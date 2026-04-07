@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SICOP - Sistema de Contabilidade Pública</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h2>SICOP</h2>
+            <span class="sidebar-subtitle">Contabilidade Pública</span>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li>
+                <a href="#" class="menu-item active" data-section="dashboard">
+                    <span class="menu-icon">&#9632;</span>
+                    Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item" data-section="plano-contas">
+                    <span class="menu-icon">&#9776;</span>
+                    Plano de Contas
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item" data-section="lancamentos">
+                    <span class="menu-icon">&#9998;</span>
+                    Lançamentos
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item" data-section="receitas">
+                    <span class="menu-icon">&#8593;</span>
+                    Receitas
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item" data-section="despesas">
+                    <span class="menu-icon">&#8595;</span>
+                    Despesas
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item" data-section="relatorios">
+                    <span class="menu-icon">&#9783;</span>
+                    Relatórios
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item" data-section="configuracoes">
+                    <span class="menu-icon">&#9881;</span>
+                    Configurações
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <span>Exercício: <strong id="exercicio-atual">2026</strong></span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <button id="btn-toggle-sidebar" class="btn-toggle-sidebar" title="Menu">&#9776;</button>
+            <h1 id="page-title">Dashboard</h1>
+            <div class="topbar-actions">
+                <span id="data-atual" class="data-atual"></span>
+            </div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <section id="section-dashboard" class="section active">
+            <div class="cards-grid">
+                <div class="card card-receita">
+                    <div class="card-label">Receita Arrecadada</div>
+                    <div class="card-value" id="total-receita">R$ 0,00</div>
+                    <div class="card-detail">Exercício 2026</div>
+                </div>
+                <div class="card card-despesa">
+                    <div class="card-label">Despesa Empenhada</div>
+                    <div class="card-value" id="total-despesa">R$ 0,00</div>
+                    <div class="card-detail">Exercício 2026</div>
+                </div>
+                <div class="card card-saldo">
+                    <div class="card-label">Resultado Orçamentário</div>
+                    <div class="card-value" id="resultado-orcamentario">R$ 0,00</div>
+                    <div class="card-detail">Receita - Despesa</div>
+                </div>
+                <div class="card card-lancamentos">
+                    <div class="card-label">Lançamentos</div>
+                    <div class="card-value" id="total-lancamentos">0</div>
+                    <div class="card-detail">Total no exercício</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>Receitas x Despesas (Mensal)</h3>
+                    <canvas id="chart-receita-despesa"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Composição da Despesa</h3>
+                    <canvas id="chart-composicao-despesa"></canvas>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3>Últimos Lançamentos</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Conta Débito</th>
+                            <th>Conta Crédito</th>
+                            <th>Histórico</th>
+                            <th>Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ultimos-lancamentos">
+                        <tr>
+                            <td colspan="5" class="empty-state">Nenhum lançamento registrado</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Plano de Contas Section -->
+        <section id="section-plano-contas" class="section">
+            <div class="section-header">
+                <h2>Plano de Contas - PCASP</h2>
+                <button class="btn btn-primary" id="btn-nova-conta">+ Nova Conta</button>
+            </div>
+            <div class="section-body">
+                <div id="plano-contas-tree" class="tree-view">
+                    <p class="empty-state">Nenhuma conta cadastrada. Clique em "+ Nova Conta" para começar.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lançamentos Section -->
+        <section id="section-lancamentos" class="section">
+            <div class="section-header">
+                <h2>Lançamentos Contábeis</h2>
+                <button class="btn btn-primary" id="btn-novo-lancamento">+ Novo Lançamento</button>
+            </div>
+            <div class="section-body">
+                <div class="filtros">
+                    <input type="date" id="filtro-data-inicio" class="input">
+                    <input type="date" id="filtro-data-fim" class="input">
+                    <button class="btn btn-secondary" id="btn-filtrar-lancamentos">Filtrar</button>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nº</th>
+                            <th>Data</th>
+                            <th>Conta Débito</th>
+                            <th>Conta Crédito</th>
+                            <th>Histórico</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-lancamentos">
+                        <tr>
+                            <td colspan="7" class="empty-state">Nenhum lançamento registrado</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Receitas Section -->
+        <section id="section-receitas" class="section">
+            <div class="section-header">
+                <h2>Receitas Orçamentárias</h2>
+                <button class="btn btn-primary" id="btn-nova-receita">+ Nova Receita</button>
+            </div>
+            <div class="section-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Natureza</th>
+                            <th>Descrição</th>
+                            <th>Estágio</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-receitas">
+                        <tr>
+                            <td colspan="6" class="empty-state">Nenhuma receita registrada</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Despesas Section -->
+        <section id="section-despesas" class="section">
+            <div class="section-header">
+                <h2>Despesas Orçamentárias</h2>
+                <button class="btn btn-primary" id="btn-nova-despesa">+ Nova Despesa</button>
+            </div>
+            <div class="section-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Natureza</th>
+                            <th>Descrição</th>
+                            <th>Estágio</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-despesas">
+                        <tr>
+                            <td colspan="6" class="empty-state">Nenhuma despesa registrada</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Relatórios Section -->
+        <section id="section-relatorios" class="section">
+            <div class="section-header">
+                <h2>Relatórios e Demonstrações</h2>
+            </div>
+            <div class="section-body">
+                <div class="cards-grid">
+                    <div class="card card-relatorio" data-relatorio="balancete">
+                        <div class="card-label">Balancete de Verificação</div>
+                        <div class="card-detail">Saldos de todas as contas</div>
+                    </div>
+                    <div class="card card-relatorio" data-relatorio="balanco-orcamentario">
+                        <div class="card-label">Balanço Orçamentário</div>
+                        <div class="card-detail">Receita prevista x arrecadada / Despesa fixada x empenhada</div>
+                    </div>
+                    <div class="card card-relatorio" data-relatorio="balanco-financeiro">
+                        <div class="card-label">Balanço Financeiro</div>
+                        <div class="card-detail">Ingressos e dispêndios</div>
+                    </div>
+                    <div class="card card-relatorio" data-relatorio="balanco-patrimonial">
+                        <div class="card-label">Balanço Patrimonial</div>
+                        <div class="card-detail">Ativo, Passivo e Patrimônio Líquido</div>
+                    </div>
+                    <div class="card card-relatorio" data-relatorio="dvp">
+                        <div class="card-label">Demonstração das Variações Patrimoniais</div>
+                        <div class="card-detail">VPA e VPD do exercício</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configurações Section -->
+        <section id="section-configuracoes" class="section">
+            <div class="section-header">
+                <h2>Configurações</h2>
+            </div>
+            <div class="section-body">
+                <div class="config-group">
+                    <h3>Dados da Entidade</h3>
+                    <div class="form-row">
+                        <label class="label">Nome da Entidade</label>
+                        <input type="text" id="config-entidade-nome" class="input" placeholder="Ex: Prefeitura Municipal de...">
+                    </div>
+                    <div class="form-row">
+                        <label class="label">CNPJ</label>
+                        <input type="text" id="config-entidade-cnpj" class="input" placeholder="00.000.000/0000-00">
+                    </div>
+                    <div class="form-row">
+                        <label class="label">Exercício Financeiro</label>
+                        <input type="number" id="config-exercicio" class="input" value="2026" min="2000" max="2100">
+                    </div>
+                    <button class="btn btn-primary" id="btn-salvar-config">Salvar Configurações</button>
+                </div>
+
+                <div class="config-group">
+                    <h3>Dados</h3>
+                    <div class="config-actions">
+                        <button class="btn btn-secondary" id="btn-exportar-dados">Exportar Dados (JSON)</button>
+                        <button class="btn btn-secondary" id="btn-importar-dados">Importar Dados (JSON)</button>
+                        <input type="file" id="input-importar" accept=".json" hidden>
+                        <button class="btn btn-danger" id="btn-limpar-dados">Limpar Todos os Dados</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Genérico -->
+    <div id="modal-overlay" class="modal-overlay" hidden>
+        <div class="modal" id="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Modal</h3>
+                <button class="btn-fechar-modal" id="btn-fechar-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer" id="modal-footer"></div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
