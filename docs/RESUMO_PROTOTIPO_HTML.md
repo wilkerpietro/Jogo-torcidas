@@ -193,6 +193,12 @@ Rodei simulações sem navegador (Node com stubs de DOM/canvas) e o que ficou em
 - **Rotina semanal**: cada dia da semana pode ter uma ação padrão, aplicada sozinha
   quando o dia passa. Nunca fura o orçamento semanal, e dia de jogo e de caravana são
   ignorados.
+- **Gestão inteligente**: a tela das decisões da semana — ir em paz ou atacar, em que
+  ponto do mapa, com quantas bombas do estoque, num bonde só ou dividido por zona,
+  como receber o aliado que joga na nossa cidade (quatro níveis, cada um com custo por
+  cabeça e ganho de relação) e por qual estrada a caravana viaja. A rota sai do grafo
+  das rodovias das trinta praças, com opção de desviar do território rival. A tela de
+  Início ganhou o cartão de **Avisos**, que lista o que está esperando decisão.
 - **Efetivo real de cada torcida**: os 20 a 250 membros e a divisão de cargos vêm da
   fonte, e a sede começa no nível que comporta esse efetivo.
 

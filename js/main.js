@@ -189,6 +189,7 @@
     {id:'inicio',      rot:'Início',      ic:'casa'},
     {id:'torcida',     rot:'Torcida',     ic:'torcida'},
     {id:'financeiro',  rot:'Financeiro',  ic:'dinheiro'},
+    {id:'gestao',      rot:'Gestão',      ic:'conversa'},
     {id:'mapa',        rot:'Mapa',        ic:'mapa'},
     {id:'calendario',  rot:'Calendário',  ic:'jornal'},
     {id:'competicoes', rot:'Competições', ic:'trofeu'},
@@ -310,6 +311,25 @@
     verTodas.onclick = ()=>{ pagina='noticias'; redesenhar(); };
     cNot.rodape(verTodas);
     esq.appendChild(cNot);
+
+    /* avisos: o que está esperando decisão do jogador */
+    const pend = TO.planejamento.pendencias(e);
+    const cAv = cartao('Avisos', pend.length ? `${pend.length} pendentes` : 'tudo em dia');
+    if(!pend.length){
+      cAv.corpo.appendChild(el('div',{class:'linha-dado', html:
+        '<span class="fraco">Nada esperando por você. Avance o dia.</span>'}));
+    }
+    for(const a of pend){
+      const b = el('button',{class:'aviso-linha '+a.tipo, html:
+        `<span class="pino"></span>
+         <span class="txt"><span>${a.texto}</span><small>${a.detalhe}</small></span>`});
+      b.onclick = ()=>{
+        if(a.id==='acoes') abrirTodasAcoes();
+        else { pagina = a.pagina; redesenhar(); }
+      };
+      cAv.corpo.appendChild(b);
+    }
+    dir.appendChild(cAv);
 
     /* resumo financeiro — o mesmo cálculo do fechamento (GDD §7) */
     const cx = TO.financeiro.contas(e);
@@ -873,6 +893,11 @@
     q.appendChild(h);
     q.corpo = el('div');
     q.appendChild(q.corpo);
+    q.rodape = (...bts)=>{
+      const r = el('div',{class:'rodape'});
+      bts.forEach(b=>b && r.appendChild(b));
+      q.appendChild(r); return q;
+    };
     return q;
   }
 
@@ -1087,6 +1112,226 @@
       q.corpo.innerHTML = '<div class="em-construcao">Nenhuma competição decidida ainda.</div>';
     else q.corpo.appendChild(t);
     return q;
+  }
+
+  /* =======================================================
+     GESTÃO INTELIGENTE
+     A tela onde a semana vira plano: ir em paz ou atacar,
+     onde, com quanta bomba, em quantos bondes, como receber o
+     aliado e por qual estrada viajar.
+     ======================================================= */
+  function opcoes(itens, atual, aoTrocar){
+    const cx = el('div',{class:'opcoes'});
+    for(const it of itens){
+      const b = el('button',{class:'opcao'+(it.id===atual?' on':'')+
+        (it.desabilitada?' off':'')});
+      b.disabled = !!it.desabilitada;
+      b.innerHTML =
+        `<span class="rot">${it.rot}</span>
+         ${it.custo!==undefined?`<span class="custo">${
+            it.custo ? U.dinheiro(-it.custo) : 'de graça'}</span>`:''}
+         <small>${it.nota||''}</small>`;
+      b.onclick = ()=>aoTrocar(it.id);
+      cx.appendChild(b);
+    }
+    return cx;
+  }
+
+  function medidor(rot, valor, max, cor){
+    return `<div class="medidor"><span>${rot}</span>
+      <i><b style="width:${U.limitar(valor/max,0,1)*100}%;background:${cor||'var(--rubro-vivo)'}"></b></i>
+      <em>${valor}</em></div>`;
+  }
+
+  /* quadro com o corpo recuado, pro conteúdo de formulário */
+  function quadroP(titulo, direita){
+    const q = quadro(titulo, direita);
+    q.corpo.className = 'recuado';
+    return q;
+  }
+
+  function pintarGestao(){
+    const e = E(), pg = U.$('.pagina[data-pag="gestao"]');
+    const P = TO.planejamento;
+    pg.innerHTML='';
+    pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Gestão inteligente</h1>'}));
+
+    const p = P.plano(e);
+    const j = e.proximoJogo;
+    const grade = el('div',{class:'comp-duas'});
+    const esq = el('div'), dir = el('div');
+
+    /* ---------- 1. postura da semana ---------- */
+    const cPost = quadroP('A semana', el('span',{class:'conta',
+      texto:`semana ${e.data.semana} · dia ${e.data.dia}`}));
+    if(!j){
+      cPost.corpo.appendChild(el('div',{class:'em-construcao',
+        html:'<b>Folga na tabela</b>O time não joga. Semana boa pra treinar, '+
+             'recrutar e resolver o que a rua deixou.'}));
+    }else{
+      cPost.corpo.appendChild(el('div',{class:'confronto-linha', html:
+        `<b>${j.mandante.nome}</b><span>×</span><b>${j.visitante.nome}</b>
+         <small>${j.competicao}${j.fase?' · '+j.fase:''} · `+
+        `${j.neutro?'campo neutro':j.casa?'em casa':'fora, em '+j.cidadeAdv}</small>`}));
+      const posts = TO.financeiro.posturas(e);
+      const atual = posts.find(x=>x.id===e.postura) || posts[posts.length-1];
+      cPost.corpo.appendChild(opcoes(
+        posts.map(x=>({id:x.id, rot:x.rot, nota:x.nota})), atual.id,
+        id=>{ TO.financeiro.definirPostura(e, id); redesenhar(); }));
+    }
+    esq.appendChild(cPost);
+
+    /* ---------- 2. em paz ou atacar ---------- */
+    if(j && e.postura !== 'ficar'){
+      const cInt = quadroP('Intenção do dia de jogo');
+      cInt.corpo.appendChild(opcoes([
+        {id:'paz',    rot:'Ir em paz',  nota:'entrar pelo portão, bandeira e bateria'},
+        {id:'atacar', rot:'Atacar',     nota:'procurar o rival antes da bola rolar'}
+      ], p.intencao, id=>{ p.intencao=id; p.decidido=false; redesenhar(); }));
+
+      if(p.intencao === 'atacar'){
+        cInt.corpo.appendChild(el('div',{class:'fase-rot', texto:'Onde bater'}));
+        cInt.corpo.appendChild(opcoes(
+          P.pontosDeAtaque(e).map(x=>({id:x.id,
+            rot:`${x.nome}${x.bairro?` — ${x.bairro}`:''}`,
+            nota:`${x.nota} · risco ${x.risco}/5 · prestígio ${x.prestigio}/5`})),
+          p.alvo, id=>{ p.alvo=id; p.decidido=false; redesenhar(); }));
+
+        /* bombas do estoque (GDD §9.1) */
+        const est = e.estoque || {bombas:0};
+        cInt.corpo.appendChild(el('div',{class:'fase-rot',
+          texto:`Bombas do estoque — ${est.bombas} guardadas`}));
+        const linha = el('div',{class:'contador'});
+        const menos = el('button',{texto:'−'}), mais = el('button',{texto:'+'});
+        menos.onclick = ()=>{ p.bombas=Math.max(0,p.bombas-1); p.decidido=false; redesenhar(); };
+        mais.onclick  = ()=>{ p.bombas=Math.min(est.bombas,p.bombas+1); p.decidido=false; redesenhar(); };
+        menos.disabled = p.bombas<=0; mais.disabled = p.bombas>=est.bombas;
+        linha.append(menos, el('b',{texto:String(p.bombas)}), mais,
+          el('small',{texto: p.bombas ? 'bomba chama a PM mais rápido (GDD §9.1)'
+                                      : 'pedra é infinita e não faz barulho'}));
+        cInt.corpo.appendChild(linha);
+      }
+      esq.appendChild(cInt);
+
+      /* ---------- 3. um bonde ou vários ---------- */
+      const d = P.divisao(e, p.bondes);
+      const cB = quadroP('Formação da saída', el('span',{class:'conta',
+        texto:`${TO.membros.aptosParaOEstadio(e).length} aptos`}));
+      cB.corpo.appendChild(opcoes([1,2,3,4].map(n=>{
+        const dd = P.divisao(e, n);
+        return {id:n, rot: n===1 ? 'Bonde único' : `${n} bondes, um por zona`,
+                nota: n===1 ? 'todo mundo junto: uma frente, mas pesada'
+                            : `${dd.porBonde} por bonde · até ${n} ataques · `+
+                              `${dd.zonas.join(', ')}`};
+      }), p.bondes, n=>{ p.bondes=n; p.decidido=false; redesenhar(); }));
+      cB.corpo.appendChild(el('div',{class:'linha-dado', html:
+        medidor('Solidez da linha', Math.round(d.solidez*100), 100,
+                d.solidez>0.75?'var(--verde)':'var(--ouro)')}));
+      esq.appendChild(cB);
+    }
+
+    /* ---------- 4. aliados na cidade ---------- */
+    const aliados = P.aliadosNaCidade(e, e.data.semana);
+    const cA = quadroP('Aliados na nossa cidade', el('span',{class:'conta',
+      texto: aliados.length ? `${aliados.length} nesta semana` : 'ninguém nesta semana'}));
+    if(!aliados.length){
+      cA.corpo.appendChild(el('div',{class:'em-construcao',
+        texto:'Nenhum time aliado joga aqui nesta semana.'}));
+    }
+    for(const a of aliados){
+      cA.corpo.appendChild(el('div',{class:'aliado-cab', html:
+        `<span class="escudinho" style="background:${a.torcida.cores[0]}"></span>
+         <div><b>${a.torcida.nome}</b>
+           <small>${a.clube.nome} joga contra o ${a.adversario.nome} · `+
+        `relação ${Math.round(a.relacao)} · vêm ~${a.estimativa}</small></div>`}));
+      const nivel = p.recepcao[a.id] || 'nada';
+      cA.corpo.appendChild(opcoes(P.RECEPCAO.map(r=>({
+        id:r.id, rot:r.rot, custo:r.porCabeca*a.estimativa,
+        nota:`${r.nota} · relação ${r.relacao>0?'+':''}${r.relacao}`,
+        desabilitada: r.porCabeca*a.estimativa > e.dinheiro && r.id!=='nada'
+      })), nivel, id=>{ p.recepcao[a.id]=id; p.decidido=false; redesenhar(); }));
+    }
+    dir.appendChild(cA);
+
+    /* ---------- 5. caravana ---------- */
+    const listaRotas = P.rotas(e);
+    if(listaRotas.length){
+      const est = P.estimativaCaravana(e);
+      const cC = quadroP('Caravana', el('span',{class:'conta',
+        texto:`${e.torcida.cidade} → ${j.cidadeAdv}`}));
+      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Interessados em ir</span><b>${est.vao} de ${est.aptos}</b>`}));
+      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+        medidor('Vontade de viajar', Math.round(est.vontade*100), 100,
+                est.vontade>0.5?'var(--verde)':'var(--ouro)')}));
+      cC.corpo.appendChild(el('div',{class:'fase-rot', texto:'Estrada'}));
+      cC.corpo.appendChild(opcoes(listaRotas.map(r=>({
+        id:r.id, rot:r.nome, custo:r.custo,
+        nota:`${r.nota}${r.risco?` · risco ${Math.round(r.risco)}`:' · sem território hostil'}`
+      })), (p.rota || listaRotas[0].id), id=>{ p.rota=id; p.decidido=false; redesenhar(); }));
+
+      const r = P.rotaEscolhida(e);
+      if(r && r.cidades.length>1){
+        cC.corpo.appendChild(el('div',{class:'trajeto', html:
+          r.cidades.map((c,i)=>{
+            const nome = (TO.mundo.cidade(c)||{}).nome || c;
+            const hostil = P.hostilidade(e, c);
+            return `<span class="parada${i===0?' saida':''}${
+              i===r.cidades.length-1?' chegada':''}${hostil>40?' hostil':''}">${nome}</span>`;
+          }).join('<i>›</i>')}));
+        if(r.rodovias.length)
+          cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+            `<span class="fraco">${r.rodovias.join(' · ')}</span>`}));
+      }
+      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Custo por cabeça</span><b>${U.dinheiro(est.porCabeca)}</b>`}));
+      dir.appendChild(cC);
+    }
+
+    /* ---------- 6. fechar o plano ---------- */
+    const cF = quadroP('Plano da semana');
+    const resumo = [];
+    if(!j) resumo.push('Sem jogo nesta semana.');
+    else{
+      resumo.push(e.postura==='ficar' ? 'A torcida fica.'
+                : e.postura==='viajar' ? `Caravana para ${j.cidadeAdv}.`
+                : 'A torcida vai ao estádio.');
+      if(e.postura!=='ficar')
+        resumo.push(p.intencao==='atacar'
+          ? `Ataque em ${P.ponto(p.alvo).nome}${p.bombas?` com ${p.bombas} bomba${p.bombas>1?'s':''}`:', só na pedra'}.`
+          : 'Entrada em paz pelo portão.');
+      if(e.postura!=='ficar')
+        resumo.push(p.bondes===1 ? 'Bonde único.'
+                                 : `${p.bondes} bondes, um por zona.`);
+    }
+    let gasto = 0;
+    for(const a of aliados){
+      const n = p.recepcao[a.id];
+      if(!n || n==='nada') continue;
+      const c = P.custoRecepcao(n, a.estimativa);
+      gasto += c;
+      resumo.push(`${P.recepcaoDe(n).rot} para a ${a.torcida.nome} (${U.dinheiro(c)}).`);
+    }
+    for(const t of resumo)
+      cF.corpo.appendChild(el('div',{class:'linha-dado', html:`<span>${t}</span>`}));
+    if(gasto)
+      cF.corpo.appendChild(el('div',{class:'linha-dado total', html:
+        `<span>A pagar agora</span><b class="negativo">${U.dinheiro(-gasto)}</b>`}));
+
+    const bt = el('button',{class:'bt destaque larga',
+      texto: p.decidido ? 'Plano fechado' : 'Fechar o plano'});
+    bt.disabled = !!p.decidido;
+    bt.onclick = ()=>{
+      const r = P.confirmar(e);
+      aviso(r.gasto ? `Plano fechado. ${U.dinheiro(r.gasto)} de recepção.`
+                    : 'Plano fechado.', 'boa');
+      redesenhar();
+    };
+    cF.rodape(bt);
+    dir.appendChild(cF);
+
+    grade.append(esq, dir);
+    pg.appendChild(grade);
   }
 
   /* =======================================================
@@ -1495,16 +1740,22 @@
     $('telaEscalacao').classList.add('oculto');
     $('telaDiaJogo').classList.remove('oculto');
     TO.estado.bloquear(true);
+    const p = TO.planejamento.plano(E());
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
-      config: { escalacao: lista },
+      /* o plano da semana entra na cena: intenção e bombas levadas */
+      config: { escalacao: lista, intencao: p.intencao, bombas: p.bombas },
       aoTerminar: fecharDiaDeJogo
     });
   }
 
   function fecharDiaDeJogo(res){
     TO.estado.bloquear(false);
-    const resumo = TO.membros.aplicarResultadoDaNoite(E(), res);
+    /* bomba jogada é bomba que não volta pro estoque (GDD §9.1) */
+    const e = E();
+    e.estoque = e.estoque || {bombas:0};
+    e.estoque.bombas = Math.max(0, e.estoque.bombas - (res.bombasUsadas||0));
+    const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     setTimeout(()=>{
       $('telaDiaJogo').classList.add('oculto');
       mostrarRelatorio(res, resumo);
@@ -1591,6 +1842,7 @@
     if(pagina==='inicio') pintarInicio();
     else if(pagina==='torcida') pintarTorcida();
     else if(pagina==='financeiro') pintarFinanceiro();
+    else if(pagina==='gestao') pintarGestao();
     else if(pagina==='calendario') pintarCalendario();
     else if(pagina==='competicoes') pintarCompeticoes();
     else if(pagina==='diplomacia') pintarDiplomacia();

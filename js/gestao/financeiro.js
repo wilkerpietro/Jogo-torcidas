@@ -207,11 +207,16 @@ TO.financeiro = (function(){
     if(E.caravanasPagas[chave]) return null;
     E.caravanasPagas[chave] = true;
     const destino = E.proximoJogo.cidadeAdv || 'fora';
-    TO.estado.lancar(E, `Caravana para ${destino}`, -CARAVANA);
+    /* a conta é da estrada escolhida no planejamento; sem plano, o
+       valor cheio do GDD §7.3 */
+    const rota = TO.planejamento && TO.planejamento.rotaEscolhida(E);
+    const valor = rota ? rota.custo : CARAVANA;
+    TO.estado.lancar(E, `Caravana para ${destino}`+
+      (rota ? ` (${rota.nome.toLowerCase()})` : ''), -valor);
     /* a lista não pode crescer pra sempre num save de dez temporadas */
     const chaves = Object.keys(E.caravanasPagas);
     if(chaves.length > 80) delete E.caravanasPagas[chaves[0]];
-    return {valor:CARAVANA, destino};
+    return {valor, destino};
   }
 
   /* =======================================================

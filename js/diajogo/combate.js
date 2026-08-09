@@ -80,12 +80,17 @@ TO.diaJogo.combate = (function(){
     const J={
       t:0, fase:'ativo',
       discos:[], policiais:[], projeteis:[], grades:A.montarGrades(),
-      form:'bonde', bombas:P.bombas,
-      alerta:12, rompido:false, reforco:0,
+      form:'bonde',
+      /* o estoque da noite vem do planejamento da semana */
+      bombas: cfg.bombas!==undefined ? cfg.bombas : P.bombas,
+      bombasIniciais: cfg.bombas!==undefined ? cfg.bombas : P.bombas,
+      alerta: 12 + (cfg.intencao==='atacar' ? 8 : 0), rompido:false, reforco:0,
       cargaEm:null, cargaAte:0, tropaVeio:false,
       sobPressao:0, fracPM:0, avisouPM:false,
       recuando:false, recuoVisitante:false,
-      paz: U.rng()*100 < P.chancePaz, cdClima:0,
+      /* quem sai pra atacar não tem noite tranquila (GDD §15.4) */
+      paz: cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
+      intencao: cfg.intencao || 'paz', cdClima:0,
       cdPedraAte:0, cdBombaAte:0,
       entraram:{}, presos:0,
       caidos:{mandante:0, visitante:0}, presosPor:{mandante:0, visitante:0},
