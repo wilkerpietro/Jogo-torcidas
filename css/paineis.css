@@ -874,3 +874,33 @@ table.dados tr.selecionada td{background:#252525}
   padding:5px 9px;font-size:11px;white-space:nowrap;z-index:5;
 }
 .mapa-dica.on{opacity:1}
+
+/* ---------- fator torcida (GDD §9.5) ---------- */
+.fator{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:4px 20px;margin-top:10px;padding-top:9px;border-top:1px solid var(--sulco);
+}
+.fator-parte{display:grid;grid-template-columns:1fr 70px auto;gap:9px;align-items:center}
+.fator-parte .rot{font-size:11.5px}
+.fator-parte .rot small{
+  display:block;font-family:var(--mono);font-size:9.5px;color:var(--fraco);
+}
+.fator-parte i{height:6px;background:#242424;display:block}
+.fator-parte i b{display:block;height:100%;background:var(--rubro-vivo)}
+.fator-parte em{
+  font-family:var(--mono);font-style:normal;font-size:11.5px;text-align:right;
+  min-width:52px;
+}
+.fator-parte em small{color:var(--fraco);font-size:9.5px;margin-left:3px}
+
+/* ---------- o dia na rua ---------- */
+.rua-barra{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:9px 14px;border-bottom:1px solid var(--linha);background:#171313;
+}
+.rua-info{flex:1;min-width:220px}
+.rua-info b{font-family:var(--titulo);font-size:13px;letter-spacing:.06em}
+.rua-info small{
+  display:block;font-family:var(--mono);font-size:10px;color:var(--fraco);
+  margin-top:2px;
+}

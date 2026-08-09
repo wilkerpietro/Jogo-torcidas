@@ -281,9 +281,23 @@ TO.estado = (function(){
       E.data.dia = 1; E.data.semana++; E.acoes.usadas = 0;
       /* GDD §5.4: a fila de treino da semana é sorteada de novo */
       TO.membros.sortearFila(E);
+      /* faixa rasgada e instrumento quebrado voltam devagar (GDD §20) */
+      TO.torcedores.reporMaterial(E);
+      /* e o humor da praça volta um pouco pro meio a cada semana */
+      TO.torcedores.esfriar(E);
       if(E.data.semana > TO.competicoes.SEMANAS_ANO){
         E.data.semana = 1; E.data.ano++;
         guardarTitulos(E);
+        /* GDD §21: título, vice e rebaixamento mexem na satisfação de vez */
+        for(const c of E.temporada.competicoes){
+          if(c.campeao === E.torcida.clubeId)
+            anotar(E, `CAMPEÃO do ${c.nome}! Satisfação `+
+              `+${TO.torcedores.aplicarConquista(E,'campeao')}.`, 'boa');
+          else if(c.vice === E.torcida.clubeId)
+            anotar(E, `Vice do ${c.nome}. Satisfação `+
+              `+${TO.torcedores.aplicarConquista(E,'vice')}.`, '');
+        }
+        E.classifAnterior = null;
         /* o ano em campo mexe na força dos clubes antes de qualquer
            outra coisa: quem foi campeão entra mais forte no ano seguinte */
         const forca = TO.competicoes.evoluirForca(E);
@@ -298,7 +312,9 @@ TO.estado = (function(){
           const sub = TO.competicoes.subiu(m.de, m.para);
           anotar(E, `${TO.mundo.time(m.id).nome} ${sub?'subiu para':'caiu para'} `+
                     `${m.para} em ${E.data.ano}.`, sub?'boa':'ruim');
-          E.indicadores.satisfacao = U.limitar(E.indicadores.satisfacao + (sub?3:-3), 0, 20);
+          /* GDD §21: rebaixado é −3 fixo na satisfação; subir vale o mesmo
+             em sentido contrário */
+          TO.torcedores.aplicarConquista(E, sub ? 'campeao' : 'rebaixado');
         }
         E.temporada = TO.competicoes.montarTemporada(E);
       }
@@ -322,18 +338,24 @@ TO.estado = (function(){
     if(est.avisos.length > 12) est.avisos.shift();
   }
 
-  /* GDD §6.1: a satisfação do torcedor comum sobe com vitória e cai
-     com derrota. É o elo entre o desempenho do time e o recrutamento. */
+  /* GDD §21: a satisfação do torcedor comum sobe com vitória, desaba com
+     derrota em clássico e acompanha a posição na tabela. É o elo entre o
+     desempenho do time, o recrutamento e o público no estádio. */
   function aplicarResultadoDoClube(E, j){
     if(!j || !j.jogado) return;
-    const I = E.indicadores;
-    const venceu = j.gp > j.gc, perdeu = j.gp < j.gc;
-    I.satisfacao = U.limitar(I.satisfacao + (venceu?0.8 : perdeu?-0.7 : 0.1), 0, 20);
-    I.moral      = U.limitar(I.moral      + (venceu?0.4 : perdeu?-0.4 : 0), 0, 20);
+    const r = TO.torcedores.aplicarResultado(E, j);
+    if(r && r.classico && Math.abs(r.delta) >= 3)
+      anotar(E, r.venceu
+        ? `Clássico ganho: a cidade inteira está com o time (satisfação `+
+          `+${r.delta.toFixed(1)}).`
+        : `Clássico perdido: a torcida comum virou as costas (satisfação `+
+          `${r.delta.toFixed(1)}).`, r.venceu ? 'boa' : 'ruim');
+    /* a rodada mexe na tabela, e a tabela mexe na satisfação */
+    TO.torcedores.aplicarClassificacao(E);
     if(j.mata && j.venceu){
-      /* título ou eliminação mexem mais do que rodada de pontos corridos */
       const meu = E.torcida.clubeId;
-      I.satisfacao = U.limitar(I.satisfacao + (j.venceu===meu ? 1 : -1), 0, 20);
+      E.indicadores.satisfacao =
+        U.limitar(E.indicadores.satisfacao + (j.venceu===meu ? 1 : -1), 0, 20);
     }
   }
 

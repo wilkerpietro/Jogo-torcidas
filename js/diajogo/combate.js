@@ -91,6 +91,10 @@ TO.diaJogo.combate = (function(){
       /* quem sai pra atacar não tem noite tranquila (GDD §15.4) */
       paz: cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
+      /* onde a briga cai: arredores do estádio, praça ou rua. Muda o
+         tamanho do bonde rival e a pressa da PM (GDD §12). */
+      local: cfg.local || 'arredores',
+      efetivoRival: cfg.efetivoRival || P.efetivoRival,
       cdPedraAte:0, cdBombaAte:0,
       entraram:{}, presos:0,
       caidos:{mandante:0, visitante:0}, presosPor:{mandante:0, visitante:0},
@@ -127,7 +131,7 @@ TO.diaJogo.combate = (function(){
       const escalados = porSpawn.get(s.id);
       const qtd = escalados && escalados.length ? escalados.length
                 : Math.max(1, Math.round(
-                    (s.lado==='mandante'?P.efetivo:P.efetivoRival)/contarSpawns(s.lado)));
+                    (s.lado==='mandante'?P.efetivo:J.efetivoRival)/contarSpawns(s.lado)));
       for(let i=0;i<qtd;i++){
         const p=A.pontoLivreMaisProximo(s.x+U.entre(-46,46), s.y+U.entre(-46,46), 7);
         const m = escalados && escalados[i];

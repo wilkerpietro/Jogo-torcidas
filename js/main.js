@@ -350,6 +350,25 @@
     cFin.rodape(verFin);
     dir.appendChild(cFin);
 
+    /* GDD §21: o humor do torcedor comum, que decide público e recruta */
+    const fx  = TO.torcedores.faixaDe(e);
+    const sat = e.indicadores.satisfacao;
+    const pub = TO.torcedores.publicoDaCidade(e);
+    const cSat = cartao('A cidade', fx.nome.toLowerCase());
+    cSat.corpo.innerHTML =
+      `<div class="valorao"><span>Satisfação com o time</span>
+         <b style="color:${fx.cor}">${sat.toFixed(1)}<span class="fraco"> de 20</span></b></div>
+       <div class="linha-dado">${medidor('Humor da praça', Math.round(sat*5), 100, fx.cor)}</div>
+       <div class="linha-dado"><span>Topam entrar na organizada</span>
+         <b>${Math.round(fx.organizar*100)}%</b></div>
+       <div class="linha-dado"><span>Vão ao estádio</span>
+         <b>${U.numero(pub.publico)} `+
+      `<span class="fraco">${pub.lotado ? 'lotado'
+        : Math.round(pub.ocupacao*100)+'% do estádio'}</span></b></div>
+       <div class="linha-dado"><span class="fraco">${fx.nota}. Vitória em clássico `+
+      `dá até +5; derrota tira o mesmo.</span></div>`;
+    dir.appendChild(cSat);
+
     dir.appendChild(cartaoAcoes());
 
     /* dia de jogo — a postura da semana decide se tem cena (GDD §3.2) */
@@ -738,11 +757,13 @@
     const grade = el('div',{class:'colunas'});
 
     const c1 = cartao(`Torcedores do ${clube?clube.nome:'clube'} em ${cid?cid.nome:'—'}`,
-                      `${U.numero(torcedores)} na praça`);
+                      `${U.numero(torcedores)} mil na praça`);
     c1.corpo.innerHTML =
       `<div class="valorao"><span>Fora de organizada</span>
-         <b class="${p.base>0?'positivo':'negativo'}">${Math.round(p.base)}</b></div>
-       <div class="linha-dado"><span>Já organizados</span><b>${organizados}</b></div>`;
+         <b class="${p.base>0?'positivo':'negativo'}">${U.numero(Math.round(p.base))}`+
+      `<span class="fraco"> mil</span></b></div>
+       <div class="linha-dado"><span>Já organizados</span>
+         <b>${organizados} <span class="fraco">pessoas</span></b></div>`;
     for(const o of org)
       c1.corpo.appendChild(el('div',{class:'linha-dado', html:
         `<span class="${o.nossa?'':'fraco'}">${o.torcida.nome}`+
@@ -753,14 +774,15 @@
       `quando o clube sobe de divisão e ganha torcedor na praça.</span>`}));
     grade.appendChild(c1);
 
-    const c2 = cartao('Previsão da próxima campanha', 'GDD §6.2');
+    const c2 = cartao('Previsão da próxima campanha', 'GDD §6.2 e §21');
     c2.corpo.innerHTML =
-      `<div class="linha-dado"><span>Alcance <span class="fraco">3% da base`+
-        `</span></span><b>${p.alcance.toFixed(1)}</b></div>
-       <div class="linha-dado"><span>Atratividade <span class="fraco">moral, `+
-        `prestígio e satisfação</span></span><b>${p.atratividade.toFixed(2)}×</b></div>
-       <div class="linha-dado"><span>Sede nível ${e.torcida.sedeNivel}</span>
-         <b>${p.mult.toFixed(1)}×</b></div>
+      `<div class="linha-dado"><span>Abordados na semana <span class="fraco">`+
+        `3% da base</span></span><b>${U.numero(Math.round(p.alcance*1000))}</b></div>
+       <div class="linha-dado"><span>Cidade ${p.faixa.nome.toLowerCase()}
+         <span class="fraco">chance de topar</span></span>
+         <b style="color:${p.faixa.cor}">${Math.round(p.chance*100)}%</b></div>
+       <div class="linha-dado"><span>Topariam entrar</span>
+         <b>${U.numero(p.querem)}</b></div>
        <div class="linha-dado"><span>Teto por campanha</span>
          <b>${p.cap} <span class="fraco">${p.capSede} da sede + ${p.capBase} `+
         `da praça</span></b></div>
@@ -768,8 +790,10 @@
          <b class="${p.vaga>0?'':'negativo'}">${p.vaga}</b></div>
        <div class="valorao"><span>Devem entrar</span>
          <b class="${p.esperado>0?'positivo':'negativo'}">~${p.esperado}</b></div>
-       <div class="linha-dado"><span class="fraco">Sai R$ 5 por novato, e a `+
-      `variância da semana é de ±15%.</span></div>`;
+       <div class="linha-dado"><span class="fraco">O gargalo é a sede, não a `+
+      `vontade do torcedor (GDD §21): milhares topariam e cabem dezenas. `+
+      `Cidade Muito Contente enche o teto; insatisfeita rende um quinze avos `+
+      `dele. Sai R$ 5 por novato, com ±15% de variância.</span></div>`;
     for(const id of ['recrutar','campanha']){
       const a = TO.acoes.porId(id);
       if(a) c2.corpo.appendChild(linhaAcao(a));
@@ -783,7 +807,8 @@
     for(const r of h.slice(0,14))
       c3.corpo.appendChild(el('div',{class:'transacao', html:
         `<span class="dia">S${r.semana}</span>
-         <span class="desc">base de ${r.base} fora de organizada</span>
+         <span class="desc">${r.faixa ? 'cidade '+r.faixa.toLowerCase()
+           : 'base de '+r.base+' mil'}${r.querem?` · ${U.numero(r.querem)} topariam`:''}</span>
          <span class="val ${r.n?'positivo':''}">${r.n?'+'+r.n:'0'}</span>`}));
     grade.appendChild(c3);
     return grade;
@@ -1416,6 +1441,29 @@
     return d;
   }
 
+  /* GDD §9.5 — de onde vem o bônus da arquibancada, parcela por parcela */
+  function painelFator(e, ft){
+    const P = TO.torcedores.PESOS;
+    const d = el('div',{class:'fator'});
+    const parte = (rot, v, peso, nota)=>{
+      const p = el('div',{class:'fator-parte'});
+      p.innerHTML =
+        `<span class="rot">${rot}<small>${nota}</small></span>
+         <i><b style="width:${Math.round(v*100)}%"></b></i>
+         <em>${Math.round(v*100)}%<small>×${peso}</small></em>`;
+      d.appendChild(p);
+    };
+    parte('Público', ft.publico, P.publico,
+          `${ft.vao} dos ${ft.total} membros vão`);
+    parte('Faixas', ft.faixas, P.faixas,
+          `${ft.tem.faixas} de ${ft.cap.faixas} da sede`);
+    parte('Bateria', ft.bateria, P.bateria,
+          `${ft.tem.bateria} de ${ft.cap.bateria} instrumentos`);
+    parte('Moral', ft.moral, P.moral,
+          `${e.indicadores.moral.toFixed(1)} de 20`);
+    return d;
+  }
+
   function pintarGestao(){
     const e = E(), pg = U.$('.pagina[data-pag="gestao"]');
     const P = TO.planejamento;
@@ -1437,6 +1485,9 @@
         `e resolver o que a rua deixou.</span></div>`;
     }else{
       const fora = TO.financeiro.precisaCaravana(e);
+      const ft  = TO.torcedores.fatorTorcida(e);
+      /* o que a arquibancada vale pro nosso time, em pontos de qualidade */
+      const bon = (ft.valor - 0.5) * TO.torcedores.EM_QUALIDADE;
       const d0   = TO.estado.dataDaSemana(e.data.ano, e.data.semana, j.dia||6);
       const dat  = `${DIA_LONGO[(j.dia||6)-1]}, `+
                    `${String(d0.getDate()).padStart(2,'0')}/`+
@@ -1460,7 +1511,11 @@
            <div><span>Sai de casa</span><b>${P.efetivoDaSaida(e)} de `+
         `${TO.membros.aptosParaOEstadio(e).length}</b></div>
            <div><span>Saída</span><b>${fora?'caravana':'bonde da sede'}</b></div>
+           <div><span>Fator torcida</span><b class="${ft.valor>=0.5?'positivo':'negativo'}">`+
+        `${Math.round(ft.valor*100)}% <span class="fraco">`+
+        `${bon>0?'+':''}${bon.toFixed(1)} no placar</span></b></div>
          </div>`;
+      topo.appendChild(painelFator(e, ft));
     }
     pg.appendChild(topo);
 
@@ -2262,6 +2317,34 @@
      ======================================================= */
   /* 80% cabe inteiro numa tela de 1080; quem quiser detalhe usa o + */
   let zoomMapa = 0.8;
+  let poeOlheiro = false;      // próximo clique no mapa posiciona o olheiro
+  let relogioRua = null;
+
+  /* o dia corre enquanto ninguém esbarra em ninguém */
+  function rodarRelogio(){
+    if(relogioRua) return;
+    let ultimo = 0;
+    const passo = agora=>{
+      const e = E();
+      const R = e && TO.ruas.estado(e);
+      if(!e || !R || !R.rodando || pagina !== 'mapa'){ relogioRua = null; return; }
+      const dt = ultimo ? Math.min(0.1, (agora-ultimo)/1000) : 0;
+      ultimo = agora;
+      const mo = mapaAtual;
+      if(mo && dt){
+        /* dois minutos de rua por segundo de tela */
+        TO.ruas.passo(e, mo, dt*2);
+        if(canvasMapa) { TO.mapa.desenhar(mo, canvasMapa);
+                         TO.ruas.desenhar(e, mo, canvasMapa.getContext('2d')); }
+        if(R.encontro){ relogioRua = null; redesenhar(); return; }
+        if(R.bondes.every(b=>b.chegou)){ R.rodando = false; relogioRua = null;
+                                         redesenhar(); return; }
+      }
+      relogioRua = requestAnimationFrame(passo);
+    };
+    relogioRua = requestAnimationFrame(passo);
+  }
+  let mapaAtual = null, canvasMapa = null;
 
   function pintarMapa(){
     const e = E(), pg = U.$('.pagina[data-pag="mapa"]');
@@ -2332,6 +2415,42 @@
     secao(grupo('DEMAIS LOCAIS', MP.TIPOS_NEUTRO),
           ...MP.TIPOS_NEUTRO.map(t=>caixa(t, ROT_NEUTRO[t] || t, 'filho')));
 
+    /* --- o dia na rua: bondes, relógio e olheiro --- */
+    const R = TO.ruas.montar(e, mo);
+    const barraRua = el('div',{class:'rua-barra'});
+    if(R.bondes.length){
+      const jogos = TO.ruas.jogosDaPraca(e).filter(x=>x.dia === e.data.dia);
+      const andando = R.bondes.filter(b=>!b.chegou).length;
+      barraRua.appendChild(el('div',{class:'rua-info', html:
+        `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
+         <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
+         ${Math.floor(R.minuto/60)}h${String(Math.round(R.minuto%60)).padStart(2,'0')}
+         antes da bola rolar</small>`}));
+      const bt = el('button',{class:'bt destaque',
+        texto: R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia'});
+      bt.disabled = !andando && !R.encontro;
+      bt.onclick = ()=>{
+        if(R.encontro){ abrirConfronto(e, R.encontro); return; }
+        R.rodando = !R.rodando;
+        redesenhar();
+        if(R.rodando) rodarRelogio();
+      };
+      const btO = el('button',{class:'bt',
+        texto: R.olheiro ? 'Tirar o olheiro' : (poeOlheiro ? 'Clique no mapa…'
+                                                           : 'Pôr olheiro')});
+      btO.onclick = ()=>{
+        if(R.olheiro){ TO.ruas.porOlheiro(e, null); poeOlheiro = false; }
+        else poeOlheiro = !poeOlheiro;
+        redesenhar();
+      };
+      barraRua.append(btO, bt);
+    }else{
+      barraRua.appendChild(el('div',{class:'rua-info', html:
+        '<b>Cidade tranquila</b><small>ninguém joga aqui hoje; '+
+        'em dia de jogo os bondes saem pra rua</small>'}));
+    }
+    q.corpo.appendChild(barraRua);
+
     /* --- superfície --- */
     const viewport = el('div',{class:'mapa-viewport'});
     const casca = el('div',{class:'mapa-casca',
@@ -2362,7 +2481,10 @@
     cv._dpr = dpr;
     cv.width  = Math.round(mo.tam * dpr);
     cv.height = Math.round(mo.tam * dpr);
-    MP.desenhar(mo, cv);
+    mapaAtual = mo; canvasMapa = cv;
+    const pintar = ()=>{ MP.desenhar(mo, cv);
+                         TO.ruas.desenhar(E(), mo, cv.getContext('2d')); };
+    pintar();
 
     const ponto = ev=>{
       const r = cv.getBoundingClientRect();
@@ -2375,7 +2497,7 @@
          || (a && mo.sob && (a.x !== mo.sob.x || a.y !== mo.sob.y))){
         mo.sob = a;
         cv.style.cursor = a ? 'pointer' : 'default';
-        MP.desenhar(mo, cv);
+        pintar();
       }
       if(!dica || !mo.sob){ dica.classList.remove('on'); return; }
       const casca = cv.parentElement.getBoundingClientRect();
@@ -2387,10 +2509,18 @@
     cv.onmouseleave = ()=>{
       mo.sob = null; cv.style.cursor = 'default';
       dica.classList.remove('on');
-      MP.desenhar(mo, cv);
+      pintar();
     };
     cv.onclick = ev=>{
-      const p = ponto(ev), a = MP.alvoEm(mo, p.x, p.y);
+      const p = ponto(ev);
+      if(poeOlheiro){
+        TO.ruas.porOlheiro(E(), p.x, p.y);
+        poeOlheiro = false;
+        aviso('Olheiro no ponto. Ele enxerga o que passa em volta.','boa');
+        redesenhar();
+        return;
+      }
+      const a = MP.alvoEm(mo, p.x, p.y);
       if(a) aviso(a.info);
     };
   }
@@ -2463,13 +2593,55 @@
     });
   }
 
-  function fecharDiaDeJogo(res){
+  /* =======================================================
+     O ENCONTRO NA RUA
+     Dois bondes hostis se encostam, o relógio para e a cena
+     abre. Quem está no meio é quem estava no bonde, não a
+     torcida inteira.
+     ======================================================= */
+  const LOCAL_ROT = {rua:'na rua', praca:'na praça', arredores:'nos arredores do estádio'};
+  let encontroAberto = null;
+
+  function abrirConfronto(e, enc){
+    const nosso = enc.a.nossa ? enc.a : enc.b.nossa ? enc.b : null;
+    const deles = nosso === enc.a ? enc.b : enc.a;
+    if(!nosso){
+      /* briga entre duas torcidas de fora: vira notícia, não vira cena */
+      TO.estado.anotar(e, `${enc.a.nome} e ${enc.b.nome} se pegaram `+
+        `${LOCAL_ROT[enc.local]||''} a caminho do estádio.`, 'ruim');
+      TO.ruas.resolver(e);
+      redesenhar();
+      return;
+    }
+    /* quem estava no bonde entra na cena, pelos mais fortes */
+    const aptos = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
+      .slice(0, U.limitar(nosso.n, 2, 34));
+    encontroAberto = enc;
+    $('telaDiaJogo').classList.remove('oculto');
+    TO.estado.bloquear(true);
+    const p = TO.planejamento.plano(e);
+    TO.diaJogo.ponte.montar({
+      canvas: $('djPrincipal'),
+      config: { escalacao: aptos, intencao:'atacar', bombas: p.bombas,
+                efetivoRival: deles.n, local: enc.local },
+      aoTerminar: res => fecharDiaDeJogo(res, enc)
+    });
+  }
+
+  function fecharDiaDeJogo(res, enc){
     TO.estado.bloquear(false);
     /* bomba jogada é bomba que não volta pro estoque (GDD §9.1) */
     const e = E();
     e.estoque = e.estoque || {bombas:0};
     e.estoque.bombas = Math.max(0, e.estoque.bombas - (res.bombasUsadas||0));
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
+    if(enc){
+      /* material perdido quando a briga é na rua e a gente leva a pior */
+      if(res.prestigio < 0) TO.torcedores.perderMaterial(e, 1, 2);
+      TO.ruas.resolver(e);
+      encontroAberto = null;
+    }
     setTimeout(()=>{
       $('telaDiaJogo').classList.add('oculto');
       mostrarRelatorio(res, resumo);

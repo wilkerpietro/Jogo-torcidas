@@ -1,0 +1,230 @@
+/* =========================================================
+   TORCEDOR COMUM E FATOR TORCIDA (GDD §9.5 e §21)
+   ---------------------------------------------------------
+   Duas coisas que faltavam e que fecham o laço do jogo:
+
+   1. O que a torcida faz no estádio mexe no placar. O GDD §9.5
+      é explícito: o MatchSimulator soma um bônus chamado Fator
+      Torcida, feito de público, faixas, bateria e moral.
+   2. O que o time faz em campo mexe no torcedor comum. O GDD
+      §21 chama isso de Satisfação: sobe com vitória, desaba com
+      derrota em clássico, e é ela que decide quanta gente topa
+      entrar na organizada e quanta gente vai ao estádio.
+
+   Juntos viram um ciclo: resultado → satisfação → público →
+   fator torcida → resultado.
+   ========================================================= */
+window.TO = window.TO || {};
+
+TO.torcedores = (function(){
+  const U = TO.util;
+  const M = () => TO.mundo;
+
+  /* =======================================================
+     SATISFAÇÃO (GDD §21) — 0 a 20, do torcedor comum
+     ======================================================= */
+  const FAIXAS = [
+    {ate:4,  nome:'Insatisfeito',   organizar:0.02, estadio:0.20, cor:'#d9705f',
+     nota:'não quer ir ao estádio nem entrar em organizada'},
+    {ate:9,  nome:'Preocupado',     organizar:0.05, estadio:0.40, cor:'#c8a03c',
+     nota:'vai ao estádio às vezes; entra na torcida com esforço'},
+    {ate:14, nome:'Contente',       organizar:0.15, estadio:0.60, cor:'#8b867d',
+     nota:'vai com frequência e é receptivo a entrar'},
+    {ate:20, nome:'Muito Contente', organizar:0.30, estadio:0.80, cor:'#7fc2a0',
+     nota:'quase todo jogo, e procura organizada pra entrar'}
+  ];
+  const ORGANIZAR_MAX = 0.30;
+  const faixa = v => U.faixa(v, FAIXAS);
+  const faixaDe = E => faixa(E.indicadores.satisfacao);
+
+  /* --- o resultado do jogo (GDD §21, aplicado no dia do jogo) --- */
+  function aplicarResultado(E, j){
+    if(!j || !j.jogado) return null;
+    const I = E.indicadores;
+    const venceu = j.gp > j.gc, perdeu = j.gp < j.gc;
+    /* clássico é jogo contra time da mesma praça, e pesa cinco vezes mais */
+    const adv = M().time(j.adversario);
+    const meu = M().time(E.torcida.clubeId);
+    const clas = !!(adv && meu && adv.mapa === meu.mapa);
+
+    let d = 0;
+    if(clas) d = venceu ? U.entre(3, 5) : perdeu ? -U.entre(3, 5) : 0;
+    else     d = venceu ? U.entre(0.5, 1) : perdeu ? -U.entre(0.5, 1) : 0;
+
+    I.satisfacao = U.limitar(I.satisfacao + d, 0, 20);
+    /* a moral da nossa gente acompanha, mais amortecida */
+    I.moral = U.limitar(I.moral + d*0.35, 0, 20);
+    return {delta:d, classico:clas, venceu, perdeu};
+  }
+
+  /* --- a posição na tabela (GDD §21, após cada rodada) ---
+     O que move a satisfação não é a posição, é a diferença entre a
+     posição esperada — pela força do elenco — e a real. Time pequeno em
+     sétimo alegra; time grande em sétimo irrita. */
+  function posicaoEsperada(E, comp, id){
+    const q = x => TO.competicoes.qualidadeDe(E, x);
+    const ordem = [...comp.clubes].sort((a,b)=>q(b)-q(a));
+    return ordem.indexOf(id) + 1;
+  }
+  function posicaoAtual(E, comp, id){
+    if(comp.grupos && comp.grupos.length > 1){
+      for(let g=0; g<comp.grupos.length; g++){
+        const i = TO.competicoes.tabela(comp, g).findIndex(l=>l.id===id);
+        if(i >= 0) return i+1;
+      }
+      return 0;
+    }
+    const i = TO.competicoes.tabela(comp).findIndex(l=>l.id===id);
+    return i < 0 ? 0 : i+1;
+  }
+
+  function aplicarClassificacao(E){
+    if(!E.temporada) return null;
+    const id = E.torcida.clubeId;
+    /* a competição que importa é a nacional; sem ela, a regional */
+    const comps = E.temporada.competicoes.filter(c=>!c.copa &&
+      (c.clubes||[]).includes(id));
+    const comp = comps.find(c=>c.tipo === 'nacional') || comps[0];
+    if(!comp) return null;
+    const atual = posicaoAtual(E, comp, id);
+    if(!atual) return null;
+
+    const esperada = posicaoEsperada(E, comp, id);
+    const n = comp.clubes.length;
+    /* a fórmula do GDD normaliza pelo tamanho da competição: subir cinco
+       posições numa Série D de 20 vale menos que numa final de 6 */
+    const nota = p => U.limitar((esperada - p) * (n/20) * 0.5, -6, 6);
+    const antes = E.classifAnterior != null ? E.classifAnterior : atual;
+    /* variação por rodada travada em ±1, como manda o GDD */
+    const d = U.limitar(nota(atual) - nota(antes), -1, 1);
+    E.classifAnterior = atual;
+    if(!d) return null;
+    E.indicadores.satisfacao = U.limitar(E.indicadores.satisfacao + d, 0, 20);
+    return {delta:d, atual, esperada, comp:comp.nome};
+  }
+
+  /* A satisfação precisa respirar. Com o puxão de classificação de ±1 por
+     rodada somado a clássico de ±5, ela cola no teto ou no chão e trava —
+     medido: 20,0 fixo depois de duas temporadas. Toda semana ela volta um
+     pouco para o meio, que é o humor de quem não teve motivo nenhum. */
+  const NEUTRA = 11;
+  function esfriar(E){
+    const I = E.indicadores;
+    const d = (NEUTRA - I.satisfacao) * 0.06;
+    I.satisfacao = U.limitar(I.satisfacao + d, 0, 20);
+    return d;
+  }
+
+  /* --- fim de temporada (GDD §21) --- */
+  const CONQUISTA = {campeao:5, vice:2, rebaixado:-3};
+  function aplicarConquista(E, tipo){
+    const d = CONQUISTA[tipo] || 0;
+    if(!d) return 0;
+    E.indicadores.satisfacao = U.limitar(E.indicadores.satisfacao + d, 0, 20);
+    return d;
+  }
+
+  /* =======================================================
+     O TORCEDOR COMUM DA PRAÇA
+     A base é gente de verdade da cidade; os números da fonte
+     estão em milhares.
+     ======================================================= */
+  function base(E){
+    return TO.mundo.baseDeRecrutamento(E.torcida.mapa, E.torcida.clubeId,
+      o => TO.acoes.efetivoDe(E, o));
+  }
+  /* Quantos torcedores comuns vão ao estádio nesta rodada (GDD §21). A
+     faixa dá a vontade; quem dá o teto é a catraca — um Castelão cheio
+     são 63 mil, não os 438 mil que topariam ir. */
+  function publicoDaCidade(E){
+    const querem = Math.round(base(E) * 1000 * faixaDe(E).estadio);
+    const est = M().estadioDoClube(E.torcida.clubeId);
+    const teto = (est && est.capacidade) || 30000;
+    return {querem, teto, publico: Math.min(querem, teto),
+            lotado: querem >= teto,
+            ocupacao: U.limitar(querem/teto, 0, 1)};
+  }
+
+  /* =======================================================
+     FATOR TORCIDA (GDD §9.5)
+       Fator = Público×0.40 + Faixas×0.25 + Bateria×0.20 + Moral×0.15
+     Cada parcela é 0..1. O resultado entra como bônus no placar.
+     ======================================================= */
+  const PESOS = {publico:0.40, faixas:0.25, bateria:0.20, moral:0.15};
+
+  /* GDD §20: quanto material a sede comporta */
+  const MATERIAL = [null, {faixas:1, bateria:3},  {faixas:2, bateria:5},
+                          {faixas:3, bateria:8},  {faixas:5, bateria:12},
+                          {faixas:10, bateria:20}];
+  const capacidade = E => MATERIAL[E.torcida.sedeNivel] || MATERIAL[1];
+
+  /* o que a torcida tem hoje; nasce cheio e só encolhe quando é roubado
+     na caminhada ou na emboscada (GDD §12) */
+  function material(E){
+    const cap = capacidade(E);
+    if(!E.material) E.material = {faixas:cap.faixas, bateria:cap.bateria};
+    E.material.faixas  = U.limitar(E.material.faixas,  0, cap.faixas);
+    E.material.bateria = U.limitar(E.material.bateria, 0, cap.bateria);
+    return E.material;
+  }
+  /* material perdido numa briga: volta com o tempo, mas custa a semana */
+  function perderMaterial(E, faixas, bateria){
+    const m = material(E);
+    m.faixas  = Math.max(0, m.faixas  - (faixas||0));
+    m.bateria = Math.max(0, m.bateria - (bateria||0));
+    return m;
+  }
+  /* a rotina da semana repõe uma faixa e um instrumento */
+  function reporMaterial(E){
+    const cap = capacidade(E), m = material(E);
+    if(m.faixas  < cap.faixas)  m.faixas++;
+    if(m.bateria < cap.bateria) m.bateria++;
+    return m;
+  }
+
+  function fatorTorcida(E){
+    const cap = capacidade(E), m = material(E);
+    const total = Math.max(1, E.membros.length);
+    /* "percentual de membros presentes no estádio" — em jogo fora é o
+       tamanho da caravana que manda, e é isso que liga a decisão da
+       Gestão ao placar */
+    const vao = TO.planejamento ? TO.planejamento.efetivoDaSaida(E)
+                                : TO.membros.aptosParaOEstadio(E).length;
+    const p = {
+      publico: U.limitar(vao/total, 0, 1),
+      faixas:  U.limitar(m.faixas /cap.faixas,  0, 1),
+      bateria: U.limitar(m.bateria/cap.bateria, 0, 1),
+      moral:   U.limitar(E.indicadores.moral/20, 0, 1)
+    };
+    const valor = p.publico*PESOS.publico + p.faixas*PESOS.faixas
+                + p.bateria*PESOS.bateria + p.moral*PESOS.moral;
+    return Object.assign({}, p, {valor, vao, total, cap,
+                            tem:{faixas:m.faixas, bateria:m.bateria}});
+  }
+
+  /* =======================================================
+     DO FATOR AO PLACAR
+     O GDD diz "aplicado como bônus" sem dar o número. Aqui ele
+     vale até 8 pontos de qualidade — com a torcida cheia contra
+     uma vazia, é meia bola de vantagem, o suficiente pra sentir
+     e longe de decidir sozinho. A referência é 0.5: torcida
+     mediana não dá nem tira nada.
+     ======================================================= */
+  const EM_QUALIDADE = 8;
+  const NEUTRO = 0.5;
+  function bonusDoJogo(E, idCasa, idFora){
+    const meu = E.torcida.clubeId;
+    if(idCasa !== meu && idFora !== meu) return 0;
+    const f = fatorTorcida(E).valor;
+    const b = (f - NEUTRO) * EM_QUALIDADE;
+    return idCasa === meu ? b : -b;      // o bônus é de quem a gente apoia
+  }
+
+  return {FAIXAS, ORGANIZAR_MAX, faixa, faixaDe, PESOS, MATERIAL, EM_QUALIDADE,
+          aplicarResultado, aplicarClassificacao, aplicarConquista, CONQUISTA,
+          esfriar, NEUTRA,
+          posicaoEsperada, posicaoAtual,
+          base, publicoDaCidade,
+          capacidade, material, perderMaterial, reporMaterial,
+          fatorTorcida, bonusDoJogo};
+})();

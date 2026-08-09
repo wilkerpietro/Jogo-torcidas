@@ -45,12 +45,16 @@ TO.financeiro = (function(){
 
   /* GDD §7.2: bar, loja e subsede ficam em zona diferente da sede.
      A regra existe pra empurrar a torcida pra fora do próprio quintal. */
-  function bairroDeFora(E){
+  function bairroDeFora(E, semente){
     const todos = TO.mundo.bairrosDe(E.torcida.mapa);
     if(!todos.length) return '';
     const sede = TO.mundo.bairroDaSede(E.torcida);
     const fora = sede ? todos.filter(b=>b.zona !== sede.zona) : todos;
-    const b = U.escolher(fora.length ? fora : todos);
+    const lista = fora.length ? fora : todos;
+    /* Endereço não se sorteia: a mesma torcida abre o bar sempre no mesmo
+       bairro, em toda partida nova. Quem decide é o hash do nome, não o
+       dado do momento — mapa que se remonta a cada save confunde. */
+    const b = lista[TO.mapa.hash(`${E.torcida.id}|${semente||'bar'}`) % lista.length];
     return b ? b.nome : '';
   }
 

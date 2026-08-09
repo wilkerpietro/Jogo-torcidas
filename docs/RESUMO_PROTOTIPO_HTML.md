@@ -267,6 +267,31 @@ O que **não** veio, e por quê:
 - **Estádios com bairro**: `dados/estadios.js`, importado do protótipo antigo, dá endereço
   às 76 praças de jogo. Clube sem estádio na fonte (41 dos 108) ganha um bairro estável,
   sorteado por hash do nome do estádio.
+- **Fator Torcida no placar** (GDD V3 §9.5, o do Unity): o MatchSimulator soma um bônus
+  feito de `Público×0,40 + Faixas×0,25 + Bateria×0,20 + Moral×0,15`, cada parcela de 0 a 1.
+  Público é o percentual de membros que saiu de casa — é o que liga a decisão de caravana
+  ao gramado. Faixas e bateria vêm do teto da sede (1/3, 2/5, 3/8, 5/12, 10/20 por nível) e
+  encolhem quando o bonde apanha na rua. O GDD não diz quanto vale o bônus; aqui ele vale
+  até 8 pontos de qualidade, com 0,5 como referência neutra. Medido em 4.000 partidas
+  contra um rival um pouco melhor: 1,53 ponto por jogo com a torcida vazia, 1,64 com ela
+  mediana, 1,77 com ela cheia.
+- **Satisfação do torcedor comum** (GDD V3 §21): vitória +0,5 a +1,0, derrota o mesmo em
+  negativo, e clássico contra time da mesma praça vale ±3 a ±5. A cada rodada entra o
+  puxão da classificação — a diferença entre a posição esperada pela força do elenco e a
+  real, travada em ±1 por rodada. Título +5, vice +2, rebaixamento −3. As quatro faixas do
+  GDD decidem quanta gente topa entrar na organizada (2/5/15/30%) e quanta vai ao estádio
+  (20/40/60/80%), com a catraca do estádio como teto. Uma correção necessária: com essas
+  faixas a satisfação colava em 20,0 e travava — medido; agora ela volta 6% em direção ao
+  meio a cada semana, e em três temporadas oscila entre 5,5 e 20 com média 11,6.
+- **Mapa vivo em dia de jogo**: a malha de ruas sai da própria geometria do mapa — as
+  avenidas entre bairros, as ruas internas entre quarteirões e o beco no meio de cada
+  quarteirão, entre as duas fileiras de lotes. São 572 nós numa praça grande, 252 deles
+  becos, montados em 2 ms, com caminho mínimo de ponta a ponta em 2 ms. Em dia de jogo os
+  bondes saem da sede e das subsedes, a torcida visitante entra pela rodovia em pontos
+  diferentes da orla e todos caminham até o estádio, cada um com hora de saída própria.
+  O olheiro se posiciona com um clique e revela quem passa no raio dele. Quando dois
+  bondes hostis se encostam o relógio para: na rua o raio é curto, nos arredores do
+  estádio o cordão aperta a multidão e ele triplica.
 - **Força dos clubes evolui** (portado do protótipo antigo, com um conserto): a posição
   final de cada competição move a qualidade do clube, e a evolução vive no save, não em
   `times.js`. As faixas herdadas tinham média positiva e em cinco anos os 108 clubes

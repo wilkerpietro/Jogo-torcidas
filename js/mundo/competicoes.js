@@ -144,8 +144,11 @@ TO.competicoes = (function(){
     return k-1;
   }
 
-  function simular(casa, fora){
-    const dif = (qual(casa) - qual(fora)) / 55;
+  /* GDD §9.5: o placar sai da forca dos dois elencos, do mando e de um
+     bonus chamado Fator Torcida — o que a arquibancada faz no dia. O
+     bonus vem de fora em pontos de qualidade, positivo pro mandante. */
+  function simular(casa, fora, bonusCasa){
+    const dif = (qual(casa) - qual(fora) + (bonusCasa||0)) / 55;
     const lc = U.limitar(1.30 + 0.30 + dif*1.5, 0.25, 5);
     const lf = U.limitar(1.30 - 0.20 - dif*1.5, 0.20, 5);
     return [poisson(lc), poisson(lf)];
@@ -859,6 +862,9 @@ TO.competicoes = (function(){
   /* =======================================================
      A SEMANA
      ======================================================= */
+  const bonusTorcida = (E, casa, fora) =>
+    (TO.torcedores ? TO.torcedores.bonusDoJogo(E, casa, fora) : 0);
+
   function jogarSemana(E, semana){
     const S = E.temporada;
     if(!S) return [];
@@ -868,7 +874,7 @@ TO.competicoes = (function(){
         if(r.semana !== semana) continue;
         for(const j of r.jogos){
           if(j.gc !== undefined && j.gc !== null) continue;
-          const [a,b] = simular(j.c, j.f);
+          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c, j.f));
           j.gc = a; j.gf = b;
           feitos.push({comp:comp.id, ...j});
         }
@@ -878,7 +884,7 @@ TO.competicoes = (function(){
         for(const j of m.jogos){
           if(!j.f) continue;                       // passou sem jogar
           if(j.gc !== undefined && j.gc !== null) continue;
-          const [a,b] = simular(j.c, j.f);
+          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c, j.f));
           j.gc = a; j.gf = b;
           /* em ida e volta quem decide é o agregado, não a partida */
           if(m.perna !== 'ida' && m.perna !== 'volta'){

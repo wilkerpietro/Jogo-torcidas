@@ -146,18 +146,28 @@ TO.mapa = (function(){
      ======================================================= */
   const ORDEM = {estadio:0, sede:1, 'bar-nosso':2, 'loja-nossa':2, subsede:2, bar:3};
 
-  function especiaisDoBairro(nome, todas){
+  function especiaisDoBairro(nome, todas, visiveis){
     const itens = todas.filter(s=>s.bairro === nome).slice().sort((a,b)=>{
       const oa = ORDEM[a.tipo] ?? 9, ob = ORDEM[b.tipo] ?? 9;
       return (oa - ob) || ((a.nossa?0:1) - (b.nossa?0:1));
     });
     const fora = {};
+    /* Os quarteirões são reservados por TODOS os itens, visíveis ou não.
+       Se o escondido liberasse a vaga, desligar um filtro empurraria de
+       lugar quem vem atrás dele na fila — e o mapa "se remontaria". */
+    const ocupado = new Set([6]);
     itens.forEach((item, i)=>{
-      if(item.tipo === 'estadio'){ fora[6] = Object.assign({}, item, {lote:-1}); return; }
+      const aparece = !visiveis || visiveis.has(item);
+      if(item.tipo === 'estadio'){
+        if(aparece) fora[6] = Object.assign({}, item, {lote:-1});
+        return;
+      }
       let q = hash(`${nome}|q|${item.tipo}|${item.label}|${i}`) % QUARTEIROES;
       let volta = 0;
-      while((fora[q] || q === 6) && volta++ < QUARTEIROES) q = (q+1) % QUARTEIROES;
+      while(ocupado.has(q) && volta++ < QUARTEIROES) q = (q+1) % QUARTEIROES;
       if(volta >= QUARTEIROES) return;
+      ocupado.add(q);
+      if(!aparece) return;
       fora[q] = Object.assign({}, item,
         {lote: hash(`${nome}|l|${item.tipo}|${item.label}|${i}`) % LOTES});
     });
@@ -186,7 +196,10 @@ TO.mapa = (function(){
     const cidade = M().cidade(E.torcida.mapa);
     if(!cidade || !(cidade.bairros||[]).length) return null;
     const todas = estruturas(E);
-    const mostra = visiveis(E, todas);
+    /* O lugar de cada coisa sai da lista COMPLETA, nunca da filtrada: se o
+       índice dependesse do filtro, desligar "mercadinho" mudaria de lote
+       metade da cidade. O filtro só decide o que aparece. */
+    const mostra = new Set(visiveis(E, todas).map(x=>x));
 
     const porZona = {Norte:[], Sul:[], Leste:[], Oeste:[]};
     for(const b of cidade.bairros) (porZona[b.zona] || porZona.Norte).push(b);
@@ -223,12 +236,12 @@ TO.mapa = (function(){
         celulas.push(Object.assign({}, pos, m.caixa(pos.row, pos.col), {
           bairro, zona, i,
           escondido: esconde[`${zona}:${i}`],
-          especiais: especiaisDoBairro(bairro.nome, mostra)
+          especiais: especiaisDoBairro(bairro.nome, todas, mostra)
         }));
       });
 
     return {tam:TAM, cols, rows, porLado, m, celulas, cidade,
-            total:todas.length, mostrando:mostra.length,
+            total:todas.length, mostrando:mostra.size,
             alvos:[], sob:null};
   }
 
@@ -451,10 +464,14 @@ TO.mapa = (function(){
     while(ctx.measureText(rot).width > cel.w-18 && tam > 8){
       tam--; ctx.font = `900 ${tam}px Arial, sans-serif`;
     }
-    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.92)';
+    /* o nome do bairro é referência, não protagonista: fica atrás do que
+       importa, com contorno fraco e transparência alta */
+    ctx.globalAlpha = 0.34;
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.55)';
     ctx.fillStyle = est.rot;
     ctx.strokeText(rot, cel.x+cel.w/2, cel.y+cel.h/2);
     ctx.fillText (rot, cel.x+cel.w/2, cel.y+cel.h/2);
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 

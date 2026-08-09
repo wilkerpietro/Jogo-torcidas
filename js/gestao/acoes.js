@@ -49,10 +49,15 @@ TO.acoes = (function(){
     const I = E.indicadores;
     const base = TO.mundo.baseDeRecrutamento(E.torcida.mapa, E.torcida.clubeId,
                                              o=>efetivoDe(E, o));
+    /* GDD §21: 3% da base não organizada é abordada por semana, e a
+       chance de cada um topar sai da faixa de satisfação. Os números da
+       fonte estão em milhares, então "abordados" e "querem" são gente de
+       verdade da cidade. */
     const alcance = base * 0.03;
-    /* os três indicadores entram normalizados de 0 a 1 */
-    const atratividade = 0.5 + (I.moral/20)*0.4 + (I.prestigio/20)*0.4
-                             + (I.satisfacao/20)*0.4;
+    const fx      = TO.torcedores.faixaDe(E);
+    const chance  = fx.organizar;
+    const querem  = Math.round(alcance * 1000 * chance);
+
     const mult = MULT_SEDE[E.torcida.sedeNivel] || 1;
     /* O teto do GDD §6.2 é por nível de sede, mas ele sozinho apaga o
        tamanho da torcida do clube na praça: recrutar em São Paulo tinha
@@ -61,10 +66,18 @@ TO.acoes = (function(){
     const capBase = Math.floor(base/120);
     const cap  = capSede + capBase;
     const vaga = TO.membros.capacidade(E) - E.membros.length;
+
+    /* O GDD §21 é explícito: "o gargalo é a capacidade da sede, não a
+       vontade do torcedor" — milhares topariam e cabem dezenas. Mas se a
+       vontade nunca entrasse na conta, a satisfação não valeria nada no
+       recrutamento. Então ela escala o teto: só cidade Muito Contente
+       (30%) enche a sede; Insatisfeita (2%) rende um quinze avos disso. */
+    const aproveita = chance / TO.torcedores.ORGANIZAR_MAX;
     return {
-      base, alcance, atratividade, mult, cap, capSede, capBase, vaga,
+      base, alcance, querem, chance, faixa:fx, atratividade:aproveita,
+      mult, cap, capSede, capBase, vaga,
       /* sem a variância, que só é sorteada na hora */
-      esperado: Math.min(cap, Math.max(0, Math.round(alcance*atratividade*mult)))
+      esperado: Math.min(cap, Math.max(0, Math.round(cap * aproveita)))
     };
   }
 
@@ -92,8 +105,8 @@ TO.acoes = (function(){
         const p = previsaoRecrutamento(E);
         if(p.vaga <= 0) return {ok:false, motivo:'a sede está cheia'};
         if(p.base <= 0) return {ok:false, motivo:'não há torcedor fora de organizada'};
-        return {ok:true, nota:`~${p.esperado} de ${Math.round(p.base)} `+
-                              `torcedores fora de organizada`};
+        return {ok:true, nota:`~${p.esperado} novatos · cidade `+
+          `${p.faixa.nome.toLowerCase()} (${Math.round(p.chance*100)}% topam)`};
       },
       executar(E){
         const p = previsaoRecrutamento(E);
@@ -101,7 +114,7 @@ TO.acoes = (function(){
         if(p.vaga <= 0) return {ok:false, msg:'A sede está cheia.', semCusto:true};
 
         const variancia = U.entre(0.85, 1.15);
-        let n = Math.round(p.alcance * p.atratividade * p.mult * variancia);
+        let n = Math.round(p.esperado * variancia);
         n = U.limitar(n, 0, Math.min(p.cap, p.vaga));
         if(n <= 0) return {ok:true, msg:'Ninguém quis entrar essa semana.'};
 
@@ -110,7 +123,8 @@ TO.acoes = (function(){
         }
         TO.estado.lancar(E, `Recrutamento de ${n} novatos`, -5*n);
         E.historicoRecrutamento = E.historicoRecrutamento || [];
-        E.historicoRecrutamento.unshift({semana:E.data.semana, n, base:Math.round(p.base)});
+        E.historicoRecrutamento.unshift({semana:E.data.semana, n,
+        base:Math.round(p.base), faixa:p.faixa.nome, querem:p.querem});
         if(E.historicoRecrutamento.length>60) E.historicoRecrutamento.pop();
         return {ok:true, msg:`${n} novatos entraram.`};
       }
@@ -286,6 +300,6 @@ TO.acoes = (function(){
   }
 
   return {LISTA, porId, maximo, restantes, executar, previsaoRecrutamento,
-          organizadasDaPraca,
+          organizadasDaPraca, efetivoDe,
           POR_SEMANA, CAP_RECRUTA};
 })();
