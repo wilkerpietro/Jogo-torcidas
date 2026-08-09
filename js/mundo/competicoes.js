@@ -96,15 +96,51 @@ TO.competicoes = (function(){
   /* =======================================================
      MONTAGEM DA TEMPORADA
      ======================================================= */
-  /* O GDD §18.3 prevê grupo único ou dois grupos conforme o tamanho.
-     Ida e volta em todos porque a janela do regional é de treze
-     semanas: com turno único sobrariam sete semanas de folga seguidas,
-     e semana sem jogo é a única em que a torcida não tem o que fazer. */
-  function formatoRegional(n){
+  /* =======================================================
+     FORMATO DOS ESTADUAIS E REGIONAIS
+     Um por competição, como o autor definiu. Quem não está na
+     tabela cai na regra por tamanho, logo abaixo.
+     ======================================================= */
+  const FORMATO = {
+    /* 6 clubes: todos contra todos ida e volta, top 4 → semi e final */
+    'Catarinense': {grupos:1, passam:4, voltas:2},
+    'Gauchão':     {grupos:1, passam:4, voltas:2},
+    'Mineiro':     {grupos:1, passam:4, voltas:2},
+    'Paranaense':  {grupos:1, passam:4, voltas:2},
+    /* 10 clubes: turno único, top 4 → semi e final */
+    'Paulistão':          {grupos:1, passam:4, voltas:1},
+    'Paulistão A2':       {grupos:1, passam:4, voltas:1},
+    'Cariocão':           {grupos:1, passam:4, voltas:1},
+    'Copa Centro-Oeste':  {grupos:1, passam:4, voltas:1},
+    /* dois grupos, turno único, top 4 de cada → quartas, semi, final */
+    'Copa do Nordeste':   {grupos:2, passam:4, voltas:1, rebaixaPorGrupo:1},
+    'Nordestão Série B':  {grupos:2, passam:4, voltas:1, sobemFinalistas:true},
+    'Copa Norte':         {grupos:2, passam:2, voltas:2}
+  };
+
+  /* GDD §18.3, pra competição que a tabela acima não cobrir */
+  function formatoRegional(nome, n){
+    if(FORMATO[nome]) return FORMATO[nome];
     if(n >= 12) return {grupos:4, passam:2, voltas:2};
-    if(n >= 8)  return {grupos:2, passam:2, voltas:2};
+    if(n >= 8)  return {grupos:2, passam:2, voltas:1};
     return {grupos:1, passam:4, voltas:2};
   }
+
+  /* quantas semanas o formato ocupa: grupos mais as chaves */
+  function semanasQuePrecisa(cfg, clubes){
+    const g = cfg.grupos || 1;
+    const maior = Math.ceil(clubes/g);
+    const rodadas = (maior % 2 ? maior : maior-1) * (cfg.voltas || 1);
+    const passam  = Math.max(2, (cfg.passam||2) * g);
+    return rodadas + Math.ceil(Math.log2(passam));
+  }
+
+  /* GDD §18.2: sobe e desce entre as séries no fim do ano.
+     Série D tem 48 clubes e a C tem 20, então o fluxo entre elas não
+     pode ser 4 por 4 — sobem 4 e caem 4, e a D absorve a diferença. */
+  const ESCADA = ['Brasileirão Série A','Brasileirão Série B',
+                  'Brasileirão Série C','Brasileirão Série D'];
+  const TROCA = 4;
 
   function criarCompeticao(id, nome, tipo, clubes, cfg, semanaInicio){
     const grupos = cfg.grupos > 1 ? dividirGrupos(clubes, cfg.grupos) : [clubes];
@@ -129,6 +165,11 @@ TO.competicoes = (function(){
     };
   }
 
+  /* A divisão e o estadual de um clube mudam com sobe-e-desce. times.js
+     é fonte estática, então a mudança vive no save. */
+  const divisaoDe  = (E, t) => (E.divisoes  || {})[t.id] || t.divisao;
+  const regionalDe = (E, t) => (E.regionais || {})[t.id] || t.regional;
+
   function montarTemporada(E){
     U.usarSemente((E.semente || 1) + (E.data.ano||2026));
     const T = M().todosTimes;
@@ -136,16 +177,28 @@ TO.competicoes = (function(){
 
     /* ---- fase 1: regionais e estaduais (GDD §18.3 e §18.4) ---- */
     const porRegional = {};
-    for(const t of T) (porRegional[t.regional] = porRegional[t.regional] || []).push(t.id);
+    for(const t of T){
+      const r = regionalDe(E, t);
+      (porRegional[r] = porRegional[r] || []).push(t.id);
+    }
+    const janela = INICIO_NACIONAL - INICIO_REGIONAL;   // 13 semanas
     for(const nome of Object.keys(porRegional).sort()){
       const clubes = porRegional[nome];
+      let cfg = formatoRegional(nome, clubes.length);
+      /* se o clube mudou de estadual e o formato não cabe mais na
+         janela de janeiro a março, o returno é o primeiro a cair */
+      if(semanasQuePrecisa(cfg, clubes.length) > janela && (cfg.voltas||1) > 1)
+        cfg = Object.assign({}, cfg, {voltas:1});
       comps.push(criarCompeticao(U.identificador(nome), nome, 'regional',
-        clubes, formatoRegional(clubes.length), INICIO_REGIONAL));
+        clubes, cfg, INICIO_REGIONAL));
     }
 
     /* ---- fase 2: Brasileirão (GDD §18.2) ---- */
     const porDivisao = {};
-    for(const t of T) (porDivisao[t.divisao] = porDivisao[t.divisao] || []).push(t.id);
+    for(const t of T){
+      const d = divisaoDe(E, t);
+      (porDivisao[d] = porDivisao[d] || []).push(t.id);
+    }
     for(const nome of Object.keys(porDivisao).sort()){
       const clubes = porDivisao[nome];
       /* até 20 clubes é turno e returno; a D, com 48, vai em quatro
@@ -308,7 +361,7 @@ TO.competicoes = (function(){
         }
       };
       comp.rodadas.forEach((r, i)=> junta(r,
-        comp.pontosCorridos ? `${i+1}ª rodada` : `Grupos · ${i+1}ª rodada`, false));
+        comp.grupos.length > 1 ? `Grupos · ${i+1}ª rodada` : `${i+1}ª rodada`, false));
       for(const m of comp.mata) junta(m, m.fase, true);
     }
     return fora.sort((a,b)=>a.semana-b.semana);
@@ -323,7 +376,121 @@ TO.competicoes = (function(){
     return semana < INICIO_NACIONAL ? 'Regionais e estaduais' : 'Brasileirão';
   }
 
+  /* =======================================================
+     SOBE E DESCE (GDD §18.2 e as regras dos estaduais)
+     Roda na virada do ano, antes de montar a temporada nova.
+     ======================================================= */
+
+  /* os melhores: em pontos corridos, o topo da tabela; em copa, quem
+     chegou mais longe — campeão, vice e depois os semifinalistas */
+  function melhores(comp, n){
+    if(comp.pontosCorridos) return tabela(comp, 0).slice(0, n).map(l=>l.id);
+    const fora = [];
+    if(comp.campeao) fora.push(comp.campeao);
+    if(comp.vice)    fora.push(comp.vice);
+    for(let i=comp.mata.length-2; i>=0 && fora.length<n; i--){
+      for(const j of comp.mata[i].jogos){
+        const perdeu = j.venceu===j.c ? j.f : j.c;
+        if(perdeu && !fora.includes(perdeu)) fora.push(perdeu);
+      }
+    }
+    return fora.slice(0, n);
+  }
+
+  /* os piores: em grupo único, a lanterna; com grupos, o último de cada */
+  function piores(comp, n){
+    if(comp.grupos.length <= 1) return tabela(comp, 0).slice(-n).map(l=>l.id);
+    const porGrupo = Math.max(1, Math.round(n/comp.grupos.length));
+    const fora = [];
+    comp.grupos.forEach((g, ig)=>
+      fora.push(...tabela(comp, ig).slice(-porGrupo).map(l=>l.id)));
+    return fora;
+  }
+
+  /* estaduais com acesso entre si */
+  const ESCADA_REGIONAL = [
+    {cima:'Paulistão',        baixo:'Paulistão A2',      troca:1},
+    {cima:'Copa do Nordeste', baixo:'Nordestão Série B', troca:2}
+  ];
+
+  function aplicarSobeDesce(E){
+    const S = E.temporada;
+    if(!S) return [];
+    const por = {};
+    for(const c of S.competicoes) por[c.nome] = c;
+    E.divisoes  = E.divisoes  || {};
+    E.regionais = E.regionais || {};
+    const mov = [];
+
+    const mover = (mapa, ids, de, para)=>{
+      for(const id of ids){
+        if(!id) continue;
+        mapa[id] = para;
+        mov.push({ano:S.ano, id, de, para});
+      }
+    };
+
+    /* Brasileirão: quatro sobem e quatro caem entre séries vizinhas.
+       Da D ninguém cai — a Série E do GDD §18.2 não existe nos dados. */
+    for(let i=0;i<ESCADA.length-1;i++){
+      const cima = por[ESCADA[i]], baixo = por[ESCADA[i+1]];
+      if(!cima || !baixo) continue;
+      mover(E.divisoes, piores(cima, TROCA),   ESCADA[i],   ESCADA[i+1]);
+      mover(E.divisoes, melhores(baixo, TROCA), ESCADA[i+1], ESCADA[i]);
+    }
+
+    for(const {cima, baixo, troca} of ESCADA_REGIONAL){
+      const a = por[cima], b = por[baixo];
+      if(!a || !b) continue;
+      mover(E.regionais, piores(a, troca),   cima,  baixo);
+      mover(E.regionais, melhores(b, troca), baixo, cima);
+    }
+
+    E.sobeDesce = (mov.concat(E.sobeDesce || [])).slice(0, 400);
+    return mov;
+  }
+
+  /* a competição `para` está acima de `de`? serve pro texto do aviso */
+  function subiu(de, para){
+    const ordem = ESCADA.concat(ESCADA_REGIONAL.flatMap(x=>[x.cima, x.baixo]));
+    const a = ordem.indexOf(de), b = ordem.indexOf(para);
+    return a >= 0 && b >= 0 && b < a;
+  }
+
+  /* =======================================================
+     RODADAS PRA TELA
+     A rodada e o mata-mata viram uma lista só, na ordem em
+     que acontecem, que é como o jogador pensa: "rodada 4 de
+     38", não "grupos" e "chave" em lugares diferentes.
+     ======================================================= */
+  function etapas(comp){
+    const fora = comp.rodadas.map((r,i)=>({
+      rot:`Rodada ${i+1}`, semana:r.semana, jogos:r.jogos, mata:false}));
+    for(const m of comp.mata)
+      fora.push({rot:m.fase, semana:m.semana, jogos:m.jogos, mata:true});
+    return fora;
+  }
+
+  /* a primeira etapa que ainda não terminou; se acabou tudo, a última */
+  function etapaAtual(comp){
+    const es = etapas(comp);
+    const i = es.findIndex(e=>e.jogos.some(j=>!temJogo(j)));
+    return i < 0 ? es.length-1 : i;
+  }
+
+  /* O clube joga no dia 6 da semana — sábado no calendário do jogo, que
+     é o dia que o GDD §3.1 reserva pro jogo. A hora varia por confronto
+     só pra tabela não ficar com 38 linhas iguais. */
+  const HORAS = ['16:30','19:30','21:00','18:30','20:00','16:00'];
+  function horaDoJogo(j){
+    const s = (j.c||'')+'|'+(j.f||'');
+    let h = 7;
+    for(let i=0;i<s.length;i++) h = (h*31 + s.charCodeAt(i)) % 9973;
+    return HORAS[h % HORAS.length];
+  }
+
   return {montarTemporada, jogarSemana, tabela, agendaDoClube, jogoDaSemana,
-          faseDaSemana, roundRobin, simular,
+          faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
+          aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,
           SEMANAS_ANO, INICIO_REGIONAL, INICIO_NACIONAL};
 })();

@@ -203,6 +203,8 @@
     $('marcaIcone').innerHTML = IC.get('casa');
     $('btAvancar').innerHTML = IC.get('play');
     $('btAvancar').onclick = ()=>{ TO.estado.avancarDia(); };
+    $('avancarFixo').classList.remove('oculto');
+    $('avancarFixo').onclick = ()=>{ TO.estado.avancarDia(); };
     montarLateral();
     redesenhar();
     ticker();
@@ -837,236 +839,433 @@
 
   /* =======================================================
      COMPETIÇÕES (GDD §18)
+     Layout do mockup: abas grandes por divisão, classificação
+     à esquerda e a rodada navegável à direita.
      ======================================================= */
-  let subComp = 'regionais', compSel = null;
+  let abaComp = null, compSel = null, rodadaSel = null;
 
   const nomeClube = id => (TO.mundo.time(id)||{}).nome || '—';
-  const sigClube  = id => (TO.mundo.time(id)||{}).sigla || '?';
+  const corClube  = id => ((TO.mundo.time(id)||{}).cores || ['#666'])[0];
 
-  function minhaCompeticao(e, tipo){
-    const meu = TO.mundo.time(e.torcida.clubeId);
-    if(!meu || !e.temporada) return null;
-    return e.temporada.competicoes.find(c=>c.tipo===tipo && c.clubes.includes(meu.id));
+  function abasGrandes(itens, atual, aoTrocar){
+    const cx = el('div',{class:'abas-grandes'});
+    for(const it of itens){
+      const b = el('button',{texto:it.rot});
+      b.classList.toggle('on', it.id===atual);
+      b.disabled = !!it.desabilitada;
+      if(it.dica) b.title = it.dica;
+      b.onclick = ()=>aoTrocar(it.id);
+      cx.appendChild(b);
+    }
+    return cx;
   }
 
-  /* tabela de classificação de um grupo */
-  function tabelaClassificacao(e, comp, ig, vagas){
+  /* quadro genérico no formato do mockup: faixa de título + corpo */
+  function quadro(titulo, direita){
+    const q = el('div',{class:'quadro'});
+    const h = el('header');
+    h.appendChild(el('h2',{texto:titulo}));
+    if(direita) h.appendChild(direita);
+    q.appendChild(h);
+    q.corpo = el('div');
+    q.appendChild(q.corpo);
+    return q;
+  }
+
+  function tabelaLiga(e, comp, ig){
     const linhas = TO.competicoes.tabela(comp, ig);
     const meu = e.torcida.clubeId;
-    const t = el('table',{class:'dados tabela-liga'});
+    const zona = comp.pontosCorridos ? 0 : comp.passam;
+    const t = el('table',{class:'liga'});
     t.innerHTML =
-      `<thead><tr><th class="pos">#</th><th>Clube</th>
-        <th>P</th><th>J</th><th>V</th><th>E</th><th>D</th>
+      `<thead><tr><th>#</th><th class="time">Time</th>
+        <th>P</th><th>V</th><th>E</th><th>D</th>
         <th>GP</th><th>GC</th><th>SG</th></tr></thead>`;
     const tb = el('tbody');
-    linhas.forEach((l, i)=>{
-      const tr = el('tr',{class:(l.id===meu?'meu ':'')+(vagas && i<vagas?'passa':'')});
+    linhas.forEach((l,i)=>{
+      const cls = [];
+      if(l.id===meu) cls.push('meu');
+      if(zona && i<zona) cls.push('sobe');
+      const tr = el('tr',{class:cls.join(' ')});
       tr.innerHTML =
         `<td class="pos">${i+1}</td>
-         <td class="clube"><i style="background:${(TO.mundo.time(l.id)||{cores:['#666']}).cores[0]}"></i>
-           ${nomeClube(l.id)}</td>
-         <td class="p">${l.p}</td><td>${l.j}</td><td>${l.v}</td><td>${l.e}</td>
-         <td>${l.d}</td><td>${l.gp}</td><td>${l.gc}</td>
-         <td>${l.sg>0?'+':''}${l.sg}</td>`;
+         <td class="time"><i style="background:${corClube(l.id)}"></i>${nomeClube(l.id)}</td>
+         <td>${l.p}</td><td>${l.v}</td><td>${l.e}</td><td>${l.d}</td>
+         <td>${l.gp}</td><td>${l.gc}</td><td>${l.sg>0?'+':''}${l.sg}</td>`;
       tb.appendChild(tr);
     });
     t.appendChild(tb);
     return t;
   }
 
-  function painelCompeticao(e, comp){
-    const cx = el('div');
+  /* uma partida na lista da rodada, no formato do mockup */
+  function linhaJogo(e, comp, j, semana){
     const meu = e.torcida.clubeId;
-
-    const cab = cartao(comp.nome,
-      comp.campeao ? `campeão: ${nomeClube(comp.campeao)}`
-                   : `${comp.clubes.length} clubes · semana ${comp.semanaInicio} em diante`);
-    if(comp.campeao){
-      cab.corpo.appendChild(el('div',{class:'campeao', html:
-        `${IC.get('trofeu')}<div><b>${nomeClube(comp.campeao)}</b>
-         <small>vice: ${nomeClube(comp.vice)}</small></div>`}));
-    }else{
-      const jogadas = comp.rodadas.filter(r=>r.jogos.every(j=>j.gc!=null)).length;
-      cab.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Rodadas disputadas</span><b>${jogadas} de ${comp.rodadas.length}</b>`}));
-      if(comp.mata.length)
-        cab.corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span>Fase atual</span><b>${comp.mata[comp.mata.length-1].fase}</b>`}));
-    }
-    cx.appendChild(cab);
-
-    /* grupos */
-    const grade = el('div',{class:comp.grupos.length>1?'colunas-2':''});
-    comp.grupos.forEach((g, ig)=>{
-      const titulo = comp.grupos.length>1 ? `Grupo ${'ABCDEFGH'[ig]}` : 'Classificação';
-      const c = cartao(titulo, comp.pontosCorridos ? 'turno e returno' : null);
-      c.corpo.appendChild(tabelaClassificacao(e, comp, ig,
-        comp.pontosCorridos ? 0 : comp.passam));
-      grade.appendChild(c);
-    });
-    cx.appendChild(grade);
-
-    /* mata-mata */
-    if(comp.mata.length){
-      const c = cartao('Mata-mata');
-      for(const fase of comp.mata){
-        c.corpo.appendChild(el('div',{class:'fase-rot', texto:`${fase.fase} · semana ${fase.semana}`}));
-        for(const j of fase.jogos){
-          const feito = j.gc!=null;
-          c.corpo.appendChild(el('div',{class:'jogo-chave'+
-            (j.c===meu||j.f===meu?' meu':''), html:
-            `<span class="a ${j.venceu===j.c?'venceu':''}">${nomeClube(j.c)}</span>
-             <b>${feito?`${j.gc} × ${j.gf}`:'—'}</b>
-             <span class="b ${j.venceu===j.f?'venceu':''}">${nomeClube(j.f)}</span>
-             ${j.penaltis?'<em>pênaltis</em>':''}`}));
-        }
-      }
-      cx.appendChild(c);
-    }
+    const feito = j.gc!=null;
+    const d = TO.estado.dataDaSemana(e.data.ano, semana, TO.estado.DIA_JOGO);
+    const SEM = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+    const quando = `${SEM[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}/`+
+                   `${String(d.getMonth()+1).padStart(2,'0')} · ${TO.competicoes.horaDoJogo(j)}`;
+    const cx = el('div',{class:'jogo'+(j.c===meu||j.f===meu?' meu':'')+(feito?' feito':'')});
+    cx.appendChild(el('div',{class:'quando', texto:quando}));
+    cx.appendChild(el('div',{class:'duelo', html:
+      `<span class="casa">${nomeClube(j.c)}<i style="background:${corClube(j.c)}"></i></span>
+       <span class="${feito?'placar':'x'}">${feito?`${j.gc} × ${j.gf}`:'×'}</span>
+       <span class="fora"><i style="background:${corClube(j.f)}"></i>${nomeClube(j.f)}</span>`}));
     return cx;
+  }
+
+  function painelRodada(e, comp){
+    const es = TO.competicoes.etapas(comp);
+    if(rodadaSel===null || rodadaSel>=es.length) rodadaSel = TO.competicoes.etapaAtual(comp);
+    const i = U.limitar(rodadaSel, 0, es.length-1);
+    const et = es[i];
+
+    /* cabeçalho é o próprio navegador: ‹ RODADA 4 DE 38 › */
+    const q = el('div',{class:'quadro'});
+    const cab = el('header',{class:'nav-rodada'});
+    const ant = el('button',{html:'‹'}), pro = el('button',{html:'›'});
+    ant.disabled = i<=0; pro.disabled = i>=es.length-1;
+    ant.onclick = ()=>{ rodadaSel = i-1; redesenhar(); };
+    pro.onclick = ()=>{ rodadaSel = i+1; redesenhar(); };
+    cab.appendChild(ant);
+    cab.appendChild(el('h2',{html:
+      `${et.rot}<span class="conta">de ${es.length}</span>`}));
+    cab.appendChild(pro);
+    q.appendChild(cab);
+    q.corpo = el('div');
+    q.appendChild(q.corpo);
+
+    const rolo = el('div',{class:'rolo'});
+    for(const j of et.jogos) rolo.appendChild(linhaJogo(e, comp, j, et.semana));
+    if(!et.jogos.length)
+      rolo.appendChild(el('div',{class:'em-construcao', texto:'Sem jogos nesta fase.'}));
+    q.corpo.appendChild(rolo);
+    return q;
   }
 
   function pintarCompeticoes(){
     const e = E(), pg = U.$('.pagina[data-pag="competicoes"]');
     pg.innerHTML='';
-    pg.appendChild(el('div',{class:'titulo-pagina', texto:'Competições'}));
-    pg.appendChild(subabas([
-      {id:'regionais', rot:'Regionais e estaduais'},
-      {id:'nacional',  rot:'Brasileirão'},
-      {id:'campeoes',  rot:'Campeões'}
-    ], subComp, id=>{ subComp=id; compSel=null; redesenhar(); }));
+    pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Competições</h1>'}));
 
     if(!e.temporada){
-      pg.appendChild(emConstrucao('Sem temporada', 'Comece um jogo novo pra gerar a tabela.'));
+      pg.appendChild(emConstrucao('Sem temporada','Comece um jogo novo pra gerar a tabela.'));
       return;
     }
+    const S = e.temporada;
+    const acha = nome => S.competicoes.find(c=>c.nome===nome);
+    const series = ['Brasileirão Série A','Brasileirão Série B',
+                    'Brasileirão Série C','Brasileirão Série D'];
 
-    if(subComp==='campeoes'){
-      const c = cartao('Campeões', `${e.temporada.ano}`);
-      const doAno = e.temporada.competicoes.filter(x=>x.campeao);
-      if(!doAno.length && !(e.temporada.titulos||[]).length)
-        c.corpo.innerHTML = '<div class="em-construcao">Nenhuma competição decidida ainda.</div>';
-      for(const x of doAno)
-        c.corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span>${x.nome}</span><b>${nomeClube(x.campeao)}</b>`}));
-      for(const t of (e.temporada.titulos||[]).slice(0,40))
-        c.corpo.appendChild(el('div',{class:'transacao', html:
-          `<span class="dia">${t.ano}</span><span class="desc">${t.comp}</span>
-           <span class="val">${nomeClube(t.campeao)}</span>`}));
-      pg.appendChild(c);
-      return;
+    const abas = series.map(n=>({id:n, rot:n.replace('Brasileirão ','')}))
+      .concat([
+        {id:'regionais', rot:'Regionais'},
+        {id:'copa', rot:'Copa do Brasil', desabilitada:true,
+         dica:'Os 156 clubes da Copa do Brasil (GDD §18.5) ainda não entraram'},
+        {id:'historico', rot:'Histórico'}
+      ]);
+
+    /* abre na divisão do meu clube */
+    if(!abaComp){
+      const meu = TO.mundo.time(e.torcida.clubeId);
+      abaComp = (meu && series.includes(meu.divisao)) ? meu.divisao : series[0];
     }
+    pg.appendChild(abasGrandes(abas, abaComp, id=>{
+      abaComp=id; compSel=null; rodadaSel=null; redesenhar();
+    }));
 
-    const tipo = subComp==='regionais' ? 'regional' : 'nacional';
-    const lista = e.temporada.competicoes.filter(c=>c.tipo===tipo);
-    const minha = minhaCompeticao(e, tipo);
-    if(!compSel || !lista.some(c=>c.id===compSel))
-      compSel = (minha && minha.id) || lista[0].id;
+    if(abaComp==='historico'){ pg.appendChild(painelHistorico(e)); return; }
 
-    /* seletor de competição, com a do meu clube marcada */
-    const filtros = el('div',{class:'filtros-linha'});
-    for(const c of lista){
-      const b = el('button',{class:(c.id===compSel?'on':'')+
-        (minha && c.id===minha.id?' minha':''),
-        html:`${c.nome}<span class="conta">${c.clubes.length}</span>`});
-      b.onclick = ()=>{ compSel=c.id; redesenhar(); };
-      filtros.appendChild(b);
+    let comp;
+    if(abaComp==='regionais'){
+      const lista = S.competicoes.filter(c=>c.tipo==='regional');
+      const meu = TO.mundo.time(e.torcida.clubeId);
+      const minha = meu && lista.find(c=>c.clubes.includes(meu.id));
+      if(!compSel || !lista.some(c=>c.id===compSel))
+        compSel = (minha && minha.id) || lista[0].id;
+      const filtros = el('div',{class:'filtros-linha'});
+      for(const c of lista){
+        const b = el('button',{class:(c.id===compSel?'on':'')+
+          (minha && c.id===minha.id?' minha':''),
+          html:`${c.nome}<span class="conta">${c.clubes.length}</span>`});
+        b.onclick = ()=>{ compSel=c.id; rodadaSel=null; redesenhar(); };
+        filtros.appendChild(b);
+      }
+      pg.appendChild(filtros);
+      comp = lista.find(c=>c.id===compSel);
+    }else{
+      comp = acha(abaComp);
     }
-    pg.appendChild(filtros);
-    pg.appendChild(painelCompeticao(e, lista.find(c=>c.id===compSel)));
+    if(!comp){ pg.appendChild(emConstrucao('Sem dados','Competição não encontrada.')); return; }
+
+    const es = TO.competicoes.etapas(comp);
+    const atual = TO.competicoes.etapaAtual(comp);
+
+    const duas = el('div',{class:'comp-duas'});
+    const esq = el('div');
+
+    if(comp.campeao){
+      const c = quadro('Campeão');
+      c.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
+        `${IC.get('trofeu')}<div><b>${nomeClube(comp.campeao)}</b>
+         <small>vice: ${nomeClube(comp.vice)}</small></div>`}));
+      esq.appendChild(c);
+    }
+    comp.grupos.forEach((g, ig)=>{
+      const rot = comp.grupos.length>1 ? `Classificação · grupo ${'ABCDEFGH'[ig]}`
+                                       : 'Classificação';
+      const q = quadro(rot, el('span',{class:'conta',
+        texto:`${es[atual] ? es[atual].rot : ''} de ${es.length}`}));
+      const rolo = el('div',{class:'rolo'});
+      rolo.appendChild(tabelaLiga(e, comp, ig));
+      q.corpo.appendChild(rolo);
+      esq.appendChild(q);
+    });
+
+    duas.appendChild(esq);
+    duas.appendChild(painelRodada(e, comp));
+    pg.appendChild(duas);
+  }
+
+  function painelHistorico(e){
+    const q = quadro('Campeões', el('span',{class:'conta', texto:`${e.data.ano}`}));
+    const S = e.temporada;
+    const doAno = S.competicoes.filter(c=>c.campeao);
+    const t = el('table',{class:'agenda'});
+    t.innerHTML = `<thead><tr><th>Ano</th><th>Competição</th><th>Campeão</th>
+                   <th>Vice</th></tr></thead>`;
+    const tb = el('tbody');
+    const linha = (ano, comp, camp, vice)=>{
+      const tr = el('tr',{class:camp===e.torcida.clubeId?'meu':''});
+      tr.innerHTML =
+        `<td class="hora">${ano}</td><td>${comp}</td>
+         <td><span class="adv"><i style="background:${corClube(camp)}"></i>
+           ${nomeClube(camp)}</span></td>
+         <td style="color:var(--fraco)">${vice?nomeClube(vice):'—'}</td>`;
+      tb.appendChild(tr);
+    };
+    for(const c of doAno) linha(S.ano, c.nome, c.campeao, c.vice);
+    for(const h of (S.titulos||[]).slice(0,60)) linha(h.ano, h.comp, h.campeao, h.vice);
+    t.appendChild(tb);
+    if(!tb.children.length)
+      q.corpo.innerHTML = '<div class="em-construcao">Nenhuma competição decidida ainda.</div>';
+    else q.corpo.appendChild(t);
+    return q;
   }
 
   /* =======================================================
-     CALENDÁRIO (GDD §18.1)
-     Um ano em 52 semanas: primeiro os regionais, depois o
-     Brasileirão. Cada célula é uma semana da torcida.
+     CALENDÁRIO
+     Três abas, como no mockup: o mês da torcida, a rotina que
+     roda sozinha e a agenda de qualquer clube.
      ======================================================= */
+  let abaCal = 'torcida', mesCal = null, agendaClube = null, agendaFiltro = 'todas';
+
+  const MES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho',
+                    'Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DIA_CURTO = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const DIA_LONGO = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+
   function pintarCalendario(){
     const e = E(), pg = U.$('.pagina[data-pag="calendario"]');
     pg.innerHTML='';
-    pg.appendChild(el('div',{class:'titulo-pagina',
-      texto:`Calendário ${e.data.ano}`}));
+    pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Calendário</h1>'}));
+    pg.appendChild(abasGrandes([
+      {id:'torcida', rot:'Calendário da torcida'},
+      {id:'rotina',  rot:'Rotina semanal'},
+      {id:'time',    rot:'Agenda do time'}
+    ], abaCal, id=>{ abaCal=id; redesenhar(); }));
 
-    if(!e.temporada || !e.torcida.clubeId){
-      pg.appendChild(emConstrucao('Sem calendário', 'Comece um jogo novo pra gerar a tabela.'));
+    if(!e.temporada){
+      pg.appendChild(emConstrucao('Sem calendário','Comece um jogo novo pra gerar a tabela.'));
       return;
     }
+    if(abaCal==='rotina') pg.appendChild(painelRotina(e));
+    else if(abaCal==='time') pg.appendChild(painelAgendaTime(e));
+    else pg.appendChild(painelMes(e));
+  }
 
+  /* ---------- aba 1: o mês ---------- */
+  function painelMes(e){
     const C = TO.competicoes;
-    const agenda = C.agendaDoClube(e, e.torcida.clubeId);
-    const porSemana = new Map();
-    for(const j of agenda) if(!porSemana.has(j.semana)) porSemana.set(j.semana, j);
+    const hoje = TO.estado.dataDaSemana(e.data.ano, e.data.semana, e.data.dia);
+    if(mesCal===null) mesCal = hoje.getFullYear()*12 + hoje.getMonth();
+    const ano = Math.floor(mesCal/12), mes = mesCal%12;
 
-    /* resumo em cima */
-    const jogados = agenda.filter(j=>j.jogado);
-    const v = jogados.filter(j=>j.gp>j.gc).length;
-    const emp = jogados.filter(j=>j.gp===j.gc).length;
-    const der = jogados.length - v - emp;
-    const aprov = jogados.length ? Math.round((v*3+emp)/(jogados.length*3)*100) : 0;
+    const q = el('div',{class:'quadro'});
+    const cab = el('div',{class:'mes-cab'});
+    const ant = el('button',{html:'‹'}), pro = el('button',{html:'›'});
+    ant.onclick = ()=>{ mesCal--; redesenhar(); };
+    pro.onclick = ()=>{ mesCal++; redesenhar(); };
+    cab.appendChild(ant);
+    cab.appendChild(el('div',{class:'titulo',
+      html:`${MES_NOME[mes]}<small>de ${ano}</small>`}));
+    cab.appendChild(pro);
+    q.appendChild(cab);
 
-    const topo = el('div',{class:'colunas-3'});
-    const c1 = cartao('A temporada');
-    c1.corpo.innerHTML =
-      `<div class="linha-dado"><span>Fase</span><b>${C.faseDaSemana(e.data.semana)}</b></div>
-       <div class="linha-dado"><span>Semana</span><b>${e.data.semana} de ${C.SEMANAS_ANO}</b></div>
-       <div class="linha-dado"><span>Jogos no ano</span><b>${agenda.length}</b></div>
-       <div class="linha-dado"><span>Já disputados</span><b>${jogados.length}</b></div>`;
-    topo.appendChild(c1);
+    /* agenda do clube indexada por semana */
+    const agenda = new Map();
+    for(const j of C.agendaDoClube(e, e.torcida.clubeId))
+      if(!agenda.has(j.semana)) agenda.set(j.semana, j);
 
-    const c2 = cartao('Aproveitamento', `${aprov}%`);
-    c2.corpo.innerHTML =
-      `<div class="valorao"><span>Vitórias</span><b class="positivo">${v}</b></div>
-       <div class="linha-dado"><span>Empates</span><b>${emp}</b></div>
-       <div class="linha-dado"><span>Derrotas</span><b class="negativo">${der}</b></div>`;
-    topo.appendChild(c2);
+    const grade = el('div',{class:'mes'});
+    for(const d of DIA_CURTO) grade.appendChild(el('div',{class:'cab', texto:d}));
 
-    const prox = agenda.find(j=>j.semana >= e.data.semana);
-    const c3 = cartao('Próximo compromisso');
-    c3.corpo.innerHTML = prox
-      ? `<div class="linha-dado"><span>Semana ${prox.semana}</span>
-           <b>${prox.casa?'em casa':'fora'}</b></div>
-         <div class="valorao"><span>${prox.comp}</span>
-           <b>${nomeClube(prox.adversario)}</b></div>
-         <div class="linha-dado"><span class="fraco">${prox.fase}</span></div>`
-      : '<div class="em-construcao">A temporada acabou.</div>';
-    topo.appendChild(c3);
-    pg.appendChild(topo);
-
-    /* as duas fases do ano, semana a semana */
-    const faixas = [
-      ['Regionais e estaduais', C.INICIO_REGIONAL, C.INICIO_NACIONAL-1],
-      ['Brasileirão',           C.INICIO_NACIONAL, C.SEMANAS_ANO]
-    ];
-    for(const [nome, de, ate] of faixas){
-      const c = cartao(nome, `semanas ${de} a ${ate}`);
-      const grade = el('div',{class:'grade-semanas'});
-      for(let s=de; s<=ate; s++){
-        const j = porSemana.get(s);
-        const cel = el('div',{class:'cel-semana'
-          + (s===e.data.semana?' agora':'')
-          + (s<e.data.semana?' passou':'')
-          + (j?'':' folga')});
-        const dt = new Date(2026, 0, 5);
-        dt.setDate(dt.getDate() + (s-1)*7 + (e.data.ano-2026)*364);
-        const rot = `${String(dt.getDate()).padStart(2,'0')}/`+
-                    `${String(dt.getMonth()+1).padStart(2,'0')}`;
-        if(j){
-          const placar = j.jogado ? `${j.gp} × ${j.gc}` : (j.casa?'casa':'fora');
-          const cls = j.jogado ? (j.gp>j.gc?'ganhou':j.gp<j.gc?'perdeu':'empatou') : '';
-          cel.innerHTML =
-            `<span class="s">S${s}<i>${rot}</i></span>
-             <span class="adv">${j.casa?'':'@ '}${sigClube(j.adversario)}</span>
-             <span class="res ${cls}">${placar}</span>
-             <span class="cp">${j.comp}</span>`;
-        }else{
-          cel.innerHTML = `<span class="s">S${s}<i>${rot}</i></span>
-                           <span class="adv">folga</span>`;
-        }
-        grade.appendChild(cel);
-      }
-      c.corpo.appendChild(grade);
-      pg.appendChild(c);
+    const primeiro = new Date(ano, mes, 1);
+    const noMes = new Date(ano, mes+1, 0).getDate();
+    const inicio = new Date(primeiro);
+    inicio.setDate(1 - primeiro.getDay());        // volta até o domingo
+    /* só as semanas que tocam o mês: nada de linha vazia no fim */
+    const celulas = Math.ceil((primeiro.getDay() + noMes)/7) * 7;
+    for(let k=0;k<celulas;k++){
+      const d = new Date(inicio);
+      d.setDate(inicio.getDate() + k);
+      grade.appendChild(celulaDoDia(e, d, mes, hoje, agenda));
     }
+    q.appendChild(grade);
+    return q;
+  }
+
+  function celulaDoDia(e, d, mesAtual, hoje, agenda){
+    const sd = TO.estado.semanaDiaDe(d);
+    const cel = el('div',{class:'dia'});
+    const classes = [];
+    if(d.getMonth() !== mesAtual) classes.push('fora-do-mes');
+    const mesmoDia = d.toDateString() === hoje.toDateString();
+    if(mesmoDia) classes.push('hoje');
+    else if(d < hoje) classes.push('passou');
+
+    cel.appendChild(el('span',{class:'n', texto:String(d.getDate())}));
+
+    if(sd && sd.ano===e.data.ano && d.getMonth()===mesAtual){
+      const j = agenda.get(sd.semana);
+      const viaja = sd.semana===e.data.semana && TO.financeiro.temCaravana(e);
+
+      if(j && sd.dia===TO.estado.DIA_JOGO){
+        classes.push('jogo');
+        cel.appendChild(el('span',{class:'rot', html:
+          `<i style="background:${corClube(j.adversario)}"></i>`+
+          `${j.casa?'':'@ '}${nomeClube(j.adversario)}`}));
+        cel.appendChild(el('span',{class:'sub',
+          texto: j.jogado ? `${j.gp} × ${j.gc}` : `${j.comp} · ${j.casa?'casa':'fora'}`}));
+      }else if(viaja && (sd.dia===5 || sd.dia===7)){
+        classes.push('caravana');
+        cel.appendChild(el('span',{class:'rot', html:
+          `${IC.get('onibus')}Caravana`}));
+        cel.appendChild(el('span',{class:'sub',
+          texto:`${sd.dia===5?'IDA':'VOLTA'} · ${e.proximoJogo.cidadeAdv||''}`}));
+      }else{
+        const id = (e.rotina||{})[sd.dia];
+        const a = id && TO.acoes.porId(id);
+        if(a) cel.appendChild(el('span',{class:'acao',
+          html:`${IC.get(a.icone)}${a.nome}`}));
+      }
+    }
+    cel.className = 'dia ' + classes.join(' ');
+    return cel;
+  }
+
+  /* ---------- aba 2: a rotina ---------- */
+  function painelRotina(e){
+    const cx = el('div');
+    cx.appendChild(el('div',{class:'recado', html:
+      `Defina sua <b>rotina semanal padrão</b>. Cada dia da semana ganha uma ação, `+
+      `aplicada sozinha quando o dia passa.
+       <small>Em dia de jogo e nos dias de caravana a rotina é ignorada, e ela nunca `+
+      `gasta mais do que as ${TO.acoes.maximo(e)} ações da semana (GDD §3.1).</small>`}));
+
+    const disponiveis = TO.acoes.LISTA.filter(a=>a.disponivel(e).ok || (e.rotina||{}))
+      .filter(a=>!['atacar','assalto','pressionar'].includes(a.id));
+
+    for(let dia=1; dia<=7; dia++){
+      const linha = el('div',{class:'linha-rotina'+(dia===e.data.dia?' hoje':'')});
+      linha.appendChild(el('span',{texto:DIA_LONGO[dia-1]}));
+      const sel = el('select',{class:'campo'});
+      sel.appendChild(el('option',{value:'', texto:'— sem ação —'}));
+      for(const a of disponiveis){
+        const o = el('option',{value:a.id, texto:`${a.nome} — ${a.efeito}`});
+        if((e.rotina||{})[dia]===a.id) o.selected = true;
+        sel.appendChild(o);
+      }
+      sel.onchange = ()=>{
+        e.rotina = e.rotina || {};
+        if(sel.value) e.rotina[dia] = sel.value; else delete e.rotina[dia];
+        redesenhar();
+      };
+      linha.appendChild(sel);
+      cx.appendChild(linha);
+    }
+    return cx;
+  }
+
+  /* ---------- aba 3: a agenda de um clube ---------- */
+  function painelAgendaTime(e){
+    const C = TO.competicoes;
+    const meu = TO.mundo.time(e.torcida.clubeId);
+    if(!agendaClube) agendaClube = meu ? meu.id : TO.mundo.todosTimes[0].id;
+    const clube = TO.mundo.time(agendaClube) || meu;
+
+    const cx = el('div');
+
+    /* seletor de clube */
+    const escolha = el('div',{class:'escolha-time'});
+    const col = el('div');
+    col.appendChild(el('div',{class:'rot', texto:'Ver agenda de'}));
+    const sel = el('select',{class:'campo'});
+    for(const t of [...TO.mundo.todosTimes].sort((a,b)=>a.nome<b.nome?-1:1)){
+      const o = el('option',{value:t.id,
+        texto: t.id===(meu&&meu.id) ? `${t.nome} (seu time)` : t.nome});
+      if(t.id===agendaClube) o.selected = true;
+      sel.appendChild(o);
+    }
+    sel.onchange = ()=>{ agendaClube = sel.value; agendaFiltro='todas'; redesenhar(); };
+    col.appendChild(sel);
+    escolha.appendChild(col);
+    escolha.appendChild(el('div',{class:'quem', html:
+      `<i style="background:${corClube(clube.id)}"></i>
+       <div><b>${clube.nome}</b>
+         <small style="margin-left:8px">${clube.cidade} · `+
+      `${clube.divisao.replace('Brasileirão ','')}</small></div>`}));
+    cx.appendChild(escolha);
+
+    const agenda = C.agendaDoClube(e, clube.id);
+    const comps = [...new Set(agenda.map(j=>j.comp))];
+    cx.appendChild(subabas(
+      [{id:'todas', rot:'Todas'}].concat(comps.map(c=>({id:c, rot:c}))),
+      agendaFiltro, id=>{ agendaFiltro=id; redesenhar(); }));
+
+    const lista = agenda.filter(j=>agendaFiltro==='todas' || j.comp===agendaFiltro);
+    const q = el('div',{class:'quadro'});
+    const t = el('table',{class:'agenda'});
+    t.innerHTML = `<thead><tr><th>Data</th><th>Hora</th><th>Competição</th>
+                   <th>Local</th><th>Adversário</th><th style="text-align:center">Placar</th>
+                   </tr></thead>`;
+    const tb = el('tbody');
+    for(const j of lista){
+      const d = TO.estado.dataDaSemana(e.data.ano, j.semana, TO.estado.DIA_JOGO);
+      const agora = j.semana===e.data.semana;
+      const tr = el('tr',{class:agora?'meu':''});
+      tr.innerHTML =
+        `<td class="data"><b>${String(d.getDate()).padStart(2,'0')}/`+
+          `${String(d.getMonth()+1).padStart(2,'0')}</b>
+          <small>${DIA_CURTO[d.getDay()].toUpperCase()}</small></td>
+         <td class="hora">${C.horaDoJogo({c:j.casa?clube.id:j.adversario,
+                                          f:j.casa?j.adversario:clube.id})}</td>
+         <td class="comp"><b>${j.comp}</b><small>${j.fase}</small></td>
+         <td><span class="local ${j.casa?'casa':'fora'}">${j.casa?'Casa':'Fora'}</span></td>
+         <td><span class="adv"><i style="background:${corClube(j.adversario)}"></i>
+           ${nomeClube(j.adversario)}</span></td>
+         <td class="placar">${j.jogado ? `${j.gp} × ${j.gc}` : '—'}</td>`;
+      tb.appendChild(tr);
+    }
+    t.appendChild(tb);
+    const rolo = el('div',{class:'rolo', estilo:{maxHeight:'62vh'}});
+    rolo.appendChild(t);
+    q.appendChild(rolo);
+    if(!lista.length)
+      q.innerHTML = '<div class="em-construcao">Sem jogos nesta competição.</div>';
+    cx.appendChild(q);
+    return cx;
   }
 
   /* =======================================================
@@ -1331,6 +1530,11 @@
      ======================================================= */
   function redesenhar(){
     if(!E()) return;
+    /* o que a rotina fez sozinha enquanto o jogador avançava os dias */
+    const fila = E().avisos;
+    if(fila && fila.length){
+      for(const a of fila.splice(0, fila.length)) aviso(a.msg, a.tipo);
+    }
     pintarTopo();
     trocarPagina();
     if(pagina==='inicio') pintarInicio();

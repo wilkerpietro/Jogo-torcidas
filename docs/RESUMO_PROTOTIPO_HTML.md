@@ -178,7 +178,11 @@ Rodei simulações sem navegador (Node com stubs de DOM/canvas) e o que ficou em
   times.js — 11 regionais e estaduais de janeiro a março, depois o Brasileirão das séries
   A a D até dezembro. Uma rodada por semana, resultado por Poisson sobre a qualidade dos
   clubes, tabela com critérios de desempate, mata-mata e campeão. O jogo da semana da
-  torcida sai da tabela, não de sorteio, e semana sem jogo é folga.
+  torcida sai da tabela, não de sorteio, e semana sem jogo é folga. Sobe e desce na virada
+  do ano, tanto no Brasileirão quanto entre Paulistão/A2 e Nordestão/Nordestão B.
+- **Rotina semanal**: cada dia da semana pode ter uma ação padrão, aplicada sozinha
+  quando o dia passa. Nunca fura o orçamento semanal, e dia de jogo e de caravana são
+  ignorados.
 - **Efetivo real de cada torcida**: os 20 a 250 membros e a divisão de cargos vêm da
   fonte, e a sede começa no nível que comporta esse efetivo.
 

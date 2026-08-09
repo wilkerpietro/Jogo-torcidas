@@ -60,6 +60,9 @@ TO.estado = (function(){
       estoque:{ bombas:4, rojoes:6, sinalizadores:1 },
 
       acoes:{ usadas:0 },
+      /* rotina semanal: dia 1 (segunda) a 7 (domingo) → id de ação */
+      rotina:{},
+      avisos:[],
       historicoNoites: []
     };
 
@@ -105,6 +108,24 @@ TO.estado = (function(){
     const d = new Date(BASE.getTime());
     d.setDate(d.getDate() + (est.data.absoluto||0));
     return d;
+  }
+
+  /* Ponte entre o calendário do jogo (ano/semana/dia) e o de parede.
+     O ano do jogo tem 52 semanas cheias — 364 dias —, então a conta é
+     direta e não precisa de bissexto. */
+  const DIAS_ANO = 52*7;
+  function dataDaSemana(ano, semana, dia){
+    const d = new Date(BASE.getTime());
+    d.setDate(d.getDate() + (ano-2026)*DIAS_ANO + (semana-1)*7 + (dia-1));
+    return d;
+  }
+  /* caminho inverso: uma data de parede vira semana e dia do jogo */
+  function semanaDiaDe(data){
+    const abs = Math.round((data - BASE)/86400000);
+    if(abs < 0) return null;
+    const ano = 2026 + Math.floor(abs/DIAS_ANO);
+    const noAno = abs % DIAS_ANO;
+    return {ano, semana: Math.floor(noAno/7)+1, dia: (noAno%7)+1};
   }
   function dataTexto(est){
     const d = dataDe(est||E);
@@ -181,7 +202,24 @@ TO.estado = (function(){
   /* -------------------------------------------------------
      TEMPO
      ------------------------------------------------------- */
+  /* A rotina semanal roda o dia que está terminando. Dia de jogo e dias
+     de caravana são ignorados — o GDD §7.3 já os declara travados —, e a
+     rotina nunca fura o orçamento de ações da semana (GDD §3.1). */
+  function rodarRotina(est){
+    const id = (est.rotina||{})[est.data.dia];
+    if(!id) return;
+    if(est.data.dia === 6 && est.proximoJogo && est.postura !== 'ficar') return;
+    if(TO.financeiro.temCaravana(est) && (est.data.dia===5 || est.data.dia===7)) return;
+    if(TO.acoes.restantes(est) <= 0) return;
+
+    const r = TO.acoes.executar(est, id);
+    const nome = (TO.acoes.porId(id)||{}).nome || id;
+    anotar(est, `${nome}: ${r.msg || (r.ok?'feito':'não deu')}`,
+           r.ok && r.tipo!=='ruim' ? 'boa' : 'ruim');
+  }
+
   function avancarDia(){
+    rodarRotina(E);
     E.data.dia++;
     E.data.absoluto = (E.data.absoluto||0) + 1;
 
@@ -201,6 +239,14 @@ TO.estado = (function(){
       if(E.data.semana > TO.competicoes.SEMANAS_ANO){
         E.data.semana = 1; E.data.ano++;
         guardarTitulos(E);
+        /* sobe e desce antes de montar a temporada nova (GDD §18.2) */
+        const mov = TO.competicoes.aplicarSobeDesce(E);
+        for(const m of mov.filter(x=>x.id===E.torcida.clubeId)){
+          const sub = TO.competicoes.subiu(m.de, m.para);
+          anotar(E, `${TO.mundo.time(m.id).nome} ${sub?'subiu para':'caiu para'} `+
+                    `${m.para} em ${E.data.ano}.`, sub?'boa':'ruim');
+          E.indicadores.satisfacao = U.limitar(E.indicadores.satisfacao + (sub?3:-3), 0, 20);
+        }
         E.temporada = TO.competicoes.montarTemporada(E);
       }
       sortearProximoJogo(E);
@@ -213,6 +259,13 @@ TO.estado = (function(){
     mudou();
     if(fecho) for(const f of ouvintesFecho) f(fecho, E);
     return fecho;
+  }
+
+  /* fila de recados pra tela mostrar quando redesenhar: o que aconteceu
+     sozinho enquanto o jogador avançava os dias */
+  function anotar(est, msg, tipo){
+    (est.avisos = est.avisos || []).push({msg, tipo:tipo||''});
+    if(est.avisos.length > 12) est.avisos.shift();
   }
 
   /* GDD §6.1: a satisfação do torcedor comum sobe com vitória e cai
@@ -301,7 +354,8 @@ TO.estado = (function(){
   return {
     get E(){ return E; },
     novo, lancar, avancarDia, aoMudar, aoFecharSemana, mudou,
-    dataTexto, sortearProximoJogo,
+    dataTexto, dataDaSemana, semanaDiaDe, sortearProximoJogo, anotar,
+    DIA_JOGO:6,
     salvar, carregar, existeSave, exportar, importar,
     bloquear, estaBloqueado
   };

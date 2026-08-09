@@ -174,7 +174,8 @@ input,select,textarea{font-family:var(--corpo);color:inherit}
 .indicador b.negativo{color:var(--vermelho)}
 
 /* ---------- área de conteúdo ---------- */
-#tela{grid-area:tela;padding:12px;overflow-x:hidden}
+/* o padding de baixo abre espaço pro botão flutuante de avançar o dia */
+#tela{grid-area:tela;padding:12px 12px 86px;overflow-x:hidden}
 .pagina{display:none}
 .pagina.on{display:block}
 .titulo-pagina{
@@ -182,6 +183,30 @@ input,select,textarea{font-family:var(--corpo);color:inherit}
   letter-spacing:.13em;text-transform:uppercase;
   padding:2px 2px 10px;
 }
+/* variante das telas de competição e calendário: barra rubra à esquerda */
+.titulo-barra{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 0 12px;
+}
+.titulo-barra::before{
+  content:'';width:4px;height:19px;background:var(--rubro-vivo);flex:none;
+}
+.titulo-barra h1{
+  font-family:var(--titulo);font-size:17px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;color:#dedede;
+}
+
+/* ---------- botão flutuante de avançar o dia ---------- */
+#avancarFixo{
+  position:fixed;right:18px;bottom:44px;z-index:60;
+  background:var(--rubro);border:0;color:#fff;cursor:pointer;
+  padding:17px 30px;
+  font-family:var(--titulo);font-size:15px;font-weight:600;
+  letter-spacing:.17em;text-transform:uppercase;
+  box-shadow:0 6px 22px rgba(0,0,0,.55);
+}
+#avancarFixo:hover{background:#b62a2a}
+#avancarFixo:disabled{opacity:.5;cursor:default}
 
 /* ---------- ticker ---------- */
 #ticker{
@@ -205,8 +230,9 @@ input,select,textarea{font-family:var(--corpo);color:inherit}
 /* =========================================================
    NOTIFICAÇÕES
    ========================================================= */
+/* empilha acima do botão flutuante, nunca por baixo dele */
 #notificacoes{
-  position:fixed;right:14px;bottom:38px;width:296px;z-index:60;
+  position:fixed;right:14px;bottom:112px;width:296px;z-index:61;
   display:flex;flex-direction:column;gap:7px;pointer-events:none;
 }
 .nota{

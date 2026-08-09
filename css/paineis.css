@@ -45,7 +45,112 @@
   .colunas,.colunas-2,.colunas-3,.principal-lateral,.lista-detalhe{grid-template-columns:1fr}
 }
 
+/* ---------- abas grandes (competições e calendário) ---------- */
+.abas-grandes{
+  display:flex;background:var(--fundo);border-bottom:1px solid var(--linha);
+  margin-bottom:13px;
+}
+.abas-grandes button{
+  flex:1;background:transparent;border:0;border-bottom:3px solid transparent;
+  padding:17px 12px;cursor:pointer;
+  font-family:var(--titulo);font-size:13.5px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;color:#8a8a8a;line-height:1.25;
+}
+.abas-grandes button:hover{color:#d0d0d0;background:#141414}
+.abas-grandes button.on{
+  color:#fff;background:#1a1a1a;border-bottom-color:var(--rubro-vivo);
+}
+.abas-grandes button:disabled{opacity:.35;cursor:default}
+.abas-grandes button:disabled:hover{background:transparent;color:#8a8a8a}
+
 /* ---------- competições ---------- */
+.comp-duas{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:13px;align-items:start}
+@media(max-width:1200px){ .comp-duas{grid-template-columns:1fr} }
+
+.quadro{background:var(--painel);border:1px solid var(--linha)}
+.quadro>header{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-bottom:1px solid var(--linha);
+}
+.quadro>header h2{
+  font-family:var(--titulo);font-size:13px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;color:#dcdcdc;
+}
+.quadro>header .conta{font-size:11.5px;color:var(--fraco)}
+.rolo{max-height:560px;overflow-y:auto}
+.rolo::-webkit-scrollbar{width:9px}
+.rolo::-webkit-scrollbar-track{background:#151515}
+.rolo::-webkit-scrollbar-thumb{background:#3a3a3a}
+
+/* classificação no formato do mockup */
+table.liga{width:100%;border-collapse:collapse}
+table.liga th{
+  background:#151515;color:var(--fraco);
+  font-family:var(--titulo);font-size:11px;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;text-align:center;padding:9px 4px;
+  border-bottom:1px solid var(--linha);position:sticky;top:0;z-index:2;
+}
+table.liga th.time{text-align:left;padding-left:8px}
+table.liga td{
+  padding:9px 4px;text-align:center;border-bottom:1px solid #1e1e1e;
+  font-family:var(--mono);font-size:12px;font-weight:600;
+}
+table.liga td.pos{width:34px;color:var(--fraco);font-size:11.5px}
+table.liga td.time{
+  text-align:left;padding-left:8px;font-family:var(--corpo);font-size:12.5px;
+  font-weight:600;color:#e6e6e6;white-space:nowrap;
+}
+table.liga td.time i{
+  width:11px;height:11px;display:inline-block;margin-right:8px;vertical-align:-1px;
+  border:1px solid rgba(255,255,255,.22);
+}
+table.liga tbody tr:hover td{background:#1b1b1b}
+table.liga tr.meu td{background:#2b1414}
+table.liga tr.meu td.pos{
+  box-shadow:inset 3px 0 0 var(--rubro-vivo);color:var(--rubro-vivo);
+}
+table.liga tr.sobe td.pos{color:var(--verde-vivo)}
+table.liga tr.cai  td.pos{color:var(--vermelho)}
+
+/* navegação de rodada: ‹ RODADA 4 DE 38 › */
+header.nav-rodada{justify-content:space-between}
+header.nav-rodada h2{
+  flex:1;text-align:center;display:flex;align-items:baseline;justify-content:center;gap:9px;
+}
+header.nav-rodada h2 .conta{
+  font-family:var(--mono);font-size:11px;color:var(--fraco);letter-spacing:.08em;
+  text-transform:none;
+}
+.nav-rodada button{
+  background:#1e1e1e;border:1px solid var(--linha);color:#cfcfcf;
+  width:30px;height:30px;cursor:pointer;font-size:14px;line-height:1;
+}
+.nav-rodada button:hover:not(:disabled){background:#2a2a2a;color:#fff}
+.nav-rodada button:disabled{opacity:.3;cursor:default}
+
+.jogo{padding:9px 14px;border-bottom:1px solid #1e1e1e}
+.jogo .quando{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  color:var(--ouro);margin-bottom:5px;
+}
+.jogo .duelo{
+  display:grid;grid-template-columns:1fr 26px 1fr;align-items:center;gap:8px;
+  font-size:12.5px;font-weight:600;
+}
+.jogo .duelo .casa{text-align:right}
+.jogo .duelo .x{text-align:center;color:var(--apagado);font-family:var(--mono);font-size:11px}
+.jogo .duelo i{
+  width:11px;height:11px;display:inline-block;vertical-align:-1px;
+  border:1px solid rgba(255,255,255,.22);
+}
+.jogo .duelo .casa i{margin-left:7px}
+.jogo .duelo .fora i{margin-right:7px}
+.jogo .placar{
+  font-family:var(--mono);font-size:13px;color:#fff;text-align:center;
+}
+.jogo.meu{background:#2b1414;box-shadow:inset 3px 0 0 var(--rubro-vivo)}
+.jogo.feito .duelo{color:#cdcdcd}
+
 .filtros-linha{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
 .filtros-linha button{
   background:var(--painel);border:1px solid var(--linha);color:var(--fraco);
@@ -88,7 +193,127 @@ table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
 .jogo-chave em{font-family:var(--mono);font-size:9px;color:var(--fraco);font-style:normal}
 .jogo-chave.meu{background:var(--rubro-fundo)}
 
-/* ---------- calendário ---------- */
+/* ---------- calendário mensal ---------- */
+.mes-cab{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid var(--linha);
+}
+.mes-cab .titulo{
+  font-family:var(--titulo);font-size:15px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;
+}
+.mes-cab .titulo small{
+  font-family:var(--mono);font-size:11px;color:var(--fraco);
+  letter-spacing:.1em;margin-left:7px;
+}
+.mes-cab button{
+  background:#1e1e1e;border:1px solid var(--linha);color:#cfcfcf;
+  width:36px;height:32px;cursor:pointer;font-size:15px;line-height:1;
+}
+.mes-cab button:hover{background:#2a2a2a;color:#fff}
+
+.mes{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid var(--linha)}
+.mes .cab{
+  background:#151515;border-right:1px solid var(--linha);
+  border-bottom:1px solid var(--linha);
+  padding:9px 4px;text-align:center;
+  font-family:var(--titulo);font-size:11px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--fraco);
+}
+.mes .dia{
+  min-height:96px;border-right:1px solid var(--linha);border-bottom:1px solid var(--linha);
+  padding:7px 8px;display:flex;flex-direction:column;gap:3px;
+  background:var(--painel);
+}
+.mes .dia .n{font-family:var(--mono);font-size:12.5px;color:#cfcfcf}
+.mes .dia.fora-do-mes{background:#101010}
+.mes .dia.fora-do-mes .n{color:#3d3d3d}
+.mes .dia.passou{background:#131313}
+.mes .dia.passou .n{color:var(--apagado)}
+.mes .dia.hoje{border:1px solid var(--rubro-vivo);background:#1d1212}
+.mes .dia.hoje .n{color:var(--rubro-vivo);font-weight:600}
+.mes .dia.jogo{background:#241414}
+.mes .dia.jogo .n{color:#e8b0b0}
+.mes .dia .rot{
+  font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;
+}
+.mes .dia .rot i{width:9px;height:9px;display:block;flex:none;border:1px solid rgba(255,255,255,.2)}
+.mes .dia .rot svg{width:15px;height:15px;flex:none}
+.mes .dia .sub{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+.mes .dia.caravana{
+  background:
+    repeating-linear-gradient(135deg, #1b1a16 0 7px, #151511 7px 14px);
+  border-color:#5a4a1e;
+}
+.mes .dia.caravana .n{color:var(--ouro)}
+.mes .dia.caravana .rot{color:var(--ouro);letter-spacing:.08em}
+.mes .dia .acao{
+  font-size:10.5px;color:#9fb8a5;display:flex;align-items:center;gap:5px;
+}
+.mes .dia .acao svg{width:11px;height:11px;flex:none}
+
+/* ---------- rotina semanal ---------- */
+.recado{
+  border:1px solid var(--linha);border-left:3px solid var(--rubro-vivo);
+  background:var(--painel);padding:13px 15px;margin-bottom:13px;font-size:12.5px;
+  line-height:1.6;
+}
+.recado b{color:var(--rubro-vivo);font-weight:600}
+.recado small{display:block;color:var(--fraco);font-size:11.5px;margin-top:4px}
+.linha-rotina{
+  display:grid;grid-template-columns:170px minmax(0,1fr);align-items:center;gap:14px;
+  background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--rubro);
+  padding:12px 15px;margin-bottom:7px;
+}
+.linha-rotina.hoje{border-left-color:var(--rubro-vivo);background:#1d1414}
+.linha-rotina>span{
+  font-family:var(--titulo);font-size:13px;font-weight:600;
+  letter-spacing:.17em;text-transform:uppercase;color:#dcdcdc;
+}
+select.campo{
+  width:100%;background:#141414;border:1px solid var(--linha);color:var(--texto);
+  padding:10px 12px;font-family:var(--corpo);font-size:12.5px;cursor:pointer;
+}
+select.campo:focus{outline:0;border-color:var(--rubro-vivo)}
+
+/* ---------- agenda do time ---------- */
+.escolha-time{
+  display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:18px;align-items:center;
+  background:var(--painel);border:1px solid var(--linha);padding:14px 16px;margin-bottom:13px;
+}
+.escolha-time .rot{
+  font-family:var(--titulo);font-size:11px;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--fraco);margin-bottom:7px;
+}
+.escolha-time .quem{display:flex;align-items:center;gap:10px}
+.escolha-time .quem i{width:14px;height:14px;display:block;border:1px solid rgba(255,255,255,.22)}
+.escolha-time .quem b{font-family:var(--titulo);font-size:17px;letter-spacing:.06em}
+.escolha-time .quem small{font-family:var(--mono);font-size:11px;color:var(--fraco)}
+
+table.agenda{width:100%;border-collapse:collapse}
+table.agenda th{
+  background:#151515;color:var(--fraco);text-align:left;
+  font-family:var(--titulo);font-size:11px;font-weight:600;letter-spacing:.15em;
+  text-transform:uppercase;padding:11px 14px;border-bottom:1px solid var(--linha);
+}
+table.agenda td{padding:10px 14px;border-bottom:1px solid #1e1e1e;font-size:12.5px}
+table.agenda tr:hover td{background:#1b1b1b}
+table.agenda tr.meu td{background:#2b1414}
+table.agenda .data b{font-family:var(--mono);font-size:13px;display:block}
+table.agenda .data small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+table.agenda .hora{font-family:var(--mono);font-size:12px;color:#cfcfcf}
+table.agenda .comp b{display:block;font-weight:600}
+table.agenda .comp small{color:var(--fraco);font-size:11px}
+table.agenda .local{
+  font-family:var(--titulo);font-size:12px;letter-spacing:.13em;text-transform:uppercase;
+}
+table.agenda .local.casa{color:var(--verde-vivo)}
+table.agenda .local.fora{color:var(--ouro)}
+table.agenda .adv{display:flex;align-items:center;gap:8px;font-weight:600}
+table.agenda .adv i{width:11px;height:11px;display:block;border:1px solid rgba(255,255,255,.22)}
+table.agenda .placar{font-family:var(--mono);font-size:13px;text-align:center}
+
+/* ---------- calendário: grade por semana (visão do ano) ---------- */
 .grade-semanas{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:5px}
 .cel-semana{
   border:1px solid var(--linha);background:var(--painel-alto);padding:6px 7px;
