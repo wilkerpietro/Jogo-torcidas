@@ -162,14 +162,38 @@ TO.diaJogo.arredores = (function(){
   const VIZ8=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],
               [1,1,1.41],[1,-1,1.41],[-1,1,1.41],[-1,-1,1.41]];
 
-  function criarCampo(alvoX, alvoY){
+  /* custo extra por célula: grade intacta encarece a passagem em vez de
+     proibir. Assim o disco contorna quando existe volta e, quando não
+     existe, vai pra cima da grade — que é exatamente o que se quer. */
+  const PENA_GRADE=60;
+  function custoDasGrades(mods){
+    const extra=new Float32Array(COLS*ROWS);
+    if(!mods) return extra;
+    for(const m of mods){
+      if(m.hp<=0) continue;
+      const alcance=m.meia+m.esp+6;
+      const c0=Math.max(0,Math.floor((m.x-alcance)/CEL));
+      const c1=Math.min(COLS-1,Math.floor((m.x+alcance)/CEL));
+      const r0=Math.max(0,Math.floor((m.y-alcance)/CEL));
+      const r1=Math.min(ROWS-1,Math.floor((m.y+alcance)/CEL));
+      for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++){
+        const x=(c+0.5)*CEL-m.x, y=(r+0.5)*CEL-m.y;
+        const ao=Math.abs(x*m.ux + y*m.uy);
+        const at=Math.abs(x*(-m.uy) + y*m.ux);
+        if(ao<=m.meia+4 && at<=m.esp+5) extra[r*COLS+c]=PENA_GRADE;
+      }
+    }
+    return extra;
+  }
+
+  function criarCampo(alvoX, alvoY, extra){
     const dist=new Float32Array(COLS*ROWS).fill(Infinity);
     const p=pontoLivreMaisProximo(alvoX,alvoY,0);
     const c0=Math.floor(p.x/CEL), r0=Math.floor(p.y/CEL);
     if(!celulaLivre(c0,r0)) return {dist, alvo:{x:alvoX,y:alvoY}, passo:()=>({dx:0,dy:0})};
 
     dist[r0*COLS+c0]=0;
-    // fila circular simples; peso 1/1.41 aproximado por Dijkstra em bucket
+    // relaxação por frente de onda (SPFA): aceita peso variável
     let fila=[[c0,r0]];
     while(fila.length){
       const prox=[];
@@ -180,9 +204,10 @@ TO.diaJogo.arredores = (function(){
           if(!celulaLivre(nc,nr)) continue;
           // não corta quina na diagonal
           if(dc&&dr&&(!celulaLivre(c+dc,r)||!celulaLivre(c,r+dr))) continue;
-          const nd=base+peso;
-          if(nd<dist[nr*COLS+nc]-0.001){
-            dist[nr*COLS+nc]=nd;
+          const i=nr*COLS+nc;
+          const nd=base+peso+(extra?extra[i]:0);
+          if(nd<dist[i]-0.001){
+            dist[i]=nd;
             prox.push([nc,nr]);
           }
         }
@@ -215,15 +240,25 @@ TO.diaJogo.arredores = (function(){
     };
   }
 
-  /* um campo por portão, calculado uma vez */
+  /* Um campo por portão. Recalcula quando a malha muda (editor) ou
+     quando uma grade cai — a rota barata passa a ser outra. */
   const campos={};
-  function campoDaEntrada(id){
+  let versaoGrades=-1, custoAtual=null;
+
+  function campoDaEntrada(id, mods, versao){
+    if(versao!==undefined && versao!==versaoGrades){
+      versaoGrades=versao; custoAtual=custoDasGrades(mods);
+      for(const k of Object.keys(campos)) delete campos[k];
+    }
     if(campos[id]) return campos[id];
     const e=D.entradas.find(x=>x.id===id) || D.entradas[0];
-    campos[id]=criarCampo(e.x,e.y);
+    campos[id]=criarCampo(e.x, e.y, custoAtual);
     return campos[id];
   }
-  function limparCampos(){ for(const k of Object.keys(campos)) delete campos[k]; }
+  function limparCampos(){
+    for(const k of Object.keys(campos)) delete campos[k];
+    versaoGrades=-1; custoAtual=null;
+  }
 
   /* =======================================================
      GRADES DE PROTEÇÃO — módulos quebráveis
@@ -420,7 +455,7 @@ TO.diaJogo.arredores = (function(){
     codificarMascara, decodificarMascara,
     caminhavel, cabe, celulaLivre, pontoLivreMaisProximo,
     mover, livre,
-    criarCampo, campoDaEntrada, limparCampos,
+    criarCampo, campoDaEntrada, limparCampos, custoDasGrades,
     montarGrades, barrarGrades,
     desenharFundo, desenharSobreposicoes,
     usarImagemLocal,

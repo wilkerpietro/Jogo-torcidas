@@ -1,0 +1,87 @@
+/* =========================================================
+   PAINÉIS — blocos de conteúdo das telas de gestão
+   ========================================================= */
+
+.painel{
+  background:var(--painel);border:1px solid var(--linha);
+  padding:11px 13px;margin-bottom:11px;
+}
+.painel h2{
+  font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--fraco);
+  margin-bottom:9px;font-weight:600;display:flex;align-items:center;gap:8px;
+}
+.tag{
+  font-family:var(--mono);font-size:9px;letter-spacing:.06em;
+  background:#2a2a26;border:1px solid var(--linha);color:var(--texto);
+  padding:1px 6px;text-transform:none;
+}
+.tag.alerta{border-color:#6b3a32;color:var(--vermelho)}
+
+.colunas{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+@media(max-width:980px){.colunas{grid-template-columns:1fr}}
+
+/* ---------- linhas genéricas ---------- */
+.linha-dado{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid var(--sulco);
+  font-size:13.5px;letter-spacing:.03em;
+}
+.linha-dado:last-child{border-bottom:0}
+.linha-dado b{font-family:var(--mono);font-size:12.5px}
+.linha-dado .fraco{color:var(--fraco);font-family:var(--mono);font-size:10.5px}
+.positivo{color:var(--verde)}
+.negativo{color:var(--vermelho)}
+
+/* ---------- itens de lista (bondes, membros, patrimônio) ---------- */
+.item{
+  border-left:3px solid #3d3d39;padding:5px 0 5px 8px;margin-bottom:5px;
+  background:#00000026;
+}
+.item.meu{border-left-color:var(--rubro)}
+.item.chegou{border-left-color:var(--ouro);background:#e0b04010}
+.item.ferido{border-left-color:var(--vermelho);background:#c0392b10}
+.item.preso{border-left-color:var(--pm);background:#3f7d5a10}
+.item .l1{display:flex;justify-content:space-between;align-items:baseline}
+.item .nm{font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.item .qt{font-family:var(--mono);font-size:11.5px;color:var(--ouro)}
+.item .l2{font-family:var(--mono);font-size:9.5px;color:var(--fraco);margin-top:2px}
+
+/* ---------- tabela de membros ---------- */
+table.membros{width:100%;border-collapse:collapse;font-size:13px}
+table.membros th{
+  font-family:var(--mono);font-size:9px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--fraco);text-align:left;padding:5px 7px;border-bottom:1px solid var(--linha);
+  cursor:pointer;user-select:none;white-space:nowrap;
+}
+table.membros th:hover{color:var(--texto)}
+table.membros th .seta{color:var(--ouro);margin-left:3px}
+table.membros td{padding:4px 7px;border-bottom:1px solid var(--sulco);letter-spacing:.02em}
+table.membros td.num{font-family:var(--mono);font-size:11.5px;text-align:right}
+table.membros tr:hover td{background:#00000030}
+table.membros tr.ferido td{color:var(--vermelho)}
+table.membros tr.preso td{color:var(--pm)}
+
+#filtrosMembros{display:flex;gap:9px;align-items:center;margin-bottom:9px;flex-wrap:wrap}
+#buscaMembros{
+  flex:1;min-width:220px;background:#141412;border:1px solid var(--linha);
+  padding:6px 9px;font-size:12px;color:var(--texto);
+}
+#buscaMembros:focus{outline:0;border-color:var(--ouro)}
+#atalhosMembros{display:flex;gap:5px}
+#atalhosMembros button{
+  background:#252522;border:1px solid #3d3d39;color:var(--fraco);
+  font-family:var(--mono);font-size:9.5px;padding:4px 8px;cursor:pointer;
+  text-transform:uppercase;letter-spacing:.07em;
+}
+#atalhosMembros button:hover{color:var(--texto)}
+#atalhosMembros button.on{background:var(--rubro);border-color:var(--rubro);color:#fff}
+
+/* ---------- transações ---------- */
+.transacao{
+  display:flex;justify-content:space-between;gap:10px;
+  font-family:var(--mono);font-size:10.5px;padding:3px 0;
+  border-bottom:1px solid var(--sulco);
+}
+.transacao .dia{color:var(--fraco);flex:none;width:44px}
+.transacao .desc{flex:1;color:var(--texto)}
+.transacao .val{flex:none;text-align:right}

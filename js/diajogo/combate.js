@@ -90,7 +90,8 @@ TO.diaJogo.combate = (function(){
       entraram:{}, presos:0,
       caidos:{mandante:0, visitante:0}, presosPor:{mandante:0, visitante:0},
       total:{mandante:0, visitante:0},
-      debandou:{}, log:[], aviso:null, avisoAte:0
+      debandou:{}, log:[], aviso:null, avisoAte:0,
+      versaoGrades:0
     };
 
     for(const g of J.grades){ g.hpMax=P.vidaGrade; g.hp=P.vidaGrade; }
@@ -106,6 +107,7 @@ TO.diaJogo.combate = (function(){
         const p=A.pontoLivreMaisProximo(s.x+U.entre(-46,46), s.y+U.entre(-46,46), 7);
         const d=new Disco((nomes[iN++%nomes.length]||'ZÉ').toUpperCase(),
                           s.lado, s, p.x, p.y, s.jogador && i===0);
+        d.doJogador = !!s.jogador;   // só o seu bonde obedece à formação
         J.discos.push(d);
       }
       J.total[s.lado]+=qtd;
@@ -197,10 +199,12 @@ TO.diaJogo.combate = (function(){
   /* ---------- discos ---------- */
   function moverDiscos(J,dt){
     const lider = J.discos.find(d=>d.lider&&d.vivo);
-    const meus  = J.discos.filter(d=>d.lado==='mandante'&&d.vivo&&!d.lider&&d.spawnJogador!==false);
+    /* formação é coisa do SEU bonde. Os outros escalões — inclusive os do
+       mesmo clube — têm portão próprio e vão sozinhos. */
+    const meus  = J.discos.filter(d=>d.doJogador&&d.vivo&&!d.lider);
     let dirX=0, dirY=-1;
     if(lider){
-      const c=A.campoDaEntrada(lider.entrada).passo(lider.x,lider.y);
+      const c=A.campoDaEntrada(lider.entrada,J.grades,J.versaoGrades).passo(lider.x,lider.y);
       if(c.dx||c.dy){dirX=c.dx;dirY=c.dy;}
     }
     const sl=slots(J.form, Math.max(meus.length,1), dirX, dirY);
@@ -226,13 +230,13 @@ TO.diaJogo.combate = (function(){
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
         campo = campoDoSpawn(s); usarCampo=true;
       } else {
-        const alvo = inimigoAlcancavel(J,d, d.lado==='mandante'&&lider?110:130);
+        const alvo = inimigoAlcancavel(J,d, d.doJogador?110:130);
         if(alvo && !J.paz){ ax=alvo.x; ay=alvo.y; }
-        else if(d.lado==='mandante' && lider && !J.paz){
+        else if(d.doJogador && lider && !J.paz){
           const i=meus.indexOf(d), s=sl[i<0?0:i]||{x:0,y:0};
           ax=lider.x+s.x; ay=lider.y+s.y;
         } else {
-          campo=A.campoDaEntrada(d.entrada); usarCampo=true;
+          campo=A.campoDaEntrada(d.entrada,J.grades,J.versaoGrades); usarCampo=true;
           const e=D.entradas.find(x=>x.id===d.entrada);
           if(e && U.dist(d.x,d.y,e.x,e.y)<(e.raio||34)){ entrarNoEstadio(J,d); continue; }
         }
@@ -368,12 +372,17 @@ TO.diaJogo.combate = (function(){
         g.hp-=a.forca*nivelMoral(a.moral)*P.dano*dt*1.6;
         g.tremor=Math.min(5,g.tremor+0.5); a.hostil=3.5;
         if(g.hp<=0){
-          g.hp=0; J.alerta=Math.min(100,J.alerta+13);
+          g.hp=0; J.versaoGrades++; J.alerta=Math.min(100,J.alerta+13);
           logar(J,'Um módulo da grade foi ao chão.','pm');
           romperCordao(J);
         }
       }
 
+      /* Só quem está procurando conflito se pega com a PM. Passar do lado
+         de um policial a caminho do portão não é enfrentamento — sem esta
+         guarda, a atenção policial ia a 100 em segundos só de todo mundo
+         andar pela rua, e a IA recuava sem que nada tivesse acontecido. */
+      if(procurandoConflito(J,a))
       for(const p of J.policiais){
         if(!p.vivo) continue;
         if(U.dist(p.x,p.y,a.x,a.y)>a.r+p.r+5) continue;
@@ -555,7 +564,7 @@ TO.diaJogo.combate = (function(){
           const dist=U.dist(g.x,g.y,p.x,p.y);
           if(g.hp>0&&dist<92){
             g.hp-=110-dist*0.6; g.tremor=5;
-            if(g.hp<=0){g.hp=0; J.alerta=Math.min(100,J.alerta+13); romperCordao(J);}
+            if(g.hp<=0){g.hp=0; J.versaoGrades++; J.alerta=Math.min(100,J.alerta+13); romperCordao(J);}
           }
         }
         J.alerta=Math.min(100,J.alerta+16);
@@ -574,6 +583,14 @@ TO.diaJogo.combate = (function(){
         const e=(min-d)/2, nx=dx/d, ny=dy/d;
         A.mover(a,-nx*e,-ny*e); A.mover(b, nx*e, ny*e);
       }
+    }
+    /* ninguém atravessa policial: a PM é obstáculo mesmo pra quem
+       está só de passagem — desviar dela é o que faz o posto importar */
+    const pms=J.policiais.filter(p=>p.vivo);
+    for(const a of t) for(const p of pms){
+      const dx=a.x-p.x, dy=a.y-p.y;
+      const d=Math.hypot(dx,dy)||0.01, min=a.r+p.r;
+      if(d<min) A.mover(a, dx/d*(min-d), dy/d*(min-d));
     }
   }
 

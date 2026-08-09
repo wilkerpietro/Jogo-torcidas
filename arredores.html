@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arredores do estádio — Torcida Organizada</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<link rel="stylesheet" href="css/cenas.css">
+<style>
+  body{display:block;padding:0}
+  header#topo{display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:2px solid var(--linha);padding:10px 16px}
+  header#topo h1{font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  header#topo span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);letter-spacing:.08em}
+</style>
+</head>
+<body>
+
+<header id="topo">
+  <h1>Arredores do estádio</h1>
+  <span>CENA SOBRE FOTO · MALHA DE CAMINHABILIDADE · <b style="color:var(--ouro)">F2</b> EDITOR</span>
+</header>
+
+<div id="djGrade">
+  <div>
+    <div id="djPalco">
+      <canvas id="djPrincipal" width="1152" height="768"></canvas>
+
+      <div class="hud" id="djRelogio">18:00</div>
+      <div class="hud" id="djSubrelogio"></div>
+      <div class="hud" id="djAlerta">
+        <div class="rot">ATENÇÃO POLICIAL</div>
+        <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
+        <div class="rot" id="djRotPressao" style="margin-top:6px;color:#d9705f">PRESSÃO SOBRE VOCÊ</div>
+        <div class="barra" style="border-color:#6b3a32">
+          <i id="djBarraPressao" style="width:0%;background:#c0392b"></i>
+        </div>
+        <div id="djCarga"></div>
+      </div>
+      <div class="hud" id="djPlacar"></div>
+      <div class="hud" id="djAviso"></div>
+      <div class="hud" id="djDica"></div>
+    </div>
+
+    <div class="painel" style="margin-top:11px">
+      <h2>Ocorrências</h2>
+      <div id="djLog"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="painel">
+      <h2>Nos arredores</h2>
+      <div id="djFormacoes"></div>
+      <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
+      <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
+      <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
+      <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
+    </div>
+    <div class="painel">
+      <h2>Calibragem <span class="tag">debug</span></h2>
+      <div id="djSliders"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/nucleo.js"></script>
+<script src="dados/nomes.js"></script>
+<script src="dados/cena_arredores.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/ponte.js"></script>
+<script>TO.diaJogo.ponte.montar();</script>
+</body>
+</html>
