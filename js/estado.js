@@ -88,6 +88,7 @@ TO.estado = (function(){
 
     TO.membros.povoarInicial(E, opc.efetivo || E.efetivoAlvo || 34,
                              (opc.torcida||{}).cargos);
+    TO.membros.sortearFila(E);
     E.temporada = TO.competicoes.montarTemporada(E);
     sortearProximoJogo(E);
     E.noticias = gerarNoticias(E);
@@ -275,6 +276,8 @@ TO.estado = (function(){
       E.ultimasNoticias = mundo.noticias;
 
       E.data.dia = 1; E.data.semana++; E.acoes.usadas = 0;
+      /* GDD §5.4: a fila de treino da semana é sorteada de novo */
+      TO.membros.sortearFila(E);
       if(E.data.semana > TO.competicoes.SEMANAS_ANO){
         E.data.semana = 1; E.data.ano++;
         guardarTitulos(E);

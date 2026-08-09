@@ -220,6 +220,16 @@ TO.financeiro = (function(){
       acoesSobrando:TO.acoes.restantes(E)
     };
 
+    /* O que a Gestão decidiu já saiu do caixa na hora (cobrarCaravana e
+       planejamento.confirmar). Entra no relatório como extrato, nunca
+       como lançamento novo — senão a semana cobraria duas vezes. */
+    const comp = TO.planejamento && TO.planejamento.compromissos(E);
+    if(comp && comp.itens.length){
+      rel.compromissos = comp.itens;
+      rel.compromissoPago = comp.pago;
+      rel.compromissoPendente = comp.pendente;
+    }
+
     for(const r of rel.receitas) TO.estado.lancar(E, r.rot, r.v);
     for(const d of rel.despesas) TO.estado.lancar(E, d.rot, -d.v);
 

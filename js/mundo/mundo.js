@@ -168,14 +168,19 @@ TO.mundo = (function(){
 
   /* GDD §6.2: base não organizada = torcedores do clube na cidade,
      menos quem já está em alguma organizada daquele clube */
-  function baseDeRecrutamento(idCidade, idClube){
+  /* Quem sobra pra recrutar: o torcedor do clube que mora na praça e
+     ainda não é de organizada nenhuma. O `vivos` opcional troca o número
+     estático da planilha pelo efetivo de agora — sem ele, recrutar não
+     encolheria o bolo e a praça viraria fonte infinita. */
+  function baseDeRecrutamento(idCidade, idClube, vivos){
     const c = cidade(idCidade);
     if(!c) return 0;
     const t = (c.times||[]).find(x=>x.clubeId===idClube);
     if(!t) return 0;
+    const conta = o => (vivos ? vivos(o) : (o.membros||0));
     const organizados = torcidasEm(idCidade)
       .filter(o=>o.clubeId===idClube)
-      .reduce((s,o)=>s+(o.membros||0), 0);
+      .reduce((s,o)=>s+conta(o), 0);
     return Math.max(0, (t.torcedores||0) - organizados);
   }
 

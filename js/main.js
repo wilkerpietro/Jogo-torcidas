@@ -333,6 +333,7 @@
 
     /* resumo financeiro — o mesmo cálculo do fechamento (GDD §7) */
     const cx = TO.financeiro.contas(e);
+    const cpr = TO.planejamento.compromissos(e);
     const cFin = cartao('Resumo da semana');
     cFin.corpo.innerHTML =
       `<div class="linha-dado"><span>Receitas</span>
@@ -341,11 +342,10 @@
          <b class="negativo">${U.dinheiro(-cx.despesa)}</b></div>
        <div class="linha-dado"><span>Saldo previsto</span>
          <b class="${cx.saldo>=0?'positivo':'negativo'}">${U.dinheiro(cx.saldo)}</b></div>`
-      + (TO.financeiro.precisaCaravana(e)
-         ? `<div class="linha-dado"><span class="${TO.financeiro.temCaravana(e)?'':'fraco'}">`+
-           `${TO.financeiro.temCaravana(e)?'Caravana para':'Viajar para'} `+
-           `${e.proximoJogo.cidadeAdv}: ${U.dinheiro(TO.financeiro.CARAVANA)} `+
-           `${TO.financeiro.temCaravana(e)?'na véspera':'se a torcida for'}.</span></div>` : '');
+      + (cpr.total
+         ? `<div class="linha-dado"><span>Decidido na Gestão`+
+           `${cpr.pendente?'':' <small class="fraco">pago</small>'}</span>`+
+           `<b class="negativo">${U.dinheiro(-cpr.total)}</b></div>` : '');
     const verFin = el('button',{class:'bt larga', texto:'Ver finanças'});
     verFin.onclick = ()=>{ pagina='financeiro'; redesenhar(); };
     cFin.rodape(verFin);
@@ -467,6 +467,19 @@
     corpo.appendChild(bloco('Despesas', rel.despesas, rel.despesa, true));
 
     const fim = el('div',{class:'col largo'});
+    if(rel.compromissos && rel.compromissos.length){
+      fim.appendChild(el('h3',{texto:'Decidido na Gestão'}));
+      for(const i of rel.compromissos)
+        fim.appendChild(el('div',{class:'linha-dado', html:
+          `<span>${i.rot} <small class="fraco">${i.nota}</small></span>
+           <b class="${i.tipo==='dinheiro'?'negativo':'fraco'}">`+
+          `${i.tipo==='acao' ? '1 ação'
+            : i.tipo==='aviso' ? 'sem custo' : U.dinheiro(-i.v)}</b>`}));
+      if(rel.compromissoPago)
+        fim.appendChild(el('div',{class:'linha-dado', html:
+          `<span class="fraco">já debitado no caixa durante a semana</span>`+
+          `<b class="negativo">${U.dinheiro(-rel.compromissoPago)}</b>`}));
+    }
     fim.appendChild(el('div',{class:'linha-dado total', html:
       `<span>Saldo da semana</span><b class="${rel.saldo>=0?'positivo':'negativo'}">`+
       `${U.dinheiro(rel.saldo)}</b>`}));
@@ -536,11 +549,12 @@
       {id:'membros',      rot:'Membros'},
       {id:'hierarquia',   rot:'Hierarquia'},
       {id:'treinamentos', rot:'Treinamentos'},
-      {id:'recrutamento', rot:'Recrutamento', desabilitada:true}
+      {id:'recrutamento', rot:'Recrutamento'}
     ], subTorcida, id=>{subTorcida=id; redesenhar();}));
 
     if(subTorcida==='treinamentos'){ pg.appendChild(painelTreinos()); return; }
     if(subTorcida==='hierarquia'){ pg.appendChild(painelHierarquia()); return; }
+    if(subTorcida==='recrutamento'){ pg.appendChild(painelRecrutamento()); return; }
 
     const c = TO.membros.contar(e);
     const grade = el('div',{class:'lista-detalhe'});
@@ -639,16 +653,21 @@
     const fila = e.membros.filter(m=>m.naFila && TO.membros.disponivel(m));
     const grade = el('div',{class:'colunas'});
 
-    const c1 = cartao('Fila de treino', `${fila.length} na fila · ${cap} por dia`);
+    const c1 = cartao('Fila de treino',
+      `${fila.length} na fila · ${cap} vagas · sorteada toda semana`);
     if(!fila.length){
-      c1.corpo.innerHTML = `<div class="em-construcao">Ninguém escalado. `+
-        `Selecione um membro em Membros e use Ações.</div>`;
+      c1.corpo.innerHTML = `<div class="em-construcao">Ninguém na fila. `+
+        `Ela é sorteada no virar da semana; até lá dá pra escalar `+
+        `à mão em Membros → Ações.</div>`;
     } else {
       fila.forEach((m,i)=>{
+        const pl = TO.membros.planoDeTreino(m);
+        const falta = pl.noTeto ? 'no teto do cargo'
+          : `${pl.sessoes} ${pl.sessoes===1?'sessão':'sessões'} até o teto ${pl.teto}`;
         c1.corpo.appendChild(el('div',{class:'item'+(i<cap?' meu':''), html:
           `<div class="l1"><span class="nm">${TO.membros.nomeDe(m)}</span>
              <span class="qt">${m.forca}/${m.defesa}</span></div>
-           <div class="l2">${i<cap?'treina hoje':'aguarda vaga'} · frações `+
+           <div class="l2">${i<cap?'treina hoje':'aguarda vaga'} · ${falta} · frações `+
           `${m.fracForca.toFixed(2)} / ${m.fracDefesa.toFixed(2)}</div>`}));
       });
     }
@@ -660,20 +679,107 @@
       aviso(`${n} treinaram.`,'boa');
       TO.estado.avancarDia();
     };
-    c1.rodape(bt);
+    const btS = el('button',{class:'bt larga', texto:'Sortear outra fila'});
+    btS.onclick = ()=>{
+      const n = TO.membros.sortearFila(e);
+      aviso(`Fila refeita: ${n} ${n===1?'nome':'nomes'}.`);
+      redesenhar();
+    };
+    c1.rodape(bt, btS);
     grade.appendChild(c1);
 
-    const c2 = cartao('Como funciona');
+    /* GDD §5.4 — quem ainda tem o que ganhar, por cargo */
+    const c2 = cartao('Plano de treino', 'GDD §5.4');
+    const disp = e.membros.filter(m=>TO.membros.disponivel(m));
+    const emTeto = disp.filter(m=>TO.membros.planoDeTreino(m).noTeto).length;
     c2.corpo.innerHTML =
       `<div class="linha-dado"><span>Ganho por sessão</span><b>0.00 a 0.30</b></div>
        <div class="linha-dado"><span>Vagas por dia</span><b>${cap}</b></div>
-       <div class="linha-dado"><span>Teto do Novato</span><b>8</b></div>
-       <div class="linha-dado"><span>Teto do Componente</span><b>12</b></div>
-       <div class="linha-dado"><span>Teto da Linha de Frente</span><b>18</b></div>
-       <div class="linha-dado"><span>Teto da Diretoria</span><b>20</b></div>
-       <div class="linha-dado"><span class="fraco">O atributo só sobe de inteiro quando `+
-      `a fração acumula. Cada treino aparece, mesmo o pequeno (GDD §5.4).</span></div>`;
+       <div class="linha-dado"><span>Disponíveis pra treinar</span>
+         <b>${disp.length - emTeto} <span class="fraco">de ${disp.length}</span></b></div>
+       <div class="linha-dado"><span>Já no teto do cargo</span>
+         <b class="fraco">${emTeto}</b></div>`;
+    for(const cargo of ['novato','componente','frente','diretoria']){
+      const C = TO.membros.CARGOS[cargo];
+      const dele = disp.filter(m=>m.cargo===cargo);
+      if(!dele.length) continue;
+      const falt = dele.reduce((s,m)=>s+TO.membros.planoDeTreino(m).sessoes, 0);
+      c2.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>${C.nome} <span class="fraco">teto ${C.teto}</span></span>
+         <b>${dele.length} <span class="fraco">· ${falt} sessões pra encher</span></b>`}));
+    }
+    c2.corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span class="fraco">O atributo só sobe de inteiro quando a fração `+
+      `acumula, e veterano leva +2 acima do teto do cargo. A fila se renova `+
+      `sozinha toda semana, priorizando quem ainda tem o que ganhar.</span>`}));
     grade.appendChild(c2);
+    return grade;
+  }
+
+  /* GDD §6.2 — a praça é finita: o que dá pra recrutar é o torcedor do
+     clube que mora aqui e ainda não é de organizada nenhuma. */
+  function painelRecrutamento(){
+    const e = E();
+    const p = TO.acoes.previsaoRecrutamento(e);
+    const cid = TO.mundo.cidade(e.torcida.mapa);
+    const clube = TO.mundo.time(e.torcida.clubeId);
+    const naPraca = ((cid && cid.times) || [])
+      .find(x=>x.clubeId===e.torcida.clubeId) || {};
+    const torcedores = naPraca.torcedores || 0;
+    const org = TO.acoes.organizadasDaPraca(e);
+    const organizados = org.reduce((s,o)=>s+o.membros, 0);
+
+    const grade = el('div',{class:'colunas'});
+
+    const c1 = cartao(`Torcedores do ${clube?clube.nome:'clube'} em ${cid?cid.nome:'—'}`,
+                      `${U.numero(torcedores)} na praça`);
+    c1.corpo.innerHTML =
+      `<div class="valorao"><span>Fora de organizada</span>
+         <b class="${p.base>0?'positivo':'negativo'}">${Math.round(p.base)}</b></div>
+       <div class="linha-dado"><span>Já organizados</span><b>${organizados}</b></div>`;
+    for(const o of org)
+      c1.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="${o.nossa?'':'fraco'}">${o.torcida.nome}`+
+        `${o.nossa?' <span class="tag">nós</span>':''}</span>
+         <b class="${o.nossa?'':'fraco'}">${o.membros}</b>`}));
+    c1.corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span class="fraco">Recrutar tira gente desse bolo. Ele só cresce `+
+      `quando o clube sobe de divisão e ganha torcedor na praça.</span>`}));
+    grade.appendChild(c1);
+
+    const c2 = cartao('Previsão da próxima campanha', 'GDD §6.2');
+    c2.corpo.innerHTML =
+      `<div class="linha-dado"><span>Alcance <span class="fraco">3% da base`+
+        `</span></span><b>${p.alcance.toFixed(1)}</b></div>
+       <div class="linha-dado"><span>Atratividade <span class="fraco">moral, `+
+        `prestígio e satisfação</span></span><b>${p.atratividade.toFixed(2)}×</b></div>
+       <div class="linha-dado"><span>Sede nível ${e.torcida.sedeNivel}</span>
+         <b>${p.mult.toFixed(1)}×</b></div>
+       <div class="linha-dado"><span>Teto por campanha</span>
+         <b>${p.cap} <span class="fraco">${p.capSede} da sede + ${p.capBase} `+
+        `da praça</span></b></div>
+       <div class="linha-dado"><span>Vagas na sede</span>
+         <b class="${p.vaga>0?'':'negativo'}">${p.vaga}</b></div>
+       <div class="valorao"><span>Devem entrar</span>
+         <b class="${p.esperado>0?'positivo':'negativo'}">~${p.esperado}</b></div>
+       <div class="linha-dado"><span class="fraco">Sai R$ 5 por novato, e a `+
+      `variância da semana é de ±15%.</span></div>`;
+    for(const id of ['recrutar','campanha']){
+      const a = TO.acoes.porId(id);
+      if(a) c2.corpo.appendChild(linhaAcao(a));
+    }
+    grade.appendChild(c2);
+
+    const h = e.historicoRecrutamento || [];
+    const c3 = cartao('Campanhas anteriores', `${h.length} registradas`);
+    if(!h.length) c3.corpo.innerHTML =
+      '<div class="em-construcao">Nenhuma campanha ainda.</div>';
+    for(const r of h.slice(0,14))
+      c3.corpo.appendChild(el('div',{class:'transacao', html:
+        `<span class="dia">S${r.semana}</span>
+         <span class="desc">base de ${r.base} fora de organizada</span>
+         <span class="val ${r.n?'positivo':''}">${r.n?'+'+r.n:'0'}</span>`}));
+    grade.appendChild(c3);
     return grade;
   }
 
@@ -799,6 +905,10 @@
 
     const grade = el('div',{class:'colunas-3'});
 
+    /* o que a Gestão comprometeu nesta semana entra na conta da tela */
+    const comp = TO.planejamento.compromissos(e);
+    const saldoReal = cx.saldo - comp.pendente;
+
     const c1 = cartao('Fluxo da semana');
     c1.corpo.innerHTML =
       `<div class="valorao"><span>Receitas</span>
@@ -806,7 +916,16 @@
        <div class="valorao"><span>Despesas</span>
          <b class="negativo">${U.dinheiro(cx.despesa)}</b></div>
        <div class="valorao"><span>Saldo</span>
-         <b class="${cx.saldo>=0?'positivo':'negativo'}">${U.dinheiro(cx.saldo)}</b></div>`;
+         <b class="${cx.saldo>=0?'positivo':'negativo'}">${U.dinheiro(cx.saldo)}</b></div>`
+      + (comp.total
+         ? `<div class="linha-dado"><span>Decidido na Gestão</span>
+              <b class="${comp.total?'negativo':'fraco'}">${U.dinheiro(-comp.total)}</b></div>
+            <div class="linha-dado"><span>${comp.pendente?'A pagar ainda':'Tudo já pago'}</span>
+              <b class="${comp.pendente?'negativo':'fraco'}">`+
+           `${comp.pendente?U.dinheiro(-comp.pendente):'—'}</b></div>
+            <div class="valorao"><span>Saldo com a Gestão</span>
+              <b class="${saldoReal>=0?'positivo':'negativo'}">${U.dinheiro(saldoReal)}</b></div>`
+         : '');
     const btDet = el('button',{class:'bt larga', texto:'Detalhes'});
     btDet.onclick = ()=>{ subFin='transacoes'; redesenhar(); };
     let btUlt = null;
@@ -853,10 +972,33 @@
 
     const c4 = cartao('Despesas', 'por semana');
     for(const d of cx.despesas) c4.corpo.appendChild(linha(d.rot, d.v, true));
-    if(TO.financeiro.temCaravana(e))
-      c4.corpo.appendChild(linha(`Caravana — ${e.proximoJogo.cidadeAdv}`,
-                                 TO.financeiro.CARAVANA, true));
-    const col3 = el('div'); col3.append(c3,c4);
+
+    /* GESTÃO → FINANCEIRO: caravana, recepção de aliado e investida não
+       são conta fixa de semana; são decisão. Ficam num cartão só delas,
+       dizendo o que já saiu do caixa e o que ainda vai sair. */
+    const c5 = cartao('Compromissos da semana', 'decididos na Gestão');
+    if(!comp.itens.length)
+      c5.corpo.innerHTML = '<div class="em-construcao">'+
+        'Nada decidido nesta semana que mexa no caixa.</div>';
+    for(const i of comp.itens){
+      const val = i.tipo==='acao'  ? '1 ação'
+                : i.tipo==='aviso' ? 'sem custo'
+                : U.dinheiro(-i.v);
+      const est = i.tipo==='aviso' ? '' : i.pago ? ' pago' : ' a pagar';
+      c5.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>${i.rot}<br><small class="fraco">${i.nota}</small></span>
+         <b class="${i.tipo==='dinheiro'?'negativo':'fraco'}">${val}`+
+        `${est?`<small class="fraco">·${est}</small>`:''}</b>`}));
+    }
+    if(comp.itens.length)
+      c5.corpo.appendChild(el('div',{class:'linha-dado total', html:
+        `<span>Total decidido</span><b class="${comp.total?'negativo':'fraco'}">`+
+        `${comp.total?U.dinheiro(-comp.total):'—'}</b>`}));
+    const btGest = el('button',{class:'bt larga', texto:'Abrir a Gestão'});
+    btGest.onclick = ()=>{ pagina='gestao'; redesenhar(); };
+    c5.rodape(btGest);
+
+    const col3 = el('div'); col3.append(c3,c4,c5);
     grade.appendChild(col3);
 
     pg.appendChild(grade);

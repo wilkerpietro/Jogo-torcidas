@@ -222,6 +222,34 @@ TO.membros = (function(){
     return fila.length;
   }
 
+  /* Quanto falta pro teto do cargo. É o "plano de treinamento" do GDD
+     §5.4 visto de perto: cada sessão rende de 0.0 a 0.3, então dá pra
+     dizer quantas sessões faltam pra estourar o teto. */
+  function planoDeTreino(m){
+    const c = CARGOS[m.cargo];
+    const teto = c.teto + (m.veterano?2:0);
+    const faltaF = Math.max(0, teto - m.forca  - m.fracForca);
+    const faltaD = Math.max(0, teto - m.defesa - m.fracDefesa);
+    const falta  = Math.max(faltaF, faltaD);
+    return {teto, faltaF, faltaD,
+            /* 0,15 é o ganho médio por sessão */
+            sessoes: falta ? Math.ceil(falta/0.15) : 0,
+            noTeto: falta <= 0};
+  }
+
+  /* A fila se renova sozinha toda semana: quem manda no treino é a
+     diretoria, não o jogador escolhendo nome por nome. Entra primeiro
+     quem ainda tem o que ganhar, e o sorteio decide o resto. */
+  function sortearFila(E){
+    for(const m of E.membros) m.naFila = false;
+    const podem = E.membros.filter(m=>disponivel(m) && !planoDeTreino(m).noTeto);
+    const resto = E.membros.filter(m=>disponivel(m) && planoDeTreino(m).noTeto);
+    const fila = U.embaralhar(podem).concat(U.embaralhar(resto))
+                  .slice(0, capTreino(E));
+    for(const m of fila) m.naFila = true;
+    return fila.length;
+  }
+
   /* -------------------------------------------------------
      BAIXAS — o retorno do dia de jogo
      ------------------------------------------------------- */
@@ -321,6 +349,7 @@ TO.membros = (function(){
     criar, nomeDe, povoarInicial, planoDeCargos, nivelQueCabe,
     disponivel, capacidade, capTreino, capDiretoria, contar, emCampanha,
     darXP, podePromover, promover, treinar, treinarFila,
+    planoDeTreino, sortearFila,
     ferir, prender, fianca, resgatar, passarDia,
     aptosParaOEstadio, aplicarResultadoDaNoite
   };

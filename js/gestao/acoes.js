@@ -29,18 +29,40 @@ TO.acoes = (function(){
   /* =======================================================
      RECRUTAMENTO (GDD §6.2)
      ======================================================= */
+  /* efetivo de agora, não o da planilha: o nosso é E.membros, o das
+     outras vem do mundo simulado (elas também crescem e encolhem) */
+  function efetivoDe(E, o){
+    if(o.id === E.torcida.id) return E.membros.length;
+    const m = TO.tensao && TO.tensao.mundo(E)[o.id];
+    return m ? m.membros : (o.membros||0);
+  }
+
+  /* as organizadas do nosso clube nesta praça, com o efetivo de agora */
+  function organizadasDaPraca(E){
+    return TO.mundo.torcidasEm(E.torcida.mapa)
+      .filter(o=>o.clubeId === E.torcida.clubeId)
+      .map(o=>({torcida:o, nossa:o.id===E.torcida.id, membros:efetivoDe(E,o)}))
+      .sort((a,b)=>b.membros-a.membros);
+  }
+
   function previsaoRecrutamento(E){
     const I = E.indicadores;
-    const base = TO.mundo.baseDeRecrutamento(E.torcida.mapa, E.torcida.clubeId);
+    const base = TO.mundo.baseDeRecrutamento(E.torcida.mapa, E.torcida.clubeId,
+                                             o=>efetivoDe(E, o));
     const alcance = base * 0.03;
     /* os três indicadores entram normalizados de 0 a 1 */
     const atratividade = 0.5 + (I.moral/20)*0.4 + (I.prestigio/20)*0.4
                              + (I.satisfacao/20)*0.4;
     const mult = MULT_SEDE[E.torcida.sedeNivel] || 1;
-    const cap  = CAP_RECRUTA[E.torcida.sedeNivel] || 2;
+    /* O teto do GDD §6.2 é por nível de sede, mas ele sozinho apaga o
+       tamanho da torcida do clube na praça: recrutar em São Paulo tinha
+       de render mais que no interior. A base entra somada ao teto. */
+    const capSede = CAP_RECRUTA[E.torcida.sedeNivel] || 2;
+    const capBase = Math.floor(base/120);
+    const cap  = capSede + capBase;
     const vaga = TO.membros.capacidade(E) - E.membros.length;
     return {
-      base, alcance, atratividade, mult, cap, vaga,
+      base, alcance, atratividade, mult, cap, capSede, capBase, vaga,
       /* sem a variância, que só é sorteada na hora */
       esperado: Math.min(cap, Math.max(0, Math.round(alcance*atratividade*mult)))
     };
@@ -70,7 +92,8 @@ TO.acoes = (function(){
         const p = previsaoRecrutamento(E);
         if(p.vaga <= 0) return {ok:false, motivo:'a sede está cheia'};
         if(p.base <= 0) return {ok:false, motivo:'não há torcedor fora de organizada'};
-        return {ok:true, nota:`~${p.esperado} novatos`};
+        return {ok:true, nota:`~${p.esperado} de ${Math.round(p.base)} `+
+                              `torcedores fora de organizada`};
       },
       executar(E){
         const p = previsaoRecrutamento(E);
@@ -263,5 +286,6 @@ TO.acoes = (function(){
   }
 
   return {LISTA, porId, maximo, restantes, executar, previsaoRecrutamento,
+          organizadasDaPraca,
           POR_SEMANA, CAP_RECRUTA};
 })();

@@ -386,6 +386,56 @@ TO.planejamento = (function(){
   }
 
   /* =======================================================
+     COMPROMISSOS — a ponte com o Financeiro
+     Toda decisão da Gestão que mexe no caixa aparece aqui, com
+     o valor e se já foi paga. O Financeiro lê esta lista pra
+     mostrar o que a semana ainda deve; o fechamento NÃO relança
+     nada daqui — quem cobra é cobrarCaravana e confirmar(), e
+     cobrar duas vezes seria roubo do próprio jogador.
+     ======================================================= */
+  function compromissos(E){
+    const p = plano(E), fora = [];
+    const põe = (id, rot, v, pago, nota, tipo) =>
+      fora.push({id, rot, v:Math.round(v||0), pago:!!pago, nota:nota||'',
+                 tipo:tipo||'dinheiro'});
+
+    /* 1. a estrada */
+    if(TO.financeiro.temCaravana(E) && E.proximoJogo){
+      const j = E.proximoJogo, est = estimativaCaravana(E);
+      const pago = !!((E.caravanasPagas||{})[j.chave]);
+      põe('caravana', `Caravana para ${j.cidadeAdv || 'fora'}`,
+          est ? est.custo : TO.financeiro.CARAVANA, pago,
+          est ? `${est.vao} pessoas por ${est.rota.nome} · `+
+                `${U.dinheiro(est.rateio)} sai do rateio dos que vão`
+              : 'rota ainda não escolhida — vale o valor cheio do GDD');
+    }
+
+    /* 2. os aliados que jogam na nossa praça */
+    for(const a of aliadosNaCidade(E, E.data.semana)){
+      const nivel = nivelDe(E, a.id), r = recepcaoDe(nivel);
+      const rel = (r.relacao>0?'+':'') + r.relacao;
+      põe('rec-'+a.id, `Recepção da ${a.torcida.nome}`,
+          custoRecepcao(nivel, a.estimativa), (p.pago||{})[a.id],
+          `${r.rot} · ~${a.estimativa} aliados · relação ${rel}`,
+          nivel==='nada' ? 'aviso' : 'dinheiro');
+    }
+
+    /* 3. as investidas nos outros jogos da cidade: custam ação, não caixa */
+    for(const [chave, alvo] of Object.entries(p.investidas || {})){
+      if(!alvo) continue;
+      const t = M().torcida(alvo);
+      põe('inv-'+chave, `Investida contra ${t ? t.nome : alvo}`, 0,
+          (p.pago||{})['inv-'+chave], 'custa 1 ação da semana', 'acao');
+    }
+
+    const soma = f => fora.filter(f).reduce((s,x)=>s+x.v, 0);
+    return {itens:fora,
+            total:   soma(()=>true),
+            pago:    soma(x=>x.pago),
+            pendente:soma(x=>!x.pago)};
+  }
+
+  /* =======================================================
      PENDÊNCIAS — o que a tela de Início cobra do jogador
      ======================================================= */
   function pendencias(E){
@@ -400,9 +450,6 @@ TO.planejamento = (function(){
     const j = E.proximoJogo;
     if(j){
       const p = plano(E);
-      if(TO.financeiro.precisaCaravana(E) && E.postura !== 'viajar' && E.postura !== 'ficar')
-        põe('postura', 'Decidir se a torcida viaja',
-            `jogo em ${j.cidadeAdv}`, 'gestao', 'urgente');
       if(TO.financeiro.temCaravana(E) && !p.rota)
         põe('rota', 'Escolher a estrada da caravana',
             `${j.cidadeAdv}, ${E.data.dia<=(j.dia||6)?'ainda dá tempo':'em cima da hora'}`,
@@ -479,5 +526,5 @@ TO.planejamento = (function(){
           destinos, opcoesDeDestino,
           aliadosNaCidade, RECEPCAO, recepcaoDe, custoRecepcao,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,
-          pendencias, confirmar, CUSTO_BASE, CUSTO_SALTO, CUSTO_AR};
+          compromissos, pendencias, confirmar, CUSTO_BASE, CUSTO_SALTO, CUSTO_AR};
 })();
