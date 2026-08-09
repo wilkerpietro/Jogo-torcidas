@@ -35,6 +35,13 @@ PADRAO = '#8a8a8a'
 # Piaui e Maranhao juntos. Apelido resolve sem mexer na planilha.
 APELIDOS_MAPA = {'meio-norte': 'maranhao'}
 
+# Correcoes de regional pedidas pelo autor depois da planilha. O Nordestao
+# tem de ficar com 16 clubes e o Nordestao Serie B com 18, que e o que os
+# formatos de 2 grupos de 8 e 2 grupos de 9 pedem.
+REGIONAL_CORRIGIDO = {
+    'floresta': 'Nordestão Série B',
+}
+
 
 def sem_acento(t):
     return ''.join(c for c in unicodedata.normalize('NFD', t)
@@ -123,7 +130,7 @@ def main():
             'fundacao': inteiro(r[12]), 'mascote': texto(r[13]),
             'qualidade': inteiro(r[14]),
             'divisao': texto(r[15]), 'mapa': ident_mapa(r[16]),
-            'regional': texto(r[17]),
+            'regional': REGIONAL_CORRIGIDO.get(ident(r[0]), texto(r[17])),
         })
 
     # ---------------- torcidas ----------------

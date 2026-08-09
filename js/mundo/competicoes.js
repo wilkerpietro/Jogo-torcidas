@@ -19,6 +19,7 @@ TO.competicoes = (function(){
   const SEMANAS_ANO      = 52;
   const INICIO_REGIONAL  = 1;    // janeiro
   const INICIO_NACIONAL  = 14;   // abril, como no GDD §18.1
+  const FINAL_REGIONAL   = INICIO_NACIONAL - 1;   // toda final na mesma semana
 
   const PONTOS = {v:3, e:1, d:0};
 
@@ -104,7 +105,6 @@ TO.competicoes = (function(){
   const FORMATO = {
     /* 6 clubes: todos contra todos ida e volta, top 4 → semi e final */
     'Catarinense': {grupos:1, passam:4, voltas:2},
-    'Gauchão':     {grupos:1, passam:4, voltas:2},
     'Mineiro':     {grupos:1, passam:4, voltas:2},
     'Paranaense':  {grupos:1, passam:4, voltas:2},
     /* 10 clubes: turno único, top 4 → semi e final */
@@ -112,17 +112,20 @@ TO.competicoes = (function(){
     'Paulistão A2':       {grupos:1, passam:4, voltas:1},
     'Cariocão':           {grupos:1, passam:4, voltas:1},
     'Copa Centro-Oeste':  {grupos:1, passam:4, voltas:1},
+    /* 8 clubes: turno único, top 4 → semi e final */
+    'Gauchão':     {grupos:1, passam:4, voltas:1},
+    'Copa Norte':  {grupos:1, passam:4, voltas:1},
     /* dois grupos, turno único, top 4 de cada → quartas, semi, final */
     'Copa do Nordeste':   {grupos:2, passam:4, voltas:1, rebaixaPorGrupo:1},
-    'Nordestão Série B':  {grupos:2, passam:4, voltas:1, sobemFinalistas:true},
-    'Copa Norte':         {grupos:2, passam:2, voltas:2}
+    'Nordestão Série B':  {grupos:2, passam:4, voltas:1, sobemFinalistas:true}
   };
 
   /* GDD §18.3, pra competição que a tabela acima não cobrir */
   function formatoRegional(nome, n){
     if(FORMATO[nome]) return FORMATO[nome];
-    if(n >= 12) return {grupos:4, passam:2, voltas:2};
-    if(n >= 8)  return {grupos:2, passam:2, voltas:1};
+    if(n >= 16) return {grupos:2, passam:4, voltas:1};
+    if(n >= 12) return {grupos:2, passam:2, voltas:1};
+    if(n >= 7)  return {grupos:1, passam:4, voltas:1};
     return {grupos:1, passam:4, voltas:2};
   }
 
@@ -142,7 +145,7 @@ TO.competicoes = (function(){
                   'Brasileirão Série C','Brasileirão Série D'];
   const TROCA = 4;
 
-  function criarCompeticao(id, nome, tipo, clubes, cfg, semanaInicio){
+  function criarCompeticao(id, nome, tipo, clubes, cfg, semanaInicio, finalEm){
     const grupos = cfg.grupos > 1 ? dividirGrupos(clubes, cfg.grupos) : [clubes];
     const porGrupo = grupos.map(g=>roundRobin(g, cfg.voltas));
     const maior = Math.max(...porGrupo.map(r=>r.length));
@@ -159,7 +162,8 @@ TO.competicoes = (function(){
       id, nome, tipo,
       clubes, grupos: grupos.map(g=>[...g]),
       passam: cfg.passam, voltas: cfg.voltas,
-      semanaInicio, rodadas, mata:[], campeao:null, vice:null,
+      semanaInicio, finalEm: finalEm || null,
+      rodadas, mata:[], campeao:null, vice:null,
       /* série com pontos corridos não tem mata-mata: campeão é o líder */
       pontosCorridos: !!cfg.pontosCorridos
     };
@@ -181,7 +185,7 @@ TO.competicoes = (function(){
       const r = regionalDe(E, t);
       (porRegional[r] = porRegional[r] || []).push(t.id);
     }
-    const janela = INICIO_NACIONAL - INICIO_REGIONAL;   // 13 semanas
+    const janela = FINAL_REGIONAL - INICIO_REGIONAL + 1;
     for(const nome of Object.keys(porRegional).sort()){
       const clubes = porRegional[nome];
       let cfg = formatoRegional(nome, clubes.length);
@@ -189,8 +193,10 @@ TO.competicoes = (function(){
          janela de janeiro a março, o returno é o primeiro a cair */
       if(semanasQuePrecisa(cfg, clubes.length) > janela && (cfg.voltas||1) > 1)
         cfg = Object.assign({}, cfg, {voltas:1});
+      /* toda final de estadual cai na mesma semana, a véspera do
+         Brasileirão: é o fim de semana de decisão do ano */
       comps.push(criarCompeticao(U.identificador(nome), nome, 'regional',
-        clubes, cfg, INICIO_REGIONAL));
+        clubes, cfg, INICIO_REGIONAL, FINAL_REGIONAL));
     }
 
     /* ---- fase 2: Brasileirão (GDD §18.2) ---- */
@@ -332,8 +338,16 @@ TO.competicoes = (function(){
     const ordem = [...vivos].sort((a,b)=>qual(b)-qual(a));
     for(let i=0;i<ordem.length/2;i++)
       jogos.push({c:ordem[i], f:ordem[ordem.length-1-i]});
+
+    /* Com data de final marcada, a chave é contada de trás pra frente:
+       a final na semana combinada, a semifinal na anterior e por aí.
+       Sem data marcada (o playoff da Série D), emenda na semana seguinte. */
+    const faltam = Math.ceil(Math.log2(vivos.length));   // rodadas até a final
+    const quando = comp.finalEm
+      ? Math.max(semana+1, comp.finalEm - (faltam-1))
+      : semana+1;
     comp.mata.push({fase: NOMES[vivos.length] || `${vivos.length} clubes`,
-                    semana: semana+1, jogos});
+                    semana: quando, jogos});
   }
 
   /* =======================================================
