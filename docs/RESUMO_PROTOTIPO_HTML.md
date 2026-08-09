@@ -174,7 +174,11 @@ Rodei simulações sem navegador (Node com stubs de DOM/canvas) e o que ficou em
 - **Ações da semana** (GDD §3.1 e §10) e **fechamento semanal** (GDD §7): orçamento de
   ações pelo nível da sede, recrutamento pela fórmula do §6.2, mensalidade, bar, insumo,
   manutenção, caravana e a debandada por caixa negativo.
-- **Competições e calendário** (GDD §18): 15 competições montadas dos próprios dados de
+- **Copa do Brasil** (GDD §18.5, com o formato do autor): 88 clubes na primeira fase
+  (todos menos a Série A, com B e C mandando em casa), 64 na segunda com a entrada da
+  Série A, 32 na terceira, oitavas a semi em ida e volta e final em campo neutro. Uma
+  fase a cada três semanas, sempre na quarta; a final fecha a temporada na semana 52.
+- **Competições e calendário** (GDD §18): 16 competições montadas dos próprios dados de
   times.js — 11 regionais e estaduais de janeiro a março, depois o Brasileirão das séries
   A a D até dezembro. Uma rodada por semana, resultado por Poisson sobre a qualidade dos
   clubes, tabela com critérios de desempate, mata-mata e campeão. O jogo da semana da
@@ -196,6 +200,6 @@ Depois disso, o patrimônio: bares, lojas e subsedes têm receita, manutenção 
 implementados no fechamento, mas não há tela de compra — só existe o bar nível 1 que o
 GDD dá de graça na sede nível 1.
 
-**O que ainda não veio da era Unity:** subida e descida entre as séries no virar do ano,
-Copa do Brasil (GDD §18.5) e o campo de qualidade dos clubes evoluindo com os
-resultados. Hoje a temporada nova é sorteada com os mesmos clubes nas mesmas divisões.
+**O que ainda falta no mundo:** a Série E do GDD §18.2 — os dados têm 108 clubes, não
+156, então ninguém cai da Série D. E a qualidade dos clubes não evolui com os
+resultados: quem é forte em 2026 é igualmente forte em 2036.

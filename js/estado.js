@@ -160,6 +160,8 @@ TO.estado = (function(){
       competicao: agenda ? agenda.comp : (meu.divisao || 'Amistoso'),
       fase: agenda ? agenda.fase : '',
       mata: !!(agenda && agenda.mata),
+      dia: agenda ? agenda.dia : 6,
+      neutro: agenda ? agenda.neutro : null,
       casa,
       mandante:{nome:mandante.nome, sigla:mandante.sigla, cores:mandante.cores},
       visitante:{nome:visitante.nome, sigla:visitante.sigla, cores:visitante.cores},
@@ -208,14 +210,24 @@ TO.estado = (function(){
   function rodarRotina(est){
     const id = (est.rotina||{})[est.data.dia];
     if(!id) return;
-    if(est.data.dia === 6 && est.proximoJogo && est.postura !== 'ficar') return;
-    if(TO.financeiro.temCaravana(est) && (est.data.dia===5 || est.data.dia===7)) return;
+    /* dia de jogo do clube, seja de fim de semana ou de meio de semana */
+    const meu = TO.mundo.time(est.torcida.clubeId);
+    if(meu && TO.competicoes.jogosDaSemana(est, meu.id, est.data.semana)
+                .some(j=>j.dia === est.data.dia)) return;
+    const cv = TO.financeiro.diasDeCaravana(est);
+    if(cv.includes(est.data.dia)) return;
     if(TO.acoes.restantes(est) <= 0) return;
 
     const r = TO.acoes.executar(est, id);
     const nome = (TO.acoes.porId(id)||{}).nome || id;
-    anotar(est, `${nome}: ${r.msg || (r.ok?'feito':'não deu')}`,
-           r.ok && r.tipo!=='ruim' ? 'boa' : 'ruim');
+    if(r.ok){
+      anotar(est, `${nome}: ${r.msg || 'feito'}`, r.tipo==='ruim' ? 'ruim' : 'boa');
+    }else{
+      /* rotina que não pôde rodar não vira alarme todo dia: junta e sai
+         uma linha só no fechamento da semana */
+      est.acoes.rotinaFalha = est.acoes.rotinaFalha || {};
+      est.acoes.rotinaFalha[nome] = r.msg;
+    }
   }
 
   function avancarDia(){
@@ -252,8 +264,9 @@ TO.estado = (function(){
       sortearProximoJogo(E);
       E.noticias = gerarNoticias(E);
     }
-    /* GDD §7.3: a caravana é cobrada na véspera do jogo (dia 6) */
-    if(E.data.dia === 5) TO.financeiro.cobrarCaravana(E);
+    /* GDD §7.3: a caravana é cobrada na véspera do jogo */
+    if(TO.financeiro.diasDeCaravana(E)[0] === E.data.dia)
+      TO.financeiro.cobrarCaravana(E);
 
     TO.membros.passarDia(E);
     mudou();

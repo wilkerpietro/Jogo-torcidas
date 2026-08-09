@@ -62,9 +62,12 @@
   }
 
   function aviso(txt, tipo){
+    const cx = $('notificacoes');
     const n = el('div',{class:'nota '+(tipo||''),
       html:`<small>${TO.estado.dataTexto().curta}</small>${txt}`});
-    $('notificacoes').appendChild(n);
+    cx.appendChild(n);
+    /* pilha curta: aviso que cobre a tela inteira não é aviso, é estorvo */
+    while(cx.children.length > 4) cx.firstChild.remove();
     setTimeout(()=>n.remove(), 4200);
   }
 
@@ -267,7 +270,8 @@
     const esq = el('div'), dir = el('div');
 
     /* próximo jogo — pode não haver: folga na tabela (GDD §3.1) */
-    const j = e.proximoJogo;
+    const pj = e.proximoJogo;
+    const j = (pj && pj.mandante && pj.visitante) ? pj : null;
     const dt = TO.estado.dataTexto();
     const cJogo = cartao('Próximo jogo',
       TO.competicoes.faseDaSemana(e.data.semana));
@@ -899,10 +903,10 @@
   }
 
   /* uma partida na lista da rodada, no formato do mockup */
-  function linhaJogo(e, comp, j, semana){
+  function linhaJogo(e, comp, j, semana, dia){
     const meu = e.torcida.clubeId;
     const feito = j.gc!=null;
-    const d = TO.estado.dataDaSemana(e.data.ano, semana, TO.estado.DIA_JOGO);
+    const d = TO.estado.dataDaSemana(e.data.ano, semana, dia || comp.dia || 6);
     const SEM = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
     const quando = `${SEM[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}/`+
                    `${String(d.getMonth()+1).padStart(2,'0')} · ${TO.competicoes.horaDoJogo(j)}`;
@@ -937,7 +941,8 @@
     q.appendChild(q.corpo);
 
     const rolo = el('div',{class:'rolo'});
-    for(const j of et.jogos) rolo.appendChild(linhaJogo(e, comp, j, et.semana));
+    for(const j of et.jogos)
+      rolo.appendChild(linhaJogo(e, comp, j, et.semana, et.dia));
     if(!et.jogos.length)
       rolo.appendChild(el('div',{class:'em-construcao', texto:'Sem jogos nesta fase.'}));
     q.corpo.appendChild(rolo);
@@ -961,8 +966,7 @@
     const abas = series.map(n=>({id:n, rot:n.replace('Brasileirão ','')}))
       .concat([
         {id:'regionais', rot:'Regionais'},
-        {id:'copa', rot:'Copa do Brasil', desabilitada:true,
-         dica:'Os 156 clubes da Copa do Brasil (GDD §18.5) ainda não entraram'},
+        {id:TO.competicoes.COPA_NOME, rot:'Copa do Brasil'},
         {id:'historico', rot:'Histórico'}
       ]);
 
@@ -1012,6 +1016,8 @@
          <small>vice: ${nomeClube(comp.vice)}</small></div>`}));
       esq.appendChild(c);
     }
+    /* copa não tem tabela: o lado esquerdo vira a chave inteira */
+    if(comp.copa){ esq.appendChild(painelChave(e, comp)); }
     comp.grupos.forEach((g, ig)=>{
       const rot = comp.grupos.length>1 ? `Classificação · grupo ${'ABCDEFGH'[ig]}`
                                        : 'Classificação';
@@ -1026,6 +1032,35 @@
     duas.appendChild(esq);
     duas.appendChild(painelRodada(e, comp));
     pg.appendChild(duas);
+  }
+
+  /* caminho do clube do jogador na copa, fase a fase */
+  function painelChave(e, comp){
+    const meu = e.torcida.clubeId;
+    const q = quadro('Chave', el('span',{class:'conta',
+      texto:`${comp.clubes.length} clubes`}));
+    for(const fase of comp.mata){
+      const meus = fase.jogos.filter(j=>j.c===meu||j.f===meu);
+      const mostra = meus.length ? meus : fase.jogos.slice(0,4);
+      q.corpo.appendChild(el('div',{class:'fase-rot',
+        texto:`${fase.fase} · semana ${fase.semana}`+
+              (meus.length?'':` · ${fase.jogos.length} jogos`)}));
+      for(const j of mostra){
+        const feito = j.gc!=null;
+        q.corpo.appendChild(el('div',{class:'jogo-chave'+
+          (j.c===meu||j.f===meu?' meu':''), html:
+          `<span class="a ${j.venceu===j.c?'venceu':''}">${nomeClube(j.c)}</span>
+           <b>${feito?`${j.gc} × ${j.gf}`:'—'}</b>
+           <span class="b ${j.venceu===j.f?'venceu':''}">${nomeClube(j.f)}</span>
+           ${j.agregado?`<em>${j.agregado}</em>`:j.penaltis?'<em>pênaltis</em>':''}`}));
+        if(j.neutro) q.corpo.appendChild(el('div',{class:'sub-chave',
+          texto:`campo neutro · ${j.neutro}`}));
+      }
+    }
+    if(!comp.mata.length)
+      q.corpo.innerHTML = '<div class="em-construcao">A copa começa na semana '+
+        `${comp.semanaInicio}.</div>`;
+    return q;
   }
 
   function painelHistorico(e){
@@ -1103,10 +1138,11 @@
     cab.appendChild(pro);
     q.appendChild(cab);
 
-    /* agenda do clube indexada por semana */
+    /* agenda do clube indexada por semana e dia: numa semana de Copa do
+       Brasil tem jogo na quarta e no sábado */
     const agenda = new Map();
     for(const j of C.agendaDoClube(e, e.torcida.clubeId))
-      if(!agenda.has(j.semana)) agenda.set(j.semana, j);
+      agenda.set(`${j.semana}/${j.dia}`, j);
 
     const grade = el('div',{class:'mes'});
     for(const d of DIA_CURTO) grade.appendChild(el('div',{class:'cab', texto:d}));
@@ -1137,28 +1173,31 @@
 
     cel.appendChild(el('span',{class:'n', texto:String(d.getDate())}));
 
-    if(sd && sd.ano===e.data.ano && d.getMonth()===mesAtual){
-      const j = agenda.get(sd.semana);
-      const viaja = sd.semana===e.data.semana && TO.financeiro.temCaravana(e);
+    if(sd && sd.ano===e.data.ano){
+      const j = agenda.get(`${sd.semana}/${sd.dia}`);
+      const cv = sd.semana===e.data.semana ? TO.financeiro.diasDeCaravana(e) : [];
 
-      if(j && sd.dia===TO.estado.DIA_JOGO){
+      if(j){
         classes.push('jogo');
         cel.appendChild(el('span',{class:'rot', html:
           `<i style="background:${corClube(j.adversario)}"></i>`+
           `${j.casa?'':'@ '}${nomeClube(j.adversario)}`}));
         cel.appendChild(el('span',{class:'sub',
-          texto: j.jogado ? `${j.gp} × ${j.gc}` : `${j.comp} · ${j.casa?'casa':'fora'}`}));
-      }else if(viaja && (sd.dia===5 || sd.dia===7)){
+          texto: j.jogado ? `${j.gp} × ${j.gc}`
+               : `${j.comp} · ${j.neutro ? 'neutro' : j.casa?'casa':'fora'}`}));
+      }else if(cv.includes(sd.dia)){
         classes.push('caravana');
         cel.appendChild(el('span',{class:'rot', html:
           `${IC.get('onibus')}Caravana`}));
         cel.appendChild(el('span',{class:'sub',
-          texto:`${sd.dia===5?'IDA':'VOLTA'} · ${e.proximoJogo.cidadeAdv||''}`}));
+          texto:`${sd.dia===cv[0]?'IDA':'VOLTA'} · ${e.proximoJogo.cidadeAdv||''}`}));
       }else{
+        /* a rotina fica registrada no calendário, inclusive nos dias
+           que transbordam pro mês vizinho */
         const id = (e.rotina||{})[sd.dia];
         const a = id && TO.acoes.porId(id);
         if(a) cel.appendChild(el('span',{class:'acao',
-          html:`${IC.get(a.icone)}${a.nome}`}));
+          html:`${IC.get(a.icone)}<span>${a.nome}</span>`}));
       }
     }
     cel.className = 'dia ' + classes.join(' ');
@@ -1242,7 +1281,7 @@
                    </tr></thead>`;
     const tb = el('tbody');
     for(const j of lista){
-      const d = TO.estado.dataDaSemana(e.data.ano, j.semana, TO.estado.DIA_JOGO);
+      const d = TO.estado.dataDaSemana(e.data.ano, j.semana, j.dia);
       const agora = j.semana===e.data.semana;
       const tr = el('tr',{class:agora?'meu':''});
       tr.innerHTML =
@@ -1533,7 +1572,7 @@
     /* o que a rotina fez sozinha enquanto o jogador avançava os dias */
     const fila = E().avisos;
     if(fila && fila.length){
-      for(const a of fila.splice(0, fila.length)) aviso(a.msg, a.tipo);
+      for(const a of fila.splice(0, fila.length).slice(-4)) aviso(a.msg, a.tipo);
     }
     pintarTopo();
     trocarPagina();

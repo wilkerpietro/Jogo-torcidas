@@ -151,10 +151,18 @@ TO.financeiro = (function(){
     ];
   }
 
+  /* véspera e dia seguinte ao jogo, quando a torcida viaja (GDD §7.3) */
+  function diasDeCaravana(E){
+    if(!temCaravana(E)) return [];
+    const d = (E.proximoJogo && E.proximoJogo.dia) || 6;
+    return [d-1, d+1].filter(x=>x>=1 && x<=7);
+  }
+
   function definirPostura(E, id){
     E.postura = id;
     /* trocou depois da véspera? cobra na hora, senão o jogo sai de graça */
-    if(id==='viajar' && E.data.dia >= 5) cobrarCaravana(E);
+    const d = (E.proximoJogo && E.proximoJogo.dia) || 6;
+    if(id==='viajar' && E.data.dia >= d-1) cobrarCaravana(E);
     return E.postura;
   }
 
@@ -217,6 +225,11 @@ TO.financeiro = (function(){
       E.semanasNoVermelho = 0;
     }
 
+    /* o que a rotina semanal tentou e não conseguiu */
+    for(const [nome, msg] of Object.entries(E.acoes.rotinaFalha || {}))
+      rel.avisos.push(`Rotina: ${nome} não rodou — ${msg}.`);
+    E.acoes.rotinaFalha = {};
+
     rel.promoveis = E.membros.filter(m=>TO.membros.podePromover(E,m).ok).length;
     rel.caixaDepois = E.dinheiro;
 
@@ -250,7 +263,7 @@ TO.financeiro = (function(){
   }
 
   return {contas, patrimonio, fatorComercial, bairroDeFora,
-          precisaCaravana, temCaravana, cobrarCaravana,
+          precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana,
           posturas, definirPostura, fecharSemana,
           MANUT_SEDE, RECEITA, MANUT, CARAVANA, SEM};
 })();

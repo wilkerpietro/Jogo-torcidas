@@ -145,6 +145,13 @@ TO.competicoes = (function(){
                   'Brasileirão Série C','Brasileirão Série D'];
   const TROCA = 4;
 
+  /* Dia da semana de cada competição. Estadual e Brasileirão no sábado
+     (dia 6); a Copa do Brasil no meio de semana, que é como ela cabe
+     junto com os pontos corridos sem ninguém jogar duas vezes no
+     mesmo dia. */
+  const DIA_FDS  = 6;
+  const DIA_MEIO = 3;
+
   function criarCompeticao(id, nome, tipo, clubes, cfg, semanaInicio, finalEm){
     const grupos = cfg.grupos > 1 ? dividirGrupos(clubes, cfg.grupos) : [clubes];
     const porGrupo = grupos.map(g=>roundRobin(g, cfg.voltas));
@@ -162,7 +169,7 @@ TO.competicoes = (function(){
       id, nome, tipo,
       clubes, grupos: grupos.map(g=>[...g]),
       passam: cfg.passam, voltas: cfg.voltas,
-      semanaInicio, finalEm: finalEm || null,
+      semanaInicio, finalEm: finalEm || null, dia: DIA_FDS,
       rodadas, mata:[], campeao:null, vice:null,
       /* série com pontos corridos não tem mata-mata: campeão é o líder */
       pontosCorridos: !!cfg.pontosCorridos
@@ -193,10 +200,18 @@ TO.competicoes = (function(){
          janela de janeiro a março, o returno é o primeiro a cair */
       if(semanasQuePrecisa(cfg, clubes.length) > janela && (cfg.voltas||1) > 1)
         cfg = Object.assign({}, cfg, {voltas:1});
-      /* toda final de estadual cai na mesma semana, a véspera do
-         Brasileirão: é o fim de semana de decisão do ano */
+
+      /* Toda final cai na mesma semana, a véspera do Brasileirão, e a
+         fase de grupos termina na semana anterior à primeira partida do
+         mata-mata. Quem tem chave mais longa começa antes; ninguém fica
+         com buraco no meio da competição. */
+      const chaves = Math.ceil(Math.log2(Math.max(2, (cfg.passam||2)*(cfg.grupos||1))));
+      const primeiraChave = FINAL_REGIONAL - (chaves - 1);
+      const rodadas = semanasQuePrecisa(cfg, clubes.length) - chaves;
+      const inicio = Math.max(INICIO_REGIONAL, primeiraChave - rodadas);
+
       comps.push(criarCompeticao(U.identificador(nome), nome, 'regional',
-        clubes, cfg, INICIO_REGIONAL, FINAL_REGIONAL));
+        clubes, cfg, inicio, FINAL_REGIONAL));
     }
 
     /* ---- fase 2: Brasileirão (GDD §18.2) ---- */
@@ -216,12 +231,176 @@ TO.competicoes = (function(){
         clubes, cfg, INICIO_NACIONAL));
     }
 
+    /* ---- a Copa do Brasil corre por dentro, no meio de semana ---- */
+    comps.push(criarCopa(E));
+
     return {
       ano: E.data.ano,
       competicoes: comps,
       /* histórico de campeões, pra tela de conquistas mais tarde */
       titulos: (E.temporada && E.temporada.titulos) || []
     };
+  }
+
+  /* =======================================================
+     COPA DO BRASIL
+     Chave direta, sem grupos. Entra todo mundo menos a Série
+     A, que só aparece na segunda fase. Jogo único até as
+     oitavas; da oitava à semi, ida e volta; final em campo
+     neutro.
+     ======================================================= */
+  /* Uma fase a cada três semanas, na quarta-feira; ida e volta em
+     semanas seguidas. A final é o último jogo do ano e sai do meio de
+     semana: fecha a temporada depois da última rodada do Brasileirão. */
+  const COPA_FASES = [
+    {fase:'Primeira fase', semanas:[15]},
+    {fase:'Segunda fase',  semanas:[18], entram:'Brasileirão Série A'},
+    {fase:'Terceira fase', semanas:[21]},
+    {fase:'Oitavas',       semanas:[24,25]},
+    {fase:'Quartas',       semanas:[28,29]},
+    {fase:'Semifinal',     semanas:[32,33]},
+    {fase:'Final',         semanas:[SEMANAS_ANO], neutro:true, dia:DIA_FDS}
+  ];
+  const COPA_NOME = 'Copa do Brasil';
+
+  const forcaDivisao = (E, id)=>{
+    const t = M().time(id);
+    const i = ESCADA.indexOf(divisaoDe(E, t||{}));
+    return i < 0 ? ESCADA.length : i;      // 0 = Série A, maior = pior
+  };
+
+  /* Quem manda no jogo único: o clube da divisão mais alta, como o
+     autor definiu pra primeira fase (B e C recebem a D). Empate de
+     divisão, decide a qualidade. */
+  function mandante(E, a, b){
+    const fa = forcaDivisao(E,a), fb = forcaDivisao(E,b);
+    if(fa !== fb) return fa < fb ? [a,b] : [b,a];
+    return qual(a) >= qual(b) ? [a,b] : [b,a];
+  }
+
+  function criarCopa(E){
+    const T = M().todosTimes;
+    const daSerieA = T.filter(t=>divisaoDe(E,t)===ESCADA[0]).map(t=>t.id);
+    const resto    = T.filter(t=>divisaoDe(E,t)!==ESCADA[0]).map(t=>t.id);
+
+    /* Primeira fase: B e C mandam em casa, e pra isso cada um deles pega
+       um clube da D. O que sobrar da D se enfrenta entre si. */
+    const bc = resto.filter(id=>forcaDivisao(E,id) <= 2);
+    const d  = U.embaralhar(resto.filter(id=>forcaDivisao(E,id) > 2));
+    const jogos = [];
+    for(const casa of U.embaralhar(bc)){
+      const fora = d.length ? d.shift() : null;
+      if(fora) jogos.push({c:casa, f:fora});
+      else jogos.push({c:casa, f:null});
+    }
+    while(d.length >= 2){
+      const [a,b] = mandante(E, d.shift(), d.shift());
+      jogos.push({c:a, f:b});
+    }
+
+    return {
+      id:'copa-do-brasil', nome:COPA_NOME, tipo:'copa', copa:true,
+      clubes:[...resto, ...daSerieA],
+      grupos:[], passam:0, voltas:1, pontosCorridos:false,
+      semanaInicio: COPA_FASES[0].semanas[0], finalEm: null,
+      dia: DIA_MEIO,
+      rodadas:[],
+      mata:[{fase:COPA_FASES[0].fase, semana:COPA_FASES[0].semanas[0],
+             dia:DIA_MEIO, jogos, indice:0, perna:'unica'}],
+      esperando: daSerieA,          // entram na segunda fase
+      faseAtual:0, campeao:null, vice:null
+    };
+  }
+
+  /* soma dos dois jogos; empatou, pênaltis */
+  function decidirAgregado(comp, volta){
+    const ida = comp.mata.find(m=>m.indice===volta.indice && m.perna==='ida');
+    for(const v of volta.jogos){
+      const i = (ida ? ida.jogos : []).find(x=>x.par===v.par);
+      if(!i) { v.venceu = v.gc>v.gf ? v.c : v.f; continue; }
+      const golsC = i.gc + v.gf;   // o mandante da ida é o visitante da volta
+      const golsF = i.gf + v.gc;
+      v.agregado = `${golsC} × ${golsF}`;
+      v.venceu = golsC>golsF ? i.c : golsF>golsC ? i.f : penaltis(i.c, i.f);
+      v.penaltis = golsC===golsF;
+    }
+    return volta.jogos.map(j=>j.venceu);
+  }
+
+  /* Estádio da final: o maior do país que não seja casa de nenhum dos
+     dois. Filtra por nome de estádio, não por clube — dois clubes podem
+     dividir o mesmo campo, e aí ele não é neutro pra nenhum deles. */
+  function campoNeutro(a, b){
+    const deles = new Set([a,b].map(id=>(M().time(id)||{}).estadio).filter(Boolean));
+    const fora = M().todosTimes
+      .filter(t=>t.estadio && !deles.has(t.estadio))
+      .sort((x,y)=>(y.capacidade||0)-(x.capacidade||0))[0];
+    return fora ? fora.estadio : 'campo neutro';
+  }
+
+  function avancarCopa(E, comp, semana){
+    if(comp.campeao) return;
+    const ult = comp.mata[comp.mata.length-1];
+    if(!ult || ult.jogos.some(j=>j.f && !temJogo(j))) return;
+
+    /* decide quem passou */
+    let vivos;
+    if(ult.perna === 'volta') vivos = decidirAgregado(comp, ult);
+    else {
+      for(const j of ult.jogos){
+        if(!j.f){ j.venceu = j.c; continue; }          // sem adversário, passa direto
+        j.venceu = j.gc>j.gf ? j.c : j.gf>j.gc ? j.f : penaltis(j.c, j.f);
+        j.penaltis = j.gc===j.gf;
+      }
+      vivos = ult.jogos.map(j=>j.venceu);
+    }
+    if(ult.perna === 'ida') return;                    // espera a volta
+
+    const passo = COPA_FASES[comp.faseAtual];
+    if(passo.fase === 'Final'){
+      comp.campeao = vivos[0];
+      const f = ult.jogos[0];
+      comp.vice = f.venceu===f.c ? f.f : f.c;
+      return;
+    }
+
+    comp.faseAtual++;
+    const prox = COPA_FASES[comp.faseAtual];
+    if(!prox) return;
+
+    /* os vinte da Série A entram na fase que a tabela mandar */
+    let chave = [...vivos];
+    if(prox.entram && comp.esperando && comp.esperando.length){
+      chave = chave.concat(comp.esperando);
+      comp.esperando = [];
+    }
+    if(chave.length < 2){ comp.campeao = chave[0] || null; return; }
+
+    /* sorteio: embaralha e emparelha, definindo o mando na hora */
+    const sorteio = U.embaralhar(chave);
+    const pares = [];
+    for(let i=0;i+1<sorteio.length;i+=2){
+      const [casa, fora] = mandante(E, sorteio[i], sorteio[i+1]);
+      pares.push([casa, fora]);
+    }
+
+    const dia = prox.dia || comp.dia;
+    const idaEVolta = prox.semanas.length > 1;
+    if(idaEVolta){
+      /* quem tem melhor campanha decide em casa, então joga a volta
+         como mandante (GDD §18.5) */
+      comp.mata.push({fase:`${prox.fase} · ida`, semana:prox.semanas[0], dia,
+        indice:comp.faseAtual, perna:'ida',
+        jogos:pares.map(([a,b],k)=>({c:b, f:a, par:k}))});
+      comp.mata.push({fase:`${prox.fase} · volta`, semana:prox.semanas[1], dia,
+        indice:comp.faseAtual, perna:'volta',
+        jogos:pares.map(([a,b],k)=>({c:a, f:b, par:k}))});
+    }else{
+      const jogos = pares.map(([a,b],k)=>({c:a, f:b, par:k}));
+      if(prox.neutro && jogos[0]) jogos[0].neutro = campoNeutro(jogos[0].c, jogos[0].f);
+      comp.mata.push({fase:prox.fase, semana:prox.semanas[0], dia,
+        indice:comp.faseAtual, perna:'unica', jogos});
+    }
   }
 
   /* =======================================================
@@ -281,15 +460,20 @@ TO.competicoes = (function(){
       for(const m of comp.mata){
         if(m.semana !== semana) continue;
         for(const j of m.jogos){
+          if(!j.f) continue;                       // passou sem jogar
           if(j.gc !== undefined && j.gc !== null) continue;
           const [a,b] = simular(j.c, j.f);
           j.gc = a; j.gf = b;
-          j.venceu = a>b ? j.c : b>a ? j.f : penaltis(j.c, j.f);
-          j.penaltis = a===b;
+          /* em ida e volta quem decide é o agregado, não a partida */
+          if(m.perna !== 'ida' && m.perna !== 'volta'){
+            j.venceu = a>b ? j.c : b>a ? j.f : penaltis(j.c, j.f);
+            j.penaltis = a===b;
+          }
           feitos.push({comp:comp.id, ...j});
         }
       }
-      avancarFase(comp, semana);
+      if(comp.copa) avancarCopa(E, comp, semana);
+      else avancarFase(comp, semana);
     }
     return feitos;
   }
@@ -364,25 +548,37 @@ TO.competicoes = (function(){
       const junta = (r, fase, mata)=>{
         for(const j of r.jogos){
           if(j.c!==clubeId && j.f!==clubeId) continue;
+          if(!j.f) continue;                     /* passou sem adversário */
           const casa = j.c===clubeId;
-          fora.push({semana:r.semana, comp:comp.nome, compId:comp.id,
+          fora.push({semana:r.semana, dia:r.dia || comp.dia || DIA_FDS,
+                     comp:comp.nome, compId:comp.id,
                      tipo:comp.tipo, fase, mata:!!mata,
-                     casa, adversario: casa ? j.f : j.c,
+                     casa: j.neutro ? false : casa, neutro: j.neutro||null,
+                     adversario: casa ? j.f : j.c,
                      gp: temJogo(j) ? (casa?j.gc:j.gf) : null,
                      gc: temJogo(j) ? (casa?j.gf:j.gc) : null,
                      jogado: temJogo(j), penaltis: !!j.penaltis,
-                     venceu: j.venceu});
+                     agregado: j.agregado || null, venceu: j.venceu});
         }
       };
       comp.rodadas.forEach((r, i)=> junta(r,
         comp.grupos.length > 1 ? `Grupos · ${i+1}ª rodada` : `${i+1}ª rodada`, false));
       for(const m of comp.mata) junta(m, m.fase, true);
     }
-    return fora.sort((a,b)=>a.semana-b.semana);
+    return fora.sort((a,b)=>a.semana-b.semana || a.dia-b.dia);
   }
 
+  const jogosDaSemana = (E, clubeId, semana) =>
+    agendaDoClube(E, clubeId).filter(j=>j.semana===semana);
+
+  /* O jogo da semana pra torcida. Numa semana com rodada de pontos
+     corridos e jogo de copa, o que vale é o mata-mata: é dele que o
+     bairro fala a semana inteira. */
   function jogoDaSemana(E, clubeId, semana){
-    return agendaDoClube(E, clubeId).find(j=>j.semana===semana) || null;
+    const lista = jogosDaSemana(E, clubeId, semana);
+    if(!lista.length) return null;
+    const peso = j => (j.mata ? 2 : 0) + (j.dia===DIA_FDS ? 1 : 0);
+    return lista.slice().sort((a,b)=>peso(b)-peso(a))[0];
   }
 
   /* competições rolando nesta semana, pra tela de calendário */
@@ -478,10 +674,12 @@ TO.competicoes = (function(){
      38", não "grupos" e "chave" em lugares diferentes.
      ======================================================= */
   function etapas(comp){
+    const dia = comp.dia || DIA_FDS;
     const fora = comp.rodadas.map((r,i)=>({
-      rot:`Rodada ${i+1}`, semana:r.semana, jogos:r.jogos, mata:false}));
+      rot:`Rodada ${i+1}`, semana:r.semana, dia, jogos:r.jogos, mata:false}));
     for(const m of comp.mata)
-      fora.push({rot:m.fase, semana:m.semana, jogos:m.jogos, mata:true});
+      fora.push({rot:m.fase, semana:m.semana, dia:m.dia||dia,
+                 jogos:m.jogos, mata:true});
     return fora;
   }
 
@@ -505,6 +703,7 @@ TO.competicoes = (function(){
 
   return {montarTemporada, jogarSemana, tabela, agendaDoClube, jogoDaSemana,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
+          jogosDaSemana, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
           aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,
           SEMANAS_ANO, INICIO_REGIONAL, INICIO_NACIONAL};
 })();

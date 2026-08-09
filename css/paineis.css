@@ -192,6 +192,8 @@ table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
 .jogo-chave .venceu{color:#fff;font-weight:600}
 .jogo-chave em{font-family:var(--mono);font-size:9px;color:var(--fraco);font-style:normal}
 .jogo-chave.meu{background:var(--rubro-fundo)}
+.sub-chave{font-family:var(--mono);font-size:9.5px;color:var(--ouro);
+  padding:3px 0 6px;text-align:center}
 
 /* ---------- calendário mensal ---------- */
 .mes-cab{
@@ -248,9 +250,11 @@ table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
 .mes .dia.caravana .n{color:var(--ouro)}
 .mes .dia.caravana .rot{color:var(--ouro);letter-spacing:.08em}
 .mes .dia .acao{
-  font-size:10.5px;color:#9fb8a5;display:flex;align-items:center;gap:5px;
+  font-size:10.5px;color:#9fb8a5;display:flex;align-items:flex-start;gap:5px;
+  line-height:1.3;
 }
-.mes .dia .acao svg{width:11px;height:11px;flex:none}
+.mes .dia .acao svg{width:11px;height:11px;flex:none;margin-top:1px}
+.mes .dia.fora-do-mes .acao{color:#5d6f62}
 
 /* ---------- rotina semanal ---------- */
 .recado{
