@@ -31,12 +31,14 @@ TO.diaJogo.ponte = (function(){
     montarBotoes();
     montarSliders();
     ligarEntrada();
-    novaNoite();
+    novaNoite(opc.config||{});
     if(!rodando){rodando=true; ant=performance.now(); requestAnimationFrame(quadro);}
   }
 
-  function novaNoite(){
-    J = C.criarEstado();
+  let config={};
+  function novaNoite(cfg){
+    if(cfg) config=cfg;
+    J = C.criarEstado(config);
     TO.diaJogo.J = J;
     atualizarBotoes();
   }
@@ -288,14 +290,39 @@ TO.diaJogo.ponte = (function(){
   function encerrar(motivo){
     if(!J||J.fase==='fim') return;
     J.fase='fim';
+
+    /* GDD §5.3 — XP de briga por escala: a média do tamanho dos dois
+       lados. Substitui a divisão binária briga grande / briga pequena,
+       que não resolvia casos como 8×12. */
+    const escala=(J.total.mandante+J.total.visitante)/2;
+    const xpBase = escala<=10?3 : escala<=30?6 : escala<=60?10 : 15;
+    const venceu = J.caidos.visitante > J.caidos.mandante;
+    const xpNoite = Math.round(xpBase * (venceu?1.5:1));
+
+    /* ficha por ficha: é isto que vira Ferido e Preso na gestão */
+    const membros=[];
+    for(const d of J.discos){
+      if(d.membroId==null) continue;
+      membros.push({
+        id:d.membroId,
+        caido:d.caido, preso:d.preso, entrou:d.entrou,
+        naRua:false,
+        xp: xpNoite + (d.entrou?1:0),
+        moral: d.preso?-4 : d.caido?-3 : venceu?+1.5 : -0.5
+      });
+    }
+
     const r={
       motivo,
       caidosMandante:J.caidos.mandante, caidosVisitante:J.caidos.visitante,
       presosMandante:J.presosPor.mandante, presosVisitante:J.presosPor.visitante,
       rompido:J.rompido,
       entraram:J.entraram,
+      venceu, xpNoite,
+      moralTorcida: venceu?+1 : (J.debandou&&J.debandou.mandante)?-2 : -0.5,
       prestigio: Math.round(J.caidos.visitante*2 - J.caidos.mandante*1.5
-                            - J.presosPor.mandante*2 + (J.rompido?6:0))
+                            - J.presosPor.mandante*2 + (J.rompido?6:0)),
+      membros
     };
     J.resultado=r;
     C.logar(J,`Encerrado (${motivo}). Prestígio ${r.prestigio>0?'+':''}${r.prestigio}.`,'p');
@@ -441,5 +468,6 @@ ${D.grades.map(g=>'    '+j(g)).join(',\n')}
   }
 
   return {montar, novaNoite, encerrar, alternarEditor, gerarArquivo,
+          get config(){return config;},
           get J(){return J;}};
 })();

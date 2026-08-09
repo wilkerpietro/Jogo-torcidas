@@ -1,0 +1,168 @@
+# TORCIDA ORGANIZADA — Estado do protótipo HTML
+
+Documento de passagem. Contém tudo que é preciso pra continuar o trabalho em outra conversa.
+
+---
+
+## 1. Decisão de arquitetura
+
+O jogo **saiu da Unity e foi pra HTML puro** rodando no navegador.
+
+O motivo: a Unity valia a pena enquanto o jogo era mundo aberto isométrico (tilemap, prefabs, sorting layers). Ao cortar o mapa navegável e adotar **cenas fixas**, o que sobrou é um jogo de telas, listas, números e decisões — e nisso DOM/CSS ganha da Unity com folga.
+
+**Divisão técnica:**
+- **DOM/CSS** para tudo que é gestão: sede, patrimônio, membros, finanças, calendário, diplomacia, WhatsApp. É ~90% do jogo.
+- **Canvas 2D** só para duas coisas: o mapa da cidade em dia de jogo e o combate por discos.
+- **JSON** para os dados (156 times, torcidas, bairros, competições).
+- **localStorage** para save, com botão de exportar/importar arquivo (o save preso ao navegador é frágil em jogo de temporadas longas).
+
+**Distribuição:** itch.io, sem instalador. Se um dia for pra Steam, usar **Tauri** (webview do sistema, ~10MB) e não Electron.
+
+**Limitações conhecidas do navegador:**
+- `requestAnimationFrame` congela quando a aba perde foco → tratar troca de foco como pausa explícita.
+- Salvar no meio de uma cena em tempo real quebra estado → bloquear save durante o deslocamento, com aviso.
+- Mapas em imagem pesam; usar WebP e resolução moderada (38 cidades × PNG de 4MB é inviável).
+
+---
+
+## 2. Arquivos gerados
+
+Todos em `/mnt/user-data/outputs/`.
+
+| Arquivo | O que é | Status |
+|---|---|---|
+| **`dia_de_jogo.html`** | **Protótipo principal.** Rua e arredores rodando juntos no mesmo relógio. | Atual, é onde continuar |
+| `combate_prototipo.html` | Briga isolada, 12×12, formações, debandada | Validado, mecânicas migradas |
+| `deslocamento_prototipo_v2.html` | Mapa da cidade isolado, bondes convergindo | Validado, mecânicas migradas |
+| `arredores_prototipo.html` | Arredores isolados (versão em anel, superada) | Obsoleto |
+| `deslocamento_prototipo.html` | Primeira versão do mapa (superada) | Obsoleto |
+
+**Só `dia_de_jogo.html` importa daqui pra frente.** Os outros servem de referência histórica.
+
+---
+
+## 3. O que existe hoje em `dia_de_jogo.html`
+
+Um arquivo único, sem dependências. Duas cenas rodando ao mesmo tempo no mesmo relógio, com mini-mapa da outra no canto inferior direito. **TAB** ou clique no mini alterna qual ocupa a tela grande.
+
+### 3.1 Cena RUA (mapa da cidade)
+
+Tamanho lógico 1080×880.
+
+- Malha viária 11×9 nós com Dijkstra simples (`caminho()`), avenidas nas colunas 3 e 7 e linhas 3 e 6 (25% mais rápidas).
+- Mar ao norte com faixa de areia, serra/mata ao sul.
+- Estádio fora do centro (nó 7,3) com cordão de polícia de raio 150 em volta.
+- 4 quarteirões especiais preenchidos: 1 terminal rodoviário + 3 praças.
+- 2 sedes sociais desenhadas como uma das casas de um quarteirão comum (sua vermelha, rival azul).
+- **Bondes:** até 5 seus + 1 do 2º escalão + até 6 visitantes. Zona com menos de 5 membros funde automaticamente com a vizinha.
+- **Estimativa imprecisa:** bonde rival aparece como faixa ("9–27"). **Olheiros** (discos dourados fixos) cravam o número exato e permanente quando o rival entra no raio deles.
+- **Viaturas** patrulham de verdade: escolhem destino distante, andam pelas ruas, e ao detectar dois bondes inimigos a menos de 115px dentro de um raio de 270px **largam a patrulha e correm a 2,1× a velocidade** pra cima. Chegando, dispersam: ~9% de prisões dos dois lados, −1,6 moral, rota refeita fugindo, e 20s de imunidade.
+- **Avistamento:** quando um bonde seu vê um rival a 150px, **o jogo inteiro pausa** e abre a decisão: partir pra cima ou mudar de rota. Se você estava nos arredores, a vista é puxada de volta pra rua.
+- **Comando por clique:** clique num bonde seu (anel dourado pulsando) e depois num ponto do mapa. Ele passa por lá e depois segue pro estádio.
+- Dentro do raio do estádio não abre mais decisão — lá é assunto dos arredores.
+
+### 3.2 Cena ARREDORES
+
+Tamanho lógico 1160×820.
+
+- **Esplanada em C**: só asfalto e estacionamento, sem casas. Três retângulos caminháveis (esquerda, topo, direita). O quarteirão do estádio encosta no fundo — **sem passagem por trás, sem flanqueio**.
+- Estádio com muro, arquibancada em setores, campo com linhas, refletores, estacionamento interno.
+- **6 portões** com vão no muro, bilheteria, gradis em serpentina e fila de torcedor comum (pontinhos claros).
+- Bares/botecos com toldo e mesas de plástico, ambulantes com carrinho e fumaça, postes com halo, árvores, ponto de ônibus, camburões da PM.
+- **Carros sólidos** nas vagas: disco não passa por cima, contorna. Vira obstáculo tático.
+- **Cordão de 13 muretas** atravessando a esplanada de cima, com 5 policiais entre elas que correm pra tapar buracos.
+- **Spawns:** sua torcida no pé da esquerda, 2º escalão no meio da esquerda, visitante no pé da direita.
+
+### 3.3 A costura entre as duas
+
+Quando um bonde termina o trajeto, **deixa de existir na rua e vira discos no portão dele**, com o efetivo e a moral que sobreviveram à viagem. Um bonde que apanhou na rua chega menor e desanimado.
+
+Avisos cruzados aparecem numa faixa vermelha embaixo do mini-mapa (chegada, PM dispersando, cordão rompido) sem tirar o jogador do que está fazendo.
+
+O painel lateral "Na rua" lista todos os bondes com estado e efetivo; clicar num seu já leva pra visão da rua com ele selecionado.
+
+### 3.4 Combate nos arredores
+
+- Discos com Força, Defesa, HP, moral individual. Raio 7 (líder 9) — proporcional ao estádio.
+- **Formações** (teclas 1–4): Bonde, Muralha, Investida, Espalhar. Slots relativos ao líder, que o jogador move com WASD.
+- **Arremessos:** Q pedra (infinita), E bomba (4 no estoque). Miram no rival mais perto ou na mureta.
+- **Ao romper 35% do cordão:** atenção policial vai a 100 e **6 policiais extras entram de uma vez** na brecha.
+- **Recuo (tecla R):** seu pessoal larga a briga e volta pra entrada, 15% mais rápido, sem revidar. Aperta de novo pra voltar.
+- **Recuo automático da IA:** 2º escalão e visitantes recuam sozinhos quando atenção >78 com polícia em cima, ou moral média <6. Voltam depois de 9s se esfriar.
+- **Debandada** a 45% de baixas: o lado inteiro corre pra fora.
+- **Prestígio final** = 2×caídos rivais − 1,5×seus − 2×presos + 6 se rompeu o cordão − 0,5×quem não chegou a tempo.
+
+---
+
+## 4. Parâmetros ajustáveis (objeto `P`, com sliders na tela)
+
+```
+ateJogo   200   segundos até a bola rolar
+minutos    42   minutos de jogo cobertos pelo trajeto
+duracao    70   segundos do trajeto mais longo
+efetivo    52   seu total de membros
+rivais      4   caravanas visitantes
+policiais   3   viaturas na rua
+olheiros    2   olheiros posicionados
+visao     150   px de alcance de avistamento
+contato    44   px pra fechar a briga na rua
+precisao   50   % de erro da estimativa sem olheiro
+velocidade 78   px/s dos discos
+dano      1.5   multiplicador global
+muretas    13   segmentos do cordão
+vidaMureta 420  resistência de cada mureta
+pmCordao    5   policiais no cordão
+forcaPM    16   dano do cassetete
+debandada  45   % de baixas que dispara a correria
+```
+
+---
+
+## 5. Calibragem pendente
+
+Rodei simulações sem navegador (Node com stubs de DOM/canvas) e o que ficou em aberto:
+
+- **O cordão pode estar duro demais.** Com 13 muretas, só 1 a 5 caem sozinhas numa partida e quase ninguém se pega. Romper virou conquista, o que é bom, mas talvez esteja inalcançável pro jogador mesmo empurrando. Mexer em `vidaMureta` e `dano`.
+- **Prestígio** variou de −13 a +45 entre partidas nas versões anteriores — variação boa, mas precisa reconferir com a esplanada nova.
+- Recarga de pedra em 2s pode ficar frequente demais com efetivo alto.
+
+---
+
+## 6. Ideias levantadas e ainda não implementadas
+
+**Fila do torcedor comum como recurso.** Hoje os pontinhos na fila são enfeite. Se atravessar a fila atrasasse o bonde e derrubasse a Satisfação (que o GDD já tem), o jogador escolheria entre o caminho rápido e o caminho limpo — e a PM reagiria mais rápido a confusão perto dela.
+
+**Entrar no estádio por portão, não por botão.** Hoje ENTER encerra de qualquer lugar. Se cada disco precisasse chegar fisicamente ao portão, romper o cordão ganharia risco real: você se afasta da sua entrada e, se a PM carregar, seu pessoal está longe demais pra escapar.
+
+**Prestígio dividido em duas contas** — uma com o rival, outra com o 2º escalão do próprio clube. Dominar os arredores enquanto o outro escalão apanha deveria subir sua posição na hierarquia interna. É a ideia mais forte que apareceu nas conversas e ainda não existe em nenhum número.
+
+**Custo de transporte do bonde** (van, ônibus fretado, ou a pé de graça e chegando tarde) — daria uma terceira variável à escolha de rota e ligaria o sistema financeiro ao dia de jogo.
+
+**Divisão pra cercar dando função de combate à Diretoria** — cada grupo dividido precisa de uma âncora; com 2 Diretores divide em dois, com 4 divide em três. Se o Diretor âncora cai, o grupo perde coesão e volta pro líder.
+
+**Personalidade dos pontos de encontro** — terminal (fechado, PM chega rápido), praça (aberto, briga espalha), avenida (larga, favorece linha). Hoje todos funcionam igual.
+
+---
+
+## 7. Decisões de design já fechadas (não reabrir sem motivo)
+
+- **Cenas fixas, não mundo aberto.** ~8 templates: sede, bar/loja, arredores do estádio, estrada, alvo comercial genérico (4 skins), praça, delegacia, CT do clube.
+- **1 a 3 ações por semana**, definidas pelo nível da sede. Upgradar a sede compra tempo, não só dinheiro.
+- **NPCs em combate são discos** estilo futebol de botão, com nome em cima. Bonecos exigiriam sprite por variação/ação/direção.
+- **Duas lojas separadas:** clandestina (consumíveis: bomba, rojão, sinalizador — pedra é infinita e fraca) e de materiais (patrimônio: bambu, faixa, bandeirão, bateria — pode ser roubado em derrota).
+- **A briga termina por quebra de linha e debandada**, não por aniquilação.
+- **Líder é âncora física**, não cursor de comando. Formação é a decisão principal.
+- **Número de rival é estimativa**, não valor exato. Olheiro estreita a margem.
+- **3 layouts de mapa de cidade** (Grande/Médio/Pequeno) reutilizados pelas 38 cidades; o que muda é onde ficam sede, subsedes e estádio.
+- **Nunca dois jogos do mesmo time no mesmo dia.**
+- **Em jogo do rival** o jogador pode ver o deslocamento deles e colocar um bonde na rua pra emboscar.
+- **Como visitante**, sai da subsede de um aliado (se houver) ou da entrada da cidade; mapa hostil com mais bondes rivais.
+- **A cidade não tem rio nem ponte** — no máximo praia ao norte.
+
+---
+
+## 8. Próximo passo recomendado
+
+Costurar o dia de jogo com a **versão de gestão HTML que já existe** (rodada no Claude Code): membros reais viram os discos, e as baixas voltam como Feridos e Presos no sistema de membros. Isso fecha o loop da semana e entrega o vertical slice de verdade — uma cidade, uma torcida, um rival.
+
+Só depois expandir cidades, times e competições. Conteúdo em cima de um core que funciona é trabalho braçal previsível; conteúdo em cima de um core que não funciona é trabalho jogado fora.

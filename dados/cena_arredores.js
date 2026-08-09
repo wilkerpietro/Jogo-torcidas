@@ -184,11 +184,11 @@ TO.dados.cenaArredores = {
     {id:'fila_v1', pontos:[[1295,170],[1367,163]], espessura:9},
     {id:'fila_v2', pontos:[[1265,324],[1300,320],[1325,297],[1398,285],[1391,365]], espessura:9},
     {id:'fila_v3', pontos:[[1190,383],[1337,402]], espessura:9},
-    /* encurtada: no traço original ela ia da quina da praça até o prédio,
-       sem vão nenhum, e selava o corredor leste — o 1º escalão visitante
-       não chegava ao portão. Com o vão a leste, o zigue-zague fecha:
-       passa por aqui, depois pelo vão leste da v3, depois pelo oeste da v2. */
-    {id:'fila_v4', pontos:[[1267,460],[1352,459]], espessura:9}
+    /* Encosta na parede do lado direito: passagem obrigatória pela
+       esquerda. O corredor aqui tem 92 px (x 1270 a 1362, prédio em
+       ~1368), então o vão de ~34 px na esquerda é o que cabe sem selar
+       — e é ele que obriga o visitante a fazer a curva. */
+    {id:'fila_v4', pontos:[[1304,460],[1378,458]], espessura:9}
   ],
 
   grades:[

@@ -19,8 +19,24 @@ RAIZ = pathlib.Path(__file__).resolve().parent.parent
 UA = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36'}
 
 CSS = ['css/base.css', 'css/paineis.css', 'css/cenas.css']
-JS = ['js/nucleo.js', 'dados/nomes.js', 'dados/cena_arredores.js',
-      'js/diajogo/arredores.js', 'js/diajogo/combate.js', 'js/diajogo/ponte.js']
+
+# dois alvos: a cena solta (pra calibrar) e o jogo inteiro (pra jogar)
+ALVOS = {
+    'cena': {
+        'pagina': 'arredores.html',
+        'js': ['js/nucleo.js', 'dados/nomes.js', 'dados/cena_arredores.js',
+               'js/diajogo/arredores.js', 'js/diajogo/combate.js', 'js/diajogo/ponte.js'],
+        'inicio': 'TO.diaJogo.ponte.montar();',
+    },
+    'jogo': {
+        'pagina': 'index.html',
+        'js': ['js/nucleo.js', 'dados/nomes.js', 'dados/cena_arredores.js',
+               'js/gestao/membros.js', 'js/estado.js',
+               'js/diajogo/arredores.js', 'js/diajogo/combate.js', 'js/diajogo/ponte.js',
+               'js/main.js'],
+        'inicio': '',
+    },
+}
 
 FONTES = [
     ('Barlow Condensed', 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700'),
@@ -61,6 +77,9 @@ def baixar_fontes():
 
 def main():
     parcial = '--parcial' in sys.argv
+    alvo = 'jogo' if '--jogo' in sys.argv else 'cena'
+    cfg = ALVOS[alvo]
+    JS = cfg['js']
 
     css = '\n'.join((RAIZ / c).read_text(encoding='utf-8') for c in CSS)
     # o @import de CDN nao sobrevive a CSP restrito; as fontes vao embutidas
@@ -77,19 +96,21 @@ def main():
 
     fontes = baixar_fontes()
 
-    corpo = (RAIZ / 'arredores.html').read_text(encoding='utf-8')
+    corpo = (RAIZ / cfg['pagina']).read_text(encoding='utf-8')
     corpo = corpo.split('<body>', 1)[1].split('</body>', 1)[0]
     # tira as tags de script externas: tudo ja esta embutido
     corpo = re.sub(r'<script[^>]*src=[^>]*></script>\s*', '', corpo)
-    corpo = re.sub(r'<script>\s*TO\.diaJogo\.ponte\.montar\(\);\s*</script>\s*', '', corpo)
+    corpo = re.sub(r'<script>[^<]*</script>\s*', '', corpo)
 
-    titulo = '' if parcial else '<title>Arredores do estádio — Torcida Organizada</title>\n'
+    nomes = {'cena': 'Arredores do estádio', 'jogo': 'Torcida Organizada'}
+    titulo = '' if parcial else f'<title>{nomes[alvo]}</title>\n'
     saida = (titulo +
              '<style>\n' + fontes + '\n' + css + '\n</style>\n' +
              corpo +
-             '\n<script>\n' + js + '\nTO.diaJogo.ponte.montar();\n</script>\n')
+             '\n<script>\n' + js + '\n' + cfg['inicio'] + '\n</script>\n')
 
-    destino = RAIZ / 'dist' / ('arredores_artifact.html' if parcial else 'arredores_unico.html')
+    base = 'arredores' if alvo == 'cena' else 'jogo'
+    destino = RAIZ / 'dist' / (f'{base}_artifact.html' if parcial else f'{base}_unico.html')
     destino.parent.mkdir(exist_ok=True)
     destino.write_text(saida, encoding='utf-8')
     print(f'\n{destino.relative_to(RAIZ)}  —  {len(saida.encode())/1024:.0f} KB')

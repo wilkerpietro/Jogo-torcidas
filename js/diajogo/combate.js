@@ -97,16 +97,47 @@ TO.diaJogo.combate = (function(){
     for(const g of J.grades){ g.hpMax=P.vidaGrade; g.hp=P.vidaGrade; }
     for(const p of D.pmPostos) J.policiais.push(new Policial(p));
 
-    /* ---- povoa cada spawn ---- */
+    /* ---- povoa cada spawn ----
+       Com escalação, cada disco É um membro: nome, força, defesa e moral
+       vêm da ficha, e o id volta no fim pra virar Ferido ou Preso.
+       Sem escalação (página solta da cena), gera gente fictícia. */
     const nomes=U.embaralhar(TO.dados.nomes ? TO.dados.nomes.apelidos : ['TROVÃO']);
     let iN=0;
+
+    const spawnsMandante=D.spawns.filter(s=>s.lado==='mandante');
+    const porSpawn=new Map(spawnsMandante.map(s=>[s.id,[]]));
+    if(cfg.escalacao && cfg.escalacao.length){
+      /* o mais rodado vai no bonde do jogador e vira o líder */
+      const fila=[...cfg.escalacao].sort((a,b)=>b.xp-a.xp);
+      const doJogador=spawnsMandante.find(s=>s.jogador)||spawnsMandante[0];
+      porSpawn.get(doJogador.id).push(fila.shift());
+      let k=0;
+      for(const m of fila){
+        const s=spawnsMandante[k++%spawnsMandante.length];
+        porSpawn.get(s.id).push(m);
+      }
+    }
+
     for(const s of D.spawns){
-      const alvo = s.lado==='mandante' ? P.efetivo : P.efetivoRival;
-      const qtd  = Math.max(1, Math.round(alvo / contarSpawns(s.lado)));
+      const escalados = porSpawn.get(s.id);
+      const qtd = escalados && escalados.length ? escalados.length
+                : Math.max(1, Math.round(
+                    (s.lado==='mandante'?P.efetivo:P.efetivoRival)/contarSpawns(s.lado)));
       for(let i=0;i<qtd;i++){
         const p=A.pontoLivreMaisProximo(s.x+U.entre(-46,46), s.y+U.entre(-46,46), 7);
-        const d=new Disco((nomes[iN++%nomes.length]||'ZÉ').toUpperCase(),
-                          s.lado, s, p.x, p.y, s.jogador && i===0);
+        const m = escalados && escalados[i];
+        const lider = !!s.jogador && i===0;
+        const d=new Disco(
+          m ? m.apelido.toUpperCase() : (nomes[iN++%nomes.length]||'ZÉ').toUpperCase(),
+          s.lado, s, p.x, p.y, lider);
+        if(m){
+          d.membroId=m.id;
+          d.forca=m.forca; d.defesa=m.defesa; d.moral=m.moral;
+          /* defesa vira resistência: quem apanha melhor cai depois */
+          d.hpMax = 90 + m.defesa*7 + (lider?60:0);
+          d.hp=d.hpMax;
+          d.cargo=m.cargo;
+        }
         d.doJogador = !!s.jogador;   // só o seu bonde obedece à formação
         J.discos.push(d);
       }
