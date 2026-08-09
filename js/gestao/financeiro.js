@@ -151,9 +151,13 @@ TO.financeiro = (function(){
     ];
   }
 
-  /* véspera e dia seguinte ao jogo, quando a torcida viaja (GDD §7.3) */
+  /* GDD §7.3: véspera e dia seguinte da viagem ficam travados. Vale
+     sempre que o jogo é fora, em outra cidade — a torcida está
+     organizando ou desfazendo a caravana, e a semana perde esses dias
+     mesmo que no fim ninguém embarque. Jogo de domingo não tem volta
+     na mesma semana. */
   function diasDeCaravana(E){
-    if(!temCaravana(E)) return [];
+    if(!precisaCaravana(E)) return [];
     const d = (E.proximoJogo && E.proximoJogo.dia) || 6;
     return [d-1, d+1].filter(x=>x>=1 && x<=7);
   }

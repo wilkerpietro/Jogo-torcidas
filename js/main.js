@@ -1140,9 +1140,18 @@
 
     /* agenda do clube indexada por semana e dia: numa semana de Copa do
        Brasil tem jogo na quarta e no sábado */
-    const agenda = new Map();
-    for(const j of C.agendaDoClube(e, e.torcida.clubeId))
+    const agenda = new Map(), caravanas = new Map();
+    for(const j of C.agendaDoClube(e, e.torcida.clubeId)){
       agenda.set(`${j.semana}/${j.dia}`, j);
+      /* jogo fora, em outra cidade: a véspera e o dia seguinte são da
+         caravana e a semana perde esses dias (GDD §7.3) */
+      if(j.casa || j.neutro) continue;
+      const t = TO.mundo.time(j.adversario);
+      if(!t || t.mapa === e.torcida.mapa) continue;
+      const cidade = (TO.mundo.cidade(t.mapa)||{}).nome || t.cidade || '';
+      if(j.dia-1 >= 1) caravanas.set(`${j.semana}/${j.dia-1}`, {rot:'IDA', cidade});
+      if(j.dia+1 <= 7) caravanas.set(`${j.semana}/${j.dia+1}`, {rot:'VOLTA', cidade});
+    }
 
     const grade = el('div',{class:'mes'});
     for(const d of DIA_CURTO) grade.appendChild(el('div',{class:'cab', texto:d}));
@@ -1156,13 +1165,13 @@
     for(let k=0;k<celulas;k++){
       const d = new Date(inicio);
       d.setDate(inicio.getDate() + k);
-      grade.appendChild(celulaDoDia(e, d, mes, hoje, agenda));
+      grade.appendChild(celulaDoDia(e, d, mes, hoje, agenda, caravanas));
     }
     q.appendChild(grade);
     return q;
   }
 
-  function celulaDoDia(e, d, mesAtual, hoje, agenda){
+  function celulaDoDia(e, d, mesAtual, hoje, agenda, caravanas){
     const sd = TO.estado.semanaDiaDe(d);
     const cel = el('div',{class:'dia'});
     const classes = [];
@@ -1174,8 +1183,8 @@
     cel.appendChild(el('span',{class:'n', texto:String(d.getDate())}));
 
     if(sd && sd.ano===e.data.ano){
-      const j = agenda.get(`${sd.semana}/${sd.dia}`);
-      const cv = sd.semana===e.data.semana ? TO.financeiro.diasDeCaravana(e) : [];
+      const j  = agenda.get(`${sd.semana}/${sd.dia}`);
+      const cv = caravanas.get(`${sd.semana}/${sd.dia}`);
 
       if(j){
         classes.push('jogo');
@@ -1185,12 +1194,11 @@
         cel.appendChild(el('span',{class:'sub',
           texto: j.jogado ? `${j.gp} × ${j.gc}`
                : `${j.comp} · ${j.neutro ? 'neutro' : j.casa?'casa':'fora'}`}));
-      }else if(cv.includes(sd.dia)){
+      }else if(cv){
         classes.push('caravana');
         cel.appendChild(el('span',{class:'rot', html:
           `${IC.get('onibus')}Caravana`}));
-        cel.appendChild(el('span',{class:'sub',
-          texto:`${sd.dia===cv[0]?'IDA':'VOLTA'} · ${e.proximoJogo.cidadeAdv||''}`}));
+        cel.appendChild(el('span',{class:'sub', texto:`${cv.rot} · ${cv.cidade}`}));
       }else{
         /* a rotina fica registrada no calendário, inclusive nos dias
            que transbordam pro mês vizinho */

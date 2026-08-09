@@ -38,7 +38,9 @@ TO.competicoes = (function(){
       for(let i=0;i<meia;i++){
         const a = t[i], b = t[n-1-i];
         if(!a || !b) continue;
-        /* alterna o mando pra ninguém jogar tudo em casa */
+        /* alterna o mando por rodada. Medido: com esta regra a pior
+           sequência em casa é 2 e o total de mandos fica 8–10 em 19;
+           alternar por posição estoura pra 18 seguidos. */
         jogos.push(r%2 ? {c:b, f:a} : {c:a, f:b});
       }
       rodadas.push(jogos);
@@ -129,13 +131,15 @@ TO.competicoes = (function(){
     return {grupos:1, passam:4, voltas:2};
   }
 
-  /* quantas semanas o formato ocupa: grupos mais as chaves */
-  function semanasQuePrecisa(cfg, clubes){
+  /* quantas semanas o formato ocupa: grupos mais as chaves, descontando
+     as rodadas de meio de semana, que não gastam semana própria */
+  function semanasQuePrecisa(cfg, clubes, tipo){
     const g = cfg.grupos || 1;
     const maior = Math.ceil(clubes/g);
     const rodadas = (maior % 2 ? maior : maior-1) * (cfg.voltas || 1);
     const passam  = Math.max(2, (cfg.passam||2) * g);
-    return rodadas + Math.ceil(Math.log2(passam));
+    const meio = Math.min(MEIO_POR_TIPO[tipo || 'regional'] || 0, Math.max(0, rodadas-2));
+    return rodadas - meio + Math.ceil(Math.log2(passam));
   }
 
   /* GDD §18.2: sobe e desce entre as séries no fim do ano.
@@ -145,31 +149,79 @@ TO.competicoes = (function(){
                   'Brasileirão Série C','Brasileirão Série D'];
   const TROCA = 4;
 
-  /* Dia da semana de cada competição. Estadual e Brasileirão no sábado
-     (dia 6); a Copa do Brasil no meio de semana, que é como ela cabe
-     junto com os pontos corridos sem ninguém jogar duas vezes no
-     mesmo dia. */
+  /* Dia 1 é segunda, 6 é sábado, 7 é domingo. */
   const DIA_FDS  = 6;
   const DIA_MEIO = 3;
+
+  /* Grade horária de cada competição: os jogos de uma rodada se
+     espalham pelos horários na ordem em que a tabela os sorteou, do
+     jeito que a TV divide o fim de semana. A Copa do Brasil fica no
+     meio de semana pra caber junto com os pontos corridos. */
+  const GRADE = {
+    'Brasileirão Série A': [
+      {d:6, h:'16:00'}, {d:6, h:'18:30'}, {d:6, h:'21:00'},
+      {d:7, h:'11:00'}, {d:7, h:'16:00'}, {d:7, h:'18:30'}, {d:7, h:'20:30'}
+    ],
+    'Brasileirão Série B': [
+      {d:6, h:'17:00'}, {d:6, h:'20:30'},
+      {d:7, h:'16:00'}, {d:7, h:'18:00'}, {d:7, h:'20:00'}
+    ],
+    'Brasileirão Série C': [
+      {d:6, h:'16:30'}, {d:6, h:'19:30'}, {d:7, h:'15:00'}, {d:7, h:'17:00'}
+    ],
+    'Brasileirão Série D': [
+      {d:6, h:'15:00'}, {d:6, h:'17:00'},
+      {d:7, h:'10:00'}, {d:7, h:'15:00'}, {d:7, h:'16:00'}
+    ],
+    regional: [
+      {d:6, h:'16:00'}, {d:6, h:'18:30'},
+      {d:7, h:'11:00'}, {d:7, h:'16:00'}, {d:7, h:'18:30'}
+    ],
+    copa:  [{d:3, h:'19:00'}, {d:3, h:'21:30'}],
+    meio:  [{d:3, h:'19:00'}, {d:3, h:'19:30'}, {d:3, h:'21:30'}],
+    final: [{d:7, h:'16:00'}]
+  };
+  const gradeDe = (nome, tipo) => GRADE[nome] || GRADE[tipo] || GRADE.regional;
+
+  /* Rodadas do meio de semana. Elas dividem a semana com a rodada
+     seguinte — quarta e depois fim de semana — e é o que faz a
+     temporada fechar no fim de novembro em vez de virar o ano. */
+  const MEIO_POR_TIPO = {regional:2, nacional:3};
+  function rodadasDoMeio(total, quantas){
+    const s = new Set();
+    for(let i=1;i<=quantas;i++){
+      let r = Math.round(total*i/(quantas+1));
+      while(s.has(r)) r++;
+      if(r > 0 && r < total) s.add(r);
+    }
+    return s;
+  }
 
   function criarCompeticao(id, nome, tipo, clubes, cfg, semanaInicio, finalEm){
     const grupos = cfg.grupos > 1 ? dividirGrupos(clubes, cfg.grupos) : [clubes];
     const porGrupo = grupos.map(g=>roundRobin(g, cfg.voltas));
     const maior = Math.max(...porGrupo.map(r=>r.length));
 
+    const grade = gradeDe(nome, tipo);
+    const meias = rodadasDoMeio(maior, MEIO_POR_TIPO[tipo] || 0);
     const rodadas = [];
+    let semana = semanaInicio;
     for(let r=0; r<maior; r++){
       const jogos = [];
       porGrupo.forEach((rr, ig)=>{
         for(const j of (rr[r]||[])) jogos.push({...j, g:ig});
       });
-      rodadas.push({semana: semanaInicio + r, fase:'grupos', jogos});
+      const g = meias.has(r) ? GRADE.meio : grade;
+      jogos.forEach((j, k)=>{ const s = g[k % g.length]; j.d = s.d; j.h = s.h; });
+      rodadas.push({semana, dia:g[0].d, meio:meias.has(r), fase:'grupos', jogos});
+      /* rodada de quarta divide a semana com a próxima */
+      if(!meias.has(r)) semana++;
     }
     return {
       id, nome, tipo,
       clubes, grupos: grupos.map(g=>[...g]),
-      passam: cfg.passam, voltas: cfg.voltas,
-      semanaInicio, finalEm: finalEm || null, dia: DIA_FDS,
+      passam: cfg.passam, voltas: cfg.voltas, grade,
+      semanaInicio, finalEm: finalEm || null, dia: grade[0].d,
       rodadas, mata:[], campeao:null, vice:null,
       /* série com pontos corridos não tem mata-mata: campeão é o líder */
       pontosCorridos: !!cfg.pontosCorridos
@@ -198,7 +250,7 @@ TO.competicoes = (function(){
       let cfg = formatoRegional(nome, clubes.length);
       /* se o clube mudou de estadual e o formato não cabe mais na
          janela de janeiro a março, o returno é o primeiro a cair */
-      if(semanasQuePrecisa(cfg, clubes.length) > janela && (cfg.voltas||1) > 1)
+      if(semanasQuePrecisa(cfg, clubes.length, 'regional') > janela && (cfg.voltas||1) > 1)
         cfg = Object.assign({}, cfg, {voltas:1});
 
       /* Toda final cai na mesma semana, a véspera do Brasileirão, e a
@@ -207,7 +259,7 @@ TO.competicoes = (function(){
          com buraco no meio da competição. */
       const chaves = Math.ceil(Math.log2(Math.max(2, (cfg.passam||2)*(cfg.grupos||1))));
       const primeiraChave = FINAL_REGIONAL - (chaves - 1);
-      const rodadas = semanasQuePrecisa(cfg, clubes.length) - chaves;
+      const rodadas = semanasQuePrecisa(cfg, clubes.length, 'regional') - chaves;
       const inicio = Math.max(INICIO_REGIONAL, primeiraChave - rodadas);
 
       comps.push(criarCompeticao(U.identificador(nome), nome, 'regional',
@@ -231,6 +283,9 @@ TO.competicoes = (function(){
         clubes, cfg, INICIO_NACIONAL));
     }
 
+    /* ---- mando de campo: rival direto e sequência em casa ---- */
+    ajustarMandos(comps);
+
     /* ---- a Copa do Brasil corre por dentro, no meio de semana ---- */
     comps.push(criarCopa(E));
 
@@ -240,6 +295,291 @@ TO.competicoes = (function(){
       /* histórico de campeões, pra tela de conquistas mais tarde */
       titulos: (E.temporada && E.temporada.titulos) || []
     };
+  }
+
+  /* =======================================================
+     MANDO DE CAMPO
+     Duas regras que a tabela sorteada não respeita sozinha:
+     rival direto não joga em casa no mesmo fim de semana, e
+     ninguém faz quatro jogos seguidos em casa na mesma
+     competição.
+     ======================================================= */
+
+  /* O rival direto de um clube é UM só. O grafo de torcidas dá até cinco
+     "maiores rivais" por clube, e com cinco arestas a regra "rival em
+     casa, eu fora" vira impossível: numa rodada do Cariocão cinco dos
+     dez cariocas mandam, e eles são rivais entre si. Então o rival
+     direto é escolhido em pares exclusivos — o clássico de cada um —,
+     priorizando mesma cidade e torcida grande. Fortaleza fica com o
+     Ceará, Grêmio com o Inter, Athletico com o Coritiba. */
+  let _rivais = null;
+  function rivaisDiretos(){
+    if(_rivais) return _rivais;
+    const clubeDa = new Map(M().todasTorcidas.map(o=>[o.id, o.clubeId]));
+    const membros = new Map();
+    for(const o of M().todasTorcidas)
+      membros.set(o.clubeId, Math.max(membros.get(o.clubeId)||0, o.membros||0));
+
+    const cand = new Map();          // "a|b" -> peso
+    for(const o of M().todasTorcidas){
+      const a = o.clubeId;
+      if(!M().time(a)) continue;
+      for(const r of (o.maioresRivais||[])){
+        const b = clubeDa.get(r);
+        if(!b || b===a || !M().time(b)) continue;
+        const k = [a,b].sort().join('|');
+        const mesmaCidade = M().time(a).mapa === M().time(b).mapa;
+        const peso = (mesmaCidade?1000:0)
+                   + (membros.get(a)||0) + (membros.get(b)||0)
+                   + (cand.get(k) ? 1 : 0);      // citado dos dois lados
+        cand.set(k, Math.max(cand.get(k)||0, peso));
+      }
+    }
+    /* casamento guloso: o clássico mais forte primeiro, e cada clube
+       entra em um par só */
+    _rivais = new Map();
+    const tomado = new Set();
+    for(const [k] of [...cand].sort((x,y)=>y[1]-x[1])){
+      const [a,b] = k.split('|');
+      if(tomado.has(a) || tomado.has(b)) continue;
+      tomado.add(a); tomado.add(b);
+      _rivais.set(a, new Set([b]));
+      _rivais.set(b, new Set([a]));
+    }
+    return _rivais;
+  }
+
+  const MAX_CASA_SEGUIDOS = 3;
+
+  function ajustarMandos(comps){
+    const riv = rivaisDiretos();
+
+    /* A janela é o fim de semana ou o meio de semana: dois rivais podem
+       mandar na mesma semana desde que em janelas diferentes. */
+    const janelaDe = (semana, dia) => `${semana}${dia>=6?'F':'M'}`;
+    const porJanela = new Map();     // chave -> jogos
+    const daJanela  = new Map();     // jogo -> chave
+    const irmao     = new Map();     // jogo -> jogo de volta
+    const doComp    = new Map();     // jogo -> competição
+    const agenda    = new Map();     // competição -> clube -> jogos em ordem
+
+    for(const comp of comps){
+      const porClube = new Map();
+      agenda.set(comp, porClube);
+      for(const r of comp.rodadas){
+        for(const j of r.jogos){
+          const k = janelaDe(r.semana, j.d || r.dia || DIA_FDS);
+          if(!porJanela.has(k)) porJanela.set(k, []);
+          porJanela.get(k).push(j);
+          daJanela.set(j, k);
+          doComp.set(j, comp);
+          j._o = r.semana*10 + (j.d || DIA_FDS);      // ordem no calendário
+          for(const cl of [j.c, j.f]){
+            if(!porClube.has(cl)) porClube.set(cl, []);
+            porClube.get(cl).push(j);
+          }
+        }
+      }
+      for(const l of porClube.values()) l.sort((a,b)=>a._o-b._o);
+      if(comp.voltas > 1){
+        const porPar = new Map();
+        for(const r of comp.rodadas) for(const j of r.jogos){
+          const chave = [j.c, j.f].sort().join('|');
+          if(porPar.has(chave)){
+            const outro = porPar.get(chave);
+            irmao.set(j, outro); irmao.set(outro, j);
+          }else porPar.set(chave, j);
+        }
+      }
+    }
+
+    /* Rival junto só conta como problema quando os dois mandam no MESMO
+       DIA. Dividir o fim de semana — um sábado, outro domingo — é a
+       saída quando o mando não pode ser trocado. */
+    const conflitosNa = chave =>{
+      const porDia = new Map();
+      for(const j of (porJanela.get(chave)||[])){
+        const d = j.d || DIA_FDS;
+        if(!porDia.has(d)) porDia.set(d, new Set());
+        porDia.get(d).add(j.c);
+      }
+      let n = 0;
+      for(const casa of porDia.values())
+        for(const a of casa)
+          for(const r of (riv.get(a)||[])) if(casa.has(r) && a < r) n++;
+      return n;
+    };
+
+    /* quantos jogos em casa passam do teto na sequência deste clube */
+    function excesso(comp, clube){
+      const l = (agenda.get(comp)||new Map()).get(clube) || [];
+      let seq = 0, exc = 0;
+      for(const j of l){
+        if(j.c === clube){ seq++; if(seq > MAX_CASA_SEGUIDOS) exc++; }
+        else seq = 0;
+      }
+      return exc;
+    }
+
+    /* trocar o mando; em turno e returno o jogo de volta vai junto */
+    function inverter(j){
+      const par = irmao.get(j);
+      if(par){ const t=par.c; par.c=par.f; par.f=t; }
+      const t = j.c; j.c = j.f; j.f = t;
+    }
+
+    /* Custo só do que a troca mexe: as janelas dos dois jogos e a
+       sequência dos dois clubes. Rival vale dez porque é a regra dura;
+       sequência longa é incômodo, não erro. */
+    function custoLocal(j){
+      const comp = doComp.get(j), par = irmao.get(j);
+      const alvos = new Set([daJanela.get(j)]);
+      if(par) alvos.add(daJanela.get(par));
+      let c = 0;
+      for(const k of alvos) c += conflitosNa(k) * 10;
+      c += excesso(comp, j.c) + excesso(comp, j.f);
+      return c;
+    }
+    function ganho(j){
+      const antes = custoLocal(j);
+      inverter(j);
+      const depois = custoLocal(j);
+      inverter(j);
+      return antes - depois;
+    }
+
+    /* descida em ladeira sobre os jogos que estão em alguma violação */
+    function candidatos(){
+      const fora = new Set();
+      for(const [chave, jogos] of porJanela)
+        if(conflitosNa(chave)) for(const j of jogos) fora.add(j);
+      for(const [comp, porClube] of agenda)
+        for(const [clube, l] of porClube){
+          if(!excesso(comp, clube)) continue;
+          for(const j of l) fora.add(j);
+        }
+      return fora;
+    }
+
+    /* custo global, pra saber se o rumo é bom */
+    const todos = [...doComp.keys()];
+    function custoTotal(){
+      let c = 0;
+      for(const k of porJanela.keys()) c += conflitosNa(k)*10;
+      for(const [comp, porClube] of agenda)
+        for(const clube of porClube.keys()) c += excesso(comp, clube);
+      return c;
+    }
+    const guardar = ()=> todos.map(j=>j.c);
+    const repor = foto => todos.forEach((j,i)=>{
+      if(j.c !== foto[i]){ const t=j.c; j.c=j.f; j.f=t; }
+    });
+
+    /* Último recurso, como o autor pediu: se os dois rivais têm de
+       mandar no mesmo fim de semana, um joga sábado e o outro domingo. */
+    const DIAS_ALTERNATIVOS = {F:[6,7], M:[3,2,4]};
+    function separarPorDia(){
+      for(const [chave, jogos] of porJanela){
+        const dias = DIAS_ALTERNATIVOS[chave.slice(-1)] || [6,7];
+        for(let tentativa=0; tentativa<8; tentativa++){
+          const porDia = new Map();
+          for(const j of jogos){
+            const d = j.d || DIA_FDS;
+            if(!porDia.has(d)) porDia.set(d, new Map());
+            porDia.get(d).set(j.c, j);
+          }
+          let alvo = null;
+          for(const casa of porDia.values()){
+            for(const [clube, j] of casa)
+              for(const r of (riv.get(clube)||[]))
+                if(casa.has(r) && clube < r){ alvo = casa.get(r); break; }
+            if(alvo) break;
+          }
+          if(!alvo) break;
+          const comp  = doComp.get(alvo);
+          const grade = comp.grade || GRADE.regional;
+          const outro = dias.find(d=>d !== alvo.d);
+          if(outro === undefined) break;
+          const vaga = grade.find(x=>x.d === outro);
+          alvo.d = outro;
+          alvo.h = vaga ? vaga.h : (alvo.h || '19:30');
+        }
+      }
+    }
+    separarPorDia();
+
+    /* Ladeira abaixo com passos de platô: prender no primeiro vale
+       deixava 45 conflitos de pé, porque trocar o mando de um jogo
+       arrasta o jogo de volta junto e o ganho imediato dá zero. Aceitar
+       o movimento neutro destrava a cadeia; a melhor configuração vista
+       fica guardada. */
+    let melhorFoto = guardar(), melhorCusto = custoTotal();
+    for(let passo=0; passo<1200; passo++){
+      const cands = [...candidatos()];
+      if(!cands.length) break;
+      let alvo = null, melhor = 0;
+      const neutros = [];
+      for(const j of cands){
+        const g = ganho(j);
+        if(g > melhor){ melhor = g; alvo = j; }
+        else if(g === 0) neutros.push(j);
+      }
+      if(alvo) inverter(alvo);
+      else if(neutros.length) inverter(neutros[Math.floor(U.rng()*neutros.length)]);
+      else break;
+      const c = custoTotal();
+      if(c < melhorCusto){ melhorCusto = c; melhorFoto = guardar(); }
+    }
+    repor(melhorFoto);
+
+
+    /* Com os rivais separados, sobra espaço pra encurtar as sequências
+       de mando. Mesma descida com passo de platô. */
+    melhorFoto = guardar(); melhorCusto = custoTotal();
+    for(let passo=0; passo<900; passo++){
+      const cands = [...candidatos()];
+      if(!cands.length) break;
+      let alvo = null, melhor = 0;
+      const neutros = [];
+      for(const j of cands){
+        const g = ganho(j);
+        if(g > melhor){ melhor = g; alvo = j; }
+        else if(g === 0) neutros.push(j);
+      }
+      if(alvo) inverter(alvo);
+      else if(neutros.length) inverter(neutros[Math.floor(U.rng()*neutros.length)]);
+      else break;
+      const c = custoTotal();
+      if(c < melhorCusto){ melhorCusto = c; melhorFoto = guardar(); }
+    }
+    repor(melhorFoto);
+    separarPorDia();
+
+    let conf = 0;
+    for(const k of porJanela.keys()) conf += conflitosNa(k);
+    for(const comp of comps) for(const r of comp.rodadas)
+      for(const j of r.jogos) delete j._o;
+    return {conflitosRestantes: conf};
+  }
+
+  /* quantas vezes um clube joga N vezes seguidas em casa, pra conferência */
+  function piorSequenciaEmCasa(comps){
+    let pior = 0;
+    for(const comp of comps){
+      const porClube = new Map();
+      for(const r of comp.rodadas)
+        for(const j of r.jogos)
+          for(const [clube, casa] of [[j.c,true],[j.f,false]]){
+            if(!porClube.has(clube)) porClube.set(clube, []);
+            porClube.get(clube).push({s:r.semana*10+(j.d||6), casa});
+          }
+      for(const [, l] of porClube){
+        l.sort((a,b)=>a.s-b.s);
+        let seq = 0;
+        for(const g of l){ seq = g.casa ? seq+1 : 0; if(seq>pior) pior = seq; }
+      }
+    }
+    return pior;
   }
 
   /* =======================================================
@@ -253,13 +593,13 @@ TO.competicoes = (function(){
      semanas seguidas. A final é o último jogo do ano e sai do meio de
      semana: fecha a temporada depois da última rodada do Brasileirão. */
   const COPA_FASES = [
-    {fase:'Primeira fase', semanas:[15]},
-    {fase:'Segunda fase',  semanas:[18], entram:'Brasileirão Série A'},
-    {fase:'Terceira fase', semanas:[21]},
-    {fase:'Oitavas',       semanas:[24,25]},
-    {fase:'Quartas',       semanas:[28,29]},
-    {fase:'Semifinal',     semanas:[32,33]},
-    {fase:'Final',         semanas:[SEMANAS_ANO], neutro:true, dia:DIA_FDS}
+    {fase:'Primeira fase', semanas:[22]},
+    {fase:'Segunda fase',  semanas:[26], entram:'Brasileirão Série A'},
+    {fase:'Terceira fase', semanas:[30]},
+    {fase:'Oitavas',       semanas:[34,35]},
+    {fase:'Quartas',       semanas:[39,40]},
+    {fase:'Semifinal',     semanas:[44,45]},
+    {fase:'Final',         semanas:[SEMANAS_ANO], neutro:true, grade:GRADE.final}
   ];
   const COPA_NOME = 'Copa do Brasil';
 
@@ -298,10 +638,12 @@ TO.competicoes = (function(){
       jogos.push({c:a, f:b});
     }
 
+    const grade = GRADE.copa;
+    jogos.forEach((j,k)=>{ const s = grade[k % grade.length]; j.d = s.d; j.h = s.h; });
     return {
       id:'copa-do-brasil', nome:COPA_NOME, tipo:'copa', copa:true,
       clubes:[...resto, ...daSerieA],
-      grupos:[], passam:0, voltas:1, pontosCorridos:false,
+      grupos:[], passam:0, voltas:1, pontosCorridos:false, grade,
       semanaInicio: COPA_FASES[0].semanas[0], finalEm: null,
       dia: DIA_MEIO,
       rodadas:[],
@@ -384,20 +726,26 @@ TO.competicoes = (function(){
       pares.push([casa, fora]);
     }
 
-    const dia = prox.dia || comp.dia;
+    const grade = prox.grade || comp.grade || GRADE.copa;
+    const horario = js => js.forEach((j,k)=>{
+      const s = grade[k % grade.length]; j.d = s.d; j.h = s.h;
+    });
+    const dia = grade[0].d;
     const idaEVolta = prox.semanas.length > 1;
     if(idaEVolta){
       /* quem tem melhor campanha decide em casa, então joga a volta
          como mandante (GDD §18.5) */
+      const ida   = pares.map(([a,b],k)=>({c:b, f:a, par:k}));
+      const volta = pares.map(([a,b],k)=>({c:a, f:b, par:k}));
+      horario(ida); horario(volta);
       comp.mata.push({fase:`${prox.fase} · ida`, semana:prox.semanas[0], dia,
-        indice:comp.faseAtual, perna:'ida',
-        jogos:pares.map(([a,b],k)=>({c:b, f:a, par:k}))});
+        indice:comp.faseAtual, perna:'ida', jogos:ida});
       comp.mata.push({fase:`${prox.fase} · volta`, semana:prox.semanas[1], dia,
-        indice:comp.faseAtual, perna:'volta',
-        jogos:pares.map(([a,b],k)=>({c:a, f:b, par:k}))});
+        indice:comp.faseAtual, perna:'volta', jogos:volta});
     }else{
       const jogos = pares.map(([a,b],k)=>({c:a, f:b, par:k}));
       if(prox.neutro && jogos[0]) jogos[0].neutro = campoNeutro(jogos[0].c, jogos[0].f);
+      horario(jogos);
       comp.mata.push({fase:prox.fase, semana:prox.semanas[0], dia,
         indice:comp.faseAtual, perna:'unica', jogos});
     }
@@ -530,8 +878,10 @@ TO.competicoes = (function(){
     const quando = comp.finalEm
       ? Math.max(semana+1, comp.finalEm - (faltam-1))
       : semana+1;
+    const grade = comp.grade || gradeDe(comp.nome, comp.tipo);
+    jogos.forEach((j,k)=>{ const s = grade[k % grade.length]; j.d = s.d; j.h = s.h; });
     comp.mata.push({fase: NOMES[vivos.length] || `${vivos.length} clubes`,
-                    semana: quando, jogos});
+                    semana: quando, dia: grade[0].d, jogos});
   }
 
   /* =======================================================
@@ -550,7 +900,8 @@ TO.competicoes = (function(){
           if(j.c!==clubeId && j.f!==clubeId) continue;
           if(!j.f) continue;                     /* passou sem adversário */
           const casa = j.c===clubeId;
-          fora.push({semana:r.semana, dia:r.dia || comp.dia || DIA_FDS,
+          fora.push({semana:r.semana, dia:j.d || r.dia || comp.dia || DIA_FDS,
+                     hora:j.h || '16:00',
                      comp:comp.nome, compId:comp.id,
                      tipo:comp.tipo, fase, mata:!!mata,
                      casa: j.neutro ? false : casa, neutro: j.neutro||null,
@@ -683,6 +1034,10 @@ TO.competicoes = (function(){
     return fora;
   }
 
+  /* o dia de cada partida vive na própria partida (a rodada se espalha
+     entre sábado e domingo), com a rodada como reserva */
+  const diaDoJogo = (j, etapa) => (j && j.d) || (etapa && etapa.dia) || DIA_FDS;
+
   /* a primeira etapa que ainda não terminou; se acabou tudo, a última */
   function etapaAtual(comp){
     const es = etapas(comp);
@@ -693,17 +1048,12 @@ TO.competicoes = (function(){
   /* O clube joga no dia 6 da semana — sábado no calendário do jogo, que
      é o dia que o GDD §3.1 reserva pro jogo. A hora varia por confronto
      só pra tabela não ficar com 38 linhas iguais. */
-  const HORAS = ['16:30','19:30','21:00','18:30','20:00','16:00'];
-  function horaDoJogo(j){
-    const s = (j.c||'')+'|'+(j.f||'');
-    let h = 7;
-    for(let i=0;i<s.length;i++) h = (h*31 + s.charCodeAt(i)) % 9973;
-    return HORAS[h % HORAS.length];
-  }
+  const horaDoJogo = j => (j && j.h) || '16:00';
 
   return {montarTemporada, jogarSemana, tabela, agendaDoClube, jogoDaSemana,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
           jogosDaSemana, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
           aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,
+          rivaisDiretos, ajustarMandos, piorSequenciaEmCasa, diaDoJogo,
           SEMANAS_ANO, INICIO_REGIONAL, INICIO_NACIONAL};
 })();

@@ -176,8 +176,14 @@ Rodei simulações sem navegador (Node com stubs de DOM/canvas) e o que ficou em
   manutenção, caravana e a debandada por caixa negativo.
 - **Copa do Brasil** (GDD §18.5, com o formato do autor): 88 clubes na primeira fase
   (todos menos a Série A, com B e C mandando em casa), 64 na segunda com a entrada da
-  Série A, 32 na terceira, oitavas a semi em ida e volta e final em campo neutro. Uma
-  fase a cada três semanas, sempre na quarta; a final fecha a temporada na semana 52.
+  Série A, 32 na terceira, oitavas a semi em ida e volta e final em campo neutro.
+  Semanas 22, 26, 30, 34+35, 39+40, 44+45, sempre na quarta; a final fecha a temporada
+  na semana 52, no domingo.
+- **Mando de campo** com duas regras duras: rival direto nunca manda no mesmo dia que o
+  seu (Fortaleza joga fora quando o Ceará recebe) e ninguém faz mais de três jogos
+  seguidos em casa na mesma competição. Quando dividir o fim de semana é inevitável, um
+  joga sábado e o outro domingo. Rival direto sai do grafo de torcidas, em pares
+  exclusivos. Medido: zero conflitos e pior sequência 3, nas dezesseis competições.
 - **Competições e calendário** (GDD §18): 16 competições montadas dos próprios dados de
   times.js — 11 regionais e estaduais de janeiro a março, depois o Brasileirão das séries
   A a D até dezembro. Uma rodada por semana, resultado por Poisson sobre a qualidade dos
