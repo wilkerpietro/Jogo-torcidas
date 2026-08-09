@@ -1,0 +1,136 @@
+/* =========================================================
+   BASE — paleta, tipografia e estruturas comuns
+   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+:root{
+  --fundo:#151514; --painel:#1c1c1a; --linha:#2e2e2c; --sulco:#24241f;
+  --texto:#e8e4dc; --fraco:#8b867d;
+  --rubro:#c0392b; --azul:#2a5fa8; --ouro:#e0b040; --pm:#3f7d5a; --aliado:#8a6a2a;
+  --verde:#7fc2a0; --vermelho:#d9705f;
+  --titulo:'Barlow Condensed', system-ui, sans-serif;
+  --mono:'IBM Plex Mono', ui-monospace, monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background:var(--fundo); color:var(--texto);
+  font-family:var(--titulo);
+  min-height:100vh;
+}
+
+button{font-family:var(--titulo);color:inherit}
+input,select{font-family:var(--mono);color:inherit}
+
+.oculto{display:none !important}
+
+/* ---------- barra de status ---------- */
+#jogo{display:flex;flex-direction:column;min-height:100vh}
+
+#barraTopo{
+  display:flex;align-items:center;gap:22px;
+  padding:9px 16px;background:#111110;border-bottom:2px solid var(--linha);
+}
+#identidade{display:flex;align-items:center;gap:10px;min-width:210px}
+#brasao{
+  width:30px;height:30px;border-radius:50%;
+  border:2px solid var(--ouro);background:var(--rubro);
+  display:block;flex:none;
+}
+#nomeTorcida{font-size:17px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;line-height:1.1}
+#subIdentidade{font-family:var(--mono);font-size:9.5px;color:var(--fraco);letter-spacing:.07em}
+
+#indicadores{display:flex;gap:16px;flex:1}
+.indicador{min-width:96px}
+.indicador .rot{
+  display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.11em;
+  color:var(--fraco);text-transform:uppercase;margin-bottom:3px;
+}
+.indicador .rot b{color:var(--texto)}
+.indicador .barra{height:5px;background:#00000066;border:1px solid var(--linha);position:relative}
+.indicador .barra i{position:absolute;inset:0 auto 0 0;transition:width .35s}
+.indicador .faixa{font-family:var(--mono);font-size:8.5px;margin-top:2px;letter-spacing:.06em}
+
+#recursos{display:flex;gap:18px}
+.recurso{text-align:right}
+.recurso .rot{
+  display:block;font-family:var(--mono);font-size:8.5px;
+  letter-spacing:.11em;color:var(--fraco);text-transform:uppercase;
+}
+.recurso b{font-family:var(--mono);font-size:14px;letter-spacing:.03em}
+.recurso b.negativo{color:var(--vermelho)}
+
+/* ---------- abas ---------- */
+#abas{display:flex;gap:1px;background:var(--linha);border-bottom:1px solid var(--linha)}
+.aba-bt{
+  flex:1;background:#191917;border:0;padding:9px 6px 7px;cursor:pointer;
+  font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fraco);
+  border-bottom:2px solid transparent;
+}
+.aba-bt:hover{background:#212120;color:var(--texto)}
+.aba-bt.on{background:var(--painel);color:var(--texto);border-bottom-color:var(--rubro)}
+.aba-bt:disabled{opacity:.3;cursor:default}
+.aba-bt small{
+  display:block;font-family:var(--mono);font-size:8px;letter-spacing:.06em;
+  color:var(--fraco);margin-top:1px;text-transform:none;
+}
+
+#conteudo{flex:1;padding:12px 16px 16px;max-width:1520px;width:100%;margin:0 auto}
+.aba{display:none}
+.aba.on{display:block}
+
+/* ---------- ticker ---------- */
+#ticker{
+  height:24px;background:#111110;border-top:1px solid var(--linha);
+  overflow:hidden;position:relative;flex:none;
+}
+#tickerFita{
+  position:absolute;white-space:nowrap;left:100%;
+  font-family:var(--mono);font-size:10.5px;line-height:24px;color:var(--fraco);
+  letter-spacing:.05em;
+}
+#tickerFita span{margin-right:46px}
+#tickerFita .destaque{color:var(--ouro)}
+#tickerFita .ruim{color:var(--vermelho)}
+
+/* ---------- notificações ---------- */
+#notificacoes{position:fixed;right:14px;bottom:34px;width:290px;z-index:60;display:flex;
+  flex-direction:column;gap:7px;pointer-events:none}
+.nota{
+  background:#1c1c1ae8;border:1px solid var(--linha);border-left:3px solid var(--ouro);
+  padding:7px 10px;font-size:13px;letter-spacing:.03em;
+  animation:entraNota .25s ease-out;
+}
+.nota small{display:block;font-family:var(--mono);font-size:9px;color:var(--fraco);letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:2px}
+.nota.boa{border-left-color:var(--verde)}
+.nota.ruim{border-left-color:var(--vermelho)}
+@keyframes entraNota{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+
+/* ---------- telas cheias ---------- */
+.tela-cheia{
+  position:fixed;inset:0;z-index:50;background:#0c0c0bf2;
+  display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;
+}
+.moldura{
+  background:var(--painel);border:1px solid var(--linha);
+  width:100%;max-width:860px;max-height:94vh;display:flex;flex-direction:column;
+}
+.moldura.estreita{max-width:520px}
+.moldura>header{padding:13px 16px;border-bottom:1px solid var(--linha)}
+.moldura>header h2{font-size:19px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+.moldura>header span{font-family:var(--mono);font-size:10px;color:var(--fraco);letter-spacing:.07em}
+.moldura>div{padding:14px 16px;overflow-y:auto;flex:1}
+.moldura>footer{padding:11px 16px;border-top:1px solid var(--linha);display:flex;gap:8px;justify-content:flex-end}
+
+.bt{
+  background:#252522;border:1px solid #3d3d39;padding:8px 16px;cursor:pointer;
+  font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+}
+.bt:hover:not(:disabled){background:#2e2e2a}
+.bt:disabled{opacity:.32;cursor:default}
+.bt.destaque{border-color:var(--rubro);color:#f0cfc9}
+.bt.destaque:hover:not(:disabled){background:var(--rubro);color:#fff}
+.bt.perigo{border-color:#6b3a32;color:var(--vermelho)}

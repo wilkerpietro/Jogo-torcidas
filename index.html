@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torcida Organizada</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<link rel="stylesheet" href="css/cenas.css">
+</head>
+<body>
+
+<div id="jogo">
+
+  <!-- ================= BARRA DE STATUS ================= -->
+  <header id="barraTopo">
+    <div id="identidade">
+      <span id="brasao"></span>
+      <div>
+        <h1 id="nomeTorcida">—</h1>
+        <span id="subIdentidade">—</span>
+      </div>
+    </div>
+
+    <div id="indicadores"></div>
+
+    <div id="recursos">
+      <div class="recurso">
+        <span class="rot">Caixa</span>
+        <b id="caixa">R$ 0</b>
+      </div>
+      <div class="recurso">
+        <span class="rot">Data</span>
+        <b id="dataAtual">—</b>
+      </div>
+      <div class="recurso">
+        <span class="rot">Ações</span>
+        <b id="acoesRestantes">0/0</b>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ABAS ================= -->
+  <nav id="abas"></nav>
+
+  <!-- ================= PAINÉIS ================= -->
+  <main id="conteudo">
+
+    <section class="aba" data-aba="sede">
+      <div class="colunas">
+        <div>
+          <div class="painel">
+            <h2>Sede <span class="tag" id="tagSede">Nível 1</span></h2>
+            <div id="resumoSede"></div>
+          </div>
+          <div class="painel">
+            <h2>Fila de treino</h2>
+            <div id="filaTreino"></div>
+          </div>
+        </div>
+        <div>
+          <div class="painel">
+            <h2>Semana</h2>
+            <div id="planoSemana"></div>
+          </div>
+          <div class="painel">
+            <h2>Patrimônio</h2>
+            <div id="listaPatrimonio"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="aba" data-aba="torcida">
+      <div class="painel">
+        <h2>Membros <span class="tag" id="tagMembros">0</span></h2>
+        <div id="filtrosMembros">
+          <input type="search" id="buscaMembros" placeholder="nome, cargo, zona, arquétipo, situação…">
+          <div id="atalhosMembros"></div>
+        </div>
+        <div id="tabelaMembros"></div>
+      </div>
+      <div class="painel">
+        <h2>Recrutamento</h2>
+        <div id="painelRecrutamento"></div>
+      </div>
+    </section>
+
+    <section class="aba" data-aba="financeiro">
+      <div class="colunas">
+        <div>
+          <div class="painel">
+            <h2>Projeção mensal</h2>
+            <div id="projecao"></div>
+          </div>
+        </div>
+        <div>
+          <div class="painel">
+            <h2>Transações</h2>
+            <div id="transacoes"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="aba" data-aba="calendario">
+      <div class="colunas">
+        <div>
+          <div class="painel">
+            <h2>Próximos dias</h2>
+            <div id="listaDias"></div>
+          </div>
+        </div>
+        <div>
+          <div class="painel">
+            <h2>Tabela</h2>
+            <div id="tabelaCampeonato"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= TICKER ================= -->
+  <footer id="ticker"><div id="tickerFita"></div></footer>
+</div>
+
+<!-- ================= ESCALAÇÃO (pré dia de jogo) ================= -->
+<div id="telaEscalacao" class="tela-cheia oculto">
+  <div class="moldura">
+    <header>
+      <h2 id="tituloEscalacao">Dia de jogo</h2>
+      <span id="subEscalacao"></span>
+    </header>
+    <div id="corpoEscalacao"></div>
+    <footer>
+      <button class="bt" id="btCancelarEscalacao">Ficar em casa</button>
+      <button class="bt destaque" id="btConfirmarEscalacao">Sair pro estádio</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ================= DIA DE JOGO ================= -->
+<div id="telaDiaJogo" class="tela-cheia oculto">
+  <div id="djGrade">
+    <div>
+      <div id="djPalco">
+        <canvas id="djPrincipal" width="1140" height="820"></canvas>
+
+        <div class="hud" id="djRelogio">18:00</div>
+        <div class="hud" id="djSubrelogio"></div>
+        <div class="hud" id="djAlerta">
+          <div class="rot">ATENÇÃO POLICIAL</div>
+          <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
+          <div class="rot" id="djRotPressao" style="margin-top:6px;color:#d9705f">PRESSÃO SOBRE VOCÊ</div>
+          <div class="barra" id="djCaixaPressao" style="border-color:#6b3a32">
+            <i id="djBarraPressao" style="width:0%;background:#c0392b"></i>
+          </div>
+          <div id="djCarga"></div>
+        </div>
+        <div class="hud" id="djPlacar"></div>
+        <div class="hud" id="djAviso"></div>
+        <div class="hud" id="djDica"></div>
+
+        <div id="djCaixaMini">
+          <canvas id="djMini" width="364" height="278"></canvas>
+          <div id="djMiniRot"><span id="djMiniNome">RUA</span><b>TAB</b></div>
+          <div id="djMiniAviso"></div>
+        </div>
+      </div>
+
+      <div class="painel" style="margin-top:11px">
+        <h2>Ocorrências</h2>
+        <div id="djLog"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="painel">
+        <h2>Na rua</h2>
+        <div id="djListaRua"></div>
+      </div>
+      <div class="painel">
+        <h2>Nos arredores</h2>
+        <div id="djFormacoes"></div>
+        <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
+        <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
+        <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
+        <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão A <b>ENTER</b></button>
+      </div>
+      <div class="painel" id="djPainelCalibragem">
+        <h2>Calibragem <span class="tag">debug</span></h2>
+        <div id="djSliders"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= RELATÓRIO PÓS-JOGO ================= -->
+<div id="telaRelatorio" class="tela-cheia oculto">
+  <div class="moldura">
+    <header>
+      <h2>Fim da noite</h2>
+      <span id="subRelatorio"></span>
+    </header>
+    <div id="corpoRelatorio"></div>
+    <footer>
+      <button class="bt destaque" id="btFecharRelatorio">Voltar pra sede</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ================= NOVA PARTIDA ================= -->
+<div id="telaInicio" class="tela-cheia">
+  <div class="moldura estreita">
+    <header>
+      <h2>Torcida Organizada</h2>
+      <span>vertical slice · uma cidade, uma torcida, um rival</span>
+    </header>
+    <div id="corpoInicio"></div>
+    <footer>
+      <button class="bt" id="btImportar">Importar save</button>
+      <button class="bt" id="btContinuar">Continuar</button>
+      <button class="bt destaque" id="btNovaPartida">Nova partida</button>
+    </footer>
+  </div>
+</div>
+
+<input type="file" id="arquivoSave" accept=".json" hidden>
+
+<div id="notificacoes"></div>
+
+<!-- dados -->
+<script src="dados/nomes.js"></script>
+<script src="dados/cidades.js"></script>
+<script src="dados/times.js"></script>
+<script src="dados/torcidas.js"></script>
+
+<!-- núcleo -->
+<script src="js/nucleo.js"></script>
+<script src="js/estado.js"></script>
+
+<!-- gestão -->
+<script src="js/gestao/membros.js"></script>
+<script src="js/gestao/recrutamento.js"></script>
+<script src="js/gestao/financeiro.js"></script>
+<script src="js/gestao/patrimonio.js"></script>
+
+<!-- mundo -->
+<script src="js/mundo/competicoes.js"></script>
+<script src="js/mundo/calendario.js"></script>
+
+<!-- dia de jogo -->
+<script src="js/diajogo/rua.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/ponte.js"></script>
+
+<!-- interface -->
+<script src="js/ui/componentes.js"></script>
+<script src="js/ui/paineis.js"></script>
+<script src="js/ui/ticker.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
