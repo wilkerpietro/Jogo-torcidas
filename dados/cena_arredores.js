@@ -126,7 +126,12 @@ TO.dados.cenaArredores = {
     {id:'mandante2', rot:'2º ESCALÃO MANDANTE', lado:'mandante',  x:28,   y:656,  entrada:'ent_mandante3'},
     {id:'mandante3', rot:'3º ESCALÃO MANDANTE', lado:'mandante',  x:28,   y:262,  entrada:'ent_mandante3'},
     {id:'visitante1',rot:'1º ESCALÃO VISITANTE',lado:'visitante', x:1508, y:648,  entrada:'ent_visitante1'},
-    {id:'visitante2',rot:'2º ESCALÃO VISITANTE',lado:'visitante', x:1508, y:250,  entrada:'ent_visitante2'}
+    /* Vai à ENTRADA VISITANTE, e não ao túnel do estádio: o cordão
+       (praça + as duas grades) é contínuo, e o túnel fica do lado
+       mandante dele. Mandar este grupo pra lá deixava 15 discos sem
+       portão alcançável, batendo na grade e puxando a PM em cima do
+       1º escalão, que aí também não entrava. */
+    {id:'visitante2',rot:'2º ESCALÃO VISITANTE',lado:'visitante', x:1508, y:250,  entrada:'ent_visitante1'}
   ],
 
   /* -------------------------------------------------------
