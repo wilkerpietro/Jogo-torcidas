@@ -380,6 +380,22 @@ O que **não** veio, e por quê:
 - **Bancada de cenas** (`arredores.html`): uma aba por cenário — arredores, praça, rua,
   bar, comércio e CT. Trocar de aba remonta a noite ali, com o efetivo típico daquele
   tipo de briga. É a mesma ponte do jogo, então serve pra calibrar sem abrir save.
+- **Praça e rua refeitas pro que elas são**. A praça virou um largo: quadra aberta de
+  calçada portuguesa, coreto no meio, **duas** ilhas de canteiro só (o miolo fica limpo,
+  que é onde a briga acontece), quiosque de toldo listrado, banca e boteco nas bordas, e
+  a rua contornando os quatro lados com uma transversal chegando no meio de cada borda —
+  **quatro esquinas, uma por lado**. A rua virou larga: pista de mão dupla, calçada larga
+  dos dois lados e uma transversal em cada ponta, com a calçada dobrando a esquina — duas
+  esquinas de cada lado, então dá pra flanquear em vez de bater de frente.
+- **Tropa de choque é operação montada, não é toda briga.** A cena diz se tem
+  (`tropaChoque`): arredores do estádio e comércio têm — um é cordão planejado, o outro
+  tem botão de pânico. Em praça e rua quem responde é a PM que já estava ali: a linha
+  avança e aperta, mas ninguém manda batalhão. O HUD passou a dizer "PM EM CIMA" em vez
+  de contar o relógio de uma tropa que não vem.
+- **Prompt das duas cenas** (`img/cenas/PROMPT-PRACA-RUA.md`): um prompt por imagem,
+  com as plantas `planta-praca-2048.png` e `planta-rua-2048.png` tiradas do próprio jogo
+  pra servir de base de img2img/ControlNet — o mesmo caminho que a foto dos arredores e o
+  mapa da cidade seguiram.
 - **Pino não mora em cima de gramado nem colado no vizinho**: o sorteio por hash punha
   mercadinho no meio do campo e dois ícones no mesmo lote. Agora o estádio entra primeiro
   (o lugar dele é fixo), os gramados viram área proibida com folga, e cada pino anda na

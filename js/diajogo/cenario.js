@@ -370,12 +370,31 @@ TO.diaJogo.cenario = (function(){
     }
   }
 
+  /* quiosque de praça: toldo listrado por cima, guarita no meio e o
+     balcão virado pra quem passa */
   function quiosque(c, b){
-    c.fillStyle = '#d8b23a'; c.fillRect(b.x, b.y, b.w, b.h);
-    c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 2;
+    c.save();
+    c.fillStyle = 'rgba(0,0,0,.3)';
+    c.fillRect(b.x+4, b.y+5, b.w, b.h);
+    /* o toldo, em gomos de duas cores */
+    const gomos = Math.max(4, Math.round(b.w/26));
+    for(let i=0;i<gomos;i++){
+      c.fillStyle = i%2 ? '#d8402f' : '#eee6d2';
+      c.fillRect(b.x + i*b.w/gomos, b.y, b.w/gomos + .5, b.h);
+    }
+    c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 2;
     c.strokeRect(b.x+1, b.y+1, b.w-2, b.h-2);
-    c.fillStyle = '#b8352c';
-    c.fillRect(b.x+b.w*0.2, b.y+b.h*0.2, b.w*0.6, b.h*0.6);
+    /* a guarita por baixo do toldo */
+    c.fillStyle = '#8d7a58';
+    c.fillRect(b.x+b.w*0.24, b.y+b.h*0.24, b.w*0.52, b.h*0.52);
+    c.fillStyle = 'rgba(0,0,0,.35)';
+    c.fillRect(b.x+b.w*0.30, b.y+b.h*0.62, b.w*0.40, b.h*0.14);
+    /* caixa de isopor e engradado do lado */
+    c.fillStyle = '#dfe4e8';
+    c.fillRect(b.x+b.w-16, b.y+b.h-20, 12, 14);
+    c.fillStyle = '#7a5a2a';
+    c.fillRect(b.x+4, b.y+b.h-18, 14, 12);
+    c.restore();
   }
 
   function predio(c, b){
@@ -724,53 +743,107 @@ TO.diaJogo.cenario = (function(){
   /* -------------------------------------------------------
      AS DUAS CENAS
      ------------------------------------------------------- */
+  /* A praça é um largo: quadra aberta no meio, rua contornando os quatro
+     lados e uma transversal chegando no meio de cada borda — quatro
+     esquinas, uma por lado. O piso é calçada portuguesa quase toda, com
+     duas ilhas de canteiro só; espaço aberto é o que a briga pede. */
   function praca(c, D, W, H){
     c.fillStyle = '#22201e'; c.fillRect(0, 0, W, H);
-    /* rua contornando a praça, e a praça de calçada portuguesa no meio */
     asfalto(c, 0, 0, W, H, 'praca-asf');
-    calcadaPortuguesa(c, 150, 150, W-300, H-300);
-    /* meio-fio dos quatro lados */
-    meioFio(c, 150, 142, W-300, 8, true);
-    meioFio(c, 150, H-158, W-300, 8, true);
-    meioFio(c, 142, 150, 8, H-300, false);
-    meioFio(c, W-158, 150, 8, H-300, false);
-    /* faixas de pedestre nas quatro bocas */
-    faixaPedestre(c, 384, 100, 90, 54, false);
-    faixaPedestre(c, 1152, 924, 90, 54, false);
-    faixaPedestre(c, 60, 512, 90, 54, true);
-    faixaPedestre(c, 1476, 512, 90, 54, true);
-    /* caminho diagonal de quem corta a praça */
+
+    /* a mesma régua de dados/cenas.js: fachada, rua de contorno, largo */
+    const MX = 226, MY = 250, FX = 96, FY = 120, VAO = 190;
+    const cx = W/2, cy = H/2;
+
+    /* o largo, de calçada portuguesa */
+    calcadaPortuguesa(c, MX, MY, W-MX*2, H-MY*2);
+    meioFio(c, MX, MY-8, W-MX*2, 8, true);
+    meioFio(c, MX, H-MY, W-MX*2, 8, true);
+    meioFio(c, MX-8, MY, 8, H-MY*2, false);
+    meioFio(c, W-MX, MY, 8, H-MY*2, false);
+
+    /* calçada dos comércios, colada na fachada dos quatro lados */
+    calcadaComum(c, 0, FY, W, 22, 'praca-cn');
+    calcadaComum(c, 0, H-FY-22, W, 22, 'praca-cs');
+    calcadaComum(c, FX, FY, 22, H-FY*2, 'praca-co');
+    calcadaComum(c, W-FX-22, FY, 22, H-FY*2, 'praca-cl');
+
+    /* as quatro transversais: a boca de cada uma no meio de uma borda */
+    asfalto(c, cx-VAO/2, 0, VAO, MY, 'praca-tn');
+    asfalto(c, cx-VAO/2, H-MY, VAO, MY, 'praca-ts');
+    asfalto(c, 0, cy-VAO/2, MX, VAO, 'praca-to');
+    asfalto(c, W-MX, cy-VAO/2, MX, VAO, 'praca-tl');
+
+    /* eixo tracejado no meio de cada pista, pra ler como rua e não pátio */
     c.save();
-    c.strokeStyle = '#b9b0a0'; c.lineWidth = 40; c.lineCap = 'round';
-    c.beginPath(); c.moveTo(170,170); c.lineTo(W-170,H-170); c.stroke();
-    c.beginPath(); c.moveTo(W-170,170); c.lineTo(170,H-170); c.stroke();
-    c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = 44;
-    c.beginPath(); c.moveTo(170,170); c.lineTo(W-170,H-170); c.stroke();
-    c.beginPath(); c.moveTo(W-170,170); c.lineTo(170,H-170); c.stroke();
+    c.strokeStyle = 'rgba(226,200,110,.6)'; c.lineWidth = 4;
+    c.setLineDash([38, 30]);
+    for(const y of [(FY+MY)/2, H-(FY+MY)/2]){
+      c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke();
+    }
+    for(const x of [(FX+MX)/2, W-(FX+MX)/2]){
+      c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke();
+    }
+    c.setLineDash([]); c.restore();
+
+    /* faixa de pedestre atravessando cada boca */
+    faixaPedestre(c, cx, (FY+MY)/2, VAO-30, 52, false);
+    faixaPedestre(c, cx, H-(FY+MY)/2, VAO-30, 52, false);
+    faixaPedestre(c, (FX+MX)/2, cy, VAO-30, 52, true);
+    faixaPedestre(c, W-(FX+MX)/2, cy, VAO-30, 52, true);
+
+    /* os dois caminhos que cortam o largo em cruz, batendo em cada boca */
+    c.save();
+    c.strokeStyle = 'rgba(0,0,0,.16)'; c.lineWidth = 62; c.lineCap = 'butt';
+    c.beginPath(); c.moveTo(MX, cy); c.lineTo(W-MX, cy); c.stroke();
+    c.beginPath(); c.moveTo(cx, MY); c.lineTo(cx, H-MY); c.stroke();
+    c.strokeStyle = '#bdb4a4'; c.lineWidth = 56;
+    c.beginPath(); c.moveTo(MX, cy); c.lineTo(W-MX, cy); c.stroke();
+    c.beginPath(); c.moveTo(cx, MY); c.lineTo(cx, H-MY); c.stroke();
     c.restore();
+
     blocos(c, D);
     enfeites(c, D);
   }
 
+  /* Rua larga de bairro, com calçada larga dos dois lados e uma
+     transversal em cada ponta — duas esquinas de cada lado. A pista é
+     o corredor da briga; as calçadas dão por onde escapar sem sair
+     da cena, e as transversais deixam flanquear em vez de bater de frente. */
   function rua(c, D, W, H){
-    /* a viela entre as casas é escura, não é buraco na tela */
-    c.fillStyle = '#1d1b19'; c.fillRect(0, 0, W, H);
-    /* calçada dos dois lados, asfalto no meio e um trecho de pedra */
-    calcadaComum(c, 0, 250, W, 110, 'calc-n');
-    calcadaComum(c, 0, H-360, W, 110, 'calc-s');
-    asfalto(c, 0, 360, W, H-720, 'rua-asf');
-    paralelepipedo(c, 520, 360, 420, H-720, 'rua-pp');
-    /* meio-fio nas duas bordas do asfalto */
-    meioFio(c, 0, 352, W, 9, true);
-    meioFio(c, 0, H-361, W, 9, true);
-    /* eixo tracejado no meio da pista */
+    terreno(c, 0, 0, W, H, 'rua-terr');      // quintal e beco entre as casas
+    const PONTA = 250;                       // largura da transversal de cada ponta
+    /* calçada larga: 140 de cada lado, contra os 110 de antes */
+    calcadaComum(c, 0, 190, W, 140, 'calc-n');
+    calcadaComum(c, 0, H-330, W, 140, 'calc-s');
+    /* a pista, de meio-fio a meio-fio */
+    asfalto(c, 0, 330, W, H-660, 'rua-asf');
+    paralelepipedo(c, 620, 330, 300, H-660, 'rua-pp');
+    /* as duas transversais das pontas, atravessando de cima a baixo */
+    asfalto(c, 0, 0, PONTA-40, H, 'rua-to');
+    asfalto(c, W-PONTA+40, 0, PONTA-40, H, 'rua-tl');
+    /* a calçada dobra a esquina: cada casa de quina fica com a dela */
+    for(const x of [0, W-PONTA+40]){
+      calcadaComum(c, x, 190, PONTA-40, 26, 'rua-q'+x);
+      calcadaComum(c, x, H-216, PONTA-40, 26, 'rua-r'+x);
+    }
+    meioFio(c, 0, 322, W, 9, true);
+    meioFio(c, 0, H-331, W, 9, true);
+    /* eixo tracejado da pista e das duas transversais */
     c.save();
     c.strokeStyle = 'rgba(226,200,110,.75)'; c.lineWidth = 5;
     c.setLineDash([44, 34]);
     c.beginPath(); c.moveTo(0, 512); c.lineTo(W, 512); c.stroke();
+    c.setLineDash([32, 26]);
+    for(const x of [(PONTA-40)/2, W-(PONTA-40)/2]){
+      c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke();
+    }
     c.setLineDash([]); c.restore();
-    faixaPedestre(c, 250, 512, 300, 60, true);
-    faixaPedestre(c, 1290, 512, 300, 60, true);
+    /* faixa nas quatro esquinas, que é onde pedestre atravessa */
+    faixaPedestre(c, PONTA+30, 512, 320, 60, true);
+    faixaPedestre(c, W-PONTA-30, 512, 320, 60, true);
+    faixaPedestre(c, (PONTA-40)/2, 260, 150, 52, false);
+    faixaPedestre(c, W-(PONTA-40)/2, 764, 150, 52, false);
     blocos(c, D);
     enfeites(c, D);
   }

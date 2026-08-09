@@ -580,14 +580,23 @@ TO.diaJogo.combate = (function(){
     logar(J,`${d.nome} foi preso.`,'pm');
   }
 
+  /* Tropa de choque é coisa de operação montada: existe no cordão do
+     estádio e no comércio, que tem botão de pânico. Em praça de bairro,
+     rua, bar e CT quem responde é a PM que já estava ali — a linha
+     avança, mas ninguém manda batalhão. */
+  const temChoque = () => D.tropaChoque !== false;
+
   function romperCordao(J){
     if(J.rompido) return;
     J.rompido=true; J.alerta=100;
-    J.cargaEm =J.t+P.atrasoCarga;
-    J.cargaAte=J.t+P.atrasoCarga+P.duracaoCarga;
+    const choque = temChoque();
+    J.cargaEm = choque ? J.t+P.atrasoCarga : null;
+    J.cargaAte= J.t + (choque ? P.atrasoCarga : 0) + P.duracaoCarga;
     for(const p of J.policiais) p.carga=true;
     aviso(J,'Grade rompida','#e0b040');
-    logar(J,`Romperam a grade. Tropa de choque a caminho (${Math.round(P.atrasoCarga)}s).`,'pm');
+    logar(J, choque
+      ? `Romperam a grade. Tropa de choque a caminho (${Math.round(P.atrasoCarga)}s).`
+      : 'Romperam a grade. A PM que estava ali partiu pra cima.', 'pm');
   }
 
   function passoCarga(J,dt){
@@ -902,5 +911,5 @@ TO.diaJogo.combate = (function(){
 
   return {FORMACOES, Disco, criarEstado, passo, desenhar,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
-          restaCd, logar, aviso, nivelMoral};
+          restaCd, logar, aviso, nivelMoral, romperCordao};
 })();

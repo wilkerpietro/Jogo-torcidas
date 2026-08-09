@@ -29,86 +29,109 @@ TO.dados.cenas = (function(){
 
   /* =======================================================
      PRAÇA
-     Praça de bairro de cidade grande do Nordeste: coreto no
-     meio, canteiro de mangueira em volta, igreja de um lado,
-     fileira de comércio do outro, e a rua contornando tudo.
+     Praça de bairro de cidade grande do Nordeste: um largo
+     aberto, pouca árvore, coreto no meio e o comércio nas
+     bordas — boteco, quiosque, banca. A rua contorna os
+     quatro lados e uma transversal chega no meio de cada
+     borda: são quatro esquinas, uma por lado. Espaço aberto
+     é o que a briga pede; canteiro fechado só atrapalha.
      ======================================================= */
   const blocosPraca = [];
   const bp = (x,y,w,h,tipo,extra)=>blocosPraca.push(
     Object.assign({x,y,w,h,tipo}, extra||{}));
 
-  /* fachadas: igreja ao norte, comércio ao sul, sobrados nos flancos */
-  bp(300, 0, 420, 150, 'igreja');
-  bp(0,   0, 250, 118, 'predio');
-  bp(820, 0, 300, 118, 'predio');
-  bp(1210,0, 326, 150, 'predio');
-  bp(0,   906, 340, 118, 'predio');
-  bp(430, 930, 300,  94, 'boteco');
-  bp(830, 906, 706, 118, 'predio');
-  bp(0,   300, 96, 420, 'predio');
-  bp(1440,300, 96, 420, 'predio');
+  /* A régua da praça, a mesma que cenario.js usa pra pintar:
+     fachada → rua de contorno → largo → rua de contorno → fachada.
+     A boca de cada transversal é o vão no meio de cada borda: são as
+     quatro esquinas, uma por lado. */
+  const P_VAO = 190;              // largura da boca de cada transversal
+  const P_MX = 226, P_MY = 250;   // do canto da tela até a borda do largo
+  const P_FX = 96,  P_FY = 120;   // fundo da fachada (leste-oeste / norte-sul)
+  const P_CX = W/2, P_CY = H/2;
+  const vaoX0 = P_CX - P_VAO/2, vaoX1 = P_CX + P_VAO/2;
+  const vaoY0 = P_CY - P_VAO/2, vaoY1 = P_CY + P_VAO/2;
+
+  bp(0,       0, vaoX0,   P_FY, 'igreja');            // norte-oeste
+  bp(vaoX1,   0, W-vaoX1, P_FY, 'predio');            // norte-leste
+  bp(0,     H-P_FY, vaoX0,   P_FY, 'predio');         // sul-oeste
+  bp(vaoX1, H-P_FY, W-vaoX1, P_FY, 'boteco');         // sul-leste: os botecos
+  bp(0,     P_FY, P_FX, vaoY0-P_FY, 'predio');        // oeste-norte
+  bp(0,     vaoY1, P_FX, H-P_FY-vaoY1, 'predio');     // oeste-sul
+  bp(W-P_FX, P_FY, P_FX, vaoY0-P_FY, 'predio');       // leste-norte
+  bp(W-P_FX, vaoY1, P_FX, H-P_FY-vaoY1, 'sobrado');   // leste-sul
 
   /* o coreto no centro, oitavado — desenhado como bloco redondo */
-  bp(690, 430, 160, 160, 'coreto', {redondo:true});
+  bp(P_CX-60, P_CY-60, 120, 120, 'coreto', {redondo:true});
 
-  /* canteiros com árvore, os quatro em volta do coreto */
-  for(const [x,y] of [[440,330],[930,330],[440,610],[930,610]])
-    bp(x, y, 168, 96, 'canteiro');
+  /* pouca árvore: dois canteiros compridos, encostados na borda, e só.
+     O miolo fica limpo — é lá que a briga acontece. */
+  bp(320, 300, 150, 74, 'canteiro');
+  bp(1066, 650, 150, 74, 'canteiro');
 
-  /* banca de jornal e quiosque de pipoca, nas quinas de quem passa */
-  bp(250, 250, 92, 70, 'banca');
-  bp(1180, 690, 84, 64, 'quiosque');
+  /* o comércio da borda, que é o que dá cara de praça de bairro:
+     quiosque de pipoca, banca de jornal e o carrinho de lanche */
+  bp(320, 660, 128, 72, 'quiosque');
+  bp(1160, 292, 112, 72, 'banca');
+  bp(940, 292, 130, 72, 'quiosque');
 
-  /* carros estacionados encostados no meio-fio de baixo */
-  for(let i=0;i<6;i++) bp(200 + i*180, 826, 88, 44, 'carro');
+  /* carros no meio-fio da rua de contorno, sem tampar as bocas */
+  for(const [cx,cy] of [[200,180],[1244,180],[200,834],[1244,834]])
+    bp(cx, cy, 92, 46, 'carro');
 
   const praca = montar({
     id:'praca', nome:'Praça', pintura:'praca', blocos:blocosPraca,
     /* aqui não se entra em estádio nenhum: quem sai da praça sai pela rua */
     local:'Na praça',
+    /* praça de bairro não tem operação montada: quem responde é a PM
+       do posto, e ela vem a pé (GDD §12) */
+    tropaChoque:false,
     saida:{perto:'Sair pela rua', longe:'Saída (leve o líder)',
            feito:'sua torcida saiu da praça com a rua na mão',
            dica:'Leve o líder até a boca de rua da sua torcida.'},
     /* postes e mobiliário só de desenho, que o corpo desvia sozinho */
     enfeites:[
-      {tipo:'poste', x:360, y:250}, {tipo:'poste', x:1150, y:250},
-      {tipo:'poste', x:360, y:760}, {tipo:'poste', x:1150, y:760},
-      {tipo:'orelhao', x:1300, y:300},
-      {tipo:'lixeira', x:640, y:250}, {tipo:'lixeira', x:900, y:760},
-      {tipo:'banco', x:560, y:512, ang:0}, {tipo:'banco', x:980, y:512, ang:0},
-      {tipo:'banco', x:770, y:330, ang:1}, {tipo:'banco', x:770, y:700, ang:1},
-      {tipo:'mesa', x:470, y:890}, {tipo:'mesa', x:560, y:900},
-      {tipo:'mesa', x:650, y:888}
+      {tipo:'poste', x:300, y:290}, {tipo:'poste', x:1236, y:290},
+      {tipo:'poste', x:300, y:734}, {tipo:'poste', x:1236, y:734},
+      {tipo:'orelhao', x:1276, y:420},
+      {tipo:'lixeira', x:700, y:290}, {tipo:'lixeira', x:836, y:734},
+      {tipo:'banco', x:560, y:512, ang:0}, {tipo:'banco', x:976, y:512, ang:0},
+      {tipo:'banco', x:768, y:360, ang:1}, {tipo:'banco', x:768, y:664, ang:1},
+      /* as mesas do boteco da borda sul, viradas pro largo */
+      {tipo:'mesa', x:900, y:742}, {tipo:'mesa', x:1000, y:754},
+      {tipo:'mesa', x:1100, y:742}
     ],
     /* varal de bandeirinha atravessando a praça, de poste a poste */
-    varais:[[[360,250],[1150,250]], [[360,760],[1150,760]]],
+    varais:[[[300,290],[1236,290]], [[300,734],[1236,734]]],
     spawns:[
-      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:120, y:512, jogador:true,
-       entrada:'saida_leste'},
-      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:190, y:790,
-       entrada:'saida_leste'},
-      /* o rival vem do leste e a saída dele é a oeste: ninguém escapa sem
-         cruzar a praça inteira, que é onde a briga tem de acontecer */
-      {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1400, y:512,
-       entrada:'saida_oeste'},
-      {id:'visitante2',rot:'RETAGUARDA',  lado:'visitante',x:1360, y:210,
-       entrada:'saida_oeste'}
+      /* cada bonde entra por uma esquina; as outras duas ficam livres
+         pra quem quiser flanquear */
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:110, y:512, jogador:true,
+       entrada:'esquina_leste'},
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:768, y:950,
+       entrada:'esquina_leste'},
+      {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1426, y:512,
+       entrada:'esquina_oeste'},
+      {id:'visitante2',rot:'RETAGUARDA',  lado:'visitante',x:768, y:74,
+       entrada:'esquina_oeste'}
     ],
-    /* na praça ninguém "entra" em lugar nenhum: sair da praça é o objetivo
-       de quem perde o pé, e o cordão fica na boca de cada rua */
+    /* quatro esquinas, uma em cada borda: as duas do meio são objetivo,
+       as de cima e de baixo servem de fuga e de entrada da PM */
     entradas:[
-      {id:'saida_oeste', rot:'RUA DO OESTE',  lado:'visitante', x:110,  y:512, raio:44, dir:[-1,0]},
-      {id:'saida_leste', rot:'AVENIDA LESTE', lado:'mandante',  x:1420, y:512, raio:44, dir:[1,0]}
+      {id:'esquina_oeste', rot:'ESQUINA OESTE', lado:'visitante', x:48,   y:512, raio:46, dir:[-1,0]},
+      {id:'esquina_leste', rot:'ESQUINA LESTE', lado:'mandante',  x:1488, y:512, raio:46, dir:[1,0]},
+      {id:'esquina_norte', rot:'ESQUINA NORTE', lado:'neutro',    x:768,  y:40,  raio:46, dir:[0,-1]},
+      {id:'esquina_sul',   rot:'ESQUINA SUL',   lado:'neutro',    x:768,  y:984, raio:46, dir:[0,1]}
     ],
+    /* a viatura para na rua de contorno, longe das bocas */
     pmPostos:[
-      {x:512, y:180}, {x:1024, y:180}, {x:768, y:840}, {x:250, y:600}
+      {x:420, y:185}, {x:1116, y:185}, {x:420, y:839}, {x:1116, y:839}
     ],
     /* gradil de canteiro: quebra e vira arma, como no GDD §12 */
     grades:[
       {id:'gradil_norte', rot:'GRADIL DO CANTEIRO',
-       de:{x:440,y:318}, ate:{x:1098,y:326}, modulos:8, espessura:9},
+       de:{x:310,y:290}, ate:{x:480,y:290}, modulos:3, espessura:9},
       {id:'gradil_sul',   rot:'GRADIL DO CANTEIRO',
-       de:{x:440,y:700},  ate:{x:1098,y:708}, modulos:8, espessura:9}
+       de:{x:1056,y:640}, ate:{x:1226,y:640}, modulos:3, espessura:9}
     ]
   });
 
@@ -123,64 +146,74 @@ TO.dados.cenas = (function(){
   const br = (x,y,w,h,tipo,extra)=>blocosRua.push(
     Object.assign({x,y,w,h,tipo}, extra||{}));
 
-  /* as duas fileiras de casa, com recuo variando pra rua não ficar reta */
-  let x = 0;
-  let i = 0;
-  while(x < W){
-    const larg = 150 + ((i*97) % 110);
-    const fundo = 250 + ((i*53) % 70);
-    br(x, 0, larg-8, fundo, i%4===1 ? 'sobrado' : 'casa', {n:i});
-    x += larg; i++;
-  }
-  x = 0; i = 0;
-  while(x < W){
-    const larg = 140 + ((i*71) % 120);
-    const fundo = 240 + ((i*61) % 80);
-    br(x, H-fundo, larg-8, fundo, i%5===2 ? 'boteco' : 'casa', {n:i+40});
-    x += larg; i++;
-  }
+  /* As duas fileiras de casa param antes das pontas: é ali que entram as
+     transversais, duas esquinas em cada extremidade da rua. O quarteirão
+     vai de x=250 a x=1286; o que sobra dos dois lados é rua atravessada. */
+  const PONTA = 250;
+  const põeFila = (y0, altura, cima)=>{
+    let x = PONTA, i = cima ? 0 : 40;
+    while(x < W-PONTA){
+      const larg = Math.min(150 + ((i*97) % 110), W-PONTA-x);
+      if(larg < 40) break;
+      const fundo = altura + ((i*53) % 60);
+      br(x, cima ? 0 : H-fundo, larg-8, fundo,
+         cima ? (i%4===1 ? 'sobrado' : 'casa') : (i%5===2 ? 'boteco' : 'casa'),
+         {n:i});
+      x += larg; i++;
+    }
+  };
+  põeFila(0, 210, true);
+  põeFila(0, 200, false);
+
+  /* as quatro quinas das transversais: casa de esquina em cada ponta */
+  br(0, 0, PONTA-40, 190, 'sobrado', {n:80});
+  br(W-PONTA+40, 0, PONTA-40, 190, 'casa', {n:81});
+  br(0, H-190, PONTA-40, 190, 'casa', {n:82});
+  br(W-PONTA+40, H-190, PONTA-40, 190, 'boteco', {n:83});
 
   /* caçamba de entulho e carros no meio-fio: o que vira barricada */
-  br(300, 700, 150, 70, 'cacamba');
-  br(980, 296, 150, 70, 'cacamba');
-  for(const [cx,cy] of [[120,300],[560,300],[1180,300],
-                        [230,690],[720,690],[1320,690]])
+  br(420, 690, 150, 70, 'cacamba');
+  br(980, 286, 150, 70, 'cacamba');
+  for(const [cx,cy] of [[320,290],[700,290],[1160,290],
+                        [330,700],[760,700],[1150,700]])
     br(cx, cy, 96, 46, 'carro');
 
   const rua = montar({
     id:'rua', nome:'Rua', pintura:'rua', blocos:blocosRua,
     local:'Na rua',
+    /* rua de bairro também não tem batalhão: é a viatura da área */
+    tropaChoque:false,
     saida:{perto:'Furar pra fora', longe:'Boca da rua (leve o líder)',
            feito:'sua torcida furou o cerco e sumiu na rua',
            dica:'Leve o líder até a ponta da rua que é sua.'},
     enfeites:[
-      {tipo:'poste', x:180, y:352}, {tipo:'poste', x:640, y:352},
-      {tipo:'poste', x:1100, y:352},
-      {tipo:'poste', x:400, y:672}, {tipo:'poste', x:880, y:672},
-      {tipo:'poste', x:1340, y:672},
-      {tipo:'lixeira', x:300, y:352}, {tipo:'lixeira', x:1000, y:672},
-      {tipo:'mesa', x:1015, y:730}, {tipo:'mesa', x:1090, y:742},
+      {tipo:'poste', x:340, y:330}, {tipo:'poste', x:780, y:330},
+      {tipo:'poste', x:1200, y:330},
+      {tipo:'poste', x:400, y:694}, {tipo:'poste', x:880, y:694},
+      {tipo:'poste', x:1240, y:694},
+      {tipo:'lixeira', x:560, y:330}, {tipo:'lixeira', x:1040, y:694},
+      {tipo:'mesa', x:1180, y:756}, {tipo:'mesa', x:1256, y:768},
       {tipo:'lombada', x:768, y:512}
     ],
-    varais:[[[180,352],[400,672]], [[880,672],[1100,352]]],
+    varais:[[[340,330],[400,694]], [[880,694],[1200,330]]],
     spawns:[
-      /* corredor: cada bonde sai pela ponta oposta, e a rua é estreita
-         demais pra alguém passar sem esbarrar */
-      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:90,  y:512, jogador:true,
+      /* cada bonde entra por uma ponta; as transversais das quinas dão
+         a volta, então dá pra flanquear em vez de bater de frente */
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:120, y:512, jogador:true,
        entrada:'boca_leste'},
-      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:150, y:420,
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:120, y:290,
        entrada:'boca_leste'},
-      {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1450, y:512,
+      {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1416, y:512,
        entrada:'boca_oeste'},
-      {id:'visitante2',rot:'RETAGUARDA', lado:'visitante',x:1400, y:600,
+      {id:'visitante2',rot:'RETAGUARDA', lado:'visitante',x:1416, y:740,
        entrada:'boca_oeste'}
     ],
     entradas:[
-      {id:'boca_oeste', rot:'BOCA DA RUA', lado:'visitante', x:40,   y:512, raio:46, dir:[-1,0]},
-      {id:'boca_leste', rot:'FIM DA RUA',  lado:'mandante',  x:1496, y:512, raio:46, dir:[1,0]}
+      {id:'boca_oeste', rot:'BOCA DA RUA', lado:'visitante', x:40,   y:512, raio:48, dir:[-1,0]},
+      {id:'boca_leste', rot:'FIM DA RUA',  lado:'mandante',  x:1496, y:512, raio:48, dir:[1,0]}
     ],
-    /* rua estreita: a PM chega pelas duas pontas e fecha o corredor */
-    pmPostos:[{x:210, y:512}, {x:1330, y:512}, {x:768, y:400}],
+    /* a PM fecha as duas pontas, que é onde a rua tem saída */
+    pmPostos:[{x:150, y:700}, {x:1400, y:300}, {x:768, y:262}],
     grades:[]
   });
 

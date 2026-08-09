@@ -141,6 +141,11 @@ TO.diaJogo.ponte = (function(){
     const cg=el('djCarga');
     if(cg){
       if(!J.rompido){cg.textContent='';cg.className='';}
+      else if(J.cargaEm===null){
+        /* sem tropa de choque: o que aperta é a PM que já estava na cena */
+        cg.textContent = J.t<J.cargaAte ? 'PM EM CIMA' : 'LINHA RECOMPOSTA';
+        cg.className = J.t<J.cargaAte ? 'quente' : '';
+      }
       else if(!J.tropaVeio){
         cg.textContent=`TROPA CHEGA EM ${Math.max(0,J.cargaEm-J.t).toFixed(1)}s`; cg.className='quente';
       } else if(J.t<J.cargaAte){
