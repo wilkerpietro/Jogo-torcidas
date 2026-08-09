@@ -4,11 +4,14 @@ Importa a planilha do autor para os arquivos de dados do jogo.
 
     python3 ferramentas/importar_planilha.py dados/fonte/Book_3_1.xlsx
 
-Gera dados/times.js, dados/torcidas.js e dados/cidades.js.
-Rodar de novo depois de editar a planilha; nada e escrito a mao.
+Gera dados/times.js. As cidades e as torcidas tem fonte propria,
+mais rica, e sao geradas por outros dois importadores:
 
-Tamanho do mapa vem dos quarteiroes, conforme o autor definiu:
-144 -> 12x12, 100 -> 10x10, 64 -> 8x8.
+    importar_bairros.py   -> dados/cidades.js  (le tambem esta planilha,
+                             so pro efetivo de rua: guardas, PMs, choque)
+    importar_relacoes.py  -> dados/torcidas.js
+
+Rodar de novo depois de editar a planilha; nada e escrito a mao.
 """
 import json, pathlib, sys, unicodedata
 
@@ -145,12 +148,13 @@ def main():
             'membros': inteiro(r[7]),
         })
 
-    escrever('dados/cidades.js', 'CIDADES — mapas e efetivo de rua',
-             'TO.dados.cidades', cidades)
+    # cidades.js NAO e escrito aqui. Quem manda nele e
+    # ferramentas/importar_bairros.py, que junta o JSON de bairros com o
+    # efetivo de rua desta planilha. Escrever aqui apagaria os 348 bairros.
     escrever('dados/times.js', 'TIMES — clubes, estadios e divisoes',
              'TO.dados.times', times)
-    escrever('dados/torcidas.js', 'TORCIDAS ORGANIZADAS',
-             'TO.dados.torcidas', torcidas)
+    # torcidas.js tambem nao: vem de ferramentas/importar_relacoes.py,
+    # que tem bairro-sede e o grafo de relacoes.
 
     # ---------------- conferencia ----------------
     print('\nconferencia:')

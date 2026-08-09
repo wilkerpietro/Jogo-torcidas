@@ -135,6 +135,50 @@ TO.mundo = (function(){
     };
   }
 
+  /* =======================================================
+     BAIRROS (GDD §19.3 e §7.2)
+     ======================================================= */
+  const CLASSES = ['Nobre','Classe Média','Classe Baixa','Favela'];
+  const ZONAS   = ['Norte','Sul','Leste','Oeste'];
+
+  const bairrosDe = idCidade => (cidade(idCidade)||{}).bairros || [];
+
+  function bairro(idCidade, nomeOuId){
+    const alvo = String(nomeOuId||'').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return bairrosDe(idCidade).find(b=>
+      b.id===alvo ||
+      b.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')===alvo);
+  }
+
+  /* onde fica a sede desta torcida, como objeto de bairro */
+  function bairroDaSede(o){
+    return bairro(o.mapa, o.bairroSede);
+  }
+
+  /* GDD §7.2: bar, loja e subsede rendem conforme a classe do bairro */
+  const multiplicador = b => b ? b.mult : 1.0;
+
+  function bairrosPorZona(idCidade){
+    const fora = {};
+    for(const z of ZONAS) fora[z] = [];
+    for(const b of bairrosDe(idCidade)) (fora[b.zona] = fora[b.zona]||[]).push(b);
+    return fora;
+  }
+
+  /* GDD §6.2: base não organizada = torcedores do clube na cidade,
+     menos quem já está em alguma organizada daquele clube */
+  function baseDeRecrutamento(idCidade, idClube){
+    const c = cidade(idCidade);
+    if(!c) return 0;
+    const t = (c.times||[]).find(x=>x.clubeId===idClube);
+    if(!t) return 0;
+    const organizados = torcidasEm(idCidade)
+      .filter(o=>o.clubeId===idClube)
+      .reduce((s,o)=>s+(o.membros||0), 0);
+    return Math.max(0, (t.torcedores||0) - organizados);
+  }
+
   function sigla(f){
     if(f.sigla) return f.sigla.slice(0,4);
     return (f.nome||'').split(/\s+/).map(p=>p[0]).join('').slice(0,3).toUpperCase();
@@ -156,6 +200,8 @@ TO.mundo = (function(){
   }
 
   return {time, torcida, cidade, jogaveis, torcidasDe, torcidasEm, timesEm,
+          CLASSES, ZONAS, bairrosDe, bairro, bairroDaSede, multiplicador,
+          bairrosPorZona, baseDeRecrutamento,
           TIPOS, valorInicial, statusDoValor, relacaoBase, estiloRelacao, relacoesDe,
           influencia, territorios, ficha, sigla, adversario, divisoes, regioes,
           get parametros(){return D().parametros || {};},
