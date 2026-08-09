@@ -591,6 +591,16 @@ table.dados tr.selecionada td{background:#252525}
 .mini-bt:hover:not(:disabled){background:var(--rubro);border-color:var(--rubro)}
 .mini-bt:disabled{opacity:.3;cursor:default}
 
+/* ---------- o saldo da cena de ação, no relatório ---------- */
+.fecho-cena{
+  display:flex;flex-direction:column;gap:3px;margin-top:12px;
+  padding:9px 11px;background:#16160f;border-left:3px solid var(--fraco);
+}
+.fecho-cena.boa{border-left-color:var(--verde-vivo)}
+.fecho-cena.ruim{border-left-color:var(--vermelho)}
+.fecho-cena b{font-size:13px;line-height:1.35}
+.fecho-cena small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+
 /* ---------- avisos na tela de início ---------- */
 .aviso-linha{
   display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left;cursor:pointer;

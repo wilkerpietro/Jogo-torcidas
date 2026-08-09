@@ -356,10 +356,41 @@ O que **não** veio, e por quê:
   painel do dia de jogo passou a dizer onde a briga é ("Na praça", "Na rua") e o botão do
   portão vira a saída da cena quando não existe estádio pra entrar.
 
-**Próximo passo recomendado: as ações que ainda não têm cena.** Atacar bar ou sede,
-assaltar alvo comercial e pressionar o clube continuam paradas esperando uma tela; a
-emboscada em ponto qualquer da praça e a escolta do aliado também. A malha e as três
-arenas já existem — falta ligar a ação ao ponto do mapa e ao cenário.
+- **As três ações que faltavam ganharam cena** (GDD §4.1). Cada uma abre a mesma tela do
+  dia de jogo num cenário próprio, e o que a noite deu vira caixa, tensão e cadeia quando
+  a tela fecha:
+  - **Bar da rival** — esquina de bairro, fachada nas cores deles, mesa de plástico no
+    deck, sinuca no salão, gradil de calçada que quebra e engradado de cerveja na ponta.
+    O objetivo é a porta do bar. Ganhando, sai a gaveta deles (R$ 60 por cabeça no bar,
+    R$ 30 na sede) mais um naco do caixa, e a moral deles cai 3.
+  - **Alvo comercial** — rua de centro com joalheria de porta de aço, agência com
+    vestíbulo de caixa eletrônico, vitrine de loja, guarita e carro-forte. Quem enfrenta
+    é segurança particular, e a PM tem quatro postos porque comércio tem botão de pânico.
+    Rende de R$ 500 a R$ 9.000 conforme o tipo, descontado por quem caiu antes de
+    carregar; a polícia esquenta de 1,0 a 3,5 mesmo dando certo, e o prestígio **cai**:
+    a rua não aplaude assalto.
+  - **CT do clube** — muro alto, portão de chapa, estacionamento de saibro, ônibus da
+    delegação, alambrado, campo de treino com faixa de cortador, cone e manequim de
+    barreira. Chegar no gramado põe o elenco sob **cobrança** por 4 semanas (+3 de
+    qualidade); ser barrado no portão vira vexame (−2). Nos dois casos a relação com o
+    clube é gasta — e é ela que acaba, não a paciência.
+  A escolha do alvo vem do mapa: os pinos de sede, bar e comércio que o jogador já vê.
+  A lista mostra bairro, tensão e efetivo (ou quanto rende e quanta segurança tem),
+  no máximo dois por tipo pra não virar catálogo de seis joalherias.
+- **Bancada de cenas** (`arredores.html`): uma aba por cenário — arredores, praça, rua,
+  bar, comércio e CT. Trocar de aba remonta a noite ali, com o efetivo típico daquele
+  tipo de briga. É a mesma ponte do jogo, então serve pra calibrar sem abrir save.
+- **Pino não mora em cima de gramado nem colado no vizinho**: o sorteio por hash punha
+  mercadinho no meio do campo e dois ícones no mesmo lote. Agora o estádio entra primeiro
+  (o lugar dele é fixo), os gramados viram área proibida com folga, e cada pino anda na
+  lista de lotes do próprio bairro até achar vaga que respeite o raio do vizinho. Se a
+  folga cheia não couber, ela cede antes de o pino sumir. Medido: 50 pinos, nenhum sobre
+  gramado, nenhum encostado, folga mínima de 20 px além dos dois raios.
+
+**Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
+aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no
+mapa — clicar num ponto da rua pra marcar tocaia, e acompanhar o bonde aliado da rodovia
+até o estádio.
 
 Depois disso, o patrimônio: bares, lojas e subsedes têm receita, manutenção e insumo
 implementados no fechamento, mas não há tela de compra — só existe o bar nível 1 que o

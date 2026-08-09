@@ -82,6 +82,185 @@ TO.acoes = (function(){
   }
 
   /* =======================================================
+     AS AÇÕES QUE ABREM CENA (GDD §4.1)
+     Estas três não se resolvem numa linha de texto: elas põem
+     a torcida na rua e o resultado sai da briga. A ação escolhe
+     o alvo e abre a cena; o que a noite deu vira dinheiro,
+     prestígio, tensão e cadeia quando a tela fecha.
+     ======================================================= */
+  const MINIMO_SAIDA   = 6;    // bonde menor que isto não sai pra investida
+  const MINIMO_ASSALTO = 4;    // assalto é serviço de poucos
+  const SEGURANCA_CT   = 10;   // seguranças e roupeiros que barram o portão
+
+  const escolher = (lista, opc)=>{
+    if(!lista.length) return null;
+    const id = opc && opc.alvo;
+    return (id && lista.find(x=>x.id === id)) || lista[0];
+  };
+
+  /* Bar e sede das outras torcidas da praça, do jeito que estão no mapa —
+     é o mesmo pino que o jogador vê, então atacar não inventa endereço. */
+  function alvosDeAtaque(E){
+    const mo = TO.mapa && TO.mapa.modelo(E);
+    if(!mo) return [];
+    const T = TO.tensao;
+    const fora = [];
+    for(const p of mo.pinos){
+      if(p.nossa || !p.torcida) continue;
+      if(p.tipo !== 'sede' && p.tipo !== 'bar') continue;
+      const o = TO.mundo.torcida(p.torcida);
+      if(!o) continue;
+      const rel = (E.relacoes||{})[o.id];
+      fora.push({
+        id: `${o.id}|${p.tipo}`, torcidaId:o.id, tipo:p.tipo, deQuem:o.nome,
+        nome: `${p.tipo === 'bar' ? 'Bar' : 'Sede'} da ${o.nome}`,
+        artigo:'a', bairro:p.bairro, x:p.x, y:p.y, cor:p.cor,
+        tensao: T ? T.nivel(E, o.id) : 0,
+        relacao: rel === undefined ? 0 : rel,
+        efetivo: efetivoDe(E, o)
+      });
+    }
+    /* o alvo mais quente primeiro: clima ruim pesa mais que tamanho */
+    return fora.sort((a,b)=>(b.tensao - a.tensao) || (a.relacao - b.relacao));
+  }
+
+  /* O que rende num assalto, por tipo de comércio: o que se leva, quanta
+     segurança tem na porta e quanto a polícia se importa (GDD §4.1). */
+  const COMERCIO = {
+    joalheria:  {nome:'Joalheria',        rende:[4200, 9000], seguranca:6, calor:3.0, artigo:'a'},
+    banco:      {nome:'Banco',            rende:[3000, 7000], seguranca:8, calor:3.5, artigo:'o'},
+    roupas:     {nome:'Loja de roupas',   rende:[1200, 2600], seguranca:3, calor:1.5, artigo:'a'},
+    posto:      {nome:'Posto de gasolina',rende:[900, 2100],  seguranca:3, calor:1.8, artigo:'o'},
+    mercadinho: {nome:'Mercadinho',       rende:[500, 1400],  seguranca:2, calor:1.0, artigo:'o'}
+  };
+
+  function alvosDeAssalto(E){
+    const mo = TO.mapa && TO.mapa.modelo(E);
+    if(!mo) return [];
+    const fora = [];
+    for(const p of mo.pinos){
+      const t = COMERCIO[p.tipo];
+      if(!t) continue;
+      fora.push(Object.assign({}, t, {
+        id:`${p.tipo}|${p.bairro}`, tipo:p.tipo, bairro:p.bairro, x:p.x, y:p.y
+      }));
+    }
+    /* o que rende mais primeiro; empate desempata pelo bairro, pra a lista
+       não dançar entre uma abertura e outra */
+    return fora.sort((a,b)=>(b.rende[1] - a.rende[1]) ||
+                            a.bairro.localeCompare(b.bairro));
+  }
+
+  /* A relação com o clube: começa morna e é gasta a cada cobrança.
+     A cobrança em si vale por algumas semanas e mexe no desempenho. */
+  function clube(E){
+    if(!E.clube) E.clube = {relacao:50, cobranca:null};
+    return E.clube;
+  }
+
+  /* =======================================================
+     O QUE CADA CENA DEIXA DEPOIS
+     Chamado quando a tela do dia de jogo fecha. O resultado
+     da briga (res) já passou por membros.aplicarResultadoDaNoite;
+     aqui entra só o que é da ação.
+     ======================================================= */
+  function fecharCena(E, ctx, res){
+    if(!ctx || !ctx.acao) return null;
+    if(ctx.acao === 'atacar')     return fecharAtaque(E, ctx.alvo, res);
+    if(ctx.acao === 'assalto')    return fecharAssalto(E, ctx.alvo, res);
+    if(ctx.acao === 'pressionar') return fecharPressao(E, res);
+    return null;
+  }
+
+  function fecharAtaque(E, alvo, res){
+    const T = TO.tensao;
+    const ganhou = !!res.venceu;
+    const linhas = [];
+    /* bar tomado é caixa deles no bolso da gente; sede é humilhação */
+    if(ganhou){
+      const m = TO.tensao ? TO.tensao.mundo(E)[alvo.torcidaId] : null;
+      const base = alvo.tipo === 'bar' ? 0.22 : 0.10;
+      /* Não é só o caixa deles: bar tem gaveta e estoque, sede tem material.
+         Torcida pequena e pobre ainda rende alguma coisa pela cabeça. */
+      const gaveta = (alvo.tipo === 'bar' ? 60 : 30) * alvo.efetivo;
+      const levou = Math.round(gaveta + (m ? m.caixa : 1200) * base);
+      if(levou > 0){
+        if(m) m.caixa = Math.max(0, m.caixa - levou);
+        TO.estado.lancar(E, `Saque — ${alvo.nome}`, levou);
+        linhas.push(`${U.dinheiro(levou)} do caixa deles`);
+      }
+      if(m){ m.moral = U.limitar(m.moral - 3, 0, 20);
+             m.membros = Math.max(4, m.membros - Math.round(res.caidosVisitante*0.4)); }
+      if(alvo.tipo === 'sede') linhas.push('faixa deles rasgada na porta');
+    }else{
+      linhas.push('a gente saiu de lá pior do que entrou');
+    }
+    /* invadir a casa do outro sobe a tensão até o teto, ganhando ou não */
+    if(T) T.somar(E, alvo.torcidaId, ganhou ? 26 : 18,
+                  `investida no ${alvo.tipo} deles`);
+    E.indicadores.policia = U.limitar(E.indicadores.policia - 1.5, 0, 20);
+    const txt = `${ganhou ? 'Tomamos' : 'Fomos até'} ${alvo.nome}, em ${alvo.bairro}.`+
+                (linhas.length ? ' ' + linhas.join('; ') + '.' : '');
+    TO.estado.anotar(E, txt, ganhou ? 'boa' : 'ruim');
+    return {txt, ganhou, linhas};
+  }
+
+  function fecharAssalto(E, alvo, res){
+    const ganhou = !!res.venceu;
+    const linhas = [];
+    let levou = 0;
+    if(ganhou){
+      /* o que se leva depende de quanta gente ficou de pé pra carregar */
+      const carregou = U.limitar(1 - res.caidosMandante/22, 0.35, 1);
+      levou = Math.round(U.entre(alvo.rende[0], alvo.rende[1]) * carregou);
+      TO.estado.lancar(E, `Assalto — ${alvo.nome} (${alvo.bairro})`, levou);
+      linhas.push(`${U.dinheiro(levou)} no bolso`);
+    }else{
+      linhas.push('nada saiu de lá');
+    }
+    /* crime é crime: a polícia esquenta mesmo quando dá certo */
+    const calor = alvo.calor * (ganhou ? 1 : 0.6);
+    E.indicadores.policia = U.limitar(E.indicadores.policia - calor, 0, 20);
+    /* e prestígio de assalto não é prestígio de briga: a rua não aplaude */
+    E.indicadores.prestigio = U.limitar(E.indicadores.prestigio - 0.5, 0, 20);
+    const txt = `${ganhou ? 'Levaram' : 'Tentaram'} ${alvo.nome.toLowerCase()} `+
+                `em ${alvo.bairro}. ${linhas.join('; ')}.`;
+    TO.estado.anotar(E, txt, ganhou ? 'boa' : 'ruim');
+    return {txt, ganhou, linhas, levou};
+  }
+
+  /* Semanas que a cobrança do elenco dura, e quanto ela vale de qualidade */
+  const COBRANCA = {semanas:4, bom:3, ruim:-2};
+
+  function fecharPressao(E, res){
+    const c = clube(E);
+    const chegou = (res.entraram || 0) > 0 || !!res.venceu;
+    const gasto = chegou ? 18 : 28;
+    c.relacao = U.limitar(c.relacao - gasto, 0, 100);
+    c.cobranca = {ate: E.data.semana + COBRANCA.semanas,
+                  valor: chegou ? COBRANCA.bom : COBRANCA.ruim};
+    /* o torcedor comum gosta de cobrança feita, e detesta vexame */
+    E.indicadores.satisfacao = U.limitar(
+      E.indicadores.satisfacao + (chegou ? 0.8 : -1.2), 0, 20);
+    if(res.presosMandante) E.indicadores.policia =
+      U.limitar(E.indicadores.policia - 1, 0, 20);
+    const txt = chegou
+      ? `A torcida chegou no gramado e cobrou o elenco na cara. `+
+        `O time joga sob pressão até a semana ${c.cobranca.ate}.`
+      : `A segurança segurou a torcida no portão do CT. `+
+        `Vexame — e o elenco se sentiu perseguido até a semana ${c.cobranca.ate}.`;
+    TO.estado.anotar(E, txt, chegou ? 'boa' : 'ruim');
+    return {txt, ganhou:chegou, linhas:[`relação com o clube em ${Math.round(c.relacao)}`]};
+  }
+
+  /* quanto a cobrança soma (ou tira) da qualidade do nosso clube */
+  function cobrancaAtiva(E){
+    const c = E.clube;
+    if(!c || !c.cobranca) return 0;
+    return c.cobranca.ate >= E.data.semana ? c.cobranca.valor : 0;
+  }
+
+  /* =======================================================
      CATÁLOGO
      Cada ação diz por que não pode, em vez de só ficar cinza.
      ======================================================= */
@@ -263,16 +442,67 @@ TO.acoes = (function(){
       }
     },
 
-    /* --- as que dependem de cena, ainda por fazer (GDD §4.1) --- */
-    {id:'atacar',    nome:'Atacar bar ou sede rival', icone:'tijolo', cena:'Cena do alvo',
-     efeito:'Saque, prestígio e dano ao rival',
-     disponivel(){return {ok:false, motivo:'depende da cena do alvo (GDD §4.1)'};}},
-    {id:'assalto',   nome:'Assaltar alvo comercial', icone:'dinheiro', cena:'Alvo comercial',
-     efeito:'Dinheiro, com risco alto de polícia',
-     disponivel(){return {ok:false, motivo:'depende da cena de alvo comercial'};}},
+    /* --- as três que abrem cena (GDD §4.1) —
+           a lista, os alvos e o que cada resultado faz estão logo abaixo --- */
+    {id:'atacar',    nome:'Atacar bar ou sede rival', icone:'tijolo', cena:'Bar',
+     efeito:'Saque, prestígio e dano ao rival', alvos:alvosDeAtaque,
+     disponivel(E){
+       const aptos = TO.membros.aptosParaOEstadio(E).length;
+       if(aptos < MINIMO_SAIDA)
+         return {ok:false, motivo:`gente apta de menos (${aptos} de ${MINIMO_SAIDA})`};
+       const l = alvosDeAtaque(E);
+       if(!l.length) return {ok:false, motivo:'nenhum bar ou sede rival mapeado na praça'};
+       const q = l[0];
+       return {ok:true, nota:`${l.length} alvos · o mais quente é ${q.nome}`};
+     },
+     executar(E, opc){
+       const alvo = escolher(alvosDeAtaque(E), opc);
+       if(!alvo) return {ok:false, msg:'Esse alvo não existe mais.'};
+       return {ok:true, cena:{cena:'bar', acao:'atacar', alvo,
+                              efetivoRival: Math.max(4, Math.round(alvo.efetivo*0.35))},
+               msg:`Bonde a caminho: ${alvo.nome}, ${alvo.bairro}.`};
+     }},
+
+    {id:'assalto',   nome:'Assaltar alvo comercial', icone:'dinheiro', cena:'Comércio',
+     efeito:'Dinheiro, com risco alto de polícia', alvos:alvosDeAssalto,
+     disponivel(E){
+       const aptos = TO.membros.aptosParaOEstadio(E).length;
+       if(aptos < MINIMO_ASSALTO)
+         return {ok:false, motivo:`turma pequena demais (${aptos} de ${MINIMO_ASSALTO})`};
+       if(E.indicadores.policia >= 17)
+         return {ok:false, motivo:'com a polícia em cima é entregar a torcida'};
+       const l = alvosDeAssalto(E);
+       if(!l.length) return {ok:false, motivo:'nenhum alvo comercial na praça'};
+       return {ok:true, nota:`${l.length} alvos · ${l[0].nome} rende mais`};
+     },
+     executar(E, opc){
+       const alvo = escolher(alvosDeAssalto(E), opc);
+       if(!alvo) return {ok:false, msg:'Esse alvo não existe mais.'};
+       return {ok:true, cena:{cena:'comercio', acao:'assalto', alvo,
+                              efetivoRival: alvo.seguranca},
+               msg:`Turma na porta d${alvo.artigo} ${alvo.nome}.`};
+     }},
+
     {id:'pressionar',nome:'Pressionar o clube', icone:'megafone', cena:'CT',
      efeito:'Muda o desempenho do time, gasta relação',
-     disponivel(){return {ok:false, motivo:'depende da cena do CT'};}}
+     disponivel(E){
+       const aptos = TO.membros.aptosParaOEstadio(E).length;
+       if(aptos < MINIMO_SAIDA)
+         return {ok:false, motivo:`gente apta de menos (${aptos} de ${MINIMO_SAIDA})`};
+       const c = clube(E);
+       if(c.relacao <= 5)
+         return {ok:false, motivo:'a diretoria não abre mais o portão pra vocês'};
+       if(c.cobranca && c.cobranca.ate >= E.data.semana)
+         return {ok:false, motivo:`o elenco já foi cobrado (vale até a semana ${c.cobranca.ate})`};
+       return {ok:true, nota:`relação com o clube em ${Math.round(c.relacao)}`};
+     },
+     executar(E){
+       const c = clube(E);
+       return {ok:true, cena:{cena:'ct', acao:'pressionar',
+                              alvo:{nome:E.torcida.clube, tipo:'ct'},
+                              efetivoRival: SEGURANCA_CT},
+               msg:`Caravana no portão do CT. Relação em ${Math.round(c.relacao)}.`};
+     }}
   ];
 
   const porId = id => LISTA.find(a=>a.id===id);
@@ -280,7 +510,7 @@ TO.acoes = (function(){
   /* =======================================================
      EXECUÇÃO
      ======================================================= */
-  function executar(E, id){
+  function executar(E, id, opc){
     const a = porId(id);
     if(!a) return {ok:false, msg:'ação desconhecida'};
     if(restantes(E) <= 0)
@@ -289,7 +519,7 @@ TO.acoes = (function(){
     const d = a.disponivel(E);
     if(!d.ok) return {ok:false, msg:d.motivo};
 
-    const r = a.executar(E);
+    const r = a.executar(E, opc);
     /* GDD §6.2: algumas recusas não gastam a ação */
     if(r.ok && !r.semCusto) E.acoes.usadas = (E.acoes.usadas||0) + 1;
     if(r.ok){
@@ -301,5 +531,7 @@ TO.acoes = (function(){
 
   return {LISTA, porId, maximo, restantes, executar, previsaoRecrutamento,
           organizadasDaPraca, efetivoDe,
+          alvosDeAtaque, alvosDeAssalto, clube, fecharCena, cobrancaAtiva,
+          COMERCIO, COBRANCA, MINIMO_SAIDA, MINIMO_ASSALTO,
           POR_SEMANA, CAP_RECRUTA};
 })();

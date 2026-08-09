@@ -25,8 +25,10 @@ ALVOS = {
     'cena': {
         'pagina': 'arredores.html',
         'js': ['js/nucleo.js', 'dados/nomes.js', 'dados/cena_arredores.js',
-               'js/diajogo/arredores.js', 'js/diajogo/combate.js', 'js/diajogo/ponte.js'],
-        'inicio': 'TO.diaJogo.ponte.montar();',
+               'dados/cenas.js', 'js/diajogo/cenario.js',
+               'js/diajogo/arredores.js', 'js/diajogo/combate.js', 'js/diajogo/ponte.js',
+               'js/diajogo/bancada.js'],
+        'inicio': 'TO.diaJogo.bancada.montar();',
     },
     'jogo': {
         'pagina': 'index.html',

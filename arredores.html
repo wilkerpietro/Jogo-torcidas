@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Arredores do estádio — Torcida Organizada</title>
+<title>Cenas de briga — Torcida Organizada</title>
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/paineis.css">
 <link rel="stylesheet" href="css/cenas.css">
@@ -13,14 +13,27 @@
     border-bottom:2px solid var(--linha);padding:10px 16px}
   header#topo h1{font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
   header#topo span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);letter-spacing:.08em}
+  /* a barra de cenas: uma aba por cenário, pra abrir e conferir cada um */
+  #cenaAbas{display:flex;flex-wrap:wrap;gap:7px;padding:9px 16px;
+    border-bottom:1px solid var(--linha);background:#141412}
+  #cenaAbas button{
+    background:#1e1e1a;border:1px solid var(--linha);color:var(--apagado);
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;padding:6px 13px;cursor:pointer}
+  #cenaAbas button:hover{color:#fff;border-color:var(--ouro)}
+  #cenaAbas button.on{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+  #cenaAbas small{font-family:var(--mono);font-size:10px;color:var(--fraco);
+    align-self:center;margin-left:6px}
 </style>
 </head>
 <body>
 
 <header id="topo">
-  <h1>Arredores do estádio</h1>
+  <h1 id="cenaTitulo">Arredores do estádio</h1>
   <span>CENA SOBRE FOTO · MALHA DE CAMINHABILIDADE · <b style="color:var(--ouro)">F2</b> EDITOR</span>
 </header>
+
+<div id="cenaAbas"></div>
 
 <div id="djGrade">
   <div>
@@ -51,7 +64,7 @@
 
   <div>
     <div class="painel">
-      <h2>Nos arredores</h2>
+      <h2 id="djLocal">Nos arredores</h2>
       <div id="djFormacoes"></div>
       <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
       <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
@@ -68,9 +81,12 @@
 <script src="js/nucleo.js"></script>
 <script src="dados/nomes.js"></script>
 <script src="dados/cena_arredores.js"></script>
+<script src="dados/cenas.js"></script>
+<script src="js/diajogo/cenario.js"></script>
 <script src="js/diajogo/arredores.js"></script>
 <script src="js/diajogo/combate.js"></script>
 <script src="js/diajogo/ponte.js"></script>
-<script>TO.diaJogo.ponte.montar();</script>
+<script src="js/diajogo/bancada.js"></script>
+<script>TO.diaJogo.bancada.montar();</script>
 </body>
 </html>

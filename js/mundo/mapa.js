@@ -86,7 +86,7 @@ TO.mapa = (function(){
       const nossa = o.id === E.torcida.id;
       const clube = M().time(o.clubeId);
       const cor = (o.cores && o.cores[0]) || '#a51f1c';
-      lista.push({bairro:o.bairroSede, tipo:'sede', nossa, cor,
+      lista.push({bairro:o.bairroSede, tipo:'sede', nossa, cor, torcida:o.id,
                   label:`Sede · ${o.nome}${clube?` (${clube.nome})`:''}`});
       /* GDD §7.2: o bar fica em zona diferente da sede. O da nossa torcida
          sai do patrimônio; o das outras é sorteado com semente fixa. */
@@ -95,7 +95,8 @@ TO.mapa = (function(){
       const fora = bairros.filter(b=>b.zona !== zonaSede);
       if(!fora.length) continue;
       const b = fora[hash(o.id) % fora.length];
-      lista.push({bairro:b.nome, tipo:'bar', cor, label:`Bar · ${o.nome}`});
+      lista.push({bairro:b.nome, tipo:'bar', cor, torcida:o.id,
+                  label:`Bar · ${o.nome}`});
     }
 
     /* --- o que é nosso --- */
@@ -271,25 +272,70 @@ TO.mapa = (function(){
     return {x:(c+0.5)*a.passo, y:(r+0.5)*a.passo};
   }
 
+  /* Quanto espaço cada pino ocupa na tela, pra ninguém encostar em ninguém */
+  const R_PINO = 11;
+  const raioDoPino = p => p && p.estadio
+    ? Math.max(13, Math.min(p.estadio.w, p.estadio.h)*0.42) : R_PINO;
+  const FOLGA = 5;          // respiro entre dois pinos vizinhos
+  const FOLGA_GRAMADO = 6;  // e a borda do campo, que não é endereço de nada
+
   function modeloDaArte(E, a){
     const todas = estruturas(E);
     const mostra = new Set(visiveis(E, todas));
     const m = decodificar(a);
     const campos = paresDeEstadio(a, todas);
-    /* dois pinos não dividem lote: quem chega depois anda na lista */
-    const usados = new Set();
-    const pinos = [];
+
+    /* Duas regras de convivência, que o sorteio por hash sozinho não dá:
+       1. ninguém mora dentro do gramado — o campo é do estádio;
+       2. dois pinos não se encostam, senão o ícone de um come o do outro.
+       O estádio entra primeiro porque o lugar dele é fixo; o resto anda
+       na lista de lotes do próprio bairro até achar vaga. */
+    const gramados = (a.estadios||[]).map(e=>({
+      x0:e.x - e.w/2, x1:e.x + e.w/2,
+      y0:e.y - e.h/2, y1:e.y + e.h/2}));
+    const noGramado = (x, y, r)=>gramados.some(g=>
+      x > g.x0-r-FOLGA_GRAMADO && x < g.x1+r+FOLGA_GRAMADO &&
+      y > g.y0-r-FOLGA_GRAMADO && y < g.y1+r+FOLGA_GRAMADO);
+
+    const postos = [];
+    const cabe = (x, y, r, folga)=>!postos.some(p=>
+      Math.hypot(p.x-x, p.y-y) < p.r + r + folga);
+
+    const pinos = new Array(todas.length).fill(null);
+    const põe = (item, i, q)=>{
+      const r = raioDoPino(q);
+      postos.push({x:q.x, y:q.y, r});
+      pinos[i] = Object.assign({}, item, q, {visivel: mostra.has(item)});
+    };
+
+    /* 1ª volta: os estádios, no gramado que é deles */
     todas.forEach((item, i)=>{
-      let p = null;
-      for(let t=0; t<8 && !p; t++){
-        const q = lugarNaArte(a, E.torcida.mapa, item, i+t*97, campos.get(i));
-        if(!q) break;
-        const ch = `${Math.round(q.x/a.passo)}|${Math.round(q.y/a.passo)}`;
-        if(!usados.has(ch) || q.estadio){ usados.add(ch); p = q; }
-      }
-      if(p) pinos.push(Object.assign({}, item, p, {visivel: mostra.has(item)}));
+      const campo = campos.get(i);
+      if(!campo) return;
+      põe(item, i, lugarNaArte(a, E.torcida.mapa, item, i, campo));
     });
-    return {arte:a, tam:a.largura, malha:m, pinos,
+
+    /* 2ª volta: o resto. Se a folga cheia não couber em lugar nenhum do
+       bairro, ela cede — pino apertado ainda é melhor que pino sumido. */
+    const TENTATIVAS = 40;
+    todas.forEach((item, i)=>{
+      if(pinos[i]) return;
+      let cru = null;
+      for(const folga of [FOLGA, 2, 0]){
+        for(let t=0; t<TENTATIVAS; t++){
+          const q = lugarNaArte(a, E.torcida.mapa, item, i + t*97);
+          if(!q) return;
+          cru = cru || q;
+          if(noGramado(q.x, q.y, R_PINO)) continue;
+          if(!cabe(q.x, q.y, R_PINO, folga)) continue;
+          põe(item, i, q);
+          return;
+        }
+      }
+      if(cru) põe(item, i, cru);
+    });
+
+    return {arte:a, tam:a.largura, malha:m, pinos:pinos.filter(Boolean),
             regioes:a.bairros, celulas:[], porLado:0,
             total:todas.length, mostrando:mostra.size,
             alvos:[], sob:null};
@@ -454,7 +500,7 @@ TO.mapa = (function(){
     if(!opc.semPinos)
       for(const p of mo.pinos){
         if(!p.visivel) continue;
-        const r = p.estadio ? Math.max(13, Math.min(p.estadio.w, p.estadio.h)*0.42) : 11;
+        const r = raioDoPino(p);
         pino(ctx, p.x, p.y, r, p);
         mo.alvos.push({x:p.x-r, y:p.y-r, w:r*2, h:r*2, tipo:p.tipo, item:p,
                        info:`${p.bairro} · ${p.label}`});

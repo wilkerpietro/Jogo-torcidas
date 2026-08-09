@@ -216,7 +216,10 @@ TO.torcedores = (function(){
     const meu = E.torcida.clubeId;
     if(idCasa !== meu && idFora !== meu) return 0;
     const f = fatorTorcida(E).valor;
-    const b = (f - NEUTRO) * EM_QUALIDADE;
+    /* GDD §4.1: cobrança no CT vale algumas semanas — elenco cobrado joga
+       apertado, elenco humilhado joga com medo */
+    const cob = TO.acoes && TO.acoes.cobrancaAtiva ? TO.acoes.cobrancaAtiva(E) : 0;
+    const b = (f - NEUTRO) * EM_QUALIDADE + cob;
     return idCasa === meu ? b : -b;      // o bônus é de quem a gente apoia
   }
 

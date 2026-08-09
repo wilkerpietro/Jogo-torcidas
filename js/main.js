@@ -415,12 +415,18 @@
       `<span class="ic">${IC.get(a.icone)}</span>
        <span class="txt"><span>${a.nome}</span><small>${sub}</small></span>
        ${a.custo?`<span class="custo">${U.dinheiro(-a.custo)}</span>`:''}`;
-    b.onclick = ()=>{
-      const r = TO.acoes.executar(e, a.id);
+    const usar = opc=>{
+      const r = TO.acoes.executar(e, a.id, opc);
       aviso(r.msg || (r.ok?'Feito.':'Não deu.'),
             r.ok && r.tipo!=='ruim' ? 'boa' : 'ruim');
       aoUsar && aoUsar();
       redesenhar();
+      /* ação que abre cena não termina aqui: termina quando a tela fecha */
+      if(r.ok && r.cena) abrirAcaoEmCena(r.cena);
+    };
+    b.onclick = ()=>{
+      if(a.alvos) escolherAlvo(a, alvo=>usar(alvo ? {alvo:alvo.id} : null));
+      else usar(null);
     };
     return b;
   }
@@ -2660,7 +2666,7 @@
     });
   }
 
-  function fecharDiaDeJogo(res, enc){
+  function fecharDiaDeJogo(res, enc, acao){
     TO.estado.bloquear(false);
     /* bomba jogada é bomba que não volta pro estoque (GDD §9.1) */
     const e = E();
@@ -2673,13 +2679,73 @@
       TO.ruas.resolver(e);
       encontroAberto = null;
     }
+    /* investida, assalto e cobrança no CT: o que a noite deu vira caixa,
+       tensão e cadeia aqui, e não dentro da cena */
+    const fecho = acao ? TO.acoes.fecharCena(e, acao, res) : null;
     setTimeout(()=>{
       $('telaDiaJogo').classList.add('oculto');
-      mostrarRelatorio(res, resumo);
+      mostrarRelatorio(res, resumo, fecho);
     }, 1400);
   }
 
-  function mostrarRelatorio(res, resumo){
+  /* =======================================================
+     AÇÃO QUE VIRA CENA (GDD §4.1)
+     Atacar bar ou sede, assaltar comércio e pressionar o clube
+     abrem a mesma tela do dia de jogo, num cenário próprio.
+     ======================================================= */
+  function abrirAcaoEmCena(cena){
+    const e = E();
+    const aptos = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
+      .slice(0, cena.acao === 'assalto' ? 12 : 34);
+    $('telaDiaJogo').classList.remove('oculto');
+    TO.estado.bloquear(true);
+    const p = TO.planejamento.plano(e);
+    TO.diaJogo.ponte.montar({
+      canvas: $('djPrincipal'),
+      config: { escalacao: aptos, intencao:'atacar',
+                /* assalto não é briga anunciada: ninguém leva bomba */
+                bombas: cena.acao === 'assalto' ? 0 : p.bombas,
+                efetivoRival: cena.efetivoRival, local: cena.cena },
+      aoTerminar: res => fecharDiaDeJogo(res, null, cena)
+    });
+  }
+
+  /* o alvo é escolhido antes de sair: a lista vem da própria ação */
+  function escolherAlvo(a, aoIr){
+    const e = E();
+    const lista = a.alvos ? a.alvos(e) : [];
+    if(!lista.length){ aoIr(null); return; }
+    const corpo = el('div');
+    corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span class="fraco">${a.id === 'assalto'
+        ? 'Quanto maior o prêmio, mais segurança na porta.'
+        : 'O clima com cada um pesa: quem já está quente reage pior.'}</span>`}));
+    /* a praça tem seis joalherias: mostrar as seis é lista inútil. Duas de
+       cada tipo já dá escolha de bairro sem virar catálogo. */
+    const teto = a.id === 'assalto' ? 2 : 99, vistos = {};
+    const curta = lista.filter(x=>{
+      vistos[x.tipo] = (vistos[x.tipo]||0) + 1;
+      return vistos[x.tipo] <= teto;
+    }).slice(0, 8);
+    let fechar = null;
+    for(const alvo of curta){
+      const b = el('button',{class:'acao-linha'});
+      const dir = a.id === 'assalto'
+        ? `${alvo.bairro} · ${U.dinheiro(alvo.rende[0])} a ${U.dinheiro(alvo.rende[1])} · `+
+          `${alvo.seguranca} na segurança`
+        : `${alvo.bairro} · tensão ${Math.round(alvo.tensao)} · `+
+          `${alvo.efetivo} membros`;
+      b.innerHTML =
+        `<span class="ic">${IC.get(a.icone)}</span>
+         <span class="txt"><span>${alvo.nome}</span><small>${dir}</small></span>`;
+      b.onclick = ()=>{ fechar && fechar(); aoIr(alvo); };
+      corpo.appendChild(b);
+    }
+    fechar = modal(a.nome, 'Escolha o alvo', corpo);
+  }
+
+  function mostrarRelatorio(res, resumo, fecho){
     $('subRelatorio').textContent = res.motivo;
     const cx = $('corpoRelatorio');
     cx.innerHTML =
@@ -2690,7 +2756,8 @@
       `${res.prestigio>0?'+':''}${res.prestigio}</b></div>
            <div class="linha-dado"><span>Caídos deles / seus</span>
              <b>${res.caidosVisitante} / ${res.caidosMandante}</b></div>
-           <div class="linha-dado"><span>Entraram no estádio</span>
+           <div class="linha-dado">
+             <span>${fecho ? 'Chegaram no alvo' : 'Entraram no estádio'}</span>
              <b>${resumo.entraram.length}</b></div>
          </div>
          <div>
@@ -2699,6 +2766,12 @@
            <div class="linha-dado"><span>Presos</span><b>${resumo.presos.length}</b></div>
          </div>
        </div>`;
+    /* o que a investida, o assalto ou a cobrança no CT deixaram */
+    if(fecho){
+      cx.appendChild(el('div',{class:`fecho-cena ${fecho.ganhou?'boa':'ruim'}`,
+        html:`<b>${fecho.txt}</b>`+
+             (fecho.linhas||[]).map(l=>`<small>${l}</small>`).join('')}));
+    }
     if(resumo.feridos.length){
       cx.appendChild(el('div',{class:'titulo-pagina',
         texto:`Feridos — ${TO.membros.DIAS_FERIDO} dias fora`,
