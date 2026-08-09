@@ -292,18 +292,26 @@ TO.mapa = (function(){
     ctx.closePath();
   }
 
-  function desenhar(mo, canvas){
+  /* opc: {semPinos, semNomes} — a planta limpa, pra levar num upscaler */
+  function desenhar(mo, canvas, opc){
     if(!mo || !canvas) return;
+    opc = opc || {};
     const dpr = canvas._dpr || 1;
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, mo.tam, mo.tam);
     mo.alvos = [];
+    mo.opc = opc;
+    /* Os pontos de interesse vão numa camada por cima de TUDO. Desenhados
+       no meio da varredura, o lote vizinho — e até o quarteirão vizinho —
+       passava por cima do pino, que estoura a borda do próprio lote. */
+    mo.camadaPinos = [];
     fundo(ctx, mo);
     decoracao(ctx, mo);
     vias(ctx, mo);
     for(const c of mo.celulas) bairro(ctx, mo, c);
     rotatoria(ctx, mo);
+    if(!opc.semPinos) for(const f of mo.camadaPinos) f(ctx);
     realce(ctx, mo);
   }
 
@@ -456,6 +464,7 @@ TO.mapa = (function(){
       quarteirao(ctx, mo, cel, q, x, y, bw, bh, cel.especiais[q]);
     }
 
+    if(mo.opc && mo.opc.semNomes) return;
     const rot = String(cel.bairro.nome||'').toUpperCase();
     ctx.save();
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -483,7 +492,12 @@ TO.mapa = (function(){
     ctx.fillStyle = '#252528'; ctx.fillRect(x, y, w, h);
     ctx.strokeStyle = '#151517'; ctx.lineWidth = 1;
     ctx.strokeRect(x+.5, y+.5, w-1, h-1);
-    if(esp && esp.tipo === 'estadio'){ estadio(ctx, x, y, w, h, esp); return; }
+    if(esp && esp.tipo === 'estadio'){
+      estadio(ctx, x, y, w, h, esp);
+      const r = Math.max(15, Math.min(24, Math.min(w,h)*.28));
+      mo.camadaPinos.push(c=>pino(c, x+w/2, y+h/2, r, esp));
+      return;
+    }
 
     const vao = 1;
     const lw = (w - 2 - vao*4)/5, lh = (h - 2 - vao)/2;
@@ -493,6 +507,7 @@ TO.mapa = (function(){
       const ly = y + 1 + Math.floor(i/5)*(lh+vao);
       if(esp && i === alvo) lote(ctx, mo, lx, ly, lw, lh, esp, info);
       else casa(ctx, cel.bairro.nome, q, i, lx, ly, lw, lh);
+
     }
   }
 
@@ -513,10 +528,18 @@ TO.mapa = (function(){
   function lote(ctx, mo, x, y, w, h, item, info){
     const p = pinoDe(item);
     const bg = item.cor && (item.tipo==='sede' || item.tipo==='bar') ? item.cor : p.cor;
+    /* o terreno fica no lugar dele, na varredura normal */
     ctx.fillStyle = bg; ctx.fillRect(x, y, w, h);
     ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(x, y+h*.55, w, h*.45);
     ctx.strokeStyle = 'rgba(0,0,0,.65)'; ctx.strokeRect(x+.5, y+.5, w-1, h-1);
-    pino(ctx, x+w-3, y+3, Math.max(8, Math.min(12, w*.42)), item);
+    /* o pino, que transborda o lote, sobe pra camada de cima */
+    const r = Math.max(8, Math.min(12, w*.42));
+    mo.camadaPinos.push(c=>{
+      c.fillStyle = bg; c.fillRect(x, y, w, h);
+      c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(x, y+h*.55, w, h*.45);
+      c.strokeStyle = 'rgba(0,0,0,.65)'; c.strokeRect(x+.5, y+.5, w-1, h-1);
+      pino(c, x+w-3, y+3, r, item);
+    });
     mo.alvos.push({x, y, w, h, info, tipo:item.tipo, item});
   }
 
@@ -530,7 +553,6 @@ TO.mapa = (function(){
     arredondado(ctx, x+w*.22, y+h*.24, w*.56, h*.52, 3); ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1;
     ctx.strokeRect(x+w*.31, y+h*.34, w*.38, h*.32);
-    pino(ctx, x+w/2, y+h/2, Math.max(15, Math.min(24, Math.min(w,h)*.28)), item);
   }
 
   /* =======================================================
@@ -680,6 +702,40 @@ TO.mapa = (function(){
     ctx.restore();
   }
 
+  /* =======================================================
+     A PLANTA EM IMAGEM
+     Rende o mapa num canvas fora da tela, no tamanho que se
+     pedir. Serve pra levar a planta pra um upscaler e voltar
+     com a cidade pintada, como foi feito com a foto aérea dos
+     arredores. Sem pino e sem nome de bairro, que é o que a IA
+     estraga.
+     ======================================================= */
+  function paraImagem(E, opc){
+    opc = opc || {};
+    const lado = opc.lado || 2048;
+    const mo = modelo(E);
+    if(!mo) return null;
+    const cv = document.createElement('canvas');
+    cv.width = lado; cv.height = lado;
+    cv._dpr = lado / TAM;
+    desenhar(mo, cv, {semPinos: opc.semPinos !== false,
+                      semNomes: opc.semNomes !== false});
+    return cv;
+  }
+
+  function baixarImagem(E, opc){
+    const cv = paraImagem(E, opc);
+    if(!cv) return null;
+    const cidade = M().cidade(E.torcida.mapa) || {id:'mapa'};
+    const nome = (opc && opc.nome) ||
+      `mapa-${cidade.id}-${cv.width}.png`;
+    const a = document.createElement('a');
+    a.download = nome;
+    a.href = cv.toDataURL('image/png');
+    a.click();
+    return nome;
+  }
+
   const alvoEm = (mo, x, y)=>{
     for(let i=mo.alvos.length-1;i>=0;i--){
       const a = mo.alvos[i];
@@ -691,5 +747,6 @@ TO.mapa = (function(){
   return {TAM, PAD, AVENIDA, QUARTEIROES, LOTES,
           NEUTROS, TIPOS_TORCIDA, TIPOS_NEUTRO,
           hash, filtros, estruturas, modelo, desenhar, alvoEm, pinoDe, classeDe,
+          paraImagem, baixarImagem,
           ICONE};
 })();

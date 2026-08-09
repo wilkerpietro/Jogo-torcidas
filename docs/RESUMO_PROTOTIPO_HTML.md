@@ -307,11 +307,27 @@ O que **não** veio, e por quê:
   janela, mercadinho é carrinho, posto é bomba, joalheria é brilhante, roupas é cabide,
   banco é frontão de colunas e hospital é cruz — todos desenhados em vetor, legíveis a 12
   pixels.
-- **Força dos clubes evolui** (portado do protótipo antigo, com um conserto): a posição
+- **Força dos clubes evolui** (portado do protótipo antigo, com dois consertos): a posição
   final de cada competição move a qualidade do clube, e a evolução vive no save, não em
-  `times.js`. As faixas herdadas tinham média positiva e em cinco anos os 108 clubes
-  chegavam todos no teto — medido. Agora o delta é centrado na média da temporada: dez
-  anos depois a soma das qualidades varia 2%, mas Grêmio subiu 16 e o Remo caiu 9.
+  `times.js`. Duas correções que só apareceram medindo:
+  1. As faixas herdadas têm média positiva — em cinco anos os 108 clubes chegavam no teto.
+  2. Centrar pela média geral não bastou: a tabela é muito mais generosa na Série A (16 dos
+     20 com média positiva) que na D (teto de +2). Em vinte anos isso virava uma
+     aristocracia congelada — medido: 9 clubes da A no teto, 30 da D no piso, Série A
+     ganhando +12,4 de média enquanto todo o resto perdia.
+  A resposta foi centrar **por competição** (cada divisão é soma zero dentro de si, e o
+  movimento entre divisões fica por conta do acesso) e somar uma **gravidade de divisão**
+  de 12% ao ano em direção ao nível típico de onde o clube está jogando — gigante
+  rebaixado perde elenco, pequeno que sobe recebe dinheiro. Medido em 20 temporadas:
+  nenhum clube no teto, 8 no piso, 56 dos 108 variando dentro de ±3, e histórias reais
+  nas pontas (Central 6→32 subindo da D à A; Santos 34→13 caindo à B).
+- **Planta do mapa em PNG**: `TO.mapa.paraImagem()` rende a cidade num canvas fora da tela
+  no tamanho que se pedir, sem pinos e sem nome de bairro — que é o que um upscaler
+  estraga. O botão fica na barra do Mapa, e `img/cenas/planta-fortaleza-2048.png` é a
+  primeira saída, no mesmo caminho que a foto dos arredores seguiu.
+- **Pinos numa camada por cima**: o ponto de interesse era desenhado no meio da varredura
+  dos lotes, então o lote vizinho passava por cima dele. Agora o terreno fica na varredura
+  e o pino sobe pra uma camada desenhada depois de todos os bairros.
 
 **Próximo passo recomendado: pôr o mapa pra trabalhar.** A planta da cidade já está de
 pé; o que falta é a camada viva por cima dela — onde a torcida rival está agora, o bonde

@@ -2466,6 +2466,15 @@
     bMais.onclick  = ()=>{ zoomMapa = Math.min(2,   zoomMapa+0.2); redesenhar(); };
     zoom.append(bMenos, el('span',{texto:Math.round(zoomMapa*100)+'%'}), bMais);
 
+    /* a planta em PNG, sem pino e sem nome: é o que se leva pro upscaler */
+    const btPng = el('button',{class:'bt', texto:'Baixar planta (PNG)'});
+    btPng.onclick = ()=>{
+      const nome = TO.mapa.baixarImagem(e, {lado:2048});
+      aviso(nome ? `Planta salva: ${nome} (2048×2048, sem pinos).`
+                 : 'Não deu pra gerar a planta.', nome ? 'boa' : 'ruim');
+    };
+    barraRua.appendChild(btPng);
+
     casca.append(cv, filtros, zoom, dica);
     viewport.appendChild(casca);
     q.corpo.appendChild(viewport);

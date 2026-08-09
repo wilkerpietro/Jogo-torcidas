@@ -93,7 +93,7 @@ TO.competicoes = (function(){
     E.qualidades = E.qualidades || {};
 
     /* 1. cada competição dá um delta bruto por posição */
-    const bruto = {};
+    const bruto = {}, porComp = {};
     for(const comp of S.competicoes){
       const div = ESCADA.indexOf(comp.nome) + 1;   // 0 = não é Brasileirão
       const linhas = comp.grupos && comp.grupos.length > 1
@@ -110,21 +110,51 @@ TO.competicoes = (function(){
         /* o regional vale menos: é um torneio de dez jogos */
         else               d = (pos<=2 ? U.inteiro(0,2) : U.inteiro(-1,1)) * 0.5;
         bruto[l.id] = (bruto[l.id] || 0) + d;
+        /* o clube pertence à competição de maior peso em que jogou:
+           o nacional manda, o regional é tempero */
+        if(div || !porComp[l.id]){
+          (porComp[comp.nome] = porComp[comp.nome] || []).push(l.id);
+        }
       });
     }
 
-    /* 2. tira a média: futebol não fica melhor no atacado. Sem isso, as
-       faixas herdadas do protótipo antigo têm média positiva e em cinco
-       anos os 108 clubes chegam todos no teto — medido. */
     const ids = Object.keys(bruto);
     if(!ids.length) return [];
-    const media = ids.reduce((s,id)=>s+bruto[id], 0) / ids.length;
 
-    /* 3. o delta é da escala de força (1–100); a qualidade é 4–50 */
+    /* 2. cada divisão é soma zero DENTRO DE SI. Tirar só a média geral não
+       basta: a tabela do protótipo é muito mais generosa na Série A (16 dos
+       20 com média positiva) que na D (teto de +2), e em vinte anos isso
+       vira uma aristocracia congelada — medido, 9 clubes da A no teto e 30
+       da D no piso. Centrando por competição, quem sobe de nível sobe às
+       custas de quem desceu na MESMA divisão, e o resto do movimento entre
+       divisões fica por conta do acesso e do rebaixamento, que é onde ele
+       deve estar. */
+    for(const grupo of Object.values(porComp)){
+      if(!grupo.length) continue;
+      const m = grupo.reduce((s,id)=>s+bruto[id], 0) / grupo.length;
+      for(const id of grupo) bruto[id] -= m;
+    }
+
+    /* 3. gravidade da divisão: todo ano o clube anda um pouco na direção do
+       nível típico de onde está jogando. Gigante rebaixado perde elenco,
+       clube pequeno que sobe recebe dinheiro. É isso que impede alguém de
+       estacionar encostado no teto ou no piso. */
+    const soma = {}, conta = {};
+    for(const id of ids){
+      const d = divisaoDe(E, M().time(id) || {});
+      soma[d] = (soma[d]||0) + qualidadeDe(E, id);
+      conta[d] = (conta[d]||0) + 1;
+    }
+    const GRAVIDADE = 0.12;
+
+    /* 4. o delta é da escala de força (1–100); a qualidade é 4–50 */
     const mov = [];
     for(const id of ids){
       const antes = qualidadeDe(E, id);
-      const dep = U.limitar(Math.round(antes + (bruto[id]-media)/2), 4, 50);
+      const d = divisaoDe(E, M().time(id) || {});
+      const nivel = conta[d] ? soma[d]/conta[d] : antes;
+      const puxao = (nivel - antes) * GRAVIDADE;
+      const dep = U.limitar(Math.round(antes + bruto[id]/2 + puxao), 4, 50);
       if(dep !== antes){ E.qualidades[id] = dep; mov.push({id, de:antes, para:dep}); }
     }
     usarSave(E);
