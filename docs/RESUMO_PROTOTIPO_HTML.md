@@ -168,6 +168,27 @@ atravessando a cidade é perigoso demais. Guardado para quando o mapa entrar.
 
 ---
 
+## 7.5 O protótipo antigo (`legado/unity/`)
+
+O autor subiu o protótipo anterior — `index.html`, `app.js` (8 mil linhas), `data.js`
+(22 mil) e `styles.css`, mais dois arquivos C# da era Unity. Foi lido inteiro. O que
+valia a pena já veio pra cá:
+
+- **o mapa da cidade em canvas** — o problema difícil já estava resolvido lá;
+- **os 76 estádios com bairro e capacidade**, que a planilha não tem;
+- **a evolução de força dos clubes entre temporadas** (com a média corrigida).
+
+O que **não** veio, e por quê:
+
+- `BrasileiraoManager.cs` / `BrasileiraoUI.cs`: quatro divisões e uma copa. O nosso
+  `js/mundo/competicoes.js` já faz dezesseis competições com mando, rivalidade e grade
+  de horários. Não há o que aproveitar.
+- O calendário e o financeiro do protótipo: mesma ideia, versão mais antiga que a nossa.
+- `HISTORICO_INICIAL`: 90 anos de campeões e vices do Brasileirão A/B/C/D em texto solto.
+  Serve pro Salão da Fama quando essa tela existir; fica de reserva no legado.
+- Os painéis de WhatsApp, Notícias e Conquistas: existem lá e são placeholders aqui.
+  Valem uma leitura quando essas telas entrarem na fila.
+
 ## 8. Onde o trabalho está
 
 **Feito** (repositório `Jogo-torcidas`, branch `claude/project-continuation-vgatml`):
@@ -234,12 +255,30 @@ atravessando a cidade é perigoso demais. Guardado para quando o mapa entrar.
   e ainda não é de organizada nenhuma, contado pelo efetivo de agora e não pela planilha —
   recrutar encolhe o bolo. O teto por campanha soma o nível da sede ao tamanho da praça,
   então Fortaleza rende mais que o interior e São Paulo rende mais que Fortaleza.
+- **Mapa da cidade** (GDD §13), portado do protótipo antigo em `legado/unity/`: os bairros
+  da praça em cruz (Norte em cima, Sul embaixo, Oeste e Leste nos flancos), doze
+  quarteirões por bairro e dez lotes por quarteirão — 1.920 lotes num mapa grande, numa
+  superfície de canvas só, porque em DOM isso não fecha. Cada bairro pinta pela classe
+  social, cada casa tem telhado sorteado por hash do endereço, e em cima disso ficam os
+  estádios, a sede de toda organizada da praça (com o bar de cada uma em outra zona), o
+  nosso patrimônio e o comércio neutro do GDD. Filtros por tipo, zoom de 60% a 200% e
+  hover que diz o que tem em cada quarteirão. O desenho é determinístico: reabrir o save
+  devolve a mesma cidade.
+- **Estádios com bairro**: `dados/estadios.js`, importado do protótipo antigo, dá endereço
+  às 76 praças de jogo. Clube sem estádio na fonte (41 dos 108) ganha um bairro estável,
+  sorteado por hash do nome do estádio.
+- **Força dos clubes evolui** (portado do protótipo antigo, com um conserto): a posição
+  final de cada competição move a qualidade do clube, e a evolução vive no save, não em
+  `times.js`. As faixas herdadas tinham média positiva e em cinco anos os 108 clubes
+  chegavam todos no teto — medido. Agora o delta é centrado na média da temporada: dez
+  anos depois a soma das qualidades varia 2%, mas Grêmio subiu 16 e o Remo caiu 9.
 
-**Próximo passo recomendado: o mapa da cidade.** É o que falta pra briga deixar de
-depender do dia de jogo. O mapa mostra em tempo real onde a rival está e deixa o jogador
-buscar o enfrentamento, abrindo a cena da rua. Isso também destrava as quatro ações que
-hoje estão paradas por falta de cena (atacar bar/sede, assaltar alvo comercial, pressionar
-o clube) e dá lugar às subsedes e ao patrimônio, que o financeiro já sabe faturar.
+**Próximo passo recomendado: pôr o mapa pra trabalhar.** A planta da cidade já está de
+pé; o que falta é a camada viva por cima dela — onde a torcida rival está agora, o bonde
+saindo da sede a caminho do estádio, o clique num alvo abrindo a cena da rua. É isso que
+destrava as quatro ações hoje paradas por falta de cena (atacar bar/sede, assaltar alvo
+comercial, pressionar o clube), a emboscada em qualquer ponto da praça e a escolta do
+aliado.
 
 Depois disso, o patrimônio: bares, lojas e subsedes têm receita, manutenção e insumo
 implementados no fechamento, mas não há tela de compra — só existe o bar nível 1 que o

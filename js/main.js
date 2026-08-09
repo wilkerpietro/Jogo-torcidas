@@ -332,20 +332,19 @@
     dir.appendChild(cAv);
 
     /* resumo financeiro — o mesmo cálculo do fechamento (GDD §7) */
-    const cx = TO.financeiro.contas(e);
-    const cpr = TO.planejamento.compromissos(e);
+    const sem = TO.financeiro.resumoDaSemana(e);
     const cFin = cartao('Resumo da semana');
     cFin.corpo.innerHTML =
       `<div class="linha-dado"><span>Receitas</span>
-         <b class="positivo">${U.dinheiro(cx.receita)}</b></div>
+         <b class="positivo">${U.dinheiro(sem.receita)}</b></div>
        <div class="linha-dado"><span>Despesas</span>
-         <b class="negativo">${U.dinheiro(-cx.despesa)}</b></div>
-       <div class="linha-dado"><span>Saldo previsto</span>
-         <b class="${cx.saldo>=0?'positivo':'negativo'}">${U.dinheiro(cx.saldo)}</b></div>`
-      + (cpr.total
-         ? `<div class="linha-dado"><span>Decidido na Gestão`+
-           `${cpr.pendente?'':' <small class="fraco">pago</small>'}</span>`+
-           `<b class="negativo">${U.dinheiro(-cpr.total)}</b></div>` : '');
+         <b class="negativo">${U.dinheiro(-sem.despesa)}</b></div>`
+      + (sem.gestao.total
+         ? `<div class="linha-dado"><span class="fraco">— disso, decidido na Gestão`+
+           `${sem.gestao.pendente?'':' (pago)'}</span>`+
+           `<b class="negativo">${U.dinheiro(-sem.gestao.total)}</b></div>` : '')
+      + `<div class="linha-dado"><span>Saldo previsto</span>
+           <b class="${sem.saldo>=0?'positivo':'negativo'}">${U.dinheiro(sem.saldo)}</b></div>`;
     const verFin = el('button',{class:'bt larga', texto:'Ver finanças'});
     verFin.onclick = ()=>{ pagina='financeiro'; redesenhar(); };
     cFin.rodape(verFin);
@@ -456,7 +455,8 @@
         d.appendChild(el('div',{class:'linha-dado', html:'<span class="fraco">nada</span>'}));
       for(const i of itens)
         d.appendChild(el('div',{class:'linha-dado', html:
-          `<span>${i.rot}</span><b class="${neg?'negativo':'positivo'}">`+
+          `<span>${i.rot}${i.daGestao?' <span class="tag">gestão</span>':''}</span>`+
+          `<b class="${neg?'negativo':'positivo'}">`+
           `${U.dinheiro(neg?-i.v:i.v)}</b>`}));
       d.appendChild(el('div',{class:'linha-dado total', html:
         `<span>Total</span><b class="${neg?'negativo':'positivo'}">`+
@@ -467,22 +467,28 @@
     corpo.appendChild(bloco('Despesas', rel.despesas, rel.despesa, true));
 
     const fim = el('div',{class:'col largo'});
-    if(rel.compromissos && rel.compromissos.length){
-      fim.appendChild(el('h3',{texto:'Decidido na Gestão'}));
-      for(const i of rel.compromissos)
+    /* o que a Gestão decidiu e não sai em dinheiro: investida gasta ação,
+       aliado não recebido não custa nada e mesmo assim pesa */
+    const semGrana = (rel.compromissos||[]).filter(i=>i.tipo !== 'dinheiro');
+    if(semGrana.length){
+      fim.appendChild(el('h3',{texto:'Também decidido na Gestão'}));
+      for(const i of semGrana)
         fim.appendChild(el('div',{class:'linha-dado', html:
           `<span>${i.rot} <small class="fraco">${i.nota}</small></span>
-           <b class="${i.tipo==='dinheiro'?'negativo':'fraco'}">`+
-          `${i.tipo==='acao' ? '1 ação'
-            : i.tipo==='aviso' ? 'sem custo' : U.dinheiro(-i.v)}</b>`}));
-      if(rel.compromissoPago)
-        fim.appendChild(el('div',{class:'linha-dado', html:
-          `<span class="fraco">já debitado no caixa durante a semana</span>`+
-          `<b class="negativo">${U.dinheiro(-rel.compromissoPago)}</b>`}));
+           <b class="fraco">${i.tipo==='acao' ? '1 ação' : 'sem custo'}</b>`}));
     }
+    if(rel.compromissoTotal)
+      fim.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="fraco">Das despesas, ${U.dinheiro(rel.compromissoTotal)} `+
+        'saíram de decisão da Gestão, e não da conta fixa.</span>'}));
     fim.appendChild(el('div',{class:'linha-dado total', html:
       `<span>Saldo da semana</span><b class="${rel.saldo>=0?'positivo':'negativo'}">`+
       `${U.dinheiro(rel.saldo)}</b>`}));
+    if(rel.foraDaConta)
+      fim.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Ações e imprevistos da semana</span>`+
+        `<b class="${rel.foraDaConta<0?'negativo':'positivo'}">`+
+        `${U.dinheiro(rel.foraDaConta)}</b>`}));
     fim.appendChild(el('div',{class:'linha-dado', html:
       `<span>Caixa</span><b class="${rel.caixaDepois<0?'negativo':''}">`+
       `${U.dinheiro(rel.caixaAntes)} → ${U.dinheiro(rel.caixaDepois)}</b>`}));
@@ -906,26 +912,23 @@
     const grade = el('div',{class:'colunas-3'});
 
     /* o que a Gestão comprometeu nesta semana entra na conta da tela */
-    const comp = TO.planejamento.compromissos(e);
-    const saldoReal = cx.saldo - comp.pendente;
+    const sem  = TO.financeiro.resumoDaSemana(e);
+    const comp = sem.gestao;
 
     const c1 = cartao('Fluxo da semana');
     c1.corpo.innerHTML =
       `<div class="valorao"><span>Receitas</span>
-         <b class="positivo">${U.dinheiro(cx.receita)}</b></div>
+         <b class="positivo">${U.dinheiro(sem.receita)}</b></div>
        <div class="valorao"><span>Despesas</span>
-         <b class="negativo">${U.dinheiro(cx.despesa)}</b></div>
-       <div class="valorao"><span>Saldo</span>
-         <b class="${cx.saldo>=0?'positivo':'negativo'}">${U.dinheiro(cx.saldo)}</b></div>`
+         <b class="negativo">${U.dinheiro(sem.despesa)}</b></div>`
       + (comp.total
-         ? `<div class="linha-dado"><span>Decidido na Gestão</span>
-              <b class="${comp.total?'negativo':'fraco'}">${U.dinheiro(-comp.total)}</b></div>
-            <div class="linha-dado"><span>${comp.pendente?'A pagar ainda':'Tudo já pago'}</span>
-              <b class="${comp.pendente?'negativo':'fraco'}">`+
-           `${comp.pendente?U.dinheiro(-comp.pendente):'—'}</b></div>
-            <div class="valorao"><span>Saldo com a Gestão</span>
-              <b class="${saldoReal>=0?'positivo':'negativo'}">${U.dinheiro(saldoReal)}</b></div>`
-         : '');
+         ? `<div class="linha-dado"><span>Conta fixa</span>
+              <b class="negativo">${U.dinheiro(-cx.despesa)}</b></div>
+            <div class="linha-dado"><span>Decidido na Gestão`+
+           `${comp.pendente?'':' <small class="fraco">pago</small>'}</span>
+              <b class="negativo">${U.dinheiro(-comp.total)}</b></div>` : '')
+      + `<div class="valorao"><span>Saldo da semana</span>
+           <b class="${sem.saldo>=0?'positivo':'negativo'}">${U.dinheiro(sem.saldo)}</b></div>`;
     const btDet = el('button',{class:'bt larga', texto:'Detalhes'});
     btDet.onclick = ()=>{ subFin='transacoes'; redesenhar(); };
     let btUlt = null;
@@ -2251,6 +2254,148 @@
   }
 
   /* =======================================================
+     MAPA DA CIDADE (GDD §13)
+     Uma superfície de canvas só, com os bairros da praça, os
+     doze quarteirões de cada um e os dez lotes de cada
+     quarteirão. O renderizador está em js/mundo/mapa.js; aqui
+     ficam só a moldura, os filtros e o zoom.
+     ======================================================= */
+  /* 80% cabe inteiro numa tela de 1080; quem quiser detalhe usa o + */
+  let zoomMapa = 0.8;
+
+  function pintarMapa(){
+    const e = E(), pg = U.$('.pagina[data-pag="mapa"]');
+    const MP = TO.mapa;
+    pg.innerHTML = '';
+    pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Mapa da cidade</h1>'}));
+
+    const cidade = TO.mundo.cidade(e.torcida.mapa);
+    if(!cidade || !(cidade.bairros||[]).length){
+      pg.appendChild(emConstrucao('Sem mapa',
+        'Esta praça não tem bairros catalogados.'));
+      return;
+    }
+    const mo = MP.modelo(e);
+    const sede = TO.mundo.bairroDaSede(e.torcida);
+    const tamanho = cidade.nivel === 1 ? 'Grande' : cidade.nivel === 2 ? 'Médio' : 'Pequeno';
+
+    const q = quadro(`${cidade.nome} — ${cidade.uf}`,
+      el('span',{class:'conta',
+        texto:`${mo.mostrando} de ${mo.total} pontos visíveis`}));
+
+    const barra = el('div',{class:'mapa-barra'});
+    const dado = (rot, val)=>barra.appendChild(el('div',{html:
+      `<span>${rot}</span><b>${val}</b>`}));
+    dado('Tamanho', tamanho);
+    dado('Bairros', cidade.bairros.length);
+    dado('Quarteirões', cidade.bairros.length * MP.QUARTEIROES);
+    dado('Lotes', cidade.bairros.length * MP.QUARTEIROES * MP.LOTES);
+    dado('Nossa sede', sede ? sede.nome : '—');
+    const pop = cidade.populacao || 0;
+    dado('População', pop >= 1000 ? U.numero(pop/1000, 1) + ' mi'
+                                  : U.numero(pop) + ' mil');
+    q.corpo.appendChild(barra);
+
+    /* --- filtros --- */
+    const f = MP.filtros(e);
+    const filtros = el('div',{class:'mapa-filtros'});
+    const caixa = (chave, rot, cls)=>{
+      const l = el('label',{class:'mapa-filtro '+(cls||'')});
+      const i = el('input',{type:'checkbox'});
+      i.checked = !!f[chave];
+      i.onchange = ()=>{ f[chave] = i.checked; redesenhar(); };
+      l.append(i, el('span',{texto:rot}));
+      return l;
+    };
+    const grupo = (rot, chaves)=>{
+      const todos = chaves.every(k=>f[k]);
+      const l = el('label',{class:'mapa-filtro grupo'});
+      const i = el('input',{type:'checkbox'});
+      i.checked = todos;
+      i.indeterminate = !todos && chaves.some(k=>f[k]);
+      i.onchange = ()=>{ for(const k of chaves) f[k] = i.checked; redesenhar(); };
+      l.append(i, el('span',{texto:rot}));
+      return l;
+    };
+    const secao = (...filhos)=>{
+      const d = el('div',{class:'mapa-filtro-secao'});
+      for(const x of filhos) d.appendChild(x);
+      filtros.appendChild(d);
+    };
+    secao(caixa('estadios', 'Estádios', 'solo'));
+    secao(grupo('TORCIDAS', MP.TIPOS_TORCIDA),
+          caixa('sedes','Sedes','filho'), caixa('bares','Bares','filho'),
+          caixa('lojas','Lojas','filho'), caixa('subsedes','Subsedes','filho'));
+    const ROT_NEUTRO = {joalheria:'Joalheria', posto:'Posto de gasolina',
+      hospital:'Hospital', mercadinho:'Mercadinho', roupas:'Loja de roupas',
+      banco:'Banco'};
+    secao(grupo('DEMAIS LOCAIS', MP.TIPOS_NEUTRO),
+          ...MP.TIPOS_NEUTRO.map(t=>caixa(t, ROT_NEUTRO[t] || t, 'filho')));
+
+    /* --- superfície --- */
+    const viewport = el('div',{class:'mapa-viewport'});
+    const casca = el('div',{class:'mapa-casca',
+      estilo:{width:(MP.TAM*zoomMapa)+'px', height:(MP.TAM*zoomMapa)+'px'}});
+    const cv = el('canvas',{class:'mapa-canvas',
+      estilo:{width:(MP.TAM*zoomMapa)+'px', height:(MP.TAM*zoomMapa)+'px'}});
+    const dica = el('div',{class:'mapa-dica'});
+
+    const zoom = el('div',{class:'mapa-zoom'});
+    const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
+    bMenos.disabled = zoomMapa <= 0.6; bMais.disabled = zoomMapa >= 2;
+    bMenos.onclick = ()=>{ zoomMapa = Math.max(0.6, zoomMapa-0.2); redesenhar(); };
+    bMais.onclick  = ()=>{ zoomMapa = Math.min(2,   zoomMapa+0.2); redesenhar(); };
+    zoom.append(bMenos, el('span',{texto:Math.round(zoomMapa*100)+'%'}), bMais);
+
+    casca.append(cv, filtros, zoom, dica);
+    viewport.appendChild(casca);
+    q.corpo.appendChild(viewport);
+    pg.appendChild(q);
+
+    /* o canvas só existe depois de entrar no documento */
+    requestAnimationFrame(()=>ligarMapa(cv, dica, mo));
+  }
+
+  function ligarMapa(cv, dica, mo){
+    const MP = TO.mapa;
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    cv._dpr = dpr;
+    cv.width  = Math.round(mo.tam * dpr);
+    cv.height = Math.round(mo.tam * dpr);
+    MP.desenhar(mo, cv);
+
+    const ponto = ev=>{
+      const r = cv.getBoundingClientRect();
+      return {x:(ev.clientX - r.left) * (mo.tam / r.width),
+              y:(ev.clientY - r.top)  * (mo.tam / r.height)};
+    };
+    cv.onmousemove = ev=>{
+      const p = ponto(ev), a = MP.alvoEm(mo, p.x, p.y);
+      if((a && a.info) !== (mo.sob && mo.sob.info)
+         || (a && mo.sob && (a.x !== mo.sob.x || a.y !== mo.sob.y))){
+        mo.sob = a;
+        cv.style.cursor = a ? 'pointer' : 'default';
+        MP.desenhar(mo, cv);
+      }
+      if(!dica || !mo.sob){ dica.classList.remove('on'); return; }
+      const casca = cv.parentElement.getBoundingClientRect();
+      dica.textContent = mo.sob.info;
+      dica.style.left = (ev.clientX - casca.left + 16) + 'px';
+      dica.style.top  = (ev.clientY - casca.top  + 16) + 'px';
+      dica.classList.add('on');
+    };
+    cv.onmouseleave = ()=>{
+      mo.sob = null; cv.style.cursor = 'default';
+      dica.classList.remove('on');
+      MP.desenhar(mo, cv);
+    };
+    cv.onclick = ev=>{
+      const p = ponto(ev), a = MP.alvoEm(mo, p.x, p.y);
+      if(a) aviso(a.info);
+    };
+  }
+
+  /* =======================================================
      ESCALAÇÃO → CENA → RELATÓRIO
      ======================================================= */
   let escalados = new Set();
@@ -2415,6 +2560,7 @@
     else if(pagina==='calendario') pintarCalendario();
     else if(pagina==='competicoes') pintarCompeticoes();
     else if(pagina==='diplomacia') pintarDiplomacia();
+    else if(pagina==='mapa') pintarMapa();
     else pintarPendente(pagina);
   }
 

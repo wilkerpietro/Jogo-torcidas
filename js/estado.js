@@ -89,6 +89,8 @@ TO.estado = (function(){
     TO.membros.povoarInicial(E, opc.efetivo || E.efetivoAlvo || 34,
                              (opc.torcida||{}).cargos);
     TO.membros.sortearFila(E);
+    E.qualidades = {};
+    TO.competicoes.usarSave(E);
     E.temporada = TO.competicoes.montarTemporada(E);
     sortearProximoJogo(E);
     E.noticias = gerarNoticias(E);
@@ -282,6 +284,14 @@ TO.estado = (function(){
       if(E.data.semana > TO.competicoes.SEMANAS_ANO){
         E.data.semana = 1; E.data.ano++;
         guardarTitulos(E);
+        /* o ano em campo mexe na força dos clubes antes de qualquer
+           outra coisa: quem foi campeão entra mais forte no ano seguinte */
+        const forca = TO.competicoes.evoluirForca(E);
+        const nosso = forca.find(x=>x.id === E.torcida.clubeId);
+        if(nosso)
+          anotar(E, `${TO.mundo.time(nosso.id).nome} ${nosso.para>nosso.de
+            ? 'ganhou' : 'perdeu'} força na temporada `+
+            `(${nosso.de} → ${nosso.para}).`, nosso.para>nosso.de?'boa':'ruim');
         /* sobe e desce antes de montar a temporada nova (GDD §18.2) */
         const mov = TO.competicoes.aplicarSobeDesce(E);
         for(const m of mov.filter(x=>x.id===E.torcida.clubeId)){
@@ -362,7 +372,9 @@ TO.estado = (function(){
       if(!txt) return null;
       const dados = JSON.parse(txt);
       if(dados.versao !== VERSAO) return null;
-      E = dados; mudou(); return E;
+      E = dados;
+      TO.competicoes.usarSave(E);
+      mudou(); return E;
     }catch(e){ return null; }
   }
 
@@ -386,7 +398,9 @@ TO.estado = (function(){
       try{
         const dados = JSON.parse(fr.result);
         if(!dados.membros || !dados.data) throw new Error('não parece um save');
-        E = dados; mudou();
+        E = dados;
+        TO.competicoes.usarSave(E);
+        mudou();
         aoTerminar && aoTerminar({ok:true});
       }catch(e){
         aoTerminar && aoTerminar({ok:false, motivo:e.message});

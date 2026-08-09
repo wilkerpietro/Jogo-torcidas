@@ -32,6 +32,41 @@ TO.mundo = (function(){
   const timesEm    = idMapa  => T().filter(t=>t.mapa===idMapa);
 
   /* =======================================================
+     ESTÁDIOS
+     dados/estadios.js diz em que bairro cada praça de jogo
+     fica — é o que o mapa da cidade precisa. Clube sem estádio
+     mapeado (a fonte cobre 67 dos 108) ganha um bairro fixo,
+     sorteado por hash do próprio nome: melhor um lugar estável
+     do que nenhum.
+     ======================================================= */
+  const EST = () => TO.dados.estadios || [];
+  let idxE = null;
+  const estadio = id => (idxE || (idxE = new Map(EST().map(x=>[x.id,x])))).get(id);
+  const estadioDoClube = idClube =>
+    EST().find(e=>(e.mandantes||[]).includes(idClube)) || null;
+
+  function estadiosEm(idMapa){
+    const daPraca = EST().filter(e=>e.mapa === idMapa);
+    const nomes = new Set(daPraca.map(e=>e.nome));
+    const bairros = bairrosDe(idMapa);
+    /* completa com os estádios que os clubes da praça declaram e que a
+       fonte antiga não tinha */
+    const fora = [];
+    for(const t of timesEm(idMapa)){
+      if(!t.estadio || nomes.has(t.estadio)) continue;
+      nomes.add(t.estadio);
+      const b = bairros.length
+        ? bairros[Math.abs(U.identificador(t.estadio).split('')
+            .reduce((h,c)=>Math.imul(h^c.charCodeAt(0), 16777619), 2166136261)) % bairros.length]
+        : null;
+      fora.push({id:U.identificador(t.estadio), nome:t.estadio, mapa:idMapa,
+                 bairro: b ? b.nome : '', capacidade:t.capacidade||0,
+                 mandantes:[t.id], estimado:true});
+    }
+    return daPraca.concat(fora);
+  }
+
+  /* =======================================================
      RELAÇÕES
      ======================================================= */
   const TIPOS = ['Maior Rival','Rival','Irmandade','Aliado','Neutro'];
@@ -207,6 +242,7 @@ TO.mundo = (function(){
   return {time, torcida, cidade, jogaveis, torcidasDe, torcidasEm, timesEm,
           CLASSES, ZONAS, bairrosDe, bairro, bairroDaSede, multiplicador,
           bairrosPorZona, baseDeRecrutamento,
+          estadio, estadiosEm, estadioDoClube,
           TIPOS, valorInicial, statusDoValor, relacaoBase, estiloRelacao, relacoesDe,
           influencia, territorios, ficha, sigla, adversario, divisoes, regioes,
           get parametros(){return D().parametros || {};},

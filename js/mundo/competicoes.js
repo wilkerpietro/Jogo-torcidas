@@ -67,7 +67,69 @@ TO.competicoes = (function(){
     return g;
   }
 
-  const qual = id => (M().time(id)||{}).qualidade || 10;
+  /* =======================================================
+     QUALIDADE DOS CLUBES
+     A planilha dá o ponto de partida; o resto do decênio é
+     consequência do que aconteceu em campo. Quem termina no
+     G4 sobe de nível, quem briga contra o rebaixamento perde.
+     A evolução vive no save (E.qualidades), nunca em times.js
+     — dado importado não se reescreve.
+     ======================================================= */
+  let _qualidades = null;                 // ponteiro pro save da vez
+  const usarSave = E => { _qualidades = (E && E.qualidades) || null; };
+  const qual = id => (_qualidades && _qualidades[id] != null)
+    ? _qualidades[id]
+    : ((M().time(id)||{}).qualidade || 10);
+  const qualidadeDe = (E, id) =>
+    (E.qualidades && E.qualidades[id] != null)
+      ? E.qualidades[id] : ((M().time(id)||{}).qualidade || 10);
+
+  /* GDD §18: a escala é 4 a 50. O passo por temporada é pequeno de
+     propósito — time grande não vira pequeno num ano, mas dez anos de
+     Série C cobram o preço. Portado do protótipo antigo. */
+  function evoluirForca(E){
+    const S = E.temporada;
+    if(!S) return [];
+    E.qualidades = E.qualidades || {};
+
+    /* 1. cada competição dá um delta bruto por posição */
+    const bruto = {};
+    for(const comp of S.competicoes){
+      const div = ESCADA.indexOf(comp.nome) + 1;   // 0 = não é Brasileirão
+      const linhas = comp.grupos && comp.grupos.length > 1
+        ? comp.grupos.flatMap((g,i)=>tabela(comp, i))
+        : tabela(comp);
+      linhas.forEach((l, i)=>{
+        const pos = i + 1;
+        let d;
+        if(div === 1)      d = pos<=4 ? 5+U.inteiro(-5,5) : pos<=16 ? 2+U.inteiro(-5,5) : U.inteiro(-6,3);
+        else if(div === 2) d = pos<=4 ? 3+U.inteiro(-2,5) : U.inteiro(-4,2);
+        else if(div === 3) d = pos<=4 ? 2+U.inteiro(-1,4) : pos<=10 ? U.inteiro(-1,2)
+                                      : pos<=16 ? U.inteiro(-2,2) : U.inteiro(-2,1);
+        else if(div === 4) d = pos<=4 ? 2+U.inteiro(-1,2) : pos<=12 ? U.inteiro(-1,2) : U.inteiro(-1,1);
+        /* o regional vale menos: é um torneio de dez jogos */
+        else               d = (pos<=2 ? U.inteiro(0,2) : U.inteiro(-1,1)) * 0.5;
+        bruto[l.id] = (bruto[l.id] || 0) + d;
+      });
+    }
+
+    /* 2. tira a média: futebol não fica melhor no atacado. Sem isso, as
+       faixas herdadas do protótipo antigo têm média positiva e em cinco
+       anos os 108 clubes chegam todos no teto — medido. */
+    const ids = Object.keys(bruto);
+    if(!ids.length) return [];
+    const media = ids.reduce((s,id)=>s+bruto[id], 0) / ids.length;
+
+    /* 3. o delta é da escala de força (1–100); a qualidade é 4–50 */
+    const mov = [];
+    for(const id of ids){
+      const antes = qualidadeDe(E, id);
+      const dep = U.limitar(Math.round(antes + (bruto[id]-media)/2), 4, 50);
+      if(dep !== antes){ E.qualidades[id] = dep; mov.push({id, de:antes, para:dep}); }
+    }
+    usarSave(E);
+    return mov;
+  }
 
   /* =======================================================
      RESULTADO
@@ -1057,6 +1119,7 @@ TO.competicoes = (function(){
   const horaDoJogo = j => (j && j.h) || '16:00';
 
   return {montarTemporada, jogarSemana, tabela, agendaDoClube, jogoDaSemana,
+          qualidadeDe, evoluirForca, usarSave,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
           jogosDaSemana, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
           aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,

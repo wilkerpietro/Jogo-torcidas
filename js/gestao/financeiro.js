@@ -206,6 +206,24 @@ TO.financeiro = (function(){
   }
 
   /* =======================================================
+     O SALDO DA SEMANA
+     A conta corrente (contas) mais o que a Gestão decidiu. Um
+     é rotina, o outro é escolha, mas os dois saem do mesmo
+     caixa — e é esse número que a tela mostra como saldo.
+     ======================================================= */
+  const compromissos = E =>
+    (TO.planejamento && TO.planejamento.compromissos(E))
+      || {itens:[], total:0, pago:0, pendente:0};
+
+  function resumoDaSemana(E){
+    const c = contas(E), g = compromissos(E);
+    return {contas:c, gestao:g,
+            receita:c.receita,
+            despesa:c.despesa + g.total,
+            saldo:  c.saldo   - g.total};
+  }
+
+  /* =======================================================
      FECHAMENTO
      ======================================================= */
   function fecharSemana(E){
@@ -215,20 +233,15 @@ TO.financeiro = (function(){
       receitas:c.receitas.filter(x=>!x.nota), despesas:c.despesas.filter(x=>!x.nota),
       notas:c.despesas.filter(x=>x.nota).map(x=>x.rot),
       receita:c.receita, despesa:c.despesa, saldo:c.saldo,
-      caixaAntes:E.dinheiro, caixaDepois:0,
+      /* o caixa de referência é o do fechamento anterior: só assim o
+         "de → para" cobre a semana inteira, inclusive o que saiu no meio
+         dela (caravana, recepção, recrutamento, fiança) */
+      caixaAntes: E.caixaAberturaSemana != null ? E.caixaAberturaSemana : E.dinheiro,
+      caixaDepois:0,
       saidas:[], avisos:[], promoveis:0,
       acoesSobrando:TO.acoes.restantes(E)
     };
 
-    /* O que a Gestão decidiu já saiu do caixa na hora (cobrarCaravana e
-       planejamento.confirmar). Entra no relatório como extrato, nunca
-       como lançamento novo — senão a semana cobraria duas vezes. */
-    const comp = TO.planejamento && TO.planejamento.compromissos(E);
-    if(comp && comp.itens.length){
-      rel.compromissos = comp.itens;
-      rel.compromissoPago = comp.pago;
-      rel.compromissoPendente = comp.pendente;
-    }
 
     for(const r of rel.receitas) TO.estado.lancar(E, r.rot, r.v);
     for(const d of rel.despesas) TO.estado.lancar(E, d.rot, -d.v);
@@ -239,6 +252,20 @@ TO.financeiro = (function(){
       TO.estado.lancar(E, 'Doação de simpatizante', v);
       rel.receitas.push({rot:'Doação de simpatizante', v});
       rel.receita += v; rel.saldo += v;
+    }
+
+    /* O que a Gestão decidiu já saiu do caixa na hora (cobrarCaravana e
+       planejamento.confirmar), mas é dinheiro da semana: entra na despesa
+       e no saldo. O que não pode é lançar de novo — por isso este bloco
+       vem depois do laço de lançamento, e não antes. */
+    const comp = compromissos(E);
+    if(comp.itens.length){
+      rel.compromissos = comp.itens;
+      rel.compromissoTotal = comp.total;
+      for(const i of comp.itens)
+        if(i.v) rel.despesas.push({rot:i.rot, v:i.v, daGestao:true});
+      rel.despesa += comp.total;
+      rel.saldo   -= comp.total;
     }
 
     /* loja sem insumo não fatura na semana seguinte (GDD §8.3) */
@@ -267,6 +294,9 @@ TO.financeiro = (function(){
 
     rel.promoveis = E.membros.filter(m=>TO.membros.podePromover(E,m).ok).length;
     rel.caixaDepois = E.dinheiro;
+    /* o que o caixa andou além da conta: ação da semana, fiança, multa */
+    rel.foraDaConta = Math.round((rel.caixaDepois - rel.caixaAntes) - rel.saldo);
+    E.caixaAberturaSemana = E.dinheiro;
 
     E.ultimoFechamento = rel;
     E.historicoSemanas = E.historicoSemanas || [];
@@ -297,7 +327,7 @@ TO.financeiro = (function(){
                          cargo:TO.membros.CARGOS[m.cargo].nome}));
   }
 
-  return {contas, patrimonio, fatorComercial, bairroDeFora,
+  return {contas, resumoDaSemana, compromissos, patrimonio, fatorComercial, bairroDeFora,
           precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
           postura, fecharSemana,
           MANUT_SEDE, RECEITA, MANUT, CARAVANA, SEM};

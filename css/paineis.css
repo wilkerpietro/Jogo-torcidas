@@ -819,3 +819,58 @@ table.dados tr.selecionada td{background:#252525}
 }
 .olheiro .bondes b{display:block;font-family:var(--mono);font-size:14px}
 .olheiro .bondes small{font-size:9.5px;color:var(--fraco)}
+
+/* ---------- mapa da cidade ---------- */
+.mapa-barra{
+  display:flex;flex-wrap:wrap;gap:6px 26px;padding:10px 14px;
+  border-bottom:1px solid var(--linha);
+}
+.mapa-barra > div{display:flex;flex-direction:column;gap:1px}
+.mapa-barra span{
+  font-size:10px;color:var(--fraco);text-transform:uppercase;letter-spacing:.1em;
+}
+.mapa-barra b{font-family:var(--mono);font-size:12.5px}
+
+.mapa-viewport{
+  overflow:auto;background:#0d0d0e;padding:10px;
+  max-height:calc(100vh - 250px);
+}
+.mapa-casca{position:relative;margin:0 auto}
+.mapa-canvas{display:block;image-rendering:auto}
+
+.mapa-filtros{
+  position:absolute;left:12px;top:12px;width:190px;
+  background:#141416e8;border:1px solid var(--linha);padding:8px 10px;
+  display:flex;flex-direction:column;gap:8px;backdrop-filter:blur(2px);
+}
+.mapa-filtro-secao{display:flex;flex-direction:column;gap:2px}
+.mapa-filtro{
+  display:flex;align-items:center;gap:7px;font-size:11px;color:var(--apagado);
+  cursor:pointer;user-select:none;
+}
+.mapa-filtro:hover{color:#fff}
+.mapa-filtro input{accent-color:var(--rubro-vivo);width:12px;height:12px}
+.mapa-filtro.grupo, .mapa-filtro.solo{
+  font-family:var(--titulo);font-size:11px;letter-spacing:.12em;color:var(--texto);
+  text-transform:uppercase;
+}
+.mapa-filtro.filho{padding-left:12px}
+
+.mapa-zoom{
+  position:absolute;right:12px;top:12px;display:flex;align-items:center;gap:6px;
+  background:#141416e8;border:1px solid var(--linha);padding:4px 8px;
+}
+.mapa-zoom button{
+  width:24px;height:24px;background:#1e1e1e;border:1px solid var(--linha);
+  color:#cfcfcf;cursor:pointer;font-size:14px;line-height:1;
+}
+.mapa-zoom button:hover:not(:disabled){background:#2a2a2a;color:#fff}
+.mapa-zoom button:disabled{opacity:.3;cursor:default}
+.mapa-zoom span{font-family:var(--mono);font-size:11px;min-width:34px;text-align:center}
+
+.mapa-dica{
+  position:absolute;pointer-events:none;opacity:0;transition:opacity .12s;
+  background:#0f0f10f2;border:1px solid var(--linha);border-left:2px solid var(--rubro-vivo);
+  padding:5px 9px;font-size:11px;white-space:nowrap;z-index:5;
+}
+.mapa-dica.on{opacity:1}
