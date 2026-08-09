@@ -32,7 +32,8 @@ ALVOS = {
         'pagina': 'index.html',
         'js': ['js/nucleo.js',
                'dados/nomes.js', 'dados/cidades.js', 'dados/times.js',
-               'dados/torcidas.js', 'dados/estadios.js', 'dados/diplomacia.js',
+               'dados/torcidas.js', 'dados/estadios.js', 'dados/cidade_mapa.js',
+               'dados/diplomacia.js',
                'dados/cena_arredores.js', 'dados/cenas.js',
                'js/mundo/mundo.js', 'js/mundo/competicoes.js', 'js/mundo/tensao.js',
                'js/mundo/mapa.js', 'js/mundo/ruas.js',
@@ -101,6 +102,14 @@ def main():
     js, n = re.subn(r"imagem:'[^']*'", "imagem:'" + uri + "'", js, count=1)
     assert n == 1, 'nao achei o campo imagem em cena_arredores.js'
     print(f'  foto embutida: {len(img)//1024} KB -> {len(uri)//1024} KB em base64')
+
+    # o mapa da cidade vem de JSON gerado, com aspas duplas
+    if alvo == 'jogo':
+        mapa = (RAIZ / 'img/cenas/cidade_fortaleza.webp').read_bytes()
+        uri_m = 'data:image/webp;base64,' + base64.b64encode(mapa).decode()
+        js, n = re.subn(r'"imagem": "[^"]*"', '"imagem": "' + uri_m + '"', js, count=1)
+        assert n == 1, 'nao achei o campo imagem em cidade_mapa.js'
+        print(f'  mapa embutido: {len(mapa)//1024} KB -> {len(uri_m)//1024} KB em base64')
 
     fontes = baixar_fontes()
 

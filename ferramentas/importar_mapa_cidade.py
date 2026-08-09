@@ -80,6 +80,57 @@ def malha(rua, passo):
     return andavel, soltos
 
 
+# ------------------------------------------------------------------ estádios
+def estadios(a, cidade):
+    """O gramado é o único verde vivo dentro da mancha urbana. Achar o campo
+    na própria arte é melhor que sortear um lote: o pino cai onde o desenho
+    já mostra um estádio."""
+    R, G, B = a[:, :, 0], a[:, :, 1], a[:, :, 2]
+    campo = (G > R + 10) & (G > B + 10) & cidade
+    campo = nd.binary_closing(campo, np.ones((3, 3)))
+    lab, n = nd.label(campo)
+    fora = []
+    for i in range(1, n + 1):
+        m = lab == i
+        if m.sum() < 600:
+            continue
+        ys, xs = np.where(m)
+        h, w = ys.max() - ys.min() + 1, xs.max() - xs.min() + 1
+        if m.sum() / (h * w) < 0.6:          # gramado é retângulo, não mancha
+            continue
+        fora.append({'x': round(float(xs.mean()), 1), 'y': round(float(ys.mean()), 1),
+                     'w': int(w), 'h': int(h)})
+    fora.sort(key=lambda e: -e['w'] * e['h'])
+    return fora
+
+
+# -------------------------------------------------------------------- lotes
+def lotes(cidade, rua, reg, passo):
+    """Candidatos a endereço: célula de quarteirão que faz esquina com rua.
+    Sede, bar e loja caem num desses — nunca no meio de um telhado sem
+    acesso, nunca em cima do asfalto."""
+    n = cidade.shape[0] // passo
+    gy, gx = np.mgrid[0:n, 0:n]
+    py = ((gy + 0.5) * passo).astype(int).clip(0, cidade.shape[0] - 1)
+    px = ((gx + 0.5) * passo).astype(int).clip(0, cidade.shape[1] - 1)
+    densr = nd.uniform_filter(rua.astype(float), passo)[py, px]
+    dentro = cidade[py, px]
+    quadra = dentro & (densr < 0.30)                     # telhado, não rua
+    vizinha = nd.binary_dilation(densr > 0.42, np.ones((3, 3)))
+    cand = quadra & vizinha
+    regp = reg[py, px]
+    fora = {}
+    for r in range(n):
+        for c in range(n):
+            if not cand[r, c]:
+                continue
+            k = int(regp[r, c])
+            if k < 0:
+                continue
+            fora.setdefault(k, []).append([c, r])
+    return fora
+
+
 # ----------------------------------------------------------------- 16 bairros
 def regioes(cidade, k, semente):
     ys, xs = np.where(cidade)
@@ -179,6 +230,9 @@ def main():
     print(f'  cidade {100*cidade.mean():.1f}% da arte · '
           f'rua {100*rua.sum()/cidade.sum():.1f}% da cidade')
 
+    campos = estadios(a, cidade)
+    print(f'  {len(campos)} estádios achados no gramado da arte')
+
     andavel, soltos = malha(rua, PASSO)
     n = andavel.shape[0]
     print(f'  malha {n}x{n} (passo {PASSO}px) · {andavel.sum()} células andáveis · '
@@ -231,14 +285,26 @@ def main():
     print(f'  {WEBP.name}: {WEBP.stat().st_size // 1024} KB '
           f'(de {ARTE.stat().st_size // 1024} KB)')
 
+    cand = lotes(cidade, rua, reg2, PASSO)
+    print(f'  lotes com frente pra rua: ' +
+          ', '.join(f"{saida[k]['nome'][:12]} {len(v)}" for k, v in
+                    sorted(cand.items())[:4]) + ' …')
+
+    # de qual bairro é cada estádio
+    for e in campos:
+        r = int(reg2[int(e['y']), int(e['x'])])
+        e['bairro'] = saida[r]['nome'] if 0 <= r < len(saida) else ''
+
     dados = {
         'cidade': CIDADE,
         'imagem': f'img/cenas/{WEBP.name}',
         'largura': W, 'altura': H, 'passo': PASSO,
         'centro': [round(centro[0], 1), round(centro[1], 1)],
         'bairros': [{k: v for k, v in s.items() if k != 'i'} for s in saida],
+        'estadios': campos,
         'andavel': rle(andavel),
         'regioes': rle_regioes(reg2, PASSO),
+        'lotes': {str(k): v for k, v in sorted(cand.items())},
     }
     corpo = json.dumps(dados, ensure_ascii=False)
     SAIDA.write_text(

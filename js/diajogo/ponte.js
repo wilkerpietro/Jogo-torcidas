@@ -22,6 +22,11 @@ TO.diaJogo.ponte = (function(){
       {configurable:true, enumerable:true, value:A.D[k]}
   });
 
+  /* nos arredores o objetivo é o portão; nas cenas de rua a cena diz o seu */
+  const SAIDA_PADRAO = {perto:'Entrar pelo portão', longe:'Portão (leve o líder)',
+                        feito:'sua torcida entrou pelo portão',
+                        dica:'Leve o líder até o portão da sua torcida.'};
+
   let cv, ctx, J=null, teclas={}, rodando=false, ant=0;
   let aoTerminar=null;
 
@@ -125,9 +130,13 @@ TO.diaJogo.ponte = (function(){
       btB.firstChild.textContent=r>0?`Bomba ${r.toFixed(1)}s `:'Bomba ';}
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
 
+    if(el('djLocal')) el('djLocal').textContent = D.local || 'Nos arredores';
+
     const be=el('djBtEntrar');
     if(be){const perto=!!C.noPortao(J); be.disabled=!perto;
-      be.firstChild.textContent=perto?'Entrar pelo portão ':'Portão (leve o líder) ';}
+      /* fora do estádio não existe portão: o botão vira a saída da cena */
+      const s = D.saida || SAIDA_PADRAO;
+      be.firstChild.textContent=(perto?s.perto:s.longe)+' ';}
 
     const cg=el('djCarga');
     if(cg){
@@ -188,9 +197,9 @@ TO.diaJogo.ponte = (function(){
     liga('djBtBomba', ()=>C.arremessar(J,'bomba'));
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
     liga('djBtEntrar',()=>{
-      const p=C.noPortao(J);
-      if(p) encerrar('sua torcida entrou pelo portão');
-      else C.logar(J,'Leve o líder até o portão da sua torcida.','p');
+      const s = D.saida || SAIDA_PADRAO;
+      if(C.noPortao(J)) encerrar(s.feito);
+      else C.logar(J, s.dica, 'p');
     });
   }
   function atualizarBotoes(){

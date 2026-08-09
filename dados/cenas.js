@@ -64,6 +64,11 @@ TO.dados.cenas = (function(){
 
   const praca = montar({
     id:'praca', nome:'Praça', pintura:'praca', blocos:blocosPraca,
+    /* aqui não se entra em estádio nenhum: quem sai da praça sai pela rua */
+    local:'Na praça',
+    saida:{perto:'Sair pela rua', longe:'Saída (leve o líder)',
+           feito:'sua torcida saiu da praça com a rua na mão',
+           dica:'Leve o líder até a boca de rua da sua torcida.'},
     /* postes e mobiliário só de desenho, que o corpo desvia sozinho */
     enfeites:[
       {tipo:'poste', x:360, y:250}, {tipo:'poste', x:1150, y:250},
@@ -144,6 +149,10 @@ TO.dados.cenas = (function(){
 
   const rua = montar({
     id:'rua', nome:'Rua', pintura:'rua', blocos:blocosRua,
+    local:'Na rua',
+    saida:{perto:'Furar pra fora', longe:'Boca da rua (leve o líder)',
+           feito:'sua torcida furou o cerco e sumiu na rua',
+           dica:'Leve o líder até a ponta da rua que é sua.'},
     enfeites:[
       {tipo:'poste', x:180, y:352}, {tipo:'poste', x:640, y:352},
       {tipo:'poste', x:1100, y:352},

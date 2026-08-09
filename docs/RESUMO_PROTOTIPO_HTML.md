@@ -328,18 +328,42 @@ O que **não** veio, e por quê:
 - **Pinos numa camada por cima**: o ponto de interesse era desenhado no meio da varredura
   dos lotes, então o lote vizinho passava por cima dele. Agora o terreno fica na varredura
   e o pino sobe pra uma camada desenhada depois de todos os bairros.
+- **A arte no lugar da planta**: `img/cenas/cidade_fortaleza.webp` é agora o mapa de
+  Fortaleza, e `ferramentas/importar_mapa_cidade.py` lê a imagem em vez de inventar
+  geometria. Da arte saem quatro coisas, todas em `dados/cidade_mapa.js` (35 KB): a
+  **máscara de rua** num raster de 10 px (5.478 nós andáveis, com meio disco de folga),
+  os **16 bairros** redistribuídos por k-means e casados com as zonas por atribuição
+  húngara sobre o custo angular, os **lotes com frente pra rua** de cada bairro (65 a 85)
+  e os **três gramados** desenhados. `TO.mapa` ganhou o caminho da arte — `arteDe`,
+  `decodificar`, `modeloDaArte`, `desenharArte`, `bairroEm`, `andavelEm` — e o modelo
+  antigo continua servindo as praças que não têm imagem. Nome de bairro entra a 40% de
+  opacidade e o contorno a 30%: a cidade é a foto, o rótulo é só orientação.
+- **Estádio no gramado certo**: os três estádios de Fortaleza (Castelão, Presidente Vargas
+  e Felipe Santiago) moram, na tabela, em bairros que a arte não conhece — o desenho veio
+  antes. Casar por nome deixava dois pinos em lote de casa e dois gramados vazios. Agora
+  o casamento é por porte, com preferência pra quem já bate o bairro: campo maior fica com
+  o estádio de maior capacidade, e o bairro do pino passa a ser o do gramado, que é onde
+  ele de fato está.
+- **Filtros fora do mapa**: o painel de tipos era um cartão flutuante sobre o canto
+  noroeste da cidade. Com planta esquemática isso não custava nada; com a arte, tapava
+  bairro. Agora ele fica na margem do visor, grudado na borda quando o mapa é arrastado.
+- **Briga de rua sabe onde caiu**: `localDe` escolhia praça em qualquer cruzamento de
+  quatro pontas, e na malha da arte isso era 29% da cidade. Agora mede a **largura do
+  lugar** — quantas células andáveis cabem numa janela 5×5 em volta do nó. Rua de
+  quarteirão fica na casa dos 11 a 19; largo e rotatória passam de 23. O corte em 23 dá
+  4% de praça, 19% de beco e o resto rua, com os arredores do estádio mandando dentro dos
+  70 pixels do gramado. As três cenas foram conferidas abrindo cada uma pelo mapa. O
+  painel do dia de jogo passou a dizer onde a briga é ("Na praça", "Na rua") e o botão do
+  portão vira a saída da cena quando não existe estádio pra entrar.
 
-**Próximo passo recomendado: pôr o mapa pra trabalhar.** A planta da cidade já está de
-pé; o que falta é a camada viva por cima dela — onde a torcida rival está agora, o bonde
-saindo da sede a caminho do estádio, o clique num alvo abrindo a cena da rua. É isso que
-destrava as quatro ações hoje paradas por falta de cena (atacar bar/sede, assaltar alvo
-comercial, pressionar o clube), a emboscada em qualquer ponto da praça e a escolta do
-aliado.
+**Próximo passo recomendado: as ações que ainda não têm cena.** Atacar bar ou sede,
+assaltar alvo comercial e pressionar o clube continuam paradas esperando uma tela; a
+emboscada em ponto qualquer da praça e a escolta do aliado também. A malha e as três
+arenas já existem — falta ligar a ação ao ponto do mapa e ao cenário.
 
 Depois disso, o patrimônio: bares, lojas e subsedes têm receita, manutenção e insumo
 implementados no fechamento, mas não há tela de compra — só existe o bar nível 1 que o
 GDD dá de graça na sede nível 1.
 
 **O que ainda falta no mundo:** a Série E do GDD §18.2 — os dados têm 108 clubes, não
-156, então ninguém cai da Série D. E a qualidade dos clubes não evolui com os
-resultados: quem é forte em 2026 é igualmente forte em 2036.
+156, então ninguém cai da Série D.

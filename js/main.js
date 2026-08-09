@@ -2315,8 +2315,9 @@
      quarteirão. O renderizador está em js/mundo/mapa.js; aqui
      ficam só a moldura, os filtros e o zoom.
      ======================================================= */
-  /* 80% cabe inteiro numa tela de 1080; quem quiser detalhe usa o + */
-  let zoomMapa = 0.8;
+  /* o zoom padrão sai do tamanho do mapa: a planta procedural tem 1000 de
+     lado e a arte tem 1254, e os dois têm de caber na mesma janela */
+  let zoomMapa = null;
   let poeOlheiro = false;      // próximo clique no mapa posiciona o olheiro
   let relogioRua = null;
 
@@ -2361,6 +2362,7 @@
     const mo = MP.modelo(e);
     const sede = TO.mundo.bairroDaSede(e.torcida);
     const tamanho = cidade.nivel === 1 ? 'Grande' : cidade.nivel === 2 ? 'Médio' : 'Pequeno';
+    const arte = mo && mo.arte;
 
     const q = quadro(`${cidade.nome} — ${cidade.uf}`,
       el('span',{class:'conta',
@@ -2370,9 +2372,15 @@
     const dado = (rot, val)=>barra.appendChild(el('div',{html:
       `<span>${rot}</span><b>${val}</b>`}));
     dado('Tamanho', tamanho);
-    dado('Bairros', cidade.bairros.length);
-    dado('Quarteirões', cidade.bairros.length * MP.QUARTEIROES);
-    dado('Lotes', cidade.bairros.length * MP.QUARTEIROES * MP.LOTES);
+    dado('Bairros', arte ? mo.regioes.length : cidade.bairros.length);
+    if(arte){
+      const nós = mo.malha.andavel.reduce((a,b)=>a+b, 0);
+      dado('Ruas', U.numero(nós) + ' pontos');
+      dado('Estádios', (arte.estadios||[]).length);
+    }else{
+      dado('Quarteirões', cidade.bairros.length * MP.QUARTEIROES);
+      dado('Lotes', cidade.bairros.length * MP.QUARTEIROES * MP.LOTES);
+    }
     dado('Nossa sede', sede ? sede.nome : '—');
     const pop = cidade.populacao || 0;
     dado('População', pop >= 1000 ? U.numero(pop/1000, 1) + ' mi'
@@ -2421,11 +2429,13 @@
     if(R.bondes.length){
       const jogos = TO.ruas.jogosDaPraca(e).filter(x=>x.dia === e.data.dia);
       const andando = R.bondes.filter(b=>!b.chegou).length;
+      const falta = Math.max(0, TO.ruas.ANTES - R.minuto);
+      const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
       barraRua.appendChild(el('div',{class:'rua-info', html:
         `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
          <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
-         ${Math.floor(R.minuto/60)}h${String(Math.round(R.minuto%60)).padStart(2,'0')}
-         antes da bola rolar</small>`}));
+         ${falta > 0 ? `faltam ${hhmm(falta)} pra bola rolar`
+                     : 'a bola já rolou'}</small>`}));
       const bt = el('button',{class:'bt destaque',
         texto: R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia'});
       bt.disabled = !andando && !R.encontro;
@@ -2452,18 +2462,20 @@
     q.corpo.appendChild(barraRua);
 
     /* --- superfície --- */
+    const LADO = mo.tam;
+    if(zoomMapa == null) zoomMapa = Math.round((760 / LADO) * 20) / 20;
     const viewport = el('div',{class:'mapa-viewport'});
     const casca = el('div',{class:'mapa-casca',
-      estilo:{width:(MP.TAM*zoomMapa)+'px', height:(MP.TAM*zoomMapa)+'px'}});
+      estilo:{width:(LADO*zoomMapa)+'px', height:(LADO*zoomMapa)+'px'}});
     const cv = el('canvas',{class:'mapa-canvas',
-      estilo:{width:(MP.TAM*zoomMapa)+'px', height:(MP.TAM*zoomMapa)+'px'}});
+      estilo:{width:(LADO*zoomMapa)+'px', height:(LADO*zoomMapa)+'px'}});
     const dica = el('div',{class:'mapa-dica'});
 
     const zoom = el('div',{class:'mapa-zoom'});
     const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
-    bMenos.disabled = zoomMapa <= 0.6; bMais.disabled = zoomMapa >= 2;
-    bMenos.onclick = ()=>{ zoomMapa = Math.max(0.6, zoomMapa-0.2); redesenhar(); };
-    bMais.onclick  = ()=>{ zoomMapa = Math.min(2,   zoomMapa+0.2); redesenhar(); };
+    bMenos.disabled = zoomMapa <= 0.4; bMais.disabled = zoomMapa >= 2;
+    bMenos.onclick = ()=>{ zoomMapa = Math.max(0.4, zoomMapa-0.15); redesenhar(); };
+    bMais.onclick  = ()=>{ zoomMapa = Math.min(2,   zoomMapa+0.15); redesenhar(); };
     zoom.append(bMenos, el('span',{texto:Math.round(zoomMapa*100)+'%'}), bMais);
 
     /* a planta em PNG, sem pino e sem nome: é o que se leva pro upscaler */
@@ -2475,8 +2487,8 @@
     };
     barraRua.appendChild(btPng);
 
-    casca.append(cv, filtros, zoom, dica);
-    viewport.appendChild(casca);
+    casca.append(cv, zoom, dica);
+    viewport.append(filtros, casca);
     q.corpo.appendChild(viewport);
     pg.appendChild(q);
 
@@ -2493,6 +2505,8 @@
     mapaAtual = mo; canvasMapa = cv;
     const pintar = ()=>{ MP.desenhar(mo, cv);
                          TO.ruas.desenhar(E(), mo, cv.getContext('2d')); };
+    /* a arte da cidade chega depois do primeiro quadro */
+    MP.aoCarregarArte(()=>{ if(canvasMapa === cv) pintar(); });
     pintar();
 
     const ponto = ev=>{
@@ -2501,7 +2515,15 @@
               y:(ev.clientY - r.top)  * (mo.tam / r.height)};
     };
     cv.onmousemove = ev=>{
-      const p = ponto(ev), a = MP.alvoEm(mo, p.x, p.y);
+      const p = ponto(ev);
+      let a = MP.alvoEm(mo, p.x, p.y);
+      if(!a && mo.arte){
+        /* fora de um pino, o que interessa é em que bairro o dedo está */
+        const b = MP.bairroEm(mo, p.x, p.y);
+        if(b) a = {x:p.x-14, y:p.y-14, w:28, h:28, tipo:'bairro', bairro:b,
+                   info:`${b.nome} · ${b.zona} · ${b.classe}`+
+                        (MP.andavelEm(mo,p.x,p.y) ? ' · rua' : '')};
+      }
       if((a && a.info) !== (mo.sob && mo.sob.info)
          || (a && mo.sob && (a.x !== mo.sob.x || a.y !== mo.sob.y))){
         mo.sob = a;

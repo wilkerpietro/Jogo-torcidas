@@ -834,12 +834,16 @@ table.dados tr.selecionada td{background:#252525}
 .mapa-viewport{
   overflow:auto;background:#0d0d0e;padding:10px;
   max-height:calc(100vh - 250px);
+  display:flex;align-items:flex-start;gap:10px;
 }
 .mapa-casca{position:relative;margin:0 auto}
 .mapa-canvas{display:block;image-rendering:auto}
 
+/* O painel de filtro fica na margem, nunca por cima da cidade: com a
+   arte no lugar da planta esquemática, tapar um canto do mapa é tapar
+   bairro de verdade. Gruda na borda quando o mapa é arrastado. */
 .mapa-filtros{
-  position:absolute;left:12px;top:12px;width:190px;
+  position:sticky;left:0;top:0;z-index:4;flex:0 0 190px;
   background:#141416e8;border:1px solid var(--linha);padding:8px 10px;
   display:flex;flex-direction:column;gap:8px;backdrop-filter:blur(2px);
 }

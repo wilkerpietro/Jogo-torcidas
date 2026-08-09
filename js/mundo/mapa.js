@@ -76,7 +76,7 @@ TO.mapa = (function(){
     for(const e of M().estadiosEm(cidade.id)){
       if(!e.bairro || !temBairro(e.bairro)) continue;
       const donos = (e.mandantes||[]).map(id=>(M().time(id)||{}).nome).filter(Boolean);
-      lista.push({bairro:e.bairro, tipo:'estadio',
+      lista.push({bairro:e.bairro, tipo:'estadio', id:e.id, cap:e.capacidade||0,
                   label:`Estádio · ${e.nome}`+(donos.length?` (${donos.join(', ')})`:'')});
     }
 
@@ -192,7 +192,112 @@ TO.mapa = (function(){
     };
   }
 
+  /* =======================================================
+     A CIDADE DESENHADA
+     Quando existe arte pra praça, ela manda: a malha de ruas,
+     as dezesseis regiões e os estádios saem dos pixels, e não
+     da grade procedural. O resto do jogo não muda de lado —
+     o modelo tem a mesma cara nos dois casos.
+     ======================================================= */
+  const arteDe = E => {
+    const a = TO.dados.cidadeMapa;
+    return (a && a.cidade === E.torcida.mapa) ? a : null;
+  };
+
+  let _cacheArte = null;
+  function decodificar(a){
+    if(_cacheArte && _cacheArte.fonte === a) return _cacheArte;
+    const n = Math.floor(a.largura / a.passo);
+    const andavel = new Uint8Array(n*n);
+    a.andavel.split(';').forEach((linha, r)=>{
+      let c = 0, v = 0;
+      for(const run of linha.split(',')){
+        const k = +run;
+        if(v) for(let i=0;i<k && c<n;i++,c++) andavel[r*n+c] = 1;
+        else c += k;
+        v ^= 1;
+      }
+    });
+    const regiao = new Int8Array(n*n).fill(-1);
+    a.regioes.split(';').forEach((linha, r)=>{
+      for(let c=0;c<linha.length && c<n;c++)
+        regiao[r*n+c] = parseInt(linha[c], 36) - 1;
+    });
+    _cacheArte = {fonte:a, n, andavel, regiao,
+                  passo:a.passo, tam:a.largura};
+    return _cacheArte;
+  }
+
+  /* Os gramados estão desenhados na arte, e são só três. Os estádios da
+     praça também são três, mas em bairros que a arte não conhece — o
+     desenho veio antes da tabela. Casar por nome de bairro deixaria dois
+     pinos de estádio num lote de casa e dois gramados vazios, então o
+     casamento é por porte: o campo maior fica com o estádio de maior
+     capacidade, e quem já bate o bairro tem preferência.
+     O bairro do pino passa a ser o do gramado — é onde ele está. */
+  function paresDeEstadio(a, todas){
+    const campos = (a.estadios||[]).map((e, i)=>({e, i, area:e.w*e.h}));
+    const casas = todas.map((it, i)=>({it, i}))
+                       .filter(x=>x.it.tipo === 'estadio');
+    const par = new Map();
+    const livre = new Set(campos.map(c=>c.i));
+
+    for(const c of casas){                       /* 1º: bate o bairro */
+      const alvo = campos.find(x=>livre.has(x.i) && x.e.bairro === c.it.bairro);
+      if(alvo){ par.set(c.i, alvo.e); livre.delete(alvo.i); }
+    }
+    const sobra = casas.filter(c=>!par.has(c.i))
+                       .sort((x, y)=>(y.it.cap||0) - (x.it.cap||0));
+    const vagos = campos.filter(c=>livre.has(c.i))
+                        .sort((x, y)=>y.area - x.area);
+    sobra.forEach((c, k)=>{ if(vagos[k]) par.set(c.i, vagos[k].e); });
+    return par;
+  }
+
+  /* onde cada coisa mora na arte: um lote com frente pra rua, sempre o
+     mesmo pro mesmo endereço */
+  function lugarNaArte(a, mapa, item, i, campo){
+    if(item.tipo === 'estadio' && campo)
+      return {x:campo.x, y:campo.y, estadio:campo, bairro:campo.bairro};
+    const bairro = a.bairros.findIndex(b=>b.nome === item.bairro);
+    if(bairro < 0) return null;
+    const lista = a.lotes[String(bairro)] || [];
+    if(!lista.length){
+      const b = a.bairros[bairro];
+      return {x:b.x, y:b.y};
+    }
+    const k = hash(`${item.bairro}|${item.tipo}|${item.label}|${i}`) % lista.length;
+    const [c, r] = lista[k];
+    return {x:(c+0.5)*a.passo, y:(r+0.5)*a.passo};
+  }
+
+  function modeloDaArte(E, a){
+    const todas = estruturas(E);
+    const mostra = new Set(visiveis(E, todas));
+    const m = decodificar(a);
+    const campos = paresDeEstadio(a, todas);
+    /* dois pinos não dividem lote: quem chega depois anda na lista */
+    const usados = new Set();
+    const pinos = [];
+    todas.forEach((item, i)=>{
+      let p = null;
+      for(let t=0; t<8 && !p; t++){
+        const q = lugarNaArte(a, E.torcida.mapa, item, i+t*97, campos.get(i));
+        if(!q) break;
+        const ch = `${Math.round(q.x/a.passo)}|${Math.round(q.y/a.passo)}`;
+        if(!usados.has(ch) || q.estadio){ usados.add(ch); p = q; }
+      }
+      if(p) pinos.push(Object.assign({}, item, p, {visivel: mostra.has(item)}));
+    });
+    return {arte:a, tam:a.largura, malha:m, pinos,
+            regioes:a.bairros, celulas:[], porLado:0,
+            total:todas.length, mostrando:mostra.size,
+            alvos:[], sob:null};
+  }
+
   function modelo(E){
+    const arte = arteDe(E);
+    if(arte) return modeloDaArte(E, arte);
     const cidade = M().cidade(E.torcida.mapa);
     if(!cidade || !(cidade.bairros||[]).length) return null;
     const todas = estruturas(E);
@@ -306,6 +411,7 @@ TO.mapa = (function(){
        no meio da varredura, o lote vizinho — e até o quarteirão vizinho —
        passava por cima do pino, que estoura a borda do próprio lote. */
     mo.camadaPinos = [];
+    if(mo.arte){ desenharArte(ctx, mo, opc); return; }
     fundo(ctx, mo);
     decoracao(ctx, mo);
     vias(ctx, mo);
@@ -314,6 +420,99 @@ TO.mapa = (function(){
     if(!opc.semPinos) for(const f of mo.camadaPinos) f(ctx);
     realce(ctx, mo);
   }
+
+  /* =======================================================
+     DESENHO DA CIDADE DESENHADA
+     ======================================================= */
+  let _img = null, _imgOk = false;
+  function imagem(a){
+    if(_img && _img.src.endsWith(a.imagem)) return _imgOk ? _img : null;
+    _img = new Image();
+    _imgOk = false;
+    _img.onload = ()=>{ _imgOk = true; if(_aoCarregar) _aoCarregar(); };
+    _img.src = a.imagem;
+    return null;
+  }
+  let _aoCarregar = null;
+  const aoCarregarArte = fn => { _aoCarregar = fn; };
+
+  function desenharArte(ctx, mo, opc){
+    const a = mo.arte, m = mo.malha;
+    const img = imagem(a);
+    if(img) ctx.drawImage(img, 0, 0, a.largura, a.altura);
+    else { ctx.fillStyle = '#14150f'; ctx.fillRect(0,0,mo.tam,mo.tam);
+           ctx.fillStyle = '#7a736a'; ctx.font = '600 20px monospace';
+           ctx.textAlign = 'center';
+           ctx.fillText('carregando a cidade…', mo.tam/2, mo.tam/2); }
+
+    /* o contorno do bairro é lembrete, não moldura: fica quase invisível
+       até o mouse encostar */
+    if(!opc.semNomes) contornoDosBairros(ctx, mo);
+
+    /* alvos de clique: uma célula da malha por vez sairia caro, então o
+       hit-test do bairro é feito na hora, direto no raster */
+    if(!opc.semPinos)
+      for(const p of mo.pinos){
+        if(!p.visivel) continue;
+        const r = p.estadio ? Math.max(13, Math.min(p.estadio.w, p.estadio.h)*0.42) : 11;
+        pino(ctx, p.x, p.y, r, p);
+        mo.alvos.push({x:p.x-r, y:p.y-r, w:r*2, h:r*2, tipo:p.tipo, item:p,
+                       info:`${p.bairro} · ${p.label}`});
+      }
+    realce(ctx, mo);
+  }
+
+  function contornoDosBairros(ctx, mo){
+    const m = mo.malha, n = m.n, P = m.passo;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,232,150,.30)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for(let r=0;r<n;r++)
+      for(let c=0;c<n;c++){
+        const k = m.regiao[r*n+c];
+        if(k < 0) continue;
+        if(c+1<n && m.regiao[r*n+c+1] !== k){
+          ctx.moveTo((c+1)*P, r*P); ctx.lineTo((c+1)*P, (r+1)*P);
+        }
+        if(r+1<n && m.regiao[(r+1)*n+c] !== k){
+          ctx.moveTo(c*P, (r+1)*P); ctx.lineTo((c+1)*P, (r+1)*P);
+        }
+      }
+    ctx.stroke();
+    ctx.restore();
+
+    /* o nome do bairro, no mesmo tom apagado da planta antiga */
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.globalAlpha = 0.40;
+    for(const b of mo.regioes){
+      const est = classeDe(b.classe);
+      let tam = 20;
+      ctx.font = `900 ${tam}px Arial, sans-serif`;
+      ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+      ctx.fillStyle = est.rot;
+      ctx.strokeText(b.nome.toUpperCase(), b.x, b.y);
+      ctx.fillText (b.nome.toUpperCase(), b.x, b.y);
+    }
+    ctx.restore();
+  }
+
+  /* em que bairro cai um ponto da arte */
+  function bairroEm(mo, x, y){
+    if(!mo.arte) return null;
+    const m = mo.malha;
+    const c = Math.floor(x/m.passo), r = Math.floor(y/m.passo);
+    if(c<0 || r<0 || c>=m.n || r>=m.n) return null;
+    const k = m.regiao[r*m.n+c];
+    return k >= 0 ? mo.regioes[k] : null;
+  }
+  const andavelEm = (mo, x, y)=>{
+    if(!mo.arte) return true;
+    const m = mo.malha;
+    const c = Math.floor(x/m.passo), r = Math.floor(y/m.passo);
+    return c>=0 && r>=0 && c<m.n && r<m.n && !!m.andavel[r*m.n+c];
+  };
 
   function fundo(ctx, mo){
     ctx.fillStyle = '#141416';
@@ -717,7 +916,7 @@ TO.mapa = (function(){
     if(!mo) return null;
     const cv = document.createElement('canvas');
     cv.width = lado; cv.height = lado;
-    cv._dpr = lado / TAM;
+    cv._dpr = lado / mo.tam;
     desenhar(mo, cv, {semPinos: opc.semPinos !== false,
                       semNomes: opc.semNomes !== false});
     return cv;
@@ -747,6 +946,6 @@ TO.mapa = (function(){
   return {TAM, PAD, AVENIDA, QUARTEIROES, LOTES,
           NEUTROS, TIPOS_TORCIDA, TIPOS_NEUTRO,
           hash, filtros, estruturas, modelo, desenhar, alvoEm, pinoDe, classeDe,
-          paraImagem, baixarImagem,
+          paraImagem, baixarImagem, arteDe, bairroEm, andavelEm, aoCarregarArte,
           ICONE};
 })();
