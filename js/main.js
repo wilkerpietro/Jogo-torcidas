@@ -356,19 +356,20 @@
     /* dia de jogo — a postura da semana decide se tem cena (GDD §3.2) */
     const cDJ = cartao('Dia de jogo',
       !j ? 'sem jogo' : j.casa ? 'em casa' : `fora · ${j.cidadeAdv||''}`);
-    const posts = TO.financeiro.posturas(e);
-    const atual = posts.find(p=>p.id===e.postura) || posts[posts.length-1];
-    cDJ.corpo.appendChild(subabas(
-      posts.map(p=>({id:p.id, rot:p.rot})), atual.id,
-      id=>{ TO.financeiro.definirPostura(e, id); redesenhar(); }));
+    const P = TO.planejamento, pl = P.plano(e);
     cDJ.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span class="fraco">${atual.nota}</span>`}));
+      `<span class="fraco">${!j ? 'o time não joga nesta semana'
+        : TO.financeiro.precisaCaravana(e)
+          ? `caravana para ${j.cidadeAdv}` : 'o bonde sai da sede'}</span>`}));
     cDJ.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Aptos a sair</span><b>${TO.membros.aptosParaOEstadio(e).length}</b>`}));
+      `<span>Sai de casa</span><b>${j ? P.efetivoDaSaida(e) : 0}</b>`}));
+    if(j) cDJ.corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span>Plano</span><b>${pl.intencao==='atacar'?'atacar':'ir em paz'} · `+
+      `${pl.bondes===1?'bonde único':pl.bondes+' bondes'}</b>`}));
 
-    const vai = atual.id !== 'ficar';
+    const vai = !!j;
     const btDJ = el('button',{class:'bt destaque larga',
-      texto: vai ? 'Sair pro estádio' : 'A torcida fica'});
+      texto: vai ? 'Sair pro estádio' : 'Folga na tabela'});
     btDJ.disabled = !vai;
     btDJ.onclick = abrirEscalacao;
     cDJ.rodape(btDJ);
@@ -1150,6 +1151,34 @@
     return q;
   }
 
+  /* cartão que abre e fecha. O estado fica aqui fora pra sobreviver ao
+     redesenho — a tela de Gestão é longa e ninguém quer rolar tudo. */
+  const dobras = new Set(['jogo','intencao','saida']);
+  function quadroDobra(id, titulo, direita){
+    const aberto = dobras.has(id);
+    const q = el('div',{class:'quadro dobra'+(aberto?' aberto':'')});
+    const h = el('header');
+    h.appendChild(el('span',{class:'seta', texto:aberto?'▾':'▸'}));
+    h.appendChild(el('h2',{texto:titulo}));
+    if(direita) h.appendChild(direita);
+    h.onclick = ()=>{
+      if(dobras.has(id)) dobras.delete(id); else dobras.add(id);
+      redesenhar();
+    };
+    q.appendChild(h);
+    q.corpo = el('div',{class:'recuado'});
+    if(!aberto) q.corpo.style.display = 'none';
+    q.appendChild(q.corpo);
+    q.rodape = (...bts)=>{
+      if(!aberto) return q;
+      const r = el('div',{class:'rodape'});
+      bts.forEach(b=>b && r.appendChild(b));
+      q.appendChild(r); return q;
+    };
+    q.aberto = aberto;
+    return q;
+  }
+
   function pintarGestao(){
     const e = E(), pg = U.$('.pagina[data-pag="gestao"]');
     const P = TO.planejamento;
@@ -1161,162 +1190,296 @@
     const grade = el('div',{class:'comp-duas'});
     const esq = el('div'), dir = el('div');
 
-    /* ---------- 1. postura da semana ---------- */
-    const cPost = quadroP('A semana', el('span',{class:'conta',
-      texto:`semana ${e.data.semana} · dia ${e.data.dia}`}));
-    if(!j){
-      cPost.corpo.appendChild(el('div',{class:'em-construcao',
-        html:'<b>Folga na tabela</b>O time não joga. Semana boa pra treinar, '+
-             'recrutar e resolver o que a rua deixou.'}));
-    }else{
-      cPost.corpo.appendChild(el('div',{class:'confronto-linha', html:
-        `<b>${j.mandante.nome}</b><span>×</span><b>${j.visitante.nome}</b>
-         <small>${j.competicao}${j.fase?' · '+j.fase:''} · `+
-        `${j.neutro?'campo neutro':j.casa?'em casa':'fora, em '+j.cidadeAdv}</small>`}));
-      const posts = TO.financeiro.posturas(e);
-      const atual = posts.find(x=>x.id===e.postura) || posts[posts.length-1];
-      cPost.corpo.appendChild(opcoes(
-        posts.map(x=>({id:x.id, rot:x.rot, nota:x.nota})), atual.id,
-        id=>{ TO.financeiro.definirPostura(e, id); redesenhar(); }));
+    /* ---------- 1. o jogo da semana ---------- */
+    const cPost = quadroDobra('jogo', 'O jogo da semana', el('span',{class:'conta',
+      texto: j ? (TO.financeiro.precisaCaravana(e) ? 'fora, com caravana'
+                                                   : 'em casa') : 'folga'}));
+    if(cPost.aberto){
+      if(!j){
+        cPost.corpo.appendChild(el('div',{class:'em-construcao',
+          html:'<b>Folga na tabela</b>O time não joga. Semana boa pra treinar, '+
+               'recrutar e resolver o que a rua deixou.'}));
+      }else{
+        cPost.corpo.appendChild(el('div',{class:'confronto-linha', html:
+          `<b>${j.mandante.nome}</b><span>×</span><b>${j.visitante.nome}</b>
+           <small>${j.competicao}${j.fase?' · '+j.fase:''} · `+
+          `${j.neutro?'campo neutro':j.casa?'em casa':'fora, em '+j.cidadeAdv}</small>`}));
+        cPost.corpo.appendChild(el('div',{class:'linha-dado', html:
+          `<span>Saída</span><b>${TO.financeiro.precisaCaravana(e)
+            ? 'caravana para '+j.cidadeAdv : 'bonde da sede pro estádio'}</b>`}));
+        cPost.corpo.appendChild(el('div',{class:'linha-dado', html:
+          `<span>Sai de casa</span><b>${P.efetivoDaSaida(e)} de `+
+          `${TO.membros.aptosParaOEstadio(e).length} aptos</b>`}));
+      }
     }
     esq.appendChild(cPost);
 
-    /* ---------- 2. em paz ou atacar ---------- */
-    if(j && e.postura !== 'ficar'){
-      const cInt = quadroP('Intenção do dia de jogo');
-      cInt.corpo.appendChild(opcoes([
-        {id:'paz',    rot:'Ir em paz',  nota:'entrar pelo portão, bandeira e bateria'},
-        {id:'atacar', rot:'Atacar',     nota:'procurar o rival antes da bola rolar'}
-      ], p.intencao, id=>{ p.intencao=id; p.decidido=false; redesenhar(); }));
+    /* ---------- 2. intenção e alvo ---------- */
+    if(j){
+      const alvos = P.alvosDoJogo(e);
+      const trair = P.soAliados(e);
+      if(trair && p.intencao === 'atacar') p.intencao = 'trair';
+      if(!trair && p.intencao === 'trair') p.intencao = 'atacar';
+      const briga = p.intencao !== 'paz';
+      if(briga && !p.alvoTorcida && alvos.length) p.alvoTorcida = alvos[0].id;
 
-      if(p.intencao === 'atacar'){
-        cInt.corpo.appendChild(el('div',{class:'fase-rot', texto:'Onde bater'}));
-        cInt.corpo.appendChild(opcoes(
-          P.pontosDeAtaque(e).map(x=>({id:x.id,
-            rot:`${x.nome}${x.bairro?` — ${x.bairro}`:''}`,
-            nota:`${x.nota} · risco ${x.risco}/5 · prestígio ${x.prestigio}/5`})),
-          p.alvo, id=>{ p.alvo=id; p.decidido=false; redesenhar(); }));
+      const cInt = quadroDobra('intencao', 'Intenção do dia de jogo',
+        el('span',{class:'conta', texto: briga
+          ? (P.ponto(p.alvo).nome) : 'em paz'}));
+      if(cInt.aberto){
+        cInt.corpo.appendChild(opcoes(P.intencoes(e), p.intencao,
+          id=>{ p.intencao=id; p.decidido=false; redesenhar(); }));
 
-        /* bombas do estoque (GDD §9.1) */
-        const est = e.estoque || {bombas:0};
-        cInt.corpo.appendChild(el('div',{class:'fase-rot',
-          texto:`Bombas do estoque — ${est.bombas} guardadas`}));
-        const linha = el('div',{class:'contador'});
-        const menos = el('button',{texto:'−'}), mais = el('button',{texto:'+'});
-        menos.onclick = ()=>{ p.bombas=Math.max(0,p.bombas-1); p.decidido=false; redesenhar(); };
-        mais.onclick  = ()=>{ p.bombas=Math.min(est.bombas,p.bombas+1); p.decidido=false; redesenhar(); };
-        menos.disabled = p.bombas<=0; mais.disabled = p.bombas>=est.bombas;
-        linha.append(menos, el('b',{texto:String(p.bombas)}), mais,
-          el('small',{texto: p.bombas ? 'bomba chama a PM mais rápido (GDD §9.1)'
-                                      : 'pedra é infinita e não faz barulho'}));
-        cInt.corpo.appendChild(linha);
+        if(briga){
+          cInt.corpo.appendChild(el('div',{class:'fase-rot', texto:'Contra quem'}));
+          if(!alvos.length){
+            cInt.corpo.appendChild(el('div',{class:'em-construcao',
+              texto:'O adversário não tem organizada catalogada.'}));
+          }
+          cInt.corpo.appendChild(opcoes(alvos.map(a=>({
+            id:a.id, rot:a.torcida.nome,
+            nota:`${a.aliada?'ALIADA — bater nela é traição · ':''}`+
+                 `relação ${a.relacao>0?'+':''}${Math.round(a.relacao)}`+
+                 `${a.tensao?` · tensão ${Math.round(a.tensao)}`:''} · `+
+                 `${a.torcida.membros} membros`
+          })), p.alvoTorcida, id=>{ p.alvoTorcida=id; p.decidido=false; redesenhar(); }));
+
+          cInt.corpo.appendChild(el('div',{class:'fase-rot', texto:'Onde bater'}));
+          cInt.corpo.appendChild(opcoes(
+            P.pontosDeAtaque(e).map(x=>({id:x.id,
+              rot:`${x.nome}${x.bairro?` — ${x.bairro}`:''}`,
+              nota:`${x.nota} · risco ${x.risco}/5 · prestígio ${x.prestigio}/5`})),
+            p.alvo, id=>{ p.alvo=id; p.decidido=false; redesenhar(); }));
+
+          const est = e.estoque || {bombas:0};
+          cInt.corpo.appendChild(el('div',{class:'fase-rot',
+            texto:`Bombas do estoque — ${est.bombas} guardadas`}));
+          const linha = el('div',{class:'contador'});
+          const menos = el('button',{texto:'−'}), mais = el('button',{texto:'+'});
+          menos.onclick = ()=>{ p.bombas=Math.max(0,p.bombas-1); p.decidido=false; redesenhar(); };
+          mais.onclick  = ()=>{ p.bombas=Math.min(est.bombas,p.bombas+1); p.decidido=false; redesenhar(); };
+          menos.disabled = p.bombas<=0; mais.disabled = p.bombas>=est.bombas;
+          linha.append(menos, el('b',{texto:String(p.bombas)}), mais,
+            el('small',{texto: p.bombas ? 'bomba chama a PM mais rápido (GDD §9.1)'
+                                        : 'pedra é infinita e não faz barulho'}));
+          cInt.corpo.appendChild(linha);
+        }
       }
       esq.appendChild(cInt);
 
-      /* ---------- 3. um bonde ou vários ---------- */
+      /* ---------- 3. formação da saída ---------- */
       const d = P.divisao(e, p.bondes);
-      const cB = quadroP('Formação da saída', el('span',{class:'conta',
-        texto:`${TO.membros.aptosParaOEstadio(e).length} aptos`}));
-      cB.corpo.appendChild(opcoes([1,2,3,4].map(n=>{
-        const dd = P.divisao(e, n);
-        return {id:n, rot: n===1 ? 'Bonde único' : `${n} bondes, um por zona`,
-                nota: n===1 ? 'todo mundo junto: uma frente, mas pesada'
-                            : `${dd.porBonde} por bonde · até ${n} ataques · `+
-                              `${dd.zonas.join(', ')}`};
-      }), p.bondes, n=>{ p.bondes=n; p.decidido=false; redesenhar(); }));
-      cB.corpo.appendChild(el('div',{class:'linha-dado', html:
-        medidor('Solidez da linha', Math.round(d.solidez*100), 100,
-                d.solidez>0.75?'var(--verde)':'var(--ouro)')}));
+      const cB = quadroDobra('saida', 'Formação da saída', el('span',{class:'conta',
+        texto:`${P.efetivoDaSaida(e)} saem · ${p.bondes===1?'um bonde':p.bondes+' bondes'}`}));
+      if(cB.aberto){
+        cB.corpo.appendChild(opcoes([1,2,3,4].map(n=>{
+          const dd = P.divisao(e, n);
+          return {id:n, rot: n===1 ? 'Bonde único' : `${n} bondes, um por zona`,
+                  nota: n===1 ? 'todo mundo junto: uma frente, mas pesada'
+                              : `${dd.porBonde} por bonde · até ${n} frentes · `+
+                                `${dd.zonas.join(', ')}`};
+        }), p.bondes, n=>{ p.bondes=n; p.decidido=false; redesenhar(); }));
+        cB.corpo.appendChild(el('div',{class:'linha-dado', html:
+          medidor('Solidez da linha', Math.round(d.solidez*100), 100,
+                  d.solidez>0.75?'var(--verde)':'var(--ouro)')}));
+
+        if(p.bondes > 1){
+          cB.corpo.appendChild(el('div',{class:'fase-rot', texto:'Destino de cada bonde'}));
+          const ops = P.opcoesDeDestino(e);
+          for(const b of P.destinos(e)){
+            const linha = el('div',{class:'linha-bonde'});
+            linha.appendChild(el('span',{class:'zona', html:
+              `${b.zona}<small>${b.gente} membros</small>`}));
+            const sel = el('select',{class:'campo'});
+            for(const o of ops){
+              const opt = el('option',{value:o.id, texto:`${o.nome} — ${o.nota}`});
+              if(o.id === b.destino) opt.selected = true;
+              sel.appendChild(opt);
+            }
+            sel.onchange = ()=>{
+              p.destinos[b.i] = sel.value; p.decidido = false; redesenhar();
+            };
+            linha.appendChild(sel);
+            cB.corpo.appendChild(linha);
+          }
+          const brigam = P.destinos(e).filter(x=>x.ponto).length;
+          cB.corpo.appendChild(el('div',{class:'linha-dado', html:
+            `<span class="fraco">${brigam
+              ? `${brigam} ${brigam===1?'frente de ataque':'frentes de ataque'} e `+
+                `${p.bondes-brigam} entrando pelo portão`
+              : 'todos entram pelo portão'}</span>`}));
+        }
+      }
       esq.appendChild(cB);
     }
 
-    /* ---------- 4. aliados na cidade ---------- */
-    const aliados = P.aliadosNaCidade(e, e.data.semana);
-    const cA = quadroP('Aliados na nossa cidade', el('span',{class:'conta',
-      texto: aliados.length ? `${aliados.length} nesta semana` : 'ninguém nesta semana'}));
-    if(!aliados.length){
-      cA.corpo.appendChild(el('div',{class:'em-construcao',
-        texto:'Nenhum time aliado joga aqui nesta semana.'}));
+    /* ---------- 4. outros jogos na cidade ---------- */
+    const outros = P.outrosJogosNaCidade(e, e.data.semana);
+    const cO = quadroDobra('outros', 'Outros jogos na cidade',
+      el('span',{class:'conta', texto: outros.length
+        ? `${outros.length} nesta semana` : 'nenhum'}));
+    if(cO.aberto){
+      if(!outros.length)
+        cO.corpo.appendChild(el('div',{class:'em-construcao',
+          texto:'Nenhum outro time da praça joga em casa nesta semana.'}));
+      for(const g of outros){
+        cO.corpo.appendChild(el('div',{class:'aliado-cab', html:
+          `<span class="escudinho" style="background:${corClube(g.casa.id)}"></span>
+           <div><b>${g.casa.nome} × ${g.vis.nome}</b>
+             <small>${g.comp} · torcida de fora circulando pela cidade</small></div>`}));
+        const ops = [{id:'', rot:'Deixar passar', nota:'ninguém sai da sede por isso'}]
+          .concat(g.visitantes.map(v=>({
+            id:v.id, rot:`Cair em cima da ${v.torcida.nome}`,
+            nota:`${v.aliada?'ALIADA — isso é traição · ':''}`+
+                 `${v.torcida.membros} membros · custa uma ação da semana`})));
+        cO.corpo.appendChild(opcoes(ops, p.investidas[g.chave] || '',
+          id=>{ if(id) p.investidas[g.chave]=id; else delete p.investidas[g.chave];
+                p.decidido=false; redesenhar(); }));
+      }
     }
-    for(const a of aliados){
-      cA.corpo.appendChild(el('div',{class:'aliado-cab', html:
-        `<span class="escudinho" style="background:${a.torcida.cores[0]}"></span>
-         <div><b>${a.torcida.nome}</b>
-           <small>${a.clube.nome} joga contra o ${a.adversario.nome} · `+
-        `relação ${Math.round(a.relacao)} · vêm ~${a.estimativa}</small></div>`}));
-      const nivel = p.recepcao[a.id] || 'nada';
-      cA.corpo.appendChild(opcoes(P.RECEPCAO.map(r=>({
-        id:r.id, rot:r.rot, custo:r.porCabeca*a.estimativa,
-        nota:`${r.nota} · relação ${r.relacao>0?'+':''}${r.relacao}`,
-        desabilitada: r.porCabeca*a.estimativa > e.dinheiro && r.id!=='nada'
-      })), nivel, id=>{ p.recepcao[a.id]=id; p.decidido=false; redesenhar(); }));
+    dir.appendChild(cO);
+
+    /* ---------- 5. aliados na cidade ---------- */
+    const aliados = P.aliadosNaCidade(e, e.data.semana);
+    const padrao = P.recepcaoPadrao(e);
+    const cA = quadroDobra('aliados', 'Aliados na nossa cidade', el('span',{class:'conta',
+      texto: aliados.length ? `${aliados.length} nesta semana` : 'ninguém nesta semana'}));
+    if(cA.aberto){
+      cA.corpo.appendChild(el('div',{class:'fase-rot', texto:'Recepção padrão'}));
+      cA.corpo.appendChild(opcoes(
+        [{id:'', rot:'Decidir caso a caso', nota:'a tela pergunta toda vez'}]
+          .concat(P.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
+            nota:`${U.dinheiro(r.porCabeca)} por cabeça · relação `+
+                 `${r.relacao>0?'+':''}${r.relacao}`}))),
+        padrao || '', id=>{ P.definirRecepcaoPadrao(e, id); redesenhar(); }));
+
+      if(!aliados.length)
+        cA.corpo.appendChild(el('div',{class:'em-construcao',
+          texto:'Nenhum time aliado joga aqui nesta semana.'}));
+      for(const a of aliados){
+        const nivel = P.nivelDe(e, a.id);
+        cA.corpo.appendChild(el('div',{class:'aliado-cab', html:
+          `<span class="escudinho" style="background:${a.torcida.cores[0]}"></span>
+           <div><b>${a.torcida.nome}</b>
+             <small>${a.clube.nome} joga contra o ${a.adversario.nome} · `+
+          `relação ${Math.round(a.relacao)} · vêm ~${a.estimativa}</small></div>`}));
+        cA.corpo.appendChild(opcoes(P.RECEPCAO.map(r=>({
+          id:r.id, rot:r.rot + (padrao===r.id ? ' (padrão)' : ''),
+          custo:r.porCabeca*a.estimativa,
+          nota:`${r.nota} · relação ${r.relacao>0?'+':''}${r.relacao}`,
+          desabilitada: r.porCabeca*a.estimativa > e.dinheiro && r.id!=='nada'
+        })), nivel, id=>{ p.recepcao[a.id]=id; p.decidido=false; redesenhar(); }));
+      }
     }
     dir.appendChild(cA);
 
-    /* ---------- 5. caravana ---------- */
+    /* ---------- 6. caravana ---------- */
     const listaRotas = P.rotas(e);
     if(listaRotas.length){
       const est = P.estimativaCaravana(e);
-      const cC = quadroP('Caravana', el('span',{class:'conta',
-        texto:`${e.torcida.cidade} → ${j.cidadeAdv}`}));
-      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Interessados em ir</span><b>${est.vao} de ${est.aptos}</b>`}));
-      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-        medidor('Vontade de viajar', Math.round(est.vontade*100), 100,
-                est.vontade>0.5?'var(--verde)':'var(--ouro)')}));
-      cC.corpo.appendChild(el('div',{class:'fase-rot', texto:'Estrada'}));
-      cC.corpo.appendChild(opcoes(listaRotas.map(r=>({
-        id:r.id, rot:r.nome, custo:r.custo,
-        nota:`${r.nota}${r.risco?` · risco ${Math.round(r.risco)}`:' · sem território hostil'}`
-      })), (p.rota || listaRotas[0].id), id=>{ p.rota=id; p.decidido=false; redesenhar(); }));
+      const cC = quadroDobra('caravana', 'Caravana', el('span',{class:'conta',
+        texto:`${est.vao} para ${j.cidadeAdv} · ${U.dinheiro(est.custo)}`}));
+      if(cC.aberto){
+        cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+          `<span>Interessados em ir</span><b>${est.interessados} de ${est.aptos}</b>`}));
+        cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+          medidor('Vontade de viajar', Math.round(est.vontade*100), 100,
+                  est.vontade>0.5?'var(--verde)':'var(--ouro)')}));
 
-      const r = P.rotaEscolhida(e);
-      if(r && r.cidades.length>1){
-        cC.corpo.appendChild(el('div',{class:'trajeto', html:
-          r.cidades.map((c,i)=>{
-            const nome = (TO.mundo.cidade(c)||{}).nome || c;
-            const hostil = P.hostilidade(e, c);
-            return `<span class="parada${i===0?' saida':''}${
-              i===r.cidades.length-1?' chegada':''}${hostil>40?' hostil':''}">${nome}</span>`;
-          }).join('<i>›</i>')}));
-        if(r.rodovias.length)
-          cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-            `<span class="fraco">${r.rodovias.join(' · ')}</span>`}));
+        const passo = Math.max(1, Math.round(est.interessados/10));
+        const linhaQtd = el('div',{class:'contador'});
+        const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
+        bMenos.disabled = est.vao <= est.minimo;
+        bMais.disabled  = est.vao >= est.interessados;
+        bMenos.onclick = ()=>{ p.caravana = Math.max(est.minimo, est.vao-passo);
+                               p.decidido=false; redesenhar(); };
+        bMais.onclick  = ()=>{ p.caravana = Math.min(est.interessados, est.vao+passo);
+                               p.decidido=false; redesenhar(); };
+        linhaQtd.append(bMenos, el('b',{texto:String(est.vao)}), bMais,
+          el('small',{texto:`embarcam · ${U.dinheiro(est.porCabeca)} por cabeça`}));
+        cC.corpo.appendChild(linhaQtd);
+
+        cC.corpo.appendChild(el('div',{class:'fase-rot', texto:'Estrada'}));
+        cC.corpo.appendChild(opcoes(listaRotas.map(r=>({
+          id:r.id, rot:r.nome, custo:Math.round(r.custo*0.4),
+          nota:`${r.nota}${r.risco?` · risco ${Math.round(r.risco)}`:' · sem território hostil'}`
+        })), (p.rota || listaRotas[0].id), id=>{ p.rota=id; p.decidido=false; redesenhar(); }));
+
+        const r = P.rotaEscolhida(e);
+        if(r && r.cidades.length>1){
+          cC.corpo.appendChild(el('div',{class:'trajeto', html:
+            r.cidades.map((c,i)=>{
+              const nome = (TO.mundo.cidade(c)||{}).nome || c;
+              const hostil = P.hostilidade(e, c);
+              return `<span class="parada${i===0?' saida':''}${
+                i===r.cidades.length-1?' chegada':''}${hostil>40?' hostil':''}">${nome}</span>`;
+            }).join('<i>›</i>')}));
+          if(r.rodovias.length)
+            cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+              `<span class="fraco">${r.rodovias.join(' · ')}</span>`}));
+        }
+        cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+          `<span>Ônibus e pedágio</span><b>${U.dinheiro(est.bruto)}</b>`}));
+        cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+          `<span>Rateio entre os que vão</span><b class="positivo">`+
+          `${U.dinheiro(est.rateio)}</b>`}));
+        cC.corpo.appendChild(el('div',{class:'linha-dado total', html:
+          `<span>Sai do caixa</span><b class="negativo">${U.dinheiro(-est.custo)}</b>`}));
       }
-      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Custo por cabeça</span><b>${U.dinheiro(est.porCabeca)}</b>`}));
       dir.appendChild(cC);
     }
 
-    /* ---------- 6. fechar o plano ---------- */
+    /* ---------- 7. fechar o plano ---------- */
     const cF = quadroP('Plano da semana');
     const resumo = [];
     if(!j) resumo.push('Sem jogo nesta semana.');
     else{
-      resumo.push(e.postura==='ficar' ? 'A torcida fica.'
-                : e.postura==='viajar' ? `Caravana para ${j.cidadeAdv}.`
-                : 'A torcida vai ao estádio.');
-      if(e.postura!=='ficar')
-        resumo.push(p.intencao==='atacar'
-          ? `Ataque em ${P.ponto(p.alvo).nome}${p.bombas?` com ${p.bombas} bomba${p.bombas>1?'s':''}`:', só na pedra'}.`
-          : 'Entrada em paz pelo portão.');
-      if(e.postura!=='ficar')
-        resumo.push(p.bondes===1 ? 'Bonde único.'
-                                 : `${p.bondes} bondes, um por zona.`);
+      resumo.push(TO.financeiro.precisaCaravana(e)
+        ? `Caravana para ${j.cidadeAdv} com ${P.efetivoDaSaida(e)}.`
+        : `Ao estádio com ${P.efetivoDaSaida(e)}.`);
+      if(p.intencao === 'paz') resumo.push('Entrada em paz pelo portão.');
+      else{
+        const alvo = TO.mundo.torcida(p.alvoTorcida);
+        resumo.push(`${p.intencao==='trair'?'Traição contra':'Ataque à'} `+
+          `${alvo?alvo.nome:'torcida rival'} em ${P.ponto(p.alvo).nome}`+
+          `${p.bombas?` com ${p.bombas} bomba${p.bombas>1?'s':''}`:', só na pedra'}.`);
+      }
+      for(const d2 of P.destinos(e))
+        if(p.bondes > 1)
+          resumo.push(`Bonde ${d2.zona}: ${d2.ponto ? 'atacar em '+d2.ponto.nome
+                                                    : 'direto pro estádio'} (${d2.gente}).`);
     }
     let gasto = 0;
     for(const a of aliados){
-      const n = p.recepcao[a.id];
+      const n = P.nivelDe(e, a.id);
       if(!n || n==='nada') continue;
       const c = P.custoRecepcao(n, a.estimativa);
       gasto += c;
       resumo.push(`${P.recepcaoDe(n).rot} para a ${a.torcida.nome} (${U.dinheiro(c)}).`);
     }
+    let invs = 0;
+    for(const [chave, alvo] of Object.entries(p.investidas||{})){
+      if(!alvo) continue;
+      const o = TO.mundo.torcida(alvo);
+      invs++;
+      resumo.push(`Investida contra a ${o?o.nome:alvo} num jogo da cidade.`);
+    }
     for(const t of resumo)
       cF.corpo.appendChild(el('div',{class:'linha-dado', html:`<span>${t}</span>`}));
+    if(invs)
+      cF.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="fraco">${invs} ${invs===1?'investida gasta':'investidas gastam'} `+
+        `${invs} de ${TO.acoes.restantes(e)} ${TO.acoes.restantes(e)===1?'ação':'ações'} `+
+        'que sobraram na semana.</span>'}));
     if(gasto)
       cF.corpo.appendChild(el('div',{class:'linha-dado total', html:
         `<span>A pagar agora</span><b class="negativo">${U.dinheiro(-gasto)}</b>`}));
+
+    const tipo = P.tipoDoJogo(e) === 'fora' ? 'de viagem' : 'em casa';
+    if(P.temPadrao(e))
+      cF.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="fraco">Este plano vem do padrão ${tipo} e é aplicado `+
+        'sozinho toda semana.</span>'}));
 
     const bt = el('button',{class:'bt destaque larga',
       texto: p.decidido ? 'Plano fechado' : 'Fechar o plano'});
@@ -1327,7 +1490,15 @@
                     : 'Plano fechado.', 'boa');
       redesenhar();
     };
-    cF.rodape(bt);
+    const btPad = el('button',{class:'bt larga',
+      texto: P.temPadrao(e) ? `Esquecer padrão ${tipo}` : `Salvar como padrão ${tipo}`});
+    btPad.onclick = ()=>{
+      if(P.temPadrao(e)){ P.esquecerPadrao(e); aviso('Padrão esquecido.','ruim'); }
+      else { P.salvarPadrao(e);
+             aviso(`Padrão ${tipo} salvo. Semanas assim já vêm decididas.`,'boa'); }
+      redesenhar();
+    };
+    cF.rodape(btPad, bt);
     dir.appendChild(cF);
 
     grade.append(esq, dir);
@@ -1580,6 +1751,55 @@
       <u></u></span>`;
   }
 
+  /* tensão é escala 0–100 numa barra só, com a cor da faixa */
+  function barraTensao(v){
+    const f = TO.tensao.faixa(v);
+    if(!v) return '<span class="ten-num fraco">—</span>';
+    return `<span class="ten-barra" title="${f.nome}">
+      <i style="width:${v}%;background:${f.cor}"></i></span>
+      <span class="ten-num" style="color:${f.cor}">${Math.round(v)}</span>`;
+  }
+
+  /* quem está prestes a nos atacar, e por quê */
+  function painelTensao(e){
+    const lista = TO.tensao.panorama(e);
+    const cx = el('div');
+    const c = cartao('Termômetro', lista.length
+      ? `${lista.filter(x=>x.tensao>=45).length} em ponto de briga`
+      : 'nenhum atrito aberto');
+    c.corpo.appendChild(el('div',{class:'linha-dado', html:
+      '<span class="fraco">Relação é o que se pensa do outro; tensão é o que está '+
+      'prestes a acontecer. Acima de 45 a torcida pode atacar a sede, o bar, a '+
+      'caravana na estrada ou o bonde nos arredores.</span>'}));
+    if(!lista.length){
+      c.corpo.appendChild(el('div',{class:'em-construcao',
+        texto:'Ninguém com contas a acertar. Por enquanto.'}));
+    }
+    for(const t of lista){
+      c.corpo.appendChild(el('div',{class:'linha-tensao', html:
+        `<span class="cor" style="background:${t.cores[0]}"></span>
+         <span class="nm">${t.nome}<small>relação ${t.relacao>0?'+':''}${t.relacao}</small></span>
+         ${barraTensao(t.tensao)}
+         <span class="faixa" style="color:${t.faixa.cor}">${t.faixa.nome}</span>`}));
+    }
+    cx.appendChild(c);
+
+    const focos = (e.focos||[]).slice(0,14);
+    const h = cartao('O que esquentou', `${focos.length} episódios`);
+    if(!focos.length) h.corpo.innerHTML =
+      '<div class="em-construcao">Nada aconteceu ainda.</div>';
+    for(const f of focos){
+      const o = TO.mundo.torcida(f.id);
+      h.corpo.appendChild(el('div',{class:'transacao', html:
+        `<span class="dia">S${f.semana}</span>
+         <span class="desc">${o?o.nome:f.id} — ${f.motivo}</span>
+         <span class="val ${f.quanto>0?'negativo':'positivo'}">`+
+        `${f.quanto>0?'+':''}${f.quanto}</span>`}));
+    }
+    cx.appendChild(h);
+    return cx;
+  }
+
   function pintarDiplomacia(){
     const e = E(), pg = U.$('.pagina[data-pag="diplomacia"]');
     pg.innerHTML='';
@@ -1588,8 +1808,10 @@
       {id:'relacoes',    rot:'Relações'},
       {id:'aliancas',    rot:'Alianças'},
       {id:'rivalidades', rot:'Rivalidades'},
-      {id:'tratados',    rot:'Tratados', desabilitada:true}
+      {id:'tensao',      rot:'Tensão'}
     ], subDip, id=>{subDip=id; redesenhar();}));
+
+    if(subDip === 'tensao'){ pg.appendChild(painelTensao(e)); return; }
 
     /* o valor corrente manda; o tipo da fonte é só o ponto de partida */
     const linhas = Object.entries(e.relacoes||{}).map(([id,v])=>{
@@ -1624,8 +1846,9 @@
 
     const tab = el('table',{class:'dados'});
     tab.appendChild(el('thead',null,[el('tr',{html:
-      `<th style="width:30%">Torcida</th><th style="width:22%">Clube</th>
-       <th style="width:26%">Relação</th><th>Status</th><th>Ações</th>`})]));
+      `<th style="width:26%">Torcida</th><th style="width:18%">Clube</th>
+       <th style="width:24%">Relação</th><th style="width:16%">Tensão</th>
+       <th>Status</th><th>Ações</th>`})]));
     const tb = el('tbody');
     for(const l of filtradas.slice(0,120)){
       const est = TO.mundo.estiloRelacao(l.tipo);
@@ -1634,6 +1857,7 @@
         `<td>${l.o.nome}</td>
          <td>${l.o.clube}</td>
          <td>${barraRelacao(l.valor)}<span class="rel-num">${l.valor>0?'+':''}${Math.round(l.valor)}</span></td>
+         <td>${barraTensao(TO.tensao.nivel(e, l.id))}</td>
          <td style="color:${est.corTexto}">${l.tipo}</td>
          <td class="rel-acoes"></td>`;
       const cel = tr.querySelector('.rel-acoes');

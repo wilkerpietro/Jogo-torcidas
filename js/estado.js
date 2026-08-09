@@ -148,7 +148,7 @@ TO.estado = (function(){
       ? TO.competicoes.jogoDaSemana(est, meu.id, est.data.semana) : null;
     if(est.temporada && !agenda){
       est.proximoJogo = null;
-      est.postura = 'ficar';
+      est.postura = 'folga';
       return;
     }
 
@@ -172,20 +172,39 @@ TO.estado = (function(){
       cidadeAdv: cAdv ? cAdv.nome : (adv.cidade || ''),
       chave: `${est.data.ano}-${est.data.semana}-${adv.id}`
     };
-    /* GDD §3.2: a postura da semana começa no padrão — ir ao estádio
-       quando dá pé a pé, ficar quando o jogo é em outra cidade */
-    est.postura = TO.financeiro.precisaCaravana(est) ? 'ficar' : 'estadio';
+    /* torcida organizada não falta jogo: a postura é consequência do
+       calendário, não escolha (o que se decide é o tamanho da caravana) */
+    est.postura = TO.financeiro.postura(est);
   }
 
+  /* O noticiário conta o que de fato aconteceu: briga entre torcidas
+     que não controlamos, trégua fechada, o que sobrou da nossa semana e
+     o que vem pela frente. */
   function gerarNoticias(est){
-    const n = est.torcida.nome;
-    return [
-      {txt:`${n} realiza treino fechado antes do clássico`, hora:'10:23'},
-      {txt:`${est.torcida.rival||'A rival'} provoca nas redes sociais`, hora:'18:45'},
-      {txt:`Clássico contra ${est.proximoJogo?est.proximoJogo.visitante.nome:'o rival'} tem esquema especial`, hora:'14:02'},
-      {txt:'Polícia aumenta patrulhamento na zona oeste', hora:'09:12'},
-      {txt:'Torcida Jovem do Santos anuncia nova faixa', hora:'22:31'}
-    ];
+    const hora = ()=> String(U.inteiro(8,23)).padStart(2,'0')+':'+
+                      String(U.inteiro(0,59)).padStart(2,'0');
+    const fora = [];
+    for(const n of (est.ultimasNoticias||[]))
+      fora.push({txt:`${n.tipo==='briga'?'CONFRONTO':'DIPLOMACIA'}: ${n.txt}`,
+                 hora:hora(), tipo:n.tipo});
+
+    const quentes = TO.tensao.panorama(est).filter(x=>x.tensao >= 45);
+    if(quentes.length)
+      fora.push({txt:`CLIMA: tensão ${quentes[0].faixa.nome.toLowerCase()} com a `+
+                     `${quentes[0].nome}`, hora:hora(), tipo:'clima'});
+
+    const j = est.proximoJogo;
+    if(j) fora.push({txt:`PRÉ-JOGO: ${j.mandante.nome} recebe o ${j.visitante.nome} `+
+                         `pelo ${j.competicao}`, hora:hora(), tipo:'jogo'});
+    else  fora.push({txt:`AGENDA: ${est.torcida.clube} não joga nesta semana`,
+                     hora:hora(), tipo:'jogo'});
+
+    const ult = est.historicoNoites && est.historicoNoites[0];
+    if(ult) fora.push({txt:`ARREDORES: ${ult.feridos} feridos e ${ult.presos} presos `+
+                           `na última saída`, hora:hora(), tipo:'briga'});
+    fora.push({txt:`SUA TORCIDA: ${est.membros.length} membros, moral `+
+                   `${Math.round(est.indicadores.moral)}/20`, hora:hora(), tipo:'casa'});
+    return fora.slice(0, 6);
   }
 
   /* -------------------------------------------------------
@@ -246,6 +265,14 @@ TO.estado = (function(){
       fecho = TO.financeiro.fecharSemana(E);
       fecho.jogo = meu ? TO.competicoes.jogoDaSemana(E, meu.id, E.data.semana) : null;
       if(jogo) aplicarResultadoDoClube(E, fecho.jogo);
+
+      /* o mundo das outras torcidas também anda: caixa, brigas e tréguas */
+      const mundo = TO.tensao.passarSemana(E);
+      fecho.ataques = mundo.ataques;
+      fecho.investidas = mundo.investidas;
+      for(const a of mundo.ataques) anotar(E, a.txt, 'ruim');
+      for(const i of mundo.investidas) anotar(E, i.txt, i.ganhamos?'boa':'ruim');
+      E.ultimasNoticias = mundo.noticias;
 
       E.data.dia = 1; E.data.semana++; E.acoes.usadas = 0;
       if(E.data.semana > TO.competicoes.SEMANAS_ANO){

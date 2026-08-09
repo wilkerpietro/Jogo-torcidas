@@ -140,6 +140,12 @@ Rodei simulações sem navegador (Node com stubs de DOM/canvas) e o que ficou em
 
 **Divisão pra cercar dando função de combate à Diretoria** — cada grupo dividido precisa de uma âncora; com 2 Diretores divide em dois, com 4 divide em três. Se o Diretor âncora cai, o grupo perde coesão e volta pro líder.
 
+**Escolta do aliado no mapa da cidade.** A decisão de escoltar já existe na Gestão, mas
+ela só ganha corpo quando o mapa da cidade voltar: os membros da nossa torcida saem da
+sede **junto com os do aliado**, num bonde só, a caminho do estádio. E quando o jogo é
+*contra* um aliado, o bonde precisa se dividir — deixar a torcida aliada sozinha
+atravessando a cidade é perigoso demais. Guardado para quando o mapa entrar.
+
 **Personalidade dos pontos de encontro** — terminal (fechado, PM chega rápido), praça (aberto, briga espalha), avenida (larga, favorece linha). Hoje todos funcionam igual.
 
 ---
@@ -193,12 +199,20 @@ Rodei simulações sem navegador (Node com stubs de DOM/canvas) e o que ficou em
 - **Rotina semanal**: cada dia da semana pode ter uma ação padrão, aplicada sozinha
   quando o dia passa. Nunca fura o orçamento semanal, e dia de jogo e de caravana são
   ignorados.
-- **Gestão inteligente**: a tela das decisões da semana — ir em paz ou atacar, em que
-  ponto do mapa, com quantas bombas do estoque, num bonde só ou dividido por zona,
-  como receber o aliado que joga na nossa cidade (quatro níveis, cada um com custo por
-  cabeça e ganho de relação) e por qual estrada a caravana viaja. A rota sai do grafo
-  das rodovias das trinta praças, com opção de desviar do território rival. A tela de
-  Início ganhou o cartão de **Avisos**, que lista o que está esperando decisão.
+- **Gestão inteligente**: cartões recolhíveis com as decisões da semana — ir em paz,
+  atacar (dizendo **qual** torcida do adversário) ou trair, quando todas as torcidas do
+  outro lado são aliadas; em que ponto da cidade; com quantas bombas; num bonde só ou
+  dividido por zona, com destino por bonde; o que fazer nos **outros jogos da praça**,
+  onde dá pra cair em cima de torcida de fora que está de passagem; como receber o
+  aliado que joga aqui, com nível padrão salvável; e a caravana — quantos embarcam e por
+  qual estrada, tirada do grafo das rodovias das trinta praças. Plano padrão de jogo em
+  casa e de viagem para quem não quer decidir toda semana. A tela de Início ganhou o
+  cartão de **Avisos** com o que está esperando decisão.
+- **Tensão** (por par de torcidas, 0–100, quatro faixas): atacar dispara, semana quieta
+  esfria, e a relação só volta ao normal quando o clima baixa. Acima de 45 a torcida pode
+  atacar a sede, o bar, a caravana na estrada ou o bonde nos arredores. As outras 138
+  torcidas têm caixa e efetivo próprios, brigam e fazem as pazes entre si, e é isso que
+  alimenta o noticiário.
 - **Efetivo real de cada torcida**: os 20 a 250 membros e a divisão de cargos vêm da
   fonte, e a sede começa no nível que comporta esse efetivo.
 

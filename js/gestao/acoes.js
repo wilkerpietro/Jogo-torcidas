@@ -138,6 +138,10 @@ TO.acoes = (function(){
         TO.estado.lancar(E, 'Tinta e adesivo', -300);
         E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + 1, 0, 20);
         E.indicadores.policia   = U.limitar(E.indicadores.policia - 1, 0, 20);
+        /* muro pichado é provocação: o rival mais próximo sente */
+        const alvo = Object.entries(E.relacoes||{})
+          .filter(([,v])=>v < -20).sort((a,b)=>a[1]-b[1])[0];
+        if(alvo) TO.tensao.somar(E, alvo[0], 9, 'pichação no território');
         /* quem pinta muro de madrugada às vezes é pego */
         const aptos = E.membros.filter(TO.membros.disponivel);
         if(aptos.length && U.rng() < 0.18){
@@ -167,6 +171,7 @@ TO.acoes = (function(){
         const [id, v] = alvos[0];
         const o = TO.mundo.torcida(id);
         E.relacoes[id] = U.limitar(v + 12, -100, 100);
+        TO.tensao.somar(E, id, -8, 'reunião de diretoria');
         return {ok:true, msg:`Reunião com ${o?o.nome:'a diretoria aliada'}. Relação em `+
                              `${Math.round(E.relacoes[id])}.`};
       }

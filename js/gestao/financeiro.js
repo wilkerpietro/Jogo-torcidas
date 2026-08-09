@@ -133,23 +133,10 @@ TO.financeiro = (function(){
     const j = E.proximoJogo;
     return !!(j && !j.casa && j.mapaAdv && j.mapaAdv !== E.torcida.mapa);
   }
-  const temCaravana = E => precisaCaravana(E) && E.postura === 'viajar';
-
-  /* posturas possíveis nesta semana (GDD §3.2) */
-  function posturas(E){
-    /* semana sem jogo do clube é folga na tabela (GDD §3.1) */
-    if(!E.proximoJogo) return [
-      {id:'ficar', rot:'Folga na tabela', nota:'o time não joga nesta semana'}
-    ];
-    if(precisaCaravana(E)) return [
-      {id:'viajar', rot:'Viajar', nota:`caravana de ${U.dinheiro(CARAVANA)} e uma ação a menos`},
-      {id:'ficar',  rot:'Ficar',  nota:'ninguém sai da cidade'}
-    ];
-    return [
-      {id:'estadio', rot:'Ir ao estádio', nota:'o bonde sai da sede'},
-      {id:'ficar',   rot:'Ficar',         nota:'a semana passa sem jogo'}
-    ];
-  }
+  /* Torcida organizada não falta jogo: se tem jogo, ela vai. O que se
+     decide é o tamanho da caravana e por onde ela passa, não se sai de
+     casa. */
+  const temCaravana = E => precisaCaravana(E);
 
   /* GDD §7.3: véspera e dia seguinte da viagem ficam travados. Vale
      sempre que o jogo é fora, em outra cidade — a torcida está
@@ -192,12 +179,10 @@ TO.financeiro = (function(){
     return fora.sort((x,y)=>x-y);
   }
 
-  function definirPostura(E, id){
-    E.postura = id;
-    /* trocou depois da véspera? cobra na hora, senão o jogo sai de graça */
-    const d = (E.proximoJogo && E.proximoJogo.dia) || 6;
-    if(id==='viajar' && E.data.dia >= d-1) cobrarCaravana(E);
-    return E.postura;
+  /* a postura vira consequência do calendário, não escolha */
+  function postura(E){
+    if(!E.proximoJogo) return 'folga';
+    return precisaCaravana(E) ? 'viajar' : 'estadio';
   }
 
   function cobrarCaravana(E){
@@ -207,12 +192,13 @@ TO.financeiro = (function(){
     if(E.caravanasPagas[chave]) return null;
     E.caravanasPagas[chave] = true;
     const destino = E.proximoJogo.cidadeAdv || 'fora';
-    /* a conta é da estrada escolhida no planejamento; sem plano, o
-       valor cheio do GDD §7.3 */
-    const rota = TO.planejamento && TO.planejamento.rotaEscolhida(E);
-    const valor = rota ? rota.custo : CARAVANA;
+    /* a conta é da estrada e do tamanho da caravana; sem plano, o valor
+       cheio do GDD §7.3 */
+    const est = TO.planejamento && TO.planejamento.estimativaCaravana(E);
+    const valor = est ? est.custo : CARAVANA;
     TO.estado.lancar(E, `Caravana para ${destino}`+
-      (rota ? ` (${rota.nome.toLowerCase()})` : ''), -valor);
+      (est ? ` (${est.vao} pessoas, rateio de ${U.dinheiro(est.rateio)})` : ''),
+      -valor);
     /* a lista não pode crescer pra sempre num save de dez temporadas */
     const chaves = Object.keys(E.caravanasPagas);
     if(chaves.length > 80) delete E.caravanasPagas[chaves[0]];
@@ -303,6 +289,6 @@ TO.financeiro = (function(){
 
   return {contas, patrimonio, fatorComercial, bairroDeFora,
           precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
-          posturas, definirPostura, fecharSemana,
+          postura, fecharSemana,
           MANUT_SEDE, RECEITA, MANUT, CARAVANA, SEM};
 })();
