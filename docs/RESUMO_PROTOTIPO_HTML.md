@@ -292,6 +292,21 @@ O que **não** veio, e por quê:
   O olheiro se posiciona com um clique e revela quem passa no raio dele. Quando dois
   bondes hostis se encostam o relógio para: na rua o raio é curto, nos arredores do
   estádio o cordão aperta a multidão e ele triplica.
+- **Cenas de praça e rua** (GDD §12): a dos arredores nasceu de uma foto aérea; estas duas
+  são desenhadas em canvas e a geometria sai da MESMA lista de blocos que a pintura, então
+  não existe muro que só apareça na tela. A praça tem calçada portuguesa em onda, coreto
+  oitavado no meio, canteiro de mangueira e ipê com gradil que quebra e vira arma, igreja
+  com cruz, banca de jornal, quiosque, boteco de toldo listrado com mesa de plástico na
+  calçada, carro no meio-fio pintado de preto e branco e bandeirinha de festa junina de
+  poste a poste. A rua é um corredor: asfalto remendado com buraco, um trecho de
+  paralelepípedo, calçada estreita, casas com laje, caixa d'água azul e varal de roupa,
+  muro pichado, caçamba de entulho, lombada e poste com gambiarra. Nas duas, cada bonde sai
+  pela ponta oposta à sua — ninguém atravessa sem esbarrar.
+- **Ícones no mapa**: os pinos deixaram de ser letra. Estádio é a elipse da arquibancada,
+  sede é bandeirão no mastro, bar é copo americano, loja é camisa, subsede é prédio com
+  janela, mercadinho é carrinho, posto é bomba, joalheria é brilhante, roupas é cabide,
+  banco é frontão de colunas e hospital é cruz — todos desenhados em vetor, legíveis a 12
+  pixels.
 - **Força dos clubes evolui** (portado do protótipo antigo, com um conserto): a posição
   final de cada competição move a qualidade do clube, e a evolução vive no save, não em
   `times.js`. As faixas herdadas tinham média positiva e em cinco anos os 108 clubes

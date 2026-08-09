@@ -20,7 +20,17 @@ TO.diaJogo.combate = (function(){
   const U = TO.util;
   const A = TO.diaJogo.arredores;
   const P = TO.diaJogo.P;
-  const D = A.D;
+  /* A cena pode trocar no ar (arredores, praça, rua), então D não pode ser
+     uma referência congelada no carregamento do módulo. */
+  const D = new Proxy({}, {
+    get:(_, k)=>A.D[k],
+    set:(_, k, v)=>{ A.D[k] = v; return true; },
+    has:(_, k)=>k in A.D,
+    ownKeys:()=>Reflect.ownKeys(A.D),
+    getOwnPropertyDescriptor:(_, k)=>
+      Object.getOwnPropertyDescriptor(A.D, k) ||
+      {configurable:true, enumerable:true, value:A.D[k]}
+  });
 
   const FORMACOES={
     bonde    :{nome:'Bonde',    tecla:'1', desc:'coluna'},

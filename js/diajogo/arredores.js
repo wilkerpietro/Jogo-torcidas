@@ -15,7 +15,10 @@ TO.diaJogo = TO.diaJogo || {};
 
 TO.diaJogo.arredores = (function(){
   const U = TO.util;
-  const D = TO.dados.cenaArredores;
+  /* A cena dos arredores é a padrão; praça e rua entram por usarCena().
+     Todas têm o mesmo tamanho de tela e a mesma célula, então a malha e
+     todo o resto do combate não precisam saber qual está no ar. */
+  let D = TO.dados.cenaArredores;
 
   const W = D.largura, H = D.altura, CEL = D.celula;
   const COLS = Math.ceil(W/CEL), ROWS = Math.ceil(H/CEL);
@@ -452,11 +455,26 @@ TO.diaJogo.arredores = (function(){
      DESENHO
      ======================================================= */
   function carregarImagem(){
+    if(!D.imagem) return;
     imagem=new Image();
     imagem.onload =()=>{imagemOk=true;};
     imagem.onerror=()=>{imagemErro=true;};
     imagem.src=D.imagem;
   }
+  /* Troca a cena no ar. O combate chama isto antes de montar: encontro na
+     rua abre a rua, encontro na praça abre a praça, e o resto do dia de
+     jogo continua nos arredores. */
+  function usarCena(id){
+    const nova = (id && id !== 'arredores' && TO.dados.cenas)
+      ? TO.dados.cenas[id] : TO.dados.cenaArredores;
+    if(!nova || nova === D) { reconstruir(); return D; }
+    D = nova;
+    imagem = null; imagemOk = false; imagemErro = false;
+    if(D.imagem) carregarImagem();
+    reconstruir();
+    return D;
+  }
+
   /* usada pelo editor quando você arrasta um arquivo na tela */
   function usarImagemLocal(arquivo){
     const url=URL.createObjectURL(arquivo);
@@ -467,6 +485,8 @@ TO.diaJogo.arredores = (function(){
 
   function desenharFundo(c){
     if(imagemOk){ c.drawImage(imagem,0,0,W,H); return; }
+    /* cena desenhada: praça e rua se pintam sozinhas */
+    if(TO.diaJogo.cenario && TO.diaJogo.cenario.pintar(c, D, W, H)) return;
 
     // sem a foto: desenha a malha para dar pra trabalhar mesmo assim
     c.fillStyle='#14150f'; c.fillRect(0,0,W,H);
@@ -624,7 +644,7 @@ TO.diaJogo.arredores = (function(){
   carregarImagem();
 
   return {
-    D, W, H, CEL, COLS, ROWS, malha,
+    get D(){return D;}, W, H, CEL, COLS, ROWS, malha, usarCena,
     reconstruir, construirMalhaDosPoligonos,
     codificarMascara, decodificarMascara,
     caminhavel, cabe, celulaLivre, cabeCorpo, pontoLivreMaisProximo,

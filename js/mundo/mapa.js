@@ -533,17 +533,123 @@ TO.mapa = (function(){
     pino(ctx, x+w/2, y+h/2, Math.max(15, Math.min(24, Math.min(w,h)*.28)), item);
   }
 
+  /* =======================================================
+     OS ÍCONES
+     Cada desenho vive num quadrado de -1 a 1, escalado pelo
+     raio do pino. Traço grosso e forma cheia, porque no zoom
+     de 80% o ícone tem doze pixels e não pode virar borrão.
+     ======================================================= */
+  function tracar(ctx, pontos, fechar){
+    ctx.beginPath();
+    pontos.forEach(([x,y], i)=> i ? ctx.lineTo(x,y) : ctx.moveTo(x,y));
+    if(fechar) ctx.closePath();
+  }
+
+  const ICONE = {
+    /* estádio: a elipse da arquibancada com o gramado dentro */
+    estadio(c){
+      c.beginPath(); c.ellipse(0, 0, .92, .70, 0, 0, Math.PI*2); c.fill();
+      c.save(); c.fillStyle = 'rgba(0,0,0,.55)';
+      c.beginPath(); c.ellipse(0, 0, .50, .34, 0, 0, Math.PI*2); c.fill();
+      c.restore();
+      c.lineWidth = .17;
+      c.beginPath(); c.moveTo(0,-.34); c.lineTo(0,.34); c.stroke();
+    },
+    /* sede: bandeirão no mastro — é o que a torcida põe na fachada */
+    sede(c){
+      c.lineWidth = .22; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(-.55,-.85); c.lineTo(-.55,.9); c.stroke();
+      tracar(c, [[-.55,-.8],[.85,-.45],[-.55,-.05]], true); c.fill();
+    },
+    /* bar: o copo americano, com a bebida pela metade */
+    bar(c){
+      tracar(c, [[-.5,-.75],[.5,-.75],[.33,.8],[-.33,.8]], true); c.fill();
+      c.save(); c.fillStyle = 'rgba(255,255,255,.45)';
+      tracar(c, [[-.44,-.28],[.44,-.28],[.33,.8],[-.33,.8]], true); c.fill();
+      c.restore();
+    },
+    /* loja: a camisa pendurada */
+    loja(c){
+      tracar(c, [[-.85,-.32],[-.3,-.72],[-.12,-.5],[.12,-.5],[.3,-.72],
+                 [.85,-.32],[.5,.02],[.5,.8],[-.5,.8],[-.5,.02]], true);
+      c.fill();
+    },
+    /* subsede: o prédio de dois andares com janela acesa */
+    subsede(c){
+      tracar(c, [[-.75,-.6],[.75,-.6],[.75,.85],[-.75,.85]], true); c.fill();
+      c.save(); c.fillStyle = 'rgba(0,0,0,.5)';
+      for(const [x,y] of [[-.42,-.3],[.06,-.3],[-.42,.16],[.06,.16]])
+        c.fillRect(x, y, .36, .3);
+      c.restore();
+    },
+    /* mercadinho: o carrinho */
+    mercadinho(c){
+      c.lineWidth = .2; c.lineCap = 'round'; c.lineJoin = 'round';
+      tracar(c, [[-.85,-.6],[-.5,-.6],[-.2,.35],[.72,.35]]);
+      c.stroke();
+      tracar(c, [[-.38,-.2],[.9,-.2],[.72,.35],[-.2,.35]], true); c.fill();
+      c.beginPath(); c.arc(-.05,.72,.16,0,Math.PI*2); c.fill();
+      c.beginPath(); c.arc(.6,.72,.16,0,Math.PI*2); c.fill();
+    },
+    /* posto: a bomba de combustível com a mangueira */
+    posto(c){
+      tracar(c, [[-.8,-.75],[.15,-.75],[.15,.85],[-.8,.85]], true); c.fill();
+      c.save(); c.fillStyle = 'rgba(0,0,0,.5)';
+      c.fillRect(-.62,-.55,.6,.42); c.restore();
+      c.lineWidth = .19; c.lineCap = 'round';
+      tracar(c, [[.15,-.35],[.62,-.35],[.62,.5]]); c.stroke();
+    },
+    /* joalheria: o brilhante lapidado */
+    joalheria(c){
+      tracar(c, [[0,-.8],[.85,-.15],[0,.85],[-.85,-.15]], true); c.fill();
+      c.save(); c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = .13;
+      tracar(c, [[-.85,-.15],[.85,-.15]]); c.stroke();
+      tracar(c, [[-.4,-.15],[0,-.8],[.4,-.15],[0,.85]]); c.stroke();
+      c.restore();
+    },
+    /* roupas: o cabide */
+    roupas(c){
+      c.lineWidth = .2; c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath(); c.arc(0,-.5,.22,Math.PI*0.15,Math.PI*0.85,true); c.stroke();
+      tracar(c, [[0,-.28],[0,-.05],[-.88,.5],[.88,.5],[0,-.05]]); c.stroke();
+    },
+    /* banco: as colunas do frontão */
+    banco(c){
+      tracar(c, [[0,-.85],[.95,-.3],[-.95,-.3]], true); c.fill();
+      for(const x of [-.62,-.2,.22]) c.fillRect(x,-.15,.3,.75);
+      c.fillRect(-.95,.62,1.9,.26);
+    },
+    /* hospital: a cruz */
+    hospital(c){
+      c.fillRect(-.28,-.85,.56,1.7);
+      c.fillRect(-.85,-.28,1.7,.56);
+    }
+  };
+  ICONE['bar-nosso']  = ICONE.bar;
+  ICONE['loja-nossa'] = ICONE.loja;
+
   function pino(ctx, cx, cy, r, item){
     const p = pinoDe(item);
+    const desenho = ICONE[item && item.tipo];
     ctx.save();
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
     ctx.fillStyle = p.cor; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.70)'; ctx.stroke();
     ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.65)'; ctx.stroke();
-    ctx.fillStyle = p.escuro ? '#101010' : '#fff';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = `900 ${Math.max(7, r*.95)}px Arial, sans-serif`;
-    ctx.fillText(p.letra, cx, cy+.5);
+
+    const tinta = p.escuro ? '#101010' : '#fff';
+    if(desenho){
+      ctx.translate(cx, cy);
+      ctx.scale(r*0.62, r*0.62);
+      ctx.fillStyle = tinta; ctx.strokeStyle = tinta;
+      ctx.lineJoin = 'round';
+      desenho(ctx);
+    }else{
+      ctx.fillStyle = tinta;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = `900 ${Math.max(7, r*.95)}px Arial, sans-serif`;
+      ctx.fillText(p.letra, cx, cy+.5);
+    }
     ctx.restore();
   }
 
@@ -584,5 +690,6 @@ TO.mapa = (function(){
 
   return {TAM, PAD, AVENIDA, QUARTEIROES, LOTES,
           NEUTROS, TIPOS_TORCIDA, TIPOS_NEUTRO,
-          hash, filtros, estruturas, modelo, desenhar, alvoEm, pinoDe, classeDe};
+          hash, filtros, estruturas, modelo, desenhar, alvoEm, pinoDe, classeDe,
+          ICONE};
 })();
