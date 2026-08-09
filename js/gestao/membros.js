@@ -69,25 +69,63 @@ TO.membros = (function(){
     return m.cargo==='diretoria' ? `${m.apelido} ${m.sobrenome}` : m.apelido;
   }
 
-  function povoarInicial(E, total){
-    /* proporção do GDD §5.1: 50 / 30 / 15 / 5, mínimo 2 na Diretoria */
-    const plano = [
+  /* nomes de cargo como a fonte da era Unity escreve */
+  const DA_FONTE = {povao:'novato', componentes:'componente',
+                    frente:'frente', diretoria:'diretoria'};
+
+  /* A sede tem de caber a torcida que a fonte descreve — tanto o efetivo
+     quanto a Diretoria. Sem isso o jogo abre já estourando o próprio teto. */
+  function nivelQueCabe(membros, diretores){
+    for(let i=1;i<SEDE.length;i++)
+      if(SEDE[i].membros >= (membros||0) && SEDE[i].diretoria >= (diretores||0)) return i;
+    return SEDE.length-1;
+  }
+
+  /* Quantos de cada cargo. Vem da fonte quando ela diz; a proporção do
+     GDD §5.1 (50/30/15/5) só entra quando não há dado nenhum. */
+  function planoDeCargos(total, cargos){
+    const plano = [];
+    if(cargos && Object.keys(cargos).length){
+      for(const chave of ['diretoria','frente','componentes','povao']){
+        const n = cargos[chave] || cargos[DA_FONTE[chave]] || 0;
+        if(n > 0) plano.push([DA_FONTE[chave] || chave, n]);
+      }
+      const soma = plano.reduce((s,[,n])=>s+n, 0);
+      /* a fonte arredonda os percentuais; a sobra engrossa os novatos */
+      if(total > soma){
+        const novatos = plano.find(p=>p[0]==='novato');
+        if(novatos) novatos[1] += total - soma;
+        else plano.push(['novato', total - soma]);
+      }
+      if(plano.length) return plano;
+    }
+    const p = [
       ['diretoria', Math.max(2, Math.round(total*0.05))],
       ['frente',    Math.round(total*0.15)],
-      ['componente',Math.round(total*0.30)],
-      ['novato',    0]
+      ['componente',Math.round(total*0.30)]
     ];
-    plano[3][1] = Math.max(0, total - plano[0][1] - plano[1][1] - plano[2][1]);
+    p.push(['novato', Math.max(0, total - p[0][1] - p[1][1] - p[2][1])]);
+    return p;
+  }
+
+  function povoarInicial(E, total, cargos){
+    const plano = planoDeCargos(total || 34, cargos);
+    /* torcida forte tem gente mais rodada — o `poder` da fonte é o que
+       separa a Gaviões de uma organizada de interior */
+    const peso = U.limitar((E.torcida.poder || 60)/250, 0, 1);
+    const moralBase = Math.round(E.indicadores.moral);
 
     for(const [cargo, n] of plano){
       const c = CARGOS[cargo];
       for(let i=0;i<n;i++){
         const base = cargo==='novato' ? 1 : cargo==='componente' ? 5
                    : cargo==='frente' ? 10 : 14;
+        const bonus = Math.round(peso*3);
         E.membros.push(criar(E, {
           cargo,
-          forca:  Math.min(c.teto, base + U.inteiro(0,3)),
-          defesa: Math.min(c.teto, base + U.inteiro(0,3)),
+          forca:  Math.min(c.teto, base + U.inteiro(0,3) + bonus),
+          defesa: Math.min(c.teto, base + U.inteiro(0,3) + bonus),
+          moral:  U.limitar(moralBase + U.inteiro(-3,3), 1, 20),
           xp: cargo==='novato' ? U.inteiro(0,30)
             : cargo==='componente' ? U.inteiro(40,95)
             : cargo==='frente' ? U.inteiro(100,290) : U.inteiro(300,500)
@@ -279,8 +317,8 @@ TO.membros = (function(){
   }
 
   return {
-    CARGOS, ACIMA, SEDE, DIAS_FERIDO,
-    criar, nomeDe, povoarInicial,
+    CARGOS, ACIMA, SEDE, DIAS_FERIDO, DA_FONTE,
+    criar, nomeDe, povoarInicial, planoDeCargos, nivelQueCabe,
     disponivel, capacidade, capTreino, capDiretoria, contar, emCampanha,
     darXP, podePromover, promover, treinar, treinarFila,
     ferir, prender, fianca, resgatar, passarDia,

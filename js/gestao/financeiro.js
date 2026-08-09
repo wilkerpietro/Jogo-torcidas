@@ -137,6 +137,10 @@ TO.financeiro = (function(){
 
   /* posturas possíveis nesta semana (GDD §3.2) */
   function posturas(E){
+    /* semana sem jogo do clube é folga na tabela (GDD §3.1) */
+    if(!E.proximoJogo) return [
+      {id:'ficar', rot:'Folga na tabela', nota:'o time não joga nesta semana'}
+    ];
     if(precisaCaravana(E)) return [
       {id:'viajar', rot:'Viajar', nota:`caravana de ${U.dinheiro(CARAVANA)} e uma ação a menos`},
       {id:'ficar',  rot:'Ficar',  nota:'ninguém sai da cidade'}

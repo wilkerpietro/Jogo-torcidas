@@ -37,12 +37,80 @@
 
 /* ---------- grades de layout ---------- */
 .colunas{display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:start}
+.colunas-2{display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:start}
 .colunas-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;align-items:start}
 .principal-lateral{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:11px;align-items:start}
 .lista-detalhe{display:grid;grid-template-columns:230px minmax(0,1fr);gap:11px;align-items:start}
 @media(max-width:1080px){
-  .colunas,.colunas-3,.principal-lateral,.lista-detalhe{grid-template-columns:1fr}
+  .colunas,.colunas-2,.colunas-3,.principal-lateral,.lista-detalhe{grid-template-columns:1fr}
 }
+
+/* ---------- competições ---------- */
+.filtros-linha{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
+.filtros-linha button{
+  background:var(--painel);border:1px solid var(--linha);color:var(--fraco);
+  padding:6px 11px;cursor:pointer;font-size:11.5px;display:flex;gap:7px;align-items:center;
+}
+.filtros-linha button:hover{background:#1f1f1f;color:var(--texto)}
+.filtros-linha button.on{background:var(--rubro);border-color:var(--rubro);color:#fff}
+.filtros-linha button.minha{border-color:var(--rubro-vivo)}
+.filtros-linha button .conta{font-family:var(--mono);font-size:9.5px;opacity:.7}
+
+table.tabela-liga{font-size:11.5px}
+table.tabela-liga td{padding:4px 6px;font-family:var(--mono);text-align:right}
+table.tabela-liga th{padding:4px 6px;text-align:right;font-size:9.5px}
+table.tabela-liga th:nth-child(2),table.tabela-liga td.clube{text-align:left}
+table.tabela-liga td.pos,table.tabela-liga th.pos{width:22px;text-align:center;color:var(--fraco)}
+table.tabela-liga td.clube{
+  font-family:var(--corpo);display:flex;align-items:center;gap:6px;border-bottom:0;
+}
+table.tabela-liga td.clube i{width:3px;height:13px;display:block;flex:none}
+table.tabela-liga td.p{color:#fff;font-weight:600}
+table.tabela-liga tr.passa td.pos{color:var(--verde-vivo)}
+table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
+
+.campeao{display:flex;align-items:center;gap:11px;padding:6px 0}
+.campeao svg{width:26px;height:26px;color:var(--ouro)}
+.campeao b{font-family:var(--titulo);font-size:17px;letter-spacing:.08em;text-transform:uppercase}
+.campeao small{display:block;font-family:var(--mono);font-size:10px;color:var(--fraco)}
+
+.fase-rot{
+  font-family:var(--titulo);font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fraco);padding:8px 0 3px;
+}
+.jogo-chave{
+  display:grid;grid-template-columns:1fr 62px 1fr auto;align-items:center;gap:8px;
+  padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12px;
+}
+.jogo-chave b{font-family:var(--mono);text-align:center}
+.jogo-chave .b{text-align:right}
+.jogo-chave .venceu{color:#fff;font-weight:600}
+.jogo-chave em{font-family:var(--mono);font-size:9px;color:var(--fraco);font-style:normal}
+.jogo-chave.meu{background:var(--rubro-fundo)}
+
+/* ---------- calendário ---------- */
+.grade-semanas{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:5px}
+.cel-semana{
+  border:1px solid var(--linha);background:var(--painel-alto);padding:6px 7px;
+  display:flex;flex-direction:column;gap:2px;min-height:62px;
+}
+.cel-semana .s{
+  font-family:var(--mono);font-size:9px;color:var(--fraco);
+  display:flex;justify-content:space-between;
+}
+.cel-semana .s i{font-style:normal;opacity:.7}
+.cel-semana .adv{
+  font-family:var(--titulo);font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+}
+.cel-semana .res{font-family:var(--mono);font-size:12px;color:var(--fraco)}
+.cel-semana .res.ganhou{color:var(--verde-vivo)}
+.cel-semana .res.perdeu{color:var(--vermelho)}
+.cel-semana .cp{font-size:8.5px;color:var(--apagado);text-transform:uppercase;letter-spacing:.06em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cel-semana.folga{opacity:.45}
+.cel-semana.folga .adv{font-size:11px;color:var(--fraco)}
+.cel-semana.passou{opacity:.75}
+.cel-semana.agora{border-color:var(--rubro-vivo);background:#241717;opacity:1}
 
 /* ---------- sub-abas ---------- */
 .subabas{display:flex;gap:1px;background:var(--linha);border:1px solid var(--linha);margin-bottom:11px}
@@ -212,6 +280,22 @@ table.dados tr.selecionada td{background:#252525}
   line-height:1.15;
 }
 .torcida-opcao .cid{font-family:var(--mono);font-size:9px;color:var(--fraco)}
+.torcida-opcao .qt-membros{
+  margin-left:auto;text-align:right;font-family:var(--mono);font-size:13px;line-height:1.1;
+}
+.torcida-opcao .qt-membros small{
+  display:block;font-size:8px;color:var(--fraco);letter-spacing:.1em;text-transform:uppercase;
+}
+
+/* divisão de cargos na ficha da seleção */
+.hierarquia-fina{display:grid;gap:3px;padding:0 0 12px}
+.hierarquia-fina>div{
+  display:grid;grid-template-columns:96px 1fr 34px;align-items:center;gap:8px;
+  font-size:11px;
+}
+.hierarquia-fina span{color:var(--fraco)}
+.hierarquia-fina i{height:7px;background:var(--rubro);display:block;min-width:2px}
+.hierarquia-fina b{font-family:var(--mono);font-size:11.5px;text-align:right}
 
 .ficha-torcida{display:flex;align-items:center;gap:16px;padding:4px 0 14px}
 .ficha-torcida .escudo{width:74px;height:74px;font-size:20px;border-width:3px}

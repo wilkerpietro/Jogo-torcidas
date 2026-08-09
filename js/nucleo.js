@@ -57,6 +57,10 @@ TO.util = (function(){
     (v<0?'−':'')+'R$ '+Math.abs(Math.round(v)).toLocaleString('pt-BR');
   const numero = (v,casas=0)=> Number(v).toLocaleString('pt-BR',
     {minimumFractionDigits:casas, maximumFractionDigits:casas});
+  /* 'Copa do Nordeste' -> 'copa-do-nordeste'; mesma regra dos importadores */
+  const identificador = t => String(t||'').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 
   /* ---------- escala 0–20 padronizada (GDD §12) ---------- */
   const FAIXAS_PADRAO = [
@@ -91,6 +95,6 @@ TO.util = (function(){
   return {limitar,dist,dist2,misturar,
           semear,rng,usarSemente,entre,inteiro,escolher,embaralhar,
           pontoEmPoligono,maisProximoNoSegmento,
-          dinheiro,numero,faixa,FAIXAS_PADRAO,
+          dinheiro,numero,identificador,faixa,FAIXAS_PADRAO,
           $,$$,criar};
 })();

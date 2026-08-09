@@ -174,6 +174,13 @@ Rodei simulações sem navegador (Node com stubs de DOM/canvas) e o que ficou em
 - **Ações da semana** (GDD §3.1 e §10) e **fechamento semanal** (GDD §7): orçamento de
   ações pelo nível da sede, recrutamento pela fórmula do §6.2, mensalidade, bar, insumo,
   manutenção, caravana e a debandada por caixa negativo.
+- **Competições e calendário** (GDD §18): 15 competições montadas dos próprios dados de
+  times.js — 11 regionais e estaduais de janeiro a março, depois o Brasileirão das séries
+  A a D até dezembro. Uma rodada por semana, resultado por Poisson sobre a qualidade dos
+  clubes, tabela com critérios de desempate, mata-mata e campeão. O jogo da semana da
+  torcida sai da tabela, não de sorteio, e semana sem jogo é folga.
+- **Efetivo real de cada torcida**: os 20 a 250 membros e a divisão de cargos vêm da
+  fonte, e a sede começa no nível que comporta esse efetivo.
 
 **Próximo passo recomendado: o mapa da cidade.** É o que falta pra briga deixar de
 depender do dia de jogo. O mapa mostra em tempo real onde a rival está e deixa o jogador
@@ -181,4 +188,10 @@ buscar o enfrentamento, abrindo a cena da rua. Isso também destrava as quatro a
 hoje estão paradas por falta de cena (atacar bar/sede, assaltar alvo comercial, pressionar
 o clube) e dá lugar às subsedes e ao patrimônio, que o financeiro já sabe faturar.
 
-Depois disso, competições — o calendário é o que transforma semanas soltas em temporada.
+Depois disso, o patrimônio: bares, lojas e subsedes têm receita, manutenção e insumo
+implementados no fechamento, mas não há tela de compra — só existe o bar nível 1 que o
+GDD dá de graça na sede nível 1.
+
+**O que ainda não veio da era Unity:** subida e descida entre as séries no virar do ano,
+Copa do Brasil (GDD §18.5) e o campo de qualidade dos clubes evoluindo com os
+resultados. Hoje a temporada nova é sorteada com os mesmos clubes nas mesmas divisões.

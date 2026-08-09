@@ -42,7 +42,7 @@ TO.estado = (function(){
         id:'propria', nome:'Fúria Independente', sigla:'FI',
         clube:'seu clube', clubeId:null, cidade:'a cidade', uf:'BR',
         mapa:null, bairroSede:'', cores:['#9d2222','#e8e8e8'], sedeNivel:1
-      }, opc.torcida || {}, {sedeNivel:1}),
+      }, opc.torcida || {}),
 
       /* GDD §11.1: cada par tem um valor de −100 a +100. O número
          inicial sai do tipo de relação que veio da fonte; daqui pra
@@ -69,6 +69,10 @@ TO.estado = (function(){
       E.indicadores.prestigio = U.limitar(Math.round((f.prestigio||15)/5),0,20);
       E.indicadores.moral     = U.limitar(Math.round((f.moral||60)/5),0,20);
       E.efetivoAlvo = f.membros || 60;
+      /* a torcida entra no jogo do tamanho que a fonte diz, e a sede
+         sobe até caber esse tamanho (GDD §8.1) */
+      E.torcida.sedeNivel = Math.max(f.sedeNivel || 1,
+        TO.membros.nivelQueCabe(f.membros || 34, (f.cargos||{}).diretoria || 0));
 
       /* semeia a diplomacia a partir do grafo importado */
       for(const outra of TO.mundo.todasTorcidas){
@@ -79,7 +83,9 @@ TO.estado = (function(){
       }
     }
 
-    TO.membros.povoarInicial(E, opc.efetivo || 34);
+    TO.membros.povoarInicial(E, opc.efetivo || E.efetivoAlvo || 34,
+                             (opc.torcida||{}).cargos);
+    E.temporada = TO.competicoes.montarTemporada(E);
     sortearProximoJogo(E);
     E.noticias = gerarNoticias(E);
     lancar(E, 'Caixa inicial', 0);
@@ -90,7 +96,9 @@ TO.estado = (function(){
   /* -------------------------------------------------------
      CALENDÁRIO — data de verdade, pra bater com o cabeçalho
      ------------------------------------------------------- */
-  const BASE = new Date(2026, 2, 2);   // segunda-feira
+  /* semana 1 é a primeira segunda-feira do ano: assim o calendário do
+     jogo bate com o do futebol, estaduais em janeiro (GDD §18.1) */
+  const BASE = new Date(2026, 0, 5);
   const SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 
   function dataDe(est){
@@ -107,16 +115,30 @@ TO.estado = (function(){
     };
   }
 
+  /* O jogo da semana sai da tabela (GDD §18), não de sorteio: é o
+     calendário do futebol que define a semana da torcida. Semana sem
+     jogo é folga, e folga é resposta legítima — o GDD §3.1 prevê. */
   function sortearProximoJogo(est){
     const M = TO.mundo;
     const meu = M.time(est.torcida.clubeId);
     if(!meu){ est.proximoJogo = null; return; }
-    const adv = M.adversario(meu.id);
-    const casa = U.rng() < 0.5;
+
+    const agenda = est.temporada
+      ? TO.competicoes.jogoDaSemana(est, meu.id, est.data.semana) : null;
+    if(est.temporada && !agenda){
+      est.proximoJogo = null;
+      est.postura = 'ficar';
+      return;
+    }
+
+    const adv  = agenda ? M.time(agenda.adversario) : M.adversario(meu.id);
+    const casa = agenda ? agenda.casa : U.rng() < 0.5;
     const mandante = casa ? meu : adv, visitante = casa ? adv : meu;
     const cAdv = M.cidade(adv.mapa);
     est.proximoJogo = {
-      competicao: meu.divisao || 'Amistoso',
+      competicao: agenda ? agenda.comp : (meu.divisao || 'Amistoso'),
+      fase: agenda ? agenda.fase : '',
+      mata: !!(agenda && agenda.mata),
       casa,
       mandante:{nome:mandante.nome, sigla:mandante.sigla, cores:mandante.cores},
       visitante:{nome:visitante.nome, sigla:visitante.sigla, cores:visitante.cores},
@@ -165,10 +187,22 @@ TO.estado = (function(){
 
     let fecho = null;
     if(E.data.dia > 7){
-      /* o fechamento pertence à semana que acabou, então roda antes
-         de virar o contador (GDD §3.2) */
+      /* a rodada da semana rola antes do fechamento, pra que o
+         resultado do clube já apareça no relatório (GDD §3.2) */
+      const meu = TO.mundo.time(E.torcida.clubeId);
+      const jogo = meu ? TO.competicoes.jogoDaSemana(E, meu.id, E.data.semana) : null;
+      TO.competicoes.jogarSemana(E, E.data.semana);
+
       fecho = TO.financeiro.fecharSemana(E);
+      fecho.jogo = meu ? TO.competicoes.jogoDaSemana(E, meu.id, E.data.semana) : null;
+      if(jogo) aplicarResultadoDoClube(E, fecho.jogo);
+
       E.data.dia = 1; E.data.semana++; E.acoes.usadas = 0;
+      if(E.data.semana > TO.competicoes.SEMANAS_ANO){
+        E.data.semana = 1; E.data.ano++;
+        guardarTitulos(E);
+        E.temporada = TO.competicoes.montarTemporada(E);
+      }
       sortearProximoJogo(E);
       E.noticias = gerarNoticias(E);
     }
@@ -179,6 +213,31 @@ TO.estado = (function(){
     mudou();
     if(fecho) for(const f of ouvintesFecho) f(fecho, E);
     return fecho;
+  }
+
+  /* GDD §6.1: a satisfação do torcedor comum sobe com vitória e cai
+     com derrota. É o elo entre o desempenho do time e o recrutamento. */
+  function aplicarResultadoDoClube(E, j){
+    if(!j || !j.jogado) return;
+    const I = E.indicadores;
+    const venceu = j.gp > j.gc, perdeu = j.gp < j.gc;
+    I.satisfacao = U.limitar(I.satisfacao + (venceu?0.8 : perdeu?-0.7 : 0.1), 0, 20);
+    I.moral      = U.limitar(I.moral      + (venceu?0.4 : perdeu?-0.4 : 0), 0, 20);
+    if(j.mata && j.venceu){
+      /* título ou eliminação mexem mais do que rodada de pontos corridos */
+      const meu = E.torcida.clubeId;
+      I.satisfacao = U.limitar(I.satisfacao + (j.venceu===meu ? 1 : -1), 0, 20);
+    }
+  }
+
+  function guardarTitulos(E){
+    if(!E.temporada) return;
+    const t = E.temporada.titulos || [];
+    for(const c of E.temporada.competicoes)
+      if(c.campeao) t.unshift({ano:E.temporada.ano, comp:c.nome,
+                               campeao:c.campeao, vice:c.vice});
+    if(t.length > 200) t.length = 200;
+    E.temporada.titulos = t;
   }
 
   /* -------------------------------------------------------
