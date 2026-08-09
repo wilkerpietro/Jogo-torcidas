@@ -75,7 +75,8 @@ TO.diaJogo.arredores = (function(){
   function reconstruir(){
     if(D.mascara) decodificarMascara(D.mascara);
     else construirMalhaDosPoligonos();
-    limparCampos();   // a navegação depende da malha
+    construirMalhaCorpo();   // onde o corpo cabe, base das rotas
+    limparCampos();          // a navegação depende da malha
   }
 
   /* =======================================================
@@ -108,7 +109,7 @@ TO.diaJogo.arredores = (function(){
           const c=c0+dc, rr=r0+dr;
           if(!celulaLivre(c,rr)) continue;
           const px=(c+0.5)*CEL, py=(rr+0.5)*CEL;
-          if(r && !cabe(px,py,r)) continue;
+          if(r && !livrePara(px,py,Math.min(r,CEL*0.62))) continue;
           return {x:px,y:py};
         }
       }
@@ -118,27 +119,73 @@ TO.diaJogo.arredores = (function(){
 
   /* =======================================================
      COLISÃO
-     Move eixo a eixo: bater na parede em X não trava o Y.
-     É o que dá a sensação de deslizar pelo meio-fio.
-     ======================================================= */
-  function mover(ent, dx, dy){
-    const r = ent.r||7;
 
-    if(dx){
-      const tx=ent.x+dx;
-      if(cabe(tx,ent.y,r)) ent.x=tx;
-      else if(ent.vx!==undefined) ent.vx*=-0.15;
+     O raio usado contra a malha é menor que o raio de desenho.
+     Com o raio cheio, um disco encostado no meio-fio não encontra
+     NENHUMA posição vizinha válida e trava parado na borda — que
+     era o bug. Contra a malha ele é mais magro; entre discos, o
+     raio cheio continua valendo (separar()).
+     ======================================================= */
+  const raioMalha = r => Math.min(r||7, CEL*0.62);
+
+  function livrePara(x,y,r){
+    if(!caminhavel(x,y)) return false;
+    for(const [dx,dy] of BUSSOLA)
+      if(!caminhavel(x+dx*r, y+dy*r)) return false;
+    return true;
+  }
+
+  /* Tenta um deslocamento; devolve se andou. */
+  function tentar(ent,dx,dy,r){
+    const nx=ent.x+dx, ny=ent.y+dy;
+    if(!livrePara(nx,ny,r)) return false;
+    ent.x=nx; ent.y=ny; return true;
+  }
+
+  /* Escada de tentativas: reto, depois deslizando pelo eixo livre,
+     depois em diagonal contornando a quina. Só desiste no fim. */
+  const GIROS=[Math.PI/4,-Math.PI/4,Math.PI/2,-Math.PI/2];
+  function mover(ent, dx, dy){
+    if(!dx && !dy) return true;
+    const r=raioMalha(ent.r);
+
+    if(tentar(ent,dx,dy,r)) return true;
+    // desliza pelo meio-fio: um eixo trava, o outro passa
+    const soX = dx && tentar(ent,dx,0,r);
+    const soY = !soX && dy && tentar(ent,0,dy,r);
+    if(soX||soY) return true;
+    // contorna a quina: mesma velocidade, direção girada
+    const m=Math.hypot(dx,dy);
+    if(m>0.01){
+      for(const a of GIROS){
+        const cs=Math.cos(a), sn=Math.sin(a);
+        if(tentar(ent, dx*cs-dy*sn, dx*sn+dy*cs, r)) return true;
+      }
     }
-    if(dy){
-      const ty=ent.y+dy;
-      if(cabe(ent.x,ty,r)) ent.y=ty;
-      else if(ent.vy!==undefined) ent.vy*=-0.15;
-    }
-    if(!cabe(ent.x,ent.y,r)){
+    // encurralado de verdade
+    if(ent.vx!==undefined){ent.vx*=0.2; ent.vy*=0.2;}
+    if(!livrePara(ent.x,ent.y,r)){
       const p=pontoLivreMaisProximo(ent.x,ent.y,r);
       ent.x=p.x; ent.y=p.y;
-      if(ent.vx!==undefined){ent.vx*=0.3; ent.vy*=0.3;}
     }
+    return false;
+  }
+
+  /* Um segmento cruza alguma grade em pé? Serve pra PM não
+     tentar perseguir quem está do outro lado da barreira. */
+  function atravessaGrade(x1,y1,x2,y2,mods){
+    if(!mods) return false;
+    const passos=Math.max(2,Math.ceil(U.dist(x1,y1,x2,y2)/6));
+    for(const m of mods){
+      if(m.hp<=0) continue;
+      for(let i=0;i<=passos;i++){
+        const t=i/passos, x=x1+(x2-x1)*t, y=y1+(y2-y1)*t;
+        const ao=Math.abs((x-m.x)*m.ux + (y-m.y)*m.uy);
+        const at=Math.abs((x-m.x)*(-m.uy) + (y-m.y)*m.ux);
+        if(ao<=m.meia && at<=m.esp+2) return true;
+      }
+    }
+    return false;
   }
 
   /* linha de visada: dois pontos se enxergam sem prédio no meio.
@@ -162,16 +209,18 @@ TO.diaJogo.arredores = (function(){
   const VIZ8=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],
               [1,1,1.41],[1,-1,1.41],[-1,1,1.41],[-1,-1,1.41]];
 
-  /* custo extra por célula: grade intacta encarece a passagem em vez de
-     proibir. Assim o disco contorna quando existe volta e, quando não
-     existe, vai pra cima da grade — que é exatamente o que se quer. */
-  const PENA_GRADE=60;
-  function custoDasGrades(mods){
-    const extra=new Float32Array(COLS*ROWS);
-    if(!mods) return extra;
+  /* Grade em pé é PAREDE no cálculo de rota, não caminho caro.
+     Com custo, a volta longa às vezes sai mais cara que atravessar,
+     o campo mandava passar por dentro, e o disco empacava encostado
+     nela pra sempre. Como parede, ele dá a volta sempre que existir
+     volta — e quando não existir, o campo devolve 'sem rota' e quem
+     decide é o combate: aí sim vai pra cima da grade. */
+  function celulasDeGrades(mods){
+    const bloq=new Uint8Array(COLS*ROWS);
+    if(!mods) return bloq;
     for(const m of mods){
       if(m.hp<=0) continue;
-      const alcance=m.meia+m.esp+6;
+      const alcance=m.meia+m.esp+8;
       const c0=Math.max(0,Math.floor((m.x-alcance)/CEL));
       const c1=Math.min(COLS-1,Math.floor((m.x+alcance)/CEL));
       const r0=Math.max(0,Math.floor((m.y-alcance)/CEL));
@@ -180,20 +229,52 @@ TO.diaJogo.arredores = (function(){
         const x=(c+0.5)*CEL-m.x, y=(r+0.5)*CEL-m.y;
         const ao=Math.abs(x*m.ux + y*m.uy);
         const at=Math.abs(x*(-m.uy) + y*m.ux);
-        if(ao<=m.meia+4 && at<=m.esp+5) extra[r*COLS+c]=PENA_GRADE;
+        if(ao<=m.meia+2 && at<=m.esp+4) bloq[r*COLS+c]=1;
       }
     }
-    return extra;
+    return bloq;
   }
 
-  function criarCampo(alvoX, alvoY, extra){
+  /* Células onde o CORPO cabe, não só onde o pé pisa.
+     A rota tem que ser calculada sobre isto: se o campo aponta pra uma
+     célula de asfalto onde o disco não cabe, ele fica a vida inteira
+     empurrando o meio-fio, apontando pra uma direção impossível.
+     Recalculada junto com a malha. */
+  const malhaCorpo=new Uint8Array(COLS*ROWS);
+  function construirMalhaCorpo(){
+    const r=raioMalha(7);
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)
+      malhaCorpo[y*COLS+x]=livrePara((x+0.5)*CEL,(y+0.5)*CEL,r)?1:0;
+  }
+  const cabeCorpo=(c,r)=>
+    !(c<0||r<0||c>=COLS||r>=ROWS) && malhaCorpo[r*COLS+c]===1;
+
+  function criarCampo(alvoX, alvoY, bloq){
     const dist=new Float32Array(COLS*ROWS).fill(Infinity);
-    const p=pontoLivreMaisProximo(alvoX,alvoY,0);
-    const c0=Math.floor(p.x/CEL), r0=Math.floor(p.y/CEL);
-    if(!celulaLivre(c0,r0)) return {dist, alvo:{x:alvoX,y:alvoY}, passo:()=>({dx:0,dy:0})};
+    const passavel=(c,r)=>{
+      if(!cabeCorpo(c,r)) return false;
+      return !(bloq && bloq[r*COLS+c]);
+    };
+    /* O destino tem que nascer numa célula onde o corpo caiba. Um portão
+       encostado no muro do estádio cai numa célula pisável mas apertada;
+       semear ali fazia o campo nascer vazio e TODO mundo receber
+       'sem rota' — e ir bater na grade em vez de entrar. */
+    let c0=-1, r0=-1;
+    {
+      const ci=Math.floor(alvoX/CEL), ri=Math.floor(alvoY/CEL);
+      let md=Infinity;
+      for(let dr=-6;dr<=6;dr++)for(let dc=-6;dc<=6;dc++){
+        const c=ci+dc, r=ri+dr;
+        if(!passavel(c,r)) continue;
+        const q=dc*dc+dr*dr;
+        if(q<md){md=q; c0=c; r0=r;}
+      }
+    }
+    const vazio={dist, alvo:{x:alvoX,y:alvoY},
+                 passo:()=>({dx:0,dy:0,semRota:true})};
+    if(c0<0) return vazio;
 
     dist[r0*COLS+c0]=0;
-    // relaxação por frente de onda (SPFA): aceita peso variável
     let fila=[[c0,r0]];
     while(fila.length){
       const prox=[];
@@ -201,15 +282,12 @@ TO.diaJogo.arredores = (function(){
         const base=dist[r*COLS+c];
         for(const [dc,dr,peso] of VIZ8){
           const nc=c+dc, nr=r+dr;
-          if(!celulaLivre(nc,nr)) continue;
+          if(!passavel(nc,nr)) continue;
           // não corta quina na diagonal
-          if(dc&&dr&&(!celulaLivre(c+dc,r)||!celulaLivre(c,r+dr))) continue;
+          if(dc&&dr&&(!passavel(c+dc,r)||!passavel(c,r+dr))) continue;
           const i=nr*COLS+nc;
-          const nd=base+peso+(extra?extra[i]:0);
-          if(nd<dist[i]-0.001){
-            dist[i]=nd;
-            prox.push([nc,nr]);
-          }
+          const nd=base+peso;
+          if(nd<dist[i]-0.001){ dist[i]=nd; prox.push([nc,nr]); }
         }
       }
       fila=prox;
@@ -217,19 +295,34 @@ TO.diaJogo.arredores = (function(){
 
     return {
       dist, alvo:{x:alvoX,y:alvoY},
-      /* direção normalizada a seguir a partir de (x,y) */
+      /* direção a seguir. semRota:true = não há caminho daqui até o
+         destino sem derrubar alguma coisa. */
       passo(x,y){
         const c=Math.floor(x/CEL), r=Math.floor(y/CEL);
-        let melhorC=0, melhorR=0, melhor=dist[r*COLS+c];
+        if(c<0||r<0||c>=COLS||r>=ROWS) return {dx:0,dy:0,semRota:true};
+        let melhor=dist[r*COLS+c];
+
+        // encostado na grade: procura a célula útil mais perto e vai nela
         if(melhor===undefined||melhor===Infinity){
-          const q=pontoLivreMaisProximo(x,y,0);
-          const dx=q.x-x, dy=q.y-y, d=Math.hypot(dx,dy)||1;
-          return {dx:dx/d, dy:dy/d};
+          let alvo=null, md=Infinity;
+          for(let dr=-3;dr<=3;dr++)for(let dc=-3;dc<=3;dc++){
+            const nc=c+dc, nr=r+dr;
+            if(nc<0||nr<0||nc>=COLS||nr>=ROWS) continue;
+            const v=dist[nr*COLS+nc];
+            if(v===Infinity) continue;
+            const q=dc*dc+dr*dr;
+            if(v+q*0.5<md){md=v+q*0.5; alvo=[dc,dr];}
+          }
+          if(!alvo) return {dx:0,dy:0,semRota:true};
+          const d=Math.hypot(alvo[0],alvo[1])||1;
+          return {dx:alvo[0]/d, dy:alvo[1]/d};
         }
+
+        let melhorC=0, melhorR=0;
         for(const [dc,dr] of VIZ8){
           const nc=c+dc, nr=r+dr;
-          if(!celulaLivre(nc,nr)) continue;
-          if(dc&&dr&&(!celulaLivre(c+dc,r)||!celulaLivre(c,r+dr))) continue;
+          if(!passavel(nc,nr)) continue;
+          if(dc&&dr&&(!passavel(c+dc,r)||!passavel(c,r+dr))) continue;
           const v=dist[nr*COLS+nc];
           if(v<melhor){melhor=v;melhorC=dc;melhorR=dr;}
         }
@@ -247,7 +340,7 @@ TO.diaJogo.arredores = (function(){
 
   function campoDaEntrada(id, mods, versao){
     if(versao!==undefined && versao!==versaoGrades){
-      versaoGrades=versao; custoAtual=custoDasGrades(mods);
+      versaoGrades=versao; custoAtual=celulasDeGrades(mods);
       for(const k of Object.keys(campos)) delete campos[k];
     }
     if(campos[id]) return campos[id];
@@ -352,6 +445,65 @@ TO.diaJogo.arredores = (function(){
   }
 
   const COR_LADO={mandante:'#c0392b', visitante:'#2a5fa8'};
+  const COR_RGB ={mandante:'192,57,43', visitante:'42,95,168'};
+
+  /* Portão desenhado orientado: batente no chão, dois postes, boca
+     iluminada e setas apontando pra dentro. O eixo +x local é o
+     sentido de entrada, então tudo é desenhado uma vez só e girado. */
+  function desenharPortao(c,e,t){
+    const cor=COR_LADO[e.lado]||'#8a6a2a';
+    const rgb=COR_RGB[e.lado]||'138,106,42';
+    const d=e.dir||[0,-1];
+    const ang=Math.atan2(d[1],d[0]);
+    const larg=21, fundo=30;
+    const pulso=(Math.sin(t*2.2)+1)/2;
+
+    c.save();
+    c.translate(e.x,e.y);
+
+    // alcance de entrada, no chão e sem girar
+    c.strokeStyle=`rgba(${rgb},${.18+pulso*.14})`;
+    c.lineWidth=1.4; c.setLineDash([4,7]);
+    c.beginPath(); c.arc(0,0,e.raio||34,0,7); c.stroke(); c.setLineDash([]);
+
+    c.rotate(ang);
+
+    // boca do portão: escurece entrando, com brilho de lâmpada
+    const g=c.createLinearGradient(0,0,fundo,0);
+    g.addColorStop(0,'rgba(255,232,170,.30)');
+    g.addColorStop(1,'rgba(10,9,8,.72)');
+    c.fillStyle=g;
+    c.beginPath();
+    c.moveTo(0,-larg); c.lineTo(fundo,-larg+5);
+    c.lineTo(fundo, larg-5); c.lineTo(0, larg);
+    c.closePath(); c.fill();
+
+    // batente no chão
+    c.fillStyle=`rgba(${rgb},.85)`; c.fillRect(-3,-larg,6,larg*2);
+    c.fillStyle='rgba(255,240,205,.55)'; c.fillRect(-3,-larg,6,3);
+    c.fillRect(-3,larg-3,6,3);
+
+    // postes dos dois lados
+    for(const s of [-1,1]){
+      const py=s*larg;
+      c.fillStyle='rgba(0,0,0,.45)'; c.fillRect(-7,py-5+2,15,10);
+      c.fillStyle='#6f6a60';         c.fillRect(-7,py-5,15,10);
+      c.fillStyle=cor;               c.fillRect(-7,py-5,15,3.5);
+    }
+
+    // setas: pra onde se entra
+    for(let i=0;i<3;i++){
+      const x=6+i*9, a=(.85-i*.2)*(.65+pulso*.35);
+      c.strokeStyle=`rgba(255,236,190,${a})`; c.lineWidth=2.6;
+      c.lineCap='round'; c.lineJoin='round';
+      c.beginPath(); c.moveTo(x,-7); c.lineTo(x+5,0); c.lineTo(x,7); c.stroke();
+    }
+    c.lineCap='butt';
+    c.restore();
+
+    // etiqueta atrás do portão, sempre na horizontal
+    etiqueta(c, e.rot, e.x-d[0]*(fundo+22), e.y-d[1]*(fundo+22), cor);
+  }
 
   function etiqueta(c,txt,x,y,cor){
     c.font='600 10px "IBM Plex Mono",monospace';
@@ -365,34 +517,35 @@ TO.diaJogo.arredores = (function(){
   function desenharSobreposicoes(c, mods, opc){
     opc=opc||{};
 
-    // ---- spawns
+    // ---- spawns: faixa translúcida, não tapa a foto
     for(const s of D.spawns){
       const cor=COR_LADO[s.lado]||'#8a6a2a';
+      const rgb=COR_RGB[s.lado]||'138,106,42';
       const naBorda = s.x<60?'oeste' : s.x>W-60?'leste' : s.y>H-60?'sul':'norte';
       const vert = naBorda==='oeste'||naBorda==='leste';
-      c.fillStyle=cor;
-      if(vert) c.fillRect(s.x-5,s.y-38,10,76);
-      else     c.fillRect(s.x-38,s.y-5,76,10);
-      c.fillStyle='rgba(0,0,0,.35)';
-      if(vert) c.fillRect(s.x-5,s.y-38,3,76);
-      else     c.fillRect(s.x-38,s.y-5,76,3);
+      const x0 = vert ? s.x-7 : s.x-40, y0 = vert ? s.y-40 : s.y-7;
+      const lg = vert ? 14 : 80,        al = vert ? 80 : 14;
+
+      c.fillStyle=`rgba(${rgb},.20)`;  c.fillRect(x0,y0,lg,al);
+      c.strokeStyle=`rgba(${rgb},.75)`; c.lineWidth=1.5;
+      c.setLineDash([5,4]); c.strokeRect(x0+.5,y0+.5,lg-1,al-1); c.setLineDash([]);
+      // ponta cheia encostada na borda, pra ler de onde vem
+      c.fillStyle=`rgba(${rgb},.85)`;
+      if(vert) c.fillRect(naBorda==='oeste'?x0:x0+lg-3, y0, 3, al);
+      else     c.fillRect(x0, naBorda==='sul'?y0+al-3:y0, lg, 3);
+
       if(s.jogador){
-        c.strokeStyle='#e0b040'; c.lineWidth=2.5;
-        c.beginPath(); c.arc(s.x,s.y,24,0,7); c.stroke();
+        c.strokeStyle='rgba(224,176,64,.9)'; c.lineWidth=2;
+        c.setLineDash([3,4]);
+        c.beginPath(); c.arc(s.x,s.y,26,0,7); c.stroke(); c.setLineDash([]);
       }
-      const ex = naBorda==='oeste'? s.x+78 : naBorda==='leste'? s.x-78 : s.x;
-      const ey = naBorda==='sul'  ? s.y-30 : naBorda==='norte'? s.y+30 : s.y;
+      const ex = naBorda==='oeste'? s.x+80 : naBorda==='leste'? s.x-80 : s.x;
+      const ey = naBorda==='sul'  ? s.y-32 : naBorda==='norte'? s.y+32 : s.y;
       etiqueta(c,s.rot,ex,ey,cor);
     }
 
     // ---- portões
-    for(const e of D.entradas){
-      c.fillStyle='rgba(70,190,90,.9)';
-      c.beginPath(); c.ellipse(e.x,e.y,13,26,0,0,7); c.fill();
-      c.strokeStyle='rgba(20,60,25,.8)'; c.lineWidth=2;
-      c.beginPath(); c.ellipse(e.x,e.y,13,26,0,0,7); c.stroke();
-      etiqueta(c,e.rot,e.x,e.y+46,'#5fd07a');
-    }
+    for(const e of D.entradas) desenharPortao(c,e,opc.t||0);
 
     // ---- grades de proteção
     for(const m of mods){
@@ -453,9 +606,9 @@ TO.diaJogo.arredores = (function(){
     D, W, H, CEL, COLS, ROWS, malha,
     reconstruir, construirMalhaDosPoligonos,
     codificarMascara, decodificarMascara,
-    caminhavel, cabe, celulaLivre, pontoLivreMaisProximo,
-    mover, livre,
-    criarCampo, campoDaEntrada, limparCampos, custoDasGrades,
+    caminhavel, cabe, celulaLivre, cabeCorpo, pontoLivreMaisProximo,
+    mover, livre, livrePara, raioMalha, atravessaGrade,
+    criarCampo, campoDaEntrada, limparCampos, celulasDeGrades,
     montarGrades, barrarGrades,
     desenharFundo, desenharSobreposicoes,
     usarImagemLocal,
@@ -469,6 +622,7 @@ TO.diaJogo.arredores = (function(){
         if(c<0||r<0||c>=COLS||r>=ROWS) continue;
         malha[r*COLS+c]=valor?1:0;
       }
+      construirMalhaCorpo();
     }
   };
 })();

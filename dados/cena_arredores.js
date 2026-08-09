@@ -122,27 +122,25 @@ TO.dados.cenaArredores = {
      jogador:true  = é o bonde que você controla
      ------------------------------------------------------- */
   spawns:[
-    {id:'mandante1', rot:'1º ESCALÃO MANDANTE', lado:'mandante',  x:690,  y:1000, jogador:true,  entrada:'ent_mandante1'},
-    {id:'mandante2', rot:'2º ESCALÃO MANDANTE', lado:'mandante',  x:28,   y:656,  entrada:'ent_mandante3'},
+    {id:'mandante1', rot:'1º ESCALÃO MANDANTE', lado:'mandante',  x:690,  y:1000, jogador:true, entrada:'ent_mandante1'},
+    {id:'mandante2', rot:'2º ESCALÃO MANDANTE', lado:'mandante',  x:28,   y:656,  entrada:'ent_mandante2'},
     {id:'mandante3', rot:'3º ESCALÃO MANDANTE', lado:'mandante',  x:28,   y:262,  entrada:'ent_mandante3'},
-    {id:'visitante1',rot:'1º ESCALÃO VISITANTE',lado:'visitante', x:1508, y:648,  entrada:'ent_visitante1'},
-    /* Vai à ENTRADA VISITANTE, e não ao túnel do estádio: o cordão
-       (praça + as duas grades) é contínuo, e o túnel fica do lado
-       mandante dele. Mandar este grupo pra lá deixava 15 discos sem
-       portão alcançável, batendo na grade e puxando a PM em cima do
-       1º escalão, que aí também não entrava. */
-    {id:'visitante2',rot:'2º ESCALÃO VISITANTE',lado:'visitante', x:1508, y:250,  entrada:'ent_visitante1'}
+    /* Os dois escalões visitantes entram pelo mesmo portão. */
+    {id:'visitante1',rot:'1º ESCALÃO VISITANTE',lado:'visitante', x:1508, y:648,  entrada:'ent_visitante'},
+    {id:'visitante2',rot:'2º ESCALÃO VISITANTE',lado:'visitante', x:1508, y:250,  entrada:'ent_visitante'}
   ],
 
   /* -------------------------------------------------------
      PORTÕES  (marcas verdes da imagem)
      'raio' = a que distância o disco é considerado dentro.
+     'dir'  = para onde se entra, em vetor. Orienta o desenho
+              do portão: batente, postes e setas apontam pra lá.
      ------------------------------------------------------- */
   entradas:[
-    {id:'ent_mandante1', rot:'ENTRADA 1º ESCALÃO MANDANTE', lado:'mandante',  x:291,  y:78,  raio:34},
-    {id:'ent_mandante3', rot:'ENTRADA 3º ESCALÃO MANDANTE', lado:'mandante',  x:532,  y:316, raio:34},
-    {id:'ent_visitante2',rot:'ENTRADA 2º ESCALÃO VISITANTE',lado:'visitante', x:996,  y:316, raio:34},
-    {id:'ent_visitante1',rot:'ENTRADA VISITANTE',           lado:'visitante', x:1260, y:76,  raio:34}
+    {id:'ent_mandante1', rot:'ENTRADA 1º ESCALÃO MANDANTE', lado:'mandante',  x:291,  y:78,  raio:34, dir:[ 1, 0]},
+    {id:'ent_mandante2', rot:'ENTRADA 2º ESCALÃO MANDANTE', lado:'mandante',  x:996,  y:316, raio:34, dir:[ 0,-1]},
+    {id:'ent_mandante3', rot:'ENTRADA 3º ESCALÃO MANDANTE', lado:'mandante',  x:532,  y:316, raio:34, dir:[ 0,-1]},
+    {id:'ent_visitante', rot:'ENTRADA VISITANTE',           lado:'visitante', x:1260, y:76,  raio:34, dir:[-1, 0]}
   ],
 
   /* -------------------------------------------------------

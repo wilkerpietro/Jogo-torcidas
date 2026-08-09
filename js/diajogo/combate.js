@@ -246,6 +246,20 @@ TO.diaJogo.combate = (function(){
       if(usarCampo && campo){
         const c=campo.passo(d.x,d.y);
         dirx=c.dx; diry=c.dy;
+        /* Sem caminho até o portão sem derrubar nada: só então a grade
+           vira alvo. Enquanto houver volta, o campo já mandou dar a volta. */
+        if(c.semRota){
+          let g=null, md=1e9;
+          for(const x of J.grades){
+            if(x.hp<=0) continue;
+            const dd=U.dist(d.x,d.y,x.x,x.y);
+            if(dd<md){md=dd;g=x;}
+          }
+          if(g){
+            const gx=g.x-d.x, gy=g.y-d.y, gd=Math.hypot(gx,gy)||1;
+            dirx=gx/gd; diry=gy/gd;
+          }
+        }
         if(recua){
           const s=D.spawns.find(x=>x.id===d.spawn);
           if(s && U.dist(d.x,d.y,s.x,s.y)<40){dirx=0;diry=0;}
@@ -258,8 +272,33 @@ TO.diaJogo.combate = (function(){
       const vel=P.velocidade*(d.fugindo?1.25:recua?1.15:1)*(0.75+nivelMoral(d.moral)*0.25);
       d.vx += (dirx*vel-d.vx)*Math.min(1,dt*6);
       d.vy += (diry*vel-d.vy)*Math.min(1,dt*6);
+      const px=d.x, py=d.y;
       A.mover(d, d.vx*dt, d.vy*dt);
       A.barrarGrades(d,J.grades);
+      /* progresso medido na posição real. O retorno do mover mente:
+         ele pode "andar" 0,9 px e ser desfeito logo depois por um
+         empurrão, e aí o disco nunca é considerado travado. */
+      const andou = Math.hypot(d.x-px, d.y-py) > vel*dt*0.25;
+
+      /* Rede de segurança: se nem deslizando nem contornando ele saiu
+         do lugar, larga o steering e vai direto pela célula que o campo
+         de fluxo aponta. Melhor andar torto que ficar parado na borda. */
+      if(andou){ d.travado=0; }
+      else {
+        d.travado=(d.travado||0)+dt;
+        if(d.travado>0.45){
+          const guia = campo || A.campoDaEntrada(d.entrada,J.grades,J.versaoGrades);
+          const st=guia.passo(d.x,d.y);
+          if(st.dx||st.dy){
+            d.vx=st.dx*vel; d.vy=st.dy*vel;
+            A.mover(d, st.dx*vel*dt*1.6, st.dy*vel*dt*1.6);
+          }
+          if(d.travado>2.0){
+            const q=A.pontoLivreMaisProximo(d.x,d.y,d.r);
+            d.x=q.x; d.y=q.y; d.vx=d.vy=0; d.travado=0;
+          }
+        }
+      }
     }
   }
 
@@ -306,7 +345,10 @@ TO.diaJogo.combate = (function(){
         for(const d of J.discos){
           if(!procurandoConflito(J,d)) continue;
           const dd=U.dist(d.x,d.y,p.x,p.y);
-          if(dd<80&&dd<pd){pd=dd;perto=d;}
+          if(dd>=80||dd>=pd) continue;
+          // atrás da grade não se persegue: o cordão é pra ser segurado
+          if(A.atravessaGrade(p.x,p.y,d.x,d.y,J.grades)) continue;
+          pd=dd; perto=d;
         }
         if(perto){
           ax=perto.x; ay=perto.y; vel=70;
@@ -325,8 +367,17 @@ TO.diaJogo.combate = (function(){
       const dx=ax-p.x, dy=ay-p.y, dist=Math.hypot(dx,dy)||1;
       if(dist>6){
         p.vx=dx/dist*vel; p.vy=dy/dist*vel;
-        A.mover(p, p.vx*dt, p.vy*dt);
-      } else {p.vx=p.vy=0;}
+        const andou=A.mover(p, p.vx*dt, p.vy*dt);
+        A.barrarGrades(p, J.grades);
+        // empacou tentando alcançar algo inalcançável: volta pro posto
+        p.travado = andou ? 0 : (p.travado||0)+dt;
+        if(p.travado>1.0){
+          const v=A.pontoLivreMaisProximo(p.postoX,p.postoY,p.r);
+          const bx=v.x-p.x, by=v.y-p.y, bd=Math.hypot(bx,by)||1;
+          A.mover(p, bx/bd*vel*dt, by/bd*vel*dt);
+          if(p.travado>2.5){p.x=v.x; p.y=v.y; p.travado=0;}
+        }
+      } else {p.vx=p.vy=0; p.travado=0;}
     }
     const vv=J.policiais.filter(p=>p.vivo);
     for(let i=0;i<vv.length;i++)for(let j=i+1;j<vv.length;j++){
@@ -340,6 +391,7 @@ TO.diaJogo.combate = (function(){
     let melhor=null, melhorN=-1;
     for(const d of J.discos){
       if(!procurandoConflito(J,d)) continue;
+      if(A.atravessaGrade(p.x,p.y,d.x,d.y,J.grades)) continue;
       let n=0;
       for(const o of J.discos)
         if(procurandoConflito(J,o)&&U.dist(o.x,o.y,d.x,d.y)<70) n++;
@@ -729,7 +781,7 @@ TO.diaJogo.combate = (function(){
 
   function desenhar(J,c,opc){
     A.desenharFundo(c);
-    A.desenharSobreposicoes(c,J.grades,opc);
+    A.desenharSobreposicoes(c,J.grades,Object.assign({t:J.t},opc||{}));
     for(const p of J.policiais) desenharPolicial(c,p,J.t);
     const ord=[...J.discos].sort((a,b)=>a.y-b.y);
     for(const d of ord) if(!d.vivo) desenharDisco(c,d);
