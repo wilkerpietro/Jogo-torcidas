@@ -30,7 +30,8 @@ TO.planejamento = (function(){
          quem não quer decidir toda semana decide uma vez */
       const padrao = (E.padroes||{})[tipoDoJogo(E)];
       E.plano = Object.assign(
-        {intencao:'paz', alvo:'arredores', alvoTorcida:null, bombas:0,
+        {intencao:'paz', como:'arredores', olheiro:null,
+         alvo:'arredores', alvoTorcida:null, bombas:0,
          bondes:1, destinos:{}, investidas:{}, caravana:null, rota:null},
         padrao ? JSON.parse(JSON.stringify(padrao)) : {},
         {chave, recepcao:{}, pago:{}, investidas:{}, decidido: !!padrao});
@@ -49,7 +50,8 @@ TO.planejamento = (function(){
     const p = plano(E), est = estimativaCaravana(E);
     E.padroes = E.padroes || {};
     E.padroes[tipoDoJogo(E)] = {
-      intencao:p.intencao, alvo:p.alvo, bombas:p.bombas, bondes:p.bondes,
+      intencao:p.intencao, como:p.como, olheiro:p.olheiro, alvo:p.alvo,
+      bombas:p.bombas, bondes:p.bondes,
       destinos:Object.assign({}, p.destinos), rota:p.rota,
       /* a caravana é guardada como fração do interesse, não como número */
       fracao: est ? U.limitar(est.vao / Math.max(1, est.interessados), 0, 1) : null
@@ -65,16 +67,34 @@ TO.planejamento = (function(){
      chega rápido, a praça é aberta e a briga espalha.
      ======================================================= */
   const PONTOS = [
-    {id:'arredores', nome:'Arredores do estádio', risco:3, prestigio:4,
+    /* o destino: só faz sentido quando se decide esperar o rival chegar */
+    {id:'arredores', nome:'Arredores do estádio', curto:'ARREDORES',
+     risco:3, prestigio:4, ida:false, x:0.80, y:0.34, acima:false,
      nota:'cordão da PM em peso, mas é onde o rival inteiro está'},
-    {id:'terminal',  nome:'Terminal rodoviário',  risco:4, prestigio:3,
-     nota:'fechado: pega o bonde na descida, a PM chega rápido'},
-    {id:'avenida',   nome:'Avenida de acesso',    risco:2, prestigio:3,
-     nota:'larga, favorece a linha e a fuga'},
-    {id:'praca',     nome:'Praça de encontro',    risco:2, prestigio:2,
+    /* os da ida: o bonde deles ainda está na rua, quebrado em pedaços */
+    {id:'bar',       nome:'Bar do rival',         curto:'BAR DELES',
+     risco:2, prestigio:5, ida:true, via:'sul', x:0.21, y:0.46, acima:false,
+     nota:'poucos lá dentro, mas é humilhação que fica'},
+    {id:'praca',     nome:'Praça de encontro',    curto:'PRAÇA',
+     risco:2, prestigio:2, ida:true, via:'norte', x:0.37, y:0.15, acima:true,
      nota:'aberta, a briga espalha e pouca gente se pega'},
-    {id:'bar',       nome:'Bar do rival',         risco:2, prestigio:5,
-     nota:'poucos lá dentro, mas é humilhação que fica'}
+    {id:'terminal',  nome:'Terminal rodoviário',  curto:'TERMINAL',
+     risco:4, prestigio:3, ida:true, via:'sul', x:0.34, y:0.76, acima:false,
+     nota:'fechado: pega o bonde na descida, a PM chega rápido'},
+    {id:'avenida',   nome:'Avenida de acesso',    curto:'AVENIDA',
+     risco:2, prestigio:3, ida:true, via:'norte', x:0.57, y:0.38, acima:true,
+     nota:'larga, favorece a linha e a fuga'},
+    {id:'viaduto',   nome:'Viaduto da via expressa', curto:'VIADUTO',
+     risco:3, prestigio:4, ida:true, via:'sul', x:0.66, y:0.74, acima:false,
+     nota:'gargalo: o bonde tem de passar por baixo, sem saída pelos lados'}
+  ];
+
+  /* GDD §14: esperar no destino ou cortar o caminho */
+  const COMO = [
+    {id:'arredores', rot:'Só nos arredores do estádio',
+     nota:'espera o bonde deles chegar inteiro; PM em peso, briga grande'},
+    {id:'ida',       rot:'Na ida ao estádio',
+     nota:'corta o caminho antes do cordão; precisa do olheiro no ponto certo'}
   ];
 
   /* o ponto ganha um bairro de verdade da praça, sempre o mesmo */
@@ -84,7 +104,71 @@ TO.planejamento = (function(){
       bairro: bairros.length ? bairros[(i*7) % bairros.length].nome : ''
     }));
   }
+  const pontosDeIda = E => pontosDeAtaque(E).filter(p=>p.ida);
   const ponto = id => PONTOS.find(p=>p.id===id) || PONTOS[0];
+
+  /* =======================================================
+     O OLHEIRO
+     Antes de emboscar é preciso saber por onde eles vêm. O
+     olheiro dá a leitura da semana: em quantos bondes a torcida
+     rival deve se dividir e qual o tamanho de cada um. A leitura
+     é a mesma o dia inteiro — olheiro não muda de ideia porque
+     a tela redesenhou.
+     ======================================================= */
+  function baralhoFixo(txt){
+    let h = 2166136261;
+    for(let i=0;i<txt.length;i++){ h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return U.semear(h >>> 0);
+  }
+
+  function relatorioDoOlheiro(E, idTorcida){
+    const o = M().torcida(idTorcida);
+    if(!o) return null;
+    const viva = (TO.tensao && TO.tensao.mundo(E)[idTorcida]) || {};
+    const efetivo = Math.max(6, Math.round((viva.membros || o.membros || 20) * 0.62));
+    const r = baralhoFixo(`${idTorcida}|${E.data.ano}|${E.data.semana}`);
+
+    /* torcida grande se divide mais; torcida pequena anda junto */
+    let bondes = efetivo > 140 ? 3 : efetivo > 70 ? 2 : 1;
+    const d = r();
+    if(d > 0.80) bondes++;
+    else if(d < 0.18 && bondes > 1) bondes--;
+    bondes = U.limitar(bondes, 1, 4);
+
+    /* os bondes não são iguais: o primeiro leva a bateria e o grosso */
+    const pesos = [];
+    for(let i=0;i<bondes;i++) pesos.push(1 + r()*0.6 + (i===0 ? 0.9 : 0));
+    const soma = pesos.reduce((s,x)=>s+x, 0);
+    const tamanhos = pesos.map(p=>Math.max(4, Math.round(efetivo*p/soma)));
+
+    /* quanto o olheiro enxerga: tensão alta deixa o rival cauteloso */
+    const t = TO.tensao ? TO.tensao.nivel(E, idTorcida) : 0;
+    const confianca = Math.round(U.limitar(88 - t*0.35 - (bondes-1)*9, 35, 95));
+
+    const pts = pontosDeIda(E);
+    /* cada bonde tem um caminho preferido; o olheiro chuta qual */
+    const rotas = tamanhos.map((n, i)=>({
+      n, ponto: pts[Math.floor(r()*pts.length)] || pts[0]
+    }));
+    return {torcida:o, efetivo, bondes, tamanhos, confianca, rotas,
+            texto: bondes===1
+              ? `Saem num bonde só, ${tamanhos[0]} na conta do olheiro.`
+              : `Devem se quebrar em ${bondes} bondes: ${tamanhos.join(', ')}.`};
+  }
+
+  /* Chance de o olheiro estar no lugar certo: com o rival num bonde só,
+     é acertar ou perder tudo; dividido, pega-se um pedaço. */
+  function leituraDoPonto(E, rel, idPonto){
+    if(!rel) return null;
+    const pegos = rel.rotas.filter(r=>r.ponto && r.ponto.id === idPonto);
+    const gente = pegos.reduce((s,r)=>s+r.n, 0);
+    const chance = Math.round(U.limitar(
+      (gente ? 62 : 14) + (rel.confianca-70)*0.4, 8, 92));
+    return {gente, chance, bondes:pegos.length,
+            texto: gente
+              ? `O olheiro põe ${gente} deles passando aqui`
+              : 'O olheiro não vê bonde nenhum por aqui'};
+  }
 
   /* GDD §16.7: dividir por zona rende mais frentes de ataque, cada uma
      mais fraca. Um bonde só bate mais forte num lugar só. */
@@ -386,6 +470,104 @@ TO.planejamento = (function(){
   }
 
   /* =======================================================
+     A SEQUÊNCIA DE DECISÕES
+     A tela não mostra tudo de uma vez: cada escolha abre a
+     próxima. Ir em paz encerra em dois passos; atacar abre o
+     alvo, o modo, o mapa do olheiro e as bombas.
+     ======================================================= */
+  function definirIntencao(E, id){
+    const p = plano(E);
+    p.intencao = id;
+    if(id === 'paz'){ p.alvoTorcida = null; p.olheiro = null; p.bombas = 0; }
+    p.alvo = alvoDe(p);
+    p.decidido = false;
+    return p;
+  }
+  function definirComo(E, id){
+    const p = plano(E);
+    p.como = id;
+    if(id !== 'ida') p.olheiro = null;
+    p.alvo = alvoDe(p);
+    p.decidido = false;
+    return p;
+  }
+  function definirOlheiro(E, id){
+    const p = plano(E);
+    p.olheiro = id; p.como = 'ida'; p.alvo = alvoDe(p);
+    p.decidido = false;
+    return p;
+  }
+  /* o alvo real é consequência: arredores ou o ponto do olheiro */
+  const alvoDe = p => p.intencao === 'paz' ? null
+                    : p.como === 'ida' ? (p.olheiro || null) : 'arredores';
+
+  /* os passos que a tela desenha, na ordem, e se já foram resolvidos */
+  function passos(E){
+    const p = plano(E), j = E.proximoJogo, fora = [];
+    const põe = (id, rot, feito, resumo) => fora.push({id, rot, feito, resumo});
+    if(!j) return fora;
+
+    const briga = p.intencao !== 'paz';
+    põe('intencao', 'Intenção do dia de jogo', true,
+        p.intencao === 'paz' ? 'Ir em paz'
+        : p.intencao === 'trair' ? 'Trair aliado' : 'Atacar');
+
+    if(briga){
+      const alvo = M().torcida(p.alvoTorcida);
+      põe('alvo', 'Contra quem', !!p.alvoTorcida,
+          alvo ? alvo.nome : 'ninguém escolhido');
+      if(p.alvoTorcida){
+        põe('como', 'Como atacar', !!p.como,
+            (COMO.find(c=>c.id===p.como)||{}).rot || '—');
+        if(p.como === 'ida')
+          põe('olheiro', 'Olheiro no mapa', !!p.olheiro,
+              p.olheiro ? ponto(p.olheiro).nome : 'sem posição definida');
+        põe('bombas', 'Bombas', true,
+            p.bombas ? `${p.bombas} do estoque` : 'só na pedra');
+      }
+    }
+    põe('saida', 'Formação da saída', true,
+        `${efetivoDaSaida(E)} saem · ${p.bondes===1?'um bonde':p.bondes+' bondes'}`);
+
+    const al = aliadosNaCidade(E, E.data.semana);
+    if(al.length){
+      const decididos = al.filter(a=>plano(E).recepcao[a.id] || recepcaoPadrao(E)).length;
+      põe('aliados', 'Aliados na cidade', decididos === al.length,
+          `${al.length} ${al.length===1?'torcida':'torcidas'} · ${decididos} resolvidas`);
+    }
+    const ou = outrosJogosNaCidade(E, E.data.semana);
+    if(ou.length){
+      const n = Object.values(p.investidas||{}).filter(Boolean).length;
+      põe('outros', 'Outros jogos na cidade', true,
+          n ? `${n} ${n===1?'investida':'investidas'}` : `${ou.length} sem investida`);
+    }
+    return fora;
+  }
+  /* dá pra fechar? o que falta é o que trava o botão */
+  function falta(E){
+    return passos(E).filter(x=>!x.feito).map(x=>x.rot);
+  }
+
+  /* ---------- investidas nos outros jogos da praça ---------- */
+  /* o valor é objeto: alvo, como (arredores ou ida) e o ponto do olheiro */
+  function investidaDe(E, chave){
+    const v = (plano(E).investidas || {})[chave];
+    if(!v) return null;
+    /* save antigo guardava só o id da torcida */
+    return typeof v === 'string' ? {alvo:v, como:'arredores', olheiro:null} : v;
+  }
+  function definirInvestida(E, chave, campos){
+    const p = plano(E);
+    if(campos === null){ delete p.investidas[chave]; p.decidido = false; return null; }
+    const atual = investidaDe(E, chave) || {alvo:null, como:'arredores', olheiro:null};
+    const novo = Object.assign(atual, campos);
+    if(novo.como !== 'ida') novo.olheiro = null;
+    p.investidas[chave] = novo;
+    p.decidido = false;
+    return novo;
+  }
+
+  /* =======================================================
      COMPROMISSOS — a ponte com o Financeiro
      Toda decisão da Gestão que mexe no caixa aparece aqui, com
      o valor e se já foi paga. O Financeiro lê esta lista pra
@@ -421,11 +603,14 @@ TO.planejamento = (function(){
     }
 
     /* 3. as investidas nos outros jogos da cidade: custam ação, não caixa */
-    for(const [chave, alvo] of Object.entries(p.investidas || {})){
-      if(!alvo) continue;
-      const t = M().torcida(alvo);
-      põe('inv-'+chave, `Investida contra ${t ? t.nome : alvo}`, 0,
-          (p.pago||{})['inv-'+chave], 'custa 1 ação da semana', 'acao');
+    for(const chave of Object.keys(p.investidas || {})){
+      const inv = investidaDe(E, chave);
+      if(!inv || !inv.alvo) continue;
+      const t = M().torcida(inv.alvo);
+      põe('inv-'+chave, `Investida contra ${t ? t.nome : inv.alvo}`, 0,
+          (p.pago||{})['inv-'+chave],
+          `${inv.como==='ida' ? 'na ida ao estádio, em '+ponto(inv.olheiro).nome
+                              : 'nos arredores do estádio'} · custa 1 ação`, 'acao');
     }
 
     const soma = f => fora.filter(f).reduce((s,x)=>s+x.v, 0);
@@ -508,12 +693,14 @@ TO.planejamento = (function(){
     /* as investidas nos outros jogos da cidade gastam ação da semana */
     let usadas = 0;
     E.investidas = E.investidas || [];
-    for(const [chave, alvo] of Object.entries(p.investidas || {})){
-      if(!alvo || (p.pago||{})['inv-'+chave]) continue;
+    for(const chave of Object.keys(p.investidas || {})){
+      const inv = investidaDe(E, chave);
+      if(!inv || !inv.alvo || (p.pago||{})['inv-'+chave]) continue;
       if(TO.acoes.restantes(E) <= 0) break;
       E.acoes.usadas = (E.acoes.usadas||0) + 1;
       p.pago = p.pago || {}; p.pago['inv-'+chave] = true;
-      E.investidas.push({semana:E.data.semana, alvo, chave});
+      E.investidas.push({semana:E.data.semana, alvo:inv.alvo, chave,
+                         como:inv.como, olheiro:inv.olheiro});
       usadas++;
     }
     return {ok:true, gasto, investidas:usadas};
@@ -522,6 +709,9 @@ TO.planejamento = (function(){
   return {plano, tipoDoJogo, salvarPadrao, temPadrao, esquecerPadrao,
           alvosDoJogo, soAliados, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
+          COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,
+          passos, falta, investidaDe, definirInvestida,
+          relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
           destinos, opcoesDeDestino,
           aliadosNaCidade, RECEPCAO, recepcaoDe, custoRecepcao,

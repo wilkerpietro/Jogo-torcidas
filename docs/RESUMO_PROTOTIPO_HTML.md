@@ -199,15 +199,23 @@ atravessando a cidade é perigoso demais. Guardado para quando o mapa entrar.
 - **Rotina semanal**: cada dia da semana pode ter uma ação padrão, aplicada sozinha
   quando o dia passa. Nunca fura o orçamento semanal, e dia de jogo e de caravana são
   ignorados.
-- **Gestão inteligente**: cartões recolhíveis com as decisões da semana — ir em paz,
-  atacar (dizendo **qual** torcida do adversário) ou trair, quando todas as torcidas do
-  outro lado são aliadas; em que ponto da cidade; com quantas bombas; num bonde só ou
-  dividido por zona, com destino por bonde; o que fazer nos **outros jogos da praça**,
-  onde dá pra cair em cima de torcida de fora que está de passagem; como receber o
-  aliado que joga aqui, com nível padrão salvável; e a caravana — quantos embarcam e por
-  qual estrada, tirada do grafo das rodovias das trinta praças. Plano padrão de jogo em
-  casa e de viagem para quem não quer decidir toda semana. A tela de Início ganhou o
-  cartão de **Avisos** com o que está esperando decisão.
+- **Gestão inteligente**: a tela é uma sequência, não um formulário. Em cima, a faixa do
+  próximo jogo do nosso time — confronto, competição, rodada, dia, hora, estádio, mando e
+  quanta gente sai de casa. Abaixo, os passos aparecem conforme se escolhe: **ir em paz**
+  encerra na formação da saída; **atacar** (ou **trair**, quando todas as torcidas do
+  outro lado são aliadas) pergunta **qual** torcida, depois **como** — só nos arredores
+  do estádio ou na ida ao estádio. Escolhida a ida, abre o **mapa do olheiro**: a sede
+  deles, a nossa, o estádio e as duas vias que ligam um ao outro, com os pontos de
+  interceptação clicáveis. O olheiro diz em quantos bondes o rival deve se quebrar, o
+  tamanho de cada um e por onde acha que passam; o ponto escolhido mostra a chance de
+  interceptar. Só então vêm as bombas e a formação da saída. Depois disso, os aliados que
+  jogam na praça (com nível de recepção padrão salvável) e os **outros jogos da cidade**,
+  onde dá pra cair em cima de torcida de fora de passagem **ou dos nossos próprios rivais
+  indo pro jogo deles** — também com olheiro, modo e ponto. Fecha com a caravana (quantos
+  embarcam e por qual estrada, tirada do grafo das rodovias) e o resumo, que só libera o
+  botão quando não falta decisão. Plano padrão de jogo em casa e de viagem para quem não
+  quer decidir toda semana. A tela de Início tem o cartão de **Avisos** com o que está
+  esperando decisão.
 - **Tensão** (por par de torcidas, 0–100, quatro faixas): atacar dispara, semana quieta
   esfria, e a relação só volta ao normal quando o clima baixa. Acima de 45 a torcida pode
   atacar a sede, o bar, a caravana na estrada ou o bonde nos arredores. As outras 138
@@ -215,6 +223,17 @@ atravessando a cidade é perigoso demais. Guardado para quando o mapa entrar.
   alimenta o noticiário.
 - **Efetivo real de cada torcida**: os 20 a 250 membros e a divisão de cargos vêm da
   fonte, e a sede começa no nível que comporta esse efetivo.
+- **Financeiro ligado à Gestão**: caravana, recepção de aliado e investida saem de
+  `planejamento.compromissos()` e aparecem no Financeiro e no fechamento com valor e
+  estado de pagamento. Quem cobra continua sendo quem sempre cobrou — o fechamento só
+  lê a lista, nunca relança, pra ninguém pagar duas vezes.
+- **Treino sorteado por semana**: a fila se refaz sozinha no virar da semana e prioriza
+  quem ainda está longe do teto do cargo. A aba Treinamentos mostra o plano do GDD §5.4 —
+  teto por cargo, quantas sessões faltam pra encher e quem já chegou no limite.
+- **Recrutamento pela praça** (GDD §6.2): a base é o torcedor do clube que mora na cidade
+  e ainda não é de organizada nenhuma, contado pelo efetivo de agora e não pela planilha —
+  recrutar encolhe o bolo. O teto por campanha soma o nível da sede ao tamanho da praça,
+  então Fortaleza rende mais que o interior e São Paulo rende mais que Fortaleza.
 
 **Próximo passo recomendado: o mapa da cidade.** É o que falta pra briga deixar de
 depender do dia de jogo. O mapa mostra em tempo real onde a rival está e deixa o jogador

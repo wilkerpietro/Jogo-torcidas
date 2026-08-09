@@ -1293,32 +1293,124 @@
     return q;
   }
 
-  /* cartão que abre e fecha. O estado fica aqui fora pra sobreviver ao
-     redesenho — a tela de Gestão é longa e ninguém quer rolar tudo. */
-  const dobras = new Set(['jogo','intencao','saida']);
-  function quadroDobra(id, titulo, direita){
-    const aberto = dobras.has(id);
-    const q = el('div',{class:'quadro dobra'+(aberto?' aberto':'')});
+  /* ---------- o cartão de um passo da sequência ---------- */
+  function passoCartao(n, titulo, direita, pendente){
+    const q = el('div',{class:'passo'+(pendente?' pendente':'')});
     const h = el('header');
-    h.appendChild(el('span',{class:'seta', texto:aberto?'▾':'▸'}));
+    h.appendChild(el('i',{class:'num', texto:String(n)}));
     h.appendChild(el('h2',{texto:titulo}));
-    if(direita) h.appendChild(direita);
-    h.onclick = ()=>{
-      if(dobras.has(id)) dobras.delete(id); else dobras.add(id);
-      redesenhar();
-    };
+    if(direita) h.appendChild(el('span',{class:'conta', texto:direita}));
     q.appendChild(h);
-    q.corpo = el('div',{class:'recuado'});
-    if(!aberto) q.corpo.style.display = 'none';
+    q.corpo = el('div',{class:'corpo'});
     q.appendChild(q.corpo);
-    q.rodape = (...bts)=>{
-      if(!aberto) return q;
-      const r = el('div',{class:'rodape'});
-      bts.forEach(b=>b && r.appendChild(b));
-      q.appendChild(r); return q;
-    };
-    q.aberto = aberto;
     return q;
+  }
+
+  /* ---------- a trilha das decisões já tomadas ---------- */
+  function trilha(passos){
+    const t = el('div',{class:'trilha'});
+    passos.forEach((s,i)=>{
+      if(i) t.appendChild(el('i',{texto:'›'}));
+      t.appendChild(el('span',{class:'etapa'+(s.feito?'':' aberta'),
+        html:`${s.rot}<small>${s.resumo}</small>`}));
+    });
+    return t;
+  }
+
+  /* =======================================================
+     O MAPA DO OLHEIRO
+     Esquema da praça: a nossa sede, a sede deles, o estádio e
+     os pontos onde dá pra cortar o caminho. Clicar num ponto é
+     posicionar o olheiro ali.
+     ======================================================= */
+  function mapaDoOlheiro(e, pontos, escolhido, rel, aoEscolher){
+    const cx = el('div',{class:'mapa-olheiro'});
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS,'svg');
+    /* a caixa é larga porque a coluna é larga; sem preserveAspectRatio
+       a tipografia esticaria junto com o desenho */
+    svg.setAttribute('viewBox','-7 -8 174 78');
+
+    const cria = (tag, attrs)=>{
+      const n = document.createElementNS(NS, tag);
+      for(const [k,v] of Object.entries(attrs)) n.setAttribute(k, v);
+      return n;
+    };
+    const X = v=>v*160, Y = v=>v*62;
+
+    /* a malha, só pra dar noção de cidade */
+    for(let i=1;i<8;i++)
+      svg.appendChild(cria('line',{x1:i*20, y1:0, x2:i*20, y2:62, class:'malha'}));
+    for(let i=1;i<5;i++)
+      svg.appendChild(cria('line',{x1:0, y1:i*12.4, x2:160, y2:i*12.4, class:'malha'}));
+    svg.appendChild(cria('rect',{x:0, y:0, width:160, height:62, class:'moldura'}));
+
+    /* os caminhos deles: da sede rival ao estádio, pelo norte ou pelo sul.
+       É por isso que o ponto do olheiro importa — ele cobre uma via só. */
+    for(const via of ['norte','sul']){
+      const desta = pontos.filter(p=>p.via===via).sort((a,b)=>a.x-b.x);
+      if(!desta.length) continue;
+      const pts = [[0.07,0.14]].concat(desta.map(p=>[p.x,p.y])).concat([[0.90,0.34]]);
+      svg.appendChild(cria('polyline',{class:'rota '+via,
+        points: pts.map(([x,y])=>`${X(x)},${Y(y)}`).join(' ')}));
+    }
+
+    /* âncoras */
+    const ancora = (x,y,rot,cls,acima)=>{
+      svg.appendChild(cria('rect',{x:X(x)-2.2, y:Y(y)-2.2, width:4.4, height:4.4,
+        class:'ancora '+cls}));
+      const t = cria('text',{x:X(x), y:Y(y)+(acima?-4.2:6.2), class:'rot '+cls});
+      t.textContent = rot;
+      svg.appendChild(t);
+    };
+    ancora(0.07, 0.14, 'SEDE DELES', 'deles',   true);
+    ancora(0.07, 0.88, 'NOSSA SEDE', 'nossa',   false);
+    ancora(0.90, 0.34, 'ESTÁDIO',    'estadio', true);
+
+    /* os pontos: o olheiro vai num deles */
+    for(const pt of pontos){
+      const leitura = P_leitura(e, rel, pt.id);
+      const on = pt.id === escolhido;
+      const g = cria('g',{class:'pino'+(on?' on':'')+
+        (leitura && leitura.gente ? ' quente':'')});
+      g.appendChild(cria('circle',{cx:X(pt.x), cy:Y(pt.y), r: on?3:2.3}));
+      const t = cria('text',{x:X(pt.x), y:Y(pt.y)+(pt.acima?-4.6:6.4)});
+      t.textContent = pt.curto || pt.nome.toUpperCase();
+      g.appendChild(t);
+      if(leitura && leitura.gente){
+        const n = cria('text',{x:X(pt.x), y:Y(pt.y)+(pt.acima?7.2:-4.2), class:'qtd'});
+        n.textContent = '~'+leitura.gente;
+        g.appendChild(n);
+      }
+      g.onclick = ()=>aoEscolher(pt.id);
+      svg.appendChild(g);
+    }
+    cx.appendChild(svg);
+    return cx;
+  }
+  const P_leitura = (e, rel, id) =>
+    rel ? TO.planejamento.leituraDoPonto(e, rel, id) : null;
+
+  /* ---------- o relatório do olheiro em texto ---------- */
+  function fichaDoOlheiro(rel){
+    const d = el('div',{class:'olheiro'});
+    if(!rel){
+      d.innerHTML = '<div class="em-construcao">Sem alvo definido, o olheiro '+
+        'não tem quem seguir.</div>';
+      return d;
+    }
+    d.innerHTML =
+      `<div class="l1"><b>Relatório do olheiro</b>
+         <span>confiança ${rel.confianca}%</span></div>
+       <div class="l2">${rel.texto}</div>`;
+    const faixa = el('div',{class:'bondes'});
+    rel.tamanhos.forEach((n,i)=>{
+      faixa.appendChild(el('span',{html:
+        `<b>${n}</b><small>bonde ${i+1}${rel.rotas[i] && rel.rotas[i].ponto
+          ? ' · '+rel.rotas[i].ponto.nome : ''}</small>`}));
+    });
+    d.appendChild(faixa);
+    return d;
   }
 
   function pintarGestao(){
@@ -1329,164 +1421,201 @@
 
     const p = P.plano(e);
     const j = e.proximoJogo;
+
+    /* =====================================================
+       PARTE SUPERIOR — o próximo jogo do nosso time
+       ===================================================== */
+    const topo = el('div',{class:'gestao-topo'+(j?'':' vazio')});
+    if(!j){
+      topo.innerHTML =
+        `<div class="cab"><h2>Folga na tabela</h2>
+           <small>o time não joga nesta semana</small></div>
+         <div class="dados"><span class="fraco">Semana boa pra treinar, recrutar `+
+        `e resolver o que a rua deixou.</span></div>`;
+    }else{
+      const fora = TO.financeiro.precisaCaravana(e);
+      const d0   = TO.estado.dataDaSemana(e.data.ano, e.data.semana, j.dia||6);
+      const dat  = `${DIA_LONGO[(j.dia||6)-1]}, `+
+                   `${String(d0.getDate()).padStart(2,'0')}/`+
+                   `${String(d0.getMonth()+1).padStart(2,'0')}`;
+      topo.innerHTML =
+        `<div class="cab">
+           <div class="times">
+             <span class="lado ${j.casa?'nosso':''}">
+               <i style="background:${j.mandante.cores[0]}"></i>${j.mandante.nome}</span>
+             <em>×</em>
+             <span class="lado ${j.casa?'':'nosso'}">
+               <i style="background:${j.visitante.cores[0]}"></i>${j.visitante.nome}</span>
+           </div>
+           <small>${j.competicao}${j.fase?' · '+j.fase:''} · ${dat}`+
+        `${j.hora?' · '+j.hora:''}</small>
+         </div>
+         <div class="dados">
+           <div><span>Mando</span><b>${j.neutro?'campo neutro'
+              : j.casa?'em casa':'fora, em '+j.cidadeAdv}</b></div>
+           <div><span>Estádio</span><b>${j.estadio||'—'}</b></div>
+           <div><span>Sai de casa</span><b>${P.efetivoDaSaida(e)} de `+
+        `${TO.membros.aptosParaOEstadio(e).length}</b></div>
+           <div><span>Saída</span><b>${fora?'caravana':'bonde da sede'}</b></div>
+         </div>`;
+    }
+    pg.appendChild(topo);
+
+    if(j) pg.appendChild(trilha(P.passos(e)));
+
     const grade = el('div',{class:'comp-duas'});
     const esq = el('div'), dir = el('div');
+    let n = 0;
 
-    /* ---------- 1. o jogo da semana ---------- */
-    const cPost = quadroDobra('jogo', 'O jogo da semana', el('span',{class:'conta',
-      texto: j ? (TO.financeiro.precisaCaravana(e) ? 'fora, com caravana'
-                                                   : 'em casa') : 'folga'}));
-    if(cPost.aberto){
-      if(!j){
-        cPost.corpo.appendChild(el('div',{class:'em-construcao',
-          html:'<b>Folga na tabela</b>O time não joga. Semana boa pra treinar, '+
-               'recrutar e resolver o que a rua deixou.'}));
-      }else{
-        cPost.corpo.appendChild(el('div',{class:'confronto-linha', html:
-          `<b>${j.mandante.nome}</b><span>×</span><b>${j.visitante.nome}</b>
-           <small>${j.competicao}${j.fase?' · '+j.fase:''} · `+
-          `${j.neutro?'campo neutro':j.casa?'em casa':'fora, em '+j.cidadeAdv}</small>`}));
-        cPost.corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span>Saída</span><b>${TO.financeiro.precisaCaravana(e)
-            ? 'caravana para '+j.cidadeAdv : 'bonde da sede pro estádio'}</b>`}));
-        cPost.corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span>Sai de casa</span><b>${P.efetivoDaSaida(e)} de `+
-          `${TO.membros.aptosParaOEstadio(e).length} aptos</b>`}));
-      }
-    }
-    esq.appendChild(cPost);
-
-    /* ---------- 2. intenção e alvo ---------- */
+    /* =====================================================
+       A SEQUÊNCIA
+       ===================================================== */
     if(j){
       const alvos = P.alvosDoJogo(e);
       const trair = P.soAliados(e);
-      if(trair && p.intencao === 'atacar') p.intencao = 'trair';
-      if(!trair && p.intencao === 'trair') p.intencao = 'atacar';
+      if(trair && p.intencao === 'atacar') P.definirIntencao(e, 'trair');
+      if(!trair && p.intencao === 'trair')  P.definirIntencao(e, 'atacar');
       const briga = p.intencao !== 'paz';
-      if(briga && !p.alvoTorcida && alvos.length) p.alvoTorcida = alvos[0].id;
+      if(briga && !p.alvoTorcida && alvos.length === 1)
+        { p.alvoTorcida = alvos[0].id; }
 
-      const cInt = quadroDobra('intencao', 'Intenção do dia de jogo',
-        el('span',{class:'conta', texto: briga
-          ? (P.ponto(p.alvo).nome) : 'em paz'}));
-      if(cInt.aberto){
-        cInt.corpo.appendChild(opcoes(P.intencoes(e), p.intencao,
-          id=>{ p.intencao=id; p.decidido=false; redesenhar(); }));
+      /* --- 1. intenção --- */
+      const c1 = passoCartao(++n, 'Intenção do dia de jogo',
+        p.intencao==='paz' ? 'ir em paz'
+        : p.intencao==='trair' ? 'trair aliado' : 'atacar');
+      c1.corpo.appendChild(opcoes(P.intencoes(e), p.intencao,
+        id=>{ P.definirIntencao(e, id); redesenhar(); }));
+      esq.appendChild(c1);
 
-        if(briga){
-          cInt.corpo.appendChild(el('div',{class:'fase-rot', texto:'Contra quem'}));
-          if(!alvos.length){
-            cInt.corpo.appendChild(el('div',{class:'em-construcao',
-              texto:'O adversário não tem organizada catalogada.'}));
+      if(briga){
+        /* --- 2. contra quem --- */
+        const alvoT = TO.mundo.torcida(p.alvoTorcida);
+        const c2 = passoCartao(++n, 'Contra qual torcida',
+          alvoT ? alvoT.nome : 'escolha', !p.alvoTorcida);
+        if(!alvos.length){
+          c2.corpo.appendChild(el('div',{class:'em-construcao',
+            texto:'O adversário não tem organizada catalogada. '+
+                  'Sem alvo, o dia é de ir em paz.'}));
+        }
+        c2.corpo.appendChild(opcoes(alvos.map(a=>({
+          id:a.id, rot:a.torcida.nome,
+          nota:`${a.aliada?'ALIADA — bater nela é traição · ':''}`+
+               `relação ${a.relacao>0?'+':''}${Math.round(a.relacao)}`+
+               `${a.tensao?` · tensão ${Math.round(a.tensao)}`:''} · `+
+               `${a.torcida.membros} membros`
+        })), p.alvoTorcida, id=>{ p.alvoTorcida=id; p.decidido=false; redesenhar(); }));
+        esq.appendChild(c2);
+
+        if(p.alvoTorcida){
+          const rel = P.relatorioDoOlheiro(e, p.alvoTorcida);
+
+          /* --- 3. como atacar --- */
+          const c3 = passoCartao(++n, 'Como atacar',
+            (P.COMO.find(c=>c.id===p.como)||{}).rot);
+          c3.corpo.appendChild(opcoes(P.COMO.map(c=>({
+            id:c.id, rot:c.rot,
+            nota: c.id==='ida' && rel
+              ? `${c.nota} — ${rel.texto.toLowerCase()}` : c.nota
+          })), p.como, id=>{ P.definirComo(e, id); redesenhar(); }));
+          esq.appendChild(c3);
+
+          /* --- 4. o olheiro no mapa --- */
+          if(p.como === 'ida'){
+            const pt = p.olheiro ? P.ponto(p.olheiro) : null;
+            const c4 = passoCartao(++n, 'Olheiro no mapa',
+              pt ? pt.nome : 'posicione', !p.olheiro);
+            c4.corpo.appendChild(fichaDoOlheiro(rel));
+            c4.corpo.appendChild(mapaDoOlheiro(e, P.pontosDeIda(e), p.olheiro, rel,
+              id=>{ P.definirOlheiro(e, id); redesenhar(); }));
+            if(pt){
+              const lt = P.leituraDoPonto(e, rel, pt.id);
+              c4.corpo.appendChild(el('div',{class:'linha-dado', html:
+                `<span>${pt.nome}${pt.bairro?' — '+pt.bairro:''}</span>
+                 <b>risco ${pt.risco}/5 · prestígio ${pt.prestigio}/5</b>`}));
+              c4.corpo.appendChild(el('div',{class:'linha-dado', html:
+                `<span class="fraco">${pt.nota}</span>`}));
+              if(lt) c4.corpo.appendChild(el('div',{class:'linha-dado', html:
+                medidor('Chance de interceptar', lt.chance, 100,
+                        lt.chance>55?'var(--verde)':'var(--ouro)')}));
+              if(lt) c4.corpo.appendChild(el('div',{class:'linha-dado', html:
+                `<span class="${lt.gente?'':'fraco'}">${lt.texto}.</span>`}));
+            }else{
+              c4.corpo.appendChild(el('div',{class:'em-construcao',
+                texto:'Clique num ponto do mapa pra mandar o olheiro pra lá.'}));
+            }
+            esq.appendChild(c4);
           }
-          cInt.corpo.appendChild(opcoes(alvos.map(a=>({
-            id:a.id, rot:a.torcida.nome,
-            nota:`${a.aliada?'ALIADA — bater nela é traição · ':''}`+
-                 `relação ${a.relacao>0?'+':''}${Math.round(a.relacao)}`+
-                 `${a.tensao?` · tensão ${Math.round(a.tensao)}`:''} · `+
-                 `${a.torcida.membros} membros`
-          })), p.alvoTorcida, id=>{ p.alvoTorcida=id; p.decidido=false; redesenhar(); }));
 
-          cInt.corpo.appendChild(el('div',{class:'fase-rot', texto:'Onde bater'}));
-          cInt.corpo.appendChild(opcoes(
-            P.pontosDeAtaque(e).map(x=>({id:x.id,
-              rot:`${x.nome}${x.bairro?` — ${x.bairro}`:''}`,
-              nota:`${x.nota} · risco ${x.risco}/5 · prestígio ${x.prestigio}/5`})),
-            p.alvo, id=>{ p.alvo=id; p.decidido=false; redesenhar(); }));
-
+          /* --- 5. bombas --- */
           const est = e.estoque || {bombas:0};
-          cInt.corpo.appendChild(el('div',{class:'fase-rot',
-            texto:`Bombas do estoque — ${est.bombas} guardadas`}));
+          const c5 = passoCartao(++n, 'Bombas',
+            p.bombas ? `${p.bombas} de ${est.bombas}` : 'nenhuma');
           const linha = el('div',{class:'contador'});
           const menos = el('button',{texto:'−'}), mais = el('button',{texto:'+'});
           menos.onclick = ()=>{ p.bombas=Math.max(0,p.bombas-1); p.decidido=false; redesenhar(); };
           mais.onclick  = ()=>{ p.bombas=Math.min(est.bombas,p.bombas+1); p.decidido=false; redesenhar(); };
           menos.disabled = p.bombas<=0; mais.disabled = p.bombas>=est.bombas;
           linha.append(menos, el('b',{texto:String(p.bombas)}), mais,
-            el('small',{texto: p.bombas ? 'bomba chama a PM mais rápido (GDD §9.1)'
-                                        : 'pedra é infinita e não faz barulho'}));
-          cInt.corpo.appendChild(linha);
+            el('small',{texto: p.bombas ? `de ${est.bombas} no estoque · a PM chega `+
+                                          'mais rápido (GDD §9.1)'
+                                        : `${est.bombas} no estoque · pedra é infinita `+
+                                          'e não faz barulho'}));
+          c5.corpo.appendChild(linha);
+          esq.appendChild(c5);
         }
       }
-      esq.appendChild(cInt);
 
-      /* ---------- 3. formação da saída ---------- */
+      /* --- formação da saída --- */
       const d = P.divisao(e, p.bondes);
-      const cB = quadroDobra('saida', 'Formação da saída', el('span',{class:'conta',
-        texto:`${P.efetivoDaSaida(e)} saem · ${p.bondes===1?'um bonde':p.bondes+' bondes'}`}));
-      if(cB.aberto){
-        cB.corpo.appendChild(opcoes([1,2,3,4].map(n=>{
-          const dd = P.divisao(e, n);
-          return {id:n, rot: n===1 ? 'Bonde único' : `${n} bondes, um por zona`,
-                  nota: n===1 ? 'todo mundo junto: uma frente, mas pesada'
-                              : `${dd.porBonde} por bonde · até ${n} frentes · `+
-                                `${dd.zonas.join(', ')}`};
-        }), p.bondes, n=>{ p.bondes=n; p.decidido=false; redesenhar(); }));
-        cB.corpo.appendChild(el('div',{class:'linha-dado', html:
-          medidor('Solidez da linha', Math.round(d.solidez*100), 100,
-                  d.solidez>0.75?'var(--verde)':'var(--ouro)')}));
-
-        if(p.bondes > 1){
-          cB.corpo.appendChild(el('div',{class:'fase-rot', texto:'Destino de cada bonde'}));
-          const ops = P.opcoesDeDestino(e);
-          for(const b of P.destinos(e)){
-            const linha = el('div',{class:'linha-bonde'});
-            linha.appendChild(el('span',{class:'zona', html:
-              `${b.zona}<small>${b.gente} membros</small>`}));
-            const sel = el('select',{class:'campo'});
-            for(const o of ops){
-              const opt = el('option',{value:o.id, texto:`${o.nome} — ${o.nota}`});
-              if(o.id === b.destino) opt.selected = true;
-              sel.appendChild(opt);
-            }
-            sel.onchange = ()=>{
-              p.destinos[b.i] = sel.value; p.decidido = false; redesenhar();
-            };
-            linha.appendChild(sel);
-            cB.corpo.appendChild(linha);
+      const cB = passoCartao(++n, 'Formação da saída',
+        `${p.bondes===1?'um bonde':p.bondes+' bondes'}`);
+      cB.corpo.appendChild(opcoes([1,2,3,4].map(k=>{
+        const dd = P.divisao(e, k);
+        return {id:k, rot: k===1 ? 'Bonde único' : `${k} bondes, um por zona`,
+                nota: k===1 ? 'todo mundo junto: uma frente, mas pesada'
+                            : `${dd.porBonde} por bonde · até ${k} frentes · `+
+                              `${dd.zonas.join(', ')}`};
+      }), p.bondes, k=>{ p.bondes=k; p.decidido=false; redesenhar(); }));
+      cB.corpo.appendChild(el('div',{class:'linha-dado', html:
+        medidor('Solidez da linha', Math.round(d.solidez*100), 100,
+                d.solidez>0.75?'var(--verde)':'var(--ouro)')}));
+      if(p.bondes > 1){
+        cB.corpo.appendChild(el('div',{class:'fase-rot', texto:'Destino de cada bonde'}));
+        const ops = P.opcoesDeDestino(e);
+        for(const b of P.destinos(e)){
+          const lb = el('div',{class:'linha-bonde'});
+          lb.appendChild(el('span',{class:'zona', html:
+            `${b.zona}<small>${b.gente} membros</small>`}));
+          const sel = el('select',{class:'campo'});
+          for(const o of ops){
+            const opt = el('option',{value:o.id, texto:`${o.nome} — ${o.nota}`});
+            if(o.id === b.destino) opt.selected = true;
+            sel.appendChild(opt);
           }
-          const brigam = P.destinos(e).filter(x=>x.ponto).length;
-          cB.corpo.appendChild(el('div',{class:'linha-dado', html:
-            `<span class="fraco">${brigam
-              ? `${brigam} ${brigam===1?'frente de ataque':'frentes de ataque'} e `+
-                `${p.bondes-brigam} entrando pelo portão`
-              : 'todos entram pelo portão'}</span>`}));
+          sel.onchange = ()=>{ p.destinos[b.i]=sel.value; p.decidido=false; redesenhar(); };
+          lb.appendChild(sel);
+          cB.corpo.appendChild(lb);
         }
+        const brigam = P.destinos(e).filter(x=>x.ponto).length;
+        cB.corpo.appendChild(el('div',{class:'linha-dado', html:
+          `<span class="fraco">${brigam
+            ? `${brigam} ${brigam===1?'frente de ataque':'frentes de ataque'} e `+
+              `${p.bondes-brigam} entrando pelo portão`
+            : 'todos entram pelo portão'}</span>`}));
       }
       esq.appendChild(cB);
     }
 
-    /* ---------- 4. outros jogos na cidade ---------- */
-    const outros = P.outrosJogosNaCidade(e, e.data.semana);
-    const cO = quadroDobra('outros', 'Outros jogos na cidade',
-      el('span',{class:'conta', texto: outros.length
-        ? `${outros.length} nesta semana` : 'nenhum'}));
-    if(cO.aberto){
-      if(!outros.length)
-        cO.corpo.appendChild(el('div',{class:'em-construcao',
-          texto:'Nenhum outro time da praça joga em casa nesta semana.'}));
-      for(const g of outros){
-        cO.corpo.appendChild(el('div',{class:'aliado-cab', html:
-          `<span class="escudinho" style="background:${corClube(g.casa.id)}"></span>
-           <div><b>${g.casa.nome} × ${g.vis.nome}</b>
-             <small>${g.comp} · torcida de fora circulando pela cidade</small></div>`}));
-        const ops = [{id:'', rot:'Deixar passar', nota:'ninguém sai da sede por isso'}]
-          .concat(g.visitantes.map(v=>({
-            id:v.id, rot:`Cair em cima da ${v.torcida.nome}`,
-            nota:`${v.aliada?'ALIADA — isso é traição · ':''}`+
-                 `${v.torcida.membros} membros · custa uma ação da semana`})));
-        cO.corpo.appendChild(opcoes(ops, p.investidas[g.chave] || '',
-          id=>{ if(id) p.investidas[g.chave]=id; else delete p.investidas[g.chave];
-                p.decidido=false; redesenhar(); }));
-      }
-    }
-    dir.appendChild(cO);
-
-    /* ---------- 5. aliados na cidade ---------- */
+    /* =====================================================
+       ALIADOS NA NOSSA CIDADE
+       ===================================================== */
     const aliados = P.aliadosNaCidade(e, e.data.semana);
     const padrao = P.recepcaoPadrao(e);
-    const cA = quadroDobra('aliados', 'Aliados na nossa cidade', el('span',{class:'conta',
-      texto: aliados.length ? `${aliados.length} nesta semana` : 'ninguém nesta semana'}));
-    if(cA.aberto){
+    if(aliados.length || padrao !== null){
+      const pend = aliados.some(a=>!p.recepcao[a.id] && !padrao);
+      const cA = passoCartao(++n, 'Aliados na nossa cidade',
+        aliados.length ? `${aliados.length} nesta semana` : 'ninguém nesta semana',
+        pend);
       cA.corpo.appendChild(el('div',{class:'fase-rot', texto:'Recepção padrão'}));
       cA.corpo.appendChild(opcoes(
         [{id:'', rot:'Decidir caso a caso', nota:'a tela pergunta toda vez'}]
@@ -1512,66 +1641,128 @@
           desabilitada: r.porCabeca*a.estimativa > e.dinheiro && r.id!=='nada'
         })), nivel, id=>{ p.recepcao[a.id]=id; p.decidido=false; redesenhar(); }));
       }
+      (j ? dir : esq).appendChild(cA);
     }
-    dir.appendChild(cA);
 
-    /* ---------- 6. caravana ---------- */
+    /* =====================================================
+       OS OUTROS JOGOS DA CIDADE
+       Torcida de fora de passagem e rival nosso indo pro jogo
+       dele: os dois cabem numa emboscada.
+       ===================================================== */
+    const outros = P.outrosJogosNaCidade(e, e.data.semana);
+    if(outros.length){
+      const feitas = Object.values(p.investidas||{}).filter(Boolean).length;
+      const cO = passoCartao(++n, 'Outros jogos na cidade',
+        feitas ? `${feitas} ${feitas===1?'investida':'investidas'}`
+               : `${outros.length} nesta semana`);
+      for(const g of outros){
+        const inv = P.investidaDe(e, g.chave);
+        cO.corpo.appendChild(el('div',{class:'aliado-cab', html:
+          `<span class="escudinho" style="background:${corClube(g.casa.id)}"></span>
+           <div><b>${g.casa.nome} × ${g.vis.nome}</b>
+             <small>${g.comp} · ${DIA_LONGO[(g.dia||6)-1]||''} · `+
+          `torcida de fora circulando pela praça</small></div>`}));
+
+        /* pode-se cair em cima da torcida visitante ou da própria casa */
+        const opts = [{id:'', rot:'Deixar passar',
+                       nota:'ninguém sai da sede por esse jogo'}]
+          .concat(g.visitantes.map(v=>({
+            id:v.id, rot:`Cair em cima da ${v.torcida.nome}`,
+            nota:`visitante · ${v.aliada?'ALIADA — isso é traição · ':''}`+
+                 `${v.torcida.membros} membros · custa uma ação`})))
+          .concat(TO.mundo.torcidasDe(g.casa.id)
+            .filter(o=>o.id !== e.torcida.id)
+            .map(o=>{
+              const v = (e.relacoes||{})[o.id];
+              const rel = v===undefined ? 0 : v;
+              return {id:o.id, rot:`Cair em cima da ${o.nome}`,
+                nota:`da nossa praça · ${rel>=20?'ALIADA — isso é traição · ':''}`+
+                     `relação ${rel>0?'+':''}${Math.round(rel)} · `+
+                     `${o.membros} membros · custa uma ação`};
+            }));
+        cO.corpo.appendChild(opcoes(opts, (inv&&inv.alvo) || '',
+          id=>{ P.definirInvestida(e, g.chave, id ? {alvo:id} : null); redesenhar(); }));
+
+        /* escolhido o alvo, o olheiro entra também aqui */
+        if(inv && inv.alvo){
+          const rel = P.relatorioDoOlheiro(e, inv.alvo);
+          cO.corpo.appendChild(fichaDoOlheiro(rel));
+          cO.corpo.appendChild(opcoes(P.COMO.map(c=>({
+            id:c.id, rot:c.rot, nota:c.nota})), inv.como,
+            id=>{ P.definirInvestida(e, g.chave, {como:id}); redesenhar(); }));
+          if(inv.como === 'ida'){
+            cO.corpo.appendChild(mapaDoOlheiro(e, P.pontosDeIda(e), inv.olheiro, rel,
+              id=>{ P.definirInvestida(e, g.chave, {olheiro:id}); redesenhar(); }));
+            const lt = inv.olheiro && P.leituraDoPonto(e, rel, inv.olheiro);
+            cO.corpo.appendChild(el('div',{class:'linha-dado', html: lt
+              ? medidor('Chance de interceptar', lt.chance, 100,
+                        lt.chance>55?'var(--verde)':'var(--ouro)')
+              : '<span class="fraco">Falta pôr o olheiro num ponto do mapa.</span>'}));
+          }
+        }
+      }
+      (j ? dir : esq).appendChild(cO);
+    }
+
+    /* =====================================================
+       CARAVANA
+       ===================================================== */
     const listaRotas = P.rotas(e);
     if(listaRotas.length){
       const est = P.estimativaCaravana(e);
-      const cC = quadroDobra('caravana', 'Caravana', el('span',{class:'conta',
-        texto:`${est.vao} para ${j.cidadeAdv} · ${U.dinheiro(est.custo)}`}));
-      if(cC.aberto){
-        cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span>Interessados em ir</span><b>${est.interessados} de ${est.aptos}</b>`}));
-        cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-          medidor('Vontade de viajar', Math.round(est.vontade*100), 100,
-                  est.vontade>0.5?'var(--verde)':'var(--ouro)')}));
+      const cC = passoCartao(++n, 'Caravana',
+        `${est.vao} para ${j.cidadeAdv} · ${U.dinheiro(est.custo)}`);
+      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Interessados em ir</span><b>${est.interessados} de ${est.aptos}</b>`}));
+      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+        medidor('Vontade de viajar', Math.round(est.vontade*100), 100,
+                est.vontade>0.5?'var(--verde)':'var(--ouro)')}));
 
-        const passo = Math.max(1, Math.round(est.interessados/10));
-        const linhaQtd = el('div',{class:'contador'});
-        const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
-        bMenos.disabled = est.vao <= est.minimo;
-        bMais.disabled  = est.vao >= est.interessados;
-        bMenos.onclick = ()=>{ p.caravana = Math.max(est.minimo, est.vao-passo);
-                               p.decidido=false; redesenhar(); };
-        bMais.onclick  = ()=>{ p.caravana = Math.min(est.interessados, est.vao+passo);
-                               p.decidido=false; redesenhar(); };
-        linhaQtd.append(bMenos, el('b',{texto:String(est.vao)}), bMais,
-          el('small',{texto:`embarcam · ${U.dinheiro(est.porCabeca)} por cabeça`}));
-        cC.corpo.appendChild(linhaQtd);
+      const passo = Math.max(1, Math.round(est.interessados/10));
+      const linhaQtd = el('div',{class:'contador'});
+      const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
+      bMenos.disabled = est.vao <= est.minimo;
+      bMais.disabled  = est.vao >= est.interessados;
+      bMenos.onclick = ()=>{ p.caravana = Math.max(est.minimo, est.vao-passo);
+                             p.decidido=false; redesenhar(); };
+      bMais.onclick  = ()=>{ p.caravana = Math.min(est.interessados, est.vao+passo);
+                             p.decidido=false; redesenhar(); };
+      linhaQtd.append(bMenos, el('b',{texto:String(est.vao)}), bMais,
+        el('small',{texto:`embarcam · ${U.dinheiro(est.porCabeca)} por cabeça`}));
+      cC.corpo.appendChild(linhaQtd);
 
-        cC.corpo.appendChild(el('div',{class:'fase-rot', texto:'Estrada'}));
-        cC.corpo.appendChild(opcoes(listaRotas.map(r=>({
-          id:r.id, rot:r.nome, custo:Math.round(r.custo*0.4),
-          nota:`${r.nota}${r.risco?` · risco ${Math.round(r.risco)}`:' · sem território hostil'}`
-        })), (p.rota || listaRotas[0].id), id=>{ p.rota=id; p.decidido=false; redesenhar(); }));
+      cC.corpo.appendChild(el('div',{class:'fase-rot', texto:'Estrada'}));
+      cC.corpo.appendChild(opcoes(listaRotas.map(r=>({
+        id:r.id, rot:r.nome, custo:Math.round(r.custo*0.4),
+        nota:`${r.nota}${r.risco?` · risco ${Math.round(r.risco)}`:' · sem território hostil'}`
+      })), (p.rota || listaRotas[0].id), id=>{ p.rota=id; p.decidido=false; redesenhar(); }));
 
-        const r = P.rotaEscolhida(e);
-        if(r && r.cidades.length>1){
-          cC.corpo.appendChild(el('div',{class:'trajeto', html:
-            r.cidades.map((c,i)=>{
-              const nome = (TO.mundo.cidade(c)||{}).nome || c;
-              const hostil = P.hostilidade(e, c);
-              return `<span class="parada${i===0?' saida':''}${
-                i===r.cidades.length-1?' chegada':''}${hostil>40?' hostil':''}">${nome}</span>`;
-            }).join('<i>›</i>')}));
-          if(r.rodovias.length)
-            cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-              `<span class="fraco">${r.rodovias.join(' · ')}</span>`}));
-        }
-        cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span>Ônibus e pedágio</span><b>${U.dinheiro(est.bruto)}</b>`}));
-        cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span>Rateio entre os que vão</span><b class="positivo">`+
-          `${U.dinheiro(est.rateio)}</b>`}));
-        cC.corpo.appendChild(el('div',{class:'linha-dado total', html:
-          `<span>Sai do caixa</span><b class="negativo">${U.dinheiro(-est.custo)}</b>`}));
+      const r = P.rotaEscolhida(e);
+      if(r && r.cidades.length>1){
+        cC.corpo.appendChild(el('div',{class:'trajeto', html:
+          r.cidades.map((c,i)=>{
+            const nome = (TO.mundo.cidade(c)||{}).nome || c;
+            const hostil = P.hostilidade(e, c);
+            return `<span class="parada${i===0?' saida':''}${
+              i===r.cidades.length-1?' chegada':''}${hostil>40?' hostil':''}">${nome}</span>`;
+          }).join('<i>›</i>')}));
+        if(r.rodovias.length)
+          cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+            `<span class="fraco">${r.rodovias.join(' · ')}</span>`}));
       }
+      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Ônibus e pedágio</span><b>${U.dinheiro(est.bruto)}</b>`}));
+      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Rateio entre os que vão</span><b class="positivo">`+
+        `${U.dinheiro(est.rateio)}</b>`}));
+      cC.corpo.appendChild(el('div',{class:'linha-dado total', html:
+        `<span>Sai do caixa</span><b class="negativo">${U.dinheiro(-est.custo)}</b>`}));
       dir.appendChild(cC);
     }
 
-    /* ---------- 7. fechar o plano ---------- */
+    /* =====================================================
+       FECHAR O PLANO
+       ===================================================== */
     const cF = quadroP('Plano da semana');
     const resumo = [];
     if(!j) resumo.push('Sem jogo nesta semana.');
@@ -1582,8 +1773,12 @@
       if(p.intencao === 'paz') resumo.push('Entrada em paz pelo portão.');
       else{
         const alvo = TO.mundo.torcida(p.alvoTorcida);
+        const onde = p.como === 'ida'
+          ? (p.olheiro ? `na ida ao estádio, em ${P.ponto(p.olheiro).nome}`
+                       : 'na ida ao estádio, sem ponto definido')
+          : 'nos arredores do estádio';
         resumo.push(`${p.intencao==='trair'?'Traição contra':'Ataque à'} `+
-          `${alvo?alvo.nome:'torcida rival'} em ${P.ponto(p.alvo).nome}`+
+          `${alvo?alvo.nome:'torcida rival'} ${onde}`+
           `${p.bombas?` com ${p.bombas} bomba${p.bombas>1?'s':''}`:', só na pedra'}.`);
       }
       for(const d2 of P.destinos(e))
@@ -1593,18 +1788,21 @@
     }
     let gasto = 0;
     for(const a of aliados){
-      const n = P.nivelDe(e, a.id);
-      if(!n || n==='nada') continue;
-      const c = P.custoRecepcao(n, a.estimativa);
+      const nv = P.nivelDe(e, a.id);
+      if(!nv || nv==='nada') continue;
+      const c = P.custoRecepcao(nv, a.estimativa);
       gasto += c;
-      resumo.push(`${P.recepcaoDe(n).rot} para a ${a.torcida.nome} (${U.dinheiro(c)}).`);
+      resumo.push(`${P.recepcaoDe(nv).rot} para a ${a.torcida.nome} (${U.dinheiro(c)}).`);
     }
     let invs = 0;
-    for(const [chave, alvo] of Object.entries(p.investidas||{})){
-      if(!alvo) continue;
-      const o = TO.mundo.torcida(alvo);
+    for(const chave of Object.keys(p.investidas||{})){
+      const inv = P.investidaDe(e, chave);
+      if(!inv || !inv.alvo) continue;
+      const o = TO.mundo.torcida(inv.alvo);
       invs++;
-      resumo.push(`Investida contra a ${o?o.nome:alvo} num jogo da cidade.`);
+      resumo.push(`Investida contra a ${o?o.nome:inv.alvo} `+
+        `${inv.como==='ida' ? 'na ida ao estádio' : 'nos arredores'}, `+
+        'num jogo da cidade.');
     }
     for(const t of resumo)
       cF.corpo.appendChild(el('div',{class:'linha-dado', html:`<span>${t}</span>`}));
@@ -1617,6 +1815,11 @@
       cF.corpo.appendChild(el('div',{class:'linha-dado total', html:
         `<span>A pagar agora</span><b class="negativo">${U.dinheiro(-gasto)}</b>`}));
 
+    const pendentes = P.falta(e);
+    if(pendentes.length)
+      cF.corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="negativo">Falta resolver: ${pendentes.join(', ')}.</span>`}));
+
     const tipo = P.tipoDoJogo(e) === 'fora' ? 'de viagem' : 'em casa';
     if(P.temPadrao(e))
       cF.corpo.appendChild(el('div',{class:'linha-dado', html:
@@ -1625,7 +1828,7 @@
 
     const bt = el('button',{class:'bt destaque larga',
       texto: p.decidido ? 'Plano fechado' : 'Fechar o plano'});
-    bt.disabled = !!p.decidido;
+    bt.disabled = !!p.decidido || pendentes.length > 0;
     bt.onclick = ()=>{
       const r = P.confirmar(e);
       aviso(r.gasto ? `Plano fechado. ${U.dinheiro(r.gasto)} de recepção.`
