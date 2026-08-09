@@ -154,12 +154,42 @@ TO.financeiro = (function(){
   /* GDD §7.3: véspera e dia seguinte da viagem ficam travados. Vale
      sempre que o jogo é fora, em outra cidade — a torcida está
      organizando ou desfazendo a caravana, e a semana perde esses dias
-     mesmo que no fim ninguém embarque. Jogo de domingo não tem volta
-     na mesma semana. */
+     mesmo que no fim ninguém embarque.
+
+     A conta é feita em dias corridos do ano, não em dias da semana:
+     jogo de domingo tem a volta na segunda, que já é da semana
+     seguinte. */
+  const emDias  = (semana, dia) => (semana-1)*7 + (dia-1);
+  const daConta = a => ({semana: Math.floor(a/7)+1, dia:(a%7)+1});
+
+  /* dias corridos ocupados pela caravana de um jogo fora em outra cidade */
+  function diasDaViagem(E, j){
+    if(!j || j.casa || j.neutro) return [];
+    const t = TO.mundo.time(j.adversario);
+    if(!t || t.mapa === E.torcida.mapa) return [];
+    const a = emDias(j.semana, j.dia);
+    return [a-1, a+1].filter(x=>x >= 0);
+  }
+
+  /* dias da semana corrente travados, olhando também a semana anterior
+     (a volta de domingo cai na segunda) e a seguinte */
   function diasDeCaravana(E){
-    if(!precisaCaravana(E)) return [];
-    const d = (E.proximoJogo && E.proximoJogo.dia) || 6;
-    return [d-1, d+1].filter(x=>x>=1 && x<=7);
+    const meu = TO.mundo.time(E.torcida.clubeId);
+    if(!meu || !E.temporada) {
+      if(!precisaCaravana(E)) return [];
+      const d = (E.proximoJogo && E.proximoJogo.dia) || 6;
+      return [d-1, d+1].filter(x=>x>=1 && x<=7);
+    }
+    const fora = [];
+    for(const s of [E.data.semana-1, E.data.semana, E.data.semana+1]){
+      if(s < 1) continue;
+      for(const j of TO.competicoes.jogosDaSemana(E, meu.id, s))
+        for(const a of diasDaViagem(E, j)){
+          const {semana, dia} = daConta(a);
+          if(semana === E.data.semana && !fora.includes(dia)) fora.push(dia);
+        }
+    }
+    return fora.sort((x,y)=>x-y);
   }
 
   function definirPostura(E, id){
@@ -267,7 +297,7 @@ TO.financeiro = (function(){
   }
 
   return {contas, patrimonio, fatorComercial, bairroDeFora,
-          precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana,
+          precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
           posturas, definirPostura, fecharSemana,
           MANUT_SEDE, RECEITA, MANUT, CARAVANA, SEM};
 })();

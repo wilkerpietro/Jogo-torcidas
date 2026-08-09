@@ -264,8 +264,8 @@ TO.estado = (function(){
       sortearProximoJogo(E);
       E.noticias = gerarNoticias(E);
     }
-    /* GDD §7.3: a caravana é cobrada na véspera do jogo */
-    if(TO.financeiro.diasDeCaravana(E)[0] === E.data.dia)
+    /* GDD §7.3: a caravana é cobrada na véspera do jogo da semana */
+    if(E.proximoJogo && E.data.dia === (E.proximoJogo.dia||6) - 1)
       TO.financeiro.cobrarCaravana(E);
 
     TO.membros.passarDia(E);

@@ -1145,12 +1145,16 @@
       agenda.set(`${j.semana}/${j.dia}`, j);
       /* jogo fora, em outra cidade: a véspera e o dia seguinte são da
          caravana e a semana perde esses dias (GDD §7.3) */
-      if(j.casa || j.neutro) continue;
+      const viagem = TO.financeiro.diasDaViagem(e, j);
+      if(!viagem.length) continue;
       const t = TO.mundo.time(j.adversario);
-      if(!t || t.mapa === e.torcida.mapa) continue;
       const cidade = (TO.mundo.cidade(t.mapa)||{}).nome || t.cidade || '';
-      if(j.dia-1 >= 1) caravanas.set(`${j.semana}/${j.dia-1}`, {rot:'IDA', cidade});
-      if(j.dia+1 <= 7) caravanas.set(`${j.semana}/${j.dia+1}`, {rot:'VOLTA', cidade});
+      /* dias corridos: a volta de um jogo de domingo cai na segunda,
+         já na semana seguinte */
+      viagem.forEach((a, i)=>{
+        const semana = Math.floor(a/7)+1, dia = (a%7)+1;
+        caravanas.set(`${semana}/${dia}`, {rot: i===0?'IDA':'VOLTA', cidade});
+      });
     }
 
     const grade = el('div',{class:'mes'});

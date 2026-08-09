@@ -349,7 +349,8 @@ TO.competicoes = (function(){
     return _rivais;
   }
 
-  const MAX_CASA_SEGUIDOS = 3;
+  /* nem quatro jogos seguidos em casa nem quatro fora, por competição */
+  const MAX_SEGUIDOS = 3;
 
   function ajustarMandos(comps){
     const riv = rivaisDiretos();
@@ -410,13 +411,14 @@ TO.competicoes = (function(){
       return n;
     };
 
-    /* quantos jogos em casa passam do teto na sequência deste clube */
+    /* quantos jogos passam do teto de seguidos, dos dois lados: nem
+       quatro em casa nem quatro fora */
     function excesso(comp, clube){
       const l = (agenda.get(comp)||new Map()).get(clube) || [];
-      let seq = 0, exc = 0;
+      let casa = 0, fora = 0, exc = 0;
       for(const j of l){
-        if(j.c === clube){ seq++; if(seq > MAX_CASA_SEGUIDOS) exc++; }
-        else seq = 0;
+        if(j.c === clube){ casa++; fora = 0; if(casa > MAX_SEGUIDOS) exc++; }
+        else            { fora++; casa = 0; if(fora > MAX_SEGUIDOS) exc++; }
       }
       return exc;
     }
@@ -562,8 +564,8 @@ TO.competicoes = (function(){
     return {conflitosRestantes: conf};
   }
 
-  /* quantas vezes um clube joga N vezes seguidas em casa, pra conferência */
-  function piorSequenciaEmCasa(comps){
+  /* pior sequência de jogos seguidos do mesmo lado, pra conferência */
+  function piorSequencia(comps){
     let pior = 0;
     for(const comp of comps){
       const porClube = new Map();
@@ -575,12 +577,16 @@ TO.competicoes = (function(){
           }
       for(const [, l] of porClube){
         l.sort((a,b)=>a.s-b.s);
-        let seq = 0;
-        for(const g of l){ seq = g.casa ? seq+1 : 0; if(seq>pior) pior = seq; }
+        let c = 0, f = 0;
+        for(const g of l){
+          if(g.casa){ c++; f=0; } else { f++; c=0; }
+          pior = Math.max(pior, c, f);
+        }
       }
     }
     return pior;
   }
+  const piorSequenciaEmCasa = piorSequencia;
 
   /* =======================================================
      COPA DO BRASIL
@@ -1054,6 +1060,6 @@ TO.competicoes = (function(){
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
           jogosDaSemana, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
           aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,
-          rivaisDiretos, ajustarMandos, piorSequenciaEmCasa, diaDoJogo,
+          rivaisDiretos, ajustarMandos, piorSequencia, piorSequenciaEmCasa, diaDoJogo,
           SEMANAS_ANO, INICIO_REGIONAL, INICIO_NACIONAL};
 })();
