@@ -171,6 +171,17 @@ TO.diaJogo.arredores = (function(){
     return false;
   }
 
+  /* Empurrão de separação: só reto ou pelo eixo livre, nunca girando.
+     Usar o mover completo aqui faz o disco encostado na parede deslizar
+     de lado a cada empurrãozinho, e a aglomeração nunca assenta. */
+  function empurrar(ent,dx,dy){
+    const r=raioMalha(ent.r);
+    if(tentar(ent,dx,dy,r)) return true;
+    if(dx && tentar(ent,dx,0,r)) return true;
+    if(dy && tentar(ent,0,dy,r)) return true;
+    return false;
+  }
+
   /* Um segmento cruza alguma grade em pé? Serve pra PM não
      tentar perseguir quem está do outro lado da barreira. */
   function atravessaGrade(x1,y1,x2,y2,mods){
@@ -358,6 +369,30 @@ TO.diaJogo.arredores = (function(){
      ======================================================= */
   function montarGrades(){
     const mods=[];
+
+    /* grades de organizar fila: polilinha fatiada em módulos, sólidas
+       e inquebráveis. Entram na mesma lista das outras porque colisão,
+       rota e desenho já sabem lidar com módulo — muda só o tipo. */
+    for(const f of D.filas||[]){
+      const pts=f.pontos;
+      for(let i=1;i<pts.length;i++){
+        const ax=pts[i-1][0], ay=pts[i-1][1], bx=pts[i][0], by=pts[i][1];
+        const vx=bx-ax, vy=by-ay, comp=Math.hypot(vx,vy)||1;
+        const n=Math.max(1,Math.round(comp/22));
+        const meia=(comp/n)/2;
+        for(let k=0;k<n;k++){
+          const t=(k+0.5)/n;
+          mods.push({
+            grade:f.id, tipo:'fila',
+            x:ax+vx*t, y:ay+vy*t,
+            ux:vx/comp, uy:vy/comp,
+            meia, esp:(f.espessura||9)/2,
+            hpMax:1, hp:1, tremor:0
+          });
+        }
+      }
+    }
+
     for(const g of D.grades){
       const n=g.modulos;
       const vx=g.ate.x-g.de.x, vy=g.ate.y-g.de.y;
@@ -366,7 +401,7 @@ TO.diaJogo.arredores = (function(){
       for(let i=0;i<n;i++){
         const t=(i+0.5)/n;
         mods.push({
-          grade:g.id,
+          grade:g.id, tipo:'cordao',
           x:g.de.x+vx*t, y:g.de.y+vy*t,
           ux:vx/comp, uy:vy/comp,          // direção da grade
           meia, esp:(g.espessura||10)/2,
@@ -447,62 +482,32 @@ TO.diaJogo.arredores = (function(){
   const COR_LADO={mandante:'#c0392b', visitante:'#2a5fa8'};
   const COR_RGB ={mandante:'192,57,43', visitante:'42,95,168'};
 
-  /* Portão desenhado orientado: batente no chão, dois postes, boca
-     iluminada e setas apontando pra dentro. O eixo +x local é o
-     sentido de entrada, então tudo é desenhado uma vez só e girado. */
-  function desenharPortao(c,e,t){
+  /* Portão. Em jogo é só a barra no chão, atravessada no sentido de
+     entrada — a foto já diz que ali é portão, o resto era enfeite.
+     No editor ganha alcance, etiqueta e alça, que aí servem pra
+     posicionar. */
+  function desenharPortao(c,e,t,editor){
     const cor=COR_LADO[e.lado]||'#8a6a2a';
     const rgb=COR_RGB[e.lado]||'138,106,42';
     const d=e.dir||[0,-1];
-    const ang=Math.atan2(d[1],d[0]);
-    const larg=21, fundo=30;
-    const pulso=(Math.sin(t*2.2)+1)/2;
+    const larg=21;
 
     c.save();
     c.translate(e.x,e.y);
 
-    // alcance de entrada, no chão e sem girar
-    c.strokeStyle=`rgba(${rgb},${.18+pulso*.14})`;
-    c.lineWidth=1.4; c.setLineDash([4,7]);
-    c.beginPath(); c.arc(0,0,e.raio||34,0,7); c.stroke(); c.setLineDash([]);
-
-    c.rotate(ang);
-
-    // boca do portão: escurece entrando, com brilho de lâmpada
-    const g=c.createLinearGradient(0,0,fundo,0);
-    g.addColorStop(0,'rgba(255,232,170,.30)');
-    g.addColorStop(1,'rgba(10,9,8,.72)');
-    c.fillStyle=g;
-    c.beginPath();
-    c.moveTo(0,-larg); c.lineTo(fundo,-larg+5);
-    c.lineTo(fundo, larg-5); c.lineTo(0, larg);
-    c.closePath(); c.fill();
-
-    // batente no chão
-    c.fillStyle=`rgba(${rgb},.85)`; c.fillRect(-3,-larg,6,larg*2);
-    c.fillStyle='rgba(255,240,205,.55)'; c.fillRect(-3,-larg,6,3);
-    c.fillRect(-3,larg-3,6,3);
-
-    // postes dos dois lados
-    for(const s of [-1,1]){
-      const py=s*larg;
-      c.fillStyle='rgba(0,0,0,.45)'; c.fillRect(-7,py-5+2,15,10);
-      c.fillStyle='#6f6a60';         c.fillRect(-7,py-5,15,10);
-      c.fillStyle=cor;               c.fillRect(-7,py-5,15,3.5);
+    if(editor){
+      const pulso=(Math.sin(t*2.2)+1)/2;
+      c.strokeStyle=`rgba(${rgb},${.18+pulso*.14})`;
+      c.lineWidth=1.4; c.setLineDash([4,7]);
+      c.beginPath(); c.arc(0,0,e.raio||34,0,7); c.stroke(); c.setLineDash([]);
     }
 
-    // setas: pra onde se entra
-    for(let i=0;i<3;i++){
-      const x=6+i*9, a=(.85-i*.2)*(.65+pulso*.35);
-      c.strokeStyle=`rgba(255,236,190,${a})`; c.lineWidth=2.6;
-      c.lineCap='round'; c.lineJoin='round';
-      c.beginPath(); c.moveTo(x,-7); c.lineTo(x+5,0); c.lineTo(x,7); c.stroke();
-    }
-    c.lineCap='butt';
+    c.rotate(Math.atan2(d[1],d[0]));
+    c.fillStyle='rgba(0,0,0,.45)'; c.fillRect(-3,-larg+2,6,larg*2);
+    c.fillStyle=cor;               c.fillRect(-4,-larg,7,larg*2);
     c.restore();
 
-    // etiqueta atrás do portão, sempre na horizontal
-    etiqueta(c, e.rot, e.x-d[0]*(fundo+22), e.y-d[1]*(fundo+22), cor);
+    if(editor) etiqueta(c, e.rot, e.x-d[0]*52, e.y-d[1]*52, cor);
   }
 
   function etiqueta(c,txt,x,y,cor){
@@ -517,8 +522,10 @@ TO.diaJogo.arredores = (function(){
   function desenharSobreposicoes(c, mods, opc){
     opc=opc||{};
 
-    // ---- spawns: faixa translúcida, não tapa a foto
-    for(const s of D.spawns){
+    /* ---- spawns: invisíveis em jogo. São ponto de partida, não
+       informação que o jogador precise ver a noite toda. Só o editor
+       mostra, porque lá é preciso enxergar pra arrastar. */
+    if(opc.editor) for(const s of D.spawns){
       const cor=COR_LADO[s.lado]||'#8a6a2a';
       const rgb=COR_RGB[s.lado]||'138,106,42';
       const naBorda = s.x<60?'oeste' : s.x>W-60?'leste' : s.y>H-60?'sul':'norte';
@@ -545,13 +552,27 @@ TO.diaJogo.arredores = (function(){
     }
 
     // ---- portões
-    for(const e of D.entradas) desenharPortao(c,e,opc.t||0);
+    for(const e of D.entradas) desenharPortao(c,e,opc.t||0,opc.editor);
 
-    // ---- grades de proteção
+    // ---- grades
     for(const m of mods){
       const px=-m.uy, py=m.ux;
       const ax=m.x-m.ux*m.meia, ay=m.y-m.uy*m.meia;
       const bx=m.x+m.ux*m.meia, by=m.y+m.uy*m.meia;
+
+      // grade de organizar fila: aço, sem barra de vida, não quebra
+      if(m.tipo==='fila'){
+        c.lineCap='round';
+        c.strokeStyle='rgba(0,0,0,.45)'; c.lineWidth=m.esp*2+3;
+        c.beginPath(); c.moveTo(ax+2,ay+3); c.lineTo(bx+2,by+3); c.stroke();
+        c.strokeStyle='#9aa0a6'; c.lineWidth=m.esp*2;
+        c.beginPath(); c.moveTo(ax,ay); c.lineTo(bx,by); c.stroke();
+        c.strokeStyle='rgba(235,240,245,.55)'; c.lineWidth=1.6;
+        c.beginPath(); c.moveTo(ax,ay); c.lineTo(bx,by); c.stroke();
+        c.lineCap='butt';
+        continue;
+      }
+
       if(m.hp<=0){
         c.strokeStyle='rgba(120,100,40,.35)'; c.lineWidth=3;
         c.setLineDash([4,6]);
@@ -607,7 +628,7 @@ TO.diaJogo.arredores = (function(){
     reconstruir, construirMalhaDosPoligonos,
     codificarMascara, decodificarMascara,
     caminhavel, cabe, celulaLivre, cabeCorpo, pontoLivreMaisProximo,
-    mover, livre, livrePara, raioMalha, atravessaGrade,
+    mover, empurrar, livre, livrePara, raioMalha, atravessaGrade,
     criarCampo, campoDaEntrada, limparCampos, celulasDeGrades,
     montarGrades, barrarGrades,
     desenharFundo, desenharSobreposicoes,

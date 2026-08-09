@@ -234,13 +234,27 @@ TO.diaJogo.combate = (function(){
         if(alvo && !J.paz){ ax=alvo.x; ay=alvo.y; }
         else if(d.doJogador && lider && !J.paz){
           const i=meus.indexOf(d), s=sl[i<0?0:i]||{x:0,y:0};
+          /* O slot é geometria pura e pode cair em cima de prédio, ou
+             fora da cena quando o líder está colado numa borda. Nesse
+             caso puxa pro ponto válido mais perto.
+             Só nesse caso: pontoLivreMaisProximo devolve CENTRO DE
+             CÉLULA, então puxar sempre faria vários seguidores mirarem
+             exatamente o mesmo ponto, empilhando e se empurrando. */
           ax=lider.x+s.x; ay=lider.y+s.y;
+          if(!A.livrePara(ax,ay,A.raioMalha(d.r))){
+            const q=A.pontoLivreMaisProximo(ax,ay,d.r);
+            ax=q.x; ay=q.y;
+          }
         } else {
           campo=A.campoDaEntrada(d.entrada,J.grades,J.versaoGrades); usarCampo=true;
           const e=D.entradas.find(x=>x.id===d.entrada);
           if(e && U.dist(d.x,d.y,e.x,e.y)<(e.raio||34)){ entrarNoEstadio(J,d); continue; }
         }
       }
+
+      // rastro de diagnóstico: qual decisão e qual alvo, por disco
+      d._ramo = recua?'recuo' : usarCampo?'campo' : (d.doJogador&&lider)?'formacao':'inimigo';
+      d._alvo = usarCampo?null:[Math.round(ax),Math.round(ay)];
 
       let dirx,diry;
       if(usarCampo && campo){
@@ -251,7 +265,7 @@ TO.diaJogo.combate = (function(){
         if(c.semRota){
           let g=null, md=1e9;
           for(const x of J.grades){
-            if(x.hp<=0) continue;
+            if(x.hp<=0 || x.tipo==='fila') continue;
             const dd=U.dist(d.x,d.y,x.x,x.y);
             if(dd<md){md=dd;g=x;}
           }
@@ -266,12 +280,48 @@ TO.diaJogo.combate = (function(){
         }
       } else {
         const ddx=ax-d.x, ddy=ay-d.y, dist=Math.hypot(ddx,ddy)||1;
-        if(dist>5){dirx=ddx/dist; diry=ddy/dist;} else {dirx=0;diry=0;}
+        /* Histerese: chega com 9, só volta a andar depois de 22. Sem as
+           duas soleiras ele oscila em cima do limite — para com 8, a
+           separação empurra pra 10, anda de novo — e é isso que faz o
+           bonde inteiro parecer inquieto parado no lugar. */
+        if(d.acomodado && dist>22) d.acomodado=false;
+        if(dist<=9) d.acomodado=true;
+        if(d.acomodado){
+          dirx=0; diry=0; d.melhorDist=undefined; d.semGanho=0;
+        } else {
+          /* Desistência: se em 0,8 s ele não encostou nem 2 px mais perto,
+             o alvo é inalcançável daqui. Para, em vez de empurrar pedra.
+             Se o alvo se afasta muito, é porque mudou — recomeça a contar. */
+          if(d.melhorDist===undefined || dist<d.melhorDist-2){
+            d.melhorDist=dist; d.semGanho=0;
+          } else if(dist>d.melhorDist+25){
+            d.melhorDist=dist; d.semGanho=0;
+          } else {
+            d.semGanho=(d.semGanho||0)+dt;
+          }
+          if(d.semGanho>0.8){dirx=0;diry=0;}
+          else {dirx=ddx/dist; diry=ddy/dist;}
+        }
       }
 
       const vel=P.velocidade*(d.fugindo?1.25:recua?1.15:1)*(0.75+nivelMoral(d.moral)*0.25);
-      d.vx += (dirx*vel-d.vx)*Math.min(1,dt*6);
-      d.vy += (diry*vel-d.vy)*Math.min(1,dt*6);
+      if(!dirx && !diry && d.acomodado){
+        /* Chegou: para de verdade. Deixar o steering rodando com alvo
+           a 8 px mantém micromovimento que, com 60 discos na tela,
+           lê como uma multidão inquieta. Quem chegou, chegou. */
+        d.vx=0; d.vy=0; d.travado=0;
+        continue;
+      }
+      if(!dirx && !diry){
+        /* chegou onde queria: freia e assenta. Decaimento exponencial
+           sozinho nunca chega a zero, e o disco fica vibrando de leve —
+           com 60 deles na tela isso vira inquietação visível. */
+        d.vx*=0.70; d.vy*=0.70;
+        if(Math.hypot(d.vx,d.vy)<3.5){d.vx=0; d.vy=0;}
+      } else {
+        d.vx += (dirx*vel-d.vx)*Math.min(1,dt*6);
+        d.vy += (diry*vel-d.vy)*Math.min(1,dt*6);
+      }
       const px=d.x, py=d.y;
       A.mover(d, d.vx*dt, d.vy*dt);
       A.barrarGrades(d,J.grades);
@@ -419,7 +469,7 @@ TO.diaJogo.combate = (function(){
       }
 
       for(const g of J.grades){
-        if(g.hp<=0) continue;
+        if(g.hp<=0 || g.tipo==='fila') continue;   // fila não quebra
         if(U.dist(g.x,g.y,a.x,a.y)>a.r+g.meia+4) continue;
         g.hp-=a.forca*nivelMoral(a.moral)*P.dano*dt*1.6;
         g.tremor=Math.min(5,g.tremor+0.5); a.hostil=3.5;
@@ -600,7 +650,7 @@ TO.diaJogo.combate = (function(){
         for(const d of alvos) if(U.dist(d.x,d.y,p.x,p.y)<32){
           d.hp-=22*P.dano; d.tremor=5; if(d.hp<=0) derrubar(J,d); break;
         }
-        for(const g of J.grades) if(g.hp>0&&U.dist(g.x,g.y,p.x,p.y)<26){g.hp-=30;g.tremor=4;break;}
+        for(const g of J.grades) if(g.hp>0&&g.tipo!=='fila'&&U.dist(g.x,g.y,p.x,p.y)<26){g.hp-=30;g.tremor=4;break;}
       } else {
         p.explosao=0;
         for(const d of alvos){
@@ -613,6 +663,7 @@ TO.diaJogo.combate = (function(){
           }
         }
         for(const g of J.grades){
+          if(g.tipo==='fila') continue;
           const dist=U.dist(g.x,g.y,p.x,p.y);
           if(g.hp>0&&dist<92){
             g.hp-=110-dist*0.6; g.tremor=5;
@@ -626,14 +677,24 @@ TO.diaJogo.combate = (function(){
     J.projeteis=J.projeteis.filter(p=>!p.morto||(p.explosao!==undefined&&p.explosao<0.45));
   }
 
+  const FOLGA=1.5;      // sobreposição tolerada, em px
+  const MACIEZ=0.45;    // fração da sobreposição resolvida por quadro
   function separar(J){
     const t=J.discos.filter(d=>d.vivo);
     for(let i=0;i<t.length;i++)for(let j=i+1;j<t.length;j++){
       const a=t[i],b=t[j],dx=b.x-a.x,dy=b.y-a.y;
       const d=Math.hypot(dx,dy)||0.01, min=a.r+b.r;
-      if(d<min){
-        const e=(min-d)/2, nx=dx/d, ny=dy/d;
-        A.mover(a,-nx*e,-ny*e); A.mover(b, nx*e, ny*e);
+      /* Resolver a sobreposição inteira todo quadro faz o par bater e
+         voltar pra sempre. Com folga e resolução parcial, eles encostam
+         e acomodam — que é como gente parada em aglomeração fica. */
+      if(d<min-FOLGA){
+        const e=(min-FOLGA-d)*MACIEZ, nx=dx/d, ny=dy/d;
+        /* O líder é âncora (GDD §16.2): não é empurrado pelos próprios
+           seguidores. Sem isso ele deriva, os slots da formação vão
+           junto, e o bonde inteiro persegue a si mesmo sem parar. */
+        if(a.lider)      A.empurrar(b, nx*e*2, ny*e*2);
+        else if(b.lider) A.empurrar(a,-nx*e*2,-ny*e*2);
+        else { A.empurrar(a,-nx*e,-ny*e); A.empurrar(b, nx*e, ny*e); }
       }
     }
     /* ninguém atravessa policial: a PM é obstáculo mesmo pra quem
@@ -642,7 +703,7 @@ TO.diaJogo.combate = (function(){
     for(const a of t) for(const p of pms){
       const dx=a.x-p.x, dy=a.y-p.y;
       const d=Math.hypot(dx,dy)||0.01, min=a.r+p.r;
-      if(d<min) A.mover(a, dx/d*(min-d), dy/d*(min-d));
+      if(d<min-FOLGA) A.empurrar(a, dx/d*(min-FOLGA-d)*MACIEZ, dy/d*(min-FOLGA-d)*MACIEZ);
     }
   }
 

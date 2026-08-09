@@ -65,7 +65,8 @@ TO.diaJogo.ponte = (function(){
   function desenhar(){
     if(!J) return;
     escala=ajustar(ctx,cv,A.W,A.H);
-    C.desenhar(J,ctx,{mostrarMalha:ED.ativo&&ED.mostrarMalha,
+    C.desenhar(J,ctx,{editor:ED.ativo,
+                      mostrarMalha:ED.ativo&&ED.mostrarMalha,
                       mostrarPostos:ED.ativo&&ED.mostrarPostos});
     if(ED.ativo) desenharEditor(ctx);
     ctx.setTransform(1,0,0,1,0,0);

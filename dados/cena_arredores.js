@@ -165,6 +165,32 @@ TO.dados.cenaArredores = {
      Cada linha é fatiada em módulos quebráveis — derrubar um
      módulo já conta como cordão rompido (GDD §15.3).
      ------------------------------------------------------- */
+  /* -------------------------------------------------------
+     GRADES DE ORGANIZAR FILA  (traços roxos da imagem)
+     Diferentes da grade de proteção: não fazem parte do cordão,
+     não quebram e não disparam ruptura. Servem pra obrigar o
+     zigue-zague antes do portão — o tempo que isso custa é a
+     janela pra briga acontecer mesmo quando um dos lados não
+     quer brigar.
+     Cada uma é uma polilinha; o código fatia em módulos.
+     ------------------------------------------------------- */
+  filas:[
+    // ---- lado mandante, em frente à fachada sul
+    {id:'fila_m1', pontos:[[234,210],[293,200],[347,201]], espessura:9},
+    {id:'fila_m2', pontos:[[193,333],[227,312],[277,283],[318,279]], espessura:9},
+    {id:'fila_m3', pontos:[[373,343],[413,310],[460,269]], espessura:9},
+
+    // ---- lado visitante, a leste da grade de proteção
+    {id:'fila_v1', pontos:[[1295,170],[1367,163]], espessura:9},
+    {id:'fila_v2', pontos:[[1265,324],[1300,320],[1325,297],[1398,285],[1391,365]], espessura:9},
+    {id:'fila_v3', pontos:[[1190,383],[1337,402]], espessura:9},
+    /* encurtada: no traço original ela ia da quina da praça até o prédio,
+       sem vão nenhum, e selava o corredor leste — o 1º escalão visitante
+       não chegava ao portão. Com o vão a leste, o zigue-zague fecha:
+       passa por aqui, depois pelo vão leste da v3, depois pelo oeste da v2. */
+    {id:'fila_v4', pontos:[[1267,460],[1352,459]], espessura:9}
+  ],
+
   grades:[
     {id:'grade_norte', rot:'GRADE DE PROTEÇÃO',
      de:{x:1186,y:205}, ate:{x:1197,y:432}, modulos:9, espessura:11},
