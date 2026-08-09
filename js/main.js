@@ -776,98 +776,13 @@
   }
 
   /* =======================================================
-     MAPA DA CIDADE — bairros por zona (GDD §19.3)
-     ======================================================= */
-  const COR_CLASSE = {
-    'Nobre':'#d9a441', 'Classe Média':'#8d8d8d',
-    'Classe Baixa':'#a9714a', 'Favela':'#9d4a4a'
-  };
-
-  function pintarMapa(){
-    const e = E(), pg = U.$('.pagina[data-pag="mapa"]');
-    pg.innerHTML='';
-    const c = TO.mundo.cidade(e.torcida.mapa);
-    pg.appendChild(el('div',{class:'titulo-pagina',
-      texto:`Mapa — ${c?c.nome:'cidade'}`}));
-
-    if(!c){ pg.appendChild(emConstrucao('Sem cidade','Torcida sem praça definida.')); return; }
-
-    const grade = el('div',{class:'principal-lateral'});
-    const esq = el('div'), dir = el('div');
-
-    const porZona = TO.mundo.bairrosPorZona(c.id);
-    const sede = TO.mundo.bairroDaSede(e.torcida);
-
-    for(const z of TO.mundo.ZONAS){
-      const lista = porZona[z] || [];
-      if(!lista.length) continue;
-      const cz = cartao(`Zona ${z}`, `${lista.length} bairros`);
-      const tab = el('table',{class:'dados'});
-      tab.appendChild(el('thead',null,[el('tr',{html:
-        `<th style="width:42%">Bairro</th><th style="width:24%">Classe</th>
-         <th style="width:14%">Receita</th><th>Sedes</th>`})]));
-      const tb = el('tbody');
-      for(const b of lista){
-        const ehSede = sede && b.id===sede.id;
-        const tr = el('tr', ehSede?{class:'selecionada'}:null);
-        const donas = (b.sedes||[]).join(', ') || '—';
-        tr.innerHTML =
-          `<td>${ehSede?'<span class="ponto"></span>':''}${b.nome}</td>
-           <td style="color:${COR_CLASSE[b.classe]||'#8d8d8d'}">${b.classe}</td>
-           <td class="num">${b.mult.toFixed(1)}×</td>
-           <td class="fraco">${donas}</td>`;
-        tb.appendChild(tr);
-      }
-      tab.appendChild(tb);
-      cz.corpo.appendChild(tab);
-      esq.appendChild(cz);
-    }
-
-    const ci = cartao('A praça');
-    ci.corpo.innerHTML =
-      `<div class="linha-dado"><span>Mapa</span>
-         <b>${c.grade[0]}×${c.grade[1]} · ${c.quarteiroes} quarteirões</b></div>
-       <div class="linha-dado"><span>Nível</span><b>${c.nivel} · ${c.tamanho}</b></div>
-       <div class="linha-dado"><span>Bairros</span><b>${c.bairros.length}</b></div>
-       <div class="linha-dado"><span>População</span><b>${U.numero(c.populacao)}</b></div>
-       <div class="linha-dado"><span>Metrô</span><b>${c.temMetro?'sim':'não'}</b></div>
-       <div class="linha-dado"><span>Estádios</span><b>${c.estadios.length}</b></div>
-       <div class="linha-dado"><span>Multiplicador médio</span><b>${c.multMedio.toFixed(2)}×</b></div>
-       <div class="linha-dado"><span>PM no mapa</span>
-         <b>${c.pms} PM · ${c.guardas} guardas · ${c.choque} choque</b></div>
-       <div class="linha-dado"><span>Sua sede</span>
-         <b>${sede?sede.nome:'—'}${sede?` (${sede.mult.toFixed(1)}×)`:''}</b></div>`;
-    dir.appendChild(ci);
-
-    const ce = cartao('Estádios', `${c.estadios.length}`);
-    for(const nome of c.estadios)
-      ce.corpo.appendChild(el('div',{class:'linha-dado', html:`<span>${nome}</span>`}));
-    if(c.rodovias.length){
-      ce.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">Rodovias: ${c.rodovias.join(' · ')}</span>`}));
-    }
-    dir.appendChild(ce);
-
-    /* GDD §6.2: de quem dá pra recrutar nesta praça */
-    const ct = cartao('Torcedores na praça', `${c.times.length} clubes`);
-    for(const t of c.times.slice(0,10)){
-      const base = TO.mundo.baseDeRecrutamento(c.id, t.clubeId);
-      const meu = t.clubeId===e.torcida.clubeId;
-      ct.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>${meu?'<span class="ponto"></span>':''}${t.clube}</span>
-         <b>${t.perc}% · ${U.numero(t.torcedores)}</b>
-         ${meu?`<span class="fraco">${U.numero(base)} fora de organizada</span>`:''}`}));
-    }
-    dir.appendChild(ct);
-
-    grade.append(esq, dir);
-    pg.appendChild(grade);
-  }
-
-  /* =======================================================
      PÁGINAS AINDA POR FAZER
      ======================================================= */
   const PENDENTES = {
+    mapa:['Mapa da cidade',
+      'Os 348 bairros já estão nos dados, com zona, classe social e multiplicador. '+
+      'Falta o mapa em si — sede, subsedes, bares, lojas e território rival sobre '+
+      'o desenho da praça (GDD §19.3).'],
     competicoes:['Competições',
       'Cinco divisões, 23 estaduais, 4 regionais e a Copa do Brasil (GDD §18). '+
       'O motor de tabelas da era Unity está em legado/unity e serve de base.'],
@@ -1024,7 +939,6 @@
     else if(pagina==='torcida') pintarTorcida();
     else if(pagina==='financeiro') pintarFinanceiro();
     else if(pagina==='diplomacia') pintarDiplomacia();
-    else if(pagina==='mapa') pintarMapa();
     else pintarPendente(pagina);
   }
 
