@@ -1,0 +1,35 @@
+/* CIDADES — mapas e efetivo de rua
+   GERADO por ferramentas/importar_planilha.py — nao editar a mao.
+   30 registros. */
+TO.dados.cidades = [
+  {"id": "rio-de-janeiro", "nome": "Rio de Janeiro", "torcedores": 1060, "nivel": 1, "guardas": 5, "pms": 12, "choque": 3, "personagens": 1080, "quarteiroes": 144, "grade": [12, 12], "npcsPorQuarteirao": 7.5},
+  {"id": "sao-paulo", "nome": "São Paulo", "torcedores": 935, "nivel": 1, "guardas": 5, "pms": 12, "choque": 3, "personagens": 955, "quarteiroes": 144, "grade": [12, 12], "npcsPorQuarteirao": 6.63},
+  {"id": "belo-horizonte", "nome": "Belo Horizonte", "torcedores": 530, "nivel": 1, "guardas": 5, "pms": 12, "choque": 3, "personagens": 550, "quarteiroes": 144, "grade": [12, 12], "npcsPorQuarteirao": 3.82},
+  {"id": "recife", "nome": "Recife", "torcedores": 490, "nivel": 1, "guardas": 5, "pms": 12, "choque": 3, "personagens": 510, "quarteiroes": 144, "grade": [12, 12], "npcsPorQuarteirao": 3.54},
+  {"id": "fortaleza", "nome": "Fortaleza", "torcedores": 430, "nivel": 1, "guardas": 5, "pms": 12, "choque": 3, "personagens": 450, "quarteiroes": 144, "grade": [12, 12], "npcsPorQuarteirao": 3.12},
+  {"id": "belem", "nome": "Belém", "torcedores": 390, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 399, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 3.99},
+  {"id": "curitiba", "nome": "Curitiba", "torcedores": 375, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 384, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 3.84},
+  {"id": "bahia", "nome": "Bahia", "torcedores": 325, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 334, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 3.34},
+  {"id": "porto-alegre", "nome": "Porto Alegre", "torcedores": 300, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 309, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 3.09},
+  {"id": "goiania", "nome": "Goiânia", "torcedores": 290, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 299, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 2.99},
+  {"id": "paraiba", "nome": "Paraíba", "torcedores": 260, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 269, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 2.69},
+  {"id": "interior-do-rs", "nome": "Interior do RS", "torcedores": 260, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 269, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 2.69},
+  {"id": "rio-grande-do-norte", "nome": "Rio Grande do Norte", "torcedores": 245, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 254, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 2.54},
+  {"id": "alagoas", "nome": "Alagoas", "torcedores": 225, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 234, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 2.34},
+  {"id": "sergipe", "nome": "Sergipe", "torcedores": 220, "nivel": 2, "guardas": 2, "pms": 6, "choque": 1, "personagens": 229, "quarteiroes": 100, "grade": [10, 10], "npcsPorQuarteirao": 2.29},
+  {"id": "litoral-catarinense", "nome": "Litoral Catarinense", "torcedores": 180, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 184, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 2.88},
+  {"id": "regiao-de-campinas", "nome": "Região de Campinas", "torcedores": 180, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 184, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 2.88},
+  {"id": "brasilia", "nome": "Brasília", "torcedores": 180, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 184, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 2.88},
+  {"id": "interior-de-sp", "nome": "Interior de SP", "torcedores": 160, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 164, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 2.56},
+  {"id": "interior-de-sc", "nome": "Interior de SC", "torcedores": 150, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 154, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 2.41},
+  {"id": "santos", "nome": "Santos", "torcedores": 150, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 154, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 2.41},
+  {"id": "suburbio-carioca", "nome": "Subúrbio Carioca", "torcedores": 130, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 134, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 2.09},
+  {"id": "maranhao", "nome": "Maranhão", "torcedores": 130, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 134, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 2.09},
+  {"id": "manaus", "nome": "Manaus", "torcedores": 120, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 124, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 1.94},
+  {"id": "interior-do-pr", "nome": "Interior do PR", "torcedores": 120, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 124, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 1.94},
+  {"id": "interior-de-pe", "nome": "Interior de PE", "torcedores": 110, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 114, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 1.78},
+  {"id": "interior-do-ce", "nome": "Interior do CE", "torcedores": 100, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 104, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 1.62},
+  {"id": "mato-grosso", "nome": "Mato Grosso", "torcedores": 70, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 74, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 1.16},
+  {"id": "interior-de-minas", "nome": "Interior de Minas", "torcedores": 60, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 64, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 1.0},
+  {"id": "abc-paulista", "nome": "ABC Paulista", "torcedores": 60, "nivel": 3, "guardas": 1, "pms": 3, "choque": 0, "personagens": 64, "quarteiroes": 64, "grade": [8, 8], "npcsPorQuarteirao": 1.0}
+];

@@ -1,87 +1,235 @@
 /* =========================================================
-   PAINÉIS — blocos de conteúdo das telas de gestão
+   PAINÉIS — cartões, sub-abas, tabelas e listas
+   Vocabulário visual dos mockups: cartão com faixa de título,
+   sub-aba ativa em vermelho, número com barrinha ao lado.
    ========================================================= */
 
-.painel{
-  background:var(--painel);border:1px solid var(--linha);
-  padding:11px 13px;margin-bottom:11px;
+/* ---------- cartão ---------- */
+.cartao{
+  background:var(--painel);
+  border:1px solid var(--linha);
+  margin-bottom:11px;
+  display:flex;flex-direction:column;
 }
-.painel h2{
-  font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--fraco);
-  margin-bottom:9px;font-weight:600;display:flex;align-items:center;gap:8px;
+.cartao>h2{
+  background:var(--painel-alto);
+  border-bottom:1px solid var(--linha);
+  padding:8px 12px;
+  font-family:var(--titulo);font-size:12px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:#cfcfcf;
+  display:flex;align-items:center;gap:8px;
 }
+.cartao>h2 .conta{
+  margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--fraco);
+  letter-spacing:.04em;text-transform:none;
+}
+.cartao>.corpo{padding:11px 12px}
+.cartao>.rodape{
+  border-top:1px solid var(--linha);padding:8px 12px;
+  display:flex;gap:8px;justify-content:flex-end;
+}
+
 .tag{
-  font-family:var(--mono);font-size:9px;letter-spacing:.06em;
-  background:#2a2a26;border:1px solid var(--linha);color:var(--texto);
+  font-family:var(--mono);font-size:9px;letter-spacing:.05em;
+  background:#2a2a2a;border:1px solid var(--linha);color:var(--texto);
   padding:1px 6px;text-transform:none;
 }
-.tag.alerta{border-color:#6b3a32;color:var(--vermelho)}
 
-.colunas{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-@media(max-width:980px){.colunas{grid-template-columns:1fr}}
+/* ---------- grades de layout ---------- */
+.colunas{display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:start}
+.colunas-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;align-items:start}
+.principal-lateral{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:11px;align-items:start}
+.lista-detalhe{display:grid;grid-template-columns:230px minmax(0,1fr);gap:11px;align-items:start}
+@media(max-width:1080px){
+  .colunas,.colunas-3,.principal-lateral,.lista-detalhe{grid-template-columns:1fr}
+}
 
-/* ---------- linhas genéricas ---------- */
+/* ---------- sub-abas ---------- */
+.subabas{display:flex;gap:1px;background:var(--linha);border:1px solid var(--linha);margin-bottom:11px}
+.subabas button{
+  flex:1;background:var(--painel);border:0;padding:9px 10px;cursor:pointer;
+  font-family:var(--titulo);font-size:12.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fraco);
+}
+.subabas button:hover{background:#202020;color:var(--texto)}
+.subabas button.on{background:var(--rubro);color:#fff}
+.subabas button:disabled{opacity:.35;cursor:default}
+.subabas button:disabled:hover{background:var(--painel);color:var(--fraco)}
+
+/* ---------- linhas de dado ---------- */
 .linha-dado{
-  display:flex;justify-content:space-between;align-items:baseline;
-  padding:5px 0;border-bottom:1px solid var(--sulco);
-  font-size:13.5px;letter-spacing:.03em;
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:6px 0;border-bottom:1px solid var(--sulco);
 }
 .linha-dado:last-child{border-bottom:0}
-.linha-dado b{font-family:var(--mono);font-size:12.5px}
-.linha-dado .fraco{color:var(--fraco);font-family:var(--mono);font-size:10.5px}
-.positivo{color:var(--verde)}
+.linha-dado b{font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.linha-dado .fraco{color:var(--fraco);font-size:12px}
+.positivo{color:var(--verde-vivo)}
 .negativo{color:var(--vermelho)}
 
-/* ---------- itens de lista (bondes, membros, patrimônio) ---------- */
+/* bloco grande de valor, como no Fluxo Financeiro */
+.valorao{padding:7px 0 10px;border-bottom:1px solid var(--sulco)}
+.valorao:last-child{border-bottom:0}
+.valorao span{
+  display:block;font-size:11.5px;color:var(--fraco);margin-bottom:3px;
+}
+.valorao b{
+  font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;
+}
+
+/* ---------- lista de filtro à esquerda ---------- */
+.filtros{display:flex;flex-direction:column}
+.filtros button{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  background:transparent;border:0;border-left:3px solid transparent;
+  padding:9px 12px;cursor:pointer;text-align:left;color:var(--fraco);
+  font-family:var(--titulo);font-size:13px;letter-spacing:.11em;text-transform:uppercase;
+  border-bottom:1px solid var(--sulco);
+}
+.filtros button .conta{font-family:var(--mono);font-size:11px}
+.filtros button:hover{background:#1f1f1f;color:var(--texto)}
+.filtros button.on{background:#212121;border-left-color:var(--rubro-vivo);color:var(--texto)}
+
+/* ---------- tabela ---------- */
+table.dados{width:100%;border-collapse:collapse;font-size:12.5px}
+table.dados th{
+  font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fraco);text-align:left;padding:7px 9px;
+  border-bottom:1px solid var(--linha);white-space:nowrap;user-select:none;
+}
+table.dados th.ordenavel{cursor:pointer}
+table.dados th.ordenavel:hover{color:var(--texto)}
+table.dados th .seta{color:var(--rubro-vivo);margin-left:3px}
+table.dados td{padding:6px 9px;border-bottom:1px solid var(--sulco)}
+table.dados tbody tr:hover td{background:#1d1d1d}
+table.dados td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+table.dados tr.ferido td{color:var(--vermelho)}
+table.dados tr.preso td{color:var(--pm)}
+table.dados tr.selecionada td{background:#252525}
+
+/* número + barrinha, como nos mockups de membros */
+.medida{display:flex;align-items:center;gap:7px}
+.medida .n{font-family:var(--mono);font-size:12px;min-width:20px;text-align:right;
+  font-variant-numeric:tabular-nums}
+.medida .barra{flex:1;max-width:52px;height:4px;background:#2b2b2b;position:relative}
+.medida .barra i{position:absolute;inset:0 auto 0 0;background:var(--verde)}
+.medida.media .barra i{background:var(--ouro)}
+.medida.baixa .barra i{background:var(--vermelho)}
+
+/* marcador de cargo, o pontinho vermelho do mockup */
+.ponto{
+  display:inline-block;width:9px;height:9px;border-radius:50%;
+  background:var(--rubro-vivo);margin-right:6px;vertical-align:-1px;
+}
+
+/* ---------- item de lista ---------- */
 .item{
-  border-left:3px solid #3d3d39;padding:5px 0 5px 8px;margin-bottom:5px;
+  border-left:3px solid #3a3a3a;padding:6px 0 6px 9px;margin-bottom:5px;
   background:#00000026;
 }
-.item.meu{border-left-color:var(--rubro)}
-.item.chegou{border-left-color:var(--ouro);background:#e0b04010}
-.item.ferido{border-left-color:var(--vermelho);background:#c0392b10}
-.item.preso{border-left-color:var(--pm);background:#3f7d5a10}
-.item .l1{display:flex;justify-content:space-between;align-items:baseline}
-.item .nm{font-size:13px;letter-spacing:.06em;text-transform:uppercase}
-.item .qt{font-family:var(--mono);font-size:11.5px;color:var(--ouro)}
+.item.meu{border-left-color:var(--rubro-vivo)}
+.item.chegou{border-left-color:var(--ouro);background:#d9a44112}
+.item.ferido{border-left-color:var(--vermelho);background:#e04b4512}
+.item.preso{border-left-color:var(--pm);background:#3f7d5a12}
+.item .l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.item .nm{font-family:var(--titulo);font-size:13.5px;letter-spacing:.06em;text-transform:uppercase}
+.item .qt{font-family:var(--mono);font-size:11px;color:var(--ouro)}
 .item .l2{font-family:var(--mono);font-size:9.5px;color:var(--fraco);margin-top:2px}
 
-/* ---------- tabela de membros ---------- */
-table.membros{width:100%;border-collapse:collapse;font-size:13px}
-table.membros th{
-  font-family:var(--mono);font-size:9px;letter-spacing:.11em;text-transform:uppercase;
-  color:var(--fraco);text-align:left;padding:5px 7px;border-bottom:1px solid var(--linha);
-  cursor:pointer;user-select:none;white-space:nowrap;
+/* ---------- lista de notícias ---------- */
+.noticia{
+  display:flex;gap:10px;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12px;
 }
-table.membros th:hover{color:var(--texto)}
-table.membros th .seta{color:var(--ouro);margin-left:3px}
-table.membros td{padding:4px 7px;border-bottom:1px solid var(--sulco);letter-spacing:.02em}
-table.membros td.num{font-family:var(--mono);font-size:11.5px;text-align:right}
-table.membros tr:hover td{background:#00000030}
-table.membros tr.ferido td{color:var(--vermelho)}
-table.membros tr.preso td{color:var(--pm)}
+.noticia .data{font-family:var(--mono);font-size:10px;color:var(--fraco);flex:none}
+.noticia .txt{flex:1}
+.noticia .hora{font-family:var(--mono);font-size:10px;color:var(--apagado);flex:none}
 
-#filtrosMembros{display:flex;gap:9px;align-items:center;margin-bottom:9px;flex-wrap:wrap}
-#buscaMembros{
-  flex:1;min-width:220px;background:#141412;border:1px solid var(--linha);
-  padding:6px 9px;font-size:12px;color:var(--texto);
+/* ---------- ações do dia ---------- */
+.acao-linha{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 0;border-bottom:1px solid var(--sulco);
+  background:none;border-left:0;border-right:0;border-top:0;
+  width:100%;text-align:left;cursor:pointer;color:var(--texto);font-size:12.5px;
 }
-#buscaMembros:focus{outline:0;border-color:var(--ouro)}
-#atalhosMembros{display:flex;gap:5px}
-#atalhosMembros button{
-  background:#252522;border:1px solid #3d3d39;color:var(--fraco);
-  font-family:var(--mono);font-size:9.5px;padding:4px 8px;cursor:pointer;
-  text-transform:uppercase;letter-spacing:.07em;
+.acao-linha:hover{color:#fff}
+.acao-linha:hover .ic{color:var(--rubro-vivo)}
+.acao-linha .ic{color:var(--fraco);display:flex}
+.acao-linha .ic svg{width:15px;height:15px}
+.acao-linha:disabled{opacity:.4;cursor:default}
+
+/* ---------- confronto (próximo jogo) ---------- */
+.confronto{display:flex;align-items:center;justify-content:center;gap:26px;padding:8px 0 4px}
+.confronto .lado{text-align:center;width:110px}
+.confronto .escudo{width:54px;height:54px;margin:0 auto 7px;font-size:17px}
+.confronto .nome{
+  font-family:var(--titulo);font-size:13px;letter-spacing:.09em;text-transform:uppercase;
 }
-#atalhosMembros button:hover{color:var(--texto)}
-#atalhosMembros button.on{background:var(--rubro);border-color:var(--rubro);color:#fff}
+.confronto .x{font-family:var(--titulo);font-size:24px;color:var(--fraco)}
+.confronto-info{text-align:center;padding:6px 0 2px;font-family:var(--mono);font-size:11px}
+.confronto-info .local{
+  display:block;font-size:9.5px;color:var(--fraco);letter-spacing:.13em;
+  text-transform:uppercase;margin-top:4px;
+}
+.competicao-rot{
+  text-align:center;font-size:11.5px;color:var(--fraco);
+  padding-bottom:6px;border-bottom:1px solid var(--sulco);margin-bottom:6px;
+}
+
+/* ---------- seleção de torcida ---------- */
+.torcida-opcao{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:transparent;border:0;border-bottom:1px solid var(--sulco);
+  border-left:3px solid transparent;
+  padding:8px 11px;cursor:pointer;text-align:left;
+}
+.torcida-opcao:hover{background:#1f1f1f}
+.torcida-opcao.on{background:#242424;border-left-color:var(--rubro-vivo)}
+.torcida-opcao .escudo{width:30px;height:30px;font-size:11px}
+.torcida-opcao .nm{
+  font-family:var(--titulo);font-size:13.5px;letter-spacing:.07em;text-transform:uppercase;
+  line-height:1.15;
+}
+.torcida-opcao .cid{font-family:var(--mono);font-size:9px;color:var(--fraco)}
+
+.ficha-torcida{display:flex;align-items:center;gap:16px;padding:4px 0 14px}
+.ficha-torcida .escudo{width:74px;height:74px;font-size:20px;border-width:3px}
+.ficha-torcida h3{
+  font-family:var(--titulo);font-size:26px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;line-height:1;
+}
+.ficha-torcida span{font-family:var(--mono);font-size:11px;color:var(--fraco)}
+.grade-atributos{
+  display:grid;grid-template-columns:1fr 1fr;gap:11px 20px;
+  border-top:1px solid var(--sulco);padding-top:12px;
+}
+.grade-atributos div span{
+  display:block;font-size:11px;color:var(--fraco);margin-bottom:2px;
+}
+.grade-atributos div b{font-family:var(--mono);font-size:14px}
+
+/* ---------- busca ---------- */
+.busca{
+  width:100%;background:#111;border:1px solid var(--linha);
+  padding:7px 10px;font-size:12.5px;color:var(--texto);margin-bottom:9px;
+}
+.busca:focus{outline:0;border-color:var(--rubro-vivo)}
 
 /* ---------- transações ---------- */
 .transacao{
   display:flex;justify-content:space-between;gap:10px;
-  font-family:var(--mono);font-size:10.5px;padding:3px 0;
+  font-family:var(--mono);font-size:10.5px;padding:4px 0;
   border-bottom:1px solid var(--sulco);
 }
 .transacao .dia{color:var(--fraco);flex:none;width:44px}
-.transacao .desc{flex:1;color:var(--texto)}
-.transacao .val{flex:none;text-align:right}
+.transacao .desc{flex:1;color:var(--texto);font-family:var(--corpo);font-size:11.5px}
+.transacao .val{flex:none;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- aviso de fase ---------- */
+.em-construcao{
+  padding:26px 18px;text-align:center;color:var(--fraco);font-size:12.5px;line-height:1.6;
+}
+.em-construcao b{
+  display:block;font-family:var(--titulo);font-size:16px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--texto);margin-bottom:7px;
+}

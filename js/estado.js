@@ -31,14 +31,13 @@ TO.estado = (function(){
       semente,
       criadoEm: opc.agora || 0,
 
-      data:{ ano:2026, semana:1, dia:1 },   // dia 1..7, jogo no 6
+      data:{ ano:2026, semana:1, dia:1, absoluto:0 },   // dia 1..7, jogo no 6
 
-      torcida:{
-        nome: opc.nome || 'Fúria Independente',
-        time: opc.time || 'seu clube',
-        cidade: opc.cidade || 'a cidade',
-        sedeNivel: 1
-      },
+      torcida: Object.assign({
+        id:'propria', nome:'Fúria Independente', sigla:'FI',
+        time:'seu clube', timeId:null, cidade:'a cidade', uf:'BR',
+        mapa:null, cores:['#9d2222','#e8e8e8'], sedeNivel:1
+      }, opc.torcida || {}, {sedeNivel:1}),
 
       /* GDD §12: tudo na mesma escala 0–20 com 4 faixas.
          O jogador aprende uma vez e aplica em tudo. */
@@ -54,10 +53,68 @@ TO.estado = (function(){
       historicoNoites: []
     };
 
+    if(opc.torcida){
+      /* A ficha traz o tamanho da torcida na vida real. O jogador começa
+         com uma fração disso: crescer até lá é o jogo. */
+      E.dinheiro = Math.round((opc.torcida.dinheiro||40000)/8);
+      E.indicadores.prestigio = U.limitar(Math.round((opc.torcida.prestigio||40)/5),0,20);
+      E.efetivoAlvo = opc.torcida.membros || 60;
+    }
+
     TO.membros.povoarInicial(E, opc.efetivo || 34);
+    sortearProximoJogo(E);
+    E.noticias = gerarNoticias(E);
     lancar(E, 'Caixa inicial', 0);
     mudou();
     return E;
+  }
+
+  /* -------------------------------------------------------
+     CALENDÁRIO — data de verdade, pra bater com o cabeçalho
+     ------------------------------------------------------- */
+  const BASE = new Date(2026, 2, 2);   // segunda-feira
+  const SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+  function dataDe(est){
+    const d = new Date(BASE.getTime());
+    d.setDate(d.getDate() + (est.data.absoluto||0));
+    return d;
+  }
+  function dataTexto(est){
+    const d = dataDe(est||E);
+    return {
+      curta:`${String(d.getDate()).padStart(2,'0')}/`+
+            `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`,
+      semana: SEMANA[d.getDay()]
+    };
+  }
+
+  function sortearProximoJogo(est){
+    const M = TO.mundo;
+    const meu = M.time(est.torcida.timeId);
+    if(!meu){ est.proximoJogo = null; return; }
+    const adv = M.adversario(meu.id);
+    const casa = U.rng() < 0.5;
+    const mandante = casa ? meu : adv, visitante = casa ? adv : meu;
+    est.proximoJogo = {
+      competicao: meu.divisao || 'Amistoso',
+      casa,
+      mandante:{nome:mandante.nome, sigla:mandante.sigla, cores:mandante.cores},
+      visitante:{nome:visitante.nome, sigla:visitante.sigla, cores:visitante.cores},
+      estadio: mandante.estadio,
+      hora:'21:00'
+    };
+  }
+
+  function gerarNoticias(est){
+    const n = est.torcida.nome;
+    return [
+      {txt:`${n} realiza treino fechado antes do clássico`, hora:'10:23'},
+      {txt:`${est.torcida.rival||'A rival'} provoca nas redes sociais`, hora:'18:45'},
+      {txt:`Clássico contra ${est.proximoJogo?est.proximoJogo.visitante.nome:'o rival'} tem esquema especial`, hora:'14:02'},
+      {txt:'Polícia aumenta patrulhamento na zona oeste', hora:'09:12'},
+      {txt:'Torcida Jovem do Santos anuncia nova faixa', hora:'22:31'}
+    ];
   }
 
   /* -------------------------------------------------------
@@ -78,7 +135,12 @@ TO.estado = (function(){
      ------------------------------------------------------- */
   function avancarDia(){
     E.data.dia++;
-    if(E.data.dia > 7){ E.data.dia = 1; E.data.semana++; E.acoes.usadas = 0; }
+    E.data.absoluto = (E.data.absoluto||0) + 1;
+    if(E.data.dia > 7){
+      E.data.dia = 1; E.data.semana++; E.acoes.usadas = 0;
+      sortearProximoJogo(E);
+      E.noticias = gerarNoticias(E);
+    }
     TO.membros.passarDia(E);
     mudou();
   }
@@ -143,7 +205,7 @@ TO.estado = (function(){
 
   return {
     get E(){ return E; },
-    novo, lancar, avancarDia, aoMudar, mudou,
+    novo, lancar, avancarDia, aoMudar, mudou, dataTexto, sortearProximoJogo,
     salvar, carregar, existeSave, exportar, importar,
     bloquear, estaBloqueado
   };

@@ -30,10 +30,12 @@ ALVOS = {
     },
     'jogo': {
         'pagina': 'index.html',
-        'js': ['js/nucleo.js', 'dados/nomes.js', 'dados/cena_arredores.js',
-               'js/gestao/membros.js', 'js/estado.js',
+        'js': ['js/nucleo.js',
+               'dados/nomes.js', 'dados/cidades.js', 'dados/times.js',
+               'dados/torcidas.js', 'dados/cena_arredores.js',
+               'js/mundo/mundo.js', 'js/gestao/membros.js', 'js/estado.js',
                'js/diajogo/arredores.js', 'js/diajogo/combate.js', 'js/diajogo/ponte.js',
-               'js/main.js'],
+               'js/ui/icones.js', 'js/main.js'],
         'inicio': '',
     },
 }
