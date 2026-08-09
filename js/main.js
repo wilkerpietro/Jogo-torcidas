@@ -95,12 +95,12 @@
   function abrirSelecao(){
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.remove('oculto');
-    escolhida = TO.mundo.ficha(TO.mundo.todasTorcidas[0]);
+    escolhida = TO.mundo.ficha(TO.mundo.jogaveis()[0]);
     pintarSelecao();
   }
 
   function pintarSelecao(){
-    const fichas = TO.mundo.todasTorcidas.map(TO.mundo.ficha);
+    const fichas = TO.mundo.jogaveis().map(TO.mundo.ficha);
     const filtros = [{id:'todas', rot:'Todas'}]
       .concat(TO.mundo.divisoes().map(d=>({id:d, rot:d.replace('Brasileirão ','')})));
 
@@ -109,7 +109,7 @@
 
     const lista = fichas
       .filter(f=>filtroSel==='todas' || f.divisao===filtroSel)
-      .filter(f=>!buscaSel || (f.nome+f.time+f.cidade).toLowerCase()
+      .filter(f=>!buscaSel || (f.nome+f.clube+f.cidade).toLowerCase()
                                 .includes(buscaSel.toLowerCase()))
       .sort((a,b)=>b.membros-a.membros);
 
@@ -132,7 +132,7 @@
       b.appendChild(escudo(f.cores, TO.mundo.sigla(f)));
       b.appendChild(el('div',{html:
         `<div class="nm">${f.nome}</div>
-         <div class="cid">${f.time} · ${f.cidade} - ${f.uf}</div>`}));
+         <div class="cid">${f.clube} · ${f.cidade} - ${f.uf}</div>`}));
       b.onclick = ()=>{ escolhida = f; pintarSelecao(); };
       rolo.appendChild(b);
     }
@@ -146,7 +146,7 @@
     cab.appendChild(escudo(f.cores, TO.mundo.sigla(f)));
     cab.appendChild(el('div',{html:
       `<h3>${f.nome}</h3>
-       <span>${f.time} · ${f.cidade} - ${f.uf} · fundada em ${f.fundacao}</span>`}));
+       <span>${f.clube} · ${f.cidade} - ${f.uf} · fundada em ${f.fundacao}</span>`}));
     cxF.appendChild(cab);
     cxF.appendChild(el('div',{class:'grade-atributos', html:
       `<div><span>Membros</span><b>${U.numero(f.membros)}</b></div>
@@ -155,10 +155,11 @@
        <div><span>Influência</span><b class="positivo">${f.influencia}/100</b></div>
        <div><span>Territórios</span><b>${f.territorios}</b></div>
        <div><span>Rivalidade máxima</span><b>${f.rival}</b></div>
+       <div><span>Bairro da sede</span><b>${f.bairroSede||'—'}</b></div>
        <div><span>Divisão</span><b>${f.divisao||'—'}</b></div>
        <div><span>Estádio</span><b>${f.estadio||'—'}</b></div>
-       <div><span>Mapa da cidade</span><b>${f.grade[0]}×${f.grade[1]} quarteirões</b></div>
-       <div><span>Nível da cidade</span><b>${f.nivelCidade}</b></div>`}));
+       <div><span>Aliados / Rivais</span><b>${f.qtdAliados} / ${f.qtdRivais}</b></div>
+       <div><span>Mapa da cidade</span><b>${f.grade[0]}×${f.grade[1]} quarteirões</b></div>`}));
   }
 
   /* =======================================================
@@ -679,6 +680,102 @@
   }
 
   /* =======================================================
+     DIPLOMACIA
+     ======================================================= */
+  let subDip = 'relacoes', buscaDip = '';
+
+  /* barra de −100 a +100 com o zero no meio, como no mockup */
+  function barraRelacao(v){
+    const meio = 50, larg = Math.abs(v)/100*50;
+    const esq = v<0 ? meio-larg : meio;
+    const cor = v<=-70?'#cc0000' : v<0?'#e05a3a' : v<20?'#6d6d6d'
+              : v<70?'#1ab31a' : '#1a80e6';
+    return `<span class="rel-barra">
+      <i style="left:${esq}%;width:${larg}%;background:${cor}"></i>
+      <u></u></span>`;
+  }
+
+  function pintarDiplomacia(){
+    const e = E(), pg = U.$('.pagina[data-pag="diplomacia"]');
+    pg.innerHTML='';
+    pg.appendChild(el('div',{class:'titulo-pagina', texto:'Diplomacia'}));
+    pg.appendChild(subabas([
+      {id:'relacoes',    rot:'Relações'},
+      {id:'aliancas',    rot:'Alianças'},
+      {id:'rivalidades', rot:'Rivalidades'},
+      {id:'tratados',    rot:'Tratados', desabilitada:true}
+    ], subDip, id=>{subDip=id; redesenhar();}));
+
+    /* o valor corrente manda; o tipo da fonte é só o ponto de partida */
+    const linhas = Object.entries(e.relacoes||{}).map(([id,v])=>{
+      const o = TO.mundo.torcida(id);
+      if(!o) return null;
+      return {id, o, valor:v, tipo:TO.mundo.statusDoValor(v)};
+    }).filter(Boolean);
+
+    const filtradas = linhas
+      .filter(l=> subDip==='aliancas'    ? l.valor>0
+                : subDip==='rivalidades' ? l.valor<0 : true)
+      .filter(l=> !buscaDip ||
+        (l.o.nome+l.o.clube+l.o.cidade).toLowerCase().includes(buscaDip.toLowerCase()))
+      .sort((a,b)=> subDip==='aliancas' ? b.valor-a.valor : a.valor-b.valor);
+
+    const aliados = linhas.filter(l=>l.valor>0).length;
+    const rivais  = linhas.filter(l=>l.valor<0).length;
+
+    const c = cartao('Relações', `${aliados} aliadas · ${rivais} rivais · `+
+      `${TO.mundo.jogaveis().length-1-linhas.length} neutras`);
+
+    const bs = el('input',{class:'busca', type:'search',
+      placeholder:'torcida, clube ou cidade…'});
+    bs.value = buscaDip;
+    bs.oninput = ev=>{ buscaDip = ev.target.value; pintarDiplomacia(); };
+    c.corpo.appendChild(bs);
+
+    if(!filtradas.length){
+      c.corpo.appendChild(el('div',{class:'em-construcao', texto:'Nada nesta aba.'}));
+      pg.appendChild(c); return;
+    }
+
+    const tab = el('table',{class:'dados'});
+    tab.appendChild(el('thead',null,[el('tr',{html:
+      `<th style="width:30%">Torcida</th><th style="width:22%">Clube</th>
+       <th style="width:26%">Relação</th><th>Status</th><th>Ações</th>`})]));
+    const tb = el('tbody');
+    for(const l of filtradas.slice(0,120)){
+      const est = TO.mundo.estiloRelacao(l.tipo);
+      const tr = el('tr');
+      tr.innerHTML =
+        `<td>${l.o.nome}</td>
+         <td>${l.o.clube}</td>
+         <td>${barraRelacao(l.valor)}<span class="rel-num">${l.valor>0?'+':''}${Math.round(l.valor)}</span></td>
+         <td style="color:${est.corTexto}">${l.tipo}</td>
+         <td class="rel-acoes"></td>`;
+      const cel = tr.querySelector('.rel-acoes');
+
+      const botao = (rot, titulo, ativo, fn)=>{
+        const b = el('button',{class:'mini-bt', texto:rot, title:titulo});
+        b.disabled = !ativo;
+        b.onclick = fn;
+        cel.appendChild(b);
+      };
+      botao('+', 'Aproximar', est.podeMelhorar, ()=>{
+        e.relacoes[l.id] = U.limitar(l.valor+8, -100, 100);
+        aviso(`Aproximação com ${l.o.nome}.`,'boa'); redesenhar();
+      });
+      botao('−', 'Provocar', est.podePiorar, ()=>{
+        e.relacoes[l.id] = U.limitar(l.valor-8, -100, 100);
+        aviso(`Provocação contra ${l.o.nome}.`,'ruim'); redesenhar();
+      });
+      botao('!', 'Atacar — entra na Fase 2', false, ()=>{});
+      tb.appendChild(tr);
+    }
+    tab.appendChild(tb);
+    c.corpo.appendChild(tab);
+    pg.appendChild(c);
+  }
+
+  /* =======================================================
      PÁGINAS AINDA POR FAZER
      ======================================================= */
   const PENDENTES = {
@@ -688,8 +785,6 @@
     competicoes:['Competições',
       'Cinco divisões, 23 estaduais, 4 regionais e a Copa do Brasil (GDD §18). '+
       'O motor de tabelas da era Unity está em legado/unity e serve de base.'],
-    diplomacia:['Diplomacia',
-      'Relação de −100 a +100 entre cada par de torcidas, alianças e traições (GDD §11).'],
     whatsapp:['WhatsApp',
       'Conversas com a diretoria, aliados e contatos. É por aqui que o tutorial acontece (GDD §22.4).'],
     noticias:['Notícias', 'Mundo vivo: o que a imprensa e as outras torcidas andam falando.'],
@@ -842,6 +937,7 @@
     if(pagina==='inicio') pintarInicio();
     else if(pagina==='torcida') pintarTorcida();
     else if(pagina==='financeiro') pintarFinanceiro();
+    else if(pagina==='diplomacia') pintarDiplomacia();
     else pintarPendente(pagina);
   }
 

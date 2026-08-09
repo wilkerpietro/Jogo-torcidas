@@ -233,3 +233,26 @@ table.dados tr.selecionada td{background:#252525}
   display:block;font-family:var(--titulo);font-size:16px;letter-spacing:.13em;
   text-transform:uppercase;color:var(--texto);margin-bottom:7px;
 }
+
+/* ---------- diplomacia ---------- */
+.rel-barra{
+  display:inline-block;position:relative;width:110px;height:8px;
+  background:#262626;border:1px solid var(--linha);vertical-align:-1px;
+}
+.rel-barra i{position:absolute;top:0;bottom:0;display:block}
+.rel-barra u{
+  position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;
+  background:var(--apagado);
+}
+.rel-num{
+  font-family:var(--mono);font-size:10.5px;margin-left:8px;color:var(--fraco);
+  font-variant-numeric:tabular-nums;
+}
+.rel-acoes{white-space:nowrap}
+.mini-bt{
+  width:22px;height:20px;margin-right:3px;cursor:pointer;
+  background:#262626;border:1px solid #383838;color:var(--texto);
+  font-family:var(--mono);font-size:11px;line-height:1;
+}
+.mini-bt:hover:not(:disabled){background:var(--rubro);border-color:var(--rubro)}
+.mini-bt:disabled{opacity:.3;cursor:default}

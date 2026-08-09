@@ -1,16 +1,18 @@
 /* =========================================================
    MUNDO — consulta e junção dos dados importados
-   times.js, torcidas.js e cidades.js vêm da planilha do autor
-   e guardam só o que ela tem. O que é derivado (prestígio,
-   influência, território, rival) é calculado aqui, num lugar só.
+   torcidas.js traz o grafo de relações da era Unity (8857
+   direcionais, já simetrizadas na importação). times.js e
+   cidades.js vêm da planilha. O que nenhum dos dois traz —
+   influência, território — é derivado aqui, num lugar só.
    ========================================================= */
 window.TO = window.TO || {};
 
 TO.mundo = (function(){
   const U = TO.util;
-  const T = () => TO.dados.times     || [];
-  const O = () => TO.dados.torcidas  || [];
-  const C = () => TO.dados.cidades   || [];
+  const T = () => TO.dados.times    || [];
+  const O = () => TO.dados.torcidas || [];
+  const C = () => TO.dados.cidades  || [];
+  const D = () => TO.dados.diplomacia || {regras:{relacoes:{}}, parametros:{}};
 
   let idxT=null, idxO=null, idxC=null;
   function indexar(){
@@ -18,88 +20,145 @@ TO.mundo = (function(){
     idxO = new Map(O().map(x=>[x.id,x]));
     idxC = new Map(C().map(x=>[x.id,x]));
   }
-  const time    = id => (idxT||indexar()||idxT).get(id);
-  const torcida = id => (idxO||indexar()||idxO).get(id);
-  const cidade  = id => (idxC||indexar()||idxC).get(id);
+  const time    = id => (idxT||(indexar(),idxT)).get(id);
+  const torcida = id => (idxO||(indexar(),idxO)).get(id);
+  const cidade  = id => (idxC||(indexar(),idxC)).get(id);
 
-  const torcidasDe   = idTime  => O().filter(o=>o.time===idTime);
-  const torcidasEm   = idMapa  => O().filter(o=>o.mapa===idMapa);
-  const timesEm      = idMapa  => T().filter(t=>t.mapa===idMapa);
+  /* torcidas jogáveis: as completas (a fonte tem um asset vazio) */
+  const jogaveis = () => O().filter(o=>!o.incompleta);
 
-  /* ---------- números derivados ----------
-     A planilha traz efetivo. O resto sai dele, de forma estável:
-     a mesma torcida sempre dá o mesmo número. */
-  const MAIOR = 250;   // maior efetivo da planilha
+  const torcidasDe = idClube => O().filter(o=>o.clubeId===idClube);
+  const torcidasEm = idMapa  => O().filter(o=>o.mapa===idMapa);
+  const timesEm    = idMapa  => T().filter(t=>t.mapa===idMapa);
 
-  function prestigio(o){
-    return U.limitar(Math.round(24 + (o.membros/MAIOR)*72), 1, 100);
+  /* =======================================================
+     RELAÇÕES
+     ======================================================= */
+  const TIPOS = ['Maior Rival','Rival','Irmandade','Aliado','Neutro'];
+
+  /* GDD §11.1 usa escala −100 a +100. A fonte traz o tipo;
+     o número inicial sai daqui e depois evolui com o jogo. */
+  const VALOR_INICIAL = {
+    'Maior Rival': -85, 'Rival': -45, 'Neutro': 0, 'Aliado': 45, 'Irmandade': 80
+  };
+  function valorInicial(tipo){ return VALOR_INICIAL[tipo] !== undefined ? VALOR_INICIAL[tipo] : 0; }
+
+  /* caminho inverso: de um número em −100..+100 para o rótulo */
+  function statusDoValor(v){
+    if(v <= -70) return 'Maior Rival';
+    if(v <  -15) return 'Rival';
+    if(v <   20) return 'Neutro';
+    if(v <   70) return 'Aliado';
+    return 'Irmandade';
   }
+
+  /* precedência da fonte: Maior Rival vence Rival, que vence o resto */
+  function relacaoBase(idA, idB){
+    const a = torcida(idA);
+    if(!a || idA===idB) return 'Neutro';
+    if((a.maioresRivais||[]).includes(idB)) return 'Maior Rival';
+    if((a.rivais||[]).includes(idB))        return 'Rival';
+    if((a.irmandade||[]).includes(idB))     return 'Irmandade';
+    if((a.aliados||[]).includes(idB))       return 'Aliado';
+    return 'Neutro';
+  }
+
+  function estiloRelacao(tipo){
+    const r = (D().regras.relacoes||{})[tipo];
+    return r || {ordem:0, corTexto:'#8d8d8d', corFundo:'#333', podeMelhorar:true,
+                 podePiorar:true, podeAtacar:true};
+  }
+
+  /* todas as relações não neutras de uma torcida, prontas pra tabela */
+  function relacoesDe(id){
+    const a = torcida(id);
+    if(!a) return [];
+    const saida = [];
+    const juntar = (lista, tipo)=>{
+      for(const outro of (lista||[])){
+        const o = torcida(outro);
+        if(!o) continue;
+        saida.push({id:outro, nome:o.nome, clube:o.clube, cidade:o.cidade,
+                    uf:o.uf, cores:o.cores, tipo, membros:o.membros});
+      }
+    };
+    juntar(a.maioresRivais,'Maior Rival');
+    juntar(a.rivais,       'Rival');
+    juntar(a.irmandade,    'Irmandade');
+    juntar(a.aliados,      'Aliado');
+    /* uma torcida pode aparecer em duas listas; a precedência decide */
+    const vistas = new Map();
+    for(const r of saida){
+      const atual = vistas.get(r.id);
+      if(!atual || estiloRelacao(r.tipo).ordem > estiloRelacao(atual.tipo).ordem)
+        vistas.set(r.id, r);
+    }
+    return [...vistas.values()];
+  }
+
+  /* =======================================================
+     NÚMEROS DERIVADOS
+     ======================================================= */
   function influencia(o){
-    const t = time(o.time);
-    const c = t && cidade(t.mapa);
-    const peso = c ? U.limitar(c.torcedores/1060, 0, 1) : 0.5;
-    return U.limitar(Math.round(prestigio(o)*0.72 + peso*26), 1, 100);
+    const c = cidade(o.mapa);
+    const peso = c ? U.limitar(c.torcedores/1060, 0, 1) : 0.4;
+    const base = U.limitar((o.membros||20)/250, 0, 1);
+    return U.limitar(Math.round(base*64 + peso*30), 1, 100);
   }
-  function territorios(o){
-    return Math.max(1, Math.round(o.membros/16));
-  }
-  function caixa(o){
-    return o.membros * 420;
-  }
+  const territorios = o => Math.max(1, Math.round((o.membros||20)/16));
 
-  /* Maior torcida da mesma cidade que não seja do mesmo time.
-     Se não houver, a maior do mesmo time (briga interna, GDD §15.2). */
-  function rivalDe(o){
-    const vizinhas = torcidasEm(o.mapa).filter(x=>x.id!==o.id);
-    const deOutros = vizinhas.filter(x=>x.time!==o.time);
-    const pool = deOutros.length ? deOutros : vizinhas;
-    if(!pool.length) return null;
-    return pool.reduce((a,b)=> b.membros>a.membros ? b : a);
-  }
-
-  /* tudo que a tela de seleção precisa, num objeto só */
+  /* tudo que a seleção e a diplomacia precisam, num objeto só */
   function ficha(o){
-    const t = time(o.time) || {};
-    const c = cidade(o.mapa) || {};
-    const r = rivalDe(o);
+    const t = time(o.clubeId) || {};
+    const c = cidade(o.mapa)  || {};
+    const rel = relacoesDe(o.id);
+    const maior = rel.find(r=>r.tipo==='Maior Rival')
+               || rel.find(r=>r.tipo==='Rival');
     return {
-      id:o.id, nome:o.nome, cores:o.cores, linha:o.linha,
-      fundacao:o.fundacao, membros:o.membros,
-      time:t.nome || o.timeNome, timeId:o.time, sigla:t.sigla || '',
-      cidade:c.nome || t.cidade || '', uf:t.uf || '',
-      estadio:t.estadio || '', divisao:t.divisao || '',
+      id:o.id, nome:o.nome, cores:o.cores, detalhe:o.detalhe,
+      fundacao:o.fundacao, membros:o.membros, bairroSede:o.bairroSede,
+      clube:o.clube, clubeId:o.clubeId, sigla:o.sigla,
+      cidade:c.nome || o.cidade || '', uf:o.uf || t.uf || '',
+      regiao:o.regiao || '',
+      estadio:o.estadio || t.estadio || '',
+      divisao:t.divisao || `Série ${'ABCD'[(o.divisaoClube||1)-1] || '?'}`,
       regional:t.regional || '', mapa:o.mapa,
       grade:c.grade || [8,8], nivelCidade:c.nivel || 3,
-      prestigio:prestigio(o), influencia:influencia(o),
-      territorios:territorios(o), dinheiro:caixa(o),
-      rival: r ? r.nome : '—'
+      sedeNivel:o.sedeNivel || 1,
+      prestigio:o.prestigio || 15, moral:o.moral || 60,
+      dinheiro:o.saldo || 0, poder:o.poder || 0,
+      influencia:influencia(o), territorios:territorios(o),
+      cargos:o.cargos || {},
+      rival: maior ? maior.nome : '—',
+      qtdAliados: (o.aliados||[]).length + (o.irmandade||[]).length,
+      qtdRivais:  (o.rivais||[]).length + (o.maioresRivais||[]).length
     };
   }
 
-  /* sigla curta pro escudo quando o time não tem uma */
   function sigla(f){
     if(f.sigla) return f.sigla.slice(0,4);
-    return f.nome.split(/\s+/).map(p=>p[0]).join('').slice(0,3).toUpperCase();
+    return (f.nome||'').split(/\s+/).map(p=>p[0]).join('').slice(0,3).toUpperCase();
   }
 
-  /* adversário plausível: mesmo campeonato, outro clube */
-  function adversario(idTime){
-    const meu = time(idTime);
+  function adversario(idClube){
+    const meu = time(idClube);
     if(!meu) return T()[0];
-    const mesma = T().filter(t=>t.id!==idTime && t.divisao===meu.divisao);
-    const pool = mesma.length ? mesma : T().filter(t=>t.id!==idTime);
+    const mesma = T().filter(t=>t.id!==idClube && t.divisao===meu.divisao);
+    const pool = mesma.length ? mesma : T().filter(t=>t.id!==idClube);
     return pool[Math.floor(U.rng()*pool.length)];
   }
 
-  /* divisões existentes, na ordem certa */
   function divisoes(){
-    const vistas = [...new Set(T().map(t=>t.divisao).filter(Boolean))];
-    return vistas.sort();
+    return [...new Set(T().map(t=>t.divisao).filter(Boolean))].sort();
+  }
+  function regioes(){
+    return [...new Set(O().map(o=>o.regiao).filter(Boolean))].sort();
   }
 
-  return {time, torcida, cidade, torcidasDe, torcidasEm, timesEm,
-          prestigio, influencia, territorios, caixa, rivalDe,
-          ficha, sigla, adversario, divisoes,
+  return {time, torcida, cidade, jogaveis, torcidasDe, torcidasEm, timesEm,
+          TIPOS, valorInicial, statusDoValor, relacaoBase, estiloRelacao, relacoesDe,
+          influencia, territorios, ficha, sigla, adversario, divisoes, regioes,
+          get parametros(){return D().parametros || {};},
           get todasTorcidas(){return O();},
           get todosTimes(){return T();},
           get todasCidades(){return C();}};

@@ -35,9 +35,14 @@ TO.estado = (function(){
 
       torcida: Object.assign({
         id:'propria', nome:'Fúria Independente', sigla:'FI',
-        time:'seu clube', timeId:null, cidade:'a cidade', uf:'BR',
-        mapa:null, cores:['#9d2222','#e8e8e8'], sedeNivel:1
+        clube:'seu clube', clubeId:null, cidade:'a cidade', uf:'BR',
+        mapa:null, bairroSede:'', cores:['#9d2222','#e8e8e8'], sedeNivel:1
       }, opc.torcida || {}, {sedeNivel:1}),
+
+      /* GDD §11.1: cada par tem um valor de −100 a +100. O número
+         inicial sai do tipo de relação que veio da fonte; daqui pra
+         frente ele se move com confronto, apoio e traição. */
+      relacoes:{},
 
       /* GDD §12: tudo na mesma escala 0–20 com 4 faixas.
          O jogador aprende uma vez e aplica em tudo. */
@@ -54,11 +59,19 @@ TO.estado = (function(){
     };
 
     if(opc.torcida){
-      /* A ficha traz o tamanho da torcida na vida real. O jogador começa
-         com uma fração disso: crescer até lá é o jogo. */
-      E.dinheiro = Math.round((opc.torcida.dinheiro||40000)/8);
-      E.indicadores.prestigio = U.limitar(Math.round((opc.torcida.prestigio||40)/5),0,20);
-      E.efetivoAlvo = opc.torcida.membros || 60;
+      const f = opc.torcida;
+      E.dinheiro = Math.max(4000, Math.round((f.dinheiro||4000)*4));
+      E.indicadores.prestigio = U.limitar(Math.round((f.prestigio||15)/5),0,20);
+      E.indicadores.moral     = U.limitar(Math.round((f.moral||60)/5),0,20);
+      E.efetivoAlvo = f.membros || 60;
+
+      /* semeia a diplomacia a partir do grafo importado */
+      for(const outra of TO.mundo.todasTorcidas){
+        if(outra.id===f.id || outra.incompleta) continue;
+        const tipo = TO.mundo.relacaoBase(f.id, outra.id);
+        if(tipo==='Neutro') continue;
+        E.relacoes[outra.id] = TO.mundo.valorInicial(tipo);
+      }
     }
 
     TO.membros.povoarInicial(E, opc.efetivo || 34);
@@ -91,7 +104,7 @@ TO.estado = (function(){
 
   function sortearProximoJogo(est){
     const M = TO.mundo;
-    const meu = M.time(est.torcida.timeId);
+    const meu = M.time(est.torcida.clubeId);
     if(!meu){ est.proximoJogo = null; return; }
     const adv = M.adversario(meu.id);
     const casa = U.rng() < 0.5;
