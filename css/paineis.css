@@ -156,7 +156,28 @@ table.dados tr.selecionada td{background:#252525}
 .acao-linha:hover .ic{color:var(--rubro-vivo)}
 .acao-linha .ic{color:var(--fraco);display:flex}
 .acao-linha .ic svg{width:15px;height:15px}
-.acao-linha:disabled{opacity:.4;cursor:default}
+.acao-linha:disabled{opacity:.55;cursor:default}
+.acao-linha:disabled:hover{color:var(--texto)}
+.acao-linha:disabled:hover .ic{color:var(--fraco)}
+/* nome em cima, efeito ou motivo do bloqueio embaixo */
+.acao-linha .txt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.acao-linha .txt small{font-size:10.5px;color:var(--fraco);line-height:1.3}
+.acao-linha:disabled .txt small{color:#a36b60}
+.acao-linha .custo{font-family:var(--mono);font-size:10.5px;color:var(--fraco);white-space:nowrap}
+
+/* fichas de ação da semana: gastas apagam */
+.fichas{display:flex;gap:4px;align-items:center;margin-left:auto}
+.fichas i{width:9px;height:9px;border:1px solid var(--rubro-vivo);border-radius:50%;
+  background:var(--rubro-vivo);display:block}
+.fichas i.gasta{background:none;border-color:var(--apagado)}
+
+/* relatório do fechamento semanal */
+.fecho{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.fecho h3{font-family:var(--titulo);font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fraco);margin:2px 0 4px;font-weight:600}
+.fecho .col{min-width:0}
+.fecho .total{border-top:1px solid var(--linha);margin-top:5px;padding-top:5px}
+.fecho .largo{grid-column:1 / -1}
 
 /* ---------- confronto (próximo jogo) ---------- */
 .confronto{display:flex;align-items:center;justify-content:center;gap:26px;padding:8px 0 4px}

@@ -30,7 +30,7 @@
     c.corpo = corpo;
     c.rodape = (...bts)=>{
       const r = el('div',{class:'rodape'});
-      bts.forEach(b=>r.appendChild(b));
+      bts.forEach(b=>b && r.appendChild(b));
       c.appendChild(r); return c;
     };
     return c;
@@ -276,61 +276,168 @@
     cNot.rodape(verTodas);
     esq.appendChild(cNot);
 
-    /* resumo financeiro */
-    let receitas = 0;
-    for(const m of e.membros) receitas += TO.membros.CARGOS[m.cargo].mensalidade;
-    const despesas = 200 + e.membros.length * 4;
-    const cFin = cartao('Resumo financeiro');
+    /* resumo financeiro — o mesmo cálculo do fechamento (GDD §7) */
+    const cx = TO.financeiro.contas(e);
+    const cFin = cartao('Resumo da semana');
     cFin.corpo.innerHTML =
       `<div class="linha-dado"><span>Receitas</span>
-         <b class="positivo">${U.dinheiro(receitas)}</b></div>
+         <b class="positivo">${U.dinheiro(cx.receita)}</b></div>
        <div class="linha-dado"><span>Despesas</span>
-         <b class="negativo">${U.dinheiro(-despesas)}</b></div>
-       <div class="linha-dado"><span>Saldo</span>
-         <b class="${receitas-despesas>=0?'positivo':'negativo'}">${U.dinheiro(receitas-despesas)}</b></div>`;
+         <b class="negativo">${U.dinheiro(-cx.despesa)}</b></div>
+       <div class="linha-dado"><span>Saldo previsto</span>
+         <b class="${cx.saldo>=0?'positivo':'negativo'}">${U.dinheiro(cx.saldo)}</b></div>`
+      + (TO.financeiro.precisaCaravana(e)
+         ? `<div class="linha-dado"><span class="${TO.financeiro.temCaravana(e)?'':'fraco'}">`+
+           `${TO.financeiro.temCaravana(e)?'Caravana para':'Viajar para'} `+
+           `${e.proximoJogo.cidadeAdv}: ${U.dinheiro(TO.financeiro.CARAVANA)} `+
+           `${TO.financeiro.temCaravana(e)?'na véspera':'se a torcida for'}.</span></div>` : '');
     const verFin = el('button',{class:'bt larga', texto:'Ver finanças'});
     verFin.onclick = ()=>{ pagina='financeiro'; redesenhar(); };
     cFin.rodape(verFin);
     dir.appendChild(cFin);
 
-    /* ações do dia */
-    const cAc = cartao('Ações do dia');
-    const fila = e.membros.filter(m=>m.naFila && TO.membros.disponivel(m)).length;
-    const acoes = [
-      ['halter',  `Treinar membros${fila?` (${fila} na fila)`:''}`, ()=>{
-        const n = TO.membros.treinarFila(e);
-        if(n){ aviso(`${n} treinaram.`,'boa'); TO.estado.avancarDia(); }
-        else aviso('Ninguém na fila. Escale o treino na aba Torcida.','ruim');
-      }],
-      ['megafone','Recrutar', ()=>aviso('Recrutamento entra na próxima etapa (GDD §6).','ruim')],
-      ['copo',    'Visitar bar', ()=>aviso('Bares entram com o patrimônio (GDD §8.3).','ruim')],
-      ['tijolo',  'Gerenciar construções', ()=>aviso('Construções entram com o patrimônio.','ruim')]
-    ];
-    for(const [ic, rot, fn] of acoes){
-      const b = el('button',{class:'acao-linha',
-        html:`<span class="ic">${IC.get(ic)}</span><span>${rot}</span>`});
-      b.onclick = fn;
-      cAc.corpo.appendChild(b);
-    }
-    const maisAcoes = el('button',{class:'bt larga', texto:'Ver mais ações'});
-    maisAcoes.onclick = ()=>aviso('As dez ações da semana entram na Fase 2 (GDD §10).','ruim');
-    cAc.rodape(maisAcoes);
-    dir.appendChild(cAc);
+    dir.appendChild(cartaoAcoes());
 
-    /* dia de jogo */
-    const cDJ = cartao('Dia de jogo');
-    cDJ.corpo.innerHTML =
-      `<div class="linha-dado"><span>Aptos a sair</span>
-         <b>${TO.membros.aptosParaOEstadio(e).length}</b></div>
-       <div class="linha-dado"><span class="fraco">Quem for escalado vira disco na cena. `+
-      `O que acontecer com ele volta pra ficha.</span></div>`;
-    const btDJ = el('button',{class:'bt destaque larga', texto:'Sair pro estádio'});
+    /* dia de jogo — a postura da semana decide se tem cena (GDD §3.2) */
+    const cDJ = cartao('Dia de jogo', j.casa ? 'em casa' : `fora · ${j.cidadeAdv||''}`);
+    const posts = TO.financeiro.posturas(e);
+    const atual = posts.find(p=>p.id===e.postura) || posts[posts.length-1];
+    cDJ.corpo.appendChild(subabas(
+      posts.map(p=>({id:p.id, rot:p.rot})), atual.id,
+      id=>{ TO.financeiro.definirPostura(e, id); redesenhar(); }));
+    cDJ.corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span class="fraco">${atual.nota}</span>`}));
+    cDJ.corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span>Aptos a sair</span><b>${TO.membros.aptosParaOEstadio(e).length}</b>`}));
+
+    const vai = atual.id !== 'ficar';
+    const btDJ = el('button',{class:'bt destaque larga',
+      texto: vai ? 'Sair pro estádio' : 'A torcida fica'});
+    btDJ.disabled = !vai;
     btDJ.onclick = abrirEscalacao;
     cDJ.rodape(btDJ);
     dir.appendChild(cDJ);
 
     grade.append(esq, dir);
     pg.appendChild(grade);
+  }
+
+  /* =======================================================
+     AÇÕES DA SEMANA (GDD §3.1 e §10)
+     A ação indisponível não fica só cinza: ela diz por quê.
+     ======================================================= */
+  function linhaAcao(a, aoUsar){
+    const e = E();
+    const d = a.disponivel(e);
+    const sobrou = TO.acoes.restantes(e) > 0;
+    const b = el('button',{class:'acao-linha'});
+    b.disabled = !d.ok || !sobrou;
+    const sub = !d.ok    ? d.motivo
+              : !sobrou  ? 'a semana acabou'
+              : d.nota   ? `${a.efeito} · ${d.nota}`
+              :            a.efeito;
+    b.innerHTML =
+      `<span class="ic">${IC.get(a.icone)}</span>
+       <span class="txt"><span>${a.nome}</span><small>${sub}</small></span>
+       ${a.custo?`<span class="custo">${U.dinheiro(-a.custo)}</span>`:''}`;
+    b.onclick = ()=>{
+      const r = TO.acoes.executar(e, a.id);
+      aviso(r.msg || (r.ok?'Feito.':'Não deu.'),
+            r.ok && r.tipo!=='ruim' ? 'boa' : 'ruim');
+      aoUsar && aoUsar();
+      redesenhar();
+    };
+    return b;
+  }
+
+  function cartaoAcoes(){
+    const e = E();
+    const max = TO.acoes.maximo(e), rest = TO.acoes.restantes(e);
+    const c = cartao('Ações da semana', `${rest} de ${max}`);
+
+    /* fichas: cheia é ação na mão, vazia é ação gasta */
+    const f = el('div',{class:'fichas'});
+    for(let i=0;i<max;i++) f.appendChild(el('i',{class:i<rest?'':'gasta'}));
+    c.querySelector('h2').appendChild(f);
+
+    if(!rest){
+      c.corpo.appendChild(el('div',{class:'linha-dado', html:
+        '<span class="fraco">Nada mais nesta semana. Avance os dias até o '+
+        'fechamento.</span>'}));
+    }
+    /* as que dá pra fazer primeiro; o resto explica o bloqueio */
+    const lista = [...TO.acoes.LISTA]
+      .sort((a,b)=>(a.disponivel(e).ok?0:1) - (b.disponivel(e).ok?0:1));
+    for(const a of lista.slice(0,5)) c.corpo.appendChild(linhaAcao(a));
+
+    const bt = el('button',{class:'bt larga',
+      texto:`Todas as ações (${TO.acoes.LISTA.length})`});
+    bt.onclick = abrirTodasAcoes;
+    c.rodape(bt);
+    return c;
+  }
+
+  function abrirTodasAcoes(){
+    const e = E();
+    const corpo = el('div');
+    let fechar = null;
+    corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span>Ações restantes</span><b>${TO.acoes.restantes(e)} de ${TO.acoes.maximo(e)}</b>`}));
+    for(const a of TO.acoes.LISTA)
+      corpo.appendChild(linhaAcao(a, ()=>fechar && fechar()));
+    fechar = modal('Ações da semana', `Semana ${e.data.semana} · dia ${e.data.dia}`, corpo);
+  }
+
+  /* ---------- relatório do fechamento (GDD §3.2 e §7) ---------- */
+  function abrirFechamento(rel){
+    const corpo = el('div',{class:'fecho'});
+
+    const bloco = (titulo, itens, total, neg)=>{
+      const d = el('div',{class:'col'});
+      d.appendChild(el('h3',{texto:titulo}));
+      if(!itens.length)
+        d.appendChild(el('div',{class:'linha-dado', html:'<span class="fraco">nada</span>'}));
+      for(const i of itens)
+        d.appendChild(el('div',{class:'linha-dado', html:
+          `<span>${i.rot}</span><b class="${neg?'negativo':'positivo'}">`+
+          `${U.dinheiro(neg?-i.v:i.v)}</b>`}));
+      d.appendChild(el('div',{class:'linha-dado total', html:
+        `<span>Total</span><b class="${neg?'negativo':'positivo'}">`+
+        `${U.dinheiro(neg?-total:total)}</b>`}));
+      return d;
+    };
+    corpo.appendChild(bloco('Receitas', rel.receitas, rel.receita, false));
+    corpo.appendChild(bloco('Despesas', rel.despesas, rel.despesa, true));
+
+    const fim = el('div',{class:'col largo'});
+    fim.appendChild(el('div',{class:'linha-dado total', html:
+      `<span>Saldo da semana</span><b class="${rel.saldo>=0?'positivo':'negativo'}">`+
+      `${U.dinheiro(rel.saldo)}</b>`}));
+    fim.appendChild(el('div',{class:'linha-dado', html:
+      `<span>Caixa</span><b class="${rel.caixaDepois<0?'negativo':''}">`+
+      `${U.dinheiro(rel.caixaAntes)} → ${U.dinheiro(rel.caixaDepois)}</b>`}));
+    if(rel.acoesSobrando)
+      fim.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Ações não usadas</span><b>${rel.acoesSobrando}</b>`}));
+    if(rel.promoveis)
+      fim.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Prontos pra promoção</span><b class="positivo">${rel.promoveis}</b>`}));
+    for(const n of rel.notas||[])
+      fim.appendChild(el('div',{class:'linha-dado', html:`<span class="fraco">${n}</span>`}));
+    for(const a of rel.avisos)
+      fim.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="negativo">${a}</span>`}));
+    if(rel.saidas.length){
+      fim.appendChild(el('h3',{texto:'Foram embora'}));
+      for(const s of rel.saidas)
+        fim.appendChild(el('div',{class:'linha-dado', html:
+          `<span>${s.nome}</span><b class="fraco">${s.cargo}</b>`}));
+    }
+    corpo.appendChild(fim);
+
+    modal(`Fechamento da semana ${rel.semana}`,
+          `${rel.receitas.length} receitas · ${rel.despesas.length} despesas`,
+          corpo, null, 'media');
   }
 
   /* =======================================================
@@ -534,9 +641,9 @@
   }
 
   /* ---------- ficha e ações do membro ---------- */
-  function modal(titulo, sub, corpo, acoes){
+  function modal(titulo, sub, corpo, acoes, largura){
     const fundo = el('div',{class:'tela-cheia'});
-    const m = el('div',{class:'moldura estreita'});
+    const m = el('div',{class:'moldura '+(largura||'estreita')});
     m.appendChild(el('header',{html:`<h2>${titulo}</h2><span>${sub||''}</span>`}));
     const d = el('div'); d.appendChild(corpo); m.appendChild(d);
     const f = el('footer');
@@ -550,6 +657,7 @@
     fechar.onclick = ()=>fundo.remove();
     f.appendChild(fechar); m.appendChild(f);
     fundo.appendChild(m); document.body.appendChild(fundo);
+    return ()=>fundo.remove();
   }
 
   function abrirFicha(m){
@@ -627,52 +735,70 @@
       return;
     }
 
-    let mensalidades = 0;
-    for(const m of e.membros) mensalidades += TO.membros.CARGOS[m.cargo].mensalidade;
-    const manutencao = 200, material = e.membros.length*4;
-    const receitas = mensalidades;
-    const despesas = manutencao + material;
+    /* mesma conta do fechamento: a tela nunca promete o que não cobra */
+    const cx = TO.financeiro.contas(e);
+    const pat = TO.financeiro.patrimonio(e);
+    const pagantes = e.membros.filter(m=>!m.preso).length;
 
     const grade = el('div',{class:'colunas-3'});
 
-    const c1 = cartao('Fluxo financeiro');
+    const c1 = cartao('Fluxo da semana');
     c1.corpo.innerHTML =
       `<div class="valorao"><span>Receitas</span>
-         <b class="positivo">${U.dinheiro(receitas)}</b></div>
+         <b class="positivo">${U.dinheiro(cx.receita)}</b></div>
        <div class="valorao"><span>Despesas</span>
-         <b class="negativo">${U.dinheiro(despesas)}</b></div>
+         <b class="negativo">${U.dinheiro(cx.despesa)}</b></div>
        <div class="valorao"><span>Saldo</span>
-         <b class="${receitas-despesas>=0?'positivo':'negativo'}">${U.dinheiro(receitas-despesas)}</b></div>`;
+         <b class="${cx.saldo>=0?'positivo':'negativo'}">${U.dinheiro(cx.saldo)}</b></div>`;
     const btDet = el('button',{class:'bt larga', texto:'Detalhes'});
     btDet.onclick = ()=>{ subFin='transacoes'; redesenhar(); };
-    c1.rodape(btDet);
+    let btUlt = null;
+    if(e.ultimoFechamento){
+      btUlt = el('button',{class:'bt larga', texto:'Último fechamento'});
+      btUlt.onclick = ()=>abrirFechamento(e.ultimoFechamento);
+    }
+    c1.rodape(btDet, btUlt);
     grade.appendChild(c1);
 
     const c2 = cartao('Caixa');
     c2.corpo.innerHTML =
       `<div class="valorao"><span>Em caixa</span>
          <b class="${e.dinheiro<0?'negativo':''}">${U.dinheiro(e.dinheiro)}</b></div>
-       <div class="linha-dado"><span>Membros pagantes</span><b>${e.membros.length}</b></div>
-       <div class="linha-dado"><span>Manutenção da sede</span><b>${U.dinheiro(manutencao)}</b></div>
-       <div class="linha-dado"><span>Material</span><b>${U.dinheiro(material)}</b></div>
-       <div class="linha-dado"><span class="fraco">Gráfico de seis meses entra quando `+
-      `houver seis meses de histórico.</span></div>`;
+       <div class="linha-dado"><span>Membros pagantes</span><b>${pagantes}`+
+      `${pagantes<e.membros.length?` <span class="fraco">de ${e.membros.length}</span>`:''}</b></div>
+       <div class="linha-dado"><span>Sede nível ${e.torcida.sedeNivel}</span>
+         <b>${U.dinheiro(TO.financeiro.MANUT_SEDE[e.torcida.sedeNivel])}/mês</b></div>
+       <div class="linha-dado"><span>Bares · lojas · subsedes</span>
+         <b>${pat.bares.length} · ${pat.lojas.length} · ${pat.subsedes.length}</b></div>`
+      + (e.semanasNoVermelho
+         ? `<div class="linha-dado"><span class="negativo">No vermelho há `+
+           `${e.semanasNoVermelho} semana(s) — gente começa a sair.</span></div>`
+         : '');
+    if(e.historicoSemanas && e.historicoSemanas.length){
+      c2.corpo.appendChild(el('div',{class:'titulo-pagina', texto:'Últimas semanas',
+        estilo:{fontSize:'12px', paddingTop:'10px'}}));
+      for(const h of e.historicoSemanas.slice(0,6))
+        c2.corpo.appendChild(el('div',{class:'transacao', html:
+          `<span class="dia">S${h.semana}</span>
+           <span class="desc">caixa ${U.dinheiro(h.caixa)}</span>
+           <span class="val ${h.saldo<0?'negativo':'positivo'}">${U.dinheiro(h.saldo)}</span>`}));
+    }
     grade.appendChild(c2);
 
-    const c3 = cartao('Principais receitas');
-    const linhas = [
-      ['Mensalidades', mensalidades, true],
-      ['Bares', 0, true], ['Lojas', 0, true], ['Doações', 0, true]
-    ];
-    for(const [rot,v,pos] of linhas)
-      c3.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>${rot}</span><b class="${v?(pos?'positivo':'negativo'):'fraco'}">`+
-        `${v?U.dinheiro(v):'—'}</b>`}));
-    const c4 = cartao('Principais despesas');
-    for(const [rot,v] of [['Manutenção',manutencao],['Material',material],
-                          ['Fianças',0],['Insumos',0]])
-      c4.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>${rot}</span><b class="${v?'negativo':'fraco'}">${v?U.dinheiro(-v):'—'}</b>`}));
+    const linha = (rot, v, neg) =>
+      el('div',{class:'linha-dado', html:
+        `<span>${rot}</span><b class="${v?(neg?'negativo':'positivo'):'fraco'}">`+
+        `${v?U.dinheiro(neg?-v:v):'—'}</b>`});
+
+    const c3 = cartao('Receitas', 'por semana');
+    if(!cx.receitas.length) c3.corpo.appendChild(linha('Nada entrando', 0));
+    for(const r of cx.receitas) c3.corpo.appendChild(linha(r.rot, r.v, false));
+
+    const c4 = cartao('Despesas', 'por semana');
+    for(const d of cx.despesas) c4.corpo.appendChild(linha(d.rot, d.v, true));
+    if(TO.financeiro.temCaravana(e))
+      c4.corpo.appendChild(linha(`Caravana — ${e.proximoJogo.cidadeAdv}`,
+                                 TO.financeiro.CARAVANA, true));
     const col3 = el('div'); col3.append(c3,c4);
     grade.appendChild(col3);
 
@@ -946,6 +1072,8 @@
      LIGAÇÃO
      ======================================================= */
   TO.estado.aoMudar(redesenhar);
+  /* o fechamento é o momento em que a semana cobra o que prometeu */
+  TO.estado.aoFecharSemana(rel=>{ abrirFechamento(rel); TO.estado.salvar(); });
   $('btSelecionarTorcida').onclick = ()=>{
     if(!escolhida) return;
     TO.estado.novo({torcida: escolhida});

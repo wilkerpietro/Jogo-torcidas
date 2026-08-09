@@ -156,13 +156,29 @@ Rodei simulações sem navegador (Node com stubs de DOM/canvas) e o que ficou em
 - **3 layouts de mapa de cidade** (Grande/Médio/Pequeno) reutilizados pelas 38 cidades; o que muda é onde ficam sede, subsedes e estádio.
 - **Nunca dois jogos do mesmo time no mesmo dia.**
 - **Em jogo do rival** o jogador pode ver o deslocamento deles e colocar um bonde na rua pra emboscar.
+- **A briga não depende do dia de jogo.** O mapa da cidade mostra **em tempo real onde a torcida rival está**, e o jogador pode buscar o enfrentamento em qualquer ponto — o que abre a cena da rua (ou a cena do alvo, conforme o lugar). Nos arredores do estádio o cordão separa mandante e visitante quase sempre; é o mapa que garante que sempre existe um jeito de brigar sem depender de romper grade.
 - **Como visitante**, sai da subsede de um aliado (se houver) ou da entrada da cidade; mapa hostil com mais bondes rivais.
 - **A cidade não tem rio nem ponte** — no máximo praia ao norte.
 
 ---
 
-## 8. Próximo passo recomendado
+## 8. Onde o trabalho está
 
-Costurar o dia de jogo com a **versão de gestão HTML que já existe** (rodada no Claude Code): membros reais viram os discos, e as baixas voltam como Feridos e Presos no sistema de membros. Isso fecha o loop da semana e entrega o vertical slice de verdade — uma cidade, uma torcida, um rival.
+**Feito** (repositório `Jogo-torcidas`, branch `claude/project-continuation-vgatml`):
 
-Só depois expandir cidades, times e competições. Conteúdo em cima de um core que funciona é trabalho braçal previsível; conteúdo em cima de um core que não funciona é trabalho jogado fora.
+- Cena dos arredores sobre foto aérea, com malha de caminhabilidade tirada da própria
+  imagem, campo de fluxo por portão, grades rompíveis e grades de fila.
+- Costura com a gestão: membros reais viram discos; feridos e presos voltam pra ficha.
+- Dados importados: 108 times, 140 torcidas (8857 relações), 30 praças, 348 bairros.
+- Telas de gestão no visual dos mockups: Início, Torcida, Financeiro, Diplomacia.
+- **Ações da semana** (GDD §3.1 e §10) e **fechamento semanal** (GDD §7): orçamento de
+  ações pelo nível da sede, recrutamento pela fórmula do §6.2, mensalidade, bar, insumo,
+  manutenção, caravana e a debandada por caixa negativo.
+
+**Próximo passo recomendado: o mapa da cidade.** É o que falta pra briga deixar de
+depender do dia de jogo. O mapa mostra em tempo real onde a rival está e deixa o jogador
+buscar o enfrentamento, abrindo a cena da rua. Isso também destrava as quatro ações que
+hoje estão paradas por falta de cena (atacar bar/sede, assaltar alvo comercial, pressionar
+o clube) e dá lugar às subsedes e ao patrimônio, que o financeiro já sabe faturar.
+
+Depois disso, competições — o calendário é o que transforma semanas soltas em temporada.

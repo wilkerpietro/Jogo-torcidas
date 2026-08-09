@@ -100,7 +100,11 @@ TO.membros = (function(){
      CONSULTA
      ------------------------------------------------------- */
   const disponivel = m => !m.ferido && !m.preso;
-  const capacidade = E => SEDE[E.torcida.sedeNivel].membros;
+  /* GDD §6.2: a campanha de recrutamento estica o teto da sede em 50%
+     enquanto dura — agência pro jogador quando o gargalo é a estrutura */
+  const emCampanha = E => !!(E.campanha && E.campanha.ate >= E.data.semana);
+  const capacidade = E => Math.round(SEDE[E.torcida.sedeNivel].membros
+                                     * (emCampanha(E) ? 1.5 : 1));
   const capTreino  = E => SEDE[E.torcida.sedeNivel].treino;
   const capDiretoria = E => SEDE[E.torcida.sedeNivel].diretoria;
 
@@ -277,7 +281,7 @@ TO.membros = (function(){
   return {
     CARGOS, ACIMA, SEDE, DIAS_FERIDO,
     criar, nomeDe, povoarInicial,
-    disponivel, capacidade, capTreino, capDiretoria, contar,
+    disponivel, capacidade, capTreino, capDiretoria, contar, emCampanha,
     darXP, podePromover, promover, treinar, treinarFila,
     ferir, prender, fianca, resgatar, passarDia,
     aptosParaOEstadio, aplicarResultadoDaNoite

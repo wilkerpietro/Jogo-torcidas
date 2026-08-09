@@ -18,6 +18,11 @@ TO.estado = (function(){
   function aoMudar(fn){ ouvintes.push(fn); }
   function mudou(){ for(const f of ouvintes) f(E); }
 
+  /* o fechamento da semana é evento, não estado: a tela precisa saber
+     que ele aconteceu pra abrir o relatório uma vez só */
+  const ouvintesFecho = [];
+  function aoFecharSemana(fn){ ouvintesFecho.push(fn); }
+
   /* -------------------------------------------------------
      NOVA PARTIDA
      ------------------------------------------------------- */
@@ -109,14 +114,22 @@ TO.estado = (function(){
     const adv = M.adversario(meu.id);
     const casa = U.rng() < 0.5;
     const mandante = casa ? meu : adv, visitante = casa ? adv : meu;
+    const cAdv = M.cidade(adv.mapa);
     est.proximoJogo = {
       competicao: meu.divisao || 'Amistoso',
       casa,
       mandante:{nome:mandante.nome, sigla:mandante.sigla, cores:mandante.cores},
       visitante:{nome:visitante.nome, sigla:visitante.sigla, cores:visitante.cores},
       estadio: mandante.estadio,
-      hora:'21:00'
+      hora:'21:00',
+      /* o que a caravana precisa saber (GDD §7.3) */
+      advId: adv.id, mapaAdv: adv.mapa,
+      cidadeAdv: cAdv ? cAdv.nome : (adv.cidade || ''),
+      chave: `${est.data.ano}-${est.data.semana}-${adv.id}`
     };
+    /* GDD §3.2: a postura da semana começa no padrão — ir ao estádio
+       quando dá pé a pé, ficar quando o jogo é em outra cidade */
+    est.postura = TO.financeiro.precisaCaravana(est) ? 'ficar' : 'estadio';
   }
 
   function gerarNoticias(est){
@@ -149,13 +162,23 @@ TO.estado = (function(){
   function avancarDia(){
     E.data.dia++;
     E.data.absoluto = (E.data.absoluto||0) + 1;
+
+    let fecho = null;
     if(E.data.dia > 7){
+      /* o fechamento pertence à semana que acabou, então roda antes
+         de virar o contador (GDD §3.2) */
+      fecho = TO.financeiro.fecharSemana(E);
       E.data.dia = 1; E.data.semana++; E.acoes.usadas = 0;
       sortearProximoJogo(E);
       E.noticias = gerarNoticias(E);
     }
+    /* GDD §7.3: a caravana é cobrada na véspera do jogo (dia 6) */
+    if(E.data.dia === 5) TO.financeiro.cobrarCaravana(E);
+
     TO.membros.passarDia(E);
     mudou();
+    if(fecho) for(const f of ouvintesFecho) f(fecho, E);
+    return fecho;
   }
 
   /* -------------------------------------------------------
@@ -218,7 +241,8 @@ TO.estado = (function(){
 
   return {
     get E(){ return E; },
-    novo, lancar, avancarDia, aoMudar, mudou, dataTexto, sortearProximoJogo,
+    novo, lancar, avancarDia, aoMudar, aoFecharSemana, mudou,
+    dataTexto, sortearProximoJogo,
     salvar, carregar, existeSave, exportar, importar,
     bloquear, estaBloqueado
   };
