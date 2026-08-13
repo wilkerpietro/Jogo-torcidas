@@ -25,7 +25,7 @@ ALVOS = {
     'cena': {
         'pagina': 'arredores.html',
         'js': ['js/nucleo.js', 'dados/nomes.js', 'dados/cena_arredores.js',
-               'dados/cenas.js', 'js/diajogo/cenario.js',
+               'dados/cenas_foto.js', 'dados/cenas.js', 'js/diajogo/cenario.js',
                'js/diajogo/arredores.js', 'js/diajogo/combate.js', 'js/diajogo/ponte.js',
                'js/diajogo/bancada.js'],
         'inicio': 'TO.diaJogo.bancada.montar();',
@@ -36,7 +36,7 @@ ALVOS = {
                'dados/nomes.js', 'dados/cidades.js', 'dados/times.js',
                'dados/torcidas.js', 'dados/estadios.js', 'dados/cidade_mapa.js',
                'dados/diplomacia.js',
-               'dados/cena_arredores.js', 'dados/cenas.js',
+               'dados/cena_arredores.js', 'dados/cenas_foto.js', 'dados/cenas.js',
                'js/mundo/mundo.js', 'js/mundo/competicoes.js', 'js/mundo/tensao.js',
                'js/mundo/mapa.js', 'js/mundo/ruas.js',
                'js/gestao/membros.js', 'js/gestao/torcedores.js',
@@ -98,20 +98,21 @@ def main():
 
     js = '\n'.join(f'/* ===== {j} ===== */\n' + (RAIZ / j).read_text(encoding='utf-8') for j in JS)
 
-    # a foto vira data URI e o caminho no arquivo de dados aponta pra ela
-    img = (RAIZ / 'img/cenas/arredores.webp').read_bytes()
-    uri = 'data:image/webp;base64,' + base64.b64encode(img).decode()
-    js, n = re.subn(r"imagem:'[^']*'", "imagem:'" + uri + "'", js, count=1)
-    assert n == 1, 'nao achei o campo imagem em cena_arredores.js'
-    print(f'  foto embutida: {len(img)//1024} KB -> {len(uri)//1024} KB em base64')
+    # toda imagem citada nos dados vira data URI: arquivo solto na pasta
+    # nao existe pra quem abre o HTML sozinho. Pega as duas formas de
+    # escrita — a mao (aspas simples) e a gerada por importador (JSON).
+    def embutir(m):
+        caminho = m.group(2)
+        if caminho.startswith('data:'):
+            return m.group(0)
+        dados = (RAIZ / caminho).read_bytes()
+        uri = 'data:image/webp;base64,' + base64.b64encode(dados).decode()
+        print(f'  {caminho}: {len(dados)//1024} KB -> {len(uri)//1024} KB em base64')
+        return f'{m.group(1)}{uri}{m.group(3)}'
 
-    # o mapa da cidade vem de JSON gerado, com aspas duplas
-    if alvo == 'jogo':
-        mapa = (RAIZ / 'img/cenas/cidade_fortaleza.webp').read_bytes()
-        uri_m = 'data:image/webp;base64,' + base64.b64encode(mapa).decode()
-        js, n = re.subn(r'"imagem": "[^"]*"', '"imagem": "' + uri_m + '"', js, count=1)
-        assert n == 1, 'nao achei o campo imagem em cidade_mapa.js'
-        print(f'  mapa embutido: {len(mapa)//1024} KB -> {len(uri_m)//1024} KB em base64')
+    js, n1 = re.subn(r"(imagem:')([^']*)(')", embutir, js)
+    js, n2 = re.subn(r'("imagem": ")([^"]*)(")', embutir, js)
+    assert n1 + n2 >= 1, 'nao achei campo imagem nenhum nos dados'
 
     fontes = baixar_fontes()
 

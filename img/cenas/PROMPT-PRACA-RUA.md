@@ -27,8 +27,10 @@ esbarra dentro do jogo.
 A imagem vira o chão da cena. Se a IA fechar uma boca de rua ou plantar
 prédio em cima de calçada, o disco passa a andar por cima de parede.
 
-- **proporção 3:2 exata** e enquadramento a prumo (nadir). Nada de perspectiva,
-  nada de horizonte, nada de corte;
+- **enquadramento a prumo** (nadir). Nada de perspectiva, nada de horizonte.
+  A proporção pode ser 16:9 como as duas primeiras vieram: o importador
+  encaixa a largura inteira e completa a altura com faixa de quintal, porque
+  cortar de lado tiraria justamente as transversais das pontas;
 - toda faixa escura da planta continua sendo via aberta, do começo ao fim;
 - as **quatro bocas de rua** da praça (uma no meio de cada borda) e as **duas
   transversais** da rua (uma em cada ponta) continuam abertas e no mesmo lugar;
@@ -48,8 +50,11 @@ Não use texto puro — a planta tem de ser a base:
   guia. Aí dá pra subir o denoise sem perder rua.
 - Duas passadas: uma a 2048 pro traçado, outra de *upscale* 2× (tile/ultimate SD
   upscale, denoise 0,2) só pra textura.
-- Converta pro jogo:
-  `Image.open(...).convert('RGB').save('praca.webp','WEBP',quality=82,method=6)`
+- Ponha o arquivo em `img/cenas/` e rode
+  `python3 ferramentas/importar_cena_foto.py` — ele encaixa na tela, tira a
+  máscara de caminhabilidade da própria foto e escreve `dados/cenas_foto.js`.
+  Confira em `img/cenas/_ref_mascara_<cena>.png`: o que está claro é chão de
+  andar, o escuro é parede. Telhado claro tem de estar escuro ali.
 
 ---
 

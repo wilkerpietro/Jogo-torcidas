@@ -487,6 +487,73 @@ TO.dados.cenas = (function(){
     pmPostos:[{x:120, y:300}, {x:120, y:760}]
   });
 
+  /* =======================================================
+     QUANDO EXISTE FOTO
+     A cena desenhada é o rascunho; quando a foto aérea chega,
+     ela manda. A imagem vira o chão e a máscara tirada dela
+     (ferramentas/importar_cena_foto.py) vira a colisão — bloco
+     e enfeite desenhados saem, senão apareceria muro em cima
+     de casa que já está na foto.
+
+     Os marcadores são puxados pro chão mais perto: a foto nunca
+     cai exatamente onde a planta imaginou, e spawn dentro de
+     telhado é bonde que nasce presd.
+     ======================================================= */
+  function sobreFoto(cena, f){
+    if(!f) return cena;
+    cena.imagem = f.imagem;
+    cena.mascara = f.mascara;
+    cena.foto = true;
+    delete cena.pintura;                 // quem pinta agora é a foto
+    cena.blocos = []; cena.enfeites = []; cena.varais = [];
+    cena.poligonos = {caminhavel:[], bloqueio:[]};
+    /* railing modelado é coisa de cena desenhada: na foto não dá pra
+       saber onde o gradil está sem marcar na mão */
+    cena.grades = [];
+
+    const C = cena.celula, COLS = cena.largura/C, ROWS = cena.altura/C;
+    const m = new Uint8Array(COLS*ROWS);
+    f.mascara.split(';').forEach((linha, r)=>{
+      let c = 0, v = 0;
+      for(const n of linha.split(',')){
+        for(let k=0; k<+n && c<COLS; k++, c++) m[r*COLS+c] = v;
+        v ^= 1;
+      }
+    });
+    const livre = (x, y)=>{
+      const c = Math.floor(x/C), r = Math.floor(y/C);
+      return c>=0 && r>=0 && c<COLS && r<ROWS && m[r*COLS+c] === 1;
+    };
+    const puxa = p=>{
+      if(livre(p.x, p.y)) return p;
+      for(let raio=C; raio<=460; raio+=C)
+        for(let a=0; a<32; a++){
+          const x = p.x + Math.cos(a*Math.PI/16)*raio;
+          const y = p.y + Math.sin(a*Math.PI/16)*raio;
+          if(livre(x, y)){ p.x = Math.round(x); p.y = Math.round(y); return p; }
+        }
+      return p;
+    };
+    /* a pista da foto não cai na mesma altura da desenhada */
+    if(f.meio) for(const s of cena.spawns)
+      if(Math.abs(s.y - cena.altura/2) < 40) s.y = f.meio;
+    if(f.bocas) for(const e of cena.entradas){
+      if(e.x < cena.largura*0.2) e.x = f.bocas[0];
+      if(e.x > cena.largura*0.8) e.x = f.bocas[1];
+      if(f.meio && Math.abs(e.y - cena.altura/2) < 40) e.y = f.meio;
+    }
+    cena.spawns.forEach(puxa);
+    cena.entradas.forEach(puxa);
+    cena.pmPostos.forEach(puxa);
+    return cena;
+  }
+
+  const FOTO = (typeof TO !== 'undefined' && TO.dados && TO.dados.cenasFoto) || {};
+  sobreFoto(praca, FOTO.praca);
+  sobreFoto(rua, FOTO.rua);
+  sobreFoto(ruaMedia, FOTO['rua-media']);
+  sobreFoto(ruaNobre, FOTO['rua-nobre']);
+
   return {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
           bar, comercio, ct};
 })();
