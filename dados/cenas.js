@@ -287,42 +287,68 @@ TO.dados.cenas = (function(){
 
   /* =======================================================
      BAR DA RIVAL
-     Esquina de bairro com o bar da outra torcida: fachada
-     pintada nas cores deles, mesa de plástico na calçada,
-     mesa de sinuca dentro, gradil separando o salão da rua.
-     Quem invade quer chegar na porta; quem defende quer
-     segurar a calçada.
+     Esquina de bairro com o bar da outra torcida. A rua de
+     sempre atravessando o quadro e uma transversal descendo
+     da borda de cima: é ela que faz a esquina, e o bar é o
+     prédio da quina a leste dela.
+
+     O bar aqui não é bloco maciço — é SALÃO. Parede em volta
+     com uma porta virada pra rua, e dentro balcão, sinuca,
+     freezer e pilha de engradado. A briga entra: quem ataca
+     desce a transversal e toma o salão; quem defende está lá
+     dentro e só descobre o ataque quando um rival aparece na
+     frente do bar (D.gatilho), porque olhar através de parede
+     seria trapaça dos dois lados.
      ======================================================= */
   const blocosBar = [];
   const bb = (x,y,w,h,tipo,extra)=>blocosBar.push(
     Object.assign({x,y,w,h,tipo}, extra||{}));
 
-  /* o bar toma a esquina nordeste, com o salão virado pra rua */
-  bb(1010, 140, 400, 310, 'bar-rival');
-  /* o sobrado em cima do bar e o vizinho de parede, a leste */
-  bb(1010, 0, 526, 130, 'sobrado', {n:80});
-  bb(1420, 140, 116, 310, 'casa', {n:81});
-  /* o muro que fecha o deck do bar pelo lado da esquina */
-  bb(1010, 470, 30, 110, 'muro');
+  /* a transversal: x 885..1050, da borda de cima até a rua */
+  const BAR_X0 = 1050, BAR_X1 = 1420;   // parede oeste e leste do salão
+  const BAR_Y0 = 140,  BAR_Y1 = 450;    // fundo e frente
+  const PAR = 22;                       // espessura da parede
+  const PORTA = [1150, 1215];           // o vão da porta, na parede da frente
 
-  /* a vizinhança: casa e sobrado dos dois lados da rua */
-  for(let k=0;k<5;k++) bb(k*206, 0, 190, 210 + (k%3)*40, k%3===1?'sobrado':'casa', {n:k});
+  /* as quatro paredes do salão, com o vão da porta na da frente */
+  bb(BAR_X0, BAR_Y0, BAR_X1-BAR_X0, PAR, 'parede-bar');
+  bb(BAR_X0, BAR_Y0, PAR, BAR_Y1-BAR_Y0, 'parede-bar');
+  bb(BAR_X1-PAR, BAR_Y0, PAR, BAR_Y1-BAR_Y0, 'parede-bar');
+  bb(BAR_X0, BAR_Y1-PAR, PORTA[0]-BAR_X0, PAR, 'parede-bar');
+  bb(PORTA[1], BAR_Y1-PAR, BAR_X1-PORTA[1], PAR, 'fachada-bar');
+
+  /* o que tem dentro, e que também é obstáculo */
+  bb(1090, 176, 290, 34, 'balcao');       // balcão encostado no fundo
+  bb(1180, 262, 124, 68, 'sinuca');       // sinuca no meio do salão
+  /* freezer e engradado encostados nas laterais, nunca na frente da
+     porta: o vão é estreito e móvel atravessado ali fecha a invasão */
+  bb(1076, 296, 58, 46, 'freezer');
+  bb(1076, 354, 58, 46, 'freezer');
+  bb(1330, 352, 64, 56, 'engradado');
+
+  /* o sobrado em cima do bar e o vizinho de parede, a leste */
+  bb(1050, 0, 486, 130, 'sobrado', {n:80});
+  bb(1430, 140, 106, 310, 'casa', {n:81});
+
+  /* a vizinhança: casa e sobrado dos dois lados da rua. Em cima a
+     fileira para na transversal; embaixo atravessa, que a esquina é T. */
+  for(let k=0;k<5;k++) bb(k*180, 0, 165, 210 + (k%3)*40, k%3===1?'sobrado':'casa', {n:k});
   for(let k=0;k<7;k++) bb(k*222, 860, 204, 164, k%4===2?'boteco':'casa', {n:k+20});
 
   /* o que vira arma: caçamba, carro no meio-fio e engradado de cerveja */
   bb(620, 690, 150, 70, 'cacamba');
   for(const [cx,cy] of [[300,300],[700,300],[430,700],[1140,780]])
     bb(cx, cy, 96, 46, 'carro');
-  /* engradado de cerveja empilhado na ponta do deck: pilha que vira arma */
+  /* engradado empilhado na ponta do deck, do lado de fora */
   bb(1442, 476, 70, 60, 'engradado');
   bb(1442, 544, 70, 60, 'engradado');
 
   const bar = montar({
     id:'bar', nome:'Bar', pintura:'bar', blocos:blocosBar,
     local:'No bar deles',
-    saida:{perto:'Tomar o bar', longe:'Porta do bar (leve o líder)',
+    saida:{perto:'Tomar o bar', longe:'Balcão do bar (leve o líder)',
            feito:'sua torcida tomou o bar deles',
-           dica:'Leve o líder até a porta do bar.'},
+           dica:'Leve o líder pra dentro, até o balcão.'},
     enfeites:[
       {tipo:'poste', x:520, y:430}, {tipo:'poste', x:980, y:430},
       {tipo:'poste', x:1340, y:760},
@@ -334,20 +360,30 @@ TO.dados.cenas = (function(){
     /* a bandeirinha do bar, pendurada de poste a poste na frente dele */
     varais:[[[980,430],[1340,430]]],
     spawns:[
-      /* a gente chega pela rua, eles saem de dentro */
-      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:120, y:512, jogador:true,
+      /* a gente desce a transversal; eles já estão dentro do salão */
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:944, y:132, jogador:true,
        entrada:'porta_bar'},
-      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:180, y:760,
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:966, y:250,
        entrada:'porta_bar'},
-      {id:'visitante1',rot:'DONOS DA CASA', lado:'visitante', x:1160, y:480,
+      {id:'visitante1',rot:'DONOS DA CASA',  lado:'visitante', x:1140, y:236, guarda:true,
        entrada:'fuga_oeste'},
-      {id:'visitante2',rot:'SAIU DE DENTRO', lado:'visitante', x:1340, y:540,
+      {id:'visitante2',rot:'NA MESA DE TRÁS',lado:'visitante', x:1344, y:262, guarda:true,
        entrada:'fuga_oeste'}
     ],
     entradas:[
-      {id:'porta_bar',  rot:'PORTA DO BAR', lado:'mandante',  x:1120, y:462, raio:52, dir:[0,-1]},
+      /* o alvo é o balcão, lá no fundo: com o salão caminhável, parar na
+         porta seria tomar a calçada e chamar de bar. Tem de atravessar. */
+      {id:'porta_bar',  rot:'BALCÃO DO BAR', lado:'mandante', x:1240, y:236, raio:44, dir:[0,-1]},
       {id:'fuga_oeste', rot:'FIM DA RUA',   lado:'visitante', x:40,   y:512, raio:46, dir:[-1,0]}
     ],
+    /* Eles estão de costas pra rua até alguém aparecer na porta. O
+       gatilho é geográfico de propósito: acordar por linha de visão
+       faria a torcida enxergar através da parede do salão, e acordar
+       no relógio faria eles saberem antes de haver o que saber. */
+    gatilho:{x:1182, y:520, raio:150, lado:'mandante',
+             rot:'FRENTE DO BAR',
+             espera:'os donos da casa ainda não te viram',
+             aviso:'gritaram lá dentro — o bar inteiro veio pra porta'},
     /* o gradil da calçada é o que segura a investida — e quebra */
     grades:[
       {id:'gradil_bar', rot:'GRADIL DA CALÇADA',

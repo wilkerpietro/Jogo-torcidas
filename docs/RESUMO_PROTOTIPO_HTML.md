@@ -448,6 +448,22 @@ O que **não** veio, e por quê:
   a entrada no lugar e reescreve no formato da casa — colar na unha já derrubou o
   arquivo uma vez, por vírgula faltando entre duas entradas. Prova da máscara que
   vale de verdade: `python3 ferramentas/prova_mascara.py`.
+- **O bar da rival virou salão, e a casa não sabe do ataque antes da hora.** A cena
+  ganhou a esquina que o prompt promete — transversal descendo da borda de cima — e o
+  bar deixou de ser bloco maciço: agora são quatro paredes com um vão de porta e, dentro,
+  balcão, sinuca, dois freezers e pilha de engradado como obstáculo. A torcida atacante
+  nasce na ponta norte da transversal e o alvo mudou de lugar: era chegar na porta, o que
+  com o salão caminhável seria tomar a calçada e chamar de bar; agora é o **balcão**, no
+  fundo. Quem defende nasce dentro, de guarda — não anda pra lugar nenhum enquanto a casa
+  não acorda, senão o dono do bar sai andando pro fim da rua no primeiro segundo, que é o
+  padrão de quem não tem inimigo à vista. O despertar é uma zona na frente da porta
+  (`D.gatilho`), com linha de visão como segundo caminho e não como o único: `A.livre()`
+  não atravessa parede, então de dentro do salão só se enxerga quem está no vão — medido,
+  a visão do fundo pra rua dá `false` e pela porta dá `true`. Sem a zona a casa só
+  acordaria com o invasor em cima; sem a visão, uma entrada pelos fundos pegaria todo
+  mundo de costas pra sempre. Medido numa invasão inteira: casa acorda em 2,6 s pela zona,
+  os 14 defensores começam e ficam dentro até lá, 7 atacantes chegam no balcão e ninguém
+  atravessa parede em 45 s.
 - **Pino não mora em cima de gramado nem colado no vizinho**: o sorteio por hash punha
   mercadinho no meio do campo e dois ícones no mesmo lote. Agora o estádio entra primeiro
   (o lugar dele é fixo), os gramados viram área proibida com folga, e cada pino anda na

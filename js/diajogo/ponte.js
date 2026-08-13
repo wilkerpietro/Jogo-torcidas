@@ -177,8 +177,14 @@ TO.diaJogo.ponte = (function(){
     }
 
     const dica=el('djDica');
+    /* cena de invasão: enquanto a casa não acordou, isso é o que
+       importa saber — e some no instante em que gritam lá dentro */
+    const espera = D.gatilho && !J.acordou && D.gatilho.espera;
     if(dica) dica.innerHTML = ED.ativo
       ? '<kbd>F2</kbd> sair do editor'
+      : espera
+      ? `<b style="color:var(--ouro)">${espera.toUpperCase()}</b> · `+
+        '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação'
       : '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação · <kbd>Q</kbd> pedra · '+
         '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>F2</kbd> editor de cena';
   }

@@ -427,34 +427,84 @@ TO.diaJogo.cenario = (function(){
     c.restore();
   }
 
-  /* o bar da outra torcida: fachada nas cores deles, sinuca no salão */
-  function barRival(c, b){
+  /* O BAR DA OUTRA TORCIDA, POR DENTRO
+     Sem laje: a cena mostra o salão inteiro, então o bar não é um bloco
+     e sim quatro paredes com um vão de porta, e o que está dentro é
+     móvel — obstáculo que se contorna, não muro que fecha. */
+
+  /* o xadrez do piso, que faz ler de longe que ali se entra */
+  function pisoDeBar(c, x, y, w, h){
+    const l = 34;
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+    c.fillStyle = '#c9c2b2'; c.fillRect(x, y, w, h);
+    c.fillStyle = '#6c655c';
+    for(let i=0; i*l<w; i++) for(let k=0; k*l<h; k++)
+      if((i+k)%2) c.fillRect(x+i*l, y+k*l, l, l);
+    c.fillStyle = 'rgba(0,0,0,.10)';
+    for(let i=0;i<26;i++){
+      const s = hash(`piso|${x}|${i}`);
+      c.fillRect(x+(s%Math.round(w)), y+((s>>>7)%Math.round(h)), 7+(s%9), 5+(s%7));
+    }
+    c.restore();
+  }
+
+  function paredeBar(c, b){
+    c.fillStyle = '#8b8375'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 2;
+    c.strokeRect(b.x+1, b.y+1, b.w-2, b.h-2);
+    c.fillStyle = 'rgba(255,255,255,.10)';
+    c.fillRect(b.x+2, b.y+2, Math.max(2,b.w-4), Math.max(2, Math.min(6, b.h-4)));
+    pichar(c, b);
+  }
+
+  /* a parede da frente leva o letreiro e a faixa nas cores deles */
+  function fachadaBar(c, b){
     const cor = b.cor || '#2f4f9a';
-    c.fillStyle = '#6f6a5e'; c.fillRect(b.x, b.y, b.w, b.h);
-    c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 3;
-    c.strokeRect(b.x+1.5, b.y+1.5, b.w-3, b.h-3);
-    /* faixa das cores no beiral, virada pra rua */
-    c.fillStyle = cor; c.fillRect(b.x, b.y+b.h-46, b.w, 30);
-    c.fillStyle = 'rgba(255,255,255,.85)'; c.fillRect(b.x, b.y+b.h-22, b.w, 8);
-    /* salão: mesa de sinuca no meio e o balcão encostado no fundo */
-    c.fillStyle = '#2c6b3f';
-    c.fillRect(b.x+b.w*0.30, b.y+b.h*0.30, b.w*0.34, b.h*0.30);
-    c.strokeStyle = '#5a3a20'; c.lineWidth = 6;
-    c.strokeRect(b.x+b.w*0.30, b.y+b.h*0.30, b.w*0.34, b.h*0.30);
-    c.fillStyle = '#e8e2d2';
-    for(let i=0;i<5;i++){
-      const s = hash(`bola|${b.x}|${i}`);
+    paredeBar(c, b);
+    c.fillStyle = cor; c.fillRect(b.x, b.y+2, b.w, Math.max(6, b.h*0.55));
+    c.fillStyle = 'rgba(255,255,255,.85)';
+    c.fillRect(b.x, b.y+b.h*0.62, b.w, Math.max(3, b.h*0.16));
+    if(b.w > 120) letreiro(c, {x:b.x, y:b.y-26, w:b.w, h:b.h+26}, 'BAR DO ZÉ', '#f2e2a8');
+  }
+
+  function balcao(c, b){
+    c.fillStyle = '#7a4a26'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 2;
+    c.strokeRect(b.x+1, b.y+1, b.w-2, b.h-2);
+    /* o tampo mais claro e a prateleira de garrafa encostada no fundo */
+    c.fillStyle = '#9a6436'; c.fillRect(b.x+3, b.y+b.h*0.45, b.w-6, b.h*0.45);
+    for(let i=0; i*15 < b.w-14; i++){
+      const s = hash(`garrafa|${b.x}|${i}`);
+      c.fillStyle = ['#3f5f3a','#6b4a2a','#2f4258','#7a6a2a'][s%4];
+      c.fillRect(b.x+8+i*15, b.y+4, 8, Math.max(6, b.h*0.34));
+    }
+  }
+
+  function sinuca(c, b){
+    c.fillStyle = '#5a3a20'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.fillStyle = '#2c6b3f'; c.fillRect(b.x+9, b.y+9, b.w-18, b.h-18);
+    c.fillStyle = '#1b1a18';
+    for(const [px,py] of [[0,0],[1,0],[0,1],[1,1],[0.5,0],[0.5,1]]){
       c.beginPath();
-      c.arc(b.x+b.w*0.34+(s%Math.round(b.w*0.26)),
-            b.y+b.h*0.34+((s>>>6)%Math.round(b.h*0.22)), 4, 0, Math.PI*2);
+      c.arc(b.x+9+px*(b.w-18), b.y+9+py*(b.h-18), 6, 0, Math.PI*2); c.fill();
+    }
+    for(let i=0;i<6;i++){
+      const s = hash(`bola|${b.x}|${i}`);
+      c.fillStyle = ['#e8e2d2','#c0392b','#e0b040','#2f4f9a','#1b1a18','#d9705f'][i];
+      c.beginPath();
+      c.arc(b.x+18+(s%Math.max(1,Math.round(b.w-36))),
+            b.y+18+((s>>>6)%Math.max(1,Math.round(b.h-36))), 4.5, 0, Math.PI*2);
       c.fill();
     }
-    c.fillStyle = '#7a4a26';
-    c.fillRect(b.x+b.w*0.72, b.y+22, b.w*0.20, b.h*0.52);
-    /* freezer e engradado empilhado atrás do balcão */
-    c.fillStyle = '#c8ccd2'; c.fillRect(b.x+b.w*0.74, b.y+b.h*0.62, 54, 40);
-    letreiro(c, b, 'BAR DO ZÉ', '#f2e2a8');
-    pichar(c, b);
+  }
+
+  function freezer(c, b){
+    c.fillStyle = '#c8ccd2'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 2;
+    c.strokeRect(b.x+1, b.y+1, b.w-2, b.h-2);
+    c.strokeStyle = 'rgba(0,0,0,.25)';
+    c.beginPath(); c.moveTo(b.x+2, b.y+b.h/2); c.lineTo(b.x+b.w-2, b.y+b.h/2); c.stroke();
+    c.fillStyle = '#9aa2ab'; c.fillRect(b.x+b.w*0.30, b.y+b.h/2-3, b.w*0.40, 6);
   }
 
   /* muro alto: o que separa quintal, CT e terreno */
@@ -927,7 +977,8 @@ TO.diaJogo.cenario = (function(){
   const PINTOR = {
     igreja, coreto, canteiro, carro, cacamba, banca, quiosque, boteco,
     predio, sobrado, casa, muro,
-    'bar-rival':barRival, engradado, vitrine, joalheria, banco, guarita,
+    'parede-bar':paredeBar, 'fachada-bar':fachadaBar, balcao, sinuca, freezer,
+    engradado, vitrine, joalheria, banco, guarita,
     carroforte, onibus, vestiario, arquibancada, manequim,
     'casa-media':casaMedia, predinho, padaria, 'arvore-rua':arvoreRua,
     'ponto-onibus':pontoOnibus, torre, 'jardim-alto':jardimAlto,
@@ -1112,11 +1163,17 @@ TO.diaJogo.cenario = (function(){
      frente dele é larga porque é ali que ficam as mesas. */
   function bar(c, D, W, H){
     terreno(c, 0, 0, W, H, 'bar-terr');               // quintal e beco no fundo
+    /* a transversal que faz a esquina, descendo da borda de cima */
+    asfalto(c, 907, 0, 122, 440, 'bar-asf-t');
+    calcadaComum(c, 885, 0, 22, 440, 'bar-calc-to');
+    calcadaComum(c, 1029, 0, 22, 440, 'bar-calc-tl');
     asfalto(c, 0, 430, W, 430, 'bar-asf');            // a rua da frente
-    calcadaComum(c, 0, 340, W, 92, 'bar-calc-n');
+    calcadaComum(c, 0, 340, 885, 92, 'bar-calc-n');
+    calcadaComum(c, 1051, 340, W-1051, 92, 'bar-calc-ne');
     calcadaComum(c, 0, 800, W, 92, 'bar-calc-s');
-    calcadaComum(c, 1010, 430, 526, 148, 'bar-calc-bar');   // o deck das mesas
-    meioFio(c, 0, 428, W, 8, true);
+    calcadaComum(c, 1051, 430, W-1051, 148, 'bar-calc-bar');   // o deck das mesas
+    meioFio(c, 0, 428, 885, 8, true);
+    meioFio(c, 1051, 428, W-1051, 8, true);
     meioFio(c, 0, 856, W, 8, true);
     c.save();
     c.strokeStyle = 'rgba(226,200,110,.7)'; c.lineWidth = 5;
@@ -1124,6 +1181,9 @@ TO.diaJogo.cenario = (function(){
     c.beginPath(); c.moveTo(0, 644); c.lineTo(W, 644); c.stroke();
     c.setLineDash([]); c.restore();
     faixaPedestre(c, 560, 644, 300, 58, true);
+    faixaPedestre(c, 968, 470, 58, 74, false);        // a faixa da esquina
+    /* o piso do salão: xadrez, pra ler de longe que ali se entra */
+    pisoDeBar(c, 1050, 140, 370, 310);
     blocos(c, D);
     enfeites(c, D);
   }

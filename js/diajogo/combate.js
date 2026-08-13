@@ -49,6 +49,9 @@ TO.diaJogo.combate = (function(){
       this.nome=nome; this.lado=lado;
       this.spawn=spawn.id; this.entrada=spawn.entrada;
       this.escalao=spawn.rot;
+      /* quem nasce de guarda está no lugar dele, não indo pra lugar
+         nenhum: fica onde nasceu até a cena acordar (D.gatilho) */
+      this.guarda=!!spawn.guarda;
       this.x=x; this.y=y; this.vx=0; this.vy=0;
       this.r=lider?9:7; this.lider=!!lider;
       this.forca  = lider?14+U.inteiro(0,4):5+U.inteiro(0,8);
@@ -110,7 +113,10 @@ TO.diaJogo.combate = (function(){
       caidos:{mandante:0, visitante:0}, presosPor:{mandante:0, visitante:0},
       total:{mandante:0, visitante:0},
       debandou:{}, log:[], aviso:null, avisoAte:0,
-      versaoGrades:0
+      versaoGrades:0,
+      /* cena com gatilho começa dormindo: quem defende está dentro e
+         ainda não sabe de nada. Sem gatilho, tudo acordado, como sempre. */
+      acordou: !D.gatilho
     };
 
     for(const g of J.grades){ g.hpMax=P.vidaGrade; g.hp=P.vidaGrade; }
@@ -174,6 +180,7 @@ TO.diaJogo.combate = (function(){
   function passo(J,dt,teclas,podeControlar){
     if(J.fase!=='ativo') return;
     J.t+=dt;
+    conferirGatilho(J);
     moverLider(J,dt,teclas,podeControlar);
     moverDiscos(J,dt);
     moverPoliciais(J,dt);
@@ -226,6 +233,40 @@ TO.diaJogo.combate = (function(){
     return s;
   }
 
+  /* =======================================================
+     O GATILHO DA CASA
+     Cena de invasão não pode começar com os dois lados sabendo
+     um do outro: quem está dentro do bar não vê a rua, e quem
+     vem pela transversal não vê o salão. A cena declara uma
+     zona (D.gatilho) na frente da porta — rival pisou ali, a
+     casa acordou.
+
+     Linha de visão entra como segundo caminho, e não como o
+     único, justamente porque ela é honesta: A.livre() não
+     atravessa parede, então de dentro do salão só se enxerga
+     quem já está no vão da porta. Sem a zona, a casa só
+     acordaria com o invasor em cima — e sem a visão, uma
+     invasão pelos fundos pegaria todo mundo de costas pra
+     sempre. Os dois juntos cobrem os dois casos.
+     ======================================================= */
+  function conferirGatilho(J){
+    if(J.acordou) return;
+    const g=D.gatilho;
+    const atacantes=J.discos.filter(d=>d.vivo && d.lado===(g.lado||'mandante'));
+    let por=null;
+    for(const a of atacantes)
+      if(U.dist(a.x,a.y,g.x,g.y) <= (g.raio||140)){ por='zona'; break; }
+    if(!por) for(const d of J.discos){
+      if(!d.vivo || !d.guarda) continue;
+      if(inimigoAlcancavel(J,d,170)){ por='visao'; break; }
+    }
+    if(!por) return;
+    J.acordou=true; J.acordouPor=por; J.acordouEm=J.t;
+    for(const d of J.discos) d.guarda=false;
+    logar(J, g.aviso || 'a casa acordou', 'r');
+    aviso(J, g.aviso || 'A CASA ACORDOU', 'r');
+  }
+
   function inimigoAlcancavel(J,d,raio){
     const cands=[];
     for(const o of J.discos){
@@ -274,6 +315,16 @@ TO.diaJogo.combate = (function(){
         || (d.lado==='visitante' && J.recuoVisitante);
 
       let ax,ay, usarCampo=false, campo=null;
+
+      /* de guarda: fica no posto. Sem isto o dono do bar sai andando
+         pro fim da rua no primeiro segundo, porque o padrão de quem
+         não tem inimigo à vista é caminhar pra própria saída. */
+      if(d.guarda && !J.acordou){
+        d._ramo='guarda'; d._alvo=null;
+        d.vx*=0.82; d.vy*=0.82;
+        A.mover(d, d.vx*dt, d.vy*dt);
+        continue;
+      }
 
       if(recua){
         // volta pro próprio spawn
@@ -911,5 +962,5 @@ TO.diaJogo.combate = (function(){
 
   return {FORMACOES, Disco, criarEstado, passo, desenhar,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
-          restaCd, logar, aviso, nivelMoral, romperCordao};
+          restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho};
 })();

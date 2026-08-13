@@ -68,6 +68,17 @@ FONTES = [
      'sementes': [(0.50, 0.50), (0.20, 0.50), (0.80, 0.50),
                   (0.02, 0.30), (0.02, 0.70), (0.98, 0.30), (0.98, 0.70)],
      'corredor': True},
+    # O bar e o unico com transversal no meio do quadro, entao aqui o
+    # corredor geometrico atrapalha: ele so procura travessa nos 18% da
+    # borda e mataria a esquina. Fica na conectividade pura, com semente
+    # tambem dentro do salao — o piso do bar e chao de andar de proposito,
+    # e a briga termina la dentro.
+    {'id': 'bar', 'arquivo': 'Aerial_view_of_roofless_bar_202608131633.jpeg',
+     'saida': 'bar.webp',
+     'sementes': [(0.50, 0.60), (0.20, 0.60), (0.80, 0.60),
+                  (0.02, 0.60), (0.98, 0.60),
+                  (0.63, 0.12), (0.63, 0.32),
+                  (0.80, 0.29), (0.72, 0.35), (0.85, 0.49)]},
 ]
 
 

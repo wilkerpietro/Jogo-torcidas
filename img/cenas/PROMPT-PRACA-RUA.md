@@ -313,11 +313,22 @@ o bonde passa a atravessar sala de estranho.
 A geometria é a da rua de sempre — pista larga atravessando o quadro,
 calçada larga dos dois lados — mais **uma transversal descendo da borda
 de cima, a uns dois terços da largura**. É ela que faz a esquina, e o bar
-é o prédio da quina a leste dela. Comparando com `planta-bar-2048.png`:
-a planta ainda não tem essa transversal (o bar lá é meio de quadra), e é
-a única coisa que a imagem acrescenta. O resto tem de bater — faixa de
-asfalto no mesmo lugar, calçada com a mesma largura, o bar na quina de
-cima à direita e o deck de mesas na calçada em frente a ele.
+é o prédio da quina a leste dela. `planta-bar-2048.png` já está assim, e
+a imagem tem de bater com ela: transversal encostando na borda de cima,
+faixa de asfalto na mesma altura, calçada com a mesma largura, o bar na
+quina de cima à direita, a porta dele virada pra rua e o deck de mesas na
+calçada em frente.
+
+Três pontos da planta não são enfeite, são regra de jogo:
+
+- **a transversal chega até a borda de cima do quadro**, porque é ali que
+  a torcida atacante nasce (`mandante1` em 944,132 e `mandante2` em 966,250);
+- **o salão é chão contínuo**, com o balcão, a sinuca, os freezers e a pilha
+  de engradado como ilhas de obstáculo no meio dele — quem defende nasce lá
+  dentro (`visitante1` em 1112,300 e `visitante2` em 1344,250);
+- **a porta é o único vão na parede da frente** (x 1150..1215). É por ela que
+  a visão passa: de dentro do salão só se enxerga quem está no vão, e é isso
+  que segura a lógica de os donos da casa não saberem do ataque antes da hora.
 
 ```
 top-down nadir aerial drone photograph of a Brazilian street corner with a
