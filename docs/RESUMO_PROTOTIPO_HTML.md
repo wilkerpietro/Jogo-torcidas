@@ -532,6 +532,23 @@ O que **não** veio, e por quê:
   por id em vez de trocar a lista inteira: um remendo exportado antes de existir o campo
   `guarda` apagava o comportamento junto com a posição, e a torcida atacada voltava a sair
   andando no primeiro segundo.
+- **Nos arredores, a cena acaba quando o presidente entra.** Lá não se toma nada de
+  ninguém: o que se faz é chegar e entrar, e depois disso não há mais cena pra jogar,
+  mesmo que sobre gente de pé na esplanada. O botão do portão passou a marcar o líder
+  como quem entrou (antes ele fechava a cena sem entrar em lugar nenhum, e ficava de fora
+  da conta de quem chegou no alvo). Chegar no objetivo é vitória nas cenas de ação —
+  tomar o bar, levar a loja, chegar no gramado — mas **não** nos arredores, onde entrar
+  pelo portão é o fim normal da noite: ali quem decide continua sendo quem caiu de cada
+  lado, e noite sem ninguém no chão fecha como tranquila.
+- **A bancada mostra o resumo na própria cena.** No jogo quem conta o fim é a tela de
+  relatório; na bancada não havia tela nenhuma depois da cena, e a briga acabava com uma
+  faixa piscando por cima do palco — que era pior que nada, porque competia com o
+  resultado de verdade. Agora o mesmo cartaz, com os mesmos números, aparece por cima do
+  palco com um botão de nova noite. A faixa saiu.
+- **A aba `Arredores · em paz`** existe porque a outra força briga (`intencao:'atacar'`),
+  e sem ela não havia como ver o comportamento de noite tranquila — que é metade do que a
+  cena faz. O slider **Falta pro jogo** encurta o relógio da cena pra caber numa
+  conferência: com 150 min a espera até a entrada é de quase 4 minutos reais.
 - **A briga acaba sozinha.** Não é mais o botão nem o relógio: acabou quando um dos dois
   lados não tem mais ninguém de pé na cena — caiu, foi preso, entrou ou correu pra fora.
   Antes disso o vencedor ficava sozinho no cenário sem nada pra fazer até o jogador andar

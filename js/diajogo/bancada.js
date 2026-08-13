@@ -15,6 +15,12 @@ TO.diaJogo.bancada = (function(){
   const CENAS = [
     {id:'arredores', rot:'Arredores', titulo:'Arredores do estádio',
      cfg:{intencao:'atacar', bombas:2, efetivoRival:30}},
+    /* a mesma cena em noite tranquila, que é o outro comportamento
+       inteiro dos arredores: ninguém marcha pro portão, o pessoal fica
+       de conversa e entra escalão por escalão perto da hora. Sem uma
+       aba própria não havia como ver — a de cima força briga. */
+    {id:'arredores', rot:'Arredores · em paz', titulo:'Arredores, noite tranquila',
+     cfg:{paz:true, bombas:2, efetivoRival:30}},
     {id:'praca', rot:'Praça', titulo:'Praça do bairro',
      cfg:{intencao:'atacar', bombas:1, efetivoRival:22}},
     {id:'rua', rot:'Rua · periferia', titulo:'Rua de bairro de periferia',
@@ -36,7 +42,9 @@ TO.diaJogo.bancada = (function(){
 
   function abrir(c){
     atual = c;
-    for(const id of Object.keys(botoes)) botoes[id].classList.toggle('on', id === c.id);
+    /* a chave é o rótulo e não o id: as duas abas de arredores são a
+       mesma cena em situação diferente, e por id uma apagava a outra */
+    for(const k of Object.keys(botoes)) botoes[k].classList.toggle('on', k === c.rot);
     const t = document.getElementById('cenaTitulo');
     if(t) t.textContent = c.titulo;
     document.title = c.titulo + ' — Torcida Organizada';
@@ -51,7 +59,7 @@ TO.diaJogo.bancada = (function(){
       const b = document.createElement('button');
       b.textContent = c.rot;
       b.onclick = ()=>abrir(c);
-      botoes[c.id] = b;
+      botoes[c.rot] = b;
       abas.appendChild(b);
     }
     const dica = document.createElement('small');

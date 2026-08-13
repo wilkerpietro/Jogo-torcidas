@@ -628,6 +628,18 @@ table.dados tr.selecionada td{background:#252525}
 .dado-cena b{font-size:14px;white-space:nowrap}
 @media (max-width:720px){ .dados-cena{grid-template-columns:1fr} }
 
+/* o mesmo cartaz por cima do palco, na bancada, que não tem
+   tela de relatório depois da cena */
+#djFim{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(10,10,9,.72);z-index:6;
+}
+#djFim .cartaz-cena{width:min(560px,86%);box-shadow:0 18px 60px rgba(0,0,0,.6)}
+#djFim .cartaz-cena small{
+  display:block;margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--fraco);
+}
+#djFim .acao-btn{margin-top:12px}
+
 /* ---------- avisos na tela de início ---------- */
 .aviso-linha{
   display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left;cursor:pointer;

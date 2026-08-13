@@ -54,6 +54,7 @@ TO.diaJogo.ponte = (function(){
 
   let config={};
   function novaNoite(cfg){
+    const fim=$('djFim'); if(fim) fim.remove();
     if(cfg) config=cfg;
     J = C.criarEstado(config);
     TO.diaJogo.J = J;
@@ -212,8 +213,12 @@ TO.diaJogo.ponte = (function(){
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
     liga('djBtEntrar',()=>{
       const s = D.saida || SAIDA_PADRAO;
-      if(C.noPortao(J)) encerrar(s.feito);
-      else C.logar(J, s.dica, 'p');
+      if(!C.noPortao(J)){ C.logar(J, s.dica, 'p'); return; }
+      /* o líder entrando é o que fecha a cena dos arredores, e é ele
+         que faltava na conta de quem chegou no alvo */
+      const l=J.discos.find(d=>d.lider&&d.vivo);
+      if(l) C.entrarNoEstadio(J, l);
+      encerrar(s.feito, {objetivo:true});
     });
   }
   function atualizarBotoes(){
@@ -242,7 +247,11 @@ TO.diaJogo.ponte = (function(){
       ['aguentaPM','Quanto o bonde aguenta',3,20,1,v=>v+'s'],
       ['chancePaz','Chance de noite tranquila',0,100,5,v=>v+'%'],
       ['cdPedra','Recarga da pedra',0.5,6,0.1,v=>v.toFixed(1)+'s'],
-      ['alcancePedra','Alcance da pedra',80,320,10,v=>v+'px']
+      ['alcancePedra','Alcance da pedra',80,320,10,v=>v+'px'],
+      /* o relógio da cena anda 0,6 min por segundo: 150 min são 4 min
+         de espera até o pessoal entrar. Baixar isto é o jeito de ver a
+         noite tranquila inteira sem esperar a noite inteira. */
+      ['minutosAteJogo','Falta pro jogo',10,240,10,v=>v+' min']
     ];
     for(const [k,rot,mi,ma,pa,fmt] of LISTA){
       const d=document.createElement('div'); d.className='slider';
@@ -322,9 +331,14 @@ TO.diaJogo.ponte = (function(){
     } else if(!on&&el) el.remove();
   }
 
-  function encerrar(motivo){
+  function encerrar(motivo, opc){
     if(!J||J.fase==='fim') return;
     J.fase='fim';
+    /* chegar no objetivo é o sucesso da ação — tomar o bar, levar a
+       loja, chegar no gramado. Nos arredores não: lá entrar pelo portão
+       é o fim normal da noite e não uma vitória sobre ninguém, então
+       ali quem decide continua sendo quem caiu de cada lado. */
+    const noObjetivo = !!(opc && opc.objetivo) && !(!D.id || D.id==='arredores');
 
     /* GDD §5.3 — XP de briga por escala: a média do tamanho dos dois
        lados. Substitui a divisão binária briga grande / briga pequena,
@@ -337,7 +351,12 @@ TO.diaJogo.ponte = (function(){
        casos, não em todos: dá pra derrubar mais e ainda assim ser
        corrido de lá. */
     const venceu = J.acabou ? J.acabou.venceu
-                            : J.caidos.visitante > J.caidos.mandante;
+                 : noObjetivo ? true
+                 : J.caidos.visitante > J.caidos.mandante;
+    /* noite sem ninguém no chão é noite tranquila, tenha ela acabado
+       pelo portão ou por a cena esvaziar */
+    const tranquila = (J.acabou && J.acabou.tranquila) ||
+                      J.caidos.mandante + J.caidos.visitante === 0;
     const xpNoite = Math.round(xpBase * (venceu?1.5:1));
 
     /* ficha por ficha: é isto que vira Ferido e Preso na gestão */
@@ -360,7 +379,7 @@ TO.diaJogo.ponte = (function(){
       rompido:J.rompido,
       entraram:J.entraram,
       venceu, xpNoite,
-      tranquila: !!(J.acabou && J.acabou.tranquila),
+      tranquila,
       bombasUsadas: Math.max(0, (J.bombasIniciais||0) - J.bombas),
       /* o que saiu da mão de cada lado, e quem correu pra fora da cena */
       armas: J.armas,
@@ -372,7 +391,44 @@ TO.diaJogo.ponte = (function(){
     };
     J.resultado=r;
     C.logar(J,`Encerrado (${motivo}). Prestígio ${r.prestigio>0?'+':''}${r.prestigio}.`,'p');
-    if(aoTerminar) aoTerminar(r);
+    if(aoTerminar) aoTerminar(r); else mostrarFimNaCena(r);
+  }
+
+  /* =======================================================
+     O RESUMO NA PRÓPRIA CENA
+     No jogo quem mostra o fim é a tela de relatório. Na bancada
+     não existe tela nenhuma depois da cena, e a briga acabava
+     em silêncio — daí este mesmo cartaz, com os mesmos números,
+     desenhado por cima do palco.
+     ======================================================= */
+  function mostrarFimNaCena(r){
+    const palco=$('djPalco');
+    if(!palco) return;
+    const velho=$('djFim'); if(velho) velho.remove();
+    const a=(r.armas&&r.armas.mandante)||{pedra:0,bomba:0};
+    /* mesmas três palavras da tela de relatório do jogo, e nesta ordem:
+       ter vencido diz mais que a noite ter sido calma */
+    const titulo = r.venceu ? 'SAÍMOS POR CIMA'
+                 : r.tranquila ? 'NOITE TRANQUILA' : 'SAÍMOS POR BAIXO';
+    const dado=(rot,val)=>`<div class="dado-cena"><span>${rot}</span><b>${val}</b></div>`;
+    const cx=document.createElement('div');
+    cx.id='djFim';
+    cx.innerHTML=
+      `<div class="cartaz-cena ${r.venceu?'boa':'ruim'}">
+         <h3>${titulo}</h3>
+         <div class="dados-cena">
+           ${dado('Feridos deles', r.caidosVisitante)}
+           ${dado('Feridos nossos', r.caidosMandante)}
+           ${dado('Armas empregadas', `${a.pedra||0} pedras · ${a.bomba||0} bombas`)}
+           ${dado('Presos', r.presosMandante+r.presosVisitante)}
+           ${dado('Chegaram no alvo', (r.entraram||{}).mandante||0)}
+           ${dado('Prestígio', (r.prestigio>0?'+':'')+r.prestigio)}
+         </div>
+         <small>${r.motivo}</small>
+         <button class="acao-btn" id="djOutraNoite">Nova noite</button>
+       </div>`;
+    palco.appendChild(cx);
+    $('djOutraNoite').onclick=()=>{ cx.remove(); novaNoite(); };
   }
 
   /* =======================================================

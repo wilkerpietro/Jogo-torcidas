@@ -131,7 +131,8 @@ TO.diaJogo.combate = (function(){
       sobPressao:0, fracPM:0, avisouPM:false,
       recuando:false, recuoVisitante:false,
       /* quem sai pra atacar não tem noite tranquila (GDD §15.4) */
-      paz: cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
+      paz: cfg.paz!==undefined ? cfg.paz
+         : cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
       /* onde a briga cai: arredores do estádio, praça ou rua. Muda o
          tamanho do bonde rival e a pressa da PM (GDD §12). */
@@ -221,7 +222,10 @@ TO.diaJogo.combate = (function(){
         if(d.lider) continue;      // o líder é do jogador, ele decide
         const g=Math.max(0, grupos.indexOf(d.spawn));
         const passo=grupos.length>1 ? (cedo-tarde-FOLGA)/(grupos.length-1) : 0;
-        const faltando=cedo - g*passo;                    // em minutos
+        /* relógio curto (a bancada baixa isto pra dar pra ver a cena
+           sem esperar a noite) não pode pedir que entrem antes de a
+           cena começar: a janela encolhe junto */
+        const faltando=Math.min(cedo - g*passo, P.minutosAteJogo*0.7);
         d.vadiando=true;
         d.entraEm=(P.minutosAteJogo - faltando)/0.6 + U.entre(0, FOLGA/0.6);
       }
@@ -284,6 +288,22 @@ TO.diaJogo.combate = (function(){
 
   function conferirFim(J){
     if(J.fase!=='ativo') return;
+    /* Nos arredores o fim é outro e é mais simples: acabou quando o
+       presidente entrou pelo portão. Lá não se toma nada de ninguém —
+       o que se faz é chegar e entrar, e depois disso não há mais cena
+       pra jogar, mesmo que sobre gente de pé na esplanada. */
+    if(fugaPelaEntrada()){
+      const l=J.discos.find(d=>d.lider);
+      if(l && l.entrou){
+        J.fase='acabando';
+        const venceu = J.caidos.visitante >= J.caidos.mandante;
+        J.acabou={lado:'mandante', venceu,
+                  tranquila: J.caidos.mandante+J.caidos.visitante===0,
+                  motivo:'o presidente entrou pelo portão'};
+        logar(J, J.acabou.motivo, 'p');
+        return;
+      }
+    }
     const m=dePe(J,'mandante'), v=dePe(J,'visitante');
     if(m>0 && v>0) return;
     const lado = m>0 ? 'mandante' : (v>0 ? 'visitante' : null);
@@ -328,9 +348,10 @@ TO.diaJogo.combate = (function(){
       : lado===null ? 'não sobrou ninguém de pé dos dois lados'
       : venceu ? 'não sobrou ninguém deles na cena'
                : 'sua torcida foi corrida do lugar'};
+    /* nada de faixa na cena aqui: quem conta o resultado é a tela de
+       resumo, e um aviso piscando por cima do palco no mesmo instante
+       só fazia perguntar qual dos dois era o resultado de verdade */
     logar(J, J.acabou.motivo, semBriga?'p':venceu?'v':'r');
-    if(!semBriga)
-      aviso(J, venceu?'A CENA É SUA':'CORRERAM COM VOCÊ', venceu?'#7fc2a0':'#d9705f');
   }
 
   function logar(J,txt,cor){
@@ -506,7 +527,7 @@ TO.diaJogo.combate = (function(){
         // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
         campo = campoDoSpawn(s); usarCampo=true;
-      } else if(d.vadiando && J.t < d.entraEm){
+      } else if(d.vadiando && J.paz && J.t < d.entraEm){
         vadiar(J, d); ax=d.vagoX; ay=d.vagoY;
       } else {
         const alvo = inimigoAlcancavel(J,d, d.doJogador?110:130);
@@ -584,7 +605,7 @@ TO.diaJogo.combate = (function(){
       }
 
       /* quem está de conversa anda devagar: é passeio, não deslocamento */
-      const passeio = d.vadiando && J.t < d.entraEm;
+      const passeio = d.vadiando && J.paz && J.t < d.entraEm;
       const vel=P.velocidade*(d.fugindo?1.25:recua?1.15:passeio?0.5:1)
                 *(0.75+nivelMoral(d.moral)*0.25);
       if(!dirx && !diry && d.acomodado){
