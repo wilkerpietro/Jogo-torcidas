@@ -432,9 +432,14 @@ O que **não** veio, e por quê:
   nem carrega a imagem junto. Ele entra depois de `cenas_foto.js` (que é gerado e se
   perde na próxima importação) e sobrescreve só o que está escrito — pôr só `mascara`
   mantém spawn, entrada e posto de PM onde estavam, e o que não veio da mão reencosta
-  na malha nova. A rua de periferia já foi assim: 33% de chão viraram 43%, de meio-fio
-  a meio-fio, sem ninguém nascer preso nem atravessar parede em 45 s de briga. Prova da
-  máscara que vale de verdade: `python3 ferramentas/prova_mascara.py`.
+  na malha nova. Três cenas já passaram por aí, e o erro do corte foi diferente em cada
+  uma: na rua de periferia faltava chão (33% → 43%, a calçada inteira voltou), na praça
+  sobrava (71% → 61%, o corte tinha vazado pra dentro do quarteirão) e na de classe
+  média era vazamento fino pelo portão — entrada de garagem e jardim de frente entrando
+  como chão (47% → 44%). Marcador da mão que caia em parede depois da repintura
+  reencosta no chão mais perto, e reencostar exige a maior ilha de chão: poço de uma
+  célula solta no meio de telhado é bonde nascendo emparedado sem nunca tocar muro.
+  Prova da máscara que vale de verdade: `python3 ferramentas/prova_mascara.py`.
 - **Pino não mora em cima de gramado nem colado no vizinho**: o sorteio por hash punha
   mercadinho no meio do campo e dois ícones no mesmo lote. Agora o estádio entra primeiro
   (o lugar dele é fixo), os gramados viram área proibida com folga, e cada pino anda na
