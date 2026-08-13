@@ -2747,10 +2747,39 @@
     fechar = modal(a.nome, 'Escolha o alvo', corpo);
   }
 
+  /* =======================================================
+     O CARTAZ DO FIM DA CENA
+     Primeira coisa que se lê ao sair da briga: deu certo ou
+     não, e a conta da noite embaixo. Vem antes do prestígio
+     porque prestígio é número de gestão — na hora o que se
+     quer saber é se a operação valeu.
+     ======================================================= */
+  function cartazDaCena(res, fecho){
+    const ganhou = fecho ? !!fecho.ganhou : !!res.venceu;
+    const titulo = (fecho && fecho.titulo) ||
+                   (ganhou ? 'SAÍMOS POR CIMA' : 'SAÍMOS POR BAIXO');
+    const armas = (res.armas && res.armas.mandante) || {pedra:0, bomba:0};
+    const dinheiro = (fecho && fecho.dinheiro) || 0;
+    const dado = (rot, val, cor)=>
+      `<div class="dado-cena"><span>${rot}</span>`+
+      `<b${cor?` class="${cor}"`:''}>${val}</b></div>`;
+    return el('div', {class:`cartaz-cena ${ganhou?'boa':'ruim'}`, html:
+      `<h3>${titulo}</h3><div class="dados-cena">`+
+        dado('Feridos deles', res.caidosVisitante, res.caidosVisitante?'positivo':'')+
+        dado('Feridos nossos', res.caidosMandante, res.caidosMandante?'negativo':'')+
+        dado('Armas empregadas',
+             `${armas.pedra||0} pedras · ${armas.bomba||0} bombas`)+
+        dado('Dinheiro da operação', dinheiro ? U.dinheiro(dinheiro) : '—',
+             dinheiro ? 'positivo' : '')+
+      `</div>`});
+  }
+
   function mostrarRelatorio(res, resumo, fecho){
     $('subRelatorio').textContent = res.motivo;
     const cx = $('corpoRelatorio');
-    cx.innerHTML =
+    cx.innerHTML = '';
+    cx.appendChild(cartazDaCena(res, fecho));
+    cx.insertAdjacentHTML('beforeend',
       `<div class="colunas">
          <div>
            <div class="valorao"><span>Prestígio da noite</span>
@@ -2767,7 +2796,7 @@
            <div class="linha-dado"><span>Grade rompida</span><b>${res.rompido?'sim':'não'}</b></div>
            <div class="linha-dado"><span>Presos</span><b>${resumo.presos.length}</b></div>
          </div>
-       </div>`;
+       </div>`);
     /* o que a investida, o assalto ou a cobrança no CT deixaram */
     if(fecho){
       cx.appendChild(el('div',{class:`fecho-cena ${fecho.ganhou?'boa':'ruim'}`,

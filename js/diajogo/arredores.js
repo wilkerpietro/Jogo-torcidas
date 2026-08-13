@@ -80,6 +80,65 @@ TO.diaJogo.arredores = (function(){
     else construirMalhaDosPoligonos();
     construirMalhaCorpo();   // onde o corpo cabe, base das rotas
     limparCampos();          // a navegação depende da malha
+    fugas = acharFugas();    // por onde se some, quando se corre
+  }
+
+  /* =======================================================
+     POR ONDE SE SOME
+     Quem debanda corre até sair da tela, e sair da tela é
+     chegar numa boca de rua. Estas não se marcam à mão: são
+     lidas da própria malha, e por isso caem sempre em cima de
+     rua — chão que encosta na borda da área andável é boca de
+     rua, por construção.
+
+     A borda usada é a da MANCHA, não a da imagem: foto 16:9
+     entra numa tela 3:2 com faixa de quintal em cima e embaixo,
+     então a linha 0 nunca é chão e as transversais que sobem
+     pro topo ficariam de fora.
+     ======================================================= */
+  let fugas = [];
+  function acharFugas(){
+    let c0 = COLS, c1 = -1, r0 = ROWS, r1 = -1;
+    for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++){
+      if(malha[r*COLS+c] !== 1) continue;
+      if(c<c0) c0=c; if(c>c1) c1=c;
+      if(r<r0) r0=r; if(r>r1) r1=r;
+    }
+    if(c1<0) return [];
+
+    /* corridas contínuas de chão em cada uma das quatro linhas de borda */
+    const achados = [];
+    const varrer = (n, pega, dentro)=>{
+      let ini = -1;
+      for(let i=0; i<=n; i++){
+        const tem = i<n && pega(i);
+        if(tem && ini<0) ini = i;
+        else if(!tem && ini>=0){
+          if(i-ini >= 3) achados.push(dentro((ini+i-1)/2));   // 24 px de vão
+          ini = -1;
+        }
+      }
+    };
+    const livreEm = (c,r)=> malha[r*COLS+c] === 1;
+    varrer(COLS, c=>livreEm(c,r0), c=>({x:(c+0.5)*CEL, y:(r0+1.5)*CEL}));
+    varrer(COLS, c=>livreEm(c,r1), c=>({x:(c+0.5)*CEL, y:(r1-0.5)*CEL}));
+    varrer(ROWS, r=>livreEm(c0,r), r=>({x:(c0+1.5)*CEL, y:(r+0.5)*CEL}));
+    varrer(ROWS, r=>livreEm(c1,r), r=>({x:(c1-0.5)*CEL, y:(r+0.5)*CEL}));
+
+    /* o ponto tem de ser pisável de verdade, não a beirada da célula */
+    return achados.map(p=>{
+      const q = cabe(p.x, p.y, 9) ? p : pontoLivreMaisProximo(p.x, p.y, 9);
+      return {x:Math.round(q.x), y:Math.round(q.y), raio:34};
+    });
+  }
+  /* a mais perto de quem está correndo */
+  function fugaMaisPerto(x, y){
+    let melhor=null, md=Infinity;
+    for(const f of fugas){
+      const d=(f.x-x)*(f.x-x)+(f.y-y)*(f.y-y);
+      if(d<md){md=d; melhor=f;}
+    }
+    return melhor;
   }
 
   /* =======================================================
@@ -648,6 +707,7 @@ TO.diaJogo.arredores = (function(){
     reconstruir, construirMalhaDosPoligonos,
     codificarMascara, decodificarMascara,
     caminhavel, cabe, celulaLivre, cabeCorpo, pontoLivreMaisProximo,
+    get fugas(){return fugas;}, fugaMaisPerto,
     mover, empurrar, livre, livrePara, raioMalha, atravessaGrade,
     criarCampo, campoDaEntrada, limparCampos, celulasDeGrades,
     montarGrades, barrarGrades,

@@ -352,6 +352,9 @@ TO.diaJogo.ponte = (function(){
       entraram:J.entraram,
       venceu, xpNoite,
       bombasUsadas: Math.max(0, (J.bombasIniciais||0) - J.bombas),
+      /* o que saiu da mão de cada lado, e quem correu pra fora da cena */
+      armas: J.armas,
+      sumiram: J.sumiram,
       moralTorcida: venceu?+1 : (J.debandou&&J.debandou.mandante)?-2 : -0.5,
       prestigio: Math.round(J.caidos.visitante*2 - J.caidos.mandante*1.5
                             - J.presosPor.mandante*2 + (J.rompido?6:0)),

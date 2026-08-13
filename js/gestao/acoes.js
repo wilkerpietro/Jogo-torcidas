@@ -176,6 +176,7 @@ TO.acoes = (function(){
     const T = TO.tensao;
     const ganhou = !!res.venceu;
     const linhas = [];
+    let levou = 0;
     /* bar tomado é caixa deles no bolso da gente; sede é humilhação */
     if(ganhou){
       const m = TO.tensao ? TO.tensao.mundo(E)[alvo.torcidaId] : null;
@@ -183,7 +184,7 @@ TO.acoes = (function(){
       /* Não é só o caixa deles: bar tem gaveta e estoque, sede tem material.
          Torcida pequena e pobre ainda rende alguma coisa pela cabeça. */
       const gaveta = (alvo.tipo === 'bar' ? 60 : 30) * alvo.efetivo;
-      const levou = Math.round(gaveta + (m ? m.caixa : 1200) * base);
+      levou = Math.round(gaveta + (m ? m.caixa : 1200) * base);
       if(levou > 0){
         if(m) m.caixa = Math.max(0, m.caixa - levou);
         TO.estado.lancar(E, `Saque — ${alvo.nome}`, levou);
@@ -202,7 +203,8 @@ TO.acoes = (function(){
     const txt = `${ganhou ? 'Tomamos' : 'Fomos até'} ${alvo.nome}, em ${alvo.bairro}.`+
                 (linhas.length ? ' ' + linhas.join('; ') + '.' : '');
     TO.estado.anotar(E, txt, ganhou ? 'boa' : 'ruim');
-    return {txt, ganhou, linhas};
+    return {txt, ganhou, linhas, dinheiro:levou,
+            titulo: ganhou ? 'ATAQUE BEM-SUCEDIDO' : 'ATAQUE FRACASSOU'};
   }
 
   function fecharAssalto(E, alvo, res){
@@ -226,7 +228,8 @@ TO.acoes = (function(){
     const txt = `${ganhou ? 'Levaram' : 'Tentaram'} ${alvo.nome.toLowerCase()} `+
                 `em ${alvo.bairro}. ${linhas.join('; ')}.`;
     TO.estado.anotar(E, txt, ganhou ? 'boa' : 'ruim');
-    return {txt, ganhou, linhas, levou};
+    return {txt, ganhou, linhas, levou, dinheiro:levou,
+            titulo: ganhou ? 'ASSALTO BEM-SUCEDIDO' : 'ASSALTO FRACASSOU'};
   }
 
   /* Semanas que a cobrança do elenco dura, e quanto ela vale de qualidade */
@@ -250,7 +253,9 @@ TO.acoes = (function(){
       : `A segurança segurou a torcida no portão do CT. `+
         `Vexame — e o elenco se sentiu perseguido até a semana ${c.cobranca.ate}.`;
     TO.estado.anotar(E, txt, chegou ? 'boa' : 'ruim');
-    return {txt, ganhou:chegou, linhas:[`relação com o clube em ${Math.round(c.relacao)}`]};
+    return {txt, ganhou:chegou, dinheiro:0,
+            titulo: chegou ? 'COBRANÇA FEITA' : 'COBRANÇA FRACASSOU',
+            linhas:[`relação com o clube em ${Math.round(c.relacao)}`]};
   }
 
   /* quanto a cobrança soma (ou tira) da qualidade do nosso clube */

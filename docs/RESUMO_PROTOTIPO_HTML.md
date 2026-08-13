@@ -484,6 +484,33 @@ O que **não** veio, e por quê:
   mundo de costas pra sempre. Medido numa invasão inteira: casa acorda em 2,6 s pela zona,
   os 14 defensores começam e ficam dentro até lá, 7 atacantes chegam no balcão e ninguém
   atravessa parede em 45 s.
+- **Debandar é sair da cena, não recuar pro spawn.** Quem corre agora corre até sumir:
+  o destino é a boca de rua mais perto, e as bocas não se marcam à mão — saem da própria
+  malha (`A.fugas`), lendo o chão que encosta na borda da mancha andável, o que faz elas
+  caírem sempre em cima de rua por construção. A borda é a da mancha e não a da imagem,
+  senão a faixa de quintal da foto 16:9 esconderia as transversais que sobem pro topo.
+  Medido: 5 a 9 bocas por cena, todas em chão livre. Duas armadilhas apareceram: o disco
+  escolhia a boca mais perto **em linha reta** e ia empurrar muro a vida toda (dez presos
+  no CT, onze nos arredores), então agora a escolha é pela boca mais perto **que tem
+  rota**, com o campo de fluxo respeitando grade — cerca de CT e cordão de PM fecham
+  caminho de verdade. E o gargalo do portão não cabia dez discos dentro do raio marcado,
+  daí os 46 px de folga na chegada. **Nos arredores é diferente de propósito**: ali fugir
+  é entrar, então o destino é o portão do próprio bonde e quem chega conta como quem
+  entrou; se o cordão cortar a rota até o portão, aí sim cai pra rua. Medido nas oito
+  cenas: todo mundo sai, sobra o líder (que é do jogador e não foge sozinho).
+- **O outro lado também tem pedra e bomba.** Um disco do bonde rival — o mais forte —
+  vira o braço deles, com a mesma arma, a mesma física e o mesmo alcance do jogador. O
+  que muda é a decisão: bomba só de perto (60% do alcance) e com quatro ou mais no raio,
+  pedra no resto, mira torta (22 px, 34 na bomba) e cadência mais lenta. Ele começa com
+  8 s de espera porque nos primeiros segundos o bonde ainda está em coluna no spawn e uma
+  bomba ali derrubava doze de uma vez — foi medido, 15 caídos aos 18 s, antes de o jogador
+  ter chance de abrir a formação. O estoque é metade do seu, no mínimo um.
+- **O fim da cena abre com um cartaz** (`.cartaz-cena`): **ATAQUE BEM-SUCEDIDO** ou
+  **ATAQUE FRACASSOU** em letra grande — ASSALTO e COBRANÇA nas outras ações, e um par
+  neutro no dia de jogo — e embaixo os quatro números da noite: feridos deles, feridos
+  nossos, armas empregadas (pedras e bombas que saíram da sua mão) e dinheiro da
+  operação. Vem antes do prestígio de propósito: prestígio é número de gestão, o que se
+  quer saber ao sair da briga é se valeu.
 - **Pino não mora em cima de gramado nem colado no vizinho**: o sorteio por hash punha
   mercadinho no meio do campo e dois ícones no mesmo lote. Agora o estádio entra primeiro
   (o lugar dele é fixo), os gramados viram área proibida com folga, e cada pino anda na

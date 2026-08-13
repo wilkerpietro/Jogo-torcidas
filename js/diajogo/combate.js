@@ -13,7 +13,7 @@ TO.diaJogo.P = {
   vidaGrade:420, forcaPM:21, debandada:45,
   atrasoCarga:7, tropaCarga:8, duracaoCarga:18, aguentaPM:9,
   cdPedra:2, cdBomba:2.5, alcancePedra:170, alcanceBomba:210,
-  bombas:4, chancePaz:35
+  bombas:4, bombasRival:2, chancePaz:35
 };
 
 TO.diaJogo.combate = (function(){
@@ -59,10 +59,11 @@ TO.diaJogo.combate = (function(){
       this.hpMax  = lider?220:150; this.hp=this.hpMax;
       this.moral=12;
       this.caido=false; this.preso=false; this.fugindo=false; this.entrou=false;
+      this.sumiu=false;     // debandou e saiu da cena por uma boca de rua
       this.atordoado=0; this.tremor=0; this.golpe=0; this.hostil=0;
       this.membroId=null;   // costura com a gestão
     }
-    get vivo(){return !this.caido && !this.preso && !this.entrou;}
+    get vivo(){return !this.caido && !this.preso && !this.entrou && !this.sumiu;}
   }
 
   class Policial{
@@ -90,6 +91,11 @@ TO.diaJogo.combate = (function(){
      ======================================================= */
   function criarEstado(cfg){
     cfg=cfg||{};
+    /* campo de fluxo é geometria da cena que estava no ar. Trocar de
+       cena sem limpar faz o bonde de 'mandante1' andar pro spawn da
+       cena anterior, que na nova é dentro de um prédio. */
+    for(const k in camposSpawn) delete camposSpawn[k];
+    cacheFuga = {versao:-1, lista:null};
     const J={
       t:0, fase:'ativo',
       discos:[], policiais:[], projeteis:[], grades:A.montarGrades(),
@@ -97,6 +103,16 @@ TO.diaJogo.combate = (function(){
       /* o estoque da noite vem do planejamento da semana */
       bombas: cfg.bombas!==undefined ? cfg.bombas : P.bombas,
       bombasIniciais: cfg.bombas!==undefined ? cfg.bombas : P.bombas,
+      /* do outro lado também tem quem junte pedra: sem isso a briga é
+         um lado bombardeando e o outro correndo pra cima na mão */
+      /* metade do que você levou, no mínimo uma: assim a cena que te
+         dá pouca bomba não vira a cena em que só eles têm */
+      bombasRival: cfg.bombasRival!==undefined ? cfg.bombasRival
+                 : Math.max(1, Math.ceil((cfg.bombas!==undefined?cfg.bombas:P.bombas)/2)),
+      /* ele não começa jogando: nos primeiros segundos o bonde ainda
+         está em coluna no spawn, e uma bomba ali derruba doze de uma
+         vez antes de o jogador ter chance de abrir a formação */
+      cdRival:8,
       alerta: 12 + (cfg.intencao==='atacar' ? 8 : 0), rompido:false, reforco:0,
       cargaEm:null, cargaAte:0, tropaVeio:false,
       sobPressao:0, fracPM:0, avisouPM:false,
@@ -111,6 +127,8 @@ TO.diaJogo.combate = (function(){
       cdPedraAte:0, cdBombaAte:0,
       entraram:{}, presos:0,
       caidos:{mandante:0, visitante:0}, presosPor:{mandante:0, visitante:0},
+      sumiram:{mandante:0, visitante:0},
+      armas:{mandante:{pedra:0,bomba:0}, visitante:{pedra:0,bomba:0}},
       total:{mandante:0, visitante:0},
       debandou:{}, log:[], aviso:null, avisoAte:0,
       versaoGrades:0,
@@ -168,6 +186,16 @@ TO.diaJogo.combate = (function(){
       }
       J.total[s.lado]+=qtd;
     }
+
+    /* o braço deles: um disco só, o mais forte do bonde rival. Um por
+       lado é de propósito — dois já viram chuva de pedra e a cena
+       deixa de ser briga de corpo. */
+    const rivais=J.discos.filter(d=>d.lado==='visitante');
+    if(rivais.length){
+      const braco=rivais.reduce((a,b)=> b.forca>a.forca ? b : a);
+      braco.arremessador=true;
+      J.bracoRival=braco;
+    }
     return J;
   }
   function contarSpawns(lado){
@@ -185,6 +213,7 @@ TO.diaJogo.combate = (function(){
     moverDiscos(J,dt);
     moverPoliciais(J,dt);
     contatos(J,dt);
+    iaArremesso(J,dt);
     moverProjeteis(J,dt);
     medirClima(J,dt);
     passoCarga(J,dt);
@@ -326,8 +355,28 @@ TO.diaJogo.combate = (function(){
         continue;
       }
 
-      if(recua){
-        // volta pro próprio spawn
+      if(d.fugindo){
+        /* debandada é fuga, não recuo: corre até sumir da tela. */
+        const rota = rotaDeFuga(J, d);
+        const destino = rota && rota.destino;
+        if(destino){
+          /* 46 px de folga: no gargalo do portão dez discos convergem
+             pro mesmo ponto e não cabem todos dentro do raio marcado —
+             sem a folga a fila para ali e ninguém some nunca */
+          const perto = Math.max(destino.raio||34, 46);
+          if(U.dist(d.x,d.y,destino.x,destino.y) < perto){
+            /* nos arredores fugir é entrar: some pro estádio, e é isso
+               que o placar de quem entrou tem de contar */
+            if(destino.entrada) entrarNoEstadio(J,d); else sumir(J,d);
+            continue;
+          }
+          campo = rota.campo; usarCampo=true;
+        } else {
+          const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
+          campo = campoDoSpawn(s); usarCampo=true;
+        }
+      } else if(recua){
+        // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
         campo = campoDoSpawn(s); usarCampo=true;
       } else {
@@ -375,7 +424,7 @@ TO.diaJogo.combate = (function(){
             dirx=gx/gd; diry=gy/gd;
           }
         }
-        if(recua){
+        if(recua && !d.fugindo){
           const s=D.spawns.find(x=>x.id===d.spawn);
           if(s && U.dist(d.x,d.y,s.x,s.y)<40){dirx=0;diry=0;}
         }
@@ -457,6 +506,63 @@ TO.diaJogo.combate = (function(){
   function campoDoSpawn(s){
     if(!camposSpawn[s.id]) camposSpawn[s.id]=A.criarCampo(s.x,s.y);
     return camposSpawn[s.id];
+  }
+
+  /* =======================================================
+     DEBANDADA: SAIR DA CENA
+     Quem debanda não recua pro spawn e fica parado ali — corre
+     até sumir. O destino é a boca de rua mais perto, lida da
+     malha por arredores.js, então cai sempre em cima de rua.
+
+     Nos arredores é diferente e de propósito: ali não se corre
+     pra rua, se entra pro estádio. A cena não tem id (é a
+     padrão) e é a única assim, o que serve de teste.
+     ======================================================= */
+  const fugaPelaEntrada = ()=> !D.id || D.id === 'arredores';
+
+  /* Um campo de fluxo por boca de rua, e todos respeitando a grade:
+     cerca de CT e cordão de PM fecham caminho de verdade, e um campo
+     que os ignora manda o bonde empurrar o alambrado pra sempre.
+     Custa uma varredura por boca, então só se constrói quando alguém
+     debanda — e se refaz quando uma grade cai. */
+  let cacheFuga = {versao:-1, lista:null};
+  function camposDeFuga(J){
+    if(cacheFuga.versao !== J.versaoGrades) cacheFuga = {versao:J.versaoGrades, lista:null};
+    if(!cacheFuga.lista){
+      const bloq = A.celulasDeGrades(J.grades);
+      cacheFuga.lista = A.fugas.map(f=>({f, campo:A.criarCampo(f.x, f.y, bloq)}));
+    }
+    return cacheFuga.lista;
+  }
+
+  /* A saída mais perto QUE TEM CAMINHO. Sem o teste de rota, o disco
+     escolhe a boca do outro lado do muro e vai morrer de empurrar
+     parede — foi o que travou dez discos no CT e onze nos arredores. */
+  function rotaDeFuga(J, d){
+    if(fugaPelaEntrada()){
+      const e = D.entradas.find(x=>x.id===d.entrada) ||
+                D.entradas.find(x=>x.lado===d.lado);
+      if(e){
+        const c = A.campoDaEntrada(e.id, J.grades, J.versaoGrades);
+        if(!c.passo(d.x,d.y).semRota)
+          return {destino:{x:e.x, y:e.y, raio:e.raio||34, entrada:e.id}, campo:c};
+      }
+    }
+    let melhor=null, md=Infinity;
+    for(const o of camposDeFuga(J)){
+      if(o.campo.passo(d.x,d.y).semRota) continue;
+      const q=U.dist2(d.x,d.y,o.f.x,o.f.y);
+      if(q<md){md=q; melhor=o;}
+    }
+    return melhor ? {destino:melhor.f, campo:melhor.campo} : null;
+  }
+  /* usada pelos testes e pelo editor: só o destino, sem o campo */
+  function alvoDeFuga(J, d){ const r=rotaDeFuga(J,d); return r && r.destino; }
+
+  function sumir(J,d){
+    if(d.sumiu) return;
+    d.sumiu=true; d.vx=d.vy=0;
+    J.sumiram[d.lado]=(J.sumiram[d.lado]||0)+1;
   }
 
   /* ---------- polícia ---------- */
@@ -865,7 +971,63 @@ TO.diaJogo.combate = (function(){
     if(tipo==='bomba'){ if(J.bombas<=0) return; J.bombas--; }
     if(tipo==='pedra') J.cdPedraAte=J.t+P.cdPedra; else J.cdBombaAte=J.t+P.cdBomba;
     l.hostil=4.0;
+    J.armas[l.lado][tipo]++;
     J.projeteis.push(new Projetil(l.x,l.y,ax,ay,tipo,l.lado));
+  }
+
+  /* =======================================================
+     O BRAÇO DELES
+     A mesma arma, a mesma física e o mesmo alcance do jogador —
+     o que muda é quem decide. Ele joga bomba só quando compensa
+     (três ou mais juntos no raio) e pedra no resto do tempo, com
+     cadência mais lenta que a sua: a vantagem do jogador deixa
+     de ser ter pedra e passa a ser saber quando jogar.
+     ======================================================= */
+  function iaArremesso(J, dt){
+    const b=J.bracoRival;
+    if(!b || !b.vivo || b.fugindo || J.paz || J.t < J.cdRival) return;
+    if(b.guarda && !J.acordou) return;
+
+    const alvos=J.discos.filter(d=>d.vivo && inimigos(b.lado,d.lado) && !d.fugindo);
+    if(!alvos.length) return;
+
+    /* bomba onde o aglomerado paga: conta quantos caem no raio */
+    let melhor=null, maior=0;
+    if(J.bombasRival>0) for(const a of alvos){
+      /* bomba é de perto: só quando já estão em cima dele. De longe
+         seria tiro de artilharia em cima do spawn, e não é o que um
+         bonde faz nem o que a cena aguenta */
+      if(U.dist(b.x,b.y,a.x,a.y) > P.alcanceBomba*0.6) continue;
+      if(!A.livre(b.x,b.y,a.x,a.y)) continue;
+      let n=0;
+      for(const o of alvos) if(U.dist(o.x,o.y,a.x,a.y)<80) n++;
+      if(n>maior){maior=n; melhor=a;}
+    }
+    let tipo=null, alvo=null;
+    if(melhor && maior>=4){ tipo='bomba'; alvo=melhor; }
+    else {
+      let md=1e9;
+      for(const a of alvos){
+        const d=U.dist(b.x,b.y,a.x,a.y);
+        if(d<md && d<=P.alcancePedra && A.livre(b.x,b.y,a.x,a.y)){md=d; alvo=a;}
+      }
+      if(alvo) tipo='pedra';
+    }
+    if(!alvo) return;
+
+    /* mira torta: ele erra mais que o jogador, e erro de bomba é o que
+       impede que um único braço decida a briga sozinho */
+    const erro = tipo==='bomba' ? 34 : 22;
+    const ax = alvo.x + U.entre(-erro,erro), ay = alvo.y + U.entre(-erro,erro);
+    if(tipo==='bomba') J.bombasRival--;
+    J.cdRival = J.t + (tipo==='bomba' ? P.cdBomba*2.2 : P.cdPedra*1.7);
+    b.hostil=4.0;
+    J.armas[b.lado][tipo]++;
+    J.projeteis.push(new Projetil(b.x,b.y,ax,ay,tipo,b.lado));
+    if(tipo==='bomba'){
+      J.alerta=Math.min(100,J.alerta+10);
+      logar(J,'Bomba deles.','a');
+    }
   }
   function alternarRecuo(J){
     if(J.fase!=='ativo') return;
@@ -962,5 +1124,6 @@ TO.diaJogo.combate = (function(){
 
   return {FORMACOES, Disco, criarEstado, passo, desenhar,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
-          restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho};
+          restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
+          iaArremesso, alvoDeFuga};
 })();

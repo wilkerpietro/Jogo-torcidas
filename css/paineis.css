@@ -601,6 +601,33 @@ table.dados tr.selecionada td{background:#252525}
 .fecho-cena b{font-size:13px;line-height:1.35}
 .fecho-cena small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
 
+/* ---------- o cartaz que abre o fim da cena ----------
+   Deu certo ou não, em letra grande, e a conta da noite embaixo.
+   É a primeira coisa da tela de relatório. */
+.cartaz-cena{
+  margin-bottom:14px;padding:13px 15px;
+  background:#16160f;border:1px solid var(--linha);border-top:3px solid var(--fraco);
+}
+.cartaz-cena.boa {border-top-color:var(--verde-vivo);background:#131a13}
+.cartaz-cena.ruim{border-top-color:var(--vermelho);  background:#1a1312}
+.cartaz-cena h3{
+  font-size:21px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  margin-bottom:10px;
+}
+.cartaz-cena.boa  h3{color:var(--verde-vivo)}
+.cartaz-cena.ruim h3{color:var(--vermelho)}
+.dados-cena{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 18px}
+.dado-cena{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  border-bottom:1px solid var(--sulco);padding-bottom:4px;
+}
+.dado-cena span{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--fraco);
+}
+.dado-cena b{font-size:14px;white-space:nowrap}
+@media (max-width:720px){ .dados-cena{grid-template-columns:1fr} }
+
 /* ---------- avisos na tela de início ---------- */
 .aviso-linha{
   display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left;cursor:pointer;
