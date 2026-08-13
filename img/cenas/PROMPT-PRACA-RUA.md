@@ -79,7 +79,7 @@ calçada clara vira parede, laje clara vira chão. Não conserte `cenas_foto.js`
 5. confira com `python3 ferramentas/prova_mascara.py`, que desenha
    `_ref_mascara_<cena>_editada.png` com a máscara que vale de verdade.
 
-As quatro cenas passaram por aí, e o corte errou de um jeito diferente em
+As cinco cenas passaram por aí, e o corte errou de um jeito diferente em
 cada uma — pros dois lados, com a mesma configuração:
 
 | cena | corte | mão | como errou |
@@ -93,9 +93,9 @@ cada uma — pros dois lados, com a mesma configuração:
 Como ele erra pros dois lados, não adianta mexer em limiar: qualquer número
 que salve a periferia arrebenta a praça. O pincel é etapa, não gambiarra.
 
-O bar precisou dos dois: prior geométrico **e** pincel. Primeiro o corte laje de vizinho
-é cinza igual asfalto **e** encosta na rua pela esquina, então a conectividade
-subiu no telhado do quarteirão inteiro — nove linhas abrindo de ponta a ponta.
+O bar precisou dos dois: prior geométrico **e** pincel. Primeiro o corte, que
+subiu no telhado do quarteirão inteiro — nove linhas abrindo de ponta a ponta,
+porque laje de vizinho é cinza igual asfalto **e** encosta na rua pela esquina.
 O conserto foi um prior geométrico declarado, `recorte`: quatro retângulos em
 fração da tela (a rua principal, as duas verticais e o bloco do bar), e fora
 deles não há chão — irmão do `corredor` para planta que não é pista
