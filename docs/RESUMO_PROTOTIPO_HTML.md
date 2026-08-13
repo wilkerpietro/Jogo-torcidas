@@ -96,6 +96,13 @@ O painel lateral "Na rua" lista todos os bondes com estado e efetivo; clicar num
 
 ## 4. Parâmetros ajustáveis (objeto `P`, com sliders na tela)
 
+Os valores abaixo são de uma versão antiga; os que valem hoje estão em
+`TO.diaJogo.P` (js/diajogo/combate.js) e saíram de calibrar na bancada:
+velocidade 60, dano 1.0×, grade 420, cassetete 18, debandada 30%, carga 7s,
+tropa 8 PM, o bonde aguenta 10s, noite tranquila 50%, pedra 2.0s / 170px.
+Efetivo é o único que não é padrão de verdade — no jogo vem da escalação
+da semana e do tamanho do bonde rival.
+
 ```
 ateJogo   200   segundos até a bola rolar
 minutos    42   minutos de jogo cobertos pelo trajeto
@@ -505,6 +512,16 @@ O que **não** veio, e por quê:
   8 s de espera porque nos primeiros segundos o bonde ainda está em coluna no spawn e uma
   bomba ali derrubava doze de uma vez — foi medido, 15 caídos aos 18 s, antes de o jogador
   ter chance de abrir a formação. O estoque é metade do seu, no mínimo um.
+- **A briga acaba sozinha.** Não é mais o botão nem o relógio: acabou quando um dos dois
+  lados não tem mais ninguém de pé na cena — caiu, foi preso, entrou ou correu pra fora.
+  Antes disso o vencedor ficava sozinho no cenário sem nada pra fazer até o jogador andar
+  até a saída. Quem sobrou de pé é quem venceu, e é esse o `venceu` que a ação usa pro
+  fecho — sair de pé com menos baixas é a mesma coisa na maioria dos casos, não em todos.
+  **Quando quem ganha é a casa**, os discos que nasceram dentro (`daCasa`) voltam pro
+  posto antes de a tela subir: ver o bonde deles voltando pro salão conta o resultado sem
+  precisar de texto. `guarda` cai quando a casa acorda, `daCasa` não cai nunca — foi o
+  primeiro jeito de escrever isso e o motivo de a volta não acontecer. Medido: com 8 no
+  salão e 6 na rua, os 14 voltam em 2,7 s.
 - **O fim da cena abre com um cartaz** (`.cartaz-cena`): **ATAQUE BEM-SUCEDIDO** ou
   **ATAQUE FRACASSOU** em letra grande — ASSALTO e COBRANÇA nas outras ações, e um par
   neutro no dia de jogo — e embaixo os quatro números da noite: feridos deles, feridos

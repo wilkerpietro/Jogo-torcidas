@@ -7,13 +7,17 @@ window.TO = window.TO || {};
 TO.diaJogo = TO.diaJogo || {};
 
 /* ---------- parâmetros de calibragem ---------- */
+/* Os números que ficaram depois de calibrar na bancada. Efetivo é o
+   único que não é padrão de verdade: no jogo ele vem da escalação da
+   semana e do tamanho do bonde rival, e o valor aqui só serve pra
+   cena aberta solta. */
 TO.diaJogo.P = {
   efetivo:34, efetivoRival:30,
-  velocidade:78, dano:1.5,
-  vidaGrade:420, forcaPM:21, debandada:45,
-  atrasoCarga:7, tropaCarga:8, duracaoCarga:18, aguentaPM:9,
+  velocidade:60, dano:1.0,
+  vidaGrade:420, forcaPM:18, debandada:30,
+  atrasoCarga:7, tropaCarga:8, duracaoCarga:18, aguentaPM:10,
   cdPedra:2, cdBomba:2.5, alcancePedra:170, alcanceBomba:210,
-  bombas:4, bombasRival:2, chancePaz:35
+  bombas:4, bombasRival:2, chancePaz:50
 };
 
 TO.diaJogo.combate = (function(){
@@ -50,8 +54,11 @@ TO.diaJogo.combate = (function(){
       this.spawn=spawn.id; this.entrada=spawn.entrada;
       this.escalao=spawn.rot;
       /* quem nasce de guarda está no lugar dele, não indo pra lugar
-         nenhum: fica onde nasceu até a cena acordar (D.gatilho) */
+         nenhum: fica onde nasceu até a cena acordar (D.gatilho).
+         `guarda` cai quando a casa acorda; `daCasa` não cai nunca — é
+         quem tem pra onde voltar quando a briga acaba. */
       this.guarda=!!spawn.guarda;
+      this.daCasa=!!spawn.guarda;
       this.x=x; this.y=y; this.vx=0; this.vy=0;
       this.r=lider?9:7; this.lider=!!lider;
       this.forca  = lider?14+U.inteiro(0,4):5+U.inteiro(0,8);
@@ -60,6 +67,7 @@ TO.diaJogo.combate = (function(){
       this.moral=12;
       this.caido=false; this.preso=false; this.fugindo=false; this.entrou=false;
       this.sumiu=false;     // debandou e saiu da cena por uma boca de rua
+      this.voltando=false;  // defendeu, ganhou, e está voltando pro posto
       this.atordoado=0; this.tremor=0; this.golpe=0; this.hostil=0;
       this.membroId=null;   // costura com a gestão
     }
@@ -206,8 +214,16 @@ TO.diaJogo.combate = (function(){
      PASSO
      ======================================================= */
   function passo(J,dt,teclas,podeControlar){
-    if(J.fase!=='ativo') return;
+    /* 'voltando' é o respiro entre a briga acabar e a tela de fim:
+       ninguém mais se pega, mas quem defendeu ainda anda de volta */
+    if(J.fase!=='ativo' && J.fase!=='voltando') return;
     J.t+=dt;
+    if(J.fase==='voltando'){
+      moverDiscos(J,dt);
+      separar(J);
+      conferirVolta(J);
+      return;
+    }
     conferirGatilho(J);
     moverLider(J,dt,teclas,podeControlar);
     moverDiscos(J,dt);
@@ -221,6 +237,61 @@ TO.diaJogo.combate = (function(){
     iaRecuo(J);
     separar(J);
     checarDebandada(J);
+    conferirFim(J);
+  }
+
+  /* =======================================================
+     QUANDO A BRIGA ACABA SOZINHA
+     Não é o relógio nem o botão: acabou quando um dos dois
+     lados não tem mais ninguém em pé na cena — caiu, foi
+     preso, entrou ou correu pra fora. Antes disso a tela de
+     fim só vinha se o jogador andasse até a saída, o que
+     deixava o vencedor sozinho no cenário sem nada pra fazer.
+     ======================================================= */
+  const dePe = (J,lado)=> J.discos.filter(d=>d.lado===lado && d.vivo).length;
+
+  function conferirFim(J){
+    if(J.fase!=='ativo') return;
+    const m=dePe(J,'mandante'), v=dePe(J,'visitante');
+    if(m>0 && v>0) return;
+    const lado = m>0 ? 'mandante' : (v>0 ? 'visitante' : null);
+
+    /* defensor que ganhou volta pra dentro antes de a tela subir: o bar
+       é deles de novo, e ver o bonde voltando pro salão é o que conta
+       isso sem precisar de texto */
+    if(lado==='visitante'){
+      const casa=J.discos.filter(d=>d.lado==='visitante' && d.vivo && d.daCasa);
+      if(casa.length){
+        J.fase='voltando'; J.voltarAte=J.t+9; J.ladoVencedor=lado;
+        for(const d of casa){ d.voltando=true; d.fugindo=false; }
+        logar(J,'Eles voltaram pra dentro.','a');
+        return;
+      }
+    }
+    acabar(J, lado);
+  }
+
+  function conferirVolta(J){
+    const casa=J.discos.filter(d=>d.voltando && d.vivo);
+    /* catorze discos não cabem todos em volta de dois pontos de spawn:
+       quem emperra contra os próprios companheiros já voltou pra todos
+       os efeitos, senão a tela de fim espera o relógio inteiro */
+    const chegou=casa.every(d=>{
+      const s=D.spawns.find(x=>x.id===d.spawn);
+      return !s || U.dist(d.x,d.y,s.x,s.y)<60 || (d.travado||0)>1.2;
+    });
+    if(chegou || J.t>J.voltarAte) acabar(J, J.ladoVencedor);
+  }
+
+  function acabar(J, lado){
+    const venceu = lado==='mandante';
+    J.fase='acabando';       // a ponte vê isto e abre a tela de fim
+    J.acabou={lado, venceu, motivo: lado===null
+      ? 'não sobrou ninguém de pé dos dois lados'
+      : venceu ? 'não sobrou ninguém deles na cena'
+               : 'sua torcida foi corrida do lugar'};
+    logar(J, J.acabou.motivo, venceu?'v':'r');
+    aviso(J, venceu?'A CENA É SUA':'CORRERAM COM VOCÊ', venceu?'#7fc2a0':'#d9705f');
   }
 
   function logar(J,txt,cor){
@@ -355,7 +426,12 @@ TO.diaJogo.combate = (function(){
         continue;
       }
 
-      if(d.fugindo){
+      if(d.voltando){
+        /* acabou e a casa é deles: volta pro lugar de onde saiu */
+        const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
+        if(U.dist(d.x,d.y,s.x,s.y)<44){ d.vx*=0.8; d.vy*=0.8; d._ramo='voltou'; continue; }
+        campo = campoDoSpawn(s); usarCampo=true;
+      } else if(d.fugindo){
         /* debandada é fuga, não recuo: corre até sumir da tela. */
         const rota = rotaDeFuga(J, d);
         const destino = rota && rota.destino;
@@ -1125,5 +1201,5 @@ TO.diaJogo.combate = (function(){
   return {FORMACOES, Disco, criarEstado, passo, desenhar,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
-          iaArremesso, alvoDeFuga};
+          iaArremesso, alvoDeFuga, conferirFim, dePe};
 })();

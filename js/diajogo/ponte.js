@@ -67,6 +67,9 @@ TO.diaJogo.ponte = (function(){
     let dt=(agora-ant)/1000; ant=agora;
     if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
     if(J && !ED.ativo) C.passo(J,dt,teclas,true);
+    /* a briga pode acabar sozinha: um lado sem ninguém de pé. Quem
+       decide isso é o combate; aqui só se abre a tela. */
+    if(J && J.acabou && J.fase==='acabando') encerrar(J.acabou.motivo);
     desenhar();
     atualizarHUD();
     requestAnimationFrame(quadro);
@@ -328,7 +331,13 @@ TO.diaJogo.ponte = (function(){
        que não resolvia casos como 8×12. */
     const escala=(J.total.mandante+J.total.visitante)/2;
     const xpBase = escala<=10?3 : escala<=30?6 : escala<=60?10 : 15;
-    const venceu = J.caidos.visitante > J.caidos.mandante;
+    /* Se a briga acabou por si — um lado sem ninguém de pé —, quem
+       venceu é quem sobrou, e não quem derrubou mais. Sair de pé com
+       menos baixas do que o outro é a mesma coisa só na maioria dos
+       casos, não em todos: dá pra derrubar mais e ainda assim ser
+       corrido de lá. */
+    const venceu = J.acabou ? J.acabou.venceu
+                            : J.caidos.visitante > J.caidos.mandante;
     const xpNoite = Math.round(xpBase * (venceu?1.5:1));
 
     /* ficha por ficha: é isto que vira Ferido e Preso na gestão */
