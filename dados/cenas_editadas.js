@@ -206,6 +206,34 @@ TO.dados.cenasEditadas = {
       {"x":1432,"y":300},
       {"x":880,"y":430}
     ]
+  },
+
+  /* bar da rival — só as marcações. A malha vem da foto (o recorte do
+     importador já segurou o telhado do quarteirão); o que não dá pra
+     tirar da imagem é onde cada bonde nasce. A foto pôs a rua principal
+     embaixo e uma vertical de cada lado do bar, então o desenho da cena
+     — feito com o bar na quina nordeste — não serve de referência aqui:
+     atacante desce a vertical oeste, defensor nasce no salão. */
+  'bar': {
+    spawns:[
+      {"id":"mandante1","rot":"1º ESCALÃO","lado":"mandante","x":404,"y":140,"jogador":true,"entrada":"porta_bar"},
+      {"id":"mandante2","rot":"2º ESCALÃO","lado":"mandante","x":404,"y":270,"entrada":"porta_bar"},
+      {"id":"visitante1","rot":"DONOS DA CASA","lado":"visitante","x":770,"y":420,"guarda":true,"entrada":"fuga_oeste"},
+      {"id":"visitante2","rot":"NA MESA DE TRÁS","lado":"visitante","x":872,"y":592,"guarda":true,"entrada":"fuga_oeste"}
+    ],
+
+    entradas:[
+      {"id":"porta_bar","rot":"BALCÃO DO BAR","lado":"mandante","x":800,"y":368,"raio":44,"dir":[0,-1]},
+      {"id":"fuga_oeste","rot":"FIM DA RUA","lado":"visitante","x":60,"y":850,"raio":46,"dir":[-1,0]}
+    ],
+
+    pmPostos:[
+      {"x":210,"y":880},
+      {"x":1300,"y":884},
+      {"x":1140,"y":300}
+    ],
+
+    gatilho:{"x":740,"y":720,"raio":170,"lado":"mandante","rot":"FRENTE DO BAR","espera":"os donos da casa ainda não te viram","aviso":"gritaram lá dentro — o bar inteiro veio pra porta"}
   }
 
 };

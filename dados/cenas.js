@@ -632,6 +632,9 @@ TO.dados.cenas = (function(){
     for(const campo of ['spawns', 'entradas', 'pmPostos', 'grades'])
       if(e[campo]) cena[campo] = copia(e[campo]);
     if(e.poligonos) cena.poligonos = copia(e.poligonos);
+    /* a zona que acorda a casa é coordenada como qualquer marcador, e
+       muda junto com eles quando a foto tem outra planta */
+    if(e.gatilho) cena.gatilho = copia(e.gatilho);
     /* Marcador que veio da mão fica onde a mão pôs — desde que dê pra
        ficar de pé ali. Quem pinta a malha mexe na planta inteira e nem
        sempre volta pra arrastar os quatro marcadores atrás: na praça,
@@ -646,14 +649,15 @@ TO.dados.cenas = (function(){
     return cena;
   }
 
-  const FOTO = (typeof TO !== 'undefined' && TO.dados && TO.dados.cenasFoto) || {};
-  sobreFoto(praca, FOTO.praca);
-  sobreFoto(rua, FOTO.rua);
-  sobreFoto(ruaMedia, FOTO['rua-media']);
-  sobreFoto(ruaNobre, FOTO['rua-nobre']);
-
   const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
                  bar, comercio, ct};
+
+  /* Quem manda é a ordem: desenho, depois foto, depois mão. As duas
+     últimas varrem o que existir — cena que ganhar foto amanhã entra
+     sozinha, sem ninguém lembrar de acrescentar a linha aqui (o bar
+     ficou uma sessão inteira rodando no desenho por causa disso). */
+  const FOTO = (typeof TO !== 'undefined' && TO.dados && TO.dados.cenasFoto) || {};
+  for(const id in FOTO) if(cenas[id]) sobreFoto(cenas[id], FOTO[id]);
 
   const MAO = (typeof TO !== 'undefined' && TO.dados && TO.dados.cenasEditadas) || {};
   for(const id in MAO) if(cenas[id]) sobreEdicao(cenas[id], MAO[id]);

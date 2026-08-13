@@ -448,6 +448,19 @@ O que **não** veio, e por quê:
   a entrada no lugar e reescreve no formato da casa — colar na unha já derrubou o
   arquivo uma vez, por vírgula faltando entre duas entradas. Prova da máscara que
   vale de verdade: `python3 ferramentas/prova_mascara.py`.
+- **O bar da rival é foto, com o salão aberto** (`Aerial_view_of_roofless_bar…jpeg`). A
+  imagem veio com a planta trocada em relação ao desenho — rua principal embaixo e uma
+  vertical de cada lado do bar, que ficou no meio do quadro —, então as marcações foram
+  reancoradas na geometria da foto e moram em `cenas_editadas.js`: atacante desce a
+  vertical oeste (404,140 e 404,270), defensor nasce no salão (770,420 e 872,592), alvo
+  no fundo do salão (800,368) e a zona que acorda a casa na calçada da frente (740,720).
+  Duas coisas quebradas apareceram no caminho: o `sobreFoto` era uma chamada escrita à
+  mão por cena e a do bar não existia — o bar rodou uma sessão inteira no desenho sem
+  ninguém notar; agora a foto e a mão varrem o que existir. E o corte subiu no telhado do
+  quarteirão inteiro (nove linhas abrindo de ponta a ponta), porque laje de vizinho é
+  cinza igual asfalto **e** encosta na rua pela esquina — daí o `recorte` do importador,
+  irmão declarado do `corredor`: quatro retângulos em fração da tela, e fora deles não há
+  chão. Medido: 60% → 54% de chão, 0% de telhado fora dos retângulos.
 - **O bar da rival virou salão, e a casa não sabe do ataque antes da hora.** A cena
   ganhou a esquina que o prompt promete — transversal descendo da borda de cima — e o
   bar deixou de ser bloco maciço: agora são quatro paredes com um vão de porta e, dentro,

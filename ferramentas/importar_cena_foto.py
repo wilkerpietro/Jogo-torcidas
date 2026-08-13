@@ -75,10 +75,23 @@ FONTES = [
     # e a briga termina la dentro.
     {'id': 'bar', 'arquivo': 'Aerial_view_of_roofless_bar_202608131633.jpeg',
      'saida': 'bar.webp',
-     'sementes': [(0.50, 0.60), (0.20, 0.60), (0.80, 0.60),
-                  (0.02, 0.60), (0.98, 0.60),
-                  (0.63, 0.12), (0.63, 0.32),
-                  (0.80, 0.29), (0.72, 0.35), (0.85, 0.49)]},
+     # A foto veio com a rua principal embaixo e DUAS verticais, uma de
+     # cada lado do bar — o bar ficou no meio do quadro, na quina de
+     # baixo do quarteirao. Semente em cada uma delas, na calcada que
+     # contorna o bar e dentro do salao: o piso do bar e chao de andar
+     # de proposito, a briga termina la dentro.
+     'sementes': [(0.10, 0.83), (0.50, 0.86), (0.90, 0.83),
+                  (0.27, 0.10), (0.27, 0.45), (0.27, 0.80),
+                  (0.74, 0.10), (0.74, 0.45), (0.74, 0.80),
+                  (0.51, 0.71),
+                  (0.50, 0.50), (0.44, 0.40), (0.58, 0.58)],
+     # a laje do vizinho e cinza igual asfalto e encosta na rua pela
+     # esquina: sem recorte a conectividade sobe no telhado do
+     # quarteirao inteiro (medido: 9 linhas abrindo de ponta a ponta)
+     'recorte': [(0.00, 0.66, 1.00, 1.00),    # a rua principal e a calcada
+                 (0.16, 0.00, 0.37, 0.72),    # a vertical oeste
+                 (0.62, 0.00, 0.91, 0.72),    # a vertical leste
+                 (0.35, 0.28, 0.64, 0.72)]},  # o bar e a calcada dele
 ]
 
 
@@ -127,7 +140,22 @@ def corredor(asf, calcada=132):
 
 
 # ------------------------------------------------------- chão de andar
-def chao(a, sementes, topo, altura, usarCorredor=False):
+# --------------------------------------------------------- recorte
+def recortar(forma, retangulos):
+    """Fora destes retangulos nao ha chao, ponto.
+
+    Irmao declarado do corredor(): quando a planta nao e uma pista
+    atravessando a tela, o prior geometrico tem de ser dito na mao. No
+    bar, laje de vizinho e cinza igual asfalto E encosta na rua pela
+    esquina, entao a conectividade sozinha sobe no telhado de todo o
+    quarteirao. Os retangulos vao em fracao da tela: (x0, y0, x1, y1)."""
+    fica = np.zeros(forma, bool)
+    for x0, y0, x1, y1 in retangulos:
+        fica[int(y0 * ALT):int(y1 * ALT), int(x0 * LARG):int(x1 * LARG)] = True
+    return fica
+
+
+def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None):
     """1 onde dá pra pisar. Cor dá o candidato; conectividade dá a resposta."""
     R, G, B = a[:, :, 0], a[:, :, 1], a[:, :, 2]
     mx, mn = a.max(2), a.min(2)
@@ -149,6 +177,8 @@ def chao(a, sementes, topo, altura, usarCorredor=False):
         asf = cinza & (lum > 45) & (lum < 130)
         asf[:topo, :] = False; asf[topo + altura:, :] = False
         cand &= corredor(asf)
+    if recorte:
+        cand &= recortar(cand.shape, recorte)
 
     # fecha junta e remove cisco antes de olhar conectividade
     cand = nd.binary_closing(cand, np.ones((5, 5)))
@@ -240,7 +270,8 @@ def main():
         tela.save(destino, 'WEBP', quality=82, method=6)
 
         a = np.asarray(tela).astype(np.int16)
-        m = chao(a, f['sementes'], topo, altura, f.get('corredor', False))
+        m = chao(a, f['sementes'], topo, altura,
+                 f.get('corredor', False), f.get('recorte'))
         cel = para_celulas(m)
         anc = ancoras(cel)
         fora[f['id']] = {

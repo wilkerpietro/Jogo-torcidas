@@ -9,7 +9,7 @@ foto de drone a prumo, dia nublado, cor dessaturada, cidade brasileira.
 | Rua | Favela e Classe Baixa | `planta-rua-2048.png` | `rua.webp` | **feita** — `Aerial_view_of_residential_street_202608131403.jpeg` |
 | Rua de classe média | Classe Média | `planta-rua-media-2048.png` | `rua_media.webp` | **feita** — `Aerial_view_of_residential_street_202608131455.jpeg` |
 | Rua de classe alta | Nobre | `planta-rua-nobre-2048.png` | `rua_nobre.webp` | **feita** — `Aerial_view_of_residential_avenue_202608131501.jpeg` |
-| Bar da rival | ação *atacar a sede/bar* | `planta-bar-2048.png` | `bar.webp` | a fazer |
+| Bar da rival | ação *atacar a sede/bar* | `planta-bar-2048.png` | `bar.webp` | **feita** — `Aerial_view_of_roofless_bar_202608131633.jpeg` |
 
 A briga abre a cena do bairro onde ela cai: esbarrão no Pirambu não pode
 abrir a mesma rua do esbarrão na Aldeota. As três ruas têm **a mesma
@@ -88,9 +88,18 @@ cada uma — pros dois lados, com a mesma configuração:
 | praça | 70,8% | 60,9% | cortou de mais: vazou pro quarteirão |
 | rua de classe média | 46,8% | 43,5% | vazou pelo portão (e faltou marcar parada e carro) |
 | rua de bairro nobre | 32,1% | 39,2% | encolheu: perdeu pedra clara e grama |
+| bar da rival | 59,9% | 53,9% | subiu no telhado do quarteirão inteiro |
 
 Como ele erra pros dois lados, não adianta mexer em limiar: qualquer número
 que salve a periferia arrebenta a praça. O pincel é etapa, não gambiarra.
+
+O bar foi o único que se resolveu sem pincel, mas não sozinho: laje de vizinho
+é cinza igual asfalto **e** encosta na rua pela esquina, então a conectividade
+subiu no telhado do quarteirão inteiro — nove linhas abrindo de ponta a ponta.
+O conserto foi um prior geométrico declarado, `recorte`: quatro retângulos em
+fração da tela (a rua principal, as duas verticais e o bloco do bar), e fora
+deles não há chão. É o irmão do `corredor` para planta que não é pista
+atravessando o quadro.
 
 ---
 
