@@ -403,8 +403,11 @@ O que **não** veio, e por quê:
   meio-fio, então trocar de bairro muda o cenário e não a tática. Medido nos 5.478 nós
   de rua da cidade: 65% periferia, 17% classe média, 15% nobre, 4% praça, 2% arredores.
 - **Prompt das cenas** (`img/cenas/PROMPT-PRACA-RUA.md`): um prompt por imagem — praça,
-  rua de periferia, rua de classe média e rua de classe alta —, com as plantas
-  `planta-*-2048.png` tiradas do próprio jogo pra servir de base de img2img/ControlNet.
+  rua de periferia, rua de classe média, rua de classe alta e o bar da rival —, com as
+  plantas `planta-*-2048.png` tiradas do próprio jogo pra servir de base de
+  img2img/ControlNet. O do bar é o único fora do padrão: **a laje dele sai**, porque a
+  ação de atacar a sede termina dentro do salão e não dá pra jogar o que não se vê —
+  telhado aberto só no bar, vizinho nenhum, senão laje de estranho vira chão de andar.
   **As quatro já voltaram e estão no jogo**: as cenas desenhadas viraram rascunho e o
   que se vê em briga de rua é foto. Medido no import das duas últimas: classe média 47%
   de chão (pista, as duas calçadas de bloquete e as transversais das pontas), classe

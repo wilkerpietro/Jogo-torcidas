@@ -1,4 +1,4 @@
-# Prompts para as cenas de PRAÇA e de RUA
+# Prompts para as cenas de fora
 
 Uma imagem por cena. Alvo: o mesmo acabamento de `arredores.png` —
 foto de drone a prumo, dia nublado, cor dessaturada, cidade brasileira.
@@ -9,6 +9,7 @@ foto de drone a prumo, dia nublado, cor dessaturada, cidade brasileira.
 | Rua | Favela e Classe Baixa | `planta-rua-2048.png` | `rua.webp` | **feita** — `Aerial_view_of_residential_street_202608131403.jpeg` |
 | Rua de classe média | Classe Média | `planta-rua-media-2048.png` | `rua_media.webp` | **feita** — `Aerial_view_of_residential_street_202608131455.jpeg` |
 | Rua de classe alta | Nobre | `planta-rua-nobre-2048.png` | `rua_nobre.webp` | **feita** — `Aerial_view_of_residential_avenue_202608131501.jpeg` |
+| Bar da rival | ação *atacar a sede/bar* | `planta-bar-2048.png` | `bar.webp` | a fazer |
 
 A briga abre a cena do bairro onde ela cai: esbarrão no Pirambu não pode
 abrir a mesma rua do esbarrão na Aldeota. As três ruas têm **a mesma
@@ -284,6 +285,97 @@ asbestos sheets, graffiti, dirt yard, cracked sidewalk, weeds, potholes,
 street market, small houses, narrow alley, no sidewalk, blocked intersections,
 crowd, people, pedestrians, moving cars, snow, night, rain, hdr
 ```
+
+---
+
+## BAR DA RIVAL — prompt
+
+Esta é diferente das quatro anteriores, e por um motivo só: **o bar não
+tem telhado**. A briga não acaba na calçada — a ação *atacar a sede/bar
+da rival* termina com o líder chegando na porta e tomando o salão, e não
+dá pra jogar o que não se vê. Então a foto é de drone a prumo como as
+outras, com um detalhe de maquete: a laje do bar foi tirada e o salão
+aparece inteiro por dentro, com balcão, sinuca, mesa e freezer.
+
+**Só o bar.** Toda casa vizinha continua de telhado fechado. Se a IA
+abrir o quarteirão inteiro, o importador lê laje de vizinho como chão e
+o bonde passa a atravessar sala de estranho.
+
+A geometria é a da rua de sempre — pista larga atravessando o quadro,
+calçada larga dos dois lados — mais **uma transversal descendo da borda
+de cima, a uns dois terços da largura**. É ela que faz a esquina, e o bar
+é o prédio da quina a leste dela. Comparando com `planta-bar-2048.png`:
+a planta ainda não tem essa transversal (o bar lá é meio de quadra), e é
+a única coisa que a imagem acrescenta. O resto tem de bater — faixa de
+asfalto no mesmo lugar, calçada com a mesma largura, o bar na quina de
+cima à direita e o deck de mesas na calçada em frente a ele.
+
+```
+top-down nadir aerial drone photograph of a Brazilian street corner with a
+corner bar, shot straight down at 90 degrees, orthographic feel, overcast
+diffuse daylight, soft shadows, desaturated muted colors, documentary
+photography,
+
+one wide two-lane street running left to right across the whole frame, worn
+dark asphalt, faded yellow dashed center line, painted black-and-white curbs,
+wide concrete sidewalks on both sides, a zebra crossing,
+
+a cross street comes down from the top edge and meets the main street about
+two thirds of the way across, forming a corner; the sidewalk turns around the
+corner building,
+
+on that corner, east of the cross street, a single-storey corner bar with its
+roof completely removed, seen as an open floor plan from directly above,
+architectural cutaway of only this one building: checkerboard tiled floor, a
+long wooden bar counter along the back wall with bottles on shelves behind it,
+a green baize pool table in the middle of the room with balls on it, four small
+square tables with chairs, two white chest freezers, stacked crates of beer
+bottles in the corner, a doorway to a small toilet at the back, the front wall
+open to the street where the entrance is,
+
+in front of the bar, on the wide sidewalk, an outdoor deck: white plastic
+tables and chairs, a low metal railing separating the deck from the curb, a
+string of small colored triangular flags overhead, a painted sign board over
+the entrance, stacked beer crates by the wall,
+
+every other building in the frame keeps its roof intact: terracotta clay tile
+roofs and flat concrete rooftops with blue water tanks, laundry lines,
+satellite dishes, small back yards of bare packed earth, a two-storey house
+attached to the bar on the east, a row of low houses along the other side of
+the street, cars parked along both curbs, a rubbish skip,
+
+photorealistic, natural materials, sun-bleached concrete, tropical northeast
+Brazil, 8k satellite imagery quality, sharp detail, no people visible
+```
+
+### Negativo
+
+```
+illustration, cartoon, isometric, 3d render, video game asset, painting,
+vector art, blueprint, floor plan drawing, map icons, labels, text, watermark,
+grid lines, tilted perspective, oblique angle, fisheye, vignette,
+all roofs removed, every building open, doll house, whole block cutaway,
+roof over the bar, closed roof on the bar,
+interior lighting, indoor photo, eye-level view, storefront photo,
+buildings covering the street, blocked intersection, dead end,
+crowd, people, pedestrians, drinkers, waiters, moving cars,
+snow, night, rain, saturated colors, hdr, dramatic lighting
+```
+
+### O que conferir nesta
+
+1. **Um telhado só aberto.** Passe o olho no quadro inteiro: se houver uma
+   segunda casa sem laje, refaça — vira chão de andar onde não devia.
+2. **A porta do bar dá pra rua.** É o objetivo da ação (`porta_bar`): se a
+   entrada ficar num beco lateral ou virada pro fundo, o líder não tem onde
+   chegar.
+3. **A ponta oeste da rua continua aberta.** É por ali que os donos da casa
+   fogem (`fuga_oeste`); rua fechada à esquerda deixa o rival sem saída e a
+   cena trava numa chacina.
+4. **Depois de importar, o salão inteiro vai virar chão** — é o certo, o bar é
+   invadível. Mas balcão, sinuca, freezer e pilha de engradado têm de virar
+   parede na mão, senão o disco atravessa a mesa de sinuca. É o pincel do F2
+   e `colar_remendo.py`, como nas outras quatro.
 
 ---
 
