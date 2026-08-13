@@ -297,6 +297,15 @@ dá pra jogar o que não se vê. Então a foto é de drone a prumo como as
 outras, com um detalhe de maquete: a laje do bar foi tirada e o salão
 aparece inteiro por dentro, com balcão, sinuca, mesa e freezer.
 
+**Inteiro mesmo, do rodapé de uma parede ao da outra.** O erro que o
+modelo comete sozinho é tirar só o miolo do telhado e deixar o beiral em
+volta — sobra uma coroa coberta rente às paredes, e é justamente ali que
+ficam o balcão e o freezer. Meia laje não serve: o que fica na sombra da
+beirada some da máscara e vira parede dentro do jogo, num canto que o
+jogador precisa ocupar. Por isso o prompt abre falando disso, repete no
+fim e o negativo lista as seis formas de meio-telhado (beiral, varanda,
+pergolado, toldo, marquise, alpendre).
+
 **Só o bar.** Toda casa vizinha continua de telhado fechado. Se a IA
 abrir o quarteirão inteiro, o importador lê laje de vizinho como chão e
 o bonde passa a atravessar sala de estranho.
@@ -312,9 +321,25 @@ cima à direita e o deck de mesas na calçada em frente a ele.
 
 ```
 top-down nadir aerial drone photograph of a Brazilian street corner with a
-corner bar, shot straight down at 90 degrees, orthographic feel, overcast
-diffuse daylight, soft shadows, desaturated muted colors, documentary
-photography,
+corner bar whose roof has been completely removed, shot straight down at 90
+degrees, orthographic feel, overcast diffuse daylight, soft shadows,
+desaturated muted colors, documentary photography,
+
+THE CORNER BAR HAS NO ROOF AT ALL. Not a single roof tile, slab, beam, eave or
+overhang is left anywhere over it. Its walls are cut off at knee height, so
+that from directly above the whole floor of the bar is visible corner to
+corner, wall to wall, with nothing shading or hiding any part of it — an
+architectural cutaway model of this one building, open to the sky, every square
+metre of its floor lit by the same flat daylight as the street outside,
+
+inside the bar, all of it plainly visible from above: checkerboard tiled floor,
+a long wooden bar counter running along the back wall with shelves of bottles
+behind it and a cash register on it, a green baize pool table in the middle of
+the room with balls and two cues on it, four small square tables with plastic
+chairs, two white chest freezers against the side wall, stacked crates of beer
+bottles in the corner, a small sink, a doorway at the back leading to a tiny
+toilet whose floor is also visible, the front of the building opening onto the
+sidewalk where the entrance is,
 
 one wide two-lane street running left to right across the whole frame, worn
 dark asphalt, faded yellow dashed center line, painted black-and-white curbs,
@@ -322,27 +347,22 @@ wide concrete sidewalks on both sides, a zebra crossing,
 
 a cross street comes down from the top edge and meets the main street about
 two thirds of the way across, forming a corner; the sidewalk turns around the
-corner building,
-
-on that corner, east of the cross street, a single-storey corner bar with its
-roof completely removed, seen as an open floor plan from directly above,
-architectural cutaway of only this one building: checkerboard tiled floor, a
-long wooden bar counter along the back wall with bottles on shelves behind it,
-a green baize pool table in the middle of the room with balls on it, four small
-square tables with chairs, two white chest freezers, stacked crates of beer
-bottles in the corner, a doorway to a small toilet at the back, the front wall
-open to the street where the entrance is,
+corner building, and the bar sits on that corner, east of the cross street,
 
 in front of the bar, on the wide sidewalk, an outdoor deck: white plastic
 tables and chairs, a low metal railing separating the deck from the curb, a
-string of small colored triangular flags overhead, a painted sign board over
-the entrance, stacked beer crates by the wall,
+string of small colored triangular flags overhead, a painted sign board by the
+entrance, stacked beer crates by the wall,
 
-every other building in the frame keeps its roof intact: terracotta clay tile
-roofs and flat concrete rooftops with blue water tanks, laundry lines,
-satellite dishes, small back yards of bare packed earth, a two-storey house
-attached to the bar on the east, a row of low houses along the other side of
-the street, cars parked along both curbs, a rubbish skip,
+every other building in the frame keeps its roof completely intact: terracotta
+clay tile roofs and flat concrete rooftops with blue water tanks, laundry
+lines, satellite dishes, small back yards of bare packed earth, a two-storey
+house attached to the bar on the east, a row of low houses along the other side
+of the street, a rubbish skip,
+
+the bar is the only building in the whole picture without a roof, and it is
+open all the way to its walls — no covered strip, no shaded edge, no part of
+its interior hidden,
 
 photorealistic, natural materials, sun-bleached concrete, tropical northeast
 Brazil, 8k satellite imagery quality, sharp detail, no people visible
@@ -351,28 +371,57 @@ Brazil, 8k satellite imagery quality, sharp detail, no people visible
 ### Negativo
 
 ```
+roof over the bar, partial roof, half roof, remaining roof section, roof ring,
+eaves, overhanging roof, roof overhang, veranda, pergola, canopy, awning over
+the interior, marquee, porch, covered walkway, covered perimeter, covered
+edge, shaded interior, dark interior, unlit corners, open courtyard in the
+middle of a roofed building, atrium, patio surrounded by roof, only the center
+open, walls hiding the floor, tall walls casting shadow inside,
+
+all roofs removed, every building open, doll house, whole block cutaway,
+neighbours without roofs,
+
 illustration, cartoon, isometric, 3d render, video game asset, painting,
 vector art, blueprint, floor plan drawing, map icons, labels, text, watermark,
 grid lines, tilted perspective, oblique angle, fisheye, vignette,
-all roofs removed, every building open, doll house, whole block cutaway,
-roof over the bar, closed roof on the bar,
 interior lighting, indoor photo, eye-level view, storefront photo,
 buildings covering the street, blocked intersection, dead end,
-crowd, people, pedestrians, drinkers, waiters, moving cars,
+crowd, people, pedestrians, drinkers, waiters, cars, moving cars,
 snow, night, rain, saturated colors, hdr, dramatic lighting
+```
+
+### Se for consertar uma imagem que já saiu (Flow / Nano Banana)
+
+Modelo de edição obedece melhor a uma ordem curta e negativa do que a um
+prompt novo inteiro, e aproveita o enquadramento que já deu certo. Pegue a
+melhor das que saíram e mande:
+
+```
+Remove every remaining piece of roof from the corner bar: the ring of tiles
+around the edge, the eaves and the overhang. Cut its walls down to knee height
+so the entire floor of the bar is visible from above, wall to wall, evenly lit,
+with no shaded strip along the edges. Show the bar counter, the shelves of
+bottles, the freezers and the crates that are currently hidden under the
+roof edge. Keep everything else in the image exactly as it is — the street,
+the sidewalk, the outdoor tables, and the roofs of all the neighbouring
+houses, which stay intact.
 ```
 
 ### O que conferir nesta
 
-1. **Um telhado só aberto.** Passe o olho no quadro inteiro: se houver uma
+1. **O salão inteiro à vista.** Olhe a beirada do bar, não o meio: se sobrou uma
+   faixa coberta rente às paredes, o balcão e o freezer estão embaixo dela e a
+   imagem não serve. O chão tem de ir de parede a parede, com a mesma luz do
+   meio da sala.
+2. **Um telhado só aberto.** Passe o olho no quadro inteiro: se houver uma
    segunda casa sem laje, refaça — vira chão de andar onde não devia.
-2. **A porta do bar dá pra rua.** É o objetivo da ação (`porta_bar`): se a
+3. **A porta do bar dá pra rua.** É o objetivo da ação (`porta_bar`): se a
    entrada ficar num beco lateral ou virada pro fundo, o líder não tem onde
    chegar.
-3. **A ponta oeste da rua continua aberta.** É por ali que os donos da casa
+4. **A ponta oeste da rua continua aberta.** É por ali que os donos da casa
    fogem (`fuga_oeste`); rua fechada à esquerda deixa o rival sem saída e a
    cena trava numa chacina.
-4. **Depois de importar, o salão inteiro vai virar chão** — é o certo, o bar é
+5. **Depois de importar, o salão inteiro vai virar chão** — é o certo, o bar é
    invadível. Mas balcão, sinuca, freezer e pilha de engradado têm de virar
    parede na mão, senão o disco atravessa a mesa de sinuca. É o pincel do F2
    e `colar_remendo.py`, como nas outras quatro.
