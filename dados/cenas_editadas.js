@@ -47,24 +47,24 @@ TO.dados.cenasEditadas = {
       '1,142,2,46,1;66,7,1,5,113;192;192;192;192;192;192;192;192;192;192',
 
     spawns:[
-      {"id": "mandante1", "rot": "1º ESCALÃO", "lado": "mandante", "x": 88, "y": 487, "jogador": true, "entrada": "esquina_leste"},
-      {"id": "mandante2", "rot": "2º ESCALÃO", "lado": "mandante", "x": 762, "y": 935, "entrada": "esquina_leste"},
-      {"id": "visitante1", "rot": "BONDE RIVAL", "lado": "visitante", "x": 1444, "y": 493, "entrada": "esquina_oeste"},
-      {"id": "visitante2", "rot": "RETAGUARDA", "lado": "visitante", "x": 783, "y": 111, "entrada": "esquina_oeste"}
+      {"id":"mandante1","rot":"1º ESCALÃO","lado":"mandante","x":88,"y":487,"jogador":true,"entrada":"esquina_leste"},
+      {"id":"mandante2","rot":"2º ESCALÃO","lado":"mandante","x":762,"y":935,"entrada":"esquina_leste"},
+      {"id":"visitante1","rot":"BONDE RIVAL","lado":"visitante","x":1444,"y":493,"entrada":"esquina_oeste"},
+      {"id":"visitante2","rot":"RETAGUARDA","lado":"visitante","x":783,"y":111,"entrada":"esquina_oeste"}
     ],
 
     entradas:[
-      {"id": "esquina_oeste", "rot": "ESQUINA OESTE", "lado": "visitante", "x": 252, "y": 520, "raio": 46, "dir": [-1, 0]},
-      {"id": "esquina_leste", "rot": "ESQUINA LESTE", "lado": "mandante", "x": 1252, "y": 520, "raio": 46, "dir": [1, 0]},
-      {"id": "esquina_norte", "rot": "ESQUINA NORTE", "lado": "neutro", "x": 782, "y": 111, "raio": 46, "dir": [0, -1]},
-      {"id": "esquina_sul", "rot": "ESQUINA SUL", "lado": "neutro", "x": 747, "y": 932, "raio": 46, "dir": [0, 1]}
+      {"id":"esquina_oeste","rot":"ESQUINA OESTE","lado":"visitante","x":252,"y":520,"raio":46,"dir":[-1,0]},
+      {"id":"esquina_leste","rot":"ESQUINA LESTE","lado":"mandante","x":1252,"y":520,"raio":46,"dir":[1,0]},
+      {"id":"esquina_norte","rot":"ESQUINA NORTE","lado":"neutro","x":782,"y":111,"raio":46,"dir":[0,-1]},
+      {"id":"esquina_sul","rot":"ESQUINA SUL","lado":"neutro","x":747,"y":932,"raio":46,"dir":[0,1]}
     ],
 
     pmPostos:[
-      {"x": 420, "y": 185},
-      {"x": 1116, "y": 185},
-      {"x": 420, "y": 839},
-      {"x": 1116, "y": 839}
+      {"x":420,"y":185},
+      {"x":1116,"y":185},
+      {"x":420,"y":839},
+      {"x":1116,"y":839}
     ]
   },
 
@@ -95,21 +95,21 @@ TO.dados.cenasEditadas = {
       '1,13,168,9,1;192;192;192;192;192;192;192;192;192;192;192',
 
     spawns:[
-      {"id":"mandante1", "rot":"1º ESCALÃO", "lado":"mandante", "x":120, "y":512, "jogador":true, "entrada":"boca_leste"},
-      {"id":"mandante2", "rot":"2º ESCALÃO", "lado":"mandante", "x":124, "y":297, "entrada":"boca_leste"},
-      {"id":"visitante1", "rot":"BONDE RIVAL", "lado":"visitante", "x":1416, "y":512, "entrada":"boca_oeste"},
-      {"id":"visitante2", "rot":"RETAGUARDA", "lado":"visitante", "x":1424, "y":740, "entrada":"boca_oeste"}
+      {"id":"mandante1","rot":"1º ESCALÃO","lado":"mandante","x":120,"y":512,"jogador":true,"entrada":"boca_leste"},
+      {"id":"mandante2","rot":"2º ESCALÃO","lado":"mandante","x":124,"y":297,"entrada":"boca_leste"},
+      {"id":"visitante1","rot":"BONDE RIVAL","lado":"visitante","x":1416,"y":512,"entrada":"boca_oeste"},
+      {"id":"visitante2","rot":"RETAGUARDA","lado":"visitante","x":1424,"y":740,"entrada":"boca_oeste"}
     ],
 
     entradas:[
-      {"id":"boca_oeste", "rot":"BOCA DA RUA", "lado":"visitante", "x":60, "y":512, "raio":48, "dir":[-1, 0]},
-      {"id":"boca_leste", "rot":"FIM DA RUA", "lado":"mandante", "x":1484, "y":512, "raio":48, "dir":[1, 0]}
+      {"id":"boca_oeste","rot":"BOCA DA RUA","lado":"visitante","x":60,"y":512,"raio":48,"dir":[-1,0]},
+      {"id":"boca_leste","rot":"FIM DA RUA","lado":"mandante","x":1484,"y":512,"raio":48,"dir":[1,0]}
     ],
 
     pmPostos:[
-      {"x":119, "y":706},
-      {"x":1383, "y":317},
-      {"x":880, "y":430}
+      {"x":119,"y":706},
+      {"x":1383,"y":317},
+      {"x":880,"y":430}
     ]
   },
 
@@ -126,36 +126,37 @@ TO.dados.cenasEditadas = {
       '1,19,149,22,1;1,19,148,23,1;1,19,147,24,1;1,19,146,25,1;1,19,145,26,1;' +
       '1,19,142,29,1;1,19,127,44,1;1,19,126,45,1;1,19,126,45,1;1,21,19,1,4,2,98,45,1;' +
       '1,22,122,46,1;1,23,120,47,1;1,24,119,47,1;1,25,106,59,1;1,26,18,146,1;' +
-      '1,29,14,147,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;' +
+      '1,29,14,147,1;1,190,1;1,89,12,89,1;1,89,12,89,1;1,89,12,89,1;' +
+      '1,89,12,20,7,62,1;1,89,12,19,9,61,1;1,120,9,61,1;1,120,9,61,1;1,121,7,62,1;' +
       '1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;' +
       '1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;' +
       '1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;' +
-      '1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,35,22,82,27,24,1;' +
-      '1,23,144,23,1;1,22,146,22,1;1,21,149,20,1;1,20,152,18,1;1,20,152,18,1;' +
-      '1,19,153,18,1;1,19,154,17,1;1,19,154,17,1;1,19,154,17,1;1,19,154,17,1;' +
-      '1,8,6,5,154,17,1;1,7,8,4,153,18,1;1,7,8,4,153,18,1;1,7,8,3,154,18,1;' +
-      '1,6,10,2,154,18,1;1,5,11,2,154,18,1;1,6,10,3,153,18,1;1,6,10,3,153,18,1;' +
-      '1,7,9,3,153,18,1;1,7,7,5,153,18,1;1,9,1,1,1,7,153,18,1;1,19,153,18,1;' +
-      '1,19,153,18,1;1,19,153,18,1;1,19,153,18,1;1,19,153,18,1;1,19,154,17,1;' +
-      '1,19,154,17,1;1,19,154,7,1,9,1;1,19,154,3,6,8,1;1,19,154,2,7,8,1;' +
-      '1,18,155,2,8,7,1;192;192;192;192;192;192;192;192;192;192;192',
+      '1,190,1;1,190,1;1,190,1;1,190,1;1,190,1;1,35,22,82,27,24,1;1,23,144,23,1;' +
+      '1,22,146,22,1;1,21,149,20,1;1,20,152,18,1;1,20,152,18,1;1,19,153,18,1;' +
+      '1,19,154,17,1;1,19,154,17,1;1,19,154,17,1;1,19,154,17,1;1,8,6,5,154,17,1;' +
+      '1,7,8,4,153,18,1;1,7,8,4,153,18,1;1,7,8,3,154,18,1;1,6,10,2,154,18,1;' +
+      '1,5,11,2,154,18,1;1,6,10,3,153,18,1;1,6,10,3,153,18,1;1,7,9,3,153,18,1;' +
+      '1,7,7,5,153,18,1;1,9,1,1,1,7,153,18,1;1,19,153,18,1;1,19,153,18,1;' +
+      '1,19,153,18,1;1,19,153,18,1;1,19,153,18,1;1,19,154,17,1;1,19,154,17,1;' +
+      '1,19,154,7,1,9,1;1,19,154,3,6,8,1;1,19,154,2,7,8,1;1,18,155,2,8,7,1;192;192;' +
+      '192;192;192;192;192;192;192;192;192',
 
     spawns:[
-      {"id": "mandante1", "rot": "1º ESCALÃO", "lado": "mandante", "x": 120, "y": 508, "jogador": true, "entrada": "boca_leste"},
-      {"id": "mandante2", "rot": "2º ESCALÃO", "lado": "mandante", "x": 120, "y": 290, "entrada": "boca_leste"},
-      {"id": "visitante1", "rot": "BONDE RIVAL", "lado": "visitante", "x": 1416, "y": 508, "entrada": "boca_oeste"},
-      {"id": "visitante2", "rot": "RETAGUARDA", "lado": "visitante", "x": 1416, "y": 740, "entrada": "boca_oeste"}
+      {"id":"mandante1","rot":"1º ESCALÃO","lado":"mandante","x":120,"y":508,"jogador":true,"entrada":"boca_leste"},
+      {"id":"mandante2","rot":"2º ESCALÃO","lado":"mandante","x":120,"y":290,"entrada":"boca_leste"},
+      {"id":"visitante1","rot":"BONDE RIVAL","lado":"visitante","x":1416,"y":508,"entrada":"boca_oeste"},
+      {"id":"visitante2","rot":"RETAGUARDA","lado":"visitante","x":1416,"y":740,"entrada":"boca_oeste"}
     ],
 
     entradas:[
-      {"id": "boca_oeste", "rot": "BOCA DA RUA", "lado": "visitante", "x": 84, "y": 508, "raio": 48, "dir": [-1, 0]},
-      {"id": "boca_leste", "rot": "FIM DA RUA", "lado": "mandante", "x": 1460, "y": 508, "raio": 48, "dir": [1, 0]}
+      {"id":"boca_oeste","rot":"BOCA DA RUA","lado":"visitante","x":84,"y":508,"raio":48,"dir":[-1,0]},
+      {"id":"boca_leste","rot":"FIM DA RUA","lado":"mandante","x":1460,"y":508,"raio":48,"dir":[1,0]}
     ],
 
     pmPostos:[
-      {"x": 150, "y": 700},
-      {"x": 1400, "y": 300},
-      {"x": 880, "y": 430}
+      {"x":150,"y":700},
+      {"x":1400,"y":300},
+      {"x":880,"y":430}
     ]
   },
 
@@ -189,21 +190,21 @@ TO.dados.cenasEditadas = {
       '192;192;192',
 
     spawns:[
-      {"id": "mandante1", "rot": "1º ESCALÃO", "lado": "mandante", "x": 120, "y": 536, "jogador": true, "entrada": "boca_leste"},
-      {"id": "mandante2", "rot": "2º ESCALÃO", "lado": "mandante", "x": 118, "y": 298, "entrada": "boca_leste"},
-      {"id": "visitante1", "rot": "BONDE RIVAL", "lado": "visitante", "x": 1416, "y": 536, "entrada": "boca_oeste"},
-      {"id": "visitante2", "rot": "RETAGUARDA", "lado": "visitante", "x": 1432, "y": 740, "entrada": "boca_oeste"}
+      {"id":"mandante1","rot":"1º ESCALÃO","lado":"mandante","x":120,"y":536,"jogador":true,"entrada":"boca_leste"},
+      {"id":"mandante2","rot":"2º ESCALÃO","lado":"mandante","x":118,"y":298,"entrada":"boca_leste"},
+      {"id":"visitante1","rot":"BONDE RIVAL","lado":"visitante","x":1416,"y":536,"entrada":"boca_oeste"},
+      {"id":"visitante2","rot":"RETAGUARDA","lado":"visitante","x":1432,"y":740,"entrada":"boca_oeste"}
     ],
 
     entradas:[
-      {"id": "boca_oeste", "rot": "BOCA DA RUA", "lado": "visitante", "x": 68, "y": 536, "raio": 48, "dir": [-1, 0]},
-      {"id": "boca_leste", "rot": "FIM DA RUA", "lado": "mandante", "x": 1484, "y": 536, "raio": 48, "dir": [1, 0]}
+      {"id":"boca_oeste","rot":"BOCA DA RUA","lado":"visitante","x":68,"y":536,"raio":48,"dir":[-1,0]},
+      {"id":"boca_leste","rot":"FIM DA RUA","lado":"mandante","x":1484,"y":536,"raio":48,"dir":[1,0]}
     ],
 
     pmPostos:[
-      {"x": 141, "y": 687},
-      {"x": 1432, "y": 300},
-      {"x": 880, "y": 430}
+      {"x":141,"y":687},
+      {"x":1432,"y":300},
+      {"x":880,"y":430}
     ]
   }
 

@@ -441,7 +441,10 @@ O que **não** veio, e por quê:
   (32% → 39%, 1.723 células abertas e nenhuma fechada). Marcador da mão que caia em parede depois da repintura
   reencosta no chão mais perto, e reencostar exige a maior ilha de chão: poço de uma
   célula solta no meio de telhado é bonde nascendo emparedado sem nunca tocar muro.
-  Prova da máscara que vale de verdade: `python3 ferramentas/prova_mascara.py`.
+  O remendo entra por `python3 ferramentas/colar_remendo.py remendo.txt`, que troca
+  a entrada no lugar e reescreve no formato da casa — colar na unha já derrubou o
+  arquivo uma vez, por vírgula faltando entre duas entradas. Prova da máscara que
+  vale de verdade: `python3 ferramentas/prova_mascara.py`.
 - **Pino não mora em cima de gramado nem colado no vizinho**: o sorteio por hash punha
   mercadinho no meio do campo e dois ícones no mesmo lote. Agora o estádio entra primeiro
   (o lugar dele é fixo), os gramados viram área proibida com folga, e cada pino anda na

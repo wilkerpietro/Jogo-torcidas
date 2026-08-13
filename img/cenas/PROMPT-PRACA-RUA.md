@@ -67,15 +67,29 @@ calçada clara vira parede, laje clara vira chão. Não conserte `cenas_foto.js`
    `[` e `]` mudam o tamanho —, e arraste os marcadores que ficarem mal postos;
 3. clique em **Exportar arquivo**: fora dos arredores ele devolve só o remendo
    da cena que está no ar, sem a imagem junto;
-4. cole em `dados/cenas_editadas.js`, na chave da cena. Esse arquivo é da mão,
-   entra depois do gerado e manda — o que estiver escrito lá troca, o resto
-   continua vindo da foto;
+4. salve o texto num arquivo e rode
+   `python3 ferramentas/colar_remendo.py remendo.txt` — ele encaixa em
+   `dados/cenas_editadas.js` no formato da casa, trocando a entrada se ela já
+   existir. Colar na unha também funciona, mas as três armadilhas são reais:
+   entrada anterior sem vírgula derruba o arquivo inteiro, colar duas vezes
+   deixa a cena duplicada (a segunda ganha calada) e a máscara numa linha de
+   3 KB some no diff. Esse arquivo é da mão, entra depois do gerado e manda —
+   o que estiver escrito lá troca, o resto continua vindo da foto;
 5. confira com `python3 ferramentas/prova_mascara.py`, que desenha
    `_ref_mascara_<cena>_editada.png` com a máscara que vale de verdade.
 
-Foi assim com a rua de periferia: o corte tinha deixado só o asfalto, e a
-calçada larga — que é por onde se escapa sem sair do quadro — voltou a ser
-chão de andar.
+As quatro cenas passaram por aí, e o corte errou de um jeito diferente em
+cada uma — pros dois lados, com a mesma configuração:
+
+| cena | corte | mão | como errou |
+|---|---|---|---|
+| rua de periferia | 32,6% | 43,0% | cortou de menos: perdeu a calçada |
+| praça | 70,8% | 60,9% | cortou de mais: vazou pro quarteirão |
+| rua de classe média | 46,8% | 43,5% | vazou pelo portão (e faltou marcar parada e carro) |
+| rua de bairro nobre | 32,1% | 39,2% | encolheu: perdeu pedra clara e grama |
+
+Como ele erra pros dois lados, não adianta mexer em limiar: qualquer número
+que salve a periferia arrebenta a praça. O pincel é etapa, não gambiarra.
 
 ---
 
