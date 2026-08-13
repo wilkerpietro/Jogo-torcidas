@@ -463,8 +463,10 @@ O que **não** veio, e por quê:
   chão. Medido: 60% → 54% de chão, 0% de telhado fora dos retângulos. Depois disso a
   malha ainda passou pelo pincel, que num salão pequeno pesa mais que em rua: mesa,
   balcão e freezer são obstáculo de verdade e o degrau da frente tinha fechado a
-  entrada — 54% → 51,3%, com 1.260 células fechadas e 614 abertas. Medido na invasão:
-  casa acorda aos 5,4 s pela zona, 12 atacantes chegam no balcão, 14 defensores caem e
+  entrada — 54% → 49,6% em duas passadas, a segunda fechando balcão, freezers e a copa
+  do fundo. O alvo era o balcão e o balcão virou parede, então ele reencostou 24 px pro
+  chão em frente (800,392), que é onde se chega de verdade. Medido na invasão: casa
+  acorda aos 5,5 s pela zona, 16 atacantes chegam no balcão, 14 defensores caem e
   ninguém atravessa parede.
 - **O bar da rival virou salão, e a casa não sabe do ataque antes da hora.** A cena
   ganhou a esquina que o prompt promete — transversal descendo da borda de cima — e o

@@ -88,7 +88,7 @@ cada uma — pros dois lados, com a mesma configuração:
 | praça | 70,8% | 60,9% | cortou de mais: vazou pro quarteirão |
 | rua de classe média | 46,8% | 43,5% | vazou pelo portão (e faltou marcar parada e carro) |
 | rua de bairro nobre | 32,1% | 39,2% | encolheu: perdeu pedra clara e grama |
-| bar da rival | 59,9% | 51,3% | subiu no telhado do quarteirão inteiro |
+| bar da rival | 59,9% | 49,6% | subiu no telhado do quarteirão inteiro |
 
 Como ele erra pros dois lados, não adianta mexer em limiar: qualquer número
 que salve a periferia arrebenta a praça. O pincel é etapa, não gambiarra.
@@ -101,8 +101,9 @@ fração da tela (a rua principal, as duas verticais e o bloco do bar), e fora
 deles não há chão — irmão do `corredor` para planta que não é pista
 atravessando o quadro. Depois a mão, que no salão importa mais que nas
 outras cenas: mesa, balcão e freezer são obstáculo dentro de uma sala
-pequena, e o degrau da frente tinha fechado a entrada. 54% → 51,3%, com
-1.260 células fechadas e 614 abertas.
+pequena, e o degrau da frente tinha fechado a entrada. 54% → 49,6% em duas
+passadas de pincel: a primeira abriu o degrau e marcou as mesas, a segunda
+fechou o balcão, os freezers e a copa do fundo.
 
 ---
 
