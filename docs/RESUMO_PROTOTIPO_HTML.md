@@ -512,6 +512,26 @@ O que **não** veio, e por quê:
   8 s de espera porque nos primeiros segundos o bonde ainda está em coluna no spawn e uma
   bomba ali derrubava doze de uma vez — foi medido, 15 caídos aos 18 s, antes de o jogador
   ter chance de abrir a formação. O estoque é metade do seu, no mínimo um.
+- **Noite tranquila nos arredores é gente esperando, não bonde marchando.** Com `paz`, o
+  pessoal fica de conversa em volta do próprio ponto — alvo sorteado dentro de 200 px,
+  alternando parado (2 a 6 s) e andando (1,5 a 4 s) a meia velocidade — e só vai pro
+  portão perto da hora. **Não vão todos juntos**: cada escalão tem o seu momento dentro
+  da janela de 25 a 20 minutos antes da bola rolar, e dentro do escalão cada um sai com
+  alguns segundos de diferença; a janela é fechada de propósito (o passo entre grupos
+  para 1,5 min antes do fim, que é o que o sorteio individual gasta), senão o último
+  entraria depois dos 20. Nada disso vira aviso na tela. Medido numa noite inteira: de
+  18:06 a 20:05 ninguém sai da área do próprio spawn, com 12 a 23 dos 62 se mexendo a
+  cada instante; a entrada começa 20:05 e termina 20:09.
+- **Quem é atacado não se mexe antes da hora.** Na praça e nas três ruas o bonde
+  visitante começa parado e só vem quando o outro chega perto (`gatilho.perto`, 260 px).
+  É o mesmo mecanismo do bar com um gatilho diferente, e a diferença é o que a cena pede:
+  no bar o que importa é o LUGAR (a porta que se vigia), na praça e na rua é a DISTÂNCIA
+  — não há porta pra vigiar. Medido: nas quatro cenas ninguém do lado atacado anda nos
+  três primeiros segundos, e a casa acorda por `perto`.
+- **O remendo diz onde, a cena diz o quê.** `sobreEdicao` passou a mesclar spawn e entrada
+  por id em vez de trocar a lista inteira: um remendo exportado antes de existir o campo
+  `guarda` apagava o comportamento junto com a posição, e a torcida atacada voltava a sair
+  andando no primeiro segundo.
 - **A briga acaba sozinha.** Não é mais o botão nem o relógio: acabou quando um dos dois
   lados não tem mais ninguém de pé na cena — caiu, foi preso, entrou ou correu pra fora.
   Antes disso o vencedor ficava sozinho no cenário sem nada pra fazer até o jogador andar

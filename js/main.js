@@ -2757,7 +2757,8 @@
   function cartazDaCena(res, fecho){
     const ganhou = fecho ? !!fecho.ganhou : !!res.venceu;
     const titulo = (fecho && fecho.titulo) ||
-                   (ganhou ? 'SAÍMOS POR CIMA' : 'SAÍMOS POR BAIXO');
+                   (res.tranquila ? 'NOITE TRANQUILA'
+                                  : ganhou ? 'SAÍMOS POR CIMA' : 'SAÍMOS POR BAIXO');
     const armas = (res.armas && res.armas.mandante) || {pedra:0, bomba:0};
     const dinheiro = (fecho && fecho.dinheiro) || 0;
     const dado = (rot, val, cor)=>

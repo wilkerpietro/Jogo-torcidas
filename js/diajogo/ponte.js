@@ -360,6 +360,7 @@ TO.diaJogo.ponte = (function(){
       rompido:J.rompido,
       entraram:J.entraram,
       venceu, xpNoite,
+      tranquila: !!(J.acabou && J.acabou.tranquila),
       bombasUsadas: Math.max(0, (J.bombasIniciais||0) - J.bombas),
       /* o que saiu da mão de cada lado, e quem correu pra fora da cena */
       armas: J.armas,

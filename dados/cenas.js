@@ -110,10 +110,16 @@ TO.dados.cenas = (function(){
       {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:768, y:950,
        entrada:'esquina_leste'},
       {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1426, y:512,
-       entrada:'esquina_oeste'},
+       guarda:true, entrada:'esquina_oeste'},
       {id:'visitante2',rot:'RETAGUARDA',  lado:'visitante',x:768, y:74,
-       entrada:'esquina_oeste'}
+       guarda:true, entrada:'esquina_oeste'}
     ],
+    /* Eles estão na praça deles e não vieram atrás de ninguém: só se
+       mexem quando o outro bonde chega perto. Aqui o gatilho é
+       distância e não lugar — praça não tem porta pra vigiar. */
+    gatilho:{lado:'mandante', perto:260, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
     /* quatro esquinas, uma em cada borda: as duas do meio são objetivo,
        as de cima e de baixo servem de fuga e de entrada da PM */
     entradas:[
@@ -191,10 +197,15 @@ TO.dados.cenas = (function(){
         {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:120, y:290,
          entrada:'boca_leste'},
         {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1416, y:512,
-         entrada:'boca_oeste'},
+         guarda:true, entrada:'boca_oeste'},
         {id:'visitante2',rot:'RETAGUARDA', lado:'visitante',x:1416, y:740,
-         entrada:'boca_oeste'}
+         guarda:true, entrada:'boca_oeste'}
       ],
+      /* parados na ponta deles até o bonde chegar perto — a mesma
+         regra da praça, porque é a mesma situação */
+      gatilho:{lado:'mandante', perto:260, rot:'DE OLHO',
+               espera:'eles ainda não se mexeram',
+               aviso:'eles viram o bonde e vieram'},
       entradas:[
         {id:'boca_oeste', rot:'BOCA DA RUA', lado:'visitante', x:40,   y:512, raio:48, dir:[-1,0]},
         {id:'boca_leste', rot:'FIM DA RUA',  lado:'mandante',  x:1496, y:512, raio:48, dir:[1,0]}
@@ -629,7 +640,17 @@ TO.dados.cenas = (function(){
        (reencostado aqui, arrastado no editor) e isso ia comendo por
        baixo o arquivo que devia ser a fonte */
     const copia = (o)=>JSON.parse(JSON.stringify(o));
-    for(const campo of ['spawns', 'entradas', 'pmPostos', 'grades'])
+    /* Marcador com id entra MESCLADO, não trocado: o remendo é do
+       editor e diz onde o marcador fica; a cena é que diz o que ele é.
+       Trocando inteiro, um remendo exportado antes de existir o campo
+       `guarda` apagava o comportamento junto com a posição — e a
+       torcida atacada voltava a sair andando no primeiro segundo. */
+    for(const campo of ['spawns', 'entradas'])
+      if(e[campo]) cena[campo] = cena[campo].map(o=>{
+        const novo = e[campo].find(x=>x.id===o.id);
+        return novo ? Object.assign({}, o, copia(novo)) : o;
+      }).concat(e[campo].filter(x=>!cena[campo].some(o=>o.id===x.id)).map(copia));
+    for(const campo of ['pmPostos', 'grades'])
       if(e[campo]) cena[campo] = copia(e[campo]);
     if(e.poligonos) cena.poligonos = copia(e.poligonos);
     /* a zona que acorda a casa é coordenada como qualquer marcador, e

@@ -17,7 +17,11 @@ TO.diaJogo.P = {
   vidaGrade:420, forcaPM:18, debandada:30,
   atrasoCarga:7, tropaCarga:8, duracaoCarga:18, aguentaPM:10,
   cdPedra:2, cdBomba:2.5, alcancePedra:170, alcanceBomba:210,
-  bombas:4, bombasRival:2, chancePaz:50
+  bombas:4, bombasRival:2, chancePaz:50,
+  /* noite tranquila nos arredores: o relógio da cena anda 0,6 min por
+     segundo, e o pessoal fica de conversa em volta do próprio ponto até
+     faltar isto pra bola rolar */
+  minutosAteJogo:150, entrarFaltando:[25,20], raioVadiagem:200
 };
 
 TO.diaJogo.combate = (function(){
@@ -68,6 +72,7 @@ TO.diaJogo.combate = (function(){
       this.caido=false; this.preso=false; this.fugindo=false; this.entrou=false;
       this.sumiu=false;     // debandou e saiu da cena por uma boca de rua
       this.voltando=false;  // defendeu, ganhou, e está voltando pro posto
+      this.vadiando=false;  // noite tranquila: fica de conversa até a hora
       this.atordoado=0; this.tremor=0; this.golpe=0; this.hostil=0;
       this.membroId=null;   // costura com a gestão
     }
@@ -195,6 +200,33 @@ TO.diaJogo.combate = (function(){
       J.total[s.lado]+=qtd;
     }
 
+    /* =======================================================
+       NOITE TRANQUILA NOS ARREDORES
+       Sem briga, ninguém marcha pro portão no primeiro segundo: fica
+       de conversa em volta de onde chegou e entra na hora de entrar.
+       E não entram todos juntos — cada escalão tem o seu momento
+       dentro da janela, e dentro do escalão cada um sai com alguns
+       segundos de diferença. Torcida inteira partindo no mesmo quadro
+       é a coisa mais artificial que essa cena pode fazer.
+       ======================================================= */
+    if(J.paz && (!D.id || D.id==='arredores')){
+      const grupos=D.spawns.map(s=>s.id);
+      const [cedo, tarde]=P.entrarFaltando;
+      /* a janela é fechada: o primeiro escalão sai faltando 25 min e o
+         último tem de estar dentro faltando 20, contando o sorteio de
+         cada um. Por isso o passo entre grupos para 1,5 min antes do
+         fim da janela — é esse 1,5 que o sorteio individual gasta. */
+      const FOLGA=1.5;
+      for(const d of J.discos){
+        if(d.lider) continue;      // o líder é do jogador, ele decide
+        const g=Math.max(0, grupos.indexOf(d.spawn));
+        const passo=grupos.length>1 ? (cedo-tarde-FOLGA)/(grupos.length-1) : 0;
+        const faltando=cedo - g*passo;                    // em minutos
+        d.vadiando=true;
+        d.entraEm=(P.minutosAteJogo - faltando)/0.6 + U.entre(0, FOLGA/0.6);
+      }
+    }
+
     /* o braço deles: um disco só, o mais forte do bonde rival. Um por
        lado é de propósito — dois já viram chuva de pedra e a cena
        deixa de ser briga de corpo. */
@@ -284,14 +316,21 @@ TO.diaJogo.combate = (function(){
   }
 
   function acabar(J, lado){
-    const venceu = lado==='mandante';
+    /* noite tranquila acaba pelo mesmo caminho — todo mundo entrou —,
+       e aí não houve vencido: dizer que a cena esvaziou porque não
+       sobrou ninguém de pé seria mentir sobre uma noite sem briga */
+    const semBriga = lado===null && J.caidos.mandante+J.caidos.visitante===0;
+    const venceu = lado ? lado==='mandante'
+                        : J.caidos.visitante >= J.caidos.mandante;
     J.fase='acabando';       // a ponte vê isto e abre a tela de fim
-    J.acabou={lado, venceu, motivo: lado===null
-      ? 'não sobrou ninguém de pé dos dois lados'
+    J.acabou={lado, venceu, tranquila:semBriga, motivo:
+        semBriga ? 'a noite foi tranquila e todo mundo entrou'
+      : lado===null ? 'não sobrou ninguém de pé dos dois lados'
       : venceu ? 'não sobrou ninguém deles na cena'
                : 'sua torcida foi corrida do lugar'};
-    logar(J, J.acabou.motivo, venceu?'v':'r');
-    aviso(J, venceu?'A CENA É SUA':'CORRERAM COM VOCÊ', venceu?'#7fc2a0':'#d9705f');
+    logar(J, J.acabou.motivo, semBriga?'p':venceu?'v':'r');
+    if(!semBriga)
+      aviso(J, venceu?'A CENA É SUA':'CORRERAM COM VOCÊ', venceu?'#7fc2a0':'#d9705f');
   }
 
   function logar(J,txt,cor){
@@ -354,8 +393,20 @@ TO.diaJogo.combate = (function(){
     const g=D.gatilho;
     const atacantes=J.discos.filter(d=>d.vivo && d.lado===(g.lado||'mandante'));
     let por=null;
-    for(const a of atacantes)
-      if(U.dist(a.x,a.y,g.x,g.y) <= (g.raio||140)){ por='zona'; break; }
+    /* dois jeitos de a cena declarar o gatilho, porque são duas
+       situações: no bar o que importa é o LUGAR (a porta), na praça e
+       na rua o que importa é a DISTÂNCIA — não há porta pra vigiar,
+       eles só reagem quando o outro bonde chega perto. */
+    if(g.perto){
+      const parados=J.discos.filter(d=>d.vivo && d.guarda);
+      for(const d of parados){
+        for(const a of atacantes)
+          if(U.dist(a.x,a.y,d.x,d.y) <= g.perto){ por='perto'; break; }
+        if(por) break;
+      }
+    }
+    if(!por && g.raio) for(const a of atacantes)
+      if(U.dist(a.x,a.y,g.x,g.y) <= g.raio){ por='zona'; break; }
     if(!por) for(const d of J.discos){
       if(!d.vivo || !d.guarda) continue;
       if(inimigoAlcancavel(J,d,170)){ por='visao'; break; }
@@ -455,6 +506,8 @@ TO.diaJogo.combate = (function(){
         // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
         campo = campoDoSpawn(s); usarCampo=true;
+      } else if(d.vadiando && J.t < d.entraEm){
+        vadiar(J, d); ax=d.vagoX; ay=d.vagoY;
       } else {
         const alvo = inimigoAlcancavel(J,d, d.doJogador?110:130);
         if(alvo && !J.paz){ ax=alvo.x; ay=alvo.y; }
@@ -530,7 +583,10 @@ TO.diaJogo.combate = (function(){
         }
       }
 
-      const vel=P.velocidade*(d.fugindo?1.25:recua?1.15:1)*(0.75+nivelMoral(d.moral)*0.25);
+      /* quem está de conversa anda devagar: é passeio, não deslocamento */
+      const passeio = d.vadiando && J.t < d.entraEm;
+      const vel=P.velocidade*(d.fugindo?1.25:recua?1.15:passeio?0.5:1)
+                *(0.75+nivelMoral(d.moral)*0.25);
       if(!dirx && !diry && d.acomodado){
         /* Chegou: para de verdade. Deixar o steering rodando com alvo
            a 8 px mantém micromovimento que, com 60 discos na tela,
@@ -576,6 +632,24 @@ TO.diaJogo.combate = (function(){
         }
       }
     }
+  }
+
+  /* Anda um pouco, para um pouco, sempre em volta do próprio ponto.
+     O alvo é sorteado dentro do raio a cada troca, e a parada é o que
+     tira a cara de formiga em fila — gente esperando jogo fica em roda,
+     não andando em linha reta o tempo todo. */
+  function vadiar(J, d){
+    if(d.vagoAte===undefined || J.t > d.vagoAte){
+      d.vagoParado = !d.vagoParado;
+      d.vagoAte = J.t + (d.vagoParado ? U.entre(2,6) : U.entre(1.5,4));
+      if(!d.vagoParado){
+        const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
+        const a=U.rng()*Math.PI*2, r=U.entre(20, P.raioVadiagem);
+        const q=A.pontoLivreMaisProximo(s.x+Math.cos(a)*r, s.y+Math.sin(a)*r, d.r);
+        d.vagoX=q.x; d.vagoY=q.y;
+      }
+    }
+    if(d.vagoParado || d.vagoX===undefined){ d.vagoX=d.x; d.vagoY=d.y; }
   }
 
   const camposSpawn={};
