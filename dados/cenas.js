@@ -136,85 +136,153 @@ TO.dados.cenas = (function(){
   });
 
   /* =======================================================
-     RUA
-     Rua de bairro: asfalto remendado no meio, calçada estreita
-     dos dois lados, muro pichado, boteco com mesa de plástico
-     na porta, caçamba de entulho e carro estacionado. Corredor
-     comprido — quem quer fugir corre pro fim da rua.
+     AS TRÊS RUAS
+     Mesma planta nas três: pista larga atravessando a tela,
+     calçada larga dos dois lados e uma transversal em cada
+     ponta — duas esquinas de cada lado. O que muda é o bairro
+     em volta, porque esbarrão no Pirambu não pode abrir a
+     mesma tela do esbarrão na Aldeota. A tática continua a
+     mesma de propósito; o cenário é que conta de onde é.
      ======================================================= */
-  const blocosRua = [];
-  const br = (x,y,w,h,tipo,extra)=>blocosRua.push(
-    Object.assign({x,y,w,h,tipo}, extra||{}));
+  const PONTA = 250;              // largura da transversal de cada ponta
 
-  /* As duas fileiras de casa param antes das pontas: é ali que entram as
-     transversais, duas esquinas em cada extremidade da rua. O quarteirão
-     vai de x=250 a x=1286; o que sobra dos dois lados é rua atravessada. */
-  const PONTA = 250;
-  const põeFila = (y0, altura, cima)=>{
-    let x = PONTA, i = cima ? 0 : 40;
-    while(x < W-PONTA){
-      const larg = Math.min(150 + ((i*97) % 110), W-PONTA-x);
-      if(larg < 40) break;
-      const fundo = altura + ((i*53) % 60);
-      br(x, cima ? 0 : H-fundo, larg-8, fundo,
-         cima ? (i%4===1 ? 'sobrado' : 'casa') : (i%5===2 ? 'boteco' : 'casa'),
-         {n:i});
-      x += larg; i++;
+  function fazRua(cfg){
+    const blocos = [];
+    const br = (x,y,w,h,tipo,extra)=>blocos.push(
+      Object.assign({x,y,w,h,tipo}, extra||{}));
+
+    /* as duas fileiras, cada uma parando antes das pontas */
+    const fila = (cima)=>{
+      const L = cima ? cfg.norte : cfg.sul;
+      let x = PONTA, i = cima ? 0 : 40;
+      while(x < W-PONTA){
+        const larg = Math.min(L.larg + ((i*97) % L.varia), W-PONTA-x);
+        if(larg < 40) break;
+        const fundo = L.fundo + ((i*53) % 60);
+        br(x, cima ? 0 : H-fundo, larg-8, fundo, L.tipos[i % L.tipos.length], {n:i});
+        x += larg; i++;
+      }
+    };
+    fila(true); fila(false);
+
+    /* as quatro quinas das transversais */
+    const q = cfg.quinas;
+    br(0, 0, PONTA-40, 190, q[0], {n:80});
+    br(W-PONTA+40, 0, PONTA-40, 190, q[1], {n:81});
+    br(0, H-190, PONTA-40, 190, q[2], {n:82});
+    br(W-PONTA+40, H-190, PONTA-40, 190, q[3], {n:83});
+
+    /* o mobiliário do meio-fio: é o que muda de bairro pra bairro */
+    for(const b of cfg.mobilia || []) br(...b);
+    /* carros nas duas faixas de estacionamento */
+    for(const [cx,cy] of cfg.carros) br(cx, cy, 96, 46, 'carro');
+
+    return montar(Object.assign({
+      blocos, tropaChoque:false,
+      saida:{perto:'Furar pra fora', longe:'Boca da rua (leve o líder)',
+             feito:'sua torcida furou o cerco e sumiu na rua',
+             dica:'Leve o líder até a ponta da rua que é sua.'},
+      varais:[],
+      spawns:[
+        /* cada bonde entra por uma ponta; as transversais das quinas dão
+           a volta, então dá pra flanquear em vez de bater de frente */
+        {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:120, y:512, jogador:true,
+         entrada:'boca_leste'},
+        {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:120, y:290,
+         entrada:'boca_leste'},
+        {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1416, y:512,
+         entrada:'boca_oeste'},
+        {id:'visitante2',rot:'RETAGUARDA', lado:'visitante',x:1416, y:740,
+         entrada:'boca_oeste'}
+      ],
+      entradas:[
+        {id:'boca_oeste', rot:'BOCA DA RUA', lado:'visitante', x:40,   y:512, raio:48, dir:[-1,0]},
+        {id:'boca_leste', rot:'FIM DA RUA',  lado:'mandante',  x:1496, y:512, raio:48, dir:[1,0]}
+      ],
+      /* a PM fecha as duas pontas, que é onde a rua tem saída */
+      pmPostos:[{x:150, y:700}, {x:1400, y:300}, {x:880, y:430}],
+      grades:[]
+    }, cfg.cena));
+  }
+
+  /* --- periferia: favela e classe baixa --------------------------------
+     Asfalto remendado, muro pichado, boteco com mesa de plástico na
+     porta, caçamba de entulho e quintal de terra batida atrás. */
+  const rua = fazRua({
+    norte:{larg:150, varia:110, fundo:210, tipos:['casa','sobrado','casa','casa']},
+    sul:  {larg:150, varia:110, fundo:200, tipos:['casa','casa','boteco','casa','casa']},
+    quinas:['sobrado','casa','casa','boteco'],
+    mobilia:[[420, 690, 150, 70, 'cacamba'], [980, 286, 150, 70, 'cacamba']],
+    carros:[[320,290],[700,290],[1160,290],[330,700],[760,700],[1150,700]],
+    cena:{
+      id:'rua', nome:'Rua', pintura:'rua', local:'Na rua',
+      enfeites:[
+        {tipo:'poste', x:340, y:330}, {tipo:'poste', x:780, y:330},
+        {tipo:'poste', x:1200, y:330},
+        {tipo:'poste', x:400, y:694}, {tipo:'poste', x:880, y:694},
+        {tipo:'poste', x:1240, y:694},
+        {tipo:'lixeira', x:560, y:330}, {tipo:'lixeira', x:1040, y:694},
+        {tipo:'mesa', x:1180, y:756}, {tipo:'mesa', x:1256, y:768},
+        {tipo:'lombada', x:768, y:512}
+      ],
+      varais:[[[340,330],[400,694]], [[880,694],[1200,330]]]
     }
-  };
-  põeFila(0, 210, true);
-  põeFila(0, 200, false);
+  });
 
-  /* as quatro quinas das transversais: casa de esquina em cada ponta */
-  br(0, 0, PONTA-40, 190, 'sobrado', {n:80});
-  br(W-PONTA+40, 0, PONTA-40, 190, 'casa', {n:81});
-  br(0, H-190, PONTA-40, 190, 'casa', {n:82});
-  br(W-PONTA+40, H-190, PONTA-40, 190, 'boteco', {n:83});
+  /* --- classe média ----------------------------------------------------
+     Casa de muro baixo com garagem e jardim na frente, predinho de três
+     andares, padaria na esquina e árvore nova plantada no meio-fio. */
+  const ruaMedia = fazRua({
+    norte:{larg:170, varia:80, fundo:220, tipos:['casa-media','casa-media','predinho']},
+    sul:  {larg:170, varia:80, fundo:214, tipos:['casa-media','predinho','casa-media']},
+    quinas:['padaria','casa-media','casa-media','predinho'],
+    /* a árvore de calçada é obstáculo: é o que muda a briga de bairro */
+    mobilia:[[360, 260, 54, 54, 'arvore-rua'], [700, 260, 54, 54, 'arvore-rua'],
+             [1040, 260, 54, 54, 'arvore-rua'],
+             [470, 706, 54, 54, 'arvore-rua'], [810, 706, 54, 54, 'arvore-rua'],
+             [1150, 706, 54, 54, 'arvore-rua'],
+             [560, 700, 120, 60, 'ponto-onibus']],
+    /* aqui o carro fica na vaga pintada, não em cima da calçada */
+    carros:[[440,344],[820,344],[1160,344],[330,630],[930,630],[1250,630]],
+    cena:{
+      id:'rua-media', nome:'Rua de classe média', pintura:'rua-media',
+      local:'Na rua, bairro de classe média',
+      enfeites:[
+        {tipo:'poste', x:300, y:340}, {tipo:'poste', x:900, y:340},
+        {tipo:'poste', x:1290, y:340},
+        {tipo:'poste', x:380, y:684}, {tipo:'poste', x:990, y:684},
+        {tipo:'poste', x:1300, y:684},
+        {tipo:'lixeira', x:640, y:340}, {tipo:'lixeira', x:1080, y:684},
+        {tipo:'mesa', x:196, y:760}, {tipo:'mesa', x:196, y:840},
+        {tipo:'lombada', x:768, y:512}
+      ]
+    }
+  });
 
-  /* caçamba de entulho e carros no meio-fio: o que vira barricada */
-  br(420, 690, 150, 70, 'cacamba');
-  br(980, 286, 150, 70, 'cacamba');
-  for(const [cx,cy] of [[320,290],[700,290],[1160,290],
-                        [330,700],[760,700],[1150,700]])
-    br(cx, cy, 96, 46, 'carro');
-
-  const rua = montar({
-    id:'rua', nome:'Rua', pintura:'rua', blocos:blocosRua,
-    local:'Na rua',
-    /* rua de bairro também não tem batalhão: é a viatura da área */
-    tropaChoque:false,
-    saida:{perto:'Furar pra fora', longe:'Boca da rua (leve o líder)',
-           feito:'sua torcida furou o cerco e sumiu na rua',
-           dica:'Leve o líder até a ponta da rua que é sua.'},
-    enfeites:[
-      {tipo:'poste', x:340, y:330}, {tipo:'poste', x:780, y:330},
-      {tipo:'poste', x:1200, y:330},
-      {tipo:'poste', x:400, y:694}, {tipo:'poste', x:880, y:694},
-      {tipo:'poste', x:1240, y:694},
-      {tipo:'lixeira', x:560, y:330}, {tipo:'lixeira', x:1040, y:694},
-      {tipo:'mesa', x:1180, y:756}, {tipo:'mesa', x:1256, y:768},
-      {tipo:'lombada', x:768, y:512}
-    ],
-    varais:[[[340,330],[400,694]], [[880,694],[1200,330]]],
-    spawns:[
-      /* cada bonde entra por uma ponta; as transversais das quinas dão
-         a volta, então dá pra flanquear em vez de bater de frente */
-      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:120, y:512, jogador:true,
-       entrada:'boca_leste'},
-      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:120, y:290,
-       entrada:'boca_leste'},
-      {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1416, y:512,
-       entrada:'boca_oeste'},
-      {id:'visitante2',rot:'RETAGUARDA', lado:'visitante',x:1416, y:740,
-       entrada:'boca_oeste'}
-    ],
-    entradas:[
-      {id:'boca_oeste', rot:'BOCA DA RUA', lado:'visitante', x:40,   y:512, raio:48, dir:[-1,0]},
-      {id:'boca_leste', rot:'FIM DA RUA',  lado:'mandante',  x:1496, y:512, raio:48, dir:[1,0]}
-    ],
-    /* a PM fecha as duas pontas, que é onde a rua tem saída */
-    pmPostos:[{x:150, y:700}, {x:1400, y:300}, {x:768, y:262}],
-    grades:[]
+  /* --- classe alta -----------------------------------------------------
+     Muro alto com cerca elétrica, guarita em cada portão, torre com
+     piscina na cobertura e mangueira grande sombreando a calçada. */
+  const ruaNobre = fazRua({
+    norte:{larg:250, varia:60, fundo:230, tipos:['torre','jardim-alto','torre']},
+    sul:  {larg:250, varia:60, fundo:226, tipos:['jardim-alto','torre','jardim-alto']},
+    quinas:['torre','jardim-alto','jardim-alto','torre'],
+    mobilia:[[330, 250, 68, 68, 'arvore-grande'], [700, 250, 68, 68, 'arvore-grande'],
+             [1070, 250, 68, 68, 'arvore-grande'],
+             [420, 706, 68, 68, 'arvore-grande'], [790, 706, 68, 68, 'arvore-grande'],
+             [1160, 706, 68, 68, 'arvore-grande'],
+             [560, 252, 70, 64, 'guarita'], [960, 706, 70, 64, 'guarita']],
+    carros:[[470,344],[860,344],[1230,344],[300,630],[900,630],[1270,630]],
+    cena:{
+      id:'rua-nobre', nome:'Rua de classe alta', pintura:'rua-nobre',
+      local:'Na rua, bairro nobre',
+      enfeites:[
+        {tipo:'poste', x:250, y:346}, {tipo:'poste', x:640, y:346},
+        {tipo:'poste', x:1010, y:346}, {tipo:'poste', x:1380, y:346},
+        {tipo:'poste', x:250, y:678}, {tipo:'poste', x:640, y:678},
+        {tipo:'poste', x:1010, y:678}, {tipo:'poste', x:1380, y:678},
+        {tipo:'lixeira', x:880, y:346}, {tipo:'lixeira', x:1240, y:678}
+      ]
+    }
   });
 
   /* =======================================================
@@ -419,5 +487,6 @@ TO.dados.cenas = (function(){
     pmPostos:[{x:120, y:300}, {x:120, y:760}]
   });
 
-  return {praca, rua, bar, comercio, ct};
+  return {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
+          bar, comercio, ct};
 })();

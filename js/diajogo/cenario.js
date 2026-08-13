@@ -628,6 +628,197 @@ TO.diaJogo.cenario = (function(){
     }
   }
 
+  /* -------------------------------------------------------
+     CLASSE MÉDIA
+     ------------------------------------------------------- */
+
+  /* casa de muro baixo: garagem coberta, jardim na frente e laje com
+     placa de aquecedor solar — o retrato do bairro que subiu de vida */
+  function casaMedia(c, b){
+    const s = `cm|${b.x}|${b.y}`;
+    const pro = b.y < 512 ? 1 : -1;                 // que lado é a rua
+    /* o corpo da casa, recuado do muro */
+    c.fillStyle = '#b9b3a6'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 2;
+    c.strokeRect(b.x+1, b.y+1, b.w-2, b.h-2);
+    const rec = 62;                                  // o recuo do jardim
+    const cy = pro > 0 ? b.y : b.y + rec;
+    const ch = b.h - rec;
+    c.fillStyle = dado(s, 2) ? '#a8532f' : '#8d8a80';
+    c.fillRect(b.x+6, cy, b.w-12, ch);
+    c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 2;
+    c.strokeRect(b.x+6, cy, b.w-12, ch);
+    /* telha em fiada, e a placa do aquecedor solar na laje */
+    c.strokeStyle = 'rgba(0,0,0,.14)'; c.lineWidth = 1;
+    for(let py=cy+8; py<cy+ch-4; py+=9){
+      c.beginPath(); c.moveTo(b.x+9, py); c.lineTo(b.x+b.w-9, py); c.stroke();
+    }
+    c.fillStyle = '#243a4a';
+    c.fillRect(b.x+b.w*0.55, cy+14, b.w*0.32, 30);
+    c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 1;
+    c.strokeRect(b.x+b.w*0.55, cy+14, b.w*0.32, 30);
+    /* o ar-condicionado e a caixa d'água escondida */
+    c.fillStyle = '#d8d4c8'; c.fillRect(b.x+14, cy+16, 20, 14);
+    /* jardim na frente, com grama cortada e o carro na garagem */
+    const jy = pro > 0 ? b.y + ch : b.y;
+    c.fillStyle = '#4f7040'; c.fillRect(b.x+6, jy, b.w-12, rec);
+    for(let i=0;i<10;i++){
+      const q = hash(`${s}|g|${i}`);
+      c.fillStyle = 'rgba(96,124,70,.7)';
+      c.fillRect(b.x+10+(q%Math.max(1,b.w-24)), jy+4+((q>>>6)%(rec-8)), 8, 5);
+    }
+    c.fillStyle = '#9a958c'; c.fillRect(b.x+b.w-62, jy, 52, rec);
+    c.fillStyle = '#5a5f6a'; c.fillRect(b.x+b.w-56, jy+8, 40, rec-16);
+    /* o muro baixo e o portão de chapa, virados pra rua */
+    const my = pro > 0 ? b.y + b.h - 9 : b.y;
+    c.fillStyle = '#cfc8b8'; c.fillRect(b.x, my, b.w, 9);
+    c.fillStyle = '#7a5a2a'; c.fillRect(b.x+b.w-62, my, 52, 9);
+  }
+
+  /* predinho de três andares: caixa d'água, ar-condicionado e a laje */
+  function predinho(c, b){
+    const s = `pd|${b.x}|${b.y}`;
+    c.fillStyle = '#a9a89f'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 2.5;
+    c.strokeRect(b.x+1.5, b.y+1.5, b.w-3, b.h-3);
+    c.fillStyle = 'rgba(0,0,0,.16)';
+    c.fillRect(b.x+10, b.y+10, b.w-20, b.h-20);
+    /* caixa d'água grande, casa de máquinas e as condensadoras na laje */
+    c.fillStyle = '#2d6fa8';
+    c.beginPath(); c.arc(b.x+b.w*0.30, b.y+b.h*0.32, 15, 0, Math.PI*2); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#8f8d84'; c.fillRect(b.x+b.w*0.55, b.y+b.h*0.22, 48, 34);
+    c.fillStyle = '#d8d4c8';
+    for(let i=0;i<4;i++)
+      c.fillRect(b.x+18+i*26, b.y+b.h-40, 20, 15);
+    letreiro(c, b, 'EDIFÍCIO', '#e8e2d2');
+  }
+
+  /* padaria de esquina: toldo, mesa na calçada e a placa na fachada */
+  function padaria(c, b){
+    c.fillStyle = '#c9bfa6'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 2.5;
+    c.strokeRect(b.x+1.5, b.y+1.5, b.w-3, b.h-3);
+    const alto = b.y < 512;
+    const ty = alto ? b.y + b.h - 30 : b.y;
+    for(let px=b.x+6, k=0; px<b.x+b.w-6; px+=24, k++){
+      c.fillStyle = k%2 ? '#e8e2d2' : '#c8452f';
+      c.fillRect(px, ty, Math.min(24, b.x+b.w-6-px), 30);
+    }
+    c.fillStyle = 'rgba(120,170,190,.5)';
+    c.fillRect(b.x+12, alto ? b.y+b.h-64 : b.y+34, b.w-24, 30);
+    letreiro(c, b, 'PADARIA', '#f2e2a8');
+  }
+
+  /* árvore nova de calçada, no berço de concreto */
+  function arvoreRua(c, b){
+    const cx = b.x+b.w/2, cy = b.y+b.h/2;
+    c.fillStyle = '#8f8a80'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 2;
+    c.strokeRect(b.x+1, b.y+1, b.w-2, b.h-2);
+    c.fillStyle = '#5a4a34'; c.fillRect(b.x+5, b.y+5, b.w-10, b.h-10);
+    arvore(c, cx, cy, b.w*0.42, false);
+  }
+
+  function pontoOnibus(c, b){
+    c.fillStyle = '#2f4f5a'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 2;
+    c.strokeRect(b.x+1, b.y+1, b.w-2, b.h-2);
+    c.fillStyle = 'rgba(190,220,230,.45)';
+    c.fillRect(b.x+8, b.y+8, b.w-16, b.h-24);
+    c.fillStyle = '#d8b23a'; c.fillRect(b.x+8, b.y+b.h-13, b.w-16, 7);
+  }
+
+  /* -------------------------------------------------------
+     CLASSE ALTA
+     ------------------------------------------------------- */
+
+  /* torre residencial: muro alto com cerca elétrica, piscina e quadra
+     na cobertura, rampa de garagem descendo */
+  function torre(c, b){
+    const s = `tr|${b.x}|${b.y}`;
+    /* o terreno murado */
+    c.fillStyle = '#8a9184'; c.fillRect(b.x, b.y, b.w, b.h);
+    /* o muro alto, com o vergalhão da cerca elétrica por cima */
+    c.fillStyle = '#d2cdc0'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = '#5c5952'; c.lineWidth = 7;
+    c.strokeRect(b.x+3.5, b.y+3.5, b.w-7, b.h-7);
+    c.strokeStyle = 'rgba(220,90,60,.75)'; c.lineWidth = 1.5;
+    c.strokeRect(b.x+7, b.y+7, b.w-14, b.h-14);
+    /* jardim interno */
+    c.fillStyle = '#4a7040'; c.fillRect(b.x+12, b.y+12, b.w-24, b.h-24);
+    /* a torre, recuada do muro */
+    const tx = b.x+b.w*0.16, ty = b.y+b.h*0.16;
+    const tw = b.w*0.68, th = b.h*0.60;
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(tx+6, ty+8, tw, th);
+    c.fillStyle = '#c6c8c4'; c.fillRect(tx, ty, tw, th);
+    c.strokeStyle = 'rgba(0,0,0,.5)'; c.lineWidth = 2.5;
+    c.strokeRect(tx+1.5, ty+1.5, tw-3, th-3);
+    /* piscina e quadra na cobertura */
+    c.fillStyle = '#3d92b8'; c.fillRect(tx+tw*0.10, ty+th*0.14, tw*0.34, th*0.28);
+    c.strokeStyle = '#e8ecec'; c.lineWidth = 2;
+    c.strokeRect(tx+tw*0.10, ty+th*0.14, tw*0.34, th*0.28);
+    c.fillStyle = '#7a8f5a'; c.fillRect(tx+tw*0.54, ty+th*0.14, tw*0.34, th*0.34);
+    c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 1.5;
+    c.strokeRect(tx+tw*0.54, ty+th*0.14, tw*0.34, th*0.34);
+    /* casa de máquinas e caixa embutida */
+    c.fillStyle = '#9d9a92'; c.fillRect(tx+tw*0.16, ty+th*0.58, tw*0.28, th*0.26);
+    /* palmeira no jardim */
+    for(let i=0;i<3;i++){
+      const q = hash(`${s}|pm|${i}`);
+      arvore(c, b.x+22+(q%Math.max(1,b.w-44)),
+                b.y+b.h-30-((q>>>7)%30), 15, false);
+    }
+    /* a rampa da garagem, virada pra rua */
+    const rampa = b.y < 512 ? b.y+b.h-16 : b.y;
+    c.fillStyle = '#5e5b55'; c.fillRect(b.x+b.w*0.62, rampa, b.w*0.24, 16);
+  }
+
+  /* casa de alto padrão: muro liso, gramado cortado e piscina no fundo */
+  function jardimAlto(c, b){
+    const s = `ja|${b.x}|${b.y}`;
+    c.fillStyle = '#dcd7c8'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = '#5c5952'; c.lineWidth = 7;
+    c.strokeRect(b.x+3.5, b.y+3.5, b.w-7, b.h-7);
+    c.strokeStyle = 'rgba(220,90,60,.75)'; c.lineWidth = 1.5;
+    c.strokeRect(b.x+7, b.y+7, b.w-14, b.h-14);
+    /* gramado */
+    c.fillStyle = '#4f7a44'; c.fillRect(b.x+12, b.y+12, b.w-24, b.h-24);
+    for(let i=0;i<14;i++){
+      const q = hash(`${s}|g|${i}`);
+      c.fillStyle = 'rgba(90,124,70,.6)';
+      c.fillRect(b.x+16+(q%Math.max(1,b.w-32)), b.y+16+((q>>>6)%Math.max(1,b.h-32)), 10, 6);
+    }
+    /* a casa, de telhado claro */
+    const cxx = b.x+b.w*0.14, cyy = b.y+b.h*0.20;
+    const cw = b.w*0.56, chh = b.h*0.46;
+    c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(cxx+5, cyy+6, cw, chh);
+    c.fillStyle = '#c3b9a4'; c.fillRect(cxx, cyy, cw, chh);
+    c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 2;
+    c.strokeRect(cxx+1, cyy+1, cw-2, chh-2);
+    c.strokeStyle = 'rgba(0,0,0,.2)'; c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(cxx+4, cyy+chh/2); c.lineTo(cxx+cw-4, cyy+chh/2); c.stroke();
+    /* piscina e deck */
+    c.fillStyle = '#eae4d6'; c.fillRect(b.x+b.w*0.60, b.y+b.h*0.52, b.w*0.30, b.h*0.30);
+    c.fillStyle = '#3d92b8'; c.fillRect(b.x+b.w*0.64, b.y+b.h*0.56, b.w*0.22, b.h*0.22);
+    /* duas palmeiras */
+    arvore(c, b.x+b.w*0.24, b.y+b.h*0.76, 17, false);
+    arvore(c, b.x+b.w*0.42, b.y+b.h*0.82, 14, false);
+    /* portão de correr e a entrada coberta */
+    const py = b.y < 512 ? b.y+b.h-9 : b.y;
+    c.fillStyle = '#4a4a46'; c.fillRect(b.x+b.w*0.16, py, b.w*0.26, 9);
+  }
+
+  /* mangueira grande de calçada de bairro nobre */
+  function arvoreGrande(c, b){
+    const cx = b.x+b.w/2, cy = b.y+b.h/2;
+    c.fillStyle = '#a29c90'; c.fillRect(b.x, b.y, b.w, b.h);
+    c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = 2;
+    c.strokeRect(b.x+1, b.y+1, b.w-2, b.h-2);
+    c.fillStyle = '#4a3a24'; c.fillRect(b.x+6, b.y+6, b.w-12, b.h-12);
+    arvore(c, cx, cy, b.w*0.62, false);
+  }
+
   function manequim(c, b){
     const cx = b.x+b.w/2, cy = b.y+b.h/2;
     c.fillStyle = 'rgba(0,0,0,.35)';
@@ -737,7 +928,10 @@ TO.diaJogo.cenario = (function(){
     igreja, coreto, canteiro, carro, cacamba, banca, quiosque, boteco,
     predio, sobrado, casa, muro,
     'bar-rival':barRival, engradado, vitrine, joalheria, banco, guarita,
-    carroforte, onibus, vestiario, arquibancada, manequim
+    carroforte, onibus, vestiario, arquibancada, manequim,
+    'casa-media':casaMedia, predinho, padaria, 'arvore-rua':arvoreRua,
+    'ponto-onibus':pontoOnibus, torre, 'jardim-alto':jardimAlto,
+    'arvore-grande':arvoreGrande
   };
 
   /* -------------------------------------------------------
@@ -810,28 +1004,46 @@ TO.diaJogo.cenario = (function(){
      transversal em cada ponta — duas esquinas de cada lado. A pista é
      o corredor da briga; as calçadas dão por onde escapar sem sair
      da cena, e as transversais deixam flanquear em vez de bater de frente. */
-  function rua(c, D, W, H){
-    terreno(c, 0, 0, W, H, 'rua-terr');      // quintal e beco entre as casas
-    const PONTA = 250;                       // largura da transversal de cada ponta
-    /* calçada larga: 140 de cada lado, contra os 110 de antes */
-    calcadaComum(c, 0, 190, W, 140, 'calc-n');
-    calcadaComum(c, 0, H-330, W, 140, 'calc-s');
-    /* a pista, de meio-fio a meio-fio */
-    asfalto(c, 0, 330, W, H-660, 'rua-asf');
-    paralelepipedo(c, 620, 330, 300, H-660, 'rua-pp');
+  /* As três ruas dividem o mesmo chão: pista de 330 a H-330, calçada larga
+     dos dois lados e uma transversal em cada ponta. O que muda é o
+     acabamento — asfalto remendado ou novo, calçada de cimento ou de
+     bloquete, faixa de estacionamento pintada. */
+  function chaoDeRua(c, W, H, est){
+    const PONTA = 250;
+    terreno(c, 0, 0, W, H, est.id+'-terr', est.fundo);
+    est.calcada(c, 0, 190, W, 140, est.id+'-cn');
+    est.calcada(c, 0, H-330, W, 140, est.id+'-cs');
+    asfalto(c, 0, 330, W, H-660, est.id+'-asf');
+    if(est.pedra) paralelepipedo(c, 620, 330, 300, H-660, est.id+'-pp');
     /* as duas transversais das pontas, atravessando de cima a baixo */
-    asfalto(c, 0, 0, PONTA-40, H, 'rua-to');
-    asfalto(c, W-PONTA+40, 0, PONTA-40, H, 'rua-tl');
+    asfalto(c, 0, 0, PONTA-40, H, est.id+'-to');
+    asfalto(c, W-PONTA+40, 0, PONTA-40, H, est.id+'-tl');
     /* a calçada dobra a esquina: cada casa de quina fica com a dela */
     for(const x of [0, W-PONTA+40]){
-      calcadaComum(c, x, 190, PONTA-40, 26, 'rua-q'+x);
-      calcadaComum(c, x, H-216, PONTA-40, 26, 'rua-r'+x);
+      est.calcada(c, x, 190, PONTA-40, 26, est.id+'-q'+x);
+      est.calcada(c, x, H-216, PONTA-40, 26, est.id+'-r'+x);
+    }
+    /* asfalto novo é liso: o remendo e o buraco só valem na periferia */
+    if(est.liso){
+      c.save(); c.fillStyle = 'rgba(58,58,64,.55)';
+      c.fillRect(0, 330, W, H-660);
+      c.fillRect(0, 0, PONTA-40, H); c.fillRect(W-PONTA+40, 0, PONTA-40, H);
+      c.restore();
     }
     meioFio(c, 0, 322, W, 9, true);
     meioFio(c, 0, H-331, W, 9, true);
+    /* faixa de estacionamento demarcada, que bairro cuidado tem */
+    if(est.vagas){
+      c.save(); c.strokeStyle = 'rgba(238,234,222,.75)'; c.lineWidth = 3;
+      for(const y of [[340, 400], [H-400, H-340]])
+        for(let x=PONTA+40; x<W-PONTA-40; x+=124){
+          c.beginPath(); c.moveTo(x, y[0]); c.lineTo(x, y[1]); c.stroke();
+        }
+      c.restore();
+    }
     /* eixo tracejado da pista e das duas transversais */
     c.save();
-    c.strokeStyle = 'rgba(226,200,110,.75)'; c.lineWidth = 5;
+    c.strokeStyle = est.eixo; c.lineWidth = 5;
     c.setLineDash([44, 34]);
     c.beginPath(); c.moveTo(0, 512); c.lineTo(W, 512); c.stroke();
     c.setLineDash([32, 26]);
@@ -844,8 +1056,56 @@ TO.diaJogo.cenario = (function(){
     faixaPedestre(c, W-PONTA-30, 512, 320, 60, true);
     faixaPedestre(c, (PONTA-40)/2, 260, 150, 52, false);
     faixaPedestre(c, W-(PONTA-40)/2, 764, 150, 52, false);
-    blocos(c, D);
-    enfeites(c, D);
+  }
+
+  /* periferia: cimento gasto, remendo no asfalto, trecho de pedra */
+  function rua(c, D, W, H){
+    chaoDeRua(c, W, H, {id:'rua', calcada:calcadaComum, pedra:true,
+                        eixo:'rgba(226,200,110,.75)'});
+    blocos(c, D); enfeites(c, D);
+  }
+
+  /* classe média: bloquete na calçada, asfalto inteiro e vaga pintada */
+  function ruaMedia(c, D, W, H){
+    chaoDeRua(c, W, H, {id:'rua-media', calcada:bloquete, liso:true, vagas:true,
+                        fundo:'#5f5a4a', eixo:'rgba(240,214,120,.9)'});
+    blocos(c, D); enfeites(c, D);
+  }
+
+  /* classe alta: calçada de pedra clara, asfalto novo, faixa contínua */
+  function ruaNobre(c, D, W, H){
+    chaoDeRua(c, W, H, {id:'rua-nobre', calcada:pedraClara, liso:true,
+                        fundo:'#4e5544', eixo:'rgba(246,240,224,.9)'});
+    blocos(c, D); enfeites(c, D);
+  }
+
+  /* bloquete intertravado: a calçada que a prefeitura assenta em bairro
+     de classe média — junta certinha e nada de mato */
+  function bloquete(c, x, y, w, h, chave){
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+    c.fillStyle = '#b6ada0'; c.fillRect(x, y, w, h);
+    const p = 22;
+    for(let ry=y, l=0; ry<y+h; ry+=p, l++)
+      for(let rx=x - (l%2)*p/2; rx<x+w; rx+=p){
+        const s = hash(`${chave}|bq|${rx}|${ry}`);
+        const t = 176 + (s%16);
+        c.fillStyle = `rgb(${t},${t-8},${t-20})`;
+        c.fillRect(rx+1, ry+1, p-2.5, p-2.5);
+      }
+    c.restore();
+  }
+
+  /* pedra clara serrada: a calçada larga de bairro nobre */
+  function pedraClara(c, x, y, w, h, chave){
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+    c.fillStyle = '#ded8ca'; c.fillRect(x, y, w, h);
+    c.strokeStyle = 'rgba(0,0,0,.13)'; c.lineWidth = 1.5;
+    for(let px=x; px<x+w; px+=52){ c.beginPath(); c.moveTo(px,y); c.lineTo(px,y+h); c.stroke(); }
+    for(let py=y; py<y+h; py+=52){ c.beginPath(); c.moveTo(x,py); c.lineTo(x+w,py); c.stroke(); }
+    /* faixa de grama entre a calçada e o meio-fio */
+    c.fillStyle = 'rgba(84,116,68,.75)';
+    if(h > 60){ c.fillRect(x, y+h-20, w, 16); }
+    c.restore();
   }
 
   /* Esquina do bar: a rua faz L, o bar toma a quina e a calçada da
@@ -947,7 +1207,8 @@ TO.diaJogo.cenario = (function(){
     }
   }
 
-  const CENAS = {praca, rua, bar, comercio, ct};
+  const CENAS = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
+                 bar, comercio, ct};
   const pintar = (c, D, W, H) => {
     const f = CENAS[D && D.pintura];
     if(!f) return false;
@@ -957,5 +1218,5 @@ TO.diaJogo.cenario = (function(){
 
   return {pintar, CENAS, ENFEITE, PINTOR, arvore, varal,
           asfalto, calcadaPortuguesa, calcadaComum, paralelepipedo,
-          meioFio, faixaPedestre};
+          bloquete, pedraClara, terreno, meioFio, faixaPedestre};
 })();

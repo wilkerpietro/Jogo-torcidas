@@ -392,10 +392,22 @@ O que **não** veio, e por quê:
   tem botão de pânico. Em praça e rua quem responde é a PM que já estava ali: a linha
   avança e aperta, mas ninguém manda batalhão. O HUD passou a dizer "PM EM CIMA" em vez
   de contar o relógio de uma tropa que não vem.
-- **Prompt das duas cenas** (`img/cenas/PROMPT-PRACA-RUA.md`): um prompt por imagem,
-  com as plantas `planta-praca-2048.png` e `planta-rua-2048.png` tiradas do próprio jogo
-  pra servir de base de img2img/ControlNet — o mesmo caminho que a foto dos arredores e o
-  mapa da cidade seguiram.
+- **A rua é a do bairro onde a briga caiu.** Esbarrão no Pirambu não abre a mesma tela
+  do esbarrão na Aldeota: `Favela` e `Classe Baixa` abrem a rua de periferia, `Classe
+  Média` abre a rua de classe média (calçada de bloquete, casa de muro baixo com garagem
+  e jardim, predinho de três andares, padaria na esquina, árvore nova no berço de
+  concreto, vaga pintada) e `Nobre` abre a de classe alta (calçada de pedra clara com
+  faixa de grama, mangueira grande, muro alto com cerca elétrica, guarita no portão,
+  torre com piscina e quadra na cobertura, casa com piscina no fundo). As três têm a
+  **mesma planta de pista e calçada** — muda o que está construído e o mobiliário do
+  meio-fio, então trocar de bairro muda o cenário e não a tática. Medido nos 5.478 nós
+  de rua da cidade: 65% periferia, 17% classe média, 15% nobre, 4% praça, 2% arredores.
+- **Prompt das cenas** (`img/cenas/PROMPT-PRACA-RUA.md`): um prompt por imagem — praça,
+  rua de periferia, rua de classe média e rua de classe alta —, com as plantas
+  `planta-*-2048.png` tiradas do próprio jogo pra servir de base de img2img/ControlNet.
+  A praça e a rua de periferia já voltaram prontas
+  (`Aerial_view_of_public_square_...jpeg` e `Aerial_view_of_residential_street_...jpeg`);
+  faltam as duas de bairro melhor.
 - **Pino não mora em cima de gramado nem colado no vizinho**: o sorteio por hash punha
   mercadinho no meio do campo e dois ícones no mesmo lote. Agora o estádio entra primeiro
   (o lugar dele é fixo), os gramados viram área proibida com folga, e cada pino anda na

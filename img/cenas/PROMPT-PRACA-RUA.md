@@ -1,12 +1,21 @@
 # Prompts para as cenas de PRAÇA e de RUA
 
-Duas imagens, uma por cena. Alvo: o mesmo acabamento de `arredores.png` —
-foto de drone a prumo, dia nublado, cor dessaturada, periferia brasileira.
+Uma imagem por cena. Alvo: o mesmo acabamento de `arredores.png` —
+foto de drone a prumo, dia nublado, cor dessaturada, cidade brasileira.
 
-| Cena | Planta de entrada | Saída pro jogo |
-|---|---|---|
-| Praça | `planta-praca-2048.png` | `praca.webp` |
-| Rua   | `planta-rua-2048.png`   | `rua.webp` |
+| Cena | Bairro que abre | Planta de entrada | Saída pro jogo | Estado |
+|---|---|---|---|---|
+| Praça | qualquer | `planta-praca-2048.png` | `praca.webp` | **feita** — `Aerial_view_of_public_square_202608131340.jpeg` |
+| Rua | Favela e Classe Baixa | `planta-rua-2048.png` | `rua.webp` | **feita** — `Aerial_view_of_residential_street_202608131403.jpeg` |
+| Rua de classe média | Classe Média | `planta-rua-media-2048.png` | `rua_media.webp` | a fazer |
+| Rua de classe alta | Nobre | `planta-rua-nobre-2048.png` | `rua_nobre.webp` | a fazer |
+
+A briga abre a cena do bairro onde ela cai: esbarrão no Pirambu não pode
+abrir a mesma rua do esbarrão na Aldeota. As três ruas têm **a mesma
+geometria** — pista larga no meio, calçada larga dos dois lados,
+transversal em cada ponta — e mudam só no que está construído em volta.
+Isso é de propósito: a colisão é a mesma, então trocar de bairro não
+muda a tática, muda o cenário.
 
 As duas plantas saem do próprio jogo (`TO.diaJogo.arredores.desenharFundo`
 num canvas 2048×1365, sem disco e sem HUD). Elas são a **geometria de
@@ -136,6 +145,104 @@ narrow alley, one-way lane, no sidewalk, buildings covering the street,
 blocked intersections, dead end, cul-de-sac, roundabout,
 crowd, people, pedestrians, moving cars, american suburb, european street,
 snow, river, saturated colors, hdr, dramatic lighting, night, rain
+```
+
+---
+
+## RUA DE CLASSE MÉDIA — prompt
+
+Mesmo enquadramento e mesma geometria da rua de periferia: pista larga
+atravessando o quadro da esquerda pra direita, calçada larga dos dois
+lados, uma transversal em cada ponta. O que muda é o bairro em volta.
+
+```
+top-down nadir aerial drone photograph of a wide middle-class residential
+street in a Brazilian city, shot straight down at 90 degrees, orthographic
+feel, overcast diffuse daylight, soft shadows, desaturated muted colors,
+documentary photography,
+
+one wide two-lane street running left to right across the whole frame,
+well-maintained dark asphalt with crisp painted markings, clean yellow dashed
+center line, white parking bays painted along both curbs, a painted speed bump,
+freshly painted black-and-white curbs,
+
+wide sidewalks of interlocking concrete paver blocks on both sides, evenly
+spaced young street trees in square tree pits along the curb, tidy joints, no
+weeds, drain grates, a bus stop shelter on one side,
+
+a cross street at each end of the block, so the frame shows two corners on the
+left and two corners on the right; the sidewalk turns the corner around each
+corner building; zebra crossings and a traffic sign at both intersections,
+
+two rows of two-storey houses and small three-storey apartment blocks facing
+each other, each with a walled front garden, a metal gate and a garage, clean
+ceramic roof tiles and flat white rooftops with solar water heater panels and
+air-conditioning units, a few blue water tanks, small backyards with mown grass
+and one with a tiny swimming pool, a corner bakery with an awning and outdoor
+tables, modern cars parked in the garages and along the bays,
+
+photorealistic, natural materials, tropical Brazil, 8k satellite imagery
+quality, sharp detail, no people visible
+```
+
+### Negativo
+
+```
+illustration, cartoon, isometric, 3d render, video game asset, painting,
+vector art, blueprint, map icons, labels, text, watermark, grid lines,
+tilted perspective, oblique angle, fisheye, vignette,
+favela, shantytown, exposed brickwork, unfinished construction, dirt yard,
+laundry lines, asbestos sheets, potholes, cracked pavement, graffiti,
+high-rise towers, gated luxury condominium,
+narrow alley, no sidewalk, blocked intersections, dead end,
+crowd, people, pedestrians, moving cars, snow, night, rain, hdr
+```
+
+---
+
+## RUA DE CLASSE ALTA — prompt
+
+Mesma geometria de novo. Aqui o bairro é nobre: muro alto, guarita,
+jardim e torre residencial. A rua continua sendo a mesma pista larga —
+mudou o que tem atrás do muro.
+
+```
+top-down nadir aerial drone photograph of a wide upper-class residential avenue
+in an affluent Brazilian neighbourhood, shot straight down at 90 degrees,
+orthographic feel, overcast diffuse daylight, soft shadows, desaturated muted
+colors, documentary photography,
+
+one wide two-lane avenue running left to right across the whole frame, smooth
+new asphalt, crisp white and yellow markings, clean painted curbs, no potholes,
+
+very wide sidewalks of light stone paving on both sides, a continuous row of
+large mature shade trees with full round canopies along both curbs, manicured
+grass strips, ornamental street lamps,
+
+a cross street at each end of the block, so the frame shows two corners on the
+left and two corners on the right; the sidewalk turns the corner around each
+corner property; zebra crossings at both intersections,
+
+on both sides, gated luxury properties behind tall smooth boundary walls topped
+with electric fencing: high-rise residential towers with rooftop swimming pools,
+rooftop tennis court, landscaped gardens with palm trees and cut lawn, curved
+driveways, a covered entrance canopy, security guard booths at each gate,
+underground garage ramps, a private security car parked at a gate,
+
+photorealistic, natural materials, tropical Brazil, 8k satellite imagery
+quality, sharp detail, no people visible
+```
+
+### Negativo
+
+```
+illustration, cartoon, isometric, 3d render, video game asset, painting,
+vector art, blueprint, map icons, labels, text, watermark, grid lines,
+tilted perspective, oblique angle, fisheye, vignette,
+favela, shantytown, terracotta roof tiles, blue water tanks, laundry lines,
+asbestos sheets, graffiti, dirt yard, cracked sidewalk, weeds, potholes,
+street market, small houses, narrow alley, no sidewalk, blocked intersections,
+crowd, people, pedestrians, moving cars, snow, night, rain, hdr
 ```
 
 ---

@@ -450,17 +450,30 @@ TO.ruas = (function(){
     return t === 'Rival' || t === 'Maior Rival';
   }
 
+  /* A rua da cena é a do bairro onde a briga caiu: esbarrão no Pirambu
+     não abre a mesma tela do esbarrão na Aldeota. A planta das três é a
+     mesma; muda o que está construído em volta. */
+  const RUA_DA_CLASSE = {
+    'Favela':'rua', 'Classe Baixa':'rua',
+    'Classe Média':'rua-media', 'Nobre':'rua-nobre'
+  };
+  function ruaDoBairro(mo, x, y){
+    const b = MP().bairroEm ? MP().bairroEm(mo, x, y) : null;
+    return (b && RUA_DA_CLASSE[b.classe]) || 'rua';
+  }
+
   /* Onde a briga cai muda a cena: colado no estádio são os arredores,
-     num cruzamento largo é praça, no meio do quarteirão é rua. */
+     num largo de verdade é praça, no resto é a rua do bairro. */
   function localDe(mo, x, y){
     if(!mo) return 'rua';
     const est = pontoDoEstadio(mo, null);
     if(est && Math.hypot(est.x-x, est.y-y) < 70) return 'arredores';
+    const naRua = () => ruaDoBairro(mo, x, y);
     const m = malha(mo).perto(x, y);
-    if(!m || m.beco) return 'rua';
+    if(!m || m.beco) return naRua();
     /* praça é lugar largo de verdade — cruzamento de rua continua rua */
-    if(m.largura != null) return m.largura >= LARGO ? 'praca' : 'rua';
-    return m.viz.length >= 4 ? 'praca' : 'rua';
+    if(m.largura != null) return m.largura >= LARGO ? 'praca' : naRua();
+    return m.viz.length >= 4 ? 'praca' : naRua();
   }
 
   function resolver(E, quem){
@@ -548,7 +561,8 @@ TO.ruas = (function(){
     }
   }
 
-  return {malha, caminho, localDe, pontoDe, pontoDoEstadio, pontoDaSede, entradaDaCidade,
+  return {malha, caminho, localDe, ruaDoBairro, RUA_DA_CLASSE,
+          pontoDe, pontoDoEstadio, pontoDaSede, entradaDaCidade,
           estado, jogosDaPraca, montar, passo, resolver, hostis,
           porOlheiro, visivel, desenhar,
           VEL, ANTES, RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};

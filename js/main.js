@@ -2636,7 +2636,9 @@
      abre. Quem está no meio é quem estava no bonde, não a
      torcida inteira.
      ======================================================= */
-  const LOCAL_ROT = {rua:'na rua', praca:'na praça', arredores:'nos arredores do estádio'};
+  const LOCAL_ROT = {rua:'na rua', 'rua-media':'numa rua de classe média',
+                     'rua-nobre':'numa rua de bairro nobre',
+                     praca:'na praça', arredores:'nos arredores do estádio'};
   let encontroAberto = null;
 
   function abrirConfronto(e, enc){
