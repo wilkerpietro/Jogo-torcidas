@@ -432,11 +432,13 @@ O que **não** veio, e por quê:
   nem carrega a imagem junto. Ele entra depois de `cenas_foto.js` (que é gerado e se
   perde na próxima importação) e sobrescreve só o que está escrito — pôr só `mascara`
   mantém spawn, entrada e posto de PM onde estavam, e o que não veio da mão reencosta
-  na malha nova. Três cenas já passaram por aí, e o erro do corte foi diferente em cada
-  uma: na rua de periferia faltava chão (33% → 43%, a calçada inteira voltou), na praça
-  sobrava (71% → 61%, o corte tinha vazado pra dentro do quarteirão) e na de classe
-  média era vazamento fino pelo portão — entrada de garagem e jardim de frente entrando
-  como chão (47% → 44%). Marcador da mão que caia em parede depois da repintura
+  na malha nova. **As quatro cenas de foto passaram por aí**, e o erro do corte foi
+  diferente em cada uma: na rua de periferia faltava chão (33% → 43%, a calçada inteira
+  voltou), na praça sobrava (71% → 61%, o corte tinha vazado pra dentro do quarteirão),
+  na de classe média era vazamento fino pelo portão — entrada de garagem e jardim de
+  frente entrando como chão (47% → 44%) — e na de bairro nobre o corte encolheu: pedra
+  clara e faixa de grama saíram junto com o muro, e ali a calçada é metade da cena
+  (32% → 39%, 1.723 células abertas e nenhuma fechada). Marcador da mão que caia em parede depois da repintura
   reencosta no chão mais perto, e reencostar exige a maior ilha de chão: poço de uma
   célula solta no meio de telhado é bonde nascendo emparedado sem nunca tocar muro.
   Prova da máscara que vale de verdade: `python3 ferramentas/prova_mascara.py`.
