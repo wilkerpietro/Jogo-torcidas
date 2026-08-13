@@ -7,8 +7,8 @@ foto de drone a prumo, dia nublado, cor dessaturada, cidade brasileira.
 |---|---|---|---|---|
 | Praça | qualquer | `planta-praca-2048.png` | `praca.webp` | **feita** — `Aerial_view_of_public_square_202608131340.jpeg` |
 | Rua | Favela e Classe Baixa | `planta-rua-2048.png` | `rua.webp` | **feita** — `Aerial_view_of_residential_street_202608131403.jpeg` |
-| Rua de classe média | Classe Média | `planta-rua-media-2048.png` | `rua_media.webp` | a fazer |
-| Rua de classe alta | Nobre | `planta-rua-nobre-2048.png` | `rua_nobre.webp` | a fazer |
+| Rua de classe média | Classe Média | `planta-rua-media-2048.png` | `rua_media.webp` | **feita** — `Aerial_view_of_residential_street_202608131455.jpeg` |
+| Rua de classe alta | Nobre | `planta-rua-nobre-2048.png` | `rua_nobre.webp` | **feita** — `Aerial_view_of_residential_avenue_202608131501.jpeg` |
 
 A briga abre a cena do bairro onde ela cai: esbarrão no Pirambu não pode
 abrir a mesma rua do esbarrão na Aldeota. As três ruas têm **a mesma

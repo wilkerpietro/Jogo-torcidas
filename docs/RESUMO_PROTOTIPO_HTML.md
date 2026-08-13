@@ -405,7 +405,12 @@ O que **não** veio, e por quê:
 - **Prompt das cenas** (`img/cenas/PROMPT-PRACA-RUA.md`): um prompt por imagem — praça,
   rua de periferia, rua de classe média e rua de classe alta —, com as plantas
   `planta-*-2048.png` tiradas do próprio jogo pra servir de base de img2img/ControlNet.
-- **Praça e rua já são foto** (`ferramentas/importar_cena_foto.py`). O importador faz
+  **As quatro já voltaram e estão no jogo**: as cenas desenhadas viraram rascunho e o
+  que se vê em briga de rua é foto. Medido no import das duas últimas: classe média 47%
+  de chão (pista, as duas calçadas de bloquete e as transversais das pontas), classe
+  alta 32% — lá a calçada é larguíssima mas o quarteirão é murado de ponta a ponta, e
+  muro alto de condomínio é parede mesmo.
+- **As quatro cenas de fora já são foto** (`ferramentas/importar_cena_foto.py`). O importador faz
   duas coisas com a imagem que volta: encaixa na tela de 1536×1024 sem distorcer nem
   cortar largura — as fotos vêm em 16:9, então sobra faixa em cima e embaixo, preenchida
   com tom de quintal, porque cortar de lado tiraria justamente as transversais das
@@ -413,8 +418,8 @@ O que **não** veio, e por quê:
   resolve: laje de casa tem o mesmo cinza da calçada. O que separa é conectividade
   (a partir de sementes na pista e no largo) mais, na cena de rua, um corredor
   geométrico — pista com as calçadas e as duas transversais, o resto é telhado. Medido:
-  praça 71% de chão, rua 33%, ninguém nascendo dentro de parede e ninguém atravessando
-  parede depois de 45 s de briga nas oito cenas. A prova visual de cada máscara fica em
+  praça 71% de chão, rua 33%, classe média 47%, classe alta 32%, ninguém nascendo
+  dentro de parede e ninguém atravessando parede depois de 45 s de briga nas oito cenas. A prova visual de cada máscara fica em
   `img/cenas/_ref_mascara_*.png`. Quando a cena tem foto, o desenho procedural sai
   inteiro (bloco, enfeite, gradil) e os marcadores são puxados pro chão mais perto —
   a foto nunca cai exatamente onde a planta imaginou.
