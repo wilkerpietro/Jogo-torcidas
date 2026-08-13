@@ -499,7 +499,11 @@ TO.dados.cenas = (function(){
      cai exatamente onde a planta imaginou, e spawn dentro de
      telhado é bonde que nasce presd.
      ======================================================= */
-  /* a máscara em RLE vira um teste de chão livre */
+  /* A máscara em RLE vira um teste de chão livre — mas não basta estar
+     livre: tem de estar no chão GRANDE. Recorte de cor deixa poço de uma
+     célula solta no meio de telhado, e pincel de editor deixa respingo.
+     Marcador que cai num poço desses nasce emparedado sem nunca tocar
+     muro, que é pior de achar do que nascer dentro da parede. */
   function puxador(cena, mascara){
     const C = cena.celula, COLS = cena.largura/C, ROWS = cena.altura/C;
     const m = new Uint8Array(COLS*ROWS);
@@ -510,9 +514,28 @@ TO.dados.cenas = (function(){
         v ^= 1;
       }
     });
+    /* a maior ilha de chão é a rua: é ela que liga boca a boca */
+    const ilha = new Int32Array(COLS*ROWS).fill(-1);
+    const fila = new Int32Array(COLS*ROWS);
+    let maior = -1, maiorTam = 0;
+    for(let i=0, n=0; i<m.length; i++){
+      if(m[i] !== 1 || ilha[i] >= 0) continue;
+      let cabeca = 0, cauda = 0, tam = 0;
+      ilha[i] = n; fila[cauda++] = i;
+      while(cabeca < cauda){
+        const j = fila[cabeca++], c = j % COLS, r = (j - c) / COLS;
+        tam++;
+        if(c > 0)      { const k = j-1;    if(m[k]===1 && ilha[k]<0){ ilha[k]=n; fila[cauda++]=k; } }
+        if(c < COLS-1) { const k = j+1;    if(m[k]===1 && ilha[k]<0){ ilha[k]=n; fila[cauda++]=k; } }
+        if(r > 0)      { const k = j-COLS; if(m[k]===1 && ilha[k]<0){ ilha[k]=n; fila[cauda++]=k; } }
+        if(r < ROWS-1) { const k = j+COLS; if(m[k]===1 && ilha[k]<0){ ilha[k]=n; fila[cauda++]=k; } }
+      }
+      if(tam > maiorTam){ maiorTam = tam; maior = n; }
+      n++;
+    }
     const livre = (x, y)=>{
       const c = Math.floor(x/C), r = Math.floor(y/C);
-      return c>=0 && r>=0 && c<COLS && r<ROWS && m[r*COLS+c] === 1;
+      return c>=0 && r>=0 && c<COLS && r<ROWS && ilha[r*COLS+c] === maior;
     };
     const puxa = p=>{
       if(livre(p.x, p.y)) return p;
@@ -566,15 +589,23 @@ TO.dados.cenas = (function(){
   function sobreEdicao(cena, e){
     if(!e) return cena;
     if(e.mascara) cena.mascara = e.mascara;
+    /* cópia, não o mesmo objeto: o marcador da cena é mexido em jogo
+       (reencostado aqui, arrastado no editor) e isso ia comendo por
+       baixo o arquivo que devia ser a fonte */
+    const copia = (o)=>JSON.parse(JSON.stringify(o));
     for(const campo of ['spawns', 'entradas', 'pmPostos', 'grades'])
-      if(e[campo]) cena[campo] = e[campo];
-    if(e.poligonos) cena.poligonos = e.poligonos;
-    /* marcador que veio da mão fica onde a mão pôs; o que não veio
-       reencosta na malha nova, que pode ter fechado onde ele estava */
-    if(e.mascara){
+      if(e[campo]) cena[campo] = copia(e[campo]);
+    if(e.poligonos) cena.poligonos = copia(e.poligonos);
+    /* Marcador que veio da mão fica onde a mão pôs — desde que dê pra
+       ficar de pé ali. Quem pinta a malha mexe na planta inteira e nem
+       sempre volta pra arrastar os quatro marcadores atrás: na praça,
+       fechar o quarteirão deixou dois bondes e uma boca dentro de
+       telhado. Então o que sobrar em cima de parede reencosta no chão
+       mais perto, exatamente como quando a foto chegou. */
+    if(e.mascara) {
       const puxa = puxador(cena, e.mascara);
       for(const campo of ['spawns', 'entradas', 'pmPostos'])
-        if(!e[campo]) cena[campo].forEach(puxa);
+        cena[campo].forEach(puxa);
     }
     return cena;
   }

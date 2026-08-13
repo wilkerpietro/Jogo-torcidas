@@ -20,10 +20,16 @@ Telhado cinza solto no meio de quarteirão não encosta em rua nenhuma.
 
     python3 ferramentas/importar_cena_foto.py
 
+Foto que ainda nao chegou nao para o importador: a cena dela continua
+desenhada ate o arquivo aparecer em img/cenas/.
+
+Correcao de malha nao se faz aqui — dados/cenas_foto.js e reescrito toda
+vez. Pinte no editor (F2) e cole em dados/cenas_editadas.js, que entra
+depois deste e manda.
+
 Saída (um arquivo só, como todo importador daqui):
     dados/cenas_foto.js
-    img/cenas/praca.webp
-    img/cenas/rua.webp
+    img/cenas/*.webp — a foto encaixada na tela da cena
 """
 import base64, json, pathlib
 import numpy as np
@@ -50,6 +56,17 @@ FONTES = [
                   (0.02, 0.30), (0.02, 0.70), (0.98, 0.30), (0.98, 0.70)],
      # laje de casa é cinza igual calçada e encosta nela: sem um corredor
      # geométrico o telhado inteiro vira chão de andar
+     'corredor': True},
+    # as tres ruas tem a mesma planta, entao a mesma semeadura serve
+    {'id': 'rua-media', 'arquivo': 'Aerial_view_of_residential_street_202608131455.jpeg',
+     'saida': 'rua_media.webp',
+     'sementes': [(0.50, 0.50), (0.20, 0.50), (0.80, 0.50),
+                  (0.02, 0.30), (0.02, 0.70), (0.98, 0.30), (0.98, 0.70)],
+     'corredor': True},
+    {'id': 'rua-nobre', 'arquivo': 'Aerial_view_of_residential_avenue_202608131501.jpeg',
+     'saida': 'rua_nobre.webp',
+     'sementes': [(0.50, 0.50), (0.20, 0.50), (0.80, 0.50),
+                  (0.02, 0.30), (0.02, 0.70), (0.98, 0.30), (0.98, 0.70)],
      'corredor': True},
 ]
 
@@ -201,7 +218,12 @@ def ancoras(cel):
 def main():
     fora = {}
     for f in FONTES:
-        img = Image.open(CENAS / f['arquivo']).convert('RGB')
+        origem = CENAS / f['arquivo']
+        if not origem.exists():
+            # foto que ainda nao chegou: a cena continua desenhada
+            print(f'{f["id"]:>9}: sem {f["arquivo"]} — segue no desenho')
+            continue
+        img = Image.open(origem).convert('RGB')
         tela, topo, altura = encaixar(img)
         destino = CENAS / f['saida']
         tela.save(destino, 'WEBP', quality=82, method=6)
