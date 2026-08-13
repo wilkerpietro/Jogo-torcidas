@@ -418,6 +418,18 @@ O que **não** veio, e por quê:
   `img/cenas/_ref_mascara_*.png`. Quando a cena tem foto, o desenho procedural sai
   inteiro (bloco, enfeite, gradil) e os marcadores são puxados pro chão mais perto —
   a foto nunca cai exatamente onde a planta imaginou.
+- **O que a mão pinta manda mais que o importador** (`dados/cenas_editadas.js`). O corte
+  por cor acerta o grosso e erra o fino, e sempre pro mesmo lado: na rua ele deixou só o
+  asfalto, e a calçada larga — que é justamente por onde se escapa sem sair do quadro —
+  ficou de fora. Abrir a cena, apertar **F2**, pintar a malha e clicar em *Exportar
+  arquivo* devolve agora o remendo da cena que está no ar, pronto pra colar nesse
+  arquivo: fora dos arredores o editor não escreve mais o `cena_arredores.js` inteiro
+  nem carrega a imagem junto. Ele entra depois de `cenas_foto.js` (que é gerado e se
+  perde na próxima importação) e sobrescreve só o que está escrito — pôr só `mascara`
+  mantém spawn, entrada e posto de PM onde estavam, e o que não veio da mão reencosta
+  na malha nova. A rua de periferia já foi assim: 33% de chão viraram 43%, de meio-fio
+  a meio-fio, sem ninguém nascer preso nem atravessar parede em 45 s de briga. Prova da
+  máscara que vale de verdade: `python3 ferramentas/prova_mascara.py`.
 - **Pino não mora em cima de gramado nem colado no vizinho**: o sorteio por hash punha
   mercadinho no meio do campo e dois ícones no mesmo lote. Agora o estádio entra primeiro
   (o lugar dele é fixo), os gramados viram área proibida com folga, e cada pino anda na

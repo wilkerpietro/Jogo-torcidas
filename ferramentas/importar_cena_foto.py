@@ -227,7 +227,9 @@ def main():
         Image.fromarray(prova).save(CENAS / f'_ref_mascara_{f["id"]}.png')
 
     js = ('/* CENAS SOBRE FOTO — máscara de caminhabilidade tirada da imagem\n'
-          '   GERADO por ferramentas/importar_cena_foto.py — nao editar a mao. */\n'
+          '   GERADO por ferramentas/importar_cena_foto.py — nao editar a mao.\n'
+          '   Correção fica em dados/cenas_editadas.js, que entra depois deste\n'
+          '   e manda: o editor (F2) exporta a entrada pronta pra colar la. */\n'
           'TO.dados = TO.dados || {};\n'
           'TO.dados.cenasFoto = ' + json.dumps(fora, ensure_ascii=False) + ';\n')
     alvo = RAIZ / 'dados' / 'cenas_foto.js'

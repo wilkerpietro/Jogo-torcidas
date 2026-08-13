@@ -56,6 +56,27 @@ Não use texto puro — a planta tem de ser a base:
   Confira em `img/cenas/_ref_mascara_<cena>.png`: o que está claro é chão de
   andar, o escuro é parede. Telhado claro tem de estar escuro ali.
 
+### Quando o corte errar (e ele erra)
+
+O importador separa chão de construção por cor, e cor sozinha não resolve:
+calçada clara vira parede, laje clara vira chão. Não conserte `cenas_foto.js`
+— ele é gerado e some na próxima importação. Conserte na mão:
+
+1. abra a cena na bancada (`arredores.html`) e aperte **F2**;
+2. pinte com o pincel — clique libera passagem, shift ou botão direito bloqueia,
+   `[` e `]` mudam o tamanho —, e arraste os marcadores que ficarem mal postos;
+3. clique em **Exportar arquivo**: fora dos arredores ele devolve só o remendo
+   da cena que está no ar, sem a imagem junto;
+4. cole em `dados/cenas_editadas.js`, na chave da cena. Esse arquivo é da mão,
+   entra depois do gerado e manda — o que estiver escrito lá troca, o resto
+   continua vindo da foto;
+5. confira com `python3 ferramentas/prova_mascara.py`, que desenha
+   `_ref_mascara_<cena>_editada.png` com a máscara que vale de verdade.
+
+Foi assim com a rua de periferia: o corte tinha deixado só o asfalto, e a
+calçada larga — que é por onde se escapa sem sair do quadro — voltou a ser
+chão de andar.
+
 ---
 
 ## PRAÇA — prompt

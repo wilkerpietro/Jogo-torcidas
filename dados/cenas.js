@@ -499,21 +499,11 @@ TO.dados.cenas = (function(){
      cai exatamente onde a planta imaginou, e spawn dentro de
      telhado é bonde que nasce presd.
      ======================================================= */
-  function sobreFoto(cena, f){
-    if(!f) return cena;
-    cena.imagem = f.imagem;
-    cena.mascara = f.mascara;
-    cena.foto = true;
-    delete cena.pintura;                 // quem pinta agora é a foto
-    cena.blocos = []; cena.enfeites = []; cena.varais = [];
-    cena.poligonos = {caminhavel:[], bloqueio:[]};
-    /* railing modelado é coisa de cena desenhada: na foto não dá pra
-       saber onde o gradil está sem marcar na mão */
-    cena.grades = [];
-
+  /* a máscara em RLE vira um teste de chão livre */
+  function puxador(cena, mascara){
     const C = cena.celula, COLS = cena.largura/C, ROWS = cena.altura/C;
     const m = new Uint8Array(COLS*ROWS);
-    f.mascara.split(';').forEach((linha, r)=>{
+    mascara.split(';').forEach((linha, r)=>{
       let c = 0, v = 0;
       for(const n of linha.split(',')){
         for(let k=0; k<+n && c<COLS; k++, c++) m[r*COLS+c] = v;
@@ -534,6 +524,23 @@ TO.dados.cenas = (function(){
         }
       return p;
     };
+    puxa.livre = livre;
+    return puxa;
+  }
+
+  function sobreFoto(cena, f){
+    if(!f) return cena;
+    cena.imagem = f.imagem;
+    cena.mascara = f.mascara;
+    cena.foto = true;
+    delete cena.pintura;                 // quem pinta agora é a foto
+    cena.blocos = []; cena.enfeites = []; cena.varais = [];
+    cena.poligonos = {caminhavel:[], bloqueio:[]};
+    /* railing modelado é coisa de cena desenhada: na foto não dá pra
+       saber onde o gradil está sem marcar na mão */
+    cena.grades = [];
+
+    const puxa = puxador(cena, f.mascara);
     /* a pista da foto não cai na mesma altura da desenhada */
     if(f.meio) for(const s of cena.spawns)
       if(Math.abs(s.y - cena.altura/2) < 40) s.y = f.meio;
@@ -548,12 +555,41 @@ TO.dados.cenas = (function(){
     return cena;
   }
 
+  /* =======================================================
+     E QUANDO A MÃO PASSA POR CIMA
+     O importador acerta o grosso e erra o fino: ele corta por
+     cor, então calçada clara vira parede e laje clara vira
+     chão. Quem abre a cena no editor (F2) e pinta a malha
+     manda mais que ele — dados/cenas_editadas.js entra aqui,
+     depois da foto, e o que estiver escrito lá troca.
+     ======================================================= */
+  function sobreEdicao(cena, e){
+    if(!e) return cena;
+    if(e.mascara) cena.mascara = e.mascara;
+    for(const campo of ['spawns', 'entradas', 'pmPostos', 'grades'])
+      if(e[campo]) cena[campo] = e[campo];
+    if(e.poligonos) cena.poligonos = e.poligonos;
+    /* marcador que veio da mão fica onde a mão pôs; o que não veio
+       reencosta na malha nova, que pode ter fechado onde ele estava */
+    if(e.mascara){
+      const puxa = puxador(cena, e.mascara);
+      for(const campo of ['spawns', 'entradas', 'pmPostos'])
+        if(!e[campo]) cena[campo].forEach(puxa);
+    }
+    return cena;
+  }
+
   const FOTO = (typeof TO !== 'undefined' && TO.dados && TO.dados.cenasFoto) || {};
   sobreFoto(praca, FOTO.praca);
   sobreFoto(rua, FOTO.rua);
   sobreFoto(ruaMedia, FOTO['rua-media']);
   sobreFoto(ruaNobre, FOTO['rua-nobre']);
 
-  return {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
-          bar, comercio, ct};
+  const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
+                 bar, comercio, ct};
+
+  const MAO = (typeof TO !== 'undefined' && TO.dados && TO.dados.cenasEditadas) || {};
+  for(const id in MAO) if(cenas[id]) sobreEdicao(cenas[id], MAO[id]);
+
+  return cenas;
 })();

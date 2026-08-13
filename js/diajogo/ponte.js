@@ -422,8 +422,49 @@ TO.diaJogo.ponte = (function(){
     $('edExportar').onclick=exportar;
   }
 
+  /* Duas saídas, porque são dois arquivos diferentes:
+
+     - arredores é cena própria, mora inteira em dados/cena_arredores.js
+       e o editor devolve o arquivo pronto pra substituir;
+     - praça, rua e as outras nascem de dados/cenas.js com a foto por
+       cima (dados/cenas_foto.js, que é gerado e se perde na próxima
+       importação). Pra essas o editor devolve só o remendo, pra colar
+       em dados/cenas_editadas.js — que é da mão e entra por último. */
+  function nomeDoArquivo(){
+    return (D.id && D.id !== 'arredores') ? 'cenas_editadas.js' : 'cena_arredores.js';
+  }
+
+  function gerarRemendo(){
+    const j=(o)=>JSON.stringify(o);
+    const lista=(v)=>v.map(o=>'      '+j(o)).join(',\n');
+    return `  /* ${D.nome || D.id} — recortado do editor (F2) em cima da foto.
+     Cole dentro de TO.dados.cenasEditadas, em dados/cenas_editadas.js,
+     trocando a entrada '${D.id}' que já estiver lá. */
+  '${D.id}': {
+    mascara:${j(A.codificarMascara())},
+
+    spawns:[
+${lista(D.spawns)}
+    ],
+
+    entradas:[
+${lista(D.entradas)}
+    ],
+
+    pmPostos:[
+${lista(D.pmPostos)}
+    ],
+
+    grades:[
+${lista(D.grades)}
+    ]
+  },
+`;
+  }
+
   /* gera o dados/cena_arredores.js completo, pronto pra substituir */
   function gerarArquivo(){
+    if(D.id && D.id !== 'arredores') return gerarRemendo();
     const j=(o)=>JSON.stringify(o);
     const pol=(lista)=>lista.map(p=>
       `      {nome:${j(p.nome)},\n       pontos:${j(p.pontos)}}`).join(',\n');
@@ -471,13 +512,14 @@ ${D.grades.map(g=>'    '+j(g)).join(',\n')}
 
   function exportar(){
     const txt=gerarArquivo();
+    const arq=nomeDoArquivo();
     let cx=$('editorSaida');
     if(cx) cx.remove();
     cx=document.createElement('div');
     cx.id='editorSaida';
     cx.innerHTML=`
       <div class="linha">
-        <span>dados/cena_arredores.js — baixe e suba no repositório, ou copie e cole</span>
+        <span>dados/${arq} — baixe e suba no repositório, ou copie e cole</span>
         <button class="bt" id="edBaixar">Baixar arquivo</button>
         <button class="bt" id="edCopiar">Copiar</button>
         <button class="bt" id="edFechar">Fechar</button>
@@ -490,7 +532,7 @@ ${D.grades.map(g=>'    '+j(g)).join(',\n')}
     $('edBaixar').onclick=()=>{
       const a=document.createElement('a');
       a.href=URL.createObjectURL(new Blob([txt],{type:'text/javascript'}));
-      a.download='cena_arredores.js'; a.click();
+      a.download=arq; a.click();
     };
   }
 
