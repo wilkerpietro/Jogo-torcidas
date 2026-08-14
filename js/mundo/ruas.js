@@ -462,7 +462,12 @@ TO.ruas = (function(){
     const elenco = elencoDaNoite(E, doDia);
 
     let id = 0;
-    const nasce = (torcida, origem, destino, n, tag)=>{
+    /* De que JOGO é o bonde. A praça pode ter três partidas no mesmo dia,
+       e sem isso a cena dos arredores juntava todo mundo que chegou —
+       torcida de um clássico do outro lado da cidade aparecia na
+       esplanada do nosso jogo. Guardado como o clube mandante, que é o
+       que identifica a partida na praça. */
+    const nasce = (torcida, origem, destino, n, tag, jogo)=>{
       if(!origem || !destino) return;
       /* ninguém sai no mesmo minuto: a saída se espalha pela tarde, com
          hora fixa por torcida — bonde não muda de horário a cada abertura */
@@ -472,6 +477,7 @@ TO.ruas = (function(){
         cor: elenco.cor[torcida.id] || (torcida.cores && torcida.cores[0]) || '#999',
         nossa: torcida.id === E.torcida.id, n, tag, saiEm, andou:0,
         sigla: elenco.sigla[torcida.id] || M().siglaTorcida(torcida),
+        jogo: jogo && jogo.casa.id,
         rota: caminho(mo, origem, destino), i:0, t:0,
         x: origem.x, y: origem.y, chegou:false
       });
@@ -493,13 +499,13 @@ TO.ruas = (function(){
           /* a nossa se divide entre a sede e as subsedes, como o plano manda */
           const bondes = Math.max(1, (TO.planejamento.plano(E).bondes)||1);
           const porBonde = Math.max(4, Math.round(TO.planejamento.efetivoDaSaida(E)/bondes));
-          nasce(o, sede, est, porBonde, 'sede');
+          nasce(o, sede, est, porBonde, 'sede', jogo);
           const subs = TO.financeiro.patrimonio(E).subsedes || [];
           for(let k=1; k<bondes; k++){
             const sub = subs[k-1]
               ? pontoDe(mo, (it,c)=>it.tipo==='subsede' && c.bairro.nome===subs[k-1].bairro)
               : null;
-            nasce(o, sub || sede, est, porBonde, sub ? 'subsede' : 'sede');
+            nasce(o, sub || sede, est, porBonde, sub ? 'subsede' : 'sede', jogo);
           }
         }else{
           /* as de casa também se quebram: a primeira sai da sede, as
@@ -507,11 +513,11 @@ TO.ruas = (function(){
           const efetivo = Math.round((TO.acoes.efetivoDe(E, o)) * 0.6);
           const q = quantosBondes(efetivo);
           const porBonde = Math.max(4, Math.round(efetivo/q));
-          nasce(o, sede, est, porBonde, 'sede');
+          nasce(o, sede, est, porBonde, 'sede', jogo);
           for(let k=1; k<q; k++){
             const bar = pontoDe(mo, (it)=>it.tipo === 'bar' &&
               (it.label||'').includes(o.nome));
-            nasce(o, bar || sede, est, porBonde, bar ? 'bar' : 'sede');
+            nasce(o, bar || sede, est, porBonde, bar ? 'bar' : 'sede', jogo);
           }
         }
       }
@@ -523,10 +529,31 @@ TO.ruas = (function(){
         if(vem < 5) continue;
         const q = quantosBondes(vem);
         const porBonde = Math.max(4, Math.round(vem/q));
-        for(let j=0;j<q;j++) nasce(o, entradaDaCidade(mo, k++), est, porBonde, 'visitante');
+        for(let j=0;j<q;j++)
+          nasce(o, entradaDaCidade(mo, k++), est, porBonde, 'visitante', jogo);
       }
     }
     return R;
+  }
+
+  /* =======================================================
+     A ESPLANADA É DO NOSSO JOGO, NÃO DA CIDADE
+
+     A praça pode ter três partidas no mesmo dia, e cada estádio tem a
+     sua esplanada. Juntando todas, a cena abria com torcida de um
+     clássico do outro lado da cidade parada no nosso portão — e o mapa
+     dos arredores prometia uma briga que não existe. Nosso jogo é o do
+     nosso bonde: se não temos bonde na rua, nosso clube não joga aqui
+     hoje e não há esplanada nossa.
+     ======================================================= */
+  const nossoJogo = R => {
+    const meu = (R.bondes || []).find(b=>b.nossa);
+    return meu ? meu.jogo : null;
+  };
+  function naEsplanada(R){
+    const j = nossoJogo(R);
+    if(j == null) return [];
+    return (R.arredores || []).filter(a=>a.jogo === j);
   }
 
   /* =======================================================
@@ -558,7 +585,7 @@ TO.ruas = (function(){
           b.nosArredores = true;
           b.entrouEm = Math.round(R.minuto);
           R.arredores.push({id:b.id, torcida:b.torcida, nome:b.nome, cor:b.cor,
-                            n:b.n, nossa:b.nossa, tag:b.tag,
+                            n:b.n, nossa:b.nossa, tag:b.tag, jogo:b.jogo,
                             lado: b.tag === 'visitante' ? 'visitante' : 'mandante',
                             entrouEm:b.entrouEm});
         }
@@ -762,6 +789,7 @@ TO.ruas = (function(){
           pontoDe, pontoDoEstadio, pontoDoEstadioDoClube, camposDaPraca,
           pontoDaSede, entradaDaCidade,
           estado, jogosDaPraca, montar, passo, resolver, hostis,
+          nossoJogo, naEsplanada,
           porOlheiro, visivel, desenhar,
           VEL, ANTES, RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};
 })();

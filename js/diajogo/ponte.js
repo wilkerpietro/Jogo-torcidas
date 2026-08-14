@@ -244,7 +244,9 @@ TO.diaJogo.ponte = (function(){
       ['debandada','Debandada em',20,80,5,v=>v+'%'],
       ['atrasoCarga','Demora da carga',0,20,1,v=>v+'s'],
       ['tropaCarga','Tropa de choque',2,16,1,v=>v+' PM'],
-      ['aguentaPM','Quanto o bonde aguenta',3,20,1,v=>v+'s'],
+      /* a barra enche nesse tempo de pressão; ela não recua mais o bonde
+         sozinho — quem recua é o jogador, ou a debandada por baixas */
+      ['aguentaPM','Tempo pra barra de pressão encher',3,20,1,v=>v+'s'],
       ['chancePaz','Chance de noite tranquila',0,100,5,v=>v+'%'],
       ['cdPedra','Recarga da pedra',0.5,6,0.1,v=>v.toFixed(1)+'s'],
       ['alcancePedra','Alcance da pedra',80,320,10,v=>v+'px'],

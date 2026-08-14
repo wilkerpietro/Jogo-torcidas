@@ -254,8 +254,11 @@ TO.mundo = (function(){
      O campo `sigla` do dado é a do TIME: Gaviões traz "SCCP", Camisa 12
      traz "SCCP" e Pavilhão 9 traz "SCCP". No mapa de dia de jogo isso
      fazia as três organizadas do Corinthians virarem o mesmo rótulo, e
-     o jogador olhava a rua e via uma torcida só. Aqui a sigla sai do
-     nome da própria torcida:
+     o jogador olhava a rua e via uma torcida só.
+
+     A sigla de verdade vem da planilha do autor, em `siglaTorcida` —
+     GAVIOES, C12, P9, CMA, TJF. São 136 das 140. Para as quatro que a
+     planilha ainda não tem, ela se deriva do nome:
 
        · nome de uma palavra vale por si  — GAVIÕES, BAMOR, MOFI
        · nome de várias vira as iniciais  — Mancha Verde → MV,
@@ -263,10 +266,14 @@ TO.mundo = (function(){
 
      Artigo e preposição não contam. Número entra inteiro (Camisa 12 é
      C12, não C1) e palavra que já é sigla entra inteira (Leões da TUF é
-     LTUF, Ultras do ABC é UABC). Conferido nas 140 torcidas: nenhuma
-     praça tem duas com a mesma sigla. */
+     LTUF, Ultras do ABC é UABC).
+
+     Sigla repetida existe de verdade — três torcidas do país se chamam
+     RAÇA — e quem resolve isso é quem monta a noite, que sabe quais
+     estão na mesma rua. */
   const SEM_PESO = new Set(['da','de','do','das','dos','e','a','o','as','os','em','no','na']);
   function siglaTorcida(t){
+    if(t && t.siglaTorcida) return t.siglaTorcida;
     const nome = (typeof t === 'string' ? t : (t && t.nome) || '').trim();
     if(!nome) return '';
     const palavras = nome.split(/[\s/\-]+/).filter(Boolean);

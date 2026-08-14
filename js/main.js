@@ -2660,7 +2660,9 @@
 
     casca.append(cv, zoom, dica);
     viewport.append(filtros, casca);
-    if(R.bondes.length) viewport.appendChild(miniArredores(e, R));
+    /* a esplanada é a do NOSSO jogo: sem bonde nosso na rua, o nosso
+       clube não joga nesta praça hoje e não há esplanada pra mostrar */
+    if(TO.ruas.nossoJogo(R) != null) viewport.appendChild(miniArredores(e, R));
     q.corpo.appendChild(viewport);
     pg.appendChild(q);
 
@@ -2678,7 +2680,7 @@
      ======================================================= */
   function miniArredores(e, R){
     const cx = el('div',{class:'mini-arredores'});
-    const dentro = R.arredores || [];
+    const dentro = TO.ruas.naEsplanada(R);
     cx.appendChild(el('div',{class:'mini-cab', html:
       `<b>Arredores do estádio</b><small>${dentro.length ?
         `${dentro.length} ${dentro.length===1?'bonde':'bondes'} na esplanada` :
@@ -2720,7 +2722,7 @@
   /* Da esplanada em miniatura pro palco: quem está no minimapa é quem
      entra na cena, com o efetivo que sobrou da caminhada. */
   function irParaOsArredores(e, R){
-    const dentro = (R.arredores||[]).filter(x=>x.nossa);
+    const dentro = TO.ruas.naEsplanada(R).filter(x=>x.nossa);
     const meu = dentro.reduce((s,x)=>s+x.n, 0) || 1;
     const aptos = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
@@ -2732,8 +2734,8 @@
     const p = TO.planejamento.plano(e);
     /* quem chegou na esplanada entra na cena com o efetivo que sobrou da
        caminhada e a cor da própria torcida */
-    const bondes = (R.arredores||[]).map(x=>({lado:x.lado, n:x.n, cor:x.cor,
-                                              nome:x.nome, nossa:x.nossa}));
+    const bondes = TO.ruas.naEsplanada(R).map(x=>({lado:x.lado, n:x.n, cor:x.cor,
+                                                   nome:x.nome, nossa:x.nossa}));
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao: p.intencao, bombas: p.bombas,

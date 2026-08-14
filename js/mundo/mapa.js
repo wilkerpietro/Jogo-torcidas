@@ -87,7 +87,10 @@ TO.mapa = (function(){
       const nossa = o.id === E.torcida.id;
       const clube = M().time(o.clubeId);
       const cor = (o.cores && o.cores[0]) || '#a51f1c';
+      /* a sede é o escudo da torcida no mapa: bola na cor principal dela,
+         com a sigla dela no meio na cor secundária */
       lista.push({bairro:o.bairroSede, tipo:'sede', nossa, cor, torcida:o.id,
+                  sigla: M().siglaTorcida(o), corSigla: corQueLeSobre(cor, o),
                   label:`Sede · ${o.nome}${clube?` (${clube.nome})`:''}`});
       /* GDD §7.2: o bar fica em zona diferente da sede. O da nossa torcida
          sai do patrimônio; o das outras é sorteado com semente fixa. */
@@ -438,6 +441,35 @@ TO.mapa = (function(){
     hospital:     {cor:'#d1d6e0', letra:'H', escuro:true}
   };
   const pinoDe = it => PINO[it && it.tipo] || {cor:'#b8322c', letra:'?'};
+
+  /* =======================================================
+     A COR QUE SE LÊ SOBRE A COR DA TORCIDA
+
+     Na sede o fundo é a cor principal e a letra é a secundária. Só que
+     "secundária" nem sempre contrasta — a Gaviões é preta no manto e no
+     calção, e preto sobre preto não se lê. Então a letra é a primeira
+     cor dela que se separa do fundo: o calção, depois a linha da camisa.
+     Se nenhuma servir (quatro torcidas em 140), cai no preto ou branco
+     pela luminância, que é a única saída honesta — inventar uma cor que
+     não é dela seria pior.
+     ======================================================= */
+  function rgbDe(h){
+    const s = String(h||'').replace('#','');
+    const t = s.length === 3 ? s.split('').map(c=>c+c).join('') : s;
+    const v = parseInt(t, 16);
+    return isNaN(v) ? [138,138,138] : [(v>>16)&255, (v>>8)&255, v&255];
+  }
+  const luz = h => {
+    const c = rgbDe(h);
+    return (0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2]) / 255;
+  };
+  const SEPARA = 0.22;   // diferença de luminância que ainda se lê de longe
+  function corQueLeSobre(fundo, o){
+    const lf = luz(fundo);
+    for(const c of [(o.cores||[])[1], o.detalhe])
+      if(c && Math.abs(luz(c) - lf) >= SEPARA) return c;
+    return lf > 0.55 ? '#151515' : '#f2f2f2';
+  }
 
   function arredondado(ctx, x, y, w, h, r){
     const rr = Math.max(0, Math.min(r, w/2, h/2));
@@ -831,8 +863,10 @@ TO.mapa = (function(){
     ctx.fillStyle = bg; ctx.fillRect(x, y, w, h);
     ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(x, y+h*.55, w, h*.45);
     ctx.strokeStyle = 'rgba(0,0,0,.65)'; ctx.strokeRect(x+.5, y+.5, w-1, h-1);
-    /* o pino, que transborda o lote, sobe pra camada de cima */
-    const r = Math.max(8, Math.min(12, w*.42));
+    /* o pino, que transborda o lote, sobe pra camada de cima. A sede vem
+       maior que os outros: ela carrega a sigla da torcida escrita, e é o
+       ponto do mapa que o jogador mais procura. */
+    const r = Math.max(8, Math.min(12, w*.42)) * (item.tipo === 'sede' ? 1.45 : 1);
     mo.camadaPinos.push(c=>{
       c.fillStyle = bg; c.fillRect(x, y, w, h);
       c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(x, y+h*.55, w, h*.45);
@@ -951,8 +985,40 @@ TO.mapa = (function(){
 
   function pino(ctx, cx, cy, r, item){
     const p = pinoDe(item);
-    const desenho = ICONE[item && item.tipo];
+    /* A sede não leva ícone: leva o escudo da torcida — bola na cor
+       principal dela, sigla no meio na secundária. É o que diz de quem é
+       aquela casa sem passar o mouse, e o que separa as três organizadas
+       do mesmo clube, que antes eram três pinos vermelhos iguais. */
+    const escudo = item && item.tipo === 'sede' && item.sigla;
+    const desenho = escudo ? null : ICONE[item && item.tipo];
     ctx.save();
+
+    if(escudo){
+      /* A BOLA CRESCE PRA CABER A SIGLA, a letra não encolhe até sumir.
+         Duas em cada três siglas têm três letras ou menos (MV, C12, P9,
+         TUP) e cabem no tamanho normal do pino; as compridas — GAVIOES,
+         DRAGÕES, ESQUADRÃO — ganham uma bola maior. Na primeira versão
+         era o contrário, a letra é que encolhia, e GAVIOES saía com
+         quatro pixels e meio: um borrão preto onde devia estar o nome. */
+      const MENOR = 9;                       // fonte que ainda se lê no mapa
+      ctx.font = `900 ${MENOR}px Arial, sans-serif`;
+      const larg = ctx.measureText(item.sigla).width;
+      const raio = Math.min(r * 2.2, Math.max(r, larg/1.62 + 2));
+      const px = Math.min(raio * 1.05, MENOR * (raio*1.62) / Math.max(larg, 1));
+
+      ctx.beginPath(); ctx.arc(cx, cy, raio, 0, Math.PI*2);
+      ctx.fillStyle = item.cor; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.70)'; ctx.stroke();
+      ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.65)'; ctx.stroke();
+
+      ctx.font = `900 ${px}px Arial, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = item.corSigla || '#fff';
+      ctx.fillText(item.sigla, cx, cy + px*0.06);
+      ctx.restore();
+      return;
+    }
+
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
     ctx.fillStyle = p.cor; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.70)'; ctx.stroke();

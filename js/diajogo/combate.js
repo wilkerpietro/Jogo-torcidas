@@ -20,8 +20,11 @@ TO.diaJogo.P = {
   bombas:4, bombasRival:2, chancePaz:50,
   /* noite tranquila nos arredores: o relógio da cena anda 0,6 min por
      segundo, e o pessoal fica de conversa em volta do próprio ponto até
-     faltar isto pra bola rolar */
-  minutosAteJogo:150, entrarFaltando:[25,20], raioVadiagem:200
+     faltar isto pra bola rolar.
+     raioVadiagem era 200, feito pra trinta discos. Com o efetivo de
+     verdade — 250 da Gaviões — duzentos pixels são um formigueiro: é o
+     mesmo espaço pra oito vezes mais gente. */
+  minutosAteJogo:150, entrarFaltando:[25,20], raioVadiagem:800
 };
 
 TO.diaJogo.combate = (function(){
@@ -229,8 +232,20 @@ TO.diaJogo.combate = (function(){
       const qtd = Math.max(g.qtd, escalados.length);
       /* só o nosso bonde obedece à formação; aliado que divide o portão não */
       const meu = g.bonde ? !!g.bonde.nossa : !!s.jogador;
+      /* ONDE O BONDE SE ESPALHA AO NASCER.
+         Era um quadrado de 92 px de lado pra qualquer tamanho. Com 250
+         pessoas isso dá 34 px² por cabeça e o disco sozinho ocupa 154:
+         a esplanada abria com todo mundo dentro de todo mundo, e o
+         primeiro segundo era um empurra-empurra pra achar lugar. Agora o
+         raio vem do efetivo, com teto de 800 px — bonde de oito se junta
+         numa esquina, bonde de 250 ocupa quarteirão. A raiz no sorteio é
+         o que dá densidade uniforme; sem ela a nuvem sai com miolo
+         grosso e borda vazia. */
+      const raio = U.limitar(46 + 24*Math.sqrt(qtd), 46, P.raioVadiagem);
       for(let i=0;i<qtd;i++){
-        const p=A.pontoLivreMaisProximo(s.x+U.entre(-46,46), s.y+U.entre(-46,46), 7);
+        const a = U.rng()*Math.PI*2, dd = raio*Math.sqrt(U.rng());
+        const p=A.pontoLivreMaisProximo(s.x + Math.cos(a)*dd,
+                                        s.y + Math.sin(a)*dd, 7);
         const m = escalados[i];
         const lider = g === grupoLider && i===0;
         const d=new Disco(
@@ -1194,6 +1209,20 @@ TO.diaJogo.combate = (function(){
     }
     return false;
   }
+  /* PRESSÃO DA PM — mede e avisa, NÃO manda no seu bonde.
+
+     Antes ela recuava sozinha depois de P.aguentaPM segundos com mais de
+     35% do bonde perto de PM em carga. Na prática isso disparava
+     exatamente no melhor momento da noite: romper a grade põe TODA a PM
+     em carga de uma vez, e a carga ameaça a 120 px em vez de 46 — o
+     bonde estava colado no cordão, porque foi ele que derrubou a grade,
+     e dez segundos depois virava as costas sozinho.
+
+     Quem manda no bonde é o jogador (R pra recuar). A única coisa que o
+     quebra sem ordem é o preço de sangue combinado: a debandada em
+     P.debandada por cento de baixas, em checarDebandada(). A pressão
+     continua pesando onde deve — derruba a moral, e moral baixa é o que
+     leva à debandada. */
   function pressaoSobreMim(J,dt){
     const meus=J.discos.filter(d=>d.lado==='mandante'&&d.vivo&&!d.fugindo);
     if(!meus.length){J.fracPM=0;return;}
@@ -1206,11 +1235,6 @@ TO.diaJogo.combate = (function(){
         J.avisouPM=true;
         aviso(J,'PM em cima do seu bonde','#5fa87d');
         logar(J,'A PM encostou no seu pessoal. R pra recuar.','pm');
-      }
-      if(J.sobPressao>=P.aguentaPM){
-        J.recuando=true; J.sobPressao=0;
-        logar(J,'Seu pessoal não aguentou e recuou sozinho.','r');
-        aviso(J,'Recuaram sem sua ordem','#d9705f');
       }
     } else {
       J.sobPressao=Math.max(0,J.sobPressao-dt*1.6);

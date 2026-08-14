@@ -888,6 +888,58 @@ O que **não** veio, e por quê:
   cor dela), C12 e P9 em cinzas distintos.
   A letra do rótulo encolhe quando a sigla é comprida — melhor INDEPENDENTE pequeno e
   inteiro que grande e cortado.
+  **A sigla de verdade veio da planilha do autor**, que ganhou a coluna `Sigla` na aba
+  Torcidas: GAVIOES, C12, P9, TJP, CMA, MV, TTI, TUF. São 136 das 140 — as quatro que
+  faltam continuam com a sigla derivada do nome, que é o padrão de propósito.
+  `importar_relacoes.py` lê a planilha junto com o JSON e escreve `siglaTorcida` em
+  `dados/torcidas.js`; o `sigla` de antes continua lá e continua sendo a do clube, que é
+  quem manda no escudo do cabeçalho. O pareamento é pelo NOME sem acento e sem separador:
+  pelo id não dá, porque o id do jogo usa underscore (`mafia_azul`) e o identificador dos
+  importadores usa hífen — só as torcidas de nome de uma palavra casavam, 15 de 140.
+  Sigla repetida existe de verdade (três torcidas do país se chamam RAÇA) e quem resolve
+  continua sendo quem monta a noite.
+
+- **A sede virou o escudo da torcida no mapa.** Era um pino vermelho com um bandeirão
+  desenhado, igual pras oito torcidas da praça. Agora é uma bola na **cor principal** da
+  torcida com a **sigla dela no meio na cor secundária** — dá pra ler o mapa e saber de
+  quem é cada casa sem passar o mouse.
+  "Secundária" nem sempre contrasta: a Gaviões é preta no manto e no calção, e preto sobre
+  preto não se lê. A letra é a primeira cor dela que se separa do fundo — calção, depois a
+  linha da camisa — e só se nenhuma servir (quatro torcidas em 140) cai no preto ou branco
+  pela luminância. Inventar uma cor que não é dela seria pior.
+  A bola cresce pra caber a sigla em vez de encolher a letra: duas em cada três siglas têm
+  três letras ou menos e cabem no tamanho normal do pino; GAVIOES e ESQUADRÃO ganham uma
+  bola maior. Na primeira versão era o contrário, e GAVIOES saía com quatro pixels e meio
+  de fonte — um borrão preto onde devia estar o nome.
+
+- **A esplanada é do nosso jogo, não da cidade.** A praça tem até três partidas no mesmo
+  dia e cada estádio tem a sua esplanada; a cena juntava todos os bondes que tinham
+  chegado a qualquer um deles, então abria com torcida de um clássico do outro lado da
+  cidade parada no nosso portão. Cada bonde passou a carregar de que jogo é (o clube
+  mandante), e o nosso jogo é o do nosso bonde — sem bonde nosso na rua, nosso clube não
+  joga nesta praça hoje e não há esplanada nossa pra mostrar. Medido num dia de duas
+  partidas em São Paulo: 7 bondes chegaram à cidade, 5 são do Corinthians x Santos e são
+  esses os 5 que entram na cena; os 2 do Portuguesa x Ituano ficam de fora.
+
+- **Espaço pra torcida grande na esplanada.** O raio de vadiagem era 200 px, dimensionado
+  para trinta discos; com 250 é o mesmo espaço para oito vezes mais gente. Passou para
+  **800 px**. O nascimento também: era um quadrado de 92 px de lado para qualquer efetivo
+  — 34 px² por cabeça quando o disco sozinho ocupa 154 —, e a cena abria com todo mundo
+  dentro de todo mundo. Agora o raio de espalhamento vem do efetivo, com o mesmo teto de
+  800: bonde de oito se junta numa esquina, bonde de 250 ocupa quarteirão. Medido: a
+  Gaviões nasce com raio mediano de 157 px em vez de amontoada, e os dois lados continuam
+  cada um no seu setor.
+
+- **A PM não recua mais o seu bonde.** Depois de `aguentaPM` segundos com mais de 35% do
+  bonde perto de PM em carga, a torcida virava as costas sozinha. Isso disparava
+  exatamente no melhor momento da noite: romper a grade põe **toda** a PM em carga de uma
+  vez, e a carga ameaça a 120 px em vez de 46 — o bonde estava colado no cordão, porque
+  foi ele que derrubou a grade, e dez segundos depois debandava. Quem manda no bonde é o
+  jogador (R pra recuar); a única coisa que o quebra sem ordem é o preço de sangue
+  combinado, a debandada em `P.debandada` por cento de baixas. A pressão continua pesando
+  onde deve — derruba a moral, e moral baixa é o que leva à debandada. Medido: com a barra
+  de pressão estourada e o bonde grudado no cordão por quarenta segundos, ninguém recua;
+  aos 30% de baixas, debandada na hora.
 
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
 aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no

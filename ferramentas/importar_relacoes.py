@@ -17,6 +17,10 @@ import json, pathlib, sys, unicodedata
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 ORIGEM = RAIZ / 'dados/fonte/torcidas_relacoes.json'
+# A sigla da TORCIDA (GAVIOES, TJF, CMA) so existe na planilha do autor —
+# o `sigla` do JSON da era Unity e a do CLUBE, e por isso as tres
+# organizadas do Corinthians vinham as tres como "SCCP".
+PLANILHA = RAIZ / 'dados/fonte/Book_3_1.xlsx'
 
 # A cidade no JSON e o nome da praca; em cidades.js e o id do mapa.
 # Onde os dois nomes divergem, o apelido resolve.
@@ -59,6 +63,43 @@ def ano(data):
         return 0
 
 
+def chave(t):
+    """Nome de torcida sem acento, sem caixa e sem separador nenhum.
+    Nao da pra parear pelo id: o id do jogo usa underscore (mafia_azul) e
+    ident() devolve hifen (mafia-azul), e so as torcidas de nome de uma
+    palavra casavam — 15 de 140."""
+    return ''.join(c for c in sem_acento(t).lower() if c.isalnum())
+
+
+def siglas_da_planilha():
+    """{chave do nome: sigla da torcida}. A aba Torcidas ganhou a coluna
+    Sigla; sem a planilha (ou sem openpyxl) o jogo cai na sigla derivada do
+    nome, entao isto e opcional de proposito."""
+    if not PLANILHA.exists():
+        print('  planilha ausente: siglas de torcida ficam derivadas do nome')
+        return {}
+    try:
+        import openpyxl
+    except ImportError:
+        print('  sem openpyxl: siglas de torcida ficam derivadas do nome')
+        return {}
+    ws = openpyxl.load_workbook(PLANILHA, data_only=True)['Torcidas']
+    cab = [str(c or '').strip().lower() for c in
+           next(ws.iter_rows(max_row=1, values_only=True))]
+    if 'sigla' not in cab:
+        print('  aba Torcidas sem coluna Sigla: siglas ficam derivadas do nome')
+        return {}
+    cn, cs = cab.index('torcida'), cab.index('sigla')
+    fora = {}
+    for r in ws.iter_rows(min_row=2, values_only=True):
+        if not r[cn]:
+            continue
+        s = str(r[cs] or '').strip()
+        if s:
+            fora[chave(r[cn])] = s
+    return fora
+
+
 def escrever(caminho, cabecalho, corpo):
     (RAIZ / caminho).write_text(
         f'/* {cabecalho}\n'
@@ -71,6 +112,7 @@ def escrever(caminho, cabecalho, corpo):
 def main():
     origem = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ORIGEM
     d = json.loads(origem.read_text(encoding='utf-8'))
+    siglas = siglas_da_planilha()
 
     torcidas = []
     for t in d['torcidas']:
@@ -82,7 +124,8 @@ def main():
             'nome': t['nome'],
             'clube': t.get('clube', ''),
             'clubeId': ident(t.get('clube', '')),
-            'sigla': t.get('sigla', ''),
+            'sigla': t.get('sigla', ''),                    # a do CLUBE
+            'siglaTorcida': siglas.get(chave(t['nome']), ''),   # a da TORCIDA
             'cidade': t.get('cidade', ''),
             'mapa': id_cidade(t.get('cidade', '')),
             'uf': t.get('uf', ''),
