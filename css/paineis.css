@@ -1005,3 +1005,13 @@ table.dados tr.selecionada td{background:#252525}
 @media (max-width:820px){
   .tabela-pat .cab,.tabela-pat .linha{grid-template-columns:1fr 78px 78px 84px}
 }
+
+/* barra do elenco: o que o clube conquistou e o que a torcida bancou
+   por cima, na mesma escala de 4 a 50 */
+.barra-elenco{
+  position:relative; height:14px; background:var(--sulco);
+  border:1px solid var(--linha); margin:2px 0 10px;
+}
+.barra-elenco i{position:absolute; top:0; bottom:0; display:block}
+.barra-elenco i.base{left:0; background:var(--azul)}
+.barra-elenco i.inv{background:var(--ouro)}

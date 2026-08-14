@@ -704,6 +704,37 @@ O que **não** veio, e por quê:
   roda num trilho próprio, sem notícia, e o ticker segue com os três de sempre — esta é a
   recomendada.
 
+- **Investir no elenco** (GDD **V3** §19, que o V4 não repete). O V3 traz a tabela de
+  preço por ponto de força, e o §9.5 define a força do elenco como "base **+ investimento
+  da torcida**" — as duas parcelas separadas, que é como está implementado. A base é o que
+  o clube conquistou em campo e continua sendo ela que a evolução de fim de ano recentra
+  por competição; o investimento é dinheiro de torcida e fica fora dessa média, senão
+  comprar elenco derrubaria o dos outros da mesma divisão.
+  A tabela do V3 é da escala de força 1–100 e a qualidade aqui é 4–50, então o preço se
+  consulta dobrando: R$ 100.000 por ponto no clube pequeno, subindo de faixa em faixa até
+  R$ 1.000.000 no gigante. É o maior ralo de dinheiro do jogo de propósito — com bar, loja
+  e subsede montados, é pra onde sobra, e fecha o laço que faltava entre a torcida e o
+  gramado: elenco melhor ganha mais, ganhar sobe a satisfação, satisfação enche o
+  recrutamento.
+  **Uma coisa o GDD não diz e foi preciso inventar**: o que acontece com o investimento
+  depois de feito. Sem nada, cem anos de torcida rica levam todo clube grande ao teto de
+  50 e a tabela vira retrato — medido. Elenco comprado envelhece: **12% do investimento se
+  perde por temporada**, então segurar o time no alto é despesa recorrente e não compra
+  única. O número é meu, não do GDD.
+  A tela é a terceira aba do Patrimônio, **ELENCO** — o Patrimônio já era onde o dinheiro
+  vai, e agora são três destinos: imóvel, material e time. A barra separa em azul o que o
+  clube conquistou e em ouro o que a torcida bancou, e a tabela de preço marca em qual
+  faixa o clube está.
+  **As torcidas da IA também bancam** (GDD §26: elas evoluem como o jogador), com um
+  limite que as impede de quebrar o mundo: só investem enquanto o clube estiver **abaixo
+  da média da divisão dele**. Vira meta de poupança como a sede — na primeira versão o
+  investimento entrava depois da torneira de queima, que segura o caixa delas em R$ 56
+  mil, abaixo dos R$ 100 mil do ponto mais barato, e cem anos renderam 4 pontos no país
+  inteiro. Medido depois do conserto: 62 dos 108 clubes recebem aporte, 88 pontos somados,
+  estável desde 2066, e a distribuição pende pra baixo — 32 clubes da Série D, 11 da C, 12
+  da B e 7 da A. Quem tem time ruim tem pra onde correr; quem já tem time bom guarda o
+  dinheiro.
+
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
 aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no
 mapa — clicar num ponto da rua pra marcar tocaia, e acompanhar o bonde aliado da rodovia

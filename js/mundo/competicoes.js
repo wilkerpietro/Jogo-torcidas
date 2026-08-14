@@ -76,13 +76,92 @@ TO.competicoes = (function(){
      — dado importado não se reescreve.
      ======================================================= */
   let _qualidades = null;                 // ponteiro pro save da vez
-  const usarSave = E => { _qualidades = (E && E.qualidades) || null; };
-  const qual = id => (_qualidades && _qualidades[id] != null)
+  let _investido  = null;
+  const usarSave = E => {
+    _qualidades = (E && E.qualidades) || null;
+    _investido  = (E && E.investimento) || null;
+  };
+  /* GDD §9.5: "força do elenco (base + investimento da torcida)". As duas
+     parcelas vivem separadas de propósito: a base é o que o clube conquistou
+     em campo e é ela que a evolução de fim de ano recentra por competição;
+     o investimento é dinheiro de torcida e não pode entrar nessa média,
+     senão comprar elenco derrubaria o dos outros na mesma divisão. */
+  const invDe = (E, id) => ((E && E.investimento) || {})[id] || 0;
+  const base = id => (_qualidades && _qualidades[id] != null)
     ? _qualidades[id]
     : ((M().time(id)||{}).qualidade || 10);
-  const qualidadeDe = (E, id) =>
+  const qual = id => U.limitar(
+    base(id) + ((_investido && _investido[id]) || 0), 4, 50);
+  const qualidadeBase = (E, id) =>
     (E.qualidades && E.qualidades[id] != null)
       ? E.qualidades[id] : ((M().time(id)||{}).qualidade || 10);
+  const qualidadeDe = (E, id) =>
+    U.limitar(qualidadeBase(E, id) + invDe(E, id), 4, 50);
+
+  /* =======================================================
+     INVESTIR NO TIME (GDD V3 §19)
+     A tabela do GDD é da escala de força 1–100; a qualidade
+     aqui é 4–50, então o preço se consulta dobrando. Um ponto
+     de qualidade custa o preço da faixa em que o clube está —
+     de R$ 100 mil no time pequeno a R$ 1 milhão no gigante.
+
+     É o maior ralo de dinheiro do jogo, e é de propósito: com
+     bar, loja e subsede montados, é pra onde sobra. Fecha o
+     laço da torcida com o gramado — elenco melhor ganha mais,
+     ganhar sobe a satisfação, satisfação enche o recrutamento.
+     ======================================================= */
+  const TABELA_INVESTIMENTO = [
+    {ate: 20, custo:  100000}, {ate: 30, custo:  200000},
+    {ate: 40, custo:  300000}, {ate: 50, custo:  400000},
+    {ate: 60, custo:  500000}, {ate: 70, custo:  600000},
+    {ate: 80, custo:  700000}, {ate: 90, custo:  800000},
+    {ate:100, custo: 1000000}
+  ];
+  function custoDoPonto(E, id){
+    const forca = qualidadeDe(E, id) * 2;          // 4–50 → 8–100
+    return (TABELA_INVESTIMENTO.find(f=>forca <= f.ate)
+            || TABELA_INVESTIMENTO[TABELA_INVESTIMENTO.length-1]).custo;
+  }
+  const TETO_QUALIDADE = 50;
+
+  /* O GDD não diz o que acontece com o investimento depois de feito. Sem
+     nada, cem anos de torcida rica levam todo clube grande ao teto e a
+     tabela vira um retrato fixo — medido. Elenco comprado envelhece: 12%
+     do investimento se perde por temporada, então segurar o time no alto
+     é despesa recorrente e não compra única. */
+  const DESGASTE = 0.12;
+  function investir(E, id, pontos){
+    pontos = Math.max(1, Math.round(pontos||1));
+    E.investimento = E.investimento || {};
+    let gasto = 0, feitos = 0;
+    /* ponto a ponto, porque o segundo pode cair na faixa de cima e custar
+       mais caro que o primeiro */
+    for(let i=0;i<pontos;i++){
+      if(qualidadeDe(E, id) >= TETO_QUALIDADE) break;
+      const c = custoDoPonto(E, id);
+      if(E.dinheiro < gasto + c) break;
+      E.investimento[id] = (E.investimento[id] || 0) + 1;
+      gasto += c; feitos++;
+      usarSave(E);
+    }
+    if(!feitos) return {ok:false, pontos:0, gasto:0,
+      msg: qualidadeDe(E, id) >= TETO_QUALIDADE
+        ? 'O elenco já está no teto.' : 'Não dá: falta caixa.'};
+    const time = (M().time(id)||{}).nome || id;
+    TO.estado.lancar(E, `Investimento no elenco do ${time}`, -gasto);
+    TO.estado.anotar(E, `A torcida bancou reforço pro ${time}: `+
+      `+${feitos} de qualidade.`, 'boa');
+    return {ok:true, pontos:feitos, gasto, msg:`${time}: +${feitos} de qualidade`};
+  }
+  function desgastarInvestimento(E){
+    if(!E.investimento) return;
+    for(const id of Object.keys(E.investimento)){
+      const v = E.investimento[id] * (1 - DESGASTE);
+      if(v < 0.5) delete E.investimento[id];
+      else E.investimento[id] = Math.round(v*100)/100;
+    }
+    usarSave(E);
+  }
 
   /* GDD §18: a escala é 4 a 50. O passo por temporada é pequeno de
      propósito — time grande não vira pequeno num ano, mas dez anos de
@@ -142,7 +221,7 @@ TO.competicoes = (function(){
     const soma = {}, conta = {};
     for(const id of ids){
       const d = divisaoDe(E, M().time(id) || {});
-      soma[d] = (soma[d]||0) + qualidadeDe(E, id);
+      soma[d] = (soma[d]||0) + qualidadeBase(E, id);
       conta[d] = (conta[d]||0) + 1;
     }
     const GRAVIDADE = 0.12;
@@ -150,13 +229,15 @@ TO.competicoes = (function(){
     /* 4. o delta é da escala de força (1–100); a qualidade é 4–50 */
     const mov = [];
     for(const id of ids){
-      const antes = qualidadeDe(E, id);
+      const antes = qualidadeBase(E, id);
       const d = divisaoDe(E, M().time(id) || {});
       const nivel = conta[d] ? soma[d]/conta[d] : antes;
       const puxao = (nivel - antes) * GRAVIDADE;
       const dep = U.limitar(Math.round(antes + bruto[id]/2 + puxao), 4, 50);
       if(dep !== antes){ E.qualidades[id] = dep; mov.push({id, de:antes, para:dep}); }
     }
+    /* a virada do ano também come o elenco comprado */
+    desgastarInvestimento(E);
     usarSave(E);
     return mov;
   }
@@ -1155,7 +1236,9 @@ TO.competicoes = (function(){
   const horaDoJogo = j => (j && j.h) || '16:00';
 
   return {montarTemporada, jogarSemana, tabela, agendaDoClube, jogoDaSemana,
-          qualidadeDe, evoluirForca, usarSave,
+          qualidadeDe, qualidadeBase, evoluirForca, usarSave,
+          custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
+          TETO_QUALIDADE, DESGASTE,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
           jogosDaSemana, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
           aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,

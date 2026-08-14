@@ -210,7 +210,7 @@ TO.tensao = (function(){
 
   /* o que ela compraria agora, se tivesse dinheiro: o primeiro item da
      lista do arquétipo que ainda cabe na sede */
-  function proximaCompra(E, t){
+  function proximaCompra(E, t, id){
     const cfgArq = ARQUETIPOS[t.arq];
     /* Ampliar a sede quando o efetivo está no teto é sempre prioridade:
        sem isso ela para de crescer pra sempre. Só vale, porém, se quem
@@ -236,7 +236,38 @@ TO.tensao = (function(){
     }
     if(!t.fabrica && t.sede >= P().FABRICA.sede)
       return {tipo:'fabrica', custo:P().FABRICA.custo};
-    return null;
+    return elencoAlvo(E, id);
+  }
+
+  /* A média da divisão onde o clube joga, que é o alvo do investimento da
+     IA. Recalcular isso pra 138 torcidas toda semana é caro, então vale um
+     cache por temporada — a divisão só muda no acesso e no descenso. */
+  let _mediaDiv = null, _mediaAno = null;
+  function mediaDaDivisao(E, div){
+    if(_mediaAno !== E.data.ano){ _mediaDiv = {}; _mediaAno = E.data.ano; }
+    if(_mediaDiv[div] != null) return _mediaDiv[div];
+    const C = TO.competicoes;
+    let soma = 0, n = 0;
+    for(const t of M().todosTimes){
+      if(C.divisaoDe(E, t) !== div) continue;
+      soma += C.qualidadeDe(E, t.id); n++;
+    }
+    return (_mediaDiv[div] = n ? soma/n : 0);
+  }
+
+  /* GDD V3 §19, do lado da IA: bancar reforço é a última coisa que ela
+     compra, e só enquanto o clube estiver ABAIXO da média de quem ele
+     enfrenta. Vira meta de poupança como a sede — sem isso a torneira de
+     queima segurava o caixa em R$ 56 mil, abaixo dos R$ 100 mil do ponto
+     mais barato, e cem anos rendiam 4 pontos no país inteiro. */
+  function elencoAlvo(E, id){
+    const C = TO.competicoes, o = M().torcida(id);
+    if(!o || !o.clubeId) return null;
+    const time = M().time(o.clubeId);
+    if(!time) return null;
+    if(C.qualidadeDe(E, o.clubeId) >= mediaDaDivisao(E, C.divisaoDe(E, time)))
+      return null;
+    return {tipo:'elenco', clube:o.clubeId, custo:C.custoDoPonto(E, o.clubeId)};
   }
 
   function economiaDelas(E){
@@ -258,12 +289,17 @@ TO.tensao = (function(){
       t.vermelho = 0;
 
       /* comprar vem antes de crescer: estrutura destrava efetivo */
-      const compra = proximaCompra(E, t);
+      const compra = proximaCompra(E, t, id);
       if(compra && t.caixa >= compra.custo * ARQUETIPOS[t.arq].reserva){
         t.caixa -= compra.custo;
         if(compra.tipo === 'sede') t.sede++;
         else if(compra.tipo === 'fabrica') t.fabrica = true;
         else if(compra.tipo === 'subsede') t.subsedes++;
+        else if(compra.tipo === 'elenco'){
+          E.investimento = E.investimento || {};
+          E.investimento[compra.clube] = (E.investimento[compra.clube] || 0) + 1;
+          TO.competicoes.usarSave(E);
+        }
         else if(compra.tipo.startsWith('ampliar:')) compra.alvo.nivel++;
         else t[P().PONTO[compra.tipo].plural].push({nivel:1});
         continue;
