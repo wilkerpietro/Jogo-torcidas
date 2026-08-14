@@ -2660,11 +2660,82 @@
 
     casca.append(cv, zoom, dica);
     viewport.append(filtros, casca);
+    if(R.bondes.length) viewport.appendChild(miniArredores(e, R));
     q.corpo.appendChild(viewport);
     pg.appendChild(q);
 
     /* o canvas só existe depois de entrar no documento */
     requestAnimationFrame(()=>ligarMapa(cv, dica, mo));
+  }
+
+  /* =======================================================
+     O MINIMAPA DOS ARREDORES
+     Roda em paralelo ao mapa da cidade: quando um bonde entra
+     no quarteirão do estádio ele some de lá e aparece aqui,
+     no portão do lado dele. É a antessala da cena de
+     arredores — quando o jogador manda entrar, é esta gente
+     que vai pro palco.
+     ======================================================= */
+  function miniArredores(e, R){
+    const cx = el('div',{class:'mini-arredores'});
+    const dentro = R.arredores || [];
+    cx.appendChild(el('div',{class:'mini-cab', html:
+      `<b>Arredores do estádio</b><small>${dentro.length ?
+        `${dentro.length} ${dentro.length===1?'bonde':'bondes'} na esplanada` :
+        'ninguém chegou ainda'}</small>`}));
+
+    /* a esplanada em C do GDD §15.1, de cima: o quarteirão do estádio no
+       meio e as duas entradas de cada lado do cordão */
+    const palco = el('div',{class:'mini-palco'});
+    palco.appendChild(el('div',{class:'mini-campo', texto:'ESTÁDIO'}));
+    palco.appendChild(el('div',{class:'mini-cordao'}));
+    for(const lado of ['mandante','visitante']){
+      const faixa = el('div',{class:'mini-lado '+lado});
+      const meus = dentro.filter(x=>x.lado === lado);
+      for(const x of meus){
+        const d = el('i',{class:'mini-disco'+(x.nossa?' nosso':'')});
+        d.style.background = x.cor;
+        d.style.width = d.style.height =
+          U.limitar(10 + Math.sqrt(x.n)*1.4, 12, 30) + 'px';
+        d.title = `${x.nome} · ${x.n} · chegou ${Math.floor(x.entrouEm/60)}h`+
+                  `${String(x.entrouEm%60).padStart(2,'0')}`;
+        faixa.appendChild(d);
+      }
+      if(!meus.length) faixa.appendChild(el('span',{class:'mini-vazio',
+        texto: lado === 'mandante' ? 'lado de casa' : 'setor visitante'}));
+      palco.appendChild(faixa);
+    }
+    cx.appendChild(palco);
+
+    /* nosso bonde chegou: dá pra entrar na esplanada de verdade */
+    const nosso = dentro.some(x=>x.nossa);
+    const bt = el('button',{class:'bt'+(nosso?' destaque':''),
+      texto: nosso ? 'Entrar nos arredores' : 'Seu bonde ainda está na rua'});
+    bt.disabled = !nosso;
+    bt.onclick = ()=>irParaOsArredores(e, R);
+    cx.appendChild(bt);
+    return cx;
+  }
+
+  /* Da esplanada em miniatura pro palco: quem está no minimapa é quem
+     entra na cena, com o efetivo que sobrou da caminhada. */
+  function irParaOsArredores(e, R){
+    const dentro = (R.arredores||[]).filter(x=>x.nossa);
+    const meu = dentro.reduce((s,x)=>s+x.n, 0) || 1;
+    const aptos = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
+      .slice(0, U.limitar(meu, 2, 34));
+    if(aptos.length < 2){ aviso('Não sobrou gente de pé pra entrar.','ruim'); return; }
+    R.rodando = false;
+    $('telaDiaJogo').classList.remove('oculto');
+    TO.estado.bloquear(true);
+    const p = TO.planejamento.plano(e);
+    TO.diaJogo.ponte.montar({
+      canvas: $('djPrincipal'),
+      config: { escalacao: aptos, intencao: p.intencao, bombas: p.bombas,
+                tensao: tensaoDaNoite() },
+      aoTerminar: fecharDiaDeJogo
+    });
   }
 
   function ligarMapa(cv, dica, mo){

@@ -763,6 +763,33 @@ O que **não** veio, e por quê:
   iniciar, todas têm rota da sede ao estádio (de 12 a 108 passos), 47 a 54 pinos e malha
   de 3.744 a 5.478 nós montada em ~11 ms.
 
+- **A cidade viva em dia de jogo.** O mapa já movia bondes; faltavam quatro coisas pra
+  virar o que o GDD §14 descreve.
+  **Vários bondes por torcida, não só a nossa.** O jogador decide no plano da semana; as
+  outras se quebram pelo tamanho — um bonde a cada 60 membros, no máximo quatro. A
+  primeira sai da sede, as seguintes dos bares dela, e a caravana visitante entra por
+  bocas diferentes da cidade. Medido em São Paulo: 10 bondes de 8 torcidas, saindo de 5
+  sedes, 2 bares e 3 entradas.
+  **Reencontro.** A chave do confronto era o par de TORCIDAS e valia pro dia inteiro:
+  brigou uma vez, nunca mais. Agora é o par de BONDES, com esfriamento de 15 minutos em
+  vez de bloqueio — dois bondes da mesma torcida têm cada um a sua noite, e o mesmo par
+  pode se pegar de novo duas ruas adiante. Quem apanha segue com 25% menos gente.
+  **A rua ganhou briga.** O raio de esbarrão era 16 e, medido em 12 dias de jogo, dois
+  bondes hostis chegavam a menos disso **uma vez só** — todo confronto acontecia no cordão
+  do estádio. É que todos vão pro mesmo destino, então as rotas só convergem no fim. A 45
+  (umas quatro células de rua, o que se lê como "mesma esquina") aparecem 65 aproximações
+  em 14 dias, 21 delas longe do estádio.
+  **O minimapa dos arredores**, rodando ao lado do mapa da cidade: o bonde que entra no
+  quarteirão do estádio **some da rua e aparece na esplanada**, no portão do lado dele,
+  com o horário de chegada. É a antessala da cena — quando o nosso bonde chega, o botão
+  abre os arredores de verdade com o efetivo que sobrou da caminhada. Medido: os 7 bondes
+  de um dia de Fortaleza saem do mapa e entram na esplanada entre 18 e 64 minutos.
+  **O que ainda não é o que devia**: as brigas de rua continuam raras porque o gargalo não
+  é distância, é **hostilidade cruzada com dia de jogo** — dos 65 pares que se encostam,
+  22 são hostis, e os hostis tendem a se encontrar já perto do estádio. Pra rua encher de
+  briga é preciso mexer no que conta como hostil na rua (hoje exige rivalidade de fato ou
+  tensão ≥ 45), não no raio.
+
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
 aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no
 mapa — clicar num ponto da rua pra marcar tocaia, e acompanhar o bonde aliado da rodovia

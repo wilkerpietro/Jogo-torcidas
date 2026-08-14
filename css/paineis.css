@@ -1015,3 +1015,41 @@ table.dados tr.selecionada td{background:#252525}
 .barra-elenco i{position:absolute; top:0; bottom:0; display:block}
 .barra-elenco i.base{left:0; background:var(--azul)}
 .barra-elenco i.inv{background:var(--ouro)}
+
+/* =========================================================
+   MINIMAPA DOS ARREDORES
+   Roda ao lado do mapa da cidade: o bonde que entra no
+   quarteirão do estádio some de lá e aparece aqui.
+   ========================================================= */
+.mini-arredores{
+  flex:0 0 210px; align-self:flex-start;
+  display:flex; flex-direction:column; gap:8px;
+  background:var(--painel); border:1px solid var(--linha); padding:10px;
+}
+.mini-cab b{display:block; font-family:var(--titulo); font-size:13px;
+  letter-spacing:.06em; text-transform:uppercase}
+.mini-cab small{color:var(--apagado); font-size:11px}
+.mini-palco{
+  display:flex; flex-direction:column; gap:4px;
+  background:var(--fundo); border:1px solid var(--linha); padding:8px;
+}
+.mini-campo{
+  background:#2f5c33; border:1px solid #3f7a45; color:#cfe6d2;
+  font-family:var(--mono); font-size:9px; letter-spacing:.14em;
+  text-align:center; padding:10px 0; order:2;
+}
+/* o cordão da PM separa as duas entradas (GDD §15.3) */
+.mini-cordao{height:3px; background:repeating-linear-gradient(
+  90deg,#3f7d5a 0 7px,transparent 7px 12px); order:3}
+.mini-lado{
+  display:flex; flex-wrap:wrap; gap:3px; align-items:center;
+  min-height:26px; padding:3px;
+}
+.mini-lado.mandante{order:1}
+.mini-lado.visitante{order:4}
+.mini-vazio{color:var(--apagado); font-family:var(--mono); font-size:9px;
+  letter-spacing:.1em; text-transform:uppercase}
+.mini-disco{
+  display:block; border-radius:50%; border:1.5px solid rgba(0,0,0,.5);
+}
+.mini-disco.nosso{border-color:#e8e8e8; box-shadow:0 0 0 1px var(--rubro)}

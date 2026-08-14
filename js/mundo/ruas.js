@@ -284,13 +284,22 @@ TO.ruas = (function(){
      ======================================================= */
   const VEL = 26;            // unidades do mapa por minuto de jogo
   const ANTES = 150;         // os bondes saem duas horas e meia antes do apito
-  const RAIO_ENCONTRO  = 16;   // esbarrão na rua
+  /* Esbarrão na rua. Foi 16 e a briga de rua praticamente não existia:
+     medido em 12 dias de jogo, dois bondes hostis chegavam a menos de 16
+     uma vez só — todo confronto acontecia no cordão do estádio. É que
+     todos vão pro mesmo destino, então as rotas só convergem no fim. A
+     45 (umas quatro células de rua, o que se lê como "mesma esquina") a
+     rua ganha uma a duas brigas por dia de jogo, que é o que o GDD §14
+     descreve. */
+  const RAIO_ENCONTRO  = 45;   // esbarrão na rua
   const RAIO_ARREDORES = 52;   // no cordão do estádio a multidão se toca
   const LARGO = 23;            // células andáveis numa janela 5×5 = é praça
 
   function estado(E){
     if(!E.ruas) E.ruas = {chave:null, bondes:[], minuto:0, rodando:false,
-                          olheiro:null, encontro:null, resolvidos:[]};
+                          olheiro:null, encontro:null, esfria:{}, arredores:[]};
+    if(!E.ruas.esfria) E.ruas.esfria = {};
+    if(!E.ruas.arredores) E.ruas.arredores = [];
     return E.ruas;
   }
 
@@ -320,6 +329,7 @@ TO.ruas = (function(){
     const chave = `${E.data.ano}|${E.data.semana}|${E.data.dia}`;
     if(R.chave === chave && R.bondes.length) return R;
     R.chave = chave; R.bondes = []; R.minuto = 0; R.encontro = null;
+    R.esfria = {}; R.arredores = [];
 
     const doDia = jogosDaPraca(E).filter(j=>j.dia === E.data.dia);
     if(!doDia.length) return R;
@@ -339,13 +349,18 @@ TO.ruas = (function(){
       });
     };
 
+    /* Quantos bondes uma torcida põe na rua. O jogador decide no plano da
+       semana; as outras se quebram pelo tamanho, que é o que acontece de
+       verdade — torcida de 200 não sai toda junta de um ponto só. */
+    const POR_BONDE = 60, MAX_BONDES = 4;
+    const quantosBondes = n => U.limitar(Math.ceil(n / POR_BONDE), 1, MAX_BONDES);
+
     for(const jogo of doDia){
       const est = pontoDoEstadio(mo, null) || {x:mo.tam/2, y:mo.tam/2};
       /* mandante: as organizadas dele saem de casa */
       for(const o of M().torcidasDe(jogo.casa.id)){
         const sede = pontoDaSede(mo, o.nome);
         if(!sede) continue;
-        const efetivo = Math.round((TO.acoes.efetivoDe(E, o)) * 0.6);
         if(o.id === E.torcida.id){
           /* a nossa se divide entre a sede e as subsedes, como o plano manda */
           const bondes = Math.max(1, (TO.planejamento.plano(E).bondes)||1);
@@ -359,15 +374,28 @@ TO.ruas = (function(){
             nasce(o, sub || sede, est, porBonde, sub ? 'subsede' : 'sede');
           }
         }else{
-          nasce(o, sede, est, efetivo, 'sede');
+          /* as de casa também se quebram: a primeira sai da sede, as
+             outras dos bares dela, que é onde a rapaziada se junta */
+          const efetivo = Math.round((TO.acoes.efetivoDe(E, o)) * 0.6);
+          const q = quantosBondes(efetivo);
+          const porBonde = Math.max(4, Math.round(efetivo/q));
+          nasce(o, sede, est, porBonde, 'sede');
+          for(let k=1; k<q; k++){
+            const bar = pontoDe(mo, (it)=>it.tipo === 'bar' &&
+              (it.label||'').includes(o.nome));
+            nasce(o, bar || sede, est, porBonde, bar ? 'bar' : 'sede');
+          }
         }
       }
-      /* visitante: entra pela rodovia e vai direto */
+      /* visitante: entra pela rodovia e vai direto. Vários bondes entram
+         por bocas diferentes — caravana grande não chega por uma porta só */
       let k = 0;
       for(const o of M().torcidasDe(jogo.vis.id)){
         const vem = Math.round(TO.acoes.efetivoDe(E, o) * 0.25);
         if(vem < 5) continue;
-        nasce(o, entradaDaCidade(mo, k++), est, vem, 'visitante');
+        const q = quantosBondes(vem);
+        const porBonde = Math.max(4, Math.round(vem/q));
+        for(let j=0;j<q;j++) nasce(o, entradaDaCidade(mo, k++), est, porBonde, 'visitante');
       }
     }
     return R;
@@ -392,9 +420,20 @@ TO.ruas = (function(){
         else { resta -= falta; b.i++; b.t = 0; }
       }
       if(b.i >= b.rota.length-1){
+        /* Chegou no quarteirão do estádio: sai do mapa da cidade e passa
+           pros arredores, que é onde a noite continua (GDD §13). Daqui pra
+           frente ele não anda mais na rua nem esbarra em ninguém aqui. */
         b.chegou = true;
         const f = b.rota[b.rota.length-1];
         b.x = f.x; b.y = f.y;
+        if(!b.nosArredores){
+          b.nosArredores = true;
+          b.entrouEm = Math.round(R.minuto);
+          R.arredores.push({id:b.id, torcida:b.torcida, nome:b.nome, cor:b.cor,
+                            n:b.n, nossa:b.nossa, tag:b.tag,
+                            lado: b.tag === 'visitante' ? 'visitante' : 'mandante',
+                            entrouEm:b.entrouEm});
+        }
       }else{
         const a = b.rota[b.i], c = b.rota[b.i+1];
         b.x = a.x + (c.x-a.x)*b.t; b.y = a.y + (c.y-a.y)*b.t;
@@ -413,14 +452,19 @@ TO.ruas = (function(){
 
   function procurarEncontro(E, R){
     if(!R._mo) return null;
-    const vivos = R.bondes.filter(b=>!b.chegou && R.minuto >= b.saiEm
-                                     && b.andou >= NA_RUA);
+    const vivos = R.bondes.filter(b=>!b.chegou && !b.nosArredores
+                                     && R.minuto >= b.saiEm && b.andou >= NA_RUA);
     for(let i=0;i<vivos.length;i++)
       for(let k=i+1;k<vivos.length;k++){
         const a = vivos[i], b = vivos[k];
         if(a.torcida === b.torcida) continue;
-        const par = [a.torcida, b.torcida].sort().join('|');
-        if(R.resolvidos.includes(par + '|' + R.chave)) continue;
+        /* A chave é do par de BONDES, não de torcidas: dois bondes da
+           mesma torcida têm cada um a sua noite, e o mesmo par pode se
+           pegar de novo mais adiante — brigou, se separou, se reencontrou
+           duas ruas depois. O que impede o laço infinito é o esfriamento,
+           não um bloqueio definitivo. */
+        const par = [a.id, b.id].sort((p,q)=>p-q).join('|');
+        if((R.esfria[par] || 0) > R.minuto) continue;
         /* nos arredores do estádio todo mundo se esbarra: o cordão
            aperta a multidão num quarteirão só (GDD §12) */
         const est = pontoDoEstadio(R._mo, null);
@@ -476,11 +520,19 @@ TO.ruas = (function(){
     return m.viz.length >= 4 ? 'praca' : naRua();
   }
 
+  /* Depois da briga os dois seguem viagem, e só voltam a se enxergar
+     quando já se separaram — senão o mesmo esbarrão reabriria a cena no
+     quadro seguinte, com os discos ainda em cima um do outro. */
+  const ESFRIAMENTO = 15;      // minutos de jogo
   function resolver(E, quem){
     const R = estado(E);
     if(!R.encontro) return;
-    R.resolvidos.push(R.encontro.par + '|' + R.chave);
-    if(R.resolvidos.length > 40) R.resolvidos.shift();
+    R.esfria[R.encontro.par] = R.minuto + ESFRIAMENTO;
+    /* quem apanhou anda menos: o bonde derrotado perde gente e ritmo */
+    if(quem && quem.perdeu){
+      const b = R.bondes.find(x=>x.id === quem.perdeu);
+      if(b){ b.n = Math.max(2, Math.round(b.n*0.75)); b.apanhou = (b.apanhou||0)+1; }
+    }
     R.encontro = null;
   }
 
@@ -519,6 +571,7 @@ TO.ruas = (function(){
     }
 
     for(const b of R.bondes){
+      if(b.nosArredores) continue;      // saiu do mapa, está nos arredores
       if(!visivel(R, b)) continue;
       /* o caminho que falta, fininho */
       if(!b.chegou){
@@ -561,7 +614,7 @@ TO.ruas = (function(){
     }
   }
 
-  return {malha, caminho, localDe, ruaDoBairro, RUA_DA_CLASSE,
+  return {malha, caminho, localDe, ruaDoBairro, RUA_DA_CLASSE, ESFRIAMENTO,
           pontoDe, pontoDoEstadio, pontoDaSede, entradaDaCidade,
           estado, jogosDaPraca, montar, passo, resolver, hostis,
           porOlheiro, visivel, desenhar,
