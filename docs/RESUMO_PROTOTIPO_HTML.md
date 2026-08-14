@@ -512,6 +512,27 @@ O que **não** veio, e por quê:
   8 s de espera porque nos primeiros segundos o bonde ainda está em coluna no spawn e uma
   bomba ali derrubava doze de uma vez — foi medido, 15 caídos aos 18 s, antes de o jogador
   ter chance de abrir a formação. O estoque é metade do seu, no mínimo um.
+- **Nos arredores o humor é de cada bonde, não da cena.** Ali não há dois lados numa
+  briga marcada: há vários bondes chegando pro mesmo jogo, cada um com a sua intenção.
+  A noite **sempre** começa tranquila — ninguém desce do ônibus batendo —, e cada bonde
+  que não é o seu sorteia, pela **tensão** entre as torcidas, se veio em paz ou disposto
+  a procurar rival: 3 + tensão×0,85 por cento de chance, medido em 4% na Calmaria, 38%
+  no Atrito, 65% em Fervendo e 88% na Guerra. Quem veio disposto ainda espera entre 20%
+  e 55% do caminho até a bola rolar antes de ir — e vai mesmo, andando até o ponto do
+  rival por campo de fluxo, porque só ficar "disposto" não encontrava ninguém: sem isso
+  ele caminhava pro próprio portão e a hostilidade morria sem acontecer.
+  **O seu bonde fica de fora do sorteio**: ele te segue, briga onde você brigar, e não
+  tem programação nenhuma — foi preciso tirar a formação de dentro do `if(!J.paz)` pra
+  isso valer também em noite calma.
+  **Quem apanha decide na hora**: revida ou corre pro portão, e a conta é bravura ×
+  cabeça (`moral/12 × os meus ≥ 0,75 × os que estão em cima`), então bonde com moral 15
+  encara em desvantagem de 11 contra 15 e bonde com moral 12 na mesma situação corre.
+  Quem não foi tocado **não muda de vida** — segue na programação e entra na hora dele.
+  O `J.paz` virou valor derivado disso (basta um bonde partir pra cima), e o
+  `medirClima`, que virava a cena inteira de uma vez, não roda mais nos arredores.
+  A tensão vem do jogo: a maior tensão com as torcidas do adversário do dia, ou o pico
+  da cidade quando não há jogo marcado. Medido no fluxo real com tensão 85: cena montada
+  em paz, três dos quatro bondes hostis.
 - **Noite tranquila nos arredores é gente esperando, não bonde marchando.** Com `paz`, o
   pessoal fica de conversa em volta do próprio ponto — alvo sorteado dentro de 200 px,
   alternando parado (2 a 6 s) e andando (1,5 a 4 s) a meia velocidade — e só vai pro

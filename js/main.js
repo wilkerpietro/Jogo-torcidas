@@ -2615,6 +2615,27 @@
     }
   }
 
+  /* A tensão que vale pra noite é com a torcida do adversário do dia;
+     sem jogo marcado (amistoso, folga), vale a maior tensão da cidade,
+     que é quem tem mais chance de aparecer. */
+  function tensaoDaNoite(){
+    const e = E();
+    const T = TO.tensao;
+    if(!T) return 0;
+    const j = e.proximoJogo;
+    if(j){
+      const meu = e.torcida.clubeId;
+      const outro = j.mandante === meu ? j.visitante : j.mandante;
+      const delas = TO.mundo.torcidasDe(outro) || [];
+      let pico = 0;
+      for(const o of delas) pico = Math.max(pico, T.nivel(e, o.id));
+      if(delas.length) return pico;
+    }
+    let pico = 0;
+    for(const id in (e.tensao||{})) pico = Math.max(pico, e.tensao[id]);
+    return pico;
+  }
+
   function comecarDiaDeJogo(){
     const lista = E().membros.filter(m=>escalados.has(m.id));
     if(lista.length < 2){ aviso('Escale pelo menos dois.','ruim'); return; }
@@ -2624,8 +2645,12 @@
     const p = TO.planejamento.plano(E());
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
-      /* o plano da semana entra na cena: intenção e bombas levadas */
-      config: { escalacao: lista, intencao: p.intencao, bombas: p.bombas },
+      /* o plano da semana entra na cena: intenção e bombas levadas.
+         A tensão vai junto porque é ela que diz quantos bondes chegam
+         nos arredores dispostos a procurar rival — noite de Calmaria
+         quase não tem, noite de Guerra quase só tem. */
+      config: { escalacao: lista, intencao: p.intencao, bombas: p.bombas,
+                tensao: tensaoDaNoite() },
       aoTerminar: fecharDiaDeJogo
     });
   }

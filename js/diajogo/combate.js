@@ -131,7 +131,12 @@ TO.diaJogo.combate = (function(){
       sobPressao:0, fracPM:0, avisouPM:false,
       recuando:false, recuoVisitante:false,
       /* quem sai pra atacar não tem noite tranquila (GDD §15.4) */
+      /* Nos arredores a noite SEMPRE começa tranquila: ninguém desce do
+         ônibus batendo, e quem veio disposto ainda vai levar um tempo
+         pra ir atrás. Nas outras cenas o interruptor continua sendo da
+         cena inteira, porque lá a briga já é o motivo de estar ali. */
       paz: cfg.paz!==undefined ? cfg.paz
+         : !D.id ? true
          : cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
       /* onde a briga cai: arredores do estádio, praça ou rua. Muda o
@@ -148,7 +153,9 @@ TO.diaJogo.combate = (function(){
       versaoGrades:0,
       /* cena com gatilho começa dormindo: quem defende está dentro e
          ainda não sabe de nada. Sem gatilho, tudo acordado, como sempre. */
-      acordou: !D.gatilho
+      acordou: !D.gatilho,
+      /* nos arredores o humor não é da cena, é de cada bonde */
+      bondes:{}
     };
 
     for(const g of J.grades){ g.hpMax=P.vidaGrade; g.hp=P.vidaGrade; }
@@ -202,6 +209,42 @@ TO.diaJogo.combate = (function(){
     }
 
     /* =======================================================
+       O HUMOR DE CADA BONDE (só nos arredores)
+       Ali não há dois lados numa briga marcada: há vários bondes
+       chegando pro mesmo jogo, e cada um vem com a sua intenção. A
+       noite SEMPRE começa tranquila — ninguém sai do ônibus batendo —,
+       mas quem veio disposto vai procurar o rival em algum momento, e
+       é a tensão entre as torcidas que diz quantos vieram assim.
+
+       O seu bonde fica de fora do sorteio: ele te segue, é o que você
+       manda, e não tem programação própria nenhuma.
+       ======================================================= */
+    if(fugaPelaEntrada()){
+      const tensao = cfg.tensao!==undefined ? cfg.tensao : 20;
+      /* Calmaria quase não gera hostil; Guerra gera quase todo mundo */
+      const chance = Math.min(90, 3 + tensao*0.85);
+      const ateJogo = P.minutosAteJogo/0.6;
+      for(const s of D.spawns){
+        const b = {id:s.id, rot:s.rot||s.id, lado:s.lado,
+                   jogador:!!s.jogador, humor:'paz', agirEm:Infinity};
+        if(!s.jogador && U.rng()*100 < chance){
+          b.humor='atacar';
+          /* e mesmo esse não sai atrás de ninguém no primeiro segundo:
+             espera, mistura-se, e só depois vai. A noite começa igual
+             pros dois casos — o que muda é como ela termina.
+
+             A janela para em 55% do caminho: quem sai depois disso
+             chega no ponto do rival quando o rival já entrou, e a
+             hostilidade não vira nada. */
+          b.agirEm = U.entre(0.20, 0.55) * ateJogo;
+          const inimigos = D.spawns.filter(o=>o.lado!==s.lado);
+          if(inimigos.length) b.alvo = U.escolher(inimigos).id;
+        }
+        J.bondes[s.id]=b;
+      }
+    }
+
+    /* =======================================================
        NOITE TRANQUILA NOS ARREDORES
        Sem briga, ninguém marcha pro portão no primeiro segundo: fica
        de conversa em volta de onde chegou e entra na hora de entrar.
@@ -210,7 +253,7 @@ TO.diaJogo.combate = (function(){
        segundos de diferença. Torcida inteira partindo no mesmo quadro
        é a coisa mais artificial que essa cena pode fazer.
        ======================================================= */
-    if(J.paz && (!D.id || D.id==='arredores')){
+    if(fugaPelaEntrada()){
       const grupos=D.spawns.map(s=>s.id);
       const [cedo, tarde]=P.entrarFaltando;
       /* a janela é fechada: o primeiro escalão sai faltando 25 min e o
@@ -261,6 +304,7 @@ TO.diaJogo.combate = (function(){
       return;
     }
     conferirGatilho(J);
+    conferirBondes(J);
     moverLider(J,dt,teclas,podeControlar);
     moverDiscos(J,dt);
     moverPoliciais(J,dt);
@@ -285,6 +329,64 @@ TO.diaJogo.combate = (function(){
      deixava o vencedor sozinho no cenário sem nada pra fazer.
      ======================================================= */
   const dePe = (J,lado)=> J.discos.filter(d=>d.lado===lado && d.vivo).length;
+
+  /* =======================================================
+     QUEM ESTÁ DISPOSTO A BATER
+     O seu bonde sempre está: ele te segue e briga onde você
+     brigar. Os outros dependem do humor do próprio bonde e da
+     hora dele. Cena que não tem bondes (praça, rua, bar) cai no
+     interruptor de sempre, que lá continua sendo da cena inteira.
+     ======================================================= */
+  function agressivo(J, d){
+    if(d.doJogador) return true;
+    const b=J.bondes[d.spawn];
+    if(!b) return !J.paz;
+    return b.humor==='atacar' && J.t>=b.agirEm;
+  }
+
+  /* Levou pancada: o bonde decide na hora se revida ou se corre pro
+     portão. Quem não foi tocado não muda de vida — é o vizinho vendo
+     briga do outro lado da esplanada e continuando na fila. */
+  function atacado(J, d){
+    const b=J.bondes[d.spawn];
+    if(!b || b.jogador || b.humor!=='paz') return;
+    const meus=J.discos.filter(x=>x.spawn===b.id && x.vivo);
+    if(!meus.length) return;
+    const moral=meus.reduce((s,x)=>s+x.moral,0)/meus.length;
+    let emCima=0;
+    for(const x of J.discos){
+      if(!x.vivo || !inimigos(x.lado,b.lado)) continue;
+      if(meus.some(m=>U.dist(m.x,m.y,x.x,x.y)<220)) emCima++;
+    }
+    /* Não é só contar cabeça: bonde com moral alta encara em
+       desvantagem e bonde desanimado corre mesmo em igualdade. A moral
+       padrão é 12, então bravura 1 é o time médio. */
+    const bravura = moral/12;
+    const reage = meus.length*bravura >= emCima*0.75;
+    b.humor = reage ? 'atacar' : 'fugir';
+    b.agirEm = J.t;
+    /* correr aqui é entrar: o portão é a saída de quem não quer briga */
+    if(!reage) for(const m of meus) m.entraEm = J.t;
+    logar(J, `${b.rot}: ${reage?'veio pra cima':'correu pro portão'}.`,
+          b.lado==='mandante'?'r':'a');
+  }
+
+  /* O clima da cena passa a ser a soma dos humores, e não um
+     interruptor: basta um bonde partir pra cima pra noite deixar de
+     ser tranquila, e os outros continuam na programação deles. */
+  function conferirBondes(J){
+    const ids=Object.keys(J.bondes);
+    if(!ids.length) return;
+    const brigando=ids.some(k=>{
+      const b=J.bondes[k];
+      return b.humor==='atacar' && !b.jogador && J.t>=b.agirEm;
+    });
+    if(J.paz && brigando){
+      J.paz=false;
+      logar(J,'O clima virou — tem bonde procurando briga.','r');
+    }
+    if(!J.paz && !brigando && J.caidos.mandante+J.caidos.visitante===0) J.paz=true;
+  }
 
   function conferirFim(J){
     if(J.fase!=='ativo') return;
@@ -527,12 +629,22 @@ TO.diaJogo.combate = (function(){
         // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
         campo = campoDoSpawn(s); usarCampo=true;
-      } else if(d.vadiando && J.paz && J.t < d.entraEm){
+      } else if(d.vadiando && !agressivo(J,d) && J.t < d.entraEm){
         vadiar(J, d); ax=d.vagoX; ay=d.vagoY;
       } else {
         const alvo = inimigoAlcancavel(J,d, d.doJogador?110:130);
-        if(alvo && !J.paz){ ax=alvo.x; ay=alvo.y; }
-        else if(d.doJogador && lider && !J.paz){
+        const meuBonde = J.bondes[d.spawn];
+        if(alvo && agressivo(J,d)){ ax=alvo.x; ay=alvo.y; }
+        /* veio pra brigar e não tem ninguém por perto: vai até onde o
+           rival está. Sem isto ele só ficava disposto — andava pro
+           próprio portão e a hostilidade não encontrava ninguém. */
+        else if(agressivo(J,d) && meuBonde && meuBonde.alvo){
+          const s=D.spawns.find(x=>x.id===meuBonde.alvo);
+          if(s){ campo=campoDoSpawn(s); usarCampo=true; }
+        }
+        /* o seu bonde te segue sempre, com ou sem briga no ar: ele não
+           tem programação própria, ele tem você */
+        else if(d.doJogador && lider){
           const i=meus.indexOf(d), s=sl[i<0?0:i]||{x:0,y:0};
           /* O slot é geometria pura e pode cair em cima de prédio, ou
              fora da cena quando o líder está colado numa borda. Nesse
@@ -605,7 +717,7 @@ TO.diaJogo.combate = (function(){
       }
 
       /* quem está de conversa anda devagar: é passeio, não deslocamento */
-      const passeio = d.vadiando && J.paz && J.t < d.entraEm;
+      const passeio = d.vadiando && !agressivo(J,d) && J.t < d.entraEm;
       const vel=P.velocidade*(d.fugindo?1.25:recua?1.15:passeio?0.5:1)
                 *(0.75+nivelMoral(d.moral)*0.25);
       if(!dirx && !diry && d.acomodado){
@@ -837,16 +949,18 @@ TO.diaJogo.combate = (function(){
       if(a.lado==='mandante'&&J.recuando) continue;
       if(a.lado==='visitante'&&J.recuoVisitante) continue;
 
-      for(const b of vivos){
+      const bate = agressivo(J,a);
+      if(bate) for(const b of vivos){
         if(a===b||!inimigos(a.lado,b.lado)) continue;
         if(U.dist(a.x,a.y,b.x,b.y)>a.r+b.r+5) continue;
         const bruto=(a.forca*nivelMoral(a.moral)*U.entre(0.8,1.2))-b.defesa*0.5;
         b.hp-=Math.max(1,bruto)*P.dano*dt*(b.fugindo?1.6:1);
         b.tremor=Math.min(6,b.tremor+0.6); a.golpe=0.12; a.hostil=3.0;
+        atacado(J,b);
         if(b.hp<=0) derrubar(J,b);
       }
 
-      for(const g of J.grades){
+      if(bate) for(const g of J.grades){
         if(g.hp<=0 || g.tipo==='fila') continue;   // fila não quebra
         if(U.dist(g.x,g.y,a.x,a.y)>a.r+g.meia+4) continue;
         g.hp-=a.forca*nivelMoral(a.moral)*P.dano*dt*1.6;
@@ -951,7 +1065,9 @@ TO.diaJogo.combate = (function(){
   }
 
   function medirClima(J,dt){
-    if(!J.paz) return;
+    /* nos arredores quem diz o clima é conferirBondes: lá a cena não
+       vira de uma vez, vira bonde por bonde */
+    if(!J.paz || Object.keys(J.bondes).length) return;
     J.cdClima=(J.cdClima||0)-dt;
     if(J.cdClima>0) return;
     J.cdClima=0.35;
@@ -1035,7 +1151,8 @@ TO.diaJogo.combate = (function(){
       const alvos=J.discos.filter(d=>d.vivo&&inimigos(p.lado,d.lado));
       if(p.tipo==='pedra'){
         for(const d of alvos) if(U.dist(d.x,d.y,p.x,p.y)<32){
-          d.hp-=22*P.dano; d.tremor=5; if(d.hp<=0) derrubar(J,d); break;
+          d.hp-=22*P.dano; d.tremor=5; atacado(J,d);
+          if(d.hp<=0) derrubar(J,d); break;
         }
         for(const g of J.grades) if(g.hp>0&&g.tipo!=='fila'&&U.dist(g.x,g.y,p.x,p.y)<26){g.hp-=30;g.tremor=4;break;}
       } else {
@@ -1043,7 +1160,7 @@ TO.diaJogo.combate = (function(){
         for(const d of alvos){
           const dist=U.dist(d.x,d.y,p.x,p.y);
           if(dist<92){
-            d.hp-=(58-dist*0.4)*P.dano; d.atordoado=1.1; d.tremor=6;
+            d.hp-=(58-dist*0.4)*P.dano; d.atordoado=1.1; d.tremor=6; atacado(J,d);
             const a=Math.atan2(d.y-p.y,d.x-p.x);
             d.vx=Math.cos(a)*150; d.vy=Math.sin(a)*150;
             if(d.hp<=0) derrubar(J,d);
@@ -1156,7 +1273,8 @@ TO.diaJogo.combate = (function(){
      ======================================================= */
   function iaArremesso(J, dt){
     const b=J.bracoRival;
-    if(!b || !b.vivo || b.fugindo || J.paz || J.t < J.cdRival) return;
+    if(!b || !b.vivo || b.fugindo || J.t < J.cdRival) return;
+    if(!agressivo(J,b)) return;
     if(b.guarda && !J.acordou) return;
 
     const alvos=J.discos.filter(d=>d.vivo && inimigos(b.lado,d.lado) && !d.fugindo);
@@ -1296,5 +1414,5 @@ TO.diaJogo.combate = (function(){
   return {FORMACOES, Disco, criarEstado, passo, desenhar,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
-          iaArremesso, alvoDeFuga, conferirFim, dePe};
+          iaArremesso, alvoDeFuga, conferirFim, dePe, agressivo, atacado};
 })();
