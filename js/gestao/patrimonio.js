@@ -14,14 +14,11 @@
    prestígio na rua. Bomba é a exceção: ela vira estoque do
    dia de jogo.
 
-   PREÇOS. As receitas e manutenções mensais vêm do GDD e já
-   estavam em financeiro.js. Os preços de AQUISIÇÃO não estão
-   no repositório (o GDD V3 não está aqui), então foram
-   calculados a partir delas por uma regra só: o imóvel se
-   paga em torno de doze meses de lucro líquido, no bairro e
-   na fase médios. Quem tiver o número oficial troca a
-   tabela — a regra está escrita ao lado de cada preço pra
-   saber o que muda junto.
+   PREÇOS. Todos vêm do GDD V4 §8.1 e §8.3, com uma exceção
+   anotada no lugar (subsede, que o GDD não precifica).
+   Imóvel neste jogo é caro de propósito: um bar custa
+   cinquenta meses do que ele rende, então comprar é decisão
+   de temporada e não de semana.
    ========================================================= */
 window.TO = window.TO || {};
 
@@ -34,55 +31,59 @@ TO.patrimonio = (function(){
      ------------------------------------------------------- */
 
   /* Ampliar a sede é a compra que destrava as outras: teto de
-     membros, diretoria, treino e quantos pontos comerciais cabem.
-     Preço = ~10 meses da manutenção nova, que é o que o GDD usa
-     pra medir o tamanho do salto. */
+     membros, diretoria, treino e quantos pontos comerciais cabem —
+     e não só quantos, também de que nível. GDD V4 §8.1. */
   const SEDE = [null,
     null,                                        // n1 é onde se começa
-    {custo: 20000,  rot:'Sede nível 2'},
-    {custo: 45000,  rot:'Sede nível 3'},
-    {custo: 90000,  rot:'Sede nível 4'},
-    {custo:160000,  rot:'Sede nível 5'}
+    {custo: 40000,  rot:'Sede nível 2'},
+    {custo:100000,  rot:'Sede nível 3'},
+    {custo:200000,  rot:'Sede nível 4'},
+    {custo:400000,  rot:'Sede nível 5'}
   ];
 
-  /* Quantos pontos de cada tipo cabem por nível de sede. Sem teto,
-     a torcida de nível 1 compraria a cidade inteira e o resto do
-     jogo perderia a graça. */
+  /* Quanto de cada coisa cabe por nível de sede (GDD V4 §8.1). Duas
+     dimensões, não uma: `qtd` é quantos pontos, `nivel` é até que
+     nível eles podem chegar. Bar nível 3 só existe em sede nível 5. */
   const TETO = {
-    bar:     [null, 1, 2, 3, 4, 6],
-    loja:    [null, 0, 1, 2, 3, 5],
-    subsede: [null, 0, 1, 2, 4, 6]
+    bar:     [null, {qtd:1, nivel:1}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
+                    {qtd:2, nivel:2}, {qtd:2, nivel:3}],
+    loja:    [null, {qtd:0, nivel:0}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
+                    {qtd:2, nivel:2}, {qtd:2, nivel:3}],
+    /* subsede na cidade e fora somadas: a cena não distingue as duas
+       ainda, então o teto é a soma das duas colunas do GDD */
+    subsede: [null, {qtd:0, nivel:1}, {qtd:1, nivel:1}, {qtd:2, nivel:1},
+                    {qtd:5, nivel:1}, {qtd:8, nivel:1}]
   };
 
-  /* Aquisição e ampliação. O lucro mensal de referência está no
-     comentário: é dele que sai o preço (≈12 meses). */
+  /* GDD V4 §8.3. O preço de cada nível é o preço de ter o ponto
+     naquele nível, então ampliar custa o cheio do nível novo. */
   const PONTO = {
     bar: {
       rot:'Bar', plural:'bares',
-      /* n1 rende 800 e custa 120 → 680/mês */
-      compra: 8000,
-      /* n2: +580/mês · n3: +1290/mês */
-      ampliar:[null, 7000, 15000, null]
+      compra: 40000,
+      ampliar:[null, 80000, 150000, null]
     },
     loja: {
       rot:'Loja', plural:'lojas',
-      /* n1 rende 1000, custa 150 de manutenção e 250 de insumo → 600 */
-      compra: 9000,
-      /* n2: +600/mês · n3: +960/mês */
-      ampliar:[null, 8000, 13000, null]
+      compra: 50000,
+      ampliar:[null, 100000, 150000, null]
     },
     subsede: {
       rot:'Subsede', plural:'subsedes',
-      /* 600 de receita, 90 de manutenção → 510/mês, e ainda dá pé
-         na zona pra recrutar */
-      compra: 6000,
+      /* ÚNICO PREÇO INFERIDO: o GDD V4 §8.3 descreve o que a subsede
+         faz mas não diz quanto custa. Ela rende 600/mês contra 90 de
+         manutenção e dobra o recrutamento da zona — na escala dos
+         outros pontos (bar 40k pra 680/mês), 30k é o equivalente. */
+      compra: 30000,
       ampliar:[null, null]
     }
   };
 
-  /* A fábrica de material não fatura: ela corta o custo de material
-     por membro, que é despesa fixa e cresce com a torcida. */
-  const FABRICA = {custo:35000, corte:0.4, rot:'Fábrica de material'};
+  /* A fábrica não corta material: ela é fábrica de produto de loja.
+     Triplica o faturamento das lojas e derruba o insumo em 60%
+     (GDD V4 §8.3), e só existe em sede nível 5. */
+  const FABRICA = {custo:400000, sede:5, multLoja:3, corteInsumo:0.6,
+                   rot:'Fábrica'};
 
   const nivelSede = E => E.torcida.sedeNivel;
   const cont = (E, tipo) => (F().patrimonio(E)[PONTO[tipo].plural] || []).length;
@@ -111,22 +112,21 @@ TO.patrimonio = (function(){
     for(const b of p.bares) fora.push({tipo:'bar',
       rot:`Bar (nível ${b.nivel})${b.gratis?' · da sede':''}`, bairro:b.bairro,
       receita: REC.bar[b.nivel]*mult(b.bairro)*fator, despesa: MAN.bar[b.nivel]});
+    const fab = p.fabrica ? FABRICA : null;
     for(const l of p.lojas) fora.push({tipo:'loja',
-      rot:`Loja (nível ${l.nivel})${l.semInsumo?' · sem insumo':''}`, bairro:l.bairro,
-      receita: l.semInsumo ? 0 : REC.loja[l.nivel]*mult(l.bairro)*fator,
-      despesa: MAN.loja[l.nivel] + REC.loja[l.nivel]*INSUMO});
+      rot:`Loja (nível ${l.nivel})${l.semInsumo?' · sem insumo':fab?' · fábrica':''}`,
+      bairro:l.bairro,
+      receita: l.semInsumo ? 0
+             : REC.loja[l.nivel]*mult(l.bairro)*fator*(fab?fab.multLoja:1),
+      despesa: MAN.loja[l.nivel]
+             + REC.loja[l.nivel]*INSUMO*(fab?1-fab.corteInsumo:1)});
     for(const s of p.subsedes) fora.push({tipo:'subsede', rot:'Subsede', bairro:s.bairro,
       receita: REC.subsede*mult(s.bairro)*fator, despesa: MAN.subsede});
 
-    if(p.fabrica) fora.push({tipo:'fabrica', rot:FABRICA.rot, bairro:'',
-      receita:0, despesa:0,
-      nota:`corta ${Math.round(FABRICA.corte*100)}% do material`});
-
     /* material por membro entra como linha: é despesa de estrutura,
        não some só porque não tem endereço */
-    const material = E.membros.length*F().MATERIAL*(p.fabrica ? 1-FABRICA.corte : 1);
     fora.push({tipo:'material', rot:`Material (${E.membros.length} membros)`,
-               bairro:'', receita:0, despesa:material});
+               bairro:'', receita:0, despesa:E.membros.length*F().MATERIAL});
 
     /* o que a torcida já comprou de faixa, bandeirão e bateria também
        custa todo mês — a aba Materiais lista o que é, aqui entra o preço */
@@ -163,9 +163,9 @@ TO.patrimonio = (function(){
     for(const tipo of ['bar','loja','subsede']){
       const cfg = PONTO[tipo], tem = cont(E,tipo), teto = TETO[tipo][n];
       lista.push({id:'comprar:'+tipo, rot:`Abrir ${cfg.rot.toLowerCase()}`,
-        nota:`${tem} de ${teto} pela sede nível ${n}`,
+        nota:`${tem} de ${teto.qtd} pela sede nível ${n}`,
         custo:cfg.compra,
-        trava:trava(cfg.compra, tem>=teto ? 'a sede não comporta mais' : null)});
+        trava:trava(cfg.compra, tem>=teto.qtd ? 'a sede não comporta mais' : null)});
 
       /* ampliar o ponto mais fraco de cada tipo: é o que o jogador
          faria de qualquer jeito, e evita uma lista de dez botões */
@@ -175,14 +175,17 @@ TO.patrimonio = (function(){
       if(alvo) lista.push({
         id:'ampliar:'+tipo, rot:`Ampliar ${cfg.rot.toLowerCase()} para nível ${alvo.nivel+1}`,
         nota:alvo.bairro ? `em ${alvo.bairro}` : '',
-        custo:cfg.ampliar[alvo.nivel], trava:trava(cfg.ampliar[alvo.nivel])});
+        custo:cfg.ampliar[alvo.nivel],
+        trava:trava(cfg.ampliar[alvo.nivel],
+          alvo.nivel+1 > teto.nivel ? `sede nível ${n} não comporta ${cfg.rot.toLowerCase()} nível ${alvo.nivel+1}` : null)});
     }
 
     if(!p.fabrica) lista.push({
       id:'fabrica', rot:FABRICA.rot,
-      nota:`corta ${Math.round(FABRICA.corte*100)}% do material de todo mês`,
+      nota:`triplica o faturamento das lojas e corta ${Math.round(FABRICA.corteInsumo*100)}% do insumo`,
       custo:FABRICA.custo,
-      trava:trava(FABRICA.custo, n<3 ? 'precisa de sede nível 3' : null)});
+      trava:trava(FABRICA.custo,
+        n < FABRICA.sede ? `precisa de sede nível ${FABRICA.sede}` : null)});
 
     return lista;
   }

@@ -97,10 +97,12 @@ TO.financeiro = (function(){
     for(const b of p.bares)
       juntar(rec, `Bar${b.bairro?' — '+b.bairro:''} (n${b.nivel})`,
              RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM);
+    /* GDD §8.3: a fábrica triplica o que a loja fatura */
+    const multFab = p.fabrica ? (TO.patrimonio ? TO.patrimonio.FABRICA.multLoja : 3) : 1;
     for(const l of p.lojas){
       if(l.semInsumo){ des.push({rot:`Loja — ${l.bairro}: sem insumo`, v:0, nota:true}); continue; }
-      juntar(rec, `Loja${l.bairro?' — '+l.bairro:''} (n${l.nivel})`,
-             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM);
+      juntar(rec, `Loja${l.bairro?' — '+l.bairro:''} (n${l.nivel})${multFab>1?' · fábrica':''}`,
+             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*multFab*SEM);
     }
     for(const s of p.subsedes)
       juntar(rec, `Subsede${s.bairro?' — '+s.bairro:''}`,
@@ -115,14 +117,14 @@ TO.financeiro = (function(){
     for(const s of p.subsedes) manutCom += MANUT.subsede;
     juntar(des, 'Manutenção do comércio', manutCom*SEM);
 
+    /* e corta 60% do insumo, que é o outro lado do mesmo negócio */
+    const corteIns = p.fabrica ? (TO.patrimonio ? TO.patrimonio.FABRICA.corteInsumo : 0.6) : 0;
     let insumo = 0;
-    for(const l of p.lojas) insumo += RECEITA.loja[l.nivel]*INSUMO;
-    juntar(des, 'Insumos das lojas', insumo*SEM);
+    for(const l of p.lojas) insumo += RECEITA.loja[l.nivel]*INSUMO*(1-corteIns);
+    juntar(des, `Insumos das lojas${corteIns?' · fábrica':''}`, insumo*SEM);
 
-    /* a fábrica corta o material de todo mês; sem ela, nada muda */
-    const corte = p.fabrica ? (TO.patrimonio ? TO.patrimonio.FABRICA.corte : 0.4) : 0;
-    juntar(des, `Material (${E.membros.length} membros)${corte?' · fábrica':''}`,
-           E.membros.length*MATERIAL*(1-corte)*SEM);
+    juntar(des, `Material (${E.membros.length} membros)`,
+           E.membros.length*MATERIAL*SEM);
 
     /* bandeirão, faixa e bateria se guardam e se consertam */
     if(TO.patrimonio){

@@ -608,17 +608,19 @@ O que **não** veio, e por quê:
   bandeirão em quatro, bandeira, bateria em dois níveis e a pirotecnia que já existia.
   Cada item diz o que vale — onde a satisfação vai descansar, quanto rende de reputação
   e o que custa de guarda por mês.
-  **Os preços de aquisição não vêm do GDD V3, que não está no repositório.** Saíram de
-  uma regra só, escrita no cabeçalho do módulo: o imóvel se paga em torno de doze meses
-  de lucro líquido, no bairro e na fase médios — bar R$ 8.000 pra R$ 680/mês, loja
-  R$ 9.000 pra R$ 600, subsede R$ 6.000 pra R$ 510, ampliação de sede em 20/45/90/160 mil
-  e fábrica de material a R$ 35.000 (corta 40% do custo de material de todo mês, e exige
-  sede nível 3). Quem tiver o número oficial troca a tabela — a regra fica ao lado de
-  cada preço justamente pra saber o que muda junto.
-  Teto por nível de sede pra torcida nível 1 não comprar a cidade: bar 1/2/3/4/6, loja
-  0/1/2/3/5, subsede 0/1/2/4/6. Botão travado sempre diz **por quê** ("falta caixa", "a
-  sede não comporta mais", "precisa de sede nível 3") — cinza sem explicação é o que faz
-  o jogador achar que o jogo quebrou.
+  **Os preços vêm do GDD V4 §8.1 e §8.3** — a primeira versão desta tela usou números
+  inferidos porque o GDD não estava no repositório, e os oficiais são de outra ordem de
+  grandeza: sede em 40/100/200/400 mil (era 20/45/90/160), bar 40/80/150 mil (era 8/7/15),
+  loja 50/100/150 mil (era 9/8/13). Imóvel aqui custa cerca de **cinquenta meses** do que
+  rende, não doze — comprar é decisão de temporada, não de semana. A fábrica também mudou
+  de função: não corta material, ela **triplica o faturamento das lojas e derruba o insumo
+  em 60%**, custa R$ 400.000 e exige sede nível 5.
+  Um único preço continua inferido e está anotado no código: a **subsede**, que o GDD
+  descreve mas não precifica — R$ 30.000, na mesma escala dos outros pontos.
+  O teto por nível de sede agora tem duas dimensões, como no GDD: **quantos** pontos e
+  **até que nível**. Bar nível 3 só existe em sede nível 5. Botão travado sempre diz
+  **por quê** ("falta caixa", "a sede não comporta mais", "sede nível 3 não comporta bar
+  nível 3") — cinza sem explicação é o que faz o jogador achar que o jogo quebrou.
   **O material precisava pagar em alguma coisa, e não em três.** Ele mexe em exatamente
   três lugares, todos existentes: (1) a satisfação **descansa** mais alto — `esfriar` já
   puxava tudo pra 11 toda semana, e agora o alvo é 11 + festa×0,45, com teto em 15, então
@@ -644,6 +646,48 @@ O que **não** veio, e por quê:
   O que se guarda mora em `E.patrimonio.itens`; a pirotecnia continua em `E.estoque`,
   que é de onde o planejamento da semana tira as bombas. São duas gavetas porque já eram
   duas antes desta tela.
+
+- **As 138 torcidas da IA pagam a mesma conta que o jogador** (`js/mundo/tensao.js`).
+  Antes a economia delas era uma linha — R$ 24 líquidos por cabeça — e o resultado,
+  medido em vinte anos, era que toda torcida crescia ~14 membros por ano do tamanho que
+  fosse: a de bairro alcançava a Gaviões e a distância entre a maior e a menor caía de
+  12,5× pra 2,1×. Sem estrutura não há custo fixo nem teto, e é a estrutura que decide os
+  dois. Agora cada uma tem **sede com nível, bar, loja, subsede e fábrica**, mensalidade
+  pela proporção de cargos do §5.1 (dá R$ 45 por cabeça, derivada e não mágica),
+  manutenção, insumo e material — tudo pela tabela do GDD V4.
+  Duas coisas limitam o tamanho, e a segunda é a que importa: o teto da sede (§8.1) e o
+  **teto da praça** (§6.2). Medido nas 139 torcidas da fonte, a militância fica em 0,23
+  membro por mil torcedores do clube na mediana e 1,33 no caso mais saturado; o teto usa
+  0,55, então a mediana ainda pode dobrar e quem já esgotou a praça não cresce mais.
+  Em cem anos, **133 das 138 terminam encostadas no teto da praça e não no da sede** —
+  Os Farrapos, de um clube com 15 mil torcedores, fica nos 20 membros que tinha, e a
+  Jovem Fla chega aos 500 do nível 5. A distância entre a maior e a menor **sobe** pra
+  25×, e o mundo estabiliza por volta de 2066 e não se move mais.
+  Os **arquétipos do §21.1** deixaram de ser lista morta: cada um compra coisa diferente
+  (a empresária loja, bar e subsede; a agressiva só bar) e guarda uma reserva diferente
+  antes de assinar. Medido: a diplomática termina com 4,3 subsedes e a agressiva com
+  nenhuma.
+  Duas quebras apareceram na primeira medição de cem anos e foram consertadas.
+  **Quinze torcidas faliram até o piso de 8 membros** porque a reserva do arquétipo era
+  um múltiplo *menor* que 1 — a agressiva assinava uma fábrica de R$ 400.000 com
+  R$ 240.000 no caixa e nunca mais saía do vermelho, perdendo 3% do efetivo por semana.
+  E o **caixa continuava empilhando** depois de tudo comprado: mediana de R$ 3,9 milhões
+  e subindo em linha reta desde 2066, porque não havia no que gastar. A torneira é a do
+  próprio GDD (§7.4 e §9): quando não sobra o que comprar, queima 6% do que passa de um
+  ano de despesa em material, pirotecnia, festa e estrada. Acha o equilíbrio sozinha em
+  qualquer tamanho — a mediana fica em R$ 67 mil e não anda mais.
+- **A relação entre duas torcidas da IA passou a existir** — antes só a tensão andava, e
+  tensão esfria em três semanas, então uma rivalidade de trinta anos de porrada terminava
+  exatamente onde começou. `E.relacoesDelas` nasce do grafo importado e se move com as
+  brigas e as tréguas, com o mesmo retorno lento pro valor natural que a nossa tem.
+  **E mesmo assim ela quase não anda, por aritmética e não por bug**: o mundo gera três
+  episódios por semana espalhados por 4.396 pares, então um par qualquer é sorteado uma
+  vez a cada trinta anos, enquanto a relação volta ao normal a 5% por semana — cinco
+  meses. Medido em cem anos: 3.101 dos 3.121 pares terminaram a menos de 2 pontos de onde
+  começaram e nenhum trocou de faixa. O conserto é decisão de design e por isso não foi
+  aplicado: ou o mundo gera muito mais episódios (e o ticker vira ruído), ou a diplomacia
+  roda num trilho próprio, sem notícia, e o ticker segue com os três de sempre — esta é a
+  recomendada.
 
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
 aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no
