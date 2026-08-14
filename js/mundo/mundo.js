@@ -250,6 +250,34 @@ TO.mundo = (function(){
     return (f.nome||'').split(/\s+/).map(p=>p[0]).join('').slice(0,3).toUpperCase();
   }
 
+  /* A SIGLA DA TORCIDA — não a do clube.
+     O campo `sigla` do dado é a do TIME: Gaviões traz "SCCP", Camisa 12
+     traz "SCCP" e Pavilhão 9 traz "SCCP". No mapa de dia de jogo isso
+     fazia as três organizadas do Corinthians virarem o mesmo rótulo, e
+     o jogador olhava a rua e via uma torcida só. Aqui a sigla sai do
+     nome da própria torcida:
+
+       · nome de uma palavra vale por si  — GAVIÕES, BAMOR, MOFI
+       · nome de várias vira as iniciais  — Mancha Verde → MV,
+         Movimento Uniformizado Cruzmaltino → MUC
+
+     Artigo e preposição não contam. Número entra inteiro (Camisa 12 é
+     C12, não C1) e palavra que já é sigla entra inteira (Leões da TUF é
+     LTUF, Ultras do ABC é UABC). Conferido nas 140 torcidas: nenhuma
+     praça tem duas com a mesma sigla. */
+  const SEM_PESO = new Set(['da','de','do','das','dos','e','a','o','as','os','em','no','na']);
+  function siglaTorcida(t){
+    const nome = (typeof t === 'string' ? t : (t && t.nome) || '').trim();
+    if(!nome) return '';
+    const palavras = nome.split(/[\s/\-]+/).filter(Boolean);
+    const fortes = palavras.filter(p=>!SEM_PESO.has(p.toLowerCase()));
+    const lista = fortes.length ? fortes : palavras;
+    if(lista.length === 1) return lista[0].toUpperCase();
+    return lista.map(p=>
+      /^\d+$/.test(p) || (p.length >= 2 && p === p.toUpperCase())
+        ? p : p[0].toUpperCase()).join('');
+  }
+
   function adversario(idClube){
     const meu = time(idClube);
     if(!meu) return T()[0];
@@ -271,7 +299,8 @@ TO.mundo = (function(){
           bairrosPorZona, baseDeRecrutamento,
           estadio, estadiosEm, estadioDoClube,
           TIPOS, valorInicial, statusDoValor, relacaoBase, estiloRelacao, relacoesDe,
-          influencia, territorios, ficha, sigla, adversario, divisoes, regioes,
+          influencia, territorios, ficha, sigla, siglaTorcida, adversario,
+          divisoes, regioes,
           get parametros(){return D().parametros || {};},
           get todasTorcidas(){return O();},
           get todosTimes(){return T();},

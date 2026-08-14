@@ -860,6 +860,35 @@ O que **não** veio, e por quê:
   arredores"; sobrou a cena, em tela cheia sobre o mapa, com os comandos num HUD por cima
   do canvas em vez de numa coluna ao lado.
 
+- **Cada torcida com a sua sigla e a sua cor no dia de jogo.** A queixa era que as
+  organizadas de segundo e terceiro escalão não apareciam no mapa. Medido: elas
+  **apareciam** — 287 aparições em 60 dias de jogo em quatro praças, nenhuma faltando.
+  O que não dava era distinguir uma da outra.
+  **A sigla era a do CLUBE.** O campo `sigla` do dado traz o time, então Gaviões,
+  Camisa 12 e Pavilhão 9 mostravam as três "SCCP": o jogador olhava a rua e via uma
+  torcida só. Agora a sigla sai do nome da própria torcida — nome de uma palavra vale por
+  si (GAVIÕES, MOFI, INDEPENDENTE), nome de várias vira as iniciais (Mancha Verde → MV,
+  Movimento Uniformizado Cruzmaltino → MUC). Artigo e preposição não contam; número entra
+  inteiro (Camisa 12 é C12, não C1) e palavra que já é sigla entra inteira (Leões da TUF é
+  LTUF). Nas 140 torcidas nenhuma praça tem duas siglas iguais; o que ainda colidia era
+  visitante de outro mapa — Esquadrão Atleticano e Esquadrão Alvinegro são as duas "EA" e
+  se cruzam quando o Atlético recebe o interior de Minas —, e aí a segunda cresce pela
+  última palavra: EA vira EAL.
+  **A cor era sempre `cores[0]`, que é a paleta do clube.** Duas consequências: as
+  organizadas do mesmo time saíam idênticas, e em São Paulo quatro torcidas de clubes
+  diferentes eram todas brancas, porque branco é a primeira cor de meia dúzia de paletas —
+  a Mancha Verde, do Palmeiras, saía branca. Agora cada torcida da noite escolhe, na ordem
+  da própria paleta (`cores[0]`, `cores[1]`, `detalhe`), a primeira que ninguém pegou;
+  escolhe primeiro a nossa, depois as visitantes (é quem o jogador precisa achar), depois
+  as de casa, sempre da maior pra menor — ordem fixa, então a mesma noite pinta igual toda
+  vez que a tela reabre. Quando a paleta inteira já foi, o tom muda: num clássico de clube
+  preto e branco as três organizadas vestem as mesmas duas cores de verdade, e aí quem
+  separa é a sigla. Medido nas mesmas 60 noites: **zero siglas repetidas, zero cores
+  repetidas**. Num Corinthians em casa: GAVIÕES preto, JP branco (a visitante fica com a
+  cor dela), C12 e P9 em cinzas distintos.
+  A letra do rótulo encolhe quando a sigla é comprida — melhor INDEPENDENTE pequeno e
+  inteiro que grande e cortado.
+
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
 aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no
 mapa — clicar num ponto da rua pra marcar tocaia, e acompanhar o bonde aliado da rodovia

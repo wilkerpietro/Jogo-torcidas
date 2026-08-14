@@ -348,6 +348,103 @@ TO.ruas = (function(){
     return fora;
   }
 
+  /* =======================================================
+     UMA COR POR TORCIDA NA NOITE
+
+     A cor do disco era sempre `cores[0]`, e como a paleta é a do CLUBE,
+     as organizadas do mesmo time saíam iguais: num Corinthians em casa,
+     Gaviões e Pavilhão 9 pretos e Camisa 12 branca — o jogador olhava a
+     rua e via duas torcidas onde havia três. Pior: em São Paulo quatro
+     torcidas de clubes diferentes eram todas brancas, porque branco é a
+     primeira cor de meia dúzia de paletas.
+
+     Aqui cada torcida do dia escolhe, na ordem da PRÓPRIA paleta
+     (cores[0], cores[1], detalhe), a primeira que ninguém pegou. Escolhe
+     primeiro a nossa — a cor do jogador nunca se mexe — e depois as
+     maiores, que são as que o jogador reconhece de longe. Quem chega e
+     não acha nada livre ganha um tom claro ou escuro da sua primeira
+     cor, alternando, pra pelo menos não se confundir com a irmã.
+     ======================================================= */
+  function hexParaRgb(h){
+    const s = String(h||'').replace('#','');
+    const t = s.length === 3 ? s.split('').map(c=>c+c).join('') : s;
+    const v = parseInt(t, 16);
+    return isNaN(v) ? [153,153,153]
+                    : [(v>>16)&255, (v>>8)&255, v&255];
+  }
+  const rgbParaHex = c =>
+    '#' + c.map(v=>U.limitar(Math.round(v),0,255).toString(16).padStart(2,'0')).join('');
+  /* clareia com fator positivo, escurece com negativo */
+  const tonalizar = (hex, f) => {
+    const c = hexParaRgb(hex);
+    return rgbParaHex(f >= 0 ? c.map(v=>v + (255-v)*f) : c.map(v=>v*(1+f)));
+  };
+
+  /* Duas torcidas com a mesma sigla na mesma noite. Dentro de uma praça
+     isso não acontece — conferido nas 140 —, mas a visitante vem de outro
+     mapa: Esquadrão Atleticano e Esquadrão Alvinegro são as duas "EA", e
+     se cruzam quando o Atlético recebe um time do interior de Minas. A
+     segunda cresce pela última palavra do nome: EA vira EAL. */
+  function siglaUnica(o, usadas){
+    const base = M().siglaTorcida(o);
+    if(!usadas.has(base)) return base;
+    const ultima = (o.nome||'').split(/[\s/\-]+/).filter(Boolean).pop() || '';
+    for(let k=2; k<=ultima.length; k++){
+      const tenta = (base + ultima.slice(1, k)).toUpperCase();
+      if(!usadas.has(tenta)) return tenta;
+    }
+    for(let k=2; k<40; k++) if(!usadas.has(base+k)) return base+k;
+    return base;
+  }
+
+  function elencoDaNoite(E, doDia){
+    /* o elenco da noite: as organizadas dos clubes que jogam */
+    const cast = [];
+    const visto = new Set(), visitante = new Set();
+    for(const j of doDia)
+      for(const clube of [j.casa, j.vis])
+        for(const o of M().torcidasDe(clube.id)){
+          if(clube === j.vis) visitante.add(o.id);
+          if(visto.has(o.id)) continue;
+          visto.add(o.id); cast.push(o);
+        }
+    /* A ordem de escolha: a nossa, depois as visitantes, depois as de
+       casa — em cada grupo da maior pra menor, e o id desempata. É ordem
+       fixa, então a mesma noite pinta igual toda vez que a tela reabre.
+       Visitante escolhe antes da vizinhança porque é quem o jogador
+       precisa achar no mapa: vem pela rodovia e vem pra briga. */
+    const posto = o => o.id === E.torcida.id ? 0 : visitante.has(o.id) ? 1 : 2;
+    cast.sort((a,b)=> posto(a) - posto(b)
+                   || (b.membros||0) - (a.membros||0)
+                   || (a.id < b.id ? -1 : 1));
+
+    const usadas = new Set(), siglado = new Set(), cor = {}, sigla = {};
+    for(const o of cast){
+      const s = siglaUnica(o, siglado);
+      siglado.add(s); sigla[o.id] = s;
+
+      const paleta = [...(o.cores||[]), o.detalhe].filter(Boolean)
+                       .map(c=>String(c).toUpperCase());
+      let tom = paleta.find(c=>!usadas.has(c));
+      /* Paleta inteira tomada. Acontece de verdade num clássico de clube
+         preto e branco: as três organizadas do Corinthians têm as mesmas
+         duas cores, porque na arquibancada elas vestem as mesmas duas
+         cores. Aí o tom muda pra pelo menos não virar um borrão só — e
+         quem separa mesmo é a sigla em cima do disco. */
+      if(!tom){
+        const base = paleta[0] || '#999999';
+        for(let k=1; k<=4 && !tom; k++)
+          for(const f of [0.36*k, -0.32*k]){
+            const t = tonalizar(base, f).toUpperCase();
+            if(!usadas.has(t)){ tom = t; break; }
+          }
+        tom = tom || base;
+      }
+      usadas.add(tom); cor[o.id] = tom;
+    }
+    return {cor, sigla};
+  }
+
   /* Monta os bondes do dia: os daqui saem da sede (e da subsede, quando é
      a nossa torcida); os de fora entram pela rodovia. Todos vão ao
      estádio do mandante. */
@@ -361,6 +458,9 @@ TO.ruas = (function(){
     const doDia = jogosDaPraca(E).filter(j=>j.dia === E.data.dia);
     if(!doDia.length) return R;
 
+    /* cada torcida da noite com a sua cor e a sua sigla, sem repetir */
+    const elenco = elencoDaNoite(E, doDia);
+
     let id = 0;
     const nasce = (torcida, origem, destino, n, tag)=>{
       if(!origem || !destino) return;
@@ -369,9 +469,9 @@ TO.ruas = (function(){
       const saiEm = (MP().hash(`${torcida.id}|${tag}|${R.chave}`) % 18);
       R.bondes.push({
         id: ++id, torcida: torcida.id, nome: torcida.nome,
-        cor: (torcida.cores && torcida.cores[0]) || '#999',
+        cor: elenco.cor[torcida.id] || (torcida.cores && torcida.cores[0]) || '#999',
         nossa: torcida.id === E.torcida.id, n, tag, saiEm, andou:0,
-        sigla: M().sigla(torcida),
+        sigla: elenco.sigla[torcida.id] || M().siglaTorcida(torcida),
         rota: caminho(mo, origem, destino), i:0, t:0,
         x: origem.x, y: origem.y, chegou:false
       });
@@ -630,10 +730,14 @@ TO.ruas = (function(){
         ctx.fillText(String(b.n), b.x, b.y+0.5);
       }
       /* e a sigla da torcida logo acima, que é o que diz de quem é o
-         bonde sem precisar passar o mouse */
+         bonde sem precisar passar o mouse. Sigla de torcida de nome
+         curto é o nome inteiro (GAVIÕES, INDEPENDENTE), então a letra
+         encolhe quando o rótulo é comprido — melhor pequeno e inteiro
+         que grande e cortado. */
       if(b.sigla){
         const y = b.y - r - 5;
-        ctx.font = '700 11px Arial, sans-serif';
+        const px = b.sigla.length > 8 ? 8 : b.sigla.length > 5 ? 9.5 : 11;
+        ctx.font = `700 ${px}px Arial, sans-serif`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
         ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.85)';
         ctx.strokeText(b.sigla, b.x, y);
