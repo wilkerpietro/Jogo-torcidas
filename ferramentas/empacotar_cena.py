@@ -40,7 +40,7 @@ ALVOS = {
                'dados/cena_arredores.js', 'dados/cenas_foto.js',
                'dados/cenas_editadas.js', 'dados/cenas.js',
                'js/mundo/mundo.js', 'js/mundo/competicoes.js', 'js/mundo/tensao.js',
-               'js/mundo/mapa.js', 'js/mundo/ruas.js',
+               'js/mundo/mapa.js', 'js/mundo/mapa_gerado.js', 'js/mundo/ruas.js',
                'js/gestao/membros.js', 'js/gestao/torcedores.js',
                'js/gestao/financeiro.js', 'js/gestao/patrimonio.js',
                'js/gestao/acoes.js',

@@ -98,12 +98,12 @@
   function abrirSelecao(){
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.remove('oculto');
-    escolhida = TO.mundo.ficha(TO.mundo.jogaveis()[0]);
+    escolhida = TO.mundo.ficha(TO.mundo.selecionaveis()[0]);
     pintarSelecao();
   }
 
   function pintarSelecao(){
-    const fichas = TO.mundo.jogaveis().map(TO.mundo.ficha);
+    const fichas = TO.mundo.selecionaveis().map(TO.mundo.ficha);
     const filtros = [{id:'todas', rot:'Todas'}]
       .concat(TO.mundo.divisoes().map(d=>({id:d, rot:d.replace('Brasileirão ','')})));
 
@@ -994,7 +994,7 @@
        tela — número solto de "festa" não diz nada a ninguém */
     const ef = PAT.efeito(e);
     const T = TO.torcedores;
-    const bonus = T.fatorTorcida(e).ganho * T.EM_QUALIDADE;
+    const bonus = T.fatorTorcida(e).ganho * T.EM_FORCA;
     c.corpo.appendChild(el('div',{class:'linha-dado', html:
       `<span>Satisfação descansa em</span><b${ef.satisfacao?' class="positivo"':''}>`+
       `${T.neutraDe(e).toFixed(1)} de 20</b>`}));
@@ -1003,7 +1003,7 @@
       `${ef.prestigio ? '+'+ef.prestigio.toFixed(1)+' na doação de simpatizante' : '—'}</b>`}));
     c.corpo.appendChild(el('div',{class:'linha-dado', html:
       `<span>No dia de jogo</span><b${bonus>=0.05?' class="positivo"':''}>`+
-      `${bonus>=0.05 ? '+'+bonus.toFixed(1)+' de qualidade'
+      `${bonus>=0.05 ? '+'+bonus.toFixed(1)+' de força'
                      : 'a arquibancada já está cheia'}</b>`}));
     c.corpo.appendChild(el('div',{class:'linha-dado', html:
       `<span>Guarda e conserto</span><b${ef.manutencao?' class="negativo"':''}>`+
@@ -1026,79 +1026,47 @@
   }
 
   /* =======================================================
-     ELENCO — dinheiro da torcida virando qualidade do time
-     (GDD V3 §19). A tabela de preço é do GDD e sobe com a
-     força do clube: bancar o time pequeno é barato, segurar o
-     gigante no topo é R$ 1 milhão por ponto.
+     ELENCO — dinheiro da torcida virando força do time
+     (GDD V3 §19). O preço do ponto sobe com a força do clube:
+     R$ 50 mil no time pequeno, R$ 800 mil no gigante.
      ======================================================= */
   function pintarElenco(pg, e, oferta, comprar){
     const C = TO.competicoes;
     const id = e.torcida.clubeId;
     const time = TO.mundo.time(id) || {};
-    const qual = C.qualidadeDe(e, id);
-    const inv  = C.invDe(e, id);
-    const base = C.qualidadeBase(e, id);
+    const forca = C.forcaDe(e, id);
+    const inv   = C.invDe(e, id);
+    const base  = C.forcaBase(e, id);
     const custo = C.custoDoPonto(e, id);
-    const noTeto = qual >= C.TETO_QUALIDADE;
+    const noTeto = forca >= C.FORCA_MAX;
 
     const c = cartao(`Elenco do ${time.nome || id}`,
-      `${time.divisao || ''}${time.divisao?' · ':''}escala de 4 a ${C.TETO_QUALIDADE}`);
-    /* a barra separa o que o clube conquistou do que a torcida comprou */
+      `${time.divisao || ''}${time.divisao?' · ':''}força de ${C.FORCA_MIN} a ${C.FORCA_MAX}`);
+    /* a barra separa o que o clube conquistou do que a torcida bancou */
     const barra = el('div',{class:'barra-elenco'});
     barra.appendChild(el('i',{class:'base',
-      style:`width:${base/C.TETO_QUALIDADE*100}%`}));
+      style:`width:${base/C.FORCA_MAX*100}%`}));
     barra.appendChild(el('i',{class:'inv',
-      style:`left:${base/C.TETO_QUALIDADE*100}%;width:${inv/C.TETO_QUALIDADE*100}%`}));
+      style:`left:${base/C.FORCA_MAX*100}%;width:${inv/C.FORCA_MAX*100}%`}));
     c.corpo.appendChild(barra);
     c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Qualidade hoje</span><b>${Math.round(qual)} de ${C.TETO_QUALIDADE}</b>`}));
+      `<span>Força hoje</span><b>${forca} de ${C.FORCA_MAX}</b>`}));
     c.corpo.appendChild(el('div',{class:'linha-dado', html:
       `<span>Conquistada em campo</span><b>${base}</b>`}));
     c.corpo.appendChild(el('div',{class:'linha-dado', html:
       `<span>Bancada pela torcida</span><b${inv?' class="positivo"':''}>`+
-      `${inv ? '+'+(Math.round(inv*10)/10) : '—'}</b>`}));
-    c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Desgaste por temporada</span><b class="negativo">`+
-      `−${Math.round(C.DESGASTE*100)}% do que foi bancado</b>`}));
+      `${inv ? '+'+inv : '—'}</b>`}));
     pg.appendChild(c);
 
-    const c2 = cartao('Bancar reforço', `caixa: ${U.dinheiro(e.dinheiro)}`);
-    for(const n of [1, 3]){
-      /* o preço de n pontos soma faixa por faixa: o terceiro ponto pode
-         custar mais que o primeiro se cruzar pra faixa de cima */
-      let total = 0, cabe = 0, q = qual;
-      for(let i=0;i<n && q < C.TETO_QUALIDADE;i++){
-        const f = C.TABELA_INVESTIMENTO.find(x=>q*2 <= x.ate)
-               || C.TABELA_INVESTIMENTO[C.TABELA_INVESTIMENTO.length-1];
-        total += f.custo; q++; cabe++;
-      }
-      if(cabe < n) continue;
-      c2.corpo.appendChild(oferta(
-        `+${n} de qualidade`,
-        n===1 ? 'um reforço' : 'janela inteira de contratações',
-        total,
-        noTeto ? 'o elenco já está no teto'
-               : e.dinheiro < total ? 'falta caixa' : null,
-        ()=>comprar(()=>C.investir(e, id, n))));
-    }
+    const c2 = cartao('Reforçar elenco', `caixa: ${U.dinheiro(e.dinheiro)}`);
+    c2.corpo.appendChild(oferta(
+      '+1 de força',
+      noTeto ? '' : `o clube está na faixa de ${U.dinheiro(custo)} por ponto`,
+      custo,
+      noTeto ? 'o elenco já está no teto'
+             : e.dinheiro < custo ? 'falta caixa' : null,
+      ()=>comprar(()=>C.investir(e, id, 1))));
     pg.appendChild(c2);
-
-    const c3 = cartao('A tabela do preço', 'quanto mais forte o clube, mais caro o ponto');
-    const tab = el('div',{class:'tabela-pat'});
-    tab.appendChild(el('div',{class:'cab', html:
-      '<span>Qualidade</span><span>Força (GDD)</span><span></span><span>Por ponto</span>'}));
-    let piso = 0;
-    for(const f of C.TABELA_INVESTIMENTO){
-      const aqui = qual*2 > piso && qual*2 <= f.ate;
-      tab.appendChild(el('div',{class:'linha'+(aqui?' total':''), html:
-        `<span class="nome">${Math.ceil((piso+1)/2)} a ${f.ate/2}`+
-        `${aqui?'<small>é aqui que o clube está</small>':''}</span>
-         <span class="v">${piso+1} a ${f.ate}</span><span class="v"></span>
-         <span class="v">${U.dinheiro(f.custo)}</span>`}));
-      piso = f.ate;
-    }
-    c3.corpo.appendChild(tab);
-    pg.appendChild(c3);
   }
 
   /* =======================================================
@@ -1689,8 +1657,8 @@
     }else{
       const fora = TO.financeiro.precisaCaravana(e);
       const ft  = TO.torcedores.fatorTorcida(e);
-      /* o que a arquibancada vale pro nosso time, em pontos de qualidade */
-      const bon = (ft.valor - 0.5) * TO.torcedores.EM_QUALIDADE;
+      /* o que a arquibancada vale pro nosso time, em pontos de força */
+      const bon = (ft.valor - 0.5) * TO.torcedores.EM_FORCA;
       const d0   = TO.estado.dataDaSemana(e.data.ano, e.data.semana, j.dia||6);
       const dat  = `${DIA_LONGO[(j.dia||6)-1]}, `+
                    `${String(d0.getDate()).padStart(2,'0')}/`+

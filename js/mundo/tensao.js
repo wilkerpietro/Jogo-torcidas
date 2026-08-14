@@ -250,7 +250,7 @@ TO.tensao = (function(){
     let soma = 0, n = 0;
     for(const t of M().todosTimes){
       if(C.divisaoDe(E, t) !== div) continue;
-      soma += C.qualidadeDe(E, t.id); n++;
+      soma += C.forcaDe(E, t.id); n++;
     }
     return (_mediaDiv[div] = n ? soma/n : 0);
   }
@@ -265,7 +265,7 @@ TO.tensao = (function(){
     if(!o || !o.clubeId) return null;
     const time = M().time(o.clubeId);
     if(!time) return null;
-    if(C.qualidadeDe(E, o.clubeId) >= mediaDaDivisao(E, C.divisaoDe(E, time)))
+    if(C.forcaDe(E, o.clubeId) >= mediaDaDivisao(E, C.divisaoDe(E, time)))
       return null;
     return {tipo:'elenco', clube:o.clubeId, custo:C.custoDoPonto(E, o.clubeId)};
   }

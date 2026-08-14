@@ -57,7 +57,7 @@ TO.competicoes = (function(){
   /* divide em grupos servindo em zigue-zague, pra não juntar
      os melhores todos no mesmo lado da chave */
   function dividirGrupos(clubes, quantos){
-    const ordem = [...clubes].sort((a,b)=>qual(b)-qual(a));
+    const ordem = [...clubes].sort((a,b)=>forca(b)-forca(a));
     const g = Array.from({length:quantos}, ()=>[]);
     ordem.forEach((c,i)=>{
       const volta = Math.floor(i/quantos) % 2;
@@ -68,18 +68,23 @@ TO.competicoes = (function(){
   }
 
   /* =======================================================
-     QUALIDADE DOS CLUBES
-     A planilha dá o ponto de partida; o resto do decênio é
+     FORÇA DOS CLUBES — escala 1 a 100
+     A planilha dá o ponto de partida na escala antiga de 4 a
+     50 e é convertida na leitura (×2); o resto do decênio é
      consequência do que aconteceu em campo. Quem termina no
      G4 sobe de nível, quem briga contra o rebaixamento perde.
-     A evolução vive no save (E.qualidades), nunca em times.js
-     — dado importado não se reescreve.
+     A evolução vive no save (E.forcas), nunca em times.js —
+     dado importado não se reescreve.
      ======================================================= */
-  let _qualidades = null;                 // ponteiro pro save da vez
-  let _investido  = null;
+  const FORCA_MIN = 1, FORCA_MAX = 100;
+  /* a fonte veio em 4–50; o jogo trabalha em 1–100 */
+  const DA_FONTE = 2;
+
+  let _forcas = null;                     // ponteiro pro save da vez
+  let _investido = null;
   const usarSave = E => {
-    _qualidades = (E && E.qualidades) || null;
-    _investido  = (E && E.investimento) || null;
+    _forcas    = (E && E.forcas) || null;
+    _investido = (E && E.investimento) || null;
   };
   /* GDD §9.5: "força do elenco (base + investimento da torcida)". As duas
      parcelas vivem separadas de propósito: a base é o que o clube conquistou
@@ -87,49 +92,38 @@ TO.competicoes = (function(){
      o investimento é dinheiro de torcida e não pode entrar nessa média,
      senão comprar elenco derrubaria o dos outros na mesma divisão. */
   const invDe = (E, id) => ((E && E.investimento) || {})[id] || 0;
-  const base = id => (_qualidades && _qualidades[id] != null)
-    ? _qualidades[id]
-    : ((M().time(id)||{}).qualidade || 10);
-  const qual = id => U.limitar(
-    base(id) + ((_investido && _investido[id]) || 0), 4, 50);
-  const qualidadeBase = (E, id) =>
-    (E.qualidades && E.qualidades[id] != null)
-      ? E.qualidades[id] : ((M().time(id)||{}).qualidade || 10);
-  const qualidadeDe = (E, id) =>
-    U.limitar(qualidadeBase(E, id) + invDe(E, id), 4, 50);
+  const daFonte = id => ((M().time(id)||{}).qualidade || 10) * DA_FONTE;
+  const crua = id => (_forcas && _forcas[id] != null) ? _forcas[id] : daFonte(id);
+  const forca = id => U.limitar(
+    crua(id) + ((_investido && _investido[id]) || 0), FORCA_MIN, FORCA_MAX);
+  const forcaBase = (E, id) =>
+    (E.forcas && E.forcas[id] != null) ? E.forcas[id] : daFonte(id);
+  const forcaDe = (E, id) =>
+    U.limitar(forcaBase(E, id) + invDe(E, id), FORCA_MIN, FORCA_MAX);
 
   /* =======================================================
-     INVESTIR NO TIME (GDD V3 §19)
-     A tabela do GDD é da escala de força 1–100; a qualidade
-     aqui é 4–50, então o preço se consulta dobrando. Um ponto
-     de qualidade custa o preço da faixa em que o clube está —
-     de R$ 100 mil no time pequeno a R$ 1 milhão no gigante.
-
-     É o maior ralo de dinheiro do jogo, e é de propósito: com
-     bar, loja e subsede montados, é pra onde sobra. Fecha o
-     laço da torcida com o gramado — elenco melhor ganha mais,
-     ganhar sobe a satisfação, satisfação enche o recrutamento.
+     REFORÇAR O ELENCO (GDD V3 §19)
+     Um ponto de força custa o preço da faixa em que o clube
+     está — de R$ 50 mil no time pequeno a R$ 800 mil no
+     gigante. É o maior ralo de dinheiro do jogo, e é de
+     propósito: com bar, loja e subsede montados, é pra onde
+     sobra. Fecha o laço da torcida com o gramado — elenco
+     melhor ganha mais, ganhar sobe a satisfação, satisfação
+     enche o recrutamento.
      ======================================================= */
   const TABELA_INVESTIMENTO = [
-    {ate: 20, custo:  100000}, {ate: 30, custo:  200000},
-    {ate: 40, custo:  300000}, {ate: 50, custo:  400000},
-    {ate: 60, custo:  500000}, {ate: 70, custo:  600000},
-    {ate: 80, custo:  700000}, {ate: 90, custo:  800000},
-    {ate:100, custo: 1000000}
+    {ate: 10, custo:  50000}, {ate: 20, custo:  80000},
+    {ate: 30, custo: 140000}, {ate: 40, custo: 200000},
+    {ate: 50, custo: 250000}, {ate: 60, custo: 300000},
+    {ate: 70, custo: 350000}, {ate: 80, custo: 400000},
+    {ate: 90, custo: 500000}, {ate:100, custo: 800000}
   ];
   function custoDoPonto(E, id){
-    const forca = qualidadeDe(E, id) * 2;          // 4–50 → 8–100
-    return (TABELA_INVESTIMENTO.find(f=>forca <= f.ate)
+    const f = forcaDe(E, id);
+    return (TABELA_INVESTIMENTO.find(x=>f <= x.ate)
             || TABELA_INVESTIMENTO[TABELA_INVESTIMENTO.length-1]).custo;
   }
-  const TETO_QUALIDADE = 50;
 
-  /* O GDD não diz o que acontece com o investimento depois de feito. Sem
-     nada, cem anos de torcida rica levam todo clube grande ao teto e a
-     tabela vira um retrato fixo — medido. Elenco comprado envelhece: 12%
-     do investimento se perde por temporada, então segurar o time no alto
-     é despesa recorrente e não compra única. */
-  const DESGASTE = 0.12;
   function investir(E, id, pontos){
     pontos = Math.max(1, Math.round(pontos||1));
     E.investimento = E.investimento || {};
@@ -137,7 +131,7 @@ TO.competicoes = (function(){
     /* ponto a ponto, porque o segundo pode cair na faixa de cima e custar
        mais caro que o primeiro */
     for(let i=0;i<pontos;i++){
-      if(qualidadeDe(E, id) >= TETO_QUALIDADE) break;
+      if(forcaDe(E, id) >= FORCA_MAX) break;
       const c = custoDoPonto(E, id);
       if(E.dinheiro < gasto + c) break;
       E.investimento[id] = (E.investimento[id] || 0) + 1;
@@ -145,31 +139,23 @@ TO.competicoes = (function(){
       usarSave(E);
     }
     if(!feitos) return {ok:false, pontos:0, gasto:0,
-      msg: qualidadeDe(E, id) >= TETO_QUALIDADE
+      msg: forcaDe(E, id) >= FORCA_MAX
         ? 'O elenco já está no teto.' : 'Não dá: falta caixa.'};
     const time = (M().time(id)||{}).nome || id;
-    TO.estado.lancar(E, `Investimento no elenco do ${time}`, -gasto);
-    TO.estado.anotar(E, `A torcida bancou reforço pro ${time}: `+
-      `+${feitos} de qualidade.`, 'boa');
-    return {ok:true, pontos:feitos, gasto, msg:`${time}: +${feitos} de qualidade`};
-  }
-  function desgastarInvestimento(E){
-    if(!E.investimento) return;
-    for(const id of Object.keys(E.investimento)){
-      const v = E.investimento[id] * (1 - DESGASTE);
-      if(v < 0.5) delete E.investimento[id];
-      else E.investimento[id] = Math.round(v*100)/100;
-    }
-    usarSave(E);
+    TO.estado.lancar(E, `Reforço no elenco do ${time}`, -gasto);
+    TO.estado.anotar(E, `A torcida reforçou o elenco do ${time}: `+
+      `+${feitos} de força.`, 'boa');
+    return {ok:true, pontos:feitos, gasto, msg:`${time}: +${feitos} de força`};
   }
 
-  /* GDD §18: a escala é 4 a 50. O passo por temporada é pequeno de
+
+  /* GDD §18: a escala é 1 a 100. O passo por temporada é pequeno de
      propósito — time grande não vira pequeno num ano, mas dez anos de
      Série C cobram o preço. Portado do protótipo antigo. */
   function evoluirForca(E){
     const S = E.temporada;
     if(!S) return [];
-    E.qualidades = E.qualidades || {};
+    E.forcas = E.forcas || {};
 
     /* 1. cada competição dá um delta bruto por posição */
     const bruto = {}, porComp = {};
@@ -221,30 +207,28 @@ TO.competicoes = (function(){
     const soma = {}, conta = {};
     for(const id of ids){
       const d = divisaoDe(E, M().time(id) || {});
-      soma[d] = (soma[d]||0) + qualidadeBase(E, id);
+      soma[d] = (soma[d]||0) + forcaBase(E, id);
       conta[d] = (conta[d]||0) + 1;
     }
     const GRAVIDADE = 0.12;
 
-    /* 4. o delta é da escala de força (1–100); a qualidade é 4–50 */
+    /* 4. delta e força vivem na mesma escala de 1 a 100 */
     const mov = [];
     for(const id of ids){
-      const antes = qualidadeBase(E, id);
+      const antes = forcaBase(E, id);
       const d = divisaoDe(E, M().time(id) || {});
       const nivel = conta[d] ? soma[d]/conta[d] : antes;
       const puxao = (nivel - antes) * GRAVIDADE;
-      const dep = U.limitar(Math.round(antes + bruto[id]/2 + puxao), 4, 50);
-      if(dep !== antes){ E.qualidades[id] = dep; mov.push({id, de:antes, para:dep}); }
+      const dep = U.limitar(Math.round(antes + bruto[id] + puxao), FORCA_MIN, FORCA_MAX);
+      if(dep !== antes){ E.forcas[id] = dep; mov.push({id, de:antes, para:dep}); }
     }
-    /* a virada do ano também come o elenco comprado */
-    desgastarInvestimento(E);
     usarSave(E);
     return mov;
   }
 
   /* =======================================================
      RESULTADO
-     Poisson com o gol esperado saindo da qualidade dos dois
+     Poisson com o gol esperado saindo da força dos dois
      e do fator casa. Nada de sortear vencedor direto: placar
      de verdade dá empate, goleada e zebra na medida certa.
      ======================================================= */
@@ -257,9 +241,11 @@ TO.competicoes = (function(){
 
   /* GDD §9.5: o placar sai da forca dos dois elencos, do mando e de um
      bonus chamado Fator Torcida — o que a arquibancada faz no dia. O
-     bonus vem de fora em pontos de qualidade, positivo pro mandante. */
+     bonus vem de fora em pontos de força, positivo pro mandante.
+     O divisor acompanha a escala: em 1–100 as diferenças são o dobro
+     das de 4–50, então 110 mantém o mesmo placar de antes. */
   function simular(casa, fora, bonusCasa){
-    const dif = (qual(casa) - qual(fora) + (bonusCasa||0)) / 55;
+    const dif = (forca(casa) - forca(fora) + (bonusCasa||0)) / 110;
     const lc = U.limitar(1.30 + 0.30 + dif*1.5, 0.25, 5);
     const lf = U.limitar(1.30 - 0.20 - dif*1.5, 0.20, 5);
     return [poisson(lc), poisson(lf)];
@@ -268,7 +254,7 @@ TO.competicoes = (function(){
   /* mata-mata empatado vai a pênaltis; quem é melhor leva
      vantagem, mas longe de garantia (GDD §18.3) */
   function penaltis(a, b){
-    const p = qual(a) / (qual(a) + qual(b) || 1);
+    const p = forca(a) / (forca(a) + forca(b) || 1);
     return U.rng() < (0.5 + (p-0.5)*0.5) ? a : b;
   }
 
@@ -793,11 +779,11 @@ TO.competicoes = (function(){
 
   /* Quem manda no jogo único: o clube da divisão mais alta, como o
      autor definiu pra primeira fase (B e C recebem a D). Empate de
-     divisão, decide a qualidade. */
+     divisão, decide a força. */
   function mandante(E, a, b){
     const fa = forcaDivisao(E,a), fb = forcaDivisao(E,b);
     if(fa !== fb) return fa < fb ? [a,b] : [b,a];
-    return qual(a) >= qual(b) ? [a,b] : [b,a];
+    return forca(a) >= forca(b) ? [a,b] : [b,a];
   }
 
   function criarCopa(E){
@@ -1052,7 +1038,7 @@ TO.competicoes = (function(){
     const NOMES = {2:'Final', 4:'Semifinal', 8:'Quartas', 16:'Oitavas', 32:'Primeira fase'};
     const jogos = [];
     /* melhor contra pior, o clássico chaveamento de copa */
-    const ordem = [...vivos].sort((a,b)=>qual(b)-qual(a));
+    const ordem = [...vivos].sort((a,b)=>forca(b)-forca(a));
     for(let i=0;i<ordem.length/2;i++)
       jogos.push({c:ordem[i], f:ordem[ordem.length-1-i]});
 
@@ -1236,9 +1222,9 @@ TO.competicoes = (function(){
   const horaDoJogo = j => (j && j.h) || '16:00';
 
   return {montarTemporada, jogarSemana, tabela, agendaDoClube, jogoDaSemana,
-          qualidadeDe, qualidadeBase, evoluirForca, usarSave,
+          forcaDe, forcaBase, evoluirForca, usarSave,
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
-          TETO_QUALIDADE, DESGASTE,
+          FORCA_MIN, FORCA_MAX,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
           jogosDaSemana, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
           aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,

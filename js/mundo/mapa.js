@@ -200,9 +200,14 @@ TO.mapa = (function(){
      da grade procedural. O resto do jogo não muda de lado —
      o modelo tem a mesma cara nos dois casos.
      ======================================================= */
+  /* A arte de verdade é só de Fortaleza; nas outras 29 praças a planta é
+     gerada da própria lista de bairros, na cruz por zona (mapa_gerado.js).
+     As duas têm a mesma forma, então daqui pra frente o código não sabe
+     qual está usando. */
   const arteDe = E => {
     const a = TO.dados.cidadeMapa;
-    return (a && a.cidade === E.torcida.mapa) ? a : null;
+    if(a && a.cidade === E.torcida.mapa) return a;
+    return TO.mapaGerado ? TO.mapaGerado.arteDe(E.torcida.mapa) : null;
   };
 
   let _cacheArte = null;
@@ -484,12 +489,15 @@ TO.mapa = (function(){
 
   function desenharArte(ctx, mo, opc){
     const a = mo.arte, m = mo.malha;
-    const img = imagem(a);
-    if(img) ctx.drawImage(img, 0, 0, a.largura, a.altura);
-    else { ctx.fillStyle = '#14150f'; ctx.fillRect(0,0,mo.tam,mo.tam);
-           ctx.fillStyle = '#7a736a'; ctx.font = '600 20px monospace';
-           ctx.textAlign = 'center';
-           ctx.fillText('carregando a cidade…', mo.tam/2, mo.tam/2); }
+    if(a.sintetica) pintarPlanta(ctx, mo);
+    else {
+      const img = imagem(a);
+      if(img) ctx.drawImage(img, 0, 0, a.largura, a.altura);
+      else { ctx.fillStyle = '#14150f'; ctx.fillRect(0,0,mo.tam,mo.tam);
+             ctx.fillStyle = '#7a736a'; ctx.font = '600 20px monospace';
+             ctx.textAlign = 'center';
+             ctx.fillText('carregando a cidade…', mo.tam/2, mo.tam/2); }
+    }
 
     /* o contorno do bairro é lembrete, não moldura: fica quase invisível
        até o mouse encostar */
@@ -506,6 +514,50 @@ TO.mapa = (function(){
                        info:`${p.bairro} · ${p.label}`});
       }
     realce(ctx, mo);
+  }
+
+  /* =======================================================
+     A PLANTA SEM FOTO
+     Onde não há arte, a cidade se pinta do próprio raster: o
+     quarteirão toma a cor da classe do bairro, a rua fica em
+     asfalto e o gramado do estádio entra por cima. Não compete
+     com a foto de Fortaleza — é planta, e é pra ler.
+     ======================================================= */
+  function pintarPlanta(ctx, mo){
+    const m = mo.malha, n = m.n, P = m.passo;
+    ctx.fillStyle = '#101012';
+    ctx.fillRect(0, 0, mo.tam, mo.tam);
+
+    /* o construído, célula a célula, na cor da classe do bairro */
+    for(let r=0;r<n;r++){
+      for(let c=0;c<n;c++){
+        const k = m.regiao[r*n+c];
+        const rua = m.andavel[r*n+c];
+        if(k < 0 && !rua) continue;
+        if(rua){ ctx.fillStyle = '#26262a'; }
+        else {
+          const b = mo.regioes[k];
+          const t = TELHADOS[hash(`${(b&&b.id)||k}|${c}|${r}`) % TELHADOS.length];
+          ctx.fillStyle = t.bg;
+        }
+        ctx.fillRect(c*P, r*P, P, P);
+      }
+    }
+    /* a tinta da classe por cima, que é o que dá caráter ao bairro */
+    for(const b of mo.regioes){
+      const cl = classeDe(b.classe);
+      ctx.fillStyle = cl.tinta;
+      const meia = Math.sqrt(b.area/100)*mo.tam/2;
+      ctx.fillRect(b.x-meia, b.y-meia, meia*2, meia*2);
+    }
+    /* gramado */
+    for(const e of (mo.arte.estadios||[])){
+      ctx.fillStyle = '#2f5c33';
+      ctx.fillRect(e.x-e.w/2, e.y-e.h/2, e.w, e.h);
+      ctx.strokeStyle = 'rgba(255,255,255,.25)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(e.x-e.w/2+3, e.y-e.h/2+3, e.w-6, e.h-6);
+    }
   }
 
   function contornoDosBairros(ctx, mo){

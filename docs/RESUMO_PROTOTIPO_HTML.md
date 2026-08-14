@@ -704,36 +704,52 @@ O que **não** veio, e por quê:
   roda num trilho próprio, sem notícia, e o ticker segue com os três de sempre — esta é a
   recomendada.
 
-- **Investir no elenco** (GDD **V3** §19, que o V4 não repete). O V3 traz a tabela de
-  preço por ponto de força, e o §9.5 define a força do elenco como "base **+ investimento
-  da torcida**" — as duas parcelas separadas, que é como está implementado. A base é o que
-  o clube conquistou em campo e continua sendo ela que a evolução de fim de ano recentra
-  por competição; o investimento é dinheiro de torcida e fica fora dessa média, senão
-  comprar elenco derrubaria o dos outros da mesma divisão.
-  A tabela do V3 é da escala de força 1–100 e a qualidade aqui é 4–50, então o preço se
-  consulta dobrando: R$ 100.000 por ponto no clube pequeno, subindo de faixa em faixa até
-  R$ 1.000.000 no gigante. É o maior ralo de dinheiro do jogo de propósito — com bar, loja
-  e subsede montados, é pra onde sobra, e fecha o laço que faltava entre a torcida e o
-  gramado: elenco melhor ganha mais, ganhar sobe a satisfação, satisfação enche o
-  recrutamento.
-  **Uma coisa o GDD não diz e foi preciso inventar**: o que acontece com o investimento
-  depois de feito. Sem nada, cem anos de torcida rica levam todo clube grande ao teto de
-  50 e a tabela vira retrato — medido. Elenco comprado envelhece: **12% do investimento se
-  perde por temporada**, então segurar o time no alto é despesa recorrente e não compra
-  única. O número é meu, não do GDD.
-  A tela é a terceira aba do Patrimônio, **ELENCO** — o Patrimônio já era onde o dinheiro
-  vai, e agora são três destinos: imóvel, material e time. A barra separa em azul o que o
-  clube conquistou e em ouro o que a torcida bancou, e a tabela de preço marca em qual
-  faixa o clube está.
-  **As torcidas da IA também bancam** (GDD §26: elas evoluem como o jogador), com um
+- **Reforçar o elenco** (GDD **V3** §19, que o V4 não repete). O V3 traz a tabela de preço
+  por ponto de força e o §9.5 define a força do elenco como "base **+ investimento da
+  torcida**" — as duas parcelas separadas, que é como está implementado. A base é o que o
+  clube conquistou em campo e continua sendo ela que a evolução de fim de ano recentra por
+  competição; o investimento é dinheiro de torcida e fica fora dessa média, senão comprar
+  elenco derrubaria o dos outros da mesma divisão.
+  **A escala do jogo virou 1 a 100**, que é a do GDD. A fonte veio em 4–50 e é convertida
+  na leitura (×2); com isso tudo que compara força teve de acompanhar, senão o placar
+  mudava de comportamento sozinho: o divisor do Poisson foi de 55 pra 110, o bônus do
+  Fator Torcida de 8 pra 16 pontos, a cobrança no CT de +3/−2 pra +6/−4, e os deltas da
+  evolução deixaram de ser divididos por dois. O save guarda `E.forcas`, não mais
+  `E.qualidades`.
+  Preço por ponto, pela faixa em que o clube está: **R$ 50 mil** até 10 de força, 80 mil
+  até 20, 140 mil até 30, 200 mil até 40, 250 mil até 50, 300 mil até 60, 350 mil até 70,
+  400 mil até 80, 500 mil até 90 e **R$ 800 mil** até 100. Não há desgaste — o que a
+  torcida banca fica.
+  A tela é a terceira aba do Patrimônio, **ELENCO**: uma barra que separa em azul o que o
+  clube conquistou e em ouro o que a torcida bancou, e um botão só, **+1 de força**, com o
+  preço da faixa. O Patrimônio já era onde o dinheiro vai, e agora são três destinos —
+  imóvel, material e time.
+  **As torcidas da IA também reforçam** (GDD §26: elas evoluem como o jogador), com um
   limite que as impede de quebrar o mundo: só investem enquanto o clube estiver **abaixo
-  da média da divisão dele**. Vira meta de poupança como a sede — na primeira versão o
-  investimento entrava depois da torneira de queima, que segura o caixa delas em R$ 56
-  mil, abaixo dos R$ 100 mil do ponto mais barato, e cem anos renderam 4 pontos no país
-  inteiro. Medido depois do conserto: 62 dos 108 clubes recebem aporte, 88 pontos somados,
-  estável desde 2066, e a distribuição pende pra baixo — 32 clubes da Série D, 11 da C, 12
-  da B e 7 da A. Quem tem time ruim tem pra onde correr; quem já tem time bom guarda o
-  dinheiro.
+  da média da divisão dele**, e vira meta de poupança como a sede. Na primeira versão o
+  investimento entrava depois da torneira de queima, que segura o caixa delas abaixo do
+  ponto mais barato, e cem anos renderam 4 pontos no país inteiro; depois do conserto,
+  62 dos 108 clubes recebem aporte e a distribuição pende pra baixo — Série D na frente,
+  Série A no fim.
+- **Outras praças jogáveis** (`js/mundo/mapa_gerado.js`). Só Fortaleza tinha arte, e o
+  desenho do mapa foi reescrito pra camada de pinos dela: a via procedural antiga ficou
+  sem `pinos` nem `regioes` e **o mapa quebrava em qualquer outra cidade** — `mo.pinos is
+  not iterable` na hora de abrir. Agora, pra qualquer praça, a planta é gerada da própria
+  lista de bairros com a **mesma forma da arte**, e quem consome (pinos, filtros, briga de
+  rua, contorno de bairro, malha do dia de jogo) não sabe a diferença.
+  A planta é a cruz do GDD §19.3 — Norte em cima, Sul embaixo, Oeste e Leste nos flancos,
+  miolo no centro. Cada bairro vira um retângulo com avenida em volta, ruas internas
+  cortando em quarteirões de 5 células, e lote é toda célula construída que encosta numa
+  rua; casa sem frente pra rua não é endereço de nada. A moldura de fora é rua, então dá
+  pra contornar a praça sem passar pelo centro. Tudo por hash do nome do bairro: a mesma
+  cidade sai igual em toda partida. Sem foto, o mapa se pinta do próprio raster — telhado
+  na cor da classe do bairro, asfalto na rua, gramado por cima.
+  **Começar uma partida agora exige uma praça Grande** (GDD §10.1): São Paulo, Rio,
+  Belo Horizonte, Recife e Fortaleza, que é onde os bairros chegam a 16 e a cruz fecha nos
+  quatro lados. São **33 torcidas selecionáveis** de 139 — as outras continuam existindo,
+  brigando e aparecendo no noticiário, só não são jogáveis. Medido nas 33: nenhuma erra ao
+  iniciar, todas têm rota da sede ao estádio (de 12 a 108 passos), 47 a 54 pinos e malha
+  de 3.744 a 5.478 nós montada em ~11 ms.
 
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
 aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no

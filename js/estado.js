@@ -89,7 +89,7 @@ TO.estado = (function(){
     TO.membros.povoarInicial(E, opc.efetivo || E.efetivoAlvo || 34,
                              (opc.torcida||{}).cargos);
     TO.membros.sortearFila(E);
-    E.qualidades = {};
+    E.forcas = {};
     TO.competicoes.usarSave(E);
     E.temporada = TO.competicoes.montarTemporada(E);
     sortearProximoJogo(E);

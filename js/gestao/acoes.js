@@ -232,8 +232,8 @@ TO.acoes = (function(){
             titulo: ganhou ? 'ASSALTO BEM-SUCEDIDO' : 'ASSALTO FRACASSOU'};
   }
 
-  /* Semanas que a cobrança do elenco dura, e quanto ela vale de qualidade */
-  const COBRANCA = {semanas:4, bom:3, ruim:-2};
+  /* Semanas que a cobrança do elenco dura, e quanto ela vale de força */
+  const COBRANCA = {semanas:4, bom:6, ruim:-4};
 
   function fecharPressao(E, res){
     const c = clube(E);
@@ -258,7 +258,7 @@ TO.acoes = (function(){
             linhas:[`relação com o clube em ${Math.round(c.relacao)}`]};
   }
 
-  /* quanto a cobrança soma (ou tira) da qualidade do nosso clube */
+  /* quanto a cobrança soma (ou tira) da força do nosso clube */
   function cobrancaAtiva(E){
     const c = E.clube;
     if(!c || !c.cobranca) return 0;
