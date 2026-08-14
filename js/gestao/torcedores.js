@@ -108,9 +108,18 @@ TO.torcedores = (function(){
      medido: 20,0 fixo depois de duas temporadas. Toda semana ela volta um
      pouco para o meio, que é o humor de quem não teve motivo nenhum. */
   const NEUTRA = 11;
+  /* O material que a torcida comprou não empurra a satisfação pra cima:
+     ele muda o lugar pra onde ela volta. Torcida com bateria completa e
+     bandeirão descansa mais feliz do que torcida com faixa remendada, e
+     é só isso — vitória e derrota continuam mandando mais. Teto em 15
+     porque material sozinho não faz temporada boa. */
+  function neutraDe(E){
+    const f = TO.patrimonio ? TO.patrimonio.efeito(E).satisfacao : 0;
+    return U.limitar(NEUTRA + f*0.45, NEUTRA, 15);
+  }
   function esfriar(E){
     const I = E.indicadores;
-    const d = (NEUTRA - I.satisfacao) * 0.06;
+    const d = (neutraDe(E) - I.satisfacao) * 0.06;
     I.satisfacao = U.limitar(I.satisfacao + d, 0, 20);
     return d;
   }
@@ -196,9 +205,21 @@ TO.torcedores = (function(){
       bateria: U.limitar(m.bateria/cap.bateria, 0, 1),
       moral:   U.limitar(E.indicadores.moral/20, 0, 1)
     };
-    const valor = p.publico*PESOS.publico + p.faixas*PESOS.faixas
-                + p.bateria*PESOS.bateria + p.moral*PESOS.moral;
-    return Object.assign({}, p, {valor, vao, total, cap,
+    /* O que a torcida comprou entra por cima do estoque de rua: um
+       bandeirão de 50×30 aberto na arquibancada não é "faixa cheia",
+       é outra categoria de festa (patrimonio.js). O teto continua em 1
+       de propósito — o bônus do jogo é ±4 de qualidade desde sempre, e
+       comprar material não é jeito de furar esse limite: serve pra
+       cobrir o que falta de gente, de faixa e de moral. */
+    const comprado = TO.patrimonio ? TO.patrimonio.efeito(E).satisfacao : 0;
+    const rua = p.publico*PESOS.publico + p.faixas*PESOS.faixas
+              + p.bateria*PESOS.bateria + p.moral*PESOS.moral;
+    const base  = U.limitar(rua, 0, 1);
+    const valor = U.limitar(rua + U.limitar(comprado*0.06, 0, 0.25), 0, 1);
+    /* `ganho` é o que o material comprado adicionou de verdade depois do
+       teto: torcida que já lota e canta não ganha nada com mais um
+       bandeirão, e a tela do Patrimônio precisa dizer isso */
+    return Object.assign({}, p, {valor, ganho:valor-base, vao, total, cap,
                             tem:{faixas:m.faixas, bateria:m.bateria}});
   }
 
@@ -225,7 +246,7 @@ TO.torcedores = (function(){
 
   return {FAIXAS, ORGANIZAR_MAX, faixa, faixaDe, PESOS, MATERIAL, EM_QUALIDADE,
           aplicarResultado, aplicarClassificacao, aplicarConquista, CONQUISTA,
-          esfriar, NEUTRA,
+          esfriar, NEUTRA, neutraDe,
           posicaoEsperada, posicaoAtual,
           base, publicoDaCidade,
           capacidade, material, perderMaterial, reporMaterial,

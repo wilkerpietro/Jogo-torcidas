@@ -30,12 +30,13 @@ TO.financeiro = (function(){
 
   /* =======================================================
      PATRIMÔNIO
-     Ainda não há tela de compra; o que existe é o que o GDD
-     dá de graça no nível 1. A estrutura já nasce no formato
-     que a loja de patrimônio vai usar.
+     A estrutura vive aqui porque é daqui que ela cobra e
+     fatura; quem compra e quem mostra é patrimonio.js. O
+     nível 1 já nasce com o que o GDD dá de graça.
      ======================================================= */
   function patrimonio(E){
-    if(!E.patrimonio) E.patrimonio = {bares:[], lojas:[], subsedes:[], fabrica:false};
+    if(!E.patrimonio) E.patrimonio = {bares:[], lojas:[], subsedes:[], fabrica:false, itens:{}};
+    if(!E.patrimonio.itens) E.patrimonio.itens = {};
     const p = E.patrimonio;
     /* GDD §8.1: sede nível 1 já vem com um bar nível 1, grátis */
     if(!p.bares.length)
@@ -118,7 +119,16 @@ TO.financeiro = (function(){
     for(const l of p.lojas) insumo += RECEITA.loja[l.nivel]*INSUMO;
     juntar(des, 'Insumos das lojas', insumo*SEM);
 
-    juntar(des, `Material (${E.membros.length} membros)`, E.membros.length*MATERIAL*SEM);
+    /* a fábrica corta o material de todo mês; sem ela, nada muda */
+    const corte = p.fabrica ? (TO.patrimonio ? TO.patrimonio.FABRICA.corte : 0.4) : 0;
+    juntar(des, `Material (${E.membros.length} membros)${corte?' · fábrica':''}`,
+           E.membros.length*MATERIAL*(1-corte)*SEM);
+
+    /* bandeirão, faixa e bateria se guardam e se consertam */
+    if(TO.patrimonio){
+      const m = TO.patrimonio.efeito(E).manutencao;
+      juntar(des, 'Guarda e conserto do material', m*SEM);
+    }
 
     const soma = l => l.reduce((s,x)=>s+x.v, 0);
     return {receitas:rec, despesas:des,
@@ -250,9 +260,12 @@ TO.financeiro = (function(){
     for(const r of rel.receitas) TO.estado.lancar(E, r.rot, r.v);
     for(const d of rel.despesas) TO.estado.lancar(E, d.rot, -d.v);
 
-    /* GDD §7.1: doação esporádica, tanto maior quanto o prestígio */
-    if(U.rng() < 0.10){
-      const v = Math.round(200 + E.indicadores.prestigio*U.entre(30, 90));
+    /* GDD §7.1: doação esporádica, tanto maior quanto o prestígio. O
+       bandeirão e a bateria pesam aqui: quem faz festa grande aparece,
+       e quem aparece recebe do simpatizante que nunca vai à sede. */
+    const festa = TO.patrimonio ? TO.patrimonio.efeito(E).prestigio : 0;
+    if(U.rng() < 0.10 + U.limitar(festa*0.01, 0, 0.08)){
+      const v = Math.round(200 + (E.indicadores.prestigio + festa)*U.entre(30, 90));
       TO.estado.lancar(E, 'Doação de simpatizante', v);
       rel.receitas.push({rot:'Doação de simpatizante', v});
       rel.receita += v; rel.saldo += v;
@@ -334,5 +347,5 @@ TO.financeiro = (function(){
   return {contas, resumoDaSemana, compromissos, patrimonio, fatorComercial, bairroDeFora,
           precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
           postura, fecharSemana,
-          MANUT_SEDE, RECEITA, MANUT, CARAVANA, SEM};
+          MANUT_SEDE, RECEITA, MANUT, INSUMO, MATERIAL, CARAVANA, SEM};
 })();

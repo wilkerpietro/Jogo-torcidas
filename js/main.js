@@ -907,9 +907,125 @@
   }
 
   /* =======================================================
+     PATRIMÔNIO
+     Duas abas porque são duas decisões diferentes com o mesmo
+     caixa: ESTRUTURA é o que rende todo mês e MATERIAL é o
+     que a torcida leva pro estádio. A tabela é mensal porque
+     é assim que ela se compara com o preço de compra — o
+     fechamento continua sendo semanal.
+     ======================================================= */
+  function pintarPatrimonio(pg, e){
+    const PAT = TO.patrimonio;
+    pg.appendChild(abasGrandes([
+      {id:'estrutura', rot:'Estrutura'},
+      {id:'materiais', rot:'Materiais'}
+    ], abaPat, id=>{abaPat=id; redesenhar();}));
+
+    const comprar = (fn)=>{
+      const r = fn();
+      aviso(r.msg, r.ok?'boa':'ruim');
+      if(r.ok) redesenhar();
+    };
+    /* uma linha de loja: o que é, quanto custa, e o botão */
+    const oferta = (rot, nota, custo, trava, aoClicar)=>{
+      const b = el('button',{class:'oferta'+(trava?' travada':'')});
+      b.innerHTML =
+        `<span class="txt"><b>${rot}</b>${nota?`<small>${nota}</small>`:''}</span>
+         <span class="preco">${U.dinheiro(custo)}</span>`;
+      if(trava) b.appendChild(el('small',{class:'trava', texto:trava}));
+      b.disabled = !!trava;
+      b.onclick = aoClicar;
+      return b;
+    };
+
+    if(abaPat==='estrutura'){
+      const linhas = PAT.linhas(e);
+      const soma = k => linhas.reduce((s,l)=>s+l[k], 0);
+      const c = cartao('Estrutura',
+        'por mês · mensalidade e caravana ficam no Resumo');
+      const tab = el('div',{class:'tabela-pat'});
+      tab.appendChild(el('div',{class:'cab', html:
+        '<span>Local</span><span>Receita</span><span>Despesa</span><span>Mês</span>'}));
+      for(const l of linhas){
+        tab.appendChild(el('div',{class:'linha', html:
+          `<span class="nome">${l.rot}${l.bairro?`<small>${l.bairro}</small>`:''}`+
+          `${l.nota?`<small>${l.nota}</small>`:''}</span>
+           <span class="v ${l.receita?'positivo':''}">${l.receita?U.dinheiro(l.receita):'—'}</span>
+           <span class="v ${l.despesa?'negativo':''}">${l.despesa?U.dinheiro(-l.despesa):'—'}</span>
+           <span class="v ${l.saldo>0?'positivo':l.saldo<0?'negativo':''}">`+
+          `${U.dinheiro(l.saldo)}</span>`}));
+      }
+      const s = soma('receita')-soma('despesa');
+      tab.appendChild(el('div',{class:'linha total', html:
+        `<span class="nome">Total do patrimônio</span>
+         <span class="v positivo">${U.dinheiro(soma('receita'))}</span>
+         <span class="v negativo">${U.dinheiro(-soma('despesa'))}</span>
+         <span class="v ${s>=0?'positivo':'negativo'}">${U.dinheiro(s)}</span>`}));
+      c.corpo.appendChild(tab);
+      pg.appendChild(c);
+
+      const c2 = cartao('Adquirir e ampliar', `caixa: ${U.dinheiro(e.dinheiro)}`);
+      for(const o of PAT.opcoes(e))
+        c2.corpo.appendChild(oferta(o.rot, o.nota, o.custo, o.trava,
+          ()=>comprar(()=>PAT.comprar(e, o.id))));
+      pg.appendChild(c2);
+      return;
+    }
+
+    /* --- materiais --- */
+    const c = cartao('O que a torcida tem', 'bateria, faixa, bandeirão, bandeira e pirotecnia');
+    const grade = el('div',{class:'itens-pat'});
+    let nada = true;
+    for(const m of PAT.MATERIAIS){
+      const n = PAT.quantidade(e, m.id);
+      if(!n) continue;
+      nada = false;
+      grade.appendChild(el('div',{class:'item-pat', html:
+        `<b>${n}</b><span>${m.rot}</span>`}));
+    }
+    if(nada) grade.appendChild(el('div',{class:'em-construcao',
+      texto:'A torcida não tem material nenhum guardado.'}));
+    c.corpo.appendChild(grade);
+    /* o que o material vale, em número que o jogador reconhece de outra
+       tela — número solto de "festa" não diz nada a ninguém */
+    const ef = PAT.efeito(e);
+    const T = TO.torcedores;
+    const bonus = T.fatorTorcida(e).ganho * T.EM_QUALIDADE;
+    c.corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span>Satisfação descansa em</span><b${ef.satisfacao?' class="positivo"':''}>`+
+      `${T.neutraDe(e).toFixed(1)} de 20</b>`}));
+    c.corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span>Reputação na rua</span><b${ef.prestigio?' class="positivo"':''}>`+
+      `${ef.prestigio ? '+'+ef.prestigio.toFixed(1)+' na doação de simpatizante' : '—'}</b>`}));
+    c.corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span>No dia de jogo</span><b${bonus>=0.05?' class="positivo"':''}>`+
+      `${bonus>=0.05 ? '+'+bonus.toFixed(1)+' de qualidade'
+                     : 'a arquibancada já está cheia'}</b>`}));
+    c.corpo.appendChild(el('div',{class:'linha-dado', html:
+      `<span>Guarda e conserto</span><b${ef.manutencao?' class="negativo"':''}>`+
+      `${ef.manutencao ? U.dinheiro(-ef.manutencao)+' por mês' : '—'}</b>`}));
+    pg.appendChild(c);
+
+    for(const fam of PAT.FAMILIAS){
+      const itens = PAT.MATERIAIS.filter(m=>m.fam===fam);
+      if(!itens.length) continue;
+      const cf = cartao(fam);
+      for(const m of itens){
+        const trava = PAT.podeComprar(e, m.id, 1);
+        const tem = PAT.quantidade(e, m.id);
+        const nota = [m.nota, tem?`tem ${tem}`:null].filter(Boolean).join(' · ');
+        cf.corpo.appendChild(oferta(m.rot, nota, m.preco, trava,
+          ()=>comprar(()=>PAT.comprarMaterial(e, m.id, 1))));
+      }
+      pg.appendChild(cf);
+    }
+  }
+
+  /* =======================================================
      FINANCEIRO
      ======================================================= */
   let subFin = 'resumo';
+  let abaPat = 'estrutura';
 
   function pintarFinanceiro(){
     const e = E(), pg = U.$('.pagina[data-pag="financeiro"]');
@@ -917,10 +1033,11 @@
     pg.appendChild(el('div',{class:'titulo-pagina', texto:'Financeiro'}));
     pg.appendChild(subabas([
       {id:'resumo', rot:'Resumo'},
-      {id:'lojas',  rot:'Lojas e bares', desabilitada:true},
-      {id:'obras',  rot:'Construções',   desabilitada:true},
+      {id:'patrimonio', rot:'Patrimônio'},
       {id:'transacoes', rot:'Transações'}
     ], subFin, id=>{subFin=id; redesenhar();}));
+
+    if(subFin==='patrimonio'){ pintarPatrimonio(pg, e); return; }
 
     if(subFin==='transacoes'){
       const c = cartao('Transações', `${e.transacoes.length} lançamentos`);
@@ -2702,7 +2819,15 @@
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     if(enc){
       /* material perdido quando a briga é na rua e a gente leva a pior */
-      if(res.prestigio < 0) TO.torcedores.perderMaterial(e, 1, 2);
+      if(res.prestigio < 0){
+        TO.torcedores.perderMaterial(e, 1, 2);
+        /* e de vez em quando some o que estava na mão de alguém: é o que
+           faz a loja de material continuar sendo decisão depois de comprada */
+        if(TO.patrimonio && U.rng() < 0.25){
+          const p = TO.patrimonio.perderItem(e);
+          if(p) TO.estado.anotar(e, `${p.rot} ficou na rua — levaram.`, 'ruim');
+        }
+      }
       TO.ruas.resolver(e);
       encontroAberto = null;
     }

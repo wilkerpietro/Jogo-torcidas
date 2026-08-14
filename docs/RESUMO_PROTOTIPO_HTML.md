@@ -593,14 +593,62 @@ O que **não** veio, e por quê:
   folga cheia não couber, ela cede antes de o pino sumir. Medido: 50 pinos, nenhum sobre
   gramado, nenhum encostado, folga mínima de 20 px além dos dois raios.
 
+- **Patrimônio: a tela que faltava pro dinheiro ter pra onde ir** (`js/gestao/patrimonio.js`).
+  A subaba do Financeiro que se chamava *Construções* virou **Patrimônio**, com duas abas,
+  porque são duas decisões diferentes saindo do mesmo caixa.
+  **ESTRUTURA** abre com a tabela do mês — cada local numa linha, com receita, despesa e
+  o que sobra — e fecha com o que dá pra comprar. Ela é **mensal** de propósito: é assim
+  que se compara com o preço de compra, enquanto o fechamento continua semanal. Os números
+  não são recalculados aqui; `RECEITA`, `MANUT`, `MANUT_SEDE`, `INSUMO` e `MATERIAL` saem
+  de `financeiro.js`, que é quem cobra — duas tabelas com os mesmos valores escritos duas
+  vezes é a tela mentindo daqui a três semanas. Medido: a soma da tabela dividida por
+  quatro, mais as mensalidades, bate com `contas()` com diferença de R$ 0 a R$ 1 de
+  arredondamento.
+  **MATERIAIS** lista o que a torcida guarda e vende o resto: faixa em três tamanhos,
+  bandeirão em quatro, bandeira, bateria em dois níveis e a pirotecnia que já existia.
+  Cada item diz o que vale — onde a satisfação vai descansar, quanto rende de reputação
+  e o que custa de guarda por mês.
+  **Os preços de aquisição não vêm do GDD V3, que não está no repositório.** Saíram de
+  uma regra só, escrita no cabeçalho do módulo: o imóvel se paga em torno de doze meses
+  de lucro líquido, no bairro e na fase médios — bar R$ 8.000 pra R$ 680/mês, loja
+  R$ 9.000 pra R$ 600, subsede R$ 6.000 pra R$ 510, ampliação de sede em 20/45/90/160 mil
+  e fábrica de material a R$ 35.000 (corta 40% do custo de material de todo mês, e exige
+  sede nível 3). Quem tiver o número oficial troca a tabela — a regra fica ao lado de
+  cada preço justamente pra saber o que muda junto.
+  Teto por nível de sede pra torcida nível 1 não comprar a cidade: bar 1/2/3/4/6, loja
+  0/1/2/3/5, subsede 0/1/2/4/6. Botão travado sempre diz **por quê** ("falta caixa", "a
+  sede não comporta mais", "precisa de sede nível 3") — cinza sem explicação é o que faz
+  o jogador achar que o jogo quebrou.
+  **O material precisava pagar em alguma coisa, e não em três.** Ele mexe em exatamente
+  três lugares, todos existentes: (1) a satisfação **descansa** mais alto — `esfriar` já
+  puxava tudo pra 11 toda semana, e agora o alvo é 11 + festa×0,45, com teto em 15, então
+  bandeirão não empurra a satisfação, muda onde ela para (medido: convergiu pra 14,92
+  vindo de 4 e pra 15,03 vindo de 19); (2) a doação de simpatizante fica mais frequente e
+  maior; (3) no dia de jogo entra como festa comprada. Esse terceiro **não fura o teto**:
+  o Fator Torcida continua limitado a 1, porque o bônus de ±4 de qualidade é decisão
+  fechada e comprar material não é jeito de contornar. A tela mostra o ganho **depois**
+  do teto — torcida que já lota e canta lê "a arquibancada já está cheia" em vez de um
+  número que não existe. Cada cópia rende 60% da anterior, então o segundo mega bandeirão
+  não impressiona como o primeiro.
+  **Preço medido contra a economia real**: uma torcida de 150 membros na sede nível 4
+  sobra ~R$ 250 por semana e sai de R$ 6.000 pra R$ 18.500 no primeiro ano sem comprar
+  nada. Faixa e bandeira são compra de semana, bandeirão de 10×10 é de mês, o de 20×20 é
+  de temporada e o mega de R$ 60.000 é obra de torcida grande — e cobra R$ 934/mês de
+  guarda com a coleção inteira, que é o freio. Estrutura primeiro, material depois, é o
+  caminho que os números desenham.
+  **E a loja não é catraca de mão única**: apanhar feio na rua já tirava faixa e
+  instrumento do estoque de rua, e agora tem 25% de chance de levar junto um item
+  comprado — o mais barato que estava na mão, do menor pro maior, e nunca a bateria,
+  que não vai pra briga. Sem isso a coleção só crescia, e comprar deixava de ser decisão
+  depois da primeira vez.
+  O que se guarda mora em `E.patrimonio.itens`; a pirotecnia continua em `E.estoque`,
+  que é de onde o planejamento da semana tira as bombas. São duas gavetas porque já eram
+  duas antes desta tela.
+
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
 aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no
 mapa — clicar num ponto da rua pra marcar tocaia, e acompanhar o bonde aliado da rodovia
 até o estádio.
-
-Depois disso, o patrimônio: bares, lojas e subsedes têm receita, manutenção e insumo
-implementados no fechamento, mas não há tela de compra — só existe o bar nível 1 que o
-GDD dá de graça na sede nível 1.
 
 **O que ainda falta no mundo:** a Série E do GDD §18.2 — os dados têm 108 clubes, não
 156, então ninguém cai da Série D.

@@ -957,3 +957,51 @@ table.dados tr.selecionada td{background:#252525}
   display:block;font-family:var(--mono);font-size:10px;color:var(--fraco);
   margin-top:2px;
 }
+
+
+/* =========================================================
+   PATRIMÔNIO — a tabela da estrutura e a loja de material
+   ========================================================= */
+.tabela-pat{display:flex;flex-direction:column}
+.tabela-pat .cab,.tabela-pat .linha{
+  display:grid;grid-template-columns:1fr 96px 96px 100px;gap:8px;align-items:baseline;
+  padding:7px 0;border-bottom:1px solid var(--sulco);
+}
+.tabela-pat .cab{
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--fraco);border-bottom-color:var(--linha);
+}
+.tabela-pat .cab span:not(:first-child),.tabela-pat .v{text-align:right}
+.tabela-pat .nome{display:flex;flex-direction:column;gap:1px;font-size:13px}
+.tabela-pat .nome small{font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.tabela-pat .v{font-family:var(--mono);font-size:12.5px}
+.tabela-pat .total{border-bottom:0;border-top:1px solid var(--linha);margin-top:2px}
+.tabela-pat .total .nome{font-weight:700}
+
+/* uma oferta: o que é, quanto custa, e o motivo quando não dá */
+.oferta{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:#16160f;border:1px solid var(--linha);color:var(--texto);
+  padding:9px 12px;margin-bottom:6px;cursor:pointer;
+}
+.oferta:hover:not(:disabled){border-color:var(--ouro);color:#fff}
+.oferta .txt{display:flex;flex-direction:column;gap:2px;flex:1}
+.oferta .txt b{font-size:13px}
+.oferta .txt small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+.oferta .preco{font-family:var(--mono);font-size:13px;color:var(--ouro);white-space:nowrap}
+.oferta.travada{opacity:.55;cursor:default}
+.oferta .trava{
+  font-family:var(--mono);font-size:10px;color:var(--vermelho);
+  text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;
+}
+
+.itens-pat{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px}
+.item-pat{
+  display:flex;align-items:baseline;gap:8px;
+  background:#16160f;border-left:2px solid var(--ouro);padding:7px 10px;
+}
+.item-pat b{font-family:var(--mono);font-size:16px;color:var(--ouro)}
+.item-pat span{font-size:12px;line-height:1.25}
+@media (max-width:820px){
+  .tabela-pat .cab,.tabela-pat .linha{grid-template-columns:1fr 78px 78px 84px}
+}
