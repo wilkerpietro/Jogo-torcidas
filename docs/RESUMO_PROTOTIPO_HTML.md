@@ -827,8 +827,18 @@ O que **não** veio, e por quê:
   declara. Medido em 178 bondes de 36 dias de jogo em três praças: 178 vão pro pino certo.
   Corinthians em casa manda a torcida pra Neo Química Arena.
 - **Um disco por pessoa nos arredores.** Se a Gaviões vai com 250, spawnam 250 — com a
-  cor de verdade da torcida, não a cor do lado. Isso levou a esplanada a **760 discos**, e
-  a 5 quadros por segundo. Três achados, em ordem de tamanho:
+  cor de verdade da torcida, não a cor do lado. Quem cria disco passou a ser o **bonde** e
+  não o portão: um portão recebe dois bondes num clássico, e cada um traz a sua cor e o
+  seu efetivo. Na primeira versão o bonde nascia em *cada* portão que lhe coubesse e o
+  efetivo saía dobrado (os "760 discos" que eu media eram 510 contados duas vezes); e a
+  escalação, que diz quem tem **nome** — força, defesa, ficha e consequência depois da
+  briga —, estava sendo lida como se dissesse **quantos foram**, então o nosso lado
+  entrava com 34 pessoas em vez de 250. Agora os 34 escalados são os 34 primeiros discos
+  do nosso bonde e o resto é povão sem ficha, que é o que o povão é. Medido pela tela, num
+  Corinthians em casa: 250 discos pretos da Gaviões (todos obedecendo à formação), 15
+  brancos da Jovem Ponte, 34 com ficha, 1 líder.
+  Isso levou a esplanada a **510 discos** e a 5 quadros por segundo. Três achados, em
+  ordem de tamanho:
   **1)** `pontoLivreMaisProximo` era chamado com o slot de formação, que **cai fora da
   cena** o tempo todo quando o líder está encostado numa borda. De fora da grade o anel
   gastava dezenas de voltas só pra reencontrar o mapa, e não dava pra guardar o resultado
@@ -843,8 +853,9 @@ O que **não** veio, e por quê:
   dependente da ordem da lista. Agora soma no disco e sai num movimento só —
   226 mil chamadas viraram 17 mil.
   O primeiro palpite (grade espacial na busca de inimigo) **não mudou nada** e ficou; o
-  que resolveu foi medir. Resultado: 186,8 ms → **11,7 ms por quadro** de simulação, e
-  **44 FPS medianos** com os 760 discos num laço de verdade, em Chromium sem GPU.
+  que resolveu foi medir. Resultado: 186,8 ms → **1,9 ms por quadro** de simulação, e
+  **60 FPS medianos** com os 510 discos num laço de verdade, em Chromium sem GPU
+  (p95 de 18 ms, pior quadro 21,9 ms).
 - **Os arredores viraram pop-up.** Saíram os painéis de calibragem, ocorrências e "nos
   arredores"; sobrou a cena, em tela cheia sobre o mapa, com os comandos num HUD por cima
   do canvas em vez de numa coluna ao lado.

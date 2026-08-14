@@ -164,7 +164,7 @@ TO.diaJogo.arredores = (function(){
      ficou preso dentro de um prédio (spawn mal posto, empurrão) */
   /* O anel se percorre pela BORDA, não pelo quadrado cheio. A primeira
      versão varria (2a+1)² células e jogava fora o miolo, o que faz o custo
-     crescer com o cubo do raio: com a esplanada cheia — 760 discos, efetivo
+     crescer com o cubo do raio: com a esplanada cheia — 510 discos, efetivo
      de verdade — isso deu 0,6 ms por chamada e 5 quadros por segundo,
      medido. Pela borda são 8a células por anel. */
   /* Memória da busca padrão. A resposta só depende da célula de partida

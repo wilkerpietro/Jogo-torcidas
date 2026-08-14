@@ -172,40 +172,67 @@ TO.diaJogo.combate = (function(){
     const nomes=U.embaralhar(TO.dados.nomes ? TO.dados.nomes.apelidos : ['TROVÃO']);
     let iN=0;
 
-    const spawnsMandante=D.spawns.filter(s=>s.lado==='mandante');
-    const porSpawn=new Map(spawnsMandante.map(s=>[s.id,[]]));
-    if(cfg.escalacao && cfg.escalacao.length){
-      /* o mais rodado vai no bonde do jogador e vira o líder */
-      const fila=[...cfg.escalacao].sort((a,b)=>b.xp-a.xp);
-      const doJogador=spawnsMandante.find(s=>s.jogador)||spawnsMandante[0];
-      porSpawn.get(doJogador.id).push(fila.shift());
-      let k=0;
-      for(const m of fila){
-        const s=spawnsMandante[k++%spawnsMandante.length];
-        porSpawn.get(s.id).push(m);
+    /* Quem cria disco é o BONDE, não o portão. Um portão pode receber dois
+       bondes num clássico, e cada um traz a sua cor e o seu efetivo: se a
+       Gaviões veio com 250 do mapa da cidade, nascem 250. Sem bonde — a
+       página solta da cena — cada portão gera pelo efetivo do parâmetro,
+       que é como era antes. */
+    const porLado = {mandante:[], visitante:[]};
+    for(const b of (J.bondes_ || [])) (porLado[b.lado] || porLado.mandante).push(b);
+    /* o nosso primeiro na fila: é dele o portão do jogador */
+    const iNosso = porLado.mandante.findIndex(b=>b.nossa);
+    if(iNosso > 0) porLado.mandante.unshift(porLado.mandante.splice(iNosso, 1)[0]);
+
+    const temEscalacao = !!(cfg.escalacao && cfg.escalacao.length);
+    const grupos = [];
+    for(const lado of ['mandante','visitante']){
+      const spawns = D.spawns.filter(s=>s.lado === lado);
+      if(!spawns.length) continue;
+      const fila = porLado[lado];
+      if(fila.length){
+        /* portão do jogador na frente, pra casar com o nosso bonde */
+        const ordem = spawns.slice().sort((a,b)=>(b.jogador?1:0)-(a.jogador?1:0));
+        fila.forEach((b, i)=> grupos.push({s:ordem[i % ordem.length], bonde:b,
+                                           qtd:Math.max(1, Math.round(b.n))}));
+      } else {
+        /* com escalação e sem bonde, quem diz o tamanho é a escalação */
+        const base = (lado === 'mandante' && temEscalacao) ? 0
+          : Math.max(1, Math.round(
+              (lado==='mandante'?P.efetivo:J.efetivoRival)/contarSpawns(lado)));
+        for(const s of spawns) grupos.push({s, bonde:null, qtd:base});
       }
     }
 
-    /* um bonde por spawn, na ordem de chegada; sobra bonde, ele divide o
-       spawn com outro — a esplanada tem quatro portões, não vinte */
-    const filaBonde = {mandante:[], visitante:[]};
-    for(const b of (J.bondes_ || [])) (filaBonde[b.lado] || filaBonde.mandante).push(b);
-    const usados = {mandante:0, visitante:0};
+    /* A escalação diz quem tem NOME — força, defesa, ficha e consequência
+       depois da briga. Ela não diz quantos foram: o resto é povão, sem
+       ficha, que é o que o povão é. Quando o bonde veio do mapa os
+       escalados são todos NOSSOS; sem bonde, se espalham pelos portões de
+       casa, como era antes. */
+    const nossos = grupos.filter(g=>g.bonde ? g.bonde.nossa : g.s.lado === 'mandante');
+    const alvo = nossos.length ? nossos : grupos.filter(g=>g.s.lado === 'mandante');
+    const grupoLider = alvo.find(g=>g.s.jogador) || alvo[0] || null;
+    const fichas = new Map();
+    if(temEscalacao && grupoLider){
+      /* o mais rodado vai no bonde do jogador e vira o líder */
+      const fila=[...cfg.escalacao].sort((a,b)=>b.xp-a.xp);
+      fichas.set(grupoLider, [fila.shift()]);
+      let k=0;
+      for(const m of fila){
+        const g = alvo[k++ % alvo.length];
+        if(!fichas.has(g)) fichas.set(g, []);
+        fichas.get(g).push(m);
+      }
+    }
 
-    for(const s of D.spawns){
-      const escalados = porSpawn.get(s.id);
-      const fila = filaBonde[s.lado] || [];
-      const bd = fila.length ? fila[(usados[s.lado]++) % fila.length] : null;
-      if(bd){ s._cor = bd.cor; s._torcida = bd.nome; }
-      const qtd = escalados && escalados.length ? escalados.length
-                : bd ? Math.max(1, Math.round(bd.n / Math.max(1,
-                        fila.filter(x=>x===bd).length)))
-                : Math.max(1, Math.round(
-                    (s.lado==='mandante'?P.efetivo:J.efetivoRival)/contarSpawns(s.lado)));
+    for(const g of grupos){
+      const s = g.s, escalados = fichas.get(g) || [];
+      const qtd = Math.max(g.qtd, escalados.length);
+      /* só o nosso bonde obedece à formação; aliado que divide o portão não */
+      const meu = g.bonde ? !!g.bonde.nossa : !!s.jogador;
       for(let i=0;i<qtd;i++){
         const p=A.pontoLivreMaisProximo(s.x+U.entre(-46,46), s.y+U.entre(-46,46), 7);
-        const m = escalados && escalados[i];
-        const lider = !!s.jogador && i===0;
+        const m = escalados[i];
+        const lider = g === grupoLider && i===0;
         const d=new Disco(
           m ? m.apelido.toUpperCase() : (nomes[iN++%nomes.length]||'ZÉ').toUpperCase(),
           s.lado, s, p.x, p.y, lider);
@@ -217,9 +244,9 @@ TO.diaJogo.combate = (function(){
           d.hp=d.hpMax;
           d.cargo=m.cargo;
         }
-        d.cor = s._cor || null;      // a cor da torcida, quando ela veio do mapa
-        d.torcida = s._torcida || null;
-        d.doJogador = !!s.jogador;   // só o seu bonde obedece à formação
+        d.cor = g.bonde ? g.bonde.cor : null;   // a cor da torcida que veio do mapa
+        d.torcida = g.bonde ? g.bonde.nome : null;
+        d.doJogador = meu;
         J.discos.push(d);
       }
       J.total[s.lado]+=qtd;
@@ -563,7 +590,7 @@ TO.diaJogo.combate = (function(){
      A GRADE ESPACIAL
      Procurar inimigo varrendo todos os discos é O(n²), e com o
      efetivo de verdade na esplanada — 250 da Gaviões mais os
-     rivais — são 760 discos. A grade divide o palco em células
+     rivais — são 510 discos. A grade divide o palco em células
      de 96 px e cada busca só olha as nove células em volta.
      Refeita uma vez por quadro, que é mais barato que mantê-la
      incremental.
