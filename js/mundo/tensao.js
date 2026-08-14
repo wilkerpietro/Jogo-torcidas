@@ -104,6 +104,8 @@ TO.tensao = (function(){
       const sede = TO.membros.nivelQueCabe(membros, (o.cargos||{}).diretoria || 0);
       E.mundoTorcidas[o.id] = {
         membros, sede,
+        /* o tamanho de fábrica, que é pra onde ela sempre pode voltar */
+        piso: membros,
         caixa: (o.saldo || 200) * 4,
         moral: 12,
         /* GDD §8.1: a sede nível 1 já vem com um bar nível 1 de graça */
@@ -114,11 +116,15 @@ TO.tensao = (function(){
            semana pra 138 torcidas */
         mult: multDaSede(o),
         /* GDD §6.2: não adianta ter sede nível 5 numa praça que não tem
-           500 torcedores sobrando. Sem este teto, cem anos deixavam toda
-           torcida do interior do mesmo tamanho da Gaviões — a estrutura
-           limita quando cabe, a praça limita se existe gente. Fica
-           guardado porque recalcular isso 138 × 5.200 vezes custa caro. */
-        praca: tetoDaPraca(o),
+           500 torcedores sobrando — a estrutura limita quando cabe, a
+           praça limita se existe gente. Guardado porque recalcular isso
+           138 × 5.200 vezes custa caro. */
+        pool: poolDaPraca(o),
+        /* as outras organizadas do mesmo clube na mesma praça, que
+           disputam o mesmo bolo — a do jogador entra aqui também */
+        irmas: M().torcidasEm(o.mapa)
+                  .filter(x=>x.clubeId===o.clubeId && x.id!==o.id && !x.incompleta)
+                  .map(x=>x.id),
         arq: NOMES_ARQ[TO.mapa.hash(o.id + '|arq') % NOMES_ARQ.length],
         /* torcida grande e de clube grande é mais ousada */
         ousadia: U.limitar((o.poder || 60)/260 + U.entre(-0.15, 0.15), 0.05, 1)
@@ -132,22 +138,37 @@ TO.tensao = (function(){
     return b ? M().multiplicador(b) : 1.0;
   }
 
-  /* Quanta gente essa torcida chega a ter, no limite da praça dela
-     (GDD §6.2). A base do clube na cidade vem em milhares; medido nas
-     139 torcidas da fonte, a militância fica em 0,23 membro por mil
-     torcedores na mediana e 1,33 no caso mais saturado. O teto usa
-     0,55 — meio caminho entre o p75 e o máximo —, então a torcida
-     mediana ainda pode dobrar de tamanho e a que já esgotou a praça
-     dela não cresce mais.
+  /* Quanta gente o clube tem pra dar, na praça dele (GDD §6.2). A base
+     vem em milhares; medido nas 139 torcidas da fonte, a militância
+     fica em 0,23 membro por mil torcedores na mediana e 1,33 no caso
+     mais saturado. O bolo usa 0,55 — meio caminho entre o p75 e o
+     máximo —, então a torcida mediana ainda pode dobrar.
 
-     Piso no efetivo inicial: torcida que a fonte diz que existe não
-     encolhe por causa desta conta. Teto em 500, que é o da sede 5. */
+     O BOLO É DO CLUBE, NÃO DA TORCIDA. É o que o GDD manda ("menos os
+     já organizados de todas as torcidas daquele time") e a primeira
+     versão disto errou: dava o bolo inteiro pra cada uma, então as
+     duas torcidas do Flamengo tinham exatamente o mesmo teto, cresciam
+     até ele e terminavam com o mesmo número. Medido em cem anos, 25
+     dos 29 clubes com mais de uma organizada acabaram com todas elas
+     empatadas na mesma casa — Fúria Jovem e Torcida Jovem do Botafogo
+     em 442 cada, Jovem Fla e Raça Fla em 500 cada.
+
+     Agora elas dividem: o que uma recruta some do que sobra pra
+     outra, e quem chega primeiro fica com o espaço. */
   const POR_MIL = 0.55;
-  function tetoDaPraca(o){
+  function poolDaPraca(o){
     const base = M().baseDeRecrutamento(o.mapa, o.clubeId, () => 0);
-    const membros = o.membros || 20;
-    if(!base) return 500;
-    return U.limitar(Math.round(base*POR_MIL), membros, 500);
+    const bolo = base ? Math.round(base*POR_MIL) : 500;
+    /* A fonte manda mais que a fórmula. Onde o clube é pequeno, 0,55 por
+       mil dá menos gente do que as organizadas dele já têm — Os Farrapos
+       começa com 20 e a conta dá 8. Sem este piso elas perdiam gente nas
+       brigas e não recrutavam de volta, porque o teto já estava vencido:
+       medido, 17 torcidas descendo em cem anos até o piso de 8, todas com
+       caixa saudável. O bolo nunca é menor do que o que já está na mesa. */
+    const jaTem = M().torcidasEm(o.mapa)
+      .filter(x=>x.clubeId===o.clubeId && !x.incompleta)
+      .reduce((s,x)=>s+(x.membros||20), 0);
+    return Math.max(bolo, jaTem);
   }
 
   /* o balanço mensal de uma torcida da IA, na mesma tabela do jogador */
@@ -166,19 +187,39 @@ TO.tensao = (function(){
     return {rec, des, saldo:rec - des};
   }
 
-  /* o efetivo máximo é o menor dos dois: o que a sede comporta e o que
-     a praça tem pra dar */
-  const tetoDe = t => Math.min(TO.membros.SEDE[t.sede].membros, t.praca);
+  /* Quanto do bolo do clube ainda é desta torcida: o bolo menos o que as
+     irmãs já ocupam. O piso é o efetivo com que ela entrou no jogo, e não
+     o de agora — apanhar não pode encolher a torcida pra sempre, ela tem
+     que poder repor até onde estava. Praça apertada trava o crescimento,
+     não expulsa ninguém. */
+  function espacoDaPraca(E, t){
+    const m = E.mundoTorcidas;
+    let ocupado = 0;
+    for(const ir of t.irmas)
+      ocupado += m[ir] ? m[ir].membros
+               : (ir === E.torcida.id ? E.membros.length : 0);
+    return Math.max(t.piso, t.pool - ocupado);
+  }
+
+  /* o efetivo máximo é o menor dos dois: sede e praça. As duas contas
+     ficam separadas de propósito — comparar o teto da sede com este
+     mínimo é comparar um número com ele mesmo, e foi assim que numa
+     medição inteira de cem anos nenhuma torcida ampliou a sede. */
+  const tetoDe = (E, t) =>
+    Math.min(TO.membros.SEDE[t.sede].membros, espacoDaPraca(E, t));
 
   /* o que ela compraria agora, se tivesse dinheiro: o primeiro item da
      lista do arquétipo que ainda cabe na sede */
-  function proximaCompra(t){
+  function proximaCompra(E, t){
     const cfgArq = ARQUETIPOS[t.arq];
-    /* ampliar a sede quando o efetivo está no teto é sempre prioridade:
-       sem isso ela para de crescer pra sempre */
-    const teto = tetoDe(t);
+    /* Ampliar a sede quando o efetivo está no teto é sempre prioridade:
+       sem isso ela para de crescer pra sempre. Só vale, porém, se quem
+       está segurando for a SEDE e não a praça — sede nova que a praça
+       não enche é R$ 40.000 jogados fora. */
+    const espaco = espacoDaPraca(E, t);
+    const teto = Math.min(TO.membros.SEDE[t.sede].membros, espaco);
     if(t.membros >= teto * 0.9 && P().SEDE[t.sede+1]
-       && TO.membros.SEDE[t.sede].membros < t.praca)
+       && TO.membros.SEDE[t.sede].membros < espaco)
       return {tipo:'sede', custo:P().SEDE[t.sede+1].custo};
 
     for(const tipo of cfgArq.compra){
@@ -217,7 +258,7 @@ TO.tensao = (function(){
       t.vermelho = 0;
 
       /* comprar vem antes de crescer: estrutura destrava efetivo */
-      const compra = proximaCompra(t);
+      const compra = proximaCompra(E, t);
       if(compra && t.caixa >= compra.custo * ARQUETIPOS[t.arq].reserva){
         t.caixa -= compra.custo;
         if(compra.tipo === 'sede') t.sede++;
@@ -230,7 +271,7 @@ TO.tensao = (function(){
 
       /* GDD §6.2: recrutar custa R$ 5 por cabeça e só cabe até o teto —
          é ele que segura o crescimento, não o sorteio */
-      const teto = tetoDe(t);
+      const teto = tetoDe(E, t);
       if(t.membros < teto && t.caixa > 2000 && U.rng() < 0.18){
         const n = Math.min(U.inteiro(1,2), teto - t.membros);
         t.membros += n;
@@ -307,6 +348,8 @@ TO.tensao = (function(){
     if(!_pares) _pares = paresPossiveis(E);
     if(!_pares.length) return [];
     const m = mundo(E);
+    E.tensoesDelas  = E.tensoesDelas  || {};
+    E.relacoesDelas = E.relacoesDelas || {};
     const noticias = [];
     /* três episódios por semana no país inteiro: o bastante pra o
        ticker ter o que dizer sem virar ruído */
@@ -323,7 +366,6 @@ TO.tensao = (function(){
         /* bater custa; apanhar custa mais, e ainda perde gente */
         m[a].caixa -= 300; m[b].caixa -= 900;
         m[b].membros = Math.max(8, m[b].membros - U.inteiro(0,2));
-        E.tensoesDelas = E.tensoesDelas || {};
         const ch = chaveDe(a,b);
         E.tensoesDelas[ch] = U.limitar((E.tensoesDelas[ch]||0) + ev.tensao, 0, MAX);
         moverRelacao(E, a, b, -ev.tensao*0.35);
@@ -427,7 +469,10 @@ TO.tensao = (function(){
       const base = M().valorInicial(M().relacaoBase(a, b));
       const atual = E.relacoesDelas[ch];
       if(Math.abs(base - atual) < 2) continue;
-      const puxao = 0.05 * (1 - (E.tensoesDelas[ch]||0)/MAX);
+      /* a relação existe sem a tensão existir: uma trégua entre duas
+         torcidas que nunca brigaram cria o par aqui sem passar pelo
+         ramo hostil, que é quem criava o mapa de tensão */
+      const puxao = 0.05 * (1 - ((E.tensoesDelas||{})[ch]||0)/MAX);
       E.relacoesDelas[ch] = U.limitar(atual + (base - atual)*puxao, -100, 100);
     }
   }

@@ -656,10 +656,13 @@ O que **não** veio, e por quê:
   pela proporção de cargos do §5.1 (dá R$ 45 por cabeça, derivada e não mágica),
   manutenção, insumo e material — tudo pela tabela do GDD V4.
   Duas coisas limitam o tamanho, e a segunda é a que importa: o teto da sede (§8.1) e o
-  **teto da praça** (§6.2). Medido nas 139 torcidas da fonte, a militância fica em 0,23
-  membro por mil torcedores do clube na mediana e 1,33 no caso mais saturado; o teto usa
+  **bolo da praça** (§6.2). Medido nas 139 torcidas da fonte, a militância fica em 0,23
+  membro por mil torcedores do clube na mediana e 1,33 no caso mais saturado; o bolo usa
   0,55, então a mediana ainda pode dobrar e quem já esgotou a praça não cresce mais.
-  Em cem anos, **133 das 138 terminam encostadas no teto da praça e não no da sede** —
+  **O bolo é do clube e é disputado**, como o GDD manda ("menos os já organizados de
+  todas as torcidas daquele time"): cada torcida desconta o que as irmãs ocupam, e quem
+  cresce primeiro fica com o espaço. A do jogador entra na conta.
+  Em cem anos, **76 das 138 terminam encostadas no teto da praça e não no da sede** —
   Os Farrapos, de um clube com 15 mil torcedores, fica nos 20 membros que tinha, e a
   Jovem Fla chega aos 500 do nível 5. A distância entre a maior e a menor **sobe** pra
   25×, e o mundo estabiliza por volta de 2066 e não se move mais.
@@ -667,15 +670,27 @@ O que **não** veio, e por quê:
   (a empresária loja, bar e subsede; a agressiva só bar) e guarda uma reserva diferente
   antes de assinar. Medido: a diplomática termina com 4,3 subsedes e a agressiva com
   nenhuma.
-  Duas quebras apareceram na primeira medição de cem anos e foram consertadas.
-  **Quinze torcidas faliram até o piso de 8 membros** porque a reserva do arquétipo era
-  um múltiplo *menor* que 1 — a agressiva assinava uma fábrica de R$ 400.000 com
-  R$ 240.000 no caixa e nunca mais saía do vermelho, perdendo 3% do efetivo por semana.
-  E o **caixa continuava empilhando** depois de tudo comprado: mediana de R$ 3,9 milhões
-  e subindo em linha reta desde 2066, porque não havia no que gastar. A torneira é a do
-  próprio GDD (§7.4 e §9): quando não sobra o que comprar, queima 6% do que passa de um
-  ano de despesa em material, pirotecnia, festa e estrada. Acha o equilíbrio sozinha em
-  qualquer tamanho — a mediana fica em R$ 67 mil e não anda mais.
+  Quatro quebras apareceram nas medições de cem anos e foram consertadas, todas visíveis
+  só na corrida longa:
+  1. **Quinze torcidas faliram até o piso de 8 membros** porque a reserva do arquétipo era
+     um múltiplo *menor* que 1 — a agressiva assinava uma fábrica de R$ 400.000 com
+     R$ 240.000 no caixa e nunca mais saía do vermelho, perdendo 3% do efetivo por semana.
+  2. O **caixa empilhava** depois de tudo comprado: mediana de R$ 3,9 milhões subindo em
+     linha reta desde 2066, porque não havia no que gastar. A torneira é a do próprio GDD
+     (§7.4 e §9): quando não sobra o que comprar, queima 6% do que passa de um ano de
+     despesa em material, pirotecnia, festa e estrada. Acha o equilíbrio sozinha em
+     qualquer tamanho — a mediana fica em R$ 56 mil e não anda mais.
+  3. **Toda torcida do mesmo clube terminava com o mesmo efetivo** — 25 dos 29 clubes com
+     mais de uma organizada. `baseDeRecrutamento(praça, clube)` não recebe *qual* torcida,
+     então as duas do Botafogo recebiam o mesmo 442 e paravam ali. Daí o bolo disputado
+     acima. Os 3 empates que sobraram são legítimos: nos clubes de bolo enorme todas as
+     irmãs batem no teto de 500 do nível 5.
+  4. Na primeira tentativa de dividir o bolo, **nenhuma torcida ampliava a sede em cem
+     anos**: a condição comparava o teto da sede com o mínimo entre sede e praça, ou seja
+     com ele mesmo. E **dezessete torcidas de clube pequeno secavam**, porque o bolo
+     calculado dava menos gente do que elas já tinham — perdiam nas brigas e não
+     recrutavam de volta. A fonte manda mais que a fórmula: o bolo nunca é menor do que o
+     que já está na mesa, e o piso de cada uma é o efetivo com que ela entrou no jogo.
 - **A relação entre duas torcidas da IA passou a existir** — antes só a tensão andava, e
   tensão esfria em três semanas, então uma rivalidade de trinta anos de porrada terminava
   exatamente onde começou. `E.relacoesDelas` nasce do grafo importado e se move com as
