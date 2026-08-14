@@ -208,7 +208,7 @@ TO.torcedores = (function(){
     /* O que a torcida comprou entra por cima do estoque de rua: um
        bandeirão de 50×30 aberto na arquibancada não é "faixa cheia",
        é outra categoria de festa (patrimonio.js). O teto continua em 1
-       de propósito — o bônus do jogo é ±8 de força desde sempre, e
+       de propósito — o bônus do jogo é ±4 de força desde sempre, e
        comprar material não é jeito de furar esse limite: serve pra
        cobrir o que falta de gente, de faixa e de moral. */
     const comprado = TO.patrimonio ? TO.patrimonio.efeito(E).satisfacao : 0;
@@ -226,12 +226,12 @@ TO.torcedores = (function(){
   /* =======================================================
      DO FATOR AO PLACAR
      O GDD diz "aplicado como bônus" sem dar o número. Aqui ele
-     vale até 16 pontos de força — com a torcida cheia contra
+     vale até 8 pontos de força — com a torcida cheia contra
      uma vazia, é meia bola de vantagem, o suficiente pra sentir
      e longe de decidir sozinho. A referência é 0.5: torcida
      mediana não dá nem tira nada.
      ======================================================= */
-  const EM_FORCA = 16;
+  const EM_FORCA = 8;
   const NEUTRO = 0.5;
   function bonusDoJogo(E, idCasa, idFora){
     const meu = E.torcida.clubeId;

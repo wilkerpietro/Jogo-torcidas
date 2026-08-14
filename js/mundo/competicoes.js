@@ -68,17 +68,18 @@ TO.competicoes = (function(){
   }
 
   /* =======================================================
-     FORÇA DOS CLUBES — escala 1 a 100
-     A planilha dá o ponto de partida na escala antiga de 4 a
-     50 e é convertida na leitura (×2); o resto do decênio é
-     consequência do que aconteceu em campo. Quem termina no
-     G4 sobe de nível, quem briga contra o rebaixamento perde.
-     A evolução vive no save (E.forcas), nunca em times.js —
-     dado importado não se reescreve.
+     FORÇA DOS CLUBES — teto 100, valores da fonte
+     A planilha dá o ponto de partida e ele entra como está:
+     os 108 clubes nascem entre 4 e 50, que é a força que o
+     autor definiu pra cada um. O que mudou foi só o TETO —
+     de 50 pra 100 —, então sobra metade da régua pra crescer,
+     seja em campo, seja com dinheiro de torcida. O resto do
+     decênio é consequência do que aconteceu no gramado: quem
+     termina no G4 sobe de nível, quem briga contra o
+     rebaixamento perde. A evolução vive no save (E.forcas),
+     nunca em times.js — dado importado não se reescreve.
      ======================================================= */
   const FORCA_MIN = 1, FORCA_MAX = 100;
-  /* a fonte veio em 4–50; o jogo trabalha em 1–100 */
-  const DA_FONTE = 2;
 
   let _forcas = null;                     // ponteiro pro save da vez
   let _investido = null;
@@ -92,7 +93,7 @@ TO.competicoes = (function(){
      o investimento é dinheiro de torcida e não pode entrar nessa média,
      senão comprar elenco derrubaria o dos outros na mesma divisão. */
   const invDe = (E, id) => ((E && E.investimento) || {})[id] || 0;
-  const daFonte = id => ((M().time(id)||{}).qualidade || 10) * DA_FONTE;
+  const daFonte = id => (M().time(id)||{}).qualidade || 10;
   const crua = id => (_forcas && _forcas[id] != null) ? _forcas[id] : daFonte(id);
   const forca = id => U.limitar(
     crua(id) + ((_investido && _investido[id]) || 0), FORCA_MIN, FORCA_MAX);
@@ -219,7 +220,7 @@ TO.competicoes = (function(){
       const d = divisaoDe(E, M().time(id) || {});
       const nivel = conta[d] ? soma[d]/conta[d] : antes;
       const puxao = (nivel - antes) * GRAVIDADE;
-      const dep = U.limitar(Math.round(antes + bruto[id] + puxao), FORCA_MIN, FORCA_MAX);
+      const dep = U.limitar(Math.round(antes + bruto[id]/2 + puxao), FORCA_MIN, FORCA_MAX);
       if(dep !== antes){ E.forcas[id] = dep; mov.push({id, de:antes, para:dep}); }
     }
     usarSave(E);
@@ -242,10 +243,10 @@ TO.competicoes = (function(){
   /* GDD §9.5: o placar sai da forca dos dois elencos, do mando e de um
      bonus chamado Fator Torcida — o que a arquibancada faz no dia. O
      bonus vem de fora em pontos de força, positivo pro mandante.
-     O divisor acompanha a escala: em 1–100 as diferenças são o dobro
-     das de 4–50, então 110 mantém o mesmo placar de antes. */
+     O divisor é 55 porque é a distância que separa o clube mais fraco
+     do mais forte da fonte — subir o teto pra 100 não muda isso. */
   function simular(casa, fora, bonusCasa){
-    const dif = (forca(casa) - forca(fora) + (bonusCasa||0)) / 110;
+    const dif = (forca(casa) - forca(fora) + (bonusCasa||0)) / 55;
     const lc = U.limitar(1.30 + 0.30 + dif*1.5, 0.25, 5);
     const lf = U.limitar(1.30 - 0.20 - dif*1.5, 0.20, 5);
     return [poisson(lc), poisson(lf)];

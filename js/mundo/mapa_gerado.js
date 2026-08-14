@@ -59,7 +59,79 @@ TO.mapaGerado = (function(){
     if(_cache[idCidade] !== undefined) return _cache[idCidade];
     const cidade = TO.mundo.cidade(idCidade);
     if(!cidade || !(cidade.bairros||[]).length) return (_cache[idCidade] = null);
-    return (_cache[idCidade] = gerar(cidade));
+    /* praça Grande herda a foto de Fortaleza; o resto ganha planta */
+    const foto = emprestada(cidade);
+    return (_cache[idCidade] = foto || gerar(cidade));
+  }
+
+  /* =======================================================
+     A FOTO EMPRESTADA
+     A arte de Fortaleza é uma cidade brasileira de 16 bairros
+     em quatro zonas — e as cinco praças Grandes do jogo têm
+     exatamente isso: 16 bairros, 4 por zona. Então a mesma
+     imagem serve pra todas, com os bairros trocados de nome.
+
+     O que se empresta é a GEOMETRIA: a máscara de rua, os
+     lotes com frente pra rua e os três gramados desenhados. O
+     que é da cidade continua sendo dela: nome, classe social
+     (que decide receita e cena de briga) e zona.
+
+     Os estádios se reposicionam sozinhos. Cada gramado sabe em
+     que região caiu, e `paresDeEstadio` casa o estádio da praça
+     com o gramado por porte — o maior campo pro estádio de
+     maior capacidade. O bairro do estádio passa a ser o do
+     gramado, que é onde ele de fato está no desenho.
+     ======================================================= */
+  const ZONAS = ['Norte','Sul','Leste','Oeste'];
+
+  function emprestada(cidade){
+    const base = (TO.dados||{}).cidadeMapa;
+    if(!base || cidade.tamanho !== TO.mundo.PRACA_JOGAVEL) return null;
+    if(cidade.id === base.cidade) return null;          // a dona da foto
+    if((cidade.bairros||[]).length !== base.bairros.length) return null;
+
+    /* casa zona com zona, em ordem: a arte tem 4 por zona e a praça
+       Grande também. Sem isso um bairro do Norte cairia no Sul do
+       desenho e a cidade viraria outra coisa. */
+    const daArte = {}, daPraca = {};
+    for(const z of ZONAS){
+      daArte[z]  = base.bairros.map((b,i)=>({b,i})).filter(x=>x.b.zona === z);
+      daPraca[z] = cidade.bairros.filter(b=>b.zona === z);
+      if(daArte[z].length !== daPraca[z].length) return null;
+    }
+
+    const bairros = new Array(base.bairros.length);
+    for(const z of ZONAS)
+      daArte[z].forEach(({b, i}, k)=>{
+        const n = daPraca[z][k];
+        bairros[i] = {nome:n.nome, id:n.id, zona:n.zona, classe:n.classe,
+                      mult:n.mult, x:b.x, y:b.y, area:b.area, i};
+      });
+
+    /* em que região cada gramado caiu — é o que dá o bairro novo dele */
+    const reg = regioesDe(base);
+    const estadios = (base.estadios||[]).map(e=>{
+      const k = reg(e.x, e.y);
+      return Object.assign({}, e,
+        {bairro: (bairros[k] || bairros[0]).nome});
+    });
+
+    /* a máscara, os lotes e a imagem vão por referência: são os mesmos
+       bytes pras cinco praças, e clonar 35 KB cinco vezes não paga */
+    return Object.assign({}, base, {cidade:cidade.id, emprestada:true,
+                                    bairros, estadios});
+  }
+
+  /* lê o raster de regiões da arte sem depender do decodificador do
+     mapa, que é privado dele */
+  function regioesDe(a){
+    const n = Math.floor(a.largura / a.passo);
+    const linhas = a.regioes.split(';');
+    return (x, y)=>{
+      const c = Math.floor(x / a.passo), r = Math.floor(y / a.passo);
+      if(c < 0 || r < 0 || r >= linhas.length || c >= linhas[r].length) return 0;
+      return parseInt(linhas[r][c], 36) - 1;
+    };
   }
 
   function gerar(cidade){
@@ -204,5 +276,5 @@ TO.mapaGerado = (function(){
     return linhas.join(';');
   }
 
-  return {arteDe, LARGURA, PASSO, N};
+  return {arteDe, emprestada, LARGURA, PASSO, N};
 })();

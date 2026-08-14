@@ -233,7 +233,7 @@ TO.acoes = (function(){
   }
 
   /* Semanas que a cobrança do elenco dura, e quanto ela vale de força */
-  const COBRANCA = {semanas:4, bom:6, ruim:-4};
+  const COBRANCA = {semanas:4, bom:3, ruim:-2};
 
   function fecharPressao(E, res){
     const c = clube(E);

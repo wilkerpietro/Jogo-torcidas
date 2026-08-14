@@ -710,12 +710,12 @@ O que **não** veio, e por quê:
   clube conquistou em campo e continua sendo ela que a evolução de fim de ano recentra por
   competição; o investimento é dinheiro de torcida e fica fora dessa média, senão comprar
   elenco derrubaria o dos outros da mesma divisão.
-  **A escala do jogo virou 1 a 100**, que é a do GDD. A fonte veio em 4–50 e é convertida
-  na leitura (×2); com isso tudo que compara força teve de acompanhar, senão o placar
-  mudava de comportamento sozinho: o divisor do Poisson foi de 55 pra 110, o bônus do
-  Fator Torcida de 8 pra 16 pontos, a cobrança no CT de +3/−2 pra +6/−4, e os deltas da
-  evolução deixaram de ser divididos por dois. O save guarda `E.forcas`, não mais
-  `E.qualidades`.
+  **O teto virou 100, os valores continuam os da fonte.** Os 108 clubes nascem entre 4 e
+  50, que é a força que o autor definiu pra cada um; o que mudou foi só a régua, que agora
+  vai até 100 — sobra metade dela pra crescer, em campo ou com dinheiro de torcida. Como
+  os valores não se mexeram, nada de balanceamento precisou acompanhar: o divisor do
+  Poisson segue 55, o bônus do Fator Torcida segue 8 pontos e a cobrança no CT segue
+  +3/−2. O save guarda `E.forcas`, não mais `E.qualidades`.
   Preço por ponto, pela faixa em que o clube está: **R$ 50 mil** até 10 de força, 80 mil
   até 20, 140 mil até 30, 200 mil até 40, 250 mil até 50, 300 mil até 60, 350 mil até 70,
   400 mil até 80, 500 mil até 90 e **R$ 800 mil** até 100. Não há desgaste — o que a
@@ -737,8 +737,20 @@ O que **não** veio, e por quê:
   not iterable` na hora de abrir. Agora, pra qualquer praça, a planta é gerada da própria
   lista de bairros com a **mesma forma da arte**, e quem consome (pinos, filtros, briga de
   rua, contorno de bairro, malha do dia de jogo) não sabe a diferença.
-  A planta é a cruz do GDD §19.3 — Norte em cima, Sul embaixo, Oeste e Leste nos flancos,
-  miolo no centro. Cada bairro vira um retângulo com avenida em volta, ruas internas
+  **As cinco praças Grandes usam a foto de Fortaleza.** A arte é uma cidade brasileira de
+  16 bairros em quatro zonas, e São Paulo, Rio, Belo Horizonte e Recife têm exatamente
+  isso — 16 bairros, 4 por zona. Então a mesma imagem serve pras cinco, com os bairros
+  trocados de nome zona a zona: o que se empresta é a geometria (máscara de rua, lotes com
+  frente pra rua, os três gramados), e o que é da cidade continua dela — nome, zona e
+  classe social, que é quem decide receita e cena de briga. Os **estádios se reposicionam
+  sozinhos**: cada gramado sabe em que região caiu, `paresDeEstadio` casa o estádio da
+  praça com o campo por porte, e o bairro do pino passa a ser o do gramado. Medido: o
+  Mineirão cai no Itapoã, a Arena MRV em Santo Agostinho e o Independência nas Mangabeiras,
+  os três em cima de campo desenhado. Onde a praça tem mais estádios que gramados — São
+  Paulo tem quatro — o que sobra vai pra um lote do próprio bairro.
+  A máscara, os lotes e a imagem vão por referência: são os mesmos bytes pras cinco praças.
+  Nas praças que não são Grandes, a planta é a cruz do GDD §19.3 — Norte em cima, Sul
+  embaixo, Oeste e Leste nos flancos, miolo no centro. Cada bairro vira um retângulo com avenida em volta, ruas internas
   cortando em quarteirões de 5 células, e lote é toda célula construída que encosta numa
   rua; casa sem frente pra rua não é endereço de nada. A moldura de fora é rua, então dá
   pra contornar a praça sem passar pelo centro. Tudo por hash do nome do bairro: a mesma

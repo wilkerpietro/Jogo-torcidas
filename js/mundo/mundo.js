@@ -60,14 +60,19 @@ TO.mundo = (function(){
 
   function estadiosEm(idMapa){
     const daPraca = EST().filter(e=>e.mapa === idMapa);
-    const nomes = new Set(daPraca.map(e=>e.nome));
+    /* A comparação é pelo identificador, não pelo nome cru: `estadios.js`
+       escreve "Mineirão" e times.js escreve "Mineirao", e comparando as
+       duas strings o mesmo estádio entrava duas vezes — dois pinos no
+       mapa e dois gramados disputados por um clube só. Belo Horizonte
+       tinha 5 entradas pra 3 estádios. */
+    const nomes = new Set(daPraca.map(e=>U.identificador(e.nome)));
     const bairros = bairrosDe(idMapa);
     /* completa com os estádios que os clubes da praça declaram e que a
        fonte antiga não tinha */
     const fora = [];
     for(const t of timesEm(idMapa)){
-      if(!t.estadio || nomes.has(t.estadio)) continue;
-      nomes.add(t.estadio);
+      if(!t.estadio || nomes.has(U.identificador(t.estadio))) continue;
+      nomes.add(U.identificador(t.estadio));
       const b = bairros.length
         ? bairros[Math.abs(U.identificador(t.estadio).split('')
             .reduce((h,c)=>Math.imul(h^c.charCodeAt(0), 16777619), 2166136261)) % bairros.length]
