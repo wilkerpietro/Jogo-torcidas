@@ -2730,10 +2730,14 @@
     $('telaDiaJogo').classList.remove('oculto');
     TO.estado.bloquear(true);
     const p = TO.planejamento.plano(e);
+    /* quem chegou na esplanada entra na cena com o efetivo que sobrou da
+       caminhada e a cor da própria torcida */
+    const bondes = (R.arredores||[]).map(x=>({lado:x.lado, n:x.n, cor:x.cor,
+                                              nome:x.nome, nossa:x.nossa}));
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao: p.intencao, bombas: p.bombas,
-                tensao: tensaoDaNoite() },
+                tensao: tensaoDaNoite(), bondes },
       aoTerminar: fecharDiaDeJogo
     });
   }

@@ -790,6 +790,65 @@ O que **não** veio, e por quê:
   briga é preciso mexer no que conta como hostil na rua (hoje exige rivalidade de fato ou
   tensão ≥ 45), não no raio.
 
+- **São Paulo e Belo Horizonte ganharam mapa próprio.** A foto emprestada de Fortaleza
+  resolvia a geometria mas mentia em duas coisas: São Paulo tem **quatro** estádios e o
+  desenho só tinha três gramados (o quarto ia parar num lote qualquer), e Belo Horizonte
+  ficava com **praia**, numa cidade a 700 km do mar. As duas artes novas
+  (`img/cenas/mapa sao paulo.png` e `mapa belo horizonte.png`) têm quatro campos e serra
+  no lugar da praia. `ferramentas/importar_mapa_cidade.py` deixou de ser um script de uma
+  cidade só: recebe a praça por argumento, lê a tabela `ARTES` e escreve
+  `dados/cidade_mapa*.js`, todas registradas em `TO.dados.cidadeMapas` por id.
+  `TO.dados.cidadeMapa` continua apontando pra Fortaleza, que é o nome que o resto do jogo
+  usa quando quer "a arte de referência". Conferido: os 35 KB de Fortaleza saíram byte a
+  byte iguais.
+  **O quarto campo de São Paulo não era achado** porque o importador procurava gramado
+  *dentro* da máscara de cidade — e essa máscara é feita de densidade de telhado, que em
+  cima de um estádio é zero. A mancha urbana tem um buraco exatamente onde está o campo. O
+  do canto do mar caía 80% fora dela e sumia. Agora o verde se procura no desenho inteiro
+  e quem decide se é estádio ou mato é a vizinhança: gramado de estádio tem quarteirão em
+  volta. Pelo mesmo motivo o bairro do estádio saía vazio (a região no pixel do centro é
+  −1), e passou a vir do vizinho mais próximo.
+  Sobra o caso das outras três Grandes — Fortaleza, Rio e Recife — que seguem com a arte
+  de Fortaleza, agora com **três estádios pra três gramados** nas três (ver o item do
+  apelido, abaixo).
+- **Engenhão é Nilton Santos, Aflitos é Estádio dos Aflitos.** O Rio aparecia com quatro
+  estádios pra três campos e o Recife também: `estadios.js` escreve um nome e a planilha
+  de times escreve outro, e como não é caso de acento o identificador não pegava —
+  `estadiosEm` criava um pino a mais, sem mandante, e o clube dono ganhava um estádio
+  fantasma só dele. `importar_estadios.py` ganhou uma tabela `APELIDOS`; o estádio guarda
+  os nomes alternativos e absorve o mandante que apontava pro apelido. Rio: Maracanã,
+  São Januário e Engenhão (Botafogo). Recife: Arruda, Ilha do Retiro e Aflitos (Náutico).
+- **O disco na rua.** Cada bonde no mapa da cidade carrega a **sigla da torcida** por
+  cima, em traço preto, e anda **4× mais devagar** (velocidade de 26 pra 6,5). A lentidão
+  não foi só estética: com o bonde voando, dois hostis se cruzavam entre dois quadros e o
+  encontro nunca disparava. Devagar, um dia de Fortaleza rende briga de rua no minuto 28.
+  E o destino passou a ser o **estádio do mandante daquele jogo**, não o primeiro pino da
+  lista — `pontoDoEstadioDoClube` casa por `mandantes`, depois pelo nome que o clube
+  declara. Medido em 178 bondes de 36 dias de jogo em três praças: 178 vão pro pino certo.
+  Corinthians em casa manda a torcida pra Neo Química Arena.
+- **Um disco por pessoa nos arredores.** Se a Gaviões vai com 250, spawnam 250 — com a
+  cor de verdade da torcida, não a cor do lado. Isso levou a esplanada a **760 discos**, e
+  a 5 quadros por segundo. Três achados, em ordem de tamanho:
+  **1)** `pontoLivreMaisProximo` era chamado com o slot de formação, que **cai fora da
+  cena** o tempo todo quando o líder está encostado numa borda. De fora da grade o anel
+  gastava dezenas de voltas só pra reencontrar o mapa, e não dava pra guardar o resultado
+  porque a célula de origem não existe. Prendendo a partida à borda e memorizando por
+  célula: 404 ms → 3 ms por 30 quadros.
+  **2)** A separação disco-a-disco era uma varredura par a par — 288 mil comparações por
+  quadro. Grade própria com célula do tamanho do maior disco, comparando cada célula
+  consigo e com quatro vizinhas (as outras quatro chegam pelo outro lado; comparar duas
+  vezes dobraria o empurrão).
+  **3)** O empurrão saía par a par, e no meio da aglomeração cada disco encosta em cinco
+  ou seis vizinhos: dez colisões contra a malha por disco por quadro, com resultado
+  dependente da ordem da lista. Agora soma no disco e sai num movimento só —
+  226 mil chamadas viraram 17 mil.
+  O primeiro palpite (grade espacial na busca de inimigo) **não mudou nada** e ficou; o
+  que resolveu foi medir. Resultado: 186,8 ms → **11,7 ms por quadro** de simulação, e
+  **44 FPS medianos** com os 760 discos num laço de verdade, em Chromium sem GPU.
+- **Os arredores viraram pop-up.** Saíram os painéis de calibragem, ocorrências e "nos
+  arredores"; sobrou a cena, em tela cheia sobre o mapa, com os comandos num HUD por cima
+  do canvas em vez de numa coluna ao lado.
+
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
 aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no
 mapa — clicar num ponto da rua pra marcar tocaia, e acompanhar o bonde aliado da rodovia

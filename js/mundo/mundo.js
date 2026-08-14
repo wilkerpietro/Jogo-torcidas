@@ -64,8 +64,16 @@ TO.mundo = (function(){
        escreve "Mineirão" e times.js escreve "Mineirao", e comparando as
        duas strings o mesmo estádio entrava duas vezes — dois pinos no
        mapa e dois gramados disputados por um clube só. Belo Horizonte
-       tinha 5 entradas pra 3 estádios. */
-    const nomes = new Set(daPraca.map(e=>U.identificador(e.nome)));
+       tinha 5 entradas pra 3 estádios.
+
+       Nome diferente pro mesmo gramado — Engenhão/Nilton Santos, Aflitos —
+       o identificador não pega: quem sabe é a lista de apelidos do
+       próprio estádio, em `estadios.js`. */
+    const nomes = new Set();
+    for(const e of daPraca){
+      nomes.add(U.identificador(e.nome));
+      for(const ap of (e.apelidos||[])) nomes.add(U.identificador(ap));
+    }
     const bairros = bairrosDe(idMapa);
     /* completa com os estádios que os clubes da praça declaram e que a
        fonte antiga não tinha */

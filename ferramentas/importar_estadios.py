@@ -21,6 +21,16 @@ RAIZ = pathlib.Path(__file__).resolve().parent.parent
 FONTE = RAIZ / 'legado' / 'unity' / 'data.js'
 SAIDA = RAIZ / 'dados' / 'estadios.js'
 
+# O mesmo estadio com dois nomes. O legado escreve um, a planilha de times
+# escreve o outro, e sem esta tabela o jogo desenha dois pinos pro mesmo
+# gramado: o Rio ficava com quatro estadios pra tres campos, e Recife
+# tambem. Nao e caso de acento (isso o identificador resolve) — sao nomes
+# de verdade diferentes pra mesma praca de jogo.
+APELIDOS = {
+    'engenhao': ['Nilton Santos'],            # Botafogo
+    'estadio-dos-aflitos': ['Aflitos'],       # Nautico
+}
+
 
 def identificador(txt):
     """mesma regra dos outros importadores: 'Arena Castelão' -> 'arena-castelao'"""
@@ -77,15 +87,25 @@ def main():
         mapa = de_para.get(e['cidadeId'])
         if not mapa:
             continue
-        mandantes = manda_em.get(identificador(e['nome']), [])
-        saida.append({
-            'id': identificador(e['nome']),
+        eid = identificador(e['nome'])
+        apelidos = APELIDOS.get(eid, [])
+        # o clube que aponta pro apelido manda aqui, nao num estadio novo
+        mandantes = list(manda_em.get(eid, []))
+        for ap in apelidos:
+            for t in manda_em.get(identificador(ap), []):
+                if t not in mandantes:
+                    mandantes.append(t)
+        reg = {
+            'id': eid,
             'nome': e['nome'],
             'mapa': mapa,
             'bairro': e.get('bairroEstadio') or '',
             'capacidade': e.get('capacidade') or 0,
             'mandantes': mandantes,
-        })
+        }
+        if apelidos:
+            reg['apelidos'] = apelidos
+        saida.append(reg)
 
     linhas = [
         '/* ESTADIOS — 76 pracas de jogo, com o bairro de cada uma',

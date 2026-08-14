@@ -77,6 +77,7 @@ TO.mapa = (function(){
       if(!e.bairro || !temBairro(e.bairro)) continue;
       const donos = (e.mandantes||[]).map(id=>(M().time(id)||{}).nome).filter(Boolean);
       lista.push({bairro:e.bairro, tipo:'estadio', id:e.id, cap:e.capacidade||0,
+                  mandantes:e.mandantes||[], nomeEstadio:e.nome,
                   label:`Estádio · ${e.nome}`+(donos.length?` (${donos.join(', ')})`:'')});
     }
 
@@ -200,13 +201,14 @@ TO.mapa = (function(){
      da grade procedural. O resto do jogo não muda de lado —
      o modelo tem a mesma cara nos dois casos.
      ======================================================= */
-  /* A arte de verdade é só de Fortaleza; nas outras 29 praças a planta é
-     gerada da própria lista de bairros, na cruz por zona (mapa_gerado.js).
-     As duas têm a mesma forma, então daqui pra frente o código não sabe
-     qual está usando. */
+  /* Três praças têm arte própria — Fortaleza, São Paulo e Belo Horizonte.
+     As outras 27 ganham a foto emprestada ou a planta gerada da própria
+     lista de bairros, na cruz por zona (mapa_gerado.js). As três formas
+     têm a mesma cara, então daqui pra frente o código não sabe qual está
+     usando. */
   const arteDe = E => {
-    const a = TO.dados.cidadeMapa;
-    if(a && a.cidade === E.torcida.mapa) return a;
+    const a = (TO.dados.cidadeMapas || {})[E.torcida.mapa];
+    if(a) return a;
     return TO.mapaGerado ? TO.mapaGerado.arteDe(E.torcida.mapa) : null;
   };
 

@@ -36,6 +36,8 @@ ALVOS = {
         'js': ['js/nucleo.js',
                'dados/nomes.js', 'dados/cidades.js', 'dados/times.js',
                'dados/torcidas.js', 'dados/estadios.js', 'dados/cidade_mapa.js',
+               'dados/cidade_mapa_sao_paulo.js',
+               'dados/cidade_mapa_belo_horizonte.js',
                'dados/diplomacia.js',
                'dados/cena_arredores.js', 'dados/cenas_foto.js',
                'dados/cenas_editadas.js', 'dados/cenas.js',

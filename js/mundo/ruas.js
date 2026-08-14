@@ -254,6 +254,27 @@ TO.ruas = (function(){
   }
   const pontoDoEstadio = (mo, nome) => pontoDe(mo, it =>
     it.tipo === 'estadio' && (!nome || it.label.includes(nome)));
+
+  /* O ESTÁDIO DO MANDANTE, não o primeiro da lista.
+     `montar` pedia `pontoDoEstadio(mo, null)` e recebia o primeiro pino de
+     estádio da praça — em São Paulo, com quatro, a torcida do Corinthians
+     marchava pro Morumbi. Agora casa pelo clube: primeiro por `mandantes`,
+     que é o que a tabela de estádios diz; se não achar, pelo nome que o
+     próprio clube declara; e só então cai em qualquer campo. */
+  function pontoDoEstadioDoClube(mo, clube){
+    if(!clube) return pontoDoEstadio(mo, null);
+    return pontoDe(mo, it => it.tipo === 'estadio'
+                          && (it.mandantes||[]).includes(clube.id))
+        || (clube.estadio && pontoDe(mo, it => it.tipo === 'estadio'
+                          && (it.nomeEstadio||'') === clube.estadio))
+        || pontoDoEstadio(mo, null);
+  }
+
+  /* todos os campos da praça, pra saber se um esbarrão caiu em algum deles */
+  function camposDaPraca(mo){
+    if(!mo.arte) return [];
+    return (mo.pinos||[]).filter(p=>p.tipo === 'estadio');
+  }
   const pontoDaSede = (mo, nomeTorcida) => pontoDe(mo, it =>
     it.tipo === 'sede' && it.label.includes(nomeTorcida));
 
@@ -282,8 +303,14 @@ TO.ruas = (function(){
   /* =======================================================
      OS BONDES
      ======================================================= */
-  const VEL = 26;            // unidades do mapa por minuto de jogo
+  /* Quatro vezes mais devagar que a primeira versão: a 26 o bonde cruzava
+     a cidade antes de dar pra ler o mapa. A 6,5 a caminhada até o estádio
+     leva as duas horas e meia que o relógio da tarde promete. */
+  const VEL = 6.5;           // unidades do mapa por minuto de jogo
   const ANTES = 150;         // os bondes saem duas horas e meia antes do apito
+  /* Com VEL a 6,5 a travessia da cidade leva perto de duas horas, então a
+     janela de saída aperta: espalhar em 40 minutos deixaria o último bonde
+     chegando depois do apito. 18 minutos mantém todo mundo dentro da tarde. */
   /* Esbarrão na rua. Foi 16 e a briga de rua praticamente não existia:
      medido em 12 dias de jogo, dois bondes hostis chegavam a menos de 16
      uma vez só — todo confronto acontecia no cordão do estádio. É que
@@ -339,11 +366,12 @@ TO.ruas = (function(){
       if(!origem || !destino) return;
       /* ninguém sai no mesmo minuto: a saída se espalha pela tarde, com
          hora fixa por torcida — bonde não muda de horário a cada abertura */
-      const saiEm = (MP().hash(`${torcida.id}|${tag}|${R.chave}`) % 40);
+      const saiEm = (MP().hash(`${torcida.id}|${tag}|${R.chave}`) % 18);
       R.bondes.push({
         id: ++id, torcida: torcida.id, nome: torcida.nome,
         cor: (torcida.cores && torcida.cores[0]) || '#999',
         nossa: torcida.id === E.torcida.id, n, tag, saiEm, andou:0,
+        sigla: M().sigla(torcida),
         rota: caminho(mo, origem, destino), i:0, t:0,
         x: origem.x, y: origem.y, chegou:false
       });
@@ -356,7 +384,7 @@ TO.ruas = (function(){
     const quantosBondes = n => U.limitar(Math.ceil(n / POR_BONDE), 1, MAX_BONDES);
 
     for(const jogo of doDia){
-      const est = pontoDoEstadio(mo, null) || {x:mo.tam/2, y:mo.tam/2};
+      const est = pontoDoEstadioDoClube(mo, jogo.casa) || {x:mo.tam/2, y:mo.tam/2};
       /* mandante: as organizadas dele saem de casa */
       for(const o of M().torcidasDe(jogo.casa.id)){
         const sede = pontoDaSede(mo, o.nome);
@@ -467,9 +495,9 @@ TO.ruas = (function(){
         if((R.esfria[par] || 0) > R.minuto) continue;
         /* nos arredores do estádio todo mundo se esbarra: o cordão
            aperta a multidão num quarteirão só (GDD §12) */
-        const est = pontoDoEstadio(R._mo, null);
-        const noEstadio = est &&
-          Math.hypot(a.x-est.x, a.y-est.y) < 90 && Math.hypot(b.x-est.x, b.y-est.y) < 90;
+        const campos = camposDaPraca(R._mo);
+        const perto = (p, q)=>Math.hypot(p.x-q.x, p.y-q.y) < 90;
+        const noEstadio = campos.some(c=>perto(a, c) && perto(b, c));
         const raio = noEstadio ? RAIO_ARREDORES : RAIO_ENCONTRO;
         if(Math.hypot(a.x-b.x, a.y-b.y) > raio) continue;
         if(!hostis(E, a.torcida, b.torcida)) continue;
@@ -510,8 +538,8 @@ TO.ruas = (function(){
      num largo de verdade é praça, no resto é a rua do bairro. */
   function localDe(mo, x, y){
     if(!mo) return 'rua';
-    const est = pontoDoEstadio(mo, null);
-    if(est && Math.hypot(est.x-x, est.y-y) < 70) return 'arredores';
+    /* arredores é a beira de QUALQUER campo da praça, não a do primeiro */
+    if(camposDaPraca(mo).some(c=>Math.hypot(c.x-x, c.y-y) < 70)) return 'arredores';
     const naRua = () => ruaDoBairro(mo, x, y);
     const m = malha(mo).perto(x, y);
     if(!m || m.beco) return naRua();
@@ -594,11 +622,23 @@ TO.ruas = (function(){
       ctx.lineWidth = b.nossa ? 2 : 1.2;
       ctx.strokeStyle = b.nossa ? '#fff' : 'rgba(0,0,0,.7)';
       ctx.stroke();
+      /* o efetivo dentro do disco, quando cabe */
       if(r >= 7){
         ctx.fillStyle = '#fff';
         ctx.font = `900 ${Math.round(r*0.95)}px Arial, sans-serif`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(String(b.n), b.x, b.y+0.5);
+      }
+      /* e a sigla da torcida logo acima, que é o que diz de quem é o
+         bonde sem precisar passar o mouse */
+      if(b.sigla){
+        const y = b.y - r - 5;
+        ctx.font = '700 11px Arial, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.85)';
+        ctx.strokeText(b.sigla, b.x, y);
+        ctx.fillStyle = b.nossa ? '#ffffff' : '#e6e2d8';
+        ctx.fillText(b.sigla, b.x, y);
       }
       ctx.restore();
     }
@@ -615,7 +655,8 @@ TO.ruas = (function(){
   }
 
   return {malha, caminho, localDe, ruaDoBairro, RUA_DA_CLASSE, ESFRIAMENTO,
-          pontoDe, pontoDoEstadio, pontoDaSede, entradaDaCidade,
+          pontoDe, pontoDoEstadio, pontoDoEstadioDoClube, camposDaPraca,
+          pontoDaSede, entradaDaCidade,
           estado, jogosDaPraca, montar, passo, resolver, hostis,
           porOlheiro, visivel, desenhar,
           VEL, ANTES, RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};

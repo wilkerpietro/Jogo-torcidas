@@ -1,12 +1,13 @@
 /* =========================================================
    MAPA GERADO — a cidade que não tem arte
    ---------------------------------------------------------
-   Fortaleza tem foto: `dados/cidade_mapa.js` traz a máscara
-   de rua, os bairros por k-means, os lotes com frente pra rua
-   e os gramados, tudo tirado da imagem. As outras 29 praças
-   não têm, e o mapa quebrava nelas — o desenho foi reescrito
-   pra camada de pinos da arte e a via procedural antiga ficou
-   sem `pinos` nem `regioes`.
+   Três praças têm foto: Fortaleza, São Paulo e Belo Horizonte.
+   Cada `dados/cidade_mapa*.js` traz a máscara de rua, os
+   bairros por k-means, os lotes com frente pra rua e os
+   gramados, tudo tirado da imagem. As outras 27 não têm, e o
+   mapa quebrava nelas — o desenho foi reescrito pra camada de
+   pinos da arte e a via procedural antiga ficou sem `pinos`
+   nem `regioes`.
 
    Este módulo devolve, pra qualquer cidade, um objeto com a
    MESMA forma da arte. Quem consome — pinos, filtros, briga
@@ -57,6 +58,9 @@ TO.mapaGerado = (function(){
 
   function arteDe(idCidade){
     if(_cache[idCidade] !== undefined) return _cache[idCidade];
+    /* quem tem desenho próprio não empresta nem gera nada */
+    const propria = (TO.dados.cidadeMapas || {})[idCidade];
+    if(propria) return (_cache[idCidade] = propria);
     const cidade = TO.mundo.cidade(idCidade);
     if(!cidade || !(cidade.bairros||[]).length) return (_cache[idCidade] = null);
     /* praça Grande herda a foto de Fortaleza; o resto ganha planta */

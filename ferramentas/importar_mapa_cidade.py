@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Lê a arte do mapa da cidade e gera dados/cidade_mapa.js.
+Lê a arte do mapa de uma praça e gera o dados/cidade_mapa_*.js dela.
 
 A planta procedural desenhava bairro, quarteirão e lote. Agora a cidade é
 uma imagem, e o que o jogo precisa saber dela é:
@@ -12,7 +12,14 @@ uma imagem, e o que o jogo precisa saber dela é:
 Nada disso é chutado: sai da própria imagem, por cor. O que o desenho
 mostra como rua é rua no jogo, e o que ele mostra como telhado é bloqueio.
 
-    python3 ferramentas/importar_mapa_cidade.py
+Cada praça com arte própria entra no ARTES abaixo. A quantidade de
+gramados desenhados tem que bater com a quantidade de estádios da praça
+— é por isso que São Paulo (Morumbi, Neo Química, Allianz e Canindé)
+não podia usar o desenho de Fortaleza, que tem três campos, e por isso
+que Belo Horizonte ganhou serra no lugar do mar.
+
+    python3 ferramentas/importar_mapa_cidade.py            # todas
+    python3 ferramentas/importar_mapa_cidade.py sao-paulo  # uma só
 """
 import json, pathlib, sys
 import numpy as np
@@ -20,11 +27,19 @@ from PIL import Image
 import scipy.ndimage as nd
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
-ARTE = RAIZ / 'img' / 'cenas' / 'ChatGPT Image 9 de ago. de 2026, 17_50_14.png'
-WEBP = RAIZ / 'img' / 'cenas' / 'cidade_fortaleza.webp'
-SAIDA = RAIZ / 'dados' / 'cidade_mapa.js'
+CENAS = RAIZ / 'img' / 'cenas'
 
-CIDADE = 'fortaleza'
+# id da praça → (arte de origem, nome do webp, nome do arquivo de dados)
+ARTES = {
+    'fortaleza': ('ChatGPT Image 9 de ago. de 2026, 17_50_14.png',
+                  'cidade_fortaleza.webp', 'cidade_mapa.js'),
+    'sao-paulo': ('mapa sao paulo.png',
+                  'cidade_sao_paulo.webp', 'cidade_mapa_sao_paulo.js'),
+    'belo-horizonte': ('mapa belo horizonte.png',
+                       'cidade_belo_horizonte.webp',
+                       'cidade_mapa_belo_horizonte.js'),
+}
+
 PASSO = 10          # lado da célula da malha, em pixels da arte
 SEMENTE = 20260809  # k-means determinístico: a cidade não se remonta
 
@@ -84,9 +99,18 @@ def malha(rua, passo):
 def estadios(a, cidade):
     """O gramado é o único verde vivo dentro da mancha urbana. Achar o campo
     na própria arte é melhor que sortear um lote: o pino cai onde o desenho
-    já mostra um estádio."""
+    já mostra um estádio.
+
+    O campo NÃO se procura dentro da máscara de cidade. Ela é feita de
+    densidade de telhado, e em cima de um estádio não há telhado nenhum —
+    então a mancha urbana tem um buraco exatamente onde está o gramado. Era
+    isso que sumia com o quarto campo de São Paulo, o do canto do mar: o
+    desenho tem quatro estádios e o importador achava três. Quem decide se
+    o verde é estádio ou mato é a vizinhança — gramado de estádio tem
+    quarteirão em volta."""
     R, G, B = a[:, :, 0], a[:, :, 1], a[:, :, 2]
-    campo = (G > R + 10) & (G > B + 10) & cidade
+    vizinhanca = nd.binary_dilation(cidade, np.ones((41, 41)))
+    campo = (G > R + 10) & (G > B + 10) & vizinhanca
     campo = nd.binary_closing(campo, np.ones((3, 3)))
     lab, n = nd.label(campo)
     fora = []
@@ -218,7 +242,7 @@ def rle_regioes(reg, passo):
                     for linha in peq)
 
 
-def main():
+def importar(CIDADE, ARTE, WEBP, SAIDA):
     if not ARTE.exists():
         sys.exit(f'arte ausente: {ARTE}')
     im = Image.open(ARTE).convert('RGB')
@@ -290,9 +314,14 @@ def main():
           ', '.join(f"{saida[k]['nome'][:12]} {len(v)}" for k, v in
                     sorted(cand.items())[:4]) + ' …')
 
-    # de qual bairro é cada estádio
+    # De qual bairro é cada estádio. O gramado é buraco na mancha urbana
+    # (não tem telhado), então no pixel do centro do campo a região é -1 —
+    # o estádio saía sem bairro. Aqui a região se estende pro mapa inteiro
+    # pelo vizinho mais próximo, que é o bairro em volta do estádio.
+    _, (iy, ix) = nd.distance_transform_edt(reg2 < 0, return_indices=True)
+    reg_cheio = reg2[iy, ix]
     for e in campos:
-        r = int(reg2[int(e['y']), int(e['x'])])
+        r = int(reg_cheio[int(e['y']), int(e['x'])])
         e['bairro'] = saida[r]['nome'] if 0 <= r < len(saida) else ''
 
     dados = {
@@ -307,15 +336,38 @@ def main():
         'lotes': {str(k): v for k, v in sorted(cand.items())},
     }
     corpo = json.dumps(dados, ensure_ascii=False)
+    # Todas as praças com arte entram no mesmo balcão, por id. cidadeMapa
+    # segue apontando pra Fortaleza porque é o nome que o resto do jogo
+    # usa quando quer "a arte de referência".
+    alias = ('TO.dados.cidadeMapa = TO.dados.cidadeMapas.%s;\n' % json_id(CIDADE)
+             if CIDADE == 'fortaleza' else '')
     SAIDA.write_text(
         '/* MAPA DA CIDADE — malha de ruas e 16 bairros tirados da arte\n'
         '   GERADO por ferramentas/importar_mapa_cidade.py — nao editar a mao. */\n'
-        'TO.dados.cidadeMapa = ' + corpo + ';\n', encoding='utf-8')
+        'TO.dados.cidadeMapas = TO.dados.cidadeMapas || {};\n'
+        'TO.dados.cidadeMapas[' + json.dumps(CIDADE) + '] = ' + corpo + ';\n'
+        + alias, encoding='utf-8')
     print(f'\n{SAIDA.relative_to(RAIZ)}  —  {SAIDA.stat().st_size // 1024} KB')
     print('\n  bairro                  zona    classe          área   centro')
     for s in saida:
         print(f"  {s['nome']:<22} {s['zona']:<7} {s['classe']:<14} "
               f"{s['area']:>4.1f}%  ({s['x']:.0f},{s['y']:.0f})")
+
+
+def json_id(cid):
+    """id de praça vira chave de objeto: 'sao-paulo' não é identificador"""
+    return json.dumps(cid) if '-' in cid else cid
+
+
+def main():
+    quais = sys.argv[1:] or list(ARTES)
+    for cid in quais:
+        if cid not in ARTES:
+            sys.exit(f'praça sem arte cadastrada: {cid} '
+                     f'(conhecidas: {", ".join(ARTES)})')
+        arte, webp, saida = ARTES[cid]
+        print(f'\n=== {cid} ===')
+        importar(cid, CENAS / arte, CENAS / webp, RAIZ / 'dados' / saida)
 
 
 if __name__ == '__main__':

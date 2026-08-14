@@ -122,45 +122,35 @@
 <!-- ================= DIA DE JOGO ================= -->
 <div id="telaDiaJogo" class="tela-cheia oculto">
   <div id="djGrade">
-    <div>
-      <div id="djPalco">
-        <canvas id="djPrincipal" width="1140" height="820"></canvas>
-        <div class="hud" id="djRelogio">18:00</div>
-        <div class="hud" id="djSubrelogio"></div>
-        <div class="hud" id="djAlerta">
-          <div class="rot">ATENÇÃO POLICIAL</div>
-          <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
-          <div class="rot" id="djRotPressao" style="margin-top:6px;color:#d9705f">PRESSÃO SOBRE VOCÊ</div>
-          <div class="barra" style="border-color:#6b3a32">
-            <i id="djBarraPressao" style="width:0%;background:#c0392b"></i>
-          </div>
-          <div id="djCarga"></div>
+    <div id="djPalco">
+      <canvas id="djPrincipal" width="1140" height="820"></canvas>
+      <div class="hud" id="djRelogio">18:00</div>
+      <div class="hud" id="djSubrelogio"></div>
+      <div class="hud" id="djAlerta">
+        <div class="rot">ATENÇÃO POLICIAL</div>
+        <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
+        <div class="rot" id="djRotPressao" style="margin-top:6px;color:#d9705f">PRESSÃO SOBRE VOCÊ</div>
+        <div class="barra" style="border-color:#6b3a32">
+          <i id="djBarraPressao" style="width:0%;background:#c0392b"></i>
         </div>
-        <div class="hud" id="djPlacar"></div>
-        <div class="hud" id="djAviso"></div>
-        <div class="hud" id="djDica"></div>
+        <div id="djCarga"></div>
       </div>
-      <div class="cartao" style="margin-top:11px">
-        <h2>Ocorrências</h2>
-        <div class="corpo"><div id="djLog"></div></div>
-      </div>
-    </div>
-
-    <div>
-      <div class="cartao">
-        <h2 id="djLocal">Nos arredores</h2>
-        <div class="corpo">
-          <div id="djFormacoes"></div>
+      <div class="hud" id="djPlacar"></div>
+      <div class="hud" id="djAviso"></div>
+      <div class="hud" id="djDica"></div>
+      <!-- os comandos ficam sobre o palco: a cena é a tela inteira -->
+      <div class="hud" id="djComandos">
+        <div id="djFormacoes"></div>
+        <div class="dj-botoes">
           <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
           <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
           <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
           <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
         </div>
       </div>
-      <div class="cartao">
-        <h2>Calibragem <span class="tag">debug</span></h2>
-        <div class="corpo"><div id="djSliders"></div></div>
-      </div>
+      <h2 id="djLocal" hidden></h2>
+      <div id="djLog" hidden></div>
+      <div id="djSliders" hidden></div>
     </div>
   </div>
 </div>
@@ -188,6 +178,8 @@
 <script src="dados/torcidas.js"></script>
 <script src="dados/estadios.js"></script>
 <script src="dados/cidade_mapa.js"></script>
+<script src="dados/cidade_mapa_sao_paulo.js"></script>
+<script src="dados/cidade_mapa_belo_horizonte.js"></script>
 <script src="dados/diplomacia.js"></script>
 <script src="dados/cena_arredores.js"></script>
 <script src="dados/cenas_foto.js"></script>

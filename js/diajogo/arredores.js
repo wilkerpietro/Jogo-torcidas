@@ -162,21 +162,68 @@ TO.diaJogo.arredores = (function(){
 
   /* célula caminhável mais próxima — usada para destravar quem
      ficou preso dentro de um prédio (spawn mal posto, empurrão) */
+  /* O anel se percorre pela BORDA, não pelo quadrado cheio. A primeira
+     versão varria (2a+1)² células e jogava fora o miolo, o que faz o custo
+     crescer com o cubo do raio: com a esplanada cheia — 760 discos, efetivo
+     de verdade — isso deu 0,6 ms por chamada e 5 quadros por segundo,
+     medido. Pela borda são 8a células por anel. */
+  /* Memória da busca padrão. A resposta só depende da célula de partida
+     e da malha, então quem está encalhado numa calçada estreita repetia
+     a mesma varredura funda todo quadro pra receber a mesma resposta.
+     -1 = ainda não perguntaram; -2 = não existe saída. Zerada junto com
+     a malha de corpo, que é a única coisa que pode mudá-la. */
+  let memoriaLivre=null;
+
   function pontoLivreMaisProximo(x,y,r){
-    const c0=Math.floor(x/CEL), r0=Math.floor(y/CEL);
-    for(let anel=0; anel<60; anel++){
-      for(let dr=-anel; dr<=anel; dr++){
-        for(let dc=-anel; dc<=anel; dc++){
-          if(Math.max(Math.abs(dr),Math.abs(dc))!==anel) continue;
-          const c=c0+dc, rr=r0+dr;
-          if(!celulaLivre(c,rr)) continue;
-          const px=(c+0.5)*CEL, py=(rr+0.5)*CEL;
-          if(r && !livrePara(px,py,Math.min(r,CEL*0.62))) continue;
-          return {x:px,y:py};
+    /* A partida entra na grade na marra. Slot de formação e mira de IA
+       caem fora da cena o tempo todo, e de fora o anel gasta dezenas de
+       voltas só pra reencontrar o mapa — sem nunca poder guardar o
+       resultado, porque a célula de origem não existe. Preso à borda, a
+       resposta é a mesma e sai na primeira volta. */
+    const c0=U.limitar(Math.floor(x/CEL), 0, COLS-1);
+    const r0=U.limitar(Math.floor(y/CEL), 0, ROWS-1);
+    const raio = r ? Math.min(r, CEL*0.62) : 0;
+    /* O disco de tamanho padrão responde por quase todas as chamadas, e
+       para ele a resposta já está pronta na malha de corpo: uma leitura
+       de vetor no lugar das nove sondagens de livrePara() por célula. */
+    const padrao = raio === raioMalha(7);
+
+    if(padrao && memoriaLivre){
+      const guardado = memoriaLivre[r0*COLS+c0];
+      if(guardado === -2) return {x,y};
+      if(guardado >= 0)
+        return {x:((guardado%COLS)+0.5)*CEL, y:((guardado/COLS|0)+0.5)*CEL};
+    }
+
+    const serve = (c,rr)=>{
+      if(padrao) return cabeCorpo(c,rr) ? rr*COLS+c : -1;
+      if(!celulaLivre(c,rr)) return -1;
+      const px=(c+0.5)*CEL, py=(rr+0.5)*CEL;
+      if(raio && !livrePara(px,py,raio)) return -1;
+      return rr*COLS+c;
+    };
+    const buscar = ()=>{
+      let i = serve(c0,r0);
+      if(i>=0) return i;
+      for(let a=1; a<60; a++){
+        /* as duas linhas de cima e de baixo */
+        for(let dc=-a; dc<=a; dc++){
+          i = serve(c0+dc, r0-a); if(i>=0) return i;
+          i = serve(c0+dc, r0+a); if(i>=0) return i;
+        }
+        /* e as duas colunas, sem repetir as quinas */
+        for(let dr=-a+1; dr<=a-1; dr++){
+          i = serve(c0-a, r0+dr); if(i>=0) return i;
+          i = serve(c0+a, r0+dr); if(i>=0) return i;
         }
       }
-    }
-    return {x,y};
+      return -2;
+    };
+
+    const achou = buscar();
+    if(padrao && memoriaLivre) memoriaLivre[r0*COLS+c0]=achou;
+    if(achou < 0) return {x,y};
+    return {x:((achou%COLS)+0.5)*CEL, y:((achou/COLS|0)+0.5)*CEL};
   }
 
   /* =======================================================
@@ -318,6 +365,8 @@ TO.diaJogo.arredores = (function(){
     const r=raioMalha(7);
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)
       malhaCorpo[y*COLS+x]=livrePara((x+0.5)*CEL,(y+0.5)*CEL,r)?1:0;
+    if(!memoriaLivre) memoriaLivre=new Int32Array(COLS*ROWS);
+    memoriaLivre.fill(-1);
   }
   const cabeCorpo=(c,r)=>
     !(c<0||r<0||c>=COLS||r>=ROWS) && malhaCorpo[r*COLS+c]===1;

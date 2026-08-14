@@ -143,6 +143,10 @@ TO.diaJogo.combate = (function(){
          tamanho do bonde rival e a pressa da PM (GDD §12). */
       local: cfg.local || 'arredores',
       efetivoRival: cfg.efetivoRival || P.efetivoRival,
+      /* Quem de fato chegou na esplanada, vindo do mapa da cidade: cada
+         bonde traz o efetivo que sobrou da caminhada e a cor da torcida.
+         Sem isso a cena inventava 30 discos genéricos por lado. */
+      bondes_: cfg.bondes || null,
       cdPedraAte:0, cdBombaAte:0,
       entraram:{}, presos:0,
       caidos:{mandante:0, visitante:0}, presosPor:{mandante:0, visitante:0},
@@ -182,9 +186,20 @@ TO.diaJogo.combate = (function(){
       }
     }
 
+    /* um bonde por spawn, na ordem de chegada; sobra bonde, ele divide o
+       spawn com outro — a esplanada tem quatro portões, não vinte */
+    const filaBonde = {mandante:[], visitante:[]};
+    for(const b of (J.bondes_ || [])) (filaBonde[b.lado] || filaBonde.mandante).push(b);
+    const usados = {mandante:0, visitante:0};
+
     for(const s of D.spawns){
       const escalados = porSpawn.get(s.id);
+      const fila = filaBonde[s.lado] || [];
+      const bd = fila.length ? fila[(usados[s.lado]++) % fila.length] : null;
+      if(bd){ s._cor = bd.cor; s._torcida = bd.nome; }
       const qtd = escalados && escalados.length ? escalados.length
+                : bd ? Math.max(1, Math.round(bd.n / Math.max(1,
+                        fila.filter(x=>x===bd).length)))
                 : Math.max(1, Math.round(
                     (s.lado==='mandante'?P.efetivo:J.efetivoRival)/contarSpawns(s.lado)));
       for(let i=0;i<qtd;i++){
@@ -202,6 +217,8 @@ TO.diaJogo.combate = (function(){
           d.hp=d.hpMax;
           d.cargo=m.cargo;
         }
+        d.cor = s._cor || null;      // a cor da torcida, quando ela veio do mapa
+        d.torcida = s._torcida || null;
         d.doJogador = !!s.jogador;   // só o seu bonde obedece à formação
         J.discos.push(d);
       }
@@ -297,6 +314,7 @@ TO.diaJogo.combate = (function(){
        ninguém mais se pega, mas quem defendeu ainda anda de volta */
     if(J.fase!=='ativo' && J.fase!=='voltando') return;
     J.t+=dt;
+    refazerGrade(J);      // uma vez por quadro, antes de qualquer busca
     if(J.fase==='voltando'){
       moverDiscos(J,dt);
       separar(J);
@@ -541,9 +559,56 @@ TO.diaJogo.combate = (function(){
     aviso(J, g.aviso || 'A CASA ACORDOU', 'r');
   }
 
+  /* =======================================================
+     A GRADE ESPACIAL
+     Procurar inimigo varrendo todos os discos é O(n²), e com o
+     efetivo de verdade na esplanada — 250 da Gaviões mais os
+     rivais — são 760 discos. A grade divide o palco em células
+     de 96 px e cada busca só olha as nove células em volta.
+     Refeita uma vez por quadro, que é mais barato que mantê-la
+     incremental.
+
+     Sinceridade sobre o ganho: isto foi o primeiro palpite pros
+     5 quadros por segundo e, medido, NÃO mudou nada — a busca
+     de inimigo não era o gargalo. Fica porque é o jeito certo
+     de procurar vizinho e porque a separação e os contatos
+     passaram a depender dela. Quem custava era
+     pontoLivreMaisProximo (arredores.js) e a varredura par a
+     par de separar().
+     ======================================================= */
+  const CELULA = 96;
+  function refazerGrade(J){
+    const g = new Map();
+    let maior = 8;
+    for(const o of J.discos){
+      if(!o.vivo) continue;
+      const k = ((o.x/CELULA)|0) + ',' + ((o.y/CELULA)|0);
+      let l = g.get(k); if(!l){ l=[]; g.set(k,l); }
+      l.push(o);
+      if(o.r > maior) maior = o.r;
+    }
+    J._grade = g;
+    /* o maior raio da cena: quem procura vizinho precisa dele pra saber
+       até onde olhar sem varrer a lista inteira */
+    J._raioMax = maior;
+  }
+  /* todos os discos vivos num raio, sem varrer a lista inteira */
+  function porPerto(J, x, y, raio){
+    const g = J._grade;
+    if(!g) return J.discos;
+    const c0=((x-raio)/CELULA)|0, c1=((x+raio)/CELULA)|0;
+    const r0=((y-raio)/CELULA)|0, r1=((y+raio)/CELULA)|0;
+    const fora=[];
+    for(let c=c0;c<=c1;c++) for(let r=r0;r<=r1;r++){
+      const l=g.get(c+','+r);
+      if(l) for(const o of l) fora.push(o);
+    }
+    return fora;
+  }
+
   function inimigoAlcancavel(J,d,raio){
     const cands=[];
-    for(const o of J.discos){
+    for(const o of porPerto(J,d.x,d.y,raio)){
       if(!o.vivo||!inimigos(d.lado,o.lado)) continue;
       const q=U.dist2(d.x,d.y,o.x,o.y);
       if(q<=raio*raio) cands.push([q,o]);
@@ -866,7 +931,7 @@ TO.diaJogo.combate = (function(){
       if(p.carga){
         const alvo=alvoDaCarga(J,p);
         if(alvo){ax=alvo.x;ay=alvo.y;vel=96;} else {ax=p.postoX;ay=p.postoY;vel=76;}
-        for(const d of J.discos){
+        for(const d of porPerto(J,p.x,p.y,40)){
           if(!procurandoConflito(J,d)) continue;
           if(U.dist(d.x,d.y,p.x,p.y)>d.r+p.r+8) continue;
           if(p.cooldown>0) break;
@@ -882,7 +947,7 @@ TO.diaJogo.combate = (function(){
         ax=alvo.x; ay=alvo.y; vel=64;
       } else {
         let perto=null, pd=1e9;
-        for(const d of J.discos){
+        for(const d of porPerto(J,p.x,p.y,80)){
           if(!procurandoConflito(J,d)) continue;
           const dd=U.dist(d.x,d.y,p.x,p.y);
           if(dd>=80||dd>=pd) continue;
@@ -933,7 +998,7 @@ TO.diaJogo.combate = (function(){
       if(!procurandoConflito(J,d)) continue;
       if(A.atravessaGrade(p.x,p.y,d.x,d.y,J.grades)) continue;
       let n=0;
-      for(const o of J.discos)
+      for(const o of porPerto(J,d.x,d.y,70))
         if(procurandoConflito(J,o)&&U.dist(o.x,o.y,d.x,d.y)<70) n++;
       const nota=n-U.dist(d.x,d.y,p.x,p.y)/90;
       if(nota>melhorN){melhorN=nota;melhor=d;}
@@ -950,8 +1015,8 @@ TO.diaJogo.combate = (function(){
       if(a.lado==='visitante'&&J.recuoVisitante) continue;
 
       const bate = agressivo(J,a);
-      if(bate) for(const b of vivos){
-        if(a===b||!inimigos(a.lado,b.lado)) continue;
+      if(bate) for(const b of porPerto(J,a.x,a.y,a.r+(J._raioMax||8)+5)){
+        if(a===b||!b.vivo||!inimigos(a.lado,b.lado)) continue;
         if(U.dist(a.x,a.y,b.x,b.y)>a.r+b.r+5) continue;
         const bruto=(a.forca*nivelMoral(a.moral)*U.entre(0.8,1.2))-b.defesa*0.5;
         b.hp-=Math.max(1,bruto)*P.dano*dt*(b.fugindo?1.6:1);
@@ -1183,22 +1248,75 @@ TO.diaJogo.combate = (function(){
 
   const FOLGA=1.5;      // sobreposição tolerada, em px
   const MACIEZ=0.45;    // fração da sobreposição resolvida por quadro
+
+  /* Resolver a sobreposição inteira todo quadro faz o par bater e
+     voltar pra sempre. Com folga e resolução parcial, eles encostam
+     e acomodam — que é como gente parada em aglomeração fica.
+
+     O empurrão não é aplicado aqui: fica somado no disco e sai num
+     movimento só no fim da varredura. No meio da aglomeração cada
+     disco encosta em cinco ou seis vizinhos, e mover um pouquinho a
+     cada par custava dez colisões contra a malha por disco por quadro
+     — além de dar resultado diferente conforme a ordem da lista.
+     Somado, os empurrões opostos se cancelam antes de custar nada. */
+  function resolverPar(a,b){
+    const lim=a.r+b.r-FOLGA;
+    const dx=b.x-a.x; if(dx>lim||dx<-lim) return;
+    const dy=b.y-a.y; if(dy>lim||dy<-lim) return;
+    const q=dx*dx+dy*dy;
+    if(q>=lim*lim) return;
+    const d=Math.sqrt(q)||0.01;
+    const e=(lim-d)*MACIEZ, nx=dx/d*e, ny=dy/d*e;
+    /* O líder é âncora (GDD §16.2): não é empurrado pelos próprios
+       seguidores. Sem isso ele deriva, os slots da formação vão
+       junto, e o bonde inteiro persegue a si mesmo sem parar. */
+    if(a.lider)      { b._edx+=nx*2; b._edy+=ny*2; }
+    else if(b.lider) { a._edx-=nx*2; a._edy-=ny*2; }
+    else { a._edx-=nx; a._edy-=ny; b._edx+=nx; b._edy+=ny; }
+  }
+
+  /* Grade própria da separação. A de busca de inimigo tem célula de
+     96 px — grossa demais aqui, porque dois discos só se empurram a
+     uns 15 px um do outro. A célula certa é do tamanho do maior disco:
+     aí basta comparar cada célula consigo mesma e com quatro vizinhas.
+     São quatro e não oito de propósito — as outras quatro chegam pelo
+     outro lado, e comparar o par duas vezes dobraria o empurrão.
+     Com a esplanada cheia isso troca 288 mil comparações por quadro
+     por algumas dezenas por disco. */
+  const VIZ_SEP=[[1,0],[-1,1],[0,1],[1,1]];
+  let _baldes=[], _bCol=0, _bLin=0, _bCel=0;
+  function baldesDeSeparacao(t, raioMax){
+    const cel=Math.max(16, raioMax*2+2);
+    const nc=Math.ceil(D.largura/cel)+1, nr=Math.ceil(D.altura/cel)+1;
+    if(cel!==_bCel||nc!==_bCol||nr!==_bLin){
+      _bCel=cel; _bCol=nc; _bLin=nr;
+      _baldes=new Array(nc*nr);
+      for(let i=0;i<_baldes.length;i++) _baldes[i]=[];
+    } else for(let i=0;i<_baldes.length;i++) _baldes[i].length=0;
+    for(const d of t){
+      const c=U.limitar((d.x/cel)|0,0,nc-1), r=U.limitar((d.y/cel)|0,0,nr-1);
+      _baldes[r*nc+c].push(d);
+    }
+    return _baldes;
+  }
+
   function separar(J){
     const t=J.discos.filter(d=>d.vivo);
-    for(let i=0;i<t.length;i++)for(let j=i+1;j<t.length;j++){
-      const a=t[i],b=t[j],dx=b.x-a.x,dy=b.y-a.y;
-      const d=Math.hypot(dx,dy)||0.01, min=a.r+b.r;
-      /* Resolver a sobreposição inteira todo quadro faz o par bater e
-         voltar pra sempre. Com folga e resolução parcial, eles encostam
-         e acomodam — que é como gente parada em aglomeração fica. */
-      if(d<min-FOLGA){
-        const e=(min-FOLGA-d)*MACIEZ, nx=dx/d, ny=dy/d;
-        /* O líder é âncora (GDD §16.2): não é empurrado pelos próprios
-           seguidores. Sem isso ele deriva, os slots da formação vão
-           junto, e o bonde inteiro persegue a si mesmo sem parar. */
-        if(a.lider)      A.empurrar(b, nx*e*2, ny*e*2);
-        else if(b.lider) A.empurrar(a,-nx*e*2,-ny*e*2);
-        else { A.empurrar(a,-nx*e,-ny*e); A.empurrar(b, nx*e, ny*e); }
+    for(const d of t){ d._edx=0; d._edy=0; }
+    const baldes=baldesDeSeparacao(t, J._raioMax||8);
+    const nc=_bCol, nr=_bLin;
+    for(let r=0;r<nr;r++) for(let c=0;c<nc;c++){
+      const aqui=baldes[r*nc+c];
+      if(!aqui.length) continue;
+      for(let i=0;i<aqui.length;i++){
+        const a=aqui[i];
+        for(let j=i+1;j<aqui.length;j++) resolverPar(a, aqui[j]);
+        for(const [dc,dr] of VIZ_SEP){
+          const c2=c+dc, r2=r+dr;
+          if(c2<0||c2>=nc||r2>=nr) continue;
+          const la=baldes[r2*nc+c2];
+          for(let j=0;j<la.length;j++) resolverPar(a, la[j]);
+        }
       }
     }
     /* ninguém atravessa policial: a PM é obstáculo mesmo pra quem
@@ -1207,8 +1325,14 @@ TO.diaJogo.combate = (function(){
     for(const a of t) for(const p of pms){
       const dx=a.x-p.x, dy=a.y-p.y;
       const d=Math.hypot(dx,dy)||0.01, min=a.r+p.r;
-      if(d<min-FOLGA) A.empurrar(a, dx/d*(min-FOLGA-d)*MACIEZ, dy/d*(min-FOLGA-d)*MACIEZ);
+      if(d<min-FOLGA){
+        const e=(min-FOLGA-d)*MACIEZ;
+        a._edx+=dx/d*e; a._edy+=dy/d*e;
+      }
     }
+    /* e agora o movimento, um por disco */
+    for(const d of t)
+      if(d._edx || d._edy) A.empurrar(d, d._edx, d._edy);
   }
 
   function checarDebandada(J){
@@ -1236,7 +1360,7 @@ TO.diaJogo.combate = (function(){
     const alcance = tipo==='pedra'?P.alcancePedra:P.alcanceBomba;
 
     let alvo=null, md=1e9;
-    for(const o of J.discos){
+    for(const o of porPerto(J,l.x,l.y,alcance*1.6)){
       if(!o.vivo||!inimigos(l.lado,o.lado)) continue;
       const d=U.dist(l.x,l.y,o.x,o.y);
       if(d<md){md=d;alvo=o;}
@@ -1338,6 +1462,9 @@ TO.diaJogo.combate = (function(){
     if(l==='visitante') return claro?'#e8e8e8':'#2a5fa8';
     return claro?'#e8e4dc':'#c0392b';
   }
+  /* A cor do disco é a da torcida quando ela veio do mapa da cidade; nas
+     cenas soltas (bancada, ações) continua sendo a do lado. */
+  const corDisco = (d, claro) => d.cor && !claro ? d.cor : corLado(d.lado, claro);
   function desenharDisco(c,d){
     const tx=d.tremor?(Math.random()-0.5)*d.tremor:0;
     const ty=d.tremor?(Math.random()-0.5)*d.tremor:0;
@@ -1346,13 +1473,13 @@ TO.diaJogo.combate = (function(){
       if(d.entrou) return;
       c.globalAlpha=d.preso?.5:.33;
       c.fillStyle='#000'; c.beginPath(); c.ellipse(x,y,d.r,d.r*.6,0,0,7); c.fill();
-      c.strokeStyle=d.preso?'#5fa87d':corLado(d.lado,false); c.lineWidth=2.5;
+      c.strokeStyle=d.preso?'#5fa87d':corDisco(d,false); c.lineWidth=2.5;
       c.beginPath(); c.ellipse(x,y,d.r,d.r*.6,0,0,7); c.stroke();
       c.globalAlpha=1; return;
     }
     c.fillStyle='rgba(0,0,0,.4)'; c.beginPath(); c.ellipse(x+2,y+4,d.r,d.r*.82,0,0,7); c.fill();
-    c.fillStyle=corLado(d.lado,false); c.beginPath(); c.arc(x,y,d.r,0,7); c.fill();
-    c.fillStyle=corLado(d.lado,true);  c.beginPath(); c.arc(x,y,d.r*.62,0,7); c.fill();
+    c.fillStyle=corDisco(d,false); c.beginPath(); c.arc(x,y,d.r,0,7); c.fill();
+    c.fillStyle=corDisco(d,true);  c.beginPath(); c.arc(x,y,d.r*.62,0,7); c.fill();
     c.fillStyle='#2b2320'; c.beginPath(); c.arc(x,y,d.r*.34,0,7); c.fill();
     if(d.lider){c.strokeStyle='#e0b040';c.lineWidth=3;c.beginPath();c.arc(x,y,d.r+3,0,7);c.stroke();}
     if(d.golpe>0){c.strokeStyle=`rgba(255,235,190,${d.golpe*6})`;c.lineWidth=2;

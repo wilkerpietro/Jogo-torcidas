@@ -120,3 +120,26 @@
   text-transform:uppercase;color:var(--ouro);border:3px dashed var(--ouro);
   pointer-events:none;
 }
+
+/* =========================================================
+   O PALCO EM POP-UP
+   A cena é a tela: nada de cartão de log, de calibragem nem
+   de painel lateral. Os comandos ficam sobre o próprio palco.
+   ========================================================= */
+#telaDiaJogo{display:flex; align-items:center; justify-content:center;
+  background:rgba(6,6,7,.92); padding:18px}
+#djGrade{display:block; max-width:min(96vw, 1180px); max-height:94vh}
+#djPalco{
+  border:1px solid var(--fio, #383838);
+  box-shadow:0 24px 70px rgba(0,0,0,.7);
+  max-width:100%;
+}
+#djPalco canvas{max-width:100%; height:auto; display:block}
+#djComandos{
+  left:50%; transform:translateX(-50%); bottom:12px; right:auto; top:auto;
+  display:flex; flex-direction:column; gap:7px; align-items:center;
+  background:rgba(12,12,14,.82); border:1px solid rgba(255,255,255,.10);
+  padding:8px 10px; max-width:calc(100% - 24px);
+}
+#djComandos .dj-botoes{display:flex; gap:6px; flex-wrap:wrap; justify-content:center}
+#djComandos #djFormacoes{display:flex; gap:5px; flex-wrap:wrap; justify-content:center}
