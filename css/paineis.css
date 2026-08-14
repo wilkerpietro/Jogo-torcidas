@@ -957,6 +957,18 @@ table.dados tr.selecionada td{background:#252525}
   display:block;font-family:var(--mono);font-size:10px;color:var(--fraco);
   margin-top:2px;
 }
+/* o relógio do dia, à esquerda de tudo: 08:00 quando a praça acorda */
+.rua-relogio{
+  flex:0 0 auto;text-align:center;padding:2px 12px 2px 0;
+  border-right:1px solid var(--linha);margin-right:2px;
+}
+.rua-relogio b{
+  display:block;font-family:var(--mono);font-size:22px;font-weight:600;
+  letter-spacing:.04em;color:var(--ouro,#d9a441);line-height:1.05;
+}
+.rua-relogio small{
+  display:block;font-family:var(--mono);font-size:9px;color:var(--fraco);
+}
 
 
 /* =========================================================

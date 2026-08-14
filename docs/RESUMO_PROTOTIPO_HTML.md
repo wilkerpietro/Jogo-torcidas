@@ -941,10 +941,51 @@ O que **não** veio, e por quê:
   de pressão estourada e o bonde grudado no cordão por quarenta segundos, ninguém recua;
   aos 30% de baixas, debandada na hora.
 
-**Próximo passo recomendado: a emboscada em ponto qualquer da praça e a escolta do
-aliado.** As cinco arenas já existem e as ações já sabem abrir cena; falta o gesto no
-mapa — clicar num ponto da rua pra marcar tocaia, e acompanhar o bonde aliado da rodovia
-até o estádio.
+- **O dia de jogo virou um dia, com hora.** O relógio da rua era um cronômetro sem hora:
+  contava de zero e o mapa só sabia dizer quanto faltava. Agora `R.minuto` conta desde as
+  **08:00**, o relógio aparece no canto esquerdo do mapa e o apito é às **16:00**. A tarde
+  tem duas cenas: de manhã cedo entra quem vem de fora, e só entre **2h30 e 2h antes do
+  apito** é que a praça sai pro estádio, escalonada por torcida.
+  Com hora fixa, 22 de 267 bondes chegavam com a bola já rolando — atravessar São Paulo a
+  pé leva mais que duas horas e meia. Quem mora longe passou a sair mais cedo: o
+  adiantamento é só o que o caminho exige, com quinze minutos de folga. Medido em 48 dias
+  de jogo nas quatro praças: **nenhum bonde chega depois do apito**, e o último de cada
+  dia entra sempre por volta das 15h45. E como das 08:00 às 13:30 quase nada se mexe, o
+  relógio da tela corre solto quando não há ninguém andando.
+
+- **O visitante pode morar aqui.** Num Atlético × Cruzeiro a Máfia Azul é visitante no
+  jogo e moradora da cidade — tem sede, bar e rua —, e o código mandava ela entrar pela
+  borda da praça como se viesse de ônibus. Agora quem decide o ponto de partida é ter ou
+  não casa na praça, não ser mandante ou visitante na tabela.
+
+- **Os dois pontos de chegada.** Quem realmente vem de fora entra por um dos dois pontos
+  que o autor marcou na arte — a boca da avenida no alto e a ponta sudeste do bairro de
+  baixo —, alternando: dois bondes novos não descem no mesmo meio-fio. Guardados em fração
+  do lado do mapa, porque as três praças com arte compartilham o mesmo esqueleto de ruas;
+  conferido, nos três os dois pontos caem em cima de asfalto.
+
+- **A primeira cena do dia é o aliado chegando.** Torcida de fora que tem aliado com sede
+  na praça desce de manhã e vai pra casa dele; à tarde os dois saem juntos pro estádio. A
+  viagem virou uma lista de pernas (`etapas`), então um bonde pode ter dois destinos e uma
+  espera no meio. Quem escolhe o anfitrião: pro jogador vale a relação corrente (o mesmo
+  ≥ 20 da tela de aliados na cidade), pras outras valem as listas de aliado e irmandade do
+  dado, irmandade na frente.
+  **A escolta soma 5 a 10% dos membros de quem recebe** (GDD §11.1), aplicada quando o
+  bonde chega na sede — a Leões da TUF, com 150, empresta 8. Quem decide pelo jogador é
+  Gestão > Aliados na nossa cidade: em `hospedar` não há escolta, em `escoltar` ou
+  `churrasco` há. A IA que tem o aliado dormindo em casa escolta sempre. **Escoltado pela
+  nossa torcida é bonde nosso na briga**: o jogador comanda a soma das duas, e isso pode
+  acontecer num jogo em que o nosso clube nem entra em campo — daí `nossoJogo` olhar
+  primeiro o nosso bonde e depois o aliado que a gente escoltou.
+
+- **Dá pra descer com o bonde que já chegou.** Se três de seis estão na esplanada e um é o
+  nosso, a briga é com esses três; o botão diz quantos ainda vêm. E quem desce pro palco
+  não volta pro minimapa — entrou pro estádio. É o que faz a hora de descer valer alguma
+  coisa: brigar às 14h30 com três bondes ou esperar os seis das 15h10 é uma escolha só.
+
+**Próximo passo recomendado: a emboscada em ponto qualquer da praça.** As cinco arenas já
+existem e as ações já sabem abrir cena; falta o gesto no mapa — clicar num ponto da rua
+pra marcar tocaia.
 
 **O que ainda falta no mundo:** a Série E do GDD §18.2 — os dados têm 108 clubes, não
 156, então ninguém cai da Série D.

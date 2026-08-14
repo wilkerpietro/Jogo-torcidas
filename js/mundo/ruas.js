@@ -278,26 +278,30 @@ TO.ruas = (function(){
   const pontoDaSede = (mo, nomeTorcida) => pontoDe(mo, it =>
     it.tipo === 'sede' && it.label.includes(nomeTorcida));
 
-  /* A torcida de fora entra pela borda — rodovia a sudoeste, como o mapa
-     desenha. Cada uma desce num ponto diferente da orla da cidade: três
-     ônibus não param no mesmo meio-fio. */
+  /* OS DOIS PONTOS DE CHEGADA, marcados na arte pelo autor: a boca da
+     avenida no alto e a ponta sudeste do bairro de baixo. São os dois
+     lugares por onde o ônibus de fora entra na praça, e alternam — dois
+     bondes novos não descem no mesmo meio-fio.
+
+     Só valem pra quem NÃO tem sede aqui. Torcida da própria praça sai de
+     casa mesmo quando o clube dela joga fora: num Atlético x Cruzeiro a
+     Máfia Azul é visitante no jogo e moradora da cidade.
+
+     Guardados em fração do lado do mapa, e não em pixel, porque as três
+     praças com arte compartilham o mesmo esqueleto de ruas — conferido:
+     nos três mapas os dois pontos caem em cima de asfalto. */
+  const CHEGADAS = [[0.4947, 0.0677], [0.8551, 0.9474]];
+
   function entradaDaCidade(mo, k){
-    const i = k || 0;
+    const i = (k || 0) % CHEGADAS.length;
     if(mo.arte){
-      /* na arte a rodovia entra pelo sudoeste: pega os nós de rua mais
-         perto daquela quina e espalha os ônibus entre eles */
-      const {nos} = malha(mo);
-      const alvo = {x: mo.tam*0.16, y: mo.tam*0.80};
-      const perto = nos.slice()
-        .sort((a,b)=>((a.x-alvo.x)**2+(a.y-alvo.y)**2)-((b.x-alvo.x)**2+(b.y-alvo.y)**2))
-        .slice(0, 40);
-      const n = perto[(i*13) % perto.length];
-      return {x:n.x, y:n.y, bairro:'chegada'};
+      const [fx, fy] = CHEGADAS[i];
+      return {x: mo.tam*fx, y: mo.tam*fy, bairro:'chegada'};
     }
     const P = MP().PAD;
     const passo = (mo.tam - P*2) / 6;
-    return {x: P + 6 + Math.min(3, i)*passo*0.6,
-            y: mo.tam - P - 6 - (i%2)*passo*0.35, bairro:'chegada'};
+    return {x: P + 6 + i*passo*1.8,
+            y: mo.tam - P - 6 - i*passo*0.35, bairro:'chegada'};
   }
 
   /* =======================================================
@@ -307,10 +311,40 @@ TO.ruas = (function(){
      a cidade antes de dar pra ler o mapa. A 6,5 a caminhada até o estádio
      leva as duas horas e meia que o relógio da tarde promete. */
   const VEL = 6.5;           // unidades do mapa por minuto de jogo
-  const ANTES = 150;         // os bondes saem duas horas e meia antes do apito
-  /* Com VEL a 6,5 a travessia da cidade leva perto de duas horas, então a
-     janela de saída aperta: espalhar em 40 minutos deixaria o último bonde
-     chegando depois do apito. 18 minutos mantém todo mundo dentro da tarde. */
+
+  /* =======================================================
+     O RELÓGIO DO DIA
+
+     R.minuto conta minutos desde as 08:00, que é quando o dia de jogo
+     abre. O relógio do mapa é ABERTURA + R.minuto, e o apito é às 16:00.
+     Antes disso o relógio era um cronômetro sem hora: contava de zero e
+     o mapa só sabia dizer quanto faltava.
+
+     A tarde tem duas cenas. De manhã cedo entra quem vem de fora e vai
+     dormir na sede do aliado. Só entre 2h30 e 2h antes do apito é que a
+     praça inteira sai pro estádio — escalonada, porque bonde não sai
+     todo no mesmo minuto. */
+  const ABERTURA = 8*60;             // 08:00
+  const APITO    = 16*60 - ABERTURA; // 16:00, em minutos de dia de jogo
+  const ANTES    = 150;              // sai 2h30 antes do apito...
+  const JANELA   = 30;               // ...ou até 2h, conforme o sorteio fixo
+  const CHEGADA_CEDO = 45;           // quem vem de fora desce entre 8h e 8h45
+
+  /* quantos minutos de jogo essa rota leva a pé */
+  function andarLeva(rota){
+    let d = 0;
+    for(let i=0;i+1<rota.length;i++)
+      d += Math.hypot(rota[i+1].x - rota[i].x, rota[i+1].y - rota[i].y);
+    return d / VEL;
+  }
+
+  /* 'minutos desde as 08:00' -> 'HH:MM' */
+  const relogio = m => {
+    const t = Math.max(0, Math.round(ABERTURA + m));
+    return `${String(Math.floor(t/60)%24).padStart(2,'0')}:`+
+           `${String(t%60).padStart(2,'0')}`;
+  };
+
   /* Esbarrão na rua. Foi 16 e a briga de rua praticamente não existia:
      medido em 12 dias de jogo, dois bondes hostis chegavam a menos de 16
      uma vez só — todo confronto acontecia no cordão do estádio. É que
@@ -462,25 +496,48 @@ TO.ruas = (function(){
     const elenco = elencoDaNoite(E, doDia);
 
     let id = 0;
+    /* a hora em que este bonde sai pro estádio: entre 2h30 e 2h antes do
+       apito, fixa por torcida — bonde não muda de horário a cada abertura */
+    const saidaPraOEstadio = (torcida, tag) =>
+      APITO - ANTES + (MP().hash(`${torcida.id}|${tag}|${R.chave}`) % JANELA);
+
     /* De que JOGO é o bonde. A praça pode ter três partidas no mesmo dia,
        e sem isso a cena dos arredores juntava todo mundo que chegou —
        torcida de um clássico do outro lado da cidade aparecia na
        esplanada do nosso jogo. Guardado como o clube mandante, que é o
-       que identifica a partida na praça. */
-    const nasce = (torcida, origem, destino, n, tag, jogo)=>{
-      if(!origem || !destino) return;
-      /* ninguém sai no mesmo minuto: a saída se espalha pela tarde, com
-         hora fixa por torcida — bonde não muda de horário a cada abertura */
-      const saiEm = (MP().hash(`${torcida.id}|${tag}|${R.chave}`) % 18);
-      R.bondes.push({
+       que identifica a partida na praça.
+
+       `pernas` é a viagem inteira: [{saiEm, ate}]. Quase todo bonde tem
+       uma só (sede -> estádio). Quem vem de fora e tem aliado aqui tem
+       duas: chega de manhã na sede dele e só de tarde os dois saem pro
+       estádio. */
+    const nasce = (torcida, origem, pernas, n, tag, jogo, extra)=>{
+      if(!origem || !pernas.length || pernas.some(p=>!p.ate)) return;
+      let de = origem;
+      const etapas = pernas.map(p=>{
+        const rota = caminho(mo, de, p.ate);
+        de = p.ate;
+        return {saiEm: p.saiEm, rota, tipo: p.tipo || 'estadio'};
+      });
+      /* QUEM MORA LONGE SAI MAIS CEDO. A janela de 2h30 a 2h antes do
+         apito é a do trajeto normal; atravessar São Paulo a pé leva mais
+         do que isso, e com hora fixa esses bondes chegavam com a bola já
+         rolando — 22 de 267, medido em 48 dias de jogo. O adiantamento é
+         só o que o caminho exige, com quinze minutos de folga. */
+      const ultima = etapas[etapas.length-1];
+      if(ultima.tipo === 'estadio'){
+        const precisa = APITO - andarLeva(ultima.rota) - 15;
+        if(precisa < ultima.saiEm) ultima.saiEm = Math.max(0, precisa);
+      }
+      R.bondes.push(Object.assign({
         id: ++id, torcida: torcida.id, nome: torcida.nome,
         cor: elenco.cor[torcida.id] || (torcida.cores && torcida.cores[0]) || '#999',
-        nossa: torcida.id === E.torcida.id, n, tag, saiEm, andou:0,
+        nossa: torcida.id === E.torcida.id, n, tag, andou:0,
         sigla: elenco.sigla[torcida.id] || M().siglaTorcida(torcida),
         jogo: jogo && jogo.casa.id,
-        rota: caminho(mo, origem, destino), i:0, t:0,
+        etapas, etapa:0, saiEm: etapas[0].saiEm, rota: etapas[0].rota, i:0, t:0,
         x: origem.x, y: origem.y, chegou:false
-      });
+      }, extra || {}));
     };
 
     /* Quantos bondes uma torcida põe na rua. O jogador decide no plano da
@@ -489,51 +546,137 @@ TO.ruas = (function(){
     const POR_BONDE = 60, MAX_BONDES = 4;
     const quantosBondes = n => U.limitar(Math.ceil(n / POR_BONDE), 1, MAX_BONDES);
 
+    let chegada = 0;   // alterna os dois pontos de entrada da praça
+
+    /* Quem sai da própria casa: mandante, ou visitante que mora aqui. */
+    const daPraca = (o, sede, est, jogo)=>{
+      if(o.id === E.torcida.id){
+        /* a nossa se divide entre a sede e as subsedes, como o plano manda */
+        const bondes = Math.max(1, (TO.planejamento.plano(E).bondes)||1);
+        const porBonde = Math.max(4, Math.round(TO.planejamento.efetivoDaSaida(E)/bondes));
+        nasce(o, sede, [{saiEm:saidaPraOEstadio(o,'sede'), ate:est}],
+              porBonde, 'sede', jogo);
+        const subs = TO.financeiro.patrimonio(E).subsedes || [];
+        for(let k=1; k<bondes; k++){
+          const sub = subs[k-1]
+            ? pontoDe(mo, (it,c)=>it.tipo==='subsede' && c.bairro.nome===subs[k-1].bairro)
+            : null;
+          const tag = sub ? 'subsede' : 'sede';
+          nasce(o, sub || sede, [{saiEm:saidaPraOEstadio(o,tag+k), ate:est}],
+                porBonde, tag, jogo);
+        }
+        return;
+      }
+      /* as outras também se quebram: a primeira sai da sede, as demais
+         dos bares dela, que é onde a rapaziada se junta */
+      const efetivo = Math.round((TO.acoes.efetivoDe(E, o)) * 0.6);
+      const q = quantosBondes(efetivo);
+      const porBonde = Math.max(4, Math.round(efetivo/q));
+      nasce(o, sede, [{saiEm:saidaPraOEstadio(o,'sede'), ate:est}],
+            porBonde, 'sede', jogo);
+      for(let k=1; k<q; k++){
+        const bar = pontoDe(mo, (it)=>it.tipo === 'bar' &&
+          (it.label||'').includes(o.nome));
+        const tag = bar ? 'bar' : 'sede';
+        nasce(o, bar || sede, [{saiEm:saidaPraOEstadio(o,tag+k), ate:est}],
+              porBonde, tag, jogo);
+      }
+    };
+
+    /* Quem vem de fora. Se tem aliado com sede aqui, a primeira coisa
+       que acontece no dia é ele descer do ônibus e ir pra casa do aliado;
+       à tarde os dois saem juntos pro estádio, e o anfitrião que escolta
+       manda gente junto. Sem aliado, desce na hora de ir pro jogo e vai
+       direto — caravana não fica seis horas parada no meio-fio. */
+    const deFora = (o, est, jogo)=>{
+      const vem = Math.round(TO.acoes.efetivoDe(E, o) * 0.25);
+      if(vem < 5) return;
+      const q = quantosBondes(vem);
+      const porBonde = Math.max(4, Math.round(vem/q));
+      const casa = anfitriaoDe(E, mo, o);
+      for(let j=0;j<q;j++){
+        const entra = entradaDaCidade(mo, chegada++);
+        const saida = saidaPraOEstadio(o, 'visitante'+j);
+        if(!casa){
+          nasce(o, entra, [{saiEm:saida, ate:est}], porBonde, 'visitante', jogo);
+          continue;
+        }
+        /* só o primeiro bonde é hospedado: a escolta é uma, não uma por
+           ônibus, e é o bonde principal que anda com o anfitrião */
+        const escolta = j === 0 ? escoltaDe(E, casa.torcida, o) : 0;
+        nasce(o, entra, [
+          {saiEm: MP().hash(`${o.id}|vem${j}|${R.chave}`) % CHEGADA_CEDO,
+           ate: casa.sede, tipo:'aliado'},
+          {saiEm: saida, ate: est}
+        ], porBonde, 'visitante', jogo, escolta ? {
+          escolta: {de: casa.torcida.id, nome: casa.torcida.nome, n: escolta},
+          /* escoltado pela nossa torcida é bonde nosso na hora da briga:
+             o jogador comanda a soma dos dois */
+          doJogador: casa.torcida.id === E.torcida.id
+        } : {hospedadoPor: casa.torcida.id});
+      }
+    };
+
     for(const jogo of doDia){
       const est = pontoDoEstadioDoClube(mo, jogo.casa) || {x:mo.tam/2, y:mo.tam/2};
-      /* mandante: as organizadas dele saem de casa */
       for(const o of M().torcidasDe(jogo.casa.id)){
         const sede = pontoDaSede(mo, o.nome);
-        if(!sede) continue;
-        if(o.id === E.torcida.id){
-          /* a nossa se divide entre a sede e as subsedes, como o plano manda */
-          const bondes = Math.max(1, (TO.planejamento.plano(E).bondes)||1);
-          const porBonde = Math.max(4, Math.round(TO.planejamento.efetivoDaSaida(E)/bondes));
-          nasce(o, sede, est, porBonde, 'sede', jogo);
-          const subs = TO.financeiro.patrimonio(E).subsedes || [];
-          for(let k=1; k<bondes; k++){
-            const sub = subs[k-1]
-              ? pontoDe(mo, (it,c)=>it.tipo==='subsede' && c.bairro.nome===subs[k-1].bairro)
-              : null;
-            nasce(o, sub || sede, est, porBonde, sub ? 'subsede' : 'sede', jogo);
-          }
-        }else{
-          /* as de casa também se quebram: a primeira sai da sede, as
-             outras dos bares dela, que é onde a rapaziada se junta */
-          const efetivo = Math.round((TO.acoes.efetivoDe(E, o)) * 0.6);
-          const q = quantosBondes(efetivo);
-          const porBonde = Math.max(4, Math.round(efetivo/q));
-          nasce(o, sede, est, porBonde, 'sede', jogo);
-          for(let k=1; k<q; k++){
-            const bar = pontoDe(mo, (it)=>it.tipo === 'bar' &&
-              (it.label||'').includes(o.nome));
-            nasce(o, bar || sede, est, porBonde, bar ? 'bar' : 'sede', jogo);
-          }
-        }
+        if(sede) daPraca(o, sede, est, jogo);
       }
-      /* visitante: entra pela rodovia e vai direto. Vários bondes entram
-         por bocas diferentes — caravana grande não chega por uma porta só */
-      let k = 0;
+      /* O VISITANTE PODE SER DAQUI. Num Atlético x Cruzeiro a Máfia Azul
+         é visitante no jogo e moradora da cidade: ela tem sede, bar e
+         rua, e sair da entrada da praça não faz sentido nenhum. Quem
+         entra pela chegada é só quem não tem casa aqui. */
       for(const o of M().torcidasDe(jogo.vis.id)){
-        const vem = Math.round(TO.acoes.efetivoDe(E, o) * 0.25);
-        if(vem < 5) continue;
-        const q = quantosBondes(vem);
-        const porBonde = Math.max(4, Math.round(vem/q));
-        for(let j=0;j<q;j++)
-          nasce(o, entradaDaCidade(mo, k++), est, porBonde, 'visitante', jogo);
+        const sede = pontoDaSede(mo, o.nome);
+        if(sede) daPraca(o, sede, est, jogo);
+        else     deFora(o, est, jogo);
       }
     }
     return R;
+  }
+
+  /* =======================================================
+     O ANFITRIÃO
+
+     Torcida de fora que tem aliado com sede na praça dorme na casa dele.
+     Pro jogador vale a relação corrente (o mesmo ≥ 20 que a tela de
+     aliados na cidade usa); pras outras valem as listas de aliado e
+     irmandade do dado. Irmandade na frente, e o hash desempata pra que a
+     mesma dupla se repita em toda abertura.
+     ======================================================= */
+  function anfitriaoDe(E, mo, visitante){
+    const daqui = M().torcidasEm(E.torcida.mapa)
+      .filter(t=>t.id !== visitante.id && pontoDaSede(mo, t.nome));
+    const grau = t=>{
+      if(t.id === E.torcida.id){
+        const v = (E.relacoes||{})[visitante.id];
+        if(v === undefined || v < 20) return 0;
+        return v >= 60 ? 2 : 1;
+      }
+      if((visitante.irmandade||[]).includes(t.id)) return 2;
+      if((visitante.aliados||[]).includes(t.id))   return 1;
+      return 0;
+    };
+    const bons = daqui.filter(t=>grau(t) > 0)
+      .sort((a,b)=> grau(b) - grau(a) ||
+        MP().hash(`${visitante.id}|${a.id}`) - MP().hash(`${visitante.id}|${b.id}`));
+    if(!bons.length) return null;
+    return {torcida: bons[0], sede: pontoDaSede(mo, bons[0].nome)};
+  }
+
+  /* Quanta gente o anfitrião manda junto. GDD §11.1: acolher bem sobe a
+     relação, e escoltar é acolher com bonde. São 5 a 10% do efetivo de
+     quem recebe — a TUF, com 150, empresta de 8 a 15. Quem decide pelo
+     jogador é Gestão > Aliados na nossa cidade; a IA que tem o aliado
+     dormindo em casa escolta sempre. */
+  function escoltaDe(E, anfitriao, visitante){
+    if(anfitriao.id === E.torcida.id){
+      const nivel = TO.planejamento.nivelDe(E, visitante.id);
+      if(nivel !== 'escolta' && nivel !== 'churrasco') return 0;
+    }
+    const pct = 5 + (MP().hash(`escolta|${anfitriao.id}|${visitante.id}`) % 6);
+    return Math.max(1, Math.round((anfitriao.membros || 20) * pct / 100));
   }
 
   /* =======================================================
@@ -547,13 +690,38 @@ TO.ruas = (function(){
      hoje e não há esplanada nossa.
      ======================================================= */
   const nossoJogo = R => {
-    const meu = (R.bondes || []).find(b=>b.nossa);
+    /* o nosso bonde manda; na falta dele, o aliado que a gente escoltou —
+       dá pra estar na rua por causa de um jogo em que o nosso clube nem
+       entra em campo */
+    const meu = (R.bondes || []).find(b=>b.nossa)
+             || (R.bondes || []).find(b=>b.doJogador);
     return meu ? meu.jogo : null;
   };
   function naEsplanada(R){
     const j = nossoJogo(R);
     if(j == null) return [];
-    return (R.arredores || []).filter(a=>a.jogo === j);
+    return (R.arredores || []).filter(a=>a.jogo === j && !a.entrou);
+  }
+
+  /* Tem alguém andando agora? Não basta "não chegou": o bonde pode não
+     ter saído ainda, ou estar parado na casa do aliado esperando a hora.
+     Quem pergunta é o relógio da tela, pra correr solto quando a rua está
+     vazia — entre a chegada de quem vem de fora e a saída geral são quase
+     seis horas sem nada pra ver. */
+  const emMovimento = R => (R.bondes || []).some(b=>{
+    if(b.chegou || R.minuto < b.saiEm) return false;
+    const etapa = b.etapas && b.etapas[b.etapa];
+    const parouNaSede = etapa && etapa.tipo === 'aliado' && b.i >= b.rota.length-1;
+    return !parouNaSede;
+  });
+
+  /* Quem entrou na cena não volta pra esplanada: acabou a briga, entrou
+     pro estádio. É o que faz a hora de descer valer alguma coisa — dá pra
+     brigar às 14h30 com três bondes ou esperar os seis das 15h10, e a
+     escolha é uma só. */
+  function marcarQueEntraram(R, lista){
+    const ids = new Set((lista||[]).map(x=>x.id));
+    for(const a of (R.arredores || [])) if(ids.has(a.id)) a.entrou = true;
   }
 
   /* =======================================================
@@ -575,17 +743,35 @@ TO.ruas = (function(){
         else { resta -= falta; b.i++; b.t = 0; }
       }
       if(b.i >= b.rota.length-1){
+        const f = b.rota[b.rota.length-1];
+        b.x = f.x; b.y = f.y;
+        const etapa = b.etapas[b.etapa];
+        if(etapa && etapa.tipo === 'aliado'){
+          /* Chegou na casa do aliado. Fica lá até a hora de sair pro
+             estádio, e nessa hora leva a escolta junto — é aqui que o
+             efetivo cresce, não na saída de casa. */
+          if(!b.hospedado){
+            b.hospedado = true;
+            if(b.escolta) b.n += b.escolta.n;
+          }
+          const proxima = b.etapas[b.etapa+1];
+          if(proxima && R.minuto >= proxima.saiEm){
+            b.etapa++; b.rota = proxima.rota; b.saiEm = proxima.saiEm;
+            b.i = 0; b.t = 0;
+          }
+          continue;
+        }
         /* Chegou no quarteirão do estádio: sai do mapa da cidade e passa
            pros arredores, que é onde a noite continua (GDD §13). Daqui pra
            frente ele não anda mais na rua nem esbarra em ninguém aqui. */
         b.chegou = true;
-        const f = b.rota[b.rota.length-1];
-        b.x = f.x; b.y = f.y;
         if(!b.nosArredores){
           b.nosArredores = true;
           b.entrouEm = Math.round(R.minuto);
           R.arredores.push({id:b.id, torcida:b.torcida, nome:b.nome, cor:b.cor,
                             n:b.n, nossa:b.nossa, tag:b.tag, jogo:b.jogo,
+                            doJogador: !!(b.nossa || b.doJogador),
+                            escolta: b.escolta || null,
                             lado: b.tag === 'visitante' ? 'visitante' : 'mandante',
                             entrouEm:b.entrouEm});
         }
@@ -789,7 +975,9 @@ TO.ruas = (function(){
           pontoDe, pontoDoEstadio, pontoDoEstadioDoClube, camposDaPraca,
           pontoDaSede, entradaDaCidade,
           estado, jogosDaPraca, montar, passo, resolver, hostis,
-          nossoJogo, naEsplanada,
-          porOlheiro, visivel, desenhar,
-          VEL, ANTES, RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};
+          nossoJogo, naEsplanada, marcarQueEntraram, emMovimento,
+          anfitriaoDe, escoltaDe,
+          porOlheiro, visivel, desenhar, relogio,
+          VEL, ANTES, ABERTURA, APITO,
+          RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};
 })();

@@ -2504,8 +2504,12 @@
       ultimo = agora;
       const mo = mapaAtual;
       if(mo && dt){
-        /* dois minutos de rua por segundo de tela */
-        TO.ruas.passo(e, mo, dt*2);
+        /* Dois minutos de rua por segundo de tela — mas o dia abre às
+           08:00 e a praça só sai pro estádio às 13h30. Quando ninguém
+           está andando (o pessoal de fora já dormiu na casa do aliado e
+           o resto ainda não saiu de casa) o relógio corre solto: são
+           quase seis horas sem nada pra ver. */
+        TO.ruas.passo(e, mo, dt * (TO.ruas.emMovimento(R) ? 2 : 90));
         if(canvasMapa) { TO.mapa.desenhar(mo, canvasMapa);
                          TO.ruas.desenhar(e, mo, canvasMapa.getContext('2d')); }
         if(R.encontro){ relogioRua = null; redesenhar(); return; }
@@ -2600,13 +2604,16 @@
     if(R.bondes.length){
       const jogos = TO.ruas.jogosDaPraca(e).filter(x=>x.dia === e.data.dia);
       const andando = R.bondes.filter(b=>!b.chegou).length;
-      const falta = Math.max(0, TO.ruas.ANTES - R.minuto);
+      const falta = Math.max(0, TO.ruas.APITO - R.minuto);
       const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
+      /* o relógio do dia, que abre às 08:00 e vai até o apito das 16:00 */
+      barraRua.appendChild(el('div',{class:'rua-relogio', html:
+        `<b>${TO.ruas.relogio(R.minuto)}</b><small>${
+          falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`}));
       barraRua.appendChild(el('div',{class:'rua-info', html:
         `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
          <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
-         ${falta > 0 ? `faltam ${hhmm(falta)} pra bola rolar`
-                     : 'a bola já rolou'}</small>`}));
+         apito às ${TO.ruas.relogio(TO.ruas.APITO)}</small>`}));
       const bt = el('button',{class:'bt destaque',
         texto: R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia'});
       bt.disabled = !andando && !R.encontro;
@@ -2695,12 +2702,13 @@
       const faixa = el('div',{class:'mini-lado '+lado});
       const meus = dentro.filter(x=>x.lado === lado);
       for(const x of meus){
-        const d = el('i',{class:'mini-disco'+(x.nossa?' nosso':'')});
+        const d = el('i',{class:'mini-disco'+((x.nossa||x.doJogador)?' nosso':'')});
         d.style.background = x.cor;
         d.style.width = d.style.height =
           U.limitar(10 + Math.sqrt(x.n)*1.4, 12, 30) + 'px';
-        d.title = `${x.nome} · ${x.n} · chegou ${Math.floor(x.entrouEm/60)}h`+
-                  `${String(x.entrouEm%60).padStart(2,'0')}`;
+        d.title = `${x.nome} · ${x.n} · chegou ${TO.ruas.relogio(x.entrouEm)}`
+                + (x.escolta ? ` · ${x.escolta.n} da ${x.escolta.nome} na escolta` : '')
+                + (x.doJogador && !x.nossa ? ' · sob o seu comando' : '');
         faixa.appendChild(d);
       }
       if(!meus.length) faixa.appendChild(el('span',{class:'mini-vazio',
@@ -2709,10 +2717,16 @@
     }
     cx.appendChild(palco);
 
-    /* nosso bonde chegou: dá pra entrar na esplanada de verdade */
-    const nosso = dentro.some(x=>x.nossa);
+    /* Bonde nosso na esplanada: dá pra entrar, mesmo com os outros ainda
+       na rua. Aliado que a gente escoltou conta como nosso. */
+    const nosso = dentro.some(x=>x.nossa || x.doJogador);
+    const faltam = (R.bondes||[]).filter(b=>!b.chegou && b.jogo === TO.ruas.nossoJogo(R)).length;
+    const jaFoi = (R.arredores||[]).some(a=>a.entrou && (a.nossa || a.doJogador));
     const bt = el('button',{class:'bt'+(nosso?' destaque':''),
-      texto: nosso ? 'Entrar nos arredores' : 'Seu bonde ainda está na rua'});
+      texto: jaFoi ? 'Seu bonde já entrou'
+                   : nosso ? (faltam ? `Entrar nos arredores (${faltam} ainda vindo)`
+                                     : 'Entrar nos arredores')
+                           : 'Seu bonde ainda está na rua'});
     bt.disabled = !nosso;
     bt.onclick = ()=>irParaOsArredores(e, R);
     cx.appendChild(bt);
@@ -2720,9 +2734,15 @@
   }
 
   /* Da esplanada em miniatura pro palco: quem está no minimapa é quem
-     entra na cena, com o efetivo que sobrou da caminhada. */
+     entra na cena, com o efetivo que sobrou da caminhada.
+
+     Basta o NOSSO bonde estar lá. Se três de seis chegaram e um é o
+     nosso, a briga é com esses três — os outros ainda estão na rua e é
+     assim que funciona: quem chega primeiro é quem está lá quando
+     estoura. Ao voltar da cena o relógio da rua continua de onde parou. */
   function irParaOsArredores(e, R){
-    const dentro = TO.ruas.naEsplanada(R).filter(x=>x.nossa);
+    const naCena = TO.ruas.naEsplanada(R);
+    const dentro = naCena.filter(x=>x.doJogador || x.nossa);
     const meu = dentro.reduce((s,x)=>s+x.n, 0) || 1;
     const aptos = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
@@ -2733,9 +2753,12 @@
     TO.estado.bloquear(true);
     const p = TO.planejamento.plano(e);
     /* quem chegou na esplanada entra na cena com o efetivo que sobrou da
-       caminhada e a cor da própria torcida */
-    const bondes = TO.ruas.naEsplanada(R).map(x=>({lado:x.lado, n:x.n, cor:x.cor,
-                                                   nome:x.nome, nossa:x.nossa}));
+       caminhada e a cor da própria torcida. `nossa` aqui é "o jogador
+       comanda": o aliado que a gente escoltou anda com a gente. */
+    const bondes = naCena.map(x=>({lado:x.lado, n:x.n, cor:x.cor,
+                                   nome:x.nome, nossa: !!(x.nossa || x.doJogador)}));
+    /* quem desce pro palco já não volta pro minimapa */
+    TO.ruas.marcarQueEntraram(R, naCena);
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao: p.intencao, bombas: p.bombas,
