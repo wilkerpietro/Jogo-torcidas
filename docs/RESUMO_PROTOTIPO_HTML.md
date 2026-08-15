@@ -1286,20 +1286,34 @@ Duas descobertas no caminho, as duas medidas:
    de 28) e **2,4 em Belo Horizonte, que tem só 4 pares hostis de 10** — a
    rivalidade da praça mexe menos do que a densidade, porque quem não é hostil
    simplesmente passa direto.
-3. **Assaltos: 2,4 por mês** medidos em 10 meses de uma temporada. O bloco de quatro
-   semanas é sorteado por hash da data, então **o mesmo dia reaberto mostra o mesmo
-   assalto** — conferido abrindo e fechando o mapa três vezes: mesma foto,
-   `banco@785,605|Independente|563`.
+3. **Assaltos: 2,42 por mês**, medidos em **116 meses** (12 temporadas de cada uma de
+   três praças). **111 desses meses fecham em exatamente 2 ou 3**; os 5 de fora são
+   os blocos partidos pelo fim da temporada, que não têm as quatro semanas
+   inteiras. O bloco é sorteado por hash da data, então **o mesmo dia reaberto
+   mostra o mesmo assalto** — conferido abrindo e fechando o mapa três vezes: mesma
+   foto, `banco@785,605|Independente|563`.
 4. **Quem assaltou, contra o efetivo:** Gaviões 250 → 5 assaltos, Independente 196 →
    5, Mancha Verde 200 → 5, TUP 76 → 3, Dragões 74 → 2, Camisa 12 78 → 1. As três
    grandes levam 15 dos 24; as pequenas aparecem, mas raro.
 5. **Sucesso por alvo** — o alvo grande rende mais e prende mais, que é a tesoura
-   que o desenho queria: mercadinho 0 presos de 4, roupas 0 de 2, posto 2 de 7,
-   joalheria 2 de 4, **banco 6 de 7**. No total 42% presos. Cada assalto que dá
-   certo rende de R$ 60 (mercadinho) a R$ 504 (joalheria) — uma fração de 12% do
-   piso da faixa, porque isto é um cara levando a gaveta e não um bonde invadindo.
-6. **O que rendeu pra nós:** R$ 1.320 numa temporada, **1,14% da receita total** de
-   R$ 115.480. É extra, não torneira.
+   que o desenho queria. Em 281 assaltos de São Paulo ao longo de 12 temporadas:
+
+   | alvo | assaltos | presos | proporção |
+   |---|---|---|---|
+   | roupas | 57 | 0 | 0% |
+   | mercadinho | 48 | 4 | 8% |
+   | posto | 63 | 17 | 27% |
+   | joalheria | 55 | 22 | 40% |
+   | **banco** | 58 | **38** | **66%** |
+
+   No total, 20% a 29% presos conforme a praça. Cada assalto que dá certo rende de
+   R$ 60 (mercadinho) a R$ 504 (joalheria) — uma fração de 12% do piso da faixa,
+   porque isto é um cara levando a gaveta e não um bonde invadindo.
+6. **O que rendeu pra nós:** R$ 1.320 numa temporada simulada inteira, **1,14% da
+   receita total** de R$ 115.480. Na varredura longa o ganho fica entre R$ 344 e
+   R$ 1.236 por temporada conforme o tamanho da torcida na praça — a Máfia Azul, que
+   é enorme perto das outras quatro de Belo Horizonte, leva 117 dos 281 assaltos e
+   fica na ponta de cima. Em qualquer dos casos é extra, não torneira.
 7. **A viatura:** mediana de **9 minutos** do chamado até a porta, pior caso 18, e
    **42% chegam a tempo**. Ela não sai sempre do posto mais perto: com o mais perto
    sempre, o banco era preso em 7 de 7 e não rendia nunca; com qualquer um por
@@ -1314,9 +1328,15 @@ Duas descobertas no caminho, as duas medidas:
     "Preso assaltando banco do Centro — 60 dias". `ferir` e `prender` passaram a
     receber o motivo de quem chamou; sem motivo, o padrão continua sendo o dia de
     jogo.
-11. **Membro nosso preso num assalto** é raro por construção: a nossa torcida faz 5
-    dos 24 assaltos da temporada e 42% dão errado, o que dá cerca de dois por
-    temporada — e a temporada medida fechou em zero.
+11. **Membro nosso preso num assalto: cerca de dois por temporada** — e isto
+    contraria o que a primeira medição sugeria. Uma temporada só tinha fechado em
+    zero, e daí a impressão de raridade; em 12 temporadas de cada praça o número é
+    **2,17 por temporada com a Gaviões, 2,08 com a Máfia Azul e 1,0 com a Young
+    Flu**, que é menor na praça dela. Não é raro: é regular, uma ou duas vezes por
+    ano. **A pena não tira gente demais de circulação**: duas prisões de 30 a 60
+    dias somam uns 90 dias-membro numa temporada de 266 dias, o que dá em média
+    **0,3 membro na cadeia a qualquer momento** numa torcida de 250 — visível na
+    ficha, longe de fazer falta no bonde.
 12. **Ninguém atravessa quarteirão:** o andarilho ficou fora do asfalto em 5.357 de
     454.158 amostras (1,2%, o mesmo meio-de-aresta dos bondes) e a **viatura em 0 de
     5.002**.
