@@ -1033,6 +1033,158 @@ O que **não** veio, e por quê:
   erro em campo — era mina, não buraco, e com o visitante passando a procurar sede o
   caminho ficaria quente. 275 pinos conferidos nas 30 praças, **0 errados**.
 
+## 8.5 O bonde comandado — o projeto, antes do código
+
+Quatro escolhas de desenho que precisavam estar fechadas antes de qualquer linha,
+porque errar nelas custa retrabalho e não conserto.
+
+**1. O que é "atacar um rival" — quem escolhe é o destino, não um menu.** O jogo já
+tem cena para os dois alvos, e não faz sentido inventar um terceiro caminho:
+
+- clicar num **pino de sede ou bar** rival é alvo **fixo**, e cai na ação que já
+  existe em `acoes.js` (`alvosDeAtaque` já varre exatamente esses pinos, com cena,
+  saque, prestígio e tensão próprios);
+- clicar num **ponto de rua** é **tocaia**: o bonde vai até lá e fica. Se um bonde
+  hostil passar perto, `procurarEncontro` dispara como sempre e a cena abre pelo
+  `localDe` do lugar — rua, rua média, rua nobre ou praça.
+
+O jogador não escolhe num seletor: ele escolhe apontando. É a mesma gramática do
+resto do mapa, onde o clique já significa "aqui".
+
+**2. Fora de dia de jogo o alvo é sempre fixo.** Sem jogo na praça ninguém mais põe
+gente na rua, então tocaia num dia vazio seria esperar por um bonde que não existe.
+A alternativa — dar movimento próprio às torcidas da IA todo dia — é um mundo
+inteiro a mais para simular e não é o que está sendo pedido. Então: em dia de jogo
+o mapa tem os dois alvos; fora dele, só o fixo. **Nada de movimento de rival
+independente de jogo.**
+
+**3. Custa uma ação da semana.** É a assunção do pedido e ela está certa: são 2 a 3
+ações por semana pelo nível da sede (GDD §3.1), e é esse teto que faz a decisão ter
+preço. Sair de graça transformaria o ataque diário no caminho ótimo e tiraria o
+sentido de todo o resto do orçamento. O botão desconta por `TO.acoes` e, quando não
+dá, diz o motivo em vez de só ficar cinza.
+
+**4. Quem sai:** `TO.membros.aptosParaOEstadio(E)` — os que não estão feridos nem
+presos —, com o jogador escolhendo quantos, como já faz na escalação. Em dia de
+jogo `efetivoDaSaida` continua mandando nos bondes automáticos; o bonde comandado é
+outro, e o efetivo dele é escolhido na hora.
+
+## 8.6 O bonde comandado — o que ficou de pé, com número
+
+O projeto de §8.5 foi implementado inteiro. As cinco coisas que o pedido mandava
+medir, medidas dirigindo o jogo de verdade em Chromium:
+
+- **O mapa vive todo dia.** `montar()` deixou de sair pela porta dos fundos quando
+  o dia não tem jogo: ele monta o dia, o relógio corre e a barra oferece o comando.
+  Dia vazio abre **08:00 e vai até 22:00** — não faz sentido abrir 13:30 porque um
+  apito imaginário seria às 16:00. Medido no dia 1 da semana 1 da Gaviões: relógio
+  em 08:00, "14h00 de rua", *Sair da sede* ligado, zero bondes automáticos.
+  A guarda de cache virou `R.montado` — era `R.bondes.length`, e num dia vazio isso
+  remontava o dia a cada pintura de tela, zerando o relógio do bonde comandado.
+- **Sai da sede, anda pela malha, chega.** O bonde nasce no pino da nossa sede
+  (445, 895 em São Paulo) com o efetivo escolhido. Mandado pra sede da Camisa 12,
+  a rota tem **73 nós e 805 px** contra **640 px em linha reta** — ou seja, dá a
+  volta pelo quarteirão em vez de atravessar. Chegou às **10:04**, e a chegada abre
+  a investida que `acoes.js` já tinha, com saque, prestígio e tensão.
+- **Custa uma ação.** 3 restantes antes, **2 depois**. Sem ação sobrando o botão
+  não fica só cinza: o rótulo vira **"Não sobrou ação esta semana"**. O motivo vai
+  no rótulo e não só no `title` porque no celular não existe passar o mouse.
+- **Dia de jogo não regrediu.** Três dias de jogo conferidos: 9, 4 e 7 bondes
+  automáticos, aberturas 16:00 / 08:30 / 13:30, apitos 18:30 / 11:00 / 16:00, e
+  **0 bondes fora da janela de saída**.
+- **WASD dirige, e pela malha.** 320 passos de tecla em oito direções: **maior
+  salto de 3 px** (nada de teletransporte), **236 passos travados** — que é a
+  parede fazendo o que parede faz — e das **82 posições distintas** que o bonde
+  ocupou, **3 caíram fora do asfalto**, a mesma taxa dos bondes automáticos (2,7%
+  medidos em 788 amostras), que é o meio de uma aresta cortando calçada. O truque
+  que trouxe isso de 13% pra 3,7% foi guardar o nó de destino entre quadros: sem
+  ele, cada chamada parava no meio da quadra e a seguinte perguntava "qual o nó mais
+  perto?", que no meio da quadra tanto pode ser o de trás quanto o da frente.
+  **Sem bonde selecionado o WASD não faz nada** — nem move a vista: medido, disco e
+  scroll do viewport parados nos mesmos pixels depois de segurar as quatro teclas.
+  No celular o pad aparece **com a cruz e mais nada** — sem PEDRA, BOMBA, RECUAR
+  nem as quatro formações, que são comandos de briga e não significam nada no mapa.
+
+## 8.7 A briga de rua nasce com o efetivo do mapa
+
+`abrirConfronto` montava a cena sem `bondes`, e o mandante com escalação caía no
+ramo em que o tamanho do lado é o tamanho da escalação — que já vinha cortada em 34.
+Bonde de 80 abria a cena com 34 discos enquanto `efetivoRival` passava inteiro.
+
+- **80 × 60 vira 80 × 60**: 80 discos nossos, **34 com ficha** e 46 povão.
+  250 × 180 vira 250 × 180 (34 com ficha, 216 povão). 12 × 400 vira 12 × 400, com
+  12 fichas — **nenhum lado clampado por acidente**, nem pra cima nem pra baixo.
+- **Vale também para bar, comércio e CT**, que passam pelo mesmo caminho. Ali só o
+  NOSSO lado vira bonde: quem defende continua se espalhando pelos pontos que a cena
+  declarou, porque no bar são a porta e o fundo do salão e juntar os dois num canto
+  mudaria a planta, não o efetivo.
+- **Quem não cabe na rua fica na boca dela.** Das duas saídas possíveis — cortar o
+  efetivo ou deixar nascer todo mundo e empilhar quem sobra —, ficou a segunda, que
+  é o que `pontoLivreMaisProximo` já faz sozinho. Medido antes de fechar, com **400
+  discos**, mais do que qualquer bonde que o jogo produz: **rua 91 · rua-média 95 ·
+  rua-nobre 99 · praça 88 · arredores 115 FPS**. Com 140: 174 / 180 / 186 / 150 / 217.
+- **O maior bonde que o jogo produz de fato** é de **250** (o nosso, em São Paulo), e
+  o maior encontro possível soma **310** — medido em 120 dias de jogo de três praças,
+  1.291 bondes. Os 400 discos acima cobrem isso com folga.
+
+## 8.8 Correr por inferioridade — e correr não ser derrota
+
+Havia um gatilho de fuga só: 30% de baixas. Um bonde de 8 encarava um de 40 até cair
+o trigésimo por cento. Agora há dois, e um terceiro fim de cena.
+
+**O limiar não é metade, é 40%,** e a razão é medida. Com metade, **39%** dos
+esbarrões de rua acabavam sem ninguém encostar em ninguém — acima do teto de um terço
+que o próprio pedido fixou, e a rua voltaria a ser vazia por outro caminho depois de o
+`RAIO_ENCONTRO` ter sido subido justamente pra ela ter briga. A 40% dá **29%**. Os
+outros cortes medidos em 80 esbarrões reais de 120 dias de jogo: 1/3 → 20%, 30% → 15%,
+25% → 12,5%.
+
+**Três travas no gatilho novo**, e as três estão medidas:
+
+- **Nunca o bonde do jogador.** Em 12 contra 40 o nosso lado só quebrou pelo preço de
+  sangue combinado, com **91,7% de baixas** — `debandouPor.mandante = 'baixas'`, nunca
+  `'minoria'`.
+- **Piso de seis**, o mesmo do preço de sangue: em 10 × 4 o lado de 4 não corre.
+- **De perto, e fora dos arredores.** Eles deixam o bonde chegar e só então viram as
+  costas: o gatilho pede inimigo dentro do alcance de busca (110/130 px), não a
+  distância em que a cena acorda (260 px). Num 40 × 12 a cena acorda em **17,8 s** e a
+  debandada dispara em **19,3 s** — um segundo e meio depois, com **zero caídos dos
+  dois lados**. Nos arredores a regra não vale: lá ninguém está brigando, está todo
+  mundo indo pro portão.
+- **Não volta atrás.** `desfezDebandada: false` em todos os cenários medidos.
+
+**Dá pra alcançar quem foge**, e isso precisou de três peças. Sem elas a fuga era
+aritmética fechada — eles a 1,25 da velocidade, nós a 1,0 — e o jogador que rastreou o
+rival pela cidade abria a cena pra assistir ela terminar sozinha: **zero de doze em
+oito corridas**. As três: quem persegue enxerga a 420 px e **corre no mesmo passo**;
+o rabo da debandada é **escalonado**, e quem está de frente pro outro bonde é o último
+a virar as costas; e **alcançou, pegou** — segundo e pouco de mão em cima e o sujeito
+fica, porque no dano normal um disco de vida cheia levaria vinte segundos de contato
+pra ir ao chão e a janela de uma fuga é de dois a quatro.
+
+Com as três, num 40 × 12 em dez corridas: **perseguindo, 1 ou 2 dos 12 segurados,
+nunca zero**; **parado, 0 em 7 das 10** — e é aí que a tela ELES CORRERAM aparece. O
+"alcançou, pegou" vale **só pra debandada por minoria**: quem quebra depois da briga já
+está gasto e o 1,6× de sempre já segurava gente (11 de 25 medidos); estender a regra
+àquele caso virava toda derrota em extermínio, de 26 caídos de 40 para 36.
+
+**O terceiro fim.** `J.acabou.correram` quando o lado que esvaziou a cena saiu inteiro:
+debandou, sumiu pela boca de rua e não deixou **nenhum caído nem preso**. Cartaz
+próprio, **ELES CORRERAM**, em tom neutro — nem a classe `boa` nem a `ruim` —, e com os
+números que importam no lugar dos de sempre: **eram deles, éramos nós, escaparam**.
+Numa fuga limpa os feridos são zero dos dois lados, e zero ali é informação.
+
+**Quanto vale:** `arredonda(BASE × deles/seus)`, preso entre 1 e 6. **BASE 12 e não
+3,5**, e de novo por medição: o gatilho dispara em 40%, o que prende a razão abaixo de
+0,40 — quem foge nunca foi mais da metade da sua gente, por definição do gatilho. Com
+BASE 3,5 toda fuga pagaria `arredonda(≤1,4) = 1`, uma constante, e o pedido era
+justamente pagar menos quando a vantagem era maior. Com 12 a faixa volta: **80 × 6 →
+1 · 60 × 8 → 2 · 40 × 12 → 4 · 30 × 12 → 5**. Contra a escala normal, que vai de −13 a
++45, a fuga fica entre "nada" e "uma noite fraca de briga de verdade".
+
+Uma correção de canto no caminho: `Math.round(-0.5)` é `-0`, e a tela de relatório
+escrevia **"Prestígio -0"** numa noite que deu em nada.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima

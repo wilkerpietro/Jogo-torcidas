@@ -448,6 +448,38 @@ TO.diaJogo.ponte = (function(){
     } else if(!on&&el) el.remove();
   }
 
+  /* =======================================================
+     O QUE VALE UMA FUGA
+
+     Pouco, e menos ainda quanto maior era a vantagem. Correr de quem
+     chegou com o triplo não é façanha de ninguém e o jogo não paga por
+     isso; o outro lado amarelar numa briga parelha vale alguma coisa;
+     e o bonde grande que virou as costas pro bonde pequeno é o teto.
+
+     A conta é `arredonda(BASE × deles/seus)`, presa entre 1 e 6. A
+     escala normal de prestígio vai de −13 a +45, então 1 a 6 é entre
+     "nada" e "uma noite fraca de briga de verdade" — se a fuga pagasse
+     como vitória o jogador caçaria fuga em vez de briga, e a briga é o
+     jogo.
+
+     BASE 12 e não 3,5, e a razão é medida. O gatilho da fuga dispara em
+     40% (combate.js, MINORIA) porque em 50% quatro de cada dez
+     esbarrões de rua acabavam sem contato. Isso prende a razão
+     deles/seus abaixo de 0,40 — quem foge nunca foi mais da metade da
+     sua gente, por definição do gatilho. Com BASE 3,5 toda fuga pagaria
+     arredonda(≤1,4) = 1, uma constante, e o pedido era justamente que
+     pagasse menos quando a vantagem era maior. BASE 12 devolve a faixa:
+     eles com 8% da sua gente vale 1; com 25%, 3; encostando no limiar,
+     5. O 6 fica reservado pro dia em que um bonde correr de outro sem
+     estar em minoria — hoje nenhum gatilho produz isso.
+     ======================================================= */
+  const BASE_FUGA = 12;
+  function prestigioDaFuga(J){
+    const meus  = Math.max(1, J.total.mandante);
+    const deles = Math.max(0, J.total.visitante);
+    return U.limitar(Math.round(BASE_FUGA * (deles/meus)), 1, 6);
+  }
+
   function encerrar(motivo, opc){
     if(!J||J.fase==='fim') return;
     J.fase='fim';
@@ -470,10 +502,12 @@ TO.diaJogo.ponte = (function(){
     const venceu = J.acabou ? J.acabou.venceu
                  : noObjetivo ? true
                  : J.caidos.visitante > J.caidos.mandante;
+    /* eles amarelaram e saíram inteiros: nem vitória nem noite calma */
+    const correram = !!(J.acabou && J.acabou.correram);
     /* noite sem ninguém no chão é noite tranquila, tenha ela acabado
        pelo portão ou por a cena esvaziar */
-    const tranquila = (J.acabou && J.acabou.tranquila) ||
-                      J.caidos.mandante + J.caidos.visitante === 0;
+    const tranquila = !correram && ((J.acabou && J.acabou.tranquila) ||
+                      J.caidos.mandante + J.caidos.visitante === 0);
     const xpNoite = Math.round(xpBase * (venceu?1.5:1));
 
     /* ficha por ficha: é isto que vira Ferido e Preso na gestão */
@@ -496,14 +530,20 @@ TO.diaJogo.ponte = (function(){
       rompido:J.rompido,
       entraram:J.entraram,
       venceu, xpNoite,
-      tranquila,
+      tranquila, correram,
+      /* quantos eram de cada lado, pro cartaz poder dizer de que
+         tamanho era o bonde que amarelou */
+      efetivo: {mandante:J.total.mandante, visitante:J.total.visitante},
       bombasUsadas: Math.max(0, (J.bombasIniciais||0) - J.bombas),
       /* o que saiu da mão de cada lado, e quem correu pra fora da cena */
       armas: J.armas,
       sumiram: J.sumiram,
       moralTorcida: venceu?+1 : (J.debandou&&J.debandou.mandante)?-2 : -0.5,
-      prestigio: Math.round(J.caidos.visitante*2 - J.caidos.mandante*1.5
-                            - J.presosPor.mandante*2 + (J.rompido?6:0)),
+      /* o `|| 0` não é enfeite: Math.round(-0.5) é -0, e a tela
+         escrevia "Prestígio -0" numa noite que deu em nada */
+      prestigio: correram ? prestigioDaFuga(J)
+        : (Math.round(J.caidos.visitante*2 - J.caidos.mandante*1.5
+                      - J.presosPor.mandante*2 + (J.rompido?6:0)) || 0),
       membros
     };
     J.resultado=r;
@@ -525,20 +565,26 @@ TO.diaJogo.ponte = (function(){
     const a=(r.armas&&r.armas.mandante)||{pedra:0,bomba:0};
     /* mesmas três palavras da tela de relatório do jogo, e nesta ordem:
        ter vencido diz mais que a noite ter sido calma */
-    const titulo = r.venceu ? 'SAÍMOS POR CIMA'
+    const titulo = r.correram ? 'ELES CORRERAM'
+                 : r.venceu ? 'SAÍMOS POR CIMA'
                  : r.tranquila ? 'NOITE TRANQUILA' : 'SAÍMOS POR BAIXO';
     const dado=(rot,val)=>`<div class="dado-cena"><span>${rot}</span><b>${val}</b></div>`;
+    const ef = r.efetivo || {};
     const cx=document.createElement('div');
     cx.id='djFim';
     cx.innerHTML=
-      `<div class="cartaz-cena ${r.venceu?'boa':'ruim'}">
+      `<div class="cartaz-cena ${r.correram?'neutra':r.venceu?'boa':'ruim'}">
          <h3>${titulo}</h3>
          <div class="dados-cena">
            ${dado('Feridos deles', r.caidosVisitante)}
            ${dado('Feridos nossos', r.caidosMandante)}
-           ${dado('Armas empregadas', `${a.pedra||0} pedras · ${a.bomba||0} bombas`)}
-           ${dado('Presos', r.presosMandante+r.presosVisitante)}
-           ${dado('Chegaram no alvo', (r.entraram||{}).mandante||0)}
+           ${r.correram ? dado('Eram deles', ef.visitante||0) +
+                          dado('Éramos nós', ef.mandante||0) +
+                          dado('Escaparam', (r.sumiram||{}).visitante||0)
+                        : dado('Armas empregadas',
+                               `${a.pedra||0} pedras · ${a.bomba||0} bombas`) +
+                          dado('Presos', r.presosMandante+r.presosVisitante) +
+                          dado('Chegaram no alvo', (r.entraram||{}).mandante||0)}
            ${dado('Prestígio', (r.prestigio>0?'+':'')+r.prestigio)}
          </div>
          <small>${r.motivo}</small>

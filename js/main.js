@@ -2615,6 +2615,18 @@
         if(canvasMapa) { TO.mapa.desenhar(mo, canvasMapa);
                          TO.ruas.desenhar(e, mo, canvasMapa.getContext('2d')); }
         if(R.encontro){ relogioRua = null; redesenhar(); return; }
+        /* o bonde comandado chegou no pino que o jogador apontou: a
+           cena é a investida que `acoes.js` já sabe montar, e a ação
+           da semana já foi cobrada na saída da sede */
+        if(R.noAlvo){
+          const b = R.noAlvo; R.noAlvo = null;
+          R.rodando = false; relogioRua = null;
+          const alvo = `${b.alvoFixo.torcidaId}|${b.alvoFixo.tipo}`;
+          const r = TO.acoes.porId('atacar').executar(e, {alvo});
+          if(r.ok && r.cena){ b.chegou = true; abrirAcaoEmCena(r.cena, b.n); }
+          else { aviso(r.msg || 'O alvo sumiu.', 'ruim'); redesenhar(); }
+          return;
+        }
         /* o relógio para no apito, não quando o último bonde chega */
         if(R.minuto >= (R.apito || 0)){ R.rodando = false; relogioRua = null;
                                         redesenhar(); return; }
@@ -2687,22 +2699,67 @@
     secao(grupo('DEMAIS LOCAIS', MP.TIPOS_NEUTRO),
           ...MP.TIPOS_NEUTRO.map(t=>caixa(t, ROT_NEUTRO[t] || t, 'filho')));
 
-    /* --- o dia na rua: bondes, relógio e olheiro --- */
+    /* --- o dia na rua: bondes, relógio, olheiro e o bonde comandado ---
+       A barra existe TODO DIA. Antes ela só valia em dia de jogo e o
+       resto do ano era uma frase morta ("cidade tranquila"); agora o
+       relógio corre sempre e num dia vazio o único bonde da rua é o que
+       o jogador mandar sair. */
     const R = TO.ruas.montar(e, mo);
     const barraRua = el('div',{class:'rua-barra'});
-    if(R.bondes.length){
+    {
       const jogos = TO.ruas.jogosDaPraca(e).filter(x=>x.dia === e.data.dia);
       const andando = R.bondes.filter(b=>!b.chegou).length;
       const falta = Math.max(0, (R.apito||0) - R.minuto);
       const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
-      /* o relógio do dia, que abre às 08:00 e vai até o apito das 16:00 */
+      const meu = TO.ruas.nossoBonde(e);
       barraRua.appendChild(el('div',{class:'rua-relogio', html:
         `<b>${TO.ruas.relogio(R.minuto, e)}</b><small>${
-          falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`}));
-      barraRua.appendChild(el('div',{class:'rua-info', html:
-        `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
-         <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
-         apito às ${TO.ruas.relogio(R.apito||0, e)}</small>`}));
+          !jogos.length ? (falta > 0 ? `${hhmm(falta)} de rua` : 'anoiteceu')
+          : falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`}));
+      barraRua.appendChild(el('div',{class:'rua-info', html: jogos.length
+        ? `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
+           <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
+           apito às ${TO.ruas.relogio(R.apito||0, e)}</small>`
+        : `<b>Cidade tranquila</b><small>${meu
+            ? `seu bonde de ${meu.n} está na rua`
+            : 'ninguém joga aqui hoje — quem sair, sai porque você mandou'}
+           </small>`}));
+
+      /* SAIR DA SEDE. Custa uma ação da semana, e quando não dá o botão
+         diz por quê em vez de só ficar cinza. */
+      const btS = el('button',{class:'bt',
+        texto: meu ? (R.selecionado === meu.id ? 'Bonde selecionado' : 'Selecionar bonde')
+                   : 'Sair da sede'});
+      if(meu) btS.onclick = ()=>{
+        R.selecionado = R.selecionado === meu.id ? null : meu.id;
+        aviso(R.selecionado
+          ? 'Clique num ponto do mapa pra mandar, ou dirija com WASD.'
+          : 'Bonde solto.', 'boa');
+        redesenhar();
+      };
+      else {
+        const rest = TO.acoes.restantes(e);
+        const aptos = TO.membros.aptosParaOEstadio(e).length;
+        /* botão que não dá diz o motivo NO RÓTULO, não só no title: no
+           celular não existe passar o mouse, e cinza sem explicação é a
+           coisa que mais parece bug numa tela de jogo */
+        const porque = rest <= 0 ? 'Não sobrou ação esta semana'
+                     : aptos < TO.acoes.MINIMO_SAIDA
+                       ? `Gente apta de menos (${aptos} de ${TO.acoes.MINIMO_SAIDA})`
+                       : null;
+        btS.disabled = !!porque;
+        if(porque) btS.textContent = porque;
+        btS.title = porque || 'Gasta uma ação da semana.';
+        btS.onclick = ()=>{
+          if(rest <= 0){ aviso('Não sobrou ação nesta semana.','ruim'); return; }
+          if(aptos < TO.acoes.MINIMO_SAIDA){
+            aviso(`Gente apta de menos (${aptos} de ${TO.acoes.MINIMO_SAIDA}).`,'ruim');
+            return;
+          }
+          abrirSaidaDaSede(e, mo);
+        };
+      }
+
       const bt = el('button',{class:'bt destaque',
         texto: R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia'});
       bt.disabled = !andando && !R.encontro;
@@ -2720,11 +2777,7 @@
         else poeOlheiro = !poeOlheiro;
         redesenhar();
       };
-      barraRua.append(btO, bt);
-    }else{
-      barraRua.appendChild(el('div',{class:'rua-info', html:
-        '<b>Cidade tranquila</b><small>ninguém joga aqui hoje; '+
-        'em dia de jogo os bondes saem pra rua</small>'}));
+      barraRua.append(btO, btS, bt);
     }
     q.corpo.appendChild(barraRua);
 
@@ -2929,39 +2982,160 @@
         redesenhar();
         return;
       }
+      /* O BONDE COMANDADO: clicar em cima dele seleciona; com ele
+         selecionado, o clique seguinte é a ordem de destino. Fora
+         disso o clique continua sendo o que sempre foi — informação
+         do que está debaixo do dedo. */
+      const R = TO.ruas.estado(E());
+      const meu = TO.ruas.nossoBonde(E());
+      if(meu && Math.hypot(meu.x-p.x, meu.y-p.y) < 18){
+        R.selecionado = R.selecionado === meu.id ? null : meu.id;
+        aviso(R.selecionado ? 'Bonde selecionado — clique no destino ou dirija com WASD.'
+                            : 'Bonde solto.', 'boa');
+        redesenhar();
+        return;
+      }
+      if(meu && R.selecionado === meu.id){
+        const r = TO.ruas.mandarPara(E(), mo, p.x, p.y);
+        aviso(r.msg, r.ok ? 'boa' : 'ruim');
+        if(r.ok && !R.rodando){ R.rodando = true; rodarRelogio(); }
+        redesenhar();
+        return;
+      }
       const a = MP.alvoEm(mo, p.x, p.y);
       if(a) aviso(a.info);
     });
 
-    /* WASD arrasta a vista no celular, que é onde não há mouse pra
-       empurrar o viewport */
-    if(estreito()) ligarSetasDoMapa(cv);
+    /* WASD dirige o bonde selecionado, em qualquer largura */
+    ligarSetasDoMapa(cv);
   }
 
   /* =======================================================
-     ARRASTAR O MAPA COM WASD
-     O viewport já rola; aqui só se empurra o scroll dele, e só em tela
-     estreita — no desktop o mouse faz isso melhor.
+     TIRAR O BONDE DA SEDE
+
+     Quantos vão sai de `aptosParaOEstadio` — os que não estão feridos
+     nem presos —, com o jogador escolhendo o número, como na escalação.
+     O plano da semana não serve aqui: ele diz o efetivo do DIA DE JOGO,
+     e este bonde existe em qualquer dia.
      ======================================================= */
+  function abrirSaidaDaSede(e, mo){
+    const aptos = TO.membros.aptosParaOEstadio(e).length;
+    const teto = Math.max(TO.acoes.MINIMO_SAIDA, aptos);
+    let quantos = U.limitar(Math.round(aptos*0.5), TO.acoes.MINIMO_SAIDA, teto);
+    let fechar = null;
+    const corpo = el('div');
+    const conta = el('div',{class:'valorao'});
+    const faixa = el('input',{type:'range'});
+    faixa.min = TO.acoes.MINIMO_SAIDA; faixa.max = teto; faixa.value = quantos;
+    faixa.style.width = '100%';
+    const pintar = ()=>{ conta.innerHTML =
+      `<span>Vão sair</span><b>${quantos} de ${aptos}</b>`; };
+    faixa.oninput = ()=>{ quantos = +faixa.value; pintar(); };
+    pintar();
+    corpo.append(conta, faixa);
+    corpo.appendChild(el('div',{class:'linha-dado', html:
+      '<span class="fraco">Gasta uma ação da semana. O bonde nasce no pino '+
+      'da sua sede; depois é só clicar num ponto do mapa pra mandar — pino '+
+      'de rival é investida, rua qualquer é tocaia.</span>'}));
+    const ir = el('button',{class:'bt destaque larga', texto:'Pra rua'});
+    ir.onclick = ()=>{
+      const g = TO.acoes.gastarAcao(e, 'atacar', 'Bonde na rua, fora de jogo.');
+      if(!g.ok){ aviso(g.msg, 'ruim'); return; }
+      const r = TO.ruas.sairDaSede(e, mo, quantos);
+      if(!r.ok){
+        /* não saiu: devolve a ação, senão o jogador paga por nada */
+        e.acoes.usadas = Math.max(0, (e.acoes.usadas||1) - 1);
+        aviso(r.msg, 'ruim'); return;
+      }
+      TO.estado.anotar(e, `${quantos} saíram da sede pra rua.`, 'neutro');
+      aviso(r.msg, 'boa');
+      fechar && fechar();
+      redesenhar();
+    };
+    corpo.appendChild(ir);
+    fechar = modal('Tirar o bonde da sede', `${aptos} aptos`, corpo);
+  }
+
+  /* =======================================================
+     DIRIGIR O BONDE COM WASD
+
+     Antes estas teclas arrastavam a vista, e só no celular. Agora elas
+     dirigem o bonde selecionado, em qualquer largura — a vista continua
+     no arrasto e na pinça, que já funcionam e não precisam de tecla.
+     Sem bonde selecionado, WASD não faz nada: duas funções na mesma
+     tecla, decididas por um estado invisível, é o tipo de coisa que
+     parece bug.
+     ======================================================= */
+  /* O PAD DO MAPA: só a cruz.
+     É o mesmo pad da cena de luta — mesmas classes, mesmo CSS, mesmo
+     jeito de segurar a tecla —, sem Q, E, R nem as formações: aquilo é
+     comando de briga e não significa nada no mapa, e botão que não faz
+     nada ensina o jogador a desconfiar dos botões. */
+  let padDoMapa = null;
+  function montarPadDoMapa(){
+    const e = E();
+    const R = e && TO.ruas.estado(e);
+    const b = e && TO.ruas.nossoBonde(e);
+    const querem = estreito() && pagina === 'mapa' && !painel &&
+                   b && R && R.selecionado === b.id;
+    if(!querem){
+      if(padDoMapa){ padDoMapa.remove(); padDoMapa = null; }
+      for(const k of ['w','a','s','d']) teclasDoMapa[k] = false;
+      return;
+    }
+    if(padDoMapa) return;
+    const caixa = el('div',{class:'dj-pad'});
+    caixa.id = 'mapaPad';
+    const lado = el('div',{class:'pad-lado pad-esq'});
+    const cruz = el('div',{class:'pad-cruz'});
+    for(const k of ['w','a','s','d']){
+      const bt = el('button',{class:`pad-bt pad-mov pad-${k}`, texto:k.toUpperCase()});
+      bt.addEventListener('pointerdown', ev=>{
+        ev.preventDefault();
+        try{ bt.setPointerCapture(ev.pointerId); }catch(_){}
+        bt.classList.add('apertado'); teclasDoMapa[k] = true;
+      });
+      const solta = ev=>{ if(ev) ev.preventDefault();
+                          bt.classList.remove('apertado'); teclasDoMapa[k] = false; };
+      bt.addEventListener('pointerup', solta);
+      bt.addEventListener('pointercancel', solta);
+      bt.addEventListener('lostpointercapture', solta);
+      bt.addEventListener('contextmenu', ev=>ev.preventDefault());
+      cruz.appendChild(bt);
+    }
+    lado.appendChild(cruz);
+    caixa.append(lado, el('div',{class:'pad-lado pad-dir'}));
+    document.body.appendChild(caixa);
+    padDoMapa = caixa;
+  }
+
   let setasDoMapa = null;
+  const teclasDoMapa = {};
   function ligarSetasDoMapa(cv){
-    const vp = cv.closest('.mapa-viewport') || cv.parentElement;
-    if(!vp || setasDoMapa) return;
-    const teclas = {};
-    const VEL = 520;                     // px por segundo
-    addEventListener('keydown', e=>{
-      const k = e.key.toLowerCase();
-      if('wasd'.includes(k) && pagina==='mapa' && !painel) teclas[k]=true;
+    if(setasDoMapa) return;
+    addEventListener('keydown', ev=>{
+      const k = ev.key.toLowerCase();
+      if('wasd'.includes(k) && pagina==='mapa' && !painel) teclasDoMapa[k]=true;
     });
-    addEventListener('keyup', e=>{ teclas[e.key.toLowerCase()]=false; });
+    addEventListener('keyup', ev=>{ teclasDoMapa[ev.key.toLowerCase()]=false; });
     let ant = 0;
     const passo = agora=>{
       const dt = ant ? Math.min(0.05,(agora-ant)/1000) : 0; ant = agora;
-      if(dt && vp.isConnected){
-        if(teclas.a) vp.scrollLeft -= VEL*dt;
-        if(teclas.d) vp.scrollLeft += VEL*dt;
-        if(teclas.w) vp.scrollTop  -= VEL*dt;
-        if(teclas.s) vp.scrollTop  += VEL*dt;
+      const e = E();
+      const R = e && TO.ruas.estado(e);
+      const b = e && TO.ruas.nossoBonde(e);
+      if(dt && e && R && b && R.selecionado === b.id && !R.encontro && mapaAtual){
+        const dx = (teclasDoMapa.d?1:0) - (teclasDoMapa.a?1:0);
+        const dy = (teclasDoMapa.s?1:0) - (teclasDoMapa.w?1:0);
+        if(dx || dy){
+          /* mesma escala de tempo do relógio: dois minutos de rua por
+             segundo de tela */
+          TO.ruas.dirigir(e, mapaAtual, dx, dy, dt*2);
+          if(canvasMapa){
+            TO.mapa.desenhar(mapaAtual, canvasMapa);
+            TO.ruas.desenhar(e, mapaAtual, canvasMapa.getContext('2d'));
+          }
+        }
       }
       setasDoMapa = requestAnimationFrame(passo);
     };
@@ -3084,10 +3258,25 @@
       redesenhar();
       return;
     }
-    /* quem estava no bonde entra na cena, pelos mais fortes */
+    /* A RUA NASCE COM O EFETIVO QUE O MAPA DIZ, não com o tamanho da
+       escalação. Sem `bondes` no config, o mandante com escalação caía
+       no ramo de `base = 0` e o nosso lado nascia com 34 discos — o
+       corte da escalação — enquanto `efetivoRival` passava inteiro: um
+       bonde nosso de 80 abria a cena em 34 contra 60. O caminho certo é
+       o mesmo da esplanada: passar os dois bondes com o `n` de verdade.
+
+       O 34 continua, com o sentido que sempre teve: são os que têm
+       FICHA — nome, força, defesa e consequência de ferido ou preso
+       depois da briga. O resto é povão sem ficha. */
     const aptos = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
       .slice(0, U.limitar(nosso.n, 2, 34));
+    const bondes = [
+      {lado:'mandante',  n:nosso.n, cor:nosso.cor, sigla:nosso.sigla,
+       nome:nosso.nome,  nossa:true},
+      {lado:'visitante', n:deles.n, cor:deles.cor, sigla:deles.sigla,
+       nome:deles.nome,  nossa:false}
+    ];
     encontroAberto = enc;
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
@@ -3096,7 +3285,7 @@
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', bombas: p.bombas,
-                efetivoRival: deles.n, local: enc.local },
+                bondes, efetivoRival: deles.n, local: enc.local },
       aoTerminar: res => fecharDiaDeJogo(res, enc)
     });
   }
@@ -3137,18 +3326,33 @@
      Atacar bar ou sede, assaltar comércio e pressionar o clube
      abrem a mesma tela do dia de jogo, num cenário próprio.
      ======================================================= */
-  function abrirAcaoEmCena(cena){
+  function abrirAcaoEmCena(cena, efetivo){
     const e = E();
-    const aptos = TO.membros.aptosParaOEstadio(e)
-      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
-      .slice(0, cena.acao === 'assalto' ? 12 : 34);
+    const fila = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa));
+    /* QUANTOS VÃO — a mesma correção da briga de rua, aqui também.
+       Assalto é serviço de meia dúzia e continua sendo doze. Investida
+       é a turma que estiver de pé, ou o bonde que o mapa mandou. O 34
+       segue valendo pra FICHA: nome, força, defesa e consequência de
+       ferido ou preso depois. O resto é povão. */
+    const n = cena.acao === 'assalto'
+      ? Math.max(2, Math.min(12, fila.length))
+      : Math.max(2, Math.round(efetivo || fila.length));
+    const aptos = fila.slice(0, Math.min(n, cena.acao === 'assalto' ? 12 : 34));
+    /* só o NOSSO lado vem como bonde: quem defende continua se
+       espalhando pelos pontos que a cena declarou — no bar são a porta e
+       o fundo do salão, e juntar os dois num canto só mudaria a planta
+       da cena, não o efetivo dela */
+    const bondes = [{lado:'mandante', n, nossa:true, nome:e.torcida.nome,
+                     cor:(e.torcida.cores && e.torcida.cores[0]) || null,
+                     sigla: TO.mundo.siglaTorcida(e.torcida)}];
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
     const p = TO.planejamento.plano(e);
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
-      config: { escalacao: aptos, intencao:'atacar',
+      config: { escalacao: aptos, intencao:'atacar', bondes,
                 /* assalto não é briga anunciada: ninguém leva bomba */
                 bombas: cena.acao === 'assalto' ? 0 : p.bombas,
                 efetivoRival: cena.efetivoRival, local: cena.cena },
@@ -3199,22 +3403,37 @@
      ======================================================= */
   function cartazDaCena(res, fecho){
     const ganhou = fecho ? !!fecho.ganhou : !!res.venceu;
-    const titulo = (fecho && fecho.titulo) ||
+    /* ELES CORRERAM vem antes de tudo, inclusive do título da ação —
+       "ATAQUE BEM-SUCEDIDO" com zero ferido dos dois lados era a tela
+       gritando uma coisa e o número dizendo outra. E o tom é neutro de
+       propósito: não é vitória, porque não houve briga; não é derrota,
+       porque quem virou as costas foram eles. */
+    const correu = !!res.correram;
+    const titulo = correu ? 'ELES CORRERAM'
+                 : (fecho && fecho.titulo) ||
                    (res.tranquila ? 'NOITE TRANQUILA'
                                   : ganhou ? 'SAÍMOS POR CIMA' : 'SAÍMOS POR BAIXO');
     const armas = (res.armas && res.armas.mandante) || {pedra:0, bomba:0};
     const dinheiro = (fecho && fecho.dinheiro) || 0;
+    const ef = res.efetivo || {};
     const dado = (rot, val, cor)=>
       `<div class="dado-cena"><span>${rot}</span>`+
       `<b${cor?` class="${cor}"`:''}>${val}</b></div>`;
-    return el('div', {class:`cartaz-cena ${ganhou?'boa':'ruim'}`, html:
+    return el('div', {class:`cartaz-cena ${correu?'neutra':ganhou?'boa':'ruim'}`, html:
       `<h3>${titulo}</h3><div class="dados-cena">`+
         dado('Feridos deles', res.caidosVisitante, res.caidosVisitante?'positivo':'')+
         dado('Feridos nossos', res.caidosMandante, res.caidosMandante?'negativo':'')+
-        dado('Armas empregadas',
-             `${armas.pedra||0} pedras · ${armas.bomba||0} bombas`)+
-        dado('Dinheiro da operação', dinheiro ? U.dinheiro(dinheiro) : '—',
-             dinheiro ? 'positivo' : '')+
+        /* numa fuga limpa os feridos são zero dos dois lados, e zero ali
+           é informação: ninguém encostou em ninguém. O que falta saber é
+           de que tamanho eram os dois bondes e quantos escaparam. */
+        (correu
+          ? dado('Eram deles', ef.visitante||0)+
+            dado('Éramos nós', ef.mandante||0)+
+            dado('Escaparam', (res.sumiram||{}).visitante||0)
+          : dado('Armas empregadas',
+                 `${armas.pedra||0} pedras · ${armas.bomba||0} bombas`)+
+            dado('Dinheiro da operação', dinheiro ? U.dinheiro(dinheiro) : '—',
+                 dinheiro ? 'positivo' : ''))+
       `</div>`});
   }
 
@@ -3307,6 +3526,7 @@
     pintarPagina(pagina);
     if(painel) pintarPagina(painel);
     montarAtalhos();
+    montarPadDoMapa();
   }
 
   /* =======================================================

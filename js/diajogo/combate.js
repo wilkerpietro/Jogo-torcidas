@@ -73,6 +73,8 @@ TO.diaJogo.combate = (function(){
       this.hpMax  = lider?220:150; this.hp=this.hpMax;
       this.moral=12;
       this.caido=false; this.preso=false; this.fugindo=false; this.entrou=false;
+      this.correEm=null;    // debandou, mas ainda não virou as costas
+      this.agarrado=0;      // segundos de mão em cima enquanto foge
       this.sumiu=false;     // debandou e saiu da cena por uma boca de rua
       this.voltando=false;  // defendeu, ganhou, e está voltando pro posto
       this.vadiando=false;  // noite tranquila: fica de conversa até a hora
@@ -156,7 +158,7 @@ TO.diaJogo.combate = (function(){
       sumiram:{mandante:0, visitante:0},
       armas:{mandante:{pedra:0,bomba:0}, visitante:{pedra:0,bomba:0}},
       total:{mandante:0, visitante:0},
-      debandou:{}, log:[], aviso:null, avisoAte:0,
+      debandou:{}, debandouPor:{}, log:[], aviso:null, avisoAte:0,
       versaoGrades:0,
       /* cena com gatilho começa dormindo: quem defende está dentro e
          ainda não sabe de nada. Sem gatilho, tudo acordado, como sempre. */
@@ -334,6 +336,21 @@ TO.diaJogo.combate = (function(){
        o que dá densidade uniforme; sem ela a nuvem sai com miolo
        grosso e borda vazia. */
     const raio = U.limitar(46 + 24*Math.sqrt(qtd), 46, P.raioVadiagem);
+    /* E QUANDO O BONDE NÃO CABE NA RUA?
+       Uma rua não é uma esplanada: 800 px de raio não existem ali. Duas
+       saídas eram possíveis — cortar o efetivo pro que cabe, ou deixar
+       nascer todo mundo e quem não achou lugar se empilha na boca da
+       rua, entrando conforme abre espaço. Ficou a segunda: é o que o
+       `pontoLivreMaisProximo` já faz sozinho (procura em anéis a partir
+       do sorteio e para no primeiro vão livre), é realista, e faz o
+       corredor virar gargalo tático em vez de sumir com gente.
+
+       Medido antes de fechar, com 400 discos — mais do que qualquer
+       bonde que o jogo produz — nas cinco cenas:
+         rua 96 FPS · rua-media 99 · rua-nobre 97 · praça 88 · arredores 117.
+       Com 140 discos: 181 / 186 / 179 / 150 / 218. Nenhuma cena chega
+       perto de 60, então não há motivo de desempenho pra cortar
+       ninguém. */
     for(let i=0;i<qtd;i++){
       const a = U.rng()*Math.PI*2, dd = raio*Math.sqrt(U.rng());
       const p=A.pontoLivreMaisProximo(s.x + Math.cos(a)*dd,
@@ -550,9 +567,25 @@ TO.diaJogo.combate = (function(){
     const semBriga = lado===null && J.caidos.mandante+J.caidos.visitante===0;
     const venceu = lado ? lado==='mandante'
                         : J.caidos.visitante >= J.caidos.mandante;
+    /* O TERCEIRO FIM: ELES CORRERAM.
+       A cena podia esvaziar de dois jeitos e só sabia contar um. Se o
+       outro lado saiu inteiro pela boca da rua, ninguém tomou nada de
+       ninguém — anunciar vitória com zero caído é a tela dizer uma
+       coisa e o número dizer outra. Então isto é um fim próprio, como
+       a noite tranquila já era.
+
+       O corte é o que o jogador viu acontecer: eles debandaram, saíram
+       da cena correndo, e não ficou nenhum deles caído nem preso. Segurar
+       um só já muda a história — aí houve briga, e vale o fim de sempre.
+       Correr NÓS continua sendo derrota: este fim é o do outro lado. */
+    const outro = lado ? OUTRO_LADO[lado] : null;
+    const correram = !!outro && lado === ladoDoJogador(J) &&
+      !!J.debandou[outro] && (J.sumiram[outro]||0) > 0 &&
+      J.caidos[outro] + J.presosPor[outro] === 0;
     J.fase='acabando';       // a ponte vê isto e abre a tela de fim
-    J.acabou={lado, venceu, tranquila:semBriga, motivo:
-        semBriga ? 'a noite foi tranquila e todo mundo entrou'
+    J.acabou={lado, venceu, correram, tranquila:semBriga && !correram, motivo:
+        correram ? 'eles correram sem ninguém encostar em ninguém'
+      : semBriga ? 'a noite foi tranquila e todo mundo entrou'
       : lado===null ? 'não sobrou ninguém de pé dos dois lados'
       : venceu ? 'não sobrou ninguém deles na cena'
                : 'sua torcida foi corrida do lugar'};
@@ -581,7 +614,11 @@ TO.diaJogo.combate = (function(){
     if(teclas['s']||teclas['arrowdown'])  dy++;
     const m=Math.hypot(dx,dy);
     if(!m) return;
-    A.mover(l, dx/m*P.velocidade*dt, dy/m*P.velocidade*dt);
+    /* o jogador corre atrás no mesmo passo de quem foge — a mesma
+       regra dos discos, e pelo mesmo motivo (ver `inimigoFugindo`) */
+    const cacando = J.discos.some(o=>o.vivo && o.fugindo && inimigos(l.lado,o.lado));
+    const v = P.velocidade * (cacando ? 1.25 : 1);
+    A.mover(l, dx/m*v*dt, dy/m*v*dt);
     A.barrarGrades(l,J.grades);
   }
 
@@ -708,6 +745,18 @@ TO.diaJogo.combate = (function(){
     return null;
   }
 
+  /* o inimigo que já virou as costas, que se enxerga de longe */
+  const RAIO_CACA = 420;
+  function inimigoFugindo(J,d,raio){
+    let melhor=null, md=raio*raio;
+    for(const o of porPerto(J,d.x,d.y,raio)){
+      if(!o.vivo || !o.fugindo || !inimigos(d.lado,o.lado)) continue;
+      const q=U.dist2(d.x,d.y,o.x,o.y);
+      if(q<md && A.livre(d.x,d.y,o.x,o.y)){ md=q; melhor=o; }
+    }
+    return melhor;
+  }
+
   function entrarNoEstadio(J,d){
     if(d.entrou) return;
     d.entrou=true; d.vx=d.vy=0;
@@ -716,6 +765,20 @@ TO.diaJogo.combate = (function(){
 
   /* ---------- discos ---------- */
   function moverDiscos(J,dt){
+    /* quem já tem inimigo ao alcance neste quadro. Sai de graça daqui,
+       onde a busca já é feita, e é o que `checarDebandada` usa pra
+       saber se um lado chegou perto o bastante pra ver o tamanho do
+       outro — ver MINORIA. */
+    J.encostou = {};
+    /* Tem gente fugindo neste quadro? Uma varredura O(n) aqui evita
+       `inimigoFugindo` — que olha 420 px, nove por nove células da
+       grade — em todo disco que não tem inimigo por perto. Medido: sem
+       esta guarda, 430 discos numa rua caíam de 91 pra 68 quadros por
+       segundo, e na esmagadora maioria dos quadros não há ninguém
+       fugindo pra procurar. */
+    const fugindo = {mandante:false, visitante:false};
+    for(const d of J.discos)
+      if(d.vivo && d.fugindo) fugindo[d.lado] = true;
     const lider = J.discos.find(d=>d.lider&&d.vivo);
     /* formação é coisa do SEU bonde. Os outros escalões — inclusive os do
        mesmo clube — têm portão próprio e vão sozinhos. */
@@ -736,6 +799,7 @@ TO.diaJogo.combate = (function(){
         continue;
       }
       if(d.lider) continue;
+      d._cacando = false;
 
       const recua = d.fugindo
         || (d.lado==='mandante'  && J.recuando)
@@ -785,7 +849,27 @@ TO.diaJogo.combate = (function(){
       } else if(d.vadiando && !agressivo(J,d) && J.t < d.entraEm){
         vadiar(J, d); ax=d.vagoX; ay=d.vagoY;
       } else {
-        const alvo = inimigoAlcancavel(J,d, d.doJogador?110:130);
+        let alvo = inimigoAlcancavel(J,d, d.doJogador?110:130);
+        if(alvo && !alvo.fugindo){
+          J.encostou[d.lado]=true; J.encostou[alvo.lado]=true;
+        }
+        /* CORRER ATRÁS.
+           Bonde que vira as costas é visível de muito mais longe que o
+           inimigo que está te encarando: é um bloco inteiro correndo
+           pra mesma boca de rua. Por isso quem persegue enxerga a 420
+           px e corre no mesmo passo de quem foge.
+
+           Sem isso a fuga por inferioridade seria aritmética e nada
+           mais: eles quebram a 260 px (o alcance do gatilho da cena),
+           correm a 1,25 da velocidade e ninguém alcança ninguém nunca
+           — o jogador que rastreou o rival pela cidade inteira abriria
+           a cena pra assistir ela terminar sozinha. Correndo igual,
+           quem decide não é a corrida: é o gargalo. Doze discos não
+           passam juntos por uma boca de 48 px, e quem chega junto da
+           fila segura os últimos. */
+        if(!alvo && fugindo[OUTRO_LADO[d.lado]] && agressivo(J,d))
+          alvo = inimigoFugindo(J, d, RAIO_CACA);
+        d._cacando = !!(alvo && alvo.fugindo);
         const meuBonde = J.bondes[d.spawn];
         if(alvo && agressivo(J,d)){ ax=alvo.x; ay=alvo.y; }
         /* veio pra brigar e não tem ninguém por perto: vai até onde o
@@ -871,7 +955,8 @@ TO.diaJogo.combate = (function(){
 
       /* quem está de conversa anda devagar: é passeio, não deslocamento */
       const passeio = d.vadiando && !agressivo(J,d) && J.t < d.entraEm;
-      const vel=P.velocidade*(d.fugindo?1.25:recua?1.15:passeio?0.5:1)
+      /* quem corre atrás corre igual — ver `inimigoFugindo` */
+      const vel=P.velocidade*(d.fugindo||d._cacando?1.25:recua?1.15:passeio?0.5:1)
                 *(0.75+nivelMoral(d.moral)*0.25);
       if(!dirx && !diry && d.acomodado){
         /* Chegou: para de verdade. Deixar o steering rodando com alvo
@@ -1110,6 +1195,31 @@ TO.diaJogo.combate = (function(){
         b.hp-=Math.max(1,bruto)*P.dano*dt*(b.fugindo?1.6:1);
         b.tremor=Math.min(6,b.tremor+0.6); a.golpe=0.12; a.hostil=3.0;
         atacado(J,b);
+        /* ALCANÇOU, PEGOU — e só pra quem correu sem brigar.
+           Quem debanda por inferioridade sai com a vida cheia, e no
+           dano de cima um disco inteiro leva vinte segundos de contato
+           pra ir ao chão: a janela de uma fuga é de dois a quatro, então
+           com o 1,6× e nada mais "dá pra alcançar quem foge" era frase
+           sem consequência — medido, zero de doze em oito corridas.
+           Segundo e pouco de mão em cima e ele fica, que é o que
+           acontece quando se alcança alguém de costas.
+
+           Só pra debandada por minoria, de propósito. Quem quebra
+           DEPOIS da briga já está gasto, e ali o 1,6× sozinho já
+           segurava gente — medido, 11 de 25. Estender a regra àquele
+           caso virava toda derrota em extermínio: 26 caídos de 40
+           passavam a 36.
+
+           1,2 s foi escolhido medindo dez corridas de 40×12 em cada
+           corte. Com 1,2 o jogador que corre atrás segura 1 ou 2 dos
+           12 e nunca zero; o que fica parado vê a tela ELES CORRERAM em
+           4 de 10. Com 2,0 e 2,8 a coisa vira sim/não: quem persegue
+           segura exatamente 1, sempre. É a diferença entre perseguir
+           valer a pena e perseguir ser protocolo. */
+        if(b.fugindo && J.debandouPor[b.lado]==='minoria'){
+          b.agarrado=(b.agarrado||0)+dt*2;   // −dt do decaimento = +dt líquido
+          if(b.agarrado>=1.2 && b.hp>0) derrubar(J,b);
+        }
         if(b.hp<=0) derrubar(J,b);
       }
 
@@ -1146,6 +1256,7 @@ TO.diaJogo.combate = (function(){
       d.tremor=Math.max(0,d.tremor-dt*9);
       d.golpe =Math.max(0,d.golpe-dt);
       d.hostil=Math.max(0,d.hostil-dt);
+      if(d.agarrado) d.agarrado=Math.max(0,d.agarrado-dt);
     }
     for(const g of J.grades) g.tremor=Math.max(0,g.tremor-dt*8);
     J.alerta=Math.max(0,J.alerta-dt*1.2);
@@ -1432,17 +1543,122 @@ TO.diaJogo.combate = (function(){
       if(d._edx || d._edy) A.empurrar(d, d._edx, d._edy);
   }
 
+  /* =======================================================
+     DEBANDADA — dois motivos pra um bonde quebrar
+
+     1. PREÇO DE SANGUE: passou de `P.debandada` por cento de caídos.
+        Vale pros dois lados, inclusive o do jogador — é o combinado.
+     2. INFERIORIDADE NUMÉRICA: o lado tem 40% ou menos de gente de pé
+        que o outro (ver MINORIA). Corre no primeiro quadro em que
+        reconhece o tamanho do outro bonde, sem ninguém
+        encostar em ninguém: bonde de doze não encara bonde de quarenta
+        pra ver no que dá, e fingir que encara era o que fazia a rua
+        parecer um simulador em vez de uma rua.
+
+     Três travas no gatilho novo:
+
+     · NÃO VALE PRO BONDE DO JOGADOR. Quem manda nele é ele; a única
+       coisa que o quebra sem ordem é o preço de sangue combinado. IA
+       decidindo por conta própria que a sua torcida vai correr é
+       exatamente o que já foi consertado uma vez aqui.
+     · PISO DE SEIS, o mesmo do preço de sangue: numa briga de três
+       contra seis "metade" não quer dizer nada.
+     · DE PERTO. Eles não correm de longe: deixam o bonde chegar, veem
+       o tamanho a um passo, e aí viram as costas — `J.encostou`, que é
+       ter inimigo dentro do alcance de busca (110/130 px). Disparar no
+       instante em que a cena acorda (260 px, o alcance do gatilho)
+       punha os dois bondes longe demais pra alguém alcançar alguém, e
+       aí não existia briga nenhuma pra jogar.
+     · FORA DOS ARREDORES SÓ, E COM A CENA ACORDADA. Nos arredores
+       ninguém está brigando — está todo mundo indo pro portão —, e um
+       visitante em minoria fugir na abertura acabaria com a cena antes
+       de ela começar. Na cena com gatilho (bar, comércio, CT) quem
+       defende está dentro e ainda não viu ninguém: não se corre de um
+       bonde que você não sabe que chegou.
+
+     Os dois disparam uma vez e não voltam atrás: sem isso o lado
+     entraria e sairia do estado a cada disco que cai e cada disco que
+     se levanta, e debandada não se desfaz.
+     ======================================================= */
+  /* O LIMIAR, E POR QUE NÃO É METADE.
+     O projeto pedia metade. Medido nos encontros que o mapa produz de
+     verdade — 80 esbarrões de rua em 120 dias de jogo de três praças —,
+     metade fazia 39% deles acabarem em fuga antes de alguém encostar em
+     alguém, e o teto combinado era um terço: passar disso é a rua voltar
+     a ser vazia por outro caminho, depois de o RAIO_ENCONTRO ter sido
+     subido justamente pra ela ter briga. A 40% dá 29%, que cabe. Os
+     outros cortes medidos: 1/3 → 20%, 30% → 15%, 25% → 12,5%. */
+  const MINORIA = 0.40;     // 40% ou menos de pé que o outro lado
+  const OUTRO_LADO = {mandante:'visitante', visitante:'mandante'};
+
+  /* De quem é o bonde do jogador. O líder é o disco que ele dirige;
+     sem líder na cena, vale a marca que o mapa pôs no bonde dele. */
+  function ladoDoJogador(J){
+    const l = J.discos.find(d=>d.lider);
+    if(l) return l.lado;
+    const meu = J.discos.find(d=>d.doJogador);
+    return meu ? meu.lado : 'mandante';
+  }
+
   function checarDebandada(J){
+    const meuLado = ladoDoJogador(J);
+    const pe = {mandante:dePe(J,'mandante'), visitante:dePe(J,'visitante')};
     for(const lado of ['mandante','visitante']){
       if(J.debandou[lado]) continue;
       const total=J.total[lado], caidos=J.caidos[lado];
-      if(total>=6 && caidos/total>=P.debandada/100){
-        J.debandou[lado]=true;
-        for(const d of J.discos) if(d.lado===lado&&d.vivo) d.fugindo=true;
-        const meu=lado==='mandante';
-        logar(J, meu?'Seu pessoal correu.':'Os visitantes correram.', meu?'r':'a');
-        aviso(J, meu?'Seu pessoal correu':'Eles correram', meu?'#d9705f':'#7098d9');
+      if(total < 6) continue;
+      let motivo = null;
+      if(caidos/total >= P.debandada/100) motivo = 'baixas';
+      else if(lado !== meuLado && !fugaPelaEntrada() && J.acordou &&
+              (J.encostou||{})[lado] && pe[lado] > 0 &&
+              pe[lado] <= pe[OUTRO_LADO[lado]] * MINORIA) motivo = 'minoria';
+      if(!motivo) continue;
+      J.debandou[lado]=true;
+      J.debandouPor[lado]=motivo;
+      const meu=lado==='mandante';
+      const txt = motivo==='minoria'
+        ? (meu ? 'Seu pessoal viu o tamanho deles e correu.'
+               : 'Eles viram o tamanho do bonde e correram.')
+        : (meu ? 'Seu pessoal correu.' : 'Os visitantes correram.');
+      logar(J, txt, meu?'r':'a');
+      aviso(J, meu?'Seu pessoal correu':'Eles correram', meu?'#d9705f':'#7098d9');
+    }
+    soltarFuga(J);
+  }
+
+  /* =======================================================
+     NINGUÉM VIRA AS COSTAS NO MESMO QUADRO
+
+     Debandada não é coreografia. Uns entendem na hora, outros ainda
+     estão olhando pro lado quando o bonde já saiu andando — e é essa
+     ponta atrasada que dá ao jogador a chance de segurar alguém.
+
+     Sem ela a fuga é aritmética fechada e o resultado é sempre o
+     mesmo: eles quebram no alcance do gatilho da cena (260 px), a boca
+     de rua deles fica a 80 px do posto onde nasceram, e ninguém
+     alcança ninguém em cena nenhuma — o jogador que rastreou o rival
+     pela cidade abre a briga pra assistir ela terminar sozinha. Com
+     2,2 s de rabo, quem persegue (que corre no mesmo passo, ver
+     `inimigoFugindo`) chega na boca da rua antes dos últimos.
+     ======================================================= */
+  const ATRASO_FUGA = 2.6;
+  function soltarFuga(J){
+    for(const d of J.discos){
+      if(!d.vivo || d.fugindo || !J.debandou[d.lado]) continue;
+      /* quem chegou depois num lado que já quebrou também tem o seu
+         instante — o retardatário entra na cena e vê o bonde correndo */
+      if(d.correEm == null){
+        /* e o rabo não é sorteio puro: quem está de frente pro outro
+           bonde é o último a virar as costas, porque antes precisa se
+           desvencilhar. Quem está no fundo já saiu andando. É esse
+           atraso da linha de frente que dá ao perseguidor os dois
+           segundos de que ele precisa pra cobrir os 130 px do alcance
+           de busca — sem ele, dois discos na mesma velocidade nunca se
+           encontram. */
+        const encarando = !!inimigoAlcancavel(J, d, 160);
+        d.correEm = J.t + (encarando ? ATRASO_FUGA : 0) + U.rng()*0.6;
       }
+      else if(J.t >= d.correEm) d.fugindo = true;
     }
   }
 

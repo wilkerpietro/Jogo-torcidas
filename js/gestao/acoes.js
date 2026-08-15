@@ -534,7 +534,27 @@ TO.acoes = (function(){
     return r;
   }
 
-  return {LISTA, porId, maximo, restantes, executar, previsaoRecrutamento,
+  /* =======================================================
+     GASTAR A AÇÃO SEM ABRIR A CENA
+
+     `executar` cobra e abre no mesmo instante, o que serve pra lista de
+     ações — clicou, aconteceu. No mapa a decisão e a cena estão
+     separadas no tempo: tirar o bonde da sede custa a ação na hora da
+     saída, e a briga só abre quando ele chega no alvo, que pode ser uma
+     hora de jogo depois. Se a cobrança ficasse pra chegada, o jogador
+     poria três bondes na rua com uma ação só.
+     ======================================================= */
+  function gastarAcao(E, id, msg){
+    if(restantes(E) <= 0) return {ok:false, msg:'Não sobrou ação nesta semana.'};
+    E.acoes = E.acoes || {};
+    E.acoes.usadas = (E.acoes.usadas||0) + 1;
+    E.acoes.feitas = E.acoes.feitas || [];
+    E.acoes.feitas.push({semana:E.data.semana, dia:E.data.dia, id, msg});
+    return {ok:true, msg};
+  }
+
+  return {LISTA, porId, maximo, restantes, executar, gastarAcao,
+          previsaoRecrutamento,
           organizadasDaPraca, efetivoDe,
           alvosDeAtaque, alvosDeAssalto, clube, fecharCena, cobrancaAtiva,
           COMERCIO, COBRANCA, MINIMO_SAIDA, MINIMO_ASSALTO,

@@ -356,6 +356,11 @@ TO.ruas = (function(){
      começa às 12:00 em vez das 15:00. */
   const MANHA_COM_HOSPEDE = 240;
   const APITO_PADRAO = 16*60;      // usado só quando o dia não tem jogo
+  /* DIA SEM JOGO NA PRAÇA. Não há apito pra medir nada a partir dele, e
+     não faz sentido abrir a cidade às 13:30 porque um jogo imaginário
+     seria às 16:00. O dia vale inteiro: das oito da manhã às dez da
+     noite é quando dá pra tirar o bonde da sede e ir a algum lugar. */
+  const DIA_VAZIO = [8*60, 22*60];
 
   /* 'HH:MM' -> minutos do dia; devolve null no que não for hora */
   function emMinutos(hhmm){
@@ -384,14 +389,17 @@ TO.ruas = (function(){
      2h30 antes do último apito, que é quando a janela abre.
      Nunca antes da meia-noite: o piso só existe pra jogo de madrugada
      não virar dia negativo. */
-  const aberturaDoDia = (E, temHospede) => temHospede
-    ? Math.max(0, primeiroApito(E) - MANHA_COM_HOSPEDE)
+  const aberturaDoDia = (E, temHospede) =>
+      !horasDoDia(E).length ? DIA_VAZIO[0]
+    : temHospede ? Math.max(0, primeiroApito(E) - MANHA_COM_HOSPEDE)
     : Math.max(0, ultimoApito(E) - ANTES);
 
   /* o apito em minutos DESDE A ABERTURA, que é o zero de R.minuto */
   function apitoDoDia(E){
     const R = estado(E);
     const abertura = R.abertura != null ? R.abertura : aberturaDoDia(E, false);
+    /* sem jogo não há apito: o "fim" é o fim do expediente da rua */
+    if(!horasDoDia(E).length) return DIA_VAZIO[1] - DIA_VAZIO[0];
     return Math.max(60, ultimoApito(E) - abertura);
   }
 
@@ -545,9 +553,15 @@ TO.ruas = (function(){
   function montar(E, mo){
     const R = estado(E);
     const chave = `${E.data.ano}|${E.data.semana}|${E.data.dia}`;
-    if(R.chave === chave && R.bondes.length) return R;
-    R.chave = chave; R.bondes = []; R.minuto = 0; R.encontro = null;
-    R.esfria = {}; R.arredores = [];
+    /* A guarda era `R.bondes.length`, e isso bastava enquanto o mapa só
+       vivia em dia de jogo: dia sem jogo não tinha bonde nenhum, então
+       remontar de novo a cada redesenho não custava nada. Agora custa —
+       num dia vazio o bonde comandado é o único que existe, e remontar
+       zerava o relógio e o encontro dele a cada pintura da tela. */
+    if(R.chave === chave && R.montado) return R;
+    R.chave = chave; R.montado = true;
+    R.bondes = []; R.minuto = 0; R.encontro = null;
+    R.esfria = {}; R.arredores = []; R.selecionado = null;
 
     const doDia = jogosDaPraca(E).filter(j=>j.dia === E.data.dia);
 
@@ -564,6 +578,11 @@ TO.ruas = (function(){
     R.abertura = aberturaDoDia(E, temHospede);
     R.comHospede = temHospede;
     R.apito = apitoDoDia(E);
+    /* Dia sem jogo na praça não tem bonde automático — mas TEM dia. O
+       estado da rua existe, o relógio corre e o nosso bonde pode entrar
+       nela quando o jogador mandar. "Cidade tranquila" deixou de ser
+       beco sem saída e virou o estado normal de um dia em que só sai
+       quem o jogador mandar sair. */
     if(!doDia.length) return R;
 
     /* cada torcida da noite com a sua cor e a sua sigla, sem repetir */
@@ -834,6 +853,7 @@ TO.ruas = (function(){
     R.minuto = Math.min(fim, R.minuto + minutos);
     for(const b of R.bondes){
       if(b.chegou || R.minuto < b.saiEm) continue;
+      if(b.parado) continue;              // bonde comandado esperando ordem
       let resta = VEL * minutos;
       b.andou += resta;
       while(resta > 0 && b.i < b.rota.length-1){
@@ -846,6 +866,16 @@ TO.ruas = (function(){
       if(b.i >= b.rota.length-1){
         const f = b.rota[b.rota.length-1];
         b.x = f.x; b.y = f.y;
+        /* O BONDE COMANDADO NÃO VAI PRO ESTÁDIO: ele foi aonde o
+           jogador mandou. Chegando num alvo fixo, avisa — quem abre a
+           cena de investida é a tela. Chegando num ponto de rua, fica:
+           tocaia é esperar, e quem termina a espera é `procurarEncontro`
+           ou o jogador mandando outra coisa. */
+        if(b.comandado){
+          b.parado = true;
+          if(b.alvoFixo && !b.entregue){ b.entregue = true; R.noAlvo = b; }
+          continue;
+        }
         const etapa = b.etapas[b.etapa];
         if(etapa && etapa.tipo === 'aliado'){
           /* Chegou na casa do aliado. Fica lá até a hora de sair pro
@@ -1005,6 +1035,145 @@ TO.ruas = (function(){
   }
 
   /* =======================================================
+     O BONDE COMANDADO
+
+     Até aqui o mapa era um relógio com bondes automáticos: o jogador
+     olhava. Agora ele tira a torcida da sede quando quiser — inclusive
+     num dia em que ninguém joga na praça — e aponta pra onde ela vai.
+
+     O projeto fechado antes do código está em docs (§8.5); em resumo:
+
+     · quem escolhe o tipo de alvo é o DESTINO, não um menu. Pino de
+       sede ou bar do rival é alvo fixo e cai na cena de investida que
+       `acoes.js` já tem; ponto de rua é tocaia — o bonde vai até lá e
+       fica, e `procurarEncontro` abre a cena pelo `localDe` do lugar
+       quando um bonde hostil passar perto.
+     · fora de dia de jogo o alvo é sempre fixo, porque sem jogo
+       ninguém mais põe gente na rua e tocaia seria esperar por um
+       bonde que não existe.
+     · sair custa UMA AÇÃO da semana. Quem cobra é `acoes.js`; aqui só
+       se monta o bonde.
+     ======================================================= */
+  function nossoBonde(E){
+    const R = estado(E);
+    return R.bondes.find(b => b.comandado && !b.chegou) || null;
+  }
+
+  /* Tira o bonde da sede. Devolve {ok, msg, bonde}. Não cobra ação
+     nenhuma: o preço é do chamador, que é quem sabe do orçamento. */
+  function sairDaSede(E, mo, n){
+    const R = montar(E, mo);
+    if(nossoBonde(E)) return {ok:false, msg:'Seu bonde já está na rua.'};
+    const origem = pontoDaSede(mo, E.torcida) || pontoDoBar(mo, E.torcida);
+    if(!origem) return {ok:false, msg:'Sua torcida não tem sede nesta praça.'};
+    const b = {
+      id: 1000 + (R.bondes.length),
+      torcida: E.torcida.id, nome: E.torcida.nome,
+      cor: (E.torcida.cores && E.torcida.cores[0]) || '#d9a441',
+      sigla: M().siglaTorcida(E.torcida),
+      nossa: true, comandado: true, n: Math.max(2, Math.round(n)),
+      tag: 'comandado', andou: 0, jogo: null,
+      etapas: [], etapa: 0, saiEm: R.minuto, rota: [origem, origem],
+      i: 0, t: 0, x: origem.x, y: origem.y, chegou: false, parado: true
+    };
+    R.bondes.push(b);
+    R.selecionado = b.id;
+    return {ok:true, bonde:b,
+            msg:`${b.n} saíram da sede. Clique num ponto do mapa pra mandar.`};
+  }
+
+  /* O destino por clique. Pino de rival = alvo fixo; qualquer outro
+     ponto da rua = tocaia. Devolve {ok, tipo, msg}. */
+  const RAIO_PINO = 22;         // o dedo em cima do pino
+  function mandarPara(E, mo, x, y){
+    const b = nossoBonde(E);
+    if(!b) return {ok:false, msg:'Não tem bonde nosso na rua.'};
+    /* O pino se acha direto em `mo.pinos`, e não em `alvoEm`: a lista de
+       alvos de clique só existe depois de um desenho e só entra nela
+       pino que o filtro está mostrando. Pino escondido pelo filtro
+       continua sendo um endereço no mapa. */
+    let it = null, md = RAIO_PINO*RAIO_PINO;
+    for(const p of (mo.pinos || [])){
+      if(p.tipo !== 'sede' && p.tipo !== 'bar') continue;
+      if(!p.torcida || p.torcida === E.torcida.id) continue;
+      const q = (p.x-x)*(p.x-x) + (p.y-y)*(p.y-y);
+      if(q <= md){ md = q; it = p; }
+    }
+    const destino = it ? {x: it.x, y: it.y} : {x, y};
+    b.rota = caminho(mo, {x:b.x, y:b.y}, destino);
+    b.i = 0; b.t = 0; b.parado = false; b.dirigindo = false; b._indo = null;
+    b.saiEm = Math.min(b.saiEm, estado(E).minuto);
+    b.entregue = false;
+    b.alvoFixo = it ? {tipo: it.tipo, nome: it.label || 'alvo deles',
+                       torcidaId: it.torcida, x: it.x, y: it.y} : null;
+    b.tocaia = it ? null : {x, y};
+    return {ok:true, tipo: it ? 'fixo' : 'tocaia',
+            msg: it ? `O bonde vai pra cima d${it.tipo==='sede'?'a sede':'o bar'} `+
+                      `deles — ${it.bairro}.`
+                    : 'O bonde vai esperar nesse ponto.'};
+  }
+
+  /* =======================================================
+     DIRIGIR PELA MALHA (WASD)
+
+     A tecla não empurra o disco em linha reta: ela escolhe, entre os
+     vizinhos do nó em que o bonde está, o que estiver mais alinhado com
+     a direção apertada. Sem vizinho naquela direção o bonde fica onde
+     está — parede é parede aqui como é na cena de luta.
+
+     Dirigir cancela a rota calculada; um clique novo devolve o comando
+     a ela. Sem isso o jogador e o `caminho()` brigariam pelo mesmo
+     disco.
+     ======================================================= */
+  function dirigir(E, mo, dx, dy, minutos){
+    const b = nossoBonde(E);
+    if(!b || !(dx || dy)) return null;
+    b.dirigindo = true; b.parado = false;
+    b.alvoFixo = null; b.tocaia = null;
+    const m = Math.hypot(dx, dy) || 1;
+    dx /= m; dy /= m;
+    const {perto} = malha(mo);
+    let resta = VEL * minutos;
+    let voltas = 0;
+    while(resta > 0 && voltas++ < 40){
+      /* `_indo` é o nó pro qual ele está atravessando agora. Guardar
+         isso entre quadros é o que mantém o bonde em cima da rua: sem
+         ele, cada chamada parava no meio de uma quadra e a seguinte
+         perguntava "qual o nó mais perto?" — que no meio da quadra tanto
+         pode ser o de trás quanto o da frente. Medido: com o alvo
+         guardado, o bonde dirigido fica fora do asfalto na mesma taxa
+         dos bondes automáticos (o meio de uma aresta às vezes corta
+         calçada); sem ele, cinco vezes mais. */
+      if(!b._indo){
+        const aqui = perto(b.x, b.y);
+        if(!aqui) return b;
+        /* o vizinho mais alinhado com a tecla, e só se estiver de fato
+           naquele lado: sem vizinho na direção, o bonde fica onde está
+           — parede é parede aqui como é na cena de luta */
+        let melhor = null, score = 0.15;
+        for(const {n:v} of aqui.viz){
+          const vx = v.x - aqui.x, vy = v.y - aqui.y, d = Math.hypot(vx, vy) || 1;
+          const cos = (vx/d)*dx + (vy/d)*dy;
+          if(cos > score){ score = cos; melhor = v; }
+        }
+        if(!melhor) return b;
+        b._indo = {x:melhor.x, y:melhor.y};
+      }
+      const ax = b._indo.x - b.x, ay = b._indo.y - b.y;
+      const d = Math.hypot(ax, ay);
+      if(d <= resta){
+        b.x = b._indo.x; b.y = b._indo.y;
+        b.andou += d; resta -= d; b._indo = null;
+      } else {
+        b.x += ax*(resta/d); b.y += ay*(resta/d);
+        b.andou += resta; resta = 0;
+      }
+    }
+    b.rota = [{x:b.x, y:b.y}, {x:b.x, y:b.y}]; b.i = 0; b.t = 0;
+    return b;
+  }
+
+  /* =======================================================
      O OLHEIRO NO MAPA
      ======================================================= */
   const RAIO_OLHEIRO = 150;
@@ -1023,6 +1192,23 @@ TO.ruas = (function(){
   function desenhar(E, mo, ctx){
     const R = estado(E);
     if(!R.bondes.length) return;
+
+    /* PRA ONDE O BONDE COMANDADO FOI MANDADO. Sem isto o jogador clica
+       num ponto e o mapa não confirma nada — a ordem só apareceria dez
+       segundos depois, quando o disco começasse a se aproximar. */
+    const meu = nossoBonde(E);
+    const dest = meu && (meu.alvoFixo || meu.tocaia);
+    if(dest){
+      ctx.save();
+      ctx.strokeStyle = meu.alvoFixo ? '#e04b45' : '#d9a441';
+      ctx.setLineDash([7,6]); ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(meu.x, meu.y); ctx.lineTo(dest.x, dest.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(dest.x, dest.y, 9, 0, Math.PI*2);
+      ctx.lineWidth = 2; ctx.stroke();
+      ctx.restore();
+    }
 
     if(R.olheiro){
       ctx.save();
@@ -1084,6 +1270,11 @@ TO.ruas = (function(){
         ctx.fillStyle = b.nossa ? '#ffffff' : '#e6e2d8';
         ctx.fillText(b.sigla, b.x, y);
       }
+      /* o anel de selecionado: é dele que o WASD manda */
+      if(b.comandado && R.selecionado === b.id){
+        ctx.beginPath(); ctx.arc(b.x, b.y, r + 6, 0, Math.PI*2);
+        ctx.strokeStyle = '#d9a441'; ctx.lineWidth = 2; ctx.stroke();
+      }
       ctx.restore();
     }
 
@@ -1105,6 +1296,7 @@ TO.ruas = (function(){
           nossoJogo, naEsplanada, marcarQueEntraram,
           anfitriaoDe, escoltaDe,
           porOlheiro, visivel, desenhar, relogio,
+          nossoBonde, sairDaSede, mandarPara, dirigir, DIA_VAZIO,
           VEL, ANTES, JANELA, MANHA_COM_HOSPEDE, apitoDoDia, aberturaDoDia,
           RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};
 })();

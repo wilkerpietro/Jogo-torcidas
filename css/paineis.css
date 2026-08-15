@@ -610,12 +610,16 @@ table.dados tr.selecionada td{background:#252525}
 }
 .cartaz-cena.boa {border-top-color:var(--verde-vivo);background:#131a13}
 .cartaz-cena.ruim{border-top-color:var(--vermelho);  background:#1a1312}
+/* eles correram: nem verde nem vermelho. Não houve vitória — não houve
+   briga —, e também não houve derrota: quem virou as costas foi o outro. */
+.cartaz-cena.neutra{border-top-color:var(--fraco);background:#15161a}
 .cartaz-cena h3{
   font-size:21px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   margin-bottom:10px;
 }
 .cartaz-cena.boa  h3{color:var(--verde-vivo)}
 .cartaz-cena.ruim h3{color:var(--vermelho)}
+.cartaz-cena.neutra h3{color:var(--texto)}
 .dados-cena{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 18px}
 .dado-cena{
   display:flex;justify-content:space-between;align-items:baseline;gap:10px;
