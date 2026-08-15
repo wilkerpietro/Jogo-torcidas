@@ -601,7 +601,15 @@ TO.diaJogo.ponte = (function(){
        pelo portão ou por a cena esvaziar */
     const tranquila = !correram && ((J.acabou && J.acabou.tranquila) ||
                       J.caidos.mandante + J.caidos.visitante === 0);
-    const xpNoite = Math.round(xpBase * (venceu?1.5:1));
+    /* VENCEU É DO PONTO DE VISTA DO MANDANTE, e nem sempre o mandante
+       somos nós: quando eles vêm pro nosso bar, quem desce a rua é o
+       lado `mandante` e a gente é o dono da casa. Pra XP e moral da
+       ficha o que vale é se NÓS ganhamos — senão o time inteiro sai
+       comemorando a derrota. O resto do relatório continua na
+       convenção antiga, que é a que `fecharCena` lê. */
+    const nossoLado = (J.discos.find(d=>d.doJogador) || {}).lado || 'mandante';
+    const ganhamos = nossoLado === 'mandante' ? venceu : !venceu;
+    const xpNoite = Math.round(xpBase * (ganhamos?1.5:1));
 
     /* ficha por ficha: é isto que vira Ferido e Preso na gestão */
     const membros=[];
@@ -612,7 +620,7 @@ TO.diaJogo.ponte = (function(){
         caido:d.caido, preso:d.preso, entrou:d.entrou,
         naRua:false,
         xp: xpNoite + (d.entrou?1:0),
-        moral: d.preso?-4 : d.caido?-3 : venceu?+1.5 : -0.5
+        moral: d.preso?-4 : d.caido?-3 : ganhamos?+1.5 : -0.5
       });
     }
 
@@ -622,7 +630,7 @@ TO.diaJogo.ponte = (function(){
       presosMandante:J.presosPor.mandante, presosVisitante:J.presosPor.visitante,
       rompido:J.rompido,
       entraram:J.entraram,
-      venceu, xpNoite,
+      venceu, ganhamos, nossoLado, xpNoite,
       tranquila, correram,
       /* quantos eram de cada lado, pro cartaz poder dizer de que
          tamanho era o bonde que amarelou */

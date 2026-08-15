@@ -1210,3 +1210,19 @@ table.dados tr.selecionada td{background:#252525}
   display:block; border-radius:50%; border:1.5px solid rgba(0,0,0,.5);
 }
 .mini-disco.nosso{border-color:#e8e8e8; box-shadow:0 0 0 1px var(--rubro)}
+
+
+/* ---------- opções ---------- */
+/* Duas chaves, e as duas mudam o ritmo do jogo. O texto de baixo não é
+   enfeite: chave que muda simulação precisa dizer o que muda. */
+.opc-chave{
+  display:flex;align-items:flex-start;gap:11px;padding:11px 2px;
+  border-bottom:1px solid var(--sulco);cursor:pointer;
+}
+.opc-chave:last-child{border-bottom:0}
+.opc-chave input{accent-color:var(--rubro-vivo);width:16px;height:16px;margin-top:2px}
+.opc-chave b{
+  display:block;font-family:var(--titulo);font-size:13px;letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.opc-chave small{display:block;font-size:11.5px;color:var(--fraco);line-height:1.5;margin-top:3px}

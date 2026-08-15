@@ -441,6 +441,32 @@ TO.tensao = (function(){
                     moral:-1, prestigio:-2})}
   ];
 
+  /* ALVO COM CENA E ALVO SEM CENA CONVIVEM, e isso é estado normal por
+     enquanto — não é bug. O bar é o primeiro alvo que virou evento
+     datado e jogável: em vez de resolver em número no virar da semana,
+     ele marca o dia e, naquele dia, abre a cena do bar com os papéis
+     invertidos. Subsede, loja e sede continuam resolvendo em número até
+     ganharem cena, nesta ordem.
+
+     QUEM COBRA É UM SÓ. Alvo sem cena: `ataquesContraNos` lança o
+     dinheiro, fere e mexe em moral e prestígio, como sempre fez. Alvo
+     com cena: aqui só agenda e narra, e quem aplica tudo é o fecho da
+     cena — senão o jogador paga duas vezes pelo mesmo ataque. A tensão
+     de "fomos atacados" acontece nos dois casos, uma vez só. */
+  const COM_CENA = {bar:'bar'};
+
+  /* O DIA DO ATAQUE SAI DO CALENDÁRIO, não do sorteio da hora.
+     Mesma disciplina dos assaltos (§8.9): hash da data mais o id da
+     torcida, então o mesmo dia reaberto traz o mesmo ataque e a semana
+     não gera um novo a cada vez que o mapa é montado. Cai num dia sem
+     jogo da praça — dia de jogo já tem o que fazer. */
+  function diaDoAtaque(E, id){
+    const semente = `${E.data.ano}|${E.data.semana}|${id}`;
+    let h = 0;
+    for(let i=0;i<semente.length;i++) h = (h*31 + semente.charCodeAt(i)) >>> 0;
+    return 1 + (h % 7);
+  }
+
   function ataquesContraNos(E){
     const fora = [];
     for(const [id, t] of Object.entries(E.tensao||{})){
@@ -455,7 +481,25 @@ TO.tensao = (function(){
       const alvos = ALVOS.filter(a=>a.id!=='emboscada' || podeEstrada);
       const sorteio = [];
       for(const a of alvos) for(let i=0;i<a.peso;i++) sorteio.push(a);
-      const ev = U.escolher(sorteio).conta(E, o);
+      const alvo = U.escolher(sorteio);
+      const ev = alvo.conta(E, o);
+      ev.alvo = alvo.id;
+
+      if(COM_CENA[alvo.id]){
+        /* agenda e narra. Nada de dinheiro, ferido, moral ou prestígio
+           aqui: quem cobra é a cena. */
+        E.ataqueMarcado = {torcida:id, nome:o.nome, alvo:alvo.id,
+                           cena:COM_CENA[alvo.id],
+                           ano:E.data.ano, semana:E.data.semana,
+                           dia:diaDoAtaque(E, id),
+                           txt:`${o.nome} vem pro nosso ${alvo.id} esta semana`};
+        somar(E, id, 6, 'fomos atacados');
+        fora.push(Object.assign({id, torcida:o.nome, marcado:true,
+                                 dia:E.ataqueMarcado.dia},
+                                {txt:E.ataqueMarcado.txt, dinheiro:0, feridos:0,
+                                 moral:0, prestigio:0, alvo:alvo.id}));
+        continue;
+      }
 
       if(ev.dinheiro) TO.estado.lancar(E, ev.txt, ev.dinheiro);
       const aptos = E.membros.filter(TO.membros.disponivel);
@@ -468,6 +512,14 @@ TO.tensao = (function(){
       fora.push(Object.assign({id, torcida:o.nome}, ev));
     }
     return fora;
+  }
+
+  /* o ataque marcado para HOJE, se houver — é o que o mapa consulta */
+  function ataqueDeHoje(E){
+    const a = E.ataqueMarcado;
+    if(!a || a.resolvido) return null;
+    return (a.ano === E.data.ano && a.semana === E.data.semana &&
+            a.dia === E.data.dia) ? a : null;
   }
 
   /* =======================================================
@@ -587,5 +639,5 @@ TO.tensao = (function(){
 
   return {MAX, FAIXAS, faixa, nivel, somar, passarSemana, panorama,
           resolverInvestidas, relacaoDelas, chaveDe, balanco, ARQUETIPOS,
-          mundo, ataquesContraNos, HOSTIS, PACIFICAS, MENSALIDADE};
+          mundo, ataquesContraNos, ataqueDeHoje, HOSTIS, PACIFICAS, MENSALIDADE};
 })();

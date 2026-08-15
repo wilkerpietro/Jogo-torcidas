@@ -1857,6 +1857,90 @@ nunca no laço por quadro.
    dirigir na tela), porque a coluna do menu, solta até o fim, passava por baixo da
    faixa da torcida em tela deitada.
 
+## 8.16 Opções: pular dia vazio, relatório opcional e o ataque à nossa casa
+
+Entrou um 12º ícone na coluna — **Opções** — com duas chaves que mudam o ritmo do
+jogo, e o ataque à nossa casa deixou de ser uma linha de texto no fim da semana.
+
+**Pular é simular, não omitir.** Com a chave ligada (o padrão), o ≫ simula os dias
+sem jogo e para no próximo que tem alguma coisa. O dia pulado roda a rua inteira
+pelo mesmo caminho do dia assistido — `TO.ruas.montar` e `TO.ruas.passo` do primeiro
+minuto ao apito — e **com o mesmo passo de relógio**: um quadro a 60 fps empurra 1/30
+de minuto de rua, e o pulo usa 1/30. Isso foi decisão medida, não escolha de gosto:
+com passo maior o agregado continua igual, mas a identidade de alguns encontros
+muda, porque quem esbarra em quem é testado nos instantes amostrados. Custa **49 ms
+por dia em vez de 25** — meio segundo a mais numa semana pulada.
+
+**O relatório da semana virou opcional, e nasce desligado.** Três coisas moravam na
+mesma linha (`abrirFechamento(rel); TO.estado.salvar();`) e só uma delas é opcional:
+salvar é sempre, o resumo é sempre, o modal é a chave. Semana no vermelho ou com
+gente saindo abre de qualquer jeito **e para o pulo** — é aí que a torcida começa a
+se desfazer, e descobrir isso depois de trinta dias pulados não é conforto.
+
+**O ataque à nossa casa virou cena, começando pelo bar.** Em vez de resolver em
+número no virar da semana, ele marca o dia — hash da data mais o id da torcida,
+mesma disciplina dos assaltos — e naquele dia abre **a cena do bar com os papéis
+trocados**: nós somos os donos da casa, do lado `visitante`, com `guarda:true` dentro
+do salão; eles descem a transversal pelo lado `mandante`. Não há cenário novo: o
+comportamento de guarda, o despertar por zona e a linha de visão pela porta já
+estavam prontos.
+
+**E ninguém paga duas vezes.** Alvo com cena: `ataquesContraNos` só agenda e narra.
+Alvo sem cena — subsede, loja, sede — continua exatamente como era. A tensão de
+"fomos atacados" acontece nos dois casos, uma vez só.
+
+### Os números de aceite
+
+1. **Pular é igual a assistir.** Do mesmo save (criado uma vez e recarregado por
+   variante, porque `novo()` sorteia a própria semente e duas partidas novas nunca
+   são a mesma partida), 30 dias de rua cheia — 90 andarilhos por dia, 4,5× o que o
+   jogo usa: **caixa, efetivo, feridos, presos, moral, prestígio, satisfação e as 12
+   baixas de rua idênticos**. O que diverge quando o passo muda é a **tensão**, em
+   dois ou três pontos, porque a identidade de alguns esbarrões troca. Por isso o
+   pulo usa o passo da tela: no passo da tela não diverge nada.
+   **O que o pulo não simula, e é honesto dizer:** o resto do dia em que o jogador
+   apertou ≫. Esse pedaço já era cortado pelo ≫ antes desta rodada — avançar o dia
+   sempre encerrou o dia corrente onde ele estava.
+2. **Os padrões:** save novo abre com `{pularVazios:true, relatorio:false}`, as duas
+   chaves na tela de Opções, e os padrões são aplicados na leitura — save velho abre
+   igual, sem migração.
+3. **O pulo para e diz por quê.** Medido: 13 dias pulados de uma vez, parando com
+   *"13 dias passaram — parou porque zóio fora de combate."* As cinco paradas estão
+   no código: jogo na praça, ataque marcado, bonde nosso na rua, decisão nova e
+   semana ruim. **Um desvio deliberado na terceira:** o cartão de Avisos tem itens
+   que são lembrete permanente — ações sobrando, gente pronta pra promover, fila de
+   treino vazia, membro presos por trinta dias — e parar neles seria não pular
+   nunca. Para o pulo a pendência **nova**, a que não existia quando o pulo começou.
+4. **A semana continua sendo salva** com o relatório desligado: o `TO.estado.salvar()`
+   saiu da linha do modal e roda sempre, e o ciclo salvar → recarregar → Continuar já
+   estava medido em §8.14.
+5. **Semana ruim abre o relatório mesmo com a chave desligada** e escreve o motivo da
+   parada — está no `aoFecharSemana`, com `grave = saldo < 0 || caixa < 0 || saiu`.
+   Medido pelo caminho normal (semana no azul não abriu); o caso forçado de caixa
+   negativo ainda não foi medido.
+6. **O resumo chega sem o modal:** *"Semana 2: sobrou R$ 856 · caixa R$ 7.712"* no
+   ticker e na lista de avisos, toda virada.
+7. Com as duas chaves na posição antiga o jogo se comporta como antes — o pulo é um
+   `if` na frente do ≫ e o modal volta a abrir sempre.
+8. **A cena do bar com os lados trocados:** medido, **34 nossos do lado `visitante`,
+   os 34 com `guarda:true` dentro do salão**, 6 deles descendo pelo `mandante`, e
+   **0 discos fora do chão** — ninguém atravessa parede.
+9. **O prejuízo é contado uma vez.** No agendamento, a entrada do bar volta com
+   `{dinheiro:0, feridos:0, moral:0, prestigio:0}` — o `ataquesContraNos` não cobrou
+   nada pelo alvo que tem cena, e o caixa só mexeu o que os alvos **sem** cena
+   cobraram. No fecho, a cena cobra sozinha: segurando a casa, `caixaDelta: 0`, um
+   ferido nosso e o cartaz **"A CASA FICOU DE PÉ"**. O ramo de derrota — eles levam a
+   gaveta e 10% do caixa, espelho do saque do outro lado — está escrito e ainda não
+   foi medido numa partida em que eles tomem o bar.
+10. **Ataque é evento de dia:** seis chamadas na mesma semana devolvem sempre
+    `bar@s1d5` — mesmo dia, e a semana não multiplica, porque o ataque marcado é um
+    só e é lido pela data.
+11. **Os outros três alvos seguem em número:** 80 rodadas do gerador, **11 ataques
+    sem cena resolvidos como sempre e 7 agendados com cena, zero erros**.
+12. **O ícone Opções abre o painel** e a coluna passou a ter **12 ícones**; o
+    `column wrap` que já resolvia 11 continua resolvendo 12 sem mudar o tamanho do
+    ícone.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima

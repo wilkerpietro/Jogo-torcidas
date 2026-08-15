@@ -169,7 +169,48 @@ TO.acoes = (function(){
     if(ctx.acao === 'atacar')     return fecharAtaque(E, ctx.alvo, res);
     if(ctx.acao === 'assalto')    return fecharAssalto(E, ctx.alvo, res);
     if(ctx.acao === 'pressionar') return fecharPressao(E, res);
+    if(ctx.acao === 'defender')   return fecharDefesa(E, ctx.alvo, res);
     return null;
+  }
+
+  /* O ESPELHO DO ATAQUE. Quem toma o bar leva a gaveta e um naco do
+     caixa, e a moral do dono cai 3 — está escrito ali embaixo, do outro
+     lado. Defendendo, a conta é a mesma virada: se eles tomam, é o nosso
+     caixa que vai embora e a nossa moral que cai.
+
+     E é AQUI que o prejuízo é cobrado, uma vez só: `ataquesContraNos`
+     não lançou dinheiro, não feriu ninguém e não mexeu em moral nem em
+     prestígio para o alvo que tem cena. Ferido e preso da noite quem
+     aplica é `aplicarResultadoDaNoite`, como em qualquer cena. */
+  function fecharDefesa(E, alvo, res){
+    const T = TO.tensao;
+    /* `venceu` é do ponto de vista de quem ataca a cena; defendendo,
+       segurar o bar é o nosso ganho */
+    const seguramos = !res.venceu;
+    const linhas = [];
+    let perdeu = 0;
+    if(!seguramos){
+      const gaveta = (alvo.tipo === 'bar' ? 60 : 30) * Math.max(4, alvo.efetivo||40);
+      perdeu = Math.round(gaveta + Math.max(0, E.dinheiro) * 0.10);
+      if(perdeu > 0){
+        TO.estado.lancar(E, `Levaram do nosso ${alvo.tipo}`, -perdeu);
+        linhas.push(`${U.dinheiro(perdeu)} da gaveta e do caixa`);
+      }
+      E.indicadores.moral = U.limitar(E.indicadores.moral - 3, 0, 20);
+      E.indicadores.prestigio = U.limitar(E.indicadores.prestigio - 0.7, 0, 20);
+      linhas.push('eles saíram de lá com a casa na mão');
+    }else{
+      E.indicadores.moral = U.limitar(E.indicadores.moral + 1.5, 0, 20);
+      E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + 0.7, 0, 20);
+      linhas.push('a casa ficou de pé');
+    }
+    if(T) T.somar(E, alvo.torcidaId, seguramos ? 10 : 6, 'vieram na nossa casa');
+    const txt = `${alvo.nome} veio pro nosso ${alvo.tipo}. `+
+                `${seguramos ? 'Seguramos' : 'Perdemos'} a casa.`+
+                (linhas.length ? ' ' + linhas.join('; ') + '.' : '');
+    TO.estado.anotar(E, txt, seguramos ? 'boa' : 'ruim');
+    return {txt, ganhou:seguramos, linhas, dinheiro:-perdeu,
+            titulo: seguramos ? 'A CASA FICOU DE PÉ' : 'PERDEMOS O BAR'};
   }
 
   function fecharAtaque(E, alvo, res){

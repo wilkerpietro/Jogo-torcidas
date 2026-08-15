@@ -196,9 +196,22 @@
     {id:'diplomacia',  rot:'Diplomacia',  ic:'diplomacia'},
     {id:'whatsapp',    rot:'WhatsApp',    ic:'conversa'},
     {id:'noticias',    rot:'Notícias',    ic:'jornal'},
-    {id:'conquistas',  rot:'Conquistas',  ic:'medalha'}
+    {id:'conquistas',  rot:'Conquistas',  ic:'medalha'},
+    {id:'opcoes',      rot:'Opções',      ic:'halter'}
   ];
   let pagina = 'inicio';
+
+  /* AS DUAS CHAVES DE OPÇÕES.
+     Ficam no save, e os padrões são aplicados na leitura — assim save
+     velho abre com o pulo em pé e o relatório desligado, igual a save
+     novo, sem migração nenhuma. */
+  function opc(e){
+    e = e || E(); if(!e) return {pularVazios:true, relatorio:false};
+    e.opcoes = e.opcoes || {};
+    if(e.opcoes.pularVazios === undefined) e.opcoes.pularVazios = true;
+    if(e.opcoes.relatorio   === undefined) e.opcoes.relatorio   = false;
+    return e.opcoes;
+  }
 
   function entrarNoJogo(){
     $('telaMenu').classList.add('oculto');
@@ -291,7 +304,8 @@
   const PINTOR = {
     inicio:pintarInicio, torcida:pintarTorcida, financeiro:pintarFinanceiro,
     gestao:pintarGestao, calendario:pintarCalendario,
-    competicoes:pintarCompeticoes, diplomacia:pintarDiplomacia, mapa:pintarMapa
+    competicoes:pintarCompeticoes, diplomacia:pintarDiplomacia, mapa:pintarMapa,
+    opcoes:pintarOpcoes
   };
   const pintarPagina = id => (PINTOR[id] || (()=>pintarPendente(id)))();
 
@@ -341,6 +355,35 @@
        ícone muda com a altura da tela: mudar de orientação remonta o
        mapa uma vez, que é onde ela é construída */
     addEventListener('resize', ()=>{ if(!painel) redesenhar(); });
+  }
+
+  /* =======================================================
+     OPÇÕES
+     Duas chaves, e as duas mudam o ritmo do jogo: uma tira os dias
+     vazios da frente, a outra tira o relatório automático do caminho.
+     ======================================================= */
+  function pintarOpcoes(){
+    const e = E(), pg = U.$('.pagina[data-pag="opcoes"]');
+    pg.innerHTML = '';
+    const o = opc(e);
+    const q = el('div',{class:'quadro'});
+    const chave = (id, rot, nota)=>{
+      const l = el('label',{class:'opc-chave'});
+      const i = el('input',{type:'checkbox'});
+      i.checked = !!o[id];
+      i.onchange = ()=>{ o[id] = i.checked; TO.estado.salvar(); redesenhar(); };
+      l.append(i, el('div',{html:`<b>${rot}</b><small>${nota}</small>`}));
+      q.appendChild(l);
+    };
+    chave('pularVazios', 'Pular os dias sem jogo',
+      'o jogo simula sozinho os dias vazios e para no próximo que tem alguma '+
+      'coisa. Pular é simular: tudo que aconteceria no dia assistido acontece '+
+      'igual — andarilho, esbarrão, assalto, viatura e consequência na ficha.');
+    chave('relatorio', 'Abrir o relatório toda semana',
+      'desligado, a semana fecha sem interromper: o resumo vai pro ticker e '+
+      'pros Avisos, e o relatório continua no botão do Financeiro. Semana no '+
+      'vermelho ou com gente saindo abre de qualquer jeito.');
+    pg.appendChild(q);
   }
 
   /* =======================================================
@@ -460,8 +503,10 @@
         `<span class="pino"></span>
          <span class="txt"><span>${a.texto}</span><small>${a.detalhe}</small></span>`});
       b.onclick = ()=>{
+        /* a página do aviso vira painel: `pagina` é sempre o mapa desde
+           que o mapa virou a tela */
         if(a.id==='acoes') abrirTodasAcoes();
-        else { pagina = a.pagina; redesenhar(); }
+        else abrirPainel(a.pagina);
       };
       cAv.corpo.appendChild(b);
     }
@@ -2833,6 +2878,10 @@
        relógio corre sempre e num dia vazio o único bonde da rua é o que
        o jogador mandar sair. */
     const R = TO.ruas.montar(e, mo);
+    /* eles marcaram este dia pra vir: a cena abre por cima do mapa */
+    const atq = TO.tensao.ataqueDeHoje(e);
+    if(atq && !document.body.classList.contains('em-cena'))
+      setTimeout(()=>abrirAtaqueAoBar(atq), 60);
     const barraRua = el('div',{class:'rua-barra'});
     /* a faixa de ícones do mapa: montada aqui, pendurada no palco */
     const iconesMapa = el('div',{class:'mapa-icones'});
@@ -3036,7 +3085,7 @@
     const btAv = el('button',{class:'mapa-ic', html: IC.get('avancar')});
     btAv.title = 'Avançar um dia';
     btAv.setAttribute('aria-label','Avançar um dia');
-    btAv.onclick = ()=>TO.estado.avancarDia();
+    btAv.onclick = ()=>{ TO.estado.avancarDia(); pularDiasVazios(); };
     noData.append(noRelogioRua, el('div',{class:'mapa-quando-baixo'}));
     noData.lastChild.append(datas, btAv);
 
@@ -3710,6 +3759,55 @@
     });
   }
 
+  /* =======================================================
+     ELES VIERAM PRA CIMA DO NOSSO BAR
+
+     A cena é a MESMA do ataque ao bar deles, com os papéis trocados.
+     Lá a gente desce a transversal e eles nascem no salão, de guarda,
+     com o balcão como objetivo nosso e o gatilho na calçada da frente.
+     Aqui basta dizer que o bonde NOSSO é o do lado `visitante` — o dos
+     spawns com `guarda:true`, dentro do salão — e o deles é o do lado
+     `mandante`, que desce a rua. O comportamento de guarda, o despertar
+     por zona e a linha de visão pela porta já estão prontos: não há
+     cenário novo, há papel trocado.
+
+     Quem cobra é o fecho da cena, uma vez só: `ataquesContraNos` já não
+     lançou dinheiro nem feriu ninguém para o alvo que tem cena. */
+  function abrirAtaqueAoBar(atq){
+    const e = E();
+    const o = TO.mundo.torcida(atq.torcida);
+    const aptos = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa)).slice(0, 34);
+    const nossos = Math.max(2, Math.min(aptos.length || 8,
+      Math.round((TO.membros.contar(e).total || 20) * 0.25)));
+    const deles = Math.max(4, Math.round(((o && o.membros) || 40) * 0.30));
+    const c1 = TO.mundo.coresDaTorcida(e.torcida);
+    const c2 = TO.mundo.coresDaTorcida(o || {});
+    const bondes = [
+      /* nós somos os donos da casa: lado `visitante` é o do salão */
+      {lado:'visitante', n:nossos, nossa:true, nome:e.torcida.nome,
+       cor:c1.cor, cor2:c1.cor2, sigla:TO.mundo.siglaTorcida(e.torcida)},
+      {lado:'mandante',  n:deles, nossa:false, nome:(o&&o.nome)||'Rival',
+       cor:c2.cor, cor2:c2.cor2, sigla:o?TO.mundo.siglaTorcida(o):'RIV'}
+    ];
+    atq.resolvido = true;
+    aviso(`${(o&&o.nome)||'Eles'} pararam na porta do nosso bar.`, 'ruim');
+    $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
+    TO.estado.bloquear(true);
+    pausarDia('cena');
+    const p = TO.planejamento.plano(e);
+    TO.diaJogo.ponte.montar({
+      canvas: $('djPrincipal'),
+      config: { escalacao: aptos, intencao:'atacar', paz:false, bombas:p.bombas,
+                efetivoRival: deles, local:'bar', bondes },
+      aoTerminar: res => fecharDiaDeJogo(res, null,
+        {acao:'defender', alvo:{tipo:'bar', torcidaId:atq.torcida,
+                                nome:(o&&o.nome)||'Rival',
+                                efetivo:(o&&o.membros)||40}})
+    });
+  }
+
   /* o alvo é escolhido antes de sair: a lista vem da própria ação */
   function escolherAlvo(a, aoIr){
     const e = E();
@@ -3752,7 +3850,10 @@
      quer saber é se a operação valeu.
      ======================================================= */
   function cartazDaCena(res, fecho){
-    const ganhou = fecho ? !!fecho.ganhou : !!res.venceu;
+    /* `res.ganhamos` já vem do ponto de vista do jogador; `venceu` é do
+       mandante, e nas cenas em que a gente defende os dois se opõem */
+    const ganhou = fecho ? !!fecho.ganhou
+                 : (res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu);
     /* ELES CORRERAM vem antes de tudo, inclusive do título da ação —
        "ATAQUE BEM-SUCEDIDO" com zero ferido dos dois lados era a tela
        gritando uma coisa e o número dizendo outra. E o tom é neutro de
@@ -3882,9 +3983,106 @@
   /* =======================================================
      LIGAÇÃO
      ======================================================= */
+  /* =======================================================
+     PULAR OS DIAS SEM JOGO
+
+     PULAR É SIMULAR, NÃO OMITIR. O dia pulado roda a rua inteira —
+     `TO.ruas.montar` e `TO.ruas.passo` do primeiro minuto ao apito —,
+     que é o mesmo caminho do dia assistido: andarilho anda, esbarrão
+     acontece, assalto do calendário abre e fecha, viatura sai. O que
+     muda é só o passo do relógio: assistindo, cada quadro empurra uns
+     0,03 minuto de rua; pulando, o passo é maior, porque não há tela
+     pra desenhar. Se pular mudasse o resultado, a opção deixaria de ser
+     conforto e viraria trapaça.
+     ======================================================= */
+  /* O PASSO É O MESMO DE ASSISTIR, e isso é decisão medida. Um quadro a
+     60 fps empurra `dt*2` = 1/30 de minuto de rua; o pulo usa o mesmo
+     número. Com passo maior o resultado AGREGADO continua igual — 30
+     dias de rua cheia dão as mesmas 12 baixas e o mesmo caixa com 0,1,
+     0,25 ou 0,5 —, mas a IDENTIDADE de alguns encontros muda: quem
+     esbarra em quem é testado nos instantes amostrados, e amostrar
+     menos troca um par por outro. Isso aparecia como duas ou três
+     unidades de tensão a mais numa torcida e um ferido a mais ou a
+     menos no trigésimo dia. Custa 49 ms por dia em vez de 25 — meio
+     segundo a mais numa semana pulada — e compra igualdade exata. */
+  const PASSO_PULO = 1/30;      // minutos de rua por tique, sem tela
+  const MAX_PULO = 90;          // teto de segurança: nunca mais que isso
+  let pulando = false;
+
+  const diaComJogo = e =>
+    TO.ruas.jogosDaPraca(e).filter(j=>j.dia === e.data.dia).length > 0;
+
+  function simularDiaDaRua(e){
+    const mo = mapaAtual || TO.mapa.modelo(e);
+    const R = TO.ruas.montar(e, mo);
+    const fim = R.apito || 0;
+    let guarda = 0;
+    while(R.minuto < fim && guarda++ < 6000){
+      TO.ruas.passo(e, mo, PASSO_PULO);
+      if(R.encontro) return 'dois bondes se encontraram na rua';
+    }
+    return null;
+  }
+
+  /* AS CINCO PARADAS. Quatro são do enunciado e valem sempre; a quinta
+     — semana ruim — é decidida no fechamento, que roda dentro do
+     `avancarDia`, então ela chega aqui por `motivoDaParada`.
+
+     A "decisão pendente" é a que precisou de julgamento: o cartão de
+     Avisos tem itens que são lembrete permanente (ações sobrando, gente
+     pronta pra promover, fila de treino vazia, membro presos por trinta
+     dias) e parar neles seria não pular nunca. O que para o pulo é
+     pendência NOVA — a que não existia quando o pulo começou. */
+  let motivoDaParada = null;
+  function pendenciasDe(e){
+    return new Set(TO.planejamento.pendencias(e).map(p=>p.id));
+  }
+  function porQueParar(e, antes){
+    if(diaComJogo(e))                       return 'tem jogo na praça hoje';
+    if(TO.tensao.ataqueDeHoje(e))           return 'vieram pra cima do nosso bar';
+    if(TO.ruas.bondeComandado(e))           return 'seu bonde está na rua';
+    const agora = pendenciasDe(e);
+    for(const id of agora)
+      if(!antes.has(id)){
+        const p = TO.planejamento.pendencias(e).find(x=>x.id === id);
+        return p ? p.texto.toLowerCase() : 'apareceu decisão pra tomar';
+      }
+    return null;
+  }
+
+  function pularDiasVazios(){
+    const e = E();
+    if(!e || pulando || !opc(e).pularVazios) return 0;
+    const antes = pendenciasDe(e);
+    let n = 0, motivo = porQueParar(e, antes);
+    if(motivo) return 0;               // já tem o que fazer hoje
+    pulando = true; motivoDaParada = null;
+    try{
+      while(n < MAX_PULO){
+        const daRua = simularDiaDaRua(e);
+        if(daRua){ motivo = daRua; break; }
+        TO.estado.avancarDia();
+        n++;
+        if(motivoDaParada){ motivo = motivoDaParada; break; }
+        motivo = porQueParar(e, antes);
+        if(motivo) break;
+      }
+    } finally { pulando = false; }
+    redesenhar();
+    retomarDia('dia');
+    if(n) aviso(`${n} ${n===1?'dia passou':'dias passaram'} — parou porque `+
+                `${motivo || 'chegou no limite de '+MAX_PULO+' dias'}.`,
+                motivo ? '' : 'ruim');
+    return n;
+  }
+
   /* avançar o dia recomeça o dia seguinte JÁ RODANDO: `montar` nasce com
-     `rodando:false` e antes ninguém religava */
-  TO.estado.aoMudar(()=>{ redesenhar(); retomarDia('dia'); });
+     `rodando:false` e antes ninguém religava. Durante o pulo o mapa não
+     é repintado a cada dia — seria remontar a planta noventa vezes. */
+  TO.estado.aoMudar(()=>{
+    if(pulando) return;
+    redesenhar(); retomarDia('dia');
+  });
 
   /* ABA SEM FOCO É PAUSA EXPLÍCITA.
      O `requestAnimationFrame` congela sozinho quando a aba perde o
@@ -3896,8 +4094,37 @@
   document.addEventListener('visibilitychange', ()=>{
     if(document.hidden) pausarDia('foco'); else retomarDia('foco');
   });
-  /* o fechamento é o momento em que a semana cobra o que prometeu */
-  TO.estado.aoFecharSemana(rel=>{ abrirFechamento(rel); TO.estado.salvar(); });
+  /* O FECHAMENTO DA SEMANA, COM O RELATÓRIO OPCIONAL.
+     Antes as três coisas moravam na mesma linha: abrir o modal, salvar e
+     nada mais. Agora elas se separam, porque só uma delas é opcional.
+
+     · SALVAR é sempre. O autosave estava pendurado no mesmo `;` do
+       `abrirFechamento`, e desligar o modal teria desligado o save
+       junto — o jeito mais silencioso de perder uma temporada.
+     · O RESUMO é sempre, e em dois lugares que o jogador vê de
+       passagem: o ticker e a lista de avisos da tela de Início. Sem
+       isso, quem nunca abre o relatório joga sem economia.
+     · O MODAL é a chave. Fica desligado por padrão — mas semana no
+       vermelho ou com gente saindo abre de qualquer jeito e para o
+       pulo, porque é aí que a torcida começa a se desfazer e descobrir
+       isso depois de trinta dias pulados não é conforto, é perda. */
+  TO.estado.aoFecharSemana((rel, e)=>{
+    TO.estado.salvar();
+    const saiu = (rel.saidas || []).length;
+    const resumo = `Semana ${rel.semana}: ${rel.saldo >= 0 ? 'sobrou' : 'faltou'} `+
+      `${U.dinheiro(Math.abs(rel.saldo))}` +
+      (saiu ? ` · ${saiu} ${saiu===1?'saiu':'saíram'} da torcida` : '') +
+      ` · caixa ${U.dinheiro((e||E()).dinheiro)}`;
+    TO.estado.anotar(e || E(), resumo, rel.saldo >= 0 && !saiu ? 'boa' : 'ruim');
+    const grave = rel.saldo < 0 || (e||E()).dinheiro < 0 || saiu > 0;
+    if(opc(e).relatorio || grave){
+      abrirFechamento(rel);
+      if(grave) motivoDaParada = saiu
+        ? `a semana ${rel.semana} fechou com gente saindo da torcida`
+        : `a semana ${rel.semana} fechou no vermelho`;
+      else motivoDaParada = `virou a semana ${rel.semana}`;
+    }
+  });
   $('btSelecionarTorcida').onclick = ()=>{
     if(!escolhida) return;
     TO.estado.novo({torcida: escolhida});
