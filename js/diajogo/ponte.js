@@ -29,6 +29,10 @@ TO.diaJogo.ponte = (function(){
 
   let cv, ctx, J=null, teclas={}, rodando=false, ant=0;
   let aoTerminar=null;
+  /* chamado a cada quadro enquanto a cena roda: quem monta a cena usa
+     isso pra continuar o relógio da rua e mandar pra cá o bonde que
+     acabou de chegar na esplanada */
+  let aCadaQuadro=null;
 
   /* editor */
   const ED={ativo:false, modo:'pincel', pincel:16, pintando:0,
@@ -42,6 +46,7 @@ TO.diaJogo.ponte = (function(){
     cv  = opc.canvas || document.getElementById('djPrincipal');
     ctx = cv.getContext('2d');
     aoTerminar = opc.aoTerminar || null;
+    aCadaQuadro = opc.aCadaQuadro || null;
 
     /* rua, praça ou arredores: a cena vem do encontro que abriu a tela */
     A.usarCena((opc.config||{}).local);
@@ -67,7 +72,12 @@ TO.diaJogo.ponte = (function(){
   function quadro(agora){
     let dt=(agora-ant)/1000; ant=agora;
     if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
-    if(J && !ED.ativo) C.passo(J,dt,teclas,true);
+    if(J && !ED.ativo){
+      C.passo(J,dt,teclas,true);
+      /* a rua não para porque a briga começou: quem ainda estava andando
+         chega no meio dela */
+      if(aCadaQuadro) for(const b of (aCadaQuadro(dt, J) || [])) C.reforcar(J, b);
+    }
     /* a briga pode acabar sozinha: um lado sem ninguém de pé. Quem
        decide isso é o combate; aqui só se abre a tela. */
     if(J && J.acabou && J.fase==='acabando') encerrar(J.acabou.motivo);

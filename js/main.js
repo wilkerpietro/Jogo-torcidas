@@ -2504,17 +2504,15 @@
       ultimo = agora;
       const mo = mapaAtual;
       if(mo && dt){
-        /* Dois minutos de rua por segundo de tela — mas o dia abre às
-           08:00 e a praça só sai pro estádio às 13h30. Quando ninguém
-           está andando (o pessoal de fora já dormiu na casa do aliado e
-           o resto ainda não saiu de casa) o relógio corre solto: são
-           quase seis horas sem nada pra ver. */
-        TO.ruas.passo(e, mo, dt * (TO.ruas.emMovimento(R) ? 2 : 90));
+        /* dois minutos de rua por segundo de tela, a mesma velocidade o
+           dia inteiro: a manhã parada faz parte do dia */
+        TO.ruas.passo(e, mo, dt*2);
         if(canvasMapa) { TO.mapa.desenhar(mo, canvasMapa);
                          TO.ruas.desenhar(e, mo, canvasMapa.getContext('2d')); }
         if(R.encontro){ relogioRua = null; redesenhar(); return; }
-        if(R.bondes.every(b=>b.chegou)){ R.rodando = false; relogioRua = null;
-                                         redesenhar(); return; }
+        /* o relógio para no apito, não quando o último bonde chega */
+        if(R.minuto >= (R.apito || 0)){ R.rodando = false; relogioRua = null;
+                                        redesenhar(); return; }
       }
       relogioRua = requestAnimationFrame(passo);
     };
@@ -2604,7 +2602,7 @@
     if(R.bondes.length){
       const jogos = TO.ruas.jogosDaPraca(e).filter(x=>x.dia === e.data.dia);
       const andando = R.bondes.filter(b=>!b.chegou).length;
-      const falta = Math.max(0, TO.ruas.APITO - R.minuto);
+      const falta = Math.max(0, (R.apito||0) - R.minuto);
       const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
       /* o relógio do dia, que abre às 08:00 e vai até o apito das 16:00 */
       barraRua.appendChild(el('div',{class:'rua-relogio', html:
@@ -2613,7 +2611,7 @@
       barraRua.appendChild(el('div',{class:'rua-info', html:
         `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
          <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
-         apito às ${TO.ruas.relogio(TO.ruas.APITO)}</small>`}));
+         apito às ${TO.ruas.relogio(R.apito||0)}</small>`}));
       const bt = el('button',{class:'bt destaque',
         texto: R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia'});
       bt.disabled = !andando && !R.encontro;
@@ -2755,7 +2753,7 @@
     /* quem chegou na esplanada entra na cena com o efetivo que sobrou da
        caminhada e a cor da própria torcida. `nossa` aqui é "o jogador
        comanda": o aliado que a gente escoltou anda com a gente. */
-    const bondes = naCena.map(x=>({lado:x.lado, n:x.n, cor:x.cor,
+    const bondes = naCena.map(x=>({lado:x.lado, n:x.n, cor:x.cor, sigla:x.sigla,
                                    nome:x.nome, nossa: !!(x.nossa || x.doJogador)}));
     /* quem desce pro palco já não volta pro minimapa */
     TO.ruas.marcarQueEntraram(R, naCena);
@@ -2763,6 +2761,19 @@
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao: p.intencao, bombas: p.bombas,
                 tensao: tensaoDaNoite(), bondes },
+      /* O RELÓGIO DA RUA NÃO PARA PORQUE A BRIGA COMEÇOU. Os bondes que
+         ainda estavam andando continuam a viagem, e quem chega na
+         esplanada com o tumulto em curso entra nele. Dois minutos de rua
+         por segundo de tela, a mesma velocidade do mapa. */
+      aCadaQuadro: (dt)=>{
+        const mo = mapaAtual || TO.mapa.modelo(e);
+        TO.ruas.passo(e, mo, dt*2);
+        const novos = TO.ruas.naEsplanada(R);
+        if(!novos.length) return [];
+        TO.ruas.marcarQueEntraram(R, novos);
+        return novos.map(x=>({lado:x.lado, n:x.n, cor:x.cor, sigla:x.sigla,
+                              nome:x.nome, nossa: !!(x.nossa || x.doJogador)}));
+      },
       aoTerminar: fecharDiaDeJogo
     });
   }

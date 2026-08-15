@@ -173,7 +173,6 @@ TO.diaJogo.combate = (function(){
        vêm da ficha, e o id volta no fim pra virar Ferido ou Preso.
        Sem escalação (página solta da cena), gera gente fictícia. */
     const nomes=U.embaralhar(TO.dados.nomes ? TO.dados.nomes.apelidos : ['TROVÃO']);
-    let iN=0;
 
     /* Quem cria disco é o BONDE, não o portão. Um portão pode receber dois
        bondes num clássico, e cada um traz a sua cor e o seu efetivo: se a
@@ -227,45 +226,8 @@ TO.diaJogo.combate = (function(){
       }
     }
 
-    for(const g of grupos){
-      const s = g.s, escalados = fichas.get(g) || [];
-      const qtd = Math.max(g.qtd, escalados.length);
-      /* só o nosso bonde obedece à formação; aliado que divide o portão não */
-      const meu = g.bonde ? !!g.bonde.nossa : !!s.jogador;
-      /* ONDE O BONDE SE ESPALHA AO NASCER.
-         Era um quadrado de 92 px de lado pra qualquer tamanho. Com 250
-         pessoas isso dá 34 px² por cabeça e o disco sozinho ocupa 154:
-         a esplanada abria com todo mundo dentro de todo mundo, e o
-         primeiro segundo era um empurra-empurra pra achar lugar. Agora o
-         raio vem do efetivo, com teto de 800 px — bonde de oito se junta
-         numa esquina, bonde de 250 ocupa quarteirão. A raiz no sorteio é
-         o que dá densidade uniforme; sem ela a nuvem sai com miolo
-         grosso e borda vazia. */
-      const raio = U.limitar(46 + 24*Math.sqrt(qtd), 46, P.raioVadiagem);
-      for(let i=0;i<qtd;i++){
-        const a = U.rng()*Math.PI*2, dd = raio*Math.sqrt(U.rng());
-        const p=A.pontoLivreMaisProximo(s.x + Math.cos(a)*dd,
-                                        s.y + Math.sin(a)*dd, 7);
-        const m = escalados[i];
-        const lider = g === grupoLider && i===0;
-        const d=new Disco(
-          m ? m.apelido.toUpperCase() : (nomes[iN++%nomes.length]||'ZÉ').toUpperCase(),
-          s.lado, s, p.x, p.y, lider);
-        if(m){
-          d.membroId=m.id;
-          d.forca=m.forca; d.defesa=m.defesa; d.moral=m.moral;
-          /* defesa vira resistência: quem apanha melhor cai depois */
-          d.hpMax = 90 + m.defesa*7 + (lider?60:0);
-          d.hp=d.hpMax;
-          d.cargo=m.cargo;
-        }
-        d.cor = g.bonde ? g.bonde.cor : null;   // a cor da torcida que veio do mapa
-        d.torcida = g.bonde ? g.bonde.nome : null;
-        d.doJogador = meu;
-        J.discos.push(d);
-      }
-      J.total[s.lado]+=qtd;
-    }
+    for(const g of grupos)
+      nascerGrupo(J, g, fichas.get(g) || [], g === grupoLider, nomes);
 
     /* =======================================================
        O HUMOR DE CADA BONDE (só nos arredores)
@@ -346,6 +308,90 @@ TO.diaJogo.combate = (function(){
   }
   function contarSpawns(lado){
     return D.spawns.filter(s=>s.lado===lado).length||1;
+  }
+
+  /* =======================================================
+     NASCER UM GRUPO NA CENA
+
+     Um bonde vira discos aqui. Fica separado de `montar` porque a
+     esplanada não é uma foto: quem ainda estava na rua quando a briga
+     começou chega no meio dela, e chega por este mesmo caminho.
+     ======================================================= */
+  function nascerGrupo(J, g, escalados, temLider, nomes){
+    const s = g.s;
+    const qtd = Math.max(g.qtd, escalados.length);
+    if(qtd <= 0) return;
+    nomes = nomes || U.embaralhar(TO.dados.nomes ? TO.dados.nomes.apelidos : ['TROVÃO']);
+    /* só o nosso bonde obedece à formação; aliado que divide o portão não */
+    const meu = g.bonde ? !!g.bonde.nossa : !!s.jogador;
+    /* ONDE O BONDE SE ESPALHA AO NASCER.
+       Era um quadrado de 92 px de lado pra qualquer tamanho. Com 250
+       pessoas isso dá 34 px² por cabeça e o disco sozinho ocupa 154:
+       a esplanada abria com todo mundo dentro de todo mundo, e o
+       primeiro segundo era um empurra-empurra pra achar lugar. Agora o
+       raio vem do efetivo, com teto de 800 px — bonde de oito se junta
+       numa esquina, bonde de 250 ocupa quarteirão. A raiz no sorteio é
+       o que dá densidade uniforme; sem ela a nuvem sai com miolo
+       grosso e borda vazia. */
+    const raio = U.limitar(46 + 24*Math.sqrt(qtd), 46, P.raioVadiagem);
+    for(let i=0;i<qtd;i++){
+      const a = U.rng()*Math.PI*2, dd = raio*Math.sqrt(U.rng());
+      const p=A.pontoLivreMaisProximo(s.x + Math.cos(a)*dd,
+                                      s.y + Math.sin(a)*dd, 7);
+      const m = escalados[i];
+      const lider = temLider && i===0;
+      const d=new Disco(
+        m ? m.apelido.toUpperCase() : (nomes[i%nomes.length]||'ZÉ').toUpperCase(),
+        s.lado, s, p.x, p.y, lider);
+      if(m){
+        d.membroId=m.id;
+        d.forca=m.forca; d.defesa=m.defesa; d.moral=m.moral;
+        /* defesa vira resistência: quem apanha melhor cai depois */
+        d.hpMax = 90 + m.defesa*7 + (lider?60:0);
+        d.hp=d.hpMax;
+        d.cargo=m.cargo;
+      }
+      d.cor = g.bonde ? g.bonde.cor : null;   // a cor da torcida que veio do mapa
+      d.torcida = g.bonde ? g.bonde.nome : null;
+      d.doJogador = meu;
+      J.discos.push(d);
+    }
+    J.total[s.lado] += qtd;
+  }
+
+  /* =======================================================
+     REFORÇO: QUEM CHEGOU COM A BRIGA JÁ ROLANDO
+
+     A esplanada não é uma foto. Se o jogador desceu com três dos seis
+     bondes, os outros três continuam andando na rua e chegam no meio do
+     tumulto. Quem é de torcida metida no confronto entra nele; quem não
+     tem nada com aquilo atravessa e vai pro próprio portão — é o que o
+     humor do bonde já sabe fazer, então aqui só se diz qual é.
+     ======================================================= */
+  function reforcar(J, bonde){
+    if(!J || J.fase === 'acabando' || !bonde || !(bonde.n > 0)) return null;
+    const lado = bonde.lado === 'visitante' ? 'visitante' : 'mandante';
+    const spawns = D.spawns.filter(x=>x.lado === lado);
+    if(!spawns.length) return null;
+    /* o portão de quem chega atrasado é o do lado dele, o menos usado */
+    const uso = {};
+    for(const d of J.discos) if(d.spawn) uso[d.spawn] = (uso[d.spawn]||0)+1;
+    const s = spawns.slice().sort((x,y)=>(uso[x.id]||0)-(uso[y.id]||0))[0];
+
+    nascerGrupo(J, {s, bonde, qtd: Math.max(1, Math.round(bonde.n))}, [], false);
+
+    /* O humor: entra na briga quem tem lado nela. Bonde do jogador é
+       sempre do jogador; o resto, se a cena já não está em paz e ele é
+       de um dos lados envolvidos, chega batendo. */
+    J.bondes[s.id] = J.bondes[s.id] || {};
+    const b = J.bondes[s.id];
+    b.nome = bonde.nome; b.jogador = !!bonde.nossa;
+    b.humor = (!J.paz && !bonde.nossa) ? 'atacar' : (b.humor || 'paz');
+    b.agirEm = J.t;
+    b.entraEm = b.entraEm || (J.t + 90);
+    if(b.humor === 'atacar') J.paz = false;
+    logar(J, `${bonde.nome} chegou na esplanada.`, bonde.nossa ? 'v' : 'a');
+    return s.id;
   }
 
   /* =======================================================
@@ -1589,7 +1635,7 @@ TO.diaJogo.combate = (function(){
     for(const p of J.projeteis) desenharProjetil(c,p);
   }
 
-  return {FORMACOES, Disco, criarEstado, passo, desenhar,
+  return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
           iaArremesso, alvoDeFuga, conferirFim, dePe, agressivo, atacado};

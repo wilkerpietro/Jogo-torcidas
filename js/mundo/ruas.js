@@ -275,8 +275,18 @@ TO.ruas = (function(){
     if(!mo.arte) return [];
     return (mo.pinos||[]).filter(p=>p.tipo === 'estadio');
   }
-  const pontoDaSede = (mo, nomeTorcida) => pontoDe(mo, it =>
-    it.tipo === 'sede' && it.label.includes(nomeTorcida));
+  /* SEDE E BAR SE ACHAM PELO ID, não pelo nome. O casamento era
+     `label.includes(nome)`, e 21 dos 140 nomes são subcadeia de outro —
+     "Camisa 12" dentro de "Camisa 12 do Inter", "Garra" dentro de "Garra
+     Alvinegra", "Gaviões" dentro de "Gaviões Alvinegros", "Independente"
+     dentro de "Fúria Independente". `pontoDe` devolve o primeiro que
+     casa, então a Camisa 12 podia sair da sede do Inter. O pino já
+     carrega `torcida: o.id` desde que a sede virou escudo; é por ele. */
+  const pontoDaSede = (mo, torcida) => pontoDe(mo, it =>
+    it.tipo === 'sede' && it.torcida === (torcida.id || torcida));
+  const pontoDoBar = (mo, torcida) => pontoDe(mo, it =>
+    (it.tipo === 'bar' || it.tipo === 'bar-nosso') &&
+    it.torcida === (torcida.id || torcida));
 
   /* OS DOIS PONTOS DE CHEGADA, marcados na arte pelo autor: a boca da
      avenida no alto e a ponta sudeste do bairro de baixo. São os dois
@@ -325,17 +335,25 @@ TO.ruas = (function(){
      praça inteira sai pro estádio — escalonada, porque bonde não sai
      todo no mesmo minuto. */
   const ABERTURA = 8*60;             // 08:00
-  const APITO    = 16*60 - ABERTURA; // 16:00, em minutos de dia de jogo
-  const ANTES    = 150;              // sai 2h30 antes do apito...
-  const JANELA   = 30;               // ...ou até 2h, conforme o sorteio fixo
+  const ANTES    = 150;              // a janela abre 2h30 antes do apito...
+  const JANELA   = 30;               // ...e fecha 2h antes
   const CHEGADA_CEDO = 45;           // quem vem de fora desce entre 8h e 8h45
 
-  /* quantos minutos de jogo essa rota leva a pé */
-  function andarLeva(rota){
-    let d = 0;
-    for(let i=0;i+1<rota.length;i++)
-      d += Math.hypot(rota[i+1].x - rota[i].x, rota[i+1].y - rota[i].y);
-    return d / VEL;
+  /* 'HH:MM' -> minutos do dia; devolve null no que não for hora */
+  function emMinutos(hhmm){
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm||'').trim());
+    return m ? (+m[1])*60 + (+m[2]) : null;
+  }
+
+  /* O APITO É O DO ÚLTIMO JOGO DO DIA NESTA PRAÇA, e a hora vem da grade
+     (`horaDoJogo`), não de constante: rodada de domingo tem jogo às 11h e
+     às 20h30, e o relógio da rua tem de acompanhar o que a tabela marcou.
+     Em minutos desde as 08:00, que é o zero de R.minuto. */
+  function apitoDoDia(E){
+    const horas = jogosDaPraca(E).filter(j=>j.dia === E.data.dia)
+      .map(j=>emMinutos(j.hora)).filter(h=>h != null);
+    const ultimo = horas.length ? Math.max(...horas) : 16*60;
+    return Math.max(60, ultimo - ABERTURA);
   }
 
   /* 'minutos desde as 08:00' -> 'HH:MM' */
@@ -376,7 +394,8 @@ TO.ruas = (function(){
           if(!j.f) continue;
           const casa = M().time(j.c), vis = M().time(j.f);
           if(!casa || !vis || casa.mapa !== nossa) continue;
-          fora.push({casa, vis, comp:comp.nome, dia: j.d || etapa.dia || 6});
+          fora.push({casa, vis, comp:comp.nome, dia: j.d || etapa.dia || 6,
+                     hora: TO.competicoes.horaDoJogo(j)});
         }
       }
     return fora;
@@ -490,16 +509,21 @@ TO.ruas = (function(){
     R.esfria = {}; R.arredores = [];
 
     const doDia = jogosDaPraca(E).filter(j=>j.dia === E.data.dia);
+    R.apito = apitoDoDia(E);
     if(!doDia.length) return R;
 
     /* cada torcida da noite com a sua cor e a sua sigla, sem repetir */
     const elenco = elencoDaNoite(E, doDia);
 
+    const apito = R.apito;
+
     let id = 0;
-    /* a hora em que este bonde sai pro estádio: entre 2h30 e 2h antes do
-       apito, fixa por torcida — bonde não muda de horário a cada abertura */
+    /* A hora em que este bonde sai pro estádio: entre 2h30 e 2h antes do
+       apito, nunca fora disso. Fixa por torcida — o hash é do id e da
+       chave do dia, então o bonde não muda de horário a cada abertura da
+       tela. */
     const saidaPraOEstadio = (torcida, tag) =>
-      APITO - ANTES + (MP().hash(`${torcida.id}|${tag}|${R.chave}`) % JANELA);
+      apito - ANTES + (MP().hash(`${torcida.id}|${tag}|${R.chave}`) % JANELA);
 
     /* De que JOGO é o bonde. A praça pode ter três partidas no mesmo dia,
        e sem isso a cena dos arredores juntava todo mundo que chegou —
@@ -519,16 +543,6 @@ TO.ruas = (function(){
         de = p.ate;
         return {saiEm: p.saiEm, rota, tipo: p.tipo || 'estadio'};
       });
-      /* QUEM MORA LONGE SAI MAIS CEDO. A janela de 2h30 a 2h antes do
-         apito é a do trajeto normal; atravessar São Paulo a pé leva mais
-         do que isso, e com hora fixa esses bondes chegavam com a bola já
-         rolando — 22 de 267, medido em 48 dias de jogo. O adiantamento é
-         só o que o caminho exige, com quinze minutos de folga. */
-      const ultima = etapas[etapas.length-1];
-      if(ultima.tipo === 'estadio'){
-        const precisa = APITO - andarLeva(ultima.rota) - 15;
-        if(precisa < ultima.saiEm) ultima.saiEm = Math.max(0, precisa);
-      }
       R.bondes.push(Object.assign({
         id: ++id, torcida: torcida.id, nome: torcida.nome,
         cor: elenco.cor[torcida.id] || (torcida.cores && torcida.cores[0]) || '#999',
@@ -548,12 +562,39 @@ TO.ruas = (function(){
 
     let chegada = 0;   // alterna os dois pontos de entrada da praça
 
+    /* AS ESCOLTAS SE RESOLVEM ANTES DOS BONDES.
+       Os membros da escolta saem do efetivo do anfitrião e passam pro
+       bonde do aliado: não é gente nova, o total da noite não muda, muda
+       de quem é. E o anfitrião pode ser torcida de outro jogo do mesmo
+       dia — a gente pode escoltar um aliado numa partida em que o nosso
+       clube nem entra em campo. Se as escoltas fossem calculadas dentro
+       do laço dos jogos, o desconto chegaria depois de o bonde do
+       anfitrião já ter saído com o efetivo cheio. */
+    const escoltas = {};          // id do visitante -> {casa, n}
+    const devidoDeEscolta = {};   // id do anfitrião -> quanto emprestou
+    for(const jogo of doDia)
+      for(const o of M().torcidasDe(jogo.vis.id)){
+        if(pontoDaSede(mo, o)) continue;        // mora aqui, não é caravana
+        if(TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id]) < 5) continue;
+        const casa = anfitriaoDe(E, mo, o);
+        if(!casa) continue;
+        const n = escoltaDe(E, casa.torcida, o);
+        if(!n) continue;
+        escoltas[o.id] = {casa, n};
+        devidoDeEscolta[casa.torcida.id] =
+          (devidoDeEscolta[casa.torcida.id] || 0) + n;
+      }
+    /* quanto sobra pro anfitrião depois de mandar gente na escolta */
+    const menosAEscolta = (o, efetivo) =>
+      Math.max(4, efetivo - (devidoDeEscolta[o.id] || 0));
+
     /* Quem sai da própria casa: mandante, ou visitante que mora aqui. */
     const daPraca = (o, sede, est, jogo)=>{
       if(o.id === E.torcida.id){
         /* a nossa se divide entre a sede e as subsedes, como o plano manda */
         const bondes = Math.max(1, (TO.planejamento.plano(E).bondes)||1);
-        const porBonde = Math.max(4, Math.round(TO.planejamento.efetivoDaSaida(E)/bondes));
+        const nosso = menosAEscolta(o, TO.planejamento.efetivoDaSaida(E));
+        const porBonde = Math.max(4, Math.round(nosso/bondes));
         nasce(o, sede, [{saiEm:saidaPraOEstadio(o,'sede'), ate:est}],
               porBonde, 'sede', jogo);
         const subs = TO.financeiro.patrimonio(E).subsedes || [];
@@ -569,14 +610,13 @@ TO.ruas = (function(){
       }
       /* as outras também se quebram: a primeira sai da sede, as demais
          dos bares dela, que é onde a rapaziada se junta */
-      const efetivo = Math.round((TO.acoes.efetivoDe(E, o)) * 0.6);
+      const efetivo = menosAEscolta(o, Math.round(TO.acoes.efetivoDe(E, o) * 0.6));
       const q = quantosBondes(efetivo);
       const porBonde = Math.max(4, Math.round(efetivo/q));
       nasce(o, sede, [{saiEm:saidaPraOEstadio(o,'sede'), ate:est}],
             porBonde, 'sede', jogo);
       for(let k=1; k<q; k++){
-        const bar = pontoDe(mo, (it)=>it.tipo === 'bar' &&
-          (it.label||'').includes(o.nome));
+        const bar = pontoDoBar(mo, o);
         const tag = bar ? 'bar' : 'sede';
         nasce(o, bar || sede, [{saiEm:saidaPraOEstadio(o,tag+k), ate:est}],
               porBonde, tag, jogo);
@@ -589,7 +629,8 @@ TO.ruas = (function(){
        manda gente junto. Sem aliado, desce na hora de ir pro jogo e vai
        direto — caravana não fica seis horas parada no meio-fio. */
     const deFora = (o, est, jogo)=>{
-      const vem = Math.round(TO.acoes.efetivoDe(E, o) * 0.25);
+      /* a MESMA conta que a Gestão mostrou ao jogador na semana */
+      const vem = TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id]);
       if(vem < 5) return;
       const q = quantosBondes(vem);
       const porBonde = Math.max(4, Math.round(vem/q));
@@ -598,18 +639,30 @@ TO.ruas = (function(){
         const entra = entradaDaCidade(mo, chegada++);
         const saida = saidaPraOEstadio(o, 'visitante'+j);
         if(!casa){
+          /* sem aliado na praça, não fica a manhã inteira no meio-fio:
+             desce já na janela de saída e vai direto pro estádio */
           nasce(o, entra, [{saiEm:saida, ate:est}], porBonde, 'visitante', jogo);
           continue;
         }
         /* só o primeiro bonde é hospedado: a escolta é uma, não uma por
            ônibus, e é o bonde principal que anda com o anfitrião */
-        const escolta = j === 0 ? escoltaDe(E, casa.torcida, o) : 0;
+        const escolta = j === 0 && escoltas[o.id] ? escoltas[o.id].n : 0;
+        /* A caravana desce entre 08:00 e 08:45 — salvo em jogo de manhã,
+           que é quando a janela de saída abre antes disso: num apito às
+           11:00 ela abre 08:30, e sem apertar a chegada o ônibus estaria
+           marcado pra sair da sede do aliado antes de ter descido. */
+        const cedo = Math.max(1, Math.min(CHEGADA_CEDO, apito - ANTES));
         nasce(o, entra, [
-          {saiEm: MP().hash(`${o.id}|vem${j}|${R.chave}`) % CHEGADA_CEDO,
+          {saiEm: MP().hash(`${o.id}|vem${j}|${R.chave}`) % cedo,
            ate: casa.sede, tipo:'aliado'},
           {saiEm: saida, ate: est}
         ], porBonde, 'visitante', jogo, escolta ? {
-          escolta: {de: casa.torcida.id, nome: casa.torcida.nome, n: escolta},
+          escolta: {de: casa.torcida.id, nome: casa.torcida.nome,
+                    sigla: elenco.sigla[casa.torcida.id] ||
+                           M().siglaTorcida(casa.torcida),
+                    cor: elenco.cor[casa.torcida.id] ||
+                         (casa.torcida.cores && casa.torcida.cores[0]) || '#999',
+                    n: escolta},
           /* escoltado pela nossa torcida é bonde nosso na hora da briga:
              o jogador comanda a soma dos dois */
           doJogador: casa.torcida.id === E.torcida.id
@@ -620,7 +673,7 @@ TO.ruas = (function(){
     for(const jogo of doDia){
       const est = pontoDoEstadioDoClube(mo, jogo.casa) || {x:mo.tam/2, y:mo.tam/2};
       for(const o of M().torcidasDe(jogo.casa.id)){
-        const sede = pontoDaSede(mo, o.nome);
+        const sede = pontoDaSede(mo, o);
         if(sede) daPraca(o, sede, est, jogo);
       }
       /* O VISITANTE PODE SER DAQUI. Num Atlético x Cruzeiro a Máfia Azul
@@ -628,7 +681,7 @@ TO.ruas = (function(){
          rua, e sair da entrada da praça não faz sentido nenhum. Quem
          entra pela chegada é só quem não tem casa aqui. */
       for(const o of M().torcidasDe(jogo.vis.id)){
-        const sede = pontoDaSede(mo, o.nome);
+        const sede = pontoDaSede(mo, o);
         if(sede) daPraca(o, sede, est, jogo);
         else     deFora(o, est, jogo);
       }
@@ -647,11 +700,11 @@ TO.ruas = (function(){
      ======================================================= */
   function anfitriaoDe(E, mo, visitante){
     const daqui = M().torcidasEm(E.torcida.mapa)
-      .filter(t=>t.id !== visitante.id && pontoDaSede(mo, t.nome));
+      .filter(t=>t.id !== visitante.id && pontoDaSede(mo, t));
     const grau = t=>{
       if(t.id === E.torcida.id){
         const v = (E.relacoes||{})[visitante.id];
-        if(v === undefined || v < 20) return 0;
+        if(v === undefined || v < TO.planejamento.RELACAO_ALIADO) return 0;
         return v >= 60 ? 2 : 1;
       }
       if((visitante.irmandade||[]).includes(t.id)) return 2;
@@ -662,7 +715,7 @@ TO.ruas = (function(){
       .sort((a,b)=> grau(b) - grau(a) ||
         MP().hash(`${visitante.id}|${a.id}`) - MP().hash(`${visitante.id}|${b.id}`));
     if(!bons.length) return null;
-    return {torcida: bons[0], sede: pontoDaSede(mo, bons[0].nome)};
+    return {torcida: bons[0], sede: pontoDaSede(mo, bons[0])};
   }
 
   /* Quanta gente o anfitrião manda junto. GDD §11.1: acolher bem sobe a
@@ -703,18 +756,6 @@ TO.ruas = (function(){
     return (R.arredores || []).filter(a=>a.jogo === j && !a.entrou);
   }
 
-  /* Tem alguém andando agora? Não basta "não chegou": o bonde pode não
-     ter saído ainda, ou estar parado na casa do aliado esperando a hora.
-     Quem pergunta é o relógio da tela, pra correr solto quando a rua está
-     vazia — entre a chegada de quem vem de fora e a saída geral são quase
-     seis horas sem nada pra ver. */
-  const emMovimento = R => (R.bondes || []).some(b=>{
-    if(b.chegou || R.minuto < b.saiEm) return false;
-    const etapa = b.etapas && b.etapas[b.etapa];
-    const parouNaSede = etapa && etapa.tipo === 'aliado' && b.i >= b.rota.length-1;
-    return !parouNaSede;
-  });
-
   /* Quem entrou na cena não volta pra esplanada: acabou a briga, entrou
      pro estádio. É o que faz a hora de descer valer alguma coisa — dá pra
      brigar às 14h30 com três bondes ou esperar os seis das 15h10, e a
@@ -730,7 +771,12 @@ TO.ruas = (function(){
   function passo(E, mo, minutos){
     const R = estado(E);
     if(R.encontro) return R;                 // parado esperando a briga
-    R.minuto += minutos;
+    /* o dia acaba no apito do último jogo da praça, não quando o último
+       bonde chega: quem saiu atrasado ainda está andando na rua quando a
+       bola rola, e é isso que o relógio tem de mostrar */
+    const fim = R.apito || apitoDoDia(E);
+    if(R.minuto >= fim) return R;
+    R.minuto = Math.min(fim, R.minuto + minutos);
     for(const b of R.bondes){
       if(b.chegou || R.minuto < b.saiEm) continue;
       let resta = VEL * minutos;
@@ -768,12 +814,30 @@ TO.ruas = (function(){
         if(!b.nosArredores){
           b.nosArredores = true;
           b.entrouEm = Math.round(R.minuto);
-          R.arredores.push({id:b.id, torcida:b.torcida, nome:b.nome, cor:b.cor,
-                            n:b.n, nossa:b.nossa, tag:b.tag, jogo:b.jogo,
-                            doJogador: !!(b.nossa || b.doJogador),
-                            escolta: b.escolta || null,
-                            lado: b.tag === 'visitante' ? 'visitante' : 'mandante',
-                            entrouEm:b.entrouEm});
+          /* Bonde escoltado pela NOSSA torcida entra pelo nosso lado: ele
+             veio com a gente. É o que mantém de pé tudo que a cena assume
+             sobre 'mandante' ser o lado do jogador — pressão da PM, HUD,
+             recuo por tecla. */
+          const meu = !!(b.nossa || b.doJogador);
+          const lado = meu ? 'mandante'
+                     : b.tag === 'visitante' ? 'visitante' : 'mandante';
+          const base = {id:b.id, torcida:b.torcida, nome:b.nome, cor:b.cor,
+                        sigla:b.sigla, nossa:b.nossa, tag:b.tag, jogo:b.jogo,
+                        doJogador: meu, lado, entrouEm:b.entrouEm};
+          /* O BONDE COMBINADO ANDOU COMO UM DISCO SÓ, mas na esplanada
+             são duas torcidas: cada uma com a própria cor e a própria
+             sigla. Juntá-las numa cor só apagaria justamente o que a
+             escolta tem de legível. */
+          if(b.escolta){
+            const doAliado = Math.max(1, b.n - b.escolta.n);
+            R.arredores.push(Object.assign({}, base, {n:doAliado}));
+            R.arredores.push(Object.assign({}, base, {
+              id: b.id + 0.5, torcida: b.escolta.de, nome: b.escolta.nome,
+              cor: b.escolta.cor, sigla: b.escolta.sigla,
+              n: b.escolta.n, escoltando: b.torcida}));
+          } else {
+            R.arredores.push(Object.assign({}, base, {n:b.n}));
+          }
         }
       }else{
         const a = b.rota[b.i], c = b.rota[b.i+1];
@@ -975,9 +1039,9 @@ TO.ruas = (function(){
           pontoDe, pontoDoEstadio, pontoDoEstadioDoClube, camposDaPraca,
           pontoDaSede, entradaDaCidade,
           estado, jogosDaPraca, montar, passo, resolver, hostis,
-          nossoJogo, naEsplanada, marcarQueEntraram, emMovimento,
+          nossoJogo, naEsplanada, marcarQueEntraram,
           anfitriaoDe, escoltaDe,
           porOlheiro, visivel, desenhar, relogio,
-          VEL, ANTES, ABERTURA, APITO,
+          VEL, ANTES, JANELA, ABERTURA, apitoDoDia,
           RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};
 })();

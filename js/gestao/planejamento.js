@@ -282,6 +282,20 @@ TO.planejamento = (function(){
      Sai do calendário: jogo desta semana na nossa praça em que
      o visitante tem torcida aliada nossa.
      ======================================================= */
+  /* QUANTA GENTE A CARAVANA TRAZ — uma conta só.
+     Havia duas e elas não batiam: esta, que a Gestão mostra ao jogador
+     antes do jogo, e `efetivoDe × 0,25` dentro de ruas.js, que era a que
+     desenhava o bonde no mapa. A escolta somava sobre um número e o mapa
+     mostrava outro. Fica esta, que é a que o jogador viu quando decidiu
+     como receber. Quanto mais próxima a relação, mais gente eles mandam;
+     sem relação registrada vale o piso, porque a caravana existe mesmo
+     quando não somos nada deles. */
+  const RELACAO_ALIADO = 20;
+  function caravanaDe(torcida, relacao){
+    const v = relacao || 0;
+    return Math.max(4, Math.round((torcida.membros||20) * 0.18 * (1 + v/150)));
+  }
+
   function aliadosNaCidade(E, semana){
     if(!E.temporada) return [];
     const nossa = E.torcida.mapa;
@@ -295,12 +309,10 @@ TO.planejamento = (function(){
           if(!casa || !vis || casa.mapa !== nossa || vis.mapa === nossa) continue;
           for(const o of M().torcidasDe(vis.id)){
             const v = (E.relacoes||{})[o.id];
-            if(v === undefined || v < 20) continue;      // só aliado de fato
-            /* quanto mais próxima a relação, mais gente eles mandam */
-            const vem = Math.max(4, Math.round((o.membros||20) * 0.18 * (1 + v/150)));
+            if(v === undefined || v < RELACAO_ALIADO) continue;   // só aliado de fato
             fora.push({id:o.id, torcida:o, clube:vis, adversario:casa,
                        relacao:v, dia:j.d || etapa.dia || 6, comp:comp.nome,
-                       estimativa:vem});
+                       estimativa:caravanaDe(o, v)});
           }
         }
       }
@@ -714,7 +726,8 @@ TO.planejamento = (function(){
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
           destinos, opcoesDeDestino,
-          aliadosNaCidade, RECEPCAO, recepcaoDe, custoRecepcao,
+          aliadosNaCidade, caravanaDe, RELACAO_ALIADO,
+          RECEPCAO, recepcaoDe, custoRecepcao,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,
           compromissos, pendencias, confirmar, CUSTO_BASE, CUSTO_SALTO, CUSTO_AR};
 })();

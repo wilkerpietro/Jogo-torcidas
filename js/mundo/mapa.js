@@ -105,9 +105,12 @@ TO.mapa = (function(){
 
     /* --- o que é nosso --- */
     const p = TO.financeiro.patrimonio(E);
+    /* os nossos também levam o id: quem procura ponto casa por id, e o
+       nosso bar é o único bar da nossa torcida no mapa */
     for(const b of p.bares)
       if(b.bairro && temBairro(b.bairro))
         lista.push({bairro:b.bairro, tipo:'bar-nosso', nossa:true,
+                    torcida:E.torcida.id,
                     label:`Nosso bar (nível ${b.nivel})`});
     for(const l of p.lojas)
       if(l.bairro && temBairro(l.bairro))
@@ -116,7 +119,7 @@ TO.mapa = (function(){
     for(const s of p.subsedes)
       if(s.bairro && temBairro(s.bairro))
         lista.push({bairro:s.bairro, tipo:'subsede', nossa:true,
-                    label:'Nossa subsede'});
+                    torcida:E.torcida.id, label:'Nossa subsede'});
 
     /* --- comércio neutro, espalhado com semente fixa --- */
     const quantos = QUANTOS[bairros.length] || {};
