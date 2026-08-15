@@ -29,7 +29,20 @@ TO.icones = (function(){
     onibus:    env('<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5V17H4z"/>'+
                    '<path d="M4 10.5h16"/><path d="M7 17v2.6"/><path d="M17 17v2.6"/>'+
                    '<circle cx="7.4" cy="14" r=".9" fill="currentColor" stroke="none"/>'+
-                   '<circle cx="16.6" cy="14" r=".9" fill="currentColor" stroke="none"/>')
+                   '<circle cx="16.6" cy="14" r=".9" fill="currentColor" stroke="none"/>'),
+
+    /* os da barra do mapa, que virou faixa de ícones sobre o canvas */
+    pausa:     env('<path d="M9 5v14"/><path d="M15 5v14"/>'),
+    olho:      env('<path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/>'+
+                   '<circle cx="12" cy="12" r="2.8"/>'),
+    raio:      env('<path d="M13 2.5 4.5 13.5H11l-1 8 8.5-11H12z" fill="currentColor" stroke="none"/>'),
+    /* sair da sede: a porta e quem sai por ela */
+    saida:     env('<path d="M13.5 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h7"/>'+
+                   '<path d="M16 8.5 19.5 12 16 15.5"/><path d="M10.5 12h9"/>'),
+    /* pontos do mapa: as camadas que se acendem e se apagam */
+    camadas:   env('<path d="m12 3.5 8.5 4.3-8.5 4.3-8.5-4.3z"/>'+
+                   '<path d="m4.6 12.4-1.1.6 8.5 4.3 8.5-4.3-1.1-.6"/>'+
+                   '<path d="m4.6 16.6-1.1.6 8.5 4.3 8.5-4.3-1.1-.6"/>')
   };
 
   /* devolve o SVG cru, pra injetar com innerHTML */

@@ -2597,6 +2597,7 @@
      lado e a arte tem 1254, e os dois têm de caber na mesma janela */
   let zoomMapa = null;
   let poeOlheiro = false;      // próximo clique no mapa posiciona o olheiro
+  let filtrosAbertos = false;  // "Pontos do mapa" começa recolhido
   let relogioRua = null;
 
   /* =======================================================
@@ -2710,14 +2711,21 @@
     q.corpo = el('div');
     q.appendChild(q.corpo);
 
-    /* --- filtros --- */
+    /* --- filtros ---
+       PONTOS DO MAPA, RECOLHIDO POR PADRÃO.
+       Este painel já morou por cima do mapa uma vez e foi pra margem
+       porque, com a arte no lugar da planta esquemática, o cartão
+       flutuante tapava bairro de verdade. Volta pra dentro do mapa, mas
+       fechado: aberto ele é uma coluna estreita, e escolher um tipo o
+       fecha de novo — o que ele tapa, tapa por dois segundos. */
     const f = MP.filtros(e);
     const filtros = el('div',{class:'mapa-filtros'});
+    if(!filtrosAbertos) filtros.classList.add('fechado');
     const caixa = (chave, rot, cls)=>{
       const l = el('label',{class:'mapa-filtro '+(cls||'')});
       const i = el('input',{type:'checkbox'});
       i.checked = !!f[chave];
-      i.onchange = ()=>{ f[chave] = i.checked; redesenhar(); };
+      i.onchange = ()=>{ f[chave] = i.checked; filtrosAbertos = false; redesenhar(); };
       l.append(i, el('span',{texto:rot}));
       return l;
     };
@@ -2727,7 +2735,8 @@
       const i = el('input',{type:'checkbox'});
       i.checked = todos;
       i.indeterminate = !todos && chaves.some(k=>f[k]);
-      i.onchange = ()=>{ for(const k of chaves) f[k] = i.checked; redesenhar(); };
+      i.onchange = ()=>{ for(const k of chaves) f[k] = i.checked;
+                         filtrosAbertos = false; redesenhar(); };
       l.append(i, el('span',{texto:rot}));
       return l;
     };
@@ -2753,6 +2762,8 @@
        o jogador mandar sair. */
     const R = TO.ruas.montar(e, mo);
     const barraRua = el('div',{class:'rua-barra'});
+    /* a faixa de ícones do mapa: montada aqui, pendurada no palco */
+    const iconesMapa = el('div',{class:'mapa-icones'});
     {
       const jogos = TO.ruas.jogosDaPraca(e).filter(x=>x.dia === e.data.dia);
       const andando = R.bondes.filter(b=>!b.chegou).length;
@@ -2766,7 +2777,11 @@
         `<b>${TO.ruas.relogio(R.minuto, e)}</b><small>${
           !jogos.length ? (falta > 0 ? `${hhmm(falta)} de rua` : 'anoiteceu')
           : falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`});
-      barraRua.appendChild(noRelogioRua);
+      /* o relógio não entra mais na barra: ele é HUD do mapa, no canto de
+         cima à esquerda, e vai pro palco lá embaixo. A REFERÊNCIA é a
+         mesma, então `pintarRelogioDaRua` continua escrevendo nele a cada
+         quadro sem passar por `redesenhar()` — mudar de lugar na tela não
+         pode devolver o relógio congelado que o item G.4 consertou. */
       /* a cidade em volta, que existe com jogo e sem: quem está na rua
          a pé agora, e o assalto em curso, se houver */
       const naRuaAgora = (R.andarilhos||[])
@@ -2807,67 +2822,80 @@
         };
       }
 
-      /* SAIR DA SEDE. Custa uma ação da semana, e quando não dá o botão
-         diz por quê em vez de só ficar cinza. */
-      const btS = el('button',{class:'bt', texto:'Sair da sede'});
+      /* OS QUATRO CONTROLES VIRARAM ÍCONE, numa faixa colada na borda de
+         cima do mapa. Regras que valem pros quatro:
+         · o desenho vem de `IC.get`, em vetor, como os do resto do jogo;
+         · todo um tem `title`, porque ícone sem rótulo é adivinhação — e
+           o title carrega exatamente o que o botão dizia antes, motivo
+           de travamento incluído;
+         · quem tem estado mostra o estado DE AGORA, não o próximo. */
+      const chip = (icone, rot, opc)=>{
+        const o = opc || {};
+        const b = el('button',{class:'mapa-ic'
+          + (o.aceso ? ' aceso' : '') + (o.alerta ? ' alerta' : '')});
+        if(o.texto) b.innerHTML = `<span class="rot">${o.texto}</span>`;
+        else b.innerHTML = IC.get(icone);
+        b.title = rot;
+        b.setAttribute('aria-label', rot);
+        if(o.travado) b.disabled = true;
+        if(o.aoClicar) b.onclick = o.aoClicar;
+        return b;
+      };
+
+      /* SAIR DA SEDE. Custa uma ação da semana, e quando não dá o ícone
+         diz por quê no title — antes o motivo ia no próprio rótulo do
+         botão, e sem rótulo é o title que tem de carregá-lo. */
+      let icS;
       if(TO.ruas.bondeComandado(e)){
-        btS.disabled = true;
-        btS.textContent = 'Bonde já está na rua';
-        btS.title = 'Um bonde comandado por vez.';
+        icS = chip('saida', 'Bonde já está na rua — um bonde comandado por vez.',
+                   {travado:true});
       } else {
         const rest = TO.acoes.restantes(e);
         const aptos = TO.membros.aptosParaOEstadio(e).length;
-        /* botão que não dá diz o motivo NO RÓTULO, não só no title: no
-           celular não existe passar o mouse, e cinza sem explicação é a
-           coisa que mais parece bug numa tela de jogo */
         const porque = rest <= 0 ? 'Não sobrou ação esta semana'
                      : aptos < TO.acoes.MINIMO_SAIDA
                        ? `Gente apta de menos (${aptos} de ${TO.acoes.MINIMO_SAIDA})`
                        : null;
-        btS.disabled = !!porque;
-        if(porque) btS.textContent = porque;
-        btS.title = porque || 'Gasta uma ação da semana.';
-        btS.onclick = ()=>{
-          if(rest <= 0){ aviso('Não sobrou ação nesta semana.','ruim'); return; }
-          if(aptos < TO.acoes.MINIMO_SAIDA){
-            aviso(`Gente apta de menos (${aptos} de ${TO.acoes.MINIMO_SAIDA}).`,'ruim');
-            return;
-          }
-          abrirSaidaDaSede(e, mo);
-        };
+        icS = chip('saida', porque ? `Sair da sede — ${porque.toLowerCase()}`
+                                   : 'Sair da sede — gasta uma ação da semana',
+          {travado: !!porque, aoClicar: ()=>abrirSaidaDaSede(e, mo)});
       }
 
-      const bt = el('button',{class:'bt destaque',
-        texto: R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia'});
       /* dá pra rodar o dia enquanto ele não acabou, com bonde ou sem:
          num dia comum o que anda é a cidade — os andarilhos, a viatura,
          o assalto do calendário */
-      bt.disabled = !R.encontro && R.minuto >= (R.apito || 0);
-      bt.onclick = ()=>{
-        if(R.encontro){ abrirConfronto(e, R.encontro); return; }
-        R.rodando = !R.rodando;
-        redesenhar();
-        if(R.rodando) rodarRelogio();
-      };
-      /* o mesmo 1×/2× da cena: uma velocidade só pro jogo inteiro, pra
-         não ter que reescolher a cada tela */
-      const btV = el('button',{class:'bt',
-        texto: TO.diaJogo.ponte.velocidade + '×'});
-      btV.title = 'Velocidade do relógio';
-      if(TO.diaJogo.ponte.velocidade > 1) btV.classList.add('destaque');
-      btV.onclick = ()=>{ TO.diaJogo.ponte.alternarVelocidade(); redesenhar(); };
+      const acabou = !R.encontro && R.minuto >= (R.apito || 0);
+      const icR = chip(R.encontro ? 'raio' : R.rodando ? 'pausa' : 'play',
+        R.encontro ? 'Confronto! — abrir a briga'
+        : acabou   ? 'O dia acabou'
+        : R.rodando ? 'Pausar o dia' : 'Rodar o dia',
+        {alerta: !!R.encontro, travado: acabou, aoClicar: ()=>{
+          if(R.encontro){ abrirConfronto(e, R.encontro); return; }
+          R.rodando = !R.rodando;
+          redesenhar();
+          if(R.rodando) rodarRelogio();
+        }});
 
-      const btO = el('button',{class:'bt',
-        texto: R.olheiro ? 'Tirar o olheiro' : (poeOlheiro ? 'Clique no mapa…'
-                                                           : 'Pôr olheiro')});
-      btO.onclick = ()=>{
-        if(R.olheiro){ TO.ruas.porOlheiro(e, null); poeOlheiro = false; }
-        else poeOlheiro = !poeOlheiro;
-        redesenhar();
-      };
-      barraRua.append(btV, btO, btS);
+      /* o mesmo 1×/2× da cena: uma velocidade só pro jogo inteiro, pra
+         não ter que reescolher a cada tela. Este escreve o número em vez
+         de desenhar: velocidade não tem ícone que se leia sem legenda. */
+      const vel = TO.diaJogo.ponte.velocidade;
+      const icV = chip(null, `Velocidade do relógio — agora em ${vel}×`,
+        {texto: vel + '×', aceso: vel > 1,
+         aoClicar: ()=>{ TO.diaJogo.ponte.alternarVelocidade(); redesenhar(); }});
+
+      const icO = chip('olho',
+        R.olheiro ? 'Tirar o olheiro'
+        : poeOlheiro ? 'Clique num ponto do mapa pra pôr o olheiro'
+        : 'Pôr olheiro',
+        {aceso: !!R.olheiro || poeOlheiro, aoClicar: ()=>{
+          if(R.olheiro){ TO.ruas.porOlheiro(e, null); poeOlheiro = false; }
+          else poeOlheiro = !poeOlheiro;
+          redesenhar();
+        }});
+
+      iconesMapa.append(icR, icV, icO, icS);
       if(btP) barraRua.appendChild(btP);
-      barraRua.appendChild(bt);
     }
     q.corpo.appendChild(barraRua);
 
@@ -2888,25 +2916,79 @@
     bMais.onclick  = ()=>{ zoomMapa = Math.min(2,   zoomMapa+0.15); redesenhar(); };
     zoom.append(bMenos, el('span',{texto:Math.round(zoomMapa*100)+'%'}), bMais);
 
-    /* a planta em PNG, sem pino e sem nome: é o que se leva pro upscaler */
-    const btPng = el('button',{class:'bt', texto:'Baixar planta (PNG)'});
-    btPng.onclick = ()=>{
-      const nome = TO.mapa.baixarImagem(e, {lado:2048});
-      aviso(nome ? `Planta salva: ${nome} (2048×2048, sem pinos).`
-                 : 'Não deu pra gerar a planta.', nome ? 'boa' : 'ruim');
-    };
-    barraRua.appendChild(btPng);
+    /* "Baixar planta (PNG)" saiu da tela do jogador. A função continua:
+       `TO.mapa.paraImagem` / `TO.mapa.baixarImagem` é ferramenta de autor
+       — foi ela que gerou as `planta-*-2048.png` que viraram base das
+       artes —, e dá pra chamar pelo console quando for preciso outra. */
 
     casca.append(cv, zoom, dica);
-    viewport.append(filtros, casca);
+    viewport.append(casca);
     /* a esplanada é a do NOSSO jogo: sem bonde nosso na rua, o nosso
        clube não joga nesta praça hoje e não há esplanada pra mostrar */
     if(TO.ruas.nossoJogo(R) != null) viewport.appendChild(miniArredores(e, R));
-    q.corpo.appendChild(viewport);
+
+    /* O PALCO: o mapa é a tela principal, então o que manda nele fica
+       POR CIMA dele e não antes dele. O `viewport` continua sendo quem
+       rola e quem arrasta; a HUD é irmã dele, presa no palco, então não
+       anda junto com o mapa arrastado. */
+    const palco = el('div',{class:'mapa-palco'});
+    const hud = el('div',{class:'mapa-hud'});
+    const canto = el('div',{class:'mapa-canto'});
+    canto.appendChild(noRelogioRua);
+    /* "Pontos do mapa": o botão fica logo abaixo do relógio e abre a
+       lista; escolher um tipo fecha de novo */
+    const btF = el('button',{class:'mapa-ic largo'
+      + (filtrosAbertos ? ' aceso' : '')});
+    btF.innerHTML = IC.get('camadas') + '<span class="rot">Pontos do mapa</span>';
+    btF.title = 'Pontos do mapa — escolher o que aparece';
+    btF.onclick = ()=>{ filtrosAbertos = !filtrosAbertos; redesenhar(); };
+    canto.append(btF, filtros);
+    hud.append(iconesMapa, canto);
+    palco.append(viewport, hud);
+    q.corpo.appendChild(palco);
     pg.appendChild(q);
 
+    /* A HUD SE ENCAIXA NO MAPA VISÍVEL, não no quadro.
+       Com zoom baixo a planta é mais estreita que o visor e sobra fundo
+       dos dois lados; grudar a HUD no canto do quadro punha o relógio
+       "dentro do mapa" boiando no vazio, longe da cidade. O que vale é a
+       interseção entre o visor e a planta — que muda com o zoom, com o
+       arrasto e com a janela, então é recalculada nos três. */
+    const encaixarHud = ()=>{
+      if(!palco.isConnected) return;
+      const p = palco.getBoundingClientRect(), v = viewport.getBoundingClientRect();
+      const c = casca.getBoundingClientRect();
+      let l = Math.max(v.left, c.left),   r = Math.min(v.right,  c.right);
+      let t = Math.max(v.top,  c.top),    f = Math.min(v.bottom, c.bottom);
+      /* e também na tela. No celular deitado o mapa é mais alto que os
+         390px e quem rola é a PÁGINA: sem esta conta a faixa de ícones
+         sobe junto com o mapa e some atrás do `#topo`, que é grudento.
+         Cortando pela janela, a HUD encosta embaixo da barra de cima e
+         fica onde a mão alcança enquanto a cidade desliza por trás. */
+      const topo = document.getElementById('topo');
+      const teto = topo && getComputedStyle(topo).position === 'sticky'
+                 ? topo.getBoundingClientRect().bottom : 0;
+      /* nunca acima da barra de cima, nunca acima da tela: no celular
+         deitado a barra some junto com a página, e sem o zero a faixa de
+         ícones sairia da tela com ela. Quando o mapa inteiro passa por
+         cima, a altura vira zero e o `overflow:hidden` da HUD some com
+         tudo — ícone pendurado num mapa que não está mais ali seria pior
+         do que ícone nenhum. */
+      t = Math.max(t, teto, 0); f = Math.min(f, innerHeight);
+      l = Math.max(l, 0);    r = Math.min(r, innerWidth);
+      hud.style.left   = (l - p.left) + 'px';
+      hud.style.top    = (t - p.top)  + 'px';
+      hud.style.width  = Math.max(0, r - l) + 'px';
+      hud.style.height = Math.max(0, f - t) + 'px';
+    };
+    /* em captura, no documento: quem rola varia com a largura da tela —
+       o visor do mapa no desktop, a página no celular deitado — e evento
+       de rolagem não sobe sozinho */
+    addEventListener('scroll', encaixarHud, {capture:true, passive:true});
+    addEventListener('resize', encaixarHud);
+
     /* o canvas só existe depois de entrar no documento */
-    requestAnimationFrame(()=>ligarMapa(cv, dica, mo));
+    requestAnimationFrame(()=>{ ligarMapa(cv, dica, mo); encaixarHud(); });
   }
 
   /* =======================================================

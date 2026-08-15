@@ -92,13 +92,42 @@
      página. Sem o min-width o flex deixa o filho furar o pai. */
   .mapa-viewport{ max-width:100%; min-width:0; max-height:none;
                   flex-direction:column; }
-  /* o painel de filtros vira uma faixa em cima do mapa, e não uma coluna
-     que come metade da largura do celular */
-  .mapa-filtros{
-    position:static !important; width:100%; max-height:104px; overflow-y:auto;
-    display:flex; flex-wrap:wrap; gap:2px 14px;
-  }
+  /* Os pontos do mapa agora são um recolhível DENTRO do mapa, e no
+     celular ele abre um pouco mais estreito. Fechado — que é como ele
+     começa — não ocupa nada. */
+  .mapa-filtros{ width:168px; max-height:52vh; }
   .mapa-casca{ flex:0 0 auto; }
+
+  /* A FAIXA DE ÍCONES NO CELULAR.
+     Ela é HUD do mapa, não do documento: mora dentro do `.mapa-palco`,
+     que já está abaixo do `#topo` grudento — então uma não passa por
+     cima da outra em nenhuma rolagem. E o pad de WASD é `position:fixed`
+     colado embaixo: a faixa fica na borda de cima, a cruz na de baixo,
+     e entre as duas sobra o mapa, que continua sendo quem recebe o
+     arrasto. */
+  /* A conta da largura em retrato: 390px de tela, o visor come 21 de
+     margem de cada lado, o relógio fica no canto esquerdo e a faixa vai
+     no meio. Com a faixa em 168px e o relógio em 93 os dois se tocavam
+     por 8 pixels — daí a faixa e o relógio encolherem juntos aqui. */
+  .mapa-icones{ gap:3px; padding:4px; }
+  .mapa-ic{ width:34px; height:32px; }
+  .mapa-ic svg{ width:18px; height:18px; }
+  .rua-relogio{ padding:2px 7px 3px; }
+  .rua-relogio b{ font-size:17px; }
+  .rua-relogio small{ font-size:8px; }
+  /* em paisagem a tela tem 390px de altura: o rótulo do recolhível some
+     e sobra o ícone, que é o que cabe */
+  @media (max-height:460px){
+    .mapa-ic.largo .rot{ display:none; }
+    .mapa-ic.largo{ width:34px; padding:0; }
+    .mapa-filtros{ max-height:44vh; }
+    /* deitado, o canto de cima vira uma linha: relógio e o botão dos
+       pontos lado a lado. Empilhados, o botão descia até a altura da
+       cruz de WASD, que é fixa no canto de baixo à esquerda — 844×390
+       tem 390px de altura e não sobra o que empilhar. */
+    .mapa-canto{ flex-direction:row; align-items:flex-start; }
+    .mapa-canto .mapa-filtros{ position:absolute; left:0; top:44px; }
+  }
   .cartao, .corpo, .lista-detalhe, .subabas, .abas-grandes{ min-width:0; }
   .lista-detalhe{ grid-template-columns:1fr !important; }
   .subabas, .abas-grandes{ overflow-x:auto; -webkit-overflow-scrolling:touch; }

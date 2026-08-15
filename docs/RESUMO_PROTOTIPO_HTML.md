@@ -1615,6 +1615,80 @@ nas 60 noites: **38 grupos** de bondes dividindo a cor chapada. Quem separa no m
 a sigla, que continua única por noite — e a cena, que é onde a briga acontece, separa
 pelo miolo.
 
+## 8.13 A barra do mapa virou ícone sobre o mapa
+
+O mapa é a tela principal do jogo, e tudo que manda nele morava numa barra **acima**
+dele: o mapa começava depois de uma faixa de sete botões de texto. Agora o que manda
+está **por cima** — relógio no canto de cima à esquerda, quatro ícones colados na
+borda de cima, zoom onde sempre esteve no canto direito.
+
+**O relógio mudou de lugar sem voltar a congelar.** Ele tinha acabado de ser
+consertado (§8.10) pra andar dentro do laço de `rodarRelogio` em vez de esperar
+`redesenhar()`. A referência guardada é a mesma de antes, só o pai mudou: medido num
+dia sem jogo, **o texto mudou 14 vezes em 6 segundos e o nó foi trocado 0 vezes**.
+
+**Os quatro ícones vêm de `IC.get`**, em vetor como os do resto do jogo, e cada um
+mostra o estado **de agora**, não o próximo:
+
+| controle | ícone | estado |
+|---|---|---|
+| rodar o dia | ▶ / ❚❚ / raio | vira pausa enquanto roda; vira raio vermelho piscando em `Confronto!`; apaga quando o dia acabou |
+| velocidade | `1×` / `2×` escrito | acende em ouro no 2× — velocidade não tem desenho que se leia sem legenda |
+| olheiro | olho | aceso com olheiro posto **e** enquanto espera o clique no mapa |
+| sair da sede | porta com seta | apagado quando não dá |
+
+**Todo ícone tem `title`**, e o title carrega o que o botão dizia antes — motivo de
+travamento incluído. O rótulo de botão travado, que este projeto faz questão de
+mostrar ("Não sobrou ação esta semana"), passou pro tooltip: `Sair da sede — não
+sobrou ação esta semana`.
+
+**Uma HUD que se encaixa no mapa visível.** O quadro do mapa é mais largo que a
+planta em zoom baixo; grudar a HUD no canto do quadro punha o relógio "dentro do
+mapa" boiando no fundo vazio, longe da cidade. O que vale é a interseção entre o
+visor e a planta, **e também a janela** — recalculada no zoom, no arrasto, na
+rolagem (em captura, porque quem rola muda com a largura da tela) e no redimensionar.
+
+**"Pontos do mapa" voltou pra dentro do mapa, recolhido.** Ele já esteve por cima do
+mapa uma vez e foi pra margem porque, com a arte no lugar da planta esquemática,
+tapava bairro de verdade. Volta como botão abaixo do relógio: começa **fechado**,
+abre uma coluna de **178 px por 223**, e **escolher um tipo fecha de novo** — o que
+ele tapa, tapa por dois segundos.
+
+**"Baixar planta (PNG)" saiu da tela do jogador**, e só o botão: `TO.mapa.paraImagem`
+e `TO.mapa.baixarImagem` continuam de pé — é a ferramenta de autor que gerou as
+`planta-*-2048.png` que viraram base das artes.
+
+### O que foi conferido
+
+1. **Nada de emoji e nada de ícone mudo:** os quatro têm SVG (ou o número, no caso do
+   1×/2×) e **`title` em todos os quatro**, zero sem rótulo.
+2. **Os estados**, medidos clicando: parado `Rodar o dia` com ▶; rodando `Pausar o
+   dia` com ❚❚; `Velocidade do relógio — agora em 2×` aceso; olheiro armado com
+   `Clique num ponto do mapa pra pôr o olheiro` aceso; e, quando dois bondes hostis
+   se cruzaram, `Confronto! — abrir a briga` em vermelho.
+3. **O relógio dentro do mapa e fora da barra:** `relogioNoPalco: true`,
+   `relogioNaBarra: false`, e na barra restou só a `.rua-info` — o confronto do dia e
+   quantos bondes na rua, que era pra ficar.
+4. **O botão da planta não existe mais** na tela (`0` botões com esse texto) e as duas
+   funções continuam existindo (`paraImagem` e `baixarImagem`, ambas `function`).
+5. **Celular, 390×844 e 844×390**, com a cruz de WASD montada e o mapa antes e depois
+   de rolar: **nenhuma sobreposição** entre a faixa de ícones, o relógio, o botão dos
+   pontos, o `#topo`, a cruz e os botões de ação do pad — oito pares testados em
+   quatro estados. O mapa continua rolável (404 px de rolagem horizontal em retrato).
+   Dois ajustes saíram dessa medição: em retrato a faixa e o relógio se tocavam por
+   **8 px**, e os dois encolheram; deitado, o botão dos pontos descia até a altura da
+   cruz, e o canto virou uma linha — relógio e botão lado a lado, porque 390 px de
+   altura não dão pra empilhar.
+6. **Deitado, a HUD não sai da tela com a página.** O `#topo` do celular tem
+   `position:sticky` mas o container dele rola inteiro, então a barra some junto — e a
+   faixa de ícones ia junto com ela. A HUD passou a ser cortada também pela janela:
+   encosta no alto da tela e fica onde a mão alcança enquanto a cidade desliza por
+   trás. Quando o mapa sai inteiro de vista a altura vira zero e o `overflow:hidden`
+   some com ela, porque ícone pendurado num mapa que não está mais ali é pior que
+   ícone nenhum.
+7. **Bateria limpa**, `ERR []` em `conect`, `acoes_ui`, `pad`, `pad2` e
+   `bundle_check`.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima
