@@ -1446,6 +1446,86 @@ grade. O portão certo continua sendo o primeiro da lista quando há rota até e
    "Porta de aço", CT "Gramado", praça "Saída", rua "Boca da rua" — todos desabilitados
    até a condição de cada um, e nenhum deles emite ordem de entrada.
 
+## 8.11 O cordão que selava o portão do jogador
+
+O §8.10 fechou com um contorno: como do spawn do jogador não havia rota até o portão
+dele, cada disco ia pro portão do mesmo lado mais perto que tivesse caminho. Contorno
+de bug de arte — e contorno silencioso, que é como o defeito tinha passado despercebido
+desde o começo. Agora o defeito foi consertado na arte, o contorno saiu, e no lugar
+dele ficou um alarme.
+
+**A geometria, medida no motor.** Na altura da `fila_m1` o corredor tem 144 px de chão,
+de x=224 a x=368. A fila ia de x=234 a x=347: sobravam **10 px a oeste e 21 a leste**.
+Vinte e um pixels não passam ninguém — o disco tem raio 7, a grade tem 4,5 de
+meia-espessura, e a malha de navegação exige a célula inteira livre. O portão do 1º
+escalão mandante ficava selado.
+
+**O corte foi de 18 px na ponta leste**, `[347,201]` → `[329,201]`. O vão leste medido
+na linha y=201 vai de **20 px para 38** — a mesma ordem do vão de ~34 px que o
+comentário da `fila_v4` já documentava como vão que funciona. Leste e não oeste porque
+é por leste que o zigue-zague desemboca: a `fila_m2` acaba em x=318 e a `fila_m3`
+começa em x=373, então quem sobe do sul chega na `fila_m1` já pela direita. Cortar a
+oeste também abriria rota e jogaria a passagem pra junto do muro, desmanchando o
+desenho.
+
+### Os números de aceite
+
+1 e 2. **A rota, com o motor e não com um modelo do dado.** Três medidas por spawn: a
+   malha que o jogo usa (`campoDaEntrada`), e um modelo físico com a parede por
+   `livrePara(raioMalha(r))` e a grade inflada pelo raio do corpo — que é onde
+   `barrarGrades` de fato empurra — para r=7 e para o r=9 do líder.
+
+   | spawn → portão | antes (malha / corpo 7 / corpo 9) | depois |
+   |---|---|---|
+   | mandante1 → ent_mandante1 | **não / não / não** | sim / sim / sim |
+   | mandante2 → ent_mandante2 | sim / sim / sim | sim / sim / sim |
+   | mandante3 → ent_mandante3 | sim / sim / sim | sim / sim / sim |
+   | visitante1 → ent_visitante | sim / sim / sim | sim / sim / sim |
+   | visitante2 → ent_visitante | sim / sim / sim | sim / sim / sim |
+
+   Só a rota quebrada mudou.
+
+3. **`portaoAlcancavel()` não existe mais**, o campo `d.portao` também não, e cada disco
+   anda pro `d.entrada` do escalão dele. Em **12 medições** — 40, 150 e 250 discos, três
+   sementes cada, mais três no meio da briga — **`portaoErrado` deu 0 em todas**:
+   ninguém parou junto de portão alheio. Junto veio um vazamento do §8.10: o **ENTER**
+   tinha caminho próprio (`noPortao` e encerra a cena), que só não aparecia porque o
+   portão vivia inalcançável. Agora o atalho chama a mesma função do botão.
+4. **A marcha, com o tempo e o motivo de quem não chega.** Torcida espalhada, ordem de
+   entrar, todos pro próprio portão:
+
+   | cena | chegaram | por emperro | levados pelo relógio | segundos |
+   |---|---|---|---|---|
+   | 40 discos, noite parada | 40 de 40 | 0 | 0 | 56,6 · 56,7 · 58,3 |
+   | 150, noite parada | 148 de 149 | 0 | 0 | 71,5 |
+   | 250, noite parada | 221 a 236 de 249 | 0 a 1 | 2 a 14 | 90 (estourou) |
+   | 150, no meio da briga | 137 de 137 (1 semente) | 0 | 0 | 72,5 |
+   | 150, no meio da briga | 83 e 86 (2 sementes) | 0 | 41 e 42 | 90 (estourou) |
+
+   Quem não chega **não é rota**: dos 41 que ficaram pra trás na pior semente,
+   `semRota` deu 0 — todos com caminho, todos andando a 25 px/s e nenhum saindo do
+   lugar. É a **PM**. Medido num deles: 13 policiais num raio de 120 px, nenhum outro
+   disco num raio de 70, posição idêntica por 12 segundos. Com esse tanto de gente a
+   esplanada rompe o cordão, a tropa de choque entra e prende — 10 a 13 dos nossos por
+   noite de 250 — e quem fica dentro do caldeirão é segurado ali. O escape de 90 s
+   existe pra isso, e nessas noites é ele que fecha a cena. Levantar o prazo não
+   resolveria: medido com o escape em 400 s, a conta **empaca em 41 e não desce mais**
+   até os 170 segundos.
+5. **A verificação está na bateria** (`ferramentas/prova_portoes.py`, ao lado do
+   `prova_mascara.py` — é o primeiro teste da bateria que passa a morar no repositório,
+   justamente porque o que ele pega é bug de arte) e passa nas oito cenas: arredores,
+   praça, rua, rua-média, rua-nobre, bar, comércio e CT — **nenhum spawn sem rota até o
+   portão dele**. Ela não é enfeite: repondo os 18 px da `fila_m1`, o teste volta a
+   apontar `mandante1 → ent_mandante1 (sem rota)` e sai com código 1. Em cena, a mesma
+   função (`C.conferirPortoes`, chamada no fim de `criarEstado`) escreve
+   `PORTÃO SELADO: cena 'arredores': mandante1 não tem rota até ent_mandante1` no log da
+   cena e no console.
+6. **O print** (`vao_fila.png`): a coluna sobe pela calçada leste, vira entre a ponta da
+   `fila_m3` e a fachada, e passa em fila indiana pelo vão da `fila_m1`. O zigue-zague
+   continua lá — três barras, duas curvas obrigatórias —, não virou corredor reto.
+7. **Bateria limpa**, `ERR []` em `conect`, `acoes_ui`, `pad`, `pad2`, `bundle_check` e
+   `portoes`.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima

@@ -290,24 +290,31 @@ TO.diaJogo.ponte = (function(){
     liga('djBtBomba', ()=>C.arremessar(J,'bomba'));
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
     liga('djVelocidade', alternarVelocidade);
-    liga('djBtEntrar',()=>{
-      const s = D.saida || SAIDA_PADRAO;
-      /* NOS ARREDORES O BOTÃO É UMA ORDEM.
-         Todo mundo caminha pro próprio portão e a cena fecha quando
-         todos entraram — quem encerra é `conferirEntrada`, no combate.
-         Nas outras cinco cenas não há portão pra entrar: ali o mesmo
-         botão continua sendo a SAÍDA da cena, com o líder no ponto e os
-         textos que a cena declara. */
-      if(entradaDeVerdade()){
-        if(!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p');
-        atualizarBotoes();
-        return;
-      }
-      if(!C.noPortao(J)){ C.logar(J, s.dica, 'p'); return; }
-      const l=J.discos.find(d=>d.lider&&d.vivo);
-      if(l) C.entrarNoEstadio(J, l);
-      encerrar(s.feito, {objetivo:true});
-    });
+    liga('djBtEntrar', mandarEntrarOuSair);
+  }
+  /* O botão e o ENTER fazem a MESMA coisa.
+     Antes o atalho tinha caminho próprio — `noPortao` e encerra —, e
+     enquanto o portão do jogador estava selado isso nunca rodava, então
+     ninguém viu. Com a rota aberta, apertar ENTER nos arredores voltaria
+     a acabar a cena com o líder entrando sozinho, que é exatamente o que
+     a ordem de entrar veio corrigir. */
+  function mandarEntrarOuSair(){
+    const s = D.saida || SAIDA_PADRAO;
+    /* NOS ARREDORES O BOTÃO É UMA ORDEM.
+       Todo mundo caminha pro próprio portão e a cena fecha quando
+       todos entraram — quem encerra é `conferirEntrada`, no combate.
+       Nas outras cinco cenas não há portão pra entrar: ali o mesmo
+       botão continua sendo a SAÍDA da cena, com o líder no ponto e os
+       textos que a cena declara. */
+    if(entradaDeVerdade()){
+      if(!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p');
+      atualizarBotoes();
+      return;
+    }
+    if(!C.noPortao(J)){ C.logar(J, s.dica, 'p'); return; }
+    const l=J.discos.find(d=>d.lider&&d.vivo);
+    if(l) C.entrarNoEstadio(J, l);
+    encerrar(s.feito, {objetivo:true});
   }
   function atualizarBotoes(){
     U.$$('.form-btn').forEach(b=>b.classList.toggle('on', b.dataset.f===J.form));
@@ -486,7 +493,7 @@ TO.diaJogo.ponte = (function(){
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
       if(k==='q') C.arremessar(J,'pedra');
       if(k==='e') C.arremessar(J,'bomba');
-      if(k==='enter'&&C.noPortao(J)) encerrar('sua torcida entrou pelo portão');
+      if(k==='enter') mandarEntrarOuSair();
       for(const [id,f] of Object.entries(C.FORMACOES))
         if(k===f.tecla){J.form=id;atualizarBotoes();}
     });

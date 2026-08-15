@@ -176,7 +176,18 @@ TO.dados.cenaArredores = {
      ------------------------------------------------------- */
   filas:[
     // ---- lado mandante, em frente à fachada sul
-    {id:'fila_m1', pontos:[[234,210],[293,200],[347,201]], espessura:9},
+    /* A ponta leste para em 329 e não em 347. O corredor aqui tem 144 px
+       (chão de x=224 a x=368) e a fila ocupava de 234 a 347: sobravam 10
+       px a oeste e 21 a leste, e 21 px não passa ninguém — o disco tem
+       raio 7 e a grade tem 4,5 de meia-espessura. O portão do 1º escalão
+       mandante ficava selado: do spawn do jogador não havia rota até
+       `ent_mandante1`, e o botão de entrar vivia apagado sem que nada
+       dissesse por quê. Cortando 18 px o vão leste vai a 39 px, a mesma
+       ordem do vão da `fila_v4` logo abaixo, que é vão que funciona.
+       Leste e não oeste porque é por leste que o zigue-zague desemboca:
+       subindo do sul, a `fila_m2` acaba em x=318 e a `fila_m3` começa em
+       x=373, então o disco chega na `fila_m1` já pela direita. */
+    {id:'fila_m1', pontos:[[234,210],[293,200],[329,201]], espessura:9},
     {id:'fila_m2', pontos:[[193,333],[227,312],[277,283],[318,279]], espessura:9},
     {id:'fila_m3', pontos:[[373,343],[413,310],[460,269]], espessura:9},
 

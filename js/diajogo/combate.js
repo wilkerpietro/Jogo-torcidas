@@ -73,8 +73,7 @@ TO.diaJogo.combate = (function(){
       this.hpMax  = lider?220:150; this.hp=this.hpMax;
       this.moral=12;
       this.caido=false; this.preso=false; this.fugindo=false; this.entrou=false;
-      this.entrando=false;  // recebeu ordem de ir pro portão
-      this.portao=null;     // e por qual portão, que pode não ser o dele
+      this.entrando=false;  // recebeu ordem de ir pro portão do escalão
       this.correEm=null;    // debandou, mas ainda não virou as costas
       this.agarrado=0;      // segundos de mão em cima enquanto foge
       this.sumiu=false;     // debandou e saiu da cena por uma boca de rua
@@ -312,7 +311,38 @@ TO.diaJogo.combate = (function(){
       braco.arremessador=true;
       J.bracoRival=braco;
     }
+    conferirPortoes(J);
     return J;
+  }
+
+  /* PORTÃO SELADO É BUG DE ARTE, E BUG DE ARTE TEM DE APARECER.
+     A cena pode ser repintada, a máscara pode ganhar um prédio e uma
+     grade de fila pode crescer dois módulos — qualquer uma dessas
+     coisas fecha um funil e deixa um escalão sem caminho até o portão
+     dele. Foi o que aconteceu com a `fila_m1`, e o sintoma foi um botão
+     cinza que ninguém sabia explicar. Então, ao montar a cena, cada
+     spawn pergunta se chega no portão que lhe deram; quem não chega vai
+     pro log da cena e pro console, com nome e sobrenome. Custa quatro
+     BFS de 24 mil células, uma vez por cena — e os campos ficam no
+     cache, que o combate ia construir de qualquer jeito. */
+  function conferirPortoes(J){
+    const selados=[];
+    for(const s of D.spawns){
+      const e=D.entradas.find(x=>x.id===s.entrada);
+      if(!e){ selados.push({spawn:s.id, portao:s.entrada||'(nenhum)',
+                            motivo:'portão não existe na cena'}); continue; }
+      const campo=A.campoDaEntrada(e.id, J.grades, J.versaoGrades);
+      if(campo.passo(s.x, s.y).semRota)
+        selados.push({spawn:s.id, portao:e.id, motivo:'sem rota'});
+    }
+    for(const p of selados){
+      const msg=`cena '${D.id||'arredores'}': ${p.spawn} não tem rota até `+
+                `${p.portao} (${p.motivo})`;
+      console.warn('[cena] PORTÃO SELADO —', msg);
+      logar(J, 'PORTÃO SELADO: '+msg, 'r');
+    }
+    J.portoesSelados=selados;
+    return selados;
   }
   function contarSpawns(lado){
     return D.spawns.filter(s=>s.lado===lado).length||1;
@@ -578,36 +608,22 @@ TO.diaJogo.combate = (function(){
      ======================================================= */
   const TEMPO_DE_ENTRAR = 90;      // segundos de escape, como o `voltando`
 
-  /* O PORTÃO QUE DÁ PRA ALCANÇAR.
-     Cada disco carrega o portão do próprio escalão, e o certo é esse.
-     Só que na esplanada as grades de fila desenham um funil, e medido:
-     do spawn do JOGADOR não existe rota até o portão dele com as 54
-     barras de pé — `campoDaEntrada` devolve `semRota`. É por isso que o
-     botão "Entrar pelo portão" vivia cinza: `noPortao` exigia o líder
-     num lugar onde o líder não chegava. Portão que não se alcança não é
-     portão: aqui ele cai pro portão do MESMO LADO mais perto que tenha
-     caminho, e só se não houver nenhum é que insiste no dele. */
-  function portaoAlcancavel(J, d){
-    const meus = D.entradas.filter(e=>e.lado === d.lado);
-    const ordem = [
-      ...meus.filter(e=>e.id === d.entrada),
-      ...meus.filter(e=>e.id !== d.entrada)
-        .sort((a,b)=>U.dist2(d.x,d.y,a.x,a.y) - U.dist2(d.x,d.y,b.x,b.y))
-    ];
-    for(const e of ordem){
-      const c = A.campoDaEntrada(e.id, J.grades, J.versaoGrades);
-      if(!c.passo(d.x, d.y).semRota) return e.id;
-    }
-    return d.entrada;
-  }
-
+  /* O portão de cada disco é o do escalão dele, e ponto. Houve aqui um
+     `portaoAlcancavel()` que mandava o disco pro portão do mesmo lado
+     mais perto que tivesse rota, porque do spawn do jogador não havia
+     caminho até `ent_mandante1`: a `fila_m1` deixava 21 px entre a
+     ponta dela e a parede, e 21 px não passa um disco de raio 7. Era
+     contorno de bug de arte, e contorno silencioso — o botão "Entrar
+     pelo portão" vivia cinza e nada dizia por quê. A fila foi encurtada
+     (dados/cena_arredores.js), o contorno saiu, e no lugar dele ficou o
+     `conferirPortoes()` lá embaixo, que grita quando uma cena sela um
+     portão. */
   function mandarEntrar(J){
     if(J.fase !== 'ativo' || J.entrando) return 0;
     let n = 0;
     for(const d of J.discos){
       if(!d.vivo || !d.doJogador || d.fugindo) continue;
       d.entrando = true; d.recuando = false;
-      d.portao = portaoAlcancavel(J, d);
       n++;
     }
     if(!n) return 0;
@@ -625,7 +641,7 @@ TO.diaJogo.combate = (function(){
   const PAROU = 1.2;
   const PERTO_DO_PORTAO = 130;
   function pertoDoPortao(d){
-    const e = D.entradas.find(x=>x.id===(d.portao || d.entrada)) ||
+    const e = D.entradas.find(x=>x.id===d.entrada) ||
               D.entradas.find(x=>x.lado===d.lado);
     return !!e && U.dist(d.x, d.y, e.x, e.y) < PERTO_DO_PORTAO;
   }
@@ -954,7 +970,7 @@ TO.diaJogo.combate = (function(){
            usa, onde fugir é entrar — só que aqui ninguém está fugindo:
            é a torcida inteira indo pra arquibancada porque o presidente
            mandou. */
-        const id = d.portao || d.entrada;
+        const id = d.entrada;
         const e = D.entradas.find(x=>x.id===id) ||
                   D.entradas.find(x=>x.lado===d.lado);
         if(e && U.dist(d.x,d.y,e.x,e.y) < (e.raio||34)+8){
@@ -1983,5 +1999,5 @@ TO.diaJogo.combate = (function(){
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
           iaArremesso, alvoDeFuga, conferirFim, dePe, agressivo, atacado,
-          mandarEntrar};
+          mandarEntrar, conferirPortoes};
 })();
