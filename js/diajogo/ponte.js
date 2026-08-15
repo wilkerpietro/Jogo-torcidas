@@ -51,6 +51,7 @@ TO.diaJogo.ponte = (function(){
     /* rua, praça ou arredores: a cena vem do encontro que abriu a tela */
     A.usarCena((opc.config||{}).local);
     montarBotoes();
+    if(estreito()) montarPad();
     montarSliders();
     ligarEntrada();
     novaNoite(opc.config||{});
@@ -145,6 +146,7 @@ TO.diaJogo.ponte = (function(){
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
 
     if(el('djLocal')) el('djLocal').textContent = D.local || 'Nos arredores';
+    atualizarPad();
 
     const be=el('djBtEntrar');
     if(be){const perto=!!C.noPortao(J); be.disabled=!perto;
@@ -280,6 +282,109 @@ TO.diaJogo.ponte = (function(){
     cs.parentElement.appendChild(b);
   }
 
+  /* =======================================================
+     O PAD DE TOQUE (só em tela estreita)
+
+     No celular não dá pra apertar tecla com o jogo rodando. O pad NÃO
+     implementa lógica nenhuma: cada botão escreve no MESMO objeto
+     `teclas` que o teclado alimenta, e as ações de uma tecolada só (Q, E,
+     R, formação) chamam exatamente o que `montarBotoes` já chama. Por
+     isso `combate.js` não precisa saber que existe celular: `moverLider`
+     continua lendo teclas['w'|'a'|'s'|'d'] e normalizando o vetor, e a
+     diagonal sai de encostar em dois botões da cruz ao mesmo tempo.
+
+     `pointerdown` e não `click`: click só dispara quando o gesto termina,
+     e pedra e bomba têm de sair no toque. `setPointerCapture` por botão
+     faz o multitoque valer e garante que o dedo que escorrega pra fora
+     solte a tecla — sem isso W fica presa e o líder anda sozinho.
+     ======================================================= */
+  const LIMIAR_ESTREITO = 900;
+  const estreito = () => innerWidth <= LIMIAR_ESTREITO;
+  let padMontado = false;
+
+  function montarPad(){
+    if(padMontado || !cv) return;
+    const pai = cv.parentElement || document.body;
+    if(!pai) return;
+    padMontado = true;
+
+    const caixa = document.createElement('div');
+    caixa.id = 'djPad'; caixa.className = 'dj-pad';
+
+    const botao = (rot, cls, aoTocar, aoSoltar)=>{
+      const b = document.createElement('button');
+      b.className = 'pad-bt ' + cls;
+      b.textContent = rot;
+      b.addEventListener('pointerdown', ev=>{
+        ev.preventDefault();
+        try{ b.setPointerCapture(ev.pointerId); }catch(_){}
+        b.classList.add('apertado');
+        aoTocar();
+      });
+      const solta = ev=>{
+        if(ev) ev.preventDefault();
+        b.classList.remove('apertado');
+        if(aoSoltar) aoSoltar();
+      };
+      b.addEventListener('pointerup', solta);
+      b.addEventListener('pointercancel', solta);
+      b.addEventListener('lostpointercapture', solta);
+      b.addEventListener('contextmenu', ev=>ev.preventDefault());
+      return b;
+    };
+    /* tecla de segurar: liga no toque, desliga ao soltar */
+    const segurar = k => botao(k.toUpperCase(), 'pad-mov ' + 'pad-'+k,
+                               ()=>{teclas[k]=true;}, ()=>{teclas[k]=false;});
+    /* tecla de disparo: o mesmo caminho do botão do HUD */
+    const disparo = (k, rot, fn) => botao(rot, 'pad-acao pad-'+k, ()=>{
+      teclas[k]=true; fn();
+      setTimeout(()=>{teclas[k]=false;}, 60);
+    });
+
+    const esq = document.createElement('div');
+    esq.className = 'pad-lado pad-esq';
+    const acoes = document.createElement('div');
+    acoes.className = 'pad-acoes';
+    acoes.append(
+      disparo('q','PEDRA', ()=>{ if(J) C.arremessar(J,'pedra'); }),
+      disparo('e','BOMBA', ()=>{ if(J) C.arremessar(J,'bomba'); }),
+      disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }));
+    const cruz = document.createElement('div');
+    cruz.className = 'pad-cruz';
+    cruz.append(segurar('w'), segurar('a'), segurar('s'), segurar('d'));
+    esq.append(acoes, cruz);
+
+    const dir = document.createElement('div');
+    dir.className = 'pad-lado pad-dir';
+    for(const [id,f] of Object.entries(C.FORMACOES))
+      dir.appendChild(botao(f.tecla, 'pad-form', ()=>{
+        if(!J) return;
+        J.form = id; atualizarBotoes(); marcarFormacaoNoPad();
+      }));
+    caixa.append(esq, dir);
+    pai.appendChild(caixa);
+    marcarFormacaoNoPad();
+  }
+
+  function marcarFormacaoNoPad(){
+    const pad = $('djPad');
+    if(!pad || !J) return;
+    const teclasForm = Object.values(C.FORMACOES).map(f=>f.tecla);
+    const atual = (C.FORMACOES[J.form]||{}).tecla;
+    pad.querySelectorAll('.pad-form').forEach((b,i)=>
+      b.classList.toggle('on', teclasForm[i] === atual));
+  }
+
+  /* a recarga da pedra e o estoque de bomba aparecem no pad, como no HUD */
+  function atualizarPad(){
+    const pad = $('djPad');
+    if(!pad || !J) return;
+    const q = pad.querySelector('.pad-q'), e = pad.querySelector('.pad-e');
+    if(q) q.classList.toggle('gasto', C.restaCd(J,'pedra') > 0);
+    if(e) e.classList.toggle('gasto', J.bombas <= 0 || C.restaCd(J,'bomba') > 0);
+    marcarFormacaoNoPad();
+  }
+
   function ligarEntrada(){
     addEventListener('keydown',e=>{
       const k=e.key.toLowerCase();
@@ -302,7 +407,7 @@ TO.diaJogo.ponte = (function(){
     addEventListener('keyup',e=>{teclas[e.key.toLowerCase()]=false;});
 
     cv.addEventListener('contextmenu',e=>{if(ED.ativo)e.preventDefault();});
-    cv.addEventListener('mousedown',e=>{
+    cv.addEventListener('pointerdown',e=>{
       if(!ED.ativo) return;
       e.preventDefault();
       const p=paraCena(e);
@@ -311,14 +416,14 @@ TO.diaJogo.ponte = (function(){
       A.pintar(p.x,p.y,ED.pincel, ED.pintando===1);
       ED.sujo=true;
     });
-    addEventListener('mousemove',e=>{
+    addEventListener('pointermove',e=>{
       if(!ED.ativo) return;
       const p=paraCena(e);
       ED.mouse=p;
       if(ED.pegou){ ED.pegou.mover(p.x,p.y); ED.sujo=true; return; }
       if(ED.pintando){ A.pintar(p.x,p.y,ED.pincel, ED.pintando===1); ED.sujo=true; }
     });
-    addEventListener('mouseup',()=>{
+    addEventListener('pointerup',()=>{
       if(!ED.ativo) return;
       if(ED.pintando||ED.pegou) A.limparCampos();   // navegação depende da malha
       ED.pintando=0; ED.pegou=null;

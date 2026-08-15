@@ -18,7 +18,7 @@ import base64, pathlib, re, sys, urllib.request
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 UA = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36'}
 
-CSS = ['css/base.css', 'css/paineis.css', 'css/cenas.css']
+CSS = ['css/base.css', 'css/paineis.css', 'css/cenas.css', 'css/mobile.css']
 
 # dois alvos: a cena solta (pra calibrar) e o jogo inteiro (pra jogar)
 ALVOS = {

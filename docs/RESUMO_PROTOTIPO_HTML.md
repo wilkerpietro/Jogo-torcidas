@@ -983,6 +983,99 @@ O que **não** veio, e por quê:
   não volta pro minimapa — entrou pro estádio. É o que faz a hora de descer valer alguma
   coisa: brigar às 14h30 com três bondes ou esperar os seis das 15h10 é uma escolha só.
 
+- **O ponto de partida é a sede, não o mando.** Os dois lados eram assimétricos: o
+  mandante procurava `pontoDaSede` e desistia se não achasse; o visitante chamava
+  `entradaDaCidade` **sempre**, sem nunca consultar a sede. Num Atlético × Cruzeiro — jogo
+  dentro do mapa de Belo Horizonte — as organizadas do Cruzeiro desciam da rodovia na
+  própria cidade. Agora quem decide é ter pino de sede na praça, dos dois lados. Medido no
+  clássico: os cinco bondes dos dois clubes saem de sede ou de bar, **nenhum** de ponto de
+  entrada.
+  Os pontos de entrada passaram a ser os **dois que o autor marcou na arte** — a boca da
+  avenida no alto e a ponta sudeste do bairro de baixo —, guardados em fração do lado do
+  mapa e alternados por um contador único do dia. Medido: 92 bondes de entrada em 100 dias
+  de jogo nas cinco praças Grandes, todos na ordem P1/P2 e em cima do ponto marcado.
+
+- **O relógio é o da grade.** O apito vem de `horaDoJogo` do **último** jogo do dia nesta
+  praça, não de constante: rodada de domingo tem partida às 11h e às 20h30, e a rua tem de
+  acompanhar o que a tabela marcou. Velocidade constante o dia inteiro — dois minutos de
+  rua por segundo de tela, a manhã parada inclusive. O relógio para no apito, não quando o
+  último bonde chega.
+  A janela de saída é **T-2h30 a T-2h00 e mais nada**. Medido em 495 bondes: 0 fora da
+  janela, e a hora de cada um é a mesma toda vez que a tela reabre. O preço aparece na
+  conta: **33 deles (6,7%) ainda estão na rua quando a bola rola** — em São Paulo, na
+  velocidade lenta que os discos têm hoje, a travessia não cabe em duas horas e meia. É
+  consequência da janela fixa, não defeito de rota; quem quiser todo mundo dentro do
+  estádio no apito mexe na janela ou na velocidade.
+
+- **A manhã do aliado.** Visitante sem sede aqui e com aliado na praça desce entre 08:00 e
+  08:45 e caminha até a sede dele; fica lá até a janela. Sem aliado, só desce na janela e
+  vai direto — caravana não passa a manhã no meio-fio. A viagem virou uma lista de pernas,
+  então um bonde tem dois destinos e uma espera no meio. Em jogo de manhã a chegada
+  aperta junto com a janela, senão o ônibus estaria marcado pra sair da sede antes de ter
+  descido: medido, 0 casos de perna 2 antes da perna 1.
+
+- **A escolta sai do anfitrião.** As escoltas se resolvem **antes** dos bondes, porque o
+  anfitrião pode ser torcida de outro jogo do mesmo dia — dá pra escoltar um aliado numa
+  partida em que o nosso clube nem entra em campo. Medido no caso do autor: aliado de 14,
+  Leões da TUF com 150, escolta de **8** (5,3%), bonde combinado sai com 22 e os nossos
+  bondes caem de 150 pra **142**. O total da noite não muda, muda de quem é.
+  Um disco só no mapa; na esplanada, duas entradas — cada torcida com a própria cor e a
+  própria sigla, que é o que a escolta tem de legível. E **uma conta só** pra caravana:
+  `membros × 0,18 × (1 + relação/150)`, a que a Gestão mostra ao jogador. O mapa usava
+  `efetivoDe × 0,25` e os dois números não batiam.
+
+- **A rua não para porque a briga começou.** Medido: entrei às 09:23 com só a Gaviões
+  (250) na esplanada e três bondes andando; às 10:43 os três tinham chegado no meio do
+  tumulto e os discos foram de 280 pra 372, com uma linha de log pra cada chegada.
+
+- **Sede e bar se acham por id.** O casamento era `label.includes(nome)` e 11 dos 140
+  nomes são subcadeia de outro. Hoje nenhum desses pares divide praça, então não havia
+  erro em campo — era mina, não buraco, e com o visitante passando a procurar sede o
+  caminho ficaria quente. 275 pinos conferidos nas 30 praças, **0 errados**.
+
+## 9. Celular
+
+Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima
+dele nada muda: lateral fixa de 186px, teclado, mouse. O teclado continua valendo em
+qualquer largura.
+
+- **O menu vira gaveta.** ☰ no canto superior direito do `#topo`, e `#lateral` sai do
+  grid e entra pela esquerda por cima do conteúdo. Fecha ao escolher página, ao tocar no
+  véu e no Esc. Medido a 390×844: os cinco caminhos funcionam; a 1400×900 o ☰ não existe,
+  a lateral é estática e o grid segue `186px 1214px`.
+- **A gestão vira periférico do mapa.** Abaixo do limiar a tela principal é o mapa e as
+  onze páginas abrem como painel por cima. `pintarMapa` recria o canvas e perderia zoom e
+  arrasto, então o caminho do painel **nunca passa por ele**: pinta só a página pedida e
+  mexe em classe. Medido: depois de abrir e fechar o Financeiro, é o **mesmo objeto
+  canvas** (marca própria sobrevive) e o scroll do viewport continua em 180 px.
+- **Nenhuma das 11 páginas rola de lado**, em 390×844 e em 844×390 — testado pelo que
+  importa, tentando rolar (`scrollTo(9999,0)` devolve `scrollX` 0). Precisaram de
+  container rolável: o **viewport do mapa** (em todas, porque o mapa fica montado
+  embaixo), as **subabas** e o **cartão de detalhe** em Torcida e Diplomacia, e as **abas
+  grandes** em Competições. Três coisas seguravam o layout aberto e foram consertadas: o
+  grid virou `minmax(0,1fr)` (com `1fr` o canvas de 752px esticava a coluna e levava topo
+  e ticker junto), a faixa de indicadores ganhou `flex:1 1 0; min-width:0`, e o painel de
+  filtros do mapa deixou de ser coluna e virou faixa.
+- **O pad de toque.** WASD em cruz embaixo à esquerda, Q/E/R logo acima, e 1–4 numa linha
+  à direita. Ele **não implementa lógica nenhuma**: cada botão escreve no mesmo objeto
+  `teclas` que o teclado alimenta, e Q, E, R e formação chamam exatamente o que
+  `montarBotoes` já chamava. Por isso o **diff de `js/diajogo/combate.js` é vazio** — o
+  arquivo mudou nesta rodada, mas pela Parte 1 (o reforço de quem chega atrasado); o pad
+  não encostou nele.
+  `pointerdown` e não `click`, porque pedra e bomba têm de sair no toque;
+  `setPointerCapture` por botão pro multitoque valer. Medido no laço de verdade: W+D
+  juntos movem o líder em diagonal (+39, −38), soltar para, e `pointercancel` — o dedo que
+  escorrega pra fora — solta a tecla, com **nenhuma tecla presa** depois.
+  Com o pad na tela o HUD encolhe pro botão do portão: repetir pedra, bomba, recuar e
+  formação no meio da cena seria tapar a rua com botão que o dedo não usa. ENTER fica fora
+  do pad de propósito — encerra a cena, não é reflexo.
+- **O toque no canvas cai no lugar certo**: medido em cinco níveis de zoom (de 60% a
+  105%), erro de **0 px** entre o pino e a coordenada lida. `cv.onclick` virou
+  `pointerup`, e os handlers da cena trocaram mouse por pointer.
+- **Funciona nos dois sentidos.** Em pé, na cena, aparece um aviso discreto sugerindo
+  girar — sem travar e sem `screen.orientation.lock()`, que só vale em tela cheia e não
+  existe no Safari do iOS.
+
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça.** As cinco arenas já
 existem e as ações já sabem abrir cena; falta o gesto no mapa — clicar num ponto da rua
 pra marcar tocaia.

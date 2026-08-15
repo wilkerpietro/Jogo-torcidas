@@ -210,6 +210,9 @@
     $('avancarFixo').classList.remove('oculto');
     $('avancarFixo').onclick = ()=>{ TO.estado.avancarDia(); };
     montarLateral();
+    ligarTelaEstreita();
+    /* no celular a tela principal é o mapa, não a página de início */
+    if(estreito()) pagina = 'mapa';
     redesenhar();
     ticker();
   }
@@ -219,14 +222,116 @@
     for(const n of NAV){
       const b = el('button',{class:'nav-item','data-pag':n.id,
         html:`${IC.get(n.ic)}<span>${n.rot}</span>`});
-      b.onclick = ()=>{ pagina=n.id; redesenhar(); };
+      b.onclick = ()=>{
+        /* em tela estreita a gestão é painel sobre o mapa; o mapa é a
+           tela principal e não sai de baixo */
+        if(estreito() && n.id !== 'mapa'){ abrirPainel(n.id); return; }
+        fecharGaveta(); fecharPainel();
+        pagina=n.id; redesenhar();
+      };
       nav.appendChild(b);
     }
   }
 
   function trocarPagina(){
-    U.$$('.pagina').forEach(s=>s.classList.toggle('on', s.dataset.pag===pagina));
-    U.$$('.nav-item').forEach(b=>b.classList.toggle('on', b.dataset.pag===pagina));
+    U.$$('.pagina').forEach(s=>{
+      s.classList.toggle('on', s.dataset.pag===pagina);
+      s.classList.toggle('painel', s.dataset.pag===painel);
+      if(s.dataset.pag===painel) s.classList.add('on');
+    });
+    U.$$('.nav-item').forEach(b=>
+      b.classList.toggle('on', b.dataset.pag===(painel||pagina)));
+    document.body.classList.toggle('com-painel', !!painel);
+  }
+
+  /* =======================================================
+     TELA ESTREITA
+
+     Um limiar só — largura, e nada mais. Acima dele o jogo é o de
+     sempre. Abaixo, a tela principal é o mapa e as onze páginas de
+     gestão viram painéis por cima dele: painel é visita, não destino.
+
+     O mapa NÃO é remontado ao abrir e fechar painel. `pintarMapa`
+     recria o canvas e perde zoom e arrasto, então o caminho do painel
+     nunca passa por ele: pinta só a página pedida e mexe em classe.
+     ======================================================= */
+  const LIMIAR_ESTREITO = 900;
+  const estreito = () => innerWidth <= LIMIAR_ESTREITO;
+  let painel = null;
+
+  const PINTOR = {
+    inicio:pintarInicio, torcida:pintarTorcida, financeiro:pintarFinanceiro,
+    gestao:pintarGestao, calendario:pintarCalendario,
+    competicoes:pintarCompeticoes, diplomacia:pintarDiplomacia, mapa:pintarMapa
+  };
+  const pintarPagina = id => (PINTOR[id] || (()=>pintarPendente(id)))();
+
+  function abrirPainel(id){
+    if(id === 'mapa'){ fecharPainel(); return; }
+    painel = id;
+    fecharGaveta();
+    const rot = (NAV.find(n=>n.id===id)||{}).rot || id;
+    if($('painelTitulo')) $('painelTitulo').textContent = rot;
+    pintarTopo();
+    pintarPagina(id);      // só a página do painel: o mapa fica de pé
+    trocarPagina();
+    montarAtalhos();
+  }
+  function fecharPainel(){
+    if(painel === null) return;
+    painel = null;
+    trocarPagina();        // sem repintar nada: o mapa está como estava
+    montarAtalhos();
+  }
+
+  const abrirGaveta = ()=>{ document.body.classList.add('gaveta'); };
+  const fecharGaveta = ()=>{ document.body.classList.remove('gaveta'); };
+
+  /* Os atalhos de canto: as páginas mais pedidas e, quando o mapa está
+     na frente, os botões que a barra dele oferece. */
+  function montarAtalhos(){
+    const cx = $('atalhos');
+    if(!cx) return;
+    cx.innerHTML = '';
+    if(!estreito() || painel) return;
+    const bt = (rot, fn, destaque)=>{
+      const b = el('button', {texto:rot});
+      if(destaque) b.classList.add('destaque');
+      b.onclick = fn;
+      cx.appendChild(b);
+    };
+    if(pagina === 'mapa'){
+      const e = E(), R = e && TO.ruas.estado(e);
+      if(R && R.bondes.length){
+        bt(R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia', ()=>{
+          if(R.encontro){ abrirConfronto(e, R.encontro); return; }
+          R.rodando = !R.rodando;
+          if(R.rodando) rodarRelogio();
+          montarAtalhos();
+        }, !!R.encontro);
+      }
+    }
+    bt('Gestão',    ()=>abrirPainel('gestao'));
+    bt('Torcida',   ()=>abrirPainel('torcida'));
+    bt('Menu',      abrirGaveta);
+  }
+
+  /* em tela estreita o jogo começa no mapa, que é a tela principal */
+  function ligarTelaEstreita(){
+    const menu = $('btMenu'), veu = $('veu'), fecha = $('painelFechar');
+    if(menu) menu.onclick = ()=>
+      document.body.classList.contains('gaveta') ? fecharGaveta() : abrirGaveta();
+    if(veu)  veu.onclick  = fecharGaveta;
+    if(fecha) fecha.onclick = fecharPainel;
+    addEventListener('keydown', ev=>{
+      if(ev.key !== 'Escape') return;
+      if(document.body.classList.contains('gaveta')) fecharGaveta();
+      else if(painel) fecharPainel();
+    });
+    addEventListener('resize', ()=>{
+      if(!estreito()){ fecharGaveta(); fecharPainel(); }
+      montarAtalhos();
+    });
   }
 
   /* =======================================================
@@ -2748,6 +2853,7 @@
     if(aptos.length < 2){ aviso('Não sobrou gente de pé pra entrar.','ruim'); return; }
     R.rodando = false;
     $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
     const p = TO.planejamento.plano(e);
     /* quem chegou na esplanada entra na cena com o efetivo que sobrou da
@@ -2824,7 +2930,11 @@
       dica.classList.remove('on');
       pintar();
     };
-    cv.onclick = ev=>{
+    /* `pointerup` e não `click`: no celular o toque tem de valer, e o
+       pointer serve mouse e dedo pelo mesmo caminho. `ponto()` já
+       converte pelo tamanho medido do canvas, então o zoom não mexe. */
+    cv.onclick = null;
+    cv.addEventListener('pointerup', ev=>{
       const p = ponto(ev);
       if(poeOlheiro){
         TO.ruas.porOlheiro(E(), p.x, p.y);
@@ -2835,7 +2945,41 @@
       }
       const a = MP.alvoEm(mo, p.x, p.y);
       if(a) aviso(a.info);
+    });
+
+    /* WASD arrasta a vista no celular, que é onde não há mouse pra
+       empurrar o viewport */
+    if(estreito()) ligarSetasDoMapa(cv);
+  }
+
+  /* =======================================================
+     ARRASTAR O MAPA COM WASD
+     O viewport já rola; aqui só se empurra o scroll dele, e só em tela
+     estreita — no desktop o mouse faz isso melhor.
+     ======================================================= */
+  let setasDoMapa = null;
+  function ligarSetasDoMapa(cv){
+    const vp = cv.closest('.mapa-viewport') || cv.parentElement;
+    if(!vp || setasDoMapa) return;
+    const teclas = {};
+    const VEL = 520;                     // px por segundo
+    addEventListener('keydown', e=>{
+      const k = e.key.toLowerCase();
+      if('wasd'.includes(k) && pagina==='mapa' && !painel) teclas[k]=true;
+    });
+    addEventListener('keyup', e=>{ teclas[e.key.toLowerCase()]=false; });
+    let ant = 0;
+    const passo = agora=>{
+      const dt = ant ? Math.min(0.05,(agora-ant)/1000) : 0; ant = agora;
+      if(dt && vp.isConnected){
+        if(teclas.a) vp.scrollLeft -= VEL*dt;
+        if(teclas.d) vp.scrollLeft += VEL*dt;
+        if(teclas.w) vp.scrollTop  -= VEL*dt;
+        if(teclas.s) vp.scrollTop  += VEL*dt;
+      }
+      setasDoMapa = requestAnimationFrame(passo);
     };
+    setasDoMapa = requestAnimationFrame(passo);
   }
 
   /* =======================================================
@@ -2917,6 +3061,7 @@
     if(lista.length < 2){ aviso('Escale pelo menos dois.','ruim'); return; }
     $('telaEscalacao').classList.add('oculto');
     $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
     const p = TO.planejamento.plano(E());
     TO.diaJogo.ponte.montar({
@@ -2959,6 +3104,7 @@
       .slice(0, U.limitar(nosso.n, 2, 34));
     encontroAberto = enc;
     $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
     const p = TO.planejamento.plano(e);
     TO.diaJogo.ponte.montar({
@@ -2995,6 +3141,7 @@
     const fecho = acao ? TO.acoes.fecharCena(e, acao, res) : null;
     setTimeout(()=>{
       $('telaDiaJogo').classList.add('oculto');
+      document.body.classList.remove('em-cena');
       mostrarRelatorio(res, resumo, fecho);
     }, 1400);
   }
@@ -3010,6 +3157,7 @@
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
       .slice(0, cena.acao === 'assalto' ? 12 : 34);
     $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
     const p = TO.planejamento.plano(e);
     TO.diaJogo.ponte.montar({
@@ -3170,15 +3318,9 @@
     }
     pintarTopo();
     trocarPagina();
-    if(pagina==='inicio') pintarInicio();
-    else if(pagina==='torcida') pintarTorcida();
-    else if(pagina==='financeiro') pintarFinanceiro();
-    else if(pagina==='gestao') pintarGestao();
-    else if(pagina==='calendario') pintarCalendario();
-    else if(pagina==='competicoes') pintarCompeticoes();
-    else if(pagina==='diplomacia') pintarDiplomacia();
-    else if(pagina==='mapa') pintarMapa();
-    else pintarPendente(pagina);
+    pintarPagina(pagina);
+    if(painel) pintarPagina(painel);
+    montarAtalhos();
   }
 
   /* =======================================================
