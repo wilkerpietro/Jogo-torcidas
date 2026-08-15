@@ -1086,8 +1086,9 @@ qualquer largura.
 
 - **O dia abre perto do jogo.** Abria sempre às 08:00, e num apito das 16:00 isso eram 480
   minutos de relógio — quatro minutos de tela, dos quais quase três sem nada acontecendo.
-  A abertura passou a depender do que o dia tem: **3h30 antes** quando há caravana que vai
-  dormir na sede de um aliado, **2h30 antes** quando não há. A janela de saída não mexeu.
+  A abertura passou a depender do que o dia tem: **4h antes do primeiro jogo** quando há
+  caravana que vai dormir na sede de um aliado, **2h30 antes do último apito** quando não
+  há. A janela de saída não mexeu.
   Saber se há hospedagem exige rodar `anfitriaoDe` pras visitantes sem sede, o que só
   acontecia lá embaixo, dentro da montagem dos bondes — então entrou uma passada de
   detecção antes de tudo, e a abertura fica em `R.abertura`, resolvida uma vez: quem lê a
@@ -1096,18 +1097,25 @@ qualquer largura.
   abria seis horas antes do jogo; com a abertura em T-3h30 a premissa acabou e a primeira
   perna começa em `saiEm: 0`. Medido: **102 bondes hospedados em 125 dias de jogo nas cinco
   praças Grandes, nenhum parado no minuto zero**.
-  Conferido: apito às 16:00 abre **12:30** com hospedagem e **13:30** sem; apito às 11:00
-  com hospedagem abre 07:30 e o dia roda inteiro, sem duração negativa. Em 638 bondes,
+  Conferido: apito às 16:00 abre **12:00** com hospedagem e **13:30** sem; apito às 11:00
+  com hospedagem abre 07:00 e o dia roda inteiro, sem duração negativa. Em 621 bondes,
   **0 fora da janela de T-2h30 a T-2h00** e **0 horas de saída instáveis** entre aberturas
   da tela. O relógio para no apito do último jogo do dia, tirado de `horaDoJogo`.
-  **O que a medição mostrou de ruim:** a manhã dá 60 minutos (3h30 − 2h30) e a caminhada
-  do ponto de entrada até a sede do aliado leva, medida rota a rota, **mediana de 51 a 145
-  minutos conforme a praça, e até 205**. Resultado: só **29 dos 102** hospedados chegam na
-  sede antes da própria hora de saída — a folga mais apertada foi de 2 minutos —, e os
-  outros 73 saem atrasados, o pior deles em 144 minutos. Eles saem assim que chegam, como
-  combinado, mas na prática a maioria não usa a hospedagem: chega na casa do aliado depois
-  da hora de sair dela. Pra fechar, ou a manhã precisa de ~3h em vez de 1h (abertura em
-  T-5h30), ou o ônibus tem de descer mais perto da sede do anfitrião.
+  **Por que 4h e por que do primeiro jogo.** Na primeira versão era 3h30 antes do último
+  apito, e a manhã sobrava 60 minutos — menos que a própria caminhada do ônibus até a casa
+  do anfitrião, que medida rota a rota tem **mediana de 51 a 145 minutos conforme a praça
+  e chega a 205**. Só 29 de 102 hospedados chegavam antes da própria hora de saída.
+  Contar 4h do **primeiro** jogo é o que abre a manhã de verdade num dia de várias
+  partidas: com jogos às 16:00 e às 18:30 a saída continua marcada pelas 18:30, mas o dia
+  começa às 12:00 em vez das 15:00. Medido de novo em 125 dias: **61 de 98** chegam a
+  tempo (era 29 de 102), a folga mais apertada é de 5 minutos e o pior atraso caiu de 144
+  pra 114 minutos. Quem ainda não chega sai assim que chega.
+  **O que isso custa:** dia sem hospedagem roda sempre 150 minutos, 1min15 de tela. Com
+  hospedagem o piso é 240 minutos (4 min de tela) e o teto medido foi **690 minutos, 5min45
+  de tela** — num dia de São Paulo com o primeiro jogo às 11:00 e o último às 18:30, o
+  relógio abre 07:00 e fecha 18:30. O trecho entre a caravana chegar na sede do aliado e a
+  janela abrir volta a ser tempo morto nesses dias. Se incomodar, o corte natural é ancorar
+  a abertura no primeiro jogo só quando o dia tem um horário só de apito.
 
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça.** As cinco arenas já
 existem e as ações já sabem abrir cena; falta o gesto no mapa — clicar num ponto da rua

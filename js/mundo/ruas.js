@@ -347,7 +347,14 @@ TO.ruas = (function(){
      de ler o mesmo número. */
   const ANTES  = 150;   // a janela abre 2h30 antes do apito...
   const JANELA = 30;    // ...e fecha 2h antes
-  const MANHA_COM_HOSPEDE = 210;   // 3h30: dá tempo de ir pra casa do aliado
+  /* 4h antes do PRIMEIRO jogo do dia. Eram 3h30 antes do último, e a
+     manhã sobrava 60 minutos — menos que a própria caminhada do ônibus
+     até a casa do anfitrião, que tem mediana de 51 a 145 minutos
+     conforme a praça. Contar do primeiro jogo e não do último é o que
+     abre a manhã de verdade num dia de várias partidas: com jogos às
+     16:00 e às 18:30 a saída continua marcada pelas 18:30, mas o dia
+     começa às 12:00 em vez das 15:00. */
+  const MANHA_COM_HOSPEDE = 240;
   const APITO_PADRAO = 16*60;      // usado só quando o dia não tem jogo
 
   /* 'HH:MM' -> minutos do dia; devolve null no que não for hora */
@@ -360,18 +367,26 @@ TO.ruas = (function(){
      (`horaDoJogo`), não de constante: rodada de domingo tem jogo às 11h e
      às 20h30, e o relógio da rua tem de acompanhar o que a tabela marcou.
      Em minutos do dia. */
+  const horasDoDia = E => jogosDaPraca(E).filter(j=>j.dia === E.data.dia)
+    .map(j=>emMinutos(j.hora)).filter(h=>h != null);
   function ultimoApito(E){
-    const horas = jogosDaPraca(E).filter(j=>j.dia === E.data.dia)
-      .map(j=>emMinutos(j.hora)).filter(h=>h != null);
+    const horas = horasDoDia(E);
     return horas.length ? Math.max(...horas) : APITO_PADRAO;
   }
+  function primeiroApito(E){
+    const horas = horasDoDia(E);
+    return horas.length ? Math.min(...horas) : APITO_PADRAO;
+  }
 
-  /* a abertura, em minutos do dia. Nunca antes da meia-noite: num apito
-     às 11:00 com hospedagem ela cairia em 07:30, o que é cedo mas é hora
-     de verdade — o piso só existe pra jogo de madrugada não virar dia
-     negativo. */
-  const aberturaDoDia = (E, temHospede) =>
-    Math.max(0, ultimoApito(E) - (temHospede ? MANHA_COM_HOSPEDE : ANTES));
+  /* A abertura, em minutos do dia. Com hospedagem conta do PRIMEIRO jogo,
+     porque é a manhã dele que a caravana tem de aproveitar; sem
+     hospedagem não há manhã, e o dia abre quando a praça começa a sair —
+     2h30 antes do último apito, que é quando a janela abre.
+     Nunca antes da meia-noite: o piso só existe pra jogo de madrugada
+     não virar dia negativo. */
+  const aberturaDoDia = (E, temHospede) => temHospede
+    ? Math.max(0, primeiroApito(E) - MANHA_COM_HOSPEDE)
+    : Math.max(0, ultimoApito(E) - ANTES);
 
   /* o apito em minutos DESDE A ABERTURA, que é o zero de R.minuto */
   function apitoDoDia(E){
