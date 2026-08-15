@@ -228,6 +228,9 @@ TO.diaJogo.combate = (function(){
       }
     }
 
+    /* o líder não depende da escalação: `grupoLider` sai do grupo do
+       nosso portão, e a escalação só decide se ele tem NOME e ficha.
+       Conferido com escalação vazia: líder existe e anda. */
     for(const g of grupos)
       nascerGrupo(J, g, fichas.get(g) || [], g === grupoLider, nomes);
 

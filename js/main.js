@@ -3107,7 +3107,13 @@
     const e = E();
     const R = e && TO.ruas.estado(e);
     const b = e && TO.ruas.nossoBonde(e);
+    /* `em-cena` é a trava que faltava: a briga abre por cima do mapa e
+       `pagina` continua sendo 'mapa', então o pad do mapa ficava na tela
+       DURANTE a luta — dois pads fixos no mesmo canto, e a cruz de cima
+       era a do mapa. Quem tocasse W ali estava mandando num bonde que
+       nem está mais na rua, e o disco da cena não saía do lugar. */
     const querem = estreito() && pagina === 'mapa' && !painel &&
+                   !document.body.classList.contains('em-cena') &&
                    b && R && R.selecionado === b.id;
     if(!querem){
       if(padDoMapa){ padDoMapa.remove(); padDoMapa = null; }
@@ -3156,7 +3162,12 @@
       const e = E();
       const R = e && TO.ruas.estado(e);
       const b = e && TO.ruas.nossoBonde(e);
-      if(dt && e && R && b && R.selecionado === b.id && !R.encontro && mapaAtual){
+      /* e nada disto roda com a briga na tela: ali WASD é do líder da
+         cena, e adiantar o relógio da rua por baixo de uma luta aberta
+         é mexer no mundo pelas costas do jogador */
+      const naCena = document.body.classList.contains('em-cena');
+      if(dt && e && R && b && !naCena &&
+         R.selecionado === b.id && !R.encontro && mapaAtual){
         const dx = (teclasDoMapa.d?1:0) - (teclasDoMapa.a?1:0);
         const dy = (teclasDoMapa.s?1:0) - (teclasDoMapa.w?1:0);
         if(dx || dy){

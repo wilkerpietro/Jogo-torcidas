@@ -1103,10 +1103,11 @@ medir, medidas dirigindo o jogo de verdade em Chromium:
   No celular o pad aparece **com a cruz e mais nada** — sem PEDRA, BOMBA, RECUAR
   nem as quatro formações, que são comandos de briga e não significam nada no mapa.
 
-### O WASD que não funcionava, e as quatro coisas que faltavam
+### O WASD que não funcionava, e as cinco coisas que faltavam
 
-A primeira versão passou nos testes e não funcionava na mão de quem jogou. Quatro
-defeitos separados, cada um bastando sozinho pra o disco não sair do lugar:
+A primeira versão passou nos testes e não funcionava na mão de quem jogou. Cinco
+defeitos separados — quatro no mapa e um que matava a cruz **dentro da cena de
+luta** —, cada um bastando sozinho pra o disco não sair do lugar:
 
 1. **Só o bonde comandado podia ser dirigido.** Em dia de jogo — que é justamente
    quando o mapa importa — o disco da nossa torcida já está na rua e não era
@@ -1126,7 +1127,20 @@ defeitos separados, cada um bastando sozinho pra o disco não sair do lugar:
    refazer o próprio rastro: uma trilha dos últimos 12 nós é o que impede a volta no
    quarteirão, que estava custando 390 px andados para 14 px de deslocamento. Com a
    trilha, os mesmos 390 px andados viram 267 a 359 px de deslocamento.
-4. **Dirigir andava no passo do relógio parado.** O dia corre 2 minutos de rua por
+4. **Dois pads no mesmo canto, e o de cima era o errado.** `#djPad`, a cruz da
+   cena de luta, é montado uma vez e nunca era desmontado — depois da primeira
+   briga ele ficava boiando por cima do mapa e de todas as páginas de gestão. O pad
+   do mapa entrou depois, por cima dele: **dentro da cena de rua, a cruz que o dedo
+   encontrava era a do MAPA**, mandando num bonde que nem está mais na rua, e o
+   disco da briga não saía do lugar. Duas linhas de CSS resolvem, e resolvem no CSS
+   de propósito, sem depender de nenhum código lembrar de apagar nada:
+   `body:not(.em-cena) #djPad{display:none}` e `body.em-cena #mapaPad{display:none}`.
+   Medido num celular de 390×844: no mapa aparece só a cruz do mapa; na cena de rua
+   aparece só a do jogo, `elementFromPoint` no W devolve `pad-w` da cena, e o toque
+   em D e em S move o líder 72 px cada. Pelo mesmo motivo o WASD do mapa **não roda
+   com a briga aberta**: adiantar o relógio da rua por baixo de uma luta é mexer no
+   mundo pelas costas do jogador.
+5. **Dirigir andava no passo do relógio parado.** O dia corre 2 minutos de rua por
    segundo e um bonde faz 6 px por minuto: 12 px/s numa praça de 1.254 px de lado, ou
    um minuto e meio de tecla presa pra atravessar a cidade. Dirigindo, o dia corre
    **4× mais rápido** — 8 minutos por segundo, ~52 px/s medidos —, **e corre pra todo

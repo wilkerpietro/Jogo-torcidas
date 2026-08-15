@@ -203,6 +203,18 @@
     pointer-events:none;
     touch-action:none; user-select:none; -webkit-user-select:none;
   }
+  /* CADA PAD NA SUA TELA.
+     `#djPad` é montado uma vez e nunca era desmontado: depois da
+     primeira briga ele ficava boiando por cima do mapa e de todas as
+     páginas de gestão. Somado ao pad do mapa, que veio depois e entra
+     por cima, dava duas cruzes fixas no mesmo canto — e a de cima, na
+     cena de luta, era a do MAPA. Quem tocava W estava mandando num
+     bonde que nem está mais na rua, e o disco da briga não saía do
+     lugar. Duas linhas resolvem, e resolvem no CSS de propósito: não
+     depende de nenhum código lembrar de apagar nada. */
+  body:not(.em-cena) #djPad{ display:none; }
+  body.em-cena       #mapaPad{ display:none; }
+
   .pad-lado{ display:flex; flex-direction:column; gap:8px; pointer-events:none; }
   /* as quatro formações numa linha só: em paisagem a tela tem 390px de
      altura e duas fileiras de botão saem pela borda de baixo */
