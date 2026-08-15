@@ -1526,6 +1526,95 @@ desenho.
 7. **Bateria limpa**, `ERR []` em `conect`, `acoes_ui`, `pad`, `pad2`, `bundle_check` e
    `portoes`.
 
+## 8.12 A cor da torcida na cena: círculo externo primária, miolo secundária
+
+O disco sempre foi desenhado em duas camadas — círculo no raio cheio, miolo a 62% —,
+mas só a de fora era da torcida. O miolo caía no tom claro genérico do lado, e a
+**segunda cor da torcida não aparecia em lugar nenhum do jogo**. Sem o miolo separando,
+duas torcidas de primária igual eram o mesmo disco, e por isso a escolha de cor da
+noite pulava pra próxima cor da paleta de quem chegasse depois. Foi assim que a Torcida
+Jovem do Galo, paleta `['#FFFFFF','#FFFFFF']` com detalhe preto, entrou na esplanada de
+**preto** num jogo contra a TUF.
+
+**A paleta mente, e a secundária tem de ser procurada.** Cinquenta das 140 torcidas
+repetem a primária em `cores[1]`. A regra: a secundária é a primeira de `cores[1:]`
+seguida de `detalhe` que seja **diferente da primária**. `M.coresDaTorcida(o)` é o
+único lugar que sabe disso, e as três telas que precisam de cor chamam ele.
+
+**A cadeia foi aberta.** A primária percorria cinco pontos — `elencoDaNoite` →
+`nasce()` → `R.arredores` → `bondes` do config → `d.cor`; a secundária agora percorre
+os mesmos cinco, como `cor2`, incluindo o bonde escoltado, que se parte em duas
+torcidas na esplanada, e as cenas de ação, que montam o bonde direto da nossa torcida.
+No mapa nada mudou: lá o bonde continua sendo um círculo chapado com a sigla em cima.
+
+**Ninguém troca de cor.** Cada torcida usa a própria primária, sempre. Isso só é
+seguro porque o miolo separa: das 140 saem **11 primárias distintas** (branco em 55,
+preto em 19, vermelho em 19) e **2.052 pares** dividem a primária, mas **1.448 desses
+se distinguem pelo miolo**. Sobram **604 pares** em que as duas cores batem — aí quem
+manda fica com a cor verdadeira e quem visita recebe um **tom da primária**, na direção
+que dá contraste: branco escurece (branco mais claro não existe), preto e vermelho
+clareiam. Vale igual quando o visitante somos nós.
+
+### Os números de aceite
+
+1. **O caso relatado, no save de verdade.** TUF, dia 41, **Fortaleza × Treze (Copa do
+   Nordeste)**. As duas com primária branca e nenhuma trocou de cor:
+
+   | torcida | externa | miolo |
+   |---|---|---|
+   | Leões da TUF | `#FFFFFF` | `#1A40CC` azul |
+   | Torcida Jovem do Galo | `#FFFFFF` | `#000000` preto |
+   | Jovem Garra Tricolor | `#1A40CC` | `#CC1414` |
+
+   **Nenhum disco preto por fora** — o print `cor_tuf_treze.png` mostra os dois bondes
+   lado a lado, brancos por fora, azul contra preto por dentro.
+2. **Em toda cena.** Cearamor (preto + amarelo) entra com externa `#000000` e miolo
+   `#FFD900` no **bar**, no **comércio** e no **CT**, em 150, 12 e 150 discos, todos
+   iguais. No dia de jogo, 12 dias de duas praças: **nenhum bonde chegou na esplanada
+   sem a secundária certa**, incluindo **6 casos de escolta** — Jovem Garra Tricolor
+   escoltando Trovão Azul entra com o próprio `#1A40CC`/`#CC1414`. Na cena solta da
+   bancada `d.cor` é nulo e as duas camadas continuam sendo as do lado.
+3. **Nas 60 noites:** 237 torcidas-noite, e **22 fora da própria primária — todas pela
+   regra do tom**, nenhuma por outro motivo. O miolo nunca mudou: `cor2` é sempre a
+   secundária de verdade da torcida. Por praça: 13 de 72 em São Paulo, 0 de 52 em Belo
+   Horizonte, 4 de 50 em Fortaleza, 5 de 63 no Rio.
+4. **O caso do tom** (`cor_tom_branco.png`): branco + preto contra branco + preto. O
+   mandante sai com `#FFFFFF`, o visitante com `#BDBDBD`, os dois com miolo preto — e
+   os dois painéis do print estão sobre o mesmo asfalto, porque com um fundo de calçada
+   atrás de um lado só o que separaria seria o fundo, não a cor.
+5. **A direção do tom, nas 11 primárias que existem.** Branco escurece, preto clareia,
+   vermelho clareia, amarelo escurece, azul-claro escurece:
+
+   | base | direção | 1º passo | 2º | 3º |
+   |---|---|---|---|---|
+   | `#FFFFFF` branco | escurece | `#BDBDBD` | `#8A8A8A` | `#575757` |
+   | `#000000` preto | clareia | `#424242` | `#757575` | `#A8A8A8` |
+   | `#CC1414` vermelho | clareia | `#D95151` | `#E38080` | `#EEAFAF` |
+   | `#FFD900` amarelo | escurece | `#BDA100` | `#8A7500` | `#574A00` |
+   | `#0D731A` verde | clareia | `#4C9756` | `#7CB383` | `#ADCFB1` |
+
+   O menor salto de luminância no primeiro passo é **0,129** (o cinza `#808080`, uma
+   torcida só) e a menor distância RGB é **57** — nada indistinguível. E o **matiz não
+   gira**: a maior diferença medida em 33 tons é de **1 grau**, porque escurecer é
+   multiplicar os três canais e clarear é misturar com branco. O tom é sempre a cor da
+   torcida, mais clara ou mais escura, nunca uma cor que ela não tem.
+6. **Três com a mesma paleta na mesma noite**, achado no save: preto + branco com
+   **Gaviões `#000000`, Pavilhão 9 `#424242` e Ira Jovem do Vasco `#757575`** — três
+   externas distintas, o mesmo miolo branco, e a sigla por cima.
+7. **Torcida sem segunda cor** (`cor_sem_segunda.png`): com `cor2` nulo o miolo cai no
+   tom claro do lado e o disco continua legível — amarelo com miolo claro, verde com
+   miolo claro. Nas 140 do arquivo **não existe esse caso hoje**: todas têm secundária
+   de verdade. O print é de uma paleta montada à mão justamente pra provar a queda.
+8. **A mesma noite reaberta pinta igual:** 60 noites remontadas, **0 divergências** de
+   cor, miolo ou sigla; e **0 siglas repetidas** e **0 discos idênticos** dentro de uma
+   noite.
+
+**O que isso custa, e é honesto dizer:** no mapa o bonde é um círculo chapado, então
+duas torcidas de primária igual passaram a ser dois círculos da mesma cor lá. Medido
+nas 60 noites: **38 grupos** de bondes dividindo a cor chapada. Quem separa no mapa é
+a sigla, que continua única por noite — e a cena, que é onde a briga acontece, separa
+pelo miolo.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima

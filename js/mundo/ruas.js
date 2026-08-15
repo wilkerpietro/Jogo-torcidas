@@ -523,31 +523,60 @@ TO.ruas = (function(){
                    || (b.membros||0) - (a.membros||0)
                    || (a.id < b.id ? -1 : 1));
 
-    const usadas = new Set(), siglado = new Set(), cor = {}, sigla = {};
+    const siglado = new Set(), cor = {}, cor2 = {}, sigla = {};
     for(const o of cast){
       const s = siglaUnica(o, siglado);
       siglado.add(s); sigla[o.id] = s;
-
-      const paleta = [...(o.cores||[]), o.detalhe].filter(Boolean)
-                       .map(c=>String(c).toUpperCase());
-      let tom = paleta.find(c=>!usadas.has(c));
-      /* Paleta inteira tomada. Acontece de verdade num clássico de clube
-         preto e branco: as três organizadas do Corinthians têm as mesmas
-         duas cores, porque na arquibancada elas vestem as mesmas duas
-         cores. Aí o tom muda pra pelo menos não virar um borrão só — e
-         quem separa mesmo é a sigla em cima do disco. */
-      if(!tom){
-        const base = paleta[0] || '#999999';
-        for(let k=1; k<=4 && !tom; k++)
-          for(const f of [0.36*k, -0.32*k]){
-            const t = tonalizar(base, f).toUpperCase();
-            if(!usadas.has(t)){ tom = t; break; }
-          }
-        tom = tom || base;
-      }
-      usadas.add(tom); cor[o.id] = tom;
+      const c = M().coresDaTorcida(o);
+      cor[o.id]  = c.cor || '#999999';
+      cor2[o.id] = c.cor2;
     }
-    return {cor, sigla};
+
+    /* NINGUÉM TROCA DE COR.
+       Antes cada torcida pegava a primeira cor da própria paleta que
+       ninguém tinha pego, e como a nossa escolhia primeiro, a visitante
+       que dividisse o branco caía na cor seguinte da paleta dela. Para a
+       Torcida Jovem do Galo, paleta ['#FFFFFF','#FFFFFF'] com detalhe
+       preto, a cor seguinte é PRETO: ela entrava na esplanada preta.
+
+       Agora cada uma usa a própria primária, sempre. Dá pra fazer isso
+       porque o miolo passou a separar: das 140 torcidas saem só 11
+       primárias distintas e 2.052 pares dividem a primária, mas 1.448
+       desses pares têm secundária diferente e se distinguem sem que
+       ninguém precise mudar de cor.
+
+       Sobram os pares em que as DUAS cores batem — 604. Aí são a mesma
+       coisa na tela e é preciso separar: o mandante fica com a cor
+       verdadeira e cada seguinte recebe um passo de tom da primária. A
+       ordem é fixa (quem manda antes de quem visita, e o `cast` desempata
+       o resto), então a mesma noite reaberta pinta igual. */
+    const chave = o => `${cor[o.id]}|${cor2[o.id] || '-'}`;
+    const grupos = {};
+    for(const o of cast) (grupos[chave(o)] = grupos[chave(o)] || []).push(o);
+    for(const iguais of Object.values(grupos)){
+      if(iguais.length < 2) continue;
+      /* quem manda fica com a cor cheia — inclusive quando o visitante
+         somos nós, jogando fora no mesmo mapa. O jogador acha os discos
+         dele pelo anel do líder e pela formação. */
+      const ordem = iguais.slice().sort((a,b)=>
+        (visitante.has(a.id)?1:0) - (visitante.has(b.id)?1:0) ||
+        cast.indexOf(a) - cast.indexOf(b));
+      ordem.forEach((o,i)=>{ if(i) cor[o.id] = tomVizinho(cor[o.id], i); });
+    }
+    return {cor, cor2, sigla};
+  }
+
+  /* Um tom que se distinga da base, na direção que dá contraste.
+     O sinal não pode ser fixo: branco tem de escurecer, porque branco
+     mais claro não existe, e vermelho tem de clarear. A luminância da
+     base decide, e o passo cresce com a ordem pra três organizadas do
+     mesmo clube saírem em três tons distintos. */
+  function tomVizinho(hex, passo){
+    const [r,g,b] = hexParaRgb(hex);
+    const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+    const sinal = lum > 0.6 ? -1 : 1;
+    const f = sinal * Math.min(0.82, 0.26 + 0.20*(passo-1));
+    return tonalizar(hex, f).toUpperCase();
   }
 
   /* Monta os bondes do dia: os daqui saem da sede (e da subsede, quando é
@@ -631,6 +660,8 @@ TO.ruas = (function(){
       R.bondes.push(Object.assign({
         id: ++id, torcida: torcida.id, nome: torcida.nome,
         cor: elenco.cor[torcida.id] || (torcida.cores && torcida.cores[0]) || '#999',
+        /* a segunda cor viaja junto: é o miolo do disco na esplanada */
+        cor2: elenco.cor2[torcida.id] || M().coresDaTorcida(torcida).cor2,
         nossa: torcida.id === E.torcida.id, n, tag, andou:0,
         sigla: elenco.sigla[torcida.id] || M().siglaTorcida(torcida),
         jogo: jogo && jogo.casa.id,
@@ -748,6 +779,8 @@ TO.ruas = (function(){
                            M().siglaTorcida(casa.torcida),
                     cor: elenco.cor[casa.torcida.id] ||
                          (casa.torcida.cores && casa.torcida.cores[0]) || '#999',
+                    cor2: elenco.cor2[casa.torcida.id] ||
+                          M().coresDaTorcida(casa.torcida).cor2,
                     n: escolta},
           /* escoltado pela nossa torcida é bonde nosso na hora da briga:
              o jogador comanda a soma dos dois */
@@ -930,7 +963,8 @@ TO.ruas = (function(){
           const meu = !!(b.nossa || b.doJogador);
           const lado = meu ? 'mandante'
                      : b.tag === 'visitante' ? 'visitante' : 'mandante';
-          const base = {id:b.id, torcida:b.torcida, nome:b.nome, cor:b.cor,
+          const base = {id:b.id, torcida:b.torcida, nome:b.nome,
+                        cor:b.cor, cor2:b.cor2,
                         sigla:b.sigla, nossa:b.nossa, tag:b.tag, jogo:b.jogo,
                         doJogador: meu, lado, entrouEm:b.entrouEm};
           /* O BONDE COMBINADO ANDOU COMO UM DISCO SÓ, mas na esplanada
@@ -942,7 +976,7 @@ TO.ruas = (function(){
             R.arredores.push(Object.assign({}, base, {n:doAliado}));
             R.arredores.push(Object.assign({}, base, {
               id: b.id + 0.5, torcida: b.escolta.de, nome: b.escolta.nome,
-              cor: b.escolta.cor, sigla: b.escolta.sigla,
+              cor: b.escolta.cor, cor2: b.escolta.cor2, sigla: b.escolta.sigla,
               n: b.escolta.n, escoltando: b.torcida}));
           } else {
             R.arredores.push(Object.assign({}, base, {n:b.n}));
@@ -1980,7 +2014,7 @@ TO.ruas = (function(){
   return {malha, caminho, localDe, ruaDoBairro, RUA_DA_CLASSE, ESFRIAMENTO,
           pontoDe, pontoDoEstadio, pontoDoEstadioDoClube, camposDaPraca,
           pontoDaSede, entradaDaCidade,
-          estado, jogosDaPraca, montar, passo, resolver, hostis,
+          estado, jogosDaPraca, montar, passo, resolver, hostis, tomVizinho,
           nossoJogo, naEsplanada, marcarQueEntraram,
           anfitriaoDe, escoltaDe,
           porOlheiro, visivel, desenhar, relogio,

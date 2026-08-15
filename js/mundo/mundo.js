@@ -285,6 +285,23 @@ TO.mundo = (function(){
         ? p : p[0].toUpperCase()).join('');
   }
 
+  /* AS DUAS CORES DA TORCIDA, e a paleta mente.
+     O disco é desenhado em duas camadas: círculo externo na primária,
+     miolo na secundária. A primária é sempre `cores[0]`. A secundária
+     não é `cores[1]`: cinquenta das 140 torcidas repetem a primária ali
+     (`['#FFFFFF','#FFFFFF']`), e pegar cegamente devolveria a mesma cor
+     duas vezes — o miolo sumiria dentro do círculo. Vale a primeira de
+     `cores[1:]` seguida de `detalhe` que seja DIFERENTE da primária;
+     não havendo nenhuma, a secundária é nula e o miolo cai no tom claro
+     genérico do lado, que é o que o jogo já fazia. */
+  function coresDaTorcida(o){
+    const lista = [...((o && o.cores) || []), o && o.detalhe]
+      .filter(Boolean).map(c=>String(c).toUpperCase());
+    const cor = lista[0] || null;
+    const cor2 = lista.slice(1).find(c=>c !== cor) || null;
+    return {cor, cor2};
+  }
+
   function adversario(idClube){
     const meu = time(idClube);
     if(!meu) return T()[0];
@@ -306,7 +323,8 @@ TO.mundo = (function(){
           bairrosPorZona, baseDeRecrutamento,
           estadio, estadiosEm, estadioDoClube,
           TIPOS, valorInicial, statusDoValor, relacaoBase, estiloRelacao, relacoesDe,
-          influencia, territorios, ficha, sigla, siglaTorcida, adversario,
+          influencia, territorios, ficha, sigla, siglaTorcida, coresDaTorcida,
+          adversario,
           divisoes, regioes,
           get parametros(){return D().parametros || {};},
           get todasTorcidas(){return O();},

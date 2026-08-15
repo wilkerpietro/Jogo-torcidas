@@ -2988,7 +2988,8 @@
     /* quem chegou na esplanada entra na cena com o efetivo que sobrou da
        caminhada e a cor da própria torcida. `nossa` aqui é "o jogador
        comanda": o aliado que a gente escoltou anda com a gente. */
-    const bondes = naCena.map(x=>({lado:x.lado, n:x.n, cor:x.cor, sigla:x.sigla,
+    const bondes = naCena.map(x=>({lado:x.lado, n:x.n, cor:x.cor, cor2:x.cor2,
+                                   sigla:x.sigla,
                                    nome:x.nome, nossa: !!(x.nossa || x.doJogador)}));
     /* quem desce pro palco já não volta pro minimapa */
     TO.ruas.marcarQueEntraram(R, naCena);
@@ -3006,7 +3007,8 @@
         const novos = TO.ruas.naEsplanada(R);
         if(!novos.length) return [];
         TO.ruas.marcarQueEntraram(R, novos);
-        return novos.map(x=>({lado:x.lado, n:x.n, cor:x.cor, sigla:x.sigla,
+        return novos.map(x=>({lado:x.lado, n:x.n, cor:x.cor, cor2:x.cor2,
+                              sigla:x.sigla,
                               nome:x.nome, nossa: !!(x.nossa || x.doJogador)}));
       },
       aoTerminar: fecharDiaDeJogo
@@ -3400,10 +3402,10 @@
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
       .slice(0, U.limitar(nosso.n, 2, 34));
     const bondes = [
-      {lado:'mandante',  n:nosso.n, cor:nosso.cor, sigla:nosso.sigla,
-       nome:nosso.nome,  nossa:true},
-      {lado:'visitante', n:deles.n, cor:deles.cor, sigla:deles.sigla,
-       nome:deles.nome,  nossa:false}
+      {lado:'mandante',  n:nosso.n, cor:nosso.cor, cor2:nosso.cor2,
+       sigla:nosso.sigla, nome:nosso.nome,  nossa:true},
+      {lado:'visitante', n:deles.n, cor:deles.cor, cor2:deles.cor2,
+       sigla:deles.sigla, nome:deles.nome,  nossa:false}
     ];
     encontroAberto = enc;
     $('telaDiaJogo').classList.remove('oculto');
@@ -3471,8 +3473,11 @@
        espalhando pelos pontos que a cena declarou — no bar são a porta e
        o fundo do salão, e juntar os dois num canto só mudaria a planta
        da cena, não o efetivo dela */
+    /* a cena de ação também é a nossa torcida na tela: as duas cores dela
+       vêm do mesmo lugar que as do mapa */
+    const cores = TO.mundo.coresDaTorcida(e.torcida);
     const bondes = [{lado:'mandante', n, nossa:true, nome:e.torcida.nome,
-                     cor:(e.torcida.cores && e.torcida.cores[0]) || null,
+                     cor: cores.cor, cor2: cores.cor2,
                      sigla: TO.mundo.siglaTorcida(e.torcida)}];
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');

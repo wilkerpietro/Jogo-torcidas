@@ -404,7 +404,10 @@ TO.diaJogo.combate = (function(){
         d.hp=d.hpMax;
         d.cargo=m.cargo;
       }
-      d.cor = g.bonde ? g.bonde.cor : null;   // a cor da torcida que veio do mapa
+      /* as duas cores da torcida que veio do mapa: o círculo externo é a
+         primária, o miolo é a secundária */
+      d.cor  = g.bonde ? g.bonde.cor  : null;
+      d.cor2 = g.bonde ? g.bonde.cor2 : null;
       d.torcida = g.bonde ? g.bonde.nome : null;
       d.doJogador = meu;
       J.discos.push(d);
@@ -1919,9 +1922,16 @@ TO.diaJogo.combate = (function(){
     if(l==='visitante') return claro?'#e8e8e8':'#2a5fa8';
     return claro?'#e8e4dc':'#c0392b';
   }
-  /* A cor do disco é a da torcida quando ela veio do mapa da cidade; nas
-     cenas soltas (bancada, ações) continua sendo a do lado. */
-  const corDisco = (d, claro) => d.cor && !claro ? d.cor : corLado(d.lado, claro);
+  /* O DISCO TEM DUAS CORES, E AS DUAS SÃO DA TORCIDA.
+     Círculo externo na primária, miolo na secundária — que é o que a
+     camisa faz. Antes só a externa era da torcida e o miolo caía no tom
+     claro genérico do lado, então a segunda cor não aparecia em lugar
+     nenhum do jogo e duas torcidas de primária igual viravam o mesmo
+     disco. Torcida sem segunda cor de verdade (paleta de uma cor só, ou
+     com a primária repetida) continua com o miolo genérico, e nas cenas
+     soltas da bancada as duas camadas continuam sendo as do lado. */
+  const corDisco = (d, claro) => claro ? (d.cor2 || corLado(d.lado, true))
+                                       : (d.cor  || corLado(d.lado, false));
   function desenharDisco(c,d){
     const tx=d.tremor?(Math.random()-0.5)*d.tremor:0;
     const ty=d.tremor?(Math.random()-0.5)*d.tremor:0;
