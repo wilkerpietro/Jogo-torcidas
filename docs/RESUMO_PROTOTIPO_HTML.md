@@ -1093,17 +1093,48 @@ medir, medidas dirigindo o jogo de verdade em Chromium:
   automáticos, aberturas 16:00 / 08:30 / 13:30, apitos 18:30 / 11:00 / 16:00, e
   **0 bondes fora da janela de saída**.
 - **WASD dirige, e pela malha.** 320 passos de tecla em oito direções: **maior
-  salto de 3 px** (nada de teletransporte), **236 passos travados** — que é a
-  parede fazendo o que parede faz — e das **82 posições distintas** que o bonde
-  ocupou, **3 caíram fora do asfalto**, a mesma taxa dos bondes automáticos (2,7%
-  medidos em 788 amostras), que é o meio de uma aresta cortando calçada. O truque
-  que trouxe isso de 13% pra 3,7% foi guardar o nó de destino entre quadros: sem
-  ele, cada chamada parava no meio da quadra e a seguinte perguntava "qual o nó mais
-  perto?", que no meio da quadra tanto pode ser o de trás quanto o da frente.
+  salto de 3 px** (nada de teletransporte), **0 passos travados**, **1.040 px
+  andados**, e de **257 posições distintas** apenas **1 caiu fora do asfalto** — o
+  meio de uma aresta cortando calçada, a mesma coisa que acontece com os bondes
+  automáticos (2,7% em 788 amostras). Segurando uma tecla só por 3 s, no teclado de
+  verdade: **156 px em qualquer das quatro direções**, sempre em cima da rua.
   **Sem bonde selecionado o WASD não faz nada** — nem move a vista: medido, disco e
   scroll do viewport parados nos mesmos pixels depois de segurar as quatro teclas.
   No celular o pad aparece **com a cruz e mais nada** — sem PEDRA, BOMBA, RECUAR
   nem as quatro formações, que são comandos de briga e não significam nada no mapa.
+
+### O WASD que não funcionava, e as quatro coisas que faltavam
+
+A primeira versão passou nos testes e não funcionava na mão de quem jogou. Quatro
+defeitos separados, cada um bastando sozinho pra o disco não sair do lugar:
+
+1. **Só o bonde comandado podia ser dirigido.** Em dia de jogo — que é justamente
+   quando o mapa importa — o disco da nossa torcida já está na rua e não era
+   "comandado": clicar nele não selecionava e WASD não fazia nada. Agora **qualquer
+   bonde nosso na rua** se pega, por clique no disco ou pelo botão *Pegar o bonde*,
+   e quem pega no volante vira dono (a chegada passa a ser a do bonde comandado, a
+   não ser que o destino escolhido seja o próprio estádio).
+2. **O bonde nascia dentro do quarteirão.** O pino da sede fica no lote, não no
+   asfalto; a malha não tem nó ali e o disco recém-saído não andava um pixel com
+   nenhuma tecla. O primeiro passo de qualquer direção passou a ser o mesmo: **sair
+   pra rua**, andando até o nó mais próximo.
+3. **A tecla escolhia o vizinho exatamente naquela direção.** Isso funciona numa
+   grade limpa; esta malha vem da arte, a célula tem 10 px e uma rua é uma fita de
+   uma ou duas células que serpenteia. Medido: 10 px e parava. Agora **a tecla dá o
+   rumo e a rua dá o caminho** — o bonde segue a rua que mais leva pra lá, sem piso
+   de ângulo (com piso, quem apertava nordeste no beco da sede não saía nunca) e sem
+   refazer o próprio rastro: uma trilha dos últimos 12 nós é o que impede a volta no
+   quarteirão, que estava custando 390 px andados para 14 px de deslocamento. Com a
+   trilha, os mesmos 390 px andados viram 267 a 359 px de deslocamento.
+4. **Dirigir andava no passo do relógio parado.** O dia corre 2 minutos de rua por
+   segundo e um bonde faz 6 px por minuto: 12 px/s numa praça de 1.254 px de lado, ou
+   um minuto e meio de tecla presa pra atravessar a cidade. Dirigindo, o dia corre
+   **4× mais rápido** — 8 minutos por segundo, ~52 px/s medidos —, **e corre pra todo
+   mundo**: os outros bondes andam junto e o relógio queima igual (medido, 24 minutos
+   de jogo por 3 segundos de tecla). Não é atalho, é o preço de atravessar a cidade
+   no dedo. Num teste de direção contínua rumo a uma sede a 716 px, 10 s de teclado
+   deram **525 px andados e 219 px de aproximação** — a diferença é a rua, que não
+   vai em linha reta.
 
 ## 8.7 A briga de rua nasce com o efetivo do mapa
 

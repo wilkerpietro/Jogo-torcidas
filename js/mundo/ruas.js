@@ -854,6 +854,10 @@ TO.ruas = (function(){
     for(const b of R.bondes){
       if(b.chegou || R.minuto < b.saiEm) continue;
       if(b.parado) continue;              // bonde comandado esperando ordem
+      /* quem está com a mão do jogador no volante não anda pela rota:
+         quem anda com ele é `dirigir`, e as duas coisas juntas fariam o
+         disco andar duas vezes por quadro */
+      if(b.dirigindo) continue;
       let resta = VEL * minutos;
       b.andou += resta;
       while(resta > 0 && b.i < b.rota.length-1){
@@ -871,7 +875,7 @@ TO.ruas = (function(){
            cena de investida é a tela. Chegando num ponto de rua, fica:
            tocaia é esperar, e quem termina a espera é `procurarEncontro`
            ou o jogador mandando outra coisa. */
-        if(b.comandado){
+        if(b.comandado && !b.rumoAoEstadio){
           b.parado = true;
           if(b.alvoFixo && !b.entregue){ b.entregue = true; R.noAlvo = b; }
           continue;
@@ -1054,16 +1058,32 @@ TO.ruas = (function(){
      · sair custa UMA AÇÃO da semana. Quem cobra é `acoes.js`; aqui só
        se monta o bonde.
      ======================================================= */
+  /* QUAL BONDE O JOGADOR ESTÁ COMANDANDO.
+
+     Era só o que tinha saído da sede por ordem dele, e isso deixava o
+     comando morto justamente no dia em que o mapa importa: em dia de
+     jogo o disco da nossa torcida já está na rua, o jogador clica nele,
+     aperta W e não acontece nada. Bonde nosso é bonde nosso — o que
+     saiu por ordem e o que saiu pro estádio. */
+  const naRua = b => b && !b.chegou && !b.nosArredores;
+  const nossosNaRua = E => estado(E).bondes.filter(b => b.nossa && naRua(b));
+
   function nossoBonde(E){
     const R = estado(E);
-    return R.bondes.find(b => b.comandado && !b.chegou) || null;
+    const sel = R.selecionado != null &&
+                R.bondes.find(b => b.id === R.selecionado);
+    if(sel && sel.nossa && naRua(sel)) return sel;
+    return R.bondes.find(b => b.comandado && naRua(b)) || null;
   }
+  /* o que saiu por ordem do jogador, que é o que impede uma segunda saída */
+  const bondeComandado = E =>
+    estado(E).bondes.find(b => b.comandado && naRua(b)) || null;
 
   /* Tira o bonde da sede. Devolve {ok, msg, bonde}. Não cobra ação
      nenhuma: o preço é do chamador, que é quem sabe do orçamento. */
   function sairDaSede(E, mo, n){
     const R = montar(E, mo);
-    if(nossoBonde(E)) return {ok:false, msg:'Seu bonde já está na rua.'};
+    if(bondeComandado(E)) return {ok:false, msg:'Seu bonde já está na rua.'};
     const origem = pontoDaSede(mo, E.torcida) || pontoDoBar(mo, E.torcida);
     if(!origem) return {ok:false, msg:'Sua torcida não tem sede nesta praça.'};
     const b = {
@@ -1092,25 +1112,36 @@ TO.ruas = (function(){
        alvos de clique só existe depois de um desenho e só entra nela
        pino que o filtro está mostrando. Pino escondido pelo filtro
        continua sendo um endereço no mapa. */
-    let it = null, md = RAIO_PINO*RAIO_PINO;
+    let it = null, campo = null, md = RAIO_PINO*RAIO_PINO;
     for(const p of (mo.pinos || [])){
+      const q = (p.x-x)*(p.x-x) + (p.y-y)*(p.y-y);
+      if(q > md) continue;
+      /* o estádio é o destino de sempre: mandar pra lá é entrar na
+         esplanada, não parar na porta */
+      if(p.tipo === 'estadio'){ md = q; it = null; campo = p; continue; }
       if(p.tipo !== 'sede' && p.tipo !== 'bar') continue;
       if(!p.torcida || p.torcida === E.torcida.id) continue;
-      const q = (p.x-x)*(p.x-x) + (p.y-y)*(p.y-y);
-      if(q <= md){ md = q; it = p; }
+      md = q; it = p; campo = null;
     }
-    const destino = it ? {x: it.x, y: it.y} : {x, y};
+    const alvo = it || campo;
+    const destino = alvo ? {x: alvo.x, y: alvo.y} : {x, y};
     b.rota = caminho(mo, {x:b.x, y:b.y}, destino);
     b.i = 0; b.t = 0; b.parado = false; b.dirigindo = false; b._indo = null;
     b.saiEm = Math.min(b.saiEm, estado(E).minuto);
     b.entregue = false;
+    /* quem pega no volante é dono: daqui pra frente a chegada é a do
+       bonde comandado (para no alvo) e não a do automático (some pro
+       estádio), a não ser que o destino escolhido seja o estádio */
+    b.comandado = true;
+    b.rumoAoEstadio = !!campo;
     b.alvoFixo = it ? {tipo: it.tipo, nome: it.label || 'alvo deles',
                        torcidaId: it.torcida, x: it.x, y: it.y} : null;
-    b.tocaia = it ? null : {x, y};
-    return {ok:true, tipo: it ? 'fixo' : 'tocaia',
+    b.tocaia = alvo ? null : {x, y};
+    return {ok:true, tipo: it ? 'fixo' : campo ? 'estadio' : 'tocaia',
             msg: it ? `O bonde vai pra cima d${it.tipo==='sede'?'a sede':'o bar'} `+
                       `deles — ${it.bairro}.`
-                    : 'O bonde vai esperar nesse ponto.'};
+               : campo ? 'O bonde vai pro estádio.'
+                       : 'O bonde vai esperar nesse ponto.'};
   }
 
   /* =======================================================
@@ -1129,9 +1160,16 @@ TO.ruas = (function(){
     const b = nossoBonde(E);
     if(!b || !(dx || dy)) return null;
     b.dirigindo = true; b.parado = false;
+    b.comandado = true; b.rumoAoEstadio = false;
     b.alvoFixo = null; b.tocaia = null;
     const m = Math.hypot(dx, dy) || 1;
     dx /= m; dy /= m;
+    /* mudou de rumo: a trilha perde a validade, senão virar a tecla pra
+       trás não conseguiria fazer o bonde voltar pela mesma rua */
+    if(!b._rumo || (b._rumo.x*dx + b._rumo.y*dy) < 0.5){
+      b._trilha = null; b._indo = null;
+    }
+    b._rumo = {x:dx, y:dy};
     const {perto} = malha(mo);
     let resta = VEL * minutos;
     let voltas = 0;
@@ -1147,16 +1185,57 @@ TO.ruas = (function(){
       if(!b._indo){
         const aqui = perto(b.x, b.y);
         if(!aqui) return b;
-        /* o vizinho mais alinhado com a tecla, e só se estiver de fato
-           naquele lado: sem vizinho na direção, o bonde fica onde está
-           — parede é parede aqui como é na cena de luta */
-        let melhor = null, score = 0.15;
-        for(const {n:v} of aqui.viz){
-          const vx = v.x - aqui.x, vy = v.y - aqui.y, d = Math.hypot(vx, vy) || 1;
-          const cos = (vx/d)*dx + (vy/d)*dy;
-          if(cos > score){ score = cos; melhor = v; }
+        /* PRIMEIRO SAIR PRA RUA. O bonde nasce no pino da sede, e pino
+           de sede fica dentro do quarteirão, não em cima do asfalto —
+           `perto` devolve o nó de rua mais próximo, mas o disco ainda
+           está na porta. Enquanto ele não pisa nesse nó não há "vizinho
+           na direção da tecla" que faça sentido, e o bonde recém-saído
+           não andava um pixel com nenhuma das quatro teclas. O primeiro
+           passo de qualquer direção é, então, o mesmo: chegar na rua. */
+        if(Math.hypot(aqui.x - b.x, aqui.y - b.y) > 1.5){
+          b._indo = {x:aqui.x, y:aqui.y};
+          continue;
         }
+        /* A TECLA DÁ O RUMO, A RUA DÁ O CAMINHO.
+
+           A primeira versão pegava o vizinho estritamente na direção da
+           tecla. Isso funciona numa grade limpa e não funciona nesta: a
+           malha sai da arte, a célula tem 10 px e uma rua é uma fita de
+           uma ou duas células que serpenteia. Medido, o bonde andava dez
+           pixels e parava, porque o nó seguinte já não tinha vizinho
+           exatamente pro norte — e o jogador via um disco que não anda.
+
+           Agora a tecla diz PRA ONDE, e o bonde segue a rua que mais
+           leva pra lá — sem piso de ângulo. Um piso existia e foi
+           removido depois de medido: no beco de saída da sede o único
+           vizinho fica ao sul, e quem aperta nordeste com um piso de
+           ângulo não sai do lugar nunca. Sem piso ele desce a viela e
+           pega a rua, que é o que uma pessoa faz.
+
+           O que ele não faz é refazer o próprio rastro. Rua sem saída
+           continua sem saída: num beco fechado a trilha cobre tudo, a
+           segunda escolha entra e ele volta pela viela — que é o que
+           acontece com quem entra num beco. */
+        const escolher = evitar=>{
+          let bom = null, score = -Infinity;
+          for(const {n:v} of aqui.viz){
+            if(evitar && evitar.has(`${v.x},${v.y}`)) continue;
+            const vx = v.x-aqui.x, vy = v.y-aqui.y, d = Math.hypot(vx,vy) || 1;
+            const cos = (vx/d)*dx + (vy/d)*dy;
+            if(cos > score){ score = cos; bom = v; }
+          }
+          return bom;
+        };
+        /* a trilha curta é o que impede a volta no quarteirão: sem ela o
+           bonde pegava a esquina, dava a volta e voltava pro mesmo nó —
+           medido, 390 px andados pra 14 px de deslocamento. Doze nós são
+           uns 120 px de rua, o bastante pra fechar um laço pequeno sem
+           impedir o desvio legítimo em volta de um prédio. */
+        b._trilha = b._trilha || [];
+        const melhor = escolher(new Set(b._trilha)) || escolher(null);
         if(!melhor) return b;
+        b._trilha.push(`${aqui.x},${aqui.y}`);
+        if(b._trilha.length > 12) b._trilha.shift();
         b._indo = {x:melhor.x, y:melhor.y};
       }
       const ax = b._indo.x - b.x, ay = b._indo.y - b.y;
@@ -1296,7 +1375,8 @@ TO.ruas = (function(){
           nossoJogo, naEsplanada, marcarQueEntraram,
           anfitriaoDe, escoltaDe,
           porOlheiro, visivel, desenhar, relogio,
-          nossoBonde, sairDaSede, mandarPara, dirigir, DIA_VAZIO,
+          nossoBonde, nossosNaRua, bondeComandado,
+          sairDaSede, mandarPara, dirigir, DIA_VAZIO,
           VEL, ANTES, JANELA, MANHA_COM_HOSPEDE, apitoDoDia, aberturaDoDia,
           RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};
 })();

@@ -2712,6 +2712,7 @@
       const falta = Math.max(0, (R.apito||0) - R.minuto);
       const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
       const meu = TO.ruas.nossoBonde(e);
+      const nossos = TO.ruas.nossosNaRua(e);
       barraRua.appendChild(el('div',{class:'rua-relogio', html:
         `<b>${TO.ruas.relogio(R.minuto, e)}</b><small>${
           !jogos.length ? (falta > 0 ? `${hhmm(falta)} de rua` : 'anoiteceu')
@@ -2725,19 +2726,38 @@
             : 'ninguém joga aqui hoje — quem sair, sai porque você mandou'}
            </small>`}));
 
+      /* PEGAR O BONDE. Qualquer bonde nosso que esteja na rua serve, e em
+         dia de jogo já tem um lá — o disco que está indo pro estádio. Com
+         mais de um, o botão passa de um pro outro. */
+      let btP = null;
+      if(nossos.length){
+        const i = nossos.findIndex(b=>b.id === R.selecionado);
+        const proximo = nossos[(i + 1) % nossos.length];
+        btP = el('button',{class:'bt' + (meu ? ' destaque' : ''),
+          texto: !meu ? `Pegar o bonde${nossos.length>1?` (${nossos.length})`:''}`
+               : nossos.length > 1 ? `Passar pro próximo (${nossos.length})`
+                                   : 'Largar o bonde'});
+        btP.title = meu
+          ? 'Clique num ponto do mapa pra mandar, ou dirija com WASD.'
+          : 'Selecionar pra mandar por clique ou dirigir com WASD.';
+        btP.onclick = ()=>{
+          R.selecionado = (meu && nossos.length === 1) ? null : proximo.id;
+          aviso(R.selecionado
+            ? `${proximo.sigla} — clique num ponto do mapa pra mandar, `+
+              `ou dirija com WASD.`
+            : 'Bonde solto.', 'boa');
+          redesenhar();
+        };
+      }
+
       /* SAIR DA SEDE. Custa uma ação da semana, e quando não dá o botão
          diz por quê em vez de só ficar cinza. */
-      const btS = el('button',{class:'bt',
-        texto: meu ? (R.selecionado === meu.id ? 'Bonde selecionado' : 'Selecionar bonde')
-                   : 'Sair da sede'});
-      if(meu) btS.onclick = ()=>{
-        R.selecionado = R.selecionado === meu.id ? null : meu.id;
-        aviso(R.selecionado
-          ? 'Clique num ponto do mapa pra mandar, ou dirija com WASD.'
-          : 'Bonde solto.', 'boa');
-        redesenhar();
-      };
-      else {
+      const btS = el('button',{class:'bt', texto:'Sair da sede'});
+      if(TO.ruas.bondeComandado(e)){
+        btS.disabled = true;
+        btS.textContent = 'Bonde já está na rua';
+        btS.title = 'Um bonde comandado por vez.';
+      } else {
         const rest = TO.acoes.restantes(e);
         const aptos = TO.membros.aptosParaOEstadio(e).length;
         /* botão que não dá diz o motivo NO RÓTULO, não só no title: no
@@ -2777,7 +2797,9 @@
         else poeOlheiro = !poeOlheiro;
         redesenhar();
       };
-      barraRua.append(btO, btS, bt);
+      barraRua.append(btO, btS);
+      if(btP) barraRua.appendChild(btP);
+      barraRua.appendChild(bt);
     }
     q.corpo.appendChild(barraRua);
 
@@ -2982,19 +3004,28 @@
         redesenhar();
         return;
       }
-      /* O BONDE COMANDADO: clicar em cima dele seleciona; com ele
-         selecionado, o clique seguinte é a ordem de destino. Fora
-         disso o clique continua sendo o que sempre foi — informação
-         do que está debaixo do dedo. */
+      /* O BONDE NOSSO: clicar em cima dele seleciona; com ele
+         selecionado, o clique seguinte é a ordem de destino. Vale pra
+         QUALQUER bonde nosso que esteja na rua, não só pro que saiu por
+         ordem — em dia de jogo é o disco que já está andando pro estádio
+         que o jogador quer pegar. Fora disso o clique continua sendo o
+         que sempre foi: informação do que está debaixo do dedo. */
       const R = TO.ruas.estado(E());
-      const meu = TO.ruas.nossoBonde(E());
-      if(meu && Math.hypot(meu.x-p.x, meu.y-p.y) < 18){
-        R.selecionado = R.selecionado === meu.id ? null : meu.id;
-        aviso(R.selecionado ? 'Bonde selecionado — clique no destino ou dirija com WASD.'
-                            : 'Bonde solto.', 'boa');
+      const nossos = TO.ruas.nossosNaRua(E());
+      let perto = null, md = 18*18;
+      for(const b of nossos){
+        const q = (b.x-p.x)*(b.x-p.x) + (b.y-p.y)*(b.y-p.y);
+        if(q <= md){ md = q; perto = b; }
+      }
+      if(perto){
+        R.selecionado = R.selecionado === perto.id ? null : perto.id;
+        aviso(R.selecionado
+          ? `${perto.sigla} selecionado — clique no destino ou dirija com WASD.`
+          : 'Bonde solto.', 'boa');
         redesenhar();
         return;
       }
+      const meu = TO.ruas.nossoBonde(E());
       if(meu && R.selecionado === meu.id){
         const r = TO.ruas.mandarPara(E(), mo, p.x, p.y);
         aviso(r.msg, r.ok ? 'boa' : 'ruim');
@@ -3111,6 +3142,7 @@
 
   let setasDoMapa = null;
   const teclasDoMapa = {};
+  const DIRIGINDO_ACELERA = 4;   // o dia corre 4× enquanto se dirige
   function ligarSetasDoMapa(cv){
     if(setasDoMapa) return;
     addEventListener('keydown', ev=>{
@@ -3128,13 +3160,30 @@
         const dx = (teclasDoMapa.d?1:0) - (teclasDoMapa.a?1:0);
         const dy = (teclasDoMapa.s?1:0) - (teclasDoMapa.w?1:0);
         if(dx || dy){
-          /* mesma escala de tempo do relógio: dois minutos de rua por
-             segundo de tela */
-          TO.ruas.dirigir(e, mapaAtual, dx, dy, dt*2);
+          /* SEGURAR A TECLA É ADIANTAR O DIA COM O DEDO.
+
+             O relógio normal anda dois minutos de rua por segundo de
+             tela, e um bonde faz 6 px por minuto de rua: 12 px por
+             segundo numa praça de 1.254 px de lado. Dirigir nesse passo
+             era segurar W por um minuto e meio pra atravessar a cidade —
+             quem testou disse, com razão, que não funcionava.
+
+             Dirigindo, o dia corre quatro vezes mais rápido: 8 minutos
+             por segundo, 48 px por segundo, a praça inteira em meio
+             minuto. E corre pra TODO MUNDO — os outros bondes andam
+             junto e o relógio queima igual. Não é atalho: é o preço de
+             atravessar a cidade no dedo em vez de deixar o dia andar. */
+          const passoDoDia = dt * 2 * DIRIGINDO_ACELERA;
+          TO.ruas.dirigir(e, mapaAtual, dx, dy, passoDoDia);
+          if(!R.rodando) TO.ruas.passo(e, mapaAtual, passoDoDia);
           if(canvasMapa){
             TO.mapa.desenhar(mapaAtual, canvasMapa);
             TO.ruas.desenhar(e, mapaAtual, canvasMapa.getContext('2d'));
           }
+          if(R.encontro){ redesenhar(); }
+        } else if(b.dirigindo){
+          /* soltou as teclas: ele para onde estiver */
+          b.dirigindo = false;
         }
       }
       setasDoMapa = requestAnimationFrame(passo);
