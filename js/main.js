@@ -2629,41 +2629,27 @@
     const e = E(), pg = U.$('.pagina[data-pag="mapa"]');
     const MP = TO.mapa;
     pg.innerHTML = '';
-    pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Mapa da cidade</h1>'}));
-
     const cidade = TO.mundo.cidade(e.torcida.mapa);
     if(!cidade || !(cidade.bairros||[]).length){
+      pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Mapa da cidade</h1>'}));
       pg.appendChild(emConstrucao('Sem mapa',
         'Esta praça não tem bairros catalogados.'));
       return;
     }
+    /* A PRAÇA VAI NO TÍTULO DA PÁGINA, e o cartão perde o cabeçalho.
+       Aqui morava um painel de conferência da época em que o mapa estava
+       sendo construído — tamanho, bairros, ruas, estádios, nossa sede,
+       população e o contador de pinos visíveis. Hoje o mapa é a tela
+       principal do jogo, e esses números comiam a primeira dobra dela;
+       no celular, comiam mais. O que não podia sumir é em qual das cinco
+       praças a gente está, e isso o título resolve com uma linha só. */
+    pg.appendChild(el('div',{class:'titulo-barra',
+      html:`<h1>Mapa da cidade — ${cidade.nome}, ${cidade.uf}</h1>`}));
+
     const mo = MP.modelo(e);
-    const sede = TO.mundo.bairroDaSede(e.torcida);
-    const tamanho = cidade.nivel === 1 ? 'Grande' : cidade.nivel === 2 ? 'Médio' : 'Pequeno';
-    const arte = mo && mo.arte;
-
-    const q = quadro(`${cidade.nome} — ${cidade.uf}`,
-      el('span',{class:'conta',
-        texto:`${mo.mostrando} de ${mo.total} pontos visíveis`}));
-
-    const barra = el('div',{class:'mapa-barra'});
-    const dado = (rot, val)=>barra.appendChild(el('div',{html:
-      `<span>${rot}</span><b>${val}</b>`}));
-    dado('Tamanho', tamanho);
-    dado('Bairros', arte ? mo.regioes.length : cidade.bairros.length);
-    if(arte){
-      const nós = mo.malha.andavel.reduce((a,b)=>a+b, 0);
-      dado('Ruas', U.numero(nós) + ' pontos');
-      dado('Estádios', (arte.estadios||[]).length);
-    }else{
-      dado('Quarteirões', cidade.bairros.length * MP.QUARTEIROES);
-      dado('Lotes', cidade.bairros.length * MP.QUARTEIROES * MP.LOTES);
-    }
-    dado('Nossa sede', sede ? sede.nome : '—');
-    const pop = cidade.populacao || 0;
-    dado('População', pop >= 1000 ? U.numero(pop/1000, 1) + ' mi'
-                                  : U.numero(pop) + ' mil');
-    q.corpo.appendChild(barra);
+    const q = el('div',{class:'quadro'});
+    q.corpo = el('div');
+    q.appendChild(q.corpo);
 
     /* --- filtros --- */
     const f = MP.filtros(e);
@@ -2711,12 +2697,12 @@
       const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
       /* o relógio do dia, que abre às 08:00 e vai até o apito das 16:00 */
       barraRua.appendChild(el('div',{class:'rua-relogio', html:
-        `<b>${TO.ruas.relogio(R.minuto)}</b><small>${
+        `<b>${TO.ruas.relogio(R.minuto, e)}</b><small>${
           falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`}));
       barraRua.appendChild(el('div',{class:'rua-info', html:
         `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
          <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
-         apito às ${TO.ruas.relogio(R.apito||0)}</small>`}));
+         apito às ${TO.ruas.relogio(R.apito||0, e)}</small>`}));
       const bt = el('button',{class:'bt destaque',
         texto: R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia'});
       bt.disabled = !andando && !R.encontro;
@@ -2809,7 +2795,7 @@
         d.style.background = x.cor;
         d.style.width = d.style.height =
           U.limitar(10 + Math.sqrt(x.n)*1.4, 12, 30) + 'px';
-        d.title = `${x.nome} · ${x.n} · chegou ${TO.ruas.relogio(x.entrouEm)}`
+        d.title = `${x.nome} · ${x.n} · chegou ${TO.ruas.relogio(x.entrouEm, e)}`
                 + (x.escolta ? ` · ${x.escolta.n} da ${x.escolta.nome} na escolta` : '')
                 + (x.doJogador && !x.nossa ? ' · sob o seu comando' : '');
         faixa.appendChild(d);

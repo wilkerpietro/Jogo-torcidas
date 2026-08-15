@@ -870,16 +870,6 @@ table.dados tr.selecionada td{background:#252525}
 .olheiro .bondes small{font-size:9.5px;color:var(--fraco)}
 
 /* ---------- mapa da cidade ---------- */
-.mapa-barra{
-  display:flex;flex-wrap:wrap;gap:6px 26px;padding:10px 14px;
-  border-bottom:1px solid var(--linha);
-}
-.mapa-barra > div{display:flex;flex-direction:column;gap:1px}
-.mapa-barra span{
-  font-size:10px;color:var(--fraco);text-transform:uppercase;letter-spacing:.1em;
-}
-.mapa-barra b{font-family:var(--mono);font-size:12.5px}
-
 .mapa-viewport{
   overflow:auto;background:#0d0d0e;padding:10px;
   max-height:calc(100vh - 250px);

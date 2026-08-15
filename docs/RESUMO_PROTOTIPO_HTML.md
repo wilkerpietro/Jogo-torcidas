@@ -1076,6 +1076,39 @@ qualquer largura.
   girar — sem travar e sem `screen.orientation.lock()`, que só vale em tela cheia e não
   existe no Safari do iOS.
 
+- **A tela do mapa perdeu o painel de conferência.** Tamanho, Bairros, Ruas, Estádios (ou
+  Quarteirões e Lotes), Nossa sede, População e o contador `X de Y pontos visíveis` eram
+  números da época em que o mapa estava sendo construído; hoje o mapa é a tela principal e
+  eles comiam a primeira dobra dela — no celular, mais ainda. Saíram, junto com o
+  cabeçalho do cartão e com a regra `.mapa-barra` do CSS, que virou código morto. O que
+  não podia sumir é em qual das cinco praças o jogador está: virou sufixo do título da
+  página — **`Mapa da cidade — Sao Paulo, SP`** —, que é uma linha em vez de duas.
+
+- **O dia abre perto do jogo.** Abria sempre às 08:00, e num apito das 16:00 isso eram 480
+  minutos de relógio — quatro minutos de tela, dos quais quase três sem nada acontecendo.
+  A abertura passou a depender do que o dia tem: **3h30 antes** quando há caravana que vai
+  dormir na sede de um aliado, **2h30 antes** quando não há. A janela de saída não mexeu.
+  Saber se há hospedagem exige rodar `anfitriaoDe` pras visitantes sem sede, o que só
+  acontecia lá embaixo, dentro da montagem dos bondes — então entrou uma passada de
+  detecção antes de tudo, e a abertura fica em `R.abertura`, resolvida uma vez: quem lê a
+  hora e quem calcula o apito têm de ler o mesmo número.
+  `CHEGADA_CEDO` morreu. Ele espalhava a descida do ônibus por 45 minutos porque o dia
+  abria seis horas antes do jogo; com a abertura em T-3h30 a premissa acabou e a primeira
+  perna começa em `saiEm: 0`. Medido: **102 bondes hospedados em 125 dias de jogo nas cinco
+  praças Grandes, nenhum parado no minuto zero**.
+  Conferido: apito às 16:00 abre **12:30** com hospedagem e **13:30** sem; apito às 11:00
+  com hospedagem abre 07:30 e o dia roda inteiro, sem duração negativa. Em 638 bondes,
+  **0 fora da janela de T-2h30 a T-2h00** e **0 horas de saída instáveis** entre aberturas
+  da tela. O relógio para no apito do último jogo do dia, tirado de `horaDoJogo`.
+  **O que a medição mostrou de ruim:** a manhã dá 60 minutos (3h30 − 2h30) e a caminhada
+  do ponto de entrada até a sede do aliado leva, medida rota a rota, **mediana de 51 a 145
+  minutos conforme a praça, e até 205**. Resultado: só **29 dos 102** hospedados chegam na
+  sede antes da própria hora de saída — a folga mais apertada foi de 2 minutos —, e os
+  outros 73 saem atrasados, o pior deles em 144 minutos. Eles saem assim que chegam, como
+  combinado, mas na prática a maioria não usa a hospedagem: chega na casa do aliado depois
+  da hora de sair dela. Pra fechar, ou a manhã precisa de ~3h em vez de 1h (abertura em
+  T-5h30), ou o ônibus tem de descer mais perto da sede do anfitrião.
+
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça.** As cinco arenas já
 existem e as ações já sabem abrir cena; falta o gesto no mapa — clicar num ponto da rua
 pra marcar tocaia.

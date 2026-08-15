@@ -325,19 +325,30 @@ TO.ruas = (function(){
   /* =======================================================
      O RELÓGIO DO DIA
 
-     R.minuto conta minutos desde as 08:00, que é quando o dia de jogo
-     abre. O relógio do mapa é ABERTURA + R.minuto, e o apito é às 16:00.
-     Antes disso o relógio era um cronômetro sem hora: contava de zero e
-     o mapa só sabia dizer quanto faltava.
+     O dia abria sempre às 08:00 e o apito de um jogo das 16:00 ficava a
+     480 minutos dali — quatro minutos de tela, dos quais quase três não
+     tinham nada acontecendo. A abertura passou a depender do que o dia
+     tem pra mostrar:
 
-     A tarde tem duas cenas. De manhã cedo entra quem vem de fora e vai
-     dormir na sede do aliado. Só entre 2h30 e 2h antes do apito é que a
-     praça inteira sai pro estádio — escalonada, porque bonde não sai
-     todo no mesmo minuto. */
-  const ABERTURA = 8*60;             // 08:00
-  const ANTES    = 150;              // a janela abre 2h30 antes do apito...
-  const JANELA   = 30;               // ...e fecha 2h antes
-  const CHEGADA_CEDO = 45;           // quem vem de fora desce entre 8h e 8h45
+       · tem caravana que dorme na sede de aliado -> abre 3h30 antes
+       · não tem                                  -> abre 2h30 antes
+
+     Três horas e meia é o que a manhã precisa pra caber a caminhada do
+     ônibus até a casa do anfitrião e a espera curta até a saída. Sem
+     hospedagem não há manhã nenhuma: o dia abre no minuto em que a praça
+     começa a sair pro estádio.
+
+     A janela de saída não mexeu — continua entre 2h30 e 2h antes do
+     apito, escalonada, porque bonde não sai todo no mesmo minuto.
+
+     `R.minuto` conta minutos desde a abertura, e a abertura de cada dia
+     fica em `R.abertura`, resolvida uma vez em `montar()`. Duas contas
+     independentes derivariam: quem lê a hora e quem calcula o apito têm
+     de ler o mesmo número. */
+  const ANTES  = 150;   // a janela abre 2h30 antes do apito...
+  const JANELA = 30;    // ...e fecha 2h antes
+  const MANHA_COM_HOSPEDE = 210;   // 3h30: dá tempo de ir pra casa do aliado
+  const APITO_PADRAO = 16*60;      // usado só quando o dia não tem jogo
 
   /* 'HH:MM' -> minutos do dia; devolve null no que não for hora */
   function emMinutos(hhmm){
@@ -348,20 +359,35 @@ TO.ruas = (function(){
   /* O APITO É O DO ÚLTIMO JOGO DO DIA NESTA PRAÇA, e a hora vem da grade
      (`horaDoJogo`), não de constante: rodada de domingo tem jogo às 11h e
      às 20h30, e o relógio da rua tem de acompanhar o que a tabela marcou.
-     Em minutos desde as 08:00, que é o zero de R.minuto. */
-  function apitoDoDia(E){
+     Em minutos do dia. */
+  function ultimoApito(E){
     const horas = jogosDaPraca(E).filter(j=>j.dia === E.data.dia)
       .map(j=>emMinutos(j.hora)).filter(h=>h != null);
-    const ultimo = horas.length ? Math.max(...horas) : 16*60;
-    return Math.max(60, ultimo - ABERTURA);
+    return horas.length ? Math.max(...horas) : APITO_PADRAO;
   }
 
-  /* 'minutos desde as 08:00' -> 'HH:MM' */
-  const relogio = m => {
-    const t = Math.max(0, Math.round(ABERTURA + m));
+  /* a abertura, em minutos do dia. Nunca antes da meia-noite: num apito
+     às 11:00 com hospedagem ela cairia em 07:30, o que é cedo mas é hora
+     de verdade — o piso só existe pra jogo de madrugada não virar dia
+     negativo. */
+  const aberturaDoDia = (E, temHospede) =>
+    Math.max(0, ultimoApito(E) - (temHospede ? MANHA_COM_HOSPEDE : ANTES));
+
+  /* o apito em minutos DESDE A ABERTURA, que é o zero de R.minuto */
+  function apitoDoDia(E){
+    const R = estado(E);
+    const abertura = R.abertura != null ? R.abertura : aberturaDoDia(E, false);
+    return Math.max(60, ultimoApito(E) - abertura);
+  }
+
+  /* 'minutos desde a abertura' -> 'HH:MM' */
+  function relogio(m, E){
+    const R = E ? estado(E) : null;
+    const base = (R && R.abertura != null) ? R.abertura : 0;
+    const t = Math.max(0, Math.round(base + m));
     return `${String(Math.floor(t/60)%24).padStart(2,'0')}:`+
            `${String(t%60).padStart(2,'0')}`;
-  };
+  }
 
   /* Esbarrão na rua. Foi 16 e a briga de rua praticamente não existia:
      medido em 12 dias de jogo, dois bondes hostis chegavam a menos de 16
@@ -509,6 +535,19 @@ TO.ruas = (function(){
     R.esfria = {}; R.arredores = [];
 
     const doDia = jogosDaPraca(E).filter(j=>j.dia === E.data.dia);
+
+    /* A ABERTURA DEPENDE DO QUE O DIA TEM, e tem de ser resolvida ANTES
+       de qualquer coisa que leia hora: o apito é medido a partir dela.
+       Saber se há hospedagem exige rodar `anfitriaoDe` pras visitantes
+       sem sede, o que só aconteceria lá embaixo, dentro da montagem dos
+       bondes — daí esta passada de detecção primeiro. Um `true` basta. */
+    const temHospede = doDia.some(j=>
+      M().torcidasDe(j.vis.id).some(o=>
+        !pontoDaSede(mo, o) &&
+        TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id]) >= 5 &&
+        !!anfitriaoDe(E, mo, o)));
+    R.abertura = aberturaDoDia(E, temHospede);
+    R.comHospede = temHospede;
     R.apito = apitoDoDia(E);
     if(!doDia.length) return R;
 
@@ -647,14 +686,15 @@ TO.ruas = (function(){
         /* só o primeiro bonde é hospedado: a escolta é uma, não uma por
            ônibus, e é o bonde principal que anda com o anfitrião */
         const escolta = j === 0 && escoltas[o.id] ? escoltas[o.id].n : 0;
-        /* A caravana desce entre 08:00 e 08:45 — salvo em jogo de manhã,
-           que é quando a janela de saída abre antes disso: num apito às
-           11:00 ela abre 08:30, e sem apertar a chegada o ônibus estaria
-           marcado pra sair da sede do aliado antes de ter descido. */
-        const cedo = Math.max(1, Math.min(CHEGADA_CEDO, apito - ANTES));
+        /* O ÔNIBUS DESCE NO MINUTO ZERO e já sai andando. Antes a
+           descida era sorteada numa janela de 45 minutos, porque o dia
+           abria seis horas antes do jogo e a caravana não podia ficar
+           parada no meio-fio. Com a abertura em T-3h30 a premissa
+           acabou: a manhã existe pra essa caminhada acontecer e ser
+           vista, não pra ninguém esperar. O que dá variedade são os dois
+           pontos de entrada alternados e as rotas até cada sede. */
         nasce(o, entra, [
-          {saiEm: MP().hash(`${o.id}|vem${j}|${R.chave}`) % cedo,
-           ate: casa.sede, tipo:'aliado'},
+          {saiEm: 0, ate: casa.sede, tipo:'aliado'},
           {saiEm: saida, ate: est}
         ], porBonde, 'visitante', jogo, escolta ? {
           escolta: {de: casa.torcida.id, nome: casa.torcida.nome,
@@ -798,12 +838,20 @@ TO.ruas = (function(){
              efetivo cresce, não na saída de casa. */
           if(!b.hospedado){
             b.hospedado = true;
+            b.chegouNaSede = Math.round(R.minuto);
             if(b.escolta) b.n += b.escolta.n;
           }
+          /* A ida ao estádio começa na hora sorteada OU no momento em
+             que ele chegou aqui, o que for depois: bonde não sai de um
+             lugar onde ainda não chegou. Se a caminhada estourou a hora,
+             ele sai atrasado — e é isso que a medição mostra. */
           const proxima = b.etapas[b.etapa+1];
-          if(proxima && R.minuto >= proxima.saiEm){
-            b.etapa++; b.rota = proxima.rota; b.saiEm = proxima.saiEm;
-            b.i = 0; b.t = 0;
+          if(proxima){
+            const parte = Math.max(proxima.saiEm, b.chegouNaSede);
+            if(R.minuto >= parte){
+              b.etapa++; b.rota = proxima.rota; b.saiEm = parte;
+              b.i = 0; b.t = 0;
+            }
           }
           continue;
         }
@@ -1042,6 +1090,6 @@ TO.ruas = (function(){
           nossoJogo, naEsplanada, marcarQueEntraram,
           anfitriaoDe, escoltaDe,
           porOlheiro, visivel, desenhar, relogio,
-          VEL, ANTES, JANELA, ABERTURA, apitoDoDia,
+          VEL, ANTES, JANELA, MANHA_COM_HOSPEDE, apitoDoDia, aberturaDoDia,
           RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};
 })();
