@@ -934,8 +934,11 @@ table.dados tr.selecionada td{background:#252525}
 
 /* O canto de cima à esquerda: relógio, embaixo dele o recolhível dos
    pontos do mapa e, embaixo dos dois, a coluna do menu. */
+/* A pilha da esquerda para ACIMA da faixa da torcida: a coluna do menu
+   é o último item dela e, deixada solta até o fim da HUD, ela passava
+   por baixo da faixa em tela deitada. */
 .mapa-canto{
-  position:absolute;left:10px;top:10px;bottom:10px;
+  position:absolute;left:10px;top:10px;bottom:56px;
   display:flex;flex-direction:column;align-items:flex-start;gap:6px;
 }
 
@@ -944,33 +947,44 @@ table.dados tr.selecionada td{background:#252525}
    (`--coluna-menu`), então o ícone da página aberta continua visível e
    clicável — é assim que se fecha o painel pelo mesmo ícone. */
 :root{--coluna-menu:58px}
+/* ONZE ÍCONES E A ALTURA QUE HOUVER.
+   Empilhados a 31px cada dão 341px de coluna, e um celular deitado tem
+   390px de tela inteira — dos quais sobram uns 190 pra cá depois do
+   zoom, do recolhível, da faixa da torcida e do ticker. Então a coluna
+   é `column wrap`: enche a altura que tem e QUEBRA numa segunda coluna
+   ao lado. Nada rola escondido e nada passa por baixo da faixa. */
 .mapa-menu{
-  display:flex;flex-direction:column;gap:3px;
+  display:flex;flex-flow:column wrap;gap:3px;align-content:flex-start;
   background:#141416e0;border:1px solid var(--linha);padding:4px;
-  backdrop-filter:blur(2px);overflow-y:auto;min-height:0;
+  backdrop-filter:blur(2px);min-height:0;max-height:100%;
 }
-.mapa-menu .mapa-ic{width:32px;height:28px}
+.mapa-menu .mapa-ic{width:32px;height:28px;flex:none}
 .mapa-menu .mapa-ic svg{width:16px;height:16px}
 .mapa-menu .mapa-ic.aceso{
   background:var(--rubro);border-color:var(--rubro-vivo);color:#fff;
 }
 
-/* A DATA E O AVANÇAR, no canto de cima à direita, com o zoom logo
-   abaixo — os dois na mesma coluna, ancorados na tela e não na planta. */
-.mapa-direita{
+/* O BLOCO DE QUANDO: hora em cima, data e dia da semana embaixo, e o ≫
+   colado. Uma moldura só — hora e data são a mesma informação em duas
+   escalas, e como dois cartões em cantos opostos o olho tinha de
+   atravessar a tela pra saber quando está. */
+.mapa-quando{
   position:absolute;right:10px;top:10px;
-  display:flex;flex-direction:column;align-items:flex-end;gap:6px;
-}
-.mapa-data{
-  display:flex;align-items:center;gap:7px;
-  background:#141416e0;border:1px solid var(--linha);padding:4px 8px;
+  display:flex;flex-direction:column;align-items:stretch;
+  background:#141416e0;border:1px solid var(--linha);
   backdrop-filter:blur(2px);
 }
-.mapa-data .dia{font-family:var(--mono);font-size:13px;line-height:1.15}
+.mapa-quando .rua-relogio{
+  background:none;border:0;border-bottom:1px solid var(--sulco);
+  padding:3px 10px 4px;
+}
+.mapa-quando-baixo{display:flex;align-items:center;gap:8px;padding:3px 6px 3px 10px}
+.mapa-data .dia{font-family:var(--mono);font-size:12.5px;line-height:1.15}
 .mapa-data .semana{
   font-family:var(--mono);font-size:8.5px;color:var(--fraco);
   letter-spacing:.16em;text-transform:uppercase;
 }
+.mapa-quando .mapa-ic{margin-left:auto;width:30px;height:26px}
 
 /* A FAIXA DE BAIXO: escudo, nome da torcida e os três números. */
 .mapa-rodape{
@@ -997,6 +1011,15 @@ table.dados tr.selecionada td{background:#252525}
   display:flex;align-items:center;gap:5px;
   font-family:var(--mono);font-size:12px;color:var(--texto);
 }
+/* o saldo da semana: sinal, cor e um rótulo curto. Dois valores em
+   reais lado a lado sem rótulo viram dois saldos e o jogador não sabe
+   qual é qual. */
+.mapa-rodape .semana{flex-direction:column;align-items:flex-start;gap:0;line-height:1.1}
+.mapa-rodape .semana i{font-style:normal;font-size:12px}
+.mapa-rodape .semana small{font-size:8.5px;color:var(--fraco);letter-spacing:.1em;
+  text-transform:uppercase}
+.mapa-rodape .semana.sobra i{color:#6a9c4a}
+.mapa-rodape .semana.falta i{color:#d9705f}
 .mapa-rodape .num svg{width:14px;height:14px;color:var(--fraco)}
 .mapa-rodape .num.negativo{color:#d9705f}
 

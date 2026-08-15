@@ -39,6 +39,10 @@ TO.icones = (function(){
     /* sair da sede: a porta e quem sai por ela */
     saida:     env('<path d="M13.5 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h7"/>'+
                    '<path d="M16 8.5 19.5 12 16 15.5"/><path d="M10.5 12h9"/>'),
+    /* avançar um dia: duas setas. O `play` é do relógio do dia — um
+       anda minutos, o outro pula 24 horas, e os dois com o mesmo
+       triângulo na mesma tela era pedir clique errado. */
+    avancar:   env('<path d="M6 5.5 12.5 12 6 18.5"/><path d="M13 5.5 19.5 12 13 18.5"/>'),
     /* pontos do mapa: as camadas que se acendem e se apagam */
     camadas:   env('<path d="m12 3.5 8.5 4.3-8.5 4.3-8.5-4.3z"/>'+
                    '<path d="m4.6 12.4-1.1.6 8.5 4.3 8.5-4.3-1.1-.6"/>'+

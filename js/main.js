@@ -318,54 +318,29 @@
     retomarDia('painel');
   }
 
-  const abrirGaveta = ()=>{ document.body.classList.add('gaveta'); };
+  /* A GAVETA, O ☰ E OS ATALHOS DE CANTO SAÍRAM.
+     A coluna de ícones dentro do mapa é a navegação inteira, em qualquer
+     largura. A gaveta era a versão de celular dela; os três botões do
+     canto — GESTÃO, TORCIDA, MENU — abriam duas páginas que a coluna já
+     abre e uma gaveta que não existe mais. `montarAtalhos` sobreviveu
+     como função vazia porque `redesenhar` a chama, e um `if` a menos no
+     caminho quente é melhor do que um nome espalhado por três arquivos.
+
+     O `#veu` também foi junto: ele só escurecia o fundo da gaveta. O
+     painel de gestão nunca usou — ele é opaco e cobre o mapa inteiro. */
   const fecharGaveta = ()=>{ document.body.classList.remove('gaveta'); };
+  function montarAtalhos(){}
 
-  /* Os atalhos de canto: as páginas mais pedidas e, quando o mapa está
-     na frente, os botões que a barra dele oferece. */
-  function montarAtalhos(){
-    const cx = $('atalhos');
-    if(!cx) return;
-    cx.innerHTML = '';
-    if(!estreito() || painel) return;
-    const bt = (rot, fn, destaque)=>{
-      const b = el('button', {texto:rot});
-      if(destaque) b.classList.add('destaque');
-      b.onclick = fn;
-      cx.appendChild(b);
-    };
-    if(pagina === 'mapa'){
-      const e = E(), R = e && TO.ruas.estado(e);
-      if(R && R.bondes.length){
-        bt(R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia', ()=>{
-          if(R.encontro){ abrirConfronto(e, R.encontro); return; }
-          R.rodando = !R.rodando;
-          if(R.rodando) rodarRelogio();
-          montarAtalhos();
-        }, !!R.encontro);
-      }
-    }
-    bt('Gestão',    ()=>abrirPainel('gestao'));
-    bt('Torcida',   ()=>abrirPainel('torcida'));
-    bt('Menu',      abrirGaveta);
-  }
-
-  /* em tela estreita o jogo começa no mapa, que é a tela principal */
   function ligarTelaEstreita(){
-    const menu = $('btMenu'), veu = $('veu'), fecha = $('painelFechar');
-    if(menu) menu.onclick = ()=>
-      document.body.classList.contains('gaveta') ? fecharGaveta() : abrirGaveta();
-    if(veu)  veu.onclick  = fecharGaveta;
+    const fecha = $('painelFechar');
     if(fecha) fecha.onclick = fecharPainel;
     addEventListener('keydown', ev=>{
-      if(ev.key !== 'Escape') return;
-      if(document.body.classList.contains('gaveta')) fecharGaveta();
-      else if(painel) fecharPainel();
+      if(ev.key === 'Escape' && painel) fecharPainel();
     });
-    addEventListener('resize', ()=>{
-      if(!estreito()){ fecharGaveta(); fecharPainel(); }
-      montarAtalhos();
-    });
+    /* a coluna do menu existe em qualquer largura, mas o tamanho do
+       ícone muda com a altura da tela: mudar de orientação remonta o
+       mapa uma vez, que é onde ela é construída */
+    addEventListener('resize', ()=>{ if(!painel) redesenhar(); });
   }
 
   /* =======================================================
@@ -390,9 +365,23 @@
       noData.querySelector('.dia').textContent = dt.curta;
       noData.querySelector('.semana').textContent = dt.semana;
     }
+
     if(noRodape && noRodape.isConnected){
       const [c1,c2] = e.torcida.cores;
       const c = TO.membros.contar(e);
+      /* O SALDO DA SEMANA, ao lado do saldo em conta.
+         O número não é recalculado aqui: sai inteiro de
+         `TO.financeiro.resumoDaSemana`, que é receita menos despesa
+         menos o que a Gestão comprometeu — a mesma conta que a tela de
+         Financeiro mostra. Duas contas com os mesmos valores escritas
+         em dois lugares é a tela mentindo daqui a três semanas.
+
+         É PROJEÇÃO DA SEMANA CORRENTE, não resultado fechado: mexe na
+         hora em que o jogador decide uma caravana, e é isso que o torna
+         útil aqui. E mora no redesenho da faixa, não no laço por quadro
+         — `resumoDaSemana` chama `contas()` e `compromissos()`. */
+      const sem = (TO.financeiro.resumoDaSemana(e) || {}).saldo || 0;
+      const sinal = sem > 0 ? '+' : sem < 0 ? '−' : '';
       noRodape.innerHTML =
         `<span class="escudo" style="background:linear-gradient(135deg,${c1} 0 52%,${c2} 52% 100%)"
            >${e.torcida.sigla}</span>` +
@@ -400,6 +389,8 @@
         `<span class="praca">${e.torcida.cidade} · ${e.torcida.uf}</span>` +
         `<span class="num${e.dinheiro<0?' negativo':''}">${IC.get('dinheiro')}` +
         `${U.dinheiro(e.dinheiro)}</span>` +
+        `<span class="num semana ${sem>0?'sobra':sem<0?'falta':''}">` +
+        `<i>${sinal}${U.dinheiro(Math.abs(sem))}</i><small>na semana</small></span>` +
         `<span class="num">${IC.get('membros')}${U.numero(c.total)}</span>` +
         `<span class="num">${IC.get('estrela')}` +
         `${Math.round(e.indicadores.prestigio*5)}</span>`;
@@ -3027,18 +3018,27 @@
        anda junto com o mapa arrastado. */
     const palco = el('div',{class:'mapa-palco'});
     const hud = el('div',{class:'mapa-hud'});
+    /* A PILHA DA ESQUERDA: zoom, o recolhível dos pontos e a coluna do
+       menu. O relógio saiu daqui — hora e data são a mesma informação em
+       duas escalas, e separadas nos dois cantos de cima o olho tinha de
+       atravessar a tela pra saber quando está. */
     const canto = el('div',{class:'mapa-canto'});
-    canto.appendChild(noRelogioRua);
+    canto.appendChild(zoom);
 
-    /* A DATA E O AVANÇAR DIA, no canto de cima à direita.
-       Vieram do `#blocoData` do cabeçalho que deixou de existir. */
-    noData = el('div',{class:'mapa-data', html:
-      '<div><div class="dia">—</div><div class="semana">—</div></div>'});
-    const btAv = el('button',{class:'mapa-ic', html: IC.get('play')});
+    /* O BLOCO DE QUANDO, no canto de cima à direita: relógio em cima,
+       data e dia da semana embaixo, uma moldura só — e o ≫ de avançar
+       o dia colado neles. O nó do relógio é o mesmo de sempre, então
+       `pintarRelogioDaRua` continua escrevendo nele a cada quadro sem
+       passar por `redesenhar()`. */
+    noData = el('div',{class:'mapa-quando'});
+    const datas = el('div',{class:'mapa-data', html:
+      '<div class="dia">—</div><div class="semana">—</div>'});
+    const btAv = el('button',{class:'mapa-ic', html: IC.get('avancar')});
     btAv.title = 'Avançar um dia';
     btAv.setAttribute('aria-label','Avançar um dia');
     btAv.onclick = ()=>TO.estado.avancarDia();
-    noData.appendChild(btAv);
+    noData.append(noRelogioRua, el('div',{class:'mapa-quando-baixo'}));
+    noData.lastChild.append(datas, btAv);
 
     /* A FAIXA DE BAIXO: escudo, nome e os três números. */
     noRodape = el('div',{class:'mapa-rodape'});
@@ -3054,14 +3054,14 @@
     const linhaF = el('div',{class:'mapa-linha-filtros'});
     linhaF.append(btF, filtros);
     canto.appendChild(linhaF);
-    /* A COLUNA DO MENU, na borda esquerda, embaixo do relógio e do
-       recolhível. Em tela estreita ela não aparece: onze ícones
-       empilhados passam de 400px de altura e um celular deitado tem
-       390 — ali continua valendo a gaveta do ☰. */
-    if(!estreito()) canto.appendChild(montarMenuDoMapa());
-    const direita = el('div',{class:'mapa-direita'});
-    direita.append(noData, zoom);
-    hud.append(iconesMapa, canto, direita, noRodape);
+    /* A COLUNA DO MENU, na borda esquerda, embaixo do zoom e do
+       recolhível — em qualquer largura, celular incluído. Onze ícones
+       empilhados não cabem nos 390px de um celular deitado, então ela
+       quebra em duas colunas quando a altura aperta (ver `.mapa-menu`,
+       que é `column wrap`): quem manda é a altura disponível, não a
+       largura da tela. */
+    canto.appendChild(montarMenuDoMapa());
+    hud.append(iconesMapa, canto, noData, noRodape);
     palco.append(viewport, hud);
     q.corpo.appendChild(palco);
     pg.appendChild(q);

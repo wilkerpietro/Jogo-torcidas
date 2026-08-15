@@ -15,9 +15,8 @@
    sido remontado.
    ========================================================= */
 
-/* o ☰ e o véu não existem em tela larga: lá quem navega é a coluna de
-   ícones dentro do mapa, e gaveta nenhuma abre */
-#btMenu, #veu{ display:none; }
+/* o ☰, o véu e a gaveta deixaram de existir: a coluna de ícones dentro
+   do mapa é a navegação em qualquer largura */
 
 @media (max-width: 900px){
 
@@ -31,42 +30,6 @@
       "tela"
       "ticker";
   }
-
-  /* O ☰ volta a existir, agora solto: ele era a última peça do `#topo`,
-     que saiu inteiro. Fica no canto de baixo à esquerda, longe da faixa
-     de ícones do mapa e do lado oposto aos atalhos. */
-  #btMenu{
-    display:block; position:fixed; z-index:44;
-    left:calc(8px + env(safe-area-inset-left));
-    /* acima do ticker, que tem 26px e é a última faixa da tela */
-    bottom:calc(34px + env(safe-area-inset-bottom));
-    width:42px; height:42px; line-height:1;
-    background:rgba(18,18,20,.92); border:1px solid var(--linha);
-    color:var(--texto); font-size:19px; border-radius:3px; cursor:pointer;
-  }
-  body.gaveta #btMenu, body.com-painel #btMenu, body.em-cena #btMenu{ display:none; }
-  /* com a cruz de WASD na tela o ☰ subiria pra cima dela */
-  body.com-pad #btMenu{ bottom:calc(200px + env(safe-area-inset-bottom)); }
-
-  /* ---------- a lateral vira gaveta ---------- */
-  /* `display:none` é o padrão em tela larga; aqui ela volta */
-  #lateral{ display:block; }
-  #lateral{
-    position:fixed; z-index:60;
-    top:0; bottom:0; left:0; width:min(74vw, 260px);
-    padding-top:calc(10px + env(safe-area-inset-top));
-    padding-left:env(safe-area-inset-left);
-    overflow-y:auto;
-    transform:translateX(-102%);
-    transition:transform .18s ease-out;
-    box-shadow:6px 0 26px rgba(0,0,0,.55);
-  }
-  body.gaveta #lateral{ transform:translateX(0); }
-  body.gaveta #veu{
-    display:block; position:fixed; inset:0; z-index:50;
-    background:rgba(0,0,0,.55);
-  }
-  .nav-item{ padding:12px 16px; font-size:14.5px; }
 
   /* ---------- páginas ---------- */
   #tela{ padding:0; min-width:0; }
@@ -105,6 +68,13 @@
   /* a faixa da torcida sai da frente da cruz de WASD enquanto se dirige
      um bonde: dirigir é modo, e o modo manda no canto de baixo */
   body.com-pad .mapa-rodape{ display:none; }
+  /* a coluna do menu NÃO some — ela é a navegação inteira agora. O que
+     muda é o quanto ela tem de altura: com a cruz na tela, o canto de
+     baixo à esquerda é dela, e a coluna quebra em mais uma coluna em
+     vez de passar por baixo. */
+  body.com-pad .mapa-canto{ bottom:168px; }
+  /* no celular a faixa da torcida ocupa duas linhas */
+  .mapa-canto{ bottom:88px; }
   /* e o pad inteiro sobe acima do ticker */
   #mapaPad{ padding-bottom:calc(32px + env(safe-area-inset-bottom)); }
   .mapa-ic{ width:34px; height:32px; }
@@ -168,27 +138,6 @@
     border-radius:3px; padding:4px 12px; font-size:15px; cursor:pointer;
   }
 
-  /* Atalhos de canto: as páginas mais usadas e os botões do mapa, sem
-     precisar abrir a gaveta toda vez. */
-  /* o botão fixo de avançar dia é do desktop: no celular o play já está
-     no topo, e aqui ele só tapava os atalhos */
-  #avancarFixo{ display:none !important; }
-
-  #atalhos{
-    position:fixed; z-index:44;
-    right:calc(8px + env(safe-area-inset-right));
-    bottom:calc(8px + env(safe-area-inset-bottom));
-    display:flex; flex-direction:column; gap:6px; align-items:flex-end;
-  }
-  body.com-painel #atalhos, body.gaveta #atalhos{ display:none; }
-  #atalhos button{
-    background:rgba(18,18,20,.92); border:1px solid var(--linha);
-    color:var(--texto); font-family:var(--titulo); font-size:11.5px;
-    letter-spacing:.09em; text-transform:uppercase;
-    padding:8px 11px; border-radius:3px; cursor:pointer; white-space:nowrap;
-  }
-  #atalhos button.destaque{ background:var(--rubro); border-color:var(--rubro-vivo); }
-
   /* ---------- tabela larga arrasta pro lado, o resto empilha ---------- */
   .tabela-rolante, .tabela-larga{
     overflow-x:auto; -webkit-overflow-scrolling:touch;
@@ -222,7 +171,6 @@
   #djComandos #djBtBomba,
   #djComandos #djBtRecuar{ display:none; }
   /* o botão fixo de avançar dia não entra na cena */
-  body.em-cena #avancarFixo, body.em-cena #atalhos{ display:none; }
 
   /* ---------- o pad ---------- */
   .dj-pad{

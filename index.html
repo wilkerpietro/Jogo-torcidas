@@ -21,15 +21,12 @@
        DENTRO dele, o escudo, o nome e os números pra faixa de baixo, e a
        marca "Torcida Organizada" saiu — o nome da torcida na periferia
        já diz onde o jogador está. Quem monta tudo isso é `pintarMapa`.
-       O ☰ sobrou porque a gaveta de tela estreita é dele. -->
-  <button id="btMenu" aria-label="Menu" title="Menu">&#9776;</button>
-
-  <div id="veu"></div>
+       O ☰ e a gaveta saíram junto: a coluna de ícones dentro do mapa
+       é a navegação inteira, em qualquer largura. -->
   <div id="painelBarra">
     <span id="painelTitulo">—</span>
     <button id="painelFechar" aria-label="Fechar">Fechar &times;</button>
   </div>
-  <div id="atalhos"></div>
   <div id="avisoGirar">gire o aparelho pra ver a rua inteira</div>
 
   <nav id="lateral"></nav>
@@ -157,7 +154,6 @@
 
 <input type="file" id="arquivoSave" accept=".json" hidden>
 <div id="notificacoes"></div>
-<button id="avancarFixo" class="oculto">Avançar dia</button>
 
 <!-- núcleo (cria o namespace TO, tem que vir antes dos dados) -->
 <script src="js/nucleo.js"></script>

@@ -96,12 +96,12 @@ input,select,textarea{font-family:var(--corpo);color:inherit}
 .nav-item:disabled{opacity:.34;cursor:default}
 .nav-item:disabled:hover{background:transparent;color:var(--fraco)}
 
-/* A BARRA LATERAL SÓ EXISTE COMO GAVETA.
-   Em tela larga quem navega é a coluna de ícones dentro do mapa; o
-   `#lateral` continua montado porque é ele que a gaveta do ☰ mostra no
-   celular, e ali ele ainda é a lista com nome e tudo. */
+/* A BARRA LATERAL NÃO EXISTE MAIS EM LARGURA NENHUMA.
+   Quem navega é a coluna de ícones dentro do mapa — no celular também.
+   O `<nav id="lateral">` continua no HTML e vazio de propósito: tirar a
+   tag exigiria mexer em `montarLateral`, que é o mesmo `NAV` que a
+   coluna usa; escondê-la aqui é uma linha e não deixa resto na tela. */
 #lateral{display:none}
-#btMenu{display:none}
 
 /* ---------- área de conteúdo ---------- */
 /* o padding de baixo abre espaço pro botão flutuante de avançar o dia */
@@ -160,17 +160,9 @@ body.com-painel #painelBarra{
   letter-spacing:.19em;text-transform:uppercase;color:#dedede;
 }
 
-/* ---------- botão flutuante de avançar o dia ---------- */
-#avancarFixo{
-  position:fixed;right:18px;bottom:44px;z-index:60;
-  background:var(--rubro);border:0;color:#fff;cursor:pointer;
-  padding:17px 30px;
-  font-family:var(--titulo);font-size:15px;font-weight:600;
-  letter-spacing:.17em;text-transform:uppercase;
-  box-shadow:0 6px 22px rgba(0,0,0,.55);
-}
-#avancarFixo:hover{background:#b62a2a}
-#avancarFixo:disabled{opacity:.5;cursor:default}
+/* O BOTÃO FLUTUANTE DE AVANÇAR O DIA SAIU.
+   Havia três caminhos pra mesma ação — ele, o play do cabeçalho e o
+   atalho de canto. Sobrou um: o ≫ ao lado da data, dentro do mapa. */
 
 /* ---------- ticker ---------- */
 #ticker{

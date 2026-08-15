@@ -1787,6 +1787,76 @@ começo, que é o estado que o save descreve.
    `drawImage` do canvas do mapa, **90 quadros em 1,5 s com o mapa na frente e 0
    quadros em 1,5 s com um painel aberto**.
 
+## 8.15 HUD do mapa: um menu só, um bloco de quando, um caminho pro dia
+
+Cinco arrumações sobre a HUD que acabou de entrar, todas de coisa duplicada ou mal
+ancorada.
+
+**Um menu só.** O ☰, a gaveta e os três atalhos do canto — GESTÃO, TORCIDA, MENU —
+saíram. Os dois primeiros abriam páginas que a coluna já abre e o terceiro abria
+justamente a gaveta que estava sendo removida. O `#veu` foi junto: ele só escurecia
+o fundo da gaveta, e o painel de gestão é opaco e cobre o mapa inteiro. **A coluna de
+ícones é a navegação inteira, em qualquer largura.**
+
+**Um bloco de quando.** Hora e data são a mesma informação em duas escalas; em
+cantos opostos, o olho tinha de atravessar a tela pra saber quando está. O relógio
+saiu do canto esquerdo e virou a linha de cima de um bloco único no canto direito —
+relógio, data, dia da semana e o ≫ de avançar, uma moldura só. O nó do relógio é o
+mesmo de antes, então `pintarRelogioDaRua` continua escrevendo nele a cada quadro.
+
+**Um Play.** O mesmo triângulo aparecia duas vezes: no relógio do dia e no avançar
+dia. Um anda minutos, o outro pula 24 horas. O play ficou com o relógio, que é quem
+tem direito ao símbolo, e o avançar virou **duas setas** (`avancar` em `icones.js`).
+
+**Um caminho pro dia seguinte.** Havia três — o botão flutuante `#avancarFixo`, o
+play do cabeçalho e o atalho de canto. Sobrou o ≫ ao lado da data; o flutuante saiu
+do HTML e do CSS.
+
+**O canto esquerdo, que o relógio desocupou, ficou com o zoom**, e abaixo dele o
+recolhível dos pontos e a coluna do menu.
+
+**E o saldo da semana entrou na faixa de baixo**, com sinal e cor. O número não é
+recalculado: sai inteiro de `TO.financeiro.resumoDaSemana(E).saldo` — receita menos
+despesa menos o que a Gestão comprometeu, a mesma conta da tela de Financeiro. É
+projeção da semana corrente, não resultado fechado, e mora no redesenho da faixa,
+nunca no laço por quadro.
+
+### Os números de aceite
+
+1. **Não existe ☰ em largura nenhuma**, nem `#atalhos`, nem `#veu`, nem
+   `#avancarFixo` — os quatro ausentes do documento em 1280×800, 390×844 e 844×390,
+   com `#lateral` em `display:none`. E a coluna **abriu as 11 páginas nas três
+   resoluções**: zero falhas nas 33 aberturas.
+2. **A coluna cabe em 844×390 quebrando em coluna**, não encolhendo nem rolando: o
+   ícone continua em **32×28 px** em qualquer tela, e o que muda é o número de
+   colunas — **1 em 1280×800, 1 em 390×844 e 3 em 844×390**. É `flex-flow: column
+   wrap` com a altura limitada pela faixa da torcida; os **11 ícones ficam inteiros
+   dentro da tela nas três resoluções**. Empilhados seriam 341 px, e um celular
+   deitado tem 390 no total.
+3. **Um Play só na tela**, o do relógio: contando os `path` do SVG, `plays: 1` e
+   `avancar: 1` nas três resoluções, com `title` "Avançar um dia".
+4. **Um caminho pro dia seguinte:** o ≫ do bloco de quando. O `#avancarFixo` saiu.
+5. **O relógio anda por quadro:** 8 mudanças de texto em 4 s com **0 trocas de nó**,
+   e no fim o mesmo canvas, o mesmo zoom e a mesma rolagem do visor.
+6. **O zoom está no canto esquerdo** (x = 23 px em 1280, 30 no celular) e vai de
+   **40% a 200%** como antes, medido clicando 20 vezes no − e 40 no +.
+7. **O saldo da semana bate com o Financeiro, e mexe na hora.** Semana 6 de um save
+   da Cearamor: faixa `+R$ 856`, `resumoDaSemana` 856, tela de Financeiro `R$ 856`.
+   Escolhendo **"Churrasco e escolta" (−R$ 375)** na recepção do aliado, pelo botão
+   de verdade da Gestão: faixa `+R$ 481`, resumo 481, Financeiro `R$ 481` — os três
+   iguais nos dois momentos.
+8. **A faixa cabe em 390 px sem corte:** sete peças (escudo, nome, praça, saldo,
+   saldo da semana, membros, prestígio), **zero com texto cortado**, `scrollWidth`
+   igual ao `clientWidth` em todas. Ela quebra em duas linhas no celular — 69 px de
+   altura contra 35 no desktop — e é isso que faz caber.
+9. **Nada se sobrepõe:** dez elementos cruzados dois a dois — bloco de quando, botão
+   dos pontos, lista aberta, coluna do menu, controles, zoom, faixa, ticker, cruz de
+   WASD e ações do pad — em 1280×800, 390×844 e 844×390, com o recolhível fechado e
+   aberto: **zero pares nos seis estados**. Um ajuste saiu daí: a pilha da esquerda
+   passou a parar 56 px acima do fim da HUD (88 no celular, 168 com o pad de
+   dirigir na tela), porque a coluna do menu, solta até o fim, passava por baixo da
+   faixa da torcida em tela deitada.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima
