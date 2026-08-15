@@ -1689,6 +1689,104 @@ e `TO.mapa.baixarImagem` continuam de pé — é a ferramenta de autor que gerou
 7. **Bateria limpa**, `ERR []` em `conect`, `acoes_ui`, `pad`, `pad2` e
    `bundle_check`.
 
+## 8.14 O mapa vira o jogo
+
+Até aqui o jogo eram onze páginas e uma delas era o mapa. Agora **a tela é o mapa**,
+e a gestão é periférico dele: o cabeçalho e a barra lateral viraram HUD sobre o
+canvas, as onze páginas viram painéis que abrem por cima e fecham, e a casca do
+`#jogo` deixou de ser o grid `marca / topo / lateral / tela / ticker` para ser mapa +
+ticker. É a mesma inversão que o celular já tinha, valendo em qualquer largura.
+
+**O dia já começa rodando.** Antes o jogador precisava apertar play, e o relógio
+parava sozinho em três lugares sem nunca religar: no encontro, ao avançar o dia e ao
+fechar a cena. Agora ele nasce ligado — e por isso precisou de motivos de pausa
+explícitos, guardados num conjunto: `painel` (o jogador está lendo, não jogando),
+`foco` (aba sem foco), `salvar` e `cena`. Enquanto houver motivo, o relógio não anda;
+quando o último sai, ele volta **de onde parou**, porque o `ultimo` do laço é zerado
+a cada partida e o tempo parado não é cobrado.
+
+**As seis âncoras**, resolvidas antes de codar porque duas já disputavam o mesmo
+canto:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ [relógio]        [play][1×][olho][sair]        [data][▶] │
+│ [pontos ▸]                                        [zoom] │
+│ [menu ×11]                                               │
+│  ...                          MAPA                       │
+│ [escudo] Cearamor · FORTALEZA CE   R$ 6.000  150  60     │
+├──────────────────────────────────────────────────────────┤
+│  ticker de notícias                                      │
+└──────────────────────────────────────────────────────────┘
+```
+
+O recolhível dos pontos **abre para o lado**, não para baixo: embaixo dele mora a
+coluna do menu, e aberto para baixo ele cobriria os onze ícones.
+
+### Três desvios, e por quê
+
+- **O zoom mudou de âncora.** Ele estava preso ao canto da *planta*, não da tela.
+  Com o mapa maior que o visor — que virou o caso normal, porque o mapa agora é a
+  tela inteira — o canto de cima à direita da planta fica fora da vista, e o zoom ia
+  junto. Passou a ser HUD, embaixo da data. Mesmo controle, mesmos botões.
+- **O zoom padrão passou a encher o visor.** Eram 760 px fixos, de quando o mapa era
+  um cartão no meio de uma página. Abrir a tela do jogo com moldura de fundo vazio em
+  volta da planta não seria a tela do jogo.
+- **O título "Mapa da cidade — Fortaleza, CE" saiu.** Era o nome de uma tela entre
+  onze; a praça foi para a faixa de baixo, ao lado do nome da torcida. Quarenta
+  pixels de moldura em cima do jogo. A linha informativa da rua (o confronto do dia,
+  quantos bondes) continua onde estava, que é o que o pedido mandava manter.
+
+### O save estava quebrado, e a criação do critério 3 é que descobriu
+
+Salvar devolvia `Converting circular structure to JSON`: `E.ruas` guarda os bondes do
+dia, cada bonde guarda a rota, e a rota é uma lista de **nós da malha da cidade** —
+que apontam para os vizinhos, que apontam de volta. **O jogo estava sem save nenhum
+desde que a rua ganhou malha**, e ninguém tinha visto porque salvar era um Ctrl+S
+silencioso e o fechamento de semana engolia o erro. O save agora omite `E.ruas`, que
+é cache: `TO.ruas.montar` reconstrói o dia inteiro a partir do calendário. O que se
+perde ao carregar é onde os bondes estavam no meio da tarde; o dia recomeça do
+começo, que é o estado que o save descreve.
+
+### Os números de aceite
+
+1. **Abre rodando:** minuto 4 ao abrir, 8 dois segundos depois, `rodando: true`, sem
+   ninguém apertar nada. **Avançar o dia** recomeça no minuto 1 e já está em 5 dois
+   segundos depois. **Fechar a cena de um confronto** devolve o dia rodando — é o
+   `retomarDia('cena')` no `fecharDiaDeJogo`.
+2. **Pausa e retoma sem pular:** com painel aberto, minuto 8 ao abrir e **8 depois de
+   três segundos**; ao fechar, ainda 8, e volta a andar. Aba sem foco: 12 → 12 → 12,
+   e anda de novo no `focus`.
+3. **Salvar com o dia rodando:** `{ok:true}`, chave `torcida-organizada:save`
+   escrita, e o dia continua correndo depois. Conferido o ciclo inteiro: salvar,
+   recarregar a página, **Continuar** — volta na semana 1, dia 4, R$ 6.000, com mapa,
+   menu e relógio andando.
+4. **Os onze ícones abrem os onze painéis:** dez painéis testados um a um (o décimo
+   primeiro é o próprio mapa, que fecha), todos com `.painel.on`, **conteúdo pintado**
+   e o ícone aceso; **zero sem `title`**.
+5. **Em tela larga não existe `#lateral` nem ☰** (`display:none` nos dois) e a coluna
+   está lá; em tela estreita a coluna não existe e a gaveta do ☰ continua sendo o
+   caminho.
+6. **Nenhum resto do cabeçalho:** `#topo` e `#marca` não existem no documento. Data e
+   avançar no canto de cima à direita; escudo, nome, praça, saldo, membros e
+   prestígio na faixa de baixo — **membros e prestígio foram para lá**, junto do
+   saldo, que é onde os três já eram lidos lado a lado.
+7. **Abrir e fechar painel não mexe no mapa:** o mesmo nó de canvas (`mesmoCanvas:
+   true`), zoom em 100% e a rolagem do visor onde estava, com o dia rodando de novo
+   no fim.
+8. **Nada se sobrepõe:** doze elementos cruzados dois a dois — relógio, botão dos
+   pontos, lista aberta, coluna do menu, controles, data, zoom, faixa de baixo,
+   ticker, ☰, cruz de WASD e botões do pad — em **1280×800, 390×844 e 844×390**, com
+   o recolhível fechado e aberto: **zero pares sobrepostos nos seis estados**. Três
+   ajustes saíram daí: em 390 px não cabem relógio, controles e data na mesma linha
+   (74 + 155 + 140 passa da largura), então os controles descem uma linha; deitado, a
+   lista abre à direita, embaixo do zoom, porque o canto de baixo à esquerda é da
+   cruz de WASD; e a faixa da torcida se esconde enquanto o pad de dirigir está na
+   tela.
+9. **O laço para de verdade, e isto foi contado, não presumido:** instrumentando o
+   `drawImage` do canvas do mapa, **90 quadros em 1,5 s com o mapa na frente e 0
+   quadros em 1,5 s com um painel aberto**.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima

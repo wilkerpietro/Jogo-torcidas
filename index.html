@@ -14,34 +14,15 @@
 <!-- ================= JOGO ================= -->
 <div id="jogo" class="oculto">
 
-  <div id="marca">
-    <span class="casa" id="marcaIcone"></span>
-    <div>
-      <b>Torcida</b>
-      <small>Organizada</small>
-    </div>
-  </div>
-
-  <header id="topo">
-    <div id="blocoData">
-      <div>
-        <div class="dia" id="dataDia">—</div>
-        <div class="semana" id="dataSemana">—</div>
-      </div>
-      <button id="btAvancar" title="Avançar um dia"></button>
-    </div>
-
-    <div id="blocoTorcida">
-      <span class="escudo" id="escudoTorcida"></span>
-      <div>
-        <h1 id="nomeTorcida">—</h1>
-        <span id="subIdentidade">—</span>
-      </div>
-    </div>
-
-    <div id="blocoIndicadores"></div>
-    <button id="btMenu" aria-label="Menu" title="Menu">&#9776;</button>
-  </header>
+  <!-- O CABEÇALHO ENTROU NO MAPA.
+       Havia aqui uma faixa de 56px com a marca, a data, o nome da
+       torcida e três indicadores, e o mapa começava depois dela. O mapa
+       é o jogo: a data e o avançar foram pro canto de cima à direita
+       DENTRO dele, o escudo, o nome e os números pra faixa de baixo, e a
+       marca "Torcida Organizada" saiu — o nome da torcida na periferia
+       já diz onde o jogador está. Quem monta tudo isso é `pintarMapa`.
+       O ☰ sobrou porque a gaveta de tela estreita é dele. -->
+  <button id="btMenu" aria-label="Menu" title="Menu">&#9776;</button>
 
   <div id="veu"></div>
   <div id="painelBarra">

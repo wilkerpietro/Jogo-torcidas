@@ -15,7 +15,8 @@
    sido remontado.
    ========================================================= */
 
-/* o ☰ e o véu não existem em tela larga */
+/* o ☰ e o véu não existem em tela larga: lá quem navega é a coluna de
+   ícones dentro do mapa, e gaveta nenhuma abre */
 #btMenu, #veu{ display:none; }
 
 @media (max-width: 900px){
@@ -27,47 +28,29 @@
   #jogo{
     grid-template-columns:minmax(0,1fr);
     grid-template-areas:
-      "topo"
       "tela"
       "ticker";
   }
-  #marca{ display:none; }
 
-  #topo{
-    grid-area:topo;
-    position:sticky; top:0; z-index:40;
-    padding-right:env(safe-area-inset-right);
-    padding-left:env(safe-area-inset-left);
-  }
-  /* os indicadores viram uma faixa que rola de lado, sem empurrar o ☰ */
-  /* `flex:1 1 0` com `min-width:0`: sem isso a linha de indicadores não
-     encolhe, o topo transborda e a página inteira passa a rolar de lado.
-     Encolhida, ela rola dentro de si mesma. */
-  #topo{ flex-wrap:nowrap; }
-  #blocoData{ flex:0 0 auto; padding:0 8px; }
-  /* o nome da torcida cede espaço; o ☰ nunca cede */
-  #blocoTorcida{ flex:0 1 auto; min-width:0; padding:0 8px; gap:7px; }
-  #blocoTorcida span#subIdentidade{ display:none; }
-  #blocoIndicadores{
-    flex:1 1 0; min-width:0;
-    overflow-x:auto; overflow-y:hidden;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-  }
-  #blocoIndicadores::-webkit-scrollbar{ display:none; }
-  #blocoTorcida h1{ max-width:38vw; overflow:hidden; text-overflow:ellipsis;
-                    white-space:nowrap; }
-
+  /* O ☰ volta a existir, agora solto: ele era a última peça do `#topo`,
+     que saiu inteiro. Fica no canto de baixo à esquerda, longe da faixa
+     de ícones do mapa e do lado oposto aos atalhos. */
   #btMenu{
-    display:flex; align-items:center; justify-content:center;
-    flex:0 0 52px; width:52px; align-self:stretch;
-    margin-left:auto; order:9;
-    background:transparent; border:0; border-left:1px solid var(--linha);
-    color:var(--texto); font-size:21px; line-height:1; cursor:pointer;
+    display:block; position:fixed; z-index:44;
+    left:calc(8px + env(safe-area-inset-left));
+    /* acima do ticker, que tem 26px e é a última faixa da tela */
+    bottom:calc(34px + env(safe-area-inset-bottom));
+    width:42px; height:42px; line-height:1;
+    background:rgba(18,18,20,.92); border:1px solid var(--linha);
+    color:var(--texto); font-size:19px; border-radius:3px; cursor:pointer;
   }
-  #btMenu:active{ background:#1f1f1f; }
+  body.gaveta #btMenu, body.com-painel #btMenu, body.em-cena #btMenu{ display:none; }
+  /* com a cruz de WASD na tela o ☰ subiria pra cima dela */
+  body.com-pad #btMenu{ bottom:calc(200px + env(safe-area-inset-bottom)); }
 
   /* ---------- a lateral vira gaveta ---------- */
+  /* `display:none` é o padrão em tela larga; aqui ela volta */
+  #lateral{ display:block; }
   #lateral{
     position:fixed; z-index:60;
     top:0; bottom:0; left:0; width:min(74vw, 260px);
@@ -105,11 +88,25 @@
      colado embaixo: a faixa fica na borda de cima, a cruz na de baixo,
      e entre as duas sobra o mapa, que continua sendo quem recebe o
      arrasto. */
-  /* A conta da largura em retrato: 390px de tela, o visor come 21 de
-     margem de cada lado, o relógio fica no canto esquerdo e a faixa vai
-     no meio. Com a faixa em 168px e o relógio em 93 os dois se tocavam
-     por 8 pixels — daí a faixa e o relógio encolherem juntos aqui. */
-  .mapa-icones{ gap:3px; padding:4px; }
+  /* AS ÂNCORAS NO CELULAR.
+     Em 390px não cabem relógio, faixa de controles e data na mesma
+     linha: 74 + 155 + 140 passa da largura útil. Então a faixa desce
+     uma linha — a de cima fica com o relógio à esquerda e a data à
+     direita, e a de baixo com o botão dos pontos (só o ícone) à
+     esquerda e a faixa no meio. E o recolhível volta a abrir PRA
+     BAIXO, porque aqui não existe coluna de menu embaixo dele pra
+     cobrir; abrindo pro lado, ele batia na data e no zoom. */
+  .mapa-icones{ gap:3px; padding:4px; margin-top:46px;
+                align-self:flex-start; margin-left:52px; }
+  .mapa-ic.largo .rot{ display:none; }
+  .mapa-ic.largo{ width:34px; padding:0; }
+  .mapa-linha-filtros{ flex-direction:column; }
+  .mapa-filtros{ max-height:46vh; }
+  /* a faixa da torcida sai da frente da cruz de WASD enquanto se dirige
+     um bonde: dirigir é modo, e o modo manda no canto de baixo */
+  body.com-pad .mapa-rodape{ display:none; }
+  /* e o pad inteiro sobe acima do ticker */
+  #mapaPad{ padding-bottom:calc(32px + env(safe-area-inset-bottom)); }
   .mapa-ic{ width:34px; height:32px; }
   .mapa-ic svg{ width:18px; height:18px; }
   .rua-relogio{ padding:2px 7px 3px; }
@@ -118,15 +115,19 @@
   /* em paisagem a tela tem 390px de altura: o rótulo do recolhível some
      e sobra o ícone, que é o que cabe */
   @media (max-height:460px){
-    .mapa-ic.largo .rot{ display:none; }
-    .mapa-ic.largo{ width:34px; padding:0; }
-    .mapa-filtros{ max-height:44vh; }
+    /* Deitado, o lado esquerdo de baixo é da cruz de WASD e do ☰, e o
+       de cima é do relógio e dos controles. Sobra a direita: a lista
+       abre lá, embaixo do zoom, presa à tela e não ao canto. */
+    .mapa-canto .mapa-filtros{
+      position:fixed; left:auto; right:10px; top:172px;
+      max-height:calc(100vh - 200px);
+    }
+    .mapa-icones{ align-self:center; margin-left:0; }
     /* deitado, o canto de cima vira uma linha: relógio e o botão dos
        pontos lado a lado. Empilhados, o botão descia até a altura da
        cruz de WASD, que é fixa no canto de baixo à esquerda — 844×390
        tem 390px de altura e não sobra o que empilhar. */
     .mapa-canto{ flex-direction:row; align-items:flex-start; }
-    .mapa-canto .mapa-filtros{ position:absolute; left:0; top:44px; }
   }
   .cartao, .corpo, .lista-detalhe, .subabas, .abas-grandes{ min-width:0; }
   .lista-detalhe{ grid-template-columns:1fr !important; }
@@ -137,10 +138,12 @@
      embaixo; o painel é outra `.pagina` marcada como aberta, por cima.
      Nada é desmontado, então o zoom e o arrasto do mapa ficam onde
      estavam. */
+  /* sem o `#topo`, o painel começa no alto da tela e só desce os 40px
+     da própria barra de título */
   body.com-painel .pagina.painel{
     display:block;
     position:fixed; z-index:45;
-    top:56px; left:0; right:0; bottom:0;
+    inset:0;
     overflow-y:auto; -webkit-overflow-scrolling:touch;
     background:var(--fundo);
     padding:10px 10px calc(64px + env(safe-area-inset-bottom));
@@ -150,12 +153,12 @@
 
   #painelBarra{
     display:flex; align-items:center; gap:8px;
-    position:fixed; z-index:46; left:0; right:0; top:56px;
+    position:fixed; z-index:46; left:0; right:0; top:0;
     height:40px; padding:0 10px;
     background:var(--painel); border-bottom:1px solid var(--linha);
   }
   body:not(.com-painel) #painelBarra{ display:none; }
-  body.com-painel .pagina.painel{ top:96px; }
+  body.com-painel .pagina.painel{ top:40px; }
   #painelTitulo{
     font-family:var(--titulo); font-size:14px; letter-spacing:.11em;
     text-transform:uppercase; flex:1;

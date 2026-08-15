@@ -54,38 +54,20 @@ input,select,textarea{font-family:var(--corpo);color:inherit}
 /* =========================================================
    CASCA
    ========================================================= */
+/* O JOGO É O MAPA E O TICKER.
+   A casca era um grid de quatro áreas — marca, topo, lateral e tela —,
+   e o mapa era uma das onze páginas que se revezavam na área "tela".
+   Agora a tela é o mapa, sempre, e todo o resto (menu, data, torcida,
+   saldo) é HUD sobre ele; as páginas de gestão abrem como painel por
+   cima e fecham. Sobrou o ticker, que continua fora do mapa. */
 #jogo{
   display:grid;
-  grid-template-columns:var(--lateral) 1fr;
-  grid-template-rows:auto 1fr auto;
+  grid-template-columns:1fr;
+  grid-template-rows:1fr auto;
   grid-template-areas:
-    "marca  topo"
-    "lateral tela"
-    "lateral ticker";
-  min-height:100vh;
-}
-
-/* ---------- canto da marca ---------- */
-#marca{
-  grid-area:marca;
-  background:var(--painel);
-  border-right:1px solid var(--linha);
-  border-bottom:1px solid var(--linha);
-  display:flex; align-items:center; gap:9px;
-  padding:0 14px; height:56px;
-}
-#marca .casa{
-  width:26px;height:26px;flex:none;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--fraco);
-}
-#marca b{
-  font-family:var(--titulo);font-size:15px;font-weight:700;
-  letter-spacing:.13em;text-transform:uppercase;line-height:1;
-}
-#marca small{
-  display:block;font-family:var(--mono);font-size:8px;
-  color:var(--rubro-vivo);letter-spacing:.22em;
+    "tela"
+    "ticker";
+  height:100vh; min-height:100vh; overflow:hidden;
 }
 
 /* ---------- barra lateral ---------- */
@@ -114,70 +96,52 @@ input,select,textarea{font-family:var(--corpo);color:inherit}
 .nav-item:disabled{opacity:.34;cursor:default}
 .nav-item:disabled:hover{background:transparent;color:var(--fraco)}
 
-/* ---------- topo ---------- */
-#topo{
-  grid-area:topo;
-  height:56px;
-  background:var(--painel);
-  border-bottom:1px solid var(--linha);
-  display:flex;align-items:stretch;
-}
-
-#blocoData{
-  display:flex;align-items:center;gap:10px;
-  padding:0 14px;border-right:1px solid var(--linha);
-  border-left:3px solid var(--rubro);
-}
-#blocoData .dia{font-family:var(--mono);font-size:13px;line-height:1.15}
-#blocoData .semana{
-  font-family:var(--mono);font-size:8.5px;color:var(--fraco);
-  letter-spacing:.16em;text-transform:uppercase;
-}
-#btAvancar{
-  width:26px;height:26px;flex:none;cursor:pointer;
-  background:#262626;border:1px solid var(--linha);color:var(--texto);
-  display:flex;align-items:center;justify-content:center;
-}
-#btAvancar:hover{background:var(--rubro);border-color:var(--rubro)}
-
-#blocoTorcida{
-  display:flex;align-items:center;gap:11px;
-  padding:0 16px;border-right:1px solid var(--linha);min-width:230px;
-}
-.escudo{
-  width:34px;height:34px;border-radius:50%;flex:none;
-  border:2px solid #d8d8d8;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--titulo);font-weight:700;font-size:13px;
-  color:#fff;letter-spacing:.02em;
-}
-#blocoTorcida h1{
-  font-family:var(--titulo);font-size:17px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;line-height:1.1;
-}
-#blocoTorcida span{
-  font-family:var(--mono);font-size:9px;color:var(--fraco);letter-spacing:.09em;
-}
-
-#blocoIndicadores{display:flex;align-items:center;gap:26px;padding:0 20px;margin-left:auto}
-.indicador{display:flex;align-items:center;gap:8px}
-.indicador .ic{color:var(--fraco);display:flex}
-.indicador .ic svg{width:15px;height:15px}
-.indicador b{
-  display:block;font-family:var(--mono);font-size:13.5px;line-height:1.15;
-  font-variant-numeric:tabular-nums;
-}
-.indicador small{
-  display:block;font-family:var(--mono);font-size:8px;color:var(--fraco);
-  letter-spacing:.15em;text-transform:uppercase;
-}
-.indicador b.negativo{color:var(--vermelho)}
+/* A BARRA LATERAL SÓ EXISTE COMO GAVETA.
+   Em tela larga quem navega é a coluna de ícones dentro do mapa; o
+   `#lateral` continua montado porque é ele que a gaveta do ☰ mostra no
+   celular, e ali ele ainda é a lista com nome e tudo. */
+#lateral{display:none}
+#btMenu{display:none}
 
 /* ---------- área de conteúdo ---------- */
 /* o padding de baixo abre espaço pro botão flutuante de avançar o dia */
-#tela{grid-area:tela;padding:12px 12px 86px;overflow-x:hidden}
+#tela{grid-area:tela;padding:0;overflow:hidden;position:relative;min-height:0}
 .pagina{display:none}
 .pagina.on{display:block}
+/* a página do mapa ocupa a área inteira: ela É a tela */
+.pagina[data-pag="mapa"].on{height:100%}
+
+/* PAINEL POR CIMA DO MAPA, EM QUALQUER LARGURA.
+   Isto era regra de celular. Virou a regra: não existe mais "página
+   atual" que substitui o mapa — existe o mapa e, às vezes, um painel
+   aberto. A gaveta em tela larga não existe, então o painel deixa a
+   coluna de ícones de fora, à esquerda, e o ícone da página aberta
+   continua aceso e clicável. */
+body.com-painel .pagina.painel{
+  position:absolute; inset:0 0 0 var(--coluna-menu, 58px); z-index:52;
+  overflow-y:auto; background:var(--fundo);
+  padding:44px 14px 24px;
+}
+/* a barra de título do painel e o aviso de girar só existem quando
+   servem: os dois eram escondidos por regra de celular, e sem o grid
+   antigo passaram a aparecer soltos no rodapé da tela larga */
+#painelBarra{display:none}
+#avisoGirar{display:none}
+body.com-painel #painelBarra{
+  display:flex;align-items:center;gap:8px;
+  position:absolute;z-index:53;left:var(--coluna-menu, 58px);right:0;top:0;
+  height:40px;padding:0 12px;
+  background:var(--painel);border-bottom:1px solid var(--linha);
+}
+#painelTitulo{
+  font-family:var(--titulo);font-size:14px;letter-spacing:.11em;
+  text-transform:uppercase;flex:1;
+}
+#painelFechar{
+  background:transparent;border:1px solid var(--linha);color:var(--texto);
+  padding:4px 12px;font-size:14px;cursor:pointer;
+}
+#painelFechar:hover{border-color:var(--ouro,#d9a441);color:var(--ouro,#d9a441)}
 .titulo-pagina{
   font-family:var(--titulo);font-size:19px;font-weight:700;
   letter-spacing:.13em;text-transform:uppercase;

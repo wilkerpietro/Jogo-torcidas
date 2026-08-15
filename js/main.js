@@ -204,17 +204,44 @@
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.add('oculto');
     $('jogo').classList.remove('oculto');
-    $('marcaIcone').innerHTML = IC.get('casa');
-    $('btAvancar').innerHTML = IC.get('play');
-    $('btAvancar').onclick = ()=>{ TO.estado.avancarDia(); };
-    $('avancarFixo').classList.remove('oculto');
-    $('avancarFixo').onclick = ()=>{ TO.estado.avancarDia(); };
+    /* O AVANÇAR FLUTUANTE SAIU. O avançar agora mora ao lado da data, no
+       canto de cima à direita do mapa, e um segundo botão gigante no
+       canto de baixo só tapava a faixa da torcida. O elemento continua
+       no HTML porque a tela de fim de semana ainda o esconde e mostra. */
     montarLateral();
     ligarTelaEstreita();
-    /* no celular a tela principal é o mapa, não a página de início */
-    if(estreito()) pagina = 'mapa';
+    /* A TELA PRINCIPAL É O MAPA, em qualquer largura. Não existe mais
+       "página atual" que substitui o mapa: existe o mapa e, às vezes,
+       um painel por cima. */
+    pagina = 'mapa';
     redesenhar();
     ticker();
+    /* o dia já começa correndo: ninguém precisa apertar play pra a
+       cidade existir */
+    retomarDia('abertura');
+  }
+
+  /* A COLUNA DE ÍCONES DO MENU.
+     Os mesmos onze itens do `NAV`, com o mesmo `IC.get(n.ic)` que a
+     lateral usava — só que agora dentro do mapa, sem rótulo escrito e
+     com o nome no `title`, porque são onze e ícone mudo é adivinhação.
+     Clicar abre a página como painel por cima do mapa; clicar de novo
+     fecha. O painel deixa esta coluna de fora, à esquerda, então o
+     ícone da página aberta continua aceso e clicável. */
+  function montarMenuDoMapa(){
+    const cx = el('div',{class:'mapa-menu'});
+    for(const n of NAV){
+      const b = el('button',{class:'mapa-ic', 'data-pag':n.id, html: IC.get(n.ic)});
+      b.title = n.rot;
+      b.setAttribute('aria-label', n.rot);
+      if(painel === n.id) b.classList.add('aceso');
+      b.onclick = ()=>{
+        if(n.id === 'mapa' || painel === n.id){ fecharPainel(); return; }
+        abrirPainel(n.id);
+      };
+      cx.appendChild(b);
+    }
+    return cx;
   }
 
   function montarLateral(){
@@ -223,11 +250,11 @@
       const b = el('button',{class:'nav-item','data-pag':n.id,
         html:`${IC.get(n.ic)}<span>${n.rot}</span>`});
       b.onclick = ()=>{
-        /* em tela estreita a gestão é painel sobre o mapa; o mapa é a
-           tela principal e não sai de baixo */
-        if(estreito() && n.id !== 'mapa'){ abrirPainel(n.id); return; }
-        fecharGaveta(); fecharPainel();
-        pagina=n.id; redesenhar();
+        /* a gaveta abre painel como a coluna de ícones abre: o mapa é a
+           tela principal e não sai de baixo, em largura nenhuma */
+        fecharGaveta();
+        if(n.id === 'mapa'){ fecharPainel(); return; }
+        abrirPainel(n.id);
       };
       nav.appendChild(b);
     }
@@ -241,6 +268,8 @@
     });
     U.$$('.nav-item').forEach(b=>
       b.classList.toggle('on', b.dataset.pag===(painel||pagina)));
+    U.$$('.mapa-menu .mapa-ic').forEach(b=>
+      b.classList.toggle('aceso', b.dataset.pag===painel));
     document.body.classList.toggle('com-painel', !!painel);
   }
 
@@ -268,6 +297,10 @@
 
   function abrirPainel(id){
     if(id === 'mapa'){ fecharPainel(); return; }
+    /* painel aberto pausa o dia: o jogador está lendo, não jogando — e
+       o mapa não pode continuar sendo desenhado quadro a quadro atrás
+       de uma tela opaca */
+    pausarDia('painel');
     painel = id;
     fecharGaveta();
     const rot = (NAV.find(n=>n.id===id)||{}).rot || id;
@@ -282,6 +315,7 @@
     painel = null;
     trocarPagina();        // sem repintar nada: o mapa está como estava
     montarAtalhos();
+    retomarDia('painel');
   }
 
   const abrirGaveta = ()=>{ document.body.classList.add('gaveta'); };
@@ -337,32 +371,38 @@
   /* =======================================================
      CABEÇALHO
      ======================================================= */
+  /* O CABEÇALHO VIROU HUD DO MAPA.
+     Era uma faixa de 56px acima de tudo; agora a data e o avançar ficam
+     no canto de cima à direita do mapa e o escudo, o nome e os números
+     na faixa de baixo. Os nós são criados por `pintarMapa` e guardados
+     aqui, do mesmo jeito que o relógio da rua — assim isto continua
+     sendo escrita de texto, e não remontagem de tela.
+
+     Membros e prestígio não foram pedidos em lugar nenhum, e sumir sem
+     destino não é opção: vão junto do saldo na faixa de baixo, que é
+     onde os três já eram lidos lado a lado. */
+  let noData = null, noRodape = null;
   function pintarTopo(){
     const e = E();
+    if(!e) return;
     const dt = TO.estado.dataTexto();
-    $('dataDia').textContent = dt.curta;
-    $('dataSemana').textContent = dt.semana;
-
-    const esc = $('escudoTorcida');
-    const [a,b] = e.torcida.cores;
-    esc.textContent = e.torcida.sigla;
-    esc.style.background = `linear-gradient(135deg, ${a} 0 52%, ${b} 52% 100%)`;
-    esc.style.textShadow = '0 1px 3px rgba(0,0,0,.85)';
-
-    $('nomeTorcida').textContent = e.torcida.nome;
-    $('subIdentidade').textContent = `${e.torcida.cidade} - ${e.torcida.uf}`;
-
-    const c = TO.membros.contar(e);
-    const ind = [
-      ['dinheiro', U.dinheiro(e.dinheiro), 'Saldo', e.dinheiro<0],
-      ['membros',  U.numero(c.total),      'Membros', false],
-      ['estrela',  Math.round(e.indicadores.prestigio*5), 'Prestígio', false]
-    ];
-    const cx = $('blocoIndicadores'); cx.innerHTML='';
-    for(const [ic, valor, rot, ruim] of ind){
-      cx.appendChild(el('div',{class:'indicador', html:
-        `<span class="ic">${IC.get(ic)}</span>
-         <div><b class="${ruim?'negativo':''}">${valor}</b><small>${rot}</small></div>`}));
+    if(noData && noData.isConnected){
+      noData.querySelector('.dia').textContent = dt.curta;
+      noData.querySelector('.semana').textContent = dt.semana;
+    }
+    if(noRodape && noRodape.isConnected){
+      const [c1,c2] = e.torcida.cores;
+      const c = TO.membros.contar(e);
+      noRodape.innerHTML =
+        `<span class="escudo" style="background:linear-gradient(135deg,${c1} 0 52%,${c2} 52% 100%)"
+           >${e.torcida.sigla}</span>` +
+        `<b>${e.torcida.nome}</b>` +
+        `<span class="praca">${e.torcida.cidade} · ${e.torcida.uf}</span>` +
+        `<span class="num${e.dinheiro<0?' negativo':''}">${IC.get('dinheiro')}` +
+        `${U.dinheiro(e.dinheiro)}</span>` +
+        `<span class="num">${IC.get('membros')}${U.numero(c.total)}</span>` +
+        `<span class="num">${IC.get('estrela')}` +
+        `${Math.round(e.indicadores.prestigio*5)}</span>`;
     }
   }
 
@@ -2642,14 +2682,53 @@
       : vida;
   }
 
-  /* o dia corre enquanto ninguém esbarra em ninguém */
+  /* =======================================================
+     O DIA COMEÇA RODANDO, E PAUSA QUANDO TEM DE PAUSAR
+
+     Antes o jogador tinha de apertar play, e o relógio parava sozinho
+     em três lugares sem nunca religar: no encontro, ao avançar o dia e
+     ao fechar a cena. Agora ele nasce ligado — e por isso precisa de
+     motivos de pausa explícitos, guardados num conjunto:
+
+     · `painel`  — o jogador está lendo uma tela de gestão, não jogando,
+                   e o `requestAnimationFrame` estaria desenhando o mapa
+                   inteiro atrás de uma tela opaca;
+     · `foco`    — aba sem foco congela o rAF sozinho; sem tratar isso
+                   como pausa, o relógio SALTA quando a aba volta,
+                   porque o primeiro quadro traz o tempo todo de fora;
+     · `salvar`  — salvar no meio de um dia correndo pega o mundo pela
+                   metade. O save não é bloqueado: ele pausa, salva e
+                   devolve o dia de onde parou;
+     · `cena`    — a briga abriu por cima do mapa.
+
+     Enquanto houver motivo o relógio não anda. Quando o último sai,
+     ele volta de onde parou — o `ultimo` do laço é zerado a cada
+     partida, então nenhum minuto é cobrado pelo tempo parado. */
+  const pausas = new Set();
+  function pausarDia(motivo){
+    pausas.add(motivo);
+    if(relogioRua){ cancelAnimationFrame(relogioRua); relogioRua = null; }
+  }
+  function retomarDia(motivo){
+    pausas.delete(motivo);
+    if(pausas.size) return;
+    const e = E(); if(!e) return;
+    const R = TO.ruas.estado(e);
+    /* religar depois do encontro, do avanço de dia e do fim da cena é
+       exatamente o que faltava: `R.rodando` virava false e ninguém o
+       punha de volta */
+    if(!R.rodando && R.minuto < (R.apito || 0) && !R.encontro) R.rodando = true;
+    if(R.rodando) rodarRelogio();
+  }
+  const diaPausado = () => pausas.size > 0;
+
   function rodarRelogio(){
-    if(relogioRua) return;
+    if(relogioRua || pausas.size) return;
     let ultimo = 0;
     const passo = agora=>{
       const e = E();
       const R = e && TO.ruas.estado(e);
-      if(!e || !R || !R.rodando || pagina !== 'mapa'){ relogioRua = null; return; }
+      if(!e || !R || !R.rodando || pausas.size){ relogioRua = null; return; }
       const dt = ultimo ? Math.min(0.1, (agora-ultimo)/1000) : 0;
       ultimo = agora;
       const mo = mapaAtual;
@@ -2703,8 +2782,10 @@
        principal do jogo, e esses números comiam a primeira dobra dela;
        no celular, comiam mais. O que não podia sumir é em qual das cinco
        praças a gente está, e isso o título resolve com uma linha só. */
-    pg.appendChild(el('div',{class:'titulo-barra',
-      html:`<h1>Mapa da cidade — ${cidade.nome}, ${cidade.uf}</h1>`}));
+    /* O TÍTULO DA PÁGINA SAIU. Ele era o nome da tela numa época em que
+       o mapa era uma das onze; agora o mapa é a tela, e o que ele dizia
+       — em qual praça estamos — está na faixa de baixo, junto do nome da
+       torcida. Eram quarenta pixels de moldura em cima do jogo. */
 
     const mo = MP.modelo(e);
     const q = el('div',{class:'quadro'});
@@ -2901,7 +2982,14 @@
 
     /* --- superfície --- */
     const LADO = mo.tam;
-    if(zoomMapa == null) zoomMapa = Math.round((760 / LADO) * 20) / 20;
+    /* O ZOOM PADRÃO ENCHE O VISOR. Eram 760px fixos, de quando o mapa
+       era um cartão no meio de uma página; agora ele é a tela, e abrir
+       com fundo vazio em volta da planta seria a tela do jogo com moldura
+       de nada. Pega a maior das duas dimensões pra não sobrar borda. */
+    if(zoomMapa == null){
+      const alvo = Math.max(innerWidth - 40, innerHeight - 120, 620);
+      zoomMapa = Math.max(0.4, Math.min(2, Math.round((alvo / LADO) * 20) / 20));
+    }
     const viewport = el('div',{class:'mapa-viewport'});
     const casca = el('div',{class:'mapa-casca',
       estilo:{width:(LADO*zoomMapa)+'px', height:(LADO*zoomMapa)+'px'}});
@@ -2921,7 +3009,13 @@
        — foi ela que gerou as `planta-*-2048.png` que viraram base das
        artes —, e dá pra chamar pelo console quando for preciso outra. */
 
-    casca.append(cv, zoom, dica);
+    /* O ZOOM SAIU DE DENTRO DA CASCA e virou HUD junto da data.
+       Ele estava preso ao canto da PLANTA, não da tela: com o mapa maior
+       que o visor — que agora é o caso normal, porque o mapa é a tela
+       inteira — o canto de cima à direita da planta fica fora da vista e
+       o zoom ia junto. Continua sendo o mesmo controle, com os mesmos
+       botões; mudou de âncora, não de função. */
+    casca.append(cv, dica);
     viewport.append(casca);
     /* a esplanada é a do NOSSO jogo: sem bonde nosso na rua, o nosso
        clube não joga nesta praça hoje e não há esplanada pra mostrar */
@@ -2935,6 +3029,19 @@
     const hud = el('div',{class:'mapa-hud'});
     const canto = el('div',{class:'mapa-canto'});
     canto.appendChild(noRelogioRua);
+
+    /* A DATA E O AVANÇAR DIA, no canto de cima à direita.
+       Vieram do `#blocoData` do cabeçalho que deixou de existir. */
+    noData = el('div',{class:'mapa-data', html:
+      '<div><div class="dia">—</div><div class="semana">—</div></div>'});
+    const btAv = el('button',{class:'mapa-ic', html: IC.get('play')});
+    btAv.title = 'Avançar um dia';
+    btAv.setAttribute('aria-label','Avançar um dia');
+    btAv.onclick = ()=>TO.estado.avancarDia();
+    noData.appendChild(btAv);
+
+    /* A FAIXA DE BAIXO: escudo, nome e os três números. */
+    noRodape = el('div',{class:'mapa-rodape'});
     /* "Pontos do mapa": o botão fica logo abaixo do relógio e abre a
        lista; escolher um tipo fecha de novo */
     const btF = el('button',{class:'mapa-ic largo'
@@ -2942,8 +3049,19 @@
     btF.innerHTML = IC.get('camadas') + '<span class="rot">Pontos do mapa</span>';
     btF.title = 'Pontos do mapa — escolher o que aparece';
     btF.onclick = ()=>{ filtrosAbertos = !filtrosAbertos; redesenhar(); };
-    canto.append(btF, filtros);
-    hud.append(iconesMapa, canto);
+    /* o recolhível abre PRA DIREITA, sobre o mapa: aberto pra baixo ele
+       cobriria a coluna do menu, que mora logo abaixo dele */
+    const linhaF = el('div',{class:'mapa-linha-filtros'});
+    linhaF.append(btF, filtros);
+    canto.appendChild(linhaF);
+    /* A COLUNA DO MENU, na borda esquerda, embaixo do relógio e do
+       recolhível. Em tela estreita ela não aparece: onze ícones
+       empilhados passam de 400px de altura e um celular deitado tem
+       390 — ali continua valendo a gaveta do ☰. */
+    if(!estreito()) canto.appendChild(montarMenuDoMapa());
+    const direita = el('div',{class:'mapa-direita'});
+    direita.append(noData, zoom);
+    hud.append(iconesMapa, canto, direita, noRodape);
     palco.append(viewport, hud);
     q.corpo.appendChild(palco);
     pg.appendChild(q);
@@ -2986,6 +3104,11 @@
        de rolagem não sobe sozinho */
     addEventListener('scroll', encaixarHud, {capture:true, passive:true});
     addEventListener('resize', encaixarHud);
+
+    /* a data e a faixa de baixo são escritas depois que a HUD existe:
+       `redesenhar` chama `pintarTopo` ANTES de pintar a página, e na
+       primeira pintura os nós ainda não estavam no documento */
+    pintarTopo();
 
     /* o canvas só existe depois de entrar no documento */
     requestAnimationFrame(()=>{ ligarMapa(cv, dica, mo); encaixarHud(); });
@@ -3066,6 +3189,7 @@
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
+    pausarDia('cena');
     const p = TO.planejamento.plano(e);
     /* quem chegou na esplanada entra na cena com o efetivo que sobrou da
        caminhada e a cor da própria torcida. `nossa` aqui é "o jogador
@@ -3269,9 +3393,14 @@
                    b && R && R.selecionado === b.id;
     if(!querem){
       if(padDoMapa){ padDoMapa.remove(); padDoMapa = null; }
+      document.body.classList.remove('com-pad');
       for(const k of ['w','a','s','d']) teclasDoMapa[k] = false;
       return;
     }
+    /* a cruz de WASD é fixa no canto de baixo e ocupa 160×142: quem
+       mora lá embaixo — o ☰ e a faixa da torcida — precisa saber que
+       ela está na tela */
+    document.body.classList.add('com-pad');
     if(padDoMapa) return;
     const caixa = el('div',{class:'dj-pad'});
     caixa.id = 'mapaPad';
@@ -3435,6 +3564,7 @@
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
+    pausarDia('cena');
     const p = TO.planejamento.plano(E());
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
@@ -3493,6 +3623,7 @@
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
+    pausarDia('cena');
     const p = TO.planejamento.plano(e);
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
@@ -3526,6 +3657,9 @@
     /* investida, assalto e cobrança no CT: o que a noite deu vira caixa,
        tensão e cadeia aqui, e não dentro da cena */
     const fecho = acao ? TO.acoes.fecharCena(e, acao, res) : null;
+    /* fechada a briga, o dia volta a correr: o encontro foi resolvido e
+       `retomarDia` religa `R.rodando`, que a cena tinha desligado */
+    retomarDia('cena');
     setTimeout(()=>{
       $('telaDiaJogo').classList.add('oculto');
       document.body.classList.remove('em-cena');
@@ -3564,6 +3698,7 @@
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
+    pausarDia('cena');
     const p = TO.planejamento.plano(e);
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
@@ -3747,7 +3882,20 @@
   /* =======================================================
      LIGAÇÃO
      ======================================================= */
-  TO.estado.aoMudar(redesenhar);
+  /* avançar o dia recomeça o dia seguinte JÁ RODANDO: `montar` nasce com
+     `rodando:false` e antes ninguém religava */
+  TO.estado.aoMudar(()=>{ redesenhar(); retomarDia('dia'); });
+
+  /* ABA SEM FOCO É PAUSA EXPLÍCITA.
+     O `requestAnimationFrame` congela sozinho quando a aba perde o
+     foco, e o primeiro quadro na volta traz o tempo todo que passou
+     fora — o relógio saltaria. Tratando como pausa, o `ultimo` do laço
+     é zerado na volta e nenhum minuto é cobrado do tempo em outra aba. */
+  addEventListener('blur', ()=>pausarDia('foco'));
+  addEventListener('focus', ()=>retomarDia('foco'));
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden) pausarDia('foco'); else retomarDia('foco');
+  });
   /* o fechamento é o momento em que a semana cobra o que prometeu */
   TO.estado.aoFecharSemana(rel=>{ abrirFechamento(rel); TO.estado.salvar(); });
   $('btSelecionarTorcida').onclick = ()=>{
@@ -3770,7 +3918,11 @@
     if(!E()) return;
     if(ev.ctrlKey && ev.key==='s'){
       ev.preventDefault();
+      /* salvar com o dia correndo pegaria o mundo pela metade. A saída
+         não é proibir de salvar — é parar o dia, salvar e devolver. */
+      pausarDia('salvar');
       const r = TO.estado.salvar();
+      retomarDia('salvar');
       aviso(r.ok?'Salvo.':'Não salvou: '+r.motivo, r.ok?'boa':'ruim');
     }
   });

@@ -879,17 +879,28 @@ table.dados tr.selecionada td{background:#252525}
    rola e arrasta, e a HUD é irmã do viewport — assim ela não anda junto
    quando o jogador arrasta a cidade. */
 .mapa-palco{position:relative}
+
 .mapa-hud{
   position:absolute;inset:0;z-index:6;pointer-events:none;
   display:flex;flex-direction:column;align-items:center;overflow:hidden;
 }
 .mapa-hud > *{pointer-events:auto}
 
+/* O MAPA OCUPA A TELA. Ele era um cartão com altura máxima dentro de
+   uma página que rolava; agora é a tela, e o que rola é ele por dentro. */
 .mapa-viewport{
   overflow:auto;background:#0d0d0e;padding:10px;
-  max-height:calc(100vh - 250px);
+  flex:1;min-height:0;
   display:flex;align-items:flex-start;gap:10px;
 }
+.pagina[data-pag="mapa"].on{display:flex;flex-direction:column}
+.pagina[data-pag="mapa"] .quadro{
+  display:flex;flex-direction:column;flex:1;min-height:0;margin:0;border:0;
+}
+.pagina[data-pag="mapa"] .quadro > div{
+  display:flex;flex-direction:column;flex:1;min-height:0;
+}
+.mapa-palco{display:flex;flex-direction:column;flex:1;min-height:0}
 .mapa-casca{position:relative;margin:0 auto}
 .mapa-canvas{display:block;image-rendering:auto}
 
@@ -921,21 +932,84 @@ table.dados tr.selecionada td{background:#252525}
   text-transform:uppercase;
 }
 
-/* O canto de cima à esquerda: relógio, e embaixo dele o recolhível dos
-   pontos do mapa. */
+/* O canto de cima à esquerda: relógio, embaixo dele o recolhível dos
+   pontos do mapa e, embaixo dos dois, a coluna do menu. */
 .mapa-canto{
-  position:absolute;left:10px;top:10px;
+  position:absolute;left:10px;top:10px;bottom:10px;
   display:flex;flex-direction:column;align-items:flex-start;gap:6px;
-  max-height:calc(100% - 20px);
 }
+
+/* A COLUNA DO MENU. Onze ícones na borda esquerda, dentro do mapa, no
+   lugar da barra lateral que sumiu. O painel aberto começa depois dela
+   (`--coluna-menu`), então o ícone da página aberta continua visível e
+   clicável — é assim que se fecha o painel pelo mesmo ícone. */
+:root{--coluna-menu:58px}
+.mapa-menu{
+  display:flex;flex-direction:column;gap:3px;
+  background:#141416e0;border:1px solid var(--linha);padding:4px;
+  backdrop-filter:blur(2px);overflow-y:auto;min-height:0;
+}
+.mapa-menu .mapa-ic{width:32px;height:28px}
+.mapa-menu .mapa-ic svg{width:16px;height:16px}
+.mapa-menu .mapa-ic.aceso{
+  background:var(--rubro);border-color:var(--rubro-vivo);color:#fff;
+}
+
+/* A DATA E O AVANÇAR, no canto de cima à direita, com o zoom logo
+   abaixo — os dois na mesma coluna, ancorados na tela e não na planta. */
+.mapa-direita{
+  position:absolute;right:10px;top:10px;
+  display:flex;flex-direction:column;align-items:flex-end;gap:6px;
+}
+.mapa-data{
+  display:flex;align-items:center;gap:7px;
+  background:#141416e0;border:1px solid var(--linha);padding:4px 8px;
+  backdrop-filter:blur(2px);
+}
+.mapa-data .dia{font-family:var(--mono);font-size:13px;line-height:1.15}
+.mapa-data .semana{
+  font-family:var(--mono);font-size:8.5px;color:var(--fraco);
+  letter-spacing:.16em;text-transform:uppercase;
+}
+
+/* A FAIXA DE BAIXO: escudo, nome da torcida e os três números. */
+.mapa-rodape{
+  position:absolute;left:10px;right:10px;bottom:10px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:#141416e0;border:1px solid var(--linha);padding:5px 10px;
+  backdrop-filter:blur(2px);
+  margin-left:var(--coluna-menu);
+}
+.mapa-rodape .escudo{
+  width:22px;height:22px;flex:none;display:flex;align-items:center;
+  justify-content:center;font-family:var(--titulo);font-size:8px;
+  letter-spacing:.04em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.85);
+}
+.mapa-rodape b{
+  font-family:var(--titulo);font-size:13px;letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.mapa-rodape .praca{
+  font-family:var(--mono);font-size:10px;color:var(--fraco);
+  letter-spacing:.1em;text-transform:uppercase;margin-left:-4px;
+}
+.mapa-rodape .num{
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:12px;color:var(--texto);
+}
+.mapa-rodape .num svg{width:14px;height:14px;color:var(--fraco)}
+.mapa-rodape .num.negativo{color:#d9705f}
 
 /* PONTOS DO MAPA. Este painel já esteve por cima do mapa e foi pra
    margem porque, com a arte no lugar da planta esquemática, tapava
    bairro de verdade. Volta pra dentro, mas RECOLHIDO: fechado não ocupa
    nada, aberto é uma coluna estreita, e escolher um tipo fecha de novo.
    Vira lista rolável quando não couber na altura do visor. */
+/* o recolhível abre para o LADO, não para baixo: embaixo dele mora a
+   coluna do menu, e aberto pra baixo ele cobriria os onze ícones */
+.mapa-linha-filtros{display:flex;align-items:flex-start;gap:6px}
 .mapa-filtros{
-  z-index:6;width:178px;overflow-y:auto;
+  z-index:6;width:178px;max-height:56vh;overflow-y:auto;
   background:#141416f2;border:1px solid var(--linha);padding:8px 10px;
   display:flex;flex-direction:column;gap:8px;backdrop-filter:blur(3px);
 }
@@ -954,8 +1028,9 @@ table.dados tr.selecionada td{background:#252525}
 .mapa-filtro.filho{padding-left:12px}
 
 .mapa-zoom{
-  position:absolute;right:12px;top:12px;display:flex;align-items:center;gap:6px;
-  background:#141416e8;border:1px solid var(--linha);padding:4px 8px;
+  display:flex;align-items:center;gap:6px;
+  background:#141416e0;border:1px solid var(--linha);padding:4px 8px;
+  backdrop-filter:blur(2px);
 }
 .mapa-zoom button{
   width:24px;height:24px;background:#1e1e1e;border:1px solid var(--linha);
