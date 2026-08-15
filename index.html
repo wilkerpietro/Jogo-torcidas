@@ -135,19 +135,18 @@
     <div id="djPalco">
       <canvas id="djPrincipal" width="1140" height="820"></canvas>
       <div class="hud" id="djRelogio">18:00</div>
-      <div class="hud" id="djSubrelogio"></div>
+      <button class="hud" id="djVelocidade" title="Velocidade da cena">1×</button>
+      <!-- a PM numa linha só: duas barras empilhadas com rótulo em caixa
+           alta era muita tela pra informação que muda devagar. A de
+           pressão só acende quando há pressão. -->
       <div class="hud" id="djAlerta">
-        <div class="rot">ATENÇÃO POLICIAL</div>
+        <span class="rot">PM</span>
         <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
-        <div class="rot" id="djRotPressao" style="margin-top:6px;color:#d9705f">PRESSÃO SOBRE VOCÊ</div>
-        <div class="barra" style="border-color:#6b3a32">
-          <i id="djBarraPressao" style="width:0%;background:#c0392b"></i>
-        </div>
+        <div class="barra pressao"><i id="djBarraPressao" style="width:0%"></i></div>
         <div id="djCarga"></div>
       </div>
       <div class="hud" id="djPlacar"></div>
       <div class="hud" id="djAviso"></div>
-      <div class="hud" id="djDica"></div>
       <!-- os comandos ficam sobre o palco: a cena é a tela inteira -->
       <div class="hud" id="djComandos">
         <div id="djFormacoes"></div>
@@ -158,9 +157,10 @@
           <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
         </div>
       </div>
-      <h2 id="djLocal" hidden></h2>
-      <div id="djLog" hidden></div>
-      <div id="djSliders" hidden></div>
+      <!-- djLocal, djLog e djSliders saíram daqui: eram `hidden` e o
+           `atualizarHUD` continuava escrevendo neles todo quadro.
+           Continuam existindo na bancada (arredores.html), que é onde
+           servem pra alguma coisa. -->
     </div>
   </div>
 </div>

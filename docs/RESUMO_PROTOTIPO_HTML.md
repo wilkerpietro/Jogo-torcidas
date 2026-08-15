@@ -1348,6 +1348,104 @@ Duas descobertas no caminho, as duas medidas:
     de tudo que vem depois, e um mês de jogo dava 123 bondes contra 128 sem que
     regra nenhuma tivesse mudado.
 
+## 8.10 Arredores enxutos: HUD limpa, 1×/2× e a entrada pelo portão
+
+Cinco arrumações nos arredores, todas de coisa que tinha entrado na tela por acidente
+e ficado.
+
+**O botão que não era do jogo.** "Nova noite" veio da bancada de teste, onde serve pra
+sortear uma cena nova sem recarregar. Dentro do jogo ele jogava a partida fora no meio.
+Saiu do `index.html` e do `ponte.js`; a bancada (`arredores.html`) continua com ele.
+
+**A HUD.** O palco tinha nove peças em cima do canvas, e três delas estavam `hidden` —
+invisíveis, mas o `atualizarHUD` escrevia nelas a cada quadro. Ficou o que muda e o que
+se olha no meio da briga:
+
+| peça | destino | por quê |
+|---|---|---|
+| `djRelogio` | ficou | é a conta regressiva do apito |
+| `djPlacar` | ficou | caídos dos dois lados |
+| `djAviso` | ficou | é o grito da cena, aparece e some |
+| `djAlerta` (PM) | encolheu | duas barras empilhadas com rótulo em caixa alta viraram uma faixa: sigla, barra da atenção e, colada, a fita fina da pressão, que só acende quando há pressão |
+| `djSubrelogio` | saiu | repetia o relógio em miúdo |
+| `djDica` | saiu | texto de tutorial permanente |
+| `djLocal`, `djLog`, `djSliders` | saíram do jogo | eram `hidden` e continuavam sendo escritos |
+
+O que não fizemos, e é honesto registrar: as escritas em `djLocal`, `djLog`,
+`djSliders`, `djSubrelogio` e `djDica` **não foram apagadas** — foram movidas pra um
+bloco só, `atualizarHudDeBancada()`, atrás de um `acharHudDeBancada()` que devolve
+`null` quando os elementos não existem. A bancada usa essas cinco peças de verdade, e
+duplicar o `atualizarHUD` em duas versões custaria mais do que o desvio de um `if` por
+quadro. No jogo o bloco é um teste nulo; na bancada, tudo continua funcionando.
+
+**1× e 2× por sub-passo.** Dobrar `dt` seria uma linha e quebraria a física: com
+`dt` de 33 ms um disco a 240 px/s anda 8 px por quadro, e as colisões dos arredores são
+por distância. A velocidade virou um laço — `for(let i=0;i<velocidade;i++) C.passo(...)`
+— com o mesmo `dt` de sempre. Duas vezes o passo, não um passo maior. O botão mostra o
+estado **de agora** (`1×` acesa em cinza, `2×` em ouro), não o que vai virar.
+
+**O relógio do mapa.** Ele avançava por dentro e a tela só descobria no próximo
+`redesenhar()`, que é a planta inteira — 5.478 nós, 0,52 ms, mas com o canvas todo. O
+relógio saiu do canvas: virou um `<span>` de HTML por cima do mapa, pintado por
+`pintarRelogioDaRua()` a cada quadro. O desenho da cidade continua acontecendo só
+quando alguém se mexe.
+
+**"Entrar pelo estádio" virou ordem.** Era um encerramento: clicava, a cena acabava.
+Agora é uma ordem de marcha — todos os nossos discos vivos andam **cada um pro seu
+portão**, deixam de ser agressivos no caminho, empurram as grades que estiverem na
+frente, e a cena só fecha quando o último entrou ou quando estourou o tempo
+(`TEMPO_DE_ENTRAR = 90 s`, com escape por emperro). O líder entra junto — foi preciso
+abrir a exceção `if(d.lider && !d.entrando) continue;` no `moverDiscos`, que até então
+deixava o líder parado esperando WASD. **Isto vale só nos arredores**: nas outras cinco
+cenas o botão continua sendo saída, com o rótulo de cada uma.
+
+Aqui apareceu um defeito **que já existia** e ninguém tinha visto, porque o botão nunca
+tinha sido usado como ordem: com o cordão de PM montado, o `mandante1` — o ponto de
+nascimento do jogador — **não tem rota até o `ent_mandante1`**. São 54 barreiras, e o
+Dijkstra da malha devolve `semRota`. Era por isso que "Entrar pelo portão" vivia
+apagado. A saída foi `portaoAlcancavel(J,d)`: cada disco procura o portão **alcançável**
+mais próximo do próprio lado, e discos com `entrando` ganharam permissão de empurrar
+grade. O portão certo continua sendo o primeiro da lista quando há rota até ele.
+
+### Os números de aceite
+
+1. **"Nova noite" não existe mais no jogo:** `{"novaNoite": 0}` — nenhum botão, nenhum
+   `id`, nenhum atalho de teclado no `index.html` nem no `ponte.js`.
+2. **Nada escondido no palco:** `escondidosNoPalco: []`. E os cinco que saíram de fato
+   não estão lá: `djSubrelogio`, `djRotPressao`, `djLocal`, `djLog`, `djDica`,
+   `djSliders` — todos `null` no `document`.
+3. **O print antes e depois** (`hud_antes.png` / `hud_depois.png`): a área ocupada por
+   HUD caiu de **182.015 px² para 140.008 px²**, de **19% para 14,6% do canvas**. O que
+   voltou é a faixa de cima à esquerda e a de baixo: o cordão de PM e a primeira linha
+   de discos deixaram de ficar atrás de texto.
+4. **2× cabe no orçamento, e é idêntico a 1×.** Custo medido de um sub-passo:
+
+   | discos | 1 sub-passo | 2× (dois) | folga em 60 fps |
+   |---|---|---|---|
+   | 140 | 1,37 ms | 2,74 ms | 14,0 ms |
+   | 250 | 2,75 ms | 5,50 ms | 11,2 ms |
+   | 510 | 6,09 ms | 12,18 ms | 4,5 ms |
+
+   E a prova que interessa não é a de relógio, é a de igualdade: **120 sub-passos
+   rodados como 120 quadros de 1× e como 60 quadros de 2×, a partir da mesma semente,
+   dão o mesmo estado** — posição e hp dos 510 discos, `estadoIdentico: true`. O maior
+   salto de um disco num único sub-passo foi de **96,7 px**, e é a ejeção de grade que
+   já existia antes: acontece igual nas duas velocidades.
+5. **O relógio anda o dobro, não o tempo:** o mesmo trecho de cena dá **1 minuto de
+   jogo em 1× e 2 minutos em 2×**, razão exata de 2, e `saidasIguais: true` — os bondes
+   saem nos mesmos horários nas duas velocidades.
+6. **O relógio do mapa anda na tela sem redesenhar a planta:** `{"andou": true,
+   "mesmoCanvas": true, "zoomIgual": true}` — de **16:03 a 16:08** com a simulação
+   rodando, byte do canvas inalterado e o zoom onde estava.
+7. **Todo mundo entra: 250 de 250**, `porEmperro: 0`. Em cena parada leva **35,3 s**; no
+   meio da briga, **34,4 s**.
+8. **Ninguém apanha no caminho:** `caidosDelesDepois: 0` nas duas medições — os discos
+   com ordem de entrar deixam de ser agressivos e o outro lado não os persegue até o
+   portão.
+9. **As outras cinco cenas não mudaram:** bar "Balcão do bar (leve o líder)", comércio
+   "Porta de aço", CT "Gramado", praça "Saída", rua "Boca da rua" — todos desabilitados
+   até a condição de cada um, e nenhum deles emite ordem de entrada.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima

@@ -2599,6 +2599,48 @@
   let poeOlheiro = false;      // próximo clique no mapa posiciona o olheiro
   let relogioRua = null;
 
+  /* =======================================================
+     O RELÓGIO DO MAPA ANDANDO NA TELA
+
+     `rodarRelogio` redesenhava o canvas a cada quadro e só. O texto do
+     relógio mora num nó do DOM montado em `pintarMapa`, e nada o
+     tocava durante o laço: ele só se refazia quando `redesenhar()`
+     rodava — que é o que acontece quando o jogador aperta Pausar. Daí o
+     sintoma de o relógio ficar congelado até você parar o dia.
+
+     Aqui só se escreve `textContent` nos dois nós guardados. Chamar
+     `redesenhar()` por quadro seria a correção errada: ela recria o
+     canvas do mapa e o zoom e o arrasto vão junto.
+     ======================================================= */
+  let noRelogioRua = null, noInfoRua = null;
+  function pintarRelogioDaRua(e, R){
+    if(!noRelogioRua || !noRelogioRua.isConnected) return;
+    const jogos = TO.ruas.jogosDaPraca(e).filter(x=>x.dia === e.data.dia);
+    const falta = Math.max(0, (R.apito||0) - R.minuto);
+    const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
+    noRelogioRua.innerHTML =
+      `<b>${TO.ruas.relogio(R.minuto, e)}</b><small>${
+        !jogos.length ? (falta > 0 ? `${hhmm(falta)} de rua` : 'anoiteceu')
+        : falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`;
+    if(noInfoRua && noInfoRua.isConnected){
+      const pequeno = noInfoRua.querySelector('small');
+      if(pequeno) pequeno.textContent = resumoDaRua(e, R);
+    }
+  }
+  /* a linha de baixo: quem está na rua agora, com jogo ou sem */
+  function resumoDaRua(e, R){
+    const naRuaAgora = (R.andarilhos||[])
+      .filter(a=>!a.chegou && R.minuto >= a.saiEm).length;
+    const roubo = (R.recados||[]).find(r=>r.aberto && !r.fechado);
+    const andando = R.bondes.filter(b=>!b.chegou).length;
+    const vida = `${naRuaAgora} a pé na rua`
+      + (R.brigasDeRua ? ` · ${R.brigasDeRua} esbarrão${R.brigasDeRua>1?'ões':''}` : '')
+      + (roubo ? ` · assalto n${/^[AEIOU]/i.test(roubo.nome)?'':'o '}${roubo.nome}` : '');
+    return R.bondes.length
+      ? `${R.bondes.length} bondes na rua · ${andando} ainda a caminho · ${vida}`
+      : vida;
+  }
+
   /* o dia corre enquanto ninguém esbarra em ninguém */
   function rodarRelogio(){
     if(relogioRua) return;
@@ -2612,10 +2654,13 @@
       const mo = mapaAtual;
       if(mo && dt){
         /* dois minutos de rua por segundo de tela, a mesma velocidade o
-           dia inteiro: a manhã parada faz parte do dia */
-        TO.ruas.passo(e, mo, dt*2);
+           dia inteiro: a manhã parada faz parte do dia. O 2× multiplica
+           só isto — `passo()` avança rota e relógio, e não tem física
+           pra perder resolução como a cena tem. */
+        TO.ruas.passo(e, mo, dt * 2 * TO.diaJogo.ponte.velocidade);
         if(canvasMapa) { TO.mapa.desenhar(mo, canvasMapa);
                          TO.ruas.desenhar(e, mo, canvasMapa.getContext('2d')); }
+        pintarRelogioDaRua(e, R);
         if(R.encontro){ relogioRua = null; redesenhar(); return; }
         /* o bonde comandado chegou no pino que o jogador apontou: a
            cena é a investida que `acoes.js` já sabe montar, e a ação
@@ -2715,10 +2760,13 @@
       const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
       const meu = TO.ruas.nossoBonde(e);
       const nossos = TO.ruas.nossosNaRua(e);
-      barraRua.appendChild(el('div',{class:'rua-relogio', html:
+      /* guardado pra o laço do relógio poder escrever nele sem
+         remontar a página inteira — ver `pintarRelogioDaRua` */
+      noRelogioRua = el('div',{class:'rua-relogio', html:
         `<b>${TO.ruas.relogio(R.minuto, e)}</b><small>${
           !jogos.length ? (falta > 0 ? `${hhmm(falta)} de rua` : 'anoiteceu')
-          : falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`}));
+          : falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`});
+      barraRua.appendChild(noRelogioRua);
       /* a cidade em volta, que existe com jogo e sem: quem está na rua
          a pé agora, e o assalto em curso, se houver */
       const naRuaAgora = (R.andarilhos||[])
@@ -2727,12 +2775,13 @@
       const vida = `${naRuaAgora} a pé na rua`
         + (R.brigasDeRua ? ` · ${R.brigasDeRua} esbarrão${R.brigasDeRua>1?'ões':''}` : '')
         + (roubo ? ` · assalto n${/^[AEIOU]/i.test(roubo.nome)?'':'o '}${roubo.nome}` : '');
-      barraRua.appendChild(el('div',{class:'rua-info', html: jogos.length
+      noInfoRua = el('div',{class:'rua-info', html: jogos.length
         ? `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
            <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
            ${vida}</small>`
         : `<b>${roubo ? 'Assalto em andamento' : 'Dia comum na praça'}</b>
-           <small>${meu ? `seu bonde de ${meu.n} está na rua · ` : ''}${vida}</small>`}));
+           <small>${meu ? `seu bonde de ${meu.n} está na rua · ` : ''}${vida}</small>`});
+      barraRua.appendChild(noInfoRua);
 
       /* PEGAR O BONDE. Qualquer bonde nosso que esteja na rua serve, e em
          dia de jogo já tem um lá — o disco que está indo pro estádio. Com
@@ -2800,6 +2849,14 @@
         redesenhar();
         if(R.rodando) rodarRelogio();
       };
+      /* o mesmo 1×/2× da cena: uma velocidade só pro jogo inteiro, pra
+         não ter que reescolher a cada tela */
+      const btV = el('button',{class:'bt',
+        texto: TO.diaJogo.ponte.velocidade + '×'});
+      btV.title = 'Velocidade do relógio';
+      if(TO.diaJogo.ponte.velocidade > 1) btV.classList.add('destaque');
+      btV.onclick = ()=>{ TO.diaJogo.ponte.alternarVelocidade(); redesenhar(); };
+
       const btO = el('button',{class:'bt',
         texto: R.olheiro ? 'Tirar o olheiro' : (poeOlheiro ? 'Clique no mapa…'
                                                            : 'Pôr olheiro')});
@@ -2808,7 +2865,7 @@
         else poeOlheiro = !poeOlheiro;
         redesenhar();
       };
-      barraRua.append(btO, btS);
+      barraRua.append(btV, btO, btS);
       if(btP) barraRua.appendChild(btP);
       barraRua.appendChild(bt);
     }

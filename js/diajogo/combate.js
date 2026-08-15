@@ -73,6 +73,8 @@ TO.diaJogo.combate = (function(){
       this.hpMax  = lider?220:150; this.hp=this.hpMax;
       this.moral=12;
       this.caido=false; this.preso=false; this.fugindo=false; this.entrou=false;
+      this.entrando=false;  // recebeu ordem de ir pro portão
+      this.portao=null;     // e por qual portão, que pode não ser o dele
       this.correEm=null;    // debandou, mas ainda não virou as costas
       this.agarrado=0;      // segundos de mão em cima enquanto foge
       this.sumiu=false;     // debandou e saiu da cena por uma boca de rua
@@ -158,7 +160,8 @@ TO.diaJogo.combate = (function(){
       sumiram:{mandante:0, visitante:0},
       armas:{mandante:{pedra:0,bomba:0}, visitante:{pedra:0,bomba:0}},
       total:{mandante:0, visitante:0},
-      debandou:{}, debandouPor:{}, log:[], aviso:null, avisoAte:0,
+      debandou:{}, debandouPor:{}, entrando:false, entrarAte:0,
+      log:[], aviso:null, avisoAte:0,
       versaoGrades:0,
       /* cena com gatilho começa dormindo: quem defende está dentro e
          ainda não sabe de nada. Sem gatilho, tudo acordado, como sempre. */
@@ -443,6 +446,7 @@ TO.diaJogo.combate = (function(){
     iaRecuo(J);
     separar(J);
     checarDebandada(J);
+    conferirEntrada(J);
     conferirFim(J);
   }
 
@@ -464,6 +468,10 @@ TO.diaJogo.combate = (function(){
      interruptor de sempre, que lá continua sendo da cena inteira.
      ======================================================= */
   function agressivo(J, d){
+    /* quem recebeu ordem de entrar não revida: largar o pau e ir pro
+       portão é uma decisão, e decisão que o disco desobedece no quadro
+       seguinte não é decisão nenhuma */
+    if(d.entrando) return false;
     if(d.doJogador) return true;
     const b=J.bondes[d.spawn];
     if(!b) return !J.paz;
@@ -520,7 +528,11 @@ TO.diaJogo.combate = (function(){
        presidente entrou pelo portão. Lá não se toma nada de ninguém —
        o que se faz é chegar e entrar, e depois disso não há mais cena
        pra jogar, mesmo que sobre gente de pé na esplanada. */
-    if(fugaPelaEntrada()){
+    /* Com a ordem de entrar dada, quem fecha a cena é `conferirEntrada`:
+       esperar a torcida inteira é justamente o ponto. Sem esta guarda o
+       presidente cruzando o portão encerraria tudo em oito segundos e os
+       outros 249 sumiriam junto com a tela, que era o defeito. */
+    if(fugaPelaEntrada() && !J.entrando){
       const l=J.discos.find(d=>d.lider);
       if(l && l.entrou){
         J.fase='acabando';
@@ -549,6 +561,93 @@ TO.diaJogo.combate = (function(){
       }
     }
     acabar(J, lado);
+  }
+
+  /* =======================================================
+     ENTRAR NO ESTÁDIO É UMA ORDEM, NÃO UM ENCERRAMENTO
+
+     O botão fazia outra coisa do que o nome prometia: exigia o LÍDER no
+     raio do portão, marcava só o líder como entrado e fechava a tela na
+     hora. O resto da torcida não entrava em lugar nenhum — sumia junto
+     com a cena.
+
+     Agora ele manda todo mundo pro portão de cada um e a cena fecha
+     quando todos entraram. Vale a qualquer momento, inclusive no meio
+     da briga: largar o pau e entrar é decisão legítima, e o resultado
+     da noite conta quem caiu de cada lado, não quem desistiu.
+     ======================================================= */
+  const TEMPO_DE_ENTRAR = 90;      // segundos de escape, como o `voltando`
+
+  /* O PORTÃO QUE DÁ PRA ALCANÇAR.
+     Cada disco carrega o portão do próprio escalão, e o certo é esse.
+     Só que na esplanada as grades de fila desenham um funil, e medido:
+     do spawn do JOGADOR não existe rota até o portão dele com as 54
+     barras de pé — `campoDaEntrada` devolve `semRota`. É por isso que o
+     botão "Entrar pelo portão" vivia cinza: `noPortao` exigia o líder
+     num lugar onde o líder não chegava. Portão que não se alcança não é
+     portão: aqui ele cai pro portão do MESMO LADO mais perto que tenha
+     caminho, e só se não houver nenhum é que insiste no dele. */
+  function portaoAlcancavel(J, d){
+    const meus = D.entradas.filter(e=>e.lado === d.lado);
+    const ordem = [
+      ...meus.filter(e=>e.id === d.entrada),
+      ...meus.filter(e=>e.id !== d.entrada)
+        .sort((a,b)=>U.dist2(d.x,d.y,a.x,a.y) - U.dist2(d.x,d.y,b.x,b.y))
+    ];
+    for(const e of ordem){
+      const c = A.campoDaEntrada(e.id, J.grades, J.versaoGrades);
+      if(!c.passo(d.x, d.y).semRota) return e.id;
+    }
+    return d.entrada;
+  }
+
+  function mandarEntrar(J){
+    if(J.fase !== 'ativo' || J.entrando) return 0;
+    let n = 0;
+    for(const d of J.discos){
+      if(!d.vivo || !d.doJogador || d.fugindo) continue;
+      d.entrando = true; d.recuando = false;
+      d.portao = portaoAlcancavel(J, d);
+      n++;
+    }
+    if(!n) return 0;
+    J.entrando = true;
+    J.entrarAte = J.t + TEMPO_DE_ENTRAR;
+    logar(J, 'Ordem de entrar: todo mundo pro portão.', 'v');
+    aviso(J, 'TODO MUNDO PRO PORTÃO', '#d9a441');
+    return n;
+  }
+
+  /* Acabou quando não sobrou nenhum nosso de pé fora do portão. O
+     escape por emperramento é o mesmo do `voltando`: dez discos não
+     cabem no mesmo raio de portão, e quem trava contra os próprios
+     companheiros já entrou pra todos os efeitos. */
+  const PAROU = 1.2;
+  const PERTO_DO_PORTAO = 130;
+  function pertoDoPortao(d){
+    const e = D.entradas.find(x=>x.id===(d.portao || d.entrada)) ||
+              D.entradas.find(x=>x.lado===d.lado);
+    return !!e && U.dist(d.x, d.y, e.x, e.y) < PERTO_DO_PORTAO;
+  }
+  function conferirEntrada(J){
+    if(!J.entrando || J.fase !== 'ativo') return;
+    const fora = J.discos.filter(d=>d.entrando && d.vivo);
+    /* emperrado conta como entrado só JUNTO DO PORTÃO: dez discos não
+       cabem no mesmo raio de entrada e quem trava contra os próprios
+       companheiros ali já entrou pra todos os efeitos. Travar no meio
+       da esplanada, contra o cordão, não é ter entrado — é estar
+       empurrando. */
+    const emperrados = fora.filter(d=>(d.travado||0) > PAROU && pertoDoPortao(d));
+    if(fora.length && fora.length > emperrados.length && J.t < J.entrarAte) return;
+    for(const d of emperrados){ d.porEmperro = true; entrarNoEstadio(J, d); }
+    /* estourou o tempo com gente ainda andando: entra quem faltou */
+    for(const d of J.discos)
+      if(d.entrando && d.vivo){ d.porEmperro = true; entrarNoEstadio(J, d); }
+    J.fase = 'acabando';
+    J.acabou = {lado:'mandante', venceu: J.caidos.visitante >= J.caidos.mandante,
+                tranquila: J.caidos.mandante + J.caidos.visitante === 0,
+                entrou:true, motivo:'sua torcida entrou pelo portão'};
+    logar(J, J.acabou.motivo, 'p');
   }
 
   function conferirVolta(J){
@@ -609,7 +708,7 @@ TO.diaJogo.combate = (function(){
   /* ---------- líder ---------- */
   function moverLider(J,dt,teclas,podeControlar){
     const l=J.discos.find(d=>d.lider&&d.vivo);
-    if(!l||l.fugindo||!podeControlar) return;
+    if(!l||l.fugindo||l.entrando||!podeControlar) return;
     let dx=0,dy=0;
     if(teclas['a']||teclas['arrowleft'])  dx--;
     if(teclas['d']||teclas['arrowright']) dx++;
@@ -801,7 +900,11 @@ TO.diaJogo.combate = (function(){
         A.mover(d, d.vx*dt, d.vy*dt); A.barrarGrades(d,J.grades);
         continue;
       }
-      if(d.lider) continue;
+      /* o líder é do jogador e não anda sozinho — MENOS quando a ordem
+         de entrar foi dada: aí o presidente vai pro portão como todo
+         mundo, senão a cena fica esperando um disco que só o teclado
+         move e a torcida inteira já entrou. */
+      if(d.lider && !d.entrando) continue;
       d._cacando = false;
 
       const recua = d.fugindo
@@ -845,6 +948,20 @@ TO.diaJogo.combate = (function(){
           const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
           campo = campoDoSpawn(s); usarCampo=true;
         }
+      } else if(d.entrando){
+        /* ORDEM DE ENTRAR: cada um pro SEU portão.
+           O caminho já existe e é o mesmo que a debandada nos arredores
+           usa, onde fugir é entrar — só que aqui ninguém está fugindo:
+           é a torcida inteira indo pra arquibancada porque o presidente
+           mandou. */
+        const id = d.portao || d.entrada;
+        const e = D.entradas.find(x=>x.id===id) ||
+                  D.entradas.find(x=>x.lado===d.lado);
+        if(e && U.dist(d.x,d.y,e.x,e.y) < (e.raio||34)+8){
+          entrarNoEstadio(J,d); continue;
+        }
+        campo = A.campoDaEntrada(id, J.grades, J.versaoGrades);
+        usarCampo = true;
       } else if(recua){
         // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
@@ -1226,7 +1343,15 @@ TO.diaJogo.combate = (function(){
         if(b.hp<=0) derrubar(J,b);
       }
 
-      if(bate) for(const g of J.grades){
+      /* QUEM VAI ENTRAR EMPURRA A GRADE, mas não bate em ninguém.
+         O cordão é o que está entre a multidão e o portão: com ele de
+         pé não existe rota até a entrada (medido: `campoDaEntrada`
+         devolve `semRota` com as 54 barras inteiras). Se a ordem de
+         entrar também desligasse o empurrão na grade, "todo mundo pro
+         portão" viraria "todo mundo encostado no cordão até o tempo
+         estourar" — que foi exatamente o que a primeira versão fez.
+         Empurrar barreira pra entrar em estádio não é revidar. */
+      if(bate || a.entrando) for(const g of J.grades){
         if(g.hp<=0 || g.tipo==='fila') continue;   // fila não quebra
         if(U.dist(g.x,g.y,a.x,a.y)>a.r+g.meia+4) continue;
         g.hp-=a.forca*nivelMoral(a.moral)*P.dano*dt*1.6;
@@ -1857,5 +1982,6 @@ TO.diaJogo.combate = (function(){
   return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
-          iaArremesso, alvoDeFuga, conferirFim, dePe, agressivo, atacado};
+          iaArremesso, alvoDeFuga, conferirFim, dePe, agressivo, atacado,
+          mandarEntrar};
 })();

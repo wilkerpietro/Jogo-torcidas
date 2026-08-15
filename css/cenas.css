@@ -32,10 +32,30 @@
   background:#0e0e0dcc;border:1px solid #45443f;padding:2px 14px 4px}
 #djSubrelogio{top:50px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--fraco);
   text-shadow:0 1px 4px #000;white-space:nowrap}
-#djAlerta{top:9px;left:11px;width:178px}
-#djAlerta .rot{font-size:9px;letter-spacing:.13em;color:var(--pm);margin-bottom:3px}
-#djAlerta .barra{height:6px;background:#00000077;border:1px solid #2f5c44;position:relative}
+/* A PM NUMA LINHA SÓ.
+   Eram duas barras empilhadas, cada uma com um rótulo em caixa alta —
+   quase cem pixels de altura no canto da tela pra dois números que
+   mudam devagar. Agora é uma faixa: a sigla, a barra da atenção
+   policial e, colada nela, a fita fina da pressão, que só acende
+   quando existe pressão. */
+#djAlerta{top:9px;left:11px;width:150px;display:flex;align-items:center;gap:6px;
+  flex-wrap:wrap}
+#djAlerta .rot{font-size:9px;letter-spacing:.13em;color:var(--pm)}
+#djAlerta .barra{height:5px;background:#00000077;border:1px solid #2f5c44;
+  position:relative;flex:1 1 60px}
 #djAlerta .barra i{position:absolute;inset:0 auto 0 0;background:var(--pm);transition:width .3s}
+#djAlerta .barra.pressao{flex-basis:100%;border-color:#6b3a32;height:3px;
+  opacity:0;transition:opacity .3s}
+#djAlerta .barra.pressao i{background:#c0392b}
+
+/* o 1×/2× fica ao lado do relógio, e mostra o estado de agora — botão
+   que anuncia o que vai virar é a fonte clássica de clique errado */
+#djVelocidade{position:absolute;top:12px;left:calc(50% + 52px);
+  font-family:var(--mono);font-size:12px;padding:2px 8px;
+  background:#00000099;border:1px solid #55534d;color:var(--texto);
+  border-radius:3px;cursor:pointer;line-height:1.5}
+#djVelocidade:hover{border-color:var(--ouro);color:var(--ouro)}
+#djVelocidade.rapido{border-color:var(--ouro);color:var(--ouro)}
 #djCarga{font-size:10px;letter-spacing:.08em;color:#5fa87d;margin-top:5px;min-height:12px}
 #djCarga.quente{color:var(--ouro)}
 #djPlacar{top:9px;right:11px;text-align:right;font-size:11px;line-height:1.55;

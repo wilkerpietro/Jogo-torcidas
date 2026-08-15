@@ -51,6 +51,8 @@ TO.diaJogo.ponte = (function(){
     /* rua, praça ou arredores: a cena vem do encontro que abriu a tela */
     A.usarCena((opc.config||{}).local);
     montarBotoes();
+    atualizarBotaoVelocidade();
+    acharHudDeBancada();
     if(estreito()) montarPad();
     montarSliders();
     ligarEntrada();
@@ -70,14 +72,41 @@ TO.diaJogo.ponte = (function(){
   /* =======================================================
      LAÇO
      ======================================================= */
+  /* =======================================================
+     1× E 2× — SUB-PASSOS, NUNCA PASSO MAIOR
+
+     O `dt` que vai pro `C.passo` é o passo da FÍSICA: colisão, dano,
+     projétil, empurrão. Dobrá-lo não acelera o relógio, acelera a
+     simulação com metade da resolução — disco atravessa parede, pedra
+     erra a colisão e o dano por quadro dobra. É por isso que o
+     `if(dt>0.05)` existe desde sempre.
+
+     Em 2× o quadro chama `C.passo` DUAS VEZES com o mesmo `dt`. Custa o
+     dobro de CPU de simulação e a física fica idêntica à de 1×.
+     ======================================================= */
+  let velocidade = 1;
+  const velocidades = [1, 2];
+  function alternarVelocidade(){
+    velocidade = velocidades[(velocidades.indexOf(velocidade)+1) % velocidades.length];
+    atualizarBotaoVelocidade();
+    return velocidade;
+  }
+  function atualizarBotaoVelocidade(){
+    const b = $('djVelocidade');
+    if(!b) return;
+    b.textContent = velocidade + '×';
+    b.classList.toggle('rapido', velocidade > 1);
+  }
+
   function quadro(agora){
     let dt=(agora-ant)/1000; ant=agora;
     if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
     if(J && !ED.ativo){
-      C.passo(J,dt,teclas,true);
+      for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
       /* a rua não para porque a briga começou: quem ainda estava andando
          chega no meio dela */
-      if(aCadaQuadro) for(const b of (aCadaQuadro(dt, J) || [])) C.reforcar(J, b);
+      if(aCadaQuadro)
+        for(const b of (aCadaQuadro(dt*velocidade, J) || [])) C.reforcar(J, b);
     }
     /* a briga pode acabar sozinha: um lado sem ninguém de pé. Quem
        decide isso é o combate; aqui só se abre a tela. */
@@ -128,14 +157,15 @@ TO.diaJogo.ponte = (function(){
       el('djRelogio').textContent=
         `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
     }
-    if(el('djSubrelogio'))
-      el('djSubrelogio').textContent = ED.ativo ? 'editor de cena — jogo pausado' : (D.nome ? 'na '+D.nome.toLowerCase() : 'nos arredores');
-
     if(el('djBarraAlerta')) el('djBarraAlerta').style.width=J.alerta+'%';
     if(el('djBarraPressao')){
       const bp=Math.min(100,J.sobPressao/P.aguentaPM*100);
       el('djBarraPressao').style.width=bp+'%';
-      el('djRotPressao').style.opacity=(J.fracPM>0.05||bp>0)?1:0.35;
+      /* a fita da pressão só existe quando existe pressão */
+      const faixa = el('djBarraPressao').parentElement;
+      if(faixa) faixa.style.opacity = bp>0 ? 1 : 0;
+      const rot = el('djRotPressao');
+      if(rot) rot.style.opacity=(J.fracPM>0.05||bp>0)?1:0.35;
     }
 
     const btP=el('djBtPedra'), btB=el('djBtBomba');
@@ -145,14 +175,22 @@ TO.diaJogo.ponte = (function(){
       btB.firstChild.textContent=r>0?`Bomba ${r.toFixed(1)}s `:'Bomba ';}
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
 
-    if(el('djLocal')) el('djLocal').textContent = D.local || 'Nos arredores';
     atualizarPad();
 
     const be=el('djBtEntrar');
-    if(be){const perto=!!C.noPortao(J); be.disabled=!perto;
-      /* fora do estádio não existe portão: o botão vira a saída da cena */
+    if(be){
       const s = D.saida || SAIDA_PADRAO;
-      be.firstChild.textContent=(perto?s.perto:s.longe)+' ';}
+      if(entradaDeVerdade()){
+        /* nos arredores a ordem vale sempre, inclusive no meio da briga:
+           o botão não fica cinza esperando o líder chegar no portão */
+        be.disabled = !!J.entrando;
+        be.firstChild.textContent = (J.entrando ? 'Indo pro portão'
+                                                : 'Entrar pelo portão') + ' ';
+      } else {
+        const perto=!!C.noPortao(J); be.disabled=!perto;
+        be.firstChild.textContent=(perto?s.perto:s.longe)+' ';
+      }
+    }
 
     const cg=el('djCarga');
     if(cg){
@@ -186,17 +224,42 @@ TO.diaJogo.ponte = (function(){
       else av.style.opacity=0;
     }
 
-    const lg=el('djLog');
-    if(lg && lg.dataset.n!=String(J.log.length)){
-      lg.dataset.n=String(J.log.length);
-      lg.innerHTML=J.log.map(l=>`<div class="${l.cor}">${l.txt}</div>`).join('');
-    }
+    atualizarHudDeBancada();
+  }
 
-    const dica=el('djDica');
+  /* =======================================================
+     A HUD QUE SÓ A BANCADA TEM
+
+     Local, log, subrelógio e a tira de dicas saíram do palco do jogo:
+     eram `hidden` no `index.html` e o `atualizarHUD` continuava
+     escrevendo neles a sessenta quadros por segundo — elemento
+     invisível que o código atualiza é dívida disfarçada.
+
+     Na bancada eles são a razão de a bancada existir, então continuam
+     lá. Os nós são resolvidos UMA vez por cena e o bloco inteiro sai do
+     quadro quando não existem, em vez de quatro `if` que nunca dão em
+     nada. */
+  let hudBancada = null;
+  function acharHudDeBancada(){
+    const n = {sub:$('djSubrelogio'), local:$('djLocal'),
+               log:$('djLog'), dica:$('djDica')};
+    hudBancada = (n.sub || n.local || n.log || n.dica) ? n : null;
+  }
+  function atualizarHudDeBancada(){
+    if(!hudBancada) return;
+    const n = hudBancada;
+    if(n.sub) n.sub.textContent = ED.ativo
+      ? 'editor de cena — jogo pausado'
+      : (D.nome ? 'na '+D.nome.toLowerCase() : 'nos arredores');
+    if(n.local) n.local.textContent = D.local || 'Nos arredores';
+    if(n.log && n.log.dataset.n != String(J.log.length)){
+      n.log.dataset.n = String(J.log.length);
+      n.log.innerHTML = J.log.map(l=>`<div class="${l.cor}">${l.txt}</div>`).join('');
+    }
     /* cena de invasão: enquanto a casa não acordou, isso é o que
        importa saber — e some no instante em que gritam lá dentro */
     const espera = D.gatilho && !J.acordou && D.gatilho.espera;
-    if(dica) dica.innerHTML = ED.ativo
+    if(n.dica) n.dica.innerHTML = ED.ativo
       ? '<kbd>F2</kbd> sair do editor'
       : espera
       ? `<b style="color:var(--ouro)">${espera.toUpperCase()}</b> · `+
@@ -208,6 +271,9 @@ TO.diaJogo.ponte = (function(){
   /* =======================================================
      BOTÕES E ENTRADA
      ======================================================= */
+  /* a cena tem portão de estádio de verdade? só os arredores têm */
+  const entradaDeVerdade = () => !A.D.id || A.D.id === 'arredores';
+
   function montarBotoes(){
     const cf=$('djFormacoes');
     if(cf && !cf.childElementCount){
@@ -223,11 +289,21 @@ TO.diaJogo.ponte = (function(){
     liga('djBtPedra', ()=>C.arremessar(J,'pedra'));
     liga('djBtBomba', ()=>C.arremessar(J,'bomba'));
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
+    liga('djVelocidade', alternarVelocidade);
     liga('djBtEntrar',()=>{
       const s = D.saida || SAIDA_PADRAO;
+      /* NOS ARREDORES O BOTÃO É UMA ORDEM.
+         Todo mundo caminha pro próprio portão e a cena fecha quando
+         todos entraram — quem encerra é `conferirEntrada`, no combate.
+         Nas outras cinco cenas não há portão pra entrar: ali o mesmo
+         botão continua sendo a SAÍDA da cena, com o líder no ponto e os
+         textos que a cena declara. */
+      if(entradaDeVerdade()){
+        if(!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p');
+        atualizarBotoes();
+        return;
+      }
       if(!C.noPortao(J)){ C.logar(J, s.dica, 'p'); return; }
-      /* o líder entrando é o que fecha a cena dos arredores, e é ele
-         que faltava na conta de quem chegou no alvo */
       const l=J.discos.find(d=>d.lider&&d.vivo);
       if(l) C.entrarNoEstadio(J, l);
       encerrar(s.feito, {objetivo:true});
@@ -243,9 +319,19 @@ TO.diaJogo.ponte = (function(){
     }
   }
 
+  /* =======================================================
+     OS SLIDERS SÃO DA BANCADA, E O "NOVA NOITE" VAI COM ELES
+
+     O botão era anexado a `cs.parentElement`, e no jogo o pai do
+     `#djSliders` é o próprio `#djPalco`: os sliders sumiam porque o
+     painel estava `hidden`, e o botão ficava plantado no meio da cena.
+     Remontar a noite é o ponto da bancada; no jogo a noite é uma só, e
+     recomeçá-la não quer dizer nada.
+     ======================================================= */
   function montarSliders(){
     const cs=$('djSliders');
-    if(!cs||cs.childElementCount) return;
+    if(!cs || cs.hidden || cs.childElementCount) return;
+    if(getComputedStyle(cs).display === 'none') return;
     const LISTA=[
       ['efetivo','Efetivo mandante',6,120,2,v=>v],
       ['efetivoRival','Efetivo visitante',6,120,2,v=>v],
@@ -775,6 +861,10 @@ ${D.grades.map(g=>'    '+j(g)).join(',\n')}
   }
 
   return {montar, novaNoite, encerrar, alternarEditor, gerarArquivo,
+          alternarVelocidade,
+          get velocidade(){return velocidade;},
+          set velocidade(v){ velocidade = velocidades.includes(v) ? v : 1;
+                             atualizarBotaoVelocidade(); },
           get config(){return config;},
           get J(){return J;}};
 })();
