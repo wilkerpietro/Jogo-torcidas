@@ -1230,6 +1230,104 @@ justamente pagar menos quando a vantagem era maior. Com 12 a faixa volta: **80 �
 Uma correção de canto no caminho: `Math.round(-0.5)` é `-0`, e a tela de relatório
 escrevia **"Prestígio -0"** numa noite que deu em nada.
 
+## 8.9 A cidade viva em dia sem nada
+
+Com o mapa vivendo todo dia (§8.6), abrir a tela numa terça mostrava uma planta com
+um disco só. A praça tem oito organizadas, cinquenta pinos e 5.478 nós de rua: ela
+precisava parecer habitada. Três coisas, com pesos deliberadamente diferentes —
+**andarilho e esbarrão são paisagem**, todo dia e em volume baixo; **assalto é
+notícia**, dois ou três no mês inteiro.
+
+### Os dois números que controlam a rua
+
+A regra do esbarrão é "sempre briga" — sem sorteio de coragem, sem desvio. Então
+quem decide a frequência é a **densidade**, e briga cresce com o **quadrado** dela.
+A curva, medida em 42 dias de São Paulo:
+
+| andarilhos/dia | raio | na tela (média · pico) | brigas/semana |
+|---|---|---|---|
+| 14 | 7 | 1,5 · 10 | 1,5 |
+| 18 | 7 | 2,2 · 17 | 4,3 |
+| **20** | **5** | **2,4 · 18** | **4,0** |
+| 24 | 7 | 2,6 · 18 | 6,0 |
+| 30 | 5 | 3,4 · 22 | 5,5 |
+| 48 | 10 | 4,8 · 31 | 22,0 |
+| 90 | 5 | 8,5 · 55 | 48,2 |
+
+O raio corta uns 25% e nada mais. Ficou em **20 por dia, raio 5**, e o número está
+num objeto (`TO.ruas.VIDA`) justamente porque é o que se mexe quando a praça parece
+vazia — sabendo o preço.
+
+Duas descobertas no caminho, as duas medidas:
+
+- **Cada um anda no seu pedaço.** Sorteando origem e destino entre os cinquenta
+  pinos, todo andarilho atravessava a cidade e passava pelo território de todos:
+  34 por dia davam 17,7 brigas por semana. Gente anda onde mora — o trajeto sai dos
+  pinos da própria torcida mais o comércio a 340 px da sede dela. Só que fechar o
+  bairro **inteiro** isolou cada torcida no seu quarteirão e a nossa passou uma
+  temporada sem cruzar com ninguém: zero baixas em 38 semanas com relação −60
+  contra as sete outras. **Um em cada três trajetos atravessa a cidade** — é esse
+  que encontra os outros.
+- **Quem sai à rua é sorteado.** A escolha era o primeiro da lista de disponíveis, e
+  a lista começa pela diretoria: os andarilhos nossos eram sempre os quatro caras
+  mais fortes da torcida. Cinco esbarrões, cinco vitórias, zero feridos. E a força
+  de quem não tem ficha (a torcida de IA não tem lista de membros) precisou cair na
+  **mesma escala** dos nossos: medida a lista de 250, `força+defesa/2` dá 8,5 no
+  primeiro quartil e 15,5 no terceiro, então a torcida de 20 vale 7 e a de 250 vale
+  12. Depois disso, **31 esbarrões nossos em 120 dias: 19 ganhos e 12 perdidos**.
+
+### Os números de aceite
+
+1. **Andarilhos e FPS.** 20 por dia numa praça Grande, **até 20 na tela ao mesmo
+   tempo** no horário de pico e 2,4 em média ao longo das catorze horas do dia. O
+   mapa desenha em 0,52 ms por quadro — a cidade viva não custa nada perto do
+   próprio desenho da planta.
+2. **Brigas por semana:** 2,5 em São Paulo (20 pares hostis de 28), 2,9 no Rio (20
+   de 28) e **2,4 em Belo Horizonte, que tem só 4 pares hostis de 10** — a
+   rivalidade da praça mexe menos do que a densidade, porque quem não é hostil
+   simplesmente passa direto.
+3. **Assaltos: 2,4 por mês** medidos em 10 meses de uma temporada. O bloco de quatro
+   semanas é sorteado por hash da data, então **o mesmo dia reaberto mostra o mesmo
+   assalto** — conferido abrindo e fechando o mapa três vezes: mesma foto,
+   `banco@785,605|Independente|563`.
+4. **Quem assaltou, contra o efetivo:** Gaviões 250 → 5 assaltos, Independente 196 →
+   5, Mancha Verde 200 → 5, TUP 76 → 3, Dragões 74 → 2, Camisa 12 78 → 1. As três
+   grandes levam 15 dos 24; as pequenas aparecem, mas raro.
+5. **Sucesso por alvo** — o alvo grande rende mais e prende mais, que é a tesoura
+   que o desenho queria: mercadinho 0 presos de 4, roupas 0 de 2, posto 2 de 7,
+   joalheria 2 de 4, **banco 6 de 7**. No total 42% presos. Cada assalto que dá
+   certo rende de R$ 60 (mercadinho) a R$ 504 (joalheria) — uma fração de 12% do
+   piso da faixa, porque isto é um cara levando a gaveta e não um bonde invadindo.
+6. **O que rendeu pra nós:** R$ 1.320 numa temporada, **1,14% da receita total** de
+   R$ 115.480. É extra, não torneira.
+7. **A viatura:** mediana de **9 minutos** do chamado até a porta, pior caso 18, e
+   **42% chegam a tempo**. Ela não sai sempre do posto mais perto: com o mais perto
+   sempre, o banco era preso em 7 de 7 e não rendia nunca; com qualquer um por
+   sorteio limpo, só 13% eram presos. 62% de chance do mais perto é o meio.
+8. **As penas:** joalheria e banco 60 dias, roupas, posto e mercadinho 30 — e o
+   contador desce em `passarDia` até sair. O preso de dia de jogo continua com
+   `dias:null` e sai pelo sorteio de 3% ao dia ou por fiança. Os dois modelos
+   convivem no mesmo campo porque objeto é *truthy*: `disponivel` não mudou.
+9. **Nenhuma baixa silenciosa:** 27 feridos e presos nossos numa temporada, **27 no
+   ticker e 27 no cartão de Avisos** da tela de Início, cada um com o motivo.
+10. **O histórico diz a verdade:** "Ferido num esbarrão na Aldeota, 4 dias fora",
+    "Preso assaltando banco do Centro — 60 dias". `ferir` e `prender` passaram a
+    receber o motivo de quem chamou; sem motivo, o padrão continua sendo o dia de
+    jogo.
+11. **Membro nosso preso num assalto** é raro por construção: a nossa torcida faz 5
+    dos 24 assaltos da temporada e 42% dão errado, o que dá cerca de dois por
+    temporada — e a temporada medida fechou em zero.
+12. **Ninguém atravessa quarteirão:** o andarilho ficou fora do asfalto em 5.357 de
+    454.158 amostras (1,2%, o mesmo meio-de-aresta dos bondes) e a **viatura em 0 de
+    5.002**.
+13. **Dia de jogo não muda, e isso é exato.** O mesmo dia rodado com a cidade viva e
+    sem, a partir do mesmo estado do mundo, em 12 dias de jogo de duas praças:
+    **mesmo número de bondes, mesmas horas de saída, mesmos encontros, mesmas
+    chegadas** — idênticos. Para isso a sorte do esbarrão teve de vir de hash e não
+    de `U.rng()`: cada briga consumindo do fluxo compartilhado empurrava o sorteio
+    de tudo que vem depois, e um mês de jogo dava 123 bondes contra 128 sem que
+    regra nenhuma tivesse mudado.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima

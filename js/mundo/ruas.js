@@ -428,6 +428,9 @@ TO.ruas = (function(){
                           olheiro:null, encontro:null, esfria:{}, arredores:[]};
     if(!E.ruas.esfria) E.ruas.esfria = {};
     if(!E.ruas.arredores) E.ruas.arredores = [];
+    if(!E.ruas.andarilhos) E.ruas.andarilhos = [];
+    if(!E.ruas.recados) E.ruas.recados = [];
+    if(!E.ruas.viaturas) E.ruas.viaturas = [];
     return E.ruas;
   }
 
@@ -562,6 +565,8 @@ TO.ruas = (function(){
     R.chave = chave; R.montado = true;
     R.bondes = []; R.minuto = 0; R.encontro = null;
     R.esfria = {}; R.arredores = []; R.selecionado = null;
+    R.andarilhos = []; R.recados = []; R.viaturas = [];
+    R.brigasDeRua = 0; R.brigasNossas = 0; R.recadosDeBriga = [];
 
     const doDia = jogosDaPraca(E).filter(j=>j.dia === E.data.dia);
 
@@ -578,6 +583,13 @@ TO.ruas = (function(){
     R.abertura = aberturaDoDia(E, temHospede);
     R.comHospede = temHospede;
     R.apito = apitoDoDia(E);
+    /* A cidade vive todo dia, com jogo ou sem: os andarilhos saem e o
+       assalto do calendário, se for hoje, entra na agenda. Isto vem
+       ANTES do `return` do dia vazio de propósito — é justamente o dia
+       vazio que precisa parecer habitado. */
+    nascerAndarilhos(E, mo, R);
+    agendarAssalto(E, mo, R);
+
     /* Dia sem jogo na praça não tem bonde automático — mas TEM dia. O
        estado da rua existe, o relógio corre e o nosso bonde pode entrar
        nela quando o jogador mandar. "Cidade tranquila" deixou de ser
@@ -942,6 +954,11 @@ TO.ruas = (function(){
       }
     }
     R._mo = mo;
+    /* a cidade em volta: quem está indo a algum lugar, quem se pegou na
+       esquina, e a viatura que saiu pro recado */
+    passoDosAndarilhos(E, R, minutos);
+    conferirEsbarroes(E, R);
+    passoDaPM(E, mo, R, minutos);
     const e = procurarEncontro(E, R);
     if(e){ R.encontro = e; R.rodando = false; }
     return R;
@@ -1036,6 +1053,548 @@ TO.ruas = (function(){
       if(b){ b.n = Math.max(2, Math.round(b.n*0.75)); b.apanhou = (b.apanhou||0)+1; }
     }
     R.encontro = null;
+  }
+
+  /* =======================================================
+     A CIDADE VIVA
+
+     Sem isto, o mapa num dia sem jogo é uma planta com um disco só. A
+     praça tem oito organizadas, cinquenta pinos e cinco mil nós de rua:
+     ela tem de parecer habitada.
+
+     Três coisas, com pesos muito diferentes de propósito:
+
+     · ANDARILHO é paisagem. Um membro indo da sede pro bar, do bar pra
+       subsede, de casa pro mercadinho. Dezenas por dia, todo dia.
+     · ESBARRÃO é o que acontece quando dois andarilhos hostis se
+       encostam. Sempre briga, e a briga não abre cena: dois sujeitos
+       trocando na esquina resolvidos em canvas seriam a coisa mais
+       interruptiva do jogo. Sai um recado e uma ficha vermelha.
+     · ASSALTO é notícia, não ambiente. Dois ou três no mês inteiro,
+       contando a cidade toda. Se um dia a praça parecer vazia, o
+       conserto é mais andarilho — nunca mais assalto.
+     ======================================================= */
+
+  /* Quantos saem à rua por dia. É ESTE número que controla quantas
+     brigas a semana tem: a regra do esbarrão é "sempre briga", sem
+     sorteio de coragem, então quem decide a frequência é a densidade.
+     Calibrado por medição — ver o resumo. */
+  /* OS DOIS NÚMEROS QUE CONTROLAM A RUA, num objeto e não em `const`,
+     porque são exatamente os que se mexe quando a praça parece vazia ou
+     virou guerra — e porque a bancada e os testes precisam varrer a
+     curva sem recompilar nada. A regra do esbarrão ("sempre briga") não
+     é um deles: quem decide a frequência é a densidade. */
+  /* Escolhidos varrendo a curva em 42 dias de São Paulo. Briga cresce
+     com o QUADRADO da densidade, porque hostil que se encosta sempre
+     briga — não há sorteio de coragem pra amortecer:
+
+       por dia / raio →  na tela (média · pico) · brigas por semana
+             14 /  7   →   1,5 · 10  ·  1,5
+             18 /  7   →   2,2 · 17  ·  4,3
+             20 /  5   →   2,4 · 18  ·  4,0     ← aqui
+             24 /  7   →   2,6 · 18  ·  6,0
+             30 /  5   →   3,4 · 22  ·  5,5
+             48 / 10   →   4,8 · 31  · 22,0
+             90 /  5   →   8,5 · 55  · 48,2
+
+     O raio corta uns 25% e nada mais; quem manda é o número. 20 por dia
+     é o ponto onde a rua tem gente e a semana tem quatro brigas —
+     "umas poucas por semana", que é o combinado. Se um dia a praça
+     parecer vazia, este é o número pra subir, sabendo o preço. */
+  const VIDA = { andarilhos: 20, raio: 5 };
+  const VEL_ANDARILHO  = 5.2;   // um a pé anda menos que um bonde inteiro? não:
+                                // é o mesmo passo, um pouco mais solto
+  const ESFRIA_ESBARRAO = 40;   // minutos até o mesmo par poder se pegar de novo
+
+  /* de onde e pra onde um andarilho vai: os pinos que já existem */
+  const DESTINOS = new Set(['sede','bar','bar-nosso','subsede','loja',
+                            'joalheria','posto','hospital','mercadinho',
+                            'roupas','banco']);
+
+  function pontosDeAndanca(mo){
+    if(!mo.arte) return [];
+    return (mo.pinos||[]).filter(p=>DESTINOS.has(p.tipo));
+  }
+
+  /* o pedaço de cidade de uma torcida: o que é dela mais o comércio que
+     fica perto da sede dela. Memoizado por praça e por torcida porque é
+     varrido por andarilho, todo dia. */
+  const RAIO_BAIRRO = 340;
+  const FATIA_DE_FORA = 0.34;   // trajetos que atravessam a cidade
+  const pedacos = new Map();
+  function pedacoDe(pontos, id){
+    const chave = `${id}|${pontos.length}`;
+    if(pedacos.has(chave)) return pedacos.get(chave);
+    const meus = pontos.filter(p=>p.torcida === id);
+    let pool = meus;
+    if(meus.length){
+      const base = meus[0];
+      const perto = pontos.filter(p=>!p.torcida &&
+        Math.hypot(p.x-base.x, p.y-base.y) <= RAIO_BAIRRO);
+      pool = meus.concat(perto);
+    }
+    /* torcida sem pino nenhum na praça, ou bairro sem comércio: ela anda
+       pela cidade como antes, que é melhor que não andar */
+    if(pool.length < 2) pool = pontos;
+    pedacos.set(chave, pool);
+    return pool;
+  }
+
+  /* AS ORGANIZADAS DA PRAÇA COM O EFETIVO DE AGORA.
+     A mesma lista serve pro andarilho e pro assalto, e nos dois o
+     sorteio é por PESO DE EFETIVO: torcida de 250 aparece na rua mais
+     que torcida de 20, porque tem mais gente pra aparecer. O número já
+     existe — não precisa de tabela nova. */
+  function organizadasComEfetivo(E){
+    const fora = [];
+    for(const o of M().torcidasEm(E.torcida.mapa)){
+      const n = o.id === E.torcida.id ? E.membros.length
+              : ((TO.tensao && TO.tensao.mundo(E)[o.id]) || {}).membros
+                || o.membros || 0;
+      if(n > 0) fora.push({torcida:o, n, nossa:o.id === E.torcida.id});
+    }
+    return fora;
+  }
+  /* sorteio por peso com número já sorteado em [0,1) — determinístico
+     quando o número vem de hash, que é o que o calendário precisa */
+  function porPeso(lista, r){
+    const soma = lista.reduce((a,x)=>a+x.n, 0) || 1;
+    let acc = 0, alvo = r * soma;
+    for(const x of lista){ acc += x.n; if(alvo < acc) return x; }
+    return lista[lista.length-1];
+  }
+
+  /* =======================================================
+     F.1 — OS ANDARILHOS DO DIA
+
+     Sorteados com hash da data, e não na hora: o mesmo dia reaberto
+     mostra a mesma rua. Cada um nasce num pino, some no outro, e entre
+     um e outro anda pela mesma malha e pelo mesmo `caminho()` dos
+     bondes — não há um segundo sistema de locomoção neste jogo.
+     ======================================================= */
+  function nascerAndarilhos(E, mo, R){
+    const pontos = pontosDeAndanca(mo);
+    if(pontos.length < 2) return;
+    const donos = organizadasComEfetivo(E);
+    if(!donos.length) return;
+    const H = MP().hash;
+    const dia = `${E.data.ano}|${E.data.semana}|${E.data.dia}`;
+    const fim = R.apito || 600;
+    /* os nossos que estão de pé hoje: o andarilho da nossa torcida é um
+       MEMBRO de verdade, com ficha, força e consequência. Um por vez —
+       o mesmo sujeito não anda em dois lugares ao mesmo tempo. */
+    const nossosLivres = E.membros.filter(TO.membros.disponivel);
+    const jaSaiu = new Set();
+    for(let i=0; i<VIDA.andarilhos; i++){
+      const s = k => (H(`${dia}|and${i}|${k}`) % 10000) / 10000;
+      const dono = porPeso(donos, s('quem'));
+      /* CADA UM ANDA NO SEU PEDAÇO.
+         Origem e destino sorteados entre os cinquenta pinos da cidade
+         punham todo mundo atravessando o mapa inteiro, e aí cada
+         andarilho passava pelo território de todos os outros: com 34 por
+         dia dava dezoito brigas por semana, porque hostil que se encosta
+         sempre briga e todo mundo se encostava. Gente anda onde mora —
+         da sede pro bar, do bar pra subsede, de casa pro mercadinho da
+         esquina. O trajeto sai dos pinos da PRÓPRIA torcida mais o
+         comércio perto deles, e é isso que separa "cidade cheia" de
+         "cidade em guerra": a densidade sobe sem que os caminhos se
+         cruzem. */
+      /* mas nem tudo é no quarteirão: um em cada três atravessa a
+         cidade, e é ESSE que encontra os outros. Sem a fatia de fora, a
+         restrição de bairro isolava cada torcida no próprio pedaço e a
+         nossa passava uma temporada inteira sem cruzar com ninguém —
+         medido: zero baixas nossas em 38 semanas, com relação em −60
+         contra as sete outras. Rua onde ninguém se encontra não tem
+         esbarrão nenhum, e aí o item não existe. */
+      const pool = s('longe') < FATIA_DE_FORA
+                 ? pontos : pedacoDe(pontos, dono.torcida.id);
+      const a = pool[Math.floor(s('de') * pool.length)];
+      let b = pool[Math.floor(s('pra') * pool.length)];
+      if(b === a) b = pool[(pool.indexOf(a) + 1) % pool.length];
+      /* espalhados pelo dia inteiro, e nenhum saindo tão tarde que a
+         caminhada não caiba antes de a rua fechar */
+      const saiEm = Math.round(s('hora') * fim * 0.82);
+      /* guarda o ID, não o objeto: `E.ruas` vai inteiro pro save, e um
+         objeto de membro serializado junto voltaria como CÓPIA — ferir
+         essa cópia não feriria ninguém na lista da torcida. É a mesma
+         costura que a cena de luta já faz com `membroId`. */
+      /* QUEM DA NOSSA SAI À RUA É SORTEADO, não é o primeiro da lista.
+         Era `nossosLivres[i++]`, e a lista começa pela diretoria: os
+         andarilhos nossos eram sempre os quatro caras mais fortes da
+         torcida, que ganhavam todo esbarrão. Medido: cinco brigas
+         nossas, cinco vitórias, zero feridos — o esbarrão não custava
+         nada porque quem ia pra rua era o presidente. */
+      let membro = null;
+      if(dono.nossa && nossosLivres.length){
+        for(let k=0; k<8 && !membro; k++){
+          const c = nossosLivres[
+            (H(`${dia}|and${i}|membro${k}`)) % nossosLivres.length];
+          if(!jaSaiu.has(c.id)){ membro = c; jaSaiu.add(c.id); }
+        }
+      }
+      if(dono.nossa && !membro) continue;   // não sobrou nosso de pé
+      R.andarilhos.push({
+        id: 90000 + i, torcida: dono.torcida.id, nome: dono.torcida.nome,
+        nossa: dono.nossa, membroId: membro ? membro.id : null,
+        /* A FORÇA DE QUEM NÃO TEM FICHA.
+           A torcida de IA não tem lista de membros, então o tamanho dela
+           serve de proxy — bonde grande cria gente rodada. O número tem
+           de cair na MESMA escala dos nossos, senão o esbarrão vira
+           moeda viciada: medida a nossa lista de 250, `força+defesa/2`
+           dá 8,5 no primeiro quartil, 10,5 na mediana e 15,5 no
+           terceiro. Então 7 pra torcida de vinte e 12 pra de duzentos e
+           cinquenta põe o andarilho de fora em volta da nossa mediana,
+           e quem decide o esbarrão passa a ser quem foi pra rua. */
+        forcaBase: 7 + Math.min(5, dono.n / 50),
+        cor: (dono.torcida.cores && dono.torcida.cores[0]) || '#9a9a9a',
+        x: a.x, y: a.y, rota: caminho(mo, a, b), i:0, t:0,
+        saiEm, andou:0, chegou:false, destino:b
+      });
+    }
+  }
+
+  function passoDosAndarilhos(E, R, minutos){
+    for(const a of R.andarilhos){
+      if(a.chegou || R.minuto < a.saiEm) continue;
+      let resta = VEL_ANDARILHO * minutos;
+      a.andou += resta;
+      while(resta > 0 && a.i < a.rota.length-1){
+        const p = a.rota[a.i], q = a.rota[a.i+1];
+        const seg = Math.hypot(q.x-p.x, q.y-p.y) || 0.001;
+        const falta = seg*(1-a.t);
+        if(resta < falta){ a.t += resta/seg; resta = 0; }
+        else { resta -= falta; a.i++; a.t = 0; }
+      }
+      if(a.i >= a.rota.length-1){
+        const f = a.rota[a.rota.length-1];
+        a.x = f.x; a.y = f.y; a.chegou = true;   // entrou e sumiu
+      }else{
+        const p = a.rota[a.i], q = a.rota[a.i+1];
+        a.x = p.x + (q.x-p.x)*a.t; a.y = p.y + (q.y-p.y)*a.t;
+      }
+    }
+  }
+
+  /* =======================================================
+     F.2 — O ESBARRÃO
+
+     Dois hostis que se encostam SEMPRE brigam. Não há sorteio de
+     coragem e não há desvio: o freio da frequência é o número de
+     andarilhos na rua, não uma moeda jogada na hora do encontro.
+
+     E não abre cena. Quem ganha sai por força e sorte; quem perde vai
+     pra casa ferido de um a sete dias, pela mesma `ferir` da gestão —
+     nada de um segundo modelo de status. Os dois levam XP, porque
+     brigar é o ofício e quem apanha aprende também.
+     ======================================================= */
+  const XP_ESBARRAO = 2;
+
+  /* =======================================================
+     NADA DE DESGASTE SILENCIOSO
+
+     Membro nosso que sai ferido ou preso de uma coisa que o jogador não
+     mandou acontecer tem de aparecer. O `anotar` já joga no ticker, mas
+     ticker passa: abrir a lista da torcida e achar três feridos sem
+     explicação é o tipo de coisa que faz o jogador achar que o jogo
+     quebrou. Então a baixa fica anotada por alguns dias e o cartão de
+     Avisos da tela de Início a mostra com o motivo.
+     ======================================================= */
+  const diaAbsoluto = E => (E.data.ano*40 + E.data.semana)*7 + E.data.dia;
+  function marcarBaixa(E, nome, txt, tipo){
+    (E.baixasDeRua = E.baixasDeRua || [])
+      .push({nome, txt, tipo:tipo||'ruim', quando:diaAbsoluto(E)});
+    if(E.baixasDeRua.length > 12) E.baixasDeRua.shift();
+  }
+
+  function conferirEsbarroes(E, R){
+    const vivos = R.andarilhos.filter(a=>!a.chegou && R.minuto >= a.saiEm);
+    for(let i=0;i<vivos.length;i++)
+      for(let k=i+1;k<vivos.length;k++){
+        const a = vivos[i], b = vivos[k];
+        if(a.torcida === b.torcida) continue;
+        if(Math.hypot(a.x-b.x, a.y-b.y) > VIDA.raio) continue;
+        const par = [a.id, b.id].sort((p,q)=>p-q).join('|');
+        if((R.esfria[par] || 0) > R.minuto) continue;
+        if(!hostis(E, a.torcida, b.torcida)) continue;
+        R.esfria[par] = R.minuto + ESFRIA_ESBARRAO;
+        resolverEsbarrao(E, R, a, b);
+      }
+  }
+
+  function resolverEsbarrao(E, R, a, b){
+    R.brigasDeRua++;
+    if(a.nossa || b.nossa) R.brigasNossas = (R.brigasNossas||0) + 1;
+    /* quem ganha: força de quem é, com sorte por cima. Pro nosso, a
+       força é a do membro de verdade; pra torcida de IA, o tamanho dela
+       serve de proxy — bonde grande cria gente rodada. */
+    const fichaDe = x => x.membroId != null
+      ? E.membros.find(m=>m.id === x.membroId) : null;
+    const mA = fichaDe(a), mB = fichaDe(b);
+    const ficha = x => x === a ? mA : mB;
+    /* A SORTE DO ESBARRÃO VEM DE HASH, não de `U.rng()`.
+       Duas razões, e as duas importam. A primeira é o mesmo dia
+       reaberto: se a moeda fosse jogada na hora, olhar o mapa duas
+       vezes daria duas histórias. A segunda é que `U.rng()` é o fluxo
+       compartilhado do mundo inteiro — cada esbarrão consumindo dele
+       empurrava o sorteio de tudo que vem depois, e um dia de jogo
+       medido com a cidade viva dava 123 bondes contra 128 sem ela, sem
+       que regra nenhuma tivesse mudado. */
+    const H = MP().hash;
+    const dado = k => (H(`esb|${a.id}|${b.id}|${Math.round(R.minuto)}|${k}`)
+                       % 10000) / 10000;
+    const forca = (x, k) => { const m = ficha(x);
+      return (m ? m.forca + m.defesa/2 : (x.forcaBase || 8)) + dado(k)*8; };
+    const ganhou = forca(a,'a') >= forca(b,'b') ? a : b;
+    const perdeu = ganhou === a ? b : a;
+    perdeu.chegou = true;                 // foi pra casa
+    ganhou.brigou = true;
+    const bairro = MP().bairroEm ? (MP().bairroEm(R._mo, a.x, a.y)||{}).nome : null;
+    const onde = bairro ? ` n${/^[AEIOU]/i.test(bairro)?'':'o '}${bairro}` : '';
+    for(const x of [a, b]){
+      const m = ficha(x);
+      if(!m) continue;
+      TO.membros.darXP(m, XP_ESBARRAO);
+      if(x === perdeu){
+        const d = 1 + Math.floor(dado('dias') * 7);
+        TO.membros.ferir(E, m, d, `Ferido num esbarrão${onde}`);
+        if(x.nossa) marcarBaixa(E, TO.membros.nomeDe(m),
+          `ferido num esbarrão${onde} — ${d} dia${d>1?'s':''} fora`);
+      }
+    }
+    /* recado só quando é da nossa conta: briga de dois estranhos na
+       esquina é paisagem, e encher o ticker com ela apagaria o que
+       importa */
+    if(a.nossa || b.nossa){
+      const nosso = a.nossa ? a : b, deles = a.nossa ? b : a;
+      const venceu = ganhou === nosso;
+      const mn = ficha(nosso);
+      const quem = mn ? TO.membros.nomeDe(mn) : 'Um dos nossos';
+      TO.estado.anotar(E, venceu
+        ? `${quem} se pegou com um da ${deles.nome}${onde} e levou a melhor.`
+        : `${quem} se pegou com um da ${deles.nome}${onde} e ficou no chão.`,
+        venceu ? 'boa' : 'ruim');
+      if(TO.tensao) TO.tensao.somar(E, deles.torcida, 3, 'esbarrão na rua');
+    }
+    R.recadosDeBriga = (R.recadosDeBriga || []);
+    R.recadosDeBriga.push({x:a.x, y:a.y, ate:R.minuto + 25});
+  }
+
+  /* =======================================================
+     F.3 — OS ASSALTOS DO MÊS
+
+     Dois ou três por mês na praça inteira — um a cada dez ou quatorze
+     dias. É extra de renda e acontecimento ocasional, nunca torneira.
+
+     Agendados PELO CALENDÁRIO e não sorteados quando o jogador abre o
+     mapa: senão quem abre o mapa sete dias seguidos vê sete assaltos. O
+     bloco de quatro semanas é o "mês" do jogo; o hash do bloco decide
+     quantos, em que dias, contra o quê e por quem. O mesmo dia reaberto
+     mostra o mesmo assalto, e o mês fecha em dois ou três.
+     ======================================================= */
+  /* o que o sujeito leva é uma FRAÇÃO DO PISO da faixa. A faixa é de
+     bonde inteiro invadindo com cena própria; isto é um cara levando a
+     gaveta e saindo andando. */
+  const FRACAO_GAVETA = 0.12;
+  const PENA = {joalheria:60, banco:60, roupas:30, posto:30, mercadinho:30};
+  /* QUANTO O SERVIÇO DEMORA, E QUANTO A PM DEMORA A SABER.
+     As duas coisas dependem da segurança do alvo, e em sentidos
+     opostos: banco tem cofre e o cara fica mais tempo lá dentro, mas
+     banco também tem alarme e a viatura sai no mesmo minuto;
+     mercadinho é rápido de limpar e ainda leva um tempo até alguém
+     ligar pra polícia. É essa tesoura que faz o alvo grande valer mais
+     e prender mais, sem ser uma armadilha pura.
+
+     Medido antes de calibrar, com a viatura saindo na hora: o banco era
+     preso em 7 de 7 e não rendia um centavo nunca. */
+  const MIN_DURACAO = 8;        // minutos de rua, no mercadinho
+  const POR_SEGURANCA = 1.6;    // e mais isto por ponto de segurança
+  const DEMORA_ALARME = 9;      // menos a segurança: banco chama na hora
+
+  const blocoDe = E => Math.floor((E.data.semana - 1) / 4);
+
+  /* Os assaltos deste bloco de quatro semanas, sempre os mesmos pro
+     mesmo bloco. Devolve [{semana, dia, tipo, torcidaId}]. */
+  function assaltosDoBloco(E){
+    const H = MP().hash;
+    const bloco = blocoDe(E);
+    const chave = `${E.data.ano}|bloco${bloco}`;
+    const quantos = 2 + (H(`${chave}|quantos`) % 2);      // 2 ou 3
+    const donos = organizadasComEfetivo(E);
+    if(!donos.length) return [];
+    const tipos = Object.keys(TO.acoes.COMERCIO);
+    const fora = [], usados = new Set();
+    for(let i=0;i<quantos;i++){
+      const s = k => (H(`${chave}|a${i}|${k}`) % 10000) / 10000;
+      /* espalhados pelos 28 dias do bloco, sem dois no mesmo dia */
+      let d = Math.floor(s('dia') * 28);
+      while(usados.has(d)) d = (d + 9) % 28;
+      usados.add(d);
+      fora.push({
+        semana: bloco*4 + 1 + Math.floor(d/7),
+        dia: (d % 7) + 1,
+        tipo: tipos[Math.floor(s('alvo') * tipos.length)],
+        torcidaId: porPeso(donos, s('quem')).torcida.id
+      });
+    }
+    return fora;
+  }
+
+  const assaltoDeHoje = E => assaltosDoBloco(E).find(
+    a => a.semana === E.data.semana && a.dia === E.data.dia) || null;
+
+  /* Põe o recado no mapa: o comércio alvo, a hora, quem está lá dentro
+     e quanto tempo ele leva. Banco demora mais que mercadinho, e é por
+     isso que banco rende mais e prende por mais tempo. */
+  function agendarAssalto(E, mo, R){
+    const plano = assaltoDeHoje(E);
+    if(!plano) return;
+    const alvos = (mo.pinos||[]).filter(p=>p.tipo === plano.tipo);
+    if(!alvos.length) return;
+    const H = MP().hash;
+    const chave = `${E.data.ano}|${E.data.semana}|${E.data.dia}|assalto`;
+    const p = alvos[H(`${chave}|onde`) % alvos.length];
+    const C = TO.acoes.COMERCIO[plano.tipo];
+    if(!C) return;
+    const o = M().torcida(plano.torcidaId);
+    if(!o) return;
+    const nossa = plano.torcidaId === E.torcida.id;
+    /* o membro sai dos DISPONÍVEIS: quem já está ferido ou preso não
+       sai assaltando */
+    let membro = null;
+    if(nossa){
+      const aptos = E.membros.filter(TO.membros.disponivel);
+      if(!aptos.length) return;                 // ninguém de pé, não houve
+      membro = aptos[H(`${chave}|quem`) % aptos.length];
+    }
+    const fim = R.apito || 600;
+    const comeca = Math.round(((H(`${chave}|hora`) % 10000)/10000) * fim * 0.6)
+                 + Math.round(fim * 0.12);
+    const duracao = MIN_DURACAO + C.seguranca * POR_SEGURANCA;
+    const chamaEm = comeca + Math.max(0, DEMORA_ALARME - C.seguranca);
+    R.recados.push({
+      x:p.x, y:p.y, tipo:plano.tipo, nome:C.nome, bairro:p.bairro,
+      torcida:plano.torcidaId, nomeTorcida:o.nome, nossa,
+      membroId: membro ? membro.id : null,
+      cor:(o.cores && o.cores[0]) || '#c04a3a',
+      comeca, chamaEm, termina: comeca + duracao, aberto:false, fechado:false,
+      levou: Math.round(C.rende[0] * FRACAO_GAVETA), calor:C.calor,
+      pena: PENA[plano.tipo] || 30, viatura:null
+    });
+  }
+
+  /* =======================================================
+     F.4 — A PM NO MAPA
+
+     Até aqui a polícia só existia dentro da cena de luta. No mapa da
+     cidade não havia viatura nenhuma: o assalto seria um número
+     sorteado, e o jogador não veria nada acontecer.
+
+     Agora o recado aparece no ponto do comércio assim que o assalto
+     começa, uma viatura sai do posto mais perto e vai até lá PELA RUA —
+     não em linha reta por cima dos quarteirões. Se chegar antes de o
+     sujeito terminar, prende; se não, ele sai com o dinheiro.
+     ======================================================= */
+  const POSTOS_PM = [[0.27,0.24],[0.74,0.33],[0.5,0.79]];
+  const VEL_VIATURA = VEL * 3.2;      // é um carro
+
+  /* DE QUAL POSTO SAI A VIATURA — e não é sempre o mais perto.
+     Era o mais perto, e com três postos numa praça de 1.254 px isso
+     dava sempre uns sete minutos de trajeto: a PM chegava antes de
+     qualquer serviço terminar e o banco era preso em 7 de 7, sem
+     render um centavo nunca. Viatura não está onde convém, está onde
+     está; o hash do recado escolhe qual delas atende, e às vezes é a do
+     outro lado da cidade. É essa variação que devolve ao alvo grande a
+     chance de dar certo, sem tirar dele o risco de ser o pior alvo. */
+  const CHANCE_MAIS_PERTO = 62;   // em cem chamados
+  function postoDaPM(mo, r){
+    const H = MP().hash;
+    const h = H(`pm|${Math.round(r.x)}|${Math.round(r.y)}|${r.comeca}`);
+    const postos = POSTOS_PM
+      .map(([fx,fy])=>({x:mo.tam*fx, y:mo.tam*fy}))
+      .sort((a,b)=>((a.x-r.x)**2+(a.y-r.y)**2) - ((b.x-r.x)**2+(b.y-r.y)**2));
+    /* na maioria das vezes atende quem está mais perto — é o que a PM
+       faz. No resto, atende outra: e é essa minoria que separa "alvo
+       difícil" de "alvo impossível". Com sempre a mais perto, o banco
+       era preso em 7 de 7; com qualquer uma por sorteio limpo, o
+       assalto virava dinheiro de graça e só 13% eram presos. */
+    if(h % 100 < CHANCE_MAIS_PERTO) return postos[0];
+    return postos[1 + (h % Math.max(1, postos.length - 1))];
+  }
+
+  function passoDaPM(E, mo, R, minutos){
+    for(const r of R.recados){
+      if(r.fechado) continue;
+      if(!r.aberto){
+        if(R.minuto < r.comeca) continue;
+        r.aberto = true;
+        if(r.nossa) TO.estado.anotar(E,
+          `Alguém da nossa está entrando n${/^[ao]/i.test(r.nome)?'':'o '}`+
+          `${r.nome} d${r.bairro?`o ${r.bairro}`:'a praça'}.`, 'ruim');
+      }
+      /* a viatura só sai quando alguém liga: banco tem alarme e chama no
+         mesmo minuto, mercadinho leva um tempo até alguém perceber */
+      if(!r.viatura){
+        if(R.minuto < (r.chamaEm != null ? r.chamaEm : r.comeca)) continue;
+        const de = postoDaPM(mo, r);
+        r.chamouEm = R.minuto;
+        r.viatura = {x:de.x, y:de.y, rota:caminho(mo, de, r), i:0, t:0,
+                     chegou:false, saiuEm:R.minuto};
+      }
+      const v = r.viatura;
+      if(v && !v.chegou){
+        let resta = VEL_VIATURA * minutos;
+        while(resta > 0 && v.i < v.rota.length-1){
+          const p = v.rota[v.i], q = v.rota[v.i+1];
+          const seg = Math.hypot(q.x-p.x, q.y-p.y) || 0.001;
+          const falta = seg*(1-v.t);
+          if(resta < falta){ v.t += resta/seg; resta = 0; }
+          else { resta -= falta; v.i++; v.t = 0; }
+        }
+        if(v.i >= v.rota.length-1){
+          v.x = r.x; v.y = r.y; v.chegou = true; v.chegouEm = R.minuto;
+        }else{
+          const p = v.rota[v.i], q = v.rota[v.i+1];
+          v.x = p.x + (q.x-p.x)*v.t; v.y = p.y + (q.y-p.y)*v.t;
+        }
+      }
+      /* a corrida: viatura na porta antes de ele terminar é prisão */
+      if(v && v.chegou && R.minuto <= r.termina) fecharAssalto(E, R, r, true);
+      else if(R.minuto > r.termina)              fecharAssalto(E, R, r, false);
+    }
+  }
+
+  function fecharAssalto(E, R, r, preso){
+    if(r.fechado) return;
+    r.fechado = true; r.preso = preso;
+    const ondeDetalhe = `${r.nome}${r.bairro ? ` d${/^[AEIOU]/i.test(r.bairro)?'':'o '}${r.bairro}` : ''}`;
+    const m = r.membroId != null ? E.membros.find(x=>x.id === r.membroId) : null;
+    if(preso){
+      if(r.nossa && m){
+        TO.membros.prender(E, m, r.pena, `Preso assaltando ${ondeDetalhe}`);
+        /* o preço do assalto: a polícia esquenta pelo calor do alvo e a
+           rua não aplaude quem terminou na viatura */
+        const I = E.indicadores;
+        I.policia   = U.limitar(I.policia - r.calor, 0, 20);
+        I.prestigio = U.limitar(I.prestigio - 1, 0, 20);
+        TO.estado.anotar(E,
+          `${TO.membros.nomeDe(m)} foi preso assaltando ${ondeDetalhe} — `+
+          `${r.pena} dias.`, 'ruim');
+        marcarBaixa(E, TO.membros.nomeDe(m),
+          `preso assaltando ${ondeDetalhe} — ${r.pena} dias de pena`);
+      }
+    }else{
+      if(r.nossa){
+        TO.estado.lancar(E, `Assalto — ${ondeDetalhe}`, r.levou);
+        if(m) TO.estado.anotar(E,
+          `${TO.membros.nomeDe(m)} limpou a gaveta d${
+            /^[AEIOU]/i.test(r.nome)?'':'o '}${r.nome} e sumiu: `+
+          `${U.dinheiro(r.levou)}.`, 'boa');
+      }else if(TO.tensao){
+        /* pras 138 da IA o caixa é o que `tensao` já mantém */
+        const t = TO.tensao.mundo(E)[r.torcida];
+        if(t) t.caixa += r.levou;
+      }
+    }
   }
 
   /* =======================================================
@@ -1266,10 +1825,60 @@ TO.ruas = (function(){
       : Math.hypot(b.x-R.olheiro.x, b.y-R.olheiro.y) <= R.olheiro.raio;
 
   /* =======================================================
+     A CIDADE VIVA, DESENHADA
+
+     O andarilho é MENOR que um bonde e não leva sigla em cima. Bonde é
+     grupo, andarilho é uma pessoa, e o jogador tem de saber de longe o
+     que é ameaça e o que é paisagem — sem precisar ler nada.
+     ======================================================= */
+  const R_ANDARILHO = 3.2;
+
+  function desenharCidadeViva(E, R, ctx){
+    ctx.save();
+    for(const a of (R.andarilhos||[])){
+      if(a.chegou || R.minuto < a.saiEm) continue;
+      if(!visivel(R, a)) continue;
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, R_ANDARILHO, 0, Math.PI*2);
+      ctx.fillStyle = a.cor; ctx.fill();
+      ctx.lineWidth = a.nossa ? 1.4 : 0.8;
+      ctx.strokeStyle = a.nossa ? '#ffffff' : 'rgba(0,0,0,.55)';
+      ctx.stroke();
+    }
+    /* a marca da briga que acabou de acontecer ali */
+    for(const b of (R.recadosDeBriga||[])){
+      if(R.minuto > b.ate) continue;
+      ctx.beginPath(); ctx.arc(b.x, b.y, 9, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(224,75,69,.75)'; ctx.lineWidth = 1.6; ctx.stroke();
+    }
+    /* o recado do assalto: pisca no ponto do comércio enquanto dura */
+    for(const r of (R.recados||[])){
+      if(!r.aberto || r.fechado) continue;
+      const anda = (r.termina - R.minuto) / Math.max(1, r.termina - r.comeca);
+      ctx.beginPath(); ctx.arc(r.x, r.y, 13, 0, Math.PI*2);
+      ctx.strokeStyle = '#e04b45'; ctx.lineWidth = 2.2; ctx.stroke();
+      /* o arco que esvazia é o tempo que falta pro sujeito terminar */
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, 18, -Math.PI/2, -Math.PI/2 + Math.PI*2*Math.max(0,anda));
+      ctx.strokeStyle = 'rgba(224,75,69,.55)'; ctx.lineWidth = 3; ctx.stroke();
+      const v = r.viatura;
+      if(v && !v.chegou){
+        ctx.beginPath(); ctx.arc(v.x, v.y, 5, 0, Math.PI*2);
+        ctx.fillStyle = '#2f6fd0'; ctx.fill();
+        ctx.lineWidth = 1.2; ctx.strokeStyle = '#dfe8ff'; ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  /* =======================================================
      DESENHO POR CIMA DO MAPA
      ======================================================= */
   function desenhar(E, mo, ctx){
     const R = estado(E);
+    /* a cidade viva se desenha mesmo sem bonde nenhum: é ela que faz o
+       dia sem jogo não parecer uma planta morta */
+    desenharCidadeViva(E, R, ctx);
     if(!R.bondes.length) return;
 
     /* PRA ONDE O BONDE COMANDADO FOI MANDADO. Sem isto o jogador clica
@@ -1377,6 +1986,8 @@ TO.ruas = (function(){
           porOlheiro, visivel, desenhar, relogio,
           nossoBonde, nossosNaRua, bondeComandado,
           sairDaSede, mandarPara, dirigir, DIA_VAZIO,
+          assaltosDoBloco, assaltoDeHoje, organizadasComEfetivo,
+          VIDA, FRACAO_GAVETA, PENA,
           VEL, ANTES, JANELA, MANHA_COM_HOSPEDE, apitoDoDia, aberturaDoDia,
           RAIO_ENCONTRO, RAIO_ARREDORES, RAIO_OLHEIRO};
 })();

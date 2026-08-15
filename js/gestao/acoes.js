@@ -367,7 +367,7 @@ TO.acoes = (function(){
         const aptos = E.membros.filter(TO.membros.disponivel);
         if(aptos.length && U.rng() < 0.18){
           const azarado = U.escolher(aptos);
-          TO.membros.prender(E, azarado);
+          TO.membros.prender(E, azarado, null, 'Preso pichando o território');
           return {ok:true, msg:`Território marcado, mas ${TO.membros.nomeDe(azarado)} foi preso.`,
                   tipo:'ruim'};
         }
@@ -434,7 +434,7 @@ TO.acoes = (function(){
           const v = Math.round(TO.membros.fianca(m)*0.75);
           if(gasto + v > E.dinheiro) break;
           gasto += v; soltos.push(m);
-          m.preso = false;
+          m.preso = null;
           m.historico.push('Solto em negociação da diretoria');
         }
         if(!soltos.length) return {ok:false, msg:'O delegado não quis conversa.',

@@ -253,32 +253,57 @@ TO.membros = (function(){
   /* -------------------------------------------------------
      BAIXAS — o retorno do dia de jogo
      ------------------------------------------------------- */
-  function ferir(E, m, dias){
+  /* O MOTIVO VEM DE QUEM CHAMOU.
+     As duas funções escreviam "no dia de jogo" fixo no histórico, e isso
+     era verdade enquanto ferido e preso só saíam da cena de sábado. Com
+     esbarrão de rua e assalto numa terça qualquer, o texto fixo passou a
+     mentir na ficha do sujeito. Sem motivo, o padrão continua sendo o
+     dia de jogo, que é de onde vem a maioria. */
+  function ferir(E, m, dias, motivo){
     if(m.ferido) return;
     const d = dias || DIAS_FERIDO;
     m.ferido = { dias:d };
     m.naFila = false;
     m.moral = Math.max(0, m.moral - 3);
-    m.historico.push(`Ferido no dia de jogo, ${d} dias fora`);
+    m.historico.push(`${motivo || 'Ferido no dia de jogo'}, ${d} dias fora`);
   }
 
-  function prender(E, m){
+  /* A PRISÃO GANHOU PRAZO, espelhando o ferido.
+     `m.preso` era um booleano e a soltura era sorteio de 3% ao dia —
+     pena desenhada pra briga de dia de jogo (GDD §17.2), que dá uma
+     média de uns 33 dias. Assalto tem pena de tabela: 30 dias nos alvos
+     pequenos, 60 no banco e na joalheria. Agora é `{dias, motivo}`, com
+     `dias:null` pra prisão sem prazo, que continua saindo no sorteio.
+     Objeto é truthy, então `disponivel` e tudo o que só pergunta "está
+     preso?" seguem valendo sem mudar uma linha. */
+  function prender(E, m, dias, motivo){
     if(m.preso) return;
-    m.preso = true;
+    const txt = motivo || 'Preso no dia de jogo';
+    m.preso = { dias: dias || null, motivo: txt };
     m.naFila = false;
     m.moral = Math.max(0, m.moral - 4);
-    m.historico.push('Preso no dia de jogo');
+    m.historico.push(dias ? `${txt} — ${dias} dias` : txt);
   }
+  /* quantos dias faltam, ou null pra prisão sem prazo. Save antigo
+     guardou `true` aqui dentro: aí não há prazo nenhum. */
+  const diasPresos = m => (m.preso && typeof m.preso === 'object')
+                          ? m.preso.dias : null;
 
-  /* GDD §17.2: preso fica até resgate (dinheiro) ou soltura */
-  function fianca(m){ return 800 + m.xp * 2; }
+  /* GDD §17.2: preso fica até resgate (dinheiro) ou soltura.
+     Com pena de tabela a fiança acompanha o que falta cumprir: tirar
+     alguém de uma pena de 60 dias por R$ 800 apagaria o preço do
+     assalto, que é justamente o que a pena existe pra cobrar. */
+  function fianca(m){
+    const d = diasPresos(m) || 0;
+    return Math.round((800 + m.xp * 2) * (1 + d/20));
+  }
 
   function resgatar(E, m){
     if(!m.preso) return {ok:false, motivo:'não está preso'};
     const custo = fianca(m);
     if(E.dinheiro < custo) return {ok:false, motivo:`fiança de ${U.dinheiro(custo)}`};
     TO.estado.lancar(E, `Fiança de ${nomeDe(m)}`, -custo);
-    m.preso = false;
+    m.preso = null;
     m.historico.push('Solto sob fiança');
     return {ok:true, custo};
   }
@@ -292,11 +317,25 @@ TO.membros = (function(){
           m.historico.push('Recuperado, de volta');
         }
       }
-      /* preso pode ser solto sozinho, devagar — senão o jogador é
-         obrigado a pagar fiança sempre e a prisão vira só imposto */
-      else if(m.preso && U.rng() < 0.03){
-        m.preso = false;
-        m.historico.push('Solto pela justiça');
+      /* DOIS MODELOS DE PRISÃO, e eles não se atrapalham.
+         Com prazo, o contador desce e ele sai no dia certo — é a pena
+         do assalto. Sem prazo, continua o sorteio de 3% ao dia da briga
+         de dia de jogo: preso pode ser solto sozinho, devagar, senão o
+         jogador é obrigado a pagar fiança sempre e a prisão vira só
+         imposto. */
+      else if(m.preso){
+        const d = diasPresos(m);
+        if(d != null){
+          m.preso.dias--;
+          if(m.preso.dias <= 0){
+            m.preso = null;
+            m.historico.push('Cumpriu a pena, de volta');
+          }
+        }
+        else if(U.rng() < 0.03){
+          m.preso = null;
+          m.historico.push('Solto pela justiça');
+        }
       }
     }
   }
@@ -350,7 +389,7 @@ TO.membros = (function(){
     disponivel, capacidade, capTreino, capDiretoria, contar, emCampanha,
     darXP, podePromover, promover, treinar, treinarFila,
     planoDeTreino, sortearFila,
-    ferir, prender, fianca, resgatar, passarDia,
+    ferir, prender, diasPresos, fianca, resgatar, passarDia,
     aptosParaOEstadio, aplicarResultadoDaNoite
   };
 })();

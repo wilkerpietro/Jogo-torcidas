@@ -751,7 +751,9 @@
 
     const tb = el('tbody');
     for(const m of lista){
-      const sit = m.preso ? 'Preso' : m.ferido ? `Ferido · ${m.ferido.dias}d`
+      const penaDele = TO.membros.diasPresos(m);
+      const sit = m.preso ? (penaDele != null ? `Preso · ${penaDele}d` : 'Preso')
+                : m.ferido ? `Ferido · ${m.ferido.dias}d`
                 : m.naFila ? 'Treinando' : 'Apto';
       const linha = el('tr',{class:(m.preso?'preso':m.ferido?'ferido':'')
         + (selecionado===m.id?' selecionada':'')});
@@ -2717,14 +2719,20 @@
         `<b>${TO.ruas.relogio(R.minuto, e)}</b><small>${
           !jogos.length ? (falta > 0 ? `${hhmm(falta)} de rua` : 'anoiteceu')
           : falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`}));
+      /* a cidade em volta, que existe com jogo e sem: quem está na rua
+         a pé agora, e o assalto em curso, se houver */
+      const naRuaAgora = (R.andarilhos||[])
+        .filter(a=>!a.chegou && R.minuto >= a.saiEm).length;
+      const roubo = (R.recados||[]).find(r=>r.aberto && !r.fechado);
+      const vida = `${naRuaAgora} a pé na rua`
+        + (R.brigasDeRua ? ` · ${R.brigasDeRua} esbarrão${R.brigasDeRua>1?'ões':''}` : '')
+        + (roubo ? ` · assalto n${/^[AEIOU]/i.test(roubo.nome)?'':'o '}${roubo.nome}` : '');
       barraRua.appendChild(el('div',{class:'rua-info', html: jogos.length
         ? `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
            <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
-           apito às ${TO.ruas.relogio(R.apito||0, e)}</small>`
-        : `<b>Cidade tranquila</b><small>${meu
-            ? `seu bonde de ${meu.n} está na rua`
-            : 'ninguém joga aqui hoje — quem sair, sai porque você mandou'}
-           </small>`}));
+           ${vida}</small>`
+        : `<b>${roubo ? 'Assalto em andamento' : 'Dia comum na praça'}</b>
+           <small>${meu ? `seu bonde de ${meu.n} está na rua · ` : ''}${vida}</small>`}));
 
       /* PEGAR O BONDE. Qualquer bonde nosso que esteja na rua serve, e em
          dia de jogo já tem um lá — o disco que está indo pro estádio. Com
@@ -2782,7 +2790,10 @@
 
       const bt = el('button',{class:'bt destaque',
         texto: R.encontro ? 'Confronto!' : R.rodando ? 'Pausar' : 'Rodar o dia'});
-      bt.disabled = !andando && !R.encontro;
+      /* dá pra rodar o dia enquanto ele não acabou, com bonde ou sem:
+         num dia comum o que anda é a cidade — os andarilhos, a viatura,
+         o assalto do calendário */
+      bt.disabled = !R.encontro && R.minuto >= (R.apito || 0);
       bt.onclick = ()=>{
         if(R.encontro){ abrirConfronto(e, R.encontro); return; }
         R.rodando = !R.rodando;

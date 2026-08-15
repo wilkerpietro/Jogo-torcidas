@@ -663,6 +663,18 @@ TO.planejamento = (function(){
           `~${a.estimativa} aliados, jogo do ${a.clube.nome} aqui`, 'gestao', 'aliado');
     }
 
+    /* O QUE ACONTECEU SEM O JOGADOR MANDAR.
+       Esbarrão na rua e assalto tiram gente de circulação numa terça
+       qualquer. O ticker avisa na hora, mas ticker passa — e abrir a
+       lista da torcida e achar três feridos sem explicação é o tipo de
+       coisa que faz o jogador achar que o jogo quebrou. Aqui a baixa
+       fica visível por três dias, com o motivo escrito. */
+    const hoje = (E.data.ano*40 + E.data.semana)*7 + E.data.dia;
+    for(const b of (E.baixasDeRua || []))
+      if(hoje - b.quando <= 3)
+        põe('baixa-'+b.quando+'-'+b.nome, `${b.nome} fora de combate`,
+            b.txt, 'torcida', b.tipo === 'boa' ? '' : 'urgente');
+
     const presos = E.membros.filter(m=>m.preso).length;
     if(presos) põe('presos', `${presos} ${presos===1?'membro preso':'membros presos'}`,
       'fiança pela ficha ou negociação na delegacia', 'torcida', 'urgente');
