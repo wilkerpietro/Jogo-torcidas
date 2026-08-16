@@ -3203,8 +3203,18 @@
   const tempoPausado = () => pausasT.size > 0;
 
   function rodarTempo(){
-    if(relogioTempo || pausasT.size) return;
+    if(relogioTempo) return;
     const e0 = E(); if(!e0) return;
+    if(pausasT.size) return;
+    /* A DECISÃO NÃO É MOTIVO DE PAUSA, é uma pergunta ao mundo.
+       Ela chegou a entrar no conjunto junto com painel, foco e save, e
+       isso criou o pior sintoma que este relógio pode ter: um motivo
+       ficava pra trás quando a resposta vinha por um caminho que não
+       passava por quem o tirava, e o jogo congelava com a tela limpa —
+       sem painel, sem modal e sem nada pra responder. Agora a verdade é
+       uma só e é `TO.feed.travado`: o laço não começa e não continua
+       enquanto houver decisão sem resposta, e quem responde manda
+       religar. Um estado do mundo não se guarda em dois lugares. */
     if(TO.feed.travado(e0)) return;
     let ultimo = 0;
     const passo = agora=>{
@@ -3238,13 +3248,12 @@
     if(enc){
       TO.feed.convocarEncontro(e, enc);
       TO.feed.publicar(e);
-      if(TO.feed.travado(e)){ pausarTempo('decisao'); return; }
+      if(TO.feed.travado(e)) return;
       /* ninguém nosso no encontro: a rua resolve sozinha e o dia segue */
       TO.ruas.resolver(e);
     }
     TO.estado.avancarDia();
     TO.feed.passarDia(e);
-    if(TO.feed.travado(e)) pausarTempo('decisao');
   }
 
   function rodarRelogio(){
@@ -4608,6 +4617,8 @@
   TO.tela = {
     passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
     rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
+    get pausasDoTempo(){ return [...pausasT]; },
+    get pausasDaRua(){ return [...pausas]; },
     abrirPainel, fecharPainel, get painel(){ return painel; },
     get diaPausado(){ return diaPausado(); }
   };
