@@ -94,15 +94,31 @@
   let filtroSel = 'todas', escolhida = null;
 
   let buscaSel = '';
+  /* DOIS PASSOS. A tela empilhava a lista e a ficha inteira, com o botão
+     de selecionar no fim de tudo. Escolher o nome e ler a ficha são
+     coisas diferentes: a primeira é o começo da decisão, a segunda É a
+     decisão. */
+  let passoSel = 1;
 
   function abrirSelecao(){
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.remove('oculto');
-    escolhida = TO.mundo.ficha(TO.mundo.selecionaveis()[0]);
+    escolhida = null;
+    passoSel = 1;
     pintarSelecao();
   }
 
+  function irParaPasso(n){ passoSel = n; pintarSelecao(); }
+
   function pintarSelecao(){
+    const p2 = passoSel === 2 && escolhida;
+    $('passo1Sel').classList.toggle('oculto', !!p2);
+    $('passo2Sel').classList.toggle('oculto', !p2);
+    $('btAvancarSelecao').classList.toggle('oculto', !!p2);
+    $('btAvancarSelecao').disabled = !escolhida;
+    $('btSelecionarTorcida').classList.toggle('oculto', !p2);
+    $('btVoltarMenu').textContent = p2 ? 'Voltar' : 'Voltar ao menu';
+
     const fichas = TO.mundo.selecionaveis().map(TO.mundo.ficha);
     const filtros = [{id:'todas', rot:'Todas'}]
       .concat(TO.mundo.divisoes().map(d=>({id:d, rot:d.replace('Brasileirão ','')})));
@@ -117,9 +133,11 @@
       .sort((a,b)=>b.membros-a.membros);
 
     $('contaTorcidas').textContent = `${lista.length} de ${fichas.length}`;
-    $('subSelecao').textContent =
-      `${fichas.length} torcidas · ${TO.mundo.todosTimes.length} clubes · `+
-      `${TO.mundo.todasCidades.length} cidades`;
+    $('subSelecao').textContent = p2
+      ? `${escolhida.nome} · ${escolhida.clube} · passo 2 de 2`
+      : `passo 1 de 2 · ${fichas.length} torcidas · `+
+        `${TO.mundo.todosTimes.length} clubes · `+
+        `${TO.mundo.todasCidades.length} cidades`;
 
     const cx = $('listaTorcidas'); cx.innerHTML='';
     const bs = el('input',{class:'busca', type:'search',
@@ -138,13 +156,17 @@
          <div class="cid">${f.clube} · ${f.cidade} - ${f.uf}</div>`}));
       b.appendChild(el('span',{class:'qt-membros',
         html:`${U.numero(f.membros)}<small>membros</small>`}));
+      /* um clique escolhe, dois avançam: o duplo é atalho, não
+         caminho único — quem avança de verdade é o botão */
       b.onclick = ()=>{ escolhida = f; pintarSelecao(); };
+      b.ondblclick = ()=>{ escolhida = f; irParaPasso(2); };
       rolo.appendChild(b);
     }
     cx.appendChild(rolo);
 
     const cxF = $('fichaTorcida');
     if(!escolhida){ cxF.innerHTML=''; return; }
+    if(!p2) return;              // a ficha é o passo 2, e só ele
     const f = escolhida;
     cxF.innerHTML='';
     const cab = el('div',{class:'ficha-torcida'});
@@ -457,16 +479,25 @@
     const cx = el('div',{class:'ass-politicas'});
     cx.appendChild(el('div',{class:'fase-rot',
       texto:'Ideologia — vale toda semana'}));
-    const grupo = (rot, itens, atual, aoTrocar)=>{
+    /* PENDENTE ATÉ SALVAR. A escolha se aplicava solta, a cada `change`,
+       e o jogador não tinha confirmação nenhuma de que ficou guardada.
+       Agora os três seletores e a chave escrevem aqui, e um botão só
+       leva tudo pro estado. */
+    const pend = {};
+    const grupo = (rot, itens, atual, aplicar)=>{
       const d = el('div',{class:'pol-grupo'});
       d.appendChild(el('b',{texto:rot}));
-      const sel = el('select');
+      /* `select.campo` E NÃO `select` PELADO: `base.css` dava `color`
+         sem `background`, e o texto claro do tema caía sobre o branco
+         padrão do navegador — os três apareciam vazios porque estavam
+         brancos no branco. A classe já existia em `paineis.css`. */
+      const sel = el('select',{class:'campo'});
       for(const it of itens){
         const o = el('option',{texto:it.rot}); o.value = it.id;
         if(it.id === atual) o.selected = true;
         sel.appendChild(o);
       }
-      sel.onchange = ()=>{ aoTrocar(sel.value); TO.estado.salvar(); redesenhar(); };
+      sel.onchange = ()=>{ pend[rot] = ()=>aplicar(sel.value); };
       d.appendChild(sel);
       cx.appendChild(d);
     };
@@ -484,14 +515,25 @@
     const l = el('label',{class:'opc-chave'});
     const i = el('input',{type:'checkbox'});
     i.checked = !!opc(e).perguntarJogo;
-    i.onchange = ()=>{ opc(e).perguntarJogo = i.checked;
-                       TO.estado.salvar(); redesenhar(); };
+    i.onchange = ()=>{ pend.chave = ()=>{ opc(e).perguntarJogo = i.checked; }; };
     l.append(i, el('div',{html:'<b>Perguntar antes de todo jogo</b>'+
       '<small>ligada, a semana de jogo chega como mensagem de decisão e o '+
       'relógio para até você responder. Desligada, a ideologia acima fecha '+
       'o plano sozinha e o feed só conta o que foi decidido — e se ela não '+
       'conseguir fechar, a pergunta vem assim mesmo.</small>'}));
     cx.appendChild(l);
+
+    /* UM BOTÃO SÓ, e é ele que confirma */
+    const bt = el('button',{class:'bt destaque', texto:'Salvar'});
+    bt.onclick = ()=>{
+      for(const fn of Object.values(pend)) fn();
+      TO.estado.salvar();
+      aviso('Ideologia salva.', 'boa');
+      redesenhar();
+    };
+    const rod = el('div',{class:'pol-rodape'});
+    rod.appendChild(bt);
+    cx.appendChild(rod);
     return cx;
   }
 
@@ -720,6 +762,7 @@
     else if(r.cena) abrirCenaDaMensagem(r.cena);
     else if(r.tela === 'caravana') abrirCaravana();
     else if(r.tela === 'ataque') abrirAtaque();
+    else if(r.tela === 'ideologia') abrirIdeologia();
     else if(r.abrir){
       /* a mensagem pode pedir uma ABA, não só uma página: a rotina é a
          segunda do Calendário, e cair na primeira é o mesmo que não
@@ -1809,7 +1852,23 @@
         id:o.id, rot:o.rot, nota:o.nota
       })), onde, id=>{ onde = id; pintar(); }));
 
-      /* --- 3: quantas bombas --- */
+      /* --- 3: quantos vão --- */
+      const f = P.efetivoDoAtaque(e);
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantos vão atacar'}));
+      const le = el('div',{class:'contador'});
+      const eB = el('button',{texto:'−'}), eM = el('button',{texto:'+'});
+      const passo = Math.max(1, Math.round(f.teto/10));
+      eB.disabled = f.vao <= f.piso;
+      eM.disabled = f.vao >= f.teto;
+      eB.onclick = ()=>{ P.definirAtaque(e, {alvo, onde, bombas,
+        efetivo: Math.max(f.piso, f.vao - passo)}); pintar(); };
+      eM.onclick = ()=>{ P.definirAtaque(e, {alvo, onde, bombas,
+        efetivo: Math.min(f.teto, f.vao + passo)}); pintar(); };
+      le.append(eB, el('b',{texto:String(f.vao)}), eM,
+        el('small',{texto:`de ${f.teto} que saem de casa · mínimo ${f.piso}`}));
+      corpo.appendChild(le);
+
+      /* --- 4: quantas bombas --- */
       const tem = (e.estoque||{}).bombas || 0;
       corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantas bombas'}));
       const lb = el('div',{class:'contador'});
@@ -1827,7 +1886,7 @@
       const a = lista.find(x=>x.id === alvo) || {};
       const o = P.ONDE_ATAQUE.find(x=>x.id === onde) || {};
       corpo.appendChild(el('div',{class:'linha-dado total', html:
-        `<span>${P.efetivoDaSaida(e)} nossos contra a ${a.nome||'—'} `+
+        `<span>${f.vao} nossos contra a ${a.nome||'—'} `+
         `${(o.rot||'').toLowerCase()}`+
         `${bombas ? `, com ${bombas} bomba${bombas>1?'s':''}` : ''}</span>`+
         `<b>${DIA_DA_SEMANA[j.dia] || 'sábado'}</b>`}));
@@ -1854,6 +1913,13 @@
         TO.estado.salvar();
         redesenhar();
       }]], 'media');
+  }
+
+  /* A IDEOLOGIA SOZINHA, numa tela dela. O botão "Definir ideologia"
+     abria a Gestão inteira e deixava o que ele promete no rodapé. */
+  function abrirIdeologia(){
+    return modal('Ideologia', 'vale toda semana', caixaDeIdeologia(E()),
+                 null, 'media');
   }
 
   function abrirFicha(m){
@@ -2696,7 +2762,11 @@
        A SEQUÊNCIA
        ===================================================== */
     if(j){
-      const alvos = P.alvosDoJogo(e);
+      /* A LISTA É A DA RUA DAQUELE DIA, e não a do clube adversário:
+         `alvosDoJogo` devolvia só as torcidas do adversário do NOSSO
+         jogo, então num Corinthians × Ponte Preta aparecia a Jovem
+         Ponte sozinha, com São Paulo inteira na rua naquele dia. */
+      const alvos = P.alvosNaRua(e);
       const trair = P.soAliados(e);
       if(trair && p.intencao === 'atacar') P.definirIntencao(e, 'trair');
       if(!trair && p.intencao === 'trair')  P.definirIntencao(e, 'atacar');
@@ -4152,7 +4222,10 @@
     TO.estado.novo({torcida: escolhida});
     entrarNoJogo(true);
   };
+  $('btAvancarSelecao').onclick = ()=>{ if(escolhida) irParaPasso(2); };
+  /* o mesmo botão volta um passo, e do primeiro volta pro menu */
   $('btVoltarMenu').onclick = ()=>{
+    if(passoSel === 2){ irParaPasso(1); return; }
     $('telaSelecao').classList.add('oculto');
     $('telaMenu').classList.remove('oculto');
   };
@@ -4194,7 +4267,7 @@
     resolverIda: e => TO.praca.resolverIda(e || E()),
     /* as duas telas de decisão da semana, pela mesma porta de serviço
        que a bateria já usa pro resto */
-    abrirCaravana, abrirAtaque
+    abrirCaravana, abrirAtaque, abrirIdeologia
   };
 
   montarMenu();

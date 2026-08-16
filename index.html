@@ -81,22 +81,27 @@
 <div id="telaSelecao" class="tela-cheia oculto">
   <div class="moldura">
     <header><h2>Seleção de torcida</h2><span id="subSelecao"></span></header>
+    <!-- DOIS PASSOS: escolher o nome, e só depois ler a ficha. Ler a
+         ficha é a decisão; escolher o nome é o começo dela. -->
     <div>
-      <div class="subabas" id="abasSelecao"></div>
-      <div class="lista-detalhe">
+      <div id="passo1Sel">
+        <div class="subabas" id="abasSelecao"></div>
         <div class="cartao">
           <h2>Torcidas <span class="conta" id="contaTorcidas"></span></h2>
           <div id="listaTorcidas"></div>
         </div>
+      </div>
+      <div id="passo2Sel" class="oculto">
         <div class="cartao">
           <div class="corpo" id="fichaTorcida"></div>
-          <div class="rodape">
-            <button class="bt destaque larga" id="btSelecionarTorcida">Selecionar torcida</button>
-          </div>
         </div>
       </div>
     </div>
-    <footer><button class="bt" id="btVoltarMenu">Voltar</button></footer>
+    <footer>
+      <button class="bt" id="btVoltarMenu">Voltar</button>
+      <button class="bt destaque" id="btAvancarSelecao">Avançar</button>
+      <button class="bt destaque oculto" id="btSelecionarTorcida">Selecionar torcida</button>
+    </footer>
   </div>
 </div>
 

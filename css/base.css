@@ -48,7 +48,16 @@ body{
   min-height:100vh;
 }
 button{font-family:var(--corpo);color:inherit}
-input,select,textarea{font-family:var(--corpo);color:inherit}
+/* COR SEM FUNDO É ARMADILHA. Isto dava `color:inherit` e mais nada, e
+   todo `select` novo nascia com o texto claro do tema sobre o branco
+   padrão do navegador — invisível, e ninguém desconfia porque o texto
+   ESTÁ lá. O fundo do tema vem junto agora; `select.campo` continua
+   existindo pro campo de formulário completo (borda, foco, largura). */
+input,select,textarea{
+  font-family:var(--corpo);color:var(--texto);
+  background:#141414;border:1px solid var(--linha);
+}
+input[type=checkbox],input[type=radio]{background:initial;border:initial}
 .oculto{display:none !important}
 
 /* =========================================================

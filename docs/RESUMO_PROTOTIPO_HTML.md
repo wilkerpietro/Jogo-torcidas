@@ -4085,6 +4085,145 @@ página**, os portões seguem em **0 selados**, o determinismo dá **141 mensage
 diferenças**, e o feed segue em 8,13 mensagens por semana com **0 categorias repetidas em
 sequência**.
 
+## 8.29 Seleção em dois passos, ideologia legível, frequência e a lista de alvos certa
+
+Quatro frentes pequenas, e uma delas — a frequência — era a que mais estragava a leitura
+do feed.
+
+### A seleção vira dois passos
+
+A tela empilhava a lista e a ficha inteira, com o botão de selecionar no fim de tudo.
+Escolher o nome e ler a ficha são coisas diferentes: a primeira é o começo da decisão, a
+segunda **é** a decisão.
+
+| | passo 1 | passo 2 |
+|---|---|---|
+| subtítulo | `passo 1 de 2 · 33 torcidas · 108 clubes · 30 cidades` | `Cearamor · Ceará · passo 2 de 2` |
+| mostra | a lista das 33, com escudo, nome, clube, cidade e efetivo | a ficha completa |
+| botões | **Avançar** (desabilitado até escolher) | **Selecionar torcida** |
+| Voltar | "Voltar ao menu" | "Voltar" → volta ao passo 1 |
+
+A ficha do passo 2 tem tudo que estava embaixo: a hierarquia (diretoria, linha de frente,
+componente, novato) e os doze campos — membros, sede, finanças, prestígio, influência,
+territórios, rivalidade máxima, bairro da sede, divisão, estádio, aliados/rivais e mapa da
+cidade. Um clique escolhe; o duplo é atalho pro passo 2, e não o caminho único.
+
+### A ideologia sozinha, e legível
+
+O botão "Definir ideologia" abria a Gestão inteira — tabela de folga, plano da semana,
+salvar padrão — e deixava a ideologia no rodapé de tudo. Agora abre **só ela**: os três
+seletores, a chave de perguntar antes de todo jogo, e nada mais. Medido: `tem assistente
+/ plano da semana? false · fala de folga? false`.
+
+**Os seletores estavam invisíveis, e a raiz era `base.css`.** A linha
+
+```css
+input,select,textarea{font-family:var(--corpo);color:inherit}
+```
+
+dava **cor e não dava fundo**: o texto claro do tema caía sobre o branco padrão do
+navegador. O texto estava lá — branco no branco. Pior, nem `.ass-politicas` nem
+`.pol-grupo` tinham estilo nenhum em lugar nenhum; o bloco funcionava e parecia rascunho.
+
+Duas coisas, então. Os três seletores passam a usar `select.campo`, que já existia em
+`paineis.css` — medido, `background: rgb(20,20,20)` com `color: rgb(233,233,233)`. E
+`base.css` deixa de ser armadilha: `input, select, textarea` ganham fundo e borda do tema
+junto com a cor, com `checkbox` e `radio` de fora, que têm desenho próprio do navegador.
+O bloco ganhou a moldura que nunca teve.
+
+**Um botão Salvar.** A escolha se aplicava solta a cada `change`, sem confirmação nenhuma.
+Agora os três seletores e a chave escrevem num pendente e um botão só leva tudo pro
+estado. Medido: com a política em `nunca`, escolher `rivais` **não muda nada** até o
+Salvar; depois dele o estado é `rivais`, e reabrindo o painel o seletor e o estado
+continuam em `rivais`.
+
+### Classe de frequência por mensagem
+
+"O membro {nome} tá passando dificuldade com a mãe" saía **25 vezes por temporada** — duas
+por mês. A carência era uma só, de duas semanas por assunto, e isso dá até 26 por ano pra
+qualquer mensagem cuja condição esteja sempre de pé. A dessa está: basta ter R$ 1.000 no
+caixa e três membros inteiros.
+
+Carência única não serve porque as mensagens não têm a mesma natureza. A carência passa a
+sair da **classe**, declarada por mensagem:
+
+| classe | carência | teto por ano |
+|---|---:|---:|
+| `evento` | nenhuma | sem teto — o fato manda |
+| `mensal` | 4 semanas | ~13 |
+| `ocasional` | 10 semanas | ~5 |
+| `rara` | 26 semanas | 1 a 2 |
+| `anual` | 52 semanas | exatamente 1 |
+
+O padrão de quem esquecer de declarar é `ocasional`, o mais apertado que ainda faz
+sentido — mensagem sem classe é mensagem que vai aparecer demais, então o padrão erra pro
+lado do silêncio.
+
+Uma temporada, antes e depois, com **0 mensagens com assunto e sem classe**:
+
+| assunto | classe | antes | depois |
+|---|---|---:|---:|
+| **ajuda** (a mãe) | ocasional | **25×** | **5×** |
+| moral (pessoal desanimado) | ocasional | 16× | **2×** |
+| visita-preso | ocasional | 5× | **2×** |
+| assalto | mensal | 2× | 1× |
+| revista, delegado (polícia) | mensal | 1× | 1× |
+| aniversário da torcida, do clube | anual | 1× | 1× |
+| ideologia, rotina (abertura) | evento | 1× | 1× |
+
+**O alarme do caixa fica fora do sistema, e agora está escrito por quê.** Ele é a rede de
+segurança da debandada: tem de falar toda vez que a condição existir. Ele não tem
+`assunto` — então a carência nem chega a ser consultada — e declara `frequencia:'evento'`
+mesmo assim, porque mensagem sem classe declarada é mensagem de que ninguém sabe a
+frequência. Medido com três semanas negativas seguidas: **1 alarme em cada uma**.
+
+### A lista de alvos e o seletor de efetivo
+
+O cartão de atacar da Gestão lia `alvosDoJogo(E)`, que devolve **só as torcidas do clube
+adversário do nosso jogo** — daí a Jovem Ponte aparecer sozinha num Corinthians × Ponte
+Preta com São Paulo inteira na rua. Passa a ler `alvosNaRua(E)`, que é a rua daquele dia.
+
+E `alvosNaRua` tinha um furo próprio: marcava a aliada com `aliada:true` e **a deixava na
+lista**. Agora ela sai, como já saía na lista da viagem.
+
+| | antes | depois |
+|---|---:|---:|
+| média de alvos por dia de jogo na praça | **1,0** | **1,77** |
+| num dia de 2 jogos (s14d6) | 1 alvo | **4 alvos** |
+
+Forçando uma aliada na rua: dos seis bondes presentes, a lista mostra **três** — a
+Aliança (aliada forçada **e** torcida-irmã) e a MOFI (irmã) ficam fora, e as três rivais
+de verdade ficam.
+
+**O seletor de efetivo** entra no mesmo padrão da caravana: teto no efetivo que sai de
+casa, piso no mínimo de bonde (5), passo de um décimo. Medido: 150 → 135 → 120 → 105 →
+90, com o resumo acompanhando cada clique — *"90 nossos contra a Jovem Confiança nos
+arredores"* — e a cena abrindo em **90 contra 8**, sem reequilíbrio.
+
+### O efeito no feed, e uma coisa que ele revela
+
+| | antes | depois |
+|---|---:|---:|
+| mensagens na temporada | 426 | **398** |
+| por semana | 8,04 | **7,51** |
+| **categoria 6 (interna)** | **46** | **9** |
+| categorias repetidas em sequência | 0 | 0 |
+
+**A interna encolheu de 46 pra 9, e o número diz mais do que parece.** Das 46 de antes,
+**41 eram `ajuda` e `moral`** — duas mensagens repetindo. O que sobrava de variedade real
+eram cinco. Cortar a repetição não tirou conteúdo da categoria: mostrou que ela **sempre
+teve pouco**, e que o volume vinha de repetição.
+
+Fica anotado como decisão do autor: a categoria 6 tem oito assuntos, e a maioria depende
+de condição que quase nunca está de pé (sede no limite, material baixo, cinco prontos pra
+promoção, R$ 300.000 parados). Se nove por ano for pouco, o caminho é **mais assunto**, e
+não carência mais frouxa — afrouxar traz de volta a mesma mensagem duas vezes por mês.
+
+### O que não mudou
+
+A bateria das oito cenas passa com **0 erros de página**, o determinismo segue intacto —
+**133 mensagens e 0 diferenças** — e o teto semanal continua respeitado (máximo 12 de 15).
+
 ## 9. Celular
 
 > **Leia junto com §8.22.** Boa parte desta seção descreve a tela do MAPA — a gaveta

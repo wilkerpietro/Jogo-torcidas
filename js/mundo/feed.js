@@ -209,6 +209,7 @@ TO.feed = (function(){
       botoes: m.botoes || [],
       tipo:  m.tipo || '',
       assunto: m.assunto || null,
+      frequencia: m.frequencia || null,
       urgente: !!m.urgente,
       seguido: !!m.seguido,
       local: !!m.local,
@@ -253,6 +254,44 @@ TO.feed = (function(){
   const decisaoAberta = E =>
     feed(E).find(m=>m.peso === 'decisao' && !m.respondido) || null;
 
+  /* =======================================================
+     CLASSE DE FREQUÊNCIA — DE QUANTO EM QUANTO CADA UMA PODE VOLTAR
+
+     A carência era uma só, de duas semanas por assunto, e isso dá até
+     26 vezes por ano pra qualquer mensagem cuja condição esteja sempre
+     de pé. A da mãe doente é uma dessas: basta ter R$ 1.000 no caixa e
+     três membros inteiros, o que é quase sempre. Medido: 24 vezes numa
+     temporada, duas por mês, e o jogador para de ler.
+
+     Carência única não serve porque as mensagens não têm todas a mesma
+     natureza — o assalto proposto pelo diretor pode voltar todo mês, a
+     dificuldade familiar de um membro não. Então a carência sai da
+     CLASSE, e toda mensagem nasce com uma declarada. Mensagem sem
+     classe é mensagem que vai aparecer demais, e por isso o padrão é o
+     mais apertado que ainda faz sentido, não o mais frouxo.
+
+     `evento` é a ausência de carência, e é uma escolha, não um esquecimento:
+     o fato mandou, a mensagem sai. O alarme do caixa é o caso limite —
+     ver `fechoDaSemana`. */
+  const FREQUENCIA = {
+    evento:     0,    // sem carência: o fato manda
+    mensal:     4,    // ~13 por ano
+    ocasional: 10,    // ~5 por ano
+    rara:      26,    // 1 a 2 por ano
+    anual:     52     // exatamente 1
+  };
+  const CLASSE_PADRAO = 'ocasional';
+  const carenciaDe = m => {
+    const f = m && m.frequencia;
+    return FREQUENCIA[f] != null ? FREQUENCIA[f] : FREQUENCIA[CLASSE_PADRAO];
+  };
+  /* está de carência? só quem tem assunto: é o assunto que se repete */
+  function naCarencia(E, m){
+    if(!m || !m.assunto) return false;
+    const ult = ctl(E).assunto[m.assunto];
+    return ult != null && semanaAbs(E) - ult < carenciaDe(m);
+  }
+
   /* quem pode sair hoje */
   function candidatas(E){
     const hoje = E.data.absoluto || 0;
@@ -286,8 +325,7 @@ TO.feed = (function(){
          carência do ASSUNTO continua valendo pra quem tem assunto;
          quem não tem, passa. */
       if(!m.urgente && c.semana.c6 >= COTA_INTERNA_SEMANA) return false;
-      const ult = m.assunto ? c.assunto[m.assunto] : null;
-      if(ult != null && semanaAbs(E) - ult < 2) return false;
+      if(naCarencia(E, m)) return false;
     }
     if(m.cat === 7 && c.mes.c7 >= COTA_DIPLOMACIA_MES) return false;
     /* as duas novas usam a mesma máquina: teto semanal e carência de
@@ -297,8 +335,7 @@ TO.feed = (function(){
       const teto = m.cat === 8 ? COTA_POLICIA_SEMANA : COTA_EFEMERIDE_SEMANA;
       const usadas = m.cat === 8 ? c.semana.c8 : c.semana.c9;
       if(!m.urgente && usadas >= teto) return false;
-      const ult = m.assunto ? c.assunto[m.assunto] : null;
-      if(ult != null && semanaAbs(E) - ult < 2) return false;
+      if(naCarencia(E, m)) return false;
     }
     return true;
   }
@@ -463,6 +500,7 @@ TO.feed = (function(){
         ]};
       }
       case 'gestao':  return {abrir:'gestao'};
+      case 'ideologia-tela': return {tela:'ideologia'};
       /* a tela do ataque resolve no `aplicar` dela, não aqui: o que
          volta é o pedido de abrir, como a caravana */
       case 'ataque':  return {tela:'ataque'};
@@ -1529,7 +1567,7 @@ TO.feed = (function(){
        `semanasNoVermelho`, que é um contador de estado e não sabe de
        gente saindo — o outro motivo pelo qual a semana é grave. */
 
-    {id:'assalto', peso:'decisao',
+    {id:'assalto', peso:'decisao', freq:'mensal',
      quando: E => E.dinheiro < 8000 &&
                   (TO.acoes.porId('assalto').disponivel(E)||{}).ok,
      monta: (E, v) => ({
@@ -1538,26 +1576,26 @@ TO.feed = (function(){
        botoes:[{rot:'Pode ir', efeito:'assalto', nota:'gasta uma ação da semana'},
                {rot:'Deixa isso', efeito:'nada'}]})},
 
-    {id:'sede', peso:'acao',
+    {id:'sede', peso:'acao', freq:'mensal',
      quando: E => E.membros.length >= TO.membros.capacidade(E)*0.9,
      monta: (E, v) => ({
        texto:`A sede não comporta mais gente. Tá na hora de subir de nível.`,
        botoes:[{rot:'Abrir Patrimônio', efeito:'painel', pagina:'financeiro'}]})},
 
-    {id:'material', peso:'acao',
+    {id:'material', peso:'acao', freq:'mensal',
      quando: E => TO.torcedores.material(E) < 0.6,
      monta: (E, v) => ({
        texto:`Bora comprar material, a arquibancada tá muda.`,
        botoes:[{rot:'Abrir Patrimônio', efeito:'painel', pagina:'financeiro'}]})},
 
-    {id:'promocao', peso:'acao',
+    {id:'promocao', peso:'acao', freq:'mensal',
      quando: E => E.membros.filter(m=>TO.membros.podePromover(E,m).ok).length >= 5,
      monta: (E, v) => {
        const n = E.membros.filter(m=>TO.membros.podePromover(E,m).ok).length;
        return {texto:`Tem ${n} moleque pronto pra promoção.`,
          botoes:[{rot:'Abrir Torcida', efeito:'painel', pagina:'torcida'}]};}},
 
-    {id:'elenco', peso:'acao',
+    {id:'elenco', peso:'acao', freq:'mensal',
      quando: E => E.dinheiro >= 300000,
      monta: (E, v) => ({
        texto:`Tamo com ${U.dinheiro(E.dinheiro)} parado. Dá pra reforçar o `+
@@ -1569,7 +1607,7 @@ TO.feed = (function(){
        semana, e não de sorteio: o mesmo save reaberto traz o mesmo
        nome. Só entra quem está disponível — quem já está ferido ou
        preso tem problema maior que a mãe doente. */
-    {id:'ajuda', peso:'decisao',
+    {id:'ajuda', peso:'decisao', freq:'ocasional',
      quando: E => E.dinheiro >= 1000 &&
                   E.membros.filter(TO.membros.disponivel).length >= 3,
      monta: (E, v) => {
@@ -1586,7 +1624,7 @@ TO.feed = (function(){
     /* 6.9 — O PRESO ESQUECIDO. Quatorze dias é o prazo em que a fiança
        deixou de ser a resposta: quem não pagou não vai pagar, e o que
        resta é aparecer. */
-    {id:'visita-preso', peso:'decisao',
+    {id:'visita-preso', peso:'decisao', freq:'ocasional',
      quando: E => !!presoEsquecido(E),
      monta: (E, v) => {
        const m = presoEsquecido(E);
@@ -1598,7 +1636,7 @@ TO.feed = (function(){
                  {rot:'Deixar quieto', efeito:'nao-visitar',
                   nota:'ele não esquece'}]};}},
 
-    {id:'moral', peso:'info',
+    {id:'moral', peso:'info', freq:'ocasional',
      quando: E => E.indicadores.moral <= 7,
      monta: (E, v) => ({tipo:'ruim',
        texto:`O pessoal tá desanimado. Ninguém quer sair de casa esse fim `+
@@ -1628,11 +1666,11 @@ TO.feed = (function(){
     for(const a of ASSUNTOS){
       if(!noDia && !a.urgente) continue;
       if(!a.quando(E)) continue;
-      const ult = c.assunto[a.id];
-      if(ult != null && semanaAbs(E) - ult < 2) continue;
+      if(naCarencia(E, {assunto:a.id, frequencia:a.freq})) continue;
       const voz = diretor(E, ch+'|'+a.id);
       const m = a.monta(E, voz);
       propor(E, Object.assign({cat:6, peso:a.peso, voz, assunto:a.id,
+                               frequencia:a.freq,
                                urgente:!!a.urgente, chave:ch+'|'+a.id}, m));
       return;                 // uma por semana, e a primeira da lista manda
     }
@@ -2150,7 +2188,7 @@ TO.feed = (function(){
       const tinha = E.estoque.bombas;
       E.estoque.bombas = 0;
       propor(E, {cat:8, peso:'info', voz:vozRua(), tipo:'ruim',
-        assunto:'revista', chave:ch+'|revista',
+        assunto:'revista', frequencia:'mensal', chave:ch+'|revista',
         texto:'A PM revistou a sede ontem. Levaram todas as bombas.',
         efeitos:[{ind:'bombas', delta:-tinha, dono:'do estoque'}]});
       return;
@@ -2161,7 +2199,7 @@ TO.feed = (function(){
        aviso por uma punição imediata na próxima briga. */
     if(I.policia <= 5 && !E.gatilhoPunicao){
       propor(E, {cat:8, peso:'decisao', voz:vozRua(), tipo:'ruim',
-        assunto:'delegado', chave:ch+'|delegado',
+        assunto:'delegado', frequencia:'mensal', chave:ch+'|delegado',
         texto:'Delegado mandou recado: mais uma dessas e a torcida tá '+
               'proibida de entrar no estádio.',
         botoes:[{rot:'Segurar a rapaziada', efeito:'segurar',
@@ -2214,7 +2252,8 @@ TO.feed = (function(){
         const rot = dt ? `${String(dt.getDate()).padStart(2,'0')}/`+
                          `${String(dt.getMonth()+1).padStart(2,'0')}` : 'logo';
         propor(E, {cat:9, peso:'decisao', voz:diretor(E, ch+'|aniv'),
-          assunto:'aniversario', chave:`c9aniv|${E.data.ano}`,
+          assunto:'aniversario', frequencia:'anual',
+          chave:`c9aniv|${E.data.ano}`,
           texto:`Dia ${rot} a ${E.torcida.sigla} faz ${anos} anos.`,
           dados:{anos},
           botoes:[{rot:'Festa grande', efeito:'festa-torcida',
@@ -2239,7 +2278,8 @@ TO.feed = (function(){
          c.assunto['aniv-clube'] !== semanaAbs(E)){
         const anos = E.data.ano - clube.fundacao;
         propor(E, {cat:9, peso:'decisao', voz:diretor(E, ch+'|clube'),
-          assunto:'aniv-clube', chave:`c9clube|${E.data.ano}`,
+          assunto:'aniv-clube', frequencia:'anual',
+          chave:`c9clube|${E.data.ano}`,
           texto:`O ${clube.nome} faz ${anos} anos essa semana.`,
           botoes:[{rot:'Fazer mosaico', efeito:'mosaico',
                    nota:'R$ 12.000 · a arquibancada inteira'},
@@ -2281,7 +2321,8 @@ TO.feed = (function(){
       const a = E.indicadores.moral;
       E.indicadores.moral = U.limitar(a + (marco.ganhamos ? 1 : -1), 0, 20);
       propor(E, {cat:9, peso:'info', voz:vozRua(),
-        assunto:'memoria', chave:`c9mem|${marco.id}|${E.data.ano}`,
+        assunto:'memoria', frequencia:'anual',
+        chave:`c9mem|${marco.id}|${E.data.ano}`,
         tipo: marco.ganhamos ? 'boa' : 'ruim',
         /* "no bairro X" e não "no X": o gênero do nome do bairro não
            está nos dados, e adivinhar dá "no Aldeota" (§8.22) */
@@ -2368,13 +2409,15 @@ TO.feed = (function(){
          quando o caixa é o problema — mas `grave` também é verdade com
          o caixa positivo e gente indo embora, e aí dizer "fechou no
          vermelho" seria mentira na cara do jogador. */
-      /* SEM `assunto`, DE PROPÓSITO. A carência de duas semanas do
-         escalonador vale pra assunto de dia — "não repita a mesma
-         conversa na semana seguinte". O alarme não é conversa: é a
-         parada obrigatória da semana grave, e com carência a semana
-         seguinte no vermelho ficaria SEM mensagem nenhuma, porque o
-         resumo também não sai quando a semana é grave. */
-      propor(E, {cat:6, peso:'decisao', urgente:true,
+      /* CLASSE `evento`, E SEM `assunto` — as duas coisas, de propósito.
+         A carência por classe (§8.29) vale pra assunto de dia: "não
+         repita a mesma conversa tão cedo". O alarme não é conversa, é a
+         rede de segurança da debandada: ele tem de falar TODA vez que a
+         condição existir, e atrasá-lo é avisar depois que o pessoal já
+         saiu. Sem `assunto` a carência nem chega a ser consultada; a
+         classe fica escrita mesmo assim, porque mensagem sem classe
+         declarada é mensagem que ninguém sabe de que frequência é. */
+      propor(E, {cat:6, peso:'decisao', urgente:true, frequencia:'evento',
         voz:diretor(E, ch), chave:ch+'|alarme', tipo:'ruim',
         texto: vermelho
           ? `Chefe, o caixa fechou no vermelho. Segunda semana assim e o `+
@@ -2528,11 +2571,14 @@ TO.feed = (function(){
       texto:`Jogo iniciado. ${E.torcida.nome} — ${E.torcida.cidade}, `+
             `${E.membros.length} membros.`});
     propor(E, {cat:6, peso:'decisao', voz:diretor(E,'inicio'), chave:'inicio|2',
-      assunto:'ideologia',
+      assunto:'ideologia', frequencia:'evento',
       texto:`Chefe, antes de tudo: define a nossa ideologia. O que a gente `+
             `faz com o adversário, como recebe aliado e o que faz com os `+
             `outros jogos da praça.`,
-      botoes:[{rot:'Definir ideologia', efeito:'gestao'}]});
+      /* SÓ A IDEOLOGIA, e não a Gestão inteira: o botão abria a
+         tabela de folga e o plano da semana, e a ideologia — que é
+         o que ele promete — ficava no rodapé de tudo (§8.29). */
+      botoes:[{rot:'Definir ideologia', efeito:'ideologia-tela'}]});
     /* A ROTINA ENTRA NA ABERTURA, junto da ideologia. Ela existe desde
        sempre — uma ação padrão por dia da semana, que roda sozinha sem
        furar o orçamento —, e o jogador descobria por acaso, abrindo o
@@ -2544,6 +2590,7 @@ TO.feed = (function(){
        ter visto a rotina — que é justamente o que este item conserta. */
     propor(E, {cat:6, peso:'decisao', urgente:true, seguido:true,
       voz:diretor(E,'inicio'), chave:'inicio|3', assunto:'rotina',
+      frequencia:'evento',
       texto:`E define a rotina da semana: uma ação padrão por dia, que a `+
             `rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de `+
             `fora.`,
@@ -2573,6 +2620,7 @@ TO.feed = (function(){
   return {CATEGORIAS, catDe, TETO_SEMANA, COTA_INTERNA_SEMANA, EFEITO,
           lerEfeito, lerEfeitos,
           COTA_DIPLOMACIA_MES, CARENCIA_AMEACA, AMEACAS, ASSUNTOS,
+          FREQUENCIA, CLASSE_PADRAO, carenciaDe, naCarencia,
           propor, publicar, responder, travado, decisaoAberta, semanaDaFundacao,
           passarDia, fecharSemana, fechoDaSemana, irProEstadio,
           registrarConfronto, registrarConfrontoDelas, TETO_CONFRONTOS_DELAS,

@@ -626,8 +626,12 @@ TO.praca = (function(){
       const alvo = outros.find(b => b.id === p.alvoTorcida);
       if(alvo){
         const onde = lugarPlanejado(E, mo, p);
+        /* QUANTOS VÃO ATACAR é escolha da tela (§8.29): quem sai de casa
+           é o teto, e o resto fica. Sem escolha, vai o bonde inteiro. */
+        const f = PL().efetivoDoAtaque(E);
+        const meu = Object.assign({}, nosso, {n: Math.min(nosso.n, f.vao)});
         return {desfecho:'planejada', onde,
-                enc: montarEncontro(nosso, alvo, onde)};
+                enc: montarEncontro(meu, alvo, onde)};
       }
     }
 
@@ -678,7 +682,7 @@ TO.praca = (function(){
        que a torcida tem. O nosso é quem embarcou, e mais ninguém. */
     const deles = Math.max(4, Math.round(
       (((TO.tensao && TO.tensao.mundo(E)[o.id]) || o).membros || 20) * 0.6));
-    const nossos = Math.max(2, PL().efetivoDaSaida(E));
+    const nossos = Math.max(2, PL().efetivoDoAtaque(E).vao);
     const cores = M().coresDaTorcida(o);
     const nossaCor = M().coresDaTorcida(E.torcida);
     const local = onde === 'praca' ? 'praca'

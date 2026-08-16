@@ -280,6 +280,23 @@ select.campo{
 }
 select.campo:focus{outline:0;border-color:var(--rubro-vivo)}
 
+/* ---------- ideologia ---------- */
+/* Os três seletores e a chave não tinham estilo NENHUM — nem `.pol-grupo`
+   nem `.ass-politicas` existiam aqui. O bloco funcionava e parecia
+   rascunho, e o `select` pelado é o que ficou branco no branco. */
+.ass-politicas{
+  background:var(--painel);border:1px solid var(--linha);padding:14px 16px;
+}
+.pol-grupo{margin-bottom:12px}
+.pol-grupo > b{
+  display:block;font-family:var(--titulo);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fraco);margin-bottom:6px;
+}
+.pol-rodape{
+  display:flex;justify-content:flex-end;
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--linha);
+}
+
 /* ---------- agenda do time ---------- */
 .escolha-time{
   display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:18px;align-items:center;

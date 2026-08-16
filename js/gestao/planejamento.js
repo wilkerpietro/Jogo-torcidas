@@ -785,7 +785,22 @@ TO.planejamento = (function(){
                 aliada: rel !== undefined && rel >= RELACAO_ALIADO,
                 deFora: !!b.deFora};
       })
+      /* ALIADA NÃO É ALVO: bater em aliado é trair, e trair tem caminho
+         próprio (`intencoes` oferece "Trair aliado" quando TODAS são
+         aliadas). Torcida-irmã já saiu no filtro de cima. */
+      .filter(a => !a.aliada)
       .sort((a,b)=> (b.tensao - a.tensao) || (a.relacao - b.relacao));
+  }
+
+  /* QUANTOS VÃO ATACAR. O teto é quem sai de casa naquele dia e o piso
+     é o mesmo da caravana — bonde de três não é bonde. Sem escolha, vai
+     todo mundo, que é como era antes de existir o seletor. */
+  function efetivoDoAtaque(E){
+    const teto = Math.max(MINIMO, efetivoDaSaida(E));
+    const p = plano(E);
+    return {teto, piso: Math.min(MINIMO, teto),
+            vao: U.limitar(p.efetivoAtaque != null ? p.efetivoAtaque : teto,
+                           Math.min(MINIMO, teto), teto)};
   }
 
   /* a escolha do assistente chega ao plano da semana por aqui, e por
@@ -801,6 +816,10 @@ TO.planejamento = (function(){
     p.alvo = alvoDe(p);
     if(esc.bombas != null)
       p.bombas = U.limitar(esc.bombas, 0, (E.estoque||{}).bombas || 0);
+    if(esc.efetivo != null){
+      const f = efetivoDoAtaque(E);
+      p.efetivoAtaque = U.limitar(esc.efetivo, f.piso, f.teto);
+    }
     p.decidido = false;
     return p;
   }
@@ -982,6 +1001,7 @@ TO.planejamento = (function(){
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
           COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,
           ONDE_ATAQUE, ondeDoPlano, alvosNaRua, alvosDaViagem, definirAtaque,
+          efetivoDoAtaque, MINIMO_BONDE:MINIMO,
           faixaDeEfetivo,
           passos, falta, investidaDe, definirInvestida,
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
