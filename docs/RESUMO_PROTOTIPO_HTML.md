@@ -2353,7 +2353,10 @@ qualquer largura.
 
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça.** As cinco arenas já
 existem e as ações já sabem abrir cena; falta o gesto no mapa — clicar num ponto da rua
-pra marcar tocaia.
+pra marcar tocaia. Com o feed, ela ganhou um segundo motivo: a emboscada na estrada é a
+única das quatro ameaças de rival que ainda resolve em número, e a mensagem de
+convocação dela — *"Pegaram a caravana na estrada."* — já está escrita esperando a
+cena.
 
 **O que ainda falta no mundo:** a Série E do GDD §18.2 — os dados têm 108 clubes, não
 156, então ninguém cai da Série D.

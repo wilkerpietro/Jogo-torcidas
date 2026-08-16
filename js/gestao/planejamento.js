@@ -731,7 +731,16 @@ TO.planejamento = (function(){
   }
 
   /* =======================================================
-     POLÍTICAS — quem, não quanto
+     A IDEOLOGIA — quem, não quanto
+
+     Ela se chamava "política" quando nasceu, e o nome mudou na virada do
+     feed: é "Seguir ideologia" que o jogador aperta numa decisão de dia
+     de jogo. As funções guardaram o nome antigo de propósito —
+     `politicas`, `definirPolitica`, `POLITICA_ATAQUE` são chamadas de
+     quatro arquivos e do save (`E.politicas`), e renomear identificador
+     por causa de rótulo é a troca que quebra save alheio sem melhorar
+     nada. O que o jogador lê diz ideologia; o que o código chama
+     continua sendo o mesmo objeto.
 
      `E.padroes` guarda um RETRATO do plano: bombas, bondes, fração da
      caravana, formação. Ele não sabe dizer "atacar quem estiver quente",
