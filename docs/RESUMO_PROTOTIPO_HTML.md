@@ -2418,8 +2418,11 @@ notícias impossíveis que eram rodadas que ele não tinha mais como ver):
 1. Numa briga entre duas IAs a perdedora perde moral e a vencedora ganha prestígio, e os
    dois números aparecem na linha — o exemplo acima é uma delas.
 2. **A moral varia de verdade**: começa em 12 para todas (desvio 0) e termina em **média
-   12,29, desvio 4,55, de 0 a 20**, com quartis em 9,6 e 14,7.
-   Prestígio: **média 6,03, desvio 3,48, de 1,4 a 18,8**.
+   12,29, desvio 4,55, de 0 a 20**, com quartis em 9,6 e 14,7. Em **20 temporadas** ela
+   abre ainda mais: **média 10,97, desvio 7,34**, com o primeiro quartil em 3,7 e o
+   terceiro em 18,4 — a praça se divide entre quem venceu e quem apanhou.
+   Prestígio: **média 6,03, desvio 3,48, de 1,4 a 18,8** em 5 temporadas; **6,47 com
+   desvio 5,0, de 0 a 20** em 20.
    Polícia: **média 8,78, desvio 0,69, de 6,9 a 10** — ela oscila pouco porque as três
    brigas por semana se espalham por 138 torcidas.
 3. Os três existem nas 138, todos dentro de 0–20 (**0 fora da escala**), e se movem
@@ -2429,8 +2432,13 @@ notícias impossíveis que eram rodadas que ele não tinha mais como ver):
    semanas 7, 8 e 9, **não gera notícia nenhuma** enquanto está fora, e volta com bonde
    na semana 10. Naturalmente, em 5 temporadas, **aconteceu 0 vez** — com três brigas
    por semana espalhadas por 138 torcidas e a ação social devolvendo polícia, o
-   banimento é risco de cauda pra IA. Quem brinca com ele de verdade é o jogador, que
-   briga muito mais.
+   banimento é risco de cauda pra IA — **0 vez também em 20 temporadas**. Quem brinca
+   com ele de verdade é o jogador, que briga toda semana.
+   A conta, escrita: cada torcida participa de ~0,043 briga por semana (3 brigas × 2
+   lados ÷ 138), o que tira ~0,026 de polícia; a ação social devolve 1,5 numa chance de
+   6 a 25% por semana conforme o arquétipo. A recuperação ganha da perda por uma ordem
+   de grandeza, e o número estaciona logo abaixo do gatilho de 8. Se o banimento tiver
+   de ser risco real pras 138, o botão é essa condição.
 5. **Moral baixa acua.** Nas mesmas 60 semanas, com todas as torcidas fixadas em moral
    **4** saíram **43 brigas**; com todas em **18**, **77** — 1,8× mais. O fator é
    `0,6 + (moral/20)·0,8`, de 0,6 acuada a 1,4 em alta.
@@ -2456,10 +2464,13 @@ notícias impossíveis que eram rodadas que ele não tinha mais como ver):
   das cenas de briga (`fecharAtaque`, `fecharDefesa`, `fecharAssalto`, `fecharPressao`)
   ainda escreve o resultado em texto e não devolve lista de efeitos — é o próximo pedaço
   do mesmo trabalho, e os números que ele move já estão calculados lá dentro.
-- **A polícia da IA quase não desce.** O equilíbrio ficou em 8,8 de 20 porque a ação
-  social é generosa perto da frequência de briga. Se o banimento tiver de ser um risco
-  real pras 138, o botão é a condição `t.policia < 8` da ação social — baixá-la pra 6
-  desce o equilíbrio e deixa a cauda mais gorda.
+- **A polícia da IA quase não desce, e por isso o banimento nunca dispara sozinho.**
+  O equilíbrio ficou em 8,7 de 20 porque a ação social é generosa perto da frequência
+  de briga: em 20 temporadas, **0 banimento natural**. A punição existe, está ligada e
+  foi comprovada forçando o caso — mas hoje ela é regra pro jogador, não pra IA. O botão
+  é a condição `t.policia < 8` da ação social em `economiaDelas`: baixá-la pra 6 desce o
+  equilíbrio e engorda a cauda. Não foi mexido porque mudar balanceamento sem o
+  enunciado pedir é escolher pelo autor.
 
 ## 9. Celular
 
