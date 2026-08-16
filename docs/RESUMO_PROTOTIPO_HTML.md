@@ -2095,6 +2095,16 @@ para por painel, aba sem foco, save, cena, modal e decisão sem resposta). Um co
 só não daria conta — com o mapa aberto a rua tem de andar e o calendário tem de ficar
 parado, e é exatamente esse par que um conjunto único não sabe representar.
 
+**A decisão NÃO é motivo de pausa, e isso custou três corridas de seis minutos.** Ela
+entrou no conjunto junto com painel, foco e save, e guardar o mesmo fato em dois lugares
+deu no pior sintoma que este relógio pode ter: quando a resposta vinha por um caminho
+que não passava por quem tirava o motivo, ele ficava pra trás e **o jogo congelava com a
+tela limpa** — sem painel, sem modal e sem nada pra responder. Só apareceu na temporada
+correndo de verdade, porque o laço headless dos outros testes chama `passarUmDia` na mão
+e nunca depende do `requestAnimationFrame`: parou no dia 42 e não voltou. A verdade
+passou a ser uma só, `TO.feed.travado`. E `TO.tela` agora expõe os dois conjuntos de
+pausa, porque a bateria tem de conseguir dizer **por que** o tempo está parado.
+
 **Um dia é simulado inteiro**, com ou sem tela: `simularDiaDaRua` roda do primeiro
 minuto ao apito com o mesmo passo de 1/30 de minuto que o dia assistido usa (a decisão
 medida em §8.16 continua valendo). Encontro entre bondes interrompe a rua e vira
@@ -2133,8 +2143,12 @@ ideologia" ou "Não dar moral".
    Fortaleza, 150 membros."` e `[6/decisão] "Chefe, antes de tudo: define a nossa
    ideologia…"` com o botão **Definir ideologia**. `travado: true`, e o dia continuou em
    **0 depois de 3 s de tela** — o tempo só começa depois da resposta.
-2. **1 dia = 1 s a 1×.** Numa janela limpa de 30 s: **29 dias, 0,2 s parados → 0,97
-   dias por segundo corrido**. TEMPO_TEMPORADA
+2. **1 dia = 1 s a 1×.** Numa janela limpa de 30 s: **29 dias, 0,3 s parados → 0,98
+   dias por segundo corrido**. A temporada inteira, sem interação humana, com um
+   respondedor automático apertando "Seguir ideologia" ou "Não dar moral": **364 dias em
+   370,9 s de relógio de parede — 363,6 s de tempo corrido (6 min 4 s) e 7,3 s parados
+   em 126 decisões**, 135 respostas e 288 mensagens. A 2×: **39 dias em 19,6 s corridos
+   → 1,99 dias por segundo**, o dobro exato.
 3. **Rajada.** A maior medida numa temporada foi de **5 mensagens no mesmo instante**;
    uma delas, no dia 147: olheiro, resultados da rodada, clássico ganho e a convocação
    pra treta, nesta ordem, com a decisão por cima.
