@@ -312,7 +312,7 @@
     inicio:pintarInicio, torcida:pintarTorcida, financeiro:pintarFinanceiro,
     gestao:pintarGestao, calendario:pintarCalendario,
     competicoes:pintarCompeticoes, diplomacia:pintarDiplomacia, mapa:pintarMapa,
-    opcoes:pintarOpcoes
+    opcoes:pintarOpcoes, noticias:pintarNoticias
   };
   const pintarPagina = id => (PINTOR[id] || (()=>pintarPendente(id)))();
 
@@ -694,6 +694,47 @@
     }
     if(d.cena){ abrirAcaoEmCena(d, d.efetivo); return; }
     abrirPainel('mapa');
+  }
+
+  /* =======================================================
+     NOTÍCIAS — o arquivo do feed
+
+     A página era um placeholder desde o começo. Agora ela é o lugar
+     onde o histórico inteiro mora: a tela principal guarda as últimas
+     sessenta mensagens no DOM, e é aqui que se procura o que aconteceu
+     em março com o filtro por categoria. Mesmo cartão, mesma leitura —
+     o que muda é que aqui não se responde nada: o que tinha botão e foi
+     respondido aparece com a resposta escrita.
+     ======================================================= */
+  let filtroFeed = 0;             // 0 = tudo
+  function pintarNoticias(){
+    const e = E(), pg = U.$('.pagina[data-pag="noticias"]');
+    if(!e || !pg) return;
+    pg.innerHTML = '';
+    const hist = TO.feed.historico(e);
+    const abas = el('div',{class:'subabas'});
+    const põe = (n, rot)=>{
+      const b = el('button',{texto: rot +
+        (n ? ` (${hist.filter(m=>m.cat===n).length})` : ` (${hist.length})`)});
+      b.classList.toggle('on', filtroFeed === n);
+      b.onclick = ()=>{ filtroFeed = n; pintarNoticias(); };
+      abas.appendChild(b);
+    };
+    põe(0, 'Tudo');
+    for(const c of TO.feed.CATEGORIAS) põe(c.n, c.rot);
+    pg.appendChild(abas);
+
+    const lista = el('div',{class:'feed-lista'});
+    const filtradas = hist.filter(m=>!filtroFeed || m.cat === filtroFeed);
+    if(!filtradas.length)
+      lista.appendChild(el('div',{class:'em-construcao',
+        texto:'Nada nesta categoria ainda.'}));
+    for(const m of filtradas.slice(0, 200)) lista.appendChild(cartaoMensagem(e, m));
+    if(filtradas.length > 200)
+      lista.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="fraco">…e mais ${filtradas.length-200} mensagens mais `+
+        `antigas.</span>`}));
+    pg.appendChild(lista);
   }
 
   /* =======================================================

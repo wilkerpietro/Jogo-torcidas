@@ -2057,6 +2057,216 @@ existe num lugar só.
 semanas sem interrupção com os dez planos fechados — está medida em §8.17 e não
 mudou; a metade ligada continua com a mesma dívida registrada lá.
 
+## 8.19 A virada: o feed vira o jogo
+
+Mudança de direção, não incremento. O jogo deixou de ser "abrir o mapa e apertar
+avançar dia" e passou a ser **um fluxo de mensagens que chega sozinho**, com o tempo
+correndo por conta própria e parando quando o jogador precisa decidir. O mapa não é
+mais a casca: ele continua inteiro — relógio, coluna de ícones, faixa da torcida,
+zoom, filtros — mas agora é uma tela que **abre a partir de uma mensagem**.
+
+### O que foi construído
+
+**`js/mundo/feed.js`** é o arquivo novo, e ele tem três regras de higiene escritas no
+cabeçalho: **não simula nada** (competição, tensão, economia, membros, patrimônio, a
+rua e as cenas continuam onde estavam; o feed lê o que elas produzem e escreve a
+linha), **não desenha nada** (`main.js` pinta; aqui só existe o modelo) e **não sorteia
+com `U.rng()`** (toda escolha sai de hash da semente com a data, a mesma disciplina do
+dia do assalto de §8.9 e do dia do ataque de §8.15).
+
+**A mensagem** tem `id, dia, hora, absoluto, ano, semana, cat, peso, voz, texto,
+linhaAbaixo, botoes[], validoAte, respondido`. `anotar(est, msg, tipo)` continua sendo
+a chamada de sempre, do mesmo lugar, com os mesmos dois argumentos — o terceiro
+argumento novo é opcional e diz de que categoria é a linha. O que mudou é o depois: a
+linha vira mensagem do feed e **fica lá**. O corte em 12 do `E.avisos` saiu; `E.feed` é
+histórico, é salvo, rola pra trás.
+
+**A voz tem dono.** Quando é um diretor, ela sai de um membro real de `E.membros`, com
+nome e cargo, e o mesmo assunto traz sempre o mesmo diretor — é isso que faz o Serrote
+que propôs o assalto ser o mesmo Serrote que aparece preso duas mensagens depois. O
+diretor da rival não tem ficha, então o nome dele sai do mesmo banco de nomes, preso ao
+id da torcida: é sempre o mesmo sujeito falando pela mesma torcida.
+
+**O relógio do tempo** é um `requestAnimationFrame` em `main.js` que avança um dia por
+segundo a 1×, e o 1×/2× que já existia multiplica ele. Ele convive com o relógio da
+rua, e por isso agora são **dois conjuntos de motivos de pausa**: `pausas` (a rua, que
+nasce parada e só anda com o mapa aberto) e `pausasT` (o tempo, que nasce correndo e
+para por painel, aba sem foco, save, cena, modal e decisão sem resposta). Um conjunto
+só não daria conta — com o mapa aberto a rua tem de andar e o calendário tem de ficar
+parado, e é exatamente esse par que um conjunto único não sabe representar.
+
+**Um dia é simulado inteiro**, com ou sem tela: `simularDiaDaRua` roda do primeiro
+minuto ao apito com o mesmo passo de 1/30 de minuto que o dia assistido usa (a decisão
+medida em §8.16 continua valendo). Encontro entre bondes interrompe a rua e vira
+convocação.
+
+### As seis regras da fila, e onde cada uma mora
+
+| regra | onde |
+|---|---|
+| nunca duas da mesma categoria em sequência, exceto a 5 | `publicar()`, e vale também pra decisão |
+| na categoria 5, o nosso mapa vem primeiro | `ordenar()`, campo `local` |
+| teto de 15 por semana, descartando pelo peso | `publicar()` + `ctl().semana.n` |
+| duas decisões no mesmo instante viram fila, não pilha | uma decisão por passada, `ORDEM_DECISAO` 3>2>6>7 |
+| determinismo | `hash`/`dado`, sem `rng` |
+| o 1×/2× controla a velocidade | `rodarTempo`, mesma variável da cena |
+
+**A rajada publica tudo que pode agora**, na ordem da fila, e a decisão vai por último
+de propósito: ela fica no topo, que é onde o olho cai, e é ela que segura o relógio.
+
+**Um bug de hash que parecia determinismo funcionando.** Quase toda chave do feed muda
+só no último pedaço — `c7m|2026|0`, `c7m|2026|1`. No FNV-1a puro, mexer no último
+caractere multiplica a diferença pelo primo 16777619 ≈ 2²⁴ e para aí: os bits altos
+quase não se movem, e `dado()` lê justamente os bits altos. Resultado: treze meses
+seguidos caíam na mesma faixa e a cota mensal da diplomacia saía **constante a
+temporada inteira** — quatro por mês o ano todo, ou dois o ano todo, conforme a
+semente. Três voltas de xor-shift e multiplicação no fim do hash resolveram; a cota
+voltou a variar de 2 a 4 dentro da mesma temporada.
+
+### Os 18 critérios, medidos no motor
+
+Salvo onde estiver dito, os números são de **uma temporada de 363 dias com a Gaviões**,
+rodada no laço do jogo (`TO.tela.passarUmDia`), respondendo toda decisão com "Seguir
+ideologia" ou "Não dar moral".
+
+1. **Partida nova abre no feed.** Duas mensagens: `[5/info] "Jogo iniciado. Cearamor —
+   Fortaleza, 150 membros."` e `[6/decisão] "Chefe, antes de tudo: define a nossa
+   ideologia…"` com o botão **Definir ideologia**. `travado: true`, e o dia continuou em
+   **0 depois de 3 s de tela** — o tempo só começa depois da resposta.
+2. **1 dia = 1 s a 1×.** Numa janela limpa de 30 s: **29 dias, 0,2 s parados → 0,97
+   dias por segundo corrido**. TEMPO_TEMPORADA
+3. **Rajada.** A maior medida numa temporada foi de **5 mensagens no mesmo instante**;
+   uma delas, no dia 147: olheiro, resultados da rodada, clássico ganho e a convocação
+   pra treta, nesta ordem, com a decisão por cima.
+4. **Decisão para o tempo, informativa não.** Com duas decisões na fila (uma de
+   categoria 6 e uma de 7 propostas no mesmo dia), saiu **uma só**, `travado: true`; a
+   segunda entrou **no mesmo instante** em que a primeira foi respondida, na ordem
+   6 → 7, e o relógio só voltou depois da última.
+5. **Existem dias em silêncio.** **177 de 363 dias sem mensagem nenhuma (48,8%)**, e o
+   **maior silêncio foi de 9 dias** (14 numa segunda corrida). Fora de competição a
+   praça não tem rodada e a cota do mundo cai de 3 pra 1 por semana — é assim que o
+   intervalo fica calado sem que nenhuma categoria invente conteúdo.
+6. **Distribuição numa temporada inteira**, em números absolutos:
+
+   | ideologia | 1 olheiro | 2 dia de jogo | 3 convocação | 4 resultado | 5 mundo | 6 interna | 7 diplomacia | total |
+   |---|---|---|---|---|---|---|---|---|
+   | defensiva (`nunca`) | 34 | 45 | 34 | 1 | 113 | 9 | 39 | 275 |
+   | agressiva (`rivais`) | 33 | 44 | 34 | 44 | 66 | 3 | 37 | 261 |
+
+   **2 e 5 lideram nas duas.** A categoria 4 é a que separa: com a ideologia defensiva
+   quase não há ação nossa, e resultado é consequência de ação — 1 mensagem. Com a
+   ideologia agressiva ela sobe pra 44 e 22 pares de rival ficam com confronto
+   registrado. **A 6 nunca passou de 1 por semana** e a **7 ficou entre 2 e 4 por mês**
+   em todos os 13 meses das duas corridas.
+7. **Sem repetição.** **0 assuntos da categoria 6 repetidos em duas semanas
+   seguidas**, **0 ameaças repetidas dentro da carência de 56 dias** e **0 rivais
+   provocando duas vezes seguidas**.
+8. **Nenhuma semana passou de 15.** A mais cheia teve **10 mensagens**; a média foi de
+   **5,3 por semana**. O que é agrupado: os resultados da rodada saem em **uma linha
+   por rodada — 45 linhas cobrindo 180 jogos na temporada**, quatro placares escritos,
+   os da nossa praça na frente, e o resto contado (*"e mais 3 jogos"*) em vez de
+   sumir. O que é descartado aparece em `contas.descartePorCat` — na corrida de
+   referência, **27 mensagens da categoria 6 e 2 da 4**, todas barradas pela cota
+   semanal ou pelo prazo, nenhuma pelo teto de 15.
+9. **Em 275 mensagens seguidas, 0 repetições de categoria em sequência fora da 5**,
+   rajadas incluídas. A 5 repetiu 28 vezes, que é o que a exceção permite.
+10. **Na categoria 5, o nosso mapa vem antes:** **0 pares fora de ordem** no mesmo
+    instante.
+11. **As nove ameaças, cada uma com a condição de pé** (rival: Dragões da Real):
+
+    1. *"Se liga, moleque. Quando menos esperar a gente tá na tua porta."*
+    2. *"Sábado a gente se vê no Arena Castelão. Vai com Deus que com a gente não dá."*
+    3. *"Some do Vila Mariana, otário. Esse pedaço aí não é de vocês e nunca foi."*
+    4. *"Ainda tá cheirando a sangue de vocês lá na Vila Mariana. Volta lá pra tomar mais."*
+    5. *"Ganharam com o dobro de gente e tão se achando. Vem sozinho da próxima vez, vacilão."*
+    6. *"Aquele barraco que vocês chamam de sede tá com os dias contados."*
+    7. *"Boa viagem, hein. Estrada é longa e escura, cuidado no caminho."*
+    8. *"Vocês são 250 gato pingado. A gente leva isso aí de bonde, sem suar."*
+    9. *"Cuida bem desse bandeirão, viu. Vai ficar bonito pendurado na nossa sede."*
+
+    No estado real daquela semana **só a nº 1 estava de pé** — as outras oito exigiram
+    que a condição fosse forçada, que é o que se queria provar. E a nº 7 com
+    `caravana: false` devolve **false**; com `true`, **true**.
+12. **"Vem, verme" soma exatamente +1** de tensão com aquela rival; **"Não dar moral"
+    devolve 0** e o mapa de tensão inteiro sai byte a byte igual. A conta fica visível
+    na própria linha do botão: *+1 de tensão com eles* / *nada acontece*.
+13. **A convocação abre a cena certa.** Ataque ao nosso bar: `local: 'bar'`, nosso
+    bonde com **34** (o corte de ficha) do lado `visitante`, o deles com **18** do lado
+    `mandante` — 30% dos 60 membros da rival —, cores `#000000/#FFFFFF` (Gaviões) e
+    `#CC1414/#FFFFFF` (Dragões da Real), primária no anel e secundária no miolo como em
+    §8.12. As bombas vêm do plano da semana, não do estoque cru.
+14. **O feed é salvo e rola pra trás.** Save no dia 30 com **13 mensagens**, entre elas
+    uma rajada de 4 no mesmo instante; recarregada a página e carregado o save, voltaram
+    **as mesmas 13, idênticas linha a linha**, a rajada inteira presente e **13 nós na
+    lista**.
+15. **Mesmo save, mesma semente, mesmo feed.** Duas cargas do mesmo arquivo, 60 dias
+    cada: **50 contra 50 mensagens, 0 diferenças**, e caixa, efetivo e mapa de tensão
+    idênticos. *A primeira medição deu 47 contra 71 e não era falta de determinismo: o
+    jogo salva sozinho no fechamento de toda semana, e a segunda corrida partia do save
+    que a primeira tinha deixado pra trás. O teste passou a copiar o save na mão.*
+16. **O caixa no vermelho para o tempo, e avisa antes da debandada.** Forçado o caixa
+    negativo, a mensagem *"Chefe, o caixa fechou no vermelho. Segunda semana assim e o
+    pessoal começa a sair."* saiu com `peso: decisao`, `travado: true`, ainda em
+    `semanasNoVermelho: 1` e com **250 membros, nenhum perdido**.
+17. **O que saiu existe mesmo:** **0 botões de avançar dia** em toda a tela, e o save
+    fica com `opcoes: ["relatorio", "perguntarJogo"]` — `pularVazios` e `abrirGestao`
+    são apagados na leitura, então save velho abre sem eles.
+18. **O mapa abre a partir de mensagem.** A convocação *"Hoje tem Corinthians × Ponte
+    Preta no Neo Química Arena"* abriu o painel do mapa com **canvas, relógio da rua
+    correndo (08:32 → 08:37 em 2,5 s), 4 ícones de controle, 13 ícones de menu, faixa da
+    torcida e os 2 botões de zoom**. O calendário ficou parado no dia 34 o tempo todo em
+    que o mapa esteve aberto, e fechar devolveu o feed com as mensagens onde estavam.
+
+### O que isto aposentou
+
+- **A chave "pular dias vazios"** — o feed é o pulo. Dia sem nada passa em um segundo,
+  calado. O código do pulo (`pularDiasVazios`, `porQueParar`, as cinco paradas) saiu
+  junto; o que ficou de lá é `simularDiaDaRua`, que virou o coração do dia.
+- **O ≫ de avançar o dia**, do bloco de quando do mapa. No lugar dele, um ícone de
+  saída que devolve o feed.
+- **O corte em 12 do `E.avisos`** e a drenagem em torradinhas dentro de `redesenhar`.
+  `aviso()` continua vivo só pra retorno imediato de clique — "Salvo", "Bonde solto" —,
+  que é conversa da interface, não do mundo.
+- **A Gestão abrindo sozinha na partida nova** (§8.18): agora a partida nova abre no
+  feed e é a segunda mensagem que chama a Gestão.
+- **O resumo semanal automático** (*"Semana 12: sobrou R$ 1.200"*). O saldo já está na
+  barra do feed o tempo todo; a linha só sai quando tem o que dizer — gente saindo da
+  torcida.
+- **"Política" virou "ideologia"** na interface e no código de tela. O botão que não
+  faz nada de diferente numa decisão é **Seguir ideologia**.
+
+### Desvios, escritos porque existem
+
+- **Só o bar tem cena com papéis trocados.** A convocação pra cena (categoria 3) sai
+  para o ataque ao nosso bar, para o dia do nosso jogo e para o encontro de bondes na
+  rua. **A emboscada na estrada continua resolvendo em número**, como sede e loja — é a
+  dívida de §8.16, e o dia em que ela ganhar cena a mensagem já está escrita.
+- **A festa do aliado cai num dia inventado.** A fonte guarda o **ano** de fundação e
+  nada mais, então o dia do ano sai do hash do id. É inventado, mas é fixo: a mesma
+  aliada faz aniversário sempre no mesmo dia, em todas as temporadas e em todas as
+  partidas.
+- **Efetivo "equivalente" é o que cada lado de fato leva**, não número igual: 25% do
+  nosso efetivo contra 30% do deles, na regra que a cena do bar já usava.
+- **`vermelho` e `debandada` são o mesmo assunto** (`caixa`) na categoria 6. Com
+  assuntos separados eles se revezavam semana sim, semana não, e a categoria interna
+  virava "estamos quebrados" o ano inteiro — 27 mensagens numa temporada.
+- **Mensagem que cede a vez pela regra 1 e nunca consegue sair é descartada no
+  prazo** — 2 dias pra informativa, 6 pra ação, 21 pra decisão. Foi por isso que a
+  contagem de descartes entrou no `resumo()`: silêncio por regra tem de ser contável.
+- **Torcida quebrada fala muito.** Numa temporada com a Cearamor — que roda **−R$ 833
+  por semana** sem o jogador fazer nada — a categoria interna sobe pra 46 e passa a
+  liderar sobre a 2. Não é o feed inventando: é a torcida indo à falência e o diretor
+  dizendo isso toda semana em que a condição está de pé. A distribuição do critério 6
+  foi medida com a Gaviões, que fecha **+R$ 1.191 por semana** parada.
+
+### Celular
+
+Medido em 390×844 e 844×390, com 40 dias de feed na tela: **0 sobreposições** entre a
+marca, o bloco de quando, a faixa de ícones e as mensagens, **0 valores cortados** e
+**0 rolagem lateral**. A barra do feed quebra em três linhas no retrato (170 px) e em
+duas no paisagem (81 px); o nome da torcida ganha a linha inteira no estreito, porque
+com os números do lado ele virava "Ga…", que não é nome de coisa nenhuma.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima
