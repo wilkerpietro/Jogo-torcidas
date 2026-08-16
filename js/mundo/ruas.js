@@ -789,9 +789,15 @@ TO.ruas = (function(){
       }
     };
 
+    /* TORCIDA BANIDA NÃO PISA NA RUA. Polícia zerada tira a organizada
+       de circulação por quatro semanas — a mesma punição que a gente
+       sofre. Enquanto durar, ela não aparece no dia de jogo, e é aqui
+       que isso vira ausência: sem bonde, sem disco, sem escolta. */
+    const podeSair = o => !(TO.tensao && TO.tensao.banida && TO.tensao.banida(E, o.id));
+
     for(const jogo of doDia){
       const est = pontoDoEstadioDoClube(mo, jogo.casa) || {x:mo.tam/2, y:mo.tam/2};
-      for(const o of M().torcidasDe(jogo.casa.id)){
+      for(const o of M().torcidasDe(jogo.casa.id).filter(podeSair)){
         const sede = pontoDaSede(mo, o);
         if(sede) daPraca(o, sede, est, jogo);
       }
@@ -799,7 +805,7 @@ TO.ruas = (function(){
          é visitante no jogo e moradora da cidade: ela tem sede, bar e
          rua, e sair da entrada da praça não faz sentido nenhum. Quem
          entra pela chegada é só quem não tem casa aqui. */
-      for(const o of M().torcidasDe(jogo.vis.id)){
+      for(const o of M().torcidasDe(jogo.vis.id).filter(podeSair)){
         const sede = pontoDaSede(mo, o);
         if(sede) daPraca(o, sede, est, jogo);
         else     deFora(o, est, jogo);

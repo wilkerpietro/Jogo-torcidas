@@ -1398,3 +1398,12 @@ table.dados tr.selecionada td{background:#252525}
   .feed-rolo{padding:8px 8px 24px}
   .msg-txt{font-size:13px}
 }
+
+/* a linha de consequência: o que a mensagem moveu no estado */
+.msg-efeitos{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin-top:5px;
+  font-family:var(--mono);font-size:10.5px;line-height:1.35;
+}
+.msg-efeitos .sep{color:var(--apagado)}
+.msg-efeitos .ef.boa{color:var(--verde-vivo)}
+.msg-efeitos .ef.ruim{color:var(--vermelho)}

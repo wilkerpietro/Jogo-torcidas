@@ -128,6 +128,50 @@ TO.feed = (function(){
   }
 
   /* =======================================================
+     A LINHA DE CONSEQUÊNCIA
+
+     Toda mensagem que move indicador mostra o que moveu, numa segunda
+     linha: "Relação entre ambos piora −10 · Tensão aumenta +15".
+
+     A REGRA QUE SUSTENTA ISSO: a linha é gerada dos efeitos que foram
+     DE FATO aplicados, nunca escrita no texto. Quem aplica devolve
+     `{ind, delta, dono}`, e a linha sai daí. Número escrito à mão no
+     texto vira mentira de tela no dia em que a fórmula mudar — e
+     mentira de tela é a coisa mais difícil de achar depois.
+
+     Mensagem que não move nada não tem linha: "nenhum efeito" é ruído.
+
+     A COR SAI DO SIGNIFICADO, não do sinal. Subir é bom em quase tudo,
+     mas tensão é o contrário: +15 de tensão é vermelho. E polícia anda
+     ao contrário do que a palavra sugere — o número é a folga que a
+     gente tem com ela, então `polícia −1` é vermelho, não verde. */
+  const EFEITO = {
+    relacao:   {rot:'Relação',    sobe:'melhora', desce:'piora',   bomSobe:true},
+    tensao:    {rot:'Tensão',     sobe:'aumenta', desce:'diminui', bomSobe:false},
+    moral:     {rot:'Moral',      sobe:'sobe',    desce:'cai',     bomSobe:true},
+    prestigio: {rot:'Prestígio',  sobe:'sobe',    desce:'cai',     bomSobe:true},
+    policia:   {rot:'Polícia',    sobe:'afrouxa', desce:'aperta',  bomSobe:true},
+    satisfacao:{rot:'Satisfação', sobe:'sobe',    desce:'cai',     bomSobe:true},
+    dinheiro:  {rot:'Caixa',      sobe:'entra',   desce:'sai',     bomSobe:true},
+    membros:   {rot:'Efetivo',    sobe:'cresce',  desce:'encolhe', bomSobe:true},
+    acao:      {rot:'Ações',      sobe:'sobra',   desce:'gasta',   bomSobe:true}
+  };
+
+  /* o texto de um efeito, pronto pra tela e pro teste */
+  function lerEfeito(e){
+    const cfg = EFEITO[e.ind] || {rot:e.ind, sobe:'sobe', desce:'cai', bomSobe:true};
+    const d = Math.round(e.delta*10)/10;
+    if(!d) return null;
+    const num = e.ind === 'dinheiro'
+      ? (d>0?'+':'−') + U.dinheiro(Math.abs(d)).replace('−','')
+      : (d>0?'+':'−') + Math.abs(d).toLocaleString('pt-BR');
+    return {texto:`${cfg.rot}${e.dono ? ' '+e.dono : ''} `+
+                  `${d>0 ? cfg.sobe : cfg.desce} ${num}`,
+            bom: (d>0) === cfg.bomSobe, delta:d, ind:e.ind};
+  }
+  const lerEfeitos = m => ((m && m.efeitos) || []).map(lerEfeito).filter(Boolean);
+
+  /* =======================================================
      PROPOR — todo mundo entra pela mesma porta
 
      Produtor nenhum publica: ele PROPÕE, e o escalonador decide
@@ -150,7 +194,10 @@ TO.feed = (function(){
       botoes: m.botoes || [],
       tipo:  m.tipo || '',
       assunto: m.assunto || null,
+      urgente: !!m.urgente,
       local: !!m.local,
+      /* o que a mensagem moveu no estado, pra linha de consequência */
+      efeitos: (m.efeitos || []).filter(x=>x && x.delta),
       dados: m.dados || null,
       naoAntesDe: m.naoAntesDe != null ? Math.max(hoje, m.naoAntesDe) : hoje,
       validoAte:  null
@@ -216,8 +263,13 @@ TO.feed = (function(){
   function temCota(E, m){
     const c = ctl(E);
     if(m.cat === 6){
-      if(c.semana.c6 >= COTA_INTERNA_SEMANA) return false;
-      /* nunca o mesmo assunto duas semanas seguidas */
+      /* A REDE DE SEGURANÇA FURA A COTA. O caixa no vermelho é o único
+         assunto urgente da categoria: ele avisa antes da debandada, e
+         chegou a ficar preso atrás do pedido de assalto da mesma
+         semana — o jogador só era avisado depois de perder oito
+         pessoas. A carência de duas semanas do assunto continua
+         valendo pra ele; o teto semanal, não. */
+      if(!m.urgente && c.semana.c6 >= COTA_INTERNA_SEMANA) return false;
       const ult = m.assunto ? c.assunto[m.assunto] : null;
       if(ult != null && semanaAbs(E) - ult < 2) return false;
     }
@@ -345,6 +397,11 @@ TO.feed = (function(){
     m.respondido = b.rot;
     m.respondidoEm = hoje;
     const r = aplicar(E, m, b) || {};
+    /* os efeitos da OPÇÃO ESCOLHIDA entram na mensagem, junto do
+       "Você respondeu: …": é o mesmo cartão que conta o que o jogador
+       decidiu e o que aquilo custou */
+    if(r.efeitos && r.efeitos.length)
+      m.efeitos = (m.efeitos || []).concat(r.efeitos.filter(x=>x && x.delta));
     /* respondida a decisão, a fila volta a andar na mesma hora: o que
        estava esperando cai agora, e não só no dia seguinte */
     if(m.peso === 'decisao') r.saiu = publicar(E);
@@ -364,8 +421,11 @@ TO.feed = (function(){
         const falta = P.falta(E);
         if(falta.length) return {abrir:'gestao', aviso:
           `A ideologia não fechou o plano: falta ${falta.join(', ')}.`};
-        P.confirmar(E);
-        return {aviso: resumoDoPlano(E, fez)};
+        const r = P.confirmar(E);
+        return {aviso: resumoDoPlano(E, fez), efeitos:[
+          {ind:'dinheiro', delta: -(r.gasto||0), dono:'de recepção'},
+          {ind:'acao',     delta: -(r.investidas||0), dono:'da semana'}
+        ]};
       }
       case 'gestao':  return {abrir:'gestao'};
       case 'painel':  return {abrir: d.pagina || b.pagina || 'inicio'};
@@ -374,20 +434,35 @@ TO.feed = (function(){
 
       /* a provocação: +1 de tensão de um lado, nada do outro */
       case 'tensao': {
-        if(d.torcidaId && TO.tensao)
-          TO.tensao.somar(E, d.torcidaId, b.quanto || 1, 'respondemos à provocação');
-        return {};
+        if(!d.torcidaId || !TO.tensao) return {};
+        const antes = TO.tensao.nivel(E, d.torcidaId);
+        const rAntes = (E.relacoes||{})[d.torcidaId];
+        TO.tensao.somar(E, d.torcidaId, b.quanto || 1, 'respondemos à provocação');
+        const nome = (M().torcida(d.torcidaId)||{}).nome || 'eles';
+        const ef = [{ind:'tensao',
+                     delta: TO.tensao.nivel(E, d.torcidaId) - antes,
+                     dono:`com a ${nome}`}];
+        if(rAntes !== undefined)
+          ef.push({ind:'relacao', delta: (E.relacoes[d.torcidaId]||0) - rAntes,
+                   dono:`com a ${nome}`});
+        return {efeitos: ef};
       }
 
       case 'festa-sim': {
         const custo = d.custo || 3000;
+        const antes = (E.relacoes[d.torcidaId]||0);
         TO.estado.lancar(E, `Festa da ${d.nome || 'aliada'}`, -custo);
-        E.relacoes[d.torcidaId] = U.limitar((E.relacoes[d.torcidaId]||0) + 5, -100, 100);
-        return {};
+        E.relacoes[d.torcidaId] = U.limitar(antes + 5, -100, 100);
+        return {efeitos:[
+          {ind:'dinheiro', delta:-custo, dono:'da festa'},
+          {ind:'relacao',  delta:(E.relacoes[d.torcidaId]-antes),
+           dono:`com a ${d.nome||'aliada'}`}]};
       }
       case 'festa-nao': {
-        E.relacoes[d.torcidaId] = U.limitar((E.relacoes[d.torcidaId]||0) - 4, -100, 100);
-        return {};
+        const antes = (E.relacoes[d.torcidaId]||0);
+        E.relacoes[d.torcidaId] = U.limitar(antes - 4, -100, 100);
+        return {efeitos:[{ind:'relacao', delta:(E.relacoes[d.torcidaId]-antes),
+                          dono:`com a ${d.nome||'aliada'}`}]};
       }
 
       case 'assalto': {
@@ -400,7 +475,9 @@ TO.feed = (function(){
         const alvo = E.membros.find(x=>x.id === d.membroId);
         if(!alvo) return {aviso:'esse não está mais preso'};
         const r = TO.membros.resgatar(E, alvo);
-        return {aviso: r.ok ? `${TO.membros.nomeDe(alvo)} solto.` : r.motivo};
+        return {aviso: r.ok ? `${TO.membros.nomeDe(alvo)} solto.` : r.motivo,
+                efeitos: r.ok ? [{ind:'dinheiro', delta:-r.custo,
+                                  dono:'de fiança'}] : []};
       }
     }
     return {};
@@ -757,9 +834,27 @@ TO.feed = (function(){
     for(const x of noticias){
       if(cota <= 0) break;
       cota--;
+      /* QUANDO A NOTÍCIA CAI. A que nasceu de um jogo já vem com o dia
+         marcado — o do jogo ou o seguinte —, porque foi a caravana que
+         criou o encontro e a data faz parte do fato. A que nasceu de
+         duas torcidas que dividem a praça cai em dia qualquer da
+         semana: elas se cruzam sem precisar de jogo. */
       propor(E, {cat:5, peso:'info', voz:vozJornal(), local:x.local,
-        chave:`${ch}|n${x.i}`, naoAntesDe:espalhar(x.i),
-        texto:`${x.n.txt}.`});
+        chave:`${ch}|n${x.i}`,
+        naoAntesDe: x.n.naoAntesDe != null ? x.n.naoAntesDe : espalhar(x.i),
+        /* A NOTÍCIA DE JOGO TEM JANELA DE DOIS DIAS e morre nela. Sem
+           isso a fila podia segurá-la — por cota da semana ou pela
+           regra da categoria em sequência — e ela saía na segunda-feira
+           seguinte, contando uma briga de um jogo que já tinha virado
+           semana. Notícia atrasada não é notícia. */
+        validoAte: x.n.naoAntesDe != null ? x.n.naoAntesDe + 1 : null,
+        efeitos: x.n.efeitos,
+        /* quem são e por que podiam se encontrar: é o que permite
+           conferir no save que a notícia era possível */
+        dados:{torcidas:x.n.torcidas, motivo:x.n.motivo, diaJogo:x.n.dia,
+               absJogo:x.n.absJogo, semanaJogo:x.n.semanaJogo,
+               vencedor:x.n.vencedor, perdedor:x.n.perdedor, contas:x.n.contas},
+        texto: /[.!?]$/.test(x.n.txt) ? x.n.txt : x.n.txt + '.'});
     }
 
     /* c) o marco: a maior do país, a que passou de 400, a que fechou */
@@ -902,7 +997,7 @@ TO.feed = (function(){
       const voz = diretor(E, ch+'|'+a.id);
       const m = a.monta(E, voz);
       propor(E, Object.assign({cat:6, peso:a.peso, voz, assunto:a.id,
-                               chave:ch+'|'+a.id}, m));
+                               urgente:!!a.urgente, chave:ch+'|'+a.id}, m));
       return;                 // uma por semana, e a primeira da lista manda
     }
   }
@@ -1130,7 +1225,8 @@ TO.feed = (function(){
            (E.data.absoluto||0) > m.validoAte;
   }
 
-  return {CATEGORIAS, catDe, TETO_SEMANA, COTA_INTERNA_SEMANA,
+  return {CATEGORIAS, catDe, TETO_SEMANA, COTA_INTERNA_SEMANA, EFEITO,
+          lerEfeito, lerEfeitos,
           COTA_DIPLOMACIA_MES, CARENCIA_AMEACA, AMEACAS, ASSUNTOS,
           propor, publicar, responder, travado, decisaoAberta,
           passarDia, fecharSemana, convocarEncontro, registrarConfronto,

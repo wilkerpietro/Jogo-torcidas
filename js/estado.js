@@ -280,10 +280,13 @@ TO.estado = (function(){
       const mundo = TO.tensao.passarSemana(E);
       fecho.ataques = mundo.ataques;
       fecho.investidas = mundo.investidas;
-      for(const a of mundo.ataques) anotar(E, a.txt+'.', 'ruim', {cat:4});
+      /* o que veio pra cima da gente e o que a gente foi fazer: as duas
+         levam a lista de efeitos que o próprio módulo aplicou */
+      for(const a of mundo.ataques)
+        anotar(E, a.txt+'.', 'ruim', {cat:4, efeitos:a.efeitos});
       for(const i of mundo.investidas){
-        anotar(E, i.txt+'.', i.ganhamos?'boa':'ruim', {cat:4,
-          linhaAbaixo:{texto:`prestígio ${i.prest>0?'+':''}${i.prest}`}});
+        anotar(E, i.txt+'.', i.ganhamos?'boa':'ruim',
+               {cat:4, efeitos:i.efeitos});
         if(TO.feed) TO.feed.registrarConfronto(E, i.id || i.alvoId, i.ganhamos);
       }
       E.ultimasNoticias = mundo.noticias;
@@ -299,6 +302,13 @@ TO.estado = (function(){
         E.data.semana = 1; E.data.ano++;
         guardarTitulos(E);
         /* GDD §21: título, vice e rebaixamento mexem na satisfação de vez */
+        /* O QUE O CLUBE FEZ EM CAMPO MOVE A TORCIDA DELE, a nossa e as
+           delas: título e acesso levantam a moral, rebaixamento derruba.
+           Antes só a nossa sentia. */
+        for(const c of E.temporada.competicoes){
+          if(c.campeao) TO.tensao.conquistaDoClube(E, c.campeao, 'campeao');
+          if(c.vice)    TO.tensao.conquistaDoClube(E, c.vice, 'vice');
+        }
         for(const c of E.temporada.competicoes){
           if(c.campeao === E.torcida.clubeId)
             anotar(E, `${TO.mundo.time(E.torcida.clubeId).nome} é campeão do `+
@@ -320,6 +330,9 @@ TO.estado = (function(){
             {cat:5});
         /* sobe e desce antes de montar a temporada nova (GDD §18.2) */
         const mov = TO.competicoes.aplicarSobeDesce(E);
+        for(const m of mov)
+          TO.tensao.conquistaDoClube(E, m.id,
+            TO.competicoes.subiu(m.de, m.para) ? 'acesso' : 'rebaixado');
         for(const m of mov.filter(x=>x.id===E.torcida.clubeId)){
           const sub = TO.competicoes.subiu(m.de, m.para);
           anotar(E, `${TO.mundo.time(m.id).nome} ${sub?'subiu para':'caiu para'} `+

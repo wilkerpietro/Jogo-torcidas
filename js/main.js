@@ -625,6 +625,19 @@
       `<time>${quando}</time>`}));
     art.appendChild(el('p',{class:'msg-txt', texto:m.texto}));
 
+    /* A LINHA DE CONSEQUÊNCIA. Ela sai dos efeitos que foram aplicados
+       no estado, nunca de número escrito no texto — e mensagem que não
+       moveu nada não tem linha, porque "nenhum efeito" é ruído. */
+    const efs = TO.feed.lerEfeitos(m);
+    if(efs.length){
+      const le = el('div',{class:'msg-efeitos'});
+      efs.forEach((x,i)=>{
+        if(i) le.appendChild(el('span',{class:'sep', texto:'·'}));
+        le.appendChild(el('span',{class:'ef '+(x.bom?'boa':'ruim'), texto:x.texto}));
+      });
+      art.appendChild(le);
+    }
+
     if(m.linhaAbaixo){
       const la = el('div',{class:'msg-abaixo'});
       la.appendChild(el('span',{texto:m.linhaAbaixo.texto}));
@@ -4279,10 +4292,21 @@
   function abrirAtaqueAoBar(atq){
     const e = E();
     const o = TO.mundo.torcida(atq.torcida);
-    const aptos = TO.membros.aptosParaOEstadio(e)
-      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa)).slice(0, 34);
-    const nossos = Math.max(2, Math.min(aptos.length || 8,
-      Math.round((TO.membros.contar(e).total || 20) * 0.25)));
+    /* O EFETIVO É O REAL DE CADA LADO, E ELES SÃO DIFERENTES.
+       Aqui estava o bug que já foi consertado uma vez na briga de rua e
+       tinha voltado por esta porta: `Math.min(aptos.length, ...)`
+       amarrava o nosso bonde ao tamanho da ESCALAÇÃO, que é cortada em
+       34 porque 34 é quanta gente tem FICHA — nome, força, defesa e
+       consequência depois. Com 250 membros a cena abria 34 contra 18
+       quando o certo eram 62 contra 18.
+
+       Escalação e efetivo são duas coisas: `escalacao` é quem tem ficha,
+       `bondes[].n` é quanta gente está lá. Nada é reequilibrado na
+       abertura: se eles vieram com mais, a cena começa com mais deles. */
+    const fila = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa));
+    const aptos = fila.slice(0, 34);
+    const nossos = Math.max(2, Math.round(fila.length * 0.25));
     const deles = Math.max(4, Math.round(((o && o.membros) || 40) * 0.30));
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
     const c2 = TO.mundo.coresDaTorcida(o || {});
@@ -4568,10 +4592,15 @@
        fundo — o saldo já está escrito na barra do feed o tempo todo.
        Semana com gente saindo é outra coisa: isso é a torcida se
        desfazendo, e tem de aparecer. */
+    /* A DEBANDADA É RESULTADO, NÃO CONVERSA DE DIRETOR. Ela chegou a
+       sair como categoria 6 com o assunto `caixa`, o mesmo do alarme —
+       e aí a linha informativa consumia a carência de duas semanas do
+       assunto e a DECISÃO que avisa antes da debandada nunca saía. O
+       aviso é interna; o pessoal indo embora é o que aconteceu. */
     if(saiu) TO.estado.anotar(e,
       `${saiu} ${saiu===1?'saiu':'saíram'} da torcida essa semana. `+
       `Caixa em ${U.dinheiro(e.dinheiro)}.`, 'ruim',
-      {cat:6, assunto:'caixa'});
+      {cat:4, efeitos:[{ind:'membros', delta:-saiu, dono:'nosso'}]});
     const grave = rel.saldo < 0 || e.dinheiro < 0 || saiu > 0;
     if(opc(e).relatorio || grave) abrirFechamento(rel);
   });

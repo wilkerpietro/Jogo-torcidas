@@ -810,10 +810,17 @@ TO.planejamento = (function(){
      custa menos relação nova; e o efetivo desempata, porque bater no
      maior é o que rende prestígio. Ordem fixa, então a mesma semana
      decide igual toda vez. */
+  /* o prestígio DELAS entra aqui: bater em torcida respeitada rende
+     mais que bater em torcida que ninguém conhece, e é isso que faz o
+     número existir do lado da IA em vez de ser float decorativo */
+  const prestigioDe = (E, id) =>
+    ((TO.tensao && TO.tensao.indicadoresDe(E, id)) || {}).prestigio || 0;
+
   function melhorAlvo(E, alvos){
     return alvos.slice().sort((a,b)=>
       (ehRival(E,b.torcida)?1:0) - (ehRival(E,a.torcida)?1:0) ||
       (b.tensao||0) - (a.tensao||0) ||
+      prestigioDe(E, b.id) - prestigioDe(E, a.id) ||
       ((b.torcida||{}).membros||0) - ((a.torcida||{}).membros||0) ||
       (a.id < b.id ? -1 : 1))[0] || null;
   }

@@ -93,8 +93,25 @@ TO.tensao = (function(){
   };
   const NOMES_ARQ = Object.keys(ARQUETIPOS);
 
+  /* save de antes dos três indicadores abre sem eles, e `t.prestigio ||
+     0` daria zero — polícia zero bane a torcida na primeira semana. A
+     migração roda uma vez e é marcada FORA do mapa, porque quem itera
+     `Object.keys(E.mundoTorcidas)` espera só ids de torcida ali. */
+  const VERSAO_MUNDO = 2;
+  function migrarMundo(E){
+    if(E.mundoVersao === VERSAO_MUNDO) return;
+    for(const id of Object.keys(E.mundoTorcidas || {})){
+      const t = E.mundoTorcidas[id], o = M().torcida(id) || {};
+      if(t.prestigio == null)
+        t.prestigio = U.limitar(Math.round((o.prestigio || 15)/5), 0, 20);
+      if(t.policia   == null) t.policia = 10;
+      if(t.banidaAte == null) t.banidaAte = 0;
+    }
+    E.mundoVersao = VERSAO_MUNDO;
+  }
+
   function mundo(E){
-    if(E.mundoTorcidas) return E.mundoTorcidas;
+    if(E.mundoTorcidas){ migrarMundo(E); return E.mundoTorcidas; }
     E.mundoTorcidas = {};
     for(const o of M().jogaveis()){
       if(o.id === E.torcida.id) continue;
@@ -107,7 +124,13 @@ TO.tensao = (function(){
         /* o tamanho de fábrica, que é pra onde ela sempre pode voltar */
         piso: membros,
         caixa: (o.saldo || 200) * 4,
+        /* OS TRÊS INDICADORES, na escala 0–20 do GDD §12, como os
+           nossos. Moral começa no meio; prestígio vem da fonte, que o
+           guarda de 0 a 100; polícia começa onde a nossa começa. */
         moral: 12,
+        prestigio: U.limitar(Math.round((o.prestigio || 15)/5), 0, 20),
+        policia: 10,
+        banidaAte: 0,
         /* GDD §8.1: a sede nível 1 já vem com um bar nível 1 de graça */
         bares:[{nivel:1}], lojas:[], subsedes:0, fabrica:false,
         vermelho:0,
@@ -130,6 +153,7 @@ TO.tensao = (function(){
         ousadia: U.limitar((o.poder || 60)/260 + U.entre(-0.15, 0.15), 0.05, 1)
       };
     }
+    E.mundoVersao = VERSAO_MUNDO;
     return E.mundoTorcidas;
   }
 
@@ -305,6 +329,19 @@ TO.tensao = (function(){
         continue;
       }
 
+      /* A MESMA AÇÃO SOCIAL QUE A GENTE FAZ, pelo mesmo preço e com o
+         mesmo efeito: R$ 2.000 por +1,5 de polícia, igualzinho ao
+         `social` da nossa lista de ações. Sem uma saída, a polícia
+         delas só descia — briga e assalto tiram, nada põe — e em vinte
+         temporadas o país inteiro estaria banido em rodízio. Quem
+         procura menos briga procura mais a comunidade, então o
+         arquétipo divide a chance. */
+      if(t.policia < 8 && t.caixa > 6000 &&
+         U.rng() < 0.10 / ARQUETIPOS[t.arq].briga){
+        t.caixa -= 2000;
+        mover(E, id, 'policia', 1.5);
+      }
+
       /* GDD §6.2: recrutar custa R$ 5 por cabeça e só cabe até o teto —
          é ele que segura o crescimento, não o sorteio */
       const teto = tetoDe(E, t);
@@ -347,16 +384,97 @@ TO.tensao = (function(){
     {id:'apoio',   txt:'apoiou no estádio a',        tensao:-8}
   ];
 
-  function paresPossiveis(E){
-    const fora = [];
-    for(const o of M().jogaveis()){
-      if(o.id === E.torcida.id) continue;
-      for(const r of (o.maioresRivais||[]).concat(o.rivais||[]))
-        if(r > o.id) fora.push([o.id, r]);
-      for(const a of (o.aliados||[]))
-        if(a > o.id) fora.push([o.id, a]);
+  /* =======================================================
+     QUEM PODE APARECER NUMA NOTÍCIA
+
+     A primeira versão varria o grafo inteiro e devolvia TODOS os pares
+     do país. Daí saía "Jovem Tricolor depredou o bar da Mancha Verde
+     Juventude": clubes de divisões e regiões diferentes, que só
+     poderiam se cruzar na Copa do Brasil — que começa em maio. Notícia
+     de briga entre torcidas que não têm como se encontrar destrói a
+     credibilidade do resto do feed.
+
+     Rivalidade declarada na fonte é NECESSÁRIA e não é SUFICIENTE: ela
+     diz que se odeiam, não que se encontraram. Além dela, o par tem de
+     passar por um destes dois portões:
+
+     (a) MESMA PRAÇA — as duas têm sede no mesmo mapa. A briga cai em dia
+         aleatório da semana, porque elas dividem a cidade e se cruzam
+         sem precisar de jogo.
+     (b) JOGO — os clubes das duas se enfrentam numa rodada, e a notícia
+         sai no dia do jogo ou no dia seguinte. Aí vale entre praças
+         diferentes, porque houve deslocamento de verdade: foi a
+         caravana que criou o encontro.
+
+     O PORTÃO (b) OLHA PRA SEMANA QUE VEM, não pra que acabou. Isto roda
+     no fechamento, e a rodada que acabou de ser simulada aconteceu em
+     dias que já passaram — publicar a notícia dela seria publicar no
+     passado ou uma semana depois. A tabela da semana seguinte já existe
+     (o placar é que não), e a briga em volta do jogo não depende do
+     placar: assim a notícia cai no dia do jogo, que é onde ela pertence.
+
+     O CACHE É POR SEMANA. Antes era `if(!_pares) _pares = ...`, uma vez
+     na vida do módulo. Com o portão (b) o conjunto muda toda semana, e
+     um cache eterno faria a correção não pegar — o comportamento antigo
+     voltaria pela porta dos fundos, que é o pior jeito de um bug
+     voltar: com o código novo escrito e sem efeito. */
+  let _pares = null, _paresChave = null;
+
+  function declarada(a, b){
+    const ta = M().torcida(a), tb = M().torcida(b);
+    if(!ta || !tb) return null;
+    const rival = (ta.maioresRivais||[]).includes(b) ||
+                  (ta.rivais||[]).includes(b) ||
+                  (tb.maioresRivais||[]).includes(a) ||
+                  (tb.rivais||[]).includes(a);
+    if(rival) return 'rival';
+    const aliada = (ta.aliados||[]).includes(b) || (ta.irmandade||[]).includes(b) ||
+                   (tb.aliados||[]).includes(a) || (tb.irmandade||[]).includes(a);
+    return aliada ? 'aliada' : null;
+  }
+
+  /* o dia absoluto de um dia da SEMANA QUE VEM: hoje é o primeiro dia
+     dela menos um (o fechamento roda antes de a data virar) */
+  const diaDaProximaSemana = (E, dia) => (E.data.absoluto||0) + 1 + (dia - 1);
+
+  function paresDaSemana(E){
+    const chave = `${E.data.ano}|${E.data.semana}`;
+    if(_pares && _paresChave === chave) return _pares;
+    _paresChave = chave;
+    const fora = [], visto = new Set();
+    const põe = (a, b, motivo, dia, praca)=>{
+      if(a === b || a === E.torcida.id || b === E.torcida.id) return;
+      const rel = declarada(a, b);
+      if(!rel) return;
+      const ch = chaveDe(a, b);
+      if(visto.has(ch)) return;
+      visto.add(ch);
+      fora.push({a, b, rel, motivo, dia, praca:!!praca});
+    };
+
+    /* (a) as que dividem a praça */
+    const pracas = new Set(M().jogaveis().map(o=>o.mapa));
+    for(const p of pracas){
+      const lista = M().torcidasEm(p).filter(o=>!o.incompleta);
+      for(let i=0;i<lista.length;i++)
+        for(let j=i+1;j<lista.length;j++)
+          põe(lista[i].id, lista[j].id, 'praca', null, true);
     }
-    return fora;
+
+    /* (b) as que vão se cruzar num jogo da semana que vem */
+    const S = E.temporada;
+    if(S) for(const comp of S.competicoes)
+      for(const etapa of [...comp.rodadas, ...comp.mata]){
+        if(etapa.semana !== E.data.semana + 1) continue;
+        for(const j of etapa.jogos){
+          if(!j.f) continue;
+          const dia = j.d || etapa.dia || 6;
+          const casa = M().torcidasDe(j.c) || [], vis = M().torcidasDe(j.f) || [];
+          for(const ta of casa) for(const tb of vis)
+            põe(ta.id, tb.id, 'jogo', dia, ta.mapa === tb.mapa);
+        }
+      }
+    return (_pares = fora);
   }
 
   /* A relação entre duas torcidas da IA existe pelo mesmo motivo que a
@@ -379,42 +497,196 @@ TO.tensao = (function(){
     E.relacoesDelas[ch] = U.limitar(E.relacoesDelas[ch] + quanto, -100, 100);
   }
 
-  let _pares = null;
+  /* =======================================================
+     OS INDICADORES DELAS
+
+     Todo indicador que se move na nossa torcida se move igual nas 138.
+     Elas já pagam a mesma conta econômica — mensalidade, manutenção,
+     insumo, material, teto de sede, bolo da praça —, e os indicadores
+     seguem a mesma regra: moral, prestígio e polícia, na mesma escala
+     0–20 do GDD §12.
+
+     SATISFAÇÃO FICA DE FORA, e é a exceção justificada: ela é do
+     torcedor comum do CLUBE, não da organizada. Existiria por clube
+     (108) e não por torcida (140), e hoje só é calculada pro nosso. Se
+     um dia entrar, entra como propriedade do clube.
+
+     E NÃO HÁ FICHA INDIVIDUAL. A nossa moral é a média de gente com
+     nome; a delas é o número agregado equivalente. Criar fichas pras
+     138 seriam dezenas de milhares de registros recalculados toda
+     semana, num laço que já se preocupa em rodar barato — o próprio
+     código anota que "recalcular isso pra 138 torcidas toda semana é
+     caro". O agregado resolve.
+     ======================================================= */
+  const semanaAbs = E => (E.data.ano - 2026)*52 + E.data.semana;
+  /* punição de polícia zerada, a mesma que a gente sofre */
+  const BANIMENTO = 4;             // semanas fora de circulação
+  const POLICIA_VOLTA = 5;         // com que folga ela volta
+
+  /* Mexer num indicador delas DEVOLVE O DELTA APLICADO. É esse número
+     que a linha de consequência mostra — nunca um escrito à mão no
+     texto, senão no dia em que a fórmula mudar a tela passa a mentir. */
+  function mover(E, id, ind, quanto){
+    const t = (E.mundoTorcidas||{})[id];
+    if(!t || !quanto) return 0;
+    const antes = t[ind] || 0;
+    t[ind] = U.limitar(antes + quanto, 0, 20);
+    /* polícia no chão tira a torcida de circulação por quatro semanas:
+       some do mapa em dia de jogo e não gera notícia de briga */
+    if(ind === 'policia' && t.policia <= 0 && !banida(E, id)){
+      t.banidaAte = semanaAbs(E) + BANIMENTO;
+      t.policia = POLICIA_VOLTA;
+    }
+    return Math.round((t[ind] - antes)*100)/100;
+  }
+  function banida(E, id){
+    const t = (E.mundoTorcidas||{})[id];
+    return !!(t && t.banidaAte && semanaAbs(E) < t.banidaAte);
+  }
+  const indicadoresDe = (E, id) => (E.mundoTorcidas||{})[id] || null;
+
+  /* =======================================================
+     O QUE ELAS FAZEM ENTRE SI, COM VENCEDOR E COM CONTA
+
+     Três coisas mudaram de uma vez, e as três pelo mesmo motivo: a
+     notícia tem de ser verdade verificável.
+
+     · o par tem de poder se encontrar (`paresDaSemana`);
+     · a notícia diz QUEM levou a melhor, e é o mesmo lado que a conta
+       beneficiou — quem paga R$ 300, não quem paga R$ 900;
+     · e ela carrega a lista de efeitos que foram DE FATO aplicados,
+       pra a linha de consequência sair do estado e não do texto.
+     ======================================================= */
+  const FECHO = ['e levou a melhor.', 'e saiu por cima.', 'e {B} levou a pior.'];
+
   function diplomaciaDelas(E){
-    if(!_pares) _pares = paresPossiveis(E);
-    if(!_pares.length) return [];
+    const pares = paresDaSemana(E);
+    if(!pares.length) return [];
     const m = mundo(E);
     E.tensoesDelas  = E.tensoesDelas  || {};
     E.relacoesDelas = E.relacoesDelas || {};
     const noticias = [];
-    /* três episódios por semana no país inteiro: o bastante pra o
-       ticker ter o que dizer sem virar ruído */
+    const usados = new Set();
+    /* três episódios por semana no país inteiro: o bastante pra o feed
+       ter o que dizer sem virar ruído. E NUNCA O MESMO PAR DUAS VEZES:
+       antes eram três sorteios independentes, sem dedupe. */
     for(let k=0;k<3;k++){
-      const [a,b] = U.escolher(_pares);
-      const ta = M().torcida(a), tb = M().torcida(b);
-      if(!ta || !tb || !m[a] || !m[b]) continue;
-      const rivais = (ta.maioresRivais||[]).includes(b) || (ta.rivais||[]).includes(b);
-      /* o arquétipo decide quem procura briga (GDD §21.1) */
-      const briga = (ARQUETIPOS[m[a].arq].briga + ARQUETIPOS[m[b].arq].briga)/2;
-      const ousadia = (m[a].ousadia + m[b].ousadia)/2;
-      if(rivais && U.rng() < (0.35 + ousadia*0.4) * briga){
-        const ev = U.escolher(HOSTIS);
-        /* bater custa; apanhar custa mais, e ainda perde gente */
-        m[a].caixa -= 300; m[b].caixa -= 900;
-        m[b].membros = Math.max(8, m[b].membros - U.inteiro(0,2));
-        const ch = chaveDe(a,b);
-        E.tensoesDelas[ch] = U.limitar((E.tensoesDelas[ch]||0) + ev.tensao, 0, MAX);
-        moverRelacao(E, a, b, -ev.tensao*0.35);
-        noticias.push({txt:`${ta.nome} ${ev.txt} ${tb.nome}`, tipo:'briga',
-                       torcidas:[a,b]});
-      }else if(!rivais && U.rng() < 0.25){
-        const ev = U.escolher(PACIFICAS);
-        moverRelacao(E, a, b, -ev.tensao*0.35);   // tensão negativa aproxima
-        noticias.push({txt:`${ta.nome} ${ev.txt} ${tb.nome}`, tipo:'paz',
-                       torcidas:[a,b]});
+      let par = null;
+      for(let t=0;t<12 && !par;t++){
+        const p = U.escolher(pares);
+        if(!p || usados.has(chaveDe(p.a, p.b))) continue;
+        if(banida(E, p.a) || banida(E, p.b)) continue;
+        par = p;
       }
+      if(!par) break;
+      usados.add(chaveDe(par.a, par.b));
+      const n = episodio(E, m, par);
+      if(n) noticias.push(n);
     }
     return noticias;
+  }
+
+  function episodio(E, m, par){
+    const {a, b} = par;
+    const ta = M().torcida(a), tb = M().torcida(b);
+    if(!ta || !tb || !m[a] || !m[b]) return null;
+
+    /* MORAL DECIDE SE ELA PROCURA BRIGA. Antes quem decidia eram o
+       arquétipo e a ousadia, os dois estáticos: a torcida que levou
+       surra na semana passada saía na semana seguinte exatamente igual.
+       Agora quem apanhou se acua e quem está em alta parte pra cima. */
+    const briga   = (ARQUETIPOS[m[a].arq].briga + ARQUETIPOS[m[b].arq].briga)/2;
+    const ousadia = (m[a].ousadia + m[b].ousadia)/2;
+    const moral   = ((m[a].moral||0) + (m[b].moral||0))/2;
+    const animo   = 0.6 + (moral/20)*0.8;         // 0,6 acuada · 1,4 em alta
+
+    if(par.rel === 'rival' && U.rng() < (0.35 + ousadia*0.4) * briga * animo)
+      return hostil(E, m, par, ta, tb);
+    if(par.rel === 'aliada' && U.rng() < 0.25)
+      return pacifica(E, m, par, ta, tb);
+    return null;
+  }
+
+  /* quem bate e quem apanha: moral e ousadia decidem, com uma pitada de
+     sorte pra a mesma dupla não dar sempre no mesmo resultado */
+  function quemLevaAMelhor(m, a, b){
+    const nota = x => (m[x].moral||0)/20*0.6 + m[x].ousadia*0.4 + U.rng()*0.5;
+    return nota(a) >= nota(b) ? [a, b] : [b, a];
+  }
+
+  function hostil(E, m, par, ta, tb){
+    const ev = U.escolher(HOSTIS);
+    const [venc, perd] = quemLevaAMelhor(m, par.a, par.b);
+    const nv = M().torcida(venc).nome, np = M().torcida(perd).nome;
+    /* bater custa; apanhar custa mais, e ainda perde gente. Os dois
+       lançamentos ficam guardados no `contas` da notícia: é por eles que
+       se confere que o vencedor do TEXTO é o mesmo lado que a CONTA
+       beneficiou — quem pagou R$ 300, não quem pagou R$ 900. Não é o
+       número copiado da fórmula: é o que foi debitado. */
+    const cxV = m[venc].caixa, cxP = m[perd].caixa;
+    m[venc].caixa -= 300; m[perd].caixa -= 900;
+    const contas = {venc: m[venc].caixa - cxV, perd: m[perd].caixa - cxP};
+    const foram = U.inteiro(0, 2);
+    m[perd].membros = Math.max(8, m[perd].membros - foram);
+
+    const ch = chaveDe(par.a, par.b);
+    const tAntes = E.tensoesDelas[ch] || 0;
+    E.tensoesDelas[ch] = U.limitar(tAntes + ev.tensao, 0, MAX);
+    const rAntes = relacaoDelas(E, par.a, par.b);
+    moverRelacao(E, par.a, par.b, -ev.tensao*0.35);
+
+    /* BATER EM TORCIDA GRANDE E RESPEITADA RENDE MAIS, pros dois lados
+       da conta: o prestígio que muda de mão é proporcional ao de quem
+       apanhou. Bater em quem ninguém respeita não faz nome. */
+    const peso = 0.5 + (m[perd].prestigio||0)/20;
+    const dPrestV = mover(E, venc, 'prestigio',  ev.prest*0.15*peso);
+    const dPrestP = mover(E, perd, 'prestigio', -ev.prest*0.10*peso);
+    const dMoralV = mover(E, venc, 'moral',  0.6);
+    const dMoralP = mover(E, perd, 'moral', -(0.8 + foram*0.4));
+    /* briga chama polícia dos dois lados, e a mais pesada chama mais */
+    const calor = -(0.3 + ev.tensao*0.03);
+    mover(E, venc, 'policia', calor);
+    mover(E, perd, 'policia', calor);
+
+    const fecho = U.escolher(FECHO).replace('{B}', np);
+    const emCasa = par.praca && U.rng() < 0.35;
+    const txt = emCasa
+      ? `Correu em casa! ${nv} ${ev.txt} ${np} ${fecho}`
+      : `${nv} ${ev.txt} ${np} ${fecho}`;
+    const absJogo = par.motivo === 'jogo' ? diaDaProximaSemana(E, par.dia) : null;
+    return {txt, tipo:'briga', torcidas:[venc, perd], vencedor:venc, perdedor:perd,
+            motivo:par.motivo, dia:par.dia, absJogo, contas,
+            semanaJogo: par.motivo === 'jogo' ? E.data.semana + 1 : null,
+            naoAntesDe: absJogo != null ? absJogo + U.inteiro(0,1) : null,
+            efeitos:[
+              {ind:'relacao',  delta: Math.round((relacaoDelas(E,par.a,par.b)-rAntes)*10)/10,
+               dono:'entre ambos'},
+              {ind:'tensao',   delta: E.tensoesDelas[ch] - tAntes, dono:'entre ambos'},
+              {ind:'moral',    delta: dMoralP, dono:`da ${np}`},
+              {ind:'prestigio',delta: dPrestV, dono:`da ${nv}`}
+            ].filter(x=>x.delta)};
+  }
+
+  function pacifica(E, m, par, ta, tb){
+    const ev = U.escolher(PACIFICAS);
+    const [a, b] = [par.a, par.b];
+    const rAntes = relacaoDelas(E, a, b);
+    moverRelacao(E, a, b, -ev.tensao*0.35);       // tensão negativa aproxima
+    const ch = chaveDe(a, b);
+    const tAntes = E.tensoesDelas[ch] || 0;
+    E.tensoesDelas[ch] = U.limitar(tAntes + ev.tensao, 0, MAX);
+    const dm = mover(E, a, 'moral', 0.3) + mover(E, b, 'moral', 0.3);
+    const txt = `${ta.nome} ${ev.txt} ${tb.nome}. As duas saíram ganhando.`;
+    const absJogo = par.motivo === 'jogo' ? diaDaProximaSemana(E, par.dia) : null;
+    return {txt, tipo:'paz', torcidas:[a, b], motivo:par.motivo, dia:par.dia, absJogo,
+            semanaJogo: par.motivo === 'jogo' ? E.data.semana + 1 : null,
+            naoAntesDe: absJogo != null ? absJogo + U.inteiro(0,1) : null,
+            efeitos:[
+              {ind:'relacao', delta: Math.round((relacaoDelas(E,a,b)-rAntes)*10)/10,
+               dono:'entre ambos'},
+              {ind:'tensao',  delta: E.tensoesDelas[ch] - tAntes, dono:'entre ambos'},
+              {ind:'moral',   delta: Math.round(dm*100)/200, dono:'das duas'}
+            ].filter(x=>x.delta)};
   }
 
   /* =======================================================
@@ -471,6 +743,9 @@ TO.tensao = (function(){
     const fora = [];
     for(const [id, t] of Object.entries(E.tensao||{})){
       if(t < 45) continue;
+      /* torcida banida não sai de casa nem pra vir na nossa: é a mesma
+         proibição que tira ela do mapa em dia de jogo */
+      if(banida(E, id)) continue;
       /* de 45 pra cima a chance cresce rápido; em guerra é quase certo */
       const chance = ((t-45)/55) * 0.28;
       if(U.rng() > chance) continue;
@@ -505,10 +780,26 @@ TO.tensao = (function(){
       const aptos = E.membros.filter(TO.membros.disponivel);
       for(let i=0;i<Math.min(ev.feridos, aptos.length);i++)
         TO.membros.ferir(E, U.escolher(aptos), 12 + U.inteiro(0,14));
+      const mAntes = E.indicadores.moral, pAntes = E.indicadores.prestigio;
       E.indicadores.moral = U.limitar(E.indicadores.moral + ev.moral, 0, 20);
       E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + ev.prestigio/3, 0, 20);
       /* apanhar esquenta ainda mais */
+      const tAntes = nivel(E, id);
       somar(E, id, 6, 'fomos atacados');
+      /* do lado delas a conta é a mesma virada: quem veio na nossa casa
+         e saiu por cima ganha moral e prestígio, e chama polícia */
+      mover(E, id, 'moral', 0.6);
+      const dp = mover(E, id, 'prestigio', 0.5);
+      mover(E, id, 'policia', -0.5);
+      ev.efeitos = [
+        {ind:'dinheiro',  delta: ev.dinheiro, dono:'nosso'},
+        {ind:'moral',     delta: Math.round((E.indicadores.moral-mAntes)*10)/10,
+         dono:'nossa'},
+        {ind:'prestigio', delta: Math.round((E.indicadores.prestigio-pAntes)*10)/10,
+         dono:'nosso'},
+        {ind:'tensao',    delta: nivel(E, id) - tAntes, dono:`com a ${o.nome}`},
+        {ind:'prestigio', delta: dp, dono:`da ${o.nome}`}
+      ].filter(x=>x.delta);
       fora.push(Object.assign({id, torcida:o.nome}, ev));
     }
     return fora;
@@ -520,6 +811,24 @@ TO.tensao = (function(){
     if(!a || a.resolvido) return null;
     return (a.ano === E.data.ano && a.semana === E.data.semana &&
             a.dia === E.data.dia) ? a : null;
+  }
+
+  /* GDD §21: o que o clube faz em campo move a torcida dele. A nossa
+     sente pela satisfação do torcedor comum; as delas, que não têm
+     torcedor comum modelado, sentem na moral — que é o agregado
+     equivalente. Título e acesso levantam, rebaixamento derruba. */
+  const CONQUISTA_MORAL = {campeao:2.5, vice:0.8, acesso:2, rebaixado:-3};
+  function conquistaDoClube(E, clubeId, tipo){
+    const d = CONQUISTA_MORAL[tipo];
+    if(!d || !clubeId) return [];
+    mundo(E);
+    const fora = [];
+    for(const o of M().torcidasDe(clubeId)){
+      if(o.id === E.torcida.id) continue;
+      const delta = mover(E, o.id, 'moral', d);
+      if(delta) fora.push({id:o.id, nome:o.nome, delta});
+    }
+    return fora;
   }
 
   /* =======================================================
@@ -593,11 +902,28 @@ TO.tensao = (function(){
         if(azar.length) TO.membros.prender(E, U.escolher(azar));
       }
       const prest = ganhamos ? U.inteiro(2,5) : -U.inteiro(1,3);
+      const pAntes = E.indicadores.prestigio, poAntes = E.indicadores.policia;
       E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + prest/3, 0, 20);
       E.indicadores.policia   = U.limitar(E.indicadores.policia - 1, 0, 20);
+      const tAntes = nivel(E, inv.alvo);
       somar(E, inv.alvo, 22, 'nós atacamos');
+      /* a investida move os indicadores DELAS pelos mesmos motivos que
+         moveria os nossos: quem apanha perde moral e prestígio, e a
+         briga chama polícia pros dois lados */
+      const dmDelas = mover(E, inv.alvo, 'moral',     ganhamos ? -1.2 : 0.6);
+      const dpDelas = mover(E, inv.alvo, 'prestigio', ganhamos ? -0.6 : 0.4);
+      mover(E, inv.alvo, 'policia', -0.5);
+      const efeitos = [
+        {ind:'prestigio', delta: Math.round((E.indicadores.prestigio-pAntes)*10)/10,
+         dono:'nosso'},
+        {ind:'policia',   delta: Math.round((E.indicadores.policia-poAntes)*10)/10,
+         dono:'nossa'},
+        {ind:'tensao',    delta: nivel(E, inv.alvo) - tAntes, dono:`com a ${o.nome}`},
+        {ind:'moral',     delta: dmDelas, dono:`da ${o.nome}`},
+        {ind:'prestigio', delta: dpDelas, dono:`da ${o.nome}`}
+      ].filter(x=>x.delta);
 
-      feitas.push({id:inv.alvo, alvo:o.nome, ganhamos, feridos, prest,
+      feitas.push({id:inv.alvo, alvo:o.nome, ganhamos, feridos, prest, efeitos,
         txt: ganhamos ? `Caímos em cima da ${o.nome} e dominamos`
                       : `Investida contra a ${o.nome} deu errado`});
     }
@@ -639,5 +965,7 @@ TO.tensao = (function(){
 
   return {MAX, FAIXAS, faixa, nivel, somar, passarSemana, panorama,
           resolverInvestidas, relacaoDelas, chaveDe, balanco, ARQUETIPOS,
-          mundo, ataquesContraNos, ataqueDeHoje, HOSTIS, PACIFICAS, MENSALIDADE};
+          mundo, ataquesContraNos, ataqueDeHoje, HOSTIS, PACIFICAS, MENSALIDADE,
+          paresDaSemana, mover, banida, indicadoresDe, BANIMENTO, semanaAbs,
+          conquistaDoClube};
 })();

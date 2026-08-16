@@ -2204,11 +2204,21 @@ ideologia" ou "Não dar moral".
 12. **"Vem, verme" soma exatamente +1** de tensão com aquela rival; **"Não dar moral"
     devolve 0** e o mapa de tensão inteiro sai byte a byte igual. A conta fica visível
     na própria linha do botão: *+1 de tensão com eles* / *nada acontece*.
-13. **A convocação abre a cena certa.** Ataque ao nosso bar: `local: 'bar'`, nosso
-    bonde com **34** (o corte de ficha) do lado `visitante`, o deles com **18** do lado
-    `mandante` — 30% dos 60 membros da rival —, cores `#000000/#FFFFFF` (Gaviões) e
-    `#CC1414/#FFFFFF` (Dragões da Real), primária no anel e secundária no miolo como em
-    §8.12. As bombas vêm do plano da semana, não do estoque cru.
+13. **A convocação abre a cena com o efetivo real e distinto de cada lado.** Ataque ao
+    nosso bar, `local: 'bar'`: Gaviões com **63** do lado `visitante` — 25% dos 320
+    aptos — e Dragões da Real com **18** do lado `mandante` — 30% dos 60 membros dela.
+    Cores `#000000/#FFFFFF` e `#CC1414/#FFFFFF`, primária no anel e secundária no miolo
+    como em §8.12; **3 bombas**, as do plano da semana, não as do estoque cru. Forçando o
+    caso pedido — nossa torcida em 320 aptos e a rival em 333 membros —, a cena abre
+    **80 contra 100**, e o canvas nasce com 80 e 100 discos: `criarEstado` faz
+    `Math.round(b.n)` por bonde e nada é reequilibrado na abertura.
+    **Aqui morava um bug que já tinha sido consertado uma vez.** `Math.min(aptos.length,
+    …)` amarrava o nosso bonde ao tamanho da ESCALAÇÃO, que é cortada em 34 porque 34 é
+    quanta gente tem FICHA — nome, força, defesa e consequência depois da briga. Com 250
+    membros a cena abria 34 contra 18 quando o certo eram 63 contra 18. Escalação e
+    efetivo são duas coisas: `escalacao` é quem tem ficha, `bondes[].n` é quanta gente
+    está lá. A desvantagem numérica, quando existe, é resultado da decisão do jogador e
+    do que o olheiro apurou — ou não apurou — antes.
 14. **O feed é salvo e rola pra trás.** Save no dia 30 com **13 mensagens**, entre elas
     uma rajada de 4 no mesmo instante; recarregada a página e carregado o save, voltaram
     **as mesmas 13, idênticas linha a linha**, a rajada inteira presente e **13 nós na
@@ -2259,11 +2269,16 @@ ideologia" ou "Não dar moral".
   nada mais, então o dia do ano sai do hash do id. É inventado, mas é fixo: a mesma
   aliada faz aniversário sempre no mesmo dia, em todas as temporadas e em todas as
   partidas.
-- **Efetivo "equivalente" é o que cada lado de fato leva**, não número igual: 25% do
-  nosso efetivo contra 30% do deles, na regra que a cena do bar já usava.
-- **`vermelho` e `debandada` são o mesmo assunto** (`caixa`) na categoria 6. Com
-  assuntos separados eles se revezavam semana sim, semana não, e a categoria interna
-  virava "estamos quebrados" o ano inteiro — 27 mensagens numa temporada.
+- **Efetivo é o real de cada lado, e eles são diferentes**: 25% do nosso efetivo
+  contra 30% do deles, na regra que a cena do bar já usava. Nada é igualado.
+- **O alarme do caixa é o assunto `caixa` da categoria 6, e a debandada é
+  resultado (categoria 4).** Eles chegaram a dividir o assunto pra não se revezarem
+  semana sim, semana não enchendo a interna de "estamos quebrados" — e aí a linha
+  informativa consumia a carência de duas semanas e a DECISÃO que avisa antes da
+  debandada nunca saía: o jogador só era avisado depois de perder oito pessoas.
+  Separados por categoria, os dois convivem sem se atrapalhar. O alarme é também o
+  único assunto **urgente** da categoria: ele fura o teto de uma interna por semana,
+  porque rede de segurança que espera a vez não é rede de segurança.
 - **Mensagem que cede a vez pela regra 1 e nunca consegue sair é descartada no
   prazo** — 2 dias pra informativa, 6 pra ação, 21 pra decisão. Foi por isso que a
   contagem de descartes entrou no `resumo()`: silêncio por regra tem de ser contável.
@@ -2280,6 +2295,171 @@ marca, o bloco de quando, a faixa de ícones e as mensagens, **0 valores cortado
 **0 rolagem lateral**. A barra do feed quebra em três linhas no retrato (170 px) e em
 duas no paisagem (81 px); o nome da torcida ganha a linha inteira no estreito, porque
 com os números do lado ele virava "Ga…", que não é nome de coisa nenhuma.
+
+## 8.20 A notícia possível, com vencedor e com conta — e os indicadores das 138
+
+Três frentes que se encontram na mesma linha da tela: a notícia tem de poder ter
+acontecido, tem de dizer quem levou a melhor, e tem de mostrar o que moveu. E o que ela
+move nas outras torcidas tem de ser o mesmo que se move na nossa.
+
+### O bug que motivou tudo
+
+`paresPossiveis` varria o grafo de rivais e aliados e devolvia **todos os 4.425 pares
+do país**, sem filtro de praça nem de calendário. `diplomaciaDelas` sorteava três por
+semana entre eles, e daí saía *"Jovem Tricolor depredou o bar da Mancha Verde
+Juventude"*: clubes de divisões e regiões diferentes, que só poderiam se cruzar na Copa
+do Brasil — que começa em maio. Notícia de briga entre torcidas que não têm como se
+encontrar destrói a credibilidade do resto do feed.
+
+### Os dois portões
+
+Rivalidade declarada na fonte é **necessária e não é suficiente**: ela diz que se
+odeiam, não que se encontraram. Além dela, o par passa por um destes dois:
+
+| portão | condição | quando a notícia cai |
+|---|---|---|
+| **a) mesma praça** | as duas têm sede no mesmo mapa | dia aleatório da semana |
+| **b) jogo** | os clubes se enfrentam numa rodada | no dia do jogo ou no seguinte |
+
+**O portão (b) olha pra semana que VEM, não pra que acabou.** Isto roda no fechamento,
+e a rodada recém-simulada aconteceu em dias que já passaram: publicar a notícia dela
+seria publicar no passado, ou uma semana depois. A tabela da semana seguinte já existe
+— o placar é que não —, e a briga em volta do jogo não depende do placar. Assim a
+notícia cai no dia em que ela pertence.
+
+**O cache saiu de eterno pra semanal.** Era `if(!_pares) _pares = …`, uma vez na vida
+do módulo. Com o portão (b) o conjunto muda toda semana, e um cache eterno faria a
+correção não pegar: o comportamento antigo voltaria pela porta dos fundos, que é o pior
+jeito de um bug voltar — com o código novo escrito e sem efeito.
+
+### O vencedor, e a linha de consequência
+
+O texto era `{A} {verbo} {B}` e o resultado ficava implícito. Agora quem bate e quem
+apanha sai de `quemLevaAMelhor` — moral, ousadia e uma pitada de sorte — e o texto
+nomeia os dois. Os R$ 300 de quem bate e os R$ 900 de quem apanha são **debitados** e o
+que foi debitado fica guardado no `contas` da notícia: é por ele que se confere que o
+vencedor do texto é o mesmo lado que a conta beneficiou.
+
+E toda mensagem que move indicador ganha uma segunda linha:
+
+> *Relação entre ambos piora −7 · Tensão entre ambos aumenta +20 · Moral da Ultras do
+> ABC cai −1,2 · Prestígio da Máfia Vermelha sobe +0,5*
+
+**A linha sai dos efeitos que foram de fato aplicados, nunca de número escrito no
+texto.** Quem aplica devolve `{ind, delta, dono}` — `mover()` devolve o delta depois do
+`limitar`, `somar` é lido antes e depois — e `TO.feed.lerEfeito` monta a frase. Número
+escrito à mão no texto vira mentira de tela no dia em que a fórmula mudar, e mentira de
+tela é a coisa mais difícil de achar depois. **Mensagem que não move nada não tem
+linha**: "nenhum efeito" é ruído.
+
+A cor sai do significado, não do sinal: subir é bom em quase tudo, mas **tensão +15 é
+vermelho**, e **polícia −1 é vermelho** — o número é a folga que se tem com ela, não a
+quantidade de polícia em cima.
+
+### Os indicadores das 138
+
+Moral, prestígio e polícia passam a existir nas outras torcidas, na mesma escala 0–20
+do GDD §12, movidos pelos mesmos eventos que movem os nossos. **Satisfação fica de
+fora**, e é a exceção justificada: ela é do torcedor comum do CLUBE, não da organizada
+— existiria por clube (108) e não por torcida (140).
+
+**Nenhuma ficha individual foi criada.** A nossa moral é a média de gente com nome; a
+delas é o número agregado equivalente. Fichas pras 138 seriam dezenas de milhares de
+registros recalculados toda semana num laço que já se preocupa em rodar barato.
+
+E nenhum dos três é número morto — indicador que se move e não realimenta comportamento
+é decoração:
+
+| indicador | escrito em | **lido em** |
+|---|---|---|
+| moral | briga, investida, ataque, título/acesso/rebaixamento, caixa no vermelho | `tensao.js:601` (`animo`, a chance de procurar briga) e `tensao.js:613` (`quemLevaAMelhor`) |
+| prestígio | briga (proporcional ao de quem apanha), investida, ataque | `tensao.js:641` (quanto prestígio muda de mão) e `planejamento.js:823` (qual alvo a ideologia escolhe) |
+| polícia | toda briga e todo assalto; sobe com a ação social | `banida()` — lido em `ruas.js:796` (some do mapa), `tensao.js:578` (não gera notícia) e `tensao.js:748` (não vem pra cima da gente) |
+
+**A ação social entrou porque a simetria exigia.** A nossa polícia sobe com "Ação
+social no bairro" — R$ 2.000 por +1,5. A delas só descia: briga e assalto tiram, nada
+punha. Em vinte temporadas o país inteiro estaria banido em rodízio. Agora elas fazem a
+mesma ação, pelo mesmo preço e com o mesmo efeito, e quem procura menos briga procura
+mais a comunidade — o arquétipo divide a chance.
+
+### Os critérios, medidos no motor
+
+**Do noticiário** (5 temporadas com a Gaviões, 291 notícias, conferidas *na hora* — a
+tabela é remontada todo ano, e no fim de cinco temporadas as rodadas de 2026 não
+existem mais pra comparar; a primeira versão do teste media do save final e acusava 21
+notícias impossíveis que eram rodadas que ele não tinha mais como ver):
+
+1. **Zero notícias impossíveis em 291.** Dos **4.425 pares declarados no grafo**, ficam
+   elegíveis **261 por semana em média** (218 no mínimo, 330 no máximo) — **4.164
+   descartados por semana**.
+2. **Zero notícias fora da janela.** Toda notícia do portão (b) saiu no dia do jogo ou
+   no seguinte. Ela também **morre na janela**: `validoAte` é o dia seguinte ao jogo, e
+   sem isso a fila podia segurá-la — por cota ou pela regra da categoria em sequência —
+   e ela saía na segunda-feira contando uma briga que já tinha virado semana.
+3. **Nenhuma semana repetiu par**, em 259 semanas. Eram três `U.escolher` independentes
+   sem dedupe.
+4. **A lista elegível se refez em 231 das 258 viradas de semana.** As 27 que não mudaram
+   são semanas sem rodada nova — intervalo de competição, em que só o portão da praça
+   contribui e o conjunto é de fato o mesmo.
+5. **104 de 104 brigas com o vencedor certo**, em duas temporadas: em todas, quem o
+   texto nomeia primeiro é quem pagou **R$ 300**, o perdedor pagou **R$ 900**, a moral
+   que cai é a do perdedor e o prestígio que sobe é o do vencedor.
+6. **50 de 50 decisões respondidas com a linha batendo com o estado.** O teste fotografa
+   moral, prestígio, polícia, satisfação, caixa, tensão e relações antes e depois de
+   cada resposta e compara com a soma dos efeitos declarados: 0 divergências acima de
+   0,06.
+7. **28 das 107 mensagens de uma corrida têm linha; 79 não têm** — e as 79 são as que
+   não moveram nada.
+8. **`Polícia nossa aperta −1` sai em vermelho** e `afrouxa +1` em verde; `Tensão
+   aumenta +1` em vermelho e `diminui −1` em verde.
+
+**Da simetria** (5 temporadas, 138 torcidas):
+
+1. Numa briga entre duas IAs a perdedora perde moral e a vencedora ganha prestígio, e os
+   dois números aparecem na linha — o exemplo acima é uma delas.
+2. **A moral varia de verdade**: começa em 12 para todas (desvio 0) e termina em **média
+   12,29, desvio 4,55, de 0 a 20**, com quartis em 9,6 e 14,7.
+   Prestígio: **média 6,03, desvio 3,48, de 1,4 a 18,8**.
+   Polícia: **média 8,78, desvio 0,69, de 6,9 a 10** — ela oscila pouco porque as três
+   brigas por semana se espalham por 138 torcidas.
+3. Os três existem nas 138, todos dentro de 0–20 (**0 fora da escala**), e se movem
+   pelos mesmos eventos que movem os nossos.
+4. **O banimento funciona, e é raro.** Forçando a polícia de uma torcida da nossa praça
+   a zero na semana 5: ela é banida até a semana 9, fica com **0 bondes na rua** nas
+   semanas 7, 8 e 9, **não gera notícia nenhuma** enquanto está fora, e volta com bonde
+   na semana 10. Naturalmente, em 5 temporadas, **aconteceu 0 vez** — com três brigas
+   por semana espalhadas por 138 torcidas e a ação social devolvendo polícia, o
+   banimento é risco de cauda pra IA. Quem brinca com ele de verdade é o jogador, que
+   briga muito mais.
+5. **Moral baixa acua.** Nas mesmas 60 semanas, com todas as torcidas fixadas em moral
+   **4** saíram **43 brigas**; com todas em **18**, **77** — 1,8× mais. O fator é
+   `0,6 + (moral/20)·0,8`, de 0,6 acuada a 1,4 em alta.
+6. **Nenhuma ficha individual**: o registro de cada torcida tem 18 campos, todos
+   escalares ou listas de estrutura (bares, lojas, irmãs) — nenhuma lista de pessoas.
+7. **O custo não subiu de forma perceptível.** Com o cache de pares frio a cada semana —
+   que é o pior caso e o que exercita o código novo —, `passarSemana` das 138 passou de
+   **0,238 ms para 0,625 ms por semana**: 0,39 ms a mais, **20 ms por temporada**. Com o
+   cache quente as duas versões medem os mesmos 0,238 ms. A comparação é feita na mesma
+   página, com o mesmo save, carregando o módulo de `dc9acde` por cima do novo — duas
+   execuções separadas mediriam também o ruído da máquina.
+8. Os pontos de leitura estão na tabela acima, com arquivo e linha.
+
+### Desvios, escritos porque existem
+
+- **A notícia do portão (b) é escrita antes do jogo acontecer.** Os efeitos são
+  aplicados no fechamento da semana anterior, e a mensagem é publicada no dia da
+  partida. É ficção de um dia: o estado anda no domingo da semana anterior e a história
+  é contada no sábado seguinte. A alternativa — aplicar tudo no dia — exigiria que
+  `passarSemana` deixasse de ser a passada semanal única que ela é hoje.
+- **A linha de consequência ainda não cobre tudo.** Ela sai nas notícias entre IAs, nos
+  ataques contra nós, nas investidas, na debandada e em toda decisão respondida. O fecho
+  das cenas de briga (`fecharAtaque`, `fecharDefesa`, `fecharAssalto`, `fecharPressao`)
+  ainda escreve o resultado em texto e não devolve lista de efeitos — é o próximo pedaço
+  do mesmo trabalho, e os números que ele move já estão calculados lá dentro.
+- **A polícia da IA quase não desce.** O equilíbrio ficou em 8,8 de 20 porque a ação
+  social é generosa perto da frequência de briga. Se o banimento tiver de ser um risco
+  real pras 138, o botão é a condição `t.policia < 8` da ação social — baixá-la pra 6
+  desce o equilíbrio e deixa a cauda mais gorda.
 
 ## 9. Celular
 
