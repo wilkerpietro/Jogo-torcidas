@@ -429,8 +429,10 @@ TO.feed = (function(){
       }
       case 'gestao':  return {abrir:'gestao'};
       case 'painel':  return {abrir: d.pagina || b.pagina || 'inicio'};
-      case 'mapa':    return {abrir:'mapa'};
       case 'cena':    return {cena: d};
+      /* o único botão que resolve mundo em vez de abrir tela: a ida ao
+         estádio devolve ou um aviso de paz ou um encontro pra cena */
+      case 'ida':     return irProEstadio(E);
 
       /* a provocação: +1 de tensão de um lado, nada do outro */
       case 'tensao': {
@@ -554,7 +556,7 @@ TO.feed = (function(){
       fora.push({torcida:o, jogo, tensao:nossaTensao(E, o.id),
                  relacao:(E.relacoes||{})[o.id]});
     };
-    for(const j of TO.ruas.jogosDaPraca(E)){
+    for(const j of TO.praca.jogosDaPraca(E)){
       if(j.vis.mapa === E.torcida.mapa) continue;   // clássico local: não é caravana
       for(const o of M().torcidasDe(j.vis.id)) põe(o, j);
     }
@@ -586,7 +588,7 @@ TO.feed = (function(){
      por semana de jogo, dois dias antes.
      ======================================================= */
   function cat1(E){
-    const jogos = TO.ruas.jogosDaPraca(E);
+    const jogos = TO.praca.jogosDaPraca(E);
     if(!jogos.length) return;
     const primeiro = jogos.reduce((a,b)=>a.dia<=b.dia?a:b);
     if(E.data.dia !== Math.max(1, primeiro.dia - 2)) return;
@@ -609,7 +611,7 @@ TO.feed = (function(){
                          `Não sei quanto.`});
       /* c) onde vão dormir — a mesma conta que a rua usa pra decidir de
          qual sede o bonde deles sai na manhã do jogo */
-      const anf = TO.ruas.anfitriaoDe(E, TO.mapa.modelo(E), v.torcida);
+      const anf = TO.praca.anfitriaoDe(E, null, v.torcida);
       if(anf && anf.id !== E.torcida.id)
         linhas.push({txt:`A ${v.torcida.nome} chega ${diaRot(v.jogo.dia)} de manhã. `+
                          `Vão dormir na sede da ${anf.nome}.`});
@@ -690,7 +692,7 @@ TO.feed = (function(){
       texto = `${E.torcida.clube} joga fora ${diaRot(j.dia)}, contra o `+
               `${j.mandante.nome}. Quantos vão na caravana, e por qual estrada?`;
     } else {
-      const lista = TO.ruas.jogosDaPraca(E)
+      const lista = TO.praca.jogosDaPraca(E)
         .map(x=>`${x.casa.nome} × ${x.vis.nome}`);
       texto = `Vai ter ${lista.slice(0,2).join(' e ')} ${diaRot(diaJ)}. `+
               `Quer fazer alguma coisa?`;
@@ -730,9 +732,12 @@ TO.feed = (function(){
       return;
     }
 
-    /* b) o dia do nosso jogo: a rua é a tela, e o mapa abre daqui */
+    /* b) O DIA DO NOSSO JOGO. Esta é a mensagem que abre a ida — e o
+       botão dela não abre mais mapa nenhum: ele manda RESOLVER o
+       caminho do estádio. O que volta é um dos três desfechos, e dois
+       deles são cena de briga. */
     const j = nossoJogo(E);
-    const naPraca = TO.ruas.jogosDaPraca(E).some(x=>x.dia === E.data.dia);
+    const naPraca = TO.praca.jogosDaPraca(E).some(x=>x.dia === E.data.dia);
     if(j && (j.dia||6) === E.data.dia && naPraca){
       const p = PL().plano(E);
       const alvo = p.intencao === 'paz' ? null
@@ -741,33 +746,61 @@ TO.feed = (function(){
       propor(E, {cat:3, peso:'decisao', voz:vozRua(),
         chave:`c3jogo|${E.data.absoluto}`,
         texto: alvo
-          ? `Guerra estoura na praça no ${bairro} contra a ${alvo}!`
+          ? `Hoje tem ${j.mandante.nome} × ${j.visitante.nome} no `+
+            `${j.estadio}, e o plano é cima da ${alvo} no ${bairro}.`
           : `Hoje tem ${j.mandante.nome} × ${j.visitante.nome} no `+
             `${j.estadio}. A bateria sai da sede.`,
-        dados:{tipo:'mapa'},
-        botoes:[{rot: alvo ? 'Ir pra treta' : 'Ir pro estádio', efeito:'mapa'},
+        dados:{tipo:'ida'},
+        botoes:[{rot: alvo ? 'Ir pra treta' : 'Ir pro estádio', efeito:'ida'},
                 {rot:'Ficar em casa', efeito:'nada',
                  nota:'a torcida não sai — a moral cobra depois'}]});
     }
   }
 
-  /* c) dois bondes se encostaram na rua e um deles é nosso. Não é
-     produtor de dia: quem chama é a simulação da rua, no instante em
-     que o encontro acontece. */
-  function convocarEncontro(E, enc){
-    const nosso = enc.a.nossa ? enc.a : enc.b.nossa ? enc.b : null;
-    if(!nosso) return null;
-    const deles = nosso === enc.a ? enc.b : enc.a;
-    return propor(E, {cat:3, peso:'decisao', voz:vozRua(), tipo:'ruim',
-      chave:`c3enc|${E.data.absoluto}|${deles.nome}`,
-      texto:`Cercaram nosso pessoal ${enc.local === 'arredores'
-        ? 'nos arredores' : 'na rua'}: ${deles.n} da ${deles.nome} `+
-        `contra ${nosso.n} nossos. A PM tá vindo.`,
-      dados:{tipo:'encontro'},
-      botoes:[{rot:'Ir pra treta', efeito:'cena'},
-              {rot:'Mandar correr', efeito:'nada',
-               nota:'a rua resolve sozinha, e ninguém volta inteiro'}]});
+  /* A IDA RESOLVIDA.
+     O jogo não simula mais a caminhada: ele calcula de uma vez o que
+     aconteceu no caminho e devolve o desfecho. Chegar em paz é
+     informação e vira mensagem aqui mesmo; os outros dois são cena, e
+     quem abre a tela é a casca — este módulo não conhece canvas. */
+  function irProEstadio(E){
+    const r = TO.praca.resolverIda(E);
+    if(!r || r.desfecho === 'paz'){
+      propor(E, {cat:4, peso:'info', voz:vozRua(), chave:`ida|${E.data.absoluto}`,
+        texto: r && r.semNos
+          /* nosso clube não joga nesta praça hoje: quem viajou foi a
+             caravana, e o que pode acontecer com ela na estrada é a
+             emboscada, que tem caminho próprio */
+          ? 'A viagem foi tranquila. Ninguém fechou a pista, e a caravana '+
+            'chegou inteira.'
+          : 'A ida foi tranquila. Ninguém cruzou com ninguém no caminho, '+
+            'e a bateria entrou inteira.'});
+      return {aviso:'Chegamos em paz.', desfecho:'paz'};
+    }
+    const deles = r.enc.b;
+    const onde = r.onde || {};
+    /* a surpresa vira registro ANTES da cena: quando o jogador sair da
+       briga, o feed já tem a linha que explica por que ela existiu */
+    propor(E, {cat:4, peso:'info', voz:vozRua(), tipo:'ruim',
+      chave:`ida|${E.data.absoluto}`,
+      texto: r.desfecho === 'planejada'
+        ? `Fomos pra cima da ${deles.nome} ${ondeRot(onde)}: `+
+          `${r.enc.a.n} nossos contra ${deles.n} deles.`
+        : `${r.porQue === 'procuraram' ? `A ${deles.nome} veio nos procurar`
+                                       : `Demos de cara com a ${deles.nome}`} `+
+          `${ondeRot(onde)}: ${deles.n} deles contra ${r.enc.a.n} nossos.`});
+    return {encontro: r.enc, desfecho: r.desfecho, onde, porQue: r.porQue};
   }
+
+  const LOCAL_ROT = {rua:'numa rua de periferia',
+                     'rua-media':'numa rua de classe média',
+                     'rua-nobre':'numa rua de bairro nobre',
+                     praca:'na praça', bar:'no bar deles',
+                     arredores:'nos arredores do estádio'};
+  /* "no bairro X" e não "no X": nome de bairro tem gênero, o gênero não
+     está nos dados, e adivinhar dá "no Aldeota" e "dAldeota". */
+  const ondeRot = onde =>
+    (LOCAL_ROT[onde.local] || 'na rua') +
+    (onde.bairro ? `, no bairro ${onde.bairro}` : '');
 
   /* =======================================================
      PRODUTOR 4 — RESULTADO
@@ -809,7 +842,7 @@ TO.feed = (function(){
        competição a praça não tem rodada, e o feed tem de ficar quieto:
        inventar manchete pra tapar buraco é exatamente o que o item 7
        proíbe. */
-    const teve = (rel && rel.jogo) || TO.ruas.jogosDaPraca(E).length;
+    const teve = (rel && rel.jogo) || TO.praca.jogosDaPraca(E).length;
     let cota = teve ? 3 : 1;
     const espalhar = i => hoje + 1 + ((hash(ch+'|d'+i) % 6));
 
@@ -1064,7 +1097,7 @@ TO.feed = (function(){
     const delesB = M().bairroDaSede(o);
     /* jogo nosso ou deles em três dias */
     let jogoEm = null, diaJogo = '', estadio = '';
-    const jogosPraca = TO.ruas.jogosDaPraca(E);
+    const jogosPraca = TO.praca.jogosDaPraca(E);
     const contra = jogosPraca.find(x=>
       M().torcidasDe(x.vis.id).some(t=>t.id===o.id) ||
       M().torcidasDe(x.casa.id).some(t=>t.id===o.id));
@@ -1251,7 +1284,7 @@ TO.feed = (function(){
           lerEfeito, lerEfeitos,
           COTA_DIPLOMACIA_MES, CARENCIA_AMEACA, AMEACAS, ASSUNTOS,
           propor, publicar, responder, travado, decisaoAberta, semanaDaFundacao,
-          passarDia, fecharSemana, convocarEncontro, registrarConfronto,
+          passarDia, fecharSemana, irProEstadio, registrarConfronto,
           abrir, historico, resumo, expirada, contexto, perguntaAntes,
           feed, fila, ctl};
 })();

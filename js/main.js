@@ -191,7 +191,6 @@
     {id:'torcida',     rot:'Torcida',     ic:'torcida'},
     {id:'financeiro',  rot:'Financeiro',  ic:'dinheiro'},
     {id:'gestao',      rot:'Gestão',      ic:'conversa'},
-    {id:'mapa',        rot:'Mapa',        ic:'mapa'},
     {id:'calendario',  rot:'Calendário',  ic:'jornal'},
     {id:'competicoes', rot:'Competições', ic:'trofeu'},
     {id:'diplomacia',  rot:'Diplomacia',  ic:'diplomacia'},
@@ -200,8 +199,9 @@
     {id:'conquistas',  rot:'Conquistas',  ic:'medalha'},
     {id:'opcoes',      rot:'Opções',      ic:'halter'}
   ];
-  /* A TELA PRINCIPAL É O FEED. O mapa virou painel como os outros: ele
-     abre a partir de uma mensagem, e fechá-lo devolve o feed. */
+  /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
+     cidade foi descontinuado e o que ele fazia por simulação virou
+     resolução. Todo o resto é painel por cima do feed. */
   let pagina = 'feed';
 
   /* AS CHAVES DE OPÇÕES.
@@ -244,12 +244,13 @@
 
   /* A COLUNA DE ÍCONES DO MENU.
      Os mesmos itens do `NAV`, sem rótulo escrito e com o nome no
-     `title`, porque são doze e ícone mudo é adivinhação. Ela é montada
-     duas vezes — uma na barra do feed, outra dentro do mapa —, porque
-     as duas telas precisam de navegação e a lista é a mesma.
+     `title`, porque são onze e ícone mudo é adivinhação. Ela era montada
+     duas vezes, uma na barra do feed e outra dentro do mapa; com o mapa
+     fora, é uma só. O parâmetro fica porque a classe é o que a folha de
+     estilo usa pra posicionar a coluna.
      Clicar abre a página como painel; clicar de novo fecha. */
   function montarMenuIcones(classe){
-    const cx = el('div',{class: classe || 'mapa-menu'});
+    const cx = el('div',{class: classe || 'feed-menu'});
     for(const n of NAV){
       const b = el('button',{class:'mapa-ic', 'data-pag':n.id, html: IC.get(n.ic)});
       b.title = n.rot;
@@ -294,14 +295,13 @@
   /* =======================================================
      PAINÉIS
 
-     A tela principal é o feed. Tudo o mais — inclusive o mapa — é
-     painel por cima dele: painel é visita, não destino.
+     A tela principal é o feed. Tudo o mais é painel por cima dele:
+     painel é visita, não destino.
 
      PAINEL ABERTO PARA O TEMPO. O jogador está lendo uma tela de
      gestão, não jogando, e um dia por segundo correndo atrás de uma
-     tela opaca é o jogo andando escondido. O mapa é o único painel que
-     também LIGA o relógio da rua — porque ele é a tela do dia de jogo,
-     e é lá que os minutos correm.
+     tela opaca é o jogo andando escondido — então painel aberto para o
+     relógio, e fechá-lo devolve o dia de onde parou.
      ======================================================= */
   const LIMIAR_ESTREITO = 900;
   const estreito = () => innerWidth <= LIMIAR_ESTREITO;
@@ -311,14 +311,13 @@
     feed:pintarFeed,
     inicio:pintarInicio, torcida:pintarTorcida, financeiro:pintarFinanceiro,
     gestao:pintarGestao, calendario:pintarCalendario,
-    competicoes:pintarCompeticoes, diplomacia:pintarDiplomacia, mapa:pintarMapa,
+    competicoes:pintarCompeticoes, diplomacia:pintarDiplomacia,
     opcoes:pintarOpcoes, noticias:pintarNoticias
   };
   const pintarPagina = id => (PINTOR[id] || (()=>pintarPendente(id)))();
 
   function abrirPainel(id){
     if(id === 'feed'){ fecharPainel(); return; }
-    if(painel && painel !== id && painel === 'mapa') pausarDia('mapa');
     pausarTempo('painel');
     painel = id;
     fecharGaveta();
@@ -328,17 +327,13 @@
     pintarPagina(id);
     trocarPagina();
     montarAtalhos();
-    /* o mapa é a tela do dia de jogo: abrindo, a rua anda */
-    if(id === 'mapa') retomarDia('mapa');
   }
   function fecharPainel(){
     if(painel === null) return;
-    const era = painel;
     painel = null;
-    if(era === 'mapa') pausarDia('mapa');
     trocarPagina();
     montarAtalhos();
-    /* o tempo volta de onde parou: fechar o mapa devolve o feed sem
+    /* o tempo volta de onde parou: fechar o painel devolve o feed sem
        perder nem cobrar o tempo em que ele esteve aberto */
     retomarTempo('painel');
   }
@@ -527,7 +522,7 @@
       'gente saindo abre de qualquer jeito.');
     q.appendChild(el('div',{class:'linha-dado', html:
       '<span class="fraco">A velocidade do tempo — 1× ou 2× — fica na barra '+
-      'do feed, e vale também pro relógio da rua no mapa.</span>'}));
+      'do feed, e vale também pra cena de briga.</span>'}));
     pg.appendChild(q);
   }
 
@@ -558,15 +553,38 @@
 
     const barra = el('div',{class:'feed-barra'});
     noFeedTopo = el('div',{class:'feed-marca'});
+
+    /* O BLOCO DE DATA COM O ≫, no canto de cima à direita.
+       O ≫ tinha sido aposentado quando o tempo passou a correr sozinho
+       — não faz sentido "avançar o dia" num jogo em que o dia avança —,
+       e volta com outro papel: EMPURRAR o dia que está correndo, pra
+       quem não quer esperar o segundo passar. Ele respeita a única
+       trava que existe: decisão sem resposta não deixa o tempo andar,
+       nem sozinho nem no dedo. */
     noFeedQuando = el('div',{class:'feed-quando'});
+    const txtQuando = el('div',{class:'quando-txt'});
+    const bDia = el('button',{class:'mapa-ic', html:'<span class="rot">≫</span>'});
+    bDia.title = 'Empurrar o dia';
+    bDia.setAttribute('aria-label', 'Empurrar o dia');
+    bDia.onclick = ()=>{
+      const at = E(); if(!at) return;
+      if(TO.feed.travado(at)){
+        aviso('Responda o que está aberto — o tempo está parado.', 'ruim');
+        return;
+      }
+      passarUmDia(at);
+      pintarTopo(); atualizarFeed();
+    };
+    noFeedQuando.append(txtQuando, bDia);
+
     /* o 1×/2× que já existe controla a velocidade do dia — é o mesmo
-       botão da cena e do relógio da rua, uma velocidade só pro jogo */
+       botão da cena, uma velocidade só pro jogo */
     const bVel = el('button',{class:'mapa-ic', html:
       `<span class="rot">${TO.diaJogo.ponte.velocidade}×</span>`});
     bVel.title = `Velocidade do tempo — agora em ${TO.diaJogo.ponte.velocidade}×`;
     bVel.onclick = ()=>{ TO.diaJogo.ponte.alternarVelocidade(); redesenhar(); };
     if(TO.diaJogo.ponte.velocidade > 1) bVel.classList.add('aceso');
-    barra.append(noFeedTopo, noFeedQuando, bVel, montarMenuIcones('feed-menu'));
+    barra.append(noFeedTopo, noFeedQuando, bVel);
 
     const rolo = el('div',{class:'feed-rolo'});
     noFeedLista = el('div',{class:'feed-lista'});
@@ -578,7 +596,12 @@
       b.onclick = ()=>{ tetoFeed += TETO_LISTA; pintarFeed(); };
       rolo.appendChild(b);
     }
-    pg.append(barra, rolo);
+    /* a coluna de ícones é irmã do corpo, não filha da barra: ela é a
+       navegação inteira e vai da borda de cima à de baixo, do mesmo
+       jeito que ia dentro do mapa */
+    const corpo = el('div',{class:'feed-corpo'});
+    corpo.append(barra, rolo);
+    pg.append(montarMenuIcones('feed-menu'), corpo);
     atualizarFeed();
     pintarTopo();
   }
@@ -690,7 +713,11 @@
     if(!r.ok){ if(r.motivo) aviso(r.motivo, 'ruim'); atualizarFeed(); return; }
     if(r.aviso) aviso(r.aviso, '');
     atualizarFeed();
-    if(r.cena) abrirCenaDaMensagem(r.cena);
+    /* A IDA RESOLVIDA devolve o encontro pronto — dois bondes com o
+       efetivo real de cada lado e o lugar. A cena abre daqui, e o
+       jogador entra nela sem ter escolhido quando é surpresa. */
+    if(r.encontro) abrirConfronto(e, r.encontro);
+    else if(r.cena) abrirCenaDaMensagem(r.cena);
     else if(r.abrir) abrirPainel(r.abrir);
     else redesenhar();
     TO.estado.salvar();
@@ -706,14 +733,10 @@
       if(atq) abrirAtaqueAoBar(atq);
       return;
     }
-    if(d.tipo === 'encontro'){
-      const R = TO.ruas.estado(e);
-      if(R && R.encontro){ abrirPainel('mapa'); abrirConfronto(e, R.encontro); }
-      else abrirPainel('mapa');
-      return;
-    }
     if(d.cena){ abrirAcaoEmCena(d, d.efetivo); return; }
-    abrirPainel('mapa');
+    /* NENHUM BOTÃO ABRE MAPA. Ele não existe mais, e "não sei o que
+       fazer com isto" tem de ser barulho, não uma tela ao acaso. */
+    aviso('Essa mensagem não tem cena pra abrir.', 'ruim');
   }
 
   /* =======================================================
@@ -760,32 +783,24 @@
   /* =======================================================
      CABEÇALHO
      ======================================================= */
-  /* O CABEÇALHO VIROU HUD DO MAPA.
-     Era uma faixa de 56px acima de tudo; agora a data e o avançar ficam
-     no canto de cima à direita do mapa e o escudo, o nome e os números
-     na faixa de baixo. Os nós são criados por `pintarMapa` e guardados
-     aqui, do mesmo jeito que o relógio da rua — assim isto continua
-     sendo escrita de texto, e não remontagem de tela.
+  /* O CABEÇALHO É A BARRA DO FEED.
+     Era uma faixa de 56px acima de tudo; virou HUD do mapa e, com o
+     mapa fora, virou a barra do feed: a data e o ≫ no canto de cima à
+     direita, o escudo, o nome e os números na faixa da torcida. Os nós
+     são criados por `pintarFeed` e guardados aqui — assim isto continua
+     sendo escrita de texto, e não remontagem de tela, que é o que
+     permite escrever nela uma vez por dia sem a rolagem saltar.
 
      Membros e prestígio não foram pedidos em lugar nenhum, e sumir sem
-     destino não é opção: vão junto do saldo na faixa de baixo, que é
-     onde os três já eram lidos lado a lado. */
-  let noData = null, noRodape = null;
+     destino não é opção: vão junto do saldo na faixa, que é onde os três
+     já eram lidos lado a lado. */
   function pintarTopo(){
     const e = E();
     if(!e) return;
     const dt = TO.estado.dataTexto();
-    if(noData && noData.isConnected){
-      noData.querySelector('.dia').textContent = dt.curta;
-      noData.querySelector('.semana').textContent = dt.semana;
-    }
-
-    /* a barra do feed carrega as mesmas coisas que a faixa do mapa: quem
-       somos, quando estamos e os três números. Uma escrita só, dois
-       lugares — recalcular em cada um é a tela mentindo daqui a três
-       semanas. */
-    if(noFeedQuando && noFeedQuando.isConnected){
-      noFeedQuando.innerHTML =
+    const txtQuando = noFeedQuando && noFeedQuando.querySelector('.quando-txt');
+    if(txtQuando && txtQuando.isConnected){
+      txtQuando.innerHTML =
         `<b>${dt.semana}, ${dt.curta}</b>`+
         `<small>semana ${e.data.semana} de ${TO.competicoes.SEMANAS_ANO} · `+
         `${e.data.ano}${TO.feed.travado(e) ? ' · tempo parado' : ''}</small>`;
@@ -809,37 +824,6 @@
         `${Math.round(e.indicadores.prestigio*5)}</span>`;
     }
 
-    if(noRodape && noRodape.isConnected){
-      const [c1,c2] = e.torcida.cores;
-      const c = TO.membros.contar(e);
-      /* O SALDO DA SEMANA, ao lado do saldo em conta.
-         O número não é recalculado aqui: sai inteiro de
-         `TO.financeiro.resumoDaSemana`, que é receita menos despesa
-         menos o que a Gestão comprometeu — a mesma conta que a tela de
-         Financeiro mostra. Duas contas com os mesmos valores escritas
-         em dois lugares é a tela mentindo daqui a três semanas.
-
-         É PROJEÇÃO DA SEMANA CORRENTE, não resultado fechado: mexe na
-         hora em que o jogador decide uma caravana, e é isso que o torna
-         útil aqui. E mora no redesenho da faixa, não no laço por quadro
-         — `resumoDaSemana` chama `contas()` e `compromissos()`. */
-      const sem = (TO.financeiro.resumoDaSemana(e) || {}).saldo || 0;
-      const sinal = sem > 0 ? '+' : sem < 0 ? '−' : '';
-      noRodape.innerHTML =
-        `<span class="escudo" style="background:linear-gradient(135deg,${c1} 0 52%,${c2} 52% 100%)"
-           >${e.torcida.sigla}</span>` +
-        `<b>${e.torcida.nome}</b>` +
-        `<span class="praca">${e.torcida.cidade} · ${e.torcida.uf}</span>` +
-        `<span class="num${e.dinheiro<0?' negativo':''}">${IC.get('dinheiro')}` +
-        `${U.dinheiro(e.dinheiro)}</span>` +
-        `<span class="num semana ${sem>0?'sobra':sem<0?'falta':''}"` +
-        ` title="saldo desta semana: receita menos despesa menos o que a `+
-        `Gestão comprometeu">${sinal}${U.dinheiro(Math.abs(sem))}` +
-        `<em>/sem</em></span>` +
-        `<span class="num">${IC.get('membros')}${U.numero(c.total)}</span>` +
-        `<span class="num">${IC.get('estrela')}` +
-        `${Math.round(e.indicadores.prestigio*5)}</span>`;
-    }
   }
 
   /* =======================================================
@@ -3064,10 +3048,6 @@
      PÁGINAS AINDA POR FAZER
      ======================================================= */
   const PENDENTES = {
-    mapa:['Mapa da cidade',
-      'Os 348 bairros já estão nos dados, com zona, classe social e multiplicador. '+
-      'Falta o mapa em si — sede, subsedes, bares, lojas e território rival sobre '+
-      'o desenho da praça (GDD §19.3).'],
     whatsapp:['WhatsApp',
       'Conversas com a diretoria, aliados e contatos. É por aqui que o tutorial acontece (GDD §22.4).'],
     noticias:['Notícias', 'Mundo vivo: o que a imprensa e as outras torcidas andam falando.'],
@@ -3082,116 +3062,32 @@
   }
 
   /* =======================================================
-     MAPA DA CIDADE (GDD §13)
-     Uma superfície de canvas só, com os bairros da praça, os
-     doze quarteirões de cada um e os dez lotes de cada
-     quarteirão. O renderizador está em js/mundo/mapa.js; aqui
-     ficam só a moldura, os filtros e o zoom.
-     ======================================================= */
-  /* o zoom padrão sai do tamanho do mapa: a planta procedural tem 1000 de
-     lado e a arte tem 1254, e os dois têm de caber na mesma janela */
-  let zoomMapa = null;
-  let poeOlheiro = false;      // próximo clique no mapa posiciona o olheiro
-  let filtrosAbertos = false;  // "Pontos do mapa" começa recolhido
-  let relogioRua = null;
+     O TEMPO PARA POR MOTIVO, E O MOTIVO TEM NOME
 
-  /* =======================================================
-     O RELÓGIO DO MAPA ANDANDO NA TELA
+     Aqui moravam DOIS relógios e dois conjuntos de motivos: o do tempo,
+     que passa um dia por segundo no feed, e o da rua, que corria os
+     minutos dentro do mapa. Com o mapa descontinuado sobrou um só, e
+     com ele um conjunto só.
 
-     `rodarRelogio` redesenhava o canvas a cada quadro e só. O texto do
-     relógio mora num nó do DOM montado em `pintarMapa`, e nada o
-     tocava durante o laço: ele só se refazia quando `redesenhar()`
-     rodava — que é o que acontece quando o jogador aperta Pausar. Daí o
-     sintoma de o relógio ficar congelado até você parar o dia.
-
-     Aqui só se escreve `textContent` nos dois nós guardados. Chamar
-     `redesenhar()` por quadro seria a correção errada: ela recria o
-     canvas do mapa e o zoom e o arrasto vão junto.
-     ======================================================= */
-  let noRelogioRua = null, noInfoRua = null;
-  function pintarRelogioDaRua(e, R){
-    if(!noRelogioRua || !noRelogioRua.isConnected) return;
-    const jogos = TO.ruas.jogosDaPraca(e).filter(x=>x.dia === e.data.dia);
-    const falta = Math.max(0, (R.apito||0) - R.minuto);
-    const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
-    noRelogioRua.innerHTML =
-      `<b>${TO.ruas.relogio(R.minuto, e)}</b><small>${
-        !jogos.length ? (falta > 0 ? `${hhmm(falta)} de rua` : 'anoiteceu')
-        : falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`;
-    if(noInfoRua && noInfoRua.isConnected){
-      const pequeno = noInfoRua.querySelector('small');
-      if(pequeno) pequeno.textContent = resumoDaRua(e, R);
-    }
-  }
-  /* a linha de baixo: quem está na rua agora, com jogo ou sem */
-  function resumoDaRua(e, R){
-    const naRuaAgora = (R.andarilhos||[])
-      .filter(a=>!a.chegou && R.minuto >= a.saiEm).length;
-    const roubo = (R.recados||[]).find(r=>r.aberto && !r.fechado);
-    const andando = R.bondes.filter(b=>!b.chegou).length;
-    const vida = `${naRuaAgora} a pé na rua`
-      + (R.brigasDeRua ? ` · ${R.brigasDeRua} esbarrão${R.brigasDeRua>1?'ões':''}` : '')
-      + (roubo ? ` · assalto n${/^[AEIOU]/i.test(roubo.nome)?'':'o '}${roubo.nome}` : '');
-    return R.bondes.length
-      ? `${R.bondes.length} bondes na rua · ${andando} ainda a caminho · ${vida}`
-      : vida;
-  }
-
-  /* =======================================================
-     O DIA COMEÇA RODANDO, E PAUSA QUANDO TEM DE PAUSAR
-
-     Antes o jogador tinha de apertar play, e o relógio parava sozinho
-     em três lugares sem nunca religar: no encontro, ao avançar o dia e
-     ao fechar a cena. Agora ele nasce ligado — e por isso precisa de
-     motivos de pausa explícitos, guardados num conjunto:
+     `pausasT` é do relógio do tempo. Ele nasce correndo e para por:
 
      · `painel`  — o jogador está lendo uma tela de gestão, não jogando,
-                   e o `requestAnimationFrame` estaria desenhando o mapa
-                   inteiro atrás de uma tela opaca;
+                   e um dia por segundo correndo atrás de uma tela opaca
+                   é o jogo andando escondido;
      · `foco`    — aba sem foco congela o rAF sozinho; sem tratar isso
                    como pausa, o relógio SALTA quando a aba volta,
                    porque o primeiro quadro traz o tempo todo de fora;
      · `salvar`  — salvar no meio de um dia correndo pega o mundo pela
                    metade. O save não é bloqueado: ele pausa, salva e
                    devolve o dia de onde parou;
-     · `cena`    — a briga abriu por cima do mapa.
+     · `cena`    — a briga abriu por cima do feed.
 
-     Enquanto houver motivo o relógio não anda. Quando o último sai,
-     ele volta de onde parou — o `ultimo` do laço é zerado a cada
-     partida, então nenhum minuto é cobrado pelo tempo parado. */
-  /* DOIS RELÓGIOS, DOIS CONJUNTOS DE MOTIVOS.
-
-     `pausas` é do relógio DA RUA — os minutos que correm dentro do
-     mapa. Ele nasce parado, com o motivo `mapa`: sem o mapa aberto não
-     há rua pra ver, e o dia inteiro é simulado de uma vez pelo relógio
-     do tempo.
-
-     `pausasT` é do relógio DO TEMPO — os dias que passam sozinhos no
-     feed, um por segundo. Ele nasce correndo, e para por painel aberto,
-     aba sem foco, save, cena e decisão sem resposta.
-
-     Os motivos que valem pros dois — foco, salvar, cena — entram nos
-     dois conjuntos. Um relógio só não daria conta: no mapa aberto a rua
-     tem de andar e o calendário tem de ficar parado, que é exatamente o
-     par de estados que um conjunto único não sabe representar. */
-  const pausas  = new Set(['mapa']);
+     A decisão sem resposta NÃO entra aqui, e isso é cicatriz: ela já
+     entrou, um motivo ficou pra trás quando a resposta veio por um
+     caminho que não o removia, e o jogo congelou com a tela limpa. A
+     verdade da decisão é uma só e é `TO.feed.travado`.
+     ======================================================= */
   const pausasT = new Set();
-  function pausarDia(motivo){
-    pausas.add(motivo);
-    if(relogioRua){ cancelAnimationFrame(relogioRua); relogioRua = null; }
-  }
-  function retomarDia(motivo){
-    pausas.delete(motivo);
-    if(pausas.size) return;
-    const e = E(); if(!e) return;
-    const R = TO.ruas.estado(e);
-    /* religar depois do encontro, do avanço de dia e do fim da cena é
-       exatamente o que faltava: `R.rodando` virava false e ninguém o
-       punha de volta */
-    if(!R.rodando && R.minuto < (R.apito || 0) && !R.encontro) R.rodando = true;
-    if(R.rodando) rodarRelogio();
-  }
-  const diaPausado = () => pausas.size > 0;
 
   /* =======================================================
      O RELÓGIO DO TEMPO — UM DIA POR SEGUNDO
@@ -3256,804 +3152,24 @@
     relogioTempo = requestAnimationFrame(passo);
   }
 
-  /* UM DIA INTEIRO, sem tela.
-     A rua do dia que está acabando roda do primeiro minuto ao apito —
-     andarilho anda, assalto abre e fecha, viatura sai —, e só depois a
-     data vira. É o mesmo caminho do dia assistido no mapa; o que muda é
-     que não há quadro pra desenhar. Encontro entre bondes interrompe: a
-     rua para onde parou e a convocação vira mensagem de decisão. */
+  /* UM DIA INTEIRO.
+     Antes daqui saía a simulação da rua: seis mil tiques de um trigésimo
+     de minuto, bondes andando pela malha, andarilho, viatura. O que
+     sobrou é uma chamada — `TO.praca.passarDia` resolve o assalto do
+     calendário, se for hoje — e a virada da data. A ida ao estádio não
+     entra aqui de propósito: ela é resposta a um botão do feed, e o
+     jogador tem de estar olhando quando ela acontece. */
   function passarUmDia(e){
-    if(document.body.classList.contains('em-cena')) return;
-    const enc = simularDiaDaRua(e);
-    if(enc){
-      TO.feed.convocarEncontro(e, enc);
-      TO.feed.publicar(e);
-      if(TO.feed.travado(e)) return;
-      /* ninguém nosso no encontro: a rua resolve sozinha e o dia segue */
-      TO.ruas.resolver(e);
-    }
+    if(document.body.classList.contains('em-cena')) return null;
+    /* devolvido pra a bateria poder ler o que o dia produziu sem ter de
+       remontar a praça do lado de fora — medir outra coisa que não o que
+       o jogo fez é medir outro jogo */
+    const daPraca = TO.praca.passarDia(e);
     TO.estado.avancarDia();
     TO.feed.passarDia(e);
+    return daPraca;
   }
 
-  function rodarRelogio(){
-    if(relogioRua || pausas.size) return;
-    let ultimo = 0;
-    const passo = agora=>{
-      const e = E();
-      const R = e && TO.ruas.estado(e);
-      if(!e || !R || !R.rodando || pausas.size){ relogioRua = null; return; }
-      const dt = ultimo ? Math.min(0.1, (agora-ultimo)/1000) : 0;
-      ultimo = agora;
-      const mo = mapaAtual;
-      if(mo && dt){
-        /* dois minutos de rua por segundo de tela, a mesma velocidade o
-           dia inteiro: a manhã parada faz parte do dia. O 2× multiplica
-           só isto — `passo()` avança rota e relógio, e não tem física
-           pra perder resolução como a cena tem. */
-        TO.ruas.passo(e, mo, dt * 2 * TO.diaJogo.ponte.velocidade);
-        if(canvasMapa) { TO.mapa.desenhar(mo, canvasMapa);
-                         TO.ruas.desenhar(e, mo, canvasMapa.getContext('2d')); }
-        pintarRelogioDaRua(e, R);
-        if(R.encontro){ relogioRua = null; redesenhar(); return; }
-        /* o bonde comandado chegou no pino que o jogador apontou: a
-           cena é a investida que `acoes.js` já sabe montar, e a ação
-           da semana já foi cobrada na saída da sede */
-        if(R.noAlvo){
-          const b = R.noAlvo; R.noAlvo = null;
-          R.rodando = false; relogioRua = null;
-          const alvo = `${b.alvoFixo.torcidaId}|${b.alvoFixo.tipo}`;
-          const r = TO.acoes.porId('atacar').executar(e, {alvo});
-          if(r.ok && r.cena){ b.chegou = true; abrirAcaoEmCena(r.cena, b.n); }
-          else { aviso(r.msg || 'O alvo sumiu.', 'ruim'); redesenhar(); }
-          return;
-        }
-        /* o relógio para no apito, não quando o último bonde chega */
-        if(R.minuto >= (R.apito || 0)){ R.rodando = false; relogioRua = null;
-                                        redesenhar(); return; }
-      }
-      relogioRua = requestAnimationFrame(passo);
-    };
-    relogioRua = requestAnimationFrame(passo);
-  }
-  let mapaAtual = null, canvasMapa = null;
-
-  function pintarMapa(){
-    const e = E(), pg = U.$('.pagina[data-pag="mapa"]');
-    const MP = TO.mapa;
-    pg.innerHTML = '';
-    const cidade = TO.mundo.cidade(e.torcida.mapa);
-    if(!cidade || !(cidade.bairros||[]).length){
-      pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Mapa da cidade</h1>'}));
-      pg.appendChild(emConstrucao('Sem mapa',
-        'Esta praça não tem bairros catalogados.'));
-      return;
-    }
-    /* A PRAÇA VAI NO TÍTULO DA PÁGINA, e o cartão perde o cabeçalho.
-       Aqui morava um painel de conferência da época em que o mapa estava
-       sendo construído — tamanho, bairros, ruas, estádios, nossa sede,
-       população e o contador de pinos visíveis. Hoje o mapa é a tela
-       principal do jogo, e esses números comiam a primeira dobra dela;
-       no celular, comiam mais. O que não podia sumir é em qual das cinco
-       praças a gente está, e isso o título resolve com uma linha só. */
-    /* O TÍTULO DA PÁGINA SAIU. Ele era o nome da tela numa época em que
-       o mapa era uma das onze; agora o mapa é a tela, e o que ele dizia
-       — em qual praça estamos — está na faixa de baixo, junto do nome da
-       torcida. Eram quarenta pixels de moldura em cima do jogo. */
-
-    const mo = MP.modelo(e);
-    const q = el('div',{class:'quadro'});
-    q.corpo = el('div');
-    q.appendChild(q.corpo);
-
-    /* --- filtros ---
-       PONTOS DO MAPA, RECOLHIDO POR PADRÃO.
-       Este painel já morou por cima do mapa uma vez e foi pra margem
-       porque, com a arte no lugar da planta esquemática, o cartão
-       flutuante tapava bairro de verdade. Volta pra dentro do mapa, mas
-       fechado: aberto ele é uma coluna estreita, e escolher um tipo o
-       fecha de novo — o que ele tapa, tapa por dois segundos. */
-    const f = MP.filtros(e);
-    const filtros = el('div',{class:'mapa-filtros'});
-    if(!filtrosAbertos) filtros.classList.add('fechado');
-    const caixa = (chave, rot, cls)=>{
-      const l = el('label',{class:'mapa-filtro '+(cls||'')});
-      const i = el('input',{type:'checkbox'});
-      i.checked = !!f[chave];
-      i.onchange = ()=>{ f[chave] = i.checked; filtrosAbertos = false; redesenhar(); };
-      l.append(i, el('span',{texto:rot}));
-      return l;
-    };
-    const grupo = (rot, chaves)=>{
-      const todos = chaves.every(k=>f[k]);
-      const l = el('label',{class:'mapa-filtro grupo'});
-      const i = el('input',{type:'checkbox'});
-      i.checked = todos;
-      i.indeterminate = !todos && chaves.some(k=>f[k]);
-      i.onchange = ()=>{ for(const k of chaves) f[k] = i.checked;
-                         filtrosAbertos = false; redesenhar(); };
-      l.append(i, el('span',{texto:rot}));
-      return l;
-    };
-    const secao = (...filhos)=>{
-      const d = el('div',{class:'mapa-filtro-secao'});
-      for(const x of filhos) d.appendChild(x);
-      filtros.appendChild(d);
-    };
-    secao(caixa('estadios', 'Estádios', 'solo'));
-    secao(grupo('TORCIDAS', MP.TIPOS_TORCIDA),
-          caixa('sedes','Sedes','filho'), caixa('bares','Bares','filho'),
-          caixa('lojas','Lojas','filho'), caixa('subsedes','Subsedes','filho'));
-    const ROT_NEUTRO = {joalheria:'Joalheria', posto:'Posto de gasolina',
-      hospital:'Hospital', mercadinho:'Mercadinho', roupas:'Loja de roupas',
-      banco:'Banco'};
-    secao(grupo('DEMAIS LOCAIS', MP.TIPOS_NEUTRO),
-          ...MP.TIPOS_NEUTRO.map(t=>caixa(t, ROT_NEUTRO[t] || t, 'filho')));
-
-    /* --- o dia na rua: bondes, relógio, olheiro e o bonde comandado ---
-       A barra existe TODO DIA. Antes ela só valia em dia de jogo e o
-       resto do ano era uma frase morta ("cidade tranquila"); agora o
-       relógio corre sempre e num dia vazio o único bonde da rua é o que
-       o jogador mandar sair. */
-    const R = TO.ruas.montar(e, mo);
-    /* ELES MARCARAM ESTE DIA PRA VIR, e quem avisa é o feed. Aqui a cena
-       abria sozinha ao pintar o mapa; agora ela chega como mensagem de
-       convocação — "Invadiram nosso bar!" — e é o botão dela que desce
-       pra lá. Abrir a briga por baixo do jogador ao entrar numa tela é
-       exatamente o que a virada tirou do jogo. */
-    const barraRua = el('div',{class:'rua-barra'});
-    /* a faixa de ícones do mapa: montada aqui, pendurada no palco */
-    const iconesMapa = el('div',{class:'mapa-icones'});
-    {
-      const jogos = TO.ruas.jogosDaPraca(e).filter(x=>x.dia === e.data.dia);
-      const andando = R.bondes.filter(b=>!b.chegou).length;
-      const falta = Math.max(0, (R.apito||0) - R.minuto);
-      const hhmm = m => `${Math.floor(m/60)}h${String(Math.round(m%60)).padStart(2,'0')}`;
-      const meu = TO.ruas.nossoBonde(e);
-      const nossos = TO.ruas.nossosNaRua(e);
-      /* guardado pra o laço do relógio poder escrever nele sem
-         remontar a página inteira — ver `pintarRelogioDaRua` */
-      noRelogioRua = el('div',{class:'rua-relogio', html:
-        `<b>${TO.ruas.relogio(R.minuto, e)}</b><small>${
-          !jogos.length ? (falta > 0 ? `${hhmm(falta)} de rua` : 'anoiteceu')
-          : falta > 0 ? `${hhmm(falta)} pro apito` : 'bola rolando'}</small>`});
-      /* o relógio não entra mais na barra: ele é HUD do mapa, no canto de
-         cima à esquerda, e vai pro palco lá embaixo. A REFERÊNCIA é a
-         mesma, então `pintarRelogioDaRua` continua escrevendo nele a cada
-         quadro sem passar por `redesenhar()` — mudar de lugar na tela não
-         pode devolver o relógio congelado que o item G.4 consertou. */
-      /* a cidade em volta, que existe com jogo e sem: quem está na rua
-         a pé agora, e o assalto em curso, se houver */
-      const naRuaAgora = (R.andarilhos||[])
-        .filter(a=>!a.chegou && R.minuto >= a.saiEm).length;
-      const roubo = (R.recados||[]).find(r=>r.aberto && !r.fechado);
-      const vida = `${naRuaAgora} a pé na rua`
-        + (R.brigasDeRua ? ` · ${R.brigasDeRua} esbarrão${R.brigasDeRua>1?'ões':''}` : '')
-        + (roubo ? ` · assalto n${/^[AEIOU]/i.test(roubo.nome)?'':'o '}${roubo.nome}` : '');
-      noInfoRua = el('div',{class:'rua-info', html: jogos.length
-        ? `<b>${jogos.map(x=>`${x.casa.nome} × ${x.vis.nome}`).join(' · ')}</b>
-           <small>${R.bondes.length} bondes na rua · ${andando} ainda a caminho ·
-           ${vida}</small>`
-        : `<b>${roubo ? 'Assalto em andamento' : 'Dia comum na praça'}</b>
-           <small>${meu ? `seu bonde de ${meu.n} está na rua · ` : ''}${vida}</small>`});
-      barraRua.appendChild(noInfoRua);
-
-      /* PEGAR O BONDE. Qualquer bonde nosso que esteja na rua serve, e em
-         dia de jogo já tem um lá — o disco que está indo pro estádio. Com
-         mais de um, o botão passa de um pro outro. */
-      let btP = null;
-      if(nossos.length){
-        const i = nossos.findIndex(b=>b.id === R.selecionado);
-        const proximo = nossos[(i + 1) % nossos.length];
-        btP = el('button',{class:'bt' + (meu ? ' destaque' : ''),
-          texto: !meu ? `Pegar o bonde${nossos.length>1?` (${nossos.length})`:''}`
-               : nossos.length > 1 ? `Passar pro próximo (${nossos.length})`
-                                   : 'Largar o bonde'});
-        btP.title = meu
-          ? 'Clique num ponto do mapa pra mandar, ou dirija com WASD.'
-          : 'Selecionar pra mandar por clique ou dirigir com WASD.';
-        btP.onclick = ()=>{
-          R.selecionado = (meu && nossos.length === 1) ? null : proximo.id;
-          aviso(R.selecionado
-            ? `${proximo.sigla} — clique num ponto do mapa pra mandar, `+
-              `ou dirija com WASD.`
-            : 'Bonde solto.', 'boa');
-          redesenhar();
-        };
-      }
-
-      /* OS QUATRO CONTROLES VIRARAM ÍCONE, numa faixa colada na borda de
-         cima do mapa. Regras que valem pros quatro:
-         · o desenho vem de `IC.get`, em vetor, como os do resto do jogo;
-         · todo um tem `title`, porque ícone sem rótulo é adivinhação — e
-           o title carrega exatamente o que o botão dizia antes, motivo
-           de travamento incluído;
-         · quem tem estado mostra o estado DE AGORA, não o próximo. */
-      const chip = (icone, rot, opc)=>{
-        const o = opc || {};
-        const b = el('button',{class:'mapa-ic'
-          + (o.aceso ? ' aceso' : '') + (o.alerta ? ' alerta' : '')});
-        if(o.texto) b.innerHTML = `<span class="rot">${o.texto}</span>`;
-        else b.innerHTML = IC.get(icone);
-        b.title = rot;
-        b.setAttribute('aria-label', rot);
-        if(o.travado) b.disabled = true;
-        if(o.aoClicar) b.onclick = o.aoClicar;
-        return b;
-      };
-
-      /* SAIR DA SEDE. Custa uma ação da semana, e quando não dá o ícone
-         diz por quê no title — antes o motivo ia no próprio rótulo do
-         botão, e sem rótulo é o title que tem de carregá-lo. */
-      let icS;
-      if(TO.ruas.bondeComandado(e)){
-        icS = chip('saida', 'Bonde já está na rua — um bonde comandado por vez.',
-                   {travado:true});
-      } else {
-        const rest = TO.acoes.restantes(e);
-        const aptos = TO.membros.aptosParaOEstadio(e).length;
-        const porque = rest <= 0 ? 'Não sobrou ação esta semana'
-                     : aptos < TO.acoes.MINIMO_SAIDA
-                       ? `Gente apta de menos (${aptos} de ${TO.acoes.MINIMO_SAIDA})`
-                       : null;
-        icS = chip('saida', porque ? `Sair da sede — ${porque.toLowerCase()}`
-                                   : 'Sair da sede — gasta uma ação da semana',
-          {travado: !!porque, aoClicar: ()=>abrirSaidaDaSede(e, mo)});
-      }
-
-      /* dá pra rodar o dia enquanto ele não acabou, com bonde ou sem:
-         num dia comum o que anda é a cidade — os andarilhos, a viatura,
-         o assalto do calendário */
-      const acabou = !R.encontro && R.minuto >= (R.apito || 0);
-      const icR = chip(R.encontro ? 'raio' : R.rodando ? 'pausa' : 'play',
-        R.encontro ? 'Confronto! — abrir a briga'
-        : acabou   ? 'O dia acabou'
-        : R.rodando ? 'Pausar o dia' : 'Rodar o dia',
-        {alerta: !!R.encontro, travado: acabou, aoClicar: ()=>{
-          if(R.encontro){ abrirConfronto(e, R.encontro); return; }
-          R.rodando = !R.rodando;
-          redesenhar();
-          if(R.rodando) rodarRelogio();
-        }});
-
-      /* o mesmo 1×/2× da cena: uma velocidade só pro jogo inteiro, pra
-         não ter que reescolher a cada tela. Este escreve o número em vez
-         de desenhar: velocidade não tem ícone que se leia sem legenda. */
-      const vel = TO.diaJogo.ponte.velocidade;
-      const icV = chip(null, `Velocidade do relógio — agora em ${vel}×`,
-        {texto: vel + '×', aceso: vel > 1,
-         aoClicar: ()=>{ TO.diaJogo.ponte.alternarVelocidade(); redesenhar(); }});
-
-      const icO = chip('olho',
-        R.olheiro ? 'Tirar o olheiro'
-        : poeOlheiro ? 'Clique num ponto do mapa pra pôr o olheiro'
-        : 'Pôr olheiro',
-        {aceso: !!R.olheiro || poeOlheiro, aoClicar: ()=>{
-          if(R.olheiro){ TO.ruas.porOlheiro(e, null); poeOlheiro = false; }
-          else poeOlheiro = !poeOlheiro;
-          redesenhar();
-        }});
-
-      iconesMapa.append(icR, icV, icO, icS);
-      if(btP) barraRua.appendChild(btP);
-    }
-    q.corpo.appendChild(barraRua);
-
-    /* --- superfície --- */
-    const LADO = mo.tam;
-    /* O ZOOM PADRÃO ENCHE O VISOR. Eram 760px fixos, de quando o mapa
-       era um cartão no meio de uma página; agora ele é a tela, e abrir
-       com fundo vazio em volta da planta seria a tela do jogo com moldura
-       de nada. Pega a maior das duas dimensões pra não sobrar borda. */
-    if(zoomMapa == null){
-      const alvo = Math.max(innerWidth - 40, innerHeight - 120, 620);
-      zoomMapa = Math.max(0.4, Math.min(2, Math.round((alvo / LADO) * 20) / 20));
-    }
-    const viewport = el('div',{class:'mapa-viewport'});
-    const casca = el('div',{class:'mapa-casca',
-      estilo:{width:(LADO*zoomMapa)+'px', height:(LADO*zoomMapa)+'px'}});
-    const cv = el('canvas',{class:'mapa-canvas',
-      estilo:{width:(LADO*zoomMapa)+'px', height:(LADO*zoomMapa)+'px'}});
-    const dica = el('div',{class:'mapa-dica'});
-
-    const zoom = el('div',{class:'mapa-zoom'});
-    const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
-    bMenos.disabled = zoomMapa <= 0.4; bMais.disabled = zoomMapa >= 2;
-    bMenos.onclick = ()=>{ zoomMapa = Math.max(0.4, zoomMapa-0.15); redesenhar(); };
-    bMais.onclick  = ()=>{ zoomMapa = Math.min(2,   zoomMapa+0.15); redesenhar(); };
-    zoom.append(bMenos, el('span',{texto:Math.round(zoomMapa*100)+'%'}), bMais);
-
-    /* "Baixar planta (PNG)" saiu da tela do jogador. A função continua:
-       `TO.mapa.paraImagem` / `TO.mapa.baixarImagem` é ferramenta de autor
-       — foi ela que gerou as `planta-*-2048.png` que viraram base das
-       artes —, e dá pra chamar pelo console quando for preciso outra. */
-
-    /* O ZOOM SAIU DE DENTRO DA CASCA e virou HUD junto da data.
-       Ele estava preso ao canto da PLANTA, não da tela: com o mapa maior
-       que o visor — que agora é o caso normal, porque o mapa é a tela
-       inteira — o canto de cima à direita da planta fica fora da vista e
-       o zoom ia junto. Continua sendo o mesmo controle, com os mesmos
-       botões; mudou de âncora, não de função. */
-    casca.append(cv, dica);
-    viewport.append(casca);
-    /* a esplanada é a do NOSSO jogo: sem bonde nosso na rua, o nosso
-       clube não joga nesta praça hoje e não há esplanada pra mostrar */
-    if(TO.ruas.nossoJogo(R) != null) viewport.appendChild(miniArredores(e, R));
-
-    /* O PALCO: o mapa é a tela principal, então o que manda nele fica
-       POR CIMA dele e não antes dele. O `viewport` continua sendo quem
-       rola e quem arrasta; a HUD é irmã dele, presa no palco, então não
-       anda junto com o mapa arrastado. */
-    const palco = el('div',{class:'mapa-palco'});
-    const hud = el('div',{class:'mapa-hud'});
-    /* A PILHA DA ESQUERDA: zoom, o recolhível dos pontos e a coluna do
-       menu. O relógio saiu daqui — hora e data são a mesma informação em
-       duas escalas, e separadas nos dois cantos de cima o olho tinha de
-       atravessar a tela pra saber quando está. */
-    const canto = el('div',{class:'mapa-canto'});
-    canto.appendChild(zoom);
-
-    /* O BLOCO DE QUANDO, no canto de cima à direita: relógio em cima,
-       data e dia da semana embaixo, uma moldura só. O nó do relógio é o
-       mesmo de sempre, então `pintarRelogioDaRua` continua escrevendo
-       nele a cada quadro sem passar por `redesenhar()`.
-
-       O ≫ DE AVANÇAR O DIA SAIU. Ninguém avança dia manualmente: o
-       tempo corre sozinho no feed, um dia por segundo, e enquanto o
-       mapa está aberto o calendário fica parado de propósito — o que
-       anda aqui são os minutos da rua, até o apito. */
-    noData = el('div',{class:'mapa-quando'});
-    const datas = el('div',{class:'mapa-data', html:
-      '<div class="dia">—</div><div class="semana">—</div>'});
-    const btVolta = el('button',{class:'mapa-ic', html: IC.get('saida')});
-    btVolta.title = 'Voltar pro feed';
-    btVolta.setAttribute('aria-label','Voltar pro feed');
-    btVolta.onclick = fecharPainel;
-    noData.append(noRelogioRua, el('div',{class:'mapa-quando-baixo'}));
-    noData.lastChild.append(datas, btVolta);
-
-    /* A FAIXA DE BAIXO: escudo, nome e os três números. */
-    noRodape = el('div',{class:'mapa-rodape'});
-    /* "Pontos do mapa": o botão fica logo abaixo do relógio e abre a
-       lista; escolher um tipo fecha de novo */
-    const btF = el('button',{class:'mapa-ic largo'
-      + (filtrosAbertos ? ' aceso' : '')});
-    btF.innerHTML = IC.get('camadas') + '<span class="rot">Pontos do mapa</span>';
-    btF.title = 'Pontos do mapa — escolher o que aparece';
-    btF.onclick = ()=>{ filtrosAbertos = !filtrosAbertos; redesenhar(); };
-    /* o recolhível abre PRA DIREITA, sobre o mapa: aberto pra baixo ele
-       cobriria a coluna do menu, que mora logo abaixo dele */
-    const linhaF = el('div',{class:'mapa-linha-filtros'});
-    linhaF.append(btF, filtros);
-    canto.appendChild(linhaF);
-    /* A COLUNA DO MENU, na borda esquerda, embaixo do zoom e do
-       recolhível — em qualquer largura, celular incluído. Onze ícones
-       empilhados não cabem nos 390px de um celular deitado, então ela
-       quebra em duas colunas quando a altura aperta (ver `.mapa-menu`,
-       que é `column wrap`): quem manda é a altura disponível, não a
-       largura da tela. */
-    canto.appendChild(montarMenuIcones('mapa-menu'));
-    hud.append(iconesMapa, canto, noData, noRodape);
-    palco.append(viewport, hud);
-    q.corpo.appendChild(palco);
-    pg.appendChild(q);
-
-    /* A HUD SE ENCAIXA NO MAPA VISÍVEL, não no quadro.
-       Com zoom baixo a planta é mais estreita que o visor e sobra fundo
-       dos dois lados; grudar a HUD no canto do quadro punha o relógio
-       "dentro do mapa" boiando no vazio, longe da cidade. O que vale é a
-       interseção entre o visor e a planta — que muda com o zoom, com o
-       arrasto e com a janela, então é recalculada nos três. */
-    const encaixarHud = ()=>{
-      if(!palco.isConnected) return;
-      const p = palco.getBoundingClientRect(), v = viewport.getBoundingClientRect();
-      const c = casca.getBoundingClientRect();
-      let l = Math.max(v.left, c.left),   r = Math.min(v.right,  c.right);
-      let t = Math.max(v.top,  c.top),    f = Math.min(v.bottom, c.bottom);
-      /* e também na tela. No celular deitado o mapa é mais alto que os
-         390px e quem rola é a PÁGINA: sem esta conta a faixa de ícones
-         sobe junto com o mapa e some atrás do `#topo`, que é grudento.
-         Cortando pela janela, a HUD encosta embaixo da barra de cima e
-         fica onde a mão alcança enquanto a cidade desliza por trás. */
-      const topo = document.getElementById('topo');
-      const teto = topo && getComputedStyle(topo).position === 'sticky'
-                 ? topo.getBoundingClientRect().bottom : 0;
-      /* nunca acima da barra de cima, nunca acima da tela: no celular
-         deitado a barra some junto com a página, e sem o zero a faixa de
-         ícones sairia da tela com ela. Quando o mapa inteiro passa por
-         cima, a altura vira zero e o `overflow:hidden` da HUD some com
-         tudo — ícone pendurado num mapa que não está mais ali seria pior
-         do que ícone nenhum. */
-      t = Math.max(t, teto, 0); f = Math.min(f, innerHeight);
-      l = Math.max(l, 0);    r = Math.min(r, innerWidth);
-      hud.style.left   = (l - p.left) + 'px';
-      hud.style.top    = (t - p.top)  + 'px';
-      hud.style.width  = Math.max(0, r - l) + 'px';
-      hud.style.height = Math.max(0, f - t) + 'px';
-    };
-    /* em captura, no documento: quem rola varia com a largura da tela —
-       o visor do mapa no desktop, a página no celular deitado — e evento
-       de rolagem não sobe sozinho */
-    addEventListener('scroll', encaixarHud, {capture:true, passive:true});
-    addEventListener('resize', encaixarHud);
-
-    /* a data e a faixa de baixo são escritas depois que a HUD existe:
-       `redesenhar` chama `pintarTopo` ANTES de pintar a página, e na
-       primeira pintura os nós ainda não estavam no documento */
-    pintarTopo();
-
-    /* o canvas só existe depois de entrar no documento */
-    requestAnimationFrame(()=>{ ligarMapa(cv, dica, mo); encaixarHud(); });
-  }
-
-  /* =======================================================
-     O MINIMAPA DOS ARREDORES
-     Roda em paralelo ao mapa da cidade: quando um bonde entra
-     no quarteirão do estádio ele some de lá e aparece aqui,
-     no portão do lado dele. É a antessala da cena de
-     arredores — quando o jogador manda entrar, é esta gente
-     que vai pro palco.
-     ======================================================= */
-  function miniArredores(e, R){
-    const cx = el('div',{class:'mini-arredores'});
-    const dentro = TO.ruas.naEsplanada(R);
-    cx.appendChild(el('div',{class:'mini-cab', html:
-      `<b>Arredores do estádio</b><small>${dentro.length ?
-        `${dentro.length} ${dentro.length===1?'bonde':'bondes'} na esplanada` :
-        'ninguém chegou ainda'}</small>`}));
-
-    /* a esplanada em C do GDD §15.1, de cima: o quarteirão do estádio no
-       meio e as duas entradas de cada lado do cordão */
-    const palco = el('div',{class:'mini-palco'});
-    palco.appendChild(el('div',{class:'mini-campo', texto:'ESTÁDIO'}));
-    palco.appendChild(el('div',{class:'mini-cordao'}));
-    for(const lado of ['mandante','visitante']){
-      const faixa = el('div',{class:'mini-lado '+lado});
-      const meus = dentro.filter(x=>x.lado === lado);
-      for(const x of meus){
-        const d = el('i',{class:'mini-disco'+((x.nossa||x.doJogador)?' nosso':'')});
-        d.style.background = x.cor;
-        d.style.width = d.style.height =
-          U.limitar(10 + Math.sqrt(x.n)*1.4, 12, 30) + 'px';
-        d.title = `${x.nome} · ${x.n} · chegou ${TO.ruas.relogio(x.entrouEm, e)}`
-                + (x.escolta ? ` · ${x.escolta.n} da ${x.escolta.nome} na escolta` : '')
-                + (x.doJogador && !x.nossa ? ' · sob o seu comando' : '');
-        faixa.appendChild(d);
-      }
-      if(!meus.length) faixa.appendChild(el('span',{class:'mini-vazio',
-        texto: lado === 'mandante' ? 'lado de casa' : 'setor visitante'}));
-      palco.appendChild(faixa);
-    }
-    cx.appendChild(palco);
-
-    /* Bonde nosso na esplanada: dá pra entrar, mesmo com os outros ainda
-       na rua. Aliado que a gente escoltou conta como nosso. */
-    const nosso = dentro.some(x=>x.nossa || x.doJogador);
-    const faltam = (R.bondes||[]).filter(b=>!b.chegou && b.jogo === TO.ruas.nossoJogo(R)).length;
-    const jaFoi = (R.arredores||[]).some(a=>a.entrou && (a.nossa || a.doJogador));
-    const bt = el('button',{class:'bt'+(nosso?' destaque':''),
-      texto: jaFoi ? 'Seu bonde já entrou'
-                   : nosso ? (faltam ? `Entrar nos arredores (${faltam} ainda vindo)`
-                                     : 'Entrar nos arredores')
-                           : 'Seu bonde ainda está na rua'});
-    bt.disabled = !nosso;
-    bt.onclick = ()=>irParaOsArredores(e, R);
-    cx.appendChild(bt);
-    return cx;
-  }
-
-  /* Da esplanada em miniatura pro palco: quem está no minimapa é quem
-     entra na cena, com o efetivo que sobrou da caminhada.
-
-     Basta o NOSSO bonde estar lá. Se três de seis chegaram e um é o
-     nosso, a briga é com esses três — os outros ainda estão na rua e é
-     assim que funciona: quem chega primeiro é quem está lá quando
-     estoura. Ao voltar da cena o relógio da rua continua de onde parou. */
-  function irParaOsArredores(e, R){
-    const naCena = TO.ruas.naEsplanada(R);
-    const dentro = naCena.filter(x=>x.doJogador || x.nossa);
-    const meu = dentro.reduce((s,x)=>s+x.n, 0) || 1;
-    const aptos = TO.membros.aptosParaOEstadio(e)
-      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
-      .slice(0, U.limitar(meu, 2, 34));
-    if(aptos.length < 2){ aviso('Não sobrou gente de pé pra entrar.','ruim'); return; }
-    R.rodando = false;
-    $('telaDiaJogo').classList.remove('oculto');
-    document.body.classList.add('em-cena');
-    TO.estado.bloquear(true);
-    pararTudo('cena');
-    const p = TO.planejamento.plano(e);
-    /* quem chegou na esplanada entra na cena com o efetivo que sobrou da
-       caminhada e a cor da própria torcida. `nossa` aqui é "o jogador
-       comanda": o aliado que a gente escoltou anda com a gente. */
-    const bondes = naCena.map(x=>({lado:x.lado, n:x.n, cor:x.cor, cor2:x.cor2,
-                                   sigla:x.sigla,
-                                   nome:x.nome, nossa: !!(x.nossa || x.doJogador)}));
-    /* quem desce pro palco já não volta pro minimapa */
-    TO.ruas.marcarQueEntraram(R, naCena);
-    TO.diaJogo.ponte.montar({
-      canvas: $('djPrincipal'),
-      config: { escalacao: aptos, intencao: p.intencao, bombas: p.bombas,
-                tensao: tensaoDaNoite(), bondes },
-      /* O RELÓGIO DA RUA NÃO PARA PORQUE A BRIGA COMEÇOU. Os bondes que
-         ainda estavam andando continuam a viagem, e quem chega na
-         esplanada com o tumulto em curso entra nele. Dois minutos de rua
-         por segundo de tela, a mesma velocidade do mapa. */
-      aCadaQuadro: (dt)=>{
-        const mo = mapaAtual || TO.mapa.modelo(e);
-        TO.ruas.passo(e, mo, dt*2);
-        const novos = TO.ruas.naEsplanada(R);
-        if(!novos.length) return [];
-        TO.ruas.marcarQueEntraram(R, novos);
-        return novos.map(x=>({lado:x.lado, n:x.n, cor:x.cor, cor2:x.cor2,
-                              sigla:x.sigla,
-                              nome:x.nome, nossa: !!(x.nossa || x.doJogador)}));
-      },
-      aoTerminar: fecharDiaDeJogo
-    });
-  }
-
-  function ligarMapa(cv, dica, mo){
-    const MP = TO.mapa;
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    cv._dpr = dpr;
-    cv.width  = Math.round(mo.tam * dpr);
-    cv.height = Math.round(mo.tam * dpr);
-    mapaAtual = mo; canvasMapa = cv;
-    const pintar = ()=>{ MP.desenhar(mo, cv);
-                         TO.ruas.desenhar(E(), mo, cv.getContext('2d')); };
-    /* a arte da cidade chega depois do primeiro quadro */
-    MP.aoCarregarArte(()=>{ if(canvasMapa === cv) pintar(); });
-    pintar();
-
-    const ponto = ev=>{
-      const r = cv.getBoundingClientRect();
-      return {x:(ev.clientX - r.left) * (mo.tam / r.width),
-              y:(ev.clientY - r.top)  * (mo.tam / r.height)};
-    };
-    cv.onmousemove = ev=>{
-      const p = ponto(ev);
-      let a = MP.alvoEm(mo, p.x, p.y);
-      if(!a && mo.arte){
-        /* fora de um pino, o que interessa é em que bairro o dedo está */
-        const b = MP.bairroEm(mo, p.x, p.y);
-        if(b) a = {x:p.x-14, y:p.y-14, w:28, h:28, tipo:'bairro', bairro:b,
-                   info:`${b.nome} · ${b.zona} · ${b.classe}`+
-                        (MP.andavelEm(mo,p.x,p.y) ? ' · rua' : '')};
-      }
-      if((a && a.info) !== (mo.sob && mo.sob.info)
-         || (a && mo.sob && (a.x !== mo.sob.x || a.y !== mo.sob.y))){
-        mo.sob = a;
-        cv.style.cursor = a ? 'pointer' : 'default';
-        pintar();
-      }
-      if(!dica || !mo.sob){ dica.classList.remove('on'); return; }
-      const casca = cv.parentElement.getBoundingClientRect();
-      dica.textContent = mo.sob.info;
-      dica.style.left = (ev.clientX - casca.left + 16) + 'px';
-      dica.style.top  = (ev.clientY - casca.top  + 16) + 'px';
-      dica.classList.add('on');
-    };
-    cv.onmouseleave = ()=>{
-      mo.sob = null; cv.style.cursor = 'default';
-      dica.classList.remove('on');
-      pintar();
-    };
-    /* `pointerup` e não `click`: no celular o toque tem de valer, e o
-       pointer serve mouse e dedo pelo mesmo caminho. `ponto()` já
-       converte pelo tamanho medido do canvas, então o zoom não mexe. */
-    cv.onclick = null;
-    cv.addEventListener('pointerup', ev=>{
-      const p = ponto(ev);
-      if(poeOlheiro){
-        TO.ruas.porOlheiro(E(), p.x, p.y);
-        poeOlheiro = false;
-        aviso('Olheiro no ponto. Ele enxerga o que passa em volta.','boa');
-        redesenhar();
-        return;
-      }
-      /* O BONDE NOSSO: clicar em cima dele seleciona; com ele
-         selecionado, o clique seguinte é a ordem de destino. Vale pra
-         QUALQUER bonde nosso que esteja na rua, não só pro que saiu por
-         ordem — em dia de jogo é o disco que já está andando pro estádio
-         que o jogador quer pegar. Fora disso o clique continua sendo o
-         que sempre foi: informação do que está debaixo do dedo. */
-      const R = TO.ruas.estado(E());
-      const nossos = TO.ruas.nossosNaRua(E());
-      let perto = null, md = 18*18;
-      for(const b of nossos){
-        const q = (b.x-p.x)*(b.x-p.x) + (b.y-p.y)*(b.y-p.y);
-        if(q <= md){ md = q; perto = b; }
-      }
-      if(perto){
-        R.selecionado = R.selecionado === perto.id ? null : perto.id;
-        aviso(R.selecionado
-          ? `${perto.sigla} selecionado — clique no destino ou dirija com WASD.`
-          : 'Bonde solto.', 'boa');
-        redesenhar();
-        return;
-      }
-      const meu = TO.ruas.nossoBonde(E());
-      if(meu && R.selecionado === meu.id){
-        const r = TO.ruas.mandarPara(E(), mo, p.x, p.y);
-        aviso(r.msg, r.ok ? 'boa' : 'ruim');
-        if(r.ok && !R.rodando){ R.rodando = true; rodarRelogio(); }
-        redesenhar();
-        return;
-      }
-      const a = MP.alvoEm(mo, p.x, p.y);
-      if(a) aviso(a.info);
-    });
-
-    /* WASD dirige o bonde selecionado, em qualquer largura */
-    ligarSetasDoMapa(cv);
-  }
-
-  /* =======================================================
-     TIRAR O BONDE DA SEDE
-
-     Quantos vão sai de `aptosParaOEstadio` — os que não estão feridos
-     nem presos —, com o jogador escolhendo o número, como na escalação.
-     O plano da semana não serve aqui: ele diz o efetivo do DIA DE JOGO,
-     e este bonde existe em qualquer dia.
-     ======================================================= */
-  function abrirSaidaDaSede(e, mo){
-    const aptos = TO.membros.aptosParaOEstadio(e).length;
-    const teto = Math.max(TO.acoes.MINIMO_SAIDA, aptos);
-    let quantos = U.limitar(Math.round(aptos*0.5), TO.acoes.MINIMO_SAIDA, teto);
-    let fechar = null;
-    const corpo = el('div');
-    const conta = el('div',{class:'valorao'});
-    const faixa = el('input',{type:'range'});
-    faixa.min = TO.acoes.MINIMO_SAIDA; faixa.max = teto; faixa.value = quantos;
-    faixa.style.width = '100%';
-    const pintar = ()=>{ conta.innerHTML =
-      `<span>Vão sair</span><b>${quantos} de ${aptos}</b>`; };
-    faixa.oninput = ()=>{ quantos = +faixa.value; pintar(); };
-    pintar();
-    corpo.append(conta, faixa);
-    corpo.appendChild(el('div',{class:'linha-dado', html:
-      '<span class="fraco">Gasta uma ação da semana. O bonde nasce no pino '+
-      'da sua sede; depois é só clicar num ponto do mapa pra mandar — pino '+
-      'de rival é investida, rua qualquer é tocaia.</span>'}));
-    const ir = el('button',{class:'bt destaque larga', texto:'Pra rua'});
-    ir.onclick = ()=>{
-      const g = TO.acoes.gastarAcao(e, 'atacar', 'Bonde na rua, fora de jogo.');
-      if(!g.ok){ aviso(g.msg, 'ruim'); return; }
-      const r = TO.ruas.sairDaSede(e, mo, quantos);
-      if(!r.ok){
-        /* não saiu: devolve a ação, senão o jogador paga por nada */
-        e.acoes.usadas = Math.max(0, (e.acoes.usadas||1) - 1);
-        aviso(r.msg, 'ruim'); return;
-      }
-      TO.estado.anotar(e, `${quantos} saíram da sede pra rua.`, 'neutro');
-      aviso(r.msg, 'boa');
-      fechar && fechar();
-      redesenhar();
-    };
-    corpo.appendChild(ir);
-    fechar = modal('Tirar o bonde da sede', `${aptos} aptos`, corpo);
-  }
-
-  /* =======================================================
-     DIRIGIR O BONDE COM WASD
-
-     Antes estas teclas arrastavam a vista, e só no celular. Agora elas
-     dirigem o bonde selecionado, em qualquer largura — a vista continua
-     no arrasto e na pinça, que já funcionam e não precisam de tecla.
-     Sem bonde selecionado, WASD não faz nada: duas funções na mesma
-     tecla, decididas por um estado invisível, é o tipo de coisa que
-     parece bug.
-     ======================================================= */
-  /* O PAD DO MAPA: só a cruz.
-     É o mesmo pad da cena de luta — mesmas classes, mesmo CSS, mesmo
-     jeito de segurar a tecla —, sem Q, E, R nem as formações: aquilo é
-     comando de briga e não significa nada no mapa, e botão que não faz
-     nada ensina o jogador a desconfiar dos botões. */
-  let padDoMapa = null;
-  function montarPadDoMapa(){
-    const e = E();
-    const R = e && TO.ruas.estado(e);
-    const b = e && TO.ruas.nossoBonde(e);
-    /* `em-cena` é a trava que faltava: a briga abre por cima do mapa e
-       `pagina` continua sendo 'mapa', então o pad do mapa ficava na tela
-       DURANTE a luta — dois pads fixos no mesmo canto, e a cruz de cima
-       era a do mapa. Quem tocasse W ali estava mandando num bonde que
-       nem está mais na rua, e o disco da cena não saía do lugar. */
-    const querem = estreito() && painel === 'mapa' &&
-                   !document.body.classList.contains('em-cena') &&
-                   b && R && R.selecionado === b.id;
-    if(!querem){
-      if(padDoMapa){ padDoMapa.remove(); padDoMapa = null; }
-      document.body.classList.remove('com-pad');
-      for(const k of ['w','a','s','d']) teclasDoMapa[k] = false;
-      return;
-    }
-    /* a cruz de WASD é fixa no canto de baixo e ocupa 160×142: quem
-       mora lá embaixo — o ☰ e a faixa da torcida — precisa saber que
-       ela está na tela */
-    document.body.classList.add('com-pad');
-    if(padDoMapa) return;
-    const caixa = el('div',{class:'dj-pad'});
-    caixa.id = 'mapaPad';
-    const lado = el('div',{class:'pad-lado pad-esq'});
-    const cruz = el('div',{class:'pad-cruz'});
-    for(const k of ['w','a','s','d']){
-      const bt = el('button',{class:`pad-bt pad-mov pad-${k}`, texto:k.toUpperCase()});
-      bt.addEventListener('pointerdown', ev=>{
-        ev.preventDefault();
-        try{ bt.setPointerCapture(ev.pointerId); }catch(_){}
-        bt.classList.add('apertado'); teclasDoMapa[k] = true;
-      });
-      const solta = ev=>{ if(ev) ev.preventDefault();
-                          bt.classList.remove('apertado'); teclasDoMapa[k] = false; };
-      bt.addEventListener('pointerup', solta);
-      bt.addEventListener('pointercancel', solta);
-      bt.addEventListener('lostpointercapture', solta);
-      bt.addEventListener('contextmenu', ev=>ev.preventDefault());
-      cruz.appendChild(bt);
-    }
-    lado.appendChild(cruz);
-    caixa.append(lado, el('div',{class:'pad-lado pad-dir'}));
-    document.body.appendChild(caixa);
-    padDoMapa = caixa;
-  }
-
-  let setasDoMapa = null;
-  const teclasDoMapa = {};
-  const DIRIGINDO_ACELERA = 4;   // o dia corre 4× enquanto se dirige
-  function ligarSetasDoMapa(cv){
-    if(setasDoMapa) return;
-    addEventListener('keydown', ev=>{
-      const k = ev.key.toLowerCase();
-      if('wasd'.includes(k) && pagina==='mapa' && !painel) teclasDoMapa[k]=true;
-    });
-    addEventListener('keyup', ev=>{ teclasDoMapa[ev.key.toLowerCase()]=false; });
-    let ant = 0;
-    const passo = agora=>{
-      const dt = ant ? Math.min(0.05,(agora-ant)/1000) : 0; ant = agora;
-      const e = E();
-      const R = e && TO.ruas.estado(e);
-      const b = e && TO.ruas.nossoBonde(e);
-      /* e nada disto roda com a briga na tela: ali WASD é do líder da
-         cena, e adiantar o relógio da rua por baixo de uma luta aberta
-         é mexer no mundo pelas costas do jogador */
-      const naCena = document.body.classList.contains('em-cena');
-      if(dt && e && R && b && !naCena &&
-         R.selecionado === b.id && !R.encontro && mapaAtual){
-        const dx = (teclasDoMapa.d?1:0) - (teclasDoMapa.a?1:0);
-        const dy = (teclasDoMapa.s?1:0) - (teclasDoMapa.w?1:0);
-        if(dx || dy){
-          /* SEGURAR A TECLA É ADIANTAR O DIA COM O DEDO.
-
-             O relógio normal anda dois minutos de rua por segundo de
-             tela, e um bonde faz 6 px por minuto de rua: 12 px por
-             segundo numa praça de 1.254 px de lado. Dirigir nesse passo
-             era segurar W por um minuto e meio pra atravessar a cidade —
-             quem testou disse, com razão, que não funcionava.
-
-             Dirigindo, o dia corre quatro vezes mais rápido: 8 minutos
-             por segundo, 48 px por segundo, a praça inteira em meio
-             minuto. E corre pra TODO MUNDO — os outros bondes andam
-             junto e o relógio queima igual. Não é atalho: é o preço de
-             atravessar a cidade no dedo em vez de deixar o dia andar. */
-          const passoDoDia = dt * 2 * DIRIGINDO_ACELERA;
-          TO.ruas.dirigir(e, mapaAtual, dx, dy, passoDoDia);
-          if(!R.rodando) TO.ruas.passo(e, mapaAtual, passoDoDia);
-          if(canvasMapa){
-            TO.mapa.desenhar(mapaAtual, canvasMapa);
-            TO.ruas.desenhar(e, mapaAtual, canvasMapa.getContext('2d'));
-          }
-          if(R.encontro){ redesenhar(); }
-        } else if(b.dirigindo){
-          /* soltou as teclas: ele para onde estiver */
-          b.dirigindo = false;
-        }
-      }
-      setasDoMapa = requestAnimationFrame(passo);
-    };
-    setasDoMapa = requestAnimationFrame(passo);
-  }
 
   /* =======================================================
      ESCALAÇÃO → CENA → RELATÓRIO
@@ -4165,10 +3281,11 @@
     const nosso = enc.a.nossa ? enc.a : enc.b.nossa ? enc.b : null;
     const deles = nosso === enc.a ? enc.b : enc.a;
     if(!nosso){
-      /* briga entre duas torcidas de fora: vira notícia, não vira cena */
+      /* briga entre duas torcidas de fora: vira notícia, não vira cena.
+         A resolução da ida só devolve encontro com a gente dentro, mas a
+         guarda fica: encontro sem nós não é cena, é jornal. */
       TO.estado.anotar(e, `${enc.a.nome} e ${enc.b.nome} se pegaram `+
         `${LOCAL_ROT[enc.local]||''} a caminho do estádio.`, 'ruim');
-      TO.ruas.resolver(e);
       redesenhar();
       return;
     }
@@ -4223,7 +3340,6 @@
           if(p) TO.estado.anotar(e, `${p.rot} ficou na rua — levaram.`, 'ruim');
         }
       }
-      TO.ruas.resolver(e);
       encontroAberto = null;
     }
     /* investida, assalto e cobrança no CT: o que a noite deu vira caixa,
@@ -4234,8 +3350,7 @@
        próximo tique do relógio, e o jogador sairia da cena sem ver no
        feed o que ela custou. */
     TO.feed.publicar(e);
-    /* fechada a briga, o dia volta a correr: o encontro foi resolvido e
-       `retomarDia` religa `R.rodando`, que a cena tinha desligado */
+    /* fechada a briga, o tempo volta a correr de onde parou */
     soltarTudo('cena');
     setTimeout(()=>{
       $('telaDiaJogo').classList.add('oculto');
@@ -4537,46 +3652,11 @@
     pintarPagina(pagina);
     if(painel) pintarPagina(painel);
     montarAtalhos();
-    montarPadDoMapa();
   }
 
   /* =======================================================
      LIGAÇÃO
      ======================================================= */
-  /* =======================================================
-     O DIA DA RUA, SEM TELA
-
-     SIMULAR É O PADRÃO, NÃO O ATALHO. O relógio do tempo roda a rua
-     inteira de todo dia — `TO.ruas.montar` e `TO.ruas.passo` do
-     primeiro minuto ao apito —, que é o mesmo caminho do dia assistido
-     no mapa: andarilho anda, assalto do calendário abre e fecha,
-     viatura sai, consequência entra na ficha. O que muda é só que não
-     há quadro pra desenhar.
-
-     O PASSO É O MESMO DE ASSISTIR, e isso é decisão medida. Um quadro a
-     60 fps empurra `dt*2` = 1/30 de minuto de rua; sem tela, o passo é
-     o mesmo número. Com passo maior o resultado AGREGADO continua igual
-     — 30 dias de rua cheia dão as mesmas 12 baixas e o mesmo caixa com
-     0,1, 0,25 ou 0,5 —, mas a IDENTIDADE de alguns encontros muda: quem
-     esbarra em quem é testado nos instantes amostrados, e amostrar
-     menos troca um par por outro. Custa 49 ms por dia em vez de 25 e
-     compra igualdade exata.
-     ======================================================= */
-  const PASSO_RUA = 1/30;       // minutos de rua por tique, sem tela
-
-  /* devolve o ENCONTRO, quando houver: é ele que vira convocação */
-  function simularDiaDaRua(e){
-    const mo = mapaAtual || TO.mapa.modelo(e);
-    const R = TO.ruas.montar(e, mo);
-    const fim = R.apito || 0;
-    let guarda = 0;
-    while(R.minuto < fim && guarda++ < 6000){
-      TO.ruas.passo(e, mo, PASSO_RUA);
-      if(R.encontro) return R.encontro;
-    }
-    return null;
-  }
-
   /* O ESTADO MUDOU.
      Durante o laço do tempo a tela não é remontada: escrever o
      cabeçalho e acrescentar as mensagens novas basta, e remontar a
@@ -4603,8 +3683,8 @@
      foco, e o primeiro quadro na volta traz o tempo todo que passou
      fora — o relógio saltaria. Tratando como pausa, o `ultimo` do laço
      é zerado na volta e nenhum minuto é cobrado do tempo em outra aba. */
-  const pararTudo  = m => { pausarDia(m);  pausarTempo(m); };
-  const soltarTudo = m => { retomarDia(m); retomarTempo(m); };
+  const pararTudo  = m => pausarTempo(m);
+  const soltarTudo = m => retomarTempo(m);
   addEventListener('blur', ()=>pararTudo('foco'));
   addEventListener('focus', ()=>soltarTudo('foco'));
   document.addEventListener('visibilitychange', ()=>{
@@ -4681,17 +3761,16 @@
 
   /* A PORTA DE SERVIÇO DA TELA.
      A bateria de regressão dirige o jogo de verdade, e há coisas que só
-     existem aqui: passar um dia com a rua inteira simulada, responder
-     uma mensagem pelo mesmo caminho do clique, parar e soltar o relógio.
+     existem aqui: passar um dia, responder uma mensagem pelo mesmo
+     caminho do clique, parar e soltar o relógio.
      Reimplementar isso no teste seria medir outro jogo — o teste passaria
      e o jogo continuaria quebrado. Nada aqui é chamado pelo jogo. */
   TO.tela = {
     passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
     rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
     get pausasDoTempo(){ return [...pausasT]; },
-    get pausasDaRua(){ return [...pausas]; },
     abrirPainel, fecharPainel, get painel(){ return painel; },
-    get diaPausado(){ return diaPausado(); }
+    resolverIda: e => TO.praca.resolverIda(e || E())
   };
 
   montarMenu();

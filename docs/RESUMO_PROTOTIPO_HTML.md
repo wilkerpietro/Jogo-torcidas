@@ -2235,6 +2235,9 @@ ideologia" ou "Não dar moral".
 17. **O que saiu existe mesmo:** **0 botões de avançar dia** em toda a tela, e o save
     fica com `opcoes: ["relatorio", "perguntarJogo"]` — `pularVazios` e `abrirGestao`
     são apagados na leitura, então save velho abre sem eles.
+    *(O ≫ voltou em §8.22, por pedido do autor, e com outro papel: ele não avança um
+    dia parado, empurra o dia que já está correndo, e não passa por cima de decisão
+    aberta. A medida de 0 botões vale pra este momento do projeto.)*
 18. **O mapa abre a partir de mensagem.** A convocação *"Hoje tem Corinthians × Ponte
     Preta no Neo Química Arena"* abriu o painel do mapa com **canvas, relógio da rua
     correndo (08:32 → 08:37 em 2,5 s), 4 ícones de controle, 13 ícones de menu, faixa da
@@ -2245,9 +2248,10 @@ ideologia" ou "Não dar moral".
 
 - **A chave "pular dias vazios"** — o feed é o pulo. Dia sem nada passa em um segundo,
   calado. O código do pulo (`pularDiasVazios`, `porQueParar`, as cinco paradas) saiu
-  junto; o que ficou de lá é `simularDiaDaRua`, que virou o coração do dia.
+  junto; o que ficou de lá é `simularDiaDaRua`, que virou o coração do dia. *(E que
+  saiu em §8.22, com a simulação da rua inteira.)*
 - **O ≫ de avançar o dia**, do bloco de quando do mapa. No lugar dele, um ícone de
-  saída que devolve o feed.
+  saída que devolve o feed. *(Voltou em §8.22, no bloco de data da barra do feed.)*
 - **O corte em 12 do `E.avisos`** e a drenagem em torradinhas dentro de `redesenhar`.
   `aviso()` continua vivo só pra retorno imediato de clique — "Salvo", "Bonde solto" —,
   que é conversa da interface, não do mundo.
@@ -2615,7 +2619,286 @@ O que sobrou era do teste: ele não fechava o relatório semanal, e cada modal d
 ~100 nós na tela. Com os três consertos, o DOM fica plano em ~1.230 nós e o heap em
 45–77 MB depois de oito temporadas.
 
+## 8.22 O mapa sai: a ida ao estádio vira resolução
+
+Mudança de direção. O mapa da cidade foi descontinuado. **Nenhum botão do feed abre
+mapa** — os botões abrem tela de gestão ou cena de briga, e nada mais. O que o mapa
+fazia por simulação passa a ser **resolvido**: o jogo calcula o que aconteceu no caminho
+do estádio e publica o desfecho.
+
+Saíram **4.122 linhas** e entraram **1.111** (771 de `js/mundo/praca.js`, o resto
+espalhado): saldo de **−3.011 linhas**.
+
+| arquivo | antes | depois |
+|---|---:|---:|
+| `js/mundo/ruas.js` | 1.948 | **apagado** |
+| `js/mundo/praca.js` | — | **771** |
+| `js/mundo/mapa.js` | 1.120 | **488** |
+| `js/main.js` | 4.698 | **3.777** |
+| `css/paineis.css` | 1.409 | **1.149** |
+| `css/mobile.css` | 246 | **193** |
+
+### 1. O que morreu
+
+A tela do mapa inteira — canvas, arte, zoom, arrasto, filtros de pontos, dica
+flutuante, faixa da torcida sobre a cidade. O deslocamento em tempo real: malha de nós,
+rotas, `caminho()`, horários escalonados de saída, os dois pontos de entrada da cidade,
+a caminhada do visitante até a sede do aliado. O bonde comandado: sair da sede, destino
+por clique, WASD, o pad de toque. O olheiro posto num ponto do mapa. O relógio da rua e
+o conjunto de pausas dele. Os andarilhos e a viatura.
+
+No jogo inteiro sobrou **um `getContext`**, o da cena de briga. `andarilho` e `viatura`
+só aparecem em comentário, contando o que saiu.
+
+**O relógio agora é um só.** Havia dois conjuntos de motivos de pausa — `pausas` da rua
+e `pausasT` do tempo — porque com o mapa aberto a rua tinha de andar e o calendário
+tinha de ficar parado, e um conjunto não sabia representar esse par. Sobrou `pausasT`:
+painel, foco, salvar, cena. A decisão sem resposta continua fora dele; a verdade dela é
+`TO.feed.travado`, e isso é cicatriz de um congelamento com a tela limpa.
+
+### 2. O que sobreviveu: os dados como modelo
+
+`dados/cidade_mapa*.js` e `dados/estadios.js` continuam carregados. `TO.mapa` perdeu
+`desenhar`, `paraImagem`, `baixarImagem`, `alvoEm`, `pinoDe`, `classeDe` e os `ICONE`
+vetoriais; ficou com `modelo`, `arteDe`, `bairroEm`, `andavelEm`, `hash`, `filtros` e
+`estruturas`. `corQueLeSobre` ficou também, e não por engano: ela produz o campo
+`corSigla` do modelo, não um pixel.
+
+`TO.praca` é o que sobrou de `ruas.js`. Ele responde ao que o jogo pergunta:
+`jogosDaPraca`, `pontoDaSede` / `pontoDoBar` / `pontoDoEstadioDoClube`, `localDe`,
+`elencoDaNoite`, `anfitriaoDe` / `escoltaDe`, `hostis`, os assaltos — e o que é novo,
+`naRuaHoje` e `resolverIda`.
+
+**As oito cenas de briga ficaram inteiras.**
+
+### 3. A resolução da ida
+
+Depois da convocação — *"Hoje tem Ceará × Confiança no Arena Castelão. A bateria sai da
+sede."* → **Ir pro estádio** — `resolverIda` devolve um de três desfechos.
+
+- **Intenção nossa.** Plano da semana com `intencao` ≠ paz e o alvo na rua: o encontro é
+  certo, e o lugar é o que o jogador escolheu na Gestão.
+- **Intenção deles.** `min(90, 3 + tensão × 0,85)` por cento — a mesma conta que
+  `combate.js:253` usa pro humor dos bondes nos arredores. Quem decidiu procurar
+  **encontra**: sem malha, não há mais como errar o alvo por dois quarteirões.
+- **Acaso.** `min(12, tensão × 0,10 + |relação| ÷ 12)`.
+
+O termo do ódio foi **medido, não escolhido**: só com a tensão o desfecho (c) não
+acontecia nunca. Numa temporada de jogador que não briga a tensão fica em **zero o tempo
+todo** — ela sobe com investida, com ataque sofrido e com briga, e decai sozinha —, e a
+temporada fechou com **31 pares hostis na rua e nenhuma surpresa**. Mas dois que estão em
+−85 passam o ano se procurando de olho. A −85 o acaso dá 7,1%; a −20, 1,7%; no piso da
+hostilidade (−15), 1,25%.
+
+**O lugar** sai do modelo do mapa: os bairros cujo centro cai a menos de 190 unidades da
+reta entre cada sede e o estádio. Se o sorteado for o bairro de um campo, é `arredores`;
+se a janela de 5×5 da máscara de ruas em volta do ponto tiver 23 ou mais células
+andáveis, é `praca`; senão é a rua da classe do bairro. O 23 é o mesmo `LARGO` de antes —
+a máscara atravessou o corte, o que sumiu foi o grafo de nós por cima dela.
+
+**O efetivo** é o real dos dois lados. `naRuaHoje` monta quem pisa na rua com a conta que
+`montar` já fazia — nós por `efetivoDaSaida`, as outras da praça por 60% do efetivo, as
+de fora por `caravanaDe` —, e a escolta continua saindo do anfitrião e entrando no
+aliado. O que morreu foi a caminhada até a sede, não o efeito.
+
+### 4. O assalto sem viatura
+
+"A viatura chega a tempo?" era pergunta espacial. O substituto estava na tabela:
+`seguranca`, de `COMERCIO`, vira a chance de dar errado, com fator **5**.
+
+| alvo | segurança | chance de dar errado | gaveta | pena |
+|---|---:|---:|---:|---:|
+| mercadinho | 2 | **10%** | R$ 60 | 30 dias |
+| posto | 3 | **15%** | R$ 108 | 30 dias |
+| roupas | 3 | **15%** | R$ 144 | 30 dias |
+| joalheria | 6 | **30%** | R$ 504 | 60 dias |
+| banco | 8 | **40%** | R$ 360 | 60 dias |
+
+O fator é medido, não escolhido de véspera. Com 10 o banco seria preso em 8 de 10 e
+voltaria a ser a armadilha que a corrida da viatura tinha criado — *"preso em 7 de 7, sem
+render um centavo nunca"*. Com o número cru (2% a 8%) ninguém seria preso numa temporada
+inteira. Em 5 a escada aparece e o banco continua sendo aposta.
+
+O resto não mudou: 2 a 3 por mês agendados por hash da data, autor sorteado por peso de
+efetivo entre todas as organizadas da praça, membro tirado dos disponíveis, aviso pra
+toda tentativa. E a prisão de uma torcida da IA agora derruba a `policia` dela pelo calor
+do alvo, como derruba a nossa — indicador que se move de um lado e não do outro é
+decoração (§8.20).
+
+### 5. O olheiro
+
+A voz ficou inteira: as estimativas em faixa, o *"não consegui colher informações essa
+semana"*, o movimento dos rivais antes do pré-jogo. O que saiu foi o **disco posto no
+mapa** (`porOlheiro`, raio de 150). O esquema de pontos da Gestão (`mapaDoOlheiro`) NÃO
+saiu — ele é onde o jogador escolhe o lugar da emboscada, que é o que o critério 5 mede.
+Estreitar a margem pagando por isso na Gestão fica anotado, não implementado.
+
+### 6. A HUD
+
+A coluna de ícones voltou pra borda esquerda, que é onde ela morava dentro do mapa. O
+corpo do feed é irmão dela: barra em cima — faixa da torcida em uma linha, bloco de data
+com o ≫, 1×/2× — e a lista embaixo. O ticker segue no rodapé.
+
+**O ≫ voltou, com outro papel.** Ele tinha sido aposentado em §8.19 porque não faz
+sentido "avançar o dia" num jogo em que o dia avança sozinho. Agora ele **empurra** o dia
+que está correndo, pra quem não quer esperar o segundo — e respeita a única trava que
+existe: decisão sem resposta não deixa o tempo andar, nem sozinho nem no dedo. O §8.19
+foi anotado pra não carregar duas afirmações contrárias.
+
+---
+
+### Os dez critérios, medidos
+
+**Uma temporada, no máximo, em cada medição.** Cearamor, Fortaleza.
+
+**1. Nenhum botão do feed abre mapa.** `feed.js` declara 11 botões com 11 efeitos:
+`nada` (5), `painel` (5), `gestao` (2), `ideologia`, `cena`, `ida`, `tensao`, `assalto`,
+`fianca`, `festa-sim`, `festa-nao`. O `case 'mapa'` saiu do `aplicar`. Varrendo o feed de
+uma temporada, apareceram: `assalto`, `festa-sim`, `festa-nao`, `fianca`, `gestao`,
+`ida`, `ideologia`, `nada`, `painel`, `tensao` e uma linha-abaixo pra `competicoes` —
+**nenhum abre mapa**. `abrirCenaDaMensagem` também perdeu o `abrirPainel('mapa')` de
+fallback: o que ele não sabe abrir vira aviso ruidoso.
+
+**2. O código saiu, não foi desligado.** Tabela de linhas acima. `getContext` aparece uma
+vez no jogo inteiro (`ponte.js`); `andarilho` e `viatura` só em comentário; a página
+`data-pag="mapa"` saiu do `index.html` e o item saiu do `NAV`.
+
+**3. Os dados do mapa continuam sendo consultados.** Quem decide é
+`TO.praca.localDe(mo, x, y)`, com `TO.mapa.bairroEm` e a máscara `mo.malha.andavel`. As
+16 regiões de Fortaleza:
+
+| bairro | classe | cena | células andáveis (5×5) |
+|---|---|---|---:|
+| **Aldeota** | Nobre | **`rua-nobre`** | 21 |
+| Meireles | Nobre | `rua-nobre` | 17 |
+| Dionísio Torres | Nobre | `rua-nobre` | 18 |
+| **Pirambu** | Favela | **`rua`** | 21 |
+| Jangurussu / Castelo Encantado / Bom Jardim | Favela | `rua` | 21 / 21 / 19 |
+| Genibaú | Favela | **`praca`** | **23** |
+| Granja Portugal / Monte Castelo / Jd. das Oliveiras | Classe Baixa | `rua` | 20 / 17 / 19 |
+| Antônio Bezerra / Conjunto Ceará | Classe Baixa | **`arredores`** | têm estádio |
+| Messejana / Maraponga / José Walter | Classe Média | `rua-media` | 21 / 19 / 14 |
+
+Na temporada medida a surpresa do dia 265 caiu na **Aldeota** e abriu a **rua nobre**.
+
+**4. Uma temporada, os dias de jogo do nosso clube.** Jogador ativo: responde
+provocação, segue a ideologia e, em metade dos dias com rival na rua, marca ataque num
+ponto da Gestão.
+
+| | dias |
+|---|---:|
+| convocações de ida | **30** |
+| **paz** | **19** |
+| **briga planejada** | **9** |
+| **surpresa** | **2** |
+
+Dos 21 dias **sem plano**, **19 terminaram em paz — 90,5%**. As duas surpresas foram por
+acaso; nenhuma por intenção deles, porque a tensão ficou em zero a temporada toda com
+este jogador.
+
+**5. A briga planejada abre onde o jogador escolheu.** Nas 9, o ponto da Gestão bateu com
+o local da cena em 9 de 9:
+
+| ponto escolhido | bairro do ponto | cena aberta |
+|---|---|---|
+| Praça de encontro | Bom Jardim | `praca` |
+| Avenida de acesso | Maraponga | `rua-media` |
+| Bar do rival | Monte Castelo | `bar` |
+
+Pela tela: a convocação do dia 40 abriu a **praça do Bom Jardim** com **150 nossos contra
+8 da Jovem Confiança** — 158 discos, o efetivo real e distinto de cada lado, nada
+clampado.
+
+**6. A briga por surpresa.** Dia 265, **rua nobre na Aldeota**, `149 × 13` contra a
+Trovão Azul, `#000000` e `#1A40CC` — cores próprias, distintas, 162 discos. Dia 51,
+`rua-media` em Messejana, `144 × 10` contra a Gang da Ilha.
+
+**7. A escolta continua somando.** Em **17 dos 30** dias de convocação houve pelo menos
+uma. A Jovem Confiança do dia 40 entrou com **8**: 5 de caravana e **3 emprestados pela
+Jovem Garra Tricolor**, que saiu com 3 a menos. O acerto foi verificado por acidente —
+uma prova que derrubou a relação pra −100 encolheu a caravana de 5 pra 4 e a torcida
+sumiu da rua, que é exatamente o gatilho `vem < 5` funcionando.
+
+**8. As oito cenas continuam funcionando.** A bateria passa limpa, **0 erros de página**:
+
+| cena | discos | PM | grades |
+|---|---:|---:|---:|
+| arredores | 63 | 9 | 54 |
+| praca | 56 | 4 | 0 |
+| rua | 52 | 3 | 0 |
+| rua-media | 52 | 3 | 0 |
+| rua-nobre | 52 | 3 | 0 |
+| bar | 48 | 3 | 0 |
+| comercio | 40 | 4 | 5 |
+| ct | 44 | 2 | 7 |
+
+E o ciclo inteiro pela tela: mensagem → `abrirConfronto` (pausa `cena` entra, 158
+discos) → fim da cena (pausa sai, `em-cena` sai, o feed ganha a mensagem do resultado).
+
+**9. Os assaltos de uma temporada.** **32 agendados e 32 resolvidos** — dentro dos 24 a
+36 esperados (13 blocos de 4 semanas × 2 ou 3).
+
+| alvo | tentativas | presos | observado | configurado |
+|---|---:|---:|---:|---:|
+| joalheria | 5 | 2 | **40,0%** | 30% |
+| roupas | 3 | 1 | 33,3% | 15% |
+| banco | 7 | 1 | 14,3% | 40% |
+| mercadinho | 9 | 1 | 11,1% | 10% |
+| posto | 8 | 0 | 0,0% | 15% |
+
+**Banco e joalheria prendem mais que mercadinho** — na configuração, 40% e 30% contra
+10%. No observado a ordenação sai certa pros dois (40,0% e 14,3% contra 11,1%), mas é
+preciso dizer o óbvio: **3 a 9 sorteios por tipo não separam 40% de 10%**. Uma temporada
+é o que o enunciado pede; o número confiável é o configurado.
+
+Os autores acompanham o efetivo, que é o que o sorteio por peso promete: Leões da TUF 16
+(a maior da praça, 167), Cearamor 5, Jovem Garra Tricolor 4, MOFI 4, Jovem do Floresta 2,
+Aliança 1.
+
+**10. A HUD nas três resoluções**, com o feed montado:
+
+| | 1400×900 | 390×844 | 844×390 |
+|---|---|---|---|
+| coluna de ícones | 41×874, 12 ícones | 37×798, 12 | 37×344, 12 |
+| faixa da torcida | **26px — uma linha** | **26px** | **26px** |
+| números visíveis | saldo, /sem, membros, prestígio | saldo | saldo, /sem |
+| bloco de data com ≫ | sim | sim (2ª linha da barra) | sim |
+| 1×/2× | sim | sim | sim |
+| ticker | 1400×26 | 390×26 | 844×26 |
+| rolagem horizontal | **não** | **não** | **não** |
+| órfãos do mapa no DOM | **0 de 17 seletores** | **0** | **0** |
+
+Em 390px a **barra** quebra em duas linhas e a **faixa** continua em uma — que é o que
+foi pedido. Antes deste ajuste a faixa é que quebrava, e o nome da torcida saía com 85px
+de largura em três linhas.
+
+### O que mais mudou de número
+
+- **Uma temporada custa 1.484 ms** contra **9.530 ms** antes: **6,4× mais rápida**. O dia
+  deixou de rodar seis mil tiques de um trigésimo de minuto de rua.
+- **Determinismo intacto:** o mesmo save carregado em duas páginas limpas dá **108
+  mensagens e 0 diferenças**.
+- **Um erro de português consertado de passagem.** `d${vogal?'':'o '}${bairro}` saía
+  *"Joalheria dAldeota"*, e *"do Aldeota"* estaria errado do mesmo jeito: nome de bairro
+  tem gênero e o gênero não está nos dados. Agora é **"no bairro X"**, que está certo
+  sempre. Pro comércio o artigo existe na tabela (`COMERCIO.artigo`) e é ele que se usa.
+
+### O que foi observado e não é deste prompt
+
+O jogador de teste — passivo, que nunca abre o Financeiro — **quebra e some**: o caixa vai
+a negativo por volta do dia 85 e a torcida cai de 150 pra 1 até o fim do ano. É
+pré-existente e o corte **melhorou** o quadro: no `09c3c8a` a torcida zerava no dia 253 e
+o ano fechava em −R$ 46.875; agora zera no 337 e fecha em −R$ 29.926. Fica registrado
+porque é o que impede uma temporada de teste de ter efetivo realista no segundo semestre
+— o ataque planejado do dia 334 abriu com 4 discos do nosso lado.
+
 ## 9. Celular
+
+> **Leia junto com §8.22.** Boa parte desta seção descreve a tela do MAPA — a gaveta
+> sobre o canvas, o pad de WASD, o toque no canvas da cidade, o painel de conferência.
+> O mapa foi descontinuado; o que vale hoje é a medição de HUD do §8.22, nas mesmas três
+> resoluções. O que continua de pé aqui é o limiar, o comportamento dos painéis de
+> gestão, o pad da CENA de briga e o toque no canvas da cena.
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima
 dele nada muda: lateral fixa de 186px, teclado, mouse. O teclado continua valendo em

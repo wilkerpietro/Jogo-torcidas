@@ -413,19 +413,18 @@ TO.estado = (function(){
   function estaBloqueado(){ return bloqueado; }
 
   /* O DIA NA RUA NÃO VAI PRO SAVE, E NÃO PODE IR.
-     `E.ruas` é cache do dia: bondes, rotas, andarilhos, viaturas. As
-     rotas são listas de NÓS da malha da cidade, e cada nó guarda os
-     vizinhos dele — que guardam ele de volta. `JSON.stringify` batia
-     nisso e devolvia "Converting circular structure to JSON": o jogo
-     estava sem save nenhum desde que a rua ganhou malha, e ninguém
-     tinha visto porque salvar era Ctrl+S e o fechamento de semana
-     engolia o erro.
+     `E.ruas` era o cache do dia — bondes, rotas, andarilhos, viaturas —,
+     e as rotas eram listas de NÓS da malha da cidade, cada nó guardando
+     os vizinhos que o guardavam de volta. `JSON.stringify` batia nisso
+     e devolvia "Converting circular structure to JSON": o jogo passou um
+     tempo sem save nenhum e ninguém viu, porque salvar era Ctrl+S e o
+     fechamento de semana engolia o erro.
 
-     Tirar o campo é a correção certa, não um remendo: `TO.ruas.montar`
-     reconstrói o dia inteiro a partir do calendário e da semente, e é
-     isso que acontece quando o save é carregado. O que o save perde é
-     onde os bondes estavam no meio da tarde — e o dia recomeça do
-     começo, que é o estado que o save descreve. */
+     O campo não existe mais: a rua deixou de ser simulação e virou
+     resolução, e a resolução não guarda estado — ela é chamada, devolve
+     o desfecho e acaba. A guarda no `stringify` FICA, e fica de
+     propósito: save de partida antiga ainda traz o campo, e escrevê-lo
+     de volta seria ressuscitar um cache de um sistema que saiu. */
   function salvar(){
     if(!E) return {ok:false, motivo:'sem partida'};
     if(bloqueado) return {ok:false, motivo:'aguarde chegar ao estádio'};

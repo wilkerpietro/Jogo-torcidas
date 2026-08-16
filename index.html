@@ -14,32 +14,32 @@
 <!-- ================= JOGO ================= -->
 <div id="jogo" class="oculto">
 
-  <!-- O CABEÇALHO ENTROU NO MAPA.
+  <!-- O CABEÇALHO ENTROU NA BARRA DO FEED.
        Havia aqui uma faixa de 56px com a marca, a data, o nome da
-       torcida e três indicadores, e o mapa começava depois dela. O mapa
-       é o jogo: a data e o avançar foram pro canto de cima à direita
-       DENTRO dele, o escudo, o nome e os números pra faixa de baixo, e a
-       marca "Torcida Organizada" saiu — o nome da torcida na periferia
-       já diz onde o jogador está. Quem monta tudo isso é `pintarMapa`.
-       O ☰ e a gaveta saíram junto: a coluna de ícones dentro do mapa
-       é a navegação inteira, em qualquer largura. -->
+       torcida e três indicadores. Ela virou HUD do mapa e, com o mapa
+       descontinuado, virou HUD do feed: a data e o ≫ no canto de cima à
+       direita, o escudo, o nome e os números na faixa da torcida, e a
+       marca "Torcida Organizada" fora — o nome da torcida na periferia
+       já diz onde o jogador está. Quem monta tudo isso é `pintarFeed`.
+       O ☰ e a gaveta saíram junto: a coluna de ícones é a navegação
+       inteira, em qualquer largura. -->
   <div id="painelBarra">
     <span id="painelTitulo">—</span>
     <button id="painelFechar" aria-label="Fechar">Fechar &times;</button>
   </div>
-  <div id="avisoGirar">gire o aparelho pra ver a rua inteira</div>
+  <div id="avisoGirar">gire o aparelho pra ver a briga inteira</div>
 
   <nav id="lateral"></nav>
 
   <main id="tela">
     <!-- O FEED É A TELA PRINCIPAL. Ele vem primeiro porque é o que o
          jogo é: uma lista de mensagens que chega sozinha. As outras
-         páginas — o mapa incluído — são painéis que abrem por cima. -->
+         páginas são painéis de gestão que abrem por cima dele; a página
+         do mapa saiu com o mapa. -->
     <section class="pagina" data-pag="feed"></section>
     <section class="pagina" data-pag="inicio"></section>
     <section class="pagina" data-pag="torcida"></section>
     <section class="pagina" data-pag="financeiro"></section>
-    <section class="pagina" data-pag="mapa"></section>
     <section class="pagina" data-pag="gestao"></section>
     <section class="pagina" data-pag="calendario"></section>
     <section class="pagina" data-pag="competicoes"></section>
@@ -184,7 +184,7 @@
 <script src="js/mundo/tensao.js"></script>
 <script src="js/mundo/mapa.js"></script>
   <script src="js/mundo/mapa_gerado.js"></script>
-<script src="js/mundo/ruas.js"></script>
+<script src="js/mundo/praca.js"></script>
 <script src="js/gestao/membros.js"></script>
 <script src="js/gestao/torcedores.js"></script>
 <script src="js/gestao/financeiro.js"></script>

@@ -873,44 +873,12 @@ table.dados tr.selecionada td{background:#252525}
 .olheiro .bondes b{display:block;font-family:var(--mono);font-size:14px}
 .olheiro .bondes small{font-size:9.5px;color:var(--fraco)}
 
-/* ---------- mapa da cidade ---------- */
-/* O PALCO. O mapa é a tela principal do jogo, então o que manda nele
-   fica por cima dele: o palco é o quadro parado, o viewport é o que
-   rola e arrasta, e a HUD é irmã do viewport — assim ela não anda junto
-   quando o jogador arrasta a cidade. */
-.mapa-palco{position:relative}
-
-.mapa-hud{
-  position:absolute;inset:0;z-index:6;pointer-events:none;
-  display:flex;flex-direction:column;align-items:center;overflow:hidden;
-}
-.mapa-hud > *{pointer-events:auto}
-
-/* O MAPA OCUPA A TELA. Ele era um cartão com altura máxima dentro de
-   uma página que rolava; agora é a tela, e o que rola é ele por dentro. */
-.mapa-viewport{
-  overflow:auto;background:#0d0d0e;padding:10px;
-  flex:1;min-height:0;
-  display:flex;align-items:flex-start;gap:10px;
-}
-.pagina[data-pag="mapa"].on{display:flex;flex-direction:column}
-.pagina[data-pag="mapa"] .quadro{
-  display:flex;flex-direction:column;flex:1;min-height:0;margin:0;border:0;
-}
-.pagina[data-pag="mapa"] .quadro > div{
-  display:flex;flex-direction:column;flex:1;min-height:0;
-}
-.mapa-palco{display:flex;flex-direction:column;flex:1;min-height:0}
-.mapa-casca{position:relative;margin:0 auto}
-.mapa-canvas{display:block;image-rendering:auto}
-
-/* A FAIXA DE ÍCONES, colada na borda de cima do mapa. Fica no meio de
-   propósito: o relógio ocupa o canto esquerdo e o zoom o direito. */
-.mapa-icones{
-  display:flex;gap:6px;align-items:center;
-  background:#141416e0;border:1px solid var(--linha);border-top:none;
-  padding:5px 7px;backdrop-filter:blur(2px);
-}
+/* ---------- a coluna de ícones ---------- */
+/* AQUI MORAVA A TELA DO MAPA: o palco, o viewport que arrastava, a HUD
+   por cima do canvas, o recolhível de pontos, o zoom, a dica flutuante,
+   a faixa da torcida e o bloco de data sobre a cidade. Saiu tudo com o
+   canvas. O que ficou é o botão de ícone, porque ele nunca foi do mapa:
+   é o botão da navegação, e a navegação agora mora no feed. */
 .mapa-ic{
   width:32px;height:30px;display:flex;align-items:center;justify-content:center;
   background:#1e1e20;border:1px solid var(--linha);color:#cfcfcf;cursor:pointer;
@@ -932,161 +900,6 @@ table.dados tr.selecionada td{background:#252525}
   text-transform:uppercase;
 }
 
-/* O canto de cima à esquerda: relógio, embaixo dele o recolhível dos
-   pontos do mapa e, embaixo dos dois, a coluna do menu. */
-/* A pilha da esquerda para ACIMA da faixa da torcida: a coluna do menu
-   é o último item dela e, deixada solta até o fim da HUD, ela passava
-   por baixo da faixa em tela deitada. */
-.mapa-canto{
-  position:absolute;left:10px;top:10px;bottom:56px;
-  display:flex;flex-direction:column;align-items:flex-start;gap:6px;
-}
-
-/* A COLUNA DO MENU. Onze ícones na borda esquerda, dentro do mapa, no
-   lugar da barra lateral que sumiu. O painel aberto começa depois dela
-   (`--coluna-menu`), então o ícone da página aberta continua visível e
-   clicável — é assim que se fecha o painel pelo mesmo ícone. */
-:root{--coluna-menu:58px}
-/* ONZE ÍCONES E A ALTURA QUE HOUVER.
-   Empilhados a 31px cada dão 341px de coluna, e um celular deitado tem
-   390px de tela inteira — dos quais sobram uns 190 pra cá depois do
-   zoom, do recolhível, da faixa da torcida e do ticker. Então a coluna
-   é `column wrap`: enche a altura que tem e QUEBRA numa segunda coluna
-   ao lado. Nada rola escondido e nada passa por baixo da faixa. */
-.mapa-menu{
-  display:flex;flex-flow:column wrap;gap:3px;align-content:flex-start;
-  background:#141416e0;border:1px solid var(--linha);padding:4px;
-  backdrop-filter:blur(2px);min-height:0;max-height:100%;
-}
-.mapa-menu .mapa-ic{width:32px;height:28px;flex:none}
-.mapa-menu .mapa-ic svg{width:16px;height:16px}
-.mapa-menu .mapa-ic.aceso{
-  background:var(--rubro);border-color:var(--rubro-vivo);color:#fff;
-}
-
-/* O BLOCO DE QUANDO: hora em cima, data e dia da semana embaixo, e o ≫
-   colado. Uma moldura só — hora e data são a mesma informação em duas
-   escalas, e como dois cartões em cantos opostos o olho tinha de
-   atravessar a tela pra saber quando está. */
-.mapa-quando{
-  position:absolute;right:10px;top:10px;
-  display:flex;flex-direction:column;align-items:stretch;
-  background:#141416e0;border:1px solid var(--linha);
-  backdrop-filter:blur(2px);
-}
-.mapa-quando .rua-relogio{
-  background:none;border:0;border-bottom:1px solid var(--sulco);
-  padding:3px 10px 4px;
-}
-.mapa-quando-baixo{display:flex;align-items:center;gap:8px;padding:3px 6px 3px 10px}
-.mapa-data .dia{font-family:var(--mono);font-size:12.5px;line-height:1.15}
-.mapa-data .semana{
-  font-family:var(--mono);font-size:8.5px;color:var(--fraco);
-  letter-spacing:.16em;text-transform:uppercase;
-}
-.mapa-quando .mapa-ic{margin-left:auto;width:30px;height:26px}
-
-/* A FAIXA DE BAIXO: escudo, nome da torcida e os três números. */
-.mapa-rodape{
-  position:absolute;left:10px;right:10px;bottom:10px;
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  background:#141416e0;border:1px solid var(--linha);padding:5px 10px;
-  backdrop-filter:blur(2px);
-  margin-left:var(--coluna-menu);
-}
-.mapa-rodape .escudo{
-  width:22px;height:22px;flex:none;display:flex;align-items:center;
-  justify-content:center;font-family:var(--titulo);font-size:8px;
-  letter-spacing:.04em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.85);
-}
-.mapa-rodape b{
-  font-family:var(--titulo);font-size:13px;letter-spacing:.09em;
-  text-transform:uppercase;
-}
-.mapa-rodape .praca{
-  font-family:var(--mono);font-size:10px;color:var(--fraco);
-  letter-spacing:.1em;text-transform:uppercase;margin-left:-4px;
-}
-.mapa-rodape .num{
-  display:flex;align-items:center;gap:5px;
-  font-family:var(--mono);font-size:12px;color:var(--texto);
-}
-/* A FAIXA EM UMA LINHA SÓ.
-   O que mais custava altura era o rótulo "NA SEMANA" empilhado embaixo
-   do número: ele virou um sufixo `/sem` de sete pixels na mesma linha, e
-   a explicação inteira foi pro `title`. O sinal e a cor já dizem que
-   aquilo é variação e não um segundo saldo. */
-.mapa-rodape{flex-wrap:nowrap;overflow:hidden}
-.mapa-rodape b{white-space:nowrap}
-.mapa-rodape .num{white-space:nowrap}
-.mapa-rodape .semana em{font-style:normal;font-size:8.5px;color:var(--fraco);
-  letter-spacing:.06em;margin-left:1px}
-.mapa-rodape .semana.sobra{color:#6a9c4a}
-.mapa-rodape .semana.falta{color:#d9705f}
-
-/* A ORDEM DE SACRIFÍCIO, quando não cabe — escrita aqui e não no olho:
-   escudo e sigla nunca saem; depois cai a praça, que é a mesma a partida
-   inteira e está no mapa embaixo; depois prestígio e membros; e o saldo
-   da semana antes do saldo em conta. Item que não cabe SAI INTEIRO:
-   número em reais cortado é número errado. */
-@media (max-width:1100px){ .mapa-rodape .praca{display:none} }
-@media (max-width:820px){ .mapa-rodape .num:nth-last-child(-n+2){display:none} }
-@media (max-width:520px){
-  .mapa-rodape{font-size:11px;padding:4px 8px;gap:8px}
-  .mapa-rodape b{font-size:11.5px}
-  .mapa-rodape .num{font-size:11px}
-}
-@media (max-width:400px){ .mapa-rodape .semana{display:none} }
-.mapa-rodape .num svg{width:14px;height:14px;color:var(--fraco)}
-.mapa-rodape .num.negativo{color:#d9705f}
-
-/* PONTOS DO MAPA. Este painel já esteve por cima do mapa e foi pra
-   margem porque, com a arte no lugar da planta esquemática, tapava
-   bairro de verdade. Volta pra dentro, mas RECOLHIDO: fechado não ocupa
-   nada, aberto é uma coluna estreita, e escolher um tipo fecha de novo.
-   Vira lista rolável quando não couber na altura do visor. */
-/* o recolhível abre para o LADO, não para baixo: embaixo dele mora a
-   coluna do menu, e aberto pra baixo ele cobriria os onze ícones */
-.mapa-linha-filtros{display:flex;align-items:flex-start;gap:6px}
-.mapa-filtros{
-  z-index:6;width:178px;max-height:56vh;overflow-y:auto;
-  background:#141416f2;border:1px solid var(--linha);padding:8px 10px;
-  display:flex;flex-direction:column;gap:8px;backdrop-filter:blur(3px);
-}
-.mapa-filtros.fechado{display:none}
-.mapa-filtro-secao{display:flex;flex-direction:column;gap:2px}
-.mapa-filtro{
-  display:flex;align-items:center;gap:7px;font-size:11px;color:var(--apagado);
-  cursor:pointer;user-select:none;
-}
-.mapa-filtro:hover{color:#fff}
-.mapa-filtro input{accent-color:var(--rubro-vivo);width:12px;height:12px}
-.mapa-filtro.grupo, .mapa-filtro.solo{
-  font-family:var(--titulo);font-size:11px;letter-spacing:.12em;color:var(--texto);
-  text-transform:uppercase;
-}
-.mapa-filtro.filho{padding-left:12px}
-
-.mapa-zoom{
-  display:flex;align-items:center;gap:6px;
-  background:#141416e0;border:1px solid var(--linha);padding:4px 8px;
-  backdrop-filter:blur(2px);
-}
-.mapa-zoom button{
-  width:24px;height:24px;background:#1e1e1e;border:1px solid var(--linha);
-  color:#cfcfcf;cursor:pointer;font-size:14px;line-height:1;
-}
-.mapa-zoom button:hover:not(:disabled){background:#2a2a2a;color:#fff}
-.mapa-zoom button:disabled{opacity:.3;cursor:default}
-.mapa-zoom span{font-family:var(--mono);font-size:11px;min-width:34px;text-align:center}
-
-.mapa-dica{
-  position:absolute;pointer-events:none;opacity:0;transition:opacity .12s;
-  background:#0f0f10f2;border:1px solid var(--linha);border-left:2px solid var(--rubro-vivo);
-  padding:5px 9px;font-size:11px;white-space:nowrap;z-index:5;
-}
-.mapa-dica.on{opacity:1}
-
 /* ---------- fator torcida (GDD §9.5) ---------- */
 .fator{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
@@ -1104,34 +917,6 @@ table.dados tr.selecionada td{background:#252525}
   min-width:52px;
 }
 .fator-parte em small{color:var(--fraco);font-size:9.5px;margin-left:3px}
-
-/* ---------- o dia na rua ---------- */
-.rua-barra{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:9px 14px;border-bottom:1px solid var(--linha);background:#171313;
-}
-.rua-info{flex:1;min-width:220px}
-.rua-info b{font-family:var(--titulo);font-size:13px;letter-spacing:.06em}
-.rua-info small{
-  display:block;font-family:var(--mono);font-size:10px;color:var(--fraco);
-  margin-top:2px;
-}
-/* O RELÓGIO DO DIA, no canto de cima à esquerda DO MAPA. Ele já foi
-   item de barra, com uma borda à direita separando do resto; agora é
-   HUD sobre o canvas e a caixa é dele. Quem escreve nele continua sendo
-   `pintarRelogioDaRua`, a cada quadro, sem passar por `redesenhar()`. */
-.rua-relogio{
-  flex:0 0 auto;text-align:center;padding:3px 10px 4px;
-  background:#141416e0;border:1px solid var(--linha);backdrop-filter:blur(2px);
-}
-.rua-relogio b{
-  display:block;font-family:var(--mono);font-size:22px;font-weight:600;
-  letter-spacing:.04em;color:var(--ouro,#d9a441);line-height:1.05;
-}
-.rua-relogio small{
-  display:block;font-family:var(--mono);font-size:9px;color:var(--fraco);
-}
-
 
 /* =========================================================
    PATRIMÔNIO — a tabela da estrutura e a loja de material
@@ -1191,107 +976,42 @@ table.dados tr.selecionada td{background:#252525}
 .barra-elenco i.inv{background:var(--ouro)}
 
 /* =========================================================
-   MINIMAPA DOS ARREDORES
-   Roda ao lado do mapa da cidade: o bonde que entra no
-   quarteirão do estádio some de lá e aparece aqui.
-   ========================================================= */
-.mini-arredores{
-  flex:0 0 210px; align-self:flex-start;
-  display:flex; flex-direction:column; gap:8px;
-  background:var(--painel); border:1px solid var(--linha); padding:10px;
-}
-.mini-cab b{display:block; font-family:var(--titulo); font-size:13px;
-  letter-spacing:.06em; text-transform:uppercase}
-.mini-cab small{color:var(--apagado); font-size:11px}
-.mini-palco{
-  display:flex; flex-direction:column; gap:4px;
-  background:var(--fundo); border:1px solid var(--linha); padding:8px;
-}
-.mini-campo{
-  background:#2f5c33; border:1px solid #3f7a45; color:#cfe6d2;
-  font-family:var(--mono); font-size:9px; letter-spacing:.14em;
-  text-align:center; padding:10px 0; order:2;
-}
-/* o cordão da PM separa as duas entradas (GDD §15.3) */
-.mini-cordao{height:3px; background:repeating-linear-gradient(
-  90deg,#3f7d5a 0 7px,transparent 7px 12px); order:3}
-.mini-lado{
-  display:flex; flex-wrap:wrap; gap:3px; align-items:center;
-  min-height:26px; padding:3px;
-}
-.mini-lado.mandante{order:1}
-.mini-lado.visitante{order:4}
-.mini-vazio{color:var(--apagado); font-family:var(--mono); font-size:9px;
-  letter-spacing:.1em; text-transform:uppercase}
-.mini-disco{
-  display:block; border-radius:50%; border:1.5px solid rgba(0,0,0,.5);
-}
-.mini-disco.nosso{border-color:#e8e8e8; box-shadow:0 0 0 1px var(--rubro)}
+   O FEED — a tela principal, e agora a única
 
+   A coluna de ícones na esquerda, o corpo à direita: em cima a
+   faixa da torcida em uma linha, o bloco de data com o ≫ e o
+   1×/2×; embaixo a lista, a nova sempre no topo. A lista é uma
+   coluna estreita no meio: linha de texto que atravessa 1600px
+   não se lê.
 
-/* ---------- opções ---------- */
-/* Duas chaves, e as duas mudam o ritmo do jogo. O texto de baixo não é
-   enfeite: chave que muda simulação precisa dizer o que muda. */
-.opc-chave{
-  display:flex;align-items:flex-start;gap:11px;padding:11px 2px;
-  border-bottom:1px solid var(--sulco);cursor:pointer;
-}
-.opc-chave:last-child{border-bottom:0}
-.opc-chave input{accent-color:var(--rubro-vivo);width:16px;height:16px;margin-top:2px}
-.opc-chave b{
-  display:block;font-family:var(--titulo);font-size:13px;letter-spacing:.08em;
-  text-transform:uppercase;
-}
-.opc-chave small{display:block;font-size:11.5px;color:var(--fraco);line-height:1.5;margin-top:3px}
-
-/* ---------- a Gestão em sequência ---------- */
-/* Uma tela por decisão. Os cartões são os mesmos de sempre; o que muda
-   é que só um aparece de cada vez, na ordem que `passos()` devolve. */
-.assistente{display:flex;flex-direction:column;gap:12px;max-width:780px;margin:0 auto}
-.ass-trilha{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.ass-bolinha{
-  width:26px;height:26px;background:#1e1e20;border:1px solid var(--linha);
-  color:var(--fraco);font-family:var(--mono);font-size:11px;cursor:pointer;
-}
-.ass-bolinha.feito{border-color:#4a6b4a;color:#8fbf8f}
-.ass-bolinha.on{border-color:var(--ouro,#d9a441);color:var(--ouro,#d9a441)}
-.ass-palco{display:flex;flex-direction:column;gap:10px;min-height:180px}
-.ass-pe{
-  display:flex;align-items:center;gap:10px;
-  border-top:1px solid var(--sulco);padding-top:10px;
-}
-.ass-pe span{flex:1;font-size:11.5px}
-.ass-politicas{
-  border:1px solid var(--linha);background:#141416;padding:10px 12px;
-  display:flex;flex-direction:column;gap:8px;
-}
-.pol-grupo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.pol-grupo b{
-  flex:0 0 150px;font-family:var(--titulo);font-size:11.5px;letter-spacing:.08em;
-  text-transform:uppercase;
-}
-.pol-grupo select{
-  flex:1;min-width:180px;background:#1e1e20;border:1px solid var(--linha);
-  color:var(--texto);font-size:12px;padding:5px 7px;
-}
-
-/* =========================================================
-   O FEED — a tela principal
-
-   Uma barra no alto com quem somos, quando estamos, a
-   velocidade e a navegação; e a lista embaixo, a nova sempre
-   no topo. A lista é uma coluna estreita no meio da tela:
-   linha de texto que atravessa 1600px não se lê.
+   A coluna é a mesma que morava dentro do mapa, e volta pro
+   lugar em que estava — a borda esquerda. Ela é `column wrap`
+   porque são onze ícones: enche a altura que tem e quebra numa
+   segunda coluna ao lado em vez de rolar escondida.
    ========================================================= */
 .pagina[data-pag="feed"].on{
-  height:100%;display:flex;flex-direction:column;min-height:0;
+  height:100%;display:flex;flex-direction:row;min-height:0;
+}
+.feed-menu{
+  display:flex;flex-flow:column wrap;gap:3px;align-content:flex-start;
+  background:#141416;border-right:1px solid var(--linha);padding:5px 4px;
+  flex:none;min-height:0;max-height:100%;
+}
+.feed-menu .mapa-ic{width:32px;height:28px;flex:none}
+.feed-menu .mapa-ic svg{width:16px;height:16px}
+.feed-menu .mapa-ic.aceso{
+  background:var(--rubro);border-color:var(--rubro-vivo);color:#fff;
+}
+.feed-corpo{
+  flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
 }
 .feed-barra{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  display:flex;align-items:center;gap:10px;flex-wrap:nowrap;
   padding:6px 10px;background:var(--painel);
   border-bottom:1px solid var(--linha);flex:none;
 }
-.feed-marca{display:flex;align-items:center;gap:9px;min-width:0;flex:1 1 260px}
+.feed-marca{display:flex;align-items:center;gap:9px;min-width:0;flex:1 1 auto;
+  flex-wrap:nowrap;overflow:hidden}
 .feed-marca .escudo{
   width:26px;height:26px;flex:none;display:flex;align-items:center;
   justify-content:center;font-family:var(--titulo);font-size:11px;
@@ -1309,19 +1029,34 @@ table.dados tr.selecionada td{background:#252525}
 .feed-marca .num.negativo,.feed-marca .num.falta{color:var(--vermelho)}
 .feed-marca .num.sobra{color:var(--verde-vivo)}
 .feed-marca .num em{font-style:normal;opacity:.55;font-size:10px}
-.feed-quando{text-align:right;line-height:1.15;flex:none}
+/* O BLOCO DE DATA NO CANTO DE CIMA À DIREITA, com o ≫ colado.
+   Ele já foi HUD do mapa e a forma é a mesma: quando estamos e o
+   botão de empurrar o dia, numa moldura só. */
+.feed-quando{
+  display:flex;align-items:center;gap:8px;flex:none;
+  background:#141416;border:1px solid var(--linha);padding:2px 4px 2px 9px;
+}
+.feed-quando .quando-txt{text-align:right;line-height:1.15}
 .feed-quando b{
   display:block;font-family:var(--titulo);font-size:14px;letter-spacing:.05em;
+  white-space:nowrap;
 }
-.feed-quando small{display:block;color:var(--fraco);font-size:10.5px}
-/* a coluna de ícones do mapa vira FAIXA no feed: ela é a navegação
-   inteira, e com treze itens tem de poder quebrar em duas linhas em vez
-   de vazar pela direita da tela */
-.feed-menu{display:flex;gap:4px;flex-wrap:wrap;flex:1 1 auto;
-  min-width:0;justify-content:flex-end}
-.feed-menu .mapa-ic{width:30px;height:26px;flex:none}
-.feed-menu .mapa-ic svg{width:15px;height:15px}
+.feed-quando small{display:block;color:var(--fraco);font-size:10.5px;
+  white-space:nowrap}
+.feed-quando .mapa-ic{width:30px;height:26px}
 
+/* A ORDEM DE SACRIFÍCIO, quando não cabe — escrita aqui e não no olho:
+   escudo e sigla nunca saem; depois caem prestígio e membros; depois o
+   saldo da semana; e a linha de baixo do bloco de data. Item que não
+   cabe SAI INTEIRO: número em reais cortado é número errado. */
+@media (max-width:900px){ .feed-marca .num:nth-last-child(-n+2){display:none} }
+@media (max-width:640px){
+  .feed-marca .num.semana{display:none}
+  .feed-marca b{font-size:13px}
+}
+/* abaixo disto o bloco de data perde a linha de baixo: "semana 12 de 52"
+   é contexto, e o dia e o ≫ são o que se usa */
+@media (max-width:380px){ .feed-quando small{display:none} }
 .feed-rolo{flex:1;overflow-y:auto;min-height:0;padding:10px 12px 30px}
 .feed-lista{
   display:flex;flex-direction:column;gap:8px;
@@ -1388,11 +1123,16 @@ table.dados tr.selecionada td{background:#252525}
 .msg.ruim .msg-txt{color:#f4d6d4}
 
 @media (max-width:640px){
-  /* o nome da torcida ganha a linha inteira: com os números do lado ele
-     virava "Ga…", que não é nome de coisa nenhuma */
-  .feed-marca{flex:1 1 100%;flex-wrap:wrap}
-  .feed-menu{justify-content:flex-start}
-  .feed-marca b{max-width:none;min-width:110px;font-size:14px}
+  /* A FAIXA CONTINUA SENDO UMA LINHA, e é a BARRA que quebra em duas.
+     Aqui a faixa é que ganhava a linha inteira com `flex-wrap:wrap`, e
+     em 390px o resultado era o contrário do pedido: 85px de largura pro
+     nome, o escudo em cima, o nome no meio e o saldo embaixo — três
+     linhas. Agora o bloco de data e o 1×/2× descem pra segunda linha da
+     barra e a faixa fica com os 390px inteiros, numa linha só. */
+  .feed-barra{flex-wrap:wrap;row-gap:5px}
+  .feed-marca{flex:1 1 100%;flex-wrap:nowrap}
+  .feed-quando{margin-right:auto}
+  .feed-marca b{max-width:none;min-width:0;font-size:14px}
   .feed-marca .num{font-size:11px}
   .feed-quando b{font-size:12.5px}
   .feed-rolo{padding:8px 8px 24px}

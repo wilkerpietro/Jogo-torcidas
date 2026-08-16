@@ -34,71 +34,21 @@
   /* ---------- páginas ---------- */
   #tela{ padding:0; min-width:0; }
   .pagina{ padding:10px; min-width:0; }
-  /* o mapa é maior que o celular: quem rola é o viewport dele, não a
-     página. Sem o min-width o flex deixa o filho furar o pai. */
-  .mapa-viewport{ max-width:100%; min-width:0; max-height:none;
-                  flex-direction:column; }
-  /* Os pontos do mapa agora são um recolhível DENTRO do mapa, e no
-     celular ele abre um pouco mais estreito. Fechado — que é como ele
-     começa — não ocupa nada. */
-  .mapa-filtros{ width:168px; max-height:52vh; }
-  .mapa-casca{ flex:0 0 auto; }
+  /* A COLUNA DE ÍCONES NO CELULAR.
+     Aqui moravam as regras da HUD do mapa: o viewport que rolava, o
+     recolhível de pontos, a faixa de controles, o pad de WASD e a faixa
+     da torcida sobre o canvas. Saíram com o mapa.
 
-  /* A FAIXA DE ÍCONES NO CELULAR.
-     Ela é HUD do mapa, não do documento: mora dentro do `.mapa-palco`,
-     que já está abaixo do `#topo` grudento — então uma não passa por
-     cima da outra em nenhuma rolagem. E o pad de WASD é `position:fixed`
-     colado embaixo: a faixa fica na borda de cima, a cruz na de baixo,
-     e entre as duas sobra o mapa, que continua sendo quem recebe o
-     arrasto. */
-  /* AS ÂNCORAS NO CELULAR.
-     Em 390px não cabem relógio, faixa de controles e data na mesma
-     linha: 74 + 155 + 140 passa da largura útil. Então a faixa desce
-     uma linha — a de cima fica com o relógio à esquerda e a data à
-     direita, e a de baixo com o botão dos pontos (só o ícone) à
-     esquerda e a faixa no meio. E o recolhível volta a abrir PRA
-     BAIXO, porque aqui não existe coluna de menu embaixo dele pra
-     cobrir; abrindo pro lado, ele batia na data e no zoom. */
-  .mapa-icones{ gap:3px; padding:4px; margin-top:46px;
-                align-self:flex-start; margin-left:52px; }
-  .mapa-ic.largo .rot{ display:none; }
-  .mapa-ic.largo{ width:34px; padding:0; }
-  .mapa-linha-filtros{ flex-direction:column; }
-  .mapa-filtros{ max-height:46vh; }
-  /* a faixa da torcida sai da frente da cruz de WASD enquanto se dirige
-     um bonde: dirigir é modo, e o modo manda no canto de baixo */
-  body.com-pad .mapa-rodape{ display:none; }
-  /* a coluna do menu NÃO some — ela é a navegação inteira agora. O que
-     muda é o quanto ela tem de altura: com a cruz na tela, o canto de
-     baixo à esquerda é dela, e a coluna quebra em mais uma coluna em
-     vez de passar por baixo. */
-  body.com-pad .mapa-canto{ bottom:168px; }
-  /* a faixa é uma linha só em qualquer largura (ver `.mapa-rodape`) */
-  .mapa-canto{ bottom:60px; }
-  /* e o pad inteiro sobe acima do ticker */
-  #mapaPad{ padding-bottom:calc(32px + env(safe-area-inset-bottom)); }
+     A coluna do feed encolhe e continua sendo a navegação inteira. Ela
+     é `column wrap`, então em tela deitada — 390px de altura — ela
+     quebra numa segunda coluna em vez de rolar escondida. */
+  .feed-menu{ padding:4px 3px; gap:2px; }
+  .feed-menu .mapa-ic{ width:30px; height:26px; }
+  .feed-menu .mapa-ic svg{ width:15px; height:15px; }
+  .feed-barra{ padding:5px 7px; gap:7px; }
   .mapa-ic{ width:34px; height:32px; }
   .mapa-ic svg{ width:18px; height:18px; }
-  .rua-relogio{ padding:2px 7px 3px; }
-  .rua-relogio b{ font-size:17px; }
-  .rua-relogio small{ font-size:8px; }
-  /* em paisagem a tela tem 390px de altura: o rótulo do recolhível some
-     e sobra o ícone, que é o que cabe */
-  @media (max-height:460px){
-    /* Deitado, o lado esquerdo de baixo é da cruz de WASD e do ☰, e o
-       de cima é do relógio e dos controles. Sobra a direita: a lista
-       abre lá, embaixo do zoom, presa à tela e não ao canto. */
-    .mapa-canto .mapa-filtros{
-      position:fixed; left:auto; right:10px; top:172px;
-      max-height:calc(100vh - 200px);
-    }
-    .mapa-icones{ align-self:center; margin-left:0; }
-    /* deitado, o canto de cima vira uma linha: relógio e o botão dos
-       pontos lado a lado. Empilhados, o botão descia até a altura da
-       cruz de WASD, que é fixa no canto de baixo à esquerda — 844×390
-       tem 390px de altura e não sobra o que empilhar. */
-    .mapa-canto{ flex-direction:row; align-items:flex-start; }
-  }
+
   .cartao, .corpo, .lista-detalhe, .subabas, .abas-grandes{ min-width:0; }
   .lista-detalhe{ grid-template-columns:1fr !important; }
   .subabas, .abas-grandes{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
@@ -185,15 +135,12 @@
   }
   /* CADA PAD NA SUA TELA.
      `#djPad` é montado uma vez e nunca era desmontado: depois da
-     primeira briga ele ficava boiando por cima do mapa e de todas as
-     páginas de gestão. Somado ao pad do mapa, que veio depois e entra
-     por cima, dava duas cruzes fixas no mesmo canto — e a de cima, na
-     cena de luta, era a do MAPA. Quem tocava W estava mandando num
-     bonde que nem está mais na rua, e o disco da briga não saía do
-     lugar. Duas linhas resolvem, e resolvem no CSS de propósito: não
-     depende de nenhum código lembrar de apagar nada. */
+     primeira briga ele ficava boiando por cima de todas as páginas de
+     gestão. O pad do mapa, que dividia este canto, saiu com o mapa;
+     esta linha fica porque o problema dela é outro e continua de pé: a
+     cruz da cena só existe dentro da cena. Resolve no CSS de propósito:
+     não depende de nenhum código lembrar de apagar nada. */
   body:not(.em-cena) #djPad{ display:none; }
-  body.em-cena       #mapaPad{ display:none; }
 
   .pad-lado{ display:flex; flex-direction:column; gap:8px; pointer-events:none; }
   /* as quatro formações numa linha só: em paisagem a tela tem 390px de
