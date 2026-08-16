@@ -195,6 +195,7 @@ TO.feed = (function(){
       tipo:  m.tipo || '',
       assunto: m.assunto || null,
       urgente: !!m.urgente,
+      seguido: !!m.seguido,
       local: !!m.local,
       /* o que a mensagem moveu no estado, pra linha de consequência */
       efeitos: (m.efeitos || []).filter(x=>x && x.delta),
@@ -263,12 +264,12 @@ TO.feed = (function(){
   function temCota(E, m){
     const c = ctl(E);
     if(m.cat === 6){
-      /* A REDE DE SEGURANÇA FURA A COTA. O caixa no vermelho é o único
-         assunto urgente da categoria: ele avisa antes da debandada, e
-         chegou a ficar preso atrás do pedido de assalto da mesma
-         semana — o jogador só era avisado depois de perder oito
-         pessoas. A carência de duas semanas do assunto continua
-         valendo pra ele; o teto semanal, não. */
+      /* `urgente` FURA O TETO SEMANAL, e só ele. Nasceu pro alarme do
+         caixa, que não podia ficar preso atrás do pedido de assalto da
+         mesma semana — o jogador era avisado depois de perder oito
+         pessoas. Hoje também carrega a segunda decisão da abertura. A
+         carência do ASSUNTO continua valendo pra quem tem assunto;
+         quem não tem, passa. */
       if(!m.urgente && c.semana.c6 >= COTA_INTERNA_SEMANA) return false;
       const ult = m.assunto ? c.assunto[m.assunto] : null;
       if(ult != null && semanaAbs(E) - ult < 2) return false;
@@ -367,9 +368,16 @@ TO.feed = (function(){
          vezes por semana. Sem isto, duas provocações seguidas de rivais
          diferentes saíam coladas e a tela virava a mesma coisa duas
          vezes. */
+      /* `seguido` é a única saída da regra 1, e existe pra a ABERTURA:
+         ideologia e rotina são a mesma categoria e são pedidas uma
+         depois da outra de propósito, antes de o tempo começar a
+         correr. Sem isto a segunda ficava presa até uma mensagem de
+         outra categoria sair, e o jogador começava a partida sem nunca
+         ter visto a rotina. Nenhum produtor de dia usa este campo. */
       const decs = ordenarDecisoes(E, disp.filter(m=>m.peso === 'decisao'
                                                   && temCota(E, m)
-                                                  && m.cat !== c.ultimaCat));
+                                                  && (m.seguido ||
+                                                      m.cat !== c.ultimaCat)));
       if(!noTeto && decs.length){ saiu.push(publicar1(E, decs[0])); break; }
       break;
     }
@@ -433,6 +441,12 @@ TO.feed = (function(){
       /* o único botão que resolve mundo em vez de abrir tela: a ida ao
          estádio devolve ou um aviso de paz ou um encontro pra cena */
       case 'ida':     return irProEstadio(E);
+      /* o Calendário tem três abas; a rotina é a segunda, e a mensagem
+         que a pede tem de cair nela e não na primeira */
+      case 'rotina':  return {abrir:'calendario', aba:'rotina'};
+      /* a caravana tem tela própria, e é a casca que a monta: aqui só
+         se diz qual é */
+      case 'caravana': return {tela:'caravana'};
 
       /* a provocação: +1 de tensão de um lado, nada do outro */
       case 'tensao': {
@@ -684,13 +698,23 @@ TO.feed = (function(){
       .filter(v=>PL().ehRival(E, v.torcida))
       .sort((a,b)=>b.tensao-a.tensao)[0];
 
-    let texto;
+    let texto, botoes = null;
     if(quente && quente.tensao >= PL().TENSAO_QUENTE){
       texto = `Nosso grande rival, a ${quente.torcida.nome}, está na cidade `+
               `essa semana. Bora dar um trato neles?`;
     } else if(j && !j.casa){
       texto = `${E.torcida.clube} joga fora ${diaRot(j.dia)}, contra o `+
               `${j.mandante.nome}. Quantos vão na caravana, e por qual estrada?`;
+      /* A PERGUNTA TEM TELA. Ela chutava o jogador pra dentro da Gestão
+         inteira, com onze cartões, pra ele achar sozinho o da caravana.
+         A pergunta é específica e a resposta tem três campos: quantos
+         vão, por onde e com quantas bombas. Nada disso é regra nova —
+         os três números já são do `planejamento`; o que faltava era a
+         tela que os põe juntos na hora em que a pergunta é feita. */
+      botoes = [{rot:'Montar a caravana', efeito:'caravana',
+                 nota:'quantos vão, por qual estrada e quantas bombas'},
+                {rot:'Seguir ideologia', efeito:'ideologia',
+                 nota:'a ideologia fecha o plano da semana'}];
     } else {
       const lista = TO.praca.jogosDaPraca(E)
         .map(x=>`${x.casa.nome} × ${x.vis.nome}`);
@@ -699,7 +723,7 @@ TO.feed = (function(){
     }
 
     propor(E, {cat:2, peso:'decisao', voz:diretor(E, ch), chave:ch, texto,
-      botoes:[{rot:'Seguir ideologia', efeito:'ideologia',
+      botoes: botoes || [{rot:'Seguir ideologia', efeito:'ideologia',
                nota:'a ideologia fecha o plano da semana'},
               {rot:'Atacar alguém', efeito:'gestao',
                nota:'escolher alvo, onde, efetivo e bomba'}]});
@@ -732,29 +756,83 @@ TO.feed = (function(){
       return;
     }
 
-    /* b) O DIA DO NOSSO JOGO. Esta é a mensagem que abre a ida — e o
-       botão dela não abre mais mapa nenhum: ele manda RESOLVER o
-       caminho do estádio. O que volta é um dos três desfechos, e dois
-       deles são cena de briga. */
+    /* b) O DIA DO NOSSO JOGO. Duas mensagens diferentes, e o que decide
+       é onde o jogo é.
+
+       EM CASA é decisão: o botão manda RESOLVER a ida ao estádio, e o
+       que volta é um dos três desfechos do §8.22 — dois deles são cena.
+
+       FORA é a CHEGADA, e é informação: a estrada já aconteceu quando
+       esta mensagem sai. A emboscada cai na véspera (o dia da ida, por
+       `diasDeCaravana`), a cena dela é jogada lá, e o que sobra aqui é
+       contar como o ônibus chegou. Ir ao estádio do adversário não abre
+       cena nenhuma: a praça dele não é a nossa, e `resolverIda` sabe
+       disso — devolveria "paz" sempre. Botão que não leva a lugar
+       nenhum é botão mentiroso. */
     const j = nossoJogo(E);
-    const naPraca = TO.praca.jogosDaPraca(E).some(x=>x.dia === E.data.dia);
-    if(j && (j.dia||6) === E.data.dia && naPraca){
-      const p = PL().plano(E);
-      const alvo = p.intencao === 'paz' ? null
-                 : (M().torcida(p.alvoTorcida)||{}).nome;
-      const bairro = (M().bairroDaSede(E.torcida)||{}).nome || 'praça';
-      propor(E, {cat:3, peso:'decisao', voz:vozRua(),
-        chave:`c3jogo|${E.data.absoluto}`,
-        texto: alvo
-          ? `Hoje tem ${j.mandante.nome} × ${j.visitante.nome} no `+
-            `${j.estadio}, e o plano é cima da ${alvo} no ${bairro}.`
-          : `Hoje tem ${j.mandante.nome} × ${j.visitante.nome} no `+
-            `${j.estadio}. A bateria sai da sede.`,
-        dados:{tipo:'ida'},
-        botoes:[{rot: alvo ? 'Ir pra treta' : 'Ir pro estádio', efeito:'ida'},
-                {rot:'Ficar em casa', efeito:'nada',
-                 nota:'a torcida não sai — a moral cobra depois'}]});
+    if(!j || (j.dia||6) !== E.data.dia) return;
+    const cartaz = `Hoje tem ${j.mandante.nome} × ${j.visitante.nome} no `+
+                   `${j.estadio}.`;
+
+    if(!j.casa){
+      propor(E, {cat:3, peso:'info', voz:vozRua(),
+        chave:`c3fora|${E.data.absoluto}`,
+        tipo: chegadaRuim(E, j) ? 'ruim' : '',
+        texto:`${cartaz} ${chegada(E, j)}`});
+      return;
     }
+
+    const naPraca = TO.praca.jogosDaPraca(E).some(x=>x.dia === E.data.dia);
+    if(!naPraca) return;
+    const p = PL().plano(E);
+    const alvo = p.intencao === 'paz' ? null
+               : (M().torcida(p.alvoTorcida)||{}).nome;
+    const bairro = (M().bairroDaSede(E.torcida)||{}).nome || 'praça';
+    propor(E, {cat:3, peso:'decisao', voz:vozRua(),
+      chave:`c3jogo|${E.data.absoluto}`,
+      texto: alvo
+        ? `${cartaz.slice(0,-1)}, e o plano é cima da ${alvo} no ${bairro}.`
+        : `${cartaz} A bateria sai da sede.`,
+      dados:{tipo:'ida'},
+      /* UM BOTÃO SÓ. "Ficar em casa" saiu: o time joga, a torcida vai.
+         Não era escolha de verdade — era a opção que o jogador apertava
+         pra não abrir a cena, e o custo dela em moral nunca foi sentido
+         porque a moral já cai por outros seis caminhos. */
+      botoes:[{rot: alvo ? 'Ir pra treta' : 'Ir pro estádio', efeito:'ida'}]});
+  }
+
+  /* A ESTRADA DESTA VIAGEM, quando houve emboscada nela. `E.viagem` é
+     escrito pelo fecho da cena (`acoes.fecharDefesa`) e vale só pra
+     semana em que foi escrito: viagem da semana passada não conta
+     história de hoje. */
+  const viagemDeHoje = E => {
+    const v = E.viagem;
+    return (v && v.ano === E.data.ano && v.semana === E.data.semana) ? v : null;
+  };
+  const chegadaRuim = (E, j) => {
+    const v = viagemDeHoje(E);
+    return !!(v && !v.seguramos);
+  };
+  function chegada(E, j){
+    const cidade = j.cidadeAdv || 'lá';
+    const v = viagemDeHoje(E);
+    if(!v) return `Nossa caravana foi tranquila e já estamos em ${cidade}.`;
+    if(v.seguramos)
+      return `Eles tentaram atacar a gente na estrada, mas passamos por cima.`;
+    /* PERDER SEM FERIDO EXISTE, e o texto tem de saber disso. A briga
+       pode terminar sem ninguém no chão — as duas turmas se olham, a PM
+       chega, o ônibus segue —, e aí quem perdeu perdeu no critério de
+       desempate, não no soco. Dizer "tivemos algumas baixas com 0
+       feridos" é a mensagem se contradizendo dentro da própria frase. */
+    if(!v.feridos)
+      return `Levamos a pior na estrada, mas ninguém ficou pelo caminho: `+
+             `já estamos em ${cidade}.`;
+    /* O NÚMERO É EXATO e sai de quem embarcou: são os feridos da cena da
+       emboscada, contados na escalação da caravana. Quem se feriu não
+       está na conta de quem chegou. */
+    return `Tivemos algumas baixas na caravana com ${v.feridos} `+
+           `${v.feridos === 1 ? 'ferido' : 'feridos'}, mas já chegamos em `+
+           `${cidade}.`;
   }
 
   /* A IDA RESOLVIDA.
@@ -959,19 +1037,12 @@ TO.feed = (function(){
      do escalonador; aqui só se escolhe o assunto do dia.
      ======================================================= */
   const ASSUNTOS = [
-    /* O CAIXA NO VERMELHO FALA UMA VEZ, não duas.
-       O aviso do fecho — "tantos saíram da torcida" — usa este mesmo
-       assunto de propósito: são a mesma notícia em dois estágios, e com
-       assuntos separados elas se revezavam semana sim, semana não,
-       enchendo a categoria interna inteira com "estamos quebrados". */
-    {id:'caixa', peso:'decisao', urgente:true,
-     quando: E => (E.semanasNoVermelho||0) >= 1,
-     monta: (E, v) => ({
-       texto:`Chefe, o caixa fechou no vermelho. Segunda semana assim e o `+
-             `pessoal começa a sair.`, tipo:'ruim',
-       botoes:[{rot:'Abrir o Financeiro', efeito:'painel', pagina:'financeiro'},
-               {rot:'Deixar como está', efeito:'nada',
-                nota:'a moral cai toda semana enquanto durar'}]})},
+    /* O CAIXA NO VERMELHO SAIU DAQUI e virou o alarme do fechamento
+       (`fecharSemana`). Ele nunca foi assunto de dia: é a leitura da
+       semana que fechou, e quem sabe disso é o `rel` que o fecho
+       entrega. Mantê-lo como produtor de dia obrigava a consultar
+       `semanasNoVermelho`, que é um contador de estado e não sabe de
+       gente saindo — o outro motivo pelo qual a semana é grave. */
 
     {id:'assalto', peso:'decisao',
      quando: E => E.dinheiro < 8000 &&
@@ -1230,6 +1301,67 @@ TO.feed = (function(){
     if(!E) return;
     ctl(E);
     cat5(E, rel);
+    fechoDaSemana(E, rel);
+  }
+
+  /* =======================================================
+     O FECHAMENTO DA SEMANA — DUAS MENSAGENS, NUNCA AS DUAS
+
+     O fecho abria um modal por cima do feed. Não era engano: a regra
+     era `relatorio || grave`, e `grave` — semana no vermelho, caixa
+     negativo ou gente saindo — abria de qualquer jeito. O que estava
+     errado era o FORMATO. Na arquitetura do feed, o que chega ao
+     jogador é mensagem; tela por cima é escolha dele.
+
+     São duas, com pesos diferentes, e uma exclui a outra:
+
+     · O RESUMO (`acao`) sai toda semana normal, com o VALOR no texto.
+       O comentário que antes suprimia o resumo dizia que uma linha
+       genérica por semana é barulho de fundo, e ele estava certo — o
+       conserto é escrever o número, não calar. É esta mensagem que dá
+       ao jogador um caminho até o detalhamento quando a chave do
+       relatório está desligada, que é o padrão.
+     · O ALARME (`decisao`) para o tempo. Semana grave é parada
+       obrigatória: é quando a torcida começa a se desfazer, e descobrir
+       isso trinta dias depois não é conforto, é perda.
+
+     Nunca as duas na mesma semana: dizer "fechou em −R$ 800" e logo
+     abaixo "chefe, o caixa fechou no vermelho" é a mesma notícia duas
+     vezes.
+     ======================================================= */
+  function fechoDaSemana(E, rel){
+    const saiu = (rel.saidas || []).length;
+    const vermelho = rel.saldo < 0 || E.dinheiro < 0;
+    const ch = `fecho|${E.data.ano}|${E.data.semana}`;
+    if(vermelho || saiu){
+      /* O TEXTO SEGUE A CAUSA. O aprovado fala do caixa, e é o certo
+         quando o caixa é o problema — mas `grave` também é verdade com
+         o caixa positivo e gente indo embora, e aí dizer "fechou no
+         vermelho" seria mentira na cara do jogador. */
+      /* SEM `assunto`, DE PROPÓSITO. A carência de duas semanas do
+         escalonador vale pra assunto de dia — "não repita a mesma
+         conversa na semana seguinte". O alarme não é conversa: é a
+         parada obrigatória da semana grave, e com carência a semana
+         seguinte no vermelho ficaria SEM mensagem nenhuma, porque o
+         resumo também não sai quando a semana é grave. */
+      propor(E, {cat:6, peso:'decisao', urgente:true,
+        voz:diretor(E, ch), chave:ch+'|alarme', tipo:'ruim',
+        texto: vermelho
+          ? `Chefe, o caixa fechou no vermelho. Segunda semana assim e o `+
+            `pessoal começa a sair.`
+          : `Chefe, ${saiu === 1 ? 'saiu um' : `saíram ${saiu}`} essa semana. `+
+            `Do jeito que tá, semana que vem sai mais.`,
+        botoes:[{rot:'Ver Financeiro', efeito:'painel', pagina:'financeiro'},
+                {rot:'Deixar como está', efeito:'nada',
+                 nota:'a moral cai toda semana enquanto durar'}]});
+      return 'alarme';
+    }
+    const sinal = rel.saldo > 0 ? '+' : rel.saldo < 0 ? '−' : '';
+    propor(E, {cat:4, peso:'acao', voz:diretor(E, ch), chave:ch,
+      texto:`A semana fechou em ${sinal}${U.dinheiro(Math.abs(rel.saldo))}.`,
+      efeitos:[{ind:'dinheiro', delta:Math.round(rel.saldo), dono:'da semana'}],
+      botoes:[{rot:'Ver Financeiro', efeito:'painel', pagina:'financeiro'}]});
+    return 'resumo';
   }
 
   /* quem ganhou o último confronto com cada rival — é o que faz as
@@ -1258,6 +1390,21 @@ TO.feed = (function(){
             `faz com o adversário, como recebe aliado e o que faz com os `+
             `outros jogos da praça.`,
       botoes:[{rot:'Definir ideologia', efeito:'gestao'}]});
+    /* A ROTINA ENTRA NA ABERTURA, junto da ideologia. Ela existe desde
+       sempre — uma ação padrão por dia da semana, que roda sozinha sem
+       furar o orçamento —, e o jogador descobria por acaso, abrindo o
+       Calendário. Duas decisões seguidas param o tempo até serem
+       respondidas, e só então o feed começa a correr. */
+    /* `urgente` aqui não é alarme: é o que fura o teto de UMA interna
+       por semana. Sem ele a segunda decisão da abertura ficava na fila
+       até a semana seguinte, e o jogador começava a partida sem nunca
+       ter visto a rotina — que é justamente o que este item conserta. */
+    propor(E, {cat:6, peso:'decisao', urgente:true, seguido:true,
+      voz:diretor(E,'inicio'), chave:'inicio|3', assunto:'rotina',
+      texto:`E define a rotina da semana: uma ação padrão por dia, que a `+
+            `rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de `+
+            `fora.`,
+      botoes:[{rot:'Abrir rotina', efeito:'rotina'}]});
     return publicar(E);
   }
 
@@ -1284,7 +1431,7 @@ TO.feed = (function(){
           lerEfeito, lerEfeitos,
           COTA_DIPLOMACIA_MES, CARENCIA_AMEACA, AMEACAS, ASSUNTOS,
           propor, publicar, responder, travado, decisaoAberta, semanaDaFundacao,
-          passarDia, fecharSemana, irProEstadio, registrarConfronto,
+          passarDia, fecharSemana, fechoDaSemana, irProEstadio, registrarConfronto,
           abrir, historico, resumo, expirada, contexto, perguntaAntes,
           feed, fila, ctl};
 })();

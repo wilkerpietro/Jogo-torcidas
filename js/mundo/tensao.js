@@ -378,10 +378,15 @@ TO.tensao = (function(){
     {id:'arredores', txt:'brigou nos arredores com a', tensao:14, prest:4},
     {id:'pichacao',  txt:'pichou o muro da', tensao:7,  prest:2}
   ];
+  /* CADA UMA FECHA POR SI. Havia um fecho fixo — ". As duas saíram
+     ganhando." — grudado nos três, e isso é conclusão de relatório, não
+     de notícia: o leitor decide se as duas saíram ganhando, o jornal
+     conta o que houve. O texto de cada evento vai inteiro aqui, com o
+     ponto final, e o produtor só encaixa os dois nomes. */
   const PACIFICAS = [
-    {id:'tregua',  txt:'fechou trégua com a',        tensao:-14},
-    {id:'visita',  txt:'foi recebida na sede da',    tensao:-10},
-    {id:'apoio',   txt:'apoiou no estádio a',        tensao:-8}
+    {id:'tregua',  txt:'reforçou o laço de amizade com a', tensao:-14},
+    {id:'visita',  txt:'foi recebida na sede da',          tensao:-10},
+    {id:'apoio',   txt:'apoiou a',        fecho:'no estádio', tensao:-8}
   ];
 
   /* =======================================================
@@ -681,7 +686,7 @@ TO.tensao = (function(){
     const tAntes = E.tensoesDelas[ch] || 0;
     E.tensoesDelas[ch] = U.limitar(tAntes + ev.tensao, 0, MAX);
     const dm = mover(E, a, 'moral', 0.3) + mover(E, b, 'moral', 0.3);
-    const txt = `${ta.nome} ${ev.txt} ${tb.nome}. As duas saíram ganhando.`;
+    const txt = `${ta.nome} ${ev.txt} ${tb.nome}${ev.fecho ? ' '+ev.fecho : ''}.`;
     const absJogo = par.motivo === 'jogo' ? diaDaProximaSemana(E, par.dia) : null;
     return {txt, tipo:'paz', torcidas:[a, b], motivo:par.motivo, dia:par.dia, absJogo,
             semanaJogo: par.motivo === 'jogo' ? E.data.semana + 1 : null,

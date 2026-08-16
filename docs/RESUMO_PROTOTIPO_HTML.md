@@ -2892,6 +2892,242 @@ o ano fechava em −R$ 46.875; agora zera no 337 e fecha em −R$ 29.926. Fica r
 porque é o que impede uma temporada de teste de ter efetivo realista no segundo semestre
 — o ataque planejado do dia 334 abriu com 4 discos do nosso lado.
 
+## 8.23 Seis ajustes: o alarme no feed, a tela da caravana e a chegada
+
+Seis coisas que não se encostam, medidas juntas. Uma temporada em cada medição,
+Cearamor, Fortaleza.
+
+### 1. O fechamento sai do modal e vira duas mensagens
+
+O modal não abria por engano: a regra era `relatorio || grave`, com `grave` = semana no
+vermelho, caixa negativo ou gente saindo. Errado era o **formato** — na arquitetura do
+feed o que chega ao jogador é mensagem, e tela por cima é escolha dele.
+
+São duas, e **uma exclui a outra**:
+
+| | peso | categoria | texto | botão |
+|---|---|---|---|---|
+| **resumo** | `acao` | 4 | *"A semana fechou em +R$ 847."* | Ver Financeiro |
+| **alarme** | `decisao` | 6 | *"Chefe, o caixa fechou no vermelho…"* | Ver Financeiro · Deixar como está |
+
+O resumo **traz o valor no texto**, e é isso que responde ao comentário que antes
+suprimia o resumo: uma linha genérica por semana é barulho de fundo, e o conserto é
+escrever o número, não calar. É também o único caminho até o detalhamento para quem
+deixa a chave do relatório desligada, que é o padrão.
+
+O alarme sai **sem `assunto`**, de propósito. A carência de duas semanas do escalonador
+vale pra assunto de dia — "não repita a mesma conversa na semana seguinte". O alarme não
+é conversa: é a parada obrigatória, e com carência a segunda semana no vermelho ficaria
+sem mensagem nenhuma, porque o resumo também não sai em semana grave. O `caixa` saiu de
+`ASSUNTOS` e virou fecho de semana; ele nunca foi assunto de dia — é a leitura da semana
+que fechou, e quem sabe disso é o `rel` que o fecho entrega.
+
+**O texto segue a causa.** `grave` também é verdade com o caixa positivo e gente indo
+embora; nesse caso dizer "fechou no vermelho" seria mentira, e a mensagem passa a contar
+a saída.
+
+O autosave já estava separado do modal e continua: ele roda toda virada, chave ligada ou
+desligada.
+
+### 2. A caravana ganha tela
+
+*"Quantos vão na caravana, e por qual estrada?"* abria a Gestão inteira, com onze
+cartões, pro jogador achar sozinho o da caravana. Pergunta específica, tela específica —
+`abrirCaravana()`, um modal com três seções e nada além:
+
+- **quantos vão**: quantos *querem* (`interessados`, de `aptos × vontade`), o medidor de
+  vontade, o contador entre o mínimo e esse teto, e **o custo por cabeça, o bruto, o
+  rateio e o que sai do caixa** — recalculados a cada toque, porque caravana é a maior
+  despesa avulsa do jogo e decidir sem ver o preço é decidir no escuro;
+- **por qual estrada**: as rotas de `rotas(E)`, com trechos, rodovias e risco de
+  emboscada, mais o trajeto cidade a cidade;
+- **quantas bombas**: do estoque, com o saldo à vista.
+
+Fecha com o resumo — *"85 para Recife por Rota mais curta − R$ 1.428"* — e o Confirmar.
+
+**Nada aqui lança dinheiro.** A tela escreve `p.caravana`, `p.rota` e `p.bombas`;
+`confirmar()` fecha o plano; a estrada continua sendo cobrada uma vez no fechamento, por
+`cobrarCaravana`. Cobrar na tela seria o lançamento duplicado.
+
+### 3. O jogo fora vira a chegada
+
+O jogo fora usava o texto de jogo em casa. Agora tem mensagem própria, e ela é
+**informativa**: quando sai, a estrada já aconteceu.
+
+**Linha fixa:** *"Hoje tem ABC × Ceará no Frasqueirão."*
+
+| situação | complemento |
+|---|---|
+| sem emboscada | "Nossa caravana foi tranquila e já estamos em Natal." |
+| emboscada, ganhamos | "Eles tentaram atacar a gente na estrada, mas passamos por cima." |
+| emboscada, perdemos com feridos | "Tivemos algumas baixas na caravana com **7** feridos, mas já chegamos em Natal." |
+| emboscada, perdemos sem ferido | "Levamos a pior na estrada, mas ninguém ficou pelo caminho: já estamos em Natal." |
+
+A quarta linha não estava no enunciado e **é necessária**: dá pra perder a briga sem
+ninguém no chão — as duas turmas se olham, a PM chega, o ônibus segue —, e o texto de
+baixas com `{n} = 0` seria a mensagem se contradizendo dentro da própria frase.
+
+**A ordem se resolve sozinha.** A emboscada cai em `diasDeCaravana(E)[0]`, que é o dia da
+IDA — a véspera do jogo. A convocação abre a cena lá; o fecho dela escreve `E.viagem`
+(`seguramos` e `feridos`); a chegada sai no dia seguinte lendo esse registro. O `{n}` sai
+de `res.membros` — as fichas da caravana que caíram na cena —, então é exatamente quem
+embarcou e não chegou inteiro.
+
+**Jogo fora não tem botão.** Ir ao estádio do adversário não abre cena: a praça dele não
+é a nossa, e `resolverIda` devolveria "paz" sempre. Botão que não leva a lugar nenhum é
+botão mentiroso.
+
+### 4. "Ficar em casa" saiu
+
+O time joga, a torcida vai. Não era escolha de verdade — era a opção que o jogador
+apertava pra não abrir a cena, e o custo dela em moral nunca foi sentido porque a moral
+já cai por outros seis caminhos.
+
+### 5. As notícias pacíficas
+
+O fecho fixo `". As duas saíram ganhando."` estava grudado nos três eventos. É conclusão
+de relatório, não de notícia: o leitor decide quem saiu ganhando, o jornal conta o que
+houve. Cada evento passa a trazer o texto inteiro:
+
+| id | texto |
+|---|---|
+| `tregua` | "{A} **reforçou o laço de amizade com a** {B}." |
+| `visita` | "{A} foi recebida na sede da {B}." |
+| `apoio` | "{A} apoiou a {B} no estádio." |
+
+### 6. A rotina entra na abertura
+
+A partida nova abria com "Jogo iniciado" e a ideologia. Entra uma segunda decisão logo
+depois — *"E define a rotina da semana: uma ação padrão por dia, que a rapaziada toca
+sozinha. Dia de jogo e dia de estrada ficam de fora."* → **Abrir rotina**, que cai na aba
+certa do Calendário (a mensagem passa a poder pedir uma ABA, não só uma página).
+
+Duas mudanças no escalonador foram necessárias, e as duas são estreitas:
+
+- **`urgente` na segunda decisão**, pra furar o teto de uma interna por semana. Sem ele a
+  rotina ficava na fila até a semana seguinte e o jogador começava a partida sem nunca
+  ter visto a rotina — que é o que este item conserta.
+- **`seguido`**, a única saída da regra 1 (nunca duas da mesma categoria em sequência).
+  Ideologia e rotina são as duas da categoria 6 e são pedidas uma depois da outra de
+  propósito. Nenhum produtor de dia usa este campo; ele existe só pra abertura.
+
+---
+
+### Os critérios, medidos
+
+**1 · O modal nunca abre sozinho, e toda semana tem mensagem.** Uma temporada, chave
+desligada:
+
+| | chave desligada | chave ligada |
+|---|---:|---:|
+| semanas fechadas | 52 | 52 |
+| semanas com mensagem de fecho | **52** | **52** |
+| resumo (`acao`) | 9 | 5 |
+| alarme (`decisao`) | 43 | 47 |
+| as duas na mesma semana | **0** | **0** |
+| presas na fila no fim | **0** | **0** |
+| **modais abertos sozinhos** | **0** | **52** |
+| autosaves | **52** | **52** |
+
+A conta é pela CHAVE da mensagem (`fecho|ano|semana`), não pelo dia em que ela saiu: a
+fila pode segurar o resumo um ou dois dias pela regra de não repetir categoria em
+sequência, e contar só o dia da virada mediria a fila, não o fechamento.
+
+**43 alarmes em 52 semanas é muito, e é o jogador de teste, não a regra.** Este jogador
+nunca abre o Financeiro; o caixa vira negativo por volta do dia 85 e não volta. Semana no
+vermelho é parada obrigatória por decisão do enunciado, então ele é parado toda semana. O
+resumo é o caso normal de quem está no azul.
+
+**1b · O resumo não para o tempo; o alarme para.** Forçando as duas situações na virada
+da mesma semana:
+
+| forçado | mensagem publicada | `travado` depois |
+|---|---|---|
+| caixa em +R$ 90.000 | `acao/4` — "A semana fechou em +R$ 856." | **false** |
+| caixa em −R$ 4.000 | `decisao/6` — "Chefe, o caixa fechou no vermelho…" | **true** |
+
+Em nenhum dos dois a outra mensagem apareceu.
+
+**2 · A semana continua sendo salva** com o modal desligado: 52 chamadas a
+`TO.estado.salvar` em 52 semanas.
+
+**3 · Com a chave ligada o modal volta**: 52 em 52.
+
+**4 · A tela da caravana**, aberta pela decisão *"Ceará joga fora domingo, contra o Santa
+Cruz. Quantos vão na caravana, e por qual estrada?"*:
+
+- seções: Quantos vão · Por qual estrada · Quantas bombas
+- "Querem ir **107** de 150 aptos", vontade 71, contador com mínimo 5
+- rotas: "Rota mais curta — 2 trechos por Rodovia Nordeste 1 e Rodovia Nordeste 2 · risco
+  de emboscada 45", trajeto Fortaleza › Paraiba › Recife
+- bombas: 0 de 4 no estoque
+
+**O custo muda no dedo.** Dois toques no `−`:
+
+| | antes | depois |
+|---|---:|---:|
+| embarcam | 107 | 85 |
+| ônibus e pedágio | R$ 4.494 | **R$ 3.570** |
+| rateio | R$ 2.696 | **R$ 2.142** |
+| sai do caixa | −R$ 1.798 | **−R$ 1.428** |
+
+**5 · A escolha chega ao plano e é cobrada uma vez.** Escolhido na tela: 74 pessoas, rota
+curta, R$ 1.243. Confirmar não mexeu no caixa (−R$ 2.262 antes e depois). Na virada da
+semana entrou **um** lançamento, em 7/6: *"Caravana para Recife (74 pessoas, rateio de
+R$ 1.865) — R$ 1.243"*, e ele não se repetiu nas semanas seguintes.
+
+**6 · Os três casos do jogo fora**, todos pela tela, Ceará × Santa Cruz no Arruda:
+
+| caso | mensagem |
+|---|---|
+| sem emboscada | "Hoje tem Santa Cruz × Ceará no Arruda. **Nossa caravana foi tranquila e já estamos em Recife.**" |
+| emboscada, ganhamos | "…**Eles tentaram atacar a gente na estrada, mas passamos por cima.**" |
+| emboscada, perdemos | "…**Levamos a pior na estrada, mas ninguém ficou pelo caminho: já estamos em Recife.**" |
+
+Nos dois casos com emboscada a convocação *"Pegaram a caravana na estrada. A Inferno
+Coral fechou a pista."* abriu a cena **antes** (79 e 152 discos), e a chegada só saiu no
+dia seguinte, com `tipo:'ruim'` quando levamos a pior.
+
+**O caso de feridos não saiu da briga, e vale dizer por quê.** A cena da emboscada não
+produz baixa nenhuma sem alguém dirigindo o bonde, e o headless não consegue dirigir:
+110 s a 2× com investida e W apertados fecharam em `caidos {0, 0}` — o teclado do
+Playwright não chega ao canvas. Então a prova do `{n}` é da CONTA, com o mesmo `res` que
+`ponte.encerrar` entrega:
+
+| caídos na cena | `E.viagem.feridos` | fichas que viraram ferido | chegaram | texto |
+|---:|---:|---:|---:|---|
+| 0 de 30 | 0 | 0 | 30 | "…ninguém ficou pelo caminho…" |
+| 7 de 30 | **7** | **7** | **23** | "…com **7** feridos, mas já chegamos em Natal." |
+
+**Não observado em uma temporada:** uma emboscada de jogo de verdade terminando com
+ferido. O caminho está medido ponta a ponta; o que falta é uma briga jogada por mão
+humana.
+
+**7 · "Ficar em casa" não existe.** Os 14 rótulos vistos numa temporada: Abrir rotina,
+Atacar alguém, Definir ideologia, Deixa isso, Deixar como está, Ir pro estádio, Montar a
+caravana, Não, Não dar moral, Pode ir, Seguir ideologia, Sim, Vem, verme, Ver Financeiro.
+
+**8 · As pacíficas.** 12 notícias distintas numa temporada, **0** terminando em "as duas
+saíram ganhando". Exemplos: *"Força Jovem Vasco reforçou o laço de amizade com a Torcida
+Jovem Botafogo."*, *"Comando Rubro-Negro foi recebida na sede da Mancha do Ypiranga."*.
+O evento `apoio` não apareceu nesta temporada — **não observado em 1 temporada**.
+
+**9 · A abertura, na ordem.**
+
+| passo | feed | `travado` |
+|---|---|---|
+| partida nova | `info/5` "Jogo iniciado. Cearamor — Fortaleza, 150 membros." + `decisao/6` ideologia | **true** |
+| respondida a ideologia | entra `decisao/6` "E define a rotina da semana…" | **true** |
+| respondida a rotina | — | **false** |
+
+As três antes de o tempo começar a correr.
+
+### O que não mudou
+
+A bateria das oito cenas continua limpa, com 0 erros de página, e o determinismo segue
+intacto: o mesmo save carregado em duas páginas limpas dá **137 mensagens e 0
+diferenças**.
+
 ## 9. Celular
 
 > **Leia junto com §8.22.** Boa parte desta seção descreve a tela do MAPA — a gaveta

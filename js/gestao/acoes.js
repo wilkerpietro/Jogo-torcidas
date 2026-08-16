@@ -233,6 +233,19 @@ TO.acoes = (function(){
       E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + 0.7, 0, 20);
       linhas.push(naEstrada ? 'a pista ficou nossa' : 'a casa ficou de pé');
     }
+    /* O QUE A ESTRADA DEIXOU, pra a mensagem de chegada poder contar.
+       Ela sai no dia do jogo — a emboscada cai na véspera, que é o dia
+       da ida — e precisa de duas coisas: se passamos ou apanhamos, e
+       quantos se feriram. Os feridos saem da lista da CENA, que é a
+       caravana: quem embarcou. O `res.membros` é a mesma lista que
+       `aplicarResultadoDaNoite` percorre; contar aqui evita depender da
+       ordem em que a casca chama as duas. */
+    if(naEstrada) E.viagem = {
+      ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
+      seguramos, torcida:alvo.torcidaId, nome:alvo.nome,
+      embarcados: alvo.nossos || 0,
+      feridos: (res.membros||[]).filter(r=>!r.preso && r.caido).length
+    };
     if(T) T.somar(E, alvo.torcidaId, seguramos ? 10 : 6, 'vieram na nossa casa');
     /* do lado delas a conta é a mesma virada */
     const dmDelas = T ? T.mover(E, alvo.torcidaId, 'moral',

@@ -718,7 +718,14 @@
        jogador entra nela sem ter escolhido quando é surpresa. */
     if(r.encontro) abrirConfronto(e, r.encontro);
     else if(r.cena) abrirCenaDaMensagem(r.cena);
-    else if(r.abrir) abrirPainel(r.abrir);
+    else if(r.tela === 'caravana') abrirCaravana();
+    else if(r.abrir){
+      /* a mensagem pode pedir uma ABA, não só uma página: a rotina é a
+         segunda do Calendário, e cair na primeira é o mesmo que não
+         abrir nada */
+      if(r.aba) abaCal = r.aba;
+      abrirPainel(r.abrir);
+    }
     else redesenhar();
     TO.estado.salvar();
     /* respondida a última decisão, o relógio volta a andar sozinho */
@@ -1437,6 +1444,131 @@
     f.appendChild(fechar); m.appendChild(f);
     fundo.appendChild(m); document.body.appendChild(fundo);
     return ()=>fundo.remove();
+  }
+
+  /* =======================================================
+     A TELA DA CARAVANA
+
+     A pergunta "quantos vão na caravana, e por qual estrada?" abria a
+     Gestão inteira — onze cartões, e o jogador que procurasse o da
+     caravana. Pergunta específica merece tela específica.
+
+     NADA AQUI É REGRA NOVA. Os três números saem de
+     `planejamento.estimativaCaravana`, `planejamento.rotas` e
+     `E.estoque.bombas`, que é exatamente o que o cartão da Gestão já
+     lia. E NADA AQUI LANÇA DINHEIRO: a caravana é cobrada uma vez, no
+     fechamento da semana, por `compromissos` — quem escreve aqui só
+     mexe em `p.caravana`, `p.rota` e `p.bombas`.
+
+     O CUSTO ANDA JUNTO COM O DEDO. Caravana é a maior despesa avulsa do
+     jogo, e decidir quantos vão sem ver o preço mudar é decidir no
+     escuro. Por isso o corpo é remontado a cada toque, em vez de o
+     número ser escrito uma vez na abertura.
+     ======================================================= */
+  function abrirCaravana(){
+    const e = E(), P = TO.planejamento;
+    const listaRotas = P.rotas(e);
+    if(!listaRotas.length){
+      aviso('Não há viagem marcada nesta semana.', 'ruim');
+      return null;
+    }
+    const p = P.plano(e);
+    const corpo = el('div');
+    let fechar = null;
+
+    const pintar = ()=>{
+      const est = P.estimativaCaravana(e);
+      const j = e.proximoJogo || {};
+      corpo.innerHTML = '';
+
+      /* --- quantos vão --- */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantos vão'}));
+      corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Querem ir</span><b>${est.interessados} `+
+        `<span class="fraco">de ${est.aptos} aptos</span></b>`}));
+      corpo.appendChild(el('div',{class:'linha-dado', html:
+        medidor('Vontade de viajar', Math.round(est.vontade*100), 100,
+                est.vontade>0.5?'var(--verde)':'var(--ouro)')}));
+      const passo = Math.max(1, Math.round(est.interessados/10));
+      const linha = el('div',{class:'contador'});
+      const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
+      bMenos.disabled = est.vao <= est.minimo;
+      bMais.disabled  = est.vao >= est.interessados;
+      bMenos.onclick = ()=>{ p.caravana = Math.max(est.minimo, est.vao - passo);
+                             p.decidido = false; pintar(); };
+      bMais.onclick  = ()=>{ p.caravana = Math.min(est.interessados, est.vao + passo);
+                             p.decidido = false; pintar(); };
+      linha.append(bMenos, el('b',{texto:String(est.vao)}), bMais,
+        el('small',{texto:`embarcam · mínimo ${est.minimo}`}));
+      corpo.appendChild(linha);
+      corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Por cabeça</span><b>${U.dinheiro(est.porCabeca)}</b>`}));
+      corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Ônibus e pedágio</span><b>${U.dinheiro(est.bruto)}</b>`}));
+      corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span>Rateio entre os que vão</span>`+
+        `<b class="positivo">${U.dinheiro(est.rateio)}</b>`}));
+      corpo.appendChild(el('div',{class:'linha-dado total', html:
+        `<span>Sai do caixa</span>`+
+        `<b class="negativo">${U.dinheiro(-est.custo)}</b>`}));
+
+      /* --- por qual estrada --- */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Por qual estrada'}));
+      corpo.appendChild(opcoes(listaRotas.map(r=>({
+        id:r.id, rot:r.nome, custo:Math.round(r.custo*0.4),
+        nota:`${r.nota}${r.risco ? ` · risco de emboscada ${Math.round(r.risco)}`
+                                 : ' · sem território hostil'}`
+      })), (p.rota || listaRotas[0].id),
+        id=>{ p.rota = id; p.decidido = false; pintar(); }));
+      const r = P.rotaEscolhida(e);
+      if(r && r.cidades.length > 1)
+        corpo.appendChild(el('div',{class:'trajeto', html:
+          r.cidades.map((c,i)=>{
+            const nome = (TO.mundo.cidade(c)||{}).nome || c;
+            const hostil = P.hostilidade(e, c);
+            return `<span class="parada${i===0?' saida':''}${
+              i===r.cidades.length-1?' chegada':''}${hostil>40?' hostil':''}`+
+              `">${nome}</span>`;
+          }).join('<i>›</i>')}));
+
+      /* --- quantas bombas --- */
+      const temBomba = (e.estoque||{}).bombas || 0;
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantas bombas'}));
+      const lb = el('div',{class:'contador'});
+      const bB = el('button',{texto:'−'}), bM = el('button',{texto:'+'});
+      const leva = U.limitar(p.bombas || 0, 0, temBomba);
+      bB.disabled = leva <= 0;
+      bM.disabled = leva >= temBomba;
+      bB.onclick = ()=>{ p.bombas = Math.max(0, leva-1); p.decidido=false; pintar(); };
+      bM.onclick = ()=>{ p.bombas = Math.min(temBomba, leva+1); p.decidido=false; pintar(); };
+      lb.append(bB, el('b',{texto:String(leva)}), bM,
+        el('small',{texto: temBomba ? `de ${temBomba} no estoque`
+                                    : 'não temos bomba no estoque'}));
+      corpo.appendChild(lb);
+
+      /* --- o resumo --- */
+      corpo.appendChild(el('div',{class:'linha-dado total', html:
+        `<span>${est.vao} para ${j.cidadeAdv || 'fora'} por `+
+        `${(r||{}).nome || '—'}${leva ? `, com ${leva} bomba${leva>1?'s':''}` : ''}`+
+        `</span><b class="negativo">${U.dinheiro(-est.custo)}</b>`}));
+    };
+
+    pintar();
+    fechar = modal('Caravana',
+      `${(e.proximoJogo||{}).mandante ? e.proximoJogo.mandante.nome : 'Fora'} · `+
+      `semana ${e.data.semana}`, corpo,
+      /* CONFIRMAR NÃO COBRA. `confirmar` fecha o plano e paga recepção e
+         investida; a estrada continua sendo compromisso da semana, e
+         cobrá-la aqui seria o lançamento duplicado. */
+      [['Confirmar', ()=>{
+        const est = P.estimativaCaravana(e);
+        P.confirmar(e);
+        aviso(`Caravana fechada: ${est.vao} para ${(e.proximoJogo||{}).cidadeAdv}.`,
+              'boa');
+        TO.estado.salvar();
+        redesenhar();
+      }]], 'media');
+    return fechar;
   }
 
   function abrirFicha(m){
@@ -3690,18 +3822,17 @@
   document.addEventListener('visibilitychange', ()=>{
     if(document.hidden) pararTudo('foco'); else soltarTudo('foco');
   });
-  /* O FECHAMENTO DA SEMANA, COM O RELATÓRIO OPCIONAL.
-     Antes as três coisas moravam na mesma linha: abrir o modal, salvar e
-     nada mais. Agora elas se separam, porque só uma delas é opcional.
+  /* O FECHAMENTO DA SEMANA. Três coisas que já moraram na mesma linha e
+     hoje se separam, porque só uma delas é opcional.
 
-     · SALVAR é sempre. O autosave estava pendurado no mesmo `;` do
+     · SALVAR é sempre. O autosave já esteve pendurado no mesmo `;` do
        `abrirFechamento`, e desligar o modal teria desligado o save
        junto — o jeito mais silencioso de perder uma temporada.
-     · O RESUMO vai pro feed, e só quando tem o que dizer.
-     · O MODAL é a chave. Fica desligado por padrão — mas semana no
-       vermelho ou com gente saindo abre de qualquer jeito, porque é aí
-       que a torcida começa a se desfazer e descobrir isso trinta dias
-       depois não é conforto, é perda. */
+     · AS DUAS MENSAGENS são do `TO.feed.fecharSemana`: o resumo com o
+       valor da semana, ou o alarme que para o tempo. Uma ou outra.
+     · O MODAL É SÓ ESCOLHA. A chave em Opções e o botão "Último
+       fechamento" no Financeiro. NUNCA MAIS ABRE SOZINHO — nem na
+       semana grave, que agora é a mensagem de decisão. */
   TO.estado.aoFecharSemana((rel, e)=>{
     e = e || E();
     TO.estado.salvar();
@@ -3709,22 +3840,14 @@
        marco. É o pulso da categoria 5, espalhado pelos sete dias. */
     TO.feed.fecharSemana(e, rel);
     const saiu = (rel.saidas || []).length;
-    /* O RESUMO SEMANAL SÓ FALA QUANDO TEM O QUE DIZER. Uma linha por
-       semana contando que sobrou dinheiro é a definição de barulho de
-       fundo — o saldo já está escrito na barra do feed o tempo todo.
-       Semana com gente saindo é outra coisa: isso é a torcida se
-       desfazendo, e tem de aparecer. */
-    /* A DEBANDADA É RESULTADO, NÃO CONVERSA DE DIRETOR. Ela chegou a
-       sair como categoria 6 com o assunto `caixa`, o mesmo do alarme —
-       e aí a linha informativa consumia a carência de duas semanas do
-       assunto e a DECISÃO que avisa antes da debandada nunca saía. O
-       aviso é interna; o pessoal indo embora é o que aconteceu. */
+    /* A DEBANDADA É RESULTADO, NÃO CONVERSA DE DIRETOR. O alarme é o
+       diretor pedindo providência; isto é o que aconteceu, e os dois
+       cabem na mesma semana porque contam coisas diferentes. */
     if(saiu) TO.estado.anotar(e,
       `${saiu} ${saiu===1?'saiu':'saíram'} da torcida essa semana. `+
       `Caixa em ${U.dinheiro(e.dinheiro)}.`, 'ruim',
       {cat:4, efeitos:[{ind:'membros', delta:-saiu, dono:'nosso'}]});
-    const grave = rel.saldo < 0 || e.dinheiro < 0 || saiu > 0;
-    if(opc(e).relatorio || grave) abrirFechamento(rel);
+    if(opc(e).relatorio) abrirFechamento(rel);
   });
   $('btSelecionarTorcida').onclick = ()=>{
     if(!escolhida) return;
