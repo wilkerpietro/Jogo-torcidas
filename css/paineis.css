@@ -1011,15 +1011,32 @@ table.dados tr.selecionada td{background:#252525}
   display:flex;align-items:center;gap:5px;
   font-family:var(--mono);font-size:12px;color:var(--texto);
 }
-/* o saldo da semana: sinal, cor e um rótulo curto. Dois valores em
-   reais lado a lado sem rótulo viram dois saldos e o jogador não sabe
-   qual é qual. */
-.mapa-rodape .semana{flex-direction:column;align-items:flex-start;gap:0;line-height:1.1}
-.mapa-rodape .semana i{font-style:normal;font-size:12px}
-.mapa-rodape .semana small{font-size:8.5px;color:var(--fraco);letter-spacing:.1em;
-  text-transform:uppercase}
-.mapa-rodape .semana.sobra i{color:#6a9c4a}
-.mapa-rodape .semana.falta i{color:#d9705f}
+/* A FAIXA EM UMA LINHA SÓ.
+   O que mais custava altura era o rótulo "NA SEMANA" empilhado embaixo
+   do número: ele virou um sufixo `/sem` de sete pixels na mesma linha, e
+   a explicação inteira foi pro `title`. O sinal e a cor já dizem que
+   aquilo é variação e não um segundo saldo. */
+.mapa-rodape{flex-wrap:nowrap;overflow:hidden}
+.mapa-rodape b{white-space:nowrap}
+.mapa-rodape .num{white-space:nowrap}
+.mapa-rodape .semana em{font-style:normal;font-size:8.5px;color:var(--fraco);
+  letter-spacing:.06em;margin-left:1px}
+.mapa-rodape .semana.sobra{color:#6a9c4a}
+.mapa-rodape .semana.falta{color:#d9705f}
+
+/* A ORDEM DE SACRIFÍCIO, quando não cabe — escrita aqui e não no olho:
+   escudo e sigla nunca saem; depois cai a praça, que é a mesma a partida
+   inteira e está no mapa embaixo; depois prestígio e membros; e o saldo
+   da semana antes do saldo em conta. Item que não cabe SAI INTEIRO:
+   número em reais cortado é número errado. */
+@media (max-width:1100px){ .mapa-rodape .praca{display:none} }
+@media (max-width:820px){ .mapa-rodape .num:nth-last-child(-n+2){display:none} }
+@media (max-width:520px){
+  .mapa-rodape{font-size:11px;padding:4px 8px;gap:8px}
+  .mapa-rodape b{font-size:11.5px}
+  .mapa-rodape .num{font-size:11px}
+}
+@media (max-width:400px){ .mapa-rodape .semana{display:none} }
 .mapa-rodape .num svg{width:14px;height:14px;color:var(--fraco)}
 .mapa-rodape .num.negativo{color:#d9705f}
 

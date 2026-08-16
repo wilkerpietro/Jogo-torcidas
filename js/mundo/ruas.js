@@ -991,7 +991,6 @@ TO.ruas = (function(){
     /* a cidade em volta: quem está indo a algum lugar, quem se pegou na
        esquina, e a viatura que saiu pro recado */
     passoDosAndarilhos(E, R, minutos);
-    conferirEsbarroes(E, R);
     passoDaPM(E, mo, R, minutos);
     const e = procurarEncontro(E, R);
     if(e){ R.encontro = e; R.rodando = false; }
@@ -1090,55 +1089,16 @@ TO.ruas = (function(){
   }
 
   /* =======================================================
-     A CIDADE VIVA
+     QUANTA GENTE A PÉ
 
-     Sem isto, o mapa num dia sem jogo é uma planta com um disco só. A
-     praça tem oito organizadas, cinquenta pinos e cinco mil nós de rua:
-     ela tem de parecer habitada.
-
-     Três coisas, com pesos muito diferentes de propósito:
-
-     · ANDARILHO é paisagem. Um membro indo da sede pro bar, do bar pra
-       subsede, de casa pro mercadinho. Dezenas por dia, todo dia.
-     · ESBARRÃO é o que acontece quando dois andarilhos hostis se
-       encostam. Sempre briga, e a briga não abre cena: dois sujeitos
-       trocando na esquina resolvidos em canvas seriam a coisa mais
-       interruptiva do jogo. Sai um recado e uma ficha vermelha.
-     · ASSALTO é notícia, não ambiente. Dois ou três no mês inteiro,
-       contando a cidade toda. Se um dia a praça parecer vazia, o
-       conserto é mais andarilho — nunca mais assalto.
+     `VIDA.andarilhos` é o número de pessoas que a praça põe na rua por
+     dia. Ele era o freio das brigas entre andarilhos — quantas por
+     semana a cidade produzia —, e com a briga fora ele passa a ser só
+     o que a palavra diz: quanta cidade se vê pela janela. Fica num
+     objeto porque é o que se mexe quando a praça parece vazia.
      ======================================================= */
-
-  /* Quantos saem à rua por dia. É ESTE número que controla quantas
-     brigas a semana tem: a regra do esbarrão é "sempre briga", sem
-     sorteio de coragem, então quem decide a frequência é a densidade.
-     Calibrado por medição — ver o resumo. */
-  /* OS DOIS NÚMEROS QUE CONTROLAM A RUA, num objeto e não em `const`,
-     porque são exatamente os que se mexe quando a praça parece vazia ou
-     virou guerra — e porque a bancada e os testes precisam varrer a
-     curva sem recompilar nada. A regra do esbarrão ("sempre briga") não
-     é um deles: quem decide a frequência é a densidade. */
-  /* Escolhidos varrendo a curva em 42 dias de São Paulo. Briga cresce
-     com o QUADRADO da densidade, porque hostil que se encosta sempre
-     briga — não há sorteio de coragem pra amortecer:
-
-       por dia / raio →  na tela (média · pico) · brigas por semana
-             14 /  7   →   1,5 · 10  ·  1,5
-             18 /  7   →   2,2 · 17  ·  4,3
-             20 /  5   →   2,4 · 18  ·  4,0     ← aqui
-             24 /  7   →   2,6 · 18  ·  6,0
-             30 /  5   →   3,4 · 22  ·  5,5
-             48 / 10   →   4,8 · 31  · 22,0
-             90 /  5   →   8,5 · 55  · 48,2
-
-     O raio corta uns 25% e nada mais; quem manda é o número. 20 por dia
-     é o ponto onde a rua tem gente e a semana tem quatro brigas —
-     "umas poucas por semana", que é o combinado. Se um dia a praça
-     parecer vazia, este é o número pra subir, sabendo o preço. */
-  const VIDA = { andarilhos: 20, raio: 5 };
-  const VEL_ANDARILHO  = 5.2;   // um a pé anda menos que um bonde inteiro? não:
-                                // é o mesmo passo, um pouco mais solto
-  const ESFRIA_ESBARRAO = 40;   // minutos até o mesmo par poder se pegar de novo
+  const VIDA = {andarilhos:20};
+  const VEL_ANDARILHO = 5.2;   // metros de rua por minuto, na escala do mapa
 
   /* de onde e pra onde um andarilho vai: os pinos que já existem */
   const DESTINOS = new Set(['sede','bar','bar-nosso','subsede','loja',
@@ -1321,7 +1281,24 @@ TO.ruas = (function(){
      nada de um segundo modelo de status. Os dois levam XP, porque
      brigar é o ofício e quem apanha aprende também.
      ======================================================= */
-  const XP_ESBARRAO = 2;
+  /* =======================================================
+     A BRIGA ENTRE ANDARILHOS SAIU
+
+     Dois andarilhos hostis que se encostavam brigavam: o perdedor ia
+     pra casa ferido de um a sete dias, os dois levavam XP, e um freio
+     de frequência existia só pra segurar isso. Não pagava o que
+     custava — era desgaste sem decisão, num dia em que o jogador não
+     tinha o que fazer a respeito.
+
+     Os ANDARILHOS ficam: são eles que fazem a cidade parecer habitada,
+     e são eles que assaltam. O que saiu foi a briga.
+
+     Consequência que vale registrar: com isso, o único evento de dia
+     vazio que mexe na nossa ficha é a PRISÃO POR ASSALTO, que é rara
+     por construção. Se o dia sem jogo parecer vazio demais, o ajuste é
+     o número de andarilhos ou um evento novo — não é ressuscitar a
+     briga.
+     ======================================================= */
 
   /* =======================================================
      NADA DE DESGASTE SILENCIOSO
@@ -1338,79 +1315,6 @@ TO.ruas = (function(){
     (E.baixasDeRua = E.baixasDeRua || [])
       .push({nome, txt, tipo:tipo||'ruim', quando:diaAbsoluto(E)});
     if(E.baixasDeRua.length > 12) E.baixasDeRua.shift();
-  }
-
-  function conferirEsbarroes(E, R){
-    const vivos = R.andarilhos.filter(a=>!a.chegou && R.minuto >= a.saiEm);
-    for(let i=0;i<vivos.length;i++)
-      for(let k=i+1;k<vivos.length;k++){
-        const a = vivos[i], b = vivos[k];
-        if(a.torcida === b.torcida) continue;
-        if(Math.hypot(a.x-b.x, a.y-b.y) > VIDA.raio) continue;
-        const par = [a.id, b.id].sort((p,q)=>p-q).join('|');
-        if((R.esfria[par] || 0) > R.minuto) continue;
-        if(!hostis(E, a.torcida, b.torcida)) continue;
-        R.esfria[par] = R.minuto + ESFRIA_ESBARRAO;
-        resolverEsbarrao(E, R, a, b);
-      }
-  }
-
-  function resolverEsbarrao(E, R, a, b){
-    R.brigasDeRua++;
-    if(a.nossa || b.nossa) R.brigasNossas = (R.brigasNossas||0) + 1;
-    /* quem ganha: força de quem é, com sorte por cima. Pro nosso, a
-       força é a do membro de verdade; pra torcida de IA, o tamanho dela
-       serve de proxy — bonde grande cria gente rodada. */
-    const fichaDe = x => x.membroId != null
-      ? E.membros.find(m=>m.id === x.membroId) : null;
-    const mA = fichaDe(a), mB = fichaDe(b);
-    const ficha = x => x === a ? mA : mB;
-    /* A SORTE DO ESBARRÃO VEM DE HASH, não de `U.rng()`.
-       Duas razões, e as duas importam. A primeira é o mesmo dia
-       reaberto: se a moeda fosse jogada na hora, olhar o mapa duas
-       vezes daria duas histórias. A segunda é que `U.rng()` é o fluxo
-       compartilhado do mundo inteiro — cada esbarrão consumindo dele
-       empurrava o sorteio de tudo que vem depois, e um dia de jogo
-       medido com a cidade viva dava 123 bondes contra 128 sem ela, sem
-       que regra nenhuma tivesse mudado. */
-    const H = MP().hash;
-    const dado = k => (H(`esb|${a.id}|${b.id}|${Math.round(R.minuto)}|${k}`)
-                       % 10000) / 10000;
-    const forca = (x, k) => { const m = ficha(x);
-      return (m ? m.forca + m.defesa/2 : (x.forcaBase || 8)) + dado(k)*8; };
-    const ganhou = forca(a,'a') >= forca(b,'b') ? a : b;
-    const perdeu = ganhou === a ? b : a;
-    perdeu.chegou = true;                 // foi pra casa
-    ganhou.brigou = true;
-    const bairro = MP().bairroEm ? (MP().bairroEm(R._mo, a.x, a.y)||{}).nome : null;
-    const onde = bairro ? ` n${/^[AEIOU]/i.test(bairro)?'':'o '}${bairro}` : '';
-    for(const x of [a, b]){
-      const m = ficha(x);
-      if(!m) continue;
-      TO.membros.darXP(m, XP_ESBARRAO);
-      if(x === perdeu){
-        const d = 1 + Math.floor(dado('dias') * 7);
-        TO.membros.ferir(E, m, d, `Ferido num esbarrão${onde}`);
-        if(x.nossa) marcarBaixa(E, TO.membros.nomeDe(m),
-          `ferido num esbarrão${onde} — ${d} dia${d>1?'s':''} fora`);
-      }
-    }
-    /* recado só quando é da nossa conta: briga de dois estranhos na
-       esquina é paisagem, e encher o ticker com ela apagaria o que
-       importa */
-    if(a.nossa || b.nossa){
-      const nosso = a.nossa ? a : b, deles = a.nossa ? b : a;
-      const venceu = ganhou === nosso;
-      const mn = ficha(nosso);
-      const quem = mn ? TO.membros.nomeDe(mn) : 'Um dos nossos';
-      TO.estado.anotar(E, venceu
-        ? `${quem} se pegou com um da ${deles.nome}${onde} e levou a melhor.`
-        : `${quem} se pegou com um da ${deles.nome}${onde} e ficou no chão.`,
-        venceu ? 'boa' : 'ruim');
-      if(TO.tensao) TO.tensao.somar(E, deles.torcida, 3, 'esbarrão na rua');
-    }
-    R.recadosDeBriga = (R.recadosDeBriga || []);
-    R.recadosDeBriga.push({x:a.x, y:a.y, ate:R.minuto + 25});
   }
 
   /* =======================================================
@@ -1601,6 +1505,14 @@ TO.ruas = (function(){
     if(r.fechado) return;
     r.fechado = true; r.preso = preso;
     const ondeDetalhe = `${r.nome}${r.bairro ? ` d${/^[AEIOU]/i.test(r.bairro)?'':'o '}${r.bairro}` : ''}`;
+    /* TODA TENTATIVA VIRA AVISO, seja de quem for.
+       Assalto é notícia, e é por ela que o jogador sente que a praça tem
+       outras torcidas vivendo nela. São dois ou três por mês na praça
+       inteira, então dá pra mostrar todos sem virar ruído — e isto é
+       recado, não decisão: não para o relógio nem o pulo de dias. */
+    TO.estado.anotar(E, `${r.nomeTorcida || 'Alguém'} tentou ${ondeDetalhe}: `+
+      (preso ? 'a PM pegou na porta.' : `saiu com ${U.dinheiro(r.levou)}.`),
+      r.nossa ? (preso ? 'ruim' : 'boa') : '');
     const m = r.membroId != null ? E.membros.find(x=>x.id === r.membroId) : null;
     if(preso){
       if(r.nossa && m){

@@ -223,7 +223,7 @@
     return !!(e && e.proximoJogo && TO.planejamento.falta(e).length);
   }
 
-  function entrarNoJogo(){
+  function entrarNoJogo(partidaNova){
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.add('oculto');
     $('jogo').classList.remove('oculto');
@@ -239,6 +239,13 @@
     pagina = 'mapa';
     redesenhar();
     ticker();
+    /* PARTIDA NOVA ABRE NA GESTÃO, no bloco de políticas: é ali que o
+       jogador diz de saída como quer atacar, como recebe aliado e o que
+       faz com os outros jogos da praça. Só vale pra partida nova — save
+       existente já escolheu, e cair na Gestão toda vez que o jogo abre
+       vira pedágio. O relógio não anda enquanto a tela está aberta,
+       porque painel aberto pausa o dia (§8.14). */
+    if(partidaNova){ opc(E()); abrirPainel('gestao'); }
     /* o dia já começa correndo: ninguém precisa apertar play pra a
        cidade existir */
     retomarDia('abertura');
@@ -389,9 +396,9 @@
   function montarAssistente(pg, e){
     const P = TO.planejamento;
     const ps = P.passos(e);
-    if(!ps.length) return;                    // sem jogo marcado: página normal
+    if(!ps.length) return false;              // sem jogo marcado: página normal
     const cartoes = [...pg.querySelectorAll('.passo')];
-    if(!cartoes.length) return;
+    if(!cartoes.length) return false;
     const porRot = new Map();
     for(const c of cartoes){
       const h = c.querySelector('h2');
@@ -448,6 +455,7 @@
 
     pg.innerHTML = '';
     pg.appendChild(cx);
+    return true;
   }
 
   function caixaDePoliticas(e){
@@ -476,6 +484,19 @@
           id=>P.definirRecepcaoPadrao(e, id === 'nada' ? 'nada' : id));
     grupo('Outros jogos na cidade', P.POLITICA_ATAQUE, pol.outros,
           id=>P.definirPolitica(e, 'outros', id));
+    /* a quarta escolha é do mesmo tipo das três: quem decide, eu ou a
+       política. Por isso ela mora aqui e não em Opções. */
+    const l = el('label',{class:'opc-chave'});
+    const i = el('input',{type:'checkbox'});
+    i.checked = !!opc(e).abrirGestao;
+    i.onchange = ()=>{ opc(e).abrirGestao = i.checked;
+                       TO.estado.salvar(); redesenhar(); };
+    l.append(i, el('div',{html:'<b>Abrir a Gestão antes de todo jogo</b>'+
+      '<small>ligada, esta tela abre sozinha e o avanço das datas para '+
+      'enquanto houver decisão pendente. Desligada, as políticas acima '+
+      'fecham o plano sozinhas e nada interrompe — e se elas não '+
+      'conseguirem fechar, a tela abre assim mesmo e diz por quê.</small>'}));
+    cx.appendChild(l);
     return cx;
   }
 
@@ -501,11 +522,9 @@
       'o jogo simula sozinho os dias vazios e para no próximo que tem alguma '+
       'coisa. Pular é simular: tudo que aconteceria no dia assistido acontece '+
       'igual — andarilho, esbarrão, assalto, viatura e consequência na ficha.');
-    chave('abrirGestao', 'Abrir a Gestão nos dias necessários',
-      'ligada, o assistente abre sozinho quando o plano do próximo jogo tem '+
-      'decisão pendente. Desligada, as políticas do canto fecham o plano '+
-      'sozinhas e o jogo não interrompe — e se elas não conseguirem fechar, o '+
-      'assistente abre assim mesmo e diz por quê.');
+    /* a chave "abrir a Gestão" NÃO mora aqui: ela é uma política como as
+       outras três e vive no bloco de políticas da Gestão. Uma chave em
+       dois lugares acaba com duas verdades. */
     chave('relatorio', 'Abrir o relatório toda semana',
       'desligado, a semana fecha sem interromper: o resumo vai pro ticker e '+
       'pros Avisos, e o relatório continua no botão do Financeiro. Semana no '+
@@ -559,8 +578,10 @@
         `<span class="praca">${e.torcida.cidade} · ${e.torcida.uf}</span>` +
         `<span class="num${e.dinheiro<0?' negativo':''}">${IC.get('dinheiro')}` +
         `${U.dinheiro(e.dinheiro)}</span>` +
-        `<span class="num semana ${sem>0?'sobra':sem<0?'falta':''}">` +
-        `<i>${sinal}${U.dinheiro(Math.abs(sem))}</i><small>na semana</small></span>` +
+        `<span class="num semana ${sem>0?'sobra':sem<0?'falta':''}"` +
+        ` title="saldo desta semana: receita menos despesa menos o que a `+
+        `Gestão comprometeu">${sinal}${U.dinheiro(Math.abs(sem))}` +
+        `<em>/sem</em></span>` +
         `<span class="num">${IC.get('membros')}${U.numero(c.total)}</span>` +
         `<span class="num">${IC.get('estrela')}` +
         `${Math.round(e.indicadores.prestigio*5)}</span>`;
@@ -703,7 +724,6 @@
 
     grade.append(esq, dir);
     pg.appendChild(grade);
-    montarAssistente(pg, e);
   }
 
   /* =======================================================
@@ -2388,7 +2408,13 @@
 
     grade.append(esq, dir);
     pg.appendChild(grade);
-    montarAssistente(pg, e);
+    /* AS POLÍTICAS APARECEM SEMPRE, com jogo marcado ou sem.
+       Elas não dependem do próximo jogo — são a regra que vale daqui pra
+       frente —, e é nelas que a partida nova abre. Antes o bloco morava
+       dentro do assistente, que só monta quando `passos()` tem algo, e
+       numa semana sem jogo o jogador caía numa Gestão sem as políticas. */
+    if(!montarAssistente(pg, e) && !pg.querySelector('.ass-politicas'))
+      pg.appendChild(caixaDePoliticas(e));
   }
 
   /* =======================================================
@@ -4299,7 +4325,7 @@
   $('btSelecionarTorcida').onclick = ()=>{
     if(!escolhida) return;
     TO.estado.novo({torcida: escolhida});
-    entrarNoJogo();
+    entrarNoJogo(true);
   };
   $('btVoltarMenu').onclick = ()=>{
     $('telaSelecao').classList.add('oculto');

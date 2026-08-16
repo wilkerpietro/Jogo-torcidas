@@ -73,8 +73,8 @@
      baixo à esquerda é dela, e a coluna quebra em mais uma coluna em
      vez de passar por baixo. */
   body.com-pad .mapa-canto{ bottom:168px; }
-  /* no celular a faixa da torcida ocupa duas linhas */
-  .mapa-canto{ bottom:88px; }
+  /* a faixa é uma linha só em qualquer largura (ver `.mapa-rodape`) */
+  .mapa-canto{ bottom:60px; }
   /* e o pad inteiro sobe acima do ticker */
   #mapaPad{ padding-bottom:calc(32px + env(safe-area-inset-bottom)); }
   .mapa-ic{ width:34px; height:32px; }

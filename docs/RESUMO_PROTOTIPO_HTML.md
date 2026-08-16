@@ -1997,6 +1997,66 @@ seja, o caminho existe, mas o teste que eu montei não caiu nele. Isso é dívid
 medição desta rodada, não um "provavelmente funciona": até ser medido, trate os
 critérios 1 a 5 e 9 como não verificados.
 
+## 8.18 Faixa em uma linha, assalto nos avisos, fim das brigas de andarilho
+
+Quatro arrumações, uma delas é remoção.
+
+**A faixa da torcida numa linha só.** O que custava altura era o rótulo "NA SEMANA"
+empilhado sob o número: virou um sufixo `/sem` de 8,5 px na mesma linha, com a
+explicação inteira no `title`. O sinal e a cor já dizem que aquilo é variação e não
+um segundo saldo. **A ordem de sacrifício está escrita no CSS**, não no olho: escudo
+e sigla nunca saem; abaixo de 1100 px cai a praça (é a mesma a partida inteira e o
+mapa embaixo já a mostra); abaixo de 820 caem membros e prestígio; abaixo de 400 cai
+o saldo da semana. Item que não cabe **sai inteiro** — número em reais cortado é
+número errado.
+
+**Toda tentativa de assalto vira aviso**, de qualquer torcida da praça, com quem
+tentou, o comércio, o bairro e o desfecho. É recado, não decisão: não para o relógio
+nem o pulo de dias, porque passa por `anotar` e não cria pendência.
+
+**A briga entre andarilhos saiu inteira** — o teste de hostilidade, o esbarrão, o XP
+dos dois, o ferido de 1 a 7 dias do perdedor e o freio de frequência que existia só
+pra segurá-la. Os andarilhos ficam: são eles que fazem a cidade parecer habitada e
+são eles que assaltam. **Consequência registrada:** com isso o único evento de dia
+vazio que mexe na nossa ficha é a **prisão por assalto**, rara por construção — o dia
+sem jogo ficou mais calmo do que estava desenhado. Se parecer vazio demais, o ajuste
+é o número de andarilhos ou um evento novo, não ressuscitar a briga.
+
+**A Gestão abre na primeira tela da partida nova**, no bloco de políticas, e a chave
+que liga a abertura automática **mudou de lugar**: saiu de Opções e passou a morar
+com as três políticas, que é onde ela faz sentido — é uma política como as outras. Ela
+existe num lugar só.
+
+### Os números de aceite
+
+1. **A faixa é uma linha nas três larguras**, medida: **34 px de altura em 1280×800 e
+   em 844×390, 32 px em 390×844**. Fonte 13 px nas duas primeiras e **11 px em 390**.
+   Em 390 sobram escudo, nome e saldo em conta — saem quatro peças (praça, saldo da
+   semana, membros e prestígio), na ordem escrita.
+2. **Nada cortado:** `scrollWidth` igual ao `clientWidth` em todas as peças visíveis e
+   na faixa inteira, nas três larguras — zero reticências em valor de reais.
+3. **Os avisos de assalto:** 60 dias medidos, **5 avisos**, de três torcidas
+   diferentes — *"Independente tentou Banco do Mooca: a PM pegou na porta."*,
+   *"Gaviões tentou Joalheria do Grajaú: saiu com R$ 504."*, *"Mancha Verde tentou
+   Posto de gasolina do Santo Amaro: a PM pegou na porta."* Nenhum deles cria
+   pendência, então nenhum para o pulo.
+4. **Não existe mais briga de andarilho:** nos mesmos 60 dias, **0 brigas de rua e 0
+   baixas por esbarrão**, com os andarilhos circulando em **20 por dia**.
+5. **O único evento de dia vazio que fere ou prende alguém nosso é a prisão por
+   assalto:** a lista de baixas de rua fechou os 60 dias **vazia** — nenhuma por
+   esbarrão (não existem mais) e nenhuma por assalto (a nossa tentativa saiu com R$
+   504 sem ser presa), que é o que "raro por construção" quer dizer.
+6. **Partida nova abre na Gestão**, com o bloco de políticas na tela (`painel: true`,
+   `gestao: true`, 3 seletores). Save existente abre no mapa: a abertura está presa ao
+   caminho de "novo jogo", não ao `entrarNoJogo`.
+8. **A chave existe só na Gestão:** o painel de Opções lista duas chaves — "Pular os
+   dias sem jogo" e "Abrir o relatório toda semana" —, e a terceira está no bloco de
+   políticas.
+
+**Critério 7 não foi medido de novo nesta rodada.** A metade desligada dele — dez
+semanas sem interrupção com os dez planos fechados — está medida em §8.17 e não
+mudou; a metade ligada continua com a mesma dívida registrada lá.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima
