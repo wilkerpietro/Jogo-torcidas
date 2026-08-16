@@ -730,7 +730,123 @@ TO.planejamento = (function(){
     return {ok:true, gasto, investidas:usadas};
   }
 
+  /* =======================================================
+     POLÍTICAS — quem, não quanto
+
+     `E.padroes` guarda um RETRATO do plano: bombas, bondes, fração da
+     caravana, formação. Ele não sabe dizer "atacar quem estiver quente",
+     porque quem está quente muda toda semana. Política é a outra
+     metade: ela decide QUEM — intenção, alvo, recepção do aliado,
+     investida nos outros jogos —, e é reavaliada toda semana contra os
+     adversários e as tensões daquela semana.
+
+     Os dois convivem, e quando discordam GANHA A POLÍTICA: ela é a mais
+     recente e a mais explícita, e é ela que roda depois do retrato ter
+     montado o plano. Save que já tem `E.padroes` continua funcionando —
+     a política nasce em 'nunca', que é não mexer em nada.
+
+     O 30 QUE NÃO É O 45. O resto do jogo usa 45 como corte de
+     hostilidade: é de 45 pra cima que a rival vem pra cima da gente
+     sozinha (`ataquesContraNos`) e que a rua trata o par como hostil. A
+     política precisa de um corte MAIS BAIXO porque ela é intenção, não
+     reação: 30 é "já tem clima ruim o bastante pra valer a pena", e
+     ainda deixa a faixa 30–45 como a zona em que a gente ataca antes de
+     apanhar. Dois números próximos com significados diferentes é
+     confusão garantida, então este tem nome. */
+  const TENSAO_QUENTE = 30;
+
+  const POLITICA_ATAQUE = [
+    {id:'nunca',   rot:'Nunca atacar'},
+    {id:'rivais',  rot:'Sempre atacar rivais'},
+    {id:'quentes', rot:`Atacar rivais com tensão acima de ${TENSAO_QUENTE}`},
+    {id:'todos',   rot:'Sempre atacar todos'}
+  ];
+
+  function politicas(E){
+    E.politicas = E.politicas || {};
+    if(E.politicas.jogo   === undefined) E.politicas.jogo   = 'nunca';
+    if(E.politicas.outros === undefined) E.politicas.outros = 'nunca';
+    return E.politicas;
+  }
+  function definirPolitica(E, qual, id){
+    politicas(E)[qual] = id;
+    return E.politicas[qual];
+  }
+
+  /* RIVAL É A RIVALIDADE DECLARADA DO GRAFO, não a tensão da semana.
+     Se fosse tensão, "rivais" e "rivais com tensão acima de 30" seriam a
+     mesma opção com nomes diferentes. */
+  function ehRival(E, o){
+    const base = M().relacaoBase(E.torcida.id, o.id || o);
+    return base === 'Rival' || base === 'Maior Rival';
+  }
+
+  /* quem a política manda atacar, de uma lista de candidatos com
+     `{id, torcida, relacao, aliada, tensao}` */
+  function alvosDaPolitica(E, lista, id){
+    if(id === 'nunca') return [];
+    const livres = lista.filter(a=>!a.aliada);
+    if(id === 'todos') return livres;
+    const rivais = livres.filter(a=>ehRival(E, a.torcida));
+    if(id === 'rivais') return rivais;
+    if(id === 'quentes')
+      return rivais.filter(a=>(a.tensao != null ? a.tensao
+                              : TO.tensao.nivel(E, a.id)) > TENSAO_QUENTE);
+    return [];
+  }
+
+  /* QUAL DELES, quando sobra mais de um. O critério, escrito: primeiro a
+     rivalidade declarada, porque é a briga que a torcida entende como
+     dela; depois a tensão, porque é onde o clima já está pior e o ataque
+     custa menos relação nova; e o efetivo desempata, porque bater no
+     maior é o que rende prestígio. Ordem fixa, então a mesma semana
+     decide igual toda vez. */
+  function melhorAlvo(E, alvos){
+    return alvos.slice().sort((a,b)=>
+      (ehRival(E,b.torcida)?1:0) - (ehRival(E,a.torcida)?1:0) ||
+      (b.tensao||0) - (a.tensao||0) ||
+      ((b.torcida||{}).membros||0) - ((a.torcida||{}).membros||0) ||
+      (a.id < b.id ? -1 : 1))[0] || null;
+  }
+
+  /* A POLÍTICA FECHA O PLANO INTEIRO, ou não serve.
+     Dizer "atacar" não fecha nada: `passos` ainda cobra contra quem,
+     como, olheiro e bombas. Por isso o "como" padrão é `arredores` — o
+     único que não pede olheiro. Bombas e formação são número e vêm do
+     retrato; a política não mexe neles. */
+  function aplicarPolitica(E){
+    const pol = politicas(E), p = plano(E);
+    const feito = {intencao:null, alvo:null, investidas:[], recepcao:recepcaoPadrao(E)};
+    if(!E.proximoJogo) return feito;
+
+    const cand = alvosDaPolitica(E, alvosDoJogo(E), pol.jogo);
+    const alvo = melhorAlvo(E, cand);
+    if(alvo){
+      definirIntencao(E, soAliados(E) ? 'trair' : 'atacar');
+      p.alvoTorcida = alvo.id;
+      definirComo(E, 'arredores');
+      feito.intencao = p.intencao;
+      feito.alvo = alvo.torcida.nome;
+    } else if(pol.jogo !== 'nunca' || !p.alvoTorcida){
+      /* política sem alvo é ir em paz, e isso apaga os passos de alvo,
+         como, olheiro e bomba da fila */
+      definirIntencao(E, 'paz');
+      feito.intencao = 'paz';
+    }
+
+    for(const o of outrosJogosNaCidade(E, E.data.semana)){
+      const esc = melhorAlvo(E, alvosDaPolitica(E, o.visitantes, pol.outros));
+      if(esc){
+        definirInvestida(E, o.chave, {alvo:esc.id, como:'arredores', olheiro:null});
+        feito.investidas.push(esc.torcida.nome);
+      }
+    }
+    return feito;
+  }
+
   return {plano, tipoDoJogo, salvarPadrao, temPadrao, esquecerPadrao,
+          TENSAO_QUENTE, POLITICA_ATAQUE, politicas, definirPolitica,
+          ehRival, alvosDaPolitica, aplicarPolitica,
           alvosDoJogo, soAliados, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
           COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,

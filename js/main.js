@@ -210,7 +210,17 @@
     e.opcoes = e.opcoes || {};
     if(e.opcoes.pularVazios === undefined) e.opcoes.pularVazios = true;
     if(e.opcoes.relatorio   === undefined) e.opcoes.relatorio   = false;
+    if(e.opcoes.abrirGestao === undefined) e.opcoes.abrirGestao = true;
     return e.opcoes;
+  }
+
+  /* O TESTE, UM SÓ.
+     "Tem decisão pendente do próximo jogo" é a mesma pergunta que faz a
+     Gestão abrir sozinha e que faz o pulo de dias parar. Duas checagens
+     que precisam concordar acabam divergindo, então é uma função. */
+  function precisaDecidir(e){
+    e = e || E();
+    return !!(e && e.proximoJogo && TO.planejamento.falta(e).length);
   }
 
   function entrarNoJogo(){
@@ -358,6 +368,118 @@
   }
 
   /* =======================================================
+     A GESTÃO EM SEQUÊNCIA
+
+     A página continua sendo montada inteira — são os mesmos cartões de
+     sempre, com os mesmos botões — e o assistente é uma camada por cima
+     dela: pega os cartões prontos e mostra UM de cada vez, na ordem de
+     `TO.planejamento.passos(E)`.
+
+     A ordem vem de lá e só de lá. Uma segunda lista escrita à mão aqui
+     seria duas ordens que precisam concordar, que é a fonte clássica de
+     divergência — e a fila é dinâmica: escolher "ir em paz" tira os
+     passos de alvo, como, olheiro e bomba, e `passos` já se refaz
+     sozinho. Por isso o assistente é remontado a cada `redesenhar`, e
+     não guarda fila nenhuma: guarda só em que passo o jogador está.
+
+     Cartão que não é passo — a caravana, o resumo — vai pro fim, junto
+     do botão de fechar o plano.
+     ======================================================= */
+  let passoGestao = 0;
+  function montarAssistente(pg, e){
+    const P = TO.planejamento;
+    const ps = P.passos(e);
+    if(!ps.length) return;                    // sem jogo marcado: página normal
+    const cartoes = [...pg.querySelectorAll('.passo')];
+    if(!cartoes.length) return;
+    const porRot = new Map();
+    for(const c of cartoes){
+      const h = c.querySelector('h2');
+      if(h) porRot.set(h.textContent.trim(), c);
+    }
+    const daFila = ps.map(x=>porRot.get(x.rot)).filter(Boolean);
+    const sobrando = cartoes.filter(c=>!daFila.includes(c));
+
+    passoGestao = U.limitar(passoGestao, 0, ps.length);
+    const ultimo = passoGestao >= ps.length;   // a tela de resumo
+    const atual = ps[passoGestao];
+
+    const cx = el('div',{class:'assistente'});
+    const trilha = el('div',{class:'ass-trilha'});
+    ps.forEach((x,i)=>{
+      const b = el('button',{class:'ass-bolinha'+(i===passoGestao?' on':'')+
+                                    (x.feito?' feito':''), texto:String(i+1)});
+      b.title = x.rot;
+      b.onclick = ()=>{ passoGestao = i; redesenhar(); };
+      trilha.appendChild(b);
+    });
+    const bR = el('button',{class:'ass-bolinha'+(ultimo?' on':''), texto:'✓'});
+    bR.title = 'Resumo e fechar o plano';
+    bR.onclick = ()=>{ passoGestao = ps.length; redesenhar(); };
+    trilha.appendChild(bR);
+    cx.appendChild(trilha);
+
+    const palco = el('div',{class:'ass-palco'});
+    if(ultimo){ for(const c of sobrando) palco.appendChild(c); }
+    else if(daFila[passoGestao]) palco.appendChild(daFila[passoGestao]);
+    else palco.appendChild(el('div',{class:'em-construcao',
+      texto:`"${atual ? atual.rot : ''}" não tem tela própria ainda.`}));
+    cx.appendChild(palco);
+
+    const pe = el('div',{class:'ass-pe'});
+    const bVolta = el('button',{class:'bt', texto:'Voltar'});
+    bVolta.disabled = passoGestao === 0;
+    /* voltar não perde nada: as decisões moram no plano, não na tela */
+    bVolta.onclick = ()=>{ passoGestao--; redesenhar(); };
+    const bAv = el('button',{class:'bt destaque',
+      texto: ultimo ? 'Tudo decidido' : 'Avançar'});
+    bAv.disabled = ultimo || (atual && !atual.feito);
+    bAv.title = (atual && !atual.feito) ? `Resolva "${atual.rot}" pra avançar.` : '';
+    bAv.onclick = ()=>{ passoGestao++; redesenhar(); };
+    pe.append(el('span',{class:'fraco',
+      texto: ultimo ? 'Resumo do plano'
+           : `${passoGestao+1} de ${ps.length} · ${atual.rot}`+
+             (atual.feito ? '' : ' — falta decidir')}), bVolta, bAv);
+    cx.appendChild(pe);
+
+    /* as três políticas ficam à vista o tempo todo: são decisões que
+       valem daqui pra frente, não desta semana */
+    cx.appendChild(caixaDePoliticas(e));
+
+    pg.innerHTML = '';
+    pg.appendChild(cx);
+  }
+
+  function caixaDePoliticas(e){
+    const P = TO.planejamento;
+    const cx = el('div',{class:'ass-politicas'});
+    cx.appendChild(el('div',{class:'fase-rot', texto:'Políticas — valem toda semana'}));
+    const grupo = (rot, itens, atual, aoTrocar)=>{
+      const d = el('div',{class:'pol-grupo'});
+      d.appendChild(el('b',{texto:rot}));
+      const sel = el('select');
+      for(const it of itens){
+        const o = el('option',{texto:it.rot}); o.value = it.id;
+        if(it.id === atual) o.selected = true;
+        sel.appendChild(o);
+      }
+      sel.onchange = ()=>{ aoTrocar(sel.value); TO.estado.salvar(); redesenhar(); };
+      d.appendChild(sel);
+      cx.appendChild(d);
+    };
+    const pol = P.politicas(e);
+    grupo('Nosso jogo', P.POLITICA_ATAQUE, pol.jogo,
+          id=>P.definirPolitica(e, 'jogo', id));
+    grupo('Aliados na cidade',
+          P.RECEPCAO.map(r=>({id:r.id, rot:r.rot})),
+          P.recepcaoPadrao(e) || 'nada',
+          id=>P.definirRecepcaoPadrao(e, id === 'nada' ? 'nada' : id));
+    grupo('Outros jogos na cidade', P.POLITICA_ATAQUE, pol.outros,
+          id=>P.definirPolitica(e, 'outros', id));
+    return cx;
+  }
+
+  /* =======================================================
      OPÇÕES
      Duas chaves, e as duas mudam o ritmo do jogo: uma tira os dias
      vazios da frente, a outra tira o relatório automático do caminho.
@@ -379,6 +501,11 @@
       'o jogo simula sozinho os dias vazios e para no próximo que tem alguma '+
       'coisa. Pular é simular: tudo que aconteceria no dia assistido acontece '+
       'igual — andarilho, esbarrão, assalto, viatura e consequência na ficha.');
+    chave('abrirGestao', 'Abrir a Gestão nos dias necessários',
+      'ligada, o assistente abre sozinho quando o plano do próximo jogo tem '+
+      'decisão pendente. Desligada, as políticas do canto fecham o plano '+
+      'sozinhas e o jogo não interrompe — e se elas não conseguirem fechar, o '+
+      'assistente abre assim mesmo e diz por quê.');
     chave('relatorio', 'Abrir o relatório toda semana',
       'desligado, a semana fecha sem interromper: o resumo vai pro ticker e '+
       'pros Avisos, e o relatório continua no botão do Financeiro. Semana no '+
@@ -576,6 +703,7 @@
 
     grade.append(esq, dir);
     pg.appendChild(grade);
+    montarAssistente(pg, e);
   }
 
   /* =======================================================
@@ -2260,6 +2388,7 @@
 
     grade.append(esq, dir);
     pg.appendChild(grade);
+    montarAssistente(pg, e);
   }
 
   /* =======================================================
@@ -4041,6 +4170,10 @@
     if(diaComJogo(e))                       return 'tem jogo na praça hoje';
     if(TO.tensao.ataqueDeHoje(e))           return 'vieram pra cima do nosso bar';
     if(TO.ruas.bondeComandado(e))           return 'seu bonde está na rua';
+    /* o mesmo teste da abertura automática: o pulo para porque a Gestão
+       vai abrir */
+    if(opc(e).abrirGestao && precisaDecidir(e))
+      return 'o plano do próximo jogo tem decisão pendente';
     const agora = pendenciasDe(e);
     for(const id of agora)
       if(!antes.has(id)){
@@ -4080,9 +4213,47 @@
      `rodando:false` e antes ninguém religava. Durante o pulo o mapa não
      é repintado a cada dia — seria remontar a planta noventa vezes. */
   TO.estado.aoMudar(()=>{
-    if(pulando) return;
+    if(pulando){ cuidarDoPlano(); return; }
+    cuidarDoPlano();
     redesenhar(); retomarDia('dia');
   });
+
+  /* A GESTÃO ABRE SOZINHA, OU A POLÍTICA FECHA SOZINHA.
+     Com a chave ligada, o assistente aparece quando `precisaDecidir` é
+     verdade — o mesmo teste que para o pulo. Com ela desligada, as
+     políticas rodam e o plano é fechado sem interromper; o que foi
+     decidido em nome do jogador vai pro ticker e pros Avisos, porque
+     automático que não conta o que fez é automático que esconde.
+
+     E automático que FALHA em silêncio é pior que manual: se depois de
+     aplicar a política ainda faltar coisa, o assistente abre assim
+     mesmo, com a chave desligada, dizendo o que ficou faltando. */
+  function cuidarDoPlano(){
+    const e = E();
+    if(!e || !e.proximoJogo || document.body.classList.contains('em-cena')) return;
+    const P = TO.planejamento;
+    if(opc(e).abrirGestao){
+      if(precisaDecidir(e) && painel !== 'gestao' && !pulando) abrirPainel('gestao');
+      return;
+    }
+    if(P.plano(e).decidido) return;
+    const fez = P.aplicarPolitica(e);
+    const falta = P.falta(e);
+    if(falta.length){
+      motivoDaParada = `o plano automático não fechou: falta ${falta.join(', ')}`;
+      if(painel !== 'gestao') abrirPainel('gestao');
+      TO.estado.anotar(e, `Gestão automática parou: falta ${falta.join(', ')}.`, 'ruim');
+      return;
+    }
+    const r = P.confirmar(e);
+    const linha = 'Plano automático: ' +
+      (fez.intencao === 'paz' ? 'ir em paz'
+        : `atacar ${fez.alvo || '—'} nos arredores`) +
+      (fez.investidas.length ? ` · investida contra ${fez.investidas.join(' e ')}` : '') +
+      (fez.recepcao ? ` · aliado: ${P.recepcaoDe(fez.recepcao).rot.toLowerCase()}` : '') +
+      (r.gasto ? ` · ${U.dinheiro(r.gasto)} de recepção` : '');
+    TO.estado.anotar(e, linha, 'boa');
+  }
 
   /* ABA SEM FOCO É PAUSA EXPLÍCITA.
      O `requestAnimationFrame` congela sozinho quando a aba perde o

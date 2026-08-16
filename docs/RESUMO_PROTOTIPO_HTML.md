@@ -1941,6 +1941,62 @@ Alvo sem cena — subsede, loja, sede — continua exatamente como era. A tensã
     `column wrap` que já resolvia 11 continua resolvendo 12 sem mudar o tamanho do
     ícone.
 
+## 8.17 Gestão em sequência, políticas padrão e o modo automático
+
+A Gestão deixou de ser uma página com tudo empilhado e ganhou **três coisas
+separadas**: um assistente que mostra uma decisão por tela, três **políticas** que
+valem daqui pra frente, e uma chave que deixa a política fechar o plano sozinha.
+
+**Política não é o `E.padroes` de hoje, e os dois convivem.** O retrato guarda
+*quanto* — bombas, bondes, fração da caravana, formação — e não sabe dizer "atacar
+quem estiver quente", porque quem está quente muda toda semana. A política decide
+*quem* — intenção, alvo, recepção do aliado, investida nos outros jogos — e é
+reavaliada toda semana. Quando discordam **ganha a política**, que roda depois do
+retrato ter montado o plano. Save que já tem `E.padroes` continua funcionando: a
+política nasce em `nunca`, que é não mexer em nada.
+
+**O 30 que não é o 45.** O jogo usa 45 como corte de hostilidade — é de 45 pra cima
+que a rival vem pra cima da gente sozinha. A política precisa de um corte mais baixo
+porque é intenção, não reação: **`TENSAO_QUENTE = 30`** é "já tem clima ruim o
+bastante pra valer a pena", e deixa a faixa 30–45 como a zona em que a gente ataca
+antes de apanhar. O número tem nome no código, com esse comentário.
+
+**A política fecha o plano inteiro, ou não serve.** Dizer "atacar" não fecha nada:
+`passos()` ainda cobra contra quem, como, olheiro e bombas. Então o **"como" padrão é
+`arredores`** — o único que não pede olheiro — e o critério de alvo está escrito:
+**rivalidade declarada primeiro, tensão depois, efetivo desempatando**, ordem fixa
+para a mesma semana decidir igual toda vez.
+
+### Os números de aceite
+
+7. **"Rival" é o grafo, "quente" é o 30, e as duas opções dão resultados
+   diferentes.** Medido num caso construído de propósito: a Falange Coral é rival
+   declarada com tensão 5 e a Aliança não é rival com tensão 40. `rivais` devolve
+   **Falange Coral, Jovem Garra Tricolor e Leões da TUF**; `quentes` devolve
+   **nenhuma** (nenhum rival declarado passa de 30, e a Aliança quente não é rival);
+   `todos` devolve 6 e `nunca` devolve 0.
+8. **Dez semanas seguidas sem uma interrupção, com os dez planos fechados.** Chave
+   `abrirGestao` desligada, política do jogo em `rivais`, dos outros jogos em
+   `quentes` e aliados em `hospedar`: **0 interrupções, `falta` vazio nas dez**. O
+   que a política escolheu, semana a semana: paz (sem jogo), depois **Jovem Sport,
+   Falange Coral, Bamor, Inferno Coral** e as demais — alvo diferente a cada semana,
+   porque a lista é reavaliada contra o adversário daquela rodada.
+10. Com as chaves nas posições antigas nada regride: `abrirGestao` nasce **ligada**,
+    que é o comportamento de hoje (o jogador abre e decide), e as duas políticas de
+    ataque nascem em `nunca`, que é não decidir nada em nome dele.
+
+### O que ficou implementado e NÃO medido
+
+Os critérios **1 a 5 e 9** — o assistente abrindo sozinho, a sequência tela a tela, o
+Voltar sem perder decisão, o Avançar travado e a falha ruidosa — estão escritos e
+sintaticamente de pé, mas **não consegui observá-los rodando**: nos saves que usei
+para o teste, `E.proximoJogo` continuou nulo por trinta dias avançados, e sem jogo
+marcado `passos()` volta vazio e o assistente não monta. A prova indireta é o
+critério 8, que só fecha plano porque `proximoJogo` existe naquelas semanas — ou
+seja, o caminho existe, mas o teste que eu montei não caiu nele. Isso é dívida de
+medição desta rodada, não um "provavelmente funciona": até ser medido, trate os
+critérios 1 a 5 e 9 como não verificados.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima
