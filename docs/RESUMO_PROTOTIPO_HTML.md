@@ -3420,6 +3420,223 @@ A bateria das oito cenas passa limpa, com **0 erros de página**, e o determinis
 intacto: o mesmo save carregado em duas páginas limpas dá **149 mensagens e 0
 diferenças**.
 
+## 8.25 Financeiro mensal, o material que sai e o pré-jogo que não aparecia
+
+Três frentes que não se tocam no código e se tocam no bolso: a mensalidade passa a
+entrar **uma vez por mês**, a despesa genérica de material **sai dos dois lados** e a
+pergunta de pré-jogo passa a ser **por evento**, e não uma por semana.
+
+### O ritmo do dinheiro
+
+`contas(E)` lançava `mens * SEM` — um quarto da mensalidade toda semana. Agora a linha
+`Mensalidades (n)` só existe **na semana que contém o dia 1 do calendário de parede**, e
+nas outras três ela **não aparece nem como zero**: linha de R$ 0 toda semana é ruído que
+ensina o jogador a não ler a tabela.
+
+Numa temporada, a linha saiu **12 vezes**, uma por mês, e o dia 1 caiu em posições
+diferentes da semana em cada uma delas — s4 (dia 7), s13 (dia 3), s22 (dia 1), s30 (dia
+6), s39 (dia 4), s48 (dia 2). Não é "a cada quatro semanas": é o dia 1 de verdade.
+
+**O total do ano NÃO é o mesmo, e isso precisa ser dito.** O critério pedia que fosse, e
+não é — por aritmética, não por engano:
+
+| | antes | depois |
+|---|---:|---:|
+| semanas com a linha | 52 | **12** |
+| mensalidade recebida no ano | R$ 87.542 | **R$ 80.700** |
+
+O ano do jogo tem 52 semanas e `SEM = 1/4` tratava o mês como quatro semanas, o que dá
+**treze meses por ano**: um novato de R$ 20 pagava R$ 260 num ano. Com o mês de parede
+são doze, e ele paga R$ 240 — que é o que "vinte por mês" quer dizer. A diferença de
+**7,8% é conserto, não perda**, e não há como ter as duas coisas: ou a mensalidade cai
+no dia 1, ou o ano tem treze delas.
+
+**Quem está preso continua sem pagar.** Prendendo um membro da diretoria na semana da
+cobrança, a linha vai de `Mensalidades (150) R$ 6.750` para `Mensalidades (149) R$
+6.650` — exatamente os R$ 100 do cargo.
+
+### As duas linhas de material, e só uma sai
+
+| linha | antes | depois |
+|---|---:|---:|
+| `Material ({n} membros)` — R$ 16 por cabeça | R$ 600/semana | **não existe** |
+| `Guarda e conserto do material` | conforme a coleção | **R$ 237/semana** |
+
+Sem coleção nenhuma, **nenhuma das duas** aparece. Comprando os 14 materiais do
+`patrimonio.js`, a segunda entra com R$ 237/semana — R$ 948/mês, na casa dos R$ 934/mês
+que o projeto calibrou. Ela é o freio da coleção e ficou.
+
+`balanco(t)` das 138 perdeu a mesma parcela. Numa torcida sintética de 100 membros, um
+bar e uma loja nível 1, sede nível 2 — **os mesmos números dos dois lados**, então a
+diferença é só a fórmula:
+
+| | receita | despesa | saldo mensal |
+|---|---:|---:|---:|
+| antes | 6.300 | 2.600 | **3.700** |
+| depois | 6.300 | **1.000** | **5.300** |
+
+São os R$ 1.600 dos 100 × R$ 16. **O ritmo delas não mudou** — o balanço das 138 sempre
+foi mensal e continua mensal; mudou só o valor, que é o que o item 3 pedia.
+
+### O relatório vira mensal, o alarme continua semanal
+
+O fechamento **semanal continua sendo o motor**: é ele que cobra manutenção, insumo e
+compromisso, e é ele que aplica a debandada. O que virou mensal é **o que o jogador vê**.
+
+`acumularNoMes` soma cada semana num bloco somando **por rótulo** — quatro semanas de
+"Manutenção da sede (n4)" viram uma linha com o valor do mês, e a mensalidade aparece uma
+vez porque aconteceu uma vez. Na última semana do mês o bloco vira `E.ultimoFechamento`.
+
+Numa temporada: **12 resumos**, um por mês, peso `acao` (não para o tempo), com o valor
+no texto — "O mês fechou em +R$ 5.774." — e o botão **Ver Financeiro**. **0 modais
+abriram sozinhos**. Com a chave de Opções ligada, o modal abre com o título `Fechamento
+do mês — semanas 1 a 3` e a legenda do total virou **"Saldo do mês"**: chamar de saldo da
+semana o que são quatro semanas somadas é errar o número na legenda.
+
+**O alarme não esperou o mês.** Abrindo um buraco de R$ 1.000 numa semana do meio do mês
+— nem a da mensalidade, nem a última —, o aviso saiu **na virada daquela semana mesmo**,
+`cat 6 · peso decisao · urgente`, com **0 meses fechados** nas duas semanas seguintes. Ele
+sai um dia depois do fecho quando outra decisão da mesma categoria acabou de sair: a
+regra 1 vale para ele também, e `urgente` fura o teto semanal, não a regra 1.
+
+**Uma coisa teve de mudar junto, e ela não estava no enunciado.** O alarme testava
+`rel.saldo < 0 || E.dinheiro < 0`, e a primeira metade morreu com a mensalidade mensal:
+em três semanas de cada quatro só há despesa, então a semana fecha negativa **por
+projeto**. Medido antes do conserto: **50 alarmes numa temporada de 52 semanas, e resumo
+mensal nenhum** — o alarme comia o mês inteiro. Hoje quem manda no alarme é a mesma
+condição que manda na debandada, o caixa negativo.
+
+**A debandada não mudou.** Com o caixa em R$ 50.000 e uma semana fechando em −R$ 469,
+saem **0 pessoas**. Com o caixa em −R$ 50.000: primeira semana **0 saídas**, segunda
+semana **5 saídas** (3% de 150, com o peso de 1). É o caixa que manda, e não o resultado
+da semana — que é justamente o que o item 1 mandou não trocar.
+
+### O que isso faz com a economia
+
+O mês da torcida como ela nasce — 150 membros, sede nível 4, um bar nível 1 —, com o
+tempo parado, que é a única forma de isolar o efeito da mudança do efeito da partida:
+
+| semana | antes | depois |
+|---|---:|---:|
+| 1 | +856 | **−232** |
+| 2 | +856 | **−232** |
+| 3 | +856 | **−232** |
+| 4 | +856 | **+6.518** |
+| **4 semanas** | **+3.424** | **+5.822** |
+| **por semana** | **+856** | **+1.456** |
+
+A diferença é de **+R$ 2.398 por mês**, ou **+R$ 600 por semana** — exatamente a linha de
+material de uma torcida de 150. O enunciado previa +494 → +1.094; a torcida medida aqui é
+um pouco mais rica de origem, e o **delta é o mesmo**.
+
+Numa temporada corrida, com o mesmo robô dos dois lados:
+
+| | antes (`498b689`) | depois |
+|---|---:|---:|
+| saldo semanal médio | +R$ 462 | **+R$ 947** |
+| semanas com caixa negativo | 0/52 | **0/52** |
+| caixa no fim do ano | R$ 31.109 | **R$ 55.800** |
+| membros no fim do ano | 150 | 150 |
+| 138 · caixa médio | R$ 23.832 | **R$ 30.033** |
+| 138 · caixa mediano | R$ 20.524 | **R$ 21.918** |
+| 138 · efetivo médio | 70 | **70** |
+| 138 · no vermelho | 0/138 | 0/138 |
+
+O jogo ficou **duas vezes mais generoso**, como o enunciado disse que ficaria, e ficou dos
+dois lados: o efetivo médio das 138 não se moveu e o caixa delas subiu na mesma
+proporção. Se só o jogador tivesse enriquecido, a assimetria apareceria aqui.
+
+> **Uma nota sobre o robô da bancada.** Ele pegava sempre o primeiro botão, e o primeiro
+> botão da festa conjunta é "Sim" — R$ 3.000, seis vezes em dez semanas. Ele quebrava a
+> torcida em **qualquer** versão do código (caixa em −R$ 43.929 antes, −R$ 40.025 depois),
+> o que apagava justamente o efeito que se queria medir. Agora ele recusa o que custa e a
+> temporada é representativa.
+
+### A pergunta que não aparecia
+
+Quatro causas, todas em `cat2`, e uma quinta que só apareceu medindo.
+
+**a) `if(p.decidido) return`.** `plano(E)` nasce com `decidido: !!padrao`, então quem tem
+plano padrão salvo nunca era perguntado — nem uma vez, e em silêncio. **O gate saiu
+inteiro, e não foi trocado por outro.** O enunciado sugeria `PL().falta(E)` no lugar, e
+isso também não serve: plano de paz não tem passo pendente NENHUM, então `falta` é vazio
+na maioria das semanas e a pergunta sumiria em metade dos jogos — **medido, 22 de 41**.
+Quem garante uma pergunta por evento é a `chave`, que é o papel que `p.decidido` fazia
+errado.
+
+**b) O dia era o do nosso jogo, e só.** Agora cada evento conta os próprios dias.
+
+**c) A janela era de um dia.** Agora vai de **D−5 até a véspera**. O 5 saiu de medição,
+não de gosto: com janela de 3, cinco das 62 noites de praça ficavam sem pergunta, e quase
+sempre a mesma noite — domingo, que divide a janela com o nosso jogo de sábado. Com 4
+sobrava uma; com 5, nenhuma.
+
+**d) Os ramos eram exclusivos.** O nosso jogo em casa caía na linha genérica com
+`slice(0,2)` descartando o terceiro jogo em diante. Hoje o nosso jogo tem mensagem
+própria, e a da praça lista **a rodada inteira do dia**: "Vai ter Fortaleza × ASA, Floresta
+× Paulista de Jundiaí e Ferroviário × Imperatriz quarta que vem."
+
+**e) A quinta causa: a janela não cabia na semana.** "De D−3 até a véspera" só cabe dentro
+da semana para jogo de quinta em diante. **Jogo de segunda tem a véspera no domingo
+anterior**, e a conta feita em dia-da-semana espremia a janela num dia só. Agora ela é
+contada em **dia absoluto** e enxerga a semana seguinte. Na última semana do ano não há
+olhada adiante, e isso é deliberado: a temporada é remontada na virada, e a "semana 1" que
+se leria dali é a da temporada velha.
+
+Junto com elas saiu o `return` que cortava a varredura no primeiro sucesso: **propor não é
+publicar**, quem decide o que sai hoje é o escalonador, e parar no primeiro evento fazia o
+segundo evento do dia nunca ser oferecido.
+
+Uma temporada, com e sem plano padrão salvo:
+
+| | sem padrão | com padrão |
+|---|---:|---:|
+| jogos do nosso clube | 40 | 42 |
+| perguntas do nosso jogo | **40** | **42** |
+| noites de jogo de outro clube na praça | 64 | 64 |
+| perguntas da praça | **64** | **64** |
+| perguntas publicadas depois do jogo | **0** | **0** |
+
+O caso do critério 11 — nosso jogo no fim de semana e jogo de outro clube no meio, na
+mesma semana — apareceu 2 vezes na temporada medida e as duas saíram completas, **cada uma
+na sua contagem**:
+
+```
+s10 · nosso jogo no dia 6
+   pergunta do nosso        → s10 d1  "Ceará joga fora sábado, contra o Bahia…"
+   jogo de outro no dia 2   → s9  d4  "Vai ter Fortaleza × Náutico terça que vem…"
+   jogo de outro no dia 6   → s10 d2  "Vai ter Floresta × ASA sábado…"
+```
+
+A pergunta do jogo de terça saiu **na semana anterior**, que é onde a véspera dela mora — é
+a causa (e) funcionando.
+
+**O grande rival na cidade não virou pergunta separada.** Ele é a mesma pergunta com outro
+texto: as duas decidem o mesmo plano, e separá-las faria o feed perguntar duas vezes o que
+se responde uma. E toda pergunta carrega `validoAte` na véspera do evento: **pergunta que
+chega depois do jogo não é pergunta**, então a fila a descarta em vez de entregar atrasada.
+
+### O feed depois de U
+
+| | §8.24 | agora |
+|---|---:|---:|
+| mensagens na temporada | 475 | **501** |
+| por semana | 8,96 | **9,45** |
+| semana mais cheia | 13 | **15** (o teto, nunca ultrapassado) |
+| categorias repetidas em sequência | 0 | **0** |
+| descartes por prazo | — | **0** |
+| cat 2 (dia de jogo) | ~62 | **105** |
+
+A categoria 2 quase dobrou, e era esse o objetivo: ela era uma por semana e virou uma por
+evento. O save foi de 558 KB para **623 KB**, com o `feed` em **296 KB** — continua sendo
+o termo que cresce, e continua anotado como a próxima decisão do autor.
+
+### O que não mudou
+
+A bateria das oito cenas passa limpa com **0 erros de página**, e o determinismo segue
+intacto: o mesmo save carregado em duas páginas limpas dá **167 mensagens e 0
+diferenças**.
+
 ## 9. Celular
 
 > **Leia junto com §8.22.** Boa parte desta seção descreve a tela do MAPA — a gaveta

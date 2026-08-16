@@ -123,10 +123,10 @@ TO.patrimonio = (function(){
     for(const s of p.subsedes) fora.push({tipo:'subsede', rot:'Subsede', bairro:s.bairro,
       receita: REC.subsede*mult(s.bairro)*fator, despesa: MAN.subsede});
 
-    /* material por membro entra como linha: é despesa de estrutura,
-       não some só porque não tem endereço */
-    fora.push({tipo:'material', rot:`Material (${E.membros.length} membros)`,
-               bairro:'', receita:0, despesa:E.membros.length*F().MATERIAL});
+    /* A LINHA DE MATERIAL POR MEMBRO SAIU do financeiro, e sai daqui
+       junto: a tabela de patrimônio mostrava a mesma despesa que as
+       contas cobravam, e deixar a sombra dela aqui faria a tela cobrar
+       um custo que o caixa não paga mais. */
 
     /* o que a torcida já comprou de faixa, bandeirão e bateria também
        custa todo mês — a aba Materiais lista o que é, aqui entra o preço */

@@ -1199,12 +1199,15 @@
       fim.appendChild(el('div',{class:'linha-dado', html:
         `<span class="fraco">Das despesas, ${U.dinheiro(rel.compromissoTotal)} `+
         'saíram de decisão da Gestão, e não da conta fixa.</span>'}));
+    /* O PERÍODO É O DO RELATÓRIO. Chamar de "saldo da semana" o que são
+       quatro semanas somadas é errar o número na legenda. */
+    const per = rel.mensal ? 'do mês' : 'da semana';
     fim.appendChild(el('div',{class:'linha-dado total', html:
-      `<span>Saldo da semana</span><b class="${rel.saldo>=0?'positivo':'negativo'}">`+
+      `<span>Saldo ${per}</span><b class="${rel.saldo>=0?'positivo':'negativo'}">`+
       `${U.dinheiro(rel.saldo)}</b>`}));
     if(rel.foraDaConta)
       fim.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Ações e imprevistos da semana</span>`+
+        `<span>Ações e imprevistos ${per}</span>`+
         `<b class="${rel.foraDaConta<0?'negativo':'positivo'}">`+
         `${U.dinheiro(rel.foraDaConta)}</b>`}));
     fim.appendChild(el('div',{class:'linha-dado', html:
@@ -1229,8 +1232,14 @@
     }
     corpo.appendChild(fim);
 
-    modal(`Fechamento da semana ${rel.semana}`,
-          `${rel.receitas.length} receitas · ${rel.despesas.length} despesas`,
+    /* o relatório é do MÊS; save antigo pode trazer um fechamento
+       semanal guardado, e ele continua abrindo com o título certo */
+    modal(rel.mensal
+            ? `Fechamento do mês — semanas ${rel.semanaDe} a ${rel.semanaAte}`
+            : `Fechamento da semana ${rel.semana}`,
+          `${rel.receitas.length} receitas · ${rel.despesas.length} despesas`+
+          (rel.mensal && rel.saidasNoMes
+            ? ` · ${rel.saidasNoMes} ${rel.saidasNoMes===1?'saída':'saídas'}` : ''),
           corpo, null, 'media');
   }
 
@@ -1959,7 +1968,7 @@
     btDet.onclick = ()=>{ subFin='transacoes'; redesenhar(); };
     let btUlt = null;
     if(e.ultimoFechamento){
-      btUlt = el('button',{class:'bt larga', texto:'Último fechamento'});
+      btUlt = el('button',{class:'bt larga', texto:'Último fechamento do mês'});
       btUlt.onclick = ()=>abrirFechamento(e.ultimoFechamento);
     }
     c1.rodape(btDet, btUlt);
@@ -3969,7 +3978,10 @@
       `${saiu} ${saiu===1?'saiu':'saíram'} da torcida essa semana. `+
       `Caixa em ${U.dinheiro(e.dinheiro)}.`, 'ruim',
       {cat:4, efeitos:[{ind:'membros', delta:-saiu, dono:'nosso'}]});
-    if(opc(e).relatorio) abrirFechamento(rel);
+    /* O MODAL, quando a chave está ligada, mostra o MÊS: ele é
+       relatório, e relatório agora é mensal. Nas outras três semanas
+       ele não abre — não há o que fechar. */
+    if(opc(e).relatorio && rel.mes) abrirFechamento(rel.mes);
   });
   $('btSelecionarTorcida').onclick = ()=>{
     if(!escolhida) return;

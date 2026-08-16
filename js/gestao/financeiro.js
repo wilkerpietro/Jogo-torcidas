@@ -25,8 +25,40 @@ TO.financeiro = (function(){
                    subsede:90};
 
   const INSUMO   = 0.25;   // GDD §8.3: loja sem insumo não fatura
-  const MATERIAL = 16;     // por membro/mês: camisa, tinta, tecido
   const CARAVANA = 3000;   // GDD §7.3
+
+  /* =======================================================
+     O MÊS
+
+     A mensalidade era dividida em quatro e cobrada toda semana. Passa a
+     entrar INTEIRA, uma vez por mês, na semana que contém o dia 1 do
+     calendário de parede — que é onde uma mensalidade cai na vida real.
+
+     O TOTAL DO ANO NÃO É O MESMO, e é preciso dizer: o ano do jogo tem
+     52 semanas, e `SEM = 1/4` tratava o mês como quatro semanas, o que
+     dá TREZE meses por ano. Um novato de R$ 20 pagava R$ 260 no ano. Com
+     o mês de parede são doze, e ele paga R$ 240 — que é o que "vinte por
+     mês" quer dizer. A diferença de 7,7% é conserto, não perda.
+
+     O que muda de verdade é o RITMO: uma data em que o dinheiro chega e
+     três semanas em que ele só sai.
+     ======================================================= */
+  /* a semana contém o dia 1 de algum mês? */
+  function semanaDaMensalidade(E, ano, semana){
+    ano = ano != null ? ano : E.data.ano;
+    semana = semana != null ? semana : E.data.semana;
+    for(let d=1; d<=7; d++)
+      if(TO.estado.dataDaSemana(ano, semana, d).getDate() === 1) return true;
+    return false;
+  }
+  /* esta é a última semana do mês? é quando o relatório mensal fecha */
+  function fimDoMes(E, ano, semana){
+    ano = ano != null ? ano : E.data.ano;
+    semana = semana != null ? semana : E.data.semana;
+    let a = ano, s = semana + 1;
+    if(s > TO.competicoes.SEMANAS_ANO){ s = 1; a++; }
+    return semanaDaMensalidade(E, a, s);
+  }
 
   /* =======================================================
      PATRIMÔNIO
@@ -91,7 +123,11 @@ TO.financeiro = (function(){
       mens += TO.membros.CARGOS[m.cargo].mensalidade;
       pagantes++;
     }
-    juntar(rec, `Mensalidades (${pagantes})`, mens*SEM);
+    /* A LINHA SÓ EXISTE NA SEMANA DO DIA 1, e não aparece como zero nas
+       outras três: linha de R$ 0 toda semana é ruído que ensina o
+       jogador a não ler a tabela. */
+    if(semanaDaMensalidade(E))
+      juntar(rec, `Mensalidades (${pagantes})`, mens);
 
     const fator = fatorComercial(E);
     for(const b of p.bares)
@@ -123,8 +159,13 @@ TO.financeiro = (function(){
     for(const l of p.lojas) insumo += RECEITA.loja[l.nivel]*INSUMO*(1-corteIns);
     juntar(des, `Insumos das lojas${corteIns?' · fábrica':''}`, insumo*SEM);
 
-    juntar(des, `Material (${E.membros.length} membros)`,
-           E.membros.length*MATERIAL*SEM);
+    /* AQUI MORAVA `Material ({n} membros)`, R$ 16 por cabeça por mês.
+       Ela saiu por decisão do autor, e com ela a constante `MATERIAL`.
+       NÃO CONFUNDA COM A DE BAIXO: a que fica é a guarda e conserto do
+       que a torcida DE FATO tem — faixa, bandeirão, bateria —, que é o
+       freio da coleção de material e foi calibrada contra a economia
+       real (R$ 934/mês com a coleção completa). Tirar as duas apagaria
+       o custo de ter patrimônio. */
 
     /* bandeirão, faixa e bateria se guardam e se consertam */
     if(TO.patrimonio){
@@ -322,12 +363,95 @@ TO.financeiro = (function(){
     rel.foraDaConta = Math.round((rel.caixaDepois - rel.caixaAntes) - rel.saldo);
     E.caixaAberturaSemana = E.dinheiro;
 
-    E.ultimoFechamento = rel;
+    /* O MÊS É O QUE O JOGADOR LÊ; a semana continua sendo o motor.
+       `acumularNoMes` soma esta semana no bloco corrente, e na última
+       semana do mês o bloco vira `E.ultimoFechamento` — que é o que o
+       modal e o botão "Último fechamento" mostram. */
+    acumularNoMes(E, rel);
+    E.ultimaSemana = rel;
+    if(fimDoMes(E)) rel.mes = fecharMes(E);
     E.historicoSemanas = E.historicoSemanas || [];
     E.historicoSemanas.unshift({semana:rel.semana, receita:rel.receita,
                                 despesa:rel.despesa, saldo:rel.saldo,
                                 caixa:rel.caixaDepois, saidas:rel.saidas.length});
     if(E.historicoSemanas.length > 60) E.historicoSemanas.pop();
+    return rel;
+  }
+
+  /* =======================================================
+     O RELATÓRIO MENSAL
+
+     O fechamento SEMANAL continua sendo o motor: é ele que cobra
+     manutenção e insumo, aplica compromisso e dispara a debandada. O que
+     vira mensal é o que o jogador VÊ.
+
+     E o motivo é o item 1: com a mensalidade caindo numa semana em
+     quatro, a semana isolada mostraria vermelho três vezes em quatro e
+     ensinaria o jogador a ignorar a linha. O mês é o ciclo em que a
+     receita de verdade entra, então é o período que responde "estou
+     ganhando ou perdendo dinheiro?".
+
+     O ALARME NÃO ESPERA O MÊS. Caixa negativo continua sendo aviso da
+     semana em que o buraco apareceu, e continua parando o tempo.
+     Relatório é balanço; alarme é urgência.
+     ======================================================= */
+  const mesCorrente = E => E.mesCorrente || null;
+
+  function acumularNoMes(E, rel){
+    const m = E.mesCorrente = E.mesCorrente || {
+      ano:E.data.ano, semanaDe:rel.semana, semanaAte:rel.semana,
+      receitas:{}, despesas:{}, receita:0, despesa:0, saldo:0,
+      caixaAntes: rel.caixaAntes, caixaDepois: rel.caixaDepois,
+      saidas:0, semanas:0, notas:[], compromissoTotal:0
+    };
+    /* as linhas se somam POR RÓTULO: quatro semanas de "Manutenção da
+       sede (n4)" viram uma linha com o valor do mês, que é como um
+       extrato se lê. A mensalidade aparece uma vez porque ela só
+       aconteceu uma vez. */
+    const junta = (mapa, lista)=>{
+      for(const x of lista||[]){
+        const k = x.rot;
+        mapa[k] = mapa[k] || {rot:k, v:0, daGestao:!!x.daGestao};
+        mapa[k].v += x.v;
+      }
+    };
+    junta(m.receitas, rel.receitas);
+    junta(m.despesas, rel.despesas);
+    m.receita += rel.receita; m.despesa += rel.despesa; m.saldo += rel.saldo;
+    m.compromissoTotal += rel.compromissoTotal || 0;
+    m.saidas += (rel.saidas||[]).length;
+    m.semanaAte = rel.semana; m.semanas++;
+    m.caixaDepois = rel.caixaDepois;
+    for(const n of rel.notas||[]) if(!m.notas.includes(n)) m.notas.push(n);
+    return m;
+  }
+
+  /* fecha o bloco e devolve o relatório do mês, na mesma forma que o
+     modal já sabe desenhar */
+  function fecharMes(E){
+    const m = E.mesCorrente;
+    if(!m) return null;
+    const rel = {
+      mensal:true, ano:m.ano, semana:m.semanaAte,
+      semanaDe:m.semanaDe, semanaAte:m.semanaAte, semanas:m.semanas,
+      receitas:Object.values(m.receitas).sort((a,b)=>b.v-a.v),
+      despesas:Object.values(m.despesas).sort((a,b)=>b.v-a.v),
+      notas:m.notas,
+      receita:m.receita, despesa:m.despesa, saldo:m.saldo,
+      compromissoTotal:m.compromissoTotal,
+      caixaAntes:m.caixaAntes, caixaDepois:m.caixaDepois,
+      saidas:[], avisos:[], promoveis:0,
+      saidasNoMes:m.saidas,
+      foraDaConta: Math.round((m.caixaDepois - m.caixaAntes) - m.saldo),
+      acoesSobrando:TO.acoes.restantes(E)
+    };
+    E.ultimoFechamento = rel;
+    E.mesCorrente = null;
+    E.historicoMeses = E.historicoMeses || [];
+    E.historicoMeses.unshift({ano:rel.ano, ate:rel.semanaAte,
+      receita:rel.receita, despesa:rel.despesa, saldo:rel.saldo,
+      caixa:rel.caixaDepois});
+    if(E.historicoMeses.length > 26) E.historicoMeses.pop();
     return rel;
   }
 
@@ -354,5 +478,6 @@ TO.financeiro = (function(){
   return {contas, resumoDaSemana, compromissos, patrimonio, fatorComercial, bairroDeFora,
           precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
           postura, fecharSemana,
-          MANUT_SEDE, RECEITA, MANUT, INSUMO, MATERIAL, CARAVANA, SEM};
+          semanaDaMensalidade, fimDoMes, mesCorrente, fecharMes,
+          MANUT_SEDE, RECEITA, MANUT, INSUMO, CARAVANA, SEM};
 })();

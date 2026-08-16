@@ -67,7 +67,10 @@ TO.tensao = (function(){
      cabeça — 50% novato a 20, 30% componente a 50, 15% frente a
      100 e 5% diretoria a 100. */
   const MENSALIDADE = 0.50*20 + 0.30*50 + 0.15*100 + 0.05*100;   // R$ 45
-  const MATERIAL    = 16;      // GDD §7.4, por cabeça/mês
+  /* A DESPESA DE MATERIAL POR CABEÇA SAIU dos dois lados. Ela era
+     R$ 16 por membro por mês, aqui e no financeiro do jogador; tirar só
+     de um lado deixaria o jogador mais rico e as 138 não, que é
+     exatamente o desequilíbrio que §8.20 mandou não criar. */
   const SEM         = 1/4;     // mês → semana, igual ao financeiro
 
   const P = () => TO.patrimonio;
@@ -203,7 +206,7 @@ TO.tensao = (function(){
     for(const l of t.lojas) rec += R.loja[l.nivel] * t.mult * (t.fabrica ? fab.multLoja : 1);
     rec += t.subsedes * R.subsede * t.mult;
 
-    let des = FIN().MANUT_SEDE[t.sede] + t.membros * MATERIAL;
+    let des = FIN().MANUT_SEDE[t.sede];
     for(const b of t.bares) des += MAN.bar[b.nivel];
     for(const l of t.lojas) des += MAN.loja[l.nivel]
                                  + R.loja[l.nivel]*FIN().INSUMO*(t.fabrica ? 1-fab.corteInsumo : 1);

@@ -916,67 +916,189 @@ TO.feed = (function(){
          : !!o.perguntarJogo;
   }
 
+  /* A PERGUNTA É POR EVENTO, NÃO UMA POR SEMANA.
+
+     Quatro coisas impediam a pergunta pré-jogo de aparecer, e as quatro
+     estavam aqui:
+
+     a) `if(p.decidido) return`. `plano()` nasce com `decidido: !!padrao`,
+        então QUEM TEM PLANO PADRÃO SALVO nunca era perguntado — nem uma
+        vez, e em silêncio. Plano padrão é atalho pra quem não quer
+        decidir toda semana, não mordaça. O teste certo é se FALTA
+        decisão, e quem sabe disso é `PL().falta(E)`.
+     b) o dia era o do NOSSO jogo e só. Com jogo nosso no domingo e jogo
+        de outro clube na quarta, a pergunta caía na quinta — depois do
+        jogo de quarta. Cada evento conta os próprios dias.
+     c) a janela era de UM DIA. Se aquele dia passasse por qualquer
+        motivo — fila cheia, decisão travando o feed —, a pergunta sumia
+        pra sempre naquela semana. Agora é janela: de cinco dias antes
+        até a véspera, contada em dia absoluto (ver `JANELA_PREJOGO`).
+     d) os ramos eram exclusivos, e o nosso jogo EM CASA caía no
+        genérico: ele virava "Vai ter A × B e C × D", com `slice(0,2)`
+        descartando o terceiro jogo em diante.
+
+     Agora são eventos independentes, cada um com a própria chave, o
+     próprio texto e a própria contagem. Dois no mesmo dia entram na
+     fila, não empilhados — a regra 1 continua valendo. */
+  /* De D-5 até a véspera. O número saiu de medição, não de gosto: numa
+     temporada, com janela de 3 dias, 5 das 62 noites de jogo na praça
+     ficavam sem pergunta, e a mesma noite quase sempre — domingo, o
+     último dia da semana, que divide a janela com o nosso jogo de
+     sábado. A regra 1 só deixa sair uma decisão de cat 2 por vez, e
+     três perguntas disputando três dias não cabem. Com 4 sobrava uma;
+     com 5, nenhuma: 61 de 61 e 42 de 42. */
+  const JANELA_PREJOGO = 5;
+
+  /* A SEMANA QUE VEM TAMBÉM ENTRA NA CONTA.
+
+     "De D-3 até a véspera" só cabe dentro da semana pra jogo de quinta
+     em diante. Jogo de segunda tem a véspera no domingo ANTERIOR, e a
+     conta feita em dia-da-semana espremia a janela num dia só — com o
+     `Math.max(1, …)` a pergunta caía no próprio dia do jogo, quando
+     caía. Medido numa temporada: 8 dos 71 dias de jogo na praça não
+     chegavam nem a ser propostos.
+
+     Na última semana do ano não há olhada adiante: a temporada é
+     remontada na virada, e a "semana 1" que se leria daqui é a da
+     temporada velha. */
+  function semanasDaJanela(E){
+    const s = [{ano:E.data.ano, semana:E.data.semana, adiante:0}];
+    if(E.temporada && E.data.semana < TO.competicoes.SEMANAS_ANO)
+      s.push({ano:E.data.ano, semana:E.data.semana+1, adiante:1});
+    return s;
+  }
+
+  /* o nosso jogo de uma semana adiante, no mínimo que o texto usa:
+     `E.proximoJogo` só conhece a semana corrente */
+  function nossoJogoDe(E, semana){
+    if(!E.temporada) return null;
+    const meu = M().time(E.torcida.clubeId);
+    if(!meu) return null;
+    const a = TO.competicoes.jogoDaSemana(E, meu.id, semana);
+    const adv = a ? M().time(a.adversario) : null;
+    if(!adv) return null;
+    return {dia: a.dia || 6, casa: a.casa, advId: adv.id,
+            mandante: a.casa ? meu : adv, visitante: a.casa ? adv : meu};
+  }
+
   function cat2(E){
+    const hoje = E.data.absoluto || 0;
     const j = nossoJogo(E);
     const outros = PL().outrosJogosNaCidade(E, E.data.semana);
-    if(!j && !outros.length) return;
-    const diaJ = j ? (j.dia||6) : outros[0].dia || 6;
-    if(E.data.dia !== Math.max(1, diaJ - 3)) return;
-    const p = PL().plano(E);
-    if(p.decidido) return;
-    const ch = `c2|${E.data.ano}|${E.data.semana}`;
 
     /* MODO AUTOMÁTICO. Com a pergunta desligada a ideologia fecha o
        plano sozinha e o feed conta o que foi decidido — automático que
        não conta o que fez é automático que esconde. */
     if(!perguntaAntes(E)){
+      if(!j && !outros.length) return;
+      const ch0 = `c2|${E.data.ano}|${E.data.semana}`;
+      if(PL().plano(E).decidido) return;
+      const diaJ = j ? (j.dia||6) : outros[0].dia || 6;
+      if(E.data.dia !== Math.max(1, diaJ - JANELA_PREJOGO)) return;
       const fez = PL().aplicarPolitica(E);
-      const falta = PL().falta(E);
-      if(!falta.length){
+      if(!PL().falta(E).length){
         PL().confirmar(E);
-        propor(E, {cat:2, peso:'info', voz:diretor(E, ch), chave:ch,
+        propor(E, {cat:2, peso:'info', voz:diretor(E, ch0), chave:ch0,
                    texto: resumoDoPlano(E, fez) + '.'});
         return;
       }
-      /* automático que falha em silêncio é pior que manual */
+      /* automático que falha em silêncio é pior que manual: cai no
+         caminho de baixo e pergunta */
     }
 
-    /* o grande rival na cidade tem chamada própria: é o clima, não o
-       calendário, que faz essa pergunta */
+    /* Tudo daqui pra baixo conta em DIA ABSOLUTO, e não em dia da
+       semana: é a única conta em que a véspera de segunda é domingo. */
+    const absDe = (d, adiante) => hoje - E.data.dia + d + 7*(adiante||0);
+    const naJanela = a => hoje >= a - JANELA_PREJOGO && hoje <= a - 1;
+    /* PERGUNTA QUE CHEGA DEPOIS DO JOGO NÃO É PERGUNTA. Se a fila
+       segurar até a véspera passar, ela é descartada em vez de sair
+       atrasada — a mesma regra da notícia de jogo (§8.20). */
+    const prazo = a => a - 1;
+    const quandoRot = (d, adiante) => diaRot(d) + (adiante ? ' que vem' : '');
+
+    /* O GRANDE RIVAL NA CIDADE não é outra pergunta: é a MESMA, com
+       outro texto. As duas decidem o mesmo plano, e separá-las faria o
+       feed perguntar duas vezes o que se responde uma. Só vale pra
+       semana corrente: `visitantesDaSemana` lê a praça de hoje. */
     const quente = visitantesDaSemana(E)
       .filter(v=>PL().ehRival(E, v.torcida))
       .sort((a,b)=>b.tensao-a.tensao)[0];
 
-    let texto, botoes = null;
-    if(quente && quente.tensao >= PL().TENSAO_QUENTE){
-      texto = `Nosso grande rival, a ${quente.torcida.nome}, está na cidade `+
-              `essa semana. Bora dar um trato neles?`;
-    } else if(j && !j.casa){
-      texto = `${E.torcida.clube} joga fora ${diaRot(j.dia)}, contra o `+
-              `${j.mandante.nome}. Quantos vão na caravana, e por qual estrada?`;
-      /* A PERGUNTA TEM TELA. Ela chutava o jogador pra dentro da Gestão
-         inteira, com onze cartões, pra ele achar sozinho o da caravana.
-         A pergunta é específica e a resposta tem três campos: quantos
-         vão, por onde e com quantas bombas. Nada disso é regra nova —
-         os três números já são do `planejamento`; o que faltava era a
-         tela que os põe juntos na hora em que a pergunta é feita. */
-      botoes = [{rot:'Montar a caravana', efeito:'caravana',
-                 nota:'quantos vão, por qual estrada e quantas bombas'},
-                {rot:'Seguir ideologia', efeito:'ideologia',
-                 nota:'a ideologia fecha o plano da semana'}];
-    } else {
-      const lista = TO.praca.jogosDaPraca(E)
-        .map(x=>`${x.casa.nome} × ${x.vis.nome}`);
-      texto = `Vai ter ${lista.slice(0,2).join(' e ')} ${diaRot(diaJ)}. `+
-              `Quer fazer alguma coisa?`;
-    }
+    /* NENHUM `return` AQUI DENTRO. Propor não é publicar: quem decide o
+       que sai hoje é o escalonador, e cortar a varredura no primeiro
+       sucesso fazia o segundo evento do dia nunca ser oferecido — era
+       essa, e não a fila, a causa dos dias de praça mudos. */
+    for(const s of semanasDaJanela(E)){
+      const ch0 = `c2|${s.ano}|${s.semana}`;
+      const nosso = s.adiante ? nossoJogoDe(E, s.semana) : j;
 
-    propor(E, {cat:2, peso:'decisao', voz:diretor(E, ch), chave:ch, texto,
-      botoes: botoes || [{rot:'Seguir ideologia', efeito:'ideologia',
-               nota:'a ideologia fecha o plano da semana'},
-              {rot:'Atacar alguém', efeito:'gestao',
-               nota:'escolher alvo, onde, efetivo e bomba'}]});
+      /* --- evento 1: o NOSSO jogo, em casa ou fora ---
+
+         NÃO HÁ GATE DE "JÁ DECIDIU". A chave já garante uma pergunta por
+         evento, e é ela que faz o papel que `p.decidido` fazia errado. E
+         o teste de `PL().falta(E)` também não serve aqui, embora pareça:
+         plano de paz não tem passo pendente NENHUM, então `falta` é
+         vazio na maioria das semanas e a pergunta sumiria em metade dos
+         jogos — medido, 22 de 41. "Antes de todo jogo" quer dizer todo. */
+      const aN = nosso ? absDe(nosso.dia || 6, s.adiante) : 0;
+      if(nosso && naJanela(aN)){
+        const fora = !nosso.casa;
+        const briga = !s.adiante && quente && quente.tensao >= PL().TENSAO_QUENTE;
+        const quando = quandoRot(nosso.dia || 6, s.adiante);
+        propor(E, {cat:2, peso:'decisao', voz:diretor(E, ch0),
+          chave:`${ch0}|nosso`, validoAte: prazo(aN),
+          texto: briga
+            ? `Nosso grande rival, a ${quente.torcida.nome}, está na cidade `+
+              `essa semana. Bora dar um trato neles?`
+            : fora
+            ? `${E.torcida.clube} joga fora ${quando}, contra o `+
+              `${nosso.mandante.nome}. Quantos vão na caravana, e por qual estrada?`
+            : `Vai ter ${nosso.mandante.nome} × ${nosso.visitante.nome} `+
+              `${quando}. Pretende fazer algo?`,
+          /* A CARAVANA TEM TELA (§8.23); o jogo em casa fecha pela
+             ideologia ou abre a Gestão pra escolher alvo. */
+          botoes: (fora && !briga)
+            ? [{rot:'Montar a caravana', efeito:'caravana',
+                nota:'quantos vão, por qual estrada e quantas bombas'},
+               {rot:'Seguir ideologia', efeito:'ideologia',
+                nota:'a ideologia fecha o plano da semana'}]
+            : BOTOES_PLANO});
+      }
+
+      /* --- evento 2: os OUTROS jogos da praça, todos eles ---
+         A mensagem lista a rodada inteira do dia, e não os dois
+         primeiros: `slice(0,2)` fazia a linha parecer a praça inteira
+         quando era um pedaço dela. Eles se agrupam por DIA, porque é o
+         dia que define a decisão — investida é por jogo, mas a pergunta
+         é uma por noite. */
+      const porDia = {};
+      for(const o of (s.adiante ? PL().outrosJogosNaCidade(E, s.semana) : outros))
+        (porDia[o.dia] = porDia[o.dia] || []).push(o);
+      for(const dia of Object.keys(porDia).map(Number).sort((a,b)=>a-b)){
+        const a = absDe(dia, s.adiante);
+        if(!naJanela(a)) continue;
+        const nomes = porDia[dia].map(x=>`${x.casa.nome} × ${x.vis.nome}`);
+        const quando = quandoRot(dia, s.adiante);
+        propor(E, {cat:2, peso:'decisao', voz:diretor(E, ch0),
+          chave:`${ch0}|praca|${dia}`, validoAte: prazo(a),
+          texto: nomes.length === 1
+            ? `Vai ter ${nomes[0]} ${quando}. Quer fazer alguma coisa?`
+            : `Vai ter ${nomes.slice(0,-1).join(', ')} e `+
+              `${nomes[nomes.length-1]} ${quando}. Quer fazer alguma coisa?`,
+          botoes:[{rot:'Seguir ideologia', efeito:'ideologia',
+                   nota:'a ideologia fecha o plano da semana'},
+                  {rot:'Atacar alguém', efeito:'gestao',
+                   nota:'escolher alvo, onde, efetivo e bomba'}]});
+      }
+    }
   }
+
+  const BOTOES_PLANO = [
+    {rot:'Seguir ideologia', efeito:'ideologia',
+     nota:'a ideologia fecha o plano da semana'},
+    {rot:'Atacar alguém', efeito:'gestao',
+     nota:'escolher alvo, onde, efetivo e bomba'}
+  ];
 
   /* =======================================================
      PRODUTOR 3 — A CONVOCAÇÃO PRA CENA
@@ -2097,7 +2219,7 @@ TO.feed = (function(){
 
      São duas, com pesos diferentes, e uma exclui a outra:
 
-     · O RESUMO (`acao`) sai toda semana normal, com o VALOR no texto.
+     · O RESUMO (`acao`) sai no fecho do MÊS, com o VALOR no texto.
        O comentário que antes suprimia o resumo dizia que uma linha
        genérica por semana é barulho de fundo, e ele estava certo — o
        conserto é escrever o número, não calar. É esta mensagem que dá
@@ -2113,7 +2235,15 @@ TO.feed = (function(){
      ======================================================= */
   function fechoDaSemana(E, rel){
     const saiu = (rel.saidas || []).length;
-    const vermelho = rel.saldo < 0 || E.dinheiro < 0;
+    /* O ALARME É DO CAIXA, NÃO DO RESULTADO DA SEMANA. Ele testava
+       `rel.saldo < 0 || E.dinheiro < 0`, e a primeira metade morreu com
+       a mensalidade mensal: em três semanas de cada quatro só há
+       despesa, então a semana fecha negativa por projeto. Medido antes
+       do conserto: 50 alarmes numa temporada de 52 semanas, e resumo
+       mensal nenhum — o alarme comia o mês inteiro. Quem manda no
+       alarme é a mesma condição que manda na debandada, o caixa
+       negativo, e ela não mudou. */
+    const vermelho = E.dinheiro < 0;
     const ch = `fecho|${E.data.ano}|${E.data.semana}`;
     if(vermelho || saiu){
       /* O TEXTO SEGUE A CAUSA. O aprovado fala do caixa, e é o certo
@@ -2138,10 +2268,16 @@ TO.feed = (function(){
                  nota:'a moral cai toda semana enquanto durar'}]});
       return 'alarme';
     }
-    const sinal = rel.saldo > 0 ? '+' : rel.saldo < 0 ? '−' : '';
+    /* O RESUMO É MENSAL, e só sai no fecho do mês. Com a mensalidade
+       caindo numa semana em quatro (§8.25), a linha semanal mostraria
+       vermelho três vezes em quatro e treinaria o jogador a ignorá-la. O
+       mês é o ciclo em que a receita de verdade entra. */
+    const mes = rel.mes;
+    if(!mes) return 'nada';
+    const sinal = mes.saldo > 0 ? '+' : mes.saldo < 0 ? '−' : '';
     propor(E, {cat:4, peso:'acao', voz:diretor(E, ch), chave:ch,
-      texto:`A semana fechou em ${sinal}${U.dinheiro(Math.abs(rel.saldo))}.`,
-      efeitos:[{ind:'dinheiro', delta:Math.round(rel.saldo), dono:'da semana'}],
+      texto:`O mês fechou em ${sinal}${U.dinheiro(Math.abs(mes.saldo))}.`,
+      efeitos:[{ind:'dinheiro', delta:Math.round(mes.saldo), dono:'do mês'}],
       botoes:[{rot:'Ver Financeiro', efeito:'painel', pagina:'financeiro'}]});
     return 'resumo';
   }
