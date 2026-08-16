@@ -328,9 +328,14 @@ TO.praca = (function(){
   const podeSair = (E, o) =>
     !(TO.tensao && TO.tensao.banida && TO.tensao.banida(E, o.id));
 
-  function naRuaHoje(E){
+  /* A RUA DE UM DIA QUALQUER, e não só a de hoje: o assistente de
+     ataque pergunta na véspera quem vai estar na rua no dia do jogo, e
+     a resposta tem de ser a mesma lista que a briga vai usar. */
+  const naRuaHoje = E => naRuaEm(E, E.data.dia);
+
+  function naRuaEm(E, dia){
     const mo = MP().modelo(E);
-    const doDia = jogosDaPraca(E).filter(j=>j.dia === E.data.dia);
+    const doDia = jogosDaPraca(E).filter(j=>j.dia === dia);
     if(!doDia.length) return [];
     const elenco = elencoDaNoite(E, doDia);
 
@@ -430,11 +435,89 @@ TO.praca = (function(){
     return t === 'Rival' || t === 'Maior Rival';
   }
 
-  /* A MESMA CONTA DOS ARREDORES. Está escrita duas vezes de propósito:
-     `combate.js` decide o humor de cada bonde DENTRO da cena e aqui se
-     decide quem procurou briga ANTES dela. Se um dia o número mudar, é
-     um número só que muda — este comentário é o bilhete. */
-  const chanceDeProcurar = tensao => Math.min(90, 3 + tensao*0.85);
+  /* =======================================================
+     A RIVALIDADE É O MOTIVO; A TENSÃO É O AGRAVANTE
+
+     Isto era `3 + tensão × 0,85`, a mesma conta que `combate.js` usa
+     pra decidir o humor de um bonde DENTRO da cena. E era errado aqui
+     por um motivo que só a medição mostra: numa temporada inteira de
+     jogador que vai em paz, a tensão fica em ZERO o tempo todo — ela
+     sobe com investida, com ataque sofrido e com briga, e decai
+     sozinha. Um laço fechado em zero: quem não ataca nunca é atacado,
+     e a tensão nunca sobe porque nada acontece. O maior rival vinha à
+     nossa cidade e tinha 3% de chance de nos procurar.
+
+     Maior rival não precisa de motivo — a rivalidade É o motivo. Então
+     a base vem da RELAÇÃO, e a tensão soma por cima.
+
+     A PARIDADE É PORTÃO, NÃO DESCONTO, e por isso multiplica tudo em
+     vez de somar à parte. Bonde deles muito menor que o nosso não
+     procura briga: não é covardia programada, é o mesmo raciocínio da
+     fuga por inferioridade que a cena já tem. Se a tensão entrasse
+     fora do fator, trinta caras com ódio viriam pra cima de duzentos,
+     que é exatamente o que não acontece na rua.
+     ======================================================= */
+  const BASE_PROCURA = {maior:88, rival:72, hostil:20};
+  const K_TENSAO     = 0.5;      // agravante, não âncora
+
+  /* A PARIDADE COMPARA TORCIDAS, NÃO BONDES, e o motivo é medido.
+
+     Em jogo em casa a NOSSA torcida bota 149 dos 150 na rua —
+     `efetivoDaSaida` é `aptosParaOEstadio`, quase o elenco inteiro —,
+     enquanto toda torcida da IA bota 60% do efetivo dela, e a que vem
+     de outra cidade bota uma caravana, que é menos ainda. Numa
+     temporada, a razão MEDIANA entre o bonde hostil e o nosso foi de
+     0,09, e o maior bonde rival que apareceu foi o dos Leões da TUF —
+     torcida do MESMO tamanho da nossa — com 66 contra 149, razão 0,44.
+
+     Comparar bonde com bonde, então, não compara coisas comparáveis: o
+     nosso número é o elenco e o deles é uma fração dele. Com o piso em
+     0,45 sobre os bondes, ninguém nunca vem — medido, 32 bondes hostis
+     na rua e 1 veio. E "rival de tamanho equivalente", que é como a
+     meta foi escrita, é uma frase sobre a TORCIDA, não sobre quantos
+     ela conseguiu botar na rua naquele sábado.
+
+     Então o portão é o efetivo das duas torcidas, que é simétrico. Uma
+     rival do nosso tamanho vem pra cima mesmo com 66 contra 149: quem
+     decide isso é o orgulho dela, não a aritmética do dia.
+
+     Fica anotado que a assimetria do `efetivoDaSaida` existe e é do
+     autor: ou o nosso passa a ser uma fração como o deles, ou fica como
+     está. Não mexi nele por conta própria — não foi pedido. */
+  const PISO_PARIDADE = 0.45;    // abaixo disto eles não vêm
+  const PAR_PARIDADE  = 0.80;    // aqui a base vale inteira
+
+  /* o grau vem da tabela do mundo primeiro, e do número da relação
+     depois: torcida com quem nunca interagimos não tem `E.relacoes`, e
+     é justamente o maior rival do primeiro ano */
+  function grauDeRivalidade(E, outro){
+    const t = M().relacaoBase(E.torcida.id, outro);
+    if(t === 'Maior Rival') return 'maior';
+    if(t === 'Rival')       return 'rival';
+    const rel = (E.relacoes||{})[outro];
+    if(rel !== undefined && rel <= -60) return 'maior';
+    if(rel !== undefined && rel <= -30) return 'rival';
+    return 'hostil';
+  }
+
+  /* 0 abaixo do piso, sobe linear até a paridade da rua, e passa de 1
+     quando eles são mais que a gente — com teto, porque bonde maior vem
+     com mais vontade, não com certeza */
+  const efetivoDe = (E, id) => id === E.torcida.id ? E.membros.length
+    : (((TO.tensao && TO.tensao.mundo(E)[id]) || M().torcida(id) || {}).membros || 20);
+
+  function fatorParidade(nossos, deles){
+    const r = deles / Math.max(1, nossos);
+    if(r < PISO_PARIDADE) return 0;
+    if(r >= PAR_PARIDADE)
+      return Math.min(1.3, 1 + (r - PAR_PARIDADE)*0.4/PAR_PARIDADE);
+    return (r - PISO_PARIDADE) / (PAR_PARIDADE - PISO_PARIDADE);
+  }
+
+  const chanceDeProcurar = (E, outro, tensao) =>
+    U.limitar((BASE_PROCURA[grauDeRivalidade(E, outro)] + tensao*K_TENSAO)
+              * fatorParidade(efetivoDe(E, E.torcida.id), efetivoDe(E, outro)),
+              0, 95);
 
   /* O ACASO É MUITO MENOR QUE A INTENÇÃO, e tem de ser: dois bondes que
      não estão se procurando só se pegam se derem de cara um com o
@@ -548,7 +631,8 @@ TO.praca = (function(){
     for(const b of inimigos){
       const ten = TO.tensao ? TO.tensao.nivel(E, b.id) : 0;
       const rel = (E.relacoes||{})[b.id];
-      const procurou = U.rng()*100 < chanceDeProcurar(ten);
+      const procurou = U.rng()*100 <
+        chanceDeProcurar(E, b.id, ten);
       const esbarrou = !procurou && U.rng()*100 < chanceDeAcaso(ten, rel);
       if(!procurou && !esbarrou) continue;
       const onde = lugarDoEncontro(E, mo, b,
@@ -762,8 +846,10 @@ TO.praca = (function(){
           pontoDaSede, pontoDoBar,
           RUA_DA_CLASSE, ruaDaClasse, localDe, larguraEm, pontoNoBairro, LARGO,
           hexParaRgb, tonalizar, tomVizinho, siglaUnica, elencoDaNoite,
-          anfitriaoDe, escoltaDe, naRuaHoje,
+          anfitriaoDe, escoltaDe, naRuaHoje, naRuaEm,
           hostis, chanceDeProcurar, chanceDeAcaso, corredor,
+          grauDeRivalidade, fatorParidade, BASE_PROCURA, PISO_PARIDADE,
+          efetivoDeTorcida:efetivoDe,
           lugarPlanejado, lugarDoEncontro, resolverIda,
           organizadasComEfetivo, porPeso, assaltosDoBloco, assaltoDeHoje,
           resolverAssalto, chanceDeDarErrado, RISCO_POR_SEGURANCA,

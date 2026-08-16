@@ -884,7 +884,20 @@ TO.tensao = (function(){
       if(houveHostilidade[id]) continue;
       const t = E.tensao[id];
       if(t <= 0){ delete E.tensao[id]; continue; }
-      E.tensao[id] = Math.max(0, t - (t > 60 ? 4 : 3));
+      /* O ESFRIAMENTO ERA MAIS RÁPIDO QUE TUDO QUE ESQUENTA, e era ele
+         que segurava a tensão em zero. Em números: 3 por semana lisos
+         apagam uma provocação de +5 em duas semanas e uma briga de rua
+         de +14 em cinco, e as fontes chegam mais espaçadas que isso —
+         medido, 21 provocações respondidas numa temporada e pico de
+         tensão 2. Nada acumulava, e a ideologia de "atacar rivais com
+         tensão acima de 30" nunca podia disparar.
+         Proporcional com piso de meio ponto, mágoa vira memória: uma
+         briga de rua de +14 leva meio ano pra sumir, então duas com o
+         mesmo rival na mesma temporada se SOMAM em vez de se apagarem,
+         que é o que faz a tensão chegar aos 30 do corte da ideologia.
+         E o teto continua caindo mais rápido que a base — 60 perde 2,4
+         e 10 perde 0,5 —, que era a intenção da regra antiga. */
+      E.tensao[id] = Math.max(0, t - Math.max(0.5, t*0.04));
     }
 
     /* Com o tempo a relação volta pro que ela é por natureza: mágoa de

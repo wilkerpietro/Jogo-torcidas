@@ -463,6 +463,9 @@ TO.feed = (function(){
         ]};
       }
       case 'gestao':  return {abrir:'gestao'};
+      /* a tela do ataque resolve no `aplicar` dela, não aqui: o que
+         volta é o pedido de abrir, como a caravana */
+      case 'ataque':  return {tela:'ataque'};
       case 'painel':  return {abrir: d.pagina || b.pagina || 'inicio'};
       case 'cena':    return {cena: d};
       /* o único botão que resolve mundo em vez de abrir tela: a ida ao
@@ -481,6 +484,10 @@ TO.feed = (function(){
         const antes = TO.tensao.nivel(E, d.torcidaId);
         const rAntes = (E.relacoes||{})[d.torcidaId];
         TO.tensao.somar(E, d.torcidaId, b.quanto || 1, 'respondemos à provocação');
+        /* a relação só cai se o botão pedir: `tensao` também serve a
+           mensagem que só esquenta o clima sem xingar ninguém */
+        if(b.relacao && rAntes !== undefined)
+          E.relacoes[d.torcidaId] = U.limitar(rAntes + b.relacao, -100, 100);
         const nome = (M().torcida(d.torcidaId)||{}).nome || 'eles';
         const ef = [{ind:'tensao',
                      delta: TO.tensao.nivel(E, d.torcidaId) - antes,
@@ -1085,19 +1092,20 @@ TO.feed = (function(){
             ? `Vai ter ${nomes[0]} ${quando}. Quer fazer alguma coisa?`
             : `Vai ter ${nomes.slice(0,-1).join(', ')} e `+
               `${nomes[nomes.length-1]} ${quando}. Quer fazer alguma coisa?`,
-          botoes:[{rot:'Seguir ideologia', efeito:'ideologia',
-                   nota:'a ideologia fecha o plano da semana'},
-                  {rot:'Atacar alguém', efeito:'gestao',
-                   nota:'escolher alvo, onde, efetivo e bomba'}]});
+          botoes: BOTOES_PLANO});
       }
     }
   }
 
+  /* "Atacar alguém" tinha `efeito:'gestao'` e jogava o jogador na Gestão
+     inteira pra ele achar sozinho três campos. Agora abre a tela do
+     ataque, que tem esses três campos e mais nada — o mesmo caminho que
+     a caravana fez em §8.23. A Gestão completa continua no ícone. */
   const BOTOES_PLANO = [
     {rot:'Seguir ideologia', efeito:'ideologia',
      nota:'a ideologia fecha o plano da semana'},
-    {rot:'Atacar alguém', efeito:'gestao',
-     nota:'escolher alvo, onde, efetivo e bomba'}
+    {rot:'Atacar alguém', efeito:'ataque',
+     nota:'quem, onde e quantas bombas'}
   ];
 
   /* =======================================================
@@ -1158,18 +1166,35 @@ TO.feed = (function(){
     const p = PL().plano(E);
     const alvo = p.intencao === 'paz' ? null
                : (M().torcida(p.alvoTorcida)||{}).nome;
-    const bairro = (M().bairroDaSede(E.torcida)||{}).nome || 'praça';
+
+    /* O DIA DA GUERRA. Com ataque marcado a mensagem não é mais a
+       convocação comum com outro rótulo de botão: é a briga que a
+       gente marcou, com o alvo e o lugar escolhidos no assistente.
+       Sem ataque, a convocação continua a de sempre. */
+    if(alvo){
+      const onde = (PL().ONDE_ATAQUE.find(o=>o.id === PL().ondeDoPlano(p))
+                    || {}).rot || 'nos arredores';
+      propor(E, {cat:3, peso:'decisao', voz:vozRua(), tipo:'ruim',
+        chave:`c3jogo|${E.data.absoluto}`,
+        texto:`Hoje é o dia. A ${alvo} vai estar `+
+              `${onde.toLowerCase().replace(/^na /,'na ').replace(/^nos /,'nos ')}`+
+              `, e a gente vai pra cima.`,
+        dados:{tipo:'ida'},
+        botoes:[{rot:'Ir para a guerra', efeito:'ida',
+                 nota:`${PL().efetivoDaSaida(E)} nossos`+
+                      `${p.bombas ? ` · ${p.bombas} bomba`+
+                                    `${p.bombas>1?'s':''}` : ''}`}]});
+      return;
+    }
     propor(E, {cat:3, peso:'decisao', voz:vozRua(),
       chave:`c3jogo|${E.data.absoluto}`,
-      texto: alvo
-        ? `${cartaz.slice(0,-1)}, e o plano é cima da ${alvo} no ${bairro}.`
-        : `${cartaz} A bateria sai da sede.`,
+      texto:`${cartaz} A bateria sai da sede.`,
       dados:{tipo:'ida'},
       /* UM BOTÃO SÓ. "Ficar em casa" saiu: o time joga, a torcida vai.
          Não era escolha de verdade — era a opção que o jogador apertava
          pra não abrir a cena, e o custo dela em moral nunca foi sentido
          porque a moral já cai por outros seis caminhos. */
-      botoes:[{rot: alvo ? 'Ir pra treta' : 'Ir pro estádio', efeito:'ida'}]});
+      botoes:[{rot:'Ir pro estádio', efeito:'ida'}]});
   }
 
   /* A ESTRADA DESTA VIAGEM, quando houve emboscada nela. `E.viagem` é
@@ -1652,8 +1677,12 @@ TO.feed = (function(){
     c.ultimaRival = o.id;
     propor(E, {cat:7, peso:'decisao', voz:vozRival(E, o, ch), chave:ch+'|'+o.id,
       texto:a.fala(E, o, x), dados:{torcidaId:o.id, ameaca:a.n},
-      botoes:[{rot:'Vem, verme', efeito:'tensao', quanto:1,
-               nota:'+1 de tensão com eles'},
+      /* RESPONDER PROVOCAÇÃO É COMPRAR BRIGA, e passou a custar o que
+         custa: era +1 de tensão, um agrado que não movia nada — com o
+         corte da ideologia em 30, seriam trinta provocações respondidas
+         pra ela valer uma vez. */
+      botoes:[{rot:'Vem, verme', efeito:'tensao', quanto:5, relacao:-3,
+               nota:'+5 de tensão · −3 de relação'},
               {rot:'Não dar moral', efeito:'nada', nota:'nada acontece'}]});
   }
 

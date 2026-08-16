@@ -719,6 +719,7 @@
     if(r.encontro) abrirConfronto(e, r.encontro);
     else if(r.cena) abrirCenaDaMensagem(r.cena);
     else if(r.tela === 'caravana') abrirCaravana();
+    else if(r.tela === 'ataque') abrirAtaque();
     else if(r.abrir){
       /* a mensagem pode pedir uma ABA, não só uma página: a rotina é a
          segunda do Calendário, e cair na primeira é o mesmo que não
@@ -1697,6 +1698,102 @@
         redesenhar();
       }]], 'media');
     return fechar;
+  }
+
+  /* =======================================================
+     A TELA DO ATAQUE — três perguntas, e só três
+
+     Mesma forma da caravana (§8.23) e pelo mesmo motivo: a pergunta do
+     feed tinha três campos e mandava o jogador procurar os três dentro
+     da Gestão inteira. Quem, onde, quantas bombas — e o resumo.
+
+     REGRA NENHUMA MORA AQUI. Alvo, local e bomba já eram campos do
+     plano; quem os escreve é `definirAtaque`, no planejamento, que é o
+     único lugar que sabe da trela do delegado.
+     ======================================================= */
+  const DIA_DA_SEMANA = ['','segunda','terça','quarta','quinta','sexta',
+                         'sábado','domingo'];
+
+  function abrirAtaque(){
+    const e = E(), P = TO.planejamento;
+    const lista = P.alvosNaRua(e);
+    if(!lista.length){
+      aviso('Não há torcida nenhuma na rua no dia do jogo.', 'ruim');
+      return null;
+    }
+    const p = P.plano(e);
+    /* abre no que o plano já tem; sem alvo, no mais quente da lista */
+    let alvo = lista.find(x=>x.id === p.alvoTorcida) ? p.alvoTorcida : lista[0].id;
+    let onde = P.ondeDoPlano(p);
+    let bombas = U.limitar(p.bombas || 0, 0, (e.estoque||{}).bombas || 0);
+    const corpo = el('div');
+
+    const pintar = ()=>{
+      corpo.innerHTML = '';
+      const j = e.proximoJogo || {};
+
+      /* --- 1: quem atacar --- */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quem atacar'}));
+      corpo.appendChild(opcoes(lista.map(a=>({
+        id:a.id, rot:a.nome + (a.aliada ? ' · aliada' : ''),
+        /* o efetivo é ESTIMATIVA, em faixa, como o olheiro dá: número
+           exato de bonde alheio é coisa que ninguém tem */
+        nota:`${a.faixa} na rua · tensão ${Math.round(a.tensao)} · `+
+             `relação ${Math.round(a.relacao)}`+
+             (a.deFora ? ' · caravana de fora' : '')
+      })), alvo, id=>{ alvo = id; pintar(); }));
+
+      /* --- 2: onde atacar --- */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Onde atacar'}));
+      corpo.appendChild(opcoes(P.ONDE_ATAQUE.map(o=>({
+        id:o.id, rot:o.rot, nota:o.nota
+      })), onde, id=>{ onde = id; pintar(); }));
+
+      /* --- 3: quantas bombas --- */
+      const tem = (e.estoque||{}).bombas || 0;
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantas bombas'}));
+      const lb = el('div',{class:'contador'});
+      const bB = el('button',{texto:'−'}), bM = el('button',{texto:'+'});
+      bB.disabled = bombas <= 0;
+      bM.disabled = bombas >= tem;
+      bB.onclick = ()=>{ bombas = Math.max(0, bombas-1); pintar(); };
+      bM.onclick = ()=>{ bombas = Math.min(tem, bombas+1); pintar(); };
+      lb.append(bB, el('b',{texto:String(bombas)}), bM,
+        el('small',{texto: tem ? `de ${tem} no estoque`
+                               : 'não temos bomba no estoque'}));
+      corpo.appendChild(lb);
+
+      /* --- o resumo --- */
+      const a = lista.find(x=>x.id === alvo) || {};
+      const o = P.ONDE_ATAQUE.find(x=>x.id === onde) || {};
+      corpo.appendChild(el('div',{class:'linha-dado total', html:
+        `<span>${P.efetivoDaSaida(e)} nossos contra a ${a.nome||'—'} `+
+        `${(o.rot||'').toLowerCase()}`+
+        `${bombas ? `, com ${bombas} bomba${bombas>1?'s':''}` : ''}</span>`+
+        `<b>${DIA_DA_SEMANA[j.dia] || 'sábado'}</b>`}));
+      if(a.aliada)
+        corpo.appendChild(el('div',{class:'linha-dado', html:
+          '<span class="negativo">É aliada nossa. Bater nela derruba a '+
+          'relação de vez.</span>'}));
+    };
+
+    pintar();
+    return modal('Atacar',
+      `${(e.proximoJogo||{}).mandante ? e.proximoJogo.mandante.nome : 'Jogo'} · `+
+      `semana ${e.data.semana}`, corpo,
+      [['Confirmar', ()=>{
+        const p2 = TO.planejamento.definirAtaque(e, {alvo, onde, bombas});
+        if(p2.intencao === 'paz'){
+          aviso('O delegado ainda está de olho: nada de ataque nesta semana.',
+                'ruim');
+        }else{
+          const a = lista.find(x=>x.id === alvo) || {};
+          const o = P.ONDE_ATAQUE.find(x=>x.id === onde) || {};
+          aviso(`Marcado: ${a.nome} ${(o.rot||'').toLowerCase()}.`, 'boa');
+        }
+        TO.estado.salvar();
+        redesenhar();
+      }]], 'media');
   }
 
   function abrirFicha(m){
@@ -4027,7 +4124,10 @@
     rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
     get pausasDoTempo(){ return [...pausasT]; },
     abrirPainel, fecharPainel, get painel(){ return painel; },
-    resolverIda: e => TO.praca.resolverIda(e || E())
+    resolverIda: e => TO.praca.resolverIda(e || E()),
+    /* as duas telas de decisão da semana, pela mesma porta de serviço
+       que a bateria já usa pro resto */
+    abrirCaravana, abrirAtaque
   };
 
   montarMenu();

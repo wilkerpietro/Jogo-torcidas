@@ -193,6 +193,21 @@ TO.acoes = (function(){
     const deles = nosso === enc.a ? enc.b : enc.a;
     const ganhamos = res && res.ganhamos !== undefined
                    ? !!res.ganhamos : !!(res && res.venceu);
+    /* BRIGA DE RUA NÃO SUBIA TENSÃO NENHUMA, e é o buraco no meio do
+       laço: `fecharAtaque` soma 18 ou 26, ser atacado em casa soma 6, a
+       investida soma 22 — e o encontro na ida, que é a briga mais comum
+       do jogo, somava zero. Sem isto o item 1 não fecha: mais briga na
+       rua não vira mais tensão, e a tensão continua presa no chão.
+       VINTE E DOIS, o mesmo da investida, ganhando ou perdendo: bonde
+       contra bonde na rua não é evento menor que ir na casa deles, e
+       ninguém escolheu este encontro — os dois lados saem com mais
+       ódio. O número é medido, não escolhido de véspera: com 14 a
+       tensão parava no próprio 14 e nunca chegava aos 30 do corte da
+       ideologia, porque cada rival briga com a gente uma ou duas vezes
+       por temporada. Com 22 e o esfriamento de 4%, duas brigas no
+       mesmo ano se somam em ~36 e a ideologia passa a valer. */
+    if(TO.tensao && deles.torcida)
+      TO.tensao.somar(E, deles.torcida, 22, 'briga na rua');
     const membros = (res && res.membros) || [];
     const outro = ((res && res.nossoLado) || 'mandante') === 'mandante'
                 ? 'visitante' : 'mandante';

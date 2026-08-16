@@ -3637,6 +3637,195 @@ A bateria das oito cenas passa limpa com **0 erros de página**, e o determinism
 intacto: o mesmo save carregado em duas páginas limpas dá **167 mensagens e 0
 diferenças**.
 
+## 8.26 A cidade fica violenta: a rival que vem, a tensão que escala e o ataque com tela
+
+O jogo era pacífico por aritmética, não por sensação, e a aritmética estava em duas
+linhas de `resolverIda`. Quatro frentes o desfazem: a rivalidade vira motivo, a briga
+de rua passa a esquentar o clima, o esfriamento deixa de apagar tudo, e o ataque ganha
+tela própria.
+
+### Por que ninguém vinha
+
+`chanceDeProcurar` era `3 + tensão × 0,85` — a mesma conta que `combate.js` usa pra
+decidir o humor de um bonde dentro da cena, e errada aqui. Numa temporada de jogador
+que vai em paz a tensão fica em **zero o tempo todo**: ela sobe com investida, ataque
+sofrido e briga, e decai sozinha. Laço fechado em zero. O maior rival vinha à nossa
+cidade e tinha **3%** de chance de nos procurar.
+
+Agora a base vem da **relação**, porque maior rival não precisa de motivo — a
+rivalidade é o motivo —, e a tensão soma por cima:
+
+```
+chance = (BASE[grau] + tensão × 0,5) × paridade      maior 88 · rival 72 · hostil 20
+```
+
+**A paridade compara TORCIDAS, não bondes, e isso é medido.** Em jogo em casa a nossa
+torcida bota 149 dos 150 na rua (`efetivoDaSaida` é `aptosParaOEstadio`), enquanto toda
+torcida da IA bota 60% do efetivo dela e a de outra cidade bota uma caravana. A razão
+**mediana** entre o bonde hostil e o nosso, numa temporada, é de **0,09**; o maior bonde
+rival que apareceu foi o dos Leões da TUF — torcida do mesmo tamanho da nossa — com 66
+contra 149, razão 0,44. Com o piso de 0,45 sobre os bondes, **ninguém nunca vem**:
+medido, 32 bondes hostis na rua e 1 veio. E "rival de tamanho equivalente", que é como
+a meta foi escrita, é uma frase sobre a torcida, não sobre quantos ela pôs na rua
+naquele sábado. Então o portão é o efetivo das duas torcidas, que é simétrico: piso em
+0,45, base inteira a partir de 0,80, teto de 1,3 pra quem é maior que a gente.
+
+> Fica anotado que a assimetria do `efetivoDaSaida` existe e é decisão do autor: ou o
+> nosso passa a ser uma fração como o deles, ou fica como está. Não mexi nele — não foi
+> pedido.
+
+**Uma temporada de jogador que vai em paz todas as semanas**, as duas medidas com o
+mesmo robô, e com as brigas **jogadas de verdade**:
+
+| | antes (`e8bc4d6`) | depois |
+|---|---:|---:|
+| idas ao estádio | 18 | 19 |
+| **fomos atacados** | **2** | **9** |
+| … porque procuraram | 1 | 8 |
+| … por acaso | 1 | 1 |
+
+Por faixa de paridade, com a chance que o modelo dá e o que de fato aconteceu:
+
+| rival na rua | n | chance do modelo | veio pra cima |
+|---|---:|---:|---:|
+| **equivalente** (efetivo ≥ 0,8 do nosso) | 9 | **86,8%** | **6 (67%)** |
+| intermediário (0,45 a 0,8) | 9 | 14,6% | 2 (22%) |
+| **muito menor** (< 0,45) | 24 | **0%** | **1 (4%)** |
+
+Os 67% do equivalente são menores que os 86,8% do modelo por um motivo que não é
+sorteio: `resolverIda` **para no primeiro que engatar**. Quando dois rivais equivalentes
+estão na mesma rua no mesmo dia, só um pode ser o que brigou — o outro conta como "não
+veio" sem nunca ter sido sorteado. Antes da mudança a mesma faixa deu **0 de 5**.
+
+O caso do critério 3, com nome: a **Falange Coral**, 21 membros contra os nossos 150 —
+razão 0,14 —, apareceu na rua e a chance dela vir é **exatamente 0**. Dos 24 bondes
+muito menores da temporada, **1** brigou conosco, e por acaso, não por procura.
+
+### A tensão sai do chão
+
+O botão **"Vem, verme"** era +1 de tensão — um agrado. Com o corte da ideologia em 30,
+seriam trinta provocações respondidas pra ela valer uma vez. Passa a ser **+5 de tensão
+e −3 de relação**, e o rodapé do botão diz isso. Medido no motor: tensão 0 → 5, relação
+−45 → −48, e as duas linhas aparecem na consequência do cartão.
+
+**Duas coisas a mais tiveram de mudar, e as duas apareceram medindo.**
+
+A primeira é um buraco: **briga de rua não subia tensão nenhuma.** `fecharAtaque` soma
+18 ou 26, ser atacado em casa soma 6, a investida soma 22 — e o encontro na ida, que é a
+briga mais comum do jogo, somava **zero**. Sem isso o item 1 não fecha: mais briga na
+rua não vira mais tensão. Agora soma **22**, o mesmo da investida, ganhando ou perdendo.
+
+A segunda é o esfriamento, que o enunciado já apontava como o lugar certo — depois de
+medir. Medido: 21 provocações respondidas numa temporada e **pico de tensão 2**. Três
+pontos lisos por semana apagam um +5 em duas semanas e um +22 em sete, e as fontes
+chegam mais espaçadas que isso. Virou **proporcional, 4% com piso de meio ponto**: um
++22 leva meio ano pra sumir, então duas brigas com o mesmo rival na mesma temporada se
+somam em vez de se apagarem. O teto continua caindo mais rápido que a base — 60 perde
+2,4 e 10 perde 0,5 —, que era a intenção da regra antiga.
+
+| | antes | depois |
+|---|---:|---:|
+| pico de tensão na temporada | **0** | **41,5** |
+| tensão média semanal entre os rivais | 0,0 | **5,6** |
+| semanas com algum rival acima de 30 | 0 | **12** |
+| tensão com os Leões da TUF no fim do ano | 0 | **34** |
+| **ideologia "atacar rivais com tensão > 30"** | **0×** | **1×** |
+
+A ideologia dispara pouco por um motivo de calendário, e vale dizer qual: ela só olha
+`alvosDoJogo` — as torcidas do adversário **daquela semana** — mais os visitantes dos
+outros jogos da praça. Não basta ter um rival a 34; é preciso que ele esteja no
+calendário naquela semana. Doze semanas com rival acima de 30 renderam **um** disparo.
+
+### O ataque em três perguntas
+
+"Atacar alguém" tinha `efeito:'gestao'` e jogava o jogador na Gestão inteira pra achar
+sozinho três campos. É o mesmo problema da caravana (§8.23), com a mesma solução.
+
+O botão abre a **tela do ataque**: `Quem atacar`, `Onde atacar`, `Quantas bombas`, o
+resumo e o Confirmar. **Nenhum painel da Gestão abre por trás** — medido,
+`TO.tela.painel` fica em `nenhum`. A lista de alvos é quem estará na rua **no dia do
+jogo** (`naRuaEm`, que é `naRuaHoje` com o dia como parâmetro), com efetivo em **faixa**,
+como o olheiro dá, mais tensão e relação:
+
+```
+Jovem Confiança      5 a 10 na rua · tensão 0 · relação −45 · caravana de fora
+Trovão Azul         10 a 20 na rua · tensão 0 · relação −45 · caravana de fora
+Império Vermelho · aliada   5 a 5 na rua · tensão 0 · relação 45
+```
+
+Os três lugares traduzem pros campos que `resolverIda` já lia: **na concentração** →
+`como:'ida'`, `olheiro:'praca'`; **na pista** → `olheiro:'avenida'`; **nos arredores** →
+`como:'arredores'`. Regra nenhuma nasceu aqui — alvo, local e bomba já eram campos do
+plano, e quem os escreve é `definirAtaque`, no planejamento, que é o único lugar que
+sabe da trela do delegado.
+
+A escolha chega ao plano: escolhendo o segundo alvo e "Na pista", o plano fica
+`{intencao:'atacar', alvo:'trovao_azul', como:'ida', olheiro:'avenida', bombas:0}`.
+A Gestão completa continua no ícone, pra quem quiser mexer no resto.
+
+### O dia da guerra
+
+Com ataque marcado, a convocação deixa de ser a de sempre com outro rótulo de botão:
+
+```
+"Hoje é o dia. A Trovão Azul vai estar na pista, e a gente vai pra cima."
+   → [Ir para a guerra]   (150 nossos)
+```
+
+E ela abre a cena no lugar escolhido, com o efetivo real e distinto dos dois lados:
+marcando "Na concentração" contra a Jovem Confiança, a cena que abriu foi `praca` com
+**150 mandante contra 8 visitante**. Nada é reequilibrado na abertura, que é a mesma
+regra de sempre.
+
+Sem ataque planejado, a convocação continua a de hoje:
+
+```
+"Hoje tem Ceará × Sport Recife no Arena Castelão. A bateria sai da sede."
+   → [Ir pro estádio]
+```
+
+### O que a violência custou
+
+| | antes | depois |
+|---|---:|---:|
+| noites de briga na temporada | 2 | **8** |
+| feridos nossos | 0 | **1** |
+| presos nossos | 0 | **2** |
+| membros no fim do ano | 150 | 150 |
+| confrontos no log | 2 | **8** |
+| **polícia nossa no fim** | **6** | **3** |
+| banimentos por polícia zerada — nossos | 0 | **0** |
+| banimentos por polícia zerada — das 138 | 0 | **0** |
+
+**O banimento continua não acontecendo, e agora dá pra dizer o quanto faltou.** A nossa
+polícia caiu de 6 pra 3 numa temporada — antes ela terminava em 6. A conta que dava zero
+não mudou de resultado, mas mudou de distância: mais uma temporada nesse ritmo e ela
+chega no chão. Não consertei nada por conta própria, como o enunciado pediu.
+
+O custo em gente é baixo porque a torcida é grande e ganha quase todas: 150 contra
+bondes de 8 a 66. Feridos e presos aparecem, a torcida não encolhe.
+
+### Uma nota sobre como isto foi medido
+
+**A cena não anda sozinha.** Um encontro de rua aberto pelo feed fica parado esperando o
+jogador conduzir o bonde: medido, 120 segundos de cena com 149 de pé de um lado, 22 do
+outro e **zero caídos**. Não é o `requestAnimationFrame` congelado — ele roda a 60 fps
+no headless; é que o líder é do jogador e ninguém apertou tecla.
+
+Por isso a bancada desta seção **joga a briga**: segura W/A/S/D na direção do centroide
+deles, como um jogador faria, até a cena encerrar sozinha. Foi assim que os feridos, os
+presos, a tensão e a polícia desta medição saíram do jogo em vez de saírem de um
+resultado inventado. Das 9 brigas da temporada, 7 terminaram assim e 2 precisaram do
+empurrão da bancada (matar parte dos discos), o que está contado acima. Isto resolve a
+dívida que §8.24 tinha registrado como "briga real com ferido não observada".
+
+### O que não mudou
+
+A bateria das oito cenas passa limpa com **0 erros de página**; o determinismo segue
+intacto — o mesmo save em duas páginas limpas dá **161 mensagens e 0 diferenças** —; e o
+feed continua no mesmo tamanho: **499 mensagens**, 9,42 por semana, máximo 15 no teto de
+15, **0 categorias repetidas em sequência** e **0 descartes por prazo**.
+
 ## 9. Celular
 
 > **Leia junto com §8.22.** Boa parte desta seção descreve a tela do MAPA — a gaveta

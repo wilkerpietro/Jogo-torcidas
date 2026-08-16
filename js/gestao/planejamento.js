@@ -706,6 +706,78 @@ TO.planejamento = (function(){
   }
 
   /* =======================================================
+     O ATAQUE EM TRÊS PERGUNTAS
+
+     "Atacar alguém" jogava o jogador na Gestão inteira, com todos os
+     cartões, pra ele achar sozinho os três campos que a pergunta pedia.
+     É o mesmo problema que a caravana teve (§8.23) e a solução é a
+     mesma: uma tela com as três perguntas e mais nada.
+
+     NENHUMA REGRA NOVA MORA AQUI. Alvo, local e bomba já são campos do
+     plano; o que faltava era a porta que os põe juntos na hora em que a
+     pergunta é feita. O que este bloco acrescenta é a LISTA — quem vai
+     estar na rua naquele dia — e a tradução dos três lugares pros
+     campos que `resolverIda` já lê.
+     ======================================================= */
+  const ONDE_ATAQUE = [
+    {id:'praca', rot:'Na concentração', como:'ida', olheiro:'praca',
+     nota:'a praça onde eles se juntam antes de subir pro estádio'},
+    {id:'pista', rot:'Na pista', como:'ida', olheiro:'avenida',
+     nota:'a avenida de acesso, com o bonde deles em movimento'},
+    {id:'arredores', rot:'Nos arredores', como:'arredores', olheiro:null,
+     nota:'a beira do estádio, com o cordão da PM em peso'}
+  ];
+  const ondeDoPlano = p => p.como === 'ida'
+    ? (ONDE_ATAQUE.find(o=>o.olheiro === p.olheiro) || ONDE_ATAQUE[0]).id
+    : 'arredores';
+
+  /* O EFETIVO É ESTIMATIVA, como o do olheiro: a faixa é larga de
+     propósito e é a mesma o dia inteiro, porque quem espia não muda de
+     ideia porque a tela redesenhou. */
+  function faixaDeEfetivo(E, n, chave){
+    const r = baralhoFixo(`${chave}|${E.data.ano}|${E.data.semana}`);
+    const erro = 0.25 + r()*0.25;
+    return `${Math.max(5, Math.round(n*(1-erro)/5)*5)} a `+
+           `${Math.round(n*(1+erro)/5)*5}`;
+  }
+
+  /* quem estará na rua no dia do NOSSO jogo, com o que importa pra
+     escolher: efetivo estimado, tensão e relação */
+  function alvosNaRua(E){
+    const j = E.proximoJogo;
+    if(!j || !TO.praca) return [];
+    return TO.praca.naRuaEm(E, j.dia || 6)
+      .filter(b => !b.nossa && !b.doJogador)
+      .map(b=>{
+        const rel = (E.relacoes||{})[b.id];
+        return {id:b.id, torcida:b.torcida, nome:b.nome, n:b.n,
+                faixa: faixaDeEfetivo(E, b.n, b.id),
+                tensao: TO.tensao ? TO.tensao.nivel(E, b.id) : 0,
+                relacao: rel === undefined ? 0 : rel,
+                aliada: rel !== undefined && rel >= RELACAO_ALIADO,
+                deFora: !!b.deFora};
+      })
+      .sort((a,b)=> (b.tensao - a.tensao) || (a.relacao - b.relacao));
+  }
+
+  /* a escolha do assistente chega ao plano da semana por aqui, e por
+     `definirIntencao`, que é o único lugar que sabe da trela */
+  function definirAtaque(E, esc){
+    definirIntencao(E, soAliados(E) ? 'trair' : 'atacar');
+    const p = plano(E);
+    if(p.intencao === 'paz') return p;          // a trela barrou
+    if(esc.alvo) p.alvoTorcida = esc.alvo;
+    const onde = ONDE_ATAQUE.find(o=>o.id === esc.onde) || ONDE_ATAQUE[2];
+    p.como = onde.como;
+    p.olheiro = onde.olheiro;
+    p.alvo = alvoDe(p);
+    if(esc.bombas != null)
+      p.bombas = U.limitar(esc.bombas, 0, (E.estoque||{}).bombas || 0);
+    p.decidido = false;
+    return p;
+  }
+
+  /* =======================================================
      FECHAR O PLANO
      ======================================================= */
   function confirmar(E){
@@ -881,6 +953,8 @@ TO.planejamento = (function(){
           alvosDoJogo, soAliados, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
           COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,
+          ONDE_ATAQUE, ondeDoPlano, alvosNaRua, definirAtaque,
+          faixaDeEfetivo,
           passos, falta, investidaDe, definirInvestida,
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
