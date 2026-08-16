@@ -30,14 +30,17 @@ TO.praca = (function(){
   /* =======================================================
      A. O CALENDÁRIO DA PRAÇA
      ======================================================= */
-  /* o dia de jogo da praça: todo jogo desta semana com mando aqui */
-  function jogosDaPraca(E){
+  /* o dia de jogo da praça: todo jogo com mando aqui na semana pedida,
+     que por omissão é a corrente. A semana entra por parâmetro porque
+     a janela de dez dias da ameaça (§8.27) atravessa a virada. */
+  function jogosDaPraca(E, semana){
     const nossa = E.torcida.mapa;
     const fora = [];
     if(!E.temporada) return fora;
+    const alvo = semana != null ? semana : E.data.semana;
     for(const comp of E.temporada.competicoes)
       for(const etapa of [...comp.rodadas, ...comp.mata]){
-        if(etapa.semana !== E.data.semana) continue;
+        if(etapa.semana !== alvo) continue;
         for(const j of etapa.jogos){
           if(!j.f) continue;
           const casa = M().time(j.c), vis = M().time(j.f);

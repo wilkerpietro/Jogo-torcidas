@@ -3826,6 +3826,134 @@ intacto — o mesmo save em duas páginas limpas dá **161 mensagens e 0 diferen
 feed continua no mesmo tamanho: **499 mensagens**, 9,42 por semana, máximo 15 no teto de
 15, **0 categorias repetidas em sequência** e **0 descartes por prazo**.
 
+## 8.27 Ameaça só de quem importa, e o feed só mostra a briga da nossa praça
+
+Duas coisas do feed que falavam do país inteiro pra quem só tem uma cidade.
+
+### Quem pode mandar ameaça
+
+`rivais(E)` devolvia **todos os rivais declarados do grafo** — 66 torcidas, de Manaus a
+Porto Alegre — mais os visitantes da semana que fossem rivais. Uma torcida de outro
+estado, que nunca vai pisar aqui, mandava recado como se fosse vizinha de bairro.
+
+Passam a ser dois grupos, e só:
+
+- **maior rival, sempre e sem condição.** Ele provoca porque existe.
+- **rival comum, só com jogo do clube dele na nossa praça nos próximos 10 dias.**
+
+Dez dias não cabem numa semana de sete, então `clubesNaPracaEmDias` olha a semana
+corrente **e a seguinte**, contando em dia absoluto. Pra isso `jogosDaPraca` ganhou o
+parâmetro de semana, como `naRuaEm` já tinha ganhado em §8.26. Na última semana do ano
+não há olhada adiante — a temporada é remontada na virada, e a "semana 1" que se leria
+dali é a da temporada velha.
+
+Forçando um jogo do clube da **Bamor** (praça `bahia`) na nossa praça, com o relógio no
+dia 1:
+
+| jogo forjado | distância | resultado |
+|---|---:|---|
+| semana seguinte, dia 2 | 8 dias | **manda** · jogo na praça em 10 dias |
+| semana seguinte, dia 6 | 12 dias | **cala** · não elegível |
+| mesma semana, dia 4 | 3 dias | **manda** · jogo na praça em 10 dias |
+| nenhum jogo na praça | — | **cala** · não elegível |
+
+Os dois primeiros casos são o critério 2 e os dois atravessam a virada de semana, que é
+o critério 3. O maior rival (**Falange Coral**) manda nos quatro cenários.
+
+**Uma temporada, e o motivo colhido no dia em que cada ameaça saiu** — não no fim do
+ano, porque "jogo na praça em 10 dias" é uma afirmação sobre aquele dia:
+
+| torcida | vezes | praça | por que entrou |
+|---|---:|---|---|
+| Falange Coral | 5 | fortaleza | maior rival |
+| Leões da TUF | 4 | fortaleza | maior rival |
+| Força Jovem Guarany | 4 | interior-do-ce | maior rival |
+| Inferno Coral | 3 | recife | jogo na praça em 10 dias |
+| Jovem Garra Tricolor | 2 | fortaleza | maior rival |
+| Esquadrão Vilanovense | 1 | goiania | jogo na praça em 10 dias |
+| Ultras 92 | 1 | curitiba | jogo na praça em 10 dias |
+| Fúria Independente | 1 | curitiba | jogo na praça em 10 dias |
+| Falange Azul | 1 | interior-do-pr | jogo na praça em 10 dias |
+| Falange Grená | 1 | interior-do-rs | jogo na praça em 10 dias |
+
+**23 ameaças, 10 torcidas distintas, 0 de fora do grafo.** Quinze entraram por serem
+maior rival e oito por jogo na praça. Não é uma torcida só o ano inteiro — o corte não
+apertou demais nesta praça.
+
+> Cuidado de medição que muda o número: a categoria 7 também carrega a festa do aliado
+> e o convite, que têm `torcidaId` e **não são ameaça**. Contando tudo dava 34 mensagens
+> com 15 "de fora do grafo", que eram aliados fazendo festa. O que marca a ameaça é o
+> campo `dados.ameaca`, o número da fala.
+
+### A briga de fora sai do feed e continua no mundo
+
+**Filtro de exibição, não de geração.** As 138 continuam brigando entre si pelos mesmos
+dois portões, na mesma frequência, movendo tensão, relação, moral, prestígio, polícia,
+caixa e efetivo. O que muda é o que o **feed** carrega.
+
+Em `cat5`, `local` deixou de ser `some` e virou `every`: o que qualifica a notícia é as
+**duas** torcidas dividirem a nossa praça, e uma briga entre uma daqui e uma de fora
+acontece longe daqui na metade dos casos. Só a **briga** é filtrada — trégua e
+diplomacia continuam passando, porque acordo entre duas grandes é notícia de jornal em
+qualquer cidade.
+
+Uma temporada de cada lado, o mesmo robô:
+
+| | antes (`4fc0c8c`) | depois |
+|---|---:|---:|
+| mensagens no feed | 488 | **434** |
+| categoria 5 | 165 | **108** |
+| … briga entre torcidas | 75 | **7** |
+| … dessas, da nossa praça | 4 | **7** |
+| … pacífica / trégua | 10 | 18 |
+| **briga de fora no feed** | **71** | **0** |
+| **confrontos do mundo registrados** | **119** | **119** |
+| … com linha de consequência | 119 | 119 |
+
+Os **119 idênticos** são o critério 6: o filtro não vazou pra geração. Se tivesse
+vazado, esse número cairia junto com o do feed.
+
+**A categoria 5 encolheu 35%** — de 165 para 108 mensagens na temporada —, e o feed
+inteiro caiu 11%, de 488 para 434. É exatamente o risco que o enunciado levantou, e o
+tamanho dele: as outras fontes da categoria (rodada, título, acesso, rebaixamento,
+marcos, assalto na praça) seguram 108 mensagens por ano, uns dois por semana. O pulso
+continua; o que sumiu foi o eco do país inteiro.
+
+### Onde elas foram parar
+
+Na aba **Todos os confrontos**, que é pra isso que ela existe. Numa partida de 120 dias:
+36 registros no log, **36 cartões desenhados**, 35 deles de fora da nossa praça, todos
+com a linha de consequência:
+
+```
+Gavirmãos × Narraçano · no bairro Vila Buriti · MUNDO 03/05
+Gavirmãos levou a melhor · Baixas 0 · 0
+Relação entre ambos piora −7 · Tensão entre ambos aumenta +2
+```
+
+### A briga nossa não passa por aqui
+
+Ela nunca passou: `paresDaSemana` descarta qualquer par que inclua `E.torcida.id` na
+primeira linha, e a medição confirma em tempo de execução — nenhuma notícia do mundo
+tem a nossa torcida dentro. O nosso confronto chega pela categoria 4, e esse caminho
+não foi tocado. Jogando uma briga de verdade:
+
+```
+cat 4 · s11d7 · "A Leões da TUF veio nos procurar nos arredores do estádio,
+                 no bairro Antônio Bezerra: 92 deles contra …"
+log: Leões da TUF · arredores · ganhamos · prestígio +25,8 · moral +1
+```
+
+A briga nossa **fora** da praça é a emboscada na estrada, e ela fecha por
+`fecharDefesa`, que termina em `anotar(…, {cat:4, efeitos})` — o mesmo caminho, também
+intocado. **Não observada em uma temporada**: o robô da bancada não sofreu emboscada
+neste ano medido.
+
+### O que não mudou
+
+A bateria das oito cenas passa limpa com **0 erros de página**, e o determinismo segue
+intacto: o mesmo save em duas páginas limpas dá **142 mensagens e 0 diferenças**.
+
 ## 9. Celular
 
 > **Leia junto com §8.22.** Boa parte desta seção descreve a tela do MAPA — a gaveta

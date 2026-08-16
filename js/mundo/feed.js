@@ -784,20 +784,64 @@ TO.feed = (function(){
     return fora;
   }
 
-  /* quem são as nossas rivais, pra provocação: as declaradas do grafo e
-     as que vêm jogar aqui */
+  /* =======================================================
+     QUEM PODE MANDAR AMEAÇA
+
+     Isto devolvia TODOS os rivais declarados do grafo, do país inteiro,
+     mais os visitantes da semana que fossem rivais. Uma torcida de
+     outro estado, que nunca vai pisar aqui, mandava recado como se
+     fosse vizinha de bairro.
+
+     São dois grupos, e só:
+
+     a) MAIOR RIVAL, sempre e sem condição. Ele provoca porque existe,
+        não porque tem jogo marcado — é o inimigo histórico.
+     b) RIVAL COMUM, só com jogo do clube dele na NOSSA praça nos
+        próximos dez dias. Passou o jogo ou está longe demais, cala.
+
+     Dez dias não cabem numa semana de sete, então a busca olha a semana
+     corrente E a seguinte, contando em dia absoluto. Na última semana
+     do ano não há olhada adiante: a temporada é remontada na virada, e
+     a "semana 1" que se leria dali é a da temporada velha.
+     ======================================================= */
+  const JANELA_AMEACA = 10;      // dias
+
+  function clubesNaPracaEmDias(E, dias){
+    const fora = new Set();
+    if(!E.temporada) return fora;
+    const hoje = E.data.absoluto || 0;
+    const semanas = [{s:E.data.semana, d:0}];
+    if(E.data.semana < TO.competicoes.SEMANAS_ANO)
+      semanas.push({s:E.data.semana + 1, d:7});
+    for(const w of semanas)
+      for(const j of TO.praca.jogosDaPraca(E, w.s)){
+        const abs = hoje - E.data.dia + (j.dia || 6) + w.d;
+        if(abs < hoje || abs > hoje + dias) continue;
+        fora.add(j.casa.id); fora.add(j.vis.id);
+      }
+    return fora;
+  }
+
   function rivais(E){
     const nossa = M().torcida(E.torcida.id) || E.torcida;
-    const ids = new Set([...(nossa.maioresRivais||[]), ...(nossa.rivais||[])]);
+    const maiores = new Set(nossa.maioresRivais || []);
+    const naPraca = clubesNaPracaEmDias(E, JANELA_AMEACA);
     const fora = [];
-    for(const id of ids){
+    for(const id of new Set([...maiores, ...(nossa.rivais || [])])){
       const o = M().torcida(id);
       if(!o || o.incompleta) continue;
+      if(!maiores.has(id) && !naPraca.has(o.clubeId)) continue;
       fora.push(o);
     }
-    for(const v of visitantesDaSemana(E))
-      if(PL().ehRival(E, v.torcida) && !ids.has(v.torcida.id)) fora.push(v.torcida);
     return fora;
+  }
+  /* por que cada uma entrou, pra medição poder dizer o motivo */
+  function motivoDaAmeaca(E, id){
+    const nossa = M().torcida(E.torcida.id) || E.torcida;
+    if((nossa.maioresRivais||[]).includes(id)) return 'maior rival';
+    const o = M().torcida(id);
+    return o && clubesNaPracaEmDias(E, JANELA_AMEACA).has(o.clubeId)
+      ? 'jogo na praça em 10 dias' : 'não elegível';
   }
 
   /* o jogo do nosso clube nesta semana, com o dia */
@@ -1339,11 +1383,33 @@ TO.feed = (function(){
       cota--;
     }
 
-    /* b) o que as outras aprontaram, com o nosso mapa na frente */
+    /* b) o que as outras aprontaram, com o nosso mapa na frente
+
+       BRIGA DE FORA NÃO ENTRA AQUI, E ISTO É FILTRO DE EXIBIÇÃO. Nada
+       muda no mundo: as 138 continuam brigando entre si pelos mesmos
+       dois portões, na mesma frequência, movendo tensão, relação,
+       moral, prestígio, polícia, caixa e efetivo. O que muda é o que o
+       FEED carrega — duas torcidas de outro estado se pegando não é
+       assunto de quem não tem nada com aquilo, e ocupava linha na tela.
+       Elas continuam existindo e continuam contadas na aba "Todos os
+       confrontos" da tela de Notícias, que é pra isso que ela existe.
+
+       `local` deixou de ser `some` e virou `every`: uma briga entre uma
+       torcida daqui e uma de fora acontece longe daqui na metade dos
+       casos, e o que qualifica a notícia é as DUAS dividirem a nossa
+       praça. Só a briga é filtrada — trégua e diplomacia continuam
+       passando, porque acordo entre duas grandes é notícia de jornal
+       em qualquer cidade.
+
+       Briga NOSSA não passa por aqui em momento nenhum: ela chega como
+       resultado, na categoria 4, e esse caminho não mudou. */
     const noticias = (E.ultimasNoticias||[]).map((n,i)=>{
       const t = (n.torcidas||[]).map(id=>M().torcida(id)).filter(Boolean);
-      return {n, i, local: t.some(x=>x.mapa === E.torcida.mapa)};
-    }).sort((a,b)=>(b.local?1:0)-(a.local?1:0));
+      return {n, i, daPraca: t.length > 0 &&
+                             t.every(x=>x.mapa === E.torcida.mapa)};
+    }).filter(x => x.n.tipo !== 'briga' || x.daPraca)
+      .map(x => ({n:x.n, i:x.i, local:x.daPraca}))
+      .sort((a,b)=>(b.local?1:0)-(a.local?1:0));
     for(const x of noticias){
       if(cota <= 0) break;
       cota--;
@@ -2488,5 +2554,6 @@ TO.feed = (function(){
           passarDia, fecharSemana, fechoDaSemana, irProEstadio,
           registrarConfronto, registrarConfrontoDelas, TETO_CONFRONTOS_DELAS,
           abrir, historico, resumo, expirada, contexto, perguntaAntes,
+          rivais, motivoDaAmeaca, clubesNaPracaEmDias, JANELA_AMEACA,
           feed, fila, ctl};
 })();
