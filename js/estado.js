@@ -62,7 +62,11 @@ TO.estado = (function(){
       acoes:{ usadas:0 },
       /* rotina semanal: dia 1 (segunda) a 7 (domingo) → id de ação */
       rotina:{},
-      avisos:[],
+      /* O FEED É O JOGO, e o feed é HISTÓRICO: ele nasce vazio, é salvo
+         inteiro e rola pra trás. Aqui morava `avisos:[]`, uma fita
+         cortada em 12 itens que a tela consumia e jogava fora — o que
+         caísse em rajada sumia pra sempre. */
+      feed: [], feedFila: [], feedCtl: null,
       historicoNoites: []
     };
 
@@ -244,7 +248,9 @@ TO.estado = (function(){
     const r = TO.acoes.executar(est, id);
     const nome = (TO.acoes.porId(id)||{}).nome || id;
     if(r.ok){
-      anotar(est, `${nome}: ${r.msg || 'feito'}`, r.tipo==='ruim' ? 'ruim' : 'boa');
+      anotar(est, `Se liga no resultado de hoje — ${nome.toLowerCase()}: `+
+        `${r.msg || 'feito'}`, r.tipo==='ruim' ? 'ruim' : 'boa',
+        {cat:6, assunto:'rotina-'+id});
     }else{
       /* rotina que não pôde rodar não vira alarme todo dia: junta e sai
          uma linha só no fechamento da semana */
@@ -274,8 +280,12 @@ TO.estado = (function(){
       const mundo = TO.tensao.passarSemana(E);
       fecho.ataques = mundo.ataques;
       fecho.investidas = mundo.investidas;
-      for(const a of mundo.ataques) anotar(E, a.txt, 'ruim');
-      for(const i of mundo.investidas) anotar(E, i.txt, i.ganhamos?'boa':'ruim');
+      for(const a of mundo.ataques) anotar(E, a.txt+'.', 'ruim', {cat:4});
+      for(const i of mundo.investidas){
+        anotar(E, i.txt+'.', i.ganhamos?'boa':'ruim', {cat:4,
+          linhaAbaixo:{texto:`prestígio ${i.prest>0?'+':''}${i.prest}`}});
+        if(TO.feed) TO.feed.registrarConfronto(E, i.id || i.alvoId, i.ganhamos);
+      }
       E.ultimasNoticias = mundo.noticias;
 
       E.data.dia = 1; E.data.semana++; E.acoes.usadas = 0;
@@ -291,11 +301,12 @@ TO.estado = (function(){
         /* GDD §21: título, vice e rebaixamento mexem na satisfação de vez */
         for(const c of E.temporada.competicoes){
           if(c.campeao === E.torcida.clubeId)
-            anotar(E, `CAMPEÃO do ${c.nome}! Satisfação `+
-              `+${TO.torcedores.aplicarConquista(E,'campeao')}.`, 'boa');
+            anotar(E, `${TO.mundo.time(E.torcida.clubeId).nome} é campeão do `+
+              `${c.nome}! Satisfação `+
+              `+${TO.torcedores.aplicarConquista(E,'campeao')}.`, 'boa', {cat:5});
           else if(c.vice === E.torcida.clubeId)
             anotar(E, `Vice do ${c.nome}. Satisfação `+
-              `+${TO.torcedores.aplicarConquista(E,'vice')}.`, '');
+              `+${TO.torcedores.aplicarConquista(E,'vice')}.`, '', {cat:5});
         }
         E.classifAnterior = null;
         /* o ano em campo mexe na força dos clubes antes de qualquer
@@ -305,13 +316,14 @@ TO.estado = (function(){
         if(nosso)
           anotar(E, `${TO.mundo.time(nosso.id).nome} ${nosso.para>nosso.de
             ? 'ganhou' : 'perdeu'} força na temporada `+
-            `(${nosso.de} → ${nosso.para}).`, nosso.para>nosso.de?'boa':'ruim');
+            `(${nosso.de} → ${nosso.para}).`, nosso.para>nosso.de?'boa':'ruim',
+            {cat:5});
         /* sobe e desce antes de montar a temporada nova (GDD §18.2) */
         const mov = TO.competicoes.aplicarSobeDesce(E);
         for(const m of mov.filter(x=>x.id===E.torcida.clubeId)){
           const sub = TO.competicoes.subiu(m.de, m.para);
           anotar(E, `${TO.mundo.time(m.id).nome} ${sub?'subiu para':'caiu para'} `+
-                    `${m.para} em ${E.data.ano}.`, sub?'boa':'ruim');
+                    `${m.para} em ${E.data.ano}.`, sub?'boa':'ruim', {cat:5});
           /* GDD §21: rebaixado é −3 fixo na satisfação; subir vale o mesmo
              em sentido contrário */
           TO.torcedores.aplicarConquista(E, sub ? 'campeao' : 'rebaixado');
@@ -331,11 +343,21 @@ TO.estado = (function(){
     return fecho;
   }
 
-  /* fila de recados pra tela mostrar quando redesenhar: o que aconteceu
-     sozinho enquanto o jogador avançava os dias */
-  function anotar(est, msg, tipo){
-    (est.avisos = est.avisos || []).push({msg, tipo:tipo||''});
-    if(est.avisos.length > 12) est.avisos.shift();
+  /* A PORTA DE ENTRADA DO FEED.
+     Era uma fila de recados que a tela consumia e descartava, cortada em
+     12 itens. Continua sendo a mesma chamada, do mesmo lugar, com os
+     mesmos dois argumentos — o que mudou é o que acontece depois: a
+     linha vira mensagem do feed, com categoria, peso e voz, e fica lá
+     pra sempre. O terceiro argumento é opcional e serve pra quem sabe
+     dizer de que categoria é o que está anotando; quem não passa nada
+     cai em "resultado", que é o que a maioria dessas linhas é.
+
+     O corte em 12 saiu: sem histórico, mensagem que cai em rajada some
+     pra sempre, e aí a rajada vira perda. */
+  function anotar(est, msg, tipo, extra){
+    if(!est) return;
+    if(TO.feed) TO.feed.propor(est, Object.assign(
+      {cat:4, peso:'info', texto:msg, tipo:tipo||''}, extra||{}));
   }
 
   /* GDD §21: a satisfação do torcedor comum sobe com vitória, desaba com
@@ -349,7 +371,7 @@ TO.estado = (function(){
         ? `Clássico ganho: a cidade inteira está com o time (satisfação `+
           `+${r.delta.toFixed(1)}).`
         : `Clássico perdido: a torcida comum virou as costas (satisfação `+
-          `${r.delta.toFixed(1)}).`, r.venceu ? 'boa' : 'ruim');
+          `${r.delta.toFixed(1)}).`, r.venceu ? 'boa' : 'ruim', {cat:5});
     /* a rodada mexe na tabela, e a tabela mexe na satisfação */
     TO.torcedores.aplicarClassificacao(E);
     if(j.mata && j.venceu){
@@ -410,6 +432,13 @@ TO.estado = (function(){
       const dados = JSON.parse(txt);
       if(dados.versao !== VERSAO) return null;
       E = dados;
+      /* O SAVE VOLTA COM A SEMENTE DELE.
+         Sem isto o gerador continuava sendo o `Math.random` com que o
+         módulo nasce, e "mesmo save, mesma semente, mesmo feed" era
+         mentira: duas cargas do mesmo arquivo davam mundos diferentes.
+         Recomeçar o fluxo do zero é reprodutível, que é o que o save
+         precisa ser. */
+      U.usarSemente(E.semente || 1);
       TO.competicoes.usarSave(E);
       mudou(); return E;
     }catch(e){ return null; }
@@ -436,6 +465,7 @@ TO.estado = (function(){
         const dados = JSON.parse(fr.result);
         if(!dados.membros || !dados.data) throw new Error('não parece um save');
         E = dados;
+        U.usarSemente(E.semente || 1);
         TO.competicoes.usarSave(E);
         mudou();
         aoTerminar && aoTerminar({ok:true});

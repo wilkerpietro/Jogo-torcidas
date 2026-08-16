@@ -145,7 +145,7 @@ TO.competicoes = (function(){
     const time = (M().time(id)||{}).nome || id;
     TO.estado.lancar(E, `Reforço no elenco do ${time}`, -gasto);
     TO.estado.anotar(E, `A torcida reforçou o elenco do ${time}: `+
-      `+${feitos} de força.`, 'boa');
+      `+${feitos} de força.`, 'boa', {cat:6, assunto:'elenco'});
     return {ok:true, pontos:feitos, gasto, msg:`${time}: +${feitos} de força`};
   }
 

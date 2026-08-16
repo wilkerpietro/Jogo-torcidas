@@ -597,7 +597,7 @@ TO.tensao = (function(){
       E.indicadores.policia   = U.limitar(E.indicadores.policia - 1, 0, 20);
       somar(E, inv.alvo, 22, 'nós atacamos');
 
-      feitas.push({alvo:o.nome, ganhamos, feridos, prest,
+      feitas.push({id:inv.alvo, alvo:o.nome, ganhamos, feridos, prest,
         txt: ganhamos ? `Caímos em cima da ${o.nome} e dominamos`
                       : `Investida contra a ${o.nome} deu errado`});
     }

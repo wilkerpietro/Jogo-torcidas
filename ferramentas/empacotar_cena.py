@@ -46,7 +46,7 @@ ALVOS = {
                'js/gestao/membros.js', 'js/gestao/torcedores.js',
                'js/gestao/financeiro.js', 'js/gestao/patrimonio.js',
                'js/gestao/acoes.js',
-               'js/gestao/planejamento.js', 'js/estado.js',
+               'js/gestao/planejamento.js', 'js/estado.js', 'js/mundo/feed.js',
                'js/diajogo/cenario.js', 'js/diajogo/arredores.js',
                'js/diajogo/combate.js', 'js/diajogo/ponte.js',
                'js/ui/icones.js', 'js/main.js'],

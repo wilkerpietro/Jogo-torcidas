@@ -200,17 +200,20 @@ TO.patrimonio = (function(){
     if(acao==='sede'){
       E.torcida.sedeNivel++;
       TO.estado.lancar(E, `Ampliação da sede — nível ${E.torcida.sedeNivel}`, -o.custo);
-      TO.estado.anotar(E, `A sede subiu pro nível ${E.torcida.sedeNivel}.`, 'boa');
+      TO.estado.anotar(E, `A sede subiu pro nível ${E.torcida.sedeNivel}.`,
+        'boa', {cat:6, assunto:'sede'});
     } else if(acao==='fabrica'){
       p.fabrica = true;
       TO.estado.lancar(E, 'Fábrica de material', -o.custo);
-      TO.estado.anotar(E, 'A torcida montou a própria fábrica de material.', 'boa');
+      TO.estado.anotar(E, 'A torcida montou a própria fábrica de material.',
+        'boa', {cat:6, assunto:'fabrica'});
     } else if(acao==='comprar'){
       const cfg = PONTO[tipo];
       const bairro = F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1));
       p[cfg.plural].push({nivel:1, bairro});
       TO.estado.lancar(E, `${cfg.rot} em ${bairro}`, -o.custo);
-      TO.estado.anotar(E, `${cfg.rot} novo em ${bairro}.`, 'boa');
+      TO.estado.anotar(E, `${cfg.rot} novo em ${bairro}.`, 'boa',
+        {cat:6, assunto:'ponto'});
     } else if(acao==='ampliar'){
       const cfg = PONTO[tipo];
       const alvo = (p[cfg.plural]||[]).filter(x=>cfg.ampliar[x.nivel])

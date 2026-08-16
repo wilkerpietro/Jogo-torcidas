@@ -186,6 +186,7 @@
      ENTRADA NO JOGO
      ======================================================= */
   const NAV = [
+    {id:'feed',        rot:'Feed',        ic:'megafone'},
     {id:'inicio',      rot:'Início',      ic:'casa'},
     {id:'torcida',     rot:'Torcida',     ic:'torcida'},
     {id:'financeiro',  rot:'Financeiro',  ic:'dinheiro'},
@@ -199,74 +200,63 @@
     {id:'conquistas',  rot:'Conquistas',  ic:'medalha'},
     {id:'opcoes',      rot:'Opções',      ic:'halter'}
   ];
-  let pagina = 'inicio';
+  /* A TELA PRINCIPAL É O FEED. O mapa virou painel como os outros: ele
+     abre a partir de uma mensagem, e fechá-lo devolve o feed. */
+  let pagina = 'feed';
 
-  /* AS DUAS CHAVES DE OPÇÕES.
+  /* AS CHAVES DE OPÇÕES.
      Ficam no save, e os padrões são aplicados na leitura — assim save
-     velho abre com o pulo em pé e o relatório desligado, igual a save
-     novo, sem migração nenhuma. */
-  function opc(e){
-    e = e || E(); if(!e) return {pularVazios:true, relatorio:false};
-    e.opcoes = e.opcoes || {};
-    if(e.opcoes.pularVazios === undefined) e.opcoes.pularVazios = true;
-    if(e.opcoes.relatorio   === undefined) e.opcoes.relatorio   = false;
-    if(e.opcoes.abrirGestao === undefined) e.opcoes.abrirGestao = true;
-    return e.opcoes;
-  }
+     velho abre igual a save novo, sem migração nenhuma.
 
-  /* O TESTE, UM SÓ.
-     "Tem decisão pendente do próximo jogo" é a mesma pergunta que faz a
-     Gestão abrir sozinha e que faz o pulo de dias parar. Duas checagens
-     que precisam concordar acabam divergindo, então é uma função. */
-  function precisaDecidir(e){
-    e = e || E();
-    return !!(e && e.proximoJogo && TO.planejamento.falta(e).length);
+     `pularVazios` MORREU: o feed é o pulo. Dia sem nada passa em um
+     segundo, calado, e não há mais o que pular. A chave que sobrou do
+     ciclo anterior é a de perguntar antes do jogo — ela é o modo
+     automático da ideologia, e agora quem pergunta é a mensagem. */
+  function opc(e){
+    e = e || E(); if(!e) return {relatorio:false, perguntarJogo:true};
+    e.opcoes = e.opcoes || {};
+    if(e.opcoes.relatorio === undefined) e.opcoes.relatorio = false;
+    if(e.opcoes.perguntarJogo === undefined)
+      e.opcoes.perguntarJogo = e.opcoes.abrirGestao === undefined
+                             ? true : !!e.opcoes.abrirGestao;
+    delete e.opcoes.pularVazios;
+    delete e.opcoes.abrirGestao;
+    return e.opcoes;
   }
 
   function entrarNoJogo(partidaNova){
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.add('oculto');
     $('jogo').classList.remove('oculto');
-    /* O AVANÇAR FLUTUANTE SAIU. O avançar agora mora ao lado da data, no
-       canto de cima à direita do mapa, e um segundo botão gigante no
-       canto de baixo só tapava a faixa da torcida. O elemento continua
-       no HTML porque a tela de fim de semana ainda o esconde e mostra. */
     montarLateral();
     ligarTelaEstreita();
-    /* A TELA PRINCIPAL É O MAPA, em qualquer largura. Não existe mais
-       "página atual" que substitui o mapa: existe o mapa e, às vezes,
-       um painel por cima. */
-    pagina = 'mapa';
+    pagina = 'feed';
+    opc(E());
+    /* PARTIDA NOVA ABRE NO FEED, não na Gestão. A primeira mensagem diz
+       que o jogo começou; a segunda é a decisão que chama a Gestão pra
+       definir a ideologia — e, sendo decisão, ela segura o relógio até
+       ser respondida. O tempo só começa a correr depois. */
+    if(partidaNova) TO.feed.abrir(E());
     redesenhar();
     ticker();
-    /* PARTIDA NOVA ABRE NA GESTÃO, no bloco de políticas: é ali que o
-       jogador diz de saída como quer atacar, como recebe aliado e o que
-       faz com os outros jogos da praça. Só vale pra partida nova — save
-       existente já escolheu, e cair na Gestão toda vez que o jogo abre
-       vira pedágio. O relógio não anda enquanto a tela está aberta,
-       porque painel aberto pausa o dia (§8.14). */
-    if(partidaNova){ opc(E()); abrirPainel('gestao'); }
-    /* o dia já começa correndo: ninguém precisa apertar play pra a
-       cidade existir */
-    retomarDia('abertura');
+    retomarTempo('abertura');
   }
 
   /* A COLUNA DE ÍCONES DO MENU.
-     Os mesmos onze itens do `NAV`, com o mesmo `IC.get(n.ic)` que a
-     lateral usava — só que agora dentro do mapa, sem rótulo escrito e
-     com o nome no `title`, porque são onze e ícone mudo é adivinhação.
-     Clicar abre a página como painel por cima do mapa; clicar de novo
-     fecha. O painel deixa esta coluna de fora, à esquerda, então o
-     ícone da página aberta continua aceso e clicável. */
-  function montarMenuDoMapa(){
-    const cx = el('div',{class:'mapa-menu'});
+     Os mesmos itens do `NAV`, sem rótulo escrito e com o nome no
+     `title`, porque são doze e ícone mudo é adivinhação. Ela é montada
+     duas vezes — uma na barra do feed, outra dentro do mapa —, porque
+     as duas telas precisam de navegação e a lista é a mesma.
+     Clicar abre a página como painel; clicar de novo fecha. */
+  function montarMenuIcones(classe){
+    const cx = el('div',{class: classe || 'mapa-menu'});
     for(const n of NAV){
       const b = el('button',{class:'mapa-ic', 'data-pag':n.id, html: IC.get(n.ic)});
       b.title = n.rot;
       b.setAttribute('aria-label', n.rot);
       if(painel === n.id) b.classList.add('aceso');
       b.onclick = ()=>{
-        if(n.id === 'mapa' || painel === n.id){ fecharPainel(); return; }
+        if(n.id === 'feed' || painel === n.id){ fecharPainel(); return; }
         abrirPainel(n.id);
       };
       cx.appendChild(b);
@@ -280,10 +270,8 @@
       const b = el('button',{class:'nav-item','data-pag':n.id,
         html:`${IC.get(n.ic)}<span>${n.rot}</span>`});
       b.onclick = ()=>{
-        /* a gaveta abre painel como a coluna de ícones abre: o mapa é a
-           tela principal e não sai de baixo, em largura nenhuma */
         fecharGaveta();
-        if(n.id === 'mapa'){ fecharPainel(); return; }
+        if(n.id === 'feed'){ fecharPainel(); return; }
         abrirPainel(n.id);
       };
       nav.appendChild(b);
@@ -298,27 +286,29 @@
     });
     U.$$('.nav-item').forEach(b=>
       b.classList.toggle('on', b.dataset.pag===(painel||pagina)));
-    U.$$('.mapa-menu .mapa-ic').forEach(b=>
+    U.$$('.mapa-menu .mapa-ic, .feed-menu .mapa-ic').forEach(b=>
       b.classList.toggle('aceso', b.dataset.pag===painel));
     document.body.classList.toggle('com-painel', !!painel);
   }
 
   /* =======================================================
-     TELA ESTREITA
+     PAINÉIS
 
-     Um limiar só — largura, e nada mais. Acima dele o jogo é o de
-     sempre. Abaixo, a tela principal é o mapa e as onze páginas de
-     gestão viram painéis por cima dele: painel é visita, não destino.
+     A tela principal é o feed. Tudo o mais — inclusive o mapa — é
+     painel por cima dele: painel é visita, não destino.
 
-     O mapa NÃO é remontado ao abrir e fechar painel. `pintarMapa`
-     recria o canvas e perde zoom e arrasto, então o caminho do painel
-     nunca passa por ele: pinta só a página pedida e mexe em classe.
+     PAINEL ABERTO PARA O TEMPO. O jogador está lendo uma tela de
+     gestão, não jogando, e um dia por segundo correndo atrás de uma
+     tela opaca é o jogo andando escondido. O mapa é o único painel que
+     também LIGA o relógio da rua — porque ele é a tela do dia de jogo,
+     e é lá que os minutos correm.
      ======================================================= */
   const LIMIAR_ESTREITO = 900;
   const estreito = () => innerWidth <= LIMIAR_ESTREITO;
   let painel = null;
 
   const PINTOR = {
+    feed:pintarFeed,
     inicio:pintarInicio, torcida:pintarTorcida, financeiro:pintarFinanceiro,
     gestao:pintarGestao, calendario:pintarCalendario,
     competicoes:pintarCompeticoes, diplomacia:pintarDiplomacia, mapa:pintarMapa,
@@ -327,26 +317,30 @@
   const pintarPagina = id => (PINTOR[id] || (()=>pintarPendente(id)))();
 
   function abrirPainel(id){
-    if(id === 'mapa'){ fecharPainel(); return; }
-    /* painel aberto pausa o dia: o jogador está lendo, não jogando — e
-       o mapa não pode continuar sendo desenhado quadro a quadro atrás
-       de uma tela opaca */
-    pausarDia('painel');
+    if(id === 'feed'){ fecharPainel(); return; }
+    if(painel && painel !== id && painel === 'mapa') pausarDia('mapa');
+    pausarTempo('painel');
     painel = id;
     fecharGaveta();
     const rot = (NAV.find(n=>n.id===id)||{}).rot || id;
     if($('painelTitulo')) $('painelTitulo').textContent = rot;
     pintarTopo();
-    pintarPagina(id);      // só a página do painel: o mapa fica de pé
+    pintarPagina(id);
     trocarPagina();
     montarAtalhos();
+    /* o mapa é a tela do dia de jogo: abrindo, a rua anda */
+    if(id === 'mapa') retomarDia('mapa');
   }
   function fecharPainel(){
     if(painel === null) return;
+    const era = painel;
     painel = null;
-    trocarPagina();        // sem repintar nada: o mapa está como estava
+    if(era === 'mapa') pausarDia('mapa');
+    trocarPagina();
     montarAtalhos();
-    retomarDia('painel');
+    /* o tempo volta de onde parou: fechar o mapa devolve o feed sem
+       perder nem cobrar o tempo em que ele esteve aberto */
+    retomarTempo('painel');
   }
 
   /* A GAVETA, O ☰ E OS ATALHOS DE CANTO SAÍRAM.
@@ -449,19 +443,25 @@
              (atual.feito ? '' : ' — falta decidir')}), bVolta, bAv);
     cx.appendChild(pe);
 
-    /* as três políticas ficam à vista o tempo todo: são decisões que
-       valem daqui pra frente, não desta semana */
-    cx.appendChild(caixaDePoliticas(e));
+    /* a ideologia fica à vista o tempo todo: são decisões que valem
+       daqui pra frente, não desta semana */
+    cx.appendChild(caixaDeIdeologia(e));
 
     pg.innerHTML = '';
     pg.appendChild(cx);
     return true;
   }
 
-  function caixaDePoliticas(e){
+  /* A IDEOLOGIA — antes chamada "políticas".
+     É o mesmo conjunto de padrões: o que fazer com o adversário do nosso
+     jogo, como receber aliado e o que fazer com os outros jogos da
+     praça. O nome mudou porque é assim que o jogo passa a falar dela em
+     toda parte, inclusive no botão "Seguir ideologia" das decisões. */
+  function caixaDeIdeologia(e){
     const P = TO.planejamento;
     const cx = el('div',{class:'ass-politicas'});
-    cx.appendChild(el('div',{class:'fase-rot', texto:'Políticas — valem toda semana'}));
+    cx.appendChild(el('div',{class:'fase-rot',
+      texto:'Ideologia — vale toda semana'}));
     const grupo = (rot, itens, atual, aoTrocar)=>{
       const d = el('div',{class:'pol-grupo'});
       d.appendChild(el('b',{texto:rot}));
@@ -485,25 +485,28 @@
     grupo('Outros jogos na cidade', P.POLITICA_ATAQUE, pol.outros,
           id=>P.definirPolitica(e, 'outros', id));
     /* a quarta escolha é do mesmo tipo das três: quem decide, eu ou a
-       política. Por isso ela mora aqui e não em Opções. */
+       ideologia. Por isso ela mora aqui e não em Opções. */
     const l = el('label',{class:'opc-chave'});
     const i = el('input',{type:'checkbox'});
-    i.checked = !!opc(e).abrirGestao;
-    i.onchange = ()=>{ opc(e).abrirGestao = i.checked;
+    i.checked = !!opc(e).perguntarJogo;
+    i.onchange = ()=>{ opc(e).perguntarJogo = i.checked;
                        TO.estado.salvar(); redesenhar(); };
-    l.append(i, el('div',{html:'<b>Abrir a Gestão antes de todo jogo</b>'+
-      '<small>ligada, esta tela abre sozinha e o avanço das datas para '+
-      'enquanto houver decisão pendente. Desligada, as políticas acima '+
-      'fecham o plano sozinhas e nada interrompe — e se elas não '+
-      'conseguirem fechar, a tela abre assim mesmo e diz por quê.</small>'}));
+    l.append(i, el('div',{html:'<b>Perguntar antes de todo jogo</b>'+
+      '<small>ligada, a semana de jogo chega como mensagem de decisão e o '+
+      'relógio para até você responder. Desligada, a ideologia acima fecha '+
+      'o plano sozinha e o feed só conta o que foi decidido — e se ela não '+
+      'conseguir fechar, a pergunta vem assim mesmo.</small>'}));
     cx.appendChild(l);
     return cx;
   }
 
   /* =======================================================
      OPÇÕES
-     Duas chaves, e as duas mudam o ritmo do jogo: uma tira os dias
-     vazios da frente, a outra tira o relatório automático do caminho.
+     A CHAVE DE PULAR DIAS SAIU. Ela existia porque o jogador tinha de
+     apertar avançar dia um por um e os dias vazios eram pedágio; com o
+     feed, o dia vazio passa em um segundo, calado, e o pulo virou o
+     jogo. Ficou uma chave só aqui — a outra, a de perguntar antes do
+     jogo, mora na Gestão porque é parte da ideologia.
      ======================================================= */
   function pintarOpcoes(){
     const e = E(), pg = U.$('.pagina[data-pag="opcoes"]');
@@ -518,18 +521,179 @@
       l.append(i, el('div',{html:`<b>${rot}</b><small>${nota}</small>`}));
       q.appendChild(l);
     };
-    chave('pularVazios', 'Pular os dias sem jogo',
-      'o jogo simula sozinho os dias vazios e para no próximo que tem alguma '+
-      'coisa. Pular é simular: tudo que aconteceria no dia assistido acontece '+
-      'igual — andarilho, esbarrão, assalto, viatura e consequência na ficha.');
-    /* a chave "abrir a Gestão" NÃO mora aqui: ela é uma política como as
-       outras três e vive no bloco de políticas da Gestão. Uma chave em
-       dois lugares acaba com duas verdades. */
     chave('relatorio', 'Abrir o relatório toda semana',
-      'desligado, a semana fecha sem interromper: o resumo vai pro ticker e '+
-      'pros Avisos, e o relatório continua no botão do Financeiro. Semana no '+
-      'vermelho ou com gente saindo abre de qualquer jeito.');
+      'desligado, a semana fecha sem interromper: o resumo vai pro feed e o '+
+      'relatório continua no botão do Financeiro. Semana no vermelho ou com '+
+      'gente saindo abre de qualquer jeito.');
+    q.appendChild(el('div',{class:'linha-dado', html:
+      '<span class="fraco">A velocidade do tempo — 1× ou 2× — fica na barra '+
+      'do feed, e vale também pro relógio da rua no mapa.</span>'}));
     pg.appendChild(q);
+  }
+
+  /* =======================================================
+     O FEED — A TELA PRINCIPAL
+
+     Uma lista de mensagens. A nova entra sempre no topo e empurra a
+     anterior pra segunda linha. O tempo corre sozinho, um dia por
+     segundo, e o jogador não clica em nada pra isso acontecer.
+
+     A LISTA NÃO É REMONTADA A CADA DIA. `pintarFeed` monta a moldura
+     uma vez; `atualizarFeed` só acrescenta o que chegou e refaz o que
+     mudou de estado — respondido ou expirado. Remontar sessenta nós por
+     segundo faria a rolagem saltar toda vez que o jogador voltasse pra
+     ler o que passou, que é justamente o que o histórico serve pra
+     permitir.
+     ======================================================= */
+  const TETO_LISTA = 60;          // quantas mensagens ficam no DOM
+  let tetoFeed = TETO_LISTA;
+  let noFeedLista = null, noFeedTopo = null, noFeedQuando = null;
+  let feedVistas = new Map();
+
+  function pintarFeed(){
+    const e = E(), pg = U.$('.pagina[data-pag="feed"]');
+    if(!e || !pg) return;
+    pg.innerHTML = '';
+    feedVistas = new Map();
+
+    const barra = el('div',{class:'feed-barra'});
+    noFeedTopo = el('div',{class:'feed-marca'});
+    noFeedQuando = el('div',{class:'feed-quando'});
+    /* o 1×/2× que já existe controla a velocidade do dia — é o mesmo
+       botão da cena e do relógio da rua, uma velocidade só pro jogo */
+    const bVel = el('button',{class:'mapa-ic', html:
+      `<span class="rot">${TO.diaJogo.ponte.velocidade}×</span>`});
+    bVel.title = `Velocidade do tempo — agora em ${TO.diaJogo.ponte.velocidade}×`;
+    bVel.onclick = ()=>{ TO.diaJogo.ponte.alternarVelocidade(); redesenhar(); };
+    if(TO.diaJogo.ponte.velocidade > 1) bVel.classList.add('aceso');
+    barra.append(noFeedTopo, noFeedQuando, bVel, montarMenuIcones('feed-menu'));
+
+    const rolo = el('div',{class:'feed-rolo'});
+    noFeedLista = el('div',{class:'feed-lista'});
+    rolo.appendChild(noFeedLista);
+    const hist = TO.feed.historico(e);
+    if(hist.length > tetoFeed){
+      const b = el('button',{class:'bt feed-mais',
+        texto:`Mostrar mais antigas (${hist.length - tetoFeed})`});
+      b.onclick = ()=>{ tetoFeed += TETO_LISTA; pintarFeed(); };
+      rolo.appendChild(b);
+    }
+    pg.append(barra, rolo);
+    atualizarFeed();
+    pintarTopo();
+  }
+
+  /* o estado visível de uma mensagem: enquanto ele não muda, o nó dela
+     no DOM não precisa ser refeito */
+  const estadoDaMsg = (e, m) =>
+    `${m.respondido||''}|${TO.feed.expirada(e,m)?1:0}`;
+
+  function atualizarFeed(){
+    const e = E();
+    if(!e || !noFeedLista || !noFeedLista.isConnected) return;
+    const hist = TO.feed.historico(e).slice(0, tetoFeed);
+    /* de trás pra frente: cada uma entra por cima da anterior, então a
+       última a entrar é a mais nova — que é a que fica no topo */
+    for(let i = hist.length - 1; i >= 0; i--){
+      const m = hist[i], est = estadoDaMsg(e, m), velho = feedVistas.get(m.id);
+      if(velho && velho.estado === est) continue;
+      const no = cartaoMensagem(e, m);
+      if(velho && velho.no.isConnected) velho.no.replaceWith(no);
+      else noFeedLista.prepend(no);
+      feedVistas.set(m.id, {no, estado:est});
+    }
+    while(noFeedLista.children.length > tetoFeed) noFeedLista.lastChild.remove();
+  }
+
+  const ROT_VOZ = {olheiro:'Olheiro', diretor:'', rua:'Na rua',
+                   jornal:'Jornal', rival:'', aliado:''};
+
+  function cartaoMensagem(e, m){
+    const cat = TO.feed.catDe(m.cat);
+    const art = el('article',{class:`msg cat${m.cat} peso-${m.peso}`+
+      (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : '')});
+    const v = m.voz || {};
+    const quem = v.nome || ROT_VOZ[v.tipo] || 'A rua';
+    const papel = v.cargo || ROT_VOZ[v.tipo] || cat.rot;
+    const d = TO.estado.dataDaSemana(m.ano, m.semana, m.dia);
+    const quando = `${String(d.getDate()).padStart(2,'0')}/`+
+                   `${String(d.getMonth()+1).padStart(2,'0')} · ${m.hora}`;
+    art.appendChild(el('div',{class:'msg-cab', html:
+      `<span class="msg-voz">${quem}</span>`+
+      `<span class="msg-papel">${papel}</span>`+
+      `<span class="msg-cat">${cat.rot}</span>`+
+      `<time>${quando}</time>`}));
+    art.appendChild(el('p',{class:'msg-txt', texto:m.texto}));
+
+    if(m.linhaAbaixo){
+      const la = el('div',{class:'msg-abaixo'});
+      la.appendChild(el('span',{texto:m.linhaAbaixo.texto}));
+      if(m.linhaAbaixo.acao){
+        const a = el('button',{class:'msg-link', texto:'Ver'});
+        a.onclick = ()=>abrirPainel(m.linhaAbaixo.pagina || 'competicoes');
+        la.appendChild(a);
+      }
+      art.appendChild(la);
+    }
+
+    if(m.respondido){
+      art.appendChild(el('div',{class:'msg-resp',
+        texto:`Você respondeu: ${m.respondido}`}));
+    } else if(TO.feed.expirada(e, m)){
+      /* BOTÃO QUE SOME SEM EXPLICAÇÃO vira a suspeita de que o jogo
+         comeu a jogada. Ele não some: fica escrito que o prazo passou. */
+      art.appendChild(el('div',{class:'msg-resp expirou',
+        texto:'O prazo desse botão passou.'}));
+    } else if((m.botoes||[]).length){
+      const bs = el('div',{class:'msg-bts'});
+      (m.botoes||[]).forEach((b, i)=>{
+        const bt = el('button',{class:'bt'+(i===0?' destaque':'')});
+        bt.innerHTML = `<span>${b.rot}</span>`+
+                       (b.nota ? `<small>${b.nota}</small>` : '');
+        bt.onclick = ()=>responderMensagem(m.id, i);
+        bs.appendChild(bt);
+      });
+      art.appendChild(bs);
+      if(m.peso === 'acao' && m.validoAte != null)
+        art.appendChild(el('div',{class:'msg-prazo', texto:
+          `vale por mais ${Math.max(0, m.validoAte - (e.data.absoluto||0))} `+
+          `${m.validoAte - (e.data.absoluto||0) === 1 ? 'dia' : 'dias'}`}));
+    }
+    return art;
+  }
+
+  /* O BOTÃO APERTADO. O efeito de estado é do `TO.feed`; o que sobra
+     aqui é abrir tela, que é a única coisa que a tela sabe fazer. */
+  function responderMensagem(id, i){
+    const e = E();
+    const r = TO.feed.responder(e, id, i);
+    if(!r.ok){ if(r.motivo) aviso(r.motivo, 'ruim'); atualizarFeed(); return; }
+    if(r.aviso) aviso(r.aviso, '');
+    atualizarFeed();
+    if(r.cena) abrirCenaDaMensagem(r.cena);
+    else if(r.abrir) abrirPainel(r.abrir);
+    else redesenhar();
+    TO.estado.salvar();
+    /* respondida a última decisão, o relógio volta a andar sozinho */
+    retomarTempo('decisao');
+  }
+
+  /* a mensagem que convoca pra cena diz QUAL cena; abrir é aqui */
+  function abrirCenaDaMensagem(d){
+    const e = E();
+    if(d.tipo === 'bar'){
+      const atq = e.ataqueMarcado;
+      if(atq) abrirAtaqueAoBar(atq);
+      return;
+    }
+    if(d.tipo === 'encontro'){
+      const R = TO.ruas.estado(e);
+      if(R && R.encontro){ abrirPainel('mapa'); abrirConfronto(e, R.encontro); }
+      else abrirPainel('mapa');
+      return;
+    }
+    if(d.cena){ abrirAcaoEmCena(d, d.efetivo); return; }
+    abrirPainel('mapa');
   }
 
   /* =======================================================
@@ -553,6 +717,35 @@
     if(noData && noData.isConnected){
       noData.querySelector('.dia').textContent = dt.curta;
       noData.querySelector('.semana').textContent = dt.semana;
+    }
+
+    /* a barra do feed carrega as mesmas coisas que a faixa do mapa: quem
+       somos, quando estamos e os três números. Uma escrita só, dois
+       lugares — recalcular em cada um é a tela mentindo daqui a três
+       semanas. */
+    if(noFeedQuando && noFeedQuando.isConnected){
+      noFeedQuando.innerHTML =
+        `<b>${dt.semana}, ${dt.curta}</b>`+
+        `<small>semana ${e.data.semana} de ${TO.competicoes.SEMANAS_ANO} · `+
+        `${e.data.ano}${TO.feed.travado(e) ? ' · tempo parado' : ''}</small>`;
+    }
+    if(noFeedTopo && noFeedTopo.isConnected){
+      const [c1,c2] = e.torcida.cores;
+      const c = TO.membros.contar(e);
+      const sem = (TO.financeiro.resumoDaSemana(e) || {}).saldo || 0;
+      const sinal = sem > 0 ? '+' : sem < 0 ? '−' : '';
+      noFeedTopo.innerHTML =
+        `<span class="escudo" style="background:linear-gradient(135deg,${c1} 0 52%,${c2} 52% 100%)"
+           >${e.torcida.sigla}</span>`+
+        `<b>${e.torcida.nome}</b>`+
+        `<span class="num${e.dinheiro<0?' negativo':''}">${IC.get('dinheiro')}`+
+        `${U.dinheiro(e.dinheiro)}</span>`+
+        `<span class="num semana ${sem>0?'sobra':sem<0?'falta':''}"`+
+        ` title="saldo desta semana">${sinal}${U.dinheiro(Math.abs(sem))}`+
+        `<em>/sem</em></span>`+
+        `<span class="num">${IC.get('membros')}${U.numero(c.total)}</span>`+
+        `<span class="num">${IC.get('estrela')}`+
+        `${Math.round(e.indicadores.prestigio*5)}</span>`;
     }
 
     if(noRodape && noRodape.isConnected){
@@ -623,7 +816,7 @@
              'Semana boa pra treinar, recrutar e resolver o que a rua deixou.'}));
     }
     const verCal = el('button',{class:'bt larga', texto:'Ver calendário'});
-    verCal.onclick = ()=>{ pagina='calendario'; redesenhar(); };
+    verCal.onclick = ()=>abrirPainel('calendario');
     cJogo.rodape(verCal);
     esq.appendChild(cJogo);
 
@@ -635,7 +828,7 @@
          <span class="txt">${n.txt}</span><span class="hora">${n.hora}</span>`}));
     }
     const verTodas = el('button',{class:'bt larga', texto:'Ver todas'});
-    verTodas.onclick = ()=>{ pagina='noticias'; redesenhar(); };
+    verTodas.onclick = ()=>abrirPainel('noticias');
     cNot.rodape(verTodas);
     esq.appendChild(cNot);
 
@@ -644,15 +837,15 @@
     const cAv = cartao('Avisos', pend.length ? `${pend.length} pendentes` : 'tudo em dia');
     if(!pend.length){
       cAv.corpo.appendChild(el('div',{class:'linha-dado', html:
-        '<span class="fraco">Nada esperando por você. Avance o dia.</span>'}));
+        '<span class="fraco">Nada esperando por você.</span>'}));
     }
     for(const a of pend){
       const b = el('button',{class:'aviso-linha '+a.tipo, html:
         `<span class="pino"></span>
          <span class="txt"><span>${a.texto}</span><small>${a.detalhe}</small></span>`});
       b.onclick = ()=>{
-        /* a página do aviso vira painel: `pagina` é sempre o mapa desde
-           que o mapa virou a tela */
+        /* a página do aviso vira painel: `pagina` é sempre o feed desde
+           que o feed virou a tela */
         if(a.id==='acoes') abrirTodasAcoes();
         else abrirPainel(a.pagina);
       };
@@ -675,7 +868,7 @@
       + `<div class="linha-dado"><span>Saldo previsto</span>
            <b class="${sem.saldo>=0?'positivo':'negativo'}">${U.dinheiro(sem.saldo)}</b></div>`;
     const verFin = el('button',{class:'bt larga', texto:'Ver finanças'});
-    verFin.onclick = ()=>{ pagina='financeiro'; redesenhar(); };
+    verFin.onclick = ()=>abrirPainel('financeiro');
     cFin.rodape(verFin);
     dir.appendChild(cFin);
 
@@ -1172,8 +1365,18 @@
   }
 
   /* ---------- ficha e ações do membro ---------- */
+  /* MODAL ABERTO PARA O TEMPO. Ele cobre a tela inteira: deixar os dias
+     correndo atrás dele é o jogo andando escondido, que é o mesmo
+     motivo pelo qual painel aberto pausa. O contador existe porque um
+     modal pode abrir por cima de outro. */
+  let modaisAbertos = 0;
   function modal(titulo, sub, corpo, acoes, largura){
     const fundo = el('div',{class:'tela-cheia'});
+    modaisAbertos++; pausarTempo('modal');
+    const sair = ()=>{ if(--modaisAbertos <= 0){ modaisAbertos = 0;
+                                                 retomarTempo('modal'); } };
+    const orig = fundo.remove.bind(fundo);
+    fundo.remove = ()=>{ if(fundo.isConnected) sair(); orig(); };
     const m = el('div',{class:'moldura '+(largura||'estreita')});
     m.appendChild(el('header',{html:`<h2>${titulo}</h2><span>${sub||''}</span>`}));
     const d = el('div'); d.appendChild(corpo); m.appendChild(d);
@@ -1525,7 +1728,7 @@
         `<span>Total decidido</span><b class="${comp.total?'negativo':'fraco'}">`+
         `${comp.total?U.dinheiro(-comp.total):'—'}</b>`}));
     const btGest = el('button',{class:'bt larga', texto:'Abrir a Gestão'});
-    btGest.onclick = ()=>{ pagina='gestao'; redesenhar(); };
+    btGest.onclick = ()=>abrirPainel('gestao');
     c5.rodape(btGest);
 
     const col3 = el('div'); col3.append(c3,c4,c5);
@@ -2408,13 +2611,13 @@
 
     grade.append(esq, dir);
     pg.appendChild(grade);
-    /* AS POLÍTICAS APARECEM SEMPRE, com jogo marcado ou sem.
-       Elas não dependem do próximo jogo — são a regra que vale daqui pra
-       frente —, e é nelas que a partida nova abre. Antes o bloco morava
+    /* A IDEOLOGIA APARECE SEMPRE, com jogo marcado ou sem.
+       Ela não depende do próximo jogo — é a regra que vale daqui pra
+       frente —, e é nela que a partida nova abre. Antes o bloco morava
        dentro do assistente, que só monta quando `passos()` tem algo, e
-       numa semana sem jogo o jogador caía numa Gestão sem as políticas. */
+       numa semana sem jogo o jogador caía numa Gestão sem ideologia. */
     if(!montarAssistente(pg, e) && !pg.querySelector('.ass-politicas'))
-      pg.appendChild(caixaDePoliticas(e));
+      pg.appendChild(caixaDeIdeologia(e));
   }
 
   /* =======================================================
@@ -2895,7 +3098,23 @@
      Enquanto houver motivo o relógio não anda. Quando o último sai,
      ele volta de onde parou — o `ultimo` do laço é zerado a cada
      partida, então nenhum minuto é cobrado pelo tempo parado. */
-  const pausas = new Set();
+  /* DOIS RELÓGIOS, DOIS CONJUNTOS DE MOTIVOS.
+
+     `pausas` é do relógio DA RUA — os minutos que correm dentro do
+     mapa. Ele nasce parado, com o motivo `mapa`: sem o mapa aberto não
+     há rua pra ver, e o dia inteiro é simulado de uma vez pelo relógio
+     do tempo.
+
+     `pausasT` é do relógio DO TEMPO — os dias que passam sozinhos no
+     feed, um por segundo. Ele nasce correndo, e para por painel aberto,
+     aba sem foco, save, cena e decisão sem resposta.
+
+     Os motivos que valem pros dois — foco, salvar, cena — entram nos
+     dois conjuntos. Um relógio só não daria conta: no mapa aberto a rua
+     tem de andar e o calendário tem de ficar parado, que é exatamente o
+     par de estados que um conjunto único não sabe representar. */
+  const pausas  = new Set(['mapa']);
+  const pausasT = new Set();
   function pausarDia(motivo){
     pausas.add(motivo);
     if(relogioRua){ cancelAnimationFrame(relogioRua); relogioRua = null; }
@@ -2912,6 +3131,80 @@
     if(R.rodando) rodarRelogio();
   }
   const diaPausado = () => pausas.size > 0;
+
+  /* =======================================================
+     O RELÓGIO DO TEMPO — UM DIA POR SEGUNDO
+
+     Uma semana são 7 s; uma temporada de 52 semanas, pouco mais de
+     6 minutos de tempo corrido, sem contar as paradas. O 1×/2× que já
+     existe multiplica isto, como multiplica a rua e a cena.
+
+     O DIA NÃO ESPERA MENSAGEM. Várias podem cair de uma vez, no mesmo
+     instante, e todas entram no topo na ordem da fila — não há pausa de
+     leitura entre elas. Isso funciona porque o tempo está sempre
+     parando: toda decisão congela o relógio, e o jogador lê com calma o
+     que se acumulou. O que passar numa rajada não se perde: o feed é
+     histórico e rola pra trás.
+     ======================================================= */
+  const SEG_POR_DIA = 1;
+  const MAX_DIAS_POR_QUADRO = 8;   // aba que volta de longe não vira maratona
+  let relogioTempo = null, sobraDoDia = 0;
+
+  function pausarTempo(motivo){
+    pausasT.add(motivo);
+    if(relogioTempo){ cancelAnimationFrame(relogioTempo); relogioTempo = null; }
+  }
+  function retomarTempo(motivo){
+    pausasT.delete(motivo);
+    if(pausasT.size) return;
+    rodarTempo();
+  }
+  const tempoPausado = () => pausasT.size > 0;
+
+  function rodarTempo(){
+    if(relogioTempo || pausasT.size) return;
+    const e0 = E(); if(!e0) return;
+    if(TO.feed.travado(e0)) return;
+    let ultimo = 0;
+    const passo = agora=>{
+      const e = E();
+      if(!e || pausasT.size || TO.feed.travado(e)){ relogioTempo = null; return; }
+      const dt = ultimo ? Math.min(0.5, (agora - ultimo)/1000) : 0;
+      ultimo = agora;
+      sobraDoDia += dt * TO.diaJogo.ponte.velocidade;
+      let n = 0;
+      while(sobraDoDia >= SEG_POR_DIA && n < MAX_DIAS_POR_QUADRO){
+        sobraDoDia -= SEG_POR_DIA; n++;
+        passarUmDia(e);
+        if(pausasT.size || TO.feed.travado(e)) break;
+      }
+      if(n){ pintarTopo(); atualizarFeed(); }
+      if(pausasT.size || TO.feed.travado(E())){ relogioTempo = null; return; }
+      relogioTempo = requestAnimationFrame(passo);
+    };
+    relogioTempo = requestAnimationFrame(passo);
+  }
+
+  /* UM DIA INTEIRO, sem tela.
+     A rua do dia que está acabando roda do primeiro minuto ao apito —
+     andarilho anda, assalto abre e fecha, viatura sai —, e só depois a
+     data vira. É o mesmo caminho do dia assistido no mapa; o que muda é
+     que não há quadro pra desenhar. Encontro entre bondes interrompe: a
+     rua para onde parou e a convocação vira mensagem de decisão. */
+  function passarUmDia(e){
+    if(document.body.classList.contains('em-cena')) return;
+    const enc = simularDiaDaRua(e);
+    if(enc){
+      TO.feed.convocarEncontro(e, enc);
+      TO.feed.publicar(e);
+      if(TO.feed.travado(e)){ pausarTempo('decisao'); return; }
+      /* ninguém nosso no encontro: a rua resolve sozinha e o dia segue */
+      TO.ruas.resolver(e);
+    }
+    TO.estado.avancarDia();
+    TO.feed.passarDia(e);
+    if(TO.feed.travado(e)) pausarTempo('decisao');
+  }
 
   function rodarRelogio(){
     if(relogioRua || pausas.size) return;
@@ -3033,10 +3326,11 @@
        relógio corre sempre e num dia vazio o único bonde da rua é o que
        o jogador mandar sair. */
     const R = TO.ruas.montar(e, mo);
-    /* eles marcaram este dia pra vir: a cena abre por cima do mapa */
-    const atq = TO.tensao.ataqueDeHoje(e);
-    if(atq && !document.body.classList.contains('em-cena'))
-      setTimeout(()=>abrirAtaqueAoBar(atq), 60);
+    /* ELES MARCARAM ESTE DIA PRA VIR, e quem avisa é o feed. Aqui a cena
+       abria sozinha ao pintar o mapa; agora ela chega como mensagem de
+       convocação — "Invadiram nosso bar!" — e é o botão dela que desce
+       pra lá. Abrir a briga por baixo do jogador ao entrar numa tela é
+       exatamente o que a virada tirou do jogo. */
     const barraRua = el('div',{class:'rua-barra'});
     /* a faixa de ícones do mapa: montada aqui, pendurada no palco */
     const iconesMapa = el('div',{class:'mapa-icones'});
@@ -3230,19 +3524,23 @@
     canto.appendChild(zoom);
 
     /* O BLOCO DE QUANDO, no canto de cima à direita: relógio em cima,
-       data e dia da semana embaixo, uma moldura só — e o ≫ de avançar
-       o dia colado neles. O nó do relógio é o mesmo de sempre, então
-       `pintarRelogioDaRua` continua escrevendo nele a cada quadro sem
-       passar por `redesenhar()`. */
+       data e dia da semana embaixo, uma moldura só. O nó do relógio é o
+       mesmo de sempre, então `pintarRelogioDaRua` continua escrevendo
+       nele a cada quadro sem passar por `redesenhar()`.
+
+       O ≫ DE AVANÇAR O DIA SAIU. Ninguém avança dia manualmente: o
+       tempo corre sozinho no feed, um dia por segundo, e enquanto o
+       mapa está aberto o calendário fica parado de propósito — o que
+       anda aqui são os minutos da rua, até o apito. */
     noData = el('div',{class:'mapa-quando'});
     const datas = el('div',{class:'mapa-data', html:
       '<div class="dia">—</div><div class="semana">—</div>'});
-    const btAv = el('button',{class:'mapa-ic', html: IC.get('avancar')});
-    btAv.title = 'Avançar um dia';
-    btAv.setAttribute('aria-label','Avançar um dia');
-    btAv.onclick = ()=>{ TO.estado.avancarDia(); pularDiasVazios(); };
+    const btVolta = el('button',{class:'mapa-ic', html: IC.get('saida')});
+    btVolta.title = 'Voltar pro feed';
+    btVolta.setAttribute('aria-label','Voltar pro feed');
+    btVolta.onclick = fecharPainel;
     noData.append(noRelogioRua, el('div',{class:'mapa-quando-baixo'}));
-    noData.lastChild.append(datas, btAv);
+    noData.lastChild.append(datas, btVolta);
 
     /* A FAIXA DE BAIXO: escudo, nome e os três números. */
     noRodape = el('div',{class:'mapa-rodape'});
@@ -3264,7 +3562,7 @@
        quebra em duas colunas quando a altura aperta (ver `.mapa-menu`,
        que é `column wrap`): quem manda é a altura disponível, não a
        largura da tela. */
-    canto.appendChild(montarMenuDoMapa());
+    canto.appendChild(montarMenuIcones('mapa-menu'));
     hud.append(iconesMapa, canto, noData, noRodape);
     palco.append(viewport, hud);
     q.corpo.appendChild(palco);
@@ -3393,7 +3691,7 @@
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
-    pausarDia('cena');
+    pararTudo('cena');
     const p = TO.planejamento.plano(e);
     /* quem chegou na esplanada entra na cena com o efetivo que sobrou da
        caminhada e a cor da própria torcida. `nossa` aqui é "o jogador
@@ -3592,7 +3890,7 @@
        DURANTE a luta — dois pads fixos no mesmo canto, e a cruz de cima
        era a do mapa. Quem tocasse W ali estava mandando num bonde que
        nem está mais na rua, e o disco da cena não saía do lugar. */
-    const querem = estreito() && pagina === 'mapa' && !painel &&
+    const querem = estreito() && painel === 'mapa' &&
                    !document.body.classList.contains('em-cena') &&
                    b && R && R.selecionado === b.id;
     if(!querem){
@@ -3768,7 +4066,7 @@
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
-    pausarDia('cena');
+    pararTudo('cena');
     const p = TO.planejamento.plano(E());
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
@@ -3827,7 +4125,7 @@
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
-    pausarDia('cena');
+    pararTudo('cena');
     const p = TO.planejamento.plano(e);
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
@@ -3863,7 +4161,7 @@
     const fecho = acao ? TO.acoes.fecharCena(e, acao, res) : null;
     /* fechada a briga, o dia volta a correr: o encontro foi resolvido e
        `retomarDia` religa `R.rodando`, que a cena tinha desligado */
-    retomarDia('cena');
+    soltarTudo('cena');
     setTimeout(()=>{
       $('telaDiaJogo').classList.add('oculto');
       document.body.classList.remove('em-cena');
@@ -3902,7 +4200,7 @@
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
-    pausarDia('cena');
+    pararTudo('cena');
     const p = TO.planejamento.plano(e);
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
@@ -3950,7 +4248,7 @@
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
-    pausarDia('cena');
+    pararTudo('cena');
     const p = TO.planejamento.plano(e);
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
@@ -4122,11 +4420,12 @@
      ======================================================= */
   function redesenhar(){
     if(!E()) return;
-    /* o que a rotina fez sozinha enquanto o jogador avançava os dias */
-    const fila = E().avisos;
-    if(fila && fila.length){
-      for(const a of fila.splice(0, fila.length).slice(-4)) aviso(a.msg, a.tipo);
-    }
+    /* A FILA DE AVISOS SAIU DAQUI. `redesenhar` drenava `E.avisos` em
+       torradinhas de quatro segundos — era assim que o jogador ficava
+       sabendo do que tinha acontecido sozinho. Agora tudo isso é
+       mensagem do feed, que fica na tela até ele rolar pra longe dela.
+       O `aviso()` continua vivo pra retorno imediato de clique — "Salvo",
+       "Bonde solto" —, que é conversa da interface, não do mundo. */
     pintarTopo();
     trocarPagina();
     pintarPagina(pagina);
@@ -4139,157 +4438,61 @@
      LIGAÇÃO
      ======================================================= */
   /* =======================================================
-     PULAR OS DIAS SEM JOGO
+     O DIA DA RUA, SEM TELA
 
-     PULAR É SIMULAR, NÃO OMITIR. O dia pulado roda a rua inteira —
-     `TO.ruas.montar` e `TO.ruas.passo` do primeiro minuto ao apito —,
-     que é o mesmo caminho do dia assistido: andarilho anda, esbarrão
-     acontece, assalto do calendário abre e fecha, viatura sai. O que
-     muda é só o passo do relógio: assistindo, cada quadro empurra uns
-     0,03 minuto de rua; pulando, o passo é maior, porque não há tela
-     pra desenhar. Se pular mudasse o resultado, a opção deixaria de ser
-     conforto e viraria trapaça.
-     ======================================================= */
-  /* O PASSO É O MESMO DE ASSISTIR, e isso é decisão medida. Um quadro a
-     60 fps empurra `dt*2` = 1/30 de minuto de rua; o pulo usa o mesmo
-     número. Com passo maior o resultado AGREGADO continua igual — 30
-     dias de rua cheia dão as mesmas 12 baixas e o mesmo caixa com 0,1,
-     0,25 ou 0,5 —, mas a IDENTIDADE de alguns encontros muda: quem
+     SIMULAR É O PADRÃO, NÃO O ATALHO. O relógio do tempo roda a rua
+     inteira de todo dia — `TO.ruas.montar` e `TO.ruas.passo` do
+     primeiro minuto ao apito —, que é o mesmo caminho do dia assistido
+     no mapa: andarilho anda, assalto do calendário abre e fecha,
+     viatura sai, consequência entra na ficha. O que muda é só que não
+     há quadro pra desenhar.
+
+     O PASSO É O MESMO DE ASSISTIR, e isso é decisão medida. Um quadro a
+     60 fps empurra `dt*2` = 1/30 de minuto de rua; sem tela, o passo é
+     o mesmo número. Com passo maior o resultado AGREGADO continua igual
+     — 30 dias de rua cheia dão as mesmas 12 baixas e o mesmo caixa com
+     0,1, 0,25 ou 0,5 —, mas a IDENTIDADE de alguns encontros muda: quem
      esbarra em quem é testado nos instantes amostrados, e amostrar
-     menos troca um par por outro. Isso aparecia como duas ou três
-     unidades de tensão a mais numa torcida e um ferido a mais ou a
-     menos no trigésimo dia. Custa 49 ms por dia em vez de 25 — meio
-     segundo a mais numa semana pulada — e compra igualdade exata. */
-  const PASSO_PULO = 1/30;      // minutos de rua por tique, sem tela
-  const MAX_PULO = 90;          // teto de segurança: nunca mais que isso
-  let pulando = false;
+     menos troca um par por outro. Custa 49 ms por dia em vez de 25 e
+     compra igualdade exata.
+     ======================================================= */
+  const PASSO_RUA = 1/30;       // minutos de rua por tique, sem tela
 
-  const diaComJogo = e =>
-    TO.ruas.jogosDaPraca(e).filter(j=>j.dia === e.data.dia).length > 0;
-
+  /* devolve o ENCONTRO, quando houver: é ele que vira convocação */
   function simularDiaDaRua(e){
     const mo = mapaAtual || TO.mapa.modelo(e);
     const R = TO.ruas.montar(e, mo);
     const fim = R.apito || 0;
     let guarda = 0;
     while(R.minuto < fim && guarda++ < 6000){
-      TO.ruas.passo(e, mo, PASSO_PULO);
-      if(R.encontro) return 'dois bondes se encontraram na rua';
+      TO.ruas.passo(e, mo, PASSO_RUA);
+      if(R.encontro) return R.encontro;
     }
     return null;
   }
 
-  /* AS CINCO PARADAS. Quatro são do enunciado e valem sempre; a quinta
-     — semana ruim — é decidida no fechamento, que roda dentro do
-     `avancarDia`, então ela chega aqui por `motivoDaParada`.
-
-     A "decisão pendente" é a que precisou de julgamento: o cartão de
-     Avisos tem itens que são lembrete permanente (ações sobrando, gente
-     pronta pra promover, fila de treino vazia, membro presos por trinta
-     dias) e parar neles seria não pular nunca. O que para o pulo é
-     pendência NOVA — a que não existia quando o pulo começou. */
-  let motivoDaParada = null;
-  function pendenciasDe(e){
-    return new Set(TO.planejamento.pendencias(e).map(p=>p.id));
-  }
-  function porQueParar(e, antes){
-    if(diaComJogo(e))                       return 'tem jogo na praça hoje';
-    if(TO.tensao.ataqueDeHoje(e))           return 'vieram pra cima do nosso bar';
-    if(TO.ruas.bondeComandado(e))           return 'seu bonde está na rua';
-    /* o mesmo teste da abertura automática: o pulo para porque a Gestão
-       vai abrir */
-    if(opc(e).abrirGestao && precisaDecidir(e))
-      return 'o plano do próximo jogo tem decisão pendente';
-    const agora = pendenciasDe(e);
-    for(const id of agora)
-      if(!antes.has(id)){
-        const p = TO.planejamento.pendencias(e).find(x=>x.id === id);
-        return p ? p.texto.toLowerCase() : 'apareceu decisão pra tomar';
-      }
-    return null;
-  }
-
-  function pularDiasVazios(){
-    const e = E();
-    if(!e || pulando || !opc(e).pularVazios) return 0;
-    const antes = pendenciasDe(e);
-    let n = 0, motivo = porQueParar(e, antes);
-    if(motivo) return 0;               // já tem o que fazer hoje
-    pulando = true; motivoDaParada = null;
-    try{
-      while(n < MAX_PULO){
-        const daRua = simularDiaDaRua(e);
-        if(daRua){ motivo = daRua; break; }
-        TO.estado.avancarDia();
-        n++;
-        if(motivoDaParada){ motivo = motivoDaParada; break; }
-        motivo = porQueParar(e, antes);
-        if(motivo) break;
-      }
-    } finally { pulando = false; }
-    redesenhar();
-    retomarDia('dia');
-    if(n) aviso(`${n} ${n===1?'dia passou':'dias passaram'} — parou porque `+
-                `${motivo || 'chegou no limite de '+MAX_PULO+' dias'}.`,
-                motivo ? '' : 'ruim');
-    return n;
-  }
-
-  /* avançar o dia recomeça o dia seguinte JÁ RODANDO: `montar` nasce com
-     `rodando:false` e antes ninguém religava. Durante o pulo o mapa não
-     é repintado a cada dia — seria remontar a planta noventa vezes. */
+  /* O ESTADO MUDOU.
+     Durante o laço do tempo a tela não é remontada: escrever o
+     cabeçalho e acrescentar as mensagens novas basta, e remontar a
+     lista inteira uma vez por segundo faria a rolagem saltar embaixo do
+     dedo de quem está lendo o que passou. */
   TO.estado.aoMudar(()=>{
-    if(pulando){ cuidarDoPlano(); return; }
-    cuidarDoPlano();
-    redesenhar(); retomarDia('dia');
+    if(!E()) return;
+    if(relogioTempo){ pintarTopo(); atualizarFeed(); return; }
+    redesenhar();
   });
-
-  /* A GESTÃO ABRE SOZINHA, OU A POLÍTICA FECHA SOZINHA.
-     Com a chave ligada, o assistente aparece quando `precisaDecidir` é
-     verdade — o mesmo teste que para o pulo. Com ela desligada, as
-     políticas rodam e o plano é fechado sem interromper; o que foi
-     decidido em nome do jogador vai pro ticker e pros Avisos, porque
-     automático que não conta o que fez é automático que esconde.
-
-     E automático que FALHA em silêncio é pior que manual: se depois de
-     aplicar a política ainda faltar coisa, o assistente abre assim
-     mesmo, com a chave desligada, dizendo o que ficou faltando. */
-  function cuidarDoPlano(){
-    const e = E();
-    if(!e || !e.proximoJogo || document.body.classList.contains('em-cena')) return;
-    const P = TO.planejamento;
-    if(opc(e).abrirGestao){
-      if(precisaDecidir(e) && painel !== 'gestao' && !pulando) abrirPainel('gestao');
-      return;
-    }
-    if(P.plano(e).decidido) return;
-    const fez = P.aplicarPolitica(e);
-    const falta = P.falta(e);
-    if(falta.length){
-      motivoDaParada = `o plano automático não fechou: falta ${falta.join(', ')}`;
-      if(painel !== 'gestao') abrirPainel('gestao');
-      TO.estado.anotar(e, `Gestão automática parou: falta ${falta.join(', ')}.`, 'ruim');
-      return;
-    }
-    const r = P.confirmar(e);
-    const linha = 'Plano automático: ' +
-      (fez.intencao === 'paz' ? 'ir em paz'
-        : `atacar ${fez.alvo || '—'} nos arredores`) +
-      (fez.investidas.length ? ` · investida contra ${fez.investidas.join(' e ')}` : '') +
-      (fez.recepcao ? ` · aliado: ${P.recepcaoDe(fez.recepcao).rot.toLowerCase()}` : '') +
-      (r.gasto ? ` · ${U.dinheiro(r.gasto)} de recepção` : '');
-    TO.estado.anotar(e, linha, 'boa');
-  }
 
   /* ABA SEM FOCO É PAUSA EXPLÍCITA.
      O `requestAnimationFrame` congela sozinho quando a aba perde o
      foco, e o primeiro quadro na volta traz o tempo todo que passou
      fora — o relógio saltaria. Tratando como pausa, o `ultimo` do laço
      é zerado na volta e nenhum minuto é cobrado do tempo em outra aba. */
-  addEventListener('blur', ()=>pausarDia('foco'));
-  addEventListener('focus', ()=>retomarDia('foco'));
+  const pararTudo  = m => { pausarDia(m);  pausarTempo(m); };
+  const soltarTudo = m => { retomarDia(m); retomarTempo(m); };
+  addEventListener('blur', ()=>pararTudo('foco'));
+  addEventListener('focus', ()=>soltarTudo('foco'));
   document.addEventListener('visibilitychange', ()=>{
-    if(document.hidden) pausarDia('foco'); else retomarDia('foco');
+    if(document.hidden) pararTudo('foco'); else soltarTudo('foco');
   });
   /* O FECHAMENTO DA SEMANA, COM O RELATÓRIO OPCIONAL.
      Antes as três coisas moravam na mesma linha: abrir o modal, salvar e
@@ -4298,29 +4501,29 @@
      · SALVAR é sempre. O autosave estava pendurado no mesmo `;` do
        `abrirFechamento`, e desligar o modal teria desligado o save
        junto — o jeito mais silencioso de perder uma temporada.
-     · O RESUMO é sempre, e em dois lugares que o jogador vê de
-       passagem: o ticker e a lista de avisos da tela de Início. Sem
-       isso, quem nunca abre o relatório joga sem economia.
+     · O RESUMO vai pro feed, e só quando tem o que dizer.
      · O MODAL é a chave. Fica desligado por padrão — mas semana no
-       vermelho ou com gente saindo abre de qualquer jeito e para o
-       pulo, porque é aí que a torcida começa a se desfazer e descobrir
-       isso depois de trinta dias pulados não é conforto, é perda. */
+       vermelho ou com gente saindo abre de qualquer jeito, porque é aí
+       que a torcida começa a se desfazer e descobrir isso trinta dias
+       depois não é conforto, é perda. */
   TO.estado.aoFecharSemana((rel, e)=>{
+    e = e || E();
     TO.estado.salvar();
+    /* o mundo lá fora escreve a semana dele aqui: rodada, briga alheia,
+       marco. É o pulso da categoria 5, espalhado pelos sete dias. */
+    TO.feed.fecharSemana(e, rel);
     const saiu = (rel.saidas || []).length;
-    const resumo = `Semana ${rel.semana}: ${rel.saldo >= 0 ? 'sobrou' : 'faltou'} `+
-      `${U.dinheiro(Math.abs(rel.saldo))}` +
-      (saiu ? ` · ${saiu} ${saiu===1?'saiu':'saíram'} da torcida` : '') +
-      ` · caixa ${U.dinheiro((e||E()).dinheiro)}`;
-    TO.estado.anotar(e || E(), resumo, rel.saldo >= 0 && !saiu ? 'boa' : 'ruim');
-    const grave = rel.saldo < 0 || (e||E()).dinheiro < 0 || saiu > 0;
-    if(opc(e).relatorio || grave){
-      abrirFechamento(rel);
-      if(grave) motivoDaParada = saiu
-        ? `a semana ${rel.semana} fechou com gente saindo da torcida`
-        : `a semana ${rel.semana} fechou no vermelho`;
-      else motivoDaParada = `virou a semana ${rel.semana}`;
-    }
+    /* O RESUMO SEMANAL SÓ FALA QUANDO TEM O QUE DIZER. Uma linha por
+       semana contando que sobrou dinheiro é a definição de barulho de
+       fundo — o saldo já está escrito na barra do feed o tempo todo.
+       Semana com gente saindo é outra coisa: isso é a torcida se
+       desfazendo, e tem de aparecer. */
+    if(saiu) TO.estado.anotar(e,
+      `${saiu} ${saiu===1?'saiu':'saíram'} da torcida essa semana. `+
+      `Caixa em ${U.dinheiro(e.dinheiro)}.`, 'ruim',
+      {cat:6, assunto:'caixa'});
+    const grave = rel.saldo < 0 || e.dinheiro < 0 || saiu > 0;
+    if(opc(e).relatorio || grave) abrirFechamento(rel);
   });
   $('btSelecionarTorcida').onclick = ()=>{
     if(!escolhida) return;
@@ -4333,10 +4536,14 @@
   };
   $('btConfirmarEscalacao').onclick = comecarDiaDeJogo;
   $('btCancelarEscalacao').onclick = ()=>$('telaEscalacao').classList.add('oculto');
+  /* O RELATÓRIO DA NOITE não avança mais o dia: quem avança o dia é o
+     relógio do tempo, e ninguém avança dia manualmente. Fechar a tela
+     devolve o feed e o relógio volta de onde parou. */
   $('btFecharRelatorio').onclick = ()=>{
     $('telaRelatorio').classList.add('oculto');
-    TO.estado.avancarDia();
     TO.estado.salvar();
+    redesenhar();
+    soltarTudo('cena');
   };
   addEventListener('keydown', ev=>{
     if(!E()) return;
@@ -4344,12 +4551,25 @@
       ev.preventDefault();
       /* salvar com o dia correndo pegaria o mundo pela metade. A saída
          não é proibir de salvar — é parar o dia, salvar e devolver. */
-      pausarDia('salvar');
+      pararTudo('salvar');
       const r = TO.estado.salvar();
-      retomarDia('salvar');
+      soltarTudo('salvar');
       aviso(r.ok?'Salvo.':'Não salvou: '+r.motivo, r.ok?'boa':'ruim');
     }
   });
+
+  /* A PORTA DE SERVIÇO DA TELA.
+     A bateria de regressão dirige o jogo de verdade, e há coisas que só
+     existem aqui: passar um dia com a rua inteira simulada, responder
+     uma mensagem pelo mesmo caminho do clique, parar e soltar o relógio.
+     Reimplementar isso no teste seria medir outro jogo — o teste passaria
+     e o jogo continuaria quebrado. Nada aqui é chamado pelo jogo. */
+  TO.tela = {
+    passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
+    rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
+    abrirPainel, fecharPainel, get painel(){ return painel; },
+    get diaPausado(){ return diaPausado(); }
+  };
 
   montarMenu();
 })();

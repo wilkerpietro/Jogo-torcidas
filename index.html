@@ -32,6 +32,10 @@
   <nav id="lateral"></nav>
 
   <main id="tela">
+    <!-- O FEED É A TELA PRINCIPAL. Ele vem primeiro porque é o que o
+         jogo é: uma lista de mensagens que chega sozinha. As outras
+         páginas — o mapa incluído — são painéis que abrem por cima. -->
+    <section class="pagina" data-pag="feed"></section>
     <section class="pagina" data-pag="inicio"></section>
     <section class="pagina" data-pag="torcida"></section>
     <section class="pagina" data-pag="financeiro"></section>
@@ -188,6 +192,9 @@
 <script src="js/gestao/acoes.js"></script>
 <script src="js/gestao/planejamento.js"></script>
 <script src="js/estado.js"></script>
+<!-- o feed lê tudo que está acima dele: calendário, tensão, rua,
+     membros, patrimônio e planejamento. Ele não simula nada. -->
+<script src="js/mundo/feed.js"></script>
 
 <!-- dia de jogo -->
 <script src="js/diajogo/cenario.js"></script>

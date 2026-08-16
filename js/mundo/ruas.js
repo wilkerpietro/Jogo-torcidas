@@ -1467,7 +1467,7 @@ TO.ruas = (function(){
         r.aberto = true;
         if(r.nossa) TO.estado.anotar(E,
           `Alguém da nossa está entrando n${/^[ao]/i.test(r.nome)?'':'o '}`+
-          `${r.nome} d${r.bairro?`o ${r.bairro}`:'a praça'}.`, 'ruim');
+          `${r.nome} d${r.bairro?`o ${r.bairro}`:'a praça'}.`, 'ruim', {cat:4});
       }
       /* a viatura só sai quando alguém liga: banco tem alarme e chama no
          mesmo minuto, mercadinho leva um tempo até alguém perceber */
@@ -1512,7 +1512,10 @@ TO.ruas = (function(){
        recado, não decisão: não para o relógio nem o pulo de dias. */
     TO.estado.anotar(E, `${r.nomeTorcida || 'Alguém'} tentou ${ondeDetalhe}: `+
       (preso ? 'a PM pegou na porta.' : `saiu com ${U.dinheiro(r.levou)}.`),
-      r.nossa ? (preso ? 'ruim' : 'boa') : '');
+      r.nossa ? (preso ? 'ruim' : 'boa') : '',
+      /* assalto nosso é resultado de ação; assalto dos outros é a praça
+         vivendo em volta, que é jornal */
+      r.nossa ? {cat:4} : {cat:5, local:true});
     const m = r.membroId != null ? E.membros.find(x=>x.id === r.membroId) : null;
     if(preso){
       if(r.nossa && m){
@@ -1524,7 +1527,7 @@ TO.ruas = (function(){
         I.prestigio = U.limitar(I.prestigio - 1, 0, 20);
         TO.estado.anotar(E,
           `${TO.membros.nomeDe(m)} foi preso assaltando ${ondeDetalhe} — `+
-          `${r.pena} dias.`, 'ruim');
+          `${r.pena} dias.`, 'ruim', {cat:4});
         marcarBaixa(E, TO.membros.nomeDe(m),
           `preso assaltando ${ondeDetalhe} — ${r.pena} dias de pena`);
       }
@@ -1534,7 +1537,7 @@ TO.ruas = (function(){
         if(m) TO.estado.anotar(E,
           `${TO.membros.nomeDe(m)} limpou a gaveta d${
             /^[AEIOU]/i.test(r.nome)?'':'o '}${r.nome} e sumiu: `+
-          `${U.dinheiro(r.levou)}.`, 'boa');
+          `${U.dinheiro(r.levou)}.`, 'boa', {cat:4});
       }else if(TO.tensao){
         /* pras 138 da IA o caixa é o que `tensao` já mantém */
         const t = TO.tensao.mundo(E)[r.torcida];

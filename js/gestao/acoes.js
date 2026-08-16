@@ -208,7 +208,10 @@ TO.acoes = (function(){
     const txt = `${alvo.nome} veio pro nosso ${alvo.tipo}. `+
                 `${seguramos ? 'Seguramos' : 'Perdemos'} a casa.`+
                 (linhas.length ? ' ' + linhas.join('; ') + '.' : '');
-    TO.estado.anotar(E, txt, seguramos ? 'boa' : 'ruim');
+    TO.estado.anotar(E, txt, seguramos ? 'boa' : 'ruim', {cat:4,
+      linhaAbaixo:{texto:`prestígio ${seguramos?'+0,7':'−0,7'}`}});
+    if(TO.feed) TO.feed.registrarConfronto(E, alvo.torcidaId, seguramos,
+                                           alvo.bairro);
     return {txt, ganhou:seguramos, linhas, dinheiro:-perdeu,
             titulo: seguramos ? 'A CASA FICOU DE PÉ' : 'PERDEMOS O BAR'};
   }
@@ -243,7 +246,9 @@ TO.acoes = (function(){
     E.indicadores.policia = U.limitar(E.indicadores.policia - 1.5, 0, 20);
     const txt = `${ganhou ? 'Tomamos' : 'Fomos até'} ${alvo.nome}, em ${alvo.bairro}.`+
                 (linhas.length ? ' ' + linhas.join('; ') + '.' : '');
-    TO.estado.anotar(E, txt, ganhou ? 'boa' : 'ruim');
+    TO.estado.anotar(E, txt, ganhou ? 'boa' : 'ruim', {cat:4});
+    if(TO.feed) TO.feed.registrarConfronto(E, alvo.torcidaId, ganhou,
+                                           alvo.bairro);
     return {txt, ganhou, linhas, dinheiro:levou,
             titulo: ganhou ? 'ATAQUE BEM-SUCEDIDO' : 'ATAQUE FRACASSOU'};
   }
@@ -268,7 +273,7 @@ TO.acoes = (function(){
     E.indicadores.prestigio = U.limitar(E.indicadores.prestigio - 0.5, 0, 20);
     const txt = `${ganhou ? 'Levaram' : 'Tentaram'} ${alvo.nome.toLowerCase()} `+
                 `em ${alvo.bairro}. ${linhas.join('; ')}.`;
-    TO.estado.anotar(E, txt, ganhou ? 'boa' : 'ruim');
+    TO.estado.anotar(E, txt, ganhou ? 'boa' : 'ruim', {cat:4});
     return {txt, ganhou, linhas, levou, dinheiro:levou,
             titulo: ganhou ? 'ASSALTO BEM-SUCEDIDO' : 'ASSALTO FRACASSOU'};
   }
@@ -293,7 +298,7 @@ TO.acoes = (function(){
         `O time joga sob pressão até a semana ${c.cobranca.ate}.`
       : `A segurança segurou a torcida no portão do CT. `+
         `Vexame — e o elenco se sentiu perseguido até a semana ${c.cobranca.ate}.`;
-    TO.estado.anotar(E, txt, chegou ? 'boa' : 'ruim');
+    TO.estado.anotar(E, txt, chegou ? 'boa' : 'ruim', {cat:4});
     return {txt, ganhou:chegou, dinheiro:0,
             titulo: chegou ? 'COBRANÇA FEITA' : 'COBRANÇA FRACASSOU',
             linhas:[`relação com o clube em ${Math.round(c.relacao)}`]};

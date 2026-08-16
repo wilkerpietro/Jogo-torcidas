@@ -111,14 +111,14 @@ input,select,textarea{font-family:var(--corpo);color:inherit}
 /* a página do mapa ocupa a área inteira: ela É a tela */
 .pagina[data-pag="mapa"].on{height:100%}
 
-/* PAINEL POR CIMA DO MAPA, EM QUALQUER LARGURA.
-   Isto era regra de celular. Virou a regra: não existe mais "página
-   atual" que substitui o mapa — existe o mapa e, às vezes, um painel
-   aberto. A gaveta em tela larga não existe, então o painel deixa a
-   coluna de ícones de fora, à esquerda, e o ícone da página aberta
-   continua aceso e clicável. */
+/* PAINEL POR CIMA DO FEED, EM QUALQUER LARGURA.
+   A tela principal é o feed, e todo o resto — o mapa incluído — é
+   painel por cima dele. O painel cobre a área inteira porque a
+   navegação do feed é uma faixa horizontal no alto, e não uma coluna na
+   margem: deixar 58px de fora só mostraria pedaço de mensagem atrás do
+   painel. Quem fecha é a barra de título, que atravessa a tela toda. */
 body.com-painel .pagina.painel{
-  position:absolute; inset:0 0 0 var(--coluna-menu, 58px); z-index:52;
+  position:absolute; inset:0; z-index:52;
   overflow-y:auto; background:var(--fundo);
   padding:44px 14px 24px;
 }
@@ -129,7 +129,7 @@ body.com-painel .pagina.painel{
 #avisoGirar{display:none}
 body.com-painel #painelBarra{
   display:flex;align-items:center;gap:8px;
-  position:absolute;z-index:53;left:var(--coluna-menu, 58px);right:0;top:0;
+  position:absolute;z-index:53;left:0;right:0;top:0;
   height:40px;padding:0 12px;
   background:var(--painel);border-bottom:1px solid var(--linha);
 }
