@@ -152,7 +152,12 @@ TO.financeiro = (function(){
   /* Torcida organizada não falta jogo: se tem jogo, ela vai. O que se
      decide é o tamanho da caravana e por onde ela passa, não se sai de
      casa. */
-  const temCaravana = E => precisaCaravana(E);
+  /* TORCIDA PROIBIDA NÃO VIAJA. A punição de quatro semanas corta a
+     caravana junto com o público: sem poder entrar no estádio, fretar
+     ônibus pra outra cidade é pagar pra ficar na calçada. Sem isto o
+     jogo cobraria a viagem de uma torcida que não pode entrar. */
+  const temCaravana = E =>
+    precisaCaravana(E) && !(TO.torcedores && TO.torcedores.punida(E));
 
   /* GDD §7.3: véspera e dia seguinte da viagem ficam travados. Vale
      sempre que o jogo é fora, em outra cidade — a torcida está

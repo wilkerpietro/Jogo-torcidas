@@ -487,8 +487,20 @@ TO.planejamento = (function(){
      próxima. Ir em paz encerra em dois passos; atacar abre o
      alvo, o modo, o mapa do olheiro e as bombas.
      ======================================================= */
+  /* A TRELA DO DELEGADO (feed 8.1). Três semanas em que a ideologia é
+     "nunca atacar": quem aceitou segurar a rapaziada não pode marcar
+     ataque na semana seguinte e fingir que aceitou. Ela mora no estado
+     e é lida aqui, que é o único lugar por onde uma intenção passa. */
+  const semAbs = E => (E.data.ano - 2026)*52 + E.data.semana;
+  const naTrela = E => !!(E && E.trela && semAbs(E) < E.trela.ate);
+
   function definirIntencao(E, id){
     const p = plano(E);
+    if(naTrela(E) && id !== 'paz'){
+      p.intencao = 'paz'; p.alvoTorcida = null; p.olheiro = null; p.bombas = 0;
+      p.alvo = alvoDe(p); p.decidido = false;
+      return p;
+    }
     p.intencao = id;
     if(id === 'paz'){ p.alvoTorcida = null; p.olheiro = null; p.bombas = 0; }
     p.alvo = alvoDe(p);
@@ -835,7 +847,10 @@ TO.planejamento = (function(){
     const feito = {intencao:null, alvo:null, investidas:[], recepcao:recepcaoPadrao(E)};
     if(!E.proximoJogo) return feito;
 
-    const cand = alvosDaPolitica(E, alvosDoJogo(E), pol.jogo);
+    /* NA TRELA, A IDEOLOGIA NÃO ESCOLHE ALVO. Sem isto, quem prometeu
+       ao delegado segurar a rapaziada apertaria "Seguir ideologia" na
+       semana seguinte e sairia atacando — a promessa valeria zero. */
+    const cand = naTrela(E) ? [] : alvosDaPolitica(E, alvosDoJogo(E), pol.jogo);
     const alvo = melhorAlvo(E, cand);
     if(alvo){
       definirIntencao(E, soAliados(E) ? 'trair' : 'atacar');
@@ -872,6 +887,7 @@ TO.planejamento = (function(){
           destinos, opcoesDeDestino,
           aliadosNaCidade, caravanaDe, RELACAO_ALIADO,
           RECEPCAO, recepcaoDe, custoRecepcao,
+          naTrela,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,
           compromissos, pendencias, confirmar, CUSTO_BASE, CUSTO_SALTO, CUSTO_AR};
 })();

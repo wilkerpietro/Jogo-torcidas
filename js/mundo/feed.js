@@ -29,7 +29,12 @@ TO.feed = (function(){
   const M  = () => TO.mundo;
   const PL = () => TO.planejamento;
 
-  /* as sete categorias do enunciado, na ordem em que ele as escreve */
+  /* AS NOVE CATEGORIAS. Eram sete, e as duas últimas nasceram por falta
+     de espaço, não por gosto: a interna tem cota de uma por semana e a
+     diplomacia de duas a quatro por mês, e enfiar ameaça de delegado e
+     aniversário de torcida lá dentro faria uma sufocar a outra. Cada
+     nova tem cota própria de UMA por semana, e as duas obedecem à regra
+     de nunca repetir categoria em sequência. */
   const CATEGORIAS = [
     {n:1, id:'olheiro',    rot:'Olheiro'},
     {n:2, id:'diajogo',    rot:'Dia de jogo'},
@@ -37,7 +42,9 @@ TO.feed = (function(){
     {n:4, id:'resultado',  rot:'Resultado'},
     {n:5, id:'mundo',      rot:'Mundo e jornal'},
     {n:6, id:'interna',    rot:'Interna'},
-    {n:7, id:'diplomacia', rot:'Diplomacia'}
+    {n:7, id:'diplomacia', rot:'Diplomacia'},
+    {n:8, id:'policia',    rot:'Polícia'},
+    {n:9, id:'efemeride',  rot:'Efeméride'}
   ];
   const catDe = n => CATEGORIAS.find(c=>c.n===n) || CATEGORIAS[4];
 
@@ -47,17 +54,22 @@ TO.feed = (function(){
   /* a única categoria que pode sair duas vezes seguidas */
   const CAT_LIVRE = 5;
   /* quem responde primeiro quando duas decisões caem no mesmo instante */
-  const ORDEM_DECISAO = {3:0, 2:1, 6:2, 7:3};
+  const ORDEM_DECISAO = {3:0, 8:1, 2:2, 6:3, 9:4, 7:5};
   /* quem sai primeiro entre as que não param o tempo: o que acabou de
      acontecer, depois o que o olheiro viu, depois a casa, a diplomacia,
      e o mundo lá fora por último — ele é o pulso, não a manchete */
-  const ORDEM_INFO = {4:0, 3:1, 2:2, 1:3, 6:4, 7:5, 5:6};
+  const ORDEM_INFO = {4:0, 8:1, 3:2, 2:3, 1:4, 6:5, 9:6, 7:7, 5:8};
   /* quanto tempo uma mensagem espera na fila antes de ser descartada,
      e quanto tempo o botão de uma `acao` continua valendo */
   const VALIDADE = {info:2, acao:6, decisao:21};
   /* cotas das duas categorias que precisam de freio (item 7) */
   const COTA_INTERNA_SEMANA = 1;
   const COTA_DIPLOMACIA_MES = 4;
+  /* as duas novas: uma por semana cada. Na prática a 8 sai bem menos —
+     as condições dela são raras —, e a 9 se espalha sozinha porque é
+     calendário. */
+  const COTA_POLICIA_SEMANA   = 1;
+  const COTA_EFEMERIDE_SEMANA = 1;
   /* carência da ameaça: a mesma fala não volta antes disso */
   const CARENCIA_AMEACA = 56;      // dias
 
@@ -74,13 +86,13 @@ TO.feed = (function(){
     const c = E.feedCtl = E.feedCtl || {};
     if(c.prox      === undefined) c.prox = 1;
     if(c.ultimaCat === undefined) c.ultimaCat = 0;
-    c.semana  = c.semana  || {n:0, chave:0, c6:0, c5:0};
+    c.semana  = c.semana  || {n:0, chave:0, c6:0, c5:0, c8:0, c9:0};
     c.mes     = c.mes     || {chave:-1, c7:0};
     c.assunto = c.assunto || {};     // assunto da categoria 6 → semana absoluta
     c.ameacas = c.ameacas || {};     // rival|nº da ameaça → dia absoluto
     c.contas  = c.contas  || {publicadas:0, descartadas:0, porCat:{}};
     if(c.semana.chave !== semanaAbs(E)){
-      c.semana = {n:0, chave:semanaAbs(E), c6:0, c5:0};
+      c.semana = {n:0, chave:semanaAbs(E), c6:0, c5:0, c8:0, c9:0};
     }
     if(c.mes.chave !== mesAbs(E)) c.mes = {chave:mesAbs(E), c7:0};
     return c;
@@ -116,6 +128,8 @@ TO.feed = (function(){
     return h >>> 0;
   }
   const dado = (E, chave) => hash(`${E.semente}|${chave}`) / 4294967296;
+  /* uma casa decimal: é a precisão em que a linha de consequência lê */
+  const r1 = v => Math.round(v*10)/10;
   const pega = (E, chave, lista) =>
     lista.length ? lista[Math.floor(dado(E, chave)*lista.length) % lista.length] : null;
   const inteiro = (E, chave, a, b) => a + Math.floor(dado(E, chave)*(b-a+1));
@@ -154,6 +168,7 @@ TO.feed = (function(){
     satisfacao:{rot:'Satisfação', sobe:'sobe',    desce:'cai',     bomSobe:true},
     dinheiro:  {rot:'Caixa',      sobe:'entra',   desce:'sai',     bomSobe:true},
     membros:   {rot:'Efetivo',    sobe:'cresce',  desce:'encolhe', bomSobe:true},
+    bombas:    {rot:'Bombas',     sobe:'entram',  desce:'somem',   bomSobe:true},
     acao:      {rot:'Ações',      sobe:'sobra',   desce:'gasta',   bomSobe:true}
   };
 
@@ -275,6 +290,16 @@ TO.feed = (function(){
       if(ult != null && semanaAbs(E) - ult < 2) return false;
     }
     if(m.cat === 7 && c.mes.c7 >= COTA_DIPLOMACIA_MES) return false;
+    /* as duas novas usam a mesma máquina: teto semanal e carência de
+       assunto, e `urgente` fura o teto — a proibição de entrar no
+       estádio não pode esperar a semana que vem pra ser contada */
+    if(m.cat === 8 || m.cat === 9){
+      const teto = m.cat === 8 ? COTA_POLICIA_SEMANA : COTA_EFEMERIDE_SEMANA;
+      const usadas = m.cat === 8 ? c.semana.c8 : c.semana.c9;
+      if(!m.urgente && usadas >= teto) return false;
+      const ult = m.assunto ? c.assunto[m.assunto] : null;
+      if(ult != null && semanaAbs(E) - ult < 2) return false;
+    }
     return true;
   }
 
@@ -319,6 +344,8 @@ TO.feed = (function(){
     if(m.cat === 6){ c.semana.c6++; if(m.assunto) c.assunto[m.assunto] = semanaAbs(E); }
     if(m.cat === 7) c.mes.c7++;
     if(m.cat === 5) c.semana.c5++;
+    if(m.cat === 8){ c.semana.c8++; if(m.assunto) c.assunto[m.assunto] = semanaAbs(E); }
+    if(m.cat === 9){ c.semana.c9++; if(m.assunto) c.assunto[m.assunto] = semanaAbs(E); }
     return m;
   }
 
@@ -487,6 +514,179 @@ TO.feed = (function(){
         return {cena: r.cena, aviso: r.msg};
       }
 
+      /* ---- a interna 6.8: a mãe do moleque ---- */
+      case 'ajudar-membro': {
+        const m = E.membros.find(x=>x.id === d.membroId);
+        const custo = 1000;
+        TO.estado.lancar(E, `Ajuda ao ${d.nome || 'pessoal'}`, -custo);
+        const antesM = E.indicadores.moral;
+        if(m) m.moral = U.limitar(m.moral + 10, 0, 20);
+        E.indicadores.moral = U.limitar(E.indicadores.moral + 1, 0, 20);
+        return {efeitos:[
+          {ind:'dinheiro', delta:-custo, dono:'nosso'},
+          {ind:'moral', delta:r1(E.indicadores.moral - antesM), dono:'nossa'}]};
+      }
+      case 'nao-ajudar': {
+        const antesM = E.indicadores.moral;
+        E.indicadores.moral = U.limitar(E.indicadores.moral - 1, 0, 20);
+        return {efeitos:[{ind:'moral',
+          delta:r1(E.indicadores.moral - antesM), dono:'nossa'}]};
+      }
+
+      /* ---- a interna 6.9: o preso esquecido ---- */
+      case 'visitar-preso': {
+        const m = E.membros.find(x=>x.id === d.membroId);
+        const custo = 1000;
+        TO.estado.lancar(E, `Visita ao ${d.nome || 'preso'}`, -custo);
+        const antesM = E.indicadores.moral;
+        if(m){
+          m.moral = U.limitar(m.moral + 8, 0, 20);
+          if(m.preso && typeof m.preso === 'object') m.preso.visitado = true;
+        }
+        E.indicadores.moral = U.limitar(E.indicadores.moral + 1, 0, 20);
+        return {efeitos:[
+          {ind:'dinheiro', delta:-custo, dono:'nosso'},
+          {ind:'moral', delta:r1(E.indicadores.moral - antesM), dono:'nossa'}]};
+      }
+      case 'nao-visitar': {
+        const m = E.membros.find(x=>x.id === d.membroId);
+        const antesM = E.indicadores.moral;
+        if(m){
+          m.moral = U.limitar(m.moral - 10, 0, 20);
+          /* marcado mesmo sem visita: a pergunta foi feita e respondida,
+             e repeti-la toda semana seria o feed cobrando duas vezes */
+          if(m.preso && typeof m.preso === 'object') m.preso.visitado = true;
+        }
+        E.indicadores.moral = U.limitar(E.indicadores.moral - 1, 0, 20);
+        return {efeitos:[{ind:'moral',
+          delta:r1(E.indicadores.moral - antesM), dono:'nossa'}]};
+      }
+
+      /* ---- a polícia 8.1 ---- */
+      case 'segurar': {
+        const antes = E.indicadores.policia;
+        E.indicadores.policia = U.limitar(antes + 2, 0, 20);
+        /* três semanas de ideologia amarrada: quem cobra é o
+           planejamento, que já sabe ler `E.trela` */
+        E.trela = {ate: semanaAbs(E) + 3};
+        PL().definirIntencao(E, 'paz');
+        return {aviso:'Três semanas sem atacar ninguém.', efeitos:[
+          {ind:'policia', delta:r1(E.indicadores.policia - antes), dono:'nossa'}]};
+      }
+      case 'foda-se': {
+        /* nada agora. A conta vem na próxima briga: `E.gatilhoPunicao`
+           é lido pelo fecho de cena, e ali a punição sai direto, sem
+           esperar a polícia chegar a zero. */
+        E.gatilhoPunicao = true;
+        return {aviso:'O delegado que se vire.'};
+      }
+
+      /* ---- a efeméride 9.1 e 9.3 ---- */
+      case 'festa-torcida': {
+        const custo = 30000, antes = {m:E.indicadores.moral,
+                                      s:E.indicadores.satisfacao};
+        if(E.dinheiro < custo) return {aviso:'Não tem caixa pra isso.'};
+        TO.estado.lancar(E, `Festa de ${d.anos} anos`, -custo);
+        /* a festa grande se paga em parte: bar, rifa e camisa */
+        const arrecada = inteiro(E, `festa|${E.data.ano}`, 20000, 35000);
+        TO.estado.lancar(E, 'Arrecadação da festa', arrecada);
+        E.indicadores.moral = U.limitar(antes.m + 5, 0, 20);
+        E.indicadores.satisfacao = U.limitar(antes.s + 2, 0, 20);
+        return {efeitos:[
+          {ind:'dinheiro', delta: arrecada - custo, dono:'da festa'},
+          {ind:'moral', delta:r1(E.indicadores.moral - antes.m), dono:'nossa'},
+          {ind:'satisfacao', delta:r1(E.indicadores.satisfacao - antes.s),
+           dono:'da torcida'}]};
+      }
+      case 'festa-simples': {
+        const custo = 5000, antes = E.indicadores.moral;
+        TO.estado.lancar(E, `Festa de ${d.anos} anos`, -custo);
+        E.indicadores.moral = U.limitar(antes + 2, 0, 20);
+        return {efeitos:[
+          {ind:'dinheiro', delta:-custo, dono:'da festa'},
+          {ind:'moral', delta:r1(E.indicadores.moral - antes), dono:'nossa'}]};
+      }
+      case 'sem-festa': {
+        const antes = E.indicadores.moral;
+        E.indicadores.moral = U.limitar(antes - 2, 0, 20);
+        return {efeitos:[{ind:'moral',
+          delta:r1(E.indicadores.moral - antes), dono:'nossa'}]};
+      }
+      case 'mosaico': {
+        const custo = 12000, antes = E.indicadores.moral;
+        if(E.dinheiro < custo) return {aviso:'Não tem caixa pra isso.'};
+        TO.estado.lancar(E, 'Mosaico da arquibancada', -custo);
+        E.indicadores.moral = U.limitar(antes + 3, 0, 20);
+        return {efeitos:[
+          {ind:'dinheiro', delta:-custo, dono:'do mosaico'},
+          {ind:'moral', delta:r1(E.indicadores.moral - antes), dono:'nossa'}]};
+      }
+
+      /* ---- o jornal 5.9, 5.10 e 5.11 ---- */
+      case 'carreata': {
+        const custo = 8000;
+        const a = {m:E.indicadores.moral, s:E.indicadores.satisfacao,
+                   p:E.indicadores.prestigio};
+        TO.estado.lancar(E, 'Carreata do título', -custo);
+        E.indicadores.moral = U.limitar(a.m + 6, 0, 20);
+        E.indicadores.satisfacao = U.limitar(a.s + 5, 0, 20);
+        E.indicadores.prestigio = U.limitar(a.p + 2, 0, 20);
+        return {efeitos:[
+          {ind:'dinheiro', delta:-custo, dono:'da carreata'},
+          {ind:'moral', delta:r1(E.indicadores.moral - a.m), dono:'nossa'},
+          {ind:'satisfacao', delta:r1(E.indicadores.satisfacao - a.s),
+           dono:'da torcida'},
+          {ind:'prestigio', delta:r1(E.indicadores.prestigio - a.p),
+           dono:'nosso'}]};
+      }
+      case 'comemorar-sede': {
+        const custo = 1500;
+        const a = {m:E.indicadores.moral, s:E.indicadores.satisfacao};
+        TO.estado.lancar(E, 'Comemoração na sede', -custo);
+        E.indicadores.moral = U.limitar(a.m + 3, 0, 20);
+        E.indicadores.satisfacao = U.limitar(a.s + 3, 0, 20);
+        return {efeitos:[
+          {ind:'dinheiro', delta:-custo, dono:'da festa'},
+          {ind:'moral', delta:r1(E.indicadores.moral - a.m), dono:'nossa'},
+          {ind:'satisfacao', delta:r1(E.indicadores.satisfacao - a.s),
+           dono:'da torcida'}]};
+      }
+      case 'faixa-despedida': {
+        const custo = 2000;
+        const a = {m:E.indicadores.moral, s:E.indicadores.satisfacao};
+        TO.estado.lancar(E, `Faixa de despedida do ${d.nome||'ídolo'}`, -custo);
+        E.indicadores.moral = U.limitar(a.m + 3, 0, 20);
+        E.indicadores.satisfacao = U.limitar(a.s + 2, 0, 20);
+        return {efeitos:[
+          {ind:'dinheiro', delta:-custo, dono:'da faixa'},
+          {ind:'moral', delta:r1(E.indicadores.moral - a.m), dono:'nossa'},
+          {ind:'satisfacao', delta:r1(E.indicadores.satisfacao - a.s),
+           dono:'da torcida'}]};
+      }
+      case 'caixao': {
+        /* provocação de rua contra TODAS as organizadas do clube que
+           caiu: é o clube que foi rebaixado, não uma torcida */
+        const ef = [];
+        const aP = E.indicadores.prestigio, aPo = E.indicadores.policia;
+        let alvos = 0;
+        for(const o of M().torcidasDe(d.clubeId || '')){
+          if(!TO.tensao) break;
+          const antes = TO.tensao.nivel(E, o.id);
+          TO.tensao.somar(E, o.id, 12, 'caixão na frente da sede deles');
+          const dt = TO.tensao.nivel(E, o.id) - antes;
+          if(dt) ef.push({ind:'tensao', delta:dt, dono:`com a ${o.nome}`});
+          alvos++;
+        }
+        E.indicadores.prestigio = U.limitar(aP + 3, 0, 20);
+        E.indicadores.policia   = U.limitar(aPo - 1, 0, 20);
+        ef.push({ind:'prestigio', delta:r1(E.indicadores.prestigio - aP),
+                 dono:'nosso'});
+        ef.push({ind:'policia', delta:r1(E.indicadores.policia - aPo),
+                 dono:'nossa'});
+        return {aviso: alvos ? 'O caixão foi.' : 'Ninguém pra provocar lá.',
+                efeitos: ef};
+      }
+
       case 'fianca': {
         const alvo = E.membros.find(x=>x.id === d.membroId);
         if(!alvo) return {aviso:'esse não está mais preso'};
@@ -601,10 +801,44 @@ TO.feed = (function(){
      Só existe quando há jogo nosso ou de rival na praça. Uma
      por semana de jogo, dois dias antes.
      ======================================================= */
+  /* O OLHEIRO ACOMPANHA O INIMIGO, NÃO O CALENDÁRIO DA NOSSA CIDADE.
+     Ele só falava quando havia visitante na praça, e isso deixava mudo
+     justamente o caso que interessa: saber que a Cearamor vai botar 60
+     na rua num jogo em Juazeiro é informação, e a gente não pisa lá.
+     Agora ele fala também quando um MAIOR RIVAL nosso joga em qualquer
+     lugar — em casa ou fora, na praça dele ou na nossa. */
+  function jogosDeMaiorRival(E){
+    if(!E.temporada) return [];
+    const nossa = M().torcida(E.torcida.id) || E.torcida;
+    const clubes = new Set();
+    for(const id of (nossa.maioresRivais||[])){
+      const o = M().torcida(id);
+      if(o && o.clubeId) clubes.add(o.clubeId);
+    }
+    if(!clubes.size) return [];
+    const fora = [];
+    for(const comp of E.temporada.competicoes)
+      for(const etapa of [...comp.rodadas, ...comp.mata]){
+        if(etapa.semana !== E.data.semana) continue;
+        for(const j of etapa.jogos){
+          if(!j.f) continue;
+          if(!clubes.has(j.c) && !clubes.has(j.f)) continue;
+          const casa = M().time(j.c), vis = M().time(j.f);
+          if(!casa || !vis) continue;
+          fora.push({casa, vis, comp:comp.nome, dia: j.d || etapa.dia || 6,
+                     deles: clubes.has(j.c) ? casa : vis,
+                     naNossa: casa.mapa === E.torcida.mapa});
+        }
+      }
+    return fora;
+  }
+
   function cat1(E){
     const jogos = TO.praca.jogosDaPraca(E);
-    if(!jogos.length) return;
-    const primeiro = jogos.reduce((a,b)=>a.dia<=b.dia?a:b);
+    const rivais = jogosDeMaiorRival(E);
+    if(!jogos.length && !rivais.length) return;
+    const todos = jogos.concat(rivais);
+    const primeiro = todos.reduce((a,b)=>a.dia<=b.dia?a:b);
     if(E.data.dia !== Math.max(1, primeiro.dia - 2)) return;
     const ch = `c1|${E.data.ano}|${E.data.semana}`;
     const vis = visitantesDaSemana(E);
@@ -630,6 +864,21 @@ TO.feed = (function(){
         linhas.push({txt:`A ${v.torcida.nome} chega ${diaRot(v.jogo.dia)} de manhã. `+
                          `Vão dormir na sede da ${anf.nome}.`});
     }
+
+    /* c2) O RIVAL QUE JOGA LONGE. É o que o olheiro passou a enxergar:
+       o efetivo que eles vão botar na rua num jogo que não é aqui. */
+    for(const r of rivais.filter(x=>!x.naNossa).slice(0,2))
+      for(const o of M().torcidasDe(r.deles.id)){
+        if(!PL().ehRival(E, o)) continue;
+        const n = (TO.tensao && (TO.tensao.mundo(E)[o.id]||{}).membros)
+                || o.membros || 20;
+        const vao = Math.max(6, Math.round(n*0.25));
+        const cidade = (M().cidade(r.deles.mapa)||{}).nome || 'fora';
+        linhas.push({txt:`Chefe, a ${o.nome} joga ${diaRot(r.dia)} em `+
+          `${cidade}, ${r.casa.nome} × ${r.vis.nome}. Vão botar `+
+          `${faixaDe(E, vao, ch+'r'+o.id)} na rua por lá.`});
+        break;
+      }
 
     /* d) o clima com quem está quase estourando */
     const quentes = (TO.tensao ? TO.tensao.panorama(E) : [])
@@ -1080,12 +1329,53 @@ TO.feed = (function(){
        botoes:[{rot:'Abrir Patrimônio › Elenco', efeito:'painel',
                 pagina:'financeiro'}]})},
 
+    /* 6.8 — A DIFICULDADE DE UM MEMBRO. Quem é o membro sai do hash da
+       semana, e não de sorteio: o mesmo save reaberto traz o mesmo
+       nome. Só entra quem está disponível — quem já está ferido ou
+       preso tem problema maior que a mãe doente. */
+    {id:'ajuda', peso:'decisao',
+     quando: E => E.dinheiro >= 1000 &&
+                  E.membros.filter(TO.membros.disponivel).length >= 3,
+     monta: (E, v) => {
+       const aptos = E.membros.filter(TO.membros.disponivel);
+       const m = aptos[hash(`ajuda|${E.semente}|${semanaAbs(E)}`) % aptos.length];
+       return {texto:`O membro ${TO.membros.nomeDe(m)} tá passando `+
+                     `dificuldade com a mãe. Bora ajudar ele?`,
+         dados:{membroId:m.id, nome:TO.membros.nomeDe(m)},
+         botoes:[{rot:'Ajudar', efeito:'ajudar-membro',
+                  nota:'R$ 1.000 · a moral dele sobe muito'},
+                 {rot:'Não ajudar', efeito:'nao-ajudar',
+                  nota:'a moral coletiva cai'}]};}},
+
+    /* 6.9 — O PRESO ESQUECIDO. Quatorze dias é o prazo em que a fiança
+       deixou de ser a resposta: quem não pagou não vai pagar, e o que
+       resta é aparecer. */
+    {id:'visita-preso', peso:'decisao',
+     quando: E => !!presoEsquecido(E),
+     monta: (E, v) => {
+       const m = presoEsquecido(E);
+       return {texto:`O ${TO.membros.nomeDe(m)} tá no presídio há duas `+
+                     `semanas e ninguém foi visitar.`, tipo:'ruim',
+         dados:{membroId:m.id, nome:TO.membros.nomeDe(m)},
+         botoes:[{rot:'Organizar a visita', efeito:'visitar-preso',
+                  nota:'R$ 1.000 · a moral dele sobe'},
+                 {rot:'Deixar quieto', efeito:'nao-visitar',
+                  nota:'ele não esquece'}]};}},
+
     {id:'moral', peso:'info',
      quando: E => E.indicadores.moral <= 7,
      monta: (E, v) => ({tipo:'ruim',
        texto:`O pessoal tá desanimado. Ninguém quer sair de casa esse fim `+
              `de semana.`})}
   ];
+
+  /* quem está preso há 14 dias ou mais e ninguém pagou fiança */
+  function presoEsquecido(E){
+    const hoje = E.data.absoluto || 0;
+    return (E.membros||[]).find(m=>m.preso && typeof m.preso === 'object' &&
+      (hoje - (m.preso.desde != null ? m.preso.desde : hoje)) >= 14 &&
+      !m.preso.visitado) || null;
+  }
 
   function cat6(E){
     /* um dia fixo da semana por assunto, tirado do hash: a interna não
@@ -1289,12 +1579,504 @@ TO.feed = (function(){
   }
 
   /* =======================================================
+     PRODUTOR 5B — O CLUBE
+
+     Dez linhas de calendário e de campanha. Elas moram na categoria 5
+     porque a 5 já é o jornal e já tem volume: abrir uma categoria pra
+     "o clube contratou fulano" seria dar a ela o mesmo peso de fila que
+     a diplomacia tem.
+
+     A CAMPANHA SAI DA TABELA, NÃO DE UM CONTADOR NOVO. `tabela()` já
+     ordena a competição e as rodadas dizem o que falta jogar; daqui sai
+     tudo — título ao alcance, rebaixamento e acesso confirmados. Um
+     número que o jogo já sabe calcular não vira campo no save.
+     ======================================================= */
+  const CP = () => TO.competicoes;
+  const VIT = 3;                       // pontos por vitória
+
+  /* a competição de pontos corridos em que o nosso clube está, com a
+     posição, o que falta jogar e as duas linhas de corte */
+  function campanha(E){
+    if(!E.temporada) return null;
+    const meu = E.torcida.clubeId;
+    for(const comp of E.temporada.competicoes){
+      if(!comp.pontosCorridos || !(comp.clubes||[]).includes(meu)) continue;
+      const tab = CP().tabela(comp, 0);
+      const pos = tab.findIndex(l=>l.id === meu);
+      if(pos < 0) continue;
+      let restam = 0;
+      for(const r of comp.rodadas)
+        for(const j of r.jogos)
+          if((j.c === meu || j.f === meu) && (j.gc == null)) restam++;
+      return {comp, tab, pos, linha:tab[pos], restam, total:tab.length};
+    }
+    return null;
+  }
+  const maxDe = (l, restam) => l.p + VIT*restam;
+
+  /* quantas rodadas faltam pra CADA clube: o cálculo do "matematicamente
+     confirmado" precisa do máximo do adversário, não do nosso */
+  function restamDe(comp, id){
+    let n = 0;
+    for(const r of comp.rodadas)
+      for(const j of r.jogos)
+        if((j.c === id || j.f === id) && (j.gc == null)) n++;
+    return n;
+  }
+
+  function cat5Clube(E){
+    const c = ctl(E);
+    c.clube = c.clube || {};
+    const meu = E.torcida.clubeId;
+    const clube = M().time(meu);
+    if(!clube) return;
+    const ano = E.data.ano, hoje = E.data.absoluto || 0;
+    const jaFoi = k => c.clube[k+'|'+ano];
+    const marca = k => { c.clube[k+'|'+ano] = hoje; };
+
+    /* ---- 5.9 e 5.11: o que o fim de temporada carimbou ---- */
+    const fim = E.fimDeTemporada;
+    if(fim && !fim.contado){
+      fim.contado = true;
+      if(fim.titulos && fim.titulos.length){
+        propor(E, {cat:5, peso:'decisao', urgente:true, voz:vozJornal(),
+          tipo:'boa', chave:`c5tit|${ano}|${fim.titulos[0]}`,
+          texto:`O ${clube.nome} é campeão.`,
+          botoes:[{rot:'Carreata pela cidade', efeito:'carreata',
+                   nota:'R$ 8.000 · a cidade inteira vê'},
+                  {rot:'Comemorar na sede', efeito:'comemorar-sede',
+                   nota:'R$ 1.500 · churrasco e bateria'}]});
+      }
+      if(fim.rivalCaiu){
+        const rc = M().time(fim.rivalCaiu);
+        if(rc) propor(E, {cat:5, peso:'decisao', voz:vozJornal(), tipo:'boa',
+          chave:`c5rival|${ano}|${fim.rivalCaiu}`,
+          texto:`O ${rc.nome} foi rebaixado.`,
+          dados:{clubeId:fim.rivalCaiu, nome:rc.nome},
+          botoes:[{rot:'Fazer o caixão na frente da sede deles',
+                   efeito:'caixao',
+                   nota:'prestígio sobe, a polícia aperta e eles não esquecem'},
+                  {rot:'Deixar quieto', efeito:'nada'}]});
+      }
+      return;
+    }
+
+    /* ---- 5.1: o sorteio da Copa ---- */
+    const copa = (E.temporada.competicoes||[]).find(x=>x.copa);
+    if(copa && (copa.mata||[]).length){
+      const etapa = copa.mata[copa.mata.length-1];
+      const j = (etapa.jogos||[]).find(x=>x.c === meu || x.f === meu);
+      if(j && !jaFoi('copa|'+etapa.fase)){
+        marca('copa|'+etapa.fase);
+        const advId = j.c === meu ? j.f : j.c;
+        const adv = M().time(advId);
+        if(adv) propor(E, {cat:5, peso:'info', voz:vozJornal(),
+          chave:`c5copa|${ano}|${etapa.fase}`,
+          texto:`Sorteio da ${CP().COPA_NOME}: pegamos o ${adv.nome} `+
+                `${j.c === meu ? 'em casa' : 'fora de casa'}.`,
+          linhaAbaixo:{texto:'Ver Competições', acao:'painel',
+                       pagina:'competicoes'}});
+        return;
+      }
+      /* ---- 5.6: caímos ---- */
+      for(const et of copa.mata){
+        const jj = (et.jogos||[]).find(x=>(x.c === meu || x.f === meu) && x.venceu);
+        if(!jj || jj.venceu === meu) continue;
+        if(jaFoi('copafora')) break;
+        marca('copafora');
+        const advId = jj.c === meu ? jj.f : jj.c;
+        const adv = M().time(advId);
+        const a = E.indicadores.satisfacao;
+        E.indicadores.satisfacao = U.limitar(a - 2, 0, 20);
+        propor(E, {cat:5, peso:'info', voz:vozJornal(), tipo:'ruim',
+          chave:`c5copafora|${ano}`,
+          texto:`Nosso clube caiu na ${CP().COPA_NOME} pro `+
+                `${(adv||{}).nome || 'adversário'}.`,
+          efeitos:[{ind:'satisfacao',
+                    delta:r1(E.indicadores.satisfacao - a), dono:'da torcida'}]});
+        return;
+      }
+    }
+
+    /* ---- 5.3: o clássico daqui a três dias ---- */
+    const jg = E.proximoJogo;
+    if(jg && (jg.dia||6) - 3 === E.data.dia && jg.advId){
+      /* `rivaisDiretos` devolve um Map clube → Set dos rivais dele */
+      const pares = CP().rivaisDiretos();
+      const meus = pares && pares.get ? pares.get(meu) : null;
+      const ehClassico = !!(meus && meus.has && meus.has(jg.advId));
+      if(ehClassico && !jaFoi('classico|'+jg.chave)){
+        marca('classico|'+jg.chave);
+        propor(E, {cat:5, peso:'info', voz:vozJornal(),
+          chave:`c5clas|${jg.chave}`, texto:'Clássico daqui a 3 dias.'});
+        return;
+      }
+    }
+
+    /* ---- 5.2, 5.4 e 5.5: a conta da tabela ---- */
+    const cp = campanha(E);
+    if(cp && cp.restam > 0){
+      const meusMax = maxDe(cp.linha, cp.restam);
+      const outros = cp.tab.filter(l=>l.id !== meu);
+      /* 5.2 — uma vitória e é título: ninguém pode passar do que eu faço
+         ganhando o próximo, e falta um jogo */
+      if(cp.restam === 1 && !jaFoi('titulo')){
+        const seEuGanhar = cp.linha.p + VIT;
+        const teto = Math.max(...outros.map(l=>maxDe(l, restamDe(cp.comp, l.id))));
+        if(seEuGanhar >= teto){
+          marca('titulo');
+          propor(E, {cat:5, peso:'info', voz:vozJornal(), tipo:'boa',
+            chave:`c5campeaoja|${ano}`,
+            texto:`Se ganhar ${diaRot(jg ? (jg.dia||6) : 6)}, o `+
+                  `${clube.nome} é campeão.`});
+          return;
+        }
+      }
+      /* 5.4 — rebaixamento confirmado: nem ganhando tudo eu passo de
+         quem está na última vaga de permanência */
+      const CAI = 4;
+      if(cp.total > CAI && !jaFoi('rebaixado')){
+        const salvo = cp.tab[cp.total - CAI - 1];
+        if(salvo && cp.pos >= cp.total - CAI && meusMax < salvo.p){
+          marca('rebaixado');
+          const a = {s:E.indicadores.satisfacao, m:E.indicadores.moral};
+          E.indicadores.satisfacao = U.limitar(a.s - 3, 0, 20);
+          E.indicadores.moral      = U.limitar(a.m - 2, 0, 20);
+          E.recrutamento = {ate: semanaAbs(E) + 8, fator:0.45,
+                            motivo:'rebaixamento'};
+          propor(E, {cat:5, peso:'info', voz:vozJornal(), tipo:'ruim',
+            chave:`c5cai|${ano}`,
+            texto:'Rebaixamento matematicamente confirmado.',
+            efeitos:[
+              {ind:'satisfacao', delta:r1(E.indicadores.satisfacao - a.s),
+               dono:'da torcida'},
+              {ind:'moral', delta:r1(E.indicadores.moral - a.m), dono:'nossa'}]});
+          return;
+        }
+      }
+      /* 5.5 — acesso garantido: quem está fora da zona não me alcança */
+      const SOBE = 4;
+      if(cp.total > SOBE && !jaFoi('acesso') && cp.pos < SOBE){
+        const primeiroDeFora = cp.tab[SOBE];
+        if(primeiroDeFora &&
+           cp.linha.p > maxDe(primeiroDeFora, restamDe(cp.comp, primeiroDeFora.id))){
+          marca('acesso');
+          const a = {s:E.indicadores.satisfacao, m:E.indicadores.moral};
+          E.indicadores.satisfacao = U.limitar(a.s + 5, 0, 20);
+          E.indicadores.moral      = U.limitar(a.m + 3, 0, 20);
+          E.recrutamento = {ate: semanaAbs(E) + 4, fator:1.6, motivo:'acesso'};
+          propor(E, {cat:5, peso:'info', voz:vozJornal(), tipo:'boa',
+            chave:`c5acesso|${ano}`,
+            texto:`O ${clube.nome} garantiu o acesso.`,
+            efeitos:[
+              {ind:'satisfacao', delta:r1(E.indicadores.satisfacao - a.s),
+               dono:'da torcida'},
+              {ind:'moral', delta:r1(E.indicadores.moral - a.m), dono:'nossa'}]});
+          return;
+        }
+      }
+    }
+
+    /* ---- 5.8: o técnico. Quatro derrotas nos últimos cinco jogos ---- */
+    if(cp && !jaFoi('tecnico')){
+      const jogos = [];
+      for(const r of cp.comp.rodadas)
+        for(const j of r.jogos){
+          if(j.gc == null) continue;
+          if(j.c !== meu && j.f !== meu) continue;
+          const meusGols = j.c === meu ? j.gc : j.gf;
+          const deles    = j.c === meu ? j.gf : j.gc;
+          jogos.push({s:r.semana, perdeu: meusGols < deles});
+        }
+      jogos.sort((a,b)=>a.s-b.s);
+      const ult = jogos.slice(-5);
+      if(ult.length === 5 && ult.filter(x=>x.perdeu).length >= 4){
+        marca('tecnico');
+        const a = E.indicadores.satisfacao;
+        E.indicadores.satisfacao = U.limitar(a - 1, 0, 20);
+        propor(E, {cat:5, peso:'info', voz:vozJornal(), tipo:'ruim',
+          chave:`c5tec|${ano}`, texto:'O técnico foi demitido.',
+          efeitos:[{ind:'satisfacao',
+                    delta:r1(E.indicadores.satisfacao - a), dono:'da torcida'}]});
+        return;
+      }
+    }
+
+    /* ---- 5.7 e 5.10: o elenco. Duas datas por temporada, do hash ----
+       NÃO HÁ MODELO DE ELENCO NESTE JOGO: o clube é um número de força.
+       O reforço e a aposentadoria são, então, calendário — uma de cada
+       por temporada, em semana e dia tirados do hash do clube com o ano,
+       com o nome saindo de `mundo.nomeDeJogador`, que é estável. O que
+       elas movem é real (satisfação), e é por isso que existem. */
+    const diaDe = (tag, de, ate) => {
+      const sem = de + (hash(`${tag}|${meu}|${ano}`) % (ate - de + 1));
+      const dia = 1 + (hash(`${tag}d|${meu}|${ano}`) % 7);
+      return {sem, dia};
+    };
+    const ref = diaDe('reforco', 2, 12);
+    if(E.data.semana === ref.sem && E.data.dia === ref.dia && !jaFoi('reforco')){
+      marca('reforco');
+      const nome = M().nomeDeJogador(meu, ano, 1);
+      const a = E.indicadores.satisfacao;
+      E.indicadores.satisfacao = U.limitar(a + 3, 0, 20);
+      propor(E, {cat:5, peso:'info', voz:vozJornal(), tipo:'boa',
+        chave:`c5ref|${ano}`,
+        texto:`O clube contratou o ${nome}. A torcida tá empolgada.`,
+        efeitos:[{ind:'satisfacao',
+                  delta:r1(E.indicadores.satisfacao - a), dono:'da torcida'}]});
+      return;
+    }
+    const ido = diaDe('idolo', 30, 50);
+    if(E.data.semana === ido.sem && E.data.dia === ido.dia && !jaFoi('idolo')){
+      marca('idolo');
+      /* o índice 0 é o ídolo da casa: o mesmo nome ano após ano até ele
+         pendurar as chuteiras */
+      const nome = M().nomeDeJogador(meu, Math.floor(ano/4)*4, 0);
+      propor(E, {cat:5, peso:'decisao', voz:vozJornal(),
+        chave:`c5idolo|${ano}`, dados:{nome},
+        texto:`O ${nome} pendurou as chuteiras hoje.`,
+        botoes:[{rot:'Faixa de despedida', efeito:'faixa-despedida',
+                 nota:'R$ 2.000 · o nome dele no pano'},
+                {rot:'Deixar quieto', efeito:'nada'}]});
+    }
+  }
+
+  /* =======================================================
+     PRODUTOR 8 — A POLÍCIA
+
+     Tudo que vem de fora da lei: a ameaça, a revista, a punição e o fim
+     dela. Condição dura e cota baixa — uma por semana no teto, e na
+     prática bem menos, porque `policia ≤ 5` não é o estado normal de
+     ninguém que não esteja aprontando.
+     ======================================================= */
+  const TC = () => TO.torcedores;
+
+  function cat8(E){
+    const c = ctl(E);
+    const ch = `c8|${E.data.ano}|${E.data.semana}`;
+    const I = E.indicadores;
+
+    /* 8.4 — O FIM DA PUNIÇÃO vem primeiro: é o único que não pode
+       esperar a semana seguinte, porque ele encerra um estado. */
+    if(TC().punicaoAcabou(E)){
+      E.punicao.fechado = true;
+      const a = {m:I.moral, s:I.satisfacao, p:I.policia};
+      I.moral      = U.limitar(a.m + 5, 0, 20);
+      I.satisfacao = U.limitar(a.s + 2, 0, 20);
+      /* CUMPRIU A PENA, LIMPOU A FICHA. Sem isto a punição vira laço:
+         ela acaba, a polícia continua no chão, e a semana seguinte
+         proíbe de novo pra sempre — medido, e o feed repetiu "proibida
+         por 4 semanas" dois dias depois de "acabou a proibição". Quatro
+         semanas fora do estádio é o preço; pago o preço, o delegado
+         devolve a torcida ao piso de quem não deve nada. */
+      const PISO = 6;
+      if(I.policia < PISO) I.policia = PISO;
+      propor(E, {cat:8, peso:'info', urgente:true, voz:vozRua(), tipo:'boa',
+        chave:ch+'|volta',
+        texto:'Acabou a proibição. Domingo a gente volta pro estádio.',
+        efeitos:[
+          {ind:'moral', delta:r1(I.moral - a.m), dono:'nossa'},
+          {ind:'satisfacao', delta:r1(I.satisfacao - a.s), dono:'da torcida'},
+          {ind:'policia', delta:r1(I.policia - a.p), dono:'nossa'}]});
+      return;
+    }
+    /* enquanto a punição corre, a polícia não tem mais nada a dizer */
+    if(TC().punida(E)) return;
+
+    /* 8.2 — A PUNIÇÃO. Dois caminhos chegam aqui: a polícia zerada, e o
+       gatilho que o "Foda-se" armou e a briga seguinte disparou. */
+    if(E.punicaoPendente){
+      E.punicaoPendente = false;
+      TC().punir(E, 'estádio');
+      propor(E, {cat:8, peso:'info', urgente:true, voz:vozRua(), tipo:'ruim',
+        chave:ch+'|proibida',
+        texto:`Torcida proibida de entrar no estádio por `+
+              `${TC().PUNICAO_SEMANAS} semanas.`,
+        linhaAbaixo:{texto:'Ver Torcida', acao:'painel', pagina:'torcida'}});
+      return;
+    }
+    if(I.policia <= 0){
+      E.punicaoPendente = true;
+      return;                       // sai na próxima passada, já punida
+    }
+
+    /* 8.3 — A REVISTA. Só com bomba na sede pra levar, e com uma
+       carência de seis semanas por cima da cota: a PM não bate na
+       porta todo mês. A chance é do hash da semana, não de `U.rng()`. */
+    const ultRevista = c.assunto['revista'];
+    const podeRevista = I.policia < 8 && ((E.estoque||{}).bombas > 0) &&
+      (ultRevista == null || semanaAbs(E) - ultRevista >= 6);
+    if(podeRevista && dado(E, ch+'|revista') < 0.22){
+      const tinha = E.estoque.bombas;
+      E.estoque.bombas = 0;
+      propor(E, {cat:8, peso:'info', voz:vozRua(), tipo:'ruim',
+        assunto:'revista', chave:ch+'|revista',
+        texto:'A PM revistou a sede ontem. Levaram todas as bombas.',
+        efeitos:[{ind:'bombas', delta:-tinha, dono:'do estoque'}]});
+      return;
+    }
+
+    /* 8.1 — O RECADO DO DELEGADO. Decisão, e a mais séria da categoria:
+       uma saída amarra a ideologia por três semanas, a outra troca o
+       aviso por uma punição imediata na próxima briga. */
+    if(I.policia <= 5 && !E.gatilhoPunicao){
+      propor(E, {cat:8, peso:'decisao', voz:vozRua(), tipo:'ruim',
+        assunto:'delegado', chave:ch+'|delegado',
+        texto:'Delegado mandou recado: mais uma dessas e a torcida tá '+
+              'proibida de entrar no estádio.',
+        botoes:[{rot:'Segurar a rapaziada', efeito:'segurar',
+                 nota:'três semanas sem atacar · a polícia afrouxa'},
+                {rot:'Foda-se', efeito:'foda-se',
+                 nota:'a próxima briga já vale a punição'}]});
+    }
+  }
+
+  /* =======================================================
+     PRODUTOR 9 — EFEMÉRIDE
+
+     Data marcada e memória. Uma por semana no teto, e elas se espalham
+     sozinhas porque são calendário: duas por ano têm data fixa, três
+     dependem de o jogador ter feito alguma coisa.
+     ======================================================= */
+  /* o dia absoluto de uma data deste ano do jogo */
+  function absDoAno(E, semana, dia){
+    const hojeNoAno = (E.data.semana - 1)*7 + (E.data.dia - 1);
+    return (E.data.absoluto || 0) - hojeNoAno + (semana - 1)*7 + (dia - 1);
+  }
+  /* a semana e o dia do aniversário de uma torcida neste ano */
+  function diaDaFundacao(E, o){
+    if(o && o.fundacaoDia && o.fundacaoMes){
+      const d = TO.estado.semanaDiaDe(
+        new Date(E.data.ano, o.fundacaoMes - 1, o.fundacaoDia));
+      if(d) return {semana:d.semana, dia:d.dia};
+      return {semana:1, dia:1};
+    }
+    const h = hash('fest|' + ((o&&o.id) || 'x')) % 364;
+    return {semana: Math.floor(h/7) + 1, dia: (h%7) + 1};
+  }
+
+  const AVISO_FESTA = 10;     // dias de antecedência da 9.1
+
+  function cat9(E){
+    const c = ctl(E);
+    const ch = `c9|${E.data.ano}|${E.data.semana}`;
+    const hoje = E.data.absoluto || 0;
+    const nossa = M().torcida(E.torcida.id) || E.torcida;
+
+    /* 9.1 — O ANIVERSÁRIO DA TORCIDA, dez dias antes */
+    if(nossa && nossa.fundacao){
+      const f = diaDaFundacao(E, nossa);
+      const quando = absDoAno(E, f.semana, f.dia);
+      if(hoje === quando - AVISO_FESTA){
+        const anos = E.data.ano - nossa.fundacao;
+        const dt = TO.estado.dataDaSemana
+          ? TO.estado.dataDaSemana(E.data.ano, f.semana, f.dia) : null;
+        const rot = dt ? `${String(dt.getDate()).padStart(2,'0')}/`+
+                         `${String(dt.getMonth()+1).padStart(2,'0')}` : 'logo';
+        propor(E, {cat:9, peso:'decisao', voz:diretor(E, ch+'|aniv'),
+          assunto:'aniversario', chave:`c9aniv|${E.data.ano}`,
+          texto:`Dia ${rot} a ${E.torcida.sigla} faz ${anos} anos.`,
+          dados:{anos},
+          botoes:[{rot:'Festa grande', efeito:'festa-torcida',
+                   nota:'R$ 30.000 · a rifa e o bar devolvem parte'},
+                  {rot:'Festa simples', efeito:'festa-simples',
+                   nota:'R$ 5.000 · churrasco na sede'},
+                  {rot:'Passar batido', efeito:'sem-festa',
+                   nota:'a moral cobra'}]});
+        return;
+      }
+    }
+
+    /* 9.3 — O ANIVERSÁRIO DO CLUBE. `dados/times.js` traz só o ANO de
+       fundação; o dia sai do hash do id, fixo pro clube e igual em toda
+       partida. Dia e mês de verdade dos 108 clubes é trabalho de
+       importador, não de código — fica anotado. */
+    const clube = M().time(E.torcida.clubeId);
+    if(clube && clube.fundacao){
+      const f = diaDaFundacao(E, {id:'clube|'+clube.id,
+        fundacaoDia:clube.fundacaoDia, fundacaoMes:clube.fundacaoMes});
+      if(f.semana === E.data.semana && E.data.dia === Math.max(1, f.dia - 1) &&
+         c.assunto['aniv-clube'] !== semanaAbs(E)){
+        const anos = E.data.ano - clube.fundacao;
+        propor(E, {cat:9, peso:'decisao', voz:diretor(E, ch+'|clube'),
+          assunto:'aniv-clube', chave:`c9clube|${E.data.ano}`,
+          texto:`O ${clube.nome} faz ${anos} anos essa semana.`,
+          botoes:[{rot:'Fazer mosaico', efeito:'mosaico',
+                   nota:'R$ 12.000 · a arquibancada inteira'},
+                  {rot:'Só a faixa de sempre', efeito:'nada'}]});
+        return;
+      }
+    }
+
+    /* 9.4 e 9.5 — A CASA NOVA. Quem avisa é o patrimônio, que carimba
+       `E.inauguracao` quando a compra acontece; aqui só se conta. */
+    const inau = E.inauguracao;
+    if(inau && !inau.contada){
+      inau.contada = true;
+      const a = {m:E.indicadores.moral, p:E.indicadores.prestigio};
+      if(inau.tipo === 'sede'){
+        E.indicadores.moral     = U.limitar(a.m + 4, 0, 20);
+        E.indicadores.prestigio = U.limitar(a.p + 1, 0, 20);
+        propor(E, {cat:9, peso:'info', urgente:true, voz:vozRua(), tipo:'boa',
+          chave:`c9sede|${hoje}`, texto:'Inauguração da sede nova.',
+          efeitos:[
+            {ind:'moral', delta:r1(E.indicadores.moral - a.m), dono:'nossa'},
+            {ind:'prestigio', delta:r1(E.indicadores.prestigio - a.p),
+             dono:'nosso'}]});
+      }else{
+        E.indicadores.moral = U.limitar(a.m + 3, 0, 20);
+        propor(E, {cat:9, peso:'info', urgente:true, voz:vozRua(), tipo:'boa',
+          chave:`c9sub|${hoje}`,
+          texto:`Batismo da subsede nova no ${inau.bairro || 'bairro'}.`,
+          efeitos:[{ind:'moral', delta:r1(E.indicadores.moral - a.m),
+                    dono:'nossa'}]});
+      }
+      return;
+    }
+
+    /* 9.2 — O ANIVERSÁRIO DE UMA TRETA. Só as que valeram muito
+       prestígio entram: o log guarda tudo, a memória é seletiva. */
+    const marco = confrontoDeAnos(E);
+    if(marco){
+      const a = E.indicadores.moral;
+      E.indicadores.moral = U.limitar(a + (marco.ganhamos ? 1 : -1), 0, 20);
+      propor(E, {cat:9, peso:'info', voz:vozRua(),
+        assunto:'memoria', chave:`c9mem|${marco.id}|${E.data.ano}`,
+        tipo: marco.ganhamos ? 'boa' : 'ruim',
+        /* "no bairro X" e não "no X": o gênero do nome do bairro não
+           está nos dados, e adivinhar dá "no Aldeota" (§8.22) */
+        texto:`Faz ${marco.anos} ${marco.anos===1?'ano':'anos'} daquela `+
+              `treta no bairro ${marco.bairro} contra a ${marco.rival}.`,
+        efeitos:[{ind:'moral', delta:r1(E.indicadores.moral - a), dono:'nossa'}]});
+    }
+  }
+
+  /* PESO DE MEMÓRIA: o confronto que rendeu ou custou muito prestígio.
+     Dois pontos de prestígio é a metade de uma investida bem-sucedida —
+     abaixo disso a briga não vira história. */
+  const PRESTIGIO_DE_MEMORIA = 2;
+  function confrontoDeAnos(E){
+    const hoje = E.data.absoluto || 0;
+    for(const r of (E.confrontos||[])){
+      if(!r.data || !r.nossos) continue;
+      const anos = E.data.ano - r.data.ano;
+      if(anos < 1) continue;
+      if(Math.abs(r.prestigioNosso || 0) < PRESTIGIO_DE_MEMORIA) continue;
+      if(absDoAno(E, r.data.semana, r.data.dia) !== hoje) continue;
+      return {id:r.id, anos, bairro:r.local && r.local.bairro || 'bairro',
+              rival:r.rival, ganhamos:!!r.ganhamos};
+    }
+    return null;
+  }
+
+  /* =======================================================
      O DIA E A SEMANA
      ======================================================= */
   function passarDia(E){
     if(!E) return [];
     ctl(E);
-    cat3(E); cat2(E); cat1(E); cat6(E); cat7(E); cat4(E);
+    cat3(E); cat8(E); cat2(E); cat1(E); cat6(E); cat9(E); cat7(E);
+    cat5Clube(E); cat4(E);
     return publicar(E);
   }
   function fecharSemana(E, rel){
@@ -1366,11 +2148,118 @@ TO.feed = (function(){
 
   /* quem ganhou o último confronto com cada rival — é o que faz as
      ameaças 4 e 5 saberem do que estão falando */
-  function registrarConfronto(E, torcidaId, ganhamos, bairro){
-    if(!E || !torcidaId) return;
+  /* =======================================================
+     O HISTÓRICO DE CONFRONTOS
+
+     `registrarConfronto` guardava três coisas — quem, se ganhamos e
+     onde — e servia a uma coisa só: as ameaças 4 e 5 saberem do que
+     estavam falando. Agora ele é o LOG, e serve a três clientes: as
+     ameaças, as duas abas de Notícias e a efeméride 9.2, que precisava
+     de duas coisas que não existiam — a DATA e quanto prestígio aquilo
+     valeu.
+
+     ELE NÃO RECALCULA NADA. Guarda o que foi APLICADO, que é a mesma
+     regra da linha de consequência do feed: os números vêm do fecho da
+     cena (os nossos) e de `tensao.hostil` (os do mundo).
+
+     AS BAIXAS NÃO SÃO A MESMA COISA DOS DOIS LADOS, e isso é dito e não
+     escondido. Na nossa briga há cena, e a cena sabe quem caiu e quem
+     foi preso, ficha por ficha. A briga entre duas torcidas da IA é
+     abstrata: o que ela produz de baixa é gente que saiu da torcida.
+     Inventar "feridos" pra ela seria número que não move nada, que é
+     justamente o que §8.20 proibiu.
+
+     O TETO. São seis episódios por semana no mundo — umas 300 brigas por
+     temporada —, e num save de dez temporadas isso passa de três mil
+     registros dentro do `localStorage`. Então o log do MUNDO tem teto e
+     descarta o mais antigo. O NOSSO não: são poucos por temporada e são
+     a memória da partida.
+     ======================================================= */
+  const TETO_CONFRONTOS_DELAS = 400;     // ~15 meses de mundo
+
+  /* O DIA 8 NÃO EXISTE, e o log guardava. A briga entre duas torcidas
+     da IA acontece no FECHO da semana, e o fecho roda com `data.dia`
+     momentaneamente em 8 — é o contador que ainda não virou. Sem este
+     `min`, um em cada seis registros do mundo nascia com uma data que o
+     calendário não sabe converter. */
+  const dataDeAgora = E => ({ano:E.data.ano, semana:E.data.semana,
+                             dia:Math.min(7, E.data.dia),
+                             absoluto:E.data.absoluto||0});
+
+  /* devolve o delta de um indicador dentro da lista de efeitos aplicados */
+  const deEfeito = (efeitos, ind, casa) => {
+    const e = (efeitos||[]).find(x=>x.ind === ind &&
+      (casa === undefined || (x.dono||'').includes(casa)));
+    return e ? e.delta : 0;
+  };
+
+  function registrarConfronto(E, a, b, c){
+    if(!E) return null;
+    /* forma antiga — `(E, torcidaId, ganhamos, bairro)` — continua
+       valendo: ela é o que as ameaças precisam, e três chamadores ainda
+       usam. A forma nova passa um objeto. */
+    const r = (a && typeof a === 'object') ? a
+            : {torcidaId:a, ganhamos:b, local:{bairro:c||''}};
+    if(!r.torcidaId) return null;
+
     E.ultimoConfronto = E.ultimoConfronto || {};
-    E.ultimoConfronto[torcidaId] = {ganhamos:!!ganhamos, bairro:bairro||'',
-                                    quando:E.data.absoluto||0};
+    E.ultimoConfronto[r.torcidaId] = {ganhamos:!!r.ganhamos,
+      bairro:(r.local && r.local.bairro) || '', quando:E.data.absoluto||0};
+
+    const nome = id => (M().torcida(id)||{}).nome || id;
+    const reg = {
+      id: (E.proxConfronto = (E.proxConfronto||0) + 1),
+      nossos: true,
+      data: dataDeAgora(E),
+      ganhamos: !!r.ganhamos,
+      rival: nome(r.torcidaId), rivalId: r.torcidaId,
+      local: {cena:(r.local&&r.local.cena)||'', bairro:(r.local&&r.local.bairro)||''},
+      a: r.a || null, b: r.b || null,
+      efeitos: (r.efeitos||[]).filter(x=>x && x.delta),
+      prestigioNosso: r.prestigioNosso != null ? r.prestigioNosso
+                    : deEfeito(r.efeitos, 'prestigio', 'nosso')
+    };
+    (E.confrontos = E.confrontos || []).push(reg);
+    return reg;
+  }
+
+  /* o mesmo log, do lado do mundo: quem brigou com quem, longe da gente */
+  /* O REGISTRO DO MUNDO É ENXUTO, e o motivo é aritmética: são umas
+     cem brigas por temporada, e cada byte a mais vira dez mil no save de
+     dez anos. Então nada de nome repetido (o id resolve na hora de
+     desenhar), nada de campo que se deduz da lista em que o registro
+     está, e o `dono` de cada efeito é `a` ou `b` em vez do nome inteiro
+     escrito duas vezes. */
+  const efeitoEnxuto = (efeitos, venc, perd) => (efeitos||[])
+    .filter(x=>x && x.delta)
+    .map(x=>({ind:x.ind, delta:Math.round(x.delta*10)/10,
+              dono: /entre ambos/.test(x.dono||'') ? '' :
+                    (x.dono||'').includes(venc) ? 'a' :
+                    (x.dono||'').includes(perd) ? 'b' : ''}))
+    .filter(x=>x.delta);
+
+  function registrarConfrontoDelas(E, r){
+    if(!E || !r) return null;
+    const nome = id => (M().torcida(id)||{}).nome || id;
+    const nv = nome(r.vencedor), np = nome(r.perdedor);
+    const reg = {
+      id: (E.proxConfronto = (E.proxConfronto||0) + 1),
+      data: dataDeAgora(E),
+      a: {torcidaId:r.vencedor, baixas:0},
+      b: {torcidaId:r.perdedor, baixas:r.foram||0},
+      bairro: r.bairro || '',
+      efeitos: efeitoEnxuto(r.efeitos, nv, np)
+    };
+    const l = (E.confrontosDelas = E.confrontosDelas || []);
+    l.push(reg);
+    /* o teto: o mais antigo sai, e o corte é anotado pra a tela poder
+       dizer quantos já não estão lá */
+    if(l.length > TETO_CONFRONTOS_DELAS){
+      E.confrontosCortados = (E.confrontosCortados||0) +
+                             (l.length - TETO_CONFRONTOS_DELAS);
+      l.splice(0, l.length - TETO_CONFRONTOS_DELAS);
+    }
+    return reg;
   }
 
   /* =======================================================
@@ -1431,7 +2320,8 @@ TO.feed = (function(){
           lerEfeito, lerEfeitos,
           COTA_DIPLOMACIA_MES, CARENCIA_AMEACA, AMEACAS, ASSUNTOS,
           propor, publicar, responder, travado, decisaoAberta, semanaDaFundacao,
-          passarDia, fecharSemana, fechoDaSemana, irProEstadio, registrarConfronto,
+          passarDia, fecharSemana, fechoDaSemana, irProEstadio,
+          registrarConfronto, registrarConfrontoDelas, TETO_CONFRONTOS_DELAS,
           abrir, historico, resumo, expirada, contexto, perguntaAntes,
           feed, fila, ctl};
 })();

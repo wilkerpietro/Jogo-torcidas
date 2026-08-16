@@ -3128,6 +3128,298 @@ A bateria das oito cenas continua limpa, com 0 erros de página, e o determinism
 intacto: o mesmo save carregado em duas páginas limpas dá **137 mensagens e 0
 diferenças**.
 
+## 8.24 As 21 aprovadas, duas categorias novas e o histórico de confrontos
+
+### 1. Duas categorias novas
+
+As sete tinham cota fechada — a interna é uma por semana, a diplomacia duas a quatro por
+mês —, e enfiar ameaça de delegado e aniversário de torcida lá dentro faria uma sufocar a
+outra. Entram a **8 · POLÍCIA** e a **9 · EFEMÉRIDE**, cada uma com teto de **uma por
+semana**, carência de duas semanas por assunto e a regra 1 (nunca duas da mesma categoria
+em sequência) valendo igual. As de competição vão para a **5**, que já é o jornal e já
+tem volume.
+
+`urgente` continua sendo a única saída do teto semanal, e agora ele carrega três coisas:
+o alarme do caixa, a segunda decisão da abertura e o que **encerra um estado** — a
+proibição de entrar no estádio e o fim dela não podem esperar a semana virar.
+
+### 2. A condição do olheiro
+
+Ele só falava com visitante na praça, e ficava mudo justamente no caso que interessa.
+Agora fala também quando um **maior rival joga em qualquer lugar** — `jogosDeMaiorRival`
+varre a semana inteira do calendário, não só os jogos com mando aqui:
+
+> *"Chefe, a Força Jovem Guarany joga domingo em Interior do CE, Imperatriz × Guarany de
+> Sobral. Vão botar 5 a 15 na rua por lá."*
+
+### 3. As pacíficas
+
+Entra o `baile` e sai o fecho fixo. Cada evento fecha por si, porque "as duas saíram
+ganhando" é conclusão de relatório e não de notícia:
+
+| id | texto |
+|---|---|
+| `tregua` | "{A} reforçou o laço de amizade com a {B}." |
+| `baile` | "{A} fez baile em conjunto com a {B}. Relações saíram fortalecidas." |
+| `visita` | "{A} foi recebida na sede da {B}." |
+| `apoio` | "{A} apoiou a {B} no estádio." |
+
+### 4. A polícia
+
+A punição **não mora no feed**: ela mora em `torcedores.js`, que é dono das três coisas
+que ela corta — o público do Fator Torcida, a caravana (que `financeiro` consulta) e a
+satisfação. O feed só conta que aconteceu.
+
+- **8.1** (`decisao`, `policia ≤ 5`): *"Segurar a rapaziada"* amarra a ideologia por três
+  semanas (`E.trela`, lida em `definirIntencao` e em `aplicarPolitica` — sem isso a
+  promessa valeria zero) e devolve +2 de polícia; *"Foda-se"* arma `E.gatilhoPunicao`, e
+  a **próxima briga** dispara a punição direto.
+- **8.2** (`info`): quatro semanas sem público nosso, sem caravana e com a satisfação
+  caindo −0,8 por semana.
+- **8.3** (`info`, `policia < 8`): a PM leva as bombas. Carência de seis semanas por cima
+  da cota, e a chance sai do hash da semana.
+- **8.4** (`info`): o fim, com moral +5, satisfação +2 — **e a polícia de volta ao piso
+  6**. Isto não estava no enunciado e é conserto medido: sem ele a punição vira laço, e o
+  feed publicou *"proibida por 4 semanas"* dois dias depois de *"acabou a proibição"*,
+  para sempre. Cumpriu a pena, limpou a ficha.
+
+### 5. As efemérides
+
+**9.1** dez dias antes do aniversário da torcida, com a data real da planilha (§8.21);
+**9.2** o aniversário de uma treta de peso, que o log novo destravou; **9.3** o
+aniversário do clube — `dados/times.js` traz só o ANO, então o dia sai do hash do id,
+fixo por clube; **9.4** e **9.5** a sede e a subsede novas, carimbadas por
+`patrimonio.comprar` em `E.inauguracao` e contadas pelo feed.
+
+*A mensagem de morte de fundador foi descartada, e com ela a necessidade de um estado de
+morte do membro: ele continua sendo `ferido` ou `preso`, e nada mais.*
+
+### 6. As duas internas
+
+**6.8** a dificuldade da mãe de um membro — o membro sai do hash da semana, entre os
+disponíveis; **6.9** o preso esquecido, que precisou de um campo novo: `m.preso.desde`,
+o dia absoluto da prisão. Nada perguntava *há quanto tempo* alguém estava preso, só *se*
+estava.
+
+### 7. O jornal
+
+Onze linhas (o enunciado diz dez e lista onze; entraram as onze). Quatro saem da
+**tabela**, não de um contador novo — `tabela()` já ordena a competição e as rodadas
+dizem o que falta jogar:
+
+| # | de onde vem a condição |
+|---|---|
+| 5.1 sorteio da Copa | a última etapa de `mata` com o nosso clube |
+| 5.2 título ao alcance | falta uma rodada e vencer basta contra o teto de todos |
+| 5.3 clássico em 3 dias | `rivaisDiretos()`, que é um Map clube → rivais |
+| 5.4 rebaixamento | nem ganhando tudo passo de quem está na última vaga |
+| 5.5 acesso | quem está fora da zona não me alcança mais |
+| 5.6 caiu na Copa | o `venceu` do mata-mata não é nosso |
+| 5.7 reforço · 5.10 ídolo | calendário: uma de cada por temporada, do hash |
+| 5.8 técnico | quatro derrotas nos últimos cinco jogos |
+| 5.9 campeão · 5.11 rival caiu | `E.fimDeTemporada`, carimbado no virar do ano |
+
+**5.4 e 5.5 mexem no recrutamento**, e mexem de verdade: `E.recrutamento` é uma janela
+com prazo em semana absoluta que multiplica `previsaoRecrutamento` — 0,45 por oito
+semanas no rebaixamento, 1,6 por quatro no acesso. Fora da janela o fator é 1.
+
+### 8. O nome do jogador
+
+O jogo não tem elenco: o clube é um número de força. Mas *"o clube contratou um jogador"*
+é a mensagem confessando que não sabe do que fala. `mundo.nomeDeJogador(clube, ano, i)`
+monta em quatro formas com peso — nome só (34), diminutivo ou aumentativo (34), composto
+(22), sobrenome só (10) —, tudo do hash, então **o mesmo jogador tem o mesmo nome três
+temporadas depois**.
+
+Três cuidados que o enunciado pediu ou que a medição cobrou:
+
+- **`apelidos` não entra.** Aquela lista é de apelido de rua e é dos membros; um atacante
+  chamado Pitbull denuncia que os dois saíram do mesmo saco.
+- **A grafia acompanha o som.** Diego → Dieg**u**inho, Marco → Mar**qu**inho, Wallace →
+  Walla**ç**ão. Nome terminado em consoante não vira diminutivo — "Lucasinho" não existe,
+  e o certo ("Luquinhas") é irregular demais pra regra; ele cai na forma anterior, como o
+  enunciado autoriza.
+- **"Ana Paula" saiu da lista de jogador.** Ela está em `compostos` porque a lista serve
+  os membros da torcida; time masculino não a contrata.
+
+### 9. O histórico de confrontos
+
+`registrarConfronto` guardava três coisas e servia a um cliente. Agora é o **log**, e
+serve três: as ameaças, as duas abas de Notícias e a efeméride 9.2 — que precisava
+exatamente do que não existia, a **data** e o **prestígio**. A forma antiga da chamada
+continua valendo; a nova passa um objeto.
+
+**Ele não recalcula nada.** Guarda o que foi aplicado — os números do fecho da cena (os
+nossos) e de `tensao.hostil` (os do mundo).
+
+**As baixas não são a mesma coisa dos dois lados, e isso é dito.** Na nossa briga há
+cena, e a cena sabe quem caiu e quem foi preso, ficha por ficha. A briga entre duas
+torcidas da IA é abstrata: o que ela produz de baixa é gente que saiu da torcida.
+Inventar "feridos" pra ela seria número que não move nada, que é o que §8.20 proibiu.
+
+A tela de Notícias ganha três abas de primeiro nível — **Mensagens** (o arquivo, com o
+filtro por categoria dentro), **Nossos confrontos** e **Todos os confrontos**.
+
+**Dois consertos que a medição achou:** o registro do mundo nascia com `dia: 8`, porque a
+briga da IA acontece no fecho da semana, quando o contador ainda não virou; e a classe
+`.confronto` já existia no CSS do painel de pré-jogo, com `display:flex`, o que deitava o
+cartão em três colunas.
+
+---
+
+### Os critérios, medidos
+
+**Uma temporada em cada medição.** Cearamor, Fortaleza. A semente da partida nova é
+sorteada, então cada temporada é uma temporada diferente; os números abaixo são de uma.
+
+**1 · A 1a sai com rival jogando fora.** 14 falas numa temporada, todas de jogo que não
+acontece na nossa praça — a de cima é a Força Jovem Guarany em Sobral.
+
+**2 · As pacíficas.** 14 notícias distintas, **0** terminando em "as duas saíram
+ganhando", e as quatro variantes presentes: trégua 5, baile 4, visita 4, apoio 1.
+
+**3 · As cotas das duas novas.** Em 475 mensagens: **0 semanas com mais de uma cat 8** e
+**0 com mais de uma cat 9**; **0 repetições de categoria em sequência** fora da 5.
+
+**4 · A distribuição, com as nove categorias:**
+
+| cat | | n | % |
+|---|---|---:|---:|
+| 5 | Mundo e jornal | 177 | 37,3 |
+| 6 | Interna | 65 | 13,7 |
+| 4 | Resultado | 62 | 13,1 |
+| 1 | Olheiro | 45 | 9,5 |
+| 3 | Convocação | 43 | 9,1 |
+| 2 | Dia de jogo | 43 | 9,1 |
+| 7 | Diplomacia | 38 | 8,0 |
+| 9 | Efeméride | 2 | 0,4 |
+| 8 | Polícia | **0** | **0** |
+
+**A cat 8 ficou muda a temporada inteira nesta corrida**, e isso é o desenho: `policia ≤
+5` não é o estado de quem não está aprontando, e o jogador de teste não apronta. Numa
+corrida anterior, de mesmo tamanho e outra semente, ela produziu duas (delegado e
+revista). O critério 6 força as duas pontas e mostra a categoria funcionando.
+
+**5 · Quantas de cada uma das 21 (22) apareceram:**
+
+| | n | | n | | n |
+|---|---:|---|---:|---|---:|
+| 8.1 delegado | 0 | 9.1 aniversário da torcida | **1** | 5.4 rebaixamento | 0 |
+| 8.2 proibida | 0 | 9.2 memória de treta | 0 | 5.5 acesso | 1 |
+| 8.3 revista | 0 | 9.3 aniversário do clube | **1** | 5.6 caiu na Copa | 1 |
+| 8.4 fim da punição | 0 | 9.4 sede nova | 0 | 5.7 reforço | 1 |
+| 6.8 ajuda ao membro | 1 | 9.5 subsede | 0 | 5.8 técnico | 0 |
+| 6.9 visita ao preso | 0 | 5.1 sorteio da Copa | 3 | 5.9 campeão | 0 |
+| | | 5.2 título ao alcance | 0 | 5.10 ídolo | 1 |
+| | | 5.3 clássico | 3 | 5.11 rival caiu | 0 |
+
+**As duas de data marcada saíram exatamente uma vez cada**, que é o que o critério pede.
+As zeradas têm motivo e prova: 8.1–8.4 no critério 6 e 7; 9.2 no critério 12; 9.4 e 9.5
+provadas comprando sede e subsede (*"Inauguração da sede nova"* com moral +4 e prestígio
++1; *"Batismo da subsede nova no Antônio Bezerra"* com moral +3); 6.9 saiu 2 vezes na
+outra corrida; 5.2/5.4/5.8/5.9/5.11 dependem da campanha do Ceará, que fechou no
+meio da tabela sem título nem queda.
+
+**6 · A punição, forçada.** Polícia a 0 no dia 19:
+
+| | antes | durante | depois |
+|---|---:|---:|---:|
+| punida | não | **sim** (semanas 4→8) | não |
+| público no Fator Torcida | 1,0 | **0** | 1,0 |
+| tem caravana | sim | **não** | sim |
+| polícia | 0 | 0 | **6** |
+
+*"Torcida proibida de entrar no estádio por 4 semanas."* saiu no dia 22 e *"Acabou a
+proibição. Domingo a gente volta pro estádio."* no dia 49 — quatro semanas exatas.
+
+**7 · O "Foda-se".** Respondido com a polícia em 4: `gatilhoPunicao = true`, nenhum efeito
+imediato. A briga seguinte (um fecho de cena de defesa) consumiu o gatilho —
+`punicaoPendente = true` — e a punição saiu no dia seguinte, **com a polícia ainda em 4**:
+ela não precisou chegar a zero.
+
+**8 · Não há morte de membro.** `grep` por morte/morreu/falecido em `js/` não acha
+mensagem nenhuma, e o membro continua com dois estados: `ferido` e `preso`.
+
+**9 · Vinte nomes de jogador**, com o Flamengo em três temporadas:
+
+> Luiz Henrique · Leandrinho · Everton · Douglas · Luís Otávio · Silva · Jonas · Douglas ·
+> Diego · Matheus · João Vitor · Ramos · Antônio Marcos · Luís Otávio · **Wallação** ·
+> José Carlos · Carlos · Carlos Alberto · Bruno · Matheus
+
+**Nenhum saiu de `apelidos`**, e nenhum é nome de mulher. Salvando e reabrindo o save, os
+seis nomes do Ceará de 2026 a 2031 e o ídolo saem idênticos.
+
+**10 · As duas abas.** Nossos confrontos, com três brigas encenadas:
+
+```
+Cearamor × Jovem do Floresta — no bar, no bairro Aldeota      NOSSO 14/02
+Cearamor levou a melhor
+Baixas 3+2 presos · 9 · Efetivo 80 × 100 ·
+Prestígio nosso sobe +1,5 · Caixa nosso entra +R$ 6.582
+```
+
+Todos os confrontos, com o mundo:
+
+```
+Inferno Coral × Gang da Ilha — no bairro Arruda               MUNDO 03/05
+Inferno Coral levou a melhor
+Baixas 0 · 2 · Relação entre ambos piora −4,2 · Tensão entre ambos aumenta +12 ·
+Moral da Inferno Coral sobe +0,6 · Moral da Gang da Ilha cai −1,6 ·
+Prestígio da Inferno Coral sobe +0,4 · Prestígio da Gang da Ilha cai −0,2
+```
+
+**11 · Os números batem.** Dez confrontos do mundo, com o estado das duas torcidas
+fotografado antes e depois do dia: **40 de 40** deltas de moral e prestígio conferem com
+o que a linha mostra, nos dois lados.
+
+**12 · A 9.2.** Uma treta de 2025 na Aldeota contra a Aliança, com prestígio +2,4 no
+registro, produziu no aniversário: *"Faz 1 ano daquela treta no bairro Aldeota contra a
+Aliança."* — com moral 12 → 13 e a linha "Moral nossa sobe +1".
+
+**13 · O tamanho do save.** Depois de uma temporada: **558 KB**, com **133 confrontos do
+mundo** e 0 cortados.
+
+| parte | KB | cresce? |
+|---|---:|---|
+| `feed` | 280 | **sim, ~280 KB por temporada** |
+| `temporada` | 149 | não (refeita todo ano) |
+| `confrontosDelas` | 48 | até o teto |
+| `mundoTorcidas` | 40 | não |
+| `transacoes` | 13 | não (corta em 200) |
+
+**O teto do log do mundo é 400 registros**, umas quatro temporadas; ao estourar, o mais
+antigo sai e o contador `E.confrontosCortados` guarda quantos, que é o que a aba mostra
+em vez de fingir que sempre foi assim. **Os nossos não têm teto**: são poucos e são a
+memória da partida. O registro do mundo foi enxugado de 675 pra **434 bytes** — sem nome
+repetido (o id resolve na hora de desenhar), sem campo dedutível, e com o `dono` de cada
+efeito virando `a`/`b` em vez do nome inteiro escrito duas vezes.
+
+**O que sobra é o `feed`, e ele é o problema de verdade:** 280 KB por temporada, dez
+temporadas dão ~3 MB, e o `localStorage` costuma parar em 5. Ele é histórico por decisão
+do §8.19 e eu não o cortei por conta própria — fica **anotado como a próxima decisão do
+autor**: ou teto por temporada, ou descartar `botoes` e `dados` de mensagem já respondida
+(que é o grosso do peso morto), ou aceitar o limite de dez anos.
+
+**14 · O feed depois das 21.**
+
+| | antes (§8.21) | agora |
+|---|---:|---:|
+| mensagens por semana | 6,2 | **8,96** |
+| semana mais cheia | 13 | **13** (teto 15, nunca ultrapassado) |
+| dias em silêncio | 40,7% | **37,4%** |
+
+**15 · A linha de consequência.** Toda mensagem nova com efeito traz a linha, e ela sai
+dos números aplicados: a inauguração da sede mostra "Moral nossa sobe +4 · Prestígio
+nosso sobe +1" com o estado indo de 12 pra 16 e de 6 pra 7; a memória de treta mostra
+"+1" com a moral indo de 12 pra 13; o fim da punição mostra os três indicadores que ele
+move, polícia inclusive. O critério 11 é a prova em escala: 40 de 40.
+
+### O que não mudou
+
+A bateria das oito cenas passa limpa, com **0 erros de página**, e o determinismo segue
+intacto: o mesmo save carregado em duas páginas limpas dá **149 mensagens e 0
+diferenças**.
+
 ## 9. Celular
 
 > **Leia junto com §8.22.** Boa parte desta seção descreve a tela do MAPA — a gaveta

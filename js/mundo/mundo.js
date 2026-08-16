@@ -317,7 +317,102 @@ TO.mundo = (function(){
     return [...new Set(O().map(o=>o.regiao).filter(Boolean))].sort();
   }
 
+  /* =======================================================
+     O NOME DO JOGADOR
+
+     O jogo só tem a força do clube como número; jogador não é entidade.
+     Mas duas mensagens do feed precisam de um nome — a contratação e a
+     aposentadoria do ídolo —, e "o clube contratou um jogador" é a
+     mensagem confessando que não sabe do que fala.
+
+     NÃO USA `apelidos`. Aquela lista é de apelido de rua — Pitbull,
+     Gordo, Fumaça, Trovão — e é dos membros da torcida. Um atacante
+     chamado Pitbull denuncia que os dois saíram do mesmo saco.
+
+     QUATRO FORMAS, com peso, que é como o futebol brasileiro de fato
+     nomeia: primeiro nome só e diminutivo puxam a maior parte, composto
+     vem no meio, sobrenome só é minoria.
+
+     O NOME É ESTÁVEL. Ele sai do hash de clube + ano + índice, então o
+     jogador contratado numa semana e aposentado três temporadas depois
+     é o mesmo sujeito. Nada é sorteado na hora de escrever a mensagem.
+     ======================================================= */
+  function hashN(txt){
+    let h = 2166136261 >>> 0;
+    for(let i=0;i<txt.length;i++){
+      h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0;
+    }
+    h ^= h >>> 15; h = Math.imul(h, 2246822507) >>> 0;
+    h ^= h >>> 13; h = Math.imul(h, 3266489909) >>> 0;
+    h ^= h >>> 16;
+    return h >>> 0;
+  }
+  const VOGAIS = 'aeiouáéíóúâêôãõ';
+  /* Pedro → Pedrinho, Diego → Dieguinho, Marco → Marquinho. A grafia
+     acompanha o som: antes de `i` o `g` vira `gu` e o `c` vira `qu`.
+     Nome terminado em consoante NÃO vira diminutivo aqui — "Lucasinho"
+     não existe, e o certo ("Luquinhas") é irregular demais pra regra. */
+  function diminutivo(nome){
+    const ult = nome[nome.length-1].toLowerCase();
+    if(VOGAIS.indexOf(ult) < 0) return null;
+    let base = nome.slice(0, -1);
+    const fim = base[base.length-1].toLowerCase();
+    if(fim === 'g') base += 'u';
+    else if(fim === 'c') base = base.slice(0,-1) + 'qu';
+    if(base.length < 3) return null;
+    return base + 'inho';
+  }
+  /* Pedro → Pedrão, Marcelo → Marcelão. O aumentativo não muda grafia:
+     antes de `ã` o `g` e o `c` continuam com o som que já tinham. */
+  function aumentativo(nome){
+    const ult = nome[nome.length-1].toLowerCase();
+    if(VOGAIS.indexOf(ult) < 0) return null;
+    let base = nome.slice(0, -1);
+    /* Wallace → Wallação, não "Wallacão": antes de `ã` o `c` teria som
+       de /k/, e o apelido que o rádio grita é com cedilha */
+    if(base[base.length-1].toLowerCase() === 'c')
+      base = base.slice(0,-1) + 'ç';
+    return base.length < 3 ? null : base + 'ão';
+  }
+
+  /* peso acumulado das quatro formas */
+  const FORMAS = [
+    {id:'simples',    peso:34},
+    {id:'diminutivo', peso:34},
+    {id:'composto',   peso:22},
+    {id:'sobrenome',  peso:10}
+  ];
+
+  /* A lista de compostos serve os MEMBROS da torcida e tem nome de
+     mulher dentro. Time de futebol masculino não contrata Ana Paula, e
+     a mensagem que diz que contratou está mentindo sobre o mundo. */
+  const NAO_JOGADOR = new Set(['Ana Paula']);
+
+  function nomeDeJogador(clubeId, ano, indice){
+    /* as listas vivem em `TO.dados.nomes`, não na diplomacia */
+    const N = (TO.dados && TO.dados.nomes) || {};
+    const simples = N.simples || ['Pedro'];
+    const comp = (N.compostos || ['João Paulo']).filter(x=>!NAO_JOGADOR.has(x));
+    const sobre = N.sobrenomes || ['Silva'];
+    const ch = `jog|${clubeId||'x'}|${ano||0}|${indice||0}`;
+    const r = hashN(ch) % 100;
+    let acc = 0, forma = 'simples';
+    for(const f of FORMAS){ acc += f.peso; if(r < acc){ forma = f.id; break; } }
+    const base = simples[hashN(ch+'|s') % simples.length];
+    if(forma === 'composto')  return comp[hashN(ch+'|c') % comp.length];
+    if(forma === 'sobrenome') return sobre[hashN(ch+'|b') % sobre.length];
+    if(forma === 'diminutivo'){
+      const grande = hashN(ch+'|g') % 100 < 35;
+      /* "dando ruim, cai na forma anterior": consoante no fim não vira
+         diminutivo, e o nome sai simples */
+      const v = grande ? aumentativo(base) : diminutivo(base);
+      return v || base;
+    }
+    return base;
+  }
+
   return {time, torcida, cidade, jogaveis, selecionaveis, PRACA_JOGAVEL,
+          nomeDeJogador,
           torcidasDe, torcidasEm, timesEm,
           CLASSES, ZONAS, bairrosDe, bairro, bairroDaSede, multiplicador,
           bairrosPorZona, baseDeRecrutamento,

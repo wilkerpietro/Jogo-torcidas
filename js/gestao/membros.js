@@ -279,7 +279,12 @@ TO.membros = (function(){
   function prender(E, m, dias, motivo){
     if(m.preso) return;
     const txt = motivo || 'Preso no dia de jogo';
-    m.preso = { dias: dias || null, motivo: txt };
+    /* `desde` é o dia absoluto da prisão. Ele não existia porque nada
+       perguntava HÁ QUANTO TEMPO alguém está preso — só se estava. A
+       visita ao preso (interna 6.9) pergunta, e sem esta linha ela teria
+       de adivinhar pelo prazo, que muda de alvo pra alvo. */
+    m.preso = { dias: dias || null, motivo: txt,
+                desde: (E && E.data && E.data.absoluto) || 0 };
     m.naFila = false;
     m.moral = Math.max(0, m.moral - 4);
     m.historico.push(dias ? `${txt} — ${dias} dias` : txt);

@@ -385,6 +385,11 @@ TO.tensao = (function(){
      ponto final, e o produtor só encaixa os dois nomes. */
   const PACIFICAS = [
     {id:'tregua',  txt:'reforçou o laço de amizade com a', tensao:-14},
+    /* o baile fecha com uma frase própria, e não com o "as duas saíram
+       ganhando" que era de todas: quem fez baile junto fez uma coisa,
+       quem foi recebido na sede fez outra */
+    {id:'baile',   txt:'fez baile em conjunto com a',      tensao:-12,
+     depois:'Relações saíram fortalecidas.'},
     {id:'visita',  txt:'foi recebida na sede da',          tensao:-10},
     {id:'apoio',   txt:'apoiou a',        fecho:'no estádio', tensao:-8}
   ];
@@ -664,17 +669,27 @@ TO.tensao = (function(){
       ? `Correu em casa! ${nv} ${ev.txt} ${np} ${fecho}`
       : `${nv} ${ev.txt} ${np} ${fecho}`;
     const absJogo = par.motivo === 'jogo' ? diaDaProximaSemana(E, par.dia) : null;
+    const efeitos = [
+              {ind:'relacao',  delta: Math.round((relacaoDelas(E,par.a,par.b)-rAntes)*10)/10,
+               dono:'entre ambos'},
+              {ind:'tensao',   delta: E.tensoesDelas[ch] - tAntes, dono:'entre ambos'},
+              {ind:'moral',    delta: dMoralV, dono:`da ${nv}`},
+              {ind:'moral',    delta: dMoralP, dono:`da ${np}`},
+              {ind:'prestigio',delta: dPrestV, dono:`da ${nv}`},
+              {ind:'prestigio',delta: dPrestP, dono:`da ${np}`}
+            ].filter(x=>x.delta);
+    /* O LOG DO MUNDO. Guarda o que foi aplicado logo acima — moral e
+       prestígio dos DOIS lados, e as baixas de quem apanhou. Não é
+       recálculo: são as mesmas variáveis que `mover` devolveu. */
+    if(TO.feed && TO.feed.registrarConfrontoDelas)
+      TO.feed.registrarConfrontoDelas(E, {vencedor:venc, perdedor:perd,
+        foram, praca:!!par.praca, efeitos,
+        bairro: par.praca ? ((M().bairroDaSede(M().torcida(venc))||{}).nome||'') : ''});
     return {txt, tipo:'briga', torcidas:[venc, perd], vencedor:venc, perdedor:perd,
             motivo:par.motivo, dia:par.dia, absJogo, contas,
             semanaJogo: par.motivo === 'jogo' ? E.data.semana + 1 : null,
             naoAntesDe: absJogo != null ? absJogo + U.inteiro(0,1) : null,
-            efeitos:[
-              {ind:'relacao',  delta: Math.round((relacaoDelas(E,par.a,par.b)-rAntes)*10)/10,
-               dono:'entre ambos'},
-              {ind:'tensao',   delta: E.tensoesDelas[ch] - tAntes, dono:'entre ambos'},
-              {ind:'moral',    delta: dMoralP, dono:`da ${np}`},
-              {ind:'prestigio',delta: dPrestV, dono:`da ${nv}`}
-            ].filter(x=>x.delta)};
+            efeitos};
   }
 
   function pacifica(E, m, par, ta, tb){
@@ -686,7 +701,8 @@ TO.tensao = (function(){
     const tAntes = E.tensoesDelas[ch] || 0;
     E.tensoesDelas[ch] = U.limitar(tAntes + ev.tensao, 0, MAX);
     const dm = mover(E, a, 'moral', 0.3) + mover(E, b, 'moral', 0.3);
-    const txt = `${ta.nome} ${ev.txt} ${tb.nome}${ev.fecho ? ' '+ev.fecho : ''}.`;
+    const txt = `${ta.nome} ${ev.txt} ${tb.nome}${ev.fecho ? ' '+ev.fecho : ''}.`+
+                `${ev.depois ? ' '+ev.depois : ''}`;
     const absJogo = par.motivo === 'jogo' ? diaDaProximaSemana(E, par.dia) : null;
     return {txt, tipo:'paz', torcidas:[a, b], motivo:par.motivo, dia:par.dia, absJogo,
             semanaJogo: par.motivo === 'jogo' ? E.data.semana + 1 : null,

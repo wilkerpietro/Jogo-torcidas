@@ -757,10 +757,50 @@
      respondido aparece com a resposta escrita.
      ======================================================= */
   let filtroFeed = 0;             // 0 = tudo
+  /* =======================================================
+     NOTÍCIAS — o arquivo do feed e o histórico de confrontos
+
+     Três abas de primeiro nível. A primeira é o arquivo de mensagens,
+     que já existia, com o filtro por categoria dentro dela. As outras
+     duas são o LOG DE CONFRONTOS: quem brigou com quem, e o que aquilo
+     custou aos dois lados.
+
+     A LINHA DE BAIXO É O PONTO. Saber que a Fanáutico brigou com a
+     Torcida Jovem do Galo não é história; saber que doze deles e cinco
+     nossos ficaram no chão, e quanta moral e quanto prestígio mudou de
+     mão, é. Os números não são recalculados aqui: saem do registro, que
+     guardou o que foi aplicado.
+     ======================================================= */
+  let abaNot = 'mensagens';
+
   function pintarNoticias(){
     const e = E(), pg = U.$('.pagina[data-pag="noticias"]');
     if(!e || !pg) return;
     pg.innerHTML = '';
+    const nossos = (e.confrontos || []).slice().reverse();
+    const delas  = (e.confrontosDelas || []).slice().reverse();
+
+    const topo = el('div',{class:'abas-grandes'});
+    const abaTopo = (id, rot, n)=>{
+      const b = el('button',{texto:`${rot} (${n})`});
+      b.classList.toggle('on', abaNot === id);
+      b.onclick = ()=>{ abaNot = id; pintarNoticias(); };
+      topo.appendChild(b);
+    };
+    abaTopo('mensagens', 'Mensagens', TO.feed.historico(e).length);
+    abaTopo('nossos', 'Nossos confrontos', nossos.length);
+    abaTopo('todos', 'Todos os confrontos', nossos.length + delas.length);
+    pg.appendChild(topo);
+
+    if(abaNot === 'mensagens'){ pintarArquivoDoFeed(e, pg); return; }
+    /* "todos" inclui os nossos: o mundo inteiro, a gente dentro dele */
+    const lista = abaNot === 'nossos' ? nossos
+      : nossos.concat(delas).sort((a,b)=>
+          (b.data.absoluto - a.data.absoluto) || (b.id - a.id));
+    pintarConfrontos(e, pg, lista, abaNot);
+  }
+
+  function pintarArquivoDoFeed(e, pg){
     const hist = TO.feed.historico(e);
     const abas = el('div',{class:'subabas'});
     const põe = (n, rot)=>{
@@ -785,6 +825,85 @@
         `<span class="fraco">…e mais ${filtradas.length-200} mensagens mais `+
         `antigas.</span>`}));
     pg.appendChild(lista);
+  }
+
+  /* a data de parede de um registro */
+  const dataDoRegistro = r => {
+    const d = TO.estado.dataDaSemana(r.data.ano, r.data.semana, r.data.dia);
+    return `${String(d.getDate()).padStart(2,'0')}/`+
+           `${String(d.getMonth()+1).padStart(2,'0')}`;
+  };
+  const LOCAL_CONF = {rua:'numa rua de periferia',
+    'rua-media':'numa rua de classe média', 'rua-nobre':'numa rua nobre',
+    praca:'na praça', arredores:'nos arredores do estádio',
+    bar:'no bar', sede:'na sede', comercio:'no comércio', ct:'no CT',
+    emboscada:'na estrada'};
+
+  function pintarConfrontos(e, pg, lista, aba){
+    const cx = el('div',{class:'feed-lista'});
+    if(!lista.length){
+      cx.appendChild(el('div',{class:'em-construcao',
+        texto: aba === 'nossos' ? 'A torcida ainda não brigou com ninguém.'
+                                : 'Nenhum confronto registrado ainda.'}));
+      pg.appendChild(cx); return;
+    }
+    if(aba === 'todos' && e.confrontosCortados)
+      cx.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="fraco">O log do mundo guarda os últimos `+
+        `${TO.feed.TETO_CONFRONTOS_DELAS}; `+
+        `${e.confrontosCortados} mais antigos já saíram. Os nossos nunca `+
+        `saem.</span>`}));
+
+    for(const r of lista.slice(0, 200)) cx.appendChild(cartaoConfronto(e, r));
+    if(lista.length > 200)
+      cx.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="fraco">…e mais ${lista.length-200} mais antigos.</span>`}));
+    pg.appendChild(cx);
+  }
+
+  /* O REGISTRO DO MUNDO GUARDA IDS, não nomes — é o que o mantém enxuto
+     no save. O nome sai aqui, na hora de desenhar, e com ele o `dono` de
+     cada efeito, que lá dentro é só `a` ou `b`. */
+  function cartaoConfronto(e, r){
+    const nomeDe = x => x && x.nome ? x.nome
+      : ((TO.mundo.torcida((x||{}).torcidaId)||{}).nome || '—');
+    /* `confronto` já é a classe do painel de pré-jogo, que é `flex`:
+       usar o mesmo nome aqui deitava o cartão em três colunas */
+    const art = el('article',{class:'msg msg-briga'+(r.nossos
+      ? (r.ganhamos ? ' boa' : ' ruim') : '')});
+    const a = Object.assign({}, r.a, {nome:nomeDe(r.a)});
+    const b = Object.assign({}, r.b, {nome:nomeDe(r.b)});
+    const onde = LOCAL_CONF[(r.local||{}).cena] || '';
+    const bairro = (r.local||{}).bairro || r.bairro || '';
+    art.appendChild(el('div',{class:'msg-cab', html:
+      `<span class="msg-voz">${a.nome || '—'} × ${b.nome || '—'}</span>`+
+      `<span class="msg-papel">${[onde, bairro ? `no bairro ${bairro}` : '']
+        .filter(Boolean).join(', ') || 'na rua'}</span>`+
+      `<span class="msg-cat">${r.nossos ? 'NOSSO' : 'MUNDO'} `+
+      `${dataDoRegistro(r)}</span>`}));
+    art.appendChild(el('div',{class:'msg-txt', texto:
+      `${(a.venceu === false ? b.nome : a.nome) || '—'} levou a melhor`}));
+
+    /* A LINHA DE BAIXO: baixas dos dois lados e o que se moveu.
+       Nas nossas as baixas são de ficha — quem caiu e quem foi preso na
+       cena. Nas do mundo é gente que saiu da torcida, que é o que a
+       briga abstrata produz; chamar as duas de "feridos" seria inventar
+       um número que não existe do outro lado. */
+    const partes = [];
+    const baixa = x => x.caidos != null
+      ? `${x.caidos}${x.presos ? `+${x.presos} preso${x.presos>1?'s':''}` : ''}`
+      : String(x.baixas || 0);
+    if(a.nome || b.nome)
+      partes.push(`<b>Baixas</b> ${baixa(a)} · ${baixa(b)}`);
+    if(a.n || b.n) partes.push(`<b>Efetivo</b> ${a.n||'?'} × ${b.n||'?'}`);
+    const comDono = (r.efeitos||[]).map(x=>Object.assign({}, x,
+      {dono: x.dono === 'a' ? `da ${a.nome}` : x.dono === 'b' ? `da ${b.nome}`
+           : (x.dono || 'entre ambos')}));
+    for(const ef of TO.feed.lerEfeitos({efeitos:comDono}))
+      partes.push(`<span class="ef ${ef.bom?'boa':'ruim'}">${ef.texto}</span>`);
+    if(partes.length)
+      art.appendChild(el('div',{class:'msg-efeitos', html:partes.join(' · ')}));
+    return art;
   }
 
   /* =======================================================
@@ -3472,6 +3591,9 @@
           if(p) TO.estado.anotar(e, `${p.rot} ficou na rua — levaram.`, 'ruim');
         }
       }
+      /* o encontro da rua também é briga: gatilho do delegado e registro
+         no histórico saem daqui, pela mesma porta das outras */
+      TO.acoes.fecharBrigaDeRua(e, enc, res);
       encontroAberto = null;
     }
     /* investida, assalto e cobrança no CT: o que a noite deu vira caixa,

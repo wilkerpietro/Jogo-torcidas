@@ -1139,6 +1139,13 @@ table.dados tr.selecionada td{background:#252525}
   .msg-txt{font-size:13px}
 }
 
+/* o cartão de confronto no arquivo de Notícias: mesma moldura da
+   mensagem, com o placar de baixas e a linha de consequência */
+.msg-briga .msg-voz{text-transform:none}
+.msg-briga .msg-txt{font-size:13px;color:var(--apagado)}
+.msg-briga.boa{border-left-color:var(--verde)}
+.msg-briga.ruim{border-left-color:var(--rubro-vivo)}
+
 /* a linha de consequência: o que a mensagem moveu no estado */
 .msg-efeitos{
   display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin-top:5px;

@@ -202,6 +202,10 @@ TO.patrimonio = (function(){
       TO.estado.lancar(E, `Ampliação da sede — nível ${E.torcida.sedeNivel}`, -o.custo);
       TO.estado.anotar(E, `A sede subiu pro nível ${E.torcida.sedeNivel}.`,
         'boa', {cat:6, assunto:'sede'});
+      /* a inauguração é EFEMÉRIDE (feed 9.4), e quem sabe que ela
+         aconteceu é quem comprou. O feed lê este carimbo e conta. */
+      E.inauguracao = {tipo:'sede', nivel:E.torcida.sedeNivel,
+                       quando:(E.data||{}).absoluto || 0, contada:false};
     } else if(acao==='fabrica'){
       p.fabrica = true;
       TO.estado.lancar(E, 'Fábrica de material', -o.custo);
@@ -214,6 +218,11 @@ TO.patrimonio = (function(){
       TO.estado.lancar(E, `${cfg.rot} em ${bairro}`, -o.custo);
       TO.estado.anotar(E, `${cfg.rot} novo em ${bairro}.`, 'boa',
         {cat:6, assunto:'ponto'});
+      /* subsede nova tem batismo (feed 9.5); bar e loja não — quem se
+         reúne na subsede é a torcida, e é isso que vira data */
+      if(tipo === 'subsede')
+        E.inauguracao = {tipo:'subsede', bairro,
+                         quando:(E.data||{}).absoluto || 0, contada:false};
     } else if(acao==='ampliar'){
       const cfg = PONTO[tipo];
       const alvo = (p[cfg.plural]||[]).filter(x=>cfg.ampliar[x.nivel])

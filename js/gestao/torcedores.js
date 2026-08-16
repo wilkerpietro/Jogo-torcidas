@@ -124,6 +124,40 @@ TO.torcedores = (function(){
     return d;
   }
 
+  /* =======================================================
+     A TORCIDA PROIBIDA DE ENTRAR NO ESTÁDIO
+
+     A punição mora aqui e não no feed porque as três coisas que ela
+     corta são desta casa: o público que entra no Fator Torcida, a
+     caravana (que `financeiro` consulta) e a satisfação. O feed só
+     conta que aconteceu — regra de jogo vai pro módulo dela.
+
+     Ela dura QUATRO SEMANAS de calendário, contadas em semana
+     absoluta, e não em dias: quem entra em campo é o clube, e o que a
+     torcida perde são quatro fins de semana.
+     ======================================================= */
+  const PUNICAO_SEMANAS = 4;
+  const semanaAbs = E => (E.data.ano - 2026)*52 + E.data.semana;
+  const punida = E => !!(E && E.punicao && semanaAbs(E) < E.punicao.ate);
+  function punir(E, motivo){
+    E.punicao = {desde: semanaAbs(E), ate: semanaAbs(E) + PUNICAO_SEMANAS,
+                 motivo: motivo || 'polícia', avisado:false, fechado:false};
+    return E.punicao;
+  }
+  /* a punição acabou e o fim ainda não foi contado: é o gatilho da 8.4 */
+  const punicaoAcabou = E => !!(E && E.punicao && !E.punicao.fechado &&
+                                semanaAbs(E) >= E.punicao.ate);
+  /* SEM ESTÁDIO, A SATISFAÇÃO CAI TODA SEMANA. Sem isto a punição seria
+     só um número menor no Fator Torcida, que o jogador nem vê. */
+  const CUSTO_PUNICAO = -0.8;
+  function pesoDaPunicao(E){
+    if(!punida(E)) return 0;
+    const I = E.indicadores;
+    const antes = I.satisfacao;
+    I.satisfacao = U.limitar(I.satisfacao + CUSTO_PUNICAO, 0, 20);
+    return Math.round((I.satisfacao - antes)*100)/100;
+  }
+
   /* --- fim de temporada (GDD §21) --- */
   const CONQUISTA = {campeao:5, vice:2, rebaixado:-3};
   function aplicarConquista(E, tipo){
@@ -200,7 +234,11 @@ TO.torcedores = (function(){
     const vao = TO.planejamento ? TO.planejamento.efetivoDaSaida(E)
                                 : TO.membros.aptosParaOEstadio(E).length;
     const p = {
-      publico: U.limitar(vao/total, 0, 1),
+      /* TORCIDA PROIBIDA NÃO ENTRA, e o Fator Torcida sente isso na
+         parcela que pesa mais (40%): sem público nosso, a arquibancada
+         é dos outros. As faixas e a bateria continuam contando — elas
+         estão na sede, não no estádio. */
+      publico: punida(E) ? 0 : U.limitar(vao/total, 0, 1),
       faixas:  U.limitar(m.faixas /cap.faixas,  0, 1),
       bateria: U.limitar(m.bateria/cap.bateria, 0, 1),
       moral:   U.limitar(E.indicadores.moral/20, 0, 1)
@@ -245,6 +283,7 @@ TO.torcedores = (function(){
   }
 
   return {FAIXAS, ORGANIZAR_MAX, faixa, faixaDe, PESOS, MATERIAL, EM_FORCA,
+          punida, punir, punicaoAcabou, pesoDaPunicao, PUNICAO_SEMANAS,
           aplicarResultado, aplicarClassificacao, aplicarConquista, CONQUISTA,
           esfriar, NEUTRA, neutraDe,
           posicaoEsperada, posicaoAtual,

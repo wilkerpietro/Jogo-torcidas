@@ -298,6 +298,10 @@ TO.estado = (function(){
       TO.torcedores.reporMaterial(E);
       /* e o humor da praça volta um pouco pro meio a cada semana */
       TO.torcedores.esfriar(E);
+      /* semana de torcida proibida cobra à parte: o esfriamento puxa pro
+         meio, a punição puxa pra baixo, e as duas são coisas
+         diferentes */
+      TO.torcedores.pesoDaPunicao(E);
       if(E.data.semana > TO.competicoes.SEMANAS_ANO){
         E.data.semana = 1; E.data.ano++;
         guardarTitulos(E);
@@ -318,6 +322,16 @@ TO.estado = (function(){
             anotar(E, `Vice do ${c.nome}. Satisfação `+
               `+${TO.torcedores.aplicarConquista(E,'vice')}.`, '', {cat:5});
         }
+        /* O QUE O FIM DE TEMPORADA DEIXA PRO FEED. Título e rival
+           rebaixado viram DECISÃO (5.9 e 5.11), e decisão não se escreve
+           com `anotar` — o feed precisa saber que aconteceu e montar os
+           botões. O carimbo é consumido uma vez, por `cat5Clube`. */
+        E.fimDeTemporada = {
+          contado:false, ano:E.data.ano - 1,
+          titulos: E.temporada.competicoes
+            .filter(c=>c.campeao === E.torcida.clubeId).map(c=>c.nome),
+          rivalCaiu: null
+        };
         E.classifAnterior = null;
         /* o ano em campo mexe na força dos clubes antes de qualquer
            outra coisa: quem foi campeão entra mais forte no ano seguinte */
@@ -330,6 +344,14 @@ TO.estado = (function(){
             {cat:5});
         /* sobe e desce antes de montar a temporada nova (GDD §18.2) */
         const mov = TO.competicoes.aplicarSobeDesce(E);
+        /* o rival DO CLUBE que caiu: é o que a 5.11 provoca */
+        {
+          const riv = TO.competicoes.rivaisDiretos();
+          const meus = riv && riv.get ? riv.get(E.torcida.clubeId) : null;
+          const caiu = mov.find(m=>meus && meus.has(m.id) &&
+                                   !TO.competicoes.subiu(m.de, m.para));
+          if(caiu && E.fimDeTemporada) E.fimDeTemporada.rivalCaiu = caiu.id;
+        }
         for(const m of mov)
           TO.tensao.conquistaDoClube(E, m.id,
             TO.competicoes.subiu(m.de, m.para) ? 'acesso' : 'rebaixado');

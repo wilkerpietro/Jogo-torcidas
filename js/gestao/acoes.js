@@ -58,7 +58,14 @@ TO.acoes = (function(){
     const chance  = fx.organizar;
     const querem  = Math.round(alcance * 1000 * chance);
 
-    const mult = MULT_SEDE[E.torcida.sedeNivel] || 1;
+    /* O QUE O CLUBE FEZ EM CAMPO PUXA O RECRUTAMENTO, por um tempo:
+       rebaixamento confirmado esvazia a fila, acesso enche. `E.recrutamento`
+       é carimbado pelo feed (5.4 e 5.5) com prazo em semana absoluta —
+       fora da janela, o fator é 1 e nada muda. */
+    const semAbs = (E.data.ano - 2026)*52 + E.data.semana;
+    const janela = E.recrutamento && semAbs < E.recrutamento.ate
+                 ? E.recrutamento.fator : 1;
+    const mult = (MULT_SEDE[E.torcida.sedeNivel] || 1) * janela;
     /* O teto do GDD §6.2 é por nível de sede, mas ele sozinho apaga o
        tamanho da torcida do clube na praça: recrutar em São Paulo tinha
        de render mais que no interior. A base entra somada ao teto. */
@@ -164,8 +171,56 @@ TO.acoes = (function(){
      da briga (res) já passou por membros.aplicarResultadoDaNoite;
      aqui entra só o que é da ação.
      ======================================================= */
+  /* O GATILHO QUE O "FODA-SE" ARMOU (feed 8.1). Quem respondeu ao
+     delegado que ele que se vire trocou o aviso por uma punição
+     imediata: a PRÓXIMA briga já vale a proibição, sem esperar a
+     polícia chegar a zero. Cobrado aqui porque é aqui que toda briga
+     nossa termina — uma porta só. */
+  function cobrarGatilho(E){
+    if(!E || !E.gatilhoPunicao) return;
+    E.gatilhoPunicao = false;
+    E.punicaoPendente = true;
+  }
+
+  /* A BRIGA DE RUA NÃO PASSA POR `fecharCena`: ela não é ação da
+     semana, é o encontro que a ida ao estádio resolveu (§8.22). Mesmo
+     assim ela é briga, e briga tem as duas consequências que este
+     módulo cobra de todas: o gatilho do delegado e o registro no log. */
+  function fecharBrigaDeRua(E, enc, res){
+    if(!E || !enc) return null;
+    cobrarGatilho(E);
+    const nosso = enc.a && enc.a.nossa ? enc.a : enc.b;
+    const deles = nosso === enc.a ? enc.b : enc.a;
+    const ganhamos = res && res.ganhamos !== undefined
+                   ? !!res.ganhamos : !!(res && res.venceu);
+    const membros = (res && res.membros) || [];
+    const outro = ((res && res.nossoLado) || 'mandante') === 'mandante'
+                ? 'visitante' : 'mandante';
+    const efeitos = [
+      {ind:'prestigio', delta: r1((res && res.prestigio || 0)/6), dono:'nosso'},
+      {ind:'moral', delta: r1(res && res.moralTorcida || 0), dono:'nossa'}
+    ].filter(x=>x.delta);
+    if(TO.feed) TO.feed.registrarConfronto(E, {
+      torcidaId: deles.torcida, ganhamos,
+      local:{cena: enc.local || '', bairro: enc.bairro || ''},
+      a: {torcidaId:E.torcida.id, nome:E.torcida.nome, n:nosso.n,
+          caidos: membros.filter(m=>!m.preso && m.caido).length,
+          presos: membros.filter(m=>m.preso).length, venceu:ganhamos},
+      b: {torcidaId:deles.torcida, nome:deles.nome, n:deles.n,
+          caidos: (res && (outro==='mandante' ? res.caidosMandante
+                                              : res.caidosVisitante)) || 0,
+          presos: (res && (outro==='mandante' ? res.presosMandante
+                                              : res.presosVisitante)) || 0,
+          venceu: !ganhamos},
+      efeitos});
+    return {ganhamos};
+  }
+
   function fecharCena(E, ctx, res){
     if(!ctx || !ctx.acao) return null;
+    /* briga é briga: atacar e defender contam pro gatilho; assalto e
+       pressão no clube não são confronto de torcida */
+    if(ctx.acao === 'atacar' || ctx.acao === 'defender') cobrarGatilho(E);
     if(ctx.acao === 'atacar')     return fecharAtaque(E, ctx.alvo, res);
     if(ctx.acao === 'assalto')    return fecharAssalto(E, ctx.alvo, res);
     if(ctx.acao === 'pressionar') return fecharPressao(E, res);
@@ -272,8 +327,16 @@ TO.acoes = (function(){
       {ind:'moral',     delta: dmDelas, dono:`da ${alvo.nome}`}
     ].filter(x=>x.delta);
     TO.estado.anotar(E, txt, seguramos ? 'boa' : 'ruim', {cat:4, efeitos});
-    if(TO.feed) TO.feed.registrarConfronto(E, alvo.torcidaId, seguramos,
-                                           alvo.bairro);
+    /* o log inteiro: quem, quantos, quantos caíram e o que se moveu.
+       Os números não são recalculados aqui — são os que a cena
+       entregou e os que acabaram de ser aplicados acima. */
+    if(TO.feed) TO.feed.registrarConfronto(E, {
+      torcidaId: alvo.torcidaId, ganhamos: seguramos,
+      local:{cena: alvo.cena || (naEstrada ? 'rua' : alvo.tipo),
+             bairro: alvo.bairro || ''},
+      a: nossoLado(E, alvo, res, seguramos),
+      b: ladoDeles(E, alvo, res, seguramos),
+      efeitos});
     return {txt, ganhou:seguramos, linhas, dinheiro:-perdeu, efeitos,
             titulo: seguramos ? (naEstrada ? 'A PISTA FICOU NOSSA'
                                            : 'A CASA FICOU DE PÉ')
@@ -281,6 +344,30 @@ TO.acoes = (function(){
                                            : 'PERDEMOS O BAR')};
   }
   const r1 = v => Math.round(v*10)/10;
+
+  /* OS DOIS LADOS DA CENA, PRO LOG. Quem caiu e quem foi preso sai da
+     lista de fichas quando ela existe (é o nosso lado) e do contador de
+     discos quando não existe (é o lado deles, que não tem ficha). */
+  function nossoLado(E, alvo, res, ganhamos){
+    const meu = (res && res.nossoLado) || 'mandante';
+    const membros = (res && res.membros) || [];
+    return {torcidaId:E.torcida.id, nome:E.torcida.nome,
+            n: alvo.nossos || membros.length || 0,
+            caidos: membros.filter(m=>!m.preso && m.caido).length,
+            presos: membros.filter(m=>m.preso).length,
+            venceu: !!ganhamos, lado: meu};
+  }
+  function ladoDeles(E, alvo, res, ganhamos){
+    const meu = (res && res.nossoLado) || 'mandante';
+    const outro = meu === 'mandante' ? 'visitante' : 'mandante';
+    const caidos = res ? (outro === 'mandante' ? res.caidosMandante
+                                               : res.caidosVisitante) : 0;
+    const presos = res ? (outro === 'mandante' ? res.presosMandante
+                                               : res.presosVisitante) : 0;
+    return {torcidaId:alvo.torcidaId, nome:alvo.nome,
+            n: (res && res.efetivo && res.efetivo[outro]) || alvo.efetivo || 0,
+            caidos: caidos||0, presos: presos||0, venceu: !ganhamos, lado: outro};
+  }
 
   function fecharAtaque(E, alvo, res){
     const T = TO.tensao;
@@ -313,8 +400,13 @@ TO.acoes = (function(){
     const txt = `${ganhou ? 'Tomamos' : 'Fomos até'} ${alvo.nome}, em ${alvo.bairro}.`+
                 (linhas.length ? ' ' + linhas.join('; ') + '.' : '');
     TO.estado.anotar(E, txt, ganhou ? 'boa' : 'ruim', {cat:4});
-    if(TO.feed) TO.feed.registrarConfronto(E, alvo.torcidaId, ganhou,
-                                           alvo.bairro);
+    if(TO.feed) TO.feed.registrarConfronto(E, {
+      torcidaId: alvo.torcidaId, ganhamos: ganhou,
+      local:{cena: alvo.cena || alvo.tipo, bairro: alvo.bairro || ''},
+      a: nossoLado(E, alvo, res, ganhou),
+      b: ladoDeles(E, alvo, res, ganhou),
+      efeitos:[{ind:'prestigio', delta: r1((res.prestigio||0)/6), dono:'nosso'},
+               {ind:'dinheiro',  delta: levou, dono:'nosso'}].filter(x=>x.delta)});
     return {txt, ganhou, linhas, dinheiro:levou,
             titulo: ganhou ? 'ATAQUE BEM-SUCEDIDO' : 'ATAQUE FRACASSOU'};
   }
@@ -668,7 +760,8 @@ TO.acoes = (function(){
   return {LISTA, porId, maximo, restantes, executar, gastarAcao,
           previsaoRecrutamento,
           organizadasDaPraca, efetivoDe,
-          alvosDeAtaque, alvosDeAssalto, clube, fecharCena, cobrancaAtiva,
+          alvosDeAtaque, alvosDeAssalto, clube, fecharCena, fecharBrigaDeRua,
+          cobrancaAtiva,
           COMERCIO, COBRANCA, MINIMO_SAIDA, MINIMO_ASSALTO,
           POR_SEMANA, CAP_RECRUTA};
 })();
