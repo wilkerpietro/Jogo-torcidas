@@ -1605,10 +1605,67 @@
     const corpo = el('div');
     let fechar = null;
 
+    /* A DECISÃO DO DIA VEM ANTES DE TUDO, porque é ela que dá sentido
+       ao resto: a tela resolvia quantos vão, por qual estrada e quantas
+       bombas, e não perguntava o que a bomba ia fazer quando chegasse
+       lá. Escolhendo paz, os dois campos somem e a tela é a de antes. */
+    const alvos = P.alvosDaViagem(e);
+    let onde = P.ondeDoPlano(p);
+
     const pintar = ()=>{
       const est = P.estimativaCaravana(e);
       const j = e.proximoJogo || {};
+      const briga = p.intencao !== 'paz';
+      const alvo = alvos.find(a=>a.id === p.alvoTorcida) || null;
       corpo.innerHTML = '';
+
+      /* --- em paz ou pra cima deles --- */
+      corpo.appendChild(el('div',{class:'fase-rot',
+        texto:'A torcida vai em paz ou vai atacar?'}));
+      corpo.appendChild(opcoes([
+        {id:'paz', rot:'Ir em paz',
+         nota:'entrar pelo portão, bandeira e bateria'},
+        {id:'atacar', rot:'Atacar',
+         nota: alvos.length ? 'procurar a torcida deles antes da bola rolar'
+                            : 'não há torcida do mandante pra atacar',
+         desabilitada: !alvos.length}
+      ], briga ? 'atacar' : 'paz', id=>{
+        if(id === 'paz'){ P.definirIntencao(e, 'paz'); }
+        else {
+          P.definirAtaque(e, {alvo: p.alvoTorcida ||
+            (alvos[0] && alvos[0].id), onde, bombas: p.bombas});
+          if(P.plano(e).intencao === 'paz')
+            aviso('O delegado ainda está de olho: nada de ataque nesta '+
+                  'semana.', 'ruim');
+        }
+        pintar();
+      }));
+
+      if(briga){
+        /* --- quem --- */
+        corpo.appendChild(el('div',{class:'fase-rot', texto:'Quem atacar'}));
+        corpo.appendChild(opcoes(alvos.map(a=>({
+          id:a.id, rot:a.nome,
+          nota:`${a.faixa} na rua · tensão ${Math.round(a.tensao)} · `+
+               `relação ${Math.round(a.relacao)}`
+        })), (alvo||alvos[0]||{}).id, id=>{
+          P.definirAtaque(e, {alvo:id, onde, bombas:p.bombas}); pintar();
+        }));
+        /* --- onde --- */
+        corpo.appendChild(el('div',{class:'fase-rot', texto:'Onde atacar'}));
+        corpo.appendChild(opcoes(P.ONDE_ATAQUE.map(o=>({
+          id:o.id, rot:o.rot,
+          /* nos arredores do estádio DELES o mando é deles, e a cena
+             abre com a gente do lado visitante — que é o que a gente é */
+          nota: o.id === 'arredores'
+            ? 'a beira do estádio deles, e lá a gente é o visitante'
+            : o.nota
+        })), onde, id=>{
+          onde = id;
+          P.definirAtaque(e, {alvo:p.alvoTorcida, onde, bombas:p.bombas});
+          pintar();
+        }));
+      }
 
       /* --- quantos vão --- */
       corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantos vão'}));
@@ -1675,10 +1732,13 @@
                                     : 'não temos bomba no estoque'}));
       corpo.appendChild(lb);
 
-      /* --- o resumo --- */
+      /* --- o resumo, com as duas decisões --- */
+      const ondeRot = (P.ONDE_ATAQUE.find(o=>o.id === onde)||{}).rot || '';
       corpo.appendChild(el('div',{class:'linha-dado total', html:
         `<span>${est.vao} para ${j.cidadeAdv || 'fora'} por `+
         `${(r||{}).nome || '—'}${leva ? `, com ${leva} bomba${leva>1?'s':''}` : ''}`+
+        (briga && alvo ? ` · em cima da ${alvo.nome} `+
+                         `${ondeRot.toLowerCase()}` : '')+
         `</span><b class="negativo">${U.dinheiro(-est.custo)}</b>`}));
     };
 
@@ -3659,10 +3719,17 @@
     const aptos = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
       .slice(0, U.limitar(nosso.n, 2, 34));
+    /* DE QUE LADO NÓS ENTRAMOS. Em casa somos o mandante, e foi assim
+       desde sempre; atacando em viagem, nos arredores do estádio DELES,
+       somos o visitante — que é o que a gente é: quem viajou. O
+       encontro diz qual, e `combate.js` lê a marca `nossa` pra tudo
+       que precisava saber "de que lado é o jogador" (§8.28). */
+    const nossoLado = enc.nossoLado === 'visitante' ? 'visitante' : 'mandante';
+    const outroLado = nossoLado === 'mandante' ? 'visitante' : 'mandante';
     const bondes = [
-      {lado:'mandante',  n:nosso.n, cor:nosso.cor, cor2:nosso.cor2,
+      {lado:nossoLado, n:nosso.n, cor:nosso.cor, cor2:nosso.cor2,
        sigla:nosso.sigla, nome:nosso.nome,  nossa:true},
-      {lado:'visitante', n:deles.n, cor:deles.cor, cor2:deles.cor2,
+      {lado:outroLado, n:deles.n, cor:deles.cor, cor2:deles.cor2,
        sigla:deles.sigla, nome:deles.nome,  nossa:false}
     ];
     encontroAberto = enc;

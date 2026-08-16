@@ -28,6 +28,7 @@ TO.diaJogo.P = {
 };
 
 TO.diaJogo.combate = (function(){
+  const OUTRO_LADO = {mandante:'visitante', visitante:'mandante'};
   const U = TO.util;
   const A = TO.diaJogo.arredores;
   const P = TO.diaJogo.P;
@@ -185,9 +186,16 @@ TO.diaJogo.combate = (function(){
        que é como era antes. */
     const porLado = {mandante:[], visitante:[]};
     for(const b of (J.bondes_ || [])) (porLado[b.lado] || porLado.mandante).push(b);
+    /* DE QUE LADO NÓS ESTAMOS, antes de existir disco pra perguntar:
+       quem diz é o bonde marcado `nossa`. Atacando em viagem ele vem
+       como visitante, e é isso que faz a escalação nascer nos spawns
+       certos. Sem bonde nenhum — a página solta da cena —, mandante,
+       que é como sempre foi. */
+    const ladoCfg = ((J.bondes_ || []).find(b=>b.nossa) || {}).lado || 'mandante';
+    J.ladoNosso = ladoCfg;
     /* o nosso primeiro na fila: é dele o portão do jogador */
-    const iNosso = porLado.mandante.findIndex(b=>b.nossa);
-    if(iNosso > 0) porLado.mandante.unshift(porLado.mandante.splice(iNosso, 1)[0]);
+    const iNosso = porLado[ladoCfg].findIndex(b=>b.nossa);
+    if(iNosso > 0) porLado[ladoCfg].unshift(porLado[ladoCfg].splice(iNosso, 1)[0]);
 
     const temEscalacao = !!(cfg.escalacao && cfg.escalacao.length);
     const grupos = [];
@@ -202,9 +210,11 @@ TO.diaJogo.combate = (function(){
                                            qtd:Math.max(1, Math.round(b.n))}));
       } else {
         /* com escalação e sem bonde, quem diz o tamanho é a escalação */
-        const base = (lado === 'mandante' && temEscalacao) ? 0
+        /* sem bonde vindo do mapa, o nosso lado é o que a cena marcou
+           como do jogador — e não o mandante por decreto */
+        const base = (lado === ladoCfg && temEscalacao) ? 0
           : Math.max(1, Math.round(
-              (lado==='mandante'?P.efetivo:J.efetivoRival)/contarSpawns(lado)));
+              (lado===ladoCfg?P.efetivo:J.efetivoRival)/contarSpawns(lado)));
         for(const s of spawns) grupos.push({s, bonde:null, qtd:base});
       }
     }
@@ -214,9 +224,15 @@ TO.diaJogo.combate = (function(){
        ficha, que é o que o povão é. Quando o bonde veio do mapa os
        escalados são todos NOSSOS; sem bonde, se espalham pelos portões de
        casa, como era antes. */
-    const nossos = grupos.filter(g=>g.bonde ? g.bonde.nossa : g.s.lado === 'mandante');
-    const alvo = nossos.length ? nossos : grupos.filter(g=>g.s.lado === 'mandante');
-    const grupoLider = alvo.find(g=>g.s.jogador) || alvo[0] || null;
+    const nossos = grupos.filter(g=>g.bonde ? g.bonde.nossa : g.s.lado === ladoCfg);
+    const alvo = nossos.length ? nossos : grupos.filter(g=>g.s.lado === ladoCfg);
+    /* O LÍDER VAI NO BONDE `nossa`, e não no spawn que o dado marcou
+       como do jogador: `jogador:true` está cravado em `mandante1` no
+       `cena_arredores.js`, e atacando em viagem o nosso bonde nasce do
+       lado visitante. A bandeira do dado vira reserva, pra a página
+       solta da cena, que não tem bonde nenhum. */
+    const grupoLider = alvo.find(g=>g.bonde && g.bonde.nossa)
+                    || alvo.find(g=>g.s.jogador) || alvo[0] || null;
     const fichas = new Map();
     if(temEscalacao && grupoLider){
       /* o mais rodado vai no bonde do jogador e vira o líder */
@@ -535,7 +551,7 @@ TO.diaJogo.combate = (function(){
     /* correr aqui é entrar: o portão é a saída de quem não quer briga */
     if(!reage) for(const m of meus) m.entraEm = J.t;
     logar(J, `${b.rot}: ${reage?'veio pra cima':'correu pro portão'}.`,
-          b.lado==='mandante'?'r':'a');
+          b.lado===ladoDoJogador(J)?'r':'a');
   }
 
   /* O clima da cena passa a ser a soma dos humores, e não um
@@ -570,7 +586,9 @@ TO.diaJogo.combate = (function(){
       if(l && l.entrou){
         J.fase='acabando';
         const venceu = J.caidos.visitante >= J.caidos.mandante;
-        J.acabou={lado:'mandante', venceu,
+        /* `venceu` segue a convenção do MANDANTE — é a ponte que a
+           vira pro nosso lado. O que estava errado era o `lado`. */
+        J.acabou={lado:ladoDoJogador(J), venceu,
                   tranquila: J.caidos.mandante+J.caidos.visitante===0,
                   motivo:'o presidente entrou pelo portão'};
         logar(J, J.acabou.motivo, 'p');
@@ -663,7 +681,8 @@ TO.diaJogo.combate = (function(){
     for(const d of J.discos)
       if(d.entrando && d.vivo){ d.porEmperro = true; entrarNoEstadio(J, d); }
     J.fase = 'acabando';
-    J.acabou = {lado:'mandante', venceu: J.caidos.visitante >= J.caidos.mandante,
+    J.acabou = {lado:ladoDoJogador(J),
+                venceu: J.caidos.visitante >= J.caidos.mandante,
                 tranquila: J.caidos.mandante + J.caidos.visitante === 0,
                 entrou:true, motivo:'sua torcida entrou pelo portão'};
     logar(J, J.acabou.motivo, 'p');
@@ -686,6 +705,10 @@ TO.diaJogo.combate = (function(){
        e aí não houve vencido: dizer que a cena esvaziou porque não
        sobrou ninguém de pé seria mentir sobre uma noite sem briga */
     const semBriga = lado===null && J.caidos.mandante+J.caidos.visitante===0;
+    /* `venceu` É DO PONTO DE VISTA DO MANDANTE, e continua sendo: é a
+       ponte que o vira pro nosso lado (`ganhamos`), e virar duas vezes
+       daria o resultado trocado de novo, agora pro outro lado. O
+       `'mandante'` aqui é o nome do lado, não sinônimo de nós. */
     const venceu = lado ? lado==='mandante'
                         : J.caidos.visitante >= J.caidos.mandante;
     /* O TERCEIRO FIM: ELES CORRERAM.
@@ -708,7 +731,11 @@ TO.diaJogo.combate = (function(){
         correram ? 'eles correram sem ninguém encostar em ninguém'
       : semBriga ? 'a noite foi tranquila e todo mundo entrou'
       : lado===null ? 'não sobrou ninguém de pé dos dois lados'
-      : venceu ? 'não sobrou ninguém deles na cena'
+      /* O TEXTO É DO NOSSO PONTO DE VISTA, e `venceu` é do mandante:
+         ganhando como visitante, `venceu` é falso e a tela dizia "sua
+         torcida foi corrida do lugar" pra uma briga que a gente venceu.
+         Quem sobrou de pé é `lado`; se for o nosso, sobramos nós. */
+      : lado === ladoDoJogador(J) ? 'não sobrou ninguém deles na cena'
                : 'sua torcida foi corrida do lugar'};
     /* nada de faixa na cena aqui: quem conta o resultado é a tela de
        resumo, e um aviso piscando por cima do palco no mesmo instante
@@ -926,9 +953,7 @@ TO.diaJogo.combate = (function(){
       if(d.lider && !d.entrando) continue;
       d._cacando = false;
 
-      const recua = d.fugindo
-        || (d.lado==='mandante'  && J.recuando)
-        || (d.lado==='visitante' && J.recuoVisitante);
+      const recua = d.fugindo || recuando(J, d.lado);
 
       let ax,ay, usarCampo=false, campo=null;
 
@@ -1228,8 +1253,7 @@ TO.diaJogo.combate = (function(){
   /* ---------- polícia ---------- */
   function procurandoConflito(J,d){
     if(!d.vivo||d.fugindo||d.entrou) return false;
-    if(d.lado==='mandante'  && J.recuando) return false;
-    if(d.lado==='visitante' && J.recuoVisitante) return false;
+    if(recuando(J, d.lado)) return false;
     return d.hostil>0;
   }
 
@@ -1323,8 +1347,7 @@ TO.diaJogo.combate = (function(){
     const vivos=J.discos.filter(d=>d.vivo);
     for(const a of vivos){
       if(a.fugindo||a.atordoado>0) continue;
-      if(a.lado==='mandante'&&J.recuando) continue;
-      if(a.lado==='visitante'&&J.recuoVisitante) continue;
+      if(recuando(J, a.lado)) continue;
 
       const bate = agressivo(J,a);
       if(bate) for(const b of porPerto(J,a.x,a.y,a.r+(J._raioMax||8)+5)){
@@ -1528,7 +1551,8 @@ TO.diaJogo.combate = (function(){
      continua pesando onde deve — derruba a moral, e moral baixa é o que
      leva à debandada. */
   function pressaoSobreMim(J,dt){
-    const meus=J.discos.filter(d=>d.lado==='mandante'&&d.vivo&&!d.fugindo);
+    const meu = ladoDoJogador(J);
+    const meus=J.discos.filter(d=>d.lado===meu&&d.vivo&&!d.fugindo);
     if(!meus.length){J.fracPM=0;return;}
     const frac=meus.filter(d=>ameacaPM(J,d)).length/meus.length;
     J.fracPM=frac;
@@ -1546,7 +1570,7 @@ TO.diaJogo.combate = (function(){
     }
   }
   function iaRecuo(J){
-    const g=J.discos.filter(d=>d.lado==='visitante'&&d.vivo);
+    const g=J.discos.filter(d=>d.lado===ladoDeles(J)&&d.vivo);
     if(!g.length) return;
     const sob=g.filter(d=>ameacaPM(J,d)).length/g.length;
     const moral=g.reduce((s,d)=>s+d.moral,0)/g.length;
@@ -1736,16 +1760,30 @@ TO.diaJogo.combate = (function(){
      subido justamente pra ela ter briga. A 40% dá 29%, que cabe. Os
      outros cortes medidos: 1/3 → 20%, 30% → 15%, 25% → 12,5%. */
   const MINORIA = 0.40;     // 40% ou menos de pé que o outro lado
-  const OUTRO_LADO = {mandante:'visitante', visitante:'mandante'};
 
   /* De quem é o bonde do jogador. O líder é o disco que ele dirige;
-     sem líder na cena, vale a marca que o mapa pôs no bonde dele. */
+     sem líder na cena, vale a marca que o mapa pôs no bonde dele.
+
+     ESTA FUNÇÃO EXISTIA E NÃO ERA CHAMADA. Oito pontos do arquivo
+     tinham `'mandante'` cravado como sinônimo de "o nosso lado", e o
+     jogo nunca reparou porque o jogador sempre foi o mandante. Atacar
+     em viagem (§8.28) inverte isso, e aí o vencedor saía trocado, a
+     tecla R não recuava ninguém, a barra da PM media o bonde deles e a
+     debandada dizia "os visitantes correram" quando quem correu era o
+     nosso pessoal. Nenhum `'mandante'` literal sobrou como sinônimo de
+     nosso — os que restam são o nome do lado, e só. */
   function ladoDoJogador(J){
     const l = J.discos.find(d=>d.lider);
     if(l) return l.lado;
     const meu = J.discos.find(d=>d.doJogador);
-    return meu ? meu.lado : 'mandante';
+    return meu ? meu.lado : (J.ladoNosso || 'mandante');
   }
+  const ladoDeles = J => OUTRO_LADO[ladoDoJogador(J)];
+
+  /* recuar é do LADO, e cada lado tem a sua bandeira: a nossa é a tecla
+     R (`J.recuando`), a deles é a decisão da IA (`J.recuoVisitante`) */
+  const recuando = (J, lado) => lado === ladoDoJogador(J)
+    ? !!J.recuando : !!J.recuoVisitante;
 
   function checarDebandada(J){
     const meuLado = ladoDoJogador(J);
@@ -1762,7 +1800,7 @@ TO.diaJogo.combate = (function(){
       if(!motivo) continue;
       J.debandou[lado]=true;
       J.debandouPor[lado]=motivo;
-      const meu=lado==='mandante';
+      const meu = lado === meuLado;
       const txt = motivo==='minoria'
         ? (meu ? 'Seu pessoal viu o tamanho deles e correu.'
                : 'Eles viram o tamanho do bonde e correram.')
@@ -2006,6 +2044,7 @@ TO.diaJogo.combate = (function(){
   }
 
   return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar,
+          ladoDoJogador, ladoDeles, OUTRO_LADO,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
           iaArremesso, alvoDeFuga, conferirFim, dePe, agressivo, atacado,

@@ -425,8 +425,13 @@ TO.praca = (function(){
        procurando. Sobe com a tensão, mas devagar: é o que garante que
        o dia de jogo comum termine em paz.
      ======================================================= */
-  /* hostil é rival de fato, ou tensão alta o bastante pra sair faísca */
+  /* hostil é rival de fato, ou tensão alta o bastante pra sair faísca —
+     menos entre duas organizadas do mesmo clube ligadas por irmandade,
+     que não se pegam por número nenhum (§8.28). Esta linha vem antes de
+     tudo de propósito: a tensão passa por cima da relação, e sem ela
+     bastaria a tensão chegar a 45 pra as irmãs se estranharem. */
   function hostis(E, ida, idb){
+    if(M().saoIrmas(ida, idb)) return false;
     const meu = E.torcida.id;
     if(ida === meu || idb === meu){
       const outro = ida === meu ? idb : ida;
@@ -646,6 +651,54 @@ TO.praca = (function(){
     return {desfecho:'paz', jogo: nosso.partida || null};
   }
 
+  /* =======================================================
+     A BRIGA MARCADA EM VIAGEM
+
+     `resolverIda` só sabe da NOSSA praça: em jogo fora ela devolve
+     "paz" com `semNos`, porque `jogosDaPraca` não tem o jogo e ninguém
+     está na rua daqui. A caravana que marcou ataque (§8.28) precisa do
+     encontro do outro lado, e ele não sai da rua de lá — o modelo não
+     tem a praça deles em detalhe — mas dos dois efetivos, que é o que a
+     cena precisa.
+
+     NOSSO LADO É O VISITANTE quando a briga é nos arredores do estádio
+     DELES: é o que a gente é, quem viajou. Na praça e na rua da cidade
+     deles não há mando, e a convenção do dado das cenas continua
+     valendo (nascemos como mandante).
+     ======================================================= */
+  function encontroDaViagem(E){
+    const j = E.proximoJogo;
+    const p = PL().plano(E);
+    if(!j || j.casa || p.intencao === 'paz' || !p.alvoTorcida) return null;
+    const o = M().torcida(p.alvoTorcida);
+    if(!o || M().saoIrmas(E.torcida.id, o.id)) return null;
+    const onde = (PL().ONDE_ATAQUE.find(x=>x.id === PL().ondeDoPlano(p))
+                  || {}).id || 'arredores';
+    /* O EFETIVO DELES É O DE CASA, a mesma conta de `naRuaHoje`: 60% do
+       que a torcida tem. O nosso é quem embarcou, e mais ninguém. */
+    const deles = Math.max(4, Math.round(
+      (((TO.tensao && TO.tensao.mundo(E)[o.id]) || o).membros || 20) * 0.6));
+    const nossos = Math.max(2, PL().efetivoDaSaida(E));
+    const cores = M().coresDaTorcida(o);
+    const nossaCor = M().coresDaTorcida(E.torcida);
+    const local = onde === 'praca' ? 'praca'
+                : onde === 'pista' ? ruaDaClasse(null) : 'arredores';
+    /* o nome da cidade já vem resolvido no jogo da semana; `cidade()`
+       indexa por id de cidade e o `mapa` da torcida nem sempre é um */
+    const cidade = j.cidadeAdv || (M().cidade(o.mapa)||{}).nome || o.cidade || '';
+    return {desfecho:'planejada', fora:true, cidade,
+      onde:{local, bairro:o.bairroSede||''},
+      enc:{
+        a:{torcida:E.torcida.id, nome:E.torcida.nome,
+           sigla:M().siglaTorcida(E.torcida), n:nossos,
+           cor:nossaCor.cor, cor2:nossaCor.cor2, nossa:true},
+        b:{torcida:o.id, nome:o.nome, sigla:M().siglaTorcida(o), n:deles,
+           cor:cores.cor, cor2:cores.cor2, nossa:false},
+        local, bairro:o.bairroSede||'', nossa:true,
+        /* nos arredores deles, o mando é deles */
+        nossoLado: onde === 'arredores' ? 'visitante' : 'mandante'}};
+  }
+
   /* O EFETIVO É O REAL DOS DOIS LADOS, e eles são diferentes. Este é o
      mesmo cuidado da cena: nada é reequilibrado na abertura — se saímos
      com 80 e eles com 100, a cena é de 80 contra 100. */
@@ -853,7 +906,7 @@ TO.praca = (function(){
           hostis, chanceDeProcurar, chanceDeAcaso, corredor,
           grauDeRivalidade, fatorParidade, BASE_PROCURA, PISO_PARIDADE,
           efetivoDeTorcida:efetivoDe,
-          lugarPlanejado, lugarDoEncontro, resolverIda,
+          lugarPlanejado, lugarDoEncontro, resolverIda, encontroDaViagem,
           organizadasComEfetivo, porPeso, assaltosDoBloco, assaltoDeHoje,
           resolverAssalto, chanceDeDarErrado, RISCO_POR_SEGURANCA,
           FRACAO_GAVETA, PENA, marcarBaixa, passarDia};

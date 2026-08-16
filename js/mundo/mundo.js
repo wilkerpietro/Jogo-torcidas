@@ -124,6 +124,30 @@ TO.mundo = (function(){
     return 'Neutro';
   }
 
+  /* =======================================================
+     TORCIDA-IRMÃ NÃO BRIGA COM TORCIDA-IRMÃ
+
+     Duas organizadas do MESMO CLUBE ligadas por irmandade não se pegam,
+     e isto precisa ser regra e não número. Só o valor inicial de +80 não
+     basta: `hostis()` devolve verdadeiro quando a relação cai de −15 OU
+     quando a tensão passa de 45, e a tensão passa por cima da relação.
+     Com a agressividade de §8.26 a tensão sobe muito mais do que subia,
+     e nada garantiria que a de duas irmãs ficasse abaixo de 45 pra
+     sempre.
+
+     A regra é geral, e não um remendo pro par Leões da TUF / Jovem Garra
+     Tricolor que a motivou: o país tem 29 clubes com mais de uma
+     organizada, e o que vale pra um vale pra todos. As duas condições
+     são necessárias — mesmo clube E irmandade declarada —, porque
+     irmandade entre torcidas de clubes diferentes é aliança forte, não
+     parentesco, e aliado se ataca (é traição, e traição tem caminho). */
+  function saoIrmas(idA, idB){
+    if(!idA || !idB || idA === idB) return false;
+    const a = torcida(idA), b = torcida(idB);
+    if(!a || !b || !a.clubeId || a.clubeId !== b.clubeId) return false;
+    return (a.irmandade||[]).includes(idB) || (b.irmandade||[]).includes(idA);
+  }
+
   function estiloRelacao(tipo){
     const r = (D().regras.relacoes||{})[tipo];
     return r || {ordem:0, corTexto:'#8d8d8d', corFundo:'#333', podeMelhorar:true,
@@ -417,7 +441,8 @@ TO.mundo = (function(){
           CLASSES, ZONAS, bairrosDe, bairro, bairroDaSede, multiplicador,
           bairrosPorZona, baseDeRecrutamento,
           estadio, estadiosEm, estadioDoClube,
-          TIPOS, valorInicial, statusDoValor, relacaoBase, estiloRelacao, relacoesDe,
+          TIPOS, valorInicial, statusDoValor, relacaoBase, saoIrmas,
+          estiloRelacao, relacoesDe,
           influencia, territorios, ficha, sigla, siglaTorcida, coresDaTorcida,
           adversario,
           divisoes, regioes,

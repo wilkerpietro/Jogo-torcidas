@@ -1198,6 +1198,26 @@ TO.feed = (function(){
                    `${j.estadio}.`;
 
     if(!j.casa){
+      /* A CARAVANA QUE MARCOU ATAQUE tem o dia da guerra dela, na
+         cidade deles (§8.28). Sem ataque, a viagem continua sendo a
+         mensagem de chegada de §8.23. */
+      const viagem = TO.praca.encontroDaViagem(E);
+      if(viagem){
+        const p2 = PL().plano(E);
+        const onde = (PL().ONDE_ATAQUE.find(o=>o.id === PL().ondeDoPlano(p2))
+                      || {}).rot || 'nos arredores';
+        propor(E, {cat:3, peso:'decisao', voz:vozRua(), tipo:'ruim',
+          chave:`c3fora|${E.data.absoluto}`,
+          texto:`Hoje é o dia. A ${viagem.enc.b.nome} vai estar `+
+                `${onde.toLowerCase()}, em ${viagem.cidade || 'casa deles'}, `+
+                `e a gente vai pra cima.`,
+          dados:{tipo:'ida'},
+          botoes:[{rot:'Ir para a guerra', efeito:'ida',
+                   nota:`${viagem.enc.a.n} embarcados`+
+                        `${p2.bombas ? ` · ${p2.bombas} bomba`+
+                                       `${p2.bombas>1?'s':''}` : ''}`}]});
+        return;
+      }
       propor(E, {cat:3, peso:'info', voz:vozRua(),
         chave:`c3fora|${E.data.absoluto}`,
         tipo: chegadaRuim(E, j) ? 'ruim' : '',
@@ -1281,7 +1301,10 @@ TO.feed = (function(){
      informação e vira mensagem aqui mesmo; os outros dois são cena, e
      quem abre a tela é a casca — este módulo não conhece canvas. */
   function irProEstadio(E){
-    const r = TO.praca.resolverIda(E);
+    /* A BRIGA MARCADA EM VIAGEM vem primeiro: `resolverIda` só conhece
+       a nossa praça e devolveria "paz" com `semNos`, que é verdade — a
+       rua daqui está vazia — e que não é a resposta da pergunta. */
+    const r = TO.praca.encontroDaViagem(E) || TO.praca.resolverIda(E);
     if(!r || r.desfecho === 'paz'){
       propor(E, {cat:4, peso:'info', voz:vozRua(), chave:`ida|${E.data.absoluto}`,
         texto: r && r.semNos

@@ -568,8 +568,9 @@ TO.diaJogo.ponte = (function(){
      ======================================================= */
   const BASE_FUGA = 12;
   function prestigioDaFuga(J){
-    const meus  = Math.max(1, J.total.mandante);
-    const deles = Math.max(0, J.total.visitante);
+    const meu = C.ladoDoJogador(J), outro = C.OUTRO_LADO[meu];
+    const meus  = Math.max(1, J.total[meu]);
+    const deles = Math.max(0, J.total[outro]);
     return U.limitar(Math.round(BASE_FUGA * (deles/meus)), 1, 6);
   }
 
@@ -607,7 +608,12 @@ TO.diaJogo.ponte = (function(){
        ficha o que vale é se NÓS ganhamos — senão o time inteiro sai
        comemorando a derrota. O resto do relatório continua na
        convenção antiga, que é a que `fecharCena` lê. */
-    const nossoLado = (J.discos.find(d=>d.doJogador) || {}).lado || 'mandante';
+    /* QUEM É O NOSSO LADO tem uma função só, em `combate.js`, e é ela
+       que vale: ela olha o líder primeiro (o disco que o jogador
+       dirige) e só depois a marca do bonde. Aqui estava a terceira
+       cópia da mesma pergunta, e ela não conhecia o líder. */
+    const nossoLado = C.ladoDoJogador(J);
+    const outroLado = C.OUTRO_LADO[nossoLado];
     const ganhamos = nossoLado === 'mandante' ? venceu : !venceu;
     const xpNoite = Math.round(xpBase * (ganhamos?1.5:1));
 
@@ -642,9 +648,14 @@ TO.diaJogo.ponte = (function(){
       moralTorcida: venceu?+1 : (J.debandou&&J.debandou.mandante)?-2 : -0.5,
       /* o `|| 0` não é enfeite: Math.round(-0.5) é -0, e a tela
          escrevia "Prestígio -0" numa noite que deu em nada */
+      /* O PRESTÍGIO É NOSSO, e a conta era do mandante: derrubar 80
+         deles jogando como visitante dava −120, e `aplicarResultado`
+         soma isso ao indicador sem virar nada — ganhar fora custava
+         prestígio e ainda fazia perder material. A fórmula continua a
+         mesma; o que muda é de quem são os caídos. */
       prestigio: correram ? prestigioDaFuga(J)
-        : (Math.round(J.caidos.visitante*2 - J.caidos.mandante*1.5
-                      - J.presosPor.mandante*2 + (J.rompido?6:0)) || 0),
+        : (Math.round(J.caidos[outroLado]*2 - J.caidos[nossoLado]*1.5
+                      - J.presosPor[nossoLado]*2 + (J.rompido?6:0)) || 0),
       membros
     };
     J.resultado=r;

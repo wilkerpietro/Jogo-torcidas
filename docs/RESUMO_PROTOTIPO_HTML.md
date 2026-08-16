@@ -3954,6 +3954,137 @@ neste ano medido.
 A bateria das oito cenas passa limpa com **0 erros de página**, e o determinismo segue
 intacto: o mesmo save em duas páginas limpas dá **142 mensagens e 0 diferenças**.
 
+## 8.28 A caravana decide a guerra, o visitante joga, e a aliança que faltava
+
+Três frentes: a tela da caravana ganha a decisão do dia, o jogo aprende a ser visitante
+nos arredores, e duas organizadas do mesmo clube param de se pegar.
+
+### A caravana decide o dia
+
+A tela resolvia quantos vão, por qual estrada e quantas bombas, e não perguntava o que a
+bomba ia fazer quando chegasse. Entra um bloco no topo — **"A torcida vai em paz ou vai
+atacar?"** —, porque é ele que muda o resto. Escolhendo atacar, abrem **quem** e **onde**;
+escolhendo paz, os dois somem e a tela é a de antes.
+
+```
+A torcida vai em paz ou vai atacar?   [Ir em paz] [Atacar]
+Quem atacar     Inferno Coral   65 a 115 na rua · tensão 0 · relação −45
+                Raça Coral      20 a  35 na rua · tensão 0 · relação −45
+Onde atacar     Na concentração · Na pista · Nos arredores
+                (nos arredores: "a beira do estádio deles, e lá a gente é o visitante")
+Quantos vão · Por qual estrada · Quantas bombas
+─────────────────────────────────────────────────────────────────────────
+100 para Recife por Rota mais curta · em cima da Inferno Coral nos arredores   −R$ 1.680
+```
+
+**Aliada não aparece na lista** — bater em aliado é traição, e traição tem caminho
+próprio —, nem torcida-irmã. `alvosDaViagem` lista as organizadas do clube mandante, com
+o efetivo em **faixa**, como o olheiro dá.
+
+A escolha chega ao plano da semana pelos campos que já existiam:
+`{intencao:'atacar', alvo:'inferno_coral', como:'arredores', onde:'arredores'}`.
+
+E o dia do jogo fora deixa de ser a mensagem de chegada:
+
+```
+"Hoje é o dia. A Inferno Coral vai estar nos arredores, em Recife,
+ e a gente vai pra cima."           → [Ir para a guerra]  (97 embarcados)
+```
+
+Isso precisou de uma peça nova em `praca.js`: **`encontroDaViagem`**. `resolverIda` só
+conhece a nossa praça — em jogo fora ela devolve "paz" com `semNos`, o que é verdade (a
+rua daqui está vazia) e não é a resposta da pergunta. O encontro da viagem sai dos dois
+efetivos: o nosso é quem embarcou, o deles é 60% da torcida em casa, a mesma conta de
+`naRuaHoje`.
+
+### O visitante joga
+
+Até aqui o jogador foi sempre o **mandante**, e `combate.js` tinha `'mandante'` cravado
+como sinônimo de "o nosso lado" em oito pontos. **O conserto já estava escrito e não era
+chamado**: `ladoDoJogador(J)` existe, olha o líder primeiro e a marca do bonde depois. Os
+oito passaram por ela, mais três que a medição encontrou:
+
+| onde | o que quebrava | como ficou |
+|---|---|---|
+| `J.acabou` ×2 | `lado:'mandante'` | `lado: ladoDoJogador(J)` |
+| recuo ×3 | `d.lado==='mandante' && J.recuando` | `recuando(J, d.lado)` |
+| barra da PM | `filter(d=>d.lado==='mandante')` | filtra pelo nosso lado |
+| debandada | `meu = lado==='mandante'` | `meu = lado === meuLado` |
+| escalação | sem bonde, cai no mandante | `ladoCfg`, do bonde `nossa` |
+| **recuo da IA** | mexia só no `'visitante'` | mexe no lado **deles** |
+| **cor do log** | `b.lado==='mandante'?'r':'a'` | pela nossa cor |
+| **líder da escalação** | `alvo.find(g=>g.s.jogador)` | o grupo do bonde `nossa` |
+
+E duas que só apareceram medindo, ambas da mesma família e **com consequência**:
+
+- **O texto do fim mentia.** Ganhando como visitante, `acabar` dizia *"sua torcida foi
+  corrida do lugar"* — porque o motivo saía de `venceu`, que é do ponto de vista do
+  mandante. Agora sai de quem sobrou de pé ser o nosso lado.
+- **O prestígio saía invertido.** Derrubando 80 deles como visitante, a conta dava
+  **−120**, e `aplicarResultadoDaNoite` soma isso ao indicador sem virar nada: ganhar
+  fora custava prestígio **e** fazia perder material (`res.prestigio < 0` dispara
+  `perderMaterial`). A fórmula continua a mesma; mudou de quem são os caídos.
+
+**`venceu` continua na convenção do mandante, de propósito**, porque é a ponte que o vira
+pro nosso lado (`ganhamos`) — virar duas vezes daria o resultado trocado de novo. O
+`'mandante'` que sobrou no arquivo é nome de lado, não sinônimo de nós.
+
+Medido, jogando os dois lados na mesma cena, 80 contra 80:
+
+| | mandante | visitante |
+|---|---|---|
+| `ladoDoJogador` / líder / spawn | mandante · mandante1 | **visitante · visitante1** |
+| **tecla R** | 79 nossos recuando, 0 deles | **79 nossos, 0 deles** |
+| **barra da PM** | `fracPM 1`, 24 nossos no cordão, 0 deles | **`fracPM 1`, 26 nossos, 0 deles** |
+| **debandada** | "Seu pessoal correu." | **"Seu pessoal correu."** |
+| **vencedor** | `venceu true` → `ganhamos true` | **`venceu false` → `ganhamos true`** |
+| **prestígio** | +160 | **+160** |
+
+No dado da cena, `jogador:true` continua cravado em `mandante1` — e agora é **reserva**,
+não regra: quem manda é o bonde marcado `nossa`, e `jogador:true` só vale na página solta
+da cena, que não tem bonde nenhum.
+
+**A rota do portão visitante existe**, e foi medida com as duas bitolas que o brief H
+deixou: `visitante1` e `visitante2` chegam a `ent_visitante` pela malha do jogo, por corpo
+de **raio 7** e por corpo de **raio 9**. As oito cenas seguem com **0 portões selados**.
+
+### A aliança entre TUF e JGT
+
+**O enunciado estava desatualizado num ponto, e vale registrar**: as duas não estavam sem
+relação nenhuma — estavam uma na lista de **`rivais`** da outra, na fonte e no gerado.
+`relacaoBase` devolvia **Rival** (−45), não Neutro. Então não bastou acrescentar: foi
+preciso **tirar de `rivais` e pôr em `irmandade`**, nos dois sentidos.
+
+A edição foi na fonte (`dados/fonte/torcidas_relacoes.json`, seis linhas) e o
+`ferramentas/importar_relacoes.py` reescreveu o gerado — mexer só no gerado sumiria na
+próxima importação. Depois disso, `relacaoBase` devolve **Irmandade** nos dois sentidos e
+a relação inicial é **+80**; jogando como Leões da TUF, `E.relacoes['jovem_garra_tricolor']`
+nasce em 80.
+
+**E "elas não brigam" virou regra, não número.** `hostis()` devolve verdadeiro quando a
+relação cai de −15 **ou** quando a tensão passa de 45 — e a tensão passa por cima da
+relação. Com a agressividade de §8.26 nada garantiria que a tensão entre irmãs ficasse
+abaixo de 45 pra sempre. Agora `M().saoIrmas(a, b)` — **mesmo clube E irmandade
+declarada** — corta antes de tudo, em `hostis()` e nas duas listas de alvo.
+
+| medida | resultado |
+|---|---|
+| tensão 100 dos dois lados | `hostis` **falso** nos dois sentidos |
+| tensão 100 **e** relação −100 | `hostis` **falso** |
+| pares de torcidas-irmãs no país | **19**, em 16 clubes |
+| desses, hostis com tensão 100 | **0** |
+| JGT como alvo, jogando de TUF | **não aparece** na lista |
+
+As duas condições são necessárias: há **22 irmandades entre clubes diferentes** no grafo,
+e essas continuam sendo aliança forte, não parentesco — aliado se ataca, e isso é traição.
+
+### O que não mudou
+
+Jogando como mandante nada regride: a bateria das oito cenas passa com **0 erros de
+página**, os portões seguem em **0 selados**, o determinismo dá **141 mensagens e 0
+diferenças**, e o feed segue em 8,13 mensagens por semana com **0 categorias repetidas em
+sequência**.
+
 ## 9. Celular
 
 > **Leia junto com §8.22.** Boa parte desta seção descreve a tela do MAPA — a gaveta

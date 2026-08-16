@@ -202,7 +202,11 @@ TO.planejamento = (function(){
   function alvosDoJogo(E){
     const j = E.proximoJogo;
     if(!j || !j.advId) return [];
-    return M().torcidasDe(j.advId).map(o=>{
+    /* TORCIDA-IRMÃ NÃO É ALVO (§8.28). Ela não aparece nem como opção:
+       marcar ataque contra a organizada irmã do nosso próprio clube não
+       é decisão difícil, é decisão impossível. */
+    return M().torcidasDe(j.advId).filter(o=>!M().saoIrmas(E.torcida.id, o.id))
+      .map(o=>{
       const v = (E.relacoes||{})[o.id];
       return {id:o.id, torcida:o, relacao: v===undefined ? 0 : v,
               aliada: v !== undefined && v >= 20,
@@ -741,13 +745,37 @@ TO.planejamento = (function(){
            `${Math.round(n*(1+erro)/5)*5}`;
   }
 
+  /* OS ALVOS DA VIAGEM: as torcidas do clube MANDANTE, que é quem vai
+     estar na rua na cidade deles. Aliada não entra — bater em aliado é
+     traição, e traição tem caminho próprio — nem torcida-irmã (§8.28).
+     Mesma forma de `alvosNaRua`, pra a tela desenhar as duas igual. */
+  function alvosDaViagem(E){
+    const j = E.proximoJogo;
+    if(!j || j.casa || !j.advId) return [];
+    return M().torcidasDe(j.advId)
+      .filter(o=>!o.incompleta && !M().saoIrmas(E.torcida.id, o.id))
+      .map(o=>{
+        const rel = (E.relacoes||{})[o.id];
+        const viva = (TO.tensao && TO.tensao.mundo(E)[o.id]) || o;
+        const n = Math.max(4, Math.round((viva.membros || o.membros || 20)*0.6));
+        return {id:o.id, torcida:o, nome:o.nome, n,
+                faixa: faixaDeEfetivo(E, n, o.id),
+                tensao: TO.tensao ? TO.tensao.nivel(E, o.id) : 0,
+                relacao: rel === undefined ? M().valorInicial(
+                  M().relacaoBase(E.torcida.id, o.id)) : rel,
+                aliada: rel !== undefined && rel >= RELACAO_ALIADO};
+      })
+      .filter(a=>!a.aliada)
+      .sort((a,b)=> (b.tensao - a.tensao) || (a.relacao - b.relacao));
+  }
+
   /* quem estará na rua no dia do NOSSO jogo, com o que importa pra
      escolher: efetivo estimado, tensão e relação */
   function alvosNaRua(E){
     const j = E.proximoJogo;
     if(!j || !TO.praca) return [];
     return TO.praca.naRuaEm(E, j.dia || 6)
-      .filter(b => !b.nossa && !b.doJogador)
+      .filter(b => !b.nossa && !b.doJogador && !M().saoIrmas(E.torcida.id, b.id))
       .map(b=>{
         const rel = (E.relacoes||{})[b.id];
         return {id:b.id, torcida:b.torcida, nome:b.nome, n:b.n,
@@ -953,7 +981,7 @@ TO.planejamento = (function(){
           alvosDoJogo, soAliados, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
           COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,
-          ONDE_ATAQUE, ondeDoPlano, alvosNaRua, definirAtaque,
+          ONDE_ATAQUE, ondeDoPlano, alvosNaRua, alvosDaViagem, definirAtaque,
           faixaDeEfetivo,
           passos, falta, investidaDe, definirInvestida,
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,

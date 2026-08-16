@@ -9154,7 +9154,9 @@
      "torcida_jovem_do_galo",
      "trovao_azul"
     ],
-    "irmandade": [],
+    "irmandade": [
+     "leoes_da_tuf"
+    ],
     "rivais": [
      "bamor",
      "boca_suja",
@@ -9196,7 +9198,6 @@
      "jovem_do_botafogo_pb",
      "jovem_ponte",
      "jovem_tricolor",
-     "leoes_da_tuf",
      "mafia_vermelha",
      "mancha_azul",
      "mancha_negra_do_asa",
@@ -9746,7 +9747,9 @@
      "uniao_tricolor",
      "young_flu"
     ],
-    "irmandade": [],
+    "irmandade": [
+     "jovem_garra_tricolor"
+    ],
     "rivais": [
      "bamor",
      "boca_suja",
@@ -9788,7 +9791,6 @@
      "jovem_chape",
      "jovem_do_botafogo_pb",
      "jovem_fla",
-     "jovem_garra_tricolor",
      "jovem_ponte",
      "jovem_sport",
      "jovem_tricolor",
