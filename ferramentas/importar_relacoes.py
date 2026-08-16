@@ -71,6 +71,57 @@ def chave(t):
     return ''.join(c for c in sem_acento(t).lower() if c.isalnum())
 
 
+def fundacao_da_planilha():
+    """{chave do nome: (ano, mes, dia)} da coluna "Data de fundacao".
+
+    A planilha guarda a data COMPLETA — Gavioes em 01/07/1969 — e a
+    importacao guardava so o ano, jogando dia e mes fora nas 140. Sem eles
+    a festa de aniversario do aliado caia num dia sorteado por hash.
+
+    O openpyxl ja devolve datetime quando a celula esta formatada como
+    data; quando vem numero cru, e o serial do Excel, que conta dias desde
+    1899-12-30. Celula vazia ou que nao vira data fica de fora, e quem
+    ficar de fora continua caindo no hash — reserva, nao regra.
+    """
+    if not PLANILHA.exists():
+        return {}
+    try:
+        import openpyxl, datetime
+    except ImportError:
+        return {}
+    ws = openpyxl.load_workbook(PLANILHA, data_only=True)['Torcidas']
+    cab = [str(c or '').strip().lower() for c in
+           next(ws.iter_rows(max_row=1, values_only=True))]
+    col = next((i for i, c in enumerate(cab) if 'funda' in c), None)
+    cn = cab.index('torcida') if 'torcida' in cab else 0
+    if col is None:
+        print('  aba Torcidas sem coluna de fundacao: dia e mes ficam no hash')
+        return {}
+    fora, seriais = {}, []
+    for r in ws.iter_rows(min_row=2, values_only=True):
+        if not r[cn]:
+            continue
+        v = r[col]
+        d = None
+        if isinstance(v, datetime.datetime):
+            d = v.date()
+        elif isinstance(v, datetime.date):
+            d = v
+        elif isinstance(v, (int, float)) and v > 0:
+            seriais.append(v)
+            # o serial 60 e o 29/02/1900 que nunca existiu; ele so afeta
+            # datas anteriores a marco de 1900, e nenhuma torcida foi
+            # fundada antes disso — a conferencia abaixo confirma
+            d = (datetime.date(1899, 12, 30) +
+                 datetime.timedelta(days=int(v)))
+        if d:
+            fora[chave(r[cn])] = (d.year, d.month, d.day)
+    if seriais:
+        baixos = [x for x in seriais if x < 61]
+        print(f'  seriais crus: {len(seriais)}, abaixo de 61: {len(baixos)}')
+    return fora
+
+
 def siglas_da_planilha():
     """{chave do nome: sigla da torcida}. A aba Torcidas ganhou a coluna
     Sigla; sem a planilha (ou sem openpyxl) o jogo cai na sigla derivada do
@@ -100,6 +151,19 @@ def siglas_da_planilha():
     return fora
 
 
+def fundacao_completa(datas, t):
+    """Dia e mes de fundacao, quando a planilha tem. O ANO continua vindo
+    do JSON: e ele que as 140 tem, a planilha tem 138."""
+    d = datas.get(chave(t['nome']))
+    if not d:
+        return {}
+    fora = {'fundacaoMes': d[1], 'fundacaoDia': d[2]}
+    # ano da planilha so entra quando o JSON nao tem
+    if not ano(t.get('fundacao', '')):
+        fora['fundacao'] = d[0]
+    return fora
+
+
 def escrever(caminho, cabecalho, corpo):
     (RAIZ / caminho).write_text(
         f'/* {cabecalho}\n'
@@ -113,6 +177,7 @@ def main():
     origem = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ORIGEM
     d = json.loads(origem.read_text(encoding='utf-8'))
     siglas = siglas_da_planilha()
+    datas = fundacao_da_planilha()
 
     torcidas = []
     for t in d['torcidas']:
@@ -134,6 +199,7 @@ def main():
             'divisaoClube': t.get('divisaoClube', 0),
             'bairroSede': t.get('bairroSede', ''),
             'fundacao': ano(t.get('fundacao', '')),
+            **fundacao_completa(datas, t),
             'cores': [c.get('camisa', '#8a8a8a'), c.get('calcao', '#8a8a8a')],
             'detalhe': c.get('detalhe', '#8a8a8a'),
             'membros': dv.get('membros', t.get('quantidadeNPCs', 20)),
@@ -198,6 +264,13 @@ def main():
     print(f'  relacoes direcionais: {total}')
     print(f'  apontando pra torcida inexistente: {sum(quebradas.values())}'
           + (f' {sorted(quebradas)[:6]}' if quebradas else ''))
+    comData = sum(1 for t in torcidas if t.get('fundacaoDia'))
+    print(f'  com dia e mes de fundacao: {comData} de {len(torcidas)}'
+          f' · no hash por falta de dado: {len(torcidas)-comData}')
+    g = next((t for t in torcidas if t['id'] == 'gavioes'), None)
+    if g:
+        print(f"  Gavioes: {g.get('fundacaoDia','?'):02}/"
+              f"{g.get('fundacaoMes','?'):02}/{g['fundacao']}")
 
     # simetria: se A diz que B e rival, B diz o mesmo de A?
     por_id = {t['id']: t for t in torcidas}

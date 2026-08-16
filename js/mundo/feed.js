@@ -714,13 +714,19 @@ TO.feed = (function(){
     if(atq && !atq.avisado){
       atq.avisado = true;
       const o = M().torcida(atq.torcida) || {nome:atq.nome};
+      const naEstrada = atq.alvo === 'emboscada';
       propor(E, {cat:3, peso:'decisao', voz:vozRua(), tipo:'ruim',
-        chave:`c3bar|${E.data.absoluto}`,
-        texto:`Invadiram nosso ${atq.alvo}! A ${o.nome} tá na porta.`,
-        dados:{tipo:'bar'},
-        botoes:[{rot:'Descer pra lá', efeito:'cena'},
-                {rot:'Deixar quebrarem', efeito:'nada',
-                 nota:'ninguém desce, e a casa é deles'}]});
+        chave:`c3atq|${E.data.absoluto}`,
+        texto: naEstrada
+          ? `Pegaram a caravana na estrada. A ${o.nome} fechou a pista.`
+          : `Invadiram nosso ${atq.alvo}! A ${o.nome} tá na porta.`,
+        dados:{tipo:'ataque', alvo:atq.alvo},
+        botoes:[{rot: naEstrada ? 'Ir pra treta' : 'Descer pra lá',
+                 efeito:'cena'},
+                {rot: naEstrada ? 'Mandar seguir viagem' : 'Deixar quebrarem',
+                 efeito:'nada',
+                 nota: naEstrada ? 'ninguém desce do ônibus, e eles cobram'
+                                 : 'ninguém desce, e a casa é deles'}]});
       return;
     }
 
@@ -1135,19 +1141,35 @@ TO.feed = (function(){
               {rot:'Não dar moral', efeito:'nada', nota:'nada acontece'}]});
   }
 
-  /* A FESTA DO ALIADO cai no dia de fundação dele. A fonte guarda o ANO
-     de fundação e nada mais, então o dia do ano sai do hash do id — é
-     inventado, mas é FIXO: a mesma aliada faz aniversário sempre no
-     mesmo dia, em todas as temporadas e em todas as partidas. */
+  /* A FESTA DO ALIADO CAI NO DIA DE FUNDAÇÃO DELE, e agora é o dia de
+     verdade: a planilha do autor sempre teve a data completa — Gaviões
+     em 01/07/1969 — e a importação jogava dia e mês fora, guardando só o
+     ano. Enquanto foi só o ano, o dia saía do hash do id: inventado, mas
+     fixo. Hoje 137 das 140 têm a data da planilha; as 3 que não têm
+     continuam no hash, que virou reserva em vez de regra. */
+  function semanaDaFundacao(E, o){
+    if(o.fundacaoDia && o.fundacaoMes){
+      const d = TO.estado.semanaDiaDe(
+        new Date(E.data.ano, o.fundacaoMes - 1, o.fundacaoDia));
+      /* 1º de janeiro de 2026 é ANTES da semana 1 do jogo: o calendário
+         começa na primeira segunda-feira do ano, dia 5, e `semanaDiaDe`
+         devolve nulo pros quatro dias antes dela. Quinze torcidas —
+         Bamor, Camisa 12 do Vitória e outras fundadas em 01/01 — caíam
+         calada no hash por causa disso. Aniversário de 1º de janeiro é
+         semana 1, e ponto. */
+      if(d) return d.semana;
+      return 1;
+    }
+    return Math.floor((hash('fest|'+o.id) % 364)/7) + 1;
+  }
+
   function festaDeAliado(E, ch){
     const c = ctl(E);
     for(const [id, v] of Object.entries(E.relacoes||{})){
       if(v < PL().RELACAO_ALIADO) continue;
       const o = M().torcida(id);
       if(!o || !o.fundacao) continue;
-      const diaAno = hash('fest|'+id) % 364;
-      const semanaF = Math.floor(diaAno/7) + 1;
-      if(semanaF !== E.data.semana) continue;
+      if(semanaDaFundacao(E, o) !== E.data.semana) continue;
       if(c.assunto['festa|'+id] === semanaAbs(E)) continue;
       c.assunto['festa|'+id] = semanaAbs(E);
       const anos = E.data.ano - o.fundacao;
@@ -1228,7 +1250,7 @@ TO.feed = (function(){
   return {CATEGORIAS, catDe, TETO_SEMANA, COTA_INTERNA_SEMANA, EFEITO,
           lerEfeito, lerEfeitos,
           COTA_DIPLOMACIA_MES, CARENCIA_AMEACA, AMEACAS, ASSUNTOS,
-          propor, publicar, responder, travado, decisaoAberta,
+          propor, publicar, responder, travado, decisaoAberta, semanaDaFundacao,
           passarDia, fecharSemana, convocarEncontro, registrarConfronto,
           abrir, historico, resumo, expirada, contexto, perguntaAntes,
           feed, fila, ctl};

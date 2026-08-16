@@ -603,6 +603,13 @@
       feedVistas.set(m.id, {no, estado:est});
     }
     while(noFeedLista.children.length > tetoFeed) noFeedLista.lastChild.remove();
+    /* O MAPA DE NÓS NÃO PODE CRESCER COM A PARTIDA. Cada mensagem que
+       sai da lista deixava aqui um nó solto que o navegador não libera:
+       numa corrida de vinte temporadas são milhares deles, e a aba
+       chegou a morrer no meio da medição. */
+    if(feedVistas.size > tetoFeed * 2)
+      for(const [id, v] of feedVistas)
+        if(!v.no.isConnected) feedVistas.delete(id);
   }
 
   const ROT_VOZ = {olheiro:'Olheiro', diretor:'', rua:'Na rua',
@@ -694,7 +701,7 @@
   /* a mensagem que convoca pra cena diz QUAL cena; abrir é aqui */
   function abrirCenaDaMensagem(d){
     const e = E();
-    if(d.tipo === 'bar'){
+    if(d.tipo === 'ataque' || d.tipo === 'bar'){
       const atq = e.ataqueMarcado;
       if(atq) abrirAtaqueAoBar(atq);
       return;
@@ -4222,6 +4229,11 @@
     /* investida, assalto e cobrança no CT: o que a noite deu vira caixa,
        tensão e cadeia aqui, e não dentro da cena */
     const fecho = acao ? TO.acoes.fecharCena(e, acao, res) : null;
+    /* O RESULTADO DA BRIGA NÃO ESPERA O DIA SEGUINTE. `fecharCena`
+       propõe a mensagem; sem esta publicação ela só apareceria no
+       próximo tique do relógio, e o jogador sairia da cena sem ver no
+       feed o que ela custou. */
+    TO.feed.publicar(e);
     /* fechada a briga, o dia volta a correr: o encontro foi resolvido e
        `retomarDia` religa `R.rodando`, que a cena tinha desligado */
     soltarTudo('cena');
@@ -4287,11 +4299,20 @@
      por zona e a linha de visão pela porta já estão prontos: não há
      cenário novo, há papel trocado.
 
+     A EMBOSCADA NA ESTRADA usa a mesma função, com dois desvios. O
+     CENÁRIO É EMPRESTADO: ela abre a rua de classe baixa (`rua`) porque
+     cena própria de rodovia não existe — e isto está escrito aqui de
+     propósito, porque cenário emprestado sem nota vira, seis meses
+     depois, "por que a emboscada na BR abre uma rua de periferia?". E o
+     nosso efetivo é QUEM EMBARCOU NA CARAVANA, não um quarto da torcida:
+     quem ficou na cidade não está na estrada pra apanhar.
+
      Quem cobra é o fecho da cena, uma vez só: `ataquesContraNos` já não
      lançou dinheiro nem feriu ninguém para o alvo que tem cena. */
   function abrirAtaqueAoBar(atq){
     const e = E();
     const o = TO.mundo.torcida(atq.torcida);
+    const naEstrada = atq.alvo === 'emboscada';
     /* O EFETIVO É O REAL DE CADA LADO, E ELES SÃO DIFERENTES.
        Aqui estava o bug que já foi consertado uma vez na briga de rua e
        tinha voltado por esta porta: `Math.min(aptos.length, ...)`
@@ -4306,19 +4327,29 @@
     const fila = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa));
     const aptos = fila.slice(0, 34);
-    const nossos = Math.max(2, Math.round(fila.length * 0.25));
+    /* na estrada vai quem embarcou; no bar, um quarto da turma de pé */
+    const est = naEstrada ? TO.planejamento.estimativaCaravana(e) : null;
+    const nossos = naEstrada
+      ? Math.max(2, (est && est.vao) || Math.round(fila.length * 0.25))
+      : Math.max(2, Math.round(fila.length * 0.25));
     const deles = Math.max(4, Math.round(((o && o.membros) || 40) * 0.30));
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
     const c2 = TO.mundo.coresDaTorcida(o || {});
+    /* no bar a gente é a casa e nasce no salão (lado `visitante`); na
+       estrada não há casa — quem desce a rua atrás da gente são eles, e
+       o nosso ônibus é que foi fechado, então os papéis se invertem */
+    const nosso  = naEstrada ? 'mandante'  : 'visitante';
+    const outro  = naEstrada ? 'visitante' : 'mandante';
     const bondes = [
-      /* nós somos os donos da casa: lado `visitante` é o do salão */
-      {lado:'visitante', n:nossos, nossa:true, nome:e.torcida.nome,
+      {lado:nosso, n:nossos, nossa:true, nome:e.torcida.nome,
        cor:c1.cor, cor2:c1.cor2, sigla:TO.mundo.siglaTorcida(e.torcida)},
-      {lado:'mandante',  n:deles, nossa:false, nome:(o&&o.nome)||'Rival',
+      {lado:outro, n:deles, nossa:false, nome:(o&&o.nome)||'Rival',
        cor:c2.cor, cor2:c2.cor2, sigla:o?TO.mundo.siglaTorcida(o):'RIV'}
     ];
     atq.resolvido = true;
-    aviso(`${(o&&o.nome)||'Eles'} pararam na porta do nosso bar.`, 'ruim');
+    aviso(naEstrada
+      ? `${(o&&o.nome)||'Eles'} fecharam a pista na frente do ônibus.`
+      : `${(o&&o.nome)||'Eles'} pararam na porta do nosso bar.`, 'ruim');
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
@@ -4327,10 +4358,11 @@
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', paz:false, bombas:p.bombas,
-                efetivoRival: deles, local:'bar', bondes },
+                efetivoRival: deles, local: atq.cena || 'bar', bondes },
       aoTerminar: res => fecharDiaDeJogo(res, null,
-        {acao:'defender', alvo:{tipo:'bar', torcidaId:atq.torcida,
+        {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida,
                                 nome:(o&&o.nome)||'Rival',
+                                nossos, rateio: est && est.rateio,
                                 efetivo:(o&&o.membros)||40}})
     });
   }
@@ -4552,8 +4584,18 @@
      dedo de quem está lendo o que passou. */
   TO.estado.aoMudar(()=>{
     if(!E()) return;
-    if(relogioTempo){ pintarTopo(); atualizarFeed(); return; }
-    redesenhar();
+    /* MUDANÇA DE ESTADO É ESCRITA, NÃO REMONTAGEM. Virar o dia não muda
+       a estrutura da tela: muda o cabeçalho e acrescenta mensagens. Isto
+       chamava `redesenhar()` fora do laço do relógio, e `redesenhar`
+       refaz a barra, os treze ícones do menu e os sessenta cartões — uns
+       cinco mil nós por dia. No jogo real isso passava despercebido
+       porque o relógio segurava o caminho leve; na bateria, que chama
+       `passarUmDia` na mão, vinte temporadas somavam dezenas de milhões
+       de nós e a aba morria de memória no meio da medição.
+       Remontagem de verdade tem dono: `abrirPainel`, `fecharPainel` e
+       quem mexe em opção chamam `redesenhar()` de propósito. */
+    pintarTopo();
+    atualizarFeed();
   });
 
   /* ABA SEM FOCO É PAUSA EXPLÍCITA.

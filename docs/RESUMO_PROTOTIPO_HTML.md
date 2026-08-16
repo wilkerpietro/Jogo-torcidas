@@ -2472,6 +2472,149 @@ notícias impossíveis que eram rodadas que ele não tinha mais como ver):
   equilíbrio e engorda a cauda. Não foi mexido porque mudar balanceamento sem o
   enunciado pedir é escolher pelo autor.
 
+## 8.21 Taxa de briga dobrada, a emboscada em cena e a data que estava na planilha
+
+Três ajustes que não se encostam, medidos juntos.
+
+### 1. Seis episódios por semana em vez de três
+
+A taxa de briga de cada torcida sai inteira de uma constante:
+`diplomaciaDelas` roda N episódios por semana, cada um envolvendo duas torcidas, e o
+teto é `N × 2 ÷ 138`. As chances por arquétipo, ousadia e moral filtram QUAIS episódios
+viram briga — o teto elas não movem. Com N = 6 ele passa de **0,0435 para 0,087**.
+
+Três números diferentes, e vale distingui-los porque só o primeiro é constante:
+
+| | por torcida, por semana |
+|---|---|
+| **teto** — episódios sorteados | 0,0435 → **0,087** (dobro exato) |
+| **gerados** — episódios que viraram briga | 0,0174 → **0,0312** (1,79×) |
+| **publicados** — brigas que chegaram ao feed | **0,021** |
+
+Os dois últimos são de **20 temporadas** — 1.036 semanas, 2.231 brigas geradas e 1.499
+publicadas — e batem com a medição de 3 temporadas na terceira casa.
+
+O "gerado" foi medido nas duas versões na mesma página, com o mesmo save, carregando o
+módulo de `a98c5dd` por cima do novo: 186 brigas em 155 semanas antes, 334 depois. Ele
+não dobra exato porque o dedupe de pares e o fator de moral filtram diferente conforme o
+estado do mundo.
+
+O "publicado" é menor que o "gerado" porque a **cota da categoria 5 é o gargalo**: são
+3 notícias de mundo por semana com jogo na praça e 1 sem. As brigas que não viram
+notícia aconteceram do mesmo jeito — caixa, efetivo, moral, prestígio e tensão delas já
+foram movidos quando `hostil()` rodou.
+
+**O que isso fez com o feed**, medido em 5 temporadas com a Gaviões:
+
+| | antes (3 episódios) | depois (6) |
+|---|---|---|
+| mensagens por semana | 5,3 | **6,2** |
+| semana mais cheia | 10 | **13** (teto 15, nunca ultrapassado) |
+| dias em silêncio | 52,1% | **40,7%** |
+| categoria 5 no total | 44% | **47%** |
+
+Em 20 temporadas os mesmos números se mantêm: **5,93 mensagens por semana**, semana mais
+cheia de **12**, **0 semanas acima do teto em 1.036**, **41,5% dos dias em silêncio**. A
+distribuição fecha em 5 = 2.831, 2 = 884, 7 = 760, 1 = 747, 3 = 704, 6 = 138 e 4 = 81 —
+a categoria 5 subiu três pontos percentuais e continua sendo a mais frequente, com a 2
+em segundo: ela não engoliu as outras, que são dirigidas por evento e não competem por
+cota.
+
+### 2. A emboscada na estrada vira cena
+
+Era o único dos quatro `ALVOS` de `ataquesContraNos` que ainda resolvia em número junto
+com sede e loja. Agora ela entra em `COM_CENA`, e a mensagem que estava escrita
+esperando passa a ser usada:
+
+> *"Pegaram a caravana na estrada. A Dragões da Real fechou a pista."* → **Ir pra treta**
+
+**O cenário é emprestado, e isso está escrito no código**: ela abre a rua de classe
+baixa (`rua`), porque cena própria de rodovia não existe. Sem a nota, daqui a seis meses
+a pergunta seria "por que a emboscada na BR abre uma rua de periferia?".
+
+Duas diferenças em relação ao ataque ao bar, e as duas têm motivo:
+
+- **O nosso lado é quem embarcou na caravana**, não um quarto da torcida:
+  `estimativaCaravana(E).vao`. Quem ficou na cidade não está na estrada pra apanhar.
+- **Os papéis se invertem**: no bar somos a casa e nascemos no salão (lado
+  `visitante`); na estrada não há casa, e o ônibus fechado é o `mandante`. Por causa
+  disso `fecharDefesa` passou a ler `res.ganhamos` — que a ponte já resolve do ponto de
+  vista do jogador — em vez de `!res.venceu`, que dava o resultado invertido.
+
+**O prejuízo é o que a caravana carregava**: o rateio da viagem mais 4% do caixa. A
+primeira versão usava R$ 120 por cabeça e, com 219 embarcados, cobrava R$ 26.813 — sete
+vezes o que custa perder o bar. Com o rateio, R$ 4.475.
+
+Medido: caravana de 219, cena `rua` com **219 contra 18**, 219 e 18 discos no canvas,
+cores certas dos dois lados, bombas do plano. Um único lançamento no extrato —
+`Emboscada na estrada −4.475` — e nada de `ataquesContraNos`: com cena, ele só agenda e
+narra. E a mensagem de resultado sai no feed com a linha de consequência:
+
+> Caixa nosso sai −R$ 4.475 · Moral nossa cai −3 · Prestígio nosso cai −0,7 ·
+> Tensão com a Dragões da Real aumenta +6 · Moral da Dragões da Real sobe +0,8
+
+Era o pedaço que faltava do §8.20: **o fecho de cena agora devolve a lista de efeitos**.
+E o resultado é publicado na hora, sem esperar o próximo tique do relógio — o jogador
+sai da briga vendo no feed o que ela custou.
+
+**A emboscada também cai no dia da viagem**, e não num dia sorteado da semana: ela é na
+estrada, e a estrada só existe quando a caravana está nela.
+
+### 3. A data de fundação estava na planilha e era jogada fora
+
+A aba Torcidas do `Book_3_1.xlsx` tem a coluna "Data de fundação" com a data completa;
+`ano()` pegava os quatro últimos dígitos e o resto ia embora. Enquanto foi só o ano, a
+festa do aliado caía num dia sorteado por hash do id: fixo, mas inventado.
+
+O importador passa a ler dia e mês. O openpyxl já devolve `datetime` quando a célula
+está formatada como data; quando vem número cru é o serial do Excel, contado desde
+1899-12-30, e a conversão trata os dois. **Nenhum serial cru apareceu no arquivo**,
+então o bug do 29/02/1900 não chegou a ser exercitado.
+
+- **137 das 140 torcidas** ganharam dia e mês. As 3 que ficaram — Força Azul, Fúria
+  Independente do Guarani e Guerrilha Jovem — não têm linha na planilha e **continuam
+  no hash, que virou reserva em vez de regra**.
+- **Gaviões: 01/07/1969.** Jovem Fla: 06/12/1967. Cearamor: 14/10/1982.
+- A semana da festa bate com a data em **137 de 137**.
+
+**Um detalhe que só apareceu medindo:** 15 torcidas fundadas em 1º de janeiro caíam
+caladas no hash, porque o calendário do jogo começa na primeira segunda-feira do ano —
+5 de janeiro — e `semanaDiaDe` devolve nulo pros quatro dias antes dela. Aniversário de
+1º de janeiro é semana 1, e agora é o que ele é.
+
+Numa temporada, quatro festas caíram: Remista (31/03) na semana 13, Fúria Jovem Botafogo
+(21/06) na 24, Camisa 12 (08/08) na 31 e Pavilhão 9 (09/09) na 36 — cada uma na semana
+que contém a data.
+
+### O banimento continua em zero, como a conta previa
+
+**0 banimentos por polícia zerada em 20 temporadas com a taxa dobrada.** A conta do
+enunciado se confirma: dobrar a frequência leva o desgaste de −0,032 para −0,065 por
+semana, e a ação social devolve +0,15 sempre que a polícia cai abaixo de 8. A
+recuperação continua duas vezes mais forte que o desgaste, e o gatilho em 8 cria um piso
+que o atrito não vence.
+
+Nenhuma das duas alternativas do enunciado foi implementada — nem a severidade por
+evento grande, nem baixar o gatilho pra 4. **Confirmar o zero era o que valia**, e
+escolher entre elas é do autor.
+
+### Um vazamento achado pela bateria
+
+A corrida de vinte temporadas matava a aba, e por dois motivos que não são do jogo mas
+valem registro:
+
+- **`aoMudar` chamava `redesenhar()`**, que refaz a barra, os treze ícones do menu e os
+  sessenta cartões — uns cinco mil nós por dia. No jogo real passava despercebido porque
+  o laço do relógio já usava o caminho leve; virar o dia agora só escreve o cabeçalho e
+  acrescenta as mensagens novas. Remontagem de verdade tem dono: `abrirPainel`,
+  `fecharPainel` e quem mexe em opção.
+- **O mapa de nós do feed** guardava referência a toda mensagem que já passou pela
+  lista, inclusive as podadas. Agora ele se limpa junto com a poda.
+
+O que sobrou era do teste: ele não fechava o relatório semanal, e cada modal deixava
+~100 nós na tela. Com os três consertos, o DOM fica plano em ~1.230 nós e o heap em
+45–77 MB depois de oito temporadas.
+
 ## 9. Celular
 
 Um limiar só, **900px de largura** — sem detecção de toque e sem botão de ligar. Acima

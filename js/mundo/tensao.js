@@ -557,6 +557,7 @@ TO.tensao = (function(){
      · e ela carrega a lista de efeitos que foram DE FATO aplicados,
        pra a linha de consequência sair do estado e não do texto.
      ======================================================= */
+  const EPISODIOS_SEMANA = 6;
   const FECHO = ['e levou a melhor.', 'e saiu por cima.', 'e {B} levou a pior.'];
 
   function diplomaciaDelas(E){
@@ -567,10 +568,14 @@ TO.tensao = (function(){
     E.relacoesDelas = E.relacoesDelas || {};
     const noticias = [];
     const usados = new Set();
-    /* três episódios por semana no país inteiro: o bastante pra o feed
-       ter o que dizer sem virar ruído. E NUNCA O MESMO PAR DUAS VEZES:
-       antes eram três sorteios independentes, sem dedupe. */
-    for(let k=0;k<3;k++){
+    /* SEIS EPISÓDIOS POR SEMANA no país inteiro. Eram três, e o número é
+       o que define a taxa de briga de cada torcida: 3 episódios × 2
+       lados ÷ 138 davam 0,043 briga por semana por torcida. Com seis a
+       média vai pra 0,087 — as chances por arquétipo e ousadia filtram
+       QUAIS episódios viram briga, mas quem manda no teto é esta
+       constante. E NUNCA O MESMO PAR DUAS VEZES: antes eram três
+       sorteios independentes, sem dedupe. */
+    for(let k=0;k<EPISODIOS_SEMANA;k++){
       let par = null;
       for(let t=0;t<12 && !par;t++){
         const p = U.escolher(pares);
@@ -725,7 +730,11 @@ TO.tensao = (function(){
      com cena: aqui só agenda e narra, e quem aplica tudo é o fecho da
      cena — senão o jogador paga duas vezes pelo mesmo ataque. A tensão
      de "fomos atacados" acontece nos dois casos, uma vez só. */
-  const COM_CENA = {bar:'bar'};
+  /* A EMBOSCADA ENTROU. O bar foi o primeiro alvo a virar evento datado e
+     jogável; a emboscada na estrada é o segundo, e usa a rua de classe
+     baixa emprestada — cena própria de rodovia não existe. Sobram sede,
+     loja e subsede resolvendo em número. */
+  const COM_CENA = {bar:'bar', emboscada:'rua'};
 
   /* O DIA DO ATAQUE SAI DO CALENDÁRIO, não do sorteio da hora.
      Mesma disciplina dos assaltos (§8.9): hash da data mais o id da
@@ -762,12 +771,21 @@ TO.tensao = (function(){
 
       if(COM_CENA[alvo.id]){
         /* agenda e narra. Nada de dinheiro, ferido, moral ou prestígio
-           aqui: quem cobra é a cena. */
+           aqui: quem cobra é a cena.
+
+           A EMBOSCADA CAI NO DIA DA VIAGEM, não num dia sorteado: ela é
+           na estrada, e a estrada só existe quando a caravana está nela.
+           Sem isso o ataque marcado podia cair numa terça em que
+           ninguém saiu da cidade. */
+        const viagem = TO.financeiro.diasDeCaravana(E);
+        const dia = alvo.id === 'emboscada' && viagem.length
+                  ? viagem[0] : diaDoAtaque(E, id);
         E.ataqueMarcado = {torcida:id, nome:o.nome, alvo:alvo.id,
                            cena:COM_CENA[alvo.id],
-                           ano:E.data.ano, semana:E.data.semana,
-                           dia:diaDoAtaque(E, id),
-                           txt:`${o.nome} vem pro nosso ${alvo.id} esta semana`};
+                           ano:E.data.ano, semana:E.data.semana, dia,
+                           txt: alvo.id === 'emboscada'
+                             ? `${o.nome} vai esperar a caravana na estrada`
+                             : `${o.nome} vem pro nosso ${alvo.id} esta semana`};
         somar(E, id, 6, 'fomos atacados');
         fora.push(Object.assign({id, torcida:o.nome, marcado:true,
                                  dia:E.ataqueMarcado.dia},
@@ -967,5 +985,6 @@ TO.tensao = (function(){
           resolverInvestidas, relacaoDelas, chaveDe, balanco, ARQUETIPOS,
           mundo, ataquesContraNos, ataqueDeHoje, HOSTIS, PACIFICAS, MENSALIDADE,
           paresDaSemana, mover, banida, indicadoresDe, BANIMENTO, semanaAbs,
+          EPISODIOS_SEMANA,
           conquistaDoClube};
 })();

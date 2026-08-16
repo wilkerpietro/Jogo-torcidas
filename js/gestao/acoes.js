@@ -182,39 +182,92 @@ TO.acoes = (function(){
      não lançou dinheiro, não feriu ninguém e não mexeu em moral nem em
      prestígio para o alvo que tem cena. Ferido e preso da noite quem
      aplica é `aplicarResultadoDaNoite`, como em qualquer cena. */
+  /* O ESPELHO DO ATAQUE, e agora ele cobre dois casos: a casa invadida e
+     a caravana fechada na estrada. Na estrada não há gaveta pra levar —
+     o que se perde é o que a turma carregava e o material que ficou no
+     acostamento —, então a conta do prejuízo é outra. O resto é igual:
+     quem apanha perde moral e prestígio, quem segura ganha.
+
+     E É AQUI QUE O PREJUÍZO É COBRADO, uma vez só: `ataquesContraNos`
+     não lançou dinheiro, não feriu ninguém e não mexeu em moral nem em
+     prestígio para o alvo que tem cena. Ferido e preso da noite quem
+     aplica é `aplicarResultadoDaNoite`, como em qualquer cena. */
   function fecharDefesa(E, alvo, res){
     const T = TO.tensao;
-    /* `venceu` é do ponto de vista de quem ataca a cena; defendendo,
-       segurar o bar é o nosso ganho */
-    const seguramos = !res.venceu;
+    /* `venceu` é do ponto de vista do MANDANTE, e o nosso lado muda com
+       a cena: no bar a gente é o visitante (o salão), na estrada é o
+       mandante (o ônibus). `res.ganhamos` já vem resolvido pela ponte —
+       usar `!venceu` direto dava resultado invertido na emboscada. */
+    const seguramos = res.ganhamos !== undefined ? !!res.ganhamos : !res.venceu;
+    const naEstrada = alvo.tipo === 'emboscada';
     const linhas = [];
     let perdeu = 0;
+    const antes = {moral:E.indicadores.moral, prestigio:E.indicadores.prestigio,
+                   tensao: T ? T.nivel(E, alvo.torcidaId) : 0};
     if(!seguramos){
-      const gaveta = (alvo.tipo === 'bar' ? 60 : 30) * Math.max(4, alvo.efetivo||40);
-      perdeu = Math.round(gaveta + Math.max(0, E.dinheiro) * 0.10);
+      /* na estrada, o prejuízo é o que ia no ônibus: rateio da viagem e
+         material. Na casa, a gaveta do ponto mais um naco do caixa. */
+      perdeu = naEstrada
+        /* na estrada, o que eles levam é o que a caravana carregava: o
+           RATEIO da viagem, que é dinheiro que já saiu do bolso de quem
+           embarcou, mais um naco do caixa. Uma constante por cabeça não
+           serve — com 219 embarcados ela dava R$ 26 mil, sete vezes o
+           prejuízo de perder o bar. */
+        ? Math.round((alvo.rateio || 25 * Math.max(4, alvo.nossos || 20))
+                     + Math.max(0, E.dinheiro) * 0.04)
+        : Math.round((alvo.tipo === 'bar' ? 60 : 30) *
+                     Math.max(4, alvo.efetivo||40)
+                     + Math.max(0, E.dinheiro) * 0.10);
       if(perdeu > 0){
-        TO.estado.lancar(E, `Levaram do nosso ${alvo.tipo}`, -perdeu);
-        linhas.push(`${U.dinheiro(perdeu)} da gaveta e do caixa`);
+        TO.estado.lancar(E, naEstrada ? 'Emboscada na estrada'
+                                      : `Levaram do nosso ${alvo.tipo}`, -perdeu);
+        linhas.push(naEstrada ? `${U.dinheiro(perdeu)} da viagem e do caixa`
+                              : `${U.dinheiro(perdeu)} da gaveta e do caixa`);
       }
       E.indicadores.moral = U.limitar(E.indicadores.moral - 3, 0, 20);
       E.indicadores.prestigio = U.limitar(E.indicadores.prestigio - 0.7, 0, 20);
-      linhas.push('eles saíram de lá com a casa na mão');
+      linhas.push(naEstrada ? 'o ônibus seguiu viagem com meia turma de pé'
+                            : 'eles saíram de lá com a casa na mão');
     }else{
       E.indicadores.moral = U.limitar(E.indicadores.moral + 1.5, 0, 20);
       E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + 0.7, 0, 20);
-      linhas.push('a casa ficou de pé');
+      linhas.push(naEstrada ? 'a pista ficou nossa' : 'a casa ficou de pé');
     }
     if(T) T.somar(E, alvo.torcidaId, seguramos ? 10 : 6, 'vieram na nossa casa');
-    const txt = `${alvo.nome} veio pro nosso ${alvo.tipo}. `+
-                `${seguramos ? 'Seguramos' : 'Perdemos'} a casa.`+
-                (linhas.length ? ' ' + linhas.join('; ') + '.' : '');
-    TO.estado.anotar(E, txt, seguramos ? 'boa' : 'ruim', {cat:4,
-      linhaAbaixo:{texto:`prestígio ${seguramos?'+0,7':'−0,7'}`}});
+    /* do lado delas a conta é a mesma virada */
+    const dmDelas = T ? T.mover(E, alvo.torcidaId, 'moral',
+                                seguramos ? -1.0 : 0.8) : 0;
+    if(T) T.mover(E, alvo.torcidaId, 'prestigio', seguramos ? -0.5 : 0.6);
+    if(T) T.mover(E, alvo.torcidaId, 'policia', -0.5);
+
+    const txt = naEstrada
+      ? `${alvo.nome} fechou a pista na caravana. `+
+        `${seguramos ? 'Passamos por cima' : 'Levamos a pior'}.`+
+        (linhas.length ? ' ' + linhas.join('; ') + '.' : '')
+      : `${alvo.nome} veio pro nosso ${alvo.tipo}. `+
+        `${seguramos ? 'Seguramos' : 'Perdemos'} a casa.`+
+        (linhas.length ? ' ' + linhas.join('; ') + '.' : '');
+    /* A LINHA DE CONSEQUÊNCIA sai daqui, dos números aplicados acima —
+       não do texto. Era o pedaço que faltava pro fecho de cena. */
+    const efeitos = [
+      {ind:'dinheiro',  delta: -perdeu, dono:'nosso'},
+      {ind:'moral',     delta: r1(E.indicadores.moral - antes.moral), dono:'nossa'},
+      {ind:'prestigio', delta: r1(E.indicadores.prestigio - antes.prestigio),
+       dono:'nosso'},
+      {ind:'tensao',    delta: T ? r1(T.nivel(E, alvo.torcidaId) - antes.tensao) : 0,
+       dono:`com a ${alvo.nome}`},
+      {ind:'moral',     delta: dmDelas, dono:`da ${alvo.nome}`}
+    ].filter(x=>x.delta);
+    TO.estado.anotar(E, txt, seguramos ? 'boa' : 'ruim', {cat:4, efeitos});
     if(TO.feed) TO.feed.registrarConfronto(E, alvo.torcidaId, seguramos,
                                            alvo.bairro);
-    return {txt, ganhou:seguramos, linhas, dinheiro:-perdeu,
-            titulo: seguramos ? 'A CASA FICOU DE PÉ' : 'PERDEMOS O BAR'};
+    return {txt, ganhou:seguramos, linhas, dinheiro:-perdeu, efeitos,
+            titulo: seguramos ? (naEstrada ? 'A PISTA FICOU NOSSA'
+                                           : 'A CASA FICOU DE PÉ')
+                              : (naEstrada ? 'PEGARAM A CARAVANA'
+                                           : 'PERDEMOS O BAR')};
   }
+  const r1 = v => Math.round(v*10)/10;
 
   function fecharAtaque(E, alvo, res){
     const T = TO.tensao;
