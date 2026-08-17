@@ -128,10 +128,15 @@ TO.diaJogo.combate = (function(){
       bombasIniciais: cfg.bombas!==undefined ? cfg.bombas : P.bombas,
       /* do outro lado também tem quem junte pedra: sem isso a briga é
          um lado bombardeando e o outro correndo pra cima na mão */
-      /* metade do que você levou, no mínimo uma: assim a cena que te
-         dá pouca bomba não vira a cena em que só eles têm */
+      /* metade do que você levou, no mínimo uma — mas SÓ se você levou.
+         O mínimo de uma valia até pra cena declarada sem bomba (treta é
+         mano a mano), e uma bomba única no bonde pareado de 7 atordoava
+         o lado inteiro por 1,1 s com o deles batendo por cima: medido,
+         era ela que virava o 7×7 em 7×0 contra nós. Briga sem bomba
+         nossa é briga sem bomba deles. */
       bombasRival: cfg.bombasRival!==undefined ? cfg.bombasRival
-                 : Math.max(1, Math.ceil((cfg.bombas!==undefined?cfg.bombas:P.bombas)/2)),
+                 : (n => n>0 ? Math.max(1, Math.ceil(n/2)) : 0)
+                   (cfg.bombas!==undefined ? cfg.bombas : P.bombas),
       /* ele não começa jogando: nos primeiros segundos o bonde ainda
          está em coluna no spawn, e uma bomba ali derruba doze de uma
          vez antes de o jogador ter chance de abrir a formação */
@@ -322,15 +327,23 @@ TO.diaJogo.combate = (function(){
       }
     }
 
-    /* o braço deles: um disco só, o mais forte do bonde rival. Um por
-       lado é de propósito — dois já viram chuva de pedra e a cena
-       deixa de ser briga de corpo. */
-    const rivais=J.discos.filter(d=>d.lado==='visitante');
-    if(rivais.length){
-      const braco=rivais.reduce((a,b)=> b.forca>a.forca ? b : a);
-      braco.arremessador=true;
-      J.bracoRival=braco;
+    /* UM BRAÇO POR LADO, e não só o do visitante: o mais forte de cada
+       bonde taca pedra sozinho. Era um braço fixo do lado 'visitante',
+       e a assimetria mudava de dono conforme a cena — na treta o rival
+       tinha artilharia de graça e o nosso lado não, e a briga pareada
+       terminava 7×0 pra eles (medido). Um por lado é de propósito —
+       dois por lado já viram chuva de pedra. */
+    J.bracos = {};
+    for(const lado of ['mandante','visitante']){
+      const doLado=J.discos.filter(d=>d.lado===lado);
+      if(doLado.length){
+        const braco=doLado.reduce((a,b)=> b.forca>a.forca ? b : a);
+        braco.arremessador=true;
+        J.bracos[lado]=braco;
+      }
     }
+    J.bracoRival = J.bracos[(J.ladoNosso||'mandante')==='mandante'
+                            ? 'visitante' : 'mandante'] || null;
     conferirPortoes(J);
     return J;
   }
@@ -383,23 +396,34 @@ TO.diaJogo.combate = (function(){
   function fichasDoPerfil(perfil, qtd){
     const p = perfil || {};
     const CARGOS = TO.membros.CARGOS;
-    const plano = TO.membros.planoDeCargos(qtd, p.cargos);
+    /* O PLANTEL INTEIRO PRIMEIRO, os melhores depois. O nosso lado leva
+       os N mais rodados da torcida; sortear o lado deles da
+       distribuição crua punha a nossa elite contra novato — medido,
+       5×5 terminava 5×0 sempre. Quem marca treta também leva os
+       melhores que tem: gera o plantel do tamanho da torcida deles e
+       corta o topo, que é a MESMA seleção que fazemos. */
+    const tamanho = Math.max(qtd, Math.min(p.membros || 60, 250));
+    const plano = TO.membros.planoDeCargos(tamanho, p.cargos);
     const peso = U.limitar((p.poder || 60)/250, 0, 1);
     const bonus = Math.round(peso*3);
+    /* a moral deles vem da moral viva da torcida no mundo (a mesma
+       régua do nosso povoarInicial: indicador ±3), não de um 12 fixo */
+    const moralBase = Math.round(p.moral !== undefined ? p.moral : 12);
     const BASE = {novato:1, componente:5, frente:10, diretoria:14};
     const fora = [];
     for(const [cargo, n] of plano){
       const teto = (CARGOS[cargo] || CARGOS.novato).teto;
-      for(let i=0;i<n && fora.length<qtd;i++)
+      for(let i=0;i<n && fora.length<tamanho;i++)
         fora.push({cargo,
           forca:  Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + bonus),
           defesa: Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + bonus),
-          moral:  U.limitar(12 + U.inteiro(-3,3), 1, 20)});
+          moral:  U.limitar(moralBase + U.inteiro(-3,3), 1, 20)});
     }
-    while(fora.length < qtd)
+    while(fora.length < tamanho)
       fora.push({cargo:'novato', forca:1+U.inteiro(0,3)+bonus,
-                 defesa:1+U.inteiro(0,3)+bonus, moral:12});
-    return U.embaralhar(fora);
+                 defesa:1+U.inteiro(0,3)+bonus, moral:moralBase});
+    return fora.sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
+               .slice(0, qtd);
   }
 
   function nascerGrupo(J, g, escalados, temLider, nomes){
@@ -1098,7 +1122,14 @@ TO.diaJogo.combate = (function(){
       } else if(d.vadiando && !agressivo(J,d) && J.t < d.entraEm){
         vadiar(J, d); ax=d.vagoX; ay=d.vagoY;
       } else {
-        let alvo = inimigoAlcancavel(J,d, d.doJogador?110:130);
+        /* MESMO ALCANCE PROS DOIS LADOS (era 110 nosso × 130 deles), e
+           com briga armada o nosso disco não larga o inimigo próximo
+           pra voltar pro slot da formação — era isso que fazia o bonde
+           pareado apanhar de 7×0: os nossos recuavam no meio da troca
+           e os deles ficavam em cima (medido). */
+        let alvo = inimigoAlcancavel(J,d, 130);
+        if(!alvo && d.doJogador && !J.paz)
+          alvo = inimigoAlcancavel(J,d, 240);
         if(alvo && !alvo.fugindo){
           J.encostou[d.lado]=true; J.encostou[alvo.lado]=true;
         }
@@ -1979,50 +2010,52 @@ TO.diaJogo.combate = (function(){
      de ser ter pedra e passa a ser saber quando jogar.
      ======================================================= */
   function iaArremesso(J, dt){
-    const b=J.bracoRival;
-    if(!b || !b.vivo || b.fugindo || J.t < J.cdRival) return;
-    if(!agressivo(J,b)) return;
-    if(b.guarda && !J.acordou) return;
+    J.cdBraco = J.cdBraco || {};
+    for(const lado of ['mandante','visitante']){
+      const b=(J.bracos||{})[lado] ||
+              (J.bracoRival && J.bracoRival.lado===lado ? J.bracoRival : null);
+      if(!b || !b.vivo || b.fugindo || J.t < (J.cdBraco[lado]||0)) continue;
+      if(!agressivo(J,b)) continue;
+      if(b.guarda && !J.acordou) continue;
 
-    const alvos=J.discos.filter(d=>d.vivo && inimigos(b.lado,d.lado) && !d.fugindo);
-    if(!alvos.length) return;
+      const alvos=J.discos.filter(d=>d.vivo && inimigos(b.lado,d.lado) && !d.fugindo);
+      if(!alvos.length) continue;
 
-    /* bomba onde o aglomerado paga: conta quantos caem no raio */
-    let melhor=null, maior=0;
-    if(J.bombasRival>0) for(const a of alvos){
-      /* bomba é de perto: só quando já estão em cima dele. De longe
-         seria tiro de artilharia em cima do spawn, e não é o que um
-         bonde faz nem o que a cena aguenta */
-      if(U.dist(b.x,b.y,a.x,a.y) > P.alcanceBomba*0.6) continue;
-      if(!A.livre(b.x,b.y,a.x,a.y)) continue;
-      let n=0;
-      for(const o of alvos) if(U.dist(o.x,o.y,a.x,a.y)<80) n++;
-      if(n>maior){maior=n; melhor=a;}
-    }
-    let tipo=null, alvo=null;
-    if(melhor && maior>=4){ tipo='bomba'; alvo=melhor; }
-    else {
-      let md=1e9;
-      for(const a of alvos){
-        const d=U.dist(b.x,b.y,a.x,a.y);
-        if(d<md && d<=P.alcancePedra && A.livre(b.x,b.y,a.x,a.y)){md=d; alvo=a;}
+      /* bomba automática é só da IA: a nossa bomba é decisão do
+         jogador, na tecla E */
+      let melhor=null, maior=0;
+      if(!b.doJogador && J.bombasRival>0) for(const a of alvos){
+        if(U.dist(b.x,b.y,a.x,a.y) > P.alcanceBomba*0.6) continue;
+        if(!A.livre(b.x,b.y,a.x,a.y)) continue;
+        let n=0;
+        for(const o of alvos) if(U.dist(o.x,o.y,a.x,a.y)<80) n++;
+        if(n>maior){maior=n; melhor=a;}
       }
-      if(alvo) tipo='pedra';
-    }
-    if(!alvo) return;
+      let tipo=null, alvo=null;
+      if(melhor && maior>=4){ tipo='bomba'; alvo=melhor; }
+      else {
+        let md=1e9;
+        for(const a of alvos){
+          const d=U.dist(b.x,b.y,a.x,a.y);
+          if(d<md && d<=P.alcancePedra && A.livre(b.x,b.y,a.x,a.y)){md=d; alvo=a;}
+        }
+        if(alvo) tipo='pedra';
+      }
+      if(!alvo) continue;
 
-    /* mira torta: ele erra mais que o jogador, e erro de bomba é o que
-       impede que um único braço decida a briga sozinho */
-    const erro = tipo==='bomba' ? 34 : 22;
-    const ax = alvo.x + U.entre(-erro,erro), ay = alvo.y + U.entre(-erro,erro);
-    if(tipo==='bomba') J.bombasRival--;
-    J.cdRival = J.t + (tipo==='bomba' ? P.cdBomba*2.2 : P.cdPedra*1.7);
-    b.hostil=4.0;
-    J.armas[b.lado][tipo]++;
-    J.projeteis.push(new Projetil(b.x,b.y,ax,ay,tipo,b.lado));
-    if(tipo==='bomba'){
-      J.alerta=Math.min(100,J.alerta+10);
-      logar(J,'Bomba deles.','a');
+      /* mira torta: ele erra mais que o jogador, e erro de bomba é o
+         que impede que um único braço decida a briga sozinho */
+      const erro = tipo==='bomba' ? 34 : 22;
+      const ax = alvo.x + U.entre(-erro,erro), ay = alvo.y + U.entre(-erro,erro);
+      if(tipo==='bomba') J.bombasRival--;
+      J.cdBraco[lado] = J.t + (tipo==='bomba' ? P.cdBomba*2.2 : P.cdPedra*1.7);
+      b.hostil=4.0;
+      J.armas[b.lado][tipo]++;
+      J.projeteis.push(new Projetil(b.x,b.y,ax,ay,tipo,b.lado));
+      if(tipo==='bomba'){
+        J.alerta=Math.min(100,J.alerta+10);
+        logar(J,'Bomba deles.','a');
+      }
     }
   }
   function alternarRecuo(J){

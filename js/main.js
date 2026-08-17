@@ -2671,7 +2671,13 @@
      lados) */
   const perfilDe = id => {
     const o = id ? TO.mundo.torcida(id) : null;
-    return o ? {poder:o.poder, cargos:o.cargos} : null;
+    if(!o) return null;
+    const viva = (TO.relacoes && TO.relacoes.mundo(E())[id]) || {};
+    return {poder:o.poder, cargos:o.cargos,
+            membros: viva.membros || o.membros || 60,
+            /* a moral viva do mundo: a ficha gerada deles nasce da mesma
+               régua que a nossa (indicador ±3), não de um 12 fixo */
+            moral: viva.moral};
   };
 
   const LOCAL_ROT = {rua:'na rua', 'rua-media':'numa rua de classe média',

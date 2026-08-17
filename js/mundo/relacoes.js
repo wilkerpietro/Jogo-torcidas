@@ -387,10 +387,17 @@ TO.relacoes = (function(){
     const locais = M().torcidasEm(E.torcida.mapa).filter(o=>
       o.id !== E.torcida.id && !o.incompleta &&
       !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)));
-    const mr = locais.find(o=>(nossa.maioresRivais||[]).includes(o.id));
-    if(mr) return mr;
+    const vivo = id => ((E.mundoTorcidas||{})[id] || {}).membros
+                     || (M().torcida(id)||{}).membros || 0;
+    /* a fonte declara VÁRIAS maiores rivais; a que marca treta e vem no
+       bar é a MAIOR delas na praça — pegar a primeira da lista punha a
+       Gaviões brigando com a nanica do bairro */
+    const mrs = locais.filter(o=>(nossa.maioresRivais||[]).includes(o.id))
+      .sort((a,b)=>vivo(b.id) - vivo(a.id));
+    if(mrs.length) return mrs[0];
     const hostis = locais.map(o=>({o, rel: nivel(E, o.id)}))
-      .filter(x=>x.rel <= -15).sort((a,b)=>a.rel-b.rel);
+      .filter(x=>x.rel <= -15)
+      .sort((a,b)=>a.rel - b.rel || vivo(b.o.id) - vivo(a.o.id));
     return hostis.length ? hostis[0].o : null;
   }
 
