@@ -25,7 +25,7 @@ TO.membros = (function(){
   const SEDE = [
     null,
     {membros:50,  diretoria:2,  treino:2},
-    {membros:100, diretoria:4,  treino:4},
+    {membros:90,  diretoria:4,  treino:4},
     {membros:150, diretoria:6,  treino:8},
     {membros:200, diretoria:10, treino:12},
     {membros:500, diretoria:15, treino:20}

@@ -52,36 +52,51 @@ TO.acoes = (function(){
       .sort((a,b)=>b.membros-a.membros);
   }
 
-  /* O FREIO DO RECRUTAMENTO (decisão do dono, 17/08/2026): com o fator
-     antigo (o REDUCAO de 0,35 do expediente) a sede enchia em 5 a 10
-     dias de recrutar fixo — medido. O fator próprio de 0,06 põe o
-     ritmo em semanas: a TUF leva ~1 mês pra encher, a Gaviões ~2.
-     E o teto virou FRACIONÁRIO, sem o piso de 1 por turno: torcida
-     nanica recruta 1 a cada tantos turnos, por sorteio da fração,
-     em vez de 3 garantidos por dia. */
-  const FATOR_RECRUTA = 0.06;
+  /* O RECRUTAMENTO É SORTEIO POR REGIME (tabela do dono, 17/08/2026).
+     Cada campanha (turno do expediente) tira um dado:
+
+       normal ................. 20% um · 10% dois · 70% ninguém
+       ganhou o último jogo ... 30% um · 20% dois · 50% ninguém
+       perdeu o último jogo ... 10% um ·  5% dois · 85% ninguém
+       2 sem. após título
+         ou acesso ............ 40% um · 40% dois · 20% ninguém
+       2 sem. após rebaixamento 10% um ·  0% dois · 90% ninguém
+
+     Custo de R$ 5 por novato; o limite duro é a vaga da sede
+     (nível → 50/90/150/200/500). A base da praça continua sendo o
+     portão: sem torcedor fora de organizada, ninguém entra. */
+  const TABELA_RECRUTA = {
+    titulo:    {um:0.40, dois:0.40, rot:'título ou acesso fresco'},
+    rebaixado: {um:0.10, dois:0.00, rot:'rebaixamento fresco'},
+    ganhou:    {um:0.30, dois:0.20, rot:'vitória no último jogo'},
+    perdeu:    {um:0.10, dois:0.05, rot:'derrota no último jogo'},
+    normal:    {um:0.20, dois:0.10, rot:'semana comum'}
+  };
+  function regimeRecrutamento(E){
+    const sa = TO.relacoes.semanaAbs(E);
+    const j = E.janelaRecruta;
+    if(j && sa < j.ate)
+      return j.tipo === 'rebaixamento' ? 'rebaixado' : 'titulo';
+    const u = E.ultimoJogoClube;
+    if(u && u.venceu) return 'ganhou';
+    if(u && u.perdeu) return 'perdeu';
+    return 'normal';
+  }
   function previsaoRecrutamento(E){
     const base = TO.mundo.baseDeRecrutamento(E.torcida.mapa, E.torcida.clubeId,
                                              o=>efetivoDe(E, o));
     const alcance = base * 0.03;
     const chance  = TO.torcedores.ORGANIZAR;
     const querem  = Math.round(alcance * 1000 * chance);
-
-    /* acesso e rebaixamento abrem janela no recrutamento */
-    const janela = TO.torcedores.janela(E);
-    const mult = (MULT_SEDE[E.torcida.sedeNivel] || 1) * janela;
-    const capSede = CAP_RECRUTA[E.torcida.sedeNivel] || 2;
-    const capBase = Math.floor(base/120);
-    const cap  = (capSede + capBase) * FATOR_RECRUTA * janela;
     const vaga = TO.membros.capacidade(E) - E.membros.length;
-
-    const aproveita = chance / TO.torcedores.ORGANIZAR_MAX;
-    const esperado = Math.max(0, cap * aproveita);
+    const regime = regimeRecrutamento(E);
+    const t = TABELA_RECRUTA[regime];
     return {
-      base, alcance, querem, chance, mult, cap, capSede, capBase, vaga,
-      esperado,
-      /* pro rótulo da ação: quanto isso dá por semana de expediente */
-      porSemana: Math.round(esperado * TURNOS.length * 7)
+      base, alcance, querem, chance, vaga, regime,
+      rotRegime: t.rot, um: t.um, dois: t.dois,
+      zero: Math.max(0, 1 - t.um - t.dois),
+      esperado: t.um + t.dois*2,
+      porSemana: Math.round((t.um + t.dois*2) * TURNOS.length * 7)
     };
   }
 
@@ -375,19 +390,17 @@ TO.acoes = (function(){
         const p = previsaoRecrutamento(E);
         if(p.vaga <= 0) return {ok:false, motivo:'a sede está cheia'};
         if(p.base <= 0) return {ok:false, motivo:'não há torcedor fora de organizada'};
-        return {ok:true, nota:`~${p.porSemana} por semana`};
+        return {ok:true, nota:`${p.rotRegime}: ${Math.round(p.um*100)}% de 1 · `+
+                              `${Math.round(p.dois*100)}% de 2`};
       },
       executar(E){
         const p = previsaoRecrutamento(E);
         if(p.vaga <= 0) return {ok:false, msg:'A sede está cheia.', semCusto:true};
 
-        /* a fração vira sorteio: esperado 0,4 é 40% de chance de UM
-           novato no turno — é assim que torcida pequena cresce devagar
-           sem o piso de 1 garantido */
-        const alvo = p.esperado * U.entre(0.85, 1.15);
-        let n = Math.floor(alvo);
-        if(U.rng() < alvo - n) n++;
-        n = U.limitar(n, 0, Math.min(Math.ceil(p.cap), p.vaga));
+        /* o dado do dono: dois primeiro, um depois, o resto é ninguém */
+        const r = U.rng();
+        let n = r < p.dois ? 2 : r < p.dois + p.um ? 1 : 0;
+        n = Math.min(n, p.vaga);
         if(n <= 0) return {ok:true, msg:'Ninguém quis entrar hoje.'};
 
         for(let i=0;i<n;i++){

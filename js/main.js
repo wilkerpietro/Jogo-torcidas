@@ -1294,26 +1294,21 @@
       `quando o clube sobe de divisão e ganha torcedor na praça.</span>`}));
     grade.appendChild(c1);
 
-    const c2 = cartao('Previsão da próxima campanha', 'GDD §6.2 e §21');
+    const c2 = cartao('Previsão da próxima campanha',
+                      `regime: ${p.rotRegime}`);
+    const pc = v => `${Math.round(v*100)}%`;
     c2.corpo.innerHTML =
-      `<div class="linha-dado"><span>Abordados na semana <span class="fraco">`+
-        `3% da base</span></span><b>${U.numero(Math.round(p.alcance*1000))}</b></div>
-       <div class="linha-dado"><span>Topam entrar
-         <span class="fraco">chance por abordado</span></span>
-         <b>${Math.round(p.chance*100)}%</b></div>
-       <div class="linha-dado"><span>Topariam entrar</span>
-         <b>${U.numero(p.querem)}</b></div>
-       <div class="linha-dado"><span>Teto por turno</span>
-         <b>${Math.round(p.cap*10)/10} <span class="fraco">(${p.capSede} da sede `+
-        `+ ${p.capBase} da praça) × 0,06</span></b></div>
+      `<div class="linha-dado"><span>Recruta 1</span><b>${pc(p.um)}</b></div>
+       <div class="linha-dado"><span>Recruta 2</span><b>${pc(p.dois)}</b></div>
+       <div class="linha-dado"><span>Ninguém entra</span><b>${pc(p.zero)}</b></div>
        <div class="linha-dado"><span>Vagas na sede</span>
          <b class="${p.vaga>0?'':'negativo'}">${p.vaga}</b></div>
        <div class="valorao"><span>Devem entrar por semana</span>
          <b class="${p.porSemana>0?'positivo':'negativo'}">~${p.porSemana}</b></div>
-       <div class="linha-dado"><span class="fraco">O gargalo é a sede, não a `+
-      `vontade do torcedor: milhares topariam e cabem dezenas. O expediente `+
-      `recruta uma fração por turno. Sai R$ 5 por novato, ±15% de `+
-      `variância.</span></div>`;
+       <div class="linha-dado"><span class="fraco">O dado muda com a fase do `+
+      `clube: vitória esquenta a praça, derrota esfria; título e acesso `+
+      `abrem 2 semanas quentes, rebaixamento seca 2. Sai R$ 5 por `+
+      `novato.</span></div>`;
     for(const id of ['recrutar','campanha']){
       const a = TO.acoes.porId(id);
       if(a) c2.corpo.appendChild(linhaAcao(a));

@@ -234,6 +234,18 @@ TO.estado = (function(){
       /* recolhe qualquer jogo que tenha sobrado e avança as fases */
       TO.competicoes.jogarSemana(E, E.data.semana);
 
+      /* TÍTULO FRESCO abre a janela quente do recrutamento por 2
+         semanas (tabela do dono) — estadual, copa, o que fechar */
+      E.titulosVistos = E.titulosVistos || {};
+      for(const c of (E.temporada ? E.temporada.competicoes : [])){
+        const k = `${E.data.ano}|${c.id}`;
+        if(c.campeao === E.torcida.clubeId && !E.titulosVistos[k]){
+          E.titulosVistos[k] = true;
+          E.janelaRecruta = {tipo:'titulo',
+                             ate: TO.relacoes.semanaAbs(E) + 3};
+        }
+      }
+
       fecho = TO.financeiro.fecharSemana(E);
       const meu = TO.mundo.time(E.torcida.clubeId);
       fecho.jogo = meu ? TO.competicoes.jogoDaSemana(E, meu.id, E.data.semana) : null;
@@ -264,6 +276,10 @@ TO.estado = (function(){
           /* acesso enche a fila do recrutamento; rebaixamento esvazia */
           TO.torcedores.abrirJanela(E, sub ? 1.6 : 0.45, sub ? 4 : 8);
           E.indicadores.moral = U.limitar(E.indicadores.moral + (sub ? 2 : -3), 0, 20);
+          /* e abre a janela de 2 semanas da tabela do dono: acesso é
+             regime quente, rebaixamento é regime seco */
+          E.janelaRecruta = {tipo: sub ? 'titulo' : 'rebaixamento',
+                             ate: TO.relacoes.semanaAbs(E) + 2};
         }
         E.temporada = TO.competicoes.montarTemporada(E);
       }
@@ -321,6 +337,9 @@ TO.estado = (function(){
     const venceu = j.gp > j.gc, perdeu = j.gp < j.gc;
     const d = venceu ? 0.6 : perdeu ? -0.6 : 0;
     E.indicadores.moral = U.limitar(E.indicadores.moral + d, 0, 20);
+    /* o recrutamento olha pro último jogo (tabela do dono): vitória
+       anima a praça, derrota esvazia — empate é semana comum */
+    E.ultimoJogoClube = {venceu, perdeu};
   }
 
   function guardarTitulos(E){
