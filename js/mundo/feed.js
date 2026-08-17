@@ -615,6 +615,9 @@ TO.feed = (function(){
         m.dados = m.dados || {};
         m.dados.iniciada = true;
         m.dados.t0 = Date.now();
+        m.dados.minAcum = 0;      // minutos já rolados (pause/velocidade)
+        m.dados.vel = 1;          // 1× ou 2×
+        m.dados.pausada = false;
         return {ok:true};
       case 'paz':
         PL().definirIntencao(E, 'paz');

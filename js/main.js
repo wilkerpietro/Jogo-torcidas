@@ -560,19 +560,84 @@
      feed e o relógio das mensagens volta a correr.
      ======================================================= */
   const MIN_POR_SEG = 2;
+
+  /* O RELÓGIO DA PARTIDA anda em minutos ACUMULADOS, não em hora de
+     parede: minAcum guarda quanto já rolou, t0 marca a última
+     retomada, e pausa e velocidade só mexem nesse par. É o que deixa
+     o espaço pausar e o 2× acelerar sem pular gol nenhum. */
+  function minutoDaPartida(d){
+    const rodando = d.pausada ? 0
+      : (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG * (d.vel||1);
+    return Math.min(90, Math.floor((d.minAcum||0) + rodando));
+  }
+  function pontoDeControle(d){
+    const rodando = d.pausada ? 0
+      : (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG * (d.vel||1);
+    d.minAcum = Math.min(90, (d.minAcum||0) + rodando);
+    d.t0 = Date.now();
+  }
+  function alternarPausaPartida(m){
+    const d = m && m.dados;
+    if(!d || !d.iniciada || m.respondido) return;
+    pontoDeControle(d);
+    d.pausada = !d.pausada;
+  }
+  function alternarVelPartida(m){
+    const d = m && m.dados;
+    if(!d || !d.iniciada || m.respondido) return;
+    pontoDeControle(d);
+    d.vel = (d.vel||1) === 1 ? 2 : 1;
+  }
+  const partidaAoVivo = e => (e.feed||[]).find(m=>
+    m.kind==='partida' && m.dados && m.dados.iniciada && !m.respondido);
+
+  /* ESPAÇO pausa e solta a partida ao vivo — só quando ela existe,
+     fora de cena de briga e sem campo de texto em foco */
+  addEventListener('keydown', ev=>{
+    if(ev.key !== ' ' && ev.code !== 'Space') return;
+    const e = E();
+    if(!e || document.body.classList.contains('em-cena')) return;
+    const alvoTag = (ev.target && ev.target.tagName || '').toLowerCase();
+    if(alvoTag === 'input' || alvoTag === 'textarea' ||
+       alvoTag === 'select') return;
+    const m = partidaAoVivo(e);
+    if(!m) return;
+    ev.preventDefault();
+    alternarPausaPartida(m);
+  });
+
   function widgetPartida(m){
     const d = m.dados;
+    /* mensagens de antes do pause: o relógio velho era só t0 corrido */
+    if(d.minAcum === undefined){
+      d.minAcum = Math.min(90,
+        (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG);
+      d.t0 = Date.now();
+    }
+    if(!d.vel) d.vel = 1;
     const caixa = el('div',{class:'partida-live'});
     const placar = el('div',{class:'partida-placar'});
     const linha = el('div',{class:'partida-linha'});
+    const btPausa = el('button',{class:'partida-bt',
+      title:'Pausar/seguir (espaço)'});
+    const btVel = el('button',{class:'partida-bt partida-vel',
+      title:'Velocidade da partida'});
     const trilho = el('div',{class:'partida-trilho'});
     const fill = el('i',{class:'partida-fill'});
     const meio = el('b',{class:'partida-meio'});
     const rotMin = el('span',{class:'partida-min', texto:"0'"});
     trilho.append(fill, meio);
-    linha.append(trilho, rotMin);
+    linha.append(btPausa, btVel, trilho, rotMin);
     const eventos = el('div',{class:'partida-eventos'});
     caixa.append(placar, linha, eventos);
+
+    const pintarBotoes = ()=>{
+      btPausa.textContent = d.pausada ? '▶' : '❚❚';
+      btVel.textContent = `${d.vel||1}×`;
+    };
+    btPausa.onclick = ()=>{ alternarPausaPartida(m); pintarBotoes(); };
+    btVel.onclick   = ()=>{ alternarVelPartida(m);   pintarBotoes(); };
+    pintarBotoes();
 
     const pintarPlacar = (gc, gf) =>
       placar.textContent = `${d.casa} ${gc} × ${gf} ${d.fora}`;
@@ -580,8 +645,8 @@
 
     const tm = setInterval(()=>{
       if(!caixa.isConnected){ clearInterval(tm); return; }
-      const min = Math.min(90,
-        Math.floor((Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG));
+      const min = minutoDaPartida(d);
+      pintarBotoes();       /* o espaço muda o estado por fora do botão */
       fill.style.width = (min/90*100)+'%';
       rotMin.textContent = `${min}'`;
       /* revela os gols que a barra já alcançou */

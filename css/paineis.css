@@ -1116,6 +1116,13 @@ table.dados tr.selecionada td{background:#252525}
   margin-bottom:7px;
 }
 .partida-linha{display:flex;align-items:center;gap:9px}
+.partida-bt{
+  width:30px;height:24px;background:#1e1e1e;border:1px solid var(--linha);
+  color:#cfcfcf;cursor:pointer;font-size:11px;line-height:1;flex:0 0 auto;
+  font-family:var(--mono);
+}
+.partida-bt:hover{background:#2a2a2a;color:#fff}
+.partida-vel{width:34px}
 .partida-trilho{
   position:relative;flex:1;height:8px;background:#242424;
   border:1px solid var(--linha);
