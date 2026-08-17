@@ -134,7 +134,7 @@ TO.acoes = (function(){
                 ? 'visitante' : 'mandante';
     const efeitos = [
       {ind:'relacao', delta:-22, dono:`com a ${deles.nome}`},
-      {ind:'prestigio', delta: r1((res && res.prestigio || 0)/6), dono:'nosso'},
+      {ind:'prestigio', delta: r1(U.limitar((res && res.prestigio || 0)/5, -2, 2)), dono:'nosso'},
       {ind:'moral', delta: r1(res && res.moralTorcida || 0), dono:'nossa'}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
@@ -312,7 +312,7 @@ TO.acoes = (function(){
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos:[{ind:'relacao', delta:r1(R.nivel(E,alvo.torcidaId)-antes),
                 dono:`com a ${alvo.nome}`},
-               {ind:'prestigio', delta: r1((res.prestigio||0)/6), dono:'nosso'},
+               {ind:'prestigio', delta: r1(U.limitar((res.prestigio||0)/5, -2, 2)), dono:'nosso'},
                {ind:'dinheiro',  delta: levou, dono:'nosso'}].filter(x=>x.delta)});
     return {ganhou, linhas, dinheiro:levou,
             titulo: ganhou ? 'ATAQUE BEM-SUCEDIDO' : 'ATAQUE FRACASSOU'};

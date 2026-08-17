@@ -31,9 +31,9 @@ seu time e dos demais times da cidade onde a torcida tem sede.
 
 **Toda notícia nova passa pelo crivo do dono antes de entrar.**
 
-## Menu (7 itens)
-Feed · Torcida · Financeiro · Calendário · Competições · Diplomacia ·
-Notícias.
+## Menu (8 itens, desde 17/08/2026)
+Feed · Torcida · Financeiro · Calendário · Competições · Ranking ·
+Diplomacia · Notícias.
 
 ## Mantido
 Tela inicial; seleção em dois passos; competições completas (16
@@ -70,9 +70,17 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.
+- **Prestígio na régua de 0 a 100** (17/08/2026): vitória rende no
+  máximo +10 e derrota tira no máximo −10 — o teto negativo só com
+  prejuízo grande de feridos e presos. Acabou o +30 por briga comum.
+- **Ranking de torcidas** (17/08/2026): tela própria no menu. Pontos =
+  (membros + prestígio×2) × média de força e defesa dos membros. O
+  cabeçalho mostra #posição ao lado do nome e as médias de moral,
+  ataque e defesa ao lado do prestígio.
 - **Partida ao vivo** (17/08/2026): no dia do nosso jogo chega a
   mensagem com o botão INICIAR PARTIDA; clicado, o cartão vira uma
   barra de minutos (2' de jogo por segundo) e os gols do resultado —
+  com a posição dos dois na tabela e o estádio no texto de abertura —
   já simulado, mas escondido — saem conforme o tempo avança, a maior
   parte dos 30 aos 45 e dos 75 aos 90. Como é decisão, o relógio do
   feed fica preso até o apito final: o placar e o resumo da rodada só

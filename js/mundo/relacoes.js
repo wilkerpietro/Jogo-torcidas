@@ -486,6 +486,70 @@ TO.relacoes = (function(){
     }
   }
 
+  /* =======================================================
+     O RANKING DE TORCIDAS (decisão do dono, 17/08/2026)
+     Pontos = (membros + prestígio×2) × média de força e defesa
+     dos membros. O prestígio entra na escala de 0 a 100 (peso
+     2); a média das IAs sai da MESMA régua que gera as fichas
+     delas nas brigas (cargo + bônus de poder), sem sorteio —
+     é a esperança da distribuição, estável de um dia pro outro.
+     ======================================================= */
+  function mediaDeFichaGerada(o, membrosVivos){
+    const CARGOS = TO.membros.CARGOS;
+    const tamanho = Math.min(Math.max(membrosVivos || o.membros || 60, 1), 250);
+    const plano = TO.membros.planoDeCargos(tamanho, o.cargos);
+    const peso = U.limitar((o.poder || 60)/250, 0, 1);
+    const bonus = Math.round(peso*3);
+    const BASE = {novato:1, componente:5, frente:10, diretoria:14};
+    let soma = 0, n = 0;
+    for(const [cargo, q] of plano){
+      const teto = (CARGOS[cargo] || CARGOS.novato).teto;
+      soma += q * Math.min(teto, (BASE[cargo]||1) + 1.5 + bonus);
+      n += q;
+    }
+    return n ? soma/n : 1;
+  }
+
+  let cacheRanking = {chave:'', lista:null};
+  function ranking(E){
+    const chave = `${E.data.ano}|${semanaAbs(E)}|${E.data.dia}|`+
+      `${E.membros.length}|${Math.round(E.indicadores.prestigio*100)}`;
+    if(cacheRanking.chave === chave) return cacheRanking.lista;
+    mundo(E);
+    const fora = [];
+    for(const o of M().jogaveis()){
+      if(o.incompleta) continue;
+      if(o.id === E.torcida.id){
+        const n = E.membros.length || 1;
+        const mf = E.membros.reduce((s,m)=>s+m.forca, 0)/n;
+        const md = E.membros.reduce((s,m)=>s+m.defesa, 0)/n;
+        const prest = Math.round(E.indicadores.prestigio*5);
+        const forca = (mf+md)/2;
+        fora.push({id:o.id, nome:o.nome, nossa:true,
+                   membros:E.membros.length, prestigio:prest, forca,
+                   pontos:Math.round((E.membros.length + prest*2)*forca)});
+      } else {
+        const viva = (E.mundoTorcidas||{})[o.id] || {};
+        const n = viva.membros || o.membros || 0;
+        const prest = Math.round((viva.prestigio !== undefined
+          ? viva.prestigio : U.limitar((o.prestigio||15)/5, 0, 20))*5);
+        const forca = mediaDeFichaGerada(o, n);
+        fora.push({id:o.id, nome:o.nome, nossa:false,
+                   membros:n, prestigio:prest, forca,
+                   pontos:Math.round((n + prest*2)*forca)});
+      }
+    }
+    fora.sort((a,b)=>b.pontos - a.pontos || b.membros - a.membros ||
+                     (a.nome < b.nome ? -1 : 1));
+    fora.forEach((x,i)=>x.pos = i+1);
+    cacheRanking = {chave, lista:fora};
+    return fora;
+  }
+  function posicaoNoRanking(E){
+    const x = ranking(E).find(v=>v.nossa);
+    return x ? x.pos : 0;
+  }
+
   function passarSemana(E){
     mundo(E);
     esfriar(E);
@@ -508,6 +572,7 @@ TO.relacoes = (function(){
   }
 
   return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
+          ranking, posicaoNoRanking,
           mundo, balanco, ARQUETIPOS, economiaDelas,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,

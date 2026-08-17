@@ -357,9 +357,12 @@ TO.membros = (function(){
       m.moral = U.limitar(m.moral + (r.moral||0), 0, 20);
     }
 
-    /* indicadores da torcida */
+    /* indicadores da torcida. O prestígio da noite fala na escala de
+       0 a 100 (teto ±10, decisão do dono); o indicador vive em 0–20,
+       então divide por 5 — e o limitador é o cinto de segurança. */
     const I = E.indicadores;
-    I.prestigio = U.limitar(I.prestigio + (res.prestigio||0)/6, 0, 20);
+    I.prestigio = U.limitar(
+      I.prestigio + U.limitar((res.prestigio||0)/5, -2, 2), 0, 20);
     I.moral     = U.limitar(I.moral + (res.moralTorcida||0), 0, 20);
 
     E.historicoNoites.unshift({

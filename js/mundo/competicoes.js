@@ -1166,6 +1166,24 @@ TO.competicoes = (function(){
   const jogosDaSemana = (E, clubeId, semana) =>
     agendaDoClube(E, clubeId).filter(j=>j.semana===semana);
 
+  /* a posição de um clube na tabela da competição — no grupo dele,
+     quando a competição tem mais de um */
+  function posicaoNaTabela(E, compId, clubeId){
+    const comp = ((E.temporada && E.temporada.competicoes) || [])
+      .find(c=>c.id === compId);
+    if(!comp || comp.copa) return 0;
+    let t;
+    if(comp.grupos.length > 1){
+      const gi = comp.grupos.findIndex(g=>g.includes(clubeId));
+      if(gi < 0) return 0;
+      t = tabela(comp, gi);
+    } else {
+      t = tabela(comp);
+    }
+    const i = t.findIndex(l=>l.id === clubeId);
+    return i < 0 ? 0 : i+1;
+  }
+
   /* O jogo da semana pra torcida. Numa semana com rodada de pontos
      corridos e jogo de copa, o que vale é o mata-mata: é dele que o
      bairro fala a semana inteira. */
@@ -1299,7 +1317,7 @@ TO.competicoes = (function(){
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
-          jogosDaSemana, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
+          jogosDaSemana, posicaoNaTabela, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
           aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,
           rivaisDiretos, ajustarMandos, piorSequencia, piorSequenciaEmCasa, diaDoJogo,
           SEMANAS_ANO, INICIO_REGIONAL, INICIO_NACIONAL};

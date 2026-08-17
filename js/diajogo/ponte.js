@@ -658,9 +658,16 @@ TO.diaJogo.ponte = (function(){
          soma isso ao indicador sem virar nada — ganhar fora custava
          prestígio e ainda fazia perder material. A fórmula continua a
          mesma; o que muda é de quem são os caídos. */
+      /* O PRESTÍGIO FALA NA ESCALA DE 0 A 100 (decisão do dono,
+         17/08/2026): vitória rende no máximo +10, derrota tira no
+         máximo −10 — e o −10 é só quando o prejuízo de feridos e
+         presos é grande. A conta de caídos continua dando o degrau;
+         o ÷3 e o teto seguram a banalização (um 51×0 dava +102). */
       prestigio: correram ? prestigioDaFuga(J)
-        : (Math.round(J.caidos[outroLado]*2 - J.caidos[nossoLado]*1.5
-                      - J.presosPor[nossoLado]*2 + (J.rompido?6:0)) || 0),
+        : (U.limitar(Math.round((J.caidos[outroLado]*2
+                      - J.caidos[nossoLado]*1.5
+                      - J.presosPor[nossoLado]*2 + (J.rompido?6:0)) / 3),
+                     -10, 10) || 0),
       membros
     };
     J.resultado=r;

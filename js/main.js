@@ -214,6 +214,7 @@
     {id:'financeiro',  rot:'Financeiro',  ic:'dinheiro'},
     {id:'calendario',  rot:'Calendário',  ic:'jornal'},
     {id:'competicoes', rot:'Competições', ic:'trofeu'},
+    {id:'ranking',     rot:'Ranking',     ic:'medalha'},
     {id:'diplomacia',  rot:'Diplomacia',  ic:'diplomacia'},
     {id:'noticias',    rot:'Notícias',    ic:'jornal'}
   ];
@@ -321,7 +322,8 @@
     feed:pintarFeed,
     torcida:pintarTorcida, financeiro:pintarFinanceiro,
     calendario:pintarCalendario,
-    competicoes:pintarCompeticoes, diplomacia:pintarDiplomacia,
+    competicoes:pintarCompeticoes, ranking:pintarRanking,
+    diplomacia:pintarDiplomacia,
     noticias:pintarNoticias
   };
   const pintarPagina = id => (PINTOR[id] || (()=>{}))();
@@ -818,6 +820,43 @@
      O histórico inteiro, do mais novo pro mais velho. Aqui não
      se responde nada: o que teve botão aparece com a resposta.
      ======================================================= */
+  /* =======================================================
+     RANKING DE TORCIDAS (decisão do dono, 17/08/2026)
+     Pontos = (membros + prestígio×2) × média de força e defesa.
+     ======================================================= */
+  function pintarRanking(){
+    const e = E(), pg = U.$('.pagina[data-pag="ranking"]');
+    if(!e || !pg) return;
+    pg.innerHTML = '';
+    pg.appendChild(el('div',{class:'titulo-pagina', texto:'Ranking de torcidas'}));
+    pg.appendChild(el('div',{class:'recado', html:
+      `Pontos = (<b>membros</b> + <b>prestígio × 2</b>) × <b>média de `+
+      `força e defesa</b> dos membros.`}));
+    const lista = TO.relacoes.ranking(e);
+    const t = el('table',{class:'tab-ranking'});
+    t.innerHTML = `<thead><tr><th>#</th><th>Torcida</th>
+      <th class="nu">Membros</th><th class="nu">Prestígio</th>
+      <th class="nu">Força média</th><th class="nu">Pontos</th></tr></thead>`;
+    const tb = el('tbody');
+    for(const r of lista){
+      const o = TO.mundo.torcida(r.id) || {};
+      const cor = (TO.mundo.coresDaTorcida(o) || {}).cor || '#888';
+      const tr = el('tr',{class: r.nossa ? 'nossa' : ''});
+      tr.innerHTML =
+        `<td class="pos">${r.pos}º</td>
+         <td><i class="to-chip" style="background:${cor}"></i>${r.nome}</td>
+         <td class="nu">${U.numero(r.membros)}</td>
+         <td class="nu">${r.prestigio}</td>
+         <td class="nu">${(Math.round(r.forca*10)/10).toFixed(1)}</td>
+         <td class="nu"><b>${U.numero(r.pontos)}</b></td>`;
+      tb.appendChild(tr);
+    }
+    t.appendChild(tb);
+    const rolo = el('div',{class:'rolo', estilo:{maxHeight:'70vh'}});
+    rolo.appendChild(t);
+    pg.appendChild(rolo);
+  }
+
   function pintarNoticias(){
     const e = E(), pg = U.$('.pagina[data-pag="noticias"]');
     if(!e || !pg) return;
@@ -866,10 +905,21 @@
       const c = TO.membros.contar(e);
       const sem = (TO.financeiro.resumoDaSemana(e) || {}).saldo || 0;
       const sinal = sem > 0 ? '+' : sem < 0 ? '−' : '';
+      /* as médias do bonde e a posição no ranking nacional (pedido do
+         dono, 17/08/2026): #pos ao lado do nome; moral, ataque e
+         defesa médios, com uma casa, ao lado do prestígio */
+      const nM = e.membros.length || 1;
+      const d1 = v => (Math.round(v*10)/10).toFixed(1);
+      const mMoral = d1(e.membros.reduce((s,m)=>s+m.moral, 0)/nM);
+      const mForca = d1(e.membros.reduce((s,m)=>s+m.forca, 0)/nM);
+      const mDef   = d1(e.membros.reduce((s,m)=>s+m.defesa, 0)/nM);
+      const pos = TO.relacoes.posicaoNoRanking(e);
       noFeedTopo.innerHTML =
         `<span class="escudo" style="background:linear-gradient(135deg,${c1} 0 52%,${c2} 52% 100%)"
            >${e.torcida.sigla}</span>`+
         `<b>${e.torcida.nome}</b>`+
+        `<span class="num pos-rank" title="posição no ranking nacional">`+
+        `#${pos||'—'}</span>`+
         `<span class="num${e.dinheiro<0?' negativo':''}">${IC.get('dinheiro')}`+
         `${U.dinheiro(e.dinheiro)}</span>`+
         `<span class="num semana ${sem>0?'sobra':sem<0?'falta':''}"`+
@@ -877,7 +927,13 @@
         `<em>/sem</em></span>`+
         `<span class="num">${IC.get('membros')}${U.numero(c.total)}</span>`+
         `<span class="num">${IC.get('estrela')}`+
-        `${Math.round(e.indicadores.prestigio*5)}</span>`;
+        `${Math.round(e.indicadores.prestigio*5)}</span>`+
+        `<span class="num" title="moral média dos membros">`+
+        `${IC.get('raio')}${mMoral}</span>`+
+        `<span class="num" title="ataque médio dos membros">`+
+        `${IC.get('halter')}${mForca}</span>`+
+        `<span class="num" title="defesa média dos membros">`+
+        `${IC.get('tijolo')}${mDef}</span>`;
     }
 
   }
@@ -2959,8 +3015,8 @@
       const outroL = meu === 'mandante' ? 'visitante' : 'mandante';
       const nossos = res.efetivo[meu] || 0, deles = res.efetivo[outroL] || 0;
       if(nossos > 0 && deles > 0)
-        res.prestigio = Math.max(1, Math.round(
-          res.prestigio * U.limitar(deles/nossos, 0.5, 2)));
+        res.prestigio = U.limitar(Math.max(1, Math.round(
+          res.prestigio * U.limitar(deles/nossos, 0.5, 2))), 1, 10);
     }
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     if(enc){

@@ -165,6 +165,8 @@ TO.feed = (function(){
   };
 
   const diaDoOlheiro = diaJogo => Math.max(1, diaJogo - 2);
+  /* "pela Copa do Nordeste", "pelo Paulistão" */
+  const pelaComp = n => n ? (/^Copa/i.test(n) ? `, pela ${n}` : `, pelo ${n}`) : '';
   const NOME_DIA = [null,'segunda','terça','quarta','quinta','sexta',
                     'sábado','domingo'];
 
@@ -507,12 +509,21 @@ TO.feed = (function(){
       for(let i=0;i<(nosso.gc||0);i++) gols.push({min:minutoDeGol(), lado:'c'});
       for(let i=0;i<(nosso.gf||0);i++) gols.push({min:minutoDeGol(), lado:'f'});
       gols.sort((a,b)=>a.min - b.min);
+      /* a posição dos dois na tabela e o palco (pedido do dono,
+         17/08/2026) — em fase de mata-mata não há posição, e a frase
+         volta ao formato antigo */
+      const p1 = TO.competicoes.posicaoNaTabela(E, nosso.comp, nosso.c);
+      const p2 = TO.competicoes.posicaoNaTabela(E, nosso.comp, nosso.f);
+      const estadio = (M().time(nosso.c)||{}).estadio || '';
+      const artEst = /^(Arena|Vila|Fonte|Ilha)/i.test(estadio) ? 'na' : 'no';
       propor(E, {
         kind:'partida', peso:'decisao', voz:'jornal',
         chave:`partida|${E.data.ano}|${E.data.semana}|${E.data.dia}|${meu}`,
         texto:`Hoje tem ${nome(nosso.c)} × ${nome(nosso.f)}`+
-              `${nosso.compNome ? `, pelo ${nosso.compNome}` : ''}. `+
-              `A bola vai rolar.`,
+              `${pelaComp(nosso.compNome)}. `+
+              (p1 && p2 ? `O ${nome(nosso.c)} está em ${p1}º na tabela `+
+                          `e o ${nome(nosso.f)} em ${p2}º. ` : '')+
+              `A bola vai rolar${estadio ? ` ${artEst} ${estadio}` : ''}.`,
         dados:{casa:nome(nosso.c), fora:nome(nosso.f),
                gc:nosso.gc, gf:nosso.gf, comp:nosso.compNome || '', gols},
         botoes:[{id:'iniciar', rot:'Iniciar partida', acao:'iniciar-partida'}]
@@ -528,7 +539,7 @@ TO.feed = (function(){
         kind:'placar', peso:'info', tipo, voz:'jornal',
         chave:`placar|${E.data.ano}|${E.data.semana}|${E.data.dia}|${meu}`,
         texto:`${nome(nosso.c)} ${nosso.gc} × ${nosso.gf} ${nome(nosso.f)}`+
-              `${nosso.compNome ? `, pelo ${nosso.compNome}` : ''}.`
+              `${pelaComp(nosso.compNome)}.`
       });
     }
 
