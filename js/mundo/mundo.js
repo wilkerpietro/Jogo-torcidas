@@ -27,17 +27,14 @@ TO.mundo = (function(){
   /* torcidas jogáveis: as completas (a fonte tem um asset vazio) */
   const jogaveis = () => O().filter(o=>!o.incompleta);
 
-  /* Quem dá pra COMANDAR. O mundo inteiro roda com as 139 torcidas, mas
-     começar uma partida exige uma praça que o mapa saiba desenhar por
-     inteiro — as cinco cidades Grandes do GDD §10.1. Nelas os bairros
-     chegam a 16 e a cruz por zona fecha nos quatro lados; numa praça
-     Pequena de 8 bairros a cidade sai magra demais pra sustentar uma
-     temporada de briga de rua. As outras continuam existindo, brigando e
-     aparecendo no noticiário — só não são jogáveis. */
-  const PRACA_JOGAVEL = 'Grande';
+  /* Quem dá pra COMANDAR: todas (decisão do autor). O mapa como tela
+     saiu do jogo, e a geometria que sobrou — sede, bar, estádio, bairro
+     da briga — a planta gerada resolve pra praça de qualquer tamanho.
+     Só fica de fora torcida de praça que a fonte não descreve. */
+  const PRACA_JOGAVEL = 'Grande';   // ainda decide quem herda a foto
   const selecionaveis = () => jogaveis().filter(o=>{
     const c = cidade(o.mapa);
-    return c && c.tamanho === PRACA_JOGAVEL;
+    return c && (c.bairros||[]).length;
   });
 
   const torcidasDe = idClube => O().filter(o=>o.clubeId===idClube);
