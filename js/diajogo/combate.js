@@ -47,7 +47,7 @@ TO.diaJogo.combate = (function(){
   const FORMACOES={
     bonde    :{nome:'Bonde',    tecla:'1', desc:'coluna'},
     muralha  :{nome:'Muralha',  tecla:'2', desc:'linha'},
-    investida:{nome:'Investida',tecla:'3', desc:'cunha'},
+    investida:{nome:'Quadrado',tecla:'3', desc:'bloco fechado atrás do líder'},
     espalhar :{nome:'Espalhar', tecla:'4', desc:'aberto'}
   };
 
@@ -146,6 +146,7 @@ TO.diaJogo.combate = (function(){
          : !D.id ? true
          : cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
+      config_perfilRival: cfg.perfilRival || null,
       /* onde a briga cai: arredores do estádio, praça ou rua. Muda o
          tamanho do bonde rival e a pressa da PM (GDD §12). */
       local: cfg.local || 'arredores',
@@ -371,11 +372,43 @@ TO.diaJogo.combate = (function(){
      esplanada não é uma foto: quem ainda estava na rua quando a briga
      começou chega no meio dela, e chega por este mesmo caminho.
      ======================================================= */
+  /* A FICHA GERADA DO RIVAL (decisão do autor): o disco deles replica
+     os dados dos membros da torcida dele — a mesma distribuição de
+     cargos da fonte e o mesmo bônus de poder que geram os NOSSOS
+     membros em povoarInicial. Força dá dano, defesa segura dano, dos
+     dois lados pela mesma régua. */
+  function fichasDoPerfil(perfil, qtd){
+    const p = perfil || {};
+    const CARGOS = TO.membros.CARGOS;
+    const plano = TO.membros.planoDeCargos(qtd, p.cargos);
+    const peso = U.limitar((p.poder || 60)/250, 0, 1);
+    const bonus = Math.round(peso*3);
+    const BASE = {novato:1, componente:5, frente:10, diretoria:14};
+    const fora = [];
+    for(const [cargo, n] of plano){
+      const teto = (CARGOS[cargo] || CARGOS.novato).teto;
+      for(let i=0;i<n && fora.length<qtd;i++)
+        fora.push({cargo,
+          forca:  Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + bonus),
+          defesa: Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + bonus),
+          moral:  U.limitar(12 + U.inteiro(-3,3), 1, 20)});
+    }
+    while(fora.length < qtd)
+      fora.push({cargo:'novato', forca:1+U.inteiro(0,3)+bonus,
+                 defesa:1+U.inteiro(0,3)+bonus, moral:12});
+    return U.embaralhar(fora);
+  }
+
   function nascerGrupo(J, g, escalados, temLider, nomes){
     const s = g.s;
     const qtd = Math.max(g.qtd, escalados.length);
     if(qtd <= 0) return;
     nomes = nomes || U.embaralhar(TO.dados.nomes ? TO.dados.nomes.apelidos : ['TROVÃO']);
+    /* só o nosso bonde tem ficha de verdade; o resto joga com a ficha
+       gerada do perfil da própria torcida */
+    const meuLado = g.bonde ? !!g.bonde.nossa : !!s.jogador;
+    const perfil = (g.bonde && g.bonde.perfil) || J.config_perfilRival || null;
+    const geradas = meuLado ? null : fichasDoPerfil(perfil, qtd);
     /* só o nosso bonde obedece à formação; aliado que divide o portão não */
     const meu = g.bonde ? !!g.bonde.nossa : !!s.jogador;
     /* ONDE O BONDE SE ESPALHA AO NASCER.
@@ -428,6 +461,13 @@ TO.diaJogo.combate = (function(){
         d.hpMax = 90 + m.defesa*7 + (lider?60:0);
         d.hp=d.hpMax;
         d.cargo=m.cargo;
+      } else if(geradas){
+        /* o disco rival com a ficha da torcida dele: mesma régua nossa */
+        const v = geradas[i % geradas.length];
+        d.forca=v.forca; d.defesa=v.defesa; d.moral=v.moral;
+        d.hpMax = 90 + v.defesa*7 + (lider?60:0);
+        d.hp=d.hpMax;
+        d.cargo=v.cargo;
       }
       /* as duas cores da torcida que veio do mapa: o círculo externo é a
          primária, o miolo é a secundária */
@@ -810,7 +850,12 @@ TO.diaJogo.combate = (function(){
       switch(form){
         case 'bonde':    {const f=Math.floor(i/2)+1,l=i%2?1:-1; a=-f*e*0.8; b=l*e*0.42; break;}
         case 'muralha':  {const c=i-(n-1)/2; a=-e*0.3+(i%2)*(-e*0.42); b=c*e*0.72; break;}
-        case 'investida':{const f=Math.floor(i/2)+1,l=i%2?1:-1; a=-f*e*0.6; b=l*f*e*0.42; break;}
+        case 'investida':{
+          /* QUADRADO ATRÁS DO LÍDER (decisão do autor): bloco cerrado,
+             lado = raiz do efetivo, todo mundo às costas de quem manda */
+          const cols=Math.max(1, Math.ceil(Math.sqrt(n)));
+          const f=Math.floor(i/cols)+1, c=(i%cols)-(cols-1)/2;
+          a=-f*e*0.75; b=c*e*0.75; break;}
         case 'espalhar': {const c=i-(n-1)/2; a=-(i%3)*e*0.7; b=c*e*1.05; break;}
       }
       s.push({x:dx*a+px*b, y:dy*a+py*b});

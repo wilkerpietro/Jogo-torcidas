@@ -2586,7 +2586,8 @@
        cor:cN.cor, cor2:cN.cor2, sigla:TO.mundo.siglaTorcida(e.torcida)},
       {lado:'visitante', n, nossa:false, nome:rival.nome||'Rival',
        cor:cR.cor, cor2:cR.cor2,
-       sigla:TO.mundo.siglaTorcida(rival)||'RIV'}
+       sigla:TO.mundo.siglaTorcida(rival)||'RIV',
+       perfil: perfilDe(d.rival)}
     ];
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
@@ -2655,6 +2656,14 @@
      abre. Quem está no meio é quem estava no bonde, não a
      torcida inteira.
      ======================================================= */
+  /* o perfil que gera a ficha dos discos rivais: cargos da fonte e
+     poder da torcida (decisão do autor — força e defesa fiéis dos dois
+     lados) */
+  const perfilDe = id => {
+    const o = id ? TO.mundo.torcida(id) : null;
+    return o ? {poder:o.poder, cargos:o.cargos} : null;
+  };
+
   const LOCAL_ROT = {rua:'na rua', 'rua-media':'numa rua de classe média',
                      'rua-nobre':'numa rua de bairro nobre',
                      praca:'na praça', arredores:'nos arredores do estádio'};
@@ -2678,9 +2687,11 @@
        O 34 continua, com o sentido que sempre teve: são os que têm
        FICHA — nome, força, defesa e consequência de ferido ou preso
        depois da briga. O resto é povão sem ficha. */
+    /* A FICHA VAI INTEIRA (decisão do autor): se saem 100, os 100 são
+       membros de verdade, cada um com a própria força e defesa. */
     const aptos = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
-      .slice(0, U.limitar(nosso.n, 2, 34));
+      .slice(0, Math.max(2, Math.round(nosso.n)));
     /* DE QUE LADO NÓS ENTRAMOS. Em casa somos o mandante, e foi assim
        desde sempre; atacando em viagem, nos arredores do estádio DELES,
        somos o visitante — que é o que a gente é: quem viajou. O
@@ -2692,7 +2703,8 @@
       {lado:nossoLado, n:nosso.n, cor:nosso.cor, cor2:nosso.cor2,
        sigla:nosso.sigla, nome:nosso.nome,  nossa:true},
       {lado:outroLado, n:deles.n, cor:deles.cor, cor2:deles.cor2,
-       sigla:deles.sigla, nome:deles.nome,  nossa:false}
+       sigla:deles.sigla, nome:deles.nome,  nossa:false,
+       perfil: perfilDe(deles.torcida)}
     ];
     encontroAberto = enc;
     $('telaDiaJogo').classList.remove('oculto');
@@ -2751,10 +2763,9 @@
        é a turma que estiver de pé, ou o bonde que o mapa mandou. O 34
        segue valendo pra FICHA: nome, força, defesa e consequência de
        ferido ou preso depois. O resto é povão. */
-    const n = cena.acao === 'assalto'
-      ? Math.max(2, Math.min(12, fila.length))
-      : Math.max(2, Math.round(efetivo || fila.length));
-    const aptos = fila.slice(0, Math.min(n, cena.acao === 'assalto' ? 12 : 34));
+    const n = Math.max(2, Math.round(efetivo || fila.length));
+    /* a ficha vai inteira: cada disco nosso é um membro de verdade */
+    const aptos = fila.slice(0, n);
     /* só o NOSSO lado vem como bonde: quem defende continua se
        espalhando pelos pontos que a cena declarou — no bar são a porta e
        o fundo do salão, e juntar os dois num canto só mudaria a planta
@@ -2773,9 +2784,9 @@
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', bondes,
-                /* assalto não é briga anunciada: ninguém leva bomba */
-                bombas: cena.acao === 'assalto' ? 0 : p.bombas,
-                efetivoRival: cena.efetivoRival, local: cena.cena },
+                bombas: p.bombas,
+                efetivoRival: cena.efetivoRival, local: cena.cena,
+                perfilRival: perfilDe(cena.alvo && cena.alvo.torcidaId) },
       aoTerminar: res => fecharDiaDeJogo(res, null, cena)
     });
   }
@@ -2819,7 +2830,6 @@
        abertura: se eles vieram com mais, a cena começa com mais deles. */
     const fila = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa));
-    const aptos = fila.slice(0, 34);
     /* na estrada vai quem embarcou; no bar, um quarto da turma de pé;
        na concentração e na pista, o bonde inteiro do dia de jogo */
     const est = naEstrada ? TO.planejamento.estimativaCaravana(e) : null;
@@ -2836,11 +2846,13 @@
        o nosso ônibus é que foi fechado, então os papéis se invertem */
     const nosso  = naEstrada ? 'mandante'  : 'visitante';
     const outro  = naEstrada ? 'visitante' : 'mandante';
+    const aptos = fila.slice(0, nossos);
     const bondes = [
       {lado:nosso, n:nossos, nossa:true, nome:e.torcida.nome,
        cor:c1.cor, cor2:c1.cor2, sigla:TO.mundo.siglaTorcida(e.torcida)},
       {lado:outro, n:deles, nossa:false, nome:(o&&o.nome)||'Rival',
-       cor:c2.cor, cor2:c2.cor2, sigla:o?TO.mundo.siglaTorcida(o):'RIV'}
+       cor:c2.cor, cor2:c2.cor2, sigla:o?TO.mundo.siglaTorcida(o):'RIV',
+       perfil: perfilDe(atq.torcida)}
     ];
     atq.resolvido = true;
     $('telaDiaJogo').classList.remove('oculto');
