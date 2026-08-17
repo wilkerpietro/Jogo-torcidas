@@ -123,7 +123,45 @@ TO.feed = (function(){
     eventoDoTrimestreHoje(E);
     ataqueSofridoHoje(E);
     escoltaDeHoje(E);
+    assaltoDeHoje(E);
     placarDoDia(E, ctx.jogos || []);
+  }
+
+  /* -------------------------------------------------------
+     3c. A SUGESTÃO DE ASSALTO (decisão do dono, 17/08/2026):
+         de tempos em tempos um diretor chega com alvo mapeado.
+         Cai uma vez por mês, em dia comum, e só se há diretor
+         de pé e gente disponível pro menor dos alvos.
+     ------------------------------------------------------- */
+  function assaltoDeHoje(E){
+    const sa = TO.relacoes.semanaAbs(E);
+    const H = TO.mapa.hash;
+    if(sa % 4 !== H(`assalto|${E.torcida.id}`) % 4) return;
+    let dia = 1 + H(`assalto|${sa}|${E.torcida.id}`) % 7;
+    for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
+    if(dia !== E.data.dia) return;
+    const dir = E.membros.find(m=>m.cargo === 'diretoria' &&
+                                  TO.membros.disponivel(m));
+    if(!dir) return;
+    if(E.membros.filter(TO.membros.disponivel).length < 2) return;
+    propor(E, {
+      kind:'assalto', peso:'decisao', voz:'diretor',
+      chave:`assalto|${E.data.ano}|${sa}`,
+      texto:`Chefe, o ${dir.apelido} mapeou uns alvos pra um assalto — `+
+            `do mercadinho ao banco, cada um com seu risco. Bora ver?`,
+      botoes:[
+        {id:'ver',  rot:'Ver os alvos',  acao:'tela-assalto'},
+        {id:'nada', rot:'Deixar quieto', acao:'nada'}
+      ]
+    });
+  }
+  /* dia sem jogo do clube e sem caravana — mesma régua dos eventos do
+     trimestre, reimplementada aqui porque a de lá é privada */
+  function diaComumFeed(E, dia){
+    const meu = M().time(E.torcida.clubeId);
+    if(meu && TO.competicoes.jogosDaSemana(E, meu.id, E.data.semana)
+                .some(j=>j.dia === dia)) return false;
+    return !TO.financeiro.diasDeCaravana(E).includes(dia);
   }
 
   /* -------------------------------------------------------
@@ -620,6 +658,9 @@ TO.feed = (function(){
       case 'nada':
         marcar();
         return {ok:true};
+      case 'tela-assalto':
+        marcar();
+        return {ok:true, abrir:{tela:'tela-assalto'}};
       case 'iniciar-partida':
         /* a bola rola: NÃO marca respondido — o relógio do feed segue
            preso até o apito final, que chega por encerrarPartida() */

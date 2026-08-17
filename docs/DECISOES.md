@@ -70,6 +70,15 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.
+- **Assaltos** (tabela do dono, 17/08/2026): uma vez por mês, em dia
+  comum, um diretor sugere assalto (decisão no feed); a tela pergunta
+  o alvo e o efetivo, com membros SORTEADOS entre os disponíveis e um
+  dado só pro bonde inteiro. Banco 10/20 → 30-50k/60-120k, 60% de
+  cadeia, 360 dias; Joalheria 10/20 → 10-20k/30-40k, 50%, 180;
+  Supermercado 5/10 → 5-10k/10-15k, 50%, 180; Posto 5/10 → 2-3k/4-5k,
+  30%, 120; Mercadinho 2/5 → 1-2k/3-4k, 20%, 60; Loja de roupas 2/5 →
+  0,5-1k/2-3k, 10%, 30. Caiu, não leva nada. (A pena explícita pode
+  ir a 360 dias; a da briga segue no teto de 90.)
 - **Recrutamento por sorteio** (tabela do dono, 17/08/2026): cada
   campanha tira um dado — normal 20%/10%/70% (um/dois/ninguém);
   vitória no último jogo 30%/20%/50%; derrota 10%/5%/85%; 2 semanas

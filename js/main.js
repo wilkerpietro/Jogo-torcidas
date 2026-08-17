@@ -551,7 +551,8 @@
                     guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
                     confronto:'Confronto', placar:'Resultado',
-                    rodada:'Rodada', partida:'Nossa partida'};
+                    rodada:'Rodada', partida:'Nossa partida',
+                    assalto:'Assalto'};
 
   /* =======================================================
      A PARTIDA AO VIVO (decisão do dono, 17/08/2026)
@@ -787,6 +788,7 @@
       else if(t === 'painel-expediente'){ abaCal = 'expediente';
                                           abrirPainel('calendario'); }
       else if(t === 'tela-caravana') abrirCaravana();
+      else if(t === 'tela-assalto') abrirAssalto();
       else if(t === 'cena-guerra') abrirGuerra(a);
       else if(t === 'cena-defesa') abrirDefesa();
       else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
@@ -1377,6 +1379,63 @@
     f.appendChild(fechar); m.appendChild(f);
     fundo.appendChild(m); document.body.appendChild(fundo);
     return ()=>fundo.remove();
+  }
+
+  /* =======================================================
+     A TELA DO ASSALTO (tabela do dono, 17/08/2026)
+     Duas perguntas: qual alvo, quantos vão. Os membros são
+     sorteados entre os disponíveis; o dado é um só pro bonde
+     inteiro — partilha pra todos ou cadeia pra todos.
+     ======================================================= */
+  function abrirAssalto(){
+    const e = E();
+    const A = TO.acoes.ASSALTOS;
+    const disp = e.membros.filter(TO.membros.disponivel).length;
+    let alvo = A[A.length-1].id;              // abre no mais leve
+    let efetivo = null;
+    const corpo = el('div');
+
+    const pintar = ()=>{
+      corpo.innerHTML = '';
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Qual o alvo'}));
+      corpo.appendChild(opcoes(A.map(a=>({
+        id:a.id, rot:a.nome,
+        nota:`${U.dinheiro(a.ganho[a.efetivos[0]][0])} a `+
+             `${U.dinheiro(a.ganho[a.efetivos[1]][1])} · `+
+             `${Math.round(a.chance*100)}% de cadeia · `+
+             `pena de ${a.pena} dias`,
+        desabilitada: disp < a.efetivos[0]
+      })), alvo, id=>{ alvo = id; efetivo = null; pintar(); }));
+
+      const a = A.find(x=>x.id === alvo);
+      if(efetivo === null && disp >= a.efetivos[0]) efetivo = a.efetivos[0];
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantos vão'}));
+      corpo.appendChild(opcoes(a.efetivos.map(n=>({
+        id:String(n), rot:`${n} membros`,
+        nota: disp < n ? `só ${disp} disponíveis`
+            : `${U.dinheiro(a.ganho[n][0])} a ${U.dinheiro(a.ganho[n][1])}`,
+        desabilitada: disp < n
+      })), efetivo !== null ? String(efetivo) : null,
+          id=>{ efetivo = parseInt(id, 10); pintar(); }));
+      corpo.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="fraco">Os ${efetivo || '—'} são sorteados entre os `+
+        `disponíveis. Se cair, cai todo mundo — e o dinheiro fica lá.</span>`}));
+    };
+    pintar();
+
+    modal('Assalto', 'a diretoria mapeou os alvos', corpo, [
+      ['Assaltar', ()=>{
+        if(efetivo === null){ aviso('Escolhe o efetivo.', 'ruim'); return; }
+        const r = TO.acoes.executarAssalto(e, alvo, efetivo);
+        if(!r.ok){ aviso(r.msg, 'ruim'); return; }
+        aviso(r.caiu ? `Deu ruim: ${r.n} presos por ${r.pena} dias.`
+                     : `${U.dinheiro(r.valor)} na conta.`,
+              r.caiu ? 'ruim' : 'boa');
+        TO.estado.salvar();
+        pintarTopo();
+        atualizarFeed();
+      }]
+    ]);
   }
 
   /* =======================================================

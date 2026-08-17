@@ -592,6 +592,57 @@ TO.acoes = (function(){
   const agendaveis = () => LISTA.filter(a=>!a.manual);
 
   /* =======================================================
+     OS ASSALTOS (tabela do dono, 17/08/2026)
+     A diretoria sugere de tempos em tempos; o jogador escolhe
+     o alvo e o efetivo. O sorteio é um só pro bonde inteiro:
+     ou todo mundo volta com a partilha, ou todo mundo cai.
+     ======================================================= */
+  const ASSALTOS = [
+    {id:'banco',        nome:'Banco',             art:'no', efetivos:[10, 20],
+     ganho:{10:[30000, 50000], 20:[60000, 120000]}, chance:0.60, pena:360},
+    {id:'joalheria',    nome:'Joalheria',         art:'na', efetivos:[10, 20],
+     ganho:{10:[10000, 20000], 20:[30000, 40000]},  chance:0.50, pena:180},
+    {id:'supermercado', nome:'Supermercado',      art:'no', efetivos:[5, 10],
+     ganho:{5:[5000, 10000],   10:[10000, 15000]},  chance:0.50, pena:180},
+    {id:'posto',        nome:'Posto de gasolina', art:'no', efetivos:[5, 10],
+     ganho:{5:[2000, 3000],    10:[4000, 5000]},    chance:0.30, pena:120},
+    {id:'mercadinho',   nome:'Mercadinho',        art:'no', efetivos:[2, 5],
+     ganho:{2:[1000, 2000],    5:[3000, 4000]},     chance:0.20, pena:60},
+    {id:'roupas',       nome:'Loja de roupas',    art:'na', efetivos:[2, 5],
+     ganho:{2:[500, 1000],     5:[2000, 3000]},     chance:0.10, pena:30}
+  ];
+
+  function executarAssalto(E, alvoId, n){
+    const a = ASSALTOS.find(x=>x.id === alvoId);
+    if(!a || !a.efetivos.includes(n)) return {ok:false, msg:'alvo inválido'};
+    const aptos = E.membros.filter(TO.membros.disponivel);
+    if(aptos.length < n)
+      return {ok:false, msg:`só ${aptos.length} disponíveis — precisa de ${n}`};
+    /* membros ALEATÓRIOS, como manda a tabela — não é a elite que vai */
+    const grupo = U.embaralhar([...aptos]).slice(0, n);
+    const caiu = U.rng() < a.chance;
+    if(caiu){
+      for(const m of grupo)
+        TO.membros.prender(E, m, a.pena, `Preso no assalto — ${a.nome}`);
+      if(TO.feed) TO.feed.propor(E, {
+        kind:'assalto', peso:'info', tipo:'ruim', voz:'diretor',
+        texto:`Deu ruim ${a.art} ${a.nome.toLowerCase()}: os ${n} foram presos. `+
+              `Pena de ${a.pena} dias pra cada um.`
+      });
+      return {ok:true, caiu:true, n, pena:a.pena, alvo:a.nome};
+    }
+    const [mn, mx] = a.ganho[n];
+    const v = U.inteiro(mn, mx);
+    TO.estado.lancar(E, `Assalto — ${a.nome}`, v);
+    if(TO.feed) TO.feed.propor(E, {
+      kind:'assalto', peso:'info', tipo:'boa', voz:'diretor',
+      texto:`Os ${n} voltaram d${a.art==='na'?'a':'o'} ${a.nome.toLowerCase()} com `+
+            `${U.dinheiro(v)}. Ninguém viu, ninguém sabe.`
+    });
+    return {ok:true, caiu:false, n, valor:v, alvo:a.nome};
+  }
+
+  /* =======================================================
      EXECUÇÃO
      ======================================================= */
   function executar(E, id, opc){
@@ -641,6 +692,7 @@ TO.acoes = (function(){
           maximo, restantes, executar, rodarExpediente,
           previsaoRecrutamento,
           organizadasDaPraca, efetivoDe,
+          ASSALTOS, executarAssalto,
           alvosDeAtaque, clube, fecharCena, fecharBrigaDeRua,
           COBRANCA, MINIMO_SAIDA, CAP_RECRUTA};
 })();

@@ -268,14 +268,17 @@ TO.membros = (function(){
     m.historico.push(`${motivo || 'Ferido no dia de jogo'}, ${d} dias fora`);
   }
 
-  /* TODA PRISÃO TEM PRAZO, e o teto é 90 dias (decisão do autor): a
-     tela mostra quantos dias faltam pra sair da cadeia. Sem prazo dado
-     por quem chamou, a pena da briga sai do sorteio na hora. */
+  /* TODA PRISÃO TEM PRAZO. Na briga o teto segue 90 dias, sorteado na
+     hora; pena EXPLÍCITA de quem chamou pode ir a 360 — é a régua dos
+     assaltos do dono (banco = 360 dias). A tela mostra quantos dias
+     faltam pra sair da cadeia. */
   const PENA_MAX = 90;
+  const PENA_TETO = 360;
   function prender(E, m, dias, motivo){
     if(m.preso) return;
     const txt = motivo || 'Preso no dia de jogo';
-    const pena = Math.min(PENA_MAX, dias || U.inteiro(15, PENA_MAX));
+    const pena = dias ? Math.min(PENA_TETO, dias)
+                      : Math.min(PENA_MAX, U.inteiro(15, PENA_MAX));
     m.preso = { dias: pena, motivo: txt,
                 desde: (E && E.data && E.data.absoluto) || 0 };
     m.naFila = false;
