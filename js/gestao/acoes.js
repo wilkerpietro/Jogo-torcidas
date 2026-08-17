@@ -154,12 +154,17 @@ TO.acoes = (function(){
     /* briga derruba a relação dos dois lados — é a deterioração que o
        esqueleto do jogo exige depois de todo confronto */
     if(deles.torcida) TO.relacoes.hostilidade(E, deles.torcida, 22);
+    /* o prestígio DELES também se move com a briga (decisão do dono) */
+    const dpDeles = deles.torcida
+      ? TO.relacoes.mover(E, deles.torcida, 'prestigio', ganhamos ? -0.4 : 0.4)
+      : 0;
     const membros = (res && res.membros) || [];
     const outro = ((res && res.nossoLado) || 'mandante') === 'mandante'
                 ? 'visitante' : 'mandante';
     const efeitos = [
       {ind:'relacao', delta:-22, dono:`com a ${deles.nome}`},
       {ind:'prestigio', delta: r1(U.limitar((res && res.prestigio || 0)/5, -2, 2)), dono:'nosso'},
+      {ind:'prestigio', delta: dpDeles, dono:`da ${deles.nome}`},
       {ind:'moral', delta: r1(res && res.moralTorcida || 0), dono:'nossa'}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
@@ -232,17 +237,17 @@ TO.acoes = (function(){
     const antes = {moral:E.indicadores.moral, prestigio:E.indicadores.prestigio,
                    relacao: R.nivel(E, alvo.torcidaId)};
     if(!seguramos){
-      perdeu = naEstrada
-        ? Math.round((alvo.rateio || 25 * Math.max(4, alvo.nossos || 20))
-                     + Math.max(0, E.dinheiro) * 0.04)
-        : Math.round((alvo.tipo === 'bar' ? 60 : 30) *
-                     Math.max(4, alvo.efetivo||40)
-                     + Math.max(0, E.dinheiro) * 0.10);
-      if(perdeu > 0){
-        TO.estado.lancar(E, naEstrada ? 'Emboscada na estrada'
-                                      : `Levaram do nosso ${alvo.tipo}`, -perdeu);
-        linhas.push(naEstrada ? `${U.dinheiro(perdeu)} da viagem e do caixa`
-                              : `${U.dinheiro(perdeu)} da gaveta e do caixa`);
+      /* DINHEIRO SÓ MUDA DE MÃO EM BRIGA NO BAR (decisão do dono,
+         17/08/2026): é lá que tem gaveta e caixa. Perder na estrada,
+         na concentração ou na pista custa gente, moral e prestígio —
+         não saque. */
+      if(alvo.tipo === 'bar'){
+        perdeu = Math.round(60 * Math.max(4, alvo.efetivo||40)
+                            + Math.max(0, E.dinheiro) * 0.10);
+        if(perdeu > 0){
+          TO.estado.lancar(E, 'Levaram do nosso bar', -perdeu);
+          linhas.push(`${U.dinheiro(perdeu)} da gaveta e do caixa`);
+        }
       }
       TO.estado.mexerIndicador(E, 'moral', -3, 'Fugimos sem defender o que é nosso');
       TO.estado.mexerIndicador(E, 'prestigio', -0.7, 'Fugimos sem defender o que é nosso');
@@ -314,13 +319,17 @@ TO.acoes = (function(){
     let levou = 0;
     if(ganhou){
       const m = R.mundo(E)[alvo.torcidaId];
-      const base = alvo.tipo === 'bar' ? 0.22 : 0.10;
-      const gaveta = (alvo.tipo === 'bar' ? 60 : 30) * alvo.efetivo;
-      levou = Math.round(gaveta + (m ? m.caixa : 1200) * base);
-      if(levou > 0){
-        if(m) m.caixa = Math.max(0, m.caixa - levou);
-        TO.estado.lancar(E, `Saque — ${alvo.nome}`, levou);
-        linhas.push(`${U.dinheiro(levou)} do caixa deles`);
+      /* DINHEIRO SÓ SAI DE BRIGA NO BAR (decisão do dono, 17/08/2026):
+         é lá que tem gaveta e caixa. Sede e o resto rendem prestígio,
+         moral e faixa rasgada — não saque. */
+      if(alvo.tipo === 'bar'){
+        const gaveta = 60 * alvo.efetivo;
+        levou = Math.round(gaveta + (m ? m.caixa : 1200) * 0.22);
+        if(levou > 0){
+          if(m) m.caixa = Math.max(0, m.caixa - levou);
+          TO.estado.lancar(E, `Saque — ${alvo.nome}`, levou);
+          linhas.push(`${U.dinheiro(levou)} do caixa deles`);
+        }
       }
       if(m){ m.moral = U.limitar(m.moral - 3, 0, 20);
              m.membros = Math.max(4, m.membros - Math.round((res.caidosVisitante||0)*0.4)); }
@@ -330,6 +339,10 @@ TO.acoes = (function(){
     }
     const antes = R.nivel(E, alvo.torcidaId);
     R.hostilidade(E, alvo.torcidaId, ganhou ? 26 : 18);
+    /* o prestígio DELES também entra na conta da briga (decisão do
+       dono): apanhar em casa custa mais do que segurar o ataque rende */
+    const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio',
+                            ganhou ? -0.6 : 0.4);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
       local:{cena: alvo.cena || alvo.tipo, bairro: alvo.bairro || ''},
@@ -338,6 +351,7 @@ TO.acoes = (function(){
       efeitos:[{ind:'relacao', delta:r1(R.nivel(E,alvo.torcidaId)-antes),
                 dono:`com a ${alvo.nome}`},
                {ind:'prestigio', delta: r1(U.limitar((res.prestigio||0)/5, -2, 2)), dono:'nosso'},
+               {ind:'prestigio', delta: dpDeles, dono:`da ${alvo.nome}`},
                {ind:'dinheiro',  delta: levou, dono:'nosso'}].filter(x=>x.delta)});
     return {ganhou, linhas, dinheiro:levou,
             titulo: ganhou ? 'ATAQUE BEM-SUCEDIDO' : 'ATAQUE FRACASSOU'};

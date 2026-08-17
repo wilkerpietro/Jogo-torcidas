@@ -553,9 +553,13 @@ TO.relacoes = (function(){
     const ganhouA = pA >= pB;
     const baixas = (o, n, perdeu) => {
       const t = (E.mundoTorcidas||{})[o.id];
-      const feridos = Math.round(n * (perdeu ? U.entre(0.12, 0.22)
-                                             : U.entre(0.05, 0.12)));
-      const presos  = Math.round(n * U.entre(0.01, 0.05));
+      /* o perdedor sai carregado (pedido do dono): um quarto a dois
+         quintos do bonde dele no chão, e a PM leva mais dos que
+         apanharam */
+      const feridos = Math.round(n * (perdeu ? U.entre(0.25, 0.40)
+                                             : U.entre(0.08, 0.16)));
+      const presos  = Math.round(n * (perdeu ? U.entre(0.05, 0.12)
+                                             : U.entre(0.01, 0.04)));
       if(t){
         if(feridos) (t.feridosIA = t.feridosIA||[])
           .push({n:feridos, ate: abs + 30});
@@ -566,11 +570,18 @@ TO.relacoes = (function(){
     };
     const bxA = baixas(a, nA, !ganhouA);
     const bxB = baixas(b, nB, ganhouA);
-    /* vencedor leva prestígio e moral; perdedor devolve — e a relação
-       entre os dois azeda, com o esfriar semanal puxando de volta */
-    mover(E, ganhouA ? a.id : b.id, 'prestigio', 0.4);
+    /* O PRESTÍGIO ACOMPANHA A BRIGA (decisão do dono, 17/08/2026):
+       briga grande move mais, e zebra — vencer em menor número —
+       move mais ainda. Na régua de 0 a 100: 1 + envolvidos/25, +2 de
+       zebra, teto 8. O vencedor leva, o perdedor devolve; a relação
+       entre os dois azeda, com o esfriar semanal puxando de volta. */
+    const zebra = ganhouA ? nA < nB : nB < nA;
+    const swingDisplay = U.limitar(
+      Math.round(1 + (nA + nB)/25) + (zebra ? 2 : 0), 1, 8);
+    const swing = swingDisplay/5;
+    mover(E, ganhouA ? a.id : b.id, 'prestigio', swing);
     mover(E, ganhouA ? a.id : b.id, 'moral', 0.6);
-    mover(E, ganhouA ? b.id : a.id, 'prestigio', -0.4);
+    mover(E, ganhouA ? b.id : a.id, 'prestigio', -swing);
     mover(E, ganhouA ? b.id : a.id, 'moral', -0.6);
     moverRelacao(E, a.id, b.id, -8);
     const reg = {
@@ -578,7 +589,8 @@ TO.relacoes = (function(){
       cidade: (M().cidade(cidade)||{}).nome || cidade, jogo: jogoRot,
       a: {id:a.id, nome:a.nome, n:nA, feridos:bxA.feridos, presos:bxA.presos},
       b: {id:b.id, nome:b.nome, n:nB, feridos:bxB.feridos, presos:bxB.presos},
-      vencedor: ganhouA ? a.nome : b.nome
+      vencedor: ganhouA ? a.nome : b.nome,
+      prestigio: swingDisplay
     };
     E.brigasIA = E.brigasIA || [];
     E.brigasIA.unshift(reg);

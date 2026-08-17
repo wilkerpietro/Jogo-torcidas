@@ -74,9 +74,14 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   dos jogos do dia — torcida metida no jogo se pega com a torcida do
   clube adversário ou com hostil local da cidade da partida, com
   efetivos proporcionais aos disponíveis (quem viajou traz menos).
-  Feridos ficam 30 dias fora, presos de 15 a 90; vencedor leva
-  prestígio e moral, perdedor devolve, e a relação entre os dois
-  azeda. O ranking conta os DISPONÍVEIS, então briga mexe em posição.
+  Feridos ficam 30 dias fora, presos de 15 a 90 — o perdedor sai
+  carregado: 25-40% de feridos e 5-12% de presos, contra 8-16% e
+  1-4% do vencedor. Vencedor leva prestígio e moral, perdedor
+  devolve — balanço proporcional (1 + envolvidos/25, +2 de zebra,
+  teto 8 na régua de 0-100) — e a relação entre os dois azeda. Toda
+  briga NOSSA também move o prestígio do rival: ±0,4 na briga de
+  rua, −0,6/+0,4 no ataque (treta e defesa já moviam). E dinheiro só
+  sai de briga NO BAR — sede e rua não têm saque. O ranking conta os DISPONÍVEIS, então briga mexe em posição.
   Registro completo na aba Brigas das Notícias, e toda segunda o
   jornal resume a semana no feed: quem brigou e quem venceu numa
   coluna, baixas na outra, as maiores brigas primeiro.

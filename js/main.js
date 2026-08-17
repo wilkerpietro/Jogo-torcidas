@@ -759,7 +759,8 @@
            <div>${chip2(b.a.id, b.a.nome)} <b>${b.a.n}</b>`+
           `<span class="to-x">×</span><b>${b.b.n}</b> `+
           `${chip2(b.b.id, b.b.nome)}</div>
-           <small>venceu <b>${b.vencedor}</b></small>`}));
+           <small>venceu <b>${b.vencedor}</b>`+
+          `${b.prestigio ? ` · prestígio ±${b.prestigio}` : ''}</small>`}));
         tr.appendChild(el('td',{class:'to-torcidas', html:
           `<div>${b.a.nome} <span class="to-faixa">${baixa2(b.a)}</span></div>
            <div>${b.b.nome} <span class="to-faixa">${baixa2(b.b)}</span></div>`}));
@@ -949,7 +950,8 @@
            <span class="briga-ia-vence">venceu ${b.vencedor}</span>
          </div>
          <small>${b.cidade} · na sombra de ${b.jogo} · ${b.a.nome}: `+
-        `${baixa(b.a)} · ${b.b.nome}: ${baixa(b.b)}</small>`}));
+        `${baixa(b.a)} · ${b.b.nome}: ${baixa(b.b)}`+
+        `${b.prestigio ? ` · prestígio ±${b.prestigio}` : ''}</small>`}));
     }
     cx.appendChild(c);
     return cx;
