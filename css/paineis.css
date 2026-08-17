@@ -712,6 +712,13 @@ table.dados tr.selecionada td{background:#252525}
 }
 .contador button:hover:not(:disabled){background:#2a2a2a;color:#fff}
 .contador button:disabled{opacity:.3;cursor:default}
+/* o botão de texto dentro do contador (Quantidade equivalente): a regra
+   de cima força 30px de largura pros botões de − e +, e o rótulo
+   estourava. Aqui ele volta a crescer pro lado, com fonte menor. */
+.contador .bt{
+  width:auto;height:30px;padding:0 13px;font-size:10px;
+  letter-spacing:.07em;white-space:nowrap;
+}
 .contador b{font-family:var(--mono);font-size:17px;min-width:22px;text-align:center}
 .contador small{color:var(--fraco);font-size:11px}
 

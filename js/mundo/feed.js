@@ -369,6 +369,13 @@ TO.feed = (function(){
          a convocação de defesa monta a mensagem */
       if(E.ataqueMarcado && !E.ataqueMarcado.resolvido &&
          E.ataqueMarcado.semana === E.data.semana) return;
+      /* ataque de nanica não existe (decisão do dono, 17/08/2026): se
+         nem a maior rival da praça tem metade do nosso efetivo, o bar
+         fica em paz neste trimestre — melhor sem cena do que uma cena
+         que acaba com eles correndo na largada */
+      const vivoR = ((E.mundoTorcidas||{})[rival.id]||{}).membros
+                  || rival.membros || 0;
+      if(vivoR < E.membros.length * 0.5) return;
       E.ataqueMarcado = {torcida:rival.id, nome:rival.nome, alvo:'bar',
                          cena:'bar', ano:E.data.ano, semana:E.data.semana,
                          dia:E.data.dia};

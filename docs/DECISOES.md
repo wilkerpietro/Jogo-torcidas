@@ -70,6 +70,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.
+- **Ataque de nanica não existe** (17/08/2026): ataque sofrido só vem de
+  torcida com pelo menos metade do nosso efetivo (na estrada, a régua é
+  a caravana embarcada) — a cena que abria e acabava com o atacante
+  correndo por minoria não acontece mais. O contrário segue valendo:
+  efetivo muito maior que o nosso ataca à vontade. Quem vem traz a
+  turma que o serviço pede: no mínimo os 30% de sempre, até ~90% do
+  nosso bonde na cena, nunca mais de 70% da torcida dele.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

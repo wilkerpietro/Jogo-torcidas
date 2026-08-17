@@ -306,6 +306,13 @@ TO.relacoes = (function(){
       if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
       if(!alcanca(E, o.id)) continue;
       const t = (E.mundoTorcidas||{})[o.id];
+      /* ATAQUE DE NANICA NÃO EXISTE (decisão do dono, 17/08/2026):
+         torcida com menos da metade do nosso efetivo não vem — a cena
+         abria e acabava na hora, com eles correndo por minoria. O
+         contrário vale: efetivo muito maior que o nosso ataca à
+         vontade. */
+      const vivoDeles = (t && t.membros) || o.membros || 0;
+      if(vivoDeles < E.membros.length * 0.5) continue;
       const briga = t ? ARQUETIPOS[t.arq].briga : 1;
       /* de −55 pra baixo a chance cresce; em −100 com arquétipo
          agressivo é quase um ataque por mês */

@@ -2866,7 +2866,17 @@
       ? Math.max(2, (est && est.vao) || Math.round(fila.length * 0.25))
       : noDiaDeJogo ? Math.max(2, fila.length)
       : Math.max(2, Math.round(fila.length * 0.25));
-    const deles = Math.max(4, Math.round(((o && o.membros) || 40) * 0.30));
+    /* QUEM VEM ATACAR TRAZ A TURMA QUE O SERVIÇO PEDE. Os 30% fixos
+       criavam a cena-farsa: atacante grande o bastante pra passar no
+       filtro de geração ainda chegava com um terço do nosso bonde e
+       corria por minoria na largada. Agora ele traz no mínimo os 30%
+       de sempre, sobe até ~90% do nosso efetivo na cena se tiver gente,
+       e nunca mais de 70% da torcida dele. Atacante gigante segue
+       vindo com muito mais que a gente. */
+    const membrosDeles = TO.acoes.efetivoDe(e, o || {}) || 40;
+    const deles = Math.max(4, Math.max(
+      Math.round(membrosDeles * 0.30),
+      Math.min(Math.round(membrosDeles * 0.70), Math.round(nossos * 0.9))));
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
     const c2 = TO.mundo.coresDaTorcida(o || {});
     /* no bar a gente é a casa e nasce no salão (lado `visitante`); na

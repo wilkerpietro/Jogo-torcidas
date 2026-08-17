@@ -1046,12 +1046,19 @@ TO.planejamento = (function(){
        ônibus passar */
     const cidades = r.cidades.slice(1);
     const candidatos = [];
+    /* na estrada o nosso efetivo é quem embarcou: rival menor que a
+       própria caravana não fecha pista (decisão do dono, 17/08/2026 —
+       ataque sofrido de efetivo muito menor que o nosso não existe) */
+    const est = estimativaCaravana(E);
+    const crew = (est && est.vao) || 20;
     for(const c of cidades)
       for(const o of M().torcidasEm(c)){
         if(o.incompleta || o.id === E.torcida.id) continue;
         if(M().saoIrmas(E.torcida.id, o.id)) continue;
         const rel = TO.relacoes.nivel(E, o.id);
         if(rel > -15) continue;
+        const viva = (TO.relacoes.mundo(E)[o.id]||{}).membros || o.membros || 0;
+        if(viva < crew * 0.7) continue;
         candidatos.push({id:o.id, torcida:o, cidade:c, relacao:rel});
       }
     if(!candidatos.length) return null;
