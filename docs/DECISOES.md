@@ -49,6 +49,15 @@ com rotas; emboscada na estrada **pelos rivais da rota**; recepção de
 aliados; save; bancada de cenas; geometria do mapa; base de dados.
 
 ## Novo/renomeado
+- **Treta marcada** (17/08/2026): evento de briga combinada em rua
+  (classe baixa/média/alta), fora de dia de jogo, com efetivos
+  idênticos — 5×5, 7×7 ou 10×10. Mensagem aprovada: "Zona {zona}
+  marcou uma treta no {bairro} contra a {rival}, bora pro problema?".
+  Fecho: relação −2, prestígio +1 pro ganhador e −1 pro perdedor.
+- **Calendário do trimestre** (17/08/2026): a cada 13 semanas, 2 a 4
+  tretas marcadas e 1 a 2 ataques ao nosso bar, sempre em dia comum.
+  O bar saiu do sorteio semanal (caía 2x por mês).
+- **Festa na sede custa R$ 700** e rende ~20% do que rendia.
 - **Relógio por mensagem**: cada mensagem dropada segura a próxima por
   1,5 s; decisão sem resposta trava o tempo; dia sem mensagem passa
   rápido.

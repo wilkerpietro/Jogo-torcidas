@@ -612,6 +612,7 @@
       else if(t === 'cena-guerra') abrirGuerra(a);
       else if(t === 'cena-defesa') abrirDefesa();
       else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
+      else if(t === 'cena-treta') abrirTreta(m && m.dados);
       else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
     }
     TO.estado.salvar();
@@ -2566,6 +2567,62 @@
     abrirAtaqueAoBar(atq);
   }
 
+  /* A TRETA MARCADA (decisão do autor): briga combinada em rua, fora
+     de dia de jogo, com efetivos IDÊNTICOS dos dois lados — 5×5, 7×7
+     ou 10×10. Vitória: relação −2, prestígio +1 pro ganhador e −1 pro
+     perdedor. */
+  function abrirTreta(d){
+    const e = E();
+    if(!d || !d.rival) return;
+    const rival = TO.mundo.torcida(d.rival) || {};
+    const aptos = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa));
+    const n = Math.max(2, Math.min(d.tam || 5, aptos.length));
+    const cN = TO.mundo.coresDaTorcida(e.torcida);
+    const cR = TO.mundo.coresDaTorcida(rival);
+    const local = TO.praca.ruaDaClasse(d.classe);
+    const bondes = [
+      {lado:'mandante', n, nossa:true, nome:e.torcida.nome,
+       cor:cN.cor, cor2:cN.cor2, sigla:TO.mundo.siglaTorcida(e.torcida)},
+      {lado:'visitante', n, nossa:false, nome:rival.nome||'Rival',
+       cor:cR.cor, cor2:cR.cor2,
+       sigla:TO.mundo.siglaTorcida(rival)||'RIV'}
+    ];
+    $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
+    TO.estado.bloquear(true);
+    pararTudo('cena');
+    TO.diaJogo.ponte.montar({
+      canvas: $('djPrincipal'),
+      /* treta marcada não leva bomba: é mano a mano */
+      config: { escalacao: aptos.slice(0, n), intencao:'atacar', bombas:0,
+                bondes, efetivoRival:n, local },
+      aoTerminar: res => fecharDiaDeJogo(res, null,
+        {acao:'treta', alvo:{torcidaId:d.rival, nome:rival.nome||'Rival',
+                             bairro:d.bairro, cena:local, n}})
+    });
+    /* BRIGA COMBINADA NÃO TEM ESPERA: os dois lados vieram pra isso.
+       O bonde deles sai da boca da rua já procurando o nosso — sem
+       este alvo, a cena de encontro fica parada esperando o jogador
+       dirigir, que é o comportamento das surpresas, não da treta. */
+    const J = TO.diaJogo.ponte.J;
+    if(J){
+      const spawnsNossos = [...new Set(J.discos.filter(x=>x.doJogador)
+                                               .map(x=>x.spawn))];
+      const alvoDeles = spawnsNossos[0] || null;
+      for(const s2 of [...new Set(J.discos.filter(x=>!x.doJogador)
+                                          .map(x=>x.spawn))]){
+        J.bondes[s2] = Object.assign(J.bondes[s2] || {id:s2},
+          {humor:'atacar', agirEm:0, alvo:alvoDeles});
+      }
+      /* na treta ninguém é dono da casa esperando atrás do balcão: o
+         spawn de rua nasce com `guarda`, e guarda parado não caça */
+      for(const d2 of J.discos){ d2.guarda = false; d2.daCasa = false; }
+      J.acordou = true;
+      J.paz = false;
+    }
+  }
+
   /* A BRIGA DA ESCOLTA: nossos membros e os do aliado no mesmo lado,
      todos sob o controle do jogador (decisão do autor). */
   function abrirEscolta(d){
@@ -2657,6 +2714,10 @@
     const e = E();
     e.estoque = e.estoque || {bombas:0};
     e.estoque.bombas = Math.max(0, e.estoque.bombas - (res.bombasUsadas||0));
+    /* na TRETA o prestígio é a conta do dono e só ela: +1 pro ganhador,
+       −1 pro perdedor (fecharTreta). O prestígio genérico da noite não
+       soma por cima. */
+    if(acao && acao.acao === 'treta') res.prestigio = 0;
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     if(enc){
       /* o encontro da rua também é briga: o registro (e a mensagem de
@@ -3047,7 +3108,7 @@
     abrirPainel, fecharPainel, get painel(){ return painel; },
     resolverIda: e => TO.praca.resolverIda(e || E()),
     abrirCaravana, abrirAtaque, abrirIdeologia,
-    abrirGuerra, abrirDefesa, abrirEscolta
+    abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta
   };
 
   montarMenu();

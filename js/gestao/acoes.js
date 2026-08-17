@@ -158,7 +158,43 @@ TO.acoes = (function(){
     if(ctx.acao === 'atacar')     return fecharAtaque(E, ctx.alvo, res);
     if(ctx.acao === 'pressionar') return fecharPressao(E, res);
     if(ctx.acao === 'defender')   return fecharDefesa(E, ctx.alvo, res);
+    if(ctx.acao === 'treta')      return fecharTreta(E, ctx.alvo, res);
     return null;
+  }
+
+  /* A TRETA MARCADA fecha com a conta própria do dono: relação −2,
+     prestígio +1 pro ganhador e −1 pro perdedor — bem mais leve que a
+     briga de dia de jogo, porque foi combinada e ninguém foi invadido. */
+  function fecharTreta(E, alvo, res){
+    const R = TO.relacoes;
+    const ganhou = res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu;
+    const antesRel = R.nivel(E, alvo.torcidaId);
+    R.hostilidade(E, alvo.torcidaId, 2);
+    const antesP = E.indicadores.prestigio;
+    E.indicadores.prestigio =
+      U.limitar(E.indicadores.prestigio + (ganhou ? 1 : -1), 0, 20);
+    const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio', ganhou ? -1 : 1);
+    const membros = (res && res.membros) || [];
+    const efeitos = [
+      {ind:'relacao',   delta: r1(R.nivel(E, alvo.torcidaId) - antesRel),
+       dono:`com a ${alvo.nome}`},
+      {ind:'prestigio', delta: r1(E.indicadores.prestigio - antesP),
+       dono:'nosso'},
+      {ind:'prestigio', delta: dpDeles, dono:`da ${alvo.nome}`}
+    ].filter(x=>x.delta);
+    if(TO.feed) TO.feed.registrarConfronto(E, {
+      torcidaId: alvo.torcidaId, ganhamos: ganhou,
+      local:{cena: alvo.cena || 'rua', bairro: alvo.bairro || ''},
+      a: {torcidaId:E.torcida.id, nome:E.torcida.nome, n:alvo.n,
+          caidos: membros.filter(m=>!m.preso && m.caido).length,
+          presos: membros.filter(m=>m.preso).length, venceu:ganhou},
+      b: {torcidaId:alvo.torcidaId, nome:alvo.nome, n:alvo.n,
+          caidos: (res && res.caidosVisitante) || 0,
+          presos: (res && res.presosVisitante) || 0, venceu:!ganhou},
+      efeitos});
+    return {ganhou, dinheiro:0,
+            titulo: ganhou ? 'TRETA VENCIDA' : 'TRETA PERDIDA',
+            linhas:[`no bairro ${alvo.bairro||'—'}, ${alvo.n} de cada lado`]};
   }
 
   /* a casa invadida ou a caravana fechada na estrada */
@@ -354,21 +390,21 @@ TO.acoes = (function(){
     {
       id:'festa', nome:'Festa na sede', icone:'copo', cena:'Sede',
       efeito:'Moral e receita de ingresso e bebida',
-      custo:1000,
+      custo:700,
       disponivel(E){
-        return E.dinheiro >= 1000 ? {ok:true}
-             : {ok:false, motivo:'custa R$ 1.000'};
+        return E.dinheiro >= 700 ? {ok:true}
+             : {ok:false, motivo:'custa R$ 700'};
       },
       executar(E){
         const publico = E.membros.filter(TO.membros.disponivel).length;
         /* festa é compra de moral, não fábrica de dinheiro: a receita
            caiu 80% por decisão do autor — a economia estava fácil */
         const receita = Math.round(publico * U.inteiro(4, 7) * REDUCAO * 2);
-        TO.estado.lancar(E, 'Festa na sede', -1000);
+        TO.estado.lancar(E, 'Festa na sede', -700);
         TO.estado.lancar(E, `Bilheteria e bar da festa (${publico})`, receita);
         E.indicadores.moral = U.limitar(E.indicadores.moral + 0.8, 0, 20);
         for(const m of E.membros) m.moral = U.limitar(m.moral + 0.6, 0, 20);
-        return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-1000)} de saldo, moral em alta.`};
+        return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-700)} de saldo, moral em alta.`};
       }
     },
     {

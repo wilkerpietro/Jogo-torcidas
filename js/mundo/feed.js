@@ -120,6 +120,7 @@ TO.feed = (function(){
     ctx = ctx || {};
     olheiroDoDia(E);
     guerraDeHoje(E);
+    eventoDoTrimestreHoje(E);
     ataqueSofridoHoje(E);
     escoltaDeHoje(E);
     placarDoDia(E, ctx.jogos || []);
@@ -351,6 +352,49 @@ TO.feed = (function(){
     });
   }
 
+  /* -------------------------------------------------------
+     3b. O CALENDÁRIO DO TRIMESTRE — a treta marcada em rua e
+         o ataque ao bar, nas doses do dono: a cada 13 semanas,
+         2 a 4 tretas e 1 a 2 ataques, sempre em dia comum.
+         Texto da treta aprovado pelo dono.
+     ------------------------------------------------------- */
+  function eventoDoTrimestreHoje(E){
+    const ev = TO.relacoes.eventoDeHoje(E);
+    if(!ev) return;
+    const rival = TO.relacoes.rivalDaPraca(E);
+    if(!rival) return;
+
+    if(ev.tipo === 'bar'){
+      /* o ataque ao bar entra pelo caminho de sempre: marca o ataque e
+         a convocação de defesa monta a mensagem */
+      if(E.ataqueMarcado && !E.ataqueMarcado.resolvido &&
+         E.ataqueMarcado.semana === E.data.semana) return;
+      E.ataqueMarcado = {torcida:rival.id, nome:rival.nome, alvo:'bar',
+                         cena:'bar', ano:E.data.ano, semana:E.data.semana,
+                         dia:E.data.dia};
+      return;
+    }
+
+    /* a TRETA MARCADA: bairro sorteado, efetivos idênticos */
+    const bairros = M().bairrosDe(E.torcida.mapa);
+    if(!bairros.length) return;
+    const H = TO.mapa.hash;
+    const b = bairros[H(ev.chave + '|b') % bairros.length];
+    const tam = [5, 7, 10][H(ev.chave + '|n') % 3];
+    propor(E, {
+      kind:'treta', peso:'decisao', chave:ev.chave, voz:'diretor', tipo:'ruim',
+      texto:`Zona ${b.zona} marcou uma treta no ${b.nome} contra a `+
+            `${rival.nome}, bora pro problema?`,
+      dados:{rival:rival.id, bairro:b.nome, zona:b.zona,
+             classe:b.classe, tam},
+      botoes:[
+        {id:'bora',  rot:'Bora pro problema', acao:'cena-treta',
+         nota:`${tam} de cada lado`},
+        {id:'ficar', rot:'Ficar de fora', acao:'nada'}
+      ]
+    });
+  }
+
   /* a emboscada da rota, agendada quando a caravana pega a estrada:
      estado chama isto no primeiro dia de viagem */
   function emboscadaDaViagem(E){
@@ -501,6 +545,9 @@ TO.feed = (function(){
 
     switch(b.acao){
       /* --- as que resolvem aqui --- */
+      case 'nada':
+        marcar();
+        return {ok:true};
       case 'paz':
         PL().definirIntencao(E, 'paz');
         marcar();
@@ -589,6 +636,7 @@ TO.feed = (function(){
       case 'cena-guerra':
       case 'cena-defesa':
       case 'cena-escolta':
+      case 'cena-treta':
         marcar();
         return {ok:true, abrir:{tela:b.acao, args:b.args || {}, msg:m}};
       case 'painel':

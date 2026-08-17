@@ -267,9 +267,11 @@ TO.relacoes = (function(){
      nossa praça, ou que está na nossa cidade nesta semana.
      ======================================================= */
   /* a emboscada na estrada não sai daqui: ela é dos rivais da ROTA da
-     caravana (planejamento.emboscadaDaRota), por decisão do autor */
+     caravana (planejamento.emboscadaDaRota). E o ataque ao BAR também
+     não: ele virou evento do CALENDÁRIO DO TRIMESTRE (decisão do autor
+     — estava caindo 2x por mês). Aqui só ficam as surpresas do dia de
+     jogo em casa. */
   const ALVOS = [
-    {id:'bar',          peso:3, cena:'bar'},        // bar/loja em dia comum
     {id:'concentracao', peso:2, cena:'praca'},      // dia de jogo em casa
     {id:'pista',        peso:2, cena:'rua'}         // a caminho do estádio
   ];
@@ -310,19 +312,13 @@ TO.relacoes = (function(){
       const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * briga;
       if(U.rng() > chance) continue;
 
-      /* o alvo depende do calendário: concentração e pista só em
-         semana de jogo em casa */
+      /* concentração e pista só existem em semana de jogo em casa */
       const jogoEmCasa  = E.proximoJogo && E.proximoJogo.casa;
-      const alvos = ALVOS.filter(a =>
-        (a.id !== 'concentracao' || jogoEmCasa) &&
-        (a.id !== 'pista'        || jogoEmCasa));
+      if(!jogoEmCasa) continue;
       const sorteio = [];
-      for(const a of alvos) for(let i=0;i<a.peso;i++) sorteio.push(a);
+      for(const a of ALVOS) for(let i=0;i<a.peso;i++) sorteio.push(a);
       const alvo = U.escolher(sorteio);
-
-      const diaJogo = E.proximoJogo ? (E.proximoJogo.dia||6) : 6;
-      const dia = (alvo.id === 'concentracao' || alvo.id === 'pista') ? diaJogo
-                : diaDoAtaque(E, o.id);
+      const dia = E.proximoJogo.dia || 6;
       E.ataqueMarcado = {torcida:o.id, nome:o.nome, alvo:alvo.id,
                          cena:alvo.cena,
                          ano:E.data.ano, semana:E.data.semana, dia};
@@ -331,6 +327,71 @@ TO.relacoes = (function(){
       break;              // um ataque-surpresa por semana já é guerra
     }
     return fora;
+  }
+
+  /* =======================================================
+     O CALENDÁRIO DO TRIMESTRE (decisão do autor)
+     A cada 13 semanas: 2 a 4 TRETAS MARCADAS em rua e 1 a 2
+     ataques ao nosso bar. Agendado por hash — o mesmo bloco dá
+     sempre o mesmo calendário — e sempre FORA de dia de jogo
+     do clube e de dia de caravana.
+     ======================================================= */
+  const SEMANAS_TRI = 13;
+
+  function eventosDoTrimestre(E){
+    const H = TO.mapa.hash;
+    const bloco = Math.floor((semanaAbs(E) - 1) / SEMANAS_TRI);
+    const chave = `tri|${bloco}|${E.torcida.id}`;
+    const nTreta = 2 + H(chave + '|nt') % 3;      // 2 a 4
+    const nBar   = 1 + H(chave + '|nb') % 2;      // 1 a 2
+    const fora = [], usados = new Set();
+    const poe = (tipo, i)=>{
+      let d = H(`${chave}|${tipo}${i}`) % (SEMANAS_TRI * 7);
+      while(usados.has(d)) d = (d + 11) % (SEMANAS_TRI * 7);
+      usados.add(d);
+      fora.push({tipo, chave:`${chave}|${tipo}${i}`,
+                 semanaAbs: bloco*SEMANAS_TRI + Math.floor(d/7) + 1,
+                 dia: (d % 7) + 1});
+    };
+    for(let i=0;i<nTreta;i++) poe('treta', i);
+    for(let i=0;i<nBar;i++)   poe('bar', i);
+    return fora;
+  }
+
+  /* dia comum: sem jogo do nosso clube e sem caravana na estrada */
+  function diaComum(E, dia){
+    const meu = M().time(E.torcida.clubeId);
+    if(meu && TO.competicoes.jogosDaSemana(E, meu.id, E.data.semana)
+                .some(j=>j.dia === dia)) return false;
+    return !TO.financeiro.diasDeCaravana(E).includes(dia);
+  }
+
+  /* o evento do trimestre que cai HOJE, já deslocado pra fora de dia
+     de jogo — o deslocamento é determinístico, então o mesmo dia
+     reaberto responde igual */
+  function eventoDeHoje(E){
+    const agora = semanaAbs(E);
+    for(const ev of eventosDoTrimestre(E)){
+      if(ev.semanaAbs !== agora) continue;
+      let dia = ev.dia;
+      for(let k=0; k<7 && !diaComum(E, dia); k++) dia = (dia % 7) + 1;
+      if(dia === E.data.dia) return Object.assign({}, ev, {dia});
+    }
+    return null;
+  }
+
+  /* quem marca treta e quem vem no bar: a maior rival declarada da
+     praça; sem ela, a pior relação local */
+  function rivalDaPraca(E){
+    const nossa = M().torcida(E.torcida.id) || {};
+    const locais = M().torcidasEm(E.torcida.mapa).filter(o=>
+      o.id !== E.torcida.id && !o.incompleta &&
+      !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)));
+    const mr = locais.find(o=>(nossa.maioresRivais||[]).includes(o.id));
+    if(mr) return mr;
+    const hostis = locais.map(o=>({o, rel: nivel(E, o.id)}))
+      .filter(x=>x.rel <= -15).sort((a,b)=>a.rel-b.rel);
+    return hostis.length ? hostis[0].o : null;
   }
 
   function ataqueDeHoje(E){
@@ -400,5 +461,6 @@ TO.relacoes = (function(){
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
+          eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
           conquistaDoClube, esfriar, passarSemana, panorama, MENSALIDADE};
 })();
