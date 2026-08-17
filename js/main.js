@@ -1303,13 +1303,13 @@
          <b>${Math.round(p.chance*100)}%</b></div>
        <div class="linha-dado"><span>Topariam entrar</span>
          <b>${U.numero(p.querem)}</b></div>
-       <div class="linha-dado"><span>Teto por campanha</span>
-         <b>${p.cap} <span class="fraco">${p.capSede} da sede + ${p.capBase} `+
-        `da praça</span></b></div>
+       <div class="linha-dado"><span>Teto por turno</span>
+         <b>${Math.round(p.cap*10)/10} <span class="fraco">(${p.capSede} da sede `+
+        `+ ${p.capBase} da praça) × 0,06</span></b></div>
        <div class="linha-dado"><span>Vagas na sede</span>
          <b class="${p.vaga>0?'':'negativo'}">${p.vaga}</b></div>
-       <div class="valorao"><span>Devem entrar</span>
-         <b class="${p.esperado>0?'positivo':'negativo'}">~${p.esperado}</b></div>
+       <div class="valorao"><span>Devem entrar por semana</span>
+         <b class="${p.porSemana>0?'positivo':'negativo'}">~${p.porSemana}</b></div>
        <div class="linha-dado"><span class="fraco">O gargalo é a sede, não a `+
       `vontade do torcedor: milhares topariam e cabem dezenas. O expediente `+
       `recruta uma fração por turno. Sai R$ 5 por novato, ±15% de `+

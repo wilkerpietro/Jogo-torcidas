@@ -70,6 +70,11 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.
+- **Freio no recrutamento** (17/08/2026): o teto por turno usa fator
+  próprio de 0,06 (era o 0,35 do expediente) e virou fracionário, sem
+  o piso de 1 garantido — fração é sorteio. Medido: a sede que enchia
+  em 5-10 dias passa a encher em 30-72; torcida nanica recruta ~1 por
+  semana.
 - **Prestígio na régua de 0 a 100** (17/08/2026): vitória rende no
   máximo +10 e derrota tira no máximo −10 — o teto negativo só com
   prejuízo grande de feridos e presos. Acabou o +30 por briga comum.
