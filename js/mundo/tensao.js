@@ -939,6 +939,13 @@ TO.tensao = (function(){
     const feitas = [];
     for(const inv of (E.investidas||[])){
       if(inv.semana !== E.data.semana) continue;
+      /* O QUE VIROU CENA É FECHADO PELA CENA (§8.30). A investida
+         resolvia no dado tudo que estava marcado, inclusive o confronto
+         que o jogador acabou de jogar no canvas — dois desfechos pro
+         mesmo ataque, um deles invisível. Aqui só fica o que NÃO foi
+         jogado; quem marca é `fecharBrigaDeRua`, pela mesma porta que
+         a ida já usava. */
+      if(inv.jogada) continue;
       const o = M().torcida(inv.alvo);
       if(!o) continue;
       const nossos = E.membros.filter(TO.membros.disponivel);

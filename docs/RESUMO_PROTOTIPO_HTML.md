@@ -4314,6 +4314,154 @@ qualquer largura.
   janela abrir volta a ser tempo morto nesses dias. Se incomodar, o corte natural é ancorar
   a abertura no primeiro jogo só quando o dia tem um horário só de apito.
 
+## 8.30 A frase de erro que virou notícia, e o confronto planejado que nunca abre
+
+O jogador leu isto no feed, no dia 09/02/2026, por cima da pergunta pré-jogo:
+
+> *"Não há torcida nenhuma na rua no dia do jogo."*
+
+Não era mensagem do jogo. Era o texto de uma validação — um `aviso(…, 'ruim')` disparado
+por `abrirAtaque()` quando a lista de alvos voltava vazia — servido no lugar da tela que o
+botão prometia abrir. E custava mais do que a feiura: o clique já tinha marcado a pergunta
+como respondida, o relógio destravava, e a semana de planejamento ia embora sem o jogador
+ter decidido nada.
+
+Três regras passam a valer, e elas não são sugestão:
+
+1. **Razão de falha nunca vira texto pro jogador.** Uma tela entrega o conteúdo ou não se
+   oferece. Falha interna é `console.warn`. `aviso(…, 'ruim')` fica pra recusa que o
+   jogador causou e entende — "o prazo desse botão passou", "não temos bomba no estoque".
+2. **Botão só existe quando a resposta dele existe.** Quem decide se "Atacar alguém"
+   aparece é quem **propõe** a mensagem, não quem responde a ela.
+3. **Ausência de alvo em dia de jogo é bug, não é notícia.** Em dia de jogo há, no mínimo,
+   as torcidas do mandante e as do visitante. Lista vazia é consulta feita com o dia, a
+   semana ou a cidade errados.
+
+### A pergunta passou a dizer de qual jogo está falando
+
+`alvosNaRua(E)` lia `E.proximoJogo` e mais nada, e por isso devolvia lista vazia em três
+situações inteiras: semana em que o nosso clube não joga, pergunta sobre um jogo da praça
+de outro dia (usava `j.dia`, o dia do **nosso** jogo), e jogo fora — em que `naRuaEm` monta
+o dia a partir de `jogosDaPraca`, que filtra pela **nossa** praça, onde o nosso jogo fora
+não está.
+
+Agora a mensagem carrega o evento em `dados` e a consulta responde sobre **ele**:
+
+```js
+{evento:'nosso', semana, dia, fora, advId, jogos:[…]}   // o nosso jogo
+{evento:'praca', semana, dia, fora:false, jogos:[…]}    // os outros da noite
+```
+
+`alvosNaRua(E, ctx)` com `ctx.fora === true` devolve `alvosDaViagem` — viagem é rua deles,
+e a lista pronta já existia e ninguém chamava. `naRuaEm(E, dia, semana)` repassa a semana
+pra `jogosDaPraca(E, semana)`, que já aceitava o parâmetro e nunca recebia; sem isso, a
+pergunta da semana adiante lia a rua da semana corrente.
+
+### O botão de "Trair aliado" pedia uma tela que não abria
+
+`botoesDoPlano(E, ctx)` substituiu a constante `BOTOES_PLANO`. São quatro casos, e a
+mensagem sai nos quatro — o que muda é o botão:
+
+| situação | botões |
+|---|---|
+| há alvo não-aliado | Seguir ideologia · **Atacar alguém** |
+| todas as da rua são aliadas | Seguir ideologia · **Trair aliado** |
+| delegado na trela | só Seguir ideologia, com a nota dizendo por quê |
+| lista vazia | só Seguir ideologia — e um `console.warn` com o contexto, porque é bug |
+
+Isso fechou o buraco do "Atacar alguém" e abriu outro, medido: **3 perguntas por temporada
+ofereciam "Trair aliado" e o clique não abria tela nenhuma.** O guarda da tela consultava
+`alvosNaRua`, que **tira as aliadas da lista** (§8.29) — justamente quem a traição quer
+bater. Botão e resposta consultavam listas diferentes.
+
+Entrou `alvosDoAtaque(E, ctx)`, a lista que a tela mostra: `alvosNaRua`, e se ela vier
+vazia porque são todas aliadas, a lista crua. É ela que o feed usa pra decidir se difere a
+tela e é ela que `abrirAtaque` desenha — uma pergunta, uma resposta. `ruaCrua` deixou de
+remontar a consulta por conta própria e virou `alvosNaRua(…, {crua:true})`: duplicar a
+montagem fazia as duas listas divergirem em forma, e a tela que recebesse a errada
+desenhava campo faltando.
+
+### Clique não queima decisão
+
+`responder` marcava `m.respondido` **antes** de `aplicar`. Quando o efeito desistia, a
+pergunta já estava queimada. A marcação foi pra depois, e não acontece quando `aplicar`
+devolve `{cancelado:true}`. Tela que abre e é fechada sem confirmar também não queima: a
+pergunta fica no feed até o `validoAte`, e quem a queima é `confirmarResposta`, chamado
+pelo botão Confirmar das três telas (ataque, caravana, ideologia).
+
+### Uma pergunta por noite
+
+Quatro noites de 60 perdiam a pergunta da praça, e o motivo não estava no produtor: **a
+regra 1 travava a segunda decisão de categoria 2 da mesma noite.** Quando um jogo da praça
+cai no mesmo dia do nosso, saíam duas perguntas cat 2; a primeira publicava, `ultimaCat`
+virava 2, e a segunda ficava esperando outra categoria sair pra ceder a vez. Nos dias
+quietos não saía nada — então nada publicava, `ultimaCat` não mudava, e a pergunta
+apodrecia na fila até vencer. A trilha de uma delas, semana 34:
+
+```
+d2  saiu=['2D','6']  ultimaCat=2   fila c2: ['2D:c2|2026|34|praca|7']
+d3  saiu=[]          ultimaCat=2   fila c2: ['2D:c2|2026|34|praca|7']
+d4  saiu=[]          ultimaCat=2   fila c2: ['2D:c2|2026|34|praca|7']
+d5  saiu=[]          ultimaCat=2   fila c2: ['2D:c2|2026|34|praca|7']
+d6  saiu=[]          ultimaCat=2   fila c2: ['2D:c2|2026|34|praca|7']
+d7  saiu=['3D']      — venceu no dia do jogo
+```
+
+O conserto não mexeu na regra 1, nem nas cotas, nem nas categorias: **as duas nunca foram
+duas perguntas.** Em casa a rua é a mesma — `naRuaEm` monta o **dia**, não a partida — e a
+pergunta do nosso jogo já decide sobre esses visitantes; o que faltava era citá-los no
+texto. Fora, a resposta não existe: o bonde está na estrada, não há efetivo pra pôr na
+praça daqui. Ausência de resposta é ausência de pergunta.
+
+O texto de 09/02/2026, a mesma noite do print, hoje é um cartão só:
+
+> *"Vai ter Ceará × Confiança sábado. Pretende fazer algo? E ainda tem Floresta ×
+> Potiguar na mesma noite."*
+
+### O confronto planejado abre sempre
+
+O ataque marcado num jogo da praça morria no plano: o cat3 do dia do jogo saía cedo em
+`if(!j || j.dia !== hoje) return` e, sem jogo nosso naquele dia, o alvo escolhido não virava
+cena nenhuma. A condição deixou de ser "temos jogo hoje" e passou a ser **"há confronto
+marcado pra hoje"** — nosso jogo hoje, ou jogo na praça hoje com alvo marcado. Jogo alheio
+**sem** ataque marcado continua não obrigando ninguém a sair de casa.
+
+`encontroDaPraca(E, dia)` nasceu no mesmo molde de `encontroDaViagem`: alvo do plano,
+efetivo deles pelos mesmos 60% de `naRuaEm`, o nosso por `efetivoDoAtaque(E).vao`, e
+`nossoLado: 'mandante'`, que é a nossa praça. `irProEstadio` consulta os três em ordem —
+viagem, praça, ida comum. E `resolverInvestidas` parou de resolver no dado o que virou
+cena: ela só fecha o que **não** foi jogado.
+
+### Os sete critérios, uma temporada
+
+| # | critério | medido |
+|---|---|---|
+| 1 | `grep -rn "torcida nenhuma" js/` | **0** |
+| 2 | avisos na tela com motivo interno | **0** em 364 dias |
+| 3 | cobertura da pergunta pré-jogo | casa **19/19** · fora **21/21** · praça **39/39** = **1.00** |
+| 4 | "Atacar alguém" com `alvosNaRua ≥ 1` | **57/57 = 100%** · com "Trair aliado" junto, **60/60** têm lista na tela |
+| 5 | confronto planejado que abre | casa **21/21** · fora **18/18** · praça **27/27** — 66 mensagens, nenhuma duplicada, nenhuma órfã |
+| 6 | decisões respondidas por botão que não abriu tela | **0** (eram 3) |
+| 7 | semanas sem jogo nosso, com a praça jogando | **não observado em 1 temporada** |
+
+As 21 noites em que um jogo da praça cai no dia do nosso jogo (13 em casa, 8 fora) saem da
+conta da praça e entram na do nosso jogo — **21/21 com pergunta publicada**. O critério 7
+não tem exemplo porque nesta temporada as 12 semanas sem jogo nosso são as 12 em que a
+tabela inteira está parada: pré-temporada, parada do meio do ano e pós-temporada. Não há
+semana em que o clube folgue e a praça jogue.
+
+**Saúde do feed, mesma temporada:** 373 mensagens em 52 semanas, média 7,17/semana, pico 14
+com teto 15, **0 categorias repetidas em sequência** (fora a 5), 0 descartes por teto. Save
+523 KB, feed 210 KB. Determinismo: 134 mensagens, **0 diferenças** entre duas execuções da
+mesma semente. Portões: 8 cenas, **0 selados**.
+
+**Débito que fica anotado:** a regra 1 continua podendo travar uma decisão sozinha na fila
+quando nenhuma outra categoria tem o que publicar. Nesta temporada isso não aparece mais,
+porque a única fonte de duas decisões cat 2 na mesma noite foi removida — mas o mecanismo
+está lá. O conserto, quando incomodar, é no escalonador: uma decisão que cedeu a vez N dias
+seguidos deixa de ceder. Não foi feito aqui porque este item pedia explicitamente pra não
+mexer na regra de não repetir categoria em sequência.
+
 **Próximo passo recomendado: a emboscada em ponto qualquer da praça.** As cinco arenas já
 existem e as ações já sabem abrir cena; falta o gesto no mapa — clicar num ponto da rua
 pra marcar tocaia. Com o feed, ela ganhou um segundo motivo: a emboscada na estrada é a

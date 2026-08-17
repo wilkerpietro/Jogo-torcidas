@@ -208,6 +208,11 @@ TO.acoes = (function(){
        mesmo ano se somam em ~36 e a ideologia passa a valer. */
     if(TO.tensao && deles.torcida)
       TO.tensao.somar(E, deles.torcida, 22, 'briga na rua');
+    /* a investida contra ESTE alvo virou cena: `resolverInvestidas` não
+       resolve de novo no dado o que acabou de ser jogado (§8.30) */
+    for(const inv of (E.investidas||[]))
+      if(inv.semana === E.data.semana && inv.alvo === deles.torcida)
+        inv.jogada = true;
     const membros = (res && res.membros) || [];
     const outro = ((res && res.nossoLado) || 'mandante') === 'mandante'
                 ? 'visitante' : 'mandante';

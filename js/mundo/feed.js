@@ -466,9 +466,21 @@ TO.feed = (function(){
       m.expirado = true;
       return {ok:false, motivo:'o prazo desse botão passou'};
     }
+    /* CLIQUE NÃO QUEIMA DECISÃO. Isto marcava `respondido` ANTES de
+       `aplicar`, e quando o efeito desistia — tela que não tinha o que
+       abrir — a pergunta já estava respondida, o relógio voltava a
+       andar e o jogador perdia o planejamento da semana sem ter
+       decidido nada. Agora só é queimada depois que o efeito confirma;
+       `{cancelado:true}` devolve a pergunta ao feed, onde ela fica até
+       o `validoAte`. */
+    const r = aplicar(E, m, b) || {};
+    if(r.cancelado) return Object.assign({ok:false, cancelado:true}, r);
+    /* TELA ABERTA NÃO É RESPOSTA DADA. Quem abre a caravana ou o ataque
+       e fecha sem confirmar não decidiu nada, e a pergunta continua no
+       feed até o `validoAte`. Quem confirma chama `confirmarResposta`. */
+    if(r.adiar) return Object.assign({ok:true, msg:m, adiado:true}, r);
     m.respondido = b.rot;
     m.respondidoEm = hoje;
-    const r = aplicar(E, m, b) || {};
     /* os efeitos da OPÇÃO ESCOLHIDA entram na mensagem, junto do
        "Você respondeu: …": é o mesmo cartão que conta o que o jogador
        decidiu e o que aquilo custou */
@@ -478,6 +490,15 @@ TO.feed = (function(){
        estava esperando cai agora, e não só no dia seguinte */
     if(m.peso === 'decisao') r.saiu = publicar(E);
     return Object.assign({ok:true, msg:m}, r);
+  }
+
+  /* a tela confirmou: agora sim a pergunta está respondida */
+  function confirmarResposta(E, id, rotulo){
+    const m = feed(E).find(x=>x.id === id);
+    if(!m || m.respondido) return {ok:false};
+    m.respondido = rotulo || (m.botoes||[])[0] && m.botoes[0].rot || 'ok';
+    m.respondidoEm = E.data.absoluto || 0;
+    return {ok:true, msg:m, saiu: publicar(E)};
   }
 
   function aplicar(E, m, b){
@@ -503,7 +524,18 @@ TO.feed = (function(){
       case 'ideologia-tela': return {tela:'ideologia'};
       /* a tela do ataque resolve no `aplicar` dela, não aqui: o que
          volta é o pedido de abrir, como a caravana */
-      case 'ataque':  return {tela:'ataque'};
+      /* A TELA SÓ É PEDIDA SE ELA TIVER O QUE MOSTRAR — e é aqui, na
+         camada que propôs o botão, que isso se decide. Devolver
+         `cancelado` faz `responder` NÃO queimar a pergunta. */
+      case 'ataque': {
+        /* `alvosDoAtaque`, e não `alvosNaRua`: o botão "Trair aliado"
+           tem alvo justamente quando a lista sem aliadas é vazia */
+        if(!PL().alvosDoAtaque(E, d).length){
+          console.warn('[feed] botão de ataque sem alvo', d);
+          return {cancelado:true};
+        }
+        return {tela:'ataque', dados:d, adiar:true};
+      }
       case 'painel':  return {abrir: d.pagina || b.pagina || 'inicio'};
       case 'cena':    return {cena: d};
       /* o único botão que resolve mundo em vez de abrir tela: a ida ao
@@ -514,7 +546,7 @@ TO.feed = (function(){
       case 'rotina':  return {abrir:'calendario', aba:'rotina'};
       /* a caravana tem tela própria, e é a casca que a monta: aqui só
          se diz qual é */
-      case 'caravana': return {tela:'caravana'};
+      case 'caravana': return {tela:'caravana', dados:d, adiar:true};
 
       /* a provocação: +1 de tensão de um lado, nada do outro */
       case 'tensao': {
@@ -1121,6 +1153,16 @@ TO.feed = (function(){
       const ch0 = `c2|${s.ano}|${s.semana}`;
       const nosso = s.adiante ? nossoJogoDe(E, s.semana) : j;
 
+      /* --- evento 2, montado antes do evento 1: os OUTROS jogos da
+         praça, agrupados por DIA, porque é o dia que define a decisão —
+         investida é por jogo, mas A PERGUNTA É UMA POR NOITE. A lista
+         é a rodada inteira daquele dia, e não os dois primeiros:
+         `slice(0,2)` fazia a linha parecer a praça inteira quando era
+         um pedaço dela. */
+      const porDia = {};
+      for(const o of (s.adiante ? PL().outrosJogosNaCidade(E, s.semana) : outros))
+        (porDia[o.dia] = porDia[o.dia] || []).push(o);
+
       /* --- evento 1: o NOSSO jogo, em casa ou fora ---
 
          NÃO HÁ GATE DE "JÁ DECIDIU". A chave já garante uma pergunta por
@@ -1133,9 +1175,42 @@ TO.feed = (function(){
       if(nosso && naJanela(aN)){
         const fora = !nosso.casa;
         const briga = !s.adiante && quente && quente.tensao >= PL().TENSAO_QUENTE;
-        const quando = quandoRot(nosso.dia || 6, s.adiante);
+        const diaN = nosso.dia || 6;
+        const quando = quandoRot(diaN, s.adiante);
+
+        /* UMA PERGUNTA POR NOITE, E ESTA NOITE JÁ TEM DONO. Quando um
+           jogo da praça cai no MESMO dia do nosso, saíam duas decisões
+           de categoria 2 pra a mesma noite — e a segunda travava na
+           regra 1: com a fila vazia de qualquer outra categoria, nada
+           publicava, `ultimaCat` continuava 2, e a pergunta apodrecia
+           até vencer. Medido em uma temporada: 4 noites perdidas de 60.
+
+           E as duas nem eram duas perguntas. EM CASA a rua é a MESMA —
+           `naRuaEm` monta o dia inteiro, não a partida — então a
+           pergunta do nosso jogo já decide sobre esses visitantes, e o
+           que faltava era citá-los no texto. FORA a resposta não
+           existe: o bonde está na estrada, e não há efetivo pra pôr na
+           praça daqui. Ausência de resposta é ausência de PERGUNTA. */
+        const mesmaNoite = porDia[diaN] || [];
+        delete porDia[diaN];
+        const nomesN = mesmaNoite.map(x=>`${x.casa.nome} × ${x.vis.nome}`);
+
+        /* A PERGUNTA SABE DE QUAL JOGO ESTÁ FALANDO, e passa isso
+           adiante: sem contexto a tela re-derivava tudo de
+           `E.proximoJogo` e respondia sobre outro evento. */
+        const ctx = {evento:'nosso', semana:s.semana, dia:diaN,
+                     fora, advId:nosso.advId,
+                     jogos: mesmaNoite.map(x=>x.chave)};
+        /* em casa, os outros jogos da noite entram no texto porque
+           entram na conta: eles são parte da mesma rua */
+        const tambem = (!fora && nomesN.length)
+          ? (nomesN.length === 1
+              ? ` E ainda tem ${nomesN[0]} na mesma noite.`
+              : ` E ainda tem ${nomesN.slice(0,-1).join(', ')} e `+
+                `${nomesN[nomesN.length-1]} na mesma noite.`)
+          : '';
         propor(E, {cat:2, peso:'decisao', voz:diretor(E, ch0),
-          chave:`${ch0}|nosso`, validoAte: prazo(aN),
+          chave:`${ch0}|nosso`, validoAte: prazo(aN), dados:ctx,
           texto: briga
             ? `Nosso grande rival, a ${quente.torcida.nome}, está na cidade `+
               `essa semana. Bora dar um trato neles?`
@@ -1143,7 +1218,7 @@ TO.feed = (function(){
             ? `${E.torcida.clube} joga fora ${quando}, contra o `+
               `${nosso.mandante.nome}. Quantos vão na caravana, e por qual estrada?`
             : `Vai ter ${nosso.mandante.nome} × ${nosso.visitante.nome} `+
-              `${quando}. Pretende fazer algo?`,
+              `${quando}. Pretende fazer algo?${tambem}`,
           /* A CARAVANA TEM TELA (§8.23); o jogo em casa fecha pela
              ideologia ou abre a Gestão pra escolher alvo. */
           botoes: (fora && !briga)
@@ -1151,44 +1226,59 @@ TO.feed = (function(){
                 nota:'quantos vão, por qual estrada e quantas bombas'},
                {rot:'Seguir ideologia', efeito:'ideologia',
                 nota:'a ideologia fecha o plano da semana'}]
-            : BOTOES_PLANO});
+            : botoesDoPlano(E, ctx)});
       }
 
-      /* --- evento 2: os OUTROS jogos da praça, todos eles ---
-         A mensagem lista a rodada inteira do dia, e não os dois
-         primeiros: `slice(0,2)` fazia a linha parecer a praça inteira
-         quando era um pedaço dela. Eles se agrupam por DIA, porque é o
-         dia que define a decisão — investida é por jogo, mas a pergunta
-         é uma por noite. */
-      const porDia = {};
-      for(const o of (s.adiante ? PL().outrosJogosNaCidade(E, s.semana) : outros))
-        (porDia[o.dia] = porDia[o.dia] || []).push(o);
       for(const dia of Object.keys(porDia).map(Number).sort((a,b)=>a-b)){
         const a = absDe(dia, s.adiante);
         if(!naJanela(a)) continue;
         const nomes = porDia[dia].map(x=>`${x.casa.nome} × ${x.vis.nome}`);
         const quando = quandoRot(dia, s.adiante);
+        const ctx = {evento:'praca', semana:s.semana, dia, fora:false,
+                     jogos:porDia[dia].map(x=>x.chave)};
         propor(E, {cat:2, peso:'decisao', voz:diretor(E, ch0),
-          chave:`${ch0}|praca|${dia}`, validoAte: prazo(a),
+          chave:`${ch0}|praca|${dia}`, validoAte: prazo(a), dados:ctx,
           texto: nomes.length === 1
             ? `Vai ter ${nomes[0]} ${quando}. Quer fazer alguma coisa?`
             : `Vai ter ${nomes.slice(0,-1).join(', ')} e `+
               `${nomes[nomes.length-1]} ${quando}. Quer fazer alguma coisa?`,
-          botoes: BOTOES_PLANO});
+          botoes: botoesDoPlano(E, ctx)});
       }
     }
   }
 
-  /* "Atacar alguém" tinha `efeito:'gestao'` e jogava o jogador na Gestão
-     inteira pra ele achar sozinho três campos. Agora abre a tela do
-     ataque, que tem esses três campos e mais nada — o mesmo caminho que
-     a caravana fez em §8.23. A Gestão completa continua no ícone. */
-  const BOTOES_PLANO = [
-    {rot:'Seguir ideologia', efeito:'ideologia',
-     nota:'a ideologia fecha o plano da semana'},
-    {rot:'Atacar alguém', efeito:'ataque',
-     nota:'quem, onde e quantas bombas'}
-  ];
+  /* =======================================================
+     BOTÃO SÓ EXISTE QUANDO A RESPOSTA DELE EXISTE
+
+     Isto era uma constante, e o botão "Atacar alguém" saía sempre — até
+     nas semanas em que não havia ninguém pra atacar. O jogador apertava
+     e recebia uma frase de validação no lugar da tela: "Não há torcida
+     nenhuma na rua no dia do jogo". Quem decide se o botão aparece é
+     quem PROPÕE a mensagem, e não quem responde a ela.
+
+     A mensagem pré-jogo sai nos quatro casos. O que muda é o botão. */
+  function botoesDoPlano(E, ctx){
+    const ideologia = {rot:'Seguir ideologia', efeito:'ideologia',
+                       nota:'a ideologia fecha o plano da semana'};
+    /* o delegado na cola: a ideologia é a única saída, e a nota diz por quê */
+    if(PL().naTrela(E))
+      return [Object.assign({}, ideologia,
+        {nota:'o delegado tá em cima da gente essa semana'})];
+    const rua = PL().ruaCrua(E, ctx);
+    if(rua.length && rua.every(x=>x.aliada))
+      return [ideologia, {rot:'Trair aliado', efeito:'ataque',
+        nota:'são todas aliadas; bater nelas derruba a relação de vez'}];
+    if(PL().alvosNaRua(E, ctx).length)
+      return [ideologia, {rot:'Atacar alguém', efeito:'ataque',
+        nota:'quem, onde e quantas bombas'}];
+    /* EM DIA DE JOGO SEMPRE HÁ TORCIDA NA RUA: no mínimo a do mandante
+       e a do visitante. Lista vazia aqui é consulta feita com o dia, a
+       semana ou a cidade errados — é bug, e bug vai pro console, não
+       pro feed. */
+    if(!rua.length)
+      console.warn('[cat2] dia de jogo sem ninguém na rua', ctx);
+    return [ideologia];
+  }
 
   /* =======================================================
      PRODUTOR 3 — A CONVOCAÇÃO PRA CENA
@@ -1231,7 +1321,28 @@ TO.feed = (function(){
        disso — devolveria "paz" sempre. Botão que não leva a lugar
        nenhum é botão mentiroso. */
     const j = nossoJogo(E);
-    if(!j || (j.dia||6) !== E.data.dia) return;
+
+    /* c) O CONFRONTO MARCADO NUM JOGO DA PRAÇA. Isto saía cedo em
+       `if(!j || j.dia !== hoje) return`, e por isso o ataque marcado
+       num jogo em que o nosso clube nem entra em campo morria no plano
+       (§8.30). A condição não é "temos jogo hoje": é "há confronto
+       marcado pra hoje". Jogo alheio SEM ataque marcado continua não
+       obrigando ninguém a sair de casa. */
+    if(!j || (j.dia||6) !== E.data.dia){
+      const naPracaHoje = TO.praca.jogosDaPraca(E)
+        .some(x => x.dia === E.data.dia);
+      if(!naPracaHoje) return;
+      const pr = TO.praca.encontroDaPraca(E, E.data.dia);
+      if(!pr) return;
+      propor(E, {cat:3, peso:'decisao', voz:vozRua(), tipo:'ruim',
+        chave:`c3praca|${E.data.absoluto}`,
+        texto:`Hoje é o dia. A ${pr.enc.b.nome} vai estar `+
+              `${ondeRot(pr.onde)}, e a gente vai pra cima.`,
+        dados:{tipo:'ida'},
+        botoes:[{rot:'Ir para a guerra', efeito:'ida',
+                 nota:`${pr.enc.a.n} nossos contra ${pr.enc.b.n}`}]});
+      return;
+    }
     const cartaz = `Hoje tem ${j.mandante.nome} × ${j.visitante.nome} no `+
                    `${j.estadio}.`;
 
@@ -1342,7 +1453,9 @@ TO.feed = (function(){
     /* A BRIGA MARCADA EM VIAGEM vem primeiro: `resolverIda` só conhece
        a nossa praça e devolveria "paz" com `semNos`, que é verdade — a
        rua daqui está vazia — e que não é a resposta da pergunta. */
-    const r = TO.praca.encontroDaViagem(E) || TO.praca.resolverIda(E);
+    const r = TO.praca.encontroDaViagem(E)
+           || TO.praca.encontroDaPraca(E, E.data.dia)
+           || TO.praca.resolverIda(E);
     if(!r || r.desfecho === 'paz'){
       propor(E, {cat:4, peso:'info', voz:vozRua(), chave:`ida|${E.data.absoluto}`,
         texto: r && r.semNos
@@ -2621,7 +2734,8 @@ TO.feed = (function(){
           lerEfeito, lerEfeitos,
           COTA_DIPLOMACIA_MES, CARENCIA_AMEACA, AMEACAS, ASSUNTOS,
           FREQUENCIA, CLASSE_PADRAO, carenciaDe, naCarencia,
-          propor, publicar, responder, travado, decisaoAberta, semanaDaFundacao,
+          propor, publicar, responder, confirmarResposta,
+          travado, decisaoAberta, semanaDaFundacao,
           passarDia, fecharSemana, fechoDaSemana, irProEstadio,
           registrarConfronto, registrarConfrontoDelas, TETO_CONFRONTOS_DELAS,
           abrir, historico, resumo, expirada, contexto, perguntaAntes,

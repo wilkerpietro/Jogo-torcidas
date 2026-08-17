@@ -214,10 +214,37 @@ TO.planejamento = (function(){
     }).sort((a,b)=>a.relacao-b.relacao);
   }
 
-  /* todas aliadas? então bater nelas é traição, e o jogo diz isso */
-  function soAliados(E){
-    const a = alvosDoJogo(E);
-    return a.length > 0 && a.every(x=>x.aliada);
+  /* TODAS ALIADAS? então bater nelas é traição, e o jogo diz isso.
+     A pergunta é sobre a rua DAQUELE evento, e não sobre o clube
+     adversário do nosso jogo: num jogo da praça o adversário nem é
+     nosso. `alvosNaRua` já tira aliada e irmã da lista, então quem
+     responde "são todas aliadas" é a lista CRUA da rua. */
+  function soAliados(E, ctx){
+    const rua = ruaCrua(E, ctx);
+    return rua.length > 0 && rua.every(x=>x.aliada);
+  }
+
+  /* a rua daquele evento SEM o filtro de aliada — é ela que sabe dizer
+     se sobrou alguém pra atacar ou se são todas da casa. É a MESMA
+     consulta de `alvosNaRua`, só que sem o corte final: duplicar a
+     montagem fazia as duas listas divergirem em forma, e a tela que
+     recebesse uma delas desenhava campo faltando. */
+  function ruaCrua(E, ctx){
+    return alvosNaRua(E, Object.assign({}, ctx || {}, {crua:true}));
+  }
+
+  /* A LISTA QUE A TELA DE ATACAR MOSTRA. Não é `alvosNaRua`: quando
+     TODAS as da rua são aliadas o botão oferecido é "Trair aliado", e
+     o alvo da traição é justamente quem `alvosNaRua` tira da lista.
+     Medido em uma temporada: 3 perguntas caíam nisso — o botão saía,
+     o clique não abria tela nenhuma e a pergunta era cancelada.
+
+     Botão só existe quando a resposta dele existe (§8.30, R2), e a
+     resposta dos dois botões é esta função. */
+  function alvosDoAtaque(E, ctx){
+    const lista = alvosNaRua(E, ctx);
+    if(lista.length) return lista;
+    return soAliados(E, ctx) ? ruaCrua(E, ctx) : [];
   }
   function intencoes(E){
     const trair = soAliados(E);
@@ -749,10 +776,12 @@ TO.planejamento = (function(){
      estar na rua na cidade deles. Aliada não entra — bater em aliado é
      traição, e traição tem caminho próprio — nem torcida-irmã (§8.28).
      Mesma forma de `alvosNaRua`, pra a tela desenhar as duas igual. */
-  function alvosDaViagem(E){
+  function alvosDaViagem(E, ctx){
     const j = E.proximoJogo;
-    if(!j || j.casa || !j.advId) return [];
-    return M().torcidasDe(j.advId)
+    /* o adversário vem do contexto quando a pergunta é de outra semana */
+    const advId = (ctx && ctx.advId) || (j && !j.casa ? j.advId : null);
+    if(!advId) return [];
+    return M().torcidasDe(advId)
       .filter(o=>!o.incompleta && !M().saoIrmas(E.torcida.id, o.id))
       .map(o=>{
         const rel = (E.relacoes||{})[o.id];
@@ -765,16 +794,40 @@ TO.planejamento = (function(){
                   M().relacaoBase(E.torcida.id, o.id)) : rel,
                 aliada: rel !== undefined && rel >= RELACAO_ALIADO};
       })
-      .filter(a=>!a.aliada)
+      /* `crua` é pra quem precisa saber se são TODAS aliadas — quem
+         responde isso é a lista sem o filtro */
+      .filter(a=>(ctx && ctx.crua) || !a.aliada)
       .sort((a,b)=> (b.tensao - a.tensao) || (a.relacao - b.relacao));
   }
 
-  /* quem estará na rua no dia do NOSSO jogo, com o que importa pra
-     escolher: efetivo estimado, tensão e relação */
-  function alvosNaRua(E){
+  /* =======================================================
+     QUEM ESTARÁ NA RUA — E DE QUAL EVENTO ESTAMOS FALANDO
+
+     Isto lia `E.proximoJogo` e mais nada, e por isso devolvia lista
+     vazia em três situações inteiras (§8.30):
+
+     · SEMANA EM QUE O NOSSO CLUBE NÃO JOGA. `if(!j) return []` — mas a
+       praça joga, a pergunta sai, e a lista é vazia por construção.
+     · PERGUNTA SOBRE OUTRO DIA. Usava `j.dia`, o dia do NOSSO jogo, pra
+       responder sobre o jogo da praça de quarta. Dia errado, lista
+       errada ou vazia.
+     · JOGO FORA. `naRuaEm` monta o dia com `jogosDaPraca`, que filtra
+       pela NOSSA praça — o nosso jogo fora não está lá. E mesmo quando
+       algum outro jogo daqui cai no mesmo dia, a lista é de gente desta
+       cidade enquanto a gente está viajando.
+
+     Agora a pergunta diz de que evento está falando, e a consulta
+     responde sobre ELE. Sem contexto, vale o de hoje — que é o que os
+     chamadores antigos esperam. */
+  function alvosNaRua(E, ctx){
+    if(!TO.praca) return [];
+    ctx = ctx || {};
+    /* viagem é rua DELES, e a lista pronta já existe */
+    if(ctx.fora === true) return alvosDaViagem(E, ctx);
     const j = E.proximoJogo;
-    if(!j || !TO.praca) return [];
-    return TO.praca.naRuaEm(E, j.dia || 6)
+    const dia = ctx.dia != null ? ctx.dia : (j ? (j.dia || 6) : null);
+    if(dia == null) return [];
+    return TO.praca.naRuaEm(E, dia, ctx.semana)
       .filter(b => !b.nossa && !b.doJogador && !M().saoIrmas(E.torcida.id, b.id))
       .map(b=>{
         const rel = (E.relacoes||{})[b.id];
@@ -787,8 +840,10 @@ TO.planejamento = (function(){
       })
       /* ALIADA NÃO É ALVO: bater em aliado é trair, e trair tem caminho
          próprio (`intencoes` oferece "Trair aliado" quando TODAS são
-         aliadas). Torcida-irmã já saiu no filtro de cima. */
-      .filter(a => !a.aliada)
+         aliadas). Torcida-irmã já saiu no filtro de cima. `crua` é a
+         porta de quem PRECISA das aliadas — quem pergunta se são todas
+         da casa, e a tela da traição. */
+      .filter(a => ctx.crua || !a.aliada)
       .sort((a,b)=> (b.tensao - a.tensao) || (a.relacao - b.relacao));
   }
 
@@ -806,7 +861,10 @@ TO.planejamento = (function(){
   /* a escolha do assistente chega ao plano da semana por aqui, e por
      `definirIntencao`, que é o único lugar que sabe da trela */
   function definirAtaque(E, esc){
-    definirIntencao(E, soAliados(E) ? 'trair' : 'atacar');
+    /* a intenção é lida na rua DAQUELE evento: sem o contexto, um
+       ataque marcado num jogo da praça de quarta era classificado
+       pela rua do nosso jogo de sábado */
+    definirIntencao(E, soAliados(E, esc.ctx) ? 'trair' : 'atacar');
     const p = plano(E);
     if(p.intencao === 'paz') return p;          // a trela barrou
     if(esc.alvo) p.alvoTorcida = esc.alvo;
@@ -997,10 +1055,11 @@ TO.planejamento = (function(){
   return {plano, tipoDoJogo, salvarPadrao, temPadrao, esquecerPadrao,
           TENSAO_QUENTE, POLITICA_ATAQUE, politicas, definirPolitica,
           ehRival, alvosDaPolitica, aplicarPolitica,
-          alvosDoJogo, soAliados, intencoes, outrosJogosNaCidade,
+          alvosDoJogo, soAliados, ruaCrua, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
           COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,
-          ONDE_ATAQUE, ondeDoPlano, alvosNaRua, alvosDaViagem, definirAtaque,
+          ONDE_ATAQUE, ondeDoPlano, alvosNaRua, alvosDaViagem, alvosDoAtaque,
+          definirAtaque,
           efetivoDoAtaque, MINIMO_BONDE:MINIMO,
           faixaDeEfetivo,
           passos, falta, investidaDe, definirInvestida,

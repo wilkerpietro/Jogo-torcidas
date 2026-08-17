@@ -749,10 +749,20 @@
 
   /* O BOTÃO APERTADO. O efeito de estado é do `TO.feed`; o que sobra
      aqui é abrir tela, que é a única coisa que a tela sabe fazer. */
+  /* a decisão que abriu tela e ainda não foi confirmada: é ela que a
+     tela queima quando o jogador aperta Confirmar */
+  let decisaoEmAberto = null;
+
   function responderMensagem(id, i){
     const e = E();
     const r = TO.feed.responder(e, id, i);
-    if(!r.ok){ if(r.motivo) aviso(r.motivo, 'ruim'); atualizarFeed(); return; }
+    if(!r.ok){
+      /* `cancelado` é falha interna, e falha interna não fala com o
+         jogador (§8.30): o `console.warn` já saiu lá dentro. */
+      if(r.motivo && !r.cancelado) aviso(r.motivo, 'ruim');
+      atualizarFeed(); return;
+    }
+    decisaoEmAberto = r.adiado ? {id, rot:(r.msg.botoes||[])[i||0].rot} : null;
     if(r.aviso) aviso(r.aviso, '');
     atualizarFeed();
     /* A IDA RESOLVIDA devolve o encontro pronto — dois bondes com o
@@ -761,7 +771,7 @@
     if(r.encontro) abrirConfronto(e, r.encontro);
     else if(r.cena) abrirCenaDaMensagem(r.cena);
     else if(r.tela === 'caravana') abrirCaravana();
-    else if(r.tela === 'ataque') abrirAtaque();
+    else if(r.tela === 'ataque') abrirAtaque(r.dados);
     else if(r.tela === 'ideologia') abrirIdeologia();
     else if(r.abrir){
       /* a mensagem pode pedir uma ABA, não só uma página: a rotina é a
@@ -772,7 +782,18 @@
     }
     else redesenhar();
     TO.estado.salvar();
-    /* respondida a última decisão, o relógio volta a andar sozinho */
+    /* respondida a última decisão, o relógio volta a andar sozinho — e
+       tela aberta não é decisão respondida: o relógio segue parado até
+       o Confirmar (ou até o jogador fechar e responder de outro jeito) */
+    if(!decisaoEmAberto) retomarTempo('decisao');
+  }
+
+  /* a tela confirmou; agora a pergunta pode ser queimada */
+  function confirmarDecisao(){
+    if(!decisaoEmAberto) return;
+    TO.feed.confirmarResposta(E(), decisaoEmAberto.id, decisaoEmAberto.rot);
+    decisaoEmAberto = null;
+    atualizarFeed();
     retomarTempo('decisao');
   }
 
@@ -785,9 +806,10 @@
       return;
     }
     if(d.cena){ abrirAcaoEmCena(d, d.efetivo); return; }
-    /* NENHUM BOTÃO ABRE MAPA. Ele não existe mais, e "não sei o que
-       fazer com isto" tem de ser barulho, não uma tela ao acaso. */
-    aviso('Essa mensagem não tem cena pra abrir.', 'ruim');
+    /* NENHUM BOTÃO ABRE MAPA — ele não existe mais. E "não sei o que
+       fazer com isto" é bug do produtor que ofereceu o botão, não
+       notícia: barulho no console, e nada na tela (§8.30). */
+    console.warn('[cena] mensagem com botão de cena e sem cena', d);
   }
 
   /* =======================================================
@@ -1641,8 +1663,10 @@
     const e = E(), P = TO.planejamento;
     const listaRotas = P.rotas(e);
     if(!listaRotas.length){
-      aviso('Não há viagem marcada nesta semana.', 'ruim');
-      return null;
+      /* o botão da caravana só sai em pergunta de jogo fora, então
+         chegar aqui sem rota é bug, e não recado (§8.30) */
+      console.warn('[caravana] tela pedida sem rota nenhuma');
+      return {cancelado:true};
     }
     const p = P.plano(e);
     const corpo = el('div');
@@ -1797,6 +1821,7 @@
         P.confirmar(e);
         aviso(`Caravana fechada: ${est.vao} para ${(e.proximoJogo||{}).cidadeAdv}.`,
               'boa');
+        confirmarDecisao();
         TO.estado.salvar();
         redesenhar();
       }]], 'media');
@@ -1817,12 +1842,21 @@
   const DIA_DA_SEMANA = ['','segunda','terça','quarta','quinta','sexta',
                          'sábado','domingo'];
 
-  function abrirAtaque(){
+  /* RAZÃO DE FALHA NUNCA VIRA TEXTO PRO JOGADOR (§8.30). Uma tela faz
+     uma de duas coisas: entrega o conteúdo, ou não se oferece. Aqui
+     havia um `aviso(…,'ruim')` com o texto de uma validação de lista
+     vazia, e ele chegava por cima da pergunta pré-jogo, no lugar da
+     tela que o botão prometia abrir. Hoje o
+     botão nem é oferecido nesse caso (`botoesDoPlano`), então isto é
+     inalcançável; se acontecer, é bug, e bug vai pro console. */
+  function abrirAtaque(ctx){
     const e = E(), P = TO.planejamento;
-    const lista = P.alvosNaRua(e);
+    /* a lista da traição e a lista do ataque entram pela mesma porta:
+       quando todas as da rua são aliadas, elas SÃO os alvos */
+    const lista = P.alvosDoAtaque(e, ctx);
     if(!lista.length){
-      aviso('Não há torcida nenhuma na rua no dia do jogo.', 'ruim');
-      return null;
+      console.warn('[ataque] tela pedida sem alvo nenhum', ctx);
+      return {cancelado:true};
     }
     const p = P.plano(e);
     /* abre no que o plano já tem; sem alvo, no mais quente da lista */
@@ -1830,6 +1864,7 @@
     let onde = P.ondeDoPlano(p);
     let bombas = U.limitar(p.bombas || 0, 0, (e.estoque||{}).bombas || 0);
     const corpo = el('div');
+    const diaDoEvento = (ctx && ctx.dia) || ((e.proximoJogo||{}).dia) || 6;
 
     const pintar = ()=>{
       corpo.innerHTML = '';
@@ -1860,9 +1895,9 @@
       const passo = Math.max(1, Math.round(f.teto/10));
       eB.disabled = f.vao <= f.piso;
       eM.disabled = f.vao >= f.teto;
-      eB.onclick = ()=>{ P.definirAtaque(e, {alvo, onde, bombas,
+      eB.onclick = ()=>{ P.definirAtaque(e, {ctx, alvo, onde, bombas,
         efetivo: Math.max(f.piso, f.vao - passo)}); pintar(); };
-      eM.onclick = ()=>{ P.definirAtaque(e, {alvo, onde, bombas,
+      eM.onclick = ()=>{ P.definirAtaque(e, {ctx, alvo, onde, bombas,
         efetivo: Math.min(f.teto, f.vao + passo)}); pintar(); };
       le.append(eB, el('b',{texto:String(f.vao)}), eM,
         el('small',{texto:`de ${f.teto} que saem de casa · mínimo ${f.piso}`}));
@@ -1889,7 +1924,7 @@
         `<span>${f.vao} nossos contra a ${a.nome||'—'} `+
         `${(o.rot||'').toLowerCase()}`+
         `${bombas ? `, com ${bombas} bomba${bombas>1?'s':''}` : ''}</span>`+
-        `<b>${DIA_DA_SEMANA[j.dia] || 'sábado'}</b>`}));
+        `<b>${DIA_DA_SEMANA[diaDoEvento] || 'sábado'}</b>`}));
       if(a.aliada)
         corpo.appendChild(el('div',{class:'linha-dado', html:
           '<span class="negativo">É aliada nossa. Bater nela derruba a '+
@@ -1901,7 +1936,7 @@
       `${(e.proximoJogo||{}).mandante ? e.proximoJogo.mandante.nome : 'Jogo'} · `+
       `semana ${e.data.semana}`, corpo,
       [['Confirmar', ()=>{
-        const p2 = TO.planejamento.definirAtaque(e, {alvo, onde, bombas});
+        const p2 = TO.planejamento.definirAtaque(e, {ctx, alvo, onde, bombas});
         if(p2.intencao === 'paz'){
           aviso('O delegado ainda está de olho: nada de ataque nesta semana.',
                 'ruim');
@@ -1910,6 +1945,7 @@
           const o = P.ONDE_ATAQUE.find(x=>x.id === onde) || {};
           aviso(`Marcado: ${a.nome} ${(o.rot||'').toLowerCase()}.`, 'boa');
         }
+        confirmarDecisao();
         TO.estado.salvar();
         redesenhar();
       }]], 'media');

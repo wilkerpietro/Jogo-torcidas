@@ -336,9 +336,13 @@ TO.praca = (function(){
      a resposta tem de ser a mesma lista que a briga vai usar. */
   const naRuaHoje = E => naRuaEm(E, E.data.dia);
 
-  function naRuaEm(E, dia){
+  /* A SEMANA ENTRA JUNTO COM O DIA. `jogosDaPraca` aceita a semana desde
+     §8.27 e aqui ninguém passava: a pergunta de uma semana adiante
+     (§8.24) lia a rua da semana corrente e respondia sobre o dia errado
+     — ou sobre dia nenhum. */
+  function naRuaEm(E, dia, semana){
     const mo = MP().modelo(E);
-    const doDia = jogosDaPraca(E).filter(j=>j.dia === dia);
+    const doDia = jogosDaPraca(E, semana).filter(j=>j.dia === dia);
     if(!doDia.length) return [];
     const elenco = elencoDaNoite(E, doDia);
 
@@ -703,6 +707,50 @@ TO.praca = (function(){
         nossoLado: onde === 'arredores' ? 'visitante' : 'mandante'}};
   }
 
+  /* =======================================================
+     O CONFRONTO MARCADO NUM JOGO DA PRAÇA
+
+     A gente pode marcar ataque num jogo em que o nosso clube nem entra
+     em campo — é o que a pergunta da praça oferece —, e isso nunca
+     virava cena. Três caminhos, e nenhum abria: o cat3 do dia do jogo
+     saía cedo por não haver jogo nosso, a investida se resolvia no dado
+     no fecho da semana, e a trela zerava o alvo em silêncio.
+
+     Este é o encontro daquele dia, no mesmo molde do da viagem. O
+     efetivo deles é o que `naRuaEm` diz — não é conta nova, é a mesma
+     rua —, o nosso é o do seletor, e o mando é NOSSO: a praça é nossa.
+     ======================================================= */
+  function encontroDaPraca(E, dia){
+    const p = PL().plano(E);
+    dia = dia != null ? dia : E.data.dia;
+    /* alvo escolhido na pergunta, ou a investida marcada daquele dia */
+    let alvoId = p.alvoTorcida;
+    if(!alvoId){
+      for(const o of PL().outrosJogosNaCidade(E, E.data.semana)){
+        if((o.dia || 6) !== dia) continue;
+        const inv = PL().investidaDe(E, o.chave);
+        if(inv && inv.alvo){ alvoId = inv.alvo; break; }
+      }
+    }
+    if(!alvoId || p.intencao === 'paz') return null;
+    if(M().saoIrmas(E.torcida.id, alvoId)) return null;
+    const rua = naRuaEm(E, dia);
+    const alvo = rua.find(b => b.id === alvoId);
+    if(!alvo) return null;
+    const nosso = rua.find(b => b.nossa) || rua.find(b => b.doJogador);
+    const mo = MP().modelo(E);
+    const onde = lugarPlanejado(E, mo, p);
+    const nossos = Math.max(2, PL().efetivoDoAtaque(E).vao);
+    const nossaCor = M().coresDaTorcida(E.torcida);
+    const meu = nosso ? Object.assign({}, nosso, {n: Math.min(nosso.n, nossos)})
+      : {id:E.torcida.id, nome:E.torcida.nome,
+         sigla:M().siglaTorcida(E.torcida), n:nossos,
+         cor:nossaCor.cor, cor2:nossaCor.cor2, nossa:true};
+    return {desfecho:'planejada', praca:true, onde,
+            enc: Object.assign(montarEncontro(meu, alvo, onde),
+                               {nossoLado:'mandante'})};
+  }
+
   /* O EFETIVO É O REAL DOS DOIS LADOS, e eles são diferentes. Este é o
      mesmo cuidado da cena: nada é reequilibrado na abertura — se saímos
      com 80 e eles com 100, a cena é de 80 contra 100. */
@@ -911,6 +959,7 @@ TO.praca = (function(){
           grauDeRivalidade, fatorParidade, BASE_PROCURA, PISO_PARIDADE,
           efetivoDeTorcida:efetivoDe,
           lugarPlanejado, lugarDoEncontro, resolverIda, encontroDaViagem,
+          encontroDaPraca,
           organizadasComEfetivo, porPeso, assaltosDoBloco, assaltoDeHoje,
           resolverAssalto, chanceDeDarErrado, RISCO_POR_SEGURANCA,
           FRACAO_GAVETA, PENA, marcarBaixa, passarDia};
