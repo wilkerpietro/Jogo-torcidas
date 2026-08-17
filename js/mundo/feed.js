@@ -125,6 +125,36 @@ TO.feed = (function(){
     escoltaDeHoje(E);
     assaltoDeHoje(E);
     placarDoDia(E, ctx.jogos || []);
+    brigasDaSemana(E);
+  }
+
+  /* -------------------------------------------------------
+     3d. AS BRIGAS DA SEMANA (decisão do dono, 17/08/2026):
+         toda segunda o jornal resume as brigas que o mundo
+         teve na semana anterior — quem brigou e quem venceu
+         numa coluna, as baixas de cada lado na outra, as
+         maiores brigas primeiro.
+     ------------------------------------------------------- */
+  function brigasDaSemana(E){
+    if(E.data.dia !== 1) return;
+    const sAnt = E.data.semana - 1;
+    if(sAnt < 1) return;
+    const brigas = (E.brigasIA||[])
+      .filter(b=>b.ano === E.data.ano && b.semana === sAnt);
+    if(!brigas.length) return;
+    const ord = [...brigas].sort((x,y)=>(y.a.n+y.b.n)-(x.a.n+x.b.n));
+    const MOSTRA = 12;
+    propor(E, {
+      kind:'brigas', peso:'info', voz:'jornal',
+      chave:`brigas|${E.data.ano}|${sAnt}`,
+      texto:`As brigas da semana pelo país: ${brigas.length} `+
+            `${brigas.length===1 ? 'registrada' : 'registradas'}, `+
+            `as maiores primeiro.`,
+      dados:{brigas: ord.slice(0, MOSTRA),
+             resto: Math.max(0, ord.length - MOSTRA)},
+      links:[{rot:'Ver todas', acao:'painel',
+              args:{pagina:'noticias', aba:'brigas'}}]
+    });
   }
 
   /* -------------------------------------------------------

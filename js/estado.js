@@ -343,6 +343,10 @@ TO.estado = (function(){
 
     /* os jogos de hoje saem hoje, e o feed conta a noite */
     const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
+    /* e onde tem jogo tem torcida na rua: as brigas entre as IAs
+       nascem dos jogos do dia (decisão do dono) — nada disso vira
+       mensagem no feed; o registro mora na aba Brigas das Notícias */
+    if(TO.relacoes.brigasDeHoje) TO.relacoes.brigasDeHoje(E, jogos);
     if(TO.feed) TO.feed.eventosDoDia(E, {jogos});
 
     mudou();

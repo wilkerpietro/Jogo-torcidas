@@ -552,7 +552,7 @@
                     sofrido:'Ataque sofrido', escolta:'Aliados',
                     confronto:'Confronto', placar:'Resultado',
                     rodada:'Rodada', partida:'Nossa partida',
-                    assalto:'Assalto'};
+                    assalto:'Assalto', brigas:'Brigas da semana'};
 
   /* =======================================================
      A PARTIDA AO VIVO (decisão do dono, 17/08/2026)
@@ -730,9 +730,45 @@
     for(const l of (m.links || [])){
       const la = el('div',{class:'msg-abaixo'});
       const a = el('button',{class:'msg-link', texto:l.rot});
-      a.onclick = ()=>abrirPainel((l.args||{}).pagina || 'competicoes');
+      a.onclick = ()=>{
+        const args = l.args || {};
+        if(args.pagina === 'noticias' && args.aba) subNoticias = args.aba;
+        abrirPainel(args.pagina || 'competicoes');
+      };
       la.appendChild(a);
       art.appendChild(la);
+    }
+
+    /* AS BRIGAS DA SEMANA EM TABELA (decisão do dono): coluna 1 quem
+       brigou e quem venceu; coluna 2 as baixas de cada lado — as
+       maiores brigas primeiro, ordenadas por envolvidos. */
+    const tbb = m.kind === 'brigas' && m.dados && m.dados.brigas;
+    if(tbb && tbb.length){
+      const corDe2 = id => {
+        const o = TO.mundo.torcida(id);
+        return (o && TO.mundo.coresDaTorcida(o).cor) || '#888';
+      };
+      const chip2 = (id, nome) =>
+        `<i class="to-chip" style="background:${corDe2(id)}"></i>${nome}`;
+      const baixa2 = l => `${l.feridos} fer.`+(l.presos?` · ${l.presos} pr.`:'');
+      const tb2 = el('table',{class:'tab-olheiro'});
+      for(const b of tbb){
+        const tr = el('tr');
+        tr.appendChild(el('td',{class:'to-jogo', html:
+          `<small>${b.cidade}</small>
+           <div>${chip2(b.a.id, b.a.nome)} <b>${b.a.n}</b>`+
+          `<span class="to-x">×</span><b>${b.b.n}</b> `+
+          `${chip2(b.b.id, b.b.nome)}</div>
+           <small>venceu <b>${b.vencedor}</b></small>`}));
+        tr.appendChild(el('td',{class:'to-torcidas', html:
+          `<div>${b.a.nome} <span class="to-faixa">${baixa2(b.a)}</span></div>
+           <div>${b.b.nome} <span class="to-faixa">${baixa2(b.b)}</span></div>`}));
+        tb2.appendChild(tr);
+      }
+      art.appendChild(tb2);
+      if(m.dados.resto)
+        art.appendChild(el('div',{class:'msg-efeitos',
+          texto:`…e mais ${m.dados.resto} brigas menores na aba Brigas.`}));
     }
 
     /* a partida ao vivo: com a bola rolando o cartão é a barra de
@@ -859,11 +895,19 @@
     pg.appendChild(rolo);
   }
 
+  let subNoticias = 'arquivo';
   function pintarNoticias(){
     const e = E(), pg = U.$('.pagina[data-pag="noticias"]');
     if(!e || !pg) return;
     pg.innerHTML = '';
     pg.appendChild(el('div',{class:'titulo-pagina', texto:'Notícias'}));
+    pg.appendChild(subabas([
+      {id:'arquivo', rot:'Arquivo do feed'},
+      {id:'brigas',  rot:'Brigas'}
+    ], subNoticias, id=>{subNoticias=id; redesenhar();}));
+
+    if(subNoticias === 'brigas'){ pg.appendChild(painelBrigasIA(e)); return; }
+
     const hist = e.feed || [];
     const lista = el('div',{class:'feed-lista'});
     if(!hist.length)
@@ -875,6 +919,40 @@
         `<span class="fraco">…e mais ${hist.length-200} mensagens mais `+
         `antigas.</span>`}));
     pg.appendChild(lista);
+  }
+
+  /* a aba BRIGAS: o que o mundo se pegou por conta própria, briga a
+     briga, com efetivos, feridos, presos e o jogo que deu o motivo
+     (decisão do dono, 17/08/2026) */
+  function painelBrigasIA(e){
+    const cx = el('div');
+    const brigas = e.brigasIA || [];
+    const c = cartao('Brigas pelo país', `${brigas.length} registradas`);
+    if(!brigas.length)
+      c.corpo.innerHTML = '<div class="em-construcao">O país anda calmo — '+
+        'por enquanto.</div>';
+    const corDe = id => {
+      const o = TO.mundo.torcida(id);
+      return (o && TO.mundo.coresDaTorcida(o).cor) || '#888';
+    };
+    const chip = (id, nome) =>
+      `<i class="to-chip" style="background:${corDe(id)}"></i>${nome}`;
+    for(const b of brigas.slice(0, 60)){
+      const baixa = l => `${l.feridos} ferido${l.feridos===1?'':'s'}`+
+        (l.presos ? `, ${l.presos} preso${l.presos===1?'':'s'}` : '');
+      c.corpo.appendChild(el('div',{class:'briga-ia', html:
+        `<div class="briga-ia-cab">
+           <span class="dia">${b.semana}/${b.dia}</span>
+           <span>${chip(b.a.id, b.a.nome)} <b>${b.a.n}</b>
+             <span class="to-x">×</span> <b>${b.b.n}</b>
+             ${chip(b.b.id, b.b.nome)}</span>
+           <span class="briga-ia-vence">venceu ${b.vencedor}</span>
+         </div>
+         <small>${b.cidade} · na sombra de ${b.jogo} · ${b.a.nome}: `+
+        `${baixa(b.a)} · ${b.b.nome}: ${baixa(b.b)}</small>`}));
+    }
+    cx.appendChild(c);
+    return cx;
   }
 
   /* =======================================================

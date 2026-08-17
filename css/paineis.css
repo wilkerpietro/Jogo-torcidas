@@ -1123,6 +1123,13 @@ table.dados tr.selecionada td{background:#252525}
 .tab-ranking tr.nossa .pos{color:#e8c76a}
 .pos-rank{color:#e8c76a}
 
+/* a aba Brigas das Notícias: uma linha por briga do mundo */
+.briga-ia{padding:8px 2px;border-bottom:1px solid #222;font-size:12.5px}
+.briga-ia-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.briga-ia-cab .dia{color:var(--fraco);font-family:var(--mono);font-size:11px}
+.briga-ia-vence{color:#7fbf7f;margin-left:auto}
+.briga-ia small{color:var(--fraco);display:block;margin-top:2px}
+
 /* turno do expediente que não rodou: fica no registro, esmaecido */
 .turno-falhou{opacity:.62}
 .turno-falhou .desc{color:#d9a05f}

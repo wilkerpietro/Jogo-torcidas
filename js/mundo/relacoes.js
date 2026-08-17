@@ -510,30 +510,151 @@ TO.relacoes = (function(){
     return n ? soma/n : 1;
   }
 
+  /* =======================================================
+     AS BRIGAS ENTRE AS IAs (decisão do dono, 17/08/2026)
+     O mundo briga sozinho, mas só onde faz sentido: a briga
+     nasce de um JOGO — torcida metida no jogo se pega com a
+     torcida do clube adversário ou com hostil local da cidade
+     que recebe a partida (Mancha em Flamengo × Palmeiras no
+     Rio pode pegar a Jovem Fla ou a Young Flu). Feridos ficam
+     30 dias fora; presos, de 15 a 90. Quem vence leva
+     prestígio e moral; quem perde, devolve. Tudo vai pro
+     registro que a aba Brigas das Notícias mostra — e mexe no
+     ranking, porque lá contam os DISPONÍVEIS.
+     ======================================================= */
+  const CHANCE_BRIGA_JOGO = 0.18;
+  function foraDeCombate(E, id){
+    const t = (E.mundoTorcidas||{})[id];
+    if(!t) return 0;
+    const hoje = E.data.absoluto || 0;
+    t.feridosIA = (t.feridosIA||[]).filter(x=>x.ate > hoje);
+    t.presosIA  = (t.presosIA ||[]).filter(x=>x.ate > hoje);
+    return t.feridosIA.reduce((s,x)=>s+x.n, 0) +
+           t.presosIA.reduce((s,x)=>s+x.n, 0);
+  }
+  function disponiveisIA(E, id){
+    const t = (E.mundoTorcidas||{})[id];
+    const total = t ? t.membros : ((M().torcida(id)||{}).membros || 0);
+    return Math.max(0, Math.round(total) - foraDeCombate(E, id));
+  }
+
+  function brigaIA(E, a, b, cidade, jogoRot){
+    const abs = E.data.absoluto || 0;
+    const dispA = disponiveisIA(E, a.id), dispB = disponiveisIA(E, b.id);
+    if(dispA < 8 || dispB < 8) return null;
+    /* quem é da cidade bota mais gente na rua; quem viajou traz caravana */
+    const bonde = (o, disp) => Math.max(4, Math.round(disp *
+      (o.mapa === cidade ? U.entre(0.18, 0.35) : U.entre(0.08, 0.18))));
+    const nA = Math.min(dispA, bonde(a, dispA));
+    const nB = Math.min(dispB, bonde(b, dispB));
+    /* a mesma régua das cenas: efetivo × ficha média, com o acaso da rua */
+    const pA = nA * mediaDeFichaGerada(a, dispA) * U.entre(0.85, 1.15);
+    const pB = nB * mediaDeFichaGerada(b, dispB) * U.entre(0.85, 1.15);
+    const ganhouA = pA >= pB;
+    const baixas = (o, n, perdeu) => {
+      const t = (E.mundoTorcidas||{})[o.id];
+      const feridos = Math.round(n * (perdeu ? U.entre(0.12, 0.22)
+                                             : U.entre(0.05, 0.12)));
+      const presos  = Math.round(n * U.entre(0.01, 0.05));
+      if(t){
+        if(feridos) (t.feridosIA = t.feridosIA||[])
+          .push({n:feridos, ate: abs + 30});
+        if(presos) (t.presosIA = t.presosIA||[])
+          .push({n:presos, ate: abs + U.inteiro(15, 90)});
+      }
+      return {feridos, presos};
+    };
+    const bxA = baixas(a, nA, !ganhouA);
+    const bxB = baixas(b, nB, ganhouA);
+    /* vencedor leva prestígio e moral; perdedor devolve — e a relação
+       entre os dois azeda, com o esfriar semanal puxando de volta */
+    mover(E, ganhouA ? a.id : b.id, 'prestigio', 0.4);
+    mover(E, ganhouA ? a.id : b.id, 'moral', 0.6);
+    mover(E, ganhouA ? b.id : a.id, 'prestigio', -0.4);
+    mover(E, ganhouA ? b.id : a.id, 'moral', -0.6);
+    moverRelacao(E, a.id, b.id, -8);
+    const reg = {
+      ano: E.data.ano, semana: E.data.semana, dia: E.data.dia,
+      cidade: (M().cidade(cidade)||{}).nome || cidade, jogo: jogoRot,
+      a: {id:a.id, nome:a.nome, n:nA, feridos:bxA.feridos, presos:bxA.presos},
+      b: {id:b.id, nome:b.nome, n:nB, feridos:bxB.feridos, presos:bxB.presos},
+      vencedor: ganhouA ? a.nome : b.nome
+    };
+    E.brigasIA = E.brigasIA || [];
+    E.brigasIA.unshift(reg);
+    if(E.brigasIA.length > 200) E.brigasIA.pop();
+    return reg;
+  }
+
+  function brigasDeHoje(E, jogos){
+    mundo(E);
+    const fora = [];
+    for(const j of (jogos||[])){
+      if(U.rng() > CHANCE_BRIGA_JOGO) continue;
+      const casa = M().time(j.c), vis = M().time(j.f);
+      if(!casa || !vis) continue;
+      const cidade = casa.mapa;
+      const doJogo = new Set(
+        [...M().torcidasDe(casa.id), ...M().torcidasDe(vis.id)].map(o=>o.id));
+      const cands = [...new Set([
+        ...M().torcidasDe(casa.id), ...M().torcidasDe(vis.id),
+        ...M().torcidasEm(cidade)
+      ])].filter(o=>!o.incompleta && o.id !== E.torcida.id);
+      const pares = [];
+      for(let x=0;x<cands.length;x++) for(let y=x+1;y<cands.length;y++){
+        const a = cands[x], b = cands[y];
+        if(a.clubeId === b.clubeId) continue;
+        if(M().saoIrmas && M().saoIrmas(a.id, b.id)) continue;
+        /* pelo menos um dos dois é do jogo; o outro se ALCANÇA — é do
+           jogo também, ou é da cidade que recebe a partida */
+        const aJogo = doJogo.has(a.id), bJogo = doJogo.has(b.id);
+        if(!aJogo && !bJogo) continue;
+        if(!(aJogo || a.mapa === cidade) || !(bJogo || b.mapa === cidade))
+          continue;
+        /* e o par tem de ter MOTIVO: relação viva azeda ou rivalidade
+           declarada na fonte */
+        if(relacaoDelas(E, a.id, b.id) > -15){
+          const base = M().relacaoBase(a.id, b.id);
+          if(base !== 'Rival' && base !== 'Maior Rival') continue;
+        }
+        pares.push([a, b]);
+      }
+      if(!pares.length) continue;
+      const [a, b] = pares[Math.floor(U.rng()*pares.length)];
+      const r = brigaIA(E, a, b, cidade, `${casa.nome} × ${vis.nome}`);
+      if(r) fora.push(r);
+    }
+    return fora;
+  }
+
   let cacheRanking = {chave:'', lista:null};
   function ranking(E){
     const chave = `${E.data.ano}|${semanaAbs(E)}|${E.data.dia}|`+
-      `${E.membros.length}|${Math.round(E.indicadores.prestigio*100)}`;
+      `${E.membros.length}|${Math.round(E.indicadores.prestigio*100)}|`+
+      `${(E.brigasIA||[]).length}`;
     if(cacheRanking.chave === chave) return cacheRanking.lista;
     mundo(E);
     const fora = [];
     for(const o of M().jogaveis()){
       if(o.incompleta) continue;
       if(o.id === E.torcida.id){
-        const n = E.membros.length || 1;
-        const mf = E.membros.reduce((s,m)=>s+m.forca, 0)/n;
-        const md = E.membros.reduce((s,m)=>s+m.defesa, 0)/n;
+        const nT = E.membros.length || 1;
+        const mf = E.membros.reduce((s,m)=>s+m.forca, 0)/nT;
+        const md = E.membros.reduce((s,m)=>s+m.defesa, 0)/nT;
         const prest = Math.round(E.indicadores.prestigio*5);
         const forca = (mf+md)/2;
+        /* contam os DISPONÍVEIS: ferido e preso não somam ponto — é o
+           que faz briga (nossa e das IAs) mexer no ranking */
+        const n = E.membros.filter(m=>!m.ferido && !m.preso).length;
         fora.push({id:o.id, nome:o.nome, nossa:true,
-                   membros:E.membros.length, prestigio:prest, forca,
-                   pontos:Math.round((E.membros.length + prest*2)*forca)});
+                   membros:n, prestigio:prest, forca,
+                   pontos:Math.round((n + prest*2)*forca)});
       } else {
         const viva = (E.mundoTorcidas||{})[o.id] || {};
-        const n = viva.membros || o.membros || 0;
+        const n = disponiveisIA(E, o.id);
         const prest = Math.round((viva.prestigio !== undefined
           ? viva.prestigio : U.limitar((o.prestigio||15)/5, 0, 20))*5);
-        const forca = mediaDeFichaGerada(o, n);
+        const forca = mediaDeFichaGerada(o, viva.membros || o.membros || n);
         fora.push({id:o.id, nome:o.nome, nossa:false,
                    membros:n, prestigio:prest, forca,
                    pontos:Math.round((n + prest*2)*forca)});
@@ -573,6 +694,7 @@ TO.relacoes = (function(){
 
   return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
           ranking, posicaoNoRanking,
+          brigasDeHoje, disponiveisIA, foraDeCombate,
           mundo, balanco, ARQUETIPOS, economiaDelas,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,

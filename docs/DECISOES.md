@@ -70,6 +70,16 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.
+- **O mundo briga sozinho** (17/08/2026): as brigas entre IAs nascem
+  dos jogos do dia — torcida metida no jogo se pega com a torcida do
+  clube adversário ou com hostil local da cidade da partida, com
+  efetivos proporcionais aos disponíveis (quem viajou traz menos).
+  Feridos ficam 30 dias fora, presos de 15 a 90; vencedor leva
+  prestígio e moral, perdedor devolve, e a relação entre os dois
+  azeda. O ranking conta os DISPONÍVEIS, então briga mexe em posição.
+  Registro completo na aba Brigas das Notícias, e toda segunda o
+  jornal resume a semana no feed: quem brigou e quem venceu numa
+  coluna, baixas na outra, as maiores brigas primeiro.
 - **A paz deprecia** (17/08/2026): 20 dias sem participar de briga
   tiram 1 de prestígio (régua 0-100) e 0,5 de moral, e o relógio
   segue correndo a cada 20 dias parados; qualquer briga zera.
