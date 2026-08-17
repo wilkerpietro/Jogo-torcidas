@@ -718,15 +718,14 @@ TO.praca = (function(){
      rua —, o nosso é o do seletor, e o mando é NOSSO: a praça é nossa.
      ======================================================= */
   function encontroDaPraca(E, dia){
-    const p = PL().plano(E);
     dia = dia != null ? dia : E.data.dia;
-    /* o alvo é a INVESTIDA marcada num jogo daquele dia — o plano do
-       nosso jogo não manda aqui */
-    let alvoId = null;
+    /* o alvo E O LUGAR são da INVESTIDA marcada num jogo daquele dia —
+       o plano do nosso jogo não manda aqui */
+    let alvoId = null, invDoDia = null;
     for(const o of PL().outrosJogosNaCidade(E, E.data.semana)){
       if((o.dia || 6) !== dia) continue;
       const inv = PL().investidaDe(E, o.chave);
-      if(inv && inv.alvo){ alvoId = inv.alvo; break; }
+      if(inv && inv.alvo){ alvoId = inv.alvo; invDoDia = inv; break; }
     }
     if(!alvoId) return null;
     if(M().saoIrmas(E.torcida.id, alvoId)) return null;
@@ -735,7 +734,11 @@ TO.praca = (function(){
     if(!alvo) return null;
     const nosso = rua.find(b => b.nossa) || rua.find(b => b.doJogador);
     const mo = MP().modelo(E);
-    const onde = lugarPlanejado(E, mo, p);
+    /* o ponto vem da investida: concentração é a praça, pista é a rua
+       do bairro, arredores são os arredores */
+    const onde = lugarPlanejado(E, mo,
+      {alvo: invDoDia.como === 'ida' ? (invDoDia.olheiro || 'praca')
+                                     : 'arredores'});
     const nossos = Math.max(2, PL().efetivoDoAtaque(E).vao);
     const nossaCor = M().coresDaTorcida(E.torcida);
     const meu = nosso ? Object.assign({}, nosso, {n: Math.min(nosso.n, nossos)})

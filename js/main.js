@@ -1483,8 +1483,11 @@
           p2.bombas = U.limitar(bombas, 0, (e.estoque||{}).bombas || 0);
           if(efetivo != null)
             p2.efetivoAtaque = U.limitar(efetivo, f2.piso, f2.teto);
+          /* o ONDE escolhido vale pra investida também: concentração
+             abre a praça, pista abre a rua, arredores abre os arredores */
+          const oc = P.ONDE_ATAQUE.find(x=>x.id === onde) || P.ONDE_ATAQUE[2];
           TO.planejamento.definirInvestida(e, chaveDoAlvo,
-            {alvo, como:'arredores', olheiro:null});
+            {alvo, como:oc.como, olheiro:oc.olheiro});
         }
         else TO.planejamento.definirAtaque(e,
           {ctx, alvo, onde, bombas, efetivo});

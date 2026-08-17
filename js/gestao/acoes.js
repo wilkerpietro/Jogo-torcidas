@@ -361,7 +361,9 @@ TO.acoes = (function(){
       },
       executar(E){
         const publico = E.membros.filter(TO.membros.disponivel).length;
-        const receita = Math.round(publico * U.inteiro(20, 34) * REDUCAO * 2);
+        /* festa é compra de moral, não fábrica de dinheiro: a receita
+           caiu 80% por decisão do autor — a economia estava fácil */
+        const receita = Math.round(publico * U.inteiro(4, 7) * REDUCAO * 2);
         TO.estado.lancar(E, 'Festa na sede', -1000);
         TO.estado.lancar(E, `Bilheteria e bar da festa (${publico})`, receita);
         E.indicadores.moral = U.limitar(E.indicadores.moral + 0.8, 0, 20);
