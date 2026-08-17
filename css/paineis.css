@@ -1109,6 +1109,33 @@ table.dados tr.selecionada td{background:#252525}
 .msg-cab time{font-family:var(--mono);font-size:10.5px;opacity:.75}
 .msg-txt{font-size:13.5px;line-height:1.4}
 
+/* a partida ao vivo: placar, barra de minutos e a lista de gols */
+.partida-live{margin-top:9px}
+.partida-placar{
+  font-family:var(--titulo);font-size:15px;letter-spacing:.06em;
+  margin-bottom:7px;
+}
+.partida-linha{display:flex;align-items:center;gap:9px}
+.partida-trilho{
+  position:relative;flex:1;height:8px;background:#242424;
+  border:1px solid var(--linha);
+}
+.partida-fill{
+  position:absolute;left:0;top:0;bottom:0;width:0;display:block;
+  background:var(--rubro);transition:width .25s linear;
+}
+.partida-meio{
+  position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;
+  background:var(--linha);
+}
+.partida-min{
+  font-family:var(--mono);font-size:12.5px;min-width:30px;text-align:right;
+}
+.partida-eventos{margin-top:7px}
+.partida-gol{
+  font-size:12.5px;margin:3px 0;color:#e8d9a0;
+}
+
 /* a tabela do relatório do olheiro: jogo na esquerda, torcidas na
    direita, uma linha por jogo */
 .tab-olheiro{

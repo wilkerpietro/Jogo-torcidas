@@ -516,7 +516,8 @@
   /* o estado visível de uma mensagem: enquanto ele não muda, o nó dela
      no DOM não precisa ser refeito */
   const estadoDaMsg = (e, m) =>
-    m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim') : '';
+    m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim')
+    : (m.kind === 'partida' && m.dados && m.dados.iniciada) ? 'aovivo' : '';
 
   function atualizarFeed(){
     const e = E();
@@ -548,7 +549,69 @@
                     guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
                     confronto:'Confronto', placar:'Resultado',
-                    rodada:'Rodada'};
+                    rodada:'Rodada', partida:'Nossa partida'};
+
+  /* =======================================================
+     A PARTIDA AO VIVO (decisão do dono, 17/08/2026)
+     O cartão vira uma barra de minutos: 2 minutos de jogo por
+     segundo real (45 s a partida). Os gols já estão sorteados
+     em dados.gols; cada um aparece quando a barra alcança o
+     minuto dele. Aos 90' o cartão apita: fecha a decisão no
+     feed e o relógio das mensagens volta a correr.
+     ======================================================= */
+  const MIN_POR_SEG = 2;
+  function widgetPartida(m){
+    const d = m.dados;
+    const caixa = el('div',{class:'partida-live'});
+    const placar = el('div',{class:'partida-placar'});
+    const linha = el('div',{class:'partida-linha'});
+    const trilho = el('div',{class:'partida-trilho'});
+    const fill = el('i',{class:'partida-fill'});
+    const meio = el('b',{class:'partida-meio'});
+    const rotMin = el('span',{class:'partida-min', texto:"0'"});
+    trilho.append(fill, meio);
+    linha.append(trilho, rotMin);
+    const eventos = el('div',{class:'partida-eventos'});
+    caixa.append(placar, linha, eventos);
+
+    const pintarPlacar = (gc, gf) =>
+      placar.textContent = `${d.casa} ${gc} × ${gf} ${d.fora}`;
+    pintarPlacar(0, 0);
+
+    const tm = setInterval(()=>{
+      if(!caixa.isConnected){ clearInterval(tm); return; }
+      const min = Math.min(90,
+        Math.floor((Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG));
+      fill.style.width = (min/90*100)+'%';
+      rotMin.textContent = `${min}'`;
+      /* revela os gols que a barra já alcançou */
+      const vistos = (d.gols||[]).filter(g=>g.min <= min);
+      while(eventos.children.length < vistos.length){
+        const g = vistos[eventos.children.length];
+        const de = g.lado==='c' ? d.casa : d.fora;
+        const c2 = vistos.slice(0, eventos.children.length+1)
+          .filter(x=>x.lado==='c').length;
+        const f2 = vistos.slice(0, eventos.children.length+1)
+          .filter(x=>x.lado==='f').length;
+        eventos.appendChild(el('div',{class:'partida-gol',
+          texto:`${g.min}' · GOL do ${de} — ${c2} × ${f2}`}));
+      }
+      pintarPlacar(vistos.filter(x=>x.lado==='c').length,
+                   vistos.filter(x=>x.lado==='f').length);
+      if(min >= 90){
+        clearInterval(tm);
+        setTimeout(()=>{
+          const e = E();
+          TO.feed.encerrarPartida(e, m.id);
+          TO.estado.salvar();
+          atualizarFeed();
+          pintarTopo();
+          if(!TO.feed.travado(e)) retomarTempo('decisao');
+        }, 600);
+      }
+    }, 250);
+    return caixa;
+  }
 
   function cartaoMensagem(e, m){
     const art = el('article',{class:`msg kind-${m.kind||'msg'} peso-${m.peso}`+
@@ -604,9 +667,31 @@
       art.appendChild(la);
     }
 
+    /* a partida ao vivo: com a bola rolando o cartão é a barra de
+       minutos; encerrada, a lista de gols fica como registro */
+    const aoVivo = m.kind === 'partida' && m.dados && m.dados.iniciada;
+    if(aoVivo && !m.respondido) art.appendChild(widgetPartida(m));
+    if(m.kind === 'partida' && m.respondido && (m.dados||{}).gols &&
+       m.dados.gols.length){
+      const evs = el('div',{class:'partida-eventos'});
+      let c2=0, f2=0;
+      for(const g of m.dados.gols){
+        if(g.lado==='c') c2++; else f2++;
+        const de = g.lado==='c' ? m.dados.casa : m.dados.fora;
+        evs.appendChild(el('div',{class:'partida-gol',
+          texto:`${g.min}' · GOL do ${de} — ${c2} × ${f2}`}));
+      }
+      art.appendChild(evs);
+    }
+
     if(m.respondido){
-      art.appendChild(el('div',{class:'msg-resp',
-        texto:`Você respondeu: ${m.respondido.rot || ''}`}));
+      /* na partida o registro é o "Final: …" da consequência — não tem
+         "você respondeu" em apito de juiz */
+      if(m.kind !== 'partida')
+        art.appendChild(el('div',{class:'msg-resp',
+          texto:`Você respondeu: ${m.respondido.rot || ''}`}));
+    } else if(aoVivo){
+      /* sem botões: o jogo está rolando, o apito fecha sozinho */
     } else if((m.botoes||[]).length){
       const bs = el('div',{class:'msg-bts'});
       (m.botoes||[]).forEach((b, i)=>{

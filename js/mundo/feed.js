@@ -486,8 +486,39 @@ TO.feed = (function(){
     const nome = id => (M().time(id)||{}).nome || id;
     const mapaDe = id => (M().time(id)||{}).mapa;
 
-    /* a mensagem individual do NOSSO jogo */
+    /* A PARTIDA AO VIVO (decisão do dono, 17/08/2026): antes do placar
+       sair, o nosso jogo chega como decisão com o botão INICIAR
+       PARTIDA. O resultado já existe — foi simulado no fechamento do
+       dia —, mas fica escondido: os gols saem conforme a barra de
+       minutos avança, com a maior parte caindo dos 30 aos 45 e dos
+       75 aos 90. Como decisão, ela segura o relógio: o placar e o
+       resumo da rodada só dropam depois do apito final, então nada
+       vaza o resultado. */
     const nosso = jogos.find(j => j.c === meu || j.f === meu);
+    if(nosso){
+      const minutoDeGol = () => {
+        const r = U.rng();
+        return r < 0.35 ? U.inteiro(30, 45)
+             : r < 0.70 ? U.inteiro(75, 90)
+             : r < 0.85 ? U.inteiro(1, 29)
+             :            U.inteiro(46, 74);
+      };
+      const gols = [];
+      for(let i=0;i<(nosso.gc||0);i++) gols.push({min:minutoDeGol(), lado:'c'});
+      for(let i=0;i<(nosso.gf||0);i++) gols.push({min:minutoDeGol(), lado:'f'});
+      gols.sort((a,b)=>a.min - b.min);
+      propor(E, {
+        kind:'partida', peso:'decisao', voz:'jornal',
+        chave:`partida|${E.data.ano}|${E.data.semana}|${E.data.dia}|${meu}`,
+        texto:`Hoje tem ${nome(nosso.c)} × ${nome(nosso.f)}`+
+              `${nosso.compNome ? `, pelo ${nosso.compNome}` : ''}. `+
+              `A bola vai rolar.`,
+        dados:{casa:nome(nosso.c), fora:nome(nosso.f),
+               gc:nosso.gc, gf:nosso.gf, comp:nosso.compNome || '', gols},
+        botoes:[{id:'iniciar', rot:'Iniciar partida', acao:'iniciar-partida'}]
+      });
+    }
+    /* a mensagem individual do NOSSO jogo */
     if(nosso){
       const somosCasa = nosso.c === meu;
       const gp = somosCasa ? nosso.gc : nosso.gf;
@@ -577,6 +608,13 @@ TO.feed = (function(){
       /* --- as que resolvem aqui --- */
       case 'nada':
         marcar();
+        return {ok:true};
+      case 'iniciar-partida':
+        /* a bola rola: NÃO marca respondido — o relógio do feed segue
+           preso até o apito final, que chega por encerrarPartida() */
+        m.dados = m.dados || {};
+        m.dados.iniciada = true;
+        m.dados.t0 = Date.now();
         return {ok:true};
       case 'paz':
         PL().definirIntencao(E, 'paz');
@@ -692,9 +730,22 @@ TO.feed = (function(){
             rateio: a.alvo === 'emboscada' && est ? est.rateio : 0};
   }
 
+  /* o apito final da partida ao vivo: fecha a decisão e libera o
+     relógio — quem chama é o cartão, quando a barra chega aos 90' */
+  function encerrarPartida(E, idMsg){
+    caixas(E);
+    const m = E.feed.find(x=>x.id === idMsg);
+    if(!m || m.kind !== 'partida' || m.respondido) return {ok:false};
+    const d = m.dados || {};
+    m.respondido = {botao:'fim', rot:'Fim de jogo'};
+    m.consequencia = `Final: ${d.casa} ${d.gc} × ${d.gf} ${d.fora}`+
+                     (d.comp ? `, pelo ${d.comp}.` : '.');
+    return {ok:true};
+  }
+
   return {INTERVALO_DROP,
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
-          registrarConfronto, responder, alvoDaDefesa,
+          registrarConfronto, responder, alvoDaDefesa, encerrarPartida,
           linhaDeConsequencia, nomeDaCena, NOME_DIA};
 })();

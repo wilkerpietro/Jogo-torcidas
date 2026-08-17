@@ -70,6 +70,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.
+- **Partida ao vivo** (17/08/2026): no dia do nosso jogo chega a
+  mensagem com o botão INICIAR PARTIDA; clicado, o cartão vira uma
+  barra de minutos (2' de jogo por segundo) e os gols do resultado —
+  já simulado, mas escondido — saem conforme o tempo avança, a maior
+  parte dos 30 aos 45 e dos 75 aos 90. Como é decisão, o relógio do
+  feed fica preso até o apito final: o placar e o resumo da rodada só
+  dropam depois, então nada vaza o resultado.
 - **Convivência** (17/08/2026): mês sem hostilidade entre nós e uma
   torcida melhora a relação em +1; dois meses sem nenhuma ajuda
   (escolta, recepção, reunião) pioram em −1. Cada briga e cada ajuda
