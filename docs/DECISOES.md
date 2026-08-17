@@ -78,7 +78,7 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   feed fica preso até o apito final: o placar e o resumo da rodada só
   dropam depois, então nada vaza o resultado. A barra tem botão de
   pause (vira play; a barra de espaço também pausa e solta) e botão
-  de velocidade 1×/2×.
+  de velocidade 1×/2×/4× — o padrão é 4×.
 - **Convivência** (17/08/2026): mês sem hostilidade entre nós e uma
   torcida melhora a relação em +1; dois meses sem nenhuma ajuda
   (escolta, recepção, reunião) pioram em −1. Cada briga e cada ajuda

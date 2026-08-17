@@ -567,12 +567,12 @@
      o espaço pausar e o 2× acelerar sem pular gol nenhum. */
   function minutoDaPartida(d){
     const rodando = d.pausada ? 0
-      : (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG * (d.vel||1);
+      : (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG * (d.vel||4);
     return Math.min(90, Math.floor((d.minAcum||0) + rodando));
   }
   function pontoDeControle(d){
     const rodando = d.pausada ? 0
-      : (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG * (d.vel||1);
+      : (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG * (d.vel||4);
     d.minAcum = Math.min(90, (d.minAcum||0) + rodando);
     d.t0 = Date.now();
   }
@@ -586,7 +586,7 @@
     const d = m && m.dados;
     if(!d || !d.iniciada || m.respondido) return;
     pontoDeControle(d);
-    d.vel = (d.vel||1) === 1 ? 2 : 1;
+    d.vel = ({1:2, 2:4, 4:1})[d.vel||4] || 4;
   }
   const partidaAoVivo = e => (e.feed||[]).find(m=>
     m.kind==='partida' && m.dados && m.dados.iniciada && !m.respondido);
@@ -614,7 +614,7 @@
         (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG);
       d.t0 = Date.now();
     }
-    if(!d.vel) d.vel = 1;
+    if(!d.vel) d.vel = 4;    /* o padrão da casa é 4× */
     const caixa = el('div',{class:'partida-live'});
     const placar = el('div',{class:'partida-placar'});
     const linha = el('div',{class:'partida-linha'});
@@ -633,7 +633,7 @@
 
     const pintarBotoes = ()=>{
       btPausa.textContent = d.pausada ? '▶' : '❚❚';
-      btVel.textContent = `${d.vel||1}×`;
+      btVel.textContent = `${d.vel||4}×`;
     };
     btPausa.onclick = ()=>{ alternarPausaPartida(m); pintarBotoes(); };
     btVel.onclick   = ()=>{ alternarVelPartida(m);   pintarBotoes(); };
