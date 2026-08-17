@@ -1,0 +1,193 @@
+/* =========================================================
+   TELA ESTREITA
+   ---------------------------------------------------------
+   Um limiar só, 900px de largura, e nada mais: sem detecção
+   de toque e sem botão de ligar. Acima dele o jogo é o de
+   sempre — lateral fixa, teclado, mouse. O teclado continua
+   valendo em qualquer largura; o que muda aqui é que tudo que
+   dependia de tecla ganha botão, porque no celular não dá pra
+   apertar tecla com o jogo rodando.
+
+   A inversão que o celular pede: a tela principal passa a ser
+   o mapa (ou a cena), e as onze páginas de gestão viram
+   painéis que se abrem por cima. Painel é visita, não destino
+   — fecha e o jogador está de volta no mapa, sem o mapa ter
+   sido remontado.
+   ========================================================= */
+
+/* o ☰, o véu e a gaveta deixaram de existir: a coluna de ícones dentro
+   do mapa é a navegação em qualquer largura */
+
+@media (max-width: 900px){
+
+  /* ---------- casca: uma coluna ---------- */
+  /* `minmax(0,1fr)` e não `1fr`: com `1fr` o canvas do mapa, que é
+     maior que a tela, estica a coluna inteira e o topo e o ticker vão
+     junto — a página passava a rolar de lado por causa dele. */
+  #jogo{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:
+      "tela"
+      "ticker";
+  }
+
+  /* ---------- páginas ---------- */
+  #tela{ padding:0; min-width:0; }
+  .pagina{ padding:10px; min-width:0; }
+  /* A COLUNA DE ÍCONES NO CELULAR.
+     Aqui moravam as regras da HUD do mapa: o viewport que rolava, o
+     recolhível de pontos, a faixa de controles, o pad de WASD e a faixa
+     da torcida sobre o canvas. Saíram com o mapa.
+
+     A coluna do feed encolhe e continua sendo a navegação inteira. Ela
+     é `column wrap`, então em tela deitada — 390px de altura — ela
+     quebra numa segunda coluna em vez de rolar escondida. */
+  .feed-menu{ padding:4px 3px; gap:2px; }
+  .feed-menu .mapa-ic{ width:30px; height:26px; }
+  .feed-menu .mapa-ic svg{ width:15px; height:15px; }
+  .feed-barra{ padding:5px 7px; gap:7px; }
+  .mapa-ic{ width:34px; height:32px; }
+  .mapa-ic svg{ width:18px; height:18px; }
+
+  .cartao, .corpo, .lista-detalhe, .subabas, .abas-grandes{ min-width:0; }
+  .lista-detalhe{ grid-template-columns:1fr !important; }
+  .subabas, .abas-grandes{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #ticker, #tickerCaixa{ min-width:0; max-width:100vw; overflow:hidden; }
+
+  /* Painel sobre o mapa. A página do mapa continua montada e pintada
+     embaixo; o painel é outra `.pagina` marcada como aberta, por cima.
+     Nada é desmontado, então o zoom e o arrasto do mapa ficam onde
+     estavam. */
+  /* sem o `#topo`, o painel começa no alto da tela e só desce os 40px
+     da própria barra de título */
+  body.com-painel .pagina.painel{
+    display:block;
+    position:fixed; z-index:45;
+    inset:0;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:var(--fundo);
+    padding:10px 10px calc(64px + env(safe-area-inset-bottom));
+    animation:sobe .16s ease-out;
+  }
+  @keyframes sobe{ from{ transform:translateY(14px); opacity:0 } }
+
+  #painelBarra{
+    display:flex; align-items:center; gap:8px;
+    position:fixed; z-index:46; left:0; right:0; top:0;
+    height:40px; padding:0 10px;
+    background:var(--painel); border-bottom:1px solid var(--linha);
+  }
+  body:not(.com-painel) #painelBarra{ display:none; }
+  body.com-painel .pagina.painel{ top:40px; }
+  #painelTitulo{
+    font-family:var(--titulo); font-size:14px; letter-spacing:.11em;
+    text-transform:uppercase; flex:1;
+  }
+  #painelFechar{
+    background:transparent; border:1px solid var(--linha); color:var(--texto);
+    border-radius:3px; padding:4px 12px; font-size:15px; cursor:pointer;
+  }
+
+  /* ---------- tabela larga arrasta pro lado, o resto empilha ---------- */
+  .tabela-rolante, .tabela-larga{
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+  .comp-duas, .principal-lateral, .duas-colunas, .grade-2{
+    grid-template-columns:1fr !important;
+  }
+  /* a página nunca rola de lado */
+  html, body{ overflow-x:hidden; }
+  #tela, .pagina{ max-width:100vw; }
+
+  /* ---------- cena ---------- */
+  #djGrade{ grid-template-columns:1fr; }
+  #telaDiaJogo{ padding:0; }
+  #djPalco{ max-width:100vw; }
+  /* Com o pad na tela, o HUD de comandos vira só o botão do portão:
+     pedra, bomba, recuar e formação já estão no pad, e repetir os quatro
+     no meio da cena é tapar a rua com botão que o dedo não usa. ENTER
+     fica fora do pad de propósito — encerra a cena e não é reflexo. */
+  /* o portão fica no vão entre as duas metades do pad, que é o único
+     lugar da tela onde nem o dedo nem o relógio passam */
+  #djComandos{
+    left:50%; right:auto; top:auto;
+    bottom:calc(12px + env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    background:transparent; border:0; padding:0;
+    max-width:44vw;
+  }
+  #djComandos #djFormacoes,
+  #djComandos #djBtPedra,
+  #djComandos #djBtBomba,
+  #djComandos #djBtRecuar{ display:none; }
+  /* o botão fixo de avançar dia não entra na cena */
+
+  /* ---------- o pad ---------- */
+  .dj-pad{
+    position:fixed; z-index:70;
+    left:0; right:0; bottom:0;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    padding:0 calc(10px + env(safe-area-inset-left))
+            calc(10px + env(safe-area-inset-bottom))
+            calc(10px + env(safe-area-inset-right));
+    pointer-events:none;
+    touch-action:none; user-select:none; -webkit-user-select:none;
+  }
+  /* CADA PAD NA SUA TELA.
+     `#djPad` é montado uma vez e nunca era desmontado: depois da
+     primeira briga ele ficava boiando por cima de todas as páginas de
+     gestão. O pad do mapa, que dividia este canto, saiu com o mapa;
+     esta linha fica porque o problema dela é outro e continua de pé: a
+     cruz da cena só existe dentro da cena. Resolve no CSS de propósito:
+     não depende de nenhum código lembrar de apagar nada. */
+  body:not(.em-cena) #djPad{ display:none; }
+
+  .pad-lado{ display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+  /* as quatro formações numa linha só: em paisagem a tela tem 390px de
+     altura e duas fileiras de botão saem pela borda de baixo */
+  .pad-dir{ flex-direction:row; align-items:flex-end; gap:6px; }
+
+  .pad-bt{
+    pointer-events:auto;
+    touch-action:none; user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    background:rgba(20,20,22,.82); border:1px solid rgba(255,255,255,.16);
+    color:#e8e4da; font-family:var(--titulo); letter-spacing:.06em;
+    border-radius:6px; cursor:pointer;
+  }
+  .pad-bt.apertado{ background:var(--rubro); border-color:var(--rubro-vivo); }
+  .pad-bt.gasto{ opacity:.4; }
+
+  .pad-acoes{ display:flex; gap:6px; pointer-events:none; }
+  .pad-acao{ width:74px; height:44px; font-size:11px; }
+  .pad-form{ width:46px; height:44px; font-size:16px; font-weight:700; }
+  .pad-form.on{ background:var(--rubro); border-color:var(--rubro-vivo); }
+
+  /* a cruz: W em cima, A e D nos lados, S embaixo */
+  .pad-cruz{
+    display:grid; gap:5px; pointer-events:none;
+    grid-template-columns:repeat(3, 50px);
+    grid-template-rows:repeat(3, 44px);
+    grid-template-areas: ".  w  ." "a  .  d" ".  s  .";
+  }
+  .pad-w{ grid-area:w } .pad-a{ grid-area:a }
+  .pad-s{ grid-area:s } .pad-d{ grid-area:d }
+  .pad-mov{ font-size:15px; font-weight:700; }
+
+  /* em pé, a cena fica apertada: um aviso discreto, sem travar nada */
+  #avisoGirar{
+    display:none; position:fixed; z-index:71; left:50%; bottom:calc(158px + env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    background:rgba(18,18,20,.9); border:1px solid var(--linha);
+    color:var(--fraco); font-family:var(--mono); font-size:10px;
+    padding:5px 10px; border-radius:3px; pointer-events:none;
+  }
+  @media (orientation: portrait){
+    body.em-cena #avisoGirar{ display:block; }
+  }
+}
+
+/* a dica de tecla nos rótulos é ruído no celular */
+@media (max-width: 900px){
+  #djComandos .acao-btn b, .form-btn small{ display:none; }
+}
