@@ -405,8 +405,17 @@ TO.diaJogo.combate = (function(){
        ninguém. */
     for(let i=0;i<qtd;i++){
       const a = U.rng()*Math.PI*2, dd = raio*Math.sqrt(U.rng());
-      const p=A.pontoLivreMaisProximo(s.x + Math.cos(a)*dd,
-                                      s.y + Math.sin(a)*dd, 7);
+      let p=A.pontoLivreMaisProximo(s.x + Math.cos(a)*dd,
+                                    s.y + Math.sin(a)*dd, 7);
+      /* NINGUÉM NASCE EM CIMA DE CASA. Quando a rua está lotada na hora
+         do nascimento, a busca em anéis falha e devolve o ponto do
+         sorteio — que pode ser um telhado, e disco em telhado não anda,
+         não briga e trava o fim da cena. O bonde que não coube se
+         empilha na boca do próprio spawn, que é sempre rua. */
+      if(!A.caminhavel(p.x, p.y)){
+        const q = A.pontoLivreMaisProximo(s.x, s.y, 7);
+        p = A.caminhavel(q.x, q.y) ? q : {x:s.x, y:s.y};
+      }
       const m = escalados[i];
       const lider = temLider && i===0;
       const d=new Disco(
@@ -481,6 +490,7 @@ TO.diaJogo.combate = (function(){
       conferirVolta(J);
       return;
     }
+    destravarEncalhados(J, dt);
     conferirGatilho(J);
     conferirBondes(J);
     moverLider(J,dt,teclas,podeControlar);
@@ -497,6 +507,28 @@ TO.diaJogo.combate = (function(){
     checarDebandada(J);
     conferirEntrada(J);
     conferirFim(J);
+  }
+
+  /* =======================================================
+     NINGUÉM MORA EM CIMA DE CASA
+     A rede de segurança do nascimento e do empurra-empurra: um
+     disco vivo parado em célula que não é rua não anda, não
+     briga e segura o fim da cena pra sempre. Uma vez por
+     segundo a cena confere e devolve o encalhado pra rua — no
+     vão livre mais próximo, ou na boca do próprio spawn.
+     ======================================================= */
+  function destravarEncalhados(J, dt){
+    J.tDestravar = (J.tDestravar || 0) + dt;
+    if(J.tDestravar < 1) return;
+    J.tDestravar = 0;
+    for(const d of J.discos){
+      if(!d.vivo || A.caminhavel(d.x, d.y)) continue;
+      const q = A.pontoLivreMaisProximo(d.x, d.y, d.r || 7);
+      if(A.caminhavel(q.x, q.y)){ d.x = q.x; d.y = q.y; continue; }
+      const s = D.spawns.find(x=>x.id===d.spawn) ||
+                D.spawns.find(x=>x.lado===d.lado);
+      if(s){ d.x = s.x; d.y = s.y; }
+    }
   }
 
   /* =======================================================

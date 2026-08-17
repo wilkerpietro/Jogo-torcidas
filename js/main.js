@@ -242,6 +242,9 @@
        o olheiro fala, se houver o que falar */
     if(partidaNova){
       const e = E();
+      /* as duas decisões de abertura vêm antes de tudo (textos
+         aprovados pelo dono): ideologia e Expediente da Sede */
+      TO.feed.abertura(e);
       const jogos = TO.competicoes.jogarDia(e, e.data.semana, e.data.dia);
       TO.feed.eventosDoDia(e, {jogos});
     }
@@ -541,7 +544,8 @@
 
   const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Na rua',
                    jornal:'Jornal'};
-  const ROT_KIND = {olheiro:'Olheiro', guerra:'Dia de jogo',
+  const ROT_KIND = {abertura:'Abertura', olheiro:'Olheiro',
+                    guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
                     confronto:'Confronto', placar:'Resultado',
                     rodada:'Rodada'};
@@ -601,6 +605,9 @@
     if(r.abrir){
       const t = r.abrir.tela, a = r.abrir.args || {}, m = r.abrir.msg;
       if(t === 'tela-ataque') abrirAtaque(a.ctx);
+      else if(t === 'tela-ideologia') abrirIdeologia();
+      else if(t === 'painel-expediente'){ abaCal = 'expediente';
+                                          abrirPainel('calendario'); }
       else if(t === 'tela-caravana') abrirCaravana();
       else if(t === 'cena-guerra') abrirGuerra(a);
       else if(t === 'cena-defesa') abrirDefesa();

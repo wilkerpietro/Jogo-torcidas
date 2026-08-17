@@ -126,6 +126,31 @@ TO.feed = (function(){
   }
 
   /* -------------------------------------------------------
+     0. A ABERTURA DA PARTIDA (textos aprovados pelo dono)
+        Duas decisões, uma vez só, antes de o tempo correr:
+        a ideologia e o Expediente da Sede.
+     ------------------------------------------------------- */
+  function abertura(E){
+    propor(E, {
+      kind:'abertura', peso:'decisao', voz:'diretor',
+      chave:'abertura|ideologia',
+      texto:'Chefe, antes de tudo: define a nossa ideologia — o que a '+
+            'gente faz com o adversário em dia de jogo e o que faz com os '+
+            'outros jogos da praça. É ela que o botão "Seguir padrão" '+
+            'executa quando você não quiser decidir jogo a jogo.',
+      botoes:[{id:'ideologia', rot:'Definir ideologia', acao:'tela-ideologia'}]
+    });
+    propor(E, {
+      kind:'abertura', peso:'decisao', voz:'diretor',
+      chave:'abertura|expediente',
+      texto:'E define o Expediente da Sede: três turnos por dia — manhã, '+
+            'tarde e noite —, cada um com uma ação que a rapaziada toca '+
+            'sozinha. Dia de jogo e dia de estrada ficam de fora.',
+      botoes:[{id:'expediente', rot:'Abrir o Expediente', acao:'painel-expediente'}]
+    });
+  }
+
+  /* -------------------------------------------------------
      1. O OLHEIRO — dois dias antes de cada jogo relevante
         da semana (no mínimo no dia 1, se o jogo é cedo).
         JAMAIS falha: toda partida das três situações gera
@@ -557,6 +582,8 @@ TO.feed = (function(){
       }
 
       /* --- as que a casca abre em tela --- */
+      case 'tela-ideologia':
+      case 'painel-expediente':
       case 'tela-ataque':
       case 'tela-caravana':
       case 'cena-guerra':
@@ -589,7 +616,7 @@ TO.feed = (function(){
 
   return {INTERVALO_DROP,
           propor, dropar, pendentes, travado, decisaoAberta,
-          eventosDoDia, emboscadaDaViagem,
+          abertura, eventosDoDia, emboscadaDaViagem,
           registrarConfronto, responder, alvoDaDefesa,
           linhaDeConsequencia, nomeDaCena, NOME_DIA};
 })();
