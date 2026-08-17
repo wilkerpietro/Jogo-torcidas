@@ -9,7 +9,9 @@ window.TO = window.TO || {};
 TO.estado = (function(){
   const U = TO.util;
   const CHAVE = 'torcida-organizada:save';
-  const VERSAO = 1;
+  /* versão 2: o jogo novo — sem tensão, feed só com o esqueleto.
+     Save da versão 1 não abre aqui de propósito. */
+  const VERSAO = 2;
 
   let E = null;                 // estado da partida em curso
   const ouvintes = [];
@@ -49,19 +51,18 @@ TO.estado = (function(){
          frente ele se move com confronto, apoio e traição. */
       relacoes:{},
 
-      /* GDD §12: tudo na mesma escala 0–20 com 4 faixas.
-         O jogador aprende uma vez e aplica em tudo. */
-      indicadores:{ moral:12, satisfacao:11, prestigio:6, policia:10 },
+      /* GDD §12: tudo na mesma escala 0–20 */
+      indicadores:{ moral:12, prestigio:6 },
 
       dinheiro: 12000,
       membros: [],
       proximoId: 1,
       transacoes: [],
-      estoque:{ bombas:4, rojoes:6, sinalizadores:1 },
+      estoque:{ bombas:4 },
 
       acoes:{ usadas:0 },
-      /* rotina semanal: dia 1 (segunda) a 7 (domingo) → id de ação */
-      rotina:{},
+      /* expediente da sede: manhã, tarde e noite → id de ação */
+      expediente:{ manha:null, tarde:null, noite:null },
       /* O FEED É O JOGO, e o feed é HISTÓRICO: ele nasce vazio, é salvo
          inteiro e rola pra trás. Aqui morava `avisos:[]`, uma fita
          cortada em 12 itens que a tela consumia e jogava fora — o que
@@ -97,7 +98,6 @@ TO.estado = (function(){
     TO.competicoes.usarSave(E);
     E.temporada = TO.competicoes.montarTemporada(E);
     sortearProximoJogo(E);
-    E.noticias = gerarNoticias(E);
     lancar(E, 'Caixa inicial', 0);
     mudou();
     return E;
@@ -185,36 +185,6 @@ TO.estado = (function(){
     est.postura = TO.financeiro.postura(est);
   }
 
-  /* O noticiário conta o que de fato aconteceu: briga entre torcidas
-     que não controlamos, trégua fechada, o que sobrou da nossa semana e
-     o que vem pela frente. */
-  function gerarNoticias(est){
-    const hora = ()=> String(U.inteiro(8,23)).padStart(2,'0')+':'+
-                      String(U.inteiro(0,59)).padStart(2,'0');
-    const fora = [];
-    for(const n of (est.ultimasNoticias||[]))
-      fora.push({txt:`${n.tipo==='briga'?'CONFRONTO':'DIPLOMACIA'}: ${n.txt}`,
-                 hora:hora(), tipo:n.tipo});
-
-    const quentes = TO.tensao.panorama(est).filter(x=>x.tensao >= 45);
-    if(quentes.length)
-      fora.push({txt:`CLIMA: tensão ${quentes[0].faixa.nome.toLowerCase()} com a `+
-                     `${quentes[0].nome}`, hora:hora(), tipo:'clima'});
-
-    const j = est.proximoJogo;
-    if(j) fora.push({txt:`PRÉ-JOGO: ${j.mandante.nome} recebe o ${j.visitante.nome} `+
-                         `pelo ${j.competicao}`, hora:hora(), tipo:'jogo'});
-    else  fora.push({txt:`AGENDA: ${est.torcida.clube} não joga nesta semana`,
-                     hora:hora(), tipo:'jogo'});
-
-    const ult = est.historicoNoites && est.historicoNoites[0];
-    if(ult) fora.push({txt:`ARREDORES: ${ult.feridos} feridos e ${ult.presos} presos `+
-                           `na última saída`, hora:hora(), tipo:'briga'});
-    fora.push({txt:`SUA TORCIDA: ${est.membros.length} membros, moral `+
-                   `${Math.round(est.indicadores.moral)}/20`, hora:hora(), tipo:'casa'});
-    return fora.slice(0, 6);
-  }
-
   /* -------------------------------------------------------
      FINANCEIRO MÍNIMO (o módulo completo vem depois)
      ------------------------------------------------------- */
@@ -231,148 +201,84 @@ TO.estado = (function(){
   /* -------------------------------------------------------
      TEMPO
      ------------------------------------------------------- */
-  /* A rotina semanal roda o dia que está terminando. Dia de jogo e dias
-     de caravana são ignorados — o GDD §7.3 já os declara travados —, e a
-     rotina nunca fura o orçamento de ações da semana (GDD §3.1). */
-  function rodarRotina(est){
-    const id = (est.rotina||{})[est.data.dia];
-    if(!id) return;
-    /* dia de jogo do clube, seja de fim de semana ou de meio de semana */
+  /* O EXPEDIENTE DA SEDE roda todo dia comum: manhã, tarde e noite,
+     cada turno com a ação que o jogador escolheu. Dia de jogo do clube
+     e dias de caravana ficam de fora — a torcida tem mais o que fazer. */
+  function rodarExpediente(est){
     const meu = TO.mundo.time(est.torcida.clubeId);
     if(meu && TO.competicoes.jogosDaSemana(est, meu.id, est.data.semana)
                 .some(j=>j.dia === est.data.dia)) return;
     const cv = TO.financeiro.diasDeCaravana(est);
     if(cv.includes(est.data.dia)) return;
-    if(TO.acoes.restantes(est) <= 0) return;
-
-    const r = TO.acoes.executar(est, id);
-    const nome = (TO.acoes.porId(id)||{}).nome || id;
-    if(r.ok){
-      anotar(est, `Se liga no resultado de hoje — ${nome.toLowerCase()}: `+
-        `${r.msg || 'feito'}`, r.tipo==='ruim' ? 'ruim' : 'boa',
-        {cat:6, assunto:'rotina-'+id});
-    }else{
-      /* rotina que não pôde rodar não vira alarme todo dia: junta e sai
-         uma linha só no fechamento da semana */
-      est.acoes.rotinaFalha = est.acoes.rotinaFalha || {};
-      est.acoes.rotinaFalha[nome] = r.msg;
-    }
+    TO.acoes.rodarExpediente(est);
   }
 
   function avancarDia(){
-    rodarRotina(E);
     E.data.dia++;
     E.data.absoluto = (E.data.absoluto||0) + 1;
 
     let fecho = null;
     if(E.data.dia > 7){
-      /* a rodada da semana rola antes do fechamento, pra que o
-         resultado do clube já apareça no relatório (GDD §3.2) */
-      const meu = TO.mundo.time(E.torcida.clubeId);
-      const jogo = meu ? TO.competicoes.jogoDaSemana(E, meu.id, E.data.semana) : null;
+      /* recolhe qualquer jogo que tenha sobrado e avança as fases */
       TO.competicoes.jogarSemana(E, E.data.semana);
 
       fecho = TO.financeiro.fecharSemana(E);
+      const meu = TO.mundo.time(E.torcida.clubeId);
       fecho.jogo = meu ? TO.competicoes.jogoDaSemana(E, meu.id, E.data.semana) : null;
-      if(jogo) aplicarResultadoDoClube(E, fecho.jogo);
+      aplicarResultadoDoClube(E, fecho.jogo);
 
-      /* o mundo das outras torcidas também anda: caixa, brigas e tréguas */
-      const mundo = TO.tensao.passarSemana(E);
-      fecho.ataques = mundo.ataques;
-      fecho.investidas = mundo.investidas;
-      /* o que veio pra cima da gente e o que a gente foi fazer: as duas
-         levam a lista de efeitos que o próprio módulo aplicou */
-      for(const a of mundo.ataques)
-        anotar(E, a.txt+'.', 'ruim', {cat:4, efeitos:a.efeitos});
-      for(const i of mundo.investidas){
-        anotar(E, i.txt+'.', i.ganhamos?'boa':'ruim',
-               {cat:4, efeitos:i.efeitos});
-        if(TO.feed) TO.feed.registrarConfronto(E, i.id || i.alvoId, i.ganhamos);
-      }
-      E.ultimasNoticias = mundo.noticias;
-
-      E.data.dia = 1; E.data.semana++; E.acoes.usadas = 0;
+      E.data.dia = 1; E.data.semana++;
       /* GDD §5.4: a fila de treino da semana é sorteada de novo */
       TO.membros.sortearFila(E);
-      /* faixa rasgada e instrumento quebrado voltam devagar (GDD §20) */
-      TO.torcedores.reporMaterial(E);
-      /* e o humor da praça volta um pouco pro meio a cada semana */
-      TO.torcedores.esfriar(E);
-      /* semana de torcida proibida cobra à parte: o esfriamento puxa pro
-         meio, a punição puxa pra baixo, e as duas são coisas
-         diferentes */
-      TO.torcedores.pesoDaPunicao(E);
+
       if(E.data.semana > TO.competicoes.SEMANAS_ANO){
         E.data.semana = 1; E.data.ano++;
         guardarTitulos(E);
-        /* GDD §21: título, vice e rebaixamento mexem na satisfação de vez */
-        /* O QUE O CLUBE FEZ EM CAMPO MOVE A TORCIDA DELE, a nossa e as
-           delas: título e acesso levantam a moral, rebaixamento derruba.
-           Antes só a nossa sentia. */
+        /* o que o clube fez em campo move a moral das torcidas dele */
         for(const c of E.temporada.competicoes){
-          if(c.campeao) TO.tensao.conquistaDoClube(E, c.campeao, 'campeao');
-          if(c.vice)    TO.tensao.conquistaDoClube(E, c.vice, 'vice');
-        }
-        for(const c of E.temporada.competicoes){
+          if(c.campeao) TO.relacoes.conquistaDoClube(E, c.campeao, 'campeao');
+          if(c.vice)    TO.relacoes.conquistaDoClube(E, c.vice, 'vice');
           if(c.campeao === E.torcida.clubeId)
-            anotar(E, `${TO.mundo.time(E.torcida.clubeId).nome} é campeão do `+
-              `${c.nome}! Satisfação `+
-              `+${TO.torcedores.aplicarConquista(E,'campeao')}.`, 'boa', {cat:5});
-          else if(c.vice === E.torcida.clubeId)
-            anotar(E, `Vice do ${c.nome}. Satisfação `+
-              `+${TO.torcedores.aplicarConquista(E,'vice')}.`, '', {cat:5});
+            E.indicadores.moral = U.limitar(E.indicadores.moral + 2.5, 0, 20);
         }
-        /* O QUE O FIM DE TEMPORADA DEIXA PRO FEED. Título e rival
-           rebaixado viram DECISÃO (5.9 e 5.11), e decisão não se escreve
-           com `anotar` — o feed precisa saber que aconteceu e montar os
-           botões. O carimbo é consumido uma vez, por `cat5Clube`. */
-        E.fimDeTemporada = {
-          contado:false, ano:E.data.ano - 1,
-          titulos: E.temporada.competicoes
-            .filter(c=>c.campeao === E.torcida.clubeId).map(c=>c.nome),
-          rivalCaiu: null
-        };
         E.classifAnterior = null;
-        /* o ano em campo mexe na força dos clubes antes de qualquer
-           outra coisa: quem foi campeão entra mais forte no ano seguinte */
-        const forca = TO.competicoes.evoluirForca(E);
-        const nosso = forca.find(x=>x.id === E.torcida.clubeId);
-        if(nosso)
-          anotar(E, `${TO.mundo.time(nosso.id).nome} ${nosso.para>nosso.de
-            ? 'ganhou' : 'perdeu'} força na temporada `+
-            `(${nosso.de} → ${nosso.para}).`, nosso.para>nosso.de?'boa':'ruim',
-            {cat:5});
-        /* sobe e desce antes de montar a temporada nova (GDD §18.2) */
+        TO.competicoes.evoluirForca(E);
         const mov = TO.competicoes.aplicarSobeDesce(E);
-        /* o rival DO CLUBE que caiu: é o que a 5.11 provoca */
-        {
-          const riv = TO.competicoes.rivaisDiretos();
-          const meus = riv && riv.get ? riv.get(E.torcida.clubeId) : null;
-          const caiu = mov.find(m=>meus && meus.has(m.id) &&
-                                   !TO.competicoes.subiu(m.de, m.para));
-          if(caiu && E.fimDeTemporada) E.fimDeTemporada.rivalCaiu = caiu.id;
-        }
         for(const m of mov)
-          TO.tensao.conquistaDoClube(E, m.id,
+          TO.relacoes.conquistaDoClube(E, m.id,
             TO.competicoes.subiu(m.de, m.para) ? 'acesso' : 'rebaixado');
         for(const m of mov.filter(x=>x.id===E.torcida.clubeId)){
           const sub = TO.competicoes.subiu(m.de, m.para);
-          anotar(E, `${TO.mundo.time(m.id).nome} ${sub?'subiu para':'caiu para'} `+
-                    `${m.para} em ${E.data.ano}.`, sub?'boa':'ruim', {cat:5});
-          /* GDD §21: rebaixado é −3 fixo na satisfação; subir vale o mesmo
-             em sentido contrário */
-          TO.torcedores.aplicarConquista(E, sub ? 'campeao' : 'rebaixado');
+          /* acesso enche a fila do recrutamento; rebaixamento esvazia */
+          TO.torcedores.abrirJanela(E, sub ? 1.6 : 0.45, sub ? 4 : 8);
+          E.indicadores.moral = U.limitar(E.indicadores.moral + (sub ? 2 : -3), 0, 20);
         }
         E.temporada = TO.competicoes.montarTemporada(E);
       }
       sortearProximoJogo(E);
-      E.noticias = gerarNoticias(E);
+      /* o mundo anda: economia das 138, relações esfriam e os
+         ataques-surpresa da semana nova são agendados */
+      const mundo = TO.relacoes.passarSemana(E);
+      fecho.ataques = mundo.ataques;
     }
-    /* GDD §7.3: a caravana é cobrada na véspera do jogo da semana */
-    if(E.proximoJogo && E.data.dia === (E.proximoJogo.dia||6) - 1)
-      TO.financeiro.cobrarCaravana(E);
 
+    /* o dia que começa agora */
+    E.acoes.usadas = 0;
+    rodarExpediente(E);
     TO.membros.passarDia(E);
+
+    /* GDD §7.3: a caravana é cobrada na véspera do jogo da semana —
+       que é também o dia em que a estrada pode ser fechada */
+    if(E.proximoJogo && E.data.dia === (E.proximoJogo.dia||6) - 1){
+      TO.financeiro.cobrarCaravana(E);
+      if(TO.financeiro.temCaravana(E) && TO.feed)
+        TO.feed.emboscadaDaViagem(E);
+    }
+
+    /* os jogos de hoje saem hoje, e o feed conta a noite */
+    const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
+    if(TO.feed) TO.feed.eventosDoDia(E, {jogos});
+
     mudou();
     if(fecho) for(const f of ouvintesFecho) f(fecho, E);
     return fecho;
@@ -389,31 +295,20 @@ TO.estado = (function(){
 
      O corte em 12 saiu: sem histórico, mensagem que cai em rajada some
      pra sempre, e aí a rajada vira perda. */
-  function anotar(est, msg, tipo, extra){
-    if(!est) return;
-    if(TO.feed) TO.feed.propor(est, Object.assign(
-      {cat:4, peso:'info', texto:msg, tipo:tipo||''}, extra||{}));
+  function anotar(est, msg){
+    /* NENHUMA notícia entra no feed sem passar pelo crivo do dono.
+       Quem tinha o hábito de anotar aqui perde a voz: o registro vai
+       pro console e não pra tela. */
+    if(window.console) console.warn('anotar() aposentado:', msg);
   }
 
-  /* GDD §21: a satisfação do torcedor comum sobe com vitória, desaba com
-     derrota em clássico e acompanha a posição na tabela. É o elo entre o
-     desempenho do time, o recrutamento e o público no estádio. */
+  /* o resultado do time mexe na moral da torcida, e é só nela: a
+     satisfação do torcedor comum saiu do jogo */
   function aplicarResultadoDoClube(E, j){
     if(!j || !j.jogado) return;
-    const r = TO.torcedores.aplicarResultado(E, j);
-    if(r && r.classico && Math.abs(r.delta) >= 3)
-      anotar(E, r.venceu
-        ? `Clássico ganho: a cidade inteira está com o time (satisfação `+
-          `+${r.delta.toFixed(1)}).`
-        : `Clássico perdido: a torcida comum virou as costas (satisfação `+
-          `${r.delta.toFixed(1)}).`, r.venceu ? 'boa' : 'ruim', {cat:5});
-    /* a rodada mexe na tabela, e a tabela mexe na satisfação */
-    TO.torcedores.aplicarClassificacao(E);
-    if(j.mata && j.venceu){
-      const meu = E.torcida.clubeId;
-      E.indicadores.satisfacao =
-        U.limitar(E.indicadores.satisfacao + (j.venceu===meu ? 1 : -1), 0, 20);
-    }
+    const venceu = j.gp > j.gc, perdeu = j.gp < j.gc;
+    const d = venceu ? 0.6 : perdeu ? -0.6 : 0;
+    E.indicadores.moral = U.limitar(E.indicadores.moral + d, 0, 20);
   }
 
   function guardarTitulos(E){

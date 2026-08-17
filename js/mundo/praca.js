@@ -720,16 +720,15 @@ TO.praca = (function(){
   function encontroDaPraca(E, dia){
     const p = PL().plano(E);
     dia = dia != null ? dia : E.data.dia;
-    /* alvo escolhido na pergunta, ou a investida marcada daquele dia */
-    let alvoId = p.alvoTorcida;
-    if(!alvoId){
-      for(const o of PL().outrosJogosNaCidade(E, E.data.semana)){
-        if((o.dia || 6) !== dia) continue;
-        const inv = PL().investidaDe(E, o.chave);
-        if(inv && inv.alvo){ alvoId = inv.alvo; break; }
-      }
+    /* o alvo é a INVESTIDA marcada num jogo daquele dia — o plano do
+       nosso jogo não manda aqui */
+    let alvoId = null;
+    for(const o of PL().outrosJogosNaCidade(E, E.data.semana)){
+      if((o.dia || 6) !== dia) continue;
+      const inv = PL().investidaDe(E, o.chave);
+      if(inv && inv.alvo){ alvoId = inv.alvo; break; }
     }
-    if(!alvoId || p.intencao === 'paz') return null;
+    if(!alvoId) return null;
     if(M().saoIrmas(E.torcida.id, alvoId)) return null;
     const rua = naRuaEm(E, dia);
     const alvo = rua.find(b => b.id === alvoId);

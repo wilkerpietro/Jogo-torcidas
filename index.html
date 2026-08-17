@@ -37,23 +37,13 @@
          páginas são painéis de gestão que abrem por cima dele; a página
          do mapa saiu com o mapa. -->
     <section class="pagina" data-pag="feed"></section>
-    <section class="pagina" data-pag="inicio"></section>
     <section class="pagina" data-pag="torcida"></section>
     <section class="pagina" data-pag="financeiro"></section>
-    <section class="pagina" data-pag="gestao"></section>
     <section class="pagina" data-pag="calendario"></section>
     <section class="pagina" data-pag="competicoes"></section>
     <section class="pagina" data-pag="diplomacia"></section>
-    <section class="pagina" data-pag="whatsapp"></section>
     <section class="pagina" data-pag="noticias"></section>
-    <section class="pagina" data-pag="conquistas"></section>
-    <section class="pagina" data-pag="opcoes"></section>
   </main>
-
-  <footer id="ticker">
-    <div id="tickerRot">Ticker de notícias</div>
-    <div id="tickerCaixa"><div id="tickerFita"></div></div>
-  </footer>
 </div>
 
 <!-- ================= MENU PRINCIPAL ================= -->
@@ -73,7 +63,7 @@
       <button disabled>Conquistas</button>
       <button disabled>Créditos</button>
     </div>
-    <div id="menuVersao">v0.3.0 · vertical slice</div>
+    <div id="menuVersao">v0.4.0 · o feed é o jogo</div>
   </div>
 </div>
 
@@ -101,18 +91,6 @@
       <button class="bt" id="btVoltarMenu">Voltar</button>
       <button class="bt destaque" id="btAvancarSelecao">Avançar</button>
       <button class="bt destaque oculto" id="btSelecionarTorcida">Selecionar torcida</button>
-    </footer>
-  </div>
-</div>
-
-<!-- ================= ESCALAÇÃO ================= -->
-<div id="telaEscalacao" class="tela-cheia oculto">
-  <div class="moldura">
-    <header><h2>Dia de jogo</h2><span id="subEscalacao"></span></header>
-    <div id="corpoEscalacao"></div>
-    <footer>
-      <button class="bt" id="btCancelarEscalacao">Ficar em casa</button>
-      <button class="bt destaque" id="btConfirmarEscalacao">Sair pro estádio</button>
     </footer>
   </div>
 </div>
@@ -186,7 +164,7 @@
 <!-- gestão -->
 <script src="js/mundo/mundo.js"></script>
 <script src="js/mundo/competicoes.js"></script>
-<script src="js/mundo/tensao.js"></script>
+<script src="js/mundo/relacoes.js"></script>
 <script src="js/mundo/mapa.js"></script>
   <script src="js/mundo/mapa_gerado.js"></script>
 <script src="js/mundo/praca.js"></script>
@@ -197,7 +175,7 @@
 <script src="js/gestao/acoes.js"></script>
 <script src="js/gestao/planejamento.js"></script>
 <script src="js/estado.js"></script>
-<!-- o feed lê tudo que está acima dele: calendário, tensão, rua,
+<!-- o feed lê tudo que está acima dele: calendário, relações, rua,
      membros, patrimônio e planejamento. Ele não simula nada. -->
 <script src="js/mundo/feed.js"></script>
 

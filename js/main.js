@@ -207,42 +207,26 @@
   /* =======================================================
      ENTRADA NO JOGO
      ======================================================= */
+  /* os sete itens que o dono do jogo apontou — e mais nenhum */
   const NAV = [
     {id:'feed',        rot:'Feed',        ic:'megafone'},
-    {id:'inicio',      rot:'Início',      ic:'casa'},
     {id:'torcida',     rot:'Torcida',     ic:'torcida'},
     {id:'financeiro',  rot:'Financeiro',  ic:'dinheiro'},
-    {id:'gestao',      rot:'Gestão',      ic:'conversa'},
     {id:'calendario',  rot:'Calendário',  ic:'jornal'},
     {id:'competicoes', rot:'Competições', ic:'trofeu'},
     {id:'diplomacia',  rot:'Diplomacia',  ic:'diplomacia'},
-    {id:'whatsapp',    rot:'WhatsApp',    ic:'conversa'},
-    {id:'noticias',    rot:'Notícias',    ic:'jornal'},
-    {id:'conquistas',  rot:'Conquistas',  ic:'medalha'},
-    {id:'opcoes',      rot:'Opções',      ic:'halter'}
+    {id:'noticias',    rot:'Notícias',    ic:'jornal'}
   ];
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
      cidade foi descontinuado e o que ele fazia por simulação virou
      resolução. Todo o resto é painel por cima do feed. */
   let pagina = 'feed';
 
-  /* AS CHAVES DE OPÇÕES.
-     Ficam no save, e os padrões são aplicados na leitura — assim save
-     velho abre igual a save novo, sem migração nenhuma.
-
-     `pularVazios` MORREU: o feed é o pulo. Dia sem nada passa em um
-     segundo, calado, e não há mais o que pular. A chave que sobrou do
-     ciclo anterior é a de perguntar antes do jogo — ela é o modo
-     automático da ideologia, e agora quem pergunta é a mensagem. */
+  /* a única chave que sobrou: abrir o relatório mensal sozinho */
   function opc(e){
-    e = e || E(); if(!e) return {relatorio:false, perguntarJogo:true};
+    e = e || E(); if(!e) return {relatorio:false};
     e.opcoes = e.opcoes || {};
     if(e.opcoes.relatorio === undefined) e.opcoes.relatorio = false;
-    if(e.opcoes.perguntarJogo === undefined)
-      e.opcoes.perguntarJogo = e.opcoes.abrirGestao === undefined
-                             ? true : !!e.opcoes.abrirGestao;
-    delete e.opcoes.pularVazios;
-    delete e.opcoes.abrirGestao;
     return e.opcoes;
   }
 
@@ -254,13 +238,14 @@
     ligarTelaEstreita();
     pagina = 'feed';
     opc(E());
-    /* PARTIDA NOVA ABRE NO FEED, não na Gestão. A primeira mensagem diz
-       que o jogo começou; a segunda é a decisão que chama a Gestão pra
-       definir a ideologia — e, sendo decisão, ela segura o relógio até
-       ser respondida. O tempo só começa a correr depois. */
-    if(partidaNova) TO.feed.abrir(E());
+    /* partida nova vive o primeiro dia na hora: os jogos de hoje saem e
+       o olheiro fala, se houver o que falar */
+    if(partidaNova){
+      const e = E();
+      const jogos = TO.competicoes.jogarDia(e, e.data.semana, e.data.dia);
+      TO.feed.eventosDoDia(e, {jogos});
+    }
     redesenhar();
-    ticker();
     retomarTempo('abertura');
   }
 
@@ -331,12 +316,12 @@
 
   const PINTOR = {
     feed:pintarFeed,
-    inicio:pintarInicio, torcida:pintarTorcida, financeiro:pintarFinanceiro,
-    gestao:pintarGestao, calendario:pintarCalendario,
+    torcida:pintarTorcida, financeiro:pintarFinanceiro,
+    calendario:pintarCalendario,
     competicoes:pintarCompeticoes, diplomacia:pintarDiplomacia,
-    opcoes:pintarOpcoes, noticias:pintarNoticias
+    noticias:pintarNoticias
   };
-  const pintarPagina = id => (PINTOR[id] || (()=>pintarPendente(id)))();
+  const pintarPagina = id => (PINTOR[id] || (()=>{}))();
 
   function abrirPainel(id){
     if(id === 'feed'){ fecharPainel(); return; }
@@ -385,90 +370,6 @@
     addEventListener('resize', ()=>{ if(!painel) redesenhar(); });
   }
 
-  /* =======================================================
-     A GESTÃO EM SEQUÊNCIA
-
-     A página continua sendo montada inteira — são os mesmos cartões de
-     sempre, com os mesmos botões — e o assistente é uma camada por cima
-     dela: pega os cartões prontos e mostra UM de cada vez, na ordem de
-     `TO.planejamento.passos(E)`.
-
-     A ordem vem de lá e só de lá. Uma segunda lista escrita à mão aqui
-     seria duas ordens que precisam concordar, que é a fonte clássica de
-     divergência — e a fila é dinâmica: escolher "ir em paz" tira os
-     passos de alvo, como, olheiro e bomba, e `passos` já se refaz
-     sozinho. Por isso o assistente é remontado a cada `redesenhar`, e
-     não guarda fila nenhuma: guarda só em que passo o jogador está.
-
-     Cartão que não é passo — a caravana, o resumo — vai pro fim, junto
-     do botão de fechar o plano.
-     ======================================================= */
-  let passoGestao = 0;
-  function montarAssistente(pg, e){
-    const P = TO.planejamento;
-    const ps = P.passos(e);
-    if(!ps.length) return false;              // sem jogo marcado: página normal
-    const cartoes = [...pg.querySelectorAll('.passo')];
-    if(!cartoes.length) return false;
-    const porRot = new Map();
-    for(const c of cartoes){
-      const h = c.querySelector('h2');
-      if(h) porRot.set(h.textContent.trim(), c);
-    }
-    const daFila = ps.map(x=>porRot.get(x.rot)).filter(Boolean);
-    const sobrando = cartoes.filter(c=>!daFila.includes(c));
-
-    passoGestao = U.limitar(passoGestao, 0, ps.length);
-    const ultimo = passoGestao >= ps.length;   // a tela de resumo
-    const atual = ps[passoGestao];
-
-    const cx = el('div',{class:'assistente'});
-    const trilha = el('div',{class:'ass-trilha'});
-    ps.forEach((x,i)=>{
-      const b = el('button',{class:'ass-bolinha'+(i===passoGestao?' on':'')+
-                                    (x.feito?' feito':''), texto:String(i+1)});
-      b.title = x.rot;
-      b.onclick = ()=>{ passoGestao = i; redesenhar(); };
-      trilha.appendChild(b);
-    });
-    const bR = el('button',{class:'ass-bolinha'+(ultimo?' on':''), texto:'✓'});
-    bR.title = 'Resumo e fechar o plano';
-    bR.onclick = ()=>{ passoGestao = ps.length; redesenhar(); };
-    trilha.appendChild(bR);
-    cx.appendChild(trilha);
-
-    const palco = el('div',{class:'ass-palco'});
-    if(ultimo){ for(const c of sobrando) palco.appendChild(c); }
-    else if(daFila[passoGestao]) palco.appendChild(daFila[passoGestao]);
-    else palco.appendChild(el('div',{class:'em-construcao',
-      texto:`"${atual ? atual.rot : ''}" não tem tela própria ainda.`}));
-    cx.appendChild(palco);
-
-    const pe = el('div',{class:'ass-pe'});
-    const bVolta = el('button',{class:'bt', texto:'Voltar'});
-    bVolta.disabled = passoGestao === 0;
-    /* voltar não perde nada: as decisões moram no plano, não na tela */
-    bVolta.onclick = ()=>{ passoGestao--; redesenhar(); };
-    const bAv = el('button',{class:'bt destaque',
-      texto: ultimo ? 'Tudo decidido' : 'Avançar'});
-    bAv.disabled = ultimo || (atual && !atual.feito);
-    bAv.title = (atual && !atual.feito) ? `Resolva "${atual.rot}" pra avançar.` : '';
-    bAv.onclick = ()=>{ passoGestao++; redesenhar(); };
-    pe.append(el('span',{class:'fraco',
-      texto: ultimo ? 'Resumo do plano'
-           : `${passoGestao+1} de ${ps.length} · ${atual.rot}`+
-             (atual.feito ? '' : ' — falta decidir')}), bVolta, bAv);
-    cx.appendChild(pe);
-
-    /* a ideologia fica à vista o tempo todo: são decisões que valem
-       daqui pra frente, não desta semana */
-    cx.appendChild(caixaDeIdeologia(e));
-
-    pg.innerHTML = '';
-    pg.appendChild(cx);
-    return true;
-  }
-
   /* A IDEOLOGIA — antes chamada "políticas".
      É o mesmo conjunto de padrões: o que fazer com o adversário do nosso
      jogo, como receber aliado e o que fazer com os outros jogos da
@@ -510,18 +411,10 @@
           id=>P.definirRecepcaoPadrao(e, id === 'nada' ? 'nada' : id));
     grupo('Outros jogos na cidade', P.POLITICA_ATAQUE, pol.outros,
           id=>P.definirPolitica(e, 'outros', id));
-    /* a quarta escolha é do mesmo tipo das três: quem decide, eu ou a
-       ideologia. Por isso ela mora aqui e não em Opções. */
-    const l = el('label',{class:'opc-chave'});
-    const i = el('input',{type:'checkbox'});
-    i.checked = !!opc(e).perguntarJogo;
-    i.onchange = ()=>{ pend.chave = ()=>{ opc(e).perguntarJogo = i.checked; }; };
-    l.append(i, el('div',{html:'<b>Perguntar antes de todo jogo</b>'+
-      '<small>ligada, a semana de jogo chega como mensagem de decisão e o '+
-      'relógio para até você responder. Desligada, a ideologia acima fecha '+
-      'o plano sozinha e o feed só conta o que foi decidido — e se ela não '+
-      'conseguir fechar, a pergunta vem assim mesmo.</small>'}));
-    cx.appendChild(l);
+    cx.appendChild(el('div',{class:'linha-dado', html:
+      '<span class="fraco">O olheiro sempre pergunta antes de cada jogo. '+
+      'O botão "Seguir padrão" da mensagem executa o que está definido '+
+      'aqui.</span>'}));
 
     /* UM BOTÃO SÓ, e é ele que confirma */
     const bt = el('button',{class:'bt destaque', texto:'Salvar'});
@@ -535,37 +428,6 @@
     rod.appendChild(bt);
     cx.appendChild(rod);
     return cx;
-  }
-
-  /* =======================================================
-     OPÇÕES
-     A CHAVE DE PULAR DIAS SAIU. Ela existia porque o jogador tinha de
-     apertar avançar dia um por um e os dias vazios eram pedágio; com o
-     feed, o dia vazio passa em um segundo, calado, e o pulo virou o
-     jogo. Ficou uma chave só aqui — a outra, a de perguntar antes do
-     jogo, mora na Gestão porque é parte da ideologia.
-     ======================================================= */
-  function pintarOpcoes(){
-    const e = E(), pg = U.$('.pagina[data-pag="opcoes"]');
-    pg.innerHTML = '';
-    const o = opc(e);
-    const q = el('div',{class:'quadro'});
-    const chave = (id, rot, nota)=>{
-      const l = el('label',{class:'opc-chave'});
-      const i = el('input',{type:'checkbox'});
-      i.checked = !!o[id];
-      i.onchange = ()=>{ o[id] = i.checked; TO.estado.salvar(); redesenhar(); };
-      l.append(i, el('div',{html:`<b>${rot}</b><small>${nota}</small>`}));
-      q.appendChild(l);
-    };
-    chave('relatorio', 'Abrir o relatório toda semana',
-      'desligado, a semana fecha sem interromper: o resumo vai pro feed e o '+
-      'relatório continua no botão do Financeiro. Semana no vermelho ou com '+
-      'gente saindo abre de qualquer jeito.');
-    q.appendChild(el('div',{class:'linha-dado', html:
-      '<span class="fraco">A velocidade do tempo — 1× ou 2× — fica na barra '+
-      'do feed, e vale também pra cena de briga.</span>'}));
-    pg.appendChild(q);
   }
 
   /* =======================================================
@@ -631,7 +493,7 @@
     const rolo = el('div',{class:'feed-rolo'});
     noFeedLista = el('div',{class:'feed-lista'});
     rolo.appendChild(noFeedLista);
-    const hist = TO.feed.historico(e);
+    const hist = e.feed || [];
     if(hist.length > tetoFeed){
       const b = el('button',{class:'bt feed-mais',
         texto:`Mostrar mais antigas (${hist.length - tetoFeed})`});
@@ -651,12 +513,12 @@
   /* o estado visível de uma mensagem: enquanto ele não muda, o nó dela
      no DOM não precisa ser refeito */
   const estadoDaMsg = (e, m) =>
-    `${m.respondido||''}|${TO.feed.expirada(e,m)?1:0}`;
+    m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim') : '';
 
   function atualizarFeed(){
     const e = E();
     if(!e || !noFeedLista || !noFeedLista.isConnected) return;
-    const hist = TO.feed.historico(e).slice(0, tetoFeed);
+    const hist = (e.feed || []).slice(0, tetoFeed);
     /* de trás pra frente: cada uma entra por cima da anterior, então a
        última a entrar é a mais nova — que é a que fica no topo */
     for(let i = hist.length - 1; i >= 0; i--){
@@ -677,139 +539,84 @@
         if(!v.no.isConnected) feedVistas.delete(id);
   }
 
-  const ROT_VOZ = {olheiro:'Olheiro', diretor:'', rua:'Na rua',
-                   jornal:'Jornal', rival:'', aliado:''};
+  const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Na rua',
+                   jornal:'Jornal'};
+  const ROT_KIND = {olheiro:'Olheiro', guerra:'Dia de jogo',
+                    sofrido:'Ataque sofrido', escolta:'Aliados',
+                    confronto:'Confronto', placar:'Resultado',
+                    rodada:'Rodada'};
 
   function cartaoMensagem(e, m){
-    const cat = TO.feed.catDe(m.cat);
-    const art = el('article',{class:`msg cat${m.cat} peso-${m.peso}`+
+    const art = el('article',{class:`msg kind-${m.kind||'msg'} peso-${m.peso}`+
       (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : '')});
-    const v = m.voz || {};
-    const quem = v.nome || ROT_VOZ[v.tipo] || 'A rua';
-    const papel = v.cargo || ROT_VOZ[v.tipo] || cat.rot;
-    const d = TO.estado.dataDaSemana(m.ano, m.semana, m.dia);
+    const quem  = ROT_VOZ[m.voz] || 'A rua';
+    const papel = ROT_KIND[m.kind] || '';
+    const q = m.quando || {};
+    const d = TO.estado.dataDaSemana(q.ano||e.data.ano, q.semana||1, q.dia||1);
     const quando = `${String(d.getDate()).padStart(2,'0')}/`+
-                   `${String(d.getMonth()+1).padStart(2,'0')} · ${m.hora}`;
+                   `${String(d.getMonth()+1).padStart(2,'0')} · ${m.hora||''}`;
     art.appendChild(el('div',{class:'msg-cab', html:
       `<span class="msg-voz">${quem}</span>`+
       `<span class="msg-papel">${papel}</span>`+
-      `<span class="msg-cat">${cat.rot}</span>`+
       `<time>${quando}</time>`}));
     art.appendChild(el('p',{class:'msg-txt', texto:m.texto}));
 
-    /* A LINHA DE CONSEQUÊNCIA. Ela sai dos efeitos que foram aplicados
-       no estado, nunca de número escrito no texto — e mensagem que não
-       moveu nada não tem linha, porque "nenhum efeito" é ruído. */
-    const efs = TO.feed.lerEfeitos(m);
-    if(efs.length){
-      const le = el('div',{class:'msg-efeitos'});
-      efs.forEach((x,i)=>{
-        if(i) le.appendChild(el('span',{class:'sep', texto:'·'}));
-        le.appendChild(el('span',{class:'ef '+(x.bom?'boa':'ruim'), texto:x.texto}));
-      });
-      art.appendChild(le);
-    }
+    /* a linha de consequência sai dos efeitos aplicados, nunca do texto */
+    if(m.consequencia)
+      art.appendChild(el('div',{class:'msg-efeitos', texto:m.consequencia}));
 
-    if(m.linhaAbaixo){
+    /* links informativos não consomem nada — "Ver Competições" */
+    for(const l of (m.links || [])){
       const la = el('div',{class:'msg-abaixo'});
-      la.appendChild(el('span',{texto:m.linhaAbaixo.texto}));
-      if(m.linhaAbaixo.acao){
-        const a = el('button',{class:'msg-link', texto:'Ver'});
-        a.onclick = ()=>abrirPainel(m.linhaAbaixo.pagina || 'competicoes');
-        la.appendChild(a);
-      }
+      const a = el('button',{class:'msg-link', texto:l.rot});
+      a.onclick = ()=>abrirPainel((l.args||{}).pagina || 'competicoes');
+      la.appendChild(a);
       art.appendChild(la);
     }
 
     if(m.respondido){
       art.appendChild(el('div',{class:'msg-resp',
-        texto:`Você respondeu: ${m.respondido}`}));
-    } else if(TO.feed.expirada(e, m)){
-      /* BOTÃO QUE SOME SEM EXPLICAÇÃO vira a suspeita de que o jogo
-         comeu a jogada. Ele não some: fica escrito que o prazo passou. */
-      art.appendChild(el('div',{class:'msg-resp expirou',
-        texto:'O prazo desse botão passou.'}));
+        texto:`Você respondeu: ${m.respondido.rot || ''}`}));
     } else if((m.botoes||[]).length){
       const bs = el('div',{class:'msg-bts'});
       (m.botoes||[]).forEach((b, i)=>{
         const bt = el('button',{class:'bt'+(i===0?' destaque':'')});
         bt.innerHTML = `<span>${b.rot}</span>`+
                        (b.nota ? `<small>${b.nota}</small>` : '');
-        bt.onclick = ()=>responderMensagem(m.id, i);
+        bt.onclick = ()=>responderMensagem(m.id, b.id);
         bs.appendChild(bt);
       });
       art.appendChild(bs);
-      if(m.peso === 'acao' && m.validoAte != null)
-        art.appendChild(el('div',{class:'msg-prazo', texto:
-          `vale por mais ${Math.max(0, m.validoAte - (e.data.absoluto||0))} `+
-          `${m.validoAte - (e.data.absoluto||0) === 1 ? 'dia' : 'dias'}`}));
     }
     return art;
   }
 
   /* O BOTÃO APERTADO. O efeito de estado é do `TO.feed`; o que sobra
      aqui é abrir tela, que é a única coisa que a tela sabe fazer. */
-  /* a decisão que abriu tela e ainda não foi confirmada: é ela que a
-     tela queima quando o jogador aperta Confirmar */
-  let decisaoEmAberto = null;
-
-  function responderMensagem(id, i){
+  function responderMensagem(id, idBotao){
     const e = E();
-    const r = TO.feed.responder(e, id, i);
-    if(!r.ok){
-      /* `cancelado` é falha interna, e falha interna não fala com o
-         jogador (§8.30): o `console.warn` já saiu lá dentro. */
-      if(r.motivo && !r.cancelado) aviso(r.motivo, 'ruim');
-      atualizarFeed(); return;
-    }
-    decisaoEmAberto = r.adiado ? {id, rot:(r.msg.botoes||[])[i||0].rot} : null;
-    if(r.aviso) aviso(r.aviso, '');
+    const r = TO.feed.responder(e, id, idBotao);
     atualizarFeed();
-    /* A IDA RESOLVIDA devolve o encontro pronto — dois bondes com o
-       efetivo real de cada lado e o lugar. A cena abre daqui, e o
-       jogador entra nela sem ter escolhido quando é surpresa. */
-    if(r.encontro) abrirConfronto(e, r.encontro);
-    else if(r.cena) abrirCenaDaMensagem(r.cena);
-    else if(r.tela === 'caravana') abrirCaravana();
-    else if(r.tela === 'ataque') abrirAtaque(r.dados);
-    else if(r.tela === 'ideologia') abrirIdeologia();
-    else if(r.abrir){
-      /* a mensagem pode pedir uma ABA, não só uma página: a rotina é a
-         segunda do Calendário, e cair na primeira é o mesmo que não
-         abrir nada */
-      if(r.aba) abaCal = r.aba;
-      abrirPainel(r.abrir);
+    if(!r.ok) return;
+    if(r.abrir){
+      const t = r.abrir.tela, a = r.abrir.args || {}, m = r.abrir.msg;
+      if(t === 'tela-ataque') abrirAtaque(a.ctx);
+      else if(t === 'tela-caravana') abrirCaravana();
+      else if(t === 'cena-guerra') abrirGuerra(a);
+      else if(t === 'cena-defesa') abrirDefesa();
+      else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
+      else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
     }
-    else redesenhar();
     TO.estado.salvar();
-    /* respondida a última decisão, o relógio volta a andar sozinho — e
-       tela aberta não é decisão respondida: o relógio segue parado até
-       o Confirmar (ou até o jogador fechar e responder de outro jeito) */
-    if(!decisaoEmAberto) retomarTempo('decisao');
+    pintarTopo();
+    /* respondida a última decisão, o relógio volta a andar sozinho */
+    if(!TO.feed.travado(e)) retomarTempo('decisao');
   }
 
-  /* a tela confirmou; agora a pergunta pode ser queimada */
+  /* compat: as telas de caravana e ataque chamam isto no Confirmar */
   function confirmarDecisao(){
-    if(!decisaoEmAberto) return;
-    TO.feed.confirmarResposta(E(), decisaoEmAberto.id, decisaoEmAberto.rot);
-    decisaoEmAberto = null;
-    atualizarFeed();
-    retomarTempo('decisao');
-  }
-
-  /* a mensagem que convoca pra cena diz QUAL cena; abrir é aqui */
-  function abrirCenaDaMensagem(d){
     const e = E();
-    if(d.tipo === 'ataque' || d.tipo === 'bar'){
-      const atq = e.ataqueMarcado;
-      if(atq) abrirAtaqueAoBar(atq);
-      return;
-    }
-    if(d.cena){ abrirAcaoEmCena(d, d.efetivo); return; }
-    /* NENHUM BOTÃO ABRE MAPA — ele não existe mais. E "não sei o que
-       fazer com isto" é bug do produtor que ofereceu o botão, não
-       notícia: barulho no console, e nada na tela (§8.30). */
-    console.warn('[cena] mensagem com botão de cena e sem cena', d);
+    if(e && !TO.feed.travado(e)) retomarTempo('decisao');
   }
 
   /* =======================================================
@@ -822,154 +629,27 @@
      o que muda é que aqui não se responde nada: o que tinha botão e foi
      respondido aparece com a resposta escrita.
      ======================================================= */
-  let filtroFeed = 0;             // 0 = tudo
   /* =======================================================
-     NOTÍCIAS — o arquivo do feed e o histórico de confrontos
-
-     Três abas de primeiro nível. A primeira é o arquivo de mensagens,
-     que já existia, com o filtro por categoria dentro dela. As outras
-     duas são o LOG DE CONFRONTOS: quem brigou com quem, e o que aquilo
-     custou aos dois lados.
-
-     A LINHA DE BAIXO É O PONTO. Saber que a Fanáutico brigou com a
-     Torcida Jovem do Galo não é história; saber que doze deles e cinco
-     nossos ficaram no chão, e quanta moral e quanto prestígio mudou de
-     mão, é. Os números não são recalculados aqui: saem do registro, que
-     guardou o que foi aplicado.
+     NOTÍCIAS — o arquivo do feed
+     O histórico inteiro, do mais novo pro mais velho. Aqui não
+     se responde nada: o que teve botão aparece com a resposta.
      ======================================================= */
-  let abaNot = 'mensagens';
-
   function pintarNoticias(){
     const e = E(), pg = U.$('.pagina[data-pag="noticias"]');
     if(!e || !pg) return;
     pg.innerHTML = '';
-    const nossos = (e.confrontos || []).slice().reverse();
-    const delas  = (e.confrontosDelas || []).slice().reverse();
-
-    const topo = el('div',{class:'abas-grandes'});
-    const abaTopo = (id, rot, n)=>{
-      const b = el('button',{texto:`${rot} (${n})`});
-      b.classList.toggle('on', abaNot === id);
-      b.onclick = ()=>{ abaNot = id; pintarNoticias(); };
-      topo.appendChild(b);
-    };
-    abaTopo('mensagens', 'Mensagens', TO.feed.historico(e).length);
-    abaTopo('nossos', 'Nossos confrontos', nossos.length);
-    abaTopo('todos', 'Todos os confrontos', nossos.length + delas.length);
-    pg.appendChild(topo);
-
-    if(abaNot === 'mensagens'){ pintarArquivoDoFeed(e, pg); return; }
-    /* "todos" inclui os nossos: o mundo inteiro, a gente dentro dele */
-    const lista = abaNot === 'nossos' ? nossos
-      : nossos.concat(delas).sort((a,b)=>
-          (b.data.absoluto - a.data.absoluto) || (b.id - a.id));
-    pintarConfrontos(e, pg, lista, abaNot);
-  }
-
-  function pintarArquivoDoFeed(e, pg){
-    const hist = TO.feed.historico(e);
-    const abas = el('div',{class:'subabas'});
-    const põe = (n, rot)=>{
-      const b = el('button',{texto: rot +
-        (n ? ` (${hist.filter(m=>m.cat===n).length})` : ` (${hist.length})`)});
-      b.classList.toggle('on', filtroFeed === n);
-      b.onclick = ()=>{ filtroFeed = n; pintarNoticias(); };
-      abas.appendChild(b);
-    };
-    põe(0, 'Tudo');
-    for(const c of TO.feed.CATEGORIAS) põe(c.n, c.rot);
-    pg.appendChild(abas);
-
+    pg.appendChild(el('div',{class:'titulo-pagina', texto:'Notícias'}));
+    const hist = e.feed || [];
     const lista = el('div',{class:'feed-lista'});
-    const filtradas = hist.filter(m=>!filtroFeed || m.cat === filtroFeed);
-    if(!filtradas.length)
+    if(!hist.length)
       lista.appendChild(el('div',{class:'em-construcao',
-        texto:'Nada nesta categoria ainda.'}));
-    for(const m of filtradas.slice(0, 200)) lista.appendChild(cartaoMensagem(e, m));
-    if(filtradas.length > 200)
+        texto:'Nada aconteceu ainda.'}));
+    for(const m of hist.slice(0, 200)) lista.appendChild(cartaoMensagem(e, m));
+    if(hist.length > 200)
       lista.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">…e mais ${filtradas.length-200} mensagens mais `+
+        `<span class="fraco">…e mais ${hist.length-200} mensagens mais `+
         `antigas.</span>`}));
     pg.appendChild(lista);
-  }
-
-  /* a data de parede de um registro */
-  const dataDoRegistro = r => {
-    const d = TO.estado.dataDaSemana(r.data.ano, r.data.semana, r.data.dia);
-    return `${String(d.getDate()).padStart(2,'0')}/`+
-           `${String(d.getMonth()+1).padStart(2,'0')}`;
-  };
-  const LOCAL_CONF = {rua:'numa rua de periferia',
-    'rua-media':'numa rua de classe média', 'rua-nobre':'numa rua nobre',
-    praca:'na praça', arredores:'nos arredores do estádio',
-    bar:'no bar', sede:'na sede', comercio:'no comércio', ct:'no CT',
-    emboscada:'na estrada'};
-
-  function pintarConfrontos(e, pg, lista, aba){
-    const cx = el('div',{class:'feed-lista'});
-    if(!lista.length){
-      cx.appendChild(el('div',{class:'em-construcao',
-        texto: aba === 'nossos' ? 'A torcida ainda não brigou com ninguém.'
-                                : 'Nenhum confronto registrado ainda.'}));
-      pg.appendChild(cx); return;
-    }
-    if(aba === 'todos' && e.confrontosCortados)
-      cx.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">O log do mundo guarda os últimos `+
-        `${TO.feed.TETO_CONFRONTOS_DELAS}; `+
-        `${e.confrontosCortados} mais antigos já saíram. Os nossos nunca `+
-        `saem.</span>`}));
-
-    for(const r of lista.slice(0, 200)) cx.appendChild(cartaoConfronto(e, r));
-    if(lista.length > 200)
-      cx.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">…e mais ${lista.length-200} mais antigos.</span>`}));
-    pg.appendChild(cx);
-  }
-
-  /* O REGISTRO DO MUNDO GUARDA IDS, não nomes — é o que o mantém enxuto
-     no save. O nome sai aqui, na hora de desenhar, e com ele o `dono` de
-     cada efeito, que lá dentro é só `a` ou `b`. */
-  function cartaoConfronto(e, r){
-    const nomeDe = x => x && x.nome ? x.nome
-      : ((TO.mundo.torcida((x||{}).torcidaId)||{}).nome || '—');
-    /* `confronto` já é a classe do painel de pré-jogo, que é `flex`:
-       usar o mesmo nome aqui deitava o cartão em três colunas */
-    const art = el('article',{class:'msg msg-briga'+(r.nossos
-      ? (r.ganhamos ? ' boa' : ' ruim') : '')});
-    const a = Object.assign({}, r.a, {nome:nomeDe(r.a)});
-    const b = Object.assign({}, r.b, {nome:nomeDe(r.b)});
-    const onde = LOCAL_CONF[(r.local||{}).cena] || '';
-    const bairro = (r.local||{}).bairro || r.bairro || '';
-    art.appendChild(el('div',{class:'msg-cab', html:
-      `<span class="msg-voz">${a.nome || '—'} × ${b.nome || '—'}</span>`+
-      `<span class="msg-papel">${[onde, bairro ? `no bairro ${bairro}` : '']
-        .filter(Boolean).join(', ') || 'na rua'}</span>`+
-      `<span class="msg-cat">${r.nossos ? 'NOSSO' : 'MUNDO'} `+
-      `${dataDoRegistro(r)}</span>`}));
-    art.appendChild(el('div',{class:'msg-txt', texto:
-      `${(a.venceu === false ? b.nome : a.nome) || '—'} levou a melhor`}));
-
-    /* A LINHA DE BAIXO: baixas dos dois lados e o que se moveu.
-       Nas nossas as baixas são de ficha — quem caiu e quem foi preso na
-       cena. Nas do mundo é gente que saiu da torcida, que é o que a
-       briga abstrata produz; chamar as duas de "feridos" seria inventar
-       um número que não existe do outro lado. */
-    const partes = [];
-    const baixa = x => x.caidos != null
-      ? `${x.caidos}${x.presos ? `+${x.presos} preso${x.presos>1?'s':''}` : ''}`
-      : String(x.baixas || 0);
-    if(a.nome || b.nome)
-      partes.push(`<b>Baixas</b> ${baixa(a)} · ${baixa(b)}`);
-    if(a.n || b.n) partes.push(`<b>Efetivo</b> ${a.n||'?'} × ${b.n||'?'}`);
-    const comDono = (r.efeitos||[]).map(x=>Object.assign({}, x,
-      {dono: x.dono === 'a' ? `da ${a.nome}` : x.dono === 'b' ? `da ${b.nome}`
-           : (x.dono || 'entre ambos')}));
-    for(const ef of TO.feed.lerEfeitos({efeitos:comDono}))
-      partes.push(`<span class="ef ${ef.bom?'boa':'ruim'}">${ef.texto}</span>`);
-    if(partes.length)
-      art.appendChild(el('div',{class:'msg-efeitos', html:partes.join(' · ')}));
-    return art;
   }
 
   /* =======================================================
@@ -1019,144 +699,6 @@
   }
 
   /* =======================================================
-     INÍCIO
-     ======================================================= */
-  function pintarInicio(){
-    const e = E(), pg = U.$('.pagina[data-pag="inicio"]');
-    pg.innerHTML='';
-    const grade = el('div',{class:'principal-lateral'});
-    const esq = el('div'), dir = el('div');
-
-    /* próximo jogo — pode não haver: folga na tabela (GDD §3.1) */
-    const pj = e.proximoJogo;
-    const j = (pj && pj.mandante && pj.visitante) ? pj : null;
-    const dt = TO.estado.dataTexto();
-    const cJogo = cartao('Próximo jogo',
-      TO.competicoes.faseDaSemana(e.data.semana));
-    if(j){
-      cJogo.corpo.appendChild(el('div',{class:'competicao-rot',
-        texto: j.fase ? `${j.competicao} · ${j.fase}` : j.competicao}));
-      const conf = el('div',{class:'confronto'});
-      for(const [lado,i] of [[j.mandante,0],[j.visitante,1]]){
-        if(i===1) conf.appendChild(el('div',{class:'x', texto:'X'}));
-        const bloco = el('div',{class:'lado'});
-        bloco.appendChild(escudo(lado.cores, lado.sigla));
-        bloco.appendChild(el('div',{class:'nome', texto:lado.nome}));
-        conf.appendChild(bloco);
-      }
-      cJogo.corpo.appendChild(conf);
-      cJogo.corpo.appendChild(el('div',{class:'confronto-info', html:
-        `${dt.curta} · ${j.hora}<span class="local">${j.estadio}</span>`}));
-    }else{
-      cJogo.corpo.appendChild(el('div',{class:'em-construcao',
-        html:'<b>Folga na tabela</b>O time não joga nesta semana. '+
-             'Semana boa pra treinar, recrutar e resolver o que a rua deixou.'}));
-    }
-    const verCal = el('button',{class:'bt larga', texto:'Ver calendário'});
-    verCal.onclick = ()=>abrirPainel('calendario');
-    cJogo.rodape(verCal);
-    esq.appendChild(cJogo);
-
-    /* notícias */
-    const cNot = cartao('Notícias');
-    for(const n of (e.noticias||[])){
-      cNot.corpo.appendChild(el('div',{class:'noticia', html:
-        `<span class="data">${dt.curta.slice(0,5)}</span>
-         <span class="txt">${n.txt}</span><span class="hora">${n.hora}</span>`}));
-    }
-    const verTodas = el('button',{class:'bt larga', texto:'Ver todas'});
-    verTodas.onclick = ()=>abrirPainel('noticias');
-    cNot.rodape(verTodas);
-    esq.appendChild(cNot);
-
-    /* avisos: o que está esperando decisão do jogador */
-    const pend = TO.planejamento.pendencias(e);
-    const cAv = cartao('Avisos', pend.length ? `${pend.length} pendentes` : 'tudo em dia');
-    if(!pend.length){
-      cAv.corpo.appendChild(el('div',{class:'linha-dado', html:
-        '<span class="fraco">Nada esperando por você.</span>'}));
-    }
-    for(const a of pend){
-      const b = el('button',{class:'aviso-linha '+a.tipo, html:
-        `<span class="pino"></span>
-         <span class="txt"><span>${a.texto}</span><small>${a.detalhe}</small></span>`});
-      b.onclick = ()=>{
-        /* a página do aviso vira painel: `pagina` é sempre o feed desde
-           que o feed virou a tela */
-        if(a.id==='acoes') abrirTodasAcoes();
-        else abrirPainel(a.pagina);
-      };
-      cAv.corpo.appendChild(b);
-    }
-    dir.appendChild(cAv);
-
-    /* resumo financeiro — o mesmo cálculo do fechamento (GDD §7) */
-    const sem = TO.financeiro.resumoDaSemana(e);
-    const cFin = cartao('Resumo da semana');
-    cFin.corpo.innerHTML =
-      `<div class="linha-dado"><span>Receitas</span>
-         <b class="positivo">${U.dinheiro(sem.receita)}</b></div>
-       <div class="linha-dado"><span>Despesas</span>
-         <b class="negativo">${U.dinheiro(-sem.despesa)}</b></div>`
-      + (sem.gestao.total
-         ? `<div class="linha-dado"><span class="fraco">— disso, decidido na Gestão`+
-           `${sem.gestao.pendente?'':' (pago)'}</span>`+
-           `<b class="negativo">${U.dinheiro(-sem.gestao.total)}</b></div>` : '')
-      + `<div class="linha-dado"><span>Saldo previsto</span>
-           <b class="${sem.saldo>=0?'positivo':'negativo'}">${U.dinheiro(sem.saldo)}</b></div>`;
-    const verFin = el('button',{class:'bt larga', texto:'Ver finanças'});
-    verFin.onclick = ()=>abrirPainel('financeiro');
-    cFin.rodape(verFin);
-    dir.appendChild(cFin);
-
-    /* GDD §21: o humor do torcedor comum, que decide público e recruta */
-    const fx  = TO.torcedores.faixaDe(e);
-    const sat = e.indicadores.satisfacao;
-    const pub = TO.torcedores.publicoDaCidade(e);
-    const cSat = cartao('A cidade', fx.nome.toLowerCase());
-    cSat.corpo.innerHTML =
-      `<div class="valorao"><span>Satisfação com o time</span>
-         <b style="color:${fx.cor}">${sat.toFixed(1)}<span class="fraco"> de 20</span></b></div>
-       <div class="linha-dado">${medidor('Humor da praça', Math.round(sat*5), 100, fx.cor)}</div>
-       <div class="linha-dado"><span>Topam entrar na organizada</span>
-         <b>${Math.round(fx.organizar*100)}%</b></div>
-       <div class="linha-dado"><span>Vão ao estádio</span>
-         <b>${U.numero(pub.publico)} `+
-      `<span class="fraco">${pub.lotado ? 'lotado'
-        : Math.round(pub.ocupacao*100)+'% do estádio'}</span></b></div>
-       <div class="linha-dado"><span class="fraco">${fx.nota}. Vitória em clássico `+
-      `dá até +5; derrota tira o mesmo.</span></div>`;
-    dir.appendChild(cSat);
-
-    dir.appendChild(cartaoAcoes());
-
-    /* dia de jogo — a postura da semana decide se tem cena (GDD §3.2) */
-    const cDJ = cartao('Dia de jogo',
-      !j ? 'sem jogo' : j.casa ? 'em casa' : `fora · ${j.cidadeAdv||''}`);
-    const P = TO.planejamento, pl = P.plano(e);
-    cDJ.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span class="fraco">${!j ? 'o time não joga nesta semana'
-        : TO.financeiro.precisaCaravana(e)
-          ? `caravana para ${j.cidadeAdv}` : 'o bonde sai da sede'}</span>`}));
-    cDJ.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Sai de casa</span><b>${j ? P.efetivoDaSaida(e) : 0}</b>`}));
-    if(j) cDJ.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Plano</span><b>${pl.intencao==='atacar'?'atacar':'ir em paz'} · `+
-      `${pl.bondes===1?'bonde único':pl.bondes+' bondes'}</b>`}));
-
-    const vai = !!j;
-    const btDJ = el('button',{class:'bt destaque larga',
-      texto: vai ? 'Sair pro estádio' : 'Folga na tabela'});
-    btDJ.disabled = !vai;
-    btDJ.onclick = abrirEscalacao;
-    cDJ.rodape(btDJ);
-    dir.appendChild(cDJ);
-
-    grade.append(esq, dir);
-    pg.appendChild(grade);
-  }
-
-  /* =======================================================
      AÇÕES DA SEMANA (GDD §3.1 e §10)
      A ação indisponível não fica só cinza: ela diz por quê.
      ======================================================= */
@@ -1188,44 +730,6 @@
       else usar(null);
     };
     return b;
-  }
-
-  function cartaoAcoes(){
-    const e = E();
-    const max = TO.acoes.maximo(e), rest = TO.acoes.restantes(e);
-    const c = cartao('Ações da semana', `${rest} de ${max}`);
-
-    /* fichas: cheia é ação na mão, vazia é ação gasta */
-    const f = el('div',{class:'fichas'});
-    for(let i=0;i<max;i++) f.appendChild(el('i',{class:i<rest?'':'gasta'}));
-    c.querySelector('h2').appendChild(f);
-
-    if(!rest){
-      c.corpo.appendChild(el('div',{class:'linha-dado', html:
-        '<span class="fraco">Nada mais nesta semana. Avance os dias até o '+
-        'fechamento.</span>'}));
-    }
-    /* as que dá pra fazer primeiro; o resto explica o bloqueio */
-    const lista = [...TO.acoes.LISTA]
-      .sort((a,b)=>(a.disponivel(e).ok?0:1) - (b.disponivel(e).ok?0:1));
-    for(const a of lista.slice(0,5)) c.corpo.appendChild(linhaAcao(a));
-
-    const bt = el('button',{class:'bt larga',
-      texto:`Todas as ações (${TO.acoes.LISTA.length})`});
-    bt.onclick = abrirTodasAcoes;
-    c.rodape(bt);
-    return c;
-  }
-
-  function abrirTodasAcoes(){
-    const e = E();
-    const corpo = el('div');
-    let fechar = null;
-    corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Ações restantes</span><b>${TO.acoes.restantes(e)} de ${TO.acoes.maximo(e)}</b>`}));
-    for(const a of TO.acoes.LISTA)
-      corpo.appendChild(linhaAcao(a, ()=>fechar && fechar()));
-    fechar = modal('Ações da semana', `Semana ${e.data.semana} · dia ${e.data.dia}`, corpo);
   }
 
   /* ---------- relatório do fechamento (GDD §3.2 e §7) ---------- */
@@ -1554,9 +1058,9 @@
     c2.corpo.innerHTML =
       `<div class="linha-dado"><span>Abordados na semana <span class="fraco">`+
         `3% da base</span></span><b>${U.numero(Math.round(p.alcance*1000))}</b></div>
-       <div class="linha-dado"><span>Cidade ${p.faixa.nome.toLowerCase()}
-         <span class="fraco">chance de topar</span></span>
-         <b style="color:${p.faixa.cor}">${Math.round(p.chance*100)}%</b></div>
+       <div class="linha-dado"><span>Topam entrar
+         <span class="fraco">chance por abordado</span></span>
+         <b>${Math.round(p.chance*100)}%</b></div>
        <div class="linha-dado"><span>Topariam entrar</span>
          <b>${U.numero(p.querem)}</b></div>
        <div class="linha-dado"><span>Teto por campanha</span>
@@ -1567,9 +1071,9 @@
        <div class="valorao"><span>Devem entrar</span>
          <b class="${p.esperado>0?'positivo':'negativo'}">~${p.esperado}</b></div>
        <div class="linha-dado"><span class="fraco">O gargalo é a sede, não a `+
-      `vontade do torcedor (GDD §21): milhares topariam e cabem dezenas. `+
-      `Cidade Muito Contente enche o teto; insatisfeita rende um quinze avos `+
-      `dele. Sai R$ 5 por novato, com ±15% de variância.</span></div>`;
+      `vontade do torcedor: milhares topariam e cabem dezenas. O expediente `+
+      `recruta uma fração por turno. Sai R$ 5 por novato, ±15% de `+
+      `variância.</span></div>`;
     for(const id of ['recrutar','campanha']){
       const a = TO.acoes.porId(id);
       if(a) c2.corpo.appendChild(linhaAcao(a));
@@ -1583,8 +1087,8 @@
     for(const r of h.slice(0,14))
       c3.corpo.appendChild(el('div',{class:'transacao', html:
         `<span class="dia">S${r.semana}</span>
-         <span class="desc">${r.faixa ? 'cidade '+r.faixa.toLowerCase()
-           : 'base de '+r.base+' mil'}${r.querem?` · ${U.numero(r.querem)} topariam`:''}</span>
+         <span class="desc">base de ${r.base} mil`+
+        `${r.querem?` · ${U.numero(r.querem)} topariam`:''}</span>
          <span class="val ${r.n?'positivo':''}">${r.n?'+'+r.n:'0'}</span>`}));
     grade.appendChild(c3);
     return grade;
@@ -1701,9 +1205,6 @@
         else {
           P.definirAtaque(e, {alvo: p.alvoTorcida ||
             (alvos[0] && alvos[0].id), onde, bombas: p.bombas});
-          if(P.plano(e).intencao === 'paz')
-            aviso('O delegado ainda está de olho: nada de ataque nesta '+
-                  'semana.', 'ruim');
         }
         pintar();
       }));
@@ -1713,8 +1214,7 @@
         corpo.appendChild(el('div',{class:'fase-rot', texto:'Quem atacar'}));
         corpo.appendChild(opcoes(alvos.map(a=>({
           id:a.id, rot:a.nome,
-          nota:`${a.faixa} na rua · tensão ${Math.round(a.tensao)} · `+
-               `relação ${Math.round(a.relacao)}`
+          nota:`${a.faixa} na rua · relação ${Math.round(a.relacao)}`
         })), (alvo||alvos[0]||{}).id, id=>{
           P.definirAtaque(e, {alvo:id, onde, bombas:p.bombas}); pintar();
         }));
@@ -1863,6 +1363,7 @@
     let alvo = lista.find(x=>x.id === p.alvoTorcida) ? p.alvoTorcida : lista[0].id;
     let onde = P.ondeDoPlano(p);
     let bombas = U.limitar(p.bombas || 0, 0, (e.estoque||{}).bombas || 0);
+    let efetivo = null;
     const corpo = el('div');
     const diaDoEvento = (ctx && ctx.dia) || ((e.proximoJogo||{}).dia) || 6;
 
@@ -1876,8 +1377,7 @@
         id:a.id, rot:a.nome + (a.aliada ? ' · aliada' : ''),
         /* o efetivo é ESTIMATIVA, em faixa, como o olheiro dá: número
            exato de bonde alheio é coisa que ninguém tem */
-        nota:`${a.faixa} na rua · tensão ${Math.round(a.tensao)} · `+
-             `relação ${Math.round(a.relacao)}`+
+        nota:`${a.faixa} na rua · relação ${Math.round(a.relacao)}`+
              (a.deFora ? ' · caravana de fora' : '')
       })), alvo, id=>{ alvo = id; pintar(); }));
 
@@ -1889,39 +1389,43 @@
 
       /* --- 3: quantos vão --- */
       const f = P.efetivoDoAtaque(e);
+      if(efetivo == null) efetivo = f.teto;
       corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantos vão atacar'}));
       const le = el('div',{class:'contador'});
       const eB = el('button',{texto:'−'}), eM = el('button',{texto:'+'});
       const passo = Math.max(1, Math.round(f.teto/10));
-      eB.disabled = f.vao <= f.piso;
-      eM.disabled = f.vao >= f.teto;
-      eB.onclick = ()=>{ P.definirAtaque(e, {ctx, alvo, onde, bombas,
-        efetivo: Math.max(f.piso, f.vao - passo)}); pintar(); };
-      eM.onclick = ()=>{ P.definirAtaque(e, {ctx, alvo, onde, bombas,
-        efetivo: Math.min(f.teto, f.vao + passo)}); pintar(); };
-      le.append(eB, el('b',{texto:String(f.vao)}), eM,
+      eB.disabled = efetivo <= f.piso;
+      eM.disabled = efetivo >= f.teto;
+      eB.onclick = ()=>{ efetivo = Math.max(f.piso, efetivo - passo); pintar(); };
+      eM.onclick = ()=>{ efetivo = Math.min(f.teto, efetivo + passo); pintar(); };
+      le.append(eB, el('b',{texto:String(efetivo)}), eM,
         el('small',{texto:`de ${f.teto} que saem de casa · mínimo ${f.piso}`}));
       corpo.appendChild(le);
 
       /* --- 4: quantas bombas --- */
       const tem = (e.estoque||{}).bombas || 0;
+      const podeComprar = Math.floor(Math.max(0, e.dinheiro) /
+                                     TO.patrimonio.PRECO_BOMBA);
+      const teto = tem + podeComprar;
       corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantas bombas'}));
       const lb = el('div',{class:'contador'});
       const bB = el('button',{texto:'−'}), bM = el('button',{texto:'+'});
       bB.disabled = bombas <= 0;
-      bM.disabled = bombas >= tem;
+      bM.disabled = bombas >= teto;
       bB.onclick = ()=>{ bombas = Math.max(0, bombas-1); pintar(); };
-      bM.onclick = ()=>{ bombas = Math.min(tem, bombas+1); pintar(); };
+      bM.onclick = ()=>{ bombas = Math.min(teto, bombas+1); pintar(); };
+      const custoExtra = Math.max(0, bombas - tem) * TO.patrimonio.PRECO_BOMBA;
       lb.append(bB, el('b',{texto:String(bombas)}), bM,
-        el('small',{texto: tem ? `de ${tem} no estoque`
-                               : 'não temos bomba no estoque'}));
+        el('small',{texto:`${tem} no estoque`+
+          (custoExtra ? ` · comprar ${bombas-tem} por ${U.dinheiro(custoExtra)}`
+                      : '')}));
       corpo.appendChild(lb);
 
       /* --- o resumo --- */
       const a = lista.find(x=>x.id === alvo) || {};
       const o = P.ONDE_ATAQUE.find(x=>x.id === onde) || {};
       corpo.appendChild(el('div',{class:'linha-dado total', html:
-        `<span>${f.vao} nossos contra a ${a.nome||'—'} `+
+        `<span>${efetivo} nossos contra a ${a.nome||'—'} `+
         `${(o.rot||'').toLowerCase()}`+
         `${bombas ? `, com ${bombas} bomba${bombas>1?'s':''}` : ''}</span>`+
         `<b>${DIA_DA_SEMANA[diaDoEvento] || 'sábado'}</b>`}));
@@ -1936,15 +1440,25 @@
       `${(e.proximoJogo||{}).mandante ? e.proximoJogo.mandante.nome : 'Jogo'} · `+
       `semana ${e.data.semana}`, corpo,
       [['Confirmar', ()=>{
-        const p2 = TO.planejamento.definirAtaque(e, {ctx, alvo, onde, bombas});
-        if(p2.intencao === 'paz'){
-          aviso('O delegado ainda está de olho: nada de ataque nesta semana.',
-                'ruim');
-        }else{
-          const a = lista.find(x=>x.id === alvo) || {};
-          const o = P.ONDE_ATAQUE.find(x=>x.id === onde) || {};
-          aviso(`Marcado: ${a.nome} ${(o.rot||'').toLowerCase()}.`, 'boa');
+        /* bomba que falta no estoque é comprada agora, R$ 120 cada */
+        const falta = Math.max(0, bombas - ((e.estoque||{}).bombas || 0));
+        if(falta) TO.patrimonio.comprarBombas(e, falta);
+        if(ctx && ctx.chaveJogo){
+          /* ataque num jogo alheio da praça é INVESTIDA daquele jogo — o
+             plano do nosso jogo não entra nessa briga */
+          const p2 = TO.planejamento.plano(e);
+          const f2 = TO.planejamento.efetivoDoAtaque(e);
+          p2.bombas = U.limitar(bombas, 0, (e.estoque||{}).bombas || 0);
+          if(efetivo != null)
+            p2.efetivoAtaque = U.limitar(efetivo, f2.piso, f2.teto);
+          TO.planejamento.definirInvestida(e, ctx.chaveJogo,
+            {alvo, como:'arredores', olheiro:null});
         }
+        else TO.planejamento.definirAtaque(e,
+          {ctx, alvo, onde, bombas, efetivo});
+        const a = lista.find(x=>x.id === alvo) || {};
+        const o = P.ONDE_ATAQUE.find(x=>x.id === onde) || {};
+        aviso(`Marcado: ${a.nome} ${(o.rot||'').toLowerCase()}.`, 'boa');
         confirmarDecisao();
         TO.estado.salvar();
         redesenhar();
@@ -2016,7 +1530,6 @@
     const PAT = TO.patrimonio;
     pg.appendChild(abasGrandes([
       {id:'estrutura', rot:'Estrutura'},
-      {id:'materiais', rot:'Materiais'},
       {id:'elenco',    rot:'Elenco'}
     ], abaPat, id=>{abaPat=id; redesenhar();}));
 
@@ -2072,55 +1585,7 @@
     }
 
     /* --- elenco (GDD V3 §19) --- */
-    if(abaPat==='elenco'){ pintarElenco(pg, e, oferta, comprar); return; }
-
-    /* --- materiais --- */
-    const c = cartao('O que a torcida tem', 'bateria, faixa, bandeirão, bandeira e pirotecnia');
-    const grade = el('div',{class:'itens-pat'});
-    let nada = true;
-    for(const m of PAT.MATERIAIS){
-      const n = PAT.quantidade(e, m.id);
-      if(!n) continue;
-      nada = false;
-      grade.appendChild(el('div',{class:'item-pat', html:
-        `<b>${n}</b><span>${m.rot}</span>`}));
-    }
-    if(nada) grade.appendChild(el('div',{class:'em-construcao',
-      texto:'A torcida não tem material nenhum guardado.'}));
-    c.corpo.appendChild(grade);
-    /* o que o material vale, em número que o jogador reconhece de outra
-       tela — número solto de "festa" não diz nada a ninguém */
-    const ef = PAT.efeito(e);
-    const T = TO.torcedores;
-    const bonus = T.fatorTorcida(e).ganho * T.EM_FORCA;
-    c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Satisfação descansa em</span><b${ef.satisfacao?' class="positivo"':''}>`+
-      `${T.neutraDe(e).toFixed(1)} de 20</b>`}));
-    c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Reputação na rua</span><b${ef.prestigio?' class="positivo"':''}>`+
-      `${ef.prestigio ? '+'+ef.prestigio.toFixed(1)+' na doação de simpatizante' : '—'}</b>`}));
-    c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>No dia de jogo</span><b${bonus>=0.05?' class="positivo"':''}>`+
-      `${bonus>=0.05 ? '+'+bonus.toFixed(1)+' de força'
-                     : 'a arquibancada já está cheia'}</b>`}));
-    c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Guarda e conserto</span><b${ef.manutencao?' class="negativo"':''}>`+
-      `${ef.manutencao ? U.dinheiro(-ef.manutencao)+' por mês' : '—'}</b>`}));
-    pg.appendChild(c);
-
-    for(const fam of PAT.FAMILIAS){
-      const itens = PAT.MATERIAIS.filter(m=>m.fam===fam);
-      if(!itens.length) continue;
-      const cf = cartao(fam);
-      for(const m of itens){
-        const trava = PAT.podeComprar(e, m.id, 1);
-        const tem = PAT.quantidade(e, m.id);
-        const nota = [m.nota, tem?`tem ${tem}`:null].filter(Boolean).join(' · ');
-        cf.corpo.appendChild(oferta(m.rot, nota, m.preco, trava,
-          ()=>comprar(()=>PAT.comprarMaterial(e, m.id, 1))));
-      }
-      pg.appendChild(cf);
-    }
+    pintarElenco(pg, e, oferta, comprar);
   }
 
   /* =======================================================
@@ -2165,6 +1630,14 @@
              : e.dinheiro < custo ? 'falta caixa' : null,
       ()=>comprar(()=>C.investir(e, id, 1))));
     pg.appendChild(c2);
+
+    /* a cobrança no CT mora aqui: é conversa da torcida com o clube */
+    const ap = TO.acoes.porId('pressionar');
+    if(ap){
+      const c3 = cartao('Pressionar o clube', 'cena no CT');
+      c3.corpo.appendChild(linhaAcao(ap));
+      pg.appendChild(c3);
+    }
   }
 
   /* =======================================================
@@ -2245,7 +1718,7 @@
          <b>${pat.bares.length} · ${pat.lojas.length} · ${pat.subsedes.length}</b></div>`
       + (e.semanasNoVermelho
          ? `<div class="linha-dado"><span class="negativo">No vermelho há `+
-           `${e.semanasNoVermelho} semana(s) — gente começa a sair.</span></div>`
+           `${e.semanasNoVermelho} semana(s) — a moral sofre.</span></div>`
          : '');
     if(e.historicoSemanas && e.historicoSemanas.length){
       c2.corpo.appendChild(el('div',{class:'titulo-pagina', texto:'Últimas semanas',
@@ -2273,7 +1746,7 @@
     /* GESTÃO → FINANCEIRO: caravana, recepção de aliado e investida não
        são conta fixa de semana; são decisão. Ficam num cartão só delas,
        dizendo o que já saiu do caixa e o que ainda vai sair. */
-    const c5 = cartao('Compromissos da semana', 'decididos na Gestão');
+    const c5 = cartao('Compromissos da semana', 'decididos nas mensagens do feed');
     if(!comp.itens.length)
       c5.corpo.innerHTML = '<div class="em-construcao">'+
         'Nada decidido nesta semana que mexa no caixa.</div>';
@@ -2291,9 +1764,6 @@
       c5.corpo.appendChild(el('div',{class:'linha-dado total', html:
         `<span>Total decidido</span><b class="${comp.total?'negativo':'fraco'}">`+
         `${comp.total?U.dinheiro(-comp.total):'—'}</b>`}));
-    const btGest = el('button',{class:'bt larga', texto:'Abrir a Gestão'});
-    btGest.onclick = ()=>abrirPainel('gestao');
-    c5.rodape(btGest);
 
     const col3 = el('div'); col3.append(c3,c4,c5);
     grade.appendChild(col3);
@@ -2583,611 +2053,6 @@
       <em>${valor}</em></div>`;
   }
 
-  /* quadro com o corpo recuado, pro conteúdo de formulário */
-  function quadroP(titulo, direita){
-    const q = quadro(titulo, direita);
-    q.corpo.className = 'recuado';
-    return q;
-  }
-
-  /* ---------- o cartão de um passo da sequência ---------- */
-  function passoCartao(n, titulo, direita, pendente){
-    const q = el('div',{class:'passo'+(pendente?' pendente':'')});
-    const h = el('header');
-    h.appendChild(el('i',{class:'num', texto:String(n)}));
-    h.appendChild(el('h2',{texto:titulo}));
-    if(direita) h.appendChild(el('span',{class:'conta', texto:direita}));
-    q.appendChild(h);
-    q.corpo = el('div',{class:'corpo'});
-    q.appendChild(q.corpo);
-    return q;
-  }
-
-  /* ---------- a trilha das decisões já tomadas ---------- */
-  function trilha(passos){
-    const t = el('div',{class:'trilha'});
-    passos.forEach((s,i)=>{
-      if(i) t.appendChild(el('i',{texto:'›'}));
-      t.appendChild(el('span',{class:'etapa'+(s.feito?'':' aberta'),
-        html:`${s.rot}<small>${s.resumo}</small>`}));
-    });
-    return t;
-  }
-
-  /* =======================================================
-     O MAPA DO OLHEIRO
-     Esquema da praça: a nossa sede, a sede deles, o estádio e
-     os pontos onde dá pra cortar o caminho. Clicar num ponto é
-     posicionar o olheiro ali.
-     ======================================================= */
-  function mapaDoOlheiro(e, pontos, escolhido, rel, aoEscolher){
-    const cx = el('div',{class:'mapa-olheiro'});
-    const NS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(NS,'svg');
-    /* a caixa é larga porque a coluna é larga; sem preserveAspectRatio
-       a tipografia esticaria junto com o desenho */
-    svg.setAttribute('viewBox','-7 -8 174 78');
-
-    const cria = (tag, attrs)=>{
-      const n = document.createElementNS(NS, tag);
-      for(const [k,v] of Object.entries(attrs)) n.setAttribute(k, v);
-      return n;
-    };
-    const X = v=>v*160, Y = v=>v*62;
-
-    /* a malha, só pra dar noção de cidade */
-    for(let i=1;i<8;i++)
-      svg.appendChild(cria('line',{x1:i*20, y1:0, x2:i*20, y2:62, class:'malha'}));
-    for(let i=1;i<5;i++)
-      svg.appendChild(cria('line',{x1:0, y1:i*12.4, x2:160, y2:i*12.4, class:'malha'}));
-    svg.appendChild(cria('rect',{x:0, y:0, width:160, height:62, class:'moldura'}));
-
-    /* os caminhos deles: da sede rival ao estádio, pelo norte ou pelo sul.
-       É por isso que o ponto do olheiro importa — ele cobre uma via só. */
-    for(const via of ['norte','sul']){
-      const desta = pontos.filter(p=>p.via===via).sort((a,b)=>a.x-b.x);
-      if(!desta.length) continue;
-      const pts = [[0.07,0.14]].concat(desta.map(p=>[p.x,p.y])).concat([[0.90,0.34]]);
-      svg.appendChild(cria('polyline',{class:'rota '+via,
-        points: pts.map(([x,y])=>`${X(x)},${Y(y)}`).join(' ')}));
-    }
-
-    /* âncoras */
-    const ancora = (x,y,rot,cls,acima)=>{
-      svg.appendChild(cria('rect',{x:X(x)-2.2, y:Y(y)-2.2, width:4.4, height:4.4,
-        class:'ancora '+cls}));
-      const t = cria('text',{x:X(x), y:Y(y)+(acima?-4.2:6.2), class:'rot '+cls});
-      t.textContent = rot;
-      svg.appendChild(t);
-    };
-    ancora(0.07, 0.14, 'SEDE DELES', 'deles',   true);
-    ancora(0.07, 0.88, 'NOSSA SEDE', 'nossa',   false);
-    ancora(0.90, 0.34, 'ESTÁDIO',    'estadio', true);
-
-    /* os pontos: o olheiro vai num deles */
-    for(const pt of pontos){
-      const leitura = P_leitura(e, rel, pt.id);
-      const on = pt.id === escolhido;
-      const g = cria('g',{class:'pino'+(on?' on':'')+
-        (leitura && leitura.gente ? ' quente':'')});
-      g.appendChild(cria('circle',{cx:X(pt.x), cy:Y(pt.y), r: on?3:2.3}));
-      const t = cria('text',{x:X(pt.x), y:Y(pt.y)+(pt.acima?-4.6:6.4)});
-      t.textContent = pt.curto || pt.nome.toUpperCase();
-      g.appendChild(t);
-      if(leitura && leitura.gente){
-        const n = cria('text',{x:X(pt.x), y:Y(pt.y)+(pt.acima?7.2:-4.2), class:'qtd'});
-        n.textContent = '~'+leitura.gente;
-        g.appendChild(n);
-      }
-      g.onclick = ()=>aoEscolher(pt.id);
-      svg.appendChild(g);
-    }
-    cx.appendChild(svg);
-    return cx;
-  }
-  const P_leitura = (e, rel, id) =>
-    rel ? TO.planejamento.leituraDoPonto(e, rel, id) : null;
-
-  /* ---------- o relatório do olheiro em texto ---------- */
-  function fichaDoOlheiro(rel){
-    const d = el('div',{class:'olheiro'});
-    if(!rel){
-      d.innerHTML = '<div class="em-construcao">Sem alvo definido, o olheiro '+
-        'não tem quem seguir.</div>';
-      return d;
-    }
-    d.innerHTML =
-      `<div class="l1"><b>Relatório do olheiro</b>
-         <span>confiança ${rel.confianca}%</span></div>
-       <div class="l2">${rel.texto}</div>`;
-    const faixa = el('div',{class:'bondes'});
-    rel.tamanhos.forEach((n,i)=>{
-      faixa.appendChild(el('span',{html:
-        `<b>${n}</b><small>bonde ${i+1}${rel.rotas[i] && rel.rotas[i].ponto
-          ? ' · '+rel.rotas[i].ponto.nome : ''}</small>`}));
-    });
-    d.appendChild(faixa);
-    return d;
-  }
-
-  /* GDD §9.5 — de onde vem o bônus da arquibancada, parcela por parcela */
-  function painelFator(e, ft){
-    const P = TO.torcedores.PESOS;
-    const d = el('div',{class:'fator'});
-    const parte = (rot, v, peso, nota)=>{
-      const p = el('div',{class:'fator-parte'});
-      p.innerHTML =
-        `<span class="rot">${rot}<small>${nota}</small></span>
-         <i><b style="width:${Math.round(v*100)}%"></b></i>
-         <em>${Math.round(v*100)}%<small>×${peso}</small></em>`;
-      d.appendChild(p);
-    };
-    parte('Público', ft.publico, P.publico,
-          `${ft.vao} dos ${ft.total} membros vão`);
-    parte('Faixas', ft.faixas, P.faixas,
-          `${ft.tem.faixas} de ${ft.cap.faixas} da sede`);
-    parte('Bateria', ft.bateria, P.bateria,
-          `${ft.tem.bateria} de ${ft.cap.bateria} instrumentos`);
-    parte('Moral', ft.moral, P.moral,
-          `${e.indicadores.moral.toFixed(1)} de 20`);
-    return d;
-  }
-
-  function pintarGestao(){
-    const e = E(), pg = U.$('.pagina[data-pag="gestao"]');
-    const P = TO.planejamento;
-    pg.innerHTML='';
-    pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Gestão inteligente</h1>'}));
-
-    const p = P.plano(e);
-    const j = e.proximoJogo;
-
-    /* =====================================================
-       PARTE SUPERIOR — o próximo jogo do nosso time
-       ===================================================== */
-    const topo = el('div',{class:'gestao-topo'+(j?'':' vazio')});
-    if(!j){
-      topo.innerHTML =
-        `<div class="cab"><h2>Folga na tabela</h2>
-           <small>o time não joga nesta semana</small></div>
-         <div class="dados"><span class="fraco">Semana boa pra treinar, recrutar `+
-        `e resolver o que a rua deixou.</span></div>`;
-    }else{
-      const fora = TO.financeiro.precisaCaravana(e);
-      const ft  = TO.torcedores.fatorTorcida(e);
-      /* o que a arquibancada vale pro nosso time, em pontos de força */
-      const bon = (ft.valor - 0.5) * TO.torcedores.EM_FORCA;
-      const d0   = TO.estado.dataDaSemana(e.data.ano, e.data.semana, j.dia||6);
-      const dat  = `${DIA_LONGO[(j.dia||6)-1]}, `+
-                   `${String(d0.getDate()).padStart(2,'0')}/`+
-                   `${String(d0.getMonth()+1).padStart(2,'0')}`;
-      topo.innerHTML =
-        `<div class="cab">
-           <div class="times">
-             <span class="lado ${j.casa?'nosso':''}">
-               <i style="background:${j.mandante.cores[0]}"></i>${j.mandante.nome}</span>
-             <em>×</em>
-             <span class="lado ${j.casa?'':'nosso'}">
-               <i style="background:${j.visitante.cores[0]}"></i>${j.visitante.nome}</span>
-           </div>
-           <small>${j.competicao}${j.fase?' · '+j.fase:''} · ${dat}`+
-        `${j.hora?' · '+j.hora:''}</small>
-         </div>
-         <div class="dados">
-           <div><span>Mando</span><b>${j.neutro?'campo neutro'
-              : j.casa?'em casa':'fora, em '+j.cidadeAdv}</b></div>
-           <div><span>Estádio</span><b>${j.estadio||'—'}</b></div>
-           <div><span>Sai de casa</span><b>${P.efetivoDaSaida(e)} de `+
-        `${TO.membros.aptosParaOEstadio(e).length}</b></div>
-           <div><span>Saída</span><b>${fora?'caravana':'bonde da sede'}</b></div>
-           <div><span>Fator torcida</span><b class="${ft.valor>=0.5?'positivo':'negativo'}">`+
-        `${Math.round(ft.valor*100)}% <span class="fraco">`+
-        `${bon>0?'+':''}${bon.toFixed(1)} no placar</span></b></div>
-         </div>`;
-      topo.appendChild(painelFator(e, ft));
-    }
-    pg.appendChild(topo);
-
-    if(j) pg.appendChild(trilha(P.passos(e)));
-
-    const grade = el('div',{class:'comp-duas'});
-    const esq = el('div'), dir = el('div');
-    let n = 0;
-
-    /* =====================================================
-       A SEQUÊNCIA
-       ===================================================== */
-    if(j){
-      /* A LISTA É A DA RUA DAQUELE DIA, e não a do clube adversário:
-         `alvosDoJogo` devolvia só as torcidas do adversário do NOSSO
-         jogo, então num Corinthians × Ponte Preta aparecia a Jovem
-         Ponte sozinha, com São Paulo inteira na rua naquele dia. */
-      const alvos = P.alvosNaRua(e);
-      const trair = P.soAliados(e);
-      if(trair && p.intencao === 'atacar') P.definirIntencao(e, 'trair');
-      if(!trair && p.intencao === 'trair')  P.definirIntencao(e, 'atacar');
-      const briga = p.intencao !== 'paz';
-      if(briga && !p.alvoTorcida && alvos.length === 1)
-        { p.alvoTorcida = alvos[0].id; }
-
-      /* --- 1. intenção --- */
-      const c1 = passoCartao(++n, 'Intenção do dia de jogo',
-        p.intencao==='paz' ? 'ir em paz'
-        : p.intencao==='trair' ? 'trair aliado' : 'atacar');
-      c1.corpo.appendChild(opcoes(P.intencoes(e), p.intencao,
-        id=>{ P.definirIntencao(e, id); redesenhar(); }));
-      esq.appendChild(c1);
-
-      if(briga){
-        /* --- 2. contra quem --- */
-        const alvoT = TO.mundo.torcida(p.alvoTorcida);
-        const c2 = passoCartao(++n, 'Contra qual torcida',
-          alvoT ? alvoT.nome : 'escolha', !p.alvoTorcida);
-        if(!alvos.length){
-          c2.corpo.appendChild(el('div',{class:'em-construcao',
-            texto:'O adversário não tem organizada catalogada. '+
-                  'Sem alvo, o dia é de ir em paz.'}));
-        }
-        c2.corpo.appendChild(opcoes(alvos.map(a=>({
-          id:a.id, rot:a.torcida.nome,
-          nota:`${a.aliada?'ALIADA — bater nela é traição · ':''}`+
-               `relação ${a.relacao>0?'+':''}${Math.round(a.relacao)}`+
-               `${a.tensao?` · tensão ${Math.round(a.tensao)}`:''} · `+
-               `${a.torcida.membros} membros`
-        })), p.alvoTorcida, id=>{ p.alvoTorcida=id; p.decidido=false; redesenhar(); }));
-        esq.appendChild(c2);
-
-        if(p.alvoTorcida){
-          const rel = P.relatorioDoOlheiro(e, p.alvoTorcida);
-
-          /* --- 3. como atacar --- */
-          const c3 = passoCartao(++n, 'Como atacar',
-            (P.COMO.find(c=>c.id===p.como)||{}).rot);
-          c3.corpo.appendChild(opcoes(P.COMO.map(c=>({
-            id:c.id, rot:c.rot,
-            nota: c.id==='ida' && rel
-              ? `${c.nota} — ${rel.texto.toLowerCase()}` : c.nota
-          })), p.como, id=>{ P.definirComo(e, id); redesenhar(); }));
-          esq.appendChild(c3);
-
-          /* --- 4. o olheiro no mapa --- */
-          if(p.como === 'ida'){
-            const pt = p.olheiro ? P.ponto(p.olheiro) : null;
-            const c4 = passoCartao(++n, 'Olheiro no mapa',
-              pt ? pt.nome : 'posicione', !p.olheiro);
-            c4.corpo.appendChild(fichaDoOlheiro(rel));
-            c4.corpo.appendChild(mapaDoOlheiro(e, P.pontosDeIda(e), p.olheiro, rel,
-              id=>{ P.definirOlheiro(e, id); redesenhar(); }));
-            if(pt){
-              const lt = P.leituraDoPonto(e, rel, pt.id);
-              c4.corpo.appendChild(el('div',{class:'linha-dado', html:
-                `<span>${pt.nome}${pt.bairro?' — '+pt.bairro:''}</span>
-                 <b>risco ${pt.risco}/5 · prestígio ${pt.prestigio}/5</b>`}));
-              c4.corpo.appendChild(el('div',{class:'linha-dado', html:
-                `<span class="fraco">${pt.nota}</span>`}));
-              if(lt) c4.corpo.appendChild(el('div',{class:'linha-dado', html:
-                medidor('Chance de interceptar', lt.chance, 100,
-                        lt.chance>55?'var(--verde)':'var(--ouro)')}));
-              if(lt) c4.corpo.appendChild(el('div',{class:'linha-dado', html:
-                `<span class="${lt.gente?'':'fraco'}">${lt.texto}.</span>`}));
-            }else{
-              c4.corpo.appendChild(el('div',{class:'em-construcao',
-                texto:'Clique num ponto do mapa pra mandar o olheiro pra lá.'}));
-            }
-            esq.appendChild(c4);
-          }
-
-          /* --- 5. bombas --- */
-          const est = e.estoque || {bombas:0};
-          const c5 = passoCartao(++n, 'Bombas',
-            p.bombas ? `${p.bombas} de ${est.bombas}` : 'nenhuma');
-          const linha = el('div',{class:'contador'});
-          const menos = el('button',{texto:'−'}), mais = el('button',{texto:'+'});
-          menos.onclick = ()=>{ p.bombas=Math.max(0,p.bombas-1); p.decidido=false; redesenhar(); };
-          mais.onclick  = ()=>{ p.bombas=Math.min(est.bombas,p.bombas+1); p.decidido=false; redesenhar(); };
-          menos.disabled = p.bombas<=0; mais.disabled = p.bombas>=est.bombas;
-          linha.append(menos, el('b',{texto:String(p.bombas)}), mais,
-            el('small',{texto: p.bombas ? `de ${est.bombas} no estoque · a PM chega `+
-                                          'mais rápido (GDD §9.1)'
-                                        : `${est.bombas} no estoque · pedra é infinita `+
-                                          'e não faz barulho'}));
-          c5.corpo.appendChild(linha);
-          esq.appendChild(c5);
-        }
-      }
-
-      /* --- formação da saída --- */
-      const d = P.divisao(e, p.bondes);
-      const cB = passoCartao(++n, 'Formação da saída',
-        `${p.bondes===1?'um bonde':p.bondes+' bondes'}`);
-      cB.corpo.appendChild(opcoes([1,2,3,4].map(k=>{
-        const dd = P.divisao(e, k);
-        return {id:k, rot: k===1 ? 'Bonde único' : `${k} bondes, um por zona`,
-                nota: k===1 ? 'todo mundo junto: uma frente, mas pesada'
-                            : `${dd.porBonde} por bonde · até ${k} frentes · `+
-                              `${dd.zonas.join(', ')}`};
-      }), p.bondes, k=>{ p.bondes=k; p.decidido=false; redesenhar(); }));
-      cB.corpo.appendChild(el('div',{class:'linha-dado', html:
-        medidor('Solidez da linha', Math.round(d.solidez*100), 100,
-                d.solidez>0.75?'var(--verde)':'var(--ouro)')}));
-      if(p.bondes > 1){
-        cB.corpo.appendChild(el('div',{class:'fase-rot', texto:'Destino de cada bonde'}));
-        const ops = P.opcoesDeDestino(e);
-        for(const b of P.destinos(e)){
-          const lb = el('div',{class:'linha-bonde'});
-          lb.appendChild(el('span',{class:'zona', html:
-            `${b.zona}<small>${b.gente} membros</small>`}));
-          const sel = el('select',{class:'campo'});
-          for(const o of ops){
-            const opt = el('option',{value:o.id, texto:`${o.nome} — ${o.nota}`});
-            if(o.id === b.destino) opt.selected = true;
-            sel.appendChild(opt);
-          }
-          sel.onchange = ()=>{ p.destinos[b.i]=sel.value; p.decidido=false; redesenhar(); };
-          lb.appendChild(sel);
-          cB.corpo.appendChild(lb);
-        }
-        const brigam = P.destinos(e).filter(x=>x.ponto).length;
-        cB.corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span class="fraco">${brigam
-            ? `${brigam} ${brigam===1?'frente de ataque':'frentes de ataque'} e `+
-              `${p.bondes-brigam} entrando pelo portão`
-            : 'todos entram pelo portão'}</span>`}));
-      }
-      esq.appendChild(cB);
-    }
-
-    /* =====================================================
-       ALIADOS NA NOSSA CIDADE
-       ===================================================== */
-    const aliados = P.aliadosNaCidade(e, e.data.semana);
-    const padrao = P.recepcaoPadrao(e);
-    if(aliados.length || padrao !== null){
-      const pend = aliados.some(a=>!p.recepcao[a.id] && !padrao);
-      const cA = passoCartao(++n, 'Aliados na nossa cidade',
-        aliados.length ? `${aliados.length} nesta semana` : 'ninguém nesta semana',
-        pend);
-      cA.corpo.appendChild(el('div',{class:'fase-rot', texto:'Recepção padrão'}));
-      cA.corpo.appendChild(opcoes(
-        [{id:'', rot:'Decidir caso a caso', nota:'a tela pergunta toda vez'}]
-          .concat(P.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
-            nota:`${U.dinheiro(r.porCabeca)} por cabeça · relação `+
-                 `${r.relacao>0?'+':''}${r.relacao}`}))),
-        padrao || '', id=>{ P.definirRecepcaoPadrao(e, id); redesenhar(); }));
-
-      if(!aliados.length)
-        cA.corpo.appendChild(el('div',{class:'em-construcao',
-          texto:'Nenhum time aliado joga aqui nesta semana.'}));
-      for(const a of aliados){
-        const nivel = P.nivelDe(e, a.id);
-        cA.corpo.appendChild(el('div',{class:'aliado-cab', html:
-          `<span class="escudinho" style="background:${a.torcida.cores[0]}"></span>
-           <div><b>${a.torcida.nome}</b>
-             <small>${a.clube.nome} joga contra o ${a.adversario.nome} · `+
-          `relação ${Math.round(a.relacao)} · vêm ~${a.estimativa}</small></div>`}));
-        cA.corpo.appendChild(opcoes(P.RECEPCAO.map(r=>({
-          id:r.id, rot:r.rot + (padrao===r.id ? ' (padrão)' : ''),
-          custo:r.porCabeca*a.estimativa,
-          nota:`${r.nota} · relação ${r.relacao>0?'+':''}${r.relacao}`,
-          desabilitada: r.porCabeca*a.estimativa > e.dinheiro && r.id!=='nada'
-        })), nivel, id=>{ p.recepcao[a.id]=id; p.decidido=false; redesenhar(); }));
-      }
-      (j ? dir : esq).appendChild(cA);
-    }
-
-    /* =====================================================
-       OS OUTROS JOGOS DA CIDADE
-       Torcida de fora de passagem e rival nosso indo pro jogo
-       dele: os dois cabem numa emboscada.
-       ===================================================== */
-    const outros = P.outrosJogosNaCidade(e, e.data.semana);
-    if(outros.length){
-      const feitas = Object.values(p.investidas||{}).filter(Boolean).length;
-      const cO = passoCartao(++n, 'Outros jogos na cidade',
-        feitas ? `${feitas} ${feitas===1?'investida':'investidas'}`
-               : `${outros.length} nesta semana`);
-      for(const g of outros){
-        const inv = P.investidaDe(e, g.chave);
-        cO.corpo.appendChild(el('div',{class:'aliado-cab', html:
-          `<span class="escudinho" style="background:${corClube(g.casa.id)}"></span>
-           <div><b>${g.casa.nome} × ${g.vis.nome}</b>
-             <small>${g.comp} · ${DIA_LONGO[(g.dia||6)-1]||''} · `+
-          `torcida de fora circulando pela praça</small></div>`}));
-
-        /* pode-se cair em cima da torcida visitante ou da própria casa */
-        const opts = [{id:'', rot:'Deixar passar',
-                       nota:'ninguém sai da sede por esse jogo'}]
-          .concat(g.visitantes.map(v=>({
-            id:v.id, rot:`Cair em cima da ${v.torcida.nome}`,
-            nota:`visitante · ${v.aliada?'ALIADA — isso é traição · ':''}`+
-                 `${v.torcida.membros} membros · custa uma ação`})))
-          .concat(TO.mundo.torcidasDe(g.casa.id)
-            .filter(o=>o.id !== e.torcida.id)
-            .map(o=>{
-              const v = (e.relacoes||{})[o.id];
-              const rel = v===undefined ? 0 : v;
-              return {id:o.id, rot:`Cair em cima da ${o.nome}`,
-                nota:`da nossa praça · ${rel>=20?'ALIADA — isso é traição · ':''}`+
-                     `relação ${rel>0?'+':''}${Math.round(rel)} · `+
-                     `${o.membros} membros · custa uma ação`};
-            }));
-        cO.corpo.appendChild(opcoes(opts, (inv&&inv.alvo) || '',
-          id=>{ P.definirInvestida(e, g.chave, id ? {alvo:id} : null); redesenhar(); }));
-
-        /* escolhido o alvo, o olheiro entra também aqui */
-        if(inv && inv.alvo){
-          const rel = P.relatorioDoOlheiro(e, inv.alvo);
-          cO.corpo.appendChild(fichaDoOlheiro(rel));
-          cO.corpo.appendChild(opcoes(P.COMO.map(c=>({
-            id:c.id, rot:c.rot, nota:c.nota})), inv.como,
-            id=>{ P.definirInvestida(e, g.chave, {como:id}); redesenhar(); }));
-          if(inv.como === 'ida'){
-            cO.corpo.appendChild(mapaDoOlheiro(e, P.pontosDeIda(e), inv.olheiro, rel,
-              id=>{ P.definirInvestida(e, g.chave, {olheiro:id}); redesenhar(); }));
-            const lt = inv.olheiro && P.leituraDoPonto(e, rel, inv.olheiro);
-            cO.corpo.appendChild(el('div',{class:'linha-dado', html: lt
-              ? medidor('Chance de interceptar', lt.chance, 100,
-                        lt.chance>55?'var(--verde)':'var(--ouro)')
-              : '<span class="fraco">Falta pôr o olheiro num ponto do mapa.</span>'}));
-          }
-        }
-      }
-      (j ? dir : esq).appendChild(cO);
-    }
-
-    /* =====================================================
-       CARAVANA
-       ===================================================== */
-    const listaRotas = P.rotas(e);
-    if(listaRotas.length){
-      const est = P.estimativaCaravana(e);
-      const cC = passoCartao(++n, 'Caravana',
-        `${est.vao} para ${j.cidadeAdv} · ${U.dinheiro(est.custo)}`);
-      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Interessados em ir</span><b>${est.interessados} de ${est.aptos}</b>`}));
-      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-        medidor('Vontade de viajar', Math.round(est.vontade*100), 100,
-                est.vontade>0.5?'var(--verde)':'var(--ouro)')}));
-
-      const passo = Math.max(1, Math.round(est.interessados/10));
-      const linhaQtd = el('div',{class:'contador'});
-      const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
-      bMenos.disabled = est.vao <= est.minimo;
-      bMais.disabled  = est.vao >= est.interessados;
-      bMenos.onclick = ()=>{ p.caravana = Math.max(est.minimo, est.vao-passo);
-                             p.decidido=false; redesenhar(); };
-      bMais.onclick  = ()=>{ p.caravana = Math.min(est.interessados, est.vao+passo);
-                             p.decidido=false; redesenhar(); };
-      linhaQtd.append(bMenos, el('b',{texto:String(est.vao)}), bMais,
-        el('small',{texto:`embarcam · ${U.dinheiro(est.porCabeca)} por cabeça`}));
-      cC.corpo.appendChild(linhaQtd);
-
-      cC.corpo.appendChild(el('div',{class:'fase-rot', texto:'Estrada'}));
-      cC.corpo.appendChild(opcoes(listaRotas.map(r=>({
-        id:r.id, rot:r.nome, custo:Math.round(r.custo*0.4),
-        nota:`${r.nota}${r.risco?` · risco ${Math.round(r.risco)}`:' · sem território hostil'}`
-      })), (p.rota || listaRotas[0].id), id=>{ p.rota=id; p.decidido=false; redesenhar(); }));
-
-      const r = P.rotaEscolhida(e);
-      if(r && r.cidades.length>1){
-        cC.corpo.appendChild(el('div',{class:'trajeto', html:
-          r.cidades.map((c,i)=>{
-            const nome = (TO.mundo.cidade(c)||{}).nome || c;
-            const hostil = P.hostilidade(e, c);
-            return `<span class="parada${i===0?' saida':''}${
-              i===r.cidades.length-1?' chegada':''}${hostil>40?' hostil':''}">${nome}</span>`;
-          }).join('<i>›</i>')}));
-        if(r.rodovias.length)
-          cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-            `<span class="fraco">${r.rodovias.join(' · ')}</span>`}));
-      }
-      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Ônibus e pedágio</span><b>${U.dinheiro(est.bruto)}</b>`}));
-      cC.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Rateio entre os que vão</span><b class="positivo">`+
-        `${U.dinheiro(est.rateio)}</b>`}));
-      cC.corpo.appendChild(el('div',{class:'linha-dado total', html:
-        `<span>Sai do caixa</span><b class="negativo">${U.dinheiro(-est.custo)}</b>`}));
-      dir.appendChild(cC);
-    }
-
-    /* =====================================================
-       FECHAR O PLANO
-       ===================================================== */
-    const cF = quadroP('Plano da semana');
-    const resumo = [];
-    if(!j) resumo.push('Sem jogo nesta semana.');
-    else{
-      resumo.push(TO.financeiro.precisaCaravana(e)
-        ? `Caravana para ${j.cidadeAdv} com ${P.efetivoDaSaida(e)}.`
-        : `Ao estádio com ${P.efetivoDaSaida(e)}.`);
-      if(p.intencao === 'paz') resumo.push('Entrada em paz pelo portão.');
-      else{
-        const alvo = TO.mundo.torcida(p.alvoTorcida);
-        const onde = p.como === 'ida'
-          ? (p.olheiro ? `na ida ao estádio, em ${P.ponto(p.olheiro).nome}`
-                       : 'na ida ao estádio, sem ponto definido')
-          : 'nos arredores do estádio';
-        resumo.push(`${p.intencao==='trair'?'Traição contra':'Ataque à'} `+
-          `${alvo?alvo.nome:'torcida rival'} ${onde}`+
-          `${p.bombas?` com ${p.bombas} bomba${p.bombas>1?'s':''}`:', só na pedra'}.`);
-      }
-      for(const d2 of P.destinos(e))
-        if(p.bondes > 1)
-          resumo.push(`Bonde ${d2.zona}: ${d2.ponto ? 'atacar em '+d2.ponto.nome
-                                                    : 'direto pro estádio'} (${d2.gente}).`);
-    }
-    let gasto = 0;
-    for(const a of aliados){
-      const nv = P.nivelDe(e, a.id);
-      if(!nv || nv==='nada') continue;
-      const c = P.custoRecepcao(nv, a.estimativa);
-      gasto += c;
-      resumo.push(`${P.recepcaoDe(nv).rot} para a ${a.torcida.nome} (${U.dinheiro(c)}).`);
-    }
-    let invs = 0;
-    for(const chave of Object.keys(p.investidas||{})){
-      const inv = P.investidaDe(e, chave);
-      if(!inv || !inv.alvo) continue;
-      const o = TO.mundo.torcida(inv.alvo);
-      invs++;
-      resumo.push(`Investida contra a ${o?o.nome:inv.alvo} `+
-        `${inv.como==='ida' ? 'na ida ao estádio' : 'nos arredores'}, `+
-        'num jogo da cidade.');
-    }
-    for(const t of resumo)
-      cF.corpo.appendChild(el('div',{class:'linha-dado', html:`<span>${t}</span>`}));
-    if(invs)
-      cF.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">${invs} ${invs===1?'investida gasta':'investidas gastam'} `+
-        `${invs} de ${TO.acoes.restantes(e)} ${TO.acoes.restantes(e)===1?'ação':'ações'} `+
-        'que sobraram na semana.</span>'}));
-    if(gasto)
-      cF.corpo.appendChild(el('div',{class:'linha-dado total', html:
-        `<span>A pagar agora</span><b class="negativo">${U.dinheiro(-gasto)}</b>`}));
-
-    const pendentes = P.falta(e);
-    if(pendentes.length)
-      cF.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="negativo">Falta resolver: ${pendentes.join(', ')}.</span>`}));
-
-    const tipo = P.tipoDoJogo(e) === 'fora' ? 'de viagem' : 'em casa';
-    if(P.temPadrao(e))
-      cF.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">Este plano vem do padrão ${tipo} e é aplicado `+
-        'sozinho toda semana.</span>'}));
-
-    const bt = el('button',{class:'bt destaque larga',
-      texto: p.decidido ? 'Plano fechado' : 'Fechar o plano'});
-    bt.disabled = !!p.decidido || pendentes.length > 0;
-    bt.onclick = ()=>{
-      const r = P.confirmar(e);
-      aviso(r.gasto ? `Plano fechado. ${U.dinheiro(r.gasto)} de recepção.`
-                    : 'Plano fechado.', 'boa');
-      redesenhar();
-    };
-    const btPad = el('button',{class:'bt larga',
-      texto: P.temPadrao(e) ? `Esquecer padrão ${tipo}` : `Salvar como padrão ${tipo}`});
-    btPad.onclick = ()=>{
-      if(P.temPadrao(e)){ P.esquecerPadrao(e); aviso('Padrão esquecido.','ruim'); }
-      else { P.salvarPadrao(e);
-             aviso(`Padrão ${tipo} salvo. Semanas assim já vêm decididas.`,'boa'); }
-      redesenhar();
-    };
-    cF.rodape(btPad, bt);
-    dir.appendChild(cF);
-
-    grade.append(esq, dir);
-    pg.appendChild(grade);
-    /* A IDEOLOGIA APARECE SEMPRE, com jogo marcado ou sem.
-       Ela não depende do próximo jogo — é a regra que vale daqui pra
-       frente —, e é nela que a partida nova abre. Antes o bloco morava
-       dentro do assistente, que só monta quando `passos()` tem algo, e
-       numa semana sem jogo o jogador caía numa Gestão sem ideologia. */
-    if(!montarAssistente(pg, e) && !pg.querySelector('.ass-politicas'))
-      pg.appendChild(caixaDeIdeologia(e));
-  }
-
   /* =======================================================
      CALENDÁRIO
      Três abas, como no mockup: o mês da torcida, a rotina que
@@ -3205,16 +2070,16 @@
     pg.innerHTML='';
     pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Calendário</h1>'}));
     pg.appendChild(abasGrandes([
-      {id:'torcida', rot:'Calendário da torcida'},
-      {id:'rotina',  rot:'Rotina semanal'},
-      {id:'time',    rot:'Agenda do time'}
+      {id:'torcida',    rot:'Calendário da torcida'},
+      {id:'expediente', rot:'Expediente da Sede'},
+      {id:'time',       rot:'Agenda do time'}
     ], abaCal, id=>{ abaCal=id; redesenhar(); }));
 
     if(!e.temporada){
       pg.appendChild(emConstrucao('Sem calendário','Comece um jogo novo pra gerar a tabela.'));
       return;
     }
-    if(abaCal==='rotina') pg.appendChild(painelRotina(e));
+    if(abaCal==='expediente') pg.appendChild(painelExpediente(e));
     else if(abaCal==='time') pg.appendChild(painelAgendaTime(e));
     else pg.appendChild(painelMes(e));
   }
@@ -3303,9 +2168,9 @@
           `${IC.get('onibus')}Caravana`}));
         cel.appendChild(el('span',{class:'sub', texto:`${cv.rot} · ${cv.cidade}`}));
       }else{
-        /* a rotina fica registrada no calendário, inclusive nos dias
-           que transbordam pro mês vizinho */
-        const id = (e.rotina||{})[sd.dia];
+        /* o expediente é o mesmo todo dia comum: mostra o 1º turno */
+        const exp = TO.acoes.expediente(e);
+        const id = exp.manha || exp.tarde || exp.noite;
         const a = id && TO.acoes.porId(id);
         if(a) cel.appendChild(el('span',{class:'acao',
           html:`${IC.get(a.icone)}<span>${a.nome}</span>`}));
@@ -3315,35 +2180,45 @@
     return cel;
   }
 
-  /* ---------- aba 2: a rotina ---------- */
-  function painelRotina(e){
+  /* ---------- aba 2: o expediente da sede ---------- */
+  function painelExpediente(e){
     const cx = el('div');
     cx.appendChild(el('div',{class:'recado', html:
-      `Defina sua <b>rotina semanal padrão</b>. Cada dia da semana ganha uma ação, `+
-      `aplicada sozinha quando o dia passa.
-       <small>Em dia de jogo e nos dias de caravana a rotina é ignorada, e ela nunca `+
-      `gasta mais do que as ${TO.acoes.maximo(e)} ações da semana (GDD §3.1).</small>`}));
+      `Defina o <b>Expediente da Sede</b>: três turnos por dia — manhã, `+
+      `tarde e noite —, cada um com uma ação que a rapaziada toca sozinha.
+       <small>Por ser diário, o rendimento é reduzido: recrutar traz menos `+
+      `gente por turno, treinar treina menos membros. Dia de jogo do clube `+
+      `e dias de caravana ficam de fora.</small>`}));
 
-    const disponiveis = TO.acoes.LISTA.filter(a=>a.disponivel(e).ok || (e.rotina||{}))
-      .filter(a=>!['atacar','assalto','pressionar'].includes(a.id));
-
-    for(let dia=1; dia<=7; dia++){
-      const linha = el('div',{class:'linha-rotina'+(dia===e.data.dia?' hoje':'')});
-      linha.appendChild(el('span',{texto:DIA_LONGO[dia-1]}));
+    const exp = TO.acoes.expediente(e);
+    const disponiveis = TO.acoes.agendaveis();
+    for(const t of TO.acoes.TURNOS){
+      const linha = el('div',{class:'linha-rotina'});
+      linha.appendChild(el('span',{texto:t.nome}));
       const sel = el('select',{class:'campo'});
       sel.appendChild(el('option',{value:'', texto:'— sem ação —'}));
       for(const a of disponiveis){
         const o = el('option',{value:a.id, texto:`${a.nome} — ${a.efeito}`});
-        if((e.rotina||{})[dia]===a.id) o.selected = true;
+        if(exp[t.id]===a.id) o.selected = true;
         sel.appendChild(o);
       }
       sel.onchange = ()=>{
-        e.rotina = e.rotina || {};
-        if(sel.value) e.rotina[dia] = sel.value; else delete e.rotina[dia];
+        exp[t.id] = sel.value || null;
+        TO.estado.salvar();
         redesenhar();
       };
       linha.appendChild(sel);
       cx.appendChild(linha);
+    }
+    /* o que rendeu nos últimos dias */
+    const feitas = (e.acoes.feitas || []).slice(-9).reverse();
+    if(feitas.length){
+      const c = cartao('Últimos turnos');
+      for(const f of feitas)
+        c.corpo.appendChild(el('div',{class:'transacao', html:
+          `<span class="dia">S${f.semana}·d${f.dia}</span>
+           <span class="desc">${f.msg||f.id}</span>`}));
+      cx.appendChild(c);
     }
     return cx;
   }
@@ -3434,55 +2309,6 @@
       <u></u></span>`;
   }
 
-  /* tensão é escala 0–100 numa barra só, com a cor da faixa */
-  function barraTensao(v){
-    const f = TO.tensao.faixa(v);
-    if(!v) return '<span class="ten-num fraco">—</span>';
-    return `<span class="ten-barra" title="${f.nome}">
-      <i style="width:${v}%;background:${f.cor}"></i></span>
-      <span class="ten-num" style="color:${f.cor}">${Math.round(v)}</span>`;
-  }
-
-  /* quem está prestes a nos atacar, e por quê */
-  function painelTensao(e){
-    const lista = TO.tensao.panorama(e);
-    const cx = el('div');
-    const c = cartao('Termômetro', lista.length
-      ? `${lista.filter(x=>x.tensao>=45).length} em ponto de briga`
-      : 'nenhum atrito aberto');
-    c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      '<span class="fraco">Relação é o que se pensa do outro; tensão é o que está '+
-      'prestes a acontecer. Acima de 45 a torcida pode atacar a sede, o bar, a '+
-      'caravana na estrada ou o bonde nos arredores.</span>'}));
-    if(!lista.length){
-      c.corpo.appendChild(el('div',{class:'em-construcao',
-        texto:'Ninguém com contas a acertar. Por enquanto.'}));
-    }
-    for(const t of lista){
-      c.corpo.appendChild(el('div',{class:'linha-tensao', html:
-        `<span class="cor" style="background:${t.cores[0]}"></span>
-         <span class="nm">${t.nome}<small>relação ${t.relacao>0?'+':''}${t.relacao}</small></span>
-         ${barraTensao(t.tensao)}
-         <span class="faixa" style="color:${t.faixa.cor}">${t.faixa.nome}</span>`}));
-    }
-    cx.appendChild(c);
-
-    const focos = (e.focos||[]).slice(0,14);
-    const h = cartao('O que esquentou', `${focos.length} episódios`);
-    if(!focos.length) h.corpo.innerHTML =
-      '<div class="em-construcao">Nada aconteceu ainda.</div>';
-    for(const f of focos){
-      const o = TO.mundo.torcida(f.id);
-      h.corpo.appendChild(el('div',{class:'transacao', html:
-        `<span class="dia">S${f.semana}</span>
-         <span class="desc">${o?o.nome:f.id} — ${f.motivo}</span>
-         <span class="val ${f.quanto>0?'negativo':'positivo'}">`+
-        `${f.quanto>0?'+':''}${f.quanto}</span>`}));
-    }
-    cx.appendChild(h);
-    return cx;
-  }
-
   function pintarDiplomacia(){
     const e = E(), pg = U.$('.pagina[data-pag="diplomacia"]');
     pg.innerHTML='';
@@ -3491,10 +2317,11 @@
       {id:'relacoes',    rot:'Relações'},
       {id:'aliancas',    rot:'Alianças'},
       {id:'rivalidades', rot:'Rivalidades'},
-      {id:'tensao',      rot:'Tensão'}
+      {id:'ideologia',   rot:'Ideologia'}
     ], subDip, id=>{subDip=id; redesenhar();}));
 
-    if(subDip === 'tensao'){ pg.appendChild(painelTensao(e)); return; }
+    /* a ideologia mora aqui: é o padrão de como tratamos os outros */
+    if(subDip === 'ideologia'){ pg.appendChild(caixaDeIdeologia(e)); return; }
 
     /* o valor corrente manda; o tipo da fonte é só o ponto de partida */
     const linhas = Object.entries(e.relacoes||{}).map(([id,v])=>{
@@ -3529,8 +2356,8 @@
 
     const tab = el('table',{class:'dados'});
     tab.appendChild(el('thead',null,[el('tr',{html:
-      `<th style="width:26%">Torcida</th><th style="width:18%">Clube</th>
-       <th style="width:24%">Relação</th><th style="width:16%">Tensão</th>
+      `<th style="width:28%">Torcida</th><th style="width:20%">Clube</th>
+       <th style="width:28%">Relação</th>
        <th>Status</th><th>Ações</th>`})]));
     const tb = el('tbody');
     for(const l of filtradas.slice(0,120)){
@@ -3540,7 +2367,6 @@
         `<td>${l.o.nome}</td>
          <td>${l.o.clube}</td>
          <td>${barraRelacao(l.valor)}<span class="rel-num">${l.valor>0?'+':''}${Math.round(l.valor)}</span></td>
-         <td>${barraTensao(TO.tensao.nivel(e, l.id))}</td>
          <td style="color:${est.corTexto}">${l.tipo}</td>
          <td class="rel-acoes"></td>`;
       const cel = tr.querySelector('.rel-acoes');
@@ -3559,29 +2385,22 @@
         e.relacoes[l.id] = U.limitar(l.valor-8, -100, 100);
         aviso(`Provocação contra ${l.o.nome}.`,'ruim'); redesenhar();
       });
-      botao('!', 'Atacar — entra na Fase 2', false, ()=>{});
+      /* atacar o bar ou a sede dela, agora: abre a cena */
+      const alvoCena = (TO.acoes.alvosDeAtaque(e) || [])
+        .find(x=>x.torcidaId === l.id);
+      const podeAtacar = !!alvoCena && l.valor < 0 &&
+        TO.acoes.porId('atacar').disponivel(e).ok;
+      botao('!', alvoCena ? `Atacar ${alvoCena.nome}` : 'Sem alvo na praça',
+        podeAtacar, ()=>{
+          const r = TO.acoes.executar(e, 'atacar', {alvo: alvoCena.id});
+          if(r.ok && r.cena){ fecharPainel(); abrirAcaoEmCena(r.cena); }
+          else aviso(r.msg || 'Não deu.', 'ruim');
+        });
       tb.appendChild(tr);
     }
     tab.appendChild(tb);
     c.corpo.appendChild(tab);
     pg.appendChild(c);
-  }
-
-  /* =======================================================
-     PÁGINAS AINDA POR FAZER
-     ======================================================= */
-  const PENDENTES = {
-    whatsapp:['WhatsApp',
-      'Conversas com a diretoria, aliados e contatos. É por aqui que o tutorial acontece (GDD §22.4).'],
-    noticias:['Notícias', 'Mundo vivo: o que a imprensa e as outras torcidas andam falando.'],
-    conquistas:['Conquistas', 'Salão da fama lendo o histórico já salvo (GDD Apêndice C).']
-  };
-  function pintarPendente(id){
-    const pg = U.$(`.pagina[data-pag="${id}"]`);
-    pg.innerHTML='';
-    const [tit, txt] = PENDENTES[id];
-    pg.appendChild(el('div',{class:'titulo-pagina', texto:tit}));
-    pg.appendChild(emConstrucao('Próxima fase', txt));
   }
 
   /* =======================================================
@@ -3626,13 +2445,16 @@
      que se acumulou. O que passar numa rajada não se perde: o feed é
      histórico e rola pra trás.
      ======================================================= */
-  const SEG_POR_DIA = 1;
-  const MAX_DIAS_POR_QUADRO = 8;   // aba que volta de longe não vira maratona
-  let relogioTempo = null, sobraDoDia = 0;
+  /* O RITMO É DA MENSAGEM, NÃO DO DIA (decisão do autor): cada
+     mensagem dropada segura a próxima por 1,5s. Dia sem mensagem passa
+     rápido; decisão sem resposta trava tudo. */
+  const MS_DROP      = TO.feed.INTERVALO_DROP;   // 1500 ms entre mensagens
+  const MS_DIA_VAZIO = 450;                      // dia calado passa ligeiro
+  let relogioTempo = null;
 
   function pausarTempo(motivo){
     pausasT.add(motivo);
-    if(relogioTempo){ cancelAnimationFrame(relogioTempo); relogioTempo = null; }
+    if(relogioTempo){ clearTimeout(relogioTempo); relogioTempo = null; }
   }
   function retomarTempo(motivo){
     pausasT.delete(motivo);
@@ -3644,149 +2466,95 @@
   function rodarTempo(){
     if(relogioTempo) return;
     const e0 = E(); if(!e0) return;
-    if(pausasT.size) return;
-    /* A DECISÃO NÃO É MOTIVO DE PAUSA, é uma pergunta ao mundo.
-       Ela chegou a entrar no conjunto junto com painel, foco e save, e
-       isso criou o pior sintoma que este relógio pode ter: um motivo
-       ficava pra trás quando a resposta vinha por um caminho que não
-       passava por quem o tirava, e o jogo congelava com a tela limpa —
-       sem painel, sem modal e sem nada pra responder. Agora a verdade é
-       uma só e é `TO.feed.travado`: o laço não começa e não continua
-       enquanto houver decisão sem resposta, e quem responde manda
-       religar. Um estado do mundo não se guarda em dois lugares. */
-    if(TO.feed.travado(e0)) return;
-    let ultimo = 0;
-    const passo = agora=>{
+    if(pausasT.size || TO.feed.travado(e0)) return;
+    const tique = ()=>{
+      relogioTempo = null;
       const e = E();
-      if(!e || pausasT.size || TO.feed.travado(e)){ relogioTempo = null; return; }
-      const dt = ultimo ? Math.min(0.5, (agora - ultimo)/1000) : 0;
-      ultimo = agora;
-      sobraDoDia += dt * TO.diaJogo.ponte.velocidade;
-      let n = 0;
-      while(sobraDoDia >= SEG_POR_DIA && n < MAX_DIAS_POR_QUADRO){
-        sobraDoDia -= SEG_POR_DIA; n++;
-        passarUmDia(e);
-        if(pausasT.size || TO.feed.travado(e)) break;
+      if(!e || pausasT.size || TO.feed.travado(e)) return;
+      const vel = TO.diaJogo.ponte.velocidade || 1;
+      if(TO.feed.pendentes(e) > 0){
+        TO.feed.dropar(e);
+        pintarTopo(); atualizarFeed();
+        if(TO.feed.travado(e)) return;         // decisão dropada: espera
+        relogioTempo = setTimeout(tique, MS_DROP/vel);
+        return;
       }
-      if(n){ pintarTopo(); atualizarFeed(); }
-      if(pausasT.size || TO.feed.travado(E())){ relogioTempo = null; return; }
-      relogioTempo = requestAnimationFrame(passo);
+      passarUmDia(e);
+      pintarTopo(); atualizarFeed();
+      if(pausasT.size || TO.feed.travado(E())) return;
+      relogioTempo = setTimeout(tique,
+        (TO.feed.pendentes(E()) > 0 ? MS_DROP : MS_DIA_VAZIO)/vel);
     };
-    relogioTempo = requestAnimationFrame(passo);
+    relogioTempo = setTimeout(tique, MS_DIA_VAZIO);
   }
 
-  /* UM DIA INTEIRO.
-     Antes daqui saía a simulação da rua: seis mil tiques de um trigésimo
-     de minuto, bondes andando pela malha, andarilho, viatura. O que
-     sobrou é uma chamada — `TO.praca.passarDia` resolve o assalto do
-     calendário, se for hoje — e a virada da data. A ida ao estádio não
-     entra aqui de propósito: ela é resposta a um botão do feed, e o
-     jogador tem de estar olhando quando ela acontece. */
+  /* um dia inteiro: a virada da data — os jogos do dia e as mensagens
+     saem de dentro do estado */
   function passarUmDia(e){
     if(document.body.classList.contains('em-cena')) return null;
-    /* devolvido pra a bateria poder ler o que o dia produziu sem ter de
-       remontar a praça do lado de fora — medir outra coisa que não o que
-       o jogo fez é medir outro jogo */
-    const daPraca = TO.praca.passarDia(e);
     TO.estado.avancarDia();
-    TO.feed.passarDia(e);
-    return daPraca;
+    return null;
   }
-
 
   /* =======================================================
      ESCALAÇÃO → CENA → RELATÓRIO
      ======================================================= */
-  let escalados = new Set();
+  /* QUEM VAI É ESCOLHIDO PELO NÚMERO, não nome a nome: o jogador diz
+     quantos emprega na missão e os mais rodados saem na frente. */
 
-  /* Torcida grande não cabe inteira num bonde — e a cena engasga acima
-     de umas centenas de discos. Vêm marcados os mais rodados; o resto
-     fica a critério do jogador. */
-  const PADRAO_ESCALACAO = 60, PESADO = 120;
-
-  function abrirEscalacao(){
-    const aptos = TO.membros.aptosParaOEstadio(E());
-    if(aptos.length < 4){ aviso('Gente apta de menos pra sair.','ruim'); return; }
-    escalados = new Set([...aptos].sort((a,b)=>b.xp-a.xp)
-                                  .slice(0, PADRAO_ESCALACAO).map(m=>m.id));
-    pintarEscalacao(aptos);
-    $('telaEscalacao').classList.remove('oculto');
-  }
-
-  function pintarEscalacao(aptos){
-    $('subEscalacao').textContent =
-      `${aptos.length} aptos · quem for escalado vira disco na cena`;
-    const cx = $('corpoEscalacao'); cx.innerHTML='';
-    cx.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Escalados</span><b id="contaEscalados" class="${
-        escalados.size>PESADO?'negativo':''}">${escalados.size}</b>`}));
-    if(escalados.size > PESADO)
-      cx.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">Acima de ${PESADO} discos a cena começa a `+
-        `engasgar. Leve os melhores.</span>`}));
-    const bt = el('button',{class:'bt', texto:'Alternar todos',
-      estilo:{marginBottom:'9px'}});
-    bt.onclick = ()=>{
-      if(escalados.size) escalados.clear(); else aptos.forEach(m=>escalados.add(m.id));
-      pintarEscalacao(aptos);
-    };
-    cx.appendChild(bt);
-    for(const m of [...aptos].sort((a,b)=>b.xp-a.xp)){
-      const on = escalados.has(m.id);
-      const it = el('div',{class:'item'+(on?' meu':''), html:
-        `<div class="l1"><span class="nm">${TO.membros.nomeDe(m)}</span>
-           <span class="qt">${on?'VAI':'fica'}</span></div>
-         <div class="l2">${TO.membros.CARGOS[m.cargo].nome} · ${m.forca}/${m.defesa} · `+
-        `moral ${m.moral.toFixed(0)} · ${m.xp} XP</div>`});
-      it.style.cursor='pointer';
-      it.onclick = ()=>{
-        if(escalados.has(m.id)) escalados.delete(m.id); else escalados.add(m.id);
-        pintarEscalacao(aptos);
-      };
-      cx.appendChild(it);
-    }
-  }
-
-  /* A tensão que vale pra noite é com a torcida do adversário do dia;
-     sem jogo marcado (amistoso, folga), vale a maior tensão da cidade,
-     que é quem tem mais chance de aparecer. */
-  function tensaoDaNoite(){
+  /* o dia da guerra: o ataque que o jogador marcou vira cena */
+  function abrirGuerra(args){
     const e = E();
-    const T = TO.tensao;
-    if(!T) return 0;
-    const j = e.proximoJogo;
-    if(j){
-      const meu = e.torcida.clubeId;
-      const outro = j.mandante === meu ? j.visitante : j.mandante;
-      const delas = TO.mundo.torcidasDe(outro) || [];
-      let pico = 0;
-      for(const o of delas) pico = Math.max(pico, T.nivel(e, o.id));
-      if(delas.length) return pico;
+    const p = TO.planejamento.plano(e);
+    let r = null;
+    if(args && args.tipo === 'fora')       r = TO.praca.encontroDaViagem(e);
+    else if(args && args.tipo === 'praca') r = TO.praca.encontroDaPraca(e, args.dia);
+    else                                   r = TO.praca.resolverIda(e);
+    if(!r || !r.enc){
+      /* o alvo não pisou na rua (banimento não existe mais, mas o
+         efetivo pode ter minguado): a guerra esvazia sem briga */
+      aviso('O bonde deles não apareceu. A noite passou em branco.', '');
+      p.guerraJogada = true;
+      return;
     }
-    let pico = 0;
-    for(const id in (e.tensao||{})) pico = Math.max(pico, e.tensao[id]);
-    return pico;
+    p.guerraJogada = true;
+    abrirConfronto(e, r.enc);
   }
 
-  function comecarDiaDeJogo(){
-    const lista = E().membros.filter(m=>escalados.has(m.id));
-    if(lista.length < 2){ aviso('Escale pelo menos dois.','ruim'); return; }
-    $('telaEscalacao').classList.add('oculto');
-    $('telaDiaJogo').classList.remove('oculto');
-    document.body.classList.add('em-cena');
-    TO.estado.bloquear(true);
-    pararTudo('cena');
-    const p = TO.planejamento.plano(E());
-    TO.diaJogo.ponte.montar({
-      canvas: $('djPrincipal'),
-      /* o plano da semana entra na cena: intenção e bombas levadas.
-         A tensão vai junto porque é ela que diz quantos bondes chegam
-         nos arredores dispostos a procurar rival — noite de Calmaria
-         quase não tem, noite de Guerra quase só tem. */
-      config: { escalacao: lista, intencao: p.intencao, bombas: p.bombas,
-                tensao: tensaoDaNoite() },
-      aoTerminar: fecharDiaDeJogo
-    });
+  /* o ataque sofrido de hoje vira a cena de defesa */
+  function abrirDefesa(){
+    const atq = E().ataqueMarcado;
+    if(!atq || atq.resolvido){
+      console.warn('[defesa] botão sem ataque marcado');
+      return;
+    }
+    abrirAtaqueAoBar(atq);
+  }
+
+  /* A BRIGA DA ESCOLTA: nossos membros e os do aliado no mesmo lado,
+     todos sob o controle do jogador (decisão do autor). */
+  function abrirEscolta(d){
+    const e = E();
+    if(!d || !d.rival) return;
+    const aliado = TO.mundo.torcida(d.aliado) || {};
+    const rival  = TO.mundo.torcida(d.rival) || {};
+    /* entrar na briga pelo aliado aproxima de vez */
+    if(d.aliado) e.relacoes[d.aliado] =
+      U.limitar((e.relacoes[d.aliado]||0) + 10, -100, 100);
+    const cN = TO.mundo.coresDaTorcida(e.torcida);
+    const cR = TO.mundo.coresDaTorcida(rival);
+    const nossos = (d.escolta||6) + (d.aliados||10);
+    const deles = Math.max(4, Math.round((((TO.relacoes.mundo(e)||{})[d.rival]
+      || rival).membros || 30) * 0.5));
+    const enc = {
+      a:{torcida:e.torcida.id, nome:`${e.torcida.sigla} + ${aliado.nome||'aliado'}`,
+         sigla:e.torcida.sigla, n:nossos, cor:cN.cor, cor2:cN.cor2, nossa:true},
+      b:{torcida:d.rival, nome:rival.nome||'Rival',
+         sigla:TO.mundo.siglaTorcida(rival)||'RIV', n:deles,
+         cor:cR.cor, cor2:cR.cor2, nossa:false},
+      local:'rua', bairro:'', nossa:true
+    };
+    abrirConfronto(e, enc);
   }
 
   /* =======================================================
@@ -3804,12 +2572,8 @@
     const nosso = enc.a.nossa ? enc.a : enc.b.nossa ? enc.b : null;
     const deles = nosso === enc.a ? enc.b : enc.a;
     if(!nosso){
-      /* briga entre duas torcidas de fora: vira notícia, não vira cena.
-         A resolução da ida só devolve encontro com a gente dentro, mas a
-         guarda fica: encontro sem nós não é cena, é jornal. */
-      TO.estado.anotar(e, `${enc.a.nome} e ${enc.b.nome} se pegaram `+
-        `${LOCAL_ROT[enc.local]||''} a caminho do estádio.`, 'ruim');
-      redesenhar();
+      /* encontro sem nós não é cena — e também não é notícia sem crivo */
+      console.warn('[confronto] encontro sem o jogador', enc);
       return;
     }
     /* A RUA NASCE COM O EFETIVO QUE O MAPA DIZ, não com o tamanho da
@@ -3860,29 +2624,14 @@
     e.estoque.bombas = Math.max(0, e.estoque.bombas - (res.bombasUsadas||0));
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     if(enc){
-      /* material perdido quando a briga é na rua e a gente leva a pior */
-      if(res.prestigio < 0){
-        TO.torcedores.perderMaterial(e, 1, 2);
-        /* e de vez em quando some o que estava na mão de alguém: é o que
-           faz a loja de material continuar sendo decisão depois de comprada */
-        if(TO.patrimonio && U.rng() < 0.25){
-          const p = TO.patrimonio.perderItem(e);
-          if(p) TO.estado.anotar(e, `${p.rot} ficou na rua — levaram.`, 'ruim');
-        }
-      }
-      /* o encontro da rua também é briga: gatilho do delegado e registro
-         no histórico saem daqui, pela mesma porta das outras */
+      /* o encontro da rua também é briga: o registro (e a mensagem de
+         resultado) sai daqui, pela mesma porta das outras */
       TO.acoes.fecharBrigaDeRua(e, enc, res);
       encontroAberto = null;
     }
-    /* investida, assalto e cobrança no CT: o que a noite deu vira caixa,
-       tensão e cadeia aqui, e não dentro da cena */
     const fecho = acao ? TO.acoes.fecharCena(e, acao, res) : null;
-    /* O RESULTADO DA BRIGA NÃO ESPERA O DIA SEGUINTE. `fecharCena`
-       propõe a mensagem; sem esta publicação ela só apareceria no
-       próximo tique do relógio, e o jogador sairia da cena sem ver no
-       feed o que ela custou. */
-    TO.feed.publicar(e);
+    /* o resultado da briga não espera o próximo tique: cai agora */
+    while(TO.feed.pendentes(e) > 0 && !TO.feed.travado(e)) TO.feed.dropar(e);
     /* fechada a briga, o tempo volta a correr de onde parou */
     soltarTudo('cena');
     setTimeout(()=>{
@@ -3975,10 +2724,13 @@
     const fila = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa));
     const aptos = fila.slice(0, 34);
-    /* na estrada vai quem embarcou; no bar, um quarto da turma de pé */
+    /* na estrada vai quem embarcou; no bar, um quarto da turma de pé;
+       na concentração e na pista, o bonde inteiro do dia de jogo */
     const est = naEstrada ? TO.planejamento.estimativaCaravana(e) : null;
+    const noDiaDeJogo = atq.alvo === 'concentracao' || atq.alvo === 'pista';
     const nossos = naEstrada
       ? Math.max(2, (est && est.vao) || Math.round(fila.length * 0.25))
+      : noDiaDeJogo ? Math.max(2, fila.length)
       : Math.max(2, Math.round(fila.length * 0.25));
     const deles = Math.max(4, Math.round(((o && o.membros) || 40) * 0.30));
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
@@ -3995,9 +2747,6 @@
        cor:c2.cor, cor2:c2.cor2, sigla:o?TO.mundo.siglaTorcida(o):'RIV'}
     ];
     atq.resolvido = true;
-    aviso(naEstrada
-      ? `${(o&&o.nome)||'Eles'} fecharam a pista na frente do ônibus.`
-      : `${(o&&o.nome)||'Eles'} pararam na porta do nosso bar.`, 'ruim');
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
@@ -4119,10 +2868,9 @@
          </div>
        </div>`);
     /* o que a investida, o assalto ou a cobrança no CT deixaram */
-    if(fecho){
+    if(fecho && (fecho.linhas||[]).length){
       cx.appendChild(el('div',{class:`fecho-cena ${fecho.ganhou?'boa':'ruim'}`,
-        html:`<b>${fecho.txt}</b>`+
-             (fecho.linhas||[]).map(l=>`<small>${l}</small>`).join('')}));
+        html:(fecho.linhas||[]).map(l=>`<small>${l}</small>`).join('')}));
     }
     if(resumo.feridos.length){
       cx.appendChild(el('div',{class:'titulo-pagina',
@@ -4144,29 +2892,6 @@
     if(!resumo.feridos.length && !resumo.presos.length)
       cx.appendChild(el('div',{class:'em-construcao', texto:'Ninguém ficou pra trás.'}));
     $('telaRelatorio').classList.remove('oculto');
-  }
-
-  /* =======================================================
-     TICKER
-     ======================================================= */
-  let tickerLigado = false;
-  function ticker(){
-    if(tickerLigado) return;
-    tickerLigado = true;
-    const fita = $('tickerFita');
-    const frases = [
-      'Polícia apreende materiais de organizada no interior paulista',
-      'Briga entre torcidas deixa feridos em Campinas',
-      'Federação estuda proibir bandeirões em clássicos',
-      'Diretoria promete reforços para a próxima janela'
-    ];
-    fita.innerHTML = frases.map(f=>`<span>${f}</span>`).join('');
-    let x = $('tickerCaixa').clientWidth;
-    setInterval(()=>{
-      x -= 0.55;
-      if(x < -fita.scrollWidth) x = $('tickerCaixa').clientWidth;
-      fita.style.transform = `translateX(${x}px)`;
-    }, 16);
   }
 
   /* =======================================================
@@ -4237,20 +2962,7 @@
   TO.estado.aoFecharSemana((rel, e)=>{
     e = e || E();
     TO.estado.salvar();
-    /* o mundo lá fora escreve a semana dele aqui: rodada, briga alheia,
-       marco. É o pulso da categoria 5, espalhado pelos sete dias. */
-    TO.feed.fecharSemana(e, rel);
-    const saiu = (rel.saidas || []).length;
-    /* A DEBANDADA É RESULTADO, NÃO CONVERSA DE DIRETOR. O alarme é o
-       diretor pedindo providência; isto é o que aconteceu, e os dois
-       cabem na mesma semana porque contam coisas diferentes. */
-    if(saiu) TO.estado.anotar(e,
-      `${saiu} ${saiu===1?'saiu':'saíram'} da torcida essa semana. `+
-      `Caixa em ${U.dinheiro(e.dinheiro)}.`, 'ruim',
-      {cat:4, efeitos:[{ind:'membros', delta:-saiu, dono:'nosso'}]});
-    /* O MODAL, quando a chave está ligada, mostra o MÊS: ele é
-       relatório, e relatório agora é mensal. Nas outras três semanas
-       ele não abre — não há o que fechar. */
+    /* o modal do mês, só pra quem ligou a chave */
     if(opc(e).relatorio && rel.mes) abrirFechamento(rel.mes);
   });
   $('btSelecionarTorcida').onclick = ()=>{
@@ -4265,8 +2977,6 @@
     $('telaSelecao').classList.add('oculto');
     $('telaMenu').classList.remove('oculto');
   };
-  $('btConfirmarEscalacao').onclick = comecarDiaDeJogo;
-  $('btCancelarEscalacao').onclick = ()=>$('telaEscalacao').classList.add('oculto');
   /* O RELATÓRIO DA NOITE não avança mais o dia: quem avança o dia é o
      relógio do tempo, e ninguém avança dia manualmente. Fechar a tela
      devolve o feed e o relógio volta de onde parou. */
@@ -4301,9 +3011,8 @@
     get pausasDoTempo(){ return [...pausasT]; },
     abrirPainel, fecharPainel, get painel(){ return painel; },
     resolverIda: e => TO.praca.resolverIda(e || E()),
-    /* as duas telas de decisão da semana, pela mesma porta de serviço
-       que a bateria já usa pro resto */
-    abrirCaravana, abrirAtaque, abrirIdeologia
+    abrirCaravana, abrirAtaque, abrirIdeologia,
+    abrirGuerra, abrirDefesa, abrirEscolta
   };
 
   montarMenu();
