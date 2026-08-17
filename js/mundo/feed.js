@@ -143,7 +143,7 @@ TO.feed = (function(){
       .filter(b=>b.ano === E.data.ano && b.semana === sAnt);
     if(!brigas.length) return;
     const ord = [...brigas].sort((x,y)=>(y.a.n+y.b.n)-(x.a.n+x.b.n));
-    const MOSTRA = 12;
+    const MOSTRA = 5;   // só as 5 maiores na notícia (decisão do dono)
     propor(E, {
       kind:'brigas', peso:'info', voz:'jornal',
       chave:`brigas|${E.data.ano}|${sAnt}`,
@@ -454,7 +454,11 @@ TO.feed = (function(){
   function eventoDoTrimestreHoje(E){
     const ev = TO.relacoes.eventoDeHoje(E);
     if(!ev) return;
-    const rival = TO.relacoes.rivalDaPraca(E);
+    /* a treta sorteia entre TODAS as hostis da praça, nanica incluída
+       (decisão do dono, 17/08/2026) — os efetivos são idênticos, então
+       tamanho não desequilibra; o bar continua vindo da maior rival */
+    const rival = TO.relacoes.rivalDaPraca(E,
+      ev.tipo === 'treta' ? ev.chave : null);
     if(!rival) return;
 
     if(ev.tipo === 'bar'){

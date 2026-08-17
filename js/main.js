@@ -1318,12 +1318,14 @@
     const fila = e.membros.filter(m=>m.naFila && TO.membros.disponivel(m));
     const grade = el('div',{class:'colunas'});
 
-    const c1 = cartao('Fila de treino',
-      `${fila.length} na fila · ${cap} vagas · sorteada toda semana`);
+    /* o treino roda sozinho no virar do dia (decisão do dono): o
+       painel só mostra quem a diretoria escalou hoje */
+    const c1 = cartao('Treino de hoje',
+      `${fila.length} escalados · ${cap} vagas · sorteado e treinado todo dia`);
     if(!fila.length){
-      c1.corpo.innerHTML = `<div class="em-construcao">Ninguém na fila. `+
-        `Ela é sorteada no virar da semana; até lá dá pra escalar `+
-        `à mão em Membros → Ações.</div>`;
+      c1.corpo.innerHTML = `<div class="em-construcao">Ninguém escalado `+
+        `hoje — todo mundo ferido, preso ou no teto. A diretoria sorteia `+
+        `de novo amanhã.</div>`;
     } else {
       fila.forEach((m,i)=>{
         const pl = TO.membros.planoDeTreino(m);
@@ -1332,25 +1334,10 @@
         c1.corpo.appendChild(el('div',{class:'item'+(i<cap?' meu':''), html:
           `<div class="l1"><span class="nm">${TO.membros.nomeDe(m)}</span>
              <span class="qt">${m.forca}/${m.defesa}</span></div>
-           <div class="l2">${i<cap?'treina hoje':'aguarda vaga'} · ${falta} · frações `+
+           <div class="l2">treinou hoje · ${falta} · frações `+
           `${m.fracForca.toFixed(2)} / ${m.fracDefesa.toFixed(2)}</div>`}));
       });
     }
-    const bt = el('button',{class:'bt destaque larga',
-      texto:`Treinar ${Math.min(fila.length,cap)} e avançar o dia`});
-    bt.disabled = !fila.length;
-    bt.onclick = ()=>{
-      const n = TO.membros.treinarFila(e);
-      aviso(`${n} treinaram.`,'boa');
-      TO.estado.avancarDia();
-    };
-    const btS = el('button',{class:'bt larga', texto:'Sortear outra fila'});
-    btS.onclick = ()=>{
-      const n = TO.membros.sortearFila(e);
-      aviso(`Fila refeita: ${n} ${n===1?'nome':'nomes'}.`);
-      redesenhar();
-    };
-    c1.rodape(bt, btS);
     grade.appendChild(c1);
 
     /* GDD §5.4 — quem ainda tem o que ganhar, por cargo */
@@ -1375,8 +1362,9 @@
     }
     c2.corpo.appendChild(el('div',{class:'linha-dado', html:
       `<span class="fraco">O atributo só sobe de inteiro quando a fração `+
-      `acumula, e veterano leva +2 acima do teto do cargo. A fila se renova `+
-      `sozinha toda semana, priorizando quem ainda tem o que ganhar.</span>`}));
+      `acumula, e veterano leva +2 acima do teto do cargo. A diretoria `+
+      `sorteia e treina a turma sozinha todo dia, priorizando quem ainda `+
+      `tem o que ganhar.</span>`}));
     grade.appendChild(c2);
     return grade;
   }
@@ -1950,8 +1938,7 @@
       aviso(r.ok?`${TO.membros.nomeDe(m)} está solto`:r.motivo, r.ok?'boa':'ruim');
       redesenhar();
     }]);
-    if(TO.membros.disponivel(m)) acoes.push([m.naFila?'Tirar da fila de treino':'Pôr na fila de treino',
-      ()=>{ m.naFila=!m.naFila; redesenhar(); }]);
+    /* escalar treino à mão saiu: a diretoria sorteia e treina todo dia */
     const p = TO.membros.podePromover(E(), m);
     acoes.push([p.ok?`Promover (${U.dinheiro(p.custo||0)})`:`Promover — ${p.motivo}`,
       ()=>{
@@ -1978,11 +1965,6 @@
      ======================================================= */
   function pintarPatrimonio(pg, e){
     const PAT = TO.patrimonio;
-    pg.appendChild(abasGrandes([
-      {id:'estrutura', rot:'Estrutura'},
-      {id:'elenco',    rot:'Elenco'}
-    ], abaPat, id=>{abaPat=id; redesenhar();}));
-
     const comprar = (fn)=>{
       const r = fn();
       aviso(r.msg, r.ok?'boa':'ruim');
@@ -2000,42 +1982,36 @@
       return b;
     };
 
-    if(abaPat==='estrutura'){
-      const linhas = PAT.linhas(e);
-      const soma = k => linhas.reduce((s,l)=>s+l[k], 0);
-      const c = cartao('Estrutura',
-        'por mês · mensalidade e caravana ficam no Resumo');
-      const tab = el('div',{class:'tabela-pat'});
-      tab.appendChild(el('div',{class:'cab', html:
-        '<span>Local</span><span>Receita</span><span>Despesa</span><span>Mês</span>'}));
-      for(const l of linhas){
-        tab.appendChild(el('div',{class:'linha', html:
-          `<span class="nome">${l.rot}${l.bairro?`<small>${l.bairro}</small>`:''}`+
-          `${l.nota?`<small>${l.nota}</small>`:''}</span>
-           <span class="v ${l.receita?'positivo':''}">${l.receita?U.dinheiro(l.receita):'—'}</span>
-           <span class="v ${l.despesa?'negativo':''}">${l.despesa?U.dinheiro(-l.despesa):'—'}</span>
-           <span class="v ${l.saldo>0?'positivo':l.saldo<0?'negativo':''}">`+
-          `${U.dinheiro(l.saldo)}</span>`}));
-      }
-      const s = soma('receita')-soma('despesa');
-      tab.appendChild(el('div',{class:'linha total', html:
-        `<span class="nome">Total do patrimônio</span>
-         <span class="v positivo">${U.dinheiro(soma('receita'))}</span>
-         <span class="v negativo">${U.dinheiro(-soma('despesa'))}</span>
-         <span class="v ${s>=0?'positivo':'negativo'}">${U.dinheiro(s)}</span>`}));
-      c.corpo.appendChild(tab);
-      pg.appendChild(c);
-
-      const c2 = cartao('Adquirir e ampliar', `caixa: ${U.dinheiro(e.dinheiro)}`);
-      for(const o of PAT.opcoes(e))
-        c2.corpo.appendChild(oferta(o.rot, o.nota, o.custo, o.trava,
-          ()=>comprar(()=>PAT.comprar(e, o.id))));
-      pg.appendChild(c2);
-      return;
+    const linhas = PAT.linhas(e);
+    const soma = k => linhas.reduce((s,l)=>s+l[k], 0);
+    const c = cartao('Estrutura',
+      'por mês · mensalidade e caravana ficam no Resumo');
+    const tab = el('div',{class:'tabela-pat'});
+    tab.appendChild(el('div',{class:'cab', html:
+      '<span>Local</span><span>Receita</span><span>Despesa</span><span>Mês</span>'}));
+    for(const l of linhas){
+      tab.appendChild(el('div',{class:'linha', html:
+        `<span class="nome">${l.rot}${l.bairro?`<small>${l.bairro}</small>`:''}`+
+        `${l.nota?`<small>${l.nota}</small>`:''}</span>
+         <span class="v ${l.receita?'positivo':''}">${l.receita?U.dinheiro(l.receita):'—'}</span>
+         <span class="v ${l.despesa?'negativo':''}">${l.despesa?U.dinheiro(-l.despesa):'—'}</span>
+         <span class="v ${l.saldo>0?'positivo':l.saldo<0?'negativo':''}">`+
+        `${U.dinheiro(l.saldo)}</span>`}));
     }
+    const s = soma('receita')-soma('despesa');
+    tab.appendChild(el('div',{class:'linha total', html:
+      `<span class="nome">Total do patrimônio</span>
+       <span class="v positivo">${U.dinheiro(soma('receita'))}</span>
+       <span class="v negativo">${U.dinheiro(-soma('despesa'))}</span>
+       <span class="v ${s>=0?'positivo':'negativo'}">${U.dinheiro(s)}</span>`}));
+    c.corpo.appendChild(tab);
+    pg.appendChild(c);
 
-    /* --- elenco (GDD V3 §19) --- */
-    pintarElenco(pg, e, oferta, comprar);
+    const c2 = cartao('Adquirir e ampliar', `caixa: ${U.dinheiro(e.dinheiro)}`);
+    for(const o of PAT.opcoes(e))
+      c2.corpo.appendChild(oferta(o.rot, o.nota, o.custo, o.trava,
+        ()=>comprar(()=>PAT.comprar(e, o.id))));
+    pg.appendChild(c2);
   }
 
   /* =======================================================
@@ -2094,7 +2070,6 @@
      FINANCEIRO
      ======================================================= */
   let subFin = 'resumo';
-  let abaPat = 'estrutura';
 
   function pintarFinanceiro(){
     const e = E(), pg = U.$('.pagina[data-pag="financeiro"]');
@@ -2103,10 +2078,32 @@
     pg.appendChild(subabas([
       {id:'resumo', rot:'Resumo'},
       {id:'patrimonio', rot:'Patrimônio'},
+      {id:'elenco', rot:'Elenco'},
       {id:'transacoes', rot:'Transações'}
     ], subFin, id=>{subFin=id; redesenhar();}));
 
     if(subFin==='patrimonio'){ pintarPatrimonio(pg, e); return; }
+    if(subFin==='elenco'){
+      /* investir no clube tem aba própria (pedido do dono): estava
+         escondido dentro do Patrimônio e ninguém achava */
+      const comprar = (fn)=>{
+        const r = fn();
+        aviso(r.msg, r.ok?'boa':'ruim');
+        if(r.ok) redesenhar();
+      };
+      const oferta = (rot, nota, custo, trava, aoClicar)=>{
+        const b = el('button',{class:'oferta'+(trava?' travada':'')});
+        b.innerHTML =
+          `<span class="txt"><b>${rot}</b>${nota?`<small>${nota}</small>`:''}</span>
+           <span class="preco">${U.dinheiro(custo)}</span>`;
+        if(trava) b.appendChild(el('small',{class:'trava', texto:trava}));
+        b.disabled = !!trava;
+        b.onclick = aoClicar;
+        return b;
+      };
+      pintarElenco(pg, e, oferta, comprar);
+      return;
+    }
 
     if(subFin==='transacoes'){
       const c = cartao('Transações', `${e.transacoes.length} lançamentos`);
@@ -3065,7 +3062,10 @@
       b:{torcida:d.rival, nome:rival.nome||'Rival',
          sigla:TO.mundo.siglaTorcida(rival)||'RIV', n:deles,
          cor:cR.cor, cor2:cR.cor2, nossa:false},
-      local:'rua', bairro:'', nossa:true
+      local:'rua', bairro:'', nossa:true,
+      /* a briga é DELES: o prestígio da noite vai pro aliado escoltado,
+         não pra nós (decisão do dono, 17/08/2026) */
+      escoltaAliado: d.aliado || null
     };
     abrirConfronto(e, enc);
   }
@@ -3189,6 +3189,13 @@
       if(nossos > 0 && deles > 0)
         res.prestigio = U.limitar(Math.max(1, Math.round(
           res.prestigio * U.limitar(deles/nossos, 0.5, 2))), 1, 10);
+    }
+    /* NA ESCOLTA o prestígio da noite é do aliado atacado, não nosso
+       (decisão do dono, 17/08/2026): a briga era dele, nós só fomos
+       junto. O ganho vira relação melhor e um aliado mais respeitado. */
+    if(enc && enc.escoltaAliado && res.prestigio){
+      TO.relacoes.mover(e, enc.escoltaAliado, 'prestigio', res.prestigio/5);
+      res.prestigio = 0;
     }
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     if(enc){

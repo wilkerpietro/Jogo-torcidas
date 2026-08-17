@@ -397,22 +397,30 @@ TO.relacoes = (function(){
 
   /* quem marca treta e quem vem no bar: a maior rival declarada da
      praça; sem ela, a pior relação local */
-  function rivalDaPraca(E){
+  function rivalDaPraca(E, semente){
     const nossa = M().torcida(E.torcida.id) || {};
     const locais = M().torcidasEm(E.torcida.mapa).filter(o=>
       o.id !== E.torcida.id && !o.incompleta &&
       !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)));
     const vivo = id => ((E.mundoTorcidas||{})[id] || {}).membros
                      || (M().torcida(id)||{}).membros || 0;
-    /* a fonte declara VÁRIAS maiores rivais; a que marca treta e vem no
-       bar é a MAIOR delas na praça — pegar a primeira da lista punha a
-       Gaviões brigando com a nanica do bairro */
     const mrs = locais.filter(o=>(nossa.maioresRivais||[]).includes(o.id))
       .sort((a,b)=>vivo(b.id) - vivo(a.id));
-    if(mrs.length) return mrs[0];
     const hostis = locais.map(o=>({o, rel: nivel(E, o.id)}))
       .filter(x=>x.rel <= -15)
       .sort((a,b)=>a.rel - b.rel || vivo(b.o.id) - vivo(a.o.id));
+    /* COM SEMENTE (a treta marcada): sorteia entre TODAS as hostis da
+       praça, maior rival e nanica no mesmo balde — treta é de efetivo
+       idêntico, então tamanho não pesa (decisão do dono, 17/08/2026).
+       O hash mantém o dia determinístico. */
+    if(semente){
+      const balde = [...new Set(mrs.concat(hostis.map(x=>x.o)))];
+      if(!balde.length) return null;
+      return balde[TO.mapa.hash(`${semente}|rival`) % balde.length];
+    }
+    /* sem semente (o bar): a MAIOR rival declarada da praça — pegar a
+       primeira da lista punha a Gaviões brigando com a nanica do bairro */
+    if(mrs.length) return mrs[0];
     return hostis.length ? hostis[0].o : null;
   }
 

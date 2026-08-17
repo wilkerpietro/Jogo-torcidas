@@ -123,6 +123,10 @@ TO.patrimonio = (function(){
     for(const s of p.subsedes) fora.push({tipo:'subsede', rot:'Subsede', bairro:s.bairro,
       receita: REC.subsede*mult(s.bairro)*fator, despesa: MAN.subsede});
 
+    if(E.onibus) fora.push({tipo:'onibus', rot:'Ônibus da torcida',
+      bairro:'', nota:'combustível e manutenção · estrada de graça',
+      receita:0, despesa:1500});
+
     /* A LINHA DE MATERIAL POR MEMBRO SAIU do financeiro, e sai daqui
        junto: a tabela de patrimônio mostrava a mesma despesa que as
        contas cobravam, e deixar a sombra dela aqui faria a tela cobrar
@@ -174,6 +178,16 @@ TO.patrimonio = (function(){
           alvo.nivel+1 > teto.nivel ? `sede nível ${n} não comporta ${cfg.rot.toLowerCase()} nível ${alvo.nivel+1}` : null)});
     }
 
+    /* O ÔNIBUS DA TORCIDA (decisão do dono, 17/08/2026): R$ 100 mil,
+       R$ 1.500/mês de combustível e manutenção, 1% ao mês de uma
+       manutenção séria de R$ 15 mil — e a caravana de estrada sai de
+       graça. Avião continua pago: ônibus não voa. */
+    if(!E.onibus) lista.push({
+      id:'onibus', rot:'Comprar o ônibus da torcida',
+      nota:'acaba a despesa da caravana na estrada · R$ 1.500/mês de '+
+           'combustível e manutenção · rota de avião continua paga',
+      custo:100000, trava:trava(100000)});
+
     if(!p.fabrica) lista.push({
       id:'fabrica', rot:FABRICA.rot,
       nota:`triplica o faturamento das lojas e corta ${Math.round(FABRICA.corteInsumo*100)}% do insumo`,
@@ -201,6 +215,9 @@ TO.patrimonio = (function(){
     } else if(acao==='fabrica'){
       p.fabrica = true;
       TO.estado.lancar(E, 'Fábrica de material', -o.custo);
+    } else if(acao==='onibus'){
+      E.onibus = {desde:(E.data||{}).absoluto || 0};
+      TO.estado.lancar(E, 'Ônibus da torcida', -o.custo);
     } else if(acao==='comprar'){
       const cfg = PONTO[tipo];
       const bairro = F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1));

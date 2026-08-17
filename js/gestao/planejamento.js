@@ -507,6 +507,12 @@ TO.planejamento = (function(){
     const porCabeca = r.id === 'ar' ? CABECA_AR
                     : CABECA_BASE + CABECA_TRECHO * r.saltos;
     const bruto = porCabeca*vao;
+    /* ônibus próprio (decisão do dono): estrada de graça — a conta do
+       mês do ônibus mora no financeiro. Avião continua pago. */
+    if(E.onibus && r.id !== 'ar')
+      return {aptos:aptos.length, interessados, vao, vontade, rota:r,
+              porCabeca:0, bruto:0, rateio:0, custo:0, minimo:MINIMO,
+              onibus:true};
     return {aptos:aptos.length, interessados, vao, vontade, rota:r, porCabeca,
             bruto, rateio: Math.round(bruto*RATEIO),
             custo: Math.round(bruto*(1-RATEIO)), minimo:MINIMO};
@@ -627,8 +633,10 @@ TO.planejamento = (function(){
       const pago = !!((E.caravanasPagas||{})[j.chave]);
       põe('caravana', `Caravana para ${j.cidadeAdv || 'fora'}`,
           est ? est.custo : TO.financeiro.CARAVANA, pago,
-          est ? `${est.vao} pessoas por ${est.rota.nome} · `+
-                `${U.dinheiro(est.rateio)} sai do rateio dos que vão`
+          est ? (est.onibus
+                  ? `${est.vao} pessoas no ônibus da torcida — estrada de graça`
+                  : `${est.vao} pessoas por ${est.rota.nome} · `+
+                    `${U.dinheiro(est.rateio)} sai do rateio dos que vão`)
               : 'rota ainda não escolhida — vale o valor cheio do GDD');
     }
 
@@ -711,10 +719,8 @@ TO.planejamento = (function(){
     if(promoveis) põe('promocao', `${promoveis} prontos pra promoção`,
       'subir de cargo custa dinheiro e rende atributo', 'torcida');
 
-    const fila = E.membros.filter(m=>m.naFila && TO.membros.disponivel(m)).length;
-    if(!fila) põe('treino', 'Fila de treino vazia',
-      'sem ninguém escalado, treinar não faz nada', 'torcida');
-
+    /* o aviso de fila de treino vazia saiu: a diretoria sorteia e
+       treina sozinha todo dia (decisão do dono, 17/08/2026) */
     if(E.dinheiro < 0) põe('caixa', 'Caixa no vermelho',
       'se durar, membro começa a sair', 'financeiro', 'urgente');
 

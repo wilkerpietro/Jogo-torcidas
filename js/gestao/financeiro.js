@@ -239,9 +239,11 @@ TO.financeiro = (function(){
        cheio do GDD §7.3 */
     const est = TO.planejamento && TO.planejamento.estimativaCaravana(E);
     const valor = est ? est.custo : CARAVANA;
-    TO.estado.lancar(E, `Caravana para ${destino}`+
-      (est ? ` (${est.vao} pessoas, rateio de ${U.dinheiro(est.rateio)})` : ''),
-      -valor);
+    /* ônibus próprio: a estrada sai de graça — nada a lançar */
+    if(valor > 0)
+      TO.estado.lancar(E, `Caravana para ${destino}`+
+        (est ? ` (${est.vao} pessoas, rateio de ${U.dinheiro(est.rateio)})` : ''),
+        -valor);
     /* a lista não pode crescer pra sempre num save de dez temporadas */
     const chaves = Object.keys(E.caravanasPagas);
     if(chaves.length > 80) delete E.caravanasPagas[chaves[0]];
@@ -343,6 +345,17 @@ TO.financeiro = (function(){
        `acumularNoMes` soma esta semana no bloco corrente, e na última
        semana do mês o bloco vira `E.ultimoFechamento` — que é o que o
        modal e o botão "Último fechamento" mostram. */
+    /* o ônibus cobra no fim do mês: combustível e manutenção fixos, e
+       1% de chance de uma manutenção séria (decisão do dono) */
+    if(E.onibus && fimDoMes(E)){
+      TO.estado.lancar(E, 'Ônibus — combustível e manutenção', -1500);
+      rel.despesa += 1500; rel.saldo -= 1500;
+      if(U.rng() < 0.01){
+        TO.estado.lancar(E, 'Ônibus — manutenção séria', -15000);
+        rel.despesa += 15000; rel.saldo -= 15000;
+        rel.avisos.push('O ônibus quebrou de verdade: R$ 15.000 de oficina.');
+      }
+    }
     acumularNoMes(E, rel);
     E.ultimaSemana = rel;
     if(fimDoMes(E)) rel.mes = fecharMes(E);

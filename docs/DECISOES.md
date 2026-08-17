@@ -84,7 +84,8 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   sai de briga NO BAR — sede e rua não têm saque. O ranking conta os DISPONÍVEIS, então briga mexe em posição.
   Registro completo na aba Brigas das Notícias, e toda segunda o
   jornal resume a semana no feed: quem brigou e quem venceu numa
-  coluna, baixas na outra, as maiores brigas primeiro.
+  coluna, baixas na outra — só as 5 maiores na notícia (decisão do
+  dono, 17/08/2026); o resto fica na aba.
 - **A paz deprecia** (17/08/2026): 20 dias sem participar de briga
   tiram 1 de prestígio (régua 0-100) e 0,5 de moral, e o relógio
   segue correndo a cada 20 dias parados; qualquer briga zera.
@@ -100,12 +101,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   30%, 120; Mercadinho 2/5 → 1-2k/3-4k, 20%, 60; Loja de roupas 2/5 →
   0,5-1k/2-3k, 10%, 30. Caiu, não leva nada. (A pena explícita pode
   ir a 360 dias; a da briga segue no teto de 90.)
-- **Recrutamento por sorteio** (tabela do dono, 17/08/2026): cada
-  campanha tira um dado — normal 20%/10%/70% (um/dois/ninguém);
-  vitória no último jogo 30%/20%/50%; derrota 10%/5%/85%; 2 semanas
-  após título ou acesso 40%/40%/20%; 2 semanas após rebaixamento
-  10%/0%/90%. R$ 5 por novato; limite duro é a vaga da sede
-  (50/90/150/200/500). A base da praça segue sendo o portão.
+- **Recrutamento por sorteio** (tabela do dono, 17/08/2026; números
+  reapertados no mesmo dia): cada campanha tira um dado — normal
+  10%/5%/85% (um/dois/ninguém); vitória no último jogo 15%/5%/80%;
+  derrota 5%/0%/95%; 2 semanas após título ou acesso 40%/20%/40%;
+  2 semanas após rebaixamento 0%/0%/100%. R$ 5 por novato; limite
+  duro é a vaga da sede (50/90/150/200/500). A base da praça segue
+  sendo o portão.
 - **Prestígio na régua de 0 a 100** (17/08/2026): vitória rende no
   máximo +10 e derrota tira no máximo −10 — o teto negativo só com
   prejuízo grande de feridos e presos. Acabou o +30 por briga comum.
@@ -149,6 +151,35 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **Relatório do olheiro em tabela** (17/08/2026): uma linha por jogo —
   competição, dia e o confronto com a cor de cada clube na esquerda;
   as torcidas do jogo com cor e estimativa na direita.
+- **Festa sem moral** (17/08/2026): a festa na sede virou só receita
+  de ingresso e bebida — o +0,8 de moral por festa rodava todo dia
+  pelo expediente e saturava o indicador em dias. Moral agora vem de
+  título, acesso, briga e caixa, não de churrasco.
+- **Ônibus da torcida** (17/08/2026): R$ 100.000 no Patrimônio.
+  Combustível e manutenção de R$ 1.500 no fim de cada mês, e 1% de
+  chance por mês de uma manutenção séria de R$ 15.000. Em troca, a
+  caravana de estrada sai de graça — o rateio some do compromisso —
+  e a rota de avião continua paga.
+- **Investir no clube tem aba própria** (17/08/2026): o reforço de
+  elenco morava escondido dentro de Financeiro → Patrimônio e
+  ninguém achava. Virou a subaba Elenco do Financeiro, com a mesma
+  conta de sempre (R$ 50 mil a R$ 800 mil o ponto, teto 100).
+- **Treino é rotina da diretoria** (17/08/2026): o botão "Treinar e
+  avançar o dia" saiu. Todo virar de dia a fila é sorteada de novo —
+  prioridade pra quem ainda não bateu o teto do cargo, sorteio no
+  resto — e treina sozinha, dentro das vagas da sede (2/4/8/12/20).
+  O ganho por sessão segue 0,0–0,3 de fração em força e defesa, +1
+  XP, teto do cargo (+2 de veterano). Treinar também saiu do
+  expediente (seria treino em dobro) e da escalação à mão.
+- **Treta marcada pode ser com nanica** (17/08/2026): o sorteio da
+  rival da treta cobre TODAS as hostis da praça, da maior rival à
+  nanica do bairro — treta é de efetivo idêntico, tamanho não pesa.
+  O ataque ao bar continua vindo da maior rival declarada.
+- **Prestígio da escolta é do aliado** (17/08/2026): quando o aliado
+  hospedado é atacado na nossa cidade e entramos na briga, o
+  prestígio da noite vai pra torcida DELE — a briga era dele, nós só
+  fomos junto. Pra nós ficam a relação (+10 na hora) e a ajuda no
+  relógio da convivência.
 - **Ataque de nanica não existe** (17/08/2026): ataque sofrido só vem de
   torcida com pelo menos metade do nosso efetivo (na estrada, a régua é
   a caravana embarcada) — a cena que abria e acabava com o atacante

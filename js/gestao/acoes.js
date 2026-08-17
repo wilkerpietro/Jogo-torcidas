@@ -66,11 +66,11 @@ TO.acoes = (function(){
      (nível → 50/90/150/200/500). A base da praça continua sendo o
      portão: sem torcedor fora de organizada, ninguém entra. */
   const TABELA_RECRUTA = {
-    titulo:    {um:0.40, dois:0.40, rot:'título ou acesso fresco'},
-    rebaixado: {um:0.10, dois:0.00, rot:'rebaixamento fresco'},
-    ganhou:    {um:0.30, dois:0.20, rot:'vitória no último jogo'},
-    perdeu:    {um:0.10, dois:0.05, rot:'derrota no último jogo'},
-    normal:    {um:0.20, dois:0.10, rot:'semana comum'}
+    titulo:    {um:0.40, dois:0.20, rot:'título ou acesso fresco'},
+    rebaixado: {um:0.00, dois:0.00, rot:'rebaixamento fresco'},
+    ganhou:    {um:0.15, dois:0.05, rot:'vitória no último jogo'},
+    perdeu:    {um:0.05, dois:0.00, rot:'derrota no último jogo'},
+    normal:    {um:0.10, dois:0.05, rot:'semana comum'}
   };
   function regimeRecrutamento(E){
     const sa = TO.relacoes.semanaAbs(E);
@@ -379,24 +379,11 @@ TO.acoes = (function(){
      Cada ação diz por que não pode, em vez de só ficar cinza.
      Rendimento reduzido: é ação de um turno, não de semana.
      ======================================================= */
+  /* TREINAR SAIU DO EXPEDIENTE (decisão do dono, 17/08/2026): a fila
+     agora é sorteada e treinada sozinha todo dia, direto no virar do
+     dia — turno de expediente treinando por cima seria treino em
+     dobro. Rotina salva com 'treinar' só pula o turno. */
   const LISTA = [
-    {
-      id:'treinar', nome:'Treinar membros', icone:'halter', cena:'Sede',
-      efeito:'Força e Defesa de quem está na fila',
-      disponivel(E){
-        const n = E.membros.filter(m=>m.naFila && TO.membros.disponivel(m)).length;
-        return n ? {ok:true} : {ok:false, motivo:'ninguém na fila de treino'};
-      },
-      executar(E){
-        /* um turno treina uma fração da fila */
-        const fila = E.membros.filter(m=>m.naFila && TO.membros.disponivel(m));
-        const n = Math.max(1, Math.round(
-          Math.min(fila.length, TO.membros.capTreino(E)) * REDUCAO));
-        let feitos = 0;
-        for(const m of fila.slice(0, n)) if(TO.membros.treinar(E, m)) feitos++;
-        return {ok:true, msg:`${feitos} treinaram.`};
-      }
-    },
     {
       id:'recrutar', nome:'Recrutar', icone:'megafone', cena:'Praça',
       efeito:'Novos membros, R$ 5 por novato',
@@ -430,7 +417,7 @@ TO.acoes = (function(){
     },
     {
       id:'festa', nome:'Festa na sede', icone:'copo', cena:'Sede',
-      efeito:'Moral e receita de ingresso e bebida',
+      efeito:'Receita de ingresso e bebida',
       custo:700,
       disponivel(E){
         return E.dinheiro >= 700 ? {ok:true}
@@ -441,11 +428,12 @@ TO.acoes = (function(){
         /* festa é compra de moral, não fábrica de dinheiro: a receita
            caiu 80% por decisão do autor — a economia estava fácil */
         const receita = Math.round(publico * U.inteiro(4, 7) * REDUCAO * 2);
+        /* festa não fabrica moral (decisão do dono, 17/08/2026): virou
+           diária com o Expediente e saturava o indicador em dias. É
+           caixa e ponto — moral vem de briga, título e defesa. */
         TO.estado.lancar(E, 'Festa na sede', -700);
         TO.estado.lancar(E, `Bilheteria e bar da festa (${publico})`, receita);
-        TO.estado.mexerIndicador(E, 'moral', 0.8, 'Festa na sede');
-        for(const m of E.membros) m.moral = U.limitar(m.moral + 0.6, 0, 20);
-        return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-700)} de saldo, moral em alta.`};
+        return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-700)} de saldo.`};
       }
     },
     {

@@ -277,8 +277,6 @@ TO.estado = (function(){
       aplicarResultadoDoClube(E, fecho.jogo);
 
       E.data.dia = 1; E.data.semana++;
-      /* GDD §5.4: a fila de treino da semana é sorteada de novo */
-      TO.membros.sortearFila(E);
 
       if(E.data.semana > TO.competicoes.SEMANAS_ANO){
         E.data.semana = 1; E.data.ano++;
@@ -320,6 +318,12 @@ TO.estado = (function(){
     E.acoes.usadas = 0;
     rodarExpediente(E);
     TO.membros.passarDia(E);
+
+    /* TREINO É ROTINA DA DIRETORIA (decisão do dono, 17/08/2026): todo
+       dia a fila é sorteada de novo — prioridade pra quem ainda tem o
+       que ganhar, sorteio no resto — e treina sozinha, sem botão. */
+    TO.membros.sortearFila(E);
+    TO.membros.treinarFila(E);
 
     /* A PAZ PROLONGADA DEPRECIA (decisão do dono, 17/08/2026): a cada
        20 dias sem participar de briga nenhuma, o prestígio cai 1 na
