@@ -78,9 +78,60 @@ TO.diaJogo.arredores = (function(){
   function reconstruir(){
     if(D.mascara) decodificarMascara(D.mascara);
     else construirMalhaDosPoligonos();
+    podarIlhas();            // quintal marcado por engano não é rua
     construirMalhaCorpo();   // onde o corpo cabe, base das rotas
     limparCampos();          // a navegação depende da malha
     fugas = acharFugas();    // por onde se some, quando se corre
+  }
+
+  /* =======================================================
+     PODA DAS ILHAS
+     As máscaras editadas à mão trazem manchas andáveis DENTRO
+     de quintal e telhado — ilhas que não encostam na rua. Um
+     disco que nasce ou é empurrado pra lá é "válido" pra
+     malha, mas não alcança a briga nem é alcançado, e segura o
+     fim da cena pra sempre. Aqui a malha fica só com o que se
+     conecta aos spawns e portões da cena: o resto vira parede,
+     e aí o nascimento e a rede de segurança fazem o trabalho
+     deles.
+     ======================================================= */
+  function podarIlhas(){
+    const sementes = [];
+    const semear = (x, y)=>{
+      const c0 = U.limitar(Math.floor(x/CEL), 0, COLS-1);
+      const r0 = U.limitar(Math.floor(y/CEL), 0, ROWS-1);
+      if(malha[r0*COLS+c0]){ sementes.push(r0*COLS+c0); return; }
+      /* âncora fora do chão: pega a célula andável mais perto */
+      for(let a=1; a<=8; a++)
+        for(let dr=-a; dr<=a; dr++) for(let dc=-a; dc<=a; dc++){
+          if(Math.max(Math.abs(dr), Math.abs(dc)) !== a) continue;
+          const c = c0+dc, r = r0+dr;
+          if(c<0||r<0||c>=COLS||r>=ROWS) continue;
+          if(malha[r*COLS+c]){ sementes.push(r*COLS+c); return; }
+        }
+    };
+    for(const s of (D.spawns   || [])) semear(s.x, s.y);
+    for(const e of (D.entradas || [])) semear(e.x, e.y);
+    for(const p of (D.pmPostos || [])) semear(p.x, p.y);
+    if(!sementes.length) return;              // cena sem âncora: não mexe
+
+    const visto = new Uint8Array(COLS*ROWS);
+    const fila = [...new Set(sementes)];
+    for(const i of fila) visto[i] = 1;
+    while(fila.length){
+      const i = fila.pop();
+      const c = i % COLS, r = (i / COLS) | 0;
+      for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+        if(!dr && !dc) continue;
+        const nc = c+dc, nr = r+dr;
+        if(nc<0||nr<0||nc>=COLS||nr>=ROWS) continue;
+        const j = nr*COLS+nc;
+        if(visto[j] || !malha[j]) continue;
+        visto[j] = 1; fila.push(j);
+      }
+    }
+    for(let i=0; i<malha.length; i++)
+      if(malha[i] && !visto[i]) malha[i] = 0;
   }
 
   /* =======================================================
