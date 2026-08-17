@@ -79,6 +79,11 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   dropam depois, então nada vaza o resultado. A barra tem botão de
   pause (vira play; a barra de espaço também pausa e solta) e botão
   de velocidade 1×/2×/4× — o padrão é 4×.
+- **Expediente presta contas** (17/08/2026): turno que não rodou
+  também entra no "Últimos turnos" — festa sem caixa ("custa R$ 700"),
+  dia de jogo do clube e dia de caravana aparecem esmaecidos com o
+  motivo. O dinheiro sempre esteve certo; o que faltava era o registro
+  do que não aconteceu.
 - **Convivência** (17/08/2026): mês sem hostilidade entre nós e uma
   torcida melhora a relação em +1; dois meses sem nenhuma ajuda
   (escolta, recepção, reunião) pioram em −1. Cada briga e cada ajuda

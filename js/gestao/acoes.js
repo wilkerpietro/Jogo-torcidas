@@ -597,6 +597,14 @@ TO.acoes = (function(){
       if(!r.ok){
         E.acoes.rotinaFalha = E.acoes.rotinaFalha || {};
         E.acoes.rotinaFalha[`${a.nome} (${t.nome.toLowerCase()})`] = r.msg;
+        /* TURNO QUE NÃO RODOU TAMBÉM É HISTÓRIA (pedido do dono,
+           17/08/2026): a festa parava sem caixa e ninguém ficava
+           sabendo — o aviso ia pro fechamento da semana e era apagado.
+           Agora o "Últimos turnos" do Expediente conta a falha. */
+        E.acoes.feitas = E.acoes.feitas || [];
+        E.acoes.feitas.push({semana:E.data.semana, dia:E.data.dia, id,
+          ok:false, msg:`${a.nome} não rolou: ${r.msg}.`});
+        if(E.acoes.feitas.length > 60) E.acoes.feitas.shift();
       }
     }
     return fora;

@@ -2437,7 +2437,8 @@
     if(feitas.length){
       const c = cartao('Últimos turnos');
       for(const f of feitas)
-        c.corpo.appendChild(el('div',{class:'transacao', html:
+        c.corpo.appendChild(el('div',
+          {class:'transacao'+(f.ok===false?' turno-falhou':''), html:
           `<span class="dia">S${f.semana}·d${f.dia}</span>
            <span class="desc">${f.msg||f.id}</span>`}));
       cx.appendChild(c);

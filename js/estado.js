@@ -205,11 +205,23 @@ TO.estado = (function(){
      cada turno com a ação que o jogador escolheu. Dia de jogo do clube
      e dias de caravana ficam de fora — a torcida tem mais o que fazer. */
   function rodarExpediente(est){
+    /* dia fora do expediente também fica registrado no "Últimos
+       turnos" — sem isso a festa sumia por semanas de calendário
+       cheio e parecia bug (pedido do dono, 17/08/2026) */
+    const folga = motivo => {
+      const exp = est.expediente || {};
+      if(!exp.manha && !exp.tarde && !exp.noite) return;
+      est.acoes.feitas = est.acoes.feitas || [];
+      est.acoes.feitas.push({semana:est.data.semana, dia:est.data.dia,
+        id:'folga', ok:false, msg:`Expediente de folga: ${motivo}.`});
+      if(est.acoes.feitas.length > 60) est.acoes.feitas.shift();
+    };
     const meu = TO.mundo.time(est.torcida.clubeId);
     if(meu && TO.competicoes.jogosDaSemana(est, meu.id, est.data.semana)
-                .some(j=>j.dia === est.data.dia)) return;
+                .some(j=>j.dia === est.data.dia))
+      return folga('dia de jogo do clube');
     const cv = TO.financeiro.diasDeCaravana(est);
-    if(cv.includes(est.data.dia)) return;
+    if(cv.includes(est.data.dia)) return folga('dia de caravana');
     TO.acoes.rodarExpediente(est);
   }
 
