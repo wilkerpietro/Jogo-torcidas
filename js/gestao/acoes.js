@@ -465,6 +465,7 @@ TO.acoes = (function(){
         const [id, v] = alvos[0];
         const o = TO.mundo.torcida(id);
         E.relacoes[id] = U.limitar(v + 12*REDUCAO, -100, 100);
+        TO.relacoes.marcarAjuda(E, id);
         return {ok:true, msg:`Reunião com ${o?o.nome:'a diretoria aliada'}. Relação em `+
                              `${Math.round(E.relacoes[id])}.`};
       }

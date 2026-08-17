@@ -1058,12 +1058,42 @@ TO.competicoes = (function(){
     if(ultima && ultima.jogos.some(j=>j.gc===undefined || j.gc===null)) return;
 
     let vivos;
+    const jogos = [];
+    const par = (a,b)=>jogos.push({c:a, f:b});
     if(!ultima){
-      vivos = [];
-      comp.grupos.forEach((g, ig)=>{
-        const t = tabela(comp, ig);
-        vivos.push(...t.slice(0, comp.passam).map(l=>l.id));
-      });
+      /* CHAVEAMENTO OLÍMPICO (decisão do dono, 17/08/2026).
+         Saindo dos grupos, o cruzamento é fixo pela classificação:
+         · dois grupos (Copa do Nordeste, e a Série D par a par):
+           jogo 1: 1ºA×4ºB · jogo 2: 2ºB×3ºA · jogo 3: 1ºB×4ºA ·
+           jogo 4: 2ºA×3ºB — o mando é do mais bem classificado;
+         · grupo único: 1º×4º e 2º×3º;
+         · e dali em diante a chave anda sozinha: vencedor do jogo 1
+           pega o do jogo 2, o do 3 pega o do 4, sem re-sorteio. */
+      const porGrupo = comp.grupos.map((g, ig)=>
+        tabela(comp, ig).slice(0, comp.passam).map(l=>l.id));
+      vivos = porGrupo.flat();
+      const G = porGrupo.length, P = comp.passam;
+      if(G === 1 && P === 4){
+        const [p1,p2,p3,p4] = porGrupo[0];
+        par(p1,p4); par(p2,p3);
+      } else if(G === 1 && P === 2){
+        par(porGrupo[0][0], porGrupo[0][1]);
+      } else if(G % 2 === 0 && P === 4){
+        for(let k=0;k<G;k+=2){
+          const A = porGrupo[k], B = porGrupo[k+1];
+          par(A[0],B[3]); par(B[1],A[2]); par(B[0],A[3]); par(A[1],B[2]);
+        }
+      } else if(G % 2 === 0 && P === 2){
+        for(let k=0;k<G;k+=2){
+          const A = porGrupo[k], B = porGrupo[k+1];
+          par(A[0],B[1]); par(B[0],A[1]);
+        }
+      } else {
+        /* formato fora do catálogo: melhor contra pior, como era */
+        const ordem = [...vivos].sort((a,b)=>forca(b)-forca(a));
+        for(let i=0;i<ordem.length/2;i++)
+          par(ordem[i], ordem[ordem.length-1-i]);
+      }
     }else{
       vivos = ultima.jogos.map(j=>j.venceu);
       if(vivos.length === 1){
@@ -1072,15 +1102,18 @@ TO.competicoes = (function(){
         comp.vice = f.venceu===f.c ? f.f : f.c;
         return;
       }
+      if(vivos.length >= 2){
+        /* a chave olímpica anda na ordem dos jogos: V1×V2, V3×V4…
+           O mando fica com o clube mais forte, a régua de sempre. */
+        for(let i=0;i+1<vivos.length;i+=2){
+          const a = vivos[i], b = vivos[i+1];
+          if(forca(a) >= forca(b)) par(a,b); else par(b,a);
+        }
+      }
     }
     if(vivos.length < 2) { comp.campeao = vivos[0] || null; return; }
 
     const NOMES = {2:'Final', 4:'Semifinal', 8:'Quartas', 16:'Oitavas', 32:'Primeira fase'};
-    const jogos = [];
-    /* melhor contra pior, o clássico chaveamento de copa */
-    const ordem = [...vivos].sort((a,b)=>forca(b)-forca(a));
-    for(let i=0;i<ordem.length/2;i++)
-      jogos.push({c:ordem[i], f:ordem[ordem.length-1-i]});
 
     /* Com data de final marcada, a chave é contada de trás pra frente:
        a final na semana combinada, a semifinal na anterior e por aí.

@@ -35,7 +35,15 @@ TO.relacoes = (function(){
     E.relacoes = E.relacoes || {};
     const antes = nivel(E, id);
     E.relacoes[id] = U.limitar(antes - quanto, -100, 100);
+    /* a convivência conta a partir da última hostilidade */
+    if(quanto > 0) (E.marcaHostil = E.marcaHostil || {})[id] = semanaAbs(E);
     return E.relacoes[id] - antes;
+  }
+
+  /* ajuda registrada (escolta, recepção, reunião): zera o relógio da
+     indiferença da convivência */
+  function marcarAjuda(E, id){
+    if(id) (E.marcaAjuda = E.marcaAjuda || {})[id] = semanaAbs(E);
   }
 
   /* =======================================================
@@ -450,9 +458,38 @@ TO.relacoes = (function(){
     }
   }
 
+  /* =======================================================
+     CONVIVÊNCIA (decisão do dono, 17/08/2026)
+     Mês (4 semanas) sem hostilidade entre nós e uma torcida
+     melhora a relação em +1; dois meses (8 semanas) sem
+     nenhuma ajuda pioram em −1. O relógio de cada torcida
+     zera na última briga (marcaHostil, via hostilidade) e na
+     última ajuda (marcaAjuda: escolta, recepção, reunião).
+     ======================================================= */
+  function convivencia(E){
+    const sa = semanaAbs(E);
+    E.marcaHostil = E.marcaHostil || {};
+    E.marcaAjuda  = E.marcaAjuda  || {};
+    E.convivenciaDesde = E.convivenciaDesde || sa;
+    for(const o of M().jogaveis()){
+      if(o.id === E.torcida.id || o.incompleta) continue;
+      const h0 = E.marcaHostil[o.id] || E.convivenciaDesde;
+      if(sa - h0 >= 4){
+        E.relacoes[o.id] = U.limitar(nivel(E, o.id) + 1, -100, 100);
+        E.marcaHostil[o.id] = h0 + 4;      // um +1 por mês cheio de paz
+      }
+      const a0 = E.marcaAjuda[o.id] || E.convivenciaDesde;
+      if(sa - a0 >= 8){
+        E.relacoes[o.id] = U.limitar(nivel(E, o.id) - 1, -100, 100);
+        E.marcaAjuda[o.id] = a0 + 8;       // um −1 a cada dois meses secos
+      }
+    }
+  }
+
   function passarSemana(E){
     mundo(E);
     esfriar(E);
+    convivencia(E);
     economiaDelas(E);
     return {ataques: ataquesContraNos(E)};
   }
@@ -470,7 +507,7 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade,
+  return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
           mundo, balanco, ARQUETIPOS, economiaDelas,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,

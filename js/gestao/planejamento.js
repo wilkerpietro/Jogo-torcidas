@@ -878,6 +878,7 @@ TO.planejamento = (function(){
       TO.estado.lancar(E, `Recepção da ${a.torcida.nome}`, -custo);
       E.relacoes[a.id] = U.limitar((E.relacoes[a.id]||0) + recepcaoDe(nivel).relacao,
                                    -100, 100);
+      TO.relacoes.marcarAjuda(E, a.id);
       p.pago = p.pago || {}; p.pago[a.id] = true;
       gasto += custo;
     }

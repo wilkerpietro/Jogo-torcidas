@@ -2668,9 +2668,13 @@
     if(!d || !d.rival) return;
     const aliado = TO.mundo.torcida(d.aliado) || {};
     const rival  = TO.mundo.torcida(d.rival) || {};
-    /* entrar na briga pelo aliado aproxima de vez */
-    if(d.aliado) e.relacoes[d.aliado] =
-      U.limitar((e.relacoes[d.aliado]||0) + 10, -100, 100);
+    /* entrar na briga pelo aliado aproxima de vez — e conta como
+       ajuda no relógio da convivência */
+    if(d.aliado){
+      e.relacoes[d.aliado] =
+        U.limitar((e.relacoes[d.aliado]||0) + 10, -100, 100);
+      TO.relacoes.marcarAjuda(e, d.aliado);
+    }
     const cN = TO.mundo.coresDaTorcida(e.torcida);
     const cR = TO.mundo.coresDaTorcida(rival);
     const nossos = (d.escolta||6) + (d.aliados||10);
@@ -2761,6 +2765,28 @@
                 bondes, efetivoRival: deles.n, local: enc.local },
       aoTerminar: res => fecharDiaDeJogo(res, enc)
     });
+    /* GUERRA É BRIGA MARCADA: os dois lados vieram pra isso. As cenas
+       sobre foto marcam os spawns visitantes com `guarda`, e guarda
+       parado espera o gatilho da casa — que só dispara com inimigo a
+       170 px. Com os bondes nascendo a 500 px, medido, os 120 deles
+       ficavam o tempo todo parados no canto do próprio spawn e a
+       guerra era um impasse de 0 × 0. Mesmo tratamento da treta:
+       ninguém é da casa, a cena nasce acordada e o bonde deles marcha
+       pro nosso ponto. */
+    const J = TO.diaJogo.ponte.J;
+    if(J){
+      const spawnsNossos = [...new Set(J.discos.filter(x=>x.doJogador)
+                                               .map(x=>x.spawn))];
+      const alvoDeles = spawnsNossos[0] || null;
+      for(const s2 of [...new Set(J.discos.filter(x=>!x.doJogador)
+                                          .map(x=>x.spawn))]){
+        J.bondes[s2] = Object.assign(J.bondes[s2] || {id:s2},
+          {humor:'atacar', agirEm:0, alvo:alvoDeles});
+      }
+      for(const d2 of J.discos){ d2.guarda = false; d2.daCasa = false; }
+      J.acordou = true;
+      J.paz = false;
+    }
   }
 
   function fecharDiaDeJogo(res, enc, acao){

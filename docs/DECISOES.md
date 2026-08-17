@@ -70,6 +70,18 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.
+- **Convivência** (17/08/2026): mês sem hostilidade entre nós e uma
+  torcida melhora a relação em +1; dois meses sem nenhuma ajuda
+  (escolta, recepção, reunião) pioram em −1. Cada briga e cada ajuda
+  zeram o próprio relógio.
+- **Chaveamento olímpico** (17/08/2026): saindo dos grupos, o
+  cruzamento é fixo pela classificação — dois grupos (Copa do
+  Nordeste; Série D par a par): 1ºA×4ºB, 2ºB×3ºA, 1ºB×4ºA, 2ºA×3ºB;
+  grupo único: 1º×4º e 2º×3º. Dali em diante a chave anda sozinha
+  (V1×V2, V3×V4), sem re-sorteio por força.
+- **Guerra nasce acordada** (17/08/2026): na cena do encontro ninguém
+  é da casa de guarda — o bonde rival marcha pro nosso ponto, como na
+  treta. (Nas defesas o gatilho da casa continua valendo.)
 - **Moral fora da briga** (17/08/2026): dano, velocidade e a decisão de
   revidar não olham mais pra moral — o multiplicador criava bola de
   neve e briga pareada virava varrida. Dano é força contra defesa.
