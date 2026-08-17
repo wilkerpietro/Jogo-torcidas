@@ -1351,9 +1351,28 @@
      inalcançável; se acontecer, é bug, e bug vai pro console. */
   function abrirAtaque(ctx){
     const e = E(), P = TO.planejamento;
-    /* a lista da traição e a lista do ataque entram pela mesma porta:
-       quando todas as da rua são aliadas, elas SÃO os alvos */
-    const lista = P.alvosDoAtaque(e, ctx);
+    /* O RELATÓRIO DO DIA É UM SÓ (decisão do dono), então a tela recebe
+       GRUPOS: cada jogo relevante traz seus alvos, e o alvo escolhido
+       carrega o jogo a que pertence — nosso (plano) ou alheio
+       (investida daquele jogo). */
+    let lista;
+    if(ctx && ctx.grupos && ctx.grupos.length){
+      lista = [];
+      const vistos = new Set();
+      for(const g of ctx.grupos){
+        const doJogo = new Set(
+          [...TO.mundo.torcidasDe(g.casa), ...TO.mundo.torcidasDe(g.vis)]
+            .map(o=>o.id));
+        for(const a of P.alvosNaRua(e, {dia:g.dia})){
+          if(!doJogo.has(a.id) || vistos.has(a.id)) continue;
+          vistos.add(a.id);
+          lista.push(Object.assign({}, a, {chaveJogo:g.chaveJogo, dia:g.dia}));
+        }
+      }
+      lista.sort((a,b)=>a.relacao-b.relacao);
+    } else {
+      lista = P.alvosDoAtaque(e, ctx);
+    }
     if(!lista.length){
       console.warn('[ataque] tela pedida sem alvo nenhum', ctx);
       return {cancelado:true};
@@ -1365,7 +1384,10 @@
     let bombas = U.limitar(p.bombas || 0, 0, (e.estoque||{}).bombas || 0);
     let efetivo = null;
     const corpo = el('div');
-    const diaDoEvento = (ctx && ctx.dia) || ((e.proximoJogo||{}).dia) || 6;
+    const diaDoEvento = ()=> {
+      const a = lista.find(x=>x.id === alvo) || {};
+      return a.dia || (ctx && ctx.dia) || ((e.proximoJogo||{}).dia) || 6;
+    };
 
     const pintar = ()=>{
       corpo.innerHTML = '';
@@ -1428,7 +1450,7 @@
         `<span>${efetivo} nossos contra a ${a.nome||'—'} `+
         `${(o.rot||'').toLowerCase()}`+
         `${bombas ? `, com ${bombas} bomba${bombas>1?'s':''}` : ''}</span>`+
-        `<b>${DIA_DA_SEMANA[diaDoEvento] || 'sábado'}</b>`}));
+        `<b>${DIA_DA_SEMANA[diaDoEvento()] || 'sábado'}</b>`}));
       if(a.aliada)
         corpo.appendChild(el('div',{class:'linha-dado', html:
           '<span class="negativo">É aliada nossa. Bater nela derruba a '+
@@ -1443,7 +1465,10 @@
         /* bomba que falta no estoque é comprada agora, R$ 120 cada */
         const falta = Math.max(0, bombas - ((e.estoque||{}).bombas || 0));
         if(falta) TO.patrimonio.comprarBombas(e, falta);
-        if(ctx && ctx.chaveJogo){
+        const escolhidoNaLista = lista.find(x=>x.id === alvo) || {};
+        const chaveDoAlvo = escolhidoNaLista.chaveJogo ||
+                            (ctx && ctx.chaveJogo) || null;
+        if(chaveDoAlvo){
           /* ataque num jogo alheio da praça é INVESTIDA daquele jogo — o
              plano do nosso jogo não entra nessa briga */
           const p2 = TO.planejamento.plano(e);
@@ -1451,7 +1476,7 @@
           p2.bombas = U.limitar(bombas, 0, (e.estoque||{}).bombas || 0);
           if(efetivo != null)
             p2.efetivoAtaque = U.limitar(efetivo, f2.piso, f2.teto);
-          TO.planejamento.definirInvestida(e, ctx.chaveJogo,
+          TO.planejamento.definirInvestida(e, chaveDoAlvo,
             {alvo, como:'arredores', olheiro:null});
         }
         else TO.planejamento.definirAtaque(e,

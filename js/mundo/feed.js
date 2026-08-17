@@ -142,26 +142,61 @@ TO.feed = (function(){
   const NOME_DIA = [null,'segunda','terça','quarta','quinta','sexta',
                     'sábado','domingo'];
 
+  /* UM RELATÓRIO POR DIA (decisão do dono): todos os jogos relevantes
+     que reportam hoje entram na MESMA mensagem, cada um com suas
+     estimativas. O jogo fora entra no mesmo relatório quando cai no
+     mesmo dia — o botão da caravana vem junto. */
   function olheiroDoDia(E){
     const hoje = E.data.dia;
     const meu = E.torcida.clubeId;
 
-    /* situações 1 e 2: os jogos da NOSSA praça nesta semana */
+    /* situações 1 e 2: os jogos da NOSSA praça que reportam hoje */
+    const grupos = [];
+    const linhas = [];
     for(const j of TO.praca.jogosDaPraca(E)){
       if(diaDoOlheiro(j.dia) !== hoje) continue;
       const nosso = j.casa.id === meu || j.vis.id === meu;
-      if(nosso && j.casa.id === meu) olheiroCasa(E, j);
-      else if(!nosso) olheiroPraca(E, j);
-      /* nosso jogo como visitante DENTRO da nossa cidade (clássico):
-         trata como jogo em casa — a rua é a mesma */
-      else olheiroCasa(E, j);
+      const ests = estimativasDaRua(E, j.dia, j);
+      if(!ests.filter(x=>x.hostil).length) continue;   // sem rival, sem pauta
+      const chaveJogo = nosso ? null : chaveDoJogoDaPraca(E, j);
+      grupos.push({dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id});
+      linhas.push(`${NOME_DIA[j.dia]} tem ${j.casa.nome} × ${j.vis.nome}`+
+        `${nosso ? ` pelo ${j.comp}` : ' aqui na cidade'} — na rua: `+
+        `${listaDeEstimativas(ests)}`);
     }
 
-    /* situação 3: nosso jogo fora, em outra cidade */
-    const j = E.proximoJogo;
-    if(j && !j.casa && j.mapaAdv && j.mapaAdv !== E.torcida.mapa &&
-       diaDoOlheiro(j.dia||6) === hoje)
-      olheiroFora(E, j);
+    /* situação 3: nosso jogo fora que reporta hoje */
+    const jf = E.proximoJogo;
+    const fora = (jf && !jf.casa && jf.mapaAdv && jf.mapaAdv !== E.torcida.mapa &&
+                  diaDoOlheiro(jf.dia||6) === hoje) ? jf : null;
+
+    if(!grupos.length && !fora) return;
+    if(!grupos.length && fora){ olheiroFora(E, fora); return; }
+
+    const nossos = TO.membros.aptosParaOEstadio(E).length;
+    let texto = `Chefe, o relatório de hoje: ${linhas.join('; ')}. `+
+                `Nós saímos com até ${nossos}. Vamos pra cima de alguém?`;
+    const botoes = [
+      {id:'atacar', rot:'Atacar', acao:'tela-ataque',
+       args:{ctx:{grupos}}},
+      {id:'paz',    rot:'Ir em paz', acao:'paz-grupo', args:{grupos}},
+      {id:'padrao', rot:'Seguir padrão', acao:'padrao-grupo', args:{grupos}}
+    ];
+    if(fora){
+      const alvos = PL().alvosDaViagem(E, {advId:fora.advId, crua:true});
+      texto += ` E ${NOME_DIA[fora.dia||6]} o ${E.torcida.clube} joga fora: `+
+        `${fora.mandante.nome} × ${fora.visitante.nome}, em ${fora.cidadeAdv}`+
+        (alvos.length ? ` — torcidas de lá na rua: `+
+          `${alvos.map(a=>`${a.nome} com ${a.faixa}`).join(', ')}` : '')+
+        `. Monta a caravana e diz se vamos em paz ou pra cima.`;
+      botoes.splice(1, 0,
+        {id:'caravana', rot:'Montar a caravana', acao:'tela-caravana'});
+    }
+    propor(E, {
+      kind:'olheiro', peso:'decisao', voz:'olheiro',
+      chave:`olheiro|${E.data.ano}|${E.data.semana}|${hoje}`,
+      texto, dados:{grupos, fora:!!fora}, botoes
+    });
   }
 
   /* a lista de estimativas DAQUELE JOGO: as torcidas dos dois clubes
@@ -181,51 +216,6 @@ TO.feed = (function(){
 
   const listaDeEstimativas = ests =>
     ests.map(e=>`${e.nome} com ${e.faixa}`).join(', ');
-
-  /* situação 1 — nós mandantes (ou clássico na nossa praça), há rival */
-  function olheiroCasa(E, j){
-    const ests = estimativasDaRua(E, j.dia, j);
-    const rivais = ests.filter(e=>e.hostil);
-    if(!rivais.length) return;                    // sem rival, sem olheiro
-    const nossos = TO.membros.aptosParaOEstadio(E).length;
-    const chave = `olheiro|${E.data.ano}|${E.data.semana}|casa|${j.casa.id}|${j.vis.id}`;
-    propor(E, {
-      kind:'olheiro', peso:'decisao', chave, voz:'olheiro',
-      texto:`Chefe, ${NOME_DIA[j.dia]} tem ${j.casa.nome} × ${j.vis.nome} `+
-            `pelo ${j.comp}. Na rua: ${listaDeEstimativas(ests)}. `+
-            `Nós saímos com até ${nossos}. Vamos pra cima de alguém?`,
-      dados:{situacao:'casa', dia:j.dia, rivais: rivais.map(r=>r.id)},
-      botoes:[
-        {id:'atacar',  rot:'Atacar',        acao:'tela-ataque',
-         args:{ctx:{dia:j.dia}}},
-        {id:'paz',     rot:'Ir em paz',     acao:'paz'},
-        {id:'padrao',  rot:'Seguir padrão', acao:'seguir-padrao'}
-      ]
-    });
-  }
-
-  /* situação 2 — jogo de outros clubes na nossa cidade, com rival na rua */
-  function olheiroPraca(E, j){
-    const ests = estimativasDaRua(E, j.dia, j);
-    const rivais = ests.filter(e=>e.hostil);
-    if(!rivais.length) return;
-    const chave = `olheiro|${E.data.ano}|${E.data.semana}|praca|${j.casa.id}|${j.vis.id}`;
-    const chaveJogo = chaveDoJogoDaPraca(E, j);
-    propor(E, {
-      kind:'olheiro', peso:'decisao', chave, voz:'olheiro',
-      texto:`Chefe, ${NOME_DIA[j.dia]} tem ${j.casa.nome} × ${j.vis.nome} `+
-            `aqui na cidade. Na rua: ${listaDeEstimativas(ests)}. `+
-            `Quer cair em cima de alguém?`,
-      dados:{situacao:'praca', dia:j.dia, chaveJogo, rivais: rivais.map(r=>r.id)},
-      botoes:[
-        {id:'atacar', rot:'Atacar',        acao:'tela-ataque',
-         args:{ctx:{dia:j.dia, chaveJogo}}},
-        {id:'paz',    rot:'Ir em paz',     acao:'paz-praca', args:{chaveJogo}},
-        {id:'padrao', rot:'Seguir padrão', acao:'seguir-padrao-praca',
-         args:{chaveJogo, dia:j.dia}}
-      ]
-    });
-  }
 
   function chaveDoJogoDaPraca(E, j){
     const o = PL().outrosJogosNaCidade(E, E.data.semana)
@@ -494,6 +484,34 @@ TO.feed = (function(){
         PL().definirInvestida(E, b.args.chaveJogo, null);
         marcar();
         return {ok:true};
+      case 'paz-grupo':
+        /* paz em tudo que o relatório do dia cobria */
+        PL().definirIntencao(E, 'paz');
+        for(const g of (b.args.grupos||[]))
+          if(g.chaveJogo) PL().definirInvestida(E, g.chaveJogo, null);
+        marcar();
+        return {ok:true};
+      case 'padrao-grupo': {
+        const pol = PL().politicas(E);
+        const feito = PL().aplicarPolitica(E);
+        const nomes = [];
+        if(feito.alvo) nomes.push(feito.alvo);
+        for(const g of (b.args.grupos||[])){
+          if(!g.chaveJogo) continue;
+          const og = PL().outrosJogosNaCidade(E, E.data.semana)
+            .find(x=>x.chave === g.chaveJogo);
+          if(!og) continue;
+          const alvos = PL().alvosDaPolitica(E, og.visitantes, pol.outros);
+          if(alvos.length){
+            PL().definirInvestida(E, og.chave,
+              {alvo:alvos[0].id, como:'arredores', olheiro:null});
+            nomes.push(alvos[0].torcida.nome);
+          }
+        }
+        marcar(nomes.length ? `Seguir padrão — atacar ${nomes.join(', ')}`
+                            : 'Seguir padrão — ir em paz');
+        return {ok:true};
+      }
       case 'seguir-padrao': {
         const feito = PL().aplicarPolitica(E);
         marcar(feito.alvo ? `Seguir padrão — atacar ${feito.alvo}`
