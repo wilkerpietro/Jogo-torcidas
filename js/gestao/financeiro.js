@@ -319,7 +319,7 @@ TO.financeiro = (function(){
        autor: a ideia de debandar saiu do jogo) */
     if(E.dinheiro < 0){
       E.semanasNoVermelho = (E.semanasNoVermelho||0) + 1;
-      E.indicadores.moral = U.limitar(E.indicadores.moral - 1, 0, 20);
+      TO.estado.mexerIndicador(E, 'moral', -1, 'Caixa no vermelho');
       rel.avisos.push(`Caixa negativo há ${E.semanasNoVermelho} `+
                       `${E.semanasNoVermelho===1?'semana':'semanas'}. `+
                       'A moral cai toda semana enquanto durar.');

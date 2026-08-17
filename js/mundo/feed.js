@@ -605,6 +605,9 @@ TO.feed = (function(){
      ------------------------------------------------------- */
   function registrarConfronto(E, d){
     if(!d) return;
+    /* toda briga zera o relógio da paz — é ele que deprecia prestígio
+       e moral depois de 20 dias parados (decisão do dono) */
+    E.ultimaBriga = E.data.absoluto || 0;
     const onde = d.local && d.local.cena ? nomeDaCena(d.local.cena) : 'na rua';
     const bairro = d.local && d.local.bairro ? `, no bairro ${d.local.bairro}` : '';
     const a = d.a || {}, b = d.b || {};

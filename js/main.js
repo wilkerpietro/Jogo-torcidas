@@ -1086,6 +1086,42 @@
         || (m.arquetipo||'').includes(t) || sit.includes(t);
   }
 
+  /* =======================================================
+     MORAL & PRESTÍGIO — o livro dos indicadores, item a item
+     (pedido do dono, 17/08/2026). O prestígio fala na régua
+     de 0 a 100 (indicador ×5); a moral fala na de 0 a 20.
+     ======================================================= */
+  function painelIndicadores(){
+    const e = E();
+    const cx = el('div');
+    const c0 = cartao('Agora');
+    c0.corpo.innerHTML =
+      `<div class="linha-dado"><span>Prestígio</span>
+         <b>${Math.round(e.indicadores.prestigio*5)} <span class="fraco">de 100</span></b></div>
+       <div class="linha-dado"><span>Moral da torcida</span>
+         <b>${Math.round(e.indicadores.moral*10)/10} <span class="fraco">de 20</span></b></div>
+       <div class="linha-dado"><span class="fraco">Ficar 20 dias sem briga `+
+      `deprecia: −1 de prestígio e −0,5 de moral, e o relógio segue `+
+      `correndo até a próxima briga.</span></div>`;
+    cx.appendChild(c0);
+
+    const hist = e.historicoIndicadores || [];
+    const c = cartao('Histórico', `${hist.length} movimentos`);
+    if(!hist.length)
+      c.corpo.innerHTML = '<div class="em-construcao">Nada mexeu ainda.</div>';
+    for(const h of hist.slice(0, 80)){
+      const prest = h.ind === 'prestigio';
+      const v = prest ? Math.round(h.delta*5*10)/10 : Math.round(h.delta*10)/10;
+      c.corpo.appendChild(el('div',{class:'transacao', html:
+        `<span class="dia">${h.dia}</span>
+         <span class="desc">${prest ? 'Prestígio' : 'Moral'} · ${h.motivo||''}</span>
+         <span class="val ${h.delta<0?'negativo':'positivo'}">`+
+        `${v>0?'+':''}${v}</span>`}));
+    }
+    cx.appendChild(c);
+    return cx;
+  }
+
   function pintarTorcida(){
     const e = E(), pg = U.$('.pagina[data-pag="torcida"]');
     pg.innerHTML='';
@@ -1094,12 +1130,14 @@
       {id:'membros',      rot:'Membros'},
       {id:'hierarquia',   rot:'Hierarquia'},
       {id:'treinamentos', rot:'Treinamentos'},
-      {id:'recrutamento', rot:'Recrutamento'}
+      {id:'recrutamento', rot:'Recrutamento'},
+      {id:'indicadores',  rot:'Moral & Prestígio'}
     ], subTorcida, id=>{subTorcida=id; redesenhar();}));
 
     if(subTorcida==='treinamentos'){ pg.appendChild(painelTreinos()); return; }
     if(subTorcida==='hierarquia'){ pg.appendChild(painelHierarquia()); return; }
     if(subTorcida==='recrutamento'){ pg.appendChild(painelRecrutamento()); return; }
+    if(subTorcida==='indicadores'){ pg.appendChild(painelIndicadores()); return; }
 
     const c = TO.membros.contar(e);
     const grade = el('div',{class:'lista-detalhe'});

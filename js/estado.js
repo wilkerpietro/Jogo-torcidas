@@ -198,6 +198,31 @@ TO.estado = (function(){
     if(est.transacoes.length > 200) est.transacoes.pop();
   }
 
+  /* =======================================================
+     O LIVRO DE MORAL E PRESTÍGIO (pedido do dono, 17/08/2026)
+     Todo movimento de indicador passa por aqui, com motivo —
+     é este livro que a sub-tela da Torcida mostra item a item.
+     O delta gravado é o REALMENTE aplicado (o limitador de
+     0–20 come o resto).
+     ======================================================= */
+  function mexerIndicador(est, ind, delta, motivo){
+    est = est || E;
+    if(!delta || !est) return 0;
+    const I = est.indicadores;
+    const antes = I[ind] || 0;
+    I[ind] = U.limitar(antes + delta, 0, 20);
+    const real = Math.round((I[ind] - antes)*100)/100;
+    if(real){
+      est.historicoIndicadores = est.historicoIndicadores || [];
+      est.historicoIndicadores.unshift({
+        dia:`${est.data.semana}/${est.data.dia}`, ano:est.data.ano,
+        ind, delta: real, motivo: motivo || ''});
+      if(est.historicoIndicadores.length > 300)
+        est.historicoIndicadores.pop();
+    }
+    return real;
+  }
+
   /* -------------------------------------------------------
      TEMPO
      ------------------------------------------------------- */
@@ -263,7 +288,7 @@ TO.estado = (function(){
           if(c.campeao) TO.relacoes.conquistaDoClube(E, c.campeao, 'campeao');
           if(c.vice)    TO.relacoes.conquistaDoClube(E, c.vice, 'vice');
           if(c.campeao === E.torcida.clubeId)
-            E.indicadores.moral = U.limitar(E.indicadores.moral + 2.5, 0, 20);
+            mexerIndicador(E, 'moral', 2.5, `Título: ${c.nome}`);
         }
         E.classifAnterior = null;
         TO.competicoes.evoluirForca(E);
@@ -275,7 +300,8 @@ TO.estado = (function(){
           const sub = TO.competicoes.subiu(m.de, m.para);
           /* acesso enche a fila do recrutamento; rebaixamento esvazia */
           TO.torcedores.abrirJanela(E, sub ? 1.6 : 0.45, sub ? 4 : 8);
-          E.indicadores.moral = U.limitar(E.indicadores.moral + (sub ? 2 : -3), 0, 20);
+          mexerIndicador(E, 'moral', sub ? 2 : -3,
+            sub ? 'Acesso do clube' : 'Rebaixamento do clube');
           /* e abre a janela de 2 semanas da tabela do dono: acesso é
              regime quente, rebaixamento é regime seco */
           E.janelaRecruta = {tipo: sub ? 'titulo' : 'rebaixamento',
@@ -294,6 +320,18 @@ TO.estado = (function(){
     E.acoes.usadas = 0;
     rodarExpediente(E);
     TO.membros.passarDia(E);
+
+    /* A PAZ PROLONGADA DEPRECIA (decisão do dono, 17/08/2026): a cada
+       20 dias sem participar de briga nenhuma, o prestígio cai 1 na
+       régua de 0 a 100 (0,2 no indicador) e a moral cai 0,5. Toda
+       briga zera o relógio — quem marca é registrarConfronto. */
+    if(E.ultimaBriga === undefined) E.ultimaBriga = E.data.absoluto;
+    const marcoPaz = Math.max(E.ultimaBriga, E.ultimaDepreciacao || 0);
+    if(E.data.absoluto - marcoPaz >= 20){
+      E.ultimaDepreciacao = E.data.absoluto;
+      mexerIndicador(E, 'prestigio', -0.2, '20 dias sem briga');
+      mexerIndicador(E, 'moral', -0.5, '20 dias sem briga');
+    }
 
     /* GDD §7.3: a caravana é cobrada na véspera do jogo da semana —
        que é também o dia em que a estrada pode ser fechada */
@@ -336,7 +374,8 @@ TO.estado = (function(){
     if(!j || !j.jogado) return;
     const venceu = j.gp > j.gc, perdeu = j.gp < j.gc;
     const d = venceu ? 0.6 : perdeu ? -0.6 : 0;
-    E.indicadores.moral = U.limitar(E.indicadores.moral + d, 0, 20);
+    mexerIndicador(E, 'moral', d,
+      venceu ? 'Vitória do clube em campo' : 'Derrota do clube em campo');
     /* o recrutamento olha pro último jogo (tabela do dono): vitória
        anima a praça, derrota esvazia — empate é semana comum */
     E.ultimoJogoClube = {venceu, perdeu};
@@ -438,7 +477,7 @@ TO.estado = (function(){
 
   return {
     get E(){ return E; },
-    novo, lancar, avancarDia, aoMudar, aoFecharSemana, mudou,
+    novo, lancar, mexerIndicador, avancarDia, aoMudar, aoFecharSemana, mudou,
     dataTexto, dataDaSemana, semanaDiaDe, sortearProximoJogo, anotar,
     DIA_JOGO:6,
     salvar, carregar, existeSave, exportar, importar,

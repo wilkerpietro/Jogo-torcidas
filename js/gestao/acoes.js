@@ -196,8 +196,8 @@ TO.acoes = (function(){
     const antesRel = R.nivel(E, alvo.torcidaId);
     R.hostilidade(E, alvo.torcidaId, 2);
     const antesP = E.indicadores.prestigio;
-    E.indicadores.prestigio =
-      U.limitar(E.indicadores.prestigio + (ganhou ? 1 : -1), 0, 20);
+    TO.estado.mexerIndicador(E, 'prestigio', ganhou ? 1 : -1,
+      `Treta contra a ${alvo.nome}: ${ganhou ? 'vencemos' : 'perdemos'}`);
     const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio', ganhou ? -1 : 1);
     const membros = (res && res.membros) || [];
     const efeitos = [
@@ -244,13 +244,13 @@ TO.acoes = (function(){
         linhas.push(naEstrada ? `${U.dinheiro(perdeu)} da viagem e do caixa`
                               : `${U.dinheiro(perdeu)} da gaveta e do caixa`);
       }
-      E.indicadores.moral = U.limitar(E.indicadores.moral - 3, 0, 20);
-      E.indicadores.prestigio = U.limitar(E.indicadores.prestigio - 0.7, 0, 20);
+      TO.estado.mexerIndicador(E, 'moral', -3, 'Fugimos sem defender o que é nosso');
+      TO.estado.mexerIndicador(E, 'prestigio', -0.7, 'Fugimos sem defender o que é nosso');
       linhas.push(naEstrada ? 'o ônibus seguiu viagem com meia turma de pé'
                             : 'eles saíram de lá com a casa na mão');
     }else{
-      E.indicadores.moral = U.limitar(E.indicadores.moral + 1.5, 0, 20);
-      E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + 0.7, 0, 20);
+      TO.estado.mexerIndicador(E, 'moral', 1.5, 'Defendemos o que é nosso');
+      TO.estado.mexerIndicador(E, 'prestigio', 0.7, 'Defendemos o que é nosso');
       linhas.push(naEstrada ? 'a pista ficou nossa' : 'a casa ficou de pé');
     }
     if(naEstrada) E.viagem = {
@@ -353,8 +353,8 @@ TO.acoes = (function(){
     const gasto = chegou ? 18 : 28;
     c.relacao = U.limitar(c.relacao - gasto, 0, 100);
     c.cobranca = {ate: E.data.semana + COBRANCA.semanas};
-    E.indicadores.moral = U.limitar(
-      E.indicadores.moral + (chegou ? 0.8 : -1.2), 0, 20);
+    TO.estado.mexerIndicador(E, 'moral', chegou ? 0.8 : -1.2,
+      chegou ? 'Caravana chegou inteira' : 'Caravana emboscada na estrada');
     return {ganhou:chegou, dinheiro:0,
             titulo: chegou ? 'COBRANÇA FEITA' : 'COBRANÇA FRACASSOU',
             linhas:[`relação com o clube em ${Math.round(c.relacao)}`]};
@@ -429,7 +429,7 @@ TO.acoes = (function(){
         const receita = Math.round(publico * U.inteiro(4, 7) * REDUCAO * 2);
         TO.estado.lancar(E, 'Festa na sede', -700);
         TO.estado.lancar(E, `Bilheteria e bar da festa (${publico})`, receita);
-        E.indicadores.moral = U.limitar(E.indicadores.moral + 0.8, 0, 20);
+        TO.estado.mexerIndicador(E, 'moral', 0.8, 'Festa na sede');
         for(const m of E.membros) m.moral = U.limitar(m.moral + 0.6, 0, 20);
         return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-700)} de saldo, moral em alta.`};
       }
@@ -444,8 +444,8 @@ TO.acoes = (function(){
       },
       executar(E){
         TO.estado.lancar(E, 'Ação social no bairro', -2000);
-        E.indicadores.moral     = U.limitar(E.indicadores.moral + 0.6, 0, 20);
-        E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + 0.4, 0, 20);
+        TO.estado.mexerIndicador(E, 'moral', 0.6, 'Ação social no bairro');
+        TO.estado.mexerIndicador(E, 'prestigio', 0.4, 'Ação social no bairro');
         return {ok:true, msg:'O bairro agradeceu.'};
       }
     },

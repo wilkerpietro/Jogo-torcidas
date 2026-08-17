@@ -70,6 +70,12 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.
+- **A paz deprecia** (17/08/2026): 20 dias sem participar de briga
+  tiram 1 de prestígio (régua 0-100) e 0,5 de moral, e o relógio
+  segue correndo a cada 20 dias parados; qualquer briga zera.
+- **Livro de moral e prestígio** (17/08/2026): todo movimento dos
+  dois indicadores passa por um registrador com motivo; a sub-tela
+  "Moral & Prestígio" da Torcida mostra o histórico item a item.
 - **Assaltos** (tabela do dono, 17/08/2026): uma vez por mês, em dia
   comum, um diretor sugere assalto (decisão no feed); a tela pergunta
   o alvo e o efetivo, com membros SORTEADOS entre os disponíveis e um
