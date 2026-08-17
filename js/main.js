@@ -1428,8 +1428,18 @@
       eM.disabled = efetivo >= f.teto;
       eB.onclick = ()=>{ efetivo = Math.max(f.piso, efetivo - passo); pintar(); };
       eM.onclick = ()=>{ efetivo = Math.min(f.teto, efetivo + passo); pintar(); };
-      le.append(eB, el('b',{texto:String(efetivo)}), eM,
-        el('small',{texto:`de ${f.teto} que saem de casa · mínimo ${f.piso}`}));
+      /* QUANTIDADE EQUIVALENTE (decisão do autor): iguala o nosso
+         efetivo ao da torcida selecionada — e vencer em menor número
+         rende mais prestígio; em maior número, menos. */
+      const bEq = el('button',{class:'bt', texto:'Quantidade equivalente'});
+      bEq.onclick = ()=>{
+        const a2 = lista.find(x=>x.id === alvo);
+        if(a2 && a2.n) efetivo = U.limitar(Math.round(a2.n), f.piso, f.teto);
+        pintar();
+      };
+      le.append(eB, el('b',{texto:String(efetivo)}), eM, bEq,
+        el('small',{texto:`de ${f.teto} que saem de casa · mínimo ${f.piso} · `+
+          `vencer em menor número rende mais prestígio`}));
       corpo.appendChild(le);
 
       /* --- 4: quantas bombas --- */
@@ -2730,6 +2740,18 @@
        −1 pro perdedor (fecharTreta). O prestígio genérico da noite não
        soma por cima. */
     if(acao && acao.acao === 'treta') res.prestigio = 0;
+    /* O TAMANHO DO BONDE PESA NO PRESTÍGIO (decisão do autor): vitória
+       em menor número vale mais, vitória esmagando em maior número
+       vale menos. O fator é a razão entre os efetivos de abertura,
+       preso entre 0,5× e 2×. */
+    if(res.prestigio > 0 && res.efetivo){
+      const meu = res.nossoLado || 'mandante';
+      const outroL = meu === 'mandante' ? 'visitante' : 'mandante';
+      const nossos = res.efetivo[meu] || 0, deles = res.efetivo[outroL] || 0;
+      if(nossos > 0 && deles > 0)
+        res.prestigio = Math.max(1, Math.round(
+          res.prestigio * U.limitar(deles/nossos, 0.5, 2)));
+    }
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     if(enc){
       /* o encontro da rua também é briga: o registro (e a mensagem de

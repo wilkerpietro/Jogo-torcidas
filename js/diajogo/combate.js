@@ -69,9 +69,12 @@ TO.diaJogo.combate = (function(){
       this.daCasa=!!spawn.guarda;
       this.x=x; this.y=y; this.vx=0; this.vy=0;
       this.r=lider?9:7; this.lider=!!lider;
-      this.forca  = lider?14+U.inteiro(0,4):5+U.inteiro(0,8);
-      this.defesa = lider?12+U.inteiro(0,4):4+U.inteiro(0,8);
-      this.hpMax  = lider?220:150; this.hp=this.hpMax;
+      /* O LÍDER É 20/20 E SÓ (decisão do autor): topo da régua dos
+         membros, mas a MESMA régua — nada de vida extra nem bônus
+         escondido que o faça valer por três. */
+      this.forca  = lider?20:5+U.inteiro(0,8);
+      this.defesa = lider?20:4+U.inteiro(0,8);
+      this.hpMax  = lider?90+20*7:150; this.hp=this.hpMax;
       this.moral=12;
       this.caido=false; this.preso=false; this.fugindo=false; this.entrou=false;
       this.entrando=false;  // recebeu ordem de ir pro portão do escalão
@@ -458,16 +461,21 @@ TO.diaJogo.combate = (function(){
         d.membroId=m.id;
         d.forca=m.forca; d.defesa=m.defesa; d.moral=m.moral;
         /* defesa vira resistência: quem apanha melhor cai depois */
-        d.hpMax = 90 + m.defesa*7 + (lider?60:0);
+        d.hpMax = 90 + m.defesa*7;
         d.hp=d.hpMax;
         d.cargo=m.cargo;
       } else if(geradas){
         /* o disco rival com a ficha da torcida dele: mesma régua nossa */
         const v = geradas[i % geradas.length];
         d.forca=v.forca; d.defesa=v.defesa; d.moral=v.moral;
-        d.hpMax = 90 + v.defesa*7 + (lider?60:0);
+        d.hpMax = 90 + v.defesa*7;
         d.hp=d.hpMax;
         d.cargo=v.cargo;
+      }
+      /* o líder é sempre 20/20, pela mesma régua de hp de todo mundo */
+      if(lider){
+        d.forca=20; d.defesa=20;
+        d.hpMax = 90 + 20*7; d.hp = d.hpMax;
       }
       /* as duas cores da torcida que veio do mapa: o círculo externo é a
          primária, o miolo é a secundária */
