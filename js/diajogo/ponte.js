@@ -169,9 +169,12 @@ TO.diaJogo.ponte = (function(){
     }
 
     const btP=el('djBtPedra'), btB=el('djBtBomba');
-    if(btP){const r=C.restaCd(J,'pedra'); btP.disabled=r>0;
+    /* cena sem armas (treta marcada): os botões de arremesso somem */
+    if(btP) btP.style.display = J.semArmas ? 'none' : '';
+    if(btB) btB.style.display = J.semArmas ? 'none' : '';
+    if(btP && !J.semArmas){const r=C.restaCd(J,'pedra'); btP.disabled=r>0;
       btP.firstChild.textContent=r>0?`Pedra ${r.toFixed(1)}s `:'Pedra ';}
-    if(btB){const r=C.restaCd(J,'bomba'); btB.disabled=J.bombas<=0||r>0;
+    if(btB && !J.semArmas){const r=C.restaCd(J,'bomba'); btB.disabled=J.bombas<=0||r>0;
       btB.firstChild.textContent=r>0?`Bomba ${r.toFixed(1)}s `:'Bomba ';}
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
 
@@ -473,8 +476,10 @@ TO.diaJogo.ponte = (function(){
     const pad = $('djPad');
     if(!pad || !J) return;
     const q = pad.querySelector('.pad-q'), e = pad.querySelector('.pad-e');
-    if(q) q.classList.toggle('gasto', C.restaCd(J,'pedra') > 0);
-    if(e) e.classList.toggle('gasto', J.bombas <= 0 || C.restaCd(J,'bomba') > 0);
+    if(q){ q.style.display = J.semArmas ? 'none' : '';
+           q.classList.toggle('gasto', C.restaCd(J,'pedra') > 0); }
+    if(e){ e.style.display = J.semArmas ? 'none' : '';
+           e.classList.toggle('gasto', J.bombas <= 0 || C.restaCd(J,'bomba') > 0); }
     marcarFormacaoNoPad();
   }
 

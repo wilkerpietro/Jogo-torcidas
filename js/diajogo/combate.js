@@ -124,8 +124,12 @@ TO.diaJogo.combate = (function(){
       discos:[], policiais:[], projeteis:[], grades:A.montarGrades(),
       form:'bonde',
       /* o estoque da noite vem do planejamento da semana */
-      bombas: cfg.bombas!==undefined ? cfg.bombas : P.bombas,
-      bombasIniciais: cfg.bombas!==undefined ? cfg.bombas : P.bombas,
+      /* cena combinada não tem projétil de lado nenhum: nem pedra, nem
+         bomba, nem braço automático (decisão do dono, 17/08/2026) */
+      semArmas: !!cfg.semArmas,
+      bombas: cfg.semArmas ? 0 : cfg.bombas!==undefined ? cfg.bombas : P.bombas,
+      bombasIniciais: cfg.semArmas ? 0
+                    : cfg.bombas!==undefined ? cfg.bombas : P.bombas,
       /* do outro lado também tem quem junte pedra: sem isso a briga é
          um lado bombardeando e o outro correndo pra cima na mão */
       /* metade do que você levou, no mínimo uma — mas SÓ se você levou.
@@ -327,19 +331,19 @@ TO.diaJogo.combate = (function(){
       }
     }
 
-    /* UM BRAÇO POR LADO, e não só o do visitante: o mais forte de cada
-       bonde taca pedra sozinho. Era um braço fixo do lado 'visitante',
-       e a assimetria mudava de dono conforme a cena — na treta o rival
-       tinha artilharia de graça e o nosso lado não, e a briga pareada
-       terminava 7×0 pra eles (medido). Um por lado é de propósito —
-       dois por lado já viram chuva de pedra. */
+    /* PEDRA NOSSA É SEMPRE MANUAL (decisão do dono, 17/08/2026): o
+       braço automático existe SÓ do lado da IA — o nosso arremesso é
+       decisão do jogador, nas teclas Q e E. E em cena sem armas
+       (treta marcada) ninguém taca nada. */
     J.bracos = {};
-    for(const lado of ['mandante','visitante']){
-      const doLado=J.discos.filter(d=>d.lado===lado);
+    if(!J.semArmas){
+      const ladoIA = (J.ladoNosso||'mandante')==='mandante'
+                   ? 'visitante' : 'mandante';
+      const doLado=J.discos.filter(d=>d.lado===ladoIA);
       if(doLado.length){
         const braco=doLado.reduce((a,b)=> b.forca>a.forca ? b : a);
         braco.arremessador=true;
-        J.bracos[lado]=braco;
+        J.bracos[ladoIA]=braco;
       }
     }
     J.bracoRival = J.bracos[(J.ladoNosso||'mandante')==='mandante'
@@ -639,17 +643,14 @@ TO.diaJogo.combate = (function(){
     if(!b || b.jogador || b.humor!=='paz') return;
     const meus=J.discos.filter(x=>x.spawn===b.id && x.vivo);
     if(!meus.length) return;
-    const moral=meus.reduce((s,x)=>s+x.moral,0)/meus.length;
     let emCima=0;
     for(const x of J.discos){
       if(!x.vivo || !inimigos(x.lado,b.lado)) continue;
       if(meus.some(m=>U.dist(m.x,m.y,x.x,x.y)<220)) emCima++;
     }
-    /* Não é só contar cabeça: bonde com moral alta encara em
-       desvantagem e bonde desanimado corre mesmo em igualdade. A moral
-       padrão é 12, então bravura 1 é o time médio. */
-    const bravura = moral/12;
-    const reage = meus.length*bravura >= emCima*0.75;
+    /* moral saiu da briga (decisão do dono): a decisão de revidar é
+       aritmética de cabeça contada, igual pros dois lados */
+    const reage = meus.length >= emCima*0.75;
     b.humor = reage ? 'atacar' : 'fugir';
     b.agirEm = J.t;
     /* correr aqui é entrar: o portão é a saída de quem não quer briga */
@@ -853,7 +854,9 @@ TO.diaJogo.combate = (function(){
   }
   function aviso(J,txt,cor){ J.aviso={txt,cor}; J.avisoAte=J.t+1.7; }
 
-  const nivelMoral = m => m<5?0.6 : m<10?0.8 : m<15?1.0 : 1.2;
+  /* moral saiu da briga (decisão do dono, 17/08/2026): dano, velocidade
+     e reação não olham mais pra ela. A escada fica só pra quem exibe. */
+  const nivelMoral = () => 1;
 
   /* ---------- líder ---------- */
   function moverLider(J,dt,teclas,podeControlar){
@@ -1127,8 +1130,11 @@ TO.diaJogo.combate = (function(){
            pra voltar pro slot da formação — era isso que fazia o bonde
            pareado apanhar de 7×0: os nossos recuavam no meio da troca
            e os deles ficavam em cima (medido). */
+        /* MESMA VISTA PROS DOIS LADOS: com briga armada, QUALQUER disco
+           disposto enxerga inimigo a 240 px — era só o nosso, e a
+           assimetria de caça pesava a briga pareada pro jogador */
         let alvo = inimigoAlcancavel(J,d, 130);
-        if(!alvo && d.doJogador && !J.paz)
+        if(!alvo && !J.paz && agressivo(J,d))
           alvo = inimigoAlcancavel(J,d, 240);
         if(alvo && !alvo.fugindo){
           J.encostou[d.lado]=true; J.encostou[alvo.lado]=true;
@@ -1236,8 +1242,7 @@ TO.diaJogo.combate = (function(){
       /* quem está de conversa anda devagar: é passeio, não deslocamento */
       const passeio = d.vadiando && !agressivo(J,d) && J.t < d.entraEm;
       /* quem corre atrás corre igual — ver `inimigoFugindo` */
-      const vel=P.velocidade*(d.fugindo||d._cacando?1.25:recua?1.15:passeio?0.5:1)
-                *(0.75+nivelMoral(d.moral)*0.25);
+      const vel=P.velocidade*(d.fugindo||d._cacando?1.25:recua?1.15:passeio?0.5:1);
       if(!dirx && !diry && d.acomodado){
         /* Chegou: para de verdade. Deixar o steering rodando com alvo
            a 8 px mantém micromovimento que, com 60 discos na tela,
@@ -1389,7 +1394,6 @@ TO.diaJogo.combate = (function(){
           if(p.cooldown>0) break;
           p.cooldown=1.25;
           d.hp-=P.forcaPM*P.dano*1.4; d.atordoado=1.0; d.tremor=6;
-          d.moral=Math.max(0,d.moral-0.6);
           if(d.hp<=0) prender(J,d);
           break;
         }
@@ -1469,7 +1473,11 @@ TO.diaJogo.combate = (function(){
       if(bate) for(const b of porPerto(J,a.x,a.y,a.r+(J._raioMax||8)+5)){
         if(a===b||!b.vivo||!inimigos(a.lado,b.lado)) continue;
         if(U.dist(a.x,a.y,b.x,b.y)>a.r+b.r+5) continue;
-        const bruto=(a.forca*nivelMoral(a.moral)*U.entre(0.8,1.2))-b.defesa*0.5;
+        /* MORAL NÃO ENTRA NA BRIGA (decisão do dono, 17/08/2026): o
+           multiplicador de moral criava bola de neve — cada caído
+           derrubava a moral de um lado e subia a do outro, e briga
+           pareada virava varrida. Dano é força contra defesa, ponto. */
+        const bruto=(a.forca*U.entre(0.8,1.2))-b.defesa*0.5;
         b.hp-=Math.max(1,bruto)*P.dano*dt*(b.fugindo?1.6:1);
         b.tremor=Math.min(6,b.tremor+0.6); a.golpe=0.12; a.hostil=3.0;
         atacado(J,b);
@@ -1512,7 +1520,7 @@ TO.diaJogo.combate = (function(){
       if(bate || a.entrando) for(const g of J.grades){
         if(g.hp<=0 || g.tipo==='fila') continue;   // fila não quebra
         if(U.dist(g.x,g.y,a.x,a.y)>a.r+g.meia+4) continue;
-        g.hp-=a.forca*nivelMoral(a.moral)*P.dano*dt*1.6;
+        g.hp-=a.forca*P.dano*dt*1.6;
         g.tremor=Math.min(5,g.tremor+0.5); a.hostil=3.5;
         if(g.hp<=0){
           g.hp=0; J.versaoGrades++; J.alerta=Math.min(100,J.alerta+13);
@@ -1559,10 +1567,9 @@ TO.diaJogo.combate = (function(){
     if(d.caido||d.preso) return;
     d.caido=true; d.hp=0; d.vx=d.vy=0;
     J.caidos[d.lado]++;
-    for(const o of J.discos){
-      if(o.lado===d.lado) o.moral=Math.max(0,o.moral-1.1);
-      else o.moral=Math.min(20,o.moral+0.5);
-    }
+    /* a cascata de moral saiu junto com a moral da briga (decisão do
+       dono): cada caído derrubava o lado dele e subia o outro, e era
+       ela que transformava a primeira queda em varrida */
     if(d.lider){logar(J,'Seu líder caiu.','r'); aviso(J,'Líder caiu','#d9705f');}
   }
   function prender(J,d){
@@ -1674,7 +1681,6 @@ TO.diaJogo.combate = (function(){
     J.fracPM=frac;
     if(frac>0.35&&!J.recuando){
       J.sobPressao+=dt;
-      for(const d of meus) d.moral=Math.max(0,d.moral-0.5*dt*frac);
       if(!J.avisouPM&&J.sobPressao>1.2){
         J.avisouPM=true;
         aviso(J,'PM em cima do seu bonde','#5fa87d');
@@ -1689,8 +1695,7 @@ TO.diaJogo.combate = (function(){
     const g=J.discos.filter(d=>d.lado===ladoDeles(J)&&d.vivo);
     if(!g.length) return;
     const sob=g.filter(d=>ameacaPM(J,d)).length/g.length;
-    const moral=g.reduce((s,d)=>s+d.moral,0)/g.length;
-    if(!J.recuoVisitante && (J.alerta>78&&sob>0.22 || moral<6)){
+    if(!J.recuoVisitante && J.alerta>78 && sob>0.22){
       J.recuoVisitante=true; J.recuoVisitanteAte=J.t+9;
       logar(J,'Os visitantes recuaram.','pm');
     } else if(J.recuoVisitante && J.t>J.recuoVisitanteAte && J.alerta<62){
@@ -1968,7 +1973,7 @@ TO.diaJogo.combate = (function(){
     return Math.max(0,(tipo==='pedra'?J.cdPedraAte:J.cdBombaAte)-J.t);
   }
   function arremessar(J,tipo){
-    if(J.fase!=='ativo'||restaCd(J,tipo)>0) return;
+    if(J.fase!=='ativo'||J.semArmas||restaCd(J,tipo)>0) return;
     const l=J.discos.find(d=>d.lider&&d.vivo);
     if(!l) return;
     const alcance = tipo==='pedra'?P.alcancePedra:P.alcanceBomba;
@@ -2010,6 +2015,7 @@ TO.diaJogo.combate = (function(){
      de ser ter pedra e passa a ser saber quando jogar.
      ======================================================= */
   function iaArremesso(J, dt){
+    if(J.semArmas) return;
     J.cdBraco = J.cdBraco || {};
     for(const lado of ['mandante','visitante']){
       const b=(J.bracos||{})[lado] ||

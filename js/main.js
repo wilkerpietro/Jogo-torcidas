@@ -565,6 +565,32 @@
       `<time>${quando}</time>`}));
     art.appendChild(el('p',{class:'msg-txt', texto:m.texto}));
 
+    /* O RELATÓRIO DO OLHEIRO É TABELA (decisão do dono, 17/08/2026):
+       coluna 1 a competição, o dia e o jogo com a cor de cada clube;
+       coluna 2 as torcidas do jogo, cada uma com sua cor e estimativa. */
+    const tab = m.dados && m.dados.tabela;
+    if(tab && tab.length){
+      const chip = (cor, nome) =>
+        `<i class="to-chip" style="background:${cor}"></i>${nome}`;
+      const tb = el('table',{class:'tab-olheiro'});
+      for(const r of tab){
+        const tr = el('tr');
+        tr.appendChild(el('td',{class:'to-jogo', html:
+          `<small>${r.comp || ''}${r.dia ? ` · ${r.dia}` : ''}</small>`+
+          `<div>${chip(r.clubes[0].cor, r.clubes[0].nome)}`+
+          `<span class="to-x">×</span>`+
+          `${chip(r.clubes[1].cor, r.clubes[1].nome)}</div>`}));
+        tr.appendChild(el('td',{class:'to-torcidas', html:
+          r.torcidas.map(t=>
+            `<div${t.hostil ? '' : ' class="to-mansa"'}>`+
+            `${chip(t.cor, t.nome)} <span class="to-faixa">`+
+            `${String(t.faixa).replace(' a ','–')} membros</span></div>`)
+            .join('') || '<div class="to-mansa">ninguém na rua</div>'}));
+        tb.appendChild(tr);
+      }
+      art.appendChild(tb);
+    }
+
     /* a linha de consequência sai dos efeitos aplicados, nunca do texto */
     if(m.consequencia)
       art.appendChild(el('div',{class:'msg-efeitos', texto:m.consequencia}));
@@ -2605,9 +2631,10 @@
     pararTudo('cena');
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
-      /* treta marcada não leva bomba: é mano a mano */
+      /* treta marcada é mano a mano: sem pedra, sem bomba, sem braço
+         automático — de lado nenhum (decisão do dono) */
       config: { escalacao: aptos.slice(0, n), intencao:'atacar', bombas:0,
-                bondes, efetivoRival:n, local },
+                semArmas:true, bondes, efetivoRival:n, local },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'treta', alvo:{torcidaId:d.rival, nome:rival.nome||'Rival',
                              bairro:d.bairro, cena:local, n}})

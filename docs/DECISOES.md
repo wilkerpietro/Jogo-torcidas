@@ -70,6 +70,15 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.
+- **Moral fora da briga** (17/08/2026): dano, velocidade e a decisão de
+  revidar não olham mais pra moral — o multiplicador criava bola de
+  neve e briga pareada virava varrida. Dano é força contra defesa.
+- **Pedra e bomba nossas são sempre manuais** (17/08/2026): braço
+  automático só do lado da IA. Treta marcada é mano a mano — sem
+  pedra, sem bomba, de lado nenhum.
+- **Relatório do olheiro em tabela** (17/08/2026): uma linha por jogo —
+  competição, dia e o confronto com a cor de cada clube na esquerda;
+  as torcidas do jogo com cor e estimativa na direita.
 - **Ataque de nanica não existe** (17/08/2026): ataque sofrido só vem de
   torcida com pelo menos metade do nosso efetivo (na estrada, a régua é
   a caravana embarcada) — a cena que abria e acabava com o atacante

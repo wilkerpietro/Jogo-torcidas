@@ -178,7 +178,11 @@ TO.feed = (function(){
 
     /* situações 1 e 2: os jogos da NOSSA praça que reportam hoje */
     const grupos = [];
-    const linhas = [];
+    const tabela = [];
+    const corDe = id => {
+      const o = M().torcida(id);
+      return (o && M().coresDaTorcida(o).cor) || '#888';
+    };
     for(const j of TO.praca.jogosDaPraca(E)){
       if(diaDoOlheiro(j.dia) !== hoje) continue;
       const nosso = j.casa.id === meu || j.vis.id === meu;
@@ -186,9 +190,16 @@ TO.feed = (function(){
       if(!ests.filter(x=>x.hostil).length) continue;   // sem rival, sem pauta
       const chaveJogo = nosso ? null : chaveDoJogoDaPraca(E, j);
       grupos.push({dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id});
-      linhas.push(`${NOME_DIA[j.dia]} tem ${j.casa.nome} × ${j.vis.nome}`+
-        `${nosso ? ` pelo ${j.comp}` : ' aqui na cidade'} — na rua: `+
-        `${listaDeEstimativas(ests)}`);
+      /* o relatório é uma TABELA (decisão do dono, 17/08/2026): coluna 1
+         a competição, a data e o jogo com as cores dos clubes; coluna 2
+         as torcidas do jogo, cada uma com sua cor e sua estimativa */
+      tabela.push({
+        comp: j.comp, dia: NOME_DIA[j.dia],
+        clubes: [{nome:j.casa.nome, cor:(j.casa.cores||[])[0]||'#888'},
+                 {nome:j.vis.nome,  cor:(j.vis.cores||[])[0]||'#888'}],
+        torcidas: ests.map(x=>({nome:x.nome, cor:corDe(x.id),
+                                faixa:x.faixa, hostil:x.hostil}))
+      });
     }
 
     /* situação 3: nosso jogo fora que reporta hoje */
@@ -200,7 +211,7 @@ TO.feed = (function(){
     if(!grupos.length && fora){ olheiroFora(E, fora); return; }
 
     const nossos = TO.membros.aptosParaOEstadio(E).length;
-    let texto = `Chefe, o relatório de hoje: ${linhas.join('; ')}. `+
+    let texto = `Chefe, o relatório de hoje. `+
                 `Nós saímos com até ${nossos}. Vamos pra cima de alguém?`;
     const botoes = [
       {id:'atacar', rot:'Atacar', acao:'tela-ataque',
@@ -210,18 +221,25 @@ TO.feed = (function(){
     ];
     if(fora){
       const alvos = PL().alvosDaViagem(E, {advId:fora.advId, crua:true});
-      texto += ` E ${NOME_DIA[fora.dia||6]} o ${E.torcida.clube} joga fora: `+
-        `${fora.mandante.nome} × ${fora.visitante.nome}, em ${fora.cidadeAdv}`+
-        (alvos.length ? ` — torcidas de lá na rua: `+
-          `${alvos.map(a=>`${a.nome} com ${a.faixa}`).join(', ')}` : '')+
-        `. Monta a caravana e diz se vamos em paz ou pra cima.`;
+      texto += ` E ${NOME_DIA[fora.dia||6]} o ${E.torcida.clube} joga fora, `+
+        `em ${fora.cidadeAdv}. Monta a caravana e diz se vamos em paz `+
+        `ou pra cima.`;
+      tabela.push({
+        comp: fora.competicao || 'fora de casa', dia: NOME_DIA[fora.dia||6],
+        clubes: [{nome:fora.mandante.nome,
+                  cor:(fora.mandante.cores||[])[0]||'#888'},
+                 {nome:fora.visitante.nome,
+                  cor:(fora.visitante.cores||[])[0]||'#888'}],
+        torcidas: alvos.map(a=>({nome:a.nome, cor:corDe(a.id),
+                                 faixa:a.faixa, hostil:!a.aliada}))
+      });
       botoes.splice(1, 0,
         {id:'caravana', rot:'Montar a caravana', acao:'tela-caravana'});
     }
     propor(E, {
       kind:'olheiro', peso:'decisao', voz:'olheiro',
       chave:`olheiro|${E.data.ano}|${E.data.semana}|${hoje}`,
-      texto, dados:{grupos, fora:!!fora}, botoes
+      texto, dados:{grupos, fora:!!fora, tabela}, botoes
     });
   }
 
@@ -240,9 +258,6 @@ TO.feed = (function(){
                   hostil: ehHostil(E, b.id)}));
   }
 
-  const listaDeEstimativas = ests =>
-    ests.map(e=>`${e.nome} com ${e.faixa}`).join(', ');
-
   function chaveDoJogoDaPraca(E, j){
     const o = PL().outrosJogosNaCidade(E, E.data.semana)
       .find(x => x.casa.id === j.casa.id && x.vis.id === j.vis.id);
@@ -255,15 +270,23 @@ TO.feed = (function(){
   function olheiroFora(E, j){
     const alvos = PL().alvosDaViagem(E, {advId:j.advId, crua:true});
     const chave = `olheiro|${E.data.ano}|${E.data.semana}|fora|${j.advId}`;
-    const lista = alvos.length
-      ? ` Torcidas de lá na rua: ${alvos.map(a=>`${a.nome} com ${a.faixa}`).join(', ')}.`
-      : '';
+    const corDe = id => {
+      const o = M().torcida(id);
+      return (o && M().coresDaTorcida(o).cor) || '#888';
+    };
+    const tabela = [{
+      comp: j.competicao || 'fora de casa', dia: NOME_DIA[j.dia||6],
+      clubes: [{nome:j.mandante.nome,  cor:(j.mandante.cores||[])[0]||'#888'},
+               {nome:j.visitante.nome, cor:(j.visitante.cores||[])[0]||'#888'}],
+      torcidas: alvos.map(a=>({nome:a.nome, cor:corDe(a.id),
+                               faixa:a.faixa, hostil:!a.aliada}))
+    }];
     propor(E, {
       kind:'olheiro', peso:'decisao', chave, voz:'olheiro',
-      texto:`Chefe, ${NOME_DIA[j.dia||6]} o ${E.torcida.clube} joga fora: `+
-            `${j.mandante.nome} × ${j.visitante.nome}, em ${j.cidadeAdv}.${lista} `+
+      texto:`Chefe, ${NOME_DIA[j.dia||6]} o ${E.torcida.clube} joga fora, `+
+            `em ${j.cidadeAdv}. `+
             `Monta a caravana e diz se vamos em paz ou pra cima.`,
-      dados:{situacao:'fora', dia:j.dia||6},
+      dados:{situacao:'fora', dia:j.dia||6, tabela},
       botoes:[
         {id:'caravana', rot:'Montar a caravana', acao:'tela-caravana'},
         {id:'padrao',   rot:'Seguir padrão',     acao:'seguir-padrao'}
