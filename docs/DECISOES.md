@@ -150,6 +150,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   com a relação — e quebrada não vai. Rival não recebe convite. Nós
   ficamos de fora desse sorteio: o convite pra gente chega pelo
   feed, com decisão nossa.
+- **O bar do rival dá sopa** (texto do dono, 18/08/2026): em torno
+  de 15 vezes no ano — sorteio por hash, ~29% das semanas, em dia
+  comum —, um diretor aponta o bar de um rival DA CIDADE (relação
+  ≤ −15, bar mapeado na praça): "Chefe, o bar da {rival} no
+  {bairro} tá de porta aberta e gaveta cheia. Bora quebrar o
+  balcão?". Atacar abre a mesma cena do ataque manual — com o
+  mesmo limite de um bonde por semana; recusar não custa nada.
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de

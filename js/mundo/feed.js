@@ -124,6 +124,7 @@ TO.feed = (function(){
     ataqueSofridoHoje(E);
     escoltaDeHoje(E);
     assaltoDeHoje(E);
+    barRivalDeHoje(E);
     aniversariosDeHoje(E);
     placarDoDia(E, ctx.jogos || []);
     brigasDaSemana(E);
@@ -307,6 +308,39 @@ TO.feed = (function(){
       ]
     });
   }
+  /* -------------------------------------------------------
+     3f. O BAR DO RIVAL DÁ SOPA (texto do dono, 18/08/2026):
+         em torno de 15 vezes no ano, um diretor aponta o bar
+         de um rival DA CIDADE e pergunta se o bonde desce.
+         Atacar abre a mesma cena do ataque manual — com o
+         mesmo limite de um bonde por semana.
+     ------------------------------------------------------- */
+  function barRivalDeHoje(E){
+    const sa = TO.relacoes.semanaAbs(E);
+    const H = TO.mapa.hash;
+    /* ~29% das semanas têm a sugestão: 0,29 × 52 ≈ 15 por ano */
+    if(H(`barrival|${sa}|${E.torcida.id}`) % 100 >= 29) return;
+    let dia = 1 + H(`barrival|d|${sa}|${E.torcida.id}`) % 7;
+    for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
+    if(dia !== E.data.dia) return;
+    const alvos = (TO.acoes.alvosDeAtaque(E) || []).filter(a =>
+      a.tipo === 'bar' && TO.relacoes.nivel(E, a.torcidaId) <= -15);
+    if(!alvos.length) return;
+    const alvo = alvos[H(`barrival|a|${sa}`) % alvos.length];
+    propor(E, {
+      kind:'barrival', peso:'decisao', voz:'diretor',
+      chave:`barrival|${E.data.ano}|${sa}`,
+      texto:`Chefe, o bar da ${alvo.deQuem} no ${alvo.bairro} tá de porta `+
+            `aberta e gaveta cheia. Bora quebrar o balcão?`,
+      dados:{alvo: alvo.id, nome: alvo.deQuem},
+      botoes:[
+        {id:'atacar', rot:'Atacar o bar', acao:'atacar-bar-rival',
+         nota:'abre a cena · saque da gaveta e do caixa deles'},
+        {id:'nada', rot:'Deixar quieto', acao:'nada'}
+      ]
+    });
+  }
+
   /* dia sem jogo do clube e sem caravana — mesma régua dos eventos do
      trimestre, reimplementada aqui porque a de lá é privada */
   function diaComumFeed(E, dia){
@@ -914,6 +948,19 @@ TO.feed = (function(){
         }
         marcar();
         return {ok:true};
+      }
+
+      /* o bar do rival da cidade (texto do dono, 18/08/2026): abre a
+         mesma cena do ataque manual, com o mesmo limite semanal */
+      case 'atacar-bar-rival': {
+        const r = TO.acoes.executar(E, 'atacar', {alvo:(m.dados||{}).alvo});
+        if(!(r && r.ok)){
+          marcar('Atacar o bar — não rolou');
+          m.consequencia = r && r.msg ? `Não rolou: ${r.msg}` : 'Não rolou.';
+          return {ok:true};
+        }
+        marcar();
+        return {ok:true, abrir:{tela:'cena-acao', args:{cena:r.cena}}};
       }
 
       /* --- aniversários (textos do dono, 18/08/2026) --- */

@@ -550,7 +550,7 @@
   const ROT_KIND = {abertura:'Abertura', olheiro:'Olheiro',
                     guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
-                    aniversario:'Aniversário',
+                    aniversario:'Aniversário', barrival:'Bar rival',
                     confronto:'Confronto', placar:'Resultado',
                     rodada:'Rodada', partida:'Nossa partida',
                     assalto:'Assalto', brigas:'Brigas da semana'};
@@ -831,6 +831,7 @@
       else if(t === 'cena-defesa') abrirDefesa();
       else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
       else if(t === 'cena-treta') abrirTreta(m && m.dados);
+      else if(t === 'cena-acao') abrirAcaoEmCena(a.cena);
       else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
     }
     TO.estado.salvar();
