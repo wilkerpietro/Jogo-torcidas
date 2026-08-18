@@ -53,7 +53,11 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   (classe baixa/média/alta), fora de dia de jogo, com efetivos
   idênticos — 5×5, 7×7 ou 10×10. Mensagem aprovada: "Zona {zona}
   marcou uma treta no {bairro} contra a {rival}, bora pro problema?".
-  Fecho: relação −2, prestígio +1 pro ganhador e −1 pro perdedor.
+  Fecho: relação −2. Régua nova do dono (18/08/2026): o vencedor
+  leva NO MÍNIMO 3 de prestígio na régua de 0-100 — 3 no 5×5, 4 no
+  7×7, 5 no 10×10 —, o perdedor devolve o mesmo, e a vitória sobe a
+  moral de cada membro que desceu (+2). Vale também pras tretas
+  entre as IAs (mesma escala, e o vencedor do mundo leva moral).
 - **Calendário do trimestre** (17/08/2026): a cada 13 semanas, 2 a 4
   tretas marcadas e 1 a 2 ataques ao nosso bar, sempre em dia comum.
   O bar saiu do sorteio semanal (caía 2x por mês).
@@ -189,7 +193,10 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   por mês, cobrados no fechamento (linha própria no extrato e na
   tabela de estrutura). Enquanto estiver contratado, a evolução de
   força e defesa no treino DOBRA (0,0-0,6 de fração por sessão em
-  vez de 0,0-0,3); o painel de treino mostra a régua nova.
+  vez de 0,0-0,3); o painel de treino mostra a régua nova. Dá pra
+  DISPENSAR a qualquer momento (18/08/2026), sem multa: o treino
+  volta ao normal e a mensalidade para de cobrar no próximo
+  fechamento.
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de

@@ -192,19 +192,28 @@ TO.acoes = (function(){
     return null;
   }
 
-  /* A TRETA MARCADA fecha com a conta própria do dono: relação −2,
-     prestígio +1 pro ganhador e −1 pro perdedor — bem mais leve que a
-     briga de dia de jogo, porque foi combinada e ninguém foi invadido. */
+  /* A TRETA MARCADA fecha com a conta própria do dono (régua nova em
+     18/08/2026): relação −2, e o vencedor leva NO MÍNIMO 3 de
+     prestígio na régua de 0-100 — 3 no 5×5, 4 no 7×7, 5 no 10×10 —
+     com o perdedor devolvendo o mesmo. Vitória também sobe a moral
+     de cada membro que desceu pro problema. */
   function fecharTreta(E, alvo, res){
     const R = TO.relacoes;
     const ganhou = res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu;
     const antesRel = R.nivel(E, alvo.torcidaId);
     R.hostilidade(E, alvo.torcidaId, 2);
     const antesP = E.indicadores.prestigio;
-    TO.estado.mexerIndicador(E, 'prestigio', ganhou ? 1 : -1,
+    const display = (alvo.n||5) >= 10 ? 5 : (alvo.n||5) >= 7 ? 4 : 3;
+    TO.estado.mexerIndicador(E, 'prestigio', (ganhou ? 1 : -1) * display/5,
       `Treta contra a ${alvo.nome}: ${ganhou ? 'vencemos' : 'perdemos'}`);
-    const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio', ganhou ? -1 : 1);
+    const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio',
+                            (ganhou ? -1 : 1) * display/5);
     const membros = (res && res.membros) || [];
+    /* a vitória na treta sobe a moral de quem foi (pedido do dono) */
+    if(ganhou) for(const r of membros){
+      const m = E.membros.find(x=>x.id === r.id);
+      if(m) m.moral = U.limitar(m.moral + 2, 0, 20);
+    }
     const efeitos = [
       {ind:'relacao',   delta: r1(R.nivel(E, alvo.torcidaId) - antesRel),
        dono:`com a ${alvo.nome}`},

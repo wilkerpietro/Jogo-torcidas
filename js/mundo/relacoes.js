@@ -792,15 +792,19 @@ TO.relacoes = (function(){
       return n;
     };
     const fA = machuca(o.id, !ganhouA), fB = machuca(r.id, ganhouA);
-    mover(E, ganhouA ? o.id : r.id, 'prestigio',  0.2);
-    mover(E, ganhouA ? r.id : o.id, 'prestigio', -0.2);
+    /* régua do dono (18/08/2026): treta paga no mínimo 3 de prestígio
+       na régua de 0-100 — 3 no 5×5, 4 no 7×7, 5 no 10×10 */
+    const display = tam >= 10 ? 5 : tam >= 7 ? 4 : 3;
+    mover(E, ganhouA ? o.id : r.id, 'prestigio',  display/5);
+    mover(E, ganhouA ? r.id : o.id, 'prestigio', -display/5);
+    mover(E, ganhouA ? o.id : r.id, 'moral', 0.6);
     moverRelacao(E, o.id, r.id, -2);
     return registrarBrigaIA(E, {
       ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
       cidade:(M().cidade(o.mapa)||{}).nome || o.mapa, jogo:'treta marcada',
       a:{id:o.id, nome:o.nome, n:tam, feridos:fA, presos:0},
       b:{id:r.id, nome:r.nome, n:tam, feridos:fB, presos:0},
-      vencedor: ganhouA ? o.nome : r.nome, prestigio:1
+      vencedor: ganhouA ? o.nome : r.nome, prestigio:display
     });
   }
 

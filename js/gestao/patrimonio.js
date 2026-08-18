@@ -200,6 +200,11 @@ TO.patrimonio = (function(){
       nota:'força e defesa evoluem em dobro no treino · R$ 2.000 '+
            'fixos por mês, cobrados no fechamento',
       custo:2000, trava:trava(2000)});
+    else lista.push({
+      id:'mma-fora', rot:'Dispensar o professor de MMA',
+      nota:'o treino volta ao ritmo normal e a mensalidade de '+
+           'R$ 2.000 para de cobrar no próximo fechamento',
+      custo:0, trava:null});
 
     /* bomba também se compra pelo Financeiro (pedido do dono,
        18/08/2026): caixa com 5, direto pro estoque que as cenas usam */
@@ -241,6 +246,9 @@ TO.patrimonio = (function(){
     } else if(acao==='mma'){
       /* nada sai do caixa agora: a mensalidade cobra no fim do mês */
       E.professorMMA = {desde:(E.data||{}).absoluto || 0};
+    } else if(acao==='mma-fora'){
+      /* dispensa na hora: sem multa, sem cobrança no próximo fecho */
+      E.professorMMA = null;
     } else if(acao==='bombas'){
       estoquePiro(E).bombas += 5;
       TO.estado.lancar(E, 'Bombas ×5', -o.custo);
