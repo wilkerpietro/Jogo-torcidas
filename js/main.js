@@ -2117,9 +2117,30 @@
     }
 
     if(subFin==='transacoes'){
-      const c = cartao('Transações', `${e.transacoes.length} lançamentos`);
-      if(!e.transacoes.length) c.corpo.innerHTML='<div class="em-construcao">Nada ainda.</div>';
-      for(const t of e.transacoes.slice(0,60)){
+      const c = cartao('Transações', `${e.transacoes.length} lançamentos`+
+        ' · comércio e festa fecham por mês');
+      /* O MÊS CORRENTE À VISTA (pedido do dono, 18/08/2026): bar,
+         loja e festa entram no caixa na hora mas só escrevem a linha
+         no fechamento — enquanto o mês corre, o acumulado aparece
+         aqui em cima, esmaecido, pra informação nenhuma sumir. */
+      const rm = e.resumoMes || {};
+      const pend = [];
+      if(rm.comercio && (rm.comercio.rec || rm.comercio.des))
+        pend.push({rot:'Comércio no mês corrente (bar, loja, subsede)',
+                   v: Math.round(rm.comercio.rec - rm.comercio.des)});
+      if(rm.festa && (rm.festa.rec || rm.festa.des))
+        pend.push({rot:`Festas na sede no mês corrente (${rm.festa.n})`,
+                   v: Math.round(rm.festa.rec - rm.festa.des)});
+      for(const p of pend)
+        c.corpo.appendChild(el('div',{class:'transacao pendente', html:
+          `<span class="dia">mês</span>
+           <span class="desc">${p.rot}
+             <small>já no caixa · a linha fecha no fim do mês</small></span>
+           <span class="val ${p.v<0?'negativo':p.v>0?'positivo':''}">`+
+          `${U.dinheiro(p.v)}</span>`}));
+      if(!e.transacoes.length && !pend.length)
+        c.corpo.innerHTML='<div class="em-construcao">Nada ainda.</div>';
+      for(const t of e.transacoes.slice(0,200)){
         c.corpo.appendChild(el('div',{class:'transacao', html:
           `<span class="dia">${t.dia}</span><span class="desc">${t.descricao}</span>
            <span class="val ${t.valor<0?'negativo':t.valor>0?'positivo':''}">`+

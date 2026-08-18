@@ -427,9 +427,12 @@ TO.acoes = (function(){
       },
       executar(E){
         const publico = E.membros.filter(TO.membros.disponivel).length;
-        /* festa é compra de moral, não fábrica de dinheiro: a receita
-           caiu 80% por decisão do autor — a economia estava fácil */
-        const receita = Math.round(publico * U.inteiro(4, 7) * REDUCAO * 2);
+        /* RÉGUA DO DONO (18/08/2026): festa de torcida com 150+ na
+           sede tem de dar lucro. Por cabeça sai de R$ 4,80 a 6,40 —
+           o ponto de equilíbrio fica em ~146 presentes: com 150 até
+           a noite fraca paga os R$ 700; abaixo disso é prejuízo
+           mesmo, festa de torcida pequena é vaquinha. */
+        const receita = Math.round(publico * U.entre(4.8, 6.4));
         /* festa não fabrica moral (decisão do dono, 17/08/2026): virou
            diária com o Expediente e saturava o indicador em dias. É
            caixa e ponto — moral vem de briga, título e defesa. */

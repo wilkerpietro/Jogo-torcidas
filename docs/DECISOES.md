@@ -58,6 +58,10 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   tretas marcadas e 1 a 2 ataques ao nosso bar, sempre em dia comum.
   O bar saiu do sorteio semanal (caía 2x por mês).
 - **Festa na sede custa R$ 700** e rende ~20% do que rendia.
+  Recalibrada em 18/08/2026 (régua do dono): R$ 4,80 a 6,40 por
+  presente — festa com 150+ na sede sempre paga a conta (mínimo
+  +R$ 20, média +130); com 200, média +420; abaixo de ~146 é
+  prejuízo mesmo, festa de torcida pequena é vaquinha.
 - **Relógio por mensagem**: cada mensagem dropada segura a próxima por
   1,5 s; decisão sem resposta trava o tempo; dia sem mensagem passa
   rápido.
@@ -163,7 +167,11 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   três linhas consolidadas: "Comércio — receitas do mês", "Comércio
   — manutenção e insumos do mês" e "Festas na sede — N no mês"
   (líquido). O relatório mensal continua detalhado por rótulo, e a
-  soma consolidada bate no centavo com o que entrou aos poucos.
+  soma consolidada bate no centavo com o que entrou aos poucos. E
+  enquanto o mês corre, a tela de Transações mostra no topo, em
+  linha esmaecida, o acumulado do mês corrente ("já no caixa · a
+  linha fecha no fim do mês") — informação nenhuma some; a lista
+  passou a exibir os 200 lançamentos guardados, não só 60.
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de
