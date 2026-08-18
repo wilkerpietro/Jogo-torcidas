@@ -10,7 +10,7 @@ cima — foto com gente vira gente parada no meio da briga.
 |---|---|---|---|
 | Treta 5×5 — vila | encontro de bonde pequeno, favela e classe baixa | `treta_vila.webp` | a fazer |
 | Treta 7×7 — quadra de terra | encontro médio, qualquer bairro de periferia | `treta_quadra.webp` | a fazer |
-| Treta 10×10 — baldio sob o viaduto | encontro grande, borda de bairro | `treta_viaduto.webp` | a fazer |
+| Treta 10×10 — pátio do galpão | encontro grande, borda de bairro | `treta_patio.webp` | a fazer |
 | Estrada 1 — pista fechada no mato | emboscada na caravana | `estrada.webp` | a fazer |
 | Estrada 2 — parada de estrada | emboscada na caravana (variação) | `estrada_posto.webp` | a fazer |
 | Loja da rival | ação *atacar a loja* | `loja.webp` | a fazer |
@@ -42,6 +42,11 @@ caminhabilidade da própria foto, e o que a foto fechar o disco não atravessa.
 - **nenhuma pessoa, nenhum carro andando**. Carro parado pode: vira obstáculo;
 - **dois caminhos de entrada opostos e pelo menos uma fuga**, sempre chegando
   na borda esquerda ou direita. Cena com um vão só trava a briga numa chacina;
+- **nada por cima do chão de andar**: o céu é o teto. Laje vista a prumo é
+  telhado, e telhado é parede — viaduto, passarela, marquise e toldo escondem
+  justamente o chão que o disco ia pisar, e isso não tem conserto no pincel,
+  porque o que estava embaixo não foi fotografado. A única exceção é a laje
+  removida de propósito, na loja e no bar;
 - **o chão de andar tem que ser uma mancha contínua**. Ilha de chão cercada de
   parede é ilha de disco preso.
 
@@ -247,53 +252,63 @@ exactly as they are. Nobody in the picture.
 
 ---
 
-## TRETA 10×10 — baldio sob o viaduto
+## TRETA 10×10 — pátio do galpão
 
-Vinte discos. O maior dos três: terreno baldio na sombra de um viaduto, chão
-aberto de ponta a ponta com os **pilares como obstáculo no meio**. É a treta
-que se abre — dá pra cercar, dá pra correr, dá pra perder gente no caminho.
-Chão livre alvo: uns 60 × 35 metros.
+Vinte discos. O maior dos três: o pátio de carga de um galpão desativado na
+borda do bairro — chão de cimento aberto de ponta a ponta, com **pilha de
+palete, contêiner e caminhão morto como obstáculo solto no meio**. É a treta
+que se abre: dá pra cercar, dá pra correr, dá pra perder gente atrás de uma
+pilha. Chão livre alvo: uns 60 × 35 metros.
 
-Geometria: o viaduto atravessa o quadro **na diagonal suave ou reto da esquerda
-pra direita, por cima** — a estrutura dele é telhado, e telhado é parede na
-máscara, então ele não pode cobrir o baldio inteiro; deixe a maior parte do
-terreno aberta ao céu, com a sombra da pista cruzando só uma faixa. Duas fileiras
-de pilares grossos dentro do terreno. Rua de acesso chegando pela esquerda e
-outra pela direita.
+**Aqui não entra viaduto, e o motivo é da máscara.** Laje vista a prumo é
+telhado, e telhado é parede: a pista do viaduto tapa justamente o chão que
+está embaixo dela, e nem o importador nem o jogador enxergam o que passa ali.
+Cena de briga não pode ter nada por cima do chão de andar — **o céu é o teto,
+e é só ele**. A mesma regra derruba marquise, galpão com telhado no meio do
+pátio e passarela atravessando o quadro.
+
+Geometria: **pátio retangular ocupando quase todo o quadro**, murado, com
+portão de caminhão aberto na esquerda e outro na direita, os dois chegando na
+borda; o galpão em si é a fileira de cima, **de telhado inteiro e fechado** —
+ele é o fundo da cena, não se entra nele. Os obstáculos ficam espalhados pelo
+miolo, nunca encostados uns nos outros: entre eles é que se corre.
 
 Spawns sugeridos: `mandante1` (110, 512) e `mandante2` (320, 900);
-`visitante1` (1426, 512) e `visitante2` (1220, 130).
+`visitante1` (1426, 512) e `visitante2` (1220, 200).
 
 ```
-top-down nadir aerial drone photograph of a large empty wasteland lot beside a
-concrete overpass on the edge of a Brazilian city district, shot straight down
-at 90 degrees, orthographic feel, overcast diffuse daylight, soft shadows,
+top-down nadir aerial drone photograph of the open loading yard of a disused
+warehouse on the edge of a Brazilian city district, shot straight down at 90
+degrees, orthographic feel, overcast diffuse daylight, soft shadows,
 desaturated muted colors, documentary photography, completely empty of people,
 
-a big open lot of bare packed earth and gravel filling most of the frame, dry
-weeds, tyre tracks, scattered rubble and broken concrete slabs pushed to the
-edges, a burnt patch, three abandoned tyres, a rusted skip,
+a very large open yard of cracked concrete and gravel filling most of the
+frame, entirely open to the sky with nothing above it, faded painted lane
+markings, oil stains, weeds growing through the cracks, patches of bare reddish
+earth, tyre tracks,
 
-a concrete elevated road crosses the upper third of the frame from left to
-right, seen from directly above as a narrow band of asphalt with a solid
-parapet on each side; it covers only a narrow strip of the lot, and its long
-soft shadow falls across the earth below; two rows of thick square concrete
-pillars stand on the open lot supporting it, plainly visible from above, their
-bases surrounded by bare ground,
+scattered across the open yard, well apart from each other, seen from directly
+above: two rusted shipping containers, three stacks of wooden pallets, an
+abandoned flatbed lorry with no wheels, a pile of sand, four oil drums, a
+concrete pipe, a skip full of scrap; the ground stays clear and continuous
+between them,
 
-most of the lot is open to the sky with nothing above it,
+a long single-storey warehouse building closes the top side of the yard, its
+corrugated zinc roof completely intact and unbroken, three closed loading dock
+doors along its front wall and a small office annex at one end,
 
-a dirt access track enters the lot from the left edge of the frame and a paved
-street enters from the right edge, both fully open and reaching the frame
-edges,
+a boundary wall of cinder block runs around the rest of the yard, with a wide
+lorry gate standing open on the left side and another wide gate standing open
+on the right side, each one meeting a strip of asphalt street that reaches the
+left and right edge of the frame, and a collapsed section of wall at the bottom
+where the blocks have fallen into a pile of rubble,
 
-along the far side of the lot, a wall of corrugated metal sheets and a row of
-low warehouses with flat concrete roofs and rusted zinc roofing, a couple of
-parked trucks outside them, low houses with terracotta tile roofs and blue
-water tanks beyond, sparse scrub bushes,
+outside the wall: a dirt street, low houses with terracotta clay tile roofs and
+flat concrete rooftops, blue water tanks, sparse scrub bushes and two mango
+trees, a parked motorbike,
 
-photorealistic, natural materials, sun-bleached concrete, tropical Brazil, 8k
-satellite imagery quality, sharp detail, no people visible
+photorealistic, natural materials, sun-bleached concrete, rusted metal,
+tropical Brazil, 8k satellite imagery quality, sharp detail, no people visible
 ```
 
 ### Negativo
@@ -301,44 +316,52 @@ satellite imagery quality, sharp detail, no people visible
 ```
 illustration, cartoon, isometric, 3d render, video game asset, painting,
 vector art, blueprint, map icons, labels, text, watermark, grid lines,
-tilted perspective, oblique angle, eye level, fisheye, vignette, drone under
-the bridge, view from below, upward angle,
-overpass covering the whole lot, roofed area, tunnel, dark shadow over
-everything, dense trees, forest, park, lake, river, mud,
-buildings on the lot, fences across the lot, closed access, dead end,
-crowd, people, homeless camp, moving cars, tents,
+tilted perspective, oblique angle, eye level, fisheye, vignette,
+overpass, viaduct, elevated road, bridge, footbridge, walkway over the yard,
+canopy, awning, marquee, roof over the yard, covered loading bay, shed in the
+middle, gantry crane, pylons, power lines across the yard, big shadow over the
+ground,
+clutter filling the yard, containers stacked in rows, full car park, busy
+depot, closed gates, unbroken wall, fenced dead end,
+crowd, people, workers, forklift drivers, moving lorries, tents,
+dense trees, forest, mud, flooding,
 saturated colors, hdr, dramatic lighting, night, rain
 ```
 
 ### Sementes pro importador
 
 ```python
-{'id': 'treta-viaduto', 'arquivo': '<arquivo que saiu>.jpeg',
- 'saida': 'treta_viaduto.webp',
- 'sementes': [(0.50, 0.60), (0.25, 0.62), (0.75, 0.58),
-              (0.02, 0.55), (0.98, 0.55), (0.50, 0.85)],
- 'recorte': [(0.00, 0.30, 1.00, 1.00)]},
+{'id': 'treta-patio', 'arquivo': '<arquivo que saiu>.jpeg',
+ 'saida': 'treta_patio.webp',
+ 'sementes': [(0.50, 0.55), (0.25, 0.55), (0.75, 0.55),
+              (0.50, 0.80), (0.02, 0.50), (0.98, 0.50)],
+ 'recorte': [(0.00, 0.22, 1.00, 1.00)]},
 ```
 
 ### Ordem curta de correção
 
 ```
-Move the elevated road so it covers only a narrow strip across the top of the
-lot, and leave the rest of the ground open to the sky in flat daylight. Keep
-the rows of concrete pillars standing on the open ground. Open the access track
-on the left and the street on the right all the way to the edges of the image.
-No people, no tents.
+Remove anything that passes above the yard — no overpass, no walkway, no canopy
+and no roof over the open ground. The whole yard must be open to the sky in
+flat daylight. Keep the warehouse roof at the top intact. Spread the
+containers, pallets and the abandoned lorry apart, leaving clear concrete
+between them. Open both lorry gates all the way to the left and right edges of
+the image. No people.
 ```
 
 ### Conferir
 
-1. **O viaduto cobre uma faixa, não o terreno.** Se a estrutura tampar o
-   miolo, a máscara lê laje e some o chão da briga inteira.
-2. Os pilares aparecem de cima, um a um: são os obstáculos que dão graça à
-   treta grande. Marque cada um no pincel depois de importar.
-3. As duas entradas laterais chegam na borda.
-4. Sombra é sombra, não parede: se o corte fechar a faixa sombreada, pinte de
-   volta no F2.
+1. **Nada por cima do pátio.** Viaduto, passarela, marquise, cabo grosso: tudo
+   que passa acima esconde o chão e vira parede na máscara. Se aparecer, é
+   refazer — não tem conserto no pincel, porque o que estava embaixo não foi
+   fotografado.
+2. O telhado do galpão está **inteiro**. Galpão aberto vira chão de andar onde
+   não devia, e a briga escapa pra dentro dele.
+3. Os dois portões chegam abertos até as bordas laterais.
+4. Os obstáculos estão soltos e separados: encostados uns nos outros viram um
+   muro só no meio do pátio e cortam a cena em duas.
+5. Depois de importar, marque contêiner, palete, caminhão, tambor e caçamba no
+   pincel — o corte por cor tende a ler pilha clara como chão.
 
 ---
 
