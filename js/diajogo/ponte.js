@@ -116,12 +116,39 @@ TO.diaJogo.ponte = (function(){
     requestAnimationFrame(quadro);
   }
 
+  /* =======================================================
+     ZOOM PELA RODINHA
+
+     Em 1× a cena inteira cabe no canvas, como sempre coube. Rolando
+     pra cima a escala cresce até 4× e a câmera passa a seguir o disco
+     do jogador — é ele que anda com WASD, então é ele que não pode
+     sair do quadro. Sem líder de pé, segue quem sobrou do nosso lado.
+     O `paraCena` continua certo de graça: ele lê `escala`, e a escala
+     devolvida por `ajustar` já carrega o zoom e o deslocamento.
+     ======================================================= */
+  let zoom=1;
+  const ZOOM_MAX=4;
+  function focoDoZoom(){
+    if(!J) return null;
+    const l=J.discos.find(d=>d.lider&&d.vivo);
+    if(l) return l;
+    const meu=C.ladoDoJogador(J);
+    return J.discos.find(d=>d.lado===meu&&d.vivo) || null;
+  }
+
   function ajustar(c,alvo,W,H){
-    const s=Math.min(alvo.width/W, alvo.height/H);
+    const s=Math.min(alvo.width/W, alvo.height/H)*zoom;
+    let cx=W/2, cy=H/2;
+    if(zoom>1){ const f=focoDoZoom(); if(f){cx=f.x; cy=f.y;} }
+    /* o ponto de foco vai pro centro do canvas, mas a câmera não passa
+       da borda da cena: encostou no canto, o foco sai do centro */
+    let ox=alvo.width/2 - cx*s, oy=alvo.height/2 - cy*s;
+    ox = W*s<=alvo.width  ? (alvo.width -W*s)/2 : U.limitar(ox, alvo.width -W*s, 0);
+    oy = H*s<=alvo.height ? (alvo.height-H*s)/2 : U.limitar(oy, alvo.height-H*s, 0);
     c.setTransform(1,0,0,1,0,0);
     c.fillStyle='#0e0e0d'; c.fillRect(0,0,alvo.width,alvo.height);
-    c.setTransform(s,0,0,s,(alvo.width-W*s)/2,(alvo.height-H*s)/2);
-    return {s, ox:(alvo.width-W*s)/2, oy:(alvo.height-H*s)/2};
+    c.setTransform(s,0,0,s,ox,oy);
+    return {s, ox, oy};
   }
   let escala={s:1,ox:0,oy:0};
 
@@ -268,7 +295,7 @@ TO.diaJogo.ponte = (function(){
       ? `<b style="color:var(--ouro)">${espera.toUpperCase()}</b> · `+
         '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação'
       : '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação · <kbd>Q</kbd> pedra · '+
-        '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>F2</kbd> editor de cena';
+        '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · rodinha = zoom · <kbd>F2</kbd> editor de cena';
   }
 
   /* =======================================================
@@ -503,6 +530,15 @@ TO.diaJogo.ponte = (function(){
         if(k===f.tecla){J.form=id;atualizarBotoes();}
     });
     addEventListener('keyup',e=>{teclas[e.key.toLowerCase()]=false;});
+
+    /* rodinha = zoom. `passive:false` porque sem o preventDefault a
+       página rola junto e o zoom vira briga com o scroll. O passo é
+       exponencial pra rodinha de degrau (±100) e trackpad (deltas
+       miúdos) andarem na mesma velocidade percebida. */
+    cv.addEventListener('wheel',e=>{
+      e.preventDefault();
+      zoom=U.limitar(zoom*Math.exp(-e.deltaY*0.0018), 1, ZOOM_MAX);
+    },{passive:false});
 
     cv.addEventListener('contextmenu',e=>{if(ED.ativo)e.preventDefault();});
     cv.addEventListener('pointerdown',e=>{
@@ -900,6 +936,8 @@ ${D.grades.map(g=>'    '+j(g)).join(',\n')}
 
   return {montar, novaNoite, encerrar, alternarEditor, gerarArquivo,
           alternarVelocidade,
+          get zoom(){return zoom;},
+          set zoom(v){ zoom=U.limitar(+v||1, 1, ZOOM_MAX); },
           get velocidade(){return velocidade;},
           set velocidade(v){ velocidade = velocidades.includes(v) ? v : 1;
                              atualizarBotaoVelocidade(); },

@@ -334,6 +334,11 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   efetivo muito maior que o nosso ataca à vontade. Quem vem traz a
   turma que o serviço pede: no mínimo os 30% de sempre, até ~90% do
   nosso bonde na cena, nunca mais de 70% da torcida dele.
+- **Zoom pela rodinha nas cenas de briga** (18/08/2026): rolar pra
+  cima aproxima a cena (de 1× até 4×) e a câmera passa a seguir o
+  disco do jogador, sem deixar a vista passar da borda da cena;
+  rolar pra baixo volta até a cena inteira de sempre. A rodinha em
+  cima da cena não rola mais a página.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
