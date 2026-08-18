@@ -127,9 +127,12 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **Aniversários** (textos do dono, 18/08/2026): a fonte só guarda o
   ANO de fundação, então o dia e o mês nascem do hash do id — cada
   torcida e cada clube fazem aniversário na mesma data em toda
-  partida. Dez dias antes do aniversário de OUTRA torcida, ela
-  convida ("Fala irmão, dia {data} comemoramos {idade} anos de
-  história. A presença de vocês seria uma honra pra gente."): ir
+  partida. Dez dias antes do aniversário de uma ALIADA — só de
+  aliada: quem a Diplomacia rotula Aliado ou Irmandade (relação
+  viva ≥ 20) ou irmã de clube; a Garra chamando a TUF não faz
+  sentido (correção do dono, 18/08/2026) —, ela convida ("Fala
+  irmão, dia {data} comemoramos {idade} anos de história. A
+  presença de vocês seria uma honra pra gente."): ir
   custa R$ 2.000 e rende +3 de relação (e conta como gesto na
   convivência); não ir tira −3. Dez dias antes do NOSSO aniversário
   o diretor pergunta a festa — grande: R$ 20.000, potencial de

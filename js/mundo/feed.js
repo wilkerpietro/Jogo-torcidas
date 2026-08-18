@@ -164,9 +164,14 @@ TO.feed = (function(){
     const em10 = new Date(hoje.getTime());
     em10.setDate(em10.getDate() + 10);
 
-    /* o convite das outras */
+    /* o convite das outras — SÓ DE ALIADA (correção do dono,
+       18/08/2026): a Garra do CRB chamando a TUF pra festa não faz
+       sentido. Convida quem a Diplomacia rotula Aliado ou Irmandade
+       (relação viva ≥ 20) e as irmãs de clube. */
     for(const o of M().jogaveis()){
       if(o.id === E.torcida.id || o.incompleta || !o.fundacao) continue;
+      const irma = M().saoIrmas && M().saoIrmas(E.torcida.id, o.id);
+      if(!irma && TO.relacoes.nivel(E, o.id) < 20) continue;
       const aniv = dataDoAniversario(o.id, em10.getFullYear());
       if(!mesmoDia(aniv, em10)) continue;
       const idade = em10.getFullYear() - o.fundacao;
