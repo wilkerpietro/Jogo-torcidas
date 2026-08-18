@@ -2113,8 +2113,13 @@ TO.diaJogo.combate = (function(){
   const corDisco = (d, claro) => claro ? (d.cor2 || corLado(d.lado, true))
                                        : (d.cor  || corLado(d.lado, false));
   function desenharDisco(c,d){
-    const tx=d.tremor?(Math.random()-0.5)*d.tremor:0;
-    const ty=d.tremor?(Math.random()-0.5)*d.tremor:0;
+    /* O TREMOR É 70% MENOR NO DESENHO (pedido do dono, 18/08/2026):
+       a amplitude cheia (±3px por eixo, a cada quadro) virava chiado
+       na hora do contato e ninguém entendia a briga — pior ainda com
+       o zoom. O `tremor` em si continua igual pra quem o lê como
+       estado (decaimento, acúmulo por golpe); só a sacudida encolhe. */
+    const tx=d.tremor?(Math.random()-0.5)*d.tremor*0.3:0;
+    const ty=d.tremor?(Math.random()-0.5)*d.tremor*0.3:0;
     const x=d.x+tx, y=d.y+ty;
     if(!d.vivo){
       if(d.entrou) return;

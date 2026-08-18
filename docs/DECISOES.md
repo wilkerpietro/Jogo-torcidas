@@ -339,6 +339,11 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   disco do jogador, sem deixar a vista passar da borda da cena;
   rolar pra baixo volta até a cena inteira de sempre. A rodinha em
   cima da cena não rola mais a página.
+- **Tremor do contato 70% menor** (18/08/2026): o boneco atingido
+  sacudia até ±3px por eixo a cada quadro e a briga virava chiado —
+  pior com o zoom. A sacudida desenhada caiu pra ±0,9px (corte de
+  70%); o acúmulo e o decaimento do tremor por golpe seguem iguais,
+  só a amplitude visual encolheu.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
