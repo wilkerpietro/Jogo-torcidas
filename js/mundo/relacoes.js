@@ -190,12 +190,13 @@ TO.relacoes = (function(){
       const b = balanco(t);
       t.caixa += Math.round(b.saldo * SEM);
 
+      /* PERDA DE MEMBROS IGUAL À NOSSA (decisão do dono, 18/08/2026):
+         caixa no vermelho derruba a MORAL — 1 por semana, a mesma
+         régua do nosso fechamento — e ninguém debanda. Membro delas
+         só sai de circulação ferido ou preso, e volta. */
       if(t.caixa < 0){
         t.vermelho++;
-        if(t.vermelho >= 2){
-          t.membros = Math.max(8, t.membros - Math.ceil(t.membros*0.03));
-          t.moral = U.limitar(t.moral - 0.4, 0, 20);
-        }
+        t.moral = U.limitar(t.moral - 1, 0, 20);
         continue;
       }
       t.vermelho = 0;
@@ -216,12 +217,8 @@ TO.relacoes = (function(){
         continue;
       }
 
-      const teto = tetoDe(E, t);
-      if(t.membros < teto && t.caixa > 2000 && U.rng() < 0.18){
-        const n = Math.min(U.inteiro(1,2), teto - t.membros);
-        t.membros += n;
-        t.caixa -= n * 5;
-      }
+      /* o sorteio de 18%/semana saiu: quem recruta agora é o
+         expediente diário delas (mundoDia), com o dado do dono */
 
       if(!compra){
         const cofre = b.des * 12;
@@ -353,10 +350,12 @@ TO.relacoes = (function(){
      ======================================================= */
   const SEMANAS_TRI = 13;
 
-  function eventosDoTrimestre(E){
+  /* sem `id` é o calendário do jogador; com `id`, o da torcida IA —
+     o mesmo sorteio por hash vale pro mundo inteiro */
+  function eventosDoTrimestre(E, id){
     const H = TO.mapa.hash;
     const bloco = Math.floor((semanaAbs(E) - 1) / SEMANAS_TRI);
-    const chave = `tri|${bloco}|${E.torcida.id}`;
+    const chave = `tri|${bloco}|${id || E.torcida.id}`;
     const nTreta = 2 + H(chave + '|nt') % 3;      // 2 a 4
     const nBar   = 1 + H(chave + '|nb') % 2;      // 1 a 2
     const fora = [], usados = new Set();
@@ -437,10 +436,22 @@ TO.relacoes = (function(){
     const d = CONQUISTA_MORAL[tipo];
     if(!d || !clubeId) return [];
     mundo(E);
+    /* a janela quente/seca do recrutamento também é delas (decisão do
+       dono, 18/08/2026): título e acesso abrem 2 semanas de 40/20;
+       rebaixamento fecha o portão por 2 semanas */
+    const janela = tipo === 'campeao' || tipo === 'acesso'
+      ? {tipo:'titulo', ate: semanaAbs(E) + 2}
+      : tipo === 'rebaixado'
+      ? {tipo:'rebaixamento', ate: semanaAbs(E) + 2}
+      : null;
     const fora = [];
     for(const o of M().torcidasDe(clubeId)){
       if(o.id === E.torcida.id) continue;
       const delta = mover(E, o.id, 'moral', d);
+      if(janela){
+        const t = (E.mundoTorcidas||{})[o.id];
+        if(t) t.janelaIA = janela;
+      }
       if(delta) fora.push({id:o.id, nome:o.nome, delta});
     }
     return fora;
@@ -546,7 +557,18 @@ TO.relacoes = (function(){
     return Math.max(0, Math.round(total) - foraDeCombate(E, id));
   }
 
-  function brigaIA(E, a, b, cidade, jogoRot){
+  /* todo registro passa por aqui: alimenta a aba Brigas, a notícia de
+     segunda e o contador que invalida o cache do ranking */
+  function registrarBrigaIA(E, reg){
+    E.brigasIA = E.brigasIA || [];
+    E.brigasIA.unshift(reg);
+    if(E.brigasIA.length > 300) E.brigasIA.pop();
+    E.brigasIATotal = (E.brigasIATotal || 0) + 1;
+    return reg;
+  }
+
+  function brigaIA(E, a, b, cidade, jogoRot, opts){
+    opts = opts || {};
     const abs = E.data.absoluto || 0;
     const dispA = disponiveisIA(E, a.id), dispB = disponiveisIA(E, b.id);
     if(dispA < 8 || dispB < 8) return null;
@@ -555,9 +577,23 @@ TO.relacoes = (function(){
       (o.mapa === cidade ? U.entre(0.18, 0.35) : U.entre(0.08, 0.18))));
     const nA = Math.min(dispA, bonde(a, dispA));
     const nB = Math.min(dispB, bonde(b, dispB));
+    /* A ESCOLTA DO MUNDO (decisão do dono, 18/08/2026): quem viaja pra
+       cidade de um aliado pode ter o anfitrião na briga — o bonde da
+       casa entra do lado do hóspede, como a nossa escolta */
+    const ajuda = lado => {
+      const anf = lado === 'a' ? opts.ajudaA : opts.ajudaB;
+      if(!anf) return null;
+      const n = Math.max(3, Math.round(disponiveisIA(E, anf.id) * 0.15));
+      return {o:anf, n};
+    };
+    const ajA = ajuda('a'), ajB = ajuda('b');
     /* a mesma régua das cenas: efetivo × ficha média, com o acaso da rua */
-    const pA = nA * mediaDeFichaGerada(a, dispA) * U.entre(0.85, 1.15);
-    const pB = nB * mediaDeFichaGerada(b, dispB) * U.entre(0.85, 1.15);
+    const pA = (nA * mediaDeFichaGerada(a, dispA)
+      + (ajA ? ajA.n * mediaDeFichaGerada(ajA.o, disponiveisIA(E, ajA.o.id)) : 0))
+      * U.entre(0.85, 1.15);
+    const pB = (nB * mediaDeFichaGerada(b, dispB)
+      + (ajB ? ajB.n * mediaDeFichaGerada(ajB.o, disponiveisIA(E, ajB.o.id)) : 0))
+      * U.entre(0.85, 1.15);
     const ganhouA = pA >= pB;
     const baixas = (o, n, perdeu) => {
       const t = (E.mundoTorcidas||{})[o.id];
@@ -578,6 +614,19 @@ TO.relacoes = (function(){
     };
     const bxA = baixas(a, nA, !ganhouA);
     const bxB = baixas(b, nB, ganhouA);
+    /* o anfitrião também sangra e também colhe: baixas na proporção do
+       bonde dele, prestígio pra ele se o lado dele venceu (é a mesma
+       regra da NOSSA escolta: o prestígio da briga é de quem foi
+       ajudado e de quem ajudou, não muda de dono no meio) */
+    for(const [aj, doLadoA] of [[ajA, true], [ajB, false]]){
+      if(!aj) continue;
+      const venceu = doLadoA === ganhouA;
+      baixas(aj.o, aj.n, !venceu);
+      if(venceu) mover(E, aj.o.id, 'prestigio', 0.2);
+      const dono = doLadoA ? a : b, rivalDe = doLadoA ? b : a;
+      moverRelacao(E, dono.id, aj.o.id, +4);
+      moverRelacao(E, aj.o.id, rivalDe.id, -6);
+    }
     /* O PRESTÍGIO ACOMPANHA A BRIGA (decisão do dono, 17/08/2026):
        briga grande move mais, e zebra — vencer em menor número —
        move mais ainda. Na régua de 0 a 100: 1 + envolvidos/25, +2 de
@@ -598,12 +647,12 @@ TO.relacoes = (function(){
       a: {id:a.id, nome:a.nome, n:nA, feridos:bxA.feridos, presos:bxA.presos},
       b: {id:b.id, nome:b.nome, n:nB, feridos:bxB.feridos, presos:bxB.presos},
       vencedor: ganhouA ? a.nome : b.nome,
-      prestigio: swingDisplay
+      prestigio: swingDisplay,
+      ganhouA
     };
-    E.brigasIA = E.brigasIA || [];
-    E.brigasIA.unshift(reg);
-    if(E.brigasIA.length > 200) E.brigasIA.pop();
-    return reg;
+    if(ajA) reg.a.ajuda = {nome:ajA.o.nome, n:ajA.n};
+    if(ajB) reg.b.ajuda = {nome:ajB.o.nome, n:ajB.n};
+    return registrarBrigaIA(E, reg);
   }
 
   function brigasDeHoje(E, jogos){
@@ -641,9 +690,241 @@ TO.relacoes = (function(){
       }
       if(!pares.length) continue;
       const [a, b] = pares[Math.floor(U.rng()*pares.length)];
-      const r = brigaIA(E, a, b, cidade, `${casa.nome} × ${vis.nome}`);
+      /* quem viajou pode estar hospedado num aliado da cidade: metade
+         das vezes o anfitrião desce junto (a escolta do mundo) */
+      const anfitriaoDe = (o, outro) => {
+        if(o.mapa === cidade) return null;
+        const anf = M().torcidasEm(cidade).find(x =>
+          x.id !== o.id && x.id !== outro.id && !x.incompleta &&
+          x.id !== E.torcida.id && x.clubeId !== outro.clubeId &&
+          (relacaoDelas(E, o.id, x.id) >= ALIADO ||
+           ['Aliado','Irmandade'].includes(M().relacaoBase(o.id, x.id)) ||
+           (M().saoIrmas && M().saoIrmas(o.id, x.id))));
+        return (anf && U.rng() < 0.5) ? anf : null;
+      };
+      const r = brigaIA(E, a, b, cidade, `${casa.nome} × ${vis.nome}`,
+        {ajudaA: anfitriaoDe(a, b), ajudaB: anfitriaoDe(b, a)});
       if(r) fora.push(r);
     }
+    return fora;
+  }
+
+  /* =======================================================
+     O MUNDO VIVE COMO A GENTE (decisão do dono, 18/08/2026)
+     As mecânicas do jogador — menos o olheiro — replicadas pras
+     138: cada torcida tem o próprio calendário do trimestre
+     (tretas marcadas e ataque ao bar), sofre ataque-surpresa de
+     relação fervendo, é emboscada na estrada quando viaja, tem
+     escolta de aliado (na brigaIA acima) e roda um Expediente
+     da Sede de 3 turnos com o MESMO dado de recrutamento — com
+     janela de título/acesso e regime seco de rebaixamento. E a
+     perda de membros ficou idêntica à nossa: caixa no vermelho
+     derruba MORAL, não membro; membro só sai de circulação
+     ferido ou preso, e volta.
+     ======================================================= */
+  const vivoDe = (E, id) => {
+    const t = (E.mundoTorcidas||{})[id];
+    return t ? t.membros : ((M().torcida(id)||{}).membros || 0);
+  };
+
+  /* as hostis que uma torcida IA alcança na própria praça */
+  function hostisLocaisIA(E, o){
+    return M().torcidasEm(o.mapa).filter(x =>
+      x.id !== o.id && !x.incompleta && x.id !== E.torcida.id &&
+      x.clubeId !== o.clubeId &&
+      !(M().saoIrmas && M().saoIrmas(o.id, x.id)) &&
+      (relacaoDelas(E, o.id, x.id) <= HOSTIL ||
+       ['Rival','Maior Rival'].includes(M().relacaoBase(o.id, x.id))));
+  }
+  /* com semente sorteia entre todas (regra da treta — nanica entra);
+     sem semente é a maior, que é quem vem no bar */
+  function rivalDaPracaIA(E, o, semente){
+    const lista = hostisLocaisIA(E, o);
+    if(!lista.length) return null;
+    if(semente) return lista[TO.mapa.hash(`${semente}|rv`) % lista.length];
+    return lista.sort((x,y)=>vivoDe(E,y.id)-vivoDe(E,x.id))[0];
+  }
+
+  /* a TRETA MARCADA delas: efetivos idênticos (5/7/10), a conta do
+     dono — prestígio ±1 na régua de 0-100, relação −2, sem dinheiro */
+  function tretaIA(E, o, chave){
+    const r = rivalDaPracaIA(E, o, chave);
+    if(!r) return null;
+    const tam = [5, 7, 10][TO.mapa.hash(`${chave}|n`) % 3];
+    if(disponiveisIA(E, o.id) < tam || disponiveisIA(E, r.id) < tam)
+      return null;
+    const abs = E.data.absoluto || 0;
+    const pA = tam * mediaDeFichaGerada(o, disponiveisIA(E, o.id)) * U.entre(0.85, 1.15);
+    const pB = tam * mediaDeFichaGerada(r, disponiveisIA(E, r.id)) * U.entre(0.85, 1.15);
+    const ganhouA = pA >= pB;
+    const machuca = (id, perdeu) => {
+      const t = (E.mundoTorcidas||{})[id];
+      const n = Math.round(tam * (perdeu ? U.entre(0.25, 0.45)
+                                         : U.entre(0.08, 0.20)));
+      if(t && n) (t.feridosIA = t.feridosIA||[]).push({n, ate: abs + 30});
+      return n;
+    };
+    const fA = machuca(o.id, !ganhouA), fB = machuca(r.id, ganhouA);
+    mover(E, ganhouA ? o.id : r.id, 'prestigio',  0.2);
+    mover(E, ganhouA ? r.id : o.id, 'prestigio', -0.2);
+    moverRelacao(E, o.id, r.id, -2);
+    return registrarBrigaIA(E, {
+      ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
+      cidade:(M().cidade(o.mapa)||{}).nome || o.mapa, jogo:'treta marcada',
+      a:{id:o.id, nome:o.nome, n:tam, feridos:fA, presos:0},
+      b:{id:r.id, nome:r.nome, n:tam, feridos:fB, presos:0},
+      vencedor: ganhouA ? o.nome : r.nome, prestigio:1
+    });
+  }
+
+  /* o ATAQUE AO BAR delas: a maior rival da praça vem, e dinheiro SÓ
+     muda de mão aqui — como no nosso bar (saque de 60 por cabeça do
+     bonde da casa + 22% do caixa do dono, se o dono perde) */
+  function barIA(E, o, chave){
+    const atk = rivalDaPracaIA(E, o);
+    if(!atk) return null;
+    /* ataque de nanica não existe — a mesma régua do nosso bar */
+    if(vivoDe(E, atk.id) < vivoDe(E, o.id) * 0.5) return null;
+    const reg = brigaIA(E, atk, o, o.mapa, 'ataque ao bar');
+    if(!reg) return null;
+    if(reg.ganhouA){
+      const tAtk = (E.mundoTorcidas||{})[atk.id];
+      const tDono = (E.mundoTorcidas||{})[o.id];
+      const saque = Math.round(60*reg.b.n +
+        0.22*Math.max(0, tDono ? tDono.caixa : 0));
+      if(tDono) tDono.caixa -= saque;
+      if(tAtk)  tAtk.caixa  += saque;
+      reg.saque = saque;
+    }
+    return reg;
+  }
+
+  /* o ATAQUE-SURPRESA delas: relação fervendo (≤ −55) vem sozinha em
+     dia comum — a mesma régua nossa (chance cresce com a mágoa e com
+     o arquétipo), diluída no dia */
+  function surpresaIA(E, o){
+    for(const v of hostisLocaisIA(E, o)){
+      const rel = relacaoDelas(E, o.id, v.id);
+      if(rel > QUENTE) continue;
+      if(vivoDe(E, o.id) < vivoDe(E, v.id) * 0.5) continue;
+      const t = (E.mundoTorcidas||{})[o.id];
+      const briga = t ? ARQUETIPOS[t.arq].briga : 1;
+      const chance = ((QUENTE - rel)/(100 + QUENTE)) * 0.28 * briga / 7;
+      if(U.rng() > chance) continue;
+      return brigaIA(E, o, v, o.mapa, 'ataque-surpresa');
+    }
+    return null;
+  }
+
+  /* a EMBOSCADA DA ESTRADA delas: torcida que viaja pro jogo cruza
+     cidade de rival da rota — a mesma lógica da nossa caravana */
+  function estradaIA(E, jogos, fora){
+    if(!TO.planejamento || !TO.planejamento.caminho) return;
+    for(const j of (jogos||[])){
+      if(U.rng() > 0.10) continue;
+      const casa = M().time(j.c), vis = M().time(j.f);
+      if(!casa || !vis || casa.mapa === vis.mapa) continue;
+      const viajantes = M().torcidasDe(vis.id)
+        .filter(o=>!o.incompleta && o.id !== E.torcida.id &&
+                   o.mapa === vis.mapa);
+      if(!viajantes.length) continue;
+      const o = viajantes[Math.floor(U.rng()*viajantes.length)];
+      const rota = TO.planejamento.caminho(E, vis.mapa, casa.mapa, false);
+      if(!rota) continue;
+      for(const cid of rota.cidades.slice(1, -1)){
+        const emb = M().torcidasEm(cid).find(x =>
+          !x.incompleta && x.id !== E.torcida.id && x.id !== o.id &&
+          x.clubeId !== o.clubeId &&
+          !(M().saoIrmas && M().saoIrmas(o.id, x.id)) &&
+          (relacaoDelas(E, o.id, x.id) <= HOSTIL ||
+           ['Rival','Maior Rival'].includes(M().relacaoBase(o.id, x.id))));
+        if(!emb) continue;
+        const r = brigaIA(E, emb, o, cid, 'emboscada na estrada');
+        if(r) fora.push(r);
+        break;
+      }
+    }
+  }
+
+  /* o EXPEDIENTE DA SEDE delas: cada torcida compõe 3 turnos — por
+     hash, então a mesma torcida joga sempre do mesmo jeito — entre
+     recrutar (o dado do dono) e festa (receita, pra quem tem povo) */
+  function expedienteIA(t, id){
+    if(t.exped) return t.exped;
+    const H = TO.mapa.hash;
+    const daFesta = t.membros >= 120;
+    const e = [];
+    for(let i = 0; i < 3; i++){
+      const gosto = ARQUETIPOS[t.arq].compra.includes('loja') ? 4 : 2;
+      e.push(daFesta && (H(`${id}|exp${i}`) % 10) < gosto ? 'festa'
+                                                          : 'recrutar');
+    }
+    return (t.exped = e);
+  }
+  function regimeIA(E, t){
+    const sa = semanaAbs(E);
+    if(t.janelaIA && sa < t.janelaIA.ate)
+      return t.janelaIA.tipo === 'rebaixamento' ? 'rebaixado' : 'titulo';
+    if(t.ultimoJogo && t.ultimoJogo.venceu) return 'ganhou';
+    if(t.ultimoJogo && t.ultimoJogo.perdeu) return 'perdeu';
+    return 'normal';
+  }
+
+  /* O DIA DO MUNDO: expediente, calendário do trimestre, surpresa e
+     estrada — roda uma vez por dia, depois das brigas de jogo */
+  function mundoDia(E, jogos){
+    const m = mundo(E);
+    /* o placar do dia vira regime de recrutamento das torcidas dos
+       dois clubes — a mesma janela quente/seca que a gente tem */
+    for(const j of (jogos||[])){
+      if(j.gc == null || j.gf == null) continue;
+      const marcar = (clube, venceu, perdeu)=>{
+        for(const o of M().torcidasDe(clube)){
+          const t = m[o.id];
+          if(t) t.ultimoJogo = {venceu, perdeu};
+        }
+      };
+      marcar(j.c, j.gc > j.gf, j.gc < j.gf);
+      marcar(j.f, j.gf > j.gc, j.gf < j.gc);
+    }
+
+    const sa = semanaAbs(E), fora = [];
+    const TAB = (TO.acoes && TO.acoes.TABELA_RECRUTA) || {};
+    for(const o of M().jogaveis()){
+      if(o.id === E.torcida.id || o.incompleta) continue;
+      const t = m[o.id];
+      if(!t) continue;
+
+      /* --- os 3 turnos do expediente --- */
+      for(const op of expedienteIA(t, o.id)){
+        if(op === 'recrutar'){
+          const teto = tetoDe(E, t);
+          if(t.membros >= teto || t.caixa < 10) continue;
+          const tab = TAB[regimeIA(E, t)] || {um:0.10, dois:0.05};
+          const r = U.rng();
+          const n = Math.min(r < tab.dois ? 2
+                           : r < tab.dois + tab.um ? 1 : 0,
+                             teto - t.membros);
+          if(n > 0){ t.membros += n; t.caixa -= n*5; }
+        } else if(op === 'festa'){
+          if(t.caixa < 700) continue;
+          t.caixa += Math.round(t.membros * U.entre(2.8, 4.9)) - 700;
+        }
+      }
+
+      /* --- o calendário do trimestre dela --- */
+      for(const ev of eventosDoTrimestre(E, o.id)){
+        if(ev.semanaAbs !== sa || ev.dia !== E.data.dia) continue;
+        const r = ev.tipo === 'treta' ? tretaIA(E, o, ev.chave)
+                                      : barIA(E, o, ev.chave);
+        if(r) fora.push(r);
+      }
+
+      /* --- e a surpresa de quem ferve --- */
+      const s = surpresaIA(E, o);
+      if(s) fora.push(s);
+    }
+    estradaIA(E, jogos, fora);
     return fora;
   }
 
@@ -651,7 +932,7 @@ TO.relacoes = (function(){
   function ranking(E){
     const chave = `${E.data.ano}|${semanaAbs(E)}|${E.data.dia}|`+
       `${E.membros.length}|${Math.round(E.indicadores.prestigio*100)}|`+
-      `${(E.brigasIA||[]).length}`;
+      `${E.brigasIATotal || (E.brigasIA||[]).length}`;
     if(cacheRanking.chave === chave) return cacheRanking.lista;
     mundo(E);
     const fora = [];
@@ -714,7 +995,7 @@ TO.relacoes = (function(){
 
   return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
           ranking, posicaoNoRanking,
-          brigasDeHoje, disponiveisIA, foraDeCombate,
+          brigasDeHoje, mundoDia, disponiveisIA, foraDeCombate,
           mundo, balanco, ARQUETIPOS, economiaDelas,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,

@@ -151,6 +151,23 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **Relatório do olheiro em tabela** (17/08/2026): uma linha por jogo —
   competição, dia e o confronto com a cor de cada clube na esquerda;
   as torcidas do jogo com cor e estimativa na direita.
+- **O mundo vive como a gente** (decisão do dono, 18/08/2026): as
+  mecânicas do jogador — menos o olheiro — replicadas pras 138.
+  Cada torcida IA tem o próprio calendário do trimestre (2 a 4
+  tretas marcadas de 5×5/7×7/10×10 e 1 a 2 ataques ao bar dela, com
+  a régua da nanica valendo no bar e o saque de 60 por cabeça + 22%
+  do caixa quando o dono perde); relação fervendo (≤ −55) traz
+  ataque-surpresa em dia comum, na mesma curva de chance nossa;
+  torcida que viaja pro jogo pode ser emboscada por rival da rota; e
+  quem visita cidade de aliado pode ter o anfitrião descendo junto —
+  a escolta do mundo, com baixas e prestígio pro anfitrião que
+  vence. Cada uma compõe um Expediente da Sede de 3 turnos (recrutar
+  e, nas grandes, festa) e recruta com o MESMO dado do dono, regime
+  por resultado do clube, janela de título/acesso (40/20) e regime
+  seco de rebaixamento. A perda de membros ficou idêntica à nossa:
+  vermelho derruba moral (−1/semana), ninguém debanda — membro só
+  sai ferido ou preso, e volta. O sorteio antigo de 18%/semana saiu.
+  Registro de tudo na aba Brigas (agora com teto de 300).
 - **Festa sem moral** (17/08/2026): a festa na sede virou só receita
   de ingresso e bebida — o +0,8 de moral por festa rodava todo dia
   pelo expediente e saturava o indicador em dias. Moral agora vem de

@@ -351,6 +351,9 @@ TO.estado = (function(){
        nascem dos jogos do dia (decisão do dono) — nada disso vira
        mensagem no feed; o registro mora na aba Brigas das Notícias */
     if(TO.relacoes.brigasDeHoje) TO.relacoes.brigasDeHoje(E, jogos);
+    /* e o resto do mundo vive o dia: expediente das 138, tretas e
+       ataques de bar do trimestre delas, surpresas e estrada */
+    if(TO.relacoes.mundoDia) TO.relacoes.mundoDia(E, jogos);
     if(TO.feed) TO.feed.eventosDoDia(E, {jogos});
 
     mudou();

@@ -692,7 +692,7 @@ TO.acoes = (function(){
 
   return {LISTA, TURNOS, REDUCAO, porId, agendaveis, expediente,
           maximo, restantes, executar, rodarExpediente,
-          previsaoRecrutamento,
+          previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe,
           ASSALTOS, executarAssalto,
           alvosDeAtaque, clube, fecharCena, fecharBrigaDeRua,

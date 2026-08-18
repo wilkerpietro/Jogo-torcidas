@@ -949,8 +949,12 @@
              ${chip(b.b.id, b.b.nome)}</span>
            <span class="briga-ia-vence">venceu ${b.vencedor}</span>
          </div>
-         <small>${b.cidade} · na sombra de ${b.jogo} · ${b.a.nome}: `+
+         <small>${b.cidade} · ${/×/.test(b.jogo||'') ?
+          `na sombra de ${b.jogo}` : (b.jogo || 'na rua')} · ${b.a.nome}: `+
         `${baixa(b.a)} · ${b.b.nome}: ${baixa(b.b)}`+
+        `${b.a.ajuda ? ` · escolta de ${b.a.ajuda.nome} (${b.a.ajuda.n})` : ''}`+
+        `${b.b.ajuda ? ` · escolta de ${b.b.ajuda.nome} (${b.b.ajuda.n})` : ''}`+
+        `${b.saque ? ` · saque de ${U.dinheiro(b.saque)}` : ''}`+
         `${b.prestigio ? ` · prestígio ±${b.prestigio}` : ''}</small>`}));
     }
     cx.appendChild(c);
