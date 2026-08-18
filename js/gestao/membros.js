@@ -112,9 +112,10 @@ TO.membros = (function(){
 
   function povoarInicial(E, total, cargos){
     const plano = planoDeCargos(total || 34, cargos);
-    /* torcida forte tem gente mais rodada — o `poder` da fonte é o que
-       separa a Gaviões de uma organizada de interior */
-    const peso = U.limitar((E.torcida.poder || 60)/250, 0, 1);
+    /* SEM BÔNUS DE PODER (decisão do dono, 18/08/2026): a ficha inicial
+       sai só do cargo, a mesma régua das IAs — o que separa a Gaviões
+       de uma organizada de interior é o tamanho e a pirâmide, não um
+       +3 de berço em cada membro. */
     const moralBase = Math.round(E.indicadores.moral);
 
     for(const [cargo, n] of plano){
@@ -122,11 +123,10 @@ TO.membros = (function(){
       for(let i=0;i<n;i++){
         const base = cargo==='novato' ? 1 : cargo==='componente' ? 5
                    : cargo==='frente' ? 10 : 14;
-        const bonus = Math.round(peso*3);
         E.membros.push(criar(E, {
           cargo,
-          forca:  Math.min(c.teto, base + U.inteiro(0,3) + bonus),
-          defesa: Math.min(c.teto, base + U.inteiro(0,3) + bonus),
+          forca:  Math.min(c.teto, base + U.inteiro(0,3)),
+          defesa: Math.min(c.teto, base + U.inteiro(0,3)),
           moral:  U.limitar(moralBase + U.inteiro(-3,3), 1, 20),
           xp: cargo==='novato' ? U.inteiro(0,30)
             : cargo==='componente' ? U.inteiro(40,95)

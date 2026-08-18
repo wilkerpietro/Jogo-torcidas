@@ -421,8 +421,8 @@ TO.diaJogo.combate = (function(){
        corta o topo, que é a MESMA seleção que fazemos. */
     const tamanho = Math.max(qtd, Math.min(p.membros || 60, 250));
     const plano = TO.membros.planoDeCargos(tamanho, p.cargos);
-    const peso = U.limitar((p.poder || 60)/250, 0, 1);
-    const bonus = Math.round(peso*3);
+    /* SEM BÔNUS DE PODER (decisão do dono, 18/08/2026): a ficha do
+       rival sai só do cargo, a mesma régua da média do ranking. */
     /* a moral deles vem da moral viva da torcida no mundo (a mesma
        régua do nosso povoarInicial: indicador ±3), não de um 12 fixo */
     const moralBase = Math.round(p.moral !== undefined ? p.moral : 12);
@@ -432,13 +432,13 @@ TO.diaJogo.combate = (function(){
       const teto = (CARGOS[cargo] || CARGOS.novato).teto;
       for(let i=0;i<n && fora.length<tamanho;i++)
         fora.push({cargo,
-          forca:  Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + bonus),
-          defesa: Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + bonus),
+          forca:  Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3)),
+          defesa: Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3)),
           moral:  U.limitar(moralBase + U.inteiro(-3,3), 1, 20)});
     }
     while(fora.length < tamanho)
-      fora.push({cargo:'novato', forca:1+U.inteiro(0,3)+bonus,
-                 defesa:1+U.inteiro(0,3)+bonus, moral:moralBase});
+      fora.push({cargo:'novato', forca:1+U.inteiro(0,3),
+                 defesa:1+U.inteiro(0,3), moral:moralBase});
     return fora.sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
                .slice(0, qtd);
   }

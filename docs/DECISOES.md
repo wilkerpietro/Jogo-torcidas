@@ -341,6 +341,15 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   disco do jogador, sem deixar a vista passar da borda da cena;
   rolar pra baixo volta até a cena inteira de sempre. A rodinha em
   cima da cena não rola mais a página.
+- **Ficha sem bônus de poder** (18/08/2026): o `poder` da fonte dava
+  até +3 de força e defesa por cabeça (poder÷250×3) e cravava as
+  gigantes acima de todas por decreto. Saiu das três portas: média
+  do ranking (mediaDeFichaGerada), fichas dos rivais nas cenas e os
+  nossos membros iniciais. A ficha agora sai só do cargo; no tamanho
+  de fonte as médias empatam (~5,6–5,7 pra todas). O que ainda
+  separa as torcidas na régua é o crescimento: recruta entra como
+  novato e dilui a média de quem cresce, e o teto de 250 da conta
+  segura a média das gigantes — isso ficou como está.
 - **Nossa partida com a linha de presença** (18/08/2026): a mensagem
   do jogo ganhou "Mandante: Gaviões 250 · Camisa 12 54. Visitante:
   Torcida Jovem 10." — quantos membros cada torcida dos dois clubes

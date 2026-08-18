@@ -510,20 +510,22 @@ TO.relacoes = (function(){
      Pontos = (membros + prestígio×2) × média de força e defesa
      dos membros. O prestígio entra na escala de 0 a 100 (peso
      2); a média das IAs sai da MESMA régua que gera as fichas
-     delas nas brigas (cargo + bônus de poder), sem sorteio —
-     é a esperança da distribuição, estável de um dia pro outro.
+     delas nas brigas (só o cargo), sem sorteio — é a esperança
+     da distribuição, estável de um dia pro outro.
      ======================================================= */
   function mediaDeFichaGerada(o, membrosVivos){
+    /* SEM BÔNUS DE PODER (decisão do dono, 18/08/2026): a ficha vem só
+       do cargo. O `poder` da fonte dava até +3 por cabeça e cravava as
+       gigantes acima de todo mundo por decreto; agora o que separa as
+       torcidas na média é a pirâmide de cargos e o tamanho. */
     const CARGOS = TO.membros.CARGOS;
     const tamanho = Math.min(Math.max(membrosVivos || o.membros || 60, 1), 250);
     const plano = TO.membros.planoDeCargos(tamanho, o.cargos);
-    const peso = U.limitar((o.poder || 60)/250, 0, 1);
-    const bonus = Math.round(peso*3);
     const BASE = {novato:1, componente:5, frente:10, diretoria:14};
     let soma = 0, n = 0;
     for(const [cargo, q] of plano){
       const teto = (CARGOS[cargo] || CARGOS.novato).teto;
-      soma += q * Math.min(teto, (BASE[cargo]||1) + 1.5 + bonus);
+      soma += q * Math.min(teto, (BASE[cargo]||1) + 1.5);
       n += q;
     }
     return n ? soma/n : 1;
