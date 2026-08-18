@@ -29,7 +29,9 @@ caminhabilidade da própria foto, e o que a foto fechar o disco não atravessa.
 
 - **enquadramento a prumo** (nadir, 90°). Sem horizonte, sem perspectiva, sem
   inclinar. É o erro nº 1 do ChatGPT nessas cenas: ele entrega uma vista
-  oblíqua bonita e inútil;
+  oblíqua bonita e inútil, e a versão disfarçada dele — a câmera alta mas
+  torta uns graus — passa batida. Tem seção só pra isso: **Zênite de
+  verdade**, e o bloco de lá abre os seis prompts;
 - **16:9**. O importador encaixa a largura inteira em 1536 px e a foto vira
   1536×864 dentro da tela de 1024 — sobram **80 px de faixa de quintal em cima
   e embaixo**. Nada que o jogador precise pisar pode encostar na borda de cima
@@ -53,6 +55,83 @@ caminhabilidade da própria foto, e o que a foto fechar o disco não atravessa.
   faz a tela inteira valer;
 - **o chão de andar tem que ser uma mancha contínua**. Ilha de chão cercada de
   parede é ilha de disco preso.
+
+## Zênite de verdade (o erro que passa despercebido)
+
+"Top-down" o modelo entende; **zênite** ele não entrega sozinho. A foto sai de
+uma câmera alta, mas inclinada uns graus — e aí quanto mais longe do centro do
+quadro, mais o objeto deita pra fora. Os tells são sempre os mesmos:
+
+- **fachada à vista.** Se dá pra ver a porta de enrolar, a parede da frente ou
+  a lateral de um prédio, a câmera estava torta;
+- **telhado deslocado da base.** A laje aparece escorregada pro lado do próprio
+  pé;
+- **veículo de perfil.** Ônibus mostrando a lateral inteira, carro mostrando
+  para-brisa e roda do outro lado;
+- **coisa deitando pra fora nas bordas.** No meio do quadro parece certo, na
+  beirada não.
+
+E não é frescura de enquadramento: **parallax esconde chão**. A parte do pátio
+que fica atrás do galpão inclinado nunca foi fotografada, o importador lê a
+fachada como se fosse piso e o disco anda por cima de parede. É o mesmo
+problema do viaduto, só que disfarçado.
+
+### Bloco de zênite — abre qualquer um dos seis prompts
+
+```
+strict orthographic top-down nadir view, camera exactly at zenith directly
+above the scene, optical axis perpendicular to the ground, 90 degrees straight
+down, orthophoto / satellite imagery projection, zero camera tilt, zero
+parallax, no perspective distortion, no vanishing point, verticals collapse to
+points,
+
+every object seen only as its top surface: roofs only, vehicle roofs only, no
+façades, no building elevations, no side walls, no visible fronts of anything,
+nothing leaning outward at the edges of the frame,
+```
+
+### Negativo de zênite — entra no negativo de todas
+
+```
+oblique aerial, bird's eye view, three quarter view, tilted camera, angled
+drone shot, perspective view, visible façade, visible building side, visible
+wall elevation, roof offset from its base, leaning buildings, vehicles seen
+from the side, windscreen visible, car front visible, vanishing point,
+wide angle, fisheye, lens distortion, parallax
+```
+
+### Ordem curta — pra imagem que já saiu quase certa
+
+Vale mais que refazer: aproveita o traçado que deu certo e mexe só na câmera.
+
+```
+Re-render this exact same scene from a TRUE NADIR viewpoint: the camera is
+directly overhead, its optical axis perfectly perpendicular to the ground,
+pointing straight down at 90 degrees, like an orthophoto or a cadastral aerial
+survey.
+
+Every single element must be seen from exactly above, at zenith, with no
+parallax and no tilt anywhere in the frame:
+- no façade, no side wall, no building elevation is visible — buildings show
+  only their roof outline, and each roof sits exactly on top of its own
+  footprint, not offset to one side;
+- the bus, the cars and the lorry show only their roofs; no windscreen, no
+  flank, no wheels on the far side, no front or rear face;
+- the canopies, the poles, the tyre stacks and the water tanks show only their
+  top surfaces;
+- objects near the edges of the frame stand perfectly upright, not leaning
+  outwards; verticals project to a point, not to a line;
+- shadows may fall to one side, but nothing leans with them.
+
+Keep the layout, the buildings, the vehicles, the ground, the road and the
+overcast lighting exactly where they are. Change only the camera: straight
+down, zenith, orthographic, zero tilt.
+```
+
+**Nas três cenas de laje removida** (bar, loja, posto) o zênite tem um sinal
+próprio: parede vista de cima é uma **linha grossa**, e o piso inteiro aparece
+com a mesma luz do chão de fora. Se a parede interna da lojinha aparecer "por
+dentro", a câmera voltou a inclinar — e o que estava atrás dela sumiu.
 
 ## Como rodar no ChatGPT e no Flow
 
