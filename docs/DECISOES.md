@@ -202,15 +202,14 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **A provocação do rival** (pedido do dono, 18/08/2026): toda
   briga NOSSA concluída puxa, logo depois da mensagem do confronto,
   um recado do outro lado — voz "Na rua", assinado pela torcida.
-  Se ELES venceram, deboche: "Foi isso que vocês trouxeram hoje?
-  Vão treinar mais, que da próxima a gente nem desce do carro." /
-  "Manda a conta do hospital pra sede. A rua tem dono." / "Contamos
+  Textos aprovados pelo dono (18/08/2026). Se ELES venceram,
+  deboche: "Anota a placa aí, teu terror tem nome!" / "Correram
+  igual galinha, cadê vocês? Ninguém sabe ninguém viu." / "Contamos
   os que correram: faltou dedo pra contar. Fica em casa da
-  próxima." Se PERDERAM, promessa de volta: "Aproveita o dia,
-  porque isso não fica assim. A gente sabe onde vocês bebem." /
-  "Hoje foi de vocês. Anota aí: tem volta, e a volta é na sua
-  porta." / "Riram hoje, choram depois. Se cuida na próxima
-  caravana." Só texto — nenhum efeito de indicador.
+  próxima." Se PERDERAM, promessa de volta: "Aproveita, porque isso
+  não fica assim. Nosso bonde volta pesado." / "Fica tranquilo que
+  a cobrança vem cara!" / "Riram hoje, choram depois. O revide é
+  pesado." Só texto — nenhum efeito de indicador.
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de
