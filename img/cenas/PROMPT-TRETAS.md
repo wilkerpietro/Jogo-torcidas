@@ -11,8 +11,8 @@ cima — foto com gente vira gente parada no meio da briga.
 | Treta 5×5 — vila | encontro de bonde pequeno, favela e classe baixa | `treta_vila.webp` | a fazer |
 | Treta 7×7 — quadra de terra | encontro médio, qualquer bairro de periferia | `treta_quadra.webp` | a fazer |
 | Treta 10×10 — pátio do galpão | encontro grande, borda de bairro | `treta_patio.webp` | a fazer |
-| Estrada 1 — pista fechada no mato | emboscada na caravana | `estrada.webp` | a fazer |
-| Estrada 2 — parada de estrada | emboscada na caravana (variação) | `estrada_posto.webp` | a fazer |
+| Estrada 1 — pista entre muros | emboscada na caravana | `estrada.webp` | a fazer |
+| Estrada 2 — posto sem teto | emboscada na caravana (variação) | `estrada_posto.webp` | a fazer |
 | Loja da rival | ação *atacar a loja* | `loja.webp` | a fazer |
 
 As três primeiras são leitura da tua ideia de treta por tamanho: **o que muda
@@ -46,7 +46,11 @@ caminhabilidade da própria foto, e o que a foto fechar o disco não atravessa.
   telhado, e telhado é parede — viaduto, passarela, marquise e toldo escondem
   justamente o chão que o disco ia pisar, e isso não tem conserto no pincel,
   porque o que estava embaixo não foi fotografado. A única exceção é a laje
-  removida de propósito, na loja e no bar;
+  removida de propósito — na loja, no posto e no bar, onde a briga entra;
+- **chão útil ocupa o quadro**. Mato, terreno vago e telhado de vizinho que
+  ninguém pisa são tela jogada fora: a briga se espreme numa faixa e o resto
+  da imagem é enfeite. Fechar a cena com muro, quarteirão ou fachada é o que
+  faz a tela inteira valer;
 - **o chão de andar tem que ser uma mancha contínua**. Ilha de chão cercada de
   parede é ilha de disco preso.
 
@@ -365,145 +369,68 @@ the image. No people.
 
 ---
 
-## ESTRADA 1 — pista fechada no mato
+## ESTRADA 1 — pista entre muros
 
 A emboscada hoje **abre a rua de classe baixa emprestada** (§8.21 do resumo),
 porque cena de rodovia não existe. Esta é ela. Papéis invertidos: o ônibus
 fechado é o `mandante` — quem embarcou na caravana —, e o bonde que fechou a
 pista é o `visitante`.
 
-Geometria: **rodovia de duas mãos atravessando o quadro da esquerda pra
-direita**, acostamento largo de terra dos dois lados, mato baixo além do
-acostamento. No meio do quadro, **o ônibus de excursão parado atravessado**,
-e dois carros fechando a pista à frente dele. A pista continua aberta nas duas
-bordas: é por onde se foge, dos dois lados.
+**Não é a estrada no meio do sertão.** Mato dos dois lados é bonito e é chão
+morto: metade da tela vira cenário que ninguém pisa, e a briga se espreme numa
+faixa de asfalto. Aqui a rodovia passa **num trecho murado de zona
+industrial** — muro alto dos dois lados, acostamento largo de terra batida
+encostando neles. O muro faz o que o mato não fazia: fecha a cena, mantém os
+dois bondes dentro do quadro e transforma o quadro inteiro em chão de briga.
 
-O ônibus e os carros são obstáculo: depois de importar, eles têm de virar
-parede no pincel, senão o disco atravessa o ônibus.
+Geometria: **pista de duas mãos atravessando o quadro da esquerda pra
+direita**, acostamento largo dos dois lados, **muro contínuo acompanhando os
+dois acostamentos** — o corredor murado ocupa pelo menos dois terços da altura
+do quadro, e sobra só uma tira fina de telhado nas bordas de cima e de baixo,
+que caem na faixa morta do importador de qualquer jeito. No meio, **o ônibus de
+excursão parado atravessado** e dois carros fechando a pista. A pista continua
+aberta nas duas bordas laterais: é por ali que se foge, dos dois lados. Um
+**portão de serviço aberto no muro** de cada lado é a fuga curta de quem não
+alcança a ponta.
+
+O ônibus e os carros são obstáculo: depois de importar, viram parede no
+pincel, senão o disco atravessa o ônibus.
 
 Spawns sugeridos: `mandante1` (760, 512) — colado no ônibus, é de lá que a
-caravana desce — e `mandante2` (900, 560); `visitante1` (1340, 512) e
+caravana desce — e `mandante2` (900, 570); `visitante1` (1340, 512) e
 `visitante2` (1180, 620), atrás do bloqueio.
 
 ```
-top-down nadir aerial drone photograph of a two-lane rural highway cutting
-through low scrubland in the Brazilian northeast, shot straight down at 90
-degrees, orthographic feel, overcast diffuse daylight, soft shadows,
+top-down nadir aerial drone photograph of a two-lane road running through a
+walled industrial stretch on the outskirts of a Brazilian city, shot straight
+down at 90 degrees, orthographic feel, overcast diffuse daylight, soft shadows,
 desaturated muted colors, documentary photography, no people anywhere,
 
-one two-lane asphalt highway running left to right across the whole frame,
-worn dark asphalt, faded white edge lines and a broken white centre line,
-patched repairs, a wide bare earth shoulder on both sides, shallow drainage
-ditches, a rusted kilometre marker post and a leaning road sign,
+one two-lane asphalt road running left to right across the whole frame, worn
+dark asphalt, faded white edge lines and a broken centre line, patched repairs,
+a wide flat shoulder of packed earth and gravel on both sides,
+
+a long continuous concrete boundary wall runs along each shoulder, on both
+sides of the road, about three metres high, stained and covered in faded
+graffiti, topped with barbed wire in places; the walled corridor of road and
+shoulders fills at least two thirds of the height of the frame,
+
+a service gate stands open in the wall on the upper side and another open gate
+in the wall on the lower side, each showing a short strip of bare yard behind
+it,
 
 parked in the middle of the frame, a large old intercity coach bus stopped at
-an angle across the road, its doors on the shoulder side, and two battered
-cars stopped nose to nose across the lanes just ahead of it, blocking the way,
-a scatter of stones on the asphalt,
-
-beyond the shoulders on both sides: flat dry scrubland with low grey-green
-bushes, red earth, a rusted barbed wire fence on wooden posts running parallel
-to the road, a dirt side track meeting the highway near one edge of the frame,
+an angle across the road, its doors on the shoulder side, and two battered cars
+stopped nose to nose across the lanes just ahead of it, a scatter of stones on
+the asphalt, a rusted skip and a stack of pallets on the shoulder, a leaning
+lamp post,
 
 the road stays completely clear and open at the left edge and at the right edge
 of the picture,
 
-photorealistic, natural materials, dusty asphalt, tropical Brazil, 8k satellite
-imagery quality, sharp detail, no people visible, no moving traffic
-```
-
-### Negativo
-
-```
-illustration, cartoon, isometric, 3d render, video game asset, painting,
-vector art, blueprint, map icons, labels, text, watermark, grid lines,
-tilted perspective, oblique angle, eye level, fisheye, vignette,
-motorway, four lanes, divided highway, guardrail through the whole frame,
-overpass, tunnel, bridge, city buildings, houses, dense forest, jungle,
-crash, fire, smoke, wreckage, blood, police, ambulance,
-crowd, people, passengers, drivers, moving cars, traffic queue,
-saturated colors, hdr, dramatic lighting, night, rain, snow
-```
-
-### Sementes pro importador
-
-```python
-{'id': 'estrada', 'arquivo': '<arquivo que saiu>.jpeg',
- 'saida': 'estrada.webp',
- 'sementes': [(0.15, 0.50), (0.85, 0.50), (0.02, 0.50), (0.98, 0.50),
-              (0.50, 0.35), (0.50, 0.65)],
- 'corredor': True},
-```
-
-### Ordem curta de correção
-
-```
-Keep the highway completely open and clear at the left and right edges of the
-image — no vehicles and no blockage there. Leave only the coach bus parked
-across the middle of the road with two cars stopped in front of it. Widen the
-bare earth shoulder on both sides of the asphalt. Remove every person. No fire,
-no smoke, no wreckage.
-```
-
-### Conferir
-
-1. **As duas pontas da pista estão livres.** É a fuga dos dois lados; estrada
-   fechada nas bordas trava a cena.
-2. O acostamento é largo e liso — é o chão útil da briga, a pista sozinha é
-   estreita demais pra vinte discos.
-3. Nada de acidente: a emboscada é bloqueio, não capotamento. Ferragem
-   retorcida vira geometria ilegível na máscara.
-4. Marque ônibus e carros como parede no F2. O ônibus é o abrigo da caravana:
-   é ele que faz a cena ter forma.
-
----
-
-## ESTRADA 2 — parada de estrada
-
-A variação. Mesma rodovia, mas na parada: posto de gasolina com borracharia e
-lanchonete, pátio de cimento grande do lado da pista. Serve pra emboscada que
-pega a caravana parada — e dá um chão bem diferente do trecho de mato, que é o
-motivo de existirem duas.
-
-Geometria: **pista atravessando o quadro embaixo, da esquerda pra direita**;
-o pátio do posto ocupa a metade de cima, aberto e ligado à pista por duas
-bocas de entrada (uma em cada ponta do pátio); a cobertura das bombas é
-**pequena e fica numa quina**, não no meio — cobertura no miolo do pátio vira
-parede na máscara e come o chão da briga.
-
-Spawns sugeridos: `mandante1` (700, 300) e `mandante2` (500, 240), no pátio
-junto do ônibus; `visitante1` (1300, 700) e `visitante2` (1100, 780), chegando
-pela pista.
-
-```
-top-down nadir aerial drone photograph of a roadside truck stop on a Brazilian
-highway, shot straight down at 90 degrees, orthographic feel, overcast diffuse
-daylight, soft shadows, desaturated muted colors, documentary photography,
-completely empty of people,
-
-along the bottom of the frame, a two-lane asphalt highway running left to right
-from edge to edge, worn asphalt, faded white edge lines, a wide bare earth
-shoulder,
-
-filling the upper half of the frame, a large open concrete forecourt of a
-petrol station, cracked slabs, faded painted lanes and arrows, oil stains, a
-drain grate, a low kerb separating it from the highway with two wide open
-driveway entrances, one near the left end and one near the right end,
-
-a small fuel canopy with two pumps stands in one corner of the forecourt only,
-compact and off to the side, leaving the rest of the concrete yard wide open to
-the sky,
-
-at the back of the forecourt, a low single-storey building with a flat white
-roof: a snack bar with a shuttered window and a tyre repair shop with a stack
-of used tyres outside, a compressor, a water tank, two picnic tables under a
-small awning against the wall,
-
-an old intercity coach bus parked on the open forecourt, a lorry parked at the
-far end, two cars at the kerb, a light pole,
-
-behind the building, dry scrubland with low bushes, red earth and a barbed wire
-fence,
+beyond the walls, only a thin strip along the very top and bottom edges of the
+frame: the flat roofs and rusted zinc roofing of warehouses, a couple of parked
+lorries,
 
 photorealistic, natural materials, sun-bleached concrete, dusty asphalt,
 tropical Brazil, 8k satellite imagery quality, sharp detail, no people visible,
@@ -516,10 +443,137 @@ no moving traffic
 illustration, cartoon, isometric, 3d render, video game asset, painting,
 vector art, blueprint, map icons, labels, text, watermark, grid lines,
 tilted perspective, oblique angle, eye level, fisheye, vignette,
-large canopy covering the forecourt, roof over the yard, covered parking,
-service station roof spanning the frame, shopping mall, city street,
-many parked cars, full car park, crowd, people, drivers, attendants,
-fire, smoke, fuel spill, explosion,
+open countryside, scrubland, caatinga, fields, desert, wide empty landscape,
+dense trees, forest, grass verges, hills, river, dirt road,
+motorway, four lanes, divided highway, overpass, viaduct, bridge, tunnel,
+canopy, walkway over the road, power lines across the road,
+crash, fire, smoke, wreckage, blood, police, ambulance,
+crowd, people, passengers, drivers, moving cars, traffic queue,
+saturated colors, hdr, dramatic lighting, night, rain, snow
+```
+
+### Sementes pro importador
+
+```python
+{'id': 'estrada', 'arquivo': '<arquivo que saiu>.jpeg',
+ 'saida': 'estrada.webp',
+ 'sementes': [(0.15, 0.50), (0.85, 0.50), (0.02, 0.50), (0.98, 0.50),
+              (0.50, 0.32), (0.50, 0.68)],
+ 'corredor': True},
+```
+
+### Ordem curta de correção
+
+```
+Put a tall continuous concrete wall along both shoulders of the road, running
+the full width of the image, and make the walled corridor of road and shoulders
+fill most of the frame — leave only a thin strip of warehouse roofs at the top
+and bottom edges. Remove all open countryside and vegetation. Keep the road
+completely open and clear at the left and right edges, and leave the coach bus
+parked across the middle with two cars in front of it. No people, no fire, no
+wreckage.
+```
+
+### Conferir
+
+1. **O corredor murado ocupa o quadro.** Se sobrar mato ou terreno vazio nas
+   bordas, a cena perde tela: aquilo não é chão de andar nem é obstáculo, é
+   nada.
+2. **As duas pontas da pista estão livres.** É a fuga dos dois lados; estrada
+   fechada nas bordas trava a cena numa chacina.
+3. O acostamento é largo e liso — é o chão útil da briga, a pista sozinha é
+   estreita demais pra vinte discos.
+4. O muro é contínuo, com **só os dois portões** abertos. Muro esburacado vira
+   fuga por todo lado e a emboscada deixa de ser emboscada.
+5. Nada de acidente: a emboscada é bloqueio, não capotamento. Ferragem
+   retorcida vira geometria ilegível na máscara.
+6. Marque ônibus, carros, caçamba e paletes como parede no F2.
+
+---
+
+## ESTRADA 2 — posto de gasolina sem teto
+
+A variação, e a mais fechada das duas: um posto de beira de estrada **murado**,
+com o ônibus da caravana parado no pátio. Aqui vale a regra do bar e da loja ao
+contrário do que o instinto pede — **a cobertura das bombas não fica menor, ela
+some**: cobertura vista a prumo é telhado, e telhado é parede justamente no
+lugar onde a briga se decide. As bombas ficam, a laje sobre elas não.
+
+E a lojinha de conveniência entra no molde do bar: **sem laje, salão inteiro à
+vista**, porque a briga termina lá dentro — é pra onde corre quem está
+perdendo.
+
+Geometria: **pátio de cimento ocupando quase todo o quadro**, murado nos três
+lados, com a pista passando rente à borda de baixo e **duas bocas largas**
+ligando pátio e pista, uma em cada ponta. A lojinha e a borracharia fecham a
+borda de cima, sem laje. Ilhas de bomba no meio do pátio como obstáculo, a
+pista aberta nas duas bordas laterais.
+
+Spawns sugeridos: `mandante1` (700, 420) e `mandante2` (520, 340), no pátio
+junto do ônibus; `visitante1` (1300, 760) e `visitante2` (1120, 820), chegando
+pela pista.
+
+```
+top-down nadir aerial drone photograph of a small walled roadside petrol
+station on a Brazilian highway, with every roof and canopy removed, shot
+straight down at 90 degrees, orthographic feel, overcast diffuse daylight, soft
+shadows, desaturated muted colors, documentary photography, completely empty of
+people,
+
+THERE IS NO CANOPY OVER THE FUEL PUMPS. No roof, no slab, no beam, no overhang
+anywhere above the forecourt — the whole yard is open to the sky and evenly
+lit. Two low concrete pump islands stand bare in the middle of the yard, each
+with two fuel pumps and a small bollard, plainly visible from directly above,
+
+a large concrete forecourt fills most of the frame, cracked slabs, faded
+painted lanes and arrows, oil stains, a drain grate, a water hose reel, a stack
+of tyres and two oil drums against the wall,
+
+a cinder block boundary wall closes the yard on the left, right and top sides,
+about two metres high, faded graffiti, with a single open service gate in the
+left wall,
+
+along the top of the yard, a low building whose roof has also been completely
+removed, so its whole floor is visible from above wall to wall, evenly lit,
+with no shaded strip along the edges: a small convenience shop with shelves of
+goods, a counter with a cash register, a chest freezer and a doorway to a
+storeroom, and next to it a tyre repair bay with a workbench, a compressor and
+stacked tyres inside,
+
+along the bottom edge of the frame, a strip of two-lane asphalt road running
+from the left edge to the right edge, worn asphalt and faded markings, with two
+wide open driveway entrances connecting the road to the forecourt, one near the
+left end and one near the right end, a low kerb between them,
+
+an old intercity coach bus parked on the open forecourt, one battered car
+stopped at an angle near the driveway, a light pole,
+
+nothing else is visible beyond the walls except a thin strip of ground at the
+very top edge,
+
+photorealistic, natural materials, sun-bleached concrete, dusty asphalt,
+tropical Brazil, 8k satellite imagery quality, sharp detail, no people visible,
+no moving traffic
+```
+
+### Negativo
+
+```
+fuel canopy, petrol station roof, awning over the pumps, shelter over the
+forecourt, marquee, pergola, covered fuelling area, roof over the shop, partial
+roof, half roof, roof ring, eaves, overhang, veranda, porch, covered edge,
+shaded interior, dark interior, unlit corners, walls hiding the floor,
+
+open countryside, scrubland, fields, wide empty landscape, dense trees, forest,
+motorway, four lanes, overpass, viaduct, bridge, city block, shopping mall,
+modern service station, brand signage, logos, brand names, price signs,
+full car park, many parked cars, tanker truck, fire, smoke, fuel spill,
+explosion,
+
+illustration, cartoon, isometric, 3d render, video game asset, painting,
+vector art, blueprint, map icons, labels, text, watermark, grid lines,
+tilted perspective, oblique angle, eye level, fisheye, vignette,
+crowd, people, drivers, attendants, moving cars,
 saturated colors, hdr, dramatic lighting, night, rain
 ```
 
@@ -528,28 +582,41 @@ saturated colors, hdr, dramatic lighting, night, rain
 ```python
 {'id': 'estrada-posto', 'arquivo': '<arquivo que saiu>.jpeg',
  'saida': 'estrada_posto.webp',
- 'sementes': [(0.50, 0.30), (0.25, 0.32), (0.75, 0.30),
-              (0.50, 0.80), (0.02, 0.80), (0.98, 0.80),
-              (0.15, 0.55), (0.85, 0.55)],
- 'recorte': [(0.00, 0.62, 1.00, 1.00),
-             (0.05, 0.10, 0.95, 0.62)]},
+ # o pátio, as duas bocas, a pista de baixo e o salão da lojinha
+ 'sementes': [(0.50, 0.50), (0.25, 0.52), (0.75, 0.50),
+              (0.50, 0.88), (0.02, 0.88), (0.98, 0.88),
+              (0.15, 0.72), (0.85, 0.72),
+              (0.35, 0.20), (0.62, 0.20)],
+ 'recorte': [(0.00, 0.78, 1.00, 1.00),
+             (0.04, 0.10, 0.96, 0.78)]},
 ```
 
 ### Ordem curta de correção
 
 ```
-Shrink the fuel canopy and move it into one corner of the forecourt, leaving
-the concrete yard wide open to the sky. Keep two wide open driveways connecting
-the forecourt to the highway, one at each end. Keep the highway open at both
-edges of the image. Remove all people and all extra parked cars.
+Remove the canopy over the fuel pumps completely — no roof, no beams, no
+overhang above the forecourt — and leave the bare pump islands standing on
+concrete open to the sky. Remove the roof of the shop as well and cut its walls
+down to knee height, so its whole floor is visible from above, wall to wall,
+evenly lit, showing the shelves, the counter and the freezer. Keep the boundary
+wall around the yard and the road along the bottom edge, open at both ends of
+the image. No people.
 ```
 
 ### Conferir
 
-1. **A cobertura das bombas é pequena e está na quina.** Se ela cobrir o pátio,
-   a briga perde o chão.
-2. As duas bocas ligam pátio e pista, e a pista sai pelas duas bordas.
-3. Ônibus, caminhão, carros, pilha de pneu e mesas viram parede no pincel.
+1. **Nenhuma cobertura sobre o pátio.** A laje das bombas é o erro que o modelo
+   comete sozinho — ele entende "posto" e desenha a cobertura. Se vier, é
+   refazer ou mandar a ordem curta: o que fica embaixo dela não foi
+   fotografado.
+2. **O salão da lojinha inteiro à vista**, de parede a parede. Olhe a beirada,
+   não o meio: faixa coberta rente à parede esconde balcão e freezer.
+3. As duas bocas ligam pátio e pista, e a pista sai pelas duas bordas laterais.
+4. O muro fecha os outros três lados, com um portão só.
+5. Ônibus, carro, ilhas de bomba, pilha de pneu, tambor, balcão e freezer viram
+   parede no pincel.
+6. Sem marca de posto, sem placa de preço: o build não leva logotipo de
+   ninguém.
 
 ---
 
