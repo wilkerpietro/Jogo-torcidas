@@ -359,15 +359,20 @@ TO.acoes = (function(){
        dono): apanhar em casa custa mais do que segurar o ataque rende */
     const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio',
                             ganhou ? -0.6 : 0.4);
+    /* relação e prestígio são da TORCIDA dona do alvo, e a linha de
+       consequência fala dela — "Bar da Falange Coral" é endereço
+       (correção do dono, 18/08/2026) */
+    const dona = alvo.deQuem
+      || ((TO.mundo.torcida(alvo.torcidaId)||{}).nome) || alvo.nome;
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
       local:{cena: alvo.cena || alvo.tipo, bairro: alvo.bairro || ''},
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos:[{ind:'relacao', delta:r1(R.nivel(E,alvo.torcidaId)-antes),
-                dono:`com a ${alvo.nome}`},
+                dono:`com a ${dona}`},
                {ind:'prestigio', delta: r1(U.limitar((res.prestigio||0)/5, -2, 2)), dono:'nosso'},
-               {ind:'prestigio', delta: dpDeles, dono:`da ${alvo.nome}`},
+               {ind:'prestigio', delta: dpDeles, dono:`da ${dona}`},
                {ind:'dinheiro',  delta: levou, dono:'nosso'}].filter(x=>x.delta)});
     return {ganhou, linhas, dinheiro:levou,
             titulo: ganhou ? 'ATAQUE BEM-SUCEDIDO' : 'ATAQUE FRACASSOU'};
