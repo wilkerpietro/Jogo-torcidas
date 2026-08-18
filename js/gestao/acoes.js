@@ -333,7 +333,7 @@ TO.acoes = (function(){
       }
       /* o corte permanente de membros saiu (18/08/2026): os caídos
          agora viram baixa temporária de verdade em registrarConfronto
-         — ferido 30 dias, preso 15 a 90 — em vez do desconto seco */
+         — ferido 5 a 15 dias, preso 15 a 90 — em vez do desconto seco */
       if(m) m.moral = U.limitar(m.moral - 3, 0, 20);
       if(alvo.tipo === 'sede') linhas.push('faixa deles rasgada na porta');
     }else{

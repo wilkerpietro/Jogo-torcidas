@@ -3468,7 +3468,7 @@
     }
     if(resumo.feridos.length){
       cx.appendChild(el('div',{class:'titulo-pagina',
-        texto:`Feridos — ${TO.membros.DIAS_FERIDO} dias fora`,
+        texto:'Feridos — de 5 a 15 dias fora',
         estilo:{fontSize:'14px', paddingTop:'12px'}}));
       for(const m of resumo.feridos)
         cx.appendChild(el('div',{class:'item ferido', html:

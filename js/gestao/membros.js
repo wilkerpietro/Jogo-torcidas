@@ -31,7 +31,9 @@ TO.membros = (function(){
     {membros:500, diretoria:15, treino:20}
   ];
 
-  const DIAS_FERIDO = 30;   // GDD §17.2
+  /* ferido volta em 5 a 15 dias, sorteado na hora (decisão do dono,
+     18/08/2026) — o 30 fixo do GDD §17.2 saiu */
+  const FERIDO_MIN = 5, FERIDO_MAX = 15;
 
   /* -------------------------------------------------------
      CRIAÇÃO
@@ -261,7 +263,7 @@ TO.membros = (function(){
      dia de jogo, que é de onde vem a maioria. */
   function ferir(E, m, dias, motivo){
     if(m.ferido) return;
-    const d = dias || DIAS_FERIDO;
+    const d = dias || U.inteiro(FERIDO_MIN, FERIDO_MAX);
     m.ferido = { dias:d };
     m.naFila = false;
     m.moral = Math.max(0, m.moral - 3);
@@ -380,7 +382,7 @@ TO.membros = (function(){
   }
 
   return {
-    CARGOS, ACIMA, SEDE, DIAS_FERIDO, DA_FONTE,
+    CARGOS, ACIMA, SEDE, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
     criar, nomeDe, povoarInicial, planoDeCargos, nivelQueCabe,
     disponivel, capacidade, capTreino, capDiretoria, contar, emCampanha,
     darXP, podePromover, promover, treinar, treinarFila,

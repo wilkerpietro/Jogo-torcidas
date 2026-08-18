@@ -74,7 +74,8 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   dos jogos do dia — torcida metida no jogo se pega com a torcida do
   clube adversário ou com hostil local da cidade da partida, com
   efetivos proporcionais aos disponíveis (quem viajou traz menos).
-  Feridos ficam 30 dias fora, presos de 15 a 90 — o perdedor sai
+  Feridos ficam de 5 a 15 dias fora (era 30 fixo até 18/08/2026 —
+  vale pros nossos e pras IAs), presos de 15 a 90 — o perdedor sai
   carregado: 25-40% de feridos e 5-12% de presos, contra 8-16% e
   1-4% do vencedor. Vencedor leva prestígio e moral, perdedor
   devolve — balanço proporcional (1 + envolvidos/25, +2 de zebra,

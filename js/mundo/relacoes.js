@@ -536,7 +536,7 @@ TO.relacoes = (function(){
      torcida do clube adversário ou com hostil local da cidade
      que recebe a partida (Mancha em Flamengo × Palmeiras no
      Rio pode pegar a Jovem Fla ou a Young Flu). Feridos ficam
-     30 dias fora; presos, de 15 a 90. Quem vence leva
+     de 5 a 15 dias fora; presos, de 15 a 90. Quem vence leva
      prestígio e moral; quem perde, devolve. Tudo vai pro
      registro que a aba Brigas das Notícias mostra — e mexe no
      ranking, porque lá contam os DISPONÍVEIS.
@@ -580,7 +580,8 @@ TO.relacoes = (function(){
     E.baixasIASeq = (E.baixasIASeq || 0) + 1;
     const abs = E.data.absoluto || 0;
     if(feridos > 0)
-      (t.feridosIA = t.feridosIA||[]).push({n:Math.round(feridos), ate: abs + 30});
+      (t.feridosIA = t.feridosIA||[]).push({n:Math.round(feridos),
+                                          ate: abs + U.inteiro(5, 15)});
     if(presos > 0)
       (t.presosIA = t.presosIA||[]).push({n:Math.round(presos),
                                           ate: abs + U.inteiro(15, 90)});
@@ -625,7 +626,7 @@ TO.relacoes = (function(){
                                              : U.entre(0.01, 0.04)));
       if(t){
         if(feridos) (t.feridosIA = t.feridosIA||[])
-          .push({n:feridos, ate: abs + 30});
+          .push({n:feridos, ate: abs + U.inteiro(5, 15)});
         if(presos) (t.presosIA = t.presosIA||[])
           .push({n:presos, ate: abs + U.inteiro(15, 90)});
       }
@@ -780,7 +781,7 @@ TO.relacoes = (function(){
       const t = (E.mundoTorcidas||{})[id];
       const n = Math.round(tam * (perdeu ? U.entre(0.25, 0.45)
                                          : U.entre(0.08, 0.20)));
-      if(t && n) (t.feridosIA = t.feridosIA||[]).push({n, ate: abs + 30});
+      if(t && n) (t.feridosIA = t.feridosIA||[]).push({n, ate: abs + U.inteiro(5, 15)});
       return n;
     };
     const fA = machuca(o.id, !ganhouA), fB = machuca(r.id, ganhouA);
