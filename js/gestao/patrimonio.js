@@ -127,6 +127,10 @@ TO.patrimonio = (function(){
       bairro:'', nota:'combustível e manutenção · estrada de graça',
       receita:0, despesa:1500});
 
+    if(E.professorMMA) fora.push({tipo:'mma', rot:'Professor de MMA',
+      bairro:'', nota:'força e defesa evoluem em dobro no treino',
+      receita:0, despesa:2000});
+
     /* A LINHA DE MATERIAL POR MEMBRO SAIU do financeiro, e sai daqui
        junto: a tabela de patrimônio mostrava a mesma despesa que as
        contas cobravam, e deixar a sombra dela aqui faria a tela cobrar
@@ -189,6 +193,14 @@ TO.patrimonio = (function(){
            '· rota de avião continua paga',
       custo:100000, trava:trava(100000)});
 
+    /* professor de MMA (pedido do dono, 18/08/2026): R$ 2.000 fixos
+       por mês, cobrados no fechamento — e o treino rende o dobro */
+    if(!E.professorMMA) lista.push({
+      id:'mma', rot:'Contratar professor de MMA',
+      nota:'força e defesa evoluem em dobro no treino · R$ 2.000 '+
+           'fixos por mês, cobrados no fechamento',
+      custo:2000, trava:trava(2000)});
+
     /* bomba também se compra pelo Financeiro (pedido do dono,
        18/08/2026): caixa com 5, direto pro estoque que as cenas usam */
     lista.push({
@@ -226,6 +238,9 @@ TO.patrimonio = (function(){
     } else if(acao==='onibus'){
       E.onibus = {desde:(E.data||{}).absoluto || 0};
       TO.estado.lancar(E, 'Ônibus da torcida', -o.custo);
+    } else if(acao==='mma'){
+      /* nada sai do caixa agora: a mensalidade cobra no fim do mês */
+      E.professorMMA = {desde:(E.data||{}).absoluto || 0};
     } else if(acao==='bombas'){
       estoquePiro(E).bombas += 5;
       TO.estado.lancar(E, 'Bombas ×5', -o.custo);

@@ -184,6 +184,12 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   linha esmaecida, o acumulado do mês corrente ("já no caixa · a
   linha fecha no fim do mês") — informação nenhuma some; a lista
   passou a exibir os 200 lançamentos guardados, não só 60.
+- **Professor de MMA** (pedido do dono, 18/08/2026): contratado no
+  Financeiro → Patrimônio, sem custo de entrada — R$ 2.000 fixos
+  por mês, cobrados no fechamento (linha própria no extrato e na
+  tabela de estrutura). Enquanto estiver contratado, a evolução de
+  força e defesa no treino DOBRA (0,0-0,6 de fração por sessão em
+  vez de 0,0-0,3); o painel de treino mostra a régua nova.
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de

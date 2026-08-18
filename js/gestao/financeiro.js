@@ -379,6 +379,12 @@ TO.financeiro = (function(){
         `Festas na sede — ${f.n} no mês`, Math.round(f.rec - f.des));
       E.resumoMes = {};
     }
+    /* o professor de MMA cobra os R$ 2.000 no fim de cada mês
+       (pedido do dono, 18/08/2026) */
+    if(E.professorMMA && fimDoMes(E)){
+      TO.estado.lancar(E, 'Professor de MMA — mês', -2000);
+      rel.despesa += 2000; rel.saldo -= 2000;
+    }
     if(E.onibus && fimDoMes(E)){
       TO.estado.lancar(E, 'Ônibus — combustível e manutenção', -1500);
       rel.despesa += 1500; rel.saldo -= 1500;

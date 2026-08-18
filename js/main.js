@@ -1356,7 +1356,8 @@
     const disp = e.membros.filter(m=>TO.membros.disponivel(m));
     const emTeto = disp.filter(m=>TO.membros.planoDeTreino(m).noTeto).length;
     c2.corpo.innerHTML =
-      `<div class="linha-dado"><span>Ganho por sessão</span><b>0.00 a 0.30</b></div>
+      `<div class="linha-dado"><span>Ganho por sessão</span>
+         <b>${e.professorMMA ? '0.00 a 0.60 · professor de MMA' : '0.00 a 0.30'}</b></div>
        <div class="linha-dado"><span>Vagas por dia</span><b>${cap}</b></div>
        <div class="linha-dado"><span>Disponíveis pra treinar</span>
          <b>${disp.length - emTeto} <span class="fraco">de ${disp.length}</span></b></div>
