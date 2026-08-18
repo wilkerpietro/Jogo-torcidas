@@ -310,7 +310,9 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **Investir no clube tem aba própria** (17/08/2026): o reforço de
   elenco morava escondido dentro de Financeiro → Patrimônio e
   ninguém achava. Virou a subaba Elenco do Financeiro, com a mesma
-  conta de sempre (R$ 50 mil a R$ 800 mil o ponto, teto 100).
+  conta de sempre, teto 100. Em 18/08/2026 o dono cortou a tabela
+  pra 40% do original: o ponto vai de R$ 20 mil (força até 10) a
+  R$ 320 mil (força 91–100).
 - **Treino é rotina da diretoria** (17/08/2026): o botão "Treinar e
   avançar o dia" saiu. Todo virar de dia a fila é sorteada de novo —
   prioridade pra quem ainda não bateu o teto do cargo, sorteio no

@@ -105,19 +105,20 @@ TO.competicoes = (function(){
   /* =======================================================
      REFORÇAR O ELENCO (GDD V3 §19)
      Um ponto de força custa o preço da faixa em que o clube
-     está — de R$ 50 mil no time pequeno a R$ 800 mil no
-     gigante. É o maior ralo de dinheiro do jogo, e é de
+     está — de R$ 20 mil no time pequeno a R$ 320 mil no
+     gigante (40% da tabela original, decisão do dono em
+     18/08/2026). É o maior ralo de dinheiro do jogo, e é de
      propósito: com bar, loja e subsede montados, é pra onde
      sobra. Fecha o laço da torcida com o gramado — elenco
      melhor ganha mais, ganhar sobe a satisfação, satisfação
      enche o recrutamento.
      ======================================================= */
   const TABELA_INVESTIMENTO = [
-    {ate: 10, custo:  50000}, {ate: 20, custo:  80000},
-    {ate: 30, custo: 140000}, {ate: 40, custo: 200000},
-    {ate: 50, custo: 250000}, {ate: 60, custo: 300000},
-    {ate: 70, custo: 350000}, {ate: 80, custo: 400000},
-    {ate: 90, custo: 500000}, {ate:100, custo: 800000}
+    {ate: 10, custo:  20000}, {ate: 20, custo:  32000},
+    {ate: 30, custo:  56000}, {ate: 40, custo:  80000},
+    {ate: 50, custo: 100000}, {ate: 60, custo: 120000},
+    {ate: 70, custo: 140000}, {ate: 80, custo: 160000},
+    {ate: 90, custo: 200000}, {ate:100, custo: 320000}
   ];
   function custoDoPonto(E, id){
     const f = forcaDe(E, id);

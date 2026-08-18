@@ -2030,7 +2030,7 @@
   /* =======================================================
      ELENCO — dinheiro da torcida virando força do time
      (GDD V3 §19). O preço do ponto sobe com a força do clube:
-     R$ 50 mil no time pequeno, R$ 800 mil no gigante.
+     R$ 20 mil no time pequeno, R$ 320 mil no gigante.
      ======================================================= */
   function pintarElenco(pg, e, oferta, comprar){
     const C = TO.competicoes;
