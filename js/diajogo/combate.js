@@ -112,6 +112,23 @@ TO.diaJogo.combate = (function(){
   /* =======================================================
      ESTADO
      ======================================================= */
+  /* BOMBA EM RUA E PRAÇA É SEMPRE POSSÍVEL (decisão do dono,
+     18/08/2026): em cena ao ar livre — rua de qualquer classe, praça
+     e arredores do estádio — o estoque inteiro da torcida está na
+     mochila, mesmo em defesa e encontro que ninguém planejou. A
+     exceção é a cena declarada sem armas (treta 5×5/7×7/10×10, mano
+     a mano). Em cena fechada (bar, sede, CT, comércio) vale o que o
+     planejamento levou. */
+  const AO_AR_LIVRE = /^(rua|rua-media|rua-nobre|praca|arredores|estrada)$/;
+  function bombasDaCena(cfg){
+    if(cfg.semArmas) return 0;
+    const base = cfg.bombas !== undefined ? cfg.bombas : P.bombas;
+    if(!AO_AR_LIVRE.test(cfg.local || '')) return base;
+    const E = TO.estado && TO.estado.E;
+    const estoque = (E && E.estoque && E.estoque.bombas) || 0;
+    return Math.max(base || 0, estoque);
+  }
+
   function criarEstado(cfg){
     cfg=cfg||{};
     /* campo de fluxo é geometria da cena que estava no ar. Trocar de
@@ -127,9 +144,8 @@ TO.diaJogo.combate = (function(){
       /* cena combinada não tem projétil de lado nenhum: nem pedra, nem
          bomba, nem braço automático (decisão do dono, 17/08/2026) */
       semArmas: !!cfg.semArmas,
-      bombas: cfg.semArmas ? 0 : cfg.bombas!==undefined ? cfg.bombas : P.bombas,
-      bombasIniciais: cfg.semArmas ? 0
-                    : cfg.bombas!==undefined ? cfg.bombas : P.bombas,
+      bombas: bombasDaCena(cfg),
+      bombasIniciais: bombasDaCena(cfg),
       /* do outro lado também tem quem junte pedra: sem isso a briga é
          um lado bombardeando e o outro correndo pra cima na mão */
       /* metade do que você levou, no mínimo uma — mas SÓ se você levou.
@@ -140,7 +156,7 @@ TO.diaJogo.combate = (function(){
          nossa é briga sem bomba deles. */
       bombasRival: cfg.bombasRival!==undefined ? cfg.bombasRival
                  : (n => n>0 ? Math.max(1, Math.ceil(n/2)) : 0)
-                   (cfg.bombas!==undefined ? cfg.bombas : P.bombas),
+                   (bombasDaCena(cfg)),
       /* ele não começa jogando: nos primeiros segundos o bonde ainda
          está em coluna no spawn, e uma bomba ali derruba doze de uma
          vez antes de o jogador ter chance de abrir a formação */

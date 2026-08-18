@@ -163,6 +163,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **Pedra e bomba nossas são sempre manuais** (17/08/2026): braço
   automático só do lado da IA. Treta marcada é mano a mano — sem
   pedra, sem bomba, de lado nenhum.
+- **Bomba em rua e praça é sempre possível** (18/08/2026): em cena
+  ao ar livre — rua de qualquer classe, praça e arredores do
+  estádio — o estoque inteiro de bombas da torcida está na mochila,
+  mesmo em defesa e encontro que ninguém planejou; o rival segue
+  trazendo a metade. A exceção continua sendo a treta 5×5/7×7/10×10
+  (mano a mano). Em cena fechada (bar, sede, CT, comércio) vale o
+  que o planejamento levou.
 - **Relatório do olheiro em tabela** (17/08/2026): uma linha por jogo —
   competição, dia e o confronto com a cor de cada clube na esquerda;
   as torcidas do jogo com cor e estimativa na direita.
