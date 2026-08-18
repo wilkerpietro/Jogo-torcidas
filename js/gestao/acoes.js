@@ -433,8 +433,10 @@ TO.acoes = (function(){
         /* festa não fabrica moral (decisão do dono, 17/08/2026): virou
            diária com o Expediente e saturava o indicador em dias. É
            caixa e ponto — moral vem de briga, título e defesa. */
-        TO.estado.lancar(E, 'Festa na sede', -700);
-        TO.estado.lancar(E, `Bilheteria e bar da festa (${publico})`, receita);
+        /* o caixa mexe agora; o extrato só ganha o resumo do mês
+           (decisão do dono, 18/08/2026 — a festa diária poluía tudo) */
+        TO.estado.lancarNoResumo(E, 'festa', -700);
+        TO.estado.lancarNoResumo(E, 'festa', receita, true);
         return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-700)} de saldo.`};
       }
     },

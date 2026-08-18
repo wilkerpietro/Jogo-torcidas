@@ -288,8 +288,21 @@ TO.financeiro = (function(){
     };
 
 
-    for(const r of rel.receitas) TO.estado.lancar(E, r.rot, r.v);
-    for(const d of rel.despesas) TO.estado.lancar(E, d.rot, -d.v);
+    /* BAR, LOJA E SUBSEDE NÃO ESCREVEM LINHA POR SEMANA (decisão do
+       dono, 18/08/2026): o caixa mexe agora, mas o extrato só ganha o
+       resumo consolidado no fim do mês — a tela de transações estava
+       afogada em linhas iguais. O relatório mensal segue detalhado
+       por rótulo, porque ele soma rel.receitas/despesas direto. */
+    const doComercio = rot => /^(Bar|Loja|Subsede)\b/.test(rot) ||
+      rot === 'Manutenção do comércio' || /^Insumos das lojas/.test(rot);
+    for(const r of rel.receitas){
+      if(doComercio(r.rot)) TO.estado.lancarNoResumo(E, 'comercio', r.v);
+      else TO.estado.lancar(E, r.rot, r.v);
+    }
+    for(const d of rel.despesas){
+      if(doComercio(d.rot)) TO.estado.lancarNoResumo(E, 'comercio', -d.v);
+      else TO.estado.lancar(E, d.rot, -d.v);
+    }
 
     /* GDD §7.1: doação esporádica, tanto maior quanto o prestígio */
     if(U.rng() < 0.10){
@@ -347,6 +360,20 @@ TO.financeiro = (function(){
        modal e o botão "Último fechamento" mostram. */
     /* o ônibus cobra no fim do mês: combustível e manutenção fixos, e
        1% de chance de uma manutenção séria (decisão do dono) */
+    /* o fim do mês despeja o resumo no extrato: uma linha de receita
+       e uma de despesa pro comércio, uma consolidada pras festas —
+       o dinheiro já entrou aos poucos, aqui é só o registro */
+    if(fimDoMes(E)){
+      const rm = E.resumoMes || {};
+      const c = rm.comercio, f = rm.festa;
+      if(c && c.rec) TO.estado.registrarLinha(E,
+        'Comércio — receitas do mês (bar, loja, subsede)', Math.round(c.rec));
+      if(c && c.des) TO.estado.registrarLinha(E,
+        'Comércio — manutenção e insumos do mês', -Math.round(c.des));
+      if(f && (f.rec || f.des)) TO.estado.registrarLinha(E,
+        `Festas na sede — ${f.n} no mês`, Math.round(f.rec - f.des));
+      E.resumoMes = {};
+    }
     if(E.onibus && fimDoMes(E)){
       TO.estado.lancar(E, 'Ônibus — combustível e manutenção', -1500);
       rel.despesa += 1500; rel.saldo -= 1500;

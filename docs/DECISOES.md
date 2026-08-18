@@ -157,6 +157,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   {bairro} tá de porta aberta e gaveta cheia. Bora quebrar o
   balcão?". Atacar abre a mesma cena do ataque manual — com o
   mesmo limite de um bonde por semana; recusar não custa nada.
+- **O extrato respira** (decisão do dono, 18/08/2026): bar, loja,
+  subsede e festa mexem no caixa na hora, mas não escrevem mais uma
+  linha por semana/por festa em Transações — no fim do mês entram
+  três linhas consolidadas: "Comércio — receitas do mês", "Comércio
+  — manutenção e insumos do mês" e "Festas na sede — N no mês"
+  (líquido). O relatório mensal continua detalhado por rótulo, e a
+  soma consolidada bate no centavo com o que entrou aos poucos.
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de

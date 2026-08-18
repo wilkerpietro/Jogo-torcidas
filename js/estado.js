@@ -198,6 +198,31 @@ TO.estado = (function(){
     if(est.transacoes.length > 200) est.transacoes.pop();
   }
 
+  /* MEXE NO CAIXA AGORA, SEM LINHA NO EXTRATO (decisão do dono,
+     18/08/2026): bar, loja e festa poluíam a tela de transações com
+     dezenas de linhas iguais — o dinheiro continua entrando na hora,
+     mas a linha só sai no resumo do fim do mês. `conta` marca quantos
+     eventos o grupo teve (as festas do mês). */
+  function lancarNoResumo(est, grupo, valor, conta){
+    est = est || E;
+    est.dinheiro += valor;
+    const r = est.resumoMes = est.resumoMes || {};
+    const g = r[grupo] = r[grupo] || {rec:0, des:0, n:0};
+    if(valor >= 0) g.rec += valor; else g.des -= valor;
+    if(conta) g.n++;
+  }
+
+  /* linha de extrato SEM mexer no caixa: o dinheiro do resumo já
+     entrou aos poucos pelo lancarNoResumo */
+  function registrarLinha(est, descricao, valor){
+    est = est || E;
+    est.transacoes.unshift({
+      dia: `${est.data.semana}/${est.data.dia}`,
+      descricao, valor
+    });
+    if(est.transacoes.length > 200) est.transacoes.pop();
+  }
+
   /* =======================================================
      O LIVRO DE MORAL E PRESTÍGIO (pedido do dono, 17/08/2026)
      Todo movimento de indicador passa por aqui, com motivo —
@@ -510,7 +535,8 @@ TO.estado = (function(){
 
   return {
     get E(){ return E; },
-    novo, lancar, mexerIndicador, avancarDia, aoMudar, aoFecharSemana, mudou,
+    novo, lancar, lancarNoResumo, registrarLinha,
+    mexerIndicador, avancarDia, aoMudar, aoFecharSemana, mudou,
     dataTexto, dataDaSemana, semanaDiaDe, sortearProximoJogo, anotar,
     DIA_JOGO:6,
     salvar, carregar, existeSave, exportar, importar,
