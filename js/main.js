@@ -550,6 +550,7 @@
   const ROT_KIND = {abertura:'Abertura', olheiro:'Olheiro',
                     guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
+                    aniversario:'Aniversário',
                     confronto:'Confronto', placar:'Resultado',
                     rodada:'Rodada', partida:'Nossa partida',
                     assalto:'Assalto', brigas:'Brigas da semana'};

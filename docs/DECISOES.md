@@ -124,6 +124,21 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   81 feridos e o efetivo deles seguia inteiro; o único efeito era um
   corte permanente de 40% dos caídos no ataque vencido, que saiu
   junto (a baixa temporária de verdade substitui o desconto seco).
+- **Aniversários** (textos do dono, 18/08/2026): a fonte só guarda o
+  ANO de fundação, então o dia e o mês nascem do hash do id — cada
+  torcida e cada clube fazem aniversário na mesma data em toda
+  partida. Dez dias antes do aniversário de OUTRA torcida, ela
+  convida ("Fala irmão, dia {data} comemoramos {idade} anos de
+  história. A presença de vocês seria uma honra pra gente."): ir
+  custa R$ 2.000 e rende +3 de relação (e conta como gesto na
+  convivência); não ir tira −3. Dez dias antes do NOSSO aniversário
+  o diretor pergunta a festa — grande: R$ 20.000, potencial de
+  R$ 20-40 mil, +2 de moral; simples: R$ 5.000, potencial de
+  R$ 4-8 mil, +1; nada: −2 de moral. Dez dias antes do aniversário
+  do CLUBE, a mesma pergunta — grande: R$ 10.000, potencial de
+  R$ 10-20 mil, +2; simples: R$ 3.000, potencial de R$ 2-5 mil,
+  +1; nada: −2. O custo e a moral saem na decisão; a receita sai no
+  dia da festa, com a mensagem do rendimento.
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de

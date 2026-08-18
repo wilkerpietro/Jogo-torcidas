@@ -124,8 +124,125 @@ TO.feed = (function(){
     ataqueSofridoHoje(E);
     escoltaDeHoje(E);
     assaltoDeHoje(E);
+    aniversariosDeHoje(E);
     placarDoDia(E, ctx.jogos || []);
     brigasDaSemana(E);
+  }
+
+  /* -------------------------------------------------------
+     3e. ANIVERSÁRIOS (textos do dono, 18/08/2026)
+         A fonte só guarda o ANO de fundação; o dia e o mês
+         nascem do hash do id — a mesma torcida faz aniversário
+         na mesma data em toda partida.
+         · 10 dias antes do aniversário de OUTRA torcida, ela
+           convida: ir custa R$ 2.000 e rende +3 de relação;
+           não ir custa −3.
+         · 10 dias antes do NOSSO e do aniversário do CLUBE, um
+           diretor pergunta o tamanho da festa; o custo e a
+           moral saem na decisão, a receita sai no dia.
+     ------------------------------------------------------- */
+  const diaDoAniversario = id => 1 + TO.mapa.hash(`${id}|aniv`) % 364;
+  const dataDoAniversario = (id, anoCivil) =>
+    new Date(anoCivil, 0, diaDoAniversario(id));
+  const fmtDia = d =>
+    `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const mesmoDia = (a, b) =>
+    a.getDate() === b.getDate() && a.getMonth() === b.getMonth();
+
+  /* a tabela do dono: custo, potencial de receita e moral */
+  const FESTA_ANIV = {
+    torcida: {grande:{custo:20000, min:20000, max:40000, moral:2},
+              simples:{custo:5000,  min:4000,  max:8000,  moral:1},
+              nada:{moral:-2}},
+    clube:   {grande:{custo:10000, min:10000, max:20000, moral:2},
+              simples:{custo:3000,  min:2000,  max:5000,  moral:1},
+              nada:{moral:-2}}
+  };
+
+  function aniversariosDeHoje(E){
+    const hoje = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
+    const em10 = new Date(hoje.getTime());
+    em10.setDate(em10.getDate() + 10);
+
+    /* o convite das outras */
+    for(const o of M().jogaveis()){
+      if(o.id === E.torcida.id || o.incompleta || !o.fundacao) continue;
+      const aniv = dataDoAniversario(o.id, em10.getFullYear());
+      if(!mesmoDia(aniv, em10)) continue;
+      const idade = em10.getFullYear() - o.fundacao;
+      if(idade <= 0) continue;
+      propor(E, {
+        kind:'aniversario', peso:'decisao', voz:'rua',
+        chave:`aniv|${em10.getFullYear()}|${o.id}`,
+        texto:`Fala irmão, dia ${fmtDia(aniv)} comemoramos ${idade} anos `+
+              `de história. A presença de vocês seria uma honra pra gente. `+
+              `— ${o.nome}`,
+        dados:{torcida:o.id, nome:o.nome},
+        botoes:[
+          {id:'ir',  rot:'Ir pra festa', acao:'aniv-ir',
+           nota:'R$ 2.000 · +3 de relação'},
+          {id:'nao', rot:'Não ir', acao:'aniv-nao', nota:'−3 de relação'}
+        ]
+      });
+    }
+
+    /* a nossa festa e a do clube */
+    const meus = [];
+    if(E.torcida.fundacao)
+      meus.push({tipo:'torcida', id:E.torcida.id, fundacao:E.torcida.fundacao});
+    const time = M().time(E.torcida.clubeId);
+    if(time && time.fundacao)
+      meus.push({tipo:'clube', id:'clube|'+E.torcida.clubeId,
+                 fundacao:time.fundacao, nome:time.nome});
+    for(const q of meus){
+      const F = FESTA_ANIV[q.tipo];
+      const aniv = dataDoAniversario(q.id, em10.getFullYear());
+      if(mesmoDia(aniv, em10)){
+        const idade = em10.getFullYear() - q.fundacao;
+        if(idade > 0) propor(E, {
+          kind:'aniversario', peso:'decisao', voz:'diretor',
+          chave:`aniv-${q.tipo}|${em10.getFullYear()}`,
+          texto: q.tipo === 'torcida'
+            ? `Dia ${fmtDia(aniv)} a torcida completa ${idade} anos. `+
+              `Que festa vamos fazer?`
+            : `Dia ${fmtDia(aniv)} o ${q.nome} completa ${idade} anos. `+
+              `Que festa vamos fazer?`,
+          dados:{tipo:q.tipo, anoCivil:em10.getFullYear()},
+          botoes:[
+            {id:'grande',  rot:'Festa grande', acao:'aniv-festa',
+             nota:`R$ ${U.numero(F.grande.custo)} · potencial de `+
+                  `${U.dinheiro(F.grande.min)} a ${U.dinheiro(F.grande.max)}`+
+                  ` · +${F.grande.moral} de moral`},
+            {id:'simples', rot:'Festa simples', acao:'aniv-festa',
+             nota:`R$ ${U.numero(F.simples.custo)} · potencial de `+
+                  `${U.dinheiro(F.simples.min)} a ${U.dinheiro(F.simples.max)}`+
+                  ` · +${F.simples.moral} de moral`},
+            {id:'nada',    rot:'Não fazer nada', acao:'aniv-festa',
+             nota:`${F.nada.moral} de moral`}
+          ]
+        });
+      }
+      /* o dia da festa: a receita sai do potencial */
+      const anivHoje = dataDoAniversario(q.id, hoje.getFullYear());
+      if(mesmoDia(anivHoje, hoje)){
+        const chave = `festa-${q.tipo}|${hoje.getFullYear()}`;
+        const marcada = (E.festasAniversario||{})[chave];
+        if(marcada && F[marcada] && F[marcada].custo){
+          delete E.festasAniversario[chave];
+          const v = U.inteiro(F[marcada].min, F[marcada].max);
+          TO.estado.lancar(E, q.tipo === 'torcida'
+            ? 'Festa de aniversário da torcida — receita'
+            : 'Festa de aniversário do clube — receita', v);
+          propor(E, {
+            kind:'aniversario', peso:'info', tipo:'boa', voz:'diretor',
+            chave:`festa-fim|${q.tipo}|${hoje.getFullYear()}`,
+            texto: q.tipo === 'torcida'
+              ? `A festa dos nossos anos rendeu ${U.dinheiro(v)}.`
+              : `A festa do aniversário do ${q.nome} rendeu ${U.dinheiro(v)}.`
+          });
+        }
+      }
+    }
   }
 
   /* -------------------------------------------------------
@@ -800,6 +917,51 @@ TO.feed = (function(){
       case 'tela-ataque':
       case 'tela-caravana':
       case 'cena-guerra':
+      /* --- aniversários (textos do dono, 18/08/2026) --- */
+      case 'aniv-ir': {
+        marcar();
+        const id = (m.dados||{}).torcida;
+        TO.estado.lancar(E, `Presença na festa da ${(m.dados||{}).nome}`, -2000);
+        E.relacoes = E.relacoes || {};
+        E.relacoes[id] = Math.max(-100, Math.min(100,
+          TO.relacoes.nivel(E, id) + 3));
+        /* aparecer na festa é gesto: zera o relógio da indiferença */
+        TO.relacoes.marcarAjuda(E, id);
+        m.consequencia = `Fomos. +3 de relação com a ${(m.dados||{}).nome}.`;
+        return {ok:true};
+      }
+      case 'aniv-nao': {
+        marcar();
+        const id = (m.dados||{}).torcida;
+        E.relacoes = E.relacoes || {};
+        E.relacoes[id] = Math.max(-100, Math.min(100,
+          TO.relacoes.nivel(E, id) - 3));
+        m.consequencia = `Ficamos em casa. −3 de relação com a `+
+                         `${(m.dados||{}).nome}.`;
+        return {ok:true};
+      }
+      case 'aniv-festa': {
+        marcar();
+        const d = m.dados || {};
+        const F = FESTA_ANIV[d.tipo] || FESTA_ANIV.torcida;
+        const f = F[idBotao];
+        if(!f) return {ok:true};
+        const quem = d.tipo === 'torcida' ? 'da torcida' : 'do clube';
+        if(idBotao === 'nada'){
+          TO.estado.mexerIndicador(E, 'moral', f.moral,
+            `Aniversário ${quem} passou em branco`);
+          m.consequencia = 'Ninguém fez nada. −2 de moral.';
+        } else {
+          TO.estado.lancar(E, `Festa de aniversário ${quem}`, -f.custo);
+          TO.estado.mexerIndicador(E, 'moral', f.moral,
+            `Festa de aniversário ${quem}`);
+          (E.festasAniversario = E.festasAniversario || {})
+            [`festa-${d.tipo}|${d.anoCivil}`] = idBotao;
+          m.consequencia = `Festa ${idBotao === 'grande' ? 'grande' : 'simples'} `+
+            `marcada: ${U.dinheiro(-f.custo)} agora, a receita sai no dia.`;
+        }
+        return {ok:true};
+      }
       case 'cena-defesa':
       case 'cena-escolta':
       case 'cena-treta':
