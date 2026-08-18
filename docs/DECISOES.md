@@ -82,8 +82,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   vale pros nossos e pras IAs), presos de 15 a 90 — o perdedor sai
   carregado: 25-40% de feridos e 5-12% de presos, contra 8-16% e
   1-4% do vencedor. Vencedor leva prestígio e moral, perdedor
-  devolve — balanço proporcional (1 + envolvidos/25, +2 de zebra,
-  teto 8 na régua de 0-100) — e a relação entre os dois azeda. Toda
+  devolve — balanço proporcional (1 + envolvidos/25, teto 8 na
+  régua de 0-100). O FAVORITO (efetivo × ficha média) vence 70%,
+  não 100 (correção do dono, 18/08/2026 — Gaviões e Raça venciam
+  todas): 3 em cada 10 brigas o bonde menor sai por cima, e a
+  zebra é paga à altura — +4 de prestígio com teto 10 e moral em
+  dobro (+1,2) pro vencedor em menor número. E a relação entre os
+  dois azeda. Toda
   briga NOSSA também move o prestígio do rival: ±0,4 na briga de
   rua, −0,6/+0,4 no ataque (treta e defesa já moviam). E dinheiro só
   sai de briga NO BAR — sede e rua não têm saque. O ranking conta os DISPONÍVEIS, então briga mexe em posição.

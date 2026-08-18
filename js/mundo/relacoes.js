@@ -607,14 +607,17 @@ TO.relacoes = (function(){
       return {o:anf, n};
     };
     const ajA = ajuda('a'), ajB = ajuda('b');
-    /* a mesma régua das cenas: efetivo × ficha média, com o acaso da rua */
-    const pA = (nA * mediaDeFichaGerada(a, dispA)
-      + (ajA ? ajA.n * mediaDeFichaGerada(ajA.o, disponiveisIA(E, ajA.o.id)) : 0))
-      * U.entre(0.85, 1.15);
-    const pB = (nB * mediaDeFichaGerada(b, dispB)
-      + (ajB ? ajB.n * mediaDeFichaGerada(ajB.o, disponiveisIA(E, ajB.o.id)) : 0))
-      * U.entre(0.85, 1.15);
-    const ganhouA = pA >= pB;
+    /* A RUA TEM ACASO (correção do dono, 18/08/2026): efetivo × ficha
+       média diz quem é o FAVORITO, mas o favorito vence 70% — não
+       100%. O ±15% antigo nunca virava briga desigual, e Gaviões e
+       Raça simplesmente venciam todas; agora 3 em cada 10 o bonde
+       menor sai por cima. */
+    const pA = nA * mediaDeFichaGerada(a, dispA)
+      + (ajA ? ajA.n * mediaDeFichaGerada(ajA.o, disponiveisIA(E, ajA.o.id)) : 0);
+    const pB = nB * mediaDeFichaGerada(b, dispB)
+      + (ajB ? ajB.n * mediaDeFichaGerada(ajB.o, disponiveisIA(E, ajB.o.id)) : 0);
+    const favoritoA = pA === pB ? U.rng() < 0.5 : pA > pB;
+    const ganhouA = U.rng() < 0.70 ? favoritoA : !favoritoA;
     const baixas = (o, n, perdeu) => {
       const t = (E.mundoTorcidas||{})[o.id];
       /* o perdedor sai carregado (pedido do dono): um quarto a dois
@@ -647,17 +650,19 @@ TO.relacoes = (function(){
       moverRelacao(E, dono.id, aj.o.id, +4);
       moverRelacao(E, aj.o.id, rivalDe.id, -6);
     }
-    /* O PRESTÍGIO ACOMPANHA A BRIGA (decisão do dono, 17/08/2026):
-       briga grande move mais, e zebra — vencer em menor número —
-       move mais ainda. Na régua de 0 a 100: 1 + envolvidos/25, +2 de
-       zebra, teto 8. O vencedor leva, o perdedor devolve; a relação
-       entre os dois azeda, com o esfriar semanal puxando de volta. */
+    /* O PRESTÍGIO ACOMPANHA A BRIGA (decisão do dono, 17/08/2026;
+       zebra engordada em 18/08): briga grande move mais, e zebra —
+       vencer em menor número — move MUITO mais: +4 na régua de 0 a
+       100 e teto 10 (a comum fica no teto 8), e a moral do zebra
+       vencedor dobra (+1,2 contra +0,6 da vitória comum). O vencedor
+       leva, o perdedor devolve; a relação entre os dois azeda, com o
+       esfriar semanal puxando de volta. */
     const zebra = ganhouA ? nA < nB : nB < nA;
     const swingDisplay = U.limitar(
-      Math.round(1 + (nA + nB)/25) + (zebra ? 2 : 0), 1, 8);
+      Math.round(1 + (nA + nB)/25) + (zebra ? 4 : 0), 1, zebra ? 10 : 8);
     const swing = swingDisplay/5;
     mover(E, ganhouA ? a.id : b.id, 'prestigio', swing);
-    mover(E, ganhouA ? a.id : b.id, 'moral', 0.6);
+    mover(E, ganhouA ? a.id : b.id, 'moral', zebra ? 1.2 : 0.6);
     mover(E, ganhouA ? b.id : a.id, 'prestigio', -swing);
     mover(E, ganhouA ? b.id : a.id, 'moral', -0.6);
     moverRelacao(E, a.id, b.id, -8);
@@ -1094,7 +1099,7 @@ TO.relacoes = (function(){
 
   return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
           ranking, posicaoNoRanking, situacaoFinanceira,
-          brigasDeHoje, mundoDia, disponiveisIA, foraDeCombate, baixasIA,
+          brigasDeHoje, mundoDia, brigaIA, disponiveisIA, foraDeCombate, baixasIA,
           convitesDeAniversario,
           mundo, balanco, ARQUETIPOS, economiaDelas,
           relacaoDelas, moverRelacao, chaveDe,
