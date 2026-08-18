@@ -341,6 +341,14 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   disco do jogador, sem deixar a vista passar da borda da cena;
   rolar pra baixo volta até a cena inteira de sempre. A rodinha em
   cima da cena não rola mais a página.
+- **Nossa partida com a linha de presença** (18/08/2026): a mensagem
+  do jogo ganhou "Mandante: Gaviões 250 · Camisa 12 54. Visitante:
+  Torcida Jovem 10." — quantos membros cada torcida dos dois clubes
+  põe no estádio. Jogo na nossa praça usa a MESMA conta da rua
+  (naRuaEm, com escolta e caravana); jogo fora refaz com as mesmas
+  réguas: 60% do efetivo pra torcida da casa, caravana pra quem
+  viaja (mínimo 5), e a nossa saída é a do planejamento. Lado sem
+  ninguém diz "ninguém".
 - **Placar da cena com nome das torcidas** (18/08/2026): o quadro de
   "de pé" na briga fala o nome dos dois bondes (ex.: Gaviões ×
   Dragões da Real) em vez de MANDANTE/VISITANTE — no ataque a bar,

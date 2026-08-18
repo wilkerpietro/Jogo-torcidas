@@ -768,6 +768,39 @@ TO.feed = (function(){
       }
       const abertura = etapa && deComp ? `${etapa} ${deComp}`
                      : pelaComp(nosso.compNome);
+      /* QUEM PÕE GENTE NO ESTÁDIO (pedido do dono, 18/08/2026): uma
+         linha com o efetivo de cada torcida dos dois clubes. Jogo na
+         nossa praça usa a MESMA conta da rua (naRuaEm — escolta e
+         caravana inclusas); jogo fora refaz com as mesmas réguas:
+         60% do efetivo pra torcida da casa, caravana pra quem viaja,
+         e a nossa saída é a que o planejamento diz. */
+      const idsCasa = new Set((M().torcidasDe(nosso.c)||[]).map(o=>o.id));
+      const casaMapa = (M().time(nosso.c)||{}).mapa;
+      let presentes = [];
+      if(casaMapa === E.torcida.mapa && TO.praca && TO.praca.naRuaEm){
+        presentes = TO.praca.naRuaEm(E, E.data.dia)
+          .filter(b => b.partida && b.partida.casa.id === nosso.c &&
+                       b.partida.vis.id === nosso.f)
+          .map(b => ({nome:b.nome, n:b.n, casa: idsCasa.has(b.id)}));
+      }
+      if(!presentes.length){
+        for(const lado of ['c','f'])
+          for(const o of (M().torcidasDe(nosso[lado])||[])){
+            let n;
+            if(o.id === E.torcida.id) n = TO.planejamento.efetivoDaSaida(E);
+            else if(o.mapa === casaMapa)
+              n = Math.round(TO.acoes.efetivoDe(E, o)*0.6);
+            else {
+              n = TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id]);
+              if(n < 5) continue;   // caravana pequena demais não viaja
+            }
+            if(n > 0) presentes.push({nome:o.nome, n, casa: lado==='c'});
+          }
+      }
+      const listaDe = casa => presentes.filter(p=>p.casa===casa)
+        .sort((a,b)=>b.n-a.n).map(p=>`${p.nome} ${p.n}`).join(' · ') || 'ninguém';
+      const linhaTorcidas = presentes.length
+        ? ` Mandante: ${listaDe(true)}. Visitante: ${listaDe(false)}.` : '';
       propor(E, {
         kind:'partida', peso:'decisao', voz:'jornal',
         chave:`partida|${E.data.ano}|${E.data.semana}|${E.data.dia}|${meu}`,
@@ -775,7 +808,8 @@ TO.feed = (function(){
               `${abertura}. `+
               (p1 && p2 ? `O ${nome(nosso.c)} está em ${p1}º na tabela `+
                           `e o ${nome(nosso.f)} em ${p2}º. ` : '')+
-              `A bola vai rolar${estadio ? ` ${artEst} ${estadio}` : ''}.`,
+              `A bola vai rolar${estadio ? ` ${artEst} ${estadio}` : ''}.`+
+              linhaTorcidas,
         dados:{casa:nome(nosso.c), fora:nome(nosso.f),
                gc:nosso.gc, gf:nosso.gf, comp:nosso.compNome || '', gols},
         botoes:[{id:'iniciar', rot:'Iniciar partida', acao:'iniciar-partida'}]
