@@ -112,18 +112,14 @@ TO.diaJogo.combate = (function(){
   /* =======================================================
      ESTADO
      ======================================================= */
-  /* BOMBA EM RUA E PRAÇA É SEMPRE POSSÍVEL (decisão do dono,
-     18/08/2026): em cena ao ar livre — rua de qualquer classe, praça
-     e arredores do estádio — o estoque inteiro da torcida está na
-     mochila, mesmo em defesa e encontro que ninguém planejou. A
-     exceção é a cena declarada sem armas (treta 5×5/7×7/10×10, mano
-     a mano). Em cena fechada (bar, sede, CT, comércio) vale o que o
-     planejamento levou. */
-  const AO_AR_LIVRE = /^(rua|rua-media|rua-nobre|praca|arredores|estrada)$/;
+  /* BOMBA EM TODO CONFRONTO (régua do dono, 18/08/2026): o estoque
+     inteiro da torcida está na mochila em qualquer cena — rua, praça,
+     arredores, bar, sede, CT —, planejada ou não. A única exceção é a
+     cena declarada sem armas: a treta 5×5/7×7/10×10, que é mano a
+     mano. */
   function bombasDaCena(cfg){
     if(cfg.semArmas) return 0;
     const base = cfg.bombas !== undefined ? cfg.bombas : P.bombas;
-    if(!AO_AR_LIVRE.test(cfg.local || '')) return base;
     const E = TO.estado && TO.estado.E;
     const estoque = (E && E.estoque && E.estoque.bombas) || 0;
     return Math.max(base || 0, estoque);

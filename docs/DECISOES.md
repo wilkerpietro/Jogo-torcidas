@@ -250,13 +250,16 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   atacando o bar da Falange Coral, quem desce a defender é a
   Falange Coral, com as cores e o nome dela — na cena e no registro
   do confronto; "Bar da Falange Coral" não vira mais torcida.
-- **Bomba em rua e praça é sempre possível** (18/08/2026): em cena
-  ao ar livre — rua de qualquer classe, praça e arredores do
-  estádio — o estoque inteiro de bombas da torcida está na mochila,
-  mesmo em defesa e encontro que ninguém planejou; o rival segue
-  trazendo a metade. A exceção continua sendo a treta 5×5/7×7/10×10
-  (mano a mano). Em cena fechada (bar, sede, CT, comércio) vale o
-  que o planejamento levou.
+- **Bomba em TODO confronto** (régua do dono, 18/08/2026 — antes só
+  rua e praça): o estoque inteiro de bombas está na mochila em
+  qualquer cena — rua, praça, arredores, bar, sede, CT —, planejada
+  ou não; o rival segue trazendo a metade. A ÚNICA exceção é a treta
+  5×5/7×7/10×10, que é mano a mano e continua sem arma nenhuma.
+- **A consequência fala a régua do dono** (correção de 18/08/2026):
+  a linha embaixo da mensagem de confronto mostrava o delta interno
+  do indicador (0-20) — "Prestígio nosso +0,6" onde o jogador esperava
+  +3. Agora todo prestígio nas linhas de consequência sai na régua de
+  0 a 100, como o livro de Moral & Prestígio e o cabeçalho já faziam.
 - **Relatório do olheiro em tabela** (17/08/2026): uma linha por jogo —
   competição, dia e o confronto com a cor de cada clube na esquerda;
   as torcidas do jogo com cor e estimativa na direita.

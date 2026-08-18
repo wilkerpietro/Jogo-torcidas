@@ -102,8 +102,12 @@ TO.feed = (function(){
     if(!efeitos || !efeitos.length) return '';
     return efeitos.map(e=>{
       const nome = NOME_IND[e.ind] || e.ind;
-      const v = e.ind === 'dinheiro' ? U.dinheiro(Math.abs(e.delta))
-                                     : Math.abs(Math.round(e.delta*10)/10);
+      /* PRESTÍGIO FALA A RÉGUA DO DONO (correção de 18/08/2026): o
+         indicador vive em 0-20, mas toda tela fala 0-100 — a linha
+         mostrava o +0,6 interno onde o jogador esperava +3 */
+      const v = e.ind === 'dinheiro'   ? U.dinheiro(Math.abs(e.delta))
+              : e.ind === 'prestigio'  ? Math.abs(Math.round(e.delta*5*10)/10)
+              : Math.abs(Math.round(e.delta*10)/10);
       const sobe = e.delta > 0;
       const dono = e.dono ? ` ${e.dono}` : '';
       return `${nome}${dono} ${sobe?'+':'−'}${v}`;
