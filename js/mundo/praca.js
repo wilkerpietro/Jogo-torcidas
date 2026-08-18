@@ -241,13 +241,14 @@ TO.praca = (function(){
                    || (b.membros||0) - (a.membros||0)
                    || (a.id < b.id ? -1 : 1));
 
-    const siglado = new Set(), cor = {}, cor2 = {}, sigla = {};
+    const siglado = new Set(), cor = {}, cor2 = {}, cor3 = {}, sigla = {};
     for(const o of cast){
       const s = siglaUnica(o, siglado);
       siglado.add(s); sigla[o.id] = s;
       const c = M().coresDaTorcida(o);
       cor[o.id]  = c.cor || '#999999';
       cor2[o.id] = c.cor2;
+      cor3[o.id] = c.cor3;
     }
 
     /* NINGUÉM TROCA DE COR. Cada uma usa a própria primária, sempre; só
@@ -263,7 +264,7 @@ TO.praca = (function(){
         cast.indexOf(a) - cast.indexOf(b));
       ordem.forEach((o,i)=>{ if(i) cor[o.id] = tomVizinho(cor[o.id], i); });
     }
-    return {cor, cor2, sigla};
+    return {cor, cor2, cor3, sigla};
   }
 
   /* Um tom que se distinga da base, na direção que dá contraste.
@@ -371,6 +372,7 @@ TO.praca = (function(){
         nossa: o.id === E.torcida.id,
         cor:  elenco.cor[o.id]  || (o.cores && o.cores[0]) || '#999',
         cor2: elenco.cor2[o.id] || M().coresDaTorcida(o).cor2,
+        cor3: elenco.cor3[o.id] || M().coresDaTorcida(o).cor3,
         sigla: elenco.sigla[o.id] || M().siglaTorcida(o),
         jogo: jogo && jogo.casa.id, partida: jogo
       }, extra || {});
@@ -696,9 +698,10 @@ TO.praca = (function(){
       enc:{
         a:{torcida:E.torcida.id, nome:E.torcida.nome,
            sigla:M().siglaTorcida(E.torcida), n:nossos,
-           cor:nossaCor.cor, cor2:nossaCor.cor2, nossa:true},
+           cor:nossaCor.cor, cor2:nossaCor.cor2, cor3:nossaCor.cor3,
+           nossa:true},
         b:{torcida:o.id, nome:o.nome, sigla:M().siglaTorcida(o), n:deles,
-           cor:cores.cor, cor2:cores.cor2, nossa:false},
+           cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3, nossa:false},
         local, bairro:o.bairroSede||'', nossa:true,
         /* nos arredores deles, o mando é deles */
         nossoLado: onde === 'arredores' ? 'visitante' : 'mandante'}};
@@ -744,7 +747,8 @@ TO.praca = (function(){
     const meu = nosso ? Object.assign({}, nosso, {n: Math.min(nosso.n, nossos)})
       : {id:E.torcida.id, nome:E.torcida.nome,
          sigla:M().siglaTorcida(E.torcida), n:nossos,
-         cor:nossaCor.cor, cor2:nossaCor.cor2, nossa:true};
+         cor:nossaCor.cor, cor2:nossaCor.cor2, cor3:nossaCor.cor3,
+         nossa:true};
     return {desfecho:'planejada', praca:true, onde,
             enc: Object.assign(montarEncontro(meu, alvo, onde),
                                {nossoLado:'mandante'})};

@@ -112,10 +112,12 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   o alvo e o efetivo, com membros SORTEADOS entre os disponíveis e um
   dado só pro bonde inteiro. Banco 10/20 → 30-50k/60-120k, 60% de
   cadeia, 360 dias; Joalheria 10/20 → 10-20k/30-40k, 50%, 180;
-  Supermercado 5/10 → 5-10k/10-15k, 50%, 180; Posto 5/10 → 2-3k/4-5k,
-  30%, 120; Mercadinho 2/5 → 1-2k/3-4k, 20%, 60; Loja de roupas 2/5 →
-  0,5-1k/2-3k, 10%, 30. Caiu, não leva nada. (A pena explícita pode
-  ir a 360 dias; a da briga segue no teto de 90.)
+  Supermercado 5/10 → 5-10k/10-15k; Posto 5/10 → 2-3k/4-5k;
+  Mercadinho 2/5 → 1-2k/3-4k; Loja de roupas 2/5 → 0,5-1k/2-3k.
+  Caiu, não leva nada. Riscos e penas reapertados em 18/08/2026
+  (valores de ganho intactos): Banco 50% de cadeia e 180 dias;
+  Joalheria 35% e 120; Supermercado 35% e 120; Posto 20% e 90;
+  Mercadinho 10% e 45; Loja de roupas 5% e 30.
 - **Recrutamento por sorteio** (tabela do dono, 17/08/2026; números
   reapertados no mesmo dia): cada campanha tira um dado — normal
   10%/5%/85% (um/dois/ninguém); vitória no último jogo 15%/5%/80%;
@@ -222,6 +224,15 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **Pedra e bomba nossas são sempre manuais** (17/08/2026): braço
   automático só do lado da IA. Treta marcada é mano a mano — sem
   pedra, sem bomba, de lado nenhum.
+- **O disco veste a camisa** (pedido do dono, 18/08/2026): o disco
+  do membro carrega TODAS as cores da torcida — e como a fonte de
+  muitas é curta (a TUF vinha só com branco e azul), a paleta se
+  completa com as cores do clube, filtrando tons quase iguais. Com
+  três cores: base na primária e duas listras finas no meio, na
+  secundária e na terciária (camisa do São Paulo). Com duas: só a
+  borda na secundária. Com uma: sólido. O miolo escuro saiu de
+  todas, e o miolo claro genérico que dava "cor de time nenhum" só
+  sobrevive na bancada de cenas.
 - **Bomba em rua e praça é sempre possível** (18/08/2026): em cena
   ao ar livre — rua de qualquer classe, praça e arredores do
   estádio — o estoque inteiro de bombas da torcida está na mochila,

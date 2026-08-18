@@ -3027,9 +3027,10 @@
     const local = TO.praca.ruaDaClasse(d.classe);
     const bondes = [
       {lado:'mandante', n, nossa:true, nome:e.torcida.nome,
-       cor:cN.cor, cor2:cN.cor2, sigla:TO.mundo.siglaTorcida(e.torcida)},
+       cor:cN.cor, cor2:cN.cor2, cor3:cN.cor3,
+       sigla:TO.mundo.siglaTorcida(e.torcida)},
       {lado:'visitante', n, nossa:false, nome:rival.nome||'Rival',
-       cor:cR.cor, cor2:cR.cor2,
+       cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3,
        sigla:TO.mundo.siglaTorcida(rival)||'RIV',
        perfil: perfilDe(d.rival)}
     ];
@@ -3090,10 +3091,11 @@
       || rival).membros || 30) * 0.5));
     const enc = {
       a:{torcida:e.torcida.id, nome:`${e.torcida.sigla} + ${aliado.nome||'aliado'}`,
-         sigla:e.torcida.sigla, n:nossos, cor:cN.cor, cor2:cN.cor2, nossa:true},
+         sigla:e.torcida.sigla, n:nossos,
+         cor:cN.cor, cor2:cN.cor2, cor3:cN.cor3, nossa:true},
       b:{torcida:d.rival, nome:rival.nome||'Rival',
          sigla:TO.mundo.siglaTorcida(rival)||'RIV', n:deles,
-         cor:cR.cor, cor2:cR.cor2, nossa:false},
+         cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3, nossa:false},
       local:'rua', bairro:'', nossa:true,
       /* a briga é DELES: o prestígio da noite vai pro aliado escoltado,
          não pra nós (decisão do dono, 17/08/2026) */
@@ -3158,9 +3160,11 @@
     const nossoLado = enc.nossoLado === 'visitante' ? 'visitante' : 'mandante';
     const outroLado = nossoLado === 'mandante' ? 'visitante' : 'mandante';
     const bondes = [
-      {lado:nossoLado, n:nosso.n, cor:nosso.cor, cor2:nosso.cor2,
+      {lado:nossoLado, n:nosso.n,
+       cor:nosso.cor, cor2:nosso.cor2, cor3:nosso.cor3,
        sigla:nosso.sigla, nome:nosso.nome,  nossa:true},
-      {lado:outroLado, n:deles.n, cor:deles.cor, cor2:deles.cor2,
+      {lado:outroLado, n:deles.n,
+       cor:deles.cor, cor2:deles.cor2, cor3:deles.cor3,
        sigla:deles.sigla, nome:deles.nome,  nossa:false,
        perfil: perfilDe(deles.torcida)}
     ];
@@ -3276,7 +3280,7 @@
        vêm do mesmo lugar que as do mapa */
     const cores = TO.mundo.coresDaTorcida(e.torcida);
     const bondes = [{lado:'mandante', n, nossa:true, nome:e.torcida.nome,
-                     cor: cores.cor, cor2: cores.cor2,
+                     cor: cores.cor, cor2: cores.cor2, cor3: cores.cor3,
                      sigla: TO.mundo.siglaTorcida(e.torcida)}];
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
@@ -3366,9 +3370,11 @@
     const aptos = fila.slice(0, nossos);
     const bondes = [
       {lado:nosso, n:nossos, nossa:true, nome:e.torcida.nome,
-       cor:c1.cor, cor2:c1.cor2, sigla:TO.mundo.siglaTorcida(e.torcida)},
+       cor:c1.cor, cor2:c1.cor2, cor3:c1.cor3,
+       sigla:TO.mundo.siglaTorcida(e.torcida)},
       {lado:outro, n:deles, nossa:false, nome:(o&&o.nome)||'Rival',
-       cor:c2.cor, cor2:c2.cor2, sigla:o?TO.mundo.siglaTorcida(o):'RIV',
+       cor:c2.cor, cor2:c2.cor2, cor3:c2.cor3,
+       sigla:o?TO.mundo.siglaTorcida(o):'RIV',
        perfil: perfilDe(atq.torcida)}
     ];
     atq.resolvido = true;

@@ -610,19 +610,21 @@ TO.acoes = (function(){
      o alvo e o efetivo. O sorteio é um só pro bonde inteiro:
      ou todo mundo volta com a partilha, ou todo mundo cai.
      ======================================================= */
+  /* riscos e penas reapertados pelo dono em 18/08/2026;
+     os valores de ganho continuam os mesmos */
   const ASSALTOS = [
     {id:'banco',        nome:'Banco',             art:'no', efetivos:[10, 20],
-     ganho:{10:[30000, 50000], 20:[60000, 120000]}, chance:0.60, pena:360},
+     ganho:{10:[30000, 50000], 20:[60000, 120000]}, chance:0.50, pena:180},
     {id:'joalheria',    nome:'Joalheria',         art:'na', efetivos:[10, 20],
-     ganho:{10:[10000, 20000], 20:[30000, 40000]},  chance:0.50, pena:180},
+     ganho:{10:[10000, 20000], 20:[30000, 40000]},  chance:0.35, pena:120},
     {id:'supermercado', nome:'Supermercado',      art:'no', efetivos:[5, 10],
-     ganho:{5:[5000, 10000],   10:[10000, 15000]},  chance:0.50, pena:180},
+     ganho:{5:[5000, 10000],   10:[10000, 15000]},  chance:0.35, pena:120},
     {id:'posto',        nome:'Posto de gasolina', art:'no', efetivos:[5, 10],
-     ganho:{5:[2000, 3000],    10:[4000, 5000]},    chance:0.30, pena:120},
+     ganho:{5:[2000, 3000],    10:[4000, 5000]},    chance:0.20, pena:90},
     {id:'mercadinho',   nome:'Mercadinho',        art:'no', efetivos:[2, 5],
-     ganho:{2:[1000, 2000],    5:[3000, 4000]},     chance:0.20, pena:60},
+     ganho:{2:[1000, 2000],    5:[3000, 4000]},     chance:0.10, pena:45},
     {id:'roupas',       nome:'Loja de roupas',    art:'na', efetivos:[2, 5],
-     ganho:{2:[500, 1000],     5:[2000, 3000]},     chance:0.10, pena:30}
+     ganho:{2:[500, 1000],     5:[2000, 3000]},     chance:0.05, pena:30}
   ];
 
   function executarAssalto(E, alvoId, n){

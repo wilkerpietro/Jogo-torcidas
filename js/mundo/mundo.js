@@ -315,12 +315,31 @@ TO.mundo = (function(){
      `cores[1:]` seguida de `detalhe` que seja DIFERENTE da primária;
      não havendo nenhuma, a secundária é nula e o miolo cai no tom claro
      genérico do lado, que é o que o jogo já fazia. */
+  /* duas cores quase iguais não contam como duas: sem isto a paleta
+     completada pelo clube dava dois azuis gêmeos no mesmo disco */
+  function coresParecidas(a, b){
+    const n = c => [1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+    const [r1,g1,b1] = n(a), [r2,g2,b2] = n(b);
+    return Math.hypot(r1-r2, g1-g2, b1-b2) < 60;
+  }
   function coresDaTorcida(o){
     const lista = [...((o && o.cores) || []), o && o.detalhe]
       .filter(Boolean).map(c=>String(c).toUpperCase());
-    const cor = lista[0] || null;
-    const cor2 = lista.slice(1).find(c=>c !== cor) || null;
-    return {cor, cor2};
+    /* TODAS as cores são da torcida (pedido do dono, 18/08/2026): a
+       fonte de muitas é curta — a TUF vem só com branco e azul —,
+       então a paleta se completa com as cores do CLUBE, que é de onde
+       a camisa vem (o Fortaleza é tricolor, a TUF também). */
+    const t = o && o.clubeId ? time(o.clubeId) : null;
+    for(const c of (t && t.cores) || [])
+      lista.push(String(c).toUpperCase());
+    const dist = [];
+    for(const c of lista){
+      if(!/^#[0-9A-F]{6}$/.test(c)) continue;
+      if(!dist.some(x => coresParecidas(x, c))) dist.push(c);
+      if(dist.length === 3) break;
+    }
+    return {cor: dist[0] || null, cor2: dist[1] || null,
+            cor3: dist[2] || null};
   }
 
   function adversario(idClube){

@@ -521,10 +521,11 @@ TO.diaJogo.combate = (function(){
         d.forca=20; d.defesa=20;
         d.hpMax = 90 + 20*7; d.hp = d.hpMax;
       }
-      /* as duas cores da torcida que veio do mapa: o círculo externo é a
-         primária, o miolo é a secundária */
+      /* TODAS as cores da torcida vão pro disco (pedido do dono,
+         18/08/2026) */
       d.cor  = g.bonde ? g.bonde.cor  : null;
       d.cor2 = g.bonde ? g.bonde.cor2 : null;
+      d.cor3 = g.bonde ? g.bonde.cor3 : null;
       d.torcida = g.bonde ? g.bonde.nome : null;
       d.doJogador = meu;
       J.discos.push(d);
@@ -2123,9 +2124,30 @@ TO.diaJogo.combate = (function(){
       c.globalAlpha=1; return;
     }
     c.fillStyle='rgba(0,0,0,.4)'; c.beginPath(); c.ellipse(x+2,y+4,d.r,d.r*.82,0,0,7); c.fill();
-    c.fillStyle=corDisco(d,false); c.beginPath(); c.arc(x,y,d.r,0,7); c.fill();
-    c.fillStyle=corDisco(d,true);  c.beginPath(); c.arc(x,y,d.r*.62,0,7); c.fill();
-    c.fillStyle='#2b2320'; c.beginPath(); c.arc(x,y,d.r*.34,0,7); c.fill();
+    /* O DISCO VESTE A CAMISA DA TORCIDA (pedido do dono, 18/08/2026):
+       base na primária; com TRÊS cores, duas listras finas no meio —
+       secundária e terciária, camisa do São Paulo; com DUAS, só a
+       borda na secundária; com uma, sólido. O miolo escuro saiu de
+       todas, e o miolo claro genérico (que dava cor de time nenhum)
+       só sobrevive nas cenas da bancada, sem torcida de verdade. */
+    const base = d.cor || corLado(d.lado, false);
+    const sec  = d.cor ? d.cor2 : corLado(d.lado, true);
+    const ter  = d.cor ? d.cor3 : null;
+    c.fillStyle=base; c.beginPath(); c.arc(x,y,d.r,0,7); c.fill();
+    if(sec && ter){
+      c.save(); c.beginPath(); c.arc(x,y,d.r,0,7); c.clip();
+      const h = Math.max(2, d.r*0.20);
+      c.fillStyle=sec; c.fillRect(x-d.r, y-h-h*0.35, d.r*2, h);
+      c.fillStyle=ter; c.fillRect(x-d.r, y+h*0.35,   d.r*2, h);
+      c.restore();
+    } else if(sec){
+      const lw = Math.max(2.5, d.r*0.26);
+      c.strokeStyle=sec; c.lineWidth=lw;
+      c.beginPath(); c.arc(x,y,d.r-lw/2,0,7); c.stroke();
+    }
+    /* contorno fino: o disco tem de se ler sobre qualquer chão */
+    c.strokeStyle='rgba(0,0,0,.45)'; c.lineWidth=1.2;
+    c.beginPath(); c.arc(x,y,d.r,0,7); c.stroke();
     if(d.lider){c.strokeStyle='#e0b040';c.lineWidth=3;c.beginPath();c.arc(x,y,d.r+3,0,7);c.stroke();}
     if(d.golpe>0){c.strokeStyle=`rgba(255,235,190,${d.golpe*6})`;c.lineWidth=2;
       c.beginPath();c.arc(x,y,d.r+6,0,7);c.stroke();}
