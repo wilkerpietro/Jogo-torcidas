@@ -70,7 +70,12 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **Ideologia**: aba da Diplomacia; é o que o botão "Seguir padrão"
   executa. Corte "quente" agora é relação < −55.
 - **Bombas**: compradas na tela do ataque (R$ 120), sem loja de
-  materiais.
+  materiais. Desde 18/08/2026 também no Financeiro → Patrimônio:
+  caixa com 5 por R$ 600, direto pro estoque que as cenas gastam.
+- **Briga de bar é briga de salão** (teto do dono, 18/08/2026): em
+  todo ataque a bar — nosso, contra nós e entre as IAs — o atacante
+  bota no máximo 60 na cena e o defensor no máximo 40. Sede,
+  concentração, pista e estrada seguem com as réguas de sempre.
 - **relacoes.js** substitui tensao.js: tudo se baseia na RELAÇÃO
   (−100..+100); ataque de rival dispara com relação ≤ −55, briga derruba
   a relação (−22 típico) e a semana puxa devagar de volta ao natural.

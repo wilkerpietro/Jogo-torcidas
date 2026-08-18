@@ -569,8 +569,12 @@ TO.acoes = (function(){
        const alvo = escolher(alvosDeAtaque(E), opc);
        if(!alvo) return {ok:false, msg:'Esse alvo não existe mais.'};
        E.acoes.ultimoAtaqueManual = E.data.semana;
+       /* teto do dono (18/08/2026): briga de bar é de salão — quem
+          defende bota no máximo 40 na cena */
+       let noAlvo = Math.max(4, Math.round(alvo.efetivo*0.35));
+       if(alvo.tipo === 'bar') noAlvo = Math.min(noAlvo, 40);
        return {ok:true, cena:{cena:'bar', acao:'atacar', alvo,
-                              efetivoRival: Math.max(4, Math.round(alvo.efetivo*0.35))},
+                              efetivoRival: noAlvo},
                msg:`Bonde a caminho: ${alvo.nome}, ${alvo.bairro}.`};
      }},
 

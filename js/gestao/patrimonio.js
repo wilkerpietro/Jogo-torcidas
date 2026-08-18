@@ -188,6 +188,13 @@ TO.patrimonio = (function(){
            'combustível e manutenção · rota de avião continua paga',
       custo:100000, trava:trava(100000)});
 
+    /* bomba também se compra pelo Financeiro (pedido do dono,
+       18/08/2026): caixa com 5, direto pro estoque que as cenas usam */
+    lista.push({
+      id:'bombas', rot:'Comprar bombas (caixa com 5)',
+      nota:`estoque atual: ${bombas(E)} · R$ ${PRECO_BOMBA} cada`,
+      custo:5*PRECO_BOMBA, trava:trava(5*PRECO_BOMBA)});
+
     if(!p.fabrica) lista.push({
       id:'fabrica', rot:FABRICA.rot,
       nota:`triplica o faturamento das lojas e corta ${Math.round(FABRICA.corteInsumo*100)}% do insumo`,
@@ -218,6 +225,9 @@ TO.patrimonio = (function(){
     } else if(acao==='onibus'){
       E.onibus = {desde:(E.data||{}).absoluto || 0};
       TO.estado.lancar(E, 'Ônibus da torcida', -o.custo);
+    } else if(acao==='bombas'){
+      estoquePiro(E).bombas += 5;
+      TO.estado.lancar(E, 'Bombas ×5', -o.custo);
     } else if(acao==='comprar'){
       const cfg = PONTO[tipo];
       const bairro = F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1));

@@ -3262,7 +3262,10 @@
        é a turma que estiver de pé, ou o bonde que o mapa mandou. O 34
        segue valendo pra FICHA: nome, força, defesa e consequência de
        ferido ou preso depois. O resto é povão. */
-    const n = Math.max(2, Math.round(efetivo || fila.length));
+    let n = Math.max(2, Math.round(efetivo || fila.length));
+    /* teto do dono (18/08/2026): atacando bar, no máximo 60 na cena */
+    if(cena.acao === 'atacar' && cena.alvo && cena.alvo.tipo === 'bar')
+      n = Math.min(n, 60);
     /* a ficha vai inteira: cada disco nosso é um membro de verdade */
     const aptos = fila.slice(0, n);
     /* só o NOSSO lado vem como bonde: quem defende continua se
@@ -3333,10 +3336,14 @@
        na concentração e na pista, o bonde inteiro do dia de jogo */
     const est = naEstrada ? TO.planejamento.estimativaCaravana(e) : null;
     const noDiaDeJogo = atq.alvo === 'concentracao' || atq.alvo === 'pista';
-    const nossos = naEstrada
+    /* teto do dono (18/08/2026): defesa do NOSSO bar bota no máximo
+       40 no salão; o atacante traz no máximo 60 (cap logo abaixo) */
+    const noBar = !naEstrada && !noDiaDeJogo;
+    let nossos = naEstrada
       ? Math.max(2, (est && est.vao) || Math.round(fila.length * 0.25))
       : noDiaDeJogo ? Math.max(2, fila.length)
       : Math.max(2, Math.round(fila.length * 0.25));
+    if(noBar) nossos = Math.min(nossos, 40);
     /* QUEM VEM ATACAR TRAZ A TURMA QUE O SERVIÇO PEDE. Os 30% fixos
        criavam a cena-farsa: atacante grande o bastante pra passar no
        filtro de geração ainda chegava com um terço do nosso bonde e
@@ -3345,9 +3352,10 @@
        e nunca mais de 70% da torcida dele. Atacante gigante segue
        vindo com muito mais que a gente. */
     const membrosDeles = TO.acoes.efetivoDe(e, o || {}) || 40;
-    const deles = Math.max(4, Math.max(
+    let deles = Math.max(4, Math.max(
       Math.round(membrosDeles * 0.30),
       Math.min(Math.round(membrosDeles * 0.70), Math.round(nossos * 0.9))));
+    if(noBar) deles = Math.min(deles, 60);
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
     const c2 = TO.mundo.coresDaTorcida(o || {});
     /* no bar a gente é a casa e nasce no salão (lado `visitante`); na

@@ -595,8 +595,10 @@ TO.relacoes = (function(){
     /* quem é da cidade bota mais gente na rua; quem viajou traz caravana */
     const bonde = (o, disp) => Math.max(4, Math.round(disp *
       (o.mapa === cidade ? U.entre(0.18, 0.35) : U.entre(0.08, 0.18))));
-    const nA = Math.min(dispA, bonde(a, dispA));
-    const nB = Math.min(dispB, bonde(b, dispB));
+    /* tetos por cena (o bar do mundo usa 60 do atacante × 40 do
+       defensor, régua do dono de 18/08/2026) */
+    const nA = Math.min(dispA, bonde(a, dispA), opts.tetoA || Infinity);
+    const nB = Math.min(dispB, bonde(b, dispB), opts.tetoB || Infinity);
     /* A ESCOLTA DO MUNDO (decisão do dono, 18/08/2026): quem viaja pra
        cidade de um aliado pode ter o anfitrião na briga — o bonde da
        casa entra do lado do hóspede, como a nossa escolta */
@@ -810,7 +812,8 @@ TO.relacoes = (function(){
     if(!atk) return null;
     /* ataque de nanica não existe — a mesma régua do nosso bar */
     if(vivoDe(E, atk.id) < vivoDe(E, o.id) * 0.5) return null;
-    const reg = brigaIA(E, atk, o, o.mapa, 'ataque ao bar');
+    const reg = brigaIA(E, atk, o, o.mapa, 'ataque ao bar',
+                        {tetoA:60, tetoB:40});
     if(!reg) return null;
     if(reg.ganhouA){
       const tAtk = (E.mundoTorcidas||{})[atk.id];
