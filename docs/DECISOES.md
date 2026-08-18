@@ -143,8 +143,9 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   +1; nada: −2. O custo e a moral saem na decisão; a receita sai no
   dia da festa, com a mensagem do rendimento. E o mundo também se
   convida (18/08/2026): no aniversário de uma torcida da IA, ela
-  chama o próprio círculo — a praça sem briga e as aliadas e irmãs
-  declaradas; cada convidada aceita (R$ 2.000 do caixa dela, +3 de
+  chama o próprio círculo — na régua estrita do dono, a mesma do
+  nosso convite: só aliada de verdade (relação viva ≥ 20) ou irmã
+  de clube; neutra da praça ficou de fora. Cada convidada aceita (R$ 2.000 do caixa dela, +3 de
   relação entre as duas) ou recusa (−3), com chance de ir crescendo
   com a relação — e quebrada não vai. Rival não recebe convite. Nós
   ficamos de fora desse sorteio: o convite pra gente chega pelo

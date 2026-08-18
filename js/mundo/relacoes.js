@@ -979,7 +979,12 @@ TO.relacoes = (function(){
                         && !x.incompleta);
       for(const c of circulo){
         const rel = relacaoDelas(E, o.id, c.id);
-        if(rel <= HOSTIL) continue;               // rival não recebe convite
+        /* a régua estrita do dono (18/08/2026), a mesma do nosso
+           convite: só aliada de verdade recebe — relação viva ≥ 20
+           (o que a Diplomacia rotula Aliado/Irmandade) ou irmã de
+           clube. Neutra da praça ficou de fora. */
+        const irma = M().saoIrmas && M().saoIrmas(o.id, c.id);
+        if(!irma && rel < 20) continue;
         const t = m[c.id];
         const podePagar = t && t.caixa > 2000;
         const aceita = podePagar &&
