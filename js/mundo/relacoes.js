@@ -928,11 +928,25 @@ TO.relacoes = (function(){
     return fora;
   }
 
+  /* A SITUAÇÃO FINANCEIRA NO RANKING (tabela do dono, 18/08/2026):
+     o saldo atual vira rótulo e multiplicador dos pontos —
+     Endividado (abaixo de −10 mil) ×0,6 · Muito ruim (−10 mil a 0)
+     ×0,8 · Pobre (até 10 mil) ×1,0 · Estável (até 20 mil) ×1,2 ·
+     Bem financeiramente (até 40 mil) ×1,4 · Rico (acima) ×1,6 */
+  function situacaoFinanceira(caixa){
+    if(caixa < -10000) return {rot:'Endividado', slug:'endividado', mult:0.6};
+    if(caixa <= 0)     return {rot:'Muito ruim', slug:'muitoruim',  mult:0.8};
+    if(caixa <= 10000) return {rot:'Pobre',      slug:'pobre',      mult:1.0};
+    if(caixa <= 20000) return {rot:'Estável',    slug:'estavel',    mult:1.2};
+    if(caixa <= 40000) return {rot:'Bem financeiramente', slug:'bem', mult:1.4};
+    return {rot:'Rico', slug:'rico', mult:1.6};
+  }
+
   let cacheRanking = {chave:'', lista:null};
   function ranking(E){
     const chave = `${E.data.ano}|${semanaAbs(E)}|${E.data.dia}|`+
       `${E.membros.length}|${Math.round(E.indicadores.prestigio*100)}|`+
-      `${E.brigasIATotal || (E.brigasIA||[]).length}`;
+      `${E.brigasIATotal || (E.brigasIA||[]).length}|${Math.round(E.dinheiro)}`;
     if(cacheRanking.chave === chave) return cacheRanking.lista;
     mundo(E);
     const fora = [];
@@ -947,18 +961,23 @@ TO.relacoes = (function(){
         /* contam os DISPONÍVEIS: ferido e preso não somam ponto — é o
            que faz briga (nossa e das IAs) mexer no ranking */
         const n = E.membros.filter(m=>!m.ferido && !m.preso).length;
+        const sit = situacaoFinanceira(E.dinheiro);
         fora.push({id:o.id, nome:o.nome, nossa:true,
                    membros:n, prestigio:prest, forca,
-                   pontos:Math.round((n + prest*2)*forca)});
+                   caixa:E.dinheiro, situacao:sit,
+                   pontos:Math.round((n + prest*2)*forca*sit.mult)});
       } else {
         const viva = (E.mundoTorcidas||{})[o.id] || {};
         const n = disponiveisIA(E, o.id);
         const prest = Math.round((viva.prestigio !== undefined
           ? viva.prestigio : U.limitar((o.prestigio||15)/5, 0, 20))*5);
         const forca = mediaDeFichaGerada(o, viva.membros || o.membros || n);
+        const caixa = viva.caixa !== undefined ? viva.caixa : (o.saldo||200)*4;
+        const sit = situacaoFinanceira(caixa);
         fora.push({id:o.id, nome:o.nome, nossa:false,
                    membros:n, prestigio:prest, forca,
-                   pontos:Math.round((n + prest*2)*forca)});
+                   caixa, situacao:sit,
+                   pontos:Math.round((n + prest*2)*forca*sit.mult)});
       }
     }
     fora.sort((a,b)=>b.pontos - a.pontos || b.membros - a.membros ||
@@ -994,7 +1013,7 @@ TO.relacoes = (function(){
   }
 
   return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
-          ranking, posicaoNoRanking,
+          ranking, posicaoNoRanking, situacaoFinanceira,
           brigasDeHoje, mundoDia, disponiveisIA, foraDeCombate,
           mundo, balanco, ARQUETIPOS, economiaDelas,
           relacaoDelas, moverRelacao, chaveDe,

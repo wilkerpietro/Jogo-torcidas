@@ -115,6 +115,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   (membros + prestígio×2) × média de força e defesa dos membros. O
   cabeçalho mostra #posição ao lado do nome e as médias de moral,
   ataque e defesa ao lado do prestígio.
+- **A situação financeira pesa no ranking** (tabela do dono,
+  18/08/2026): coluna própria com o rótulo do saldo atual de cada
+  torcida, e o rótulo multiplica os pontos — Endividado (abaixo de
+  −R$ 10.000) ×0,6 · Muito ruim (−10.000 a 0) ×0,8 · Pobre (até
+  10.000) ×1,0 · Estável (até 20.000) ×1,2 · Bem financeiramente
+  (até 40.000) ×1,4 · Rico (acima de 40.000) ×1,6. O título da
+  célula mostra o saldo exato e o multiplicador.
 - **Partida ao vivo** (17/08/2026): no dia do nosso jogo chega a
   mensagem com o botão INICIAR PARTIDA; clicado, o cartão vira uma
   barra de minutos (2' de jogo por segundo) e os gols do resultado —

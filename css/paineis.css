@@ -1123,6 +1123,16 @@ table.dados tr.selecionada td{background:#252525}
 .tab-ranking tr.nossa .pos{color:#e8c76a}
 .pos-rank{color:#e8c76a}
 
+/* a coluna de situação financeira (tabela do dono): do vermelho da
+   dívida ao verde de quem tem cofre */
+.tab-ranking .fin{white-space:nowrap;font-size:11.5px}
+.fin-endividado{color:#e5484d}
+.fin-muitoruim{color:#e07b39}
+.fin-pobre{color:#b9ac93}
+.fin-estavel{color:#c9d19a}
+.fin-bem{color:#8fbf6f}
+.fin-rico{color:#57c76a}
+
 /* a aba Brigas das Notícias: uma linha por briga do mundo */
 .briga-ia{padding:8px 2px;border-bottom:1px solid #222;font-size:12.5px}
 .briga-ia-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
