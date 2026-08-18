@@ -151,9 +151,19 @@ TO.diaJogo.combate = (function(){
          era ela que virava o 7×7 em 7×0 contra nós. Briga sem bomba
          nossa é briga sem bomba deles. */
       rivalInfo: cfg.rival || null,
+      /* o estoque DELES agora existe (decisão do dono, 18/08/2026): a
+         metade-do-nosso continua sendo o teto da cena, mas ninguém
+         joga bomba que não comprou — se o perfil da torcida diz
+         quantas ela tem no paiol, a cena não passa disso. Perfil sem
+         estoque declarado (bancada, cena solta) segue a regra velha. */
       bombasRival: cfg.bombasRival!==undefined ? cfg.bombasRival
-                 : (n => n>0 ? Math.max(1, Math.ceil(n/2)) : 0)
-                   (bombasDaCena(cfg)),
+                 : (n => {
+                     const meia = n>0 ? Math.max(1, Math.ceil(n/2)) : 0;
+                     const perfil = cfg.perfilRival ||
+                       (((cfg.bondes||[]).find(b=>!b.nossa))||{}).perfil;
+                     const paiol = perfil ? perfil.bombas : null;
+                     return paiol == null ? meia : Math.min(meia, paiol);
+                   })(bombasDaCena(cfg)),
       /* ele não começa jogando: nos primeiros segundos o bonde ainda
          está em coluna no spawn, e uma bomba ali derruba doze de uma
          vez antes de o jogador ter chance de abrir a formação */
@@ -423,6 +433,10 @@ TO.diaJogo.combate = (function(){
     const plano = TO.membros.planoDeCargos(tamanho, p.cargos);
     /* SEM BÔNUS DE PODER (decisão do dono, 18/08/2026): a ficha do
        rival sai só do cargo, a mesma régua da média do ranking. */
+    /* professor de MMA delas (decisão do dono, 18/08/2026): torcida
+       que paga o professor tem gente mais treinada — +1 por cabeça,
+       o espelho do treino em dobro do jogador */
+    const mma = p.mma ? 1 : 0;
     /* a moral deles vem da moral viva da torcida no mundo (a mesma
        régua do nosso povoarInicial: indicador ±3), não de um 12 fixo */
     const moralBase = Math.round(p.moral !== undefined ? p.moral : 12);
@@ -432,13 +446,13 @@ TO.diaJogo.combate = (function(){
       const teto = (CARGOS[cargo] || CARGOS.novato).teto;
       for(let i=0;i<n && fora.length<tamanho;i++)
         fora.push({cargo,
-          forca:  Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3)),
-          defesa: Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3)),
+          forca:  Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + mma),
+          defesa: Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + mma),
           moral:  U.limitar(moralBase + U.inteiro(-3,3), 1, 20)});
     }
     while(fora.length < tamanho)
-      fora.push({cargo:'novato', forca:1+U.inteiro(0,3),
-                 defesa:1+U.inteiro(0,3), moral:moralBase});
+      fora.push({cargo:'novato', forca:1+U.inteiro(0,3)+mma,
+                 defesa:1+U.inteiro(0,3)+mma, moral:moralBase});
     return fora.sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
                .slice(0, qtd);
   }

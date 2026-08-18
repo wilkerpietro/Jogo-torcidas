@@ -322,9 +322,14 @@ TO.planejamento = (function(){
      sem relação registrada vale o piso, porque a caravana existe mesmo
      quando não somos nada deles. */
   const RELACAO_ALIADO = 20;
-  function caravanaDe(torcida, relacao){
+  function caravanaDe(torcida, relacao, E){
     const v = relacao || 0;
-    return Math.max(4, Math.round((torcida.membros||20) * 0.18 * (1 + v/150)));
+    /* ônibus delas (decisão do dono, 18/08/2026): torcida que comprou
+       o ônibus viaja de graça, e ônibus de graça sai cheio — a
+       caravana cresce 30% */
+    const t = E && E.mundoTorcidas && E.mundoTorcidas[torcida.id];
+    const bus = t && t.onibus ? 1.3 : 1;
+    return Math.max(4, Math.round((torcida.membros||20) * 0.18 * (1 + v/150) * bus));
   }
 
   function aliadosNaCidade(E, semana){
@@ -343,7 +348,7 @@ TO.planejamento = (function(){
             if(v === undefined || v < RELACAO_ALIADO) continue;   // só aliado de fato
             fora.push({id:o.id, torcida:o, clube:vis, adversario:casa,
                        relacao:v, dia:j.d || etapa.dia || 6, comp:comp.nome,
-                       estimativa:caravanaDe(o, v)});
+                       estimativa:caravanaDe(o, v, E)});
           }
         }
       }

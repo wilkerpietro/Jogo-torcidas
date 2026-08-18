@@ -3123,7 +3123,11 @@
             membros: viva.membros || o.membros || 60,
             /* a moral viva do mundo: a ficha gerada deles nasce da mesma
                régua que a nossa (indicador ±3), não de um 12 fixo */
-            moral: viva.moral};
+            moral: viva.moral,
+            /* o Financeiro delas chega na cena (decisão do dono,
+               18/08/2026): professor de MMA melhora a ficha e o paiol
+               de bombas limita o que elas jogam */
+            mma: !!viva.mma, bombas: viva.bombas};
   };
 
   const LOCAL_ROT = {rua:'na rua', 'rua-media':'numa rua de classe média',
@@ -3212,6 +3216,19 @@
     const e = E();
     e.estoque = e.estoque || {bombas:0};
     e.estoque.bombas = Math.max(0, e.estoque.bombas - (res.bombasUsadas||0));
+    /* bomba deles também sai de estoque (decisão do dono, 18/08/2026):
+       o que o rival jogou na cena é descontado do paiol da torcida no
+       mundo — elas repõem comprando, como o jogador */
+    {
+      const meuL = res.nossoLado || 'mandante';
+      const outroL = meuL === 'mandante' ? 'visitante' : 'mandante';
+      const usadas = (res.armas && res.armas[outroL] && res.armas[outroL].bomba) || 0;
+      const rivalId = (acao && acao.alvo && acao.alvo.torcidaId) ||
+                      (enc && enc.b && enc.b.torcida) || null;
+      const t = rivalId && (e.mundoTorcidas || {})[rivalId];
+      if(t && t.bombas != null && usadas > 0)
+        t.bombas = Math.max(0, t.bombas - usadas);
+    }
     /* na TRETA o prestígio é a conta do dono e só ela: +1 pro ganhador,
        −1 pro perdedor (fecharTreta). O prestígio genérico da noite não
        soma por cima. */

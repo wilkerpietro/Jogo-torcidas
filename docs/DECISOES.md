@@ -341,6 +341,18 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   disco do jogador, sem deixar a vista passar da borda da cena;
   rolar pra baixo volta até a cena inteira de sempre. A rodinha em
   cima da cena não rola mais a página.
+- **O Financeiro delas é o nosso** (18/08/2026): tudo que o jogador
+  compra no Financeiro as outras torcidas compram com o caixa delas.
+  Já compravam sede, bar, loja, subsede, ampliações, fábrica e
+  elenco; entraram o ÔNIBUS (R$ 100 mil na escada de compras, depois
+  da fábrica; manutenção mensal na fatia semanal; caravana delas 30%
+  maior), o PROFESSOR DE MMA (contrata com saldo folgado e caixa >
+  25 mil; R$ 2.000/mês; +1 de força e defesa na ficha gerada — cena
+  e média do ranking; duas semanas no vermelho dispensam) e as
+  BOMBAS (paiol começa em 10; repõem lote de 5 por R$ 600/semana; na
+  cena o rival continua limitado à metade das nossas, mas nunca joga
+  mais do que tem no paiol, e o que joga é descontado). Perfil sem
+  paiol declarado (bancada) segue a regra antiga.
 - **Ficha sem bônus de poder** (18/08/2026): o `poder` da fonte dava
   até +3 de força e defesa por cabeça (poder÷250×3) e cravava as
   gigantes acima de todas por decreto. Saiu das três portas: média

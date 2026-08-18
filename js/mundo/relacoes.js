@@ -81,6 +81,10 @@ TO.relacoes = (function(){
         moral: 12,
         prestigio: U.limitar(Math.round((o.prestigio || 15)/5), 0, 20),
         bares:[{nivel:1}], lojas:[], subsedes:0, fabrica:false,
+        /* o menu Financeiro inteiro vale pra elas (decisão do dono,
+           18/08/2026): ônibus, professor de MMA e estoque de bombas
+           são comprados com o caixa delas, como o jogador faz */
+        onibus:false, mma:false, bombas:10,
         vermelho:0,
         mult: multDaSede(o),
         pool: poolDaPraca(o),
@@ -121,6 +125,10 @@ TO.relacoes = (function(){
     for(const l of t.lojas) des += MAN.loja[l.nivel]
                                  + R.loja[l.nivel]*FIN().INSUMO*(t.fabrica ? 1-fab.corteInsumo : 1);
     des += t.subsedes * MAN.subsede;
+    /* ônibus e professor de MMA custam o mesmo que pro jogador:
+       R$ 1.500 e R$ 2.000 por mês, aqui na fatia semanal */
+    if(t.onibus) des += 350;
+    if(t.mma)    des += 460;
     return {rec, des, saldo:rec - des};
   }
 
@@ -157,6 +165,9 @@ TO.relacoes = (function(){
     }
     if(!t.fabrica && t.sede >= P().FABRICA.sede)
       return {tipo:'fabrica', custo:P().FABRICA.custo};
+    /* com o patrimônio de pé, o ônibus é a compra grande que falta —
+       mesmo preço do jogador; depois dele o dinheiro vai pro elenco */
+    if(!t.onibus) return {tipo:'onibus', custo:100000};
     return elencoAlvo(E, id);
   }
 
@@ -187,6 +198,8 @@ TO.relacoes = (function(){
     const m = mundo(E);
     for(const id of Object.keys(m)){
       const t = m[id];
+      /* save de antes do Financeiro delas: ganha os campos novos */
+      if(t.bombas == null){ t.bombas = 10; t.onibus = !!t.onibus; t.mma = !!t.mma; }
       const b = balanco(t);
       t.caixa += Math.round(b.saldo * SEM);
 
@@ -197,15 +210,27 @@ TO.relacoes = (function(){
       if(t.caixa < 0){
         t.vermelho++;
         t.moral = U.limitar(t.moral - 1, 0, 20);
+        /* duas semanas no vermelho e o professor de MMA vai embora —
+           é o corte que qualquer diretoria faria primeiro */
+        if(t.vermelho >= 2 && t.mma) t.mma = false;
         continue;
       }
       t.vermelho = 0;
+
+      /* professor de MMA: contrata quem tem sobra toda semana e um
+         colchão no caixa — o mesmo juízo que o jogador faz */
+      if(!t.mma && b.saldo > 1000 && t.caixa > 25000) t.mma = true;
+
+      /* estoque de pirotecnia: repõe um lote de 5 por semana (R$ 600,
+         o preço do jogador) até voltar às 10 de praxe */
+      if(t.bombas < 10 && t.caixa > 3000){ t.caixa -= 600; t.bombas += 5; }
 
       const compra = proximaCompra(E, t, id);
       if(compra && t.caixa >= compra.custo * ARQUETIPOS[t.arq].reserva){
         t.caixa -= compra.custo;
         if(compra.tipo === 'sede') t.sede++;
         else if(compra.tipo === 'fabrica') t.fabrica = true;
+        else if(compra.tipo === 'onibus') t.onibus = true;
         else if(compra.tipo === 'subsede') t.subsedes++;
         else if(compra.tipo === 'elenco'){
           E.investimento = E.investimento || {};
@@ -513,11 +538,16 @@ TO.relacoes = (function(){
      delas nas brigas (só o cargo), sem sorteio — é a esperança
      da distribuição, estável de um dia pro outro.
      ======================================================= */
-  function mediaDeFichaGerada(o, membrosVivos){
+  function mediaDeFichaGerada(o, membrosVivos, E){
     /* SEM BÔNUS DE PODER (decisão do dono, 18/08/2026): a ficha vem só
        do cargo. O `poder` da fonte dava até +3 por cabeça e cravava as
        gigantes acima de todo mundo por decreto; agora o que separa as
        torcidas na média é a pirâmide de cargos e o tamanho. */
+    /* professor de MMA delas (decisão do dono, 18/08/2026): quem paga
+       os R$ 2.000 por mês tem gente mais treinada — +1 por cabeça, o
+       espelho do treino em dobro que o professor dá pro jogador. */
+    const t = E && E.mundoTorcidas && E.mundoTorcidas[o.id];
+    const mma = t && t.mma ? 1 : 0;
     const CARGOS = TO.membros.CARGOS;
     const tamanho = Math.min(Math.max(membrosVivos || o.membros || 60, 1), 250);
     const plano = TO.membros.planoDeCargos(tamanho, o.cargos);
@@ -525,7 +555,7 @@ TO.relacoes = (function(){
     let soma = 0, n = 0;
     for(const [cargo, q] of plano){
       const teto = (CARGOS[cargo] || CARGOS.novato).teto;
-      soma += q * Math.min(teto, (BASE[cargo]||1) + 1.5);
+      soma += q * Math.min(teto, (BASE[cargo]||1) + 1.5 + mma);
       n += q;
     }
     return n ? soma/n : 1;
@@ -616,10 +646,10 @@ TO.relacoes = (function(){
        100%. O ±15% antigo nunca virava briga desigual, e Gaviões e
        Raça simplesmente venciam todas; agora 3 em cada 10 o bonde
        menor sai por cima. */
-    const pA = nA * mediaDeFichaGerada(a, dispA)
-      + (ajA ? ajA.n * mediaDeFichaGerada(ajA.o, disponiveisIA(E, ajA.o.id)) : 0);
-    const pB = nB * mediaDeFichaGerada(b, dispB)
-      + (ajB ? ajB.n * mediaDeFichaGerada(ajB.o, disponiveisIA(E, ajB.o.id)) : 0);
+    const pA = nA * mediaDeFichaGerada(a, dispA, E)
+      + (ajA ? ajA.n * mediaDeFichaGerada(ajA.o, disponiveisIA(E, ajA.o.id), E) : 0);
+    const pB = nB * mediaDeFichaGerada(b, dispB, E)
+      + (ajB ? ajB.n * mediaDeFichaGerada(ajB.o, disponiveisIA(E, ajB.o.id), E) : 0);
     const favoritoA = pA === pB ? U.rng() < 0.5 : pA > pB;
     const ganhouA = U.rng() < 0.70 ? favoritoA : !favoritoA;
     const baixas = (o, n, perdeu) => {
@@ -783,8 +813,8 @@ TO.relacoes = (function(){
     if(disponiveisIA(E, o.id) < tam || disponiveisIA(E, r.id) < tam)
       return null;
     const abs = E.data.absoluto || 0;
-    const pA = tam * mediaDeFichaGerada(o, disponiveisIA(E, o.id)) * U.entre(0.85, 1.15);
-    const pB = tam * mediaDeFichaGerada(r, disponiveisIA(E, r.id)) * U.entre(0.85, 1.15);
+    const pA = tam * mediaDeFichaGerada(o, disponiveisIA(E, o.id), E) * U.entre(0.85, 1.15);
+    const pB = tam * mediaDeFichaGerada(r, disponiveisIA(E, r.id), E) * U.entre(0.85, 1.15);
     const ganhouA = pA >= pB;
     const machuca = (id, perdeu) => {
       const t = (E.mundoTorcidas||{})[id];
@@ -1065,7 +1095,7 @@ TO.relacoes = (function(){
         const n = disponiveisIA(E, o.id);
         const prest = Math.round((viva.prestigio !== undefined
           ? viva.prestigio : U.limitar((o.prestigio||15)/5, 0, 20))*5);
-        const forca = mediaDeFichaGerada(o, viva.membros || o.membros || n);
+        const forca = mediaDeFichaGerada(o, viva.membros || o.membros || n, E);
         const caixa = viva.caixa !== undefined ? viva.caixa : (o.saldo||200)*4;
         const sit = situacaoFinanceira(caixa);
         fora.push({id:o.id, nome:o.nome, nossa:false,

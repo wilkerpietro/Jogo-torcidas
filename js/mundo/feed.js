@@ -791,7 +791,7 @@ TO.feed = (function(){
             else if(o.mapa === casaMapa)
               n = Math.round(TO.acoes.efetivoDe(E, o)*0.6);
             else {
-              n = TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id]);
+              n = TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id], E);
               if(n < 5) continue;   // caravana pequena demais não viaja
             }
             if(n > 0) presentes.push({nome:o.nome, n, casa: lado==='c'});

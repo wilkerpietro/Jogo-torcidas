@@ -352,7 +352,7 @@ TO.praca = (function(){
     for(const jogo of doDia)
       for(const o of M().torcidasDe(jogo.vis.id)){
         if(pontoDaSede(mo, o)) continue;         // mora aqui, não é caravana
-        if(PL().caravanaDe(o, (E.relacoes||{})[o.id]) < 5) continue;
+        if(PL().caravanaDe(o, (E.relacoes||{})[o.id], E) < 5) continue;
         const casa = anfitriaoDe(E, mo, o);
         if(!casa) continue;
         const n = escoltaDe(E, casa.torcida, o);
@@ -398,7 +398,7 @@ TO.praca = (function(){
               jogo, {deFora:false});
           continue;
         }
-        const vem = PL().caravanaDe(o, (E.relacoes||{})[o.id]);
+        const vem = PL().caravanaDe(o, (E.relacoes||{})[o.id], E);
         if(vem < 5) continue;
         const esc = escoltas[o.id];
         põe(o, vem + (esc ? esc.n : 0), jogo, {
