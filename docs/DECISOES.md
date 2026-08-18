@@ -241,11 +241,15 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   do membro carrega TODAS as cores da torcida — e como a fonte de
   muitas é curta (a TUF vinha só com branco e azul), a paleta se
   completa com as cores do clube, filtrando tons quase iguais. Com
-  três cores: base na primária e duas listras finas no meio, na
-  secundária e na terciária (camisa do São Paulo). Com duas: só a
-  borda na secundária. Com uma: sólido. O miolo escuro saiu de
-  todas, e o miolo claro genérico que dava "cor de time nenhum" só
-  sobrevive na bancada de cenas.
+  três cores: base na primária e DUAS BORDAS — anel de fora na
+  secundária, anel de dentro na terciária (régua do dono, 18/08,
+  substituindo as listras). Com duas: uma borda na secundária. Com
+  uma: sólido. O miolo escuro saiu de todas, e o miolo claro
+  genérico que dava "cor de time nenhum" só sobrevive na bancada.
+  E o bar é ENDEREÇO, não torcida (correção do dono, 18/08/2026):
+  atacando o bar da Falange Coral, quem desce a defender é a
+  Falange Coral, com as cores e o nome dela — na cena e no registro
+  do confronto; "Bar da Falange Coral" não vira mais torcida.
 - **Bomba em rua e praça é sempre possível** (18/08/2026): em cena
   ao ar livre — rua de qualquer classe, praça e arredores do
   estádio — o estoque inteiro de bombas da torcida está na mochila,

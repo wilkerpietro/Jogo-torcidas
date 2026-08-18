@@ -3288,11 +3288,19 @@
     TO.estado.bloquear(true);
     pararTudo('cena');
     const p = TO.planejamento.plano(e);
+    /* a identidade do rival: o bar é DA torcida, não uma torcida —
+       as cores e o nome dos defensores são da dona (correção do dono,
+       18/08/2026) */
+    const donoAlvo = cena.alvo && cena.alvo.torcidaId
+      ? TO.mundo.torcida(cena.alvo.torcidaId) : null;
+    const cDono = donoAlvo ? TO.mundo.coresDaTorcida(donoAlvo) : null;
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', bondes,
                 bombas: p.bombas,
                 efetivoRival: cena.efetivoRival, local: cena.cena,
+                rival: donoAlvo ? {nome:donoAlvo.nome,
+                  cor:cDono.cor, cor2:cDono.cor2, cor3:cDono.cor3} : null,
                 perfilRival: perfilDe(cena.alvo && cena.alvo.torcidaId) },
       aoTerminar: res => fecharDiaDeJogo(res, null, cena)
     });
@@ -3644,7 +3652,7 @@
     abrirPainel, fecharPainel, get painel(){ return painel; },
     resolverIda: e => TO.praca.resolverIda(e || E()),
     abrirCaravana, abrirAtaque, abrirIdeologia,
-    abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta
+    abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena
   };
 
   montarMenu();

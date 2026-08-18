@@ -154,6 +154,7 @@ TO.diaJogo.combate = (function(){
          o lado inteiro por 1,1 s com o deles batendo por cima: medido,
          era ela que virava o 7×7 em 7×0 contra nós. Briga sem bomba
          nossa é briga sem bomba deles. */
+      rivalInfo: cfg.rival || null,
       bombasRival: cfg.bombasRival!==undefined ? cfg.bombasRival
                  : (n => n>0 ? Math.max(1, Math.ceil(n/2)) : 0)
                    (bombasDaCena(cfg)),
@@ -522,11 +523,15 @@ TO.diaJogo.combate = (function(){
         d.hpMax = 90 + 20*7; d.hp = d.hpMax;
       }
       /* TODAS as cores da torcida vão pro disco (pedido do dono,
-         18/08/2026) */
-      d.cor  = g.bonde ? g.bonde.cor  : null;
-      d.cor2 = g.bonde ? g.bonde.cor2 : null;
-      d.cor3 = g.bonde ? g.bonde.cor3 : null;
-      d.torcida = g.bonde ? g.bonde.nome : null;
+         18/08/2026). O rival das cenas de ação não vem como bonde —
+         os defensores se espalham pelos pontos da cena —, então a
+         identidade dele chega por cfg.rival: sem isto o bar da
+         Falange Coral descia com cor de time nenhum. */
+      const dono = g.bonde || (!meu && J.rivalInfo) || null;
+      d.cor  = dono ? dono.cor  : null;
+      d.cor2 = dono ? dono.cor2 : null;
+      d.cor3 = dono ? dono.cor3 : null;
+      d.torcida = dono ? dono.nome : null;
       d.doJogador = meu;
       J.discos.push(d);
     }
@@ -2135,11 +2140,14 @@ TO.diaJogo.combate = (function(){
     const ter  = d.cor ? d.cor3 : null;
     c.fillStyle=base; c.beginPath(); c.arc(x,y,d.r,0,7); c.fill();
     if(sec && ter){
-      c.save(); c.beginPath(); c.arc(x,y,d.r,0,7); c.clip();
-      const h = Math.max(2, d.r*0.20);
-      c.fillStyle=sec; c.fillRect(x-d.r, y-h-h*0.35, d.r*2, h);
-      c.fillStyle=ter; c.fillRect(x-d.r, y+h*0.35,   d.r*2, h);
-      c.restore();
+      /* TRÊS CORES = DUAS BORDAS (régua do dono, 18/08/2026): anel de
+         fora na secundária, anel de dentro na terciária, miolo na
+         primária — as listras saíram */
+      const lw = Math.max(2, d.r*0.18);
+      c.strokeStyle=sec; c.lineWidth=lw;
+      c.beginPath(); c.arc(x,y,d.r-lw/2,0,7); c.stroke();
+      c.strokeStyle=ter; c.lineWidth=lw;
+      c.beginPath(); c.arc(x,y,d.r-lw*1.5,0,7); c.stroke();
     } else if(sec){
       const lw = Math.max(2.5, d.r*0.26);
       c.strokeStyle=sec; c.lineWidth=lw;

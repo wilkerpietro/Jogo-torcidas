@@ -316,7 +316,12 @@ TO.acoes = (function(){
                                                : res.caidosVisitante) : 0;
     const presos = res ? (outro === 'mandante' ? res.presosMandante
                                                : res.presosVisitante) : 0;
-    return {torcidaId:alvo.torcidaId, nome:alvo.nome,
+    /* o nome do lado é o da TORCIDA dona do alvo — "Bar da Falange
+       Coral" é endereço, não torcida (correção do dono, 18/08/2026) */
+    const dona = (alvo.deQuem)
+      || ((TO.mundo.torcida(alvo.torcidaId)||{}).nome)
+      || alvo.nome;
+    return {torcidaId:alvo.torcidaId, nome:dona,
             n: (res && res.efetivo && res.efetivo[outro]) || alvo.efetivo || 0,
             caidos: caidos||0, presos: presos||0, venceu: !ganhamos, lado: outro};
   }
