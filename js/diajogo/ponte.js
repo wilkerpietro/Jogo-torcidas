@@ -241,9 +241,21 @@ TO.diaJogo.ponte = (function(){
       const man=J.discos.filter(d=>d.lado==='mandante' &&d.vivo).length;
       const vis=J.discos.filter(d=>d.lado==='visitante'&&d.vivo).length;
       const ent=(J.entraram.mandante||0)+(J.entraram.visitante||0);
+      /* O PLACAR FALA O NOME DAS TORCIDAS (pedido do dono, 18/08/2026):
+         MANDANTE/VISITANTE é convenção interna dos lados, não coisa que
+         se lê na rua. O nome vem do bonde do lado; no ataque ao bar o
+         defensor não tem bonde e o nome é o da dona (rivalInfo). Só a
+         bancada, que monta cena sem identidade, cai no rótulo antigo. */
+      const nomeDoLado = lado=>{
+        const b=(J.bondes_||[]).find(x=>x.lado===lado);
+        if(b && b.nome) return b.nome;
+        const nosso=(((J.bondes_||[]).find(x=>x.nossa))||{}).lado||'mandante';
+        if(lado!==nosso && J.rivalInfo && J.rivalInfo.nome) return J.rivalInfo.nome;
+        return lado==='mandante'?'MANDANTE':'VISITANTE';
+      };
       el('djPlacar').innerHTML=
-        `<b style="color:#c0392b">MANDANTE</b> ${man} de pé<br>`+
-        `<b style="color:#2a5fa8">VISITANTE</b> ${vis} de pé<br>`+
+        `<b style="color:#c0392b">${nomeDoLado('mandante')}</b> ${man} de pé<br>`+
+        `<b style="color:#2a5fa8">${nomeDoLado('visitante')}</b> ${vis} de pé<br>`+
         `<span style="color:#8b867d">${J.caidos.mandante} × ${J.caidos.visitante} caídos · ${ent} entraram</span><br>`+
         `<span style="color:${J.paz?'#7fc2a0':'#d9705f'}">CLIMA ${J.paz?'TRANQUILO':'PESADO'}</span>`;
     }

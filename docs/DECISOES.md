@@ -341,6 +341,15 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   disco do jogador, sem deixar a vista passar da borda da cena;
   rolar pra baixo volta até a cena inteira de sempre. A rodinha em
   cima da cena não rola mais a página.
+- **Placar da cena com nome das torcidas** (18/08/2026): o quadro de
+  "de pé" na briga fala o nome dos dois bondes (ex.: Gaviões ×
+  Dragões da Real) em vez de MANDANTE/VISITANTE — no ataque a bar,
+  o defensor sem bonde herda o nome da torcida dona. Só a bancada de
+  testes, que monta cena sem identidade, mantém o rótulo antigo.
+- **Cartaz do fim da noite em uma coluna** (18/08/2026): os dados do
+  cartaz (feridos, armas, dinheiro) liam fora de ordem na grade de
+  duas colunas — o valor da esquerda parecia pertencer ao rótulo da
+  direita. Agora é uma coluna só, sempre de cima pra baixo.
 - **Tremor do contato 70% menor** (18/08/2026): o boneco atingido
   sacudia até ±3px por eixo a cada quadro e a briga virava chiado —
   pior com o zoom. A sacudida desenhada caiu pra ±0,9px (corte de

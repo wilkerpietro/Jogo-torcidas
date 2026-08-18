@@ -640,7 +640,11 @@ table.dados tr.selecionada td{background:#252525}
 .cartaz-cena.boa  h3{color:var(--verde-vivo)}
 .cartaz-cena.ruim h3{color:var(--vermelho)}
 .cartaz-cena.neutra h3{color:var(--texto)}
-.dados-cena{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 18px}
+/* UMA COLUNA SÓ (pedido do dono, 18/08/2026): em duas colunas o valor
+   da esquerda ficava a 18px do rótulo da direita e o "23" parecia ser
+   dos "Feridos nossos" — a leitura saía fora de ordem conforme a
+   largura da tela. Uma coluna lê sempre de cima pra baixo. */
+.dados-cena{display:grid;grid-template-columns:1fr;gap:6px}
 .dado-cena{
   display:flex;justify-content:space-between;align-items:baseline;gap:10px;
   border-bottom:1px solid var(--sulco);padding-bottom:4px;
@@ -650,7 +654,6 @@ table.dados tr.selecionada td{background:#252525}
   text-transform:uppercase;color:var(--fraco);
 }
 .dado-cena b{font-size:14px;white-space:nowrap}
-@media (max-width:720px){ .dados-cena{grid-template-columns:1fr} }
 
 /* o mesmo cartaz por cima do palco, na bancada, que não tem
    tela de relatório depois da cena */
