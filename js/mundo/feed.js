@@ -748,11 +748,30 @@ TO.feed = (function(){
       const p2 = TO.competicoes.posicaoNaTabela(E, nosso.comp, nosso.f);
       const estadio = (M().time(nosso.c)||{}).estadio || '';
       const artEst = /^(Arena|Vila|Fonte|Ilha)/i.test(estadio) ? 'na' : 'no';
+      /* A ETAPA NA FRASE (reformulação do dono, 18/08/2026): grupos
+         falam "pela 3ª rodada da Copa do Nordeste"; mata-mata fala a
+         fase — "pela semifinal (ida)", "pelas quartas", "pela final". */
+      const deComp = nosso.compNome
+        ? (/^Copa/i.test(nosso.compNome) ? `da ${nosso.compNome}`
+                                         : `do ${nosso.compNome}`) : '';
+      let etapa = '';
+      if(nosso.fase){
+        let rot = String(nosso.fase)
+          .replace(' · ida', ' (ida)').replace(' · volta', ' (volta)');
+        if(/clubes$/i.test(rot)) rot = `fase de ${rot}`;
+        const plural = /^(Oitavas|Quartas)/i.test(rot);
+        etapa = `, pel${plural ? 'as' : 'a'} `+
+                `${rot.charAt(0).toLowerCase()}${rot.slice(1)}`;
+      } else if(nosso.rodada){
+        etapa = `, pela ${nosso.rodada}ª rodada`;
+      }
+      const abertura = etapa && deComp ? `${etapa} ${deComp}`
+                     : pelaComp(nosso.compNome);
       propor(E, {
         kind:'partida', peso:'decisao', voz:'jornal',
         chave:`partida|${E.data.ano}|${E.data.semana}|${E.data.dia}|${meu}`,
         texto:`Hoje tem ${nome(nosso.c)} × ${nome(nosso.f)}`+
-              `${pelaComp(nosso.compNome)}. `+
+              `${abertura}. `+
               (p1 && p2 ? `O ${nome(nosso.c)} está em ${p1}º na tabela `+
                           `e o ${nome(nosso.f)} em ${p2}º. ` : '')+
               `A bola vai rolar${estadio ? ` ${artEst} ${estadio}` : ''}.`,

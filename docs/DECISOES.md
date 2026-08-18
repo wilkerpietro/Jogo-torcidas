@@ -207,7 +207,10 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **Partida ao vivo** (17/08/2026): no dia do nosso jogo chega a
   mensagem com o botão INICIAR PARTIDA; clicado, o cartão vira uma
   barra de minutos (2' de jogo por segundo) e os gols do resultado —
-  com a posição dos dois na tabela e o estádio no texto de abertura —
+  com a etapa na frase (reformulação do dono, 18/08/2026: "pela 3ª
+  rodada da Copa do Nordeste" nos grupos; "pela semifinal (ida)",
+  "pelas quartas", "pela final" no mata-mata), a posição dos dois na
+  tabela e o estádio no texto de abertura —
   já simulado, mas escondido — saem conforme o tempo avança, a maior
   parte dos 30 aos 45 e dos 75 aos 90. Como é decisão, o relógio do
   feed fica preso até o apito final: o placar e o resumo da rodada só

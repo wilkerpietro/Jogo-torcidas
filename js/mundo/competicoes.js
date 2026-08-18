@@ -1015,7 +1015,10 @@ TO.competicoes = (function(){
           if(j.gc !== undefined && j.gc !== null) continue;
           const [a,b] = simular(j.c, j.f, 0);
           j.gc = a; j.gf = b;
-          feitos.push({comp:comp.id, compNome:comp.nome, ...j});
+          /* o número da rodada viaja com o jogo: a mensagem da nossa
+             partida fala "pela 3ª rodada" (pedido do dono, 18/08/2026) */
+          feitos.push({comp:comp.id, compNome:comp.nome,
+                       rodada: comp.rodadas.indexOf(r)+1, ...j});
         }
       }
       for(const m of comp.mata){
