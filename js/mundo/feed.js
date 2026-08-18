@@ -911,12 +911,6 @@ TO.feed = (function(){
         return {ok:true};
       }
 
-      /* --- as que a casca abre em tela --- */
-      case 'tela-ideologia':
-      case 'painel-expediente':
-      case 'tela-ataque':
-      case 'tela-caravana':
-      case 'cena-guerra':
       /* --- aniversários (textos do dono, 18/08/2026) --- */
       case 'aniv-ir': {
         marcar();
@@ -962,6 +956,12 @@ TO.feed = (function(){
         }
         return {ok:true};
       }
+      /* --- as que a casca abre em tela --- */
+      case 'tela-ideologia':
+      case 'painel-expediente':
+      case 'tela-ataque':
+      case 'tela-caravana':
+      case 'cena-guerra':
       case 'cena-defesa':
       case 'cena-escolta':
       case 'cena-treta':

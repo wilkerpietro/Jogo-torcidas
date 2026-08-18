@@ -450,8 +450,29 @@ TO.estado = (function(){
          precisa ser. */
       U.usarSemente(E.semente || 1);
       TO.competicoes.usarSave(E);
+      repararSave(E);
       mudou(); return E;
     }catch(e){ return null; }
+  }
+
+  /* CONSERTO DE SAVE FERIDO (18/08/2026): entre a v0.12.0 e a v0.12.2,
+     os botões de abertura (ideologia, expediente), ataque, caravana e
+     guerra caíam por engano no tratamento do convite de festa — cada
+     clique cobrava R$ 2.000 de uma "festa da undefined" e sujava as
+     relações com a chave 'undefined'. Aqui o save carregado devolve o
+     dinheiro e apaga a sujeira, uma vez só. */
+  function repararSave(E){
+    try{
+      if(E.relacoes) delete E.relacoes['undefined'];
+      if(E.marcaAjuda) delete E.marcaAjuda['undefined'];
+      const erradas = (E.transacoes||[]).filter(t =>
+        /Presença na festa da undefined/.test(t.descricao||''));
+      if(erradas.length && !E.estornoFestaFeito){
+        E.estornoFestaFeito = true;
+        lancar(E, 'Estorno — cobrança errada de festa',
+               erradas.length * 2000);
+      }
+    }catch(e){ /* conserto nunca pode derrubar a carga do save */ }
   }
 
   function existeSave(){
@@ -477,6 +498,7 @@ TO.estado = (function(){
         E = dados;
         U.usarSemente(E.semente || 1);
         TO.competicoes.usarSave(E);
+        repararSave(E);
         mudou();
         aoTerminar && aoTerminar({ok:true});
       }catch(e){
