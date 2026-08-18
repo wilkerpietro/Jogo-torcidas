@@ -138,7 +138,14 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   do CLUBE, a mesma pergunta — grande: R$ 10.000, potencial de
   R$ 10-20 mil, +2; simples: R$ 3.000, potencial de R$ 2-5 mil,
   +1; nada: −2. O custo e a moral saem na decisão; a receita sai no
-  dia da festa, com a mensagem do rendimento.
+  dia da festa, com a mensagem do rendimento. E o mundo também se
+  convida (18/08/2026): no aniversário de uma torcida da IA, ela
+  chama o próprio círculo — a praça sem briga e as aliadas e irmãs
+  declaradas; cada convidada aceita (R$ 2.000 do caixa dela, +3 de
+  relação entre as duas) ou recusa (−3), com chance de ir crescendo
+  com a relação — e quebrada não vai. Rival não recebe convite. Nós
+  ficamos de fora desse sorteio: o convite pra gente chega pelo
+  feed, com decisão nossa.
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de

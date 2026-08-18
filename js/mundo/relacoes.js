@@ -945,6 +945,60 @@ TO.relacoes = (function(){
       if(s) fora.push(s);
     }
     estradaIA(E, jogos, fora);
+    convitesDeAniversario(E);
+    return fora;
+  }
+
+  /* =======================================================
+     ANIVERSÁRIO ENTRE ELAS (decisão do dono, 18/08/2026)
+     Quando uma torcida do mundo faz aniversário — a mesma
+     data por hash que manda o convite pra gente —, ela também
+     convida o próprio círculo: as da mesma praça sem briga e
+     as aliadas e irmãs declaradas. Cada convidada aceita ou
+     recusa: aceitar custa R$ 2.000 do caixa dela e aproxima
+     as duas (+3); recusar afasta (−3). Quanto melhor a
+     relação, maior a chance de aparecer — e quebrada não vai.
+     ======================================================= */
+  const diaDoAnivIA = id => 1 + TO.mapa.hash(`${id}|aniv`) % 364;
+
+  function convitesDeAniversario(E){
+    const m = mundo(E);
+    const hoje = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
+    const fora = [];
+    for(const o of M().jogaveis()){
+      if(o.id === E.torcida.id || o.incompleta || !o.fundacao) continue;
+      const d = new Date(hoje.getFullYear(), 0, diaDoAnivIA(o.id));
+      if(d.getDate() !== hoje.getDate() || d.getMonth() !== hoje.getMonth())
+        continue;
+      /* o círculo da aniversariante */
+      const circulo = [...new Set([
+        ...M().torcidasEm(o.mapa),
+        ...(o.aliados || []).map(x => M().torcida(x)),
+        ...(o.irmandade || []).map(x => M().torcida(x))
+      ])].filter(x => x && x.id !== o.id && x.id !== E.torcida.id
+                        && !x.incompleta);
+      for(const c of circulo){
+        const rel = relacaoDelas(E, o.id, c.id);
+        if(rel <= HOSTIL) continue;               // rival não recebe convite
+        const t = m[c.id];
+        const podePagar = t && t.caixa > 2000;
+        const aceita = podePagar &&
+          U.rng() < U.limitar(0.5 + rel/100, 0.15, 0.95);
+        if(aceita){
+          if(t) t.caixa -= 2000;
+          moverRelacao(E, o.id, c.id, 3);
+        } else {
+          moverRelacao(E, o.id, c.id, -3);
+        }
+        fora.push({ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
+                   quem:o.nome, convidada:c.nome, aceitou:aceita});
+      }
+    }
+    if(fora.length){
+      E.convitesIA = E.convitesIA || [];
+      E.convitesIA.unshift(...fora);
+      if(E.convitesIA.length > 100) E.convitesIA.length = 100;
+    }
     return fora;
   }
 
@@ -1036,6 +1090,7 @@ TO.relacoes = (function(){
   return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
           ranking, posicaoNoRanking, situacaoFinanceira,
           brigasDeHoje, mundoDia, disponiveisIA, foraDeCombate, baixasIA,
+          convitesDeAniversario,
           mundo, balanco, ARQUETIPOS, economiaDelas,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,
