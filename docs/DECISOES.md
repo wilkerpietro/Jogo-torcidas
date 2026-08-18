@@ -154,7 +154,9 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   irmão, dia {data} comemoramos {idade} anos de história. A
   presença de vocês seria uma honra pra gente."): ir
   custa R$ 2.000 e rende +3 de relação (e conta como gesto na
-  convivência); não ir tira −3. Dez dias antes do NOSSO aniversário
+  convivência); não ir tira −3 de relação e −2 de prestígio na
+  régua de 0-100 (régua do dono, 18/08/2026 — furar aniversário
+  de aliado queima na rua). Dez dias antes do NOSSO aniversário
   o diretor pergunta a festa — grande: R$ 20.000, potencial de
   R$ 20-40 mil, +2 de moral; simples: R$ 5.000, potencial de
   R$ 4-8 mil, +1; nada: −2 de moral. Dez dias antes do aniversário

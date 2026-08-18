@@ -191,7 +191,8 @@ TO.feed = (function(){
         botoes:[
           {id:'ir',  rot:'Ir pra festa', acao:'aniv-ir',
            nota:'R$ 2.000 · +3 de relação'},
-          {id:'nao', rot:'Não ir', acao:'aniv-nao', nota:'−3 de relação'}
+          {id:'nao', rot:'Não ir', acao:'aniv-nao',
+           nota:'−3 de relação · −2 de prestígio'}
         ]
       });
     }
@@ -1005,8 +1006,12 @@ TO.feed = (function(){
         E.relacoes = E.relacoes || {};
         E.relacoes[id] = Math.max(-100, Math.min(100,
           TO.relacoes.nivel(E, id) - 3));
+        /* furar aniversário de aliado queima na rua (régua do dono,
+           18/08/2026): −2 de prestígio na régua de 0-100 */
+        TO.estado.mexerIndicador(E, 'prestigio', -0.4,
+          `Furamos o aniversário da ${(m.dados||{}).nome}`);
         m.consequencia = `Ficamos em casa. −3 de relação com a `+
-                         `${(m.dados||{}).nome}.`;
+                         `${(m.dados||{}).nome} · Prestígio nosso −2.`;
         return {ok:true};
       }
       case 'aniv-festa': {
