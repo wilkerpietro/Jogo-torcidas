@@ -199,6 +199,18 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   DISPENSAR a qualquer momento (18/08/2026), sem multa: o treino
   volta ao normal e a mensalidade para de cobrar no próximo
   fechamento.
+- **A provocação do rival** (pedido do dono, 18/08/2026): toda
+  briga NOSSA concluída puxa, logo depois da mensagem do confronto,
+  um recado do outro lado — voz "Na rua", assinado pela torcida.
+  Se ELES venceram, deboche: "Foi isso que vocês trouxeram hoje?
+  Vão treinar mais, que da próxima a gente nem desce do carro." /
+  "Manda a conta do hospital pra sede. A rua tem dono." / "Contamos
+  os que correram: faltou dedo pra contar. Fica em casa da
+  próxima." Se PERDERAM, promessa de volta: "Aproveita o dia,
+  porque isso não fica assim. A gente sabe onde vocês bebem." /
+  "Hoje foi de vocês. Anota aí: tem volta, e a volta é na sua
+  porta." / "Riram hoje, choram depois. Se cuida na próxima
+  caravana." Só texto — nenhum efeito de indicador.
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de

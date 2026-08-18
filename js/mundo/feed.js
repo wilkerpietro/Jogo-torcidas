@@ -852,6 +852,34 @@ TO.feed = (function(){
              a:{nome:a.nome, n:a.n, caidos:a.caidos, presos:a.presos},
              b:{nome:b.nome, n:b.n, caidos:b.caidos, presos:b.presos}}
     });
+
+    /* A PROVOCAÇÃO DO RIVAL (pedido do dono, 18/08/2026): briga
+       concluída, o outro lado manda recado — deboche quando ELES
+       venceram, promessa de volta quando apanharam. Cai logo depois
+       da mensagem do confronto, sem decisão, só veneno. */
+    if(d.torcidaId && b.nome){
+      const DEBOCHE = [
+        'Foi isso que vocês trouxeram hoje? Vão treinar mais, que da '+
+          'próxima a gente nem desce do carro.',
+        'Manda a conta do hospital pra sede. A rua tem dono.',
+        'Contamos os que correram: faltou dedo pra contar. Fica em '+
+          'casa da próxima.'
+      ];
+      const VOLTA = [
+        'Aproveita o dia, porque isso não fica assim. A gente sabe '+
+          'onde vocês bebem.',
+        'Hoje foi de vocês. Anota aí: tem volta, e a volta é na sua porta.',
+        'Riram hoje, choram depois. Se cuida na próxima caravana.'
+      ];
+      const lista = d.ganhamos ? VOLTA : DEBOCHE;
+      const fala = lista[TO.mapa.hash(
+        `provoca|${E.data.absoluto}|${d.torcidaId}`) % lista.length];
+      propor(E, {
+        kind:'provocacao', peso:'info', voz:'rua',
+        tipo: d.ganhamos ? '' : 'ruim',
+        texto:`${fala} — ${b.nome}`
+      });
+    }
   }
 
   const NOMES_CENA = {
