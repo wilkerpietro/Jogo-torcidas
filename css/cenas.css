@@ -155,11 +155,20 @@
   max-width:100%;
 }
 #djPalco canvas{max-width:100%; height:auto; display:block}
+/* UMA LINHA SÓ (pedido do dono, 18/08/2026): 1-4, Q, E, R e ENTER
+   lado a lado — a caixa em coluna cobria a briga que acontecia
+   embaixo dela */
 #djComandos{
   left:50%; transform:translateX(-50%); bottom:12px; right:auto; top:auto;
-  display:flex; flex-direction:column; gap:7px; align-items:center;
+  display:flex; flex-direction:row; flex-wrap:nowrap; gap:8px;
+  align-items:center;
   background:rgba(12,12,14,.82); border:1px solid rgba(255,255,255,.10);
-  padding:8px 10px; max-width:calc(100% - 24px);
+  padding:5px 10px; max-width:calc(100% - 24px); overflow-x:auto;
 }
-#djComandos .dj-botoes{display:flex; gap:6px; flex-wrap:wrap; justify-content:center}
-#djComandos #djFormacoes{display:flex; gap:5px; flex-wrap:wrap; justify-content:center}
+#djComandos .dj-botoes{display:flex; gap:6px; flex-wrap:nowrap}
+#djComandos #djFormacoes{display:flex; gap:5px; flex-wrap:nowrap;
+  margin-bottom:0}
+#djComandos .acao-btn{width:auto; white-space:nowrap}
+#djComandos .form-btn{flex:none; min-width:0; white-space:nowrap;
+  padding-left:8px; padding-right:8px}
+#djComandos .form-btn small{display:inline; margin-top:0; margin-left:5px}
