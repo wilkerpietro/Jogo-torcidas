@@ -115,6 +115,14 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   (membros + prestígio×2) × média de força e defesa dos membros. O
   cabeçalho mostra #posição ao lado do nome e as médias de moral,
   ataque e defesa ao lado do prestígio.
+- **Baixa nossa tira o rival de circulação** (conferência do dono,
+  18/08/2026): os feridos e presos que a NOSSA briga causa no rival
+  agora entram nos mesmos lotes das brigas entre IAs — ferido 30
+  dias fora, preso de 15 a 90 — descontando dos disponíveis, do
+  ranking e das brigas do mundo na hora. Antes a mensagem contava
+  81 feridos e o efetivo deles seguia inteiro; o único efeito era um
+  corte permanente de 40% dos caídos no ataque vencido, que saiu
+  junto (a baixa temporária de verdade substitui o desconto seco).
 - **A situação financeira pesa no ranking** (tabela do dono,
   18/08/2026): coluna própria com o rótulo do saldo atual de cada
   torcida, e o rótulo multiplica os pontos — Endividado (abaixo de

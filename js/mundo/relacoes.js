@@ -567,6 +567,25 @@ TO.relacoes = (function(){
     return reg;
   }
 
+  /* BAIXA VINDA DE BRIGA NOSSA (conferência do dono, 18/08/2026): o
+     rival que apanha da gente também sai de circulação — ferido 30
+     dias fora, preso de 15 a 90 — na mesma régua das brigas entre
+     IAs. Antes a mensagem contava os feridos e o efetivo dele
+     seguia inteiro. */
+  function baixasIA(E, id, feridos, presos){
+    const t = mundo(E)[id];
+    if(!t) return;
+    /* o contador entra na chave do cache do ranking: baixa nossa tem
+       de derrubar a posição deles na hora, como a briga de IA já faz */
+    E.baixasIASeq = (E.baixasIASeq || 0) + 1;
+    const abs = E.data.absoluto || 0;
+    if(feridos > 0)
+      (t.feridosIA = t.feridosIA||[]).push({n:Math.round(feridos), ate: abs + 30});
+    if(presos > 0)
+      (t.presosIA = t.presosIA||[]).push({n:Math.round(presos),
+                                          ate: abs + U.inteiro(15, 90)});
+  }
+
   function brigaIA(E, a, b, cidade, jogoRot, opts){
     opts = opts || {};
     const abs = E.data.absoluto || 0;
@@ -946,7 +965,8 @@ TO.relacoes = (function(){
   function ranking(E){
     const chave = `${E.data.ano}|${semanaAbs(E)}|${E.data.dia}|`+
       `${E.membros.length}|${Math.round(E.indicadores.prestigio*100)}|`+
-      `${E.brigasIATotal || (E.brigasIA||[]).length}|${Math.round(E.dinheiro)}`;
+      `${E.brigasIATotal || (E.brigasIA||[]).length}|${Math.round(E.dinheiro)}|`+
+      `${E.baixasIASeq || 0}`;
     if(cacheRanking.chave === chave) return cacheRanking.lista;
     mundo(E);
     const fora = [];
@@ -1014,7 +1034,7 @@ TO.relacoes = (function(){
 
   return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
           ranking, posicaoNoRanking, situacaoFinanceira,
-          brigasDeHoje, mundoDia, disponiveisIA, foraDeCombate,
+          brigasDeHoje, mundoDia, disponiveisIA, foraDeCombate, baixasIA,
           mundo, balanco, ARQUETIPOS, economiaDelas,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,

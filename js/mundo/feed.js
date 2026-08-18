@@ -645,6 +645,12 @@ TO.feed = (function(){
     const onde = d.local && d.local.cena ? nomeDaCena(d.local.cena) : 'na rua';
     const bairro = d.local && d.local.bairro ? `, no bairro ${d.local.bairro}` : '';
     const a = d.a || {}, b = d.b || {};
+    /* as baixas DELES saem de circulação de verdade (conferência do
+       dono, 18/08/2026): todo fechamento de briga nossa passa por
+       aqui, então é aqui que o ferido e o preso do rival entram nos
+       lotes que o ranking e as brigas do mundo já descontam */
+    if(b.torcidaId && b.torcidaId !== E.torcida.id && TO.relacoes.baixasIA)
+      TO.relacoes.baixasIA(E, b.torcidaId, b.caidos || 0, b.presos || 0);
     const vencedor = d.ganhamos ? (a.nome || E.torcida.nome) : (b.nome || '');
     const presosTxt = (a.presos || 0) > 0 ? ` ${a.presos} dos nossos presos.` : '';
     /* ninguém desceu pra segurar: não houve briga, houve prejuízo */

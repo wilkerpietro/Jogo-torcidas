@@ -331,8 +331,10 @@ TO.acoes = (function(){
           linhas.push(`${U.dinheiro(levou)} do caixa deles`);
         }
       }
-      if(m){ m.moral = U.limitar(m.moral - 3, 0, 20);
-             m.membros = Math.max(4, m.membros - Math.round((res.caidosVisitante||0)*0.4)); }
+      /* o corte permanente de membros saiu (18/08/2026): os caídos
+         agora viram baixa temporária de verdade em registrarConfronto
+         — ferido 30 dias, preso 15 a 90 — em vez do desconto seco */
+      if(m) m.moral = U.limitar(m.moral - 3, 0, 20);
       if(alvo.tipo === 'sede') linhas.push('faixa deles rasgada na porta');
     }else{
       linhas.push('a gente saiu de lá pior do que entrou');
