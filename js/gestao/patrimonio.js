@@ -184,8 +184,9 @@ TO.patrimonio = (function(){
        graça. Avião continua pago: ônibus não voa. */
     if(!E.onibus) lista.push({
       id:'onibus', rot:'Comprar o ônibus da torcida',
-      nota:'acaba a despesa da caravana na estrada · R$ 1.500/mês de '+
-           'combustível e manutenção · rota de avião continua paga',
+      nota:'a despesa da caravana na estrada morre e o rateio dos que '+
+           'vão vira receita · R$ 1.500/mês de combustível e manutenção '+
+           '· rota de avião continua paga',
       custo:100000, trava:trava(100000)});
 
     /* bomba também se compra pelo Financeiro (pedido do dono,

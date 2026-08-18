@@ -239,8 +239,13 @@ TO.financeiro = (function(){
        cheio do GDD §7.3 */
     const est = TO.planejamento && TO.planejamento.estimativaCaravana(E);
     const valor = est ? est.custo : CARAVANA;
-    /* ônibus próprio: a estrada sai de graça — nada a lançar */
-    if(valor > 0)
+    /* ônibus próprio (régua do dono, 18/08/2026): a despesa morreu, mas
+       o rateio dos que embarcam continua sendo pago — e vira RECEITA */
+    if(est && est.onibus && est.rateio > 0)
+      TO.estado.lancar(E,
+        `Caravana para ${destino} — rateio dos ${est.vao} no ônibus`,
+        est.rateio);
+    else if(valor > 0)
       TO.estado.lancar(E, `Caravana para ${destino}`+
         (est ? ` (${est.vao} pessoas, rateio de ${U.dinheiro(est.rateio)})` : ''),
         -valor);

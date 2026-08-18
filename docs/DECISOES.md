@@ -264,11 +264,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   de ingresso e bebida — o +0,8 de moral por festa rodava todo dia
   pelo expediente e saturava o indicador em dias. Moral agora vem de
   título, acesso, briga e caixa, não de churrasco.
-- **Ônibus da torcida** (17/08/2026): R$ 100.000 no Patrimônio.
-  Combustível e manutenção de R$ 1.500 no fim de cada mês, e 1% de
-  chance por mês de uma manutenção séria de R$ 15.000. Em troca, a
-  caravana de estrada sai de graça — o rateio some do compromisso —
-  e a rota de avião continua paga.
+- **Ônibus da torcida** (17/08/2026; régua do rateio em 18/08): R$
+  100.000 no Patrimônio. Combustível e manutenção de R$ 1.500 no fim
+  de cada mês, e 1% de chance por mês de uma manutenção séria de R$
+  15.000. Em troca, a DESPESA da caravana de estrada morre — mas
+  quem embarca continua pagando o rateio, e com a estrada de graça
+  esse rateio entra no caixa como RECEITA da viagem. A rota de avião
+  continua paga do jeito de sempre.
 - **Investir no clube tem aba própria** (17/08/2026): o reforço de
   elenco morava escondido dentro de Financeiro → Patrimônio e
   ninguém achava. Virou a subaba Elenco do Financeiro, com a mesma

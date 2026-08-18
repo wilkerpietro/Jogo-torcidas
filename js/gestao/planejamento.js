@@ -507,12 +507,15 @@ TO.planejamento = (function(){
     const porCabeca = r.id === 'ar' ? CABECA_AR
                     : CABECA_BASE + CABECA_TRECHO * r.saltos;
     const bruto = porCabeca*vao;
-    /* ônibus próprio (decisão do dono): estrada de graça — a conta do
-       mês do ônibus mora no financeiro. Avião continua pago. */
+    /* ônibus próprio (régua do dono, 18/08/2026): quem embarca CONTINUA
+       pagando o rateio — e como a estrada não custa mais nada pra
+       torcida, esse rateio entra no caixa como receita. A despesa da
+       caravana morre; a manutenção mensal do ônibus segue no
+       financeiro. Avião continua pago do jeito de sempre. */
     if(E.onibus && r.id !== 'ar')
       return {aptos:aptos.length, interessados, vao, vontade, rota:r,
-              porCabeca:0, bruto:0, rateio:0, custo:0, minimo:MINIMO,
-              onibus:true};
+              porCabeca, bruto, rateio: Math.round(bruto*RATEIO),
+              custo:0, minimo:MINIMO, onibus:true};
     return {aptos:aptos.length, interessados, vao, vontade, rota:r, porCabeca,
             bruto, rateio: Math.round(bruto*RATEIO),
             custo: Math.round(bruto*(1-RATEIO)), minimo:MINIMO};
@@ -634,7 +637,8 @@ TO.planejamento = (function(){
       põe('caravana', `Caravana para ${j.cidadeAdv || 'fora'}`,
           est ? est.custo : TO.financeiro.CARAVANA, pago,
           est ? (est.onibus
-                  ? `${est.vao} pessoas no ônibus da torcida — estrada de graça`
+                  ? `${est.vao} pessoas no ônibus da torcida — o rateio de `+
+                    `${U.dinheiro(est.rateio)} entra como receita`
                   : `${est.vao} pessoas por ${est.rota.nome} · `+
                     `${U.dinheiro(est.rateio)} sai do rateio dos que vão`)
               : 'rota ainda não escolhida — vale o valor cheio do GDD');
