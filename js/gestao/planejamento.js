@@ -950,10 +950,18 @@ TO.planejamento = (function(){
   const RELACAO_QUENTE = -55;
 
   const POLITICA_ATAQUE = [
-    {id:'nunca',   rot:'Nunca atacar'},
-    {id:'rivais',  rot:'Sempre atacar rivais'},
-    {id:'quentes', rot:`Atacar rivais com relação abaixo de ${RELACAO_QUENTE}`},
-    {id:'todos',   rot:'Sempre atacar todos'}
+    {id:'nunca',   rot:'Nunca atacar',
+     nota:'toda semana começa em paz; ataque só quando você marcar à mão — '+
+          'sem briga não há ferido, preso nem prestígio em jogo'},
+    {id:'rivais',  rot:'Sempre atacar rivais',
+     nota:'a diretoria marca ataque sozinha sempre que houver torcida rival '+
+          'no jogo — prestígio e baixas saem de cada briga'},
+    {id:'quentes', rot:`Atacar rivais com relação abaixo de ${RELACAO_QUENTE}`,
+     nota:`só marca ataque quando a relação está abaixo de ${RELACAO_QUENTE} — `+
+          'os ódios de verdade; o resto do calendário fica em paz'},
+    {id:'todos',   rot:'Sempre atacar todos',
+     nota:'marca ataque contra qualquer torcida metida no jogo — máximo de '+
+          'briga, de prestígio em disputa e de gente no hospital'}
   ];
 
   function politicas(E){

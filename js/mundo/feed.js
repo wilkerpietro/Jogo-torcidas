@@ -132,6 +132,66 @@ TO.feed = (function(){
     aniversariosDeHoje(E);
     placarDoDia(E, ctx.jogos || []);
     brigasDaSemana(E);
+    dicaDeHoje(E);
+  }
+
+  /* -------------------------------------------------------
+     7. AS DICAS DA DIRETORIA (pedido do dono, 19/08/2026)
+        Duas por mês — semana ímpar, dia 2 —, cada uma
+        explicando uma regra do jogo. São 40, na ordem em que
+        um jogador novo precisa delas, e recomeçam do zero
+        quando acabam. Números sempre na régua das telas.
+     ------------------------------------------------------- */
+  const DICAS = [
+    'O prestígio vive numa régua de 0 a 100 e é o nome da torcida na rua: entra no ranking com peso dobrado e sobe com briga vencida, título e ação no bairro.',
+    'A relação com cada torcida vai de −100 a +100: abaixo de −70 é Maior Rival, abaixo de −15 é Rival, até 20 é Neutro, até 70 é Aliado e de 70 pra cima é Irmandade.',
+    'Seus membros treinam sozinhos todo dia: a fila é sorteada com prioridade pra quem ainda não bateu o teto do cargo. As vagas de treino vêm da sede — 2, 4, 8, 12 ou 20 por dia, conforme o nível.',
+    'O professor de MMA custa R$ 2.000 por mês e faz cada treino render o dobro de força e defesa. Contrata e dispensa no Financeiro → Patrimônio.',
+    'Cada cargo tem teto de ficha: novato vai até 8, componente até 12, linha de frente até 18 e diretoria até 20. Promoção pede XP e força — e cargo maior paga mensalidade maior.',
+    'A mensalidade entra toda semana: R$ 20 por novato, R$ 50 por componente e R$ 100 por linha de frente e diretoria. Torcida grande é caixa forte.',
+    'O ranking de torcidas soma disponíveis + prestígio×2, multiplica pela média de força e defesa dos membros e ainda pela situação financeira. Feridos e presos saem da conta.',
+    'A situação financeira multiplica o ranking: Endividado corta pra 0,6×, e a escada sobe até Rico, que paga 1,6×. Caixa saudável é ranking alto.',
+    'A festa na sede custa R$ 700 e rende R$ 4,80 a 6,40 por presente. Com uns 150 disponíveis ela sempre dá lucro; abaixo disso é vaquinha.',
+    'Bar e loja rendem toda semana e pagam manutenção. Dá pra ampliar cada um por nível — e a fábrica corta o custo de insumo da loja e multiplica a receita dela.',
+    'A subsede é presença no bairro: rende toda semana e aumenta o alcance da torcida. Compra e ampliação moram no Financeiro → Patrimônio.',
+    'O ônibus custa R$ 100 mil e muda a estrada: a viagem sai de graça e o rateio dos embarcados vira RECEITA. Em troca, R$ 1.500 de manutenção por mês — e vez ou outra um conserto de R$ 15 mil.',
+    'Na caravana de estrada quem embarca paga rateio. Sem ônibus, o rateio abate o custo da viagem; de avião a viagem é sempre paga.',
+    'Reforçar o elenco do clube custa por ponto de força: de R$ 20 mil no time fraco a R$ 320 mil no gigante, teto 100. Time forte ganha mais, e vitória enche o recrutamento.',
+    'Assalto tem tabela: do mercadinho (10% de chance de cadeia, 45 dias) ao banco (50% e 180 dias). O sorteio é um só pro bonde inteiro — ou todos voltam com a partilha, ou todos caem.',
+    'Bombas custam R$ 600 o lote de 5 no Patrimônio. O estoque inteiro vai junto pra TODA briga — só a treta marcada é limpa, sem pedra nem bomba.',
+    'Na cena, o rival responde com até metade das suas bombas — mas nunca joga mais do que tem no paiol dele. Bomba jogada sai do estoque dos dois lados.',
+    'Treta marcada tem palco pelo tamanho: 5x5 no beco, 7x7 no pátio do galpão, 10x10 no campo de terra. Vale prestígio pro vencedor e moral pros membros.',
+    'Ataque a bar tem teto: no máximo 60 atacantes contra 40 defensores. E o bonde só sai pra UM ataque manual por semana.',
+    'Ferido volta em 5 a 15 dias; preso fica de 15 a 90. Enquanto estão fora, não treinam, não brigam e não contam no ranking.',
+    'A ida à delegacia solta presos em bloco com fiança 25% mais barata — do mais barato pro mais caro, até onde o caixa alcançar.',
+    'Quando um aliado hospedado apanha na sua cidade e você entra na briga, o prestígio da noite é DELE — pra você ficam +10 de relação na hora e a gratidão.',
+    'A recepção de aliado vai de R$ 25 a R$ 75 por cabeça: hospedar dá +2 de relação, escoltar +5, churrasco com escolta +12. Não receber cobra −5.',
+    'Aniversário de aliado: ir custa R$ 2.000 e rende +3 de relação; furar tira −3 de relação e −2 de prestígio. Só aliado e irmã de clube convidam.',
+    'No aniversário da torcida e do clube, a festa grande custa mais e rende mais; a simples é segura; não fazer nada derruba a moral. Os números estão na própria decisão.',
+    'Pra ir à guerra, marque o ataque na semana: o olheiro diz em quantos bondes o rival sai e por onde. Emboscar na ida pega o bonde deles quebrado em pedaços.',
+    'O olheiro erra: a confiança da leitura cai quando o rival está cauteloso e quando ele se divide em muitos bondes. Rival num bonde só é tudo ou nada.',
+    'Na estrada, rota curta pode cruzar praça de rival — e a caravana vira alvo de emboscada no posto ou na pista. Rota longa e avião custam mais e arriscam menos.',
+    'O prestígio de uma briga vai até ±10 por noite, contado pelos caídos e presos de cada lado. Fazer o rival correr sem briga rende de 1 a 6.',
+    'Vencer em menor número vale mais: o prestígio da vitória é multiplicado pela razão dos efetivos, de 0,5× (esmagando) a 2× (de zebra).',
+    'Nas brigas do mundo o favorito é efetivo × ficha média — e vence 70% das vezes. A zebra acontece, e quem ganha por baixo leva mais prestígio e moral.',
+    'Caixa no vermelho derruba a moral toda semana, pra você e pra qualquer torcida do mundo. Moral baixa esvazia a saída e piora a briga.',
+    'O recrutamento do expediente joga o dado do regime do clube: fase normal rende pouco, janela de título ou acesso enche a praça, rebaixamento seca tudo.',
+    'A campanha de recrutamento custa R$ 5.000 e estica o teto da sede em 50% por duas semanas — o empurrão pra crescer quando a sede é o gargalo.',
+    'A praça tem um bolo fixo de torcedores do seu clube: as organizadas irmãs dividem esse bolo. Cidade pequena não sustenta torcida gigante.',
+    'A sede dita tudo: teto de membros, vagas de treino por dia e o que dá pra construir. Ampliar sede é o investimento que destrava os outros.',
+    'As outras torcidas jogam o mesmo jogo: têm caixa, expediente, compram bar, loja, ônibus, professor de MMA e bombas — e investem no elenco do clube delas.',
+    'Na cena de briga: WASD move o líder, 1 a 4 trocam a formação, Q pedra, E bomba, R recua, ENTER entra pelo portão — e a rodinha do mouse dá zoom.',
+    'Formação é ferramenta: BONDE anda junto, MURALHA segura linha, QUADRADO protege o meio, ESPALHAR foge de bomba e cerca. Trocar na hora certa vira briga.',
+    'A PM esquenta com briga e arma na rua: o alerta enche, a pressão empurra, e grade rompida chama a tropa de choque. Recuar a tempo é sair inteiro — e decisão no feed segura o relógio até você responder.'
+  ];
+  function dicaDeHoje(E){
+    const sa = TO.relacoes.semanaAbs(E);
+    if(sa % 2 !== 1 || E.data.dia !== 2) return;
+    const i = (E.dicaSeq || 0) % DICAS.length;
+    const m = propor(E, {kind:'dica', peso:'info', voz:'diretor',
+      chave:`dica|${E.data.ano}|${E.data.semana}`,
+      texto: DICAS[i]});
+    if(m) E.dicaSeq = (E.dicaSeq || 0) + 1;
   }
 
   /* -------------------------------------------------------
@@ -600,8 +660,10 @@ TO.feed = (function(){
       texto: cfg.texto(a.nome),
       dados:{torcida:a.torcida, alvo:a.alvo, cena:a.cena},
       botoes:[
-        {id:'brigar', rot:cfg.brigar, acao:'cena-defesa'},
-        {id:'fugir',  rot:cfg.fugir,  acao:'fugir-defesa'}
+        {id:'brigar', rot:cfg.brigar, acao:'cena-defesa',
+         nota:'abre a cena — prestígio, feridos e presos saem da briga'},
+        {id:'fugir',  rot:cfg.fugir,  acao:'fugir-defesa',
+         nota:'ninguém desce: conta como derrota e o prestígio paga'}
       ]
     });
   }
@@ -654,8 +716,10 @@ TO.feed = (function(){
              classe:b.classe, tam},
       botoes:[
         {id:'bora',  rot:'Bora pro problema', acao:'cena-treta',
-         nota:`${tam} de cada lado`},
-        {id:'ficar', rot:'Ficar de fora', acao:'nada'}
+         nota:`${tam} de cada lado, sem pedra nem bomba — prestígio e `+
+              `moral pro vencedor`},
+        {id:'ficar', rot:'Ficar de fora', acao:'nada',
+         nota:'sem consequência: treta recusada morre aqui'}
       ]
     });
   }
@@ -709,8 +773,10 @@ TO.feed = (function(){
         dados:{aliado:a.id, rival:rival.id, escolta,
                aliados: a.estimativa},
         botoes:[
-          {id:'entrar', rot:'Entrar na briga', acao:'cena-escolta'},
-          {id:'fora',   rot:'Ficar de fora',   acao:'abandonar-escolta'}
+          {id:'entrar', rot:'Entrar na briga', acao:'cena-escolta',
+           nota:'abre a cena — o prestígio da noite é do aliado; pra nós, +10 de relação'},
+          {id:'fora',   rot:'Ficar de fora',   acao:'abandonar-escolta',
+           nota:'−15 de relação com o aliado'}
         ]
       });
       break;

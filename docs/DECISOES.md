@@ -341,6 +341,17 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   disco do jogador, sem deixar a vista passar da borda da cena;
   rolar pra baixo volta até a cena inteira de sempre. A rodinha em
   cima da cena não rola mais a página.
+- **As dicas da diretoria** (pedido do dono, 19/08/2026): 40 dicas
+  explicando as regras do jogo, caindo duas por mês no feed (semana
+  ímpar, dia 2), em ordem de importância pra quem chega, e
+  recomeçando quando acabam. Kind 'dica', voz da diretoria, números
+  sempre na régua das telas (prestígio 0–100 etc.). Nenhuma trava o
+  relógio. Junto: toda opção das telas de Ideologia e do Expediente
+  ganhou a explicação do efeito no próprio texto (a da ideologia
+  troca com a seleção), e os botões de decisão que mexem em
+  indicador ganharam nota de efeito (defesa/fugir, escolta
+  entrar/ficar de fora com o −15, treta, aniversários — que já
+  tinham).
 - **O lote de cenas de 19/08** (fotos do dono, 19/08/2026): nove fotos
   aéreas viraram cena jogável, pelo importador de foto (máscara de
   caminhabilidade por cor + conectividade; ganhou chão de terra, piso

@@ -407,7 +407,7 @@ TO.acoes = (function(){
   const LISTA = [
     {
       id:'recrutar', nome:'Recrutar', icone:'megafone', cena:'Praça',
-      efeito:'Novos membros, R$ 5 por novato',
+      efeito:'chance diária de 1–2 novatos (R$ 5 cada) — a fase do clube dita a sorte',
       disponivel(E){
         const p = previsaoRecrutamento(E);
         if(p.vaga <= 0) return {ok:false, motivo:'a sede está cheia'};
@@ -438,7 +438,7 @@ TO.acoes = (function(){
     },
     {
       id:'festa', nome:'Festa na sede', icone:'copo', cena:'Sede',
-      efeito:'Receita de ingresso e bebida',
+      efeito:'custa R$ 700; rende R$ 4,80–6,40 por presente — lucra com ~150 disponíveis',
       custo:700,
       disponivel(E){
         return E.dinheiro >= 700 ? {ok:true}
@@ -464,7 +464,7 @@ TO.acoes = (function(){
     },
     {
       id:'social', nome:'Ação social', icone:'megafone', cena:'Praça',
-      efeito:'Moral e prestígio no bairro',
+      efeito:'custa R$ 2.000; +3 de moral e +2 de prestígio',
       custo:2000,
       disponivel(E){
         return E.dinheiro >= 2000 ? {ok:true}
@@ -479,7 +479,7 @@ TO.acoes = (function(){
     },
     {
       id:'pichar', nome:'Pichar e colar adesivo', icone:'tijolo', cena:'Rua',
-      efeito:'Prestígio e território, provoca o rival',
+      efeito:'custa R$ 300; +2 de prestígio e esquenta o rival — 18% de chance de prisão',
       custo:300,
       disponivel(E){
         const gente = E.membros.filter(TO.membros.disponivel).length;
@@ -505,7 +505,7 @@ TO.acoes = (function(){
     },
     {
       id:'reuniao', nome:'Reunião de diretoria', icone:'conversa', cena:'Sede',
-      efeito:'Aproxima uma torcida aliada',
+      efeito:'sobe a relação com o aliado mais próximo; precisa de 2 diretores de pé',
       disponivel(E){
         const n = E.membros.filter(m=>m.cargo==='diretoria' && TO.membros.disponivel(m)).length;
         if(n < 2) return {ok:false, motivo:'precisa de dois diretores de pé'};
@@ -527,7 +527,7 @@ TO.acoes = (function(){
     },
     {
       id:'campanha', nome:'Campanha de recrutamento', icone:'megafone', cena:'Sede',
-      efeito:'Estica o teto da sede em 50% por duas semanas',
+      efeito:'custa R$ 5.000; teto da sede +50% por duas semanas',
       custo:5000,
       disponivel(E){
         if(TO.membros.emCampanha(E)) return {ok:false, motivo:'já está em campanha'};
@@ -542,7 +542,7 @@ TO.acoes = (function(){
     },
     {
       id:'delegacia', nome:'Ir à delegacia', icone:'conversa', cena:'Delegacia',
-      efeito:'Negocia a soltura em bloco, 25% mais barato',
+      efeito:'solta presos em bloco com fiança 25% mais barata',
       disponivel(E){
         const presos = E.membros.filter(m=>m.preso);
         if(!presos.length) return {ok:false, motivo:'ninguém preso'};
@@ -572,7 +572,7 @@ TO.acoes = (function(){
 
     /* --- as duas manuais que abrem cena: não entram no expediente --- */
     {id:'atacar', nome:'Atacar bar ou sede rival', icone:'tijolo', cena:'Bar',
-     efeito:'Saque, prestígio e dano ao rival', alvos:alvosDeAtaque, manual:true,
+     efeito:'saque e prestígio da briga; feridos e presos na conta — 1 ataque por semana', alvos:alvosDeAtaque, manual:true,
      disponivel(E){
        const aptos = TO.membros.aptosParaOEstadio(E).length;
        if(aptos < MINIMO_SAIDA)

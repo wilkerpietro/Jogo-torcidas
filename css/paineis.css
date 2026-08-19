@@ -288,6 +288,8 @@ select.campo:focus{outline:0;border-color:var(--rubro-vivo)}
   background:var(--painel);border:1px solid var(--linha);padding:14px 16px;
 }
 .pol-grupo{margin-bottom:12px}
+/* a linha que explica o efeito da opção selecionada (dono, 19/08/2026) */
+.pol-grupo .pol-nota{display:block;margin-top:4px;line-height:1.35}
 .pol-grupo > b{
   display:block;font-family:var(--titulo);font-size:11px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--fraco);margin-bottom:6px;

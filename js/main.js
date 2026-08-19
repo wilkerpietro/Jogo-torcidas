@@ -403,15 +403,27 @@
         if(it.id === atual) o.selected = true;
         sel.appendChild(o);
       }
-      sel.onchange = ()=>{ pend[rot] = ()=>aplicar(sel.value); };
+      /* O EFEITO DE CADA ESCOLHA, POR ESCRITO (pedido do dono,
+         19/08/2026): a linha abaixo do seletor explica o que a opção
+         selecionada faz, e troca junto com a seleção. */
+      const nota = el('small',{class:'fraco pol-nota'});
+      const explicar = ()=>{
+        const it = itens.find(x=>x.id === sel.value) || itens[0];
+        nota.textContent = it.nota || '';
+      };
+      explicar();
+      sel.onchange = ()=>{ pend[rot] = ()=>aplicar(sel.value); explicar(); };
       d.appendChild(sel);
+      d.appendChild(nota);
       cx.appendChild(d);
     };
     const pol = P.politicas(e);
     grupo('Nosso jogo', P.POLITICA_ATAQUE, pol.jogo,
           id=>P.definirPolitica(e, 'jogo', id));
     grupo('Aliados na cidade',
-          P.RECEPCAO.map(r=>({id:r.id, rot:r.rot})),
+          P.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
+            nota:(r.porCabeca ? `R$ ${r.porCabeca} por cabeça · ` : 'de graça · ')+
+                 `${r.relacao>0?'+':''}${r.relacao} de relação com o aliado — ${r.nota}`})),
           P.recepcaoPadrao(e) || 'nada',
           id=>P.definirRecepcaoPadrao(e, id === 'nada' ? 'nada' : id));
     grupo('Outros jogos na cidade', P.POLITICA_ATAQUE, pol.outros,
@@ -551,7 +563,7 @@
                     guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
                     aniversario:'Aniversário', barrival:'Bar rival',
-                    provocacao:'Provocação',
+                    provocacao:'Provocação', dica:'Dica',
                     confronto:'Confronto', placar:'Resultado',
                     rodada:'Rodada', partida:'Nossa partida',
                     assalto:'Assalto', brigas:'Brigas da semana'};
