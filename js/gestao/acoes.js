@@ -204,20 +204,30 @@ TO.acoes = (function(){
      Prestígio na régua de 0-100 (÷5 no indicador); relação não mexe —
      o dono ainda não precificou. */
   function fecharEstadio(E, alvo, res){
+    const R = TO.relacoes;
     const ganhou = res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu;
     const diff = (alvo.nossos||0) - (alvo.deles||0);
     const faixa = diff <= -11 ? 'menos' : diff >= 11 ? 'mais' : 'parelho';
     const T = ganhou
       ? {menos:{p: 3, m:-2}, parelho:{p: 2, m: 1}, mais:{p: 1, m: 0}}
       : {menos:{p:-1, m: 0}, parelho:{p:-2, m:-1}, mais:{p:-3, m:-2}};
+    /* a relação com o rival paga pela mesma régua do efetivo (preço do
+       dono, 19/08/2026): encarar quem era maior deixa mais ódio pra
+       trás do que passar por cima de quem era menor — e cai dos dois
+       lados do placar, porque briga em arquibancada nenhuma aproxima */
+    const REL = {menos:-3, parelho:-2, mais:-1};
     const t = T[faixa];
     const antesP = E.indicadores.prestigio, antesM = E.indicadores.moral;
+    const antesR = R.nivel(E, alvo.torcidaId);
     const motivo = `Briga na arquibancada contra a ${alvo.nome}`;
     TO.estado.mexerIndicador(E, 'prestigio', t.p/5, motivo);
     if(t.m) TO.estado.mexerIndicador(E, 'moral', t.m, motivo);
+    R.hostilidade(E, alvo.torcidaId, -REL[faixa]);
     const efeitos = [
       {ind:'prestigio', delta: r1(E.indicadores.prestigio - antesP), dono:'nosso'},
-      {ind:'moral',     delta: r1(E.indicadores.moral - antesM), dono:'nossa'}
+      {ind:'moral',     delta: r1(E.indicadores.moral - antesM), dono:'nossa'},
+      {ind:'relacao',   delta: r1(R.nivel(E, alvo.torcidaId) - antesR),
+       dono:`com a ${alvo.nome}`}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,

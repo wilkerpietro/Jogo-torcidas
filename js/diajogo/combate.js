@@ -473,16 +473,18 @@ TO.diaJogo.combate = (function(){
     const geradas = meuLado ? null : fichasDoPerfil(perfil, qtd);
     /* só o nosso bonde obedece à formação; aliado que divide o portão não */
     const meu = g.bonde ? !!g.bonde.nossa : !!s.jogador;
-    /* ONDE O BONDE SE ESPALHA AO NASCER.
-       Era um quadrado de 92 px de lado pra qualquer tamanho. Com 250
-       pessoas isso dá 34 px² por cabeça e o disco sozinho ocupa 154:
-       a esplanada abria com todo mundo dentro de todo mundo, e o
-       primeiro segundo era um empurra-empurra pra achar lugar. Agora o
-       raio vem do efetivo, com teto de 800 px — bonde de oito se junta
-       numa esquina, bonde de 250 ocupa quarteirão. A raiz no sorteio é
-       o que dá densidade uniforme; sem ela a nuvem sai com miolo
-       grosso e borda vazia. */
-    const raio = U.limitar(46 + 24*Math.sqrt(qtd), 46, P.raioVadiagem);
+    /* LADO A LADO, COMO NO QUADRADO (pedido do dono, 19/08/2026).
+       A nuvem redonda sorteada espalhava o bonde como se cada um
+       tivesse chegado por conta própria; torcida chega junta, em
+       bloco. A grade é a mesma do botão 3: `cols` pela raiz do
+       efetivo e passo de 18 px, que é o diâmetro do disco mais um
+       fio — encostado, sem sobrepor. Fica centrada no ponto do spawn,
+       e quem não couber (rua estreita, degrau da arquibancada) é
+       reencostado pelo `pontoLivreMaisProximo`, como sempre foi. */
+    const PASSO = 18;
+    const cols = Math.max(1, Math.ceil(Math.sqrt(qtd)));
+    const linhas = Math.ceil(qtd/cols);
+    const x0 = s.x - (cols-1)*PASSO/2, y0 = s.y - (linhas-1)*PASSO/2;
     /* E QUANDO O BONDE NÃO CABE NA RUA?
        Uma rua não é uma esplanada: 800 px de raio não existem ali. Duas
        saídas eram possíveis — cortar o efetivo pro que cabe, ou deixar
@@ -498,10 +500,23 @@ TO.diaJogo.combate = (function(){
        Com 140 discos: 181 / 186 / 179 / 150 / 218. Nenhuma cena chega
        perto de 60, então não há motivo de desempenho pra cortar
        ninguém. */
+    /* UM LUGAR POR CABEÇA. O reencosto no vão livre não sabe de quem
+       já nasceu: quando a grade bate em parede — degrau de
+       arquibancada, muro de beco — ele devolve o MESMO vão pra vários,
+       e os discos nascem empilhados no mesmo pixel. O registro de
+       ocupados desempata, procurando o vizinho livre em anéis da
+       célula da malha. Vale pra cena inteira, porque dois bondes podem
+       dividir o mesmo portão. */
+    /* a reserva é do TAMANHO DO DISCO (18 px, o passo da grade), e não
+       da célula de 8 da malha: reservando célula, dois discos cabiam
+       em quadrados vizinhos e nasciam sobrepostos pela metade */
+    const CEL = PASSO;
+    const ocupados = (J._ocupadosNasc = J._ocupadosNasc || new Set());
+    const chave = q => `${Math.round(q.x/CEL)}|${Math.round(q.y/CEL)}`;
+    const vago = q => A.caminhavel(q.x, q.y) && !ocupados.has(chave(q));
     for(let i=0;i<qtd;i++){
-      const a = U.rng()*Math.PI*2, dd = raio*Math.sqrt(U.rng());
-      let p=A.pontoLivreMaisProximo(s.x + Math.cos(a)*dd,
-                                    s.y + Math.sin(a)*dd, 7);
+      let p=A.pontoLivreMaisProximo(x0 + (i%cols)*PASSO,
+                                    y0 + Math.floor(i/cols)*PASSO, 7);
       /* NINGUÉM NASCE EM CIMA DE CASA. Quando a rua está lotada na hora
          do nascimento, a busca em anéis falha e devolve o ponto do
          sorteio — que pode ser um telhado, e disco em telhado não anda,
@@ -511,6 +526,16 @@ TO.diaJogo.combate = (function(){
         const q = A.pontoLivreMaisProximo(s.x, s.y, 7);
         p = A.caminhavel(q.x, q.y) ? q : {x:s.x, y:s.y};
       }
+      if(!vago(p)){
+        busca: for(let anel=1; anel<=14; anel++)
+          for(let dy=-anel; dy<=anel; dy++)
+            for(let dx=-anel; dx<=anel; dx++){
+              if(Math.max(Math.abs(dx), Math.abs(dy)) !== anel) continue;
+              const q = {x:p.x + dx*CEL, y:p.y + dy*CEL};
+              if(vago(q)){ p = q; break busca; }
+            }
+      }
+      ocupados.add(chave(p));
       const m = escalados[i];
       const lider = temLider && i===0;
       const d=new Disco(

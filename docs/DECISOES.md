@@ -351,6 +351,22 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   entram na conta — vão a todo jogo e travariam o recurso pra sempre.
   Medido: contra maior rival, o clima sobe em ~19 de 20 jogos e chega
   a TENSO em ~15 de 20.
+- **Nascimento lado a lado** (pedido do dono, 19/08/2026): o bonde
+  não nasce mais numa nuvem redonda sorteada — nasce em GRADE, como a
+  formação Quadrado (botão 3): colunas pela raiz do efetivo, passo de
+  18 px, bloco centrado no ponto do spawn. Cada um reserva o próprio
+  quadrado de 18 px, então ninguém nasce em cima de ninguém; quem não
+  couber (beco, degrau de arquibancada) é reencostado no vão livre
+  mais próximo, como sempre foi. Medido: vizinho mais próximo a 16 px,
+  que é disco encostado em disco.
+- **A bancada de cenas voltou** (pedido do dono, 19/08/2026):
+  `arredores.html` ganhou as oito cenas novas (três tretas, duas
+  emboscadas, três arquibancadas) nas abas, e voltou a montar — ela
+  quebrava desde que a ficha do rival passou a vir de `TO.membros`,
+  que a página não carregava. Os estádios abrem lá com os setores
+  ligados, pra planta ser a mesma que se vai editar. F2 continua sendo
+  o editor e o Exportar continua devolvendo o remendo pra colar em
+  `dados/cenas_editadas.js`.
 - **A briga na arquibancada** (imagens e tabela do dono, 19/08/2026):
   clima TENSO encerra a partida no placar já simulado e abre a cena
   do estádio da capacidade, com TODAS as torcidas presentes, cada uma
@@ -366,8 +382,9 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   O fecho usa a tabela do dono, pela diferença de efetivo: vitória em
   menor número (11+ a menos) Prestígio +3 · Moral −2; parelho (±10)
   +2 · +1; com 11+ a mais só +1. Derrota em menor número −1; parelho
-  −2 · Moral −1; com 11+ a mais −3 · Moral −2. Relação não mexe — o
-  dono ainda não precificou.
+  −2 · Moral −1; com 11+ a mais −3 · Moral −2. A RELAÇÃO com o rival
+  cai pela faixa de efetivo, ganhando ou perdendo (preço do dono,
+  19/08/2026): −3 em menor número, −2 parelho, −1 com 11+ a mais.
 - **Preços das recusas e da derrota na treta** (dono, 19/08/2026):
   ficar de fora da treta marcada custa −1 de prestígio; deixar o bar
   do rival quieto custa −1 de prestígio e −1 de moral; deixar o
