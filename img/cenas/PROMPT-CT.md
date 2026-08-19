@@ -17,13 +17,15 @@ em português com frequência, e escudo pintado prende a arte a um time só.
 
 ## A geometria da cena
 
-O muro do CT atravessa o quadro da esquerda pra direita e é a **parede de
-fundo** da briga. Tudo que se pisa está do lado de fora dele:
+O muro do CT atravessa o quadro **no terço de cima** e é a **parede de fundo**
+da briga. Tudo que se pisa está do lado de fora dele, e a faixa pisável foi
+puxada pra cima de propósito: **quase metade da altura do quadro é chão de
+briga**, senão os discos se espremem numa tira de calçada e a treta vira fila.
 
-- **faixa da calçada**, larga, colada no muro — é o chão principal, é onde a
-  torcida se ajunta e onde a treta cai;
-- **a esplanada da portaria**, um alargamento da calçada em frente ao portão:
-  o miolo da cena, onde o protesto se planta;
+- **a esplanada da portaria**, funda, uns 18 metros do muro até o meio-fio —
+  um recuo pavimentado que corre a largura inteira do quadro e alarga ainda
+  mais em frente ao portão. É o miolo da cena: onde o protesto se planta, onde
+  a festa se junta e onde a emboscada cai;
 - **a rua de duas mãos**, atravessando o quadro inteiro e **aberta nas duas
   bordas laterais** — as duas fugas;
 - **a calçada do outro lado**, na borda de baixo, estreita: quem é empurrado
@@ -40,7 +42,11 @@ com copa cobrindo o passeio: qualquer uma delas esconde justamente o chão onde
 os dois bondes se encostam. Árvore só na faixa do outro lado da rua.
 
 Escala: a mesma das cenas de rua — o quadro cobre uns **80 metros**, com a
-pista de duas mãos ocupando cerca de um oitavo da altura.
+pista de duas mãos ocupando cerca de um oitavo da altura. A repartição da
+altura, de cima pra baixo: **um quinto** de CT atrás do muro, **dois quintos**
+de esplanada, **um quinto** de pista e o resto de calçada oposta. Esplanada
+estreita é o erro que mata esta cena — com 200 discos, tira de calçada não é
+arena, é corredor.
 
 Spawns sugeridos: `mandante1` (200, 620) e `mandante2` (380, 690), chegando
 pela calçada oeste; `visitante1` (1340, 620) e `visitante2` (1180, 700), pela
@@ -64,9 +70,10 @@ ground on the outskirts of a Brazilian city, overcast diffuse daylight, soft
 shadows, desaturated muted colors, documentary photography, completely empty of
 people,
 
-a long boundary wall runs left to right across the middle of the frame, seen
-from directly above as a narrow continuous band showing only the top of the
-wall and never its side face, with a line of thin metal fencing along it,
+a long boundary wall runs left to right across the whole frame, high up, about
+one fifth of the way down from the top edge, seen from directly above as a
+narrow continuous band showing only the top of the wall and never its side
+face, with a line of thin metal fencing along it,
 
 set into the wall, a wide sliding vehicle gate, closed, seen from above as a
 flat metal panel, flanked by two square pillars; beside it a small security
@@ -77,15 +84,18 @@ above the gate, a plain rectangular sign panel mounted flat on a frame,
 completely blank: no name, no lettering, no badge, no crest, no logo anywhere
 in the picture,
 
-in front of the wall, a wide concrete sidewalk running the full width of the
-frame, widening into an open forecourt in front of the gate: plain concrete
-slabs, painted kerb, drain grates, two low concrete bollards, a rubbish bin, a
-stack of metal crowd barriers left against the wall, a small food cart parked
-at one end, a lamp post seen as a short stub with a long shadow, nothing
-overhanging the sidewalk at all,
+in front of the wall, a VERY DEEP paved forecourt, about eighteen metres from
+the wall to the kerb, filling roughly two fifths of the height of the frame and
+running the full width of the picture, one continuous uninterrupted expanse of
+plain concrete slabs with nothing built on it: painted kerb, drain grates, a
+few faded parking bay markings at one end, two low concrete bollards, a rubbish
+bin, a stack of metal crowd barriers left flat against the wall, a small food
+cart parked at one corner, a lamp post seen as a short stub with a long shadow,
+and nothing whatsoever overhanging this forecourt,
 
-below the sidewalk, a two-lane asphalt road crossing the whole frame from the
-left edge to the right edge, worn dark asphalt, faded yellow centre line,
+below the forecourt, taking about one fifth of the height of the frame, a
+two-lane asphalt road crossing the whole frame from the left edge to the right
+edge, worn dark asphalt, faded yellow centre line,
 painted black-and-white curbs, a zebra crossing in front of the gate, a coach
 bus and three cars parked along the kerb seen from directly above as roofs
 only, and beyond it a narrow sidewalk along the bottom edge with two trees seen
@@ -94,10 +104,10 @@ as round canopies,
 the road stays completely clear and open at the left edge and at the right edge
 of the picture,
 
-behind the wall, only a thin strip along the top of the frame: a paved
-manoeuvring yard, a car park with a few cars seen as roofs, a low
-administration building shown only as its flat intact roof, and the near corner
-of a training pitch with green grass and tall netting on poles,
+behind the wall, only a narrow strip along the top of the frame, no more than
+one fifth of its height: a paved manoeuvring yard, a few cars seen as roofs,
+the flat intact roof of a low administration building, and the near edge of a
+training pitch with green grass,
 
 STRICTLY NEUTRAL PALETTE, usable by any club: grey concrete, white plaster,
 dark grey and galvanised metal, black asphalt, green grass; no club colours, no
@@ -138,9 +148,10 @@ saturated colors, hdr, dramatic lighting, night, floodlit, rain
 ```python
 {'id': 'ct', 'arquivo': '<arquivo que saiu>.jpeg', 'saida': 'ct.webp',
  # a calçada, a esplanada do portão e a pista, de ponta a ponta
- 'sementes': [(0.50, 0.62), (0.20, 0.62), (0.80, 0.62),
-              (0.50, 0.55), (0.50, 0.80), (0.02, 0.80), (0.98, 0.80),
-              (0.02, 0.62), (0.98, 0.62)],
+ 'sementes': [(0.50, 0.45), (0.20, 0.45), (0.80, 0.45),
+              (0.50, 0.30), (0.50, 0.58), (0.20, 0.60), (0.80, 0.60),
+              (0.50, 0.75), (0.02, 0.75), (0.98, 0.75),
+              (0.02, 0.45), (0.98, 0.45)],
  'corredor': True},
 ```
 
@@ -149,12 +160,15 @@ saturated colors, hdr, dramatic lighting, night, floodlit, rain
 ```
 Shoot this from exactly overhead, at zenith: the wall shows only its top edge
 as a narrow band, the gate is a flat panel seen from above, the buildings show
-only their roofs and the vehicles only their roofs. Widen the concrete sidewalk
-in front of the gate into an open forecourt and remove everything that hangs
-over it — no bus shelter, no awning, no tree canopy above the pavement. Keep
-the road crossing the whole image and open at both edges, keep the gate closed
-with only the pedestrian turnstile as an opening, and keep the sign panel
-blank. No people anywhere.
+only their roofs and the vehicles only their roofs. Move the boundary wall up so
+it sits about one fifth of the way down from the top edge, and make the paved
+forecourt in front of it much deeper — a single uninterrupted expanse of
+concrete filling roughly two fifths of the height of the image, running the
+whole width, with nothing built on it and nothing hanging over it: no bus
+shelter, no awning, no tree canopy above the pavement. Keep the road crossing
+the whole image and open at both edges, keep the gate closed with only the
+pedestrian turnstile as an opening, and keep the sign panel blank. No people
+anywhere.
 ```
 
 ## Conferir
@@ -162,8 +176,10 @@ blank. No people anywhere.
 1. **Zênite primeiro**: portão de frente, muro com altura ou ônibus de perfil
    significam que a calçada atrás deles não foi fotografada — e é justamente
    ali que a torcida se ajunta.
-2. **A calçada é larga e limpa**, sem nada por cima. Abrigo de ônibus é o
-   erro clássico aqui, e ele come o miolo da cena.
+2. **A esplanada é funda e limpa**, ocupando uns dois quintos da altura, sem
+   nada por cima e sem nada construído nela. Abrigo de ônibus é o erro clássico
+   aqui, e ele come o miolo da cena; calçada estreita é o outro, e transforma a
+   briga numa fila encostada no muro.
 3. **A catraca é o único vão do muro.** Portão aberto transforma a cena numa
    invasão de CT, que é outra cena — e essa ainda não existe.
 4. **As duas pontas da rua estão livres**: são as fugas.
