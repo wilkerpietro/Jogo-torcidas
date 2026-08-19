@@ -400,7 +400,9 @@ TO.feed = (function(){
       dados:{alvo: alvo.id, nome: alvo.deQuem},
       botoes:[
         {id:'atacar', rot:'Atacar o bar', acao:'atacar-bar-rival',
-         nota:'abre a cena · saque da gaveta e do caixa deles'},
+         nota:'abre a cena — a briga vale até ±10 de prestígio; ganhando, '+
+              'saque de R$ 60 por defensor + 22% do caixa deles · '+
+              'Relação −26 (perdendo, −18)'},
         {id:'nada', rot:'Deixar quieto', acao:'nada'}
       ]
     });
@@ -611,7 +613,8 @@ TO.feed = (function(){
             `em ${j.cidadeAdv}, e a gente vai pra cima.`,
         dados:{tipo: j.casa ? 'casa' : 'fora', nota},
         botoes:[{id:'guerra', rot:'Ir pra Guerra', acao:'cena-guerra',
-                 args:{tipo: j.casa ? 'casa' : 'fora'}, nota}]
+                 args:{tipo: j.casa ? 'casa' : 'fora'},
+                 nota: nota + ' · a briga vale até ±10 de prestígio'}]
       });
     }
 
@@ -628,7 +631,8 @@ TO.feed = (function(){
               `${og.casa.nome} × ${og.vis.nome}, e a gente vai pra cima.`,
         dados:{tipo:'praca', chaveJogo:og.chave, dia:og.dia, nota},
         botoes:[{id:'guerra', rot:'Ir pra Guerra', acao:'cena-guerra',
-                 args:{tipo:'praca', chaveJogo:og.chave, dia:og.dia}, nota}]
+                 args:{tipo:'praca', chaveJogo:og.chave, dia:og.dia},
+                 nota: nota + ' · a briga vale até ±10 de prestígio'}]
       });
     }
   }
@@ -661,9 +665,11 @@ TO.feed = (function(){
       dados:{torcida:a.torcida, alvo:a.alvo, cena:a.cena},
       botoes:[
         {id:'brigar', rot:cfg.brigar, acao:'cena-defesa',
-         nota:'abre a cena — prestígio, feridos e presos saem da briga'},
+         nota:'abre a cena — a briga vale até ±10 de prestígio; segurando, '+
+              'Moral +1,5 · Prestígio +3,5; perdendo, Moral −3 · Prestígio −3,5'},
         {id:'fugir',  rot:cfg.fugir,  acao:'fugir-defesa',
-         nota:'ninguém desce: conta como derrota e o prestígio paga'}
+         nota:'ninguém desce: Moral −3 · Prestígio −3,5 · Relação −6'+
+              (a.alvo === 'bar' ? ' · levam R$ 60 por invasor + 10% do caixa' : '')}
       ]
     });
   }
@@ -716,8 +722,9 @@ TO.feed = (function(){
              classe:b.classe, tam},
       botoes:[
         {id:'bora',  rot:'Bora pro problema', acao:'cena-treta',
-         nota:`${tam} de cada lado, sem pedra nem bomba — prestígio e `+
-              `moral pro vencedor`},
+         nota:`${tam} de cada lado, sem pedra nem bomba — Prestígio `+
+              `±${tam >= 10 ? 5 : tam >= 7 ? 4 : 3} (vencedor leva, perdedor `+
+              `paga) · Relação −2 · vitória dá +2 de moral a quem foi`},
         {id:'ficar', rot:'Ficar de fora', acao:'nada',
          nota:'sem consequência: treta recusada morre aqui'}
       ]
@@ -774,7 +781,8 @@ TO.feed = (function(){
                aliados: a.estimativa},
         botoes:[
           {id:'entrar', rot:'Entrar na briga', acao:'cena-escolta',
-           nota:'abre a cena — o prestígio da noite é do aliado; pra nós, +10 de relação'},
+           nota:'abre a cena — Relação +10 com o aliado; o prestígio da '+
+                'noite (até ±10) vai pra ele'},
           {id:'fora',   rot:'Ficar de fora',   acao:'abandonar-escolta',
            nota:'−15 de relação com o aliado'}
         ]

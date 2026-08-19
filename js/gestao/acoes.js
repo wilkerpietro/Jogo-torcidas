@@ -464,7 +464,7 @@ TO.acoes = (function(){
     },
     {
       id:'social', nome:'Ação social', icone:'megafone', cena:'Praça',
-      efeito:'custa R$ 2.000; +3 de moral e +2 de prestígio',
+      efeito:'custa R$ 2.000; Moral +0,6 · Prestígio +2',
       custo:2000,
       disponivel(E){
         return E.dinheiro >= 2000 ? {ok:true}
@@ -479,7 +479,7 @@ TO.acoes = (function(){
     },
     {
       id:'pichar', nome:'Pichar e colar adesivo', icone:'tijolo', cena:'Rua',
-      efeito:'custa R$ 300; +2 de prestígio e esquenta o rival — 18% de chance de prisão',
+      efeito:'custa R$ 300; Prestígio +2 · Relação −9 com o rival mais próximo — 18% de chance de prisão',
       custo:300,
       disponivel(E){
         const gente = E.membros.filter(TO.membros.disponivel).length;
@@ -505,7 +505,7 @@ TO.acoes = (function(){
     },
     {
       id:'reuniao', nome:'Reunião de diretoria', icone:'conversa', cena:'Sede',
-      efeito:'sobe a relação com o aliado mais próximo; precisa de 2 diretores de pé',
+      efeito:'Relação +4,2 com o aliado mais próximo; precisa de 2 diretores de pé',
       disponivel(E){
         const n = E.membros.filter(m=>m.cargo==='diretoria' && TO.membros.disponivel(m)).length;
         if(n < 2) return {ok:false, motivo:'precisa de dois diretores de pé'};
@@ -572,7 +572,7 @@ TO.acoes = (function(){
 
     /* --- as duas manuais que abrem cena: não entram no expediente --- */
     {id:'atacar', nome:'Atacar bar ou sede rival', icone:'tijolo', cena:'Bar',
-     efeito:'saque e prestígio da briga; feridos e presos na conta — 1 ataque por semana', alvos:alvosDeAtaque, manual:true,
+     efeito:'a briga vale até ±10 de prestígio; no bar, saque de R$ 60 por defensor + 22% do caixa deles — 1 ataque por semana', alvos:alvosDeAtaque, manual:true,
      disponivel(E){
        const aptos = TO.membros.aptosParaOEstadio(E).length;
        if(aptos < MINIMO_SAIDA)
@@ -598,7 +598,7 @@ TO.acoes = (function(){
      }},
 
     {id:'pressionar', nome:'Pressionar o clube', icone:'megafone', cena:'CT',
-     efeito:'Cobra o elenco na cara, gasta relação com o clube', manual:true,
+     efeito:'chegando no gramado, Relação com o clube −18 · Moral +0,8; falhando, −28 · Moral −1,2', manual:true,
      disponivel(E){
        const aptos = TO.membros.aptosParaOEstadio(E).length;
        if(aptos < MINIMO_SAIDA)
