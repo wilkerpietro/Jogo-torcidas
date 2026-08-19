@@ -189,7 +189,46 @@ TO.acoes = (function(){
     if(ctx.acao === 'pressionar') return fecharPressao(E, res);
     if(ctx.acao === 'defender')   return fecharDefesa(E, ctx.alvo, res);
     if(ctx.acao === 'treta')      return fecharTreta(E, ctx.alvo, res);
+    if(ctx.acao === 'estadio')    return fecharEstadio(E, ctx.alvo, res);
     return null;
+  }
+
+  /* A BRIGA NA ARQUIBANCADA fecha com a tabela do dono (19/08/2026),
+     pela diferença de efetivo entre os lados no apito do clima:
+       vitória — em menor número (11+ a menos): Prestígio +3 · Moral −2;
+                 parelho (±10): Prestígio +2 · Moral +1;
+                 com 11+ a mais: Prestígio +1;
+       derrota — em menor número: Prestígio −1;
+                 parelho (±10): Prestígio −2 · Moral −1;
+                 com 11+ a mais: Prestígio −3 · Moral −2.
+     Prestígio na régua de 0-100 (÷5 no indicador); relação não mexe —
+     o dono ainda não precificou. */
+  function fecharEstadio(E, alvo, res){
+    const ganhou = res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu;
+    const diff = (alvo.nossos||0) - (alvo.deles||0);
+    const faixa = diff <= -11 ? 'menos' : diff >= 11 ? 'mais' : 'parelho';
+    const T = ganhou
+      ? {menos:{p: 3, m:-2}, parelho:{p: 2, m: 1}, mais:{p: 1, m: 0}}
+      : {menos:{p:-1, m: 0}, parelho:{p:-2, m:-1}, mais:{p:-3, m:-2}};
+    const t = T[faixa];
+    const antesP = E.indicadores.prestigio, antesM = E.indicadores.moral;
+    const motivo = `Briga na arquibancada contra a ${alvo.nome}`;
+    TO.estado.mexerIndicador(E, 'prestigio', t.p/5, motivo);
+    if(t.m) TO.estado.mexerIndicador(E, 'moral', t.m, motivo);
+    const efeitos = [
+      {ind:'prestigio', delta: r1(E.indicadores.prestigio - antesP), dono:'nosso'},
+      {ind:'moral',     delta: r1(E.indicadores.moral - antesM), dono:'nossa'}
+    ].filter(x=>x.delta);
+    if(TO.feed) TO.feed.registrarConfronto(E, {
+      torcidaId: alvo.torcidaId, ganhamos: ganhou,
+      local:{cena: alvo.cena || 'estadio-20', bairro:'arquibancada'},
+      a: nossoLado(E, alvo, res, ganhou),
+      b: ladoDeles(E, alvo, res, ganhou),
+      efeitos});
+    return {ganhou, dinheiro:0, efeitos,
+            titulo: ganhou ? 'A ARQUIBANCADA FICOU NOSSA'
+                           : 'CORRERAM COM A GENTE NO ESTÁDIO',
+            linhas:[`éramos ${alvo.nossos||0} contra ${alvo.deles||0} no setor`]};
   }
 
   /* A TRETA MARCADA fecha com a conta própria do dono (régua nova em

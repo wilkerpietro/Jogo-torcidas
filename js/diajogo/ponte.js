@@ -313,10 +313,10 @@ TO.diaJogo.ponte = (function(){
   /* =======================================================
      BOTÕES E ENTRADA
      ======================================================= */
-  /* a cena tem portão de estádio de verdade? os arredores e os três
-     estádios por capacidade (lote de 19/08) */
-  const entradaDeVerdade = () =>
-    !A.D.id || A.D.id === 'arredores' || /^estadio-/.test(A.D.id);
+  /* a cena tem portão de estádio de verdade? só os arredores. Na
+     arquibancada (estadio-*) o mesmo botão é a SAÍDA pelo túnel, com
+     os textos que a cena declara. */
+  const entradaDeVerdade = () => !A.D.id || A.D.id === 'arredores';
 
   function montarBotoes(){
     const cf=$('djFormacoes');

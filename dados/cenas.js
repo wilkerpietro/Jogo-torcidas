@@ -659,46 +659,111 @@ TO.dados.cenas = (function(){
     pmPostos:[{x:400, y:470}, {x:1100, y:540}]
   });
 
-  /* os três estádios por capacidade: anda-se no anel em volta da
-     arquibancada; o portão de cada torcida mora na beira do anel e a
-     cena se comporta como os arredores (ordem de entrar, PM nos
-     portões). O gradil do cordão fica pro editor, se o dono quiser. */
-  const fazEstadio = (id, nome) => cenaDeFoto({
-    id, nome, local:'Nos arredores do estádio',
+  /* Os três estádios, com os SETORES das imagens do dono (estadio
+     nivel 1/2/3.jpg, 19/08/2026): a briga é NA ARQUIBANCADA. Cada
+     escalão é uma torcida do clube, da maior pra menor (1º escalão =
+     a maior da praça — e isso vira se outra passar). PM e divisórias
+     (gradil) separam os setores como o dono marcou. As posições são
+     aproximadas: o puxador reencosta tudo no chão da foto. */
+  const fazEstadio = cfg => cenaDeFoto(Object.assign({
+    local:'Na arquibancada', gradesDaFoto:true,
+    /* na bancada não se "entra pelo portão": o fim da briga é sumir
+       pelo túnel do próprio setor, com o líder no ponto */
+    saida:{perto:'Sair pelo túnel', longe:'Túnel (leve o líder)',
+           feito:'sua torcida saiu pelo túnel com a bancada na mão',
+           dica:'Leve o líder até o túnel do seu setor.'}
+  }, cfg));
+
+  const estadio10 = fazEstadio({
+    id:'estadio-10', nome:'Estádio de 10 mil',
     spawns:[
-      {id:'mandante1', rot:'1º ESCALÃO MANDANTE', lado:'mandante', x:220,  y:960,
+      {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:300,
        jogador:true, entrada:'portao_mandante'},
-      {id:'mandante2', rot:'2º ESCALÃO MANDANTE', lado:'mandante', x:1300, y:960,
+      {id:'mandante2', rot:'MANDANTE 2º ESCALÃO', lado:'mandante', x:1000, y:865,
        entrada:'portao_mandante'},
-      {id:'visitante1',rot:'1º ESCALÃO VISITANTE',lado:'visitante', x:220,  y:60,
+      {id:'mandante3', rot:'MANDANTE 3º ESCALÃO', lado:'mandante', x:505,  y:838,
+       entrada:'portao_mandante'},
+      {id:'visitante1',rot:'VISITANTE 1º ESCALÃO',lado:'visitante', x:470, y:140,
        entrada:'portao_visitante'},
-      {id:'visitante2',rot:'2º ESCALÃO VISITANTE',lado:'visitante', x:1300, y:60,
+      {id:'visitante2',rot:'VISITANTE 2º ESCALÃO',lado:'visitante', x:640, y:140,
        entrada:'portao_visitante'}
     ],
     entradas:[
-      {id:'portao_mandante',  rot:'PORTÃO MANDANTE',  lado:'mandante',
-       x:768, y:950, raio:40, dir:[0,1]},
-      {id:'portao_visitante', rot:'PORTÃO VISITANTE', lado:'visitante',
-       x:768, y:70,  raio:40, dir:[0,-1]}
+      {id:'portao_mandante',  rot:'TÚNEL MANDANTE',  lado:'mandante',
+       x:1320, y:480, raio:40, dir:[1,0]},
+      {id:'portao_visitante', rot:'TÚNEL VISITANTE', lado:'visitante',
+       x:350, y:110, raio:40, dir:[0,-1]}
     ],
-    pmPostos:[{x:620, y:950}, {x:920, y:950}, {x:620, y:70}, {x:920, y:70}]
+    pmPostos:[{x:768, y:140}],
+    grades:[
+      {id:'div_norte1', rot:'DIVISÓRIA', de:{x:730, y:96},  ate:{x:730, y:190},
+       modulos:4, espessura:10},
+      {id:'div_norte2', rot:'DIVISÓRIA', de:{x:838, y:96},  ate:{x:838, y:190},
+       modulos:4, espessura:10}
+    ]
   });
-  const estadio10 = fazEstadio('estadio-10', 'Estádio de 10 mil');
-  const estadio20 = fazEstadio('estadio-20', 'Estádio de 20 mil');
-  const estadio40 = fazEstadio('estadio-40', 'Estádio de 40 mil');
-  /* no estadião a arquibancada desce até a borda de baixo da foto: as
-     ruas vivas são as LATERAIS — cada portão mora numa delas e os
-     escalões nascem nos quatro cantos */
-  estadio40.entradas[0].x = 40;   estadio40.entradas[0].y = 620;
-  estadio40.entradas[0].dir = [-1, 0];
-  estadio40.entradas[1].x = 1496; estadio40.entradas[1].y = 400;
-  estadio40.entradas[1].dir = [1, 0];
-  estadio40.spawns[0].x = 90;   estadio40.spawns[0].y = 950;
-  estadio40.spawns[1].x = 90;   estadio40.spawns[1].y = 120;
-  estadio40.spawns[2].x = 1440; estadio40.spawns[2].y = 120;
-  estadio40.spawns[3].x = 1440; estadio40.spawns[3].y = 950;
-  estadio40.pmPostos = [{x:60, y:500}, {x:60, y:740},
-                        {x:1480, y:300}, {x:1480, y:520}];
+
+  const estadio20 = fazEstadio({
+    id:'estadio-20', nome:'Estádio de 20 mil',
+    spawns:[
+      {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:490,
+       jogador:true, entrada:'portao_mandante'},
+      {id:'mandante2', rot:'MANDANTE 2º ESCALÃO', lado:'mandante', x:675,  y:830,
+       entrada:'portao_mandante'},
+      {id:'mandante3', rot:'MANDANTE 3º ESCALÃO', lado:'mandante', x:875,  y:175,
+       entrada:'portao_mandante'},
+      {id:'visitante1',rot:'VISITANTE 1º ESCALÃO',lado:'visitante', x:275, y:490,
+       entrada:'portao_visitante'},
+      {id:'visitante2',rot:'VISITANTE 2º ESCALÃO',lado:'visitante', x:385, y:165,
+       entrada:'portao_visitante'},
+      {id:'visitante3',rot:'VISITANTE 3º ESCALÃO',lado:'visitante', x:260, y:275,
+       entrada:'portao_visitante'}
+    ],
+    entradas:[
+      {id:'portao_mandante',  rot:'TÚNEL MANDANTE',  lado:'mandante',
+       x:1310, y:705, raio:40, dir:[1,0]},
+      {id:'portao_visitante', rot:'TÚNEL VISITANTE', lado:'visitante',
+       x:245, y:390, raio:40, dir:[-1,0]}
+    ],
+    pmPostos:[{x:570, y:185}, {x:230, y:635}],
+    grades:[
+      {id:'div_norte1', rot:'DIVISÓRIA', de:{x:515, y:92},  ate:{x:515, y:225},
+       modulos:5, espessura:10},
+      {id:'div_norte2', rot:'DIVISÓRIA', de:{x:640, y:92},  ate:{x:640, y:225},
+       modulos:5, espessura:10},
+      {id:'div_oeste',  rot:'DIVISÓRIA', de:{x:205, y:570}, ate:{x:330, y:585},
+       modulos:5, espessura:10}
+    ]
+  });
+
+  const estadio40 = fazEstadio({
+    id:'estadio-40', nome:'Estádio de 40 mil',
+    spawns:[
+      {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1310, y:360,
+       jogador:true, entrada:'portao_mandante'},
+      {id:'mandante2', rot:'MANDANTE 2º ESCALÃO', lado:'mandante', x:505,  y:125,
+       entrada:'portao_mandante'},
+      {id:'visitante1',rot:'VISITANTE 1º ESCALÃO',lado:'visitante', x:360, y:815,
+       entrada:'portao_visitante'},
+      {id:'visitante2',rot:'VISITANTE 2º ESCALÃO',lado:'visitante', x:215, y:590,
+       entrada:'portao_visitante'},
+      {id:'visitante3',rot:'VISITANTE 3º ESCALÃO',lado:'visitante', x:400, y:718,
+       entrada:'portao_visitante'}
+    ],
+    entradas:[
+      {id:'portao_mandante',  rot:'TÚNEL MANDANTE',  lado:'mandante',
+       x:1350, y:250, raio:40, dir:[1,0]},
+      {id:'portao_visitante', rot:'TÚNEL VISITANTE', lado:'visitante',
+       x:300, y:900, raio:40, dir:[0,1]}
+    ],
+    pmPostos:[{x:170, y:512}, {x:338, y:630}, {x:515, y:753}, {x:445, y:855}],
+    grades:[
+      {id:'div_v23', rot:'DIVISÓRIA', de:{x:280, y:585}, ate:{x:345, y:660},
+       modulos:4, espessura:10},
+      {id:'div_v31', rot:'DIVISÓRIA', de:{x:430, y:700}, ate:{x:490, y:775},
+       modulos:4, espessura:10}
+    ]
+  });
 
   /* =======================================================
      QUANDO EXISTE FOTO
@@ -773,8 +838,10 @@ TO.dados.cenas = (function(){
     cena.blocos = []; cena.enfeites = []; cena.varais = [];
     cena.poligonos = {caminhavel:[], bloqueio:[]};
     /* railing modelado é coisa de cena desenhada: na foto não dá pra
-       saber onde o gradil está sem marcar na mão */
-    cena.grades = [];
+       saber onde o gradil está sem marcar na mão. A exceção é a cena
+       que declara gradesDaFoto — as divisórias da arquibancada foram
+       marcadas na mão pelo dono (imagens de 19/08/2026). */
+    if(!cena.gradesDaFoto) cena.grades = [];
 
     const puxa = puxador(cena, f.mascara);
     /* a pista da foto não cai na mesma altura da desenhada */

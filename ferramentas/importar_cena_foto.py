@@ -146,25 +146,24 @@ FONTES = [
      'sementes': [(0.05, 0.30), (0.05, 0.70), (0.95, 0.30), (0.95, 0.70),
                   (0.09, 0.36),
                   (0.50, 0.88), (0.50, 0.10), (0.17, 0.50), (0.83, 0.50),
-                  (0.25, 0.15), (0.75, 0.15), (0.25, 0.85), (0.75, 0.85)]},
+                  (0.25, 0.15), (0.75, 0.15), (0.25, 0.85), (0.75, 0.85)],
+     'excluir': [(0.155, 0.155, 0.855, 0.845)]},
+    # a briga e NA ARQUIBANCADA (setores do dono, 19/08/2026): o chao
+    # e a propria bancada; o gramado (mato) e o fosso ficam de fora
     {'id': 'estadio-20', 'arquivo': 'estadio_20.jpeg',
-     'saida': 'estadio_20.webp', 'engorda': 13,
-     'sementes': [(0.04, 0.30), (0.04, 0.70), (0.96, 0.30), (0.96, 0.70),
-                  (0.30, 0.96), (0.70, 0.96), (0.30, 0.04), (0.70, 0.04),
-                  (0.05, 0.05), (0.95, 0.05), (0.05, 0.95), (0.95, 0.95),
-                  (0.50, 0.96), (0.50, 0.04)],
-     # faixas largas: com 9% o anel quebrava nos cantos e o portao
-     # ficava sem rota (conexao diagonal nao e rota)
-     'recorte': [(0.00, 0.00, 1.00, 0.13), (0.00, 0.87, 1.00, 1.00),
-                 (0.00, 0.00, 0.13, 1.00), (0.87, 0.00, 1.00, 1.00)]},
+     'saida': 'estadio_20.webp', 'terra': True, 'claro': True,
+     'sementes': [(0.50, 0.12), (0.50, 0.88), (0.13, 0.50), (0.87, 0.50),
+                  (0.25, 0.20), (0.75, 0.20), (0.25, 0.80), (0.75, 0.80),
+                  (0.18, 0.35), (0.82, 0.35), (0.18, 0.65), (0.82, 0.65)],
+     'recorte': [(0.05, 0.04, 0.95, 0.96)],
+     'excluir': [(0.245, 0.215, 0.755, 0.795)]},
     {'id': 'estadio-40', 'arquivo': 'estadio_40.jpeg',
-     'saida': 'estadio_40.webp', 'engorda': 13,
-     'sementes': [(0.03, 0.30), (0.03, 0.70), (0.97, 0.30), (0.97, 0.70),
-                  (0.30, 0.97), (0.70, 0.97), (0.30, 0.03), (0.70, 0.03),
-                  (0.04, 0.04), (0.96, 0.04), (0.04, 0.96), (0.96, 0.96),
-                  (0.50, 0.97), (0.50, 0.03)],
-     'recorte': [(0.00, 0.00, 1.00, 0.10), (0.00, 0.90, 1.00, 1.00),
-                 (0.00, 0.00, 0.09, 1.00), (0.91, 0.00, 1.00, 1.00)]},
+     'saida': 'estadio_40.webp', 'terra': True, 'claro': True,
+     'sementes': [(0.50, 0.10), (0.50, 0.90), (0.09, 0.50), (0.91, 0.50),
+                  (0.30, 0.15), (0.70, 0.15), (0.30, 0.85), (0.70, 0.85),
+                  (0.15, 0.30), (0.85, 0.30), (0.15, 0.70), (0.85, 0.70)],
+     'recorte': [(0.02, 0.02, 0.98, 0.98)],
+     'excluir': [(0.275, 0.235, 0.725, 0.775)]},
 ]
 
 
@@ -234,7 +233,7 @@ def recortar(forma, retangulos):
 
 
 def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
-         terra=False, claro=False, engorda=0):
+         terra=False, claro=False, engorda=0, excluir=None):
     """1 onde dá pra pisar. Cor dá o candidato; conectividade dá a resposta."""
     R, G, B = a[:, :, 0], a[:, :, 1], a[:, :, 2]
     mx, mn = a.max(2), a.min(2)
@@ -268,6 +267,11 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
         cand &= corredor(asf)
     if recorte:
         cand &= recortar(cand.shape, recorte)
+    if excluir:
+        # o inverso do recorte: DENTRO destes retangulos nao ha chao.
+        # E o gramado dos estadios — a briga e na arquibancada, e sem
+        # isto o campo de terra batida do estadio pequeno vira palco.
+        cand &= ~recortar(cand.shape, excluir)
 
     # fecha junta e remove cisco antes de olhar conectividade
     cand = nd.binary_closing(cand, np.ones((5, 5)))
@@ -366,7 +370,7 @@ def main():
         m = chao(a, f['sementes'], topo, altura,
                  f.get('corredor', False), f.get('recorte'),
                  f.get('terra', False), f.get('claro', False),
-                 f.get('engorda', 0))
+                 f.get('engorda', 0), f.get('excluir'))
         cel = para_celulas(m)
         anc = ancoras(cel)
         fora[f['id']] = {

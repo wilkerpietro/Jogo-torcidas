@@ -578,6 +578,47 @@
      ======================================================= */
   const MIN_POR_SEG = 2;
 
+  /* =======================================================
+     A CHANCE DE O CLIMA SUBIR (pedido do dono, 19/08/2026)
+     Por minuto de jogo, a arquibancada tem uma chance de subir
+     um degrau — tranquilo → esquentando → tenso. Quem manda é a
+     PIOR relação entre as torcidas presentes: clássico de ódio
+     esquenta rápido, jogo de neutros quase nunca. E a regra que
+     vem antes de todas: se tem ALIADO nosso no estádio, o clima
+     fica tranquilo o jogo inteiro — ninguém briga com irmão na
+     arquibancada.
+
+     As chances por minuto foram escolhidas contra os 90 minutos:
+     com 0,030 o maior rival chega a tenso em ~7 de 10 jogos, que
+     é o que "bastante chance" quer dizer sem virar toda semana.
+     ======================================================= */
+  function chanceDeClima(e, d){
+    const vazio = {pMin:0, temAliado:false, pior:0, rivais:0};
+    if(!e || !d) return vazio;
+    /* AS IRMÃS DE CLUBE NÃO ENTRAM NA CONTA. Elas vão a TODO jogo do
+       nosso time — contá-las como "aliado presente" travaria o clima
+       em tranquilo pra sempre e o recurso nasceria morto. Quem pesa é
+       a torcida do OUTRO clube: é com ela que a arquibancada se pega. */
+    const meuClube = (TO.mundo.torcida(e.torcida.id) || e.torcida).clubeId;
+    const outras = (d.presenca || []).filter(p => {
+      if(!p.id || p.id === e.torcida.id) return false;
+      const o = TO.mundo.torcida(p.id);
+      return !o || o.clubeId !== meuClube;
+    });
+    if(!outras.length) return vazio;
+    const rel = p => TO.relacoes.nivel(e, p.id);
+    /* aliado do outro clube na arquibancada: ninguém se pega com quem
+       anda junto, e o jogo inteiro fica tranquilo (régua do dono) */
+    const temAliado = outras.some(p => rel(p) >= 20 ||
+      (TO.mundo.saoIrmas && TO.mundo.saoIrmas(e.torcida.id, p.id)));
+    if(temAliado) return {pMin:0, temAliado:true, pior:0, rivais:outras.length};
+    const pior = Math.min(...outras.map(rel));
+    const pMin = pior <= -70 ? 0.030
+               : pior <= -55 ? 0.020
+               : pior <= -15 ? 0.010 : 0.003;
+    return {pMin, temAliado:false, pior, rivais:outras.length};
+  }
+
   /* O RELÓGIO DA PARTIDA anda em minutos ACUMULADOS, não em hora de
      parede: minAcum guarda quanto já rolou, t0 marca a última
      retomada, e pausa e velocidade só mexem nesse par. É o que deixa
@@ -646,7 +687,24 @@
     trilho.append(fill, meio);
     linha.append(btPausa, btVel, trilho, rotMin);
     const eventos = el('div',{class:'partida-eventos'});
-    caixa.append(placar, linha, eventos);
+    /* O CLIMA DO ESTÁDIO (pedido do dono, 19/08/2026): um cartão
+       abaixo do placar — TRANQUILO, ESQUENTANDO, TENSO. Sobe conforme
+       o jogo anda; rival de relação muito ruim na casa esquenta mais
+       rápido; aliado presente segura o clima em tranquilo. TENSO abre
+       a arquibancada. */
+    const climaEl = el('div',{class:'partida-clima clima-0',
+      texto:'Clima do estádio: TRANQUILO'});
+    caixa.append(placar, linha, climaEl, eventos);
+
+    const chance = chanceDeClima(E(), d);
+    const pMin = chance.pMin;
+    if(!d.clima) d.clima = {nivel:0, min:0};
+    const ROT_CLIMA = ['TRANQUILO', 'ESQUENTANDO', 'TENSO'];
+    const pintarClima = ()=>{
+      climaEl.className = 'partida-clima clima-' + d.clima.nivel;
+      climaEl.textContent = 'Clima do estádio: ' + ROT_CLIMA[d.clima.nivel];
+    };
+    pintarClima();
 
     const pintarBotoes = ()=>{
       btPausa.textContent = d.pausada ? '▶' : '❚❚';
@@ -680,6 +738,23 @@
       }
       pintarPlacar(vistos.filter(x=>x.lado==='c').length,
                    vistos.filter(x=>x.lado==='f').length);
+      /* o clima anda minuto a minuto, junto com a barra */
+      if(!d.pausada && !m.respondido){
+        while(d.clima.min < min && d.clima.nivel < 2){
+          d.clima.min++;
+          if(pMin && U.rng() < pMin) d.clima.nivel++;
+        }
+        d.clima.min = Math.max(d.clima.min, min);
+        pintarClima();
+        if(d.clima.nivel >= 2 && !d.clima.aberto){
+          d.clima.aberto = true;
+          clearInterval(tm);
+          eventos.appendChild(el('div',{class:'partida-gol',
+            texto:`${min}' · A arquibancada se pegou!`}));
+          setTimeout(()=>abrirBrigaNoEstadio(m), 1100);
+          return;
+        }
+      }
       if(min >= 90){
         clearInterval(tm);
         setTimeout(()=>{
@@ -693,6 +768,91 @@
       }
     }, 250);
     return caixa;
+  }
+
+  /* =======================================================
+     O CLIMA FICOU TENSO: A ARQUIBANCADA SE PEGA
+     (pedido do dono, 19/08/2026). A partida fecha no placar já
+     simulado e a cena do estádio da capacidade abre com TODAS
+     as torcidas presentes, cada uma no seu SETOR: 1º escalão é
+     a maior torcida do clube na praça, 2º a seguinte, e assim
+     vai — e isso vira quando uma passa a outra. Os efetivos
+     são os da linha de presença da mensagem. O fecho usa a
+     tabela do dono (fecharEstadio, em acoes.js).
+     ======================================================= */
+  const SETORES_ESTADIO = {
+    'estadio-10': {mandante:3, visitante:2},
+    'estadio-20': {mandante:3, visitante:3},
+    'estadio-40': {mandante:2, visitante:3}
+  };
+  function abrirBrigaNoEstadio(m){
+    const e = E();
+    const d = m && m.dados;
+    /* A BRIGA É AGENDADA COM 1,1 s DE ATRASO — o tempo do aviso "a
+       arquibancada se pegou" aparecer. Nesse intervalo a partida pode
+       ter acabado por outro caminho (fim de jogo, save carregado,
+       feed limpo): mensagem já respondida não abre cena nenhuma. */
+    if(!e || !d || m.respondido) return;
+    TO.feed.encerrarPartida(e, m.id);
+    m.consequencia = (m.consequencia || '') +
+      ' O clima azedou e a arquibancada se pegou.';
+    const pres = (d.presenca || []).filter(p => p.id);
+    const nossos = pres.filter(p => p.casa === !!d.somosCasa)
+      .sort((a,b) => b.n - a.n);
+    const deles = pres.filter(p => p.casa !== !!d.somosCasa)
+      .sort((a,b) => b.n - a.n);
+    if(!deles.length || !nossos.some(p => p.id === e.torcida.id)){
+      /* sem rival na casa (ou nós nem fomos): nada abre */
+      TO.estado.salvar(); atualizarFeed();
+      if(!TO.feed.travado(e)) retomarTempo('decisao');
+      return;
+    }
+    const local = cenaDoEstadio(e);
+    const setores = SETORES_ESTADIO[local] || {mandante:3, visitante:3};
+    const nossoLado = d.somosCasa ? 'mandante' : 'visitante';
+    const outroLado = d.somosCasa ? 'visitante' : 'mandante';
+    /* mais torcidas que setores: as menores se juntam no último */
+    const compacta = (lista, teto)=>{
+      const fica = lista.slice(0, Math.max(1, teto)).map(p=>Object.assign({}, p));
+      for(const extra of lista.slice(Math.max(1, teto)))
+        fica[fica.length-1].n += extra.n;
+      return fica;
+    };
+    const nossosSet = compacta(nossos, setores[nossoLado]);
+    const delesSet  = compacta(deles,  setores[outroLado]);
+    const bondeDe = (p, lado)=>{
+      const o = TO.mundo.torcida(p.id) || {nome:p.nome};
+      const c = TO.mundo.coresDaTorcida(o);
+      return {lado, n:p.n, nossa: p.id === e.torcida.id,
+              nome:o.nome || p.nome, cor:c.cor, cor2:c.cor2, cor3:c.cor3,
+              sigla:TO.mundo.siglaTorcida(o),
+              perfil: p.id === e.torcida.id ? null : perfilDe(p.id)};
+    };
+    const bondes = [...nossosSet.map(p => bondeDe(p, nossoLado)),
+                    ...delesSet.map(p => bondeDe(p, outroLado))];
+    const minha = nossosSet.find(p => p.id === e.torcida.id) || {n:10};
+    const aptos = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
+      .slice(0, Math.max(2, Math.round(minha.n)));
+    const nosT = nossosSet.reduce((s,p)=>s+p.n, 0);
+    const delesT = delesSet.reduce((s,p)=>s+p.n, 0);
+    const rivalTop = delesSet[0];
+    $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
+    TO.estado.bloquear(true);
+    pararTudo('cena');
+    TO.diaJogo.ponte.montar({
+      canvas: $('djPrincipal'),
+      config:{escalacao:aptos, intencao:'atacar', paz:false, setores:true,
+              bondes, efetivoRival: delesT, local,
+              perfilRival: perfilDe(rivalTop.id)},
+      aoTerminar: res => fecharDiaDeJogo(res, null,
+        {acao:'estadio', alvo:{torcidaId: rivalTop.id,
+          nome:(TO.mundo.torcida(rivalTop.id)||{}).nome || rivalTop.nome,
+          nossos:nosT, deles:delesT, efetivo:delesT, cena:local}})
+    });
+    TO.estado.salvar();
+    atualizarFeed();
   }
 
   function cartaoMensagem(e, m){
@@ -3210,14 +3370,14 @@
     TO.estado.bloquear(true);
     pararTudo('cena');
     const p = TO.planejamento.plano(e);
-    /* nos arredores, o estádio da cena é o do jogo (fotos do dono,
-       19/08/2026): pequeno, médio ou grande pela capacidade */
-    const localDaCena = (!enc.local || enc.local === 'arredores')
-      ? cenaDoEstadio(e) : enc.local;
+    /* A GUERRA CONTINUA NOS ARREDORES, do lado de fora: cordão, PM e
+       o portão pra entrar. As cenas `estadio-*` viraram a
+       ARQUIBANCADA (setores do dono, 19/08/2026) e só abrem quando o
+       clima da partida fica tenso. */
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', bombas: p.bombas,
-                bondes, efetivoRival: deles.n, local: localDaCena },
+                bondes, efetivoRival: deles.n, local: enc.local },
       aoTerminar: res => fecharDiaDeJogo(res, enc)
     });
     /* GUERRA É BRIGA MARCADA: os dois lados vieram pra isso. As cenas
@@ -3267,6 +3427,9 @@
        −1 pro perdedor (fecharTreta). O prestígio genérico da noite não
        soma por cima. */
     if(acao && acao.acao === 'treta') res.prestigio = 0;
+    /* na arquibancada a conta é SÓ a tabela do dono (19/08/2026):
+       nem o prestígio da noite nem a moral genérica entram por cima */
+    if(acao && acao.acao === 'estadio'){ res.prestigio = 0; res.moralTorcida = 0; }
     /* O TAMANHO DO BONDE PESA NO PRESTÍGIO (decisão do autor): vitória
        em menor número vale mais, vitória esmagando em maior número
        vale menos. O fator é a razão entre os efetivos de abertura,
@@ -3704,7 +3867,9 @@
     abrirPainel, fecharPainel, get painel(){ return painel; },
     resolverIda: e => TO.praca.resolverIda(e || E()),
     abrirCaravana, abrirAtaque, abrirIdeologia,
-    abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena
+    abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena,
+    /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */
+    widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima
   };
 
   montarMenu();

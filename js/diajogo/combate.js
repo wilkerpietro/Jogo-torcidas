@@ -178,7 +178,7 @@ TO.diaJogo.combate = (function(){
          pra ir atrás. Nas outras cenas o interruptor continua sendo da
          cena inteira, porque lá a briga já é o motivo de estar ali. */
       paz: cfg.paz!==undefined ? cfg.paz
-         : (!D.id || /^estadio-/.test(D.id||'')) ? true
+         : !D.id ? true
          : cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
       config_perfilRival: cfg.perfilRival || null,
@@ -229,9 +229,13 @@ TO.diaJogo.combate = (function(){
        que é como sempre foi. */
     const ladoCfg = ((J.bondes_ || []).find(b=>b.nossa) || {}).lado || 'mandante';
     J.ladoNosso = ladoCfg;
-    /* o nosso primeiro na fila: é dele o portão do jogador */
+    /* o nosso primeiro na fila: é dele o portão do jogador. EXCETO na
+       cena de setores (arquibancada, 19/08/2026): lá o spawn é o
+       ESCALÃO — a fila já vem ordenada por tamanho e o líder continua
+       no bonde `nossa`, onde quer que ele sente. */
     const iNosso = porLado[ladoCfg].findIndex(b=>b.nossa);
-    if(iNosso > 0) porLado[ladoCfg].unshift(porLado[ladoCfg].splice(iNosso, 1)[0]);
+    if(iNosso > 0 && !cfg.setores)
+      porLado[ladoCfg].unshift(porLado[ladoCfg].splice(iNosso, 1)[0]);
 
     const temEscalacao = !!(cfg.escalacao && cfg.escalacao.length);
     const grupos = [];

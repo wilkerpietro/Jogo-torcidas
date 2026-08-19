@@ -341,6 +341,33 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   disco do jogador, sem deixar a vista passar da borda da cena;
   rolar pra baixo volta até a cena inteira de sempre. A rodinha em
   cima da cena não rola mais a página.
+- **O clima do estádio na partida ao vivo** (pedido do dono,
+  19/08/2026): abaixo da barra de minutos, um cartão mostra o clima —
+  TRANQUILO, ESQUENTANDO, TENSO. Ele sobe sozinho conforme o jogo
+  anda, com chance POR MINUTO ditada pela pior relação entre as
+  torcidas presentes do OUTRO clube: maior rival 3%, rival quente 2%,
+  rival 1%, neutro 0,3%. Aliado do outro clube na arquibancada segura
+  o clima em tranquilo o jogo inteiro. As irmãs do NOSSO clube não
+  entram na conta — vão a todo jogo e travariam o recurso pra sempre.
+  Medido: contra maior rival, o clima sobe em ~19 de 20 jogos e chega
+  a TENSO em ~15 de 20.
+- **A briga na arquibancada** (imagens e tabela do dono, 19/08/2026):
+  clima TENSO encerra a partida no placar já simulado e abre a cena
+  do estádio da capacidade, com TODAS as torcidas presentes, cada uma
+  no setor do seu ESCALÃO — 1º escalão é a maior torcida do clube na
+  praça, 2º a seguinte, e a ordem vira quando uma passa a outra. Os
+  efetivos são os da linha de presença da mensagem; sobrando torcida
+  além dos setores, as menores se juntam no último. Setores por
+  capacidade (imagens do dono): 10 mil = 3 mandante × 2 visitante,
+  20 mil = 3 × 3, 40 mil = 2 × 3, com PM e divisórias entre eles. O
+  gramado é bloqueado — a briga é na bancada — e o botão de saída é o
+  túnel do próprio setor. As cenas `estadio-*` deixaram de ser os
+  arredores: a guerra do dia de jogo voltou pra cena `arredores`.
+  O fecho usa a tabela do dono, pela diferença de efetivo: vitória em
+  menor número (11+ a menos) Prestígio +3 · Moral −2; parelho (±10)
+  +2 · +1; com 11+ a mais só +1. Derrota em menor número −1; parelho
+  −2 · Moral −1; com 11+ a mais −3 · Moral −2. Relação não mexe — o
+  dono ainda não precificou.
 - **Preços das recusas e da derrota na treta** (dono, 19/08/2026):
   ficar de fora da treta marcada custa −1 de prestígio; deixar o bar
   do rival quieto custa −1 de prestígio e −1 de moral; deixar o

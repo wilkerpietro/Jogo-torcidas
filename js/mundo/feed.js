@@ -182,7 +182,9 @@ TO.feed = (function(){
     'As outras torcidas jogam o mesmo jogo: têm caixa, expediente, compram bar, loja, ônibus, professor de MMA e bombas — e investem no elenco do clube delas.',
     'Na cena de briga: WASD move o líder, 1 a 4 trocam a formação, Q pedra, E bomba, R recua, ENTER entra pelo portão — e a rodinha do mouse dá zoom.',
     'Formação é ferramenta: BONDE anda junto, MURALHA segura linha, QUADRADO protege o meio, ESPALHAR foge de bomba e cerca. Trocar na hora certa vira briga.',
-    'A PM esquenta com briga e arma na rua: o alerta enche, a pressão empurra, e grade rompida chama a tropa de choque. Recuar a tempo é sair inteiro — e decisão no feed segura o relógio até você responder.'
+    'A PM esquenta com briga e arma na rua: o alerta enche, a pressão empurra, e grade rompida chama a tropa de choque. Recuar a tempo é sair inteiro — e decisão no feed segura o relógio até você responder.',
+    'Na partida ao vivo, o cartão do clima do estádio vai de tranquilo a esquentando e tenso: rival de relação muito ruim na arquibancada esquenta rápido, e aliado presente segura o jogo inteiro em tranquilo. Se ficar TENSO, a arquibancada se pega e a cena abre.',
+    'Na briga de arquibancada cada torcida senta no setor do seu escalão — 1º escalão é a maior torcida do clube, 2º a seguinte, e isso vira quando uma passa a outra. Vencer paga de +1 a +3 de prestígio (mais se você estava em menor número); perder tira de −1 a −3.'
   ];
   function dicaDeHoje(E){
     const sa = TO.relacoes.semanaAbs(E);
@@ -870,7 +872,7 @@ TO.feed = (function(){
         presentes = TO.praca.naRuaEm(E, E.data.dia)
           .filter(b => b.partida && b.partida.casa.id === nosso.c &&
                        b.partida.vis.id === nosso.f)
-          .map(b => ({nome:b.nome, n:b.n, casa: idsCasa.has(b.id)}));
+          .map(b => ({id:b.id, nome:b.nome, n:b.n, casa: idsCasa.has(b.id)}));
       }
       if(!presentes.length){
         for(const lado of ['c','f'])
@@ -883,7 +885,7 @@ TO.feed = (function(){
               n = TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id], E);
               if(n < 5) continue;   // caravana pequena demais não viaja
             }
-            if(n > 0) presentes.push({nome:o.nome, n, casa: lado==='c'});
+            if(n > 0) presentes.push({id:o.id, nome:o.nome, n, casa: lado==='c'});
           }
       }
       const listaDe = casa => presentes.filter(p=>p.casa===casa)
@@ -900,7 +902,10 @@ TO.feed = (function(){
               `A bola vai rolar${estadio ? ` ${artEst} ${estadio}` : ''}.`+
               linhaTorcidas,
         dados:{casa:nome(nosso.c), fora:nome(nosso.f),
-               gc:nosso.gc, gf:nosso.gf, comp:nosso.compNome || '', gols},
+               gc:nosso.gc, gf:nosso.gf, comp:nosso.compNome || '', gols,
+               /* o clima do estádio lê quem está lá (dono, 19/08/2026) */
+               somosCasa: nosso.c === meu,
+               presenca: presentes},
         botoes:[{id:'iniciar', rot:'Iniciar partida', acao:'iniciar-partida'}]
       });
     }
