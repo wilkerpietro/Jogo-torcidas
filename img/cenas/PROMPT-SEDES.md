@@ -61,24 +61,40 @@ tudo bem — briga de sede é de dezenas, não de centenas, e sala cheia trava.
 
 ## Bloco de zênite
 
-Abre os cinco prompts (já está colado em todos):
+**É o mesmo das outras nove cenas**, palavra por palavra — o das seis de
+`PROMPT-TRETAS.md` e o das três de `PROMPT-ESTADIOS.md` —, mais a frase de
+maquete que a sede precisa. Abre os cinco prompts, já colado em todos:
 
 ```
 strict orthographic top-down nadir view, camera exactly at zenith directly
-above the building, optical axis perpendicular to the ground, 90 degrees
-straight down, orthophoto projection, zero camera tilt, zero parallax, no
-perspective distortion, no vanishing point, verticals collapse to points,
-architectural cutaway seen from above: the roof of this building is entirely
-removed, its walls appear only as thick lines and never as surfaces seen from
-the side, every floor is evenly lit by the same flat daylight,
+above the scene, optical axis perpendicular to the ground, 90 degrees straight
+down, orthophoto / satellite imagery projection, zero camera tilt, zero
+parallax, no perspective distortion, no vanishing point, verticals collapse to
+points,
+
+every object seen only as its top surface: roofs only, vehicle roofs only, no
+façades, no building elevations, no side walls, no visible fronts of anything,
+nothing leaning outward at the edges of the frame,
+
+architectural cutaway from directly above: the roof of this building is
+entirely removed, its walls appear only as thick lines and never as surfaces
+seen from the side, every floor is evenly lit by the same flat daylight, and
+every piece of furniture shows only its top face with its shadow beside it —
+desks, beds, counters, shelves and machines are flat shapes lying on the
+floor,
 ```
 
 ## Negativo — vale pros cinco
 
 ```
 oblique aerial, bird's eye view, three quarter view, tilted camera, angled
-drone shot, perspective view, interior wall seen from inside, visible façade,
-wall elevation, room seen from the side, ceiling visible, roof over any room,
+drone shot, perspective view, visible façade, visible building side, visible
+wall elevation, roof offset from its base, leaning buildings, vehicles seen
+from the side, windscreen visible, car front visible, vanishing point,
+wide angle, fisheye, lens distortion, parallax,
+
+interior wall seen from inside, room seen from the side, furniture seen from
+the side, ceiling visible, roof over any room,
 partial roof, half roof, roof ring, eaves, overhang, covered walkway, shaded
 interior, dark room, unlit corners, walls hiding the floor, roof offset from
 its base, vanishing point, wide angle, fisheye, lens distortion, parallax,
@@ -115,12 +131,21 @@ Spawns sugeridos: `mandante1` (400, 900) e `mandante2` (620, 940), na calçada;
 
 ```
 strict orthographic top-down nadir view, camera exactly at zenith directly
-above the building, optical axis perpendicular to the ground, 90 degrees
-straight down, orthophoto projection, zero camera tilt, zero parallax, no
-perspective distortion, no vanishing point, verticals collapse to points,
-architectural cutaway seen from above: the roof of this building is entirely
-removed, its walls appear only as thick lines and never as surfaces seen from
-the side, every floor is evenly lit by the same flat daylight,
+above the scene, optical axis perpendicular to the ground, 90 degrees straight
+down, orthophoto / satellite imagery projection, zero camera tilt, zero
+parallax, no perspective distortion, no vanishing point, verticals collapse to
+points,
+
+every object seen only as its top surface: roofs only, vehicle roofs only, no
+façades, no building elevations, no side walls, no visible fronts of anything,
+nothing leaning outward at the edges of the frame,
+
+architectural cutaway from directly above: the roof of this building is
+entirely removed, its walls appear only as thick lines and never as surfaces
+seen from the side, every floor is evenly lit by the same flat daylight, and
+every piece of furniture shows only its top face with its shadow beside it —
+desks, beds, counters, shelves and machines are flat shapes lying on the
+floor,
 
 photograph of a small Brazilian football supporters' club headquarters, a
 plain single-storey building on a street corner, overcast diffuse daylight,
@@ -196,12 +221,21 @@ Spawns sugeridos: `mandante1` (500, 930) e `mandante2` (700, 960), na rua;
 
 ```
 strict orthographic top-down nadir view, camera exactly at zenith directly
-above the building, optical axis perpendicular to the ground, 90 degrees
-straight down, orthophoto projection, zero camera tilt, zero parallax, no
-perspective distortion, no vanishing point, verticals collapse to points,
-architectural cutaway seen from above: the roof of this building is entirely
-removed, its walls appear only as thick lines and never as surfaces seen from
-the side, every floor is evenly lit by the same flat daylight,
+above the scene, optical axis perpendicular to the ground, 90 degrees straight
+down, orthophoto / satellite imagery projection, zero camera tilt, zero
+parallax, no perspective distortion, no vanishing point, verticals collapse to
+points,
+
+every object seen only as its top surface: roofs only, vehicle roofs only, no
+façades, no building elevations, no side walls, no visible fronts of anything,
+nothing leaning outward at the edges of the frame,
+
+architectural cutaway from directly above: the roof of this building is
+entirely removed, its walls appear only as thick lines and never as surfaces
+seen from the side, every floor is evenly lit by the same flat daylight, and
+every piece of furniture shows only its top face with its shadow beside it —
+desks, beds, counters, shelves and machines are flat shapes lying on the
+floor,
 
 photograph of a Brazilian football supporters' club headquarters, a
 single-storey building around a courtyard, overcast diffuse daylight,
@@ -283,12 +317,21 @@ dormitório.
 
 ```
 strict orthographic top-down nadir view, camera exactly at zenith directly
-above the building, optical axis perpendicular to the ground, 90 degrees
-straight down, orthophoto projection, zero camera tilt, zero parallax, no
-perspective distortion, no vanishing point, verticals collapse to points,
-architectural cutaway seen from above: the roof of this building is entirely
-removed, its walls appear only as thick lines and never as surfaces seen from
-the side, every floor is evenly lit by the same flat daylight,
+above the scene, optical axis perpendicular to the ground, 90 degrees straight
+down, orthophoto / satellite imagery projection, zero camera tilt, zero
+parallax, no perspective distortion, no vanishing point, verticals collapse to
+points,
+
+every object seen only as its top surface: roofs only, vehicle roofs only, no
+façades, no building elevations, no side walls, no visible fronts of anything,
+nothing leaning outward at the edges of the frame,
+
+architectural cutaway from directly above: the roof of this building is
+entirely removed, its walls appear only as thick lines and never as surfaces
+seen from the side, every floor is evenly lit by the same flat daylight, and
+every piece of furniture shows only its top face with its shadow beside it —
+desks, beds, counters, shelves and machines are flat shapes lying on the
+floor,
 
 photograph of a Brazilian football supporters' club headquarters, a
 single-storey building with two rows of rooms around a central courtyard,
@@ -375,12 +418,21 @@ dormitório.
 
 ```
 strict orthographic top-down nadir view, camera exactly at zenith directly
-above the building, optical axis perpendicular to the ground, 90 degrees
-straight down, orthophoto projection, zero camera tilt, zero parallax, no
-perspective distortion, no vanishing point, verticals collapse to points,
-architectural cutaway seen from above: the roof of this building is entirely
-removed, its walls appear only as thick lines and never as surfaces seen from
-the side, every floor is evenly lit by the same flat daylight,
+above the scene, optical axis perpendicular to the ground, 90 degrees straight
+down, orthophoto / satellite imagery projection, zero camera tilt, zero
+parallax, no perspective distortion, no vanishing point, verticals collapse to
+points,
+
+every object seen only as its top surface: roofs only, vehicle roofs only, no
+façades, no building elevations, no side walls, no visible fronts of anything,
+nothing leaning outward at the edges of the frame,
+
+architectural cutaway from directly above: the roof of this building is
+entirely removed, its walls appear only as thick lines and never as surfaces
+seen from the side, every floor is evenly lit by the same flat daylight, and
+every piece of furniture shows only its top face with its shadow beside it —
+desks, beds, counters, shelves and machines are flat shapes lying on the
+floor,
 
 photograph of a large Brazilian football supporters' club headquarters, a
 single-storey compound of rooms around a courtyard, overcast diffuse daylight,
@@ -464,12 +516,21 @@ Spawns sugeridos: `mandante1` (800, 980) e `mandante2` (1100, 990), na rua;
 
 ```
 strict orthographic top-down nadir view, camera exactly at zenith directly
-above the building, optical axis perpendicular to the ground, 90 degrees
-straight down, orthophoto projection, zero camera tilt, zero parallax, no
-perspective distortion, no vanishing point, verticals collapse to points,
-architectural cutaway seen from above: the roof of this building is entirely
-removed, its walls appear only as thick lines and never as surfaces seen from
-the side, every floor is evenly lit by the same flat daylight,
+above the scene, optical axis perpendicular to the ground, 90 degrees straight
+down, orthophoto / satellite imagery projection, zero camera tilt, zero
+parallax, no perspective distortion, no vanishing point, verticals collapse to
+points,
+
+every object seen only as its top surface: roofs only, vehicle roofs only, no
+façades, no building elevations, no side walls, no visible fronts of anything,
+nothing leaning outward at the edges of the frame,
+
+architectural cutaway from directly above: the roof of this building is
+entirely removed, its walls appear only as thick lines and never as surfaces
+seen from the side, every floor is evenly lit by the same flat daylight, and
+every piece of furniture shows only its top face with its shadow beside it —
+desks, beds, counters, shelves and machines are flat shapes lying on the
+floor,
 
 photograph of a big Brazilian football supporters' club headquarters, a
 single-storey compound with a long internal corridor, overcast diffuse
