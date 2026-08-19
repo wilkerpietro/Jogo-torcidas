@@ -9,7 +9,7 @@ aparece na foto não existe pro jogo.
 |---|---|---|---|---|
 | Estádio pequeno | ~5 mil | `capacidade` até 12.000 | `estadio_pequeno.webp` | a fazer |
 | Estádio médio | ~20 mil | 12.000 a 30.000 | `estadio_medio.webp` | a fazer |
-| Estádio grande | ~40 mil | acima de 30.000 | `estadio_grande.webp` | a fazer |
+| Estádio grande — dois anéis | ~40 mil | acima de 30.000 | `estadio_grande.webp` | a fazer |
 
 A faixa não é chutada: `dados/estadios.js` tem 76 praças com capacidade real,
 do Dutrinha (5.000) ao Castelão (63.903). Com esses três cortes, **toda a lista
@@ -30,9 +30,9 @@ valer mais metro.
 |---|---|---|---|
 | pequeno | ~130 m de largura | 11,8 px/m | ~1,2 m |
 | médio | ~170 m | 9,0 px/m | ~1,6 m |
-| grande | ~210 m | 7,3 px/m | ~1,9 m |
+| grande | ~240 m | 6,4 px/m | ~2,2 m |
 
-Um disco de 1,9 m é um sujeito gordo visto de cima, e é o preço de ver o
+Um disco de 2,2 m é um sujeito gordo visto de cima, e é o preço de ver o
 estádio inteiro. Vale porque a briga de estádio é de bonde grande: com 200
 discos em campo, disco pequeno demais vira poeira. **Se um dia incomodar**, o
 conserto não é refazer a imagem — é o `celula` e o raio do disco na cena,
@@ -47,9 +47,12 @@ zênite, 16:9, sem gente, chão contínuo). O que é próprio do estádio:
   telhado é parede: a laje esconde justamente a arquibancada onde a briga
   acontece. Estádio brasileiro descoberto é a regra, não a exceção — e onde o
   projeto teria cobertura, ela é removida como a laje do bar;
-- **um anel só de arquibancada.** Segundo anel é telhado com outro nome: o
-  superior debruça sobre o inferior e come a metade de baixo. Arquibancada
-  única e íngreme, do fosso ao topo;
+- **anel de cima recuado, nunca em balanço.** Dois anéis podem — é o formato
+  da cena grande —, desde que o superior comece **por fora** do inferior, com um
+  vão de circulação aberto entre os dois. O que não pode é o de cima debruçar
+  sobre o de baixo: em balanço ele vira telhado e come a arquibancada inferior
+  inteira. Recuado, os dois aparecem a prumo e viram dois andares de chão de
+  briga ligados por escada;
 - **o fosso e o alambrado são a parede que dá forma à briga.** Eles separam
   gramado de arquibancada, e as passagens entre os dois — os vãos do fosso e as
   bocas de vomitório — são os gargalos por onde os bondes se encontram;
@@ -327,28 +330,42 @@ stadium stays completely empty.
 
 ---
 
-## ESTÁDIO GRANDE — ~40 mil
+## ESTÁDIO GRANDE — ~40 mil, dois anéis
 
-O caldeirão. Mesma lógica do médio, em outro porte: anel único e íngreme,
-descoberto, com o gramado lá no fundo. Aqui cabe bonde de duzentos discos —
-é a cena das brigas grandes, com espaço pra dois bondes se procurarem pelo anel
-inteiro antes de se encontrarem.
+O caldeirão, e o único dos três com **dois anéis de arquibancada**. O formato é
+o do estádio grande brasileiro moderno: anel inferior colado no gramado, anel
+superior **por fora dele**, e entre os dois um vão de circulação aberto ao céu.
 
-**Anel único, e isso importa mais aqui que nas outras duas.** É justamente no
-estádio grande que o modelo desenha dois anéis e cobertura, porque foi isso que
-ele viu em foto de arena moderna. Dois anéis significam o de cima escondendo o
-de baixo — o mesmo problema do viaduto, com nome de arquitetura. Estádio
-brasileiro grande e descoberto de arquibancada única existe: é o Arruda, é o
-Beira-Rio antigo, é a geral de concreto subindo direto do fosso ao topo.
+**Dois anéis podem, em balanço não.** A regra continua sendo a do viaduto: o
+que passa por cima do chão esconde o chão. O que salva este formato é o
+**recuo** — o anel superior não debruça sobre o inferior, ele começa depois
+dele, separado pelo vão de circulação. A prumo, os dois aparecem inteiros, cada
+degrau à vista, e o estádio vira **quatro andares de chão de briga**: anel
+superior, circulação, anel inferior, gramado. Se o de cima avançar por cima do
+de baixo, a metade inferior some da foto e não tem pincel que traga de volta.
 
-Geometria: igual à do médio, mais funda e mais larga — **anel de arquibancada
-ocupando quase todo o quadro**, gramado no centro, fosso largo e alambrado
-alto, **seis vomitórios por lado**, **duas passarelas atravessando o fosso**
-atrás dos gols, grade de setor cortando o anel em oito, rampas externas nas
-quatro quinas.
+Geometria, de dentro pra fora:
 
-Spawns sugeridos: `mandante1` (768, 140) e `mandante2` (500, 190), no anel
-norte; `visitante1` (768, 890) e `visitante2` (1040, 850), no anel sul.
+1. **gramado** no centro, com fosso largo e alambrado alto em volta;
+2. **duas passarelas atravessando o fosso**, atrás de cada gol — as únicas
+   ligações entre arquibancada e campo;
+3. **anel inferior contínuo**, descoberto, cortado por escadas radiais e com
+   seis bocas de vomitório por lado;
+4. **vão de circulação em anel**, aberto ao céu, entre os dois anéis: uma
+   esplanada de concreto dando a volta no estádio inteiro. É o corredor mais
+   importante da cena — quem domina ele corre o estádio todo;
+5. **anel superior recuado**, também descoberto, em quatro blocos (norte, sul,
+   leste, oeste) com **vão aberto nas quatro quinas**, ligado à circulação por
+   escadas largas e pelas rampas externas das quinas;
+6. **muro externo** fechando tudo, com portão na esquerda e na direita
+   chegando na borda do quadro.
+
+Os vãos das quinas do anel superior não são enfeite: são a fuga de quem é
+espremido lá em cima. Anel superior fechado em círculo perfeito vira ratoeira.
+
+Spawns sugeridos: `mandante1` (768, 120) e `mandante2` (520, 150), no anel
+superior norte; `visitante1` (768, 900) e `visitante2` (1020, 860), no anel
+inferior sul.
 
 ```
 strict orthographic top-down nadir view, camera exactly at zenith directly
@@ -359,39 +376,51 @@ points, every object seen only as its top surface, no façades, no stand seen
 from the front, all four sides of the bowl looking alike, nothing leaning
 outward at the edges of the frame,
 
-aerial drone photograph of a large empty Brazilian football stadium of the old
-concrete kind, capacity around forty thousand, overcast diffuse daylight, soft
-shadows, desaturated muted colors, documentary photography, completely empty of
-people,
+aerial drone photograph of a large empty Brazilian football stadium with two
+concentric rings of open terracing, capacity around forty thousand, overcast
+diffuse daylight, soft shadows, desaturated muted colors, documentary
+photography, completely empty of people,
 
 in the middle of the frame, a full-size grass pitch with painted white
 markings, mown stripes, two white goal frames lying flat in the image with
 their shadows beside them,
 
-a single vast uncovered concrete terrace surrounds the pitch on all four sides
-and fills most of the frame, ONE TIER ONLY: there is no upper ring, no second
-deck, no cantilever and no roof anywhere over the seats, the steps run
-continuously from the front row at the moat up to the back wall at the top,
-seen from directly above as wide concentric bands of parallel steps, evenly lit
-across their whole depth on every side, the far side of the bowl reading
-exactly like the near side,
+around the pitch, a wide dry moat and a tall chain-link fence, and two
+footbridges crossing the moat, one behind each goal, which are the only
+connections between the terracing and the pitch,
 
-between the terrace and the pitch, a wide dry moat and a tall chain-link fence
-running all the way around, and two footbridges crossing the moat, one behind
-each goal, which are the only connections between the terrace and the pitch,
+the LOWER RING: a continuous band of uncovered concrete steps encircling the
+pitch, seen from directly above as concentric bands of parallel steps, evenly
+lit across its whole depth on all four sides, radial stairways cutting through
+it at regular intervals, six dark tunnel mouths opening through the steps on
+each side,
 
-six dark tunnel mouths cut through the steps on each side of the bowl, and
-fences divide the terrace into eight sectors, each with a gate,
+between the two rings, an OPEN CONCOURSE: a wide ring-shaped concrete esplanade
+that runs all the way around the stadium, completely open to the sky, plainly
+visible from above along its whole length, with wide flights of stairs rising
+from it to the upper ring,
+
+the UPPER RING: a second band of uncovered concrete steps set FURTHER OUT than
+the lower ring, standing beyond the concourse and never over it, so that both
+rings and the concourse between them are fully visible from directly above; the
+upper ring is broken into four separate blocks — north, south, east and west —
+with an open gap at each of the four corners, and radial stairways cutting
+through each block,
+
+there is no roof anywhere: no canopy, no cantilever, no membrane, no covered
+section over either ring, no upper deck overhanging the lower one, both rings
+lie open to the sky and both are evenly lit from their first row to their last,
 
 a concrete outer wall closes the stadium, with wide open gates on the left and
 right sides meeting strips of asphalt street that reach the left and right edge
-of the frame, and long external access ramps spiralling at the four corners,
+of the frame, and long external access ramps spiralling at the four corners up
+to the upper ring,
 
 four floodlight pylons at the corners, seen from directly above as small square
 lattice tops with long shadows,
 
-outside the wall, only a thin strip along the top and bottom edges: asphalt
-car park, a few parked cars and buses seen as roofs only,
+outside the wall, only a thin strip along the top and bottom edges: asphalt car
+park, a few parked cars and buses seen as roofs only,
 
 photorealistic, natural materials, sun-bleached concrete, stained old concrete,
 worn grass, tropical Brazil, 8k satellite imagery quality, sharp detail, no
@@ -407,17 +436,21 @@ vertically in the image, far side of the bowl seen from inside, visible façade,
 roof offset from its base, leaning stands, vanishing point, wide angle,
 fisheye, lens distortion, parallax,
 
-roof, covered stand, stadium roof, canopy, awning, cantilever roof, membrane
-roof, upper tier, second ring, two tiers, three tiers, ring above ring, sky
-boxes, executive boxes over the seats, press box over the seats, big shadow
-over the seats,
+roof, stadium roof, covered stand, canopy, awning, cantilever, cantilevered
+upper deck, upper tier overhanging the lower tier, upper ring above the lower
+ring, ring on top of ring, deck over the concourse, sky boxes, executive boxes
+over the seats, press box over the seats, membrane roof, retractable roof,
+concourse hidden under the stand, shaded lower tier, dark lower ring,
+
+single tier only, one ring only, upper ring closed all the way round without
+corner gaps, closed moat with no crossing, no tunnels, no stairways,
 modern arena, all-seater stadium, coloured plastic seats, world cup arena,
-european stadium, olympic running track, retractable roof,
-closed moat with no crossing, no tunnels, unbroken terrace, closed gates,
+european stadium, olympic running track,
 
 illustration, cartoon, isometric, 3d render, video game asset, painting,
-vector art, blueprint, map icons, labels, text, sponsor boards, advertising,
-club badges, watermark, grid lines, vignette,
+vector art, blueprint, seating chart, seating map, section numbers, coloured
+sectors, map icons, labels, text, sponsor boards, advertising, club badges,
+watermark, grid lines, vignette,
 crowd, people, spectators, players, football match, flags, banners, moving cars,
 saturated colors, hdr, dramatic lighting, night, floodlit, rain
 ```
@@ -427,37 +460,48 @@ saturated colors, hdr, dramatic lighting, night, floodlit, rain
 ```python
 {'id': 'estadio-grande', 'arquivo': '<arquivo que saiu>.jpeg',
  'saida': 'estadio_grande.webp',
- # o gramado, os quatro lados do anel, as rampas e os portões
- 'sementes': [(0.50, 0.50), (0.38, 0.50), (0.62, 0.50),
-              (0.50, 0.12), (0.50, 0.88), (0.12, 0.50), (0.88, 0.50),
-              (0.22, 0.22), (0.78, 0.78),
+ # gramado, anel inferior, circulação, anel superior e os portões
+ 'sementes': [(0.50, 0.50), (0.40, 0.50), (0.60, 0.50),
+              (0.50, 0.22), (0.50, 0.78), (0.22, 0.50), (0.78, 0.50),
+              (0.50, 0.14), (0.50, 0.86), (0.14, 0.50), (0.86, 0.50),
+              (0.50, 0.06), (0.50, 0.94),
               (0.02, 0.50), (0.98, 0.50)],
- 'recorte': [(0.01, 0.03, 0.99, 0.99)]},
+ 'recorte': [(0.01, 0.02, 0.99, 0.99)]},
 ```
+
+As sementes vêm em três raios de propósito: as de 0,22/0,78 caem no anel
+inferior, as de 0,14/0,86 no vão de circulação e as de 0,06/0,94 no anel
+superior. Se o corte fechar um desses raios, a máscara perde um andar inteiro
+do estádio — e é justamente assim que se descobre que a foto tem balanço.
 
 ### Ordem curta de correção
 
 ```
 Shoot this from exactly overhead, at zenith: the four sides of the bowl look
 identical, every row of steps facing the pitch, and no stand is seen from the
-front. Remove the roof and every upper tier: leave ONE single ring of concrete
-steps running continuously from the moat up to the back wall, open to the sky
-and evenly lit across its whole depth on all four sides. Keep the wide moat and
-the fence around the pitch, and keep the two footbridges crossing the moat
-behind the goals. No people anywhere, no banners, no advertising.
+front. Keep TWO rings of terracing, but set the upper ring further out than the
+lower one, with a wide open concourse between them that is fully visible from
+above along its whole length. The upper ring must never overhang the lower ring
+or the concourse. Remove every roof, canopy and cantilever, so both rings lie
+open to the sky and both are evenly lit from their first row to their last.
+Leave an open gap at each of the four corners of the upper ring, keep the moat
+and fence around the pitch, and keep the two footbridges behind the goals. No
+people, no banners, no advertising.
 ```
 
 ### Conferir
 
-1. **Um anel só.** Segundo anel esconde o primeiro — é o viaduto de novo, com
-   nome de arquitetura. Se vier, é refazer: o degrau de baixo não foi
-   fotografado.
-2. **Sem cobertura**, nem faixa de laje na última fileira.
+1. **Os três andares aparecem inteiros**: anel inferior, vão de circulação e
+   anel superior, cada um com a mesma luz. Se a circulação sumir numa faixa
+   escura, o anel de cima está em balanço e o de baixo foi comido — refaça.
+2. **Sem cobertura em nenhum dos dois anéis.**
 3. **Os quatro lados iguais**, cada degrau encarando o gramado.
-4. **As duas passarelas sobre o fosso existem.**
-5. O anel ocupa quase o quadro inteiro: estacionamento e rua só como tira fina
-   nas bordas de cima e de baixo, que caem na faixa morta do importador.
-6. Fosso, alambrado, grade de setor, muro e traves viram parede no pincel.
+4. **As duas passarelas sobre o fosso existem**, senão gramado e arquibancada
+   viram ilhas separadas.
+5. **As quatro quinas do anel superior estão abertas** — é a fuga de quem
+   apanha lá em cima.
+6. Depois de importar: gramado, degraus e circulação viram chão de andar;
+   fosso, alambrado, grade de setor, muro e traves viram parede no pincel.
 
 ---
 
