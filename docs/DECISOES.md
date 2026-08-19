@@ -471,6 +471,32 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   70%); o acúmulo e o decaimento do tremor por golpe seguem iguais,
   só a amplitude visual encolheu.
 
+- **A grade cerca o visitante por todos os lados** (19/08/2026): a
+  lógica do gradil na arquibancada é uma só — o setor visitante fica
+  cercado, e não existe brecha por onde um disco atravesse sem
+  derrubar módulo. As divisórias desenhadas no rascunho (uma solta no
+  20 mil, duas tortas no 40 mil) saíram; no lugar entrou um cerco
+  traçado em cima da máscara pintada pelo dono: das travessias
+  possíveis entre o setor visitante e o resto da bancada, cada uma
+  ganha o seu módulo de grade ancorado 18px DENTRO da parede dos dois
+  lados, pra não sobrar fresta entre a grade e a máscara. Deu 1 grade
+  no estádio de 10 mil, 6 no de 20 mil e 8 no de 40 mil. Conferido na
+  malha do jogo: nenhuma rota do visitante até setor mandante sem
+  romper grade, e o túnel de cada setor continua alcançável.
+- **Na arquibancada se briga** (19/08/2026): o rival corria antes de
+  encostar e a cena terminava 0×0. Três coisas mudaram, e só na
+  bancada. (1) Não se corre por ver o tamanho do outro: dentro do
+  curral não há pra onde ir, então a fuga por minoria não vale ali.
+  (2) O preço de sangue dobra — corre-se com 50% do setor no chão,
+  contra os 30% da rua. (3) Quem não enxerga inimigo por perto marcha
+  pro setor rival mais próximo que ainda tem gente de pé, e o gradil
+  no caminho vira alvo (o campo de rota já dá a volta enquanto houver
+  volta). E a PM lá não cancela a briga: ela está DENTRO do setor,
+  todo mundo nasce colado nela e o alerta batia 100 antes do primeiro
+  soco — continua carregando e prendendo, mas o rival não recua por
+  causa dela. Medido nos três estádios: contato por volta dos 8s,
+  baixas dos dois lados, e debandada só depois dos 50%.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

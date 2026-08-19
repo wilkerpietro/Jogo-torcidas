@@ -521,6 +521,22 @@ TO.diaJogo.arredores = (function(){
     campos[id]=criarCampo(e.x, e.y, custoAtual);
     return campos[id];
   }
+  /* O MESMO CAMPO, PARA UM PONTO QUALQUER DA CENA.
+     Na arquibancada não existe portão pra onde marchar: o que existe é
+     o setor do rival do outro lado do gradil. O campo é o mesmo do
+     portão — com o custo das grades DE PÉ —, então enquanto houver
+     volta ele manda dar a volta, e só quando não houver é que `semRota`
+     acende e a grade vira alvo. */
+  function campoDoPonto(id, x, y, mods, versao){
+    if(versao!==undefined && versao!==versaoGrades){
+      versaoGrades=versao; custoAtual=celulasDeGrades(mods);
+      for(const k of Object.keys(campos)) delete campos[k];
+    }
+    const k='pt:'+id;
+    if(campos[k]) return campos[k];
+    campos[k]=criarCampo(x, y, custoAtual);
+    return campos[k];
+  }
   function limparCampos(){
     for(const k of Object.keys(campos)) delete campos[k];
     versaoGrades=-1; custoAtual=null;
@@ -809,7 +825,7 @@ TO.diaJogo.arredores = (function(){
     caminhavel, cabe, celulaLivre, cabeCorpo, pontoLivreMaisProximo,
     get fugas(){return fugas;}, fugaMaisPerto,
     mover, empurrar, livre, livrePara, raioMalha, atravessaGrade,
-    criarCampo, campoDaEntrada, limparCampos, celulasDeGrades,
+    criarCampo, campoDaEntrada, campoDoPonto, limparCampos, celulasDeGrades,
     montarGrades, barrarGrades,
     desenharFundo, desenharSobreposicoes,
     usarImagemLocal,

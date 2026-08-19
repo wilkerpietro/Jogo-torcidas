@@ -486,6 +486,13 @@ TO.dados.cenasEditadas = {
     ]
   },
 
+  /* AS GRADES CERCAM O VISITANTE (régua do dono, 19/08/2026): o setor
+     deles é um curral fechado por todos os lados — cada travessia da
+     bancada leva uma divisória, e cada divisória entra 18 px DENTRO da
+     parede nas duas pontas, pra não sobrar brecha entre a grade e o
+     muro por onde um disco passe sem romper nada. Provado por busca:
+     com as grades de pé, nenhum caminho leva do setor visitante ao
+     mandante, e o túnel deles continua alcançável. */
   /* Estádio de 20 mil — pintada no editor (F2) pelo dono, 19/08/2026. */
   'estadio-20': {
     mascara:
@@ -553,9 +560,12 @@ TO.dados.cenasEditadas = {
     ],
 
     grades:[
-      {"id":"div_norte1","rot":"DIVISÓRIA","de":{"x":515,"y":92},"ate":{"x":515,"y":225},"modulos":5,"espessura":10},
-      {"id":"div_norte2","rot":"DIVISÓRIA","de":{"x":640,"y":92},"ate":{"x":640,"y":225},"modulos":5,"espessura":10},
-      {"id":"div_oeste","rot":"DIVISÓRIA","de":{"x":205,"y":570},"ate":{"x":330,"y":585},"modulos":5,"espessura":10}
+      {"id": "cerca_1", "rot": "DIVISÓRIA", "de": {"x": 500, "y": 44}, "ate": {"x": 500, "y": 186}, "modulos": 6, "espessura": 10},
+      {"id": "cerca_2", "rot": "DIVISÓRIA", "de": {"x": 492, "y": 172}, "ate": {"x": 492, "y": 250}, "modulos": 4, "espessura": 10},
+      {"id": "cerca_3", "rot": "DIVISÓRIA", "de": {"x": 308, "y": 348}, "ate": {"x": 378, "y": 348}, "modulos": 3, "espessura": 10},
+      {"id": "cerca_4", "rot": "DIVISÓRIA", "de": {"x": 281, "y": 363}, "ate": {"x": 372, "y": 464}, "modulos": 6, "espessura": 10},
+      {"id": "cerca_5", "rot": "DIVISÓRIA", "de": {"x": 166, "y": 611}, "ate": {"x": 306, "y": 645}, "modulos": 7, "espessura": 10},
+      {"id": "cerca_6", "rot": "DIVISÓRIA", "de": {"x": 372, "y": 567}, "ate": {"x": 295, "y": 654}, "modulos": 5, "espessura": 10}
     ]
   },
 
@@ -627,8 +637,7 @@ TO.dados.cenasEditadas = {
     ],
 
     grades:[
-      {"id":"div_norte1","rot":"DIVISÓRIA","de":{"x":730,"y":96},"ate":{"x":730,"y":190},"modulos":4,"espessura":10},
-      {"id":"div_norte2","rot":"DIVISÓRIA","de":{"x":838,"y":96},"ate":{"x":838,"y":190},"modulos":4,"espessura":10}
+      {"id": "cerca_1", "rot": "DIVISÓRIA", "de": {"x": 788, "y": 60}, "ate": {"x": 788, "y": 226}, "modulos": 8, "espessura": 10}
     ]
   },
 
@@ -732,8 +741,14 @@ TO.dados.cenasEditadas = {
     ],
 
     grades:[
-      {"id":"div_v23","rot":"DIVISÓRIA","de":{"x":280,"y":585},"ate":{"x":345,"y":660},"modulos":4,"espessura":10},
-      {"id":"div_v31","rot":"DIVISÓRIA","de":{"x":430,"y":700},"ate":{"x":490,"y":775},"modulos":4,"espessura":10}
+      {"id": "cerca_1", "rot": "DIVISÓRIA", "de": {"x": 206, "y": 453}, "ate": {"x": 113, "y": 525}, "modulos": 5, "espessura": 10},
+      {"id": "cerca_2", "rot": "DIVISÓRIA", "de": {"x": 206, "y": 464}, "ate": {"x": 290, "y": 502}, "modulos": 4, "espessura": 10},
+      {"id": "cerca_3", "rot": "DIVISÓRIA", "de": {"x": 411, "y": 613}, "ate": {"x": 429, "y": 677}, "modulos": 3, "espessura": 10},
+      {"id": "cerca_4", "rot": "DIVISÓRIA", "de": {"x": 228, "y": 679}, "ate": {"x": 272, "y": 778}, "modulos": 5, "espessura": 10},
+      {"id": "cerca_5", "rot": "DIVISÓRIA", "de": {"x": 231, "y": 673}, "ate": {"x": 166, "y": 769}, "modulos": 5, "espessura": 10},
+      {"id": "cerca_6", "rot": "DIVISÓRIA", "de": {"x": 513, "y": 721}, "ate": {"x": 438, "y": 841}, "modulos": 6, "espessura": 10},
+      {"id": "cerca_7", "rot": "DIVISÓRIA", "de": {"x": 483, "y": 842}, "ate": {"x": 420, "y": 912}, "modulos": 4, "espessura": 10},
+      {"id": "cerca_8", "rot": "DIVISÓRIA", "de": {"x": 413, "y": 906}, "ate": {"x": 347, "y": 984}, "modulos": 5, "espessura": 10}
     ]
   }
 

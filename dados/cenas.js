@@ -667,6 +667,14 @@ TO.dados.cenas = (function(){
      aproximadas: o puxador reencosta tudo no chão da foto. */
   const fazEstadio = cfg => cenaDeFoto(Object.assign({
     local:'Na arquibancada', gradesDaFoto:true,
+    /* na bancada ninguém corre do tamanho do outro — está tudo cercado
+       de grade. Corre-se de sangue, e caro: metade do setor no chão
+       (régua do dono, 19/08/2026). */
+    semFugaPorMinoria:true, debandadaEm:50,
+    /* e como está tudo cercado, quem não vê ninguém por perto marcha
+       pro setor do rival e derruba o gradil no caminho — sem isso os
+       setores ficavam a 900 px um do outro sem nunca se encontrarem */
+    marchaAoInimigo:true, semRecuoPM:true,
     /* na bancada não se "entra pelo portão": o fim da briga é sumir
        pelo túnel do próprio setor, com o líder no ponto */
     saida:{perto:'Sair pelo túnel', longe:'Túnel (leve o líder)',

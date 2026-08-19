@@ -1241,6 +1241,13 @@ TO.diaJogo.combate = (function(){
             const q=A.pontoLivreMaisProximo(ax,ay,d.r);
             ax=q.x; ay=q.y;
           }
+        }
+        /* na bancada ninguém espera o rival vir: vai-se por cima da
+           grade, que é a única coisa entre um setor e o outro */
+        else if(D.marchaAoInimigo && agressivo(J,d) && setorInimigo(J,d)){
+          const s=setorInimigo(J,d);
+          campo=A.campoDoPonto('setor:'+s.id, s.x, s.y, J.grades, J.versaoGrades);
+          usarCampo=true;
         } else {
           campo=A.campoDaEntrada(d.entrada,J.grades,J.versaoGrades); usarCampo=true;
           const e=D.entradas.find(x=>x.id===d.entrada);
@@ -1373,6 +1380,38 @@ TO.diaJogo.combate = (function(){
   function campoDoSpawn(s){
     if(!camposSpawn[s.id]) camposSpawn[s.id]=A.criarCampo(s.x,s.y);
     return camposSpawn[s.id];
+  }
+
+  /* =======================================================
+     MARCHAR PRO SETOR DO RIVAL (arquibancada)
+     Nos arredores quem veio disposto tem um bonde com alvo sorteado;
+     na briga de rua os dois lados nascem colados e a hostilidade
+     resolve tudo. Na bancada não é nem uma coisa nem outra: os setores
+     nascem a 900 px um do outro e cercados de grade, e sem uma ordem
+     de marcha cada disco andava pro PRÓPRIO túnel — a briga que o
+     clima abriu terminava com zero baixas e o relógio correndo à toa
+     (medido: 0 de 31 módulos tocados em 20 s).
+
+     Marcha-se pro setor rival mais perto que ainda tem gente de pé,
+     porque setor vazio é marchar pra parede.
+     ======================================================= */
+  function setoresDePe(J){
+    if(J._setoresT === J.t && J._setoresPe) return J._setoresPe;
+    const m={};
+    for(const o of J.discos)
+      if(o.vivo && !o.fugindo && !o.entrou) m[o.spawn]=(m[o.spawn]||0)+1;
+    J._setoresPe=m; J._setoresT=J.t;
+    return m;
+  }
+  function setorInimigo(J, d){
+    const pe=setoresDePe(J);
+    let melhor=null, md=1e9;
+    for(const s of D.spawns){
+      if(!inimigos(d.lado, s.lado) || !pe[s.id]) continue;
+      const q=U.dist2(d.x,d.y,s.x,s.y);
+      if(q<md){md=q; melhor=s;}
+    }
+    return melhor;
   }
 
   /* =======================================================
@@ -1756,6 +1795,14 @@ TO.diaJogo.combate = (function(){
     const g=J.discos.filter(d=>d.lado===ladoDeles(J)&&d.vivo);
     if(!g.length) return;
     const sob=g.filter(d=>ameacaPM(J,d)).length/g.length;
+    /* NA ARQUIBANCADA NÃO SE RECUA DA PM (régua do dono, 19/08/2026).
+       O alerta foi calibrado pra rua, onde dá pra abrir distância do
+       cordão; no setor a PM está DENTRO do curral, todo mundo nasce
+       colado nela e o alerta ia a 100 antes do primeiro soco — o
+       rival virava as costas e a briga que o clima abriu terminava
+       0×0 (medido: 0 caídos em 17 s, 8 corridas). Lá a PM continua
+       carregando e prendendo; o que ela não faz é cancelar a briga. */
+    if(D.semRecuoPM) return;
     if(!J.recuoVisitante && J.alerta>78 && sob>0.22){
       J.recuoVisitante=true; J.recuoVisitanteAte=J.t+9;
       logar(J,'Os visitantes recuaram.','pm');
@@ -1975,8 +2022,15 @@ TO.diaJogo.combate = (function(){
       const total=J.total[lado], caidos=J.caidos[lado];
       if(total < 6) continue;
       let motivo = null;
-      if(caidos/total >= P.debandada/100) motivo = 'baixas';
-      else if(lado !== meuLado && !fugaPelaEntrada() && J.acordou &&
+      /* NA ARQUIBANCADA SE BRIGA (régua do dono, 19/08/2026): o setor
+         é curral cercado de grade — não existe olhar o tamanho do outro
+         e sair andando. Lá a cena declara `debandadaEm` (50% de baixas,
+         o dobro do preço de sangue de rua) e `semFugaPorMinoria`, e por
+         isso o confronto sempre acontece. */
+      const precoDeSangue = D.debandadaEm || P.debandada;
+      if(caidos/total >= precoDeSangue/100) motivo = 'baixas';
+      else if(!D.semFugaPorMinoria &&
+              lado !== meuLado && !fugaPelaEntrada() && J.acordou &&
               (J.encostou||{})[lado] && pe[lado] > 0 &&
               pe[lado] <= pe[OUTRO_LADO[lado]] * MINORIA) motivo = 'minoria';
       if(!motivo) continue;
