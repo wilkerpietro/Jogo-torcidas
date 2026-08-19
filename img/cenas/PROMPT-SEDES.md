@@ -32,11 +32,11 @@ de raio:
 
 | Nível | Pegada do prédio | O quadro cobre | Escala | O disco vira |
 |---|---|---|---|---|
-| 1 | ~24 × 14 m | ~40 m | 38 px/m | ~0,37 m |
-| 2 | ~30 × 18 m | ~40 m | 38 px/m | ~0,37 m |
-| 3 | ~34 × 22 m | ~45 m | 34 px/m | ~0,41 m |
-| 4 | ~42 × 26 m | ~55 m | 28 px/m | ~0,50 m |
-| 5 | ~58 × 34 m | ~70 m | 22 px/m | ~0,64 m |
+| 1 | ~24 × 14 m | ~46 m | 33 px/m | ~0,42 m |
+| 2 | ~30 × 18 m | ~50 m | 31 px/m | ~0,45 m |
+| 3 | ~34 × 22 m | ~58 m | 26 px/m | ~0,53 m |
+| 4 | ~42 × 26 m | ~68 m | 23 px/m | ~0,62 m |
+| 5 | ~58 × 34 m | ~84 m | 18 px/m | ~0,77 m |
 
 É o inverso do estádio: aqui o disco fica **menor** que o normal das ruas, e
 tudo bem — briga de sede é de dezenas, não de centenas, e sala cheia trava.
@@ -51,8 +51,12 @@ tudo bem — briga de sede é de dezenas, não de centenas, e sala cheia trava.
   Porta a mais é sede furada; porta a menos é sala inalcançável;
 - **o pátio é o miolo** — é o único espaço grande, é por onde tudo se liga e é
   onde a briga se decide;
-- **uma faixa de rua e calçada na borda de baixo**, onde o bonde atacante
-  chega. É a única parte da imagem que não é o prédio;
+- **o terço de baixo do quadro é rua**, e ele não é moldura: é por ali que o
+  bonde atacante se desloca até a porta, e a animação da chegada precisa de
+  pista pra acontecer. A calçada corre a largura inteira, passando na frente
+  dos vizinhos e chegando nas duas bordas — quem ataca entra por uma ponta,
+  anda pela calçada e escolhe a porta. Faixa fina de rua colada na parede põe o
+  oponente nascendo em cima do defensor;
 - **telhado dos vizinhos fica inteiro.** Só a sede está aberta;
 - **sem cor de torcida, sem escudo, sem nome.** A mesma arte serve às 138
   torcidas: bandeira enrolada é lona crua, camisa da loja é branca e cinza, e o
@@ -151,8 +155,8 @@ photograph of a small Brazilian football supporters' club headquarters, a
 plain single-storey building on a street corner, overcast diffuse daylight,
 desaturated muted colors, documentary photography, completely empty of people,
 
-the whole floor plan is visible from above, wall to wall, with nothing hiding
-any part of it,
+the building fills the upper two thirds of the frame and its whole floor plan
+is visible from above, wall to wall, with nothing hiding any part of it,
 
 the left half of the building is one large open COURTYARD of bare polished
 cement, cracked slabs, a floor drain, a stack of plastic chairs against the
@@ -170,9 +174,19 @@ rolls of plain canvas, coils of rope, a stepladder,
 in the bottom wall of the courtyard, TWO DOORWAYS open onto the street and they
 are the only openings in that wall,
 
-along the bottom edge of the frame, a strip of concrete sidewalk and a two-lane
-asphalt street with painted curbs, two cars parked at the kerb seen from above
-as roofs only,
+the bottom third of the frame is STREET, and all of it is walkable ground: a
+wide concrete sidewalk at least six metres deep running the full width of the
+picture along the front of the building, continuing past both sides of the
+headquarters in front of the neighbouring buildings and reaching the left and
+right edges of the frame; below it a two-lane asphalt street crossing the whole
+frame from edge to edge, worn dark asphalt, faded centre line, painted
+black-and-white curbs, a zebra crossing in front of the door, cars parked along
+the kerb seen from directly above as roofs only; and along the bottom edge a
+narrow strip of the opposite sidewalk,
+
+the sidewalk and the street stay completely clear and open at the left edge and
+at the right edge of the picture, with nothing overhanging them: no awning, no
+bus shelter, no tree canopy above the pavement,
 
 on the other sides, neighbouring buildings keep their roofs completely intact,
 shown only as roof surfaces: flat concrete rooftops with blue water tanks and
@@ -182,15 +196,17 @@ photorealistic, natural materials, sun-bleached concrete, plain unpainted
 walls, tropical Brazil, 8k, sharp detail, no people visible
 ```
 
-### Sementes pro importador
+
 
 ```python
 {'id': 'sede1', 'arquivo': '<arquivo que saiu>.jpeg', 'saida': 'sede1.webp',
  # o pátio, as duas salas e a rua
- 'sementes': [(0.35, 0.50), (0.35, 0.25), (0.35, 0.75),
-              (0.72, 0.30), (0.72, 0.70),
-              (0.50, 0.93), (0.05, 0.93), (0.95, 0.93)],
- 'recorte': [(0.10, 0.08, 0.90, 0.86), (0.00, 0.86, 1.00, 1.00)]},
+ 'sementes': [(0.35, 0.30), (0.35, 0.15), (0.35, 0.45),
+              (0.72, 0.18), (0.72, 0.42), (0.50, 0.72),
+              (0.10, 0.72), (0.90, 0.72), (0.50, 0.85),
+              (0.03, 0.85), (0.97, 0.85)],
+ 'recorte': [(0.10, 0.05, 0.90, 0.60),
+             (0.00, 0.62, 1.00, 1.00)]},
 ```
 
 ### Conferir
@@ -241,7 +257,8 @@ photograph of a Brazilian football supporters' club headquarters, a
 single-storey building around a courtyard, overcast diffuse daylight,
 desaturated muted colors, documentary photography, completely empty of people,
 
-the whole floor plan is visible from above, wall to wall, nothing hidden,
+the building fills the upper two thirds of the frame and its whole floor plan
+is visible from above, wall to wall, nothing hidden,
 
 along the top of the building, three rooms in a row, each opening onto the
 courtyard through one doorway:
@@ -267,8 +284,19 @@ stacked dumbbells, a mirror line along one wall, one doorway to the courtyard,
 
 in the bottom wall, TWO DOORWAYS open onto the street, the only openings there,
 
-along the bottom edge of the frame, a strip of concrete sidewalk and a two-lane
-asphalt street, cars parked at the kerb seen as roofs only,
+the bottom third of the frame is STREET, and all of it is walkable ground: a
+wide concrete sidewalk at least six metres deep running the full width of the
+picture along the front of the building, continuing past both sides of the
+headquarters in front of the neighbouring buildings and reaching the left and
+right edges of the frame; below it a two-lane asphalt street crossing the whole
+frame from edge to edge, worn dark asphalt, faded centre line, painted
+black-and-white curbs, a zebra crossing in front of the door, cars parked along
+the kerb seen from directly above as roofs only; and along the bottom edge a
+narrow strip of the opposite sidewalk,
+
+the sidewalk and the street stay completely clear and open at the left edge and
+at the right edge of the picture, with nothing overhanging them: no awning, no
+bus shelter, no tree canopy above the pavement,
 
 neighbouring buildings keep their roofs completely intact, shown only as roof
 surfaces,
@@ -281,11 +309,13 @@ walls, tropical Brazil, 8k, sharp detail, no people visible
 
 ```python
 {'id': 'sede2', 'arquivo': '<arquivo que saiu>.jpeg', 'saida': 'sede2.webp',
- 'sementes': [(0.45, 0.55), (0.30, 0.55), (0.60, 0.55),
-              (0.20, 0.22), (0.45, 0.22), (0.72, 0.22),
-              (0.10, 0.62), (0.72, 0.75),
-              (0.50, 0.94), (0.05, 0.94), (0.95, 0.94)],
- 'recorte': [(0.06, 0.06, 0.94, 0.88), (0.00, 0.88, 1.00, 1.00)]},
+ 'sementes': [(0.45, 0.33), (0.30, 0.33), (0.60, 0.33),
+              (0.20, 0.13), (0.45, 0.13), (0.72, 0.13),
+              (0.10, 0.37), (0.72, 0.45), (0.50, 0.72),
+              (0.10, 0.72), (0.90, 0.72), (0.50, 0.85),
+              (0.03, 0.85), (0.97, 0.85)],
+ 'recorte': [(0.06, 0.04, 0.94, 0.60),
+             (0.00, 0.62, 1.00, 1.00)]},
 ```
 
 ### Conferir
@@ -338,7 +368,8 @@ single-storey building with two rows of rooms around a central courtyard,
 overcast diffuse daylight, desaturated muted colors, documentary photography,
 completely empty of people,
 
-the whole floor plan is visible from above, wall to wall, nothing hidden,
+the building fills the upper two thirds of the frame and its whole floor plan
+is visible from above, wall to wall, nothing hidden,
 
 down the LEFT SIDE, three spaces stacked one above the other, each with one
 doorway onto the courtyard:
@@ -368,8 +399,19 @@ weight bench and stacked dumbbells,
 
 in the bottom wall of the courtyard, TWO DOORWAYS open onto the street,
 
-along the bottom edge of the frame, a strip of concrete sidewalk and a two-lane
-asphalt street, cars parked at the kerb seen as roofs only,
+the bottom third of the frame is STREET, and all of it is walkable ground: a
+wide concrete sidewalk at least six metres deep running the full width of the
+picture along the front of the building, continuing past both sides of the
+headquarters in front of the neighbouring buildings and reaching the left and
+right edges of the frame; below it a two-lane asphalt street crossing the whole
+frame from edge to edge, worn dark asphalt, faded centre line, painted
+black-and-white curbs, a zebra crossing in front of the door, cars parked along
+the kerb seen from directly above as roofs only; and along the bottom edge a
+narrow strip of the opposite sidewalk,
+
+the sidewalk and the street stay completely clear and open at the left edge and
+at the right edge of the picture, with nothing overhanging them: no awning, no
+bus shelter, no tree canopy above the pavement,
 
 neighbouring buildings keep their roofs completely intact, shown only as roof
 surfaces,
@@ -382,11 +424,14 @@ walls, tropical Brazil, 8k, sharp detail, no people visible
 
 ```python
 {'id': 'sede3', 'arquivo': '<arquivo que saiu>.jpeg', 'saida': 'sede3.webp',
- 'sementes': [(0.50, 0.50), (0.50, 0.28), (0.50, 0.70),
-              (0.18, 0.20), (0.18, 0.48), (0.18, 0.76),
-              (0.80, 0.16), (0.80, 0.38), (0.80, 0.60), (0.80, 0.80),
-              (0.50, 0.95), (0.05, 0.95), (0.95, 0.95)],
- 'recorte': [(0.05, 0.05, 0.95, 0.90), (0.00, 0.90, 1.00, 1.00)]},
+ 'sementes': [(0.50, 0.30), (0.50, 0.17), (0.50, 0.42),
+              (0.18, 0.12), (0.18, 0.29), (0.18, 0.46),
+              (0.80, 0.10), (0.80, 0.23), (0.80, 0.36),
+              (0.80, 0.48), (0.50, 0.72), (0.10, 0.72),
+              (0.90, 0.72), (0.50, 0.85), (0.03, 0.85),
+              (0.97, 0.85)],
+ 'recorte': [(0.05, 0.03, 0.95, 0.60),
+             (0.00, 0.62, 1.00, 1.00)]},
 ```
 
 ### Conferir
@@ -438,7 +483,8 @@ photograph of a large Brazilian football supporters' club headquarters, a
 single-storey compound of rooms around a courtyard, overcast diffuse daylight,
 desaturated muted colors, documentary photography, completely empty of people,
 
-the whole floor plan is visible from above, wall to wall, nothing hidden,
+the building fills the upper two thirds of the frame and its whole floor plan
+is visible from above, wall to wall, nothing hidden,
 
 down the LEFT SIDE: at the top the PRESIDENT'S OFFICE with desk, computer,
 filing cabinets, meeting table and safe; below it the OPERATIONS ROOM with a
@@ -463,8 +509,19 @@ street and one internal doorway to the courtyard,
 
 in the bottom wall of the courtyard, TWO DOORWAYS open onto the street,
 
-along the bottom edge of the frame, a strip of concrete sidewalk and a two-lane
-asphalt street, cars parked at the kerb seen as roofs only,
+the bottom third of the frame is STREET, and all of it is walkable ground: a
+wide concrete sidewalk at least six metres deep running the full width of the
+picture along the front of the building, continuing past both sides of the
+headquarters in front of the neighbouring buildings and reaching the left and
+right edges of the frame; below it a two-lane asphalt street crossing the whole
+frame from edge to edge, worn dark asphalt, faded centre line, painted
+black-and-white curbs, a zebra crossing in front of the door, cars parked along
+the kerb seen from directly above as roofs only; and along the bottom edge a
+narrow strip of the opposite sidewalk,
+
+the sidewalk and the street stay completely clear and open at the left edge and
+at the right edge of the picture, with nothing overhanging them: no awning, no
+bus shelter, no tree canopy above the pavement,
 
 neighbouring buildings keep their roofs completely intact, shown only as roof
 surfaces,
@@ -477,12 +534,14 @@ walls, tropical Brazil, 8k, sharp detail, no people visible
 
 ```python
 {'id': 'sede4', 'arquivo': '<arquivo que saiu>.jpeg', 'saida': 'sede4.webp',
- 'sementes': [(0.40, 0.62), (0.28, 0.62), (0.52, 0.72),
-              (0.14, 0.18), (0.14, 0.42), (0.10, 0.72),
-              (0.42, 0.22), (0.62, 0.22),
-              (0.86, 0.18), (0.86, 0.70),
-              (0.66, 0.72), (0.50, 0.95), (0.05, 0.95), (0.95, 0.95)],
- 'recorte': [(0.04, 0.05, 0.96, 0.90), (0.00, 0.90, 1.00, 1.00)]},
+ 'sementes': [(0.40, 0.37), (0.28, 0.37), (0.52, 0.43),
+              (0.14, 0.11), (0.14, 0.25), (0.10, 0.43),
+              (0.42, 0.13), (0.62, 0.13), (0.86, 0.11),
+              (0.86, 0.42), (0.66, 0.43), (0.50, 0.72),
+              (0.10, 0.72), (0.90, 0.72), (0.50, 0.85),
+              (0.03, 0.85), (0.97, 0.85)],
+ 'recorte': [(0.04, 0.03, 0.96, 0.60),
+             (0.00, 0.62, 1.00, 1.00)]},
 ```
 
 ### Conferir
@@ -537,7 +596,8 @@ single-storey compound with a long internal corridor, overcast diffuse
 daylight, desaturated muted colors, documentary photography, completely empty
 of people,
 
-the whole floor plan is visible from above, wall to wall, nothing hidden,
+the building fills the upper two thirds of the frame and its whole floor plan
+is visible from above, wall to wall, nothing hidden,
 
 along the TOP of the plan, a row of rooms from left to right, each with one
 doorway onto the corridor below them:
@@ -568,8 +628,19 @@ oil stains, a workbench and tyres, and a wide vehicle gate onto the street,
 TWO PASSAGES connect the corridor down to the courtyard, and two doorways in
 the bottom wall of the courtyard open onto the street,
 
-along the bottom edge of the frame, a strip of concrete sidewalk and a two-lane
-asphalt street, cars parked at the kerb seen as roofs only,
+the bottom third of the frame is STREET, and all of it is walkable ground: a
+wide concrete sidewalk at least six metres deep running the full width of the
+picture along the front of the building, continuing past both sides of the
+headquarters in front of the neighbouring buildings and reaching the left and
+right edges of the frame; below it a two-lane asphalt street crossing the whole
+frame from edge to edge, worn dark asphalt, faded centre line, painted
+black-and-white curbs, a zebra crossing in front of the door, cars parked along
+the kerb seen from directly above as roofs only; and along the bottom edge a
+narrow strip of the opposite sidewalk,
+
+the sidewalk and the street stay completely clear and open at the left edge and
+at the right edge of the picture, with nothing overhanging them: no awning, no
+bus shelter, no tree canopy above the pavement,
 
 neighbouring buildings keep their roofs completely intact, shown only as roof
 surfaces,
@@ -583,13 +654,15 @@ walls, tropical Brazil, 8k, sharp detail, no people visible
 ```python
 {'id': 'sede5', 'arquivo': '<arquivo que saiu>.jpeg', 'saida': 'sede5.webp',
  # o corredor inteiro, a fila de cima, a fila de baixo e a rua
- 'sementes': [(0.20, 0.42), (0.50, 0.42), (0.80, 0.42),
-              (0.12, 0.12), (0.12, 0.30), (0.34, 0.20), (0.56, 0.20),
-              (0.82, 0.20),
-              (0.08, 0.70), (0.24, 0.70), (0.45, 0.72), (0.66, 0.72),
-              (0.86, 0.72),
-              (0.50, 0.96), (0.05, 0.96), (0.95, 0.96)],
- 'recorte': [(0.02, 0.04, 0.98, 0.92), (0.00, 0.92, 1.00, 1.00)]},
+ 'sementes': [(0.20, 0.25), (0.50, 0.25), (0.80, 0.25),
+              (0.12, 0.07), (0.12, 0.18), (0.34, 0.12),
+              (0.56, 0.12), (0.82, 0.12), (0.08, 0.42),
+              (0.24, 0.42), (0.45, 0.43), (0.66, 0.43),
+              (0.86, 0.43), (0.50, 0.72), (0.10, 0.72),
+              (0.90, 0.72), (0.50, 0.85), (0.03, 0.85),
+              (0.97, 0.85)],
+ 'recorte': [(0.02, 0.02, 0.98, 0.60),
+             (0.00, 0.62, 1.00, 1.00)]},
 ```
 
 ### Conferir
