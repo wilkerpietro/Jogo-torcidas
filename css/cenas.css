@@ -110,6 +110,10 @@
   background:#0e0e0df2;border-bottom:1px solid var(--ouro);
   display:flex;align-items:center;gap:14px;padding:7px 14px;
   font-family:var(--mono);font-size:11px;color:var(--texto);
+  /* seis ferramentas e os números da grade não cabem numa linha só
+     em tela de notebook: a barra quebra em vez de empurrar o resto
+     pra fora da janela */
+  flex-wrap:wrap;
 }
 #editorBarra b{color:var(--ouro);letter-spacing:.1em}
 #editorBarra .grupo{display:flex;align-items:center;gap:6px}
@@ -121,6 +125,9 @@
 #editorBarra button:hover{background:#2e2e2a}
 #editorBarra button.on{background:var(--ouro);border-color:var(--ouro);color:#151514}
 #editorBarra .dica{color:var(--fraco);margin-left:auto;text-align:right;line-height:1.4}
+/* o aviso da boca de fuga é linha inteira, alinhado à esquerda: é
+   recado de erro, não rodapé */
+#editorBarra #edAviso{flex-basis:100%;margin-left:0;text-align:left}
 
 #editorSaida{
   position:fixed;inset:6% 8%;z-index:80;background:#0e0e0dfa;

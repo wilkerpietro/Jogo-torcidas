@@ -1704,10 +1704,17 @@ TO.diaJogo.combate = (function(){
       J.tropaVeio=true;
       J.cargaAte=Math.max(J.cargaAte, J.t+P.duracaoCarga);
       const n=Math.round(P.tropaCarga);
-      const buraco=J.grades.find(g=>g.hp<=0)||J.grades[0];
+      /* POR ONDE A TROPA ENTRA. Sem marcador ela entra pelo buraco que
+         abriram na grade — é de onde a cena vem sozinha. Quando a cena
+         marca `tropaEm` (editor F2), a tropa entra sempre dali: cena
+         com portão de serviço, túnel ou boca de rua tem lugar certo
+         pra caminhão de choque parar, e nascer no meio da briga é
+         teletransporte. */
+      const porta = D.tropaEm || J.grades.find(g=>g.hp<=0)
+                 || J.grades[0] || D.pmPostos[0] || D.spawns[0];
       for(let i=0;i<n;i++){
-        const p=new Policial({x:buraco.x, y:buraco.y});
-        const q=A.pontoLivreMaisProximo(buraco.x+U.entre(-70,70), buraco.y+U.entre(-70,70), 10);
+        const p=new Policial({x:porta.x, y:porta.y});
+        const q=A.pontoLivreMaisProximo(porta.x+U.entre(-70,70), porta.y+U.entre(-70,70), 10);
         p.x=q.x; p.y=q.y; p.carga=true; p.hpMax=380; p.hp=380; p.r=10;
         J.policiais.push(p);
       }

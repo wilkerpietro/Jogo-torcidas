@@ -81,7 +81,7 @@ TO.diaJogo.arredores = (function(){
     podarIlhas();            // quintal marcado por engano não é rua
     construirMalhaCorpo();   // onde o corpo cabe, base das rotas
     limparCampos();          // a navegação depende da malha
-    fugas = acharFugas();    // por onde se some, quando se corre
+    fugas = fugasDaMao() || acharFugas();   // por onde se some, quando se corre
   }
 
   /* =======================================================
@@ -182,6 +182,22 @@ TO.diaJogo.arredores = (function(){
       return {x:Math.round(q.x), y:Math.round(q.y), raio:34};
     });
   }
+  /* PONTO DE FUGA MARCADO À MÃO
+     A leitura da máscara é boa regra e péssimo detalhe: ela acha TODA
+     boca da borda, inclusive a que o dono não quer que sirva de saída
+     (o túnel do rival, o canto que na foto é muro). Quando a cena
+     declara `fugas`, é ela que vale, e o automático nem roda. O ponto
+     ainda reencosta no chão mais perto, porque marcador de mão cai em
+     cima de parede o tempo todo. */
+  function fugasDaMao(){
+    const lista = D.fugas;
+    if(!lista || !lista.length) return null;
+    return lista.map(f=>{
+      const q = cabe(f.x, f.y, 9) ? f : pontoLivreMaisProximo(f.x, f.y, 9);
+      return {x:Math.round(q.x), y:Math.round(q.y), raio:f.raio||34, mao:true};
+    });
+  }
+
   /* a mais perto de quem está correndo */
   function fugaMaisPerto(x, y){
     let melhor=null, md=Infinity;
@@ -810,6 +826,29 @@ TO.diaJogo.arredores = (function(){
         c.beginPath(); c.arc(p.x,p.y,9,0,7); c.stroke();
       }
     }
+
+    /* ---- por onde se some e por onde a tropa entra: invisíveis em
+       jogo (quem corre não vê placa), desenhados só no editor, que é
+       onde eles são marcados. */
+    if(opc.editor){
+      for(const f of fugas){
+        const cor = f.mao ? '#e0b040' : 'rgba(224,176,64,.45)';
+        c.strokeStyle=cor; c.lineWidth=2;
+        c.setLineDash([4,4]);
+        c.beginPath(); c.arc(f.x,f.y,f.raio||34,0,7); c.stroke();
+        c.setLineDash([]);
+        c.beginPath(); c.arc(f.x,f.y,5,0,7); c.fillStyle=cor; c.fill();
+        if(f.mao) etiqueta(c,'FUGA',f.x,f.y-(f.raio||34)-8,'#e0b040');
+      }
+      if(D.tropaEm){
+        const t=D.tropaEm;
+        c.strokeStyle='#5fa87d'; c.lineWidth=2;
+        c.beginPath(); c.arc(t.x,t.y,16,0,7); c.stroke();
+        c.beginPath(); c.moveTo(t.x-9,t.y); c.lineTo(t.x+9,t.y);
+        c.moveTo(t.x,t.y-9); c.lineTo(t.x,t.y+9); c.stroke();
+        etiqueta(c,'TROPA',t.x,t.y-26,'#5fa87d');
+      }
+    }
   }
 
   /* =======================================================
@@ -824,6 +863,9 @@ TO.diaJogo.arredores = (function(){
     codificarMascara, decodificarMascara,
     caminhavel, cabe, celulaLivre, cabeCorpo, pontoLivreMaisProximo,
     get fugas(){return fugas;}, fugaMaisPerto,
+    /* o editor mexe na lista de bocas sem repintar a malha: refazer a
+       cena inteira ali jogaria fora o que o pincel acabou de pintar */
+    recarregarFugas(){ fugas = fugasDaMao() || acharFugas(); return fugas; },
     mover, empurrar, livre, livrePara, raioMalha, atravessaGrade,
     criarCampo, campoDaEntrada, campoDoPonto, limparCampos, celulasDeGrades,
     montarGrades, barrarGrades,

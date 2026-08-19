@@ -36,7 +36,8 @@ TO.diaJogo.ponte = (function(){
 
   /* editor */
   const ED={ativo:false, modo:'pincel', pincel:16, pintando:0,
-            pegou:null, mostrarMalha:true, mostrarPostos:true, sujo:false};
+            pegou:null, mostrarMalha:true, mostrarPostos:true, sujo:false,
+            sel:null, aviso:''};
 
   /* =======================================================
      MONTAGEM
@@ -524,7 +525,15 @@ TO.diaJogo.ponte = (function(){
     marcarFormacaoNoPad();
   }
 
+  /* UMA VEZ SÓ. `montar` roda a cada cena aberta — troca de aba na
+     bancada, cada briga do jogo — e os ouvintes iam se empilhando no
+     mesmo canvas e na mesma janela: com duas cenas abertas, uma tecla
+     Q jogava duas pedras, a rodinha dava zoom dobrado e o F2 abria e
+     fechava o editor no mesmo aperto (que foi como isto apareceu). */
+  let entradaLigada=false;
   function ligarEntrada(){
+    if(entradaLigada) return;
+    entradaLigada=true;
     addEventListener('keydown',e=>{
       const k=e.key.toLowerCase();
       teclas[k]=true;
@@ -533,6 +542,7 @@ TO.diaJogo.ponte = (function(){
         if(k==='[') ED.pincel=Math.max(4,ED.pincel-4);
         if(k===']') ED.pincel=Math.min(80,ED.pincel+4);
         if(k==='m') ED.mostrarMalha=!ED.mostrarMalha;
+        if((k==='delete'||k==='backspace') && ED.mouse) apagarSob(ED.mouse.x, ED.mouse.y);
         return;
       }
       if(!J) return;
@@ -559,7 +569,29 @@ TO.diaJogo.ponte = (function(){
       if(!ED.ativo) return;
       e.preventDefault();
       const p=paraCena(e);
-      if(ED.modo==='marcador'){ ED.pegou=acharMarcador(p.x,p.y); return; }
+      const apagando = (e.button===2 || e.shiftKey);
+      if(ED.modo!=='pincel'){
+        if(apagando){ apagarSob(p.x,p.y); return; }
+        if(ED.modo==='marcador'){ ED.pegou=acharMarcador(p.x,p.y); return; }
+        if(ED.modo==='grade'){
+          const g=novaGrade(p.x,p.y); selecionar(g);
+          ED.pegou={mover:(nx,ny)=>{ g.ate.x=Math.round(nx); g.ate.y=Math.round(ny);
+                                    ajustarModulos(g); regrade(); pintarBarraGrade(); }};
+          ED.sujo=true; return;
+        }
+        if(ED.modo==='pm'){
+          D.pmPostos.push({x:Math.round(p.x), y:Math.round(p.y)});
+          ED.sujo=true; return;
+        }
+        if(ED.modo==='fuga'){
+          (D.fugas = D.fugas || []).push({x:Math.round(p.x), y:Math.round(p.y), raio:34});
+          mexeuNasFugas(); return;
+        }
+        if(ED.modo==='tropa'){
+          D.tropaEm={x:Math.round(p.x), y:Math.round(p.y)};
+          ED.sujo=true; return;
+        }
+      }
       ED.pintando = (e.button===2||e.shiftKey) ? 2 : 1;
       A.pintar(p.x,p.y,ED.pincel, ED.pintando===1);
       ED.sujo=true;
@@ -782,10 +814,90 @@ TO.diaJogo.ponte = (function(){
     for(const e of D.entradas) if(perto(e.x,e.y,30)) return {mover:(nx,ny)=>{e.x=Math.round(nx);e.y=Math.round(ny);}};
     for(const p of D.pmPostos) if(perto(p.x,p.y,16)) return {mover:(nx,ny)=>{p.x=Math.round(nx);p.y=Math.round(ny);}};
     for(const g of D.grades){
-      if(perto(g.de.x,g.de.y,18))  return {mover:(nx,ny)=>{g.de.x=Math.round(nx); g.de.y=Math.round(ny); regrade();}};
-      if(perto(g.ate.x,g.ate.y,18))return {mover:(nx,ny)=>{g.ate.x=Math.round(nx);g.ate.y=Math.round(ny);regrade();}};
+      if(perto(g.de.x,g.de.y,18))  return {mover:(nx,ny)=>{g.de.x=Math.round(nx); g.de.y=Math.round(ny); selecionar(g); regrade();}};
+      if(perto(g.ate.x,g.ate.y,18))return {mover:(nx,ny)=>{g.ate.x=Math.round(nx);g.ate.y=Math.round(ny);selecionar(g); regrade();}};
     }
+    for(const f of (D.fugas||[])) if(perto(f.x,f.y,20))
+      return {mover:(nx,ny)=>{f.x=Math.round(nx); f.y=Math.round(ny); mexeuNasFugas();}};
+    if(D.tropaEm && perto(D.tropaEm.x,D.tropaEm.y,20))
+      return {mover:(nx,ny)=>{D.tropaEm.x=Math.round(nx); D.tropaEm.y=Math.round(ny);}};
     return null;
+  }
+
+  /* =======================================================
+     MARCAR À MÃO: GRADE, POSTO DE PM, BOCA DE FUGA E A TROPA
+     Até aqui o editor só movia o que já existia — e a lista de
+     marcadores de uma cena é decisão de quem desenha a cena, não
+     coisa pra pedir por mensagem. Cada modo da barra põe um tipo de
+     marcador; o botão direito, em qualquer um deles, tira o que
+     estiver embaixo do cursor (menos bonde e portão, que são a
+     identidade da cena e saem só do arquivo).
+     ======================================================= */
+  function selecionar(g){ ED.sel = g; pintarBarraGrade(); }
+
+  /* comprimento vira número de módulos: 22 px por módulo é o passo que
+     as grades da praça e dos estádios já usam */
+  const compr = g => Math.hypot(g.ate.x-g.de.x, g.ate.y-g.de.y);
+  function ajustarModulos(g){
+    g.modulos = Math.max(1, Math.round(compr(g)/22));
+  }
+  function novaGrade(x,y){
+    let n=1; const usado=id=>D.grades.some(g=>g.id===id);
+    while(usado('grade_'+n)) n++;
+    const g={id:'grade_'+n, rot:'GRADE', de:{x:Math.round(x),y:Math.round(y)},
+             ate:{x:Math.round(x),y:Math.round(y)}, modulos:1, espessura:10};
+    D.grades.push(g);
+    return g;
+  }
+
+  /* a lista de bocas de fuga é lida uma vez e guardada; mexeu, recarrega
+     — e o campo de rota da fuga é indexado pela versão das grades */
+  function mexeuNasFugas(){
+    A.recarregarFugas();
+    if(J) J.versaoGrades++;
+    ED.sujo=true;
+    conferirFugas();
+  }
+
+  /* AVISO NA HORA: boca de fuga em lugar sem rota é bonde correndo pra
+     parede pelo resto da noite. Confere-se do jeito que o jogo confere
+     na hora de correr: campo até a boca, com as grades de pé, e cada
+     bonde da cena tem de ter caminho. */
+  function conferirFugas(){
+    const lista = (D.fugas||[]);
+    if(!lista.length){ ED.aviso=''; pintarAviso(); return; }
+    const bloq = A.celulasDeGrades(J ? J.grades : A.montarGrades());
+    const ruins = [];
+    for(const f of A.fugas){
+      const campo = A.criarCampo(f.x, f.y, bloq);
+      const sem = D.spawns.filter(s=>campo.passo(s.x,s.y).semRota).map(s=>s.rot||s.id);
+      if(sem.length) ruins.push(`${Math.round(f.x)},${Math.round(f.y)} sem rota de ${sem.join(' e ')}`);
+    }
+    ED.aviso = ruins.length
+      ? 'FUGA SEM ROTA · ' + ruins.join(' · ')
+      : `${A.fugas.length} boca(s) de fuga à mão — todas com rota`;
+    pintarAviso();
+  }
+
+  function apagarSob(x,y){
+    const perto=(a,b,r)=>U.dist(x,y,a,b)<r;
+    for(let i=0;i<D.grades.length;i++){
+      const g=D.grades[i];
+      if(perto(g.de.x,g.de.y,18) || perto(g.ate.x,g.ate.y,18) ||
+         U.dist(x,y,(g.de.x+g.ate.x)/2,(g.de.y+g.ate.y)/2) < 18){
+        if(ED.sel===g) selecionar(null);
+        D.grades.splice(i,1); regrade(); ED.sujo=true; return true;
+      }
+    }
+    for(let i=0;i<D.pmPostos.length;i++)
+      if(perto(D.pmPostos[i].x,D.pmPostos[i].y,16)){
+        D.pmPostos.splice(i,1); ED.sujo=true; return true; }
+    const fg=D.fugas||[];
+    for(let i=0;i<fg.length;i++)
+      if(perto(fg[i].x,fg[i].y,20)){ fg.splice(i,1); mexeuNasFugas(); return true; }
+    if(D.tropaEm && perto(D.tropaEm.x,D.tropaEm.y,20)){
+      D.tropaEm=null; ED.sujo=true; return true; }
+    return false;
   }
   function regrade(){ if(J){ const hp=P.vidaGrade;
     J.grades=A.montarGrades(); for(const g of J.grades){g.hpMax=hp;g.hp=hp;} } }
@@ -805,6 +917,32 @@ TO.diaJogo.ponte = (function(){
     }
   }
 
+  /* a grade que a mão está mexendo ganha os dois números que não dá
+     pra arrastar: quantos módulos ela tem e quão grossa ela é */
+  function pintarBarraGrade(){
+    const cx=$('edGrade'); if(!cx) return;
+    const g=ED.sel;
+    if(!g || !D.grades.includes(g)){ cx.innerHTML=''; return; }
+    cx.innerHTML=
+      `<span style="color:#e0b040">${g.id}</span>`+
+      `<button data-g="mod-">módulos −</button><b id="edMod">${g.modulos}</b><button data-g="mod+">+</button>`+
+      `<button data-g="esp-">espessura −</button><b id="edEsp">${g.espessura}</b><button data-g="esp+">+</button>`;
+    cx.querySelectorAll('[data-g]').forEach(bt=>bt.onclick=()=>{
+      const a=bt.dataset.g;
+      if(a==='mod-') g.modulos=Math.max(1,g.modulos-1);
+      if(a==='mod+') g.modulos=Math.min(40,g.modulos+1);
+      if(a==='esp-') g.espessura=Math.max(4,g.espessura-1);
+      if(a==='esp+') g.espessura=Math.min(24,g.espessura+1);
+      regrade(); ED.sujo=true; pintarBarraGrade();
+    });
+  }
+  function pintarAviso(){
+    const n=$('edAviso'); if(!n) return;
+    const ruim = ED.aviso.startsWith('FUGA SEM ROTA');
+    n.style.color = ruim ? '#d9705f' : 'var(--fraco)';
+    n.textContent = ED.aviso;
+  }
+
   function montarBarraEditor(){
     if($('editorBarra')) return;
     const b=document.createElement('div');
@@ -816,20 +954,43 @@ TO.diaJogo.ponte = (function(){
         <button data-modo="marcador">Marcadores</button>
       </div>
       <div class="grupo">
+        <button data-modo="grade">Grade nova</button>
+        <button data-modo="pm">Posto de PM</button>
+        <button data-modo="fuga">Boca de fuga</button>
+        <button data-modo="tropa">Entrada da tropa</button>
+      </div>
+      <div class="grupo" id="edGrade"></div>
+      <div class="grupo">
         <button id="edMalha" class="on">Malha (M)</button>
         <button id="edRefazer">Refazer dos polígonos</button>
         <button id="edExportar">Exportar arquivo</button>
       </div>
-      <div class="dica">
-        clique = libera passagem · shift/direito = bloqueia · <b>[</b> <b>]</b> tamanho do pincel<br>
-        arraste uma imagem pra usar de fundo · F2 sai
-      </div>`;
+      <div class="dica" id="edDica"></div>
+      <div class="dica" id="edAviso"></div>`;
     document.body.appendChild(b);
     b.querySelectorAll('[data-modo]').forEach(bt=>bt.onclick=()=>{
       ED.modo=bt.dataset.modo;
       b.querySelectorAll('[data-modo]').forEach(o=>o.classList.toggle('on',o===bt));
+      pintarDica();
     });
+    pintarDica(); pintarBarraGrade(); conferirFugas();
     $('edMalha').onclick=e=>{ED.mostrarMalha=!ED.mostrarMalha;e.target.classList.toggle('on',ED.mostrarMalha);};
+
+    /* cada ferramenta explica a si mesma: a barra é a única
+       documentação que quem desenha a cena tem na frente */
+    function pintarDica(){
+      const d=$('edDica'); if(!d) return;
+      const comum='<b>direito/shift</b> ou <b>Delete</b> = apagar o que estiver sob o cursor · F2 sai';
+      d.innerHTML = ({
+        pincel:'clique = libera passagem · shift/direito = bloqueia · <b>[</b> <b>]</b> tamanho do pincel<br>'+
+               'arraste uma imagem pra usar de fundo · F2 sai',
+        marcador:'arraste bonde, portão, posto de PM, ponta de grade, boca de fuga ou a tropa<br>'+comum,
+        grade:'aperte e arraste pra traçar a grade — o número de módulos sai do comprimento<br>'+comum,
+        pm:'clique põe um posto de PM (é de lá que sai reforço, e a viatura volta pra lá)<br>'+comum,
+        fuga:'clique marca por onde se some quando debanda. Marcou uma, as automáticas da máscara desligam<br>'+comum,
+        tropa:'clique marca por onde a tropa de choque entra. Sem marcador, ela entra pelo buraco da grade<br>'+comum
+      })[ED.modo] || comum;
+    }
     $('edRefazer').onclick=()=>{D.mascara=null;A.reconstruir();ED.sujo=true;};
     $('edExportar').onclick=exportar;
   }
@@ -869,7 +1030,11 @@ ${lista(D.pmPostos)}
 
     grades:[
 ${lista(D.grades)}
-    ]
+    ],
+
+    fugas:[
+${lista(D.fugas||[])}
+    ]${D.tropaEm ? ',\n\n    tropaEm:'+j(D.tropaEm) : ''}
   },
 `;
   }
@@ -917,7 +1082,11 @@ ${D.pmPostos.map(p=>'    '+j(p)).join(',\n')}
 
   grades:[
 ${D.grades.map(g=>'    '+j(g)).join(',\n')}
-  ]
+  ],
+
+  fugas:[
+${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
+  ]${D.tropaEm ? ',\n\n  tropaEm:'+j(D.tropaEm) : ''}
 };
 `;
   }

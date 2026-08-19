@@ -497,6 +497,39 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   causa dela. Medido nos três estádios: contato por volta dos 8s,
   baixas dos dois lados, e debandada só depois dos 50%.
 
+- **A mão do dono marca grade, posto de PM, boca de fuga e a
+  entrada da tropa** (19/08/2026): o editor (F2) só movia o que já
+  existia — dava pra arrastar a ponta de uma grade, não pra criar
+  uma. Agora a barra tem seis ferramentas: pincel, marcadores,
+  **grade nova** (aperta e arrasta; os módulos saem do comprimento, a
+  22px por módulo, e dois botões acertam módulos e espessura),
+  **posto de PM**, **boca de fuga** e **entrada da tropa**. Botão
+  direito (ou Delete) apaga o que estiver sob o cursor — menos bonde
+  e portão, que são a identidade da cena e saem só do arquivo. Tudo
+  sai no mesmo remendo que se cola em `cenas_editadas.js`.
+- **Boca de fuga marcada à mão manda na lida da máscara**
+  (19/08/2026): as bocas por onde se some sempre foram lidas da
+  própria máscara (todo chão que encosta na borda da mancha andável).
+  Continua assim por padrão — é o que garante que a fuga cai em cima
+  de rua mesmo depois de repintar a planta. Mas quando a cena declara
+  `fugas`, a mão manda e o automático nem roda. Como boca sem rota é
+  bonde correndo pra parede a noite toda, o editor confere na hora
+  (campo até a boca, com as grades de pé) e acusa qual bonde não
+  chega — foi assim que se viu que uma boca dentro do curral do
+  visitante deixava os três escalões mandantes sem saída.
+- **A tropa de choque entra por onde a cena marcar** (19/08/2026):
+  sem marcador ela continua entrando pelo buraco que abriram na
+  grade, que é de onde a cena vem sozinha. Com `tropaEm` marcado no
+  editor, ela entra sempre dali — cena com portão de serviço, túnel
+  ou boca de rua tem lugar certo pra caminhão de choque parar, e
+  nascer no meio da briga é teletransporte.
+- **Os ouvintes de teclado e mouse ligam uma vez só** (19/08/2026):
+  `montar` roda a cada cena aberta e os ouvintes iam se empilhando no
+  mesmo canvas e na mesma janela. Da SEGUNDA briga da sessão em
+  diante, um R ligava e desligava o recuo no mesmo aperto, um Q
+  jogava duas pedras e a rodinha dava zoom dobrado. Apareceu porque o
+  F2 abria e fechava o editor no mesmo toque na bancada.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -891,8 +891,13 @@ TO.dados.cenas = (function(){
         const novo = e[campo].find(x=>x.id===o.id);
         return novo ? Object.assign({}, o, copia(novo)) : o;
       }).concat(e[campo].filter(x=>!cena[campo].some(o=>o.id===x.id)).map(copia));
-    for(const campo of ['pmPostos', 'grades'])
+    /* Estes vêm inteiros do editor: quem edita apaga e cria, e mesclar
+       por id devolveria a grade que a mão tirou. `fugas` só existe
+       quando a mão marcou — sem ela a cena segue lendo as bocas da
+       máscara, como sempre. */
+    for(const campo of ['pmPostos', 'grades', 'fugas'])
       if(e[campo]) cena[campo] = copia(e[campo]);
+    if(e.tropaEm) cena.tropaEm = copia(e.tropaEm);
     if(e.poligonos) cena.poligonos = copia(e.poligonos);
     /* a zona que acorda a casa é coordenada como qualquer marcador, e
        muda junto com eles quando a foto tem outra planta */
@@ -905,8 +910,9 @@ TO.dados.cenas = (function(){
        mais perto, exatamente como quando a foto chegou. */
     if(e.mascara) {
       const puxa = puxador(cena, e.mascara);
-      for(const campo of ['spawns', 'entradas', 'pmPostos'])
-        cena[campo].forEach(puxa);
+      for(const campo of ['spawns', 'entradas', 'pmPostos', 'fugas'])
+        if(cena[campo]) cena[campo].forEach(puxa);
+      if(cena.tropaEm) puxa(cena.tropaEm);
     }
     return cena;
   }
