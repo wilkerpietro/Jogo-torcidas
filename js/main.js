@@ -3026,7 +3026,10 @@
     const n = Math.max(2, Math.min(d.tam || 5, aptos.length));
     const cN = TO.mundo.coresDaTorcida(e.torcida);
     const cR = TO.mundo.coresDaTorcida(rival);
-    const local = TO.praca.ruaDaClasse(d.classe);
+    /* cada tamanho tem palco próprio (fotos do dono, 19/08/2026):
+       5x5 no beco, 7x7 no pátio do galpão, 10x10 no campo de terra */
+    const local = n <= 5 ? 'treta-beco'
+                : n <= 7 ? 'treta-galpao' : 'treta-campo';
     const bondes = [
       {lado:'mandante', n, nossa:true, nome:e.torcida.nome,
        cor:cN.cor, cor2:cN.cor2, cor3:cN.cor3,
@@ -3115,6 +3118,21 @@
   /* o perfil que gera a ficha dos discos rivais: cargos da fonte e
      poder da torcida (decisão do autor — força e defesa fiéis dos dois
      lados) */
+  /* qual estádio a cena dos arredores abre (fotos do dono, 19/08/2026):
+     pela capacidade do estádio do MANDANTE do nosso jogo — até 15 mil o
+     pequeno, até 32 mil o médio, acima disso o grandão */
+  function cenaDoEstadio(e){
+    const pj = e.proximoJogo || {};
+    let cap = pj.capacidade;
+    if(cap == null){
+      const t = (TO.dados.times || []).find(x => x.estadio === pj.estadio);
+      cap = t && t.capacidade;
+    }
+    return !cap ? 'estadio-20'
+         : cap <= 15000 ? 'estadio-10'
+         : cap <= 32000 ? 'estadio-20' : 'estadio-40';
+  }
+
   const perfilDe = id => {
     const o = id ? TO.mundo.torcida(id) : null;
     if(!o) return null;
@@ -3180,10 +3198,14 @@
     TO.estado.bloquear(true);
     pararTudo('cena');
     const p = TO.planejamento.plano(e);
+    /* nos arredores, o estádio da cena é o do jogo (fotos do dono,
+       19/08/2026): pequeno, médio ou grande pela capacidade */
+    const localDaCena = (!enc.local || enc.local === 'arredores')
+      ? cenaDoEstadio(e) : enc.local;
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', bombas: p.bombas,
-                bondes, efetivoRival: deles.n, local: enc.local },
+                bondes, efetivoRival: deles.n, local: localDaCena },
       aoTerminar: res => fecharDiaDeJogo(res, enc)
     });
     /* GUERRA É BRIGA MARCADA: os dois lados vieram pra isso. As cenas

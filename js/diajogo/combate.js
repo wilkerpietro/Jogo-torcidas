@@ -178,7 +178,7 @@ TO.diaJogo.combate = (function(){
          pra ir atrás. Nas outras cenas o interruptor continua sendo da
          cena inteira, porque lá a briga já é o motivo de estar ali. */
       paz: cfg.paz!==undefined ? cfg.paz
-         : !D.id ? true
+         : (!D.id || /^estadio-/.test(D.id||'')) ? true
          : cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
       config_perfilRival: cfg.perfilRival || null,

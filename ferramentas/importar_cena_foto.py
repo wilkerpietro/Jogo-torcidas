@@ -92,16 +92,94 @@ FONTES = [
                  (0.16, 0.00, 0.37, 0.72),    # a vertical oeste
                  (0.62, 0.00, 0.91, 0.72),    # a vertical leste
                  (0.35, 0.28, 0.64, 0.72)]},  # o bar e a calcada dele
+
+    # ---- lote de 19/08 (pedido do dono): tretas, emboscadas, CT e
+    #      os tres estadios por capacidade -------------------------------
+    # 5x5: a viela entre os quintais — corredor apertado de ponta a ponta
+    {'id': 'treta-beco', 'arquivo': 'treta_beco.jpeg',
+     'saida': 'treta_beco.webp', 'corredor': True,
+     'sementes': [(0.50, 0.50), (0.15, 0.50), (0.85, 0.50),
+                  (0.35, 0.47), (0.65, 0.53)],
+     # sem o recorte, a folga de calcada do corredor subia nos
+     # terracos dos dois cantos de cima
+     'recorte': [(0.00, 0.30, 1.00, 0.66)]},
+    # 7x7: o patio do galpao — placa de concreto murada, rua na borda
+    {'id': 'treta-galpao', 'arquivo': 'treta_galpao.jpeg',
+     'saida': 'treta_galpao.webp',
+     'sementes': [(0.45, 0.45), (0.60, 0.55), (0.30, 0.60), (0.55, 0.28),
+                  (0.35, 0.32), (0.70, 0.65), (0.25, 0.72)],
+     # so o patio: sem o recorte a conectividade escorre pro telhado do
+     # galpao e pras ruas em volta, e a treta e murada de proposito
+     'recorte': [(0.08, 0.16, 0.88, 0.82)]},
+    # 10x10: o campo de terra murado — a arena inteira e o chao
+    {'id': 'treta-campo', 'arquivo': 'treta_campo.jpeg',
+     'saida': 'treta_campo.webp', 'terra': True,
+     'sementes': [(0.50, 0.50), (0.35, 0.35), (0.65, 0.65), (0.30, 0.65),
+                  (0.70, 0.35), (0.50, 0.25), (0.50, 0.75)],
+     'recorte': [(0.16, 0.20, 0.86, 0.80)]},
+    # emboscada 1: o patio do posto de gasolina, com a pista embaixo
+    {'id': 'emb-posto', 'arquivo': 'emb_posto.jpeg',
+     'saida': 'emb_posto.webp',
+     'sementes': [(0.50, 0.50), (0.25, 0.42), (0.75, 0.42), (0.15, 0.70),
+                  (0.85, 0.68), (0.50, 0.70), (0.50, 0.92), (0.20, 0.92),
+                  (0.80, 0.92)]},
+    # emboscada 2: a estrada com o onibus parado no meio da pista
+    {'id': 'emb-onibus', 'arquivo': 'emb_onibus.jpeg',
+     'saida': 'emb_onibus.webp', 'corredor': True, 'terra': True,
+     'sementes': [(0.50, 0.48), (0.10, 0.52), (0.90, 0.45),
+                  (0.30, 0.55), (0.70, 0.50)]},
+    # frente do CT: a esplanada do portao e a rua embaixo
+    {'id': 'ct', 'arquivo': 'ct_frente.jpeg',
+     'saida': 'ct_frente.webp',
+     'sementes': [(0.50, 0.50), (0.25, 0.50), (0.75, 0.50), (0.50, 0.35),
+                  (0.15, 0.62), (0.85, 0.60), (0.20, 0.85), (0.80, 0.85),
+                  (0.50, 0.80)]},
+    # os tres estadios: anda-se no anel de rua e estacionamento em volta
+    # da arquibancada — o miolo (bancada e gramado) fica de fora pelo
+    # recorte, e os portoes moram na beira do anel
+    # o estadio pequeno nao tem anel externo continuo (casa encostada
+    # na borda da foto): o chao e a PROPRIA arquibancada, mais o
+    # terreirao da esquerda e a rua da direita — o gramado (mato) fica
+    # de fora sozinho
+    {'id': 'estadio-10', 'arquivo': 'estadio_10.jpeg',
+     'saida': 'estadio_10.webp', 'terra': True, 'claro': True,
+     'sementes': [(0.05, 0.30), (0.05, 0.70), (0.95, 0.30), (0.95, 0.70),
+                  (0.09, 0.36),
+                  (0.50, 0.88), (0.50, 0.10), (0.17, 0.50), (0.83, 0.50),
+                  (0.25, 0.15), (0.75, 0.15), (0.25, 0.85), (0.75, 0.85)]},
+    {'id': 'estadio-20', 'arquivo': 'estadio_20.jpeg',
+     'saida': 'estadio_20.webp', 'engorda': 13,
+     'sementes': [(0.04, 0.30), (0.04, 0.70), (0.96, 0.30), (0.96, 0.70),
+                  (0.30, 0.96), (0.70, 0.96), (0.30, 0.04), (0.70, 0.04),
+                  (0.05, 0.05), (0.95, 0.05), (0.05, 0.95), (0.95, 0.95),
+                  (0.50, 0.96), (0.50, 0.04)],
+     # faixas largas: com 9% o anel quebrava nos cantos e o portao
+     # ficava sem rota (conexao diagonal nao e rota)
+     'recorte': [(0.00, 0.00, 1.00, 0.13), (0.00, 0.87, 1.00, 1.00),
+                 (0.00, 0.00, 0.13, 1.00), (0.87, 0.00, 1.00, 1.00)]},
+    {'id': 'estadio-40', 'arquivo': 'estadio_40.jpeg',
+     'saida': 'estadio_40.webp', 'engorda': 13,
+     'sementes': [(0.03, 0.30), (0.03, 0.70), (0.97, 0.30), (0.97, 0.70),
+                  (0.30, 0.97), (0.70, 0.97), (0.30, 0.03), (0.70, 0.03),
+                  (0.04, 0.04), (0.96, 0.04), (0.04, 0.96), (0.96, 0.96),
+                  (0.50, 0.97), (0.50, 0.03)],
+     'recorte': [(0.00, 0.00, 1.00, 0.10), (0.00, 0.90, 1.00, 1.00),
+                 (0.00, 0.00, 0.09, 1.00), (0.91, 0.00, 1.00, 1.00)]},
 ]
 
 
 # ------------------------------------------------------------------ encaixe
 def encaixar(img):
-    """Largura inteira, sem distorcer. O que falta de altura vira quintal."""
+    """Largura inteira, sem distorcer. O que falta de altura vira quintal.
+    Foto mais ALTA que a tela (as 4:3 do lote de 19/08) é cortada
+    centrada — colar com topo negativo zerava a máscara inteira."""
     esc = LARG / img.width
     novo = img.resize((LARG, round(img.height * esc)), Image.LANCZOS)
     tela = Image.new('RGB', (LARG, ALT), QUINTAL)
     topo = (ALT - novo.height) // 2
+    if topo < 0:
+        novo = novo.crop((0, -topo, LARG, -topo + ALT))
+        topo = 0
     tela.paste(novo, (0, topo))
     return tela, topo, novo.height
 
@@ -155,7 +233,8 @@ def recortar(forma, retangulos):
     return fica
 
 
-def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None):
+def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
+         terra=False, claro=False, engorda=0):
     """1 onde dá pra pisar. Cor dá o candidato; conectividade dá a resposta."""
     R, G, B = a[:, :, 0], a[:, :, 1], a[:, :, 2]
     mx, mn = a.max(2), a.min(2)
@@ -168,6 +247,16 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None):
     agua = (B > R + 20) & (B > G + 8)
     cinza = (sat < 34) & ~telha & ~mato & ~agua
     cand = cinza & (lum > 42) & (lum < 232)
+    if terra:
+        # campo de terra e estrada de barro: marrom claro, pouco saturado
+        # demais pra ser telha e sem verde de mato
+        chao_terra = (sat < 78) & (R >= G) & (G >= B) & ~mato & \
+                     (lum > 78) & (lum < 225)
+        cand |= chao_terra
+    if claro:
+        # passeio de concreto branco estourado de sol (o anel do estadio
+        # pequeno): mais claro que o teto normal de 232
+        cand |= cinza & (lum >= 232) & (lum < 253)
 
     # a faixa de quintal, em cima e embaixo, nunca é chão
     cand[:topo, :] = False
@@ -194,6 +283,10 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None):
             if k:
                 fica[k] = True
     m = fica[lab]
+    if engorda:
+        # anel estreito demais pro corpo passar (malha do corpo erode a
+        # mascara): engorda o chao uns pixels pra rota existir
+        m = nd.binary_dilation(m, np.ones((engorda, engorda)))
 
     # tapa buraco pequeno (carro, bueiro, sombra) e volta a limpar borda
     m = nd.binary_closing(m, np.ones((9, 9)))
@@ -271,7 +364,9 @@ def main():
 
         a = np.asarray(tela).astype(np.int16)
         m = chao(a, f['sementes'], topo, altura,
-                 f.get('corredor', False), f.get('recorte'))
+                 f.get('corredor', False), f.get('recorte'),
+                 f.get('terra', False), f.get('claro', False),
+                 f.get('engorda', 0))
         cel = para_celulas(m)
         anc = ancoras(cel)
         fora[f['id']] = {

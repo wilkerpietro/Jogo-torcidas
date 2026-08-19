@@ -341,6 +341,21 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   disco do jogador, sem deixar a vista passar da borda da cena;
   rolar pra baixo volta até a cena inteira de sempre. A rodinha em
   cima da cena não rola mais a página.
+- **O lote de cenas de 19/08** (fotos do dono, 19/08/2026): nove fotos
+  aéreas viraram cena jogável, pelo importador de foto (máscara de
+  caminhabilidade por cor + conectividade; ganhou chão de terra, piso
+  claro estourado e engorda pra anel fino). As TRETAS têm palco
+  próprio por tamanho: 5x5 no beco, 7x7 no pátio do galpão, 10x10 no
+  campo de terra murado. A EMBOSCADA da caravana na estrada abre por
+  sorteio um dos dois cenários: o pátio do posto ou a pista fechada
+  com o ônibus. A frente do CT virou a foto do portão. E os ARREDORES
+  têm três estádios pela capacidade do mandante nos dados: até 15 mil
+  o pequeno (briga na arquibancada e no terreirão), até 32 mil o
+  médio (anel de rua em volta), acima o gigante (laterais vivas,
+  portões nas duas ruas do lado). As cenas de estádio se comportam
+  como os arredores: ordem de portão, PM, noite que começa calma.
+  Ajuste fino de máscara/marcadores fica no editor (F2) +
+  cenas_editadas.js, como sempre.
 - **O Financeiro delas é o nosso** (18/08/2026): tudo que o jogador
   compra no Financeiro as outras torcidas compram com o caixa delas.
   Já compravam sede, bar, loja, subsede, ampliações, fábrica e

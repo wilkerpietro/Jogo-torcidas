@@ -313,8 +313,10 @@ TO.diaJogo.ponte = (function(){
   /* =======================================================
      BOTÕES E ENTRADA
      ======================================================= */
-  /* a cena tem portão de estádio de verdade? só os arredores têm */
-  const entradaDeVerdade = () => !A.D.id || A.D.id === 'arredores';
+  /* a cena tem portão de estádio de verdade? os arredores e os três
+     estádios por capacidade (lote de 19/08) */
+  const entradaDeVerdade = () =>
+    !A.D.id || A.D.id === 'arredores' || /^estadio-/.test(A.D.id);
 
   function montarBotoes(){
     const cf=$('djFormacoes');

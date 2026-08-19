@@ -173,6 +173,9 @@ TO.estado = (function(){
       mandante:{nome:mandante.nome, sigla:mandante.sigla, cores:mandante.cores},
       visitante:{nome:visitante.nome, sigla:visitante.sigla, cores:visitante.cores},
       estadio: mandante.estadio,
+      /* a cena dos arredores escolhe o estádio pela capacidade
+         (fotos do dono, 19/08/2026) */
+      capacidade: mandante.capacidade,
       /* a hora vem da grade da competição (GDD §18), não de um chute */
       hora: agenda ? agenda.hora : '21:00',
       /* o que a caravana precisa saber (GDD §7.3) */

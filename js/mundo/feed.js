@@ -668,7 +668,12 @@ TO.feed = (function(){
     const emb = PL().emboscadaDaRota(E);
     if(!emb) return;
     E.ataqueMarcado = {torcida:emb.torcida, nome:emb.nome, alvo:'emboscada',
-                       cena:'rua', cidade:emb.cidade,
+                       /* a emboscada da estrada abre num dos dois
+                          cenários do dono (19/08/2026): o pátio do
+                          posto ou a pista fechada com o ônibus */
+                       cena: TO.mapa.hash(`embcena|${E.data.absoluto}`) % 2
+                             ? 'emb-posto' : 'emb-onibus',
+                       cidade:emb.cidade,
                        ano:E.data.ano, semana:E.data.semana, dia:E.data.dia};
   }
 
