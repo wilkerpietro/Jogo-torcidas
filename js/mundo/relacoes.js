@@ -828,8 +828,11 @@ TO.relacoes = (function(){
        na régua de 0-100 — 3 no 5×5, 4 no 7×7, 5 no 10×10 */
     const display = tam >= 10 ? 5 : tam >= 7 ? 4 : 3;
     mover(E, ganhouA ? o.id : r.id, 'prestigio',  display/5);
-    mover(E, ganhouA ? r.id : o.id, 'prestigio', -display/5);
+    /* perder a treta custa −1 de prestígio e um tanto de moral
+       (preço do dono, 19/08/2026 — a mesma régua da nossa) */
+    mover(E, ganhouA ? r.id : o.id, 'prestigio', -0.2);
     mover(E, ganhouA ? o.id : r.id, 'moral', 0.6);
+    mover(E, ganhouA ? r.id : o.id, 'moral', -0.2);
     moverRelacao(E, o.id, r.id, -2);
     return registrarBrigaIA(E, {
       ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
@@ -1003,7 +1006,16 @@ TO.relacoes = (function(){
      as duas (+3); recusar afasta (−3). Quanto melhor a
      relação, maior a chance de aparecer — e quebrada não vai.
      ======================================================= */
-  const diaDoAnivIA = id => 1 + TO.mapa.hash(`${id}|aniv`) % 364;
+  /* a data de verdade manda aqui também (correção do dono,
+     19/08/2026): fundacaoDia/fundacaoMes da fonte; hash só de reserva */
+  const diaDoAnivIA = id => {
+    const o = M().torcida(id);
+    if(o && o.fundacaoDia && o.fundacaoMes){
+      const d = new Date(2001, o.fundacaoMes - 1, o.fundacaoDia);
+      return Math.round((d - new Date(2001, 0, 0)) / 86400000);
+    }
+    return 1 + TO.mapa.hash(`${id}|aniv`) % 364;
+  };
 
   function convitesDeAniversario(E){
     const m = mundo(E);

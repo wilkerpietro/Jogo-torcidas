@@ -341,6 +341,22 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   disco do jogador, sem deixar a vista passar da borda da cena;
   rolar pra baixo volta até a cena inteira de sempre. A rodinha em
   cima da cena não rola mais a página.
+- **Preços das recusas e da derrota na treta** (dono, 19/08/2026):
+  ficar de fora da treta marcada custa −1 de prestígio; deixar o bar
+  do rival quieto custa −1 de prestígio e −1 de moral; deixar o
+  assalto quieto segue de graça; PERDER a treta custa −1 de prestígio
+  (não mais o espelho do −3/−4/−5) e −1 de moral pra cada membro que
+  foi — vencer segue +3/+4/+5 e +2 de moral. A mesma régua vale pras
+  tretas entre IAs. Turno vazio do expediente e a mensagem de guerra
+  com botão único ficam como estão.
+- **Aniversário na data de verdade** (correção do dono, 19/08/2026):
+  a fonte das torcidas já guardava fundacaoDia/fundacaoMes (137 de
+  140) e o código sorteava a data por hash — agora a data real manda
+  (TUF: 17/02, convite 10 dias antes, 07/02), pra nós, pros convites
+  e pras festas entre IAs. O hash fica só de reserva pra quem não tem
+  a data: 3 torcidas (forca_azul, furia_independente_do_guarani,
+  guerrilha_jovem) e os CLUBES — a fonte dos times só tem o ano; o
+  Fortaleza ganhou 18/10 (palavra do dono), o resto espera a lista.
 - **As dicas da diretoria** (pedido do dono, 19/08/2026): 40 dicas
   explicando as regras do jogo, caindo duas por mês no feed (semana
   ímpar, dia 2), em ordem de importância pra quem chega, e

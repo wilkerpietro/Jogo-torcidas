@@ -160,7 +160,7 @@ TO.feed = (function(){
     'Assalto tem tabela: do mercadinho (10% de chance de cadeia, 45 dias) ao banco (50% e 180 dias). O sorteio é um só pro bonde inteiro — ou todos voltam com a partilha, ou todos caem.',
     'Bombas custam R$ 600 o lote de 5 no Patrimônio. O estoque inteiro vai junto pra TODA briga — só a treta marcada é limpa, sem pedra nem bomba.',
     'Na cena, o rival responde com até metade das suas bombas — mas nunca joga mais do que tem no paiol dele. Bomba jogada sai do estoque dos dois lados.',
-    'Treta marcada tem palco pelo tamanho: 5x5 no beco, 7x7 no pátio do galpão, 10x10 no campo de terra. Vale prestígio pro vencedor e moral pros membros.',
+    'Treta marcada tem palco pelo tamanho: 5x5 no beco, 7x7 no galpão, 10x10 no campo de terra. Vencer paga +3/+4/+5 de prestígio; perder custa −1 (e −1 de moral de quem foi); recusar custa −1 de prestígio.',
     'Ataque a bar tem teto: no máximo 60 atacantes contra 40 defensores. E o bonde só sai pra UM ataque manual por semana.',
     'Ferido volta em 5 a 15 dias; preso fica de 15 a 90. Enquanto estão fora, não treinam, não brigam e não contam no ranking.',
     'A ida à delegacia solta presos em bloco com fiança 25% mais barata — do mais barato pro mais caro, até onde o caixa alcançar.',
@@ -206,9 +206,17 @@ TO.feed = (function(){
            diretor pergunta o tamanho da festa; o custo e a
            moral saem na decisão, a receita sai no dia.
      ------------------------------------------------------- */
-  const diaDoAniversario = id => 1 + TO.mapa.hash(`${id}|aniv`) % 364;
-  const dataDoAniversario = (id, anoCivil) =>
-    new Date(anoCivil, 0, diaDoAniversario(id));
+  /* A DATA DE VERDADE MANDA (correção do dono, 19/08/2026): a fonte
+     das torcidas guarda fundacaoDia/fundacaoMes — a TUF faz 17/02, e o
+     hash sorteava outra data por cima. O sorteio fica só de reserva,
+     pra quem não tem a data na fonte (3 torcidas e quase todo clube). */
+  const fonteDe = (id, o) => o || M().torcida(id) || null;
+  const dataDoAniversario = (id, anoCivil, o) => {
+    const f = fonteDe(id, o);
+    if(f && f.fundacaoDia && f.fundacaoMes)
+      return new Date(anoCivil, f.fundacaoMes - 1, f.fundacaoDia);
+    return new Date(anoCivil, 0, 1 + TO.mapa.hash(`${id}|aniv`) % 364);
+  };
   const fmtDia = d =>
     `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
   const mesmoDia = (a, b) =>
@@ -260,14 +268,15 @@ TO.feed = (function(){
     /* a nossa festa e a do clube */
     const meus = [];
     if(E.torcida.fundacao)
-      meus.push({tipo:'torcida', id:E.torcida.id, fundacao:E.torcida.fundacao});
+      meus.push({tipo:'torcida', id:E.torcida.id, fundacao:E.torcida.fundacao,
+                 fonte:E.torcida});
     const time = M().time(E.torcida.clubeId);
     if(time && time.fundacao)
       meus.push({tipo:'clube', id:'clube|'+E.torcida.clubeId,
-                 fundacao:time.fundacao, nome:time.nome});
+                 fundacao:time.fundacao, nome:time.nome, fonte:time});
     for(const q of meus){
       const F = FESTA_ANIV[q.tipo];
-      const aniv = dataDoAniversario(q.id, em10.getFullYear());
+      const aniv = dataDoAniversario(q.id, em10.getFullYear(), q.fonte);
       if(mesmoDia(aniv, em10)){
         const idade = em10.getFullYear() - q.fundacao;
         if(idade > 0) propor(E, {
@@ -294,7 +303,7 @@ TO.feed = (function(){
         });
       }
       /* o dia da festa: a receita sai do potencial */
-      const anivHoje = dataDoAniversario(q.id, hoje.getFullYear());
+      const anivHoje = dataDoAniversario(q.id, hoje.getFullYear(), q.fonte);
       if(mesmoDia(anivHoje, hoje)){
         const chave = `festa-${q.tipo}|${hoje.getFullYear()}`;
         const marcada = (E.festasAniversario||{})[chave];
@@ -403,7 +412,8 @@ TO.feed = (function(){
          nota:'abre a cena — a briga vale até ±10 de prestígio; ganhando, '+
               'saque de R$ 60 por defensor + 22% do caixa deles · '+
               'Relação −26 (perdendo, −18)'},
-        {id:'nada', rot:'Deixar quieto', acao:'nada'}
+        {id:'nada', rot:'Deixar quieto', acao:'ignorar-bar-rival',
+         nota:'Prestígio −1 · Moral −1'}
       ]
     });
   }
@@ -723,10 +733,10 @@ TO.feed = (function(){
       botoes:[
         {id:'bora',  rot:'Bora pro problema', acao:'cena-treta',
          nota:`${tam} de cada lado, sem pedra nem bomba — Prestígio `+
-              `±${tam >= 10 ? 5 : tam >= 7 ? 4 : 3} (vencedor leva, perdedor `+
-              `paga) · Relação −2 · vitória dá +2 de moral a quem foi`},
-        {id:'ficar', rot:'Ficar de fora', acao:'nada',
-         nota:'sem consequência: treta recusada morre aqui'}
+              `+${tam >= 10 ? 5 : tam >= 7 ? 4 : 3} vencendo, −1 perdendo · `+
+              `Relação −2 · moral de quem foi: +2 na vitória, −1 na derrota`},
+        {id:'ficar', rot:'Ficar de fora', acao:'ignorar-treta',
+         nota:'Prestígio −1'}
       ]
     });
   }
@@ -1125,6 +1135,24 @@ TO.feed = (function(){
         }
         marcar();
         return {ok:true, abrir:{tela:'cena-acao', args:{cena:r.cena}}};
+      }
+
+      /* recusas com preço (dono, 19/08/2026) */
+      case 'ignorar-treta': {
+        marcar();
+        TO.estado.mexerIndicador(E, 'prestigio', -0.2,
+          'Ficamos de fora da treta marcada');
+        m.consequencia = 'Ficamos de fora. Prestígio −1.';
+        return {ok:true};
+      }
+      case 'ignorar-bar-rival': {
+        marcar();
+        TO.estado.mexerIndicador(E, 'prestigio', -0.2,
+          'Deixamos o bar do rival quieto');
+        TO.estado.mexerIndicador(E, 'moral', -1,
+          'Deixamos o bar do rival quieto');
+        m.consequencia = 'Deixamos quieto. Prestígio −1 · Moral −1.';
+        return {ok:true};
       }
 
       /* --- aniversários (textos do dono, 18/08/2026) --- */

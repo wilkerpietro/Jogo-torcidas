@@ -204,15 +204,16 @@ TO.acoes = (function(){
     R.hostilidade(E, alvo.torcidaId, 2);
     const antesP = E.indicadores.prestigio;
     const display = (alvo.n||5) >= 10 ? 5 : (alvo.n||5) >= 7 ? 4 : 3;
-    TO.estado.mexerIndicador(E, 'prestigio', (ganhou ? 1 : -1) * display/5,
+    /* preço do dono (19/08/2026): vencer paga +3/+4/+5; perder custa
+       −1 de prestígio e −1 de moral pra cada um que foi */
+    TO.estado.mexerIndicador(E, 'prestigio', ganhou ? display/5 : -0.2,
       `Treta contra a ${alvo.nome}: ${ganhou ? 'vencemos' : 'perdemos'}`);
     const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio',
-                            (ganhou ? -1 : 1) * display/5);
+                            ganhou ? -0.2 : display/5);
     const membros = (res && res.membros) || [];
-    /* a vitória na treta sobe a moral de quem foi (pedido do dono) */
-    if(ganhou) for(const r of membros){
+    for(const r of membros){
       const m = E.membros.find(x=>x.id === r.id);
-      if(m) m.moral = U.limitar(m.moral + 2, 0, 20);
+      if(m) m.moral = U.limitar(m.moral + (ganhou ? 2 : -1), 0, 20);
     }
     const efeitos = [
       {ind:'relacao',   delta: r1(R.nivel(E, alvo.torcidaId) - antesRel),
