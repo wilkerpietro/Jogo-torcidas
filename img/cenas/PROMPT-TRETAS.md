@@ -15,6 +15,11 @@ cima — foto com gente vira gente parada no meio da briga.
 | Estrada 2 — posto sem teto | emboscada na caravana (variação) | `estrada_posto.webp` | a fazer |
 | Loja da rival | ação *atacar a loja* | `loja.webp` | a fazer |
 
+As três cenas de estádio (5 mil, 20 mil e 40 mil) estão em
+`PROMPT-ESTADIOS.md`, e ficaram em arquivo separado por um motivo só:
+**lá a altura de voo é outra**. Estádio não cabe em 80 metros de quadro, e
+a régua de escala desta página não vale pra elas.
+
 As três primeiras são leitura da ideia de treta por tamanho: **o que muda entre
 5×5, 7×7 e 10×10 não é o zoom da foto, é quanto chão livre a cena tem**. A tela
 da briga é sempre a mesma, 1536×1024, e o disco tem 7 px de raio — dez discos
