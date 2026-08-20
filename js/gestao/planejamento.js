@@ -1061,6 +1061,48 @@ TO.planejamento = (function(){
      estar esperando. Determinístico por semana: a mesma
      viagem reaberta dá a mesma estrada.
      ======================================================= */
+  /* QUEM PODE FECHAR A PISTA NUMA PRAÇA
+     A régua é a mesma da emboscada da rota: torcida daquela cidade,
+     não-irmã, relação hostil, e grande o bastante pra encarar a
+     caravana. Fica separado porque o itinerário pergunta praça por
+     praça (régua do dono, 20/08/2026) e a emboscada antiga perguntava
+     pela viagem inteira. */
+  function hostisNaPraca(E, cidadeId, crew){
+    const fora = [];
+    for(const o of M().torcidasEm(cidadeId)){
+      if(o.incompleta || o.id === E.torcida.id) continue;
+      if(M().saoIrmas(E.torcida.id, o.id)) continue;
+      const rel = TO.relacoes.nivel(E, o.id);
+      if(rel > -15) continue;
+      const viva = (TO.relacoes.mundo(E)[o.id]||{}).membros || o.membros || 0;
+      if(viva < crew * 0.7) continue;
+      fora.push({id:o.id, torcida:o, relacao:rel});
+    }
+    return fora.sort((a,b)=>a.relacao-b.relacao || (a.id<b.id?-1:1));
+  }
+
+  /* A EMBOSCADA DAQUELA PRAÇA, na ida ou na volta.
+     Determinístico por semana, cidade e perna: reabrir o dia dá a
+     mesma estrada. Na VOLTA a chance é METADE da ida (régua do dono):
+     a estrada de madrugada é mais calma, mas não é segura. */
+  function emboscadaNaPraca(E, cidadeId, ida){
+    const H = TO.mapa.hash;
+    const est = estimativaCaravana(E);
+    const crew = (est && est.vao) || 20;
+    const lista = hostisNaPraca(E, cidadeId, crew);
+    if(!lista.length) return null;
+    const chave = `emb|${E.data.ano}|${E.data.semana}|${cidadeId}|${ida?'ida':'volta'}`;
+    const alvo = lista[H(chave+'|quem') % lista.length];
+    let chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45);
+    if(!ida) chance = chance/2;
+    if((H(chave+'|dado') % 100) >= chance) return null;
+    const cid = M().cidade(cidadeId);
+    return {torcida:alvo.id, nome:alvo.torcida.nome,
+            cidade: cid ? cid.nome : '', relacao:alvo.relacao,
+            /* os dois cenários do dono pra estrada */
+            cena: H(chave+'|cena') % 2 ? 'emb-posto' : 'emb-onibus'};
+  }
+
   function emboscadaDaRota(E){
     const r = rotaEscolhida(E);
     if(!r || r.id === 'ar') return null;
@@ -1111,7 +1153,7 @@ TO.planejamento = (function(){
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
           aliadosNaCidade, caravanaDe, RELACAO_ALIADO,
           RECEPCAO, recepcaoDe, custoRecepcao,
-          emboscadaDaRota,
+          emboscadaDaRota, emboscadaNaPraca, hostisNaPraca,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,
           compromissos, pendencias, confirmar, CUSTO_BASE, CUSTO_SALTO, CUSTO_AR};
 })();

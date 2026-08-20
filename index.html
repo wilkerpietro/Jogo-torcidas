@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/paineis.css">
 <link rel="stylesheet" href="css/cenas.css">
+<link rel="stylesheet" href="css/itinerario.css">
 <link rel="stylesheet" href="css/mobile.css">
 </head>
 <body>
@@ -96,6 +97,11 @@
   </div>
 </div>
 
+<!-- ============== ITINERÁRIO DO DIA DE JOGO ==============
+     A linha vertical de paradas: o dia inteiro numa tela só.
+     O conteúdo é montado em main.js (abrirItinerario). -->
+<div id="telaItinerario" class="oculto"></div>
+
 <!-- ================= DIA DE JOGO ================= -->
 <div id="telaDiaJogo" class="tela-cheia oculto">
   <div id="djGrade">
@@ -175,6 +181,7 @@
 <script src="js/gestao/patrimonio.js"></script>
 <script src="js/gestao/acoes.js"></script>
 <script src="js/gestao/planejamento.js"></script>
+<script src="js/gestao/itinerario.js"></script>
 <script src="js/estado.js"></script>
 <!-- o feed lê tudo que está acima dele: calendário, relações, rua,
      membros, patrimônio e planejamento. Ele não simula nada. -->

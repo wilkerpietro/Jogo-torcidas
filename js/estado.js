@@ -134,6 +134,17 @@ TO.estado = (function(){
     const noAno = abs % DIAS_ANO;
     return {ano, semana: Math.floor(noAno/7)+1, dia: (noAno%7)+1};
   }
+  /* a mesma data, deslocada em dias — o itinerário do jogo fora
+     precisa nomear a véspera e o dia seguinte */
+  function dataTextoEm(est, offset){
+    const d = dataDe(est||E);
+    d.setDate(d.getDate() + (offset||0));
+    return {
+      curta:`${String(d.getDate()).padStart(2,'0')}/`+
+            `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`,
+      semana: SEMANA[d.getDay()]
+    };
+  }
   function dataTexto(est){
     const d = dataDe(est||E);
     return {
@@ -540,7 +551,7 @@ TO.estado = (function(){
     get E(){ return E; },
     novo, lancar, lancarNoResumo, registrarLinha,
     mexerIndicador, avancarDia, aoMudar, aoFecharSemana, mudou,
-    dataTexto, dataDaSemana, semanaDiaDe, sortearProximoJogo, anotar,
+    dataTexto, dataTextoEm, dataDaSemana, semanaDiaDe, sortearProximoJogo, anotar,
     DIA_JOGO:6,
     salvar, carregar, existeSave, exportar, importar,
     bloquear, estaBloqueado

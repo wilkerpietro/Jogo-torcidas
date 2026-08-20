@@ -1,0 +1,245 @@
+/* =========================================================
+   ITINERÁRIO DO DIA DE JOGO
+   A linha vertical de paradas, de baixo pra cima (esboço
+   aprovado pelo dono, 20/08/2026). Cores e tipografia são as
+   de base.css — aqui só o que é desta tela.
+   ========================================================= */
+/* A LINHA FICA POR BAIXO DAS CENAS (decisão do dono, 20/08/2026):
+   briga e relatório abrem POR CIMA do itinerário e voltam pra ele. As
+   telas cheias do jogo moram no z-index 50, então esta mora abaixo. */
+#telaItinerario{
+  position:fixed; inset:0; z-index:40; overflow:auto;
+  background:var(--fundo); display:block;
+}
+#telaItinerario.oculto{display:none}
+
+.itn-folha{max-width:940px; margin:0 auto; padding:0 20px 80px}
+
+/* ---------- topo ---------- */
+.itn-topo{border-bottom:1px solid var(--linha); padding:22px 0 16px}
+.itn-topo .eyebrow{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--apagado);
+}
+.itn-topo h1{
+  font-family:var(--titulo); font-weight:700; font-size:32px; letter-spacing:.02em;
+  line-height:1.05; text-transform:uppercase; margin-top:4px;
+}
+.itn-topo h1 em{font-style:normal; color:var(--ouro)}
+.itn-topo p{color:var(--fraco); max-width:62ch; margin-top:6px}
+
+/* ---------- barra fixa ---------- */
+.itn-barra{
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  padding:11px 0; border-bottom:1px solid var(--linha);
+  position:sticky; top:0; z-index:5; background:var(--fundo);
+}
+.itn-barra .estado{
+  flex-basis:100%; font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ouro); padding-top:4px;
+}
+.itn-barra .estado.travado{color:var(--rubro-vivo)}
+.itn-bt{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--fraco);
+  background:var(--painel-alto); border:1px solid var(--linha);
+  padding:7px 13px; cursor:pointer; transition:.14s;
+}
+.itn-bt:hover{color:var(--texto); border-color:#3d3d3d}
+.itn-bt:focus-visible{outline:2px solid var(--ouro); outline-offset:2px}
+.itn-bt.acao{color:var(--ouro); border-color:#4a3a18}
+.itn-bt.acao:hover{background:#3a2c11}
+.itn-bt.on{background:var(--rubro); border-color:var(--rubro-vivo); color:#fff}
+.itn-espaco{flex:1}
+.itn-jogo{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+  color:var(--apagado); text-transform:uppercase;
+}
+
+/* ---------- a linha ---------- */
+.itn-trilha{
+  position:relative; padding:30px 0 10px;
+  --gutter:76px; --rail:22px;
+}
+.itn-trilha::before{
+  content:''; position:absolute; top:0; bottom:0;
+  left:calc(var(--gutter) + var(--rail)/2); width:2px; background:var(--linha);
+}
+.itn-feito{
+  position:absolute; left:calc(var(--gutter) + var(--rail)/2); width:2px;
+  bottom:0; height:0; background:linear-gradient(to top, var(--rubro), var(--ouro));
+  transition:height .5s cubic-bezier(.4,0,.2,1);
+}
+.itn-parada{
+  position:relative; display:grid;
+  grid-template-columns:var(--gutter) var(--rail) 1fr;
+  gap:0 16px; align-items:start; padding:0 0 24px;
+  scroll-margin-top:110px;
+}
+.itn-parada.vazia{padding-bottom:16px}
+.itn-parada .hora{
+  font-family:var(--mono); font-size:11px; font-variant-numeric:tabular-nums;
+  color:var(--apagado); text-align:right; padding-top:1px; letter-spacing:.04em;
+}
+.itn-parada .marca{position:relative; display:flex; justify-content:center; padding-top:3px}
+
+.itn-bola{
+  width:14px; height:14px; border-radius:50%; background:var(--fundo);
+  border:2px solid var(--linha); position:relative; z-index:2; transition:.25s;
+}
+.itn-parada.passou .itn-bola{background:var(--fraco); border-color:var(--fraco)}
+.itn-parada.passou.brigou .itn-bola{background:var(--rubro-vivo); border-color:var(--rubro-vivo)}
+.itn-parada.agora .itn-bola{
+  background:var(--ouro); border-color:var(--ouro); transform:scale(1.35);
+  box-shadow:0 0 0 5px rgba(217,164,65,.14);
+}
+.itn-parada.agora .itn-bola::after{
+  content:''; position:absolute; inset:-9px; border-radius:50%;
+  border:1px solid var(--ouro); opacity:.55; animation:itn-pulso 1.9s ease-out infinite;
+}
+@keyframes itn-pulso{
+  0%{transform:scale(.75); opacity:.6}
+  70%{transform:scale(1.5); opacity:0}
+  100%{opacity:0}
+}
+.itn-parada.jogo .itn-bola{width:22px; height:22px; margin-top:-4px}
+.itn-parada.jogo.agora .itn-bola{transform:scale(1.15)}
+/* o trecho de rodovia que a caravana acabou de rodar */
+.itn-parada.estrada .marca::before{
+  content:''; position:absolute; top:20px; height:34px; width:4px;
+  left:50%; margin-left:-2px; z-index:1;
+  background:repeating-linear-gradient(to bottom,
+    var(--linha) 0 5px, var(--fundo) 5px 10px);
+}
+
+.itn-parada .corpo{min-width:0}
+.itn-parada .nome{
+  font-family:var(--titulo); font-weight:600; font-size:19px; letter-spacing:.05em;
+  text-transform:uppercase; line-height:1.1; color:var(--apagado); transition:.25s;
+}
+.itn-parada.passou .nome{color:var(--fraco)}
+.itn-parada.agora .nome{color:var(--texto)}
+.itn-parada.jogo .nome{font-size:24px; font-weight:700}
+.itn-parada .lugar{
+  font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--apagado); margin-top:3px;
+}
+
+/* ---------- virada de dia ---------- */
+.itn-marco{
+  display:grid; grid-template-columns:var(--gutter) var(--rail) 1fr;
+  gap:0 16px; align-items:center; padding:2px 0 20px;
+}
+.itn-marco .risco{position:relative; display:flex; justify-content:center}
+.itn-marco .risco::before{
+  content:''; position:absolute; left:50%; margin-left:-7px;
+  width:14px; height:2px; background:var(--linha);
+}
+.itn-marco .rot{
+  display:flex; align-items:center; gap:10px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--apagado); white-space:nowrap;
+}
+.itn-marco .rot::after{content:''; flex:1; height:1px; background:var(--linha)}
+.itn-marco.doJogo .rot{color:var(--ouro)}
+.itn-marco.doJogo .risco::before{background:var(--ouro); opacity:.5}
+
+/* ---------- o cartão da parada ---------- */
+.itn-cartao{
+  margin-top:10px; background:var(--painel); border:1px solid var(--linha);
+  border-left:3px solid var(--linha); padding:13px 15px 14px; max-width:56ch;
+  animation:itn-sobe .34s ease-out both;
+}
+@keyframes itn-sobe{from{opacity:0; transform:translateY(7px)} to{opacity:1; transform:none}}
+.itn-cartao.investida{border-left-color:var(--ouro)}
+.itn-cartao.sofrido,
+.itn-cartao.emboscada{border-left-color:var(--rubro-vivo); background:#1a1414}
+.itn-cartao.fecho{border-left-color:var(--verde)}
+.itn-cartao .voz{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--apagado); margin-bottom:6px;
+}
+.itn-cartao.investida .voz{color:var(--ouro)}
+.itn-cartao.sofrido .voz,
+.itn-cartao.emboscada .voz{color:var(--rubro-vivo)}
+.itn-cartao.fecho .voz{color:var(--verde)}
+.itn-cartao p{color:#d8d4cd}
+.itn-cartao .custo{
+  font-family:var(--mono); font-size:10.5px; color:var(--fraco);
+  margin-top:9px; padding-top:8px; border-top:1px dashed var(--linha);
+}
+.itn-cartao .custo b{color:var(--texto); font-weight:600}
+.itn-cartao .bts{display:flex; flex-wrap:wrap; gap:7px; margin-top:11px}
+.itn-cartao .saldo{
+  font-family:var(--mono); font-size:10.5px; margin-top:10px; padding-top:9px;
+  border-top:1px solid var(--linha); color:var(--fraco);
+}
+.itn-cartao .saldo b{color:var(--texto)}
+.itn-cartao .saldo .bom{color:var(--verde)}
+.itn-cartao .saldo .ruim{color:var(--rubro-vivo)}
+
+/* ---------- a partida dentro da parada ---------- */
+.itn-partida{
+  margin-top:12px; background:var(--painel-alto); border:1px solid #33301f;
+  max-width:56ch; overflow:hidden;
+}
+.itn-partida .placar{
+  display:flex; align-items:center; gap:12px; padding:13px 15px 11px;
+  border-bottom:1px solid var(--linha);
+}
+.itn-partida .time{
+  flex:1; font-family:var(--titulo); font-size:17px; letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.itn-partida .time.dir{text-align:right}
+.itn-partida .gols{
+  font-family:var(--mono); font-weight:600; font-size:22px;
+  font-variant-numeric:tabular-nums; letter-spacing:.06em; color:var(--ouro);
+}
+.itn-partida .trilho{height:5px; background:#14140f; position:relative}
+.itn-partida .trilho i{display:block; height:100%; width:0; background:var(--verde);
+  transition:width .3s linear}
+.itn-partida .trilho .meio{position:absolute; left:50%; top:0; bottom:0; width:1px;
+  background:rgba(255,255,255,.14)}
+.itn-partida .relogio{
+  display:flex; align-items:center; gap:10px; padding:9px 15px;
+  background:#191914; border-bottom:1px solid var(--linha);
+  font-family:var(--mono); font-size:11px; color:var(--fraco);
+  font-variant-numeric:tabular-nums;
+}
+.itn-partida .relogio .min{color:var(--texto); font-weight:600}
+.itn-partida .relogio .pausado{color:var(--rubro-vivo)}
+.itn-partida .eventos{padding:0 15px}
+.itn-partida .eventos div{
+  font-family:var(--mono); font-size:11px; color:var(--fraco);
+  padding:4px 0; border-top:1px dotted #2a2a2a;
+}
+.itn-partida .eventos div b{color:var(--texto)}
+.itn-partida .clima{
+  margin:9px 15px 14px; padding:8px 11px; border:1px solid var(--linha);
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--fraco); background:#141414; transition:.3s;
+}
+.itn-partida .clima.n1{color:var(--ouro); border-color:#4a3a18; background:#1b1710}
+.itn-partida .clima.n2{color:#fff; border-color:var(--rubro-vivo); background:var(--rubro-fundo)}
+/* a partida ao vivo é o MESMO cartão do feed (partida-live), só que
+   dentro da parada: aqui ele ganha a largura e a moldura da linha */
+.itn-parada .partida-live{
+  max-width:56ch; margin-top:12px;
+  background:var(--painel-alto); border:1px solid #33301f; padding:12px 14px;
+}
+.itn-trava{
+  font-family:var(--mono); font-size:10px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--apagado); margin-top:9px;
+}
+
+@media (max-width:620px){
+  .itn-trilha{--gutter:52px}
+  .itn-topo h1{font-size:25px}
+  .itn-cartao,.itn-partida{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .itn-parada.agora .itn-bola::after{animation:none}
+  .itn-cartao{animation:none}
+  .itn-feito{transition:none}
+}

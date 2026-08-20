@@ -613,6 +613,40 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   rival: subiu em 19, ficou tenso em 17. Aliado do outro clube na
   casa continua segurando o clima em tranquilo o jogo inteiro.
 
+- **O dia de jogo virou itinerário** (régua do dono, 20/08/2026): o
+  dia deixou de ser cartões soltos no feed e virou uma LINHA VERTICAL
+  de paradas, de baixo pra cima, cada bolinha um ponto do dia. Ela
+  anda sozinha e só para em dois lugares: parada com recado, que
+  espera resposta, e o jogo, que segura a linha até o apito final.
+  Parada em que não aconteceu nada não fala — a bolinha acende, apaga
+  e a linha segue. Em casa: concentração, pista, arredores, o jogo,
+  arredores, pista. Fora: as praças da rota da caravana na ida, o
+  bloco do estádio, e as praças de novo na volta.
+  · **Três dias.** Jogo fora ocupa véspera, dia do jogo e dia
+    seguinte — não é invenção da tela, é o que
+    `financeiro.diasDaViagem` já trancava no calendário. A linha marca
+    a virada de cada dia, e as horas saem da hora do jogo
+    (`proximoJogo.hora`) com 7h30 por trecho de rodovia.
+  · **O que aparece em cada parada** sai do que o jogo já decidia: a
+    investida que o PLANEJAMENTO marcou (que continua sendo decidido
+    antes do dia, na tela dele) e o ataque que a gente sofre. Uma
+    parada pode ter os dois — apanhar e revidar no mesmo ponto —, e aí
+    são dois cartões, um de cada vez.
+  · **A cena é a mesma.** O itinerário não inventa briga nem
+    consequência: chama `abrirGuerra` e `abrirAtaqueAoBar`, as cenas
+    abrem POR CIMA da linha e o fecho é o de sempre. Não descer usa a
+    mesma porta do feed (`feed.naoDesceu`), com a mesma conta.
+  · **Emboscada praça a praça.** Cada cidade da rota tem a sua chance,
+    de uma torcida DAQUELA cidade; na volta a chance é metade da ida.
+    A emboscada única da viagem, marcada na véspera, saiu.
+  · **O dia fica no feed** como registro, parada por parada.
+- **Clima tenso PAUSA a partida, não encerra** (20/08/2026): quando a
+  arquibancada se pega, o relógio do jogo trava onde está, a cena abre,
+  e no fim dela a bola volta a rolar até os 90. Antes a partida era
+  encerrada no primeiro soco e o placar congelava. Uma briga de
+  arquibancada por jogo: depois dela a PM fica no setor, o clima cai
+  pra "esquentando" e não sobe de novo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

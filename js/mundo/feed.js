@@ -611,7 +611,13 @@ TO.feed = (function(){
 
     /* a) nosso jogo (em casa ou fora) com ataque marcado */
     const j = E.proximoJogo;
-    if(j && p.intencao === 'atacar' && p.alvoTorcida &&
+    /* O DIA DO NOSSO JOGO É DO ITINERÁRIO (régua do dono, 20/08/2026).
+       A investida que o planejamento marcou não vira mais um cartão
+       solto no feed: ela aparece como PARADA da linha do dia, no ponto
+       combinado (concentração, pista ou arredores), e abre a mesma
+       cena de lá. As investidas nos OUTROS jogos da praça continuam
+       aqui embaixo, que essas não são do nosso dia. */
+    if(false && j && p.intencao === 'atacar' && p.alvoTorcida &&
        (j.dia||6) === hoje && !p.guerraJogada){
       const o = M().torcida(p.alvoTorcida);
       const onde = PL().ONDE_ATAQUE.find(x=>x.id === PL().ondeDoPlano(p)) || {};
@@ -668,6 +674,11 @@ TO.feed = (function(){
   function ataqueSofridoHoje(E){
     const a = TO.relacoes.ataqueDeHoje(E);
     if(!a || a.avisado) return;
+    /* concentração, pista e estrada acontecem DENTRO do itinerário do
+       dia de jogo (régua do dono, 20/08/2026) — o feed não pergunta
+       duas vezes. O ataque ao BAR continua aqui: é de dia comum. */
+    if(a.alvo === 'concentracao' || a.alvo === 'pista' ||
+       a.alvo === 'emboscada') return;
     a.avisado = true;
     const cfg = SOFRIDO[a.alvo] || SOFRIDO.bar;
     const chave = `sofrido|${E.data.ano}|${E.data.semana}|${a.torcida}|${a.alvo}`;
@@ -746,6 +757,13 @@ TO.feed = (function(){
   /* a emboscada da rota, agendada quando a caravana pega a estrada:
      estado chama isto no primeiro dia de viagem */
   function emboscadaDaViagem(E){
+    /* A ESTRADA É DO ITINERÁRIO (régua do dono, 20/08/2026): cada
+       praça por onde a caravana passa tem a sua chance, na ida e na
+       volta (planejamento.emboscadaNaPraca), e a linha do dia abre a
+       cena na parada daquela praça. Uma emboscada só pra viagem
+       inteira, marcada aqui na véspera, virou duas contas do mesmo
+       fato — esta some, e a função fica porque o calendário chama. */
+    if(TO.itinerario) return;
     if(E.ataqueMarcado && !E.ataqueMarcado.resolvido &&
        E.ataqueMarcado.semana === E.data.semana) return;
     const emb = PL().emboscadaDaRota(E);
@@ -1106,17 +1124,8 @@ TO.feed = (function(){
         return {ok:true};
       }
       case 'fugir-defesa': {
-        /* não descer é entregar: a defesa se resolve como derrota sem cena */
-        const a = E.ataqueMarcado;
         marcar();
-        if(a && !a.resolvido){
-          a.resolvido = true;
-          const alvo = alvoDaDefesa(E, a);
-          alvo.nossos = 0;              // ninguém desceu: não houve briga
-          TO.acoes.fecharCena(E, {acao:'defender', alvo},
-                              {ganhamos:false, membros:[],
-                               caidosMandante:0, caidosVisitante:0});
-        }
+        naoDesceu(E, E.ataqueMarcado);
         return {ok:true};
       }
       case 'abandonar-escolta': {
@@ -1229,6 +1238,46 @@ TO.feed = (function(){
   }
 
   /* o alvo que `fecharDefesa` espera, montado do ataque marcado */
+  /* O DIA FICA NO FEED COMO REGISTRO (decisão do dono, 20/08/2026).
+     Terminado o itinerário, a linha inteira vira uma mensagem de
+     informação: parada por parada, com a hora de cada uma e uma marca
+     em quem virou briga. As consequências de cada cena já saíram nas
+     mensagens delas — esta é a espinha do dia, não a conta. */
+  function registroDoDia(E, it){
+    if(!E || !it || !it.paradas) return null;
+    const chave = `itinerario|${E.data.ano}|${E.data.semana}|${E.data.dia}`;
+    if((E.feed||[]).some(m=>m.chave === chave)) return null;
+    const linhas = it.paradas.map(o=>{
+      const marca = o.brigou ? ' (briga)' : '';
+      return `${o.hora} ${o.nome}${marca}`;
+    });
+    const brigas = it.paradas.filter(o=>o.brigou).length;
+    propor(E, {
+      kind:'itinerario', peso:'info', voz:'diretor',
+      chave,
+      texto:`O dia de jogo, parada por parada: ${linhas.join(' · ')}.`,
+      dados:{paradas:linhas, brigas, dias:it.dias},
+      consequencia: brigas
+        ? `${brigas} ${brigas===1?'parada virou briga':'paradas viraram briga'}.`
+        : 'Nenhuma parada virou briga.'
+    });
+    return chave;
+  }
+
+  /* NÃO DESCER É ENTREGAR: a defesa se resolve como derrota sem cena.
+     Mora aqui, e não dentro do botão, porque o itinerário do dia de
+     jogo oferece a mesma escolha nas paradas dele — e a conta tem de
+     ser a mesma, saindo pela mesma porta. */
+  function naoDesceu(E, a){
+    if(!a || a.resolvido) return null;
+    a.resolvido = true;
+    const alvo = alvoDaDefesa(E, a);
+    alvo.nossos = 0;                  // ninguém desceu: não houve briga
+    return TO.acoes.fecharCena(E, {acao:'defender', alvo},
+                               {ganhamos:false, membros:[],
+                                caidosMandante:0, caidosVisitante:0});
+  }
+
   function alvoDaDefesa(E, a){
     const o = M().torcida(a.torcida) || {nome:a.nome};
     const est = TO.planejamento.estimativaCaravana(E);
@@ -1260,5 +1309,6 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           registrarConfronto, responder, alvoDaDefesa, encerrarPartida,
-          linhaDeConsequencia, nomeDaCena, NOME_DIA};
+          linhaDeConsequencia, nomeDaCena, NOME_DIA,
+          SOFRIDO, naoDesceu, registroDoDia};
 })();

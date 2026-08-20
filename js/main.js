@@ -566,7 +566,8 @@
                     provocacao:'Provocação', dica:'Dica',
                     confronto:'Confronto', placar:'Resultado',
                     rodada:'Rodada', partida:'Nossa partida',
-                    assalto:'Assalto', brigas:'Brigas da semana'};
+                    assalto:'Assalto', brigas:'Brigas da semana',
+                    itinerario:'Dia de jogo'};
 
   /* =======================================================
      A PARTIDA AO VIVO (decisão do dono, 17/08/2026)
@@ -669,7 +670,10 @@
     alternarPausaPartida(m);
   });
 
-  function widgetPartida(m){
+  /* `aoApitar` é do itinerário: a linha do dia só segue depois do
+     apito final (régua do dono, 20/08/2026), então quem desenha a
+     partida avisa quando ela acaba. */
+  function widgetPartida(m, aoApitar){
     const d = m.dados;
     /* mensagens de antes do pause: o relógio velho era só t0 corrido */
     if(d.minAcum === undefined){
@@ -751,24 +755,46 @@
         }
         d.clima.min = Math.max(d.clima.min, min);
         pintarClima();
-        if(d.clima.nivel >= 2 && !d.clima.aberto){
+        /* UMA BRIGA DE ARQUIBANCADA POR JOGO: depois da primeira a PM
+           fica no setor, o clima cai pra "esquentando" e não sobe de
+           novo — sem esta trava a mesma partida abriria a cena a cada
+           vez que o dado batesse em tenso outra vez. */
+        if(d.clima.nivel >= 2 && !d.clima.aberto && !d.clima.brigou){
           d.clima.aberto = true;
-          clearInterval(tm);
+          /* O CLIMA TENSO PAUSA O RELÓGIO (régua do dono, 20/08/2026).
+             A partida NÃO acaba aqui: ela espera a briga terminar e
+             volta a correr de onde parou. O relógio pausa pela mesma
+             porta do botão de pausa, então minuto nenhum se perde. */
+          pontoDeControle(d);
+          d.pausada = true;
           eventos.appendChild(el('div',{class:'partida-gol',
-            texto:`${min}' · A arquibancada se pegou!`}));
-          setTimeout(()=>abrirBrigaNoEstadio(m), 1100);
+            texto:`${min}' · A arquibancada se pegou — o jogo espera.`}));
+          setTimeout(()=>abrirBrigaNoEstadio(m, ()=>{
+            /* de volta da briga: a PM baixa o clima e a bola volta a
+               rolar. Sem baixar, o gatilho reabriria a cena no quadro
+               seguinte. */
+            d.clima.nivel = 1; d.clima.aberto = false; d.clima.brigou = true;
+            pontoDeControle(d);
+            d.pausada = false;
+            pintarClima();
+          }), 1100);
           return;
         }
       }
-      if(min >= 90){
+      /* PARTIDA PAUSADA NÃO APITA: com a arquibancada aberta o relógio
+         está parado, e o apito final tem de esperar a briga acabar */
+      if(min >= 90 && !d.pausada){
         clearInterval(tm);
         setTimeout(()=>{
           const e = E();
           TO.feed.encerrarPartida(e, m.id);
           TO.estado.salvar();
-          atualizarFeed();
-          pintarTopo();
-          if(!TO.feed.travado(e)) retomarTempo('decisao');
+          if(aoApitar) aoApitar();
+          else {
+            atualizarFeed();
+            pintarTopo();
+            if(!TO.feed.travado(e)) retomarTempo('decisao');
+          }
         }, 600);
       }
     }, 250);
@@ -785,12 +811,15 @@
      são os da linha de presença da mensagem. O fecho usa a
      tabela do dono (fecharEstadio, em acoes.js).
      ======================================================= */
+  /* quem espera a briga da arquibancada acabar pra voltar a correr */
+  let voltarDaArquibancada = null;
+
   const SETORES_ESTADIO = {
     'estadio-10': {mandante:3, visitante:2},
     'estadio-20': {mandante:3, visitante:3},
     'estadio-40': {mandante:2, visitante:3}
   };
-  function abrirBrigaNoEstadio(m){
+  function abrirBrigaNoEstadio(m, aoVoltar){
     const e = E();
     const d = m && m.dados;
     /* A BRIGA É AGENDADA COM 1,1 s DE ATRASO — o tempo do aviso "a
@@ -798,16 +827,26 @@
        ter acabado por outro caminho (fim de jogo, save carregado,
        feed limpo): mensagem já respondida não abre cena nenhuma. */
     if(!e || !d || m.respondido) return;
-    TO.feed.encerrarPartida(e, m.id);
+    /* A PARTIDA NÃO ACABA AQUI (régua do dono, 20/08/2026): antes ela
+       era encerrada no primeiro soco da arquibancada e o placar
+       congelava aos 63'. Agora ela está PAUSADA — quem apita é o
+       relógio, aos 90. */
     m.consequencia = (m.consequencia || '') +
       ' O clima azedou e a arquibancada se pegou.';
+    /* quem abre a arquibancada pausa a partida — vale pra quem chega
+       pelo relógio do widget e pra quem chama esta função direto */
+    if(!d.pausada){ pontoDeControle(d); d.pausada = true; }
+    voltarDaArquibancada = aoVoltar || null;
     const pres = (d.presenca || []).filter(p => p.id);
     const nossos = pres.filter(p => p.casa === !!d.somosCasa)
       .sort((a,b) => b.n - a.n);
     const deles = pres.filter(p => p.casa !== !!d.somosCasa)
       .sort((a,b) => b.n - a.n);
     if(!deles.length || !nossos.some(p => p.id === e.torcida.id)){
-      /* sem rival na casa (ou nós nem fomos): nada abre */
+      /* sem rival na casa (ou nós nem fomos): nada abre, e a bola
+         volta a rolar na hora */
+      voltarDaArquibancada = null;
+      if(aoVoltar) aoVoltar();
       TO.estado.salvar(); atualizarFeed();
       if(!TO.feed.travado(e)) retomarTempo('decisao');
       return;
@@ -858,6 +897,307 @@
     });
     TO.estado.salvar();
     atualizarFeed();
+  }
+
+
+  /* =======================================================
+     O ITINERÁRIO DO DIA DE JOGO (régua do dono, 20/08/2026)
+
+     O dia inteiro numa linha vertical, de baixo pra cima. Cada
+     bolinha é uma parada; ao chegar nela pode aparecer o recado
+     do lado — a nossa investida (a que o PLANEJAMENTO marcou,
+     que continua sendo decidido antes do dia), o ataque que a
+     gente sofre, ou nada.
+
+     A linha anda sozinha e só para em dois lugares: parada com
+     recado, que espera resposta, e o jogo, que segura o dia até
+     o apito final. Parada em que não aconteceu nada não fala:
+     a bolinha acende, apaga e a linha segue.
+
+     As cenas são as MESMAS do jogo, abertas pelas mesmas
+     funções — o itinerário não inventa briga nem consequência,
+     só ordena o dia e chama quem já existe.
+     ======================================================= */
+  let ITN = null;      // {it, msg, ponto, travado, timer, esperando}
+
+  const itnEl = ()=>$('telaItinerario');
+
+  function abrirItinerario(msg){
+    const e = E();
+    const it = TO.itinerario.montar(e);
+    if(!it) return false;
+    ITN = {it, msg, ponto:-1, travado:false, timer:null, esperando:null};
+
+    const tela = itnEl();
+    tela.innerHTML = '';
+    const folha = el('div',{class:'itn-folha'});
+
+    const topo = el('div',{class:'itn-topo'});
+    topo.appendChild(el('div',{class:'eyebrow',
+      texto: it.casa ? 'Dia de jogo · em casa'
+                     : `Dia de jogo · fora, em ${it.cidade}`}));
+    topo.appendChild(el('h1',{html:`Itinerário do <em>dia</em>`}));
+    topo.appendChild(el('p',{texto: it.viaja
+      ? `${it.titulo}. A caravana pega a estrada na véspera e volta no dia `+
+        `seguinte — ${it.dias} dias de linha.`
+      : `${it.titulo}. Bola rolando às ${it.hora}.`}));
+    folha.appendChild(topo);
+
+    const barra = el('div',{class:'itn-barra'});
+    const btSeguir = el('button',{class:'itn-bt acao', texto:'Começar o dia ▲'});
+    const btFechar = el('button',{class:'itn-bt', texto:'Fechar o dia'});
+    btFechar.disabled = true;
+    barra.appendChild(el('span',{class:'itn-jogo', texto:it.titulo}));
+    barra.appendChild(el('span',{class:'itn-espaco'}));
+    barra.appendChild(btSeguir);
+    barra.appendChild(btFechar);
+    const estado = el('div',{class:'estado', texto:'o dia ainda não começou'});
+    barra.appendChild(estado);
+    folha.appendChild(barra);
+
+    const trilha = el('div',{class:'itn-trilha'});
+    trilha.appendChild(el('div',{class:'itn-feito'}));
+    folha.appendChild(trilha);
+    tela.appendChild(folha);
+
+    ITN.trilha = trilha;
+    ITN.estado = estado;
+    ITN.btSeguir = btSeguir;
+    ITN.btFechar = btFechar;
+
+    it.paradas.forEach((p, i)=>{
+      const linha = el('div',{class:'itn-parada'+(p.jogo?' jogo':'')+
+        (p.estrada?' estrada':'')+((p.evento||p.jogo)?'':' vazia')});
+      linha.dataset.i = i;
+      linha.appendChild(el('div',{class:'hora', texto:p.hora}));
+      const marca = el('div',{class:'marca'});
+      marca.appendChild(el('div',{class:'itn-bola'}));
+      linha.appendChild(marca);
+      const corpo = el('div',{class:'corpo'});
+      corpo.appendChild(el('div',{class:'nome', texto:p.nome}));
+      corpo.appendChild(el('div',{class:'lugar', texto:p.lugar}));
+      corpo.appendChild(el('div',{class:'vaga'}));
+      linha.appendChild(corpo);
+      /* o marco do dia fica ABAIXO da primeira parada daquele dia:
+         embaixo é mais cedo. Por isso entra antes dela. */
+      if(p.abreDia){
+        const mk = el('div',{class:'itn-marco'+(p.dia===0?' doJogo':'')});
+        mk.appendChild(el('div'));
+        mk.appendChild(el('div',{class:'risco'}));
+        mk.appendChild(el('div',{class:'rot', texto:p.abreDia}));
+        trilha.prepend(mk);
+      }
+      trilha.prepend(linha);
+    });
+
+    btSeguir.onclick = ()=>{ if(!ITN.travado) itnProximo(); };
+    btFechar.onclick = ()=> itnFechar();
+
+    tela.classList.remove('oculto');
+    document.body.classList.add('em-cena');
+    /* o cartão do feed já tinha desenhado a partida antes desta tela
+       abrir: repinta pra o relógio não correr em dois lugares */
+    atualizarFeed();
+    pararTudo('itinerario');
+    itnPintar();
+    ITN.timer = setTimeout(itnProximo, 700);
+    return true;
+  }
+
+  function itnParadas(){ return [...ITN.trilha.querySelectorAll('.itn-parada')]; }
+  function itnLinhaDe(i){ return itnParadas().find(el=>+el.dataset.i === i); }
+  function itnDizer(txt, trava){
+    if(!ITN) return;
+    ITN.estado.textContent = txt;
+    ITN.estado.classList.toggle('travado', !!trava);
+  }
+
+  function itnPintar(){
+    if(!ITN) return;
+    for(const linha of itnParadas()){
+      const i = +linha.dataset.i, p = ITN.it.paradas[i];
+      linha.classList.toggle('passou', i < ITN.ponto);
+      linha.classList.toggle('agora',  i === ITN.ponto);
+      linha.classList.toggle('brigou', !!p.brigou);
+    }
+    const atual = itnLinhaDe(ITN.ponto);
+    const feito = ITN.trilha.querySelector('.itn-feito');
+    if(!atual){ feito.style.height = '0px'; return; }
+    const bola = atual.querySelector('.itn-bola');
+    const alto = ITN.trilha.getBoundingClientRect();
+    const b = bola.getBoundingClientRect();
+    feito.style.height = Math.max(0, alto.bottom - b.top - b.height/2) + 'px';
+    atual.scrollIntoView({block:'center', behavior:'smooth'});
+  }
+
+  function itnAgenda(ms){
+    if(!ITN) return;
+    clearTimeout(ITN.timer);
+    ITN.timer = setTimeout(itnProximo, ms || 1400);
+  }
+
+  function itnProximo(){
+    if(!ITN || ITN.travado) return;
+    const paradas = ITN.it.paradas;
+    if(ITN.ponto >= paradas.length - 1) return itnAcabou();
+    ITN.ponto++;
+    itnPintar();
+    const p = paradas[ITN.ponto];
+    const vaga = itnLinhaDe(ITN.ponto).querySelector('.vaga');
+
+    if(p.jogo){                       /* O JOGO SEGURA A LINHA */
+      ITN.travado = true;
+      itnDizer('a partida rolando · o dia só segue no apito final', true);
+      itnPartida(vaga);
+      return;
+    }
+    const fila = (p.eventos || []).slice();
+    if(!fila.length){                 /* parada sem nada não fala */
+      itnDizer('passando · ' + p.nome.toLowerCase());
+      itnAgenda(900);
+      return;
+    }
+    /* uma parada pode ter dois recados — a gente sofrer um ataque no
+       mesmo ponto em que planejou descer em cima de alguém. Os dois
+       cartões aparecem, um de cada vez, e a linha só segue depois do
+       último. */
+    ITN.fila = fila;
+    itnRecado();
+  }
+
+  function itnRecado(){
+    if(!ITN) return;
+    const p = ITN.it.paradas[ITN.ponto];
+    const ev = ITN.fila.shift();
+    if(!ev){ ITN.travado = false; itnDizer('seguindo'); itnAgenda(1200); return; }
+    ITN.travado = true;
+    itnDizer('recado na parada · esperando você responder', true);
+    itnLinhaDe(ITN.ponto).querySelector('.vaga').appendChild(itnCartao(p, ev));
+  }
+
+  /* ---------- o cartão de cada recado ---------- */
+  function itnCartao(p, ev){
+    const cx = el('div',{class:'itn-cartao '+ev.tipo});
+    const S = (TO.feed.SOFRIDO || {});
+    let voz, texto, bts;
+    if(ev.tipo === 'investida'){
+      voz = 'Diretor de rua · investida marcada no planejamento';
+      texto = `Hoje é o dia. A ${ev.nome} vai estar ${p.nome.toLowerCase()==='arredores'
+        ? 'nos arredores' : 'na '+p.nome.toLowerCase()}, e a gente vai pra cima.`;
+      bts = [{rot:'Ir pra cima', briga:true}];
+    } else if(ev.tipo === 'emboscada'){
+      voz = `Emboscada · ${ev.nome}`;
+      texto = (S.emboscada ? S.emboscada.texto(ev.nome)
+                           : `Pegaram a caravana na estrada. A ${ev.nome} fechou a pista.`);
+      bts = [{rot:(S.emboscada||{}).brigar || 'Descer pra treta', briga:true},
+             {rot:(S.emboscada||{}).fugir  || 'Mandar seguir viagem', briga:false}];
+    } else {
+      const cfg = S[ev.ponto] || S.bar || {};
+      voz = `Caiu em cima da gente · ${ev.nome}`;
+      texto = cfg.texto ? cfg.texto(ev.nome)
+                        : `A ${ev.nome} caiu em cima da gente.`;
+      bts = [{rot:cfg.brigar || 'Pra cima deles', briga:true},
+             {rot:cfg.fugir  || 'Deixar quieto',  briga:false}];
+    }
+    cx.appendChild(el('div',{class:'voz', texto:voz}));
+    cx.appendChild(el('p',{texto}));
+    if(ev.tipo !== 'investida')
+      cx.appendChild(el('div',{class:'custo',
+        html:'Ninguém descendo: <b>Moral −3 · Prestígio −3,5 · Relação −6</b>'}));
+    const caixa = el('div',{class:'bts'});
+    bts.forEach((b, k)=>{
+      const bt = el('button',{class:'itn-bt'+(k===0?' acao':''), texto:b.rot});
+      bt.onclick = ()=> itnResponder(p, ev, b.briga, cx);
+      caixa.appendChild(bt);
+    });
+    cx.appendChild(caixa);
+    return cx;
+  }
+
+  function itnResponder(p, ev, briga, cx){
+    if(!ITN) return;
+    const e = E();
+    cx.querySelector('.bts').remove();
+    if(!briga){
+      /* ninguém desceu: a conta é a mesma do feed, pela mesma porta */
+      const atq = (ev.abrir && ev.abrir.atq) || null;
+      const r = TO.feed.naoDesceu ? TO.feed.naoDesceu(e, atq) : null;
+      cx.appendChild(el('div',{class:'saldo',
+        html:'Ninguém desceu. <span class="ruim">Moral −3 · Prestígio −3,5 · '+
+             'Relação −6</span>'}));
+      TO.estado.salvar();
+      pintarTopo();
+      setTimeout(itnRecado, 900);       // o próximo recado da mesma parada
+      return;
+    }
+    /* vai pra briga: a cena é a do jogo, e o fecho dela é o de sempre */
+    ITN.esperando = {parada:p, cartao:cx};
+    itnAbrirCena(ev);
+  }
+
+  function itnAbrirCena(ev){
+    itnDizer('cena aberta · a linha espera', true);
+    if(ev.abrir.tela === 'guerra') abrirGuerra(ev.abrir.args);
+    else abrirAtaqueAoBar(ev.abrir.atq);
+  }
+
+  /* chamado quando o relatório da noite fecha */
+  function itnVoltouDaCena(){
+    if(!ITN || !ITN.esperando) return false;
+    const {parada, cartao} = ITN.esperando;
+    ITN.esperando = null;
+    parada.brigou = true;
+    const res = ultimoResultado || {};
+    const meu = res.nossoLado === 'visitante' ? 'Visitante' : 'Mandante';
+    cartao.appendChild(el('div',{class:'saldo',
+      html:`${res.venceu ? '<span class="bom">Saímos por cima.</span>'
+                         : '<span class="ruim">Saímos por baixo.</span>'} `+
+           `<b>${res.caidosVisitante||0} caídos deles, ${res.caidosMandante||0} nossos</b>`+
+           (res.prestigio ? ` · Prestígio ${res.prestigio>0?'+':''}${res.prestigio}` : '')}));
+    itnPintar();
+    setTimeout(itnRecado, 800);
+    return true;
+  }
+
+  /* ---------- a partida dentro da parada ---------- */
+  function itnPartida(vaga){
+    const m = ITN.msg;
+    if(!m || !m.dados){ ITN.travado = false; itnAgenda(600); return; }
+    m.dados.iniciada = true;
+    if(m.dados.minAcum === undefined){ m.dados.minAcum = 0; m.dados.t0 = Date.now(); }
+    const caixa = widgetPartida(m, ()=>{
+      /* apito final: a linha volta a andar */
+      atualizarFeed(); pintarTopo();
+      itnDizer('apito final · seguindo pros arredores');
+      ITN.travado = false;
+      itnAgenda(1100);
+    });
+    caixa.classList.add('itn-partida-caixa');
+    vaga.appendChild(caixa);
+    vaga.appendChild(el('div',{class:'itn-trava',
+      texto:'▲ os arredores só abrem no apito final'}));
+  }
+
+  function itnAcabou(){
+    if(!ITN) return;
+    ITN.travado = true;
+    itnDizer('dia encerrado · o itinerário fica no feed como registro do dia');
+    ITN.btSeguir.disabled = true;
+    ITN.btFechar.disabled = false;
+    ITN.btFechar.classList.add('acao');
+    if(TO.feed.registroDoDia) TO.feed.registroDoDia(E(), ITN.it);
+    TO.estado.salvar();
+  }
+
+  function itnFechar(){
+    if(!ITN) return;
+    clearTimeout(ITN.timer);
+    itnEl().classList.add('oculto');
+    itnEl().innerHTML = '';
+    document.body.classList.remove('em-cena');
+    ITN = null;
+    soltarTudo('itinerario');
+    redesenhar();
   }
 
   function cartaoMensagem(e, m){
@@ -954,7 +1294,9 @@
     /* a partida ao vivo: com a bola rolando o cartão é a barra de
        minutos; encerrada, a lista de gols fica como registro */
     const aoVivo = m.kind === 'partida' && m.dados && m.dados.iniciada;
-    if(aoVivo && !m.respondido) art.appendChild(widgetPartida(m));
+    /* com o itinerário aberto, quem desenha a partida é a parada do
+       jogo — dois relógios do mesmo jogo andariam em dobro */
+    if(aoVivo && !m.respondido && !ITN) art.appendChild(widgetPartida(m));
     if(m.kind === 'partida' && m.respondido && (m.dados||{}).gols &&
        m.dados.gols.length){
       const evs = el('div',{class:'partida-eventos'});
@@ -1011,6 +1353,14 @@
       else if(t === 'cena-treta') abrirTreta(m && m.dados);
       else if(t === 'cena-acao') abrirAcaoEmCena(a.cena);
       else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
+    }
+    /* A BOLA ROLANDO ABRE O DIA INTEIRO (régua do dono, 20/08/2026):
+       a partida deixou de ser um cartão solto no feed e virou uma
+       parada do itinerário, junto da concentração, da pista, dos
+       arredores e — em viagem — das praças da estrada. */
+    if(idBotao === 'iniciar'){
+      const msg = (e.feed || []).find(x=>x.id === id);
+      if(msg && msg.kind === 'partida') abrirItinerario(msg);
     }
     TO.estado.salvar();
     pintarTopo();
@@ -3409,7 +3759,12 @@
     }
   }
 
+  /* o resultado da última cena: o itinerário escreve o saldo dela no
+     cartão da parada que a abriu */
+  let ultimoResultado = null;
+
   function fecharDiaDeJogo(res, enc, acao){
+    ultimoResultado = res;
     TO.estado.bloquear(false);
     /* bomba jogada é bomba que não volta pro estoque (GDD §9.1) */
     const e = E();
@@ -3863,6 +4218,15 @@
   $('btFecharRelatorio').onclick = ()=>{
     $('telaRelatorio').classList.add('oculto');
     TO.estado.salvar();
+    /* voltando de uma cena que o itinerário abriu, quem manda é a
+       linha do dia: ela escreve o saldo no cartão e segue */
+    if(itnVoltouDaCena()) return;
+    /* e voltando da arquibancada, a partida volta a correr */
+    if(voltarDaArquibancada){
+      const volta = voltarDaArquibancada; voltarDaArquibancada = null;
+      volta();
+      if(ITN) return;
+    }
     redesenhar();
     soltarTudo('cena');
   };
@@ -3894,7 +4258,8 @@
     abrirCaravana, abrirAtaque, abrirIdeologia,
     abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena,
     /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */
-    widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima
+    widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima,
+    abrirItinerario
   };
 
   montarMenu();
