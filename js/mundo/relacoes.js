@@ -58,14 +58,32 @@ TO.relacoes = (function(){
   const P = () => TO.patrimonio;
   const FIN = () => TO.financeiro;
 
-  const ARQUETIPOS = {
-    agressiva:   {compra:['bar'],                  reserva:1.00, briga:1.6},
-    fanatica:    {compra:['bar','subsede'],        reserva:1.10, briga:1.0},
-    empresaria:  {compra:['loja','bar','subsede'], reserva:1.25, briga:0.7},
-    diplomatica: {compra:['loja','subsede'],       reserva:1.40, briga:0.4},
-    tradicional: {compra:['bar','loja'],           reserva:1.70, briga:0.8}
-  };
-  const NOMES_ARQ = Object.keys(ARQUETIPOS);
+  /* =======================================================
+     A ORDEM DE GASTO DAS OUTRAS TORCIDAS
+     (régua do dono, 20/08/2026 — acabou o arquétipo)
+
+     Uma fila só, igual pra todas. A torcida olha o primeiro
+     item que ainda falta e JUNTA DINHEIRO até poder pagar:
+     ela não desce a fila atrás de coisa barata só porque o de
+     cima ainda não coube. Com R$ 20.000 no caixa dava pra
+     encher o paiol e contratar o professor — e ela não faz nem
+     um nem outro, porque a vez é da loja.
+
+     A SEDE NÃO ESTÁ NA FILA porque não é preferência: é o que
+     DESTRAVA. Ela sobe quando o efetivo encosta no teto, ou
+     quando é ela que impede o item da vez — loja não cabe em
+     sede nível 1, bar nível 2 só existe em sede nível 3.
+     ======================================================= */
+  const ORDEM = ['loja', 'bar', 'mma', 'elenco', 'onibus', 'subsede',
+                 'bombas', 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede'];
+  /* o professor não cobra entrada, cobra mensalidade: o que a fila
+     exige dele é um caixa que aguente três meses de professor */
+  const MMA_COFRE = 6000;
+  const BOMBA = {lote:5, custo:600, teto:10};
+  /* SEM ARQUÉTIPO, a vontade de brigar vem da OUSADIA, que cada
+     torcida já tem desde que nasce (sai do poder dela). A escala
+     mantém a média de ataques por mês que a tabela dava. */
+  const brigaDe = t => t ? 0.6 + (t.ousadia != null ? t.ousadia : 0.25)*1.1 : 1;
 
   function mundo(E){
     if(E.mundoTorcidas) return E.mundoTorcidas;
@@ -91,7 +109,6 @@ TO.relacoes = (function(){
         irmas: M().torcidasEm(o.mapa)
                   .filter(x=>x.clubeId===o.clubeId && x.id!==o.id && !x.incompleta)
                   .map(x=>x.id),
-        arq: NOMES_ARQ[TO.mapa.hash(o.id + '|arq') % NOMES_ARQ.length],
         ousadia: U.limitar((o.poder || 60)/260 + U.entre(-0.15, 0.15), 0.05, 1)
       };
     }
@@ -145,33 +162,73 @@ TO.relacoes = (function(){
   const tetoDe = (E, t) =>
     Math.min(TO.membros.SEDE[t.sede].membros, espacoDaPraca(E, t));
 
+  /* UM ITEM DA FILA. Devolve a compra, `null` se essa torcida já
+     cumpriu esse item (a fila anda), ou {sede:true} quando quem
+     está impedindo não é o dinheiro e sim o tamanho da sede. */
+  function itemDaFila(E, t, id, chave){
+    const T = P().TETO, PT = P().PONTO;
+
+    if(chave === 'mma')
+      return t.mma ? null : {tipo:'mma', custo:0, cofre:MMA_COFRE};
+    if(chave === 'bombas')
+      return t.bombas >= BOMBA.teto ? null
+           : {tipo:'bombas', custo:BOMBA.custo};
+    if(chave === 'elenco') return elencoAlvo(E, id);
+    if(chave === 'onibus')
+      return frotaIA(t) < FIN().ONIBUS_MAX
+           ? {tipo:'onibus', custo:FIN().ONIBUS_CUSTO} : null;
+
+    /* evoluir: sobe o ponto de nível mais baixo que ainda cabe */
+    if(chave.indexOf('evoluir:') === 0){
+      const tipo = chave.slice(8), cfg = PT[tipo];
+      const lista = tipo === 'subsede' ? [] : t[cfg.plural];
+      const temPraOnde = x => cfg.ampliar[x.nivel] != null;
+      const alvo = lista.filter(x => temPraOnde(x) &&
+                                     x.nivel + 1 <= T[tipo][t.sede].nivel)
+                        .sort((a,b)=>a.nivel-b.nivel)[0];
+      if(alvo) return {tipo:'ampliar:'+tipo, custo:cfg.ampliar[alvo.nivel], alvo};
+      /* tem ponto que subiria, e o que segura é a sede */
+      return lista.some(temPraOnde) ? {sede:true} : null;
+    }
+
+    /* comprar: abre mais um até o que a sede comporta */
+    const lim = T[chave][t.sede], cfg = PT[chave];
+    const quantos = chave === 'subsede' ? t.subsedes : t[cfg.plural].length;
+    if(quantos < lim.qtd) return {tipo:chave, custo:cfg.compra};
+    return T[chave].some((x,n)=> x && n > t.sede && x.qtd > lim.qtd)
+         ? {sede:true} : null;
+  }
+
   function proximaCompra(E, t, id){
-    const cfgArq = ARQUETIPOS[t.arq];
     const espaco = espacoDaPraca(E, t);
     const teto = Math.min(TO.membros.SEDE[t.sede].membros, espaco);
-    if(t.membros >= teto * 0.9 && P().SEDE[t.sede+1]
-       && TO.membros.SEDE[t.sede].membros < espaco)
+    /* `porGente` é a sede comprada pra caber mais povo: essa só sai se
+       a praça ainda tem gente pra dar. A sede comprada pra DESTRAVAR
+       um item da fila sai de qualquer jeito — é o preço da loja. */
+    const subirSede = porGente =>{
+      if(!P().SEDE[t.sede+1]) return null;
+      if(porGente && TO.membros.SEDE[t.sede].membros >= espaco) return null;
       return {tipo:'sede', custo:P().SEDE[t.sede+1].custo};
-
-    for(const tipo of cfgArq.compra){
-      const lim = P().TETO[tipo][t.sede];
-      const cfg = P().PONTO[tipo];
-      const lista = tipo==='subsede' ? {length:t.subsedes} : t[cfg.plural];
-      if(lista.length < lim.qtd) return {tipo, custo:cfg.compra};
-      if(tipo !== 'subsede'){
-        const alvo = t[cfg.plural].filter(x=>cfg.ampliar[x.nivel] && x.nivel+1 <= lim.nivel)
-                                  .sort((a,b)=>a.nivel-b.nivel)[0];
-        if(alvo) return {tipo:'ampliar:'+tipo, custo:cfg.ampliar[alvo.nivel], alvo};
-      }
+    };
+    if(t.membros >= teto * 0.9){
+      const s = subirSede(true);
+      if(s) return s;
     }
+
+    for(const chave of ORDEM){
+      const it = itemDaFila(E, t, id, chave);
+      if(!it) continue;                    // cumprido: a fila anda
+      if(it.sede){                         // travado: quem destrava é a sede
+        const s = subirSede(false);
+        if(s) return s;
+        continue;                          // sede no teto: segue a fila
+      }
+      return it;                           // a vez é desta — e ela ESPERA
+    }
+    /* cumprida a fila do dono inteira, o que sobra vai pra fábrica */
     if(!t.fabrica && t.sede >= P().FABRICA.sede)
       return {tipo:'fabrica', custo:P().FABRICA.custo};
-    /* com o patrimônio de pé, o ônibus é a compra grande que falta —
-       mesmo preço do jogador, e até TRÊS, como ele (régua do dono,
-       20/08/2026); depois deles o dinheiro vai pro elenco */
-    if(frotaIA(t) < FIN().ONIBUS_MAX)
-      return {tipo:'onibus', custo:FIN().ONIBUS_CUSTO};
-    return elencoAlvo(E, id);
+    return null;
   }
 
   let _mediaDiv = null, _mediaAno = null;
@@ -220,18 +277,17 @@ TO.relacoes = (function(){
       }
       t.vermelho = 0;
 
-      /* professor de MMA: contrata quem tem sobra toda semana e um
-         colchão no caixa — o mesmo juízo que o jogador faz */
-      if(!t.mma && b.saldo > 1000 && t.caixa > 25000) t.mma = true;
-
-      /* estoque de pirotecnia: repõe um lote de 5 por semana (R$ 600,
-         o preço do jogador) até voltar às 10 de praxe */
-      if(t.bombas < 10 && t.caixa > 3000){ t.caixa -= 600; t.bombas += 5; }
-
+      /* A FILA DO DONO, uma compra por semana. Sem colchão de
+         arquétipo: o preço é o preço, e quem não tem espera. O
+         professor de MMA não cobra entrada, cobra mensalidade — por
+         isso ele pede `cofre` em vez de custo. */
       const compra = proximaCompra(E, t, id);
-      if(compra && t.caixa >= compra.custo * ARQUETIPOS[t.arq].reserva){
+      if(compra && t.caixa >= Math.max(compra.custo, compra.cofre || 0)){
         t.caixa -= compra.custo;
         if(compra.tipo === 'sede') t.sede++;
+        else if(compra.tipo === 'mma') t.mma = true;
+        else if(compra.tipo === 'bombas')
+          t.bombas = Math.min(BOMBA.teto, t.bombas + BOMBA.lote);
         else if(compra.tipo === 'fabrica') t.fabrica = true;
         else if(compra.tipo === 'onibus') t.onibus = frotaIA(t) + 1;
         else if(compra.tipo === 'subsede') t.subsedes++;
@@ -251,7 +307,7 @@ TO.relacoes = (function(){
       if(!compra){
         const cofre = b.des * 12;
         if(t.caixa > cofre)
-          t.caixa -= Math.round((t.caixa - cofre) * 0.06 * ARQUETIPOS[t.arq].briga);
+          t.caixa -= Math.round((t.caixa - cofre) * 0.06 * brigaDe(t));
       }
     }
   }
@@ -346,9 +402,9 @@ TO.relacoes = (function(){
          vontade. */
       const vivoDeles = (t && t.membros) || o.membros || 0;
       if(vivoDeles < E.membros.length * 0.5) continue;
-      const briga = t ? ARQUETIPOS[t.arq].briga : 1;
-      /* de −55 pra baixo a chance cresce; em −100 com arquétipo
-         agressivo é quase um ataque por mês */
+      const briga = brigaDe(t);
+      /* de −55 pra baixo a chance cresce; em −100, com torcida bem
+         ousada, é quase um ataque por mês */
       const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * briga;
       if(U.rng() > chance) continue;
 
@@ -908,14 +964,14 @@ TO.relacoes = (function(){
 
   /* o ATAQUE-SURPRESA delas: relação fervendo (≤ −55) vem sozinha em
      dia comum — a mesma régua nossa (chance cresce com a mágoa e com
-     o arquétipo), diluída no dia */
+     a ousadia dela), diluída no dia */
   function surpresaIA(E, o){
     for(const v of hostisLocaisIA(E, o)){
       const rel = relacaoDelas(E, o.id, v.id);
       if(rel > QUENTE) continue;
       if(vivoDe(E, o.id) < vivoDe(E, v.id) * 0.5) continue;
       const t = (E.mundoTorcidas||{})[o.id];
-      const briga = t ? ARQUETIPOS[t.arq].briga : 1;
+      const briga = brigaDe(t);
       const chance = ((QUENTE - rel)/(100 + QUENTE)) * 0.28 * briga / 7;
       if(U.rng() > chance) continue;
       return brigaIA(E, o, v, o.mapa, 'ataque-surpresa');
@@ -953,20 +1009,28 @@ TO.relacoes = (function(){
     }
   }
 
-  /* o EXPEDIENTE DA SEDE delas: cada torcida compõe 3 turnos — por
-     hash, então a mesma torcida joga sempre do mesmo jeito — entre
-     recrutar (o dado do dono) e festa (receita, pra quem tem povo) */
-  function expedienteIA(t, id){
-    if(t.exped) return t.exped;
-    const H = TO.mapa.hash;
-    const daFesta = t.membros >= 120;
-    const e = [];
-    for(let i = 0; i < 3; i++){
-      const gosto = ARQUETIPOS[t.arq].compra.includes('loja') ? 4 : 2;
-      e.push(daFesta && (H(`${id}|exp${i}`) % 10) < gosto ? 'festa'
-                                                          : 'recrutar');
+  /* o EXPEDIENTE DA SEDE delas (régua do dono, 20/08/2026): os MESMOS
+     três turnos, todo dia, pra toda torcida — recrutar, festa e
+     reunião de diretoria. Sem sorteio e sem arquétipo. */
+  const EXPEDIENTE = ['recrutar', 'festa', 'reuniao'];
+  const PISO_FESTA = 182;      // 700 ÷ R$ 3,85 por cabeça
+  function expedienteIA(){ return EXPEDIENTE; }
+
+  /* A REUNIÃO DE DIRETORIA delas: o mesmo passo da nossa (+4,2 com o
+     aliado mais próximo) e a mesma exigência de dois diretores de pé,
+     que aqui vêm da ficha da torcida. Ela conversa com as torcidas da
+     PRÓPRIA praça — a mesa da diretoria delas não mexe na relação
+     conosco, que continua vindo do que a gente faz. */
+  const PASSO_REUNIAO = 12 * 0.35;
+  function reuniaoIA(E, o, t){
+    if(((o.cargos||{}).diretoria || 0) < 2) return;
+    let alvo = null, melhor = -70;
+    for(const v of M().torcidasEm(o.mapa)){
+      if(v.id === o.id || v.incompleta || v.id === E.torcida.id) continue;
+      const r = relacaoDelas(E, o.id, v.id);
+      if(r > melhor){ melhor = r; alvo = v; }
     }
-    return (t.exped = e);
+    if(alvo) moverRelacao(E, o.id, alvo.id, PASSO_REUNIAO);
   }
   function regimeIA(E, t){
     const sa = semanaAbs(E);
@@ -1003,7 +1067,7 @@ TO.relacoes = (function(){
       if(!t) continue;
 
       /* --- os 3 turnos do expediente --- */
-      for(const op of expedienteIA(t, o.id)){
+      for(const op of expedienteIA()){
         if(op === 'recrutar'){
           const teto = tetoDe(E, t);
           if(t.membros >= teto || t.caixa < 10) continue;
@@ -1014,8 +1078,17 @@ TO.relacoes = (function(){
                              teto - t.membros);
           if(n > 0){ t.membros += n; t.caixa -= n*5; }
         } else if(op === 'festa'){
-          if(t.caixa < 700) continue;
+          /* festa é turno de todo dia, mas só sai quando dá pé — do
+             mesmo jeito que a nossa, que precisa dos R$ 700 no caixa e
+             de gente na sede pra pagar a conta. Com R$ 2,80 a 4,90 por
+             cabeça, a festa delas empata em ~180 presentes: abaixo
+             disso é vaquinha, e torcida nenhuma faz vaquinha diária —
+             era isso que estava comendo o caixa do mundo inteiro e
+             segurando a fila de compras do dono. */
+          if(t.caixa < 700 || t.membros < PISO_FESTA) continue;
           t.caixa += Math.round(t.membros * U.entre(2.8, 4.9)) - 700;
+        } else if(op === 'reuniao'){
+          reuniaoIA(E, o, t);
         }
       }
 
@@ -1118,26 +1191,68 @@ TO.relacoes = (function(){
   }
 
   let cacheRanking = {chave:'', lista:null};
+  /* =======================================================
+     A FOTO DO COMEÇO DO MÊS (pedido do dono, 20/08/2026)
+     O ranking mostra, ao lado de membros, prestígio e força
+     média, o quanto cada um andou NO MÊS. Pra isso o mundo
+     guarda uma foto dos três números na virada do mês e a
+     tela compara o de agora com o de então.
+     ======================================================= */
+  function marcaDoMes(E){
+    const d = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia || 1);
+    return `${d.getFullYear()}-${d.getMonth()}`;
+  }
+  /* os três números do ranking, medidos igual pra nós e pra elas */
+  function medirNoRanking(E, o){
+    if(o.id === E.torcida.id){
+      const nT = E.membros.length || 1;
+      const mf = E.membros.reduce((s,m)=>s+m.forca, 0)/nT;
+      const md = E.membros.reduce((s,m)=>s+m.defesa, 0)/nT;
+      return {membros: E.membros.filter(m=>!m.ferido && !m.preso).length,
+              prestigio: Math.round(E.indicadores.prestigio*5),
+              forca: (mf+md)/2};
+    }
+    const viva = (E.mundoTorcidas||{})[o.id] || {};
+    const n = disponiveisIA(E, o.id);
+    return {membros: n,
+            prestigio: Math.round((viva.prestigio !== undefined ? viva.prestigio
+              : U.limitar((o.prestigio||15)/5, 0, 20))*5),
+            forca: mediaDeFichaGerada(o, viva.membros || o.membros || n, E)};
+  }
+  /* tira a foto quando o mês vira — e na primeira vez que rodar num
+     save que ainda não tinha foto, pra ninguém abrir o ranking e ver
+     variação inventada */
+  function fotoDoMes(E){
+    const marca = marcaDoMes(E);
+    if(E.fotoMes && E.fotoMes.marca === marca) return E.fotoMes;
+    mundo(E);
+    const dados = {};
+    for(const o of M().jogaveis()){
+      if(o.incompleta) continue;
+      dados[o.id] = medirNoRanking(E, o);
+    }
+    return (E.fotoMes = {marca, dados});
+  }
+
   function ranking(E){
+    const foto = fotoDoMes(E);
     const chave = `${E.data.ano}|${semanaAbs(E)}|${E.data.dia}|`+
       `${E.membros.length}|${Math.round(E.indicadores.prestigio*100)}|`+
       `${E.brigasIATotal || (E.brigasIA||[]).length}|${Math.round(E.dinheiro)}|`+
       `${((E.brigasAno||{}).v||0)}-${((E.brigasAno||{}).d||0)}|`+
-      `${E.baixasIASeq || 0}`;
+      `${E.baixasIASeq || 0}|${foto.marca}`;
     if(cacheRanking.chave === chave) return cacheRanking.lista;
     mundo(E);
     const fora = [];
     for(const o of M().jogaveis()){
       if(o.incompleta) continue;
+      /* contam os DISPONÍVEIS: ferido e preso não somam ponto — é o
+         que faz briga (nossa e das IAs) mexer no ranking. Os três
+         números saem de `medirNoRanking`, o mesmo que tira a foto do
+         mês: o que a tela mostra e o que a variação compara não podem
+         ser medidos de jeitos diferentes. */
+      const {membros:n, prestigio:prest, forca} = medirNoRanking(E, o);
       if(o.id === E.torcida.id){
-        const nT = E.membros.length || 1;
-        const mf = E.membros.reduce((s,m)=>s+m.forca, 0)/nT;
-        const md = E.membros.reduce((s,m)=>s+m.defesa, 0)/nT;
-        const prest = Math.round(E.indicadores.prestigio*5);
-        const forca = (mf+md)/2;
-        /* contam os DISPONÍVEIS: ferido e preso não somam ponto — é o
-           que faz briga (nossa e das IAs) mexer no ranking */
-        const n = E.membros.filter(m=>!m.ferido && !m.preso).length;
         const sit = situacaoFinanceira(E.dinheiro);
         const pat = FIN().patrimonio(E);
         /* PRÉDIOS SOMADOS (pedido do dono, 20/08/2026): a sede conta 1,
@@ -1152,10 +1267,6 @@ TO.relacoes = (function(){
                    pontos:Math.round((n + prest*2)*forca*sit.mult)});
       } else {
         const viva = (E.mundoTorcidas||{})[o.id] || {};
-        const n = disponiveisIA(E, o.id);
-        const prest = Math.round((viva.prestigio !== undefined
-          ? viva.prestigio : U.limitar((o.prestigio||15)/5, 0, 20))*5);
-        const forca = mediaDeFichaGerada(o, viva.membros || o.membros || n, E);
         const caixa = viva.caixa !== undefined ? viva.caixa : (o.saldo||200)*4;
         const sit = situacaoFinanceira(caixa);
         const predios = 1 + (viva.bares||[]).length + (viva.lojas||[]).length +
@@ -1166,6 +1277,13 @@ TO.relacoes = (function(){
                    saldo: saldoDoAno(E, o.id),
                    pontos:Math.round((n + prest*2)*forca*sit.mult)});
       }
+    }
+    /* quanto cada um andou desde a foto do começo do mês */
+    for(const r of fora){
+      const antes = foto.dados[r.id];
+      r.varMembros   = antes ? r.membros   - antes.membros   : 0;
+      r.varPrestigio = antes ? r.prestigio - antes.prestigio : 0;
+      r.varForca     = antes ? r.forca     - antes.forca     : 0;
     }
     fora.sort((a,b)=>b.pontos - a.pontos || b.membros - a.membros ||
                      (a.nome < b.nome ? -1 : 1));
@@ -1180,6 +1298,9 @@ TO.relacoes = (function(){
 
   function passarSemana(E){
     mundo(E);
+    /* a foto do mês é tirada ANTES do que a semana faz: assim a
+       variação que a tela mostra cobre o mês inteiro */
+    fotoDoMes(E);
     esfriar(E);
     convivencia(E);
     economiaDelas(E);
@@ -1203,11 +1324,12 @@ TO.relacoes = (function(){
           ranking, posicaoNoRanking, situacaoFinanceira,
           brigasDeHoje, mundoDia, brigaIA, disponiveisIA, foraDeCombate, baixasIA,
           convitesDeAniversario,
-          mundo, balanco, ARQUETIPOS, economiaDelas,
+          mundo, balanco, economiaDelas, ORDEM, proximaCompra, EXPEDIENTE,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
           conquistaDoClube, esfriar, passarSemana, panorama, MENSALIDADE,
+          fotoDoMes, marcaDoMes, medirNoRanking,
           placarDoAno, anotarBriga, saldoDoAno, frotaIA};
 })();

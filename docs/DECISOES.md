@@ -665,6 +665,48 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     (100 brigas com 60 vitórias mostram 20). Zera na virada do ano, e
     conta briga de todo mundo, nossa e delas.
 
+- **Acabou o arquétipo das outras torcidas** (20/08/2026): a tabela
+  que dava a cada torcida uma "personalidade" de gasto (agressiva,
+  fanática, empresária, diplomática, tradicional) saiu. **Toda torcida
+  do mundo gasta na mesma fila, nesta ordem:**
+  1. Comprar loja · 2. Comprar bar · 3. Contratar professor de MMA ·
+  4. Melhorar elenco · 5. Comprar ônibus · 6. Comprar subsede ·
+  7. Comprar bombas (até 10) · 8. Evoluir bar · 9. Evoluir loja ·
+  10. Evoluir subsede.
+  · **E ela ESPERA.** Não pula pra um item barato da frente porque o de
+    cima ainda não coube: com R$ 20.000 no caixa dava pra encher o
+    paiol e contratar o professor, e ela não faz nem um nem outro
+    porque a vez é da loja. Junta dinheiro até dar.
+  · **Uma compra por semana**, e o preço é o preço: acabou também o
+    colchão de reserva que cada arquétipo exigia.
+  · **A sede não está na fila** porque não é preferência, é o que
+    destrava: sobe quando o efetivo encosta no teto, ou quando é ela
+    que impede o item da vez (loja não cabe em sede nível 1).
+  · **A fábrica ficou pro fim**, depois da fila inteira cumprida — não
+    está na régua do dono, e é onde o dinheiro que sobra vai parar.
+  · **Evoluir subsede não existe** na tabela de preços (subsede só tem
+    nível 1): o item fica na fila e passa direto.
+  · **A vontade de brigar** (que também vinha do arquétipo) passou a
+    sair da OUSADIA, que cada torcida já tinha desde que nasce. A
+    escala foi calibrada pra manter a mesma média de ataques por mês.
+- **O expediente da sede delas é sempre o mesmo** (20/08/2026):
+  **recrutar, festa e reunião de diretoria**, todo dia, pra toda
+  torcida. Sem sorteio.
+  · A **reunião** faz o mesmo que a nossa: +4,2 de relação com o aliado
+    mais próximo da praça delas, e precisa de dois diretores de pé. A
+    mesa da diretoria delas NÃO mexe na relação conosco — a nossa
+    continua vindo do que a gente faz.
+  · A **festa** é turno de todo dia mas só sai quando paga a conta:
+    R$ 700 de custo contra R$ 2,80–4,90 por cabeça empatam em ~180
+    presentes. Sem esse piso, a vaquinha diária comia o caixa do mundo
+    inteiro (a mediana das torcidas caiu de R$ 18.775 pra R$ 1.257 num
+    ano de simulação) e a fila de compras nunca andava.
+- **A variação do mês no ranking** (20/08/2026): membros, prestígio e
+  força média mostram, num número menor à direita, o quanto aquilo
+  andou desde a virada do mês — `Sangue Azul 34 (+1) 20 (−2) 3.8
+  (+0,0)`. Sempre com sinal: parado é "(+0)", não é vazio. O mundo
+  tira uma foto dos três números quando o mês vira, e a tela compara.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

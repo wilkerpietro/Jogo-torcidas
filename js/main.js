@@ -1403,9 +1403,21 @@
       `força e defesa</b> dos membros × <b>situação financeira</b> `+
       `(de ×0,6 endividado a ×1,6 rico). <b>Prédios</b> soma sede, bares, `+
       `lojas e subsedes; <b>saldo</b> é vitória menos derrota em brigas `+
-      `no ano.`}));
+      `no ano. O número menor ao lado é o quanto aquilo andou no mês.`}));
     const lista = TO.relacoes.ranking(e);
     const t = el('table',{class:'tab-ranking'});
+    /* A VARIAÇÃO DO MÊS (pedido do dono, 20/08/2026): o numerozinho
+       ao lado diz o quanto aquele número andou desde a virada do mês.
+       Sempre com sinal — parado é "(+0)", não é vazio. */
+    const vario = (v, casas)=>{
+      /* o sinal sai do número JÁ ARREDONDADO, não do bruto: uma queda
+         de 0,04 na força vira "(+0,0)" e não "(0,0)" — meio sinal é
+         coluna torta. */
+      const n = casas ? Math.round((v||0)*10)/10 : Math.round(v||0);
+      const cls = n > 0 ? 'bom' : n < 0 ? 'ruim' : '';
+      const txt = casas ? Math.abs(n).toFixed(1) : Math.abs(n);
+      return ` <i class="rk-var ${cls}">(${n < 0 ? '−' : '+'}${txt})</i>`;
+    };
     t.innerHTML = `<thead><tr><th>#</th><th>Torcida</th>
       <th class="nu">Membros</th><th class="nu">Prestígio</th>
       <th class="nu">Força média</th>
@@ -1422,9 +1434,10 @@
       tr.innerHTML =
         `<td class="pos">${r.pos}º</td>
          <td><i class="to-chip" style="background:${cor}"></i>${r.nome}</td>
-         <td class="nu">${U.numero(r.membros)}</td>
-         <td class="nu">${r.prestigio}</td>
-         <td class="nu">${(Math.round(r.forca*10)/10).toFixed(1)}</td>
+         <td class="nu">${U.numero(r.membros)}${vario(r.varMembros)}</td>
+         <td class="nu">${r.prestigio}${vario(r.varPrestigio)}</td>
+         <td class="nu">${(Math.round(r.forca*10)/10).toFixed(1)}`+
+        `${vario(r.varForca, 1)}</td>
          <td class="nu">${r.predios || 0}</td>
          <td class="nu saldo-briga ${(r.saldo||0) > 0 ? 'bom'
              : (r.saldo||0) < 0 ? 'ruim' : ''}">`+

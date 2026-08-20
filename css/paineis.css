@@ -1303,3 +1303,13 @@ table.dados tr.selecionada td{background:#252525}
 .tab-ranking .saldo-briga{font-variant-numeric:tabular-nums}
 .tab-ranking .saldo-briga.bom{color:var(--verde)}
 .tab-ranking .saldo-briga.ruim{color:var(--rubro-vivo)}
+
+/* A VARIAÇÃO DO MÊS no ranking (pedido do dono, 20/08/2026): menor e
+   apagada, colada à direita do número — quem lê a coluna lê o número
+   grande primeiro e só depois repara no que ele andou. */
+.tab-ranking .rk-var{
+  font-style:normal; font-size:10px; color:var(--apagado);
+  font-variant-numeric:tabular-nums; letter-spacing:0;
+}
+.tab-ranking .rk-var.bom{color:var(--verde)}
+.tab-ranking .rk-var.ruim{color:var(--rubro-vivo)}
