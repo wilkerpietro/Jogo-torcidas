@@ -28,6 +28,14 @@ TO.acoes = (function(){
   /* o rendimento diário é uma fração do que a ação semanal rendia */
   const REDUCAO = 0.35;
 
+  /* custo e efeito de uma ação podem ser número (fixo) ou função de E
+     (muda com a torcida) — quem desenha a linha pergunta por aqui */
+  const resolver = (v, E) => typeof v === 'function' ? v(E) : v;
+  const custoDe  = (E, a) => resolver(a.custo, E) || 0;
+  const efeitoDe = (E, a) => resolver(a.efeito, E) || '';
+  const nivelDaSede = E => (E.torcida && E.torcida.sedeNivel) || 1;
+  const custoFesta  = E => TO.financeiro.FESTA[nivelDaSede(E)] || 700;
+
   /* compat: quem pergunta quantas ações sobram (telas antigas) */
   const maximo = () => TURNOS.length;
   const restantes = E => Math.max(0, TURNOS.length - (E.acoes.usadas||0));
@@ -488,28 +496,36 @@ TO.acoes = (function(){
     },
     {
       id:'festa', nome:'Festa na sede', icone:'copo', cena:'Sede',
-      efeito:'custa R$ 700; rende R$ 4,80–6,40 por presente — lucra com ~150 disponíveis',
-      custo:700,
+      /* O PREÇO SEGUE O TAMANHO DO SALÃO (régua do dono, 20/08/2026):
+         R$ 170 na sede 1 e R$ 1.700 na 5, com os R$ 700 de sempre na
+         sede 4. Por isso custo e efeito são função de E, não número
+         fixo — quem lê a linha da ação lê o preço da NOSSA sede. */
+      efeito: E => `custa ${U.dinheiro(custoFesta(E))}; rende R$ 4,80–6,40 `+
+        `por presente — lucra com ~${TO.financeiro.pisoDaFesta(nivelDaSede(E))} disponíveis`,
+      custo: E => custoFesta(E),
       disponivel(E){
-        return E.dinheiro >= 700 ? {ok:true}
-             : {ok:false, motivo:'custa R$ 700'};
+        const c = custoFesta(E);
+        return E.dinheiro >= c ? {ok:true}
+             : {ok:false, motivo:`custa ${U.dinheiro(c)}`};
       },
       executar(E){
         const publico = E.membros.filter(TO.membros.disponivel).length;
-        /* RÉGUA DO DONO (18/08/2026): festa de torcida com 150+ na
-           sede tem de dar lucro. Por cabeça sai de R$ 4,80 a 6,40 —
-           o ponto de equilíbrio fica em ~146 presentes: com 150 até
-           a noite fraca paga os R$ 700; abaixo disso é prejuízo
-           mesmo, festa de torcida pequena é vaquinha. */
+        /* RÉGUA DO DONO (18/08/2026, preço por nível em 20/08/2026):
+           a festa tem de dar lucro pra sede cheia, de qualquer
+           tamanho. Por cabeça sai de R$ 4,80 a 6,40, e o custo do
+           nível fecha a conta em ~70% da lotação: aí até a noite
+           fraca paga. Abaixo disso é vaquinha, e vaquinha é escolha
+           ruim — não é impossibilidade. */
+        const custo = custoFesta(E);
         const receita = Math.round(publico * U.entre(4.8, 6.4));
         /* festa não fabrica moral (decisão do dono, 17/08/2026): virou
            diária com o Expediente e saturava o indicador em dias. É
            caixa e ponto — moral vem de briga, título e defesa. */
         /* o caixa mexe agora; o extrato só ganha o resumo do mês
            (decisão do dono, 18/08/2026 — a festa diária poluía tudo) */
-        TO.estado.lancarNoResumo(E, 'festa', -700);
+        TO.estado.lancarNoResumo(E, 'festa', -custo);
         TO.estado.lancarNoResumo(E, 'festa', receita, true);
-        return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-700)} de saldo.`};
+        return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-custo)} de saldo.`};
       }
     },
     {
@@ -772,7 +788,8 @@ TO.acoes = (function(){
     return fora;
   }
 
-  return {LISTA, TURNOS, REDUCAO, porId, agendaveis, expediente,
+  return {LISTA, TURNOS, REDUCAO, custoDe, efeitoDe, custoFesta,
+          porId, agendaveis, expediente,
           maximo, restantes, executar, rodarExpediente,
           previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe,

@@ -701,6 +701,35 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     presentes. Sem esse piso, a vaquinha diária comia o caixa do mundo
     inteiro (a mediana das torcidas caiu de R$ 18.775 pra R$ 1.257 num
     ano de simulação) e a fila de compras nunca andava.
+- **A festa custa por nível de sede** (20/08/2026): os R$ 700 fixos só
+  fechavam a conta em sede grande — torcida de bairro fazia vaquinha e
+  nunca festa. O preço passou a acompanhar o salão:
+
+  | sede | lotação | custo | precisa de | ocupação |
+  |------|---------|-------|------------|----------|
+  | 1 | 50 | R$ 170 | 36 presentes | 72% |
+  | 2 | 90 | R$ 300 | 63 presentes | 70% |
+  | 3 | 150 | R$ 500 | 105 presentes | 70% |
+  | 4 | 200 | R$ 700 | 146 presentes | 73% |
+  | 5 | 500 | R$ 1.700 | 355 presentes | 71% |
+
+  · A conta fecha sempre no mesmo ponto: com a sede ~70% cheia, até a
+    noite fraca (R$ 4,80 por cabeça) paga o custo. **Sede nível 4
+    continua nos R$ 700 de sempre** — o que mudou foi embaixo.
+  · **Vale igual pra elas**: mesmo custo, mesma renda por cabeça
+    (R$ 4,80–6,40) e a mesma conta de presentes, contando os
+    disponíveis, porque ferido e preso não bebem. A taxa mais baixa que
+    elas tinham (R$ 2,80–4,90) saiu.
+  · Por isso o custo e o efeito da ação viraram função da torcida: a
+    linha do expediente mostra o preço da NOSSA sede, não um fixo.
+- **A sede é só destravadora, nunca preferência** (20/08/2026): a
+  regra de "efetivo no teto compra sede antes de tudo" saiu. Torcida
+  lotada com a loja ainda por comprar compra a LOJA — a fila do dono
+  vem primeiro, sempre. O teto de gente sobe sozinho logo atrás,
+  porque assim que a sede atual não comporta mais nenhum ponto é ela
+  que a fila pede. Sem isso as ricas ficavam guardando R$ 200.000 pra
+  uma sede que a fila não tinha pedido e o mundo não construía nada
+  (1 ano: 2 lojas antes, 38 depois).
 - **A variação do mês no ranking** (20/08/2026): membros, prestígio e
   força média mostram, num número menor à direita, o quanto aquilo
   andou desde a virada do mês — `Sangue Azul 34 (+1) 20 (−2) 3.8

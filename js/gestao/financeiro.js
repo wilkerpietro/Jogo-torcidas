@@ -17,6 +17,21 @@ TO.financeiro = (function(){
 
   /* GDD §8.1 — manutenção mensal por nível de sede */
   const MANUT_SEDE = [null, 200, 480, 960, 1800, 3000];
+  /* =======================================================
+     O CUSTO DA FESTA, POR NÍVEL DE SEDE
+     (régua do dono, 20/08/2026 — pra ser viável pra todos)
+
+     A festa de R$ 700 fixos só pagava a conta em sede grande:
+     torcida de bairro fazia vaquinha e nunca festa. Agora o
+     preço acompanha o tamanho do salão — a lotação da sede é
+     50, 90, 150, 200 e 500 —, e a conta fecha sempre no mesmo
+     ponto: com a sede ~70% cheia, até a noite fraca (R$ 4,80
+     por cabeça) paga o custo. Sede nível 4 continua nos R$ 700
+     de sempre: o que mudou foi embaixo, não o que já existia.
+     ======================================================= */
+  const FESTA = [null, 170, 300, 500, 700, 1700];
+  /* quanta gente a festa deste nível precisa pra se pagar */
+  const pisoDaFesta = nivel => Math.ceil((FESTA[nivel] || 700)/4.8);
 
   /* GDD §8.3 — receita bruta mensal, antes do bairro e do fator */
   const RECEITA = {bar:[null, 800, 1500, 3000], loja:[null, 1000, 2000, 3600],
@@ -515,5 +530,6 @@ TO.financeiro = (function(){
           semanaDaMensalidade, fimDoMes, mesCorrente, fecharMes,
           onibusDe, descontoCaravana,
           ONIBUS_MAX, ONIBUS_MES, ONIBUS_CUSTO, DESCONTO_ONIBUS,
+          FESTA, pisoDaFesta,
           MANUT_SEDE, RECEITA, MANUT, INSUMO, CARAVANA, SEM};
 })();

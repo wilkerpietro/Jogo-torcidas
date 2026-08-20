@@ -200,26 +200,19 @@ TO.relacoes = (function(){
   }
 
   function proximaCompra(E, t, id){
-    const espaco = espacoDaPraca(E, t);
-    const teto = Math.min(TO.membros.SEDE[t.sede].membros, espaco);
-    /* `porGente` é a sede comprada pra caber mais povo: essa só sai se
-       a praça ainda tem gente pra dar. A sede comprada pra DESTRAVAR
-       um item da fila sai de qualquer jeito — é o preço da loja. */
-    const subirSede = porGente =>{
-      if(!P().SEDE[t.sede+1]) return null;
-      if(porGente && TO.membros.SEDE[t.sede].membros >= espaco) return null;
-      return {tipo:'sede', custo:P().SEDE[t.sede+1].custo};
-    };
-    if(t.membros >= teto * 0.9){
-      const s = subirSede(true);
-      if(s) return s;
-    }
+    /* A SEDE SÓ ENTRA COMO DESTRAVADORA. Ela não fura a fila do dono
+       nem quando o efetivo encosta no teto: torcida lotada com a loja
+       ainda por comprar compra a LOJA. O teto de gente sobe sozinho
+       logo atrás, porque assim que a sede atual não comporta mais
+       nenhum ponto, é ela que a fila pede. */
+    const subirSede = () => P().SEDE[t.sede+1]
+      ? {tipo:'sede', custo:P().SEDE[t.sede+1].custo} : null;
 
     for(const chave of ORDEM){
       const it = itemDaFila(E, t, id, chave);
       if(!it) continue;                    // cumprido: a fila anda
       if(it.sede){                         // travado: quem destrava é a sede
-        const s = subirSede(false);
+        const s = subirSede();
         if(s) return s;
         continue;                          // sede no teto: segue a fila
       }
@@ -1013,7 +1006,6 @@ TO.relacoes = (function(){
      três turnos, todo dia, pra toda torcida — recrutar, festa e
      reunião de diretoria. Sem sorteio e sem arquétipo. */
   const EXPEDIENTE = ['recrutar', 'festa', 'reuniao'];
-  const PISO_FESTA = 182;      // 700 ÷ R$ 3,85 por cabeça
   function expedienteIA(){ return EXPEDIENTE; }
 
   /* A REUNIÃO DE DIRETORIA delas: o mesmo passo da nossa (+4,2 com o
@@ -1078,15 +1070,17 @@ TO.relacoes = (function(){
                              teto - t.membros);
           if(n > 0){ t.membros += n; t.caixa -= n*5; }
         } else if(op === 'festa'){
-          /* festa é turno de todo dia, mas só sai quando dá pé — do
-             mesmo jeito que a nossa, que precisa dos R$ 700 no caixa e
-             de gente na sede pra pagar a conta. Com R$ 2,80 a 4,90 por
-             cabeça, a festa delas empata em ~180 presentes: abaixo
-             disso é vaquinha, e torcida nenhuma faz vaquinha diária —
-             era isso que estava comendo o caixa do mundo inteiro e
-             segurando a fila de compras do dono. */
-          if(t.caixa < 700 || t.membros < PISO_FESTA) continue;
-          t.caixa += Math.round(t.membros * U.entre(2.8, 4.9)) - 700;
+          /* A FESTA DELAS É A NOSSA, com o preço do nível da sede
+             (régua do dono, 20/08/2026): mesmo custo, mesma renda por
+             cabeça e a mesma conta de presentes — quem conta são os
+             DISPONÍVEIS, porque ferido e preso não bebem. Ela é turno
+             de todo dia, mas só sai quando se paga: torcida nenhuma
+             faz vaquinha diária, e era isso que estava comendo o caixa
+             do mundo inteiro e segurando a fila de compras. */
+          const custo = FIN().FESTA[t.sede] || 700;
+          const publico = disponiveisIA(E, o.id);
+          if(t.caixa < custo || publico < FIN().pisoDaFesta(t.sede)) continue;
+          t.caixa += Math.round(publico * U.entre(4.8, 6.4)) - custo;
         } else if(op === 'reuniao'){
           reuniaoIA(E, o, t);
         }

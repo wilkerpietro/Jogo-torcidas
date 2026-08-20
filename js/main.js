@@ -1591,14 +1591,17 @@
     const sobrou = TO.acoes.restantes(e) > 0;
     const b = el('button',{class:'acao-linha'});
     b.disabled = !d.ok || !sobrou;
+    /* custo e efeito podem depender da torcida (a festa muda de preço
+       com o nível da sede): quem resolve é o próprio módulo de ações */
+    const efeito = TO.acoes.efeitoDe(e, a), custo = TO.acoes.custoDe(e, a);
     const sub = !d.ok    ? d.motivo
               : !sobrou  ? 'a semana acabou'
-              : d.nota   ? `${a.efeito} · ${d.nota}`
-              :            a.efeito;
+              : d.nota   ? `${efeito} · ${d.nota}`
+              :            efeito;
     b.innerHTML =
       `<span class="ic">${IC.get(a.icone)}</span>
        <span class="txt"><span>${a.nome}</span><small>${sub}</small></span>
-       ${a.custo?`<span class="custo">${U.dinheiro(-a.custo)}</span>`:''}`;
+       ${custo?`<span class="custo">${U.dinheiro(-custo)}</span>`:''}`;
     const usar = opc=>{
       const r = TO.acoes.executar(e, a.id, opc);
       aviso(r.msg || (r.ok?'Feito.':'Não deu.'),
@@ -3228,7 +3231,8 @@
       const sel = el('select',{class:'campo'});
       sel.appendChild(el('option',{value:'', texto:'— sem ação —'}));
       for(const a of disponiveis){
-        const o = el('option',{value:a.id, texto:`${a.nome} — ${a.efeito}`});
+        const o = el('option',{value:a.id,
+          texto:`${a.nome} — ${TO.acoes.efeitoDe(E(), a)}`});
         if(exp[t.id]===a.id) o.selected = true;
         sel.appendChild(o);
       }
