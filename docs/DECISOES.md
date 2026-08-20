@@ -548,6 +548,27 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   mínimo (três linhas da máscara, y 744–776, entre 356,748 e 340,764) e
   a bancada voltou a ser uma peça só.
 
+- **Um padrão só de disco, e a listra fina** (20/08/2026): o disco
+  vestia a camisa com anel grosso — 2 px num raio de 7, e mais 2 pra
+  quem tinha terceira cor —, então a primária sobrava como um miolo de
+  3 px e o disco lia como alvo de tiro. Pior: a grossura mudava com o
+  número de cores da torcida (2,5 px pra quem tem duas, dois anéis de
+  2 px pra quem tem três), e como cada cena traz torcidas diferentes,
+  cada cena parecia ter um disco diferente. Agora a régua é uma só, em
+  toda cena: base na primária e listra de 16% do raio (piso de 1 px) na
+  borda — uma listra pra duas cores, duas pra três, sempre com a mesma
+  espessura. O que muda de uma torcida pra outra é quantas listras,
+  nunca a grossura, e a cor que a torcida usa pra se chamar é a que
+  toma o disco.
+- **Quem defende sempre tem dono** (20/08/2026): no bar quem defende é
+  a torcida dona dele e as cores vêm dela; no CT não existe torcida do
+  outro lado, e os dez seguranças caíam na cor genérica do LADO —
+  vermelho ou azul, cor de time nenhum. Era a única cena com disco que
+  não era de ninguém. Passaram a ter farda: chumbo com faixa de
+  colete, que não é cor de torcida nenhuma e por isso nunca se confunde
+  com a nossa. Conferido nas cenas que o jogo abre (CT, bar da rival,
+  treta marcada e dia de jogo): zero discos sem cor.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

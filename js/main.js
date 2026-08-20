@@ -3509,13 +3509,23 @@
     const donoAlvo = cena.alvo && cena.alvo.torcidaId
       ? TO.mundo.torcida(cena.alvo.torcidaId) : null;
     const cDono = donoAlvo ? TO.mundo.coresDaTorcida(donoAlvo) : null;
+    /* QUEM DEFENDE SEMPRE TEM DONO (pedido do dono, 20/08/2026: o
+       mesmo padrão de disco em todas as cenas). No bar quem defende é
+       a torcida dona dele e as cores vêm dela. No CT não existe
+       torcida do outro lado — são os seguranças do clube —, e sem
+       ninguém pra vestir o disco ele caía na cor genérica do LADO:
+       vermelho ou azul, cor de time nenhum, e a cena do CT era a
+       única com disco que não era de ninguém. Agora eles têm farda:
+       chumbo com a faixa do colete, que não é cor de torcida nenhuma
+       e por isso nunca se confunde com a nossa. */
+    const SEGURANCA = {nome:'Segurança', cor:'#3a3d42', cor2:'#e8c33a', cor3:null};
     TO.diaJogo.ponte.montar({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', bondes,
                 bombas: p.bombas,
                 efetivoRival: cena.efetivoRival, local: cena.cena,
-                rival: donoAlvo ? {nome:donoAlvo.nome,
-                  cor:cDono.cor, cor2:cDono.cor2, cor3:cDono.cor3} : null,
+                rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
+                  cor:cDono.cor, cor2:cDono.cor2, cor3:cDono.cor3} : SEGURANCA,
                 perfilRival: perfilDe(cena.alvo && cena.alvo.torcidaId) },
       aoTerminar: res => fecharDiaDeJogo(res, null, cena)
     });

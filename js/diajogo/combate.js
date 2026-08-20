@@ -2252,19 +2252,27 @@ TO.diaJogo.combate = (function(){
     const sec  = d.cor ? d.cor2 : corLado(d.lado, true);
     const ter  = d.cor ? d.cor3 : null;
     c.fillStyle=base; c.beginPath(); c.arc(x,y,d.r,0,7); c.fill();
-    if(sec && ter){
-      /* TRÊS CORES = DUAS BORDAS (régua do dono, 18/08/2026): anel de
-         fora na secundária, anel de dentro na terciária, miolo na
-         primária — as listras saíram */
-      const lw = Math.max(2, d.r*0.18);
-      c.strokeStyle=sec; c.lineWidth=lw;
-      c.beginPath(); c.arc(x,y,d.r-lw/2,0,7); c.stroke();
-      c.strokeStyle=ter; c.lineWidth=lw;
-      c.beginPath(); c.arc(x,y,d.r-lw*1.5,0,7); c.stroke();
-    } else if(sec){
-      const lw = Math.max(2.5, d.r*0.26);
-      c.strokeStyle=sec; c.lineWidth=lw;
-      c.beginPath(); c.arc(x,y,d.r-lw/2,0,7); c.stroke();
+    /* UM PADRÃO SÓ, EM CENA NENHUMA DIFERENTE (pedido do dono,
+       20/08/2026): base na primária e a camisa em LISTRA FINA na
+       borda — uma listra pra quem tem duas cores, duas pra quem tem
+       três, e a MESMA grossura nos dois casos. O que muda de uma
+       torcida pra outra é quantas listras, nunca a espessura delas.
+
+       Antes a borda comia o disco: 2 px de anel num raio de 7
+       deixavam um miolo de 3 px de primária, e num tricolor sobravam
+       menos ainda — o disco lia como alvo de tiro, e a cor que a
+       torcida usa pra se chamar era a que menos aparecia. A listra é
+       fração do raio (16%), então o líder, que é maior, tem a mesma
+       proporção do resto: o padrão não muda nem por disco nem por
+       cena. */
+    const LISTRA = Math.max(1, d.r*0.16);
+    if(sec){
+      c.strokeStyle=sec; c.lineWidth=LISTRA;
+      c.beginPath(); c.arc(x,y,d.r-LISTRA/2,0,7); c.stroke();
+      if(ter){
+        c.strokeStyle=ter; c.lineWidth=LISTRA;
+        c.beginPath(); c.arc(x,y,d.r-LISTRA*1.5,0,7); c.stroke();
+      }
     }
     /* contorno fino: o disco tem de se ler sobre qualquer chão */
     c.strokeStyle='rgba(0,0,0,.45)'; c.lineWidth=1.2;
