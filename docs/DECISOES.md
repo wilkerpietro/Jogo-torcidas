@@ -603,6 +603,16 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   atacante grande (75×39) e pequeno (14×39), nas duas cenas, sempre
   com caídos dos dois lados e sem ninguém virar as costas na largada.
 
+- **A arquibancada esquenta mais** (régua do dono, 20/08/2026): a
+  chance por minuto de o clima subir um degrau passou a 3,5% pro
+  maior rival, 3,0% pro rival quente, 2,0% pro rival e 1,0% pro
+  neutro (era 3,0 / 2,0 / 1,0 / 0,3). Como TENSO precisa de dois
+  degraus em 90 minutos, na prática a briga na arquibancada abre em
+  83% dos clássicos de ódio, 76% dos quentes, 54% dos jogos contra
+  rival e 23% dos neutros. Medido em 20 partidas contra o maior
+  rival: subiu em 19, ficou tenso em 17. Aliado do outro clube na
+  casa continua segurando o clima em tranquilo o jogo inteiro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

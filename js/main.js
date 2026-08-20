@@ -588,9 +588,14 @@
      fica tranquilo o jogo inteiro — ninguém briga com irmão na
      arquibancada.
 
-     As chances por minuto foram escolhidas contra os 90 minutos:
-     com 0,030 o maior rival chega a tenso em ~7 de 10 jogos, que
-     é o que "bastante chance" quer dizer sem virar toda semana.
+     As chances por minuto correm contra os 90 minutos do jogo, e
+     como TENSO precisa de dois degraus, o que interessa é a chance
+     de dois acertos em 90 rolagens. Na régua do dono (20/08/2026):
+
+       maior rival  3,5%/min → esquenta 96% · TENSO 83%
+       rival quente 3,0%/min → esquenta 94% · TENSO 76%
+       rival        2,0%/min → esquenta 84% · TENSO 54%
+       neutro       1,0%/min → esquenta 60% · TENSO 23%
      ======================================================= */
   function chanceDeClima(e, d){
     const vazio = {pMin:0, temAliado:false, pior:0, rivais:0};
@@ -613,9 +618,9 @@
       (TO.mundo.saoIrmas && TO.mundo.saoIrmas(e.torcida.id, p.id)));
     if(temAliado) return {pMin:0, temAliado:true, pior:0, rivais:outras.length};
     const pior = Math.min(...outras.map(rel));
-    const pMin = pior <= -70 ? 0.030
-               : pior <= -55 ? 0.020
-               : pior <= -15 ? 0.010 : 0.003;
+    const pMin = pior <= -70 ? 0.035
+               : pior <= -55 ? 0.030
+               : pior <= -15 ? 0.020 : 0.010;
     return {pMin, temAliado:false, pior, rivais:outras.length};
   }
 
