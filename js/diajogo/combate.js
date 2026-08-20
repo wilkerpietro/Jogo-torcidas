@@ -389,9 +389,17 @@ TO.diaJogo.combate = (function(){
      pro log da cena e pro console, com nome e sobrenome. Custa quatro
      BFS de 24 mil células, uma vez por cena — e os campos ficam no
      cache, que o combate ia construir de qualquer jeito. */
+  /* MENOS NA ARQUIBANCADA, ONDE NINGUÉM VAI PRO PORTÃO.
+     Lá o túnel é objetivo do LÍDER, não rota de todo mundo: quem
+     debanda some pelas bocas da máscara e quem está de pé marcha pro
+     setor rival. Divisória entre setores da casa é coisa que existe em
+     estádio, e o 3º escalão não chegar ao túnel do 1º não é bug de
+     arte — só o setor do jogador precisa da rota. */
   function conferirPortoes(J){
     const selados=[];
+    const soDoJogador = !fugaPelaEntrada();
     for(const s of D.spawns){
+      if(soDoJogador && !s.jogador) continue;
       const e=D.entradas.find(x=>x.id===s.entrada);
       if(!e){ selados.push({spawn:s.id, portao:s.entrada||'(nenhum)',
                             motivo:'portão não existe na cena'}); continue; }

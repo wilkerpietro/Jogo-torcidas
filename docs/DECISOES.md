@@ -530,6 +530,24 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   jogava duas pedras e a rodinha dava zoom dobrado. Apareceu porque o
   F2 abria e fechava o editor no mesmo toque na bancada.
 
+- **Os três estádios com as grades da mão do dono** (20/08/2026): as
+  máscaras e as divisórias dos três estádios passaram a ser as que o
+  dono traçou no F2, no lugar do cerco automático. Conferido na malha
+  do corpo, com as grades de pé: nenhum caminho do setor visitante até
+  setor mandante em nenhum dos três, e todo túnel alcançável. Duas
+  coisas apareceram na conferência e ficaram registradas: (1) no de 20
+  mil, `cerca_3` e `cerca_4` cortam o anel MANDANTE, então o 2º e o 3º
+  escalão da casa não chegam ao túnel deles — na arquibancada isso não
+  é defeito (o túnel é objetivo do líder, quem debanda some pelas bocas
+  da máscara e quem está de pé marcha pro rival), e por isso o aviso de
+  PORTÃO SELADO passou a valer só pro setor do jogador fora dos
+  arredores; (2) no de 40 mil a passagem entre os dois anéis estava
+  mais estreita que um disco — o pé passava, o corpo não —, e o setor
+  visitante3 ficava numa ilha de 3.666 células sem rota pra lugar
+  nenhum. A passagem que o dono já tinha pintado foi alargada no
+  mínimo (três linhas da máscara, y 744–776, entre 356,748 e 340,764) e
+  a bancada voltou a ser uma peça só.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
