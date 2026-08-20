@@ -69,12 +69,17 @@ TO.relacoes = (function(){
      encher o paiol e contratar o professor — e ela não faz nem
      um nem outro, porque a vez é da loja.
 
+     O PROFESSOR VEM PRIMEIRO (régua do dono, 20/08/2026): quem
+     paga o professor treina em dobro, e treino é o que faz a
+     torcida virar gente de briga. Ele não cobra entrada, só o
+     mês — o que a fila pede dele é caixa que aguente três meses.
+
      A SEDE NÃO ESTÁ NA FILA porque não é preferência: é o que
      DESTRAVA. Ela sobe quando o efetivo encosta no teto, ou
      quando é ela que impede o item da vez — loja não cabe em
      sede nível 1, bar nível 2 só existe em sede nível 3.
      ======================================================= */
-  const ORDEM = ['loja', 'bar', 'mma', 'elenco', 'onibus', 'subsede',
+  const ORDEM = ['mma', 'loja', 'bar', 'elenco', 'onibus', 'subsede',
                  'bombas', 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede'];
   /* o professor não cobra entrada, cobra mensalidade: o que a fila
      exige dele é um caixa que aguente três meses de professor */
@@ -274,6 +279,10 @@ TO.relacoes = (function(){
          arquétipo: o preço é o preço, e quem não tem espera. O
          professor de MMA não cobra entrada, cobra mensalidade — por
          isso ele pede `cofre` em vez de custo. */
+      /* a promoção vem ANTES da compra da semana: gente de pé é
+         patrimônio, e o que sobrar depois é que vai pra fila */
+      promoverDelas(E, t, id);
+
       const compra = proximaCompra(E, t, id);
       if(compra && t.caixa >= Math.max(compra.custo, compra.cofre || 0)){
         t.caixa -= compra.custo;
@@ -590,6 +599,127 @@ TO.relacoes = (function(){
      delas nas brigas (só o cargo), sem sorteio — é a esperança
      da distribuição, estável de um dia pro outro.
      ======================================================= */
+  /* =======================================================
+     O QUADRO VIVO DELAS (régua do dono, 20/08/2026)
+
+     Antes a ficha delas era uma CONTA CONGELADA: a pirâmide de
+     cargos da fonte, e pronto. Quem crescia só ganhava novato,
+     então a torcida ficava mais FRACA quanto mais crescia (5,7
+     com 20 membros, 3,5 com 250) e nunca passava disso, com ou
+     sem professor.
+
+     Agora cada torcida do mundo tem quadro de verdade: quantos
+     em cada cargo e a força média de cada cargo. Ela TREINA
+     todo dia, como a nossa — o mesmo passo de 0 a 0,3 por
+     sessão, o mesmo número de vagas de treino por nível de sede
+     e o mesmo dobro com o professor de MMA —, e PROMOVE pelas
+     nossas regras: o cargo só sobe quando encosta na força que
+     a promoção exige, custa o mesmo dinheiro e a Diretoria tem
+     o mesmo teto por nível de sede.
+     ======================================================= */
+  const BASE_FICHA = {novato:1, componente:5, frente:10, diretoria:14};
+  const ESCADA = ['novato', 'componente', 'frente', 'diretoria'];
+  /* quanto do cargo sobe por semana: promoção é ato de diretoria, não
+     enxurrada — um décimo do grupo apto por vez */
+  const FATIA_PROMO = 0.10;
+
+  function quadroDe(E, id){
+    const t = (E.mundoTorcidas||{})[id];
+    if(!t) return null;
+    if(!t.quadro){
+      const o = M().torcida(id);
+      const cargos = {novato:0, componente:0, frente:0, diretoria:0}, forca = {};
+      for(const [c, n] of TO.membros.planoDeCargos(t.membros, o && o.cargos))
+        cargos[c] = (cargos[c] || 0) + n;
+      const xp = {};
+      for(const c of ESCADA){ forca[c] = BASE_FICHA[c] + 1.5; xp[c] = 0; }
+      t.quadro = {cargos, forca, xp, total: t.membros};
+    }
+    /* o efetivo mexeu desde ontem: quem entra entra por baixo, e quem
+       sai sai por baixo também — a mesma porta */
+    const q = t.quadro, dif = Math.round(t.membros) - q.total;
+    /* save de antes do quadro vivo ganha a coluna de XP */
+    if(!q.xp){ q.xp = {}; for(const c of ESCADA) q.xp[c] = 0; }
+    if(dif > 0){
+      const n = q.cargos.novato;
+      q.forca.novato = (n*q.forca.novato + dif*BASE_FICHA.novato)/(n + dif);
+      q.xp.novato    = (n*q.xp.novato)/(n + dif);   // quem chega chega zerado
+      q.cargos.novato += dif;
+    } else if(dif < 0){
+      let sai = -dif;
+      for(const c of ESCADA){
+        const leva = Math.min(sai, q.cargos[c]);
+        q.cargos[c] -= leva; sai -= leva;
+        if(!sai) break;
+      }
+    }
+    q.total = Math.round(t.membros);
+    return q;
+  }
+
+  /* a média do quadro: é o número que o ranking mostra */
+  function mediaDoQuadro(q){
+    let soma = 0, n = 0;
+    for(const c of ESCADA){ soma += q.cargos[c]*q.forca[c]; n += q.cargos[c]; }
+    return n ? soma/n : BASE_FICHA.novato + 1.5;
+  }
+
+  /* O TREINO DELAS, todo dia. As vagas de treino são as da sede (2 no
+     nível 1, 20 no 5), então quem tem sede grande treina mais gente:
+     o passo médio da NOSSA sessão é 0,15, e o professor dobra. */
+  function treinarDelas(E){
+    const m = mundo(E);
+    for(const id of Object.keys(m)){
+      const t = m[id];
+      const q = quadroDe(E, id);
+      if(!q || !q.total) continue;
+      const vagas = TO.membros.SEDE[t.sede].treino;
+      const fatia = Math.min(vagas, q.total)/q.total;
+      const passo = fatia * 0.15 * (t.mma ? 2 : 1);
+      for(const c of ESCADA){
+        q.forca[c] = Math.min(TO.membros.CARGOS[c].teto, q.forca[c] + passo);
+        /* 1 de XP por sessão, como o nosso — e o professor NÃO dobra
+           XP, só treino: quem sobe de cargo sobe pelo rodado */
+        q.xp[c] += fatia;
+      }
+    }
+  }
+
+  /* A PROMOÇÃO DELAS, uma vez por semana e pelas NOSSAS regras: o
+     grupo só sobe quando a força média dele alcança a que a promoção
+     exige, o preço é o mesmo (componente R$ 1.000, frente R$ 5.000) e
+     a Diretoria não passa do teto da sede. De cima pra baixo, pra a
+     vaga que abre na Diretoria ser ocupada na mesma semana. */
+  function promoverDelas(E, t, id){
+    const q = quadroDe(E, id);
+    if(!q) return 0;
+    const C = TO.membros.CARGOS;
+    let subiram = 0;
+    for(let i = ESCADA.length - 2; i >= 0; i--){
+      const cargo = ESCADA[i], acima = ESCADA[i+1], c = C[cargo];
+      if(!q.cargos[cargo]) continue;
+      /* AS NOSSAS REGRAS, inteiras: XP rodado, força de sobra e o
+         dinheiro no caixa. Faltando qualquer uma, ninguém sobe. */
+      if(q.xp[cargo] < c.xpPromo) continue;
+      if(q.forca[cargo] < c.forcaPromo) continue;
+      let quantos = Math.max(1, Math.round(q.cargos[cargo]*FATIA_PROMO));
+      quantos = Math.min(quantos, q.cargos[cargo]);
+      if(acima === 'diretoria')
+        quantos = Math.min(quantos,
+          Math.max(0, TO.membros.SEDE[t.sede].diretoria - q.cargos.diretoria));
+      if(c.custoPromo) quantos = Math.min(quantos, Math.floor(t.caixa/c.custoPromo));
+      if(quantos <= 0) continue;
+      t.caixa -= quantos * c.custoPromo;
+      const n = q.cargos[acima];
+      q.forca[acima] = (n*q.forca[acima] + quantos*q.forca[cargo])/(n + quantos);
+      q.xp[acima]    = (n*q.xp[acima]    + quantos*q.xp[cargo])/(n + quantos);
+      q.cargos[acima] += quantos;
+      q.cargos[cargo] -= quantos;
+      subiram += quantos;
+    }
+    return subiram;
+  }
+
   function mediaDeFichaGerada(o, membrosVivos, E){
     /* SEM BÔNUS DE PODER (decisão do dono, 18/08/2026): a ficha vem só
        do cargo. O `poder` da fonte dava até +3 por cabeça e cravava as
@@ -598,7 +728,11 @@ TO.relacoes = (function(){
     /* professor de MMA delas (decisão do dono, 18/08/2026): quem paga
        os R$ 2.000 por mês tem gente mais treinada — +1 por cabeça, o
        espelho do treino em dobro que o professor dá pro jogador. */
+    /* com quadro vivo, a média É o quadro: o professor já entrou nela
+       pelo treino em dobro, e não vale contar duas vezes */
     const t = E && E.mundoTorcidas && E.mundoTorcidas[o.id];
+    if(t) return mediaDoQuadro(quadroDe(E, o.id));
+    /* sem mundo vivo (tela de seleção, bancada), a conta velha */
     const mma = t && t.mma ? 1 : 0;
     const CARGOS = TO.membros.CARGOS;
     const tamanho = Math.min(Math.max(membrosVivos || o.membros || 60, 1), 250);
@@ -664,7 +798,28 @@ TO.relacoes = (function(){
     if(!t.brigasAno || t.brigasAno.ano !== E.data.ano) t.brigasAno = zero();
     return t.brigasAno;
   }
-  function anotarBriga(E, id, venceu){
+  /* A NOITE DE BRIGA DELAS TAMBÉM RENDE XP, na mesma tabela da nossa
+     (3 a 15 pela escala do bonde, ×1,5 pra quem ganha). Sem isso o
+     mundo só subiria de cargo pelo treino, e cargo alto (300 de XP
+     pra Diretoria) nunca sairia — do mesmo jeito que não sai pra nós
+     numa temporada de paz. */
+  function xpDeBrigaIA(E, id, venceu, escala){
+    const q = quadroDe(E, id);
+    if(!q) return;
+    const base = escala <= 10 ? 3 : escala <= 30 ? 6 : escala <= 60 ? 10 : 15;
+    const ganho = Math.round(base * (venceu ? 1.5 : 1));
+    /* SEM DILUIR PELO EFETIVO. Do nosso lado quem vai pra rua leva o
+       XP inteiro da noite, e é justamente esse pessoal — o mesmo bonde
+       de sempre — que sobe de cargo. Repartir o ganho por toda a
+       torcida faria a média subir 1 por ano e ninguém promoveria
+       nunca: a média aqui representa quem roda, não quem fica. */
+    for(const c of ESCADA) q.xp[c] += ganho;
+  }
+
+  function anotarBriga(E, id, venceu, escala){
+    /* a torcida do jogador não tem quadro no mundo: o XP dela vem das
+       fichas de verdade, que a cena já credita membro a membro */
+    if(E.torcida && id !== E.torcida.id) xpDeBrigaIA(E, id, venceu, escala);
     const p = placarDoAno(E, id);
     if(!p) return null;
     if(venceu) p.v++; else p.d++;
@@ -682,9 +837,10 @@ TO.relacoes = (function(){
     E.brigasIA.unshift(reg);
     if(E.brigasIA.length > 300) E.brigasIA.pop();
     E.brigasIATotal = (E.brigasIATotal || 0) + 1;
-    /* o placar do ano de cada lado, que vira o saldo no ranking */
-    if(reg.a && reg.a.id) anotarBriga(E, reg.a.id, !!reg.ganhouA);
-    if(reg.b && reg.b.id) anotarBriga(E, reg.b.id, !reg.ganhouA);
+    /* o placar do ano de cada lado, que vira o saldo no ranking — e a
+       noite rendeu XP pros dois, na tabela da nossa */
+    if(reg.a && reg.a.id) anotarBriga(E, reg.a.id, !!reg.ganhouA, reg.a.n);
+    if(reg.b && reg.b.id) anotarBriga(E, reg.b.id, !reg.ganhouA, reg.b.n);
     return reg;
   }
 
@@ -1037,6 +1193,7 @@ TO.relacoes = (function(){
      estrada — roda uma vez por dia, depois das brigas de jogo */
   function mundoDia(E, jogos){
     const m = mundo(E);
+    treinarDelas(E);
     /* o placar do dia vira regime de recrutamento das torcidas dos
        dois clubes — a mesma janela quente/seca que a gente tem */
     for(const j of (jogos||[])){
@@ -1325,5 +1482,7 @@ TO.relacoes = (function(){
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
           conquistaDoClube, esfriar, passarSemana, panorama, MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,
+          quadroDe, mediaDoQuadro, treinarDelas, promoverDelas, xpDeBrigaIA,
+          mediaDeFichaGerada,
           placarDoAno, anotarBriga, saldoDoAno, frotaIA};
 })();

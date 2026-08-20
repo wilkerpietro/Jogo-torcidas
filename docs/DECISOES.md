@@ -736,6 +736,40 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   (+0,0)`. Sempre com sinal: parado é "(+0)", não é vazio. O mundo
   tira uma foto dos três números quando o mês vira, e a tela compara.
 
+- **O professor de MMA é o primeiro da fila** (20/08/2026): quem paga o
+  professor treina em dobro, e treino é o que faz a torcida virar gente
+  de briga. Ele não cobra entrada, só o mês — o que a fila pede dele é
+  caixa que aguente três meses (R$ 6.000). Num ano de mundo simulado,
+  132 das 138 torcidas contratam.
+- **As outras torcidas treinam e promovem também** (20/08/2026), pelas
+  MESMAS regras da nossa. Antes a ficha delas era conta congelada — a
+  pirâmide da fonte e pronto —, então quem crescia só ganhava novato e
+  a torcida ficava mais FRACA quanto mais crescia: 5,7 com 20 membros,
+  3,5 com 250, e nunca passava disso.
+  · Agora cada torcida tem **quadro vivo**: quantos em cada cargo, a
+    força média de cada cargo e o XP rodado de cada cargo.
+  · **Treino todo dia**, como o nosso: o mesmo passo de 0 a 0,3 por
+    sessão, as mesmas vagas de treino por nível de sede (2 no nível 1,
+    20 no 5) e o mesmo **dobro com o professor**.
+  · **Promoção uma vez por semana**, com as três exigências nossas:
+    o XP (40, 100 e 300), a força (8, 12 e 18) e o dinheiro (grátis,
+    R$ 1.000 e R$ 5.000). A Diretoria delas respeita o mesmo teto por
+    nível de sede. Sobe um décimo do grupo apto por vez.
+  · **A noite de briga rende XP pros dois lados**, na tabela da nossa
+    (3 a 15 pela escala do bonde, ×1,5 pra quem ganha), sem diluir pelo
+    efetivo — do nosso lado quem vai pra rua leva o XP inteiro, e é
+    esse pessoal que sobe de cargo.
+  · **A cena recebe a ficha treinada**, não a congelada: quem treinou e
+    promoveu no mundo chega na briga com o que ganhou.
+  · Medido, mesma torcida e mesmo ponto de partida (4,55): num ano ela
+    chega a **8,2 sem professor e 10,1 com**. A nossa, sem professor e
+    sem briga, chega a 9,4 — o mundo virou páreo.
+- **Onde fica a promoção dos nossos** (20/08/2026): ela sempre esteve em
+  Torcida → clicar no membro → **Ações → Promover**, e ninguém achava.
+  A lista agora marca em ouro quem está **Pronto p/ promoção** e o
+  cartão avisa quantos são, antes da lista — no fim de 250 linhas não
+  adiantava nada.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

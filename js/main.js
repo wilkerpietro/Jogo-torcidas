@@ -1814,6 +1814,13 @@
     bs.oninput = ev=>{ busca = ev.target.value; pintarTorcida(); };
     ct.corpo.appendChild(bs);
 
+    /* A PROMOÇÃO MORA NO BOTÃO AÇÕES, e ninguém a achava. O aviso vem
+       ANTES da lista — no fim de 250 linhas não adiantava nada. */
+    const prontos = e.membros.filter(m=>TO.membros.podePromover(e, m).ok).length;
+    if(prontos) ct.corpo.appendChild(el('div',{class:'recado', html:
+      `<b>${prontos}</b> ${prontos===1?'membro está pronto':'membros estão prontos'} `+
+      `pra subir de cargo. Clique no nome na lista e use <b>Ações → Promover</b>.`}));
+
     const lista = e.membros
       .filter(m=>filtroCargo==='todos' || m.cargo===filtroCargo)
       .filter(m=>combina(m,busca))
@@ -1843,8 +1850,13 @@
     const tb = el('tbody');
     for(const m of lista){
       const penaDele = TO.membros.diasPresos(m);
+      /* QUEM ESTÁ PRONTO PRA SUBIR APARECE NA LISTA: a promoção mora
+         no botão Ações, e sem um aviso na linha ninguém achava que ela
+         existia. Agora a Situação avisa, e o rodapé conta quantos. */
+      const pronto = TO.membros.podePromover(e, m);
       const sit = m.preso ? (penaDele != null ? `Preso · ${penaDele}d` : 'Preso')
                 : m.ferido ? `Ferido · ${m.ferido.dias}d`
+                : pronto.ok ? '<b class="pronto-promo">Pronto p/ promoção</b>'
                 : m.naFila ? 'Treinando' : 'Apto';
       const linha = el('tr',{class:(m.preso?'preso':m.ferido?'ferido':'')
         + (selecionado===m.id?' selecionada':'')});
@@ -3698,7 +3710,10 @@
             /* o Financeiro delas chega na cena (decisão do dono,
                18/08/2026): professor de MMA melhora a ficha e o paiol
                de bombas limita o que elas jogam */
-            mma: !!viva.mma, bombas: viva.bombas};
+            mma: !!viva.mma, bombas: viva.bombas,
+            /* e o QUADRO VIVO: quem treinou e promovou no mundo chega
+               na cena com a ficha que ganhou (régua do dono, 20/08) */
+            quadro: TO.relacoes.quadroDe(E(), id)};
   };
 
   const LOCAL_ROT = {rua:'na rua', 'rua-media':'numa rua de classe média',

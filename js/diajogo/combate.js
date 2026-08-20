@@ -446,6 +446,7 @@ TO.diaJogo.combate = (function(){
      cargos da fonte e o mesmo bônus de poder que geram os NOSSOS
      membros em povoarInicial. Força dá dano, defesa segura dano, dos
      dois lados pela mesma régua. */
+  const ESCADA_CARGO = ['diretoria', 'frente', 'componente', 'novato'];
   function fichasDoPerfil(perfil, qtd){
     const p = perfil || {};
     const CARGOS = TO.membros.CARGOS;
@@ -456,7 +457,16 @@ TO.diaJogo.combate = (function(){
        melhores que tem: gera o plantel do tamanho da torcida deles e
        corta o topo, que é a MESMA seleção que fazemos. */
     const tamanho = Math.max(qtd, Math.min(p.membros || 60, 250));
-    const plano = TO.membros.planoDeCargos(tamanho, p.cargos);
+    /* O QUADRO VIVO DELAS manda (régua do dono, 20/08/2026): quem
+       treinou e promovou chega na cena com a ficha que ganhou, e não
+       com a pirâmide congelada da fonte. Perfil sem quadro (bancada,
+       cena solta, tela de seleção) segue a conta antiga. */
+    const q = p.quadro;
+    const plano = q ? ESCADA_CARGO
+        .map(c => [c, Math.round((q.cargos[c] || 0) * tamanho /
+                                 Math.max(1, q.total))])
+        .filter(([,n]) => n > 0)
+      : TO.membros.planoDeCargos(tamanho, p.cargos);
     /* SEM BÔNUS DE PODER (decisão do dono, 18/08/2026): a ficha do
        rival sai só do cargo, a mesma régua da média do ranking. */
     /* professor de MMA delas (decisão do dono, 18/08/2026): torcida
@@ -470,10 +480,14 @@ TO.diaJogo.combate = (function(){
     const fora = [];
     for(const [cargo, n] of plano){
       const teto = (CARGOS[cargo] || CARGOS.novato).teto;
+      /* com quadro vivo, a ficha nasce em volta da média TREINADA do
+         cargo; o professor já está dentro dela, pelo treino em dobro */
+      const media = q && q.forca[cargo] != null ? q.forca[cargo] : null;
+      const tira = () => media != null
+        ? U.limitar(Math.round(media + U.entre(-1.5, 1.5)), 1, teto)
+        : Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + mma);
       for(let i=0;i<n && fora.length<tamanho;i++)
-        fora.push({cargo,
-          forca:  Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + mma),
-          defesa: Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + mma),
+        fora.push({cargo, forca: tira(), defesa: tira(),
           moral:  U.limitar(moralBase + U.inteiro(-3,3), 1, 20)});
     }
     while(fora.length < tamanho)
