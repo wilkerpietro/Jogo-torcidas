@@ -123,9 +123,13 @@ TO.patrimonio = (function(){
     for(const s of p.subsedes) fora.push({tipo:'subsede', rot:'Subsede', bairro:s.bairro,
       receita: REC.subsede*mult(s.bairro)*fator, despesa: MAN.subsede});
 
-    if(E.onibus) fora.push({tipo:'onibus', rot:'Ônibus da torcida',
-      bairro:'', nota:'combustível e manutenção · estrada de graça',
-      receita:0, despesa:1500});
+    const frota = F().onibusDe(E);
+    if(frota) fora.push({tipo:'onibus',
+      rot: frota === 1 ? 'Ônibus da torcida' : `Ônibus da torcida (${frota})`,
+      bairro:'',
+      nota:`combustível e manutenção · a caravana sai `+
+           `${Math.round(F().descontoCaravana(E)*100)}% mais barata`,
+      receita:0, despesa:F().ONIBUS_MES * frota});
 
     if(E.professorMMA) fora.push({tipo:'mma', rot:'Professor de MMA',
       bairro:'', nota:'força e defesa evoluem em dobro no treino',
@@ -182,16 +186,26 @@ TO.patrimonio = (function(){
           alvo.nivel+1 > teto.nivel ? `sede nível ${n} não comporta ${cfg.rot.toLowerCase()} nível ${alvo.nivel+1}` : null)});
     }
 
-    /* O ÔNIBUS DA TORCIDA (decisão do dono, 17/08/2026): R$ 100 mil,
-       R$ 1.500/mês de combustível e manutenção, 1% ao mês de uma
-       manutenção séria de R$ 15 mil — e a caravana de estrada sai de
-       graça. Avião continua pago: ônibus não voa. */
-    if(!E.onibus) lista.push({
-      id:'onibus', rot:'Comprar o ônibus da torcida',
-      nota:'a despesa da caravana na estrada morre e o rateio dos que '+
-           'vão vira receita · R$ 1.500/mês de combustível e manutenção '+
-           '· rota de avião continua paga',
-      custo:100000, trava:trava(100000)});
+    /* A FROTA (régua do dono, 20/08/2026): até TRÊS ônibus, cada um
+       por R$ 100 mil e R$ 1.500/mês de combustível e manutenção, com
+       1% ao mês por ônibus de uma manutenção séria de R$ 15 mil. Um
+       tira 30% do custo da caravana, dois tiram 60%, três deixam a
+       estrada de graça. Avião continua pago: ônibus não voa. */
+    const temOnibus = F().onibusDe(E);
+    if(temOnibus < F().ONIBUS_MAX){
+      const proximo = temOnibus + 1;
+      const desc = Math.round(F().DESCONTO_ONIBUS[proximo]*100);
+      lista.push({
+        id:'onibus',
+        rot: temOnibus ? `Comprar mais um ônibus (${proximo}º)`
+                       : 'Comprar o ônibus da torcida',
+        nota:`com ${proximo} ${proximo===1?'ônibus':'ônibus'} a caravana `+
+             `de estrada sai ${desc}% mais barata`+
+             (proximo === F().ONIBUS_MAX
+               ? ' — frota cheia, estrada de graça e o rateio vira receita' : '')+
+             ` · R$ 1.500/mês por ônibus · rota de avião continua paga`,
+        custo:F().ONIBUS_CUSTO, trava:trava(F().ONIBUS_CUSTO)});
+    }
 
     /* professor de MMA (pedido do dono, 18/08/2026): R$ 2.000 fixos
        por mês, cobrados no fechamento — e o treino rende o dobro */
@@ -241,8 +255,11 @@ TO.patrimonio = (function(){
       p.fabrica = true;
       TO.estado.lancar(E, 'Fábrica de material', -o.custo);
     } else if(acao==='onibus'){
-      E.onibus = {desde:(E.data||{}).absoluto || 0};
-      TO.estado.lancar(E, 'Ônibus da torcida', -o.custo);
+      const tinha = F().onibusDe(E);
+      E.onibus = {desde:(E.onibus && E.onibus.desde) || (E.data||{}).absoluto || 0,
+                  n: Math.min(F().ONIBUS_MAX, tinha + 1)};
+      TO.estado.lancar(E, tinha ? `Ônibus da torcida (${tinha+1}º)`
+                                : 'Ônibus da torcida', -o.custo);
     } else if(acao==='mma'){
       /* nada sai do caixa agora: a mensalidade cobra no fim do mês */
       E.professorMMA = {desde:(E.data||{}).absoluto || 0};

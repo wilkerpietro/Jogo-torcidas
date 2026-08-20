@@ -84,7 +84,7 @@ TO.relacoes = (function(){
         /* o menu Financeiro inteiro vale pra elas (decisão do dono,
            18/08/2026): ônibus, professor de MMA e estoque de bombas
            são comprados com o caixa delas, como o jogador faz */
-        onibus:false, mma:false, bombas:10,
+        onibus:0, mma:false, bombas:10,
         vermelho:0,
         mult: multDaSede(o),
         pool: poolDaPraca(o),
@@ -127,7 +127,8 @@ TO.relacoes = (function(){
     des += t.subsedes * MAN.subsede;
     /* ônibus e professor de MMA custam o mesmo que pro jogador:
        R$ 1.500 e R$ 2.000 por mês, aqui na fatia semanal */
-    if(t.onibus) des += 350;
+    /* a frota delas cobra por ônibus, como a do jogador */
+    des += frotaIA(t) * 350;
     if(t.mma)    des += 460;
     return {rec, des, saldo:rec - des};
   }
@@ -166,8 +167,10 @@ TO.relacoes = (function(){
     if(!t.fabrica && t.sede >= P().FABRICA.sede)
       return {tipo:'fabrica', custo:P().FABRICA.custo};
     /* com o patrimônio de pé, o ônibus é a compra grande que falta —
-       mesmo preço do jogador; depois dele o dinheiro vai pro elenco */
-    if(!t.onibus) return {tipo:'onibus', custo:100000};
+       mesmo preço do jogador, e até TRÊS, como ele (régua do dono,
+       20/08/2026); depois deles o dinheiro vai pro elenco */
+    if(frotaIA(t) < FIN().ONIBUS_MAX)
+      return {tipo:'onibus', custo:FIN().ONIBUS_CUSTO};
     return elencoAlvo(E, id);
   }
 
@@ -199,7 +202,7 @@ TO.relacoes = (function(){
     for(const id of Object.keys(m)){
       const t = m[id];
       /* save de antes do Financeiro delas: ganha os campos novos */
-      if(t.bombas == null){ t.bombas = 10; t.onibus = !!t.onibus; t.mma = !!t.mma; }
+      if(t.bombas == null){ t.bombas = 10; t.onibus = t.onibus ? 1 : 0; t.mma = !!t.mma; }
       const b = balanco(t);
       t.caixa += Math.round(b.saldo * SEM);
 
@@ -230,7 +233,7 @@ TO.relacoes = (function(){
         t.caixa -= compra.custo;
         if(compra.tipo === 'sede') t.sede++;
         else if(compra.tipo === 'fabrica') t.fabrica = true;
-        else if(compra.tipo === 'onibus') t.onibus = true;
+        else if(compra.tipo === 'onibus') t.onibus = frotaIA(t) + 1;
         else if(compra.tipo === 'subsede') t.subsedes++;
         else if(compra.tipo === 'elenco'){
           E.investimento = E.investimento || {};
@@ -589,6 +592,40 @@ TO.relacoes = (function(){
     return Math.max(0, Math.round(total) - foraDeCombate(E, id));
   }
 
+  /* quantos ônibus a torcida da IA tem: save antigo guardava `true` */
+  const frotaIA = t => !t || !t.onibus ? 0
+    : U.limitar(Math.round(t.onibus === true ? 1 : t.onibus), 0,
+                FIN().ONIBUS_MAX || 3);
+
+  /* =======================================================
+     O PLACAR DE BRIGAS DO ANO (pedido do dono, 20/08/2026)
+     Quantas brigas cada torcida venceu e perdeu no ano corrente. O
+     saldo (vitórias − derrotas) é a coluna nova do ranking. Vira o
+     ano, zera: o contador guarda o ano dele e se refaz sozinho.
+     ======================================================= */
+  function placarDoAno(E, id){
+    if(!E || !id) return null;
+    const zero = ()=>({ano:E.data.ano, v:0, d:0});
+    if(id === E.torcida.id){
+      if(!E.brigasAno || E.brigasAno.ano !== E.data.ano) E.brigasAno = zero();
+      return E.brigasAno;
+    }
+    const t = mundo(E)[id];
+    if(!t) return null;
+    if(!t.brigasAno || t.brigasAno.ano !== E.data.ano) t.brigasAno = zero();
+    return t.brigasAno;
+  }
+  function anotarBriga(E, id, venceu){
+    const p = placarDoAno(E, id);
+    if(!p) return null;
+    if(venceu) p.v++; else p.d++;
+    return p;
+  }
+  const saldoDoAno = (E, id)=>{
+    const p = placarDoAno(E, id);
+    return p ? p.v - p.d : 0;
+  };
+
   /* todo registro passa por aqui: alimenta a aba Brigas, a notícia de
      segunda e o contador que invalida o cache do ranking */
   function registrarBrigaIA(E, reg){
@@ -596,6 +633,9 @@ TO.relacoes = (function(){
     E.brigasIA.unshift(reg);
     if(E.brigasIA.length > 300) E.brigasIA.pop();
     E.brigasIATotal = (E.brigasIATotal || 0) + 1;
+    /* o placar do ano de cada lado, que vira o saldo no ranking */
+    if(reg.a && reg.a.id) anotarBriga(E, reg.a.id, !!reg.ganhouA);
+    if(reg.b && reg.b.id) anotarBriga(E, reg.b.id, !reg.ganhouA);
     return reg;
   }
 
@@ -1082,6 +1122,7 @@ TO.relacoes = (function(){
     const chave = `${E.data.ano}|${semanaAbs(E)}|${E.data.dia}|`+
       `${E.membros.length}|${Math.round(E.indicadores.prestigio*100)}|`+
       `${E.brigasIATotal || (E.brigasIA||[]).length}|${Math.round(E.dinheiro)}|`+
+      `${((E.brigasAno||{}).v||0)}-${((E.brigasAno||{}).d||0)}|`+
       `${E.baixasIASeq || 0}`;
     if(cacheRanking.chave === chave) return cacheRanking.lista;
     mundo(E);
@@ -1098,9 +1139,16 @@ TO.relacoes = (function(){
            que faz briga (nossa e das IAs) mexer no ranking */
         const n = E.membros.filter(m=>!m.ferido && !m.preso).length;
         const sit = situacaoFinanceira(E.dinheiro);
+        const pat = FIN().patrimonio(E);
+        /* PRÉDIOS SOMADOS (pedido do dono, 20/08/2026): a sede conta 1,
+           e somam bar, loja e subsede — o número que aparece é a
+           quantidade de portas que a torcida mantém abertas. */
+        const predios = 1 + (pat.bares||[]).length + (pat.lojas||[]).length +
+                        (pat.subsedes||[]).length;
         fora.push({id:o.id, nome:o.nome, nossa:true,
                    membros:n, prestigio:prest, forca,
-                   caixa:E.dinheiro, situacao:sit,
+                   caixa:E.dinheiro, situacao:sit, predios,
+                   saldo: saldoDoAno(E, o.id),
                    pontos:Math.round((n + prest*2)*forca*sit.mult)});
       } else {
         const viva = (E.mundoTorcidas||{})[o.id] || {};
@@ -1110,9 +1158,12 @@ TO.relacoes = (function(){
         const forca = mediaDeFichaGerada(o, viva.membros || o.membros || n, E);
         const caixa = viva.caixa !== undefined ? viva.caixa : (o.saldo||200)*4;
         const sit = situacaoFinanceira(caixa);
+        const predios = 1 + (viva.bares||[]).length + (viva.lojas||[]).length +
+                        (viva.subsedes || 0);
         fora.push({id:o.id, nome:o.nome, nossa:false,
                    membros:n, prestigio:prest, forca,
-                   caixa, situacao:sit,
+                   caixa, situacao:sit, predios,
+                   saldo: saldoDoAno(E, o.id),
                    pontos:Math.round((n + prest*2)*forca*sit.mult)});
       }
     }
@@ -1157,5 +1208,6 @@ TO.relacoes = (function(){
           mover, indicadoresDe, semanaAbs,
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
-          conquistaDoClube, esfriar, passarSemana, panorama, MENSALIDADE};
+          conquistaDoClube, esfriar, passarSemana, panorama, MENSALIDADE,
+          placarDoAno, anotarBriga, saldoDoAno, frotaIA};
 })();

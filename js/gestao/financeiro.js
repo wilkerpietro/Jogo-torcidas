@@ -66,6 +66,24 @@ TO.financeiro = (function(){
      fatura; quem compra e quem mostra é patrimonio.js. O
      nível 1 já nasce com o que o GDD dá de graça.
      ======================================================= */
+  /* =======================================================
+     A FROTA (régua do dono, 20/08/2026)
+     Um ônibus tira 30% do custo da caravana, dois tiram 60%, três
+     deixam a estrada de graça. Cada um custa os mesmos R$ 100 mil na
+     compra e R$ 1.500 por mês de combustível e manutenção — três
+     ônibus são R$ 4.500 por mês —, fora a manutenção séria de R$ 15
+     mil, que é sorteada por ônibus.
+     ======================================================= */
+  const ONIBUS_MAX = 3, ONIBUS_MES = 1500, ONIBUS_CUSTO = 100000;
+  const DESCONTO_ONIBUS = [0, 0.30, 0.60, 1];
+  /* save antigo guardava um objeto só, sem contagem: aquilo é 1 */
+  function onibusDe(E){
+    const o = E && E.onibus;
+    if(!o) return 0;
+    return U.limitar(Math.round(o.n || 1), 0, ONIBUS_MAX);
+  }
+  const descontoCaravana = E => DESCONTO_ONIBUS[onibusDe(E)] || 0;
+
   function patrimonio(E){
     if(!E.patrimonio) E.patrimonio = {bares:[], lojas:[], subsedes:[], fabrica:false, itens:{}};
     if(!E.patrimonio.itens) E.patrimonio.itens = {};
@@ -239,9 +257,12 @@ TO.financeiro = (function(){
        cheio do GDD §7.3 */
     const est = TO.planejamento && TO.planejamento.estimativaCaravana(E);
     const valor = est ? est.custo : CARAVANA;
-    /* ônibus próprio (régua do dono, 18/08/2026): a despesa morreu, mas
-       o rateio dos que embarcam continua sendo pago — e vira RECEITA */
-    if(est && est.onibus && est.rateio > 0)
+    /* FROTA CHEIA (três ônibus, régua do dono 20/08/2026): a despesa
+       da estrada morre e o rateio dos que embarcam vira RECEITA. Com
+       um ou dois ônibus a despesa só encolhe — 30% e 60% —, e o
+       rateio segue sendo o abatimento de sempre. */
+    if(est && est.custo <= 0 && est.rateio > 0 && est.rota &&
+       est.rota.id !== 'ar')
       TO.estado.lancar(E,
         `Caravana para ${destino} — rateio dos ${est.vao} no ônibus`,
         est.rateio);
@@ -385,13 +406,19 @@ TO.financeiro = (function(){
       TO.estado.lancar(E, 'Professor de MMA — mês', -2000);
       rel.despesa += 2000; rel.saldo -= 2000;
     }
-    if(E.onibus && fimDoMes(E)){
-      TO.estado.lancar(E, 'Ônibus — combustível e manutenção', -1500);
-      rel.despesa += 1500; rel.saldo -= 1500;
-      if(U.rng() < 0.01){
+    const frota = onibusDe(E);
+    if(frota && fimDoMes(E)){
+      const mes = ONIBUS_MES * frota;
+      TO.estado.lancar(E, frota === 1
+        ? 'Ônibus — combustível e manutenção'
+        : `Ônibus (${frota}) — combustível e manutenção`, -mes);
+      rel.despesa += mes; rel.saldo -= mes;
+      /* a manutenção séria é sorteada POR ÔNIBUS: frota maior quebra
+         mais, que é o preço de ter frota */
+      for(let k = 0; k < frota; k++) if(U.rng() < 0.01){
         TO.estado.lancar(E, 'Ônibus — manutenção séria', -15000);
         rel.despesa += 15000; rel.saldo -= 15000;
-        rel.avisos.push('O ônibus quebrou de verdade: R$ 15.000 de oficina.');
+        rel.avisos.push('Um ônibus quebrou de verdade: R$ 15.000 de oficina.');
       }
     }
     acumularNoMes(E, rel);
@@ -486,5 +513,7 @@ TO.financeiro = (function(){
           precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
           postura, fecharSemana,
           semanaDaMensalidade, fimDoMes, mesCorrente, fecharMes,
+          onibusDe, descontoCaravana,
+          ONIBUS_MAX, ONIBUS_MES, ONIBUS_CUSTO, DESCONTO_ONIBUS,
           MANUT_SEDE, RECEITA, MANUT, INSUMO, CARAVANA, SEM};
 })();

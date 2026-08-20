@@ -647,6 +647,24 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   arquibancada por jogo: depois dela a PM fica no setor, o clima cai
   pra "esquentando" e não sobe de novo.
 
+- **A frota de ônibus abate a caravana** (20/08/2026): a régua do dono
+  é a escada, não o "tem ou não tem". **1 ônibus tira 30% do custo da
+  caravana, 2 tiram 60%, 3 deixam a caravana de graça.** O rateio dos
+  torcedores continua sendo cobrado do mesmo jeito: com a frota
+  completa, o que sobra do rateio vira RECEITA do dia, não despesa.
+  · **A manutenção é por ônibus**: R$ 1.500 por mês cada um — 3 custam
+    R$ 4.500 por mês —, fora os custos excepcionais de R$ 15.000, que
+    cada ônibus pode ter por conta própria.
+  · **O preço de compra não muda**: cada ônibus custa o mesmo do
+    primeiro, e a garagem para no terceiro. A IA sobe a mesma escada.
+  · Avião não tem desconto: ônibus não voa.
+- **Duas colunas novas no ranking** (20/08/2026):
+  · **Prédios** — quantos imóveis a torcida tem somados, num número só
+    (1 sede + 2 bares + 2 lojas = 5). Subsede conta.
+  · **Saldo** — o saldo de brigas DO ANO: vitórias menos derrotas
+    (100 brigas com 60 vitórias mostram 20). Zera na virada do ano, e
+    conta briga de todo mundo, nossa e delas.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

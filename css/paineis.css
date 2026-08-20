@@ -1297,3 +1297,9 @@ table.dados tr.selecionada td{background:#252525}
 .msg-efeitos .sep{color:var(--apagado)}
 .msg-efeitos .ef.boa{color:var(--verde-vivo)}
 .msg-efeitos .ef.ruim{color:var(--vermelho)}
+
+/* o saldo de brigas do ano no ranking: verde ganha, vermelho perde
+   (coluna pedida pelo dono, 20/08/2026) */
+.tab-ranking .saldo-briga{font-variant-numeric:tabular-nums}
+.tab-ranking .saldo-briga.bom{color:var(--verde)}
+.tab-ranking .saldo-briga.ruim{color:var(--rubro-vivo)}

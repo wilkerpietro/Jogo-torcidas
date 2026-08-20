@@ -968,6 +968,14 @@ TO.feed = (function(){
     /* toda briga zera o relógio da paz — é ele que deprecia prestígio
        e moral depois de 20 dias parados (decisão do dono) */
     E.ultimaBriga = E.data.absoluto || 0;
+    /* o placar de brigas do ano dos dois lados (pedido do dono,
+       20/08/2026): é o saldo que aparece no ranking */
+    if(TO.relacoes.anotarBriga){
+      TO.relacoes.anotarBriga(E, E.torcida.id, !!d.ganhamos);
+      const outro = (d.b || {}).torcidaId;
+      if(outro && outro !== E.torcida.id)
+        TO.relacoes.anotarBriga(E, outro, !d.ganhamos);
+    }
     const onde = d.local && d.local.cena ? nomeDaCena(d.local.cena) : 'na rua';
     const bairro = d.local && d.local.bairro ? `, no bairro ${d.local.bairro}` : '';
     const a = d.a || {}, b = d.b || {};

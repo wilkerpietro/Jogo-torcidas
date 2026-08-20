@@ -1401,12 +1401,17 @@
     pg.appendChild(el('div',{class:'recado', html:
       `Pontos = (<b>membros</b> + <b>prestígio × 2</b>) × <b>média de `+
       `força e defesa</b> dos membros × <b>situação financeira</b> `+
-      `(de ×0,6 endividado a ×1,6 rico).`}));
+      `(de ×0,6 endividado a ×1,6 rico). <b>Prédios</b> soma sede, bares, `+
+      `lojas e subsedes; <b>saldo</b> é vitória menos derrota em brigas `+
+      `no ano.`}));
     const lista = TO.relacoes.ranking(e);
     const t = el('table',{class:'tab-ranking'});
     t.innerHTML = `<thead><tr><th>#</th><th>Torcida</th>
       <th class="nu">Membros</th><th class="nu">Prestígio</th>
-      <th class="nu">Força média</th><th>Situação</th>
+      <th class="nu">Força média</th>
+      <th class="nu" title="sede, bares, lojas e subsedes somados">Prédios</th>
+      <th class="nu" title="vitórias menos derrotas em brigas no ano">Saldo</th>
+      <th>Situação</th>
       <th class="nu">Pontos</th></tr></thead>`;
     const tb = el('tbody');
     for(const r of lista){
@@ -1420,6 +1425,10 @@
          <td class="nu">${U.numero(r.membros)}</td>
          <td class="nu">${r.prestigio}</td>
          <td class="nu">${(Math.round(r.forca*10)/10).toFixed(1)}</td>
+         <td class="nu">${r.predios || 0}</td>
+         <td class="nu saldo-briga ${(r.saldo||0) > 0 ? 'bom'
+             : (r.saldo||0) < 0 ? 'ruim' : ''}">`+
+        `${(r.saldo||0) > 0 ? '+' : ''}${r.saldo || 0}</td>
          <td class="fin fin-${sit.slug}" title="${U.dinheiro(Math.round(r.caixa||0))}`+
         ` · pontos ×${sit.mult.toFixed(1).replace('.', ',')}">${sit.rot}</td>
          <td class="nu"><b>${U.numero(r.pontos)}</b></td>`;

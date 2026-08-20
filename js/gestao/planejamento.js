@@ -512,18 +512,21 @@ TO.planejamento = (function(){
     const porCabeca = r.id === 'ar' ? CABECA_AR
                     : CABECA_BASE + CABECA_TRECHO * r.saltos;
     const bruto = porCabeca*vao;
-    /* ônibus próprio (régua do dono, 18/08/2026): quem embarca CONTINUA
-       pagando o rateio — e como a estrada não custa mais nada pra
-       torcida, esse rateio entra no caixa como receita. A despesa da
-       caravana morre; a manutenção mensal do ônibus segue no
-       financeiro. Avião continua pago do jeito de sempre. */
-    if(E.onibus && r.id !== 'ar')
-      return {aptos:aptos.length, interessados, vao, vontade, rota:r,
-              porCabeca, bruto, rateio: Math.round(bruto*RATEIO),
-              custo:0, minimo:MINIMO, onibus:true};
+    /* A FROTA ABATE A ESTRADA (régua do dono, 20/08/2026): um ônibus
+       tira 30% do que a torcida paga, dois tiram 60%, três deixam a
+       caravana sem custo nenhum — e aí o rateio de quem embarca vira
+       receita, como já era com o ônibus único. Quem embarca sempre
+       paga o rateio; o que a frota abate é a parte da TORCIDA. Avião
+       continua pago do jeito de sempre: ônibus não voa. */
+    const rateio = Math.round(bruto*RATEIO);
+    const daTorcida = bruto*(1-RATEIO);
+    const frota = r.id === 'ar' ? 0 : TO.financeiro.onibusDe(E);
+    const desconto = r.id === 'ar' ? 0 : TO.financeiro.descontoCaravana(E);
     return {aptos:aptos.length, interessados, vao, vontade, rota:r, porCabeca,
-            bruto, rateio: Math.round(bruto*RATEIO),
-            custo: Math.round(bruto*(1-RATEIO)), minimo:MINIMO};
+            bruto, rateio, minimo:MINIMO,
+            custo: Math.round(daTorcida*(1-desconto)),
+            cheio: Math.round(daTorcida),
+            onibus: frota, desconto};
   }
 
   /* =======================================================
@@ -641,9 +644,14 @@ TO.planejamento = (function(){
       const pago = !!((E.caravanasPagas||{})[j.chave]);
       põe('caravana', `Caravana para ${j.cidadeAdv || 'fora'}`,
           est ? est.custo : TO.financeiro.CARAVANA, pago,
-          est ? (est.onibus
-                  ? `${est.vao} pessoas no ônibus da torcida — o rateio de `+
+          est ? (est.custo <= 0 && est.onibus
+                  ? `${est.vao} pessoas na frota da torcida — o rateio de `+
                     `${U.dinheiro(est.rateio)} entra como receita`
+                  : est.onibus
+                  ? `${est.vao} pessoas por ${est.rota.nome} · `+
+                    `${est.onibus} ${est.onibus===1?'ônibus abate':'ônibus abatem'} `+
+                    `${Math.round(est.desconto*100)}% de `+
+                    `${U.dinheiro(est.cheio)}`
                   : `${est.vao} pessoas por ${est.rota.nome} · `+
                     `${U.dinheiro(est.rateio)} sai do rateio dos que vão`)
               : 'rota ainda não escolhida — vale o valor cheio do GDD');
