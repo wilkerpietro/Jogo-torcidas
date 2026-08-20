@@ -582,6 +582,27 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   teste acusa #FFFFFF/#1A40CC no jogo da praça e passa nas outras
   quatro — exatamente o que o dono estava vendo.
 
+- **A emboscada tinha os papéis trocados** (20/08/2026): na estrada
+  quem nascia no ônibus, no meio da tela, era o ATACANTE, e a nossa
+  caravana nascia numa das pontas — os dois spawns dizem "ELES, PELA
+  PISTA" e "NÓS, NO ÔNIBUS" e o código mandava o contrário (medido: 38
+  nossos em 'ELES, DE UM LADO', 14 deles em 'NÓS, NO ÔNIBUS'). Vinha
+  de quando a emboscada tomava emprestada a rua de periferia, onde
+  `mandante` era o lado de casa. Agora o atacado é sempre o
+  `visitante`, nas duas cenas de ataque a nós (bar e estrada).
+- **Emboscada: o atacado em volta do ônibus, o atacante nas duas
+  pontas** (régua do dono, 20/08/2026): as cenas de emboscada marcam
+  dois spawns por lado justamente pra isso, mas um bonde tomava um
+  spawn só e o outro ficava vazio — metade da emboscada não existia.
+  A cena agora pede `espalharBonde` e o bonde se reparte entre os
+  pontos do seu lado. E ali não se corre de ver o tamanho do outro
+  (`semFugaPorMinoria`): quem ataca veio pra isso e a caravana não tem
+  pra onde ir; corre-se de sangue, no preço de rua (30% no chão). Por
+  fim, o atacante MARCHA (`marchaAoInimigo`): sem isso ele andava pro
+  próprio fim de pista e a emboscada acabava sem um soco. Medido:
+  atacante grande (75×39) e pequeno (14×39), nas duas cenas, sempre
+  com caídos dos dois lados e sem ninguém virar as costas na largada.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

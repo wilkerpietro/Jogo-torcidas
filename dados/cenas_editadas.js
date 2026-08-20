@@ -431,9 +431,9 @@ TO.dados.cenasEditadas = {
       '1,190,1;1,190,1;1,190,1;1,190,1;192',
 
     spawns:[
-      {"id":"mandante1","rot":"ELES, PELA PISTA","lado":"mandante","x":200,"y":820,"jogador":true,"entrada":"ent_mandante"},
+      {"id":"mandante1","rot":"ELES, PELA PISTA","lado":"mandante","x":200,"y":820,"entrada":"ent_mandante"},
       {"id":"mandante2","rot":"ELES, PELO PÁTIO","lado":"mandante","x":1300,"y":400,"entrada":"ent_mandante"},
-      {"id":"visitante1","rot":"NÓS, NAS BOMBAS","lado":"visitante","x":700,"y":640,"entrada":"ent_visitante"},
+      {"id":"visitante1","rot":"NÓS, NAS BOMBAS","lado":"visitante","x":700,"y":640,"jogador":true,"entrada":"ent_visitante"},
       {"id":"visitante2","rot":"NÓS, NO ÔNIBUS","lado":"visitante","x":830,"y":700,"entrada":"ent_visitante"}
     ],
 
@@ -469,9 +469,9 @@ TO.dados.cenasEditadas = {
       '192;192;192;192;192;192;192;192;192;192;192;192;192;192;192',
 
     spawns:[
-      {"id":"mandante1","rot":"ELES, DE UM LADO","lado":"mandante","x":150,"y":584,"jogador":true,"entrada":"ent_mandante"},
+      {"id":"mandante1","rot":"ELES, DE UM LADO","lado":"mandante","x":150,"y":584,"entrada":"ent_mandante"},
       {"id":"mandante2","rot":"ELES, DO OUTRO","lado":"mandante","x":1390,"y":584,"entrada":"ent_mandante"},
-      {"id":"visitante1","rot":"NÓS, NO ÔNIBUS","lado":"visitante","x":687,"y":569,"entrada":"ent_visitante"},
+      {"id":"visitante1","rot":"NÓS, NO ÔNIBUS","lado":"visitante","x":687,"y":569,"jogador":true,"entrada":"ent_visitante"},
       {"id":"visitante2","rot":"NÓS, ATRÁS","lado":"visitante","x":850,"y":600,"entrada":"ent_visitante"}
     ],
 

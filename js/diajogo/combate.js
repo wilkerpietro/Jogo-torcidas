@@ -246,8 +246,22 @@ TO.diaJogo.combate = (function(){
       if(fila.length){
         /* portão do jogador na frente, pra casar com o nosso bonde */
         const ordem = spawns.slice().sort((a,b)=>(b.jogador?1:0)-(a.jogador?1:0));
-        fila.forEach((b, i)=> grupos.push({s:ordem[i % ordem.length], bonde:b,
-                                           qtd:Math.max(1, Math.round(b.n))}));
+        /* UM BONDE, DOIS PONTOS (cenas de emboscada, régua do dono
+           20/08/2026): na estrada quem ataca desce pelas DUAS pontas da
+           tela e quem é atacado fica em volta do ônibus — a cena marca
+           dois spawns por lado justamente pra isso. Sem espalhar, um
+           bonde tomava um spawn só e o outro ficava vazio: metade da
+           emboscada não existia. Vale só onde a cena pede. */
+        if(D.espalharBonde && fila.length === 1 && ordem.length > 1){
+          const b = fila[0], k = ordem.length;
+          const base = Math.floor(Math.max(k, Math.round(b.n)) / k);
+          const sobra = Math.max(k, Math.round(b.n)) - base*k;
+          ordem.forEach((s, i)=> grupos.push({s, bonde:b,
+                                              qtd: base + (i < sobra ? 1 : 0)}));
+        } else {
+          fila.forEach((b, i)=> grupos.push({s:ordem[i % ordem.length], bonde:b,
+                                             qtd:Math.max(1, Math.round(b.n))}));
+        }
       } else {
         /* com escalação e sem bonde, quem diz o tamanho é a escalação */
         /* sem bonde vindo do mapa, o nosso lado é o que a cena marcou

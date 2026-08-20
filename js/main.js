@@ -3596,11 +3596,21 @@
     if(noBar) deles = Math.min(deles, 60);
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
     const c2 = TO.mundo.coresDaTorcida(o || {});
-    /* no bar a gente é a casa e nasce no salão (lado `visitante`); na
-       estrada não há casa — quem desce a rua atrás da gente são eles, e
-       o nosso ônibus é que foi fechado, então os papéis se invertem */
-    const nosso  = naEstrada ? 'mandante'  : 'visitante';
-    const outro  = naEstrada ? 'visitante' : 'mandante';
+    /* NÓS SOMOS SEMPRE O LADO ATACADO — e nas duas cenas o atacado é o
+       `visitante`. No bar é o bonde do salão, com o balcão atrás; na
+       estrada é quem está no ônibus, no meio da tela, com eles descendo
+       pelas duas pontas.
+
+       A inversão que havia aqui (`naEstrada ? 'mandante'`) é de quando a
+       emboscada tomava emprestada a rua de periferia, onde `mandante`
+       era o lado de casa. Com as cenas de emboscada do dono (posto e
+       estrada, 19/08/2026) os papéis estão desenhados no chão: os
+       spawns dizem "ELES, PELA PISTA" nas pontas e "NÓS, NO ÔNIBUS" no
+       meio. Com a inversão ligada, nós nascíamos numa ponta (a deles) e
+       eles nasciam em cima do ônibus (o nosso) — medido: 38 nossos em
+       'ELES, DE UM LADO' e 14 deles em 'NÓS, NO ÔNIBUS'. */
+    const nosso  = 'visitante';
+    const outro  = 'mandante';
     const aptos = fila.slice(0, nossos);
     const bondes = [
       {lado:nosso, n:nossos, nossa:true, nome:e.torcida.nome,
