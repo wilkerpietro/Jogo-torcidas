@@ -757,11 +757,16 @@ TO.praca = (function(){
   /* O EFETIVO É O REAL DOS DOIS LADOS, e eles são diferentes. Este é o
      mesmo cuidado da cena: nada é reequilibrado na abertura — se saímos
      com 80 e eles com 100, a cena é de 80 contra 100. */
+  /* AS TRÊS CORES ATRAVESSAM (correção do dono, 20/08/2026): faltava a
+     terceira aqui, e só aqui — nos jogos da praça (concentração, pista
+     e arredores) o bonde chegava na cena com duas cores, e a mesma
+     torcida que tinha duas listras na arquibancada aparecia com uma
+     só. O disco é o mesmo em toda cena; quem cortava era este objeto. */
   const montarEncontro = (nosso, deles, onde) => ({
     a: {torcida:nosso.id, nome:nosso.nome, sigla:nosso.sigla, n:nosso.n,
-        cor:nosso.cor, cor2:nosso.cor2, nossa:true},
+        cor:nosso.cor, cor2:nosso.cor2, cor3:nosso.cor3, nossa:true},
     b: {torcida:deles.id, nome:deles.nome, sigla:deles.sigla, n:deles.n,
-        cor:deles.cor, cor2:deles.cor2, nossa:false},
+        cor:deles.cor, cor2:deles.cor2, cor3:deles.cor3, nossa:false},
     local: onde.local, bairro: onde.bairro, nossa:true
   });
 

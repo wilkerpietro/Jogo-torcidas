@@ -2262,10 +2262,10 @@ TO.diaJogo.combate = (function(){
        deixavam um miolo de 3 px de primária, e num tricolor sobravam
        menos ainda — o disco lia como alvo de tiro, e a cor que a
        torcida usa pra se chamar era a que menos aparecia. A listra é
-       fração do raio (16%), então o líder, que é maior, tem a mesma
-       proporção do resto: o padrão não muda nem por disco nem por
-       cena. */
-    const LISTRA = Math.max(1, d.r*0.16);
+       fração do raio (20%, subido de 16% a pedido do dono em
+       20/08/2026), então o líder, que é maior, tem a mesma proporção
+       do resto: o padrão não muda nem por disco nem por cena. */
+    const LISTRA = Math.max(1.2, d.r*0.20);
     if(sec){
       c.strokeStyle=sec; c.lineWidth=LISTRA;
       c.beginPath(); c.arc(x,y,d.r-LISTRA/2,0,7); c.stroke();

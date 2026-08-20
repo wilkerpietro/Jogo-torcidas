@@ -555,8 +555,8 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   número de cores da torcida (2,5 px pra quem tem duas, dois anéis de
   2 px pra quem tem três), e como cada cena traz torcidas diferentes,
   cada cena parecia ter um disco diferente. Agora a régua é uma só, em
-  toda cena: base na primária e listra de 16% do raio (piso de 1 px) na
-  borda — uma listra pra duas cores, duas pra três, sempre com a mesma
+  toda cena: base na primária e listra de 20% do raio (piso de 1,2 px)
+  na borda — uma listra pra duas cores, duas pra três, sempre com a mesma
   espessura. O que muda de uma torcida pra outra é quantas listras,
   nunca a grossura, e a cor que a torcida usa pra se chamar é a que
   toma o disco.
@@ -568,6 +568,19 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   colete, que não é cor de torcida nenhuma e por isso nunca se confunde
   com a nossa. Conferido nas cenas que o jogo abre (CT, bar da rival,
   treta marcada e dia de jogo): zero discos sem cor.
+
+- **A mesma camisa em toda cena** (20/08/2026): o dono viu a TUF com
+  uma listra só em algumas cenas e duas em outras. A paleta da torcida
+  não muda — `coresDaTorcida` devolve o mesmo branco/azul/vermelho pela
+  torcida e pela ficha —, quem cortava era `montarEncontro`, em
+  praca.js: o encontro dos jogos da praça (concentração, pista e
+  arredores) copiava só `cor` e `cor2` do bonde, e a terceira ficava
+  pra trás. Uma torcida tricolor entrava naquelas cenas com duas cores.
+  Agora as três atravessam. Provado com a régua invertida: com o
+  conserto, a TUF veste #FFFFFF/#1A40CC/#C8102E nas cinco cenas
+  (CT, bar da rival, treta, jogo da praça e arquibancada); sem ele, o
+  teste acusa #FFFFFF/#1A40CC no jogo da praça e passa nas outras
+  quatro — exatamente o que o dono estava vendo.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
