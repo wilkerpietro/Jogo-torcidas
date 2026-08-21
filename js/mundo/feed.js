@@ -1066,14 +1066,16 @@ TO.feed = (function(){
         marcar();
         return {ok:true, abrir:{tela:'tela-assalto'}};
       case 'iniciar-partida':
-        /* a bola rola: NÃO marca respondido — o relógio do feed segue
-           preso até o apito final, que chega por encerrarPartida() */
+        /* O DIA COMEÇA, A BOLA NÃO (correção do dono, 20/08/2026): este
+           botão abre o ITINERÁRIO — concentração, pista, arredores. A
+           partida só começa quando a linha chegar na parada do jogo, e
+           quem acende `iniciada` é ela. Ligar o cronômetro aqui fazia o
+           relógio do jogo correr durante a concentração inteira, e a
+           gente chegava no estádio com o jogo no segundo tempo.
+           NÃO marca respondido: o relógio do feed segue preso até o
+           apito final, que chega por encerrarPartida(). */
         m.dados = m.dados || {};
-        m.dados.iniciada = true;
-        m.dados.t0 = Date.now();
-        m.dados.minAcum = 0;      // minutos já rolados (pause/velocidade)
-        m.dados.vel = 4;          // 1×, 2× ou 4× — o padrão é 4×
-        m.dados.pausada = false;
+        m.dados.dia = true;
         return {ok:true};
       case 'paz':
         PL().definirIntencao(E, 'paz');

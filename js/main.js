@@ -529,8 +529,21 @@
 
   /* o estado visível de uma mensagem: enquanto ele não muda, o nó dela
      no DOM não precisa ser refeito */
+  /* O ITINERÁRIO É UM ESTADO DA MENSAGEM (correção do dono, 20/08/2026):
+     enquanto a linha do dia está andando dentro do cartão, o estado é
+     um só — assim o cartão NÃO é repintado no meio do caminho e a linha
+     não perde nem os cartões abertos nem o relógio da partida. Sem isto
+     `atualizarFeed` pulava a mensagem e a linha nunca chegava nela. */
+  /* a linha do dia que está andando, e as que já encerraram — estas
+     ficam desenhadas na mensagem como registro. Nada disso vai pro
+     save: é DOM, e DOM não se serializa. */
+  let ITN = null;      // {it, msg, ponto, travado, timer, esperando, raiz}
+  const itnProntos = {};
+
   const estadoDaMsg = (e, m) =>
-    m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim')
+    (ITN && ITN.msg && ITN.msg.id === m.id) ? 'itn'
+    : itnProntos[m.id] ? 'itn-fim'
+    : m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim')
     : (m.kind === 'partida' && m.dados && m.dados.iniciada) ? 'aovivo' : '';
 
   function atualizarFeed(){
@@ -918,56 +931,35 @@
      funções — o itinerário não inventa briga nem consequência,
      só ordena o dia e chama quem já existe.
      ======================================================= */
-  let ITN = null;      // {it, msg, ponto, travado, timer, esperando}
-
-  const itnEl = ()=>$('telaItinerario');
-
   function abrirItinerario(msg){
     const e = E();
     const it = TO.itinerario.montar(e);
     if(!it) return false;
     ITN = {it, msg, ponto:-1, travado:false, timer:null, esperando:null};
 
-    const tela = itnEl();
-    tela.innerHTML = '';
-    const folha = el('div',{class:'itn-folha'});
+    /* A LINHA MORA NA MENSAGEM (correção do dono, 20/08/2026): a tela
+       cheia saiu. O nó é montado UMA vez e guardado em `ITN.raiz`; o
+       cartão do feed só o adota a cada repintura, então o estado, os
+       cartões abertos e o widget da partida sobrevivem inteiros —
+       appendChild de um nó que já existe move, não recria. */
+    const raiz = el('div',{class:'itn-mini'});
 
-    const topo = el('div',{class:'itn-topo'});
-    topo.appendChild(el('div',{class:'eyebrow',
-      texto: it.casa ? 'Dia de jogo · em casa'
-                     : `Dia de jogo · fora, em ${it.cidade}`}));
-    topo.appendChild(el('h1',{html:`Itinerário do <em>dia</em>`}));
-    topo.appendChild(el('p',{texto: it.viaja
-      ? `${it.titulo}. A caravana pega a estrada na véspera e volta no dia `+
-        `seguinte — ${it.dias} dias de linha.`
-      : `${it.titulo}. Bola rolando às ${it.hora}.`}));
-    folha.appendChild(topo);
-
-    const barra = el('div',{class:'itn-barra'});
-    const btSeguir = el('button',{class:'itn-bt acao', texto:'Começar o dia ▲'});
-    const btFechar = el('button',{class:'itn-bt', texto:'Fechar o dia'});
-    btFechar.disabled = true;
-    barra.appendChild(el('span',{class:'itn-jogo', texto:it.titulo}));
-    barra.appendChild(el('span',{class:'itn-espaco'}));
-    barra.appendChild(btSeguir);
-    barra.appendChild(btFechar);
+    const barra = el('div',{class:'itn-mini-barra'});
     const estado = el('div',{class:'estado', texto:'o dia ainda não começou'});
     barra.appendChild(estado);
-    folha.appendChild(barra);
+    raiz.appendChild(barra);
 
-    const trilha = el('div',{class:'itn-trilha'});
+    const trilha = el('div',{class:'itn-mini-trilha'});
     trilha.appendChild(el('div',{class:'itn-feito'}));
-    folha.appendChild(trilha);
-    tela.appendChild(folha);
+    raiz.appendChild(trilha);
 
+    ITN.raiz = raiz;
     ITN.trilha = trilha;
     ITN.estado = estado;
-    ITN.btSeguir = btSeguir;
-    ITN.btFechar = btFechar;
 
     it.paradas.forEach((p, i)=>{
       const linha = el('div',{class:'itn-parada'+(p.jogo?' jogo':'')+
-        (p.estrada?' estrada':'')+((p.evento||p.jogo)?'':' vazia')});
+        (p.estrada?' estrada':'')});
       linha.dataset.i = i;
       linha.appendChild(el('div',{class:'hora', texto:p.hora}));
       const marca = el('div',{class:'marca'});
@@ -975,7 +967,6 @@
       linha.appendChild(marca);
       const corpo = el('div',{class:'corpo'});
       corpo.appendChild(el('div',{class:'nome', texto:p.nome}));
-      corpo.appendChild(el('div',{class:'lugar', texto:p.lugar}));
       corpo.appendChild(el('div',{class:'vaga'}));
       linha.appendChild(corpo);
       /* o marco do dia fica ABAIXO da primeira parada daquele dia:
@@ -990,18 +981,19 @@
       trilha.prepend(linha);
     });
 
-    btSeguir.onclick = ()=>{ if(!ITN.travado) itnProximo(); };
-    btFechar.onclick = ()=> itnFechar();
-
-    tela.classList.remove('oculto');
-    document.body.classList.add('em-cena');
-    /* o cartão do feed já tinha desenhado a partida antes desta tela
-       abrir: repinta pra o relógio não correr em dois lugares */
+    /* o cartão do feed é quem hospeda: repinta pra ele adotar a linha */
     atualizarFeed();
     pararTudo('itinerario');
     itnPintar();
     ITN.timer = setTimeout(itnProximo, 700);
     return true;
+  }
+
+  /* o cartão da mensagem chama isto: se a linha é desta mensagem, ela
+     vem pra cá inteira, com estado e tudo */
+  function itnNaMensagem(m){
+    if(ITN && ITN.msg && ITN.msg.id === m.id) return ITN.raiz;
+    return itnProntos[m.id] || null;
   }
 
   function itnParadas(){ return [...ITN.trilha.querySelectorAll('.itn-parada')]; }
@@ -1027,7 +1019,6 @@
     const alto = ITN.trilha.getBoundingClientRect();
     const b = bola.getBoundingClientRect();
     feito.style.height = Math.max(0, alto.bottom - b.top - b.height/2) + 'px';
-    atual.scrollIntoView({block:'center', behavior:'smooth'});
   }
 
   function itnAgenda(ms){
@@ -1154,6 +1145,9 @@
                          : '<span class="ruim">Saímos por baixo.</span>'} `+
            `<b>${res.caidosVisitante||0} caídos deles, ${res.caidosMandante||0} nossos</b>`+
            (res.prestigio ? ` · Prestígio ${res.prestigio>0?'+':''}${res.prestigio}` : '')}));
+    /* o cartão precisa estar na tela pra a linha se medir: repinta
+       primeiro, mede depois */
+    atualizarFeed();
     itnPintar();
     setTimeout(itnRecado, 800);
     return true;
@@ -1163,8 +1157,13 @@
   function itnPartida(vaga){
     const m = ITN.msg;
     if(!m || !m.dados){ ITN.travado = false; itnAgenda(600); return; }
+    /* AQUI a bola rola, e só aqui (correção do dono, 20/08/2026): o
+       botão do feed abriu o dia, não o jogo. */
     m.dados.iniciada = true;
-    if(m.dados.minAcum === undefined){ m.dados.minAcum = 0; m.dados.t0 = Date.now(); }
+    if(m.dados.minAcum === undefined){
+      m.dados.minAcum = 0; m.dados.t0 = Date.now();
+      m.dados.vel = m.dados.vel || 4; m.dados.pausada = false;
+    }
     const caixa = widgetPartida(m, ()=>{
       /* apito final: a linha volta a andar */
       atualizarFeed(); pintarTopo();
@@ -1181,20 +1180,13 @@
   function itnAcabou(){
     if(!ITN) return;
     ITN.travado = true;
-    itnDizer('dia encerrado · o itinerário fica no feed como registro do dia');
-    ITN.btSeguir.disabled = true;
-    ITN.btFechar.disabled = false;
-    ITN.btFechar.classList.add('acao');
+    itnDizer('dia encerrado');
+    ITN.raiz.classList.add('fechado');
     if(TO.feed.registroDoDia) TO.feed.registroDoDia(E(), ITN.it);
     TO.estado.salvar();
-  }
-
-  function itnFechar(){
-    if(!ITN) return;
-    clearTimeout(ITN.timer);
-    itnEl().classList.add('oculto');
-    itnEl().innerHTML = '';
-    document.body.classList.remove('em-cena');
+    /* a linha fica na mensagem como registro do dia; o que sai é a
+       trava do relógio */
+    itnProntos[ITN.msg.id] = ITN.raiz;
     ITN = null;
     soltarTudo('itinerario');
     redesenhar();
@@ -1294,10 +1286,16 @@
     /* a partida ao vivo: com a bola rolando o cartão é a barra de
        minutos; encerrada, a lista de gols fica como registro */
     const aoVivo = m.kind === 'partida' && m.dados && m.dados.iniciada;
-    /* com o itinerário aberto, quem desenha a partida é a parada do
-       jogo — dois relógios do mesmo jogo andariam em dobro */
-    if(aoVivo && !m.respondido && !ITN) art.appendChild(widgetPartida(m));
-    if(m.kind === 'partida' && m.respondido && (m.dados||{}).gols &&
+    /* O ITINERÁRIO DO DIA MORA AQUI (correção do dono, 20/08/2026): a
+       linha de paradas é adotada pelo cartão da própria mensagem que
+       abriu o dia. Enquanto ela existe, quem desenha a partida é a
+       parada do jogo — dois relógios do mesmo jogo andariam em dobro. */
+    const linha = itnNaMensagem(m);
+    if(linha) art.appendChild(linha);
+    if(aoVivo && !m.respondido && !linha) art.appendChild(widgetPartida(m));
+    /* com a linha do dia no cartão, os gols já estão dentro da parada
+       do jogo — repetir a lista aqui embaixo é o mesmo jogo duas vezes */
+    if(m.kind === 'partida' && m.respondido && !linha && (m.dados||{}).gols &&
        m.dados.gols.length){
       const evs = el('div',{class:'partida-eventos'});
       let c2=0, f2=0;
@@ -1316,8 +1314,9 @@
       if(m.kind !== 'partida')
         art.appendChild(el('div',{class:'msg-resp',
           texto:`Você respondeu: ${m.respondido.rot || ''}`}));
-    } else if(aoVivo){
-      /* sem botões: o jogo está rolando, o apito fecha sozinho */
+    } else if(aoVivo || linha){
+      /* sem botões: o dia está andando na linha, ou a bola está rolando
+         — nos dois casos o apito é quem fecha */
     } else if((m.botoes||[]).length){
       const bs = el('div',{class:'msg-bts'});
       (m.botoes||[]).forEach((b, i)=>{
@@ -4337,8 +4336,11 @@
     $('telaRelatorio').classList.add('oculto');
     TO.estado.salvar();
     /* voltando de uma cena que o itinerário abriu, quem manda é a
-       linha do dia: ela escreve o saldo no cartão e segue */
-    if(itnVoltouDaCena()) return;
+       linha do dia: ela escreve o saldo no cartão e segue. A pausa da
+       CENA sai aqui de qualquer jeito — a cena acabou. O que segura o
+       relógio a partir de agora é a pausa do itinerário, e ela sai
+       quando o dia fecha. */
+    if(itnVoltouDaCena()){ soltarTudo('cena'); return; }
     /* e voltando da arquibancada, a partida volta a correr */
     if(voltarDaArquibancada){
       const volta = voltarDaArquibancada; voltarDaArquibancada = null;

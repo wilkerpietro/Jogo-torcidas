@@ -837,6 +837,25 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · Medido em 20 anos de jogo: antes, **139 de 139 torcidas em 18,1**;
     agora **nenhuma**, com a força espalhada de 4,6 a 10,0 e mediana 7,3.
 
+- **O itinerário mora DENTRO da mensagem** (correção do dono,
+  20/08/2026): a tela cheia saiu do jogo. A mesma linha de paradas de
+  baixo pra cima, com a mesma lógica, é desenhada no cartão da própria
+  mensagem que abriu o dia — e por isso é bem mais enxuta: sem
+  cabeçalho, sem barra de botões, sem o "lugar" de cada parada. Sobra
+  a hora, a bolinha, o nome e o recado ao lado quando a parada tem.
+  · A linha é montada UMA vez e o cartão a adota a cada repintura, então
+    estado, cartões abertos e o relógio da partida sobrevivem inteiros.
+  · Enquanto ela anda, o itinerário É o estado da mensagem: o feed não
+    repinta o cartão no meio do caminho.
+  · Terminado o dia, a linha FICA na mensagem como registro, e não há
+    mais botão de fechar — o que sai é a trava do relógio.
+- **O botão abre o DIA, não o jogo** (correção do dono, 20/08/2026):
+  "Iniciar partida" ligava o cronômetro do jogo na mesma hora, então o
+  relógio corria durante a concentração inteira e a gente chegava no
+  estádio com o jogo no segundo tempo. Agora ele só marca o dia como
+  aberto; **quem acende a partida é a parada do jogo**, quando a linha
+  chega nela.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
