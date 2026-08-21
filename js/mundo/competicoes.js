@@ -1317,7 +1317,7 @@ TO.competicoes = (function(){
   const horaDoJogo = j => (j && j.h) || '16:00';
 
   return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana,
-          forcaDe, forcaBase, evoluirForca, usarSave,
+          forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,

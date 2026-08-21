@@ -862,13 +862,14 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   informação é a mesma; o que mudou é a hierarquia.
   · **Gazeta dos Sports**, nome do jornal do nosso mundo — não o de
     verdade, que serviu só de referência visual.
-  · **Manchete** é o jogo de maior saldo do dia; empatando, o de mais
-    gols; empatando os dois, o do nosso campeonato.
+  · **Manchete** é o jogo de maior FORÇA do dia, com a nossa divisão na
+    frente quando o clube não é da série de cima.
   · **Na nossa praça** traz os jogos da nossa cidade e a caixa do nosso
     clube, com placar, uma linha e a posição na tabela.
-  · **Pelo país** leva de duas a quatro notas curtas, escolhidas **pela
-    variedade de condição** e não só pelo saldo: quatro goleadas davam
-    quatro notas do mesmo par de moldes.
+  · **Pelo país** leva de duas a quatro notas curtas, na mesma régua de
+    força, escolhidas **pela variedade de condição**: quatro goleadas
+    davam quatro notas do mesmo par de moldes. E nenhuma condição entra
+    mais vezes do que tem molde — `empate` tem um só.
   · **Placar do dia** é CORTADO em 10 linhas, com prioridade pro nosso
     campeonato e pro da manchete; o resto vira a nota de pé, e o link de
     Ver Competições continua sendo o mesmo de sempre.
@@ -878,6 +879,27 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · Três fontes novas, por escolha do dono (fidelidade acima do peso de
     carregamento): **Ultra** no masthead, **Archivo Narrow** nas
     manchetes e rótulos, **PT Serif** no corpo e nos placares.
+- **A régua da capa é a FORÇA, não o placar** (régua do dono,
+  20/08/2026): jornal não abre pelo placar mais largo, abre pelo jogo
+  dos times de mais força. Um 4 a 0 na quarta divisão não tira a capa
+  de um clássico de Série A. Vale pra manchete E pra coluna "Pelo país".
+  · **A exceção é o dono do jornal**: se o nosso clube joga numa divisão
+    que não é a de cima, o leitor é dali — primeiro vêm os jogos da
+    NOSSA divisão, e só depois a força manda. Com o clube na Série A as
+    duas réguas dizem a mesma coisa e a exceção não muda nada.
+  · Medido: com o clube na Série B, um Cruzeiro × Mamoré de força 36
+    NÃO tomou a capa de um América/MG × Athletic de força 20, porque o
+    primeiro é de outra divisão.
+- **A faixa da classificação** (pedido do dono, 20/08/2026): o jornal
+  fecha sempre com a tabela da divisão em que o NOSSO clube joga, e
+  quando a competição tem grupos (a Série D tem) só o grupo dele.
+  · Resumida em oito linhas. Se ele não estiver entre as oito, saem as
+    seis primeiras, um risco, e a vizinhança dele.
+  · **O nacional só começa no meio do ano.** Até lá a divisão existe no
+    papel mas não tem bola rolada, e a faixa mostraria uma tabela
+    zerada — nesses meses ela mostra o campeonato que o clube ESTÁ
+    jogando (o estadual, o regional), e troca sozinha quando o nacional
+    começa.
 - **68 moldes de texto, sob crivo** (aprovados pelo dono, 20/08/2026):
   nenhuma frase do jornal é escrita na hora. São 9 grupos — chapéu,
   manchete, olho, praça, caixa do nosso jogo, notas, rodapé, tarja e

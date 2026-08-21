@@ -1261,6 +1261,26 @@
     cols.appendChild(c3);
     rec.appendChild(cols);
 
+    /* A FAIXA DA CLASSIFICAÇÃO (pedido do dono, 20/08/2026): sempre a
+       divisão do NOSSO clube, e na Série D só o grupo dele. */
+    const cl = p.classificacao;
+    if(cl){
+      const faixa = el('div',{class:'gz-tabela'});
+      faixa.appendChild(el('div',{class:'col-tit', html:
+        `A classificação <span class="onde">${cl.rot}</span>`}));
+      const grade = el('div',{class:'linhas'});
+      for(const l of cl.linhas){
+        if(l.salto){ grade.appendChild(el('div',{class:'salto', texto:'⋯'})); continue; }
+        grade.appendChild(el('div',{class:'l'+(l.nossa?' nossa':''), html:
+          `<span class="p">${l.pos}</span><span class="t">${l.nome}</span>`+
+          `<span class="j">${l.j}j</span>`+
+          `<span class="sg">${l.sg > 0 ? '+' : ''}${l.sg}</span>`+
+          `<span class="pt">${l.p}</span>`}));
+      }
+      faixa.appendChild(grade);
+      rec.appendChild(faixa);
+    }
+
     const pe = el('div',{class:'gz-pe'});
     if(p.resto) pe.appendChild(el('span',{html:
       p.resto === 1 ? 'E mais um jogo pelo interior'

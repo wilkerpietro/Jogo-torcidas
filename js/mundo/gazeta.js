@@ -19,6 +19,7 @@ window.TO = window.TO || {};
 TO.gazeta = (function(){
   const M = ()=>TO.mundo;
 
+  const COMP = ()=>TO.competicoes;
   const nome    = id => (M().time(id)||{}).nome || id;
   const estadio = id => (M().time(id)||{}).estadio || '';
   const mapaDe  = id => (M().time(id)||{}).mapa;
@@ -28,6 +29,11 @@ TO.gazeta = (function(){
   const perdedor = j => j.gc > j.gf ? j.f : j.gf > j.gc ? j.c : null;
   /* "do Mineiro" mas "da Copa do Nordeste": o artigo segue o nome */
   const dArt = n => !n ? 'a rodada' : (/^(Copa|Taça|Série)/i.test(n) ? `a ${n}` : `o ${n}`);
+  /* ESTÁDIO TEM GÊNERO: é "na Arena Castelão" e "no Maracanã". Arena e
+     Vila são femininos; o resto do país é masculino. */
+  const artEst = e => !e ? '' : (/^(Arena|Vila|Ilha)\b/i.test(e) ? 'na' : 'no');
+  const noEst  = e => e ? `${artEst(e)} ${e}` : '';
+  const NoEst  = e => e ? `N${artEst(e)} ${e}` : '';
 
   const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
                'agosto','setembro','outubro','novembro','dezembro'];
@@ -74,16 +80,16 @@ TO.gazeta = (function(){
     },
     /* 3 · olho da manchete */
     olho:{
-      comEstadio:['{gA} a {gB} no {est}, o placar mais largo desta rodada d{comp}.'],
+      comEstadio:['{gA} a {gB} {noEst}, o placar mais largo desta rodada d{comp}.'],
       semEstadio:['{gA} a {gB}, o placar mais largo desta rodada d{comp}.'],
-      diaCheio:['{gA} a {gB} no {est}, num dia de {N} jogos e {G} gols.'],
-      empate:['Ficou no {gA} a {gB} no {est}, pela {rod}ª rodada d{comp}.'],
-      mata:['{gA} a {gB} no {est}, n{fase} d{comp}.']
+      diaCheio:['{gA} a {gB} {noEst}, num dia de {N} jogos e {Gdia} gols.'],
+      empate:['Ficou no {gA} a {gB} {noEst}, pela {rod}ª rodada d{comp}.'],
+      mata:['{gA} a {gB} {noEst}, n{fase} d{comp}.']
     },
     /* 4 · na nossa praça */
     praca:{
-      um:['O {A} recebeu o {B} e o placar fechou em {gA} × {gB} no {est}.',
-          'No {est}, {A} e {B} fecharam em {gA} × {gB}.'],
+      um:['O {A} recebeu o {B} e o placar fechou em {gA} × {gB} {noEst}.',
+          '{NoEst}, {A} e {B} fecharam em {gA} × {gB}.'],
       dois:['Dois jogos na cidade: {l1} e {l2}.'],
       nenhum:['Sem outro jogo na nossa praça nesta rodada.',
               'A cidade ficou quieta: nenhum outro jogo por aqui.']
@@ -157,12 +163,39 @@ TO.gazeta = (function(){
     const comps = [];
     for(const j of jogos) if(j.comp && !comps.includes(j.comp)) comps.push(j.comp);
 
-    /* ---- a manchete: maior saldo, depois mais gols, depois o
-            nosso campeonato ---- */
-    const meuComp = (d.nosso || {}).comp || '';
-    const topo = jogos.slice().sort((a,b)=>
-      saldo(b) - saldo(a) || gols(b) - gols(a) ||
-      ((b.comp===meuComp) - (a.comp===meuComp)))[0];
+    /* =====================================================
+       A RÉGUA DA CAPA (régua do dono, 20/08/2026)
+
+       Jornal não abre pelo placar mais largo: abre pelo jogo
+       dos times de mais FORÇA. Um 4 a 0 na quarta divisão não
+       tira a capa de um clássico de Série A.
+
+       A EXCEÇÃO é o dono do jornal. Se o nosso clube joga numa
+       divisão que não é a de cima, o leitor é dali: primeiro
+       vêm os jogos da NOSSA divisão, e só depois a força
+       manda. Com o clube na Série A as duas réguas dizem a
+       mesma coisa, e a exceção não muda nada.
+       ===================================================== */
+    /* SEM try/catch AQUI. A primeira versão embrulhava as duas em
+       try/catch "por segurança", e quando um `const C` local passou a
+       sombrear o COMP() do módulo o erro sumiu calado: a força virou
+       zero pra todo mundo e a capa voltou a sair pelo saldo, sem
+       ninguém perceber. Se a API não existir, é pra quebrar alto. */
+    const forca = id => COMP().forcaDe(E, id) || 0;
+    const divDe = id => COMP().forcaDivisao(E, id);
+    const meuDiv = divDe(E.torcida.clubeId);
+    /* só vale a exceção quem não está na divisão de cima */
+    const daNossaDiv = j => meuDiv > 0 &&
+      (divDe(j.c) === meuDiv || divDe(j.f) === meuDiv) ? 0 : 1;
+    const peso = j => Math.max(forca(j.c), forca(j.f));
+    const pesoTotal = j => forca(j.c) + forca(j.f);
+    const naCapa = (a,b) =>
+      daNossaDiv(a) - daNossaDiv(b) ||
+      peso(b) - peso(a) ||
+      pesoTotal(b) - pesoTotal(a) ||
+      saldo(b) - saldo(a) || gols(b) - gols(a);
+
+    const topo = jogos.slice().sort(naCapa)[0];
 
     const nosso = d.nosso || null;
     const praca = jogos.filter(j => mapaDe(j.c) === E.torcida.mapa &&
@@ -170,12 +203,12 @@ TO.gazeta = (function(){
     const ehClassico = praca.some(j => mapaDe(j.c) === mapaDe(j.f));
 
     /* ---- chapéu ---- */
-    const C = MOLDES.chapeu;
-    const chapeu = topo.fase ? C.decisao[0]
-                 : saldo(topo) >= 3 ? C.goleada[0]
-                 : ehClassico ? C.classico[0]
-                 : (dia >= 1 && dia <= 5) ? C.semana[0]
-                 : C.padrao[0];
+    const CH = MOLDES.chapeu;
+    const chapeu = topo.fase ? CH.decisao[0]
+                 : saldo(topo) >= 3 ? CH.goleada[0]
+                 : ehClassico ? CH.classico[0]
+                 : (dia >= 1 && dia <= 5) ? CH.semana[0]
+                 : CH.padrao[0];
 
     /* ---- manchete ---- */
     const A = vencedor(topo), B = perdedor(topo);
@@ -184,7 +217,8 @@ TO.gazeta = (function(){
                    gA: Math.max(topo.gc, topo.gf), gB: Math.min(topo.gc, topo.gf),
                    G: gols(topo), fase: topo.fase ? dArt(topo.fase) : '',
                    comp: dArt(topo.comp), rod: topo.rod,
-                   est: estadio(topo.c), N: jogos.length};
+                   est: estadio(topo.c), noEst: noEst(estadio(topo.c)),
+                   N: jogos.length, Gdia: totalGols};
     const H = MOLDES.manchete;
     const forceD = !A ? (gols(topo) ? 'empate' : 'zero')
       : topo.pen ? 'penaltis'
@@ -211,9 +245,10 @@ TO.gazeta = (function(){
       textoPraca = encher(P.dois[0], {l1:l(praca[0]), l2:l(praca[1])});
     } else if(praca.length === 1){
       const j = praca[0];
-      const molde = estadio(j.c) ? proxima(P.um, 'praca') : P.um[1].replace(' no {est}','');
-      textoPraca = encher(estadio(j.c) ? molde : P.um[0].replace(' no {est}',''),
-        {A:nome(j.c), B:nome(j.f), gA:j.gc, gB:j.gf, est:estadio(j.c)});
+      const est = estadio(j.c);
+      const molde = est ? proxima(P.um, 'praca') : P.um[0].replace(' {noEst}','');
+      textoPraca = encher(molde, {A:nome(j.c), B:nome(j.f), gA:j.gc, gB:j.gf,
+                                  noEst:noEst(est), NoEst:NoEst(est)});
     } else {
       textoPraca = proxima(P.nenhum, 'pracaVazia');
     }
@@ -256,16 +291,21 @@ TO.gazeta = (function(){
        saía repetindo. Primeiro um de cada condição, na ordem de saldo;
        só depois é que se repete condição pra completar as quatro. */
     const porCond = {};
-    for(const j of sobra.slice().sort((a,b)=> saldo(b)-saldo(a) || gols(b)-gols(a))){
+    for(const j of sobra.slice().sort(naCapa)){   // a mesma régua da capa
       const c = condDe(j);
       (porCond[c] = porCond[c] || []).push(j);
     }
     const conds = Object.keys(porCond)
-      .sort((a,b)=> saldo(porCond[b][0]) - saldo(porCond[a][0]));
+      .sort((a,b)=> naCapa(porCond[a][0], porCond[b][0]));
+    /* e NENHUMA condição entra mais vezes do que tem molde: `empate`
+       tem um só, então dois empates dariam a mesma frase duas vezes.
+       Faltando nota pra fechar quatro, sai com três — o dono aprovou
+       "de duas a quatro". */
     const escolhidos = [];
     for(let volta = 0; escolhidos.length < 4 && volta < 6; volta++)
       for(const c of conds){
         if(escolhidos.length >= 4) break;
+        if(volta >= (NT[c] || []).length) continue;
         if(porCond[c][volta]) escolhidos.push(porCond[c][volta]);
       }
     const notas = escolhidos.map(j=>{
@@ -307,7 +347,8 @@ TO.gazeta = (function(){
          e as notas do país sobem pra primeira. */
       magra: !praca.length && !nosso,
       placares: corte.grupos,
-      resto: corte.resto
+      resto: corte.resto,
+      classificacao: classificacao(E)
     };
   }
 
@@ -350,6 +391,62 @@ TO.gazeta = (function(){
     return {grupos, resto:fora};
   }
 
+  /* =======================================================
+     A CLASSIFICAÇÃO DA NOSSA DIVISÃO (pedido do dono, 20/08/2026)
+     A faixa de baixo do jornal traz sempre a tabela da divisão
+     em que o NOSSO clube joga — e, quando a competição tem
+     grupos (a Série D tem), só o grupo em que ele está.
+
+     Resumida: as oito primeiras linhas. Se o nosso clube não
+     estiver entre elas, as seis primeiras mais a vizinhança
+     dele, com um risco no meio pra marcar o salto.
+     ======================================================= */
+  const TOPO_TABELA = 8;
+  function classificacao(E){
+    try{
+      const meu = E.torcida.clubeId;
+      const div = COMP().divisaoDe(E, M().time(meu) || {});
+      const rodou = c => (c.rodadas||[]).some(r =>
+        r.jogos.some(j => j.gc != null && (j.c===meu || j.f===meu)));
+      const todas = E.temporada.competicoes || [];
+      /* O NACIONAL COMEÇA NO MEIO DO ANO: até lá a divisão do clube
+         existe no papel mas não tem bola rolada, e a faixa ficaria
+         vazia. Nesses meses ela mostra o campeonato que ele ESTÁ
+         jogando — o estadual, o regional —, que é a classificação que
+         interessa ao leitor naquele momento. */
+      /* quantas rodadas o clube já cumpriu em cada competição: o
+         desempate do fallback é a que ele está jogando AGORA, não a
+         que tem mais rodadas no papel */
+      const cumpriu = c => (c.rodadas||[]).reduce((n,r)=>
+        n + (r.jogos.some(j=>j.gc!=null && (j.c===meu||j.f===meu)) ? 1 : 0), 0);
+      const comp = (todas.find(c => c.nome === div && rodou(c)))
+                || todas.filter(rodou).sort((a,b)=> cumpriu(b) - cumpriu(a))[0];
+      if(!comp) return null;
+      /* Série D joga em grupos: só o grupo dele interessa */
+      let grupo, rot = comp.nome;
+      if(comp.grupos && comp.grupos.length > 1){
+        grupo = comp.grupos.findIndex(g => g.indexOf(meu) >= 0);
+        if(grupo < 0) grupo = undefined;
+        else rot += ` · Grupo ${String.fromCharCode(65 + grupo)}`;
+      }
+      const t = COMP().tabela(comp, grupo);
+      if(!t.length || !t.some(l => l.j)) return null;
+      const eu = t.findIndex(l => l.id === meu);
+      const linha = (l, i) => ({pos:i+1, nome:nome(l.id), j:l.j, p:l.p,
+                               sg:l.sg, nossa:l.id === meu});
+      let linhas;
+      if(eu < TOPO_TABELA){
+        linhas = t.slice(0, TOPO_TABELA).map(linha);
+      } else {
+        linhas = t.slice(0, TOPO_TABELA - 2).map(linha);
+        linhas.push({salto:true});
+        for(let i = Math.max(0, eu-1); i <= Math.min(t.length-1, eu+1); i++)
+          linhas.push(linha(t[i], i));
+      }
+      return {rot, linhas, total:t.length};
+    }catch(x){ return null; }
+  }
+
   /* a tabela é a do campeonato que o clube joga HOJE — pegar a
      primeira da temporada mostrava "0 pontos em 0 jogos" */
   function tabelaNossa(E, nosso){
@@ -360,7 +457,7 @@ TO.gazeta = (function(){
         (alvo ? c.nome === alvo : true) &&
         (c.rodadas||[]).some(r=>r.jogos.some(j=>j.c===meu || j.f===meu)));
       if(!comp) return null;
-      const t = TO.competicoes.tabela(comp);
+      const t = COMP().tabela(comp);
       const i = t.findIndex(x=>x.id === meu);
       if(i < 0 || !t[i].j) return null;
       return `${comp.nome} · <b>${i+1}º</b> lugar · <b>${t[i].p}</b> `+
@@ -368,5 +465,5 @@ TO.gazeta = (function(){
     }catch(x){ return null; }
   }
 
-  return {montar, MOLDES, encher, LINHAS};
+  return {montar, MOLDES, encher, LINHAS, classificacao, TOPO_TABELA};
 })();

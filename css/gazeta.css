@@ -188,3 +188,40 @@
   text-align:justify; hyphens:auto; -webkit-hyphens:auto;
 }
 .gz-notas p:last-child{margin-bottom:0}
+
+/* =========================================================
+   A FAIXA DA CLASSIFICAÇÃO (pedido do dono, 20/08/2026)
+   A tabela da divisão do nosso clube fecha a página, como a
+   tabela fecha a página de esportes: faixa larga embaixo,
+   colunas curtas, e a nossa linha marcada.
+   ========================================================= */
+.gz-tabela{border-top:2px solid var(--tinta); margin-top:12px; padding-top:9px}
+.gz-tabela .col-tit{border-bottom-width:1px; margin-bottom:8px}
+.gz-tabela .col-tit .onde{
+  font-weight:600; letter-spacing:.1em; color:var(--tinta-2); margin-left:8px;
+}
+.gz-tabela .linhas{
+  display:grid; grid-template-columns:repeat(2, 1fr); gap:0 22px;
+}
+.gz-tabela .l,.gz-tabela .salto{
+  display:grid; grid-template-columns:16px 1fr auto auto auto;
+  gap:0 8px; align-items:baseline;
+  font-size:11.5px; line-height:1.5; color:var(--tinta);
+  font-variant-numeric:tabular-nums;
+  border-bottom:1px dotted var(--fio-jornal); padding:1px 0;
+}
+.gz-tabela .l .p{color:var(--tinta-2); text-align:right}
+.gz-tabela .l .t{overflow-wrap:anywhere}
+.gz-tabela .l .j,.gz-tabela .l .sg{color:var(--tinta-2); font-size:10.5px}
+.gz-tabela .l .sg{min-width:2.4em; text-align:right}
+.gz-tabela .l .pt{font-weight:700; min-width:2em; text-align:right}
+.gz-tabela .l.nossa{
+  background:rgba(142,42,30,.10); margin:0 -5px; padding:1px 5px;
+  border-bottom-color:var(--rubro-jornal);
+}
+.gz-tabela .l.nossa .t,.gz-tabela .l.nossa .pt{font-weight:700}
+.gz-tabela .salto{
+  display:block; text-align:center; letter-spacing:.4em;
+  color:var(--tinta-2); border-bottom:0; padding:0;
+}
+@media (max-width:560px){ .gz-tabela .linhas{grid-template-columns:1fr} }
