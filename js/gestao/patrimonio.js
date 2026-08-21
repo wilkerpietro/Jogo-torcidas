@@ -131,9 +131,12 @@ TO.patrimonio = (function(){
            `${Math.round(F().descontoCaravana(E)*100)}% mais barata`,
       receita:0, despesa:F().ONIBUS_MES * frota});
 
-    if(E.professorMMA) fora.push({tipo:'mma', rot:'Professor de MMA',
-      bairro:'', nota:'força e defesa evoluem em dobro no treino',
-      receita:0, despesa:2000});
+    const profs = F().professoresDe(E);
+    if(profs) fora.push({tipo:'mma',
+      rot: profs === 1 ? 'Professor de MMA' : `Professores de MMA (${profs})`,
+      bairro:'',
+      nota:`força e defesa evoluem +${Math.round((F().ganhoDoTreino(E)-1)*100)}% no treino`,
+      receita:0, despesa:F().MMA_MES * profs});
 
     /* A LINHA DE MATERIAL POR MEMBRO SAIU do financeiro, e sai daqui
        junto: a tabela de patrimônio mostrava a mesma despesa que as
@@ -207,17 +210,32 @@ TO.patrimonio = (function(){
         custo:F().ONIBUS_CUSTO, trava:trava(F().ONIBUS_CUSTO)});
     }
 
-    /* professor de MMA (pedido do dono, 18/08/2026): R$ 2.000 fixos
-       por mês, cobrados no fechamento — e o treino rende o dobro */
-    if(!E.professorMMA) lista.push({
-      id:'mma', rot:'Contratar professor de MMA',
-      nota:'força e defesa evoluem em dobro no treino · R$ 2.000 '+
-           'fixos por mês, cobrados no fechamento',
-      custo:2000, trava:trava(2000)});
-    else lista.push({
-      id:'mma-fora', rot:'Dispensar o professor de MMA',
-      nota:'o treino volta ao ritmo normal e a mensalidade de '+
-           'R$ 2.000 para de cobrar no próximo fechamento',
+    /* A COMISSÃO TÉCNICA (dono, 18/08/2026; escada em 20/08/2026):
+       até três professores, R$ 2.000 por mês cada, cobrados no
+       fechamento — e o treino rende +30%, +60% e +100%. */
+    const temProf = F().professoresDe(E);
+    if(temProf < F().MMA_MAX){
+      const proximo = Math.round((F().GANHO_MMA[temProf+1]-1)*100);
+      const ORD = ['', '', '2º', '3º'];
+      lista.push({
+        id:'mma',
+        rot: temProf ? `Contratar mais um professor de MMA (${ORD[temProf+1]})`
+                     : 'Contratar professor de MMA',
+        nota:`força e defesa evoluem +${proximo}% no treino`+
+             (temProf ? ` (hoje +${Math.round((F().ganhoDoTreino(E)-1)*100)}%)` : '')+
+             ` · R$ ${F().MMA_MES.toLocaleString('pt-BR')} fixos por mês por `+
+             `professor, cobrados no fechamento`,
+        custo:F().MMA_MES, trava:trava(F().MMA_MES)});
+    }
+    if(temProf) lista.push({
+      id:'mma-fora',
+      rot: temProf === 1 ? 'Dispensar o professor de MMA'
+                         : 'Dispensar um professor de MMA',
+      nota: temProf === 1
+        ? 'o treino volta ao ritmo normal e a mensalidade de '+
+          'R$ 2.000 para de cobrar no próximo fechamento'
+        : `o treino cai pra +${Math.round((F().GANHO_MMA[temProf-1]-1)*100)}% e `+
+          `a folha desce pra R$ ${(F().MMA_MES*(temProf-1)).toLocaleString('pt-BR')} por mês`,
       custo:0, trava:null});
 
     /* bomba também se compra pelo Financeiro (pedido do dono,
@@ -262,10 +280,15 @@ TO.patrimonio = (function(){
                                 : 'Ônibus da torcida', -o.custo);
     } else if(acao==='mma'){
       /* nada sai do caixa agora: a mensalidade cobra no fim do mês */
-      E.professorMMA = {desde:(E.data||{}).absoluto || 0};
+      const tinha = F().professoresDe(E);
+      E.professorMMA = {
+        desde:(E.professorMMA && E.professorMMA.desde) || (E.data||{}).absoluto || 0,
+        n: Math.min(F().MMA_MAX, tinha + 1)};
     } else if(acao==='mma-fora'){
       /* dispensa na hora: sem multa, sem cobrança no próximo fecho */
-      E.professorMMA = null;
+      const fica = F().professoresDe(E) - 1;
+      E.professorMMA = fica > 0
+        ? {desde:(E.professorMMA && E.professorMMA.desde) || 0, n:fica} : null;
     } else if(acao==='bombas'){
       estoquePiro(E).bombas += 5;
       TO.estado.lancar(E, 'Bombas ×5', -o.custo);

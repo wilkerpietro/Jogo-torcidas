@@ -1922,7 +1922,12 @@
     const emTeto = disp.filter(m=>TO.membros.planoDeTreino(m).noTeto).length;
     c2.corpo.innerHTML =
       `<div class="linha-dado"><span>Ganho por sessão</span>
-         <b>${e.professorMMA ? '0.00 a 0.60 · professor de MMA' : '0.00 a 0.30'}</b></div>
+         <b>${(()=>{ const g = TO.financeiro.ganhoDoTreino(e),
+                        n = TO.financeiro.professoresDe(e);
+             return n ? `0.00 a ${(0.3*g).toFixed(2)} · `+
+                        `${n===1?'professor':n+' professores'} de MMA `+
+                        `(+${Math.round((g-1)*100)}%)`
+                      : '0.00 a 0.30'; })()}</b></div>
        <div class="linha-dado"><span>Vagas por dia</span><b>${cap}</b></div>
        <div class="linha-dado"><span>Disponíveis pra treinar</span>
          <b>${disp.length - emTeto} <span class="fraco">de ${disp.length}</span></b></div>
@@ -3710,7 +3715,7 @@
             /* o Financeiro delas chega na cena (decisão do dono,
                18/08/2026): professor de MMA melhora a ficha e o paiol
                de bombas limita o que elas jogam */
-            mma: !!viva.mma, bombas: viva.bombas,
+            mma: TO.relacoes.mmaDe(viva), bombas: viva.bombas,
             /* e o QUADRO VIVO: quem treinou e promovou no mundo chega
                na cena com a ficha que ganhou (régua do dono, 20/08) */
             quadro: TO.relacoes.quadroDe(E(), id)};

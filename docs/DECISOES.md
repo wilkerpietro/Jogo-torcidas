@@ -736,11 +736,22 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   (+0,0)`. Sempre com sinal: parado é "(+0)", não é vazio. O mundo
   tira uma foto dos três números quando o mês vira, e a tela compara.
 
-- **O professor de MMA é o primeiro da fila** (20/08/2026): quem paga o
-  professor treina em dobro, e treino é o que faz a torcida virar gente
-  de briga. Ele não cobra entrada, só o mês — o que a fila pede dele é
-  caixa que aguente três meses (R$ 6.000). Num ano de mundo simulado,
-  132 das 138 torcidas contratam.
+- **A comissão técnica vira escada, como a garagem** (20/08/2026): não
+  é mais "tem professor ou não tem". **Um professor faz o treino render
+  +30% de força e defesa, dois +60% e três +100%** — o dobro só com a
+  sala cheia. **Cada um custa R$ 2.000 por mês**, então três saem por
+  R$ 6.000, cobrados no fechamento; ninguém paga entrada. Contrata e
+  dispensa um por vez, no Financeiro → Patrimônio.
+  · Vale igual pra elas, com a mesma folha na conta semanal.
+  · Medido em janela curta (antes do teto de cargo saturar a ficha), a
+    evolução real sai em **1,28× · 1,58× · 1,95×** — a escada nominal.
+- **O professor é o primeiro da fila** (20/08/2026): treino é o que faz
+  a torcida virar gente de briga, e ele vem antes do tijolo. Como não
+  cobra entrada, o que a fila pede de cada contratação é caixa que
+  aguente **três meses da folha nova** — R$ 6.000 pro primeiro,
+  R$ 12.000 pro segundo, R$ 18.000 pro terceiro. O degrau enche até
+  três, como o dos ônibus. Num ano de mundo simulado, 133 das 138 têm
+  professor e 52 já montaram a comissão inteira; ninguém quebrou.
 - **As outras torcidas treinam e promovem também** (20/08/2026), pelas
   MESMAS regras da nossa. Antes a ficha delas era conta congelada — a
   pirâmide da fonte e pronto —, então quem crescia só ganhava novato e
@@ -750,7 +761,7 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     força média de cada cargo e o XP rodado de cada cargo.
   · **Treino todo dia**, como o nosso: o mesmo passo de 0 a 0,3 por
     sessão, as mesmas vagas de treino por nível de sede (2 no nível 1,
-    20 no 5) e o mesmo **dobro com o professor**.
+    20 no 5) e a mesma escada de professores (+30%, +60%, +100%).
   · **Promoção uma vez por semana**, com as três exigências nossas:
     o XP (40, 100 e 300), a força (8, 12 e 18) e o dinheiro (grátis,
     R$ 1.000 e R$ 5.000). A Diretoria delas respeita o mesmo teto por

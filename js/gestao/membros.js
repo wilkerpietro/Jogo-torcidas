@@ -208,9 +208,10 @@ TO.membros = (function(){
     if(!disponivel(m)) return false;
     const c = CARGOS[m.cargo];
     const teto = c.teto + (m.veterano?2:0);
-    /* professor de MMA (pedido do dono, 18/08/2026): a evolução de
-       ataque e defesa dobra enquanto ele estiver contratado */
-    const ganho = E && E.professorMMA ? 2 : 1;
+    /* A COMISSÃO TÉCNICA (dono, 18/08/2026; escada em 20/08/2026):
+       um professor faz o treino render +30%, dois +60%, três +100% —
+       o dobro só com a sala cheia. */
+    const ganho = E && TO.financeiro ? TO.financeiro.ganhoDoTreino(E) : 1;
     m.fracForca  += U.entre(0, 0.3) * ganho;
     m.fracDefesa += U.entre(0, 0.3) * ganho;
     while(m.fracForca >= 1 && m.forca < teto){ m.fracForca -= 1; m.forca++; }

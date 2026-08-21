@@ -90,6 +90,25 @@ TO.financeiro = (function(){
      mil, que é sorteada por ônibus.
      ======================================================= */
   const ONIBUS_MAX = 3, ONIBUS_MES = 1500, ONIBUS_CUSTO = 100000;
+  /* =======================================================
+     A COMISSÃO TÉCNICA (régua do dono, 20/08/2026)
+     A mesma escada dos ônibus: um professor faz o treino
+     render +30%, dois +60%, três +100% — o dobro só com a
+     sala cheia. Cada um custa R$ 2.000 por mês, então três
+     saem por R$ 6.000, e ninguém paga entrada: a mensalidade
+     cobra no fechamento.
+     ======================================================= */
+  const MMA_MAX = 3, MMA_MES = 2000;
+  const GANHO_MMA = [1, 1.30, 1.60, 2.00];
+  /* quantos professores a torcida tem hoje. O campo já foi booleano
+     (um professor ou nenhum): save antigo lê `true` como um. */
+  function professoresDe(E){
+    const p = E && E.professorMMA;
+    if(!p) return 0;
+    if(p === true) return 1;
+    return U.limitar(Math.round(p.n != null ? p.n : 1), 0, MMA_MAX);
+  }
+  const ganhoDoTreino = E => GANHO_MMA[professoresDe(E)] || 1;
   const DESCONTO_ONIBUS = [0, 0.30, 0.60, 1];
   /* save antigo guardava um objeto só, sem contagem: aquilo é 1 */
   function onibusDe(E){
@@ -415,11 +434,14 @@ TO.financeiro = (function(){
         `Festas na sede — ${f.n} no mês`, Math.round(f.rec - f.des));
       E.resumoMes = {};
     }
-    /* o professor de MMA cobra os R$ 2.000 no fim de cada mês
-       (pedido do dono, 18/08/2026) */
-    if(E.professorMMA && fimDoMes(E)){
-      TO.estado.lancar(E, 'Professor de MMA — mês', -2000);
-      rel.despesa += 2000; rel.saldo -= 2000;
+    /* a comissão cobra R$ 2.000 por professor no fim de cada mês
+       (pedido do dono, 18/08/2026; escada em 20/08/2026) */
+    const profs = professoresDe(E);
+    if(profs && fimDoMes(E)){
+      const mes = MMA_MES * profs;
+      TO.estado.lancar(E, profs === 1 ? 'Professor de MMA — mês'
+                                      : `Professores de MMA (${profs}) — mês`, -mes);
+      rel.despesa += mes; rel.saldo -= mes;
     }
     const frota = onibusDe(E);
     if(frota && fimDoMes(E)){
@@ -531,5 +553,6 @@ TO.financeiro = (function(){
           onibusDe, descontoCaravana,
           ONIBUS_MAX, ONIBUS_MES, ONIBUS_CUSTO, DESCONTO_ONIBUS,
           FESTA, pisoDaFesta,
+          MMA_MAX, MMA_MES, GANHO_MMA, professoresDe, ganhoDoTreino,
           MANUT_SEDE, RECEITA, MANUT, INSUMO, CARAVANA, SEM};
 })();

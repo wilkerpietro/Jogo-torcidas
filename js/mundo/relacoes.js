@@ -81,9 +81,17 @@ TO.relacoes = (function(){
      ======================================================= */
   const ORDEM = ['mma', 'loja', 'bar', 'elenco', 'onibus', 'subsede',
                  'bombas', 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede'];
-  /* o professor não cobra entrada, cobra mensalidade: o que a fila
-     exige dele é um caixa que aguente três meses de professor */
-  const MMA_COFRE = 6000;
+  /* A COMISSÃO TÉCNICA DELAS é a nossa: até três professores, R$ 2.000
+     por mês cada, e o treino rendendo +30%, +60% e +100% (régua do
+     dono, 20/08/2026). Nenhum cobra entrada, só o mês — o que a fila
+     exige de cada contratação é caixa que aguente três meses da folha
+     que ela vai deixar. */
+  const mmaDe = t =>{
+    if(!t || !t.mma) return 0;
+    return U.limitar(Math.round(t.mma === true ? 1 : t.mma), 0, FIN().MMA_MAX);
+  };
+  const ganhoDeleas = t => FIN().GANHO_MMA[mmaDe(t)] || 1;
+  const cofreDoProfessor = t => FIN().MMA_MES * 3 * (mmaDe(t) + 1);
   const BOMBA = {lote:5, custo:600, teto:10};
   /* SEM ARQUÉTIPO, a vontade de brigar vem da OUSADIA, que cada
      torcida já tem desde que nasce (sai do poder dela). A escala
@@ -107,7 +115,7 @@ TO.relacoes = (function(){
         /* o menu Financeiro inteiro vale pra elas (decisão do dono,
            18/08/2026): ônibus, professor de MMA e estoque de bombas
            são comprados com o caixa delas, como o jogador faz */
-        onibus:0, mma:false, bombas:10,
+        onibus:0, mma:0, bombas:10,
         vermelho:0,
         mult: multDaSede(o),
         pool: poolDaPraca(o),
@@ -151,7 +159,9 @@ TO.relacoes = (function(){
        R$ 1.500 e R$ 2.000 por mês, aqui na fatia semanal */
     /* a frota delas cobra por ônibus, como a do jogador */
     des += frotaIA(t) * 350;
-    if(t.mma)    des += 460;
+    /* a folha da comissão delas: R$ 2.000 por mês por professor, na
+       fatia semanal, do mesmo jeito que a nossa cobra no fechamento */
+    des += mmaDe(t) * (FIN().MMA_MES/4.33);
     return {rec, des, saldo:rec - des};
   }
 
@@ -174,7 +184,8 @@ TO.relacoes = (function(){
     const T = P().TETO, PT = P().PONTO;
 
     if(chave === 'mma')
-      return t.mma ? null : {tipo:'mma', custo:0, cofre:MMA_COFRE};
+      return mmaDe(t) < FIN().MMA_MAX
+           ? {tipo:'mma', custo:0, cofre:cofreDoProfessor(t)} : null;
     if(chave === 'bombas')
       return t.bombas >= BOMBA.teto ? null
            : {tipo:'bombas', custo:BOMBA.custo};
@@ -257,7 +268,9 @@ TO.relacoes = (function(){
     for(const id of Object.keys(m)){
       const t = m[id];
       /* save de antes do Financeiro delas: ganha os campos novos */
-      if(t.bombas == null){ t.bombas = 10; t.onibus = t.onibus ? 1 : 0; t.mma = !!t.mma; }
+      if(t.bombas == null){ t.bombas = 10; t.onibus = t.onibus ? 1 : 0; }
+      /* ônibus e professor viraram CONTA, não sim-ou-não */
+      if(t.mma === true || t.mma === false) t.mma = t.mma ? 1 : 0;
       const b = balanco(t);
       t.caixa += Math.round(b.saldo * SEM);
 
@@ -270,7 +283,7 @@ TO.relacoes = (function(){
         t.moral = U.limitar(t.moral - 1, 0, 20);
         /* duas semanas no vermelho e o professor de MMA vai embora —
            é o corte que qualquer diretoria faria primeiro */
-        if(t.vermelho >= 2 && t.mma) t.mma = false;
+        if(t.vermelho >= 2 && mmaDe(t)) t.mma = mmaDe(t) - 1;
         continue;
       }
       t.vermelho = 0;
@@ -287,7 +300,7 @@ TO.relacoes = (function(){
       if(compra && t.caixa >= Math.max(compra.custo, compra.cofre || 0)){
         t.caixa -= compra.custo;
         if(compra.tipo === 'sede') t.sede++;
-        else if(compra.tipo === 'mma') t.mma = true;
+        else if(compra.tipo === 'mma') t.mma = mmaDe(t) + 1;
         else if(compra.tipo === 'bombas')
           t.bombas = Math.min(BOMBA.teto, t.bombas + BOMBA.lote);
         else if(compra.tipo === 'fabrica') t.fabrica = true;
@@ -675,7 +688,7 @@ TO.relacoes = (function(){
       if(!q || !q.total) continue;
       const vagas = TO.membros.SEDE[t.sede].treino;
       const fatia = Math.min(vagas, q.total)/q.total;
-      const passo = fatia * 0.15 * (t.mma ? 2 : 1);
+      const passo = fatia * 0.15 * ganhoDeleas(t);
       for(const c of ESCADA){
         q.forca[c] = Math.min(TO.membros.CARGOS[c].teto, q.forca[c] + passo);
         /* 1 de XP por sessão, como o nosso — e o professor NÃO dobra
@@ -1483,6 +1496,7 @@ TO.relacoes = (function(){
           conquistaDoClube, esfriar, passarSemana, panorama, MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,
           quadroDe, mediaDoQuadro, treinarDelas, promoverDelas, xpDeBrigaIA,
+          mmaDe,
           mediaDeFichaGerada,
           placarDoAno, anotarBriga, saldoDoAno, frotaIA};
 })();
