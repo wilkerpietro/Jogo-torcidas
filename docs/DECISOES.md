@@ -856,6 +856,48 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   aberto; **quem acende a partida é a parada do jogo**, quando a linha
   chega nela.
 
+- **A rodada vira primeira página** (régua do dono, 20/08/2026): a linha
+  corrida de placares — “Os jogos de domingo: A 3 × 0 B, C 0 × 3 D…” —
+  virou um **recorte de jornal** dentro da própria mensagem do feed. A
+  informação é a mesma; o que mudou é a hierarquia.
+  · **Gazeta dos Sports**, nome do jornal do nosso mundo — não o de
+    verdade, que serviu só de referência visual.
+  · **Manchete** é o jogo de maior saldo do dia; empatando, o de mais
+    gols; empatando os dois, o do nosso campeonato.
+  · **Na nossa praça** traz os jogos da nossa cidade e a caixa do nosso
+    clube, com placar, uma linha e a posição na tabela.
+  · **Pelo país** leva de duas a quatro notas curtas, escolhidas **pela
+    variedade de condição** e não só pelo saldo: quatro goleadas davam
+    quatro notas do mesmo par de moldes.
+  · **Placar do dia** é CORTADO em 10 linhas, com prioridade pro nosso
+    campeonato e pro da manchete; o resto vira a nota de pé, e o link de
+    Ver Competições continua sendo o mesmo de sempre.
+  · Papel de jornal envelhecido, tinta com viés marrom e um vermelho
+    oxidado só em três coisas: o chapéu, a coluna da nossa praça e as
+    goleadas. O recorte **não acompanha o tema do jogo** — papel é papel.
+  · Três fontes novas, por escolha do dono (fidelidade acima do peso de
+    carregamento): **Ultra** no masthead, **Archivo Narrow** nas
+    manchetes e rótulos, **PT Serif** no corpo e nos placares.
+- **68 moldes de texto, sob crivo** (aprovados pelo dono, 20/08/2026):
+  nenhuma frase do jornal é escrita na hora. São 9 grupos — chapéu,
+  manchete, olho, praça, caixa do nosso jogo, notas, rodapé, tarja e
+  cabeçalho — e cada um escolhe pela condição do jogo.
+  · Onde há mais de um molde pra mesma condição, eles andam numa **fila**:
+    dentro da edição nenhum se repete, e o ponto de partida vem da data —
+    a mesma rodada dá sempre a mesma página, o que importa porque a
+    mensagem sobrevive ao save.
+  · Ficaram de fora, de propósito, as frases que o jogo não sustenta:
+    “a quarta vitória seguida”, “colado na ponta”, o estádio de um jogo
+    que não é do mandante. Molde só afirma o que o jogo sabe.
+- **Três consertos que só o teste com dados reais mostrou** (20/08/2026):
+  a primeira coluna deixava um palmo de papel em branco quando não havia
+  jogo na praça nem o nosso — agora o jornal fecha em duas colunas e as
+  notas sobem; a tabela pegava o primeiro campeonato da temporada e
+  mostrava “0 pontos em 0 jogos” — agora é o campeonato do jogo de hoje;
+  e as notas repetiam — daí a fila e a escolha por variedade.
+- **Save antigo não quebra**: mensagem de rodada sem os jogos guardados
+  continua mostrando o texto corrido de sempre.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

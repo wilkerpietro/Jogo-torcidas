@@ -4,7 +4,9 @@
    cabeçalho com data, escudo e indicadores, e conteúdo em
    cartões de faixa escura.
    ========================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Ultra&family=Archivo+Narrow:wght@600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap');
+/* Ultra, Archivo Narrow e PT Serif são do JORNAL da rodada e de mais
+   nada: o dono escolheu fidelidade ao recorte dos anos 40 (20/08/2026) */
 
 :root{
   /* fundos, do mais fundo pro mais próximo */

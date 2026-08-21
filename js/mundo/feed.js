@@ -949,12 +949,24 @@ TO.feed = (function(){
     if(!ordenados.length) return;
     const MOSTRA = 8;
     const resto = ordenados.length - MOSTRA;
+    /* A RODADA VIRA PRIMEIRA PÁGINA (régua do dono, 20/08/2026): a
+       mensagem passa a carregar os jogos do dia em forma curta, e quem
+       arma o jornal é `TO.gazeta`. O `texto` continua aqui — é ele que
+       aparece em save antigo, na busca e em qualquer lugar que só saiba
+       ler texto corrido. */
+    const curto = j => ({c:j.c, f:j.f, gc:j.gc, gf:j.gf,
+                         comp:j.compNome || '', rod:j.rodada || 0,
+                         fase:j.fase || '', pen:!!j.penaltis,
+                         venceu:j.venceu || ''});
     propor(E, {
       kind:'rodada', peso:'info', voz:'jornal',
       chave:`rodada|${E.data.ano}|${E.data.semana}|${E.data.dia}`,
       texto:`Os jogos de ${NOME_DIA[E.data.dia]}: `+
             `${ordenados.slice(0, MOSTRA).map(linha).join(', ')}`+
             `${resto > 0 ? ` e mais ${resto} ${resto===1?'jogo':'jogos'}` : ''}.`,
+      dados:{ diaRot: NOME_DIA[E.data.dia],
+              nosso: nosso ? curto(nosso) : null,
+              jogos: [...(nosso?[nosso]:[]), ...ordenados].map(curto) },
       links:[{rot:'Ver Competições', acao:'painel', args:{pagina:'competicoes'}}]
     });
   }
