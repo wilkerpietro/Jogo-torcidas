@@ -956,6 +956,24 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · O efetivo de partida sai da PRESENÇA que a mensagem da partida já
     calcula. Sem presença declarada, o nosso é o efetivo disponível.
 
+- **O dia de jogo não vira mensagem nova** (decisão do dono,
+  21/08/2026): a mensagem "O dia de jogo, parada por parada: …" foi
+  **removida**. A linha percorrida já fica dentro da própria mensagem
+  do dia de jogo, e cada briga já saiu na mensagem dela — o registro
+  repetido era ruído.
+- **O lugar da briga é o lugar, não o bairro** (correção do dono,
+  21/08/2026): não existe "bairro arquibancada". A briga de
+  arquibancada fecha em **"se pegaram na arquibancada"**, sem sufixo.
+  · A régua: o `, no bairro X` só entra onde bairro existe de verdade.
+    **Arquibancada** (`estadio-10/20/40`) e **estrada** (`emb-onibus`)
+    não são endereço de bairro nenhum e fecham no nome do lugar.
+  · **Casos similares corrigidos**: arquibancada, beco, pátio do
+    galpão, campo de terra, posto e estrada não tinham nome na tabela
+    de cenas e caíam todos no genérico "na rua". Agora cada uma diz o
+    seu lugar, com as palavras que a própria cena já usa:
+    `na arquibancada`, `no beco`, `no pátio do galpão`,
+    `no campo de terra`, `no posto`, `na estrada`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

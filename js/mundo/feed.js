@@ -988,8 +988,10 @@ TO.feed = (function(){
       if(outro && outro !== E.torcida.id)
         TO.relacoes.anotarBriga(E, outro, !d.ganhamos);
     }
-    const onde = d.local && d.local.cena ? nomeDaCena(d.local.cena) : 'na rua';
-    const bairro = d.local && d.local.bairro ? `, no bairro ${d.local.bairro}` : '';
+    const cena = (d.local && d.local.cena) || '';
+    const onde = cena ? nomeDaCena(cena) : 'na rua';
+    const bairro = cabeBairro(cena, d.local && d.local.bairro)
+                 ? `, no bairro ${d.local.bairro}` : '';
     const a = d.a || {}, b = d.b || {};
     /* as baixas DELES saem de circulação de verdade (conferência do
        dono, 18/08/2026): todo fechamento de briga nossa passa por
@@ -1051,9 +1053,25 @@ TO.feed = (function(){
     arredores:'nos arredores do estádio', praca:'na praça',
     rua:'numa rua de periferia', 'rua-media':'numa rua de classe média',
     'rua-nobre':'numa rua de classe alta', bar:'no bar', comercio:'no comércio',
-    ct:'no CT', sede:'na sede', loja:'na loja', subsede:'na subsede'
+    ct:'no CT', sede:'na sede', loja:'na loja', subsede:'na subsede',
+    /* as cenas que faltavam: sem elas toda briga de arquibancada, de
+       treta marcada e de emboscada caía no 'na rua' e ainda ganhava um
+       ", no bairro arquibancada" atrás (correção do dono, 21/08/2026).
+       Os nomes saem da própria cena, que já traz a linha do local */
+    'estadio-10':'na arquibancada', 'estadio-20':'na arquibancada',
+    'estadio-40':'na arquibancada',
+    'treta-beco':'no beco', 'treta-galpao':'no pátio do galpão',
+    'treta-campo':'no campo de terra',
+    'emb-posto':'no posto', 'emb-onibus':'na estrada'
   };
   const nomeDaCena = c => NOMES_CENA[c] || 'na rua';
+  /* ONDE NÃO EXISTE BAIRRO: arquibancada e estrada não são endereço de
+     bairro nenhum, então a briga que acontece nelas fecha a frase no
+     nome do lugar. Nas outras o bairro entra como complemento */
+  const CENA_SEM_BAIRRO = ['estadio-10','estadio-20','estadio-40','emb-onibus'];
+  const cabeBairro = (cena, bairro) =>
+    !!bairro && CENA_SEM_BAIRRO.indexOf(cena) < 0 &&
+    NOMES_CENA[cena] !== `na ${bairro}` && NOMES_CENA[cena] !== `no ${bairro}`;
 
   /* =======================================================
      AS RESPOSTAS
@@ -1259,33 +1277,6 @@ TO.feed = (function(){
     return {ok:false};
   }
 
-  /* o alvo que `fecharDefesa` espera, montado do ataque marcado */
-  /* O DIA FICA NO FEED COMO REGISTRO (decisão do dono, 20/08/2026).
-     Terminado o itinerário, a linha inteira vira uma mensagem de
-     informação: parada por parada, com a hora de cada uma e uma marca
-     em quem virou briga. As consequências de cada cena já saíram nas
-     mensagens delas — esta é a espinha do dia, não a conta. */
-  function registroDoDia(E, it){
-    if(!E || !it || !it.paradas) return null;
-    const chave = `itinerario|${E.data.ano}|${E.data.semana}|${E.data.dia}`;
-    if((E.feed||[]).some(m=>m.chave === chave)) return null;
-    const linhas = it.paradas.map(o=>{
-      const marca = o.brigou ? ' (briga)' : '';
-      return `${o.hora} ${o.nome}${marca}`;
-    });
-    const brigas = it.paradas.filter(o=>o.brigou).length;
-    propor(E, {
-      kind:'itinerario', peso:'info', voz:'diretor',
-      chave,
-      texto:`O dia de jogo, parada por parada: ${linhas.join(' · ')}.`,
-      dados:{paradas:linhas, brigas, dias:it.dias},
-      consequencia: brigas
-        ? `${brigas} ${brigas===1?'parada virou briga':'paradas viraram briga'}.`
-        : 'Nenhuma parada virou briga.'
-    });
-    return chave;
-  }
-
   /* NÃO DESCER É ENTREGAR: a defesa se resolve como derrota sem cena.
      Mora aqui, e não dentro do botão, porque o itinerário do dia de
      jogo oferece a mesma escolha nas paradas dele — e a conta tem de
@@ -1300,6 +1291,7 @@ TO.feed = (function(){
                                 caidosMandante:0, caidosVisitante:0});
   }
 
+  /* o alvo que `fecharDefesa` espera, montado do ataque marcado */
   function alvoDaDefesa(E, a){
     const o = M().torcida(a.torcida) || {nome:a.nome};
     const est = TO.planejamento.estimativaCaravana(E);
@@ -1332,5 +1324,5 @@ TO.feed = (function(){
           abertura, eventosDoDia, emboscadaDaViagem,
           registrarConfronto, responder, alvoDaDefesa, encerrarPartida,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
-          SOFRIDO, naoDesceu, registroDoDia};
+          SOFRIDO, naoDesceu};
 })();

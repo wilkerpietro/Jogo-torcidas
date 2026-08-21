@@ -1270,10 +1270,11 @@
     ITN.travado = true;
     itnDizer('dia encerrado');
     ITN.raiz.classList.add('fechado');
-    if(TO.feed.registroDoDia) TO.feed.registroDoDia(E(), ITN.it);
     TO.estado.salvar();
-    /* a linha fica na mensagem como registro do dia; o que sai é a
-       trava do relógio */
+    /* o dia não vira mensagem nova no feed (decisão do dono,
+       21/08/2026): a linha percorrida fica na própria mensagem do dia
+       de jogo, e as brigas já saíram cada uma na mensagem delas. O que
+       sai aqui é só a trava do relógio */
     itnProntos[ITN.msg.id] = ITN.raiz;
     ITN = null;
     soltarTudo('itinerario');

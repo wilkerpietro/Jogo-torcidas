@@ -239,7 +239,9 @@ TO.acoes = (function(){
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
-      local:{cena: alvo.cena || 'estadio-20', bairro:'arquibancada'},
+      /* a arquibancada não fica em bairro nenhum (correção do dono,
+         21/08/2026): quem nomeia o lugar é a cena */
+      local:{cena: alvo.cena || 'estadio-20', bairro:''},
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos});
