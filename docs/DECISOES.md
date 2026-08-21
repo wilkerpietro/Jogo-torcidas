@@ -800,6 +800,25 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   A lista agora marca em ouro quem está **Pronto p/ promoção** e o
   cartão avisa quantos são, antes da lista — no fim de 250 linhas não
   adiantava nada.
+  · **Por que ninguém achava mesmo** (descoberto em 21/08/2026): não era
+    só o lugar. O modal nascia em `z-index:50` e o painel aberto está em
+    52 — **toda janela aberta de dentro de um painel abria ATRÁS da
+    página**. Clicar em Ações não mostrava nada. Corrigido: tela cheia
+    passa pra 55, acima do painel e abaixo do aviso e da cena.
+- **O perfil do membro é o lugar das ações** (decisão do dono,
+  21/08/2026): **dois cliques no nome** na lista da Torcida abrem o
+  perfil, e o que está pendente se resolve lá dentro — **pagar fiança**
+  e **promover** —, sem o botão Ações, que saiu.
+  · O bloco **Pendências** vem antes da ficha: quem abre o perfil de um
+    preso quer soltar o cara, não ler a mensalidade dele. Cada pendência
+    diz o preço e, quando não dá, o motivo.
+  · O corpo se repinta sozinho depois de cada ação: o perfil fica
+    aberto e já mostra o cargo novo ou o cara solto.
+  · **Selecionar não repinta a lista.** Repintar a cada clique jogava o
+    rolo de volta pro topo e o segundo clique caía noutra linha — só a
+    marca da seleção troca de lugar agora.
+  · A ficha ganhou **Situação**, **Idade** (com aviso de declínio),
+    o **teto** ao lado de Força/Defesa e o **desgaste**, quando existe.
 
 - **O QUE TIRA FICHA** (régua do dono, 20/08/2026): até aqui a ficha era
   catraca de mão única — treino somava e nada nunca subtraía, e ninguém

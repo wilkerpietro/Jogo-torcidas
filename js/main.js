@@ -1909,6 +1909,13 @@
      ======================================================= */
   let subTorcida = 'membros', filtroCargo = 'todos', busca = '';
   let ordem = {col:'forca', dir:-1}, selecionado = null;
+  /* O DOIS-CLIQUES É CONTADO NA MÃO: o primeiro clique repinta a lista
+     inteira, então a linha que recebe o segundo clique já é outra e o
+     `dblclick` do navegador nunca dispara. Guardamos quem foi clicado
+     e quando — dois cliques no mesmo membro dentro da janela abrem o
+     perfil (decisão do dono, 21/08/2026). */
+  const JANELA_DUPLO = 400;
+  let ultimoClique = {id:null, em:0};
 
   const COLUNAS = [
     {k:'nome',    rot:'Membro',   larg:'26%'},
@@ -2023,12 +2030,13 @@
     bs.oninput = ev=>{ busca = ev.target.value; pintarTorcida(); };
     ct.corpo.appendChild(bs);
 
-    /* A PROMOÇÃO MORA NO BOTÃO AÇÕES, e ninguém a achava. O aviso vem
+    /* A PROMOÇÃO MORA NO PERFIL, e ninguém a achava. O aviso vem
        ANTES da lista — no fim de 250 linhas não adiantava nada. */
     const prontos = e.membros.filter(m=>TO.membros.podePromover(e, m).ok).length;
     if(prontos) ct.corpo.appendChild(el('div',{class:'recado', html:
       `<b>${prontos}</b> ${prontos===1?'membro está pronto':'membros estão prontos'} `+
-      `pra subir de cargo. Clique no nome na lista e use <b>Ações → Promover</b>.`}));
+      `pra subir de cargo. Dois cliques no nome abrem o perfil, e a `+
+      `promoção está lá em <b>Pendências</b>.`}));
 
     const lista = e.membros
       .filter(m=>filtroCargo==='todos' || m.cargo===filtroCargo)
@@ -2057,11 +2065,14 @@
     tab.appendChild(el('thead',null,[tr]));
 
     const tb = el('tbody');
+    /* o botão do rodapé nasce depois da lista, mas as linhas mexem
+       nele: fica declarado aqui pra elas alcançarem */
+    let btPerfil = null;
     for(const m of lista){
       const penaDele = TO.membros.diasPresos(m);
       /* QUEM ESTÁ PRONTO PRA SUBIR APARECE NA LISTA: a promoção mora
-         no botão Ações, e sem um aviso na linha ninguém achava que ela
-         existia. Agora a Situação avisa, e o rodapé conta quantos. */
+         no perfil, e sem um aviso na linha ninguém achava que ela
+         existia. Agora a Situação avisa, e o cartão conta quantos. */
       const pronto = TO.membros.podePromover(e, m);
       const sit = m.preso ? (penaDele != null ? `Preso · ${penaDele}d` : 'Preso')
                 : m.ferido ? `Ferido · ${m.ferido.dias}d`
@@ -2084,20 +2095,36 @@
          <td class="num">${m.xp}</td>
          <td>${sit}</td>`;
       linha.style.cursor='pointer';
-      linha.onclick = ()=>{ selecionado = m.id; pintarTorcida(); };
+      /* DOIS CLIQUES ABREM O PERFIL: é de lá que sai fiança e
+         promoção, sem passar por outro botão.
+         SELECIONAR NÃO REPINTA A TELA: repintar a lista inteira a cada
+         clique jogava o rolo de volta pro topo, e o segundo clique
+         caía noutra linha — ou em lugar nenhum. Aqui só a marca da
+         seleção troca de lugar. */
+      linha.onclick = ()=>{
+        const agora = Date.now();
+        const duplo = ultimoClique.id === m.id &&
+                      agora - ultimoClique.em < JANELA_DUPLO;
+        ultimoClique = {id:m.id, em:agora};
+        selecionado = m.id;
+        for(const outra of tb.children) outra.classList.remove('selecionada');
+        linha.classList.add('selecionada');
+        if(btPerfil){ btPerfil.disabled = false; btPerfil.onclick = ()=>abrirFicha(m); }
+        if(duplo){ ultimoClique = {id:null, em:0}; abrirFicha(m); }
+      };
+      linha.title = 'dois cliques abrem o perfil';
+      linha.style.userSelect = 'none';   // dois cliques não pintam texto
       tb.appendChild(linha);
     }
     tab.appendChild(tb);
     ct.corpo.appendChild(tab);
 
     const alvo = e.membros.find(m=>m.id===selecionado);
-    const btPerfil = el('button',{class:'bt', texto:'Ver perfil'});
+    /* o botão Ações foi embora: as ações moram dentro do perfil */
+    btPerfil = el('button',{class:'bt destaque', texto:'Abrir perfil'});
     btPerfil.disabled = !alvo;
-    btPerfil.onclick = ()=>abrirFicha(alvo);
-    const btAcoes = el('button',{class:'bt destaque', texto:'Ações'});
-    btAcoes.disabled = !alvo;
-    btAcoes.onclick = ()=>abrirAcoes(alvo);
-    ct.rodape(btPerfil, btAcoes);
+    if(alvo) btPerfil.onclick = ()=>abrirFicha(alvo);
+    ct.rodape(btPerfil);
 
     grade.appendChild(ct);
     pg.appendChild(grade);
@@ -2769,49 +2796,121 @@
                  null, 'media');
   }
 
+  /* =======================================================
+     O PERFIL DO MEMBRO (decisão do dono, 21/08/2026)
+     Duas portas viraram uma. A ficha era só leitura e as ações
+     moravam noutro botão que ninguém achava — agora o perfil é
+     o lugar: abre com dois cliques no nome, mostra o dossiê e
+     resolve ali mesmo o que está pendente (fiança, promoção).
+     O corpo se repinta sozinho depois de cada ação, pra ficha
+     mostrar na hora o cargo novo ou o cara solto.
+     ======================================================= */
   function abrirFicha(m){
     const corpo = el('div');
-    corpo.innerHTML =
-      `<div class="linha-dado"><span>Cargo</span><b>${TO.membros.CARGOS[m.cargo].nome}</b></div>
-       <div class="linha-dado"><span>Força / Defesa</span><b>${m.forca} / ${m.defesa}</b></div>
-       <div class="linha-dado"><span>Frações acumuladas</span>
-         <b>${m.fracForca.toFixed(2)} / ${m.fracDefesa.toFixed(2)}</b></div>
-       <div class="linha-dado"><span>XP</span><b>${m.xp}</b></div>
-       <div class="linha-dado"><span>Moral</span><b>${m.moral.toFixed(1)} / 20</b></div>
-       <div class="linha-dado"><span>Arquétipo</span><b>${m.arquetipo}</b></div>
-       <div class="linha-dado"><span>Mensalidade</span>
-         <b>${U.dinheiro(TO.membros.CARGOS[m.cargo].mensalidade)}</b></div>`;
-    if(m.historico.length){
-      corpo.appendChild(el('div',{class:'titulo-pagina', texto:'Histórico',
-        estilo:{fontSize:'13px', paddingTop:'12px'}}));
-      for(const h of m.historico.slice(-8))
-        corpo.appendChild(el('div',{class:'transacao', html:`<span class="desc">${h}</span>`}));
-    }
-    modal(TO.membros.nomeDe(m), TO.membros.CARGOS[m.cargo].nome, corpo);
-  }
+    let fechar = null;
 
-  function abrirAcoes(m){
-    const acoes = [];
-    if(m.preso) acoes.push([`Pagar fiança (${U.dinheiro(TO.membros.fianca(m))})`, ()=>{
-      const r = TO.membros.resgatar(E(), m);
-      aviso(r.ok?`${TO.membros.nomeDe(m)} está solto`:r.motivo, r.ok?'boa':'ruim');
-      redesenhar();
-    }]);
-    /* escalar treino à mão saiu: a diretoria sorteia e treina todo dia */
-    const p = TO.membros.podePromover(E(), m);
-    acoes.push([p.ok?`Promover (${U.dinheiro(p.custo||0)})`:`Promover — ${p.motivo}`,
-      ()=>{
-        const r = TO.membros.promover(E(), m);
-        aviso(r.ok ? (r.veterano?`${TO.membros.nomeDe(m)} virou Veterano`
-                               :`${TO.membros.nomeDe(m)} promovido`) : r.motivo,
-              r.ok?'boa':'ruim');
-        redesenhar();
-      }, !p.ok && !p.veterano]);
+    /* um botão de pendência: o que é, quanto custa, e por que não dá */
+    const pendencia = (rot, nota, custo, trava, aoClicar)=>{
+      const b = el('button',{class:'oferta'+(trava?' travada':'')});
+      b.innerHTML =
+        `<span class="txt"><b>${rot}</b>${nota?`<small>${nota}</small>`:''}</span>
+         <span class="preco">${custo ? U.dinheiro(custo) : ''}</span>`;
+      if(trava) b.appendChild(el('small',{class:'trava', texto:trava}));
+      b.disabled = !!trava;
+      b.onclick = aoClicar;
+      return b;
+    };
 
-    const corpo = el('div');
-    corpo.innerHTML = `<div class="linha-dado"><span class="fraco">`+
-      `${TO.membros.CARGOS[m.cargo].nome} · ${m.forca}/${m.defesa} · ${m.xp} XP</span></div>`;
-    modal('Ações — '+TO.membros.nomeDe(m), '', corpo, acoes);
+    const pintar = ()=>{
+      const e = E();
+      corpo.innerHTML = '';
+      const C = TO.membros.CARGOS[m.cargo];
+
+      /* O QUE ESTÁ PENDENTE VEM PRIMEIRO: quem abre o perfil de um
+         preso quer soltar o cara, não ler a mensalidade dele */
+      const pend = [];
+      if(m.preso){
+        const dias = TO.membros.diasPresos(m);
+        pend.push(pendencia('Pagar fiança',
+          dias != null ? `preso há ${dias} ${dias===1?'dia':'dias'} — `+
+                         `a fiança sobe a cada dia` : 'tira ele hoje da cadeia',
+          TO.membros.fianca(m),
+          e.dinheiro < TO.membros.fianca(m) ? 'sem caixa' : '',
+          ()=>{
+            const r = TO.membros.resgatar(e, m);
+            aviso(r.ok ? `${TO.membros.nomeDe(m)} está solto` : r.motivo,
+                  r.ok ? 'boa' : 'ruim');
+            pintar(); redesenhar();
+          }));
+      }
+      const p = TO.membros.podePromover(e, m);
+      if(p.ok)
+        pend.push(pendencia(`Promover pra ${TO.membros.CARGOS[p.para].nome}`,
+          'bateu XP, força e defesa do cargo', p.custo || 0, '',
+          ()=>{
+            const r = TO.membros.promover(e, m);
+            aviso(r.ok ? `${TO.membros.nomeDe(m)} promovido` : r.motivo,
+                  r.ok ? 'boa' : 'ruim');
+            pintar(); redesenhar();
+          }));
+      else if(p.veterano && !m.veterano)
+        /* GDD §5.2: sem vaga na Diretoria o caminho é Veterano */
+        pend.push(pendencia('Dar galões de Veterano',
+          'Diretoria lotada — ganha +2 de força e +2 de defesa', null, '',
+          ()=>{
+            const r = TO.membros.promover(e, m);
+            aviso(r.ok ? `${TO.membros.nomeDe(m)} virou Veterano` : r.motivo,
+                  r.ok ? 'boa' : 'ruim');
+            pintar(); redesenhar();
+          }));
+      else if(TO.membros.ACIMA && TO.membros.ACIMA[m.cargo])
+        pend.push(pendencia('Promover', 'ainda não bate o corte do cargo',
+                            null, p.motivo, ()=>{}));
+
+      if(pend.length){
+        corpo.appendChild(el('div',{class:'fase-rot', texto:'Pendências'}));
+        pend.forEach(b=>corpo.appendChild(b));
+      }
+
+      /* o dossiê */
+      const teto = TO.membros.tetoDe(m);
+      const sit = m.preso ? 'Preso' : m.ferido ? `Ferido · ${m.ferido.dias} dias`
+                : m.naFila ? 'Escalado pro treino de hoje' : 'Apto';
+      const velho = m.idade != null && m.idade >= TO.membros.IDADE_DECLINIO;
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Ficha',
+        estilo:{paddingTop: pend.length ? '14px' : '0'}}));
+      corpo.appendChild(el('div',{html:
+        `<div class="linha-dado"><span>Cargo</span>`+
+        `<b>${C.nome}${m.veterano?' · Veterano':''}</b></div>
+         <div class="linha-dado"><span>Situação</span><b>${sit}</b></div>
+         <div class="linha-dado"><span>Idade</span>`+
+        `<b>${m.idade != null ? m.idade : '—'}`+
+        `${velho ? ' <small class="fraco">em declínio</small>' : ''}</b></div>
+         <div class="linha-dado"><span>Força / Defesa</span>`+
+        `<b>${m.forca} / ${m.defesa} <small class="fraco">teto ${teto}</small></b></div>
+         <div class="linha-dado"><span>Frações acumuladas</span>
+           <b>${m.fracForca.toFixed(2)} / ${m.fracDefesa.toFixed(2)}</b></div>`+
+        (m.desgaste ? `<div class="linha-dado"><span>Desgaste</span>`+
+          `<b class="negativo">−${m.desgaste.toFixed(1)} no teto</b></div>` : '')+
+        `<div class="linha-dado"><span>XP</span>`+
+        `<b>${m.xp}${C.xpPromo?` <small class="fraco">promove com ${C.xpPromo}</small>`:''}</b></div>
+         <div class="linha-dado"><span>Moral</span><b>${m.moral.toFixed(1)} / 20</b></div>
+         <div class="linha-dado"><span>Arquétipo</span><b>${m.arquetipo}</b></div>
+         <div class="linha-dado"><span>Mensalidade</span>
+           <b>${U.dinheiro(C.mensalidade)}</b></div>`}));
+
+      if(m.historico.length){
+        corpo.appendChild(el('div',{class:'fase-rot', texto:'Histórico',
+          estilo:{paddingTop:'14px'}}));
+        for(const h of m.historico.slice(-8))
+          corpo.appendChild(el('div',{class:'transacao',
+            html:`<span class="desc">${h}</span>`}));
+      }
+    };
+
+    pintar();
+    fechar = modal(TO.membros.nomeDe(m), TO.membros.CARGOS[m.cargo].nome, corpo);
+    return fechar;
   }
 
   /* =======================================================

@@ -217,8 +217,13 @@ body.com-painel #painelBarra{
 /* =========================================================
    TELAS CHEIAS (menu, seleção, escalação, relatório)
    ========================================================= */
+/* A TELA CHEIA VEM POR CIMA DO PAINEL (correção, 21/08/2026): o painel
+   sobe a 52 e a barra dele a 53, então um modal aberto de dentro de um
+   painel — o perfil do membro, o assalto, a caravana — nascia ATRÁS da
+   página e o clique não achava nada na tela. Fica em 55: acima do
+   painel, abaixo do aviso (61) e das camadas da cena (70+). */
 .tela-cheia{
-  position:fixed;inset:0;z-index:50;background:#09090af5;
+  position:fixed;inset:0;z-index:55;background:#09090af5;
   display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;
 }
 .moldura{
