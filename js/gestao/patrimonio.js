@@ -86,6 +86,12 @@ TO.patrimonio = (function(){
                    rot:'Fábrica'};
 
   const nivelSede = E => E.torcida.sedeNivel;
+  /* qual sede é preciso ter pra caber o enésimo ônibus/professor */
+  function proximaSedeQueCabe(n){
+    const T = F().TETO_SEDE;
+    for(let i = 1; i < T.length; i++) if(T[i] >= n) return `cabe na sede nível ${i}`;
+    return 'não cabe em sede nenhuma';
+  }
   const cont = (E, tipo) => (F().patrimonio(E)[PONTO[tipo].plural] || []).length;
 
   /* =======================================================
@@ -195,7 +201,7 @@ TO.patrimonio = (function(){
        tira 30% do custo da caravana, dois tiram 60%, três deixam a
        estrada de graça. Avião continua pago: ônibus não voa. */
     const temOnibus = F().onibusDe(E);
-    if(temOnibus < F().ONIBUS_MAX){
+    if(temOnibus < F().onibusMax(E)){
       const proximo = temOnibus + 1;
       const desc = Math.round(F().DESCONTO_ONIBUS[proximo]*100);
       lista.push({
@@ -208,13 +214,26 @@ TO.patrimonio = (function(){
                ? ' — frota cheia, estrada de graça e o rateio vira receita' : '')+
              ` · R$ 1.500/mês por ônibus · rota de avião continua paga`,
         custo:F().ONIBUS_CUSTO, trava:trava(F().ONIBUS_CUSTO)});
+    } else if(F().onibusMax(E) < F().ONIBUS_MAX){
+      /* dinheiro não é o que falta: falta garagem */
+      lista.push({id:'onibus', rot:'Comprar mais um ônibus',
+        nota:`a sede nível ${nivelSede(E)} guarda ${F().onibusMax(E)} `+
+             `${F().onibusMax(E)===1?'ônibus':'ônibus'} · `+
+             `${proximaSedeQueCabe(F().onibusMax(E)+1)}`,
+        custo:F().ONIBUS_CUSTO, trava:'a garagem da sede está cheia'});
     }
 
     /* A COMISSÃO TÉCNICA (dono, 18/08/2026; escada em 20/08/2026):
        até três professores, R$ 2.000 por mês cada, cobrados no
        fechamento — e o treino rende +30%, +60% e +100%. */
     const temProf = F().professoresDe(E);
-    if(temProf < F().MMA_MAX){
+    if(temProf >= F().mmaMax(E) && F().mmaMax(E) < F().MMA_MAX){
+      lista.push({id:'mma', rot:'Contratar mais um professor de MMA',
+        nota:`a sede nível ${nivelSede(E)} comporta `+
+             `${F().mmaMax(E)} ${F().mmaMax(E)===1?'professor':'professores'} · `+
+             `${proximaSedeQueCabe(F().mmaMax(E)+1)}`,
+        custo:F().MMA_MES, trava:'a sala de treino da sede está cheia'});
+    } else if(temProf < F().mmaMax(E)){
       const proximo = Math.round((F().GANHO_MMA[temProf+1]-1)*100);
       const ORD = ['', '', '2º', '3º'];
       lista.push({
@@ -275,7 +294,7 @@ TO.patrimonio = (function(){
     } else if(acao==='onibus'){
       const tinha = F().onibusDe(E);
       E.onibus = {desde:(E.onibus && E.onibus.desde) || (E.data||{}).absoluto || 0,
-                  n: Math.min(F().ONIBUS_MAX, tinha + 1)};
+                  n: Math.min(F().onibusMax(E), tinha + 1)};
       TO.estado.lancar(E, tinha ? `Ônibus da torcida (${tinha+1}º)`
                                 : 'Ônibus da torcida', -o.custo);
     } else if(acao==='mma'){
@@ -283,7 +302,7 @@ TO.patrimonio = (function(){
       const tinha = F().professoresDe(E);
       E.professorMMA = {
         desde:(E.professorMMA && E.professorMMA.desde) || (E.data||{}).absoluto || 0,
-        n: Math.min(F().MMA_MAX, tinha + 1)};
+        n: Math.min(F().mmaMax(E), tinha + 1)};
     } else if(acao==='mma-fora'){
       /* dispensa na hora: sem multa, sem cobrança no próximo fecho */
       const fica = F().professoresDe(E) - 1;

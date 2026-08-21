@@ -91,6 +91,19 @@ TO.financeiro = (function(){
      ======================================================= */
   const ONIBUS_MAX = 3, ONIBUS_MES = 1500, ONIBUS_CUSTO = 100000;
   /* =======================================================
+     A GARAGEM E A SALA DE TREINO CABEM NA SEDE
+     (régua do dono, 20/08/2026)
+     Ônibus e professor não são só dinheiro: precisam de onde
+     guardar e onde treinar. Sede nível 1 não comporta nenhum
+     dos dois; a partir do 2 cabe um, do 3 cabem dois, e o
+     terceiro só na sede nível 5.
+     ======================================================= */
+  const TETO_SEDE = [null, 0, 1, 2, 2, 3];
+  const nivelDaSede = E => (E && E.torcida && E.torcida.sedeNivel) || 1;
+  const cabeNaSede = nivel => TETO_SEDE[U.limitar(nivel || 1, 1, 5)] || 0;
+  const onibusMax = E => cabeNaSede(nivelDaSede(E));
+  const mmaMax    = E => cabeNaSede(nivelDaSede(E));
+  /* =======================================================
      A COMISSÃO TÉCNICA (régua do dono, 20/08/2026)
      A mesma escada dos ônibus: um professor faz o treino
      render +30%, dois +60%, três +100% — o dobro só com a
@@ -106,7 +119,9 @@ TO.financeiro = (function(){
     const p = E && E.professorMMA;
     if(!p) return 0;
     if(p === true) return 1;
-    return U.limitar(Math.round(p.n != null ? p.n : 1), 0, MMA_MAX);
+    /* o teto da sede vale AGORA: sede que não comporta mais aquele
+       terceiro professor não conta o que não cabe */
+    return U.limitar(Math.round(p.n != null ? p.n : 1), 0, mmaMax(E));
   }
   const ganhoDoTreino = E => GANHO_MMA[professoresDe(E)] || 1;
   const DESCONTO_ONIBUS = [0, 0.30, 0.60, 1];
@@ -114,7 +129,8 @@ TO.financeiro = (function(){
   function onibusDe(E){
     const o = E && E.onibus;
     if(!o) return 0;
-    return U.limitar(Math.round(o.n || 1), 0, ONIBUS_MAX);
+    /* a garagem da sede é o teto de agora: ônibus que não cabe não roda */
+    return U.limitar(Math.round(o.n || 1), 0, onibusMax(E));
   }
   const descontoCaravana = E => DESCONTO_ONIBUS[onibusDe(E)] || 0;
 
@@ -554,5 +570,6 @@ TO.financeiro = (function(){
           ONIBUS_MAX, ONIBUS_MES, ONIBUS_CUSTO, DESCONTO_ONIBUS,
           FESTA, pisoDaFesta,
           MMA_MAX, MMA_MES, GANHO_MMA, professoresDe, ganhoDoTreino,
+          TETO_SEDE, cabeNaSede, onibusMax, mmaMax,
           MANUT_SEDE, RECEITA, MANUT, INSUMO, CARAVANA, SEM};
 })();

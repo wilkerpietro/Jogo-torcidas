@@ -736,6 +736,26 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   (+0,0)`. Sempre com sinal: parado é "(+0)", não é vazio. O mundo
   tira uma foto dos três números quando o mês vira, e a tela compara.
 
+- **Garagem e sala de treino cabem na sede** (20/08/2026): ônibus e
+  professor não são só dinheiro — precisam de onde guardar e onde
+  treinar. **Sede nível 1 não comporta nenhum dos dois; do 2 cabe um,
+  do 3 cabem dois, e o terceiro só na sede nível 5.** A régua é a mesma
+  pros dois e pras duas mãos (nós e elas).
+
+  | sede | ônibus | professores |
+  |------|--------|-------------|
+  | 1 | 0 | 0 |
+  | 2 | 1 | 1 |
+  | 3 | 2 | 2 |
+  | 4 | 2 | 2 |
+  | 5 | 3 | 3 |
+
+  · Na fila delas, sala cheia não é fim de degrau: quem destrava é a
+    SEDE, e é ela que a fila pede em seguida.
+  · A conta guardada no cadastro delas é a que CABE — sem isso ficava
+    professor fantasma, invisível na ficha e imune à demissão.
+  · A tela mostra o motivo em vez de sumir com a opção: "a garagem da
+    sede está cheia · cabe na sede nível 5".
 - **A comissão técnica vira escada, como a garagem** (20/08/2026): não
   é mais "tem professor ou não tem". **Um professor faz o treino render
   +30% de força e defesa, dois +60% e três +100%** — o dobro só com a

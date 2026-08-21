@@ -86,9 +86,12 @@ TO.relacoes = (function(){
      dono, 20/08/2026). Nenhum cobra entrada, só o mês — o que a fila
      exige de cada contratação é caixa que aguente três meses da folha
      que ela vai deixar. */
+  /* a sala de treino delas é a nossa: sede 1 não comporta professor
+     nenhum, sede 2 comporta um, sede 3 dois e sede 5 os três */
   const mmaDe = t =>{
     if(!t || !t.mma) return 0;
-    return U.limitar(Math.round(t.mma === true ? 1 : t.mma), 0, FIN().MMA_MAX);
+    return U.limitar(Math.round(t.mma === true ? 1 : t.mma),
+                     0, FIN().cabeNaSede(t.sede));
   };
   const ganhoDeleas = t => FIN().GANHO_MMA[mmaDe(t)] || 1;
   const cofreDoProfessor = t => FIN().MMA_MES * 3 * (mmaDe(t) + 1);
@@ -183,16 +186,21 @@ TO.relacoes = (function(){
   function itemDaFila(E, t, id, chave){
     const T = P().TETO, PT = P().PONTO;
 
-    if(chave === 'mma')
-      return mmaDe(t) < FIN().MMA_MAX
-           ? {tipo:'mma', custo:0, cofre:cofreDoProfessor(t)} : null;
+    if(chave === 'mma'){
+      if(mmaDe(t) < FIN().cabeNaSede(t.sede))
+        return {tipo:'mma', custo:0, cofre:cofreDoProfessor(t)};
+      /* a sala está cheia: uma sede maior comporta mais? */
+      return FIN().cabeNaSede(t.sede) < FIN().MMA_MAX ? {sede:true} : null;
+    }
     if(chave === 'bombas')
       return t.bombas >= BOMBA.teto ? null
            : {tipo:'bombas', custo:BOMBA.custo};
     if(chave === 'elenco') return elencoAlvo(E, id);
-    if(chave === 'onibus')
-      return frotaIA(t) < FIN().ONIBUS_MAX
-           ? {tipo:'onibus', custo:FIN().ONIBUS_CUSTO} : null;
+    if(chave === 'onibus'){
+      if(frotaIA(t) < FIN().cabeNaSede(t.sede))
+        return {tipo:'onibus', custo:FIN().ONIBUS_CUSTO};
+      return FIN().cabeNaSede(t.sede) < FIN().ONIBUS_MAX ? {sede:true} : null;
+    }
 
     /* evoluir: sobe o ponto de nível mais baixo que ainda cabe */
     if(chave.indexOf('evoluir:') === 0){
@@ -269,8 +277,11 @@ TO.relacoes = (function(){
       const t = m[id];
       /* save de antes do Financeiro delas: ganha os campos novos */
       if(t.bombas == null){ t.bombas = 10; t.onibus = t.onibus ? 1 : 0; }
-      /* ônibus e professor viraram CONTA, não sim-ou-não */
-      if(t.mma === true || t.mma === false) t.mma = t.mma ? 1 : 0;
+      /* ônibus e professor viraram CONTA, não sim-ou-não — e a conta
+         guardada é a que CABE na sede: sem isso ficava professor
+         fantasma no cadastro, invisível na ficha e imune à demissão */
+      t.mma = mmaDe(t);
+      t.onibus = frotaIA(t);
       const b = balanco(t);
       t.caixa += Math.round(b.saldo * SEM);
 
@@ -789,9 +800,10 @@ TO.relacoes = (function(){
   }
 
   /* quantos ônibus a torcida da IA tem: save antigo guardava `true` */
+  /* e a garagem delas também: ônibus que não cabe na sede não roda */
   const frotaIA = t => !t || !t.onibus ? 0
     : U.limitar(Math.round(t.onibus === true ? 1 : t.onibus), 0,
-                FIN().ONIBUS_MAX || 3);
+                FIN().cabeNaSede(t.sede));
 
   /* =======================================================
      O PLACAR DE BRIGAS DO ANO (pedido do dono, 20/08/2026)
