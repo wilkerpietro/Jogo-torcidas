@@ -1286,8 +1286,14 @@
      Só desenho: o que vai em cada pedaço quem decide é
      TO.gazeta, e as frases são os moldes que o dono aprovou.
      ======================================================= */
+  /* =======================================================
+     A GAZETA NO FEED (encolhida a pedido do dono, 21/08/2026)
+     A edição fecha no placar grande. Ao lado da manchete vai um
+     recorte de três linhas da classificação: o time logo acima
+     do nosso, o nosso e o logo abaixo.
+     ======================================================= */
   function recorteDaRodada(p){
-    const rec = el('article',{class:'gz'+(p.magra?' magra':'')});
+    const rec = el('article',{class:'gz'});
 
     const cab = el('div',{class:'gz-cabeca'});
     cab.innerHTML =
@@ -1299,86 +1305,39 @@
        <div class="tarja">${p.tarja.map(t=>`<span>${t}</span>`).join('')}</div>`;
     rec.appendChild(cab);
 
+    const topo = el('div',{class:'gz-topo'+(p.tabela?'':' sozinha')});
+
     const man = el('div',{class:'gz-manchete'});
     man.innerHTML =
       `<div class="chapeu">${p.chapeu}</div>
        <h2>${p.manchete}</h2>
        <p class="olho">${p.olho}</p>
        <div class="placar-grande">
-         <span class="time">${p.placar.a}</span><span class="n">${p.placar.ga}</span>
-         <span class="n">${p.placar.gb}</span><span class="time">${p.placar.b}</span>
+         <span class="time${p.placar.nossaCasa?' nossa':''}">${p.placar.a}</span>
+         <span class="n">${p.placar.ga}</span>
+         <span class="n">${p.placar.gb}</span>
+         <span class="time${p.placar.nossaFora?' nossa':''}">${p.placar.b}</span>
        </div>`;
-    rec.appendChild(man);
+    topo.appendChild(man);
 
-    const cols = el('div',{class:'gz-colunas'});
-
-    const c1 = el('section',{class:'gz-materia'});
-    c1.innerHTML = `<div class="col-tit rubra">Na nossa praça</div>`+
-      (p.cidade ? `<div class="assina">${p.cidade}</div>` : '')+
-      `<p>${p.praca}</p>`;
-    const cx = el('div',{class:'gz-caixa'+(p.nossa.bom?' bom':p.nossa.ruim?' ruim':'')});
-    cx.innerHTML = `<div class="rot">O nosso jogo</div>
-       <div class="jogo">${p.nossa.placar}</div>`+
-      (p.nossa.sob ? `<div class="sob">${p.nossa.sob}</div>` : '')+
-      (p.nossa.tabela ? `<div class="tab">${p.nossa.tabela}</div>` : '');
-    c1.appendChild(cx);
-    cols.appendChild(c1);
-
-    /* na página magra as notas do país sobem pra primeira coluna, que
-       senão ficaria com uma caixinha e um palmo de papel em branco */
-    if(p.notas.length){
-      const notas = p.notas.map(n=>
-        `<p><strong>${n.placar}.</strong> ${n.frase}</p>`).join('');
-      if(p.magra){
-        c1.appendChild(el('div',{class:'col-tit meio', texto:'Pelo país'}));
-        c1.appendChild(el('div',{class:'gz-notas', html:notas}));
-      } else {
-        const c2 = el('section',{class:'gz-materia'});
-        c2.innerHTML = `<div class="col-tit">Pelo país</div>` + notas;
-        cols.appendChild(c2);
-      }
-    }
-
-    const c3 = el('section');
-    c3.innerHTML = `<div class="col-tit">Placar do dia</div>`+
-      `<div class="gz-placares">`+
-      p.placares.map(g=>`<div class="comp">${g.titulo}</div>`+
-        g.jogos.map(j=>`<div class="r${j.nossa?' nossa':''}${j.goleada?' gol':''}">`+
-          `<span class="m">${j.casa}</span><span class="g">${j.gc} × ${j.gf}</span>`+
-          `<span class="v">${j.fora}</span></div>`).join('')).join('')+
-      `</div>`;
-    cols.appendChild(c3);
-    rec.appendChild(cols);
-
-    /* A FAIXA DA CLASSIFICAÇÃO (pedido do dono, 20/08/2026): sempre a
-       divisão do NOSSO clube, e na Série D só o grupo dele. */
-    const cl = p.classificacao;
-    if(cl){
-      const faixa = el('div',{class:'gz-tabela'});
-      faixa.appendChild(el('div',{class:'col-tit', html:
-        `A classificação <span class="onde">${cl.rot}</span>`}));
+    /* o recorte de três linhas, na margem da manchete */
+    if(p.tabela){
+      const cl = el('aside',{class:'gz-recorte'});
+      cl.appendChild(el('div',{class:'col-tit', html:
+        `A classificação <span class="onde">${p.tabela.rot}</span>`}));
       const grade = el('div',{class:'linhas'});
-      for(const l of cl.linhas){
-        if(l.salto){ grade.appendChild(el('div',{class:'salto', texto:'⋯'})); continue; }
+      for(const l of p.tabela.linhas)
         grade.appendChild(el('div',{class:'l'+(l.nossa?' nossa':''), html:
           `<span class="p">${l.pos}</span><span class="t">${l.nome}</span>`+
           `<span class="j">${l.j}j</span>`+
           `<span class="sg">${l.sg > 0 ? '+' : ''}${l.sg}</span>`+
           `<span class="pt">${l.p}</span>`}));
-      }
-      faixa.appendChild(grade);
-      rec.appendChild(faixa);
+      cl.appendChild(grade);
+      cl.appendChild(el('div',{class:'de', texto:`de ${p.tabela.total} times`}));
+      topo.appendChild(cl);
     }
 
-    const pe = el('div',{class:'gz-pe'});
-    if(p.resto) pe.appendChild(el('span',{html:
-      p.resto === 1 ? 'E mais um jogo pelo interior'
-                    : `E mais <b>${p.resto}</b> jogos pelo interior`}));
-    pe.appendChild(el('span',{class:'espaco'}));
-    const bt = el('button',{class:'gz-link', texto:'Ver competições →'});
-    bt.onclick = ()=> abrirPainel('competicoes');
-    pe.appendChild(bt);
-    rec.appendChild(pe);
+    rec.appendChild(topo);
     return rec;
   }
 
@@ -1482,9 +1441,9 @@
       if(pg){
         const txt = art.querySelector('.msg-txt');
         if(txt) txt.remove();
-        /* o "Ver Competições" do cartão sai: o jornal tem o dele no pé,
-           e dois links iguais na mesma mensagem é ruído */
-        for(const lk of art.querySelectorAll('.msg-abaixo')) lk.remove();
+        /* o "Ver Competições" do cartão FICA: o jornal encolheu e não
+           tem mais pé próprio, então o único caminho pra tabela cheia
+           é o link da mensagem */
         art.appendChild(recorteDaRodada(pg));
       }
     }

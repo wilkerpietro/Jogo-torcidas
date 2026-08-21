@@ -993,6 +993,29 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     `na arquibancada`, `no beco`, `no pátio do galpão`,
     `no campo de terra`, `no posto`, `na estrada`.
 
+- **A Gazeta encolheu e virou o jornal do NOSSO clube** (decisão do
+  dono, 21/08/2026):
+  · **Só sai em dia de jogo nosso.** Rodada em que o clube da torcida
+    não entrou em campo não vira edição — nenhuma mensagem de jornal.
+  · **A manchete é sempre o jogo dele.** A régua antiga (capa pela
+    força dos times, com exceção pra nossa divisão) foi substituída:
+    não há mais escolha de capa, é o nosso jogo e pronto.
+  · **A página fecha no placar grande.** Saíram da edição: "Na nossa
+    praça", a caixa do nosso jogo, "Pelo país", o "Placar do dia" e a
+    faixa larga da classificação. Sobrou cabeçalho, tarja, chapéu,
+    manchete, olho e placar.
+  · **Ao lado da manchete, um recorte de três linhas** da tabela: o
+    time imediatamente acima do nosso, o nosso e o imediatamente
+    abaixo — sempre a divisão em que ele joga, e na Série D só o grupo
+    dele. **Nas pontas o recorte desliza** pra manter as três: líder
+    mostra os dois de baixo, lanterna os dois de cima.
+  · O **"Ver Competições" do cartão voltou**: o jornal não tem mais pé
+    próprio, então é o único caminho pra tabela cheia.
+  · **Os moldes das seções que saíram ficam guardados** no arquivo:
+    passaram pelo crivo do dono e, se alguma seção voltar, o texto
+    dela já está escrito e aprovado.
+  · Medido: o cartão caiu de **703px pra 359px**.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

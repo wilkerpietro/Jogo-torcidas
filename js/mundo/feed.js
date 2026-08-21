@@ -947,6 +947,10 @@ TO.feed = (function(){
     const linha = j => `${nome(j.c)} ${j.gc} × ${j.gf} ${nome(j.f)}`;
     const ordenados = [...daCidade, ...deFora];
     if(!ordenados.length) return;
+    /* O JORNAL SÓ SAI EM DIA DE JOGO NOSSO (decisão do dono,
+       21/08/2026): a manchete é o jogo do clube da torcida, então
+       rodada em que ele não entrou em campo não vira edição. */
+    if(!nosso) return;
     const MOSTRA = 8;
     const resto = ordenados.length - MOSTRA;
     /* A RODADA VIRA PRIMEIRA PÁGINA (régua do dono, 20/08/2026): a

@@ -2,10 +2,17 @@
    A GAZETA DOS SPORTS (régua do dono, 20/08/2026)
 
    A rodada deixou de ser uma linha corrida de placares e virou
-   primeira página de jornal. Aqui mora só a LÓGICA: qual jogo
-   é a manchete, que molde de frase cada pedaço usa e o que vai
-   pra cada coluna. Quem desenha é main.js; quem guarda os
-   jogos do dia é a própria mensagem, em `dados.jogos`.
+   primeira página de jornal. Aqui mora só a LÓGICA: que molde de
+   frase cada pedaço usa e o que vai pra cada pedaço. Quem desenha
+   é main.js; quem guarda os jogos do dia é a própria mensagem, em
+   `dados.jogos`.
+
+   O JORNAL É DO NOSSO CLUBE (decisão do dono, 21/08/2026). A
+   edição só sai em dia em que o clube da nossa torcida jogou, e
+   a manchete é sempre o jogo DELE — não o do time de mais força
+   da rodada. A página fecha no placar grande, com um recorte de
+   três linhas da classificação ao lado: o time logo acima do
+   nosso, o nosso e o logo abaixo.
 
    NADA É ESCRITO NA HORA. Toda frase sai de um molde aprovado
    pelo dono, preenchido com o que o jogo já sabe. Onde há mais
@@ -33,6 +40,7 @@ TO.gazeta = (function(){
      Vila são femininos; o resto do país é masculino. */
   const artEst = e => !e ? '' : (/^(Arena|Vila|Ilha)\b/i.test(e) ? 'na' : 'no');
   const noEst  = e => e ? `${artEst(e)} ${e}` : '';
+  /* NoEst só é chamado pelos moldes guardados da praça; fica com eles */
   const NoEst  = e => e ? `N${artEst(e)} ${e}` : '';
 
   const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
@@ -86,6 +94,14 @@ TO.gazeta = (function(){
       empate:['Ficou no {gA} a {gB} {noEst}, pela {rod}ª rodada d{comp}.'],
       mata:['{gA} a {gB} {noEst}, n{fase} d{comp}.']
     },
+    /* ---------------------------------------------------
+       DAQUI PRA BAIXO: TEXTO APROVADO, SEÇÃO GUARDADA.
+       A edição encolheu em 21/08/2026 e fecha no placar
+       grande — praça, caixa do nosso jogo e "pelo país"
+       saíram da página. Os moldes ficam porque passaram
+       pelo crivo do dono: se alguma seção voltar, o texto
+       dela já está escrito e aprovado.
+       --------------------------------------------------- */
     /* 4 · na nossa praça */
     praca:{
       um:['O {A} recebeu o {B} e o placar fechou em {gA} × {gB} {noEst}.',
@@ -164,43 +180,19 @@ TO.gazeta = (function(){
     for(const j of jogos) if(j.comp && !comps.includes(j.comp)) comps.push(j.comp);
 
     /* =====================================================
-       A RÉGUA DA CAPA (régua do dono, 20/08/2026)
+       A MANCHETE É O NOSSO JOGO (decisão do dono, 21/08/2026)
 
-       Jornal não abre pelo placar mais largo: abre pelo jogo
-       dos times de mais FORÇA. Um 4 a 0 na quarta divisão não
-       tira a capa de um clássico de Série A.
-
-       A EXCEÇÃO é o dono do jornal. Se o nosso clube joga numa
-       divisão que não é a de cima, o leitor é dali: primeiro
-       vêm os jogos da NOSSA divisão, e só depois a força
-       manda. Com o clube na Série A as duas réguas dizem a
-       mesma coisa, e a exceção não muda nada.
+       A régua antiga escolhia a capa pela FORÇA dos times da
+       rodada. Não escolhe mais: a capa é o jogo do clube da
+       nossa torcida, e a edição nem sai em dia que ele não
+       jogou — quem monta a mensagem já garante isso.
        ===================================================== */
-    /* SEM try/catch AQUI. A primeira versão embrulhava as duas em
-       try/catch "por segurança", e quando um `const C` local passou a
-       sombrear o COMP() do módulo o erro sumiu calado: a força virou
-       zero pra todo mundo e a capa voltou a sair pelo saldo, sem
-       ninguém perceber. Se a API não existir, é pra quebrar alto. */
-    const forca = id => COMP().forcaDe(E, id) || 0;
-    const divDe = id => COMP().forcaDivisao(E, id);
-    const meuDiv = divDe(E.torcida.clubeId);
-    /* só vale a exceção quem não está na divisão de cima */
-    const daNossaDiv = j => meuDiv > 0 &&
-      (divDe(j.c) === meuDiv || divDe(j.f) === meuDiv) ? 0 : 1;
-    const peso = j => Math.max(forca(j.c), forca(j.f));
-    const pesoTotal = j => forca(j.c) + forca(j.f);
-    const naCapa = (a,b) =>
-      daNossaDiv(a) - daNossaDiv(b) ||
-      peso(b) - peso(a) ||
-      pesoTotal(b) - pesoTotal(a) ||
-      saldo(b) - saldo(a) || gols(b) - gols(a);
-
-    const topo = jogos.slice().sort(naCapa)[0];
-
     const nosso = d.nosso || null;
-    const praca = jogos.filter(j => mapaDe(j.c) === E.torcida.mapa &&
-                                    !(nosso && j.c===nosso.c && j.f===nosso.f));
-    const ehClassico = praca.some(j => mapaDe(j.c) === mapaDe(j.f));
+    if(!nosso) return null;
+    const topo = nosso;
+
+    /* clássico é o jogo entre dois times da MESMA praça */
+    const ehClassico = mapaDe(topo.c) === mapaDe(topo.f);
 
     /* ---- chapéu ---- */
     const CH = MOLDES.chapeu;
@@ -237,87 +229,6 @@ TO.gazeta = (function(){
       : jogos.length >= 8 && saldo(topo) < 3 ? O.diaCheio[0]
       : O.comEstadio[0], vTopo);
 
-    /* ---- na nossa praça ---- */
-    const P = MOLDES.praca;
-    let textoPraca;
-    if(praca.length >= 2){
-      const l = j => `${nome(j.c)} ${j.gc} × ${j.gf} ${nome(j.f)}`;
-      textoPraca = encher(P.dois[0], {l1:l(praca[0]), l2:l(praca[1])});
-    } else if(praca.length === 1){
-      const j = praca[0];
-      const est = estadio(j.c);
-      const molde = est ? proxima(P.um, 'praca') : P.um[0].replace(' {noEst}','');
-      textoPraca = encher(molde, {A:nome(j.c), B:nome(j.f), gA:j.gc, gB:j.gf,
-                                  noEst:noEst(est), NoEst:NoEst(est)});
-    } else {
-      textoPraca = proxima(P.nenhum, 'pracaVazia');
-    }
-
-    /* ---- a caixa do nosso jogo ---- */
-    const NS = MOLDES.nossa;
-    let caixa = null;
-    if(nosso){
-      const meu = E.torcida.clubeId;
-      const emCasa = nosso.c === meu;
-      const meus = emCasa ? nosso.gc : nosso.gf;
-      const deles = emCasa ? nosso.gf : nosso.gc;
-      const adv = nome(emCasa ? nosso.f : nosso.c);
-      const cond = meus - deles >= 3 ? 'goleadaPro'
-                 : deles - meus >= 3 ? 'goleadaContra'
-                 : meus > deles ? (emCasa ? 'vitoriaCasa' : 'vitoriaFora')
-                 : meus < deles ? 'derrota' : 'empate';
-      caixa = {
-        placar: `${nome(nosso.c)} ${nosso.gc} × ${nosso.gf} ${nome(nosso.f)}`,
-        sob: encher(NS[cond][0], {comp:dArt(nosso.comp), rod:nosso.rod, adv}),
-        bom: meus > deles, ruim: meus < deles
-      };
-    } else {
-      caixa = {placar: NS.naoJogou[0], sob:'', bom:false, ruim:false};
-    }
-    caixa.tabela = tabelaNossa(E, nosso);
-
-    /* ---- pelo país: de duas a quatro notas ---- */
-    const NT = MOLDES.nota;
-    const sobra = jogos.filter(j => j !== topo &&
-      !praca.includes(j) && !(nosso && j.c===nosso.c && j.f===nosso.f));
-    const condDe = j =>{
-      const a = vencedor(j);
-      return !a ? (gols(j) ? 'empate' : 'zero')
-        : saldo(j) >= 4 ? 's4' : saldo(j) === 3 ? 's3' : saldo(j) === 2 ? 's2'
-        : (a === j.f ? 's1fora' : 's1casa');
-    };
-    /* ESCOLHE PELA VARIEDADE, não só pelo saldo: quatro jogos na mesma
-       condição davam quatro notas do mesmo par de moldes, e a coluna
-       saía repetindo. Primeiro um de cada condição, na ordem de saldo;
-       só depois é que se repete condição pra completar as quatro. */
-    const porCond = {};
-    for(const j of sobra.slice().sort(naCapa)){   // a mesma régua da capa
-      const c = condDe(j);
-      (porCond[c] = porCond[c] || []).push(j);
-    }
-    const conds = Object.keys(porCond)
-      .sort((a,b)=> naCapa(porCond[a][0], porCond[b][0]));
-    /* e NENHUMA condição entra mais vezes do que tem molde: `empate`
-       tem um só, então dois empates dariam a mesma frase duas vezes.
-       Faltando nota pra fechar quatro, sai com três — o dono aprovou
-       "de duas a quatro". */
-    const escolhidos = [];
-    for(let volta = 0; escolhidos.length < 4 && volta < 6; volta++)
-      for(const c of conds){
-        if(escolhidos.length >= 4) break;
-        if(volta >= (NT[c] || []).length) continue;
-        if(porCond[c][volta]) escolhidos.push(porCond[c][volta]);
-      }
-    const notas = escolhidos.map(j=>{
-      const a = vencedor(j), b = perdedor(j), cond = condDe(j);
-      return {placar:`${nome(j.c)} ${j.gc} × ${j.gf} ${nome(j.f)}`,
-              frase: encher(proxima(NT[cond], 'nota-'+cond),
-                {A: a?nome(a):'', B: b?nome(b):''})};
-    });
-
-    /* ---- o placar completo, com o CORTE (pedido do dono) ---- */
-    const corte = placarCortado(E, jogos, nosso, topo);
-
     /* ---- e o cabeçalho ---- */
     return {
       cabeca:{
@@ -335,94 +246,42 @@ TO.gazeta = (function(){
         })
       ],
       chapeu, manchete, olho,
-      placar:{a:nome(topo.c), ga:topo.gc, gb:topo.gf, b:nome(topo.f)},
-      cidade: (M().cidade(E.torcida.mapa)||{}).nome || '',
-      praca: textoPraca,
-      nossa: caixa,
-      notas,
-      /* SEM COLUNA VAZIA (achado do teste com dados reais): quando não
-         houve jogo na praça E o nosso clube não jogou, a primeira
-         coluna fica com duas linhas e uma caixinha, e sobra um palmo
-         de papel em branco. Nesse caso o jornal fecha em DUAS colunas
-         e as notas do país sobem pra primeira. */
-      magra: !praca.length && !nosso,
-      placares: corte.grupos,
-      resto: corte.resto,
-      classificacao: classificacao(E)
+      placar:{a:nome(topo.c), ga:topo.gc, gb:topo.gf, b:nome(topo.f),
+              nossaCasa: topo.c === E.torcida.clubeId,
+              nossaFora: topo.f === E.torcida.clubeId},
+      tabela: recorteDaTabela(E)
     };
   }
 
   /* =======================================================
-     O CORTE DO PLACAR COMPLETO (pedido do dono, 20/08/2026)
-     A coluna não leva mais a rodada inteira: leva as
-     competições que interessam — a nossa primeiro, depois as
-     dos jogos em destaque — até encher a coluna. O que sobra
-     vira a nota de pé e vai pro Ver Competições.
+     O RECORTE DA CLASSIFICAÇÃO (pedido do dono, 21/08/2026)
+     Ao lado da manchete, três linhas e nada mais: o time
+     imediatamente acima do nosso, o NOSSO e o imediatamente
+     abaixo. Nas pontas da tabela não há vizinho dos dois
+     lados, então o recorte desliza pra manter as três linhas
+     — líder mostra os dois de baixo, lanterna os dois de cima.
+
+     A tabela é sempre a da divisão em que o nosso clube joga,
+     e na Série D só o grupo dele. O NACIONAL COMEÇA NO MEIO DO
+     ANO: até lá a divisão existe no papel mas não tem bola
+     rolada, e o recorte mostra o campeonato que ele ESTÁ
+     jogando — o estadual, o regional.
      ======================================================= */
-  const LINHAS = 10;
-  function placarCortado(E, jogos, nosso, topo){
-    const ordem = [];
-    const por = {};
-    for(const j of jogos){
-      const k = j.comp + (j.fase ? ' · '+j.fase : ' · '+j.rod+'ª rodada');
-      if(!por[k]){ por[k] = []; ordem.push({k, comp:j.comp}); }
-      por[k].push(j);
-    }
-    /* a prioridade: a competição do nosso jogo, depois a da manchete,
-       depois as demais na ordem em que apareceram */
-    const peso = g => (nosso && g.comp === nosso.comp) ? 0
-                    : (g.comp === topo.comp) ? 1 : 2;
-    ordem.sort((a,b)=> peso(a) - peso(b));
-
-    const grupos = [];
-    let cabem = LINHAS, fora = 0;
-    for(const g of ordem){
-      const lista = por[g.k];
-      if(cabem <= 0){ fora += lista.length; continue; }
-      const leva = lista.slice(0, cabem);
-      fora += lista.length - leva.length;
-      cabem -= leva.length;
-      grupos.push({titulo:g.k, jogos:leva.map(j=>({
-        casa:nome(j.c), fora:nome(j.f), gc:j.gc, gf:j.gf,
-        nossa: !!(nosso && j.c===nosso.c && j.f===nosso.f),
-        goleada: saldo(j) >= 3
-      }))});
-    }
-    return {grupos, resto:fora};
-  }
-
-  /* =======================================================
-     A CLASSIFICAÇÃO DA NOSSA DIVISÃO (pedido do dono, 20/08/2026)
-     A faixa de baixo do jornal traz sempre a tabela da divisão
-     em que o NOSSO clube joga — e, quando a competição tem
-     grupos (a Série D tem), só o grupo em que ele está.
-
-     Resumida: as oito primeiras linhas. Se o nosso clube não
-     estiver entre elas, as seis primeiras mais a vizinhança
-     dele, com um risco no meio pra marcar o salto.
-     ======================================================= */
-  const TOPO_TABELA = 8;
-  function classificacao(E){
+  const RECORTE = 3;
+  function recorteDaTabela(E){
     try{
       const meu = E.torcida.clubeId;
       const div = COMP().divisaoDe(E, M().time(meu) || {});
       const rodou = c => (c.rodadas||[]).some(r =>
         r.jogos.some(j => j.gc != null && (j.c===meu || j.f===meu)));
       const todas = E.temporada.competicoes || [];
-      /* O NACIONAL COMEÇA NO MEIO DO ANO: até lá a divisão do clube
-         existe no papel mas não tem bola rolada, e a faixa ficaria
-         vazia. Nesses meses ela mostra o campeonato que ele ESTÁ
-         jogando — o estadual, o regional —, que é a classificação que
-         interessa ao leitor naquele momento. */
-      /* quantas rodadas o clube já cumpriu em cada competição: o
-         desempate do fallback é a que ele está jogando AGORA, não a
+      /* o desempate do fallback é a que ele está jogando AGORA, não a
          que tem mais rodadas no papel */
       const cumpriu = c => (c.rodadas||[]).reduce((n,r)=>
         n + (r.jogos.some(j=>j.gc!=null && (j.c===meu||j.f===meu)) ? 1 : 0), 0);
       const comp = (todas.find(c => c.nome === div && rodou(c)))
                 || todas.filter(rodou).sort((a,b)=> cumpriu(b) - cumpriu(a))[0];
       if(!comp) return null;
-      /* Série D joga em grupos: só o grupo dele interessa */
       let grupo, rot = comp.nome;
       if(comp.grupos && comp.grupos.length > 1){
         grupo = comp.grupos.findIndex(g => g.indexOf(meu) >= 0);
@@ -432,38 +291,16 @@ TO.gazeta = (function(){
       const t = COMP().tabela(comp, grupo);
       if(!t.length || !t.some(l => l.j)) return null;
       const eu = t.findIndex(l => l.id === meu);
-      const linha = (l, i) => ({pos:i+1, nome:nome(l.id), j:l.j, p:l.p,
-                               sg:l.sg, nossa:l.id === meu});
-      let linhas;
-      if(eu < TOPO_TABELA){
-        linhas = t.slice(0, TOPO_TABELA).map(linha);
-      } else {
-        linhas = t.slice(0, TOPO_TABELA - 2).map(linha);
-        linhas.push({salto:true});
-        for(let i = Math.max(0, eu-1); i <= Math.min(t.length-1, eu+1); i++)
-          linhas.push(linha(t[i], i));
-      }
+      if(eu < 0) return null;
+      /* a janela de três, empurrada pra dentro nas pontas */
+      let ini = Math.max(0, Math.min(eu - 1, t.length - RECORTE));
+      const linhas = t.slice(ini, ini + RECORTE).map((l, i)=>({
+        pos: ini + i + 1, nome: nome(l.id), j:l.j, p:l.p, sg:l.sg,
+        nossa: l.id === meu
+      }));
       return {rot, linhas, total:t.length};
     }catch(x){ return null; }
   }
 
-  /* a tabela é a do campeonato que o clube joga HOJE — pegar a
-     primeira da temporada mostrava "0 pontos em 0 jogos" */
-  function tabelaNossa(E, nosso){
-    try{
-      const meu = E.torcida.clubeId;
-      const alvo = nosso && nosso.comp;
-      const comp = (E.temporada.competicoes||[]).find(c=>
-        (alvo ? c.nome === alvo : true) &&
-        (c.rodadas||[]).some(r=>r.jogos.some(j=>j.c===meu || j.f===meu)));
-      if(!comp) return null;
-      const t = COMP().tabela(comp);
-      const i = t.findIndex(x=>x.id === meu);
-      if(i < 0 || !t[i].j) return null;
-      return `${comp.nome} · <b>${i+1}º</b> lugar · <b>${t[i].p}</b> `+
-             `${t[i].p===1?'ponto':'pontos'} em ${t[i].j} ${t[i].j===1?'jogo':'jogos'}`;
-    }catch(x){ return null; }
-  }
-
-  return {montar, MOLDES, encher, LINHAS, classificacao, TOPO_TABELA};
+  return {montar, MOLDES, encher, recorteDaTabela, RECORTE};
 })();
