@@ -1004,17 +1004,31 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     praça", a caixa do nosso jogo, "Pelo país", o "Placar do dia" e a
     faixa larga da classificação. Sobrou cabeçalho, tarja, chapéu,
     manchete, olho e placar.
-  · **Ao lado da manchete, um recorte de três linhas** da tabela: o
-    time imediatamente acima do nosso, o nosso e o imediatamente
-    abaixo — sempre a divisão em que ele joga, e na Série D só o grupo
-    dele. **Nas pontas o recorte desliza** pra manter as três: líder
-    mostra os dois de baixo, lanterna os dois de cima.
+  · **Ao lado da manchete, um recorte de SETE linhas** da tabela
+    (régua do dono, 21/08/2026), com o nosso clube **no centro** —
+    sempre a divisão em que ele joga, e na Série D só o grupo dele.
+    · **Do 1º ao 4º lugar**: sempre os sete primeiros.
+    · **Nas quatro últimas posições**: sempre os sete últimos.
+    · **No meio**: três acima, nós, três abaixo.
+    · Tabela com menos de sete times sai inteira.
+  · **Sem linha no meio** (21/08/2026): o fio vertical entre a
+    manchete e o recorte saiu — o que separa é o espaço.
   · O **"Ver Competições" do cartão voltou**: o jornal não tem mais pé
     próprio, então é o único caminho pra tabela cheia.
-  · **Os moldes das seções que saíram ficam guardados** no arquivo:
-    passaram pelo crivo do dono e, se alguma seção voltar, o texto
-    dela já está escrito e aprovado.
-  · Medido: o cartão caiu de **703px pra 359px**.
+  · **"Mostrar jornal completo"** (pedido do dono, 21/08/2026): um
+    botão no pé da notícia solta o resto da página — as seções que
+    saíram voltam inteiras, do jeito que eram em 20/08/2026 (praça,
+    caixa do nosso jogo, pelo país, placar do dia, faixa larga da
+    classificação e o pé com "Ver competições"). Nada de texto novo:
+    são os mesmos moldes.
+    · Quem lembra que a página está aberta é a **própria mensagem**
+      (`m.gzAberto`), e o estado entra em `estadoDaMsg` — senão o
+      repinte do feed fechava o jornal na cara do leitor.
+    · A página cheia é montada na mesma passada da enxuta, aberta ou
+      fechada: a fila de moldes tem de ser a mesma, porque a edição é
+      uma só.
+  · Medido: o cartão fechado tem **369px** (era 703px com o jornal
+    inteiro sempre aberto); aberto, **888px**.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

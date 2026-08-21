@@ -543,6 +543,9 @@
   const estadoDaMsg = (e, m) =>
     (ITN && ITN.msg && ITN.msg.id === m.id) ? 'itn'
     : itnProntos[m.id] ? 'itn-fim'
+    /* o jornal aberto é estado da mensagem: sem isso o repinte do feed
+       montava o cartão de novo e a página voltava a fechar */
+    : m.kind === 'rodada' ? (m.gzAberto ? 'gz-aberto' : 'gz')
     : m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim')
     : (m.kind === 'partida' && m.dados && m.dados.iniciada) ? 'aovivo' : '';
 
@@ -1292,7 +1295,7 @@
      recorte de três linhas da classificação: o time logo acima
      do nosso, o nosso e o logo abaixo.
      ======================================================= */
-  function recorteDaRodada(p){
+  function recorteDaRodada(p, msg){
     const rec = el('article',{class:'gz'});
 
     const cab = el('div',{class:'gz-cabeca'});
@@ -1338,6 +1341,112 @@
     }
 
     rec.appendChild(topo);
+
+    /* =====================================================
+       O JORNAL COMPLETO ATRÁS DE UM BOTÃO (pedido do dono,
+       21/08/2026): a mensagem abre enxuta e "Mostrar jornal
+       completo" solta o resto da página. Quem lembra que ela
+       está aberta é a própria mensagem (`m.gzAberto`), e não
+       o nó: o feed repinta a toda hora e a página tem de
+       continuar aberta depois do repinte.
+       ===================================================== */
+    if(p.completo && msg){
+      const resto = el('div',{class:'gz-resto'});
+      const bt = el('button',{class:'gz-mostrar'});
+      const pintarResto = ()=>{
+        resto.innerHTML = '';
+        const aberto = !!msg.gzAberto;
+        bt.textContent = aberto ? 'Esconder o resto do jornal'
+                                : 'Mostrar jornal completo';
+        bt.classList.toggle('aberto', aberto);
+        if(aberto) resto.appendChild(paginaCheiaDoJornal(p.completo));
+      };
+      bt.onclick = ()=>{
+        msg.gzAberto = !msg.gzAberto;
+        pintarResto();
+        TO.estado.salvar();
+      };
+      pintarResto();
+      rec.appendChild(resto);
+      const pe = el('div',{class:'gz-abre'});
+      pe.appendChild(bt);
+      rec.appendChild(pe);
+    }
+    return rec;
+  }
+
+  /* o resto da página: as seções do jornal de 20/08/2026 */
+  function paginaCheiaDoJornal(p){
+    const rec = el('div',{class:'gz-cheio'+(p.magra?' magra':'')});
+    const cols = el('div',{class:'gz-colunas'});
+
+    const c1 = el('section',{class:'gz-materia'});
+    c1.innerHTML = `<div class="col-tit rubra">Na nossa praça</div>`+
+      (p.cidade ? `<div class="assina">${p.cidade}</div>` : '')+
+      `<p>${p.praca}</p>`;
+    const cx = el('div',{class:'gz-caixa'+(p.nossa.bom?' bom':p.nossa.ruim?' ruim':'')});
+    cx.innerHTML = `<div class="rot">O nosso jogo</div>
+       <div class="jogo">${p.nossa.placar}</div>`+
+      (p.nossa.sob ? `<div class="sob">${p.nossa.sob}</div>` : '')+
+      (p.nossa.tabela ? `<div class="tab">${p.nossa.tabela}</div>` : '');
+    c1.appendChild(cx);
+    cols.appendChild(c1);
+
+    /* na página magra as notas do país sobem pra primeira coluna, que
+       senão ficaria com uma caixinha e um palmo de papel em branco */
+    if(p.notas.length){
+      const notas = p.notas.map(n=>
+        `<p><strong>${n.placar}.</strong> ${n.frase}</p>`).join('');
+      if(p.magra){
+        c1.appendChild(el('div',{class:'col-tit meio', texto:'Pelo país'}));
+        c1.appendChild(el('div',{class:'gz-notas', html:notas}));
+      } else {
+        const c2 = el('section',{class:'gz-materia'});
+        c2.innerHTML = `<div class="col-tit">Pelo país</div>` + notas;
+        cols.appendChild(c2);
+      }
+    }
+
+    const c3 = el('section');
+    c3.innerHTML = `<div class="col-tit">Placar do dia</div>`+
+      `<div class="gz-placares">`+
+      p.placares.map(g=>`<div class="comp">${g.titulo}</div>`+
+        g.jogos.map(j=>`<div class="r${j.nossa?' nossa':''}${j.goleada?' gol':''}">`+
+          `<span class="m">${j.casa}</span><span class="g">${j.gc} × ${j.gf}</span>`+
+          `<span class="v">${j.fora}</span></div>`).join('')).join('')+
+      `</div>`;
+    cols.appendChild(c3);
+    rec.appendChild(cols);
+
+    /* A FAIXA DA CLASSIFICAÇÃO (pedido do dono, 20/08/2026): sempre a
+       divisão do NOSSO clube, e na Série D só o grupo dele. */
+    const cl = p.classificacao;
+    if(cl){
+      const faixa = el('div',{class:'gz-tabela'});
+      faixa.appendChild(el('div',{class:'col-tit', html:
+        `A classificação <span class="onde">${cl.rot}</span>`}));
+      const grade = el('div',{class:'linhas'});
+      for(const l of cl.linhas){
+        if(l.salto){ grade.appendChild(el('div',{class:'salto', texto:'⋯'})); continue; }
+        grade.appendChild(el('div',{class:'l'+(l.nossa?' nossa':''), html:
+          `<span class="p">${l.pos}</span><span class="t">${l.nome}</span>`+
+          `<span class="j">${l.j}j</span>`+
+          `<span class="sg">${l.sg > 0 ? '+' : ''}${l.sg}</span>`+
+          `<span class="pt">${l.p}</span>`}));
+      }
+      faixa.appendChild(grade);
+      rec.appendChild(faixa);
+    }
+
+    const pe = el('div',{class:'gz-pe'});
+    if(p.resto) pe.appendChild(el('span',{html:
+      p.resto === 1 ? 'E mais um jogo pelo interior'
+                    : `E mais <b>${p.resto}</b> jogos pelo interior`}));
+    pe.appendChild(el('span',{class:'espaco'}));
+    const bt = el('button',{class:'gz-link', texto:'Ver competições →'});
+    bt.onclick = ()=> abrirPainel('competicoes');
+    pe.appendChild(bt);
+    rec.appendChild(pe);
     return rec;
   }
 
@@ -1444,7 +1553,7 @@
         /* o "Ver Competições" do cartão FICA: o jornal encolheu e não
            tem mais pé próprio, então o único caminho pra tabela cheia
            é o link da mensagem */
-        art.appendChild(recorteDaRodada(pg));
+        art.appendChild(recorteDaRodada(pg, m));
       }
     }
 
