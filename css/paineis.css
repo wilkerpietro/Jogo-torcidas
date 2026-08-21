@@ -1317,3 +1317,7 @@ table.dados tr.selecionada td{background:#252525}
 /* quem já pode subir de cargo se anuncia na lista da torcida: a
    promoção mora no botão Ações e ninguém a achava (dono, 20/08/2026) */
 .pronto-promo{color:var(--ouro); font-weight:600}
+
+/* a idade na lista de membros: quem passou dos 35 já está em declínio
+   (régua do dono, 20/08/2026) */
+.pagina[data-pag="torcida"] td.num.velho{color:var(--ouro)}

@@ -319,6 +319,11 @@ TO.estado = (function(){
 
       if(E.data.semana > TO.competicoes.SEMANAS_ANO){
         E.data.semana = 1; E.data.ano++;
+        /* TODO MUNDO FAZ ANIVERSÁRIO (régua do dono, 20/08/2026): dos
+           35 em diante o ano cobra ficha, e aos 46 o sujeito pendura a
+           bandeira e vai pra Velha Guarda. O mundo envelhece junto. */
+        TO.membros.envelhecer(E);
+        if(TO.relacoes.envelhecerDelas) TO.relacoes.envelhecerDelas(E);
         guardarTitulos(E);
         /* o que o clube fez em campo move a moral das torcidas dele */
         for(const c of E.temporada.competicoes){
@@ -374,6 +379,11 @@ TO.estado = (function(){
       E.ultimaDepreciacao = E.data.absoluto;
       mexerIndicador(E, 'prestigio', -0.2, '20 dias sem briga');
       mexerIndicador(E, 'moral', -0.5, '20 dias sem briga');
+      /* A FERRUGEM DA PAZ (régua do dono, 20/08/2026): quem não bate
+         desaprende. Cada 20 dias parados tiram 0,2 de força e defesa
+         de todo mundo — inclusive de quem está de molho, que é
+         justamente quem está mais tempo sem rua. */
+      for(const m of E.membros) TO.membros.perder(m, 0.2);
     }
 
     /* GDD §7.3: a caravana é cobrada na véspera do jogo da semana —

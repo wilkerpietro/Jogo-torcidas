@@ -655,15 +655,16 @@ TO.relacoes = (function(){
       const cargos = {novato:0, componente:0, frente:0, diretoria:0}, forca = {};
       for(const [c, n] of TO.membros.planoDeCargos(t.membros, o && o.cargos))
         cargos[c] = (cargos[c] || 0) + n;
-      const xp = {};
-      for(const c of ESCADA){ forca[c] = BASE_FICHA[c] + 1.5; xp[c] = 0; }
-      t.quadro = {cargos, forca, xp, total: t.membros};
+      const xp = {}, desgaste = {};
+      for(const c of ESCADA){ forca[c] = BASE_FICHA[c] + 1.5; xp[c] = 0; desgaste[c] = 0; }
+      t.quadro = {cargos, forca, xp, desgaste, total: t.membros};
     }
     /* o efetivo mexeu desde ontem: quem entra entra por baixo, e quem
        sai sai por baixo também — a mesma porta */
     const q = t.quadro, dif = Math.round(t.membros) - q.total;
     /* save de antes do quadro vivo ganha a coluna de XP */
     if(!q.xp){ q.xp = {}; for(const c of ESCADA) q.xp[c] = 0; }
+    if(!q.desgaste){ q.desgaste = {}; for(const c of ESCADA) q.desgaste[c] = 0; }
     if(dif > 0){
       const n = q.cargos.novato;
       q.forca.novato = (n*q.forca.novato + dif*BASE_FICHA.novato)/(n + dif);
@@ -701,7 +702,10 @@ TO.relacoes = (function(){
       const fatia = Math.min(vagas, q.total)/q.total;
       const passo = fatia * 0.15 * ganhoDeleas(t);
       for(const c of ESCADA){
-        q.forca[c] = Math.min(TO.membros.CARGOS[c].teto, q.forca[c] + passo);
+        /* o teto do grupo é o do cargo menos o desgaste permanente que
+           sequela e idade já cobraram — treino não devolve isso */
+        const teto = Math.max(1, TO.membros.CARGOS[c].teto - (q.desgaste[c] || 0));
+        q.forca[c] = Math.min(teto, q.forca[c] + passo);
         /* 1 de XP por sessão, como o nosso — e o professor NÃO dobra
            XP, só treino: quem sobe de cargo sobe pelo rodado */
         q.xp[c] += fatia;
@@ -866,6 +870,13 @@ TO.relacoes = (function(){
        noite rendeu XP pros dois, na tabela da nossa */
     if(reg.a && reg.a.id) anotarBriga(E, reg.a.id, !!reg.ganhouA, reg.a.n);
     if(reg.b && reg.b.id) anotarBriga(E, reg.b.id, !reg.ganhouA, reg.b.n);
+    /* a noite zera o relógio da paz dos dois e cobra o que custou */
+    const m = E.mundoTorcidas || {}, abs = E.data.absoluto || 0;
+    for(const lado of [reg.a, reg.b]){
+      if(!lado || !lado.id || !m[lado.id]) continue;
+      m[lado.id].ultimaBrigaIA = abs;
+      desgasteDaNoite(E, lado.id, lado.feridos, lado.presos);
+    }
     return reg;
   }
 
@@ -874,9 +885,94 @@ TO.relacoes = (function(){
      dias fora, preso de 15 a 90 — na mesma régua das brigas entre
      IAs. Antes a mensagem contava os feridos e o efetivo dele
      seguia inteiro. */
+  /* =======================================================
+     O DESGASTE DELAS (régua do dono, 20/08/2026)
+     As mesmas quatro cobranças da nossa ficha, traduzidas pro
+     quadro por cargo: sequela de briga, ferrugem de cadeia,
+     ferrugem da paz e idade. Elas não têm ficha individual —
+     o que se mexe é a MÉDIA do cargo, na proporção de quantos
+     do grupo passaram por aquilo.
+     ======================================================= */
+  /* membros.js carrega DEPOIS deste arquivo: a régua da idade tem de
+     ser lida na hora de usar, não na hora de definir */
+  const M_ = () => TO.membros;
+  /* uma sequela custa de 0,2 a 0,5, e pega 15% dos feridos: na média
+     do grupo isso é 0,15 × 0,35 por ferido */
+  const SEQUELA_MEDIA = 0.15 * 0.35;
+  /* a pena média de briga fica na faixa dos 30 a 60 dias, que a tabela
+     do dono cobra em 1,0 */
+  const CADEIA_MEDIA = 1.0;
+
+  function desgastarQuadro(E, id, quanto, permanente){
+    const q = quadroDe(E, id);
+    if(!q || !quanto) return;
+    for(const c of ESCADA){
+      if(permanente) q.desgaste[c] = (q.desgaste[c] || 0) + quanto;
+      q.forca[c] = Math.max(1, q.forca[c] - quanto);
+    }
+  }
+  /* o que a noite cobrou do grupo: feridos deixam sequela e presos
+     voltam enferrujados, diluídos no efetivo que ficou */
+  function desgasteDaNoite(E, id, feridos, presos){
+    const q = quadroDe(E, id);
+    if(!q || !q.total) return;
+    /* sequela deixa marca (teto abaixo); cadeia só enferruja */
+    desgastarQuadro(E, id, ((feridos||0)*SEQUELA_MEDIA)/q.total, true);
+    desgastarQuadro(E, id, ((presos||0)*CADEIA_MEDIA)/q.total, false);
+  }
+
+  /* A FERRUGEM DA PAZ delas: a mesma régua nossa — 0,2 a cada 20 dias
+     sem briga. O relógio de cada uma é a última briga registrada. */
+  function ferrugemDaPaz(E){
+    const m = mundo(E), abs = E.data.absoluto || 0;
+    for(const id of Object.keys(m)){
+      const t = m[id];
+      if(t.ultimaBrigaIA == null) t.ultimaBrigaIA = abs;
+      const marco = Math.max(t.ultimaBrigaIA, t.ultimaFerrugem || 0);
+      if(abs - marco < 20) continue;
+      t.ultimaFerrugem = abs;
+      desgastarQuadro(E, id, 0.2);
+    }
+  }
+
+  /* A IDADE DELAS. Sem ficha individual não há como saber quem tem 35;
+     o que dá pra saber é quanto do grupo tem. Com as idades espalhadas
+     de 16 a 45 como as nossas, todo ano 11 dos 30 anos de faixa estão
+     no declínio (0,6 cada) e 1 dos 30 pendura a bandeira. */
+  const faixaDeIdade = () => M_().IDADE_MAX - M_().IDADE_MIN + 1;
+  const desgasteDelas = () => M_().DESGASTE_ANO *
+    (M_().IDADE_MAX - M_().IDADE_DECLINIO + 1) / faixaDeIdade();
+  const aposentaPorAno = () => 1 / faixaDeIdade();
+  function envelhecerDelas(E){
+    const m = mundo(E);
+    const FAIXA = faixaDeIdade(), APOSENTA = aposentaPorAno();
+    for(const id of Object.keys(m)){
+      const t = m[id];
+      const q = quadroDe(E, id);
+      if(!q || !q.total) continue;
+      desgastarQuadro(E, id, desgasteDelas(), true);   // idade não volta
+      /* quem pendura a bandeira sai do efetivo; o recrutamento repõe
+         por baixo, que é o que puxa a média da torcida pra baixo.
+         SAI DE TODO CARGO, na mesma proporção: idade não escolhe
+         patente. Tirar os 3,3% só do topo esvaziava a Diretoria e a
+         Linha de Frente em poucos anos — o mundo inteiro virava
+         novato e a força média despencava pra 6 e ficava lá. */
+      for(const c of ESCADA)
+        q.cargos[c] = Math.max(0, q.cargos[c] - Math.round(q.cargos[c] * APOSENTA));
+      q.total = ESCADA.reduce((s,c)=>s+q.cargos[c], 0);
+      /* quem pendurou a bandeira levou o desgaste junto: o grupo que
+         fica é mais novo, e o teto dele alivia na mesma proporção */
+      for(const c of ESCADA)
+        q.desgaste[c] = Math.max(0, (q.desgaste[c] || 0) * (1 - APOSENTA*FAIXA/6));
+      t.membros = Math.max(1, q.total);
+      t.piso = Math.min(t.piso, t.membros);
+    }
+  }
+
   function baixasIA(E, id, feridos, presos){
     const t = mundo(E)[id];
     if(!t) return;
+    desgasteDaNoite(E, id, feridos, presos);
     /* o contador entra na chave do cache do ranking: baixa nossa tem
        de derrubar a posição deles na hora, como a briga de IA já faz */
     E.baixasIASeq = (E.baixasIASeq || 0) + 1;
@@ -1219,6 +1315,7 @@ TO.relacoes = (function(){
   function mundoDia(E, jogos){
     const m = mundo(E);
     treinarDelas(E);
+    ferrugemDaPaz(E);
     /* o placar do dia vira regime de recrutamento das torcidas dos
        dois clubes — a mesma janela quente/seca que a gente tem */
     for(const j of (jogos||[])){
@@ -1508,6 +1605,7 @@ TO.relacoes = (function(){
           conquistaDoClube, esfriar, passarSemana, panorama, MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,
           quadroDe, mediaDoQuadro, treinarDelas, promoverDelas, xpDeBrigaIA,
+          envelhecerDelas, ferrugemDaPaz, desgasteDaNoite, desgastarQuadro,
           mmaDe,
           mediaDeFichaGerada,
           placarDoAno, anotarBriga, saldoDoAno, frotaIA};

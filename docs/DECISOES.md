@@ -801,6 +801,42 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   cartão avisa quantos são, antes da lista — no fim de 250 linhas não
   adiantava nada.
 
+- **O QUE TIRA FICHA** (régua do dono, 20/08/2026): até aqui a ficha era
+  catraca de mão única — treino somava e nada nunca subtraía, e ninguém
+  nunca saía da torcida. Em vinte anos o mundo inteiro encostava em 18,1
+  de força média e a coluna do ranking morria. Agora a rua cobra:
+
+  · **Sequela de briga** — 15% dos feridos ficam com marca de −0,2 a
+    −0,5 de força E defesa.
+  · **A cadeia enferruja**, pela pena CUMPRIDA (não a que o juiz deu):
+    até 30 dias cobra 0,5; até 60, 1; até 89, 1,5; de 90 em diante, 2.
+  · **Ferrugem da paz** — a cada 20 dias sem briga, −0,2 em todo mundo.
+    Entra no mesmo relógio que já derrubava prestígio e moral.
+  · **Idade** — todo membro nasce com 16 a 45 anos. Dos **35** em diante
+    a virada do ano cobra **0,6** de força e defesa. Aos **46** ele
+    pendura a bandeira: sai da lista de membros e vira **Velha Guarda**,
+    numa aba própria, com a ficha do último dia e o histórico inteiro.
+
+- **Desgaste permanente × ferrugem** (20/08/2026): a distinção que faz as
+  quatro valerem alguma coisa. Quem está no teto do cargo — e depois de
+  alguns anos é quase todo mundo — recuperava no treino seguinte tudo o
+  que a rua tinha tirado.
+  · **Sequela e idade derrubam o TETO da pessoa** (`m.desgaste`), e não
+    voltam com treino nenhum.
+  · **Cadeia e ferrugem da paz derrubam só a ficha de agora**, e voltam
+    treinando — é isso que "enferrujado" quer dizer.
+  · O teto de uma pessoa pode ser quebrado (17,5), então encostar nele é
+    parar nele exatamente, não pular pro inteiro de cima.
+
+- **O mundo envelhece junto** (20/08/2026): as outras torcidas levam as
+  quatro cobranças no quadro por cargo. Como elas não têm ficha
+  individual, a régua sai da mesma distribuição de idades (16 a 45): todo
+  ano 11 dos 30 anos de faixa estão no declínio, o que dá **−0,22
+  permanentes por ano**, e **1 dos 30 pendura a bandeira** — saindo de
+  TODO cargo na mesma proporção, porque idade não escolhe patente.
+  · Medido em 20 anos de jogo: antes, **139 de 139 torcidas em 18,1**;
+    agora **nenhuma**, com a força espalhada de 4,6 a 10,0 e mediana 7,3.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

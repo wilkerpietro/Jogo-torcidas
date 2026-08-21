@@ -1706,8 +1706,9 @@
   let ordem = {col:'forca', dir:-1}, selecionado = null;
 
   const COLUNAS = [
-    {k:'nome',    rot:'Membro',   larg:'28%'},
-    {k:'cargo',   rot:'Função',   larg:'22%'},
+    {k:'nome',    rot:'Membro',   larg:'26%'},
+    {k:'cargo',   rot:'Função',   larg:'20%'},
+    {k:'idade',   rot:'Idade',    larg:'7%'},
     {k:'forca',   rot:'Força',    barra:true, max:20},
     {k:'defesa',  rot:'Defesa',   barra:true, max:20},
     {k:'moral',   rot:'Moral',    barra:true, max:20},
@@ -1775,9 +1776,12 @@
       {id:'hierarquia',   rot:'Hierarquia'},
       {id:'treinamentos', rot:'Treinamentos'},
       {id:'recrutamento', rot:'Recrutamento'},
+      {id:'velhaguarda',  rot:`Velha Guarda${(e.velhaGuarda||[]).length
+                                ? ' · '+e.velhaGuarda.length : ''}`},
       {id:'indicadores',  rot:'Moral & Prestígio'}
     ], subTorcida, id=>{subTorcida=id; redesenhar();}));
 
+    if(subTorcida==='velhaguarda'){ pg.appendChild(painelVelhaGuarda()); return; }
     if(subTorcida==='treinamentos'){ pg.appendChild(painelTreinos()); return; }
     if(subTorcida==='hierarquia'){ pg.appendChild(painelHierarquia()); return; }
     if(subTorcida==='recrutamento'){ pg.appendChild(painelRecrutamento()); return; }
@@ -1864,6 +1868,11 @@
       linha.innerHTML =
         `<td>${pontinho}${TO.membros.nomeDe(m)}</td>
          <td>${TO.membros.CARGOS[m.cargo].nome}</td>
+         <td class="num${m.idade >= TO.membros.IDADE_DECLINIO ? ' velho' : ''}"`+
+        ` title="${m.idade >= TO.membros.IDADE_DECLINIO
+          ? 'em declínio: perde 0,6 de força e defesa por ano; pendura a bandeira aos '
+            + TO.membros.IDADE_SAIDA
+          : 'no auge'}">${m.idade != null ? m.idade : '—'}</td>
          <td>${medida(m.forca,20)}</td>
          <td>${medida(m.defesa,20)}</td>
          <td>${medida(m.moral,20)}</td>
@@ -1887,6 +1896,69 @@
 
     grade.appendChild(ct);
     pg.appendChild(grade);
+  }
+
+  /* =======================================================
+     A VELHA GUARDA (régua do dono, 20/08/2026)
+     Quem chegou aos 46 saiu da lista de membros — não briga
+     mais, não paga mensalidade, não conta ponto no ranking.
+     Fica aqui, com a ficha do dia em que pendurou a bandeira e
+     o histórico inteiro do que fez.
+     ======================================================= */
+  function painelVelhaGuarda(){
+    const e = E(), lista = e.velhaGuarda || [];
+    const ct = cartao('Velha Guarda',
+      lista.length ? `${lista.length} ${lista.length===1?'nome pendurado'
+                                                       :'nomes pendurados'}`
+                   : 'ninguém pendurou a bandeira ainda');
+    if(!lista.length){
+      ct.corpo.appendChild(el('div',{class:'recado', html:
+        `Membro que chega aos <b>${TO.membros.IDADE_SAIDA} anos</b> deixa a `+
+        `lista de membros e vem parar aqui. Da <b>${TO.membros.IDADE_DECLINIO}ª `+
+        `primavera</b> em diante ele já perde ${String(TO.membros.DESGASTE_ANO)
+          .replace('.', ',')} de força e defesa por ano — é o preço de uma `+
+        `torcida que envelhece junto.`}));
+      return ct;
+    }
+    const tab = el('table',{class:'dados'});
+    tab.innerHTML = `<thead><tr><th>Nome</th><th>Último cargo</th>
+      <th class="num">Idade</th><th class="num">Força</th><th class="num">Defesa</th>
+      <th class="num">XP</th><th class="num">Sequelas</th><th>Pendurou</th>
+      </tr></thead>`;
+    const tb = el('tbody');
+    for(const v of lista){
+      const linha = el('tr');
+      linha.innerHTML =
+        `<td>${v.cargo==='diretoria' ? `${v.apelido} ${v.sobrenome}` : v.apelido}
+           ${v.veterano ? '<span class="ponto"></span>' : ''}</td>
+         <td>${TO.membros.CARGOS[v.cargo].nome}</td>
+         <td class="num">${v.idade}</td>
+         <td class="num">${v.forca}</td>
+         <td class="num">${v.defesa}</td>
+         <td class="num">${v.xp}</td>
+         <td class="num">${v.sequelas || 0}</td>
+         <td class="fraco">${v.ano}</td>`;
+      linha.style.cursor = 'pointer';
+      linha.onclick = ()=>{
+        const corpo = el('div');
+        corpo.innerHTML =
+          `<div class="linha-dado"><span>Pendurou a bandeira</span>`+
+          `<b>${v.idade} anos, em ${v.ano}</b></div>`+
+          `<div class="linha-dado"><span>Ficha do último dia</span>`+
+          `<b>${v.forca}/${v.defesa} · ${v.xp} XP</b></div>`+
+          (v.sequelas ? `<div class="linha-dado"><span>Sequelas de briga</span>`+
+                        `<b>${v.sequelas}</b></div>` : '');
+        for(const h of (v.historico||[]).slice(-14))
+          corpo.appendChild(el('div',{class:'transacao', html:`<span class="desc">${h}</span>`}));
+        modal(v.apelido, TO.membros.CARGOS[v.cargo].nome + ' · Velha Guarda', corpo);
+      };
+      tb.appendChild(linha);
+    }
+    tab.appendChild(tb);
+    const rolo = el('div',{class:'rolo', estilo:{maxHeight:'62vh'}});
+    rolo.appendChild(tab);
+    ct.corpo.appendChild(rolo);
+    return ct;
   }
 
   function painelTreinos(){

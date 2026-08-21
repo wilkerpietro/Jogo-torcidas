@@ -21,6 +21,83 @@ TO.membros = (function(){
   };
   const ACIMA = {novato:'componente', componente:'frente', frente:'diretoria'};
 
+  /* =======================================================
+     O QUE TIRA FICHA (régua do dono, 20/08/2026)
+
+     Até aqui a ficha era catraca de mão única: treino somava e
+     nada nunca subtraía. Agora a rua cobra — sequela de briga,
+     ferrugem de cadeia, paz demais e idade.
+
+     TUDO PASSA POR `perder`, que desconta primeiro da fração
+     acumulada e só depois morde o inteiro. Sem isso um −0,3
+     sumia no arredondamento e a régua do dono não valia nada.
+     ======================================================= */
+  const IDADE_MIN = 16, IDADE_MAX = 45;
+  const IDADE_DECLINIO = 35;      // daqui em diante o ano cobra
+  const IDADE_SAIDA    = 46;      // aqui ele pendura a bandeira
+  const DESGASTE_ANO   = 0.6;     // por virada de ano, dos 35 em diante
+  const SEQUELA = {chance:0.15, min:0.2, max:0.5};
+  /* a cadeia enferruja pela pena cumprida (tabela do dono) */
+  const CADEIA = [{ate:30, perda:0.5}, {ate:60, perda:1},
+                  {ate:89, perda:1.5}, {ate:Infinity, perda:2}];
+  const perdaDaCadeia = dias => (CADEIA.find(f => dias <= f.ate) || CADEIA[0]).perda;
+
+  /* =======================================================
+     DESGASTE PERMANENTE × FERRUGEM
+
+     Aqui mora a diferença que faz as quatro cobranças valerem
+     alguma coisa. Quem está no teto do cargo — e depois de
+     alguns anos é quase todo mundo — recuperava no treino
+     seguinte tudo o que a rua tinha tirado: perdia 0,6 de
+     idade na virada do ano e no dia seguinte o treino devolvia.
+
+     Então há duas naturezas de perda:
+     · SEQUELA e IDADE derrubam o TETO da pessoa (`m.desgaste`).
+       Não voltam com treino nenhum — é o joelho que não é mais
+       o mesmo, é a perna que não corre mais.
+     · CADEIA e FERRUGEM DA PAZ derrubam só a ficha de agora.
+       Voltam treinando, e é isso que elas querem dizer: o cara
+       está destreinado, não está acabado.
+     ======================================================= */
+  const tetoDe = m => Math.max(1,
+    CARGOS[m.cargo].teto + (m.veterano?2:0) - (m.desgaste || 0));
+
+  /* põe o atributo exatamente no teto quando ele passou dele */
+  function limitarNoTeto(m, campo, frac, teto){
+    if(m[campo] + (m[frac]||0) <= teto) return;
+    m[campo] = Math.floor(teto);
+    m[frac]  = Math.round((teto - m[campo])*1000)/1000;
+  }
+
+  /* tira `quanto` de um atributo, fração primeiro, inteiro depois.
+     Nunca desce de 1: ninguém fica com ficha zerada. */
+  function perderDe(m, campo, frac, quanto){
+    let resta = quanto;
+    const tinha = m[frac] || 0;
+    const daFracao = Math.min(tinha, resta);
+    m[frac] = tinha - daFracao;
+    resta -= daFracao;
+    while(resta > 0 && m[campo] > 1){
+      m[campo]--;
+      m[frac] = (m[frac] || 0) + 1;
+      const leva = Math.min(m[frac], resta);
+      m[frac] -= leva;
+      resta -= leva;
+    }
+    return quanto - resta;
+  }
+  /* desconta dos dois atributos e devolve o que saiu, arredondado
+     pro texto do histórico */
+  function perder(m, quanto, permanente){
+    /* o teto desce junto, e SÓ ISSO: a subtração da ficha logo abaixo
+       já leva quem estava no teto pro teto novo. Baixar o teto e ainda
+       cortar a ficha nele cobraria a mesma perda duas vezes. */
+    if(permanente) m.desgaste = (m.desgaste || 0) + quanto;
+    const f = perderDe(m, 'forca',  'fracForca',  quanto);
+    const d = perderDe(m, 'defesa', 'fracDefesa', quanto);
+    return {forca:Math.round(f*10)/10, defesa:Math.round(d*10)/10};
+  }
+
   /* GDD §8.1 — limites por nível de sede */
   const SEDE = [
     null,
@@ -50,6 +127,10 @@ TO.membros = (function(){
       forca:  opc.forca  !== undefined ? opc.forca  : U.inteiro(1,3),
       defesa: opc.defesa !== undefined ? opc.defesa : U.inteiro(1,3),
       fracForca:0, fracDefesa:0,
+      /* IDADE (régua do dono, 20/08/2026): 16 a 45 na entrada. Dos 35
+         em diante a virada do ano cobra o seu; aos 46 ele pendura a
+         bandeira e vai pra Velha Guarda. */
+      idade: opc.idade !== undefined ? opc.idade : U.inteiro(IDADE_MIN, IDADE_MAX),
       xp: opc.xp || 0,
       moral: opc.moral !== undefined ? opc.moral : 15,
       arquetipo: (opc.arquetipo || U.escolher(N.arquetipos)).id
@@ -206,8 +287,7 @@ TO.membros = (function(){
      O atributo só sobe de inteiro quando a fração acumula. */
   function treinar(E, m){
     if(!disponivel(m)) return false;
-    const c = CARGOS[m.cargo];
-    const teto = c.teto + (m.veterano?2:0);
+    const teto = tetoDe(m);
     /* A COMISSÃO TÉCNICA (dono, 18/08/2026; escada em 20/08/2026):
        um professor faz o treino render +30%, dois +60%, três +100% —
        o dobro só com a sala cheia. */
@@ -216,8 +296,11 @@ TO.membros = (function(){
     m.fracDefesa += U.entre(0, 0.3) * ganho;
     while(m.fracForca >= 1 && m.forca < teto){ m.fracForca -= 1; m.forca++; }
     while(m.fracDefesa >= 1 && m.defesa < teto){ m.fracDefesa -= 1; m.defesa++; }
-    if(m.forca >= teto) m.fracForca = 0;
-    if(m.defesa >= teto) m.fracDefesa = 0;
+    /* O TETO PODE SER QUEBRADO: sequela e idade tiram 0,5, 0,6 — o
+       teto de quem se machucou não é inteiro. Encostar nele é parar
+       nele exatamente, e não pular pro inteiro de cima. */
+    limitarNoTeto(m, 'forca',  'fracForca',  teto);
+    limitarNoTeto(m, 'defesa', 'fracDefesa', teto);
     darXP(m, 1);
     return true;
   }
@@ -232,8 +315,8 @@ TO.membros = (function(){
      §5.4 visto de perto: cada sessão rende de 0.0 a 0.3, então dá pra
      dizer quantas sessões faltam pra estourar o teto. */
   function planoDeTreino(m){
-    const c = CARGOS[m.cargo];
-    const teto = c.teto + (m.veterano?2:0);
+    /* o teto é o DELE: sequela e idade já podem ter derrubado */
+    const teto = tetoDe(m);
     const faltaF = Math.max(0, teto - m.forca  - m.fracForca);
     const faltaD = Math.max(0, teto - m.defesa - m.fracDefesa);
     const falta  = Math.max(faltaF, faltaD);
@@ -272,6 +355,16 @@ TO.membros = (function(){
     m.naFila = false;
     m.moral = Math.max(0, m.moral - 3);
     m.historico.push(`${motivo || 'Ferido no dia de jogo'}, ${d} dias fora`);
+    /* SEQUELA (régua do dono, 20/08/2026): parte das lesões deixa
+       marca — pouca coisa por vez, mas não volta nunca. */
+    if(U.rng() < SEQUELA.chance){
+      const q = U.entre(SEQUELA.min, SEQUELA.max);
+      const saiu = perder(m, q, true);        // sequela não volta no treino
+      m.sequelas = (m.sequelas || 0) + 1;
+      m.historico.push(`Ficou a sequela: −${saiu.forca.toFixed(1).replace('.',',')} `+
+                       `de força e defesa`);
+      return {sequela: saiu};
+    }
   }
 
   /* TODA PRISÃO TEM PRAZO. Na briga o teto segue 90 dias, sorteado na
@@ -285,7 +378,7 @@ TO.membros = (function(){
     const txt = motivo || 'Preso no dia de jogo';
     const pena = dias ? Math.min(PENA_TETO, dias)
                       : Math.min(PENA_MAX, U.inteiro(15, PENA_MAX));
-    m.preso = { dias: pena, motivo: txt,
+    m.preso = { dias: pena, total: pena, motivo: txt,
                 desde: (E && E.data && E.data.absoluto) || 0 };
     m.naFila = false;
     m.moral = Math.max(0, m.moral - 4);
@@ -309,13 +402,33 @@ TO.membros = (function(){
     return Math.round((800 + m.xp * 2) * (1 + d/20));
   }
 
+  /* quantos dias ele CUMPRIU até agora — é o que a ferrugem cobra,
+     não a pena que o juiz deu: sair no terceiro dia com fiança não
+     enferruja como cumprir noventa. */
+  function cumpridos(m){
+    if(!m.preso) return 0;
+    const total = m.preso.total != null ? m.preso.total : m.preso.dias;
+    return Math.max(0, total - (m.preso.dias || 0));
+  }
+  /* A CADEIA ENFERRUJA (tabela do dono, 20/08/2026): até 30 dias
+     cobra 0,5; até 60, 1; até 89, 1,5; de 90 em diante, 2. */
+  function enferrujarNaCadeia(m, dias){
+    if(!dias) return null;
+    const saiu = perder(m, perdaDaCadeia(dias));
+    m.historico.push(`Voltou enferrujado da cadeia (${dias} dias): `+
+                     `−${saiu.forca.toFixed(1).replace('.',',')} de força e defesa`);
+    return saiu;
+  }
+
   function resgatar(E, m){
     if(!m.preso) return {ok:false, motivo:'não está preso'};
     const custo = fianca(m);
     if(E.dinheiro < custo) return {ok:false, motivo:`fiança de ${U.dinheiro(custo)}`};
     TO.estado.lancar(E, `Fiança de ${nomeDe(m)}`, -custo);
+    const cumpriu = cumpridos(m);
     m.preso = null;
     m.historico.push('Solto sob fiança');
+    enferrujarNaCadeia(m, cumpriu);
     return {ok:true, custo};
   }
 
@@ -333,11 +446,57 @@ TO.membros = (function(){
         diasPresos(m);
         m.preso.dias--;
         if(m.preso.dias <= 0){
+          const cumpriu = cumpridos(m);
           m.preso = null;
           m.historico.push('Cumpriu a pena, de volta');
+          enferrujarNaCadeia(m, cumpriu);
         }
       }
     }
+  }
+
+  /* =======================================================
+     A VIRADA DO ANO: TODO MUNDO FAZ ANIVERSÁRIO
+     (régua do dono, 20/08/2026)
+
+     Dos 35 em diante o ano cobra 0,6 de força e de defesa. Aos
+     46 o sujeito pendura a bandeira: sai da lista de membros e
+     vira VELHA GUARDA — não briga mais, não paga mensalidade,
+     não conta pro ranking, mas fica registrado com o que fez.
+
+     É este o ralo que faltava. Sem ele a torcida era um
+     acumulador de mão única e, em vinte anos, todo mundo
+     encostava no teto do cargo.
+     ======================================================= */
+  function envelhecer(E){
+    const ficam = [], penduraram = [];
+    for(const m of E.membros){
+      m.idade = (m.idade != null ? m.idade : U.inteiro(IDADE_MIN, IDADE_MAX)) + 1;
+      if(m.idade >= IDADE_SAIDA){ penduraram.push(m); continue; }
+      if(m.idade >= IDADE_DECLINIO){
+        const saiu = perder(m, DESGASTE_ANO, true);   // idade não volta
+        if(saiu.forca > 0)
+          m.historico.push(`${m.idade} anos: −${saiu.forca.toFixed(1).replace('.',',')} `+
+                           `de força e defesa`);
+      }
+      ficam.push(m);
+    }
+    if(!penduraram.length) return {penduraram:[]};
+    E.membros = ficam;
+    E.velhaGuarda = E.velhaGuarda || [];
+    for(const m of penduraram){
+      m.historico.push(`Pendurou a bandeira aos ${m.idade} anos`);
+      /* na cadeia ou no hospital não se pendura bandeira: sai limpo */
+      m.ferido = null; m.preso = null; m.naFila = false;
+      E.velhaGuarda.unshift({
+        id:m.id, apelido:m.apelido, sobrenome:m.sobrenome, cargo:m.cargo,
+        idade:m.idade, forca:m.forca, defesa:m.defesa, xp:m.xp,
+        veterano:!!m.veterano, sequelas:m.sequelas || 0,
+        arquetipo:m.arquetipo, historico:m.historico,
+        ano:(E.data||{}).ano, entrou:m.entrou});
+    }
+    if(E.velhaGuarda.length > 400) E.velhaGuarda.length = 400;
+    return {penduraram};
   }
 
   /* -------------------------------------------------------
@@ -390,6 +549,8 @@ TO.membros = (function(){
     criar, nomeDe, povoarInicial, planoDeCargos, nivelQueCabe,
     disponivel, capacidade, capTreino, capDiretoria, contar, emCampanha,
     darXP, podePromover, promover, treinar, treinarFila,
+    perder, tetoDe, envelhecer, enferrujarNaCadeia, perdaDaCadeia,
+    IDADE_MIN, IDADE_MAX, IDADE_DECLINIO, IDADE_SAIDA, DESGASTE_ANO, SEQUELA,
     planoDeTreino, sortearFila,
     ferir, prender, diasPresos, fianca, resgatar, passarDia,
     aptosParaOEstadio, aplicarResultadoDaNoite
