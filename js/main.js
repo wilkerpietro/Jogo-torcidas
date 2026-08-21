@@ -846,6 +846,8 @@
        relógio, aos 90. */
     m.consequencia = (m.consequencia || '') +
       ' O clima azedou e a arquibancada se pegou.';
+    /* quem ficou quieto entra na consequência mais abaixo, depois de
+       a gente saber quem é aliado de quem */
     /* quem abre a arquibancada pausa a partida — vale pra quem chega
        pelo relógio do widget e pra quem chama esta função direto */
     if(!d.pausada){ pontoDeControle(d); d.pausada = true; }
@@ -875,7 +877,33 @@
         fica[fica.length-1].n += extra.n;
       return fica;
     };
-    const nossosSet = compacta(nossos, setores[nossoLado]);
+    /* =====================================================
+       ALIADA NÃO DESCE (régua do dono, 20/08/2026)
+
+       A arquibancada esquentou e a gente vai pra cima do rival.
+       Outra torcida do NOSSO clube que seja aliada de verdade
+       de quem está do outro lado não entra: Fortaleza × Flamengo,
+       a TUF cai em cima da Jovem Fla e a Jovem Garra Tricolor,
+       aliada da Jovem Fla, fica quieta na cadeira dela.
+
+       Vale só pras OUTRAS: a nossa torcida vai porque o jogador
+       mandou ir. E o teste é contra a torcida que a gente vai
+       enfrentar — a maior do outro lado —, não contra qualquer
+       uma que esteja no estádio.
+       ===================================================== */
+    const alvo = deles[0];
+    const quietas = [];
+    const desce = p =>{
+      if(p.id === e.torcida.id || !alvo) return true;
+      const r = TO.relacoes.relacaoDelas(e, p.id, alvo.id);
+      if(r < TO.relacoes.ALIADO) return true;
+      quietas.push({nome:p.nome, de:alvo.nome, relacao:Math.round(r)});
+      return false;
+    };
+    const nossosVao = nossos.filter(desce);
+    /* se TODA a nossa ala for aliada deles, a nossa desce sozinha */
+    const nossosSet = compacta(nossosVao.length ? nossosVao
+      : nossos.filter(p => p.id === e.torcida.id), setores[nossoLado]);
     const delesSet  = compacta(deles,  setores[outroLado]);
     const bondeDe = (p, lado)=>{
       const o = TO.mundo.torcida(p.id) || {nome:p.nome};
@@ -887,6 +915,13 @@
     };
     const bondes = [...nossosSet.map(p => bondeDe(p, nossoLado)),
                     ...delesSet.map(p => bondeDe(p, outroLado))];
+    if(quietas.length){
+      const q = quietas.map(x=>x.nome);
+      /* o jogo trata toda torcida como feminina — "A Leões da TUF caiu
+         em cima da gente" —, então aqui é "da", sem exceção */
+      m.consequencia += ` ${q.join(' e ')} ${q.length===1?'ficou':'ficaram'} `+
+        `na cadeira: ${q.length===1?'é aliada':'são aliadas'} da ${quietas[0].de}.`;
+    }
     const minha = nossosSet.find(p => p.id === e.torcida.id) || {n:10};
     const aptos = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
@@ -933,9 +968,13 @@
      ======================================================= */
   function abrirItinerario(msg){
     const e = E();
-    const it = TO.itinerario.montar(e);
+    const it = TO.itinerario.montar(e, msg);
     if(!it) return false;
-    ITN = {it, msg, ponto:-1, travado:false, timer:null, esperando:null};
+    ITN = {it, msg, ponto:-1, travado:false, timer:null, esperando:null,
+           /* O EFETIVO ANDA COM A LINHA (régua do dono, 20/08/2026): a
+              caravana parte com o que tem e cada baixa some do número
+              que chega no próximo ponto. Vale pros dois lados. */
+           nos: it.efetivo.nos, eles: it.efetivo.eles};
 
     /* A LINHA MORA NA MENSAGEM (correção do dono, 20/08/2026): a tela
        cheia saiu. O nó é montado UMA vez e guardado em `ITN.raiz`; o
@@ -947,7 +986,10 @@
     const barra = el('div',{class:'itn-mini-barra'});
     const estado = el('div',{class:'estado', texto:'o dia ainda não começou'});
     barra.appendChild(estado);
+    const conta = el('div',{class:'itn-efetivo'});
+    barra.appendChild(conta);
     raiz.appendChild(barra);
+    ITN.conta = conta;
 
     const trilha = el('div',{class:'itn-mini-trilha'});
     trilha.appendChild(el('div',{class:'itn-feito'}));
@@ -967,6 +1009,7 @@
       linha.appendChild(marca);
       const corpo = el('div',{class:'corpo'});
       corpo.appendChild(el('div',{class:'nome', texto:p.nome}));
+      corpo.appendChild(el('div',{class:'efetivo'}));
       corpo.appendChild(el('div',{class:'vaga'}));
       linha.appendChild(corpo);
       /* o marco do dia fica ABAIXO da primeira parada daquele dia:
@@ -985,6 +1028,7 @@
     atualizarFeed();
     pararTudo('itinerario');
     itnPintar();
+    itnContar();
     ITN.timer = setTimeout(itnProximo, 700);
     return true;
   }
@@ -1002,6 +1046,27 @@
     if(!ITN) return;
     ITN.estado.textContent = txt;
     ITN.estado.classList.toggle('travado', !!trava);
+  }
+
+  /* o número que a linha carrega: o nosso bonde e o deles */
+  function itnContar(){
+    if(!ITN || !ITN.conta) return;
+    const nome = ITN.it.efetivo.nomeDeles;
+    ITN.conta.innerHTML =
+      `<b>${ITN.nos}</b> ${ITN.nos===1?'nosso':'nossos'}` +
+      /* zerado continua aparecendo: sumir com a linha esconderia
+         justamente a informação de que não sobrou ninguém deles */
+      (ITN.it.efetivo.eles ? ` · <b>${ITN.eles}</b> da ${nome}` : '');
+  }
+  /* marca no ponto de agora quantos chegaram nele */
+  function itnMarcarEfetivo(){
+    if(!ITN) return;
+    const linha = itnLinhaDe(ITN.ponto);
+    if(!linha) return;
+    const cx = linha.querySelector('.efetivo');
+    if(cx) cx.textContent = ITN.eles
+      ? `${ITN.nos} nossos · ${ITN.eles} deles`
+      : `${ITN.nos} ${ITN.nos===1?'nosso':'nossos'}`;
   }
 
   function itnPintar(){
@@ -1033,6 +1098,7 @@
     if(ITN.ponto >= paradas.length - 1) return itnAcabou();
     ITN.ponto++;
     itnPintar();
+    itnMarcarEfetivo();
     const p = paradas[ITN.ponto];
     const vaga = itnLinhaDe(ITN.ponto).querySelector('.vaga');
 
@@ -1139,12 +1205,34 @@
     ITN.esperando = null;
     parada.brigou = true;
     const res = ultimoResultado || {};
-    const meu = res.nossoLado === 'visitante' ? 'Visitante' : 'Mandante';
+    /* AS BAIXAS SOMEM DO BONDE (régua do dono, 20/08/2026): quem caiu
+       não segue viagem, e o próximo ponto recebe o que sobrou. Preso
+       conta junto — quem foi pro camburão também não vai ao estádio. */
+    const nossoLado = res.nossoLado === 'visitante' ? 'visitante' : 'mandante';
+    const outro = nossoLado === 'mandante' ? 'visitante' : 'mandante';
+    const cap = (a, b) => Math.max(0, Math.round(a || 0)) +
+                          Math.max(0, Math.round(b || 0));
+    const baixasNossas = cap(res['caidos' + (nossoLado==='mandante'?'Mandante':'Visitante')],
+                             res['presos' + (nossoLado==='mandante'?'Mandante':'Visitante')]);
+    const baixasDeles  = cap(res['caidos' + (outro==='mandante'?'Mandante':'Visitante')],
+                             res['presos' + (outro==='mandante'?'Mandante':'Visitante')]);
+    const antesNos = ITN.nos, antesEles = ITN.eles;
+    ITN.nos  = Math.max(0, ITN.nos  - baixasNossas);
+    ITN.eles = Math.max(0, ITN.eles - baixasDeles);
+    itnContar();
+    itnMarcarEfetivo();
+    const perdaNos = antesNos - ITN.nos, perdaEles = antesEles - ITN.eles;
     cartao.appendChild(el('div',{class:'saldo',
       html:`${res.venceu ? '<span class="bom">Saímos por cima.</span>'
                          : '<span class="ruim">Saímos por baixo.</span>'} `+
            `<b>${res.caidosVisitante||0} caídos deles, ${res.caidosMandante||0} nossos</b>`+
-           (res.prestigio ? ` · Prestígio ${res.prestigio>0?'+':''}${res.prestigio}` : '')}));
+           (res.prestigio ? ` · Prestígio ${res.prestigio>0?'+':''}${res.prestigio}` : '')+
+           (perdaNos || perdaEles
+             ? `<br>Segue viagem com <b>${ITN.nos}</b>`+
+               (perdaNos ? ` <span class="ruim">(−${perdaNos})</span>` : '')+
+               (antesEles ? ` · eles com <b>${ITN.eles}</b>`+
+                 (perdaEles ? ` <span class="bom">(−${perdaEles})</span>` : '') : '')
+             : '')}));
     /* o cartão precisa estar na tela pra a linha se medir: repinta
        primeiro, mede depois */
     atualizarFeed();

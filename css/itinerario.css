@@ -164,3 +164,18 @@
   .itn-cartao{animation:none}
   .itn-feito{transition:none}
 }
+
+/* O EFETIVO QUE ANDA COM A LINHA (régua do dono, 20/08/2026): o bonde
+   parte com um número e cada baixa some dele. Fica na barra de estado
+   e, ponto a ponto, embaixo do nome da parada. */
+.itn-efetivo{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--fraco); margin-top:2px;
+}
+.itn-efetivo b{color:var(--texto); font-weight:600}
+.itn-parada .efetivo{
+  font-family:var(--mono); font-size:9px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--apagado); margin-top:2px;
+  font-variant-numeric:tabular-nums;
+}
+.itn-parada.agora .efetivo{color:var(--fraco)}

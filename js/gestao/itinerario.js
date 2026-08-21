@@ -71,7 +71,30 @@ TO.itinerario = (function(){
   /* ---------------------------------------------------------
      A MONTAGEM
      --------------------------------------------------------- */
-  function montar(E){
+  /* =======================================================
+     O EFETIVO DA VIAGEM (régua do dono, 20/08/2026)
+     A caravana parte com um número e ele NÃO volta: cada
+     emboscada, cada treta, cada briga tira as baixas e o
+     próximo ponto recebe o que sobrou. Vale pros dois lados —
+     o nosso bonde e o da torcida do time que a gente enfrenta,
+     em casa ou fora.
+     ======================================================= */
+  function efetivoInicial(E, msg){
+    const pres = ((msg||{}).dados || {}).presenca || [];
+    const somosCasa = !!((msg||{}).dados || {}).somosCasa;
+    const nosso = pres.find(p => p.id === E.torcida.id);
+    /* do outro lado conta a MAIOR: é ela que a gente encontra */
+    const deles = pres.filter(p => p.id && p.casa !== somosCasa)
+                      .sort((a,b)=>b.n - a.n)[0];
+    return {
+      nos: nosso ? Math.round(nosso.n)
+                 : Math.max(1, (E.membros||[]).filter(m=>!m.ferido && !m.preso).length),
+      eles: deles ? Math.round(deles.n) : 0,
+      nomeDeles: deles ? deles.nome : ''
+    };
+  }
+
+  function montar(E, msg){
     const j = E && E.proximoJogo;
     if(!j) return null;
     const hora = emMinutos(j.hora);
@@ -209,6 +232,7 @@ TO.itinerario = (function(){
 
     return {
       casa, viaja,
+      efetivo: efetivoInicial(E, msg),
       hora: j.hora || '21:00',
       titulo: `${j.mandante.nome} × ${j.visitante.nome}`,
       cidade: casa ? '' : (j.cidadeAdv || ''),
@@ -221,5 +245,5 @@ TO.itinerario = (function(){
   const comRecado = it => (it && it.paradas || [])
     .filter(o=>(o.eventos||[]).length).length;
 
-  return {montar, comRecado, hhmm};
+  return {montar, comRecado, hhmm, efetivoInicial};
 })();

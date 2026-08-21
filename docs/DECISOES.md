@@ -920,6 +920,34 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **Save antigo não quebra**: mensagem de rodada sem os jogos guardados
   continua mostrando o texto corrido de sempre.
 
+- **Aliada não desce** (régua do dono, 20/08/2026): na briga da
+  arquibancada, outra torcida do NOSSO clube que seja **aliada de
+  verdade** (relação ≥ 45) da torcida que a gente vai enfrentar fica na
+  cadeira e não entra na cena. Fortaleza × Flamengo: a TUF cai em cima
+  da Jovem Fla e a Jovem Garra Tricolor, aliada da Jovem Fla, não sai
+  do lugar.
+  · Vale só pras OUTRAS. A nossa desce porque o jogador mandou descer,
+    aliada ou não.
+  · O teste é contra a **maior torcida do outro lado** — a que a gente
+    vai enfrentar de fato —, não contra qualquer uma que esteja no
+    estádio.
+  · Se TODA a nossa ala for aliada deles, a nossa desce sozinha.
+  · Quem ficou quieto entra na consequência da mensagem.
+- **O efetivo anda com a linha** (régua do dono, 20/08/2026): a caravana
+  parte com um número e ele **não volta**. Cada emboscada, cada treta,
+  cada briga tira as baixas, e o próximo ponto do itinerário recebe o
+  que sobrou — 40 na saída, 6 baixas na emboscada, 34 na parada
+  seguinte.
+  · **Vale pros dois lados**: o nosso bonde e o da maior torcida do time
+    que a gente enfrenta, em casa ou fora.
+  · **Baixa é caído E preso**: quem foi pro camburão também não chega
+    ao estádio.
+  · Os dois números aparecem na barra da linha e ponto a ponto, embaixo
+    do nome da parada; o cartão da briga fecha com "segue viagem com
+    34 (−6)".
+  · O efetivo de partida sai da PRESENÇA que a mensagem da partida já
+    calcula. Sem presença declarada, o nosso é o efetivo disponível.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
