@@ -932,7 +932,15 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     vai enfrentar de fato —, não contra qualquer uma que esteja no
     estádio.
   · Se TODA a nossa ala for aliada deles, a nossa desce sozinha.
-  · Quem ficou quieto entra na consequência da mensagem.
+  · Quem ficou quieto entra na consequência da mensagem da partida,
+    logo depois do "O clima azedou e a arquibancada se pegou" que já
+    existia. **Texto aprovado pelo dono (20/08/2026):**
+    · uma só: `A {torcida} ficou na cadeira: é aliada da {rival}.`
+    · mais de uma: `A {torcida} e a {outra} ficaram na cadeira: são
+      aliadas da {rival}.`
+    · Toda torcida entra com **"da"**, seguindo a convenção que os
+      textos já aprovados usam ("A Leões da TUF caiu em cima da
+      gente") — o jogo trata torcida como feminina.
 - **O efetivo anda com a linha** (régua do dono, 20/08/2026): a caravana
   parte com um número e ele **não volta**. Cada emboscada, cada treta,
   cada briga tira as baixas, e o próximo ponto do itinerário recebe o
