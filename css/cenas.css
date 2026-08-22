@@ -151,6 +151,27 @@
   text-shadow:0 3px 18px #000, 0 0 40px rgba(0,0,0,.7);
   opacity:0;transition:opacity .3s}
 
+/* ---- PALCO PEQUENO, HUD PEQUENA ----
+   Num celular deitado o palco tem pouco mais de 500px e as três placas
+   somavam mais que isso: uma subia por cima da outra. A classe é posta
+   por `medirPalco`, em ponte.js — ver a nota de lá sobre por que não é
+   container query. */
+#djPalco.hud-mini #djTarjaTempo{padding:3px 4px 3px 8px;gap:6px}
+#djPalco.hud-mini #djRelogio{font-size:16px}
+#djPalco.hud-mini #djTarjaTempo .ao-vivo{width:5px;height:5px;box-shadow:none}
+#djPalco.hud-mini #djVelocidade{font-size:8.5px;padding:3px 5px}
+#djPalco.hud-mini #djAlerta{width:104px;padding:5px 7px 6px;gap:5px}
+#djPalco.hud-mini #djAlerta .rot{font-size:7.5px;letter-spacing:.12em}
+#djPalco.hud-mini #djCarga{font-size:7px;letter-spacing:.1em}
+#djPalco.hud-mini #djPlacar{min-width:0;max-width:44%}
+#djPalco.hud-mini #djPlacar .pl-time{padding:4px 7px 4px 0;gap:0 6px}
+#djPalco.hud-mini #djPlacar .pl-time::before{height:11px}
+#djPalco.hud-mini #djPlacar .pl-nome{font-size:10px;letter-spacing:.05em}
+#djPalco.hud-mini #djPlacar .pl-n{font-size:11.5px}
+#djPalco.hud-mini #djPlacar .pl-rodape{padding:3px 7px 4px;gap:6px;font-size:7.5px}
+#djPalco.hud-mini #djPlacar .pl-dado i{margin-right:3px;letter-spacing:.1em}
+#djPalco.hud-mini #djAviso{font-size:20px;letter-spacing:.08em}
+
 /* ---- a tira de dicas, no rodapé ---- */
 #djDica{bottom:9px;left:12px;font-size:10px;color:var(--fraco);
   letter-spacing:.04em;text-shadow:0 1px 4px #000;max-width:700px}
@@ -250,14 +271,35 @@
    de painel lateral. Os comandos ficam sobre o próprio palco.
    ========================================================= */
 #telaDiaJogo{display:flex; align-items:center; justify-content:center;
-  background:rgba(6,6,7,.92); padding:18px}
-#djGrade{display:block; max-width:min(96vw, 1180px); max-height:94vh}
+  background:rgba(6,6,7,.92); padding:10px; overflow:hidden}
+
+/* A CENA CABE NA TELA (pedido do dono, 22/08/2026)
+
+   O palco pedia 100% da largura e o canvas devolvia a altura
+   proporcional (1140×820): num notebook isso passava do alto do
+   monitor e a tela ganhava barra de rolagem — quem estava no meio de
+   uma briga tinha de arrastar pra ver o rodapé. O `max-height:94vh`
+   que morava aqui não resolvia nada: teto em elemento de fora não
+   encolhe filho de altura automática, só deixa ele transbordar.
+
+   O conserto é geometria. O canvas é elemento substituído e tem
+   tamanho intrínseco: com `width` e `height` em `auto` e teto nos DOIS
+   lados medido na JANELA, ele encolhe sozinho mantendo a proporção. O
+   palco passa a ter o tamanho do canvas, então a HUD — que se
+   posiciona por ele — continua colada nas bordas certas. */
+#djGrade{display:block; max-width:100%; max-height:100%; padding:0}
 #djPalco{
   border:1px solid var(--fio, #383838);
   box-shadow:0 24px 70px rgba(0,0,0,.7);
-  max-width:100%;
+  width:fit-content; max-width:100%;
 }
-#djPalco canvas{max-width:100%; height:auto; display:block}
+#djPalco canvas{
+  display:block; width:auto; height:auto;
+  max-width:calc(100vw - 22px);
+  max-height:calc(100vh - 22px);
+  max-width:calc(100dvw - 22px);
+  max-height:calc(100dvh - 22px);
+}
 /* UMA LINHA SÓ (pedido do dono, 18/08/2026): 1-4, Q, E, R e ENTER
    lado a lado — a caixa em coluna cobria a briga que acontecia
    embaixo dela */

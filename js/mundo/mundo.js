@@ -190,12 +190,26 @@ TO.mundo = (function(){
   const territorios = o => Math.max(1, Math.round((o.membros||20)/16));
 
   /* tudo que a seleção e a diplomacia precisam, num objeto só */
+  /* =======================================================
+     A RIVALIDADE MÁXIMA É A DO MESMO TAMANHO (régua do dono,
+     22/08/2026): rivalidade não se mede por ordem de lista — a briga
+     que interessa é a de igual pra igual. Entre todos os rivais
+     declarados, vale o de efetivo mais próximo do nosso; empatou, o
+     maior rival declarado tem a preferência, porque vem primeiro.
+     ======================================================= */
+  function rivalPareado(o){
+    const lista = [...(o.maioresRivais||[]), ...(o.rivais||[])]
+      .map(id => torcida(id)).filter(Boolean);
+    if(!lista.length) return null;
+    const meu = o.membros || 0;
+    return lista.reduce((a, b)=>
+      Math.abs((b.membros||0) - meu) < Math.abs((a.membros||0) - meu) ? b : a);
+  }
+
   function ficha(o){
     const t = time(o.clubeId) || {};
     const c = cidade(o.mapa)  || {};
-    const rel = relacoesDe(o.id);
-    const maior = rel.find(r=>r.tipo==='Maior Rival')
-               || rel.find(r=>r.tipo==='Rival');
+    const par = rivalPareado(o);
     return {
       id:o.id, nome:o.nome, cores:o.cores, detalhe:o.detalhe,
       fundacao:o.fundacao, membros:o.membros, bairroSede:o.bairroSede,
@@ -211,7 +225,8 @@ TO.mundo = (function(){
       dinheiro:o.saldo || 0, poder:o.poder || 0,
       influencia:influencia(o), territorios:territorios(o),
       cargos:o.cargos || {},
-      rival: maior ? maior.nome : '—',
+      rival: par ? par.nome : '—',
+      rivalMembros: par ? (par.membros||0) : 0,
       qtdAliados: (o.aliados||[]).length + (o.irmandade||[]).length,
       qtdRivais:  (o.rivais||[]).length + (o.maioresRivais||[]).length
     };

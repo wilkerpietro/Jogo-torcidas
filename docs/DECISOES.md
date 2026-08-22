@@ -1388,6 +1388,44 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     mono, escapava por transbordo. A regra antiga carregava um
     `line-height:1.55` que ninguém sabia que estava segurando isso.
 
+- **A FICHA DA SELEÇÃO SÓ DIZ O QUE É VERDADE** (limpeza pedida pelo
+  dono, 22/08/2026). Saíram cinco linhas do passo 2:
+  · **Finanças** mostrava o saldo guardado no arquivo (R$ 200 pra
+    metade das torcidas) e o jogo começa com `max(4000, saldo×4)` — o
+    número na tela nunca foi o dinheiro com que se joga.
+  · **Influência** e **Territórios** eram fórmulas do próprio efetivo
+    (territórios = membros ÷ 16) que não entram em conta nenhuma do
+    jogo: dois algarismos repetindo o que a linha "Membros" já dizia.
+  · **Mapa da cidade** contava quarteirões de um mapa descontinuado.
+  · **Bairro da sede** é trivia na hora de escolher — o nome do bairro
+    só ganha sentido depois, dentro do jogo.
+  · **A RIVALIDADE MÁXIMA MUDOU DE CRITÉRIO**: era o primeiro da lista
+    de maiores rivais; agora é **o rival de efetivo mais próximo do
+    nosso**, com o tamanho dele ao lado. É o que responde a pergunta
+    que se faz na hora de escolher — com quem eu vou brigar de igual
+    pra igual. Empatou, o maior rival declarado tem preferência.
+    Sobraram sete linhas: Membros, Sede, Prestígio, Divisão, Estádio,
+    Aliados/Rivais e a rivalidade, esta ocupando a linha inteira.
+
+- **A CENA CABE NA TELA** (pedido do dono, 22/08/2026): o palco pedia
+  100% da largura e o canvas devolvia a altura proporcional (1140×820)
+  — num notebook isso passava do alto do monitor e a cena ganhava barra
+  de rolagem no meio da briga. O `max-height:94vh` que já estava lá não
+  fazia nada: teto em elemento de fora não encolhe filho de altura
+  automática, só o deixa transbordar. Agora o canvas — elemento
+  substituído, com tamanho intrínseco — vai de `width:auto`,
+  `height:auto` e teto nos **dois** lados medido na janela: encolhe
+  sozinho mantendo a proporção, e o palco passa a ter o tamanho dele,
+  então a HUD continua colada nas bordas certas. Conferido em cinco
+  janelas, de 1920×1080 a 420×820: nenhuma rola, a proporção não muda
+  e a HUD fica dentro do palco.
+  · **PALCO PEQUENO, HUD PEQUENA**: num celular deitado o palco tem
+    553 px e as três placas somavam mais que isso — subiam umas sobre
+    as outras. Container query resolveria, mas `container-type:
+    inline-size` tira a largura do palco das mãos do conteúdo, e é do
+    conteúdo (o canvas) que ela vem. Então a medida é feita em JS, uma
+    vez por mudança de tamanho, e vira a classe `hud-mini`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

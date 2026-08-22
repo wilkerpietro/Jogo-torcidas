@@ -176,8 +176,31 @@ TO.diaJogo.ponte = (function(){
      ======================================================= */
   const $=id=>document.getElementById(id);
 
+  /* =======================================================
+     A HUD ENCOLHE COM O PALCO (22/08/2026)
+
+     Com a cena cabendo na tela, o palco de um celular deitado tem 553
+     px de largura — e as três placas somam mais que isso: elas se
+     montavam umas sobre as outras. Container query resolveria, mas
+     `container-type:inline-size` tira a largura do palco das mãos do
+     conteúdo, e é justamente do conteúdo (o canvas) que ela vem. Então
+     a medida é feita aqui, uma vez por mudança de tamanho, e vira uma
+     classe. */
+  let palcoLargo = null;
+  function medirPalco(){
+    if(!cv) return;
+    const pai = cv.parentElement;
+    if(!pai) return;
+    const l = Math.round(cv.getBoundingClientRect().width);
+    if(l === palcoLargo) return;
+    palcoLargo = l;
+    pai.classList.toggle('hud-mini', l < 760);
+  }
+  addEventListener('resize', ()=>{ palcoLargo = null; medirPalco(); });
+
   function atualizarHUD(){
     if(!J) return;
+    medirPalco();
     const el=id=>$(id);
 
     if(el('djRelogio')){

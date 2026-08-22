@@ -189,19 +189,33 @@
     }
     cxF.appendChild(barras);
 
+    /* A FICHA SÓ DIZ O QUE É VERDADE (limpeza pedida pelo dono,
+       22/08/2026). Saíram quatro números e um endereço:
+       · **Finanças** mostrava o saldo guardado no arquivo (R$ 200),
+         e o jogo começa com `max(4000, saldo×4)` — o número na tela
+         não era o dinheiro com que se joga.
+       · **Influência** e **Territórios** eram fórmulas do próprio
+         efetivo (territórios = membros ÷ 16) que não entram em conta
+         nenhuma do jogo: dois algarismos dizendo de novo o que a linha
+         "Membros" já dizia.
+       · **Mapa da cidade** contava quarteirões de um mapa que foi
+         descontinuado.
+       · **Bairro da sede** é trivia na hora de escolher: o nome do
+         bairro só ganha sentido depois, dentro do jogo.
+       A **rivalidade máxima** ficou, mudada: agora é o rival de
+       efetivo mais próximo do nosso (ver `rivalPareado`), com o
+       tamanho dele ao lado — é o que responde "com quem eu vou brigar
+       de igual pra igual". */
     cxF.appendChild(el('div',{class:'grade-atributos', html:
       `<div><span>Membros</span><b>${U.numero(f.membros)}</b></div>
        <div><span>Sede</span><b>nível ${nivelSede}</b></div>
-       <div><span>Finanças</span><b>${U.dinheiro(f.dinheiro)}</b></div>
        <div><span>Prestígio</span><b>${f.prestigio}/100</b></div>
-       <div><span>Influência</span><b class="positivo">${f.influencia}/100</b></div>
-       <div><span>Territórios</span><b>${f.territorios}</b></div>
-       <div><span>Rivalidade máxima</span><b>${f.rival}</b></div>
-       <div><span>Bairro da sede</span><b>${f.bairroSede||'—'}</b></div>
        <div><span>Divisão</span><b>${f.divisao||'—'}</b></div>
        <div><span>Estádio</span><b>${f.estadio||'—'}</b></div>
        <div><span>Aliados / Rivais</span><b>${f.qtdAliados} / ${f.qtdRivais}</b></div>
-       <div><span>Mapa da cidade</span><b>${f.grade[0]}×${f.grade[1]} quarteirões</b></div>`}));
+       <div class="largo"><span>Rivalidade máxima</span><b>${f.rival}`+
+       `${f.rivalMembros ? ` <small>${U.numero(f.rivalMembros)} membros</small>`
+                         : ''}</b></div>`}));
   }
 
   /* =======================================================
