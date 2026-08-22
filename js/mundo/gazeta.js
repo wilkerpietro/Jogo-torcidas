@@ -36,6 +36,20 @@ TO.gazeta = (function(){
   const perdedor = j => j.gc > j.gf ? j.f : j.gf > j.gc ? j.c : null;
   /* "do Mineiro" mas "da Copa do Nordeste": o artigo segue o nome */
   const dArt = n => !n ? 'a rodada' : (/^(Copa|Taça|Série)/i.test(n) ? `a ${n}` : `o ${n}`);
+  /* AS FASES SÃO TODAS FEMININAS — "na semifinal", "nas quartas" — e
+     duas são plurais. O `dArt` genérico devolvia "o Quartas", e o molde
+     do mata-mata saía "está no Quartas". */
+  const naFase = f => {
+    const b = String(f || '').toLowerCase();
+    if(!b) return 'na fase';
+    if(b === 'grupos') return 'na fase de grupos';
+    return (/s$/.test(b) ? 'nas ' : 'na ') + b;
+  };
+  /* quem passou, num jogo decidido na marca da cal. `temPen` existe
+     porque save antigo guarda `pen` como sim/não, e não como placar */
+  const temPen = j => !!(j && j.pen && j.pen.c != null && j.pen.f != null);
+  const passou = j => !temPen(j) ? null : (j.pen.c > j.pen.f ? j.c : j.f);
+  const caiu   = j => !temPen(j) ? null : (j.pen.c > j.pen.f ? j.f : j.c);
   /* ESTÁDIO TEM GÊNERO: é "na Arena Castelão" e "no Maracanã". Arena e
      Vila são femininos; o resto do país é masculino. */
   const artEst = e => !e ? '' : (/^(Arena|Vila|Ilha)\b/i.test(e) ? 'na' : 'no');
@@ -82,8 +96,13 @@ TO.gazeta = (function(){
               '{c} e {f} dividem os pontos'],
       zero:['{c} e {f} ficam no zero',
             'Nem {c} nem {f}: o dia foi de zero a zero'],
-      mata:['{A} elimina o {B} e está n{fase}'],
-      penaltis:['{A} passa pelo {B} nos pênaltis']
+      mata:['{A} elimina o {B} e passa {naFase}'],
+      /* PÊNALTI TEM DE DIZER QUE FOI PÊNALTI, E QUEM PASSOU (crivo do
+         dono, 22/08/2026): antes o jogo caía no molde de empate e a
+         notícia contava o 1 a 1 sem falar da disputa nem da vaga. */
+      penaltis:['{A} passa pelo {B} nos pênaltis',
+                '{A} elimina o {B} na marca da cal',
+                'Nos pênaltis, o {A} tira o {B} do caminho']
     },
     /* 3 · olho da manchete */
     olho:{
@@ -91,7 +110,9 @@ TO.gazeta = (function(){
       semEstadio:['{gA} a {gB}, o placar mais largo desta rodada d{comp}.'],
       diaCheio:['{gA} a {gB} {noEst}, num dia de {N} jogos e {Gdia} gols.'],
       empate:['Ficou no {gA} a {gB} {noEst}, pela {rod}ª rodada d{comp}.'],
-      mata:['{gA} a {gB} {noEst}, n{fase} d{comp}.']
+      mata:['{gA} a {gB} {noEst}, {naFase} d{comp}.'],
+      penaltis:['Empate em {gA} a {gB} {noEst} e {pA} a {pB} na marca da '+
+                'cal: quem segue {naFase} d{comp} é o {A}.']
     },
     /* ---------------------------------------------------
        DAQUI PRA BAIXO: as seções que só aparecem com o
@@ -113,6 +134,8 @@ TO.gazeta = (function(){
       derrota:['Derrota na {rod}ª rodada d{comp}.'],
       goleadaPro:['Goleada nossa, pel{comp}.'],
       goleadaContra:['Baile do {adv}, pel{comp}.'],
+      passouPen:['Classificados nos pênaltis, {naFase} d{comp}.'],
+      caiuPen:['Eliminados nos pênaltis, {naFase} d{comp}.'],
       naoJogou:['Não joga hoje']
     },
     /* 6 · pelo país */
@@ -130,7 +153,9 @@ TO.gazeta = (function(){
               'O {A} segurou a vantagem até o apito.'],
       empate:['Os dois marcaram e nenhum levou.'],
       zero:['Empate travado, sem quem levasse a melhor.',
-            'Zero a zero de jogo amarrado.']
+            'Zero a zero de jogo amarrado.'],
+      penaltis:['Decidido na marca da cal: o {A} passou.',
+                'Empate no tempo normal, vaga do {A} nos pênaltis.']
     }
   };
 
@@ -201,17 +226,24 @@ TO.gazeta = (function(){
                  : CH.padrao[0];
 
     /* ---- manchete ---- */
-    const A = vencedor(topo), B = perdedor(topo);
+    /* NO JOGO DE PÊNALTI QUEM VENCE NÃO É QUEM FEZ MAIS GOL: no tempo
+       normal ninguém venceu. Quem ocupa o lugar de {A} é quem PASSOU —
+       senão a manchete falava de um empate e a vaga sumia da notícia. */
+    const A = temPen(topo) ? passou(topo) : vencedor(topo);
+    const B = temPen(topo) ? caiu(topo)   : perdedor(topo);
     const vTopo = {A: A?nome(A):'', B: B?nome(B):'',
                    c: nome(topo.c), f: nome(topo.f),
                    gA: Math.max(topo.gc, topo.gf), gB: Math.min(topo.gc, topo.gf),
                    G: gols(topo), fase: topo.fase ? dArt(topo.fase) : '',
+                   naFase: naFase(topo.fase),
+                   pA: temPen(topo) ? Math.max(topo.pen.c, topo.pen.f) : '',
+                   pB: temPen(topo) ? Math.min(topo.pen.c, topo.pen.f) : '',
                    comp: dArt(topo.comp), rod: topo.rod,
                    est: estadio(topo.c), noEst: noEst(estadio(topo.c)),
                    N: jogos.length, Gdia: totalGols};
     const H = MOLDES.manchete;
-    const forceD = !A ? (gols(topo) ? 'empate' : 'zero')
-      : topo.pen ? 'penaltis'
+    const forceD = temPen(topo) ? 'penaltis'
+      : !A ? (gols(topo) ? 'empate' : 'zero')
       : topo.fase ? 'mata'
       : saldo(topo) >= 5 ? 's5' : saldo(topo) === 4 ? 's4'
       : saldo(topo) === 3 ? 's3' : saldo(topo) === 2 ? 's2'
@@ -221,7 +253,8 @@ TO.gazeta = (function(){
     /* ---- olho ---- */
     const O = MOLDES.olho;
     const olho = encher(
-      topo.fase ? O.mata[0]
+      temPen(topo) ? O.penaltis[0]
+      : topo.fase ? O.mata[0]
       : !A ? O.empate[0]
       : !estadio(topo.c) ? O.semEstadio[0]
       : jogos.length >= 8 && saldo(topo) < 3 ? O.diaCheio[0]
@@ -307,14 +340,21 @@ TO.gazeta = (function(){
       const meus = emCasa ? nosso.gc : nosso.gf;
       const deles = emCasa ? nosso.gf : nosso.gc;
       const adv = nome(emCasa ? nosso.f : nosso.c);
-      const cond = meus - deles >= 3 ? 'goleadaPro'
+      /* na chave decidida nos pênaltis o que conta é a vaga, e não o
+         empate: "Empate na 3ª rodada" numa eliminatória não diz nada */
+      const passamos = temPen(nosso) ? passou(nosso) === meu : null;
+      const cond = temPen(nosso) ? (passamos ? 'passouPen' : 'caiuPen')
+                 : meus - deles >= 3 ? 'goleadaPro'
                  : deles - meus >= 3 ? 'goleadaContra'
                  : meus > deles ? (emCasa ? 'vitoriaCasa' : 'vitoriaFora')
                  : meus < deles ? 'derrota' : 'empate';
       caixa = {
-        placar: `${nome(nosso.c)} ${nosso.gc} × ${nosso.gf} ${nome(nosso.f)}`,
-        sob: encher(NS[cond][0], {comp:dArt(nosso.comp), rod:nosso.rod, adv}),
-        bom: meus > deles, ruim: meus < deles
+        placar: `${nome(nosso.c)} ${nosso.gc} × ${nosso.gf} ${nome(nosso.f)}`+
+                (temPen(nosso) ? ` (${nosso.pen.c} × ${nosso.pen.f} nos pênaltis)` : ''),
+        sob: encher(NS[cond][0], {comp:dArt(nosso.comp), rod:nosso.rod, adv,
+                                  naFase:naFase(nosso.fase)}),
+        bom: temPen(nosso) ? !!passamos : meus > deles,
+        ruim: temPen(nosso) ? !passamos : meus < deles
       };
     } else {
       caixa = {placar: NS.naoJogou[0], sob:'', bom:false, ruim:false};
@@ -326,6 +366,7 @@ TO.gazeta = (function(){
     const sobra = jogos.filter(j => j !== topo &&
       !praca.includes(j) && !(nosso && j.c===nosso.c && j.f===nosso.f));
     const condDe = j =>{
+      if(temPen(j)) return 'penaltis';
       const a = vencedor(j);
       return !a ? (gols(j) ? 'empate' : 'zero')
         : saldo(j) >= 4 ? 's4' : saldo(j) === 3 ? 's3' : saldo(j) === 2 ? 's2'
@@ -354,8 +395,11 @@ TO.gazeta = (function(){
         if(porCond[c][volta]) escolhidos.push(porCond[c][volta]);
       }
     const notas = escolhidos.map(j=>{
-      const a = vencedor(j), b = perdedor(j), cond = condDe(j);
-      return {placar:`${nome(j.c)} ${j.gc} × ${j.gf} ${nome(j.f)}`,
+      const cond = condDe(j);
+      const a = temPen(j) ? passou(j) : vencedor(j);
+      const b = temPen(j) ? caiu(j)   : perdedor(j);
+      return {placar:`${nome(j.c)} ${j.gc} × ${j.gf} ${nome(j.f)}`+
+                     (temPen(j) ? ` (${j.pen.c} × ${j.pen.f} pên.)` : ''),
               frase: encher(proxima(NT[cond], 'nota-'+cond),
                 {A: a?nome(a):'', B: b?nome(b):''})};
     });

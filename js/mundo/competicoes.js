@@ -943,6 +943,12 @@ TO.competicoes = (function(){
   function decidirAgregado(E, comp, volta){
     const ida = comp.mata.find(m=>m.indice===volta.indice && m.perna==='ida');
     for(const v of volta.jogos){
+      /* DECIDE UMA VEZ SÓ: a volta é resolvida no dia em que ela é
+         jogada (pra notícia daquele dia já contar a vaga) e o
+         fechamento da semana passa por aqui de novo. Sem esta trava a
+         disputa de pênaltis rodaria duas vezes, com resultados
+         diferentes — a manchete diria um e a chave, outro. */
+      if(v.venceu) continue;
       const i = (ida ? ida.jogos : []).find(x=>x.par===v.par);
       if(!i) { v.venceu = v.gc>v.gf ? v.c : v.f; continue; }
       const golsC = i.gc + v.gf;   // o mandante da ida é o visitante da volta
@@ -1114,11 +1120,38 @@ TO.competicoes = (function(){
                      : penaltisNoJogo(E, j, j.c, j.f,
                                       {comp:comp.nome, fase:m.fase});
           }
-          feitos.push({comp:comp.id, ...j});
+          feitos.push({comp:comp.id, compNome:comp.nome, fase:m.fase, ...j});
         }
       }
       if(comp.copa) avancarCopa(E, comp, semana);
       else avancarFase(E, comp, semana);
+    }
+    return costurarDecisao(E, feitos);
+  }
+
+  /* =======================================================
+     A DECISÃO CHEGA DEPOIS DO PLACAR (correção do dono, 22/08/2026)
+
+     `feitos` guarda uma CÓPIA de cada jogo, e em ida e volta a disputa
+     de pênaltis só é resolvida no `avancarFase`, que roda depois do
+     push: a cópia saía sem `pen` e sem `venceu`. A notícia então falava
+     do empate e não da vaga — não porque faltasse texto, mas porque o
+     dado não tinha chegado. Isto costura os dois de volta, no fim.
+     ======================================================= */
+  function costurarDecisao(E, feitos){
+    const S = E.temporada;
+    if(!S) return feitos;
+    for(const f of feitos){
+      if(f.pen || !f.fase) continue;
+      const comp = S.competicoes.find(c=>c.id === f.comp);
+      if(!comp) continue;
+      for(const m of (comp.mata||[]))
+        for(const j of m.jogos)
+          if(j.c === f.c && j.f === f.f && j.gc === f.gc && j.gf === f.gf){
+            if(j.pen) f.pen = j.pen;
+            if(j.venceu) f.venceu = j.venceu;
+            if(j.agregado) f.agregado = j.agregado;
+          }
     }
     return feitos;
   }
@@ -1160,9 +1193,15 @@ TO.competicoes = (function(){
           }
           feitos.push({comp:comp.id, compNome:comp.nome, fase:m.fase, ...j});
         }
+        /* A VAGA SAI NO DIA DA VOLTA, e não no fechamento da semana: é
+           hoje que a notícia conta quem passou. O `avancarFase` volta a
+           passar por aqui no fim da semana e não muda nada, porque
+           `decidirAgregado` só decide o que ainda não foi decidido. */
+        if(m.perna === 'volta' && m.jogos.every(j=>!j.f || j.gc != null))
+          decidirAgregado(E, comp, m);
       }
     }
-    return feitos;
+    return costurarDecisao(E, feitos);
   }
 
   /* fecha grupos e gera a chave; depois vai encurtando até a final */

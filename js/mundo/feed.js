@@ -1039,9 +1039,15 @@ TO.feed = (function(){
        arma o jornal é `TO.gazeta`. O `texto` continua aqui — é ele que
        aparece em save antigo, na busca e em qualquer lugar que só saiba
        ler texto corrido. */
+    /* O PLACAR DA SÉRIE VIAJA NA MENSAGEM (correção do dono,
+       22/08/2026): `pen` era um SIM/NÃO, e o jornal não tinha como
+       dizer "5 a 4 na marca da cal" nem quem passou — por isso a
+       notícia saía falando só do empate. Vão os dois números; o
+       roteiro cobrança a cobrança fica no jogo, que é onde ele serve. */
     const curto = j => ({c:j.c, f:j.f, gc:j.gc, gf:j.gf,
                          comp:j.compNome || '', rod:j.rodada || 0,
-                         fase:j.fase || '', pen:!!j.penaltis,
+                         fase:j.fase || '',
+                         pen: j.pen ? {c:j.pen.c, f:j.pen.f} : null,
                          venceu:j.venceu || ''});
     propor(E, {
       kind:'rodada', peso:'info', voz:'jornal',
@@ -1456,8 +1462,17 @@ TO.feed = (function(){
     if(!m || m.kind !== 'partida' || m.respondido) return {ok:false};
     const d = m.dados || {};
     m.respondido = {botao:'fim', rot:'Fim de jogo'};
+    /* O FIM DA NOSSA PARTIDA CONTA A VAGA (crivo do dono, 22/08/2026):
+       empatou no mata-mata, a linha dizia só o placar do tempo normal e
+       o jogador ficava sem saber quem passou. E "pelo Copa do Brasil"
+       virou "pela": o artigo agora sai do mesmo `pelaComp` do resto. */
+    const pen = d.pen;
+    const quemPassa = pen ? (pen.c > pen.f ? d.casa : d.fora) : '';
     m.consequencia = `Final: ${d.casa} ${d.gc} × ${d.gf} ${d.fora}`+
-                     (d.comp ? `, pelo ${d.comp}.` : '.');
+                     (d.comp ? `${pelaComp(d.comp)}.` : '.')+
+                     (pen ? ` Nos pênaltis, ${Math.max(pen.c,pen.f)} a `+
+                            `${Math.min(pen.c,pen.f)}: quem passa é o `+
+                            `${quemPassa}.` : '');
     return {ok:true};
   }
 
