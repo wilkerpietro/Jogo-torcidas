@@ -1377,6 +1377,123 @@
   }
 
   /* =======================================================
+     O DETALHE DOS PÊNALTIS (pedido do dono, 21/08/2026)
+     Todo placar decidido nos pênaltis mostra a disputa ao
+     lado, em qualquer tela. Um formatador só, pra não ter
+     duas versões da mesma verdade.
+     ======================================================= */
+  const penTexto = j => (j && j.pen)
+    ? `${j.pen.c} × ${j.pen.f} nos pênaltis`
+    : (j && j.penaltis) ? 'nos pênaltis' : '';
+
+  /* =======================================================
+     A DISPUTA, COBRANÇA A COBRANÇA (pedido do dono,
+     21/08/2026): quando é o NOSSO clube que decide nos
+     pênaltis, a disputa não aparece pronta — ela acontece.
+     Uma cobrança por vez, o placar subindo, e o veredito no
+     fim. Quem não quiser esperar aperta Pular.
+     ======================================================= */
+  const PEN_PASSO = 850;   // ms entre uma cobrança e a próxima
+
+  function abrirPenaltis(dados){
+    const {nomeA, nomeB, pen, comp, fase} = dados;
+    if(!pen || !pen.cobrancas) return;
+    const corpo = el('div',{class:'pen-cena'});
+    let parar = null, i = 0, bt = null;
+
+    const placar = el('div',{class:'pen-placar'});
+    const grade  = el('div',{class:'pen-grade'});
+    const recado = el('div',{class:'pen-recado', texto:'Vai bater…'});
+
+    const linhaDe = lado => {
+      const l = el('div',{class:'pen-lado'});
+      l.appendChild(el('span',{class:'pen-time', texto: lado==='c'?nomeA:nomeB}));
+      const bolas = el('div',{class:'pen-bolas'});
+      for(const cb of pen.cobrancas) if(cb.lado === lado)
+        bolas.appendChild(el('i',{class:'pen-bola'}));
+      l.appendChild(bolas);
+      return l;
+    };
+    const lc = linhaDe('c'), lf = linhaDe('f');
+    grade.appendChild(lc); grade.appendChild(lf);
+
+    let gc = 0, gf = 0;
+    const pintarPlacar = ()=>{
+      placar.innerHTML =
+        `<span class="t">${nomeA}</span><b>${gc}</b>`+
+        `<b>${gf}</b><span class="t">${nomeB}</span>`;
+    };
+    pintarPlacar();
+
+    const bolasDe = lado => [...(lado==='c'?lc:lf).querySelectorAll('.pen-bola')];
+    const marcar = (cb, k)=>{
+      const b = bolasDe(cb.lado)[k];
+      if(b) b.className = 'pen-bola ' + (cb.marcou ? 'fez' : 'errou');
+      if(cb.marcou){ if(cb.lado==='c') gc++; else gf++; }
+      pintarPlacar();
+      recado.textContent = `${cb.lado==='c'?nomeA:nomeB} — `+
+        (cb.marcou ? 'na rede!' : 'perdeu!');
+      recado.className = 'pen-recado ' + (cb.marcou ? 'fez' : 'errou');
+    };
+
+    const fim = ()=>{
+      const venc = pen.c > pen.f ? nomeA : nomeB;
+      recado.textContent = `${venc} passa nos pênaltis, por ${pen.c} a ${pen.f}.`;
+      recado.className = 'pen-recado fim';
+      if(bt) bt.disabled = true;
+    };
+
+    /* quantas cobranças de cada lado já saíram, pra saber qual bola pintar */
+    const contados = {c:0, f:0};
+    const passo = ()=>{
+      if(i >= pen.cobrancas.length){ fim(); return; }
+      const cb = pen.cobrancas[i++];
+      marcar(cb, contados[cb.lado]++);
+      parar = setTimeout(passo, PEN_PASSO);
+    };
+
+    const pular = ()=>{
+      if(parar){ clearTimeout(parar); parar = null; }
+      while(i < pen.cobrancas.length){
+        const cb = pen.cobrancas[i++];
+        marcar(cb, contados[cb.lado]++);
+      }
+      fim();
+    };
+
+    /* O PULAR MORA NO CORPO, e não no rodapé: botão de rodapé fecha o
+       modal depois de agir, e aí o jogador pulava a disputa e não via
+       o resultado dela. Aqui ele só corre a fita até o fim. */
+    bt = el('button',{class:'bt pen-pular', texto:'Pular'});
+    bt.onclick = ()=>{ pular(); bt.disabled = true; };
+
+    corpo.appendChild(el('div',{class:'pen-onde',
+      texto:[comp, fase].filter(Boolean).join(' · ')}));
+    corpo.appendChild(placar);
+    corpo.appendChild(grade);
+    corpo.appendChild(recado);
+    corpo.appendChild(bt);
+
+    const fechar = modal('Disputa de pênaltis', 'o jogo empatou', corpo,
+      null, 'media');
+    parar = setTimeout(passo, 500);
+    /* fechar no meio da disputa não pode deixar o relógio rodando */
+    const orig = fechar;
+    return ()=>{ if(parar) clearTimeout(parar); orig(); };
+  }
+
+  /* a série cobrança a cobrança: ● converteu, ○ perdeu */
+  function penSerie(pen){
+    if(!pen || !pen.cobrancas) return null;
+    const linha = lado => pen.cobrancas.filter(x=>x.lado === lado)
+      .map(x=>`<i class="${x.marcou?'fez':'errou'}"></i>`).join('');
+    const cx = el('div',{class:'pen-serie'});
+    cx.innerHTML = `<div class="l">${linha('c')}</div>`+
+                   `<div class="l">${linha('f')}</div>`;
+    return cx;
+  }
+
+  /* =======================================================
      O ALMANAQUE NO FEED (pedido do dono, 21/08/2026)
      Mesmo esqueleto da Gazeta — cabeçalho, tarja, chapéu,
      manchete e olho —, com um QUADRO ao lado no lugar da
@@ -3658,7 +3775,10 @@
           `<span class="a ${j.venceu===j.c?'venceu':''}">${nomeClube(j.c)}</span>
            <b>${feito?`${j.gc} × ${j.gf}`:'—'}</b>
            <span class="b ${j.venceu===j.f?'venceu':''}">${nomeClube(j.f)}</span>
-           ${j.agregado?`<em>${j.agregado}</em>`:j.penaltis?'<em>pênaltis</em>':''}`}));
+           ${j.agregado?`<em>${j.agregado}</em>`:''}
+           ${penTexto(j)?`<em class="pen">${penTexto(j)}</em>`:''}`}));
+        const serie = penSerie(j.pen);
+        if(serie) q.corpo.appendChild(serie);
         if(j.neutro) q.corpo.appendChild(el('div',{class:'sub-chave',
           texto:`campo neutro · ${j.neutro}`}));
       }
@@ -3831,8 +3951,9 @@
           `<i style="background:${corClube(j.adversario)}"></i>`+
           `${j.casa?'':'@ '}${nomeClube(j.adversario)}`}));
         cel.appendChild(el('span',{class:'sub',
-          texto: j.jogado ? `${j.gp} × ${j.gc}`
-               : `${j.comp} · ${j.neutro ? 'neutro' : j.casa?'casa':'fora'}`}));
+          texto: j.jogado
+            ? `${j.gp} × ${j.gc}`+(j.pen?` (${j.pen.c}×${j.pen.f} pên.)`:'')
+            : `${j.comp} · ${j.neutro ? 'neutro' : j.casa?'casa':'fora'}`}));
       }else if(cv){
         classes.push('caravana');
         cel.appendChild(el('span',{class:'rot', html:
@@ -3953,7 +4074,8 @@
          <td><span class="local ${j.casa?'casa':'fora'}">${j.casa?'Casa':'Fora'}</span></td>
          <td><span class="adv"><i style="background:${corClube(j.adversario)}"></i>
            ${nomeClube(j.adversario)}</span></td>
-         <td class="placar">${j.jogado ? `${j.gp} × ${j.gc}` : '—'}</td>`;
+         <td class="placar">${j.jogado ? `${j.gp} × ${j.gc}` : '—'}`+
+        `${j.pen ? `<small class="pen">${j.pen.c} × ${j.pen.f} nos pênaltis</small>` : ''}</td>`;
       tb.appendChild(tr);
     }
     t.appendChild(tb);
@@ -4168,6 +4290,17 @@
   function passarUmDia(e){
     if(document.body.classList.contains('em-cena')) return null;
     TO.estado.avancarDia();
+    /* A DISPUTA DO NOSSO CLUBE NÃO PASSA BATIDA: se a semana decidiu
+       um mata-mata nosso nos pênaltis, ela acontece na tela antes de
+       o dia seguir. O flag é posto lá em competicoes, na hora. */
+    const E0 = E();
+    if(E0 && E0.penaltisPendente){
+      const p = E0.penaltisPendente;
+      E0.penaltisPendente = null;
+      TO.estado.salvar();
+      abrirPenaltis({nomeA:nomeClube(p.a), nomeB:nomeClube(p.b),
+                     pen:p.pen, comp:p.comp, fase:p.fase});
+    }
     return null;
   }
 

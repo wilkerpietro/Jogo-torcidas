@@ -1200,6 +1200,39 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     "terminou **a** Copa" pedem outra. Um artigo só dava "terminou do
     Brasileirão".
 
+- **MATA-MATA DA SÉRIE D EM IDA E VOLTA** (pedido do dono, 21/08/2026):
+  a D é a única série que sai dos grupos pro playoff, e playoff de
+  acesso não se decide em jogo único. As quatro fases — oitavas,
+  quartas, semi e final — passam a ter dois jogos, com o mando
+  invertido na volta e o agregado decidindo. Conferido: o grupo acaba
+  na semana 32, a chave vai da 33 à 40 e sobra ano.
+- **A DISPUTA DE PÊNALTIS** (correção do dono, 21/08/2026): mata-mata
+  empatado passava um time **aleatório** — uma moeda pesada pela força,
+  sem placar, sem roteiro, sem ninguém ver como. Agora é disputa de
+  verdade: cinco cobranças alternadas por lado, morte súbita se
+  persistir, e o roteiro fica guardado no jogo, cobrança a cobrança.
+  · **A conversão sai da força, mas de raspão**: o melhor bate a 78% e
+    o pior a 73%. **Medido**: com a faixa larga que eu tinha posto
+    primeiro (68% a 82%), o gigante passava **75%** das vezes contra o
+    menor clube do país — isso não é disputa de pênalti, é
+    formalidade. Com a faixa estreita fica em **66%**: vantagem, e não
+    sentença.
+  · **A ANIMAÇÃO**: quando é o NOSSO clube que decide, a disputa
+    acontece na tela — uma cobrança por vez, o placar subindo, bola
+    verde pra quem fez e riscada pra quem perdeu, e o veredito no fim.
+    O botão **Pular** corre a fita até o fim **sem fechar a janela**:
+    botão de rodapé fecha o modal depois de agir, e aí o jogador
+    pulava a disputa e não via o resultado.
+  · **O DETALHE APARECE EM TODA TELA** que mostra o placar decidido:
+    a tela de Competições (com a série cobrança a cobrança), o
+    calendário e a agenda do clube. Um formatador só, pra não haver
+    duas versões da mesma verdade.
+  · **A ORIENTAÇÃO DO PLACAR** (bug pego no teste): na chave de ida e
+    volta a disputa rodava com os times da IDA e era guardada no jogo
+    da VOLTA, então o placar saía trocado em relação aos nomes — "ASA
+    4×2 Paulista" com o **Paulista** classificado. Agora corre na
+    orientação da volta, que é onde ela mora.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

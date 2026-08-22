@@ -253,12 +253,79 @@ TO.competicoes = (function(){
     return [poisson(lc), poisson(lf)];
   }
 
-  /* mata-mata empatado vai a pênaltis; quem é melhor leva
-     vantagem, mas longe de garantia (GDD §18.3) */
-  function penaltis(a, b){
+  /* =======================================================
+     A DISPUTA DE PÊNALTIS (correção do dono, 21/08/2026)
+
+     Antes o empate no mata-mata era uma moeda pesada pela
+     força: `U.rng() < 0.5 + …` e pronto — o classificado saía
+     de lugar nenhum e ninguém via como. Agora é disputa de
+     verdade: cinco cobranças alternadas pra cada lado,
+     morte súbita se persistir, e o roteiro fica guardado no
+     jogo, cobrança a cobrança, pra tela poder mostrar.
+
+     A conversão sai da força, mas de raspão: o melhor bate a
+     78% e o pior a 73%, e nenhum passa disso. Pênalti é
+     loteria — bater bem não é ser grande, é ter sangue frio.
+     MEDIDO: com a faixa larga (68% a 82%) o gigante passava
+     75% das vezes contra o menor clube do país, o que não é
+     disputa de pênalti, é formalidade. Com esta, fica perto
+     de 60%: vantagem, e não sentença.
+     ======================================================= */
+  const PEN_MIN = 0.73, PEN_MAX = 0.78;
+  const PEN_SERIE = 5, PEN_MAX_MORTE = 15;   // trava contra série infinita
+
+  function chanceDePenalti(a, b){
     const p = forca(a) / (forca(a) + forca(b) || 1);
-    return U.rng() < (0.5 + (p-0.5)*0.5) ? a : b;
+    return U.limitar(PEN_MIN + (PEN_MAX - PEN_MIN) * p, PEN_MIN, PEN_MAX);
   }
+
+  /* devolve {c, f, venceu, cobrancas:[{lado,marcou,n}]} */
+  function disputaDePenaltis(a, b){
+    const chance = {c: chanceDePenalti(a,b), f: chanceDePenalti(b,a)};
+    const gols = {c:0, f:0};
+    const cobrancas = [];
+    /* quantas cobranças cada lado ainda tem na série regulamentar:
+       enquanto uma delas não puder mais ser alcançada, a série para */
+    const falta = lado => Math.max(0, PEN_SERIE -
+      cobrancas.filter(x=>x.lado === lado).length);
+    const decidida = ()=>{
+      const na = cobrancas.length;
+      if(na < 2) return false;
+      if(na >= PEN_SERIE*2) return gols.c !== gols.f;
+      return gols.c - gols.f > falta('f') || gols.f - gols.c > falta('c');
+    };
+
+    let n = 0, lado = 'c';
+    while(!decidida() && n < PEN_MAX_MORTE*2){
+      const marcou = U.rng() < chance[lado];
+      if(marcou) gols[lado]++;
+      cobrancas.push({lado, marcou, n: Math.floor(n/2) + 1});
+      lado = lado === 'c' ? 'f' : 'c';
+      n++;
+      /* na morte súbita a rodada é fechada: só decide com os dois
+         tendo batido o mesmo número de vezes */
+      if(n >= PEN_SERIE*2 && n % 2 === 0 && gols.c !== gols.f) break;
+    }
+    return {c:gols.c, f:gols.f, venceu: gols.c > gols.f ? a : b, cobrancas};
+  }
+
+  /* o vencedor da disputa, guardando o roteiro no próprio jogo. E se
+     quem decidiu foi o NOSSO clube, deixa o recado pra tela abrir a
+     disputa cobrança a cobrança em vez de mostrar o placar pronto. */
+  function penaltisNoJogo(E, j, a, b, ctx){
+    const d = disputaDePenaltis(a, b);
+    j.pen = d;
+    j.penaltis = true;
+    const meu = E && E.torcida && E.torcida.clubeId;
+    if(meu && (a === meu || b === meu)){
+      E.penaltisPendente = {a, b, pen:d,
+        comp:(ctx && ctx.comp) || '', fase:(ctx && ctx.fase) || ''};
+    }
+    return d.venceu;
+  }
+
+  /* compat: quem só quer saber quem passou */
+  function penaltis(a, b){ return disputaDePenaltis(a, b).venceu; }
 
   /* =======================================================
      MONTAGEM DA TEMPORADA
@@ -388,7 +455,9 @@ TO.competicoes = (function(){
       semanaInicio, finalEm: finalEm || null, dia: grade[0].d,
       rodadas, mata:[], campeao:null, vice:null,
       /* série com pontos corridos não tem mata-mata: campeão é o líder */
-      pontosCorridos: !!cfg.pontosCorridos
+      pontosCorridos: !!cfg.pontosCorridos,
+      /* cada chave do mata-mata se decide em dois jogos */
+      idaEVolta: !!cfg.idaEVolta
     };
   }
 
@@ -440,9 +509,12 @@ TO.competicoes = (function(){
       const clubes = porDivisao[nome];
       /* até 20 clubes é turno e returno; a D, com 48, vai em quatro
          grupos regionalizados com playoff, como manda o GDD */
+      /* MATA-MATA DA D É IDA E VOLTA (pedido do dono, 21/08/2026): a
+         D é a única série que sai dos grupos pro playoff, e playoff de
+         acesso não se decide em jogo único. */
       const cfg = clubes.length <= 20
         ? {grupos:1, passam:0, voltas:2, pontosCorridos:true}
-        : {grupos:4, passam:4, voltas:2};
+        : {grupos:4, passam:4, voltas:2, idaEVolta:true};
       comps.push(criarCompeticao(U.identificador(nome), nome, 'nacional',
         clubes, cfg, INICIO_NACIONAL));
     }
@@ -825,7 +897,7 @@ TO.competicoes = (function(){
   }
 
   /* soma dos dois jogos; empatou, pênaltis */
-  function decidirAgregado(comp, volta){
+  function decidirAgregado(E, comp, volta){
     const ida = comp.mata.find(m=>m.indice===volta.indice && m.perna==='ida');
     for(const v of volta.jogos){
       const i = (ida ? ida.jogos : []).find(x=>x.par===v.par);
@@ -833,8 +905,14 @@ TO.competicoes = (function(){
       const golsC = i.gc + v.gf;   // o mandante da ida é o visitante da volta
       const golsF = i.gf + v.gc;
       v.agregado = `${golsC} × ${golsF}`;
-      v.venceu = golsC>golsF ? i.c : golsF>golsC ? i.f : penaltis(i.c, i.f);
-      v.penaltis = golsC===golsF;
+      /* A DISPUTA CORRE NA ORIENTAÇÃO DA VOLTA, e não na da ida: o
+         roteiro fica guardado no jogo da volta, então `pen.c` tem de
+         ser o mandante DELA. Rodando com os times da ida, o placar
+         saía trocado em relação aos nomes — "ASA 4×2 Paulista" com o
+         Paulista classificado. */
+      v.venceu = golsC>golsF ? i.c : golsF>golsC ? i.f
+               : penaltisNoJogo(E, v, v.c, v.f,
+                                {comp:comp.nome, fase:volta.fase});
     }
     return volta.jogos.map(j=>j.venceu);
   }
@@ -857,12 +935,13 @@ TO.competicoes = (function(){
 
     /* decide quem passou */
     let vivos;
-    if(ult.perna === 'volta') vivos = decidirAgregado(comp, ult);
+    if(ult.perna === 'volta') vivos = decidirAgregado(E, comp, ult);
     else {
       for(const j of ult.jogos){
         if(!j.f){ j.venceu = j.c; continue; }          // sem adversário, passa direto
-        j.venceu = j.gc>j.gf ? j.c : j.gf>j.gc ? j.f : penaltis(j.c, j.f);
-        j.penaltis = j.gc===j.gf;
+        j.venceu = j.gc>j.gf ? j.c : j.gf>j.gc ? j.f
+                 : penaltisNoJogo(E, j, j.c, j.f,
+                                  {comp:comp.nome, fase:ult.fase});
       }
       vivos = ult.jogos.map(j=>j.venceu);
     }
@@ -988,14 +1067,15 @@ TO.competicoes = (function(){
           j.gc = a; j.gf = b;
           /* em ida e volta quem decide é o agregado, não a partida */
           if(m.perna !== 'ida' && m.perna !== 'volta'){
-            j.venceu = a>b ? j.c : b>a ? j.f : penaltis(j.c, j.f);
-            j.penaltis = a===b;
+            j.venceu = a>b ? j.c : b>a ? j.f
+                     : penaltisNoJogo(E, j, j.c, j.f,
+                                      {comp:comp.nome, fase:m.fase});
           }
           feitos.push({comp:comp.id, ...j});
         }
       }
       if(comp.copa) avancarCopa(E, comp, semana);
-      else avancarFase(comp, semana);
+      else avancarFase(E, comp, semana);
     }
     return feitos;
   }
@@ -1031,8 +1111,9 @@ TO.competicoes = (function(){
           const [a,b] = simular(j.c, j.f, 0);
           j.gc = a; j.gf = b;
           if(m.perna !== 'ida' && m.perna !== 'volta'){
-            j.venceu = a>b ? j.c : b>a ? j.f : penaltis(j.c, j.f);
-            j.penaltis = a===b;
+            j.venceu = a>b ? j.c : b>a ? j.f
+                     : penaltisNoJogo(E, j, j.c, j.f,
+                                      {comp:comp.nome, fase:m.fase});
           }
           feitos.push({comp:comp.id, compNome:comp.nome, fase:m.fase, ...j});
         }
@@ -1042,7 +1123,7 @@ TO.competicoes = (function(){
   }
 
   /* fecha grupos e gera a chave; depois vai encurtando até a final */
-  function avancarFase(comp, semana){
+  function avancarFase(E, comp, semana){
     if(comp.campeao) return;
 
     const gruposAcabaram = comp.rodadas.every(r=>
@@ -1060,6 +1141,19 @@ TO.competicoes = (function(){
     /* alguma chave ainda rodando? */
     const ultima = comp.mata[comp.mata.length-1];
     if(ultima && ultima.jogos.some(j=>j.gc===undefined || j.gc===null)) return;
+
+    /* IDA JOGADA, FALTA A VOLTA (pedido do dono, 21/08/2026): a chave
+       não anda até os dois jogos saírem. A volta inverte o mando, que
+       é o que `decidirAgregado` espera pra somar certo. */
+    if(ultima && ultima.perna === 'ida'){
+      const grade = comp.grade || gradeDe(comp.nome, comp.tipo);
+      const volta = ultima.jogos.map(j=>({c:j.f, f:j.c, par:j.par}));
+      volta.forEach((j,k)=>{ const g = grade[k % grade.length]; j.d = g.d; j.h = g.h; });
+      comp.mata.push({fase: ultima.fase, semana: ultima.semana + 1,
+                      dia: grade[0].d, indice: ultima.indice,
+                      perna:'volta', jogos: volta});
+      return;
+    }
 
     let vivos;
     const jogos = [];
@@ -1099,7 +1193,9 @@ TO.competicoes = (function(){
           par(ordem[i], ordem[ordem.length-1-i]);
       }
     }else{
-      vivos = ultima.jogos.map(j=>j.venceu);
+      vivos = ultima.perna === 'volta'
+        ? decidirAgregado(E, comp, ultima)
+        : ultima.jogos.map(j=>j.venceu);
       if(vivos.length === 1){
         comp.campeao = vivos[0];
         const f = ultima.jogos[0];
@@ -1128,8 +1224,12 @@ TO.competicoes = (function(){
       : semana+1;
     const grade = comp.grade || gradeDe(comp.nome, comp.tipo);
     jogos.forEach((j,k)=>{ const s = grade[k % grade.length]; j.d = s.d; j.h = s.h; });
-    comp.mata.push({fase: NOMES[vivos.length] || `${vivos.length} clubes`,
-                    semana: quando, dia: grade[0].d, jogos});
+    const indice = comp.mata.length;
+    if(comp.idaEVolta) jogos.forEach((j,k)=>{ j.par = `${indice}-${k}`; });
+    comp.mata.push(Object.assign(
+      {fase: NOMES[vivos.length] || `${vivos.length} clubes`,
+       semana: quando, dia: grade[0].d, jogos},
+      comp.idaEVolta ? {perna:'ida', indice} : {}));
   }
 
   /* =======================================================
@@ -1157,6 +1257,10 @@ TO.competicoes = (function(){
                      gp: temJogo(j) ? (casa?j.gc:j.gf) : null,
                      gc: temJogo(j) ? (casa?j.gf:j.gc) : null,
                      jogado: temJogo(j), penaltis: !!j.penaltis,
+                     /* o placar dos pênaltis anda junto com o do jogo:
+                        toda tela que mostra um mostra o outro */
+                     pen: j.pen ? (casa ? {c:j.pen.c, f:j.pen.f}
+                                        : {c:j.pen.f, f:j.pen.c}) : null,
                      agregado: j.agregado || null, venceu: j.venceu});
         }
       };
@@ -1369,7 +1473,7 @@ TO.competicoes = (function(){
 
   return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana,
           forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
-          emJogo, porForca, estreiaDe,
+          emJogo, porForca, estreiaDe, disputaDePenaltis,
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
