@@ -414,3 +414,69 @@
     border-top:1px solid var(--fio-jornal); padding:10px 0 11px; margin-top:2px;
   }
 }
+
+/* =========================================================
+   O ALMANAQUE (pedido do dono, 21/08/2026)
+   O jornal do ano: papel mais claro e mais limpo que o dos
+   outros dois, porque aqui não tem sangue nem rodada — tem
+   balanço. Só o que MUDA mora aqui.
+   ========================================================= */
+.gz.alm{
+  --papel:#EFECE1;
+  --fio-jornal:#B0A68C;
+  /* trama mais fina: papel de anuário, não de banca */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(23,19,15,.020) 0 1px, transparent 1px 4px);
+}
+.gz.alm .nome-jornal{letter-spacing:.01em}
+.gz.alm .gz-manchete{padding-bottom:13px}
+.gz.alm .gz-manchete h2{font-size:clamp(23px,4.2vw,37px)}
+.gz.alm .gz-manchete .olho{margin-bottom:0}
+/* o tom da notícia pinta o chapéu, e nada mais: título é título */
+.gz.alm.boa  .gz-manchete .chapeu{color:#2E6B3A}
+.gz.alm.ruim .gz-manchete .chapeu{color:var(--rubro-jornal)}
+.gz.alm .gz-topo{grid-template-columns:1fr 258px}
+
+/* ---------- o quadro do ano ---------- */
+.alm-quadro{padding:13px 0 11px; align-self:start}
+.alm-quadro .col-tit{border-bottom-width:1px; margin-bottom:8px}
+/* A COLUNA DO RÓTULO SE AJUSTA AO CONTEÚDO: "Campeão" não cabia em
+   3,1em e passava por cima do nome. Com auto, a grade mede a maior
+   das linhas e todas ficam alinhadas. */
+.alm-quadro .l{
+  display:grid; grid-template-columns:minmax(2.4em,auto) 1fr auto; gap:0 10px;
+  align-items:baseline; padding:3px 0;
+  border-bottom:1px dotted var(--fio-jornal);
+  font-size:12px; line-height:1.35; color:var(--tinta);
+}
+.alm-quadro .l:last-child{border-bottom:0}
+.alm-quadro .l .rot{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--tinta-2); font-variant-numeric:tabular-nums;
+}
+.alm-quadro .l .v{overflow-wrap:anywhere}
+.alm-quadro .l .dado{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:10px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--tinta-2); white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+.alm-quadro .l.forte .v{font-weight:700}
+.alm-quadro .l.sobe .rot{color:#2E6B3A}
+.alm-quadro .l.desce .rot{color:var(--rubro-jornal)}
+.alm-quadro .l.nossa{
+  background:rgba(142,42,30,.10); margin:0 -5px; padding:3px 5px;
+  border-bottom-color:var(--rubro-jornal);
+}
+.alm-quadro .l.nossa .v{font-weight:700}
+.alm-quadro .de{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:8.5px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--tinta-2); margin-top:5px; text-align:right;
+}
+@media (max-width:560px){
+  .gz.alm .gz-topo{grid-template-columns:1fr}
+  .alm-quadro{
+    border-top:1px solid var(--fio-jornal); padding:10px 0 11px; margin-top:2px;
+  }
+}

@@ -97,6 +97,9 @@ TO.estado = (function(){
     E.forcas = {};
     TO.competicoes.usarSave(E);
     E.temporada = TO.competicoes.montarTemporada(E);
+    /* a foto do ano zero: sem ela a primeira virada não teria contra o
+       que comparar patrimônio, e o balanço sairia vazio */
+    if(TO.almanaque) TO.almanaque.tirarFoto(E);
     sortearProximoJogo(E);
     lancar(E, 'Caixa inicial', 0);
     mudou();
@@ -333,8 +336,32 @@ TO.estado = (function(){
             mexerIndicador(E, 'moral', 2.5, `Título: ${c.nome}`);
         }
         E.classifAnterior = null;
-        TO.competicoes.evoluirForca(E);
+        /* O ALMANAQUE COLHE ANTES DA VIRADA APAGAR (pedido do dono,
+           21/08/2026): o placar de brigas do ano zera quando o ano
+           muda, e o ranking do fechamento é o do último dia. Então o
+           que a virada vai noticiar é medido AQUI, antes de qualquer
+           coisa nova entrar. */
+        const anoQueFecha = E.data.ano - 1;
+        /* O PLACAR DE BRIGAS É LIDO PRIMEIRO, e a ordem não é gosto:
+           `ranking` mede o saldo do ano de cada torcida, e medir o
+           saldo ZERA o placar quando o ano virou. Lendo o ranking
+           antes, o Rei da Pista saía sempre vazio. */
+        const placarDoAno = TO.almanaque
+          ? TO.almanaque.placarDoAnoTodo(E, anoQueFecha) : null;
+        const colheita = TO.almanaque ? {
+          ano: anoQueFecha,
+          placar: placarDoAno,
+          ranking: TO.relacoes.ranking(E).slice(0, 8)
+        } : null;
+        const movForca = TO.competicoes.evoluirForca(E);
         const mov = TO.competicoes.aplicarSobeDesce(E);
+        if(colheita){
+          colheita.sobeDesce = mov;
+          colheita.forca = movForca;
+          /* as páginas ficam guardadas: quem as derrama no feed é o
+             `eventosDoDia`, junto com o resto do dia */
+          E.almanaquePendente = TO.almanaque.fecharAno(E, colheita);
+        }
         for(const m of mov)
           TO.relacoes.conquistaDoClube(E, m.id,
             TO.competicoes.subiu(m.de, m.para) ? 'acesso' : 'rebaixado');
@@ -350,6 +377,8 @@ TO.estado = (function(){
                              ate: TO.relacoes.semanaAbs(E) + 2};
         }
         E.temporada = TO.competicoes.montarTemporada(E);
+        /* e a foto do ano que começa, pra virada seguinte comparar */
+        if(TO.almanaque) TO.almanaque.tirarFoto(E);
       }
       sortearProximoJogo(E);
       /* o mundo anda: economia das 138, relações esfriam e os

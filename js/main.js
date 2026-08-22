@@ -1377,6 +1377,57 @@
   }
 
   /* =======================================================
+     O ALMANAQUE NO FEED (pedido do dono, 21/08/2026)
+     Mesmo esqueleto da Gazeta — cabeçalho, tarja, chapéu,
+     manchete e olho —, com um QUADRO ao lado no lugar da
+     classificação: o pódio, quem trocou de divisão, quem
+     construiu. Sem placar grande: aqui não há jogo, há ano.
+     ======================================================= */
+  function recorteDoAlmanaque(p, e){
+    const rec = el('article',{class:'gz alm'+(p.tom?' '+p.tom:'')});
+
+    const cab = el('div',{class:'gz-cabeca'});
+    cab.innerHTML =
+      `<div class="linha">
+         <div class="lado">Ano ${p.ano}<br>Fundada em 2026</div>
+         <div class="nome-jornal">${p.jornal}</div>
+         <div class="lado dir">${p.edicao}</div>
+       </div>
+       <div class="tarja">${(p.tarja||[]).map(t=>`<span>${t}</span>`).join('')}</div>`;
+    rec.appendChild(cab);
+
+    const topo = el('div',{class:'gz-topo'+(p.quadro && p.quadro.linhas.length ? '' : ' sozinha')});
+    const man = el('div',{class:'gz-manchete'});
+    man.innerHTML =
+      `<div class="chapeu">${p.chapeu}</div>
+       <h2>${p.manchete}</h2>
+       <p class="olho">${p.olho}</p>`;
+    topo.appendChild(man);
+
+    const q = p.quadro;
+    if(q && q.linhas.length){
+      const cx = el('aside',{class:'alm-quadro'});
+      cx.appendChild(el('div',{class:'col-tit', texto:q.titulo}));
+      const g = el('div',{class:'linhas'});
+      for(const l of q.linhas){
+        g.appendChild(el('div',{class:'l'+(l.forte?' forte':'')+(l.nossa?' nossa':'')+
+          (l.sobe === true ? ' sobe' : l.sobe === false ? ' desce' : ''), html:
+          `<span class="rot">${l.rot}</span>`+
+          `<span class="v">${l.valor}</span>`+
+          /* `dado`, e não `nota`: .nota é a classe do aviso flutuante,
+             com fundo escuro — o quadro do ano herdava ela inteira */
+          `<span class="dado">${l.nota || ''}</span>`}));
+      }
+      cx.appendChild(g);
+      if(q.resto) cx.appendChild(el('div',{class:'de',
+        texto:`e mais ${q.resto}`}));
+      topo.appendChild(cx);
+    }
+    rec.appendChild(topo);
+    return rec;
+  }
+
+  /* =======================================================
      FUTEBOL E PORRADA NO FEED (pedido do dono, 21/08/2026)
      Mesmo esqueleto da Gazeta — cabeçalho, tarja, chapéu,
      manchete, olho e placar grande. No lugar da classificação,
@@ -1635,6 +1686,14 @@
        torcida deixa de ser uma linha e vira a primeira página do
        jornal da rua. Save antigo, sem os dois lados guardados,
        continua no texto de sempre. */
+    /* O ALMANAQUE (pedido do dono, 21/08/2026): campeão, virada de ano
+       e os dois prêmios saem no mesmo esqueleto de jornal. */
+    if(m.kind === 'almanaque' && m.dados && m.dados.pagina){
+      const txt = art.querySelector('.msg-txt');
+      if(txt) txt.remove();
+      art.appendChild(recorteDoAlmanaque(m.dados.pagina, e));
+    }
+
     if(m.kind === 'confronto' && TO.porrada){
       const pg = TO.porrada.montar(e, m);
       if(pg){

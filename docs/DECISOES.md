@@ -1140,6 +1140,33 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · Conferido no jogo rodando: a Série C segue com 20 clubes e a D com
     48 em 4 grupos.
 
+- **O ALMANAQUE** (pedido do dono, 21/08/2026): as notícias de virada
+  de ano e de título, no mesmo esqueleto de jornal da Gazeta e do
+  Futebol e Porrada — cabeçalho, tarja, chapéu, manchete, olho e um
+  quadro ao lado. Papel mais claro e trama mais fina: é anuário, não
+  banca. Seis edições:
+  · **CAMPEÃO** — uma por competição que o **nosso clube jogou**, na
+    hora em que o campeão sai. Regional em março, nacional em
+    dezembro: cada uma no seu tempo. Competição que ele não jogou não
+    vira notícia.
+  · **SOBE E DESCE** — quem subiu e quem caiu, na virada.
+  · **TORCIDA DO ANO** — a 1ª do ranking no fechamento de 31/12.
+  · **REI DA PISTA** — o maior saldo de brigas do ano.
+  · **A JANELA** — quem se reforçou, pela evolução de força de um ano
+    pro outro.
+  · **O PATRIMÔNIO** — quem mais abriu prédio no ano.
+  · **A FOTO DO ANO** (`E.almanaque`) é tirada no primeiro dia de cada
+    ano e no começo do jogo: é contra ela que o balanço compara. Sem
+    foto não existe "no ano passado".
+  · **A ORDEM DA COLHEITA NÃO É GOSTO**: o placar de brigas é lido
+    ANTES do ranking. `ranking` mede o saldo do ano de cada torcida, e
+    medir o saldo ZERA o placar quando o ano virou — lendo o ranking
+    primeiro, o Rei da Pista saía sempre vazio.
+  · **Dois artigos, dois lugares**: "a taça **do** Brasileirão" e "a
+    taça **da** Copa" pedem uma forma; "faturou **o** Brasileirão" e
+    "terminou **a** Copa" pedem outra. Um artigo só dava "terminou do
+    Brasileirão".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -134,6 +134,7 @@ TO.feed = (function(){
     barRivalDeHoje(E);
     aniversariosDeHoje(E);
     placarDoDia(E, ctx.jogos || []);
+    almanaqueDoDia(E);
     dicaDeHoje(E);
   }
 
@@ -327,6 +328,53 @@ TO.feed = (function(){
         }
       }
     }
+  }
+
+  /* -------------------------------------------------------
+     3d. O ALMANAQUE (pedido do dono, 21/08/2026)
+         Duas portas, o mesmo jornal:
+         · a VIRADA — sobe e desce, torcida do ano, rei da
+           pista, a janela e o balanço de patrimônio — sai da
+           colheita que o fecho da temporada deixou guardada;
+         · o CAMPEÃO — uma edição por competição que o NOSSO
+           clube jogou, na hora em que o campeão é decidido.
+     ------------------------------------------------------- */
+  function almanaqueDoDia(E){
+    if(!TO.almanaque) return;
+
+    /* 1. as páginas da virada, guardadas pelo fecho da temporada */
+    const fila = E.almanaquePendente || [];
+    if(fila.length){
+      for(const pg of fila) proporAlmanaque(E, pg,
+        `almanaque|${pg.tipo}|${pg.ano || E.data.ano}`);
+      E.almanaquePendente = null;
+    }
+
+    /* 2. o campeão de cada competição nossa, uma vez só */
+    const meu = E.torcida.clubeId;
+    E.campeoesVistos = E.campeoesVistos || {};
+    for(const comp of ((E.temporada||{}).competicoes || [])){
+      if(!comp.campeao) continue;
+      const chave = `${E.temporada.ano}|${comp.nome}`;
+      if(E.campeoesVistos[chave]) continue;
+      const pg = TO.almanaque.campeao(E, comp);
+      /* competição que o nosso clube não jogou não vira notícia — mas
+         fica marcada, senão a gente reavalia ela todo dia */
+      E.campeoesVistos[chave] = true;
+      if(pg) proporAlmanaque(E, pg, `almanaque|campeao|${chave}`);
+    }
+  }
+
+  function proporAlmanaque(E, pg, chave){
+    propor(E, {
+      kind:'almanaque', peso:'info', voz:'jornal', tipo: pg.tom || '',
+      chave,
+      /* o texto corrido continua valendo: é ele que aparece na busca,
+         no arquivo de Notícias e em qualquer save que não saiba
+         desenhar a página */
+      texto:`${pg.chapeu}: ${pg.manchete}. ${pg.olho}`,
+      dados:{pagina:pg}
+    });
   }
 
   /* AS BRIGAS DA SEMANA SAÍRAM DO FEED (decisão do dono, 21/08/2026).
