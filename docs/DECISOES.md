@@ -1466,6 +1466,47 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     inteira; num celular em pé, onde nem isso resolve, ela quebra em
     duas em vez de cortar o que não coube.
 
+- **A NOTÍCIA DO MATA-MATA PASSA A CONTAR A VAGA** (crivo do dono,
+  22/08/2026): jogo empatado em chave caía no molde de empate e a
+  notícia dava o 1 a 1 sem falar da disputa nem de quem passou. Eram
+  três buracos em fila:
+  · **DE DADO**: a mensagem do jornal levava `pen` como um **sim/não**,
+    então não havia como escrever o placar da série nem o nome do
+    classificado. Agora vão os dois números (o roteiro cobrança a
+    cobrança fica no jogo, que é onde ele serve).
+  · **DE CALENDÁRIO**: em ida e volta a vaga só era decidida no
+    fechamento da semana, depois de a cópia do jogo já ter ido pro
+    feed. Agora a volta é resolvida no dia em que é jogada, e o
+    fechamento passa por ali de novo sem mudar nada — `decidirAgregado`
+    só decide o que ainda não foi decidido, senão a disputa rodaria
+    duas vezes e a manchete diria um nome e a chave, outro.
+  · **DE TEXTO**: entram moldes de manchete (3), olho, nota do país (2)
+    e caixa do nosso jogo (2) pra classificação nos pênaltis, e o fim
+    da nossa partida passa a dizer o placar da série e quem passa.
+  · De quebra, dois artigos errados: a fase virou **"nas quartas"** no
+    lugar de "no Quartas" (as fases são todas femininas, e duas são
+    plurais), e a competição, **"pela Copa do Brasil"** no lugar de
+    "pelo".
+
+- **TODA NOTÍCIA DE BRIGA DIZ QUEM GANHOU** (revisão do dono,
+  22/08/2026): revisados os 30 moldes do Futebol e Porrada, um a um.
+  · **Sete manchetes nomeavam só o perdedor** ou ninguém — "{B} não
+    durou nem cinco minutos", "Sobrou pra {B} de todo lado", "A {B}
+    caiu de pé, mas caiu", "A polícia chegou e encheu o camburão", as
+    três do empate. Todas passaram a nomear quem levou a melhor; as do
+    empate nomeiam os dois lados, que antes nem apareciam.
+  · **UM MOLDE ESTAVA COM OS LADOS TROCADOS**: em "ninguém desceu" o
+    texto dizia "A {B} quebrou tudo e foi embora", e ali `{B}` somos
+    NÓS — a notícia acusava a nossa torcida de quebrar o que ela nem
+    foi defender.
+  · **UM OLHO SERVIA A DUAS CONDIÇÕES OPOSTAS**: o de "era menos"
+    valia pra vitória e pra derrota em menor número, e na derrota saía
+    dizendo que quem venceu é que estava em desvantagem. Virou dois.
+  · **EMPATE NÃO TEM VENCEDOR**: a linha simples do feed lia só
+    `ganhamos`, então briga que saiu igual era anunciada como vitória
+    deles. Agora usa a mesma conta do jornal.
+  · E "1 feridos" virou "1 ferido".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

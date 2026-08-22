@@ -54,12 +54,12 @@ TO.porrada = (function(){
       atropelo:[
         '{A} passou o trator na {B}',
         '{A} amassou a {B} e não teve conversa',
-        '{B} não durou nem cinco minutos',
-        'Deu {A} do começo ao fim'
+        '{B} não durou nem cinco minutos contra a {A}',
+        'Deu {A} do começo ao fim, e a {B} não teve resposta'
       ],
       /* venceu no sufoco */
       vitoria:[
-        '{A} levou a melhor no sufoco',
+        '{A} levou a melhor contra a {B} no sufoco',
         'Foi apertado, mas quem ficou de pé foi a {A}',
         '{A} segurou o rojão e virou o jogo',
         '{A} saiu por cima por pouco'
@@ -67,56 +67,62 @@ TO.porrada = (function(){
       /* venceu em menor número */
       vitoriaMenos:[
         '{A} era menos e ainda correu com a {B}',
-        'Em menor número, {A} não correu de ninguém',
+        'Em menor número, {A} não correu e ainda botou a {B} pra correr',
         '{A} tinha {nA} contra {nB} e mesmo assim mandou'
       ],
       /* perdeu no detalhe */
       derrota:[
         'Deu {A} no detalhe, e a treta não morre aí',
         '{A} levou por pouco e a {B} não engoliu',
-        'A {B} caiu de pé, mas caiu'
+        'A {B} caiu de pé, mas caiu: quem levou foi a {A}'
       ],
       /* apanhou feio */
       apanhou:[
         '{B} tomou um baile da {A}',
-        'Sobrou pra {B} de todo lado',
+        'Sobrou pra {B} de todo lado, e quem distribuiu foi a {A}',
         '{A} passou o rodo e a {B} foi contar os feridos'
       ],
       /* perdeu em desvantagem numérica */
       apanhouMenos:[
-        'A {B} era {nB} contra {nA} e não teve jeito',
-        'Eram muitos: a {B} apanhou no braço contado'
+        'A {B} era {nB} contra {nA} e a {A} não perdoou',
+        'Eram muitos: a {B} apanhou da {A} no braço contado'
       ],
       /* ninguém levou a melhor */
       empate:[
-        'Ninguém levou a melhor e os dois lados contaram ferido',
-        'Deu treta e deu empate: saíram machucados os dois',
-        'Bateu de igual pra igual e ficou por isso mesmo'
+        '{A} e {B}: ninguém levou a melhor e os dois contaram ferido',
+        'Deu treta e deu empate entre {A} e {B}: saíram machucados os dois',
+        '{A} e {B} bateram de igual pra igual e ficou por isso mesmo'
       ],
       /* ninguém desceu pra segurar */
       semLuta:[
-        'A {B} quebrou tudo e foi embora sem achar ninguém',
-        'Chegaram, quebraram e ninguém desceu pra segurar'
+        'A {A} quebrou tudo e foi embora sem achar ninguém',
+        'A {A} chegou, quebrou e ninguém desceu pra segurar'
       ],
       /* a polícia levou gente demais */
       cadeia:[
-        'A polícia chegou e encheu o camburão',
-        'Acabou com camburão cheio dos dois lados',
-        'Terminou na delegacia, com {P} nomes na lista'
+        'A polícia encheu o camburão, e quem levou a melhor foi a {A}',
+        'Acabou com camburão cheio dos dois lados, e a melhor foi da {A}',
+        'Terminou na delegacia com {P} nomes na lista, e a {A} ainda levou a melhor'
       ]
     },
 
     /* 3 · olho da manchete */
     olho:{
       completo:['Foi {onde}, {nA} de um lado e {nB} do outro: '+
-                '{fA} feridos da {A} e {fB} da {B}.'],
-      comPresos:['Foi {onde}, {nA} contra {nB}. '+
-                 'Saldo: {F} no chão e {P} no camburão.'],
-      empate:['Foi {onde}, {nA} de cada lado, e saiu todo mundo '+
-              'contando o que doeu.'],
+                '{fA} {plA} da {A} e {fB} da {B}.'],
+      comPresos:['Foi {onde}, {nA} contra {nB}. Saldo: {F} no chão e '+
+                 '{P} no camburão — a melhor foi da {A}.'],
+      empate:['Foi {onde}, {nA} de um lado e {nB} do outro, e saiu todo '+
+              'mundo contando o que doeu.'],
       semLuta:['Foi {onde}. Não teve briga: teve prejuízo.'],
-      menos:['Foi {onde}. A {A} era {nA} contra {nB} e mandou embora '+
-             'do mesmo jeito.']
+      /* DUAS FRASES, E NÃO UMA (revisão do dono, 22/08/2026): "era
+         menos" é sempre sobre o NOSSO lado, e {A} é sempre o vencedor.
+         Com um olho só, a derrota em menor número saía dizendo que
+         quem venceu é que estava em desvantagem. */
+      menosGanhou:['Foi {onde}. A {A} era {nA} contra {nB} e mandou '+
+                   'embora do mesmo jeito.'],
+      menosPerdeu:['Foi {onde}. A {B} era {nB} contra {nA} e não teve '+
+                   'como segurar a {A}.']
     },
 
     /* 4 · as notas das outras brigas do dia (o card aberto) */
@@ -226,6 +232,8 @@ TO.porrada = (function(){
       fA: venc === b ? fB : fA, fB: venc === b ? fA : fB,
       F: fA + fB, P: presos, onde
     };
+    /* "1 feridos" não existe: a palavra acompanha o número */
+    v.plA = v.fA === 1 ? 'ferido' : 'feridos';
 
     /* ---- chapéu ---- */
     const CH = MOLDES.chapeu;
@@ -245,7 +253,8 @@ TO.porrada = (function(){
     const olho = encher(
       d.semResistencia ? O.semLuta[0]
       : empate ? O.empate[0]
-      : (cond === 'vitoriaMenos' || cond === 'apanhouMenos') ? O.menos[0]
+      : cond === 'vitoriaMenos' ? O.menosGanhou[0]
+      : cond === 'apanhouMenos' ? O.menosPerdeu[0]
       : presos ? O.comPresos[0]
       : O.completo[0], v);
 

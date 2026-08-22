@@ -1090,7 +1090,15 @@ TO.feed = (function(){
        lotes que o ranking e as brigas do mundo já descontam */
     if(b.torcidaId && b.torcidaId !== E.torcida.id && TO.relacoes.baixasIA)
       TO.relacoes.baixasIA(E, b.torcidaId, b.caidos || 0, b.presos || 0);
-    const vencedor = d.ganhamos ? (a.nome || E.torcida.nome) : (b.nome || '');
+    /* EMPATE NÃO TEM VENCEDOR (revisão do dono, 22/08/2026): a linha
+       lia só `ganhamos`, então briga que saiu igual — as duas fichas
+       com o mesmo tanto de ferido — era anunciada como vitória DELES.
+       A conta é a mesma que o Futebol e Porrada usa pra decidir a
+       manchete, e agora as duas dizem a mesma coisa. */
+    const empatou = !d.ganhamos && (a.caidos||0) === (b.caidos||0) &&
+                    ((a.caidos||0) || (b.caidos||0) || (a.n||0));
+    const vencedor = empatou ? '' : d.ganhamos ? (a.nome || E.torcida.nome)
+                                               : (b.nome || '');
     const presosTxt = (a.presos || 0) > 0 ? ` ${a.presos} dos nossos presos.` : '';
     /* ninguém desceu pra segurar: não houve briga, houve prejuízo */
     const semResistencia = !d.ganhamos && !(a.caidos||0) && !(b.caidos||0)
