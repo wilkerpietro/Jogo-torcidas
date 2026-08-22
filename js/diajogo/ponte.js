@@ -789,7 +789,12 @@ TO.diaJogo.ponte = (function(){
       disparo('q','PEDRA', ()=>{ if(J) C.arremessar(J,'pedra'); }),
       disparo('e','BOMBA', ()=>{ if(J) C.arremessar(J,'bomba'); }),
       disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
-      disparo('f','FUGIR', ()=>{ mandarCorrer(); }));
+      disparo('f','FUGIR', ()=>{ mandarCorrer(); }),
+      /* O PORTÃO/SAÍDA VEIO PRO PAD (decisão do dono, 22/08/2026): ele
+         era o último botão em cima do palco, com o rótulo comprido
+         atravessado no meio da briga. Aqui o rótulo é curto e o estado
+         (ligado/desligado) sai do mesmo lugar que o do HUD. */
+      disparo('enter','SAIR', ()=>{ mandarEntrarOuSair(); }));
     esq.append(acoes, bolaDeControle());
 
     const dir = document.createElement('div');
@@ -822,6 +827,16 @@ TO.diaJogo.ponte = (function(){
            q.classList.toggle('gasto', C.restaCd(J,'pedra') > 0); }
     if(e){ e.style.display = J.semArmas ? 'none' : '';
            e.classList.toggle('gasto', J.bombas <= 0 || C.restaCd(J,'bomba') > 0); }
+    /* o botão de sair do pad espelha o do HUD: mesmo estado, mesma
+       porta — nos arredores a ordem vale sempre, nas outras cenas só
+       com o líder no ponto */
+    const sai = pad.querySelector('.pad-enter');
+    if(sai){
+      const be = $('djBtEntrar');
+      sai.disabled = be ? be.disabled : false;
+      sai.classList.toggle('gasto', sai.disabled);
+      sai.textContent = entradaDeVerdade() ? 'PORTÃO' : 'SAIR';
+    }
     marcarFormacaoNoPad();
     marcarFugaNoPad();
   }

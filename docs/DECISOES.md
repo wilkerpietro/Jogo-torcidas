@@ -1550,6 +1550,22 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     seta): pixel não se pergunta, e é por ali que o teste confere os
     quatro rumos.
 
+- **NO CELULAR A CENA É SÓ A CENA** (decisão do dono, 22/08/2026): dois
+  recados atravessavam o meio da briga e saíram.
+  · **"gire o aparelho pra ver a briga inteira"** foi apagado de vez. Ele
+    mandava fazer o que o jogo não faz mais: com a câmera colada no
+    disco do jogador, ver a briga inteira deixou de ser o ponto. Aviso
+    que pede o que o jogo não entrega é barulho.
+  · **A BARRA DE COMANDOS saiu de cima do palco.** O botão do
+    portão/saída era o último que ainda ficava lá, com um rótulo
+    comprido — "Canto do campo (leve o líder)" — deitado por cima dos
+    discos. A função não se perdeu: **foi pro pad**, junto dos outros,
+    com rótulo curto (SAIR, ou PORTÃO nos arredores) e no mesmo estado
+    do botão do HUD, pela mesma porta. No computador o HUD segue como
+    era.
+  · Conferido nas duas orientações: nada com texto sobra por cima do
+    palco, e apertar o botão do pad aciona o mesmo caminho de antes.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

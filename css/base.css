@@ -137,7 +137,6 @@ body.com-painel .pagina.painel{
    servem: os dois eram escondidos por regra de celular, e sem o grid
    antigo passaram a aparecer soltos no rodapé da tela larga */
 #painelBarra{display:none}
-#avisoGirar{display:none}
 body.com-painel #painelBarra{
   display:flex;align-items:center;gap:8px;
   position:absolute;z-index:53;left:0;right:0;top:0;
