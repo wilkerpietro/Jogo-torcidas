@@ -254,11 +254,33 @@ TO.diaJogo.ponte = (function(){
         if(lado!==nosso && J.rivalInfo && J.rivalInfo.nome) return J.rivalInfo.nome;
         return lado==='mandante'?'MANDANTE':'VISITANTE';
       };
+      /* O PLACAR É UM PLACAR DE TRANSMISSÃO (pedido do dono,
+         22/08/2026): duas linhas de time com a tarja da cor do bonde,
+         o nome e o número de pé alinhado à direita, e embaixo uma fita
+         fina com o resto. Antes eram quatro linhas de texto solto com
+         cor no atributo `style` — parecia depuração, não TV.
+         A COR SAI DO BONDE quando o bonde tem cor: o placar passa a
+         casar com as camisas em campo, em vez de dois tons fixos. */
+      const corDoLado = lado=>{
+        const b=(J.bondes_||[]).find(x=>x.lado===lado);
+        return (b && b.cor) || (lado==='mandante' ? '#c0392b' : '#2a5fa8');
+      };
+      const linhaDoTime = (lado, n)=>
+        `<div class="pl-time" style="--c:${corDoLado(lado)}">`+
+          `<span class="pl-nome">${nomeDoLado(lado)}</span>`+
+          `<span class="pl-n">${n}</span></div>`;
+      const rodape = [
+        `<span class="pl-dado"><i>caídos</i>`+
+        `${J.caidos.mandante}–${J.caidos.visitante}</span>`];
+      /* "entraram" só existe onde há portão pra entrar */
+      if(entradaDeVerdade())
+        rodape.push(`<span class="pl-dado"><i>entraram</i>${ent}</span>`);
       el('djPlacar').innerHTML=
-        `<b style="color:#c0392b">${nomeDoLado('mandante')}</b> ${man} de pé<br>`+
-        `<b style="color:#2a5fa8">${nomeDoLado('visitante')}</b> ${vis} de pé<br>`+
-        `<span style="color:#8b867d">${J.caidos.mandante} × ${J.caidos.visitante} caídos · ${ent} entraram</span><br>`+
-        `<span style="color:${J.paz?'#7fc2a0':'#d9705f'}">CLIMA ${J.paz?'TRANQUILO':'PESADO'}</span>`;
+        `<div class="pl-times">${linhaDoTime('mandante', man)}`+
+        `${linhaDoTime('visitante', vis)}</div>`+
+        `<div class="pl-rodape">${rodape.join('')}`+
+        `<span class="pl-clima ${J.paz?'calmo':'pesado'}">`+
+        `clima ${J.paz?'tranquilo':'pesado'}</span></div>`;
     }
 
     const av=el('djAviso');

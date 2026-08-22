@@ -1363,6 +1363,31 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   "Resultado" no feed e zero no arquivo de notícias. O rótulo do tipo
   fica no código só por causa de save antigo.
 
+- **A PERIFERIA DA CENA VIRA TRANSMISSÃO DE TV** (pedido do dono,
+  22/08/2026): as informações de borda eram quatro objetos sem
+  parentesco — relógio numa caixa de borda dura, botão de velocidade
+  solto ao lado, barra de PM crua e um bloco de texto colorido por
+  atributo `style`, cada um com o seu fundo e o seu alinhamento. Parecia
+  depuração deixada na tela.
+  · **UMA GRAMÁTICA SÓ**: placas escuras de vidro fosco (`backdrop-filter`),
+    canto levemente arredondado, mesma borda e mesma sombra nas três.
+  · **O RELÓGIO E A VELOCIDADE VIRARAM UMA TARJA**, porque são o mesmo
+    assunto — o tempo da cena —, com um ponto vermelho pulsando de "ao
+    vivo" (sem palavra nova: o ponto já diz).
+  · **O PLACAR VIROU PLACAR**: duas linhas de time com a tarja da cor do
+    bonde à esquerda, nome em caixa alta e número de pé alinhado à
+    direita em fonte de largura fixa; embaixo, uma fita com caídos,
+    entraram e o clima. **A cor sai do bonde**, então o placar casa com
+    as camisas em campo em vez de dois tons cravados. A tarja ganhou um
+    fio claro em volta porque camisa preta sumia dentro da placa.
+  · "Entraram" só aparece onde há portão pra entrar; a linha da tropa
+    some quando não há tropa.
+  · **A ARMADILHA**: `#djPalco` zera a entrelinha por causa do canvas, e
+    sem `line-height` explícito na HUD todo texto nasce com **zero de
+    altura** — o nome dos times sumiu da placa e só o número, de fonte
+    mono, escapava por transbordo. A regra antiga carregava um
+    `line-height:1.55` que ninguém sabia que estava segurando isso.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

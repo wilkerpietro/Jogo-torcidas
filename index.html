@@ -107,8 +107,14 @@
   <div id="djGrade">
     <div id="djPalco">
       <canvas id="djPrincipal" width="1140" height="820"></canvas>
-      <div class="hud" id="djRelogio">18:00</div>
-      <button class="hud" id="djVelocidade" title="Velocidade da cena">1×</button>
+      <!-- o relógio e a velocidade viraram UMA tarja de transmissão:
+           dois retângulos flutuando lado a lado eram dois objetos onde
+           existe um só assunto (o tempo da cena) -->
+      <div class="hud" id="djTarjaTempo">
+        <span class="ao-vivo" aria-hidden="true"></span>
+        <span id="djRelogio">18:00</span>
+        <button id="djVelocidade" title="Velocidade da cena">1×</button>
+      </div>
       <!-- a PM numa linha só: duas barras empilhadas com rótulo em caixa
            alta era muita tela pra informação que muda devagar. A de
            pressão só acende quando há pressão. -->

@@ -26,48 +26,140 @@
   text-align:center;pointer-events:none;opacity:0;transition:opacity .25s}
 #djMiniAviso.on{opacity:1}
 
-/* ---------- HUD ---------- */
-.hud{position:absolute;pointer-events:none;font-family:var(--mono)}
-#djRelogio{top:9px;left:50%;transform:translateX(-50%);font-size:27px;font-weight:600;
-  background:#0e0e0dcc;border:1px solid #45443f;padding:2px 14px 4px}
-#djSubrelogio{top:50px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--fraco);
-  text-shadow:0 1px 4px #000;white-space:nowrap}
-/* A PM NUMA LINHA SÓ.
-   Eram duas barras empilhadas, cada uma com um rótulo em caixa alta —
-   quase cem pixels de altura no canto da tela pra dois números que
-   mudam devagar. Agora é uma faixa: a sigla, a barra da atenção
-   policial e, colada nela, a fita fina da pressão, que só acende
-   quando existe pressão. */
-#djAlerta{top:9px;left:11px;width:150px;display:flex;align-items:center;gap:6px;
-  flex-wrap:wrap}
-#djAlerta .rot{font-size:9px;letter-spacing:.13em;color:var(--pm)}
-#djAlerta .barra{height:5px;background:#00000077;border:1px solid #2f5c44;
-  position:relative;flex:1 1 60px}
-#djAlerta .barra i{position:absolute;inset:0 auto 0 0;background:var(--pm);transition:width .3s}
-#djAlerta .barra.pressao{flex-basis:100%;border-color:#6b3a32;height:3px;
+/* =========================================================
+   A HUD DA CENA — DETALHE DE TRANSMISSÃO (pedido do dono,
+   22/08/2026)
+
+   As informações de borda eram quatro objetos sem parentesco: um
+   relógio numa caixa de borda dura, um botão de velocidade solto ao
+   lado, uma barra de PM crua e um bloco de texto colorido por atributo
+   `style`. Cada um com o seu fundo, o seu contorno e o seu alinhamento
+   — parecia depuração deixada na tela.
+
+   Agora é UM sistema, com a gramática de transmissão de TV: placas
+   escuras de vidro fosco, canto levemente arredondado, tarja de cor à
+   esquerda de quem é time, número em fonte de largura fixa alinhado à
+   direita, e rótulo miúdo em caixa alta pro dado secundário. Tudo o
+   que é peça da mesma placa mora DENTRO dela — o relógio e a
+   velocidade viraram uma tarja só, porque são o mesmo assunto.
+   ========================================================= */
+/* `line-height` EXPLÍCITO: o palco zera a entrelinha por causa do
+   canvas (`#djPalco{line-height:0}`), e sem isto todo texto da HUD
+   nasce com zero de altura — o nome dos times some da placa e só o
+   número, de fonte mono, escapa por transbordo. */
+.hud{position:absolute;pointer-events:none;font-family:var(--mono);
+  line-height:1.35}
+/* a placa de vidro: um fundo só pra toda a periferia da cena */
+#djTarjaTempo, #djAlerta, #djPlacar{
+  background:rgba(10,10,9,.66);
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:5px;
+  box-shadow:0 2px 14px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
+}
+
+/* ---- a tarja do tempo: ao vivo · relógio · velocidade ---- */
+#djTarjaTempo{
+  top:10px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:10px;
+  padding:5px 6px 5px 11px;pointer-events:auto;
+}
+#djTarjaTempo .ao-vivo{
+  width:7px;height:7px;border-radius:50%;background:#e04b45;flex:0 0 auto;
+  box-shadow:0 0 0 3px rgba(224,75,69,.16);
+  animation:djPulso 2s ease-in-out infinite;
+}
+@keyframes djPulso{ 0%,100%{opacity:1} 50%{opacity:.35} }
+@media (prefers-reduced-motion:reduce){ #djTarjaTempo .ao-vivo{animation:none} }
+#djRelogio{
+  font-size:23px;font-weight:600;line-height:1;letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;color:var(--texto);
+}
+#djVelocidade{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  padding:4px 8px;border-radius:3px;line-height:1;cursor:pointer;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+  color:var(--fraco);pointer-events:auto;
+}
+#djVelocidade:hover{border-color:var(--ouro);color:var(--ouro)}
+#djVelocidade.rapido{border-color:var(--ouro);color:var(--ouro);
+  background:rgba(217,164,65,.12)}
+
+/* ---- a faixa da PM, à esquerda ---- */
+#djAlerta{top:10px;left:11px;width:158px;padding:7px 9px 8px;
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+#djAlerta .rot{font-size:8.5px;letter-spacing:.18em;color:var(--pm);
+  text-transform:uppercase}
+#djAlerta .barra{height:4px;border-radius:2px;overflow:hidden;
+  background:rgba(255,255,255,.09);border:0;position:relative;flex:1 1 60px}
+#djAlerta .barra i{position:absolute;inset:0 auto 0 0;background:var(--pm);
+  border-radius:2px;transition:width .3s}
+#djAlerta .barra.pressao{flex-basis:100%;height:3px;
   opacity:0;transition:opacity .3s}
 #djAlerta .barra.pressao i{background:#c0392b}
-
-/* o 1×/2× fica ao lado do relógio, e mostra o estado de agora — botão
-   que anuncia o que vai virar é a fonte clássica de clique errado */
-#djVelocidade{position:absolute;top:12px;left:calc(50% + 52px);
-  font-family:var(--mono);font-size:12px;padding:2px 8px;
-  background:#00000099;border:1px solid #55534d;color:var(--texto);
-  border-radius:3px;cursor:pointer;line-height:1.5}
-#djVelocidade:hover{border-color:var(--ouro);color:var(--ouro)}
-#djVelocidade.rapido{border-color:var(--ouro);color:var(--ouro)}
-#djCarga{font-size:10px;letter-spacing:.08em;color:#5fa87d;margin-top:5px;min-height:12px}
+#djCarga{font-size:8.5px;letter-spacing:.14em;color:#5fa87d;
+  flex-basis:100%;min-height:0;text-transform:uppercase}
+#djCarga:empty{display:none}
 #djCarga.quente{color:var(--ouro)}
-#djPlacar{top:9px;right:11px;text-align:right;font-size:11px;line-height:1.55;
-  text-shadow:0 1px 4px #000}
-#djPlacar b{font-family:var(--titulo);font-size:14px;letter-spacing:.07em}
-#djAviso{top:40%;left:0;right:0;text-align:center;font-family:var(--titulo);
-  font-size:34px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  text-shadow:0 3px 14px #000;opacity:0;transition:opacity .3s}
-#djDica{bottom:8px;left:12px;font-size:11px;color:var(--fraco);
-  text-shadow:0 1px 4px #000;max-width:700px}
-#djDica kbd{font-family:var(--mono);background:#00000099;border:1px solid #55534d;
-  padding:1px 5px;color:var(--texto)}
+
+/* ---- o placar, à direita: a peça central da transmissão ---- */
+#djPlacar{top:10px;right:11px;min-width:212px;padding:0;overflow:hidden}
+#djPlacar .pl-times{display:flex;flex-direction:column}
+#djPlacar .pl-time{
+  display:grid;grid-template-columns:3px minmax(0,1fr) auto;
+  align-items:center;gap:0 9px;padding:6px 10px 6px 0;
+}
+#djPlacar .pl-time + .pl-time{border-top:1px solid rgba(255,255,255,.07)}
+/* a tarja da cor ganha um fio claro em volta: camisa preta (e há
+   várias) sumia dentro da placa escura */
+#djPlacar .pl-time::before{
+  content:'';display:block;width:3px;height:15px;background:var(--c);
+  border-radius:0 2px 2px 0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.22);
+}
+#djPlacar .pl-nome{
+  font-family:var(--titulo);font-size:12.5px;letter-spacing:.07em;line-height:1.2;
+  text-transform:uppercase;color:var(--texto);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#djPlacar .pl-n{
+  font-family:var(--mono);font-size:15px;line-height:1.2;
+  font-variant-numeric:tabular-nums;
+  color:var(--texto);min-width:2ch;text-align:right;
+}
+#djPlacar .pl-rodape{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:5px 10px 6px;background:rgba(0,0,0,.28);
+  border-top:1px solid rgba(255,255,255,.07);
+  font-size:9px;letter-spacing:.06em;color:var(--texto);
+}
+#djPlacar .pl-dado i{font-style:normal;color:var(--fraco);
+  letter-spacing:.14em;text-transform:uppercase;margin-right:5px}
+#djPlacar .pl-clima{
+  margin-left:auto;letter-spacing:.14em;text-transform:uppercase;
+  display:flex;align-items:center;gap:5px;
+}
+#djPlacar .pl-clima::before{
+  content:'';width:5px;height:5px;border-radius:50%;background:currentColor;
+}
+#djPlacar .pl-clima.calmo{color:#7fc2a0}
+#djPlacar .pl-clima.pesado{color:#d9705f}
+
+/* ---- o anúncio no meio do palco ---- */
+#djAviso{top:38%;left:0;right:0;text-align:center;font-family:var(--titulo);
+  font-size:32px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  text-shadow:0 3px 18px #000, 0 0 40px rgba(0,0,0,.7);
+  opacity:0;transition:opacity .3s}
+
+/* ---- a tira de dicas, no rodapé ---- */
+#djDica{bottom:9px;left:12px;font-size:10px;color:var(--fraco);
+  letter-spacing:.04em;text-shadow:0 1px 4px #000;max-width:700px}
+#djDica kbd{font-family:var(--mono);font-size:9.5px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  border-radius:3px;padding:1px 5px;color:var(--texto)}
+
+#djSubrelogio{top:52px;left:50%;transform:translateX(-50%);font-size:10px;
+  color:var(--fraco);text-shadow:0 1px 4px #000;white-space:nowrap}
 
 /* ---------- botões da cena ---------- */
 #djFormacoes{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}
