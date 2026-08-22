@@ -131,7 +131,6 @@ TO.feed = (function(){
     barRivalDeHoje(E);
     aniversariosDeHoje(E);
     placarDoDia(E, ctx.jogos || []);
-    brigasDaSemana(E);
     dicaDeHoje(E);
   }
 
@@ -327,34 +326,12 @@ TO.feed = (function(){
     }
   }
 
-  /* -------------------------------------------------------
-     3d. AS BRIGAS DA SEMANA (decisão do dono, 17/08/2026):
-         toda segunda o jornal resume as brigas que o mundo
-         teve na semana anterior — quem brigou e quem venceu
-         numa coluna, as baixas de cada lado na outra, as
-         maiores brigas primeiro.
-     ------------------------------------------------------- */
-  function brigasDaSemana(E){
-    if(E.data.dia !== 1) return;
-    const sAnt = E.data.semana - 1;
-    if(sAnt < 1) return;
-    const brigas = (E.brigasIA||[])
-      .filter(b=>b.ano === E.data.ano && b.semana === sAnt);
-    if(!brigas.length) return;
-    const ord = [...brigas].sort((x,y)=>(y.a.n+y.b.n)-(x.a.n+x.b.n));
-    const MOSTRA = 5;   // só as 5 maiores na notícia (decisão do dono)
-    propor(E, {
-      kind:'brigas', peso:'info', voz:'jornal',
-      chave:`brigas|${E.data.ano}|${sAnt}`,
-      texto:`As brigas da semana pelo país: ${brigas.length} `+
-            `${brigas.length===1 ? 'registrada' : 'registradas'}, `+
-            `as maiores primeiro.`,
-      dados:{brigas: ord.slice(0, MOSTRA),
-             resto: Math.max(0, ord.length - MOSTRA)},
-      links:[{rot:'Ver todas', acao:'painel',
-              args:{pagina:'noticias', aba:'brigas'}}]
-    });
-  }
+  /* AS BRIGAS DA SEMANA SAÍRAM DO FEED (decisão do dono, 21/08/2026).
+     O resumo de segunda-feira deixou de existir: quem conta briga
+     agora é o Futebol e Porrada, que sai a cada briga NOSSA e leva
+     dentro dele as outras do mesmo dia. As brigas do mundo continuam
+     sendo registradas em `E.brigasIA` do mesmo jeito e continuam
+     inteiras em Notícias → Brigas — o que acabou foi a mensagem. */
 
   /* -------------------------------------------------------
      3c. A SUGESTÃO DE ASSALTO (decisão do dono, 17/08/2026):

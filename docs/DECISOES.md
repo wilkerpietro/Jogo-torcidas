@@ -1033,6 +1033,13 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
 - **FUTEBOL E PORRADA** (pedido do dono, 21/08/2026): a briga da nossa
   torcida deixa de ser uma linha de texto e vira a primeira página do
   jornal da rua, **substituindo a mensagem de confronto**.
+  · **E substituindo também o "brigas da semana"**, que deixa de
+    existir: o resumo de segunda-feira saiu do feed. Notícia de briga
+    só sai neste layout. **As brigas do mundo continuam acontecendo e
+    continuam registradas** — inteiras, como sempre, em
+    **Notícias → Brigas**; o que acabou foi a mensagem semanal.
+    Conferido: 199 dias e 28 segundas sem uma única mensagem, com
+    3.328 brigas contadas no mundo e a aba cheia.
   · **Mesmo esqueleto da Gazeta**: cabeçalho, tarja, chapéu, manchete,
     olho e placar grande. O placar grande da briga são os **feridos**
     de cada lado.

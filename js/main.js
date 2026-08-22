@@ -1623,38 +1623,9 @@
       art.appendChild(la);
     }
 
-    /* AS BRIGAS DA SEMANA EM TABELA (decisão do dono): coluna 1 quem
-       brigou e quem venceu; coluna 2 as baixas de cada lado — as
-       maiores brigas primeiro, ordenadas por envolvidos. */
-    const tbb = m.kind === 'brigas' && m.dados && m.dados.brigas;
-    if(tbb && tbb.length){
-      const corDe2 = id => {
-        const o = TO.mundo.torcida(id);
-        return (o && TO.mundo.coresDaTorcida(o).cor) || '#888';
-      };
-      const chip2 = (id, nome) =>
-        `<i class="to-chip" style="background:${corDe2(id)}"></i>${nome}`;
-      const baixa2 = l => `${l.feridos} fer.`+(l.presos?` · ${l.presos} pr.`:'');
-      const tb2 = el('table',{class:'tab-olheiro'});
-      for(const b of tbb){
-        const tr = el('tr');
-        tr.appendChild(el('td',{class:'to-jogo', html:
-          `<small>${b.cidade}</small>
-           <div>${chip2(b.a.id, b.a.nome)} <b>${b.a.n}</b>`+
-          `<span class="to-x">×</span><b>${b.b.n}</b> `+
-          `${chip2(b.b.id, b.b.nome)}</div>
-           <small>venceu <b>${b.vencedor}</b>`+
-          `${b.prestigio ? ` · prestígio ±${b.prestigio}` : ''}</small>`}));
-        tr.appendChild(el('td',{class:'to-torcidas', html:
-          `<div>${b.a.nome} <span class="to-faixa">${baixa2(b.a)}</span></div>
-           <div>${b.b.nome} <span class="to-faixa">${baixa2(b.b)}</span></div>`}));
-        tb2.appendChild(tr);
-      }
-      art.appendChild(tb2);
-      if(m.dados.resto)
-        art.appendChild(el('div',{class:'msg-efeitos',
-          texto:`…e mais ${m.dados.resto} brigas menores na aba Brigas.`}));
-    }
+    /* a tabela das brigas da semana saiu junto com a mensagem dela
+       (decisão do dono, 21/08/2026): quem conta briga é o Futebol e
+       Porrada, e a lista cheia mora em Notícias → Brigas */
 
     /* A RODADA VIRA PRIMEIRA PÁGINA (régua do dono, 20/08/2026): a
        linha corrida de placares dá lugar a um recorte de jornal. Se a
