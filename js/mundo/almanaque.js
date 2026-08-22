@@ -132,12 +132,20 @@ TO.almanaque = (function(){
       chapeu:{
         titulo: ['Começa a disputa'],
         acesso: ['Vale o acesso'],
-        queda:  ['Tem gente pra cair']
+        queda:  ['Tem gente pra cair'],
+        copa:   ['Mata-mata']
       },
       manchete:[
         'Vem aí {compO}',
         '{compO} começa semana que vem',
         'Daqui a uma semana rola a bola {comp}'
+      ],
+      /* A COPA TEM MOLDE PRÓPRIO (pedido do dono, 21/08/2026): não tem
+         tabela, não tem acesso e não tem queda — tem eliminação. */
+      mancheteCopa:[
+        'Vem aí {compO}: erro não tem volta',
+        '{compO} começa semana que vem, e é jogo único',
+        'Daqui a uma semana abre {compO}, no tudo ou nada'
       ],
       olho:{
         /* {F} favoritos ao título · {S} favoritos ao acesso ·
@@ -148,7 +156,22 @@ TO.almanaque = (function(){
                    'Brigam pelo acesso: {S}.'],
         titQueda:['{N} clubes na disputa. Favoritos ao título: {F}. '+
                   'Ameaçados de queda: {Q}.'],
-        soTitulo:['{N} clubes na disputa. Favoritos ao título: {F}.']
+        soTitulo:['{N} clubes na disputa. Favoritos ao título: {F}.'],
+        copa:['{N} clubes e um caminho só: quem tropeçar uma vez está '+
+              'fora. Favoritos à taça: {F}.']
+      },
+      /* A BRECHA DO NOSSO CLUBE (pedido do dono, 21/08/2026): quando
+         ele não está nem entre os favoritos nem na zona de risco, a
+         notícia abre espaço pra dizer o que se espera dele. Nunca com
+         número: expectativa é palavra, não força. */
+      nos:{
+        alto:  ['O {A} entra brigando lá em cima.'],
+        meio:  ['Do {A} se espera meio de tabela.'],
+        baixo: ['O {A} entra como azarão.'],
+        risco: ['O {A} entra com a corda no pescoço.'],
+        copaAlto: ['O {A} entra como um dos que podem ir longe.'],
+        copaMeio: ['O {A} entra sem favoritismo, mas com chance.'],
+        copaBaixo:['O {A} entra pra dar trabalho a quem for maior.']
       }
     },
 
@@ -383,12 +406,14 @@ TO.almanaque = (function(){
              `janela de <b>${ano}</b>`],
       quadro:{
         titulo:'Quem mais mexeu no elenco',
+        /* SEM NÚMERO DE FORÇA (régua do dono, 21/08/2026): o que a
+           notícia conta é o QUANTO mudou, não o nível de ninguém */
         linhas:[...subiram.slice(0, LINHAS).map((x,i)=>({
-                  rot:`+${x.d}`, valor:x.nome, nota:`força ${x.para}`,
+                  rot:`+${x.d}`, valor:x.nome,
                   sobe:true, forte: i === 0,
                   nossa: x.id === E.torcida.clubeId})),
                 ...cairam.slice(0, 2).map(x=>({
-                  rot:`${x.d}`, valor:x.nome, nota:`força ${x.para}`,
+                  rot:`${x.d}`, valor:x.nome,
                   sobe:false, nossa: x.id === E.torcida.clubeId}))]
       }
     };
@@ -447,7 +472,8 @@ TO.almanaque = (function(){
     const fila = C().porForca(E, comp);
     if(fila.length < 2 || !fila.some(x=>x.id === meu)) return null;
 
-    const {sobem, caem} = C().emJogo(comp);
+    const copa = !!comp.copa;
+    const {sobem, caem} = copa ? {sobem:0, caem:0} : C().emJogo(comp);
     const nomes = lista => lista.map(x=>nomeTime(x.id)).join(', ');
     const nTit = Math.min(FAVORITOS, fila.length);
     const topo = fila.slice(0, nTit);
@@ -459,16 +485,35 @@ TO.almanaque = (function(){
 
     const AB = MOLDES.abertura;
     const nossaPos = fila.findIndex(x=>x.id === meu);
-    const cond = doAcesso.length && daQueda.length ? 'tudo'
+    const fatia = fila.length > 1 ? nossaPos / (fila.length - 1) : 0;
+
+    /* A BRECHA DO NOSSO CLUBE: quando ele já aparece na lista de
+       favoritos ou na de risco, a notícia já falou dele — repetir
+       seria encher linguiça. Fora dessas duas, entra a expectativa. */
+    const jaCitado = topo.some(x=>x.id === meu) ||
+                     doAcesso.some(x=>x.id === meu) ||
+                     daQueda.some(x=>x.id === meu);
+    const faixaNossa = copa ? (fatia < .25 ? 'copaAlto'
+                             : fatia < .7  ? 'copaMeio' : 'copaBaixo')
+                     : (caem && fatia > .85) ? 'risco'
+                     : fatia < .3  ? 'alto'
+                     : fatia < .7  ? 'meio' : 'baixo';
+    const nossaLinha = jaCitado ? '' :
+      encher(AB.nos[faixaNossa][0], {A:nomeTime(meu)});
+
+    const cond = copa ? 'copa'
+               : doAcesso.length && daQueda.length ? 'tudo'
                : doAcesso.length ? 'titAcesso'
                : daQueda.length ? 'titQueda' : 'soTitulo';
     const v = {comp:dArt(comp.nome), compO:oArt(comp.nome),
                N:fila.length, F:nomes(topo),
                S:nomes(doAcesso), Q:nomes(daQueda)};
     const ano = E.data.ano;
+    /* SEM NÚMERO DE FORÇA NA NOTÍCIA (régua do dono, 21/08/2026): o
+       quadro diz o papel de cada um — favorito, risco, o nosso —, e a
+       força fica onde sempre esteve, na tela de Competições. */
     const linha = (x, rot, cls) => ({
-      rot, valor:nomeTime(x.id), nota:`força ${Math.round(x.forca)}`,
-      sobe: cls, nossa: x.id === meu});
+      rot, valor:nomeTime(x.id), sobe: cls, nossa: x.id === meu});
     return {
       ano, tipo:'abertura', tom:'',
       jornal:'O Almanaque', edicao:'Edição de véspera',
@@ -476,20 +521,27 @@ TO.almanaque = (function(){
          B com acesso e queda, quem está em terceiro lê "vale o acesso"
          e quem está em décimo oitavo lê "tem gente pra cair". Dizer
          sempre a mesma coisa pros dois era desperdiçar a manchete. */
-      chapeu: (caem && nossaPos >= fila.length - Math.ceil(fila.length/3))
+      chapeu: copa ? AB.chapeu.copa[0]
+            : (caem && nossaPos >= fila.length - Math.ceil(fila.length/3))
                 ? AB.chapeu.queda[0]
             : (sobem && nossaPos < Math.ceil(fila.length/3))
                 ? AB.chapeu.acesso[0]
             : AB.chapeu.titulo[0],
-      manchete: encher(daFila(AB.manchete, ano + comp.nome.length), v),
-      olho: encher(AB.olho[cond][0], v),
+      manchete: encher(daFila(copa ? AB.mancheteCopa : AB.manchete,
+                              ano + comp.nome.length), v),
+      olho: encher(AB.olho[cond][0], v) + (nossaLinha ? ' ' + nossaLinha : ''),
       tarja:[comp.nome, `<b>${fila.length}</b> clubes`,
+             copa ? 'jogo único' : '',
              sobem ? `<b>${sobem}</b> sobem` : '',
              caem ? `<b>${caem}</b> caem` : ''].filter(Boolean),
       quadro:{
         titulo:'Como chegam',
         linhas:[...topo.map((x,i)=>linha(x, i === 0 ? 'favorito' : `${i+1}º`, true)),
-                ...daQueda.map(x=>linha(x, 'risco', false))]
+                ...daQueda.map(x=>linha(x, 'risco', false)),
+                /* e a linha do nosso clube, quando ele não está em
+                   nenhuma das duas pontas */
+                ...(jaCitado ? [] : [{rot:'o nosso', valor:nomeTime(meu),
+                                      nossa:true}])]
       }
     };
   }

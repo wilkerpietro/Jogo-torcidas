@@ -357,9 +357,11 @@ TO.feed = (function(){
     const hoje = (E.data.semana - 1) * 7 + E.data.dia;
     E.aberturasVistas = E.aberturasVistas || {};
     for(const comp of ((E.temporada||{}).competicoes || [])){
-      const r0 = (comp.rodadas || [])[0];
-      if(!r0) continue;
-      const estreia = (r0.semana - 1) * 7 + (r0.dia || 6);
+      /* a Copa do Brasil não tem rodada nenhuma: a estreia dela é a
+         primeira fase do mata-mata */
+      const e0 = TO.competicoes.estreiaDe(comp);
+      if(!e0) continue;
+      const estreia = (e0.semana - 1) * 7 + e0.dia;
       if(estreia - hoje !== 7) continue;
       const chave = `${E.temporada.ano}|${comp.nome}`;
       if(E.aberturasVistas[chave]) continue;

@@ -1169,6 +1169,25 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     · Quantos sobem e quantos caem sai de `TO.competicoes.emJogo`, que
       lê a escada nacional (4 por 4), a escada regional e o formato de
       cada competição (`rebaixaPorGrupo`, `sobemFinalistas`).
+    · **A COPA DO BRASIL TEM MOLDE PRÓPRIO** (pedido do dono,
+      21/08/2026): não tem tabela, não tem acesso e não tem queda —
+      tem eliminação. Manchete e olho falam disso ("quem tropeçar uma
+      vez está fora"), e a tarja diz **jogo único**. Ela também não
+      tinha rodada nenhuma, só mata-mata: a estreia passou a sair de
+      `estreiaDe`, que lê a primeira fase quando não há rodada, e a
+      lista de clubes de `porForca`, que cai no `comp.clubes`.
+    · **A BRECHA DO NOSSO CLUBE** (pedido do dono, 21/08/2026): quando
+      ele não está nem entre os favoritos nem na zona de risco, a
+      notícia abre espaço pra dizer o que se espera dele — "O Fortaleza
+      entra como um dos que podem ir longe", "Do {A} se espera meio de
+      tabela", "O {A} entra como azarão". Se ele já foi citado como
+      favorito ou como ameaçado, a linha não sai: repetir seria encher
+      linguiça. E o quadro ganha a linha **o nosso**.
+    · **NENHUMA NOTÍCIA DO ALMANAQUE EXPÕE O NÍVEL DE FORÇA** (régua do
+      dono, 21/08/2026). O quadro diz o PAPEL de cada um — favorito,
+      risco, o nosso — e a expectativa é palavra, não número. A janela
+      mostra só o QUANTO mudou (+4), nunca o nível resultante. A força
+      continua onde sempre esteve: na tela de Competições.
   · **A FOTO DO ANO** (`E.almanaque`) é tirada no primeiro dia de cada
     ano e no começo do jogo: é contra ela que o balanço compara. Sem
     foto não existe "no ano passado".

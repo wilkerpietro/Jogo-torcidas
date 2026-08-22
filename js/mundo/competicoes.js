@@ -1303,12 +1303,29 @@ TO.competicoes = (function(){
     return {sobem, caem};
   }
 
-  /* os clubes de uma competição, do mais forte pro mais fraco */
+  /* os clubes de uma competição, do mais forte pro mais fraco.
+     A COPA NÃO TEM RODADA: ela nasce só com o mata-mata e a lista de
+     inscritos, então a lista é a fonte quando não há tabela. */
   function porForca(E, comp){
     const ids = new Set();
     for(const r of (comp.rodadas||[])) for(const j of r.jogos){ ids.add(j.c); ids.add(j.f); }
+    if(!ids.size){
+      for(const id of (comp.clubes||[])) if(id) ids.add(id);
+      for(const m of (comp.mata||[])) for(const j of m.jogos){
+        if(j.c) ids.add(j.c); if(j.f) ids.add(j.f);
+      }
+    }
     return [...ids].map(id=>({id, forca:forcaDe(E, id)}))
                    .sort((a,b)=> b.forca - a.forca);
+  }
+
+  /* quando a bola rola pela primeira vez: a rodada 1, ou a primeira
+     fase do mata-mata pra quem não tem pontos corridos */
+  function estreiaDe(comp){
+    const r0 = (comp.rodadas||[])[0];
+    if(r0) return {semana:r0.semana, dia:r0.dia || DIA_FDS};
+    const m0 = (comp.mata||[])[0];
+    return m0 ? {semana:m0.semana, dia:m0.dia || comp.dia || DIA_FDS} : null;
   }
 
   /* a competição `para` está acima de `de`? serve pro texto do aviso */
@@ -1352,7 +1369,7 @@ TO.competicoes = (function(){
 
   return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana,
           forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
-          emJogo, porForca,
+          emJogo, porForca, estreiaDe,
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
