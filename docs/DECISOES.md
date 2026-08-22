@@ -1228,11 +1228,18 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     63%, 0,06 dava 68%. Ficou em **0,032**.
   · **A DISPUTA É PARTE DO JOGO, NÃO UMA TELA** (correção do dono,
     22/08/2026): a janela separada saiu. A série sai **dentro do tempo
-    real da partida, na parada do jogo do itinerário**, na mesma lista
-    onde saem os gols — uma linha por cobrança, com o placar da série
-    subindo, e a linha final dizendo quem passou. O relógio congela em
-    90' enquanto ela corre: a barra fica cheia, o clima da arquibancada
-    para de andar e os arredores só destrancam na última cobrança.
+    real da partida, na parada do jogo do itinerário**. O relógio
+    congela em 90' enquanto ela corre: a barra fica cheia, o clima da
+    arquibancada para de andar (briga nenhuma nasce no meio da série) e
+    os arredores só destrancam na última cobrança.
+  · **A GRADE, E NÃO LINHA DE TEXTO** (régua do dono, 22/08/2026): a
+    primeira versão dentro da partida escrevia uma linha por cobrança
+    na lista dos gols, e o dono preferiu de volta a animação do placar:
+    o cartão da disputa abre embaixo do placar da partida, com as duas
+    fileiras de bolas enchendo uma por vez — verde cheia pra quem
+    converteu, riscada de vermelho pra quem perdeu — o placar da série
+    subindo em cima e o recado do lance embaixo. Da lista de eventos
+    sobrou só uma linha: o aviso do fim do tempo normal.
   · **QUEM CONTA É A MENSAGEM, não o cartão**: a primeira versão da
     série vivia dentro do fechamento que desenhava o cartão, e morria
     junto com ele no primeiro repinte do feed — o jogador via três

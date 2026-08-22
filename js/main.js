@@ -744,6 +744,8 @@
       placar.textContent = `${d.casa} ${gc} × ${gf} ${d.fora}`;
     pintarPlacar(0, 0);
 
+    let penCena = null;   /* a grade da disputa, se o jogo for pra ela */
+
     const tm = setInterval(()=>{
       if(!caixa.isConnected){ clearInterval(tm); return; }
       const min = minutoDaPartida(d);
@@ -773,38 +775,27 @@
       pintarPlacar(vistos.filter(x=>x.lado==='c').length,
                    vistos.filter(x=>x.lado==='f').length);
 
-      /* a disputa de pênaltis, uma cobrança por vez.
+      /* A DISPUTA DE PÊNALTIS, NO PLACAR (régua do dono, 22/08/2026):
+         não é linha de texto por cobrança — é a grade de bolas
+         enchendo, uma por vez, com o placar da série subindo do lado.
          QUEM CONTA É A MENSAGEM, e não este nó: o feed repinta a
          qualquer momento, e uma contagem presa no fechamento morria
          junto com o cartão trocado. Com `penDesde` guardado no estado,
-         o cartão novo continua a série de onde ela estava. */
-      if(d.pen && d.penDesde != null && !d.penFim){
+         o cartão novo nasce com a grade já pintada até onde estava. */
+      if(d.pen && d.penDesde != null){
         const cb = d.pen.cobrancas || [];
         const passou = Math.floor((Date.now() - d.penDesde) / PEN_PASSO);
         d.penAte = Math.min(cb.length, Math.max(0, passou));
         if(!eventos.querySelector('.pen-abre'))
           eventos.appendChild(el('div',{class:'partida-gol pen pen-abre',
             texto:'Fim do tempo normal — vai pros pênaltis.'}));
-        let jaTem = eventos.querySelectorAll('.pen-cobranca').length;
-        while(jaTem < d.penAte){
-          const k = cb[jaTem];
-          const ate = cb.slice(0, jaTem+1);
-          const pc = ate.filter(x=>x.lado==='c' && x.marcou).length;
-          const pf = ate.filter(x=>x.lado==='f' && x.marcou).length;
-          eventos.appendChild(el('div',{
-            class:'partida-gol pen pen-cobranca'+(k.marcou?'':' errou'),
-            texto:`Pênaltis · ${k.lado==='c'?d.casa:d.fora} `+
-                  `${k.marcou ? 'converteu' : 'perdeu'} — ${pc} × ${pf}`}));
-          jaTem++;
+        if(!penCena){
+          penCena = cenaDePenaltis(d);
+          caixa.insertBefore(penCena, eventos);
         }
-        if(d.penAte >= cb.length && passou > cb.length){
-          d.penFim = true;
-          const venc = d.pen.c > d.pen.f ? d.casa : d.fora;
-          const alto = Math.max(d.pen.c, d.pen.f);
-          const baixo = Math.min(d.pen.c, d.pen.f);
-          eventos.appendChild(el('div',{class:'partida-gol pen fim',
-            texto:`${venc} passa nos pênaltis, por ${alto} a ${baixo}.`}));
-        }
+        penCena.pintar(d.penAte);
+        if(d.penAte >= cb.length && passou > cb.length) d.penFim = true;
+        if(d.penFim) penCena.fim();
       }
       /* o clima anda minuto a minuto, junto com a barra */
       if(!d.pausada && !m.respondido && !naSerie){
@@ -864,7 +855,76 @@
   }
 
   /* o compasso da disputa dentro da partida */
-  const PEN_PASSO = 750;   // ms entre uma cobrança e a próxima
+  const PEN_PASSO = 850;   // ms entre uma cobrança e a próxima
+
+  /* =======================================================
+     A GRADE DA DISPUTA (régua do dono, 22/08/2026): a disputa
+     não abre tela nenhuma — ela mora dentro do cartão da
+     partida ao vivo, logo abaixo do placar. Duas fileiras de
+     bolas, uma por cobrança, enchendo de verde quem converteu
+     e riscando de vermelho quem perdeu, com o placar da série
+     subindo em cima. Tudo desenhado a partir do estado da
+     mensagem, pra que o cartão trocado num repinte nasça com
+     a grade em dia.
+     ======================================================= */
+  function cenaDePenaltis(d){
+    const cb = (d.pen && d.pen.cobrancas) || [];
+    const cena = el('div',{class:'partida-pen'});
+    cena.appendChild(el('div',{class:'pen-onde', texto:'disputa de pênaltis'}));
+
+    const placar = el('div',{class:'pen-placar'});
+    const grade  = el('div',{class:'pen-grade'});
+    const recado = el('div',{class:'pen-recado', texto:'Vai bater…'});
+
+    const fileira = lado => {
+      const l = el('div',{class:'pen-lado'});
+      l.appendChild(el('span',{class:'pen-time',
+        texto: lado === 'c' ? d.casa : d.fora}));
+      const bolas = el('div',{class:'pen-bolas'});
+      for(const k of cb) if(k.lado === lado)
+        bolas.appendChild(el('i',{class:'pen-bola'}));
+      l.appendChild(bolas);
+      return l;
+    };
+    const lc = fileira('c'), lf = fileira('f');
+    grade.append(lc, lf);
+
+    let gc = 0, gf = 0, feitas = 0;
+    const contados = {c:0, f:0};
+    const pintarSerie = ()=>{
+      placar.innerHTML =
+        `<span class="t">${d.casa}</span><b>${gc}</b>`+
+        `<b>${gf}</b><span class="t">${d.fora}</span>`;
+    };
+    pintarSerie();
+    cena.append(placar, grade, recado);
+
+    /* pintar(n) é IDEMPOTENTE: só mexe no que ainda falta, então dá
+       pra chamar a cada quadro do relógio sem repintar a grade
+       inteira — e sem matar a animação da bola que acabou de cair */
+    cena.pintar = n => {
+      while(feitas < Math.min(n, cb.length)){
+        const k = cb[feitas++];
+        const bolas = (k.lado === 'c' ? lc : lf).querySelectorAll('.pen-bola');
+        const b = bolas[contados[k.lado]++];
+        if(b) b.className = 'pen-bola ' + (k.marcou ? 'fez' : 'errou');
+        if(k.marcou){ if(k.lado === 'c') gc++; else gf++; }
+        pintarSerie();
+        recado.textContent = `${k.lado === 'c' ? d.casa : d.fora} — `+
+          (k.marcou ? 'na rede!' : 'perdeu!');
+        recado.className = 'pen-recado ' + (k.marcou ? 'fez' : 'errou');
+      }
+    };
+    cena.fim = ()=>{
+      cena.pintar(cb.length);
+      const venc = d.pen.c > d.pen.f ? d.casa : d.fora;
+      const alto = Math.max(d.pen.c, d.pen.f);
+      const baixo = Math.min(d.pen.c, d.pen.f);
+      recado.textContent = `${venc} passa nos pênaltis, por ${alto} a ${baixo}.`;
+      recado.className = 'pen-recado fim';
+    };
+    return cena;
+  }
 
   /* =======================================================
      O CLIMA FICOU TENSO: A ARQUIBANCADA SE PEGA
