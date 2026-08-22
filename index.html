@@ -106,25 +106,26 @@
 <div id="telaDiaJogo" class="tela-cheia oculto">
   <div id="djGrade">
     <div id="djPalco">
+      <!-- A FAIXA DA TRANSMISSÃO (régua do dono, 22/08/2026): tudo o que
+           é informação parada saiu de cima da cena e virou UMA linha
+           acima dela — tempo, PM e placar, na ordem em que se lê. Só o
+           que é momento (o anúncio) e o que é comando (os botões)
+           continua sobre o palco. -->
+      <div id="djFaixa">
+        <div class="fx fx-tempo" id="djTarjaTempo">
+          <span class="ao-vivo" aria-hidden="true"></span>
+          <span id="djRelogio">18:00</span>
+          <button id="djVelocidade" title="Velocidade da cena">1×</button>
+        </div>
+        <div class="fx fx-pm" id="djAlerta">
+          <span class="rot">PM</span>
+          <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
+          <div class="barra pressao"><i id="djBarraPressao" style="width:0%"></i></div>
+          <div id="djCarga"></div>
+        </div>
+        <div class="fx fx-placar" id="djPlacar"></div>
+      </div>
       <canvas id="djPrincipal" width="1140" height="820"></canvas>
-      <!-- o relógio e a velocidade viraram UMA tarja de transmissão:
-           dois retângulos flutuando lado a lado eram dois objetos onde
-           existe um só assunto (o tempo da cena) -->
-      <div class="hud" id="djTarjaTempo">
-        <span class="ao-vivo" aria-hidden="true"></span>
-        <span id="djRelogio">18:00</span>
-        <button id="djVelocidade" title="Velocidade da cena">1×</button>
-      </div>
-      <!-- a PM numa linha só: duas barras empilhadas com rótulo em caixa
-           alta era muita tela pra informação que muda devagar. A de
-           pressão só acende quando há pressão. -->
-      <div class="hud" id="djAlerta">
-        <span class="rot">PM</span>
-        <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
-        <div class="barra pressao"><i id="djBarraPressao" style="width:0%"></i></div>
-        <div id="djCarga"></div>
-      </div>
-      <div class="hud" id="djPlacar"></div>
       <div class="hud" id="djAviso"></div>
       <!-- os comandos ficam sobre o palco: a cena é a tela inteira -->
       <div class="hud" id="djComandos">

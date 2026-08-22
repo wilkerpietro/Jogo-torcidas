@@ -27,43 +27,46 @@
 #djMiniAviso.on{opacity:1}
 
 /* =========================================================
-   A HUD DA CENA — DETALHE DE TRANSMISSÃO (pedido do dono,
-   22/08/2026)
+   A FAIXA DA TRANSMISSÃO (pedido do dono, 22/08/2026)
 
-   As informações de borda eram quatro objetos sem parentesco: um
-   relógio numa caixa de borda dura, um botão de velocidade solto ao
-   lado, uma barra de PM crua e um bloco de texto colorido por atributo
-   `style`. Cada um com o seu fundo, o seu contorno e o seu alinhamento
-   — parecia depuração deixada na tela.
+   Antes eram três placas flutuando SOBRE a cena, cada uma num canto —
+   e mesmo bonitas elas tapavam pedaço de rua. Agora tudo o que é
+   informação parada mora numa linha ACIMA do palco, na ordem em que
+   se lê: tempo à esquerda, PM no meio, placar à direita. A cena volta
+   a ser só a cena; sobre ela ficam só o anúncio (que é momento) e os
+   botões (que são comando).
 
-   Agora é UM sistema, com a gramática de transmissão de TV: placas
-   escuras de vidro fosco, canto levemente arredondado, tarja de cor à
-   esquerda de quem é time, número em fonte de largura fixa alinhado à
-   direita, e rótulo miúdo em caixa alta pro dado secundário. Tudo o
-   que é peça da mesma placa mora DENTRO dela — o relógio e a
-   velocidade viraram uma tarja só, porque são o mesmo assunto.
+   A faixa tem `width:0; min-width:100%` de propósito: assim ela ocupa
+   a largura inteira do palco SEM puxar essa largura pra si — quem
+   decide o tamanho do palco continua sendo o canvas, e a faixa se
+   encaixa nele. Sem isso, um nome de torcida comprido alargava o
+   palco e a cena encolhia pra caber ao lado dele.
    ========================================================= */
-/* `line-height` EXPLÍCITO: o palco zera a entrelinha por causa do
-   canvas (`#djPalco{line-height:0}`), e sem isto todo texto da HUD
-   nasce com zero de altura — o nome dos times some da placa e só o
-   número, de fonte mono, escapa por transbordo. */
 .hud{position:absolute;pointer-events:none;font-family:var(--mono);
   line-height:1.35}
-/* a placa de vidro: um fundo só pra toda a periferia da cena */
-#djTarjaTempo, #djAlerta, #djPlacar{
-  background:rgba(10,10,9,.66);
-  border:1px solid rgba(255,255,255,.13);
-  border-radius:5px;
-  box-shadow:0 2px 14px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05);
-  backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
-}
 
-/* ---- a tarja do tempo: ao vivo · relógio · velocidade ---- */
-#djTarjaTempo{
-  top:10px;left:50%;transform:translateX(-50%);
-  display:flex;align-items:center;gap:10px;
-  padding:5px 6px 5px 11px;pointer-events:auto;
+/* UMA BARRA SÓ, e não pedaços colados: o fundo é da faixa inteira e o
+   que separa os assuntos é um fio de um pixel — três retângulos com
+   vão claro entre eles pareciam três coisas, não uma transmissão. */
+#djFaixa{
+  display:flex;align-items:stretch;
+  /* UMA LINHA, ATÉ ONDE UMA LINHA CABE: num celular em pé a cena tem
+     400px de largura e não existe linha que segure relógio, PM e placar
+     juntos. Aí a faixa quebra em duas em vez de cortar o que não coube —
+     `overflow:hidden` escondia o clima e os caídos sem avisar. */
+  flex-wrap:wrap;
+  width:0;min-width:100%;box-sizing:border-box;
+  font-family:var(--mono);line-height:1.35;
+  background:rgba(10,10,9,.92);
+  border:1px solid rgba(255,255,255,.13);border-bottom:0;
+  border-radius:5px 5px 0 0;overflow:hidden;
 }
+#djFaixa .fx{display:flex;align-items:center;padding:7px 12px;min-width:0}
+#djFaixa .fx + .fx{border-left:1px solid rgba(255,255,255,.10)}
+#djFaixa .fx-placar{margin-left:auto;flex:0 1 auto;padding:0}
+
+/* ---- tempo: ao vivo · relógio · velocidade ---- */
+#djTarjaTempo{gap:9px;flex:0 0 auto}
 #djTarjaTempo .ao-vivo{
   width:7px;height:7px;border-radius:50%;background:#e04b45;flex:0 0 auto;
   box-shadow:0 0 0 3px rgba(224,75,69,.16);
@@ -72,71 +75,65 @@
 @keyframes djPulso{ 0%,100%{opacity:1} 50%{opacity:.35} }
 @media (prefers-reduced-motion:reduce){ #djTarjaTempo .ao-vivo{animation:none} }
 #djRelogio{
-  font-size:23px;font-weight:600;line-height:1;letter-spacing:.02em;
+  font-size:17px;font-weight:600;line-height:1;letter-spacing:.02em;
   font-variant-numeric:tabular-nums;color:var(--texto);
 }
 #djVelocidade{
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
-  padding:4px 8px;border-radius:3px;line-height:1;cursor:pointer;
+  font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+  padding:3px 7px;border-radius:3px;line-height:1;cursor:pointer;
   background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
-  color:var(--fraco);pointer-events:auto;
+  color:var(--fraco);
 }
 #djVelocidade:hover{border-color:var(--ouro);color:var(--ouro)}
 #djVelocidade.rapido{border-color:var(--ouro);color:var(--ouro);
   background:rgba(217,164,65,.12)}
 
-/* ---- a faixa da PM, à esquerda ---- */
-#djAlerta{top:10px;left:11px;width:158px;padding:7px 9px 8px;
-  display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+/* ---- a PM ---- */
+#djAlerta{gap:8px;flex:0 1 230px;min-width:0}
 #djAlerta .rot{font-size:8.5px;letter-spacing:.18em;color:var(--pm);
-  text-transform:uppercase}
+  text-transform:uppercase;flex:0 0 auto}
 #djAlerta .barra{height:4px;border-radius:2px;overflow:hidden;
-  background:rgba(255,255,255,.09);border:0;position:relative;flex:1 1 60px}
+  background:rgba(255,255,255,.09);border:0;position:relative;
+  flex:1 1 40px;min-width:22px}
 #djAlerta .barra i{position:absolute;inset:0 auto 0 0;background:var(--pm);
   border-radius:2px;transition:width .3s}
-#djAlerta .barra.pressao{flex-basis:100%;height:3px;
+#djAlerta .barra.pressao{flex-basis:24px;height:3px;
   opacity:0;transition:opacity .3s}
 #djAlerta .barra.pressao i{background:#c0392b}
-#djCarga{font-size:8.5px;letter-spacing:.14em;color:#5fa87d;
-  flex-basis:100%;min-height:0;text-transform:uppercase}
+#djCarga{font-size:8.5px;letter-spacing:.12em;color:#5fa87d;
+  text-transform:uppercase;white-space:nowrap;flex:0 0 auto}
 #djCarga:empty{display:none}
 #djCarga.quente{color:var(--ouro)}
 
-/* ---- o placar, à direita: a peça central da transmissão ---- */
-#djPlacar{top:10px;right:11px;min-width:212px;padding:0;overflow:hidden}
-#djPlacar .pl-times{display:flex;flex-direction:column}
+/* ---- o placar, na ponta direita da faixa ---- */
+#djPlacar .pl-times{display:flex;align-items:stretch}
 #djPlacar .pl-time{
-  display:grid;grid-template-columns:3px minmax(0,1fr) auto;
-  align-items:center;gap:0 9px;padding:6px 10px 6px 0;
+  display:flex;align-items:center;gap:8px;padding:0 12px 0 0;
+  border-left:1px solid rgba(255,255,255,.10);
 }
-#djPlacar .pl-time + .pl-time{border-top:1px solid rgba(255,255,255,.07)}
-/* a tarja da cor ganha um fio claro em volta: camisa preta (e há
-   várias) sumia dentro da placa escura */
 #djPlacar .pl-time::before{
-  content:'';display:block;width:3px;height:15px;background:var(--c);
-  border-radius:0 2px 2px 0;
-  box-shadow:0 0 0 1px rgba(255,255,255,.22);
+  content:'';display:block;width:3px;align-self:stretch;background:var(--c);
+  box-shadow:0 0 0 1px rgba(255,255,255,.18);margin-right:6px;
 }
 #djPlacar .pl-nome{
-  font-family:var(--titulo);font-size:12.5px;letter-spacing:.07em;line-height:1.2;
-  text-transform:uppercase;color:var(--texto);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--titulo);font-size:12px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--texto);line-height:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:15ch;
 }
 #djPlacar .pl-n{
-  font-family:var(--mono);font-size:15px;line-height:1.2;
-  font-variant-numeric:tabular-nums;
-  color:var(--texto);min-width:2ch;text-align:right;
+  font-family:var(--mono);font-size:14px;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--texto);
+  min-width:2ch;text-align:right;
 }
 #djPlacar .pl-rodape{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:5px 10px 6px;background:rgba(0,0,0,.28);
-  border-top:1px solid rgba(255,255,255,.07);
-  font-size:9px;letter-spacing:.06em;color:var(--texto);
+  display:flex;align-items:center;gap:12px;padding:0 12px;
+  border-left:1px solid rgba(255,255,255,.10);
+  font-size:9px;letter-spacing:.06em;color:var(--texto);white-space:nowrap;
 }
 #djPlacar .pl-dado i{font-style:normal;color:var(--fraco);
   letter-spacing:.14em;text-transform:uppercase;margin-right:5px}
 #djPlacar .pl-clima{
-  margin-left:auto;letter-spacing:.14em;text-transform:uppercase;
+  letter-spacing:.14em;text-transform:uppercase;
   display:flex;align-items:center;gap:5px;
 }
 #djPlacar .pl-clima::before{
@@ -144,33 +141,35 @@
 }
 #djPlacar .pl-clima.calmo{color:#7fc2a0}
 #djPlacar .pl-clima.pesado{color:#d9705f}
+/* a faixa é uma linha só: o placar vira uma fileira, não um bloco */
+#djPlacar{display:flex;align-items:stretch;flex-wrap:wrap}
+
+/* ---- FAIXA ESTREITA: o palco pequeno encolhe a faixa junto ---- */
+#djPalco.hud-mini #djFaixa .fx{padding:6px 7px}
+#djPalco.hud-mini #djRelogio{font-size:14px}
+#djPalco.hud-mini #djTarjaTempo{gap:6px}
+#djPalco.hud-mini #djTarjaTempo .ao-vivo{width:5px;height:5px;box-shadow:none}
+#djPalco.hud-mini #djVelocidade{font-size:8.5px;padding:2px 5px}
+#djPalco.hud-mini #djAlerta{flex-basis:96px;gap:5px}
+#djPalco.hud-mini #djAlerta .rot{font-size:7.5px;letter-spacing:.1em}
+#djPalco.hud-mini #djCarga{font-size:7px;letter-spacing:.08em}
+#djPalco.hud-mini #djPlacar .pl-nome{font-size:9.5px;max-width:9ch}
+#djPalco.hud-mini #djPlacar .pl-n{font-size:11px}
+#djPalco.hud-mini #djPlacar .pl-time{gap:5px;padding-right:8px}
+#djPalco.hud-mini #djPlacar .pl-rodape{font-size:7.5px;gap:7px;padding:0 8px}
+/* na faixa estreita o rótulo do dado sai: o número fala sozinho, e a
+   palavra "clima" some do clima — sobra a bolinha e o estado. Foi o que
+   fez a linha caber inteira num palco de 500px, sem quebrar em duas. */
+#djPalco.hud-mini #djPlacar .pl-dado i{display:none}
+#djPalco.hud-mini #djPlacar .pl-clima{font-size:7.5px;letter-spacing:.1em}
+#djPalco.hud-mini #djPlacar .pl-clima .rot-clima{display:none}
+#djPalco.hud-mini #djAviso{font-size:20px;letter-spacing:.08em}
 
 /* ---- o anúncio no meio do palco ---- */
 #djAviso{top:38%;left:0;right:0;text-align:center;font-family:var(--titulo);
   font-size:32px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
   text-shadow:0 3px 18px #000, 0 0 40px rgba(0,0,0,.7);
   opacity:0;transition:opacity .3s}
-
-/* ---- PALCO PEQUENO, HUD PEQUENA ----
-   Num celular deitado o palco tem pouco mais de 500px e as três placas
-   somavam mais que isso: uma subia por cima da outra. A classe é posta
-   por `medirPalco`, em ponte.js — ver a nota de lá sobre por que não é
-   container query. */
-#djPalco.hud-mini #djTarjaTempo{padding:3px 4px 3px 8px;gap:6px}
-#djPalco.hud-mini #djRelogio{font-size:16px}
-#djPalco.hud-mini #djTarjaTempo .ao-vivo{width:5px;height:5px;box-shadow:none}
-#djPalco.hud-mini #djVelocidade{font-size:8.5px;padding:3px 5px}
-#djPalco.hud-mini #djAlerta{width:104px;padding:5px 7px 6px;gap:5px}
-#djPalco.hud-mini #djAlerta .rot{font-size:7.5px;letter-spacing:.12em}
-#djPalco.hud-mini #djCarga{font-size:7px;letter-spacing:.1em}
-#djPalco.hud-mini #djPlacar{min-width:0;max-width:44%}
-#djPalco.hud-mini #djPlacar .pl-time{padding:4px 7px 4px 0;gap:0 6px}
-#djPalco.hud-mini #djPlacar .pl-time::before{height:11px}
-#djPalco.hud-mini #djPlacar .pl-nome{font-size:10px;letter-spacing:.05em}
-#djPalco.hud-mini #djPlacar .pl-n{font-size:11.5px}
-#djPalco.hud-mini #djPlacar .pl-rodape{padding:3px 7px 4px;gap:6px;font-size:7.5px}
-#djPalco.hud-mini #djPlacar .pl-dado i{margin-right:3px;letter-spacing:.1em}
-#djPalco.hud-mini #djAviso{font-size:20px;letter-spacing:.08em}
 
 /* ---- a tira de dicas, no rodapé ---- */
 #djDica{bottom:9px;left:12px;font-size:10px;color:var(--fraco);
@@ -293,12 +292,13 @@
   box-shadow:0 24px 70px rgba(0,0,0,.7);
   width:fit-content; max-width:100%;
 }
+/* a faixa mora acima do canvas, então o teto de altura desconta ela */
 #djPalco canvas{
   display:block; width:auto; height:auto;
   max-width:calc(100vw - 22px);
-  max-height:calc(100vh - 22px);
+  max-height:calc(100vh - 60px);
   max-width:calc(100dvw - 22px);
-  max-height:calc(100dvh - 22px);
+  max-height:calc(100dvh - 60px);
 }
 /* UMA LINHA SÓ (pedido do dono, 18/08/2026): 1-4, Q, E, R e ENTER
    lado a lado — a caixa em coluna cobria a briga que acontecia

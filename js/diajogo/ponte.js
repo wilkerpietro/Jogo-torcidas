@@ -298,12 +298,16 @@ TO.diaJogo.ponte = (function(){
       /* "entraram" só existe onde há portão pra entrar */
       if(entradaDeVerdade())
         rodape.push(`<span class="pl-dado"><i>entraram</i>${ent}</span>`);
+      /* NA FAIXA É TUDO UMA LINHA (22/08/2026): os dois times lado a
+         lado e o resto emendado à direita, em vez do bloco de duas
+         fileiras que a placa flutuante usava. */
       el('djPlacar').innerHTML=
         `<div class="pl-times">${linhaDoTime('mandante', man)}`+
         `${linhaDoTime('visitante', vis)}</div>`+
         `<div class="pl-rodape">${rodape.join('')}`+
         `<span class="pl-clima ${J.paz?'calmo':'pesado'}">`+
-        `clima ${J.paz?'tranquilo':'pesado'}</span></div>`;
+        `<span class="rot-clima">clima </span>`+
+        `${J.paz?'tranquilo':'pesado'}</span></div>`;
     }
 
     const av=el('djAviso');

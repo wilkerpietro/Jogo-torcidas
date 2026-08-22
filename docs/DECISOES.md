@@ -1449,6 +1449,23 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   Conferido nos três portes de atacante: 75 de 75 descem pela mesma
   ponta, e a briga continua acontecendo.
 
+- **A FAIXA DE TRANSMISSÃO SAIU DE CIMA DA CENA** (pedido do dono,
+  22/08/2026): as três placas ficaram bonitas, mas continuavam tapando
+  pedaço de rua. Agora tudo o que é informação parada mora numa **linha
+  só, acima do palco**, na ordem em que se lê: tempo, PM e placar. Sobre
+  a cena ficaram apenas o anúncio (que é momento, não informação) e os
+  botões (que são comando).
+  · **UMA BARRA, NÃO TRÊS PEDAÇOS**: o fundo é da faixa inteira e o que
+    separa os assuntos é um fio de um pixel.
+  · **A FAIXA NÃO ALARGA O PALCO**: ela vai de `width:0; min-width:100%`,
+    então ocupa a largura toda sem puxá-la pra si — quem decide o
+    tamanho do palco continua sendo o canvas. Sem isso, nome de torcida
+    comprido alargava o palco e a cena encolhia pra caber ao lado dele.
+  · **UMA LINHA, ATÉ ONDE UMA LINHA CABE**: num palco de 500 px a faixa
+    aperta (rótulo do dado some, "clima" some do clima) e ainda cabe
+    inteira; num celular em pé, onde nem isso resolve, ela quebra em
+    duas em vez de cortar o que não coube.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
