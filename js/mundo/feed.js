@@ -888,6 +888,14 @@ TO.feed = (function(){
        vaza o resultado. */
     const nosso = jogos.find(j => j.c === meu || j.f === meu);
     if(nosso){
+      /* A DISPUTA VAI DENTRO DA PARTIDA (régua do dono, 21/08/2026):
+         se o mata-mata do dia foi pros pênaltis, a série viaja na
+         própria mensagem e sai depois do apito, cobrança a cobrança,
+         na mesma lista dos gols. Sem tela separada. */
+      var penDoDia = E.penaltisPendente &&
+        (E.penaltisPendente.a === meu || E.penaltisPendente.b === meu)
+        ? E.penaltisPendente : null;
+      if(penDoDia) E.penaltisPendente = null;
       const minutoDeGol = () => {
         const r = U.rng();
         return r < 0.35 ? U.inteiro(30, 45)
@@ -971,7 +979,13 @@ TO.feed = (function(){
                gc:nosso.gc, gf:nosso.gf, comp:nosso.compNome || '', gols,
                /* o clima do estádio lê quem está lá (dono, 19/08/2026) */
                somosCasa: nosso.c === meu,
-               presenca: presentes},
+               presenca: presentes,
+               /* a disputa de pênaltis, na orientação DESTE jogo */
+               pen: penDoDia ? (penDoDia.a === nosso.c
+                     ? penDoDia.pen
+                     : {c:penDoDia.pen.f, f:penDoDia.pen.c,
+                        cobrancas:(penDoDia.pen.cobrancas||[]).map(x=>
+                          ({...x, lado: x.lado === 'c' ? 'f' : 'c'}))}) : null},
         botoes:[{id:'iniciar', rot:'Iniciar partida', acao:'iniciar-partida'}]
       });
     }

@@ -271,41 +271,84 @@ TO.competicoes = (function(){
      disputa de pênalti, é formalidade. Com esta, fica perto
      de 60%: vantagem, e não sentença.
      ======================================================= */
-  const PEN_MIN = 0.73, PEN_MAX = 0.78;
-  const PEN_SERIE = 5, PEN_MAX_MORTE = 15;   // trava contra série infinita
+  /* A RÉGUA DO DONO (21/08/2026): o favorito passa **60/40** contra o
+     pior clube do país. Pênalti é loteria; a força inclina a moeda,
+     não decide por ela. Os dois batem em torno de 75% e a vantagem é
+     uma fatia fina em cima disso — 0,032 aqui vira 60% lá na ponta,
+     porque a diferença compõe ao longo das cinco cobranças. O valor
+     saiu de varredura: 0,013 dava 54%, 0,045 dava 63%, 0,06 dava 68%. */
+  const PEN_BASE = 0.755, PEN_VANTAGEM = 0.032;
+  /* a trava contra série infinita é generosa de propósito: 50 rodadas
+     não acontecem na vida real, e chegar nelas empatado seria pior que
+     o remédio — disputa empatada não classifica ninguém */
+  const PEN_SERIE = 5, PEN_MAX_RODADAS = 50;
 
   function chanceDePenalti(a, b){
-    const p = forca(a) / (forca(a) + forca(b) || 1);
-    return U.limitar(PEN_MIN + (PEN_MAX - PEN_MIN) * p, PEN_MIN, PEN_MAX);
+    const p = forca(a) / (forca(a) + forca(b) || 1);   // 0 a 1
+    return U.limitar(PEN_BASE + (p - 0.5) * 2 * PEN_VANTAGEM, 0.55, 0.95);
   }
 
-  /* devolve {c, f, venceu, cobrancas:[{lado,marcou,n}]} */
+  /* uma cobrança de resultado dado, pra fechar a trava */
+  function cobrar2(cobrancas, gols, lado, n, marcou){
+    if(marcou) gols[lado]++;
+    cobrancas.push({lado, marcou, n});
+  }
+
+  /* =======================================================
+     A SÉRIE, PELA REGRA DE VERDADE (conferida a pedido do
+     dono, 21/08/2026)
+
+     · REGULAMENTAR: cinco cobranças pra cada lado, alternadas.
+       Para assim que uma das duas não puder mais ser
+       alcançada — o 3×0 no quarto par não vai até o fim.
+     · MORTE SÚBITA: dali em diante é PAR COMPLETO. Só decide
+       quando os dois bateram na rodada e o placar diferiu.
+       Nunca no meio de um par.
+     ======================================================= */
   function disputaDePenaltis(a, b){
     const chance = {c: chanceDePenalti(a,b), f: chanceDePenalti(b,a)};
     const gols = {c:0, f:0};
     const cobrancas = [];
-    /* quantas cobranças cada lado ainda tem na série regulamentar:
-       enquanto uma delas não puder mais ser alcançada, a série para */
-    const falta = lado => Math.max(0, PEN_SERIE -
-      cobrancas.filter(x=>x.lado === lado).length);
-    const decidida = ()=>{
-      const na = cobrancas.length;
-      if(na < 2) return false;
-      if(na >= PEN_SERIE*2) return gols.c !== gols.f;
-      return gols.c - gols.f > falta('f') || gols.f - gols.c > falta('c');
-    };
+    const bateu = lado => cobrancas.filter(x=>x.lado === lado).length;
 
-    let n = 0, lado = 'c';
-    while(!decidida() && n < PEN_MAX_MORTE*2){
+    const cobrar = (lado, n)=>{
       const marcou = U.rng() < chance[lado];
       if(marcou) gols[lado]++;
-      cobrancas.push({lado, marcou, n: Math.floor(n/2) + 1});
-      lado = lado === 'c' ? 'f' : 'c';
-      n++;
-      /* na morte súbita a rodada é fechada: só decide com os dois
-         tendo batido o mesmo número de vezes */
-      if(n >= PEN_SERIE*2 && n % 2 === 0 && gols.c !== gols.f) break;
+      cobrancas.push({lado, marcou, n});
+    };
+
+    /* ---- os cinco pares regulamentares ---- */
+    let acabou = false;
+    for(let r = 1; r <= PEN_SERIE && !acabou; r++){
+      for(const lado of ['c','f']){
+        cobrar(lado, r);
+        /* quem ainda vai bater quantas vezes na regulamentar */
+        const falta = {c: PEN_SERIE - bateu('c'), f: PEN_SERIE - bateu('f')};
+        if(gols.c - gols.f > falta.f || gols.f - gols.c > falta.c){
+          acabou = true; break;                 // decidida: não se bate mais
+        }
+      }
     }
+
+    /* ---- morte súbita: par completo, e só ---- */
+    let r = PEN_SERIE + 1;
+    for(; !acabou && r <= PEN_MAX_RODADAS; r++){
+      cobrar('c', r);
+      cobrar('f', r);
+      if(gols.c !== gols.f) acabou = true;
+    }
+
+    /* BATEU NA TRAVA AINDA EMPATADO (uma em quatro mil, medido): a
+       série não pode terminar empatada, senão ninguém se classifica.
+       Uma última rodada em que um converte e o outro não, sorteada
+       pela mesma vantagem de força que vale o resto da disputa. */
+    if(!acabou){
+      const p = chance.c / (chance.c + chance.f || 1);
+      const passaC = U.rng() < p;
+      cobrar2(cobrancas, gols, 'c', r, passaC);
+      cobrar2(cobrancas, gols, 'f', r, !passaC);
+    }
+
     return {c:gols.c, f:gols.f, venceu: gols.c > gols.f ? a : b, cobrancas};
   }
 

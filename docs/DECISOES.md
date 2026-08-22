@@ -1211,18 +1211,35 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   sem placar, sem roteiro, sem ninguém ver como. Agora é disputa de
   verdade: cinco cobranças alternadas por lado, morte súbita se
   persistir, e o roteiro fica guardado no jogo, cobrança a cobrança.
-  · **A conversão sai da força, mas de raspão**: o melhor bate a 78% e
-    o pior a 73%. **Medido**: com a faixa larga que eu tinha posto
-    primeiro (68% a 82%), o gigante passava **75%** das vezes contra o
-    menor clube do país — isso não é disputa de pênalti, é
-    formalidade. Com a faixa estreita fica em **66%**: vantagem, e não
-    sentença.
-  · **A ANIMAÇÃO**: quando é o NOSSO clube que decide, a disputa
-    acontece na tela — uma cobrança por vez, o placar subindo, bola
-    verde pra quem fez e riscada pra quem perdeu, e o veredito no fim.
-    O botão **Pular** corre a fita até o fim **sem fechar a janela**:
-    botão de rodapé fecha o modal depois de agir, e aí o jogador
-    pulava a disputa e não via o resultado.
+  · **A REGRA É A DA VIDA REAL** (conferido pelo dono, 22/08/2026):
+    cinco cobranças pra cada lado, alternando, e a série morre no
+    instante em que a diferença fica maior do que o que ainda resta pro
+    outro bater — não se cobra pênalti decidido. Passadas as cinco, é
+    alternada de verdade: **par completo**, os dois batem, e só então
+    se olha o placar. Ninguém passa no meio do par. **Medido em 20.000
+    disputas**: nenhum empate, ninguém bate mais de cinco na série
+    inicial, nenhuma decisão sai no meio do par, e 9.210 delas
+    terminaram antes das dez cobranças.
+  · **60/40, NÃO 75/25** (régua do dono, 22/08/2026): o favorito tem de
+    ter mais chance, mas pênalti é pênalti. A conversão sai da força de
+    raspão — o melhor bate a 78,7% e o pior a 72,3% — e isso dá, na
+    ponta, **59%** de passagem pro maior clube do país contra o menor.
+    A régua saiu de varredura: 0,013 de vantagem dava 54%, 0,045 dava
+    63%, 0,06 dava 68%. Ficou em **0,032**.
+  · **A DISPUTA É PARTE DO JOGO, NÃO UMA TELA** (correção do dono,
+    22/08/2026): a janela separada saiu. A série sai **dentro do tempo
+    real da partida, na parada do jogo do itinerário**, na mesma lista
+    onde saem os gols — uma linha por cobrança, com o placar da série
+    subindo, e a linha final dizendo quem passou. O relógio congela em
+    90' enquanto ela corre: a barra fica cheia, o clima da arquibancada
+    para de andar e os arredores só destrancam na última cobrança.
+  · **QUEM CONTA É A MENSAGEM, não o cartão**: a primeira versão da
+    série vivia dentro do fechamento que desenhava o cartão, e morria
+    junto com ele no primeiro repinte do feed — o jogador via três
+    cobranças e a disputa parava. Agora o instante em que a série
+    começou fica guardado no estado da mensagem (`penDesde`), e o
+    cartão novo nasce com a série em dia, seguindo de onde estava.
+    Testado com um repinte no meio da disputa.
   · **O DETALHE APARECE EM TODA TELA** que mostra o placar decidido:
     a tela de Competições (com a série cobrança a cobrança), o
     calendário e a agenda do clube. Um formatador só, pra não haver

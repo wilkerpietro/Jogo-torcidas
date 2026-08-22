@@ -747,6 +747,14 @@
     const tm = setInterval(()=>{
       if(!caixa.isConnected){ clearInterval(tm); return; }
       const min = minutoDaPartida(d);
+      /* OS PÊNALTIS SÃO PARTE DO JOGO (régua do dono, 21/08/2026):
+         empatou no mata-mata, a disputa sai aqui mesmo, cobrança a
+         cobrança, na mesma lista dos gols — sem tela separada. Enquanto
+         a série corre o relógio fica parado em 90': a barra cheia, o
+         clima congelado e o apito esperando a última cobrança. */
+      const naSerie = !d.penFim && min >= 90 && !d.pausada &&
+                      !!d.pen && !!(d.pen.cobrancas||[]).length;
+      if(naSerie && d.penDesde == null) d.penDesde = Date.now();
       pintarBotoes();       /* o espaço muda o estado por fora do botão */
       fill.style.width = (min/90*100)+'%';
       rotMin.textContent = `${min}'`;
@@ -764,8 +772,42 @@
       }
       pintarPlacar(vistos.filter(x=>x.lado==='c').length,
                    vistos.filter(x=>x.lado==='f').length);
+
+      /* a disputa de pênaltis, uma cobrança por vez.
+         QUEM CONTA É A MENSAGEM, e não este nó: o feed repinta a
+         qualquer momento, e uma contagem presa no fechamento morria
+         junto com o cartão trocado. Com `penDesde` guardado no estado,
+         o cartão novo continua a série de onde ela estava. */
+      if(d.pen && d.penDesde != null && !d.penFim){
+        const cb = d.pen.cobrancas || [];
+        const passou = Math.floor((Date.now() - d.penDesde) / PEN_PASSO);
+        d.penAte = Math.min(cb.length, Math.max(0, passou));
+        if(!eventos.querySelector('.pen-abre'))
+          eventos.appendChild(el('div',{class:'partida-gol pen pen-abre',
+            texto:'Fim do tempo normal — vai pros pênaltis.'}));
+        let jaTem = eventos.querySelectorAll('.pen-cobranca').length;
+        while(jaTem < d.penAte){
+          const k = cb[jaTem];
+          const ate = cb.slice(0, jaTem+1);
+          const pc = ate.filter(x=>x.lado==='c' && x.marcou).length;
+          const pf = ate.filter(x=>x.lado==='f' && x.marcou).length;
+          eventos.appendChild(el('div',{
+            class:'partida-gol pen pen-cobranca'+(k.marcou?'':' errou'),
+            texto:`Pênaltis · ${k.lado==='c'?d.casa:d.fora} `+
+                  `${k.marcou ? 'converteu' : 'perdeu'} — ${pc} × ${pf}`}));
+          jaTem++;
+        }
+        if(d.penAte >= cb.length && passou > cb.length){
+          d.penFim = true;
+          const venc = d.pen.c > d.pen.f ? d.casa : d.fora;
+          const alto = Math.max(d.pen.c, d.pen.f);
+          const baixo = Math.min(d.pen.c, d.pen.f);
+          eventos.appendChild(el('div',{class:'partida-gol pen fim',
+            texto:`${venc} passa nos pênaltis, por ${alto} a ${baixo}.`}));
+        }
+      }
       /* o clima anda minuto a minuto, junto com a barra */
-      if(!d.pausada && !m.respondido){
+      if(!d.pausada && !m.respondido && !naSerie){
         while(d.clima.min < min && d.clima.nivel < 2){
           d.clima.min++;
           if(pMin && U.rng() < pMin) d.clima.nivel++;
@@ -800,8 +842,11 @@
       }
       /* PARTIDA PAUSADA NÃO APITA: com a arquibancada aberta o relógio
          está parado, e o apito final tem de esperar a briga acabar */
-      if(min >= 90 && !d.pausada){
+      if(min >= 90 && !d.pausada && !naSerie){
         clearInterval(tm);
+        fecharPartida();
+      }
+      function fecharPartida(){
         setTimeout(()=>{
           const e = E();
           TO.feed.encerrarPartida(e, m.id);
@@ -817,6 +862,9 @@
     }, 250);
     return caixa;
   }
+
+  /* o compasso da disputa dentro da partida */
+  const PEN_PASSO = 750;   // ms entre uma cobrança e a próxima
 
   /* =======================================================
      O CLIMA FICOU TENSO: A ARQUIBANCADA SE PEGA
@@ -1385,102 +1433,6 @@
   const penTexto = j => (j && j.pen)
     ? `${j.pen.c} × ${j.pen.f} nos pênaltis`
     : (j && j.penaltis) ? 'nos pênaltis' : '';
-
-  /* =======================================================
-     A DISPUTA, COBRANÇA A COBRANÇA (pedido do dono,
-     21/08/2026): quando é o NOSSO clube que decide nos
-     pênaltis, a disputa não aparece pronta — ela acontece.
-     Uma cobrança por vez, o placar subindo, e o veredito no
-     fim. Quem não quiser esperar aperta Pular.
-     ======================================================= */
-  const PEN_PASSO = 850;   // ms entre uma cobrança e a próxima
-
-  function abrirPenaltis(dados){
-    const {nomeA, nomeB, pen, comp, fase} = dados;
-    if(!pen || !pen.cobrancas) return;
-    const corpo = el('div',{class:'pen-cena'});
-    let parar = null, i = 0, bt = null;
-
-    const placar = el('div',{class:'pen-placar'});
-    const grade  = el('div',{class:'pen-grade'});
-    const recado = el('div',{class:'pen-recado', texto:'Vai bater…'});
-
-    const linhaDe = lado => {
-      const l = el('div',{class:'pen-lado'});
-      l.appendChild(el('span',{class:'pen-time', texto: lado==='c'?nomeA:nomeB}));
-      const bolas = el('div',{class:'pen-bolas'});
-      for(const cb of pen.cobrancas) if(cb.lado === lado)
-        bolas.appendChild(el('i',{class:'pen-bola'}));
-      l.appendChild(bolas);
-      return l;
-    };
-    const lc = linhaDe('c'), lf = linhaDe('f');
-    grade.appendChild(lc); grade.appendChild(lf);
-
-    let gc = 0, gf = 0;
-    const pintarPlacar = ()=>{
-      placar.innerHTML =
-        `<span class="t">${nomeA}</span><b>${gc}</b>`+
-        `<b>${gf}</b><span class="t">${nomeB}</span>`;
-    };
-    pintarPlacar();
-
-    const bolasDe = lado => [...(lado==='c'?lc:lf).querySelectorAll('.pen-bola')];
-    const marcar = (cb, k)=>{
-      const b = bolasDe(cb.lado)[k];
-      if(b) b.className = 'pen-bola ' + (cb.marcou ? 'fez' : 'errou');
-      if(cb.marcou){ if(cb.lado==='c') gc++; else gf++; }
-      pintarPlacar();
-      recado.textContent = `${cb.lado==='c'?nomeA:nomeB} — `+
-        (cb.marcou ? 'na rede!' : 'perdeu!');
-      recado.className = 'pen-recado ' + (cb.marcou ? 'fez' : 'errou');
-    };
-
-    const fim = ()=>{
-      const venc = pen.c > pen.f ? nomeA : nomeB;
-      recado.textContent = `${venc} passa nos pênaltis, por ${pen.c} a ${pen.f}.`;
-      recado.className = 'pen-recado fim';
-      if(bt) bt.disabled = true;
-    };
-
-    /* quantas cobranças de cada lado já saíram, pra saber qual bola pintar */
-    const contados = {c:0, f:0};
-    const passo = ()=>{
-      if(i >= pen.cobrancas.length){ fim(); return; }
-      const cb = pen.cobrancas[i++];
-      marcar(cb, contados[cb.lado]++);
-      parar = setTimeout(passo, PEN_PASSO);
-    };
-
-    const pular = ()=>{
-      if(parar){ clearTimeout(parar); parar = null; }
-      while(i < pen.cobrancas.length){
-        const cb = pen.cobrancas[i++];
-        marcar(cb, contados[cb.lado]++);
-      }
-      fim();
-    };
-
-    /* O PULAR MORA NO CORPO, e não no rodapé: botão de rodapé fecha o
-       modal depois de agir, e aí o jogador pulava a disputa e não via
-       o resultado dela. Aqui ele só corre a fita até o fim. */
-    bt = el('button',{class:'bt pen-pular', texto:'Pular'});
-    bt.onclick = ()=>{ pular(); bt.disabled = true; };
-
-    corpo.appendChild(el('div',{class:'pen-onde',
-      texto:[comp, fase].filter(Boolean).join(' · ')}));
-    corpo.appendChild(placar);
-    corpo.appendChild(grade);
-    corpo.appendChild(recado);
-    corpo.appendChild(bt);
-
-    const fechar = modal('Disputa de pênaltis', 'o jogo empatou', corpo,
-      null, 'media');
-    parar = setTimeout(passo, 500);
-    /* fechar no meio da disputa não pode deixar o relógio rodando */
-    const orig = fechar;
-    return ()=>{ if(parar) clearTimeout(parar); orig(); };
-  }
 
   /* a série cobrança a cobrança: ● converteu, ○ perdeu */
   function penSerie(pen){
@@ -4290,17 +4242,6 @@
   function passarUmDia(e){
     if(document.body.classList.contains('em-cena')) return null;
     TO.estado.avancarDia();
-    /* A DISPUTA DO NOSSO CLUBE NÃO PASSA BATIDA: se a semana decidiu
-       um mata-mata nosso nos pênaltis, ela acontece na tela antes de
-       o dia seguir. O flag é posto lá em competicoes, na hora. */
-    const E0 = E();
-    if(E0 && E0.penaltisPendente){
-      const p = E0.penaltisPendente;
-      E0.penaltisPendente = null;
-      TO.estado.salvar();
-      abrirPenaltis({nomeA:nomeClube(p.a), nomeB:nomeClube(p.b),
-                     pen:p.pen, comp:p.comp, fase:p.fase});
-    }
     return null;
   }
 
