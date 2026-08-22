@@ -281,12 +281,30 @@ TO.acoes = (function(){
       const m = E.membros.find(x=>x.id === r.id);
       if(m) m.moral = U.limitar(m.moral + (ganhou ? 2 : -1), 0, 20);
     }
+    /* A APOSTA (régua do dono, 22/08/2026): os dois lados põem o mesmo
+       na roda e quem ganha leva. O caixa deles é raspado no que puder
+       cobrir — mesma regra do saque do bar, torcida não fica devendo. */
+    const aposta = alvo.aposta || 0;
+    let bolada = 0;
+    if(aposta > 0){
+      const m = R.mundo(E)[alvo.torcidaId];
+      if(ganhou){
+        bolada = aposta;
+        if(m) m.caixa = Math.max(0, (m.caixa||0) - aposta);
+        TO.estado.lancar(E, `Aposta da treta — ${alvo.nome}`, bolada);
+      }else{
+        bolada = -aposta;
+        if(m) m.caixa = (m.caixa||0) + aposta;
+        TO.estado.lancar(E, `Aposta da treta — ${alvo.nome}`, bolada);
+      }
+    }
     const efeitos = [
       {ind:'relacao',   delta: r1(R.nivel(E, alvo.torcidaId) - antesRel),
        dono:`com a ${alvo.nome}`},
       {ind:'prestigio', delta: r1(E.indicadores.prestigio - antesP),
        dono:'nosso'},
-      {ind:'prestigio', delta: dpDeles, dono:`da ${alvo.nome}`}
+      {ind:'prestigio', delta: dpDeles, dono:`da ${alvo.nome}`},
+      {ind:'dinheiro',  delta: bolada, dono:'nosso'}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
@@ -298,9 +316,13 @@ TO.acoes = (function(){
           caidos: (res && res.caidosVisitante) || 0,
           presos: (res && res.presosVisitante) || 0, venceu:!ganhou},
       efeitos});
-    return {ganhou, dinheiro:0,
+    const linhas = [`no bairro ${alvo.bairro||'—'}, ${alvo.n} de cada lado`];
+    if(aposta > 0)
+      linhas.push(`${U.dinheiro(aposta)} apostados — `+
+                  `${ganhou ? 'levamos a dos dois' : 'a nossa ficou com eles'}`);
+    return {ganhou, dinheiro:bolada,
             titulo: ganhou ? 'TRETA VENCIDA' : 'TRETA PERDIDA',
-            linhas:[`no bairro ${alvo.bairro||'—'}, ${alvo.n} de cada lado`]};
+            linhas};
   }
 
   /* a casa invadida ou a caravana fechada na estrada */

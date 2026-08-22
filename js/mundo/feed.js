@@ -785,19 +785,30 @@ TO.feed = (function(){
     const H = TO.mapa.hash;
     const b = bairros[H(ev.chave + '|b') % bairros.length];
     const tam = [5, 7, 10][H(ev.chave + '|n') % 3];
+    /* TRETA MARCADA É TRETA APOSTADA (régua do dono, 22/08/2026): de mil
+       a seis mil de cada lado, sempre de mil em mil. Quem ganha leva a
+       dos dois; quem recusa paga 20% da nossa só pra não descer.
+       SEM CAIXA, SEM MENSAGEM: torcida que não cobre a aposta não é
+       chamada pra treta — a mensagem nem chega, em vez de chegar como
+       uma escolha que não existe. */
+    const aposta = (1 + H(ev.chave + '|$') % 6) * 1000;
+    if(E.dinheiro < aposta) return;
+    const multa = Math.round(aposta * 0.2);
     propor(E, {
       kind:'treta', peso:'decisao', chave:ev.chave, voz:'diretor', tipo:'ruim',
       texto:`Zona ${b.zona} marcou uma treta no ${b.nome} contra a `+
             `${rival.nome}, bora pro problema?`,
       dados:{rival:rival.id, bairro:b.nome, zona:b.zona,
-             classe:b.classe, tam},
+             classe:b.classe, tam, aposta},
       botoes:[
         {id:'bora',  rot:'Bora pro problema', acao:'cena-treta',
-         nota:`${tam} de cada lado, sem pedra nem bomba — Prestígio `+
-              `+${tam >= 10 ? 5 : tam >= 7 ? 4 : 3} vencendo, −1 perdendo · `+
-              `Relação −2 · moral de quem foi: +2 na vitória, −1 na derrota`},
+         nota:`${tam} de cada lado, só linha de frente, sem pedra nem `+
+              `bomba — aposta de ${U.dinheiro(aposta)} de cada lado · `+
+              `Prestígio +${tam >= 10 ? 5 : tam >= 7 ? 4 : 3} vencendo, `+
+              `−1 perdendo · Relação −2 · moral de quem foi: +2 na `+
+              `vitória, −1 na derrota`},
         {id:'ficar', rot:'Ficar de fora', acao:'ignorar-treta',
-         nota:'Prestígio −1'}
+         nota:`Prestígio −1 · ${U.dinheiro(multa)} de multa (20% da aposta)`}
       ]
     });
   }
@@ -1297,7 +1308,14 @@ TO.feed = (function(){
         marcar();
         TO.estado.mexerIndicador(E, 'prestigio', -0.2,
           'Ficamos de fora da treta marcada');
-        m.consequencia = 'Ficamos de fora. Prestígio −1.';
+        /* RECUSAR TEM PREÇO EM DINHEIRO (régua do dono, 22/08/2026):
+           20% da aposta fica na mão de quem marcou. Combinar e não
+           descer sai mais barato que perder, mas não sai de graça. */
+        const ap = (m.dados && m.dados.aposta) || 0;
+        const multa = Math.round(ap * 0.2);
+        if(multa > 0) TO.estado.lancar(E, 'Multa por recusar a treta', -multa);
+        m.consequencia = 'Ficamos de fora. Prestígio −1' +
+          (multa > 0 ? ` · ${U.dinheiro(multa)} de multa.` : '.');
         return {ok:true};
       }
       case 'ignorar-bar-rival': {

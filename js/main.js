@@ -4367,8 +4367,16 @@
     const e = E();
     if(!d || !d.rival) return;
     const rival = TO.mundo.torcida(d.rival) || {};
+    /* TRETA É COISA DE LINHA DE FRENTE (régua do dono, 22/08/2026):
+       briga combinada de efetivo igual não é lugar de novato. Escala
+       primeiro quem tem os galões; faltando gente apta, IMPROVISA UM
+       COMPONENTE — e só depois disso é que o resto entra, pra cena
+       nunca ficar sem bonde. Dentro de cada faixa manda a ficha. */
+    const ORDEM_TRETA = {frente:0, componente:1, diretoria:2, novato:3};
     const aptos = TO.membros.aptosParaOEstadio(e)
-      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa));
+      .sort((a,b)=>
+        ((ORDEM_TRETA[a.cargo] ?? 9) - (ORDEM_TRETA[b.cargo] ?? 9)) ||
+        ((b.forca+b.defesa) - (a.forca+a.defesa)));
     const n = Math.max(2, Math.min(d.tam || 5, aptos.length));
     const cN = TO.mundo.coresDaTorcida(e.torcida);
     const cR = TO.mundo.coresDaTorcida(rival);
@@ -4397,7 +4405,8 @@
                 semArmas:true, bondes, efetivoRival:n, local },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'treta', alvo:{torcidaId:d.rival, nome:rival.nome||'Rival',
-                             bairro:d.bairro, cena:local, n}})
+                             bairro:d.bairro, cena:local, n,
+                             aposta: d.aposta || 0}})
     });
     /* BRIGA COMBINADA NÃO TEM ESPERA: os dois lados vieram pra isso.
        O bonde deles sai da boca da rua já procurando o nosso — sem

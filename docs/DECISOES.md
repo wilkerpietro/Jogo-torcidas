@@ -1300,6 +1300,30 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   Diplomacia **mantém** o botão dela: ali é página, não tela, e não há o
   que fechar.
 
+- **A TRETA MARCADA VIRA TRETA APOSTADA** (régua do dono, 22/08/2026):
+  as três — 5x5, 7x7 e 10x10 — passam a valer dinheiro, e passam a ser
+  coisa de quem tem galão.
+  · **SÓ LINHA DE FRENTE DESCE**. Briga combinada de efetivo igual não é
+    lugar de novato. A escalação vai pela patente: primeiro os Linha de
+    Frente, e **faltando gente apta improvisa um Componente**; dentro de
+    cada faixa manda a ficha. Novato só entra se não sobrar mais
+    ninguém, pra cena nunca ficar sem bonde.
+  · **SEMPRE APOSTADA**: de **R$ 1.000 a R$ 6.000** de cada lado, sempre
+    redondo, de mil em mil. O valor sai da semente da própria treta, e
+    varia de uma pra outra. Quem ganha leva a dos dois; o caixa da
+    perdedora é raspado no que puder cobrir, mesma regra do saque do
+    bar.
+  · **SEM CAIXA, SEM MENSAGEM**: torcida que não cobre a aposta não é
+    chamada — a mensagem nem chega, em vez de chegar como uma escolha
+    que não existe. Medido: com o caixa no fundo do poço, o calendário
+    marcou 68 tretas em quatro anos e nenhuma virou mensagem.
+  · **RECUSAR TEM PREÇO EM DINHEIRO**: além do Prestígio −1, ficam
+    **20% da aposta** na mão de quem marcou — apostou cinco mil, recusar
+    custa mil. Combinar e não descer sai mais barato que perder, mas não
+    sai de graça.
+  · O valor aparece nas notas dos dois botões. O texto da mensagem em si
+    não mudou: continua o aprovado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
