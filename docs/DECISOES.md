@@ -1354,6 +1354,15 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     rota, zero caídos, e a cena encerrou sozinha em "sua torcida foi
     corrida do lugar". Na quebra natural, idem.
 
+- **A LINHA "RESULTADO" SAIU DO FEED** (decisão do dono, 22/08/2026):
+  ela dizia "Bragantino 1 × 1 Corinthians, pelo Paulistão." logo acima
+  de um jornal cuja manchete é esse mesmo placar. Nasceu quando não
+  havia jornal nenhum; com a Gazeta na frente, virou eco. O placar do
+  nosso jogo continua saindo — na primeira página, que é o lugar dele.
+  Conferido em 2 anos: 101 partidas nossas, 101 jornais, zero linhas
+  "Resultado" no feed e zero no arquivo de notícias. O rótulo do tipo
+  fica no código só por causa de save antigo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -585,6 +585,8 @@
                     sofrido:'Ataque sofrido', escolta:'Aliados',
                     aniversario:'Aniversário', barrival:'Bar rival',
                     provocacao:'Provocação', dica:'Dica',
+                    /* `placar` fica só por causa de save antigo: a
+                       mensagem deixou de ser criada em 22/08/2026 */
                     confronto:'Confronto', placar:'Resultado',
                     rodada:'Rodada', partida:'Nossa partida',
                     assalto:'Assalto', brigas:'Brigas da semana',

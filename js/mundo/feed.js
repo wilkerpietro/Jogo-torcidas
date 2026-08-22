@@ -1015,19 +1015,12 @@ TO.feed = (function(){
         botoes:[{id:'iniciar', rot:'Iniciar partida', acao:'iniciar-partida'}]
       });
     }
-    /* a mensagem individual do NOSSO jogo */
-    if(nosso){
-      const somosCasa = nosso.c === meu;
-      const gp = somosCasa ? nosso.gc : nosso.gf;
-      const gc = somosCasa ? nosso.gf : nosso.gc;
-      const tipo = gp > gc ? 'boa' : gp < gc ? 'ruim' : '';
-      propor(E, {
-        kind:'placar', peso:'info', tipo, voz:'jornal',
-        chave:`placar|${E.data.ano}|${E.data.semana}|${E.data.dia}|${meu}`,
-        texto:`${nome(nosso.c)} ${nosso.gc} × ${nosso.gf} ${nome(nosso.f)}`+
-              `${pelaComp(nosso.compNome)}.`
-      });
-    }
+    /* A LINHA "RESULTADO" SAIU (decisão do dono, 22/08/2026): ela dizia
+       "Bragantino 1 × 1 Corinthians, pelo Paulistão." logo acima de um
+       jornal cuja MANCHETE é esse mesmo placar. Nasceu quando não havia
+       jornal nenhum; com a Gazeta na frente, virou eco. O placar do
+       nosso jogo continua saindo — na primeira página, que é o lugar
+       dele. */
 
     /* o resumo agrupado, nossa cidade primeiro, com Ver Competições */
     const daCidade = jogos.filter(j => mapaDe(j.c) === E.torcida.mapa && j !== nosso);
