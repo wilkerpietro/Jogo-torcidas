@@ -796,14 +796,18 @@ TO.feed = (function(){
     const multa = Math.round(aposta * 0.2);
     propor(E, {
       kind:'treta', peso:'decisao', chave:ev.chave, voz:'diretor', tipo:'ruim',
+      /* o valor entra na própria frase da diretoria (pedido do dono,
+         22/08/2026): a aposta é a notícia, não uma letra miúda de
+         botão. O resto do texto é o aprovado, palavra por palavra. */
       texto:`Zona ${b.zona} marcou uma treta no ${b.nome} contra a `+
-            `${rival.nome}, bora pro problema?`,
+            `${rival.nome}, ${U.dinheiro(aposta)} de cada lado, `+
+            `bora pro problema?`,
       dados:{rival:rival.id, bairro:b.nome, zona:b.zona,
              classe:b.classe, tam, aposta},
       botoes:[
         {id:'bora',  rot:'Bora pro problema', acao:'cena-treta',
          nota:`${tam} de cada lado, só linha de frente, sem pedra nem `+
-              `bomba — aposta de ${U.dinheiro(aposta)} de cada lado · `+
+              `bomba — vencendo leva os ${U.dinheiro(aposta*2)} da roda · `+
               `Prestígio +${tam >= 10 ? 5 : tam >= 7 ? 4 : 3} vencendo, `+
               `−1 perdendo · Relação −2 · moral de quem foi: +2 na `+
               `vitória, −1 na derrota`},

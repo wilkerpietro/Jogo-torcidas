@@ -1321,8 +1321,12 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     **20% da aposta** na mão de quem marcou — apostou cinco mil, recusar
     custa mil. Combinar e não descer sai mais barato que perder, mas não
     sai de graça.
-  · O valor aparece nas notas dos dois botões. O texto da mensagem em si
-    não mudou: continua o aprovado.
+  · **O VALOR ESTÁ NA FRASE** (pedido do dono, 22/08/2026): a aposta é a
+    notícia, e não letra miúda de botão. O texto aprovado ganhou o valor
+    no meio, sem mexer em mais nada — "Zona Leste marcou uma treta no
+    Dionísio Torres contra a Cearamor, **R$ 3.000 de cada lado**, bora
+    pro problema?". A nota do botão parou de repetir a aposta e passou a
+    dizer o que se leva: a roda inteira.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
