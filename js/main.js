@@ -656,10 +656,25 @@
       (TO.mundo.saoIrmas && TO.mundo.saoIrmas(e.torcida.id, p.id)));
     if(temAliado) return {pMin:0, temAliado:true, pior:0, rivais:outras.length};
     const pior = Math.min(...outras.map(rel));
-    const pMin = pior <= -70 ? 0.035
-               : pior <= -55 ? 0.030
-               : pior <= -15 ? 0.020 : 0.010;
-    return {pMin, temAliado:false, pior, rivais:outras.length};
+    let pMin = pior <= -70 ? 0.035
+             : pior <= -55 ? 0.030
+             : pior <= -15 ? 0.020 : 0.010;
+    /* BONDE MUITO MENOR NÃO COMPRA BRIGA (régua do dono, 22/08/2026):
+       quando eles chegam com 40% do nosso número ou menos — ou seja,
+       são 60% menores —, a chance de a arquibancada se pegar cai pela
+       METADE. Não é que não aconteça; é que quem está em muito menor
+       número na casa dos outros pensa duas vezes antes de começar.
+       A conta é de quem ESTÁ no estádio, não de quem tem ficha: o que
+       decide é o tamanho das duas torcidas na arquibancada. */
+    const nossaPresenca = (d.presenca || [])
+      .filter(p => p.id === e.torcida.id)
+      .reduce((t, p) => t + (p.n || 0), 0);
+    const deles = outras.reduce((t, p) => t + (p.n || 0), 0);
+    const minoria = nossaPresenca > 0 && deles > 0 &&
+                    deles <= nossaPresenca * 0.4;
+    if(minoria) pMin = pMin / 2;
+    return {pMin, temAliado:false, pior, rivais:outras.length,
+            minoria, nossos:nossaPresenca, deles};
   }
 
   /* O RELÓGIO DA PARTIDA anda em minutos ACUMULADOS, não em hora de

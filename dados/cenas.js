@@ -616,23 +616,27 @@ TO.dados.cenas = (function(){
      eles descendo por todo lado. Quem defende é o visitante (nós). */
   /* AS DUAS EMBOSCADAS SÃO A MESMA CENA, com dois cenários: quem é
      atacado fica em volta do ônibus, no meio da tela, e quem ataca
-     desce pelas DUAS pontas (régua do dono, 20/08/2026). Daí os dois
-     spawns por lado e o `espalharBonde`, que reparte o bonde entre
-     eles em vez de deixar um ponto vazio.
+     desce por uma ponta, em turma única (régua do dono, 22/08/2026 —
+     antes eram duas pontas). Daí os dois
+     dois spawns do lado emboscado e o `espalharBonde`, que reparte o
+     bonde entre eles em vez de deixar um ponto vazio.
 
      E ali não se corre de ver o tamanho do outro: emboscada é gente
      que veio pra isso e caravana que não tem pra onde ir. Corre-se de
-     sangue, pelo preço de sempre (30% no chão). */
+     sangue, pelo preço de sempre (30% no chão).
+
+     QUEM ATACA VEM EM UMA TURMA SÓ (correção do dono, 22/08/2026): o
+     bonde de emboscada desce junto, por um ponto só. O segundo ponto
+     deles saiu das duas cenas, e o `espalharBonde` agora nomeia o lado
+     que se espalha — o emboscado, em volta do ônibus. */
   const embPosto = cenaDeFoto({
     id:'emb-posto', nome:'Posto', local:'No posto, na parada da caravana',
-    espalharBonde:true, semFugaPorMinoria:true, marchaAoInimigo:true,
+    espalharBonde:'visitante', semFugaPorMinoria:true, marchaAoInimigo:true,
     saida:{perto:'Voltar pro ônibus', longe:'Ônibus (leve o líder)',
            feito:'a torcida voltou pro ônibus e a caravana seguiu',
            dica:'Leve o líder de volta pro ônibus.'},
     spawns:[
       {id:'mandante1', rot:'ELES, PELA PISTA',  lado:'mandante', x:200,  y:820,
-       entrada:'ent_mandante'},
-      {id:'mandante2', rot:'ELES, PELO PÁTIO',  lado:'mandante', x:1300, y:400,
        entrada:'ent_mandante'},
       {id:'visitante1',rot:'NÓS, NAS BOMBAS',   lado:'visitante', x:700, y:640,
        jogador:true, entrada:'ent_visitante'},
@@ -649,14 +653,12 @@ TO.dados.cenas = (function(){
   /* emboscada 2: a estrada com o ônibus parado no meio da pista */
   const embOnibus = cenaDeFoto({
     id:'emb-onibus', nome:'Estrada', local:'Na estrada, pista fechada',
-    espalharBonde:true, semFugaPorMinoria:true, marchaAoInimigo:true,
+    espalharBonde:'visitante', semFugaPorMinoria:true, marchaAoInimigo:true,
     saida:{perto:'Voltar pro ônibus', longe:'Ônibus (leve o líder)',
            feito:'a torcida voltou pro ônibus e a caravana seguiu',
            dica:'Leve o líder de volta pro ônibus.'},
     spawns:[
-      {id:'mandante1', rot:'ELES, DE UM LADO',  lado:'mandante', x:150,  y:500,
-       entrada:'ent_mandante'},
-      {id:'mandante2', rot:'ELES, DO OUTRO',    lado:'mandante', x:1390, y:480,
+      {id:'mandante1', rot:'ELES, NA PISTA',    lado:'mandante', x:150,  y:500,
        entrada:'ent_mandante'},
       {id:'visitante1',rot:'NÓS, NO ÔNIBUS',    lado:'visitante', x:700, y:560,
        jogador:true, entrada:'ent_visitante'},

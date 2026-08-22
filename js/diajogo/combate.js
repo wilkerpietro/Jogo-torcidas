@@ -247,12 +247,16 @@ TO.diaJogo.combate = (function(){
         /* portão do jogador na frente, pra casar com o nosso bonde */
         const ordem = spawns.slice().sort((a,b)=>(b.jogador?1:0)-(a.jogador?1:0));
         /* UM BONDE, DOIS PONTOS (cenas de emboscada, régua do dono
-           20/08/2026): na estrada quem ataca desce pelas DUAS pontas da
-           tela e quem é atacado fica em volta do ônibus — a cena marca
-           dois spawns por lado justamente pra isso. Sem espalhar, um
-           bonde tomava um spawn só e o outro ficava vazio: metade da
-           emboscada não existia. Vale só onde a cena pede. */
-        if(D.espalharBonde && fila.length === 1 && ordem.length > 1){
+           20/08/2026): quem é atacado fica espalhado em volta do ônibus
+           — a cena marca dois spawns pra isso. Sem espalhar, um bonde
+           tomava um spawn só e o outro ficava vazio.
+           MAS QUEM ATACA VEM EM UMA TURMA SÓ (correção do dono,
+           22/08/2026): emboscada é bonde que desce junto, não dois
+           grupos entrando por pontas opostas. Por isso o `espalharBonde`
+           deixou de ser interruptor da cena inteira e passa a dizer QUAL
+           LADO se espalha — nas duas emboscadas, só o lado emboscado. */
+        const espalha = D.espalharBonde === true || D.espalharBonde === lado;
+        if(espalha && fila.length === 1 && ordem.length > 1){
           const b = fila[0], k = ordem.length;
           const base = Math.floor(Math.max(k, Math.round(b.n)) / k);
           const sobra = Math.max(k, Math.round(b.n)) - base*k;

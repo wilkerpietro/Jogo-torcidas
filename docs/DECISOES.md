@@ -1426,6 +1426,29 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     conteúdo (o canvas) que ela vem. Então a medida é feita em JS, uma
     vez por mudança de tamanho, e vira a classe `hud-mini`.
 
+- **BONDE MUITO MENOR NÃO COMPRA BRIGA NA ARQUIBANCADA** (régua do
+  dono, 22/08/2026): quando eles chegam com **40% do nosso número ou
+  menos** — isto é, são 60% menores —, a chance de o clima do estádio
+  subir cai **pela metade**. Não é que não aconteça; é que quem está em
+  muito menor número na casa dos outros pensa duas vezes antes de
+  começar. A conta é de quem ESTÁ no estádio (a presença da mensagem
+  da partida), e não de quem tem ficha. **Medido em 20.000 partidas**:
+  contra bonde do mesmo tamanho a arquibancada se pega em 82% dos
+  jogos; contra bonde 60% menor, em 47%. O corte é exato — 45% do nosso
+  efetivo ainda não conta, 40% já conta.
+
+- **NA EMBOSCADA, QUEM ATACA VEM EM UMA TURMA SÓ** (correção do dono,
+  22/08/2026): as duas cenas de estrada punham o atacante descendo
+  pelas DUAS pontas da tela, divididos ao meio. Emboscada é bonde que
+  desce junto. O segundo ponto deles saiu das duas cenas — de
+  `cenas.js` **e** de `cenas_editadas.js`, que sobrescreve a lista de
+  spawns e por onde a primeira remoção passou batido — e o
+  `espalharBonde` deixou de ser interruptor da cena inteira: agora ele
+  NOMEIA o lado que se espalha. Nas duas emboscadas é `'visitante'`, o
+  lado emboscado, que continua em volta do ônibus em dois pontos.
+  Conferido nos três portes de atacante: 75 de 75 descem pela mesma
+  ponta, e a briga continua acontecendo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
