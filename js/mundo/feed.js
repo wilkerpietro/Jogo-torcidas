@@ -36,6 +36,9 @@ TO.feed = (function(){
   const PL = () => TO.planejamento;
 
   const INTERVALO_DROP = 1500;      // ms entre uma mensagem e a próxima
+  /* o corte da provocação do rival, na régua de 0 a 100 do dono:
+     abaixo disso a briga foi pequena demais pra render recado */
+  const PROVOCA_REGUA = 3.5;
 
   /* -------------------------------------------------------
      A CAIXA DE MENSAGENS
@@ -1016,8 +1019,19 @@ TO.feed = (function(){
     /* A PROVOCAÇÃO DO RIVAL (pedido do dono, 18/08/2026): briga
        concluída, o outro lado manda recado — deboche quando ELES
        venceram, promessa de volta quando apanharam. Cai logo depois
-       da mensagem do confronto, sem decisão, só veneno. */
-    if(d.torcidaId && b.nome){
+       da mensagem do confronto, sem decisão, só veneno.
+
+       SÓ EM BRIGA QUE VALEU PRESTÍGIO (régua do dono, 21/08/2026):
+       ninguém manda recado por causa de treta marcada de 5 contra 5.
+       A conta é o maior movimento de prestígio da noite — nosso ou
+       deles, pra cima ou pra baixo — na régua de 0 a 100 do dono, e
+       o corte é 3,5. Isso deixa de fora a treta marcada (1 ponto) e a
+       briga de arquibancada miúda (1 a 3), e deixa passar a guerra de
+       bar e a cena grande, que chegam a 10. */
+    const swingRegua = Math.max(0, ...(d.efeitos || [])
+      .filter(x => x.ind === 'prestigio')
+      .map(x => Math.abs(x.delta || 0) * 5));
+    if(d.torcidaId && b.nome && swingRegua >= PROVOCA_REGUA){
       /* textos aprovados pelo dono (18/08/2026) */
       const DEBOCHE = [
         'Anota a placa aí, teu terror tem nome!',
@@ -1085,8 +1099,9 @@ TO.feed = (function(){
         marcar();
         return {ok:true};
       case 'tela-assalto':
-        marcar();
-        return {ok:true, abrir:{tela:'tela-assalto'}};
+        /* a lista de alvos também dá pra fechar sem assaltar */
+        return {ok:true, abrir:{tela:'tela-assalto', msg:m,
+                                cancelavel:true, botao:idBotao}};
       case 'iniciar-partida':
         /* O DIA COMEÇA, A BOLA NÃO (correção do dono, 20/08/2026): este
            botão abre o ITINERÁRIO — concentração, pista, arredores. A
@@ -1250,11 +1265,23 @@ TO.feed = (function(){
         }
         return {ok:true};
       }
-      /* --- as que a casca abre em tela --- */
-      case 'tela-ideologia':
-      case 'painel-expediente':
+      /* --- as telas que DÃO PRA CANCELAR (correção do dono,
+         21/08/2026): abrir não é responder. Estas não marcam nada
+         aqui — quem marca é o Confirmar delas. Fechar volta pro feed
+         com a decisão ainda de pé e o relógio parado, que é o que o
+         `travado(E)` faz enquanto a mensagem não tem resposta.
+         Antes elas marcavam na abertura, e fechar a tela valia como
+         ter decidido: o turno era consumido sem nada ter acontecido. */
       case 'tela-ataque':
       case 'tela-caravana':
+        return {ok:true, abrir:{tela:b.acao, args:b.args || {}, msg:m,
+                                cancelavel:true, botao:idBotao}};
+
+      /* --- as que JÁ SÃO a ação: a cena aconteceu no clique, e as
+         duas de abertura não têm o que cancelar (não existe outro
+         botão nelas) --- */
+      case 'tela-ideologia':
+      case 'painel-expediente':
       case 'cena-guerra':
       case 'cena-defesa':
       case 'cena-escolta':
@@ -1267,6 +1294,18 @@ TO.feed = (function(){
         return {ok:true, abrir:{tela:'painel', args:b.args || {}}};
     }
     return {ok:false};
+  }
+
+  /* A RESPOSTA QUE VEM DA TELA (correção do dono, 21/08/2026): as
+     telas canceláveis são abertas sem responder a mensagem, e chamam
+     isto no Confirmar delas. Sem isso a decisão ficaria de pé pra
+     sempre e o relógio nunca voltaria a andar. */
+  function marcarResposta(E, idMsg, idBotao, rot){
+    const m = (E.feed || []).find(x => x.id === idMsg);
+    if(!m || m.respondido) return false;
+    const b = (m.botoes || []).find(x => x.id === idBotao);
+    m.respondido = {botao:idBotao, rot: rot || (b && b.rot) || 'feito'};
+    return true;
   }
 
   /* NÃO DESCER É ENTREGAR: a defesa se resolve como derrota sem cena.
@@ -1314,7 +1353,8 @@ TO.feed = (function(){
   return {INTERVALO_DROP,
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
-          registrarConfronto, responder, alvoDaDefesa, encerrarPartida,
+          registrarConfronto, responder, marcarResposta,
+          alvoDaDefesa, encerrarPartida,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu};
 })();

@@ -1064,6 +1064,29 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     régua do "pelo país" da Gazeta.
   · Medido: cartão fechado **433px**, aberto **927px**.
 
+- **A provocação do rival só em briga que valeu prestígio** (régua do
+  dono, 21/08/2026): ninguém manda recado por causa de treta marcada
+  de 5 contra 5. A conta é o **maior movimento de prestígio da noite —
+  nosso ou deles, pra cima ou pra baixo — e o corte é 3,5 na régua de
+  0 a 100**. Fica de fora a treta marcada (1 ponto) e a briga de
+  arquibancada miúda (1 a 3); passa a guerra de bar e a cena grande,
+  que chegam a 10.
+- **FECHAR NÃO É DECIDIR** (correção do dono, 21/08/2026): nas telas de
+  ação que o feed abre, fechar valia quase o mesmo que confirmar — a
+  mensagem já saía respondida na abertura, então o turno era consumido
+  e o relógio voltava a andar sem nada ter acontecido.
+  · Agora **abrir não responde**. As telas canceláveis — **Atacar**,
+    **Montar a caravana** e **Ver os alvos** (assalto) — abrem com a
+    decisão ainda de pé. Fechar volta pro feed com a mensagem inteira,
+    botões e tudo, e **o relógio segue parado**.
+  · **Quem responde é o Confirmar da tela**, por
+    `TO.feed.marcarResposta`. É ele que solta o tempo.
+  · **As exceções, que continuam marcando na abertura**: as cenas
+    (guerra, defesa, escolta, treta), porque a briga já aconteceu no
+    clique e não há o que cancelar; e as duas mensagens de abertura
+    (ideologia e Expediente), que não têm outro botão — deixá-las
+    pendentes ao fechar prenderia o relógio pra sempre.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

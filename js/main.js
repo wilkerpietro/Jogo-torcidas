@@ -1706,6 +1706,14 @@
 
   /* O BOTÃO APERTADO. O efeito de estado é do `TO.feed`; o que sobra
      aqui é abrir tela, que é a única coisa que a tela sabe fazer. */
+  /* A DECISÃO QUE ESPERA A TELA (correção do dono, 21/08/2026): as
+     telas canceláveis abrem SEM responder a mensagem. Guardamos aqui
+     qual decisão está aberta; o Confirmar da tela chama
+     `confirmarDecisao()`, que é quem finalmente a marca. Fechar não
+     chama nada: a decisão continua de pé, o relógio segue parado e a
+     mensagem volta pro feed com os botões dela. */
+  let decisaoAberta = null;
+
   function responderMensagem(id, idBotao){
     const e = E();
     const r = TO.feed.responder(e, id, idBotao);
@@ -1713,6 +1721,8 @@
     if(!r.ok) return;
     if(r.abrir){
       const t = r.abrir.tela, a = r.abrir.args || {}, m = r.abrir.msg;
+      decisaoAberta = r.abrir.cancelavel
+        ? {id, botao: r.abrir.botao || idBotao} : null;
       if(t === 'tela-ataque') abrirAtaque(a.ctx);
       else if(t === 'tela-ideologia') abrirIdeologia();
       else if(t === 'painel-expediente'){ abaCal = 'expediente';
@@ -1740,10 +1750,17 @@
     if(!TO.feed.travado(e)) retomarTempo('decisao');
   }
 
-  /* compat: as telas de caravana e ataque chamam isto no Confirmar */
-  function confirmarDecisao(){
+  /* as telas de caravana, ataque e assalto chamam isto no Confirmar:
+     é ele que responde a mensagem que abriu a tela e solta o relógio */
+  function confirmarDecisao(rot){
     const e = E();
-    if(e && !TO.feed.travado(e)) retomarTempo('decisao');
+    if(!e) return;
+    if(decisaoAberta){
+      TO.feed.marcarResposta(e, decisaoAberta.id, decisaoAberta.botao, rot);
+      decisaoAberta = null;
+      atualizarFeed();
+    }
+    if(!TO.feed.travado(e)) retomarTempo('decisao');
   }
 
   /* =======================================================
@@ -2590,6 +2607,8 @@
         aviso(r.caiu ? `Deu ruim: ${r.n} presos por ${r.pena} dias.`
                      : `${U.dinheiro(r.valor)} na conta.`,
               r.caiu ? 'ruim' : 'boa');
+        /* assalto feito responde a mensagem que abriu a lista */
+        confirmarDecisao('Ver os alvos — assalto feito');
         TO.estado.salvar();
         pintarTopo();
         atualizarFeed();
