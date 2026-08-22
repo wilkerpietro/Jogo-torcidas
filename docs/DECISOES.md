@@ -1129,6 +1129,17 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     paz** pra sair de lá. Do neutro, **quatro churrascos (R$ 12.000)
     viram Irmandade**.
 
+- **Troca de C e D** (decisão do dono, 21/08/2026): **Amazonas,
+  Ferroviário e Floresta descem pra Série D**; **Brasiliense, Sergipe e
+  CSA sobem pra Série C**. Os níveis trocam junto, par a par na ordem
+  em que o dono listou:
+  · Amazonas 10 → **6** · Brasiliense 6 → **10**
+  · Ferroviário 10 → **6** · Sergipe 6 → **10**
+  · Floresta 8 → **7** · CSA 7 → **8**
+  · O `divisaoClube` das torcidas dos seis clubes acompanha (7 registros).
+  · Conferido no jogo rodando: a Série C segue com 20 clubes e a D com
+    48 em 4 grupos.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
