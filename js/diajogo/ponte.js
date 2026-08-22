@@ -195,8 +195,47 @@ TO.diaJogo.ponte = (function(){
     if(l === palcoLargo) return;
     palcoLargo = l;
     pai.classList.toggle('hud-mini', l < 760);
+    medirFaixa();
   }
-  addEventListener('resize', ()=>{ palcoLargo = null; medirPalco(); });
+  /* =======================================================
+     UMA LINHA OU DUAS, MAS SEMPRE ALINHADA (correção do dono,
+     22/08/2026)
+
+     Deixar o `flex-wrap` decidir sozinho dava o pior dos dois mundos:
+     a faixa quebrava onde calhava e a segunda linha nascia empurrada
+     pra direita, com um vão escuro à esquerda. Alinhamento não é
+     acidente.
+
+     Então a quebra passa a ser uma DECISÃO: mede-se o que a faixa
+     precisa (a soma dos três assuntos, cada um sem quebra por dentro)
+     contra o que ela tem. Não coube, entra a classe `duas` e a faixa
+     vira duas linhas inteiras — tempo e PM ocupando a primeira de
+     ponta a ponta, o placar sozinho na segunda. Cada linha cheia, sem
+     sobra de um lado só.
+     ======================================================= */
+  let faixaChave = null;
+  function medirFaixa(){
+    const f = $('djFaixa');
+    if(!f || !f.clientWidth) return;
+    const pl = $('djPlacar');
+    /* a conta só é refeita quando muda o que ela mede: a largura da
+       faixa ou o texto do placar (nome novo, número que encolheu) */
+    const chave = `${f.clientWidth}|${pl ? pl.textContent : ''}`;
+    if(chave === faixaChave) return;
+    faixaChave = chave;
+    /* MEDIR É PERGUNTAR QUANTO PRECISA, e não quanto está ocupando: em
+       linha única os assuntos se espremem pra caber e a soma daria
+       sempre "coube"; em duas linhas a PM se estica e daria sempre
+       "não coube" — a classe nunca mais sairia. Com `medindo` ninguém
+       encolhe nem estica, e o transbordo diz a verdade. */
+    f.classList.add('medindo');
+    const precisa = f.scrollWidth > f.clientWidth;
+    f.classList.remove('medindo');
+    f.classList.toggle('duas', precisa);
+  }
+  addEventListener('resize', ()=>{
+    palcoLargo = null; faixaChave = null; medirPalco();
+  });
 
   function atualizarHUD(){
     if(!J) return;
@@ -284,14 +323,24 @@ TO.diaJogo.ponte = (function(){
          cor no atributo `style` — parecia depuração, não TV.
          A COR SAI DO BONDE quando o bonde tem cor: o placar passa a
          casar com as camisas em campo, em vez de dois tons fixos. */
-      const corDoLado = lado=>{
-        const b=(J.bondes_||[]).find(x=>x.lado===lado);
-        return (b && b.cor) || (lado==='mandante' ? '#c0392b' : '#2a5fa8');
+      /* A TARJA É A CAMISA (régua do dono, 22/08/2026): as três cores
+         da torcida, e não uma. A primária no corpo da tarja, a
+         secundária na borda de cima e a terciária na de baixo — é
+         assim que a faixa de uma organizada é. Torcida de duas cores
+         repete a que tem; de uma só, a tarja fica lisa. */
+      const coresDoLado = lado=>{
+        const b=(J.bondes_||[]).find(x=>x.lado===lado) || {};
+        const padrao = lado==='mandante' ? '#c0392b' : '#2a5fa8';
+        const c1 = b.cor || padrao;
+        return {c1, c2: b.cor2 || c1, c3: b.cor3 || b.cor2 || c1};
       };
-      const linhaDoTime = (lado, n)=>
-        `<div class="pl-time" style="--c:${corDoLado(lado)}">`+
+      const linhaDoTime = (lado, n)=>{
+        const c = coresDoLado(lado);
+        return `<div class="pl-time" style="--c1:${c.c1};--c2:${c.c2};`+
+               `--c3:${c.c3}">`+
           `<span class="pl-nome">${nomeDoLado(lado)}</span>`+
           `<span class="pl-n">${n}</span></div>`;
+      };
       const rodape = [
         `<span class="pl-dado"><i>caídos</i>`+
         `${J.caidos.mandante}–${J.caidos.visitante}</span>`];
@@ -308,6 +357,9 @@ TO.diaJogo.ponte = (function(){
         `<span class="pl-clima ${J.paz?'calmo':'pesado'}">`+
         `<span class="rot-clima">clima </span>`+
         `${J.paz?'tranquilo':'pesado'}</span></div>`;
+      /* nome e número mudam de largura no meio da briga (10 → 9, um
+         escalão que some): a conta da quebra é refeita junto */
+      medirFaixa();
     }
 
     const av=el('djAviso');

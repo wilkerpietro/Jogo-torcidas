@@ -1465,6 +1465,25 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     aperta (rótulo do dado some, "clima" some do clima) e ainda cabe
     inteira; num celular em pé, onde nem isso resolve, ela quebra em
     duas em vez de cortar o que não coube.
+  · **A QUEBRA É DECIDIDA, NÃO ACIDENTAL** (correção do dono,
+    22/08/2026): com `flex-wrap` solto a faixa quebrava onde calhava e a
+    segunda linha nascia empurrada pra direita, com um vão escuro à
+    esquerda. Agora a conta é feita em JS e vira classe: não coube, a
+    faixa vira **duas linhas inteiras** — tempo e PM fechando a
+    primeira de ponta a ponta, o placar sozinho na segunda, com os times
+    à esquerda e os dados à direita. Cada linha cheia, nenhuma sobra de
+    um lado só.
+  · **MEDIR É PERGUNTAR QUANTO PRECISA**, e não quanto está ocupando:
+    em linha única os assuntos se espremem e a soma daria sempre
+    "coube"; em duas linhas a PM se estica e daria sempre "não coube" —
+    a classe nunca mais sairia. Por um quadro a faixa entra no estado
+    `medindo`, onde ninguém encolhe nem estica, e o transbordo diz a
+    verdade.
+  · **A TARJA É A CAMISA** (régua do dono, 22/08/2026): eram uma cor
+    chapada; agora são as três da torcida — **primária no corpo,
+    secundária na borda de cima, terciária na de baixo**. Torcida de
+    duas cores repete a que tem; de uma só, a tarja fica lisa. O fio
+    claro em volta continua, porque camisa preta sumia na placa escura.
 
 - **A NOTÍCIA DO MATA-MATA PASSA A CONTAR A VAGA** (crivo do dono,
   22/08/2026): jogo empatado em chave caía no molde de empate e a

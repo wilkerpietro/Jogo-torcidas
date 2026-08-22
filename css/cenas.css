@@ -50,11 +50,11 @@
    vão claro entre eles pareciam três coisas, não uma transmissão. */
 #djFaixa{
   display:flex;align-items:stretch;
-  /* UMA LINHA, ATÉ ONDE UMA LINHA CABE: num celular em pé a cena tem
-     400px de largura e não existe linha que segure relógio, PM e placar
-     juntos. Aí a faixa quebra em duas em vez de cortar o que não coube —
-     `overflow:hidden` escondia o clima e os caídos sem avisar. */
-  flex-wrap:wrap;
+  /* A QUEBRA É DECIDIDA, NÃO ACIDENTAL: `flex-wrap` sozinho quebrava
+     onde calhava e a segunda linha nascia empurrada pra direita, com um
+     vão escuro à esquerda. Quem decide é `medirFaixa`, em ponte.js, que
+     põe a classe `duas` quando os três assuntos não cabem lado a lado. */
+  flex-wrap:nowrap;
   width:0;min-width:100%;box-sizing:border-box;
   font-family:var(--mono);line-height:1.35;
   background:rgba(10,10,9,.92);
@@ -64,6 +64,27 @@
 #djFaixa .fx{display:flex;align-items:center;padding:7px 12px;min-width:0}
 #djFaixa .fx + .fx{border-left:1px solid rgba(255,255,255,.10)}
 #djFaixa .fx-placar{margin-left:auto;flex:0 1 auto;padding:0}
+
+/* ---- DUAS LINHAS, as duas inteiras ---- */
+#djFaixa.duas{flex-wrap:wrap}
+#djFaixa.duas .fx-pm{flex:1 1 auto}          /* fecha a primeira linha */
+#djFaixa.duas .fx-placar{
+  flex:1 0 100%;margin-left:0;border-left:0;
+  border-top:1px solid rgba(255,255,255,.10);
+}
+#djFaixa.duas #djPlacar{width:100%}
+#djFaixa.duas #djPlacar .pl-rodape{margin-left:auto}
+#djFaixa.duas #djPlacar .pl-time:first-child{border-left:0}
+/* com a linha inteira pra si, o nome do time volta a caber */
+#djFaixa.duas #djPlacar .pl-nome{max-width:none}
+
+/* ---- o estado de MEDIR: ninguém encolhe, ninguém estica ----
+   Dura um quadro, só pra perguntar quanto a faixa precisa. Ver a nota
+   de `medirFaixa`, em ponte.js. */
+#djFaixa.medindo{flex-wrap:nowrap}
+#djFaixa.medindo .fx{flex:0 0 auto !important;min-width:max-content}
+#djFaixa.medindo .fx-placar{margin-left:0}
+#djFaixa.medindo #djPlacar .pl-nome{max-width:none}
 
 /* ---- tempo: ao vivo · relógio · velocidade ---- */
 #djTarjaTempo{gap:9px;flex:0 0 auto}
@@ -111,9 +132,15 @@
   display:flex;align-items:center;gap:8px;padding:0 12px 0 0;
   border-left:1px solid rgba(255,255,255,.10);
 }
+/* A TARJA É A CAMISA (régua do dono, 22/08/2026): primária no corpo,
+   secundária na borda de cima e terciária na de baixo. O fio claro em
+   volta continua, porque camisa preta — e há várias — sumia dentro da
+   placa escura. */
 #djPlacar .pl-time::before{
-  content:'';display:block;width:3px;align-self:stretch;background:var(--c);
-  box-shadow:0 0 0 1px rgba(255,255,255,.18);margin-right:6px;
+  content:'';display:block;width:6px;align-self:stretch;margin-right:7px;
+  background:linear-gradient(to bottom,
+    var(--c2) 0 26%, var(--c1) 26% 74%, var(--c3) 74% 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.18);
 }
 #djPlacar .pl-nome{
   font-family:var(--titulo);font-size:12px;letter-spacing:.07em;
@@ -142,7 +169,9 @@
 #djPlacar .pl-clima.calmo{color:#7fc2a0}
 #djPlacar .pl-clima.pesado{color:#d9705f}
 /* a faixa é uma linha só: o placar vira uma fileira, não um bloco */
-#djPlacar{display:flex;align-items:stretch;flex-wrap:wrap}
+/* nowrap por dentro: é a largura HONESTA do placar que diz se a faixa
+   cabe numa linha — placar que quebra sozinho mente na medida */
+#djPlacar{display:flex;align-items:stretch;flex-wrap:nowrap}
 
 /* ---- FAIXA ESTREITA: o palco pequeno encolhe a faixa junto ---- */
 #djPalco.hud-mini #djFaixa .fx{padding:6px 7px}
@@ -154,6 +183,9 @@
 #djPalco.hud-mini #djAlerta .rot{font-size:7.5px;letter-spacing:.1em}
 #djPalco.hud-mini #djCarga{font-size:7px;letter-spacing:.08em}
 #djPalco.hud-mini #djPlacar .pl-nome{font-size:9.5px;max-width:9ch}
+/* mas com a linha inteira pra si o nome cabe todo — e esta regra tem de
+   vir DEPOIS da de cima, que tem a mesma força e ganharia pela ordem */
+#djPalco.hud-mini #djFaixa.duas #djPlacar .pl-nome{max-width:none}
 #djPalco.hud-mini #djPlacar .pl-n{font-size:11px}
 #djPalco.hud-mini #djPlacar .pl-time{gap:5px;padding-right:8px}
 #djPalco.hud-mini #djPlacar .pl-rodape{font-size:7.5px;gap:7px;padding:0 8px}
