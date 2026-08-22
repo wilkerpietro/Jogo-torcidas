@@ -55,6 +55,7 @@ TO.diaJogo.ponte = (function(){
     atualizarBotaoVelocidade();
     acharHudDeBancada();
     if(estreito()) montarPad();
+    zoomDeCelular();
     montarSliders();
     ligarEntrada();
     novaNoite(opc.config||{});
@@ -129,6 +130,33 @@ TO.diaJogo.ponte = (function(){
      ======================================================= */
   let zoom=1;
   const ZOOM_MAX=4;
+  /* =======================================================
+     NO CELULAR A CÂMERA CHEGA PERTO (pedido do dono, 22/08/2026)
+
+     A cena inteira num palco de 500 px deixava cada disco com dois
+     pixels de raio: o jogador via formiga, não briga. Agora, em tela
+     estreita, a câmera nasce colada no disco que ele controla — a
+     mesma câmera do zoom da rodinha, que já seguia o líder.
+
+     O valor não é chutado: parte do tamanho que um disco tem de ter na
+     tela de verdade (RAIO_ALVO) e volta pela conta da escala. Palco
+     maior pede menos zoom; palco menor pede mais. O teto continua
+     sendo o ZOOM_MAX.
+
+     Em troca de não ver o mapa todo, a seta da borda diz onde eles
+     estão (ver `setaDoRival`).
+     ======================================================= */
+  const RAIO_ALVO = 9;   // px de verdade que o disco do jogador deve ter
+  const RAIO_LIDER = 9;  // o raio dele na cena (ver a classe Disco)
+  function zoomDeCelular(){
+    if(!cv || !estreito()) return;
+    const larguraReal = cv.getBoundingClientRect().width || cv.width;
+    if(!larguraReal) return;
+    /* raio na tela = raio na cena × zoom × (largura real ÷ largura da cena) */
+    const z = RAIO_ALVO * A.W / (RAIO_LIDER * larguraReal);
+    zoom = U.limitar(z, 1, ZOOM_MAX);
+  }
+  addEventListener('resize', zoomDeCelular);
   function focoDoZoom(){
     if(!J) return null;
     const l=J.discos.find(d=>d.lider&&d.vivo);
@@ -161,6 +189,84 @@ TO.diaJogo.ponte = (function(){
                       mostrarPostos:ED.ativo&&ED.mostrarPostos});
     if(ED.ativo) desenharEditor(ctx);
     ctx.setTransform(1,0,0,1,0,0);
+    setaDoRival(ctx);
+  }
+
+  /* =======================================================
+     A SETA DA BORDA (pedido do dono, 22/08/2026)
+
+     Com a câmera perto, o bonde deles sai do quadro — e sem saber pra
+     que lado correr o jogador anda em círculo. A seta encosta na borda
+     do palco, no rumo do MIOLO do bonde inimigo (a média de quem ainda
+     está de pé), e sai da tela no instante em que eles aparecem: seta
+     apontando pra quem já se vê é enfeite.
+
+     Desenhada em coordenada de TELA, depois de o mundo já ter sido
+     pintado — por isso a matriz volta ao normal antes.
+     ======================================================= */
+  const MARGEM_SETA = 26;   // px de TELA entre a seta e a borda do palco
+  /* onde a seta parou no último quadro (null = não teve seta). Serve de
+     janela pra quem testa e pra quem depura: pixel não se pergunta. */
+  let ultimaSeta = null;
+  function corDoOutroBonde(){
+    if(!J) return '#d9705f';
+    const meu = C.ladoDoJogador(J);
+    const b = (J.bondes_||[]).find(x=>x.lado !== meu);
+    return (b && b.cor) || '#d9705f';
+  }
+  function setaDoRival(c){
+    ultimaSeta = null;
+    if(!J || J.fase === 'acabando' || ED.ativo) return;
+    const eu = focoDoZoom();
+    if(!eu) return;
+    const meu = C.ladoDoJogador(J);
+    let sx = 0, sy = 0, n = 0;
+    for(const d of J.discos)
+      if(d.vivo && d.lado !== meu){ sx += d.x; sy += d.y; n++; }
+    if(!n) return;
+    const alvo = {x: sx/n, y: sy/n};
+    const px = alvo.x*escala.s + escala.ox, py = alvo.y*escala.s + escala.oy;
+    /* já dá pra ver o miolo deles: a seta não tem o que dizer */
+    if(px >= 0 && px <= c.canvas.width && py >= 0 && py <= c.canvas.height) return;
+
+    const ex = eu.x*escala.s + escala.ox, ey = eu.y*escala.s + escala.oy;
+    const dx = px - ex, dy = py - ey;
+    const m = Math.hypot(dx, dy) || 1;
+    /* caminha do disco do jogador na direção deles até bater na moldura */
+    const L = MARGEM_SETA *
+      (c.canvas.width / (cv.getBoundingClientRect().width || c.canvas.width));
+    const W = c.canvas.width - L, H = c.canvas.height - L;
+    let t = Infinity;
+    if(dx > 0) t = Math.min(t, (W - ex)/dx);
+    if(dx < 0) t = Math.min(t, (L - ex)/dx);
+    if(dy > 0) t = Math.min(t, (H - ey)/dy);
+    if(dy < 0) t = Math.min(t, (L - ey)/dy);
+    if(!isFinite(t) || t < 0) return;
+    const ax = U.limitar(ex + dx*t, L, W), ay = U.limitar(ey + dy*t, L, H);
+    const ang = Math.atan2(dy, dx);
+    ultimaSeta = {x:ax, y:ay, ang, alvo};
+
+    /* O TAMANHO É DA TELA DE VERDADE, e não do buffer: o canvas tem
+       1140 px de largura e aparece com 500 no celular, então uma seta
+       desenhada em "pixels de buffer" chegaria ao dedo com menos da
+       metade do tamanho. Aqui ela é medida em pixel de tela e
+       convertida. */
+    const k = c.canvas.width / (cv.getBoundingClientRect().width || c.canvas.width);
+    c.save();
+    c.translate(ax, ay);
+    c.rotate(ang);
+    c.scale(k, k);
+    /* um disco escuro por baixo: a seta vive sobre telhado claro,
+       asfalto e areia, e não pode sumir em nenhum dos três */
+    c.fillStyle = 'rgba(0,0,0,.6)';
+    c.beginPath(); c.arc(0, 0, 15, 0, 7); c.fill();
+    c.fillStyle = corDoOutroBonde();
+    c.strokeStyle = 'rgba(255,255,255,.9)';
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(13, 0); c.lineTo(-7, -10); c.lineTo(-3, 0); c.lineTo(-7, 10);
+    c.closePath(); c.fill(); c.stroke();
+    c.restore();
   }
 
   /* converte posição do mouse para coordenada da cena */
@@ -1323,5 +1429,7 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
           get config(){return config;},
           /* o vetor da bola de controle, pra quem quiser conferir de fora */
           get eixo(){return teclas.eixo || null;},
+          /* a seta da borda do último quadro, ou null se não teve */
+          get seta(){return ultimaSeta;},
           get J(){return J;}};
 })();

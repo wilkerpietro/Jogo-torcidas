@@ -1526,6 +1526,30 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     deles. Agora usa a mesma conta do jornal.
   · E "1 feridos" virou "1 ferido".
 
+- **NO CELULAR A CÂMERA CHEGA PERTO** (pedido do dono, 22/08/2026): a
+  cena inteira num palco de 500 px deixava cada disco com dois pixels de
+  raio — o jogador via formiga, não briga. Em tela estreita a câmera
+  nasce colada no disco que ele controla, usando o mesmo mecanismo do
+  zoom da rodinha, que já seguia o líder.
+  · **O VALOR NÃO É CHUTADO**: parte do tamanho que o disco tem de ter
+    na tela de verdade (9 px de raio) e volta pela conta da escala —
+    palco maior pede menos zoom, palco menor pede mais, com o teto do
+    `ZOOM_MAX`. Medido num celular deitado: zoom 3,07, líder com 9 px de
+    raio, um terço da cena à vista. No computador nada muda.
+  · **A SETA DA BORDA** paga o que se perdeu de visão: encosta na borda
+    do palco no rumo do MIOLO do bonde inimigo (a média de quem ainda
+    está de pé) e some no instante em que eles aparecem — seta apontando
+    pra quem já se vê é enfeite. Leva a cor da camisa deles, sobre um
+    disco escuro, porque ela vive sobre telhado claro, asfalto e areia.
+  · **O TAMANHO DA SETA É DA TELA, NÃO DO BUFFER**: o canvas tem 1140 px
+    de largura e aparece com 500 no celular, então uma seta desenhada em
+    "pixels de buffer" chegaria ao dedo com menos da metade do tamanho.
+    Ela é medida em pixel de tela e convertida — a margem da borda
+    também.
+  · A posição da seta fica exposta em `ponte.seta` (nula quando não há
+    seta): pixel não se pergunta, e é por ali que o teste confere os
+    quatro rumos.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
