@@ -293,3 +293,124 @@
   color:var(--tinta-2); border-bottom:0; padding:0;
 }
 @media (max-width:560px){ .gz-tabela .linhas{grid-template-columns:1fr} }
+
+/* =========================================================
+   FUTEBOL E PORRADA (pedido do dono, 21/08/2026)
+   O jornal da briga usa o mesmo esqueleto da Gazeta, mas o
+   papel é mais barato e a tinta mais suja: é jornal de banca
+   de esquina, não de assinatura. Só o que MUDA mora aqui.
+   ========================================================= */
+.gz.pp{
+  --papel:#E3DCC8;          /* papel mais amarelado e mais grosso */
+  --tinta:#141210;
+  --tinta-2:#5A5045;
+  --rubro-jornal:#9B2318;   /* vermelho de manchete de banca */
+  --fio-jornal:#9C9078;
+  /* a trama do papel barato é mais visível que a da Gazeta */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(20,18,16,.045) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(20,18,16,.032) 0 1px, transparent 1px 4px);
+}
+.gz.pp .gz-cabeca{border-top-width:5px; border-bottom-width:2px}
+.gz.pp .nome-jornal{
+  font-family:Ultra,'Archivo Narrow',Georgia,serif;
+  font-size:clamp(18px,3.1vw,27px); letter-spacing:-.01em;
+  color:var(--rubro-jornal);
+}
+.gz.pp .gz-manchete .chapeu{letter-spacing:.22em}
+.gz.pp .gz-manchete h2{
+  /* manchete de briga é mais gritada: um pouco maior e mais fechada */
+  font-size:clamp(26px,4.8vw,42px); letter-spacing:-.018em;
+}
+.gz.pp .placar-grande{gap:9px}
+.gz.pp .placar-grande .rot-placar{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:8.5px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--tinta-2); align-self:center; margin-left:4px;
+}
+.gz.pp .placar-grande .time.nossa{color:var(--rubro-jornal)}
+
+/* ---------- o quadro da noite ---------- */
+.pp-quadro{padding:13px 0 11px; align-self:start}
+.pp-quadro .col-tit{border-bottom-width:1px; margin-bottom:8px}
+.pp-quadro .grade{font-variant-numeric:tabular-nums}
+.pp-quadro .cab,.pp-quadro .l{
+  display:grid; grid-template-columns:1fr 3.6em 3.6em; gap:0 6px;
+  align-items:baseline;
+}
+.pp-quadro .cab{
+  border-bottom:1px solid var(--tinta); padding-bottom:4px; margin-bottom:2px;
+}
+.pp-quadro .cab .lado{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:9px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--tinta-2); text-align:center; line-height:1.15;
+  overflow-wrap:anywhere;
+}
+.pp-quadro .cab .lado.nossa{color:var(--rubro-jornal)}
+.pp-quadro .l{
+  border-bottom:1px dotted var(--fio-jornal); padding:3px 0;
+}
+.pp-quadro .l .rot{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:9px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--tinta-2);
+}
+.pp-quadro .l .v{
+  font-family:Ultra,Georgia,serif; font-size:17px; line-height:1;
+  color:var(--tinta); text-align:center;
+}
+/* quem levou mais ferido e mais cadeia aparece na tinta vermelha:
+   é o número que conta a história da noite */
+.pp-quadro .l.forte .v.pior{color:var(--rubro-jornal)}
+.pp-quadro .venceu{
+  background:var(--rubro-jornal); color:#F2EADA;
+  margin-top:8px; padding:6px 9px;
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:12px; letter-spacing:.04em; text-transform:uppercase;
+  line-height:1.2; overflow-wrap:anywhere;
+}
+.pp-quadro .venceu .rot{
+  display:block; font-weight:600; font-size:8.5px; letter-spacing:.17em;
+  opacity:.82; margin-bottom:1px;
+}
+.pp-quadro .venceu.empatou{background:var(--tinta-2)}
+
+/* ---------- as outras brigas do dia ---------- */
+.pp-outras{padding-top:2px}
+.pp-nota{border-bottom:1px solid var(--fio-jornal); padding:8px 0}
+.pp-nota:last-of-type{border-bottom:0}
+.pp-nota p{
+  margin:0; font-size:13px; line-height:1.4; color:var(--tinta);
+}
+.pp-nota .onde{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:8.5px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--tinta-2); margin-top:3px;
+}
+.pp-nota .numeros{
+  display:flex; flex-wrap:wrap; gap:2px 18px; margin-top:4px;
+  font-size:11.5px; color:var(--tinta-2); font-variant-numeric:tabular-nums;
+}
+.pp-nota .numeros b{color:var(--tinta)}
+.pp-mais{
+  border-top:1px solid var(--tinta); margin-top:8px; padding-top:6px;
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--tinta-2);
+}
+.pp-vazio{margin:0; font-size:13px; font-style:italic; color:var(--tinta-2)}
+
+/* a conta das outras tretas, ao lado do botão */
+.gz-abre{display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center}
+.gz-conta{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--tinta-2);
+}
+
+@media (max-width:560px){
+  .pp-quadro{
+    border-top:1px solid var(--fio-jornal); padding:10px 0 11px; margin-top:2px;
+  }
+}

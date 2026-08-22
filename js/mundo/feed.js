@@ -1020,9 +1020,20 @@ TO.feed = (function(){
           `${vencedor ? `A ${vencedor} levou a melhor.` : 'Ninguém levou a melhor.'}`,
       efeitos: d.efeitos || [],
       consequencia: linhaDeConsequencia(d.efeitos || []),
+      /* O JORNAL DA BRIGA LÊ DAQUI (pedido do dono, 21/08/2026): a
+         mensagem guarda o lugar e o dia junto das baixas, pra Futebol
+         e Porrada montar a página sem adivinhar nada. */
+      /* O NÚMERO DA EDIÇÃO É CARIMBADO NA HORA: jornal velho não muda
+         de número. Se fosse contado no desenho, a briga de janeiro
+         apareceria com o número de dezembro. */
       dados:{torcidaId:d.torcidaId, ganhamos:!!d.ganhamos,
-             a:{nome:a.nome, n:a.n, caidos:a.caidos, presos:a.presos},
-             b:{nome:b.nome, n:b.n, caidos:b.caidos, presos:b.presos}}
+             edicao: (E.brigasNossasTotal = (E.brigasNossasTotal || 0) + 1),
+             cena, bairro:(d.local && d.local.bairro) || '',
+             semResistencia,
+             a:{nome:a.nome || E.torcida.nome, id:E.torcida.id,
+                n:a.n, caidos:a.caidos, presos:a.presos},
+             b:{nome:b.nome, id:b.torcidaId,
+                n:b.n, caidos:b.caidos, presos:b.presos}}
     });
 
     /* A PROVOCAÇÃO DO RIVAL (pedido do dono, 18/08/2026): briga

@@ -546,6 +546,7 @@
     /* o jornal aberto é estado da mensagem: sem isso o repinte do feed
        montava o cartão de novo e a página voltava a fechar */
     : m.kind === 'rodada' ? (m.gzAberto ? 'gz-aberto' : 'gz')
+    : m.kind === 'confronto' ? (m.ppAberto ? 'pp-aberto' : 'pp')
     : m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim')
     : (m.kind === 'partida' && m.dados && m.dados.iniciada) ? 'aovivo' : '';
 
@@ -1375,6 +1376,120 @@
     return rec;
   }
 
+  /* =======================================================
+     FUTEBOL E PORRADA NO FEED (pedido do dono, 21/08/2026)
+     Mesmo esqueleto da Gazeta — cabeçalho, tarja, chapéu,
+     manchete, olho e placar grande. No lugar da classificação,
+     o QUADRO DA NOITE: envolvidos, feridos e presos dos dois
+     lados, e quem levou a melhor. O botão solta as outras
+     brigas do dia.
+     ======================================================= */
+  function recorteDaPorrada(p, msg){
+    const rec = el('article',{class:'gz pp'});
+
+    const cab = el('div',{class:'gz-cabeca'});
+    cab.innerHTML =
+      `<div class="linha">
+         <div class="lado">Ano ${p.cabeca.ano} · Nº ${p.cabeca.edicao}<br>Fundada em 2026</div>
+         <div class="nome-jornal">Futebol e Porrada</div>
+         <div class="lado dir">${p.cabeca.data}<br>Edição da treta</div>
+       </div>
+       <div class="tarja">${p.tarja.map(t=>`<span>${t}</span>`).join('')}</div>`;
+    rec.appendChild(cab);
+
+    const topo = el('div',{class:'gz-topo'});
+    const man = el('div',{class:'gz-manchete'});
+    man.innerHTML =
+      `<div class="chapeu">${p.chapeu}</div>
+       <h2>${p.manchete}</h2>
+       <p class="olho">${p.olho}</p>
+       <div class="placar-grande">
+         <span class="time nossa">${p.placar.a}</span>
+         <span class="n">${p.placar.ga}</span>
+         <span class="n">${p.placar.gb}</span>
+         <span class="time">${p.placar.b}</span>
+         <span class="rot-placar">feridos</span>
+       </div>`;
+    topo.appendChild(man);
+    topo.appendChild(quadroDaNoite(p.quadro));
+    rec.appendChild(topo);
+
+    /* as outras brigas do dia, atrás do botão */
+    const c = p.completo;
+    const resto = el('div',{class:'gz-resto'});
+    const bt = el('button',{class:'gz-mostrar'});
+    const pintar = ()=>{
+      resto.innerHTML = '';
+      const aberto = !!msg.ppAberto;
+      bt.textContent = aberto ? 'Esconder as outras' : 'Ver mais notícias';
+      bt.classList.toggle('aberto', aberto);
+      if(aberto) resto.appendChild(outrasDoDia(c));
+    };
+    bt.onclick = ()=>{ msg.ppAberto = !msg.ppAberto; pintar(); TO.estado.salvar(); };
+    pintar();
+    rec.appendChild(resto);
+    const pe = el('div',{class:'gz-abre'});
+    pe.appendChild(bt);
+    if(c.total) pe.appendChild(el('span',{class:'gz-conta', html:
+      `<b>${c.total}</b> ${c.total===1?'outra treta':'outras tretas'} no país hoje`}));
+    rec.appendChild(pe);
+    return rec;
+  }
+
+  /* o quadro da noite: duas colunas de números e o vencedor */
+  function quadroDaNoite(q){
+    const cx = el('aside',{class:'pp-quadro'});
+    cx.appendChild(el('div',{class:'col-tit', texto:'O quadro da noite'}));
+    const g = el('div',{class:'grade'});
+    g.appendChild(el('div',{class:'cab', html:
+      `<span class="rot"></span>`+
+      q.lados.map(l=>`<span class="lado${l.nossa?' nossa':''}">${l.nome}</span>`).join('')}));
+    const linha = (rot, chave, destaque)=>{
+      const vals = q.lados.map(l=>l[chave] || 0);
+      const pior = Math.max(...vals);
+      g.appendChild(el('div',{class:'l'+(destaque?' forte':''), html:
+        `<span class="rot">${rot}</span>`+
+        vals.map(v=>`<span class="v${destaque && v === pior && pior ? ' pior' : ''}">`+
+          `${v}</span>`).join('')}));
+    };
+    linha('Envolvidos', 'n');
+    linha('Feridos', 'feridos', true);
+    linha('Presos', 'presos', true);
+    cx.appendChild(g);
+    cx.appendChild(el('div',{class:'venceu'+(q.empate?' empatou':''), html:
+      q.empate ? '<span class="rot">Ninguém</span> levou a melhor'
+               : `<span class="rot">Levou a melhor</span> ${q.vencedor||'—'}`}));
+    return cx;
+  }
+
+  /* as outras brigas do dia, em nota de jornal */
+  function outrasDoDia(c){
+    const cx = el('div',{class:'gz-cheio pp-outras'});
+    cx.appendChild(el('div',{class:'col-tit rubra', texto:'Deu pau em outro canto'}));
+    if(!c.itens.length){
+      cx.appendChild(el('p',{class:'pp-vazio', texto:c.vazio}));
+      return cx;
+    }
+    for(const it of c.itens){
+      const n = el('div',{class:'pp-nota'});
+      n.innerHTML =
+        `<p>${it.frase}</p>`+
+        `<div class="onde">${[it.cidade, it.motivo].filter(Boolean).join(' · ')}</div>`+
+        `<div class="numeros">`+
+        it.lados.map(l=>
+          `<span class="lado"><b>${l.nome}</b> ${l.n} na treta · `+
+          `${l.feridos} ${l.feridos===1?'ferido':'feridos'}`+
+          `${l.presos ? ` · ${l.presos} ${l.presos===1?'preso':'presos'}` : ''}</span>`
+        ).join('')+
+        `</div>`;
+      cx.appendChild(n);
+    }
+    if(c.resto) cx.appendChild(el('div',{class:'pp-mais', html:
+      c.resto === 1 ? 'E mais uma treta pelo país'
+                    : `E mais <b>${c.resto}</b> tretas pelo país`}));
+    return cx;
+  }
+
   /* o resto da página: as seções do jornal de 20/08/2026 */
   function paginaCheiaDoJornal(p){
     const rec = el('div',{class:'gz-cheio'+(p.magra?' magra':'')});
@@ -1545,6 +1660,19 @@
        linha corrida de placares dá lugar a um recorte de jornal. Se a
        mensagem for velha e não tiver os jogos guardados, o texto de
        sempre continua valendo — nada quebra em save antigo. */
+    /* FUTEBOL E PORRADA (pedido do dono, 21/08/2026): a briga da nossa
+       torcida deixa de ser uma linha e vira a primeira página do
+       jornal da rua. Save antigo, sem os dois lados guardados,
+       continua no texto de sempre. */
+    if(m.kind === 'confronto' && TO.porrada){
+      const pg = TO.porrada.montar(e, m);
+      if(pg){
+        const txt = art.querySelector('.msg-txt');
+        if(txt) txt.remove();
+        art.appendChild(recorteDaPorrada(pg, m));
+      }
+    }
+
     if(m.kind === 'rodada' && TO.gazeta){
       const pg = TO.gazeta.montar(e, m);
       if(pg){

@@ -1030,6 +1030,33 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · Medido: o cartão fechado tem **369px** (era 703px com o jornal
     inteiro sempre aberto); aberto, **888px**.
 
+- **FUTEBOL E PORRADA** (pedido do dono, 21/08/2026): a briga da nossa
+  torcida deixa de ser uma linha de texto e vira a primeira página do
+  jornal da rua, **substituindo a mensagem de confronto**.
+  · **Mesmo esqueleto da Gazeta**: cabeçalho, tarja, chapéu, manchete,
+    olho e placar grande. O placar grande da briga são os **feridos**
+    de cada lado.
+  · **A voz é da rua**, com gíria — é jornal de banca de esquina, não
+    de assinatura: papel mais amarelado, trama mais grossa, manchete
+    maior e mais fechada, vermelho mais sujo.
+  · **No lugar da classificação, O QUADRO DA NOITE**: envolvidos,
+    feridos e presos dos dois lados, com o pior número de cada linha
+    na tinta vermelha, e uma tarja fechando com quem levou a melhor
+    (cinza quando ninguém levou).
+  · **"Ver mais notícias"** abre as outras brigas do MESMO DIA pelo
+    país, cada uma com a sua nota, a cidade, o motivo e os números dos
+    dois lados. Guarda o estado aberto na própria mensagem
+    (`m.ppAberto`), como o jornal completo da Gazeta.
+  · **O número da edição é carimbado na hora** (`dados.edicao`): jornal
+    velho não muda de número.
+  · **"Era menos" é sempre sobre o nosso lado** — vencendo vira mérito,
+    apanhando vira explicação.
+  · **O camburão passa na frente do lugar** no chapéu: quem foi preso é
+    a notícia, a arquibancada é só o endereço.
+  · **Nenhuma condição entra mais vezes do que tem molde**, a mesma
+    régua do "pelo país" da Gazeta.
+  · Medido: cartão fechado **433px**, aberto **927px**.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
