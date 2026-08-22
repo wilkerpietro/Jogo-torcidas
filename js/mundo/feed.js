@@ -886,16 +886,27 @@ TO.feed = (function(){
        75 aos 90. Como decisão, ela segura o relógio: o placar e o
        resumo da rodada só dropam depois do apito final, então nada
        vaza o resultado. */
-    const nosso = jogos.find(j => j.c === meu || j.f === meu);
+    /* A DISPUTA VAI DENTRO DA PARTIDA (régua do dono, 21/08/2026):
+       se o mata-mata do dia foi pros pênaltis, a série viaja na própria
+       mensagem e sai depois do apito. Sem tela separada.
+       A SÉRIE É DO JOGO DELA, E DE MAIS NENHUM (correção do dono,
+       22/08/2026): a disputa chega aqui numa vaga solta do estado, e
+       antes bastava ser um jogo nosso pra ela grudar. Se a vaga
+       sobrasse — dois jogos nossos no mesmo dia, um deles de pontos
+       corridos — os pênaltis apareciam numa partida de rodada, que não
+       decide nada. Agora ela só entra no jogo dos MESMOS DOIS CLUBES
+       que a disputaram, e a vaga é esvaziada de qualquer jeito: ou a
+       série sai no jogo dela, ou não sai. */
+    const meus = jogos.filter(j => j.c === meu || j.f === meu);
+    const pendente = E.penaltisPendente;
+    const daSerie = pendente && meus.find(j =>
+      (pendente.a === j.c && pendente.b === j.f) ||
+      (pendente.a === j.f && pendente.b === j.c));
+    var penDoDia = daSerie ? pendente : null;
+    E.penaltisPendente = null;
+    /* o jogo que foi pros pênaltis é o do dia; sem ele, o primeiro */
+    const nosso = daSerie || meus[0];
     if(nosso){
-      /* A DISPUTA VAI DENTRO DA PARTIDA (régua do dono, 21/08/2026):
-         se o mata-mata do dia foi pros pênaltis, a série viaja na
-         própria mensagem e sai depois do apito, cobrança a cobrança,
-         na mesma lista dos gols. Sem tela separada. */
-      var penDoDia = E.penaltisPendente &&
-        (E.penaltisPendente.a === meu || E.penaltisPendente.b === meu)
-        ? E.penaltisPendente : null;
-      if(penDoDia) E.penaltisPendente = null;
       const minutoDeGol = () => {
         const r = U.rng();
         return r < 0.35 ? U.inteiro(30, 45)

@@ -1251,6 +1251,19 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     a tela de Competições (com a série cobrança a cobrança), o
     calendário e a agenda do clube. Um formatador só, pra não haver
     duas versões da mesma verdade.
+  · **PÊNALTI SÓ ONDE PRECISA** (conferido a pedido do dono,
+    22/08/2026): a disputa só nasce em jogo de mata-mata empatado —
+    nenhuma chamada dela existe no laço das rodadas de pontos corridos.
+    O que **estava** frouxo era a entrega: a série chegava na mensagem
+    da nossa partida por uma vaga solta do estado, e bastava ser um
+    jogo nosso pra ela grudar. Dois jogos nossos no mesmo dia — ou uma
+    vaga que sobrasse — e os pênaltis apareceriam numa partida de
+    rodada, que não decide nada. Agora a série só entra no jogo dos
+    **mesmos dois clubes** que a disputaram, esse jogo é o que vira a
+    partida ao vivo do dia, e a vaga é esvaziada de qualquer jeito.
+    **Medido em 5 anos de calendário**: 165 disputas, todas em chave,
+    nenhum jogo de pontos corridos nos pênaltis, e toda série que saiu
+    na nossa partida veio de um jogo de mata-mata.
   · **A ORIENTAÇÃO DO PLACAR** (bug pego no teste): na chave de ida e
     volta a disputa rodava com os times da IDA e era guardada no jogo
     da VOLTA, então o placar saía trocado em relação aos nomes — "ASA
