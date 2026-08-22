@@ -119,6 +119,7 @@
   #djComandos #djFormacoes,
   #djComandos #djBtPedra,
   #djComandos #djBtBomba,
+  #djComandos #djBtFugir,
   #djComandos #djBtRecuar{ display:none; }
   /* a dica de teclas não vale no celular: com a cruz de WASD trocada
      pela bola de controle, ali não há tecla nenhuma pra apertar */
@@ -163,6 +164,7 @@
 
   .pad-acoes{ display:flex; gap:6px; pointer-events:none; }
   .pad-acao{ width:74px; height:44px; font-size:11px; }
+  .pad-f{ border-color:var(--vermelho); color:var(--vermelho); }
   .pad-form{ width:46px; height:44px; font-size:16px; font-weight:700; }
   .pad-form.on{ background:var(--rubro); border-color:var(--rubro-vivo); }
 

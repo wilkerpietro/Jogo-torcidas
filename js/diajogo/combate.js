@@ -1166,8 +1166,14 @@ TO.diaJogo.combate = (function(){
       /* o líder é do jogador e não anda sozinho — MENOS quando a ordem
          de entrar foi dada: aí o presidente vai pro portão como todo
          mundo, senão a cena fica esperando um disco que só o teclado
-         move e a torcida inteira já entrou. */
-      if(d.lider && !d.entrando) continue;
+         move e a torcida inteira já entrou.
+         E MENOS QUANDO O BONDE CORRE (correção do dono, 22/08/2026):
+         quebrada a torcida, o presidente não fica plantado no meio da
+         rua olhando o pessoal sumir. Ele corre junto, pela mesma rota.
+         Sem isto a cena nem acabava: `dePe` contava o líder parado e a
+         briga ficava de pé esperando um disco que só o teclado move —
+         e o teclado, em fuga, não move ele (ver `moverLider`). */
+      if(d.lider && !d.entrando && !d.fugindo) continue;
       d._cacando = false;
 
       const recua = d.fugindo || recuando(J, d.lado);
@@ -2134,12 +2140,52 @@ TO.diaJogo.combate = (function(){
     }
   }
 
+  /* =======================================================
+     A ORDEM DE CORRER (pedido do dono, 22/08/2026)
+
+     Debandada é o bonde quebrando sozinho, por sangue ou por medo do
+     tamanho do outro. ISTO É OUTRA COISA: é o presidente mandando
+     correr antes de tomar prejuízo — poupar ficha custa a briga, e a
+     conta é do jogador.
+
+     Por isso não tem rabo: `soltarFuga` dá 2,6 s de atraso a quem está
+     encarando o outro bonde, porque quem quebra sozinho demora a virar
+     as costas. Ordem dada é ordem cumprida — todo mundo vira de uma
+     vez, o líder inclusive, e cada um sai pela rota do seu spawn. A
+     cena fecha sozinha quando o último sumir, pelo caminho de sempre.
+     ======================================================= */
+  function mandarFugir(J){
+    if(!J || J.fase !== 'ativo') return 0;
+    const meu = ladoDoJogador(J);
+    let n = 0;
+    for(const d of J.discos){
+      if(!d.vivo || d.lado !== meu || d.fugindo) continue;
+      d.fugindo = true;
+      d.correEm = J.t;
+      d.entrando = false;
+      d.voltando = false;
+      n++;
+    }
+    if(!n) return 0;
+    J.debandou[meu] = true;
+    J.debandouPor[meu] = 'ordem';
+    J.fugaOrdenada = true;
+    /* recuo ligado junto da fuga só atrapalha: são duas ordens de andar
+       pra trás no mesmo bonde, e a fuga é a que vale */
+    J.recuando = false;
+    logar(J, 'Ordem de correr: todo mundo pra saída.', 'r');
+    aviso(J, 'TODO MUNDO CORRENDO', '#d9705f');
+    return n;
+  }
+  /* o bonde correndo não bate, não recua e não joga pedra */
+  const emFuga = J => !!(J && J.fugaOrdenada);
+
   /* ---------- ações do jogador ---------- */
   function restaCd(J,tipo){
     return Math.max(0,(tipo==='pedra'?J.cdPedraAte:J.cdBombaAte)-J.t);
   }
   function arremessar(J,tipo){
-    if(J.fase!=='ativo'||J.semArmas||restaCd(J,tipo)>0) return;
+    if(J.fase!=='ativo'||J.semArmas||emFuga(J)||restaCd(J,tipo)>0) return;
     const l=J.discos.find(d=>d.lider&&d.vivo);
     if(!l) return;
     const alcance = tipo==='pedra'?P.alcancePedra:P.alcanceBomba;
@@ -2231,7 +2277,7 @@ TO.diaJogo.combate = (function(){
     }
   }
   function alternarRecuo(J){
-    if(J.fase!=='ativo') return;
+    if(J.fase!=='ativo'||emFuga(J)) return;
     J.recuando=!J.recuando;
     logar(J, J.recuando?'Recuando pro ponto de saída.':'De volta pra cima.','r');
   }
@@ -2375,5 +2421,5 @@ TO.diaJogo.combate = (function(){
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
           iaArremesso, alvoDeFuga, conferirFim, dePe, agressivo, atacado,
-          mandarEntrar, conferirPortoes};
+          mandarEntrar, mandarFugir, emFuga, conferirPortoes};
 })();

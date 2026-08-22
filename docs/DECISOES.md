@@ -1328,6 +1328,32 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     pro problema?". A nota do botão parou de repetir a aposta e passou a
     dizer o que se leva: a roda inteira.
 
+- **O LÍDER CORRE JUNTO, E EXISTE UM BOTÃO DE FUGIR** (pedido do dono,
+  22/08/2026):
+  · **O PRESIDENTE NÃO FICA PLANTADO**. Quando o bonde quebrava — por
+    sangue ou por medo do tamanho do outro —, todo mundo virava as
+    costas e o líder ficava parado no meio da rua: ele é o único disco
+    que só o teclado move, e `moverLider` (com razão) larga o comando
+    em fuga. Resultado: a cena **nem acabava**, porque `dePe` contava
+    aquele disco imóvel e a briga ficava de pé esperando alguém que
+    ninguém podia mexer. Agora, fugindo, o líder anda pela mesma rota
+    dos outros.
+  · **FUGIR É UMA ORDEM, e tem botão** (`F`, e um botão vermelho no HUD
+    e no pad do celular). Debandada é o bonde quebrando sozinho; isto é
+    o presidente mandando correr **antes** de tomar prejuízo — o preço
+    de poupar ficha é perder a briga, e a conta é do jogador.
+  · **ORDEM DADA É ORDEM CUMPRIDA**: sem o rabo de 2,6 s que a
+    debandada natural dá a quem está encarando o outro bonde. Todo mundo
+    vira de uma vez, o líder inclusive, cada um pela rota do seu spawn,
+    e a cena fecha sozinha quando o último some — pelo caminho de
+    sempre, sem encerramento especial.
+  · Dada a ordem, pedra, bomba, recuo e o próprio botão apagam: bonde
+    correndo não bate, e botão que promete o que não vai acontecer é
+    pior que botão nenhum.
+  · **Medido**: dez de dez correram no mesmo instante, o líder saiu pela
+    rota, zero caídos, e a cena encerrou sozinha em "sua torcida foi
+    corrida do lugar". Na quebra natural, idem.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

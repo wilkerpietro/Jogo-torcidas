@@ -87,6 +87,10 @@
 .acao-btn b{color:var(--ouro);font-family:var(--mono);font-size:10.5px}
 .acao-btn.entrar{border-color:var(--ouro);color:var(--ouro)}
 .acao-btn.entrar:hover:not(:disabled){background:var(--ouro);color:#151514}
+/* correr é decisão de peso e tem cara de decisão de peso */
+.acao-btn.fugir{border-color:var(--vermelho);color:var(--vermelho)}
+.acao-btn.fugir:hover:not(:disabled){background:var(--vermelho);color:#151514}
+.acao-btn.gasto{opacity:.35}
 
 #djLog{height:118px;overflow-y:auto;font-family:var(--mono);
   font-size:10px;line-height:1.5;color:var(--fraco)}

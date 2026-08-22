@@ -308,7 +308,8 @@ TO.diaJogo.ponte = (function(){
       ? `<b style="color:var(--ouro)">${espera.toUpperCase()}</b> · `+
         '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação'
       : '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação · <kbd>Q</kbd> pedra · '+
-        '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · rodinha = zoom · <kbd>F2</kbd> editor de cena';
+        '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>F</kbd> fugir · '+
+        'rodinha = zoom · <kbd>F2</kbd> editor de cena';
   }
 
   /* =======================================================
@@ -334,6 +335,7 @@ TO.diaJogo.ponte = (function(){
     liga('djBtPedra', ()=>C.arremessar(J,'pedra'));
     liga('djBtBomba', ()=>C.arremessar(J,'bomba'));
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
+    liga('djBtFugir', mandarCorrer);
     liga('djVelocidade', alternarVelocidade);
     liga('djBtEntrar', mandarEntrarOuSair);
   }
@@ -361,6 +363,14 @@ TO.diaJogo.ponte = (function(){
     if(l) C.entrarNoEstadio(J, l);
     encerrar(s.feito, {objetivo:true});
   }
+  /* A ORDEM DE CORRER, do botão e da tecla F: quem manda é o combate,
+     aqui só se pinta o que sobrou de escolha. */
+  function mandarCorrer(){
+    if(!J) return;
+    if(!C.mandarFugir(J)) C.logar(J, 'Não sobrou ninguém pra correr.', 'p');
+    atualizarBotoes();
+    marcarFugaNoPad();
+  }
   function atualizarBotoes(){
     U.$$('.form-btn').forEach(b=>b.classList.toggle('on', b.dataset.f===J.form));
     const br=$('djBtRecuar');
@@ -369,6 +379,22 @@ TO.diaJogo.ponte = (function(){
       br.style.borderColor=J.recuando?'var(--ouro)':'#3d3d39';
       br.style.color=J.recuando?'var(--ouro)':'var(--texto)';
     }
+    /* dada a ordem, não há o que desfazer: o bonde já virou as costas.
+       Os botões de briga apagam junto, senão ficam prometendo pedra e
+       recuo pra quem está correndo. */
+    const correndo = C.emFuga(J);
+    for(const id of ['djBtFugir','djBtRecuar','djBtPedra','djBtBomba']){
+      const b = $(id);
+      if(b){ b.disabled = correndo; b.classList.toggle('gasto', correndo); }
+    }
+  }
+  function marcarFugaNoPad(){
+    const pad = $('djPad');
+    if(!pad || !J) return;
+    const correndo = C.emFuga(J);
+    pad.querySelectorAll('.pad-f, .pad-r, .pad-q, .pad-e').forEach(b=>{
+      b.disabled = correndo; b.classList.toggle('gasto', correndo);
+    });
   }
 
   /* =======================================================
@@ -555,7 +581,8 @@ TO.diaJogo.ponte = (function(){
     acoes.append(
       disparo('q','PEDRA', ()=>{ if(J) C.arremessar(J,'pedra'); }),
       disparo('e','BOMBA', ()=>{ if(J) C.arremessar(J,'bomba'); }),
-      disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }));
+      disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
+      disparo('f','FUGIR', ()=>{ mandarCorrer(); }));
     esq.append(acoes, bolaDeControle());
 
     const dir = document.createElement('div');
@@ -589,6 +616,7 @@ TO.diaJogo.ponte = (function(){
     if(e){ e.style.display = J.semArmas ? 'none' : '';
            e.classList.toggle('gasto', J.bombas <= 0 || C.restaCd(J,'bomba') > 0); }
     marcarFormacaoNoPad();
+    marcarFugaNoPad();
   }
 
   /* UMA VEZ SÓ. `montar` roda a cada cena aberta — troca de aba na
@@ -613,6 +641,7 @@ TO.diaJogo.ponte = (function(){
       }
       if(!J) return;
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
+      if(k==='f'){C.mandarFugir(J);atualizarBotoes();}
       if(k==='q') C.arremessar(J,'pedra');
       if(k==='e') C.arremessar(J,'bomba');
       if(k==='enter') mandarEntrarOuSair();
