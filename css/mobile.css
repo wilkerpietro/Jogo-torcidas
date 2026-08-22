@@ -120,6 +120,9 @@
   #djComandos #djBtPedra,
   #djComandos #djBtBomba,
   #djComandos #djBtRecuar{ display:none; }
+  /* a dica de teclas não vale no celular: com a cruz de WASD trocada
+     pela bola de controle, ali não há tecla nenhuma pra apertar */
+  #djDica{ display:none; }
   /* o botão fixo de avançar dia não entra na cena */
 
   /* ---------- o pad ---------- */
@@ -163,16 +166,41 @@
   .pad-form{ width:46px; height:44px; font-size:16px; font-weight:700; }
   .pad-form.on{ background:var(--rubro); border-color:var(--rubro-vivo); }
 
-  /* a cruz: W em cima, A e D nos lados, S embaixo */
-  .pad-cruz{
-    display:grid; gap:5px; pointer-events:none;
-    grid-template-columns:repeat(3, 50px);
-    grid-template-rows:repeat(3, 44px);
-    grid-template-areas: ".  w  ." "a  .  d" ".  s  .";
+  /* A BOLA DE CONTROLE, no lugar da cruz de WASD (pedido do dono,
+     22/08/2026): base redonda, quatro setas discretas marcando os
+     pontos cardeais e o núcleo que acompanha o dedo até a borda. O
+     curso do núcleo é de 46px — o mesmo BOLA_RAIO de ponte.js. */
+  .pad-bola{
+    position:relative; width:132px; height:132px; border-radius:50%;
+    pointer-events:auto; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    background:rgba(20,20,22,.72);
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:inset 0 0 22px rgba(0,0,0,.5);
   }
-  .pad-w{ grid-area:w } .pad-a{ grid-area:a }
-  .pad-s{ grid-area:s } .pad-d{ grid-area:d }
-  .pad-mov{ font-size:15px; font-weight:700; }
+  .pad-bola.apertado{ border-color:rgba(255,255,255,.38); }
+  .pad-bola-nucleo{
+    position:absolute; left:50%; top:50%;
+    width:58px; height:58px; border-radius:50%;
+    transform:translate(-50%, -50%);
+    background:rgba(150,150,152,.72);
+    border:1px solid rgba(255,255,255,.3);
+    pointer-events:none;
+  }
+  .pad-bola.apertado .pad-bola-nucleo{
+    background:var(--rubro); border-color:var(--rubro-vivo);
+  }
+  /* as setas são só marcação: quem move é o vetor, não elas */
+  .pad-bola-seta{
+    position:absolute; width:9px; height:9px; pointer-events:none;
+    border-top:2px solid rgba(255,255,255,.5);
+    border-right:2px solid rgba(255,255,255,.5);
+  }
+  .seta-n{ top:11px;    left:50%; transform:translateX(-50%) rotate(-45deg) }
+  .seta-s{ bottom:11px; left:50%; transform:translateX(-50%) rotate(135deg) }
+  .seta-l{ right:11px;  top:50%;  transform:translateY(-50%) rotate(45deg) }
+  .seta-o{ left:11px;   top:50%;  transform:translateY(-50%) rotate(-135deg) }
 
   /* em pé, a cena fica apertada: um aviso discreto, sem travar nada */
   #avisoGirar{

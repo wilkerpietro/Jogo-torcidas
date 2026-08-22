@@ -380,7 +380,7 @@
      jogo, como receber aliado e o que fazer com os outros jogos da
      praça. O nome mudou porque é assim que o jogo passa a falar dela em
      toda parte, inclusive no botão "Seguir ideologia" das decisões. */
-  function caixaDeIdeologia(e){
+  function caixaDeIdeologia(e, comBotao){
     const P = TO.planejamento;
     const cx = el('div',{class:'ass-politicas'});
     cx.appendChild(el('div',{class:'fase-rot',
@@ -433,17 +433,21 @@
       'O botão "Seguir padrão" da mensagem executa o que está definido '+
       'aqui.</span>'}));
 
-    /* UM BOTÃO SÓ, e é ele que confirma */
-    const bt = el('button',{class:'bt destaque', texto:'Salvar'});
-    bt.onclick = ()=>{
+    /* UM BOTÃO SÓ, e é ele que confirma. Aberta como tela, quem carrega
+       esse botão é o rodapé do modal — daí a caixa saber salvar sem ter
+       botão nenhum dentro dela. */
+    cx.salvar = ()=>{
       for(const fn of Object.values(pend)) fn();
       TO.estado.salvar();
-      aviso('Ideologia salva.', 'boa');
       redesenhar();
     };
-    const rod = el('div',{class:'pol-rodape'});
-    rod.appendChild(bt);
-    cx.appendChild(rod);
+    if(comBotao !== false){
+      const bt = el('button',{class:'bt destaque', texto:'Salvar'});
+      bt.onclick = ()=>{ cx.salvar(); aviso('Ideologia salva.', 'boa'); };
+      const rod = el('div',{class:'pol-rodape'});
+      rod.appendChild(bt);
+      cx.appendChild(rod);
+    }
     return cx;
   }
 
@@ -2721,7 +2725,11 @@
      motivo pelo qual painel aberto pausa. O contador existe porque um
      modal pode abrir por cima de outro. */
   let modaisAbertos = 0;
-  function modal(titulo, sub, corpo, acoes, largura){
+  /* `semFechar`: o botão Fechar automático some. Serve pra tela que se
+     resolve num botão só — na Ideologia, salvar já é fechar (régua do
+     dono, 22/08/2026), e dois botões no rodapé viravam a dúvida de
+     sempre: "salvei ou só fechei?" */
+  function modal(titulo, sub, corpo, acoes, largura, semFechar){
     const fundo = el('div',{class:'tela-cheia'});
     modaisAbertos++; pausarTempo('modal');
     const sair = ()=>{ if(--modaisAbertos <= 0){ modaisAbertos = 0;
@@ -2738,9 +2746,15 @@
       b.onclick = ()=>{ fn(); fundo.remove(); };
       f.appendChild(b);
     }
-    const fechar = el('button',{class:'bt destaque', texto:'Fechar'});
-    fechar.onclick = ()=>fundo.remove();
-    f.appendChild(fechar); m.appendChild(f);
+    if(!semFechar){
+      const fechar = el('button',{class:'bt destaque', texto:'Fechar'});
+      fechar.onclick = ()=>fundo.remove();
+      f.appendChild(fechar);
+    }
+    /* sem o Fechar, quem herda o destaque é a última ação: o rodapé não
+       pode ficar sem um botão de peso */
+    else if(f.lastChild) f.lastChild.classList.add('destaque');
+    if(f.children.length) m.appendChild(f);
     fundo.appendChild(m); document.body.appendChild(fundo);
     return ()=>fundo.remove();
   }
@@ -3166,8 +3180,13 @@
   /* A IDEOLOGIA SOZINHA, numa tela dela. O botão "Definir ideologia"
      abria a Gestão inteira e deixava o que ele promete no rodapé. */
   function abrirIdeologia(){
-    return modal('Ideologia', 'vale toda semana', caixaDeIdeologia(E()),
-                 null, 'media');
+    /* SALVAR JÁ FECHA (régua do dono, 22/08/2026): a tela tinha Salvar
+       no corpo e Fechar no rodapé, e o Fechar não guardava nada. Agora
+       é um botão só, no rodapé, e ele faz as duas coisas. */
+    const cx = caixaDeIdeologia(E(), false);
+    return modal('Ideologia', 'vale toda semana', cx,
+                 [['Salvar', ()=>{ cx.salvar(); aviso('Ideologia salva.', 'boa'); }]],
+                 'media', true);
   }
 
   /* =======================================================

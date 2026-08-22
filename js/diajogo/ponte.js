@@ -427,15 +427,87 @@ TO.diaJogo.ponte = (function(){
      implementa lógica nenhuma: cada botão escreve no MESMO objeto
      `teclas` que o teclado alimenta, e as ações de uma tecolada só (Q, E,
      R, formação) chamam exatamente o que `montarBotoes` já chama. Por
-     isso `combate.js` não precisa saber que existe celular: `moverLider`
-     continua lendo teclas['w'|'a'|'s'|'d'] e normalizando o vetor, e a
-     diagonal sai de encostar em dois botões da cruz ao mesmo tempo.
+     isso `combate.js` quase não sabe que existe celular: as ações passam
+     todas pelo mesmo `teclas`. A ÚNICA coisa que ele aprendeu foi a ler
+     `teclas.eixo` — a bola de controle (pedido do dono, 22/08/2026)
+     entrega um VETOR, e não quatro liga-desliga, então o líder anda em
+     qualquer ângulo e não só nos oito da cruz antiga.
 
      `pointerdown` e não `click`: click só dispara quando o gesto termina,
      e pedra e bomba têm de sair no toque. `setPointerCapture` por botão
      faz o multitoque valer e garante que o dedo que escorrega pra fora
      solte a tecla — sem isso W fica presa e o líder anda sozinho.
      ======================================================= */
+  /* =======================================================
+     A BOLA DE CONTROLE (pedido do dono, 22/08/2026)
+
+     A cruz de WASD saiu do celular. No lugar dela um direcional de
+     joystick: o dedo encosta em qualquer ponto da base, o núcleo
+     acompanha até a borda e o que sai daí é um VETOR — direção livre,
+     qualquer ângulo, e não os oito cantos que quatro botões davam.
+
+     O vetor mora em `teclas.eixo`, o mesmo objeto que o teclado
+     alimenta, então nada além de `moverLider` precisou mudar. Soltar o
+     dedo zera o vetor e devolve o núcleo ao centro; sem isso o líder
+     sairia andando sozinho, que é o mesmo mal que o `setPointerCapture`
+     evitava na cruz.
+
+     A ZONA MORTA existe porque dedo em vidro treme: um toque parado no
+     centro não pode virar caminhada. Fora dela a velocidade é cheia —
+     direção é do jogador, passo é do jogo.
+     ======================================================= */
+  const BOLA_RAIO = 46;     // px do centro até a borda do curso
+  const BOLA_MORTA = 0.16;  // fração do curso que não conta como direção
+
+  function bolaDeControle(){
+    const base = document.createElement('div');
+    base.className = 'pad-bola';
+    const nucleo = document.createElement('div');
+    nucleo.className = 'pad-bola-nucleo';
+    for(const lado of ['n','l','s','o'])
+      base.appendChild(el2('div', 'pad-bola-seta seta-'+lado));
+    base.appendChild(nucleo);
+
+    let dedo = null;
+    const parar = ()=>{
+      dedo = null;
+      teclas.eixo = null;
+      base.classList.remove('apertado');
+      nucleo.style.transform = 'translate(-50%, -50%)';
+    };
+    const mirar = ev=>{
+      const r = base.getBoundingClientRect();
+      let x = ev.clientX - (r.left + r.width/2);
+      let y = ev.clientY - (r.top + r.height/2);
+      const d = Math.hypot(x, y);
+      /* o núcleo para na borda, mas o dedo pode passar dela: o ângulo
+         continua valendo com o dedo longe, que é como joystick funciona */
+      if(d > BOLA_RAIO){ x = x/d*BOLA_RAIO; y = y/d*BOLA_RAIO; }
+      nucleo.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+      const f = Math.min(1, d / BOLA_RAIO);
+      teclas.eixo = f < BOLA_MORTA ? null : {x: x/(d||1), y: y/(d||1)};
+    };
+    base.addEventListener('pointerdown', ev=>{
+      ev.preventDefault();
+      try{ base.setPointerCapture(ev.pointerId); }catch(_){}
+      dedo = ev.pointerId;
+      base.classList.add('apertado');
+      mirar(ev);
+    });
+    base.addEventListener('pointermove', ev=>{
+      if(dedo === null || ev.pointerId !== dedo) return;
+      ev.preventDefault();
+      mirar(ev);
+    });
+    for(const q of ['pointerup','pointercancel','lostpointercapture'])
+      base.addEventListener(q, ev=>{ if(ev) ev.preventDefault(); parar(); });
+    base.addEventListener('contextmenu', ev=>ev.preventDefault());
+    return base;
+  }
+  const el2 = (tag, cls)=>{
+    const n = document.createElement(tag); n.className = cls; return n;
+  };
+
   const LIMIAR_ESTREITO = 900;
   const estreito = () => innerWidth <= LIMIAR_ESTREITO;
   let padMontado = false;
@@ -470,9 +542,6 @@ TO.diaJogo.ponte = (function(){
       b.addEventListener('contextmenu', ev=>ev.preventDefault());
       return b;
     };
-    /* tecla de segurar: liga no toque, desliga ao soltar */
-    const segurar = k => botao(k.toUpperCase(), 'pad-mov ' + 'pad-'+k,
-                               ()=>{teclas[k]=true;}, ()=>{teclas[k]=false;});
     /* tecla de disparo: o mesmo caminho do botão do HUD */
     const disparo = (k, rot, fn) => botao(rot, 'pad-acao pad-'+k, ()=>{
       teclas[k]=true; fn();
@@ -487,10 +556,7 @@ TO.diaJogo.ponte = (function(){
       disparo('q','PEDRA', ()=>{ if(J) C.arremessar(J,'pedra'); }),
       disparo('e','BOMBA', ()=>{ if(J) C.arremessar(J,'bomba'); }),
       disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }));
-    const cruz = document.createElement('div');
-    cruz.className = 'pad-cruz';
-    cruz.append(segurar('w'), segurar('a'), segurar('s'), segurar('d'));
-    esq.append(acoes, cruz);
+    esq.append(acoes, bolaDeControle());
 
     const dir = document.createElement('div');
     dir.className = 'pad-lado pad-dir';
@@ -1125,5 +1191,7 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
           set velocidade(v){ velocidade = velocidades.includes(v) ? v : 1;
                              atualizarBotaoVelocidade(); },
           get config(){return config;},
+          /* o vetor da bola de controle, pra quem quiser conferir de fora */
+          get eixo(){return teclas.eixo || null;},
           get J(){return J;}};
 })();

@@ -960,10 +960,18 @@ TO.diaJogo.combate = (function(){
     const l=J.discos.find(d=>d.lider&&d.vivo);
     if(!l||l.fugindo||l.entrando||!podeControlar) return;
     let dx=0,dy=0;
-    if(teclas['a']||teclas['arrowleft'])  dx--;
-    if(teclas['d']||teclas['arrowright']) dx++;
-    if(teclas['w']||teclas['arrowup'])    dy--;
-    if(teclas['s']||teclas['arrowdown'])  dy++;
+    /* A BOLA DE CONTROLE (pedido do dono, 22/08/2026): no celular a
+       direção não sai mais de quatro botões, sai de um vetor livre —
+       qualquer ângulo, e não só os oito da cruz. Quando o vetor existe
+       é ele que manda; o teclado segue exatamente como estava. */
+    const eixo = teclas.eixo;
+    if(eixo && (eixo.x || eixo.y)){ dx = eixo.x; dy = eixo.y; }
+    else {
+      if(teclas['a']||teclas['arrowleft'])  dx--;
+      if(teclas['d']||teclas['arrowright']) dx++;
+      if(teclas['w']||teclas['arrowup'])    dy--;
+      if(teclas['s']||teclas['arrowdown'])  dy++;
+    }
     const m=Math.hypot(dx,dy);
     if(!m) return;
     /* o jogador corre atrás no mesmo passo de quem foge — a mesma

@@ -1270,6 +1270,36 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     4×2 Paulista" com o **Paulista** classificado. Agora corre na
     orientação da volta, que é onde ela mora.
 
+- **JOINVILLE NA C, INTER DE LIMEIRA NA D** (pedido do dono,
+  22/08/2026): os dois trocam de divisão e trocam de nível junto —
+  Joinville 6→8, Inter de Limeira 8→6 —, e o `divisaoClube` das duas
+  torcidas acompanha (União Tricolor 4→3, Interror 3→4). Conferido no
+  jogo rodando: a Série C segue com 20 clubes e a D com 48.
+
+- **A BOLA DE CONTROLE, NO LUGAR DO WASD** (pedido do dono,
+  22/08/2026): no celular a cruz de quatro botões saiu e entrou um
+  direcional de joystick — base redonda, núcleo que acompanha o dedo até
+  a borda, e o dedo pode passar da borda que o ângulo continua valendo.
+  · **O QUE MUDA DE VERDADE É O QUE SAI DALI**: quatro botões davam oito
+    direções; a bola dá um **vetor**, qualquer ângulo. Ele mora em
+    `teclas.eixo`, o mesmo objeto que o teclado alimenta, então só
+    `moverLider` precisou aprender a ler — quando o vetor existe é ele
+    que manda, e o teclado segue exatamente como estava.
+  · **ZONA MORTA de 16% do curso**: dedo em vidro treme, e um toque
+    parado no centro não pode virar caminhada. Fora dela a velocidade é
+    cheia: a direção é do jogador, o passo é do jogo.
+  · Soltar o dedo zera o vetor e devolve o núcleo ao centro — sem isso o
+    líder sairia andando sozinho, o mesmo mal que o `setPointerCapture`
+    já evitava na cruz. A dica de teclas do canto da cena também some no
+    celular: ali não há tecla pra apertar.
+
+- **SALVAR JÁ FECHA, NA IDEOLOGIA** (régua do dono, 22/08/2026): a tela
+  tinha Salvar no corpo e Fechar no rodapé, e o Fechar não guardava
+  nada — a dúvida de sempre, "salvei ou só fechei?". Agora é um botão
+  só, no rodapé, e ele faz as duas coisas. A mesma caixa dentro da
+  Diplomacia **mantém** o botão dela: ali é página, não tela, e não há o
+  que fechar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
