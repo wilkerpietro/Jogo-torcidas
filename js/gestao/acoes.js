@@ -27,6 +27,9 @@ TO.acoes = (function(){
 
   /* o rendimento diário é uma fração do que a ação semanal rendia */
   const REDUCAO = 0.35;
+  /* a tabela da relação mora em TO.relacoes.REL (régua do dono,
+     21/08/2026): aqui só se lê dela, nunca se escreve número solto */
+  const REL = () => TO.relacoes.REL;
 
   /* custo e efeito de uma ação podem ser número (fixo) ou função de E
      (muda com a torcida) — quem desenha a linha pergunta por aqui */
@@ -161,7 +164,7 @@ TO.acoes = (function(){
                    ? !!res.ganhamos : !!(res && res.venceu);
     /* briga derruba a relação dos dois lados — é a deterioração que o
        esqueleto do jogo exige depois de todo confronto */
-    if(deles.torcida) TO.relacoes.hostilidade(E, deles.torcida, 22);
+    if(deles.torcida) TO.relacoes.hostilidade(E, deles.torcida, REL().briga);
     /* o prestígio DELES também se move com a briga (decisão do dono) */
     const dpDeles = deles.torcida
       ? TO.relacoes.mover(E, deles.torcida, 'prestigio', ganhamos ? -0.4 : 0.4)
@@ -209,8 +212,10 @@ TO.acoes = (function(){
        derrota — em menor número: Prestígio −1;
                  parelho (±10): Prestígio −2 · Moral −1;
                  com 11+ a mais: Prestígio −3 · Moral −2.
-     Prestígio na régua de 0-100 (÷5 no indicador); relação não mexe —
-     o dono ainda não precificou. */
+     Prestígio na régua de 0-100 (÷5 no indicador). A relação azeda pela
+     mesma faixa de efetivo, com os números da tabela (TO.relacoes.REL):
+     encarar quem era maior deixa mais ódio pra trás do que passar por
+     cima de quem era menor. */
   function fecharEstadio(E, alvo, res){
     const R = TO.relacoes;
     const ganhou = res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu;
@@ -223,14 +228,16 @@ TO.acoes = (function(){
        dono, 19/08/2026): encarar quem era maior deixa mais ódio pra
        trás do que passar por cima de quem era menor — e cai dos dois
        lados do placar, porque briga em arquibancada nenhuma aproxima */
-    const REL = {menos:-3, parelho:-2, mais:-1};
+    const AZEDA = {menos: REL().arquibancadaMenos,
+                   parelho: REL().arquibancadaIgual,
+                   mais: REL().arquibancadaMais};
     const t = T[faixa];
     const antesP = E.indicadores.prestigio, antesM = E.indicadores.moral;
     const antesR = R.nivel(E, alvo.torcidaId);
     const motivo = `Briga na arquibancada contra a ${alvo.nome}`;
     TO.estado.mexerIndicador(E, 'prestigio', t.p/5, motivo);
     if(t.m) TO.estado.mexerIndicador(E, 'moral', t.m, motivo);
-    R.hostilidade(E, alvo.torcidaId, -REL[faixa]);
+    R.hostilidade(E, alvo.torcidaId, AZEDA[faixa]);
     const efeitos = [
       {ind:'prestigio', delta: r1(E.indicadores.prestigio - antesP), dono:'nosso'},
       {ind:'moral',     delta: r1(E.indicadores.moral - antesM), dono:'nossa'},
@@ -260,7 +267,7 @@ TO.acoes = (function(){
     const R = TO.relacoes;
     const ganhou = res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu;
     const antesRel = R.nivel(E, alvo.torcidaId);
-    R.hostilidade(E, alvo.torcidaId, 2);
+    R.hostilidade(E, alvo.torcidaId, REL().treta);
     const antesP = E.indicadores.prestigio;
     const display = (alvo.n||5) >= 10 ? 5 : (alvo.n||5) >= 7 ? 4 : 3;
     /* preço do dono (19/08/2026): vencer paga +3/+4/+5; perder custa
@@ -333,7 +340,8 @@ TO.acoes = (function(){
       embarcados: alvo.nossos || 0,
       feridos: (res.membros||[]).filter(r=>!r.preso && r.caido).length
     };
-    R.hostilidade(E, alvo.torcidaId, seguramos ? 10 : 6);
+    R.hostilidade(E, alvo.torcidaId,
+                  seguramos ? REL().defesaSegura : REL().defesaPerdida);
     const dmDelas = R.mover(E, alvo.torcidaId, 'moral', seguramos ? -1.0 : 0.8);
     R.mover(E, alvo.torcidaId, 'prestigio', seguramos ? -0.5 : 0.6);
 
@@ -414,7 +422,8 @@ TO.acoes = (function(){
       linhas.push('a gente saiu de lá pior do que entrou');
     }
     const antes = R.nivel(E, alvo.torcidaId);
-    R.hostilidade(E, alvo.torcidaId, ganhou ? 26 : 18);
+    R.hostilidade(E, alvo.torcidaId,
+                  ganhou ? REL().ataqueGanho : REL().ataquePerdido);
     /* o prestígio DELES também entra na conta da briga (decisão do
        dono): apanhar em casa custa mais do que segurar o ataque rende */
     const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio',
@@ -559,7 +568,7 @@ TO.acoes = (function(){
         E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + 0.4, 0, 20);
         /* muro pichado é provocação: o rival mais próximo sente */
         const alvo = TO.relacoes.panorama(E).filter(x=>x.relacao < -20)[0];
-        if(alvo) TO.relacoes.hostilidade(E, alvo.id, 9);
+        if(alvo) TO.relacoes.hostilidade(E, alvo.id, REL().pichacao);
         /* quem pinta muro de madrugada às vezes é pego */
         const aptos = E.membros.filter(TO.membros.disponivel);
         if(aptos.length && U.rng() < 0.18){
@@ -573,7 +582,7 @@ TO.acoes = (function(){
     },
     {
       id:'reuniao', nome:'Reunião de diretoria', icone:'conversa', cena:'Sede',
-      efeito:'Relação +4,2 com o aliado mais próximo; precisa de 2 diretores de pé',
+      efeito:'Relação +6 com o aliado mais próximo; precisa de 2 diretores de pé',
       disponivel(E){
         const n = E.membros.filter(m=>m.cargo==='diretoria' && TO.membros.disponivel(m)).length;
         if(n < 2) return {ok:false, motivo:'precisa de dois diretores de pé'};
@@ -587,7 +596,7 @@ TO.acoes = (function(){
           .sort((a,b)=>b[1]-a[1]);
         const [id, v] = alvos[0];
         const o = TO.mundo.torcida(id);
-        E.relacoes[id] = U.limitar(v + 12*REDUCAO, -100, 100);
+        E.relacoes[id] = U.limitar(v + REL().reuniao, -100, 100);
         TO.relacoes.marcarAjuda(E, id);
         return {ok:true, msg:`Reunião com ${o?o.nome:'a diretoria aliada'}. Relação em `+
                              `${Math.round(E.relacoes[id])}.`};

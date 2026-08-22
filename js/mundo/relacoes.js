@@ -21,6 +21,60 @@ TO.relacoes = (function(){
      ≤ −70 Maior Rival · < −15 Rival · < 20 Neutro ·
      < 70 Aliado · ≥ 70 Irmandade
      ------------------------------------------------------- */
+  /* =======================================================
+     A TABELA DA RELAÇÃO (régua do dono, 21/08/2026)
+
+     Todo movimento de relação do jogo mora aqui, e em nenhum
+     outro lugar. Antes os números estavam soltos em cinco
+     arquivos, de −1 a −26, e rebalancear era caça ao tesouro.
+
+     A RÉGUA: toda mexida vale de 5 a 20 pontos, e BRIGA SEMPRE
+     TIRA MAIS. Por isso a faixa é dividida:
+       · briga ............ 10 a 20 (só briga entra aqui)
+       · resto do negativo . 5 a  9
+       · positivo ......... 5 a 20
+     Assim nenhum gesto de paz, por maior que seja, azeda a
+     relação tanto quanto o menor dos socos.
+     ======================================================= */
+  const REL = {
+    /* --- BRIGA: 10 a 20, sempre o que mais tira --- */
+    ataqueGanho:    20,   // invadir o bar, a sede ou a loja dela e vencer
+    briga:          18,   // encontro de rua no dia de jogo
+    ataquePerdido:  17,   // invadir e apanhar lá dentro
+    defesaSegura:   15,   // defender a casa ou a caravana e segurar
+    arquibancadaMenos: 13, // arquibancada: encaramos quem era maior
+    defesaPerdida:  13,   // defender e perder
+    arquibancadaIgual: 12, // arquibancada: efetivo parelho
+    arquibancadaMais:  11, // arquibancada: passamos por cima do menor
+    treta:          10,   // treta marcada, de efetivo igual
+
+    /* --- NEGATIVO SEM BRIGA: 5 a 9 --- */
+    pichacao:        9,   // pichar o território do rival
+    largarAliado:    9,   // deixar o aliado apanhando sozinho
+    provocar:        8,   // o botão Provocar, na Diplomacia
+    ataqueMarcado:   8,   // uma rival marca ataque-surpresa contra nós
+    naoReceber:      7,   // aliado na nossa cidade e a gente não recebe
+    furarAniversario: 6,  // não aparecer no aniversário da aliada
+
+    /* --- POSITIVO: 5 a 20 --- */
+    churrasco:      20,   // recepção de irmandade: carne, bebida e escolta
+    descerPeloAliado: 16, // entrar na briga que era dele
+    hospedarEscolta: 12,  // hospedar e caminhar junto até o portão
+    irAniversario:   8,   // aparecer na festa dela
+    hospedar:        7,   // colchão no salão e café de manhã
+    reuniao:         6,   // reunião de diretoria com o aliado mais próximo
+    aproximar:       5,   // o botão Aproximar, na Diplomacia
+
+    /* --- ENTRE ELAS (IA × IA), na mesma régua --- */
+    iaBriga:        16,   // briga entre duas torcidas do mundo
+    iaAjudouAmiga:  14,   // quem entrou na briga pela outra
+    iaAjudouRival:  12,   // ...e o rival de quem ela ajudou
+    iaTreta:        10,   // treta marcada entre elas
+    iaConviteAceito: 8,   // convite de festa aceito
+    iaConviteRecusado: 6, // convite de festa recusado
+    iaReuniao:       6    // reunião de diretoria delas
+  };
+
   const HOSTIL  = -15;   // daqui pra baixo há risco de briga
   const QUENTE  = -55;   // daqui pra baixo o rival vem sozinho
   const ALIADO  =  45;   // daqui pra cima é aliado de verdade
@@ -444,7 +498,7 @@ TO.relacoes = (function(){
       E.ataqueMarcado = {torcida:o.id, nome:o.nome, alvo:alvo.id,
                          cena:alvo.cena,
                          ano:E.data.ano, semana:E.data.semana, dia};
-      hostilidade(E, o.id, 6);
+      hostilidade(E, o.id, REL.ataqueMarcado);
       fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia});
       break;              // um ataque-surpresa por semana já é guerra
     }
@@ -1047,8 +1101,8 @@ TO.relacoes = (function(){
       baixas(aj.o, aj.n, !venceu);
       if(venceu) mover(E, aj.o.id, 'prestigio', 0.2);
       const dono = doLadoA ? a : b, rivalDe = doLadoA ? b : a;
-      moverRelacao(E, dono.id, aj.o.id, +4);
-      moverRelacao(E, aj.o.id, rivalDe.id, -6);
+      moverRelacao(E, dono.id, aj.o.id, +REL.iaAjudouAmiga);
+      moverRelacao(E, aj.o.id, rivalDe.id, -REL.iaAjudouRival);
     }
     /* O PRESTÍGIO ACOMPANHA A BRIGA (decisão do dono, 17/08/2026;
        zebra engordada em 18/08): briga grande move mais, e zebra —
@@ -1065,7 +1119,7 @@ TO.relacoes = (function(){
     mover(E, ganhouA ? a.id : b.id, 'moral', zebra ? 1.2 : 0.6);
     mover(E, ganhouA ? b.id : a.id, 'prestigio', -swing);
     mover(E, ganhouA ? b.id : a.id, 'moral', -0.6);
-    moverRelacao(E, a.id, b.id, -8);
+    moverRelacao(E, a.id, b.id, -REL.iaBriga);
     const reg = {
       ano: E.data.ano, semana: E.data.semana, dia: E.data.dia,
       cidade: (M().cidade(cidade)||{}).nome || cidade, jogo: jogoRot,
@@ -1199,7 +1253,7 @@ TO.relacoes = (function(){
     mover(E, ganhouA ? r.id : o.id, 'prestigio', -0.2);
     mover(E, ganhouA ? o.id : r.id, 'moral', 0.6);
     mover(E, ganhouA ? r.id : o.id, 'moral', -0.2);
-    moverRelacao(E, o.id, r.id, -2);
+    moverRelacao(E, o.id, r.id, -REL.iaTreta);
     return registrarBrigaIA(E, {
       ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
       cidade:(M().cidade(o.mapa)||{}).nome || o.mapa, jogo:'treta marcada',
@@ -1290,7 +1344,6 @@ TO.relacoes = (function(){
      que aqui vêm da ficha da torcida. Ela conversa com as torcidas da
      PRÓPRIA praça — a mesa da diretoria delas não mexe na relação
      conosco, que continua vindo do que a gente faz. */
-  const PASSO_REUNIAO = 12 * 0.35;
   function reuniaoIA(E, o, t){
     if(((o.cargos||{}).diretoria || 0) < 2) return;
     let alvo = null, melhor = -70;
@@ -1299,7 +1352,7 @@ TO.relacoes = (function(){
       const r = relacaoDelas(E, o.id, v.id);
       if(r > melhor){ melhor = r; alvo = v; }
     }
-    if(alvo) moverRelacao(E, o.id, alvo.id, PASSO_REUNIAO);
+    if(alvo) moverRelacao(E, o.id, alvo.id, REL.iaReuniao);
   }
   function regimeIA(E, t){
     const sa = semanaAbs(E);
@@ -1433,9 +1486,9 @@ TO.relacoes = (function(){
           U.rng() < U.limitar(0.5 + rel/100, 0.15, 0.95);
         if(aceita){
           if(t) t.caixa -= 2000;
-          moverRelacao(E, o.id, c.id, 3);
+          moverRelacao(E, o.id, c.id, REL.iaConviteAceito);
         } else {
-          moverRelacao(E, o.id, c.id, -3);
+          moverRelacao(E, o.id, c.id, -REL.iaConviteRecusado);
         }
         fora.push({ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
                    quem:o.nome, convidada:c.nome, aceitou:aceita});
@@ -1593,7 +1646,7 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
+  return {REL, HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
           ranking, posicaoNoRanking, situacaoFinanceira,
           brigasDeHoje, mundoDia, brigaIA, disponiveisIA, foraDeCombate, baixasIA,
           convitesDeAniversario,

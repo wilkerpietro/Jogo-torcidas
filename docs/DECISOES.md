@@ -1087,6 +1087,48 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     (ideologia e Expediente), que não têm outro botão — deixá-las
     pendentes ao fechar prenderia o relógio pra sempre.
 
+- **A RÉGUA DA RELAÇÃO** (régua do dono, 21/08/2026): todo movimento de
+  relação do jogo passa a valer **de 5 a 20 pontos**, e **briga sempre
+  tira mais**. A faixa foi dividida pra garantir isso:
+  · **briga: 10 a 20** — só briga entra aqui;
+  · **negativo que não é briga: 5 a 9**;
+  · **positivo: 5 a 20**.
+  Assim nenhum gesto de paz, por maior que seja, azeda a relação tanto
+  quanto o menor dos socos.
+  · **Tudo mora numa tabela só**, `TO.relacoes.REL`. Antes os números
+    estavam soltos em cinco arquivos, de −1 a −26, e rebalancear era
+    caça ao tesouro. Agora nenhum ponto do jogo escreve número de
+    relação: todos leem da tabela.
+  · **Briga**: ataque ao bar/sede vencendo −20 · briga de rua no dia de
+    jogo −18 · ataque perdendo −17 · defesa segurando −15 ·
+    arquibancada contra quem era maior −13 · defesa perdida −13 ·
+    arquibancada parelha −12 · arquibancada contra o menor −11 ·
+    treta marcada −10.
+  · **Sem briga**: pichação −9 · largar o aliado −9 · Provocar −8 ·
+    ataque-surpresa marcado contra nós −8 · não receber o aliado −7 ·
+    furar o aniversário −6.
+  · **Positivo**: churrasco e escolta +20 · descer pelo aliado +16 ·
+    hospedar e escoltar +12 · ir ao aniversário +8 · hospedar +7 ·
+    reunião de diretoria +6 · Aproximar +5.
+  · **Entre elas (IA × IA)**: briga −16 · ajudou, contra o rival −12 ·
+    treta −10 · ajudou, com a ajudada +14 · convite aceito +8 ·
+    convite recusado −6 · reunião +6.
+  · **A ARQUIBANCADA PASSOU A AZEDAR DE VERDADE**: era de −1 a −3 e
+    virou de −11 a −13. Antes um dia inteiro de setor pegando fogo
+    mexia menos que uma semana de paz.
+  · **O botão Aproximar caiu de +8 pra +5**, o piso da régua: é o
+    único movimento de graça e sem limite de uso do jogo, então tem
+    de ser o mais fraco. Agora custa **4 apertadas** pra igualar um
+    churrasco.
+  · **O tempo NÃO entrou na régua** (esfriar 5%/semana, convivência
+    +1/mês, indiferença −1 a cada 2 meses). São gotejamentos semanais,
+    não eventos: a 5 pontos por mês, um ano de paz daria +60 e o
+    passivo engoliria tudo que o jogador faz.
+  · Medido com os novos números: de um rival comum (−30), **dois
+    ataques ao bar viram Maior Rival** e são precisas **11 semanas de
+    paz** pra sair de lá. Do neutro, **quatro churrascos (R$ 12.000)
+    viram Irmandade**.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

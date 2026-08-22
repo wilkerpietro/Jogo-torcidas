@@ -794,7 +794,7 @@ TO.feed = (function(){
            nota:'abre a cena — Relação +10 com o aliado; o prestígio da '+
                 'noite (até ±10) vai pra ele'},
           {id:'fora',   rot:'Ficar de fora',   acao:'abandonar-escolta',
-           nota:'−15 de relação com o aliado'}
+           nota:`−${TO.relacoes.REL.largarAliado} de relação com o aliado`}
         ]
       });
       break;
@@ -1179,7 +1179,8 @@ TO.feed = (function(){
         /* deixar o aliado apanhando sozinho cobra a relação */
         const d = m.dados || {};
         if(d.aliado){
-          E.relacoes[d.aliado] = U.limitar((E.relacoes[d.aliado]||0) - 15, -100, 100);
+          E.relacoes[d.aliado] = U.limitar(
+            (E.relacoes[d.aliado]||0) - TO.relacoes.REL.largarAliado, -100, 100);
         }
         marcar();
         return {ok:true};
@@ -1223,10 +1224,11 @@ TO.feed = (function(){
         TO.estado.lancar(E, `Presença na festa da ${(m.dados||{}).nome}`, -2000);
         E.relacoes = E.relacoes || {};
         E.relacoes[id] = Math.max(-100, Math.min(100,
-          TO.relacoes.nivel(E, id) + 3));
+          TO.relacoes.nivel(E, id) + TO.relacoes.REL.irAniversario));
         /* aparecer na festa é gesto: zera o relógio da indiferença */
         TO.relacoes.marcarAjuda(E, id);
-        m.consequencia = `Fomos. +3 de relação com a ${(m.dados||{}).nome}.`;
+        m.consequencia = `Fomos. +${TO.relacoes.REL.irAniversario} de relação `+
+                         `com a ${(m.dados||{}).nome}.`;
         return {ok:true};
       }
       case 'aniv-nao': {
@@ -1234,13 +1236,14 @@ TO.feed = (function(){
         const id = (m.dados||{}).torcida;
         E.relacoes = E.relacoes || {};
         E.relacoes[id] = Math.max(-100, Math.min(100,
-          TO.relacoes.nivel(E, id) - 3));
+          TO.relacoes.nivel(E, id) - TO.relacoes.REL.furarAniversario));
         /* furar aniversário de aliado queima na rua (régua do dono,
            18/08/2026): −2 de prestígio na régua de 0-100 */
         TO.estado.mexerIndicador(E, 'prestigio', -0.4,
           `Furamos o aniversário da ${(m.dados||{}).nome}`);
-        m.consequencia = `Ficamos em casa. −3 de relação com a `+
-                         `${(m.dados||{}).nome} · Prestígio nosso −2.`;
+        m.consequencia = `Ficamos em casa. −${TO.relacoes.REL.furarAniversario} `+
+                         `de relação com a ${(m.dados||{}).nome} · `+
+                         `Prestígio nosso −2.`;
         return {ok:true};
       }
       case 'aniv-festa': {

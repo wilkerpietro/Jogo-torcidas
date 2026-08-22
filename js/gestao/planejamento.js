@@ -357,14 +357,19 @@ TO.planejamento = (function(){
   }
 
   /* GDD §11.1: acolher bem é o jeito mais barato de subir relação */
+  /* os números saem da tabela da relação (TO.relacoes.REL) */
   const RECEPCAO = [
-    {id:'nada',      rot:'Não receber',        porCabeca:0,  relacao:-5,
+    {id:'nada',      rot:'Não receber',        porCabeca:0,
+     get relacao(){ return -TO.relacoes.REL.naoReceber; },
      nota:'cada um se vira; o aliado registra e cobra depois'},
-    {id:'hospedar',  rot:'Hospedar na sede',   porCabeca:25, relacao:2,
+    {id:'hospedar',  rot:'Hospedar na sede',   porCabeca:25,
+     get relacao(){ return TO.relacoes.REL.hospedar; },
      nota:'colchão no salão e café de manhã'},
-    {id:'escolta',   rot:'Hospedar e escoltar', porCabeca:50, relacao:5,
+    {id:'escolta',   rot:'Hospedar e escoltar', porCabeca:50,
+     get relacao(){ return TO.relacoes.REL.hospedarEscolta; },
      nota:'bonde junto com o deles até o portão'},
-    {id:'churrasco', rot:'Churrasco e escolta', porCabeca:75, relacao:12,
+    {id:'churrasco', rot:'Churrasco e escolta', porCabeca:75,
+     get relacao(){ return TO.relacoes.REL.churrasco; },
      nota:'recepção de irmandade: carne, bebida e caminhada junto'}
   ];
   const recepcaoDe = id => RECEPCAO.find(r=>r.id===id) || RECEPCAO[0];

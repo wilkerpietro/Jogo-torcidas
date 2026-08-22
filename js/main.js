@@ -3992,11 +3992,13 @@
         cel.appendChild(b);
       };
       botao('+', 'Aproximar', est.podeMelhorar, ()=>{
-        e.relacoes[l.id] = U.limitar(l.valor+8, -100, 100);
+        e.relacoes[l.id] = U.limitar(l.valor + TO.relacoes.REL.aproximar,
+                                     -100, 100);
         aviso(`Aproximação com ${l.o.nome}.`,'boa'); redesenhar();
       });
       botao('−', 'Provocar', est.podePiorar, ()=>{
-        e.relacoes[l.id] = U.limitar(l.valor-8, -100, 100);
+        e.relacoes[l.id] = U.limitar(l.valor - TO.relacoes.REL.provocar,
+                                     -100, 100);
         aviso(`Provocação contra ${l.o.nome}.`,'ruim'); redesenhar();
       });
       /* atacar o bar ou a sede dela, agora: abre a cena */
@@ -4217,8 +4219,8 @@
     /* entrar na briga pelo aliado aproxima de vez — e conta como
        ajuda no relógio da convivência */
     if(d.aliado){
-      e.relacoes[d.aliado] =
-        U.limitar((e.relacoes[d.aliado]||0) + 10, -100, 100);
+      e.relacoes[d.aliado] = U.limitar(
+        (e.relacoes[d.aliado]||0) + TO.relacoes.REL.descerPeloAliado, -100, 100);
       TO.relacoes.marcarAjuda(e, d.aliado);
     }
     const cN = TO.mundo.coresDaTorcida(e.torcida);
