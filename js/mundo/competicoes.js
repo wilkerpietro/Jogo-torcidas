@@ -1277,6 +1277,40 @@ TO.competicoes = (function(){
     return mov;
   }
 
+  /* =======================================================
+     O QUE ESTÁ EM JOGO NUMA COMPETIÇÃO (pedido do dono,
+     21/08/2026): quantos sobem e quantos caem. É o que o
+     aviso de abertura precisa saber pra dizer quem são os
+     favoritos ao acesso e quem briga contra a queda.
+     ======================================================= */
+  function emJogo(comp){
+    const nome = (comp && comp.nome) || comp;
+    let sobem = 0, caem = 0;
+    const i = ESCADA.indexOf(nome);
+    if(i >= 0){
+      if(i > 0) sobem = TROCA;                    // a Série A não tem acesso
+      if(i < ESCADA.length - 1) caem = TROCA;     // da D ninguém cai
+    }
+    for(const {cima, baixo, troca} of ESCADA_REGIONAL){
+      if(nome === baixo) sobem = Math.max(sobem, troca);
+      if(nome === cima)  caem  = Math.max(caem, troca);
+    }
+    const cfg = FORMATO[nome];
+    if(cfg){
+      if(cfg.rebaixaPorGrupo) caem = Math.max(caem, cfg.rebaixaPorGrupo * (cfg.grupos||1));
+      if(cfg.sobemFinalistas) sobem = Math.max(sobem, 2);
+    }
+    return {sobem, caem};
+  }
+
+  /* os clubes de uma competição, do mais forte pro mais fraco */
+  function porForca(E, comp){
+    const ids = new Set();
+    for(const r of (comp.rodadas||[])) for(const j of r.jogos){ ids.add(j.c); ids.add(j.f); }
+    return [...ids].map(id=>({id, forca:forcaDe(E, id)}))
+                   .sort((a,b)=> b.forca - a.forca);
+  }
+
   /* a competição `para` está acima de `de`? serve pro texto do aviso */
   function subiu(de, para){
     const ordem = ESCADA.concat(ESCADA_REGIONAL.flatMap(x=>[x.cima, x.baixo]));
@@ -1318,6 +1352,7 @@ TO.competicoes = (function(){
 
   return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana,
           forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
+          emJogo, porForca,
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,

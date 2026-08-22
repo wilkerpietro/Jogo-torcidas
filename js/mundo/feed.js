@@ -350,7 +350,25 @@ TO.feed = (function(){
       E.almanaquePendente = null;
     }
 
-    /* 2. o campeão de cada competição nossa, uma vez só */
+    /* 2. A VÉSPERA: sete dias antes de a bola rolar, uma vez por
+       competição em que o NOSSO clube está. O calendário do jogo é
+       semana × dia, então "daqui a sete dias" é a MESMA posição da
+       semana que vem. */
+    const hoje = (E.data.semana - 1) * 7 + E.data.dia;
+    E.aberturasVistas = E.aberturasVistas || {};
+    for(const comp of ((E.temporada||{}).competicoes || [])){
+      const r0 = (comp.rodadas || [])[0];
+      if(!r0) continue;
+      const estreia = (r0.semana - 1) * 7 + (r0.dia || 6);
+      if(estreia - hoje !== 7) continue;
+      const chave = `${E.temporada.ano}|${comp.nome}`;
+      if(E.aberturasVistas[chave]) continue;
+      E.aberturasVistas[chave] = true;
+      const pg = TO.almanaque.abertura(E, comp);
+      if(pg) proporAlmanaque(E, pg, `almanaque|abertura|${chave}`);
+    }
+
+    /* 3. o campeão de cada competição nossa, uma vez só */
     const meu = E.torcida.clubeId;
     E.campeoesVistos = E.campeoesVistos || {};
     for(const comp of ((E.temporada||{}).competicoes || [])){

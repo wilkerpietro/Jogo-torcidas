@@ -128,6 +128,30 @@ TO.almanaque = (function(){
       }
     },
 
+    abertura:{
+      chapeu:{
+        titulo: ['Começa a disputa'],
+        acesso: ['Vale o acesso'],
+        queda:  ['Tem gente pra cair']
+      },
+      manchete:[
+        'Vem aí {compO}',
+        '{compO} começa semana que vem',
+        'Daqui a uma semana rola a bola {comp}'
+      ],
+      olho:{
+        /* {F} favoritos ao título · {S} favoritos ao acesso ·
+           {Q} ameaçados de queda · {N} clubes na disputa */
+        tudo:  ['{N} clubes na disputa. Favoritos ao título: {F}. '+
+                'Brigam pelo acesso: {S}. Ameaçados de queda: {Q}.'],
+        titAcesso:['{N} clubes na disputa. Favoritos ao título: {F}. '+
+                   'Brigam pelo acesso: {S}.'],
+        titQueda:['{N} clubes na disputa. Favoritos ao título: {F}. '+
+                  'Ameaçados de queda: {Q}.'],
+        soTitulo:['{N} clubes na disputa. Favoritos ao título: {F}.']
+      }
+    },
+
     patrimonio:{
       chapeu:{
         nossa:  ['A obra foi nossa'],
@@ -412,6 +436,64 @@ TO.almanaque = (function(){
     };
   }
 
+  /* 7 · ABERTURA — uma semana antes de a bola rolar
+     Só nas competições em que o NOSSO clube está. Quem é
+     favorito sai da FORÇA: os primeiros da fila brigam pelo
+     título e pelo acesso, os últimos brigam pra não cair. */
+  const FAVORITOS = 3;
+  function abertura(E, comp){
+    if(!comp) return null;
+    const meu = E.torcida.clubeId;
+    const fila = C().porForca(E, comp);
+    if(fila.length < 2 || !fila.some(x=>x.id === meu)) return null;
+
+    const {sobem, caem} = C().emJogo(comp);
+    const nomes = lista => lista.map(x=>nomeTime(x.id)).join(', ');
+    const nTit = Math.min(FAVORITOS, fila.length);
+    const topo = fila.slice(0, nTit);
+    /* quem briga pelo ACESSO não é quem briga pelo TÍTULO: a janela do
+       acesso começa depois dos favoritos, senão a frase repetiria os
+       mesmos nomes duas vezes */
+    const doAcesso = sobem ? fila.slice(nTit, nTit + Math.min(FAVORITOS, sobem)) : [];
+    const daQueda  = caem ? fila.slice(-Math.min(FAVORITOS, caem)).reverse() : [];
+
+    const AB = MOLDES.abertura;
+    const nossaPos = fila.findIndex(x=>x.id === meu);
+    const cond = doAcesso.length && daQueda.length ? 'tudo'
+               : doAcesso.length ? 'titAcesso'
+               : daQueda.length ? 'titQueda' : 'soTitulo';
+    const v = {comp:dArt(comp.nome), compO:oArt(comp.nome),
+               N:fila.length, F:nomes(topo),
+               S:nomes(doAcesso), Q:nomes(daQueda)};
+    const ano = E.data.ano;
+    const linha = (x, rot, cls) => ({
+      rot, valor:nomeTime(x.id), nota:`força ${Math.round(x.forca)}`,
+      sobe: cls, nossa: x.id === meu});
+    return {
+      ano, tipo:'abertura', tom:'',
+      jornal:'O Almanaque', edicao:'Edição de véspera',
+      /* O CHAPÉU FALA DA NOSSA SITUAÇÃO, não da competição: numa Série
+         B com acesso e queda, quem está em terceiro lê "vale o acesso"
+         e quem está em décimo oitavo lê "tem gente pra cair". Dizer
+         sempre a mesma coisa pros dois era desperdiçar a manchete. */
+      chapeu: (caem && nossaPos >= fila.length - Math.ceil(fila.length/3))
+                ? AB.chapeu.queda[0]
+            : (sobem && nossaPos < Math.ceil(fila.length/3))
+                ? AB.chapeu.acesso[0]
+            : AB.chapeu.titulo[0],
+      manchete: encher(daFila(AB.manchete, ano + comp.nome.length), v),
+      olho: encher(AB.olho[cond][0], v),
+      tarja:[comp.nome, `<b>${fila.length}</b> clubes`,
+             sobem ? `<b>${sobem}</b> sobem` : '',
+             caem ? `<b>${caem}</b> caem` : ''].filter(Boolean),
+      quadro:{
+        titulo:'Como chegam',
+        linhas:[...topo.map((x,i)=>linha(x, i === 0 ? 'favorito' : `${i+1}º`, true)),
+                ...daQueda.map(x=>linha(x, 'risco', false))]
+      }
+    };
+  }
+
   /* =======================================================
      A VIRADA DO ANO
      Chamada de dentro do fecho da temporada, ANTES do ano
@@ -447,7 +529,7 @@ TO.almanaque = (function(){
     return fora;
   }
 
-  return {MOLDES, encher, tirarFoto, prediosDe, LINHAS,
+  return {MOLDES, encher, tirarFoto, prediosDe, LINHAS, abertura,
           fecharAno, placarDoAnoTodo,
           campeao, sobeDesce, torcidaDoAno, reiDaPista, janela, patrimonio};
 })();

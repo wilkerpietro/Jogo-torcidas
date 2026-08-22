@@ -1155,6 +1155,20 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · **A JANELA** — quem se reforçou, pela evolução de força de um ano
     pro outro.
   · **O PATRIMÔNIO** — quem mais abriu prédio no ano.
+  · **A VÉSPERA** (pedido do dono, 21/08/2026): **sete dias antes** de
+    cada competição começar, um aviso — **só das competições em que o
+    nosso clube está**. O subtítulo diz, **pela força**, quem são os
+    favoritos ao título, quem briga pelo acesso (se a competição tem)
+    e quem está ameaçado de queda (se tem rebaixamento).
+    · Quem briga pelo **acesso** não é quem briga pelo **título**: a
+      janela do acesso começa depois dos favoritos, senão a frase
+      repetiria os mesmos nomes duas vezes.
+    · **O chapéu fala da NOSSA situação**, não da competição: numa
+      Série B com acesso e queda, quem está em terceiro lê "Vale o
+      acesso" e quem está em décimo oitavo lê "Tem gente pra cair".
+    · Quantos sobem e quantos caem sai de `TO.competicoes.emJogo`, que
+      lê a escada nacional (4 por 4), a escada regional e o formato de
+      cada competição (`rebaixaPorGrupo`, `sobemFinalistas`).
   · **A FOTO DO ANO** (`E.almanaque`) é tirada no primeiro dia de cada
     ano e no começo do jogo: é contra ela que o balanço compara. Sem
     foto não existe "no ano passado".
