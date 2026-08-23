@@ -1503,3 +1503,9 @@ td.placar small.pen{
   color:var(--fraco)}
 .torcida-opcao.off{opacity:.4;cursor:default}
 .torcida-opcao.off:hover{background:none}
+
+/* a linha de países do nível nacional: mais discreta que a de
+   competição, que é a que o jogador troca o tempo todo */
+.filtros-linha.paises button{font-size:10.5px;padding:5px 10px}
+.filtros-linha.paises button.minha{box-shadow:inset 0 -2px 0 var(--vermelho)}
+.filtros-linha.torneios{padding-top:0}

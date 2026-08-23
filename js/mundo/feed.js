@@ -875,7 +875,8 @@ TO.feed = (function(){
       dados:{ano:nasceu.ano, divisoes:nasceu.divisoes,
              minha: minha ? minha.n : null,
              fora: (E.lnt.fora||[]).length},
-      links:[{rot:'Ver a LNT', args:{pagina:'competicoes', aba:'lnt'}}]
+      links:[{rot:'Ver a LNT', args:{pagina:'competicoes', nivel:'nacional',
+                                pais:'Brasil', comp:'lnt'}}]
     });
   }
 
@@ -894,7 +895,8 @@ TO.feed = (function(){
             `${LETRA[gi] || (gi+1)}, contra ${emLista(nomes)}. `+
             `Dez de cada lado, cinco rodadas e depois é mata-mata.`,
       dados:{div:div.n, grupo:gi, ano:ed.ano, semestre:ed.semestre},
-      links:[{rot:'Ver a tabela', args:{pagina:'competicoes', aba:'lnt'}}]
+      links:[{rot:'Ver a tabela', args:{pagina:'competicoes', nivel:'nacional',
+                                pais:'Brasil', comp:'lnt'}}]
     });
   }
   const LETRA = ['A','B','C','D','E','F','G','H','I'];
@@ -959,7 +961,8 @@ TO.feed = (function(){
               ` da ${DIV_ART[meu.div]} Divisão.` : ''),
         dados:{ano:reg.ano, semestre:reg.semestre, n:reg.n,
                campeoes:camp, nosso:meu},
-        links:[{rot:'Ver a LNT', args:{pagina:'competicoes', aba:'lnt'}}]
+        links:[{rot:'Ver a LNT', args:{pagina:'competicoes', nivel:'nacional',
+                                pais:'Brasil', comp:'lnt'}}]
       });
     }
   }
@@ -1010,7 +1013,8 @@ TO.feed = (function(){
                 ? (passou ? 'É título.' : 'Ficou o vice.')
                 : (passou ? 'Passamos de fase.' : 'Fim de linha.')),
         dados:{torneio:CM_NOME[chave], fase:ult.fase, nos, deles, passou},
-        links:[{rot:'Ver a chave', args:{pagina:'competicoes', aba:'conmebol'}}]
+        links:[{rot:'Ver a chave', args:{pagina:'competicoes',
+                nivel:'internacional', comp:chave}}]
       });
     }
   }
@@ -1035,7 +1039,8 @@ TO.feed = (function(){
           : `${(M().time(c.campeao)||{}).nome} levantou a `+
             `${CM_NOME[chave]}, com ${(M().time(c.vice)||{}).nome} no vice.`,
         dados:{torneio:CM_NOME[chave], campeao:c.campeao, vice:c.vice},
-        links:[{rot:'Ver a chave', args:{pagina:'competicoes', aba:'conmebol'}}]
+        links:[{rot:'Ver a chave', args:{pagina:'competicoes',
+                nivel:'internacional', comp:chave}}]
       });
     }
   }
@@ -1057,7 +1062,8 @@ TO.feed = (function(){
       chave:`mundo-fim|${h.ano}`,
       texto:`Fecharam as ligas da América do Sul: ${emLista(linhas)}.`,
       dados:{ano:h.ano, linhas},
-      links:[{rot:'Ver as ligas', args:{pagina:'competicoes', aba:'sulamerica'}}]
+      links:[{rot:'Ver as ligas', args:{pagina:'competicoes',
+              nivel:'nacional', pais:'Argentina'}}]
     });
   }
 

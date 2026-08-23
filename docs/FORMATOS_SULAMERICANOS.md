@@ -111,11 +111,23 @@ não ganhou uma nova: já tem a Copa do Brasil no motor de sempre.
 
 ### A tela e as notícias (23/08/2026)
 
-**Competições ganhou duas abas.** `América do Sul` mostra um país por
-vez, com os torneios do ano, a classificação de cada zona, o
-quadrangular ou hexagonal em andamento, o mata-mata e a tabela anual.
-`Conmebol` mostra a Libertadores, a Sul-Americana e as nove copas
-nacionais, com os oito grupos e a chave.
+**Competições virou três níveis** (régua do dono, 23/08/2026): os
+botões `INTERNACIONAL`, `NACIONAL` e `REGIONAL` em cima, e embaixo o
+filtro da competição.
+· **Internacional**: Libertadores e Sul-Americana, com os oito grupos,
+  a chave e as vagas por país.
+· **Nacional**: primeiro o filtro do PAÍS (dez), depois o da
+  competição. No Brasil vêm as quatro séries, a Copa do Brasil, a LNT e
+  o Histórico; nos outros, as divisões daquele país e a copa nacional
+  dele. A liga de fora mostra os torneios do ano (Apertura, Clausura,
+  Intermedio), a classificação de cada zona, o quadrangular ou o
+  hexagonal em andamento, o mata-mata e a tabela anual.
+· **Regional**: só o Brasil. Lá fora não há estadual, e o nível diz
+  isso em vez de abrir vazio.
+
+A fileira única de nove abas que misturava Série A, Copa do Brasil,
+LNT, América do Sul e Conmebol não escalava pra dez países — e não
+dizia ao jogador o que era o quê.
 
 **Três notícias, e nada mais.** As ligas de fora NÃO viram mensagem
 rodada a rodada — seriam trinta linhas por semana sobre gente que o

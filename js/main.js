@@ -2093,6 +2093,14 @@
       a.onclick = ()=>{
         const args = l.args || {};
         if(args.pagina === 'noticias' && args.aba) subNoticias = args.aba;
+        /* O LINK DA MENSAGEM POSICIONA A TELA (23/08/2026): com
+           Competições em três níveis, "ver a chave" tem de dizer qual
+           nível, qual país e qual competição — senão cai na Série A. */
+        if(args.nivel){
+          nivelComp = args.nivel;
+          if(args.pais) paisComp = args.pais;
+          if(args.comp) compSel = args.comp;
+        }
         abrirPainel(args.pagina || 'competicoes');
       };
       la.appendChild(a);
@@ -4136,7 +4144,7 @@
      Layout do mockup: abas grandes por divisão, classificação
      à esquerda e a rodada navegável à direita.
      ======================================================= */
-  let abaComp = null, compSel = null, rodadaSel = null, divLNT = null;
+  let compSel = null, rodadaSel = null, divLNT = null;
 
   const nomeClube = id => (TO.mundo.time(id)||{}).nome || '—';
   const corClube  = id => ((TO.mundo.time(id)||{}).cores || ['#666'])[0];
@@ -4244,6 +4252,65 @@
     return q;
   }
 
+  /* =======================================================
+     COMPETIÇÕES EM TRÊS NÍVEIS (régua do dono, 23/08/2026)
+
+     Três botões em cima — INTERNACIONAL, NACIONAL, REGIONAL — e
+     embaixo o filtro da competição. No nacional entra também o filtro
+     do país, que é o que separa dez calendários. O regional só existe
+     no Brasil: lá fora não há estadual.
+
+     Antes era uma fileira única de nove abas misturando Série A,
+     Copa do Brasil, LNT, América do Sul e Conmebol. Com dez países
+     isso não escala, e nem diz ao jogador o que é o quê.
+     ======================================================= */
+  let nivelComp = 'nacional', paisComp = null;
+
+  const NIVEIS = [
+    {id:'internacional', rot:'Internacional'},
+    {id:'nacional',      rot:'Nacional'},
+    {id:'regional',      rot:'Regional'}
+  ];
+
+  /* o cardápio de cada nível: [{id, rot, conta}] */
+  function menuDoNivel(e){
+    if(nivelComp === 'internacional'){
+      if(!e.conmebol) return [];
+      return [{id:'libertadores', rot:'Libertadores',
+               conta:(e.conmebol.libertadores.clubes||[]).length},
+              {id:'sulamericana', rot:'Sul-Americana',
+               conta:(e.conmebol.sulamericana.clubes||[]).length}];
+    }
+    if(nivelComp === 'regional'){
+      const S = e.temporada;
+      if(!S) return [];
+      return S.competicoes.filter(c=>c.tipo==='regional')
+        .map(c=>({id:c.id, rot:c.nome, conta:c.clubes.length}));
+    }
+    /* nacional: depende do país */
+    if(paisComp === 'Brasil'){
+      const S = e.temporada;
+      const fora = (S ? S.competicoes.filter(c=>c.tipo==='nacional') : [])
+        .map(c=>({id:c.id, rot:c.nome.replace('Brasileirão ',''),
+                  conta:c.clubes.length}));
+      const copa = S && S.competicoes.find(c=>c.copa);
+      if(copa) fora.push({id:copa.id, rot:copa.nome, conta:copa.clubes.length});
+      if(TO.lnt && TO.lnt.existe(e)) fora.push({id:'lnt', rot:'LNT', conta:138});
+      fora.push({id:'historico', rot:'Histórico'});
+      return fora;
+    }
+    const P = (e.ligas||{}).paises && e.ligas.paises[paisComp];
+    const fora = P ? Object.keys(P.divisoes).map(d=>({
+      id:'liga:'+d, rot:d.replace(paisComp+' ',''),
+      conta:P.divisoes[d].clubes.length})) : [];
+    const copa = (e.conmebol||{}).copas && e.conmebol.copas[paisComp];
+    if(copa) fora.push({id:'copa-nac', rot:copa.nome, conta:copa.clubes.length});
+    return fora;
+  }
+
+  const paisesJogaveis = e => ['Brasil'].concat(
+    Object.keys((e.ligas||{}).paises || {}).sort());
+
   function pintarCompeticoes(){
     const e = E(), pg = U.$('.pagina[data-pag="competicoes"]');
     pg.innerHTML='';
@@ -4253,66 +4320,84 @@
       pg.appendChild(emConstrucao('Sem temporada','Comece um jogo novo pra gerar a tabela.'));
       return;
     }
-    const S = e.temporada;
-    const acha = nome => S.competicoes.find(c=>c.nome===nome);
-    const series = ['Brasileirão Série A','Brasileirão Série B',
-                    'Brasileirão Série C','Brasileirão Série D'];
 
-    const abas = series.map(n=>({id:n, rot:n.replace('Brasileirão ','')}))
-      .concat([
-        {id:'regionais', rot:'Regionais'},
-        {id:TO.competicoes.COPA_NOME, rot:'Copa do Brasil'},
-        {id:'historico', rot:'Histórico'}
-      ]);
-    /* A LNT só existe depois de fundada (2027): antes disso a aba
-       nem aparece, que aba vazia é promessa de tela quebrada */
-    if(TO.lnt && TO.lnt.existe(e))
-      abas.splice(abas.length - 1, 0, {id:'lnt', rot:'LNT'});
-    /* O MUNDO DE FORA (dono, 23/08/2026): as nove ligas sul-americanas
-       numa aba, as duas copas da Conmebol e as nove copas nacionais em
-       outra. Só aparecem depois que o ano montou. */
-    if(e.ligas)    abas.splice(abas.length - 1, 0, {id:'sulamerica', rot:'América do Sul'});
-    if(e.conmebol) abas.splice(abas.length - 1, 0, {id:'conmebol', rot:'Conmebol'});
-
-    /* abre na divisão do meu clube */
-    if(!abaComp){
-      const meu = TO.mundo.time(e.torcida.clubeId);
-      abaComp = (meu && series.includes(meu.divisao)) ? meu.divisao : series[0];
-    }
-    pg.appendChild(abasGrandes(abas, abaComp, id=>{
-      abaComp=id; compSel=null; rodadaSel=null; redesenhar();
+    /* ---- os três botões ---- */
+    pg.appendChild(abasGrandes(NIVEIS, nivelComp, id=>{
+      nivelComp = id; compSel = null; rodadaSel = null; redesenhar();
     }));
 
-    if(abaComp==='historico'){ pg.appendChild(painelHistorico(e)); return; }
-    if(abaComp==='lnt'){ pintarLNT(e, pg); return; }
-    if(abaComp==='sulamerica'){ pintarSulAmerica(e, pg); return; }
-    if(abaComp==='conmebol'){ pintarConmebol(e, pg); return; }
-
-    let comp;
-    if(abaComp==='regionais'){
-      const lista = S.competicoes.filter(c=>c.tipo==='regional');
-      const meu = TO.mundo.time(e.torcida.clubeId);
-      const minha = meu && lista.find(c=>c.clubes.includes(meu.id));
-      if(!compSel || !lista.some(c=>c.id===compSel))
-        compSel = (minha && minha.id) || lista[0].id;
-      const filtros = el('div',{class:'filtros-linha'});
-      for(const c of lista){
-        const b = el('button',{class:(c.id===compSel?'on':'')+
-          (minha && c.id===minha.id?' minha':''),
-          html:`${c.nome}<span class="conta">${c.clubes.length}</span>`});
-        b.onclick = ()=>{ compSel=c.id; rodadaSel=null; redesenhar(); };
-        filtros.appendChild(b);
+    /* ---- o filtro do país, só no nacional ---- */
+    if(nivelComp === 'nacional'){
+      const paises = paisesJogaveis(e);
+      if(!paises.includes(paisComp)) paisComp = 'Brasil';
+      const f = el('div',{class:'filtros-linha paises'});
+      const meu = TO.competicoes.paisDe(TO.mundo.time(e.torcida.clubeId)||{});
+      for(const p of paises){
+        const b = el('button',{class:(p===paisComp?'on':'')+
+          (p===meu?' minha':''), texto:p});
+        b.onclick = ()=>{ paisComp = p; compSel = null; redesenhar(); };
+        f.appendChild(b);
       }
-      pg.appendChild(filtros);
-      comp = lista.find(c=>c.id===compSel);
-    }else{
-      comp = acha(abaComp);
+      pg.appendChild(f);
     }
-    if(!comp){ pg.appendChild(emConstrucao('Sem dados','Competição não encontrada.')); return; }
 
+    /* ---- o filtro da competição ---- */
+    const menu = menuDoNivel(e);
+    if(nivelComp === 'regional' && !menu.length){
+      pg.appendChild(emConstrucao('Sem regional',
+        'Competição regional só existe no Brasil: lá fora não há estadual.'));
+      return;
+    }
+    if(!menu.length){
+      pg.appendChild(emConstrucao('Ainda não',
+        'Esta parte do calendário ainda não abriu neste ano.'));
+      return;
+    }
+    if(!menu.some(m=>m.id===compSel)) compSel = escolhaPadrao(e, menu);
+    const f2 = el('div',{class:'filtros-linha'});
+    for(const m of menu){
+      const b = el('button',{class:(m.id===compSel?'on':''), html:
+        `${m.rot}${m.conta?`<span class="conta">${m.conta}</span>`:''}`});
+      b.onclick = ()=>{ compSel = m.id; rodadaSel = null; redesenhar(); };
+      f2.appendChild(b);
+    }
+    pg.appendChild(f2);
+
+    /* ---- o corpo ---- */
+    if(nivelComp === 'internacional'){ pintarConmebolUm(e, pg, compSel); return; }
+    if(compSel === 'historico'){ pg.appendChild(painelHistorico(e)); return; }
+    if(compSel === 'lnt'){ pintarLNT(e, pg); return; }
+    if(compSel === 'copa-nac'){
+      pintarCopaNacional(e, pg, e.conmebol.copas[paisComp]); return;
+    }
+    if(String(compSel).startsWith('liga:')){
+      pintarLigaDeFora(e, pg, paisComp, compSel.slice(5)); return;
+    }
+    const comp = e.temporada.competicoes.find(c=>c.id===compSel);
+    if(!comp){ pg.appendChild(emConstrucao('Sem dados','Competição não encontrada.')); return; }
+    pintarCompeticaoBR(e, pg, comp);
+  }
+
+  /* abre na competição que o clube do jogador disputa */
+  function escolhaPadrao(e, menu){
+    const meu = TO.mundo.time(e.torcida.clubeId);
+    if(nivelComp === 'nacional' && paisComp === 'Brasil' && meu){
+      const div = (e.divisoes||{})[meu.id] || meu.divisao;
+      const achou = menu.find(m=>div.endsWith(m.rot));
+      if(achou) return achou.id;
+    }
+    if(nivelComp === 'regional' && meu){
+      const reg = (e.regionais||{})[meu.id] || meu.regional;
+      const achou = menu.find(m=>m.rot === reg);
+      if(achou) return achou.id;
+    }
+    return menu[0].id;
+  }
+
+  /* ---------- o corpo de uma competição brasileira ---------- */
+  function pintarCompeticaoBR(e, pg, comp){
     const es = TO.competicoes.etapas(comp);
     const atual = TO.competicoes.etapaAtual(comp);
-
     const duas = el('div',{class:'comp-duas'});
     const esq = el('div');
 
@@ -4323,7 +4408,6 @@
          <small>vice: ${nomeClube(comp.vice)}</small></div>`}));
       esq.appendChild(c);
     }
-    /* copa não tem tabela: o lado esquerdo vira a chave inteira */
     if(comp.copa){ esq.appendChild(painelChave(e, comp)); }
     comp.grupos.forEach((g, ig)=>{
       const rot = comp.grupos.length>1 ? `Classificação · grupo ${'ABCDEFGH'[ig]}`
@@ -4374,48 +4458,24 @@
   }
 
   /* =======================================================
-     AMÉRICA DO SUL (dono, 23/08/2026)
-     Um país por vez, com os torneios do ano e a classificação.
-     As ligas de fora guardam só a tabela, então é ela que a tela
-     mostra — não há lista de jogos pra mostrar.
+     UMA LIGA DE FORA NA TELA (dono, 23/08/2026)
+     Os torneios do ano, a classificação de cada zona, o
+     quadrangular ou hexagonal em andamento, o mata-mata e a
+     tabela anual. Liga de fora guarda só a tabela, então é ela
+     que a tela mostra — não há lista de jogos pra mostrar.
      ======================================================= */
-  let paisSel = null, divSel = null, torneioSel = null;
+  let torneioSel = null;
 
-  function pintarSulAmerica(e, pg){
+  const nomeT = id => (TO.mundo.time(id)||{}).nome || '—';
+  const corT  = id => ((TO.mundo.time(id)||{}).cores || ['#888'])[0];
+
+  function pintarLigaDeFora(e, pg, pais, div){
     const L = TO.ligas;
-    const nomeT = id => (TO.mundo.time(id)||{}).nome || '—';
-    const corT = id => {
-      const t = TO.mundo.time(id);
-      return (t && t.cores && t.cores[0]) || '#888';
-    };
-    const paises = Object.keys(e.ligas.paises).sort();
-    if(!paises.includes(paisSel)) paisSel = paises[0];
+    const P = (e.ligas||{}).paises && e.ligas.paises[pais];
+    const D = P && P.divisoes[div];
+    if(!D){ pg.appendChild(emConstrucao('Sem dados',
+      'Esta liga ainda não montou neste ano.')); return; }
 
-    const filtros = el('div',{class:'filtros-linha'});
-    for(const p of paises){
-      const b = el('button',{class:(p===paisSel?'on':''), texto:p});
-      b.onclick = ()=>{ paisSel = p; divSel = torneioSel = null; redesenhar(); };
-      filtros.appendChild(b);
-    }
-    pg.appendChild(filtros);
-
-    const P = e.ligas.paises[paisSel];
-    const divs = Object.keys(P.divisoes);
-    if(!divs.includes(divSel)) divSel = divs[0];
-    if(divs.length > 1){
-      const f2 = el('div',{class:'filtros-linha'});
-      for(const d of divs){
-        const b = el('button',{class:(d===divSel?'on':''), html:
-          `${d.replace(paisSel+' ','')}<span class="conta">`+
-          `${P.divisoes[d].clubes.length}</span>`});
-        b.onclick = ()=>{ divSel = d; torneioSel = null; redesenhar(); };
-        f2.appendChild(b);
-      }
-      pg.appendChild(f2);
-    }
-
-    const D = P.divisoes[divSel];
-    if(!D){ pg.appendChild(emConstrucao('Sem dados','Divisão não encontrada.')); return; }
     const nomes = D.torneios.map(t=>t.nome);
     if(!nomes.includes(torneioSel)) torneioSel = nomes[0];
 
@@ -4434,10 +4494,10 @@
     }
 
     if(D.torneios.length > 1){
-      const f3 = el('div',{class:'filtros-linha'});
+      const f3 = el('div',{class:'filtros-linha torneios'});
       for(const T of D.torneios){
         const b = el('button',{class:(T.nome===torneioSel?'on':''), html:
-          `${T.nome}${T.campeao?`<span class="conta">✓</span>`:''}`});
+          `${T.nome}${T.campeao?'<span class="conta">✓</span>':''}`});
         b.onclick = ()=>{ torneioSel = T.nome; redesenhar(); };
         f3.appendChild(b);
       }
@@ -4452,27 +4512,26 @@
       const q = quadro(rot, el('span',{class:'conta', texto: T.campeao
         ? 'encerrado' : `fecha ${T.fecha} de ${fase.fechas||'—'}`}));
       const rolo = el('div',{class:'rolo'});
-      rolo.appendChild(tabelaLiga2(L.ordenar(T.tabela, z), nomeT, corT,
-        T.passam, e.torcida.clubeId));
+      rolo.appendChild(tabelaLiga2(L.ordenar(T.tabela, z), T.passam,
+                                   e.torcida.clubeId));
       q.corpo.appendChild(rolo);
       esq.appendChild(q);
     });
 
-    /* quadrangular ou hexagonal em andamento */
     if(T.grupos && T.grupos.length){
       T.grupos.forEach((g, ig)=>{
         const q = quadro(T.grupos.length>1
           ? `Quadrangular ${'AB'[ig]||ig+1}` : 'Hexagonal final');
         const rolo = el('div',{class:'rolo'});
-        rolo.appendChild(tabelaLiga2(L.ordenar(T.tabelaGrupo[ig], g),
-          nomeT, corT, 1, e.torcida.clubeId));
+        rolo.appendChild(tabelaLiga2(L.ordenar(T.tabelaGrupo[ig], g), 1,
+                                     e.torcida.clubeId));
         q.corpo.appendChild(rolo);
         esq.appendChild(q);
       });
     }
 
     duas.appendChild(esq);
-    duas.appendChild(chaveSimples('Mata-mata', T.mata, nomeT,
+    duas.appendChild(chaveSimples('Mata-mata', T.mata,
       D.anual && Object.keys(D.anual).length
         ? {rot:'Tabela anual',
            linhas: L.ordenar(D.anual, D.clubes).slice(0,6)
@@ -4482,7 +4541,7 @@
   }
 
   /* uma tabela de liga estrangeira: só o que a classificação guarda */
-  function tabelaLiga2(linhas, nomeT, corT, passam, meuClube){
+  function tabelaLiga2(linhas, passam, meuClube){
     const t = el('table',{class:'liga'});
     t.innerHTML = `<thead><tr><th>#</th><th class="time">Clube</th>
       <th>P</th><th>J</th><th>V</th><th>E</th><th>D</th>
@@ -4505,7 +4564,7 @@
   }
 
   /* a chave de um torneio que guarda só o resultado */
-  function chaveSimples(titulo, mata, nomeT, extra){
+  function chaveSimples(titulo, mata, extra){
     const q = quadro(titulo, el('span',{class:'conta',
       texto:`${(mata||[]).length} fases`}));
     if(!mata || !mata.length){
@@ -4536,44 +4595,15 @@
   }
 
   /* =======================================================
-     CONMEBOL: Libertadores, Sul-Americana e as copas nacionais
+     LIBERTADORES E SUL-AMERICANA
      ======================================================= */
-  let abaCM = 'libertadores';
-
-  function pintarConmebol(e, pg){
-    const nomeT = id => (TO.mundo.time(id)||{}).nome || '—';
-    const corT = id => {
-      const t = TO.mundo.time(id);
-      return (t && t.cores && t.cores[0]) || '#888';
-    };
-    const cb = e.conmebol;
-    const abas = [{id:'libertadores', rot:'Libertadores'},
-                  {id:'sulamericana', rot:'Sul-Americana'},
-                  {id:'copas', rot:'Copas nacionais'}];
-    const f = el('div',{class:'filtros-linha'});
-    for(const a of abas){
-      const b = el('button',{class:(a.id===abaCM?'on':''), texto:a.rot});
-      b.onclick = ()=>{ abaCM = a.id; redesenhar(); };
-      f.appendChild(b);
-    }
-    pg.appendChild(f);
-
-    if(abaCM === 'copas'){
-      const grade = el('div',{class:'comp-duas'});
-      const a = el('div'), b = el('div');
-      Object.values(cb.copas||{}).forEach((c, i)=>{
-        (i % 2 ? b : a).appendChild(chaveSimples(
-          `${c.nome} · ${c.pais}`, c.mata, nomeT,
-          c.campeao ? {rot:'Campeão', linhas:[nomeT(c.campeao)]} : null));
-      });
-      grade.appendChild(a); grade.appendChild(b);
-      pg.appendChild(grade);
-      return;
-    }
-
-    const c = cb[abaCM];
+  function pintarConmebolUm(e, pg, qual){
+    const c = (e.conmebol||{})[qual];
+    if(!c){ pg.appendChild(emConstrucao('Ainda não',
+      'As copas da Conmebol montam na virada do ano.')); return; }
     const duas = el('div',{class:'comp-duas'});
     const esq = el('div');
+
     if(c.campeao){
       const q = quadro('Campeão');
       q.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
@@ -4585,7 +4615,7 @@
       const q = quadro(`Grupo ${'ABCDEFGH'[ig]||ig+1}`);
       const rolo = el('div',{class:'rolo'});
       rolo.appendChild(tabelaLiga2(TO.ligas.ordenar(c.tabela[ig], g),
-        nomeT, corT, abaCM==='libertadores'?2:1, e.torcida.clubeId));
+        qual==='libertadores'?2:1, e.torcida.clubeId));
       q.corpo.appendChild(rolo);
       esq.appendChild(q);
     });
@@ -4597,16 +4627,34 @@
         texto:`${(c.clubes||[]).length} clubes`}));
       q.corpo.appendChild(el('div',{class:'em-construcao',
         html:'Os grupos são sorteados depois das fases prévias.'}));
-      if(ant && ant[abaCM] && ant[abaCM].campeao)
+      if(ant && ant[qual] && ant[qual].campeao)
         q.corpo.appendChild(el('div',{class:'sub-chave',
-          texto:`Campeão de ${ant.ano}: ${nomeT(ant[abaCM].campeao)}`}));
+          texto:`Campeão de ${ant.ano}: ${nomeT(ant[qual].campeao)}`}));
       esq.appendChild(q);
     }
     duas.appendChild(esq);
-    duas.appendChild(chaveSimples('Mata-mata', c.mata, nomeT,
+    duas.appendChild(chaveSimples('Mata-mata', c.mata,
       {rot:'Vagas por país', linhas:Object.entries(
-        abaCM==='libertadores' ? TO.conmebol.VAGAS_LIB : TO.conmebol.VAGAS_SUL)
+        qual==='libertadores' ? TO.conmebol.VAGAS_LIB : TO.conmebol.VAGAS_SUL)
         .map(([p,n])=>`${p}: ${n}`)}));
+    pg.appendChild(duas);
+  }
+
+  /* a copa nacional de um país de fora */
+  function pintarCopaNacional(e, pg, copa){
+    const duas = el('div',{class:'comp-duas'});
+    const esq = el('div');
+    const q = quadro(copa.nome, el('span',{class:'conta',
+      texto:`${copa.clubes.length} clubes de todas as divisões`}));
+    if(copa.campeao)
+      q.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
+        `${IC.get('trofeu')}<div><b>${nomeT(copa.campeao)}</b>`+
+        `<small>vice: ${nomeT(copa.vice)}</small></div>`}));
+    else q.corpo.appendChild(el('div',{class:'em-construcao',
+      html:'A copa corre por dentro do ano, do 32-avos à final.'}));
+    esq.appendChild(q);
+    duas.appendChild(esq);
+    duas.appendChild(chaveSimples('Chave', copa.mata, null));
     pg.appendChild(duas);
   }
 
