@@ -134,6 +134,7 @@ TO.feed = (function(){
     assaltoDeHoje(E);
     barRivalDeHoje(E);
     aniversariosDeHoje(E);
+    mundoDeHoje(E, ctx);
     placarDoDia(E, ctx.jogos || []);
     almanaqueDoDia(E);
     dicaDeHoje(E);
@@ -963,6 +964,103 @@ TO.feed = (function(){
     }
   }
 
+  /* -------------------------------------------------------
+     3d. O MUNDO DE FORA (pedido do dono, 23/08/2026)
+
+     Três notícias e nada mais: o nosso clube na Libertadores ou na
+     Sul-Americana, o campeão de cada uma delas, e o resumo dos nove
+     países quando o ano fecha. As ligas de fora não viram mensagem
+     rodada a rodada — isso seria uma enxurrada de trinta linhas por
+     semana sobre gente que o jogador não conhece. Quem quiser a
+     classificação abre Competições → América do Sul.
+     ------------------------------------------------------- */
+  function mundoDeHoje(E, ctx){
+    if(!TO.conmebol || !E.conmebol) return;
+    nossoNaConmebol(E, ctx);
+    campeoesDaConmebol(E);
+    fechamentoDoMundo(E);
+  }
+
+  const CM_NOME = {libertadores:'Copa Libertadores',
+                   sulamericana:'Copa Sul-Americana'};
+
+  /* --- 1 · o nosso clube jogou lá fora --- */
+  function nossoNaConmebol(E, ctx){
+    const meu = E.torcida.clubeId;
+    if(!meu) return;
+    for(const chave of ['libertadores','sulamericana']){
+      const c = E.conmebol[chave];
+      if(!c || !c.mata || !c.mata.length) continue;
+      const ult = c.mata[c.mata.length - 1];
+      const j = ult.jogos.find(x=>x.c === meu || x.f === meu);
+      if(!j) continue;
+      const nossoEmCasa = j.c === meu;
+      const rival = M().torcida ? null : null;
+      const nomeR = (M().time(nossoEmCasa ? j.f : j.c) || {}).nome || 'o rival';
+      const nos = nossoEmCasa ? j.gc : j.gf;
+      const deles = nossoEmCasa ? j.gf : j.gc;
+      const passou = j.venceu === meu;
+      propor(E, {
+        kind:'conmebol', peso:'info', voz:'jornal',
+        tipo: passou ? 'bom' : 'ruim',
+        chave:`cm|${chave}|${E.data.ano}|${ult.fase}`,
+        texto:`${E.torcida.clube} ${nos} × ${deles} ${nomeR}, `+
+              `${naFaseCM(ult.fase)} da ${CM_NOME[chave]}. `+
+              (ult.fase === 'Final'
+                ? (passou ? 'É título.' : 'Ficou o vice.')
+                : (passou ? 'Passamos de fase.' : 'Fim de linha.')),
+        dados:{torneio:CM_NOME[chave], fase:ult.fase, nos, deles, passou},
+        links:[{rot:'Ver a chave', args:{pagina:'competicoes', aba:'conmebol'}}]
+      });
+    }
+  }
+  const FASE_CM = {'Fase 3':'na Fase 3', 'Fase Preliminar':'na fase preliminar',
+    'Playoff':'no playoff', 'Oitavas':'nas oitavas', 'Quartas':'nas quartas',
+    'Semifinal':'na semifinal', 'Final':'na final'};
+  const naFaseCM = f => FASE_CM[f] || `na ${String(f||'').toLowerCase()}`;
+
+  /* --- 2 · o campeão da América --- */
+  function campeoesDaConmebol(E){
+    for(const chave of ['libertadores','sulamericana']){
+      const c = E.conmebol[chave];
+      if(!c || !c.campeao) continue;
+      const nosso = c.campeao === E.torcida.clubeId;
+      propor(E, {
+        kind:'conmebol-fim', peso:'info', voz:'jornal',
+        tipo: nosso ? 'bom' : 'neutro',
+        chave:`cm-fim|${chave}|${E.data.ano}`,
+        texto: nosso
+          ? `${(M().time(c.campeao)||{}).nome} é campeão da `+
+            `${CM_NOME[chave]}. O título é nosso também.`
+          : `${(M().time(c.campeao)||{}).nome} levantou a `+
+            `${CM_NOME[chave]}, com ${(M().time(c.vice)||{}).nome} no vice.`,
+        dados:{torneio:CM_NOME[chave], campeao:c.campeao, vice:c.vice},
+        links:[{rot:'Ver a chave', args:{pagina:'competicoes', aba:'conmebol'}}]
+      });
+    }
+  }
+
+  /* --- 3 · o resumo dos nove países, uma vez por ano --- */
+  function fechamentoDoMundo(E){
+    const h = (E.ligasHistorico || [])[0];
+    if(!h) return;
+    const nomeT = id => (M().time(id)||{}).nome || '—';
+    const linhas = [];
+    for(const pais of Object.keys(h.paises)){
+      const primeira = h.paises[pais][0];
+      if(primeira && primeira.campeao)
+        linhas.push(`${pais}: ${nomeT(primeira.campeao)}`);
+    }
+    if(!linhas.length) return;
+    propor(E, {
+      kind:'mundo-fim', peso:'info', voz:'jornal', tipo:'neutro',
+      chave:`mundo-fim|${h.ano}`,
+      texto:`Fecharam as ligas da América do Sul: ${emLista(linhas)}.`,
+      dados:{ano:h.ano, linhas},
+      links:[{rot:'Ver as ligas', args:{pagina:'competicoes', aba:'sulamerica'}}]
+    });
+  }
+
   /* a emboscada da rota, agendada quando a caravana pega a estrada:
      estado chama isto no primeiro dia de viagem */
   function emboscadaDaViagem(E){
@@ -1657,7 +1755,7 @@ TO.feed = (function(){
   return {INTERVALO_DROP,
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
-          lntDeHoje, lntDepoisDaCena,
+          lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta,
           alvoDaDefesa, encerrarPartida,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,

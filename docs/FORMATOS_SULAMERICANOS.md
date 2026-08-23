@@ -109,6 +109,34 @@ da Libertadores joga a ida em casa.
 divisões daquele país, mando de quem tem a divisão mais alta. O Brasil
 não ganhou uma nova: já tem a Copa do Brasil no motor de sempre.
 
+### A tela e as notícias (23/08/2026)
+
+**Competições ganhou duas abas.** `América do Sul` mostra um país por
+vez, com os torneios do ano, a classificação de cada zona, o
+quadrangular ou hexagonal em andamento, o mata-mata e a tabela anual.
+`Conmebol` mostra a Libertadores, a Sul-Americana e as nove copas
+nacionais, com os oito grupos e a chave.
+
+**Três notícias, e nada mais.** As ligas de fora NÃO viram mensagem
+rodada a rodada — seriam trinta linhas por semana sobre gente que o
+jogador não conhece. O feed só conta:
+1. o nosso clube quando joga a Libertadores ou a Sul-Americana;
+2. o campeão de cada uma delas;
+3. o resumo dos nove países quando o ano fecha.
+
+**Medido em 3 anos**: save 1.542 KB, 10,2 ms por dia. E o mundo de fora
+custa **64 KB** disso — `ligas` 13 KB, `conmebol` 11 KB, histórico
+25 KB e promedios 15 KB. Ele nem aparece entre os seis maiores campos
+do save; quem pesa é o feed, como sempre foi.
+
+### A seleção de torcida virou dois passos
+
+País, liga e clube na mesma tela, em três colunas encadeadas; a torcida
+do clube no passo seguinte, com a ficha embaixo. Antes era uma lista
+única de 139 torcidas com uma fileira de abas por divisão — com dez
+países e 356 clubes aquilo virava um paredão. Os países sem torcida
+aparecem apagados, com o número de clubes, esperando a vez deles.
+
 ### Dois consertos que a medição pegou
 
 - **Torneio que estourava o calendário.** O Finalización colombiano

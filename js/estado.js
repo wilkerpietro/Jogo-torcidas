@@ -444,8 +444,8 @@ TO.estado = (function(){
        dia do jogo. As ligas guardam só a classificação; a Libertadores
        e a Sul-Americana guardam os jogos, porque o clube do jogador
        pode estar nelas e isso é notícia. */
-    if(TO.ligas)    TO.ligas.rodar(E);
-    if(TO.conmebol) TO.conmebol.rodar(E);
+    const passoLigas = TO.ligas ? TO.ligas.rodar(E) : null;
+    const passoCM    = TO.conmebol ? TO.conmebol.rodar(E) : null;
 
     /* os jogos de hoje saem hoje, e o feed conta a noite */
     const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
@@ -456,7 +456,8 @@ TO.estado = (function(){
     /* e o resto do mundo vive o dia: expediente das 138, tretas e
        ataques de bar do trimestre delas, surpresas e estrada */
     if(TO.relacoes.mundoDia) TO.relacoes.mundoDia(E, jogos);
-    if(TO.feed) TO.feed.eventosDoDia(E, {jogos});
+    if(TO.feed) TO.feed.eventosDoDia(E, {jogos, ligas:passoLigas,
+                                        conmebol:passoCM});
 
     mudou();
     if(fecho) for(const f of ouvintesFecho) f(fecho, E);

@@ -175,86 +175,206 @@
   }
 
   /* =======================================================
-     SELEÇÃO DE TORCIDA
-     ======================================================= */
-  let filtroSel = 'todas', escolhida = null;
+     SELEÇÃO DE TORCIDA — DOIS PASSOS (régua do dono, 23/08/2026)
 
+     PASSO 1: país, liga e clube na MESMA tela, em três colunas que se
+     encadeiam — escolher o país filtra as ligas, escolher a liga filtra
+     os clubes. É uma decisão só, tomada de uma vez, e o jogador vê o
+     caminho inteiro sem trocar de tela.
+
+     PASSO 2: qual das torcidas daquele clube, com a ficha ao lado.
+
+     Antes era uma lista única de 139 torcidas com uma fileira de abas
+     por divisão. Com dez países e 356 clubes aquilo virava um paredão.
+     ======================================================= */
   let buscaSel = '';
-  /* DOIS PASSOS. A tela empilhava a lista e a ficha inteira, com o botão
-     de selecionar no fim de tudo. Escolher o nome e ler a ficha são
-     coisas diferentes: a primeira é o começo da decisão, a segunda É a
-     decisão. */
+  let selPais = null, selLiga = null, selClube = null, escolhida = null;
   let passoSel = 1;
 
   function abrirSelecao(){
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.remove('oculto');
-    escolhida = null;
-    passoSel = 1;
+    selPais = selLiga = selClube = escolhida = null;
+    buscaSel = ''; passoSel = 1;
     pintarSelecao();
   }
 
-  function irParaPasso(n){ passoSel = n; pintarSelecao(); }
+  function irParaPasso(n){ passoSel = n; buscaSel = ''; pintarSelecao(); }
+
+  const torcidasJogaveis = () => TO.mundo.selecionaveis();
+  const torcidasDoClube = id => torcidasJogaveis()
+    .filter(o=>o.clubeId===id).map(TO.mundo.ficha)
+    .sort((a,b)=>b.membros-a.membros);
+
+  function paisesComTorcida(){
+    const conta = {};
+    for(const t of TO.mundo.todosTimes){
+      const p = TO.competicoes.paisDe(t);
+      conta[p] = conta[p] || {pais:p, clubes:0, torcidas:0};
+      conta[p].clubes++;
+    }
+    for(const o of torcidasJogaveis()){
+      const t = TO.mundo.time(o.clubeId);
+      const p = t ? TO.competicoes.paisDe(t) : 'Brasil';
+      if(conta[p]) conta[p].torcidas++;
+    }
+    return Object.values(conta).sort((a,b)=>
+      (b.torcidas - a.torcidas) || (a.pais < b.pais ? -1 : 1));
+  }
+
+  function ligasDoPais(pais){
+    const conta = {};
+    for(const t of TO.mundo.todosTimes){
+      if(TO.competicoes.paisDe(t) !== pais) continue;
+      const d = t.divisao || '—';
+      conta[d] = conta[d] || {liga:d, clubes:0, torcidas:0};
+      conta[d].clubes++;
+    }
+    for(const o of torcidasJogaveis()){
+      const t = TO.mundo.time(o.clubeId);
+      if(!t || TO.competicoes.paisDe(t) !== pais) continue;
+      if(conta[t.divisao]) conta[t.divisao].torcidas++;
+    }
+    return Object.values(conta).sort((a,b)=>(a.liga < b.liga ? -1 : 1));
+  }
+
+  function clubesDaLiga(pais, liga){
+    return TO.mundo.todosTimes
+      .filter(t=>TO.competicoes.paisDe(t)===pais && t.divisao===liga)
+      .map(t=>({time:t, torcidas: torcidasDoClube(t.id).length}))
+      .sort((a,b)=> (b.torcidas - a.torcidas) ||
+                    (a.time.nome < b.time.nome ? -1 : 1));
+  }
+
+  /* uma coluna do passo 1 */
+  function coluna(titulo, conta, itens, montar){
+    const c = el('div',{class:'sel-coluna'});
+    c.appendChild(el('div',{class:'sel-cab', html:
+      `<b>${titulo}</b><span>${conta}</span>`}));
+    const rolo = el('div',{class:'sel-rolo'});
+    if(!itens.length) rolo.appendChild(el('div',{class:'sel-vazio',
+      texto:'escolha ao lado'}));
+    for(const it of itens) rolo.appendChild(montar(it));
+    c.appendChild(rolo);
+    return c;
+  }
+
+  const linhaSel = (cls, esq, nm, cid, dir, off, aoClicar)=>{
+    const b = el('button',{class:'torcida-opcao'+(cls||'')+(off?' off':'')});
+    b.disabled = !!off;
+    if(esq) b.appendChild(esq);
+    b.appendChild(el('div',{html:`<div class="nm">${nm}</div>`+
+      (cid ? `<div class="cid">${cid}</div>` : '')}));
+    if(dir) b.appendChild(el('span',{class:'qt-membros', html:dir}));
+    b.onclick = aoClicar;
+    return b;
+  };
+  const selo = txt => el('div',{class:'sel-bandeira', texto:txt});
 
   function pintarSelecao(){
-    const p2 = passoSel === 2 && escolhida;
+    const p2 = passoSel === 2 && selClube;
     $('passo1Sel').classList.toggle('oculto', !!p2);
     $('passo2Sel').classList.toggle('oculto', !p2);
     $('btAvancarSelecao').classList.toggle('oculto', !!p2);
-    $('btAvancarSelecao').disabled = !escolhida;
+    $('btAvancarSelecao').disabled = !selClube;
     $('btSelecionarTorcida').classList.toggle('oculto', !p2);
+    $('btSelecionarTorcida').disabled = !escolhida;
     $('btVoltarMenu').textContent = p2 ? 'Voltar' : 'Voltar ao menu';
+    $('abasSelecao').innerHTML = '';
 
-    const fichas = TO.mundo.selecionaveis().map(TO.mundo.ficha);
-    const filtros = [{id:'todas', rot:'Todas'}]
-      .concat(TO.mundo.divisoes().map(d=>({id:d, rot:d.replace('Brasileirão ','')})));
-
-    const ab = $('abasSelecao'); ab.innerHTML='';
-    ab.appendChild(subabas(filtros, filtroSel, id=>{filtroSel=id; pintarSelecao();}));
-
-    const lista = fichas
-      .filter(f=>filtroSel==='todas' || f.divisao===filtroSel)
-      .filter(f=>!buscaSel || (f.nome+f.clube+f.cidade).toLowerCase()
-                                .includes(buscaSel.toLowerCase()))
-      .sort((a,b)=>b.membros-a.membros);
-
-    $('contaTorcidas').textContent = `${lista.length} de ${fichas.length}`;
-    $('subSelecao').textContent = p2
-      ? `${escolhida.nome} · ${escolhida.clube} · passo 2 de 2`
-      : `passo 1 de 2 · ${fichas.length} torcidas · `+
-        `${TO.mundo.todosTimes.length} clubes · `+
-        `${TO.mundo.todasCidades.length} cidades`;
-
-    const cx = $('listaTorcidas'); cx.innerHTML='';
-    const bs = el('input',{class:'busca', type:'search',
-      placeholder:'torcida, clube ou cidade…', estilo:{margin:'9px'}});
-    bs.value = buscaSel;
-    bs.oninput = ev=>{ buscaSel = ev.target.value; pintarSelecao(); };
-    cx.appendChild(bs);
-
-    const rolo = el('div',{estilo:{maxHeight:'44vh', overflowY:'auto'}});
-    for(const f of lista){
-      const b = el('button',{class:'torcida-opcao'+
-        (escolhida && f.id===escolhida.id ? ' on' : '')});
-      b.appendChild(escudo(f.cores, TO.mundo.sigla(f)));
-      b.appendChild(el('div',{html:
-        `<div class="nm">${f.nome}</div>
-         <div class="cid">${f.clube} · ${f.cidade} - ${f.uf}</div>`}));
-      b.appendChild(el('span',{class:'qt-membros',
-        html:`${U.numero(f.membros)}<small>membros</small>`}));
-      /* um clique escolhe, dois avançam: o duplo é atalho, não
-         caminho único — quem avança de verdade é o botão */
-      b.onclick = ()=>{ escolhida = f; pintarSelecao(); };
-      b.ondblclick = ()=>{ escolhida = f; irParaPasso(2); };
-      rolo.appendChild(b);
+    const sub = $('subSelecao');
+    if(!p2){
+      sub.textContent = `passo 1 de 2 · país, liga e clube · `+
+        `${TO.mundo.todosTimes.length} clubes em 10 países`;
+      pintarPasso1();
+      return;
     }
-    cx.appendChild(rolo);
+    sub.textContent = `passo 2 de 2 · ${selClube.nome} · escolha a torcida`;
+    pintarPasso2();
+  }
 
-    const cxF = $('fichaTorcida');
-    if(!escolhida){ cxF.innerHTML=''; return; }
-    if(!p2) return;              // a ficha é o passo 2, e só ele
-    const f = escolhida;
-    cxF.innerHTML='';
+  /* ---------- PASSO 1: três colunas encadeadas ---------- */
+  function pintarPasso1(){
+    const h = document.querySelector('#passo1Sel .cartao h2');
+    if(h && h.firstChild) h.firstChild.textContent = 'Onde você torce ';
+    const cx = $('listaTorcidas'); cx.innerHTML = '';
+    const grade = el('div',{class:'sel-tres'});
+
+    const paises = paisesComTorcida();
+    grade.appendChild(coluna('País', `${paises.length}`, paises, p=>
+      linhaSel(selPais===p.pais?' on':'', selo(p.pais.slice(0,3).toUpperCase()),
+        p.pais, `${p.clubes} clubes`,
+        p.torcidas ? `${p.torcidas}<small>torcidas</small>`
+                   : `<small>sem torcidas</small>`,
+        !p.torcidas,
+        ()=>{ selPais = p.pais; selLiga = null; selClube = null;
+              escolhida = null; pintarSelecao(); })));
+
+    const ligas = selPais ? ligasDoPais(selPais) : [];
+    grade.appendChild(coluna('Liga', selPais ? `${ligas.length}` : '', ligas, l=>
+      linhaSel(selLiga===l.liga?' on':'', null,
+        l.liga.replace('Brasileirão ',''), `${l.clubes} clubes`,
+        l.torcidas ? `${l.torcidas}<small>torcidas</small>`
+                   : `<small>sem torcidas</small>`,
+        !l.torcidas,
+        ()=>{ selLiga = l.liga; selClube = null; escolhida = null;
+              pintarSelecao(); })));
+
+    const clubes = (selPais && selLiga) ? clubesDaLiga(selPais, selLiga) : [];
+    const lista = clubes.filter(c=>!buscaSel ||
+      (c.time.nome + c.time.cidade).toLowerCase()
+        .includes(buscaSel.toLowerCase()));
+    const colC = coluna('Clube', selLiga ? `${lista.length}` : '', lista, c=>
+      linhaSel(selClube && selClube.id===c.time.id?' on':'',
+        /* `escudo` quer o ARRAY de cores; `coresDaTorcida` devolve
+           {cor, cor2, cor3} e não se desestrutura */
+        escudo(c.time.cores, c.time.sigla || c.time.nome.slice(0,3)),
+        c.time.nome, `${c.time.cidade}${c.time.uf?' - '+c.time.uf:''}`,
+        c.torcidas ? `${c.torcidas}<small>${c.torcidas===1?'torcida':'torcidas'}</small>`
+                   : `<small>sem torcida</small>`,
+        !c.torcidas,
+        ()=>{ selClube = c.time; escolhida = null;
+              const t = torcidasDoClube(c.time.id);
+              /* clube de uma torcida só não tem o que escolher: já
+                 entra no passo 2 com ela na mão */
+              if(t.length === 1) escolhida = t[0];
+              pintarSelecao(); }));
+    if(selLiga){
+      const bs = el('input',{class:'busca', type:'search',
+        placeholder:'clube ou cidade…'});
+      bs.value = buscaSel;
+      bs.oninput = ev=>{ buscaSel = ev.target.value; pintarPasso1(); };
+      colC.insertBefore(bs, colC.lastChild);
+    }
+    grade.appendChild(colC);
+    cx.appendChild(grade);
+  }
+
+  /* ---------- PASSO 2: qual torcida do clube ---------- */
+  function pintarPasso2(){
+    const cxF = $('fichaTorcida'); cxF.innerHTML = '';
+    $('contaTorcidas').textContent = '';
+    const lista = torcidasDoClube(selClube.id);
+    if(lista.length > 1){
+      const cx = el('div',{class:'sel-torcidas'});
+      for(const f of lista){
+        cx.appendChild(linhaSel(escolhida && escolhida.id===f.id?' on':'',
+          escudo(f.cores, TO.mundo.sigla(f)), f.nome,
+          `${f.cidade} - ${f.uf} · fundada em ${f.fundacao}`,
+          `${U.numero(f.membros)}<small>membros</small>`, false,
+          ()=>{ escolhida = f; pintarSelecao(); }));
+      }
+      cxF.appendChild(cx);
+    }
+    if(!escolhida){
+      cxF.appendChild(el('p',{class:'nota',
+        texto:'Escolha uma das torcidas acima pra ver a ficha.'}));
+      return;
+    }
+    montarFicha(cxF, escolhida);
+  }
+
+  function montarFicha(cxF, f){
     const cab = el('div',{class:'ficha-torcida'});
     cab.appendChild(escudo(f.cores, TO.mundo.sigla(f)));
     cab.appendChild(el('div',{html:
@@ -4148,6 +4268,11 @@
        nem aparece, que aba vazia é promessa de tela quebrada */
     if(TO.lnt && TO.lnt.existe(e))
       abas.splice(abas.length - 1, 0, {id:'lnt', rot:'LNT'});
+    /* O MUNDO DE FORA (dono, 23/08/2026): as nove ligas sul-americanas
+       numa aba, as duas copas da Conmebol e as nove copas nacionais em
+       outra. Só aparecem depois que o ano montou. */
+    if(e.ligas)    abas.splice(abas.length - 1, 0, {id:'sulamerica', rot:'América do Sul'});
+    if(e.conmebol) abas.splice(abas.length - 1, 0, {id:'conmebol', rot:'Conmebol'});
 
     /* abre na divisão do meu clube */
     if(!abaComp){
@@ -4160,6 +4285,8 @@
 
     if(abaComp==='historico'){ pg.appendChild(painelHistorico(e)); return; }
     if(abaComp==='lnt'){ pintarLNT(e, pg); return; }
+    if(abaComp==='sulamerica'){ pintarSulAmerica(e, pg); return; }
+    if(abaComp==='conmebol'){ pintarConmebol(e, pg); return; }
 
     let comp;
     if(abaComp==='regionais'){
@@ -4244,6 +4371,243 @@
       q.corpo.innerHTML = '<div class="em-construcao">A copa começa na semana '+
         `${comp.semanaInicio}.</div>`;
     return q;
+  }
+
+  /* =======================================================
+     AMÉRICA DO SUL (dono, 23/08/2026)
+     Um país por vez, com os torneios do ano e a classificação.
+     As ligas de fora guardam só a tabela, então é ela que a tela
+     mostra — não há lista de jogos pra mostrar.
+     ======================================================= */
+  let paisSel = null, divSel = null, torneioSel = null;
+
+  function pintarSulAmerica(e, pg){
+    const L = TO.ligas;
+    const nomeT = id => (TO.mundo.time(id)||{}).nome || '—';
+    const corT = id => {
+      const t = TO.mundo.time(id);
+      return (t && t.cores && t.cores[0]) || '#888';
+    };
+    const paises = Object.keys(e.ligas.paises).sort();
+    if(!paises.includes(paisSel)) paisSel = paises[0];
+
+    const filtros = el('div',{class:'filtros-linha'});
+    for(const p of paises){
+      const b = el('button',{class:(p===paisSel?'on':''), texto:p});
+      b.onclick = ()=>{ paisSel = p; divSel = torneioSel = null; redesenhar(); };
+      filtros.appendChild(b);
+    }
+    pg.appendChild(filtros);
+
+    const P = e.ligas.paises[paisSel];
+    const divs = Object.keys(P.divisoes);
+    if(!divs.includes(divSel)) divSel = divs[0];
+    if(divs.length > 1){
+      const f2 = el('div',{class:'filtros-linha'});
+      for(const d of divs){
+        const b = el('button',{class:(d===divSel?'on':''), html:
+          `${d.replace(paisSel+' ','')}<span class="conta">`+
+          `${P.divisoes[d].clubes.length}</span>`});
+        b.onclick = ()=>{ divSel = d; torneioSel = null; redesenhar(); };
+        f2.appendChild(b);
+      }
+      pg.appendChild(f2);
+    }
+
+    const D = P.divisoes[divSel];
+    if(!D){ pg.appendChild(emConstrucao('Sem dados','Divisão não encontrada.')); return; }
+    const nomes = D.torneios.map(t=>t.nome);
+    if(!nomes.includes(torneioSel)) torneioSel = nomes[0];
+
+    const duas = el('div',{class:'comp-duas'});
+    const esq = el('div');
+
+    if(D.campeao){
+      const q = quadro('Campeão do ano', el('span',{class:'conta',
+        texto:D.comoFechou||''}));
+      q.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
+        `${IC.get('trofeu')}<div><b>${nomeT(D.campeao)}</b>`+
+        `<small>${D.vice?'vice: '+nomeT(D.vice):''}</small></div>`}));
+      if(D.campeaoDeLiga) q.corpo.appendChild(el('div',{class:'sub-chave',
+        texto:`Campeão de Liga (tabela anual): ${nomeT(D.campeaoDeLiga)}`}));
+      esq.appendChild(q);
+    }
+
+    if(D.torneios.length > 1){
+      const f3 = el('div',{class:'filtros-linha'});
+      for(const T of D.torneios){
+        const b = el('button',{class:(T.nome===torneioSel?'on':''), html:
+          `${T.nome}${T.campeao?`<span class="conta">✓</span>`:''}`});
+        b.onclick = ()=>{ torneioSel = T.nome; redesenhar(); };
+        f3.appendChild(b);
+      }
+      esq.appendChild(f3);
+    }
+
+    const T = D.torneios.find(x=>x.nome===torneioSel) || D.torneios[0];
+    const fase = T.fases[T.faseAtual] || {};
+    const zonas = T.zonas && T.zonas.length > 1 ? T.zonas : [D.clubes];
+    zonas.forEach((z, iz)=>{
+      const rot = zonas.length > 1 ? `${T.nome} · zona ${'AB'[iz]||iz+1}` : T.nome;
+      const q = quadro(rot, el('span',{class:'conta', texto: T.campeao
+        ? 'encerrado' : `fecha ${T.fecha} de ${fase.fechas||'—'}`}));
+      const rolo = el('div',{class:'rolo'});
+      rolo.appendChild(tabelaLiga2(L.ordenar(T.tabela, z), nomeT, corT,
+        T.passam, e.torcida.clubeId));
+      q.corpo.appendChild(rolo);
+      esq.appendChild(q);
+    });
+
+    /* quadrangular ou hexagonal em andamento */
+    if(T.grupos && T.grupos.length){
+      T.grupos.forEach((g, ig)=>{
+        const q = quadro(T.grupos.length>1
+          ? `Quadrangular ${'AB'[ig]||ig+1}` : 'Hexagonal final');
+        const rolo = el('div',{class:'rolo'});
+        rolo.appendChild(tabelaLiga2(L.ordenar(T.tabelaGrupo[ig], g),
+          nomeT, corT, 1, e.torcida.clubeId));
+        q.corpo.appendChild(rolo);
+        esq.appendChild(q);
+      });
+    }
+
+    duas.appendChild(esq);
+    duas.appendChild(chaveSimples('Mata-mata', T.mata, nomeT,
+      D.anual && Object.keys(D.anual).length
+        ? {rot:'Tabela anual',
+           linhas: L.ordenar(D.anual, D.clubes).slice(0,6)
+             .map((l,i)=>`${i+1}º ${nomeT(l.id)} · ${l.p} pts`)}
+        : null));
+    pg.appendChild(duas);
+  }
+
+  /* uma tabela de liga estrangeira: só o que a classificação guarda */
+  function tabelaLiga2(linhas, nomeT, corT, passam, meuClube){
+    const t = el('table',{class:'liga'});
+    t.innerHTML = `<thead><tr><th>#</th><th class="time">Clube</th>
+      <th>P</th><th>J</th><th>V</th><th>E</th><th>D</th>
+      <th>GP</th><th>GC</th><th>SG</th></tr></thead>`;
+    const tb = el('tbody');
+    linhas.forEach((l,i)=>{
+      const cls = [];
+      if(l.id === meuClube) cls.push('meu');
+      if(passam && i < passam) cls.push('sobe');
+      const tr = el('tr',{class:cls.join(' ')});
+      const sg = l.gp - l.gc;
+      tr.innerHTML = `<td class="pos">${i+1}</td>
+        <td class="time"><i style="background:${corT(l.id)}"></i>${nomeT(l.id)}</td>
+        <td>${l.p}</td><td>${l.j}</td><td>${l.v}</td><td>${l.e}</td><td>${l.d}</td>
+        <td>${l.gp}</td><td>${l.gc}</td><td>${sg>0?'+':''}${sg}</td>`;
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    return t;
+  }
+
+  /* a chave de um torneio que guarda só o resultado */
+  function chaveSimples(titulo, mata, nomeT, extra){
+    const q = quadro(titulo, el('span',{class:'conta',
+      texto:`${(mata||[]).length} fases`}));
+    if(!mata || !mata.length){
+      q.corpo.innerHTML = '<div class="em-construcao">A chave abre quando '+
+        'a fase regular terminar.</div>';
+    }
+    for(const m of (mata||[])){
+      q.corpo.appendChild(el('div',{class:'fase-rot',
+        texto:`${m.fase}${m.neutro?' · campo neutro':''}`}));
+      for(const j of m.jogos){
+        /* jogo guardado empatado com vencedor decidido saiu nos
+           pênaltis: sem esta linha o placar 1 × 1 com um nome em
+           negrito parece erro de conta */
+        const nosPen = j.gc != null && j.gc === j.gf && j.venceu;
+        q.corpo.appendChild(el('div',{class:'jogo-chave', html:
+          `<span class="a ${j.venceu===j.c?'venceu':''}">${nomeT(j.c)}</span>
+           <b>${j.gc!=null?`${j.gc} × ${j.gf}`:'—'}</b>
+           <span class="b ${j.venceu===j.f?'venceu':''}">${nomeT(j.f)}</span>
+           ${nosPen?'<em class="pen">nos pênaltis</em>':''}`}));
+      }
+    }
+    if(extra){
+      q.corpo.appendChild(el('div',{class:'fase-rot', texto:extra.rot}));
+      for(const l of extra.linhas)
+        q.corpo.appendChild(el('div',{class:'sub-chave', texto:l}));
+    }
+    return q;
+  }
+
+  /* =======================================================
+     CONMEBOL: Libertadores, Sul-Americana e as copas nacionais
+     ======================================================= */
+  let abaCM = 'libertadores';
+
+  function pintarConmebol(e, pg){
+    const nomeT = id => (TO.mundo.time(id)||{}).nome || '—';
+    const corT = id => {
+      const t = TO.mundo.time(id);
+      return (t && t.cores && t.cores[0]) || '#888';
+    };
+    const cb = e.conmebol;
+    const abas = [{id:'libertadores', rot:'Libertadores'},
+                  {id:'sulamericana', rot:'Sul-Americana'},
+                  {id:'copas', rot:'Copas nacionais'}];
+    const f = el('div',{class:'filtros-linha'});
+    for(const a of abas){
+      const b = el('button',{class:(a.id===abaCM?'on':''), texto:a.rot});
+      b.onclick = ()=>{ abaCM = a.id; redesenhar(); };
+      f.appendChild(b);
+    }
+    pg.appendChild(f);
+
+    if(abaCM === 'copas'){
+      const grade = el('div',{class:'comp-duas'});
+      const a = el('div'), b = el('div');
+      Object.values(cb.copas||{}).forEach((c, i)=>{
+        (i % 2 ? b : a).appendChild(chaveSimples(
+          `${c.nome} · ${c.pais}`, c.mata, nomeT,
+          c.campeao ? {rot:'Campeão', linhas:[nomeT(c.campeao)]} : null));
+      });
+      grade.appendChild(a); grade.appendChild(b);
+      pg.appendChild(grade);
+      return;
+    }
+
+    const c = cb[abaCM];
+    const duas = el('div',{class:'comp-duas'});
+    const esq = el('div');
+    if(c.campeao){
+      const q = quadro('Campeão');
+      q.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
+        `${IC.get('trofeu')}<div><b>${nomeT(c.campeao)}</b>`+
+        `<small>vice: ${nomeT(c.vice)}</small></div>`}));
+      esq.appendChild(q);
+    }
+    (c.grupos||[]).forEach((g, ig)=>{
+      const q = quadro(`Grupo ${'ABCDEFGH'[ig]||ig+1}`);
+      const rolo = el('div',{class:'rolo'});
+      rolo.appendChild(tabelaLiga2(TO.ligas.ordenar(c.tabela[ig], g),
+        nomeT, corT, abaCM==='libertadores'?2:1, e.torcida.clubeId));
+      q.corpo.appendChild(rolo);
+      esq.appendChild(q);
+    });
+    if(!(c.grupos||[]).length){
+      /* edição recém-montada ainda não sorteou os grupos: em vez de uma
+         tela vazia, mostra quem ganhou a última */
+      const ant = (e.conmebolHistorico||[])[0];
+      const q = quadro(c.nome, el('span',{class:'conta',
+        texto:`${(c.clubes||[]).length} clubes`}));
+      q.corpo.appendChild(el('div',{class:'em-construcao',
+        html:'Os grupos são sorteados depois das fases prévias.'}));
+      if(ant && ant[abaCM] && ant[abaCM].campeao)
+        q.corpo.appendChild(el('div',{class:'sub-chave',
+          texto:`Campeão de ${ant.ano}: ${nomeT(ant[abaCM].campeao)}`}));
+      esq.appendChild(q);
+    }
+    duas.appendChild(esq);
+    duas.appendChild(chaveSimples('Mata-mata', c.mata, nomeT,
+      {rot:'Vagas por país', linhas:Object.entries(
+        abaCM==='libertadores' ? TO.conmebol.VAGAS_LIB : TO.conmebol.VAGAS_SUL)
+        .map(([p,n])=>`${p}: ${n}`)}));
+    pg.appendChild(duas);
   }
 
   /* =======================================================
@@ -5610,10 +5974,10 @@
     TO.estado.novo({torcida: escolhida});
     entrarNoJogo(true);
   };
-  $('btAvancarSelecao').onclick = ()=>{ if(escolhida) irParaPasso(2); };
-  /* o mesmo botão volta um passo, e do primeiro volta pro menu */
+  $('btAvancarSelecao').onclick = ()=>{ if(selClube) irParaPasso(2); };
+  /* do passo 2 volta pra escolha do clube; do passo 1, pro menu */
   $('btVoltarMenu').onclick = ()=>{
-    if(passoSel === 2){ irParaPasso(1); return; }
+    if(passoSel === 2){ escolhida = null; irParaPasso(1); return; }
     $('telaSelecao').classList.add('oculto');
     $('telaMenu').classList.remove('oculto');
   };
@@ -5669,7 +6033,25 @@
     widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima,
     abrirItinerario,
     /* o cofre de saves, pra bateria dirigir */
-    pintarJogo, abrirCofreNoMenu, montarMenu
+    pintarJogo, abrirCofreNoMenu, montarMenu,
+    /* A PORTA DE SERVIÇO DA SELEÇÃO (23/08/2026): a bateria escolhia
+       torcida clicando na lista única que existia antes dos dois
+       passos. Em vez de cada teste refazer o caminho país → liga →
+       clube → torcida, ele diz o nome e a tela se posiciona sozinha.
+       Nada aqui é chamado pelo jogo. */
+    escolherTorcida(rx){
+      const todas = TO.mundo.selecionaveis();
+      const alvo = todas.find(o=>new RegExp(rx, 'i').test(o.nome)) || todas[0];
+      if(!alvo) return null;
+      const t = TO.mundo.time(alvo.clubeId);
+      selPais  = TO.competicoes.paisDe(t);
+      selLiga  = t.divisao;
+      selClube = t;
+      escolhida = TO.mundo.ficha(alvo);
+      passoSel = 2;
+      pintarSelecao();
+      return escolhida.nome;
+    }
   };
 
   montarMenu();
