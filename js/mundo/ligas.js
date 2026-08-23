@@ -268,7 +268,7 @@ TO.ligas = (function(){
     return c;
   }
 
-  function agendar(E, T, semana, pares, slot){
+  function agendar(E, T, semana, pares, slot, rot){
     if(semana > FIM_DO_ANO + 1) return;
     const c = agendaDe(E, T);
     if(!c || !pares.length) return;
@@ -276,6 +276,7 @@ TO.ligas = (function(){
     let r = c.rodadas.find(x=>x.tag === tag);
     if(!r){
       r = {semana, tag, dia:(slot || GRADE_FORA[0]).d, jogos:[]};
+      if(rot) r.rot = rot;
       c.rodadas.push(r);
       c.rodadas.sort((x,y)=> x.semana - y.semana || x.dia - y.dia);
     }
@@ -331,12 +332,15 @@ TO.ligas = (function(){
      a véspera, o itinerário e a caravana precisam pra existir */
   function agendarChave(E, T, fase){
     const idaEVolta = fase.t === 'final2' || fase.jogoUnico === false;
+    const vivos = (T.vivos || []).length;
+    const rot = fase.t === 'final2' ? 'Final'
+              : (NOME_FASE[vivos] || `${vivos} clubes`);
     for(const [a,b] of paresDaChave(T)){
       if(idaEVolta){
-        agendar(E, T, T.semanaFase, [[b,a]], MATA_IDA);     // ida na casa do pior
-        agendar(E, T, T.semanaFase, [[a,b]], MATA_VOLTA);   // volta na do melhor
+        agendar(E, T, T.semanaFase, [[b,a]], MATA_IDA, rot + ' · ida');
+        agendar(E, T, T.semanaFase, [[a,b]], MATA_VOLTA, rot + ' · volta');
       } else {
-        agendar(E, T, T.semanaFase, [[a,b]], MATA_VOLTA);
+        agendar(E, T, T.semanaFase, [[a,b]], MATA_VOLTA, rot);
       }
     }
   }

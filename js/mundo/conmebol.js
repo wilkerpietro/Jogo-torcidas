@@ -110,6 +110,79 @@ TO.conmebol = (function(){
   }
 
   /* =======================================================
+     A EDIÇÃO DE 2026 É A DE VERDADE (pedido do dono, 23/08/2026)
+
+     O primeiro ano do jogo abre com os 47 clubes da Libertadores 2026 e
+     os 44 da Sul-Americana 2026, cada um na fase em que entrou de
+     verdade. Sem isto o ano 1 sorteava as vagas pela qualidade do
+     elenco, porque ainda não existe temporada jogada pra decidir quem
+     classificou — e dava uma Libertadores plausível, mas errada.
+
+     De 2027 em diante quem decide é o campeonato do jogo: a tabela
+     abaixo só vale pro ano de estreia.
+
+     Fonte: sorteios da CONMEBOL de dezembro de 2025 e março de 2026.
+     ======================================================= */
+  const ANO_REAL = 2026;
+
+  const REAIS = {
+    libertadores: {
+      /* 28 direto na fase de grupos */
+      grupos: [
+        'flamengo','palmeiras','cruzeiro','mirassol','fluminense','corinthians',
+        'boca-juniors','rosario-central','lanus','platense','estudiantes',
+        'independiente-rivadavia',
+        'bolivar','always-ready', 'u-catolica','coquimbo-unido',
+        'junior','santa-fe', 'ldu-quito','independiente-del-valle',
+        'libertad','cerro-porteno', 'universitario','cusco-fc',
+        'penarol','nacional-uru', 'deportivo-la-guaira','ucv'],
+      /* 13 que entram na Fase 2 da prévia */
+      fase2: [
+        'bahia','botafogo','argentinos','o-higgins','huachipato',
+        'deportes-tolima','independiente-medellin','barcelona-sc',
+        'guarani-par','sporting-cristal','liverpool','carabobo',
+        'nacional-potosi'],
+      /* 6 que abrem na Fase 1 */
+      fase1: ['alianza-lima','deportivo-tachira','u-catolica-equ',
+              '2-de-mayo','juventud','the-strongest'],
+    },
+    sulamericana: {
+      /* 12 direto: seis do Brasil e seis da Argentina, que não jogam
+         a fase preliminar */
+      diretos: ['sao-paulo','gremio','bragantino','atletico-mineiro','santos',
+                'vasco', 'river-plate','racing','riestra','san-lorenzo','tigre',
+                'barracas-central'],
+      /* 32 na Fase Preliminar, quatro por país e em duelo nacional */
+      previa: [
+        'independiente-petrolero','guabira','blooming','san-antonio',
+        'universidad-de-chile','palestino','cobresal','audax-italiano',
+        'atletico-nacional','millonarios','america-de-cali','bucaramanga',
+        'orense','macara','libertad-equ','deportivo-cuenca',
+        'nacional-par','recoleta','trinidense','olimpia',
+        'alianza-atletico','deportivo-garcilaso','cienciano','melgar',
+        'montevideo-city-torque','defensor-sporting','boston-river','racing-uru',
+        'academia-puerto-cabello','monagas','caracas','metropolitanos'],
+    }
+  };
+
+  /* só entra quem existe no elenco do jogo — se a planilha mudar, a
+     vaga volta pro sorteio por qualidade em vez de sumir */
+  const soReais = lista => (lista || []).filter(id => M().time(id));
+
+  function listaReal(E){
+    if(E.data.ano !== ANO_REAL) return null;
+    const R = REAIS.libertadores, S = REAIS.sulamericana;
+    const lib = soReais(R.grupos), l2 = soReais(R.fase2), l1 = soReais(R.fase1);
+    const sd = soReais(S.diretos), sp = soReais(S.previa);
+    /* a conta tem de fechar: 28+13+6 e 12+32. Se não fechar, é sinal de
+       que a base de clubes mudou, e o ano 1 volta pro sorteio. */
+    if(lib.length !== 28 || l2.length !== 13 || l1.length !== 6) return null;
+    if(sd.length !== 12 || sp.length !== 32) return null;
+    return {lib:{grupos:lib, fase2:l2, fase1:l1},
+            sul:{diretos:sd, previa:sp}};
+  }
+
+  /* =======================================================
      A MONTAGEM DO ANO
      ======================================================= */
   /* mesma razão do arquivo das ligas: a virada refaz as copas do zero,
@@ -133,6 +206,7 @@ TO.conmebol = (function(){
   function montar(E){
     arquivar(E);
     U.usarSemente((E.semente || 1) + (E.data.ano||2026) * 13);
+    const real = listaReal(E);
     const pegos = new Set();
     const campeoes = E.conmebolCampeoes || {};
 
@@ -141,14 +215,20 @@ TO.conmebol = (function(){
       .filter(id => id && M().time(id));
     for(const id of donos) pegos.add(id);
 
-    const lib = vagas(E, VAGAS_LIB, pegos)
-      .concat(donos.map(id=>({id, pais:paisDe(id), dono:true})));
-    const sul = vagas(E, VAGAS_SUL, pegos);
+    const lib = real
+      ? real.lib.grupos.concat(real.lib.fase2, real.lib.fase1)
+          .map(id=>({id, pais:paisDe(id)}))
+      : vagas(E, VAGAS_LIB, pegos)
+          .concat(donos.map(id=>({id, pais:paisDe(id), dono:true})));
+    const sul = real
+      ? real.sul.diretos.concat(real.sul.previa).map(id=>({id, pais:paisDe(id)}))
+      : vagas(E, VAGAS_SUL, pegos);
 
     E.conmebol = {
       ano: E.data.ano,
-      libertadores: criarLibertadores(E, lib),
-      sulamericana: criarSulamericana(E, sul),
+      real: !!real,
+      libertadores: criarLibertadores(E, lib, real && real.lib),
+      sulamericana: criarSulamericana(E, sul, real && real.sul),
       copas: criarCopasNacionais(E)
     };
     return E.conmebol;
@@ -157,7 +237,7 @@ TO.conmebol = (function(){
   const chaveVazia = () => ({grupos:[], tabela:[], mata:[], campeao:null,
                              vice:null, fase:'previa'});
 
-  function criarLibertadores(E, lista){
+  function criarLibertadores(E, lista, real){
     const c = chaveVazia();
     c.nome = 'Copa Libertadores';
     c.clubes = lista.map(x=>x.id);
@@ -173,10 +253,17 @@ TO.conmebol = (function(){
                  SUL-AMERICANA, que é o que a vida real faz.
        A versão anterior só ia dividindo a lista ao meio e entregava 2,
        deixando a fase de grupos com 30 e dois grupos de três. */
-    const ordem = lista.slice().sort((a,b)=>
-      (C().forca(b.id)||0) - (C().forca(a.id)||0));
-    c.diretos = ordem.slice(0, 28).map(x=>x.id);
-    c.previa  = ordem.slice(28).map(x=>x.id);
+    if(real){
+      /* no ano de estreia a fase de cada clube é a de verdade, não a que
+         a força do elenco sugere */
+      c.diretos = real.grupos.slice();
+      c.previa  = real.fase2.concat(real.fase1);
+    } else {
+      const ordem = lista.slice().sort((a,b)=>
+        (C().forca(b.id)||0) - (C().forca(a.id)||0));
+      c.diretos = ordem.slice(0, 28).map(x=>x.id);
+      c.previa  = ordem.slice(28).map(x=>x.id);
+    }
     c.faseAtual = 'previa';
     c.previaFase = 0;
     /* os 6 mais fracos abrem; os outros 13 entram na Fase 2 */
@@ -185,17 +272,26 @@ TO.conmebol = (function(){
     return c;
   }
 
-  function criarSulamericana(E, lista){
+  function criarSulamericana(E, lista, real){
     const c = chaveVazia();
     c.nome = 'Copa Sul-Americana';
     c.clubes = lista.map(x=>x.id);
     /* 44 clubes e 32 vagas de grupo, das quais 4 são da Libertadores.
        Então 12 entram direto, 32 disputam a Fase Preliminar em 16
        duelos, e os 16 vencedores completam a chave: 12 + 16 + 4 = 32. */
-    const ordem = lista.slice().sort((a,b)=>
-      (C().forca(b.id)||0) - (C().forca(a.id)||0)).map(x=>x.id);
-    c.diretos = ordem.slice(0, 12);
-    c.previa  = ordem.slice(12);
+    if(real){
+      c.diretos = real.diretos.slice();
+      c.previa  = real.previa.slice();
+    } else {
+      const ordem = lista.slice().sort((a,b)=>
+        (C().forca(b.id)||0) - (C().forca(a.id)||0)).map(x=>x.id);
+      c.diretos = ordem.slice(0, 12);
+      c.previa  = ordem.slice(12);
+    }
+    /* A FASE PRELIMINAR É NACIONAL: quatro clubes por país, duelo entre
+       compatriotas, e dois de cada país passam. `emPares` casa vizinhos
+       na lista, então basta a lista vir agrupada por país. */
+    c.previa = agruparPorPais(c.previa);
     c.esperandoLib = [];             // os 4 que caem da Fase 3 da Liberta
     c.faseAtual = 'previa';
     return c;
@@ -452,6 +548,17 @@ TO.conmebol = (function(){
   }
 
   /* ---- peças comuns ---- */
+  /* junta os clubes do mesmo país, mantendo a ordem em que vieram */
+  function agruparPorPais(lista){
+    const por = new Map();
+    for(const id of lista){
+      const p = paisDe(id) || '?';
+      if(!por.has(p)) por.set(p, []);
+      por.get(p).push(id);
+    }
+    return [...por.values()].flat();
+  }
+
   const emPares = lista => {
     const fora = [];
     for(let k=0;k+1<lista.length;k+=2) fora.push([lista[k], lista[k+1]]);

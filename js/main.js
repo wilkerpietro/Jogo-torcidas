@@ -4473,10 +4473,23 @@
      UMA LIGA DE FORA NA TELA (dono, 23/08/2026)
      Os torneios do ano, a classificação de cada zona, o
      quadrangular ou hexagonal em andamento, o mata-mata e a
-     tabela anual. Liga de fora guarda só a tabela, então é ela
-     que a tela mostra — não há lista de jogos pra mostrar.
+     tabela anual.
+
+     A LIGA DO PAÍS DO JOGADOR TAMBÉM MOSTRA OS JOGOS (régua do
+     dono, 23/08/2026). Ela é a única que guarda partida com data
+     — as outras nove só guardam classificação —, então é nela
+     que o painel de rodada com ‹ › aparece, do lado direito, no
+     mesmo lugar e no mesmo desenho da competição brasileira.
+     Quando não há jogo guardado, o lado direito volta a ser o
+     mata-mata, como era.
      ======================================================= */
   let torneioSel = null;
+
+  /* a competição-sombra que `ligas.js` pendura em E.temporada pro país
+     do jogador: é dela que saem os jogos com data */
+  const sombraDe = (e, T) => T && T.compId &&
+    ((e.temporada||{}).competicoes||[]).find(c=>c.id === T.compId &&
+      (c.rodadas||[]).length) || null;
 
   const nomeT = id => (TO.mundo.time(id)||{}).nome || '—';
   const corT  = id => ((TO.mundo.time(id)||{}).cores || ['#888'])[0];
@@ -4510,7 +4523,7 @@
       for(const T of D.torneios){
         const b = el('button',{class:(T.nome===torneioSel?'on':''), html:
           `${T.nome}${T.campeao?'<span class="conta">✓</span>':''}`});
-        b.onclick = ()=>{ torneioSel = T.nome; redesenhar(); };
+        b.onclick = ()=>{ torneioSel = T.nome; rodadaSel = null; redesenhar(); };
         f3.appendChild(b);
       }
       esq.appendChild(f3);
@@ -4542,13 +4555,25 @@
       });
     }
 
-    duas.appendChild(esq);
-    duas.appendChild(chaveSimples('Mata-mata', T.mata,
-      D.anual && Object.keys(D.anual).length
-        ? {rot:'Tabela anual',
-           linhas: L.ordenar(D.anual, D.clubes).slice(0,6)
-             .map((l,i)=>`${i+1}º ${nomeT(l.id)} · ${l.p} pts`)}
-        : null));
+    const anual = D.anual && Object.keys(D.anual).length
+      ? {rot:'Tabela anual',
+         linhas: L.ordenar(D.anual, D.clubes).slice(0,6)
+           .map((l,i)=>`${i+1}º ${nomeT(l.id)} · ${l.p} pts`)}
+      : null;
+
+    const sombra = sombraDe(e, T);
+    if(sombra){
+      /* liga do jogador: classificação à esquerda, jogos à direita —
+         o mesmo desenho da tela brasileira. O mata-mata desce pro pé
+         da coluna esquerda, porque a direita agora é a rodada. */
+      if(T.mata.length || anual)
+        esq.appendChild(chaveSimples('Mata-mata', T.mata, anual));
+      duas.appendChild(esq);
+      duas.appendChild(painelRodada(e, sombra));
+    } else {
+      duas.appendChild(esq);
+      duas.appendChild(chaveSimples('Mata-mata', T.mata, anual));
+    }
     pg.appendChild(duas);
   }
 
@@ -4656,6 +4681,11 @@
   function pintarCopaNacional(e, pg, copa){
     const duas = el('div',{class:'comp-duas'});
     const esq = el('div');
+    /* a copa do país do jogador é jogada de verdade, então ela mostra
+       a chave à esquerda e a rodada à direita, como a Copa do Brasil */
+    const sombra = copa.comJogos &&
+      ((e.temporada||{}).competicoes||[]).find(c=>c.tipo === 'copa-de-fora'
+        && (c.mata||[]).length);
     const q = quadro(copa.nome, el('span',{class:'conta',
       texto:`${copa.clubes.length} clubes de todas as divisões`}));
     if(copa.campeao)
@@ -4665,8 +4695,14 @@
     else q.corpo.appendChild(el('div',{class:'em-construcao',
       html:'A copa corre por dentro do ano, do 32-avos à final.'}));
     esq.appendChild(q);
-    duas.appendChild(esq);
-    duas.appendChild(chaveSimples('Chave', copa.mata, null));
+    if(sombra){
+      esq.appendChild(painelChave(e, sombra));
+      duas.appendChild(esq);
+      duas.appendChild(painelRodada(e, sombra));
+    } else {
+      duas.appendChild(esq);
+      duas.appendChild(chaveSimples('Chave', copa.mata, null));
+    }
     pg.appendChild(duas);
   }
 

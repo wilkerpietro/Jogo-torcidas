@@ -1585,8 +1585,12 @@ TO.competicoes = (function(){
      ======================================================= */
   function etapas(comp){
     const dia = comp.dia || DIA_FDS;
-    const fora = comp.rodadas.map((r,i)=>({
-      rot:`Rodada ${i+1}`, semana:r.semana, dia, jogos:r.jogos, mata:false}));
+    /* a rodada pode trazer o próprio rótulo: a liga de fora chama a
+       fecha de mata-mata de "Semifinal", não de "Rodada 18" */
+    let n = 0;
+    const fora = comp.rodadas.map(r=>({
+      rot: r.rot || `Rodada ${++n}`, semana:r.semana, dia,
+      jogos:r.jogos, mata:!!r.rot}));
     for(const m of comp.mata)
       fora.push({rot:m.fase, semana:m.semana, dia:m.dia||dia,
                  jogos:m.jogos, mata:true});

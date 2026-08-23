@@ -1816,6 +1816,53 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     três anos foi de 1.692 pra **1.844 KB**. O teto que matou o save era
     2.674 KB.
 
+- **A CONMEBOL DE 2026 É A DE VERDADE** (pedido do dono, 23/08/2026): "a
+  Libertadores e a Sul-Americana já devem iniciar em 2026 com os times
+  reais". O ano 1 não tem temporada jogada pra decidir quem classificou,
+  então ele sorteava as vagas pela qualidade do elenco — dava uma
+  Libertadores plausível e errada. Agora `conmebol.js` carrega os **47
+  clubes da Libertadores 2026 e os 44 da Sul-Americana 2026**, cada um
+  na fase em que entrou de verdade, e de 2027 em diante quem decide é o
+  campeonato do jogo.
+  · **Libertadores:** 28 direto na fase de grupos (Flamengo, Palmeiras,
+    Cruzeiro, Mirassol, Fluminense, Corinthians; Boca, Rosario Central,
+    Lanús, Platense, Estudiantes, Independiente Rivadavia; Bolívar,
+    Always Ready; U. Católica, Coquimbo; Junior, Santa Fe; LDU,
+    Independiente del Valle; Libertad, Cerro Porteño; Universitario,
+    Cusco; Peñarol, Nacional; La Guaira, UCV), 13 na Fase 2 (Bahia,
+    Botafogo, Argentinos, O'Higgins, Huachipato, Tolima, Medellín,
+    Barcelona, Guaraní, Sporting Cristal, Liverpool, Carabobo, Nacional
+    Potosí) e 6 na Fase 1 (Alianza Lima, Táchira, U. Católica/EQU, 2 de
+    Mayo, Juventud, The Strongest). Oito brasileiros e sete argentinos,
+    porque Flamengo entrou como campeão da Libertadores e Lanús como
+    campeão da Sul-Americana, liberando vaga na tabela de cada país.
+  · **Sul-Americana:** 12 direto (São Paulo, Grêmio, Bragantino,
+    Atlético-MG, Santos, Vasco; River, Racing, Riestra, San Lorenzo,
+    Tigre, Barracas Central) e 32 na Fase Preliminar, quatro por país.
+  · **A FASE PRELIMINAR VIROU NACIONAL**, e não só em 2026: é assim que
+    a Conmebol faz — quatro clubes do mesmo país, dois duelos, dois
+    passam. Antes o motor casava vizinhos numa lista ordenada por força,
+    e saíam duelos internacionais que não existem. Agora a lista é
+    agrupada por país antes de casar, o que reproduz o sorteio real
+    (U. de Chile × Palestino, Atlético Nacional × Millonarios,
+    Cienciano × Melgar, Caracas × Metropolitanos…).
+  · Se a base de clubes mudar e a conta não fechar (28+13+6 e 12+32), o
+    ano 1 volta sozinho pro sorteio por qualidade em vez de quebrar.
+
+- **A LIGA DO PAÍS DO JOGADOR MOSTRA OS JOGOS** (pedido do dono,
+  23/08/2026): "sempre mostrar jogos e classificação das competições do
+  país que o jogador escolheu, com o mesmo visual que era antes". A tela
+  de uma liga de fora nasceu só com tabela, porque só tabela existia.
+  Agora que o país do jogador guarda partida com data, ele ganha o
+  **painel de rodada com ‹ ›** do lado direito — mesmo lugar, mesmo
+  desenho e mesmo `linhaJogo` da competição brasileira —, com a
+  classificação à esquerda e o mata-mata descendo pro pé dela. A copa
+  nacional do país do jogador segue a mesma regra: chave à esquerda,
+  rodada à direita, como a Copa do Brasil. Os outros nove países
+  continuam só com tabela, que é tudo o que eles guardam.
+  · A rodada pode trazer o próprio rótulo, e a fecha de mata-mata da
+    liga de fora se chama "Semifinal · ida", não "Rodada 18".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
