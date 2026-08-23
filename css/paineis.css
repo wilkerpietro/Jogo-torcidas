@@ -1506,6 +1506,19 @@ td.placar small.pen{
 
 /* a linha de países do nível nacional: mais discreta que a de
    competição, que é a que o jogador troca o tempo todo */
-.filtros-linha.paises button{font-size:10.5px;padding:5px 10px}
+/* O FILTRO DO PAÍS É UMA FILEIRA DE BANDEIRAS (dono, 23/08/2026):
+   dez numa linha só, sem quebrar. O `flex-wrap:none` é o que garante a
+   linha única; em tela estreita a fileira rola no eixo x em vez de
+   virar duas linhas, porque duas linhas de bandeira ficam ilegíveis. */
+.filtros-linha.paises{flex-wrap:nowrap;overflow-x:auto;gap:4px;
+  scrollbar-width:none}
+.filtros-linha.paises::-webkit-scrollbar{display:none}
+.filtros-linha.paises button{padding:4px 6px;line-height:0;flex:0 0 auto;
+  opacity:.62;transition:opacity .12s,border-color .12s}
+.filtros-linha.paises button:hover{opacity:.9;background:#1f1f1f}
+.filtros-linha.paises button.on{opacity:1;background:transparent;
+  border-color:var(--rubro)}
 .filtros-linha.paises button.minha{box-shadow:inset 0 -2px 0 var(--vermelho)}
+.filtros-linha.paises .bandeira{display:block;border-radius:2px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.55)}
 .filtros-linha.torneios{padding-top:0}

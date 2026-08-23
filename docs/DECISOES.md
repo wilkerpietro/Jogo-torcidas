@@ -1863,6 +1863,48 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · A rodada pode trazer o próprio rótulo, e a fecha de mata-mata da
     liga de fora se chama "Semifinal · ida", não "Rodada 18".
 
+- **O FILTRO DO PAÍS VIROU BANDEIRA** (pedido do dono, 23/08/2026): "que
+  as opções dos países na tela competições seja a bandeirinha
+  correspondente e que todos os 10 estejam na mesma linha". Eram dez
+  nomes escritos, que em duas linhas quebravam a leitura da tela.
+  · **São desenhadas em SVG, não emoji.** A bandeira emoji não aparece
+    no Windows — o navegador de lá mostra as duas letras do país no
+    lugar do desenho, e a fileira ficaria com "AR" e "BR" escritos.
+  · Cada uma é a bandeira civil simplificada **com o detalhe que separa
+    as parecidas**: sem o escudo do Equador e as estrelas da Venezuela,
+    Colômbia, Equador e Venezuela seriam três retângulos
+    amarelo-azul-vermelho iguais. Entram também o sol da Argentina e do
+    Uruguai e a estrela do Chile.
+  · A fileira é `nowrap` e rola no eixo x em tela estreita: duas linhas
+    de bandeira ficam ilegíveis. O nome do país fica no `title` e no
+    `aria-label`.
+  · A lista de países passou a sair dos clubes, não de `E.ligas`: antes
+    ela nascia no primeiro tique da semana, e no dia 1 do jogo a linha
+    tinha uma bandeira só e crescia sozinha depois.
+
+- **O MEMBRO DE BARRA TEM NOME DE LÁ** (pedido do dono, 23/08/2026):
+  "200 nomes agrupados com 200 sobrenomes genéricos desses países, com
+  mais 150 apelidos". Está em `dados/nomes.js`, no bloco `hispano`, e
+  quem comanda uma barra recruta dali em vez do banco brasileiro.
+  · **200 nomes** (Adrián, Facundo, Lautaro, Nahuel, Ezequiel, Ceferino,
+    Gumersindo…), **200 sobrenomes** que cobrem o continente e não um
+    país só — Mamani, Quispe e Condori do altiplano; Cristaldo, Insfrán
+    e Estigarribia do Paraguai; Cedeño, Loor e Mero da costa
+    equatoriana; Huamán e Farfán do Peru; Riquelme e Sepúlveda do Chile
+    — e **150 apelidos** em cinco famílias de trinta: o corpo (Gordo,
+    Flaco, Zurdo, Cabezón), o bicho (Puma, Cuervo, Yacaré, Ñandú), o
+    fogo e o ferro (Trueno, Facón, Martillo), o ofício (Albañil,
+    Cartonero, Zafrero) e a origem (Salteño, Camba, Colla, Chapaco).
+    Os cinco que o dono deu — La Pulga, Chino, Diablo, Tucu, Pibe —
+    abrem a lista.
+  · O **apelido continua sendo o nome de rua**: é ele que aparece na
+    lista, na briga e no feed, como sempre foi. Nome e sobrenome entram
+    na ficha do membro, numa linha nova ("Nome: Jaime Bonilla" para o
+    Pato Bonilla). Membro brasileiro não tem primeiro nome no banco, e
+    lá a linha simplesmente não aparece.
+  · O figurante da cena de briga também segue o país: numa treta em
+    Buenos Aires o disco se chama Zurdo, não Pitbull.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

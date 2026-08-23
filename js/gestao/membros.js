@@ -115,14 +115,33 @@ TO.membros = (function(){
   /* -------------------------------------------------------
      CRIAÇÃO
      ------------------------------------------------------- */
+  /* O BANCO DE NOMES SEGUE O PAÍS DA TORCIDA (pedido do dono,
+     23/08/2026). Quem comanda uma barra recruta gente de lá: o membro
+     sai do banco hispano-americano — 200 nomes, 200 sobrenomes e 150
+     apelidos —, e não do brasileiro. O apelido continua sendo o nome de
+     rua que aparece na lista e na briga; nome e sobrenome ficam na
+     ficha. Torcida brasileira não muda nada. */
+  function bancoDe(E){
+    const N = TO.dados.nomes;
+    const meu = E && E.torcida && E.torcida.clubeId;
+    const t = meu && TO.mundo ? TO.mundo.time(meu) : null;
+    const pais = (t && t.pais) || 'Brasil';
+    return (pais !== 'Brasil' && N.hispano) ? N.hispano : N;
+  }
+
   function criar(E, opc){
     opc = opc || {};
     const N = TO.dados.nomes;
+    const B = bancoDe(E);
     const cargo = opc.cargo || 'novato';
     const m = {
       id: E.proximoId++,
-      apelido: opc.apelido || U.escolher(N.apelidos),
-      sobrenome: U.escolher(N.sobrenomes),
+      apelido: opc.apelido || U.escolher(B.apelidos),
+      sobrenome: U.escolher(B.sobrenomes),
+      /* nome de batismo: o banco de fora tem; o brasileiro não tinha
+         lista de primeiro nome de membro, então lá ele fica vazio e a
+         ficha não mostra a linha */
+      nome: B.nomes ? U.escolher(B.nomes) : '',
       cargo,
       forca:  opc.forca  !== undefined ? opc.forca  : U.inteiro(1,3),
       defesa: opc.defesa !== undefined ? opc.defesa : U.inteiro(1,3),
@@ -150,6 +169,12 @@ TO.membros = (function(){
      sem custo nenhum (GDD §5.1). */
   function nomeDe(m){
     return m.cargo==='diretoria' ? `${m.apelido} ${m.sobrenome}` : m.apelido;
+  }
+
+  /* o nome de batismo, pra ficha: "Adrián González". Sem primeiro nome
+     (é o caso do banco brasileiro) devolve vazio, e a linha não aparece. */
+  function nomeCompletoDe(m){
+    return m && m.nome ? `${m.nome} ${m.sobrenome}` : '';
   }
 
   /* nomes de cargo como a fonte da era Unity escreve */
@@ -489,7 +514,8 @@ TO.membros = (function(){
       /* na cadeia ou no hospital não se pendura bandeira: sai limpo */
       m.ferido = null; m.preso = null; m.naFila = false;
       E.velhaGuarda.unshift({
-        id:m.id, apelido:m.apelido, sobrenome:m.sobrenome, cargo:m.cargo,
+        id:m.id, apelido:m.apelido, sobrenome:m.sobrenome, nome:m.nome||'',
+        cargo:m.cargo,
         idade:m.idade, forca:m.forca, defesa:m.defesa, xp:m.xp,
         veterano:!!m.veterano, sequelas:m.sequelas || 0,
         arquetipo:m.arquetipo, historico:m.historico,
@@ -546,7 +572,7 @@ TO.membros = (function(){
 
   return {
     CARGOS, ACIMA, SEDE, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
-    criar, nomeDe, povoarInicial, planoDeCargos, nivelQueCabe,
+    criar, nomeDe, nomeCompletoDe, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe,
     disponivel, capacidade, capTreino, capDiretoria, contar, emCampanha,
     darXP, podePromover, promover, treinar, treinarFila,
     perder, tetoDe, envelhecer, enferrujarNaCadeia, perdaDaCadeia,

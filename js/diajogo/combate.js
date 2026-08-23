@@ -213,7 +213,9 @@ TO.diaJogo.combate = (function(){
        Com escalação, cada disco É um membro: nome, força, defesa e moral
        vêm da ficha, e o id volta no fim pra virar Ferido ou Preso.
        Sem escalação (página solta da cena), gera gente fictícia. */
-    const nomes=U.embaralhar(TO.dados.nomes ? TO.dados.nomes.apelidos : ['TROVÃO']);
+    /* o apelido do figurante segue o país da nossa torcida: numa treta
+       em Buenos Aires o disco se chama Zurdo, não Pitbull */
+    const nomes=U.embaralhar(bancoDeApelidos());
 
     /* Quem cria disco é o BONDE, não o portão. Um portão pode receber dois
        bondes num clássico, e cada um traz a sua cor e o seu efetivo: se a
@@ -501,11 +503,19 @@ TO.diaJogo.combate = (function(){
                .slice(0, qtd);
   }
 
+  function bancoDeApelidos(){
+    const N = TO.dados.nomes;
+    if(!N) return ['TROVÃO'];
+    const B = (TO.membros && TO.membros.bancoDe)
+      ? TO.membros.bancoDe(TO.estado && TO.estado.E) : N;
+    return (B && B.apelidos) || N.apelidos || ['TROVÃO'];
+  }
+
   function nascerGrupo(J, g, escalados, temLider, nomes){
     const s = g.s;
     const qtd = Math.max(g.qtd, escalados.length);
     if(qtd <= 0) return;
-    nomes = nomes || U.embaralhar(TO.dados.nomes ? TO.dados.nomes.apelidos : ['TROVÃO']);
+    nomes = nomes || U.embaralhar(bancoDeApelidos());
     /* só o nosso bonde tem ficha de verdade; o resto joga com a ficha
        gerada do perfil da própria torcida */
     const meuLado = g.bonde ? !!g.bonde.nossa : !!s.jogador;
