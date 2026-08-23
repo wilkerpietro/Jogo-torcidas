@@ -1669,6 +1669,35 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   subirem com os anos de treino. **Medido numa edição inteira** (427
   duelos entre IAs): parelho 54%, até 15% de vantagem 67%, até 30% 73%.
 
+- **O COFRE DE SAVES** (pedido do dono, 23/08/2026): "toda vez que fecho o
+  html eu perco o save". Fui medir e a causa não era o navegador — **era
+  a cota**. O feed guarda tudo pra sempre (regra do dono) e cada notícia
+  de jornal carrega a PÁGINA inteira em `dados`: a rodada da Gazeta
+  sozinha é **84% anexo**. Numa partida corrida até 2031 o save chegou a
+  **2.674 KB** e o `localStorage` recusou a gravação — e como quase
+  ninguém lia o `{ok:false}` que `salvar()` sempre devolveu, **o jogo
+  seguia sem salvar, calado**. Quatro consertos:
+  · **O ANEXO VELHO NÃO VAI PRO SAVE.** Notícia com mais de 90 dias é
+    gravada sem a página do jornal e volta como a linha de texto dela —
+    que é como ela era antes de os jornais existirem. **Nenhuma mensagem
+    some**, e decisão em aberto nunca é tocada (é o `dados` dela que
+    guarda rival, aposta e fase da LNT). Medido: cinco anos de partida
+    caem de 2.674 KB pra **1.751 KB**, e o save volta a caber.
+  · **SEIS VAGAS**, a primeira sendo o autosave, na aba **Jogo**. As
+    vagas 1 a 5 são pontos de retorno e **o autosave não pisa nelas** —
+    a primeira versão deixava a vaga virar "vaga em uso" e o relógio
+    passava por cima; ponto de retorno que anda não é ponto de retorno.
+  · **DUAS SAÍDAS FORA DO NAVEGADOR**: arquivo `.json` e **texto
+    comprimido em gzip** (`TO2z:` + base64), que é a única que funciona
+    onde baixar arquivo é bloqueado. Medido: 678 KB de save viram 126 KB
+    de texto.
+  · **SAVE QUE FALHA GRITA.** `aoFalharSave` põe o motivo na tela na
+    hora e deixa o alarme na aba Jogo, e o diagnóstico do armazenamento
+    aparece já no menu de abertura. Perder cinco anos em silêncio era o
+    pior desfecho possível, e agora ele não existe.
+  · Fechar a aba salva (`beforeunload`): antes o autosave só gravava no
+    fim da semana, então fechar o jogo na quarta jogava a semana fora.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

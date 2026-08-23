@@ -517,17 +517,261 @@ TO.estado = (function(){
      o desfecho e acaba. A guarda no `stringify` FICA, e fica de
      propósito: save de partida antiga ainda traz o campo, e escrevê-lo
      de volta seria ressuscitar um cache de um sistema que saiu. */
-  function salvar(){
-    if(!E) return {ok:false, motivo:'sem partida'};
-    if(bloqueado) return {ok:false, motivo:'aguarde chegar ao estádio'};
+  /* =======================================================
+     O COFRE DE SAVES (pedido do dono, 23/08/2026)
+
+     Era um slot só, escondido atrás de um Ctrl+S, e falhava calado:
+     todo `salvar()` devolve `{ok, motivo}` e quase ninguém lia o
+     motivo — navegador que recusa o armazenamento derrubava cinco
+     anos de jogo sem uma linha na tela.
+
+     Agora são SEIS VAGAS. A vaga `auto` é o autosave e continua na
+     chave velha, pra que ninguém perca o que já tinha; as outras
+     cinco são do jogador, com nome. Cada vaga guarda o save e um
+     cartão pequeno ao lado — torcida, data do jogo, data de verdade
+     e tamanho — pra a tela listar sem abrir 300 KB de JSON.
+
+     E toda vaga tem UM ESPELHO FORA DO NAVEGADOR: `paraTexto`
+     devolve o save comprimido em base64 e `deTexto` traz de volta.
+     É o caminho que sobrevive a tudo — inclusive a página servida em
+     sandbox, onde baixar arquivo não funciona.
+     ======================================================= */
+  /* O SAVE TEM DE CABER (medido em 23/08/2026)
+
+     O feed guarda tudo pra sempre, que é regra do dono, e cada notícia
+     de jornal carrega a PÁGINA inteira em `dados` — a rodada da Gazeta
+     sozinha é 84% anexo. Medido numa partida corrida até 2031: o save
+     chegou a 2.674 KB, dos quais 1.823 KB eram feed, e `localStorage`
+     recusou a gravação. É por isso que save sumia ao fechar o jogo:
+     estourava a cota, e como quase ninguém lia o `{ok:false}` que
+     `salvar()` devolvia, o jogo seguia sem salvar, calado.
+
+     O corte é no ANEXO, nunca na mensagem: notícia com mais de 90 dias
+     vai pro save sem a página do jornal e volta como a linha de texto
+     dela — que é como ela era antes de os jornais existirem. Nenhuma
+     mensagem some, e o histórico continua inteiro. Medido: no ano 3 o
+     feed cai de 1.116 KB pra 539 KB.
+
+     Decisão aberta em `dados` NUNCA é tocada: o que ainda vai ser
+     respondido carrega o rival, a aposta e a fase da LNT lá dentro. */
+  const DIAS_COM_ANEXO = 90;
+
+  function paraGravar(E2){
+    const hoje = (E2.data && E2.data.absoluto) || 0;
+    const feedLeve = (E2.feed || []).map(m=>{
+      if(!m || !m.dados) return m;
+      if(!m.respondido && m.peso === 'decisao') return m;
+      const quando = (m.quando && m.quando.abs) || 0;
+      if(hoje - quando <= DIAS_COM_ANEXO) return m;
+      const copia = Object.assign({}, m);
+      delete copia.dados;
+      copia.semAnexo = true;      // a tela sabe por que não há jornal
+      return copia;
+    });
+    return JSON.stringify(Object.assign({}, E2, {feed:feedLeve}),
+                          (k, v) => k === 'ruas' ? undefined : v);
+  }
+
+  /* quem quiser gritar quando o save falhar se inscreve aqui: sem isto
+     o erro morre no valor de retorno que ninguém lê */
+  const ouvintesFalha = [];
+  function aoFalharSave(fn){ ouvintesFalha.push(fn); }
+  function gritar(r){
+    if(r && r.ok) return r;
+    for(const f of ouvintesFalha) { try{ f(r); }catch(x){} }
+    return r;
+  }
+
+  const PASTA  = 'torcida-organizada:vaga:';
+  const CARTAO = 'torcida-organizada:cartao:';
+  const VAGAS  = ['auto', '1', '2', '3', '4', '5'];
+  const chaveDaVaga  = v => v === 'auto' ? CHAVE : PASTA + v;
+  const chaveCartao  = v => CARTAO + v;
+
+  /* o armazenamento responde? devolve o porquê quando não */
+  function diagnostico(){
     try{
-      const cru = JSON.stringify(E, (k, v) => k === 'ruas' ? undefined : v);
-      localStorage.setItem(CHAVE, cru);
-      return {ok:true};
+      const k = 'torcida-organizada:teste';
+      localStorage.setItem(k, '1');
+      const leu = localStorage.getItem(k) === '1';
+      localStorage.removeItem(k);
+      return leu ? {ok:true}
+                 : {ok:false, motivo:'o navegador aceitou gravar mas não '+
+                    'devolveu o que gravou — o save some ao fechar'};
     }catch(e){
-      return {ok:false, motivo:'localStorage recusou: '+e.message};
+      return {ok:false, motivo:'o navegador bloqueou o armazenamento '+
+              `(${e.name || 'erro'}). Janela anônima e "bloquear dados de `+
+              'sites" fazem isso. Use o save por texto ou por arquivo.'};
     }
   }
+
+  function cartaoDe(E2, nome){
+    return {nome: nome || '',
+            torcida: (E2.torcida||{}).nome || '—',
+            sigla: (E2.torcida||{}).sigla || '',
+            clube: (E2.torcida||{}).clube || '',
+            ano: E2.data.ano, semana: E2.data.semana, dia: E2.data.dia,
+            membros: (E2.membros||[]).length,
+            quando: new Date().toISOString()};
+  }
+
+  /* o que a tela lista: uma linha por vaga, vazia ou não */
+  function listarSaves(){
+    return VAGAS.map(v=>{
+      let cru = null, cartao = null;
+      try{ cru = localStorage.getItem(chaveDaVaga(v)); }catch(e){}
+      if(!cru) return {vaga:v, auto:v==='auto', vazia:true};
+      try{ cartao = JSON.parse(localStorage.getItem(chaveCartao(v))); }catch(e){}
+      if(!cartao){
+        /* save antigo, gravado antes das vagas: lê o cartão do próprio
+           save uma vez e guarda, pra não reabrir 300 KB toda vez */
+        try{
+          const d = JSON.parse(cru);
+          cartao = cartaoDe(d, v === 'auto' ? 'Autosave' : '');
+          localStorage.setItem(chaveCartao(v), JSON.stringify(cartao));
+        }catch(e){ cartao = {nome:'save ilegível'}; }
+      }
+      return Object.assign({vaga:v, auto:v==='auto', vazia:false,
+                            bytes:cru.length}, cartao);
+    });
+  }
+
+  function salvarEm(vaga, nome){
+    if(!E) return {ok:false, motivo:'sem partida'};
+    if(bloqueado) return {ok:false, motivo:'aguarde chegar ao estádio'};
+    if(VAGAS.indexOf(vaga) < 0) return {ok:false, motivo:'vaga que não existe'};
+    let cru;
+    try{
+      cru = paraGravar(E);
+    }catch(e){
+      return gritar({ok:false, motivo:'o save não virou texto: '+e.message});
+    }
+    try{
+      localStorage.setItem(chaveDaVaga(vaga), cru);
+      localStorage.setItem(chaveCartao(vaga),
+        JSON.stringify(cartaoDe(E, nome || (vaga==='auto' ? 'Autosave' : ''))));
+      return {ok:true, bytes:cru.length};
+    }catch(e){
+      /* cota estourada é o erro mais comum, e o jogador precisa saber
+         AGORA: cinco anos de jogo cabem, mas seis saves de 300 KB
+         mais o resto do navegador podem não caber */
+      const cota = /quota|exceeded|NS_ERROR_DOM_QUOTA/i.test(e.name+e.message);
+      return gritar({ok:false, motivo: cota
+        ? `o save (${Math.round(cru.length/1024)} KB) não coube: apague uma `+
+          'vaga antiga em Jogo → Vagas, ou guarde esta partida em '+
+          'arquivo/texto'
+        : 'o navegador recusou gravar ('+(e.name||'erro')+')'});
+    }
+  }
+
+  function carregarDe(vaga){
+    let txt = null;
+    try{ txt = localStorage.getItem(chaveDaVaga(vaga)); }catch(e){ return null; }
+    if(!txt) return null;
+    return adotar(txt, vaga);
+  }
+
+  function apagarSave(vaga){
+    try{
+      localStorage.removeItem(chaveDaVaga(vaga));
+      localStorage.removeItem(chaveCartao(vaga));
+      return {ok:true};
+    }catch(e){ return {ok:false, motivo:e.message}; }
+  }
+
+  /* põe um save de texto de pé, venha de onde vier */
+  function adotar(txt, vaga){
+    try{
+      const dados = JSON.parse(txt);
+      if(dados.versao !== VERSAO) return null;
+      E = dados;
+      /* de onde esta partida veio, só pra tela marcar a linha */
+      E.vaga = vaga || null;
+      U.usarSemente(E.semente || 1);
+      TO.competicoes.usarSave(E);
+      repararSave(E);
+      mudou();
+      return E;
+    }catch(e){ return null; }
+  }
+
+  /* =======================================================
+     O SAVE FORA DO NAVEGADOR — texto que se copia e se cola
+
+     Comprime com o gzip do próprio navegador (CompressionStream) e
+     devolve base64. Um save de 300 KB cabe em uns 25 KB de texto.
+     Navegador sem CompressionStream recebe o JSON puro, com um
+     prefixo dizendo qual é qual — quem lê não precisa adivinhar.
+     ======================================================= */
+  const MARCA_Z = 'TO2z:', MARCA_J = 'TO2j:';
+
+  const b64De = bytes =>{
+    let s = '';
+    for(let i = 0; i < bytes.length; i += 8192)
+      s += String.fromCharCode.apply(null, bytes.subarray(i, i+8192));
+    return btoa(s);
+  };
+  const bytesDe = b64 =>{
+    const s = atob(b64), a = new Uint8Array(s.length);
+    for(let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i);
+    return a;
+  };
+
+  async function paraTexto(){
+    if(!E) return {ok:false, motivo:'sem partida'};
+    let cru;
+    try{ cru = paraGravar(E); }
+    catch(e){ return {ok:false, motivo:'o save não virou texto: '+e.message}; }
+    if(typeof CompressionStream === 'undefined')
+      return {ok:true, texto: MARCA_J + btoa(unescape(encodeURIComponent(cru))),
+              cru: cru.length};
+    try{
+      const fluxo = new Blob([cru]).stream()
+        .pipeThrough(new CompressionStream('gzip'));
+      const bytes = new Uint8Array(await new Response(fluxo).arrayBuffer());
+      return {ok:true, texto: MARCA_Z + b64De(bytes), cru: cru.length};
+    }catch(e){
+      return {ok:true, texto: MARCA_J + btoa(unescape(encodeURIComponent(cru))),
+              cru: cru.length};
+    }
+  }
+
+  async function deTexto(txt){
+    txt = String(txt||'').replace(/\s+/g, '');
+    if(!txt) return {ok:false, motivo:'não veio texto nenhum'};
+    try{
+      let cru;
+      if(txt.indexOf(MARCA_Z) === 0){
+        const fluxo = new Blob([bytesDe(txt.slice(MARCA_Z.length))]).stream()
+          .pipeThrough(new DecompressionStream('gzip'));
+        cru = await new Response(fluxo).text();
+      } else if(txt.indexOf(MARCA_J) === 0){
+        cru = decodeURIComponent(escape(atob(txt.slice(MARCA_J.length))));
+      } else if(txt[0] === '{'){
+        cru = txt;                       // alguém colou o JSON cru
+      } else {
+        return {ok:false, motivo:'isso não parece um save do jogo'};
+      }
+      return adotar(cru) ? {ok:true}
+                         : {ok:false, motivo:'save de outra versão do jogo'};
+    }catch(e){
+      return {ok:false, motivo:'o texto veio quebrado ('+(e.name||'erro')+')'};
+    }
+  }
+
+  /* o autosave e o Ctrl+S continuam entrando pela mesma porta: a vaga
+     em uso, ou a `auto` quando o jogador não escolheu nenhuma */
+  /* O AUTOSAVE NUNCA PISA NUMA VAGA DO JOGADOR (correção medida em
+     23/08/2026): a vaga numerada era virando a vaga em uso, e o
+     autosave passava por cima dela — quem guardava um ponto de
+     retorno na semana 21 e seguia jogando encontrava a semana 31 lá
+     quando voltava. Ponto de retorno que anda não é ponto de retorno.
+
+     Agora é simples: o relógio grava SEMPRE na vaga `auto`; vaga
+     numerada só muda quando o jogador aperta "Salvar aqui". E uma
+     cópia por vez, que gravar em dois lugares dobrava o espaço — e
+     espaço é justamente o que falta num save de cinco anos. */
+  function salvar(){ return salvarEm('auto'); }
 
   function carregar(){
     try{
@@ -569,8 +813,22 @@ TO.estado = (function(){
     }catch(e){ /* conserto nunca pode derrubar a carga do save */ }
   }
 
+  /* tem save em QUALQUER vaga? o menu acende o Continuar por isto */
   function existeSave(){
-    try{ return !!localStorage.getItem(CHAVE); }catch(e){ return false; }
+    try{
+      return VAGAS.some(v=>!!localStorage.getItem(chaveDaVaga(v)));
+    }catch(e){ return false; }
+  }
+
+  /* a vaga mais recente, que é a que o Continuar abre */
+  function saveMaisNovo(){
+    const cheias = listarSaves().filter(x=>!x.vazia && x.quando);
+    if(!cheias.length){
+      const alguma = listarSaves().find(x=>!x.vazia);
+      return alguma ? alguma.vaga : null;
+    }
+    cheias.sort((a,b)=> a.quando < b.quando ? 1 : -1);
+    return cheias[0].vaga;
   }
 
   function exportar(){
@@ -578,7 +836,10 @@ TO.estado = (function(){
     const nome = `torcida-${E.torcida.nome.replace(/\s+/g,'-').toLowerCase()}`+
                  `-s${E.data.semana}.json`;
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(E,null,1)],
+    /* o arquivo leva a partida INTEIRA, com os jornais e tudo: quem
+       exporta está fazendo arquivo morto, e arquivo não tem cota */
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(E,
+                                   (k,v)=>k==='ruas'?undefined:v)],
                                           {type:'application/json'}));
     a.download = nome; a.click();
   }
@@ -610,6 +871,10 @@ TO.estado = (function(){
           fichaDoJogo, anotar,
     DIA_JOGO:6,
     salvar, carregar, existeSave, exportar, importar,
+    /* o cofre de saves (dono, 23/08/2026) */
+    VAGAS, listarSaves, salvarEm, carregarDe, apagarSave, saveMaisNovo,
+    paraTexto, deTexto, diagnostico, aoFalharSave, paraGravar,
+    DIAS_COM_ANEXO,
     bloquear, estaBloqueado
   };
 })();

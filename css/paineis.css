@@ -1424,3 +1424,50 @@ td.placar small.pen{
   color:var(--texto); font-family:var(--titulo); font-size:13px;
   letter-spacing:.04em; text-transform:uppercase;
 }
+
+/* =========================================================
+   O COFRE DE SAVES (dono, 23/08/2026)
+   ========================================================= */
+.save-alarme{display:flex;flex-direction:column;gap:4px;
+  margin:0 0 12px;padding:10px 14px;border-radius:4px;
+  background:rgba(178,34,34,.14);border:1px solid var(--vermelho)}
+.save-alarme b{color:var(--vermelho);letter-spacing:.04em}
+.save-alarme span{font-size:12px;color:var(--texto);line-height:1.45}
+
+.save-vaga{display:grid;grid-template-columns:1fr auto auto;
+  align-items:center;gap:10px;padding:9px 14px;
+  border-bottom:1px solid var(--linha)}
+.save-vaga:last-child{border-bottom:0}
+.save-vaga.atual{background:rgba(255,255,255,.03);
+  box-shadow:inset 3px 0 0 var(--vermelho)}
+.save-vaga.vazia .save-rot b,
+.save-vaga.vazia .save-quando{color:var(--fraco)}
+.save-rot{display:flex;flex-direction:column;gap:1px;min-width:0}
+.save-rot b{font-size:12.5px;letter-spacing:.03em}
+.save-rot small{font-size:10.5px;color:var(--fraco);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.save-quando{display:flex;flex-direction:column;gap:1px;text-align:right;
+  font-family:var(--mono)}
+.save-quando span{font-size:11px}
+.save-quando small{font-size:9.5px;color:var(--fraco)}
+.save-bts{display:flex;gap:5px;flex-shrink:0}
+.save-bts .bt{padding:5px 9px;font-size:10.5px}
+.save-bts .bt.fraco{color:var(--fraco)}
+.save-bts .bt:disabled{opacity:.35;cursor:default}
+
+.save-saida{display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:9px 14px;border-top:1px solid var(--linha);flex-wrap:wrap}
+.save-texto{width:100%;min-height:190px;margin:8px 0;padding:8px;
+  font-family:var(--mono);font-size:10px;line-height:1.4;
+  color:var(--texto);background:var(--fundo-2, #111);
+  border:1px solid var(--linha);border-radius:3px;resize:vertical;
+  word-break:break-all}
+
+/* as vagas no menu de abertura */
+.menu-vagas{display:flex;flex-direction:column;gap:6px;margin:10px 0 0}
+.menu-vagas .save-vaga{border:1px solid var(--linha);border-radius:3px;
+  background:rgba(0,0,0,.35)}
+@media (max-width:700px){
+  .save-vaga{grid-template-columns:1fr;gap:6px}
+  .save-quando{text-align:left}
+}

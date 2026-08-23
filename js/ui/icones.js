@@ -9,6 +9,9 @@ TO.icones = (function(){
     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 
   const I = {
+    /* o disquete do cofre de saves (dono, 23/08/2026) */
+    disquete:  env('<path d="M4 4h11l5 5v11H4z"/><path d="M8 4v6h7V4"/>'+
+                   '<path d="M7 20v-6h10v6"/>'),
     casa:      env('<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M10 21v-6h4v6"/>'),
     torcida:   env('<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3 3 0 0 1 0 5.6"/><path d="M18 20c0-2.4-1-4.5-2.6-5.8"/>'),
     dinheiro:  env('<path d="M12 3v18"/><path d="M16.5 7.5c0-1.7-2-2.7-4.5-2.7S7.5 5.9 7.5 7.7 9.6 10 12 10.4s4.5 1 4.5 3-2 3-4.5 3-4.5-1-4.5-2.8"/>'),

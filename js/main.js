@@ -77,15 +77,101 @@
   function montarMenu(){
     const bc = $('btContinuar');
     bc.disabled = !TO.estado.existeSave();
-    bc.onclick = ()=>{ if(TO.estado.carregar()) entrarNoJogo(); };
+    /* CONTINUAR ABRE A VAGA MAIS RECENTE (dono, 23/08/2026), e não mais
+       só a do autosave: com seis vagas, "continuar" tem de ser o último
+       jogo que o jogador tocou, venha da vaga que vier. */
+    bc.onclick = ()=>{
+      const v = TO.estado.saveMaisNovo();
+      if(v && TO.estado.carregarDe(v)) return entrarNoJogo();
+      if(TO.estado.carregar()) return entrarNoJogo();
+      alert('O save guardado não abriu — pode ser de outra versão do jogo.');
+    };
     $('btNovoJogo').onclick = abrirSelecao;
-    $('btCarregar').onclick = ()=>$('arquivoSave').click();
+    $('btCarregar').onclick = abrirCofreNoMenu;
     $('arquivoSave').onchange = ev=>{
       const f = ev.target.files[0];
       if(f) TO.estado.importar(f, r=>{
         if(r.ok) entrarNoJogo(); else alert('Não deu pra importar: '+r.motivo);
       });
     };
+    /* o alarme do armazenamento aparece já na abertura: quem vai jogar
+       cinco anos precisa saber ANTES se o navegador guarda ou não */
+    const d = TO.estado.diagnostico();
+    const lista = $('menuLista');
+    if(!d.ok && lista && !$('menuAlarme')){
+      const av = el('div',{class:'save-alarme', id:'menuAlarme'});
+      av.innerHTML = `<b>Este navegador não guarda o save.</b>`+
+                     `<span>${d.motivo}</span>`;
+      lista.parentNode.insertBefore(av, lista.nextSibling);
+    }
+  }
+
+  /* o cofre visto do menu: as vagas, o arquivo e o texto, antes de
+     existir partida nenhuma */
+  function abrirCofreNoMenu(){
+    const cx = el('div');
+    const lista = el('div',{class:'menu-vagas'});
+    const pintar = ()=>{
+      lista.innerHTML = '';
+      const vagas = TO.estado.listarSaves().filter(v=>!v.vazia);
+      if(!vagas.length){
+        lista.appendChild(el('p',{class:'nota', texto:
+          'Nenhuma vaga ocupada neste navegador. Dá pra trazer um save '+
+          'de arquivo ou de texto aqui embaixo.'}));
+        return;
+      }
+      for(const v of vagas){
+        const l = el('div',{class:'save-vaga'});
+        const q = v.quando ? new Date(v.quando) : null;
+        l.appendChild(el('div',{class:'save-rot', html:
+          `<b>${v.auto?'Autosave':'Vaga '+v.vaga}</b>`+
+          `<small>${v.torcida} · ${v.clube||'—'}</small>`}));
+        l.appendChild(el('div',{class:'save-quando', html:
+          `<span>semana ${v.semana} de ${v.ano}</span>`+
+          `<small>${q ? `${String(q.getDate()).padStart(2,'0')}/`+
+            `${String(q.getMonth()+1).padStart(2,'0')}` : ''}</small>`}));
+        const bts = el('div',{class:'save-bts'});
+        const ler = el('button',{class:'bt destaque', texto:'Jogar'});
+        ler.onclick = ()=>{
+          if(TO.estado.carregarDe(v.vaga)){ fechar(); entrarNoJogo(); }
+          else alert('Esse save não abriu — pode ser de outra versão.');
+        };
+        bts.appendChild(ler);
+        l.appendChild(bts);
+        lista.appendChild(l);
+      }
+    };
+    pintar();
+    cx.appendChild(lista);
+
+    const fora = el('div',{class:'save-saida'});
+    fora.appendChild(el('div',{class:'save-rot', html:
+      '<b>De fora do navegador</b><small>arquivo .json ou texto '+
+      'compactado</small>'}));
+    const bts = el('div',{class:'save-bts'});
+    const bArq = el('button',{class:'bt', texto:'De arquivo'});
+    bArq.onclick = ()=>$('arquivoSave').click();
+    bts.appendChild(bArq);
+    const bTxt = el('button',{class:'bt', texto:'De texto'});
+    bTxt.onclick = ()=>{
+      const c2 = el('div');
+      c2.appendChild(el('p',{class:'nota', texto:'Cole o texto do save.'}));
+      const ta = el('textarea',{class:'save-texto'});
+      ta.placeholder = 'TO2z:…';
+      c2.appendChild(ta);
+      modal('Colar um save', '', c2, [['Carregar', ()=>{
+        TO.estado.deTexto(ta.value).then(r=>{
+          if(!r.ok){ alert('Não deu: '+r.motivo); return; }
+          fechar(); entrarNoJogo();
+        });
+      }]], 'larga');
+    };
+    bts.appendChild(bTxt);
+    fora.appendChild(bts);
+    cx.appendChild(fora);
+
+    const fechar = modal('Carregar jogo', 'as vagas deste navegador',
+                         cx, [], 'larga');
   }
 
   /* =======================================================
@@ -230,7 +316,11 @@
     {id:'competicoes', rot:'Competições', ic:'trofeu'},
     {id:'ranking',     rot:'Ranking',     ic:'medalha'},
     {id:'diplomacia',  rot:'Diplomacia',  ic:'diplomacia'},
-    {id:'noticias',    rot:'Notícias',    ic:'jornal'}
+    {id:'noticias',    rot:'Notícias',    ic:'jornal'},
+    /* O COFRE DE SAVES tem lugar na coluna (pedido do dono, 23/08/2026):
+       salvar estava atrás de um Ctrl+S que ninguém adivinha, e uma
+       partida de cinco anos precisa de porta com placa. */
+    {id:'jogo',        rot:'Jogo',        ic:'disquete'}
   ];
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
      cidade foi descontinuado e o que ele fazia por simulação virou
@@ -338,7 +428,8 @@
     calendario:pintarCalendario,
     competicoes:pintarCompeticoes, ranking:pintarRanking,
     diplomacia:pintarDiplomacia,
-    noticias:pintarNoticias
+    noticias:pintarNoticias,
+    jogo:pintarJogo
   };
   const pintarPagina = id => (PINTOR[id] || (()=>{}))();
 
@@ -2129,6 +2220,242 @@
   }
 
   let subNoticias = 'arquivo';
+  /* =======================================================
+     O COFRE DE SAVES (pedido do dono, 23/08/2026)
+
+     Seis vagas, a primeira sendo o autosave. Cada uma diz de quem é o
+     save, em que semana parou e quando foi gravada. Embaixo, os dois
+     caminhos que sobrevivem ao navegador: arquivo e texto.
+
+     E A PRIMEIRA COISA DA TELA É O DIAGNÓSTICO. Salvar falhava calado —
+     `salvar()` sempre devolveu `{ok, motivo}` e quase ninguém lia o
+     motivo. Navegador que recusa o armazenamento agora avisa aqui, em
+     vermelho, ANTES de o jogador perder cinco anos de partida.
+     ======================================================= */
+  let ultimaFalhaSave = null;
+
+  function pintarJogo(){
+    const e = E(), pg = U.$('.pagina[data-pag="jogo"]');
+    pg.innerHTML = '';
+    pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Jogo</h1>'}));
+
+    const diag = TO.estado.diagnostico();
+    if(!diag.ok){
+      const av = el('div',{class:'save-alarme'});
+      av.innerHTML = `<b>O navegador não está guardando o save.</b>`+
+        `<span>${diag.motivo}</span>`;
+      pg.appendChild(av);
+    } else if(ultimaFalhaSave){
+      const av = el('div',{class:'save-alarme'});
+      av.innerHTML = `<b>O último save não gravou.</b>`+
+        `<span>${ultimaFalhaSave.motivo}</span>`;
+      pg.appendChild(av);
+    }
+
+    const duas = el('div',{class:'comp-duas'});
+    const esq = el('div');
+
+    /* ---------- as vagas ---------- */
+    const q = quadro('Vagas de save', el('span',{class:'conta',
+      texto: e && e.vaga ? `jogando na vaga ${e.vaga}` : 'autosave'}));
+    const pintarVagas = ()=>{
+      q.corpo.innerHTML = '';
+      for(const v of TO.estado.listarSaves()){
+        const l = el('div',{class:'save-vaga'+(v.vazia?' vazia':'')+
+                                   (e && e.vaga === v.vaga ? ' atual':'')});
+        const quando = v.quando ? new Date(v.quando) : null;
+        const dt = quando ? `${String(quando.getDate()).padStart(2,'0')}/`+
+          `${String(quando.getMonth()+1).padStart(2,'0')} `+
+          `${String(quando.getHours()).padStart(2,'0')}:`+
+          `${String(quando.getMinutes()).padStart(2,'0')}` : '';
+        l.appendChild(el('div',{class:'save-rot', html:
+          `<b>${v.auto ? 'Autosave' : 'Vaga '+v.vaga}</b>`+
+          (v.vazia ? '<small>vazia</small>'
+                   : `<small>${v.torcida} · ${v.clube||'—'}</small>`)}));
+        l.appendChild(el('div',{class:'save-quando', html: v.vazia ? '—' :
+          `<span>semana ${v.semana} de ${v.ano}</span>`+
+          `<small>${dt} · ${Math.round((v.bytes||0)/1024)} KB · `+
+          `${v.membros||0} membros</small>`}));
+        const bts = el('div',{class:'save-bts'});
+        const grav = el('button',{class:'bt', texto: v.vazia ? 'Salvar aqui'
+                                                             : 'Sobrescrever'});
+        grav.disabled = !e || TO.estado.estaBloqueado();
+        grav.onclick = ()=>{
+          pararTudo('salvar');
+          const r = TO.estado.salvarEm(v.vaga);
+          soltarTudo('salvar');
+          aviso(r.ok ? `Salvo na ${v.auto?'vaga do autosave':'vaga '+v.vaga}.`
+                     : 'Não salvou: '+r.motivo, r.ok?'boa':'ruim');
+          pintarVagas();
+        };
+        bts.appendChild(grav);
+        const ler = el('button',{class:'bt', texto:'Carregar'});
+        ler.disabled = v.vazia;
+        ler.onclick = ()=> confirmarCarga(v);
+        bts.appendChild(ler);
+        const apagar = el('button',{class:'bt fraco', texto:'Apagar'});
+        apagar.disabled = v.vazia;
+        apagar.onclick = ()=>{
+          modal('Apagar a vaga', v.vazia ? '' : `${v.torcida} · semana `+
+            `${v.semana} de ${v.ano}`,
+            el('p',{class:'nota', texto:'Isso não tem volta. Se este save '+
+              'importa, guarde ele em arquivo ou em texto antes.'}),
+            [['Apagar', ()=>{ TO.estado.apagarSave(v.vaga); pintarVagas();
+                              aviso('Vaga apagada.', 'boa'); }]]);
+        };
+        bts.appendChild(apagar);
+        l.appendChild(bts);
+        q.corpo.appendChild(l);
+      }
+    };
+    pintarVagas();
+    esq.appendChild(q);
+
+    /* carregar por cima de uma partida em curso pede confirmação */
+    function confirmarCarga(v){
+      const abrir = ()=>{
+        const ok = TO.estado.carregarDe(v.vaga);
+        if(!ok){ aviso('Esse save não abriu — pode ser de outra versão '+
+                       'do jogo.', 'ruim'); return; }
+        fecharPainel();
+        redesenhar();
+        aviso(`Carregado: ${v.torcida}, semana ${v.semana} de ${v.ano}.`, 'boa');
+      };
+      if(!e) return abrir();
+      modal('Carregar este save',
+        `${v.torcida} · semana ${v.semana} de ${v.ano}`,
+        el('p',{class:'nota', texto:'A partida em curso sai da tela. Ela '+
+          'continua guardada na vaga dela, mas o que ainda não foi salvo '+
+          'se perde.'}),
+        [['Carregar', abrir]]);
+    }
+
+    /* ---------- fora do navegador ---------- */
+    const dir = el('div');
+    const f = quadro('Fora do navegador', el('span',{class:'conta',
+      texto:'a cópia que não depende de nada'}));
+    f.corpo.appendChild(el('p',{class:'nota', texto:
+      'Vaga de save mora no navegador: limpar dados do site, trocar de '+
+      'navegador ou abrir numa janela anônima leva tudo junto. Estas duas '+
+      'saídas sobrevivem a isso.'}));
+
+    const linhaArq = el('div',{class:'save-saida'});
+    linhaArq.appendChild(el('div',{class:'save-rot', html:
+      '<b>Arquivo</b><small>um .json na sua pasta de downloads</small>'}));
+    const btsA = el('div',{class:'save-bts'});
+    const baixar = el('button',{class:'bt', texto:'Baixar o save'});
+    baixar.disabled = !e;
+    baixar.onclick = ()=>{ TO.estado.exportar();
+      aviso('Se o download não abrir, use o save por texto aqui embaixo.',
+            'neutro'); };
+    btsA.appendChild(baixar);
+    const arq = el('input');
+    arq.type = 'file'; arq.accept = '.json,application/json';
+    arq.style.display = 'none';
+    arq.onchange = ev=>{
+      const a = ev.target.files[0];
+      if(!a) return;
+      TO.estado.importar(a, r=>{
+        if(!r.ok){ aviso('Não deu pra abrir: '+r.motivo, 'ruim'); return; }
+        fecharPainel(); redesenhar();
+        aviso('Save carregado do arquivo.', 'boa');
+      });
+    };
+    const abrirArq = el('button',{class:'bt', texto:'Carregar de arquivo'});
+    abrirArq.onclick = ()=>arq.click();
+    btsA.appendChild(abrirArq);
+    linhaArq.appendChild(btsA);
+    linhaArq.appendChild(arq);
+    f.corpo.appendChild(linhaArq);
+
+    const linhaTxt = el('div',{class:'save-saida'});
+    linhaTxt.appendChild(el('div',{class:'save-rot', html:
+      '<b>Texto</b><small>compactado, pra colar num bloco de notas</small>'}));
+    const btsT = el('div',{class:'save-bts'});
+    const copiar = el('button',{class:'bt', texto:'Gerar o texto'});
+    copiar.disabled = !e;
+    copiar.onclick = async ()=>{
+      copiar.disabled = true; copiar.textContent = 'compactando…';
+      const r = await TO.estado.paraTexto();
+      copiar.disabled = false; copiar.textContent = 'Gerar o texto';
+      if(!r.ok){ aviso('Não deu: '+r.motivo, 'ruim'); return; }
+      caixaDeTexto(r);
+    };
+    btsT.appendChild(copiar);
+    const colar = el('button',{class:'bt', texto:'Colar um save'});
+    colar.onclick = ()=>caixaDeColar();
+    btsT.appendChild(colar);
+    linhaTxt.appendChild(btsT);
+    f.corpo.appendChild(linhaTxt);
+    dir.appendChild(f);
+
+    /* o Ctrl+S continua valendo, e a tela conta isso */
+    const at = quadro('Atalhos');
+    at.corpo.appendChild(el('div',{class:'sub-chave',
+      texto:'Ctrl + S grava no autosave, a qualquer momento'}));
+    at.corpo.appendChild(el('div',{class:'sub-chave',
+      texto:'o autosave também grava sozinho no fim de cada semana '+
+            'e ao fechar a aba'}));
+    at.corpo.appendChild(el('div',{class:'sub-chave',
+      texto:'as vagas 1 a 5 só mudam quando você aperta Salvar aqui — '+
+            'são pontos de retorno e o autosave não pisa nelas'}));
+    dir.appendChild(at);
+
+    duas.appendChild(esq);
+    duas.appendChild(dir);
+    pg.appendChild(duas);
+  }
+
+  /* o texto do save numa caixa que dá pra selecionar e copiar. O botão
+     de copiar usa a área de transferência quando o navegador deixa; não
+     deixando, o texto está ali, selecionado, esperando o Ctrl+C. */
+  function caixaDeTexto(r){
+    const cx = el('div');
+    cx.appendChild(el('p',{class:'nota', texto:
+      `${Math.round(r.texto.length/1024)} KB de texto (o save cru tem `+
+      `${Math.round(r.cru/1024)} KB). Copie tudo e guarde num arquivo de `+
+      `texto — é ele que traz a partida de volta em qualquer navegador.`}));
+    const ta = el('textarea',{class:'save-texto'});
+    ta.value = r.texto; ta.readOnly = true;
+    cx.appendChild(ta);
+    /* o Copiar mora no CORPO e não no rodapé: botão de rodapé fecha a
+       caixa, e fechar a caixa em cima de uma cópia que falhou seria
+       levar o texto embora justo na hora em que ele é necessário */
+    const bc = el('button',{class:'bt destaque', texto:'Copiar tudo'});
+    bc.onclick = ()=>{
+      ta.select();
+      const feito = ()=>{ bc.textContent = 'Copiado ✓';
+        setTimeout(()=>bc.textContent = 'Copiar tudo', 2500); };
+      if(navigator.clipboard && navigator.clipboard.writeText)
+        navigator.clipboard.writeText(ta.value).then(feito, ()=>{
+          bc.textContent = 'use Ctrl+C — está selecionado'; });
+      else { document.execCommand && document.execCommand('copy'); feito(); }
+    };
+    cx.appendChild(bc);
+    modal('O save em texto', '', cx, [], 'larga');
+    setTimeout(()=>{ ta.focus(); ta.select(); }, 60);
+  }
+
+  function caixaDeColar(){
+    const cx = el('div');
+    cx.appendChild(el('p',{class:'nota', texto:
+      'Cole aqui o texto que você guardou. A partida em curso sai da tela.'}));
+    const ta = el('textarea',{class:'save-texto'});
+    ta.placeholder = 'TO2z:…';
+    cx.appendChild(ta);
+    const aviso2 = el('p',{class:'nota'});
+    cx.appendChild(aviso2);
+    modal('Colar um save', '', cx, [
+      ['Carregar', ()=>{
+        TO.estado.deTexto(ta.value).then(r=>{
+          if(!r.ok){ aviso('Não deu: '+r.motivo, 'ruim'); return; }
+          fecharPainel(); redesenhar();
+          aviso('Save carregado do texto.', 'boa');
+        });
+      }]], 'larga');
+    setTimeout(()=>ta.focus(), 60);
+  }
+
   function pintarNoticias(){
     const e = E(), pg = U.$('.pagina[data-pag="noticias"]');
     if(!e || !pg) return;
@@ -5240,6 +5567,13 @@
      é zerado na volta e nenhum minuto é cobrado do tempo em outra aba. */
   const pararTudo  = m => pausarTempo(m);
   const soltarTudo = m => retomarTempo(m);
+  /* FECHAR A ABA SALVA (pedido do dono, 23/08/2026): o autosave só
+     gravava no fim da semana, então fechar o jogo na quarta-feira
+     jogava a semana inteira fora. `beforeunload` é o último instante em
+     que ainda dá pra escrever, e `localStorage` é síncrono — cabe. */
+  addEventListener('beforeunload', ()=>{
+    try{ if(E() && !TO.estado.estaBloqueado()) TO.estado.salvar(); }catch(x){}
+  });
   addEventListener('blur', ()=>pararTudo('foco'));
   addEventListener('focus', ()=>soltarTudo('foco'));
   document.addEventListener('visibilitychange', ()=>{
@@ -5256,6 +5590,15 @@
      · O MODAL É SÓ ESCOLHA. A chave em Opções e o botão "Último
        fechamento" no Financeiro. NUNCA MAIS ABRE SOZINHO — nem na
        semana grave, que agora é a mensagem de decisão. */
+  /* SAVE QUE FALHA TEM DE GRITAR (medido em 23/08/2026): a cota do
+     `localStorage` estoura no quarto ou quinto ano de partida, e antes
+     disto o jogo simplesmente parava de salvar sem dizer nada. Agora
+     todo fracasso vira aviso na tela e fica guardado pra aba Jogo. */
+  TO.estado.aoFalharSave(r=>{
+    ultimaFalhaSave = r;
+    aviso('NÃO SALVOU · '+r.motivo, 'ruim');
+  });
+
   TO.estado.aoFecharSemana((rel, e)=>{
     e = e || E();
     TO.estado.salvar();
@@ -5324,7 +5667,9 @@
     abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena,
     /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */
     widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima,
-    abrirItinerario
+    abrirItinerario,
+    /* o cofre de saves, pra bateria dirigir */
+    pintarJogo, abrirCofreNoMenu, montarMenu
   };
 
   montarMenu();
