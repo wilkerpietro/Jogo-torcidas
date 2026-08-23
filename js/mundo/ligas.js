@@ -124,9 +124,38 @@ TO.ligas = (function(){
     }
   };
 
+  /* O BRASIL NO MOTOR DE RESUMO. Só serve quando o jogador é de fora:
+     aí o Brasil vira mais um dos dez, com tabela e sobe-e-desce, sem
+     jogo guardado. O formato é o mesmo que `competicoes.js` monta —
+     turno e returno nas três primeiras séries, quatro grupos e playoff
+     na D —, porque é a mesma competição vista de longe. */
+  const FORMATOS_BR = {
+    'Brasileirão Série A': {
+      torneios:['Brasileirão'], inicio:[16],
+      fases:[{t:'regular', fechas:38, zonas:1}],
+      anual:true, caem:4, campeaoDeLiga:true},
+    'Brasileirão Série B': {
+      torneios:['Série B'], inicio:[16],
+      fases:[{t:'regular', fechas:38, zonas:1}],
+      anual:true, sobem:4, caem:4},
+    'Brasileirão Série C': {
+      torneios:['Série C'], inicio:[16],
+      fases:[{t:'regular', fechas:38, zonas:1}],
+      anual:true, sobem:4, caem:4},
+    'Brasileirão Série D': {
+      torneios:['Série D'], inicio:[16],
+      fases:[{t:'regular', fechas:11, zonas:4},
+             {t:'mata', de:16, jogoUnico:false}],
+      passam:4, sobem:4},
+  };
+  Object.assign(FORMATOS, FORMATOS_BR);
+
   const NOME_FASE = {2:'Final', 4:'Semifinal', 8:'Quartas',
                      16:'Oitavas', 32:'16-avos'};
-  const DIA = 4;                       // quinta: não bate com o Brasil
+  /* O TIQUE FECHOU A SEMANA (23/08/2026): era quinta, e virou domingo
+     porque a fecha do país do jogador é jogada no fim de semana — o
+     tique tem que vir DEPOIS dela pra ler o placar, não antes. */
+  const DIA = 7;
   const PASSO = 1;                     // uma semana entre um tique e outro
   const FIM_DO_ANO = 51;               // a última semana em que se joga
 
@@ -190,15 +219,145 @@ TO.ligas = (function(){
   }
 
   /* =======================================================
+     O PAÍS DO JOGADOR JOGA DE VERDADE
+     (régua do dono, 23/08/2026)
+
+     "O país cuja torcida que o jogador selecionar deve gerar os jogos
+     e as demais geram somente as tabelas."
+
+     Este motor sempre soube QUEM joga contra quem — o método do círculo
+     é determinístico — mas jogava tudo no mesmo instante e guardava só
+     a classificação. Era isso que deixava quem escolhia uma barra sem
+     dia de jogo nenhum: o dia de jogo nasce de `E.temporada`, e lá fora
+     não havia temporada.
+
+     Agora, e só pro país da nossa torcida, cada fase é AGENDADA assim
+     que os pares dela são conhecidos: uma competição-sombra entra em
+     `E.temporada` no formato que `competicoes.js` usa, e o `jogarDia`
+     dele é que roda os jogos. Na hora da fecha, este motor lê o placar
+     de volta em vez de sortear. Um só lugar decide os pares, um só
+     lugar simula, e a tabela continua sendo a daqui.
+
+     Os outros nove países seguem como estavam — resumo, sem jogo
+     guardado —, que é o que mantém o mundo inteiro em 64 KB de save.
+     ======================================================= */
+  /* a grade do país do jogador: fecha no fim de semana, mata-mata com
+     ida no meio e volta no domingo, como se joga lá */
+  const GRADE_FORA = [{d:6, h:'17:00'}, {d:6, h:'19:30'}, {d:7, h:'16:00'},
+                      {d:7, h:'18:30'}, {d:7, h:'20:00'}];
+  const MATA_IDA   = {d:4, h:'21:30'};
+  const MATA_VOLTA = {d:7, h:'18:00'};
+
+  function nossoPais(E){
+    return C().paisDoJogador ? C().paisDoJogador(E) : 'Brasil';
+  }
+
+  function agendaDe(E, T){
+    const S = E.temporada;
+    if(!S || !S.competicoes) return null;
+    let c = S.competicoes.find(x=>x.id === T.compId);
+    if(!c){
+      const cl = (T.clubesDoTorneio || []).slice();
+      c = {id:T.compId, nome:T.nomeCheio, tipo:'liga-de-fora', deFora:true,
+           clubes:cl, grupos:[cl], passam:0, voltas:1,
+           pontosCorridos:true, idaEVolta:false,
+           rodadas:[], mata:[], dia:GRADE_FORA[2].d,
+           campeao:null, vice:null};
+      S.competicoes.push(c);
+    }
+    return c;
+  }
+
+  function agendar(E, T, semana, pares, slot){
+    if(semana > FIM_DO_ANO + 1) return;
+    const c = agendaDe(E, T);
+    if(!c || !pares.length) return;
+    const tag = slot ? `${semana}|${slot.d}` : `${semana}|fecha`;
+    let r = c.rodadas.find(x=>x.tag === tag);
+    if(!r){
+      r = {semana, tag, dia:(slot || GRADE_FORA[0]).d, jogos:[]};
+      c.rodadas.push(r);
+      c.rodadas.sort((x,y)=> x.semana - y.semana || x.dia - y.dia);
+    }
+    pares.forEach(([a,b], k)=>{
+      if(r.jogos.some(j=>j.c === a && j.f === b)) return;
+      const g = slot || GRADE_FORA[k % GRADE_FORA.length];
+      r.jogos.push({c:a, f:b, d:g.d, h:g.h, g:0});
+    });
+  }
+
+  function resultadoAgendado(E, T, a, b){
+    const S = E.temporada;
+    const c = S && S.competicoes && S.competicoes.find(x=>x.id === T.compId);
+    if(!c) return null;
+    for(const r of c.rodadas)
+      for(const j of r.jogos)
+        if(j.c === a && j.f === b && j.gc != null) return [j.gc, j.gf];
+    return null;
+  }
+
+  /* o placar do país do jogador vem do jogo que já aconteceu; o do
+     resto do mundo continua sendo sorteado na hora */
+  function placarDe(E, T, a, b){
+    if(T && T.comJogos){
+      const r = resultadoAgendado(E, T, a, b);
+      if(r) return r;
+    }
+    return placar(a, b);
+  }
+
+  function agendarRegular(E, T, fase){
+    const n = T.porTique || 1;
+    for(let f = 0; f < fase.fechas; f++)
+      agendar(E, T, T.inicio + Math.floor(f / n) * PASSO,
+              paresRegular(T, fase, f));
+  }
+
+  function agendarGrupo(E, T, fase, semana0){
+    const n = T.porTique || 1;
+    for(let f = 0; f < fase.fechas; f++)
+      agendar(E, T, semana0 + Math.floor(f / n) * PASSO,
+              paresGrupo(T, fase, f).map(x=>[x[1], x[2]]));
+  }
+
+  const paresDaChave = T => {
+    const vivos = T.vivos || [], fora = [];
+    for(let k = 0; k < vivos.length / 2; k++)
+      fora.push([vivos[k], vivos[vivos.length - 1 - k]]);
+    return fora;
+  };
+
+  /* a chave do país do jogador sai uma semana antes, que é o tempo que
+     a véspera, o itinerário e a caravana precisam pra existir */
+  function agendarChave(E, T, fase){
+    const idaEVolta = fase.t === 'final2' || fase.jogoUnico === false;
+    for(const [a,b] of paresDaChave(T)){
+      if(idaEVolta){
+        agendar(E, T, T.semanaFase, [[b,a]], MATA_IDA);     // ida na casa do pior
+        agendar(E, T, T.semanaFase, [[a,b]], MATA_VOLTA);   // volta na do melhor
+      } else {
+        agendar(E, T, T.semanaFase, [[a,b]], MATA_VOLTA);
+      }
+    }
+  }
+  /* =======================================================
      A EDIÇÃO DO ANO
      ======================================================= */
   const divisoesDe = pais => Object.keys(FORMATOS).filter(d =>
     (M().todosTimes.find(t=>t.divisao === d) || {}).pais === pais);
 
-  function paises(){
+  /* O BRASIL SÓ ENTRA AQUI QUANDO O JOGADOR É DE FORA. Com jogador
+     brasileiro quem manda no Brasil é `competicoes.js`, que tem
+     estadual e Copa do Brasil; rodar os dois motores no mesmo país
+     daria duas tabelas divergentes pro mesmo Brasileirão. */
+  function paises(E){
+    const nosso = nossoPais(E);
     const s = new Set();
-    for(const t of M().todosTimes)
-      if(C().paisDe(t) !== 'Brasil' && FORMATOS[t.divisao]) s.add(t.pais);
+    for(const t of M().todosTimes){
+      const p = C().paisDe(t);
+      if(p === 'Brasil' && nosso === 'Brasil') continue;
+      if(FORMATOS[t.divisao]) s.add(p);
+    }
     return [...s].sort();
   }
 
@@ -263,7 +422,8 @@ TO.ligas = (function(){
     aplicarSobeDesce(E);
     U.usarSemente((E.semente || 1) + (E.data.ano||2026) * 7);
     const L = {ano: E.data.ano, paises: {}};
-    for(const pais of paises()){
+    const nosso = nossoPais(E);
+    for(const pais of paises(E)){
       const P = {divisoes: {}};
       for(const div of divisoesDe(pais)){
         const f = FORMATOS[div];
@@ -290,6 +450,23 @@ TO.ligas = (function(){
           if(T.fases[0] && T.fases[0].t !== 'regular'){
             /* abre já na fase de grupos: monta o grupo na primeira semana */
             T.abreEmGrupo = true;
+          }
+          /* O CALENDÁRIO DO NOSSO PAÍS NASCE NA MONTAGEM, não na semana
+             de estreia: fecha 1 tem que estar marcada antes do dia dela
+             chegar, senão a estreia era a única fecha sem dia de jogo. */
+          if(pais === nosso){
+            T.comJogos = true;
+            T.compId = 'fora-' + T.id;
+            T.nomeCheio = f.torneios.length > 1 ? `${div} · ${nome}` : div;
+            T.clubesDoTorneio = clubes.slice();
+            const f0 = T.fases[0];
+            if(f0 && f0.t === 'regular'){
+              T.zonas = repartir(D.clubes, f0.zonas || 1);
+              agendarRegular(E, T, f0);
+            } else if(T.abreEmGrupo && f0){
+              abrirGrupoDaFase(T, f0, D);
+              agendarGrupo(E, T, f0, T.semanaFase);
+            }
           }
           D.torneios.push(T);
         });
@@ -336,7 +513,7 @@ TO.ligas = (function(){
       if(E.data.semana < T.inicio + Math.floor(T.fecha / n) * PASSO) return null;
       if(!T.zonas) T.zonas = repartir(D.clubes, fase.zonas || 1);
       for(let k=0;k<n && T.fecha < fase.fechas;k++){
-        rodarFechaRegular(T, fase);
+        rodarFechaRegular(E, T, fase);
         T.fecha++;
       }
       if(T.fecha >= fase.fechas) return proximaFase(E, D, T);
@@ -348,7 +525,7 @@ TO.ligas = (function(){
       if(!T.grupos) abrirGrupoDaFase(T, fase, D);
       if(T.fecha >= fase.fechas) return proximaFase(E, D, T);
       for(let k=0;k<n && T.fecha < fase.fechas;k++){
-        rodarFechaGrupo(T, fase);
+        rodarFechaGrupo(E, T, fase);
         T.fecha++;
       }
       if(T.fecha >= fase.fechas) return proximaFase(E, D, T);
@@ -369,39 +546,51 @@ TO.ligas = (function(){
     return z;
   }
 
-  function rodarFechaRegular(T, fase){
-    const zonas = T.zonas;
-    const porZona = Math.max(1, Math.ceil(fase.fechas / 1));
+  /* QUEM JOGA CONTRA QUEM, SEM JOGAR AINDA. Isto era o miolo do
+     `rodarFecha*`; virou função à parte porque a agenda do país do
+     jogador precisa saber os pares de uma fecha ANTES da semana dela
+     chegar — é assim que o jogo do nosso clube vira dia de jogo. */
+  function paresRegular(T, fase, fecha){
+    const zonas = T.zonas || [];
     const intra = fase.fechas - (fase.interzonais || 0);
-    if(T.fecha < intra){
-      /* fecha dentro da zona */
+    const fora = [];
+    if(fecha < intra){
       for(const z of zonas){
         const voltas = Math.max(1, Math.ceil(intra / Math.max(1, z.length-1)));
-        for(const [a,b] of jogosDaFecha(z, T.fecha, voltas)){
-          const [ga,gb] = placar(a,b);
-          anotar(T.tabela, a, b, ga, gb);
-        }
+        for(const par of jogosDaFecha(z, fecha, voltas)) fora.push(par);
       }
     } else {
       /* fecha interzonal: cada clube de uma zona pega o par da outra */
       const [A, B] = [zonas[0] || [], zonas[1] || []];
-      const desloca = T.fecha - intra;
-      for(let k=0;k<Math.min(A.length, B.length);k++){
-        const a = A[k], b = B[(k + desloca) % B.length];
-        const [ga,gb] = placar(a,b);
-        anotar(T.tabela, a, b, ga, gb);
-      }
+      const desloca = fecha - intra;
+      for(let k=0;k<Math.min(A.length, B.length);k++)
+        fora.push([A[k], B[(k + desloca) % B.length]]);
+    }
+    return fora;
+  }
+
+  /* [indice do grupo, mandante, visitante] */
+  function paresGrupo(T, fase, fecha){
+    const fora = [];
+    (T.grupos || []).forEach((g, ig)=>{
+      const voltas = fase.fechas > (g.length-1) ? 2 : 1;
+      for(const [a,b] of jogosDaFecha(g, fecha, voltas)) fora.push([ig, a, b]);
+    });
+    return fora;
+  }
+
+  function rodarFechaRegular(E, T, fase){
+    for(const [a,b] of paresRegular(T, fase, T.fecha)){
+      const [ga,gb] = placarDe(E, T, a, b);
+      anotar(T.tabela, a, b, ga, gb);
     }
   }
 
-  function rodarFechaGrupo(T, fase){
-    T.grupos.forEach((g, ig)=>{
-      const voltas = fase.fechas > (g.length-1) ? 2 : 1;
-      for(const [a,b] of jogosDaFecha(g, T.fecha, voltas)){
-        const [ga,gb] = placar(a,b);
-        anotar(T.tabelaGrupo[ig], a, b, ga, gb);
-      }
-    });
+  function rodarFechaGrupo(E, T, fase){
+    for(const [ig, a, b] of paresGrupo(T, fase, T.fecha)){
+      const [ga,gb] = placarDe(E, T, a, b);
+      anotar(T.tabelaGrupo[ig], a, b, ga, gb);
+    }
   }
 
   /* fecha a fase corrente e abre a seguinte */
@@ -414,6 +603,7 @@ TO.ligas = (function(){
 
     if(fase.t === 'quadrangular' || fase.t === 'hexagonal'){
       abrirGrupoDaFase(T, fase, D);
+      if(T.comJogos) agendarGrupo(E, T, fase, T.semanaFase);
       return {fase:'abre-'+fase.t, grupos:T.grupos.map(g=>g.length)};
     }
     if(fase.t === 'mata' || fase.t === 'final2') return abrirMata(E, T, fase);
@@ -457,6 +647,13 @@ TO.ligas = (function(){
         Math.max(1, (T.zonas||[1]).length)));
     }
     T.vivos = vivos;
+    /* no país do jogador a chave é AGENDADA pra semana marcada em vez
+       de resolvida agora: é o `jogarDia` que joga, e ele precisa do
+       jogo no calendário antes do dia chegar */
+    if(T.comJogos){
+      agendarChave(E, T, fase);
+      return {fase:'abre-mata', seguem:vivos.length};
+    }
     return jogarChave(E, T, fase);
   }
 
@@ -473,13 +670,13 @@ TO.ligas = (function(){
       const idaEVolta = fase.t === 'final2' || fase.jogoUnico === false;
       let ga, gb, venceu;
       if(idaEVolta){
-        const [x1,y1] = placar(b, a);      // ida na casa do pior
-        const [x2,y2] = placar(a, b);      // volta na casa do melhor
+        const [x1,y1] = placarDe(E, T, b, a);   // ida na casa do pior
+        const [x2,y2] = placarDe(E, T, a, b);   // volta na casa do melhor
         const sa = y1 + x2, sb = x1 + y2;
         venceu = sa > sb ? a : sb > sa ? b : (C().disputaDePenaltis(a,b).venceu);
         ga = sa; gb = sb;
       } else {
-        [ga, gb] = placar(a, b);
+        [ga, gb] = placarDe(E, T, a, b);
         venceu = ga > gb ? a : gb > ga ? b : C().disputaDePenaltis(a,b).venceu;
       }
       jogos.push({c:a, f:b, gc:ga, gf:gb, venceu});
@@ -495,6 +692,7 @@ TO.ligas = (function(){
       return {fase:nome, campeao:T.campeao};
     }
     T.semanaFase = E.data.semana + PASSO;
+    if(T.comJogos) agendarChave(E, T, fase);
     return {fase:nome, seguem:T.vivos.length};
   }
 

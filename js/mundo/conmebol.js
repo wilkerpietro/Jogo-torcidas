@@ -81,6 +81,10 @@ TO.conmebol = (function(){
       for(const l of t) if(!fora.includes(l.id)) fora.push(l.id);
     }
     if(fora.length) return fora;
+    /* jogador de fora: o Brasil não tem temporada, tem resumo — a vaga
+       brasileira sai da tabela das ligas, igual à dos outros nove */
+    const resumo = L().ordemDoPais(E, 'Brasil');
+    if(resumo && resumo.length) return resumo;
     return M().todosTimes.filter(t=>C().paisDe(t)==='Brasil')
       .sort((a,b)=>(b.qualidade||0)-(a.qualidade||0)).map(t=>t.id);
   }
@@ -204,9 +208,63 @@ TO.conmebol = (function(){
      ======================================================= */
   const SEMANAS_COPA = [10, 14, 18, 24, 28, 34, 40, 46];
 
+  /* A COPA DO PAÍS DO JOGADOR TAMBÉM É JOGADA (régua do dono,
+     23/08/2026). Mesma ideia das ligas: a chave da rodada seguinte é
+     agendada em `E.temporada` assim que se sabe quem sobrou, e aqui a
+     gente lê o placar de volta em vez de sortear. Como a copa é de jogo
+     único, quem decide empate é o `jogarDia` — o que dá ao jogador a
+     disputa de pênaltis na tela, e não um vencedor sorteado por baixo. */
+  const COPA_ID = 'copa-de-fora';
+  const NOMES_COPA = {2:'Final', 4:'Semifinal', 8:'Quartas', 16:'Oitavas',
+                      32:'16-avos', 64:'32-avos', 128:'Primeira fase'};
+  const faseCopa = n => NOMES_COPA[n] || `${n} clubes`;
+
+  function agendaCopa(E, copa){
+    const S = E.temporada;
+    if(!S || !S.competicoes) return null;
+    let c = S.competicoes.find(x=>x.id === COPA_ID);
+    if(!c){
+      const cl = copa.clubes.slice();
+      c = {id:COPA_ID, nome:copa.nome, tipo:'copa-de-fora', deFora:true,
+           clubes:cl, grupos:[cl], passam:0, voltas:1,
+           pontosCorridos:false, idaEVolta:false,
+           rodadas:[], mata:[], campeao:null, vice:null, dia:DIA};
+      S.competicoes.push(c);
+    }
+    return c;
+  }
+
+  /* o mando é de quem tem a divisão mais alta; empate de divisão, a força */
+  function mandoDe(a, b){
+    return (C().forca(b)||0) > (C().forca(a)||0) ? [b, a] : [a, b];
+  }
+
+  function agendarCopa(E, copa){
+    const c = agendaCopa(E, copa);
+    const sem = SEMANAS_COPA[copa.passo];
+    if(!c || sem == null) return;
+    const vivos = copa.vivos || [];
+    if(vivos.length < 2) return;
+    const fase = faseCopa(vivos.length);
+    if(c.mata.some(m=>m.fase === fase && m.semana === sem)) return;
+    const jogos = [];
+    for(let k=0;k+1<vivos.length;k+=2){
+      const [a, b] = mandoDe(vivos[k], vivos[k+1]);
+      jogos.push({c:a, f:b, d:DIA, h:'21:30'});
+    }
+    c.mata.push({fase, semana:sem, dia:DIA, jogos});
+  }
+
+  function chaveAgendada(E, copa, fase, sem){
+    const S = E.temporada;
+    const c = S && S.competicoes && S.competicoes.find(x=>x.id === COPA_ID);
+    if(!c) return null;
+    return c.mata.find(m=>m.fase === fase && m.semana === sem) || null;
+  }
+
   function criarCopasNacionais(E){
     const fora = {};
-    for(const pais of L().paises()){
+    for(const pais of L().paises(E)){
       const clubes = M().todosTimes.filter(t=>C().paisDe(t)===pais);
       if(clubes.length < 4) continue;
       const nomeCopa = (clubes.find(t=>t.copa)||{}).copa || `Copa ${pais}`;
@@ -219,7 +277,9 @@ TO.conmebol = (function(){
       const dentro = ordem.slice(0, n);
       fora[pais] = {nome:nomeCopa, pais, clubes:ordem,
                     vivos:U.embaralhar(dentro), mata:[],
-                    campeao:null, vice:null, passo:0};
+                    campeao:null, vice:null, passo:0,
+                    comJogos: pais === C().paisDoJogador(E)};
+      if(fora[pais].comJogos) agendarCopa(E, fora[pais]);
     }
     return fora;
   }
@@ -481,21 +541,24 @@ TO.conmebol = (function(){
     if(sem == null || E.data.semana !== sem) return null;
     const vivos = copa.vivos || [];
     if(vivos.length < 2){ copa.campeao = vivos[0] || null; return null; }
+    const fase = faseCopa(vivos.length);
+    const marcada = copa.comJogos ? chaveAgendada(E, copa, fase, sem) : null;
     const jogos = [], passa = [];
     for(let k=0;k+1<vivos.length;k+=2){
-      /* manda quem tem a divisão mais alta; empate de divisão, a força */
-      let a = vivos[k], b = vivos[k+1];
-      if((C().forca(b)||0) > (C().forca(a)||0)){ const x=a; a=b; b=x; }
-      const j = duelo(a, b);
-      j.venceu = j.gc>j.gf ? a : j.gf>j.gc ? b : C().disputaDePenaltis(a,b).venceu;
+      const [a, b] = mandoDe(vivos[k], vivos[k+1]);
+      const feito = marcada &&
+        marcada.jogos.find(x=>x.c === a && x.f === b && x.gc != null);
+      const j = feito ? {c:a, f:b, gc:feito.gc, gf:feito.gf,
+                         venceu:feito.venceu, pen:feito.pen || null}
+                      : duelo(a, b);
+      if(!j.venceu)
+        j.venceu = j.gc>j.gf ? a : j.gf>j.gc ? b : C().disputaDePenaltis(a,b).venceu;
       jogos.push(j); passa.push(j.venceu);
     }
-    const NOMES = {2:'Final', 4:'Semifinal', 8:'Quartas', 16:'Oitavas',
-                   32:'16-avos', 64:'32-avos', 128:'Primeira fase'};
-    copa.mata.push({fase: NOMES[vivos.length] || `${vivos.length} clubes`,
-                    semana:sem, jogos});
+    copa.mata.push({fase, semana:sem, jogos});
     copa.vivos = passa;
     copa.passo++;
+    if(copa.comJogos) agendarCopa(E, copa);
     if(passa.length === 1){
       copa.campeao = passa[0];
       const f = jogos[0];

@@ -444,11 +444,14 @@ TO.estado = (function(){
        dia do jogo. As ligas guardam só a classificação; a Libertadores
        e a Sul-Americana guardam os jogos, porque o clube do jogador
        pode estar nelas e isso é notícia. */
+    /* OS JOGOS SAEM ANTES DAS TABELAS (23/08/2026): o país da nossa
+       torcida agenda a fecha dele em `E.temporada` e é o `jogarDia`
+       que a joga; se as ligas andassem primeiro, elas leriam a fecha
+       do dia ainda sem placar e sorteariam por cima. */
+    const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
+
     const passoLigas = TO.ligas ? TO.ligas.rodar(E) : null;
     const passoCM    = TO.conmebol ? TO.conmebol.rodar(E) : null;
-
-    /* os jogos de hoje saem hoje, e o feed conta a noite */
-    const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
     /* e onde tem jogo tem torcida na rua: as brigas entre as IAs
        nascem dos jogos do dia (decisão do dono) — nada disso vira
        mensagem no feed; o registro mora na aba Brigas das Notícias */

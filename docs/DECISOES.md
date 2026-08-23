@@ -1751,6 +1751,71 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   agendar a fecha da divisão do jogador uma semana à frente e ler o
   resultado de volta na tabela. Espera a palavra do dono.
 
+- **TODO CLUBE DE FORA TEM BARRA** (régua do dono, 23/08/2026): "coloque
+  o nome das 54 que você tem dúvida; as demais, coloque 'La Barra de
+  Albion', por exemplo". Então os **248 clubes** dos nove países têm
+  organizada, e cada registro diz de onde o nome veio:
+  · **`origem: 'pesquisa'` — 100.** Nome, ano e tamanho confirmados.
+  · **`origem: 'conferir'` — 54.** A busca achou o nome mas não fechou a
+    confirmação. Entram assim mesmo, marcadas, pra quem quiser conferir
+    depois: La Banda del Guapo, La Banda del Ferroviario, Los Marginales
+    del Bío-Bío, Los Pijes, La Banda Lila, La Banda Auriazul…
+  · **`origem: 'gerada'` — 94.** Não há nome nenhum na fonte, então o
+    molde do dono monta um: "La Barra de " + o clube sem o genérico na
+    frente (Deportivo, Deportes, Club, Sportivo, Atlético) e sem o
+    sufixo de país. "La Barra de Albion", "La Barra del 2 de Mayo", "La
+    Barra de Águilas Doradas". O corte do genérico só acontece quando
+    sobra nome de verdade — "Atlético Grau" fica inteiro.
+  · O efetivo de quem não tem pesquisa sai da qualidade do clube, na
+    faixa de baixo da régua (22 a 48), que é onde mora clube pequeno.
+  · **15 praças novas** (Sul de CABA, La Matanza, Santiago del Estero,
+    Sul do Chile, Sul de Bogotá, Interior da Colômbia, Leste de
+    Montevidéu, Interior do Uruguai, Norte do Peru, Ambato, Costa
+    Equatoriana, Grande Assunção, Interior do Paraguai, Interior da
+    Bolívia, Oruro e Potosí) fecham o mapa em **64 praças e 620 bairros
+    reais**. Sem praça com bairro o clube não aparece na seleção.
+  · **A aliança fica pra depois** ("depois fazemos as alianças com
+    calma"): o grafo entrega clássico e rival, e `aliados`/`irmandade`
+    seguem vazios até o dono ditar.
+
+- **O PAÍS DO JOGADOR GERA OS JOGOS** (régua do dono, 23/08/2026): "o
+  país cuja torcida que o jogador selecionar deve gerar os jogos e as
+  demais geram somente as tabelas". Antes, quem escolhia uma barra não
+  tinha dia de jogo nenhum: o dia de jogo nasce de `E.temporada`, e lá
+  fora só existia resumo.
+  · **O motor de formatos passou a agendar.** `ligas.js` sempre soube
+    QUEM joga contra quem — o método do círculo é determinístico —, mas
+    jogava tudo no mesmo instante e guardava só a classificação. Agora,
+    e só pro país da nossa torcida, cada fase é agendada assim que os
+    pares dela são conhecidos: uma **competição-sombra** entra em
+    `E.temporada` no formato de `competicoes.js`, o `jogarDia` dele roda
+    os jogos, e o motor lê o placar de volta na hora da fecha. Um lugar
+    decide os pares, um lugar simula, e a tabela continua sendo a das
+    ligas.
+  · **O tique fechou a semana**: era quinta e virou domingo, porque a
+    fecha é jogada no fim de semana e o tique tem que vir depois dela.
+    Pelo mesmo motivo, `jogarDia` passou a rodar ANTES das ligas no
+    `avancarDia` — se as tabelas andassem primeiro, leriam a fecha do
+    dia ainda sem placar e sorteariam por cima.
+  · **A copa nacional do país do jogador também é jogada**, e como ela é
+    de jogo único quem decide empate é o `jogarDia`: o jogador ganha a
+    **disputa de pênaltis na tela** em vez de um vencedor sorteado por
+    baixo. Medido: 10 decisões por pênalti num ano de Copa Argentina.
+  · **Quando o jogador é de fora, o Brasil vira resumo**, com as quatro
+    séries no mesmo motor dos outros nove — turno e returno nas três
+    primeiras, quatro grupos e playoff na D. `competicoes.js` só monta
+    temporada pra jogador brasileiro; rodar os dois motores no mesmo
+    país daria duas tabelas divergentes pro mesmo Brasileirão. Some o
+    estadual e a Copa do Brasil, que é o preço da régua.
+  · Medido com a La 12, três anos: **1.302 KB de save**, 19 ms por dia,
+    74 dias de jogo do Boca, as três divisões argentinas e as quatro
+    séries brasileiras fechando todo ano, e todas as divisões do
+    continente mantendo o tamanho depois do sobe-e-desce.
+  · Com jogador brasileiro nada mudou de lugar — só o peso: as 148
+    barras novas põem mais 148 quadros em `mundoTorcidas`, e o save de
+    três anos foi de 1.692 pra **1.844 KB**. O teto que matou o save era
+    2.674 KB.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

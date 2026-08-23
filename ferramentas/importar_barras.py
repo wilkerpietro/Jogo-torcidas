@@ -289,6 +289,81 @@ PRACAS = {
   'Ciudad Bolívar Centro|S|M','Vista Hermosa|S|N',
   'Puerto La Cruz|L|M','Lechería|L|N',
   'Barcelona|O|B','Guanta|O|B']),
+'buenos-aires-sul': ('Sul de CABA', 'Pequeno', 'AR', 700, [
+  'Constitución|N|B','San Telmo|N|M',
+  'Villa Soldati|S|F','Villa Lugano|S|F',
+  'Barracas|L|B','La Boca|L|B',
+  'Nueva Pompeya|O|B','Bajo Flores|O|F']),
+'la-matanza': ('La Matanza', 'Pequeno', 'AR', 1800, [
+  'Ramos Mejía|N|M','San Justo|N|M',
+  'Isidro Casanova|S|B','Gregorio de Laferrere|S|B',
+  'Villa Madero|L|F','Tapiales|L|B',
+  'González Catán|O|F','Rafael Castillo|O|F']),
+'santiago-del-estero': ('Santiago del Estero', 'Pequeno', 'AR', 500, [
+  'Barrio Norte|N|M','La Banda|N|B',
+  'Barrio Sur|S|B','Villa Griselda|S|F',
+  'Centro|L|M','Autonomía|L|B',
+  'Belgrano|O|M','Reconquista|O|B']),
+'sul-do-chile': ('Sul do Chile', 'Pequeno', 'CL', 600, [
+  'Chillán Centro|N|M','Las Termas|N|N',
+  'Temuco Centro|S|M','Pedro de Valdivia|S|B',
+  'Padre Las Casas|L|B','Labranza|L|B',
+  'Chillán Viejo|O|B','Amanecer|O|F']),
+'bogota-sul': ('Sul de Bogotá', 'Pequeno', 'CO', 1400, [
+  'Zipaquirá|N|M','Chía|N|N',
+  'Soacha|S|F','Usme|S|F',
+  'Ciudad Bolívar|L|F','San Cristóbal Sur|L|B',
+  'Funza|O|M','Mosquera|O|B']),
+'interior-da-colombia': ('Interior da Colômbia', 'Pequeno', 'CO', 900, [
+  'Valledupar Centro|N|M','Novalito|N|B',
+  'Villavicencio Centro|S|M','Porfía|S|F',
+  'Tunja Centro|L|M','El Topo|L|B',
+  'Sogamoso|O|B','Duitama|O|M']),
+'montevideu-leste': ('Leste de Montevidéu', 'Pequeno', 'UY', 500, [
+  'Sayago|N|B','Villa Peñarol|N|B',
+  'Playa Ramírez|S|M','Punta Gorda|S|N',
+  'Carrasco|L|N','Unión|L|B',
+  'Jacinto Vera|O|M','Reducto|O|B']),
+'interior-do-uruguai': ('Interior do Uruguai', 'Pequeno', 'UY', 600, [
+  'Melo Centro|N|M','Rivera|N|B',
+  'Colonia del Sacramento|S|N','Nueva Helvecia|S|M',
+  'Maldonado|L|N','San Carlos|L|B',
+  'Las Piedras|O|B','Paysandú|O|B']),
+'norte-do-peru': ('Norte do Peru', 'Pequeno', 'PE', 1500, [
+  'Piura Centro|N|M','Castilla|N|B',
+  'Chiclayo Centro|S|M','José Leonardo Ortiz|S|F',
+  'Cajamarca Centro|L|M','Baños del Inca|L|B',
+  'Sullana|O|B','Trujillo Centro|O|M']),
+'ambato': ('Ambato', 'Pequeno', 'EC', 400, [
+  'Izamba|N|M','Atocha|N|M',
+  'Huachi Chico|S|B','Celiano Monge|S|B',
+  'La Merced|L|M','Pinllo|L|B',
+  'Ficoa|O|N','Miraflores|O|M']),
+'costa-equatoriana': ('Costa Equatoriana', 'Pequeno', 'EC', 900, [
+  'Manta Centro|N|M','Tarqui|N|B',
+  'Machala Centro|S|M','Puerto Bolívar|S|B',
+  'Portoviejo|L|M','Jipijapa|L|B',
+  'Los Esteros|O|F','Barbasquillo|O|N']),
+'grande-assuncao': ('Grande Assunção', 'Pequeno', 'PY', 1000, [
+  'Luque Centro|N|M','Areguá|N|B',
+  'Villa Elisa|S|M','Ytororó|S|B',
+  'San Lorenzo|L|M','Capiatá|L|B',
+  'Mariano Roque Alonso|O|B','Limpio|O|F']),
+'interior-do-paraguai': ('Interior do Paraguai', 'Pequeno', 'PY', 700, [
+  'Pedro Juan Caballero|N|M','Amambay|N|B',
+  'Encarnación|S|M','San Isidro|S|B',
+  'Ciudad del Este|L|M','Km 7|L|F',
+  'Villarrica|O|B','Coronel Oviedo|O|B']),
+'interior-da-bolivia': ('Interior da Bolívia', 'Pequeno', 'BO', 600, [
+  'Montero Centro|N|M','Guabirá|N|B',
+  'Tarija Centro|S|M','San Jerónimo|S|B',
+  'Villa Tunari|L|B','Chimoré|L|F',
+  'Yacuiba|O|B','Bermejo|O|B']),
+'oruro-e-potosi': ('Oruro e Potosí', 'Pequeno', 'BO', 700, [
+  'Oruro Centro|N|M','Norte de Oruro|N|B',
+  'Potosí Centro|S|M','Villa Copacabana|S|B',
+  'Sucre Centro|L|M','San Roque|L|B',
+  'Huanuni|O|F','Challapata|O|B']),
 }
 
 # ===================================================================
@@ -300,144 +375,273 @@ PRACAS = {
 RODOVIAS = {
  'Ruta Panamericana': ['buenos-aires','buenos-aires-norte','norte-de-buenos-aires',
                        'san-martin-e-tres-de-febrero','rosario'],
- 'Ruta 3': ['buenos-aires','avellaneda','lanus-e-lomas','quilmes-e-berazategui',
-            'varela-e-ezeiza','la-plata','interior-de-buenos-aires'],
- 'Ruta 7': ['buenos-aires-oeste','moron-e-merlo','interior-de-buenos-aires',
-            'mendoza','cuyo-e-patagonia'],
- 'Ruta 9': ['rosario','cordoba','tucuman','norte-da-argentina','litoral-argentino','la-paz'],
- 'Corredor do Prata': ['buenos-aires','la-plata','montevideu','montevideu-oeste','assuncao'],
+ 'Ruta 3': ['buenos-aires','buenos-aires-sul','avellaneda','lanus-e-lomas',
+            'quilmes-e-berazategui','varela-e-ezeiza','la-plata',
+            'interior-de-buenos-aires'],
+ 'Ruta 7': ['buenos-aires-oeste','la-matanza','moron-e-merlo',
+            'interior-de-buenos-aires','mendoza','cuyo-e-patagonia'],
+ 'Ruta 9': ['rosario','cordoba','tucuman','santiago-del-estero','norte-da-argentina',
+            'litoral-argentino','la-paz'],
+ 'Corredor do Prata': ['buenos-aires','la-plata','montevideu','montevideu-oeste',
+                       'montevideu-leste','interior-do-uruguai','assuncao'],
  'Corredor Andino': ['mendoza','santiago','valparaiso','centro-do-chile','la-paz'],
  'Ruta 5': ['norte-do-chile','norte-chico','valparaiso','santiago','santiago-sul',
-            'centro-do-chile','concepcion'],
- 'Autopista Norte-Sul': ['bogota','eixo-cafeteiro','medellin','cali','sul-da-colombia'],
+            'centro-do-chile','concepcion','sul-do-chile'],
+ 'Autopista Norte-Sul': ['bogota','bogota-sul','eixo-cafeteiro','medellin','cali',
+                         'sul-da-colombia','interior-da-colombia'],
  'Ruta do Caribe': ['medellin','costa-colombiana','norte-da-colombia','bogota',
-                    'oeste-da-venezuela'],
- 'Panamericana Sul': ['lima','sul-do-peru','norte-do-chile'],
+                    'interior-da-colombia','oeste-da-venezuela'],
+ 'Panamericana Sul': ['lima','norte-do-peru','sul-do-peru','norte-do-chile'],
  'Carretera Central': ['lima','cusco','sul-do-peru'],
- 'Panamericana Equatoriana': ['quito','guayaquil','sul-do-equador','sul-da-colombia','lima'],
- 'Ruta Bolívia': ['la-paz','cochabamba','santa-cruz'],
+ 'Ruta 2': ['assuncao','grande-assuncao','interior-do-paraguai'],
+ 'Panamericana Equatoriana': ['quito','ambato','guayaquil','costa-equatoriana',
+                             'sul-do-equador','sul-da-colombia','norte-do-peru'],
+ 'Ruta Bolívia': ['la-paz','oruro-e-potosi','cochabamba','santa-cruz','interior-da-bolivia'],
  'Autopista Venezuelana': ['caracas','centro-da-venezuela','oeste-da-venezuela',
                            'oriente-da-venezuela'],
 }
 
 # ===================================================================
 # AS BARRAS
-# (clubeId, nome, fundacao, membros)
-# Entram so as que a pesquisa confirmou. As 54 que ficaram em duvida --
-# quase todas da terceira divisao argentina e de clube pequeno -- estao
-# fora ate o dono decidir: nome de organizada de verdade nao se inventa.
+# (clubeId, nome, fundacao, membros, origem)
+#
+# origem 'pesquisa'  a busca confirmou o nome, o ano e o tamanho.
+# origem 'conferir'  a busca achou o nome mas nao fechou a confirmacao.
+#                    Entram assim mesmo (regua do dono, 23/08/2026), e
+#                    ficam marcadas pra quem quiser conferir depois.
+# origem 'gerada'    nao ha nome nenhum na fonte, entao o jogo monta um
+#                    no molde que o dono deu -- "La Barra de Albion",
+#                    o apelido ou o nome do clube depois de "La Barra".
+#
+# TODO clube dos nove paises tem barra: sem ela o clube nao aparece na
+# selecao, e clube sem torcida nao existe pro jogador.
 # ===================================================================
 BARRAS = [
 # ---------------- Argentina ----------------
-("boca-juniors","La 12",1970,250),
-("river-plate","Los Borrachos del Tablón",1975,250),
-("racing","La Guardia Imperial",1958,200),
-("independiente","La Barra del Rojo",1970,190),
-("san-lorenzo","La Gloriosa Butteler",1959,180),
-("rosario-central","Los Guerreros",1980,135),
-("newell-s","La Hinchada Más Popular",1980,130),
-("velez","La Pandilla de Liniers",1980,120),
-("talleres","La Fiel",1979,120),
-("estudiantes","Los Leales",1985,110),
-("huracan","La Banda de la Quema",1975,110),
-("gimnasia","La Banda de Fierro",1987,105),
-("belgrano","Los Piratas Celestes de Alberdi",1985,100),
-("atletico-tucuman","La Inimitable",1980,95),
-("lanus","La Barra 14",1985,90),
-("colon","Los de Siempre",1980,90),
-("chacarita","Los Funebreros",1975,80),
-("union","La Barra de la Bomba",1985,75),
-("banfield","La Banda del Sur",1988,70),
-("tigre","La Barra del Matador",1985,65),
-("argentinos","Los Ninjas",1985,60),
-("godoy-cruz","La Banda del Expreso",1990,60),
-("instituto","La Barra del Gloria",1990,60),
-("quilmes","Los Indios",1985,60),
-("san-martin-tucuman","La Banda del Camion",1990,60),
-("nueva-chicago","Los Torditos",1985,55),
-("ferro","La Banda 100% Puro Ferro",1985,50),
-("defensa-y-justicia","La Banda de Varela",1990,45),
-("platense","La Banda Marrón",1990,45),
-("all-boys","La Peste Blanca",1990,45),
-("san-martin-sj","La Banda del Pueblo Viejo",1990,45),
-("gimnasia-jujuy","La Banda del Lobo Jujeño",1990,45),
-("atlanta","La Banda de Villa Crespo",1985,40),
-("aldosivi","La Banda del Puerto",1990,40),
-("los-andes","La Banda Descontrolada",1990,40),
-("temperley","La Barra del Gasolero",1990,35),
-("deportivo-moron","Los Borrachos del Oeste",1990,35),
-("san-telmo","La Banda de la Isla",1990,30),
+("boca-juniors","La 12",1970,250,"pesquisa"),
+("river-plate","Los Borrachos del Tablón",1975,250,"pesquisa"),
+("racing","La Guardia Imperial",1958,200,"pesquisa"),
+("independiente","La Barra del Rojo",1970,190,"pesquisa"),
+("san-lorenzo","La Gloriosa Butteler",1959,180,"pesquisa"),
+("rosario-central","Los Guerreros",1980,135,"pesquisa"),
+("newell-s","La Hinchada Más Popular",1980,130,"pesquisa"),
+("velez","La Pandilla de Liniers",1980,120,"pesquisa"),
+("talleres","La Fiel",1979,120,"pesquisa"),
+("estudiantes","Los Leales",1985,110,"pesquisa"),
+("huracan","La Banda de la Quema",1975,110,"pesquisa"),
+("gimnasia","La Banda de Fierro",1987,105,"pesquisa"),
+("belgrano","Los Piratas Celestes de Alberdi",1985,100,"pesquisa"),
+("atletico-tucuman","La Inimitable",1980,95,"pesquisa"),
+("lanus","La Barra 14",1985,90,"pesquisa"),
+("colon","Los de Siempre",1980,90,"pesquisa"),
+("chacarita","Los Funebreros",1975,80,"pesquisa"),
+("union","La Barra de la Bomba",1985,75,"pesquisa"),
+("banfield","La Banda del Sur",1988,70,"pesquisa"),
+("tigre","La Barra del Matador",1985,65,"pesquisa"),
+("argentinos","Los Ninjas",1985,60,"pesquisa"),
+("godoy-cruz","La Banda del Expreso",1990,60,"pesquisa"),
+("instituto","La Barra del Gloria",1990,60,"pesquisa"),
+("quilmes","Los Indios",1985,60,"pesquisa"),
+("san-martin-tucuman","La Banda del Camion",1990,60,"pesquisa"),
+("nueva-chicago","Los Torditos",1985,55,"pesquisa"),
+("ferro","La Banda 100% Puro Ferro",1985,50,"pesquisa"),
+("defensa-y-justicia","La Banda de Varela",1990,45,"pesquisa"),
+("platense","La Banda Marrón",1990,45,"pesquisa"),
+("all-boys","La Peste Blanca",1990,45,"pesquisa"),
+("san-martin-sj","La Banda del Pueblo Viejo",1990,45,"pesquisa"),
+("gimnasia-jujuy","La Banda del Lobo Jujeño",1990,45,"pesquisa"),
+("atlanta","La Banda de Villa Crespo",1985,40,"pesquisa"),
+("aldosivi","La Banda del Puerto",1990,40,"pesquisa"),
+("los-andes","La Banda Descontrolada",1990,40,"pesquisa"),
+("temperley","La Barra del Gasolero",1990,35,"pesquisa"),
+("deportivo-moron","Los Borrachos del Oeste",1990,35,"pesquisa"),
+("san-telmo","La Banda de la Isla",1990,30,"pesquisa"),
 # ---------------- Chile ----------------
-("colo-colo","Garra Blanca",1986,250),
-("universidad-de-chile","Los de Abajo",1988,240),
-("u-catolica","Los Cruzados",1992,160),
-("santiago-wanderers","Los Panzers",1990,90),
-("o-higgins","Trinchera Celeste",1995,55),
-("cobreloa","Los Guerreros del Desierto",1990,55),
-("coquimbo-unido","Los Piratas",1995,50),
-("union-espanola","Los Marginales",1990,45),
-("palestino","Los Baisanos",1990,40),
-("everton","Los Ruleteros",1990,40),
-("deportes-antofagasta","Los Pumas del Norte",1995,35),
-("huachipato","Los Acereros",1995,35),
+("colo-colo","Garra Blanca",1986,250,"pesquisa"),
+("universidad-de-chile","Los de Abajo",1988,240,"pesquisa"),
+("u-catolica","Los Cruzados",1992,160,"pesquisa"),
+("santiago-wanderers","Los Panzers",1990,90,"pesquisa"),
+("o-higgins","Trinchera Celeste",1995,55,"pesquisa"),
+("cobreloa","Los Guerreros del Desierto",1990,55,"pesquisa"),
+("coquimbo-unido","Los Piratas",1995,50,"pesquisa"),
+("union-espanola","Los Marginales",1990,45,"pesquisa"),
+("palestino","Los Baisanos",1990,40,"pesquisa"),
+("everton","Los Ruleteros",1990,40,"pesquisa"),
+("deportes-antofagasta","Los Pumas del Norte",1995,35,"pesquisa"),
+("huachipato","Los Acereros",1995,35,"pesquisa"),
 # ---------------- Colômbia ----------------
-("atletico-nacional","Los del Sur",1997,230),
-("millonarios","Comandos Azules",1992,220),
-("america-de-cali","Barón Rojo Sur",1992,190),
-("independiente-medellin","Rexixtenxia Norte",1996,170),
-("deportivo-cali","Frente Radical Verdiblanco",1993,165),
-("junior","Frente Rojiblanco Sur",1998,150),
-("santa-fe","La Guardia Albirroja Sur",1998,140),
-("once-caldas","Holocausto Norte",1998,70),
-("deportes-tolima","Revolución Vinotinto Sur",1999,65),
-("bucaramanga","Fortaleza Leoparda Sur",2000,60),
-("deportivo-pereira","Lobo Sur",1999,55),
-("union-magdalena","Garra Samaria Norte",1999,45),
-("cucuta-deportivo","La Banda del Indio",1998,45),
-("deportivo-pasto","Attake Masivo",2000,40),
-("atletico-huila","Fuerza Opita",2000,30),
+("atletico-nacional","Los del Sur",1997,230,"pesquisa"),
+("millonarios","Comandos Azules",1992,220,"pesquisa"),
+("america-de-cali","Barón Rojo Sur",1992,190,"pesquisa"),
+("independiente-medellin","Rexixtenxia Norte",1996,170,"pesquisa"),
+("deportivo-cali","Frente Radical Verdiblanco",1993,165,"pesquisa"),
+("junior","Frente Rojiblanco Sur",1998,150,"pesquisa"),
+("santa-fe","La Guardia Albirroja Sur",1998,140,"pesquisa"),
+("once-caldas","Holocausto Norte",1998,70,"pesquisa"),
+("deportes-tolima","Revolución Vinotinto Sur",1999,65,"pesquisa"),
+("bucaramanga","Fortaleza Leoparda Sur",2000,60,"pesquisa"),
+("deportivo-pereira","Lobo Sur",1999,55,"pesquisa"),
+("union-magdalena","Garra Samaria Norte",1999,45,"pesquisa"),
+("cucuta-deportivo","La Banda del Indio",1998,45,"pesquisa"),
+("deportivo-pasto","Attake Masivo",2000,40,"pesquisa"),
+("atletico-huila","Fuerza Opita",2000,30,"pesquisa"),
 # ---------------- Uruguai ----------------
-("penarol","Barra Amsterdam",1970,230),
-("nacional-uru","La Banda del Parque",1970,230),
-("defensor-sporting","La Banda del Violeta",1990,60),
-("wanderers","La Banda del Bohemio",1990,45),
-("danubio","La Banda del Franjeado",1990,45),
-("cerro","La Banda del Villero",1985,45),
-("liverpool","La Banda del Negriazul",1990,40),
+("penarol","Barra Amsterdam",1970,230,"pesquisa"),
+("nacional-uru","La Banda del Parque",1970,230,"pesquisa"),
+("defensor-sporting","La Banda del Violeta",1990,60,"pesquisa"),
+("wanderers","La Banda del Bohemio",1990,45,"pesquisa"),
+("danubio","La Banda del Franjeado",1990,45,"pesquisa"),
+("cerro","La Banda del Villero",1985,45,"pesquisa"),
+("liverpool","La Banda del Negriazul",1990,40,"pesquisa"),
 # ---------------- Peru ----------------
-("universitario","Trinchera Norte",1988,230),
-("alianza-lima","Comando SVR",1988,230),
-("sporting-cristal","Extremo Celeste",1993,130),
-("melgar","Barra Roja Sur",1995,60),
-("cienciano","Fuerza Oriente",1998,55),
-("sport-boys","La Marea Rosada",1995,35),
+("universitario","Trinchera Norte",1988,230,"pesquisa"),
+("alianza-lima","Comando SVR",1988,230,"pesquisa"),
+("sporting-cristal","Extremo Celeste",1993,130,"pesquisa"),
+("melgar","Barra Roja Sur",1995,60,"pesquisa"),
+("cienciano","Fuerza Oriente",1998,55,"pesquisa"),
+("sport-boys","La Marea Rosada",1995,35,"pesquisa"),
 # ---------------- Equador ----------------
-("barcelona-sc","Sur Oscura",1997,220),
-("emelec","Boca del Pozo",1997,200),
-("ldu-quito","Muerte Blanca",1998,150),
-("aucas","Armagedón",1999,90),
-("el-nacional","Marea Roja",1998,60),
-("deportivo-cuenca","Nueva Generación Roja",2000,45),
+("barcelona-sc","Sur Oscura",1997,220,"pesquisa"),
+("emelec","Boca del Pozo",1997,200,"pesquisa"),
+("ldu-quito","Muerte Blanca",1998,150,"pesquisa"),
+("aucas","Armagedón",1999,90,"pesquisa"),
+("el-nacional","Marea Roja",1998,60,"pesquisa"),
+("deportivo-cuenca","Nueva Generación Roja",2000,45,"pesquisa"),
 # ---------------- Paraguai ----------------
-("olimpia","La Barra 79",1979,190),
-("cerro-porteno","La Plaza y Comando",1990,190),
-("libertad","La Banda del Gumarelo",1995,70),
-("guarani-par","La Banda del Indio",1995,60),
+("olimpia","La Barra 79",1979,190,"pesquisa"),
+("cerro-porteno","La Plaza y Comando",1990,190,"pesquisa"),
+("libertad","La Banda del Gumarelo",1995,70,"pesquisa"),
+("guarani-par","La Banda del Indio",1995,60,"pesquisa"),
 # ---------------- Bolívia ----------------
-("bolivar","Furia Celeste",1990,150),
-("the-strongest","Ultra Sur",1995,145),
-("oriente-petrolero","Los de Siempre",1995,110),
-("blooming","La Banda del Cielo",1995,70),
-("wilstermann","La Gloriosa",1995,60),
-("always-ready","La Banda Roja",2000,55),
+("bolivar","Furia Celeste",1990,150,"pesquisa"),
+("the-strongest","Ultra Sur",1995,145,"pesquisa"),
+("oriente-petrolero","Los de Siempre",1995,110,"pesquisa"),
+("blooming","La Banda del Cielo",1995,70,"pesquisa"),
+("wilstermann","La Gloriosa",1995,60,"pesquisa"),
+("always-ready","La Banda Roja",2000,55,"pesquisa"),
 # ---------------- Venezuela ----------------
-("deportivo-tachira","Avalancha Sur",1997,100),
-("caracas","Los Demonios Rojos",1997,90),
-("carabobo","La Banda Granate",2000,40),
-("monagas","Guerreros del Guarapiche",2000,40),
-("deportivo-la-guaira","La Banda Naranja",2010,40),
-("zamora","Furia Llanera",2000,35),
+("deportivo-tachira","Avalancha Sur",1997,100,"pesquisa"),
+("caracas","Los Demonios Rojos",1997,90,"pesquisa"),
+("carabobo","La Banda Granate",2000,40,"pesquisa"),
+("monagas","Guerreros del Guarapiche",2000,40,"pesquisa"),
+("deportivo-la-guaira","La Banda Naranja",2010,40,"pesquisa"),
+("zamora","Furia Llanera",2000,35,"pesquisa"),
+# ---------- nome achado, confirmacao nao fechada ----------
+("barracas-central","La Banda del Guapo",1995,30,"conferir"),
+("central-cordoba","La Banda del Ferroviario",1995,40,"conferir"),
+("sarmiento","La Barra del Verde",1995,35,"conferir"),
+("independiente-rivadavia","La Furia Azul",1990,55,"conferir"),
+("riestra","La Banda del Malevo",2000,25,"conferir"),
+("defensores-de-belgrano","La Banda del Dragón",1990,30,"conferir"),
+("almirante-brown","La Banda de la Fragata",1995,30,"conferir"),
+("patronato","La Banda de la Terraza",1995,30,"conferir"),
+("estudiantes-rc","La Banda del Imperio",1995,25,"conferir"),
+("racing-de-cordoba","La Banda del Nuevo Gasómetro",1995,25,"conferir"),
+("gimnasia-mendoza","La Banda del Lobo Mendocino",1995,30,"conferir"),
+("chaco-for-ever","La Banda del Negro",1995,25,"conferir"),
+("central-norte","La Banda del Cuervo Salteño",1995,30,"conferir"),
+("gimnasia-y-tiro","La Banda del Albo",1995,25,"conferir"),
+("deportivo-madryn","La Banda del Aurinegro",2000,20,"conferir"),
+("deportivo-maipu","La Banda del Cruzado",1995,25,"conferir"),
+("alvarado","La Banda del Torito",1995,25,"conferir"),
+("atletico-rafaela","La Banda de la Crema",1995,25,"conferir"),
+("mitre","La Banda del Aurinegro Santiagueño",1995,20,"conferir"),
+("guemes","La Banda del Gaucho",2000,20,"conferir"),
+("talleres-re","La Banda del Albirrojo",1995,20,"conferir"),
+("brown-de-adrogue","La Banda del Tricolor del Sur",1995,20,"conferir"),
+("agropecuario","La Banda del Sojero",2015,20,"conferir"),
+("defensores-unidos","La Banda del Celeste de Zárate",2000,20,"conferir"),
+("almagro","La Banda del Tricolor",1990,25,"conferir"),
+("estudiantes-ba","La Banda de Caseros",1995,25,"conferir"),
+("villa-dalmine","La Banda del Viola",1995,20,"conferir"),
+("deportivo-espanol","La Banda del Gallego",1990,25,"conferir"),
+("comunicaciones","La Banda del Cartero",1995,20,"conferir"),
+("excursionistas","La Banda del Verdinegro",1990,20,"conferir"),
+("dock-sud","La Banda del Darsenero",1990,25,"conferir"),
+("colegiales","La Banda del Tricolor de Munro",1995,20,"conferir"),
+("acassuso","La Banda de Boulogne",1995,20,"conferir"),
+("sacachispas","La Banda del Lila",1990,20,"conferir"),
+("el-porvenir","La Banda del Porve",1990,20,"conferir"),
+("laferrere","La Banda del Villero",1995,25,"conferir"),
+("deportivo-armenio","La Banda del Tricolor Armenio",1995,20,"conferir"),
+("ituzaingo","La Banda del Verde de Ituzaingó",1995,20,"conferir"),
+("canuelas","La Banda del Tambero",2000,20,"conferir"),
+("argentino-de-merlo","La Banda del Amarillo",1995,20,"conferir"),
+("deportivo-merlo","La Banda del Charro",1995,20,"conferir"),
+("midland","La Banda de Libertad",1995,20,"conferir"),
+("fenix","La Banda del Ave Fénix",2000,20,"conferir"),
+("uai-urquiza","La Banda del Furgón",2000,20,"conferir"),
+("jj-urquiza","La Banda del Naranja",1995,20,"conferir"),
+("argentino-de-quilmes","La Banda del Mate",1995,20,"conferir"),
+("villa-san-carlos","La Banda de Berisso",1995,20,"conferir"),
+("deportes-concepcion","Los Marginales del Bío-Bío",1995,40,"conferir"),
+("deportes-temuco","Los Pijes",1995,35,"conferir"),
+("independiente-del-valle","La Banda del Rayado",2010,40,"conferir"),
+("nacional-par","La Banda del Albo",1995,35,"conferir"),
+("sportivo-luqueno","La Banda Auriazul",1995,40,"conferir"),
+("nacional-potosi","La Banda Lila",2000,35,"conferir"),
+("estudiantes-de-merida","La Banda del Estudiante",1995,35,"conferir"),
 ]
+
+# ===================================================================
+# O NOME QUE FALTA
+# "As demais torcidas que nao conseguiu coletar informacoes, coloque
+#  'La Barra de Albion', por exemplo" (regua do dono, 23/08/2026).
+# Entao o molde e "La Barra de " + o clube sem o generico na frente
+# (Deportivo, Deportes, Club, Sportivo, Atletico) e sem o sufixo de
+# pais. Onde o resto comeca com artigo, a preposicao contrai: "La
+# Barra del 2 de Mayo", "La Barra de Los Chankas".
+# ===================================================================
+GENERICOS = ('Deportivo ', 'Deportes ', 'Club ', 'Sportivo ',
+             'Atlético ', 'Atletico ', 'Real Club ')
+
+# clube que ja empresta o nome a uma barra de pesquisa nao ganha outro
+def nome_gerado(clube):
+    n = clube['nome']
+    for g in ('/URU', '/EQU', '/VEN', '/MG', '/EQU'):
+        n = n.replace(g, '')
+    n = n.strip()
+    for g in GENERICOS:
+        # so corta quando sobra nome de verdade: "Atlético Grau" fica
+        # inteiro, que e como o clube e conhecido
+        if n.startswith(g) and len(n) - len(g) >= 6:
+            n = n[len(g):]
+            break
+    if n.startswith('El '):
+        return 'La Barra del ' + n[3:]
+    if n[0].isdigit():
+        return 'La Barra del ' + n
+    return 'La Barra de ' + n
+
+
+# efetivo de quem nao tem pesquisa: a qualidade do clube diz o tamanho,
+# na faixa de baixo da regua (20 a 45), que e onde mora clube pequeno.
+def membros_gerado(clube):
+    q = clube.get('qualidade', 8)
+    base = 45 if q >= 13 else 40 if q >= 12 else 32 if q >= 10 else \
+           26 if q >= 8 else 22
+    # primeira divisao junta mais gente do que a segunda do mesmo porte
+    return base + (3 if 'Primera B' not in clube['divisao'] and
+                        'Nacional' not in clube['divisao'] else 0)
+
+
+def gerar_faltantes(times):
+    """uma barra pra cada clube dos nove paises que a pesquisa nao cobriu"""
+    tem = {b[0] for b in BARRAS}
+    usados = {b[1] for b in BARRAS}
+    fora = []
+    for c in times:
+        if c.get('pais') in (None, 'Brasil') or c['id'] in tem:
+            continue
+        nome = nome_gerado(c)
+        if nome in usados:                       # dois clubes de nome igual
+            nome += ' de ' + c.get('cidade', '')
+        usados.add(nome)
+        fora.append((c['id'], nome, 1990 + hashado(c['id']) % 16,
+                     membros_gerado(c), 'gerada'))
+    fora.sort(key=lambda b: b[0])
+    return fora
+
 
 # bairro-sede: onde a barra de verdade se junta, por clube -- duas barras
 # de paises diferentes tem o mesmo nome ("Los de Siempre", "La Banda do
@@ -673,6 +877,7 @@ def bairro_da_sede(clube_id, barra, praca):
 
 
 def montar_torcidas(times, pracas):
+    TODAS = BARRAS + gerar_faltantes(times)
     por_id = {t['id']: t for t in times}
     por_praca = {c['id']: c for c in pracas}
     div_do_pais = {}
@@ -682,16 +887,19 @@ def montar_torcidas(times, pracas):
             div_do_pais[t['pais']].append(t['divisao'])
 
     fora, sem_sede = [], []
-    for clube_id, nome, fund, membros in BARRAS:
+    for clube_id, nome, fund, membros, origem in TODAS:
         c = por_id[clube_id]
         praca = por_praca[c['mapa']]
         bairro, casou = bairro_da_sede(clube_id, nome, praca)
-        if not casou:
+        if clube_id in SEDES and not casou:
             sem_sede.append(f'{nome} ({clube_id})')
         cor = c.get('cores', ['#8a8a8a', '#8a8a8a'])
         pais = c.get('pais', '')
         fora.append({
-            'id': ident(nome) + '-' + ident(clube_id)[:12],
+            # o id e curto de proposito: ele se repete umas vinte vezes
+            # em cada lista de rivais, e "b-boca-juniors" custa metade de
+            # "la-12-boca-juniors" no arquivo inteiro
+            'id': 'b-' + clube_id,
             'nome': nome, 'clube': c['nome'], 'clubeId': clube_id,
             'sigla': c.get('sigla', ''), 'siglaTorcida': sigla_curta(nome),
             'cidade': praca['nome'], 'mapa': c['mapa'], 'uf': c.get('uf', ''),
@@ -711,7 +919,7 @@ def montar_torcidas(times, pracas):
             'poder': round(membros * 0.9835 + 8.3, 1),
             'cargos': cargos_de(membros),
             'aliados': [], 'irmandade': [], 'rivais': [], 'maioresRivais': [],
-            'fora': True,
+            'fora': True, 'origem': origem,
         })
 
     # ---- o grafo ----
@@ -797,6 +1005,16 @@ def main():
 
     print(f'  bairro-sede da pesquisa que não bateu com a praça: {len(sem_sede)}'
           + (f' {sem_sede[:6]}' if sem_sede else ''))
+    porhash = sum(1 for t in torcidas if t['clubeId'] not in SEDES)
+    print(f'  sede sorteada por hash (sem pesquisa de bairro): {porhash}')
+
+    origens = {}
+    for t in torcidas:
+        origens[t['origem']] = origens.get(t['origem'], 0) + 1
+    print('  por origem: ' + ', '.join(f'{k} {v}' for k, v in sorted(origens.items())))
+    clubes_fora = [t for t in times if t.get('pais') not in (None, 'Brasil')]
+    orfaos = sorted({c['id'] for c in clubes_fora} - {t['clubeId'] for t in torcidas})
+    print(f'  clube de fora sem barra: {orfaos or "nenhum"}')
 
     m = [t['membros'] for t in torcidas]
     print(f'  efetivo: menor {min(m)} · maior {max(m)} · soma {sum(m)}')

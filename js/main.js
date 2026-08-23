@@ -4288,7 +4288,11 @@
         .map(c=>({id:c.id, rot:c.nome, conta:c.clubes.length}));
     }
     /* nacional: depende do país */
-    if(paisComp === 'Brasil'){
+    /* JOGADOR DE FORA: o Brasil não tem temporada, tem tabela — então
+       ele desce pro mesmo caminho dos outros nove, logo abaixo. */
+    const temBR = e.temporada &&
+      (e.temporada.competicoes||[]).some(c=>c.tipo==='nacional');
+    if(paisComp === 'Brasil' && temBR){
       const S = e.temporada;
       const fora = (S ? S.competicoes.filter(c=>c.tipo==='nacional') : [])
         .map(c=>({id:c.id, rot:c.nome.replace('Brasileirão ',''),
@@ -4301,15 +4305,19 @@
     }
     const P = (e.ligas||{}).paises && e.ligas.paises[paisComp];
     const fora = P ? Object.keys(P.divisoes).map(d=>({
-      id:'liga:'+d, rot:d.replace(paisComp+' ',''),
+      id:'liga:'+d, rot:d.replace(paisComp+' ','').replace('Brasileirão ',''),
       conta:P.divisoes[d].clubes.length})) : [];
     const copa = (e.conmebol||{}).copas && e.conmebol.copas[paisComp];
     if(copa) fora.push({id:'copa-nac', rot:copa.nome, conta:copa.clubes.length});
+    if(paisComp === 'Brasil'){
+      if(TO.lnt && TO.lnt.existe(e)) fora.push({id:'lnt', rot:'LNT', conta:138});
+      fora.push({id:'historico', rot:'Histórico'});
+    }
     return fora;
   }
 
-  const paisesJogaveis = e => ['Brasil'].concat(
-    Object.keys((e.ligas||{}).paises || {}).sort());
+  const paisesJogaveis = e => [...new Set(
+    ['Brasil'].concat(Object.keys((e.ligas||{}).paises || {}).sort()))];
 
   function pintarCompeticoes(){
     const e = E(), pg = U.$('.pagina[data-pag="competicoes"]');
@@ -4329,7 +4337,11 @@
     /* ---- o filtro do país, só no nacional ---- */
     if(nivelComp === 'nacional'){
       const paises = paisesJogaveis(e);
-      if(!paises.includes(paisComp)) paisComp = 'Brasil';
+      /* a aba que abre é a do país da nossa torcida: jogando com a La 12
+         a primeira tabela a aparecer tem que ser a da Argentina */
+      const meuPais = TO.competicoes.paisDoJogador(e);
+      if(!paises.includes(paisComp))
+        paisComp = paises.includes(meuPais) ? meuPais : 'Brasil';
       const f = el('div',{class:'filtros-linha paises'});
       const meu = TO.competicoes.paisDe(TO.mundo.time(e.torcida.clubeId)||{});
       for(const p of paises){

@@ -528,17 +528,34 @@ TO.competicoes = (function(){
      Então os clubes de fora ficam guardados e fora da temporada até o
      motor de formatos existir. Quem ligar isto antes tem de resolver
      o armazenamento junto. */
-  const SO_BRASIL = true;
+  /* O PAÍS DO JOGADOR É QUE JOGA (régua do dono, 23/08/2026).
+     "O país cuja torcida que o jogador selecionar deve gerar os jogos e
+     as demais geram somente as tabelas." Este motor sabe o formato
+     brasileiro — estadual, quatro séries e Copa do Brasil —, então ele
+     monta a temporada quando o jogador é do Brasil. Quando não é, quem
+     monta é `ligas.js`, que sabe Apertura, Clausura, quadrangular,
+     hexagonal e tabela anual; a temporada nasce vazia aqui e ele
+     pendura as competições dele nela. O Brasil, nesse caso, cai pro
+     resumo das ligas junto com os outros oito. */
+  function paisDoJogador(E){
+    const meu = E && E.torcida && E.torcida.clubeId;
+    const t = meu ? M().time(meu) : null;
+    return (t && t.pais) || 'Brasil';
+  }
 
   function montarTemporada(E){
     U.usarSemente((E.semente || 1) + (E.data.ano||2026));
     const T = M().todosTimes;
     const comps = [];
 
+    if(paisDoJogador(E) !== 'Brasil')
+      return {ano:E.data.ano, competicoes:comps, deFora:true,
+              titulos:(E.temporada && E.temporada.titulos) || []};
+
     /* ---- fase 1: regionais e estaduais (GDD §18.3 e §18.4) ---- */
     const porRegional = {};
     for(const t of T){
-      if(SO_BRASIL && paisDe(t) !== 'Brasil') continue;
+      if(paisDe(t) !== 'Brasil') continue;
       const r = regionalDe(E, t);
       if(!r) continue;
       (porRegional[r] = porRegional[r] || []).push(t.id);
@@ -568,7 +585,7 @@ TO.competicoes = (function(){
     /* ---- fase 2: Brasileirão (GDD §18.2) ---- */
     const porDivisao = {};
     for(const t of T){
-      if(SO_BRASIL && paisDe(t) !== 'Brasil') continue;
+      if(paisDe(t) !== 'Brasil') continue;
       const d = divisaoDe(E, t);
       (porDivisao[d] = porDivisao[d] || []).push(t.id);
     }
@@ -1594,7 +1611,7 @@ TO.competicoes = (function(){
 
   return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana,
           forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
-          paisDe, SO_BRASIL, simular, forca,
+          paisDe, paisDoJogador, simular, forca,
           emJogo, porForca, estreiaDe, disputaDePenaltis,
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
