@@ -439,6 +439,14 @@ TO.estado = (function(){
         TO.feed.emboscadaDaViagem(E);
     }
 
+    /* O MUNDO DE FORA JOGA JUNTO (régua do dono, 23/08/2026): as nove
+       ligas sul-americanas e as duas copas da Conmebol andam no mesmo
+       dia do jogo. As ligas guardam só a classificação; a Libertadores
+       e a Sul-Americana guardam os jogos, porque o clube do jogador
+       pode estar nelas e isso é notícia. */
+    if(TO.ligas)    TO.ligas.rodar(E);
+    if(TO.conmebol) TO.conmebol.rodar(E);
+
     /* os jogos de hoje saem hoje, e o feed conta a noite */
     const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
     /* e onde tem jogo tem torcida na rua: as brigas entre as IAs

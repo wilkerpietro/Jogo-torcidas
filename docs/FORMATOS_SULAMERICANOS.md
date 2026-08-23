@@ -74,7 +74,54 @@ volta** (22 fechas cada). **Dois campeões por ano.**
 - **Copa de la División Profesional** no segundo semestre: 16 clubes em
   **4 grupos de 4**
 
-## O que o motor de hoje não sabe fazer
+## IMPLEMENTADO (23/08/2026) — `js/mundo/ligas.js` e `js/mundo/conmebol.js`
+
+Os nove formatos acima rodam no jogo, na **opção 1** que o dono
+escolheu: o Brasil segue com a tabela de jogos inteira no motor de
+sempre, e as ligas de fora rodam o formato real guardando **só a
+classificação e o mata-mata**. As fechas da fase regular são sorteadas
+pelo método do círculo, resolvidas e descartadas — nunca ficam no save.
+
+**Medido em 5 anos de jogo**: save 1.824 KB, 13 ms por dia, e toda
+divisão dos nove países mantendo o tamanho depois do sobe-e-desce.
+Contra os 2.374 KB **no primeiro ano** que a versão detalhada dava.
+
+### As duas copas da Conmebol
+
+**Libertadores** — 47 clubes: Brasil 7, Argentina 6, os outros oito 4
+cada, mais os campeões da Libertadores e da Sul-Americana do ano
+anterior. 28 entram direto e 19 disputam a prévia, que afunila
+exatamente como a Conmebol: Fase 1 com os 6 mais fracos (3 duelos),
+Fase 2 com esses 3 mais os 13 que esperavam (16 clubes, 8 duelos), e
+Fase 3 com 8 clubes — 4 vão aos grupos e **os 4 que caem vão pra
+Sul-Americana**. Oito grupos de quatro, seis fechas, os dois primeiros
+às oitavas. Oitavas, quartas e semi em ida e volta; final em jogo único.
+
+**Sul-Americana** — 44 clubes: Brasil 6, Argentina 6, os outros 4 cada.
+12 entram direto, 32 jogam a Fase Preliminar (16 duelos) e os 16
+vencedores completam a chave com os 4 que caíram da Fase 3 da
+Libertadores: 12 + 16 + 4 = 32. Oito grupos de quatro. O **primeiro**
+de cada grupo vai direto às oitavas; o **segundo** cai no **playoff**
+contra os oito **terceiros dos grupos da Libertadores**, e ali quem vem
+da Libertadores joga a ida em casa.
+
+**Nove copas nacionais** — uma por país, mata-mata com todas as
+divisões daquele país, mando de quem tem a divisão mais alta. O Brasil
+não ganhou uma nova: já tem a Copa do Brasil no motor de sempre.
+
+### Dois consertos que a medição pegou
+
+- **Torneio que estourava o calendário.** O Finalización colombiano
+  abre na semana 30 e pede 19 fechas mais o quadrangular de 6 — dá 55
+  num ano de 52. Ele não terminava, e sem terminar ninguém caía: a
+  Primera A foi de 20 pra **26 clubes** em três anos enquanto a B
+  minguava pra 10. O conserto é o que o futebol faz quando o calendário
+  aperta — rodada no meio de semana, aqui mais de uma fecha por tique.
+- **Torneio que abre em fase de grupos.** O Intermedio uruguaio não tem
+  fase regular, e a semana da primeira fase só era marcada na transição
+  — ele nunca começava.
+
+## O que o motor não sabia fazer (e agora sabe)
 
 `criarCompeticao` monta UMA competição com `{grupos, passam, voltas}`:
 fase de grupos, mata-mata olímpico, um campeão. Falta:

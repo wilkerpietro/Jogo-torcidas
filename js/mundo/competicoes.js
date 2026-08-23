@@ -1594,7 +1594,7 @@ TO.competicoes = (function(){
 
   return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana,
           forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
-          paisDe, SO_BRASIL,
+          paisDe, SO_BRASIL, simular, forca,
           emJogo, porForca, estreiaDe, disputaDePenaltis,
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
