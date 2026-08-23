@@ -1698,6 +1698,59 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · Fechar a aba salva (`beforeunload`): antes o autosave só gravava no
     fim da semana, então fechar o jogo na quarta jogava a semana fora.
 
+- **AS BARRAS BRAVAS DOS NOVE PAÍSES** (pedido do dono, 23/08/2026):
+  "as barras bravas originais de cada time, com a quantidade de membros
+  de acordo com o tamanho estimado da torcida no país". Entraram **100
+  barras** — Argentina 38, Colômbia 15, Chile 12, Uruguai 7, Peru 6,
+  Equador 6, Bolívia 6, Paraguai 4 — cada uma com **nome real**, ano de
+  fundação e bairro-sede de verdade (La 12 na Boca, Los Borrachos del
+  Tablón em Núñez, Garra Blanca em Macul, Trinchera Norte no Rímac).
+  · **O EFETIVO SEGUE A RÉGUA BRASILEIRA**, 20 a 250, com Gaviões e
+    Jovem Fla no teto: 250 pra La 12, Los Borrachos e Garra Blanca; 230
+    pra Barra Amsterdam, La Banda del Parque, Trinchera Norte, Comando
+    SVR e Los del Sur; e a escada desce até 30 no clube pequeno.
+  · **A PESQUISA TEM CRIVO**. Levantei 154 barras; **54 ficaram de
+    fora** — quase todas de terceira divisão argentina e clube pequeno —
+    porque a pesquisa não confirmou o nome. Nome de organizada que
+    existe de verdade não se inventa; se o dono quiser, elas entram com
+    nome gerado, mas só com a palavra dele.
+  · **49 PRAÇAS NOVAS, 500 BAIRROS REAIS**, no mesmo formato das trinta
+    brasileiras: Grande 16 bairros, Médio 12, Pequeno 8, quatro zonas
+    equilibradas e as quatro classes com o multiplicador de sempre. Zona
+    e classe seguem a geografia onde ela é conhecida — Las Condes nobre,
+    Petare favela, El Poblado nobre, Villa Fiorito favela.
+  · **A ALIANÇA FICA VAZIA, DE PROPÓSITO.** A barra brava não tem a rede
+    de aliadas que a organizada brasileira tem. O grafo entrega o
+    **clássico como maior rival** (Boca×River, Racing×Independiente,
+    Colo-Colo×U de Chile, Nacional×Peñarol, Olímpia×Cerro,
+    Millonarios×Santa Fe, Nacional×Medellín, Barcelona×Emelec,
+    Universitario×Alianza, Bolívar×The Strongest, Caracas×Táchira) e
+    **rival** pra quem divide praça ou divisão. Hermanamiento entra
+    quando o dono mandar.
+  · **`dados/barras.js` é arquivo à parte**, e entra depois de
+    `cidades.js` e `torcidas.js`. As duas são geradas das fontes
+    brasileiras, e regerar qualquer uma apagaria o mundo de fora se ele
+    morasse lá dentro.
+
+- **A LNT É DE UM PAÍS SÓ** (correção, 23/08/2026): com as barras
+  dentro, `jogaveis()` foi de 139 pra 239 e a peneira despejava as 101
+  sobrando na 4ª Divisão de uma vez — chave de 17 numa liga de 6, e a
+  edição quebrava ao montar as rodadas. Além do defeito, "Liga
+  Nacional" com La 12 e Garra Blanca dentro não é nacional. Agora a
+  lista é a do **país da nossa torcida**, e país que não tem as 138 não
+  funda liga nenhuma até o dono decidir o formato de lá. A troca com a
+  fila de fora virou **um por um**, e quem não entrou continua na frente
+  dela — antes a fila inteira entrava de uma vez e quem esperava era
+  descartado.
+
+- **O CLUBE DE FORA AINDA NÃO TEM DIA DE JOGO** (pendente, 23/08/2026):
+  jogando com uma barra, a rua funciona inteira — treta, assalto, bar
+  rival, rivalidade, notícia da Libertadores —, mas o **clube dela não
+  entra em campo**: as nove ligas guardam só a classificação, sem
+  jogos, e é do `E.temporada` que sai o dia de jogo. Ligar isso pede
+  agendar a fecha da divisão do jogador uma semana à frente e ler o
+  resultado de volta na tabela. Espera a palavra do dono.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

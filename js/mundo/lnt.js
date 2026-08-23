@@ -107,9 +107,28 @@ TO.lnt = (function(){
   /* as 138 que entram: as maiores primeiro, e a divisão sai daí.
      Quem sobrar fica de fora desta edição e entra na próxima, no
      lugar do pior da 4ª — liga fechada pra sempre seria injusta com
-     quem cresceu. */
+     quem cresceu.
+
+     A LIGA É NACIONAL, E NACIONAL QUER DIZER UM PAÍS SÓ (23/08/2026).
+     Com as barras bravas dentro do jogo, `jogaveis()` passou de 139
+     pra 239, e a peneira despejava as 101 sobrando na 4ª Divisão de
+     uma vez: chave de 17 numa liga de 6, e a edição quebrava na hora
+     de montar as rodadas. Além do defeito, uma "Liga Nacional" com
+     La 12 e Garra Blanca dentro não é nacional. Então a lista é a do
+     país da nossa torcida — e país que não tem as 138 não funda liga
+     nenhuma até o dono decidir o formato de lá. */
+  function paisDaNossa(E){
+    const meu = E && E.torcida && E.torcida.clubeId;
+    const t = meu ? M().time(meu) : null;
+    return (t && t.pais) || 'Brasil';
+  }
+
   function ordenarPorForca(E){
-    const vivas = M().jogaveis().slice();
+    const pais = paisDaNossa(E);
+    const vivas = M().jogaveis().filter(o=>{
+      const t = M().time(o.clubeId);
+      return ((t && t.pais) || 'Brasil') === pais;
+    });
     const peso = o => {
       const t = (E.mundoTorcidas||{})[o.id] || {};
       const membros = t.membros != null ? t.membros : (o.membros||20);
@@ -121,9 +140,12 @@ TO.lnt = (function(){
                               (a.nome < b.nome ? -1 : 1));
   }
 
+  const VAGAS_LNT = FORMATO.reduce((a,f)=>a + f.clubes, 0);   // 138
+
   function fundar(E){
     if(existe(E)) return null;
     const lista = ordenarPorForca(E).map(o=>o.id);
+    if(lista.length < VAGAS_LNT) return null;   // país sem liga ainda
     const divs = [];
     let i = 0;
     for(const f of FORMATO){
@@ -608,14 +630,21 @@ TO.lnt = (function(){
     /* A PENEIRA: quem ficou de fora entra no lugar do pior da última
        divisão. Liga fechada pra sempre seria injusta com quem cresceu
        — e sem isto a torcida que sobrou na fundação nunca jogaria. */
+    /* A TROCA É UM POR UM: sai um pior da última, entra um de fora.
+       Antes isto entregava a fila INTEIRA de uma vez e ainda jogava
+       fora quem estava esperando — com 1 sobrando não se notava, com
+       101 a 4ª Divisão virava chave de 17 e a edição quebrava. Agora
+       `fora` é fila de verdade: quem não entrou continua na frente, e
+       quem caiu vai pro fim dela. */
     const ultima = nova.length - 1;
     if((L.fora || []).length){
       const piores = ultimosDosGrupos(ed.divs[ultima])
         .filter(id=>nova[ultima].includes(id))
         .slice(0, L.fora.length);
+      const entram = L.fora.slice(0, piores.length);
       nova[ultima] = nova[ultima].filter(id=>!piores.includes(id))
-                                 .concat(L.fora);
-      L.fora = piores;
+                                 .concat(entram);
+      L.fora = L.fora.slice(entram.length).concat(piores);
     }
     L.composicao = nova;
     L.historico.push({

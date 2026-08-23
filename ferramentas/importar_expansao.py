@@ -77,6 +77,35 @@ def da_expansao(caminho):
     return fora
 
 
+# A TROCA DE C E D (decisao do dono, 21/08/2026). A planilha do autor
+# nunca foi atualizada, entao a decisao vivia so no times.js gerado --
+# e a importacao da expansao a apagou junto. Agora ela mora aqui, que e
+# onde sobrevive a proxima regeracao. DECISOES.md guarda o porque.
+TROCA_C_D = {
+    'amazonas':    ('Brasileirão Série D', 6),
+    'ferroviario': ('Brasileirão Série D', 6),
+    'floresta':    ('Brasileirão Série D', 7),
+    'brasiliense': ('Brasileirão Série C', 10),
+    'sergipe':     ('Brasileirão Série C', 10),
+    'csa':         ('Brasileirão Série C', 8),
+    'joinville':        ('Brasileirão Série C', 8),
+    'inter-de-limeira': ('Brasileirão Série D', 6),
+}
+
+
+def aplicar_remendos(times):
+    achados = 0
+    for t in times:
+        r = TROCA_C_D.get(t['id'])
+        if r:
+            t['divisao'], t['qualidade'] = r
+            achados += 1
+    faltando = sorted(set(TROCA_C_D) - {t['id'] for t in times})
+    if faltando:
+        sys.exit(f'REMENDO SEM CLUBE, a decisao do dono se perde: {faltando}')
+    return achados
+
+
 def main():
     br = do_brasil(RAIZ / 'dados/fonte/Book_3_1.xlsx')
     ex = da_expansao(RAIZ / 'dados/fonte/Expansao_America_do_Sul.xlsx')
@@ -90,11 +119,14 @@ def main():
     if repetidos:
         sys.exit(f'ID REPETIDO, o jogo funde os dois clubes: {repetidos}')
 
+    remendados = aplicar_remendos(times)
+
     escrever('dados/times.js', 'TIMES — clubes, estadios e divisoes',
              'TO.dados.times', times)
 
     print('\nconferencia:')
     print(f'  Brasil: {len(br)} · expansao: {len(ex)} · total: {len(times)}')
+    print(f'  remendos da decisao do dono aplicados: {remendados}')
     porpais = {}
     for t in times:
         porpais[t['pais']] = porpais.get(t['pais'], 0) + 1
