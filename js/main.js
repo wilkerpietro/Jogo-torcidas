@@ -4595,6 +4595,67 @@
   const nomeT = id => (TO.mundo.time(id)||{}).nome || '—';
   const corT  = id => ((TO.mundo.time(id)||{}).cores || ['#888'])[0];
 
+  /* =======================================================
+     QUEM VAI PRA CONMEBOL (pedido do dono, 23/08/2026)
+
+     "Quando eu selecionar um país as competições dos demais países
+     seguem aparecendo, mas somente mostrando a classificação e se tiver
+     finalizado dizendo quem foi o campeão, o vice e os demais
+     classificados pras competições Conmebol."
+
+     A tabela dizia quem ganhou, mas não o que isso valeu. Este quadro
+     fecha a conta do ano: campeão, vice e a lista das vagas, Copa
+     Libertadores primeiro e Copa Sul-Americana depois, na ordem em que
+     `conmebol.js` distribui de verdade. Vale pra qualquer um dos dez
+     países, jogue o jogador nele ou não.
+     ======================================================= */
+  function painelVagasConmebol(e, pais, D){
+    if(!TO.conmebol || !TO.conmebol.vagasDoPais) return null;
+    const v = TO.conmebol.vagasDoPais(e, pais);
+    if(!v || (!v.lib.length && !v.sul.length)) return null;
+    const proximo = (e.data.ano || 2026) + 1;
+
+    const q = quadro(`Vagas da Conmebol · ${proximo}`,
+      el('span',{class:'conta', texto:`${v.lib.length + v.sul.length} vagas`}));
+
+    if(D && D.campeao){
+      q.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
+        `${IC.get('trofeu')}<div><b>${nomeT(D.campeao)}</b>`+
+        `<small>${D.vice ? 'vice: ' + nomeT(D.vice) : 'campeão do ano'}</small></div>`}));
+    }
+
+    /* o campeão continental já tem a vaga na mão, e ela não sai da
+       tabela do país — é o que faz o Brasil ter oito e a Argentina
+       sete numa Libertadores de sete e seis */
+    for(const id of v.donos)
+      q.corpo.appendChild(el('div',{class:'sub-chave',
+        texto:`${nomeT(id)} entra como campeão continental, fora da conta do país`}));
+
+    /* a numeração é a da fila do país, e corre pelos dois torneios: o
+       5º do campeonato é o 1º da Sul-Americana, e mostrar "1º" ali
+       faria parecer que ele ganhou alguma coisa */
+    let n = 0;
+    const linhas = (rot, lista, classe)=>{
+      if(!lista.length) return;
+      q.corpo.appendChild(el('div',{class:'fase-rot', texto:rot}));
+      for(const id of lista){
+        n++;
+        const nosso = id === e.torcida.clubeId;
+        q.corpo.appendChild(el('div',{class:'vaga-cm '+classe+(nosso?' meu':''), html:
+          `<span class="pos">${n}º</span>`+
+          `<i style="background:${corT(id)}"></i>`+
+          `<span class="nm">${nomeT(id)}</span>`}));
+      }
+    };
+    linhas('Libertadores', v.lib, 'lib');
+    linhas('Sul-Americana', v.sul, 'sul');
+
+    if(!D || !D.campeao)
+      q.corpo.appendChild(el('div',{class:'sub-chave',
+        texto:'a temporada ainda corre — a lista muda com a tabela'}));
+    return q;
+  }
+
   function pintarLigaDeFora(e, pg, pais, div){
     const L = TO.ligas;
     const P = (e.ligas||{}).paises && e.ligas.paises[pais];
@@ -4654,6 +4715,15 @@
         q.corpo.appendChild(rolo);
         esq.appendChild(q);
       });
+    }
+
+    /* A CONTA DO ANO FECHA A COLUNA. A vaga continental sai da primeira
+       divisão do país; repetir o quadro na segunda seria dizer que a
+       Primera B dá vaga na Libertadores, o que ela não dá. Vem depois
+       das tabelas porque é o que elas decidem. */
+    if(Object.keys(P.divisoes)[0] === div){
+      const vg = painelVagasConmebol(e, pais, D);
+      if(vg) esq.appendChild(vg);
     }
 
     const anual = D.anual && Object.keys(D.anual).length

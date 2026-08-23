@@ -195,6 +195,21 @@ table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
 .sub-chave{font-family:var(--mono);font-size:9.5px;color:var(--ouro);
   padding:3px 0 6px;text-align:center}
 
+/* A VAGA CONTINENTAL (dono, 23/08/2026): posição, cor do clube, nome e
+   a etiqueta do torneio. Libertadores em ouro, Sul-Americana em prata —
+   é a hierarquia que a arquibancada enxerga de longe. */
+.vaga-cm{display:grid;grid-template-columns:26px 11px 1fr;
+  align-items:center;gap:8px;padding:5px 0;font-size:12px;
+  border-bottom:1px solid var(--sulco)}
+.vaga-cm:last-child{border-bottom:0}
+.vaga-cm .pos{font-family:var(--mono);font-size:10px}
+.vaga-cm.lib .pos{color:var(--ouro)}
+.vaga-cm.sul .pos{color:#b9c3cc}
+.vaga-cm i{width:11px;height:11px;display:inline-block;
+  border:1px solid rgba(255,255,255,.22)}
+.vaga-cm.meu{background:var(--rubro-fundo)}
+.vaga-cm.meu .nm{color:#fff;font-weight:600}
+
 /* a tabela de prêmios da LNT: rótulo à esquerda, dinheiro à direita */
 .lnt-premio{display:flex;justify-content:space-between;align-items:baseline;
   gap:10px;font-family:var(--mono);font-size:10px;

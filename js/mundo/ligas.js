@@ -864,8 +864,37 @@ TO.ligas = (function(){
     const fora = [];
     for(const T of D.torneios) if(T.campeao && !fora.includes(T.campeao))
       fora.push(T.campeao);
-    if(D.campeao && !fora.includes(D.campeao)) fora.unshift(D.campeao);
+    /* o campeão do ano abre a fila, mesmo quando quem ganhou o torneio
+       foi outro: numa liga com tabela anual dá pra ser campeão do país
+       sem ter ganho o Clausura, e a primeira vaga é dele */
+    if(D.campeao){
+      const i = fora.indexOf(D.campeao);
+      if(i >= 0) fora.splice(i, 1);
+      fora.unshift(D.campeao);
+    }
     for(const id of (D.tabelaAnual || [])) if(!fora.includes(id)) fora.push(id);
+
+    /* A ORDEM VALE O ANO INTEIRO (correção de 23/08/2026): a tabela
+       anual só nasce no fechamento do país, então no meio da temporada
+       isto devolvia uma lista de um nome — o campeão do Apertura — e a
+       tela de vagas mostrava uma vaga de Libertadores e nenhuma de
+       Sul-Americana. Agora, faltando gente, entra a anual em construção,
+       depois a tabela do torneio que está correndo, e por último o que
+       sobrar, pela força do elenco. Quem já está na lista não repete. */
+    const juntar = tab => {
+      if(!tab) return;
+      for(const l of ordenar(tab, D.clubes))
+        if(!fora.includes(l.id)) fora.push(l.id);
+    };
+    if(fora.length < D.clubes.length && D.anual && Object.keys(D.anual).length)
+      juntar(D.anual);
+    for(let k = D.torneios.length - 1; k >= 0 && fora.length < D.clubes.length; k--)
+      juntar(D.torneios[k].tabela);
+    if(fora.length < D.clubes.length){
+      const resto = D.clubes.filter(id=>!fora.includes(id))
+        .sort((a,b)=>(C().forca(b)||0) - (C().forca(a)||0));
+      for(const id of resto) fora.push(id);
+    }
     return fora;
   }
 

@@ -1905,6 +1905,38 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · O figurante da cena de briga também segue o país: numa treta em
     Buenos Aires o disco se chama Zurdo, não Pitbull.
 
+- **CADA PAÍS FECHA A CONTA DO ANO** (pedido do dono, 23/08/2026):
+  "quando eu selecionar um país as competições dos demais países seguem
+  aparecendo, mas somente mostrando a classificação e se tiver
+  finalizado dizendo quem foi o campeão, o vice e os demais
+  classificados pras competições Conmebol". A tabela dizia quem ganhou,
+  mas não o que aquilo valeu.
+  · Um quadro novo, **Vagas da Conmebol**, fecha a coluna da primeira
+    divisão de qualquer um dos dez países: campeão e vice no alto, e
+    embaixo a fila das vagas — Libertadores em ouro, Sul-Americana em
+    prata —, numerada de ponta a ponta, porque o 5º do campeonato é o
+    primeiro da Sul-Americana e mostrar "1º" ali faria parecer que ele
+    ganhou alguma coisa. Só na divisão de cima: repetir o quadro na
+    segunda seria dizer que a Primera B dá vaga na Libertadores.
+  · A lista sai de `conmebol.vagasDoPais`, que aplica a mesma regra da
+    montagem — a ordem do país menos os dois campeões continentais, os
+    primeiros pra Libertadores e os seguintes pra Sul-Americana. Campeão
+    continental do próprio país aparece à parte, com a nota de que entra
+    fora da conta: é isso que dá ao Brasil oito clubes numa Libertadores
+    de sete vagas.
+  · Com a temporada em andamento o quadro mostra a projeção e avisa: "a
+    temporada ainda corre — a lista muda com a tabela".
+  · **`ordemDoPais` passou a valer o ano inteiro.** A tabela anual só
+    nasce no fechamento do país, então no meio da temporada a função
+    devolvia uma lista de um nome — o campeão do Apertura — e o quadro
+    mostrava uma vaga de Libertadores e nenhuma de Sul-Americana.
+    Faltando gente, entra agora a anual em construção, depois a tabela
+    do torneio que está correndo, e por último o que sobrar pela força
+    do elenco.
+  · E **o campeão do ano abre a fila**, mesmo quando quem ganhou o
+    torneio foi outro: numa liga com tabela anual dá pra ser campeão do
+    país sem ter ganho o Clausura, e a primeira vaga é dele.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -97,6 +97,28 @@ TO.conmebol = (function(){
       .sort((a,b)=>(b.qualidade||0)-(a.qualidade||0)).map(t=>t.id);
   }
 
+  /* AS VAGAS DE UM PAÍS, PRA TELA (pedido do dono, 23/08/2026).
+     Mesma regra que `vagas` usa na montagem — a ordem do país menos os
+     dois campeões continentais, os primeiros pra Libertadores e os
+     seguintes pra Sul-Americana —, só que olhando um país de cada vez.
+     Bate com o sorteio porque os únicos clubes que `vagas` tira de fora
+     da ordem são justamente esses dois. */
+  function vagasDoPais(E, pais){
+    const campeoes = E.conmebolCampeoes || {};
+    const donos = [campeoes.libertadores, campeoes.sulamericana]
+      .filter(id => id && M().time(id));
+    const daCasa = donos.filter(id => paisDe(id) === pais);
+    const fora = new Set(donos);
+    const ordem = ordemDoPais(E, pais).filter(id => !fora.has(id));
+    const nLib = VAGAS_LIB[pais] || 0, nSul = VAGAS_SUL[pais] || 0;
+    return {
+      donos: daCasa,
+      lib: ordem.slice(0, nLib),
+      sul: ordem.slice(nLib, nLib + nSul),
+      ordem
+    };
+  }
+
   function vagas(E, tabela, jaPegos){
     const fora = [];
     for(const pais of Object.keys(tabela)){
@@ -675,6 +697,6 @@ TO.conmebol = (function(){
     return {fase:copa.mata[copa.mata.length-1].fase, seguem:passa.length};
   }
 
-  return {VAGAS_LIB, VAGAS_SUL, CAL_LIB, CAL_SUL, DIA,
+  return {VAGAS_LIB, VAGAS_SUL, CAL_LIB, CAL_SUL, DIA, vagasDoPais,
           montar, rodar, arquivar, ordemDoPais, ordemDoBrasil, nome};
 })();
