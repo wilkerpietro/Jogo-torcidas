@@ -59,8 +59,46 @@ TO.feed = (function(){
 
   /* põe uma mensagem na fila. `msg`: {kind, peso:'info'|'decisao',
      texto, tipo, voz, botoes, links, efeitos, dados} */
+  /* =======================================================
+     O BOTÃO DE SIMULAR (pedido do dono, 23/08/2026)
+
+     "Um botão de simular em todas as ações de confronto." Em vez de
+     escrever o gêmeo à mão em cada mensagem — e esquecer de um —, ele
+     nasce aqui, na porta por onde TODA mensagem entra: achou botão que
+     abre cena de briga, entra o par dele. Mensagem nova de confronto
+     já ganha o Simular sem ninguém lembrar.
+
+     Ficam de fora as que NÃO SÃO a briga, e sim o plano dela:
+     `tela-caravana` é a viagem inteira e `tela-ataque` é a emboscada
+     marcada pro dia do jogo. Nas duas o confronto nasce lá na frente, e
+     um Simular apertado aqui ficaria de pé esperando — na melhor das
+     hipóteses simulando a briga errada. Quem pergunta nessas é a
+     própria cena, na hora em que ela vai abrir.
+     ======================================================= */
+  const ACOES_DE_BRIGA = new Set([
+    'cena-guerra', 'cena-defesa', 'cena-escolta', 'cena-treta',
+    'atacar-bar-rival'
+  ]);
+
+  function comSimular(botoes){
+    if(!botoes || !botoes.length) return botoes;
+    const fora = [];
+    for(const b of botoes){
+      fora.push(b);
+      if(!ACOES_DE_BRIGA.has(b.acao) || b.simular) continue;
+      fora.push(Object.assign({}, b, {
+        id: b.id + '-sim', rot: 'Simular', simular: true,
+        /* a dica diz o que muda e o que não muda */
+        dica: 'Roda o duelo sem abrir a cena. As consequências são as mesmas.'
+      }));
+    }
+    return fora;
+  }
+
   function propor(E, msg){
     caixas(E);
+    if(msg && msg.botoes) msg = Object.assign({}, msg,
+                                              {botoes: comSimular(msg.botoes)});
     const m = Object.assign({
       id: E.feedSeq++,
       quando: {ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
@@ -1570,7 +1608,8 @@ TO.feed = (function(){
           return {ok:true};
         }
         marcar();
-        return {ok:true, abrir:{tela:'cena-acao', args:{cena:r.cena}}};
+        return {ok:true, abrir:{tela:'cena-acao', args:{cena:r.cena},
+                                simular: !!b.simular}};
       }
 
       /* recusas com preço (dono, 19/08/2026) */
@@ -1674,6 +1713,7 @@ TO.feed = (function(){
       case 'tela-ataque':
       case 'tela-caravana':
         return {ok:true, abrir:{tela:b.acao, args:b.args || {}, msg:m,
+                                simular: !!b.simular,
                                 cancelavel:true, botao:idBotao}};
 
       /* --- as que JÁ SÃO a ação: a cena aconteceu no clique, e as
@@ -1686,7 +1726,8 @@ TO.feed = (function(){
       case 'cena-escolta':
       case 'cena-treta':
         marcar();
-        return {ok:true, abrir:{tela:b.acao, args:b.args || {}, msg:m}};
+        return {ok:true, abrir:{tela:b.acao, args:b.args || {}, msg:m,
+                                simular: !!b.simular}};
       case 'painel':
         /* link informativo não consome nada */
         m.respondido = null;

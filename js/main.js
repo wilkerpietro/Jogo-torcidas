@@ -568,6 +568,10 @@
   function fecharPainel(){
     if(painel === null) return;
     painel = null;
+    /* fechar a tela de ataque sem confirmar cancela também o Simular:
+       senão a marca ficava de pé e a PRÓXIMA briga saía simulada sem
+       ninguém ter pedido */
+    simularProxima = false;
     trocarPagina();
     montarAtalhos();
     /* o tempo volta de onde parou: fechar o painel devolve o feed sem
@@ -1065,14 +1069,17 @@
           d.pausada = true;
           eventos.appendChild(el('div',{class:'partida-gol',
             texto:`${min}' · A arquibancada se pegou — o jogo espera.`}));
-          setTimeout(()=>abrirBrigaNoEstadio(m, ()=>{
+          setTimeout(()=>comEscolhaDeBriga(sim=>{
+            simularProxima = sim;
+            abrirBrigaNoEstadio(m, ()=>{
             /* de volta da briga: a PM baixa o clima e a bola volta a
                rolar. Sem baixar, o gatilho reabriria a cena no quadro
                seguinte. */
-            d.clima.nivel = 1; d.clima.aberto = false; d.clima.brigou = true;
-            pontoDeControle(d);
-            d.pausada = false;
-            pintarClima();
+              d.clima.nivel = 1; d.clima.aberto = false; d.clima.brigou = true;
+              pontoDeControle(d);
+              d.pausada = false;
+              pintarClima();
+            });
           }), 1100);
           return;
         }
@@ -1291,7 +1298,7 @@
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
     pararTudo('cena');
-    TO.diaJogo.ponte.montar({
+    abrirPalco({
       canvas: $('djPrincipal'),
       config:{escalacao:aptos, intencao:'atacar', paz:false, setores:true,
               bondes, efetivoRival: delesT, local,
@@ -2198,9 +2205,13 @@
     } else if((m.botoes||[]).length){
       const bs = el('div',{class:'msg-bts'});
       (m.botoes||[]).forEach((b, i)=>{
-        const bt = el('button',{class:'bt'+(i===0?' destaque':'')});
+        /* o Simular nunca é o destaque: descer continua sendo a
+           resposta que o jogo pede primeiro */
+        const bt = el('button',{class:'bt'+(i===0 && !b.simular ? ' destaque':'')+
+                                          (b.simular ? ' simular' : '')});
         bt.innerHTML = `<span>${b.rot}</span>`+
                        (b.nota ? `<small>${b.nota}</small>` : '');
+        if(b.dica) bt.title = b.dica;
         bt.onclick = ()=>responderMensagem(m.id, b.id);
         bs.appendChild(bt);
       });
@@ -2226,6 +2237,9 @@
     if(!r.ok) return;
     if(r.abrir){
       const t = r.abrir.tela, a = r.abrir.args || {}, m = r.abrir.msg;
+      /* o botão Simular chega marcado daqui: o palco lê a marca uma vez
+         e a apaga, pra que a próxima briga volte a ser jogada */
+      simularProxima = !!r.abrir.simular;
       decisaoAberta = r.abrir.cancelavel
         ? {id, botao: r.abrir.botao || idBotao} : null;
       if(t === 'tela-ataque') abrirAtaque(a.ctx);
@@ -2739,7 +2753,9 @@
       aoUsar && aoUsar();
       redesenhar();
       /* ação que abre cena não termina aqui: termina quando a tela fecha */
-      if(r.ok && r.cena) abrirAcaoEmCena(r.cena);
+      if(r.ok && r.cena) comEscolhaDeBriga(sim=>{
+        simularProxima = sim; abrirAcaoEmCena(r.cena);
+      });
     };
     b.onclick = ()=>{
       if(a.alvos) escolherAlvo(a, alvo=>usar(alvo ? {alvo:alvo.id} : null));
@@ -5407,7 +5423,13 @@
       botao('!', alvoCena ? `Atacar ${alvoCena.nome}` : 'Sem alvo na praça',
         podeAtacar, ()=>{
           const r = TO.acoes.executar(e, 'atacar', {alvo: alvoCena.id});
-          if(r.ok && r.cena){ fecharPainel(); abrirAcaoEmCena(r.cena); }
+          if(r.ok && r.cena){
+            fecharPainel();
+            /* a marca entra DEPOIS do fecharPainel, que a limpa */
+            comEscolhaDeBriga(sim=>{
+              simularProxima = sim; abrirAcaoEmCena(r.cena);
+            });
+          }
           else aviso(r.msg || 'Não deu.', 'ruim');
         });
       tb.appendChild(tr);
@@ -5583,7 +5605,7 @@
     document.body.classList.add('em-cena');
     TO.estado.bloquear(true);
     pararTudo('cena');
-    TO.diaJogo.ponte.montar({
+    abrirPalco({
       canvas: $('djPrincipal'),
       /* treta marcada é mano a mano: sem pedra, sem bomba, sem braço
          automático — de lado nenhum (decisão do dono) */
@@ -5749,7 +5771,7 @@
        o portão pra entrar. As cenas `estadio-*` viraram a
        ARQUIBANCADA (setores do dono, 19/08/2026) e só abrem quando o
        clima da partida fica tenso. */
-    TO.diaJogo.ponte.montar({
+    abrirPalco({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', bombas: p.bombas,
                 bondes, efetivoRival: deles.n, local: enc.local },
@@ -5777,6 +5799,50 @@
       J.acordou = true;
       J.paz = false;
     }
+  }
+
+  /* =======================================================
+     O PALCO, JOGADO OU SIMULADO (pedido do dono, 23/08/2026)
+
+     Toda cena de briga passava direto pra `ponte.montar`. Agora passa
+     por aqui, e quem decide é o botão que o jogador apertou: descer
+     abre a cena, Simular roda o motor de duelo entre duas IAs e devolve
+     o mesmo `res`. Depois disso o caminho é um só — `fecharDiaDeJogo` —,
+     que é o que garante a promessa do dono: a consequência não sabe se
+     a briga foi jogada ou simulada.
+     ======================================================= */
+  let simularProxima = false;
+
+  /* A ESCOLHA FORA DO FEED (pedido do dono, 23/08/2026): no feed o
+     Simular é um botão ao lado da decisão, mas a briga também nasce do
+     painel de Ações e da Diplomacia, onde não há mensagem pra pendurar
+     botão. Nesses dois a pergunta vira este cartão — e ela é só sobre
+     COMO brigar: a ação já foi executada e o custo já saiu. */
+  function comEscolhaDeBriga(fn){
+    const corpo = el('div');
+    corpo.appendChild(el('div',{class:'em-construcao', texto:
+      'Descer abre a cena e você comanda o bonde. Simular roda o duelo '+
+      'na hora — as consequências são as mesmas.'}));
+    const bs = el('div',{class:'msg-bts'});
+    let fechar = null;
+    const opcao = (rot, classe, simular)=>{
+      const bt = el('button',{class:'bt '+classe, html:`<span>${rot}</span>`});
+      bt.onclick = ()=>{ if(fechar) fechar(); fn(simular); };
+      bs.appendChild(bt);
+    };
+    opcao('Descer pra briga', 'destaque', false);
+    opcao('Simular', 'simular', true);
+    corpo.appendChild(bs);
+    fechar = modal('Como vai ser', 'a briga é a mesma; o comando é que muda',
+                   corpo);
+    return fechar;
+  }
+
+
+  function abrirPalco(op){
+    if(!simularProxima) { TO.diaJogo.ponte.montar(op); return; }
+    simularProxima = false;
+    TO.diaJogo.simular.rodar(op);
   }
 
   /* o resultado da última cena: o itinerário escreve o saldo dela no
@@ -5841,11 +5907,13 @@
     while(TO.feed.pendentes(e) > 0 && !TO.feed.travado(e)) TO.feed.dropar(e);
     /* fechada a briga, o tempo volta a correr de onde parou */
     soltarTudo('cena');
+    /* a cena leva 1,4s pra assentar antes do relatório; a simulada
+       não tem o que assentar, e esperar seria tela preta à toa */
     setTimeout(()=>{
       $('telaDiaJogo').classList.add('oculto');
       document.body.classList.remove('em-cena');
       mostrarRelatorio(res, resumo, fecho);
-    }, 1400);
+    }, res.simulada ? 0 : 1400);
   }
 
   /* =======================================================
@@ -5899,7 +5967,7 @@
        chumbo com a faixa do colete, que não é cor de torcida nenhuma
        e por isso nunca se confunde com a nossa. */
     const SEGURANCA = {nome:'Segurança', cor:'#3a3d42', cor2:'#e8c33a', cor3:null};
-    TO.diaJogo.ponte.montar({
+    abrirPalco({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', bondes,
                 bombas: p.bombas,
@@ -6007,7 +6075,7 @@
     TO.estado.bloquear(true);
     pararTudo('cena');
     const p = TO.planejamento.plano(e);
-    TO.diaJogo.ponte.montar({
+    abrirPalco({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', paz:false, bombas:p.bombas,
                 efetivoRival: deles, local: atq.cena || 'bar', bondes },
@@ -6119,7 +6187,13 @@
          <div>
            <div class="linha-dado"><span>XP distribuído</span><b>${resumo.xpTotal}</b></div>
            <div class="linha-dado"><span>Grade rompida</span><b>${res.rompido?'sim':'não'}</b></div>
-           <div class="linha-dado"><span>Presos</span><b>${resumo.presos.length}</b></div>
+           <div class="linha-dado"><span>Presos</span><b>${resumo.presos.length}</b></div>`+
+      /* na simulada o jogador não viu a briga: então o relatório diz de
+         que lado estava a força, que é o que decidiu o duelo */
+      (res.forca ? `<div class="linha-dado"><span>Força na rua</span>`+
+        `<b>${Math.round(res.forca.nossa)} × ${Math.round(res.forca.deles)}`+
+        ` <small class="fraco">${res.forca.favoritoNosso?'éramos favoritos':'eram favoritos'}</small></b></div>` : '')+
+      `
          </div>
        </div>`);
     /* o que a investida, o assalto ou a cobrança no CT deixaram */

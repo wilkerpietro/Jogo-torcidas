@@ -2431,6 +2431,9 @@ TO.diaJogo.combate = (function(){
   }
 
   return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar,
+          /* o simulador precisa das MESMAS fichas que a cena geraria:
+             simular não pode dar ao rival um bonde diferente */
+          fichasDoPerfil,
           ladoDoJogador, ladoDeles, OUTRO_LADO,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,

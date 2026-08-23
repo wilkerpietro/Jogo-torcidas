@@ -1537,3 +1537,11 @@ td.placar small.pen{
 .filtros-linha.paises .bandeira{display:block;border-radius:2px;
   box-shadow:0 0 0 1px rgba(0,0,0,.55)}
 .filtros-linha.torneios{padding-top:0}
+
+
+/* O BOTÃO DE SIMULAR (dono, 23/08/2026): é a saída rápida, não a
+   resposta principal — fica ao lado da decisão, mais discreto, com a
+   borda tracejada de quem pula a cena. */
+.msg-bts .bt.simular{border-style:dashed;color:var(--fraco);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.04em}
+.msg-bts .bt.simular:hover{color:var(--texto);border-color:var(--fraco)}

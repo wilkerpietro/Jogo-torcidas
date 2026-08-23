@@ -1937,6 +1937,48 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     torneio foi outro: numa liga com tabela anual dá pra ser campeão do
     país sem ter ganho o Clausura, e a primeira vaga é dele.
 
+- **O BOTÃO DE SIMULAR** (pedido do dono, 23/08/2026): "um botão de
+  simular em todas as ações de confronto. Esse botão vai rodar o motor
+  de confronto de duas IAs pra definir o vencedor do duelo. As
+  consequências nas relações, prestígio, etc continuam na mesma regra,
+  independente se é simulado ou não."
+  · **`js/diajogo/simular.js` não tem regra de consequência nenhuma.**
+    Ele monta o mesmo objeto `res` que a cena entrega no apito final e
+    chama o mesmo `aoTerminar`. Quem cobra prestígio, relação, ferido,
+    preso, XP, moral e aposta continua sendo `fecharDiaDeJogo` e
+    `aplicarResultadoDaNoite`, que não sabem se a briga foi jogada ou
+    simulada. Era essa a promessa.
+  · **A régua é a da briga entre duas IAs**: força é efetivo × ficha
+    (força + defesa de cada um), o mais forte é o favorito, e o
+    favorito vence **70%**. As fichas do outro lado saem do mesmo
+    `fichasDoPerfil` que a cena usaria — simular não dá ao rival um
+    bonde diferente. As baixas seguem a mesma tabela: quem perde deixa
+    de 25% a 40% no chão e de 5% a 12% no camburão; quem ganha, de 8% a
+    16% e de 1% a 4%. Quem cai é sorteado com peso invertido pela ficha.
+    Medido em 1.600 duelos: favorito entre 66,7% e 72%, feridos
+    ganhando ~11% e perdendo ~33%.
+  · **O gêmeo nasce sozinho.** Em vez de escrever o botão à mão em cada
+    mensagem — e esquecer de uma —, `propor` varre os botões e cria o
+    par de todo `acao` que abre cena de briga. Mensagem de confronto
+    nova já vem com Simular sem ninguém lembrar.
+  · **Ficam de fora as que não são a briga, e sim o plano dela**:
+    `tela-caravana` é a viagem inteira e `tela-ataque` é a emboscada
+    marcada pro dia do jogo. Nas duas o confronto nasce lá na frente, e
+    um Simular apertado antes ficaria de pé esperando — na melhor das
+    hipóteses simulando a briga errada. Nessas quem pergunta é a própria
+    cena, na hora de abrir, com um cartão de dois botões. O mesmo cartão
+    atende o painel de Ações e a Diplomacia, onde não há mensagem pra
+    pendurar botão.
+  · **Um palco só**: as cinco portas de cena passaram a chamar
+    `abrirPalco`, que escolhe entre a ponte e o simulador. O relatório
+    de fim de noite é o mesmo, sem os 1,4 s de espera que a cena pede
+    pra assentar, e ganhou a linha **"Força na rua"** — o duelo que o
+    jogador não viu diz de que lado estava o favoritismo.
+  · O que simular NÃO reproduz é a mão do jogador: na cena dá pra virar
+    uma briga perdida com formação, pedra e o líder no lugar certo. O
+    simulador só conhece ficha e efetivo. É o preço de pular a cena, e
+    ele é sempre o mesmo dos dois lados.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
