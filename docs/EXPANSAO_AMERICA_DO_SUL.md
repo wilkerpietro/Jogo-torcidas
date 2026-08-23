@@ -7,7 +7,7 @@ lê pra gerar `dados/times.js`.
 
 ## O que já está na planilha
 
-158 clubes, as nove primeiras divisões, ficha completa nas 18 colunas:
+248 clubes em 13 divisões, ficha completa nas 18 colunas:
 
 | País | Divisão | Clubes |
 |---|---|---|
@@ -20,39 +20,45 @@ lê pra gerar `dados/times.js`.
 | Peru | Peru Liga 1 | 18 |
 | Uruguai | Uruguai Primera | 16 |
 | Venezuela | Venezuela Primera | 14 |
+| Argentina | Argentina Primera Nacional (2ª) | 38 |
+| Argentina | Argentina Primera B (3ª) | 20 |
+| Chile | Chile Primera B (2ª) | 16 |
+| Colômbia | Colômbia Primera B (2ª) | 16 |
 
-Cada linha traz uma coluna **Confiança** que não vai pro jogo e serve só
-pra revisão: `alta` (68 clubes), `média` (49) e `conferir` (41). O que
-está em `conferir` é elenco pequeno de divisão nacional, onde capacidade
-de estádio e ano de fundação pedem uma fonte antes de virar dado.
+**Torneo Federal A ficou de fora por decisão do dono (23/08/2026).**
 
-## O que falta, e por que ficou pra depois
+## O AMARELO
 
-126 clubes das divisões de baixo, com o elenco listado na aba
-**A confirmar** (nome + cidade) e a ficha por preencher:
+Célula que eu não consegui confirmar sai **amarela** na planilha — são
+406 delas em 248 linhas. A régua está na aba `Legenda`:
 
-| País | Divisão | Clubes |
-|---|---|---|
-| Argentina | Primera Nacional (2ª) | 38 |
-| Argentina | Primera B Metropolitana (3ª) | 20 |
-| Argentina | Torneo Federal A (3ª) | 36 |
-| Chile | Primera B (2ª) | 16 |
-| Colômbia | Categoría Primera B (2ª) | 16 |
+| Confiança | O que fica amarelo |
+|---|---|
+| `alta` (68 clubes) | nada |
+| `média` (69 células) | Capacidade do estádio |
+| `conferir` (337 células) | Capacidade, Ano de Fundação, Mascote e — quando não achei o nome — o Estádio |
 
-Motivo declarado: a composição dessas divisões muda todo ano e a ficha
-dos clubes menores (capacidade, fundação, mascote) não sai de memória
-sem risco de virar invenção. O elenco vai listado pra ser conferido
-ANTES de alguém encher 18 colunas × 126 linhas.
+Por coluna: 175 capacidades, 106 anos de fundação, 106 mascotes e 19
+nomes de estádio. Nome do clube, nome completo, cidade, cores e divisão
+**não têm amarelo em lugar nenhum**: esses eu confirmo.
 
 ## As cinco decisões que atravessam todas as linhas
 
 1. **Coluna "Estado"** → sigla do país (AR, BO, CL…). A tela mostra
    "cidade/UF", então "Rosario/AR" se lê de primeira. Alternativa:
    província ou departamento.
-2. **Coluna "Mapa"** → 33 praças novas, uma por polo mais um
-   "Interior de X" por país. O Brasil faz 108 clubes com 30 praças, e
-   **cada praça precisa de malha de bairros** — é aqui que mora o custo
-   real da expansão, não na tabela de clubes.
+2. **Coluna "Mapa"** → **64 praças novas, teto de 7 clubes cada**
+   (régua do dono, 23/08/2026). A praça é um mapa de cidade com malha de
+   bairros, e é onde a briga acontece: praça com vinte clubes seria um
+   mapa impossível de povoar e uma cidade onde todo mundo é rival de
+   todo mundo. O corte é por geografia de verdade — zona da capital
+   (Buenos Aires Sul, Norte, Oeste), partido do conurbano (Avellaneda,
+   Lanús e Lomas, Morón e Merlo), região do interior (Litoral Argentino,
+   Norte Chico, Eixo Cafeteiro). Nenhuma praça passa de 7 e a maior é
+   Buenos Aires Sul, com 7. **Cada praça precisa de malha de bairros** —
+   é aqui que mora o custo real da expansão, não na tabela de clubes.
+   Maracaibo é a única praça com um clube só (Rayo Zuliano): é a
+   primeira a cortar se o orçamento de mapa apertar.
 3. **Coluna "Competição Regional"** → a copa nacional do país. Lá fora
    não há estadual; a copa é o torneio paralelo que todo clube joga.
 4. **Qualidade do elenco** → 6 a 36 na régua brasileira, onde o
