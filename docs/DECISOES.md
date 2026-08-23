@@ -1612,6 +1612,39 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · Não cabendo lado a lado, as formações sobem pra uma linha só delas
     (`wrap-reverse`: embaixo fica o que o dedo já procura, ações e bola).
 
+- **A LNT — LIGA NACIONAL DAS TRETAS** (régua do dono, 22/08/2026): uma
+  competição de treta 10×10 entre linhas de frente, duas por ano, uma
+  em cada semestre, correndo POR CIMA do calendário — ela não substitui
+  a treta marcada do trimestre nem o dia de jogo, ela ocupa o dia vazio.
+  Nasce numa edição do **Futebol e Porrada** na primeira semana de 2027.
+  · **O formato, divisão por divisão**: 1ª com 24 (4 chaves de 6, turno
+    único, passam 4, oitavas → final, caem 4); 2ª igual à 1ª (sobem os
+    4 semifinalistas); 3ª com 36 (6 chaves de 6, passam 4 = 24, os **8
+    melhores do geral vão direto às oitavas** e os outros 16 jogam o
+    16-avos; sobem 4, caem 6); 4ª com 54 (9 chaves de 6, os **32
+    melhores do geral** entram no 16-avos, e depois das quartas há um
+    **playoff dos perdedores** que dá mais 2 acessos — 6 no total).
+  · **Os prêmios**: 1ª 300/150/100/50/30 mil; 2ª 100/50/30/20/10 mil;
+    3ª 50/25/15/10/5/3 mil; 4ª 30/15/10/5/3/1,5 mil.
+  · **O desempate da chave**: 3 pontos pra vitória, 0 pra derrota,
+    depois **saldo de feridos** e depois **quantidade de rivais
+    feridos** — quem bate mais e apanha menos passa na frente.
+  · **AS QUATRO FINAIS NO MESMO DIA**: a 3ª e a 4ª têm cinco fases e as
+    duas primeiras têm quatro, então a 1ª e a 2ª entram no mata-mata uma
+    rodada depois. São dez rodadas por edição, uma a cada duas semanas.
+  · **DECISÕES QUE O FORMATO EXIGIU, e que ficam registradas pra veto**:
+    (a) são 139 torcidas jogáveis pra 138 vagas, então a que sobra fica
+    de fora da edição e entra na seguinte **no lugar do pior da 4ª** —
+    "a peneira"; (b) duelo de LNT **não tem aposta**: o dinheiro dali é
+    prêmio de fase; (c) **recusar é W.O.** — a vaga é do rival, sem
+    briga, sem ferido, sem prêmio, e o prestígio cai 2 (o dobro do que
+    custa furar uma treta marcada); (d) os duelos entre IAs movem
+    prestígio e baixa de verdade, mas **não mexem na relação** entre
+    elas — competição não é rixa.
+  · Medido: 24/24/36/54 antes e depois do sobe-e-desce, 45 pontos por
+    chave de 6 (15 duelos × 3), 4 semifinalistas por divisão, 2 vagas
+    pelo playoff, e nenhuma torcida em duas divisões.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

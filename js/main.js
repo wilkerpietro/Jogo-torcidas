@@ -1651,6 +1651,56 @@
     return rec;
   }
 
+  /* a página da LNT no Futebol e Porrada: mesma cabeça, mesma tarja,
+     e no lugar do quadro da noite o quadro das quatro divisões */
+  function recorteDaLNT(p){
+    const rec = el('article',{class:'gz pp'});
+    const cab = el('div',{class:'gz-cabeca'});
+    cab.innerHTML =
+      `<div class="linha">
+         <div class="lado">Ano ${p.cabeca.ano} · Nº ${p.cabeca.edicao}<br>Fundada em 2026</div>
+         <div class="nome-jornal">Futebol e Porrada</div>
+         <div class="lado dir">${p.cabeca.data}<br>${p.especial}</div>
+       </div>
+       <div class="tarja">${p.tarja.map(t=>`<span>${t}</span>`).join('')}</div>`;
+    rec.appendChild(cab);
+
+    const topo = el('div',{class:'gz-topo'});
+    const man = el('div',{class:'gz-manchete'});
+    man.innerHTML =
+      `<div class="chapeu">${p.chapeu}</div>
+       <h2>${p.manchete}</h2>
+       <p class="olho">${p.olho}</p>` +
+      (p.meu ? `<p class="olho nossa">${p.meu}</p>` : '');
+    topo.appendChild(man);
+
+    const cx = el('aside',{class:'pp-quadro'});
+    if(p.divisoes){
+      cx.appendChild(el('div',{class:'col-tit', texto:'As quatro divisões'}));
+      const g = el('div',{class:'grade'});
+      for(const d of p.divisoes)
+        g.appendChild(el('div',{class:'l'+(d.minha?' forte':''), html:
+          `<span class="rot">${d.nome}${d.minha?' · a nossa':''}</span>`+
+          `<span class="v">${d.clubes}</span>`}));
+      cx.appendChild(g);
+      cx.appendChild(el('div',{class:'venceu', html: p.fora
+        ? `<span class="rot">Fora desta edição</span> ${p.fora} `+
+          `${p.fora===1?'torcida':'torcidas'}`
+        : '<span class="rot">Todas</span> as torcidas entraram'}));
+    }else{
+      cx.appendChild(el('div',{class:'col-tit', texto:'Os quatro campeões'}));
+      const g = el('div',{class:'grade'});
+      for(const c of (p.campeoes||[]))
+        g.appendChild(el('div',{class:'l', html:
+          `<span class="rot">${c.div}ª Divisão</span>`+
+          `<span class="v">${c.campeao}</span>`}));
+      cx.appendChild(g);
+    }
+    topo.appendChild(cx);
+    rec.appendChild(topo);
+    return rec;
+  }
+
   /* o quadro da noite: duas colunas de números e o vencedor */
   function quadroDaNoite(q){
     const cx = el('aside',{class:'pp-quadro'});
@@ -1856,6 +1906,19 @@
       const txt = art.querySelector('.msg-txt');
       if(txt) txt.remove();
       art.appendChild(recorteDoAlmanaque(m.dados.pagina, e));
+    }
+
+    /* A LNT NO JORNAL (pedido do dono, 22/08/2026): a fundação e o
+       fim de cada edição saem no Futebol e Porrada, no mesmo
+       esqueleto da briga. */
+    if((m.kind === 'lnt-fundacao' || m.kind === 'lnt-fim') &&
+       TO.porrada && TO.porrada.montarLNT){
+      const pg = TO.porrada.montarLNT(e, m);
+      if(pg){
+        const txt = art.querySelector('.msg-txt');
+        if(txt) txt.remove();
+        art.appendChild(recorteDaLNT(pg));
+      }
     }
 
     if(m.kind === 'confronto' && TO.porrada){
@@ -3626,7 +3689,7 @@
      Layout do mockup: abas grandes por divisão, classificação
      à esquerda e a rodada navegável à direita.
      ======================================================= */
-  let abaComp = null, compSel = null, rodadaSel = null;
+  let abaComp = null, compSel = null, rodadaSel = null, divLNT = null;
 
   const nomeClube = id => (TO.mundo.time(id)||{}).nome || '—';
   const corClube  = id => ((TO.mundo.time(id)||{}).cores || ['#666'])[0];
@@ -3754,6 +3817,10 @@
         {id:TO.competicoes.COPA_NOME, rot:'Copa do Brasil'},
         {id:'historico', rot:'Histórico'}
       ]);
+    /* A LNT só existe depois de fundada (2027): antes disso a aba
+       nem aparece, que aba vazia é promessa de tela quebrada */
+    if(TO.lnt && TO.lnt.existe(e))
+      abas.splice(abas.length - 1, 0, {id:'lnt', rot:'LNT'});
 
     /* abre na divisão do meu clube */
     if(!abaComp){
@@ -3765,6 +3832,7 @@
     }));
 
     if(abaComp==='historico'){ pg.appendChild(painelHistorico(e)); return; }
+    if(abaComp==='lnt'){ pintarLNT(e, pg); return; }
 
     let comp;
     if(abaComp==='regionais'){
@@ -3848,6 +3916,135 @@
     if(!comp.mata.length)
       q.corpo.innerHTML = '<div class="em-construcao">A copa começa na semana '+
         `${comp.semanaInicio}.</div>`;
+    return q;
+  }
+
+  /* =======================================================
+     A LNT NA TELA (pedido do dono, 22/08/2026)
+     Uma divisão por vez: as chaves à esquerda, o mata-mata e o
+     dinheiro à direita. Abre na divisão onde a gente está.
+     ======================================================= */
+  function pintarLNT(e, pg){
+    const L = TO.lnt, ed = e.lnt.edicao;
+    const nomeT = id => (TO.mundo.torcida(id)||{}).nome || '—';
+    const corT  = id =>{
+      const o = TO.mundo.torcida(id);
+      return (o && TO.mundo.coresDaTorcida(o).cor) || '#888';
+    };
+    if(!ed){
+      pg.appendChild(emConstrucao('LNT',
+        'A liga foi fundada. A primeira edição começa na virada do semestre.'));
+      return;
+    }
+    const minha = ed.divs.findIndex(d=>d.clubes.includes(e.torcida.id));
+    if(divLNT === null) divLNT = minha >= 0 ? minha : 0;
+
+    const filtros = el('div',{class:'filtros-linha'});
+    ed.divs.forEach((d, k)=>{
+      const b = el('button',{class:(k===divLNT?'on':'')+(k===minha?' minha':''),
+        html:`${d.nome}<span class="conta">${d.clubes.length}</span>`});
+      b.onclick = ()=>{ divLNT = k; redesenhar(); };
+      filtros.appendChild(b);
+    });
+    pg.appendChild(filtros);
+
+    const div = ed.divs[divLNT];
+    const duas = el('div',{class:'comp-duas'});
+    const esq = el('div');
+
+    if(div.campeao){
+      const c = quadro('Campeão');
+      c.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
+        `${IC.get('trofeu')}<div><b>${nomeT(div.campeao)}</b>
+         <small>vice: ${nomeT(div.vice)}</small></div>`}));
+      esq.appendChild(c);
+    }
+
+    div.grupos.forEach((g, gi)=>{
+      const q = quadro(`Chave ${'ABCDEFGHI'[gi]}`, el('span',{class:'conta',
+        texto:`${(FORMATO_LNT()[divLNT].passam || 4) } passam`}));
+      const rolo = el('div',{class:'rolo'});
+      rolo.appendChild(tabelaLNT(e, div, gi, nomeT, corT));
+      q.corpo.appendChild(rolo);
+      esq.appendChild(q);
+    });
+
+    duas.appendChild(esq);
+    duas.appendChild(chaveLNT(e, div, nomeT));
+    pg.appendChild(duas);
+  }
+  const FORMATO_LNT = ()=> TO.lnt.FORMATO;
+
+  function tabelaLNT(e, div, gi, nomeT, corT){
+    const linhas = TO.lnt.tabelaDoGrupo(div, gi);
+    const f = TO.lnt.FORMATO.find(x=>x.n === div.n);
+    const meu = e.torcida.id;
+    const t = el('table',{class:'liga'});
+    /* FZ é ferido do rival, TM é ferido nosso: o saldo entre os dois é
+       o primeiro desempate depois dos pontos (régua do dono) */
+    t.innerHTML =
+      `<thead><tr><th>#</th><th class="time">Torcida</th>
+        <th>P</th><th>V</th><th>D</th>
+        <th>FZ</th><th>TM</th><th>SF</th></tr></thead>`;
+    const tb = el('tbody');
+    linhas.forEach((l,i)=>{
+      const cls = [];
+      if(l.id===meu) cls.push('meu');
+      if(f.passam && i < f.passam) cls.push('sobe');
+      if(f.caem && i === linhas.length-1) cls.push('cai');
+      const tr = el('tr',{class:cls.join(' ')});
+      tr.innerHTML =
+        `<td class="pos">${i+1}</td>
+         <td class="time"><i style="background:${corT(l.id)}"></i>${nomeT(l.id)}</td>
+         <td>${l.p}</td><td>${l.v}</td><td>${l.d}</td>
+         <td>${l.fez}</td><td>${l.tomou}</td><td>${l.sf>0?'+':''}${l.sf}</td>`;
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    return t;
+  }
+
+  function chaveLNT(e, div, nomeT){
+    const meu = e.torcida.id;
+    const f = TO.lnt.FORMATO.find(x=>x.n === div.n);
+    const q = quadro('Mata-mata', el('span',{class:'conta',
+      texto:`${div.clubes.length} torcidas`}));
+    if(!div.mata.length){
+      q.corpo.innerHTML = '<div class="em-construcao">A chave abre quando '+
+        'as cinco rodadas de grupo terminarem.</div>';
+    }
+    for(const m of div.mata){
+      const meus = m.jogos.filter(j=>j.a===meu||j.b===meu);
+      const mostra = meus.length ? meus : m.jogos.slice(0,4);
+      q.corpo.appendChild(el('div',{class:'fase-rot',
+        texto:`${m.fase}`+(m.espera && m.espera.length
+              ? ` · ${m.espera.length} esperando nas oitavas` : '')+
+              (meus.length?'':` · ${m.jogos.length} duelos`)}));
+      for(const j of mostra){
+        const feito = !!j.venceu;
+        q.corpo.appendChild(el('div',{class:'jogo-chave'+
+          (j.a===meu||j.b===meu?' meu':''), html:
+          `<span class="a ${j.venceu===j.a?'venceu':''}">${nomeT(j.a)}</span>
+           <b>${feito?`${j.fb||0} × ${j.fa||0}`:'—'}</b>
+           <span class="b ${j.venceu===j.b?'venceu':''}">${nomeT(j.b)}</span>
+           ${j.wo?'<em class="pen">W.O.</em>':''}`}));
+      }
+    }
+    /* o dinheiro da divisão, na régua do dono */
+    const pr = el('div',{class:'fase-rot', texto:'Prêmios da divisão'});
+    q.corpo.appendChild(pr);
+    const tab = [['Campeão', f.premio.campeao], ['Vice', f.premio.vice],
+                 ['Semifinal', f.premio.semi], ['Quartas', f.premio.quartas],
+                 ['Oitavas', f.premio.oitavas], ['16-avos', f.premio.dezesseis]];
+    for(const [rot, v] of tab){
+      if(!v) continue;
+      q.corpo.appendChild(el('div',{class:'lnt-premio', html:
+        `<span class="rot">${rot}</span><span class="v">${U.dinheiro(v)}</span>`}));
+    }
+    const nosso = div.premiados[meu];
+    if(nosso) q.corpo.appendChild(el('div',{class:'lnt-premio nosso', html:
+      `<span class="rot">Já embolsamos</span>`+
+      `<span class="v">${U.dinheiro(nosso)}</span>`}));
     return q;
   }
 
@@ -4437,7 +4634,10 @@
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'treta', alvo:{torcidaId:d.rival, nome:rival.nome||'Rival',
                              bairro:d.bairro, cena:local, n,
-                             aposta: d.aposta || 0}})
+                             aposta: d.aposta || 0,
+                             /* na LNT a treta é a competição: sem aposta,
+                                que o dinheiro ali é prêmio de fase */
+                             lnt: d.lnt || null}})
     });
     /* BRIGA COMBINADA NÃO TEM ESPERA: os dois lados vieram pra isso.
        O bonde deles sai da boca da rua já procurando o nosso — sem

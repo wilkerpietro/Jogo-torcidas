@@ -128,6 +128,7 @@ TO.feed = (function(){
     olheiroDoDia(E);
     guerraDeHoje(E);
     eventoDoTrimestreHoje(E);
+    lntDeHoje(E);
     ataqueSofridoHoje(E);
     escoltaDeHoje(E);
     assaltoDeHoje(E);
@@ -817,6 +818,151 @@ TO.feed = (function(){
     });
   }
 
+  /* -------------------------------------------------------
+     3c. A LNT — LIGA NACIONAL DAS TRETAS (pedido do dono,
+         22/08/2026)
+
+     A liga nasce nos primeiros dias de 2027 e roda duas edições
+     por ano, uma por semestre, POR CIMA do calendário: ela não
+     tira a treta marcada nem o dia de jogo, ela ocupa o dia
+     vazio. Aqui mora só a porta — quem monta a chave, resolve
+     os duelos das outras 137 e guarda a tabela é o TO.lnt.
+     ------------------------------------------------------- */
+  function lntDeHoje(E){
+    const L = TO.lnt;
+    if(!L) return;
+
+    /* A FUNDAÇÃO: quarta-feira da primeira semana de 2027 */
+    if(!L.existe(E)){
+      if(E.data.ano < L.ANO_FUNDACAO) return;
+      if(E.data.semana !== 1 || E.data.dia !== 3) return;
+      const nasceu = L.fundar(E);
+      if(nasceu) anunciarLNT(E, nasceu);
+      /* a chave do semestre sai no mesmo dia da fundação: liga fundada
+         que só joga daqui a seis meses é papel, não competição */
+      const primeira = L.podeAbrir(E) && L.montarEdicao(E);
+      if(primeira) abrirEdicaoLNT(E, primeira);
+      return;
+    }
+
+    /* a edição do semestre é montada na virada dele */
+    if(L.podeAbrir(E)){
+      const nova = L.montarEdicao(E);
+      if(nova) abrirEdicaoLNT(E, nova);
+    }
+
+    contarFechamentoLNT(E);
+    const passo = L.rodar(E);
+    if(passo && passo.meu) chamarParaLNT(E, passo.meu);
+    contarFechamentoLNT(E);
+  }
+
+  /* a cena da LNT terminou e pode ter fechado a edição: main chama */
+  function lntDepoisDaCena(E){ contarFechamentoLNT(E); }
+
+  const DIV_ART = {1:'1ª', 2:'2ª', 3:'3ª', 4:'4ª'};
+
+  /* --- 1 · a fundação --- */
+  function anunciarLNT(E, nasceu){
+    const minha = (nasceu.divisoes || []).find(d=>
+      (E.lnt.composicao[d.n-1]||[]).includes(E.torcida.id));
+    propor(E, {
+      kind:'lnt-fundacao', peso:'info', voz:'jornal', tipo:'bom',
+      chave:`lnt-fundacao|${E.data.ano}`,
+      texto:'A LNT foi fundada: 138 torcidas em quatro divisões, '+
+            'duas edições por ano, dez contra dez.',
+      dados:{ano:nasceu.ano, divisoes:nasceu.divisoes,
+             minha: minha ? minha.n : null,
+             fora: (E.lnt.fora||[]).length},
+      links:[{rot:'Ver a LNT', args:{pagina:'competicoes', aba:'lnt'}}]
+    });
+  }
+
+  /* --- 2 · a edição abre --- */
+  function abrirEdicaoLNT(E, ed){
+    const div = ed.divs.find(d=>d.clubes.includes(E.torcida.id));
+    if(!div) return;
+    const gi = div.grupos.findIndex(g=>g.includes(E.torcida.id));
+    const grupo = div.grupos[gi] || [];
+    const nomes = grupo.filter(id=>id !== E.torcida.id)
+      .map(id=>(M().torcida(id)||{}).nome || id);
+    propor(E, {
+      kind:'lnt-abertura', peso:'info', voz:'diretor', tipo:'neutro',
+      chave:`lnt-abre|${ed.ano}|${ed.semestre}`,
+      texto:`Saiu a chave da LNT: estamos na ${div.nome}, no grupo `+
+            `${LETRA[gi] || (gi+1)}, contra ${emLista(nomes)}. `+
+            `Dez de cada lado, cinco rodadas e depois é mata-mata.`,
+      dados:{div:div.n, grupo:gi, ano:ed.ano, semestre:ed.semestre},
+      links:[{rot:'Ver a tabela', args:{pagina:'competicoes', aba:'lnt'}}]
+    });
+  }
+  const LETRA = ['A','B','C','D','E','F','G','H','I'];
+  /* "a, b, c e d" — a vírgula até a penúltima, "e" antes da última */
+  const emLista = l => l.length < 2 ? (l[0] || '')
+    : l.slice(0, -1).join(', ') + ' e ' + l[l.length-1];
+
+  /* --- 3 · a nossa vez --- */
+  function chamarParaLNT(E, meu){
+    const rival = M().torcida(meu.j.a === E.torcida.id ? meu.j.b : meu.j.a)
+                  || {nome:'Rival'};
+    const grupo = meu.grupo !== undefined && meu.grupo !== null
+                ? ` do grupo ${LETRA[meu.grupo] || (meu.grupo+1)}` : '';
+    const fase = /rodada/.test(meu.fase)
+               ? `${meu.fase}${grupo} da ${meu.div.nome}`
+               : `${meu.fase} da ${meu.div.nome}`;
+    propor(E, {
+      /* KIND PRÓPRIO: treta de LNT não é a treta marcada do
+         trimestre — não tem aposta, não sai do calendário da praça e
+         quem filtra uma não pode pegar a outra */
+      kind:'lnt-treta', peso:'decisao', voz:'diretor', tipo:'neutro',
+      chave:`lnt|${E.lnt.edicao.ano}|${E.lnt.edicao.semestre}|`+
+            `${E.lnt.edicao.rodadaFeita}`,
+      texto:`A LNT marcou a nossa: ${fase} contra a ${rival.nome}, `+
+            `dez de cada lado. Quem não bota os dez no campo perde `+
+            `por W.O.`,
+      dados:{rival:rival.id, bairro:'', tam:10, aposta:0,
+             lnt:{div:meu.div.n, nomeDiv:meu.div.nome, fase:meu.fase}},
+      botoes:[
+        {id:'bora', rot:'Escalar a linha de frente', acao:'cena-treta',
+         nota:'10 de cada lado, só linha de frente, sem pedra nem bomba '+
+              '— quem ganha segue na LNT · Prestígio +5 vencendo, −1 '+
+              'perdendo · Relação −2 · moral de quem foi: +2 na vitória, '+
+              '−1 na derrota'},
+        {id:'ficar', rot:'Não botar bonde', acao:'lnt-wo',
+         nota:'W.O.: a vaga é deles e o prestígio cai 2 · sem briga, '+
+              'sem ferido, sem prêmio'}
+      ]
+    });
+  }
+
+  /* --- 4 · a edição fecha --- */
+  function contarFechamentoLNT(E){
+    const L = TO.lnt, h = (E.lnt && E.lnt.historico) || [];
+    if(!L || !h.length) return;
+    E.lntContadas = E.lntContadas || 0;
+    while(E.lntContadas < h.length){
+      const reg = h[E.lntContadas++];
+      const meu = reg.nosso;
+      const nomeT = id => (M().torcida(id)||{}).nome || id;
+      const camp = (reg.campeoes || []).map(c=>({
+        div:c.div, campeao:nomeT(c.campeao), vice:nomeT(c.vice),
+        sobem: emLista((c.sobem||[]).map(nomeT)),
+        caem:  emLista((c.caem||[]).map(nomeT))}));
+      propor(E, {
+        kind:'lnt-fim', peso:'info', voz:'jornal',
+        tipo: meu && /Campeão/.test(meu.fase) ? 'bom'
+            : meu && /chaves/.test(meu.fase) ? 'ruim' : 'neutro',
+        chave:`lnt-fim|${reg.ano}|${reg.semestre}`,
+        texto:`Acabou a LNT: ${camp[0].campeao} é o campeão da 1ª `+
+              `Divisão.` + (meu ? ` Nós paramos na ${meu.fase.toLowerCase()}`+
+              ` da ${DIV_ART[meu.div]} Divisão.` : ''),
+        dados:{ano:reg.ano, semestre:reg.semestre, n:reg.n,
+               campeoes:camp, nosso:meu},
+        links:[{rot:'Ver a LNT', args:{pagina:'competicoes', aba:'lnt'}}]
+      });
+    }
+  }
+
   /* a emboscada da rota, agendada quando a caravana pega a estrada:
      estado chama isto no primeiro dia de viagem */
   function emboscadaDaViagem(E){
@@ -1131,6 +1277,9 @@ TO.feed = (function(){
              edicao: (E.brigasNossasTotal = (E.brigasNossasTotal || 0) + 1),
              cena, bairro:(d.local && d.local.bairro) || '',
              semResistencia,
+             /* duelo de LNT não é treta de esquina: o jornal precisa
+                saber a fase e a divisão pra dizer o que estava em jogo */
+             lnt: d.lnt || null,
              a:{nome:a.nome || E.torcida.nome, id:E.torcida.id,
                 n:a.n, caidos:a.caidos, presos:a.presos},
              b:{nome:b.nome, id:b.torcidaId,
@@ -1335,6 +1484,21 @@ TO.feed = (function(){
           (multa > 0 ? ` · ${U.dinheiro(multa)} de multa.` : '.');
         return {ok:true};
       }
+      /* W.O. NA LNT (régua do dono, 22/08/2026): não botar bonde é
+         entregar a vaga. Sem briga, sem ferido, sem prêmio — e o
+         prestígio cai o dobro do que cai numa treta recusada, que
+         faltar em competição pesa mais que furar um combinado. */
+      case 'lnt-wo': {
+        marcar();
+        TO.estado.mexerIndicador(E, 'prestigio', -0.4,
+          'W.O. na LNT');
+        const reg = TO.lnt && TO.lnt.registrarNosso(E,
+          {ganhamos:false, nossos:0, deles:0, wo:true});
+        m.consequencia = 'Não botamos bonde: perdemos por W.O. '+
+                         'Prestígio −2.';
+        contarFechamentoLNT(E);
+        return {ok:true};
+      }
       case 'ignorar-bar-rival': {
         marcar();
         TO.estado.mexerIndicador(E, 'prestigio', -0.2,
@@ -1493,6 +1657,7 @@ TO.feed = (function(){
   return {INTERVALO_DROP,
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
+          lntDeHoje, lntDepoisDaCena,
           registrarConfronto, responder, marcarResposta,
           alvoDaDefesa, encerrarPartida,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,

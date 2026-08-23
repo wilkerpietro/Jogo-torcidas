@@ -309,6 +309,7 @@ TO.acoes = (function(){
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
       local:{cena: alvo.cena || 'rua', bairro: alvo.bairro || ''},
+      lnt: alvo.lnt || null,
       a: {torcidaId:E.torcida.id, nome:E.torcida.nome, n:alvo.n,
           caidos: membros.filter(m=>!m.preso && m.caido).length,
           presos: membros.filter(m=>m.preso).length, venceu:ganhou},
@@ -316,12 +317,30 @@ TO.acoes = (function(){
           caidos: (res && res.caidosVisitante) || 0,
           presos: (res && res.presosVisitante) || 0, venceu:!ganhou},
       efeitos});
-    const linhas = [`no bairro ${alvo.bairro||'—'}, ${alvo.n} de cada lado`];
+    /* A LNT ANOTA O DUELO (régua do dono, 22/08/2026): o resultado
+       da cena é o resultado da chave, com feridos e tudo — é o saldo
+       de feridos que desempata os grupos. O prêmio de fase, se
+       houver, é pago por lá quando a fase fecha. */
+    let lnt = null;
+    if(alvo.lnt && TO.lnt){
+      lnt = TO.lnt.registrarNosso(E, {
+        ganhamos: ganhou,
+        nossos: membros.filter(m=>m.caido || m.preso).length,
+        deles: ((res && res.caidosVisitante) || 0) +
+               ((res && res.presosVisitante) || 0)
+      });
+      if(TO.feed && TO.feed.lntDepoisDaCena) TO.feed.lntDepoisDaCena(E);
+    }
+    const linhas = alvo.lnt
+      ? [`${alvo.lnt.fase} da ${alvo.lnt.nomeDiv} da LNT, `+
+         `${alvo.n} de cada lado`]
+      : [`no bairro ${alvo.bairro||'—'}, ${alvo.n} de cada lado`];
     if(aposta > 0)
       linhas.push(`${U.dinheiro(aposta)} apostados — `+
                   `${ganhou ? 'levamos a dos dois' : 'a nossa ficou com eles'}`);
-    return {ganhou, dinheiro:bolada,
-            titulo: ganhou ? 'TRETA VENCIDA' : 'TRETA PERDIDA',
+    return {ganhou, dinheiro:bolada, lnt,
+            titulo: alvo.lnt ? (ganhou ? 'PASSAMOS NA LNT' : 'CAÍMOS NA LNT')
+                  : ganhou ? 'TRETA VENCIDA' : 'TRETA PERDIDA',
             linhas};
   }
 

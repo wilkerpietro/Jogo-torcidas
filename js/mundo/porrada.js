@@ -42,6 +42,7 @@ TO.porrada = (function(){
       cadeia:    ['Noite de camburão'],
       semLuta:   ['Ninguém desceu'],
       arquibancada:['O setor se pegou'],
+      lnt:       ['Dia de LNT'],
       padrao:    ['O pau do dia']
     },
 
@@ -142,6 +143,34 @@ TO.porrada = (function(){
                 'Deu {A} sobre a {B} e a noite acabou na delegacia.']
     },
 
+    /* 6 · A LNT (textos submetidos ao crivo do dono, 23/08/2026)
+       {D} divisão · {A} campeã · {V} vice · {S} quem sobe
+       {C} quem desce · {N} quantas torcidas */
+    lnt:{
+      fundacao:[
+        'A LNT está de pé: {N} torcidas, quatro divisões, dez contra dez'],
+      fundacaoOlho:[
+        'Duas edições por ano, uma em cada semestre. Cinco rodadas de '+
+        'chave e depois mata-mata; o último de cada chave desce de '+
+        'divisão e o mata-mata dá o acesso. Na 1ª Divisão o campeão '+
+        'leva {P}.'],
+      campeao:[
+        '{A} é campeã da {D} da LNT',
+        '{A} levantou a taça da {D} da LNT',
+        'Deu {A} na {D}: a taça da LNT ficou com ela'],
+      campeaoNos:[
+        'A taça da {D} da LNT é NOSSA',
+        'Somos campeões da {D} da LNT'],
+      olhoFim:[
+        '{V} ficou com o vice. Sobem: {S}. Descem: {C}.',
+        'O vice foi da {V}. Quem sobe: {S}. Quem desce: {C}.'],
+      olhoFimSemDesce:[
+        '{V} ficou com o vice. Sobem: {S}.'],
+      nosso:[
+        'A gente parou {F} da {DN} Divisão.',
+        'A nossa campanha acabou {F} da {DN} Divisão.']
+    },
+
     /* 5 · quando o país não se pegou */
     vazio:['O resto do país passou o dia em paz.',
            'Fora essa, nenhuma outra treta hoje.']
@@ -225,7 +254,11 @@ TO.porrada = (function(){
                : (emMenor ? 'apanhouMenos'
                   : dif >= 3 ? 'apanhou' : 'derrota');
 
-    const onde = ondeDe(d);
+    /* na LNT o lugar é a fase: o campo de terra é o mesmo toda
+       edição, e o que a página precisa dizer é o que estava em jogo */
+    const onde = d.lnt
+      ? `${naFaseLNT(d.lnt.fase)} da ${d.lnt.nomeDiv} da LNT`
+      : ondeDe(d);
     const v = {
       A: venc ? venc.nome : a.nome, B: perd ? perd.nome : b.nome,
       nA: venc === b ? nB : nA, nB: venc === b ? nA : nB,
@@ -241,6 +274,7 @@ TO.porrada = (function(){
                  /* o camburão passa na frente do lugar: quem foi preso
                     é a notícia, a arquibancada é só o endereço */
                  : presos >= 4 ? CH.cadeia[0]
+                 : d.lnt ? CH.lnt[0]
                  : /^estadio-/.test(d.cena||'') ? CH.arquibancada[0]
                  : (cond === 'vitoriaMenos' || cond === 'apanhouMenos') ? CH.menos[0]
                  : cond === 'atropelo' ? CH.atropelo[0]
@@ -268,7 +302,7 @@ TO.porrada = (function(){
         `<b>${nA + nB}</b> na treta`,
         `<b>${fA + fB}</b> ${fA + fB === 1 ? 'ferido' : 'feridos'}`,
         `<b>${presos}</b> ${presos === 1 ? 'preso' : 'presos'}`,
-        onde.replace(/^n[ao] /, '').replace(/^num[a]? /, '')
+        onde.replace(/^n[ao]s? /, '').replace(/^num[a]? /, '')
       ],
       chapeu, manchete, olho,
       /* o placar grande da briga é o ferido de cada lado */
@@ -341,5 +375,82 @@ TO.porrada = (function(){
     };
   }
 
-  return {montar, MOLDES, encher, ondeDe, MOSTRA};
+
+  /* =======================================================
+     A LNT NO JORNAL (pedido do dono, 22/08/2026)
+     A fundação e o fim de cada edição saem no mesmo esqueleto
+     da Porrada, com o quadro das quatro divisões no lugar do
+     quadro da noite.
+     ======================================================= */
+  function montarLNT(E, m){
+    const d = m && m.dados;
+    if(!d) return null;
+    const q = m.quando || {};
+    const ano = q.ano || E.data.ano, sem = q.semana || 1, dia = q.dia || 1;
+    const dt = TO.estado.dataDaSemana(ano, sem, dia);
+    const proxima = filaDe((dt.getDate() + dt.getMonth()*31) || 1);
+    const L = MOLDES.lnt;
+    const cabeca = {
+      ano: ROMANO(Math.max(1, ano - 2025)),
+      edicao: d.n || 1,
+      data: `${DIA_SEM[dia]}, ${dt.getDate()} de ${MES[dt.getMonth()]}`
+    };
+    const dinheiro = v => TO.util.dinheiro(v);
+
+    if(m.kind === 'lnt-fundacao'){
+      const total = (d.divisoes||[]).reduce((s,x)=>s + x.clubes, 0);
+      return {
+        cabeca, especial:'A fundação da liga',
+        tarja:[`<b>${total}</b> torcidas`, `<b>4</b> divisões`,
+               `<b>2</b> edições por ano`, 'dez contra dez'],
+        chapeu:'Nasce a liga',
+        manchete: encher(proxima(L.fundacao, 'lnt-man'), {N:total}),
+        olho: encher(proxima(L.fundacaoOlho, 'lnt-olho'),
+                     {P:dinheiro(300000)}),
+        divisoes: (d.divisoes||[]).map(x=>({
+          nome:x.nome, clubes:x.clubes, minha: x.n === d.minha})),
+        fora: d.fora || 0
+      };
+    }
+
+    if(m.kind === 'lnt-fim'){
+      const c = (d.campeoes || [])[0] || {};
+      /* a página é da 1ª Divisão: quem SOBE nela é quem veio da 2ª,
+         e quem DESCE é o último de cada chave dela mesma */
+      const sobem = ((d.campeoes || [])[1] || {}).sobem || '';
+      const nos = d.nosso && /Campeão/.test(d.nosso.fase) && d.nosso.div === 1;
+      const v = {D:'1ª Divisão', A:c.campeao || '—', V:c.vice || '—',
+                 S: sobem || '—', C: c.caem || '—'};
+      const olho = c.caem
+        ? encher(proxima(L.olhoFim, 'lnt-olho'), v)
+        : encher(proxima(L.olhoFimSemDesce, 'lnt-olho'), v);
+      const meu = d.nosso ? encher(proxima(L.nosso, 'lnt-nosso'),
+        {F: /Campeão|Vice/.test(d.nosso.fase)
+             ? `como ${d.nosso.fase.toLowerCase()}`
+             : `${naFaseLNT(d.nosso.fase)}`,
+         DN: d.nosso.div + 'ª'}) : '';
+      return {
+        cabeca, especial:`${d.semestre}º semestre de ${d.ano}`,
+        tarja:[`<b>${d.n}ª</b> edição`,
+               `<b>${(d.campeoes||[]).length}</b> divisões decididas`,
+               d.nosso ? `nós na <b>${d.nosso.div}ª</b>` : 'nós de fora',
+               d.nosso && d.nosso.premio
+                 ? `<b>${dinheiro(d.nosso.premio)}</b> de prêmio` : 'sem prêmio'],
+        chapeu:'Fim de LNT',
+        manchete: encher(proxima(nos ? L.campeaoNos : L.campeao, 'lnt-man'), v),
+        olho, meu,
+        campeoes: d.campeoes || []
+      };
+    }
+    return null;
+  }
+  /* "na semifinal", "nas quartas", "no 16-avos" — a preposição
+     acompanha a fase, como na Gazeta */
+  const FASE_LNT = {'Fase de chaves':'na fase de chaves',
+                    '16-avos':'no 16-avos', 'Oitavas':'nas oitavas',
+                    'Quartas':'nas quartas', 'Semifinal':'na semifinal',
+                    'Final':'na final'};
+  const naFaseLNT = f => FASE_LNT[f] || `na ${String(f||'').toLowerCase()}`;
+
+  return {montar, montarLNT, MOLDES, encher, ondeDe, MOSTRA, naFaseLNT};
 })();

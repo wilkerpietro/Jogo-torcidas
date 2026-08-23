@@ -195,6 +195,15 @@ table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
 .sub-chave{font-family:var(--mono);font-size:9.5px;color:var(--ouro);
   padding:3px 0 6px;text-align:center}
 
+/* a tabela de prêmios da LNT: rótulo à esquerda, dinheiro à direita */
+.lnt-premio{display:flex;justify-content:space-between;align-items:baseline;
+  gap:10px;font-family:var(--mono);font-size:10px;
+  padding:4px 14px;border-bottom:1px solid var(--linha)}
+.lnt-premio:last-child{border-bottom:0}
+.lnt-premio .rot{color:var(--fraco);letter-spacing:.06em;text-transform:uppercase}
+.lnt-premio .v{color:var(--ouro)}
+.lnt-premio.nosso .rot{color:var(--texto)}
+
 /* ---------- calendário mensal ---------- */
 .mes-cab{
   display:flex;align-items:center;justify-content:space-between;
