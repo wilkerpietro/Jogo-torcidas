@@ -339,8 +339,42 @@ TO.diaJogo.ponte = (function(){
     f.classList.remove('medindo');
     f.classList.toggle('duas', precisa);
   }
+  /* =======================================================
+     O PAD INTEIRO TEM DE CABER (correção do dono, 22/08/2026)
+
+     Em pé, a tela tem 420 px e o pad pede mais: a fileira de ações
+     cresceu (pedra, bomba, recuar, fugir, sair) e empurrou as
+     formações 1–4 pra fora da tela — some o botão, some a formação. E
+     como o número de ações MUDA com a cena (treta não tem pedra nem
+     bomba), um corte fixo de largura acertaria numa cena e erraria na
+     outra.
+
+     Então é medida, e não chute: o que as duas colunas precisam contra
+     o que a tela tem. Não cabendo lado a lado, as formações sobem pra
+     uma linha só delas — a mesma régua da faixa lá em cima.
+     ======================================================= */
+  let padChave = null;
+  function medirPad(){
+    const pad = $('djPad');
+    if(!pad || !pad.clientWidth) return;
+    const esq = pad.querySelector('.pad-esq');
+    const dir = pad.querySelector('.pad-dir');
+    if(!esq || !dir) return;
+    const chave = `${pad.clientWidth}|${esq.childElementCount}|`+
+                  `${dir.childElementCount}|`+
+                  `${(esq.querySelector('.pad-acoes')||{}).childElementCount}`;
+    if(chave === padChave) return;
+    padChave = chave;
+    /* medir é perguntar quanto PRECISA: empilhado, a conta daria
+       sempre "coube" e a classe nunca mais sairia */
+    pad.classList.add('medindo');
+    const precisa = esq.scrollWidth + dir.scrollWidth + 24 > pad.clientWidth;
+    pad.classList.remove('medindo');
+    pad.classList.toggle('empilhado', precisa);
+  }
+
   addEventListener('resize', ()=>{
-    palcoLargo = null; faixaChave = null; medirPalco();
+    palcoLargo = null; faixaChave = null; padChave = null; medirPalco();
   });
 
   function atualizarHUD(){
@@ -407,8 +441,6 @@ TO.diaJogo.ponte = (function(){
     }
 
     if(el('djPlacar')){
-      const man=J.discos.filter(d=>d.lado==='mandante' &&d.vivo).length;
-      const vis=J.discos.filter(d=>d.lado==='visitante'&&d.vivo).length;
       const ent=(J.entraram.mandante||0)+(J.entraram.visitante||0);
       /* O PLACAR FALA O NOME DAS TORCIDAS (pedido do dono, 18/08/2026):
          MANDANTE/VISITANTE é convenção interna dos lados, não coisa que
@@ -434,19 +466,44 @@ TO.diaJogo.ponte = (function(){
          secundária na borda de cima e a terciária na de baixo — é
          assim que a faixa de uma organizada é. Torcida de duas cores
          repete a que tem; de uma só, a tarja fica lisa. */
-      const coresDoLado = lado=>{
-        const b=(J.bondes_||[]).find(x=>x.lado===lado) || {};
-        const padrao = lado==='mandante' ? '#c0392b' : '#2a5fa8';
-        const c1 = b.cor || padrao;
-        return {c1, c2: b.cor2 || c1, c3: b.cor3 || b.cor2 || c1};
+      const padraoDoLado = lado => lado==='mandante' ? '#c0392b' : '#2a5fa8';
+      /* =====================================================
+         CADA TORCIDA NA SUA LINHA (correção do dono, 22/08/2026)
+
+         O placar mostrava UMA torcida por lado e somava o resto nela:
+         no Castelão, os 30 da Jovem Garra Tricolor entravam na conta da
+         TUF e a faixa dizia "Leões da TUF 187". Mas na arquibancada
+         quem está lá são três torcidas, e cada uma responde pelo seu
+         número.
+
+         A conta sai do disco, que já sabe de que torcida é
+         (`d.torcida`, posto em `nascerGrupo`), e a lista é montada com
+         TODOS os discos, vivos ou não: torcida que foi inteira ao chão
+         continua na faixa com zero. Sumir do placar seria a faixa
+         contando outra história que a cena.
+         ===================================================== */
+      const torcidasNaCena = ()=>{
+        const fora = [];
+        for(const d of J.discos){
+          const nome = d.torcida || nomeDoLado(d.lado);
+          let g = fora.find(x=>x.nome === nome && x.lado === d.lado);
+          if(!g) fora.push(g = {nome, lado:d.lado, n:0, total:0,
+                                c1: d.cor || padraoDoLado(d.lado),
+                                c2: d.cor2 || d.cor || padraoDoLado(d.lado),
+                                c3: d.cor3 || d.cor2 || d.cor ||
+                                    padraoDoLado(d.lado)});
+          g.total++;
+          if(d.vivo) g.n++;
+        }
+        /* mandante primeiro, como sempre foi; dentro do lado, o maior */
+        return fora.sort((a,b)=>
+          (a.lado==='mandante'?0:1) - (b.lado==='mandante'?0:1) ||
+          b.total - a.total);
       };
-      const linhaDoTime = (lado, n)=>{
-        const c = coresDoLado(lado);
-        return `<div class="pl-time" style="--c1:${c.c1};--c2:${c.c2};`+
-               `--c3:${c.c3}">`+
-          `<span class="pl-nome">${nomeDoLado(lado)}</span>`+
-          `<span class="pl-n">${n}</span></div>`;
-      };
+      const linhaDoTime = g =>
+        `<div class="pl-time" style="--c1:${g.c1};--c2:${g.c2};--c3:${g.c3}">`+
+          `<span class="pl-nome">${g.nome}</span>`+
+          `<span class="pl-n">${g.n}</span></div>`;
       const rodape = [
         `<span class="pl-dado"><i>caídos</i>`+
         `${J.caidos.mandante}–${J.caidos.visitante}</span>`];
@@ -457,8 +514,8 @@ TO.diaJogo.ponte = (function(){
          lado e o resto emendado à direita, em vez do bloco de duas
          fileiras que a placa flutuante usava. */
       el('djPlacar').innerHTML=
-        `<div class="pl-times">${linhaDoTime('mandante', man)}`+
-        `${linhaDoTime('visitante', vis)}</div>`+
+        `<div class="pl-times">`+
+        `${torcidasNaCena().map(linhaDoTime).join('')}</div>`+
         `<div class="pl-rodape">${rodape.join('')}`+
         `<span class="pl-clima ${J.paz?'calmo':'pesado'}">`+
         `<span class="rot-clima">clima </span>`+
@@ -839,6 +896,7 @@ TO.diaJogo.ponte = (function(){
     }
     marcarFormacaoNoPad();
     marcarFugaNoPad();
+    medirPad();
   }
 
   /* UMA VEZ SÓ. `montar` roda a cada cena aberta — troca de aba na

@@ -1589,6 +1589,29 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   daquele dia não conta. **Medido**: antes do jogo [6º, 5º], depois
   [4º, 7º] — a notícia diz 6º e 5º.
 
+- **CADA TORCIDA NA SUA LINHA DA FAIXA** (correção do dono,
+  22/08/2026): o placar mostrava UMA torcida por lado e somava o resto
+  nela — no Castelão, os 30 da Jovem Garra Tricolor entravam na conta da
+  TUF e a faixa dizia "Leões da TUF 187". Na arquibancada quem está lá
+  são três torcidas, e cada uma responde pelo seu número. A conta agora
+  sai do disco, que já sabia de que torcida é (`d.torcida`), e a lista é
+  montada com TODOS os discos, vivos ou não: torcida que foi inteira ao
+  chão continua na faixa com zero, porque sumir do placar seria a faixa
+  contando outra história que a cena. Medido: 157 · 30 × 23, cada uma
+  com a cor dela, e a soma batendo com o que está na tela.
+
+- **O PAD INTEIRO TEM DE CABER** (bug pego pelo dono, 22/08/2026): em pé,
+  a tela tem 420 px e o pad pedia mais — a fileira de ações cresceu
+  (pedra, bomba, recuar, fugir, sair) e empurrou as **formações 1–4 pra
+  fora da tela**. Medido antes do conserto: na treta sobravam 3 de 4
+  formações visíveis; na defesa do bar, **nenhuma**.
+  · **NÃO DAVA PRA CORTAR POR LARGURA FIXA**: o número de ações muda com
+    a cena (treta não tem pedra nem bomba), então um corte acertaria
+    numa e erraria na outra. É medida — o que as duas colunas precisam
+    contra o que a tela tem —, pela mesma régua da faixa.
+  · Não cabendo lado a lado, as formações sobem pra uma linha só delas
+    (`wrap-reverse`: embaixo fica o que o dedo já procura, ações e bola).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
