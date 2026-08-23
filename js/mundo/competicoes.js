@@ -1056,13 +1056,16 @@ TO.competicoes = (function(){
     return {id, j:0, v:0, e:0, d:0, gp:0, gc:0, sg:0, p:0};
   }
 
-  function tabela(comp, grupo){
+  /* `pular` (22/08/2026): uma rodada que NÃO deve contar. Serve pra
+     tabela "antes do jogo de hoje" — ver `posicaoNaTabela`. */
+  function tabela(comp, grupo, pular){
     const alvo = grupo===undefined ? null : grupo;
     const linhas = {};
     const lista = alvo===null ? comp.clubes : comp.grupos[alvo];
     for(const id of lista) linhas[id] = linhaVazia(id);
 
     for(const r of comp.rodadas){
+      if(pular && pular(r, comp)) continue;
       for(const j of r.jogos){
         if(j.gc===undefined || j.gc===null) continue;
         if(alvo!==null && j.g!==alvo) continue;
@@ -1357,18 +1360,28 @@ TO.competicoes = (function(){
     agendaDoClube(E, clubeId).filter(j=>j.semana===semana);
 
   /* a posição de um clube na tabela da competição — no grupo dele,
-     quando a competição tem mais de um */
-  function posicaoNaTabela(E, compId, clubeId){
+     quando a competição tem mais de um.
+
+     `antesDe` = {semana, dia}: a rodada jogada nesse dia NÃO conta.
+     É o que a mensagem da nossa partida precisa (correção do dono,
+     22/08/2026): ela é escrita ANTES da bola rolar mas depois de o dia
+     ter sido simulado, então "o Fortaleza está em 15º" já vinha com o
+     resultado de hoje dentro — quem decorava a tabela sabia o placar
+     antes do apito. */
+  function posicaoNaTabela(E, compId, clubeId, antesDe){
     const comp = ((E.temporada && E.temporada.competicoes) || [])
       .find(c=>c.id === compId);
     if(!comp || comp.copa) return 0;
+    const pular = antesDe ? (r, c)=>
+      r.semana === antesDe.semana &&
+      (r.dia || c.dia || DIA_FDS) === antesDe.dia : null;
     let t;
     if(comp.grupos.length > 1){
       const gi = comp.grupos.findIndex(g=>g.includes(clubeId));
       if(gi < 0) return 0;
-      t = tabela(comp, gi);
+      t = tabela(comp, gi, pular);
     } else {
-      t = tabela(comp);
+      t = tabela(comp, undefined, pular);
     }
     const i = t.findIndex(l=>l.id === clubeId);
     return i < 0 ? 0 : i+1;

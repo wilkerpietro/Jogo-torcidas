@@ -1566,6 +1566,29 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · Conferido nas duas orientações: nada com texto sobra por cima do
     palco, e apertar o botão do pad aciona o mesmo caminho de antes.
 
+- **O ITINERÁRIO É DO JOGO DE HOJE** (bug pego pelo dono, 22/08/2026):
+  a linha do dia lia `E.proximoJogo`, e "próximo jogo" é o jogo da
+  SEMANA — o que pesa mais, com o mata-mata e o sábado na frente. Numa
+  semana com dois jogos nossos, o dia de um jogo **em casa** na quarta
+  vinha montado como a viagem do jogo de sábado: praças de estrada,
+  véspera de caravana, tudo do jogo errado. Agora a linha pergunta pela
+  agenda o que se joga hoje.
+  · **E SÓ TOMA A AGENDA QUANDO PRECISA**: sendo o `proximoJogo` o jogo
+    de hoje, quem manda continua sendo ele — é lá que moram a rota
+    escolhida e o plano da semana. A troca só acontece quando o
+    `proximoJogo` fala de outro dia.
+  · A montagem da ficha do jogo virou função à parte (`estado.fichaDoJogo`),
+    porque agora dois lugares precisam dela.
+
+- **A POSIÇÃO NA TABELA NÃO PODE SER SPOILER** (bug pego pelo dono,
+  22/08/2026): a mensagem "Hoje tem X × Y. O X está em 15º na tabela"
+  é escrita ANTES de a bola rolar, mas depois de o dia já ter sido
+  simulado — e a tabela lida sem cuidado já trazia o resultado de hoje
+  dentro. Quem decorava a classificação sabia o placar antes do apito.
+  Agora `posicaoNaTabela` aceita um `antesDe {semana, dia}` e a rodada
+  daquele dia não conta. **Medido**: antes do jogo [6º, 5º], depois
+  [4º, 7º] — a notícia diz 6º e 5º.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

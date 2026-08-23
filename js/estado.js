@@ -157,27 +157,24 @@ TO.estado = (function(){
     };
   }
 
-  /* O jogo da semana sai da tabela (GDD §18), não de sorteio: é o
-     calendário do futebol que define a semana da torcida. Semana sem
-     jogo é folga, e folga é resposta legítima — o GDD §3.1 prevê. */
-  function sortearProximoJogo(est){
+  /* =======================================================
+     A FICHA DE UM JOGO (extraída em 22/08/2026)
+
+     Era o corpo do `sortearProximoJogo`, e agora é função à parte
+     porque outro lugar precisa dela: o itinerário do dia monta a linha
+     a partir do jogo DAQUELE dia, e não do "próximo jogo" da semana —
+     ver a nota em `itinerario.montar`.
+     ======================================================= */
+  function fichaDoJogo(est, agenda){
     const M = TO.mundo;
     const meu = M.time(est.torcida.clubeId);
-    if(!meu){ est.proximoJogo = null; return; }
-
-    const agenda = est.temporada
-      ? TO.competicoes.jogoDaSemana(est, meu.id, est.data.semana) : null;
-    if(est.temporada && !agenda){
-      est.proximoJogo = null;
-      est.postura = 'folga';
-      return;
-    }
-
+    if(!meu) return null;
     const adv  = agenda ? M.time(agenda.adversario) : M.adversario(meu.id);
+    if(!adv) return null;
     const casa = agenda ? agenda.casa : U.rng() < 0.5;
     const mandante = casa ? meu : adv, visitante = casa ? adv : meu;
     const cAdv = M.cidade(adv.mapa);
-    est.proximoJogo = {
+    return {
       competicao: agenda ? agenda.comp : (meu.divisao || 'Amistoso'),
       fase: agenda ? agenda.fase : '',
       mata: !!(agenda && agenda.mata),
@@ -197,6 +194,25 @@ TO.estado = (function(){
       cidadeAdv: cAdv ? cAdv.nome : (adv.cidade || ''),
       chave: `${est.data.ano}-${est.data.semana}-${adv.id}`
     };
+  }
+
+  /* O jogo da semana sai da tabela (GDD §18), não de sorteio: é o
+     calendário do futebol que define a semana da torcida. Semana sem
+     jogo é folga, e folga é resposta legítima — o GDD §3.1 prevê. */
+  function sortearProximoJogo(est){
+    const M = TO.mundo;
+    const meu = M.time(est.torcida.clubeId);
+    if(!meu){ est.proximoJogo = null; return; }
+
+    const agenda = est.temporada
+      ? TO.competicoes.jogoDaSemana(est, meu.id, est.data.semana) : null;
+    if(est.temporada && !agenda){
+      est.proximoJogo = null;
+      est.postura = 'folga';
+      return;
+    }
+
+    est.proximoJogo = fichaDoJogo(est, agenda);
     /* torcida organizada não falta jogo: a postura é consequência do
        calendário, não escolha (o que se decide é o tamanho da caravana) */
     est.postura = TO.financeiro.postura(est);
@@ -590,7 +606,8 @@ TO.estado = (function(){
     get E(){ return E; },
     novo, lancar, lancarNoResumo, registrarLinha,
     mexerIndicador, avancarDia, aoMudar, aoFecharSemana, mudou,
-    dataTexto, dataTextoEm, dataDaSemana, semanaDiaDe, sortearProximoJogo, anotar,
+    dataTexto, dataTextoEm, dataDaSemana, semanaDiaDe, sortearProximoJogo,
+          fichaDoJogo, anotar,
     DIA_JOGO:6,
     salvar, carregar, existeSave, exportar, importar,
     bloquear, estaBloqueado

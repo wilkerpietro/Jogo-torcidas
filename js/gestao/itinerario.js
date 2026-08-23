@@ -94,8 +94,34 @@ TO.itinerario = (function(){
     };
   }
 
+  /* =======================================================
+     O ITINERÁRIO É DO JOGO DE HOJE (correção do dono, 22/08/2026)
+
+     Ele lia `E.proximoJogo`, e "próximo jogo" é o jogo da SEMANA — o
+     que pesa mais, com o mata-mata e o sábado na frente. Numa semana
+     com dois jogos nossos, a linha do dia de um jogo em CASA na quarta
+     vinha montada como a viagem pro jogo de sábado: praças de estrada,
+     véspera de caravana, tudo do jogo errado.
+
+     Agora a linha pergunta pela agenda o que se joga HOJE — e só toma
+     a agenda pra si quando o `proximoJogo` fala de OUTRO dia. Sendo o
+     mesmo jogo, quem manda continua sendo o `proximoJogo`, que é onde
+     moram a rota escolhida e o plano da semana. Sem jogo hoje (a
+     bancada abre a linha fora de dia de jogo), idem.
+     ======================================================= */
+  function jogoDeHoje(E){
+    if(!E || !E.temporada || !E.torcida) return null;
+    const prox = E.proximoJogo;
+    if(prox && prox.dia === E.data.dia) return null;   // é o mesmo jogo
+    const meu = M().time(E.torcida.clubeId);
+    if(!meu || !TO.competicoes.agendaDoClube) return null;
+    const hoje = (TO.competicoes.agendaDoClube(E, meu.id) || [])
+      .find(a => a.semana === E.data.semana && a.dia === E.data.dia);
+    return hoje ? TO.estado.fichaDoJogo(E, hoje) : null;
+  }
+
   function montar(E, msg){
-    const j = E && E.proximoJogo;
+    const j = jogoDeHoje(E) || (E && E.proximoJogo);
     if(!j) return null;
     const hora = emMinutos(j.hora);
     const p = PL().plano(E);

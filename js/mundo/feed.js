@@ -936,8 +936,14 @@ TO.feed = (function(){
       /* a posição dos dois na tabela e o palco (pedido do dono,
          17/08/2026) — em fase de mata-mata não há posição, e a frase
          volta ao formato antigo */
-      const p1 = TO.competicoes.posicaoNaTabela(E, nosso.comp, nosso.c);
-      const p2 = TO.competicoes.posicaoNaTabela(E, nosso.comp, nosso.f);
+      /* A POSIÇÃO É A DE ANTES DA BOLA ROLAR (correção do dono,
+         22/08/2026): a mensagem é escrita depois de o dia já ter sido
+         simulado, e a tabela lida sem cuidado já trazia o resultado de
+         hoje — quem decorava a classificação sabia o placar antes do
+         apito. A rodada de hoje não conta pra esta frase. */
+      const hoje = {semana:E.data.semana, dia:E.data.dia};
+      const p1 = TO.competicoes.posicaoNaTabela(E, nosso.comp, nosso.c, hoje);
+      const p2 = TO.competicoes.posicaoNaTabela(E, nosso.comp, nosso.f, hoje);
       const estadio = (M().time(nosso.c)||{}).estadio || '';
       const artEst = /^(Arena|Vila|Fonte|Ilha)/i.test(estadio) ? 'na' : 'no';
       /* A ETAPA NA FRASE (reformulação do dono, 18/08/2026): grupos
