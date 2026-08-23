@@ -38,9 +38,36 @@ Célula que eu não consegui confirmar sai **amarela** na planilha — são
 | `média` (69 células) | Capacidade do estádio |
 | `conferir` (337 células) | Capacidade, Ano de Fundação, Mascote e — quando não achei o nome — o Estádio |
 
-Por coluna: 175 capacidades, 106 anos de fundação, 106 mascotes e 19
+Por coluna: 164 capacidades, 106 anos de fundação, 106 mascotes e 19
 nomes de estádio. Nome do clube, nome completo, cidade, cores e divisão
 **não têm amarelo em lugar nenhum**: esses eu confirmo.
+
+## A rodada de pesquisa nas capacidades (23/08/2026)
+
+15 estádios conferidos um por um, na aba `Pesquisa`. Onze correções:
+
+| Clube | Estava | Ficou |
+|---|---|---|
+| Los Andes | 34.000 | **38.000** |
+| Colón | 40.000 | **33.716** |
+| Atlanta | 14.000 | **18.000** |
+| Temperley | 15.000 | **19.500** |
+| Chacarita | 25.000 | **24.300** |
+| Ferro | 24.442 | **24.268** |
+| Nueva Chicago | 28.500 | **28.000** |
+| San Martín Tucumán | 30.000 | **30.250** |
+| Santiago Wanderers | 21.414 | **21.113** |
+| Cobreloa | 12.346 | **12.102** |
+| Cúcuta Deportivo | 42.000 | **42.901** |
+| Atlético Huila | 26.000 | **27.000** |
+
+Confirmados sem mudança: All Boys 21.500, Quilmes 30.200 e Deportivo
+Español 32.500.
+
+**Por que só 15**: Wikipedia e Transfermarkt estão bloqueados no proxy
+de saída deste ambiente, então a conferência saiu por busca, um estádio
+de cada vez. O que não passou por ela continua amarelo — e o amarelo é
+justamente a lista de trabalho da próxima rodada.
 
 ## As cinco decisões que atravessam todas as linhas
 
