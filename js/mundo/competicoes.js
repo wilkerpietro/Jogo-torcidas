@@ -508,6 +508,27 @@ TO.competicoes = (function(){
      é fonte estática, então a mudança vive no save. */
   const divisaoDe  = (E, t) => (E.divisoes  || {})[t.id] || t.divisao;
   const regionalDe = (E, t) => (E.regionais || {})[t.id] || t.regional;
+  const paisDe     = t => (t && t.pais) || 'Brasil';
+
+  /* =======================================================
+     O MUNDO DE FORA AINDA NÃO JOGA (medido em 23/08/2026)
+
+     `dados/times.js` já traz os 248 clubes de nove países da América
+     do Sul, mas a temporada só monta o Brasil. Não é esquecimento, é
+     conta: deixando o motor de hoje montar tudo, a temporada vai a
+     20.714 jogos e o campo `temporada` do save salta de 154 KB pra
+     1.568 KB — o save passa de 2,3 MB ANTES de fechar o primeiro ano,
+     que é mais do que uma partida brasileira de cinco anos ocupa. O
+     dia também fica 21 ms mais lento, e o dia roda no relógio.
+
+     Além disso o formato estaria errado: as ligas de lá são Apertura
+     e Clausura, quadrangular, hexagonal, tabela anual e promedio, e
+     nada disso cabe em `{grupos, passam, voltas}`.
+
+     Então os clubes de fora ficam guardados e fora da temporada até o
+     motor de formatos existir. Quem ligar isto antes tem de resolver
+     o armazenamento junto. */
+  const SO_BRASIL = true;
 
   function montarTemporada(E){
     U.usarSemente((E.semente || 1) + (E.data.ano||2026));
@@ -517,7 +538,9 @@ TO.competicoes = (function(){
     /* ---- fase 1: regionais e estaduais (GDD §18.3 e §18.4) ---- */
     const porRegional = {};
     for(const t of T){
+      if(SO_BRASIL && paisDe(t) !== 'Brasil') continue;
       const r = regionalDe(E, t);
+      if(!r) continue;
       (porRegional[r] = porRegional[r] || []).push(t.id);
     }
     const janela = FINAL_REGIONAL - INICIO_REGIONAL + 1;
@@ -545,6 +568,7 @@ TO.competicoes = (function(){
     /* ---- fase 2: Brasileirão (GDD §18.2) ---- */
     const porDivisao = {};
     for(const t of T){
+      if(SO_BRASIL && paisDe(t) !== 'Brasil') continue;
       const d = divisaoDe(E, t);
       (porDivisao[d] = porDivisao[d] || []).push(t.id);
     }
@@ -904,7 +928,9 @@ TO.competicoes = (function(){
   }
 
   function criarCopa(E){
-    const T = M().todosTimes;
+    /* a Copa do Brasil é só de clube brasileiro: sem este filtro os
+       248 de fora entram como "resto" e disputam a primeira fase */
+    const T = M().todosTimes.filter(t=>paisDe(t) === 'Brasil');
     const daSerieA = T.filter(t=>divisaoDe(E,t)===ESCADA[0]).map(t=>t.id);
     const resto    = T.filter(t=>divisaoDe(E,t)!==ESCADA[0]).map(t=>t.id);
 
@@ -1568,6 +1594,7 @@ TO.competicoes = (function(){
 
   return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana,
           forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
+          paisDe, SO_BRASIL,
           emJogo, porForca, estreiaDe, disputaDePenaltis,
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
