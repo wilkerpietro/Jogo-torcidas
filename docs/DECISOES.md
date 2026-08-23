@@ -1645,6 +1645,30 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     chave de 6 (15 duelos × 3), 4 semifinalistas por divisão, 2 vagas
     pelo playoff, e nenhuma torcida em duas divisões.
 
+- **A FORÇA DA IA É A DOS DEZ QUE DESCEM** (correção do dono,
+  23/08/2026): o duelo entre IAs media a torcida pela **média de ficha
+  do quadro inteiro**, novato dentro, enquanto o nosso lado escala os
+  **dez melhores**. Duas réguas pro mesmo duelo — e a média do quadro
+  ainda DILUI com o tamanho, então a torcida de 250 saía mais fraca que
+  a de 30. Medido no começo de um jogo: o mundo inteiro cabia entre
+  5,59 e 5,77 e **47% dos 9.591 pares empatavam na casa decimal**, o
+  que jogava quase metade dos duelos no cara ou coroa. Agora a conta é
+  a mesma dos dois lados — os dez que desceriam, na ordem em que a
+  diretoria escala (linha de frente, componente, diretoria, novato) —
+  e quem chega desfalcado perde força na proporção do que faltou.
+  **Medido depois**: o mundo se abre de 8,50 a 11,50, os empates caem
+  pra 1.941 pares, e a Gaviões de 250 passa a encabeçar a lista.
+
+- **O FAVORITO GANHA PROPORCIONAL À VANTAGEM** (régua do dono,
+  23/08/2026): o 70% cravado dava o mesmo resultado num duelo parelho e
+  no mais desigual do mundo — medi 20.000 duelos entre os extremos
+  (70,1%) e 20.000 entre dois separados por 0,002 de ficha (69,6%).
+  Agora é uma rampa: **55% de igual pra igual, 80% quando um lado é 35%
+  mais forte**, e nada passa disso. A conta é de RAZÃO e não de
+  diferença, pra que a régua continue valendo quando as fichas do mundo
+  subirem com os anos de treino. **Medido numa edição inteira** (427
+  duelos entre IAs): parelho 54%, até 15% de vantagem 67%, até 30% 73%.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

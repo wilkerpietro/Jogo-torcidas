@@ -208,19 +208,69 @@ TO.lnt = (function(){
      ======================================================= */
   const EFETIVO = 10;
 
+  /* A FORÇA É A DOS DEZ QUE DESCEM (correção do dono, 23/08/2026)
+
+     Antes isto lia a média de ficha do QUADRO INTEIRO da torcida, com
+     novato dentro. Duas coisas quebravam:
+
+       · a IA era medida por uma régua e nós por outra — o `abrirTreta`
+         escala os NOSSOS dez melhores (linha de frente primeiro,
+         componente improvisando), e a IA respondia pela média de todo
+         mundo;
+       · a média do quadro DILUI com o tamanho, então a torcida de 250
+         saía mais fraca que a de 30. Medido no começo de um jogo: o
+         mundo inteiro cabia entre 5,59 e 5,77, e 47% dos pares
+         empatavam na casa decimal.
+
+     Agora a conta é a mesma dos dois lados: os dez que desceriam, na
+     ordem em que a diretoria escala — linha de frente, componente,
+     diretoria, novato. Faltando gente apta, o bonde chega desfalcado e
+     a força cai na proporção do que faltou. Medido depois: o mundo se
+     abre de 8,50 a 11,50 e os pares empatados caem de 4.486 pra 1.941. */
+  const ORDEM_LNT = ['frente', 'componente', 'diretoria', 'novato'];
+
   function forcaDe(E, id){
     const o = M().torcida(id);
     if(!o) return 5;
-    const disp = R().disponiveisIA(E, id) || 20;
-    return R().mediaDeFichaGerada(o, disp, E) || 5;
+    const q = R().quadroDe ? R().quadroDe(E, id) : null;
+    if(!q) return (R().mediaDeFichaGerada(o, 20, E) || 5);
+    const disp = Math.max(0, R().disponiveisIA(E, id));
+    const cabem = Math.min(EFETIVO, disp);
+    if(!cabem) return 0;
+    let falta = cabem, soma = 0;
+    for(const c of ORDEM_LNT){
+      const n = Math.min(falta, q.cargos[c] || 0);
+      soma += n * (q.forca[c] || 0);
+      falta -= n;
+      if(!falta) break;
+    }
+    const usados = cabem - falta;
+    if(!usados) return 0;
+    /* desfalcado é desfalcado: sete contra dez não vale dez */
+    return (soma / usados) * (usados / EFETIVO);
+  }
+
+  /* O FAVORITO GANHA PROPORCIONAL À VANTAGEM (régua do dono,
+     23/08/2026): o 70% cravado dava o mesmo resultado num duelo
+     parelho e no mais desigual do mundo. Agora é uma rampa — 55% no
+     duelo de igual pra igual, 80% quando um lado é 35% mais forte que
+     o outro, e nada passa disso. A conta é de RAZÃO e não de
+     diferença, pra que a régua continue valendo quando as fichas do
+     mundo inteiro subirem com os anos de treino. */
+  const PISO_FAV = 0.55, TETO_FAV = 0.80, RAMPA_FAV = 0.35;
+  function chanceDoFavorito(pFrt, pFrc){
+    if(pFrc <= 0) return TETO_FAV;
+    const vantagem = pFrt / pFrc - 1;
+    return PISO_FAV + U.limitar(vantagem / RAMPA_FAV, 0, 1) *
+                      (TETO_FAV - PISO_FAV);
   }
 
   /* devolve {venceuA, fa, fb} — feridos de cada lado, de 0 a 9 */
   function simularDuelo(E, a, b){
-    const pA = forcaDe(E, a) * EFETIVO, pB = forcaDe(E, b) * EFETIVO;
+    const pA = forcaDe(E, a), pB = forcaDe(E, b);
     const favA = pA === pB ? U.rng() < 0.5 : pA > pB;
-    /* a mesma régua da rua: o favorito leva 70%, e não 100% */
-    const venceuA = U.rng() < 0.70 ? favA : !favA;
+    const chance = chanceDoFavorito(Math.max(pA, pB), Math.min(pA, pB));
+    const venceuA = U.rng() < chance ? favA : !favA;
     const feridos = perdeu => U.inteiro(perdeu ? 3 : 0, perdeu ? 7 : 3);
     return {venceuA, fa: feridos(!venceuA), fb: feridos(venceuA)};
   }
@@ -601,6 +651,7 @@ TO.lnt = (function(){
           existe, fundar, montarEdicao, calendario, semestreDe,
           podeAbrir, semanaDeAbertura, inicioDoSemestre,
           simularDuelo, resolver, cruzar, chaves, rodadasDoGrupo,
+          forcaDe, chanceDoFavorito, PISO_FAV, TETO_FAV, RAMPA_FAV,
           tabelaDoGrupo, tabelaGeral, classificados,
           abrirMata, avancarMata, faseAberta, ordenarPorForca,
           rodadaDeHoje, duelosDoDia, rodar, meuDuelo, registrarNosso,
