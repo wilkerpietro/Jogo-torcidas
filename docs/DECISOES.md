@@ -2316,6 +2316,34 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     situação` — multiplicar pela ficha esmagava a variação de membros
     e prestígio.
 
+## Limpeza de telas e moral de 0 a 100 (decisão do dono, 24/08/2026)
+
+- **Ranking sem a fórmula na tela.** O recado que explicava a conta dos
+  pontos (a fórmula velha, ainda por cima) saiu da tela de Ranking; fica
+  só a nota da aba América do Sul dizendo que aquela fila é do continente.
+- **Calendário da torcida com os três turnos.** A célula do dia mostrava
+  só o primeiro turno preenchido do expediente; agora manhã, tarde e
+  noite aparecem, cada um na sua linha.
+- **Agenda do time só do país filtrado.** O seletor "Ver agenda de"
+  listava os 388 clubes dos dez países; agora acompanha o país escolhido
+  na tela de Competições (sem filtro lá, vale o país do jogador). O time
+  do jogador entra na lista mesmo fora do filtro.
+- **"Pressionar o clube" saiu de Financeiro → Elenco.** O cartão sumiu
+  da tela; a ação continua existindo no catálogo por baixo, só não tem
+  mais botão.
+- **Subaba Torcida → Hierarquia removida.**
+- **Recrutamento em gente, não em população.** O cartão dizia "Fora de
+  organizada 695 mil", que lia como população; agora diz "Possíveis de
+  recrutar 695 pessoas" — o número é o mesmo alcance de sempre, o rótulo
+  é que mentia a escala.
+- **Moral de 0 a 100.** A moral passa a falar na mesma régua do
+  prestígio: o indicador continua 0–20 por dentro (nenhuma mecânica
+  mudou — "sem mexer em nada mais", palavra do dono) e a APRESENTAÇÃO
+  multiplica por 5 — o painel Moral & Prestígio mostra "60 de 100" e o
+  histórico mostra os deltas ×5 pros dois indicadores. A moral de ficha
+  dos membros (a média do cabeçalho, a coluna da lista) segue na régua
+  0–20 da ficha, junto de força e defesa.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

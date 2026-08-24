@@ -2377,14 +2377,10 @@
        dica:'as torcidas dos dez países na mesma fila'}
     ], abaRanking, id=>{ abaRanking = id; redesenhar(); }));
 
-    pg.appendChild(el('div',{class:'recado', html:
-      `Pontos = (<b>membros</b> + <b>prestígio × 2</b>) × <b>média de `+
-      `força e defesa</b> dos membros × <b>situação financeira</b> `+
-      `(de ×0,6 endividado a ×1,6 rico). <b>Prédios</b> soma sede, bares, `+
-      `lojas e subsedes; <b>saldo</b> é vitória menos derrota em brigas `+
-      `no ano. O número menor ao lado é o quanto aquilo andou no mês.`+
-      (mundial ? ' Esta é a fila do continente inteiro; a do cabeçalho '+
-                 'é a do país.' : '')}));
+    /* O RECADO DA FÓRMULA SAIU (ordem do dono, 24/08/2026): o texto
+       explicava a régua velha e ficou pra trás quando ela mudou. */
+    if(mundial) pg.appendChild(el('div',{class:'recado',
+      html:'Esta é a fila do continente inteiro; a do cabeçalho é a do país.'}));
     const lista = mundial ? TO.relacoes.ranking(e)
                           : TO.relacoes.rankingDoPais(e);
     const t = el('table',{class:'tab-ranking'});
@@ -2968,8 +2964,9 @@
 
   /* =======================================================
      MORAL & PRESTÍGIO — o livro dos indicadores, item a item
-     (pedido do dono, 17/08/2026). O prestígio fala na régua
-     de 0 a 100 (indicador ×5); a moral fala na de 0 a 20.
+     (pedido do dono, 17/08/2026). Os dois falam na régua de
+     0 a 100 (indicador ×5) — a moral entrou nela por ordem
+     do dono em 24/08/2026.
      ======================================================= */
   function painelIndicadores(){
     const e = E();
@@ -2979,9 +2976,9 @@
       `<div class="linha-dado"><span>Prestígio</span>
          <b>${Math.round(e.indicadores.prestigio*5)} <span class="fraco">de 100</span></b></div>
        <div class="linha-dado"><span>Moral da torcida</span>
-         <b>${Math.round(e.indicadores.moral*10)/10} <span class="fraco">de 20</span></b></div>
+         <b>${Math.round(e.indicadores.moral*5)} <span class="fraco">de 100</span></b></div>
        <div class="linha-dado"><span class="fraco">Ficar 20 dias sem briga `+
-      `deprecia: −1 de prestígio e −0,5 de moral, e o relógio segue `+
+      `deprecia: −5 de prestígio e −2,5 de moral, e o relógio segue `+
       `correndo até a próxima briga.</span></div>`;
     cx.appendChild(c0);
 
@@ -2991,7 +2988,7 @@
       c.corpo.innerHTML = '<div class="em-construcao">Nada mexeu ainda.</div>';
     for(const h of hist.slice(0, 80)){
       const prest = h.ind === 'prestigio';
-      const v = prest ? Math.round(h.delta*5*10)/10 : Math.round(h.delta*10)/10;
+      const v = Math.round(h.delta*5*10)/10;
       c.corpo.appendChild(el('div',{class:'transacao', html:
         `<span class="dia">${h.dia}</span>
          <span class="desc">${prest ? 'Prestígio' : 'Moral'} · ${h.motivo||''}</span>
@@ -3008,7 +3005,7 @@
     pg.appendChild(el('div',{class:'titulo-pagina', texto:'Torcida — membros'}));
     pg.appendChild(subabas([
       {id:'membros',      rot:'Membros'},
-      {id:'hierarquia',   rot:'Hierarquia'},
+
       {id:'treinamentos', rot:'Treinamentos'},
       {id:'recrutamento', rot:'Recrutamento'},
       {id:'velhaguarda',  rot:`Velha Guarda${(e.velhaGuarda||[]).length
@@ -3018,7 +3015,7 @@
 
     if(subTorcida==='velhaguarda'){ pg.appendChild(painelVelhaGuarda()); return; }
     if(subTorcida==='treinamentos'){ pg.appendChild(painelTreinos()); return; }
-    if(subTorcida==='hierarquia'){ pg.appendChild(painelHierarquia()); return; }
+    /* a subaba Hierarquia saiu (ordem do dono, 24/08/2026) */
     if(subTorcida==='recrutamento'){ pg.appendChild(painelRecrutamento()); return; }
     if(subTorcida==='indicadores'){ pg.appendChild(painelIndicadores()); return; }
 
@@ -3295,10 +3292,13 @@
 
     const c1 = cartao(`Torcedores do ${clube?clube.nome:'clube'} em ${cid?cid.nome:'—'}`,
                       `${U.numero(torcedores)} mil na praça`);
+    /* PESSOAS, NÃO MILHARES (correção do dono, 24/08/2026): "695 mil
+       fora de organizada" era fantasia — o que existe é o punhado que
+       dá pra recrutar de verdade. */
     c1.corpo.innerHTML =
-      `<div class="valorao"><span>Fora de organizada</span>
+      `<div class="valorao"><span>Possíveis de recrutar</span>
          <b class="${p.base>0?'positivo':'negativo'}">${U.numero(Math.round(p.base))}`+
-      `<span class="fraco"> mil</span></b></div>
+      `<span class="fraco"> pessoas</span></b></div>
        <div class="linha-dado"><span>Já organizados</span>
          <b>${organizados} <span class="fraco">pessoas</span></b></div>`;
     for(const o of org)
@@ -4058,13 +4058,8 @@
       ()=>comprar(()=>C.investir(e, id, 1))));
     pg.appendChild(c2);
 
-    /* a cobrança no CT mora aqui: é conversa da torcida com o clube */
-    const ap = TO.acoes.porId('pressionar');
-    if(ap){
-      const c3 = cartao('Pressionar o clube', 'cena no CT');
-      c3.corpo.appendChild(linhaAcao(ap));
-      pg.appendChild(c3);
-    }
+    /* PRESSIONAR O CLUBE SAIU DA TELA (ordem do dono, 24/08/2026):
+       o cartão morava aqui, no Elenco, e foi removido. */
   }
 
   /* =======================================================
@@ -5318,12 +5313,16 @@
           `${IC.get('onibus')}Caravana`}));
         cel.appendChild(el('span',{class:'sub', texto:`${cv.rot} · ${cv.cidade}`}));
       }else{
-        /* o expediente é o mesmo todo dia comum: mostra o 1º turno */
+        /* OS TRÊS TURNOS NO DIA (pedido do dono, 24/08/2026): a célula
+           mostrava só o primeiro turno preenchido, e o calendário
+           escondia dois terços do expediente. Agora manhã, tarde e
+           noite aparecem, cada um na sua linha. */
         const exp = TO.acoes.expediente(e);
-        const id = exp.manha || exp.tarde || exp.noite;
-        const a = id && TO.acoes.porId(id);
-        if(a) cel.appendChild(el('span',{class:'acao',
-          html:`${IC.get(a.icone)}<span>${a.nome}</span>`}));
+        for(const turno of ['manha','tarde','noite']){
+          const a = exp[turno] && TO.acoes.porId(exp[turno]);
+          if(a) cel.appendChild(el('span',{class:'acao',
+            html:`${IC.get(a.icone)}<span>${a.nome}</span>`}));
+        }
       }
     }
     cel.className = 'dia ' + classes.join(' ');
@@ -5389,7 +5388,17 @@
     const col = el('div');
     col.appendChild(el('div',{class:'rot', texto:'Ver agenda de'}));
     const sel = el('select',{class:'campo'});
-    for(const t of [...TO.mundo.todosTimes].sort((a,b)=>a.nome<b.nome?-1:1)){
+    /* SÓ O PAÍS FILTRADO (pedido do dono, 24/08/2026): a lista seguia
+       os 388 clubes dos dez países; agora acompanha o país escolhido
+       na tela de Competições — sem filtro lá, vale o país do jogador. */
+    const paisSel = paisComp || TO.competicoes.paisDe(meu || {}) || 'Brasil';
+    const doPais = [...TO.mundo.todosTimes]
+      .filter(t=>TO.competicoes.paisDe(t) === paisSel)
+      .sort((a,b)=>a.nome<b.nome?-1:1);
+    if(meu && !doPais.some(t=>t.id === meu.id)) doPais.unshift(meu);
+    if(!doPais.some(t=>t.id === agendaClube))
+      agendaClube = (meu && meu.id) || (doPais[0] && doPais[0].id);
+    for(const t of doPais){
       const o = el('option',{value:t.id,
         texto: t.id===(meu&&meu.id) ? `${t.nome} (seu time)` : t.nome});
       if(t.id===agendaClube) o.selected = true;
