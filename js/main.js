@@ -1563,8 +1563,10 @@
       setTimeout(itnRecado, 900);       // o próximo recado da mesma parada
       return;
     }
-    /* vai pra briga: a cena é a do jogo, e o fecho dela é o de sempre */
-    ITN.esperando = {parada:p, cartao:cx};
+    /* vai pra briga: a cena é a do jogo, e o fecho dela é o de sempre.
+       O `ev` vai junto: é dele que sai a torcida do outro lado, pro
+       livro-caixa de baixas do itinerário saber de quem descontar. */
+    ITN.esperando = {parada:p, cartao:cx, ev};
     itnAbrirCena(ev, simular);
   }
 
@@ -1579,7 +1581,7 @@
   /* chamado quando o relatório da noite fecha */
   function itnVoltouDaCena(){
     if(!ITN || !ITN.esperando) return false;
-    const {parada, cartao} = ITN.esperando;
+    const {parada, cartao, ev} = ITN.esperando;
     ITN.esperando = null;
     parada.brigou = true;
     const res = ultimoResultado || {};
@@ -1597,6 +1599,22 @@
     const antesNos = ITN.nos, antesEles = ITN.eles;
     ITN.nos  = Math.max(0, ITN.nos  - baixasNossas);
     ITN.eles = Math.max(0, ITN.eles - baixasDeles);
+    /* FERIDO NÃO VOLTA PRA BRIGA (régua do dono, 24/08/2026): o que
+       cada torcida perdeu NESTE itinerário fica anotado, e o próximo
+       atrito com ela abre a cena já descontado — os dois lados. O
+       nosso desconto é o próprio ITN.nos; o delas é este livro. */
+    /* O LIVRO É DE QUEM SOBROU, não de quanto caiu: descontar baixas
+       da fórmula da cena descontava DUAS vezes — os membros feridos já
+       encolhem a fórmula sozinhos (medido: 101 − 15 dava 79, porque a
+       ficha ferida também tinha sumido da conta). Guardar a sobra e
+       cortar por ela não soma desconto com desconto. */
+    ITN.resta = ITN.resta || {};
+    const ef = res.efetivo || {};
+    const rid = ev && ev.torcida;
+    if(rid) ITN.resta[rid] =
+      Math.max(0, (ef[outro] || 0) - baixasDeles);
+    ITN.resta[E().torcida.id] =
+      Math.max(0, (ef[nossoLado] || 0) - baixasNossas);
     itnContar();
     itnMarcarEfetivo();
     const perdaNos = antesNos - ITN.nos, perdaEles = antesEles - ITN.eles;
@@ -5783,6 +5801,25 @@
                      praca:'na praça', arredores:'nos arredores do estádio'};
   let encontroAberto = null;
 
+  /* =======================================================
+     FERIDO NÃO VOLTA PRA BRIGA (régua do dono, 24/08/2026)
+     Cena aberta PELA LINHA DO DIA abre com o efetivo descontado:
+     o nosso é o que sobrou na caravana (ITN.nos, que já perde as
+     baixas parada a parada), e o deles desconta o que AQUELA
+     torcida perdeu neste itinerário (ITN.gasto). Fora do
+     itinerário nada muda — o desconto de lá é dos membros
+     feridos e dos lotes de baixas da IA, como sempre foi.
+     ======================================================= */
+  const doItinerario = () => !!(ITN && ITN.esperando);
+  const descontoItn = (tid, n) =>
+    doItinerario() && tid && ITN.resta && ITN.resta[tid] !== undefined
+      ? Math.max(2, Math.min(n, ITN.resta[tid])) : n;
+  /* o nosso corte é o mesmo dos outros, com a caravana viva de teto */
+  const tetoNossoItn = n =>
+    doItinerario()
+      ? Math.max(2, Math.min(descontoItn(E().torcida.id, n), ITN.nos || 0))
+      : n;
+
   function abrirConfronto(e, enc){
     const nosso = enc.a.nossa ? enc.a : enc.b.nossa ? enc.b : null;
     const deles = nosso === enc.a ? enc.b : enc.a;
@@ -5803,6 +5840,10 @@
        depois da briga. O resto é povão sem ficha. */
     /* A FICHA VAI INTEIRA (decisão do autor): se saem 100, os 100 são
        membros de verdade, cada um com a própria força e defesa. */
+    /* na linha do dia, os dois lados chegam já descontados — e o
+       registro da briga (enc) conta os números que a cena abriu */
+    nosso.n = tetoNossoItn(Math.round(nosso.n));
+    deles.n = descontoItn(deles.torcida, Math.round(deles.n));
     const aptos = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
       .slice(0, Math.max(2, Math.round(nosso.n)));
@@ -6099,6 +6140,8 @@
       : noDiaDeJogo ? Math.max(2, fila.length)
       : Math.max(2, Math.round(fila.length * 0.25));
     if(noBar) nossos = Math.min(nossos, 40);
+    /* na linha do dia, quem briga é o que SOBROU da caravana */
+    nossos = tetoNossoItn(nossos);
     /* QUEM VEM ATACAR TRAZ A TURMA QUE O SERVIÇO PEDE. Os 30% fixos
        criavam a cena-farsa: atacante grande o bastante pra passar no
        filtro de geração ainda chegava com um terço do nosso bonde e
@@ -6111,6 +6154,8 @@
       Math.round(membrosDeles * 0.30),
       Math.min(Math.round(membrosDeles * 0.70), Math.round(nossos * 0.9))));
     if(noBar) deles = Math.min(deles, 60);
+    /* e o ferido deles da briga anterior também não desce do carro */
+    deles = descontoItn(atq.torcida, deles);
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
     const c2 = TO.mundo.coresDaTorcida(o || {});
     /* NÓS SOMOS SEMPRE O LADO ATACADO — e nas duas cenas o atacado é o

@@ -2141,6 +2141,22 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   preso pesava 1,5 de caído MAIS 2 de preso — 3,5 por cabeça, e só na
   cena jogada.
 
+- **FERIDO NÃO VOLTA PRA BRIGA NA LINHA DO DIA** (régua do dono,
+  24/08/2026): dois atritos no mesmo itinerário com as mesmas torcidas
+  abriam a segunda cena com efetivo cheio. Agora o itinerário guarda,
+  briga a briga, **quem sobrou de cada torcida** (`ITN.resta`, a partir
+  do `res.efetivo` menos as baixas), e toda cena aberta pela linha —
+  emboscada, ataque na pista, investida — corta o efetivo dos DOIS
+  lados por essa sobra (com a caravana viva de teto extra no nosso).
+  · O livro é de sobra, não de baixas: descontar baixas da fórmula
+    descontava duas vezes, porque a ficha ferida já some da conta
+    sozinha (medido: 101 − 15 dava 79).
+  · Medido com duas emboscadas da mesma torcida: 1ª cena 101 × 59 com
+    15 baixas nossas e 26 deles; a 2ª abriu **86 × 33** — exatamente
+    101−15 e 59−26.
+  · Fora do itinerário nada muda: o desconto de lá segue sendo os
+    membros feridos e os lotes de baixas da IA.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
