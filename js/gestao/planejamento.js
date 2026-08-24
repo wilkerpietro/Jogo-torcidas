@@ -437,15 +437,32 @@ TO.planejamento = (function(){
     return pior;      // 0 a 100
   }
 
-  /* caminho mínimo com peso: 1 por salto, mais o que a praça cobra
-     de risco quando `evitarRival` está ligado */
+  /* O TRECHO PESA O QUE MEDE (regra do dono, 24/08/2026): a rota
+     curta é a de menor QUILOMETRAGEM, fiel ao "traçar rota" do Mapa
+     das Praças. Pesar 1 por salto empatava Fortaleza→Rio entre o
+     sertão e o cerrado (6 trechos dos dois jeitos) e o desempate era
+     ordem de inserção — a linha do Vasco saía por Brasília. O km vem
+     das posições da malha (haversine sobre malhaXY); praça sem
+     coordenada cai no peso antigo de 400 km por salto. */
+  function kmEntre(a, b){
+    const XY = TO.dados.malhaXY || {};
+    const pa = XY[a], pb = XY[b];
+    if(!pa || !pb) return 400;
+    const la1 = 13 - pa[1]/20, lo1 = pa[0]/20 - 82;
+    const la2 = 13 - pb[1]/20, lo2 = pb[0]/20 - 82;
+    const r = Math.PI/180, R = 6371;
+    const h = Math.sin((la2-la1)*r/2)**2 +
+      Math.cos(la1*r)*Math.cos(la2*r)*Math.sin((lo2-lo1)*r/2)**2;
+    return 2*R*Math.asin(Math.sqrt(h));
+  }
+
   function caminho(E, origem, destino, evitarRival){
     if(origem === destino) return {cidades:[origem], rodovias:[], saltos:0, risco:0};
     const g = grafo();
     const dist = new Map([[origem, 0]]);
     const anterior = new Map();
     const fila = [origem];
-    /* Dijkstra simples: 30 nós não pedem heap */
+    /* Dijkstra simples: 94 nós não pedem heap */
     const visto = new Set();
     while(fila.length){
       fila.sort((a,b)=>(dist.get(a)||1e9)-(dist.get(b)||1e9));
@@ -454,8 +471,10 @@ TO.planejamento = (function(){
       visto.add(n);
       if(n === destino) break;
       for(const [viz, rod] of (g.get(n) || new Map())){
-        const extra = evitarRival ? hostilidade(E, viz)/25 : 0;
-        const d = (dist.get(n)||0) + 1 + extra;
+        /* a régua do desvio acompanha a do peso: antes o risco valia
+           até 4 saltos; agora vale até o km de uns 4 trechos médios */
+        const extra = evitarRival ? hostilidade(E, viz)*16 : 0;
+        const d = (dist.get(n)||0) + kmEntre(n, viz) + extra;
         if(d < (dist.get(viz) ?? 1e9)){
           dist.set(viz, d); anterior.set(viz, [n, rod]);
           if(!visto.has(viz)) fila.push(viz);

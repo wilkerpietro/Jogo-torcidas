@@ -2222,12 +2222,16 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · **O continente inteiro é alcançável por terra** — a regra "entre as
     malhas só de avião" morreu. Medido: das 94 praças, as 94 têm rota
     a partir de Fortaleza; SP → Rio passa pelo Subúrbio Carioca.
-  · A rota curta cobra por TRECHO (7h30 cada): Fortaleza → Santiago sai
-    em **10 trechos** subindo pela Bioceânica e cruzando a Bolívia
-    (Maranhão → Brasília → Goiânia → Mato Grosso → Santa Cruz →
-    Cochabamba → Oruro → La Paz → Mendoza → Santiago) — e a linha do
-    dia monta as praças da ida e da volta como paradas, cada uma com
-    emboscada possível.
+  · **O TRECHO PESA O QUE MEDE** (regra do dono, 24/08/2026): a rota
+    curta é a de menor QUILOMETRAGEM real (haversine sobre as posições
+    da malha), fiel ao "traçar rota" do mapa. Pesar 1 por salto
+    empatava Fortaleza → Rio entre o sertão e o cerrado e o desempate
+    era ordem de inserção — a linha do Vasco saía por Brasília. Agora:
+    Fortaleza → Rio pelo sertão (Interior do CE → Bahia → BH → SP →
+    Subúrbio → Rio) e Fortaleza → Santiago nos mesmos 15 trechos do
+    mapa, pelo Chuí — e a linha do dia monta as praças da ida e da
+    volta como paradas, cada uma com emboscada possível. O peso do
+    desvio de rival acompanhou a régua (hostilidade × 16 km).
   · Viagem de 5+ trechos ganha o avião como alternativa (custo de
     sempre, sem emboscada).
 
