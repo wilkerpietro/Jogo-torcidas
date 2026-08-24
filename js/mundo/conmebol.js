@@ -299,6 +299,10 @@ TO.conmebol = (function(){
       sulamericana: criarSulamericana(E, sul, real && real.sul),
       copas: criarCopasNacionais(E)
     };
+    /* se o clube do jogador abre o ano numa prévia, ela já entra na
+       agenda; entrando direto nos grupos, quem agenda é o sorteio */
+    agendarPreviaLib(E, E.conmebol.libertadores);
+    agendarPreviaSul(E, E.conmebol.sulamericana);
     return E.conmebol;
   }
 
@@ -466,6 +470,77 @@ TO.conmebol = (function(){
     return feitos.length ? feitos : null;
   }
 
+  /* =======================================================
+     A CONMEBOL NO CALENDÁRIO DO CLUBE (pedido do dono, 24/08/2026)
+
+     A Libertadores e a Sul-Americana do clube do jogador deixam
+     de ser simuladas por baixo: cada fase dele vira um jogo DE
+     VERDADE na temporada — mesma porta da copa nacional
+     (`copa-de-fora`): o jogo entra na agenda, o feed noticia, a
+     caravana viaja pela malha, e quando a Conmebol fecha a fase
+     ela LÊ o resultado jogado em vez de sortear outro. No
+     mata-mata o confronto do jogador decide em JOGO ÚNICO — a
+     mesma régua da copa nacional. Pros outros 30 clubes nada
+     muda: agregado simulado, como sempre.
+     ======================================================= */
+  const CM_IDS = {'Copa Libertadores':'libertadores-de-fora',
+                  'Copa Sul-Americana':'sulamericana-de-fora'};
+  const meuClubeId = E => {
+    const t = E.torcida && M().time(E.torcida.clubeId);
+    return t ? t.id : null;
+  };
+  function agendaCM(E, nomeTorneio){
+    const S = E.temporada;
+    if(!S || !S.competicoes) return null;
+    const id = CM_IDS[nomeTorneio];
+    let c = S.competicoes.find(x=>x.id === id);
+    if(!c){
+      c = {id, nome:nomeTorneio, tipo:'copa-de-fora', deFora:true,
+           clubes:[], grupos:[[]], passam:0, voltas:1,
+           pontosCorridos:false, idaEVolta:false,
+           rodadas:[], mata:[], campeao:null, vice:null, dia:DIA};
+      S.competicoes.push(c);
+    }
+    return c;
+  }
+  /* agenda o confronto SE o clube do jogador estiver nele */
+  function agendarCM(E, torneio, fase, semana, mand, vis){
+    const meu = meuClubeId(E);
+    if(!meu || (mand !== meu && vis !== meu)) return;
+    const c = agendaCM(E, torneio);
+    if(!c || c.mata.some(m=>m.fase === fase && m.semana === semana)) return;
+    for(const id of [mand, vis]) if(!c.clubes.includes(id)) c.clubes.push(id);
+    c.mata.push({fase, semana, dia:DIA,
+                 jogos:[{c:mand, f:vis, d:DIA, h:'21:30'}]});
+  }
+  function jogadoCM(E, torneio, fase, semana, a, b){
+    const S = E.temporada;
+    const c = S && S.competicoes &&
+      S.competicoes.find(x=>x.id === CM_IDS[torneio]);
+    if(!c) return null;
+    const m = c.mata.find(x=>x.fase === fase && x.semana === semana);
+    if(!m) return null;
+    return m.jogos.find(x=>((x.c===a && x.f===b) || (x.c===b && x.f===a)) &&
+                           x.gc != null) || null;
+  }
+  /* o confronto do jogador resolvido pelo jogo jogado (único) */
+  function tieCM(E, torneio, fase, semana, a, b){
+    const meu = meuClubeId(E);
+    if(!meu || (a !== meu && b !== meu)) return null;
+    const j = jogadoCM(E, torneio, fase, semana, a, b);
+    if(!j) return null;
+    let venceu = j.gc > j.gf ? j.c : j.gf > j.gc ? j.f : null;
+    if(!venceu) venceu = j.pen
+      ? (j.pen.c > j.pen.f ? j.c : j.f)
+      : C().disputaDePenaltis(j.c, j.f).venceu;
+    return {c:j.c, f:j.f, gc:j.gc, gf:j.gf, venceu,
+            sa: j.c === a ? j.gc : j.gf, sb: j.c === a ? j.gf : j.gc};
+  }
+  /* agregado simulado — ou o jogo único do jogador, quando é dele */
+  function resolver(E, torneio, fase, semana, a, b){
+    return tieCM(E, torneio, fase, semana, a, b) || agregado(a, b);
+  }
+
   /* ---- o duelo, com o resultado guardado: a Libertadores é
          notícia, e o clube do jogador pode estar nela ---- */
   function duelo(a, b){
@@ -498,29 +573,34 @@ TO.conmebol = (function(){
         const pares = emPares(vivos);
         const caidos = [];
         const passa = [];
+        const jogos = [];
         for(const [a,b] of pares){
-          const r = agregado(a,b);
+          const r = resolver(E, c.nome, 'Fase 3', sem, a, b);
           passa.push(r.venceu);
           caidos.push(r.venceu === a ? b : a);
+          jogos.push({c:a, f:b, gc:r.sa, gf:r.sb, venceu:r.venceu});
         }
-        c.mata.push({fase:'Fase 3', semana:sem, jogos:pares.map(([a,b],k)=>
-          ({c:a, f:b, agregado:true}))});
+        c.mata.push({fase:'Fase 3', semana:sem, jogos:jogos.slice(0, 4)});
         c.diretos = c.diretos.concat(passa.slice(0, 4));
         E.conmebol.sulamericana.esperandoLib = caidos.slice(0, 4);
-        c.mata[c.mata.length-1].jogos = pares.slice(0,4).map(([a,b])=>({c:a,f:b}));
         abrirGrupos(E, c, CAL_LIB.grupos);
         return {fase:'grupos', clubes:c.diretos.length};
       }
       const pares = emPares(vivos);
-      c.vivosPrevia = pares.map(([a,b])=>agregado(a,b).venceu);
+      const rotAtual = `Fase ${c.previaFase + 1}`;
+      c.vivosPrevia = pares.map(([a,b])=>
+        resolver(E, c.nome, rotAtual, sem, a, b).venceu);
       c.previaFase++;
-      return {fase:`Fase ${c.previaFase}`, seguem:c.vivosPrevia.length};
+      /* a fase seguinte do jogador entra na agenda assim que a chave
+         dela nasce */
+      agendarPreviaLib(E, c);
+      return {fase:rotAtual, seguem:c.vivosPrevia.length};
     }
 
     if(c.faseAtual === 'grupos'){
       const i = CAL_LIB.grupos.indexOf(sem);
       if(i < 0) return null;
-      rodarFechaDeGrupo(c, i);
+      rodarFechaDeGrupo(E, c, i, sem);
       if(i === CAL_LIB.grupos.length - 1){
         /* passam os dois primeiros; os terceiros vão pro playoff da Sul */
         const segundos = [], primeiros = [], terceiros = [];
@@ -533,6 +613,8 @@ TO.conmebol = (function(){
         E.conmebol.sulamericana.terceirosLib = terceiros;
         c.faseAtual = 'mata';
         c.matasFeitas = 0;
+        agendarMataCM(E, c, [CAL_LIB.oitavas, CAL_LIB.quartas,
+                             CAL_LIB.semi, CAL_LIB.final]);
       }
       return {fase:`grupos ${i+1}/6`};
     }
@@ -541,9 +623,35 @@ TO.conmebol = (function(){
       const cal = [CAL_LIB.oitavas, CAL_LIB.quartas, CAL_LIB.semi, CAL_LIB.final];
       const passo = cal[c.matasFeitas];
       if(!passo || sem !== passo[0]) return null;
-      return andarChave(E, c, ['Oitavas','Quartas','Semifinal','Final']);
+      return andarChave(E, c, ['Oitavas','Quartas','Semifinal','Final'], cal);
     }
     return null;
+  }
+
+  /* a prévia do jogador na agenda: a fase corrente de cada momento */
+  function agendarPreviaLib(E, c){
+    if(c.faseAtual !== 'previa') return;
+    const q = CAL_LIB.previa[c.previaFase];
+    if(q == null) return;
+    let vivos = c.vivosPrevia;
+    if(c.previaFase === 1 && (c.esperamPrevia||[]).length)
+      vivos = vivos.concat(c.esperamPrevia);
+    for(const [a,b] of emPares(vivos))
+      agendarCM(E, c.nome, `Fase ${c.previaFase + 1}`, q, a, b);
+  }
+  function agendarPreviaSul(E, c){
+    if(c.faseAtual !== 'previa') return;
+    for(const [a,b] of emPares(c.previa || []))
+      agendarCM(E, c.nome, 'Fase Preliminar', CAL_SUL.previa, a, b);
+  }
+  /* o mata-mata do jogador na agenda: a próxima fase da chave viva */
+  function agendarMataCM(E, c, cal){
+    const nomes = ['Oitavas','Quartas','Semifinal','Final'];
+    const passo = cal[c.matasFeitas];
+    if(!passo) return;
+    for(const [a,b] of emPares(c.vivos || []))
+      agendarCM(E, c.nome, nomes[c.matasFeitas] ||
+        `${(c.vivos||[]).length} clubes`, passo[0], a, b);
   }
 
   function andarSulamericana(E){
@@ -554,16 +662,26 @@ TO.conmebol = (function(){
     if(c.faseAtual === 'previa'){
       if(sem !== CAL_SUL.previa) return null;
       const pares = emPares(c.previa || []);
-      const passa = pares.map(([a,b])=>agregado(a,b).venceu);
-      c.mata.push({fase:'Fase Preliminar', semana:sem,
-                   jogos:pares.map(([a,b])=>({c:a, f:b}))});
+      const jogos = [];
+      const passa = pares.map(([a,b])=>{
+        const r = resolver(E, c.nome, 'Fase Preliminar', sem, a, b);
+        jogos.push({c:a, f:b, gc:r.sa, gf:r.sb, venceu:r.venceu});
+        return r.venceu;
+      });
+      c.mata.push({fase:'Fase Preliminar', semana:sem, jogos});
       c.diretos = c.diretos.concat(passa);
       c.faseAtual = 'espera';
       return {fase:'Fase Preliminar', seguem:passa.length};
     }
 
     if(c.faseAtual === 'espera'){
-      if(sem < CAL_SUL.grupos[0]) return null;
+      /* O SORTEIO SAI UMA SEMANA ANTES DA BOLA (correção de
+         24/08/2026): abrir os grupos NA semana da primeira fecha comia
+         a fecha — o indexOf achava a semana, mas a fase já tinha
+         gastado o dia com o sorteio. Abrindo na véspera, as seis
+         fechas jogam as seis semanas — e a agenda do jogador nasce
+         antes do primeiro apito. */
+      if(sem < CAL_SUL.grupos[0] - 1) return null;
       c.diretos = c.diretos.concat(c.esperandoLib || []);
       abrirGrupos(E, c, CAL_SUL.grupos);
       return {fase:'grupos', clubes:c.diretos.length};
@@ -572,7 +690,7 @@ TO.conmebol = (function(){
     if(c.faseAtual === 'grupos'){
       const i = CAL_SUL.grupos.indexOf(sem);
       if(i < 0) return null;
-      rodarFechaDeGrupo(c, i);
+      rodarFechaDeGrupo(E, c, i, sem);
       if(i === CAL_SUL.grupos.length - 1){
         const primeiros = [], segundos = [];
         c.grupos.forEach((g, ig)=>{
@@ -581,6 +699,12 @@ TO.conmebol = (function(){
         });
         c.primeiros = primeiros; c.segundos = segundos;
         c.faseAtual = 'playoff';
+        /* o playoff do jogador entra na agenda já com os pares */
+        const vindos = (c.terceirosLib || []).slice(0, segundos.length);
+        segundos.forEach((s2, k)=>{
+          if(vindos[k]) agendarCM(E, c.nome, 'Playoff',
+            CAL_SUL.playoff[0], s2, vindos[k]);
+        });
       }
       return {fase:`grupos ${i+1}/6`};
     }
@@ -592,17 +716,19 @@ TO.conmebol = (function(){
       const vindos = (c.terceirosLib || []).slice(0, c.segundos.length);
       const jogos = [];
       const passa = [];
-      c.segundos.forEach((s, k)=>{
+      c.segundos.forEach((s2, k)=>{
         const lib = vindos[k];
-        if(!lib){ passa.push(s); return; }
-        const r = agregado(s, lib);       // ida na casa do da Libertadores
+        if(!lib){ passa.push(s2); return; }
+        const r = resolver(E, c.nome, 'Playoff', sem, s2, lib);
         passa.push(r.venceu);
-        jogos.push({c:s, f:lib, gc:r.sa, gf:r.sb, venceu:r.venceu});
+        jogos.push({c:s2, f:lib, gc:r.sa, gf:r.sb, venceu:r.venceu});
       });
       c.mata.push({fase:'Playoff', semana:sem, jogos});
       c.vivos = cruzar(c.primeiros, passa);
       c.faseAtual = 'mata';
       c.matasFeitas = 0;
+      agendarMataCM(E, c, [CAL_SUL.oitavas, CAL_SUL.quartas,
+                           CAL_SUL.semi, CAL_SUL.final]);
       return {fase:'Playoff', seguem:c.vivos.length};
     }
 
@@ -610,7 +736,7 @@ TO.conmebol = (function(){
       const cal = [CAL_SUL.oitavas, CAL_SUL.quartas, CAL_SUL.semi, CAL_SUL.final];
       const passo = cal[c.matasFeitas];
       if(!passo || sem !== passo[0]) return null;
-      return andarChave(E, c, ['Oitavas','Quartas','Semifinal','Final']);
+      return andarChave(E, c, ['Oitavas','Quartas','Semifinal','Final'], cal);
     }
     return null;
   }
@@ -651,18 +777,43 @@ TO.conmebol = (function(){
         .sort((a,b)=>(C().forca(b)||0)-(C().forca(a)||0));
       dentro = dentro.concat(sobra.slice(0, 32 - dentro.length));
     }
-    const pote = U.embaralhar(dentro);
+    /* SORTEIO POR POTES (pedido do dono, 24/08/2026): os 32 em quatro
+       potes de oito pela força, um de cada pote por grupo — cabeça de
+       chave não cruza com cabeça de chave na fase de grupos, que é
+       como a Conmebol sorteia. Dentro de cada pote a ordem é sorteada. */
+    const ordemForca = dentro.slice().sort((a,b)=>
+      (C().forca(b)||0) - (C().forca(a)||0));
     c.grupos = Array.from({length:8}, ()=>[]);
-    pote.forEach((id, k)=> c.grupos[k % 8].push(id));
+    for(let p=0; p<4; p++){
+      const pote = U.embaralhar(ordemForca.slice(p*8, (p+1)*8));
+      pote.forEach((id, g)=> c.grupos[g % 8].push(id));
+    }
+    c.potes = [0,1,2,3].map(p=>ordemForca.slice(p*8, (p+1)*8));
     c.tabela = c.grupos.map(()=>({}));
+    c.fechas = [];
     c.faseAtual = 'grupos';
     c.calGrupos = cal;
+    /* o grupo do jogador entra inteiro na agenda: as 6 fechas dele */
+    const meu = meuClubeId(E);
+    const gMeu = meu && c.grupos.find(g=>g.includes(meu));
+    if(gMeu) for(let i=0; i<cal.length; i++)
+      for(const [a,b] of L().jogosDaFecha(gMeu, i, 2))
+        if(a === meu || b === meu)
+          agendarCM(E, c.nome, `Fecha ${i+1}`, cal[i], a, b);
   }
 
-  function rodarFechaDeGrupo(c, fecha){
+  function rodarFechaDeGrupo(E, c, fecha, sem){
+    const registro = {fecha:fecha+1, semana:sem, jogos:[]};
     c.grupos.forEach((g, ig)=>{
       for(const [a,b] of L().jogosDaFecha(g, fecha, 2)){
-        const j = duelo(a, b);
+        /* o jogo do jogador já rolou de verdade hoje: entra o placar
+           jogado, não um sorteio por cima */
+        const feito = jogadoCM(E, c.nome, `Fecha ${fecha+1}`, sem, a, b);
+        const j = feito
+          ? {c:a, f:b, gc: feito.c===a ? feito.gc : feito.gf,
+                    gf: feito.c===a ? feito.gf : feito.gc}
+          : duelo(a, b);
+        registro.jogos.push({grupo:ig, c:j.c, f:j.f, gc:j.gc, gf:j.gf});
         const tab = c.tabela[ig];
         const la = tab[a] || (tab[a] = L().linha(a));
         const lb = tab[b] || (tab[b] = L().linha(b));
@@ -673,9 +824,10 @@ TO.conmebol = (function(){
         else { la.e++; lb.e++; la.p++; lb.p++; }
       }
     });
+    (c.fechas = c.fechas || []).push(registro);
   }
 
-  function andarChave(E, c, nomes){
+  function andarChave(E, c, nomes, cal){
     const vivos = c.vivos || [];
     if(vivos.length < 2){ c.campeao = vivos[0] || null; return {fase:'fim'}; }
     const rot = nomes[c.matasFeitas] || `${vivos.length} clubes`;
@@ -683,7 +835,13 @@ TO.conmebol = (function(){
     const final = rot === 'Final';
     for(let k=0;k+1<vivos.length;k+=2){
       const a = vivos[k], b = vivos[k+1];
-      if(final){
+      /* o confronto do jogador é o jogo jogado — na final inclusive */
+      const t = tieCM(E, c.nome, rot, E.data.semana, a, b);
+      if(t){
+        jogos.push({c:t.c, f:t.f, gc:t.gc, gf:t.gf,
+                    venceu:t.venceu, neutro:final || null});
+        passa.push(t.venceu);
+      } else if(final){
         const j = duelo(a, b);
         j.venceu = j.gc>j.gf ? a : j.gf>j.gc ? b
                  : C().disputaDePenaltis(a,b).venceu;
@@ -698,6 +856,7 @@ TO.conmebol = (function(){
     c.mata.push({fase:rot, semana:E.data.semana, jogos});
     c.vivos = passa;
     c.matasFeitas++;
+    if(cal) agendarMataCM(E, c, cal);
     if(passa.length === 1){
       c.campeao = passa[0];
       const f = jogos[0];

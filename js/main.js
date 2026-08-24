@@ -4903,6 +4903,39 @@
   /* =======================================================
      LIBERTADORES E SUL-AMERICANA
      ======================================================= */
+  /* A CONMEBOL COM JOGOS NA TELA (pedido do dono, 24/08/2026): o
+     mesmo painel de rodadas da Série A, montado sobre as fechas e o
+     mata-mata guardados na edição — as fechas já jogadas com placar,
+     as futuras com a chave do sorteio esperando a bola. */
+  function compDaConmebol(c){
+    const DIA = TO.conmebol.DIA;
+    const rodadas = (c.fechas||[]).map(f=>({
+      rot:`Fecha ${f.fecha}`, semana:f.semana,
+      jogos:f.jogos.map(j=>({c:j.c, f:j.f, gc:j.gc, gf:j.gf, d:DIA, h:'21:30'}))}));
+    /* as fechas que ainda vêm: a chave existe desde o sorteio */
+    if(c.faseAtual === 'grupos' && (c.grupos||[]).length && c.calGrupos){
+      for(let i = rodadas.length; i < c.calGrupos.length; i++){
+        const jogos = [];
+        c.grupos.forEach(g=>{
+          for(const [a,b] of TO.ligas.jogosDaFecha(g, i, 2))
+            jogos.push({c:a, f:b, d:DIA, h:'21:30'});
+        });
+        rodadas.push({rot:`Fecha ${i+1}`, semana:c.calGrupos[i], jogos});
+      }
+    }
+    /* TUDO NUMA LINHA DO TEMPO SÓ: prévia, fechas e mata em ordem de
+       semana — senão o navegador de rodadas abria na Fase 3 depois de
+       seis fechas jogadas, porque o mata vem depois na lista */
+    for(const m of (c.mata||[]))
+      rodadas.push({rot:m.fase, semana:m.semana,
+        jogos:m.jogos.map(j=>({c:j.c, f:j.f, gc:j.gc, gf:j.gf,
+          venceu:j.venceu, d:DIA, h:'21:30'}))});
+    rodadas.sort((a,b)=>(a.semana||0)-(b.semana||0));
+    return {id:'cm-vista', nome:c.nome, dia:DIA, copa:true,
+      grupos:c.grupos && c.grupos.length ? c.grupos : [[]],
+      rodadas, mata:[]};
+  }
+
   function pintarConmebolUm(e, pg, qual){
     const c = (e.conmebol||{})[qual];
     if(!c){ pg.appendChild(emConstrucao('Ainda não',
@@ -4939,10 +4972,20 @@
       esq.appendChild(q);
     }
     duas.appendChild(esq);
-    duas.appendChild(chaveSimples('Mata-mata', c.mata,
-      {rot:'Vagas por país', linhas:Object.entries(
-        qual==='libertadores' ? TO.conmebol.VAGAS_LIB : TO.conmebol.VAGAS_SUL)
-        .map(([p,n])=>`${p}: ${n}`)}));
+    /* a direita é a rodada, como na Série A: fechas e mata-mata
+       navegáveis, com placar no que já rolou */
+    const dir = el('div');
+    const vista = compDaConmebol(c);
+    if(vista.rodadas.length || vista.mata.length)
+      dir.appendChild(painelRodada(e, vista));
+    const vagas = quadro('Vagas por país');
+    const rolo = el('div',{class:'rolo', estilo:{padding:'8px 14px 12px'}});
+    for(const [pais, n] of Object.entries(
+        qual==='libertadores' ? TO.conmebol.VAGAS_LIB : TO.conmebol.VAGAS_SUL))
+      rolo.appendChild(el('div',{class:'sub-chave', texto:`${pais}: ${n}`}));
+    vagas.corpo.appendChild(rolo);
+    dir.appendChild(vagas);
+    duas.appendChild(dir);
     pg.appendChild(duas);
   }
 

@@ -2282,6 +2282,27 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · O espelho das IAs foi junto: SEQUELA_MEDIA 0,0525 → 0,01575 e
     CADEIA_MEDIA 1,0 → 0,3.
 
+- **A CONMEBOL NO CALENDÁRIO DO CLUBE** (pedido do dono, 24/08/2026):
+  a Libertadores e a Sul-Americana do clube do jogador deixaram de ser
+  simuladas por baixo — cada fase dele é um jogo DE VERDADE, pela mesma
+  porta da copa nacional (`copa-de-fora`): entra na agenda
+  (`libertadores-de-fora`/`sulamericana-de-fora`), o feed noticia, a
+  caravana viaja pela malha continental, e a edição LÊ o placar jogado
+  em vez de sortear outro. No mata-mata o confronto do jogador decide
+  em jogo único, como a copa nacional. Medido com a La 12: as 6 fechas
+  do grupo do Boca na agenda, jogadas, e o placar da edição batendo
+  jogo a jogo com o jogado.
+  · **SORTEIO POR POTES** (pedido do dono): os 32 da fase de grupos em
+    4 potes de 8 pela força, um de cada pote por grupo — cabeça de
+    chave não cruza com cabeça de chave. Vale pras duas copas.
+  · **A tela ganhou os jogos**, como a Série A: painel de rodadas
+    navegável (prévia, fechas e mata em ordem cronológica, futuros com
+    a chave do sorteio à espera), grupos à esquerda, vagas por país
+    embaixo.
+  · De quebra: a Sul-Americana jogava 5 das 6 fechas — o sorteio dos
+    grupos comia a semana da primeira. O sorteio saiu pra véspera e as
+    seis jogam.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
