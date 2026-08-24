@@ -2215,6 +2215,32 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   24/08/2026): "Dia de bandeira e nada mais?" virou **"Deve ser um dia
   tranquilo"**, e o botão "Só bandeira" virou **"Avançar"**.
 
+- **A MALHA LIGADA NO MOTOR** (24/08/2026): a planta do Mapa das
+  Praças virou `dados/malha.js` (94 praças, 45 rodovias, trecho a
+  trecho) e o grafo do `planejamento` agora nasce dela — vizinho é a
+  PRÓXIMA praça do corredor, não qualquer uma da mesma rodovia. Efeitos:
+  · **O continente inteiro é alcançável por terra** — a regra "entre as
+    malhas só de avião" morreu. Medido: das 94 praças, as 94 têm rota
+    a partir de Fortaleza; SP → Rio passa pelo Subúrbio Carioca.
+  · A rota curta cobra por TRECHO (7h30 cada): Fortaleza → Santiago sai
+    em **10 trechos** subindo pela Bioceânica e cruzando a Bolívia
+    (Maranhão → Brasília → Goiânia → Mato Grosso → Santa Cruz →
+    Cochabamba → Oruro → La Paz → Mendoza → Santiago) — e a linha do
+    dia monta as praças da ida e da volta como paradas, cada uma com
+    emboscada possível.
+  · Viagem de 5+ trechos ganha o avião como alternativa (custo de
+    sempre, sem emboscada).
+
+- **CADA LADO FOGE PRA UM CANTO** (correção do dono, 24/08/2026):
+  quando os dois bondes corriam, os dois escolhiam a boca mais perta e
+  a tela mostrava caçador e caça fugindo abraçados pela mesma rua.
+  Cada lado em fuga agora tem a SUA saída — a mais perto do centro do
+  bonde, entre as que têm rota desviando da PM; se os dois escolhem a
+  mesma e há outra, quem debandou POR ÚLTIMO cede a boca. Nos
+  arredores nada muda: lá fugir é entrar pelo próprio portão. De
+  quebra, guarda que debandou deixou de ficar plantado no posto (o
+  ramo de guarda rodava antes do ramo de correr).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

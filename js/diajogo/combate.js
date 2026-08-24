@@ -1197,7 +1197,10 @@ TO.diaJogo.combate = (function(){
       /* de guarda: fica no posto. Sem isto o dono do bar sai andando
          pro fim da rua no primeiro segundo, porque o padrão de quem
          não tem inimigo à vista é caminhar pra própria saída. */
-      if(d.guarda && !J.acordou){
+      /* guarda que debandou não é mais guarda: sem o `!d.fugindo`,
+         o dono do posto ficava plantado no lugar mesmo em fuga —
+         o ramo de guarda rodava antes do ramo de correr (24/08/2026) */
+      if(d.guarda && !J.acordou && !d.fugindo){
         d._ramo='guarda'; d._alvo=null;
         d.vx*=0.82; d.vy*=0.82;
         A.mover(d, d.vx*dt, d.vy*dt);
@@ -1516,10 +1519,10 @@ TO.diaJogo.combate = (function(){
      a única rota passa por cima da PM mesmo. Como a PM anda (carga,
      reforço), o cache expira a cada 1,2s além de expirar com grade
      caída. */
-  let cacheFuga = {versao:-1, ate:-1, lista:null};
+  let cacheFuga = {versao:-1, ate:-1, lista:null, saidaDe:null};
   function camposDeFuga(J){
     if(cacheFuga.versao !== J.versaoGrades || J.t > cacheFuga.ate)
-      cacheFuga = {versao:J.versaoGrades, ate:J.t + 1.2, lista:null};
+      cacheFuga = {versao:J.versaoGrades, ate:J.t + 1.2, lista:null, saidaDe:null};
     if(!cacheFuga.lista){
       const bloq = A.celulasDeGrades(J.grades);
       const comPM = A.celulasDeDiscos(J.policiais.filter(p=>p.vivo), 12, bloq);
@@ -1528,6 +1531,51 @@ TO.diaJogo.combate = (function(){
         campo: A.criarCampo(f.x, f.y, bloq)}));
     }
     return cacheFuga.lista;
+  }
+
+  /* CADA LADO FOGE PRA UM CANTO (correção do dono, 24/08/2026).
+     Quando os DOIS bondes correm, os dois escolhiam a mesma boca — a
+     mais perto — e a tela mostrava caçador e caça fugindo abraçados
+     pela mesma rua. Agora cada lado em fuga tem a SUA saída: a mais
+     perto do centro do bonde; se os dois escolherem a mesma e houver
+     outra com rota, o lado que debandou POR ÚLTIMO pega a segunda —
+     quem quebrou primeiro já estava correndo, não muda de rua no meio.
+     Com uma boca só, fica todo mundo nela mesmo: porta é porta. */
+  function saidasPorLado(J){
+    const lista = camposDeFuga(J);
+    if(cacheFuga.saidaDe) return cacheFuga.saidaDe;
+    const saida = {};
+    const lados = ['mandante','visitante'].filter(l=>
+      J.discos.some(d=>d.vivo && !d.sumiu && d.fugindo && d.lado===l));
+    const escolha = {};
+    for(const l of lados){
+      const fugindo = J.discos.filter(d=>d.vivo && !d.sumiu && d.fugindo && d.lado===l);
+      const cx = fugindo.reduce((s,d)=>s+d.x,0)/fugindo.length;
+      const cy = fugindo.reduce((s,d)=>s+d.y,0)/fugindo.length;
+      /* SÓ BOCA COM ROTA entra na fila do lado — e a rota que vale é a
+         que DESVIA da PM: escolher a boca mais perto sem olhar o
+         cordão devolvia o bonde pro corredor tampado (regressão pega
+         pelo fuga-cordao). Sem nenhuma desviável, vale a de grades;
+         sem nenhuma, o lado fica sem preferência e cada disco se vira. */
+      const fila = lista.slice().sort((a,b)=>
+        U.dist2(cx,cy,a.f.x,a.f.y) - U.dist2(cx,cy,b.f.x,b.f.y));
+      const passa = o => !o.desvia.passo(cx,cy).semRota;
+      const passaGrade = o => !o.campo.passo(cx,cy).semRota;
+      escolha[l] = fila.filter(passa);
+      if(!escolha[l].length) escolha[l] = fila.filter(passaGrade);
+      saida[l] = escolha[l][0] ? escolha[l][0].chave : null;
+    }
+    if(lados.length === 2 && lista.length > 1 &&
+       saida[lados[0]] && saida[lados[0]] === saida[lados[1]]){
+      /* quem debandou por último cede a boca */
+      const ordem = lados.slice().sort((a,b)=>
+        (J.correuEm && J.correuEm[a] || 0) - (J.correuEm && J.correuEm[b] || 0));
+      const cede = ordem[1];
+      const alt = escolha[cede].find(o=>o.chave !== saida[ordem[0]]);
+      if(alt) saida[cede] = alt.chave;
+    }
+    cacheFuga.saidaDe = saida;
+    return saida;
   }
 
   /* A saída mais perto QUE TEM CAMINHO. Sem o teste de rota, o disco
@@ -1548,10 +1596,13 @@ TO.diaJogo.combate = (function(){
       }
     }
     const evita = (d.fugaEvita && d.fugaEvita.ate > J.t) ? d.fugaEvita.chave : null;
-    const acha = (qualCampo, pulaEvitada)=>{
+    /* a boca do MEU lado primeiro: é o que separa as duas debandadas */
+    const minha = saidasPorLado(J)[d.lado] || null;
+    const acha = (qualCampo, pulaEvitada, soDoLado)=>{
       let melhor=null, md=Infinity;
       for(const o of camposDeFuga(J)){
         if(pulaEvitada && o.chave === evita) continue;
+        if(soDoLado && o.chave !== minha) continue;
         const c = o[qualCampo];
         if(c.passo(d.x,d.y).semRota) continue;
         const q=U.dist2(d.x,d.y,o.f.x,o.f.y);
@@ -1559,7 +1610,10 @@ TO.diaJogo.combate = (function(){
       }
       return melhor;
     };
-    const r = acha('desvia', !!evita) || acha('campo', !!evita) ||
+    /* a boca do lado só vale enquanto ela desvia do cordão: se daqui
+       deste disco só se chega nela empurrando PM, cai na régua normal */
+    const r = (minha && minha !== evita && acha('desvia', false, true)) ||
+              acha('desvia', !!evita) || acha('campo', !!evita) ||
               (evita && (acha('desvia', false) || acha('campo', false))) || null;
     if(r) d._fugaChave = r.chave;
     return r;
@@ -2145,6 +2199,7 @@ TO.diaJogo.combate = (function(){
       if(!motivo) continue;
       J.debandou[lado]=true;
       J.debandouPor[lado]=motivo;
+      (J.correuEm=J.correuEm||{})[lado]=J.correuEm[lado]??J.t;
       const meu = lado === meuLado;
       const txt = motivo==='minoria'
         ? (meu ? 'Seu pessoal viu o tamanho deles e correu.'
@@ -2221,6 +2276,7 @@ TO.diaJogo.combate = (function(){
     if(!n) return 0;
     J.debandou[meu] = true;
     J.debandouPor[meu] = 'ordem';
+    (J.correuEm=J.correuEm||{})[meu]=J.correuEm[meu]??J.t;
     J.fugaOrdenada = true;
     /* recuo ligado junto da fuga só atrapalha: são duas ordens de andar
        pra trás no mesmo bonde, e a fuga é a que vale */

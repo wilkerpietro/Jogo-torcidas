@@ -396,16 +396,32 @@ TO.planejamento = (function(){
   function grafo(){
     if(_grafo) return _grafo;
     _grafo = new Map();
+    const liga = (a,b,rod)=>{
+      if(!_grafo.has(a)) _grafo.set(a, new Map());
+      if(!_grafo.get(a).has(b)) _grafo.get(a).set(b, rod);
+    };
+    /* A MALHA DO DONO (24/08/2026, dados/malha.js): o grafo nasce da
+       planta fechada no Mapa das Praças — 94 praças, 45 rodovias,
+       travessias de fronteira incluídas. Vizinho é a PRÓXIMA praça do
+       corredor, não qualquer uma da mesma rodovia: é isso que faz cada
+       parada da rota ser uma praça de verdade, com emboscada possível.
+       De quebra, o continente inteiro ficou alcançável por terra. */
+    if(TO.dados.malha){
+      for(const r of TO.dados.malha)
+        for(const seg of r.seg)
+          for(let k=0;k<seg.length-1;k++){
+            liga(seg[k], seg[k+1], r.nome);
+            liga(seg[k+1], seg[k], r.nome);
+          }
+      return _grafo;
+    }
+    /* sem a planta (save de teste antigo): a régua velha, por rodovia */
     const porRodovia = new Map();
     for(const c of M().todasCidades)
       for(const r of (c.rodovias||[])){
         if(!porRodovia.has(r)) porRodovia.set(r, []);
         porRodovia.get(r).push(c.id);
       }
-    const liga = (a,b,rod)=>{
-      if(!_grafo.has(a)) _grafo.set(a, new Map());
-      _grafo.get(a).set(b, rod);
-    };
     for(const [rod, lista] of porRodovia)
       for(const a of lista) for(const b of lista) if(a!==b) liga(a,b,rod);
     return _grafo;
@@ -496,6 +512,16 @@ TO.planejamento = (function(){
       fora.push(monta(segura, 'segura', 'Rota que desvia dos rivais',
         `${segura.saltos} trechos por ${segura.rodovias.join(' e ')}, ` +
         'fugindo do território de quem nos odeia'));
+    /* VIAGEM DE OUTRO CONTINENTE DE DISTÂNCIA (malha do dono,
+       24/08/2026): com as travessias, Santiago fica a 15 trechos de
+       estrada — dá pra ir, e cada praça é uma emboscada possível. Mas
+       caravana longa assim merece a alternativa: a partir de 5 trechos
+       o avião entra como opção, com o custo de sempre. */
+    if(curta.saltos >= 5)
+      fora.push({id:'ar', nome:'De avião', rodovias:[],
+        cidades:[origem, destino], saltos:1, custo:CUSTO_AR, risco:0,
+        nota:`${curta.saltos} trechos de estrada é caravana de dias — `+
+             'voando não tem emboscada, mas custa caro'});
     return fora;
   }
 
