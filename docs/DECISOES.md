@@ -2165,6 +2165,16 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   mais se a série alongou no pé a pé) e a vaga que ninguém usou fica
   vazia: não precisou bater.
 
+- **O MAPA DAS PRAÇAS** (pedido do dono, 24/08/2026): artefato em HTML
+  (`docs/mapa-das-pracas.html`) com as 94 praças do jogo na posição
+  geográfica real e as 23 rodovias — as 8 do Brasil e as 15 rutas
+  Conmebol — desenhadas como corredores, com pan/zoom, tooltip por
+  praça e realce por rodovia. Os TRECHOS desenhados (a sequência de
+  praças de cada corredor) são a proposta de cima da qual as rotas de
+  itinerário com emboscada vão ser construídas nos 9 países, na mesma
+  régua da malha brasileira. A regra atual segue de pé: malha do Brasil
+  e malha Conmebol não se tocam — entre elas, só de avião.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

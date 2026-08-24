@@ -1,0 +1,291 @@
+<title>Mapa das Praças</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ultra&family=Archivo+Narrow:wght@400;600;700&display=swap">
+<style>
+:root{
+  --asfalto:#131009; --painel:#1b1710; --painel-2:#221d13;
+  --tinta:#e9dfc8; --tinta-2:#96896e; --tinta-3:#5f553f;
+  --rubro:#c8483c; --fio:#332c1e; --continente:#1d1811; --borda:#3b3323;
+  --estrada-br:#c9a24b; --estrada-cb:#7d96ad;
+}
+*{margin:0; padding:0; box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--asfalto); color:var(--tinta);
+  font:15px/1.45 'Archivo Narrow',system-ui,sans-serif; overflow:hidden}
+#app{display:grid; grid-template-columns:1fr 340px; height:100vh}
+#palco{position:relative; overflow:hidden; background:var(--asfalto)}
+svg{display:block; width:100%; height:100%; cursor:grab; touch-action:none}
+svg.arrastando{cursor:grabbing}
+.costa{fill:var(--continente); stroke:var(--borda); stroke-width:1.4;
+  vector-effect:non-scaling-stroke}
+.grade-mar{stroke:#1a1610; stroke-width:1; vector-effect:non-scaling-stroke}
+.rod{fill:none; stroke-linecap:round; stroke-linejoin:round;
+  vector-effect:non-scaling-stroke; opacity:.62; transition:opacity .2s, stroke .2s}
+.rod.br{stroke:var(--estrada-br); stroke-width:1.6}
+.rod.cb{stroke:var(--estrada-cb); stroke-width:1.6}
+.rod.apagada{opacity:.10}
+.rod.acesa{stroke:var(--rubro); stroke-width:3; opacity:1}
+.pr{stroke:#0c0a06; stroke-width:1; cursor:pointer}
+.pr.apagada{opacity:.18}
+.pr.acesa{stroke:var(--rubro); stroke-width:2.5}
+.rotulo{fill:var(--tinta-2); font-family:'Archivo Narrow',sans-serif; font-weight:600;
+  paint-order:stroke; stroke:#131009; stroke-width:3px; pointer-events:none}
+.rotulo.grande{fill:var(--tinta)}
+#cartela{position:absolute; left:18px; top:16px; pointer-events:none}
+#cartela h1{font:400 30px/1 Ultra,Georgia,serif; letter-spacing:.01em; color:var(--tinta)}
+#cartela .sub{margin-top:6px; font-weight:600; font-size:12px; letter-spacing:.17em;
+  text-transform:uppercase; color:var(--tinta-2)}
+#legenda{position:absolute; left:18px; bottom:16px; background:color-mix(in srgb, var(--painel) 88%, transparent);
+  border:1px solid var(--fio); padding:10px 12px 8px; max-width:290px}
+#legenda .tit{font-weight:700; font-size:10.5px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--tinta-2); margin-bottom:7px}
+#legenda .paises{display:flex; flex-wrap:wrap; gap:4px 12px}
+#legenda .p{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--tinta)}
+#legenda .p i{width:9px; height:9px; border-radius:50%; display:inline-block}
+#legenda .estradas{display:flex; gap:14px; margin-top:8px; padding-top:7px; border-top:1px solid var(--fio)}
+#legenda .e{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--tinta-2)}
+#legenda .e i{width:18px; height:0; border-top:2px solid; display:inline-block}
+#zoom{position:absolute; right:14px; top:14px; display:flex; flex-direction:column; gap:6px}
+#zoom button{width:34px; height:34px; background:var(--painel); color:var(--tinta);
+  border:1px solid var(--fio); font:700 17px/1 'Archivo Narrow',sans-serif; cursor:pointer}
+#zoom button:hover{border-color:var(--tinta-2)}
+#zoom button:focus-visible{outline:2px solid var(--rubro); outline-offset:1px}
+#dica{position:absolute; display:none; pointer-events:none; background:#241e12;
+  border:1px solid var(--borda); border-left:3px solid var(--rubro);
+  padding:8px 11px; max-width:240px; z-index:5}
+#dica .n{font-weight:700; font-size:15px; color:var(--tinta)}
+#dica .p{font-weight:600; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--tinta-2); margin:1px 0 5px}
+#dica .r{font-size:12.5px; color:var(--tinta-2); line-height:1.5}
+#dica .r b{color:var(--tinta); font-weight:600}
+#lado{background:var(--painel); border-left:1px solid var(--fio);
+  overflow-y:auto; padding:16px 0 24px}
+#lado .bloco{padding:0 16px; margin-bottom:4px}
+#lado h2{font-weight:700; font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--tinta-2); padding:14px 16px 7px; border-bottom:1px solid var(--fio);
+  margin-bottom:6px; display:flex; justify-content:space-between; align-items:baseline}
+#lado h2 .soma{color:var(--tinta-3); letter-spacing:.05em; font-size:11px}
+.rod-item{display:flex; align-items:baseline; gap:8px; width:100%; text-align:left;
+  background:none; border:0; border-left:3px solid transparent; color:var(--tinta);
+  font:inherit; padding:6px 13px; cursor:pointer}
+.rod-item:hover{background:var(--painel-2)}
+.rod-item:focus-visible{outline:2px solid var(--rubro); outline-offset:-2px}
+.rod-item.acesa{border-left-color:var(--rubro); background:var(--painel-2)}
+.rod-item .nome{font-weight:600; font-size:14.5px}
+.rod-item .n{margin-left:auto; color:var(--tinta-3); font-size:12px;
+  font-variant-numeric:tabular-nums}
+.rod-item .fio{flex:1; border-bottom:1px dotted var(--fio); transform:translateY(-3px)}
+#resumo{padding:0 16px 4px; color:var(--tinta-2); font-size:13px; line-height:1.55}
+#resumo b{color:var(--tinta); font-variant-numeric:tabular-nums}
+#nota{margin:12px 16px 0; padding:9px 11px; border:1px solid var(--fio);
+  border-left:3px solid var(--estrada-br); font-size:12.5px; color:var(--tinta-2); line-height:1.5}
+#nota b{color:var(--tinta)}
+@media (max-width:760px){
+  #app{grid-template-columns:1fr}
+  #lado{display:none}
+}
+</style>
+<div id="app">
+ <div id="palco">
+  <svg id="mapa" viewBox="0 0 980 1390" role="img" aria-label="Mapa das praças da América do Sul"></svg>
+  <div id="cartela">
+   <h1>Mapa das Praças</h1>
+   <div class="sub">94 praças · 23 rodovias · 10 países</div>
+  </div>
+  <div id="legenda">
+   <div class="tit">Praças por país</div>
+   <div class="paises" id="lgPaises"></div>
+   <div class="estradas">
+    <span class="e"><i style="border-color:var(--estrada-br)"></i>Rodovias do Brasil</span>
+    <span class="e"><i style="border-color:var(--estrada-cb)"></i>Rutas Conmebol</span>
+   </div>
+  </div>
+  <div id="zoom">
+   <button id="btMais" title="Aproximar" aria-label="Aproximar">+</button>
+   <button id="btMenos" title="Afastar" aria-label="Afastar">−</button>
+   <button id="btTudo" title="Ver tudo" aria-label="Ver o continente inteiro">▣</button>
+  </div>
+  <div id="dica"></div>
+ </div>
+ <aside id="lado">
+  <div id="resumo"></div>
+  <div id="nota"><b>Regra atual:</b> a malha do Brasil e a malha Conmebol
+   não se tocam — entre elas a caravana só cruza de avião. As rutas de
+   fora já nascem prontas pra virar rota de itinerário com emboscada,
+   igual às rodovias daqui.</div>
+  <div id="listaRod"></div>
+ </aside>
+</div>
+<script>
+const DADOS = {"pracas": [{"id": "manaus", "nome": "Manaus", "pais": "BR", "tam": "Médio", "xy": [439.6, 322.4]}, {"id": "belem", "nome": "Belém", "pais": "BR", "tam": "Médio", "xy": [670.2, 289.0]}, {"id": "maranhao", "nome": "Maranhão", "pais": "BR", "tam": "Médio", "xy": [754.0, 310.6]}, {"id": "fortaleza", "nome": "Fortaleza", "pais": "BR", "tam": "Grande", "xy": [869.2, 334.4]}, {"id": "interior-do-ce", "nome": "Interior do CE", "pais": "BR", "tam": "Pequeno", "xy": [853.6, 404.2]}, {"id": "rio-grande-do-norte", "nome": "Rio Grande do Norte", "pais": "BR", "tam": "Médio", "xy": [935.8, 375.8]}, {"id": "paraiba", "nome": "Paraíba", "pais": "BR", "tam": "Médio", "xy": [942.4, 402.4]}, {"id": "recife", "nome": "Recife", "pais": "BR", "tam": "Grande", "xy": [942.0, 421.0]}, {"id": "interior-de-pe", "nome": "Interior de PE", "pais": "BR", "tam": "Pequeno", "xy": [920.4, 425.6]}, {"id": "alagoas", "nome": "Alagoas", "pais": "BR", "tam": "Médio", "xy": [925.2, 453.4]}, {"id": "sergipe", "nome": "Sergipe", "pais": "BR", "tam": "Médio", "xy": [898.6, 479.0]}, {"id": "bahia", "nome": "Bahia", "pais": "BR", "tam": "Médio", "xy": [870.0, 519.4]}, {"id": "brasilia", "nome": "Brasília", "pais": "BR", "tam": "Médio", "xy": [682.4, 575.8]}, {"id": "goiania", "nome": "Goiânia", "pais": "BR", "tam": "Médio", "xy": [655.0, 593.6]}, {"id": "mato-grosso", "nome": "Mato Grosso", "pais": "BR", "tam": "Pequeno", "xy": [518.0, 572.0]}, {"id": "belo-horizonte", "nome": "Belo Horizonte", "pais": "BR", "tam": "Grande", "xy": [761.2, 658.4]}, {"id": "interior-de-minas", "nome": "Interior de Minas", "pais": "BR", "tam": "Pequeno", "xy": [674.4, 638.4]}, {"id": "rio-de-janeiro", "nome": "Rio de Janeiro", "pais": "BR", "tam": "Grande", "xy": [776.0, 718.2]}, {"id": "suburbio-carioca", "nome": "Subúrbio Carioca", "pais": "BR", "tam": "Médio", "xy": [772.2, 716.0]}, {"id": "sao-paulo", "nome": "São Paulo", "pais": "BR", "tam": "Grande", "xy": [707.4, 731.0]}, {"id": "abc-paulista", "nome": "ABC Paulista", "pais": "BR", "tam": "Médio", "xy": [710.0, 733.6]}, {"id": "santos", "nome": "Santos", "pais": "BR", "tam": "Médio", "xy": [713.4, 739.2]}, {"id": "regiao-de-campinas", "nome": "Região de Campinas", "pais": "BR", "tam": "Médio", "xy": [698.8, 718.2]}, {"id": "interior-de-sp", "nome": "Interior de SP", "pais": "BR", "tam": "Pequeno", "xy": [683.8, 683.6]}, {"id": "curitiba", "nome": "Curitiba", "pais": "BR", "tam": "Médio", "xy": [654.6, 768.6]}, {"id": "interior-do-pr", "nome": "Interior do PR", "pais": "BR", "tam": "Pequeno", "xy": [616.8, 726.2]}, {"id": "litoral-catarinense", "nome": "Litoral Catarinense", "pais": "BR", "tam": "Médio", "xy": [669.0, 812.0]}, {"id": "interior-de-sc", "nome": "Interior de SC", "pais": "BR", "tam": "Pequeno", "xy": [587.8, 802.0]}, {"id": "porto-alegre", "nome": "Porto Alegre", "pais": "BR", "tam": "Médio", "xy": [615.6, 860.6]}, {"id": "interior-do-rs", "nome": "Interior do RS", "pais": "BR", "tam": "Pequeno", "xy": [616.4, 843.4]}, {"id": "buenos-aires", "nome": "Buenos Aires", "pais": "AR", "tam": "Grande", "xy": [472.4, 952.2]}, {"id": "buenos-aires-norte", "nome": "Norte de CABA", "pais": "AR", "tam": "Médio", "xy": [471.0, 951.2]}, {"id": "buenos-aires-oeste", "nome": "Oeste de CABA", "pais": "AR", "tam": "Médio", "xy": [470.2, 952.6]}, {"id": "buenos-aires-sul", "nome": "Sul de CABA", "pais": "AR", "tam": "Pequeno", "xy": [472.2, 953.4]}, {"id": "norte-de-buenos-aires", "nome": "Zona Norte", "pais": "AR", "tam": "Pequeno", "xy": [468.8, 949.4]}, {"id": "san-martin-e-tres-de-febrero", "nome": "San Martín e Tres de Febrero", "pais": "AR", "tam": "Pequeno", "xy": [468.0, 951.4]}, {"id": "la-matanza", "nome": "La Matanza", "pais": "AR", "tam": "Pequeno", "xy": [468.0, 954.8]}, {"id": "moron-e-merlo", "nome": "Morón e Merlo", "pais": "AR", "tam": "Pequeno", "xy": [466.0, 953.2]}, {"id": "avellaneda", "nome": "Avellaneda", "pais": "AR", "tam": "Médio", "xy": [473.2, 953.4]}, {"id": "lanus-e-lomas", "nome": "Lanús e Lomas", "pais": "AR", "tam": "Médio", "xy": [471.6, 954.6]}, {"id": "quilmes-e-berazategui", "nome": "Quilmes e Berazategui", "pais": "AR", "tam": "Pequeno", "xy": [475.2, 955.2]}, {"id": "varela-e-ezeiza", "nome": "Varela e Ezeiza", "pais": "AR", "tam": "Pequeno", "xy": [471.0, 956.8]}, {"id": "la-plata", "nome": "La Plata", "pais": "AR", "tam": "Médio", "xy": [481.0, 958.4]}, {"id": "interior-de-buenos-aires", "nome": "Interior de Buenos Aires", "pais": "AR", "tam": "Pequeno", "xy": [489.0, 1020.0]}, {"id": "rosario", "nome": "Rosário", "pais": "AR", "tam": "Médio", "xy": [427.2, 919.0]}, {"id": "litoral-argentino", "nome": "Litoral Argentino", "pais": "AR", "tam": "Pequeno", "xy": [426.0, 892.6]}, {"id": "cordoba", "nome": "Córdoba", "pais": "AR", "tam": "Médio", "xy": [356.4, 888.4]}, {"id": "santiago-del-estero", "nome": "Santiago del Estero", "pais": "AR", "tam": "Pequeno", "xy": [354.8, 815.6]}, {"id": "tucuman", "nome": "Tucumã", "pais": "AR", "tam": "Pequeno", "xy": [335.6, 796.4]}, {"id": "norte-da-argentina", "nome": "Norte da Argentina", "pais": "AR", "tam": "Pequeno", "xy": [331.8, 755.8]}, {"id": "mendoza", "nome": "Mendoza", "pais": "AR", "tam": "Pequeno", "xy": [263.2, 917.8]}, {"id": "cuyo-e-patagonia", "nome": "Cuyo e Patagônia", "pais": "AR", "tam": "Pequeno", "xy": [278.8, 1039.0]}, {"id": "santiago", "nome": "Santiago", "pais": "CL", "tam": "Grande", "xy": [226.6, 929.0]}, {"id": "santiago-sul", "nome": "Santiago Sul", "pais": "CL", "tam": "Médio", "xy": [227.4, 932.0]}, {"id": "valparaiso", "nome": "Valparaíso", "pais": "CL", "tam": "Médio", "xy": [207.6, 921.0]}, {"id": "norte-do-chile", "nome": "Norte do Chile", "pais": "CL", "tam": "Pequeno", "xy": [232.0, 733.0]}, {"id": "norte-chico", "nome": "Norte Chico", "pais": "CL", "tam": "Pequeno", "xy": [215.0, 858.0]}, {"id": "centro-do-chile", "nome": "Centro do Chile", "pais": "CL", "tam": "Pequeno", "xy": [215.2, 959.6]}, {"id": "concepcion", "nome": "Concepción", "pais": "CL", "tam": "Pequeno", "xy": [179.0, 996.6]}, {"id": "sul-do-chile", "nome": "Sul do Chile", "pais": "CL", "tam": "Pequeno", "xy": [188.0, 1034.8]}, {"id": "bogota", "nome": "Bogotá", "pais": "CO", "tam": "Grande", "xy": [158.6, 165.8]}, {"id": "bogota-sul", "nome": "Sul de Bogotá", "pais": "CO", "tam": "Pequeno", "xy": [157.4, 169.4]}, {"id": "medellin", "nome": "Medellín", "pais": "CO", "tam": "Médio", "xy": [128.4, 135.2]}, {"id": "cali", "nome": "Cali", "pais": "CO", "tam": "Médio", "xy": [109.4, 191.0]}, {"id": "costa-colombiana", "nome": "Costa Colombiana", "pais": "CO", "tam": "Médio", "xy": [144.0, 40.8]}, {"id": "norte-da-colombia", "nome": "Norte da Colômbia", "pais": "CO", "tam": "Pequeno", "xy": [177.6, 117.6]}, {"id": "eixo-cafeteiro", "nome": "Eixo Cafeteiro", "pais": "CO", "tam": "Pequeno", "xy": [126.2, 163.8]}, {"id": "sul-da-colombia", "nome": "Sul da Colômbia", "pais": "CO", "tam": "Pequeno", "xy": [94.4, 235.8]}, {"id": "interior-da-colombia", "nome": "Interior da Colômbia", "pais": "CO", "tam": "Pequeno", "xy": [135.4, 171.2]}, {"id": "montevideu", "nome": "Montevidéu", "pais": "UY", "tam": "Grande", "xy": [516.2, 958.0]}, {"id": "montevideu-oeste", "nome": "Oeste de Montevidéu", "pais": "UY", "tam": "Pequeno", "xy": [514.0, 957.0]}, {"id": "montevideu-leste", "nome": "Leste de Montevidéu", "pais": "UY", "tam": "Pequeno", "xy": [518.8, 957.6]}, {"id": "interior-do-uruguai", "nome": "Interior do Uruguai", "pais": "UY", "tam": "Pequeno", "xy": [509.6, 927.6]}, {"id": "lima", "nome": "Lima", "pais": "PE", "tam": "Grande", "xy": [99.2, 501.0]}, {"id": "norte-do-peru", "nome": "Norte do Peru", "pais": "PE", "tam": "Pequeno", "xy": [59.4, 422.2]}, {"id": "cusco", "nome": "Cusco", "pais": "PE", "tam": "Pequeno", "xy": [200.6, 530.6]}, {"id": "sul-do-peru", "nome": "Sul do Peru", "pais": "PE", "tam": "Pequeno", "xy": [209.2, 588.2]}, {"id": "quito", "nome": "Quito", "pais": "EC", "tam": "Médio", "xy": [70.6, 263.6]}, {"id": "guayaquil", "nome": "Guayaquil", "pais": "EC", "tam": "Médio", "xy": [42.2, 303.8]}, {"id": "ambato", "nome": "Ambato", "pais": "EC", "tam": "Pequeno", "xy": [67.6, 284.8]}, {"id": "costa-equatoriana", "nome": "Costa Equatoriana", "pais": "EC", "tam": "Pequeno", "xy": [25.8, 279.2]}, {"id": "sul-do-equador", "nome": "Sul do Equador", "pais": "EC", "tam": "Pequeno", "xy": [60.0, 318.0]}, {"id": "assuncao", "nome": "Assunção", "pais": "PY", "tam": "Médio", "xy": [487.4, 765.6]}, {"id": "grande-assuncao", "nome": "Grande Assunção", "pais": "PY", "tam": "Pequeno", "xy": [490.0, 767.0]}, {"id": "interior-do-paraguai", "nome": "Interior do Paraguai", "pais": "PY", "tam": "Pequeno", "xy": [547.8, 770.2]}, {"id": "la-paz", "nome": "La Paz", "pais": "BO", "tam": "Médio", "xy": [277.0, 590.0]}, {"id": "oruro-e-potosi", "nome": "Oruro e Potosí", "pais": "BO", "tam": "Pequeno", "xy": [297.4, 619.6]}, {"id": "cochabamba", "nome": "Cochabamba", "pais": "BO", "tam": "Pequeno", "xy": [316.8, 607.8]}, {"id": "santa-cruz", "nome": "Santa Cruz", "pais": "BO", "tam": "Pequeno", "xy": [376.4, 615.6]}, {"id": "interior-da-bolivia", "nome": "Interior da Bolívia", "pais": "BO", "tam": "Pequeno", "xy": [334.8, 640.6]}, {"id": "caracas", "nome": "Caracas", "pais": "VE", "tam": "Médio", "xy": [302.0, 50.4]}, {"id": "centro-da-venezuela", "nome": "Centro da Venezuela", "pais": "VE", "tam": "Pequeno", "xy": [280.0, 56.8]}, {"id": "oeste-da-venezuela", "nome": "Oeste da Venezuela", "pais": "VE", "tam": "Pequeno", "xy": [217.0, 88.0]}, {"id": "oriente-da-venezuela", "nome": "Oriente da Venezuela", "pais": "VE", "tam": "Pequeno", "xy": [347.4, 55.8]}], "rodovias": [{"nome": "Rodovia Norte", "fam": "BR", "seg": [["manaus", "belem"]]}, {"nome": "Rodovia Nordeste 1", "fam": "BR", "seg": [["maranhao", "fortaleza", "interior-do-ce"], ["fortaleza", "rio-grande-do-norte", "paraiba"]]}, {"nome": "Rodovia Nordeste 2", "fam": "BR", "seg": [["paraiba", "recife", "interior-de-pe", "alagoas", "sergipe", "bahia"]]}, {"nome": "Rodovia Centro-Oeste", "fam": "BR", "seg": [["maranhao", "brasilia"], ["brasilia", "goiania", "mato-grosso"], ["brasilia", "belo-horizonte"]]}, {"nome": "Rodovia Sudeste 1", "fam": "BR", "seg": [["belo-horizonte", "interior-de-minas", "interior-de-sp", "regiao-de-campinas"]]}, {"nome": "Rodovia Sudeste 2", "fam": "BR", "seg": [["rio-de-janeiro", "suburbio-carioca", "sao-paulo"], ["sao-paulo", "abc-paulista", "santos"], ["sao-paulo", "regiao-de-campinas", "interior-de-sp", "interior-do-pr"], ["sao-paulo", "curitiba"]]}, {"nome": "Rodovia Sul 1", "fam": "BR", "seg": [["interior-do-pr", "curitiba", "interior-de-sc"]]}, {"nome": "Rodovia Sul 2", "fam": "BR", "seg": [["interior-de-sc", "litoral-catarinense", "porto-alegre"], ["interior-de-sc", "interior-do-rs", "porto-alegre"]]}, {"nome": "Ruta Panamericana", "fam": "CONMEBOL", "seg": [["buenos-aires", "buenos-aires-norte", "norte-de-buenos-aires", "rosario"], ["buenos-aires-norte", "san-martin-e-tres-de-febrero"]]}, {"nome": "Ruta 3", "fam": "CONMEBOL", "seg": [["buenos-aires", "buenos-aires-sul", "avellaneda", "lanus-e-lomas", "quilmes-e-berazategui", "varela-e-ezeiza", "la-plata"], ["la-plata", "interior-de-buenos-aires"]]}, {"nome": "Ruta 7", "fam": "CONMEBOL", "seg": [["buenos-aires-oeste", "la-matanza", "moron-e-merlo", "mendoza", "cuyo-e-patagonia"], ["moron-e-merlo", "interior-de-buenos-aires"]]}, {"nome": "Ruta 9", "fam": "CONMEBOL", "seg": [["rosario", "litoral-argentino"], ["rosario", "cordoba", "santiago-del-estero", "tucuman", "norte-da-argentina", "la-paz"]]}, {"nome": "Corredor do Prata", "fam": "CONMEBOL", "seg": [["buenos-aires", "la-plata"], ["la-plata", "montevideu"], ["montevideu-oeste", "montevideu", "montevideu-leste"], ["montevideu", "interior-do-uruguai", "assuncao"]]}, {"nome": "Corredor Andino", "fam": "CONMEBOL", "seg": [["mendoza", "santiago"], ["santiago", "valparaiso"], ["mendoza", "la-paz"], ["centro-do-chile", "santiago"]]}, {"nome": "Ruta 5", "fam": "CONMEBOL", "seg": [["norte-do-chile", "norte-chico", "valparaiso"], ["valparaiso", "santiago"], ["santiago", "santiago-sul", "centro-do-chile", "concepcion", "sul-do-chile"]]}, {"nome": "Autopista Norte-Sul", "fam": "CONMEBOL", "seg": [["medellin", "eixo-cafeteiro"], ["eixo-cafeteiro", "cali", "sul-da-colombia"], ["eixo-cafeteiro", "interior-da-colombia", "bogota", "bogota-sul"]]}, {"nome": "Ruta do Caribe", "fam": "CONMEBOL", "seg": [["medellin", "costa-colombiana"], ["costa-colombiana", "norte-da-colombia", "oeste-da-venezuela"], ["norte-da-colombia", "bogota"], ["norte-da-colombia", "interior-da-colombia"]]}, {"nome": "Panamericana Sul", "fam": "CONMEBOL", "seg": [["norte-do-peru", "lima", "sul-do-peru", "norte-do-chile"]]}, {"nome": "Carretera Central", "fam": "CONMEBOL", "seg": [["lima", "cusco"], ["cusco", "sul-do-peru"]]}, {"nome": "Ruta 2", "fam": "CONMEBOL", "seg": [["assuncao", "grande-assuncao"], ["assuncao", "interior-do-paraguai"]]}, {"nome": "Panamericana Equatoriana", "fam": "CONMEBOL", "seg": [["sul-da-colombia", "quito", "ambato", "sul-do-equador", "norte-do-peru"], ["ambato", "guayaquil", "costa-equatoriana"], ["guayaquil", "sul-do-equador"]]}, {"nome": "Ruta Bolívia", "fam": "CONMEBOL", "seg": [["la-paz", "oruro-e-potosi"], ["oruro-e-potosi", "cochabamba", "santa-cruz"], ["oruro-e-potosi", "interior-da-bolivia"]]}, {"nome": "Autopista Venezuelana", "fam": "CONMEBOL", "seg": [["oeste-da-venezuela", "centro-da-venezuela", "caracas", "oriente-da-venezuela"]]}], "costa": [[94.0, 86.0], [104.0, 82.0], [128.0, 50.0], [144.0, 38.0], [188.0, 28.0], [208.0, 11.0], [214.0, 24.0], [208.0, 42.0], [220.0, 52.0], [236.0, 34.0], [240.0, 17.0], [248.0, 30.0], [274.0, 42.0], [284.0, 50.0], [316.0, 48.0], [344.0, 49.0], [364.0, 47.0], [386.0, 46.0], [382.0, 56.0], [402.0, 64.0], [424.0, 74.0], [442.0, 94.0], [470.0, 124.0], [496.0, 140.0], [538.0, 142.0], [562.0, 146.0], [594.0, 162.0], [608.0, 176.0], [618.0, 210.0], [642.0, 232.0], [628.0, 256.0], [652.0, 264.0], [670.0, 288.0], [704.0, 280.0], [752.0, 308.0], [772.0, 307.0], [804.0, 318.0], [830.0, 317.0], [870.0, 334.0], [896.0, 358.0], [932.0, 364.0], [942.0, 396.0], [944.0, 418.0], [934.0, 444.0], [912.0, 470.0], [898.0, 480.0], [876.0, 514.0], [870.0, 520.0], [860.0, 554.0], [862.0, 576.0], [856.0, 614.0], [846.0, 636.0], [834.0, 666.0], [820.0, 698.0], [800.0, 719.0], [776.0, 721.0], [748.0, 726.0], [714.0, 741.0], [682.0, 760.0], [669.0, 770.0], [668.0, 792.0], [669.0, 812.0], [654.0, 832.0], [645.0, 847.0], [634.0, 868.0], [614.0, 886.0], [598.0, 902.0], [588.0, 924.0], [570.0, 940.0], [556.0, 953.0], [541.0, 959.4], [522.0, 957.0], [516.0, 958.0], [498.0, 950.0], [482.0, 949.0], [472.0, 951.0], [470.0, 956.0], [476.0, 966.0], [494.0, 974.0], [492.0, 988.0], [506.0, 998.0], [490.0, 1022.0], [464.0, 1034.0], [430.0, 1038.0], [398.0, 1039.0], [394.0, 1048.0], [384.0, 1078.0], [368.0, 1083.0], [352.0, 1078.0], [338.0, 1090.0], [350.0, 1108.0], [368.0, 1112.0], [354.0, 1118.0], [336.0, 1132.0], [334.0, 1160.0], [310.0, 1166.0], [290.0, 1182.0], [300.0, 1202.0], [324.0, 1212.0], [312.0, 1236.0], [288.0, 1252.0], [272.0, 1274.0], [260.0, 1292.0], [272.0, 1306.0], [256.0, 1310.0], [224.0, 1318.0], [230.0, 1332.0], [250.0, 1352.0], [268.0, 1358.0], [294.0, 1358.0], [310.0, 1362.0], [284.0, 1366.0], [246.0, 1364.0], [222.0, 1340.0], [208.0, 1324.0], [192.0, 1322.0], [198.0, 1304.0], [170.0, 1300.0], [176.0, 1280.0], [150.0, 1264.0], [160.0, 1238.0], [150.0, 1214.0], [168.0, 1190.0], [180.0, 1172.0], [168.0, 1154.0], [162.0, 1122.0], [170.0, 1108.0], [160.0, 1096.0], [166.0, 1072.0], [172.0, 1050.0], [176.0, 1026.0], [170.0, 1006.0], [176.0, 996.0], [192.0, 972.0], [200.0, 948.0], [208.0, 921.0], [211.0, 900.0], [212.0, 874.0], [215.0, 858.0], [222.0, 830.0], [228.0, 798.0], [232.0, 780.0], [229.0, 760.0], [232.0, 732.0], [238.0, 708.0], [237.0, 680.0], [234.0, 630.0], [212.0, 606.0], [182.0, 588.0], [138.0, 568.0], [116.0, 536.0], [97.0, 502.0], [66.0, 454.0], [60.0, 422.0], [38.0, 394.0], [17.0, 382.0], [23.0, 368.0], [14.0, 354.0], [32.0, 328.0], [40.0, 320.0], [26.0, 312.0], [22.0, 304.0], [29.0, 288.0], [25.0, 279.0], [32.0, 262.0], [39.0, 244.0], [52.0, 238.0], [62.0, 231.0], [68.0, 210.0], [84.0, 194.0], [96.0, 182.0], [92.0, 162.0], [93.0, 142.0], [90.0, 128.0], [82.0, 116.0], [94.0, 86.0]]};
+const COR_PAIS = {BR:'#e3bd4a', AR:'#6fb0dd', UY:'#5cc4b5', CL:'#d96a5b',
+  PY:'#d98bb0', BO:'#7fcf8f', CO:'#e0913f', PE:'#dd7a95', EC:'#b7cf5f', VE:'#a68be0'};
+const NOME_PAIS = {BR:'Brasil', AR:'Argentina', UY:'Uruguai', CL:'Chile', PY:'Paraguai',
+  BO:'Bolívia', CO:'Colômbia', PE:'Peru', EC:'Equador', VE:'Venezuela'};
+const RAIO = {Grande:7, 'Médio':5.2, Pequeno:3.8};
+
+const svg = document.getElementById('mapa');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t,at)=>{ const n=document.createElementNS(NS,t);
+  for(const k in at) n.setAttribute(k,at[k]); return n; };
+const porId = {}; DADOS.pracas.forEach(p=>porId[p.id]=p);
+
+/* ---- continente ---- */
+svg.appendChild(el('path',{class:'costa',
+  d:'M'+DADOS.costa.map(p=>p.join(',')).join('L')+'Z'}));
+
+/* ---- rodovias ---- */
+const gRod = el('g',{}); svg.appendChild(gRod);
+const pathsDe = [];
+DADOS.rodovias.forEach((r,i)=>{
+  const g = el('g',{}); pathsDe.push(g);
+  r.seg.forEach(seg=>{
+    const d = 'M'+seg.map(id=>porId[id].xy.join(',')).join('L');
+    g.appendChild(el('path',{class:'rod '+(r.fam==='BR'?'br':'cb'), d}));
+  });
+  gRod.appendChild(g);
+});
+
+/* ---- praças ---- */
+const gPr = el('g',{}), gRot = el('g',{});
+svg.appendChild(gPr); svg.appendChild(gRot);
+const nos = {};
+const rodDe = {};
+DADOS.rodovias.forEach(r=>{ const s=new Set();
+  r.seg.forEach(x=>x.forEach(id=>s.add(id)));
+  s.forEach(id=>(rodDe[id]=rodDe[id]||[]).push(r.nome)); r.ids=[...s]; });
+DADOS.pracas.forEach(p=>{
+  const c = el('circle',{class:'pr', cx:p.xy[0], cy:p.xy[1],
+    r:RAIO[p.tam], fill:COR_PAIS[p.pais]});
+  c.dataset.id = p.id;
+  gPr.appendChild(c); nos[p.id]=c;
+  const t = el('text',{class:'rotulo'+(p.tam==='Grande'?' grande':''),
+    x:p.xy[0]+RAIO[p.tam]+3, y:p.xy[1]+3.5, 'font-size':p.tam==='Grande'?13:10.5});
+  t.textContent = p.nome; t.dataset.tam = p.tam;
+  gRot.appendChild(t); p.rotulo = t;
+});
+
+/* ---- tooltip ---- */
+const dica = document.getElementById('dica');
+gPr.addEventListener('mousemove', e=>{
+  const id = e.target.dataset && e.target.dataset.id;
+  if(!id){ dica.style.display='none'; return; }
+  const p = porId[id];
+  dica.innerHTML = '<div class="n">'+p.nome+'</div>'+
+    '<div class="p">'+NOME_PAIS[p.pais]+' · praça '+p.tam.toLowerCase()+'</div>'+
+    '<div class="r">'+(rodDe[id]||[]).map(x=>'<b>'+x+'</b>').join(' · ')+'</div>';
+  dica.style.display='block';
+  const cx = e.clientX + 14, cy = e.clientY + 10;
+  dica.style.left = Math.min(cx, innerWidth-260)+'px';
+  dica.style.top = Math.min(cy, innerHeight-90)+'px';
+});
+gPr.addEventListener('mouseleave', ()=>dica.style.display='none');
+
+/* ---- painel de rodovias ---- */
+const lista = document.getElementById('listaRod');
+let acesa = -1;
+const grupos = {BR:'Malha do Brasil', CONMEBOL:'Malha Conmebol'};
+for(const fam in grupos){
+  const h = document.createElement('h2');
+  const rods = DADOS.rodovias.filter(r=>r.fam===fam);
+  const nPr = new Set(); rods.forEach(r=>r.ids.forEach(x=>nPr.add(x)));
+  h.innerHTML = grupos[fam]+'<span class="soma">'+rods.length+' rodovias · '+nPr.size+' praças</span>';
+  lista.appendChild(h);
+  rods.forEach(r=>{
+    const i = DADOS.rodovias.indexOf(r);
+    const bt = document.createElement('button');
+    bt.className = 'rod-item'; bt.dataset.i = i;
+    bt.innerHTML = '<span class="nome">'+r.nome+'</span><span class="fio"></span>'+
+      '<span class="n">'+r.ids.length+' praças</span>';
+    bt.onclick = ()=>acender(i===acesa ? -1 : i);
+    lista.appendChild(bt);
+  });
+}
+function acender(i){
+  acesa = i;
+  document.querySelectorAll('.rod-item').forEach(b=>
+    b.classList.toggle('acesa', +b.dataset.i===i));
+  DADOS.rodovias.forEach((r,k)=>{
+    const liga = i<0 ? null : k===i;
+    pathsDe[k].querySelectorAll('.rod').forEach(p=>{
+      p.classList.toggle('acesa', liga===true);
+      p.classList.toggle('apagada', liga===false);
+    });
+  });
+  const ids = i<0 ? null : new Set(DADOS.rodovias[i].ids);
+  DADOS.pracas.forEach(p=>{
+    nos[p.id].classList.toggle('acesa', !!ids && ids.has(p.id));
+    nos[p.id].classList.toggle('apagada', !!ids && !ids.has(p.id));
+    p.rotulo.style.opacity = (!ids || ids.has(p.id)) ? '' : '.15';
+  });
+}
+
+/* ---- resumo ---- */
+const porPais = {};
+DADOS.pracas.forEach(p=>porPais[p.pais]=(porPais[p.pais]||0)+1);
+document.getElementById('resumo').innerHTML =
+  'Toda praça do jogo, na posição real, ligada pela rodovia que a '+
+  'caravana pega. <b>Clique numa rodovia</b> pra ver o corredor que ela '+
+  'abre — é nesses corredores que o itinerário arma parada, emboscada e briga.';
+const lg = document.getElementById('lgPaises');
+Object.keys(COR_PAIS).forEach(p=>{
+  const s = document.createElement('span');
+  s.className='p';
+  s.innerHTML = '<i style="background:'+COR_PAIS[p]+'"></i>'+NOME_PAIS[p]+
+    ' <span style="color:var(--tinta-3)">'+porPais[p]+'</span>';
+  lg.appendChild(s);
+});
+
+/* ---- pan e zoom ---- */
+const VB0 = {x:0,y:0,w:980,h:1390};
+let vb = {...VB0};
+function aplicarVB(){
+  svg.setAttribute('viewBox', vb.x+' '+vb.y+' '+vb.w+' '+vb.h);
+  const z = VB0.w/vb.w;
+  const esc = Math.max(0.10, 1/Math.pow(z,0.72));
+  DADOS.pracas.forEach(p=>{
+    nos[p.id].setAttribute('r', RAIO[p.tam]*esc);
+    const t = p.rotulo;
+    t.setAttribute('font-size', (p.tam==='Grande'?13:10.5)*esc);
+    t.setAttribute('x', p.xy[0]+RAIO[p.tam]*esc+3*esc);
+    const some = p.tam==='Pequeno' ? z<4.5 : p.tam==='Médio' ? z<2.1 : false;
+    t.style.display = some ? 'none' : '';
+  });
+}
+function zoomEm(px, py, f){
+  const r = svg.getBoundingClientRect();
+  const mx = vb.x + (px-r.left)/r.width*vb.w;
+  const my = vb.y + (py-r.top)/r.height*vb.h;
+  const w = Math.min(VB0.w*1.15, Math.max(45, vb.w*f));
+  const h = w*VB0.h/VB0.w;
+  vb = {x:mx-(mx-vb.x)*w/vb.w, y:my-(my-vb.y)*h/vb.h, w, h};
+  aplicarVB();
+}
+svg.addEventListener('wheel', e=>{
+  e.preventDefault();
+  zoomEm(e.clientX, e.clientY, e.deltaY>0 ? 1.18 : 1/1.18);
+},{passive:false});
+let arr = null;
+svg.addEventListener('pointerdown', e=>{
+  arr = {x:e.clientX, y:e.clientY, vx:vb.x, vy:vb.y};
+  svg.classList.add('arrastando'); svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener('pointermove', e=>{
+  if(!arr) return;
+  const r = svg.getBoundingClientRect();
+  vb.x = arr.vx - (e.clientX-arr.x)/r.width*vb.w;
+  vb.y = arr.vy - (e.clientY-arr.y)/r.height*vb.h;
+  aplicarVB();
+});
+addEventListener('pointerup', ()=>{arr=null; svg.classList.remove('arrastando');});
+svg.addEventListener('dblclick', e=>zoomEm(e.clientX, e.clientY, 1/2.2));
+document.getElementById('btMais').onclick = ()=>{
+  const r = svg.getBoundingClientRect();
+  zoomEm(r.left+r.width/2, r.top+r.height/2, 1/1.5);
+};
+document.getElementById('btMenos').onclick = ()=>{
+  const r = svg.getBoundingClientRect();
+  zoomEm(r.left+r.width/2, r.top+r.height/2, 1.5);
+};
+document.getElementById('btTudo').onclick = ()=>{ vb={...VB0}; aplicarVB(); };
+aplicarVB();
+</script>
