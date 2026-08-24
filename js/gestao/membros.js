@@ -156,7 +156,10 @@ TO.membros = (function(){
          bandeira e vai pra Velha Guarda. */
       idade: opc.idade !== undefined ? opc.idade : U.inteiro(IDADE_MIN, IDADE_MAX),
       xp: opc.xp || 0,
-      moral: opc.moral !== undefined ? opc.moral : 15,
+      /* MORAL DE MEMBRO EXTINTA (ordem do dono, 24/08/2026): só existe
+         a moral da torcida. O campo fica parado na ficha por causa de
+         save antigo e da cena, mas nada mais o move nem o mostra. */
+      moral: 12,
       arquetipo: (opc.arquetipo || U.escolher(N.arquetipos)).id
                  || U.escolher(N.arquetipos).id,
       veterano:false,
@@ -227,8 +230,6 @@ TO.membros = (function(){
        sai só do cargo, a mesma régua das IAs — o que separa a Gaviões
        de uma organizada de interior é o tamanho e a pirâmide, não um
        +3 de berço em cada membro. */
-    const moralBase = Math.round(E.indicadores.moral);
-
     for(const [cargo, n] of plano){
       const c = CARGOS[cargo];
       for(let i=0;i<n;i++){
@@ -238,7 +239,6 @@ TO.membros = (function(){
           cargo,
           forca:  Math.min(c.teto, base + U.inteiro(0,3)),
           defesa: Math.min(c.teto, base + U.inteiro(0,3)),
-          moral:  U.limitar(moralBase + U.inteiro(-3,3), 1, 20),
           xp: cargo==='novato' ? U.inteiro(0,30)
             : cargo==='componente' ? U.inteiro(40,95)
             : cargo==='frente' ? U.inteiro(100,290) : U.inteiro(300,500)
@@ -388,7 +388,6 @@ TO.membros = (function(){
     const d = dias || U.inteiro(FERIDO_MIN, FERIDO_MAX);
     m.ferido = { dias:d };
     m.naFila = false;
-    m.moral = Math.max(0, m.moral - 3);
     m.historico.push(`${motivo || 'Ferido no dia de jogo'}, ${d} dias fora`);
     /* SEQUELA (régua do dono, 20/08/2026): parte das lesões deixa
        marca — pouca coisa por vez, mas não volta nunca. */
@@ -416,7 +415,6 @@ TO.membros = (function(){
     m.preso = { dias: pena, total: pena, motivo: txt,
                 desde: (E && E.data && E.data.absoluto) || 0 };
     m.naFila = false;
-    m.moral = Math.max(0, m.moral - 4);
     m.historico.push(`${txt} — ${pena} dias`);
   }
   /* quantos dias faltam pra sair. Save antigo pode ter prisão sem
@@ -558,7 +556,8 @@ TO.membros = (function(){
 
       darXP(m, r.xp || 0);
       resumo.xpTotal += r.xp || 0;
-      m.moral = U.limitar(m.moral + (r.moral||0), 0, 20);
+      /* o r.moral da ficha morreu com a moral de membro (dono,
+         24/08/2026) — quem sente a noite é a torcida, logo abaixo */
     }
 
     /* indicadores da torcida. O prestígio da noite fala na escala de

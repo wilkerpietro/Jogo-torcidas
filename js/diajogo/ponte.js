@@ -1116,7 +1116,12 @@ TO.diaJogo.ponte = (function(){
       /* o que saiu da mão de cada lado, e quem correu pra fora da cena */
       armas: J.armas,
       sumiram: J.sumiram,
-      moralTorcida: venceu?+1 : (J.debandou&&J.debandou.mandante)?-2 : -0.5,
+      /* A MORAL É NOSSA, NÃO DO MANDANTE (correção do dono,
+         24/08/2026): a linha usava `venceu`, que é do ponto de vista
+         do mandante — ganhar de visitante DESCONTAVA moral e perder
+         pagava +1. Vale `ganhamos`, e a debandada que pesa é a NOSSA. */
+      moralTorcida: ganhamos ? +1
+                  : (J.debandou && J.debandou[nossoLado]) ? -2 : -0.5,
       /* o `|| 0` não é enfeite: Math.round(-0.5) é -0, e a tela
          escrevia "Prestígio -0" numa noite que deu em nada */
       /* O PRESTÍGIO É NOSSO, e a conta era do mandante: derrubar 80

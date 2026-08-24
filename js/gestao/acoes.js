@@ -205,10 +205,13 @@ TO.acoes = (function(){
   }
 
   /* A BRIGA NA ARQUIBANCADA fecha com a tabela do dono (19/08/2026),
-     pela diferença de efetivo entre os lados no apito do clima:
-       vitória — em menor número (11+ a menos): Prestígio +3 · Moral −2;
+     pela diferença de efetivo entre os lados no apito do clima.
+     VITÓRIA NÃO DESCONTA MORAL (correção do dono, 24/08/2026): a
+     tabela antiga dava Moral −2 na vitória em menor número — a maior
+     façanha da arquibancada saía punida. Agora a zebra é o topo:
+       vitória — em menor número (11+ a menos): Prestígio +3 · Moral +2;
                  parelho (±10): Prestígio +2 · Moral +1;
-                 com 11+ a mais: Prestígio +1;
+                 com 11+ a mais: Prestígio +1 · Moral +0,5;
        derrota — em menor número: Prestígio −1;
                  parelho (±10): Prestígio −2 · Moral −1;
                  com 11+ a mais: Prestígio −3 · Moral −2.
@@ -222,7 +225,7 @@ TO.acoes = (function(){
     const diff = (alvo.nossos||0) - (alvo.deles||0);
     const faixa = diff <= -11 ? 'menos' : diff >= 11 ? 'mais' : 'parelho';
     const T = ganhou
-      ? {menos:{p: 3, m:-2}, parelho:{p: 2, m: 1}, mais:{p: 1, m: 0}}
+      ? {menos:{p: 3, m: 2}, parelho:{p: 2, m: 1}, mais:{p: 1, m: 0.5}}
       : {menos:{p:-1, m: 0}, parelho:{p:-2, m:-1}, mais:{p:-3, m:-2}};
     /* a relação com o rival paga pela mesma régua do efetivo (preço do
        dono, 19/08/2026): encarar quem era maior deixa mais ódio pra
@@ -277,10 +280,8 @@ TO.acoes = (function(){
     const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio',
                             ganhou ? -0.2 : display/5);
     const membros = (res && res.membros) || [];
-    for(const r of membros){
-      const m = E.membros.find(x=>x.id === r.id);
-      if(m) m.moral = U.limitar(m.moral + (ganhou ? 2 : -1), 0, 20);
-    }
+    /* a moral de membro foi extinta (dono, 24/08/2026): o ±2/−1 de
+       quem descia pra treta saiu daqui — realocação a definir */
     /* A APOSTA (régua do dono, 22/08/2026): os dois lados põem o mesmo
        na roda e quem ganha leva. O caixa deles é raspado no que puder
        cobrir — mesma regra do saque do bar, torcida não fica devendo. */
@@ -693,32 +694,9 @@ TO.acoes = (function(){
         return {ok:true, msg:'Dois olheiros na rua — nada passa sem a gente saber.'};
       }
     },
-    {
-      id:'pichar', nome:'Pichar e colar adesivo', icone:'tijolo', cena:'Rua',
-      efeito:'custa R$ 300; Prestígio +2 · Relação −9 com o rival mais próximo — 18% de chance de prisão',
-      custo:300,
-      disponivel(E){
-        const gente = E.membros.filter(TO.membros.disponivel).length;
-        if(gente < 3) return {ok:false, motivo:'precisa de pelo menos três de pé'};
-        return E.dinheiro >= 300 ? {ok:true} : {ok:false, motivo:'custa R$ 300 de material'};
-      },
-      executar(E){
-        TO.estado.lancar(E, 'Tinta e adesivo', -300);
-        E.indicadores.prestigio = U.limitar(E.indicadores.prestigio + 0.4, 0, 20);
-        /* muro pichado é provocação: o rival mais próximo sente */
-        const alvo = TO.relacoes.panorama(E).filter(x=>x.relacao < -20)[0];
-        if(alvo) TO.relacoes.hostilidade(E, alvo.id, REL().pichacao);
-        /* quem pinta muro de madrugada às vezes é pego */
-        const aptos = E.membros.filter(TO.membros.disponivel);
-        if(aptos.length && U.rng() < 0.18){
-          const azarado = U.escolher(aptos);
-          TO.membros.prender(E, azarado, U.inteiro(10, 30), 'Preso pichando o território');
-          return {ok:true, msg:`Território marcado, mas ${TO.membros.nomeDe(azarado)} foi preso.`,
-                  tipo:'ruim'};
-        }
-        return {ok:true, msg:'Muro pintado. O bairro é seu.'};
-      }
-    },
+    /* PICHAR E IR À DELEGACIA APOSENTADAS (ordem do dono, 24/08/2026),
+       na mesma leva de limpeza do expediente. A fiança individual
+       continua no perfil do membro. */
     {
       id:'reuniao', nome:'Reunião de diretoria', icone:'conversa', cena:'Sede',
       efeito:'Relação +6 com o aliado mais próximo; precisa de 2 diretores de pé',
@@ -741,36 +719,6 @@ TO.acoes = (function(){
                              `${Math.round(E.relacoes[id])}.`};
       }
     },
-    {
-      id:'delegacia', nome:'Ir à delegacia', icone:'conversa', cena:'Delegacia',
-      efeito:'solta presos em bloco com fiança 25% mais barata',
-      disponivel(E){
-        const presos = E.membros.filter(m=>m.preso);
-        if(!presos.length) return {ok:false, motivo:'ninguém preso'};
-        const menor = Math.round(TO.membros.fianca(presos[0])*0.75);
-        if(E.dinheiro < menor)
-          return {ok:false, motivo:`nem a fiança mais barata cabe (${U.dinheiro(menor)})`};
-        return {ok:true, nota:`${presos.length} na cadeia`};
-      },
-      executar(E){
-        const presos = E.membros.filter(m=>m.preso)
-          .sort((a,b)=>TO.membros.fianca(a)-TO.membros.fianca(b));
-        let gasto = 0; const soltos = [];
-        for(const m of presos){
-          const v = Math.round(TO.membros.fianca(m)*0.75);
-          if(gasto + v > E.dinheiro) break;
-          gasto += v; soltos.push(m);
-          m.preso = null;
-          m.historico.push('Solto em negociação da diretoria');
-        }
-        if(!soltos.length) return {ok:false, msg:'O delegado não quis conversa.',
-                                   semCusto:true};
-        TO.estado.lancar(E, `Fianças negociadas (${soltos.length})`, -gasto);
-        return {ok:true, msg:`${soltos.length} soltos por ${U.dinheiro(gasto)}`+
-                             `${soltos.length<presos.length?', o resto fica':''}.`};
-      }
-    },
-
     /* --- as duas manuais que abrem cena: não entram no expediente --- */
     {id:'atacar', nome:'Atacar bar ou sede rival', icone:'tijolo', cena:'Bar',
      efeito:'a briga vale até ±10 de prestígio; no bar, saque de R$ 60 por defensor + 22% do caixa deles — 1 ataque por semana', alvos:alvosDeAtaque, manual:true,

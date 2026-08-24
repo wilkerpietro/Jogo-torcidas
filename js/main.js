@@ -2767,11 +2767,12 @@
       const sem = (TO.financeiro.resumoDaSemana(e) || {}).saldo || 0;
       const sinal = sem > 0 ? '+' : sem < 0 ? '−' : '';
       /* as médias do bonde e a posição no ranking nacional (pedido do
-         dono, 17/08/2026): #pos ao lado do nome; moral, ataque e
-         defesa médios, com uma casa, ao lado do prestígio */
+         dono, 17/08/2026): #pos ao lado do nome; ataque e defesa
+         médios ao lado do prestígio. A média de moral dos membros deu
+         lugar à MORAL DA TORCIDA (ordem do dono, 24/08/2026), na
+         régua de 0 a 100 — a moral de membro foi extinta. */
       const nM = e.membros.length || 1;
       const d1 = v => (Math.round(v*10)/10).toFixed(1);
-      const mMoral = d1(e.membros.reduce((s,m)=>s+m.moral, 0)/nM);
       const mForca = d1(e.membros.reduce((s,m)=>s+m.forca, 0)/nM);
       const mDef   = d1(e.membros.reduce((s,m)=>s+m.defesa, 0)/nM);
       /* a do cabeçalho é a NACIONAL (régua do dono, 23/08/2026); a do
@@ -2793,8 +2794,8 @@
         `<span class="num">${IC.get('membros')}${U.numero(c.total)}</span>`+
         `<span class="num">${IC.get('estrela')}`+
         `${Math.round(e.indicadores.prestigio*5)}</span>`+
-        `<span class="num" title="moral média dos membros">`+
-        `${IC.get('raio')}${mMoral}</span>`+
+        `<span class="num" title="moral da torcida">`+
+        `${IC.get('raio')}${Math.round(e.indicadores.moral*5)}</span>`+
         `<span class="num" title="ataque médio dos membros">`+
         `${IC.get('halter')}${mForca}</span>`+
         `<span class="num" title="defesa média dos membros">`+
@@ -2942,7 +2943,6 @@
     {k:'idade',   rot:'Idade',    larg:'7%'},
     {k:'forca',   rot:'Força',    barra:true, max:20},
     {k:'defesa',  rot:'Defesa',   barra:true, max:20},
-    {k:'moral',   rot:'Moral',    barra:true, max:20},
     {k:'xp',      rot:'XP'},
     {k:'situacao',rot:'Situação'}
   ];
@@ -3111,7 +3111,6 @@
           : 'no auge'}">${m.idade != null ? m.idade : '—'}</td>
          <td>${medida(m.forca,20)}</td>
          <td>${medida(m.defesa,20)}</td>
-         <td>${medida(m.moral,20)}</td>
          <td class="num">${m.xp}</td>
          <td>${sit}</td>`;
       linha.style.cursor='pointer';
@@ -3937,7 +3936,6 @@
           `<b class="negativo">−${m.desgaste.toFixed(1)} no teto</b></div>` : '')+
         `<div class="linha-dado"><span>XP</span>`+
         `<b>${m.xp}${C.xpPromo?` <small class="fraco">promove com ${C.xpPromo}</small>`:''}</b></div>
-         <div class="linha-dado"><span>Moral</span><b>${m.moral.toFixed(1)} / 20</b></div>
          <div class="linha-dado"><span>Arquétipo</span><b>${m.arquetipo}</b></div>
          <div class="linha-dado"><span>Mensalidade</span>
            <b>${U.dinheiro(C.mensalidade)}</b></div>`}));

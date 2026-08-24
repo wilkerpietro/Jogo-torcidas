@@ -151,7 +151,9 @@ TO.diaJogo.simular = (function(){
       bombasUsadas: 0,
       armas: {mandante:{}, visitante:{}},
       sumiram: {mandante:0, visitante:0},
-      moralTorcida: venceu ? +1 : -0.5,
+      /* `ganhamos`, não `venceu`: a mesma correção da ponte (dono,
+         24/08/2026) — venceu é do mandante, e a moral é nossa */
+      moralTorcida: ganhamos ? +1 : -0.5,
       prestigio,
       /* a conta que decidiu, pro relatório poder dizer se a gente era
          favorito ou zebra — e pro teste medir a régua */

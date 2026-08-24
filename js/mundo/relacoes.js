@@ -203,9 +203,13 @@ TO.relacoes = (function(){
   function balanco(t){
     const R = FIN().RECEITA, MAN = FIN().MANUT, fab = P().FABRICA;
     let rec = t.membros * MENSALIDADE;
-    for(const b of t.bares) rec += R.bar[b.nivel] * t.mult;
-    for(const l of t.lojas) rec += R.loja[l.nivel] * t.mult * (t.fabrica ? fab.multLoja : 1);
-    rec += t.subsedes * R.subsede * t.mult;
+    /* a moral manda no movimento delas também (régua do dono,
+       24/08/2026): a mesma faixa de 0,4 a 1,3, na moral da torcida
+       (interna 0–20, ×5 pra régua de 100) */
+    const fx = FIN().faixaDaMoral ? FIN().faixaDaMoral((t.moral||12)*5) : 1;
+    for(const b of t.bares) rec += R.bar[b.nivel] * t.mult * fx;
+    for(const l of t.lojas) rec += R.loja[l.nivel] * t.mult * fx * (t.fabrica ? fab.multLoja : 1);
+    rec += t.subsedes * R.subsede * t.mult * fx;
 
     let des = FIN().MANUT_SEDE[t.sede];
     for(const b of t.bares) des += MAN.bar[b.nivel];

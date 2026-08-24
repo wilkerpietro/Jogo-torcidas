@@ -175,6 +175,15 @@ TO.financeiro = (function(){
                + U.limitar(E.membros.length/150, 0, 1)*0.3;
   }
 
+  /* A MORAL MANDA NO MOVIMENTO (régua do dono, 24/08/2026): a
+     arrecadação de bar, loja e subsede multiplica pela faixa da moral
+     da torcida, na régua de 0 a 100 — ×0,4 de 0 a 10, subindo 0,1 a
+     cada faixa de 10, até ×1,3 de 91 a 100. Vale pro mundo inteiro:
+     as IAs passam a régua na moral delas (relacoes.balanco). */
+  const faixaDaMoral = m100 =>
+    0.4 + 0.1 * (m100 <= 10 ? 0 : Math.min(9, Math.ceil(m100/10) - 1));
+  const multMoral = E => faixaDaMoral(Math.round((E.indicadores.moral||0)*5));
+
   /* =======================================================
      A CONTA DA SEMANA
      Determinística: a mesma função alimenta a tela do
@@ -202,7 +211,7 @@ TO.financeiro = (function(){
     if(semanaDaMensalidade(E))
       juntar(rec, `Mensalidades (${pagantes})`, mens);
 
-    const fator = fatorComercial(E);
+    const fator = fatorComercial(E) * multMoral(E);
     for(const b of p.bares)
       juntar(rec, `Bar${b.bairro?' — '+b.bairro:''} (n${b.nivel})`,
              RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM);
@@ -577,7 +586,8 @@ TO.financeiro = (function(){
     return rel;
   }
 
-  return {contas, resumoDaSemana, compromissos, patrimonio, fatorComercial, bairroDeFora,
+  return {contas, resumoDaSemana, compromissos, patrimonio, fatorComercial,
+          faixaDaMoral, multMoral, bairroDeFora,
           precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
           postura, fecharSemana,
           semanaDaMensalidade, fimDoMes, mesCorrente, fecharMes,

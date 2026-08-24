@@ -108,7 +108,9 @@ TO.patrimonio = (function(){
      ======================================================= */
   function linhas(E){
     const p = F().patrimonio(E);
-    const fator = F().fatorComercial(E);
+    /* a moral entra na conta da tabela igual entra no fechamento
+       (régua do dono, 24/08/2026) — sem isso a tela mentiria */
+    const fator = F().fatorComercial(E) * F().multMoral(E);
     const mult = b => TO.mundo.multiplicador(
       TO.mundo.bairro(E.torcida.mapa, b));
     /* os números do GDD moram no financeiro; puxar de lá é o que

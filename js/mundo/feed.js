@@ -203,10 +203,9 @@ TO.feed = (function(){
     'Assalto tem tabela: do mercadinho (10% de chance de cadeia, 45 dias) ao banco (50% e 180 dias). O sorteio é um só pro bonde inteiro — ou todos voltam com a partilha, ou todos caem.',
     'Bombas custam R$ 600 o lote de 5 no Patrimônio. O estoque inteiro vai junto pra TODA briga — só a treta marcada é limpa, sem pedra nem bomba.',
     'Na cena, o rival responde com até metade das suas bombas — mas nunca joga mais do que tem no paiol dele. Bomba jogada sai do estoque dos dois lados.',
-    'Treta marcada tem palco pelo tamanho: 5x5 no beco, 7x7 no galpão, 10x10 no campo de terra. Vencer paga +3/+4/+5 de prestígio; perder custa −1 (e −1 de moral de quem foi); recusar custa −1 de prestígio.',
+    'Treta marcada tem palco pelo tamanho: 5x5 no beco, 7x7 no galpão, 10x10 no campo de terra. Vencer paga +3/+4/+5 de prestígio; perder custa −1; recusar custa −1 de prestígio.',
     'Ataque a bar tem teto: no máximo 60 atacantes contra 40 defensores. E o bonde só sai pra UM ataque manual por semana.',
     'Ferido volta em 5 a 15 dias; preso fica de 15 a 90. Enquanto estão fora, não treinam, não brigam e não contam no ranking.',
-    'A ida à delegacia solta presos em bloco com fiança 25% mais barata — do mais barato pro mais caro, até onde o caixa alcançar.',
     'Quando um aliado hospedado apanha na sua cidade e você entra na briga, o prestígio da noite é DELE — pra você ficam +10 de relação na hora e a gratidão.',
     'A recepção de aliado vai de R$ 25 a R$ 75 por cabeça: hospedar dá +2 de relação, escoltar +5, churrasco com escolta +12. Não receber cobra −5.',
     'Aniversário de aliado: ir custa R$ 2.000 e rende +3 de relação; furar tira −3 de relação e −2 de prestígio. Só aliado e irmã de clube convidam.',
@@ -910,8 +909,7 @@ TO.feed = (function(){
          nota:`${tam} de cada lado, só linha de frente, sem pedra nem `+
               `bomba — vencendo leva os ${U.dinheiro(aposta*2)} da roda · `+
               `Prestígio +${tam >= 10 ? 5 : tam >= 7 ? 4 : 3} vencendo, `+
-              `−1 perdendo · Relação −2 · moral de quem foi: +2 na `+
-              `vitória, −1 na derrota`},
+              `−1 perdendo · Relação −2`},
         {id:'ficar', rot:'Ficar de fora', acao:'ignorar-treta',
          nota:`Prestígio −1 · ${U.dinheiro(multa)} de multa (20% da aposta)`}
       ]
@@ -1028,8 +1026,7 @@ TO.feed = (function(){
         {id:'bora', rot:'Escalar a linha de frente', acao:'cena-treta',
          nota:'10 de cada lado, só linha de frente, sem pedra nem bomba '+
               '— quem ganha segue na LNT · Prestígio +5 vencendo, −1 '+
-              'perdendo · Relação −2 · moral de quem foi: +2 na vitória, '+
-              '−1 na derrota'},
+              'perdendo · Relação −2'},
         {id:'ficar', rot:'Não botar bonde', acao:'lnt-wo',
          nota:'W.O.: a vaga é deles e o prestígio cai 2 · sem briga, '+
               'sem ferido, sem prêmio'}

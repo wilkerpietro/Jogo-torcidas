@@ -2385,6 +2385,34 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   sai no fechamento do mês (PIX, campana e gratificação do padrinho),
   com o acumulado do mês corrente visível em Transações.
 
+## Só existe a moral da torcida (decisão do dono, 24/08/2026)
+
+- **Moral de membro extinta.** Saiu da lista de membros (coluna), do
+  perfil, do cabeçalho (a média ⚡ virou a MORAL DA TORCIDA, régua de
+  0 a 100) e de toda mecânica: ferir (−3), prender (−4), o resultado
+  da noite por membro (preso −4 · caído −3 · vitória +1,5 · derrota
+  −0,5) e o ±2/−1 da treta não mexem mais em ficha nenhuma. O campo
+  fica parado na ficha por causa de save antigo e da cena. A
+  realocação desses fatores está com o dono. As notas de treta que
+  citavam "moral de quem foi" foram enxugadas porque descreviam a
+  mecânica morta.
+- **A moral manda no movimento.** Bar, loja e subsede multiplicam a
+  arrecadação pela faixa da moral da torcida (régua de 0 a 100):
+  ×0,4 de 0–10, subindo 0,1 por faixa de 10, até ×1,3 de 91–100.
+  Vale na conta semanal, na tabela do Patrimônio e no balanço das
+  IAs (com a moral delas).
+- **Vitória não desconta moral — dois consertos:**
+  · O `moralTorcida` da briga usava `venceu`, que é do ponto de vista
+    do MANDANTE: ganhar de visitante (ataque a bar, jogo fora,
+    itinerário) descontava −0,5 e perder pagava +1. Corrigido na cena
+    e no simulado: vale `ganhamos`, e a debandada que pesa é a nossa.
+  · A tabela da arquibancada dava Moral −2 na vitória em menor
+    número. Nova linha de vitória: menor +2 · parelho +1 · maior
+    +0,5 (derrota ficou como era: 0 / −1 / −2).
+- **Pichar e colar adesivo e Ir à delegacia aposentadas** do
+  expediente (a fiança individual continua no perfil do membro; a
+  dica e a pendência que citavam a delegacia foram ajustadas).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -791,7 +791,7 @@ TO.planejamento = (function(){
 
     const presos = E.membros.filter(m=>m.preso).length;
     if(presos) põe('presos', `${presos} ${presos===1?'membro preso':'membros presos'}`,
-      'fiança pela ficha ou negociação na delegacia', 'torcida', 'urgente');
+      'a fiança sai pela ficha do membro', 'torcida', 'urgente');
 
     const promoveis = E.membros.filter(m=>TO.membros.podePromover(E,m).ok).length;
     if(promoveis) põe('promocao', `${promoveis} prontos pra promoção`,
