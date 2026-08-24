@@ -2078,8 +2078,9 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   lia-se dos dois jeitos — a TUF botou a Cearamor pra correr, ou a TUF
   correu junto com ela —, e em caixa alta ficava pior. O mesmo valia
   pro "mandou" solto. Os moldes de vitória em menor número passaram a
-  usar verbo de uma leitura só: **venceu**, **levou a melhor**, **botou
-  pra correr**.
+  usar verbo de uma leitura só: **venceu**, **botou pra correr**,
+  **passou por cima** — o terceiro molde é palavra do dono: "{A} era
+  menor mas mesmo assim passou por cima da {B}".
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

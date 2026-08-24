@@ -77,7 +77,7 @@ TO.porrada = (function(){
       vitoriaMenos:[
         '{A} era {nA} contra {nB} e venceu a {B} do mesmo jeito',
         'Em menor número, {A} não correu e ainda botou a {B} pra correr',
-        '{A} tinha gente a menos e ainda levou a melhor sobre a {B}'
+        '{A} era menor mas mesmo assim passou por cima da {B}'
       ],
       /* perdeu no detalhe */
       derrota:[
