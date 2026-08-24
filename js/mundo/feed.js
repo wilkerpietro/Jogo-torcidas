@@ -474,7 +474,9 @@ TO.feed = (function(){
   }
   /* -------------------------------------------------------
      3f. O BAR DO RIVAL DÁ SOPA (texto do dono, 18/08/2026):
-         em torno de 15 vezes no ano, um diretor aponta o bar
+         em torno de 8 vezes no ano (eram 15 até 24/08/2026,
+         quando o dono mandou cortar pela metade a dose de bar
+         e de treta marcada), um diretor aponta o bar
          de um rival DA CIDADE e pergunta se o bonde desce.
          Atacar abre a mesma cena do ataque manual — com o
          mesmo limite de um bonde por semana.
@@ -482,8 +484,8 @@ TO.feed = (function(){
   function barRivalDeHoje(E){
     const sa = TO.relacoes.semanaAbs(E);
     const H = TO.mapa.hash;
-    /* ~29% das semanas têm a sugestão: 0,29 × 52 ≈ 15 por ano */
-    if(H(`barrival|${sa}|${E.torcida.id}`) % 100 >= 29) return;
+    /* ~15% das semanas têm a sugestão: 0,15 × 52 ≈ 8 por ano */
+    if(H(`barrival|${sa}|${E.torcida.id}`) % 100 >= 15) return;
     let dia = 1 + H(`barrival|d|${sa}|${E.torcida.id}`) % 7;
     for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
     if(dia !== E.data.dia) return;

@@ -507,10 +507,16 @@ TO.relacoes = (function(){
 
   /* =======================================================
      O CALENDÁRIO DO TRIMESTRE (decisão do autor)
-     A cada 13 semanas: 2 a 4 TRETAS MARCADAS em rua e 1 a 2
-     ataques ao nosso bar. Agendado por hash — o mesmo bloco dá
-     sempre o mesmo calendário — e sempre FORA de dia de jogo
-     do clube e de dia de caravana.
+     A cada 13 semanas: 1 a 2 TRETAS MARCADAS em rua e, na
+     maioria dos trimestres, 1 ataque ao nosso bar. Agendado por
+     hash — o mesmo bloco dá sempre o mesmo calendário — e sempre
+     FORA de dia de jogo do clube e de dia de caravana.
+
+     A DOSE CAIU PELA METADE (decisão do dono, 24/08/2026): era 2 a 4
+     tretas (média 3) e 1 a 2 ataques ao bar (média 1,5) por trimestre.
+     Agora é 1 a 2 tretas (média 1,5) e 3 trimestres com ataque pra 1
+     sem (média 0,75). A conta vale igual pro mundo inteiro: as IAs
+     puxam o mesmo sorteio.
      ======================================================= */
   const SEMANAS_TRI = 13;
 
@@ -520,8 +526,8 @@ TO.relacoes = (function(){
     const H = TO.mapa.hash;
     const bloco = Math.floor((semanaAbs(E) - 1) / SEMANAS_TRI);
     const chave = `tri|${bloco}|${id || E.torcida.id}`;
-    const nTreta = 2 + H(chave + '|nt') % 3;      // 2 a 4
-    const nBar   = 1 + H(chave + '|nb') % 2;      // 1 a 2
+    const nTreta = 1 + H(chave + '|nt') % 2;      // 1 a 2 (média 1,5)
+    const nBar   = H(chave + '|nb') % 4 ? 1 : 0;  // 0 ou 1 (média 0,75)
     const fora = [], usados = new Set();
     const poe = (tipo, i)=>{
       let d = H(`${chave}|${tipo}${i}`) % (SEMANAS_TRI * 7);

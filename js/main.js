@@ -5578,7 +5578,13 @@
       relogioTempo = setTimeout(tique,
         (TO.feed.pendentes(E()) > 0 ? MS_DROP : MS_DIA_VAZIO)/vel);
     };
-    relogioTempo = setTimeout(tique, MS_DIA_VAZIO);
+    /* O PRIMEIRO TIQUE TAMBÉM É DE 1,5s quando há fila (correção do
+       dono, 24/08/2026): o relógio abria em 450ms — o passo do dia
+       calado — e a mensagem que já estava na fila caía quase colada na
+       anterior. Fila cheia entra no compasso da mensagem; só o dia sem
+       nada passa ligeiro. */
+    relogioTempo = setTimeout(tique,
+      TO.feed.pendentes(e0) > 0 ? MS_DROP : MS_DIA_VAZIO);
   }
 
   /* um dia inteiro: a virada da data — os jogos do dia e as mensagens
@@ -5960,8 +5966,16 @@
       encontroAberto = null;
     }
     const fecho = acao ? TO.acoes.fecharCena(e, acao, res) : null;
-    /* o resultado da briga não espera o próximo tique: cai agora */
-    while(TO.feed.pendentes(e) > 0 && !TO.feed.travado(e)) TO.feed.dropar(e);
+    /* O RITMO DA NOTÍCIA É SEMPRE 1,5s (correção do dono, 24/08/2026).
+       Aqui a fila inteira era esvaziada de uma vez pra o resultado da
+       briga não esperar o próximo tique — e o que caía junto com ele
+       (o jornal da rodada, a treta das IAs, o recado do diretor)
+       aparecia todo no mesmo instante. Na briga jogada isso passava
+       despercebido, porque a cena leva 1,4s pra assentar; no duelo
+       simulado, que abre o relatório na hora, virava rajada. Agora sai
+       UMA — a da briga, que acabou de ser escrita — e o relógio entrega
+       o resto no compasso de sempre. */
+    if(TO.feed.pendentes(e) > 0 && !TO.feed.travado(e)) TO.feed.dropar(e);
     /* fechada a briga, o tempo volta a correr de onde parou */
     soltarTudo('cena');
     /* a cena leva 1,4s pra assentar antes do relatório; a simulada

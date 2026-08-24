@@ -2082,6 +2082,29 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   **passou por cima** — o terceiro molde é palavra do dono: "{A} era
   menor mas mesmo assim passou por cima da {B}".
 
+- **METADE DA DOSE DE TRETA MARCADA E DE BAR** (decisão do dono,
+  24/08/2026): a rua estava chamando demais.
+  · Calendário do trimestre: **1 a 2** tretas marcadas (era 2 a 4) e
+    **3 trimestres com ataque ao nosso bar pra 1 sem** (era 1 a 2 por
+    trimestre). Medido em 8 anos: 6 tretas/ano (eram 12) e 3 ataques ao
+    nosso bar/ano (eram 6).
+  · Sugestão de atacar o bar do rival: **15% das semanas** (era 29%),
+    ou ~8 por ano contra ~15. Medido em 40 torcidas × 10 anos: 8,6/ano.
+  · A conta vale pro mundo inteiro — as IAs puxam o mesmo sorteio por
+    hash, então a rua inteira acalmou junto.
+
+- **O RITMO DA NOTÍCIA É SEMPRE 1,5s** (correção do dono, 24/08/2026):
+  ao fechar a briga, a fila inteira do feed era esvaziada de uma vez
+  pra o resultado não esperar o próximo tique — e o jornal da rodada, a
+  treta das IAs e o recado do diretor apareciam todos no mesmo instante.
+  Na briga jogada isso passava despercebido (a cena leva 1,4s pra
+  assentar); no duelo **simulado**, que abre o relatório na hora, virava
+  rajada. Agora sai só a mensagem da briga e o relógio entrega o resto
+  no compasso de sempre. De quebra, o **primeiro tique do relógio**
+  também passou a ser de 1,5s quando há fila — ele abria em 450ms, o
+  passo do dia calado, e colava a segunda mensagem na primeira. Medido:
+  1501, 1501, 1502, 1502 ms.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
