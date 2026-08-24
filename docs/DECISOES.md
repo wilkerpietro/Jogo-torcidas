@@ -2198,6 +2198,23 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · A regra "entre as malhas só de avião" morre junto com as ilhas
     quando isso entrar no motor do jogo.
 
+- **A MALHA FECHADA PELO DONO** (24/08/2026): revisão dele sobre o
+  Mapa das Praças, que passa a ser **a planta que norteia a criação de
+  rotas no jogo** — 94 praças, 45 rodovias. Entraram, a pedido: BR-364
+  (Manaus ↔ Mato Grosso), BR-101 Sul (Curitiba ↔ Litoral Catarinense),
+  BR-050 (Brasília ↔ Interior de Minas), BR-153 (Goiânia ↔ Interior do
+  PR), Rota de Foz (Interior do PR ↔ Interior do Paraguai), Rota do
+  Chaco (Interior da Bolívia ↔ Assunção), Rota da Patagônia (Sul do
+  Chile ↔ Cuyo e Patagônia) e Ruta 22 (Interior de Buenos Aires ↔
+  Cuyo e Patagônia). **Saiu** a Rota de Uruguaiana (Litoral Argentino ↔
+  Interior do RS) — a porta terrestre do Sul é o Chuí. Conectividade
+  conferida: 94 de 94; a simulação Fortaleza → Santiago fecha em
+  5.571 km e 15 trechos, descendo o litoral e cruzando em Montevidéu.
+
+- **O RELATÓRIO DO OLHEIRO SEM RIVAL NA RUA** (texto do dono,
+  24/08/2026): "Dia de bandeira e nada mais?" virou **"Deve ser um dia
+  tranquilo"**, e o botão "Só bandeira" virou **"Avançar"**.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

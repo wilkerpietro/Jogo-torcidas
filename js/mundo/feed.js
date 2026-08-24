@@ -621,12 +621,12 @@ TO.feed = (function(){
       ? `Chefe, o relatório de hoje. Nós saímos com até ${nossos}. `+
         `Vamos pra cima de alguém?`
       : `Chefe, o relatório de hoje. Nós saímos com até ${nossos}, e `+
-        `rival na rua não tem. Dia de bandeira e nada mais?`;
+        `rival na rua não tem. Deve ser um dia tranquilo`;
     const botoes = [];
     if(temAlvo) botoes.push({id:'atacar', rot:'Atacar', acao:'tela-ataque',
                              args:{ctx:{grupos}}});
     botoes.push(
-      {id:'paz',    rot: temAlvo ? 'Ir em paz' : 'Só bandeira',
+      {id:'paz',    rot: temAlvo ? 'Ir em paz' : 'Avançar',
        acao:'paz-grupo', args:{grupos}},
       {id:'padrao', rot:'Seguir padrão', acao:'padrao-grupo', args:{grupos}});
     if(fora){
