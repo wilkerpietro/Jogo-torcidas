@@ -959,12 +959,13 @@ TO.relacoes = (function(){
   /* membros.js carrega DEPOIS deste arquivo: a régua da idade tem de
      ser lida na hora de usar, não na hora de definir */
   const M_ = () => TO.membros;
-  /* uma sequela custa de 0,2 a 0,5, e pega 15% dos feridos: na média
-     do grupo isso é 0,15 × 0,35 por ferido */
-  const SEQUELA_MEDIA = 0.15 * 0.35;
+  /* uma sequela custa de 0,06 a 0,15 (30% da régua velha, decisão do
+     dono, 24/08/2026), e pega 15% dos feridos: na média do grupo isso
+     é 0,15 × 0,105 por ferido */
+  const SEQUELA_MEDIA = 0.15 * 0.105;
   /* a pena média de briga fica na faixa dos 30 a 60 dias, que a tabela
-     do dono cobra em 1,0 */
-  const CADEIA_MEDIA = 1.0;
+     do dono (a 30%) cobra em 0,3 */
+  const CADEIA_MEDIA = 0.3;
 
   function desgastarQuadro(E, id, quanto, permanente){
     const q = quadroDe(E, id);

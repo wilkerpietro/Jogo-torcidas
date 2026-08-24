@@ -36,10 +36,15 @@ TO.membros = (function(){
   const IDADE_DECLINIO = 35;      // daqui em diante o ano cobra
   const IDADE_SAIDA    = 46;      // aqui ele pendura a bandeira
   const DESGASTE_ANO   = 0.6;     // por virada de ano, dos 35 em diante
-  const SEQUELA = {chance:0.15, min:0.2, max:0.5};
-  /* a cadeia enferruja pela pena cumprida (tabela do dono) */
-  const CADEIA = [{ate:30, perda:0.5}, {ate:60, perda:1},
-                  {ate:89, perda:1.5}, {ate:Infinity, perda:2}];
+  /* O DESCONTO DE FICHA CAIU PRA 30% (régua do dono, 24/08/2026):
+     ferido e preso seguem saindo de cena e pagando moral, mas a marca
+     na força e na defesa vale 30% do que valia — a sequela foi de
+     0,2–0,5 pra 0,06–0,15 e a tabela da cadeia de 0,5/1/1,5/2 pra
+     0,15/0,3/0,45/0,6. O espelho das IAs (relacoes.js) foi junto. */
+  const SEQUELA = {chance:0.15, min:0.06, max:0.15};
+  /* a cadeia enferruja pela pena cumprida (tabela do dono, a 30%) */
+  const CADEIA = [{ate:30, perda:0.15}, {ate:60, perda:0.3},
+                  {ate:89, perda:0.45}, {ate:Infinity, perda:0.6}];
   const perdaDaCadeia = dias => (CADEIA.find(f => dias <= f.ate) || CADEIA[0]).perda;
 
   /* =======================================================

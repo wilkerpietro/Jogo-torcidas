@@ -2266,6 +2266,22 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     país. Medido: Vélez campeão da Copa Argentina abriu a fila e foi
     pra Libertadores.
 
+- **TRÊS VIRADAS DE VAGAS CONFERIDAS** (pedido do dono, 24/08/2026):
+  simulação de 2026 a 2029, com as edições de 2027, 2028 e 2029
+  conferidas clube a clube contra a foto de cada virada. As sete
+  réguas passaram nos três anos — e no primeiro deles o Ceará foi DE
+  NOVO campeão da Série B e desta vez ficou fora das copas, que era
+  exatamente o bug de origem.
+
+- **O DESCONTO DE FICHA POR FERIDO/PRESO CAIU PRA 30%** (régua do
+  dono, 24/08/2026): ferido e preso seguem fora de cena e pagando
+  moral, mas a marca na força e na defesa vale 30% do que valia.
+  · Sequela de ferido: perda 0,2–0,5 → **0,06–0,15** (chance segue 15%).
+  · Ferrugem da cadeia: 0,5 / 1 / 1,5 / 2 → **0,15 / 0,3 / 0,45 / 0,6**
+    pela pena cumprida.
+  · O espelho das IAs foi junto: SEQUELA_MEDIA 0,0525 → 0,01575 e
+    CADEIA_MEDIA 1,0 → 0,3.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
