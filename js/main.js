@@ -1129,12 +1129,21 @@
     const grade  = el('div',{class:'pen-grade'});
     const recado = el('div',{class:'pen-recado', texto:'Vai bater…'});
 
+    /* AS DUAS FILEIRAS TÊM AS MESMAS VAGAS (correção do dono,
+       24/08/2026): uma bolinha por cobrança REAL entregava o fim antes
+       da primeira batida — 5 vagas de um lado e 4 do outro só existem
+       quando a série acabou no 5º do primeiro. As vagas agora são
+       iguais (5, ou mais se a série alongou) e a que ninguém usou
+       fica vazia: não precisou bater. */
+    const vagas = Math.max(5,
+      cb.filter(k=>k.lado==='c').length,
+      cb.filter(k=>k.lado==='f').length);
     const fileira = lado => {
       const l = el('div',{class:'pen-lado'});
       l.appendChild(el('span',{class:'pen-time',
         texto: lado === 'c' ? d.casa : d.fora}));
       const bolas = el('div',{class:'pen-bolas'});
-      for(const k of cb) if(k.lado === lado)
+      for(let k=0;k<vagas;k++)
         bolas.appendChild(el('i',{class:'pen-bola'}));
       l.appendChild(bolas);
       return l;

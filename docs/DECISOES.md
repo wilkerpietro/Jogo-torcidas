@@ -2157,6 +2157,14 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · Fora do itinerário nada muda: o desconto de lá segue sendo os
     membros feridos e os lotes de baixas da IA.
 
+- **A GRADE DE PÊNALTIS NÃO ENTREGA O VENCEDOR** (correção do dono,
+  24/08/2026): as fileiras nasciam com uma bolinha por cobrança REAL —
+  5 vagas de um lado e 4 do outro só existem quando a série morreu no
+  5º do primeiro, então dava pra deduzir o vencedor antes da primeira
+  batida. As duas fileiras agora nascem com as MESMAS vagas (5, ou
+  mais se a série alongou no pé a pé) e a vaga que ninguém usou fica
+  vazia: não precisou bater.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
