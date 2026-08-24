@@ -322,8 +322,13 @@ TO.membros = (function(){
        um professor faz o treino render +30%, dois +60%, três +100% —
        o dobro só com a sala cheia. */
     const ganho = E && TO.financeiro ? TO.financeiro.ganhoDoTreino(E) : 1;
-    m.fracForca  += U.entre(0, 0.3) * ganho;
-    m.fracDefesa += U.entre(0, 0.3) * ganho;
+    /* O PADRINHO DE TREINO (pedido do dono, 24/08/2026): um veterano
+       da velha guarda no tatame rende +15% na sessão e ensina novato
+       em dobro — vale no dia em que a gratificação foi paga. */
+    const pad = !!(E && E.data && E.padrinhoAbs === E.data.absoluto);
+    const fator = ganho * (pad ? 1.15 : 1);
+    m.fracForca  += U.entre(0, 0.3) * fator;
+    m.fracDefesa += U.entre(0, 0.3) * fator;
     while(m.fracForca >= 1 && m.forca < teto){ m.fracForca -= 1; m.forca++; }
     while(m.fracDefesa >= 1 && m.defesa < teto){ m.fracDefesa -= 1; m.defesa++; }
     /* O TETO PODE SER QUEBRADO: sequela e idade tiram 0,5, 0,6 — o
@@ -331,7 +336,7 @@ TO.membros = (function(){
        nele exatamente, e não pular pro inteiro de cima. */
     limitarNoTeto(m, 'forca',  'fracForca',  teto);
     limitarNoTeto(m, 'defesa', 'fracDefesa', teto);
-    darXP(m, 1);
+    darXP(m, pad && m.cargo === 'novato' ? 2 : 1);
     return true;
   }
 

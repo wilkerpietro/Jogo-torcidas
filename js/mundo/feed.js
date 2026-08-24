@@ -219,7 +219,6 @@ TO.feed = (function(){
     'Nas brigas do mundo o favorito é efetivo × ficha média — e vence 70% das vezes. A zebra acontece, e quem ganha por baixo leva mais prestígio e moral.',
     'Caixa no vermelho derruba a moral toda semana, pra você e pra qualquer torcida do mundo. Moral baixa esvazia a saída e piora a briga.',
     'O recrutamento do expediente joga o dado do regime do clube: fase normal rende pouco, janela de título ou acesso enche a praça, rebaixamento seca tudo.',
-    'A campanha de recrutamento custa R$ 5.000 e estica o teto da sede em 50% por duas semanas — o empurrão pra crescer quando a sede é o gargalo.',
     'A praça tem um bolo fixo de torcedores do seu clube: as organizadas irmãs dividem esse bolo. Cidade pequena não sustenta torcida gigante.',
     'A sede dita tudo: teto de membros, vagas de treino por dia e o que dá pra construir. Ampliar sede é o investimento que destrava os outros.',
     'As outras torcidas jogam o mesmo jogo: têm caixa, expediente, compram bar, loja, ônibus, professor de MMA e bombas — e investem no elenco do clube delas.',
@@ -705,6 +704,49 @@ TO.feed = (function(){
   }
 
   /* -------------------------------------------------------
+     1b. A CAMPANA DO OLHEIRO (Inteligência — pedido do dono,
+         24/08/2026). Com a diária paga no expediente, o
+         olheiro tem 50% de chance de prever cada emboscada e
+         ataque que vem (100% na campana dupla). O sorteio é
+         por hash: a mesma fita nunca é re-sorteada, e a chave
+         segura a mensagem de sair duas vezes. Os textos-base
+         são do dono, palavra por palavra, com nome e praça
+         entrando no lugar dos exemplos.
+     ------------------------------------------------------- */
+  function nivelDaCampana(E){
+    const c = E.campana;
+    if(!c) return 0;
+    const abs = (E.data && E.data.absoluto) || 0;
+    /* a diária cobre a viagem: o expediente não roda em dia de
+       caravana nem de jogo, então o último pagamento vale 7 dias */
+    if(abs - (c.pagoAbs || 0) > 7) return 0;
+    return c.nivel || 0;
+  }
+  function avisoDoOlheiro(E, av){
+    const nivel = nivelDaCampana(E);
+    if(!nivel) return;
+    const chave = 'campana|' + av.chave;
+    if(nivel < 2 && TO.mapa.hash(chave) % 2) return;   // 50% na simples
+    const LUGAR = {concentracao:'na concentração',
+                   pista:'na pista a caminho do estádio'};
+    const texto = av.alvo === 'emboscada'
+      ? (av.chegada
+         ? `Fala presida, me passaram a fita de que os caras da ${av.nome} `+
+           `vai atacar a gente assim que chegarmos em ${av.cidade}. `+
+           `Vale ficar de olho.`
+         : `Chefe, descobri que a ${av.nome} vai atacar a gente quando `+
+           `passarmos por ${av.cidade}. Bora se preparar pra esse ataque deles.`)
+      : av.alvo === 'bar'
+      ? `Fala presida, me passaram a fita de que os caras da ${av.nome} `+
+        `vai atacar o nosso bar hoje. Vale ficar de olho.`
+      : `Fala presida, me passaram a fita de que os caras da ${av.nome} `+
+        `vai atacar a gente ${LUGAR[av.alvo] || 'na rua'} no dia do jogo. `+
+        `Vale ficar de olho.`;
+    propor(E, {kind:'campana', peso:'info', tipo:'ruim', voz:'olheiro',
+               chave, texto});
+  }
+
+  /* -------------------------------------------------------
      2. O DIA DA GUERRA — o ataque que o jogador marcou
      ------------------------------------------------------- */
   function guerraDeHoje(E){
@@ -833,6 +875,8 @@ TO.feed = (function(){
       E.ataqueMarcado = {torcida:rival.id, nome:rival.nome, alvo:'bar',
                          cena:'bar', ano:E.data.ano, semana:E.data.semana,
                          dia:E.data.dia};
+      avisoDoOlheiro(E, {chave:`bar|${E.data.ano}|${E.data.semana}|${rival.id}`,
+                         alvo:'bar', nome:rival.nome});
       return;
     }
 
@@ -1833,6 +1877,7 @@ TO.feed = (function(){
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta,
+          avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu};

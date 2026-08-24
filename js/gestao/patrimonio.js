@@ -16,9 +16,10 @@
 
    PREÇOS. Todos vêm do GDD V4 §8.1 e §8.3, com uma exceção
    anotada no lugar (subsede, que o GDD não precifica).
-   Imóvel neste jogo é caro de propósito: um bar custa
-   cinquenta meses do que ele rende, então comprar é decisão
-   de temporada e não de semana.
+   Imóvel neste jogo é caro de propósito: um bar custa uns
+   dois anos do que ele rende (a régua caiu de cinco anos na
+   reforma do comércio, dono, 24/08/2026), então comprar é
+   decisão de temporada e não de semana.
    ========================================================= */
 window.TO = window.TO || {};
 
@@ -61,19 +62,23 @@ TO.patrimonio = (function(){
     bar: {
       rot:'Bar', plural:'bares',
       compra: 40000,
-      ampliar:[null, 80000, 150000, null]
+      /* ampliar baixou na reforma do comércio (dono, 24/08/2026):
+         era 80/150 mil — a ampliação nunca se pagava */
+      ampliar:[null, 50000, 90000, null]
     },
     loja: {
       rot:'Loja', plural:'lojas',
       compra: 50000,
-      ampliar:[null, 100000, 150000, null]
+      /* idem: era 100/150 mil */
+      ampliar:[null, 60000, 90000, null]
     },
     subsede: {
       rot:'Subsede', plural:'subsedes',
       /* ÚNICO PREÇO INFERIDO: o GDD V4 §8.3 descreve o que a subsede
          faz mas não diz quanto custa. Ela rende 600/mês contra 90 de
-         manutenção e dobra o recrutamento da zona — na escala dos
-         outros pontos (bar 40k pra 680/mês), 30k é o equivalente. */
+         manutenção e dobra o recrutamento da zona — na escala que os
+         pontos tinham antes da reforma de 24/08/2026 (bar 40k pra
+         680/mês), 30k era o equivalente, e o preço ficou. */
       compra: 30000,
       ampliar:[null, null]
     }

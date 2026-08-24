@@ -3326,7 +3326,7 @@
       `clube: vitória esquenta a praça, derrota esfria; título e acesso `+
       `abrem 2 semanas quentes, rebaixamento seca 2. Sai R$ 5 por `+
       `novato.</span></div>`;
-    for(const id of ['recrutar','campanha']){
+    for(const id of ['recrutar']){
       const a = TO.acoes.porId(id);
       if(a) c2.corpo.appendChild(linhaAcao(a));
     }
@@ -4116,6 +4116,15 @@
       if(rm.festa && (rm.festa.rec || rm.festa.des))
         pend.push({rot:`Festas na sede no mês corrente (${rm.festa.n})`,
                    v: Math.round(rm.festa.rec - rm.festa.des)});
+      if(rm.pix && rm.pix.rec)
+        pend.push({rot:`Doações por PIX no mês corrente (${rm.pix.n})`,
+                   v: Math.round(rm.pix.rec)});
+      if(rm.campana && rm.campana.des)
+        pend.push({rot:`Campana do olheiro no mês corrente (${rm.campana.n})`,
+                   v: -Math.round(rm.campana.des)});
+      if(rm.padrinho && rm.padrinho.des)
+        pend.push({rot:`Padrinho de treino no mês corrente (${rm.padrinho.n})`,
+                   v: -Math.round(rm.padrinho.des)});
       for(const p of pend)
         c.corpo.appendChild(el('div',{class:'transacao pendente', html:
           `<span class="dia">mês</span>

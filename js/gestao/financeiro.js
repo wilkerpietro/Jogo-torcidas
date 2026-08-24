@@ -33,8 +33,13 @@ TO.financeiro = (function(){
   /* quanta gente a festa deste nível precisa pra se pagar */
   const pisoDaFesta = nivel => Math.ceil((FESTA[nivel] || 700)/4.8);
 
-  /* GDD §8.3 — receita bruta mensal, antes do bairro e do fator */
-  const RECEITA = {bar:[null, 800, 1500, 3000], loja:[null, 1000, 2000, 3600],
+  /* GDD §8.3 — receita bruta mensal, antes do bairro e do fator.
+     A REFORMA DO COMÉRCIO (proposta aceita pelo dono, 24/08/2026): o
+     bar de 40 mil rendia ~680 líquidos/mês e se pagava em cinco anos —
+     ninguém compra isso. Com a receita nova, ponto novo se paga em
+     ~2 anos e ampliar (que também baixou de preço no patrimônio)
+     passou a valer a conta. A subsede ficou como era. */
+  const RECEITA = {bar:[null, 1600, 3600, 7500], loja:[null, 2200, 5000, 10000],
                    subsede:600};
   const MANUT   = {bar:[null, 120, 240, 450],   loja:[null, 150, 300, 540],
                    subsede:90};
@@ -448,6 +453,16 @@ TO.financeiro = (function(){
         'Comércio — manutenção e insumos do mês', -Math.round(c.des));
       if(f && (f.rec || f.des)) TO.estado.registrarLinha(E,
         `Festas na sede — ${f.n} no mês`, Math.round(f.rec - f.des));
+      /* as diárias do expediente novo (dono, 24/08/2026) fecham por
+         mês do mesmo jeito: o caixa já mexeu na hora, aqui é registro */
+      if(rm.pix && rm.pix.rec) TO.estado.registrarLinha(E,
+        `Doações por PIX — ${rm.pix.n} campanhas no mês`, Math.round(rm.pix.rec));
+      if(rm.campana && rm.campana.des) TO.estado.registrarLinha(E,
+        `Campana do olheiro — ${rm.campana.n} diárias no mês`,
+        -Math.round(rm.campana.des));
+      if(rm.padrinho && rm.padrinho.des) TO.estado.registrarLinha(E,
+        `Padrinho de treino — ${rm.padrinho.n} gratificações no mês`,
+        -Math.round(rm.padrinho.des));
       E.resumoMes = {};
     }
     /* a comissão cobra R$ 2.000 por professor no fim de cada mês

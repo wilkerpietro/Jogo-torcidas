@@ -29,6 +29,10 @@ TO.icones = (function(){
     megafone:  env('<path d="M4 10v4a1 1 0 0 0 1 1h3l7 4V5L8 9H5a1 1 0 0 0-1 1z"/><path d="M18 9.5a4 4 0 0 1 0 5"/>'),
     copo:      env('<path d="M6 4h12l-1.2 15a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.6 10h10.8"/>'),
     tijolo:    env('<path d="M3 8h18v8H3z"/><path d="M3 12h18"/><path d="M9 8v4"/><path d="M15 12v4"/>'),
+    /* o surdo da bateria, com as duas baquetas (Treino de bateria) */
+    tambor:    env('<path d="M4 9.5c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5S16.4 7 12 7 4 8.1 4 9.5z"/>'+
+                   '<path d="M4 9.5V17c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5V9.5"/>'+
+                   '<path d="m6.5 3 4 4.5"/><path d="m17.5 3-4 4.5"/>'),
     onibus:    env('<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5V17H4z"/>'+
                    '<path d="M4 10.5h16"/><path d="M7 17v2.6"/><path d="M17 17v2.6"/>'+
                    '<circle cx="7.4" cy="14" r=".9" fill="currentColor" stroke="none"/>'+

@@ -2344,6 +2344,47 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   dos membros (a média do cabeçalho, a coluna da lista) segue na régua
   0–20 da ficha, junto de força e defesa.
 
+## A reforma do comércio e o expediente novo (decisão do dono, 24/08/2026)
+
+- **Bar e loja rentáveis (proposta aceita).** Receita bruta mensal: bar
+  1.600/3.600/7.500 (era 800/1.500/3.000), loja 2.200/5.000/10.000 (era
+  1.000/2.000/3.600). Ampliar baixou: bar 50/90 mil (era 80/150), loja
+  60/90 mil (era 100/150). Compra, manutenção, insumo (25% da receita) e
+  subsede ficaram como eram. Ponto novo passa a se pagar em ~2 anos.
+- **Ação social e Campanha de recrutamento aposentadas** — as duas
+  piores do expediente, por ordem do dono. Save antigo com elas na
+  rotina só pula o turno.
+- **Seis ações novas no expediente da sede:**
+  · **Visita aos feridos** — grátis; cada ferido sara 2 dias mais
+    cedo · Moral +0,3.
+  · **Campanha de doação por PIX** — no lugar da "Vaquinha no sinal"
+    proposta; grátis, arrecada R$ 8–15 por membro disponível,
+    Prestígio −1 (régua de 0 a 100).
+  · **Padrinho de treino** — R$ 150 de gratificação; com gente na
+    velha guarda, a melhor ficha dela puxa o treino do dia: +15% de
+    rendimento e novato ganha XP em dobro.
+  · **Treino de bateria** — grátis, precisa de 6 de pé; o Fator
+    Torcida volta por esta porta só: com a bateria ensaiada na última
+    semana, o clube do jogador manda em casa com +20% da régua de
+    força (11 dos 55 pontos do divisor do placar). O resto do mundo
+    segue com placar puro.
+  · **Inteligência** — R$ 100 por dia; o olheiro tem 50% de chance de
+    prever cada emboscada de caravana e ataque não esperado.
+  · **Inteligência ×2** — R$ 400 por dia; crava 100% dos ataques.
+    Subir da simples pra dupla no mesmo dia paga só a diferença.
+- **A campana do olheiro.** Um só funil: os três pontos onde o jogo
+  marca ataque (concentração/pista da semana de jogo em casa, bar do
+  trimestre, emboscadas da rota no itinerário) chamam o aviso. O
+  sorteio de 50% é por hash — a mesma fita nunca é re-sorteada — e a
+  chave impede aviso repetido. Textos do dono: "Chefe, descobri que a
+  {torcida} vai atacar a gente quando passarmos por {praça}…" na
+  estrada, "Fala presida, me passaram a fita…" na chegada, na
+  concentração/pista e no bar. A diária paga vale 7 dias, porque o
+  expediente não roda em dia de jogo nem de caravana.
+- As diárias novas não poluem o extrato: caixa mexe na hora e a linha
+  sai no fechamento do mês (PIX, campana e gratificação do padrinho),
+  com o acumulado do mês corrente visível em Transações.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -580,19 +580,117 @@ TO.acoes = (function(){
         return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-custo)} de saldo.`};
       }
     },
+    /* AÇÃO SOCIAL E CAMPANHA DE RECRUTAMENTO APOSENTADAS (ordem do
+       dono, 24/08/2026): eram as duas piores do catálogo — caras e sem
+       retorno que pagasse a conta. No lugar entrou o bloco novo
+       abaixo. Save antigo com elas no expediente só pula o turno. */
     {
-      id:'social', nome:'Ação social', icone:'megafone', cena:'Praça',
-      efeito:'custa R$ 2.000; Moral +0,6 · Prestígio +2',
-      custo:2000,
+      id:'visita', nome:'Visita aos feridos', icone:'conversa', cena:'Hospital',
+      efeito:'grátis; cada ferido sara 2 dias mais cedo · Moral +0,3',
       disponivel(E){
-        return E.dinheiro >= 2000 ? {ok:true}
-             : {ok:false, motivo:'custa R$ 2.000'};
+        const n = E.membros.filter(m=>m.ferido).length;
+        return n ? {ok:true, nota:`${n} de molho`}
+                 : {ok:false, motivo:'ninguém ferido'};
       },
       executar(E){
-        TO.estado.lancar(E, 'Ação social no bairro', -2000);
-        TO.estado.mexerIndicador(E, 'moral', 0.6, 'Ação social no bairro');
-        TO.estado.mexerIndicador(E, 'prestigio', 0.4, 'Ação social no bairro');
-        return {ok:true, msg:'O bairro agradeceu.'};
+        let n = 0;
+        for(const m of E.membros)
+          if(m.ferido){ m.ferido.dias = Math.max(0, m.ferido.dias - 2); n++; }
+        if(!n) return {ok:false, msg:'Ninguém ferido.', semCusto:true};
+        TO.estado.mexerIndicador(E, 'moral', 0.3, 'Visita aos feridos');
+        return {ok:true, msg:`${n} visitados — sara todo mundo 2 dias mais cedo.`};
+      }
+    },
+    {
+      id:'pix', nome:'Campanha de doação por PIX', icone:'dinheiro', cena:'Sede',
+      efeito:'grátis; arrecada R$ 8–15 por membro disponível · Prestígio −1 (na régua de 0 a 100)',
+      disponivel(E){
+        const n = E.membros.filter(TO.membros.disponivel).length;
+        return n >= 3 ? {ok:true}
+                      : {ok:false, motivo:'precisa de pelo menos três de pé'};
+      },
+      executar(E){
+        const n = E.membros.filter(TO.membros.disponivel).length;
+        const v = Math.round(n * U.entre(8, 15));
+        /* diária: o caixa mexe agora, a linha do extrato sai no mês */
+        TO.estado.lancarNoResumo(E, 'pix', v, true);
+        TO.estado.mexerIndicador(E, 'prestigio', -0.2,
+          'Campanha de doação por PIX');
+        return {ok:true, msg:`${U.dinheiro(v)} caíram na conta.`};
+      }
+    },
+    {
+      id:'padrinho', nome:'Padrinho de treino', icone:'halter', cena:'Sede',
+      efeito:'R$ 150 de gratificação; um veterano da velha guarda puxa o treino do dia: rende +15% e novato ganha XP em dobro',
+      custo:150,
+      disponivel(E){
+        if(!(E.velhaGuarda||[]).length)
+          return {ok:false, motivo:'ninguém pendurou a bandeira ainda'};
+        if(E.dinheiro < 150) return {ok:false, motivo:'custa R$ 150'};
+        return {ok:true, nota:`${E.velhaGuarda.length} na velha guarda`};
+      },
+      executar(E){
+        const abs = E.data.absoluto || 0;
+        if(E.padrinhoAbs === abs)
+          return {ok:true, msg:'O padrinho já está no tatame hoje.', semCusto:true};
+        TO.estado.lancarNoResumo(E, 'padrinho', -150, true);
+        E.padrinhoAbs = abs;
+        /* quem assume é a melhor ficha da velha guarda — quem apanhou
+           e bateu mais tem mais o que ensinar */
+        const vg = [...E.velhaGuarda]
+          .sort((a,b)=>((b.forca||0)+(b.defesa||0))-((a.forca||0)+(a.defesa||0)))[0];
+        const nome = (vg && (vg.apelido || vg.nome)) || 'Um veterano';
+        return {ok:true, msg:`${nome} assumiu o treino de hoje.`};
+      }
+    },
+    {
+      id:'bateria', nome:'Treino de bateria', icone:'tambor', cena:'Sede',
+      efeito:'grátis; precisa de 6 de pé — com a bateria afiada, o Fator Torcida empurra o nosso time em casa (+20%)',
+      disponivel(E){
+        const n = E.membros.filter(TO.membros.disponivel).length;
+        return n >= 6 ? {ok:true}
+                      : {ok:false, motivo:'precisa de seis de pé'};
+      },
+      executar(E){
+        E.bateriaAbs = E.data.absoluto || 0;
+        return {ok:true, msg:'Bateria ensaiada — jogo em casa vai ter empurrão.'};
+      }
+    },
+    {
+      id:'inteligencia', nome:'Inteligência', icone:'olho', cena:'Rua',
+      efeito:'R$ 100 por dia; o olheiro tem 50% de chance de prever emboscada na estrada ou ataque que vem',
+      custo:100,
+      disponivel(E){
+        return E.dinheiro >= 100 ? {ok:true}
+                                 : {ok:false, motivo:'custa R$ 100 por dia'};
+      },
+      executar(E){
+        const abs = E.data.absoluto || 0;
+        if(E.campana && E.campana.pagoAbs === abs)
+          return {ok:true, msg:'A campana de hoje já está de pé.', semCusto:true};
+        TO.estado.lancarNoResumo(E, 'campana', -100, true);
+        E.campana = {nivel:1, pagoAbs:abs};
+        return {ok:true, msg:'Olheiro na rua, ouvido no chão.'};
+      }
+    },
+    {
+      id:'inteligencia2', nome:'Inteligência ×2', icone:'olho', cena:'Rua',
+      efeito:'R$ 400 por dia; o olheiro crava TODOS os ataques que vêm',
+      custo:400,
+      disponivel(E){
+        return E.dinheiro >= 400 ? {ok:true}
+                                 : {ok:false, motivo:'custa R$ 400 por dia'};
+      },
+      executar(E){
+        const abs = E.data.absoluto || 0;
+        if(E.campana && E.campana.pagoAbs === abs && E.campana.nivel >= 2)
+          return {ok:true, msg:'A campana dupla de hoje já está de pé.',
+                  semCusto:true};
+        /* subir da simples pra dupla no mesmo dia paga só a diferença */
+        const paga = E.campana && E.campana.pagoAbs === abs ? 300 : 400;
+        TO.estado.lancarNoResumo(E, 'campana', -paga, true);
+        E.campana = {nivel:2, pagoAbs:abs};
+        return {ok:true, msg:'Dois olheiros na rua — nada passa sem a gente saber.'};
       }
     },
     {
@@ -641,21 +739,6 @@ TO.acoes = (function(){
         TO.relacoes.marcarAjuda(E, id);
         return {ok:true, msg:`Reunião com ${o?o.nome:'a diretoria aliada'}. Relação em `+
                              `${Math.round(E.relacoes[id])}.`};
-      }
-    },
-    {
-      id:'campanha', nome:'Campanha de recrutamento', icone:'megafone', cena:'Sede',
-      efeito:'custa R$ 5.000; teto da sede +50% por duas semanas',
-      custo:5000,
-      disponivel(E){
-        if(TO.membros.emCampanha(E)) return {ok:false, motivo:'já está em campanha'};
-        return E.dinheiro >= 5000 ? {ok:true} : {ok:false, motivo:'custa R$ 5.000'};
-      },
-      executar(E){
-        TO.estado.lancar(E, 'Campanha de recrutamento', -5000);
-        E.campanha = {ate: E.data.semana + 1};
-        return {ok:true, msg:`Teto da sede em ${TO.membros.capacidade(E)} até `+
-                             `o fim da semana ${E.data.semana+1}.`};
       }
     },
     {

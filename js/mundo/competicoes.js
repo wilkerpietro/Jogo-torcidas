@@ -1136,8 +1136,18 @@ TO.competicoes = (function(){
      A SEMANA
      ======================================================= */
   /* O PLACAR É PURO (decisão do autor): só a força dos clubes entra na
-     simulação. O Fator Torcida saiu do jogo junto com a satisfação. */
-  const bonusTorcida = () => 0;
+     simulação. O Fator Torcida saiu do jogo junto com a satisfação —
+     e VOLTOU por uma porta só (pedido do dono, 24/08/2026): o Treino
+     de bateria do expediente. Com a bateria ensaiada na última semana,
+     o clube DO JOGADOR manda em casa com +20% da régua de força (11
+     dos 55 pontos do divisor). O resto do mundo segue sem bônus. */
+  function bonusTorcida(E, casaId){
+    if(!E || !E.torcida || !E.torcida.clubeId) return 0;
+    if(casaId !== E.torcida.clubeId) return 0;
+    if(E.bateriaAbs == null) return 0;
+    const abs = (E.data && E.data.absoluto) || 0;
+    return abs - E.bateriaAbs <= 7 ? 55 * 0.20 : 0;
+  }
 
   function jogarSemana(E, semana){
     const S = E.temporada;
@@ -1216,7 +1226,7 @@ TO.competicoes = (function(){
         for(const j of r.jogos){
           if((j.d || r.dia || comp.dia || DIA_FDS) !== dia) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
-          const [a,b] = simular(j.c, j.f, 0);
+          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c));
           j.gc = a; j.gf = b;
           /* o número da rodada viaja com o jogo: a mensagem da nossa
              partida fala "pela 3ª rodada" (pedido do dono, 18/08/2026) */
@@ -1230,7 +1240,7 @@ TO.competicoes = (function(){
           if(!j.f) continue;
           if((j.d || m.dia || DIA_FDS) !== dia) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
-          const [a,b] = simular(j.c, j.f, 0);
+          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c));
           j.gc = a; j.gf = b;
           if(m.perna !== 'ida' && m.perna !== 'volta'){
             j.venceu = a>b ? j.c : b>a ? j.f
@@ -1614,6 +1624,7 @@ TO.competicoes = (function(){
   const horaDoJogo = j => (j && j.h) || '16:00';
 
   return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana,
+          bonusTorcida,
           forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
           paisDe, paisDoJogador, simular, forca,
           emJogo, porForca, estreiaDe, disputaDePenaltis,

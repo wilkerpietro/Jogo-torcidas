@@ -499,6 +499,11 @@ TO.relacoes = (function(){
                          cena:alvo.cena,
                          ano:E.data.ano, semana:E.data.semana, dia};
       hostilidade(E, o.id, REL.ataqueMarcado);
+      /* a campana do olheiro pode farejar a fita (dono, 24/08/2026) */
+      if(TO.feed && TO.feed.avisoDoOlheiro)
+        TO.feed.avisoDoOlheiro(E, {
+          chave:`atq|${E.data.ano}|${E.data.semana}|${o.id}|${alvo.id}`,
+          alvo:alvo.id, nome:o.nome});
       fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia});
       break;              // um ataque-surpresa por semana já é guerra
     }

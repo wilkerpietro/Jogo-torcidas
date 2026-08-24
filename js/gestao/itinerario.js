@@ -189,11 +189,20 @@ TO.itinerario = (function(){
                         : 'Praça de passagem'};
         if(k>0){
           const emb = emboscadaEm(E, c, true);
-          if(emb) o.eventos = [{tipo:'emboscada', torcida:emb.torcida, nome:emb.nome,
-                                ponto:'emboscada',
-                                abrir:{tela:'defesa', atq:{
-                                  torcida:emb.torcida, nome:emb.nome,
-                                  alvo:'emboscada', cena:emb.cena}}}];
+          if(emb){
+            o.eventos = [{tipo:'emboscada', torcida:emb.torcida, nome:emb.nome,
+                          ponto:'emboscada',
+                          abrir:{tela:'defesa', atq:{
+                            torcida:emb.torcida, nome:emb.nome,
+                            alvo:'emboscada', cena:emb.cena}}}];
+            /* a campana do olheiro fareja a pista (dono, 24/08/2026):
+               a chave repete a da emboscada, então o aviso sai uma vez */
+            if(TO.feed && TO.feed.avisoDoOlheiro)
+              TO.feed.avisoDoOlheiro(E, {
+                chave:`emb|${E.data.ano}|${E.data.semana}|${c}|ida`,
+                alvo:'emboscada', nome:emb.nome, cidade:nome,
+                chegada: k === cid.length-1});
+          }
         }
         põe(o);
       });
@@ -233,11 +242,17 @@ TO.itinerario = (function(){
                         : 'Praça de passagem'};
         if(k < cid.length-1){
           const emb = emboscadaEm(E, c, false);
-          if(emb) o.eventos = [{tipo:'emboscada', torcida:emb.torcida, nome:emb.nome,
-                                ponto:'emboscada',
-                                abrir:{tela:'defesa', atq:{
-                                  torcida:emb.torcida, nome:emb.nome,
-                                  alvo:'emboscada', cena:emb.cena}}}];
+          if(emb){
+            o.eventos = [{tipo:'emboscada', torcida:emb.torcida, nome:emb.nome,
+                          ponto:'emboscada',
+                          abrir:{tela:'defesa', atq:{
+                            torcida:emb.torcida, nome:emb.nome,
+                            alvo:'emboscada', cena:emb.cena}}}];
+            if(TO.feed && TO.feed.avisoDoOlheiro)
+              TO.feed.avisoDoOlheiro(E, {
+                chave:`emb|${E.data.ano}|${E.data.semana}|${c}|volta`,
+                alvo:'emboscada', nome:emb.nome, cidade:nome});
+          }
         }
         põe(o);
       });
