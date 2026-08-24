@@ -1517,13 +1517,15 @@ TO.relacoes = (function(){
      Endividado (abaixo de −10 mil) ×0,6 · Muito ruim (−10 mil a 0)
      ×0,8 · Pobre (até 10 mil) ×1,0 · Estável (até 20 mil) ×1,2 ·
      Bem financeiramente (até 40 mil) ×1,4 · Rico (acima) ×1,6 */
+  /* a situação pesa de 0,8 a 1,2 (régua do dono, 24/08/2026): o caixa
+     tempera o ranking, não o domina */
   function situacaoFinanceira(caixa){
-    if(caixa < -10000) return {rot:'Endividado', slug:'endividado', mult:0.6};
-    if(caixa <= 0)     return {rot:'Muito ruim', slug:'muitoruim',  mult:0.8};
-    if(caixa <= 10000) return {rot:'Pobre',      slug:'pobre',      mult:1.0};
-    if(caixa <= 20000) return {rot:'Estável',    slug:'estavel',    mult:1.2};
-    if(caixa <= 40000) return {rot:'Bem financeiramente', slug:'bem', mult:1.4};
-    return {rot:'Rico', slug:'rico', mult:1.6};
+    if(caixa < -10000) return {rot:'Endividado', slug:'endividado', mult:0.8};
+    if(caixa <= 0)     return {rot:'Muito ruim', slug:'muitoruim',  mult:0.88};
+    if(caixa <= 10000) return {rot:'Pobre',      slug:'pobre',      mult:0.96};
+    if(caixa <= 20000) return {rot:'Estável',    slug:'estavel',    mult:1.04};
+    if(caixa <= 40000) return {rot:'Bem financeiramente', slug:'bem', mult:1.12};
+    return {rot:'Rico', slug:'rico', mult:1.2};
   }
 
   let cacheRanking = {chave:'', lista:null};
@@ -1539,21 +1541,25 @@ TO.relacoes = (function(){
     return `${d.getFullYear()}-${d.getMonth()}`;
   }
   /* os três números do ranking, medidos igual pra nós e pra elas */
+  /* A RÉGUA DO RANKING (refeita pelo dono, 24/08/2026):
+     membros TODOS — ferido e preso seguem sendo da torcida, e a
+     régua parou de puni-los duas vezes —, o prestígio na escala de
+     0 a 100, e a ficha média (força+defesa)/2 vezes cinco. */
   function medirNoRanking(E, o){
     if(o.id === E.torcida.id){
       const nT = E.membros.length || 1;
       const mf = E.membros.reduce((s,m)=>s+m.forca, 0)/nT;
       const md = E.membros.reduce((s,m)=>s+m.defesa, 0)/nT;
-      return {membros: E.membros.filter(m=>!m.ferido && !m.preso).length,
+      return {membros: E.membros.length,
               prestigio: Math.round(E.indicadores.prestigio*5),
               forca: (mf+md)/2};
     }
     const viva = (E.mundoTorcidas||{})[o.id] || {};
-    const n = disponiveisIA(E, o.id);
+    const n = viva.membros !== undefined ? viva.membros : (o.membros || 0);
     return {membros: n,
             prestigio: Math.round((viva.prestigio !== undefined ? viva.prestigio
               : U.limitar((o.prestigio||15)/5, 0, 20))*5),
-            forca: mediaDeFichaGerada(o, viva.membros || o.membros || n, E)};
+            forca: mediaDeFichaGerada(o, n, E)};
   }
   /* tira a foto quando o mês vira — e na primeira vez que rodar num
      save que ainda não tinha foto, pra ninguém abrir o ranking e ver
@@ -1600,7 +1606,9 @@ TO.relacoes = (function(){
                    membros:n, prestigio:prest, forca,
                    caixa:E.dinheiro, situacao:sit, predios,
                    saldo: saldoDoAno(E, o.id),
-                   pontos:Math.round((n + prest*2)*forca*sit.mult)});
+                   /* a fórmula do dono (24/08/2026): membros + prestígio
+                      + ficha média ×5, tudo vezes a situação */
+                   pontos:Math.round((n + prest + forca*5)*sit.mult)});
       } else {
         const viva = (E.mundoTorcidas||{})[o.id] || {};
         const caixa = viva.caixa !== undefined ? viva.caixa : (o.saldo||200)*4;
@@ -1611,7 +1619,7 @@ TO.relacoes = (function(){
                    membros:n, prestigio:prest, forca,
                    caixa, situacao:sit, predios,
                    saldo: saldoDoAno(E, o.id),
-                   pontos:Math.round((n + prest*2)*forca*sit.mult)});
+                   pontos:Math.round((n + prest + forca*5)*sit.mult)});
       }
     }
     /* quanto cada um andou desde a foto do começo do mês */

@@ -2303,6 +2303,19 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     grupos comia a semana da primeira. O sorteio saiu pra véspera e as
     seis jogam.
 
+- **A FÓRMULA NOVA DO RANKING** (régua do dono, 24/08/2026):
+  `pontos = (membros + prestígio + ficha média × 5) × situação`.
+  · **Membros contam TODOS** — ferido e preso seguem sendo da torcida;
+    a régua parou de os punir duas vezes (a ficha já paga a cicatriz).
+  · Prestígio na escala de 0 a 100, como sempre foi na tela.
+  · Ficha média = (força + defesa) / 2, vezes cinco.
+  · A situação financeira pesa de **0,8 a 1,2** (era 0,6–1,6):
+    Endividado 0,8 · Muito ruim 0,88 · Pobre 0,96 · Estável 1,04 ·
+    Bem 1,12 · Rico 1,2 — o caixa tempera o ranking, não o domina.
+  · A fórmula velha era `(disponíveis + prestígio×2) × ficha ×
+    situação` — multiplicar pela ficha esmagava a variação de membros
+    e prestígio.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
