@@ -422,6 +422,29 @@ TO.diaJogo.arredores = (function(){
     return bloq;
   }
 
+  /* OBSTÁCULO VIVO NO MAPA DE ROTA (correção do dono, 24/08/2026).
+     O policial é obstáculo físico — `separar` não deixa ninguém
+     atravessar PM —, mas o campo de fuga não o via: o disco em fuga
+     escolhia o corredor do cordão e passava a cena inteira empurrando
+     policial, parado no lugar (o vídeo do dono, na arquibancada).
+     Marca as células num raio corpo+folga de cada um; quem monta o
+     campo soma isto às grades e a rota dá a volta no cordão. */
+  function celulasDeDiscos(lista, folga, base){
+    const bloq = base ? base.slice() : new Uint8Array(COLS*ROWS);
+    for(const p of (lista||[])){
+      const alc = (p.r||10) + (folga||10);
+      const c0=Math.max(0,Math.floor((p.x-alc)/CEL)),
+            c1=Math.min(COLS-1,Math.floor((p.x+alc)/CEL)),
+            r0=Math.max(0,Math.floor((p.y-alc)/CEL)),
+            r1=Math.min(ROWS-1,Math.floor((p.y+alc)/CEL));
+      for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++){
+        const x=(c+0.5)*CEL-p.x, y=(r+0.5)*CEL-p.y;
+        if(x*x+y*y<=alc*alc) bloq[r*COLS+c]=1;
+      }
+    }
+    return bloq;
+  }
+
   /* Células onde o CORPO cabe, não só onde o pé pisa.
      A rota tem que ser calculada sobre isto: se o campo aponta pra uma
      célula de asfalto onde o disco não cabe, ele fica a vida inteira
@@ -868,6 +891,7 @@ TO.diaJogo.arredores = (function(){
     recarregarFugas(){ fugas = fugasDaMao() || acharFugas(); return fugas; },
     mover, empurrar, livre, livrePara, raioMalha, atravessaGrade,
     criarCampo, campoDaEntrada, campoDoPonto, limparCampos, celulasDeGrades,
+    celulasDeDiscos,
     montarGrades, barrarGrades,
     desenharFundo, desenharSobreposicoes,
     usarImagemLocal,

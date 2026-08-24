@@ -1413,6 +1413,17 @@ TO.diaJogo.combate = (function(){
             d.vx=st.dx*vel; d.vy=st.dy*vel;
             A.mover(d, st.dx*vel*dt*1.6, st.dy*vel*dt*1.6);
           }
+          /* FUGA EMPERRADA TROCA DE SAÍDA (correção do dono,
+             24/08/2026): quase um segundo parado a caminho de uma
+             saída é a saída entupida — cordão de PM, aglomeração,
+             tanto faz. Este disco risca ELA do mapa por 5s e a
+             `rotaDeFuga` escolhe outra no quadro seguinte; se não
+             existir outra, a própria rotaDeFuga volta pra riscada.
+             O teletransporte de 2s continua embaixo, de rede final. */
+          if(d.fugindo && d.travado>0.9 && d._fugaChave){
+            d.fugaEvita = {chave:d._fugaChave, ate:J.t+5};
+            d.travado = 0.5;
+          }
           if(d.travado>2.0){
             const q=A.pontoLivreMaisProximo(d.x,d.y,d.r);
             d.x=q.x; d.y=q.y; d.vx=d.vy=0; d.travado=0;
@@ -1495,19 +1506,37 @@ TO.diaJogo.combate = (function(){
      que os ignora manda o bonde empurrar o alambrado pra sempre.
      Custa uma varredura por boca, então só se constrói quando alguém
      debanda — e se refaz quando uma grade cai. */
-  let cacheFuga = {versao:-1, lista:null};
+  /* O CORDÃO DA PM TAMBÉM É PAREDE NA FUGA (correção do dono,
+     24/08/2026, vídeo da arquibancada): a rota de fuga contornava
+     grade mas atravessava policial — que fisicamente não se atravessa
+     (`separar`). O disco escolhia o corredor do cordão e ficava a
+     cena inteira empurrando PM, parado. Cada saída ganhou DOIS
+     campos: `desvia`, que trata PM viva como parede e dá a volta no
+     cordão, e `campo`, o antigo, só com grades — o plano B de quando
+     a única rota passa por cima da PM mesmo. Como a PM anda (carga,
+     reforço), o cache expira a cada 1,2s além de expirar com grade
+     caída. */
+  let cacheFuga = {versao:-1, ate:-1, lista:null};
   function camposDeFuga(J){
-    if(cacheFuga.versao !== J.versaoGrades) cacheFuga = {versao:J.versaoGrades, lista:null};
+    if(cacheFuga.versao !== J.versaoGrades || J.t > cacheFuga.ate)
+      cacheFuga = {versao:J.versaoGrades, ate:J.t + 1.2, lista:null};
     if(!cacheFuga.lista){
       const bloq = A.celulasDeGrades(J.grades);
-      cacheFuga.lista = A.fugas.map(f=>({f, campo:A.criarCampo(f.x, f.y, bloq)}));
+      const comPM = A.celulasDeDiscos(J.policiais.filter(p=>p.vivo), 12, bloq);
+      cacheFuga.lista = A.fugas.map(f=>({f, chave:f.x+'|'+f.y,
+        desvia:A.criarCampo(f.x, f.y, comPM),
+        campo: A.criarCampo(f.x, f.y, bloq)}));
     }
     return cacheFuga.lista;
   }
 
   /* A saída mais perto QUE TEM CAMINHO. Sem o teste de rota, o disco
      escolhe a boca do outro lado do muro e vai morrer de empurrar
-     parede — foi o que travou dez discos no CT e onze nos arredores. */
+     parede — foi o que travou dez discos no CT e onze nos arredores.
+     A ordem de preferência é: rota que DESVIA da PM pra qualquer
+     saída (a mais perto), depois rota que passa pela PM (plano B),
+     sempre pulando a saída que este disco marcou como emperrada
+     (`fugaEvita`, ver o movimento) enquanto a marca vale. */
   function rotaDeFuga(J, d){
     if(fugaPelaEntrada()){
       const e = D.entradas.find(x=>x.id===d.entrada) ||
@@ -1518,13 +1547,22 @@ TO.diaJogo.combate = (function(){
           return {destino:{x:e.x, y:e.y, raio:e.raio||34, entrada:e.id}, campo:c};
       }
     }
-    let melhor=null, md=Infinity;
-    for(const o of camposDeFuga(J)){
-      if(o.campo.passo(d.x,d.y).semRota) continue;
-      const q=U.dist2(d.x,d.y,o.f.x,o.f.y);
-      if(q<md){md=q; melhor=o;}
-    }
-    return melhor ? {destino:melhor.f, campo:melhor.campo} : null;
+    const evita = (d.fugaEvita && d.fugaEvita.ate > J.t) ? d.fugaEvita.chave : null;
+    const acha = (qualCampo, pulaEvitada)=>{
+      let melhor=null, md=Infinity;
+      for(const o of camposDeFuga(J)){
+        if(pulaEvitada && o.chave === evita) continue;
+        const c = o[qualCampo];
+        if(c.passo(d.x,d.y).semRota) continue;
+        const q=U.dist2(d.x,d.y,o.f.x,o.f.y);
+        if(q<md){md=q; melhor={destino:o.f, campo:c, chave:o.chave};}
+      }
+      return melhor;
+    };
+    const r = acha('desvia', !!evita) || acha('campo', !!evita) ||
+              (evita && (acha('desvia', false) || acha('campo', false))) || null;
+    if(r) d._fugaChave = r.chave;
+    return r;
   }
   /* usada pelos testes e pelo editor: só o destino, sem o campo */
   function alvoDeFuga(J, d){ const r=rotaDeFuga(J,d); return r && r.destino; }

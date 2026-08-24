@@ -2105,6 +2105,23 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   passo do dia calado, e colava a segunda mensagem na primeira. Medido:
   1501, 1501, 1502, 1502 ms.
 
+- **A ROTA DE FUGA DÁ A VOLTA NO CORDÃO** (correção do dono,
+  24/08/2026, vídeo da arquibancada): o disco em fuga ficava a cena
+  inteira parado, empurrando o cordão da PM. O policial sempre foi
+  obstáculo físico (`separar` não deixa atravessar PM), mas o campo de
+  fuga só enxergava grade — a rota passava por dentro do cordão e o
+  disco morria empurrando.
+  · Cada boca de fuga agora tem DOIS campos: um que trata PM viva como
+    parede (`desvia`) e o antigo, só com grades, de plano B. A escolha
+    é: a boca mais perto com rota que desvia da PM; sem nenhuma, a rota
+    que passa por cima (empurrar é melhor que ficar sem alvo). Como a
+    PM anda (carga, reforço), o cache expira a cada 1,2s.
+  · Disco em fuga que fica ~1s sem sair do lugar risca a própria saída
+    do mapa por 5s e re-roteia pra outra boca no quadro seguinte.
+  · Medido com uma boca tampada por 16 PMs em anel: antes, os 24 discos
+    escolhiam a boca tampada e 13 morriam empurrando o cordão; agora,
+    zero e zero — todo mundo sai pela outra boca.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
