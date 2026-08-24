@@ -1620,7 +1620,40 @@ TO.relacoes = (function(){
     cacheRanking = {chave, lista:fora};
     return fora;
   }
+  /* =======================================================
+     DOIS RANKINGS (pedido do dono, 23/08/2026)
+
+     Com as barras dentro, o ranking passou a ter 388 torcidas de dez
+     países, e uma organizada de interior brasileiro aparecia em 200º
+     por causa da Boca e da Colo-Colo. Agora são dois: o do PAÍS, que é
+     com quem a gente compete de verdade e é o que vai no cabeçalho do
+     feed, e o do MUNDO, que é o continente inteiro. A conta de pontos é
+     a mesma nos dois; o que muda é quem entra na fila.
+     ======================================================= */
+  function paisDaTorcida(id){
+    const o = M().torcida(id);
+    const t = o && M().time(o.clubeId);
+    return (t && t.pais) || 'Brasil';
+  }
+  const paisDoJogador = E => paisDaTorcida(E && E.torcida && E.torcida.id);
+
+  /* o mesmo ranking, só com quem joga no nosso país, renumerado. A
+     posição no mundo viaja junto, pra tela poder mostrar as duas. */
+  function rankingDoPais(E, pais){
+    const alvo = pais || paisDoJogador(E);
+    return ranking(E)
+      .filter(r => paisDaTorcida(r.id) === alvo)
+      .map((r, i) => Object.assign({}, r, {pos: i + 1, posMundo: r.pos}));
+  }
+
+  /* A DO CABEÇALHO É A NACIONAL (régua do dono, 23/08/2026) — e o
+     título dela já dizia "ranking nacional" antes de ser verdade. */
   function posicaoNoRanking(E){
+    const x = rankingDoPais(E).find(v=>v.nossa);
+    return x ? x.pos : 0;
+  }
+
+  function posicaoNoMundo(E){
     const x = ranking(E).find(v=>v.nossa);
     return x ? x.pos : 0;
   }
@@ -1650,7 +1683,8 @@ TO.relacoes = (function(){
   }
 
   return {REL, HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
-          ranking, posicaoNoRanking, situacaoFinanceira,
+          ranking, rankingDoPais, posicaoNoRanking, posicaoNoMundo,
+          paisDaTorcida, situacaoFinanceira,
           brigasDeHoje, mundoDia, brigaIA, disponiveisIA, foraDeCombate, baixasIA,
           convitesDeAniversario,
           mundo, balanco, economiaDelas, ORDEM, proximaCompra, EXPEDIENTE,

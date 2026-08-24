@@ -2025,6 +2025,29 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     ano é do país de quem joga: torcida do ano, rei da pista, patrimônio
     e treta do ano filtram pelo país da nossa torcida.
 
+- **DOIS RANKINGS, EM ABAS** (pedido do dono, 23/08/2026): "o ranking de
+  torcidas deve mostrar dois rankings agora, o do país e o do mundo, em
+  abas separadas. A que vai pro cabeçalho do feed é a nacional."
+  · A conta de pontos é **a mesma nos dois**; o que muda é quem entra na
+    fila. `rankingDoPais` filtra o mundial pelo país da nossa torcida e
+    renumera de 1 em diante, levando junto a posição continental de cada
+    uma.
+  · A tela **abre no país**, que é com quem a gente compete de verdade:
+    numa fila de 388 torcidas de dez países, a organizada de interior
+    aparecia em 200º por causa da Boca e da Colo-Colo. Na aba do mundo o
+    país vem ao lado do nome.
+  · **O cabeçalho do feed passou a ser o nacional** — o title dele já
+    dizia "ranking nacional" desde 17/08, antes de ser verdade. O
+    número do continente foi pro `title`: "12º no ranking nacional · 36º
+    na América do Sul".
+  · **A Torcida do Ano colhe do país**, e não do mundo: `slice(0, 8)`
+    sobre a fila mundial podia entregar oito barras e deixar o país
+    inteiro de fora do prêmio.
+
+- **TEXTOS DA TRETA DO ANO APROVADOS** (crivo do dono, 23/08/2026): os
+  moldes de chapéu, manchete e olho da página nova do anuário passaram
+  sem alteração.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

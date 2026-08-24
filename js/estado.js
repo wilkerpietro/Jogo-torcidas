@@ -367,7 +367,11 @@ TO.estado = (function(){
         const colheita = TO.almanaque ? {
           ano: anoQueFecha,
           placar: placarDoAno,
-          ranking: TO.relacoes.ranking(E).slice(0, 8)
+          /* o prêmio de Torcida do Ano é nacional: colher o top 8 do
+             MUNDO podia entregar oito barras e deixar o país de fora */
+          ranking: (TO.relacoes.rankingDoPais
+                    ? TO.relacoes.rankingDoPais(E)
+                    : TO.relacoes.ranking(E)).slice(0, 8)
         } : null;
         const movForca = TO.competicoes.evoluirForca(E);
         const mov = TO.competicoes.aplicarSobeDesce(E);

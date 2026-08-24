@@ -2314,18 +2314,44 @@
      RANKING DE TORCIDAS (decisão do dono, 17/08/2026)
      Pontos = (membros + prestígio×2) × média de força e defesa.
      ======================================================= */
+  /* =======================================================
+     O RANKING EM DUAS ABAS (pedido do dono, 23/08/2026)
+
+     "O ranking de torcidas deve mostrar dois rankings agora, o do país
+     e o do mundo, em abas separadas. A que vai pro cabeçalho do feed é
+     a nacional."
+
+     Abre no país, que é com quem a gente compete de verdade: numa lista
+     de 388 torcidas de dez países, a organizada de interior aparecia em
+     200º por causa da Boca e da Colo-Colo. No mundo, a coluna # é a
+     posição continental e o país de cada uma vem ao lado do nome.
+     ======================================================= */
+  let abaRanking = 'pais';
+
   function pintarRanking(){
     const e = E(), pg = U.$('.pagina[data-pag="ranking"]');
     if(!e || !pg) return;
     pg.innerHTML = '';
     pg.appendChild(el('div',{class:'titulo-pagina', texto:'Ranking de torcidas'}));
+
+    const meuPais = TO.relacoes.paisDaTorcida(e.torcida.id);
+    const mundial = abaRanking === 'mundo';
+    pg.appendChild(abasGrandes([
+      {id:'pais',  rot:meuPais, dica:'o ranking que vale no cabeçalho do feed'},
+      {id:'mundo', rot:'América do Sul',
+       dica:'as torcidas dos dez países na mesma fila'}
+    ], abaRanking, id=>{ abaRanking = id; redesenhar(); }));
+
     pg.appendChild(el('div',{class:'recado', html:
       `Pontos = (<b>membros</b> + <b>prestígio × 2</b>) × <b>média de `+
       `força e defesa</b> dos membros × <b>situação financeira</b> `+
       `(de ×0,6 endividado a ×1,6 rico). <b>Prédios</b> soma sede, bares, `+
       `lojas e subsedes; <b>saldo</b> é vitória menos derrota em brigas `+
-      `no ano. O número menor ao lado é o quanto aquilo andou no mês.`}));
-    const lista = TO.relacoes.ranking(e);
+      `no ano. O número menor ao lado é o quanto aquilo andou no mês.`+
+      (mundial ? ' Esta é a fila do continente inteiro; a do cabeçalho '+
+                 'é a do país.' : '')}));
+    const lista = mundial ? TO.relacoes.ranking(e)
+                          : TO.relacoes.rankingDoPais(e);
     const t = el('table',{class:'tab-ranking'});
     /* A VARIAÇÃO DO MÊS (pedido do dono, 20/08/2026): o numerozinho
        ao lado diz o quanto aquele número andou desde a virada do mês.
@@ -2352,9 +2378,13 @@
       const cor = (TO.mundo.coresDaTorcida(o) || {}).cor || '#888';
       const tr = el('tr',{class: r.nossa ? 'nossa' : ''});
       const sit = r.situacao || {rot:'—', slug:'pobre', mult:1};
+      /* no mundo o país fica ao lado do nome; no país seria repetição */
+      const bandeirinha = mundial
+        ? `<em class="rk-pais">${TO.relacoes.paisDaTorcida(r.id)}</em>` : '';
       tr.innerHTML =
         `<td class="pos">${r.pos}º</td>
-         <td><i class="to-chip" style="background:${cor}"></i>${r.nome}</td>
+         <td><i class="to-chip" style="background:${cor}"></i>${r.nome}`+
+        `${bandeirinha}</td>
          <td class="nu">${U.numero(r.membros)}${vario(r.varMembros)}</td>
          <td class="nu">${r.prestigio}${vario(r.varPrestigio)}</td>
          <td class="nu">${(Math.round(r.forca*10)/10).toFixed(1)}`+
@@ -2713,12 +2743,16 @@
       const mMoral = d1(e.membros.reduce((s,m)=>s+m.moral, 0)/nM);
       const mForca = d1(e.membros.reduce((s,m)=>s+m.forca, 0)/nM);
       const mDef   = d1(e.membros.reduce((s,m)=>s+m.defesa, 0)/nM);
+      /* a do cabeçalho é a NACIONAL (régua do dono, 23/08/2026); a do
+         continente vai no title, pra quem quiser saber */
       const pos = TO.relacoes.posicaoNoRanking(e);
+      const posMundo = TO.relacoes.posicaoNoMundo ? TO.relacoes.posicaoNoMundo(e) : 0;
       noFeedTopo.innerHTML =
         `<span class="escudo" style="background:linear-gradient(135deg,${c1} 0 52%,${c2} 52% 100%)"
            >${e.torcida.sigla}</span>`+
         `<b>${e.torcida.nome}</b>`+
-        `<span class="num pos-rank" title="posição no ranking nacional">`+
+        `<span class="num pos-rank" title="${pos||'—'}º no ranking nacional`+
+        `${posMundo?` · ${posMundo}º na América do Sul`:''}">`+
         `#${pos||'—'}</span>`+
         `<span class="num${e.dinheiro<0?' negativo':''}">${IC.get('dinheiro')}`+
         `${U.dinheiro(e.dinheiro)}</span>`+

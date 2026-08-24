@@ -1545,3 +1545,9 @@ td.placar small.pen{
 .msg-bts .bt.simular{border-style:dashed;color:var(--fraco);
   font-family:var(--mono);font-size:10.5px;letter-spacing:.04em}
 .msg-bts .bt.simular:hover{color:var(--texto);border-color:var(--fraco)}
+
+
+/* O PAÍS AO LADO DO NOME, na aba mundial do ranking (dono, 23/08/2026) */
+.tab-ranking .rk-pais{display:inline-block;margin-left:8px;font-style:normal;
+  font-family:var(--mono);font-size:9px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--fraco)}
