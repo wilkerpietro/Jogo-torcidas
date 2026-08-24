@@ -2172,8 +2172,31 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   praça e realce por rodovia. Os TRECHOS desenhados (a sequência de
   praças de cada corredor) são a proposta de cima da qual as rotas de
   itinerário com emboscada vão ser construídas nos 9 países, na mesma
-  régua da malha brasileira. A regra atual segue de pé: malha do Brasil
-  e malha Conmebol não se tocam — entre elas, só de avião.
+  régua da malha brasileira.
+  · **A MALHA VIROU UMA SÓ** (decisão do dono, 24/08/2026): caem as
+    ilhas. Dentro do Brasil entraram BR-116 Sertão (Interior do CE ↔
+    Bahia), Rio–Bahia (Bahia ↔ BH), Fernão Dias (BH ↔ São Paulo) e
+    BR-316 (Belém ↔ Maranhão — a Rodovia Norte não morre mais
+    sozinha). Nasceram as **travessias de fronteira**: BR-174
+    (Manaus ↔ Oriente da Venezuela), Bioceânica (Mato Grosso ↔ Santa
+    Cruz), Rota do Pantanal (Mato Grosso ↔ Assunção), Rota do Chuí
+    (Porto Alegre ↔ Montevidéu), Ponte da Amizade (Interior de SC ↔
+    Interior do Paraguai) e Rota de Uruguaiana (Interior do RS ↔
+    Litoral Argentino). Casos similares resolvidos do lado de lá:
+    Ruta 11 (Assunção ↔ Litoral Argentino), Desaguadero (Sul do
+    Peru ↔ La Paz), Arica (Norte do Chile ↔ La Paz), Ruta 20
+    (Córdoba ↔ Mendoza) e General Paz (Oeste de CABA ↔ Buenos Aires —
+    o Oeste só alcançava o centro passando por Mar del Plata).
+    **94 de 94 praças conectadas**, conferido por busca em largura.
+  · O artefato ganhou um **traçador de rota** (Dijkstra por km reais
+    de haversine sobre os trechos desenhados). A simulação pedida —
+    Fortaleza jogando em Santiago — sai com **5.613 km em 12
+    trechos**: Interior do CE → Bahia → BH → São Paulo → Curitiba →
+    Interior de SC → Interior do RS → (Uruguaiana) → Litoral
+    Argentino → Rosário → Córdoba → Mendoza → Santiago. Cada parada é
+    uma praça onde o itinerário pode armar emboscada.
+  · A regra "entre as malhas só de avião" morre junto com as ilhas
+    quando isso entrar no motor do jogo.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
