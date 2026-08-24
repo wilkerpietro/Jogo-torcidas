@@ -1521,6 +1521,14 @@
       bts = [{rot:cfg.brigar || 'Pra cima deles', briga:true},
              {rot:cfg.fugir  || 'Deixar quieto',  briga:false}];
     }
+    /* O SIMULAR TAMBÉM NA LINHA DO DIA (correção do dono, 23/08/2026).
+       A briga da parada — emboscada na estrada, ataque na pista,
+       investida marcada — não passa pelo feed, então ela não pegava o
+       gêmeo que o `propor` cria. Aqui ele entra na mão, ao lado de
+       quem desce: é briga, e briga tem as duas saídas. */
+    const descer = bts.find(b=>b.briga);
+    if(descer) bts.splice(bts.indexOf(descer) + 1, 0,
+      {rot:'Simular', briga:true, simular:true});
     cx.appendChild(el('div',{class:'voz', texto:voz}));
     cx.appendChild(el('p',{texto}));
     if(ev.tipo !== 'investida')
@@ -1528,15 +1536,18 @@
         html:'Ninguém descendo: <b>Moral −3 · Prestígio −3,5 · Relação −6</b>'}));
     const caixa = el('div',{class:'bts'});
     bts.forEach((b, k)=>{
-      const bt = el('button',{class:'itn-bt'+(k===0?' acao':''), texto:b.rot});
-      bt.onclick = ()=> itnResponder(p, ev, b.briga, cx);
+      const bt = el('button',{class:'itn-bt'+(k===0?' acao':'')+
+                                     (b.simular?' simular':''), texto:b.rot});
+      if(b.simular) bt.title =
+        'Roda o duelo sem abrir a cena. As consequências são as mesmas.';
+      bt.onclick = ()=> itnResponder(p, ev, b.briga, cx, b.simular);
       caixa.appendChild(bt);
     });
     cx.appendChild(caixa);
     return cx;
   }
 
-  function itnResponder(p, ev, briga, cx){
+  function itnResponder(p, ev, briga, cx, simular){
     if(!ITN) return;
     const e = E();
     cx.querySelector('.bts').remove();
@@ -1554,11 +1565,13 @@
     }
     /* vai pra briga: a cena é a do jogo, e o fecho dela é o de sempre */
     ITN.esperando = {parada:p, cartao:cx};
-    itnAbrirCena(ev);
+    itnAbrirCena(ev, simular);
   }
 
-  function itnAbrirCena(ev){
-    itnDizer('cena aberta · a linha espera', true);
+  function itnAbrirCena(ev, simular){
+    simularProxima = !!simular;
+    itnDizer(simular ? 'duelo simulado · a linha espera'
+                     : 'cena aberta · a linha espera', true);
     if(ev.abrir.tela === 'guerra') abrirGuerra(ev.abrir.args);
     else abrirAtaqueAoBar(ev.abrir.atq);
   }
@@ -1837,11 +1850,11 @@
        <h2>${p.manchete}</h2>
        <p class="olho">${p.olho}</p>
        <div class="placar-grande">
-         <span class="time nossa">${p.placar.a}</span>
-         <span class="n">${p.placar.ga}</span>
-         <span class="n">${p.placar.gb}</span>
-         <span class="time">${p.placar.b}</span>
-         <span class="rot-placar">feridos</span>
+         <span class="time nossa${p.placar.venceuA?' venceu':''}">${p.placar.a}</span>
+         <span class="n${p.placar.venceuA?' venceu':''}">${p.placar.ga}</span>
+         <span class="n${p.placar.venceuB?' venceu':''}">${p.placar.gb}</span>
+         <span class="time${p.placar.venceuB?' venceu':''}">${p.placar.b}</span>
+         <span class="rot-placar">${p.placar.rot || 'feridos'}</span>
        </div>`;
     topo.appendChild(man);
     topo.appendChild(quadroDaNoite(p.quadro));

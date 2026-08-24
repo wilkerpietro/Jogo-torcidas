@@ -179,3 +179,8 @@
   font-variant-numeric:tabular-nums;
 }
 .itn-parada.agora .efetivo{color:var(--fraco)}
+
+
+/* O SIMULAR NA LINHA DO DIA (dono, 23/08/2026): mesma família do botão
+   do feed — tracejado, discreto, ao lado de quem desce. */
+.itn-bt.simular{border-style:dashed;font-size:10px;letter-spacing:.04em}

@@ -580,7 +580,15 @@ TO.feed = (function(){
       if(diaDoOlheiro(j.dia) !== hoje) continue;
       const nosso = j.casa.id === meu || j.vis.id === meu;
       const ests = estimativasDaRua(E, j.dia, j);
-      if(!ests.filter(x=>x.hostil).length) continue;   // sem rival, sem pauta
+      /* SEM RIVAL, SEM PAUTA — MAS O NOSSO JOGO SEMPRE TEM PAUTA
+         (correção do dono, 23/08/2026). A regra vale pro jogo dos
+         outros na nossa praça: sem rival na rua não há o que planejar
+         ali. No NOSSO jogo há sempre — quantos descem, quantas bombas,
+         a intenção do dia —, e o relatório sumia justamente nos jogos
+         em que ninguém hostil pisava na rua: Fortaleza × Vitória com a
+         TUF, com a irmã do lado e o visitante em casa, ficava sem
+         planejamento nenhum. */
+      if(!nosso && !ests.filter(x=>x.hostil).length) continue;
       const chaveJogo = nosso ? null : chaveDoJogoDaPraca(E, j);
       grupos.push({dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id});
       /* o relatório é uma TABELA (decisão do dono, 17/08/2026): coluna 1
@@ -604,14 +612,21 @@ TO.feed = (function(){
     if(!grupos.length && fora){ olheiroFora(E, fora); return; }
 
     const nossos = TO.membros.aptosParaOEstadio(E).length;
-    let texto = `Chefe, o relatório de hoje. `+
-                `Nós saímos com até ${nossos}. Vamos pra cima de alguém?`;
-    const botoes = [
-      {id:'atacar', rot:'Atacar', acao:'tela-ataque',
-       args:{ctx:{grupos}}},
-      {id:'paz',    rot:'Ir em paz', acao:'paz-grupo', args:{grupos}},
-      {id:'padrao', rot:'Seguir padrão', acao:'padrao-grupo', args:{grupos}}
-    ];
+    /* sem ninguém hostil na rua não há a quem descer, e o texto não
+       pode perguntar "vamos pra cima de alguém?" pra uma rua vazia */
+    const temAlvo = tabela.some(t=>(t.torcidas||[]).some(x=>x.hostil));
+    let texto = temAlvo
+      ? `Chefe, o relatório de hoje. Nós saímos com até ${nossos}. `+
+        `Vamos pra cima de alguém?`
+      : `Chefe, o relatório de hoje. Nós saímos com até ${nossos}, e `+
+        `rival na rua não tem. Dia de bandeira e nada mais?`;
+    const botoes = [];
+    if(temAlvo) botoes.push({id:'atacar', rot:'Atacar', acao:'tela-ataque',
+                             args:{ctx:{grupos}}});
+    botoes.push(
+      {id:'paz',    rot: temAlvo ? 'Ir em paz' : 'Só bandeira',
+       acao:'paz-grupo', args:{grupos}},
+      {id:'padrao', rot:'Seguir padrão', acao:'padrao-grupo', args:{grupos}});
     if(fora){
       const alvos = PL().alvosDaViagem(E, {advId:fora.advId, crua:true});
       texto += ` E ${NOME_DIA[fora.dia||6]} o ${E.torcida.clube} joga fora, `+
@@ -1397,6 +1412,18 @@ TO.feed = (function(){
     /* ninguém desceu pra segurar: não houve briga, houve prejuízo */
     const semResistencia = !d.ganhamos && !(a.caidos||0) && !(b.caidos||0)
                         && !(a.n||0);
+    /* a nossa briga entra na conta da treta do ano pela mesma porta que
+       o mundo usa: `brigasIA` não guarda as nossas, então é aqui */
+    if(TO.almanaque && TO.almanaque.anotarTreta)
+      TO.almanaque.anotarTreta(E, {
+        semana:E.data.semana, dia:E.data.dia,
+        cidade: onde.replace(/^n[ao]s? /, '').replace(/^num[a]? /, ''),
+        ganhouA: !!d.ganhamos,
+        a:{id:E.torcida.id, nome:a.nome || E.torcida.nome, n:a.n || 0,
+           feridos:a.caidos || 0, presos:a.presos || 0},
+        b:{id:d.torcidaId, nome:b.nome || 'Rival', n:b.n || 0,
+           feridos:b.caidos || 0, presos:b.presos || 0}
+      });
     propor(E, {
       kind:'confronto', peso:'info', tipo: d.ganhamos ? 'boa' : 'ruim',
       voz:'diretor',

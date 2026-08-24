@@ -72,7 +72,34 @@ TO.almanaque = (function(){
       olho:{
         comNosso:['{S} subiram e {D} desceram no país. '+
                   'O nosso clube está no meio.'],
-        padrao:  ['{S} subiram e {D} desceram no país.']
+        padrao:  ['{S} subiram e {D} desceram no país.'],
+        vazio:   ['Nenhuma divisão trocou de dono na virada.']
+      }
+    },
+
+    /* 6 · A TRETA DO ANO — a briga que mais derrubou rival
+       (pedido do dono, 23/08/2026) */
+    tretaDoAno:{
+      chapeu:{
+        nossa:  ['Foi a nossa noite'],
+        contra: ['A noite que a gente prefere esquecer'],
+        padrao: ['A treta do ano']
+      },
+      manchete:{
+        nossa:  ['A {A} passou o rodo na {B} e fechou o ano no topo da rua',
+                 'Ninguém esquece o que a {A} fez com a {B} em {ano}'],
+        contra: ['A {B} pegou a gente de jeito, e {ano} tem essa marca',
+                 'O ano guarda a noite em que a {B} passou por cima da {A}'],
+        padrao: ['A {A} deixou {N} da {B} no chão: a treta do ano',
+                 'Foi na {onde} que {ano} teve a sua maior treta'],
+        vazio:  ['{ano} passou sem uma treta pra contar']
+      },
+      olho:{
+        cheio:['{F} feridos e {P} presos numa noite só, {onde}, '+
+               'na {sem}ª semana do ano.'],
+        semPreso:['{F} feridos numa noite só, {onde}, '+
+                  'na {sem}ª semana do ano. Ninguém foi pro camburão.'],
+        vazio:['Nenhuma briga do ano deixou baixa que valesse manchete.']
       }
     },
 
@@ -203,6 +230,24 @@ TO.almanaque = (function(){
 
   const nomeTime    = id => (M().time(id)||{}).nome || id;
   const nomeTorcida = id => (M().torcida(id)||{}).nome || id;
+
+  /* O ALMANAQUE É UM JORNAL NACIONAL (correção do dono, 23/08/2026).
+     Com as barras dentro do jogo, o ranking passou a somar 388
+     torcidas de dez países, e a Torcida do Ano de uma partida
+     brasileira saía a Comando SVR, de Lima. Prêmio de ano é do país
+     de quem joga: a lista é filtrada pelo país da nossa torcida. */
+  function paisDaNossa(E){
+    const meu = E && E.torcida && E.torcida.clubeId;
+    const t = meu ? M().time(meu) : null;
+    return (t && t.pais) || 'Brasil';
+  }
+  function doNossoPais(E, id){
+    const o = M().torcida(id);
+    const t = o && M().time(o.clubeId);
+    return ((t && t.pais) || 'Brasil') === paisDaNossa(E);
+  }
+  const soDaqui = (E, lista) => (lista || [])
+    .filter(x => x && x.id && doNossoPais(E, x.id));
   /* DOIS ARTIGOS, DOIS LUGARES. "a taça DO Brasileirão" e "a taça DA
      Copa" pedem a forma com de; "faturou O Brasileirão" e "terminou A
      Copa" pedem a forma sem. Um molde só dava "terminou do
@@ -282,7 +327,21 @@ TO.almanaque = (function(){
 
   /* 2 · SOBE E DESCE — na virada do ano */
   function sobeDesce(E, mov, ano){
-    if(!mov || !mov.length) return null;
+    /* O ANUÁRIO NÃO TEM PÁGINA FALTANDO (régua do dono, 23/08/2026):
+       ano sem sobe-e-desce entregava `null`, e o fim de ano vinha com
+       quatro páginas em vez de cinco. Agora ele diz que não houve. */
+    if(!mov || !mov.length){
+      const SDv = MOLDES.sobeDesce;
+      return {
+        ano, tipo:'sobeDesce', tom:'',
+        jornal:'O Almanaque', edicao:'Edição da virada',
+        chapeu: SDv.chapeu.padrao[0],
+        manchete: encher(SDv.manchete.padrao[0], {N:0}),
+        olho: SDv.olho.vazio[0],
+        tarja:[`virada de <b>${ano}</b>`],
+        quadro:{titulo:'Sobe e desce', linhas:[]}
+      };
+    }
     const meu = E.torcida.clubeId;
     const sobem = mov.filter(m => C().subiu(m.de, m.para));
     const caem  = mov.filter(m => !C().subiu(m.de, m.para));
@@ -316,6 +375,7 @@ TO.almanaque = (function(){
 
   /* 3 · TORCIDA DO ANO — a 1ª do ranking no fechamento */
   function torcidaDoAno(E, lista, ano){
+    lista = soDaqui(E, lista);
     if(!lista || !lista.length) return null;
     const primeira = lista[0], segunda = lista[1];
     const nossa = primeira.id === E.torcida.id;
@@ -344,7 +404,7 @@ TO.almanaque = (function(){
   /* 4 · REI DA PISTA — maior saldo de brigas do ano */
   function reiDaPista(E, placar, ano){
     const RP = MOLDES.reiDaPista;
-    const lista = (placar||[]).filter(x => x.saldo > 0)
+    const lista = soDaqui(E, placar).filter(x => x.saldo > 0)
                               .sort((a,b)=> b.saldo - a.saldo || b.v - a.v);
     if(!lista.length) return {
       ano, tipo:'reiDaPista', tom:'',
@@ -425,7 +485,7 @@ TO.almanaque = (function(){
     const antes = (E.almanaque && E.almanaque.predios) || {};
     const lista = [];
     for(const o of M().jogaveis()){
-      if(o.incompleta) continue;
+      if(o.incompleta || !doNossoPais(E, o.id)) continue;
       const hoje = prediosDe(E, o.id);
       const d = hoje - (antes[o.id] != null ? antes[o.id] : hoje);
       if(d > 0) lista.push({id:o.id, nome:o.nome, d, total:hoje});
@@ -553,6 +613,87 @@ TO.almanaque = (function(){
      ranking do fechamento é o do último dia. Devolve as
      páginas na ordem em que devem cair no feed.
      ======================================================= */
+  /* =======================================================
+     6 · A TRETA DO ANO (pedido do dono, 23/08/2026)
+     "Uma lembrança no fim do ano da briga que a torcida mais
+     feriu/prendeu rivais."
+
+     A conta é dos DERRUBADOS: feridos mais presos que o
+     vencedor deixou do outro lado numa noite só. Fica guardada
+     em `E.tretaDoAno`, atualizada a cada briga fechada — nossa
+     ou entre duas IAs —, porque o feed larga o anexo das
+     notícias velhas depois de 90 dias e uma varredura de fim de
+     ano não acharia mais a briga de janeiro.
+     ======================================================= */
+  function anotarTreta(E, reg){
+    if(!E || !reg || !reg.a || !reg.b) return null;
+    const ano = E.data.ano;
+    const venceuA = !!reg.ganhouA;
+    const alvo = venceuA ? reg.b : reg.a, dono = venceuA ? reg.a : reg.b;
+    const derrubados = (alvo.feridos || 0) + (alvo.presos || 0);
+    if(!derrubados) return null;
+    /* o anuário é nacional: treta entre duas barras argentinas não é
+       manchete do almanaque de quem joga no Brasil */
+    if(!doNossoPais(E, dono.id) && !doNossoPais(E, alvo.id)) return null;
+    const guardada = E.tretaDoAno;
+    if(guardada && guardada.ano === ano && guardada.derrubados >= derrubados)
+      return guardada;
+    E.tretaDoAno = {
+      ano, derrubados,
+      semana: reg.semana || E.data.semana, dia: reg.dia || E.data.dia,
+      onde: reg.cidade || reg.onde || '',
+      nossa: dono.id === E.torcida.id,
+      contra: alvo.id === E.torcida.id,
+      a:{id:dono.id, nome:dono.nome, n:dono.n || 0,
+         feridos:dono.feridos || 0, presos:dono.presos || 0},
+      b:{id:alvo.id, nome:alvo.nome, n:alvo.n || 0,
+         feridos:alvo.feridos || 0, presos:alvo.presos || 0}
+    };
+    return E.tretaDoAno;
+  }
+
+  function tretaDoAno(E, ano){
+    const TA = MOLDES.tretaDoAno;
+    const t = E.tretaDoAno;
+    if(!t || t.ano !== ano) return {
+      ano, tipo:'tretaDoAno', tom:'',
+      jornal:'O Almanaque', edicao:'Edição da rua',
+      chapeu: TA.chapeu.padrao[0],
+      manchete: encher(TA.manchete.vazio[0], {ano}),
+      olho: TA.olho.vazio[0],
+      tarja:[`a rua em <b>${ano}</b>`],
+      quadro:{titulo:'A treta do ano', linhas:[]}
+    };
+    const onde = t.onde || 'na rua';
+    const cond = t.nossa ? 'nossa' : t.contra ? 'contra' : 'padrao';
+    const v = {A:t.a.nome, B:t.b.nome, ano, onde,
+               N:t.derrubados, F:t.b.feridos, P:t.b.presos,
+               sem:t.semana};
+    return {
+      ano, tipo:'tretaDoAno',
+      tom: t.nossa ? 'boa' : t.contra ? 'ruim' : '',
+      jornal:'O Almanaque', edicao:'Edição da rua',
+      chapeu: TA.chapeu[cond][0],
+      manchete: encher(daFila(TA.manchete[cond], ano), v),
+      olho: encher(t.b.presos ? TA.olho.cheio[0] : TA.olho.semPreso[0], v),
+      tarja:[`<b>${t.derrubados}</b> derrubados`,
+             `<b>${t.b.feridos}</b> feridos`,
+             `<b>${t.b.presos}</b> presos`, onde],
+      quadro:{
+        titulo:'A noite, lado a lado',
+        linhas:[
+          {rot:'levou a melhor', valor:t.a.nome, nota:`${t.a.n} na rua`,
+           forte:true, nossa:t.a.id === E.torcida.id},
+          {rot:'ficou no chão',  valor:t.b.nome,
+           nota:`${t.b.feridos} feridos · ${t.b.presos} presos`,
+           nossa:t.b.id === E.torcida.id},
+          {rot:'baixa do vencedor', valor:`${t.a.feridos} feridos`,
+           nota:`${t.a.presos} presos`}
+        ]
+      }
+    };
+  }
+
   function fecharAno(E, ctx){
     const ano = (ctx && ctx.ano) || E.data.ano;
     return [
@@ -560,7 +701,8 @@ TO.almanaque = (function(){
       torcidaDoAno(E, (ctx && ctx.ranking) || [], ano),
       reiDaPista(E, (ctx && ctx.placar) || [], ano),
       janela(E, (ctx && ctx.forca) || [], ano + 1),
-      patrimonio(E, ano)
+      patrimonio(E, ano),
+      tretaDoAno(E, ano)
     ].filter(Boolean);
   }
 
@@ -582,6 +724,7 @@ TO.almanaque = (function(){
   }
 
   return {MOLDES, encher, tirarFoto, prediosDe, LINHAS, abertura,
-          fecharAno, placarDoAnoTodo,
-          campeao, sobeDesce, torcidaDoAno, reiDaPista, janela, patrimonio};
+          fecharAno, placarDoAnoTodo, anotarTreta,
+          campeao, sobeDesce, torcidaDoAno, reiDaPista, janela, patrimonio,
+          tretaDoAno};
 })();

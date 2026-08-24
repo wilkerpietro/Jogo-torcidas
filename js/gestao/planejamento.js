@@ -459,8 +459,19 @@ TO.planejamento = (function(){
 
   const CUSTO_BASE = 1200, CUSTO_SALTO = 900, CUSTO_AR = 5200;
 
-  function rotas(E){
-    const j = E.proximoJogo;
+  /* A ROTA É DO JOGO QUE SE PEDE (correção do dono, 23/08/2026).
+
+     Isto lia `E.proximoJogo` e mais nada, e `proximoJogo` é o jogo da
+     SEMANA — o que pesa mais. Numa semana com dois jogos nossos, a
+     linha do dia de UM deles vinha com a estrada do OUTRO: com a TUF
+     jogando em Campinas, a volta saía por Porto Alegre, que era o
+     destino do jogo seguinte. O itinerário já sabia perguntar qual é o
+     jogo de hoje; era a rota que continuava respondendo pelo da semana.
+
+     Agora o jogo entra por parâmetro. Sem parâmetro, `proximoJogo`
+     continua sendo o padrão, que é o que a tela de planejamento usa. */
+  function rotas(E, jogo){
+    const j = jogo || E.proximoJogo;
     if(!j || j.casa || !j.mapaAdv || j.mapaAdv === E.torcida.mapa) return [];
     const origem = E.torcida.mapa, destino = j.mapaAdv;
 
@@ -488,8 +499,8 @@ TO.planejamento = (function(){
     return fora;
   }
 
-  const rotaEscolhida = E =>{
-    const p = plano(E), lista = rotas(E);
+  const rotaEscolhida = (E, jogo) =>{
+    const p = plano(E), lista = rotas(E, jogo);
     if(!lista.length) return null;
     return lista.find(r=>r.id === p.rota) || lista[0];
   };

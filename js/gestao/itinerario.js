@@ -167,7 +167,9 @@ TO.itinerario = (function(){
     };
 
     const casa = !!j.casa;
-    const rota = (!casa && PL().rotaEscolhida) ? PL().rotaEscolhida(E) : null;
+    /* a rota é a DESTE jogo: passar `j` é o que impede a linha de hoje
+       de pegar a estrada do jogo da semana que vem */
+    const rota = (!casa && PL().rotaEscolhida) ? PL().rotaEscolhida(E, j) : null;
     const viaja = !!(rota && rota.cidades && rota.cidades.length > 1 &&
                      rota.id !== 'ar');
 
@@ -261,6 +263,10 @@ TO.itinerario = (function(){
       efetivo: efetivoInicial(E, msg),
       hora: j.hora || '21:00',
       titulo: `${j.mandante.nome} × ${j.visitante.nome}`,
+      /* de que jogo é esta linha, e pra onde ela vai: sem isto não dá
+         pra conferir de fora se a estrada é a do jogo certo — e era
+         justamente aí que estava o defeito da rota */
+      destino: casa ? E.torcida.mapa : (j.mapaAdv || ''),
       cidade: casa ? '' : (j.cidadeAdv || ''),
       dias: Object.keys(dias).length,
       paradas

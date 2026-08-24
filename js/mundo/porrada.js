@@ -305,8 +305,18 @@ TO.porrada = (function(){
         onde.replace(/^n[ao]s? /, '').replace(/^num[a]? /, '')
       ],
       chapeu, manchete, olho,
-      /* o placar grande da briga é o ferido de cada lado */
-      placar:{a:a.nome, ga:fA, gb:fB, b:b.nome, nossaCasa:true},
+      /* O PLACAR É DE DERRUBADOS, NÃO DE FERIDOS (correção do dono,
+         23/08/2026). Ele mostrava o ferido DE cada lado — "TUF 6 × 36
+         Cearamor" queria dizer que a TUF perdeu seis e derrubou trinta
+         e seis, e se lia como um 6 a 36 pra Cearamor: o número grande
+         ficava do lado de quem apanhou. Agora cada lado exibe quantos
+         ele DERRUBOU, que é como placar se lê — o maior número é o de
+         quem ganhou — e o rótulo mudou junto. O quadro da noite, ao
+         lado, continua contando os feridos de cada um. */
+      placar:{a:a.nome, ga:fB, gb:fA, b:b.nome, nossaCasa:true,
+              rot:'derrubados',
+              venceuA: venc ? venc.nome === a.nome : false,
+              venceuB: venc ? venc.nome === b.nome : false},
       /* O QUADRO DA NOITE, no lugar da classificação */
       quadro:{
         lados:[{nome:a.nome, nossa:true,  n:nA, feridos:fA, presos:pA},

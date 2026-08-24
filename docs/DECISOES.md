@@ -1979,6 +1979,52 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     simulador só conhece ficha e efetivo. É o preço de pular a cena, e
     ele é sempre o mesmo dos dois lados.
 
+- **CINCO CORREÇÕES DA JOGATINA DO DONO** (23/08/2026):
+  · **O Simular faltava na linha do dia.** A briga da parada —
+    emboscada na estrada, ataque na pista, investida marcada — não passa
+    pelo feed, então ela não pegava o gêmeo que o `propor` cria. Agora
+    ele entra na mão no cartão da parada, ao lado de quem desce.
+  · **O placar da treta lia ao contrário.** O Futebol e Porrada mostrava
+    o ferido DE cada lado: "TUF 6 × 36 Cearamor" queria dizer que a TUF
+    perdeu seis e derrubou trinta e seis, e se lia como um 6 a 36 pra
+    Cearamor — o número grande ficava do lado de quem apanhou. Agora
+    cada lado exibe quantos **derrubou**, que é como placar se lê (o
+    maior número é o de quem ganhou), o rótulo mudou junto e o vencedor
+    vem marcado. O quadro da noite, ao lado, continua contando os
+    feridos de cada um.
+  · **O nosso jogo sempre tem planejamento.** O relatório do olheiro
+    saía só quando havia rival hostil na rua — regra boa pro jogo dos
+    OUTROS na nossa praça, e errada pro nosso: Fortaleza × Vitória com a
+    TUF, com a irmã do lado e o visitante sem caravana, ficava sem
+    logística nenhuma. Agora o nosso jogo sempre reporta; sem alvo, o
+    texto diz que rival não tem e o botão de atacar não aparece.
+  · **A rota era a do jogo errado.** `rotas()` lia `E.proximoJogo`, que
+    é o jogo da SEMANA. Numa semana com dois jogos nossos, a linha do
+    dia de um vinha com a estrada do outro: com a TUF jogando em
+    Campinas, a volta saía por Porto Alegre, que era o destino do jogo
+    seguinte. O itinerário já sabia perguntar qual é o jogo de hoje; era
+    a rota que continuava respondendo pelo da semana. Agora o jogo entra
+    por parâmetro. Medido: forçando a semana de dois jogos, a estrada
+    ia pra Bahia com o jogo no Rio Grande do Norte; agora vai pro RN.
+  · **O anuário ganhou a treta do ano e parou de ter página faltando.**
+
+- **A TRETA DO ANO** (pedido do dono, 23/08/2026): "uma lembrança no fim
+  do ano da briga que a torcida mais feriu/prendeu rivais". A conta é a
+  dos **derrubados**: feridos mais presos que o vencedor deixou do outro
+  lado numa noite só. Fica guardada em `E.tretaDoAno`, atualizada a cada
+  briga fechada — nossa ou entre duas IAs —, porque o feed larga o anexo
+  das notícias velhas depois de 90 dias e uma varredura de fim de ano
+  não acharia mais a briga de janeiro.
+  · **E TODAS AS PÁGINAS SAEM, SEMPRE.** O sobe-e-desce devolvia `null`
+    em ano sem movimento, e o fim de ano vinha com quatro páginas em vez
+    de cinco; agora ele diz que não houve. São seis: sobe-e-desce,
+    torcida do ano, rei da pista, janela, patrimônio e treta do ano.
+  · **O almanaque é um jornal NACIONAL.** Com as barras dentro, o
+    ranking passou a somar 388 torcidas de dez países, e a Torcida do
+    Ano de uma partida brasileira saía a Comando SVR, de Lima. Prêmio de
+    ano é do país de quem joga: torcida do ano, rei da pista, patrimônio
+    e treta do ano filtram pelo país da nossa torcida.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

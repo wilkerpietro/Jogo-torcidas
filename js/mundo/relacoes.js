@@ -918,6 +918,9 @@ TO.relacoes = (function(){
   function registrarBrigaIA(E, reg){
     E.brigasIA = E.brigasIA || [];
     E.brigasIA.unshift(reg);
+    /* a maior treta do ano é medida na hora: o anuário lê no fim, e
+       varrer o feed lá na frente não acharia a briga de janeiro */
+    if(TO.almanaque && TO.almanaque.anotarTreta) TO.almanaque.anotarTreta(E, reg);
     if(E.brigasIA.length > 300) E.brigasIA.pop();
     E.brigasIATotal = (E.brigasIATotal || 0) + 1;
     /* o placar do ano de cada lado, que vira o saldo no ranking — e a
