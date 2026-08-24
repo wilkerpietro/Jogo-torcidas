@@ -631,7 +631,16 @@ TO.dados.cenas = (function(){
      que se espalha — o emboscado, em volta do ônibus. */
   const embPosto = cenaDeFoto({
     id:'emb-posto', nome:'Posto', local:'No posto, na parada da caravana',
+    /* QUEM ARMA EMBOSCADA NÃO RECUA DA PM (correção do dono,
+       23/08/2026). O recuo por alerta foi calibrado pros arredores do
+       estádio, onde existe cordão pra abrir distância. Na estrada não
+       existe cordão: quem fechou a pista escolheu o lugar e a hora, e
+       virava as costas assim que o alerta passava de 78 — medido, em
+       2 de 6 emboscadas o atacante recuava sem levar um soco. A PM
+       segue carregando e prendendo; o que ela não faz é cancelar a
+       emboscada. */
     espalharBonde:'visitante', semFugaPorMinoria:true, marchaAoInimigo:true,
+    semRecuoPM:true,
     saida:{perto:'Voltar pro ônibus', longe:'Ônibus (leve o líder)',
            feito:'a torcida voltou pro ônibus e a caravana seguiu',
            dica:'Leve o líder de volta pro ônibus.'},
@@ -653,7 +662,9 @@ TO.dados.cenas = (function(){
   /* emboscada 2: a estrada com o ônibus parado no meio da pista */
   const embOnibus = cenaDeFoto({
     id:'emb-onibus', nome:'Estrada', local:'Na estrada, pista fechada',
+    /* mesma razão do posto: na pista não há cordão de onde recuar */
     espalharBonde:'visitante', semFugaPorMinoria:true, marchaAoInimigo:true,
+    semRecuoPM:true,
     saida:{perto:'Voltar pro ônibus', longe:'Ônibus (leve o líder)',
            feito:'a torcida voltou pro ônibus e a caravana seguiu',
            dica:'Leve o líder de volta pro ônibus.'},

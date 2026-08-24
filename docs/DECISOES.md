@@ -2048,6 +2048,39 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   moldes de chapéu, manchete e olho da página nova do anuário passaram
   sem alteração.
 
+- **O LADO É O DA CENA, NÃO O DO CAMPEONATO** (correção do dono,
+  24/08/2026): na emboscada de caravana a nossa torcida entra pela cena
+  como **visitante** — o bonde deles é que fecha a pista, e o palco põe
+  quem atacou nas pontas. Três telas liam `caidosVisitante` como "deles"
+  e `res.venceu` (que diz se o MANDANTE ganhou) como se fosse o nosso
+  veredito, e o dono recebeu, ganhando a briga, o cartão "Saímos por
+  baixo. 0 caídos deles, 25 nossos · Prestígio +9".
+  · O cartão da linha do dia (`itnVoltouDaCena`), o cartaz de fim de
+    cena e o relatório da noite passaram a ler `res.nossoLado` pra
+    decidir quem é "nós" e quem é "eles" — caídos, efetivo, quem
+    escapou e as armas empregadas.
+  · O veredito virou `res.ganhamos`, que já vem do ponto de vista do
+    jogador. `res.venceu` fica onde ele vale: no mandante.
+  · O mesmo cartaz da bancada de cenas (`mostrarFimNaCena`) foi
+    corrigido junto, pela mesma régua.
+
+- **QUEM ARMA EMBOSCADA NÃO RECUA DA PM** (correção do dono,
+  24/08/2026): medido em seis emboscadas, em duas o atacante virava as
+  costas sem levar um soco, sempre com o alerta em 100. Era o `iaRecuo`,
+  calibrado pros arredores do estádio, onde existe cordão pra abrir
+  distância. Na estrada não existe cordão: quem fechou a pista escolheu
+  o lugar e a hora. `emb-posto` e `emb-onibus` ganharam `semRecuoPM` —
+  a PM segue carregando e prendendo, o que ela não faz é cancelar a
+  emboscada. Nova medição: 0 recuos em 8 cenas.
+
+- **"CORREU COM A" NÃO DIZ QUEM GANHOU** (correção do dono,
+  24/08/2026): "LEÕES DA TUF ERA MENOS E AINDA CORREU COM A CEARAMOR"
+  lia-se dos dois jeitos — a TUF botou a Cearamor pra correr, ou a TUF
+  correu junto com ela —, e em caixa alta ficava pior. O mesmo valia
+  pro "mandou" solto. Os moldes de vitória em menor número passaram a
+  usar verbo de uma leitura só: **venceu**, **levou a melhor**, **botou
+  pra correr**.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -1600,10 +1600,20 @@
     itnContar();
     itnMarcarEfetivo();
     const perdaNos = antesNos - ITN.nos, perdaEles = antesEles - ITN.eles;
+    /* QUEM É "NOSSO" MUDA DE CENA (correção do dono, 24/08/2026): na
+       emboscada de caravana a nossa torcida entra como visitante, e o
+       cartão lia caidosVisitante como "deles". Some-se a isso que
+       res.venceu diz que o MANDANTE ganhou, não que nós ganhamos — daí
+       "Saímos por baixo" logo depois de vencer. Agora o saldo lê o lado
+       que a cena nos deu e usa res.ganhamos. */
+    const caidosNossos = Math.max(0, Math.round(
+      res['caidos' + (nossoLado==='mandante'?'Mandante':'Visitante')] || 0));
+    const caidosDeles = Math.max(0, Math.round(
+      res['caidos' + (outro==='mandante'?'Mandante':'Visitante')] || 0));
     cartao.appendChild(el('div',{class:'saldo',
-      html:`${res.venceu ? '<span class="bom">Saímos por cima.</span>'
-                         : '<span class="ruim">Saímos por baixo.</span>'} `+
-           `<b>${res.caidosVisitante||0} caídos deles, ${res.caidosMandante||0} nossos</b>`+
+      html:`${res.ganhamos ? '<span class="bom">Saímos por cima.</span>'
+                           : '<span class="ruim">Saímos por baixo.</span>'} `+
+           `<b>${caidosDeles} caídos deles, ${caidosNossos} nossos</b>`+
            (res.prestigio ? ` · Prestígio ${res.prestigio>0?'+':''}${res.prestigio}` : '')+
            (perdaNos || perdaEles
              ? `<br>Segue viagem com <b>${ITN.nos}</b>`+
@@ -6190,7 +6200,16 @@
                  : (fecho && fecho.titulo) ||
                    (res.tranquila ? 'NOITE TRANQUILA'
                                   : ganhou ? 'SAÍMOS POR CIMA' : 'SAÍMOS POR BAIXO');
-    const armas = (res.armas && res.armas.mandante) || {pedra:0, bomba:0};
+    /* O LADO É DA CENA, NÃO DO CAMPEONATO (correção do dono,
+       24/08/2026): na emboscada de caravana a nossa torcida entra como
+       visitante, e o cartaz lia "caidosVisitante" como "deles". Todo
+       número daqui pra baixo passa por nossoLado/outro. */
+    const nossoLado = res.nossoLado === 'visitante' ? 'visitante' : 'mandante';
+    const outro = nossoLado === 'mandante' ? 'visitante' : 'mandante';
+    const Cap = l => l === 'mandante' ? 'Mandante' : 'Visitante';
+    const caidosDeles  = res['caidos' + Cap(outro)] || 0;
+    const caidosNossos = res['caidos' + Cap(nossoLado)] || 0;
+    const armas = (res.armas && res.armas[nossoLado]) || {pedra:0, bomba:0};
     const dinheiro = (fecho && fecho.dinheiro) || 0;
     const ef = res.efetivo || {};
     const dado = (rot, val, cor)=>
@@ -6198,15 +6217,15 @@
       `<b${cor?` class="${cor}"`:''}>${val}</b></div>`;
     return el('div', {class:`cartaz-cena ${correu?'neutra':ganhou?'boa':'ruim'}`, html:
       `<h3>${titulo}</h3><div class="dados-cena">`+
-        dado('Feridos deles', res.caidosVisitante, res.caidosVisitante?'positivo':'')+
-        dado('Feridos nossos', res.caidosMandante, res.caidosMandante?'negativo':'')+
+        dado('Feridos deles', caidosDeles, caidosDeles?'positivo':'')+
+        dado('Feridos nossos', caidosNossos, caidosNossos?'negativo':'')+
         /* numa fuga limpa os feridos são zero dos dois lados, e zero ali
            é informação: ninguém encostou em ninguém. O que falta saber é
            de que tamanho eram os dois bondes e quantos escaparam. */
         (correu
-          ? dado('Eram deles', ef.visitante||0)+
-            dado('Éramos nós', ef.mandante||0)+
-            dado('Escaparam', (res.sumiram||{}).visitante||0)
+          ? dado('Eram deles', ef[outro]||0)+
+            dado('Éramos nós', ef[nossoLado]||0)+
+            dado('Escaparam', (res.sumiram||{})[outro]||0)
           : dado('Armas empregadas',
                  `${armas.pedra||0} pedras · ${armas.bomba||0} bombas`)+
             dado('Dinheiro da operação', dinheiro ? U.dinheiro(dinheiro) : '—',
@@ -6215,6 +6234,12 @@
   }
 
   function mostrarRelatorio(res, resumo, fecho){
+    /* mesma régua do cartaz: o lado é o que a cena nos deu */
+    const nossoLado = res.nossoLado === 'visitante' ? 'visitante' : 'mandante';
+    const outro = nossoLado === 'mandante' ? 'visitante' : 'mandante';
+    const Cap = l => l === 'mandante' ? 'Mandante' : 'Visitante';
+    const caidosDeles  = res['caidos' + Cap(outro)] || 0;
+    const caidosNossos = res['caidos' + Cap(nossoLado)] || 0;
     $('subRelatorio').textContent = res.motivo;
     const cx = $('corpoRelatorio');
     cx.innerHTML = '';
@@ -6226,7 +6251,7 @@
              <b class="${res.prestigio>=0?'positivo':'negativo'}">`+
       `${res.prestigio>0?'+':''}${res.prestigio}</b></div>
            <div class="linha-dado"><span>Caídos deles / seus</span>
-             <b>${res.caidosVisitante} / ${res.caidosMandante}</b></div>
+             <b>${caidosDeles} / ${caidosNossos}</b></div>
            <div class="linha-dado">
              <span>${fecho ? 'Chegaram no alvo' : 'Entraram no estádio'}</span>
              <b>${resumo.entraram.length}</b></div>

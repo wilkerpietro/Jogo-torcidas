@@ -1143,29 +1143,35 @@ TO.diaJogo.ponte = (function(){
     const palco=$('djPalco');
     if(!palco) return;
     const velho=$('djFim'); if(velho) velho.remove();
-    const a=(r.armas&&r.armas.mandante)||{pedra:0,bomba:0};
+    /* o lado é o da cena, não o do campeonato: numa emboscada a nossa
+       torcida entra como visitante (correção do dono, 24/08/2026) */
+    const nosso = r.nossoLado === 'visitante' ? 'visitante' : 'mandante';
+    const dele  = nosso === 'mandante' ? 'visitante' : 'mandante';
+    const Cap = l => l === 'mandante' ? 'Mandante' : 'Visitante';
+    const ganhou = r.ganhamos !== undefined ? !!r.ganhamos : !!r.venceu;
+    const a=(r.armas&&r.armas[nosso])||{pedra:0,bomba:0};
     /* mesmas três palavras da tela de relatório do jogo, e nesta ordem:
        ter vencido diz mais que a noite ter sido calma */
     const titulo = r.correram ? 'ELES CORRERAM'
-                 : r.venceu ? 'SAÍMOS POR CIMA'
+                 : ganhou ? 'SAÍMOS POR CIMA'
                  : r.tranquila ? 'NOITE TRANQUILA' : 'SAÍMOS POR BAIXO';
     const dado=(rot,val)=>`<div class="dado-cena"><span>${rot}</span><b>${val}</b></div>`;
     const ef = r.efetivo || {};
     const cx=document.createElement('div');
     cx.id='djFim';
     cx.innerHTML=
-      `<div class="cartaz-cena ${r.correram?'neutra':r.venceu?'boa':'ruim'}">
+      `<div class="cartaz-cena ${r.correram?'neutra':ganhou?'boa':'ruim'}">
          <h3>${titulo}</h3>
          <div class="dados-cena">
-           ${dado('Feridos deles', r.caidosVisitante)}
-           ${dado('Feridos nossos', r.caidosMandante)}
-           ${r.correram ? dado('Eram deles', ef.visitante||0) +
-                          dado('Éramos nós', ef.mandante||0) +
-                          dado('Escaparam', (r.sumiram||{}).visitante||0)
+           ${dado('Feridos deles', r['caidos'+Cap(dele)]||0)}
+           ${dado('Feridos nossos', r['caidos'+Cap(nosso)]||0)}
+           ${r.correram ? dado('Eram deles', ef[dele]||0) +
+                          dado('Éramos nós', ef[nosso]||0) +
+                          dado('Escaparam', (r.sumiram||{})[dele]||0)
                         : dado('Armas empregadas',
                                `${a.pedra||0} pedras · ${a.bomba||0} bombas`) +
                           dado('Presos', r.presosMandante+r.presosVisitante) +
-                          dado('Chegaram no alvo', (r.entraram||{}).mandante||0)}
+                          dado('Chegaram no alvo', (r.entraram||{})[nosso]||0)}
            ${dado('Prestígio', (r.prestigio>0?'+':'')+r.prestigio)}
          </div>
          <small>${r.motivo}</small>

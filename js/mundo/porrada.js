@@ -65,11 +65,19 @@ TO.porrada = (function(){
         '{A} segurou o rojão e virou o jogo',
         '{A} saiu por cima por pouco'
       ],
-      /* venceu em menor número */
+      /* venceu em menor número
+         "CORREU COM A" NÃO DIZ QUEM GANHOU (correção do dono,
+         24/08/2026): "LEÕES DA TUF ERA MENOS E AINDA CORREU COM A
+         CEARAMOR" lia-se tanto como "a TUF botou a Cearamor pra
+         correr" quanto como "a TUF correu junto com a Cearamor" — e
+         em caixa alta, sem o artigo pra separar, ficava pior. O mesmo
+         vale pro "mandou" solto. Agora todo molde daqui traz um verbo
+         que só tem uma leitura: venceu, levou a melhor, botou pra
+         correr. */
       vitoriaMenos:[
-        '{A} era menos e ainda correu com a {B}',
+        '{A} era {nA} contra {nB} e venceu a {B} do mesmo jeito',
         'Em menor número, {A} não correu e ainda botou a {B} pra correr',
-        '{A} tinha {nA} contra {nB} e mesmo assim mandou'
+        '{A} tinha gente a menos e ainda levou a melhor sobre a {B}'
       ],
       /* perdeu no detalhe */
       derrota:[
@@ -131,7 +139,7 @@ TO.porrada = (function(){
        Gazeta — nenhuma condição entra mais vezes do que tem frase —,
        e com um molde só o dia de seis brigas saía com uma nota. */
     nota:{
-      atropelo:['{A} correu com a {B} e não deu trabalho.',
+      atropelo:['{A} botou a {B} pra correr e não deu trabalho.',
                 'A {B} nem esquentou: {A} resolveu rápido.',
                 '{A} passou por cima da {B} sem sustos.'],
       vitoria: ['{A} levou a melhor contra a {B} no aperto.',
