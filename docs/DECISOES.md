@@ -2245,6 +2245,27 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   quebra, guarda que debandou deixou de ficar plantado no posto (o
   ramo de guarda rodava antes do ramo de correr).
 
+- **AS VAGAS DA CONMEBOL SAEM DA FOTO DA VIRADA** (correção do dono,
+  24/08/2026 — "por que o Ceará tá na Libertadores?"): a edição nova
+  monta na primeira rodada do ano, e a essa altura a virada JÁ TINHA
+  trocado a temporada pela nova, zerada — `ordemDoBrasil` lia a Série A
+  de 2027 com todo mundo em zero ponto, a "ordem" era a ordem de
+  inserção da tabela, e o campeão da SÉRIE B (recém-promovido) abria o
+  ano na Libertadores. Agora a virada tira uma FOTO da ordem de mérito
+  dos 10 países ANTES de zerar qualquer coisa (`E.vagasConmebol`), e a
+  montagem lê a foto. O painel de vagas continua na ordem viva: no meio
+  do ano ele projeta a edição seguinte.
+  · **Revisão completa das réguas**, medida num ano simulado inteiro:
+    Brasil-Libertadores = campeão da Copa do Brasil + 6 primeiros da
+    Série A (vaga sobrando desce a tabela — campeão duplo puxa o 7º);
+    Brasil-Sul-Americana = os 6 seguintes (7º ao 12º); campeão da
+    Série B fora das copas; os dois campeões continentais entram por
+    vaga própria, sem roubar as do país.
+  · **O campeão da copa nacional dos 9 países agora tem vaga** (regra
+    real que faltava): entra logo atrás do campeão da liga na fila do
+    país. Medido: Vélez campeão da Copa Argentina abriu a fila e foi
+    pra Libertadores.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

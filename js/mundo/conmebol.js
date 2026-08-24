@@ -97,6 +97,52 @@ TO.conmebol = (function(){
       .sort((a,b)=>(b.qualidade||0)-(a.qualidade||0)).map(t=>t.id);
   }
 
+  /* =======================================================
+     A FOTO DA VIRADA (correção do dono, 24/08/2026)
+
+     A edição nova monta na primeira rodada do ano — e a essa
+     altura a virada JÁ TROCOU a temporada pela nova, zerada.
+     `ordemDoBrasil` lia a Série A de 2027 com todo mundo em
+     zero ponto, a "ordem" era a ordem de inserção da tabela, e
+     o Ceará — campeão da SÉRIE B — abria o ano na Libertadores.
+
+     Agora a virada tira uma FOTO da ordem de mérito de cada
+     país ANTES de zerar qualquer coisa (estado.js chama
+     `fotoDasVagas` com a temporada fechada ainda de pé), e a
+     montagem da edição lê a foto. Painel de vagas continua
+     lendo a ordem viva: no meio do ano ele projeta a edição
+     seguinte, e projeção é do ano corrente mesmo.
+     ======================================================= */
+  function fotoDasVagas(E, anoQueFecha){
+    const paises = {};
+    const copas = (E.conmebol && E.conmebol.copas) || {};
+    for(const pais of Object.keys(VAGAS_LIB)){
+      const ordem = ordemDoPais(E, pais).slice();
+      /* O CAMPEÃO DA COPA NACIONAL TEM VAGA (revisão do dono,
+         24/08/2026): é a regra real em todo país — liga E copa
+         classificam. Ele entra logo atrás do campeão da liga; no
+         Brasil com jogador brasileiro o campeão da Copa do Brasil já
+         abre a fila pela própria ordemDoBrasil, e aí nada se mexe. */
+      const copa = copas[pais];
+      const dono = copa && copa.campeao;
+      if(dono){
+        const i = ordem.indexOf(dono);
+        if(i > 1){ ordem.splice(i, 1); ordem.splice(1, 0, dono); }
+        else if(i < 0) ordem.splice(1, 0, dono);
+      }
+      paises[pais] = ordem;
+    }
+    E.vagasConmebol = {ano: anoQueFecha, paises};
+    return E.vagasConmebol;
+  }
+  function ordemFechada(E, pais){
+    const f = E.vagasConmebol;
+    if(f && f.ano === E.data.ano - 1 && (f.paises[pais]||[]).length)
+      return f.paises[pais];
+    /* save de antes da foto: a régua viva, como era */
+    return ordemDoPais(E, pais);
+  }
+
   /* AS VAGAS DE UM PAÍS, PRA TELA (pedido do dono, 23/08/2026).
      Mesma regra que `vagas` usa na montagem — a ordem do país menos os
      dois campeões continentais, os primeiros pra Libertadores e os
@@ -122,7 +168,7 @@ TO.conmebol = (function(){
   function vagas(E, tabela, jaPegos){
     const fora = [];
     for(const pais of Object.keys(tabela)){
-      const ordem = ordemDoPais(E, pais).filter(id=>!jaPegos.has(id));
+      const ordem = ordemFechada(E, pais).filter(id=>!jaPegos.has(id));
       for(const id of ordem.slice(0, tabela[pais])){
         fora.push({id, pais});
         jaPegos.add(id);
@@ -698,5 +744,6 @@ TO.conmebol = (function(){
   }
 
   return {VAGAS_LIB, VAGAS_SUL, CAL_LIB, CAL_SUL, DIA, vagasDoPais,
-          montar, rodar, arquivar, ordemDoPais, ordemDoBrasil, nome};
+          montar, rodar, arquivar, ordemDoPais, ordemDoBrasil, nome,
+          fotoDasVagas, ordemFechada};
 })();

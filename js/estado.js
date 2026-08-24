@@ -362,6 +362,13 @@ TO.estado = (function(){
            `ranking` mede o saldo do ano de cada torcida, e medir o
            saldo ZERA o placar quando o ano virou. Lendo o ranking
            antes, o Rei da Pista saía sempre vazio. */
+        /* A FOTO DAS VAGAS DA CONMEBOL sai AQUI, com a temporada
+           fechada ainda de pé: a edição nova monta na primeira rodada
+           do ano, quando a Série A já virou tabela zerada (correção do
+           dono, 24/08/2026 — o campeão da Série B abria o ano na
+           Libertadores). */
+        if(TO.conmebol && TO.conmebol.fotoDasVagas)
+          TO.conmebol.fotoDasVagas(E, anoQueFecha);
         const placarDoAno = TO.almanaque
           ? TO.almanaque.placarDoAnoTodo(E, anoQueFecha) : null;
         const colheita = TO.almanaque ? {
