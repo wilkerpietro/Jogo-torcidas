@@ -2122,6 +2122,25 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
     escolhiam a boca tampada e 13 morriam empurrando o cordão; agora,
     zero e zero — todo mundo sai pela outra boca.
 
+- **O FUTEBOL E PORRADA PERDEU O PLACAR** (decisão do dono,
+  24/08/2026): mesmo mostrando derrubados, o par de números grandes lia
+  como jogo — e briga não tem placar. A página agora é chapéu, manchete
+  e olho de um lado e o QUADRO DA NOITE do outro, protagonista:
+  envolvidos, feridos e presos de cada torcida (número maior, pior
+  número em vermelho) e a faixa "levou a melhor" embaixo.
+
+- **FERIDO É FERIDO, PRESO É PRESO** (correção do dono, 24/08/2026): o
+  bonde de 20 saía da cena com "20 feridos e 5 presos" — 25 baixas em
+  20 homens. Dentro do combate `prender()` soma o preso também em
+  `J.caidos` (lá "caído" é baixa total, e as réguas de debandada
+  precisam disso), mas a ponte exportava o número cru e todo relatório
+  somava presos por cima de novo. A fronteira da cena passou a entregar
+  `caidos = J.caidos − presos`, que é a conta que o simulado sempre
+  fez — relatório, cartaz, notícia, itinerário e LNT recebem a mesma
+  régua. A fórmula do prestígio da noite foi junto: com o número cru, o
+  preso pesava 1,5 de caído MAIS 2 de preso — 3,5 por cabeça, e só na
+  cena jogada.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

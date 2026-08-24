@@ -1094,7 +1094,16 @@ TO.diaJogo.ponte = (function(){
 
     const r={
       motivo,
-      caidosMandante:J.caidos.mandante, caidosVisitante:J.caidos.visitante,
+      /* FERIDO É FERIDO, PRESO É PRESO (correção do dono, 24/08/2026):
+         `prender()` soma o preso também em J.caidos — dentro do
+         combate "caído" é baixa total, e as réguas de debandada
+         precisam disso. Mas AQUI é a fronteira do relatório, e todo
+         mundo lá fora soma caídos + presos de novo: um bonde de 20
+         com 15 no chão e 5 no camburão saía como "20 feridos e 5
+         presos" — 25 baixas em 20 homens. O simulado sempre separou;
+         a cena passa a entregar a mesma conta. */
+      caidosMandante:  Math.max(0, J.caidos.mandante  - J.presosPor.mandante),
+      caidosVisitante: Math.max(0, J.caidos.visitante - J.presosPor.visitante),
       presosMandante:J.presosPor.mandante, presosVisitante:J.presosPor.visitante,
       rompido:J.rompido,
       entraram:J.entraram,
@@ -1120,9 +1129,12 @@ TO.diaJogo.ponte = (function(){
          máximo −10 — e o −10 é só quando o prejuízo de feridos e
          presos é grande. A conta de caídos continua dando o degrau;
          o ÷3 e o teto seguram a banalização (um 51×0 dava +102). */
+      /* e a conta usa ferido SEM o preso, como o simulado: com
+         J.caidos cru o preso pesava 1,5 de caído MAIS 2 de preso —
+         3,5 por cabeça, e só na cena jogada (24/08/2026) */
       prestigio: correram ? prestigioDaFuga(J)
-        : (U.limitar(Math.round((J.caidos[outroLado]*2
-                      - J.caidos[nossoLado]*1.5
+        : (U.limitar(Math.round(((J.caidos[outroLado]-J.presosPor[outroLado])*2
+                      - (J.caidos[nossoLado]-J.presosPor[nossoLado])*1.5
                       - J.presosPor[nossoLado]*2 + (J.rompido?6:0)) / 3),
                      -10, 10) || 0),
       membros

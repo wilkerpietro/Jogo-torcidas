@@ -1855,17 +1855,15 @@
 
     const topo = el('div',{class:'gz-topo'});
     const man = el('div',{class:'gz-manchete'});
+    /* SEM PLACAR (decisão do dono, 24/08/2026): mesmo mostrando
+       derrubados, o par de números grandes lia como jogo — e briga
+       não tem placar. Quem conta a noite é o quadro do lado:
+       envolvidos, feridos e presos de cada torcida, com o "levou a
+       melhor" embaixo. */
     man.innerHTML =
       `<div class="chapeu">${p.chapeu}</div>
        <h2>${p.manchete}</h2>
-       <p class="olho">${p.olho}</p>
-       <div class="placar-grande">
-         <span class="time nossa${p.placar.venceuA?' venceu':''}">${p.placar.a}</span>
-         <span class="n${p.placar.venceuA?' venceu':''}">${p.placar.ga}</span>
-         <span class="n${p.placar.venceuB?' venceu':''}">${p.placar.gb}</span>
-         <span class="time${p.placar.venceuB?' venceu':''}">${p.placar.b}</span>
-         <span class="rot-placar">${p.placar.rot || 'feridos'}</span>
-       </div>`;
+       <p class="olho">${p.olho}</p>`;
     topo.appendChild(man);
     topo.appendChild(quadroDaNoite(p.quadro));
     rec.appendChild(topo);

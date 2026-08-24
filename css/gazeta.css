@@ -322,15 +322,9 @@
   /* manchete de briga é mais gritada: um pouco maior e mais fechada */
   font-size:clamp(26px,4.8vw,42px); letter-spacing:-.018em;
 }
-.gz.pp .placar-grande{gap:9px}
-.gz.pp .placar-grande .rot-placar{
-  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
-  font-size:8.5px; letter-spacing:.16em; text-transform:uppercase;
-  color:var(--tinta-2); align-self:center; margin-left:4px;
-}
-.gz.pp .placar-grande .time.nossa{color:var(--rubro-jornal)}
-
-/* ---------- o quadro da noite ---------- */
+/* ---------- o quadro da noite ----------
+   Sem o placar grande (dono, 24/08/2026), o quadro é o protagonista
+   da página: número maior e o vencedor em faixa. */
 .pp-quadro{padding:13px 0 11px; align-self:start}
 .pp-quadro .col-tit{border-bottom-width:1px; margin-bottom:8px}
 .pp-quadro .grade{font-variant-numeric:tabular-nums}
@@ -360,6 +354,8 @@
   font-family:Ultra,Georgia,serif; font-size:17px; line-height:1;
   color:var(--tinta); text-align:center;
 }
+.gz.pp .pp-quadro .l .v{font-size:20px}
+.gz.pp .pp-quadro .cab .lado{font-size:10px}
 /* quem levou mais ferido e mais cadeia aparece na tinta vermelha:
    é o número que conta a história da noite */
 .pp-quadro .l.forte .v.pior{color:var(--rubro-jornal)}
