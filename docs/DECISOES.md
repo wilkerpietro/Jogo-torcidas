@@ -2413,6 +2413,15 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   expediente (a fiança individual continua no perfil do membro; a
   dica e a pendência que citavam a delegacia foram ajustadas).
 
+## Classificações na mesma régua (pedido do dono, 24/08/2026)
+
+- As tabelas de classificação empilhadas (grupos da Série D, Copa do
+  Nordeste etc.) desalinhavam entre si: o layout automático media as
+  colunas pelo maior nome de time de cada grupo. Agora a tabela usa
+  `table-layout:fixed` com largura cravada nas colunas de número (34px,
+  29px no celular) — toda classificação tem o MESMO espaçamento — e o
+  nome fica com a sobra, cortando com reticências quando não cabe.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
