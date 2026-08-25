@@ -2441,6 +2441,34 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   dobrava o resto. O meio agora estica pro placar e os nomes cortam
   com reticências (na lista de jogos e na chave).
 
+## Média de público e Histórico por competição (pedido do dono, 25/08/2026)
+
+- **Dois botões em toda competição** (Brasileirão e copas, estaduais,
+  Libertadores/Sul-Americana, ligas e copas de fora):
+  · **Média de público** — quanto cada organizada põe no estádio em
+    casa (60% do efetivo vivo; a nossa leva os aptos) e, no quadro ao
+    lado, a média como visitante (a caravana típica: 18% do efetivo,
+    +30% com ônibus). É a mesma régua que o dia de jogo já usa.
+  · **Histórico** — os maiores campeões e a lista de campeões e vices
+    por ano, real. Os anos jogados (2026+) emendam por cima da base,
+    marcados "no jogo", e contam nos maiores.
+- **Base real em `dados/historia.js`** (~370 edições), verificada:
+  Série A 1959–2025 completa com vices (Taça Brasil e RGP contam, como
+  a CBF conta); Série B 1971–2025; Série C 1981–2025; Série D
+  2009–2025; Copa do Brasil 1989–2025 completa; Copa do Nordeste;
+  Libertadores 1960–2025 completa com vices; Sul-Americana 2002–2025;
+  Paulistão e Cariocão ano a ano de 1971 pra cá com a contagem de
+  títulos da história inteira; Mineiro de 2016 e Gauchão de 2011 pra
+  cá (contagens completas); ligas estrangeiras na era recente com as
+  contagens históricas; Copa Argentina desde 2011-12. Onde a
+  documentação confiável acaba, a lista declara a nota em vez de
+  inventar dado — Catarinense/Paranaense ano a ano, Venezuela e as
+  demais copas nacionais entram por partes.
+- O repositório BrasileiraoManager citado pelo dono não está acessível
+  a esta sessão (só Jogo-torcidas e sistema-esporte-paraipaba); a base
+  foi levantada por pesquisa, com os campeões de 2025 confirmados um a
+  um.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

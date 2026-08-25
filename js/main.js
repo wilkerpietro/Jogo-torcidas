@@ -4248,6 +4248,9 @@
      à esquerda e a rodada navegável à direita.
      ======================================================= */
   let compSel = null, rodadaSel = null, faseSel = null, divLNT = null;
+  /* a vista extra da competição: null (a tela normal), 'publico' ou
+     'historico' (pedido do dono, 25/08/2026) */
+  let vistaComp = null;
 
   const nomeClube = id => (TO.mundo.time(id)||{}).nome || '—';
   const corClube  = id => ((TO.mundo.time(id)||{}).cores || ['#666'])[0];
@@ -4462,11 +4465,13 @@
   /* o cardápio de cada nível: [{id, rot, conta}] */
   function menuDoNivel(e){
     if(nivelComp === 'internacional'){
-      if(!e.conmebol) return [];
+      /* mesmo antes de a edição montar as duas abas existem: o
+         Histórico e a Média de público não dependem do calendário */
+      const cm = e.conmebol || {};
       return [{id:'libertadores', rot:'Libertadores',
-               conta:(e.conmebol.libertadores.clubes||[]).length},
+               conta:((cm.libertadores||{}).clubes||[]).length || null},
               {id:'sulamericana', rot:'Sul-Americana',
-               conta:(e.conmebol.sulamericana.clubes||[]).length}];
+               conta:((cm.sulamericana||{}).clubes||[]).length || null}];
     }
     if(nivelComp === 'regional'){
       const S = e.temporada;
@@ -4530,7 +4535,8 @@
 
     /* ---- os três botões ---- */
     pg.appendChild(abasGrandes(NIVEIS, nivelComp, id=>{
-      nivelComp = id; compSel = null; rodadaSel = null; faseSel = null; redesenhar();
+      nivelComp = id; compSel = null; rodadaSel = null; faseSel = null;
+      vistaComp = null; redesenhar();
     }));
 
     /* ---- o filtro do país, só no nacional ---- */
@@ -4571,7 +4577,8 @@
     for(const m of menu){
       const b = el('button',{class:(m.id===compSel?'on':''), html:
         `${m.rot}${m.conta?`<span class="conta">${m.conta}</span>`:''}`});
-      b.onclick = ()=>{ compSel = m.id; rodadaSel = null; faseSel = null; redesenhar(); };
+      b.onclick = ()=>{ compSel = m.id; rodadaSel = null; faseSel = null;
+                        vistaComp = null; redesenhar(); };
       f2.appendChild(b);
     }
     pg.appendChild(f2);
@@ -4609,6 +4616,12 @@
 
   /* ---------- o corpo de uma competição brasileira ---------- */
   function pintarCompeticaoBR(e, pg, comp){
+    const vista = botoesDaCompeticao(pg);
+    if(vista === 'publico'){
+      pg.appendChild(painelPublico(e, clubesDaComp(comp), comp.nome)); return; }
+    if(vista === 'historico'){
+      pg.appendChild(painelHistoricoComp(e, comp.id, comp.nome,
+        titulosDoJogo(e, comp.nome))); return; }
     const es = TO.competicoes.etapas(comp);
     const atual = TO.competicoes.etapaAtual(comp);
     const duas = el('div',{class:'comp-duas'});
@@ -4658,6 +4671,142 @@
     duas.appendChild(painelRodada(e, comp));
     pg.appendChild(duas);
   }
+
+  /* =======================================================
+     OS DOIS BOTÕES DA COMPETIÇÃO (pedido do dono, 25/08/2026)
+     Média de público — quanto cada organizada põe no estádio
+     em casa e como visitante — e Histórico, com os maiores
+     campeões e a lista real de campeões e vices por ano.
+     ======================================================= */
+  function botoesDaCompeticao(pg){
+    const f = el('div',{class:'filtros-linha vista-comp'});
+    for(const [id, rot] of [['publico','Média de público'],
+                            ['historico','Histórico']]){
+      const b = el('button',{class:vistaComp===id?'on':'', texto:rot});
+      b.onclick = ()=>{ vistaComp = vistaComp===id ? null : id; redesenhar(); };
+      f.appendChild(b);
+    }
+    pg.appendChild(f);
+    return vistaComp;
+  }
+
+  /* A MÉDIA DE PÚBLICO sai da régua que o jogo já usa no dia de jogo:
+     em casa a organizada põe 60% do efetivo vivo na rua (a nossa leva
+     os aptos); como visitante vai a caravana típica — 18% do efetivo,
+     30% a mais pra quem tem ônibus. */
+  function painelPublico(e, clubes, rotulo){
+    const set = new Set(clubes||[]);
+    const linhas = [];
+    for(const o of TO.mundo.todasTorcidas){
+      if(o.incompleta || !set.has(o.clubeId)) continue;
+      const nossa = o.id === e.torcida.id;
+      const viva = !nossa && (TO.relacoes.mundo(e)||{})[o.id];
+      const membros = nossa ? e.membros.length
+                            : ((viva && viva.membros) || o.membros || 0);
+      const casa = nossa ? TO.membros.aptosParaOEstadio(e).length
+                         : Math.round(membros * 0.6);
+      const bus = nossa ? TO.financeiro.onibusDe(e) > 0
+                        : !!(viva && viva.onibus);
+      const fora = Math.max(4, Math.round(membros * 0.18 * (bus ? 1.3 : 1)));
+      linhas.push({nome:o.nome, nossa, casa, fora,
+        clube:(TO.mundo.time(o.clubeId)||{}).nome || ''});
+    }
+    const quadroDe = (titulo, chave, nota)=>{
+      const q = quadro(titulo, el('span',{class:'conta',
+        texto:`${linhas.length} organizadas`}));
+      q.corpo.appendChild(el('div',{class:'recado', html:nota}));
+      const rolo = el('div',{class:'rolo'});
+      linhas.sort((a,b)=>b[chave]-a[chave]).forEach((l,i)=>{
+        rolo.appendChild(el('div',{class:'transacao',
+          estilo: l.nossa ? {background:'var(--rubro-fundo)'} : null, html:
+          `<span class="dia">${i+1}º</span>
+           <span class="desc">${l.nome} <small class="fraco">· ${l.clube}</small></span>
+           <span class="val">${U.numero(l[chave])}</span>`}));
+      });
+      if(!linhas.length) q.corpo.appendChild(el('div',
+        {class:'em-construcao', texto:'Nenhuma organizada mapeada aqui.'}));
+      q.corpo.appendChild(rolo);
+      return q;
+    };
+    const cx = el('div',{class:'comp-duas'});
+    const esq = el('div'), dir = el('div');
+    esq.appendChild(quadroDe(`Média de público — em casa`, 'casa',
+      `${rotulo||'A competição'}: quanto cada organizada põe no estádio `+
+      `jogando em casa — 60% do efetivo vivo (a nossa leva os aptos).`));
+    dir.appendChild(quadroDe('Média como visitante', 'fora',
+      'A caravana típica na estrada: 18% do efetivo — 30% a mais pra '+
+      'quem tem ônibus.'));
+    cx.appendChild(esq); cx.appendChild(dir);
+    return cx;
+  }
+
+  /* O HISTÓRICO: a base real (dados/historia.js) com os anos do JOGO
+     emendados por cima — o que a temporada guardou de 2026 em diante. */
+  function painelHistoricoComp(e, chave, nomeComp, jogoAnos){
+    const hist = (TO.dados.historia||{})[chave] || null;
+    const anosJogo = (jogoAnos||[]).map(t=>({ano:t.ano,
+      campeao:nomeClube(t.campeao), vice:t.vice?nomeClube(t.vice):null, jogo:true}));
+    const anosReais = ((hist&&hist.anos)||[]).map(([a,c,v])=>
+      ({ano:a, campeao:c, vice:v, jogo:false}));
+    const todos = anosJogo.concat(anosReais);
+    const cx = el('div',{class:'comp-duas'});
+
+    /* maiores: a contagem real da história inteira (quando a base a
+       traz) mais os títulos conquistados dentro do jogo */
+    const conta = new Map();
+    if(hist && hist.maiores)
+      for(const [n,t] of hist.maiores) conta.set(n, t);
+    else
+      for(const l of anosReais)
+        if(l.campeao) conta.set(l.campeao, (conta.get(l.campeao)||0)+1);
+    for(const l of anosJogo)
+      if(l.campeao) conta.set(l.campeao, (conta.get(l.campeao)||0)+1);
+    const maiores = [...conta.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
+
+    const esq = el('div');
+    const q1 = quadro('Maiores campeões', el('span',{class:'conta',
+      texto:nomeComp||''}));
+    if(hist && hist.nota)
+      q1.corpo.appendChild(el('div',{class:'recado', html:hist.nota}));
+    if(!maiores.length)
+      q1.corpo.appendChild(el('div',{class:'em-construcao',
+        texto:'Sem campeão registrado ainda — a história começa agora.'}));
+    maiores.forEach(([n,t],i)=>{
+      q1.corpo.appendChild(el('div',{class:'transacao', html:
+        `<span class="dia">${i+1}º</span>
+         <span class="desc">${n}</span>
+         <span class="val">${t} ${t===1?'título':'títulos'}</span>`}));
+    });
+    esq.appendChild(q1);
+    cx.appendChild(esq);
+
+    const dir = el('div');
+    const q2 = quadro('Campeões e vices por ano', el('span',{class:'conta',
+      texto:`${todos.length} edições`}));
+    const rolo = el('div',{class:'rolo'});
+    for(const l of todos)
+      rolo.appendChild(el('div',{class:'transacao',
+        estilo: l.jogo ? {background:'var(--rubro-fundo)'} : null, html:
+        `<span class="dia">${l.ano}</span>
+         <span class="desc"><b>${l.campeao}</b>`+
+        `${l.vice?` <small class="fraco">· vice: ${l.vice}</small>`:''}</span>`+
+        `${l.jogo?'<span class="val fraco">no jogo</span>':''}`}));
+    if(!todos.length)
+      q2.corpo.appendChild(el('div',{class:'em-construcao',
+        texto:'Nenhuma edição registrada.'}));
+    q2.corpo.appendChild(rolo);
+    dir.appendChild(q2);
+    cx.appendChild(dir);
+    return cx;
+  }
+
+  /* os títulos que o JOGO guardou pra esta competição */
+  const titulosDoJogo = (e, nomeComp) =>
+    (((e.temporada||{}).titulos)||[]).filter(t=>t.comp === nomeComp);
+
+  const clubesDaComp = comp =>
+    (comp.clubes && comp.clubes.length) ? comp.clubes
+      : [...new Set((comp.grupos||[]).flat())];
 
   /* =======================================================
      UMA PÁGINA POR FASE (pedido do dono, 24/08/2026)
@@ -4838,6 +4987,15 @@
     const nomes = D.torneios.map(t=>t.nome);
     if(!nomes.includes(torneioSel)) torneioSel = nomes[0];
 
+    const vista = botoesDaCompeticao(pg);
+    if(vista === 'publico'){
+      pg.appendChild(painelPublico(e, D.clubes, div)); return; }
+    if(vista === 'historico'){
+      /* a base real vale pra PRIMEIRA divisão do país */
+      const primeira = Object.keys(P.divisoes)[0] === div;
+      pg.appendChild(painelHistoricoComp(e, primeira ? 'liga:'+pais : div,
+        div, [])); return; }
+
     const duas = el('div',{class:'comp-duas'});
     const esq = el('div');
 
@@ -5012,6 +5170,17 @@
 
   function pintarConmebolUm(e, pg, qual){
     const c = (e.conmebol||{})[qual];
+    /* o histórico e o público existem mesmo antes de a edição montar */
+    const nomeCM = c ? c.nome
+      : (qual==='libertadores' ? 'Copa Libertadores' : 'Copa Sul-Americana');
+    const vista = botoesDaCompeticao(pg);
+    if(vista === 'publico'){
+      pg.appendChild(painelPublico(e, (c&&c.clubes)||[], nomeCM)); return; }
+    if(vista === 'historico'){
+      const anosJogo = (e.conmebolHistorico||[])
+        .filter(h=>h[qual] && h[qual].campeao)
+        .map(h=>({ano:h.ano, campeao:h[qual].campeao, vice:h[qual].vice}));
+      pg.appendChild(painelHistoricoComp(e, qual, nomeCM, anosJogo)); return; }
     if(!c){ pg.appendChild(emConstrucao('Ainda não',
       'As copas da Conmebol montam na virada do ano.')); return; }
     const duas = el('div',{class:'comp-duas'});
@@ -5069,9 +5238,9 @@
     /* a direita é a rodada, como na Série A: fechas e mata-mata
        navegáveis, com placar no que já rolou */
     const dir = el('div');
-    const vista = compDaConmebol(c);
-    if(vista.rodadas.length || vista.mata.length)
-      dir.appendChild(painelRodada(e, vista));
+    const vistaCM = compDaConmebol(c);
+    if(vistaCM.rodadas.length || vistaCM.mata.length)
+      dir.appendChild(painelRodada(e, vistaCM));
     const vagas = quadro('Vagas por país');
     const rolo = el('div',{class:'rolo', estilo:{padding:'8px 14px 12px'}});
     for(const [pais, n] of Object.entries(
@@ -5085,6 +5254,12 @@
 
   /* a copa nacional de um país de fora */
   function pintarCopaNacional(e, pg, copa){
+    const vista = botoesDaCompeticao(pg);
+    if(vista === 'publico'){
+      pg.appendChild(painelPublico(e, copa.clubes, copa.nome)); return; }
+    if(vista === 'historico'){
+      pg.appendChild(painelHistoricoComp(e, 'copa:'+copa.nome, copa.nome,
+        [])); return; }
     const duas = el('div',{class:'comp-duas'});
     const esq = el('div');
     /* a copa do país do jogador é jogada de verdade, então ela mostra
