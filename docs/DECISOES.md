@@ -2469,6 +2469,14 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   foi levantada por pesquisa, com os campeões de 2025 confirmados um a
   um.
 
+## Sede e ônibus no ranking (pedido do dono, 25/08/2026)
+
+- O ranking ganhou duas colunas só de informação, entre Prédios e
+  Saldo: o nível da sede (n1–n5) e a quantidade de ônibus. Não entram
+  no cálculo dos pontos — o tooltip do cabeçalho avisa. A nossa linha
+  lê o estado do jogador; as IAs leem o mundo vivo (a frota delas já
+  respeita o teto da sede, como sempre).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

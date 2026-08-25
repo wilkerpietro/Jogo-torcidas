@@ -2400,6 +2400,8 @@
       <th class="nu">Membros</th><th class="nu">Prestígio</th>
       <th class="nu">Força média</th>
       <th class="nu" title="sede, bares, lojas e subsedes somados">Prédios</th>
+      <th class="nu" title="nível da sede — só informação, não entra nos pontos">Sede</th>
+      <th class="nu" title="ônibus na garagem — só informação, não entra nos pontos">Ônibus</th>
       <th class="nu" title="vitórias menos derrotas em brigas no ano">Saldo</th>
       <th>Situação</th>
       <th class="nu">Pontos</th></tr></thead>`;
@@ -2409,6 +2411,12 @@
       const cor = (TO.mundo.coresDaTorcida(o) || {}).cor || '#888';
       const tr = el('tr',{class: r.nossa ? 'nossa' : ''});
       const sit = r.situacao || {rot:'—', slug:'pobre', mult:1};
+      /* sede e ônibus são só INFORMAÇÃO (ordem do dono, 25/08/2026):
+         não entram no cálculo dos pontos */
+      const viva = (e.mundoTorcidas || {})[r.id];
+      const sede = r.nossa ? e.torcida.sedeNivel : (viva ? viva.sede : null);
+      const onibus = r.nossa ? TO.financeiro.onibusDe(e)
+                   : (viva ? TO.relacoes.frotaIA(viva) : null);
       /* no mundo o país fica ao lado do nome; no país seria repetição */
       const bandeirinha = mundial
         ? `<em class="rk-pais">${TO.relacoes.paisDaTorcida(r.id)}</em>` : '';
@@ -2421,6 +2429,8 @@
          <td class="nu">${(Math.round(r.forca*10)/10).toFixed(1)}`+
         `${vario(r.varForca, 1)}</td>
          <td class="nu">${r.predios || 0}</td>
+         <td class="nu">${sede != null ? 'n'+sede : '—'}</td>
+         <td class="nu">${onibus != null ? onibus : '—'}</td>
          <td class="nu saldo-briga ${(r.saldo||0) > 0 ? 'bom'
              : (r.saldo||0) < 0 ? 'ruim' : ''}">`+
         `${(r.saldo||0) > 0 ? '+' : ''}${r.saldo || 0}</td>
