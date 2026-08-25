@@ -2422,6 +2422,25 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   29px no celular) — toda classificação tem o MESMO espaçamento — e o
   nome fica com a sobra, cortando com reticências quando não cabe.
 
+## Uma página por fase (pedido do dono, 24/08/2026)
+
+- Competição com mais de uma fase ganhou um navegador de fases na
+  coluna da esquerda — as mesmas setas ‹ › da rodada, na ordem das
+  fases. A Libertadores anda Fase 1 → Fase 2 → Fase 3 → classificação
+  da fase de grupos (os oito grupos numa página) → Oitavas → Quartas →
+  Semi → Final; a Copa do Brasil, da Primeira Fase à Final; Nordestão
+  e afins abrem na Classificação e seguem pro mata. A tela abre na
+  fase corrente. Competição de fase única (Série A) segue sem setas.
+  A coluna dos jogos (rodadas) ficou como era.
+- **Fase 1 e 2 da prévia da Libertadores agora ficam guardadas**: os
+  duelos eram resolvidos e jogados fora — só a Fase 3 ia pra chave, e
+  as duas primeiras páginas nasceriam vazias. De quebra, elas passam
+  a aparecer também na linha do tempo das rodadas.
+- **Placar numa linha só**: a coluna do meio do duelo tinha 26px
+  fixos — "2 × 1" não cabia e descia de linha — e nome comprido
+  dobrava o resto. O meio agora estica pro placar e os nomes cortam
+  com reticências (na lista de jogos e na chave).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

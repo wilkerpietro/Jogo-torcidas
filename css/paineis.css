@@ -144,9 +144,17 @@ header.nav-rodada h2 .conta{
   font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
   color:var(--ouro);margin-bottom:5px;
 }
+/* O PLACAR NUMA LINHA SÓ (pedido do dono, 24/08/2026): a coluna do
+   meio tinha 26px fixos — "2 × 1" não cabia e descia de linha — e o
+   nome comprido quebrava o resto. O meio agora estica pro placar e o
+   nome corta com reticências em vez de dobrar. */
 .jogo .duelo{
-  display:grid;grid-template-columns:1fr 26px 1fr;align-items:center;gap:8px;
+  display:grid;grid-template-columns:1fr minmax(30px,auto) 1fr;
+  align-items:center;gap:8px;
   font-size:12.5px;font-weight:600;
+}
+.jogo .duelo .casa,.jogo .duelo .fora{
+  min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .jogo .duelo .casa{text-align:right}
 .jogo .duelo .x{text-align:center;color:var(--apagado);font-family:var(--mono);font-size:11px}
@@ -158,6 +166,7 @@ header.nav-rodada h2 .conta{
 .jogo .duelo .fora i{margin-right:7px}
 .jogo .placar{
   font-family:var(--mono);font-size:13px;color:#fff;text-align:center;
+  white-space:nowrap;
 }
 .jogo.meu{background:#2b1414;box-shadow:inset 3px 0 0 var(--rubro-vivo)}
 .jogo.feito .duelo{color:#cdcdcd}
@@ -198,7 +207,10 @@ table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
   display:grid;grid-template-columns:1fr 62px 1fr auto;align-items:center;gap:8px;
   padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12px;
 }
-.jogo-chave b{font-family:var(--mono);text-align:center}
+.jogo-chave .a,.jogo-chave .b{
+  min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.jogo-chave b{font-family:var(--mono);text-align:center;white-space:nowrap}
 .jogo-chave .b{text-align:right}
 .jogo-chave .venceu{color:#fff;font-weight:600}
 .jogo-chave em{font-family:var(--mono);font-size:9px;color:var(--fraco);font-style:normal}

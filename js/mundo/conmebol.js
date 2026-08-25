@@ -588,8 +588,17 @@ TO.conmebol = (function(){
       }
       const pares = emPares(vivos);
       const rotAtual = `Fase ${c.previaFase + 1}`;
-      c.vivosPrevia = pares.map(([a,b])=>
-        resolver(E, c.nome, rotAtual, sem, a, b).venceu);
+      /* FASE 1 E 2 TAMBÉM FICAM NA CHAVE (pedido do dono, 24/08/2026):
+         os duelos eram resolvidos e jogados fora — só a Fase 3 ficava
+         em c.mata, e a tela de páginas por fase abria sem as duas
+         primeiras. Agora toda prévia guarda os jogos. */
+      const jogosPrev = [];
+      c.vivosPrevia = pares.map(([a,b])=>{
+        const r = resolver(E, c.nome, rotAtual, sem, a, b);
+        jogosPrev.push({c:a, f:b, gc:r.sa, gf:r.sb, venceu:r.venceu});
+        return r.venceu;
+      });
+      c.mata.push({fase:rotAtual, semana:sem, jogos:jogosPrev});
       c.previaFase++;
       /* a fase seguinte do jogador entra na agenda assim que a chave
          dela nasce */

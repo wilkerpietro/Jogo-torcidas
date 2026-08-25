@@ -4247,7 +4247,7 @@
      Layout do mockup: abas grandes por divisão, classificação
      à esquerda e a rodada navegável à direita.
      ======================================================= */
-  let compSel = null, rodadaSel = null, divLNT = null;
+  let compSel = null, rodadaSel = null, faseSel = null, divLNT = null;
 
   const nomeClube = id => (TO.mundo.time(id)||{}).nome || '—';
   const corClube  = id => ((TO.mundo.time(id)||{}).cores || ['#666'])[0];
@@ -4530,7 +4530,7 @@
 
     /* ---- os três botões ---- */
     pg.appendChild(abasGrandes(NIVEIS, nivelComp, id=>{
-      nivelComp = id; compSel = null; rodadaSel = null; redesenhar();
+      nivelComp = id; compSel = null; rodadaSel = null; faseSel = null; redesenhar();
     }));
 
     /* ---- o filtro do país, só no nacional ---- */
@@ -4571,7 +4571,7 @@
     for(const m of menu){
       const b = el('button',{class:(m.id===compSel?'on':''), html:
         `${m.rot}${m.conta?`<span class="conta">${m.conta}</span>`:''}`});
-      b.onclick = ()=>{ compSel = m.id; rodadaSel = null; redesenhar(); };
+      b.onclick = ()=>{ compSel = m.id; rodadaSel = null; faseSel = null; redesenhar(); };
       f2.appendChild(b);
     }
     pg.appendChild(f2);
@@ -4621,53 +4621,125 @@
          <small>vice: ${nomeClube(comp.vice)}</small></div>`}));
       esq.appendChild(c);
     }
-    if(comp.copa){ esq.appendChild(painelChave(e, comp)); }
-    comp.grupos.forEach((g, ig)=>{
-      const rot = comp.grupos.length>1 ? `Classificação · grupo ${'ABCDEFGH'[ig]}`
-                                       : 'Classificação';
-      const q = quadro(rot, el('span',{class:'conta',
+    /* UMA PÁGINA POR FASE (pedido do dono, 24/08/2026): a
+       classificação — com todos os grupos — é uma página, e cada fase
+       do mata é outra, nas setas. Competição de fase única segue no
+       quadro de sempre, sem navegador. */
+    const paginas = [];
+    if(comp.grupos.length && comp.grupos.some(g=>g && g.length)){
+      const corpo = el('div');
+      comp.grupos.forEach((g, ig)=>{
+        if(comp.grupos.length>1)
+          corpo.appendChild(el('div',{class:'fase-rot',
+            texto:`Grupo ${'ABCDEFGH'[ig]||ig+1}`,
+            estilo:{padding:'8px 14px 3px'}}));
+        const rolo = el('div',{class:'rolo'});
+        rolo.appendChild(tabelaLiga(e, comp, ig));
+        corpo.appendChild(rolo);
+      });
+      paginas.push({rot:'Classificação', semana:0, corpo});
+    }
+    for(const fase of (comp.mata||[]))
+      paginas.push({rot:fase.fase, semana:fase.semana,
+                    corpo:paginaFaseMata(e, fase)});
+
+    if(paginas.length > 1){
+      esq.appendChild(painelFases(paginas, faseCorrente(e, paginas)));
+    } else if(paginas.length === 1){
+      const q = quadro('Classificação', el('span',{class:'conta',
         texto:`${es[atual] ? es[atual].rot : ''} de ${es.length}`}));
-      const rolo = el('div',{class:'rolo'});
-      rolo.appendChild(tabelaLiga(e, comp, ig));
-      q.corpo.appendChild(rolo);
+      q.corpo.appendChild(paginas[0].corpo);
       esq.appendChild(q);
-    });
+    } else if(comp.copa){
+      esq.appendChild(painelChave(e, comp));
+    }
 
     duas.appendChild(esq);
     duas.appendChild(painelRodada(e, comp));
     pg.appendChild(duas);
   }
 
-  /* caminho do clube do jogador na copa, fase a fase */
-  function painelChave(e, comp){
+  /* =======================================================
+     UMA PÁGINA POR FASE (pedido do dono, 24/08/2026)
+     Competição com mais de uma fase vira um navegador com as
+     setas da rodada — ‹ FASE › — na ordem das fases. A
+     Libertadores anda das três prévias pra classificação dos
+     grupos e daí oitavas, quartas, semi e final.
+     ======================================================= */
+  function painelFases(paginas, atual){
+    if(faseSel===null || faseSel>=paginas.length)
+      faseSel = U.limitar(atual||0, 0, paginas.length-1);
+    const i = U.limitar(faseSel, 0, paginas.length-1);
+    const p = paginas[i];
+    const q = el('div',{class:'quadro'});
+    const cab = el('header',{class:'nav-rodada'});
+    const ant = el('button',{html:'‹'}), pro = el('button',{html:'›'});
+    ant.disabled = i<=0; pro.disabled = i>=paginas.length-1;
+    ant.onclick = ()=>{ faseSel = i-1; redesenhar(); };
+    pro.onclick = ()=>{ faseSel = i+1; redesenhar(); };
+    cab.appendChild(ant);
+    cab.appendChild(el('h2',{html:
+      `${p.rot}<span class="conta">de ${paginas.length}</span>`}));
+    cab.appendChild(pro);
+    q.appendChild(cab);
+    const corpo = el('div');
+    corpo.appendChild(p.corpo);
+    q.appendChild(corpo);
+    return q;
+  }
+
+  /* em que página a tela abre: a última fase que já começou */
+  function faseCorrente(e, paginas){
+    let a = 0;
+    paginas.forEach((p,i)=>{
+      if(p.semana!=null && p.semana <= e.data.semana) a = i; });
+    return a;
+  }
+
+  /* o corpo de uma fase de mata: todos os jogos dela, na chave */
+  function paginaFaseMata(e, fase, nome){
+    nome = nome || nomeClube;
     const meu = e.torcida.clubeId;
-    const q = quadro('Chave', el('span',{class:'conta',
-      texto:`${comp.clubes.length} clubes`}));
-    for(const fase of comp.mata){
-      const meus = fase.jogos.filter(j=>j.c===meu||j.f===meu);
-      const mostra = meus.length ? meus : fase.jogos.slice(0,4);
-      q.corpo.appendChild(el('div',{class:'fase-rot',
-        texto:`${fase.fase} · semana ${fase.semana}`+
-              (meus.length?'':` · ${fase.jogos.length} jogos`)}));
-      for(const j of mostra){
-        const feito = j.gc!=null;
-        q.corpo.appendChild(el('div',{class:'jogo-chave'+
-          (j.c===meu||j.f===meu?' meu':''), html:
-          `<span class="a ${j.venceu===j.c?'venceu':''}">${nomeClube(j.c)}</span>
-           <b>${feito?`${j.gc} × ${j.gf}`:'—'}</b>
-           <span class="b ${j.venceu===j.f?'venceu':''}">${nomeClube(j.f)}</span>
-           ${j.agregado?`<em>${j.agregado}</em>`:''}
-           ${penTexto(j)?`<em class="pen">${penTexto(j)}</em>`:''}`}));
-        const serie = penSerie(j.pen);
-        if(serie) q.corpo.appendChild(serie);
-        if(j.neutro) q.corpo.appendChild(el('div',{class:'sub-chave',
-          texto:`campo neutro · ${j.neutro}`}));
-      }
+    const corpo = el('div');
+    const reais = (fase.jogos||[]).filter(j=>j.f);
+    const passes = (fase.jogos||[]).length - reais.length;
+    corpo.appendChild(el('div',{class:'fase-rot',
+      texto:`semana ${fase.semana}`+
+            ` · ${reais.length} ${reais.length===1?'jogo':'jogos'}`+
+            (passes?` · ${passes} ${passes===1?'passa':'passam'} direto`:'')}));
+    const rolo = el('div',{class:'rolo'});
+    for(const j of reais){
+      const feito = j.gc!=null;
+      rolo.appendChild(el('div',{class:'jogo-chave'+
+        (j.c===meu||j.f===meu?' meu':''), html:
+        `<span class="a ${j.venceu===j.c?'venceu':''}">${nome(j.c)}</span>
+         <b>${feito?`${j.gc} × ${j.gf}`:'—'}</b>
+         <span class="b ${j.venceu===j.f?'venceu':''}">${nome(j.f)}</span>
+         ${j.agregado?`<em>${j.agregado}</em>`:''}
+         ${penTexto(j)?`<em class="pen">${penTexto(j)}</em>`:''}`}));
+      const serie = penSerie(j.pen);
+      if(serie) rolo.appendChild(serie);
+      if(j.neutro) rolo.appendChild(el('div',{class:'sub-chave',
+        texto:`campo neutro · ${j.neutro}`}));
     }
-    if(!comp.mata.length)
+    if(!reais.length) rolo.appendChild(el('div',{class:'em-construcao',
+      texto:'Os jogos desta fase ainda não estão marcados.'}));
+    corpo.appendChild(rolo);
+    return corpo;
+  }
+
+  /* a chave de uma copa jogada: uma página por fase */
+  function painelChave(e, comp){
+    if(!(comp.mata||[]).length){
+      const q = quadro('Chave', el('span',{class:'conta',
+        texto:`${(comp.clubes||[]).length} clubes`}));
       q.corpo.innerHTML = '<div class="em-construcao">A copa começa na semana '+
         `${comp.semanaInicio}.</div>`;
-    return q;
+      return q;
+    }
+    const paginas = comp.mata.map(f=>({rot:f.fase, semana:f.semana,
+      corpo:paginaFaseMata(e, f)}));
+    return painelFases(paginas, faseCorrente(e, paginas));
   }
 
   /* =======================================================
@@ -4785,7 +4857,7 @@
       for(const T of D.torneios){
         const b = el('button',{class:(T.nome===torneioSel?'on':''), html:
           `${T.nome}${T.campeao?'<span class="conta">✓</span>':''}`});
-        b.onclick = ()=>{ torneioSel = T.nome; rodadaSel = null; redesenhar(); };
+        b.onclick = ()=>{ torneioSel = T.nome; rodadaSel = null; faseSel = null; redesenhar(); };
         f3.appendChild(b);
       }
       esq.appendChild(f3);
@@ -4952,27 +5024,47 @@
         `<small>vice: ${nomeT(c.vice)}</small></div>`}));
       esq.appendChild(q);
     }
-    (c.grupos||[]).forEach((g, ig)=>{
-      const q = quadro(`Grupo ${'ABCDEFGH'[ig]||ig+1}`);
-      const rolo = el('div',{class:'rolo'});
-      rolo.appendChild(tabelaLiga2(TO.ligas.ordenar(c.tabela[ig], g),
-        qual==='libertadores'?2:1, e.torcida.clubeId));
-      q.corpo.appendChild(rolo);
-      esq.appendChild(q);
-    });
-    if(!(c.grupos||[]).length){
-      /* edição recém-montada ainda não sorteou os grupos: em vez de uma
-         tela vazia, mostra quem ganhou a última */
-      const ant = (e.conmebolHistorico||[])[0];
-      const q = quadro(c.nome, el('span',{class:'conta',
-        texto:`${(c.clubes||[]).length} clubes`}));
-      q.corpo.appendChild(el('div',{class:'em-construcao',
+    /* UMA PÁGINA POR FASE (pedido do dono, 24/08/2026): as prévias
+       (Fase 1, 2 e 3 na Libertadores), depois a classificação da fase
+       de grupos, depois oitavas, quartas, semi e final — nas setas. */
+    const cal = c.calGrupos || [];
+    const inicioGrupos = cal.length ? cal[0] : null;
+    const mata = c.mata || [];
+    const antes  = mata.filter(m=>inicioGrupos!=null ? m.semana < inicioGrupos : true);
+    const depois = mata.filter(m=>inicioGrupos!=null ? m.semana >= inicioGrupos : false);
+    const paginas = [];
+    for(const m of antes)
+      paginas.push({rot:m.fase, semana:m.semana,
+                    corpo:paginaFaseMata(e, m, nomeT)});
+    const corpoG = el('div');
+    if((c.grupos||[]).length){
+      c.grupos.forEach((g, ig)=>{
+        corpoG.appendChild(el('div',{class:'fase-rot',
+          texto:`Grupo ${'ABCDEFGH'[ig]||ig+1}`,
+          estilo:{padding:'8px 14px 3px'}}));
+        const rolo = el('div',{class:'rolo'});
+        rolo.appendChild(tabelaLiga2(TO.ligas.ordenar(c.tabela[ig], g),
+          qual==='libertadores'?2:1, e.torcida.clubeId));
+        corpoG.appendChild(rolo);
+      });
+    }else{
+      /* edição recém-montada ainda não sorteou os grupos: em vez de
+         uma página vazia, mostra quem ganhou a última */
+      corpoG.appendChild(el('div',{class:'em-construcao',
         html:'Os grupos são sorteados depois das fases prévias.'}));
-      if(ant && ant[qual] && ant[qual].campeao)
-        q.corpo.appendChild(el('div',{class:'sub-chave',
-          texto:`Campeão de ${ant.ano}: ${nomeT(ant[qual].campeao)}`}));
-      esq.appendChild(q);
+      const antEd = (e.conmebolHistorico||[])[0];
+      if(antEd && antEd[qual] && antEd[qual].campeao)
+        corpoG.appendChild(el('div',{class:'sub-chave',
+          texto:`Campeão de ${antEd.ano}: ${nomeT(antEd[qual].campeao)}`}));
     }
+    paginas.push({rot:'Fase de grupos',
+      semana: inicioGrupos!=null ? inicioGrupos
+            : (antes.length ? antes[antes.length-1].semana+1 : 1),
+      corpo:corpoG});
+    for(const m of depois)
+      paginas.push({rot:m.fase, semana:m.semana,
+                    corpo:paginaFaseMata(e, m, nomeT)});
+    esq.appendChild(painelFases(paginas, faseCorrente(e, paginas)));
     duas.appendChild(esq);
     /* a direita é a rodada, como na Série A: fechas e mata-mata
        navegáveis, com placar no que já rolou */
