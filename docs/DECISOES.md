@@ -2512,9 +2512,8 @@ réguas:
   R$ 70.000. Limite por sede-mãe: n3 banca 1 filial, n4 banca 3, n5
   banca 8.
 - **Núcleo local**: teto de 20/40/80 membros nos níveis 1/2/3 da
-  filial, somado à lotação da matriz. (O exemplo do dono citou
-  "200+30" pra sede n4 + filial n1 — implementado 20/40/80 conforme a
-  regra explícita dele; sinalizado pra possível ajuste pra 30/50/90.)
+  filial, somado à lotação da matriz. (Confirmado pelo dono em
+  26/08/2026 — o "200+30" do exemplo dele era engano, vale 20/40/80.)
 - **Receita**: a mesma régua da subsede, vezes o multiplicador de
   bairro da CIDADE da filial (bairro fixado por hash) e o fator
   comercial×moral de sempre. Manutenção de subsede por nível.
@@ -2537,19 +2536,22 @@ réguas:
 - **Sem planejamento de jogo alheio**: jogo na cidade da filial que
   não é do nosso clube NÃO gera mensagem de planejamento. Nossos
   ataques por lá chegam como sugestão esporádica do olheiro da filial
-  (~a cada 9 semanas por filial, com núcleo ≥6 e hostil na praça),
-  com decisão "Manda descer"/"Deixar quieto".
+  (~a cada 12 semanas por filial, com núcleo ≥6 e hostil na praça),
+  com decisão "Atacar"/"Não atacar" (o dono achou "Manda descer"
+  brega, 26/08/2026).
 - **Hospedagem de aliado**: aliado jogando na cidade da nossa filial
   é hospedado pelo núcleo — +2 de relação, silencioso.
 - **Feed**: tudo da filial cai no feed normal, bem menos frequente
-  que a cidade-sede (defesa ~2%/dia por filial).
+  que a cidade-sede (defesa 0,5%/dia por filial — dose do dono,
+  26/08/2026; ataque de filial inimiga pede núcleo ≥6 e relação
+  ≤−55).
 - **Ranking**: coluna "Filiais" com a contagem de subsedes de fora
   (só informação, não pontua).
 - **IA**: entram na fila de compras ('filial' depois de subsede,
   'evoluir:filial' no fim); ao comprar, priorizam a cidade com MAIS
   torcedores do clube delas (fora a própria praça); mesmas travas de
-  sede/prestígio/limite; núcleo começa com 8 e cresce ~0,5/semana até
-  o teto.
+  sede/prestígio/limite; núcleo começa com 8 e cresce ~1 membro a
+  cada 3 semanas até o teto (dose do dono, 26/08/2026).
 - A ideia do mapa (16) foi recusada: o mapa será reformulado de outra
   forma depois.
 

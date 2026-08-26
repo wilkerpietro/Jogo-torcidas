@@ -194,7 +194,7 @@ TO.feed = (function(){
   function filialDeHoje(E){
     if(!TO.patrimonio || !TO.diaJogo || !TO.diaJogo.simular) return;
     for(const f of (((E.patrimonio||{}).filiais)||[])){
-      if(U.rng() >= 0.02) continue;                 // ~1 susto a cada 7 semanas
+      if(U.rng() >= 0.005) continue;                // dose do dono: 0,5% ao dia
       const nucleo = TO.membros.aptosDaFilial(E, f.cidade);
       if(nucleo.length < 4) continue;
       const hostis = M().torcidasEm(f.cidade)
@@ -216,15 +216,15 @@ TO.feed = (function(){
     }
   }
 
-  /* a sugestão esporádica do olheiro da filial — TEXTO SOB CRIVO DO
-     DONO (25/08/2026): mais ou menos a cada 9 semanas por filial */
+  /* a sugestão esporádica do olheiro da filial — texto e dose do dono
+     (26/08/2026): mais ou menos a cada 12 semanas por filial */
   function filialSugestaoDeHoje(E){
     const fs = ((E.patrimonio||{}).filiais)||[];
     if(!fs.length) return;
     const sa = TO.relacoes.semanaAbs(E);
     const H = TO.mapa.hash;
     for(const f of fs){
-      if((sa + H('fsug|'+f.cidade)) % 9 !== 0) continue;
+      if((sa + H('fsug|'+f.cidade)) % 12 !== 0) continue;
       if((H(`fsug|${f.cidade}|${sa}`) % 7) + 1 !== E.data.dia) continue;
       const nucleo = TO.membros.aptosDaFilial(E, f.cidade);
       if(nucleo.length < 6) continue;
@@ -242,10 +242,10 @@ TO.feed = (function(){
               `${alvo.nome}. São ${nucleo.length} dos nossos na cidade. `+
               `Manda descer?`,
         dados:{cidade:f.cidade, rival:alvo.id},
-        botoes:[{id:'desce',  rot:'Manda descer', acao:'filial-ataque',
+        botoes:[{id:'desce',  rot:'Atacar', acao:'filial-ataque',
                  nota:'o núcleo da sub-sede desce sozinho — a briga vale '+
                       'prestígio como qualquer ataque a bar'},
-                {id:'quieto', rot:'Deixar quieto', acao:'nada'}]});
+                {id:'quieto', rot:'Não atacar', acao:'nada'}]});
     }
   }
 
@@ -1791,7 +1791,7 @@ TO.feed = (function(){
         const rival = M().torcida(d.rival);
         const nucleo = TO.membros.aptosDaFilial(E, d.cidade);
         if(!rival || nucleo.length < 4){
-          marcar('Manda descer — não rolou');
+          marcar('Atacar — não rolou');
           m.consequencia = 'Não rolou: o núcleo de lá não tem gente de pé.';
           return {ok:true};
         }

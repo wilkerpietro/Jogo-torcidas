@@ -385,10 +385,10 @@ TO.relacoes = (function(){
       t.mma = mmaDe(t);
       t.onibus = frotaIA(t);
       /* o núcleo das filiais delas cresce devagar até o teto do nível
-         (dono, 25/08/2026): meio membro por semana, na média */
+         (dose do dono, 26/08/2026): ~1 membro a cada 3 semanas */
       for(const f of (t.filiais = t.filiais || []))
         f.membros = Math.min(P().FILIAL.teto[f.nivel] || 0,
-                             (f.membros || 8) + (U.rng() < 0.5 ? 1 : 0));
+                             (f.membros || 8) + (U.rng() < 1/3 ? 1 : 0));
       const b = balanco(t);
       t.caixa += Math.round(b.saldo * SEM);
 
@@ -578,7 +578,7 @@ TO.relacoes = (function(){
         if(o.mapa === E.torcida.mapa) continue;      // essas já vêm por cima
         const t = (E.mundoTorcidas||{})[o.id];
         const f = t && (t.filiais||[]).find(x=>x.cidade === E.torcida.mapa);
-        if(!f || (f.membros||0) < 12) continue;      // núcleo pequeno não desce
+        if(!f || (f.membros||0) < 6) continue;       // núcleo pequeno não desce
         if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
         const r = nivel(E, o.id);
         if(r > QUENTE) continue;
