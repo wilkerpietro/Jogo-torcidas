@@ -2477,6 +2477,31 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   lê o estado do jogador; as IAs leem o mundo vivo (a frota delas já
   respeita o teto da sede, como sempre).
 
+## Nome de gente e o histórico que não se perde (pedido do dono, 25/08/2026)
+
+- **Banco de nomes brasileiro**: 400 nomes próprios e 200 sobrenomes,
+  todos únicos, com os apelidos atuais mantidos — só apelido deixava o
+  jogo artificial. O apelido segue sendo o nome de rua (lista, briga,
+  feed); nome e sobrenome são a identidade da ficha, que agora sai
+  completa ("Caio Matos" na ficha do "Viga Matos"). As listas
+  `simples`/`compostos` ficaram como eram: os JOGADORES de futebol do
+  mundo tiram os nomes de lá.
+- **O botão Histórico do menu nacional e sua tela saíram**: o
+  Histórico por competição supre melhor.
+- **O histórico das demais ligas agora chega na tela e não se perde:**
+  · As ligas de fora e as copas nacionais SEMPRE arquivaram os
+    campeões ano a ano (`ligasHistorico`, `conmebolHistorico` com as
+    copas juntas) — mas a tela nova não lia esses arquivos, e os dois
+    cortavam em 12 anos. Agora o Histórico de cada liga de fora lê o
+    arquivo (com Apertura/Clausura em linhas próprias), as copas
+    nacionais também, e os cortes subiram pra 80 anos.
+  · `E.temporada.titulos` (Brasil) cortava em 200 entradas (~13
+    anos); subiu pra 800.
+  · O campeão do ANO CORRENTE, decidido antes da virada, entra na
+    frente da lista em toda competição.
+  · Trocar de país no filtro passa a resetar a vista, como a troca de
+    competição já fazia.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

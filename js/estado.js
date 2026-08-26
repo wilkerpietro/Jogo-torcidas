@@ -515,7 +515,9 @@ TO.estado = (function(){
     for(const c of E.temporada.competicoes)
       if(c.campeao) t.unshift({ano:E.temporada.ano, comp:c.nome,
                                campeao:c.campeao, vice:c.vice});
-    if(t.length > 200) t.length = 200;
+    /* ~15 títulos por ano: 200 dava uns 13 anos e o Histórico por
+       competição perdia o resto (dono, 25/08/2026) — cabem 800 */
+    if(t.length > 800) t.length = 800;
     E.temporada.titulos = t;
   }
 

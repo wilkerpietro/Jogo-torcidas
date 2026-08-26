@@ -393,7 +393,9 @@ TO.ligas = (function(){
       });
     }
     E.ligasHistorico.unshift({ano, paises});
-    E.ligasHistorico = E.ligasHistorico.slice(0, 12);
+    /* o Histórico por competição lê daqui (dono, 25/08/2026): 12 anos
+       apagavam a história cedo demais — agora cabem 80 */
+    E.ligasHistorico = E.ligasHistorico.slice(0, 80);
   }
 
   /* SOBE E DESCE: o que a temporada decidiu vira a divisão do ano que

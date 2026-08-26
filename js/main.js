@@ -4502,7 +4502,8 @@
       const copa = S && S.competicoes.find(c=>c.copa);
       if(copa) fora.push({id:copa.id, rot:copa.nome, conta:copa.clubes.length});
       if(TO.lnt && TO.lnt.existe(e)) fora.push({id:'lnt', rot:'LNT', conta:138});
-      fora.push({id:'historico', rot:'Histórico'});
+      /* o botão Histórico do menu saiu (ordem do dono, 25/08/2026):
+         o Histórico por competição supre melhor */
       return fora;
     }
     const P = (e.ligas||{}).paises && e.ligas.paises[paisComp];
@@ -4513,7 +4514,6 @@
     if(copa) fora.push({id:'copa-nac', rot:copa.nome, conta:copa.clubes.length});
     if(paisComp === 'Brasil'){
       if(TO.lnt && TO.lnt.existe(e)) fora.push({id:'lnt', rot:'LNT', conta:138});
-      fora.push({id:'historico', rot:'Histórico'});
     }
     return fora;
   }
@@ -4564,7 +4564,8 @@
           (p===meu?' minha':''), html: bandeira(p) || p});
         b.title = p;
         b.setAttribute('aria-label', p);
-        b.onclick = ()=>{ paisComp = p; compSel = null; redesenhar(); };
+        b.onclick = ()=>{ paisComp = p; compSel = null;
+                          vistaComp = null; redesenhar(); };
         f.appendChild(b);
       }
       pg.appendChild(f);
@@ -4595,7 +4596,6 @@
 
     /* ---- o corpo ---- */
     if(nivelComp === 'internacional'){ pintarConmebolUm(e, pg, compSel); return; }
-    if(compSel === 'historico'){ pg.appendChild(painelHistorico(e)); return; }
     if(compSel === 'lnt'){ pintarLNT(e, pg); return; }
     if(compSel === 'copa-nac'){
       pintarCopaNacional(e, pg, e.conmebol.copas[paisComp]); return;
@@ -4630,8 +4630,13 @@
     if(vista === 'publico'){
       pg.appendChild(painelPublico(e, clubesDaComp(comp), comp.nome)); return; }
     if(vista === 'historico'){
-      pg.appendChild(painelHistoricoComp(e, comp.id, comp.nome,
-        titulosDoJogo(e, comp.nome))); return; }
+      /* o campeão do ANO CORRENTE ainda não está na virada: entra
+         na frente da lista quando a competição já decidiu */
+      const anosJogo = (comp.campeao
+        ? [{ano:e.data.ano, campeao:comp.campeao, vice:comp.vice}] : [])
+        .concat(titulosDoJogo(e, comp.nome));
+      pg.appendChild(painelHistoricoComp(e, comp.id, comp.nome, anosJogo));
+      return; }
     const es = TO.competicoes.etapas(comp);
     const atual = TO.competicoes.etapaAtual(comp);
     const duas = el('div',{class:'comp-duas'});
@@ -5001,10 +5006,33 @@
     if(vista === 'publico'){
       pg.appendChild(painelPublico(e, D.clubes, div)); return; }
     if(vista === 'historico'){
-      /* a base real vale pra PRIMEIRA divisão do país */
+      /* a base real vale pra PRIMEIRA divisão do país; os anos do
+         JOGO saem do arquivo anual das ligas (e o ano corrente, do
+         que a divisão já decidiu) */
       const primeira = Object.keys(P.divisoes)[0] === div;
+      const anosJogo = [];
+      const linhaDe = (ano, dv)=>{
+        if((dv.torneios||[]).length > 1){
+          for(const T of dv.torneios)
+            if(T.campeao) anosJogo.push({ano:`${ano} (${T.nome})`,
+              campeao:T.campeao, vice:T.vice});
+        } else if(dv.campeao)
+          anosJogo.push({ano, campeao:dv.campeao, vice:dv.vice});
+      };
+      const anoAtual = (e.ligas||{}).ano || e.data.ano;
+      const decididos = (D.torneios||[]).filter(t=>t.campeao);
+      if(decididos.length > 1 || (decididos.length === 1 && !D.campeao))
+        for(const T of decididos)
+          anosJogo.push({ano:`${anoAtual} (${T.nome})`,
+                         campeao:T.campeao, vice:T.vice});
+      else if(D.campeao)
+        anosJogo.push({ano:anoAtual, campeao:D.campeao, vice:D.vice});
+      for(const h of (e.ligasHistorico||[])){
+        const dv = ((h.paises||{})[pais]||[]).find(x=>x.div === div);
+        if(dv) linhaDe(h.ano, dv);
+      }
       pg.appendChild(painelHistoricoComp(e, primeira ? 'liga:'+pais : div,
-        div, [])); return; }
+        div, anosJogo)); return; }
 
     const duas = el('div',{class:'comp-duas'});
     const esq = el('div');
@@ -5187,9 +5215,12 @@
     if(vista === 'publico'){
       pg.appendChild(painelPublico(e, (c&&c.clubes)||[], nomeCM)); return; }
     if(vista === 'historico'){
-      const anosJogo = (e.conmebolHistorico||[])
-        .filter(h=>h[qual] && h[qual].campeao)
-        .map(h=>({ano:h.ano, campeao:h[qual].campeao, vice:h[qual].vice}));
+      const anosJogo = (c && c.campeao
+        ? [{ano:(e.conmebol||{}).ano || e.data.ano,
+            campeao:c.campeao, vice:c.vice}] : [])
+        .concat((e.conmebolHistorico||[])
+          .filter(h=>h[qual] && h[qual].campeao)
+          .map(h=>({ano:h.ano, campeao:h[qual].campeao, vice:h[qual].vice})));
       pg.appendChild(painelHistoricoComp(e, qual, nomeCM, anosJogo)); return; }
     if(!c){ pg.appendChild(emConstrucao('Ainda não',
       'As copas da Conmebol montam na virada do ano.')); return; }
@@ -5268,8 +5299,18 @@
     if(vista === 'publico'){
       pg.appendChild(painelPublico(e, copa.clubes, copa.nome)); return; }
     if(vista === 'historico'){
+      /* os anos do jogo saem do arquivo da Conmebol, que guarda as
+         copas nacionais junto (e o ano corrente, se já decidiu) */
+      const anosJogo = (copa.campeao
+        ? [{ano:(e.conmebol||{}).ano || e.data.ano,
+            campeao:copa.campeao, vice:copa.vice}] : []);
+      for(const h of (e.conmebolHistorico||[])){
+        const cp = (h.copas||[]).find(x=>x.nome === copa.nome);
+        if(cp && cp.campeao)
+          anosJogo.push({ano:h.ano, campeao:cp.campeao, vice:cp.vice});
+      }
       pg.appendChild(painelHistoricoComp(e, 'copa:'+copa.nome, copa.nome,
-        [])); return; }
+        anosJogo)); return; }
     const duas = el('div',{class:'comp-duas'});
     const esq = el('div');
     /* a copa do país do jogador é jogada de verdade, então ela mostra
@@ -5426,31 +5467,8 @@
     return q;
   }
 
-  function painelHistorico(e){
-    const q = quadro('Campeões', el('span',{class:'conta', texto:`${e.data.ano}`}));
-    const S = e.temporada;
-    const doAno = S.competicoes.filter(c=>c.campeao);
-    const t = el('table',{class:'agenda'});
-    t.innerHTML = `<thead><tr><th>Ano</th><th>Competição</th><th>Campeão</th>
-                   <th>Vice</th></tr></thead>`;
-    const tb = el('tbody');
-    const linha = (ano, comp, camp, vice)=>{
-      const tr = el('tr',{class:camp===e.torcida.clubeId?'meu':''});
-      tr.innerHTML =
-        `<td class="hora">${ano}</td><td>${comp}</td>
-         <td><span class="adv"><i style="background:${corClube(camp)}"></i>
-           ${nomeClube(camp)}</span></td>
-         <td style="color:var(--fraco)">${vice?nomeClube(vice):'—'}</td>`;
-      tb.appendChild(tr);
-    };
-    for(const c of doAno) linha(S.ano, c.nome, c.campeao, c.vice);
-    for(const h of (S.titulos||[]).slice(0,60)) linha(h.ano, h.comp, h.campeao, h.vice);
-    t.appendChild(tb);
-    if(!tb.children.length)
-      q.corpo.innerHTML = '<div class="em-construcao">Nenhuma competição decidida ainda.</div>';
-    else q.corpo.appendChild(t);
-    return q;
-  }
+  /* o painelHistorico global saiu (ordem do dono, 25/08/2026): o
+     Histórico de cada competição supre melhor a necessidade */
 
   /* =======================================================
      GESTÃO INTELIGENTE

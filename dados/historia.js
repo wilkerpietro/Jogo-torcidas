@@ -331,7 +331,7 @@ TO.dados.historia = {
  nota:'A lista ano a ano entra de 2015 pra cá; a contagem de títulos vale a era profissional inteira, desde 1931.',
  maiores:[['River Plate',38],['Boca Juniors',35],['Racing',18],
   ['Independiente',16],['San Lorenzo',15],['Vélez Sarsfield',10],
-  ['Estudiantes',7]],
+  ['Estudiantes',7],['Lanús',2],['Platense',1]],
  anos:[
   ['2025 (Clausura)','Estudiantes','Racing'],['2025 (Apertura)','Platense','Huracán'],
   [2024,'Vélez Sarsfield','Huracán'],[2023,'River Plate','Talleres'],
