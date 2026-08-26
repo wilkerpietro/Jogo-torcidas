@@ -114,29 +114,43 @@ TO.relacoes = (function(){
 
   /* =======================================================
      A ORDEM DE GASTO DAS OUTRAS TORCIDAS
-     (régua do dono, 20/08/2026 — acabou o arquétipo)
+     (régua do dono, 20/08/2026 — acabou o arquétipo;
+      fila RODANTE em 26/08/2026)
 
-     Uma fila só, igual pra todas. A torcida olha o primeiro
-     item que ainda falta e JUNTA DINHEIRO até poder pagar:
-     ela não desce a fila atrás de coisa barata só porque o de
-     cima ainda não coube. Com R$ 20.000 no caixa dava pra
-     encher o paiol e contratar o professor — e ela não faz nem
-     um nem outro, porque a vez é da loja.
+     Cada torcida carrega a própria fila, que nasce desta ordem
+     — com a FILIAL subida, por ordem do dono. A torcida olha o
+     primeiro item que ainda falta e JUNTA DINHEIRO até poder
+     pagar: ela não desce a fila atrás de coisa barata só porque
+     o de cima ainda não coube.
 
-     O PROFESSOR VEM PRIMEIRO (régua do dono, 20/08/2026): quem
-     paga o professor treina em dobro, e treino é o que faz a
-     torcida virar gente de briga. Ele não cobra entrada, só o
-     mês — o que a fila pede dele é caixa que aguente três meses.
+     UMA POR VEZ (régua do dono, 26/08/2026): comprou um bar, a
+     vez do PRÓXIMO bar vai pro fim da fila da torcida — e assim
+     com tudo. Ninguém enfileira três bares seguidos enquanto a
+     filial espera; o patrimônio cresce em rodízio.
 
      A SEDE NÃO ESTÁ NA FILA porque não é preferência: é o que
      DESTRAVA. Ela sobe quando o efetivo encosta no teto, ou
      quando é ela que impede o item da vez — loja não cabe em
-     sede nível 1, bar nível 2 só existe em sede nível 3.
+     sede nível 1, bar nível 2 só existe em sede nível 3. Comprar
+     sede não roda a fila: o item travado segue com a vez.
      ======================================================= */
-  const ORDEM = ['mma', 'loja', 'bar', 'elenco', 'onibus', 'subsede',
-                 'filial',
+  const ORDEM = ['mma', 'loja', 'bar', 'filial', 'elenco', 'onibus',
+                 'subsede',
                  'bombas', 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede',
                  'evoluir:filial'];
+
+  /* a fila viva da torcida: nasce da ORDEM e roda a cada compra.
+     Save antigo entra aqui — chave nova vai pro fim, aposentada sai */
+  function filaDe(t){
+    if(!Array.isArray(t.fila)) t.fila = ORDEM.slice();
+    else{
+      const tem = new Set(t.fila);
+      if(ORDEM.some(ch=>!tem.has(ch)) || t.fila.some(ch=>ORDEM.indexOf(ch)<0))
+        t.fila = t.fila.filter(ch=>ORDEM.indexOf(ch)>=0)
+                       .concat(ORDEM.filter(ch=>!tem.has(ch)));
+    }
+    return t.fila;
+  }
 
   /* A CIDADE DA FILIAL DELAS (aprovado pelo dono, 25/08/2026): a IA
      prioriza sempre a praça com MAIS torcedores do clube dela, fora
@@ -195,6 +209,8 @@ TO.relacoes = (function(){
         onibus:0, mma:0, bombas:10,
         /* subsedes em OUTRAS cidades (dono, 25/08/2026) */
         filiais:[],
+        /* a fila de compras rodante de cada uma (dono, 26/08/2026) */
+        fila: ORDEM.slice(),
         vermelho:0,
         mult: multDaSede(o),
         pool: poolDaPraca(o),
@@ -334,7 +350,7 @@ TO.relacoes = (function(){
     const subirSede = () => P().SEDE[t.sede+1]
       ? {tipo:'sede', custo:P().SEDE[t.sede+1].custo} : null;
 
-    for(const chave of ORDEM){
+    for(const chave of filaDe(t)){
       const it = itemDaFila(E, t, id, chave);
       if(!it) continue;                    // cumprido: a fila anda
       if(it.sede){                         // travado: quem destrava é a sede
@@ -342,6 +358,7 @@ TO.relacoes = (function(){
         if(s) return s;
         continue;                          // sede no teto: segue a fila
       }
+      it.chave = chave;                    // pra rodar a fila na compra
       return it;                           // a vez é desta — e ela ESPERA
     }
     /* cumprida a fila do dono inteira, o que sobra vai pra fábrica */
@@ -434,6 +451,13 @@ TO.relacoes = (function(){
         }
         else if(compra.tipo.startsWith('ampliar:')) compra.alvo.nivel++;
         else t[P().PONTO[compra.tipo].plural].push({nivel:1});
+        /* UMA POR VEZ (dono, 26/08/2026): comprou, a vez desse item
+           vai pro fim da fila da torcida. Sede e fábrica não rodam
+           nada — não estão na fila. */
+        if(compra.chave){
+          const fl = filaDe(t), i = fl.indexOf(compra.chave);
+          if(i >= 0){ fl.splice(i, 1); fl.push(compra.chave); }
+        }
         continue;
       }
 

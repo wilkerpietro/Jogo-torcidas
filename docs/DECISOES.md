@@ -2555,6 +2555,27 @@ réguas:
 - A ideia do mapa (16) foi recusada: o mapa será reformulado de outra
   forma depois.
 
+## A fila de compras rodante das IAs (decisão do dono, 26/08/2026)
+
+O dono viu a simulação de 3 anos com só 7 torcidas de filial aberta —
+as sede n4 morriam pagando bares, lojas e ônibus antes de chegar na
+filial — e mandou duas coisas:
+
+- **A filial subiu na fila**: a ordem-base virou mma, loja, bar,
+  FILIAL, elenco, ônibus, subsede, bombas e as evoluções.
+- **Uma por vez**: cada torcida agora carrega a própria fila, que
+  RODA — comprou um bar, a vez do próximo bar vai pro fim da fila
+  dela, e assim com tudo. Ninguém enfileira três bares seguidos
+  enquanto a filial espera; o patrimônio cresce em rodízio. A sede
+  segue fora da fila (é destravadora) e comprá-la não roda nada: o
+  item travado fica com a vez. Save antigo ganha a fila na ordem-base
+  (chave nova entra no fim, aposentada sai).
+
+Efeito medido em 3 anos simulados: de 7 torcidas com filial (12 no
+mundo) pra 40 torcidas (58 filiais), várias já ampliadas pra nível 2
+— e em troca as IAs acumulam menos ônibus e prédios repetidos, que
+era exatamente o "uma por vez" pedido.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
