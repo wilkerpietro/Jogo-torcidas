@@ -2502,6 +2502,57 @@ aliados; save; bancada de cenas; geometria do mapa; base de dados.
   · Trocar de país no filtro passa a resetar a vista, como a troca de
     competição já fazia.
 
+## Sub-sede em outra cidade (decisão do dono, 26/08/2026)
+
+Da chuva de ideias sobre filiais, o dono aprovou o pacote com estas
+réguas:
+
+- **Abrir**: exige sede nível 3 e pelo menos 60 de prestígio (12 na
+  régua interna), sempre. Custa R$ 90.000; subir de nível custa
+  R$ 70.000. Limite por sede-mãe: n3 banca 1 filial, n4 banca 3, n5
+  banca 8.
+- **Núcleo local**: teto de 20/40/80 membros nos níveis 1/2/3 da
+  filial, somado à lotação da matriz. (O exemplo do dono citou
+  "200+30" pra sede n4 + filial n1 — implementado 20/40/80 conforme a
+  regra explícita dele; sinalizado pra possível ajuste pra 30/50/90.)
+- **Receita**: a mesma régua da subsede, vezes o multiplicador de
+  bairro da CIDADE da filial (bairro fixado por hash) e o fator
+  comercial×moral de sempre. Manutenção de subsede por nível.
+- **Recrutar**: mesma regra e mesmo dado de hoje; o novato entra pela
+  sede OU pela filial, sorteado pelo peso das vagas de cada casa, e
+  cada casa exige torcedor fora de organizada na praça DELA. A
+  mensagem diz "(N pela subsede de fora)".
+- **Rota mais segura**: perna de caravana passando por cidade com
+  filial nossa tem metade da chance de emboscada.
+- **Olheiro fixo**: emboscada em cidade de filial SEMPRE sai avisada,
+  campana paga ou não — o núcleo local é o olheiro.
+- **Jogo na cidade da filial**: todos os membros daquele núcleo vão
+  pro jogo, somados à caravana normal dos demais.
+- **Ataque nos dois sentidos**: torcida de fora com filial na NOSSA
+  praça pode atacar a gente aqui, com o efetivo do núcleo dela e o
+  nome decorado ("Jovem Fla Sub-Sede Fortaleza") nas mensagens de
+  sofrido de sempre. Sem bonde de socorro: quem defende é quem está
+  lá. Nossa filial atacada também se defende SOZINHA, resolvida por
+  simulação no feed normal.
+- **Sem planejamento de jogo alheio**: jogo na cidade da filial que
+  não é do nosso clube NÃO gera mensagem de planejamento. Nossos
+  ataques por lá chegam como sugestão esporádica do olheiro da filial
+  (~a cada 9 semanas por filial, com núcleo ≥6 e hostil na praça),
+  com decisão "Manda descer"/"Deixar quieto".
+- **Hospedagem de aliado**: aliado jogando na cidade da nossa filial
+  é hospedado pelo núcleo — +2 de relação, silencioso.
+- **Feed**: tudo da filial cai no feed normal, bem menos frequente
+  que a cidade-sede (defesa ~2%/dia por filial).
+- **Ranking**: coluna "Filiais" com a contagem de subsedes de fora
+  (só informação, não pontua).
+- **IA**: entram na fila de compras ('filial' depois de subsede,
+  'evoluir:filial' no fim); ao comprar, priorizam a cidade com MAIS
+  torcedores do clube delas (fora a própria praça); mesmas travas de
+  sede/prestígio/limite; núcleo começa com 8 e cresce ~0,5/semana até
+  o teto.
+- A ideia do mapa (16) foi recusada: o mapa será reformulado de outra
+  forma depois.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

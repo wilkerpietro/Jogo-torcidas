@@ -168,6 +168,8 @@ TO.membros = (function(){
       olheiro:false,
       naFila:false,       // fila de treino
       entrou:{semana:E.data.semana, dia:E.data.dia},
+      /* núcleo: null é a sede-mãe; id de cidade é a filial de lá */
+      filial: opc.filial || null,
       historico:[]
     };
     return m;
@@ -254,8 +256,18 @@ TO.membros = (function(){
   /* GDD §6.2: a campanha de recrutamento estica o teto da sede em 50%
      enquanto dura — agência pro jogador quando o gargalo é a estrutura */
   const emCampanha = E => !!(E.campanha && E.campanha.ate >= E.data.semana);
-  const capacidade = E => Math.round(SEDE[E.torcida.sedeNivel].membros
+  /* AS FILIAIS SOMAM NO TETO (aprovado pelo dono, 25/08/2026): sede
+     nível 4 + subsede de fora nível 1 = 200 + 20 de potencial. A
+     campanha de recrutamento estica só a sede-mãe. */
+  const filiais = E => ((E.patrimonio||{}).filiais)||[];
+  const tetoFilial = f =>
+    (TO.patrimonio ? TO.patrimonio.FILIAL.teto[f.nivel] : 0) || 0;
+  const capacidadeMatriz = E => Math.round(SEDE[E.torcida.sedeNivel].membros
                                      * (emCampanha(E) ? 1.5 : 1));
+  const capacidade = E => capacidadeMatriz(E) +
+    filiais(E).reduce((s,f)=>s+tetoFilial(f), 0);
+  const naMatriz = m => !m.filial;
+  const daFilial = (E, cidade) => E.membros.filter(m=>m.filial === cidade);
   const capTreino  = E => SEDE[E.torcida.sedeNivel].treino;
   const capDiretoria = E => SEDE[E.torcida.sedeNivel].diretoria;
 
@@ -537,8 +549,13 @@ TO.membros = (function(){
      A COSTURA
      Quem está apto a sair, e o que volta depois.
      ------------------------------------------------------- */
+  /* quem sai na rua da CIDADE-MÃE: membro de filial mora longe e só
+     entra em cena na cidade dele (dono, 25/08/2026) */
   function aptosParaOEstadio(E){
-    return E.membros.filter(disponivel);
+    return E.membros.filter(m=>disponivel(m) && !m.filial);
+  }
+  function aptosDaFilial(E, cidade){
+    return E.membros.filter(m=>disponivel(m) && m.filial === cidade);
   }
 
   /* Recebe o resultado da cena e devolve o resumo do que mudou.
@@ -582,7 +599,8 @@ TO.membros = (function(){
   return {
     CARGOS, ACIMA, SEDE, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
     criar, nomeDe, nomeCompletoDe, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe,
-    disponivel, capacidade, capTreino, capDiretoria, contar, emCampanha,
+    disponivel, capacidade, capacidadeMatriz, capTreino, capDiretoria,
+    contar, emCampanha, naMatriz, daFilial, aptosDaFilial,
     darXP, podePromover, promover, treinar, treinarFila,
     perder, tetoDe, envelhecer, enferrujarNaCadeia, perdaDaCadeia,
     IDADE_MIN, IDADE_MAX, IDADE_DECLINIO, IDADE_SAIDA, DESGASTE_ANO, SEQUELA,

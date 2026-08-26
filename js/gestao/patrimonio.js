@@ -84,6 +84,39 @@ TO.patrimonio = (function(){
     }
   };
 
+  /* =======================================================
+     A FILIAL — subsede em OUTRA CIDADE (aprovado pelo dono,
+     25/08/2026). R$ 90 mil pra abrir, R$ 70 mil por nível, e
+     cada nível comporta 20/40/80 membros do núcleo local.
+     Só abre com prestígio 60 (na régua de 100) e a sede-mãe
+     dita quantas: nível 3 permite 1, nível 4 permite 3 e a
+     sede 5 permite 8. Abre onde o clube tem torcedor.
+     ======================================================= */
+  const FILIAL = {
+    compra: 90000,
+    ampliar: [null, 70000, 70000, null],
+    teto:    [0, 20, 40, 80],
+    porSede: [0, 0, 0, 1, 3, 8],
+    prestigioMin: 12            // 60 na régua de 0 a 100
+  };
+  const filiaisDe = E => F().patrimonio(E).filiais || [];
+  const temFilialEm = (E, cidade) =>
+    !!cidade && filiaisDe(E).some(f=>f.cidade === cidade);
+  /* cidades onde o NOSSO clube tem torcedor, sem filial ainda e fora
+     da nossa praça — as candidatas, da maior base pra menor */
+  function cidadesCandidatas(E){
+    const clube = E.torcida.clubeId, nossas = new Set(
+      filiaisDe(E).map(f=>f.cidade).concat([E.torcida.mapa]));
+    const fora = [];
+    for(const c of (TO.dados.cidades||[])){
+      if(nossas.has(c.id)) continue;
+      const t = (c.times||[]).find(x=>x.clubeId === clube);
+      if(t && t.torcedores > 0)
+        fora.push({cidade:c.id, nome:c.nome, torcedores:t.torcedores});
+    }
+    return fora.sort((a,b)=>b.torcedores - a.torcedores);
+  }
+
   /* A fábrica não corta material: ela é fábrica de produto de loja.
      Triplica o faturamento das lojas e derruba o insumo em 60%
      (GDD V4 §8.3), e só existe em sede nível 5. */
@@ -133,6 +166,13 @@ TO.patrimonio = (function(){
              : REC.loja[l.nivel]*mult(l.bairro)*fator*(fab?fab.multLoja:1),
       despesa: MAN.loja[l.nivel]
              + REC.loja[l.nivel]*INSUMO*(fab?1-fab.corteInsumo:1)});
+    for(const f of (p.filiais||[])) fora.push({tipo:'filial',
+      rot:`Subsede de ${F().nomeCidade(f.cidade)} (nível ${f.nivel})`,
+      bairro:F().nomeCidade(f.cidade),
+      nucleo: (E.membros||[]).filter(m=>m.filial === f.cidade).length,
+      teto: FILIAL.teto[f.nivel],
+      receita: REC.subsede * F().multFilial(E, f) * fator,
+      despesa: MAN.subsede * f.nivel});
     for(const s of p.subsedes) fora.push({tipo:'subsede', rot:'Subsede', bairro:s.bairro,
       receita: REC.subsede*mult(s.bairro)*fator, despesa: MAN.subsede});
 
@@ -271,6 +311,36 @@ TO.patrimonio = (function(){
       nota:`estoque atual: ${bombas(E)} · R$ ${PRECO_BOMBA} cada`,
       custo:5*PRECO_BOMBA, trava:trava(5*PRECO_BOMBA)});
 
+    /* AS FILIAIS: até 4 candidatas na vitrine, da maior base pra
+       menor, e a ampliação da filial mais fraca */
+    {
+      const fs = p.filiais || [];
+      const limite = FILIAL.porSede[n] || 0;
+      const travaF =
+        n < 3 ? 'precisa de sede nível 3' :
+        (E.indicadores.prestigio < FILIAL.prestigioMin)
+          ? 'precisa de 60 de prestígio' :
+        fs.length >= limite
+          ? `a sede nível ${n} banca ${limite} ${limite===1?'filial':'filiais'}`
+          : null;
+      for(const c of cidadesCandidatas(E).slice(0, 4))
+        lista.push({id:'filial:'+c.cidade,
+          rot:`Abrir subsede em ${c.nome}`,
+          nota:`${U.numero(c.torcedores)} mil torcedores do ${
+            (TO.mundo.time(E.torcida.clubeId)||{}).nome||'clube'} na praça · `+
+            `núcleo local de até ${FILIAL.teto[1]} membros no nível 1`,
+          custo:FILIAL.compra,
+          trava:trava(FILIAL.compra, travaF)});
+      const alvoF = fs.filter(f=>FILIAL.ampliar[f.nivel])
+                      .sort((a,b)=>a.nivel-b.nivel)[0];
+      if(alvoF) lista.push({id:'ampliar-filial:'+alvoF.cidade,
+        rot:`Ampliar a subsede de ${F().nomeCidade(alvoF.cidade)} `+
+            `para o nível ${alvoF.nivel+1}`,
+        nota:`o núcleo local passa a caber ${FILIAL.teto[alvoF.nivel+1]} membros`,
+        custo:FILIAL.ampliar[alvoF.nivel],
+        trava:trava(FILIAL.ampliar[alvoF.nivel])});
+    }
+
     if(!p.fabrica) lista.push({
       id:'fabrica', rot:FABRICA.rot,
       nota:`triplica o faturamento das lojas e corta ${Math.round(FABRICA.corteInsumo*100)}% do insumo`,
@@ -288,6 +358,21 @@ TO.patrimonio = (function(){
     if(o.trava) return {ok:false, msg:`Não dá: ${o.trava}.`};
 
     const [acao, tipo] = id.split(':');
+    if(acao==='filial'){
+      p.filiais = p.filiais || [];
+      p.filiais.push({cidade:tipo, nivel:1});
+      TO.estado.lancar(E, `Subsede em ${F().nomeCidade(tipo)}`, -o.custo);
+      E.inauguracao = {tipo:'subsede', bairro:F().nomeCidade(tipo),
+                       quando:(E.data||{}).absoluto || 0, contada:false};
+      return {ok:true, msg:o.rot+'.'};
+    }
+    if(acao==='ampliar-filial'){
+      const f = (p.filiais||[]).find(x=>x.cidade === tipo);
+      if(f){ f.nivel++;
+        TO.estado.lancar(E, `Ampliação da subsede de ${F().nomeCidade(tipo)}`+
+                            ` — nível ${f.nivel}`, -o.custo); }
+      return {ok:true, msg:o.rot+'.'};
+    }
     if(acao==='sede'){
       E.torcida.sedeNivel++;
       TO.estado.lancar(E, `Ampliação da sede — nível ${E.torcida.sedeNivel}`, -o.custo);
@@ -365,7 +450,8 @@ TO.patrimonio = (function(){
     return {ok:true, compradas:qtd, custo};
   }
 
-  return {SEDE, TETO, PONTO, FABRICA,
+  return {SEDE, TETO, PONTO, FABRICA, FILIAL,
+          filiaisDe, temFilialEm, cidadesCandidatas,
           linhas, opcoes, comprar,
           PRECO_BOMBA, bombas, comprarBombas};
 })();

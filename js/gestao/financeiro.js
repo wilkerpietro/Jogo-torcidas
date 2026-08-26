@@ -140,7 +140,10 @@ TO.financeiro = (function(){
   const descontoCaravana = E => DESCONTO_ONIBUS[onibusDe(E)] || 0;
 
   function patrimonio(E){
-    if(!E.patrimonio) E.patrimonio = {bares:[], lojas:[], subsedes:[], fabrica:false, itens:{}};
+    if(!E.patrimonio) E.patrimonio = {bares:[], lojas:[], subsedes:[], filiais:[],
+                                      fabrica:false, itens:{}};
+    /* save de antes das filiais (dono, 25/08/2026) ganha a lista vazia */
+    if(!E.patrimonio.filiais) E.patrimonio.filiais = [];
     if(!E.patrimonio.itens) E.patrimonio.itens = {};
     const p = E.patrimonio;
     /* GDD §8.1: sede nível 1 já vem com um bar nível 1, grátis */
@@ -166,6 +169,18 @@ TO.financeiro = (function(){
 
   const multDe = (E, nomeBairro) =>
     TO.mundo.multiplicador(TO.mundo.bairro(E.torcida.mapa, nomeBairro));
+
+  /* o multiplicador da FILIAL sai de um bairro da cidade DELA, cravado
+     por hash — a mesma filial rende no mesmo bairro pra sempre */
+  const nomeCidade = id =>
+    ((TO.mundo.cidade && TO.mundo.cidade(id)) || {}).nome || id;
+  function multFilial(E, f){
+    const bairros = (TO.mundo.bairrosDe && TO.mundo.bairrosDe(f.cidade)) || [];
+    if(!bairros.length) return 1;
+    const b = bairros[TO.mapa.hash(`${E.torcida.id}|filial|${f.cidade}`)
+                      % bairros.length];
+    return TO.mundo.multiplicador(b) || 1;
+  }
 
   /* GDD §7.1: o comércio varia com a fase do time, o prestígio e o
      tamanho da torcida. Fase do time entra junto com as competições;
@@ -225,6 +240,11 @@ TO.financeiro = (function(){
     for(const s of p.subsedes)
       juntar(rec, `Subsede${s.bairro?' — '+s.bairro:''}`,
              RECEITA.subsede*multDe(E,s.bairro)*fator*SEM);
+    /* as FILIAIS (subsede em outra cidade, dono 25/08/2026) rendem a
+       mesma régua da subsede, no multiplicador da cidade DELAS */
+    for(const f of (p.filiais||[]))
+      juntar(rec, `Subsede — ${nomeCidade(f.cidade)} (n${f.nivel})`,
+             RECEITA.subsede*multFilial(E,f)*fator*SEM);
 
     /* --- despesas --- */
     juntar(des, `Manutenção da sede (n${E.torcida.sedeNivel})`,
@@ -233,6 +253,7 @@ TO.financeiro = (function(){
     for(const b of p.bares)    manutCom += MANUT.bar[b.nivel];
     for(const l of p.lojas)    manutCom += MANUT.loja[l.nivel];
     for(const s of p.subsedes) manutCom += MANUT.subsede;
+    for(const f of (p.filiais||[])) manutCom += MANUT.subsede * f.nivel;
     juntar(des, 'Manutenção do comércio', manutCom*SEM);
 
     /* e corta 60% do insumo, que é o outro lado do mesmo negócio */
@@ -587,7 +608,7 @@ TO.financeiro = (function(){
   }
 
   return {contas, resumoDaSemana, compromissos, patrimonio, fatorComercial,
-          faixaDaMoral, multMoral, bairroDeFora,
+          faixaDaMoral, multMoral, multFilial, nomeCidade, bairroDeFora,
           precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
           postura, fecharSemana,
           semanaDaMensalidade, fimDoMes, mesCorrente, fecharMes,

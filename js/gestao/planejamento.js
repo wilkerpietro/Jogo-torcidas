@@ -186,12 +186,19 @@ TO.planejamento = (function(){
     };
   }
 
-  /* quanta gente sai de casa: em jogo fora, o tamanho da caravana */
+  /* quanta gente sai de casa: em jogo fora, o tamanho da caravana.
+     Jogo na cidade de uma SUB-SEDE nossa (dono, 26/08/2026): todos os
+     membros daquele núcleo vão pro jogo, fora os demais que fazem
+     caravana normalmente — o núcleo já mora lá. */
   function efetivoDaSaida(E){
     const aptos = TO.membros.aptosParaOEstadio(E).length;
-    if(!TO.financeiro.precisaCaravana(E)) return aptos;
+    const j = E.proximoJogo;
+    const nucleo = (j && !j.casa && TO.patrimonio.temFilialEm &&
+                    TO.patrimonio.temFilialEm(E, j.mapaAdv))
+      ? TO.membros.aptosDaFilial(E, j.mapaAdv).length : 0;
+    if(!TO.financeiro.precisaCaravana(E)) return aptos + nucleo;
     const est = estimativaCaravana(E);
-    return est ? est.vao : aptos;
+    return (est ? est.vao : aptos) + nucleo;
   }
 
   /* =======================================================
@@ -1164,6 +1171,10 @@ TO.planejamento = (function(){
     const alvo = lista[H(chave+'|quem') % lista.length];
     let chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45);
     if(!ida) chance = chance/2;
+    /* praça com SUB-SEDE nossa é parada meio segura (dono, 26/08/2026):
+       o núcleo local conhece as ruas e a chance cai pela metade */
+    if(TO.patrimonio.temFilialEm && TO.patrimonio.temFilialEm(E, cidadeId))
+      chance = chance/2;
     if((H(chave+'|dado') % 100) >= chance) return null;
     const cid = M().cidade(cidadeId);
     return {torcida:alvo.id, nome:alvo.torcida.nome,
@@ -1200,7 +1211,11 @@ TO.planejamento = (function(){
     candidatos.sort((a,b)=>a.relacao-b.relacao || (a.id<b.id?-1:1));
     const alvo = candidatos[H(chave+'|quem') % candidatos.length];
     /* quanto pior a relação, maior a chance de fecharem a pista */
-    const chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45);
+    let chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45);
+    /* trecho passando por praça com SUB-SEDE nossa: metade da chance
+       (dono, 26/08/2026) — o núcleo local segura a barra da estrada */
+    if(TO.patrimonio.temFilialEm && TO.patrimonio.temFilialEm(E, alvo.cidade))
+      chance = chance/2;
     if((H(chave+'|dado') % 100) >= chance) return null;
     const cid = M().cidade(alvo.cidade);
     return {torcida:alvo.id, nome:alvo.torcida.nome,

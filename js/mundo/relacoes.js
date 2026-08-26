@@ -134,7 +134,27 @@ TO.relacoes = (function(){
      sede nível 1, bar nível 2 só existe em sede nível 3.
      ======================================================= */
   const ORDEM = ['mma', 'loja', 'bar', 'elenco', 'onibus', 'subsede',
-                 'bombas', 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede'];
+                 'filial',
+                 'bombas', 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede',
+                 'evoluir:filial'];
+
+  /* A CIDADE DA FILIAL DELAS (aprovado pelo dono, 25/08/2026): a IA
+     prioriza sempre a praça com MAIS torcedores do clube dela, fora
+     da própria e das que já têm filial. */
+  function melhorCidadeFilial(E, id, t){
+    const o = M().torcida(id);
+    if(!o || !o.clubeId) return null;
+    const tem = new Set((t.filiais||[]).map(f=>f.cidade).concat([o.mapa]));
+    let melhor = null;
+    for(const c of (TO.dados.cidades||[])){
+      if(tem.has(c.id)) continue;
+      const x = (c.times||[]).find(y=>y.clubeId === o.clubeId);
+      if(x && x.torcedores > 0 &&
+         (!melhor || x.torcedores > melhor.torcedores))
+        melhor = {cidade:c.id, torcedores:x.torcedores};
+    }
+    return melhor && melhor.cidade;
+  }
   /* A COMISSÃO TÉCNICA DELAS é a nossa: até três professores, R$ 2.000
      por mês cada, e o treino rendendo +30%, +60% e +100% (régua do
      dono, 20/08/2026). Nenhum cobra entrada, só o mês — o que a fila
@@ -173,6 +193,8 @@ TO.relacoes = (function(){
            18/08/2026): ônibus, professor de MMA e estoque de bombas
            são comprados com o caixa delas, como o jogador faz */
         onibus:0, mma:0, bombas:10,
+        /* subsedes em OUTRAS cidades (dono, 25/08/2026) */
+        filiais:[],
         vermelho:0,
         mult: multDaSede(o),
         pool: poolDaPraca(o),
@@ -210,12 +232,18 @@ TO.relacoes = (function(){
     for(const b of t.bares) rec += R.bar[b.nivel] * t.mult * fx;
     for(const l of t.lojas) rec += R.loja[l.nivel] * t.mult * fx * (t.fabrica ? fab.multLoja : 1);
     rec += t.subsedes * R.subsede * t.mult * fx;
+    /* as filiais delas rendem e custam como subsede, por nível */
+    for(const f of (t.filiais||[])){
+      rec += R.subsede * t.mult * fx;
+      // manutenção da filial entra junto das despesas abaixo
+    }
 
     let des = FIN().MANUT_SEDE[t.sede];
     for(const b of t.bares) des += MAN.bar[b.nivel];
     for(const l of t.lojas) des += MAN.loja[l.nivel]
                                  + R.loja[l.nivel]*FIN().INSUMO*(t.fabrica ? 1-fab.corteInsumo : 1);
     des += t.subsedes * MAN.subsede;
+    for(const f of (t.filiais||[])) des += MAN.subsede * f.nivel;
     /* ônibus e professor de MMA custam o mesmo que pro jogador:
        R$ 1.500 e R$ 2.000 por mês, aqui na fatia semanal */
     /* a frota delas cobra por ônibus, como a do jogador */
@@ -258,6 +286,22 @@ TO.relacoes = (function(){
       if(frotaIA(t) < FIN().cabeNaSede(t.sede))
         return {tipo:'onibus', custo:FIN().ONIBUS_CUSTO};
       return FIN().cabeNaSede(t.sede) < FIN().ONIBUS_MAX ? {sede:true} : null;
+    }
+
+    if(chave === 'filial'){
+      const FL = P().FILIAL;
+      if((t.filiais||[]).length >= (FL.porSede[t.sede]||0))
+        return t.sede < 5 ? {sede:true} : null;
+      if((t.prestigio||0) < FL.prestigioMin) return null;
+      const cidade = melhorCidadeFilial(E, id, t);
+      return cidade ? {tipo:'filial', custo:FL.compra, cidade} : null;
+    }
+    if(chave === 'evoluir:filial'){
+      const FL = P().FILIAL;
+      const alvo = (t.filiais||[]).filter(f=>FL.ampliar[f.nivel])
+                     .sort((a,b)=>a.nivel-b.nivel)[0];
+      return alvo ? {tipo:'ampliar:filial', custo:FL.ampliar[alvo.nivel], alvo}
+                  : null;
     }
 
     /* evoluir: sobe o ponto de nível mais baixo que ainda cabe */
@@ -340,6 +384,11 @@ TO.relacoes = (function(){
          fantasma no cadastro, invisível na ficha e imune à demissão */
       t.mma = mmaDe(t);
       t.onibus = frotaIA(t);
+      /* o núcleo das filiais delas cresce devagar até o teto do nível
+         (dono, 25/08/2026): meio membro por semana, na média */
+      for(const f of (t.filiais = t.filiais || []))
+        f.membros = Math.min(P().FILIAL.teto[f.nivel] || 0,
+                             (f.membros || 8) + (U.rng() < 0.5 ? 1 : 0));
       const b = balanco(t);
       t.caixa += Math.round(b.saldo * SEM);
 
@@ -375,6 +424,9 @@ TO.relacoes = (function(){
         else if(compra.tipo === 'fabrica') t.fabrica = true;
         else if(compra.tipo === 'onibus') t.onibus = frotaIA(t) + 1;
         else if(compra.tipo === 'subsede') t.subsedes++;
+        else if(compra.tipo === 'filial')
+          (t.filiais = t.filiais || []).push(
+            {cidade:compra.cidade, nivel:1, membros:8});
         else if(compra.tipo === 'elenco'){
           E.investimento = E.investimento || {};
           E.investimento[compra.clube] = (E.investimento[compra.clube] || 0) + 1;
@@ -510,6 +562,50 @@ TO.relacoes = (function(){
           alvo:alvo.id, nome:o.nome});
       fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia});
       break;              // um ataque-surpresa por semana já é guerra
+    }
+
+    /* A SUB-SEDE INIMIGA NA NOSSA PRAÇA (decisão do dono, 26/08/2026):
+       torcida de fora que abriu filial na nossa cidade pode atacar a
+       gente aqui dentro, com a quantidade de membros da sub-sede dela.
+       O nome vem decorado — "Jovem Fla Sub-Sede Fortaleza" — e o bar
+       cai em dia comum; concentração/pista só em semana de jogo em
+       casa e se o núcleo deles tiver metade do nosso efetivo. */
+    if(!fora.length){
+      const nomeCid = FIN().nomeCidade ? FIN().nomeCidade(E.torcida.mapa)
+                                       : E.torcida.mapa;
+      for(const o of M().jogaveis()){
+        if(o.id === E.torcida.id || o.incompleta) continue;
+        if(o.mapa === E.torcida.mapa) continue;      // essas já vêm por cima
+        const t = (E.mundoTorcidas||{})[o.id];
+        const f = t && (t.filiais||[]).find(x=>x.cidade === E.torcida.mapa);
+        if(!f || (f.membros||0) < 12) continue;      // núcleo pequeno não desce
+        if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
+        const r = nivel(E, o.id);
+        if(r > QUENTE) continue;
+        const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.18 * brigaDe(t);
+        if(U.rng() > chance) continue;
+
+        const jogoEmCasa = E.proximoJogo && E.proximoJogo.casa;
+        const aptos = TO.membros.aptosParaOEstadio
+          ? TO.membros.aptosParaOEstadio(E).length : E.membros.length;
+        const podeRua = jogoEmCasa && f.membros >= aptos * 0.5;
+        const alvo = podeRua ? U.escolher(ALVOS) : {id:'bar', cena:'bar'};
+        const dia = alvo.id === 'bar'
+          ? diaDoAtaque(E, o.id) : (E.proximoJogo.dia || 6);
+        if(alvo.id === 'bar' && dia < E.data.dia) continue;  // hash já passou
+        E.ataqueMarcado = {torcida:o.id,
+                           nome:`${o.nome} Sub-Sede ${nomeCid}`,
+                           alvo:alvo.id, cena:alvo.cena,
+                           efetivo:f.membros, filial:true,
+                           ano:E.data.ano, semana:E.data.semana, dia};
+        hostilidade(E, o.id, REL.ataqueMarcado);
+        if(TO.feed && TO.feed.avisoDoOlheiro)
+          TO.feed.avisoDoOlheiro(E, {
+            chave:`atqf|${E.data.ano}|${E.data.semana}|${o.id}`,
+            alvo:alvo.id, nome:`${o.nome} Sub-Sede ${nomeCid}`});
+        fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia, filial:true});
+        break;
+      }
     }
     return fora;
   }

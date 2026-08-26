@@ -196,12 +196,16 @@ TO.itinerario = (function(){
                             torcida:emb.torcida, nome:emb.nome,
                             alvo:'emboscada', cena:emb.cena}}}];
             /* a campana do olheiro fareja a pista (dono, 24/08/2026):
-               a chave repete a da emboscada, então o aviso sai uma vez */
+               a chave repete a da emboscada, então o aviso sai uma vez.
+               Em praça com SUB-SEDE nossa o aviso é GARANTIDO (dono,
+               26/08/2026) — o núcleo local é olheiro fixo. */
             if(TO.feed && TO.feed.avisoDoOlheiro)
               TO.feed.avisoDoOlheiro(E, {
                 chave:`emb|${E.data.ano}|${E.data.semana}|${c}|ida`,
                 alvo:'emboscada', nome:emb.nome, cidade:nome,
-                chegada: k === cid.length-1});
+                chegada: k === cid.length-1,
+                forcar: !!(TO.patrimonio.temFilialEm &&
+                           TO.patrimonio.temFilialEm(E, c))});
           }
         }
         põe(o);
@@ -251,7 +255,9 @@ TO.itinerario = (function(){
             if(TO.feed && TO.feed.avisoDoOlheiro)
               TO.feed.avisoDoOlheiro(E, {
                 chave:`emb|${E.data.ano}|${E.data.semana}|${c}|volta`,
-                alvo:'emboscada', nome:emb.nome, cidade:nome});
+                alvo:'emboscada', nome:emb.nome, cidade:nome,
+                forcar: !!(TO.patrimonio.temFilialEm &&
+                           TO.patrimonio.temFilialEm(E, c))});
           }
         }
         põe(o);

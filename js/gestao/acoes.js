@@ -536,15 +536,46 @@ TO.acoes = (function(){
         n = Math.min(n, p.vaga);
         if(n <= 0) return {ok:true, msg:'Ninguém quis entrar hoje.'};
 
+        /* O NOVATO PODE ENTRAR PELA SEDE OU POR UMA FILIAL (aprovado
+           pelo dono, 25/08/2026): mesma regra, mesmo dado — o sorteio
+           do núcleo pesa pela vaga de cada casa, e cada casa precisa
+           de torcedor fora de organizada na praça DELA. */
+        const locais = [];
+        const capM = TO.membros.capacidadeMatriz(E);
+        const naM = E.membros.filter(m=>!m.filial).length;
+        if(capM - naM > 0 && p.base > 0)
+          locais.push({filial:null, vaga:capM - naM});
+        for(const f of ((E.patrimonio||{}).filiais||[])){
+          const teto = (TO.patrimonio.FILIAL.teto[f.nivel]||0);
+          const tem = E.membros.filter(m=>m.filial === f.cidade).length;
+          const base = TO.mundo.baseDeRecrutamento(f.cidade,
+            E.torcida.clubeId, o=>efetivoDe(E, o));
+          if(teto - tem > 0 && base > 0)
+            locais.push({filial:f.cidade, vaga:teto - tem});
+        }
+        if(!locais.length) return {ok:true, msg:'Ninguém quis entrar hoje.'};
+        const sorteiaLocal = ()=>{
+          const soma = locais.reduce((s,l)=>s+l.vaga, 0);
+          let d = U.rng()*soma;
+          for(const l of locais){ d -= l.vaga; if(d <= 0) return l; }
+          return locais[locais.length-1];
+        };
+        let daFilial = 0;
         for(let i=0;i<n;i++){
-          E.membros.push(TO.membros.criar(E, {cargo:'novato', moral:15}));
+          const l = sorteiaLocal();
+          E.membros.push(TO.membros.criar(E, {cargo:'novato',
+                                              filial:l.filial}));
+          l.vaga--; if(l.vaga <= 0) locais.splice(locais.indexOf(l),1);
+          if(l.filial) daFilial++;
+          if(!locais.length) break;
         }
         TO.estado.lancar(E, `Recrutamento de ${n} novatos`, -5*n);
         E.historicoRecrutamento = E.historicoRecrutamento || [];
         E.historicoRecrutamento.unshift({semana:E.data.semana, n,
         base:Math.round(p.base), querem:p.querem});
         if(E.historicoRecrutamento.length>60) E.historicoRecrutamento.pop();
-        return {ok:true, msg:`${n} novatos entraram.`};
+        return {ok:true, msg:`${n} ${n===1?'novato entrou':'novatos entraram'}`+
+                             `${daFilial ? ` (${daFilial} pela subsede de fora)` : ''}.`};
       }
     },
     {
@@ -562,7 +593,8 @@ TO.acoes = (function(){
              : {ok:false, motivo:`custa ${U.dinheiro(c)}`};
       },
       executar(E){
-        const publico = E.membros.filter(TO.membros.disponivel).length;
+        /* festa é na SEDE: membro de filial mora longe e não conta */
+        const publico = TO.membros.aptosParaOEstadio(E).length;
         /* RÉGUA DO DONO (18/08/2026, preço por nível em 20/08/2026):
            a festa tem de dar lucro pra sede cheia, de qualquer
            tamanho. Por cabeça sai de R$ 4,80 a 6,40, e o custo do
@@ -648,7 +680,7 @@ TO.acoes = (function(){
       id:'bateria', nome:'Treino de bateria', icone:'tambor', cena:'Sede',
       efeito:'grátis; precisa de 6 de pé — com a bateria afiada, o Fator Torcida empurra o nosso time em casa (+20%)',
       disponivel(E){
-        const n = E.membros.filter(TO.membros.disponivel).length;
+        const n = TO.membros.aptosParaOEstadio(E).length;
         return n >= 6 ? {ok:true}
                       : {ok:false, motivo:'precisa de seis de pé'};
       },
