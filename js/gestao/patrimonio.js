@@ -311,8 +311,10 @@ TO.patrimonio = (function(){
       nota:`estoque atual: ${bombas(E)} · R$ ${PRECO_BOMBA} cada`,
       custo:5*PRECO_BOMBA, trava:trava(5*PRECO_BOMBA)});
 
-    /* AS FILIAIS: até 4 candidatas na vitrine, da maior base pra
-       menor, e a ampliação da filial mais fraca */
+    /* AS FILIAIS: um botão só com o dropdown do destino (pedido do
+       dono, 26/08/2026), candidatas da maior base pra menor, e a
+       ampliação da filial mais fraca. A população sai SEM o "mil":
+       o número da planilha é o número de verdade. */
     {
       const fs = p.filiais || [];
       const limite = FILIAL.porSede[n] || 0;
@@ -323,14 +325,15 @@ TO.patrimonio = (function(){
         fs.length >= limite
           ? `a sede nível ${n} banca ${limite} ${limite===1?'filial':'filiais'}`
           : null;
-      for(const c of cidadesCandidatas(E).slice(0, 4))
-        lista.push({id:'filial:'+c.cidade,
-          rot:`Abrir subsede em ${c.nome}`,
-          nota:`${U.numero(c.torcedores)} mil torcedores do ${
-            (TO.mundo.time(E.torcida.clubeId)||{}).nome||'clube'} na praça · `+
-            `núcleo local de até ${FILIAL.teto[1]} membros no nível 1`,
-          custo:FILIAL.compra,
-          trava:trava(FILIAL.compra, travaF)});
+      const cands = cidadesCandidatas(E);
+      const clube = (TO.mundo.time(E.torcida.clubeId)||{}).nome || 'clube';
+      if(cands.length) lista.push({
+        id:'filial', rot:'Abrir subsede em outra cidade',
+        nota:`núcleo local de até ${FILIAL.teto[1]} membros no nível 1 · `+
+             `recruta, defende e ataca na cidade dela`,
+        custo:FILIAL.compra, trava:trava(FILIAL.compra, travaF),
+        escolhas: cands.map(c=>({id:c.cidade,
+          rot:`${c.nome} — ${U.numero(c.torcedores)} torcedores do ${clube}`}))});
       const alvoF = fs.filter(f=>FILIAL.ampliar[f.nivel])
                       .sort((a,b)=>a.nivel-b.nivel)[0];
       if(alvoF) lista.push({id:'ampliar-filial:'+alvoF.cidade,
@@ -353,7 +356,13 @@ TO.patrimonio = (function(){
 
   function comprar(E, id){
     const p = F().patrimonio(E);
-    const o = opcoes(E).find(x=>x.id===id);
+    let o = opcoes(E).find(x=>x.id===id);
+    /* a filial vem do dropdown: o id chega como 'filial:cidade', mas a
+       opção na vitrine é uma só, com as escolhas dentro */
+    if(!o && id.indexOf('filial:') === 0){
+      const f = opcoes(E).find(x=>x.id === 'filial');
+      if(f && (f.escolhas||[]).some(c=>c.id === id.slice(7))) o = f;
+    }
     if(!o) return {ok:false, msg:'Opção que não existe.'};
     if(o.trava) return {ok:false, msg:`Não dá: ${o.trava}.`};
 
@@ -364,7 +373,7 @@ TO.patrimonio = (function(){
       TO.estado.lancar(E, `Subsede em ${F().nomeCidade(tipo)}`, -o.custo);
       E.inauguracao = {tipo:'subsede', bairro:F().nomeCidade(tipo),
                        quando:(E.data||{}).absoluto || 0, contada:false};
-      return {ok:true, msg:o.rot+'.'};
+      return {ok:true, msg:`Subsede aberta em ${F().nomeCidade(tipo)}.`};
     }
     if(acao==='ampliar-filial'){
       const f = (p.filiais||[]).find(x=>x.cidade === tipo);

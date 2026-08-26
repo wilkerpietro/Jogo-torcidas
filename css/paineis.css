@@ -1039,6 +1039,25 @@ table.dados tr.selecionada td{background:#252525}
   font-family:var(--mono);font-size:10px;color:var(--vermelho);
   text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;
 }
+/* a oferta com escolha: um botão só e o dropdown do destino dentro */
+.oferta.escolha{cursor:default;flex-wrap:wrap}
+.oferta.escolha:hover{border-color:var(--linha);color:var(--texto)}
+.oferta.escolha select{
+  background:#0f0f0a;border:1px solid var(--linha);color:var(--texto);
+  font-family:var(--mono);font-size:11.5px;padding:6px 8px;
+  max-width:min(46%,340px);
+}
+.oferta.escolha select:disabled{opacity:.55}
+.oferta .bt-oferta{
+  background:none;border:1px solid var(--linha);color:var(--ouro);
+  font-family:var(--mono);font-size:13px;padding:7px 12px;cursor:pointer;
+  white-space:nowrap;
+}
+.oferta .bt-oferta:hover:not(:disabled){border-color:var(--ouro)}
+.oferta .bt-oferta:disabled{opacity:.55;cursor:default}
+@media (max-width:560px){
+  .oferta.escolha select{max-width:100%;flex:1 1 100%}
+}
 
 .itens-pat{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px}
 .item-pat{

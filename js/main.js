@@ -3303,8 +3303,10 @@
 
     const grade = el('div',{class:'colunas'});
 
+    /* SEM O "MIL" (correção do dono, 26/08/2026): o número da planilha
+       é o número de verdade — 60 torcedores na praça são 60 */
     const c1 = cartao(`Torcedores do ${clube?clube.nome:'clube'} em ${cid?cid.nome:'—'}`,
-                      `${U.numero(torcedores)} mil na praça`);
+                      `${U.numero(torcedores)} na praça`);
     /* PESSOAS, NÃO MILHARES (correção do dono, 24/08/2026): "695 mil
        fora de organizada" era fantasia — o que existe é o punhado que
        dá pra recrutar de verdade. */
@@ -4023,9 +4025,29 @@
     pg.appendChild(c);
 
     const c2 = cartao('Adquirir e ampliar', `caixa: ${U.dinheiro(e.dinheiro)}`);
-    for(const o of PAT.opcoes(e))
+    for(const o of PAT.opcoes(e)){
+      /* oferta com ESCOLHA (pedido do dono, 26/08/2026): um botão só
+         e o dropdown do destino dentro — a subsede de fora usa isso */
+      if(o.escolhas){
+        const d = el('div',{class:'oferta escolha'+(o.trava?' travada':'')});
+        d.appendChild(el('span',{class:'txt',
+          html:`<b>${o.rot}</b>${o.nota?`<small>${o.nota}</small>`:''}`}));
+        const sel = el('select',{class:'sel-oferta'});
+        for(const esc of o.escolhas)
+          sel.appendChild(el('option',{value:esc.id, texto:esc.rot}));
+        sel.disabled = !!o.trava;
+        d.appendChild(sel);
+        const b = el('button',{class:'bt-oferta', texto:U.dinheiro(o.custo)});
+        b.disabled = !!o.trava;
+        b.onclick = ()=>comprar(()=>PAT.comprar(e, o.id+':'+sel.value));
+        d.appendChild(b);
+        if(o.trava) d.appendChild(el('small',{class:'trava', texto:o.trava}));
+        c2.corpo.appendChild(d);
+        continue;
+      }
       c2.corpo.appendChild(oferta(o.rot, o.nota, o.custo, o.trava,
         ()=>comprar(()=>PAT.comprar(e, o.id))));
+    }
     pg.appendChild(c2);
   }
 

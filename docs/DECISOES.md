@@ -2576,6 +2576,21 @@ mundo) pra 40 torcidas (58 filiais), várias já ampliadas pra nível 2
 — e em troca as IAs acumulam menos ônibus e prédios repetidos, que
 era exatamente o "uma por vez" pedido.
 
+## O dropdown da subsede e a população sem "mil" (pedido do dono, 26/08/2026)
+
+- **Um botão só pra abrir subsede de fora**: em vez de uma oferta por
+  cidade na vitrine do Patrimônio, uma única oferta "Abrir subsede em
+  outra cidade" com um dropdown do destino dentro — todas as
+  candidatas listadas, da maior base pra menor. A compra vai pelo
+  valor selecionado ('filial:cidade'), a cidade comprada some do
+  dropdown, e cidade fora da lista não passa.
+- **A população dividida por mil, na verdade**: o número da planilha
+  é o número de verdade — era "60 mil torcedores do Fortaleza na
+  praça" e virou "60 torcedores do Fortaleza na praça". Corrigido no
+  dropdown da subsede e no cartão "Torcedores do clube" da tela da
+  torcida (o "Possíveis de recrutar" já estava em pessoas desde
+  24/08).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
