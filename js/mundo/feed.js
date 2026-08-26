@@ -592,8 +592,10 @@ TO.feed = (function(){
     propor(E, {
       kind:'barrival', peso:'decisao', voz:'diretor',
       chave:`barrival|${E.data.ano}|${sa}`,
-      texto:`Chefe, o bar da ${alvo.deQuem} no ${alvo.bairro} tá de porta `+
-            `aberta e gaveta cheia. Bora quebrar o balcão?`,
+      /* texto do dono (26/08/2026) */
+      texto:`Chefe, chegou a informação que o bar da ${alvo.deQuem} tá `+
+            `cheio deles lá, a gente quer dar o bote neles e roubar o `+
+            `caixa do bar.`,
       dados:{alvo: alvo.id, nome: alvo.deQuem},
       botoes:[
         {id:'atacar', rot:'Atacar o bar', acao:'atacar-bar-rival',
@@ -713,11 +715,14 @@ TO.feed = (function(){
     /* sem ninguém hostil na rua não há a quem descer, e o texto não
        pode perguntar "vamos pra cima de alguém?" pra uma rua vazia */
     const temAlvo = tabela.some(t=>(t.torcidas||[]).some(x=>x.hostil));
+    /* texto do dono (26/08/2026) */
     let texto = temAlvo
-      ? `Chefe, o relatório de hoje. Nós saímos com até ${nossos}. `+
-        `Vamos pra cima de alguém?`
-      : `Chefe, o relatório de hoje. Nós saímos com até ${nossos}, e `+
-        `rival na rua não tem. Deve ser um dia tranquilo`;
+      ? `Chefe, esses são os jogos dos próximos dias na cidade. Nosso `+
+        `bonde vai pro jogo com ${nossos} membros. Fale as ações das `+
+        `torcidas.`
+      : `Chefe, esses são os jogos dos próximos dias na cidade. Nosso `+
+        `bonde vai pro jogo com ${nossos} membros, e rival na rua não `+
+        `tem. Deve ser um dia tranquilo`;
     const botoes = [];
     if(temAlvo) botoes.push({id:'atacar', rot:'Atacar', acao:'tela-ataque',
                              args:{ctx:{grupos}}});
@@ -1440,10 +1445,10 @@ TO.feed = (function(){
             if(n > 0) presentes.push({id:o.id, nome:o.nome, n, casa: lado==='c'});
           }
       }
-      const listaDe = casa => presentes.filter(p=>p.casa===casa)
-        .sort((a,b)=>b.n-a.n).map(p=>`${p.nome} ${p.n}`).join(' · ') || 'ninguém';
-      const linhaTorcidas = presentes.length
-        ? ` Mandante: ${listaDe(true)}. Visitante: ${listaDe(false)}.` : '';
+      /* A LISTA VIROU TABELA (pedido do dono, 26/08/2026): as torcidas
+         presentes saem do texto corrido e vão pra uma linha única de
+         colunas, cada uma com a cor primária na borda esquerda —
+         quem desenha é o cartão da mensagem, lendo `dados.presenca` */
       propor(E, {
         kind:'partida', peso:'decisao', voz:'jornal',
         chave:`partida|${E.data.ano}|${E.data.semana}|${E.data.dia}|${meu}`,
@@ -1451,8 +1456,7 @@ TO.feed = (function(){
               `${abertura}. `+
               (p1 && p2 ? `O ${nome(nosso.c)} está em ${p1}º na tabela `+
                           `e o ${nome(nosso.f)} em ${p2}º. ` : '')+
-              `A bola vai rolar${estadio ? ` ${artEst} ${estadio}` : ''}.`+
-              linhaTorcidas,
+              `A bola vai rolar${estadio ? ` ${artEst} ${estadio}` : ''}.`,
         dados:{casa:nome(nosso.c), fora:nome(nosso.f),
                gc:nosso.gc, gf:nosso.gf, comp:nosso.compNome || '', gols,
                /* o clima do estádio lê quem está lá (dono, 19/08/2026) */

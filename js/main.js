@@ -2137,6 +2137,29 @@
       art.appendChild(tb);
     }
 
+    /* QUEM PÕE GENTE NO ESTÁDIO É TABELA (pedido do dono, 26/08/2026):
+       linha única, uma coluna por torcida, com a cor primária na borda
+       esquerda de cada uma. Mandantes primeiro, visitantes depois. */
+    const pres = m.kind === 'partida' && m.dados && m.dados.presenca;
+    if(pres && pres.length){
+      const rolinho = el('div',{class:'rolo-presenca'});
+      const tb = el('table',{class:'tab-presenca'});
+      const tr = el('tr');
+      const ordem = [...pres].sort((a,b)=>
+        (b.casa?1:0)-(a.casa?1:0) || b.n-a.n);
+      for(const p of ordem){
+        const o = TO.mundo.torcida(p.id) || {};
+        const cor = (TO.mundo.coresDaTorcida(o) || {}).cor || '#888';
+        tr.appendChild(el('td',{class: p.casa ? '' : 'fora',
+          estilo:{borderLeftColor:cor},
+          title: p.casa ? 'torcida do mandante' : 'torcida do visitante',
+          html:`<span>${p.nome}</span><b>${p.n}</b>`}));
+      }
+      tb.appendChild(tr);
+      rolinho.appendChild(tb);
+      art.appendChild(rolinho);
+    }
+
     /* a linha de consequência sai dos efeitos aplicados, nunca do texto */
     if(m.consequencia)
       art.appendChild(el('div',{class:'msg-efeitos', texto:m.consequencia}));

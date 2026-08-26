@@ -2591,6 +2591,24 @@ era exatamente o "uma por vez" pedido.
   torcida (o "Possíveis de recrutar" já estava em pessoas desde
   24/08).
 
+## Três retoques no feed (textos do dono, 26/08/2026)
+
+- **Relatório do olheiro**: "Chefe, o relatório de hoje. Nós saímos
+  com até N. Vamos pra cima de alguém?" virou "Chefe, esses são os
+  jogos dos próximos dias na cidade. Nosso bonde vai pro jogo com N
+  membros. Fale as ações das torcidas." (a variante de rua vazia
+  manteve o fecho "e rival na rua não tem. Deve ser um dia
+  tranquilo").
+- **Convite do bar rival**: "o bar da X no bairro tá de porta aberta
+  e gaveta cheia. Bora quebrar o balcão?" virou "Chefe, chegou a
+  informação que o bar da X tá cheio deles lá, a gente quer dar o
+  bote neles e roubar o caixa do bar."
+- **A presença da partida virou tabela**: o "Mandante: A 54 · B 20.
+  Visitante: C 140 · D 12." saiu do texto corrido e virou tabela de
+  linha única no cartão, uma coluna por torcida com a cor primária na
+  borda esquerda — mandantes primeiro, visitantes depois (célula
+  levemente destacada), rolando na horizontal quando não cabe.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
