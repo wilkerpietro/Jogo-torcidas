@@ -55,6 +55,34 @@ E como a elipse é contínua, **a fuga não é a quina** — é a rampa. As quat
 entram na cena como caminho de verdade, ligando a circulação ao lado de fora.
 Sem elas, o anel superior vira ratoeira.
 
+## Rodando com o mapa anexado
+
+O mapa de setores vai junto do prompt, sempre. Isso troca o trabalho de lugar:
+o texto para de descrever a forma e passa a garantir o que o mapa **não** diz.
+
+**O que o mapa dá:** contorno da elipse, proporção entre os anéis, onde a
+arquibancada é contínua e onde vira fatia, posição do gramado.
+
+**O que o mapa não dá, e o prompt tem que impor:** que é foto e não desenho,
+que não há cobertura, que o anel de cima é recuado, que existe fosso com duas
+passarelas, que as rampas são caminho, e que o estádio está vazio.
+
+**O erro novo que a anexação cria** é o modelo copiar o mapa: fundo chapado,
+setor vermelho, gramado verde-uniforme, contorno branco. Por isso o prompt abre
+mandando pegar só a geometria e o negativo lista o vocabulário do mapa
+(`flat diagram`, `colour-coded sectors`, `legend`, `flat colour fill`). Se a
+primeira saída vier chapada, não mude o prompt — mande a ordem curta:
+
+```
+Same layout, but this must be a photograph, not a diagram: real weathered
+concrete steps with texture and joints, real grass with mown stripes and worn
+patches, real overcast daylight and soft shadows. No flat colour fill, no
+coloured sectors, no outlines, no legend, no numbers.
+```
+
+**Vale pra qualquer estádio que entrar aqui.** A forma vem do mapa, as regras
+de cena vêm do texto, e o negativo segura o desenho.
+
 ## Prompt — anel inteiro
 
 ```
@@ -68,6 +96,14 @@ every object seen only as its top surface: roofs only, vehicle roofs only, no
 façades, no building elevations, no side walls, no stand seen from the front,
 all sides of the bowl looking alike, nothing leaning outward at the edges of
 the frame,
+
+FOLLOW THE ATTACHED SEATING MAP for the shape of the stadium: the outline of
+the bowl, the proportion between the rings, where the terracing is continuous
+and where it is split into sectors, and the position of the pitch inside it all
+come from that reference. Take from it ONLY the plan geometry. Ignore its
+colours, its legend, its numbers and its flat diagram look completely — this is
+a PHOTOGRAPH of a real concrete stadium, not a drawing of a map, with real
+materials, real texture and real daylight,
 
 aerial drone photograph of a huge empty oval Brazilian football stadium of the
 old concrete kind, capacity around eighty thousand, overcast diffuse daylight,
@@ -139,10 +175,12 @@ corners, broken ring, athletics track, running track, olympic stadium,
 all-seater arena, coloured plastic seats, world cup arena, european stadium,
 closed moat with no crossing, no tunnels, no ramps,
 
+flat diagram, ticketing map, seating chart, seating map, section numbers,
+colour-coded sectors, red sectors, green pitch fill, legend, key, white
+outlines around sectors, plain background, vector shapes, flat colour fill,
 illustration, cartoon, isometric, 3d render, video game asset, painting,
-vector art, blueprint, seating chart, seating map, section numbers, coloured
-sectors, map icons, labels, text, sponsor boards, advertising, club badges,
-watermark, grid lines, vignette,
+vector art, blueprint, map icons, labels, text, sponsor boards, advertising,
+club badges, watermark, grid lines, vignette,
 crowd, people, spectators, players, football match, flags, banners, moving cars,
 saturated colors, hdr, dramatic lighting, night, floodlit, rain
 ```
