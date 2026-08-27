@@ -56,6 +56,26 @@ E como a elipse é contínua, **a fuga não é a quina** — é a rampa. As quat
 entram na cena como caminho de verdade, ligando a circulação ao lado de fora.
 Sem elas, o anel superior vira ratoeira.
 
+## Fidelidade, e as três divergências declaradas
+
+Estádio individual não é "um estádio brasileiro com esta forma" — **é aquele
+estádio**, com o complexo em volta: esplanada, estacionamento, ginásio vizinho,
+avenida, quarteirão. Quanto mais real o entorno, mais a cena parece o lugar.
+
+O que muda em relação ao real é pouco, e o prompt **declara em bloco numerado**,
+porque é a estrutura que o modelo mais obedece:
+
+1. **a câmera** — ortográfica, zênite, orthomosaic;
+2. **o teto sai** — cobertura vista a prumo apaga a arquibancada inteira;
+3. **duas passarelas sobre o fosso** — sem elas, gramado e arquibancada viram
+   ilhas separadas e metade da cena fica inalcançável.
+
+E o cimento, que é decisão de projeto e não divergência de planta: cadeira
+colorida é cor de clube, e a mesma cena serve a torcida que muda toda partida.
+
+Fora isso, **tudo segue o lugar real**. Se um estádio tiver rampa helicoidal,
+setor interrompido, ginásio colado ou linha de trem passando, isso entra.
+
 ## Referência: qual imagem serve pra quê
 
 Estádio individual roda com imagem anexada, sempre. Mas **nenhuma referência
@@ -182,79 +202,72 @@ de cena vêm do texto, e o negativo segura o desenho.
 ```
 strict orthographic top-down nadir view, camera exactly at zenith directly
 above the scene, optical axis perpendicular to the ground, 90 degrees straight
-down, orthophoto / satellite imagery projection, zero camera tilt, zero
-parallax, no perspective distortion, no vanishing point, verticals collapse to
-points,
+down, TRUE ORTHOMOSAIC as if photographed from very high altitude with a long
+telephoto lens, zero camera tilt, zero parallax, no perspective distortion, no
+vanishing point, verticals collapse to points, no vertical surface visible
+anywhere — no inner face of any stand, no front wall of the terracing, no side
+of any tunnel mouth; the near side and the far side of the bowl read identical,
+mirrored about the centre of the pitch,
 
-every object seen only as its top surface: roofs only, vehicle roofs only, no
-façades, no building elevations, no side walls, no stand seen from the front,
-all sides of the bowl looking alike, nothing leaning outward at the edges of
-the frame,
+this is the MARACANÃ STADIUM in Rio de Janeiro, and the real place is followed
+faithfully: its true elliptical plan, the proportion of its rings, its radial
+sectors, its external ramps, its esplanade and the real buildings and streets
+around it,
 
-FOLLOW THE ATTACHED SEATING MAP for the shape of the stadium: the outline of
-the bowl, the proportion between the rings, where the terracing is continuous
-and where it is split into sectors, and the position of the pitch inside it all
-come from that reference. Take from it ONLY the plan geometry. Ignore its
-colours, its legend, its numbers and its flat diagram look completely — this is
-a PHOTOGRAPH of a real concrete stadium, not a drawing of a map, with real
-materials, real texture and real daylight,
+ONLY THREE THINGS DEPART FROM REALITY, and nothing else changes:
+1. the camera is a strict orthographic nadir orthomosaic, as described above;
+2. THE ROOF IS ENTIRELY REMOVED — the elliptical roof ring, its trusses, its
+   cables and its masts are gone, so both rings of terracing lie open to the
+   sky and are evenly lit from the front row to the back row, with no shadow
+   cast over them;
+3. two footbridges cross the moat, one behind each goal, connecting the
+   terracing to the pitch.
 
-aerial drone photograph of a huge empty oval Brazilian football stadium of the
-old concrete kind, capacity around eighty thousand, overcast diffuse daylight,
-soft shadows, desaturated muted colors, documentary photography, completely
-empty of people,
+the stadium is a perfect ellipse filling the frame, its long axis running left
+to right; in the exact centre a full-size grass pitch with painted white
+markings and mown stripes, two white goal frames lying flat in the image with
+their shadows beside them, no athletics track,
 
-the stadium is a PERFECT ELLIPSE seen from directly above, filling the frame,
-its long axis running left to right; in the exact centre, a full-size grass
-pitch with painted white markings and mown stripes, two white goal frames lying
-flat in the image with their shadows beside them, and no running track around
-it,
+around the pitch a dry moat and a perimeter wall, then the LOWER RING: a
+continuous elliptical band of steps unbroken all the way around with no gap at
+any corner, seen from directly above as concentric bands, divided into radial
+wedge-shaped sectors by straight stairways running outward like spokes, with
+tunnel mouths reading as flat dark slots in the surface of the steps,
 
-around the pitch, a wide dry moat and a tall perimeter fence, and two
-footbridges crossing the moat, one behind each goal, the only connections
-between the terracing and the pitch,
+between the rings, an OPEN CONCOURSE: a wide elliptical esplanade running the
+whole way around, completely open to the sky and plainly visible from above
+along its entire length, with flights of stairs rising from it to the upper
+ring,
 
-the LOWER RING: a continuous elliptical band of uncovered concrete steps
-hugging the pitch, unbroken all the way around with no gap at any corner, seen
-from directly above as concentric bands of parallel steps, evenly lit across
-its whole depth, divided into radial wedge-shaped sectors by straight
-stairways that run outward like spokes, with dark tunnel mouths opening through
-the steps,
+the UPPER RING: a second continuous elliptical band of steps set FURTHER OUT
+than the lower ring, standing beyond the concourse and never over it, so that
+both rings and the concourse between them are fully visible from directly
+above, divided into the same radial sectors,
 
-between the rings, an OPEN CONCOURSE: a wide elliptical concrete esplanade
-running the whole way around the stadium, completely open to the sky and
-plainly visible from above along its entire length, with flights of stairs
-rising from it to the upper ring,
+on the outside of the ellipse, the great external access ramps, one in each
+quadrant, seen from above as broad straight slabs rising to the concourse, each
+landing on a paved apron,
 
-the UPPER RING: a second continuous elliptical band of uncovered concrete
-steps set FURTHER OUT than the lower ring, standing beyond the concourse and
-never over it, so that both rings and the concourse between them are fully
-visible from directly above, divided into the same radial wedge-shaped sectors
-by straight stairways,
+around the stadium, the real Maracanã complex: the wide paved esplanade ringing
+the whole ellipse, large open car parks with cars and coaches parked in marked
+bays seen from directly above as roofs only, the round indoor arena standing
+just to one side of the stadium shown only as its intact roof, the avenue and
+the railway line running past on one side, rows of trees, and beyond them the
+dense city blocks of Rio de Janeiro, all of them keeping their roofs intact and
+shown only as roof surfaces,
 
-there is no roof anywhere: no canopy, no ring roof, no cantilever, no membrane,
-no covered section over either ring, no upper deck overhanging the lower one,
+EVERYTHING IS BARE CONCRETE: every stand, every step, every wall, every
+stairway, every ramp and every esplanade is grey unpainted cement, weathered
+and stained, in a range of greys from pale sun-bleached concrete to dark damp
+concrete with rain streaks, moss in the joints and patched repairs; there are
+no seats of any colour anywhere — the terracing is plain concrete steps; the
+only colours in the whole picture are the green of the grass and the trees, the
+white of the painted pitch markings and the dark grey of the asphalt,
 
-on the outside of the ellipse, four large access ramps, one in each quadrant,
-seen from above as broad straight concrete slabs rising to the concourse, each
-landing on a paved apron outside,
-
-around the whole stadium, a paved esplanade of concrete slabs and painted
-asphalt, then a ring road circling the ellipse with cars and coaches parked
-along it seen from directly above as roofs only, the road running out of frame
-at the left and right edges,
-
-EVERYTHING IS BARE CONCRETE: every stand, every step, every wall, every stairway,
-every ramp and every esplanade is grey unpainted cement, weathered and stained,
-in a range of greys from pale sun-bleached concrete to dark damp concrete with
-rain streaks, moss in the joints and patched repairs; there are no seats of any
-colour anywhere — the terracing is plain concrete steps; the only colours in the
-whole picture are the green of the grass, the white of the painted pitch
-markings and the dark grey of the asphalt outside,
-
-photorealistic, natural materials, sun-bleached concrete, stained old concrete,
-worn grass, tropical Brazil, Rio de Janeiro, 8k satellite imagery quality,
-sharp detail, no people visible, no spectators, no players
+photorealistic, natural materials, overcast diffuse daylight, soft shadows,
+desaturated muted colors, documentary photography, stained old concrete, worn
+grass, 8k satellite imagery quality, sharp detail, completely empty of people,
+no spectators, no players, no moving cars
 ```
 
 ## Negativo
