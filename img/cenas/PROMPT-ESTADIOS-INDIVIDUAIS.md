@@ -113,6 +113,42 @@ visible, clouds, roof structure, steel truss, roof ring, hanging scoreboard,
 floodlight rig, white plastic seats, rows of seats,
 ```
 
+### Quando a forma vem certa e a câmera vem torta
+
+Acontece muito: traçado certo, concreto certo, e ainda assim sobra ângulo. O
+tell não é o meio do quadro, é a **face vertical**: se dá pra ver a parede
+interna da arquibancada, a frente do degrau ou a lateral da boca de vomitório,
+a projeção ainda é de lente, não é ortográfica.
+
+Não refaça — a forma é a parte cara. Anexe a imagem que saiu e mande:
+
+```
+Re-render this exact same stadium as a TRUE ORTHOGRAPHIC ORTHOMOSAIC seen from
+directly overhead. Imagine it photographed from very high altitude with a long
+telephoto lens, so that all vertical lines project to points and nothing
+diverges towards the edges of the frame.
+
+No vertical surface may be visible anywhere: you must not see the inner face of
+any stand, the front wall of the terracing, or the sides of the tunnel mouths —
+the tunnels read as flat dark slots on the surface of the steps, not as holes
+seen from an angle. The near side and the far side of the bowl must look
+identical, mirrored about the centre of the pitch, and every ring must be a
+perfect concentric ellipse, not leaning outward at the corners.
+
+Keep everything else exactly as it is: the shape, the two rings, the concourse
+between them, the bare concrete, the pitch, the ramps, the ring road and the
+overcast light. Change only the projection.
+```
+
+Duas palavras puxam mais que "top-down": **orthomosaic**, que é o nome do
+produto real com essa projeção, e **long telephoto from very high altitude**,
+que descreve fisicamente como se mata a divergência em vez de pedir um
+resultado abstrato.
+
+E o teste de aceitação é simples e objetivo: **o lado de perto e o lado de
+longe têm que ser idênticos, espelhados pelo centro do gramado.** Se um dos
+dois mostra mais parede que o outro, sobrou ângulo.
+
 ## Rodando com o mapa anexado
 
 O mapa de setores vai junto do prompt, sempre. Isso troca o trabalho de lugar:
