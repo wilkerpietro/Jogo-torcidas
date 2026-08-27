@@ -143,10 +143,22 @@ TO.itinerario = (function(){
     const alvo = atacando ? M().torcida(p.alvoTorcida) : null;
 
     /* o que a gente sofre hoje: a concentração e a pista vêm do
-       calendário de ataques-surpresa (relacoes.ALVOS) */
+       calendário de ataques-surpresa (relacoes.ALVOS).
+       A PRAÇA TEM DE BATER (correção do dono, 27/08/2026): numa
+       semana de dois jogos, o ataque marcado pro jogo de CASA vazava
+       pro itinerário do jogo fora — a Ultras Madureira "caía em cima
+       da concentração" em Itu. O marcado agora carrega a cidade do
+       ataque e o DIA, e só entra na linha do jogo daquela praça
+       naquele dia. Marcado velho, sem cidade, só vale em casa. */
+    const pracaDoJogo = j.casa ? E.torcida.mapa : j.mapaAdv;
     const atq = E.ataqueMarcado && !E.ataqueMarcado.resolvido &&
                 E.ataqueMarcado.ano === E.data.ano &&
                 E.ataqueMarcado.semana === E.data.semana &&
+                (E.ataqueMarcado.dia == null ||
+                 E.ataqueMarcado.dia === E.data.dia) &&
+                (E.ataqueMarcado.mapa
+                  ? E.ataqueMarcado.mapa === pracaDoJogo
+                  : !!j.casa) &&
                 (E.ataqueMarcado.alvo === 'concentracao' ||
                  E.ataqueMarcado.alvo === 'pista') ? E.ataqueMarcado : null;
 

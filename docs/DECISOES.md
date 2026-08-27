@@ -2723,6 +2723,26 @@ caixa média R$ 28 mil — a estrada cobra sem afundar ninguém.
   nome decorado ("X Sub-Sede Y") acha a torcida-mãe pelo prefixo, e o
   contador por cena evita repetição sem quebrar a fila fixa.
 
+## A concentração de jogo fora é na praça DELES (correção do dono, 27/08/2026)
+
+O dono flagrou no save do Sangue Americano: jogo fora em Itu e a
+"Ultras Madureira caiu em cima da nossa concentração" — torcida da
+NOSSA praça atacando numa cidade onde ela não estava. Duas pontas:
+
+- **O vazamento**: numa semana de dois jogos, o ataque-surpresa era
+  marcado pro jogo de CASA (o `proximoJogo` da semana), mas o
+  itinerário do jogo de meio de semana FORA consumia o marcado —
+  ele só conferia ano e semana. O marcado agora carrega a CIDADE do
+  ataque e o dia, e o itinerário só o aceita se a praça e o dia
+  baterem com o jogo daquela linha. Marcado de save velho, sem
+  cidade, só vale em casa.
+- **A fonte certa**: semana de jogo fora ganhou o próprio sorteio de
+  ataque-surpresa — torcida hostil DA PRAÇA DO MANDANTE pode cair na
+  nossa concentração ou pista lá, com a mesma chance da régua de
+  casa. A nanica se mede contra a CARAVANA que viajou (não contra a
+  torcida inteira em casa), e sub-sede nossa naquela cidade é
+  olheiro fixo do aviso, como nas emboscadas.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

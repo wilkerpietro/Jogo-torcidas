@@ -605,7 +605,7 @@ TO.relacoes = (function(){
       const alvo = U.escolher(sorteio);
       const dia = E.proximoJogo.dia || 6;
       E.ataqueMarcado = {torcida:o.id, nome:o.nome, alvo:alvo.id,
-                         cena:alvo.cena,
+                         cena:alvo.cena, mapa:E.torcida.mapa,
                          ano:E.data.ano, semana:E.data.semana, dia};
       hostilidade(E, o.id, REL.ataqueMarcado);
       /* a campana do olheiro pode farejar a fita (dono, 24/08/2026) */
@@ -650,6 +650,7 @@ TO.relacoes = (function(){
                            nome:`${o.nome} Sub-Sede ${nomeCid}`,
                            alvo:alvo.id, cena:alvo.cena,
                            efetivo:f.membros, filial:true,
+                           mapa:E.torcida.mapa,
                            ano:E.data.ano, semana:E.data.semana, dia};
         hostilidade(E, o.id, REL.ataqueMarcado);
         if(TO.feed && TO.feed.avisoDoOlheiro)
@@ -657,6 +658,47 @@ TO.relacoes = (function(){
             chave:`atqf|${E.data.ano}|${E.data.semana}|${o.id}`,
             alvo:alvo.id, nome:`${o.nome} Sub-Sede ${nomeCid}`});
         fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia, filial:true});
+        break;
+      }
+    }
+
+    /* JOGO FORA: A CONCENTRAÇÃO É NA PRAÇA DELES (correção do dono,
+       27/08/2026). A concentração e a pista do dia de jogo fora
+       acontecem na cidade do MANDANTE — então quem cai em cima é
+       torcida hostil DAQUELA praça, nunca a da nossa. A nanica se
+       mede contra a CARAVANA que viajou, não contra a torcida
+       inteira, e a filial nossa por lá é olheiro fixo do aviso. */
+    const j = E.proximoJogo;
+    if(!fora.length && j && !j.casa && j.mapaAdv &&
+       j.mapaAdv !== E.torcida.mapa){
+      const est = TO.planejamento.estimativaCaravana
+        ? TO.planejamento.estimativaCaravana(E) : null;
+      const crew = (est && est.vao) ||
+        TO.membros.aptosParaOEstadio(E).length;
+      for(const o of M().torcidasEm(j.mapaAdv)){
+        if(o.id === E.torcida.id || o.incompleta) continue;
+        if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
+        const r = nivel(E, o.id);
+        if(r > QUENTE) continue;
+        if(disponiveisIA(E, o.id) < crew * 0.5) continue;
+        const t = (E.mundoTorcidas||{})[o.id];
+        const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * brigaDe(t);
+        if(U.rng() > chance) continue;
+        const sorteio = [];
+        for(const a of ALVOS) for(let i=0;i<a.peso;i++) sorteio.push(a);
+        const alvo = U.escolher(sorteio);
+        const dia = j.dia || 6;
+        E.ataqueMarcado = {torcida:o.id, nome:o.nome, alvo:alvo.id,
+                           cena:alvo.cena, mapa:j.mapaAdv,
+                           ano:E.data.ano, semana:E.data.semana, dia};
+        hostilidade(E, o.id, REL.ataqueMarcado);
+        if(TO.feed && TO.feed.avisoDoOlheiro)
+          TO.feed.avisoDoOlheiro(E, {
+            chave:`atq|${E.data.ano}|${E.data.semana}|${o.id}|${alvo.id}`,
+            alvo:alvo.id, nome:o.nome, cidade:j.cidadeAdv || '',
+            forcar: !!(TO.patrimonio && TO.patrimonio.temFilialEm &&
+                       TO.patrimonio.temFilialEm(E, j.mapaAdv))});
+        fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia});
         break;
       }
     }
