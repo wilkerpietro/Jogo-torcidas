@@ -18,6 +18,11 @@ Bezerrão e o Canindé (17–20 mil) no médio, o Couto Pereira e o Arruda no
 grande. Um estádio de 60 mil abre a cena grande: passar de 40 pra 60 mil muda o
 número na ficha, não muda a briga.
 
+Estádio que o jogador vê muito pode ganhar **imagem própria**, com a forma real
+da arquibancada: elas ficam em `PROMPT-ESTADIOS-INDIVIDUAIS.md`, e a regra é
+simples — se existe imagem pra aquele `id`, usa; senão, cai na faixa de
+capacidade daqui.
+
 ## A escala muda aqui, e é a única cena onde muda
 
 As outras seis cenas voam na mesma altura: o quadro cobre uns 80 metros. **Um
