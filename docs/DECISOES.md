@@ -2706,6 +2706,23 @@ que sobravam pro mundo:
 Medido 1 ano rodado com as três ligadas: 0 torcidas no vermelho,
 caixa média R$ 28 mil — a estrada cobra sem afundar ninguém.
 
+## Nome de rua e o elenco fixo de cada torcida (pedido do dono, 27/08/2026)
+
+- **~60% de nome próprio na rua**: os nossos membros agora atendem em
+  ~60% dos casos pelo próprio nome (Thales, Pedro...) e só o resto
+  tem apelido. Quando a rua chama pelo nome, a ficha bate com ele
+  ("Pedro Matos" na ficha, "Pedro" na lista e na briga). Medido: 62%
+  em 600 criados.
+- **Elenco fixo por torcida, do país certo**: os figurantes de TODA
+  torcida — brasileira ou estrangeira — têm nome sorteado por hash do
+  nome da torcida e da posição na fila: o membro nº 7 da Jovem Fla se
+  chama igual em todo save, em toda cena. A régua dos 60/40 vale pra
+  eles também, no banco do PAÍS da torcida (a barra argentina desce
+  com Benjamín e Yacaré, não com Pitbull — antes o figurante usava o
+  banco da NOSSA torcida e reembaralhava a cada cena). Filial com
+  nome decorado ("X Sub-Sede Y") acha a torcida-mãe pelo prefixo, e o
+  contador por cena evita repetição sem quebrar a fila fixa.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

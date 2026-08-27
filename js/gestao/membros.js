@@ -139,14 +139,17 @@ TO.membros = (function(){
     const N = TO.dados.nomes;
     const B = bancoDe(E);
     const cargo = opc.cargo || 'novato';
+    /* O NOME DE RUA (régua do dono, 27/08/2026): ~60% dos membros
+       atendem pelo próprio nome — Thales, Pedro — e só o resto tem
+       apelido. Quando a rua chama pelo nome, a ficha bate com ele. */
+    const nomeProprio = B.nomes ? U.escolher(B.nomes) : '';
     const m = {
       id: E.proximoId++,
-      apelido: opc.apelido || U.escolher(B.apelidos),
+      apelido: opc.apelido ||
+        (nomeProprio && U.rng() < 0.6 ? nomeProprio : U.escolher(B.apelidos)),
       sobrenome: U.escolher(B.sobrenomes),
-      /* nome de batismo: o banco de fora tem; o brasileiro não tinha
-         lista de primeiro nome de membro, então lá ele fica vazio e a
-         ficha não mostra a linha */
-      nome: B.nomes ? U.escolher(B.nomes) : '',
+      /* nome de batismo: quando o nome de rua É o nome, os dois batem */
+      nome: nomeProprio,
       cargo,
       forca:  opc.forca  !== undefined ? opc.forca  : U.inteiro(1,3),
       defesa: opc.defesa !== undefined ? opc.defesa : U.inteiro(1,3),
@@ -179,6 +182,34 @@ TO.membros = (function(){
      sem custo nenhum (GDD §5.1). */
   function nomeDe(m){
     return m.cargo==='diretoria' ? `${m.apelido} ${m.sobrenome}` : m.apelido;
+  }
+
+  /* O ELENCO DE RUA DE CADA TORCIDA (pedido do dono, 27/08/2026):
+     os figurantes de TODA torcida — brasileira ou estrangeira — têm
+     nome FIXO, sorteado por hash do nome da torcida e da posição na
+     fila: o membro nº 7 da Jovem Fla se chama igual em todo save.
+     A régua é a mesma da nossa: ~60% nome próprio, o resto apelido,
+     no banco do PAÍS da torcida (hispano pra barra de fora). O nome
+     decorado de filial ("X Sub-Sede Y") acha a torcida-mãe pelo
+     prefixo. */
+  function nomesDaTorcida(nomeTorcida, inicio, qtd){
+    const N = TO.dados.nomes;
+    const H = TO.mapa.hash;
+    let B = N;
+    if(nomeTorcida && TO.mundo && TO.mundo.jogaveis){
+      const o = TO.mundo.jogaveis().find(x => x.nome &&
+        (nomeTorcida === x.nome || nomeTorcida.indexOf(x.nome) === 0));
+      const t = o && TO.mundo.time(o.clubeId);
+      if(t && t.pais && t.pais !== 'Brasil' && N.hispano) B = N.hispano;
+    }
+    const fora = [];
+    for(let i = inicio; i < inicio + qtd; i++){
+      const chave = `rua|${nomeTorcida || 'povo'}|${i}`;
+      fora.push(H(chave) % 100 < 60 && B.nomes
+        ? B.nomes[H(chave + '|n') % B.nomes.length]
+        : B.apelidos[H(chave + '|a') % B.apelidos.length]);
+    }
+    return fora;
   }
 
   /* o nome de batismo, pra ficha: "Adrián González". Sem primeiro nome
@@ -609,6 +640,6 @@ TO.membros = (function(){
     IDADE_MIN, IDADE_MAX, IDADE_DECLINIO, IDADE_SAIDA, DESGASTE_ANO, SEQUELA,
     planoDeTreino, sortearFila,
     ferir, prender, diasPresos, fianca, resgatar, passarDia,
-    aptosParaOEstadio, aplicarResultadoDaNoite
+    aptosParaOEstadio, aplicarResultadoDaNoite, nomesDaTorcida
   };
 })();

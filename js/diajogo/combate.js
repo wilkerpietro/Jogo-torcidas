@@ -515,10 +515,24 @@ TO.diaJogo.combate = (function(){
     const s = g.s;
     const qtd = Math.max(g.qtd, escalados.length);
     if(qtd <= 0) return;
-    nomes = nomes || U.embaralhar(bancoDeApelidos());
     /* só o nosso bonde tem ficha de verdade; o resto joga com a ficha
        gerada do perfil da própria torcida */
     const meuLado = g.bonde ? !!g.bonde.nossa : !!s.jogador;
+    /* O ELENCO FIXO DA TORCIDA (pedido do dono, 27/08/2026): o
+       figurante tem nome sorteado por hash da PRÓPRIA torcida — o
+       mesmo bonde traz os mesmos nomes em todo save, no banco do país
+       dele (a barra argentina se chama Zurdo e Adrián, não Pitbull).
+       O contador por torcida evita nome repetido dentro da cena sem
+       quebrar a fila fixa. */
+    const donoDoNome = g.bonde || (!meuLado && J.rivalInfo) || null;
+    const rotN = donoDoNome ? donoDoNome.nome
+      : (meuLado && TO.estado && TO.estado.E ? TO.estado.E.torcida.nome : '');
+    if(TO.membros && TO.membros.nomesDaTorcida){
+      const idx = (J._nomeIdx = J._nomeIdx || {});
+      const de = idx[rotN] || 0;
+      nomes = TO.membros.nomesDaTorcida(rotN, de, qtd);
+      idx[rotN] = de + qtd;
+    } else nomes = nomes || U.embaralhar(bancoDeApelidos());
     const perfil = (g.bonde && g.bonde.perfil) || J.config_perfilRival || null;
     const geradas = meuLado ? null : fichasDoPerfil(perfil, qtd);
     /* só o nosso bonde obedece à formação; aliado que divide o portão não */
@@ -589,7 +603,8 @@ TO.diaJogo.combate = (function(){
       const m = escalados[i];
       const lider = temLider && i===0;
       const d=new Disco(
-        m ? m.apelido.toUpperCase() : (nomes[i%nomes.length]||'ZÉ').toUpperCase(),
+        m ? m.apelido.toUpperCase()
+          : String(nomes[i%nomes.length]||'ZÉ').toUpperCase(),
         s.lado, s, p.x, p.y, lider);
       if(m){
         d.membroId=m.id;
