@@ -2684,6 +2684,28 @@ contagem crua só o que é quadro, não presença: recrutamento
 (organizado ferido ainda é organizado) e as colunas de membros do
 ranking.
 
+## As três assimetrias da economia IA fechadas (decisão do dono, 27/08/2026)
+
+Da conferência jogador × IA, o dono mandou fechar as três vantagens
+que sobravam pro mundo:
+
+- **Caravana paga**: semana com jogo fora da praça cobra da IA a
+  mesma régua do jogador — por cabeça (viagem média de 2 trechos, R$
+  42), a torcida banca 40% (o rateio dos embarcados cobre o resto) e
+  a frota abate 30% por ônibus até zerar com três. Caravana de 30 sem
+  ônibus: R$ 504.
+- **Fator comercial**: o balanco delas passou a multiplicar bar, loja,
+  subsede e filial pela mesma conta do jogador — 0,7 + prestígio×0,4
+  + tamanho×0,3 — com o prestígio e o efetivo DELAS. IA nanica parou
+  de faturar como média (nanica×gigante mede razão 1,89, a mesma da
+  régua 0,73→1,4).
+- **Filial pelo bairro da cidade dela**: a receita da filial da IA
+  deixou o multiplicador da sede-mãe e passou pro bairro sorteado da
+  CIDADE da filial (`multFilial` com dono), como a do jogador.
+
+Medido 1 ano rodado com as três ligadas: 0 torcidas no vermelho,
+caixa média R$ 28 mil — a estrada cobra sem afundar ninguém.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

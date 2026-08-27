@@ -174,10 +174,12 @@ TO.financeiro = (function(){
      por hash — a mesma filial rende no mesmo bairro pra sempre */
   const nomeCidade = id =>
     ((TO.mundo.cidade && TO.mundo.cidade(id)) || {}).nome || id;
-  function multFilial(E, f){
+  /* o `dono` opcional deixa a mesma régua valer pras filiais das IAs
+     (dono, 27/08/2026): cada torcida tem o próprio bairro sorteado */
+  function multFilial(E, f, dono){
     const bairros = (TO.mundo.bairrosDe && TO.mundo.bairrosDe(f.cidade)) || [];
     if(!bairros.length) return 1;
-    const b = bairros[TO.mapa.hash(`${E.torcida.id}|filial|${f.cidade}`)
+    const b = bairros[TO.mapa.hash(`${dono || E.torcida.id}|filial|${f.cidade}`)
                       % bairros.length];
     return TO.mundo.multiplicador(b) || 1;
   }

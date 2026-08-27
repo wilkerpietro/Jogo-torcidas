@@ -351,6 +351,18 @@ TO.planejamento = (function(){
     return Math.max(4, Math.round(base * 0.18 * (1 + v/150) * bus));
   }
 
+  /* A ESTRADA COBRA DAS IAs TAMBÉM (assimetria fechada pelo dono,
+     27/08/2026): mesma régua do jogador — por cabeça, a torcida paga
+     40% (o rateio dos embarcados cobre os outros 60%) e a frota abate
+     30% por ônibus até zerar com três. Sem rota traçada pra elas, a
+     viagem média vale 2 trechos. */
+  function custoCaravanaIA(n, frota){
+    const porCabeca = CABECA_BASE + CABECA_TRECHO * 2;
+    const desconto = TO.financeiro.DESCONTO_ONIBUS[
+      Math.min(3, frota || 0)] || 0;
+    return Math.round(porCabeca * n * (1 - RATEIO) * (1 - desconto));
+  }
+
   function aliadosNaCidade(E, semana){
     if(!E.temporada) return [];
     const nossa = E.torcida.mapa;
@@ -1251,7 +1263,7 @@ TO.planejamento = (function(){
           passos, falta, investidaDe, definirInvestida,
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
-          aliadosNaCidade, caravanaDe, RELACAO_ALIADO,
+          aliadosNaCidade, caravanaDe, custoCaravanaIA, RELACAO_ALIADO,
           RECEPCAO, recepcaoDe, custoRecepcao,
           emboscadaDaRota, emboscadaNaPraca, hostisNaPraca,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,

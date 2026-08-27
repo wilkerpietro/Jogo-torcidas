@@ -238,19 +238,28 @@ TO.relacoes = (function(){
     return Math.max(bolo, jaTem);
   }
 
-  function balanco(t){
+  function balanco(t, E, id){
     const R = FIN().RECEITA, MAN = FIN().MANUT, fab = P().FABRICA;
     let rec = t.membros * MENSALIDADE;
     /* a moral manda no movimento delas também (régua do dono,
        24/08/2026): a mesma faixa de 0,4 a 1,3, na moral da torcida
        (interna 0–20, ×5 pra régua de 100) */
     const fx = FIN().faixaDaMoral ? FIN().faixaDaMoral((t.moral||12)*5) : 1;
-    for(const b of t.bares) rec += R.bar[b.nivel] * t.mult * fx;
-    for(const l of t.lojas) rec += R.loja[l.nivel] * t.mult * fx * (t.fabrica ? fab.multLoja : 1);
-    rec += t.subsedes * R.subsede * t.mult * fx;
-    /* as filiais delas rendem e custam como subsede, por nível */
+    /* O FATOR COMERCIAL VALE PRA ELAS (assimetria fechada pelo dono,
+       27/08/2026): a mesma conta do jogador — 0,7 + prestígio×0,4 +
+       tamanho×0,3 —, com o prestígio e o efetivo DELAS. IA nanica
+       parava de faturar como média. */
+    const fator = fx * (0.7 + ((t.prestigio||0)/20)*0.4
+                            + U.limitar(t.membros/150, 0, 1)*0.3);
+    for(const b of t.bares) rec += R.bar[b.nivel] * t.mult * fator;
+    for(const l of t.lojas) rec += R.loja[l.nivel] * t.mult * fator * (t.fabrica ? fab.multLoja : 1);
+    rec += t.subsedes * R.subsede * t.mult * fator;
+    /* a filial delas rende pelo bairro da CIDADE DELA, como a nossa
+       (assimetria fechada pelo dono, 27/08/2026) — não mais pelo
+       bairro da sede-mãe */
     for(const f of (t.filiais||[])){
-      rec += R.subsede * t.mult * fx;
+      rec += R.subsede * (E && id && FIN().multFilial
+        ? FIN().multFilial(E, f, id) : t.mult) * fator;
       // manutenção da filial entra junto das despesas abaixo
     }
 
@@ -406,8 +415,27 @@ TO.relacoes = (function(){
       for(const f of (t.filiais = t.filiais || []))
         f.membros = Math.min(P().FILIAL.teto[f.nivel] || 0,
                              (f.membros || 8) + (U.rng() < 1/3 ? 1 : 0));
-      const b = balanco(t);
+      const b = balanco(t, E, id);
       t.caixa += Math.round(b.saldo * SEM);
+
+      /* A CARAVANA DELAS PAGA ESTRADA (assimetria fechada pelo dono,
+         27/08/2026): semana com jogo fora da praça cobra a mesma
+         régua do jogador — por cabeça, 40% da torcida, frota
+         abatendo. A régua média vale 2 trechos de viagem. */
+      const o = M().torcida(id);
+      if(o && o.clubeId && TO.competicoes.jogosDaSemana){
+        const jogos = TO.competicoes.jogosDaSemana(E, o.clubeId,
+                                                   E.data.semana) || [];
+        const viaja = jogos.some(j=>{
+          if(j.casa) return false;
+          const adv = M().time(j.adversario);
+          return adv && adv.mapa !== o.mapa;
+        });
+        if(viaja && TO.planejamento.custoCaravanaIA){
+          const n = TO.planejamento.caravanaDe(o, 0, E);
+          t.caixa -= TO.planejamento.custoCaravanaIA(n, frotaIA(t));
+        }
+      }
 
       /* PERDA DE MEMBROS IGUAL À NOSSA (decisão do dono, 18/08/2026):
          caixa no vermelho derruba a MORAL — 1 por semana, a mesma
