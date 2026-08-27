@@ -6572,7 +6572,7 @@
        de sempre, sobe até ~90% do nosso efetivo na cena se tiver gente,
        e nunca mais de 70% da torcida dele. Atacante gigante segue
        vindo com muito mais que a gente. */
-    const membrosDeles = TO.acoes.efetivoDe(e, o || {}) || 40;
+    const membrosDeles = TO.acoes.efetivoDePe(e, o || {}) || 40;
     let deles = Math.max(4, Math.max(
       Math.round(membrosDeles * 0.30),
       Math.min(Math.round(membrosDeles * 0.70), Math.round(nossos * 0.9))));

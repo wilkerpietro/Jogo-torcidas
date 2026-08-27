@@ -519,8 +519,12 @@ TO.praca = (function(){
   /* 0 abaixo do piso, sobe linear até a paridade da rua, e passa de 1
      quando eles são mais que a gente — com teto, porque bonde maior vem
      com mais vontade, não com certeza */
-  const efetivoDe = (E, id) => id === E.torcida.id ? E.membros.length
-    : (((TO.relacoes && TO.relacoes.mundo(E)[id]) || M().torcida(id) || {}).membros || 20);
+  /* de pé, sem ferido nem preso, dos dois lados (dono, 27/08/2026) */
+  const efetivoDe = (E, id) => id === E.torcida.id
+    ? TO.membros.aptosParaOEstadio(E).length
+    : (TO.relacoes && TO.relacoes.disponiveisIA
+        ? TO.relacoes.disponiveisIA(E, id)
+        : ((M().torcida(id) || {}).membros || 20));
 
   function fatorParidade(nossos, deles){
     const r = deles / Math.max(1, nossos);

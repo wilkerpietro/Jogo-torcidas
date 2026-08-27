@@ -975,9 +975,9 @@ TO.feed = (function(){
          nem a maior rival da praça tem metade do nosso efetivo, o bar
          fica em paz neste trimestre — melhor sem cena do que uma cena
          que acaba com eles correndo na largada */
-      const vivoR = ((E.mundoTorcidas||{})[rival.id]||{}).membros
-                  || rival.membros || 0;
-      if(vivoR < E.membros.length * 0.5) return;
+      /* de pé, sem ferido nem preso, dos dois lados (dono, 27/08/2026) */
+      const vivoR = TO.relacoes.disponiveisIA(E, rival.id);
+      if(vivoR < TO.membros.aptosParaOEstadio(E).length * 0.5) return;
       E.ataqueMarcado = {torcida:rival.id, nome:rival.nome, alvo:'bar',
                          cena:'bar', ano:E.data.ano, semana:E.data.semana,
                          dia:E.data.dia};
@@ -1802,7 +1802,7 @@ TO.feed = (function(){
           m.consequencia = 'Não rolou: o núcleo de lá não tem gente de pé.';
           return {ok:true};
         }
-        const ef = TO.acoes.efetivoDe(E, rival) || 30;
+        const ef = TO.acoes.efetivoDePe(E, rival) || 30;
         const defensores = Math.min(40, Math.max(4, Math.round(ef * 0.35)));
         /* como no ataque manual, o nosso bonde é o mandante da cena —
            fecharAtaque lê `res.venceu`, que é a vitória do mandante */
@@ -1983,7 +1983,7 @@ TO.feed = (function(){
                 : a.alvo === 'bar' ? 'bar' : a.alvo,
             cena: a.cena,
             bairro: '',
-            efetivo: a.efetivo || TO.acoes.efetivoDe(E, o) || 30,
+            efetivo: a.efetivo || TO.acoes.efetivoDePe(E, o) || 30,
             nossos: a.alvo === 'emboscada' && est ? est.vao
                    : TO.membros.aptosParaOEstadio(E).length,
             rateio: a.alvo === 'emboscada' && est ? est.rateio : 0};

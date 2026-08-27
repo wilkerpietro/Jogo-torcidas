@@ -124,8 +124,12 @@ TO.planejamento = (function(){
   function relatorioDoOlheiro(E, idTorcida){
     const o = M().torcida(idTorcida);
     if(!o) return null;
-    const viva = (TO.relacoes && TO.relacoes.mundo(E)[idTorcida]) || {};
-    const efetivo = Math.max(6, Math.round((viva.membros || o.membros || 20) * 0.62));
+    /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
+    const vivos = TO.relacoes && TO.relacoes.disponiveisIA
+      ? TO.relacoes.disponiveisIA(E, idTorcida)
+      : (((TO.relacoes && TO.relacoes.mundo(E)[idTorcida]) || {}).membros
+         || o.membros || 20);
+    const efetivo = Math.max(6, Math.round(vivos * 0.62));
     const r = baralhoFixo(`${idTorcida}|${E.data.ano}|${E.data.semana}`);
 
     /* torcida grande se divide mais; torcida pequena anda junto */
@@ -869,8 +873,10 @@ TO.planejamento = (function(){
       .filter(o=>!o.incompleta && !M().saoIrmas(E.torcida.id, o.id))
       .map(o=>{
         const rel = (E.relacoes||{})[o.id];
-        const viva = (TO.relacoes && TO.relacoes.mundo(E)[o.id]) || o;
-        const n = Math.max(4, Math.round((viva.membros || o.membros || 20)*0.6));
+        /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
+        const vivos = TO.relacoes && TO.relacoes.disponiveisIA
+          ? TO.relacoes.disponiveisIA(E, o.id) : (o.membros || 20);
+        const n = Math.max(4, Math.round(vivos * 0.6));
         return {id:o.id, torcida:o, nome:o.nome, n,
                 faixa: faixaDeEfetivo(E, n, o.id),
                 relacao: rel === undefined ? M().valorInicial(
@@ -1158,7 +1164,8 @@ TO.planejamento = (function(){
       if(M().saoIrmas(E.torcida.id, o.id)) continue;
       const rel = TO.relacoes.nivel(E, o.id);
       if(rel > -15) continue;
-      const viva = (TO.relacoes.mundo(E)[o.id]||{}).membros || o.membros || 0;
+      /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
+      const viva = TO.relacoes.disponiveisIA(E, o.id);
       if(viva < crew * 0.7) continue;
       fora.push({id:o.id, torcida:o, relacao:rel});
     }
@@ -1211,7 +1218,8 @@ TO.planejamento = (function(){
         if(M().saoIrmas(E.torcida.id, o.id)) continue;
         const rel = TO.relacoes.nivel(E, o.id);
         if(rel > -15) continue;
-        const viva = (TO.relacoes.mundo(E)[o.id]||{}).membros || o.membros || 0;
+        /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
+        const viva = TO.relacoes.disponiveisIA(E, o.id);
         if(viva < crew * 0.7) continue;
         candidatos.push({id:o.id, torcida:o, cidade:c, relacao:rel});
       }

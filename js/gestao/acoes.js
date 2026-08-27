@@ -55,6 +55,17 @@ TO.acoes = (function(){
     const m = TO.relacoes && TO.relacoes.mundo(E)[o.id];
     return m ? m.membros : (o.membros||0);
   }
+  /* QUEM DESCE É QUEM ESTÁ DE PÉ (ordem do dono, 27/08/2026): toda
+     conta de briga e presença desconta ferido e preso — da IA via
+     `disponiveisIA`, da nossa via `aptosParaOEstadio`. O `efetivoDe`
+     cru fica pra contagem de quadro (recrutamento, ranking): ferido
+     ainda é membro. */
+  function efetivoDePe(E, o){
+    if(!o || !o.id) return 0;
+    if(o.id === E.torcida.id) return TO.membros.aptosParaOEstadio(E).length;
+    return TO.relacoes && TO.relacoes.disponiveisIA
+      ? TO.relacoes.disponiveisIA(E, o.id) : efetivoDe(E, o);
+  }
 
   function organizadasDaPraca(E){
     return TO.mundo.torcidasEm(E.torcida.mapa)
@@ -137,7 +148,7 @@ TO.acoes = (function(){
         nome: `${p.tipo === 'bar' ? 'Bar' : 'Sede'} da ${o.nome}`,
         artigo:'a', bairro:p.bairro, x:p.x, y:p.y, cor:p.cor,
         relacao: rel,
-        efetivo: efetivoDe(E, o)
+        efetivo: efetivoDePe(E, o)
       });
     }
     /* o alvo de pior relação primeiro */
@@ -924,7 +935,7 @@ TO.acoes = (function(){
           porId, agendaveis, expediente,
           maximo, restantes, executar, rodarExpediente,
           previsaoRecrutamento, TABELA_RECRUTA,
-          organizadasDaPraca, efetivoDe,
+          organizadasDaPraca, efetivoDe, efetivoDePe,
           ASSALTOS, executarAssalto,
           alvosDeAtaque, clube, fecharCena, fecharBrigaDeRua,
           COBRANCA, MINIMO_SAIDA, CAP_RECRUTA};

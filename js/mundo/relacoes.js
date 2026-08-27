@@ -560,8 +560,9 @@ TO.relacoes = (function(){
          abria e acabava na hora, com eles correndo por minoria. O
          contrário vale: efetivo muito maior que o nosso ataca à
          vontade. */
-      const vivoDeles = (t && t.membros) || o.membros || 0;
-      if(vivoDeles < E.membros.length * 0.5) continue;
+      /* de pé, sem ferido nem preso, dos dois lados (dono, 27/08/2026) */
+      const vivoDeles = disponiveisIA(E, o.id);
+      if(vivoDeles < TO.membros.aptosParaOEstadio(E).length * 0.5) continue;
       const briga = brigaDe(t);
       /* de −55 pra baixo a chance cresce; em −100, com torcida bem
          ousada, é quase um ataque por mês */

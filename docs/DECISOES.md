@@ -2671,9 +2671,18 @@ cru:
 - **Tabela de presença da partida** (feed): mesma troca.
 
 O nosso lado já usava `aptosParaOEstadio` (ferido/preso fora) — a
-assimetria acabou. Fora do pacote, anotado: o dimensionamento de
-cena de briga manual (ataque a bar, defesa) ainda usa o efetivo cru
-do rival; se o dono quiser, entra na mesma régua.
+assimetria acabou.
+
+**E vale SEMPRE (ordem do dono, na sequência)**: nasceu o
+`efetivoDePe` (nosso lado = aptos; IA = `disponiveisIA`) e toda conta
+de briga passou pela régua — defensores do bar nos alvos de ataque,
+tamanho do bonde rival na cena de defesa, estimativa do relatório do
+olheiro, alvos do dia de jogo, regra da nanica (ataque ao bar e
+ataque-surpresa, dos DOIS lados), candidatas a emboscada na estrada,
+paridade dos encontros de rua e a descida da filial. Ficam com a
+contagem crua só o que é quadro, não presença: recrutamento
+(organizado ferido ainda é organizado) e as colunas de membros do
+ranking.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
