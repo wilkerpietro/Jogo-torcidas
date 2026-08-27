@@ -172,11 +172,19 @@ TO.acoes = (function(){
     const membros = (res && res.membros) || [];
     const outro = ((res && res.nossoLado) || 'mandante') === 'mandante'
                 ? 'visitante' : 'mandante';
+    /* a linha do nosso prestígio mostra o que ENTROU (carimbado por
+       aplicarResultadoDaNoite), não o que a briga reivindicou — no
+       teto de 100 a mensagem não promete crédito que não houve */
+    const dpNosso = res && res.prestigioAplicado != null
+      ? r1(res.prestigioAplicado/5)
+      : r1(U.limitar((res && res.prestigio || 0)/5, -2, 2));
+    const dmNossa = res && res.moralAplicada != null
+      ? r1(res.moralAplicada) : r1(res && res.moralTorcida || 0);
     const efeitos = [
       {ind:'relacao', delta:-22, dono:`com a ${deles.nome}`},
-      {ind:'prestigio', delta: r1(U.limitar((res && res.prestigio || 0)/5, -2, 2)), dono:'nosso'},
+      {ind:'prestigio', delta: dpNosso, dono:'nosso'},
       {ind:'prestigio', delta: dpDeles, dono:`da ${deles.nome}`},
-      {ind:'moral', delta: r1(res && res.moralTorcida || 0), dono:'nossa'}
+      {ind:'moral', delta: dmNossa, dono:'nossa'}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: deles.torcida, ganhamos,
@@ -387,10 +395,16 @@ TO.acoes = (function(){
     const dmDelas = R.mover(E, alvo.torcidaId, 'moral', seguramos ? -1.0 : 0.8);
     R.mover(E, alvo.torcidaId, 'prestigio', seguramos ? -0.5 : 0.6);
 
+    /* a noite inteira na linha (revisão do dono, 27/08/2026): o `antes`
+       daqui é depois de aplicarResultadoDaNoite, então a parte da CENA
+       (carimbada no res) entrava no indicador mas sumia do ocorrido —
+       a mensagem mostrava só o ±0,7 fixo da defesa */
     const efeitos = [
       {ind:'dinheiro',  delta: -perdeu, dono:'nosso'},
-      {ind:'moral',     delta: r1(E.indicadores.moral - antes.moral), dono:'nossa'},
-      {ind:'prestigio', delta: r1(E.indicadores.prestigio - antes.prestigio),
+      {ind:'moral',     delta: r1(E.indicadores.moral - antes.moral
+                                  + ((res && res.moralAplicada) || 0)), dono:'nossa'},
+      {ind:'prestigio', delta: r1(E.indicadores.prestigio - antes.prestigio
+                                  + ((res && res.prestigioAplicado) || 0)/5),
        dono:'nosso'},
       {ind:'relacao',   delta: r1(R.nivel(E, alvo.torcidaId) - antes.relacao),
        dono:`com a ${alvo.nome}`},
@@ -482,7 +496,10 @@ TO.acoes = (function(){
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos:[{ind:'relacao', delta:r1(R.nivel(E,alvo.torcidaId)-antes),
                 dono:`com a ${dona}`},
-               {ind:'prestigio', delta: r1(U.limitar((res.prestigio||0)/5, -2, 2)), dono:'nosso'},
+               /* o que ENTROU, não o que a briga reivindicou */
+               {ind:'prestigio', delta: res.prestigioAplicado != null
+                  ? r1(res.prestigioAplicado/5)
+                  : r1(U.limitar((res.prestigio||0)/5, -2, 2)), dono:'nosso'},
                {ind:'prestigio', delta: dpDeles, dono:`da ${dona}`},
                {ind:'dinheiro',  delta: levou, dono:'nosso'}].filter(x=>x.delta)});
     return {ganhou, linhas, dinheiro:levou,

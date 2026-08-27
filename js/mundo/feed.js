@@ -208,6 +208,8 @@ TO.feed = (function(){
       const res = TO.diaJogo.simular.rodar({config:{
         escalacao: nucleo, efetivoRival: deles,
         bondes:[{nossa:true, lado:'mandante', n:nucleo.length}]}});
+      /* todo ocorrido mexe no prestígio (ordem do dono, 27/08/2026) */
+      if(!res.prestigio) res.prestigio = res.ganhamos ? 1 : -1;
       TO.membros.aplicarResultadoDaNoite(E, res);
       TO.acoes.fecharCena(E, {acao:'defender', alvo:{
         torcidaId:rival.id, nome:rival.nome, tipo:'subsede', cena:'bar',
@@ -1806,6 +1808,8 @@ TO.feed = (function(){
         const res = TO.diaJogo.simular.rodar({config:{
           escalacao: nucleo, efetivoRival: defensores,
           bondes:[{nossa:true, lado:'mandante', n:nucleo.length}]}});
+        /* todo ocorrido mexe no prestígio (ordem do dono, 27/08/2026) */
+        if(!res.prestigio) res.prestigio = res.ganhamos ? 1 : -1;
         TO.membros.aplicarResultadoDaNoite(E, res);
         TO.acoes.fecharCena(E, {acao:'atacar', alvo:{
           torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,

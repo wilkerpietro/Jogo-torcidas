@@ -580,10 +580,13 @@ TO.membros = (function(){
     /* indicadores da torcida. O prestígio da noite fala na escala de
        0 a 100 (teto ±10, decisão do dono); o indicador vive em 0–20,
        então divide por 5 — e o limitador é o cinto de segurança.
-       Os dois movimentos passam pelo livro, com motivo. */
-    TO.estado.mexerIndicador(E, 'prestigio',
-      U.limitar((res.prestigio||0)/5, -2, 2), 'Resultado da briga');
-    TO.estado.mexerIndicador(E, 'moral',
+       Os dois movimentos passam pelo livro, com motivo. O que ENTROU
+       de verdade fica carimbado no res (na régua de 0-100): é o que a
+       linha do ocorrido mostra, pra nunca prometer crédito que o teto
+       de 100 não deixou entrar (revisão do dono, 27/08/2026). */
+    res.prestigioAplicado = TO.estado.mexerIndicador(E, 'prestigio',
+      U.limitar((res.prestigio||0)/5, -2, 2), 'Resultado da briga') * 5;
+    res.moralAplicada = TO.estado.mexerIndicador(E, 'moral',
       res.moralTorcida||0, 'Resultado da briga');
 
     E.historicoNoites.unshift({

@@ -6385,6 +6385,15 @@
       if(t && t.bombas != null && usadas > 0)
         t.bombas = Math.max(0, t.bombas - usadas);
     }
+    /* TODO OCORRIDO MEXE NO PRESTÍGIO (ordem do dono, 27/08/2026): em
+       briga pequena ou parelha a conta de caídos arredondava pra 0 e a
+       mensagem saía sem crédito nenhum — foi o que ele viu no save do
+       América, num encontro nos arredores do estádio. Vitória agora
+       vale no mínimo +1 na régua de 0 a 100, derrota no mínimo −1. A
+       pressão no CT fica fora (não é confronto de torcida), e treta e
+       arquibancada zeram logo abaixo porque têm tabela própria. */
+    if(!res.prestigio && !(acao && acao.acao === 'pressionar'))
+      res.prestigio = res.ganhamos ? 1 : -1;
     /* na TRETA o prestígio é a conta do dono e só ela: +1 pro ganhador,
        −1 pro perdedor (fecharTreta). O prestígio genérico da noite não
        soma por cima. */

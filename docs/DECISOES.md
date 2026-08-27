@@ -2609,6 +2609,30 @@ era exatamente o "uma por vez" pedido.
   borda esquerda — mandantes primeiro, visitantes depois (célula
   levemente destacada), rolando na horizontal quando não cabe.
 
+## Todo ocorrido mexe no prestígio (ordem do dono, 27/08/2026)
+
+O dono abriu um save com uma torcida do América e um ocorrido no
+estádio não creditou prestígio. A revisão geral dos fechos de cena
+achou a causa e dois furos de fidelidade:
+
+- **A causa**: o prestígio genérico da noite é
+  `arredonda((caídosDeles×2 − caídosNossos×1,5 − presosNossos×2)/3)`
+  — em briga pequena ou parelha (venceu com 1×1 caído, 2×2...) isso
+  arredonda pra ZERO, e nos encontros de rua/arredores do estádio e
+  no ataque a bar essa conta era a única fonte do nosso prestígio: a
+  mensagem saía e o indicador não andava.
+- **O piso**: vitória agora vale no mínimo +1 na régua de 0 a 100,
+  derrota no mínimo −1 — aplicado no fecho do dia de jogo (cenas
+  jogadas e simuladas) e nos fechos da filial. A pressão no CT fica
+  fora (não é confronto de torcida); treta e arquibancada seguem só
+  com as tabelas próprias do dono.
+- **Fidelidade das linhas**: `aplicarResultadoDaNoite` agora carimba
+  no resultado o que ENTROU de verdade (`prestigioAplicado`,
+  `moralAplicada`), e as linhas de efeito dos ocorridos leem daí — no
+  teto de 100 a mensagem não promete crédito que não houve, e no
+  fecho de DEFESA a linha passou a somar a parte da cena (antes
+  mostrava só o ±0,7 fixo e escondia o resto que entrou).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
