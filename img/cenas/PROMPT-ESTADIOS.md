@@ -190,7 +190,7 @@ saturated colors, hdr, dramatic lighting, night, floodlit, rain
 ```python
 {'id': 'estadio-pequeno', 'arquivo': '<arquivo que saiu>.jpeg',
  'saida': 'estadio_pequeno.webp',
- # o gramado, a arquibancada de cima, os taludes e os dois portões
+ # SEM semente no gramado: a arquibancada, os taludes e os dois portoes
  'sementes': [(0.50, 0.55), (0.30, 0.55), (0.70, 0.55),
               (0.50, 0.20), (0.30, 0.22), (0.70, 0.22),
               (0.50, 0.85), (0.02, 0.55), (0.98, 0.55)],
@@ -228,13 +228,13 @@ gargalar.
 
 Geometria: **anel contínuo de arquibancada em torno do gramado**, **quatro
 vomitórios por lado** (as bocas escuras que cortam os degraus), fosso e
-alambrado entre a arquibancada e o campo, **duas passarelas atravessando o
-fosso** (uma em cada gol) que são as únicas ligações entre anel e gramado, e
-grades de separação de setor cortando o anel em quatro, cada uma com portão.
+alambrado entre a arquibancada e o campo — **sem nenhuma travessia**, porque a
+briga é só na arquibancada —, e grades de separação de setor cortando o anel em
+quatro, cada uma com portão.
 
-As duas passarelas são o coração da cena: quem domina a passarela domina o
-campo. Se a imagem vier sem elas, arquibancada e gramado viram duas ilhas e a
-briga acontece em dois lugares separados que nunca se encontram.
+O gramado é ilha, e é de propósito: **ninguém desce no campo**. O fosso
+fechado é o que segura a briga em cima, e é por isso que os vomitórios importam
+tanto — são eles, e as grades de setor, que fazem os gargalos da cena.
 
 Spawns sugeridos: `mandante1` (768, 180) e `mandante2` (560, 210), no anel
 norte; `visitante1` (768, 850) e `visitante2` (980, 820), no anel sul.
@@ -263,9 +263,9 @@ directly above as concentric bands of parallel steps, evenly lit from the front
 row to the back row on every side, the steps of the far side reading exactly
 like the steps of the near side,
 
-between the terrace and the pitch, a dry moat and a chain-link fence running
-all the way around, and two narrow footbridges crossing the moat, one behind
-each goal, which are the only connections between the terrace and the pitch,
+between the terrace and the pitch, a dry moat and a chain-link fence, and the moat and the fence run unbroken all the way around the pitch, with no
+bridge, no ramp, no gate and no crossing of any kind: from above, the pitch
+is completely cut off from the terracing,
 
 four dark tunnel mouths cut through the steps on each side of the bowl, opening
 into the terrace from below, and low fences divide the terrace into four
@@ -308,8 +308,8 @@ roof, covered stand, canopy, awning, cantilever roof, upper tier, second ring,
 two tiers, ring above ring, press box over the seats, big shadow over the
 seats,
 modern arena, all-seater stadium, coloured plastic seats, european stadium,
-olympic running track, closed moat with no crossing, no tunnels, unbroken
-terrace, closed gates,
+olympic running track, footbridge, bridge over the moat, ramp down to the
+pitch, gate to the pitch, no tunnels, unbroken terrace, closed gates,
 
 illustration, cartoon, isometric, 3d render, video game asset, painting,
 vector art, blueprint, map icons, labels, text, sponsor boards, advertising,
@@ -323,8 +323,8 @@ saturated colors, hdr, dramatic lighting, night, floodlit, rain
 ```python
 {'id': 'estadio-medio', 'arquivo': '<arquivo que saiu>.jpeg',
  'saida': 'estadio_medio.webp',
- # o gramado, os quatro lados do anel e os dois portões externos
- 'sementes': [(0.50, 0.50), (0.35, 0.50), (0.65, 0.50),
+ # SEM semente no gramado: os quatro lados do anel e os dois portoes externos
+ 'sementes': [(0.35, 0.50), (0.65, 0.50),
               (0.50, 0.16), (0.50, 0.84), (0.16, 0.50), (0.84, 0.50),
               (0.02, 0.50), (0.98, 0.50)],
  'recorte': [(0.02, 0.04, 0.98, 0.98)]},
@@ -338,8 +338,8 @@ identical, every row of steps facing the pitch, and no stand is seen from the
 front. Remove every roof and canopy over the terrace and remove any upper tier,
 leaving one single ring of concrete steps open to the sky, evenly lit from the
 first row to the last on all four sides. Keep the moat and the fence around the
-pitch, and keep the two footbridges crossing the moat behind the goals. The
-stadium stays completely empty.
+pitch unbroken, with no bridge or ramp crossing them anywhere. The stadium
+stays completely empty.
 ```
 
 ### Conferir
@@ -347,8 +347,8 @@ stadium stays completely empty.
 1. **Os quatro lados do anel são iguais.** Se um deles parece "de frente", a
    câmera deitou e o degrau de baixo daquele lado sumiu.
 2. **Um anel só, sem cobertura.** Segundo anel é telhado com outro nome.
-3. **As duas passarelas sobre o fosso existem.** Sem elas, anel e gramado viram
-   ilhas separadas e metade da cena fica inalcançável.
+3. **O fosso é contínuo, sem passarela nem rampa.** Gramado ligado à
+   arquibancada é briga escapando pro campo.
 4. Os vomitórios aparecem como bocas escuras cortando os degraus — depois de
    importar, confira se o corte os leu como chão; eles são passagem.
 5. Fosso, alambrado, grade de setor e muro externo viram parede no pincel;
@@ -373,8 +373,8 @@ de baixo, a metade inferior some da foto e não tem pincel que traga de volta.
 Geometria, de dentro pra fora:
 
 1. **gramado** no centro, com fosso largo e alambrado alto em volta;
-2. **duas passarelas atravessando o fosso**, atrás de cada gol — as únicas
-   ligações entre arquibancada e campo;
+2. **fosso e alambrado sem travessia nenhuma** — o gramado é ilha, a briga é
+   toda na arquibancada;
 3. **anel inferior contínuo**, descoberto, cortado por escadas radiais e com
    seis bocas de vomitório por lado;
 4. **vão de circulação em anel**, aberto ao céu, entre os dois anéis: uma
@@ -411,9 +411,9 @@ in the middle of the frame, a full-size grass pitch with painted white
 markings, mown stripes, two white goal frames lying flat in the image with
 their shadows beside them,
 
-around the pitch, a wide dry moat and a tall chain-link fence, and two
-footbridges crossing the moat, one behind each goal, which are the only
-connections between the terracing and the pitch,
+around the pitch, a wide dry moat and a tall chain-link fence, and the moat and the fence run unbroken all the way around the pitch, with no
+bridge, no ramp, no gate and no crossing of any kind: from above, the pitch
+is completely cut off from the terracing,
 
 the LOWER RING: a continuous band of uncovered concrete steps encircling the
 pitch, seen from directly above as concentric bands of parallel steps, evenly
@@ -477,7 +477,8 @@ over the seats, press box over the seats, membrane roof, retractable roof,
 concourse hidden under the stand, shaded lower tier, dark lower ring,
 
 single tier only, one ring only, upper ring closed all the way round without
-corner gaps, closed moat with no crossing, no tunnels, no stairways,
+corner gaps, footbridge, bridge over the moat, ramp down to the pitch, gate to
+the pitch, no tunnels, no stairways,
 modern arena, all-seater stadium, coloured plastic seats, world cup arena,
 european stadium, olympic running track,
 
@@ -494,8 +495,8 @@ saturated colors, hdr, dramatic lighting, night, floodlit, rain
 ```python
 {'id': 'estadio-grande', 'arquivo': '<arquivo que saiu>.jpeg',
  'saida': 'estadio_grande.webp',
- # gramado, anel inferior, circulação, anel superior e os portões
- 'sementes': [(0.50, 0.50), (0.40, 0.50), (0.60, 0.50),
+ # SEM semente no gramado: anel inferior, circulacao, anel superior e os portoes
+ 'sementes': [(0.40, 0.50), (0.60, 0.50),
               (0.50, 0.22), (0.50, 0.78), (0.22, 0.50), (0.78, 0.50),
               (0.50, 0.14), (0.50, 0.86), (0.14, 0.50), (0.86, 0.50),
               (0.50, 0.06), (0.50, 0.94),
@@ -503,7 +504,8 @@ saturated colors, hdr, dramatic lighting, night, floodlit, rain
  'recorte': [(0.01, 0.02, 0.99, 0.99)]},
 ```
 
-As sementes vêm em três raios de propósito: as de 0,22/0,78 caem no anel
+Nenhuma semente cai no gramado — ele é ilha, e semente lá dentro abriria o
+chão que o fosso fecha. As sementes vêm em três raios de propósito: as de 0,22/0,78 caem no anel
 inferior, as de 0,14/0,86 no vão de circulação e as de 0,06/0,94 no anel
 superior. Se o corte fechar um desses raios, a máscara perde um andar inteiro
 do estádio — e é justamente assim que se descobre que a foto tem balanço.
@@ -518,9 +520,9 @@ lower one, with a wide open concourse between them that is fully visible from
 above along its whole length. The upper ring must never overhang the lower ring
 or the concourse. Remove every roof, canopy and cantilever, so both rings lie
 open to the sky and both are evenly lit from their first row to their last.
-Leave an open gap at each of the four corners of the upper ring, keep the moat
-and fence around the pitch, and keep the two footbridges behind the goals. No
-people, no banners, no advertising.
+Leave an open gap at each of the four corners of the upper ring, and keep the
+moat and fence around the pitch unbroken, with no bridge or ramp crossing them.
+No people, no banners, no advertising.
 ```
 
 ### Conferir
@@ -530,8 +532,8 @@ people, no banners, no advertising.
    escura, o anel de cima está em balanço e o de baixo foi comido — refaça.
 2. **Sem cobertura em nenhum dos dois anéis.**
 3. **Os quatro lados iguais**, cada degrau encarando o gramado.
-4. **As duas passarelas sobre o fosso existem**, senão gramado e arquibancada
-   viram ilhas separadas.
+4. **O fosso é contínuo, sem passarela nem rampa**: o gramado é ilha de
+   propósito.
 5. **As quatro quinas do anel superior estão abertas** — é a fuga de quem
    apanha lá em cima.
 6. Depois de importar: gramado, degraus e circulação viram chão de andar;
@@ -550,6 +552,6 @@ people, no banners, no advertising.
    disso a grande. Assim as 76 praças ganham cena sem uma imagem por estádio.
 4. A cena dos arredores (`arredores.webp`) continua sendo o lado de fora: uma é
    a chegada, a outra é o que acontece dentro. Não se substituem.
-5. Ande com o líder (WASD) pelo anel inteiro e atravesse as duas passarelas. Se
-   uma delas estiver fechada na máscara, metade da cena fica inalcançável e a
-   briga acontece em dois lugares que nunca se encontram.
+5. Ande com o líder (WASD) pelo anel inteiro, dando a volta completa. O que não
+   pode é chegar no gramado: se chegou, o fosso tem furo na máscara e a briga
+   vaza pro campo.

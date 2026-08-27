@@ -67,8 +67,8 @@ porque é a estrutura que o modelo mais obedece:
 
 1. **a câmera** — ortográfica, zênite, orthomosaic;
 2. **o teto sai** — cobertura vista a prumo apaga a arquibancada inteira;
-3. **duas passarelas sobre o fosso** — sem elas, gramado e arquibancada viram
-   ilhas separadas e metade da cena fica inalcançável.
+3. **o fosso fica sem travessia** — o gramado é ilha de propósito: a briga é
+   toda na arquibancada, ninguém desce no campo.
 
 E o cimento, que é decisão de projeto e não divergência de planta: cadeira
 colorida é cor de clube, e a mesma cena serve a torcida que muda toda partida.
@@ -179,7 +179,7 @@ arquibancada é contínua e onde vira fatia, posição do gramado.
 
 **O que o mapa não dá, e o prompt tem que impor:** que é foto e não desenho,
 que não há cobertura, que o anel de cima é recuado, que existe fosso com duas
-passarelas, que as rampas são caminho, e que o estádio está vazio.
+travessia no fosso, que as rampas são caminho, e que o estádio está vazio.
 
 **O erro novo que a anexação cria** é o modelo copiar o mapa: fundo chapado,
 setor vermelho, gramado verde-uniforme, contorno branco. Por isso o prompt abre
@@ -220,8 +220,9 @@ ONLY THREE THINGS DEPART FROM REALITY, and nothing else changes:
    cables and its masts are gone, so both rings of terracing lie open to the
    sky and are evenly lit from the front row to the back row, with no shadow
    cast over them;
-3. two footbridges cross the moat, one behind each goal, connecting the
-   terracing to the pitch.
+3. the moat and the fence around the pitch run unbroken, with no bridge, ramp,
+   gate or crossing of any kind, so the pitch is completely cut off from the
+   terracing.
 
 the stadium is a perfect ellipse filling the frame, its long axis running left
 to right; in the exact centre a full-size grass pitch with painted white
@@ -288,7 +289,8 @@ tier, dark lower ring,
 rectangular stadium, square bowl, single tier only, one ring only, gaps at the
 corners, broken ring, athletics track, running track, olympic stadium,
 all-seater arena, coloured plastic seats, world cup arena, european stadium,
-closed moat with no crossing, no tunnels, no ramps,
+footbridge, bridge over the moat, ramp down to the pitch, gate to the pitch,
+no tunnels, no ramps,
 
 flat diagram, ticketing map, seating chart, seating map, section numbers,
 colour-coded sectors, red sectors, green pitch fill, legend, key, white
@@ -305,8 +307,8 @@ saturated colors, hdr, dramatic lighting, night, floodlit, rain
 ```python
 {'id': 'estadio-maracana', 'arquivo': '<arquivo que saiu>.jpeg',
  'saida': 'estadio_maracana.webp',
- # gramado, anel inferior, circulação, anel superior e a esplanada de fora
- 'sementes': [(0.50, 0.50), (0.42, 0.50), (0.58, 0.50),
+ # SEM semente no gramado: ele e ilha. anel inferior, circulacao, anel superior
+ 'sementes': [(0.42, 0.50), (0.58, 0.50),
               (0.50, 0.34), (0.50, 0.66), (0.30, 0.50), (0.70, 0.50),
               (0.50, 0.26), (0.50, 0.74), (0.22, 0.50), (0.78, 0.50),
               (0.50, 0.16), (0.50, 0.84), (0.14, 0.50), (0.86, 0.50),
@@ -328,8 +330,8 @@ stand is seen from the front. Remove the roof entirely — no ring roof, no
 canopy, no cantilever anywhere — and set the upper ring further out than the
 lower one, with a wide open concourse between them that is visible from above
 along its whole length. Keep both rings continuous with no gap at the corners,
-keep the four external ramps, the moat and fence around the pitch, and the two
-footbridges behind the goals. No people, no advertising.
+keep the four external ramps, and keep the moat and fence around the pitch
+unbroken, with no bridge or ramp crossing them. No people, no advertising.
 ```
 
 ## Conferir
@@ -343,7 +345,8 @@ footbridges behind the goals. No people, no advertising.
    fileira.
 4. **As quatro rampas existem** e encostam na circulação. São a fuga: elipse
    contínua não tem quina pra escapar.
-5. **As duas passarelas sobre o fosso**, atrás dos gols.
+5. **O fosso é contínuo, sem passarela nem rampa**: o gramado é ilha, e é assim
+   que tem que ser.
 6. Depois de importar: gramado, degraus, circulação, rampa e esplanada viram
    chão; fosso, alambrado, grade de setor e traves viram parede no pincel.
 
@@ -403,9 +406,9 @@ the exact centre a full-size grass pitch with painted white markings and mown
 stripes, two white goal frames lying flat in the image with their shadows
 beside them, and no running track around it,
 
-around the pitch, a dry moat and a perimeter fence, and two footbridges
-crossing the moat, one behind each goal, the only connections between the
-terracing and the pitch,
+around the pitch, a dry moat and a perimeter fence, and the moat and the fence run unbroken all the way around the pitch, with no
+bridge, no ramp, no gate and no crossing of any kind: from above, the pitch
+is completely cut off from the terracing,
 
 the LOWER RING: a band of uncovered concrete steps hugging the pitch, seen from
 directly above as concentric bands of parallel steps, evenly lit across its
@@ -468,8 +471,8 @@ covered platform, structure on the terrace, seats on the terrace,
 ```python
 {'id': 'estadio-mineirao', 'arquivo': '<arquivo que saiu>.jpeg',
  'saida': 'estadio_mineirao.webp',
- # gramado, o patamar do cinturão, anel inferior, circulação, anel superior
- 'sementes': [(0.50, 0.50), (0.42, 0.50), (0.58, 0.50),
+ # SEM semente no gramado: o patamar do cinturao, anel inferior, circulacao, superior
+ 'sementes': [(0.42, 0.50), (0.58, 0.50),
               (0.50, 0.63), (0.50, 0.36), (0.50, 0.70),
               (0.28, 0.50), (0.72, 0.50), (0.50, 0.24), (0.50, 0.78),
               (0.20, 0.50), (0.80, 0.50), (0.50, 0.14), (0.50, 0.87),
