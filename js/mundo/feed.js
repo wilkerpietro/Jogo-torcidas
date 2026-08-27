@@ -1438,8 +1438,9 @@ TO.feed = (function(){
           for(const o of (M().torcidasDe(nosso[lado])||[])){
             let n;
             if(o.id === E.torcida.id) n = TO.planejamento.efetivoDaSaida(E);
+            /* ferido e preso da IA ficam em casa (dono, 27/08/2026) */
             else if(o.mapa === casaMapa)
-              n = Math.round(TO.acoes.efetivoDe(E, o)*0.6);
+              n = Math.round(TO.relacoes.disponiveisIA(E, o.id)*0.6);
             else {
               n = TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id], E);
               if(n < 5) continue;   // caravana pequena demais não viaja

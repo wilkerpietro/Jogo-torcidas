@@ -382,9 +382,12 @@ TO.praca = (function(){
     for(const jogo of doDia){
       for(const o of M().torcidasDe(jogo.casa.id)){
         if(!podeSair(E, o) || !pontoDaSede(mo, o)) continue;
+        /* ferido e preso da IA não vão ao estádio (conferência do
+           dono, 27/08/2026): a base é `disponiveisIA`, não o total */
         põe(o, o.id === E.torcida.id
                ? menosAEscolta(o, PL().efetivoDaSaida(E))
-               : menosAEscolta(o, Math.round(TO.acoes.efetivoDe(E, o) * 0.6)),
+               : menosAEscolta(o, Math.round(
+                   TO.relacoes.disponiveisIA(E, o.id) * 0.6)),
             jogo, {deFora:false});
       }
       for(const o of M().torcidasDe(jogo.vis.id)){
@@ -394,7 +397,8 @@ TO.praca = (function(){
         if(pontoDaSede(mo, o)){
           põe(o, o.id === E.torcida.id
                  ? menosAEscolta(o, PL().efetivoDaSaida(E))
-                 : menosAEscolta(o, Math.round(TO.acoes.efetivoDe(E, o) * 0.6)),
+                 : menosAEscolta(o, Math.round(
+                     TO.relacoes.disponiveisIA(E, o.id) * 0.6)),
               jogo, {deFora:false});
           continue;
         }

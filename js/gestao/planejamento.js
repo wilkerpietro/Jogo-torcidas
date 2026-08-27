@@ -336,7 +336,15 @@ TO.planejamento = (function(){
        caravana cresce 30% */
     const t = E && E.mundoTorcidas && E.mundoTorcidas[torcida.id];
     const bus = t && t.onibus ? 1.3 : 1;
-    return Math.max(4, Math.round((torcida.membros||20) * 0.18 * (1 + v/150) * bus));
+    /* QUEM VIAJA É QUEM ESTÁ DE PÉ (conferência do dono, 27/08/2026):
+       a conta usava o número estático da fonte — nem o efetivo vivo
+       nem o desconto de ferido e preso da IA entravam. Agora a base é
+       `disponiveisIA`: membros de agora menos quem está fora de
+       combate, a mesma régua do nosso `aptosParaOEstadio`. */
+    const vivos = E && TO.relacoes && TO.relacoes.disponiveisIA
+      ? TO.relacoes.disponiveisIA(E, torcida.id) : null;
+    const base = vivos != null ? vivos : (torcida.membros||20);
+    return Math.max(4, Math.round(base * 0.18 * (1 + v/150) * bus));
   }
 
   function aliadosNaCidade(E, semana){

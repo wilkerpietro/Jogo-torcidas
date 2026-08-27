@@ -2654,6 +2654,27 @@ viraram cortes CONTÍGUOS do mapa, como na Série D real:
   mesmo, e os clubes já são todos do NE); estaduais são de um estado
   só; ligas de fora não têm dado de geografia.
 
+## Ferido de IA não vai ao estádio (conferência do dono, 27/08/2026)
+
+O dono mandou conferir se a conta de membros de torcida IA que vão
+ao jogo descontava os feridos. Não descontava: a régua certa já
+existia (`disponiveisIA` = membros vivos − feridos/presos anotados
+por `baixasIA`), mas os três caminhos de presença usavam o número
+cru:
+
+- **Rua da praça em dia de jogo** (`naRuaEm`): torcida da casa saía
+  com `membros × 0,6` sem desconto — agora `disponiveisIA × 0,6`.
+- **Caravana de visitante** (`caravanaDe`): pior, usava o número
+  ESTÁTICO da fonte (nem o efetivo vivo entrava) — agora parte de
+  `disponiveisIA`, e de quebra a caravana passou a acompanhar o
+  crescimento real da torcida no mundo.
+- **Tabela de presença da partida** (feed): mesma troca.
+
+O nosso lado já usava `aptosParaOEstadio` (ferido/preso fora) — a
+assimetria acabou. Fora do pacote, anotado: o dimensionamento de
+cena de briga manual (ataque a bar, defesa) ainda usa o efetivo cru
+do rival; se o dono quiser, entra na mesma régua.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
