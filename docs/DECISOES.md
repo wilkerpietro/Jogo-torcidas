@@ -2633,6 +2633,27 @@ achou a causa e dois furos de fidelidade:
   fecho de DEFESA a linha passou a somar a parte da cena (antes
   mostrava só o ±0,7 fixo e escondia o resto que entrou).
 
+## Grupos regionalizados na divisão inferior (pedido do dono, 27/08/2026)
+
+Os grupos da Série D deixaram o sorteio por força (zigue-zague) e
+viraram cortes CONTÍGUOS do mapa, como na Série D real:
+
+- **O método**: os clubes são ordenados pela cadeia de UFs de norte a
+  sul (RR→…→RS; dentro da UF, pela cidade — times da mesma praça caem
+  sempre juntos) e a fila é fatiada em grupos iguais. O Grupo A é o
+  mais ao norte, o D o mais ao sul; a fronteira pode dividir uma UF
+  quando a conta não fecha (CE metade no A, metade no B), mas nenhum
+  grupo "volta" no mapa.
+- O playoff da D já cruzava grupos vizinhos (A×B, C×D), então virou
+  cruzamento de vizinhos de mapa de graça.
+- A régua é automática: vale pra qualquer divisão nacional que abrir
+  em grupos (`cfg.regional`), refeita a cada virada com a safra nova
+  de subidos/rebaixados.
+- Fora do pacote (sem mudança): Copa do Nordeste e Nordestão Série B
+  continuam com sorteio misto (na vida real o sorteio da CdN é misto
+  mesmo, e os clubes já são todos do NE); estaduais são de um estado
+  só; ligas de fora não têm dado de geografia.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

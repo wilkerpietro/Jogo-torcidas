@@ -67,6 +67,34 @@ TO.competicoes = (function(){
     return g;
   }
 
+  /* A REGIONALIZAÇÃO (pedido do dono, 27/08/2026): grupo de divisão
+     inferior é corte CONTÍGUO do mapa, como na Série D real — nada de
+     Manaus caindo no grupo do Sul. A régua é a cadeia de UFs de norte
+     a sul; dentro da UF ordena pela cidade, então times da mesma praça
+     caem sempre juntos. O Grupo A é o mais ao norte, o último é o mais
+     ao sul — e o playoff, que cruza grupos vizinhos (A×B, C×D), vira
+     cruzamento de vizinhos de mapa. Clube sem cidade mapeada vai pro
+     fim da fila, o que hoje não acontece: os 108 têm praça. */
+  const CADEIA_UF = ['RR','AP','AM','PA','AC','RO','TO','MA','PI','CE',
+                     'RN','PB','PE','AL','SE','BA','GO','DF','MT','MS',
+                     'ES','MG','RJ','SP','PR','SC','RS'];
+  function dividirGruposPorRegiao(clubes, quantos){
+    const chave = id => {
+      const t = M().time(id);
+      const c = t && M().cidade(t.mapa);
+      const i = CADEIA_UF.indexOf((c && c.uf) || '');
+      return {uf: i < 0 ? 99 : i, cidade: (t && t.mapa) || '', id};
+    };
+    const ordem = [...clubes].map(chave).sort((a,b)=>
+      a.uf - b.uf ||
+      (a.cidade < b.cidade ? -1 : a.cidade > b.cidade ? 1 : 0) ||
+      (a.id < b.id ? -1 : 1)).map(x=>x.id);
+    const tam = Math.ceil(ordem.length / quantos);
+    const g = [];
+    for(let i=0; i<quantos; i++) g.push(ordem.slice(i*tam, (i+1)*tam));
+    return g.filter(x=>x.length);
+  }
+
   /* =======================================================
      FORÇA DOS CLUBES — teto 100, valores da fonte
      A planilha dá o ponto de partida e ele entra como está:
@@ -472,7 +500,10 @@ TO.competicoes = (function(){
   }
 
   function criarCompeticao(id, nome, tipo, clubes, cfg, semanaInicio, finalEm){
-    const grupos = cfg.grupos > 1 ? dividirGrupos(clubes, cfg.grupos) : [clubes];
+    const grupos = cfg.grupos > 1
+      ? (cfg.regional ? dividirGruposPorRegiao(clubes, cfg.grupos)
+                      : dividirGrupos(clubes, cfg.grupos))
+      : [clubes];
     const porGrupo = grupos.map(g=>roundRobin(g, cfg.voltas));
     const maior = Math.max(...porGrupo.map(r=>r.length));
 
@@ -596,9 +627,11 @@ TO.competicoes = (function(){
       /* MATA-MATA DA D É IDA E VOLTA (pedido do dono, 21/08/2026): a
          D é a única série que sai dos grupos pro playoff, e playoff de
          acesso não se decide em jogo único. */
+      /* os grupos da divisão inferior são REGIONALIZADOS (pedido do
+         dono, 27/08/2026): corte contíguo do mapa, norte no A */
       const cfg = clubes.length <= 20
         ? {grupos:1, passam:0, voltas:2, pontosCorridos:true}
-        : {grupos:4, passam:4, voltas:2, idaEVolta:true};
+        : {grupos:4, passam:4, voltas:2, idaEVolta:true, regional:true};
       comps.push(criarCompeticao(U.identificador(nome), nome, 'nacional',
         clubes, cfg, INICIO_NACIONAL));
     }
