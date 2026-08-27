@@ -11,6 +11,7 @@ Nada mais muda — é a mesma cena de briga, com outro chão.
 | Estádio | Capacidade | Forma | Saída pro jogo | Estado |
 |---|---|---|---|---|
 | Maracanã | 78.000 | elipse de dois anéis contínuos | `estadio_maracana.webp` | a fazer |
+| Mineirão | 60.000 | elipse de dois anéis, cinturão de camarote num lado | `estadio_mineirao.webp` | a fazer |
 
 ## A elipse não cabe na tela, e isso tem que ser decidido
 
@@ -150,6 +151,14 @@ asphalt, then a ring road circling the ellipse with cars and coaches parked
 along it seen from directly above as roofs only, the road running out of frame
 at the left and right edges,
 
+EVERYTHING IS BARE CONCRETE: every stand, every step, every wall, every stairway,
+every ramp and every esplanade is grey unpainted cement, weathered and stained,
+in a range of greys from pale sun-bleached concrete to dark damp concrete with
+rain streaks, moss in the joints and patched repairs; there are no seats of any
+colour anywhere — the terracing is plain concrete steps; the only colours in the
+whole picture are the green of the grass, the white of the painted pitch
+markings and the dark grey of the asphalt outside,
+
 photorealistic, natural materials, sun-bleached concrete, stained old concrete,
 worn grass, tropical Brazil, Rio de Janeiro, 8k satellite imagery quality,
 sharp detail, no people visible, no spectators, no players
@@ -231,6 +240,146 @@ footbridges behind the goals. No people, no advertising.
 5. **As duas passarelas sobre o fosso**, atrás dos gols.
 6. Depois de importar: gramado, degraus, circulação, rampa e esplanada viram
    chão; fosso, alambrado, grade de setor e traves viram parede no pincel.
+
+---
+
+## MINEIRÃO — 60.000
+
+`id: mineirao`, Pampulha, mandante do Cruzeiro. A forma é irmã da do Maracanã e
+muda em duas coisas que o mapa mostra: a elipse é **mais alongada**, quase um
+retângulo de pontas redondas, e num dos lados o anel inferior é interrompido
+por um **cinturão de camarote e cadeira especial** — a faixa que no mapa
+aparece separada, entre o gramado e a arquibancada.
+
+**O cinturão de camarote entra como degrau, não como camarote.** Camarote é
+sala coberta, e coberta a prumo é telhado: some a fileira de baixo e o
+cinturão vira parede atravessando a cena no lado mais disputado. Ele fica como
+uma **faixa de piso mais largo** no meio da arquibancada — plataforma de
+concreto, sem laje —, e aí ele deixa de ser problema e vira o que é bom pra
+briga: um patamar plano no meio dos degraus, onde dá pra segurar linha.
+
+Escala: 60 mil em elipse mais alongada que a do Maracanã, uns **270 × 220 m**.
+Cabendo a altura na tela 3:2, o quadro fica em **330 m** — 4,7 px/m, disco de
+~3,0 m. Um tico melhor que o Maracanã, mesma conversa: a variante de meio
+estádio do fim do arquivo vale aqui igual.
+
+### Prompt
+
+```
+strict orthographic top-down nadir view, camera exactly at zenith directly
+above the scene, optical axis perpendicular to the ground, 90 degrees straight
+down, orthophoto / satellite imagery projection, zero camera tilt, zero
+parallax, no perspective distortion, no vanishing point, verticals collapse to
+points,
+
+every object seen only as its top surface: roofs only, vehicle roofs only, no
+façades, no building elevations, no side walls, no stand seen from the front,
+all sides of the bowl looking alike, nothing leaning outward at the edges of
+the frame,
+
+FOLLOW THE ATTACHED SEATING MAP for the shape of the stadium: the outline of
+the bowl, how elongated the ellipse is, the proportion between the rings, where
+the terracing is continuous and where it is split into sectors, the wide band
+that interrupts the lower ring on one side, and the position of the pitch
+inside it all come from that reference. Take from it ONLY the plan geometry.
+Ignore its colours, its legend, its numbers and its flat diagram look
+completely — this is a PHOTOGRAPH of a real concrete stadium, not a drawing of
+a map, with real materials, real texture and real daylight,
+
+aerial drone photograph of a huge empty Brazilian football stadium of the old
+concrete kind, capacity around sixty thousand, overcast diffuse daylight, soft
+shadows, desaturated muted colors, documentary photography, completely empty of
+people,
+
+the stadium is a long ELLIPSE seen from directly above, almost a rectangle with
+rounded ends, filling the frame with its long axis running left to right; in
+the exact centre a full-size grass pitch with painted white markings and mown
+stripes, two white goal frames lying flat in the image with their shadows
+beside them, and no running track around it,
+
+around the pitch, a dry moat and a perimeter fence, and two footbridges
+crossing the moat, one behind each goal, the only connections between the
+terracing and the pitch,
+
+the LOWER RING: a band of uncovered concrete steps hugging the pitch, seen from
+directly above as concentric bands of parallel steps, evenly lit across its
+whole depth, divided into radial wedge-shaped sectors by straight stairways
+running outward like spokes, with dark tunnel mouths opening through the steps,
+
+along one long side, the lower ring is interrupted by a WIDE FLAT TERRACE: a
+broad level platform of plain concrete set between the pitch and the steps,
+completely open to the sky with no roof, no box, no glazing and no structure of
+any kind on it, reading from above as a smooth pale band with the steps
+resuming behind it,
+
+between the rings, an OPEN CONCOURSE: a wide elliptical concrete esplanade
+running the whole way around the stadium, completely open to the sky and
+plainly visible from above along its entire length, with flights of stairs
+rising from it to the upper ring,
+
+the UPPER RING: a second continuous elliptical band of uncovered concrete steps
+set FURTHER OUT than the lower ring, standing beyond the concourse and never
+over it, so that both rings and the concourse between them are fully visible
+from directly above, divided into the same radial wedge-shaped sectors,
+
+there is no roof anywhere: no canopy, no ring roof, no cantilever, no membrane,
+no covered section over either ring, no upper deck overhanging the lower one,
+no executive boxes,
+
+on the outside of the ellipse, four large access ramps, one in each quadrant,
+seen from above as broad straight concrete slabs rising to the concourse, each
+landing on a paved apron outside,
+
+around the whole stadium, an enormous paved esplanade of concrete slabs, then a
+ring road circling the ellipse with cars and coaches parked along it seen from
+directly above as roofs only, the road running out of frame at the left and
+right edges,
+
+EVERYTHING IS BARE CONCRETE: every stand, every step, every wall, every
+stairway, every ramp and every esplanade is grey unpainted cement, weathered
+and stained, in a range of greys from pale sun-bleached concrete to dark damp
+concrete with rain streaks, moss in the joints and patched repairs; there are
+no seats of any colour anywhere — the terracing is plain concrete steps; the
+only colours in the whole picture are the green of the grass, the white of the
+painted pitch markings and the dark grey of the asphalt outside,
+
+photorealistic, natural materials, sun-bleached concrete, stained old concrete,
+worn grass, tropical Brazil, Belo Horizonte, 8k satellite imagery quality,
+sharp detail, no people visible, no spectators, no players
+```
+
+### Negativo
+
+O mesmo do Maracanã, mais o cinturão:
+
+```
+executive boxes, hospitality boxes, glazed boxes, box tier, roofed terrace,
+covered platform, structure on the terrace, seats on the terrace,
+```
+
+### Sementes pro importador
+
+```python
+{'id': 'estadio-mineirao', 'arquivo': '<arquivo que saiu>.jpeg',
+ 'saida': 'estadio_mineirao.webp',
+ # gramado, o patamar do cinturão, anel inferior, circulação, anel superior
+ 'sementes': [(0.50, 0.50), (0.42, 0.50), (0.58, 0.50),
+              (0.50, 0.63), (0.50, 0.36), (0.50, 0.70),
+              (0.28, 0.50), (0.72, 0.50), (0.50, 0.24), (0.50, 0.78),
+              (0.20, 0.50), (0.80, 0.50), (0.50, 0.14), (0.50, 0.87),
+              (0.03, 0.50), (0.97, 0.50)],
+ 'recorte': [(0.00, 0.02, 1.00, 0.98)]},
+```
+
+### Conferir
+
+Tudo do Maracanã, mais um item, e ele é o primeiro:
+
+1. **O cinturão é chão, não sala.** Nenhuma laje, nenhum vidro, nenhuma cabine
+   em cima dele. Se vier coberto, aquela faixa vira parede atravessando o lado
+   mais disputado da cena — e é o lado onde os dois bondes se encontram.
+2. A elipse é **alongada**, quase retângulo de pontas redondas: o Mineirão não
+   é redondo como o Maracanã, e é isso que distingue os dois de cima.
 
 ## Variante — meio estádio
 

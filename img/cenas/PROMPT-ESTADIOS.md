@@ -66,6 +66,11 @@ zênite, 16:9, sem gente, chão contínuo). O que é próprio do estádio:
 - **grade de separação de setor com portão.** É ela que faz a arquibancada
   valer como cena, e não como esplanada: sem divisão, os dois bondes se acham
   em linha reta;
+- **tudo é cimento.** Arquibancada de concreto pelado, do primeiro degrau ao
+  último, em cinza envelhecido com mancha de chuva e remendo. Nada de cadeira
+  colorida, nada de setor pintado: a única cor do quadro é o verde do gramado, o
+  branco da marcação e o cinza do asfalto de fora. Isso não é só estilo — cor de
+  cadeira é cor de clube, e a mesma cena serve a torcida que muda toda partida;
 - **estádio vazio**, sem torcida, sem jogador, sem carro andando. Quem enche a
   arquibancada são os discos.
 
@@ -146,6 +151,14 @@ short players' tunnel entering at one corner,
 outside the wall, only a thin strip: a dirt car park with two parked cars seen
 as roofs only, low houses showing only their terracotta clay tile roofs, sparse
 scrub bushes,
+
+EVERYTHING IS BARE CONCRETE: every stand, every step, every wall, every stairway,
+every ramp and every esplanade is grey unpainted cement, weathered and stained,
+in a range of greys from pale sun-bleached concrete to dark damp concrete with
+rain streaks, moss in the joints and patched repairs; there are no seats of any
+colour anywhere — the terracing is plain concrete steps; the only colours in the
+whole picture are the green of the grass, the white of the painted pitch
+markings and the dark grey of the asphalt outside,
 
 photorealistic, natural materials, sun-bleached concrete, worn grass, tropical
 Brazil, 8k satellite imagery quality, sharp detail, no people visible, no
@@ -268,6 +281,14 @@ square lattice tops with long shadows,
 outside the wall, only a thin strip along the top and bottom edges: an asphalt
 car park with a few parked cars seen as roofs only, low buildings showing only
 their flat roofs,
+
+EVERYTHING IS BARE CONCRETE: every stand, every step, every wall, every stairway,
+every ramp and every esplanade is grey unpainted cement, weathered and stained,
+in a range of greys from pale sun-bleached concrete to dark damp concrete with
+rain streaks, moss in the joints and patched repairs; there are no seats of any
+colour anywhere — the terracing is plain concrete steps; the only colours in the
+whole picture are the green of the grass, the white of the painted pitch
+markings and the dark grey of the asphalt outside,
 
 photorealistic, natural materials, sun-bleached concrete, worn grass, tropical
 Brazil, 8k satellite imagery quality, sharp detail, no people visible, no
@@ -426,6 +447,14 @@ lattice tops with long shadows,
 
 outside the wall, only a thin strip along the top and bottom edges: asphalt car
 park, a few parked cars and buses seen as roofs only,
+
+EVERYTHING IS BARE CONCRETE: every stand, every step, every wall, every stairway,
+every ramp and every esplanade is grey unpainted cement, weathered and stained,
+in a range of greys from pale sun-bleached concrete to dark damp concrete with
+rain streaks, moss in the joints and patched repairs; there are no seats of any
+colour anywhere — the terracing is plain concrete steps; the only colours in the
+whole picture are the green of the grass, the white of the painted pitch
+markings and the dark grey of the asphalt outside,
 
 photorealistic, natural materials, sun-bleached concrete, stained old concrete,
 worn grass, tropical Brazil, 8k satellite imagery quality, sharp detail, no
