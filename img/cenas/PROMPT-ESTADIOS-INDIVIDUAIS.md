@@ -56,6 +56,63 @@ E como a elipse é contínua, **a fuga não é a quina** — é a rampa. As quat
 entram na cena como caminho de verdade, ligando a circulação ao lado de fora.
 Sem elas, o anel superior vira ratoeira.
 
+## Referência: qual imagem serve pra quê
+
+Estádio individual roda com imagem anexada, sempre. Mas **nenhuma referência
+sozinha entrega a cena**, e cada uma atrapalha de um jeito se o papel dela não
+estiver declarado:
+
+| Referência | O que dá | O que atrapalha se não for barrado |
+|---|---|---|
+| **A — mapa de setores** | geometria de planta: contorno, anéis, setores, cinturão | cor chapada, legenda, número, cara de desenho |
+| **B — foto interna do estádio** | material e identidade: tom do concreto, escada, boca de túnel, grama | perspectiva, nível do olho, **cobertura**, cadeira colorida |
+| **C — satélite de estádio descoberto** | como degrau se lê a prumo: faixa concêntrica, escada radial, vomitório | a forma daquele outro estádio |
+
+**Satélite do próprio estádio não serve pra arquibancada quando ele tem
+cobertura** — e os grandes têm. De cima, o satélite mostra a laje, não o
+degrau: é o problema do viaduto visto de fora. Ele serve pro **entorno**, que
+é metade do quadro: contorno da elipse, esplanada, rampa, via de contorno,
+estacionamento.
+
+Por isso a C existe: um estádio descoberto qualquer (Arruda, geral de concreto)
+dá, a prumo, exatamente o que A e B não dão. Dela vem só a textura do degrau,
+nunca a forma.
+
+O parágrafo abaixo declara os papéis e entra em todo prompt individual, logo
+depois do bloco de zênite. Com só A e B anexadas, apague a linha da C:
+
+```
+THREE REFERENCE IMAGES ARE ATTACHED, and they have different jobs.
+
+Reference A is a seating map: take from it ONLY the plan geometry — the outline
+of the bowl, how elongated it is, the proportion between the rings, where the
+terracing is continuous and where it is split into sectors, and the position of
+the pitch inside it. Ignore its colours, its legend, its numbers and its flat
+diagram look.
+
+Reference B is a photograph of the real stadium taken from inside at eye level:
+take from it ONLY the materials and the identity of the place — the tone and
+staining of the concrete, the pattern of the stairways, the shape of the tunnel
+mouths, the grass and its mowing stripes. Do NOT take its camera angle, do NOT
+take its perspective, do NOT take its roof and do NOT take its seats.
+
+Reference C is a satellite view of a different, roofless concrete stadium: take
+from it ONLY how terracing reads from directly overhead — the concentric bands
+of steps, the radial stairways cutting through them, the dark tunnel mouths.
+Do not take the shape of that stadium.
+
+The finished image is a strict overhead nadir view of the stadium in reference
+A, from directly above, with no roof at all.
+```
+
+E o negativo ganha os tells da foto interna:
+
+```
+interior view, view from the stands, eye level, ground level photo, sky
+visible, clouds, roof structure, steel truss, roof ring, hanging scoreboard,
+floodlight rig, white plastic seats, rows of seats,
+```
+
 ## Rodando com o mapa anexado
 
 O mapa de setores vai junto do prompt, sempre. Isso troca o trabalho de lugar:
