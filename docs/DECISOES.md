@@ -2743,6 +2743,20 @@ NOSSA praça atacando numa cidade onde ela não estava. Duas pontas:
   torcida inteira em casa), e sub-sede nossa naquela cidade é
   olheiro fixo do aviso, como nas emboscadas.
 
+## Recuado bate de costas (correção do dono, 27/08/2026)
+
+O dono viu que a briga fica fácil de definir quando um lado recua: o
+laço de contatos PULAVA o lado em recuo inteiro — recuado não dava
+um soco enquanto o outro lado seguia batendo, e apertar R (ou a IA
+decidir recuar) virava sentença. Agora o recuo segue mandando o
+disco de volta pro spawn (o ramo de movimento não mudou), mas quem
+COLAR nele leva o golpe normal: recuo reposiciona, não desarma. Só a
+debandada (`fugindo`) continua sem revidar — quem virou as costas de
+vez não briga, e é nela que valem o 1,6× e o agarrão de quem
+alcança. Medido em treta 12×12: o lado recuado, que dava 0 de dano
+por definição, devolveu ~1.300 de dano e derrubou gente, seguindo
+apanhando no recuo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

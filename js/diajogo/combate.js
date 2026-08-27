@@ -1738,7 +1738,13 @@ TO.diaJogo.combate = (function(){
     const vivos=J.discos.filter(d=>d.vivo);
     for(const a of vivos){
       if(a.fugindo||a.atordoado>0) continue;
-      if(recuando(J, a.lado)) continue;
+      /* RECUADO BATE DE COSTAS (correção do dono, 27/08/2026): o lado
+         em recuo era pulado inteiro aqui — não devolvia um soco
+         enquanto o outro lado seguia batendo, e apertar R virava
+         sentença. Recuar segue mandando o disco de volta pro spawn
+         (ramo de movimento), mas quem COLAR nele leva o golpe normal:
+         recuo reposiciona, não desarma. Só a debandada (`fugindo`)
+         continua sem revidar — quem virou as costas de vez não briga. */
 
       const bate = agressivo(J,a);
       if(bate) for(const b of porPerto(J,a.x,a.y,a.r+(J._raioMax||8)+5)){
