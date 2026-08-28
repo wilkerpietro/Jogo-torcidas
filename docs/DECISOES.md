@@ -2757,6 +2757,19 @@ alcança. Medido em treta 12×12: o lado recuado, que dava 0 de dano
 por definição, devolveu ~1.300 de dano e derrubou gente, seguindo
 apanhando no recuo.
 
+## Data de fundação real dos clubes (pedido do dono, 27/08/2026)
+
+O aniversário do clube lia só o ANO da fonte e sorteava o dia por
+hash. Entrou `dados/fundacoes.js`: dia e mês REAIS de fundação de
+215 dos 356 clubes — todos os grandes e médios do Brasil e os
+principais dos 9 países —, aplicados por cima de times.js na carga
+(a fonte não se reescreve). A tubulação do feed já preferia
+`fundacaoDia/fundacaoMes` quando existem, então o evento passou a
+cair na data histórica: "Dia 18/10 o Fortaleza completa 108 anos."
+Os 141 clubes menores sem data conferível seguem no sorteio por hash
+(determinístico); o dono pode completar a lista quando quiser — é só
+adicionar `id: [dia, mes]` no arquivo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
