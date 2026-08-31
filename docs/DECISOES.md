@@ -2939,6 +2939,22 @@ rompimento. O dono mandou aplicar as opções 1 e 2 da análise:
 - A opção 3 (semRecuoPM nos arredores, como na arquibancada) ficou
   de fora por ordem do dono.
 
+## A descida da sub-sede abre cena (ordem do dono, 31/08/2026)
+
+O "Atacar" da sugestão do olheiro da filial ("mapeou o bar da...")
+resolvia por simulação. Agora ABRE A CENA do ataque a bar, jogável:
+
+- A cena de ação aceita **escalação própria** (`cena.escalacao`): quem
+  desce é o núcleo da sub-sede, com ficha real de cada membro — não os
+  aptos da cidade-sede.
+- Defensores seguem a régua de antes (35% do efetivo de pé do rival,
+  entre 4 e 40), e o fechamento passa pela porta de sempre
+  (`fecharAtaque`): prestígio, dano no bar e consequência de ferido e
+  preso no núcleo de lá.
+- Núcleo com menos de 4 de pé continua não descendo ("Não rolou").
+- A nota do botão mudou junto: "abre a cena com o núcleo da sub-sede —
+  a briga vale prestígio como qualquer ataque a bar".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

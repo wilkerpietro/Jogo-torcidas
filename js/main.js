@@ -6511,7 +6511,12 @@
      ======================================================= */
   function abrirAcaoEmCena(cena, efetivo){
     const e = E();
-    const fila = TO.membros.aptosParaOEstadio(e)
+    /* A DESCIDA DA FILIAL ABRE CENA (ordem do dono, 31/08/2026): quando
+       a ação manda escalação própria — o núcleo da sub-sede — é ela que
+       desce, não os aptos da cidade-sede. */
+    const fila = (cena.escalacao && cena.escalacao.length
+        ? cena.escalacao.slice()
+        : TO.membros.aptosParaOEstadio(e))
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa));
     /* QUANTOS VÃO — a mesma correção da briga de rua, aqui também.
        Assalto é serviço de meia dúzia e continua sendo doze. Investida

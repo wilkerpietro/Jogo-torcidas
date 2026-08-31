@@ -248,8 +248,8 @@ TO.feed = (function(){
               `Manda descer?`,
         dados:{cidade:f.cidade, rival:alvo.id},
         botoes:[{id:'desce',  rot:'Atacar', acao:'filial-ataque',
-                 nota:'o núcleo da sub-sede desce sozinho — a briga vale '+
-                      'prestígio como qualquer ataque a bar'},
+                 nota:'abre a cena com o núcleo da sub-sede — a briga '+
+                      'vale prestígio como qualquer ataque a bar'},
                 {id:'quieto', rot:'Não atacar', acao:'nada'}]});
     }
   }
@@ -1808,10 +1808,12 @@ TO.feed = (function(){
                                 simular: !!b.simular}};
       }
 
-      /* a descida do núcleo da SUB-SEDE (dono, 26/08/2026): o olheiro
-         de lá sugeriu, o chefe mandou — o núcleo desce sozinho e a
-         briga se resolve por simulação, caindo no feed como qualquer
-         ataque a bar */
+      /* a descida do núcleo da SUB-SEDE (dono, 26/08/2026; cena jogável
+         por ordem do dono, 31/08/2026): o olheiro de lá sugeriu, o
+         chefe mandou — o "Atacar" ABRE A CENA do ataque a bar com a
+         escalação do núcleo da sub-sede, e o fechamento segue pela
+         porta de sempre (fecharAtaque), valendo prestígio como
+         qualquer ataque a bar. */
       case 'filial-ataque': {
         const d = m.dados || {};
         const rival = M().torcida(d.rival);
@@ -1823,21 +1825,14 @@ TO.feed = (function(){
         }
         const ef = TO.acoes.efetivoDePe(E, rival) || 30;
         const defensores = Math.min(40, Math.max(4, Math.round(ef * 0.35)));
-        /* como no ataque manual, o nosso bonde é o mandante da cena —
-           fecharAtaque lê `res.venceu`, que é a vitória do mandante */
-        const res = TO.diaJogo.simular.rodar({config:{
-          escalacao: nucleo, efetivoRival: defensores,
-          bondes:[{nossa:true, lado:'mandante', n:nucleo.length}]}});
-        /* todo ocorrido mexe no prestígio (ordem do dono, 27/08/2026) */
-        if(!res.prestigio) res.prestigio = res.ganhamos ? 1 : -1;
-        TO.membros.aplicarResultadoDaNoite(E, res);
-        TO.acoes.fecharCena(E, {acao:'atacar', alvo:{
-          torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,
-          tipo:'bar', cena:'bar',
-          bairro:TO.financeiro.nomeCidade(d.cidade),
-          nossos:nucleo.length, efetivo:defensores}}, res);
         marcar();
-        return {ok:true};
+        return {ok:true, abrir:{tela:'cena-acao', args:{cena:{
+          cena:'bar', acao:'atacar',
+          escalacao: nucleo, efetivoRival: defensores,
+          alvo:{torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,
+                tipo:'bar', cena:'bar',
+                bairro:TO.financeiro.nomeCidade(d.cidade),
+                nossos:nucleo.length, efetivo:defensores}}}}};
       }
 
       /* recusas com preço (dono, 19/08/2026) */
