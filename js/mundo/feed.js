@@ -1614,6 +1614,9 @@ TO.feed = (function(){
              /* duelo de LNT não é treta de esquina: o jornal precisa
                 saber a fase e a divisão pra dizer o que estava em jogo */
              lnt: d.lnt || null,
+             /* quando descemos pelo aliado escoltado, o jornal precisa
+                do nome dele: a manchete é de apoio, não de treta nossa */
+             aliado: d.aliado || null,
              a:{nome:a.nome || E.torcida.nome, id:E.torcida.id,
                 n:a.n, caidos:a.caidos, presos:a.presos},
              b:{nome:b.nome, id:b.torcidaId,

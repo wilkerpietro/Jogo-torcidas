@@ -200,6 +200,11 @@ TO.acoes = (function(){
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: deles.torcida, ganhamos,
       local:{cena: enc.local || '', bairro: enc.bairro || ''},
+      /* a escolta desce com o aliado junto: o carimbo vai pro jornal
+         montar a manchete de apoio (pedido do dono, 31/08/2026) */
+      aliado: enc.escoltaAliado && enc.junto
+        ? {id: enc.junto.torcida, nome: enc.junto.nome, n: enc.junto.n}
+        : null,
       a: {torcidaId:E.torcida.id, nome:E.torcida.nome, n:nosso.n,
           caidos: membros.filter(m=>!m.preso && m.caido).length,
           presos: membros.filter(m=>m.preso).length, venceu:ganhamos},

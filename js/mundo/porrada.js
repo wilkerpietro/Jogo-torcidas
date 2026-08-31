@@ -43,6 +43,7 @@ TO.porrada = (function(){
       semLuta:   ['Ninguém desceu'],
       arquibancada:['O setor se pegou'],
       lnt:       ['Dia de LNT'],
+      apoio:     ['Desceu junto'],
       padrao:    ['O pau do dia']
     },
 
@@ -243,6 +244,21 @@ TO.porrada = (function(){
           'A liga cobrou caro da {B}: deu {A} dez contra dez',
           'Na LNT, a {A} levou a melhor e a {B} saiu devendo'
         ]
+      },
+      /* apoio a aliado (pedido do dono, 31/08/2026): a escolta desceu
+         junto — {AL} é o aliado escoltado, e o grupo passa NA FRENTE do
+         grupo da cena, porque a notícia é a aliança na porrada */
+      apoio:{
+        vitoria:[
+          'A {AL} foi atacada, a {A} desceu junto e a {B} se arrependeu',
+          '{A} e {AL} lado a lado: a {B} veio pra emboscar e saiu carregada',
+          'Mexeu com a {AL}, mexeu com a {A}: a {B} aprendeu na porrada'
+        ],
+        derrota:[
+          'A {A} atropelou a escolta: {B} e {AL} saíram no prejuízo',
+          'A {B} desceu pela {AL}, mas quem mandou na rua foi a {A}',
+          'Nem junto deu: a {A} venceu a {B} e a {AL} de uma vez'
+        ]
       }
     },
 
@@ -419,6 +435,8 @@ TO.porrada = (function(){
     };
     /* "1 feridos" não existe: a palavra acompanha o número */
     v.plA = v.fA === 1 ? 'ferido' : 'feridos';
+    /* o aliado escoltado entra na manchete de apoio */
+    if(d.aliado) v.AL = d.aliado.nome;
 
     /* ---- chapéu ---- */
     const CH = MOLDES.chapeu;
@@ -427,6 +445,7 @@ TO.porrada = (function(){
                     é a notícia, a arquibancada é só o endereço */
                  : presos >= 4 ? CH.cadeia[0]
                  : d.lnt ? CH.lnt[0]
+                 : d.aliado ? CH.apoio[0]
                  : /^estadio-/.test(d.cena||'') ? CH.arquibancada[0]
                  : (cond === 'vitoriaMenos' || cond === 'apanhouMenos') ? CH.menos[0]
                  : cond === 'atropelo' ? CH.atropelo[0]
@@ -438,7 +457,7 @@ TO.porrada = (function(){
        nosso lado. Empate e "ninguém desceu" não têm vencedor, então
        ficam só com o molde próprio. A fila continua determinada pelo
        dia: a mesma briga dá sempre a mesma página. */
-    const grupo = d.lnt ? 'lnt' : GRUPO_CENA[d.cena || ''];
+    const grupo = d.lnt ? 'lnt' : d.aliado ? 'apoio' : GRUPO_CENA[d.cena || ''];
     const daCena = (venc && !d.semResistencia && MOLDES.mancheteCena[grupo] &&
                     MOLDES.mancheteCena[grupo][ganhamos ? 'vitoria' : 'derrota'])
                    || [];
