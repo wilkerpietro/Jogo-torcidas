@@ -183,7 +183,9 @@ TO.relacoes = (function(){
   };
   const ganhoDeleas = t => FIN().GANHO_MMA[mmaDe(t)] || 1;
   const cofreDoProfessor = t => FIN().MMA_MES * 3 * (mmaDe(t) + 1);
-  const BOMBA = {lote:5, custo:600, teto:10};
+  /* o lote de 5 acompanha os R$ 400 por bomba do jogador (reajuste do
+     dono, 31/08/2026): a IA paga o mesmo preço unitário */
+  const BOMBA = {lote:5, custo:2000, teto:10};
   /* SEM ARQUÉTIPO, a vontade de brigar vem da OUSADIA, que cada
      torcida já tem desde que nasce (sai do poder dela). A escala
      mantém a média de ataques por mês que a tabela dava. */

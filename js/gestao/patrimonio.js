@@ -440,7 +440,8 @@ TO.patrimonio = (function(){
      hora do planejamento do ataque e vai pro estoque que a
      cena gasta.
      ======================================================= */
-  const PRECO_BOMBA = 120;
+  /* R$ 400 a unidade (reajuste do dono, 31/08/2026 — era 120) */
+  const PRECO_BOMBA = 400;
 
   function estoquePiro(E){
     if(!E.estoque) E.estoque = {bombas:0};

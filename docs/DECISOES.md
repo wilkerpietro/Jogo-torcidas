@@ -2835,6 +2835,25 @@ regras do baralho:
 - Cena sem grupo (ou save antigo sem cena) segue só com as manchetes
   por condição, sem quebrar.
 
+## Manchete de apoio a aliado (pedido do dono, 31/08/2026)
+
+O baralho por cenário ganhou o grupo APOIO: quando a escolta desce
+junto do aliado atacado, o fechamento da briga carimba o aliado na
+mensagem de confronto (`dados.aliado`) e o jornal monta a página de
+apoio — chapéu próprio ("Desceu junto") e 3 manchetes de vitória +
+3 de derrota com o `{AL}` (o aliado escoltado) nomeado. O grupo de
+apoio passa NA FRENTE do grupo da cena, porque a notícia é a aliança
+na porrada. Briga comum segue sem carimbo.
+
+## Bomba a R$400 e custo fixo do comércio dobrado (reajuste do dono, 31/08/2026)
+
+- **Bomba**: R$120 → **R$400 a unidade**. O lote de 5 da IA acompanha
+  (R$600 → R$2.000): mesmo preço unitário dos dois lados.
+- **Custo fixo mensal de bar e loja dobrou**: bar 240/480/900 e loja
+  300/600/1.080 por nível (eram 120/240/450 e 150/300/540). A subsede
+  ficou como era, e a IA paga pela mesma tabela (o balanço dela lê
+  `FIN().MANUT` direto — sem assimetria).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
