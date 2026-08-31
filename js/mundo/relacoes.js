@@ -831,21 +831,12 @@ TO.relacoes = (function(){
      A SEMANA ESFRIA: a relação volta devagar pro valor
      natural do grafo — mágoa de briga passa, favor também.
      ======================================================= */
-  function esfriar(E){
-    for(const id of Object.keys(E.relacoes||{})){
-      const base = M().valorInicial(M().relacaoBase(E.torcida.id, id));
-      const atual = E.relacoes[id];
-      if(Math.abs(base - atual) < 2) continue;
-      E.relacoes[id] = U.limitar(atual + (base - atual)*0.05, -100, 100);
-    }
-    for(const ch of Object.keys(E.relacoesDelas||{})){
-      const [a, b] = ch.split('|');
-      const base = M().valorInicial(M().relacaoBase(a, b));
-      const atual = E.relacoesDelas[ch];
-      if(Math.abs(base - atual) < 2) continue;
-      E.relacoesDelas[ch] = U.limitar(atual + (base - atual)*0.05, -100, 100);
-    }
-  }
+  /* O ESFRIAR MORREU (ordem do dono, 31/08/2026): a relação não anda
+     mais sozinha de volta pra base — nem a nossa, nem a das IAs entre
+     si. O que se constrói ou se quebra fica construído ou quebrado, e
+     só EVENTO move o ponteiro: briga, recepção, escolta, aniversário,
+     reunião — e a convivência do dono (17/08), que lê as marcas de
+     hostilidade e ajuda reais, não o relógio puro. */
 
   /* =======================================================
      CONVIVÊNCIA (decisão do dono, 17/08/2026)
@@ -1319,8 +1310,8 @@ TO.relacoes = (function(){
        vencer em menor número — move MUITO mais: +4 na régua de 0 a
        100 e teto 10 (a comum fica no teto 8), e a moral do zebra
        vencedor dobra (+1,2 contra +0,6 da vitória comum). O vencedor
-       leva, o perdedor devolve; a relação entre os dois azeda, com o
-       esfriar semanal puxando de volta. */
+       leva, o perdedor devolve; a relação entre os dois azeda — e
+       fica azeda: o esfriar passivo morreu (dono, 31/08/2026). */
     const zebra = ganhouA ? nA < nB : nB < nA;
     const swingDisplay = U.limitar(
       Math.round(1 + (nA + nB)/25) + (zebra ? 4 : 0), 1, zebra ? 10 : 8);
@@ -1878,7 +1869,6 @@ TO.relacoes = (function(){
     /* a foto do mês é tirada ANTES do que a semana faz: assim a
        variação que a tela mostra cobre o mês inteiro */
     fotoDoMes(E);
-    esfriar(E);
     convivencia(E);
     economiaDelas(E);
     return {ataques: ataquesContraNos(E)};
@@ -1907,7 +1897,7 @@ TO.relacoes = (function(){
           mover, indicadoresDe, semanaAbs,
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
-          conquistaDoClube, esfriar, passarSemana, panorama, MENSALIDADE,
+          conquistaDoClube, passarSemana, panorama, MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,
           quadroDe, mediaDoQuadro, treinarDelas, promoverDelas, xpDeBrigaIA,
           envelhecerDelas, ferrugemDaPaz, desgasteDaNoite, desgastarQuadro,

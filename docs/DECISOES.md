@@ -2801,6 +2801,17 @@ pacote:
   segue a formação do nosso líder e obedece R e F), e as consequências
   de ferido/preso continuam só nos nossos 10.
 
+## O esfriar passivo das relações morreu (ordem do dono, 31/08/2026)
+
+A relação não anda mais sozinha de volta pra base: saiu o puxão
+semanal de 5% que derretia tanto as nossas relações quanto as das
+IAs entre si — aliança construída ficava escorrendo pro neutro, e
+ódio comprado em briga ia embora de graça. Agora só EVENTO move o
+ponteiro: briga, recepção, escolta, aniversário, reunião, hospedagem
+de filial. A CONVIVÊNCIA do dono (17/08) ficou de pé — +1 por mês
+sem hostilidade, −1 por dois meses sem ajuda — porque lê as marcas
+de briga e ajuda reais, não o relógio puro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
