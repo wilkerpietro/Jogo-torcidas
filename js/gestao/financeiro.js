@@ -41,9 +41,11 @@ TO.financeiro = (function(){
      passou a valer a conta. A subsede ficou como era. */
   const RECEITA = {bar:[null, 1600, 3600, 7500], loja:[null, 2200, 5000, 10000],
                    subsede:600};
-  /* custo fixo de bar e loja DOBROU (reajuste do dono, 31/08/2026);
-     a subsede ficou como era. A IA paga pela mesma tabela. */
-  const MANUT   = {bar:[null, 240, 480, 900],   loja:[null, 300, 600, 1080],
+  /* custo fixo de bar e loja DOBROU (reajuste do dono, 31/08/2026), e
+     o do bar dobrou DE NOVO no mesmo dia ("despesa de bar tá com valor
+     muito baixo"); a subsede ficou como era. A IA paga pela mesma
+     tabela. */
+  const MANUT   = {bar:[null, 480, 960, 1800],  loja:[null, 300, 600, 1080],
                    subsede:90};
 
   const INSUMO   = 0.25;   // GDD §8.3: loja sem insumo não fatura

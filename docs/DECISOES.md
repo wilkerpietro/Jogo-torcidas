@@ -2891,8 +2891,22 @@ Advogado se contrata no Financeiro, no molde da comissão técnica:
 - **Escada própria da sede**: nível 1 não comporta nenhum, o 2
   comporta 1, o 3 comporta 2, o 4 quatro e o 5, oito. Sede menor não
   conta o que não cabe (mesma régua dos professores).
-- As IAs por enquanto NÃO têm advogado (o dono pediu só o Financeiro
-  nosso); se quiser paridade, entra na fila de compras delas.
+- **As IAs também têm** (pedido do dono, mais tarde no mesmo dia):
+  'advogado' entrou na fila de compras delas, depois do ônibus, com o
+  cofre de três meses de folha que a fila já exige do professor. A
+  mesma régua inteira: R$ 5.000/mês na fatia semanal do balanço,
+  escada da sede 0/1/2/4/8, prisão nova de IA já sai com 10 dias a
+  menos por advogado, a contratação alivia os lotes de `presosIA` na
+  hora (lote que zera é solto) — e no vermelho o advogado é o
+  primeiro a ser dispensado, antes do professor de MMA, porque é a
+  folha mais cara.
+
+## Despesa do bar dobrou de novo (reajuste do dono, 31/08/2026)
+
+"Despesa de bar tá com valor muito baixo": a manutenção mensal do bar
+foi de 240/480/900 pra **480/960/1.800** por nível — a segunda dobra
+do dia. Loja e subsede ficaram como estavam, e a IA paga pela mesma
+tabela.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

@@ -135,7 +135,7 @@ TO.relacoes = (function(){
      sede não roda a fila: o item travado segue com a vez.
      ======================================================= */
   const ORDEM = ['mma', 'loja', 'bar', 'filial', 'elenco', 'onibus',
-                 'subsede',
+                 'advogado', 'subsede',
                  'bombas', 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede',
                  'evoluir:filial'];
 
@@ -183,6 +183,27 @@ TO.relacoes = (function(){
   };
   const ganhoDeleas = t => FIN().GANHO_MMA[mmaDe(t)] || 1;
   const cofreDoProfessor = t => FIN().MMA_MES * 3 * (mmaDe(t) + 1);
+  /* O ESCRITÓRIO DELAS É O NOSSO (pedido do dono, 31/08/2026): R$ 5.000
+     por mês por advogado, 10 dias a menos de cadeia por cabeça — na
+     contratação e em toda prisão nova — e a escada própria da sede:
+     0/1/2/4/8. A fila exige o mesmo cofre de três meses da folha. */
+  const advogadosIA = t =>{
+    if(!t || !t.advogados) return 0;
+    return U.limitar(Math.round(t.advogados), 0,
+                     FIN().ADVOGADOS_SEDE[U.limitar(t.sede || 1, 1, 5)] || 0);
+  };
+  const cofreDoAdvogado = t => FIN().ADVOGADO_MES * 3 * (advogadosIA(t) + 1);
+  /* a pena que o camburão dá hoje, já com o corte do escritório */
+  const penaIA = t => Math.max(1,
+    U.inteiro(15, 90) - advogadosIA(t) * FIN().ADVOGADO_DIAS);
+  /* a chegada do advogado alivia quem já está preso: todo lote perde
+     10 dias na hora, e lote que zera sai da cadeia junto */
+  function aliviarPresosIA(E, t){
+    const hoje = E.data.absoluto || 0;
+    t.presosIA = (t.presosIA || [])
+      .map(x=>({n:x.n, ate:x.ate - FIN().ADVOGADO_DIAS}))
+      .filter(x=>x.ate > hoje);
+  }
   /* o lote de 5 acompanha os R$ 400 por bomba do jogador (reajuste do
      dono, 31/08/2026): a IA paga o mesmo preço unitário */
   const BOMBA = {lote:5, custo:2000, teto:10};
@@ -278,6 +299,9 @@ TO.relacoes = (function(){
     /* a folha da comissão delas: R$ 2.000 por mês por professor, na
        fatia semanal, do mesmo jeito que a nossa cobra no fechamento */
     des += mmaDe(t) * (FIN().MMA_MES/4.33);
+    /* e a folha do escritório: R$ 5.000 por mês por advogado, na
+       mesma fatia (pedido do dono, 31/08/2026) */
+    des += advogadosIA(t) * (FIN().ADVOGADO_MES/4.33);
     return {rec, des, saldo:rec - des};
   }
 
@@ -304,6 +328,13 @@ TO.relacoes = (function(){
         return {tipo:'mma', custo:0, cofre:cofreDoProfessor(t)};
       /* a sala está cheia: uma sede maior comporta mais? */
       return FIN().cabeNaSede(t.sede) < FIN().MMA_MAX ? {sede:true} : null;
+    }
+    if(chave === 'advogado'){
+      const teto = FIN().ADVOGADOS_SEDE[U.limitar(t.sede || 1, 1, 5)] || 0;
+      if(advogadosIA(t) < teto)
+        return {tipo:'advogado', custo:0, cofre:cofreDoAdvogado(t)};
+      /* o escritório está cheio: sede maior comporta mais? */
+      return t.sede < 5 ? {sede:true} : null;
     }
     if(chave === 'bombas')
       return t.bombas >= BOMBA.teto ? null
@@ -446,9 +477,12 @@ TO.relacoes = (function(){
       if(t.caixa < 0){
         t.vermelho++;
         t.moral = U.limitar(t.moral - 1, 0, 20);
-        /* duas semanas no vermelho e o professor de MMA vai embora —
-           é o corte que qualquer diretoria faria primeiro */
-        if(t.vermelho >= 2 && mmaDe(t)) t.mma = mmaDe(t) - 1;
+        /* duas semanas no vermelho e o advogado vai embora primeiro —
+           é a folha mais cara; sem advogado, cai o professor de MMA */
+        if(t.vermelho >= 2){
+          if(advogadosIA(t)) t.advogados = advogadosIA(t) - 1;
+          else if(mmaDe(t)) t.mma = mmaDe(t) - 1;
+        }
         continue;
       }
       t.vermelho = 0;
@@ -466,6 +500,12 @@ TO.relacoes = (function(){
         t.caixa -= compra.custo;
         if(compra.tipo === 'sede') t.sede++;
         else if(compra.tipo === 'mma') t.mma = mmaDe(t) + 1;
+        else if(compra.tipo === 'advogado'){
+          /* o advogado delas também chega trabalhando: 10 dias a
+             menos pra quem já está no camburão */
+          t.advogados = advogadosIA(t) + 1;
+          aliviarPresosIA(E, t);
+        }
         else if(compra.tipo === 'bombas')
           t.bombas = Math.min(BOMBA.teto, t.bombas + BOMBA.lote);
         else if(compra.tipo === 'fabrica') t.fabrica = true;
@@ -1239,7 +1279,7 @@ TO.relacoes = (function(){
                                           ate: abs + U.inteiro(5, 15)});
     if(presos > 0)
       (t.presosIA = t.presosIA||[]).push({n:Math.round(presos),
-                                          ate: abs + U.inteiro(15, 90)});
+                                          ate: abs + penaIA(t)});
   }
 
   function brigaIA(E, a, b, cidade, jogoRot, opts){
@@ -1288,7 +1328,7 @@ TO.relacoes = (function(){
         if(feridos) (t.feridosIA = t.feridosIA||[])
           .push({n:feridos, ate: abs + U.inteiro(5, 15)});
         if(presos) (t.presosIA = t.presosIA||[])
-          .push({n:presos, ate: abs + U.inteiro(15, 90)});
+          .push({n:presos, ate: abs + penaIA(t)});
       }
       return {feridos, presos};
     };
