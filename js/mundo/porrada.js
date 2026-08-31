@@ -115,6 +115,137 @@ TO.porrada = (function(){
       ]
     },
 
+    /* 2b · manchete POR CENÁRIO (pedido do dono, 31/08/2026):
+       cada cenário de briga tem o seu baralho — 3 manchetes de
+       vitória e 3 de derrota — que entra na MESMA fila das
+       manchetes por condição. {A} é sempre o vencedor e {B} o
+       perdedor, então as frases não podem dizer quem atacou nem
+       quem era a caravana: o mesmo molde serve pros dois lados
+       da mesma cena. Empate e "ninguém desceu" ficam de fora —
+       são condições sem vencedor e já têm molde próprio. */
+    mancheteCena:{
+      arquibancada:{
+        vitoria:[
+          '{A} tomou o setor e a {B} subiu as escadas correndo',
+          'A {A} varreu a arquibancada e a {B} assistiu o resto de longe',
+          'O jogo parou no campo e no setor: deu {A} pra cima da {B}'
+        ],
+        derrota:[
+          'A {A} invadiu o setor e a {B} não segurou a grade',
+          'A {B} perdeu a própria arquibancada pra {A}',
+          'Deu {A} no meio do setor, e a {B} desceu antes do fim do jogo'
+        ]
+      },
+      emboscada:{
+        vitoria:[
+          '{A} levou a melhor na estrada e a {B} juntou os cacos no acostamento',
+          'Teve emboscada na rota e a {A} seguiu viagem por cima da {B}',
+          'A parada virou campo de batalha e a {B} saiu por baixo: deu {A}'
+        ],
+        derrota:[
+          'A rota virou armadilha e a {B} pagou o pedágio pra {A}',
+          'Deu {A} no asfalto, e a {B} saiu carregando os seus',
+          'A emboscada na estrada terminou com a {B} no prejuízo e a {A} por cima'
+        ]
+      },
+      bar:{
+        vitoria:[
+          'O bar fechou mais cedo: deu {A} pra cima da {B} no meio das mesas',
+          '{A} venceu a {B} no salão do bar e saiu pisando em caco de garrafa',
+          'Mesa, cadeira e garrafa voando: no fim, o bar era da {A} e a {B} tinha ido embora'
+        ],
+        derrota:[
+          'A conta do bar sobrou pra {B}: a {A} cobrou na porrada',
+          'Deu {A} no bar, e a {B} saiu pelos fundos',
+          'A noite no bar acabou mal pra {B}: a {A} não deixou copo em pé'
+        ]
+      },
+      comercio:{
+        vitoria:[
+          'Deu {A} na porta do comércio e a {B} não voltou pra buscar o troco',
+          'A {A} venceu a {B} no meio das bancas e ninguém abriu no dia seguinte',
+          '{A} passou por cima da {B} e o comércio baixou as portas'
+        ],
+        derrota:[
+          'O comércio fechou no susto: a {A} passou por cima da {B}',
+          'A {B} perdeu a queda de braço na porta da loja pra {A}',
+          'Deu {A} entre as bancas, e a {B} amargou o prejuízo'
+        ]
+      },
+      casa:{
+        vitoria:[
+          'A briga chegou na porta da sede e deu {A} pra cima da {B}',
+          '{A} venceu a {B} no portão da sede e pendurou o resultado no muro',
+          'A sede virou praça de guerra: a {A} ficou de pé e a {B} não'
+        ],
+        derrota:[
+          'Deu {A} na porta da sede, e a {B} recolheu os seus',
+          'A {B} perdeu a batalha da sede: a {A} saiu por cima',
+          'O dia da sede acabou com a {A} por cima e a {B} contando ferido'
+        ]
+      },
+      praca:{
+        vitoria:[
+          'A praça tem dono hoje: deu {A} pra cima da {B}',
+          '{A} venceu a {B} no meio da praça, com a cidade inteira olhando',
+          'A {B} veio marcar presença na praça e a {A} marcou em cima'
+        ],
+        derrota:[
+          'A {B} perdeu a praça no braço: deu {A}',
+          'No coração da cidade, a {A} passou por cima da {B}',
+          'A tarde na praça terminou com a {B} correndo e a {A} por cima'
+        ]
+      },
+      rua:{
+        vitoria:[
+          'A rua escolheu lado: deu {A} pra cima da {B}',
+          '{A} venceu a {B} no meio da rua e o bairro inteiro ouviu',
+          'Esquina fechada, rua parada: a {A} saiu andando e a {B} saiu carregada'
+        ],
+        derrota:[
+          'A {B} cruzou com a {A} na rua errada e pagou o preço',
+          'Deu {A} no asfalto do bairro, e a {B} saiu mancando',
+          'A rua ficou pequena pra {B}: a {A} tomou conta'
+        ]
+      },
+      arredores:{
+        vitoria:[
+          'Nos arredores do estádio, deu {A} pra cima da {B} antes do apito',
+          '{A} venceu a {B} a duas quadras do portão e o jogo nem tinha começado',
+          'O entorno do estádio ferveu e a {A} saiu por cima da {B}'
+        ],
+        derrota:[
+          'A {B} não chegou inteira no portão: a {A} estava no caminho',
+          'Deu {A} nos arredores, e a {B} entrou contando os seus',
+          'O caminho do estádio custou caro pra {B}: a {A} cobrou na porrada'
+        ]
+      },
+      treta:{
+        vitoria:[
+          'Marcaram, desceram e deu {A}: a {B} saiu carregada do combinado',
+          'No pau marcado, a {A} cumpriu o trato e a {B} não aguentou',
+          'Hora marcada, lugar marcado e dono marcado: a {A} venceu a {B}'
+        ],
+        derrota:[
+          'A {B} topou o combinado e voltou menor: deu {A}',
+          'No pau marcado, a {B} até foi, mas quem voltou por cima foi a {A}',
+          'A {B} desceu pro combinado e subiu carregada: deu {A}'
+        ]
+      },
+      lnt:{
+        vitoria:[
+          'Pela LNT, {A} venceu a {B} dez contra dez',
+          'Na liga, a {A} fez valer o regulamento da porrada em cima da {B}',
+          'Dia de LNT: deu {A} pra cima da {B} no campo combinado'
+        ],
+        derrota:[
+          'Pela LNT, a {B} não aguentou o ritmo da {A}',
+          'A liga cobrou caro da {B}: deu {A} dez contra dez',
+          'Na LNT, a {A} levou a melhor e a {B} saiu devendo'
+        ]
+      }
+    },
+
     /* 3 · olho da manchete */
     olho:{
       completo:['Foi {onde}, {nA} de um lado e {nB} do outro: '+
@@ -214,6 +345,19 @@ TO.porrada = (function(){
     'emb-posto':'no posto', 'emb-onibus':'na estrada'
   };
   const SEM_BAIRRO = ['estadio-10','estadio-20','estadio-40','emb-onibus'];
+  /* cada cena cai num grupo do baralho por cenário; cena sem grupo
+     (ou save antigo sem cena) fica só com as manchetes por condição */
+  const GRUPO_CENA = {
+    'estadio-10':'arquibancada', 'estadio-20':'arquibancada',
+    'estadio-40':'arquibancada',
+    'emb-posto':'emboscada', 'emb-onibus':'emboscada',
+    bar:'bar', comercio:'comercio', loja:'comercio',
+    sede:'casa', subsede:'casa', ct:'casa',
+    praca:'praca',
+    rua:'rua', 'rua-media':'rua', 'rua-nobre':'rua',
+    arredores:'arredores',
+    'treta-beco':'treta', 'treta-galpao':'treta', 'treta-campo':'treta'
+  };
   const ondeDe = d =>{
     const c = d.cena || '';
     const nome = NOMES_CENA[c] || 'na rua';
@@ -288,7 +432,18 @@ TO.porrada = (function(){
                  : cond === 'atropelo' ? CH.atropelo[0]
                  : CH.padrao[0];
 
-    const manchete = encher(proxima(MOLDES.manchete[cond], 'manchete'), v);
+    /* O BARALHO POR CENÁRIO ENTRA NA MESMA FILA (pedido do dono,
+       31/08/2026): toda briga com vencedor soma às manchetes da
+       condição as 3 do cenário — de vitória ou de derrota conforme o
+       nosso lado. Empate e "ninguém desceu" não têm vencedor, então
+       ficam só com o molde próprio. A fila continua determinada pelo
+       dia: a mesma briga dá sempre a mesma página. */
+    const grupo = d.lnt ? 'lnt' : GRUPO_CENA[d.cena || ''];
+    const daCena = (venc && !d.semResistencia && MOLDES.mancheteCena[grupo] &&
+                    MOLDES.mancheteCena[grupo][ganhamos ? 'vitoria' : 'derrota'])
+                   || [];
+    const manchete = encher(
+      proxima(MOLDES.manchete[cond].concat(daCena), 'manchete'), v);
 
     /* ---- olho ---- */
     const O = MOLDES.olho;

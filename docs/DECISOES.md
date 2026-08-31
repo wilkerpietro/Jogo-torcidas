@@ -2812,6 +2812,29 @@ de filial. A CONVIVÊNCIA do dono (17/08) ficou de pé — +1 por mês
 sem hostilidade, −1 por dois meses sem ajuda — porque lê as marcas
 de briga e ajuda reais, não o relógio puro.
 
+## Manchete por cenário no Futebol e Porrada (pedido do dono, 31/08/2026)
+
+O jornal ganhou um segundo baralho de manchetes: além das filas por
+CONDIÇÃO (atropelo, sufoco, era menos, camburão…), cada CENÁRIO de
+briga tem 3 manchetes de vitória e 3 de derrota — pelo menos 6 por
+cenário, como o dono pediu. Os grupos: arquibancada (estadio-10/20/40),
+emboscada de caravana (emb-posto/emb-onibus), bar, comércio (comercio/
+loja), casa da torcida (sede/subsede/ct), praça, rua (rua/media/nobre),
+arredores do estádio, treta marcada (beco/galpão/campo) e LNT. As
+regras do baralho:
+
+- **Mesma fila, mesmo relógio**: as manchetes do cenário entram na
+  MESMA fila das manchetes por condição, e a escolha continua
+  determinada pelo dia — a mesma briga dá sempre a mesma página.
+- **{A} é sempre o vencedor**: como o mesmo molde serve pra quando
+  atacamos e pra quando defendemos a mesma cena, nenhuma frase diz
+  quem atacou nem quem era a caravana — só quem venceu, e toda
+  manchete nomeia os DOIS lados.
+- **Empate e "ninguém desceu" ficam de fora**: são condições sem
+  vencedor e seguem só com os moldes próprios.
+- Cena sem grupo (ou save antigo sem cena) segue só com as manchetes
+  por condição, sem quebrar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
