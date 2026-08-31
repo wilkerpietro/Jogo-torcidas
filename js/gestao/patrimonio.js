@@ -304,6 +304,41 @@ TO.patrimonio = (function(){
           `a folha desce pra R$ ${(F().MMA_MES*(temProf-1)).toLocaleString('pt-BR')} por mês`,
       custo:0, trava:null});
 
+    /* O ESCRITÓRIO DE ADVOCACIA (pedido do dono, 31/08/2026): cada
+       advogado custa R$ 5.000 por mês e corta 10 dias da cadeia de
+       todo membro preso. Escada própria da sede: nv2 um, nv3 dois,
+       nv4 quatro, nv5 oito. */
+    const temAdv = F().advogadosDe(E);
+    const maxAdv = F().advogadosMax(E);
+    if(temAdv >= maxAdv && n < 5){
+      lista.push({id:'advogado',
+        rot: maxAdv ? 'Contratar mais um advogado' : 'Contratar advogado',
+        nota:`a sede nível ${n} comporta `+
+             `${maxAdv} advogado${maxAdv===1?'':'s'} — a nível ${n+1} `+
+             `comporta ${F().ADVOGADOS_SEDE[n+1]}`,
+        custo:F().ADVOGADO_MES,
+        trava: maxAdv ? 'o escritório da sede está cheio'
+                      : 'a sede nível 1 não comporta advogado'});
+    } else if(temAdv < maxAdv){
+      lista.push({id:'advogado',
+        rot: temAdv ? `Contratar mais um advogado (${temAdv+1}º)`
+                    : 'Contratar advogado',
+        nota:`cada advogado corta 10 dias de cadeia de todo membro preso `+
+             `— na contratação e em toda prisão nova · R$ `+
+             `${F().ADVOGADO_MES.toLocaleString('pt-BR')} fixos por mês por `+
+             `advogado, cobrados no fechamento`,
+        custo:F().ADVOGADO_MES, trava:trava(F().ADVOGADO_MES)});
+    }
+    if(temAdv) lista.push({
+      id:'advogado-fora',
+      rot: temAdv === 1 ? 'Demitir o advogado' : 'Demitir um advogado',
+      nota: temAdv === 1
+        ? 'os R$ 5.000 param de cobrar no próximo fechamento — quem está '+
+          'preso cumpre a pena que já tem'
+        : `a folha desce pra R$ ${(F().ADVOGADO_MES*(temAdv-1)).toLocaleString('pt-BR')} `+
+          `por mês — as penas já cortadas ficam cortadas`,
+      custo:0, trava:null});
+
     /* bomba também se compra pelo Financeiro (pedido do dono,
        18/08/2026): caixa com 5, direto pro estoque que as cenas usam */
     lista.push({
@@ -409,6 +444,22 @@ TO.patrimonio = (function(){
       const fica = F().professoresDe(E) - 1;
       E.professorMMA = fica > 0
         ? {desde:(E.professorMMA && E.professorMMA.desde) || 0, n:fica} : null;
+    } else if(acao==='advogado'){
+      /* nada sai do caixa agora: a mensalidade cobra no fim do mês.
+         O advogado já chega trabalhando — 10 dias a menos pra cada
+         membro que está preso hoje. */
+      const tinha = F().advogadosDe(E);
+      E.advogados = {
+        desde:(E.advogados && E.advogados.desde) || (E.data||{}).absoluto || 0,
+        n: Math.min(F().advogadosMax(E), tinha + 1)};
+      if(TO.membros.aliviarPena)
+        TO.membros.aliviarPena(E, F().ADVOGADO_DIAS);
+    } else if(acao==='advogado-fora'){
+      /* demite na hora: sem multa, sem cobrança no próximo fecho —
+         e pena já cortada não volta */
+      const fica = F().advogadosDe(E) - 1;
+      E.advogados = fica > 0
+        ? {desde:(E.advogados && E.advogados.desde) || 0, n:fica} : null;
     } else if(acao==='bombas'){
       estoquePiro(E).bombas += 5;
       TO.estado.lancar(E, 'Bombas ×5', -o.custo);

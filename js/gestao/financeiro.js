@@ -120,6 +120,25 @@ TO.financeiro = (function(){
      ======================================================= */
   const MMA_MAX = 3, MMA_MES = 2000;
   const GANHO_MMA = [1, 1.30, 1.60, 2.00];
+  /* =======================================================
+     O ESCRITÓRIO DE ADVOCACIA (pedido do dono, 31/08/2026)
+     Cada advogado custa R$ 5.000 por mês, cobrados no
+     fechamento como a comissão técnica, e corta 10 dias da
+     cadeia de todo membro preso — na contratação e em toda
+     prisão nova. A escada é própria, não a do ônibus: sede
+     nível 2 comporta 1, o 3 comporta 2, o 4 quatro e o 5,
+     oito.
+     ======================================================= */
+  const ADVOGADO_MES = 5000, ADVOGADO_DIAS = 10;
+  const ADVOGADOS_SEDE = [null, 0, 1, 2, 4, 8];
+  const advogadosMax = E => ADVOGADOS_SEDE[U.limitar(
+    (E && E.torcida && E.torcida.sedeNivel) || 1, 1, 5)] || 0;
+  function advogadosDe(E){
+    const a = E && E.advogados;
+    if(!a) return 0;
+    /* o teto da sede vale AGORA, como nos professores */
+    return U.limitar(Math.round(a.n != null ? a.n : 1), 0, advogadosMax(E));
+  }
   /* quantos professores a torcida tem hoje. O campo já foi booleano
      (um professor ou nenhum): save antigo lê `true` como um. */
   function professoresDe(E){
@@ -508,6 +527,15 @@ TO.financeiro = (function(){
                                       : `Professores de MMA (${profs}) — mês`, -mes);
       rel.despesa += mes; rel.saldo -= mes;
     }
+    /* os advogados cobram R$ 5.000 cada no fim do mês (pedido do
+       dono, 31/08/2026) */
+    const advs = advogadosDe(E);
+    if(advs && fimDoMes(E)){
+      const mes = ADVOGADO_MES * advs;
+      TO.estado.lancar(E, advs === 1 ? 'Advogado — mês'
+                                     : `Advogados (${advs}) — mês`, -mes);
+      rel.despesa += mes; rel.saldo -= mes;
+    }
     const frota = onibusDe(E);
     if(frota && fimDoMes(E)){
       const mes = ONIBUS_MES * frota;
@@ -620,6 +648,8 @@ TO.financeiro = (function(){
           ONIBUS_MAX, ONIBUS_MES, ONIBUS_CUSTO, DESCONTO_ONIBUS,
           FESTA, pisoDaFesta,
           MMA_MAX, MMA_MES, GANHO_MMA, professoresDe, ganhoDoTreino,
+          ADVOGADO_MES, ADVOGADO_DIAS, ADVOGADOS_SEDE,
+          advogadosDe, advogadosMax,
           TETO_SEDE, cabeNaSede, onibusMax, mmaMax,
           MANUT_SEDE, RECEITA, MANUT, INSUMO, CARAVANA, SEM};
 })();

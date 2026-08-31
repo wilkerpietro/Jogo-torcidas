@@ -453,12 +453,20 @@ TO.membros = (function(){
   function prender(E, m, dias, motivo){
     if(m.preso) return;
     const txt = motivo || 'Preso no dia de jogo';
-    const pena = dias ? Math.min(PENA_TETO, dias)
-                      : Math.min(PENA_MAX, U.inteiro(15, PENA_MAX));
+    let pena = dias ? Math.min(PENA_TETO, dias)
+                    : Math.min(PENA_MAX, U.inteiro(15, PENA_MAX));
+    /* O ADVOGADO CORTA A PENA (pedido do dono, 31/08/2026): 10 dias
+       a menos por advogado contratado, com piso de 1 — preso entrou,
+       a ficha registra. */
+    const advs = TO.financeiro && TO.financeiro.advogadosDe
+      ? TO.financeiro.advogadosDe(E) : 0;
+    const corte = Math.min(pena - 1, advs * 10);
+    if(corte > 0) pena -= corte;
     m.preso = { dias: pena, total: pena, motivo: txt,
                 desde: (E && E.data && E.data.absoluto) || 0 };
     m.naFila = false;
-    m.historico.push(`${txt} — ${pena} dias`);
+    m.historico.push(`${txt} — ${pena} dias`+
+      (corte > 0 ? ` (o advogado cortou ${corte})` : ''));
   }
   /* quantos dias faltam pra sair. Save antigo pode ter prisão sem
      prazo: ganha um na primeira leitura. */
@@ -494,6 +502,28 @@ TO.membros = (function(){
     m.historico.push(`Voltou enferrujado da cadeia (${dias} dias): `+
                      `−${saiu.forca.toFixed(1).replace('.',',')} de força e defesa`);
     return saiu;
+  }
+
+  /* A CHEGADA DO ADVOGADO ALIVIA QUEM JÁ ESTÁ DENTRO (pedido do dono,
+     31/08/2026): contratou, todo preso perde os dias na hora; quem
+     zera sai já — e a ferrugem cobra só o que ele de fato cumpriu. */
+  function aliviarPena(E, dias){
+    const soltos = [];
+    for(const m of E.membros){
+      if(!m.preso) continue;
+      diasPresos(m);
+      const cumpriu = cumpridos(m);
+      m.preso.dias -= dias;
+      if(m.preso.dias <= 0){
+        m.preso = null;
+        m.historico.push('Solto pelo trabalho do advogado');
+        enferrujarNaCadeia(m, cumpriu);
+        soltos.push(m);
+      } else {
+        m.historico.push(`O advogado cortou ${dias} dias da pena`);
+      }
+    }
+    return soltos;
   }
 
   function resgatar(E, m){
@@ -639,7 +669,7 @@ TO.membros = (function(){
     perder, tetoDe, envelhecer, enferrujarNaCadeia, perdaDaCadeia,
     IDADE_MIN, IDADE_MAX, IDADE_DECLINIO, IDADE_SAIDA, DESGASTE_ANO, SEQUELA,
     planoDeTreino, sortearFila,
-    ferir, prender, diasPresos, fianca, resgatar, passarDia,
+    ferir, prender, diasPresos, fianca, resgatar, aliviarPena, passarDia,
     aptosParaOEstadio, aplicarResultadoDaNoite, nomesDaTorcida
   };
 })();

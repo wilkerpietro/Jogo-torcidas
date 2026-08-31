@@ -2875,6 +2875,25 @@ Mandante e visitante IA vão pro jogo pela MESMA conta da nossa torcida:
 - Sondagem de 1 ano simulado: 386 torcidas IA, nenhuma no vermelho
   (a caravana maior custa mais, mas o comércio segura).
 
+## O escritório de advocacia (pedido do dono, 31/08/2026)
+
+Advogado se contrata no Financeiro, no molde da comissão técnica:
+
+- **R$ 5.000 por mês por advogado**, cobrados no fechamento do mês —
+  nada sai do caixa na contratação.
+- **Cada advogado corta 10 dias de cadeia** de todo membro preso, em
+  duas portas: prisão NOVA já sai com a pena reduzida (piso de 1 dia —
+  preso entrou, a ficha registra), e a CONTRATAÇÃO alivia na hora quem
+  já está dentro (quem zera é solto já, e a ferrugem cobra só o que
+  ele de fato cumpriu).
+- **Demitir é livre**: sem multa, a mensalidade para no próximo
+  fechamento e pena já cortada não volta.
+- **Escada própria da sede**: nível 1 não comporta nenhum, o 2
+  comporta 1, o 3 comporta 2, o 4 quatro e o 5, oito. Sede menor não
+  conta o que não cabe (mesma régua dos professores).
+- As IAs por enquanto NÃO têm advogado (o dono pediu só o Financeiro
+  nosso); se quiser paridade, entra na fila de compras delas.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
