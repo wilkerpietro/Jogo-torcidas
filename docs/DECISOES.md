@@ -2777,13 +2777,16 @@ despesas — a recepção só era paga quando o jogador CONFIRMAVA a tela
 de planejamento; decidindo pelo padrão, a despesa nunca caía. O
 pacote:
 
-- **O bloco na mensagem do olheiro**: abaixo da tabela dos jogos da
-  semana, a lista de aliados que vêm pra cidade — nome, clube, número
-  EXATO de membros e o dia do jogo — com os quatro botões (Não
+- **O bloco na mensagem do olheiro**: abaixo da tabela dos jogos, a
+  lista de aliados que vêm pra cidade — nome, clube, número EXATO de
+  membros e o dia do jogo — com os quatro botões (Não
   receber / Hospedar na sede / Hospedar e escoltar / Churrasco e
   escolta), cada um mostrando o custo total e a relação. A escolha
   acende na hora e fica anotada no plano; os botões apagam depois de
-  paga.
+  paga. E o bloco BATE com a tabela de cima (correção do dono,
+  31/08/2026): cada mensagem do olheiro cobre os jogos que reportam
+  naquele dia, então só entra aliado cujo jogo está listado ali —
+  aliado de jogo que reporta noutro dia sai na mensagem daquele dia.
 - **A conta vira no DIA DO JOGO do aliado** (`cobrarRecepcoes`, no
   relógio diário): paga o combinado por cabeça, move a relação da
   tabela — não receber cobra a dela também, o que antes nunca

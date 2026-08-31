@@ -753,10 +753,15 @@ TO.feed = (function(){
         {id:'caravana', rot:'Montar a caravana', acao:'tela-caravana'});
     }
     /* O BLOCO DA RECEPÇÃO (pedido do dono, 28/08/2026): a lista de
-       aliados que vêm pros jogos da mensagem, com o número exato de
+       aliados que vêm pros jogos DA MENSAGEM, com o número exato de
        membros — os quatro botões de recepção são desenhados pelo
-       cartão da mensagem, e a conta vira no dia do jogo de cada um */
+       cartão da mensagem, e a conta vira no dia do jogo de cada um.
+       SÓ OS JOGOS DE CIMA (correção do dono, 31/08/2026): cada
+       mensagem do olheiro cobre os jogos que reportam naquele dia, e
+       o bloco tem de bater com eles — aliado de jogo que reporta em
+       outro dia aparece na mensagem daquele dia. */
     const aliados = PL().aliadosNaCidade(E, E.data.semana)
+      .filter(a=>grupos.some(g=>g.vis === a.clube.id && g.dia === a.dia))
       .map(a=>({id:a.id, nome:a.torcida.nome, n:a.estimativa,
                 dia:a.dia, clube:a.clube.nome}));
     propor(E, {
