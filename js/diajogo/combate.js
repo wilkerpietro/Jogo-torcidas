@@ -1839,7 +1839,10 @@ TO.diaJogo.combate = (function(){
       J.reforco++;
       const base=D.pmPostos[U.inteiro(0,D.pmPostos.length-1)];
       for(let i=0;i<3;i++) J.policiais.push(new Policial(base));
-      J.alerta=64; logar(J,'Chegou reforço da PM.','pm');
+      /* o reset fica ABAIXO do limiar de desarme do recuo (62): com 64,
+         o reforço chegava e ainda segurava o visitante recuado uns
+         segundos à toa (ordem do dono, 31/08/2026) */
+      J.alerta=56; logar(J,'Chegou reforço da PM.','pm');
     }
   }
 
@@ -1879,7 +1882,14 @@ TO.diaJogo.combate = (function(){
   }
 
   function passoCarga(J,dt){
-    if(J.rompido) J.alerta=100;
+    /* O ALERTA SOLTA QUANDO A CARGA ACABA (ordem do dono, 31/08/2026).
+       O rompido cravava 100 a cada tique até o fim da noite, e o recuo
+       do visitante — que só desarma com alerta < 62 — virava catraca:
+       nos arredores, onde romper a grade é rotina (entrar no estádio
+       empurra o cordão), o rival recuava e nunca mais voltava. Agora o
+       100 vale enquanto a carga dura; recomposta a linha, o alerta
+       decai normal e a briga pode voltar. */
+    if(J.rompido && J.t<=J.cargaAte) J.alerta=100;
     if(J.cargaEm!==null&&!J.tropaVeio&&J.t>=J.cargaEm){
       J.tropaVeio=true;
       J.cargaAte=Math.max(J.cargaAte, J.t+P.duracaoCarga);

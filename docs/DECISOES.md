@@ -2919,6 +2919,26 @@ foi de 240/480/900 pra **480/960/1.800** por nível — a segunda dobra
 do dia. Loja e subsede ficaram como estavam, e a IA paga pela mesma
 tabela.
 
+## A catraca do recuo nos arredores (análise e ordem do dono, 31/08/2026)
+
+O adversário SEMPRE recuava nos arredores, e a causa era uma catraca:
+romper a grade (rotina ali — entrar no estádio empurra o cordão)
+ligava `rompido`, que cravava o alerta da PM em 100 a cada tique até
+o fim da noite; o recuo do visitante arma com alerta > 78 e só
+desarma com alerta < 62 — matematicamente impossível depois do
+rompimento. O dono mandou aplicar as opções 1 e 2 da análise:
+
+- **O alerta solta quando a carga acaba**: o `rompido` só crava 100
+  enquanto a carga da PM dura (`t ≤ cargaAte`); recomposta a linha, o
+  alerta decai no ritmo normal (−1,2/s) e o rival volta pra briga
+  quando a PM afrouxa. Medido na cena viva: 100 → 90 → 57 e o
+  `recuoVisitante` desarmou sozinho.
+- **O reforço reseta abaixo do limiar**: chegava zerando o alerta em
+  64 — dois pontos ACIMA dos 62 que desarmam o recuo — e segurava o
+  visitante recuado à toa. Agora reseta em 56.
+- A opção 3 (semRecuoPM nos arredores, como na arquibancada) ficou
+  de fora por ordem do dono.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
