@@ -2854,6 +2854,27 @@ na porrada. Briga comum segue sem carimbo.
   ficou como era, e a IA paga pela mesma tabela (o balanço dela lê
   `FIN().MANUT` direto — sem assimetria).
 
+## Presença no jogo: a régua do jogador vale pra IA (ordem do dono, 31/08/2026)
+
+Mandante e visitante IA vão pro jogo pela MESMA conta da nossa torcida:
+
+- **Em casa vai todo mundo de pé**: caíram os 60% — a IA mandante põe
+  o `disponiveisIA` inteiro na rua (menos escoltas destacadas), como
+  nós levamos todos os aptos.
+- **Fora viaja a caravana da vontade**: `de pé × limitar(0,72 − 0,09×2
+  trechos + 0,4×moral, 0,08–0,95)` — a mesma fórmula da nossa
+  `estimativaCaravana`, com a viagem média de 2 trechos que a estrada
+  delas já assume no custo e risco zero (elas não traçam rota).
+  Morreram os 18%, o "cresce com a relação com a gente" e o "ônibus
+  enche 30%" — ônibus só barateia, como pra nós.
+- A régua nova alcança tudo que refazia a conta velha: tabela de
+  presença da partida, rua da praça, alvos da viagem, encontro da
+  viagem, relatório do olheiro (que agora lê caravana pra quem vem de
+  fora e efetivo inteiro pra quem joga na própria praça — os 62%
+  avulsos morreram) e o painel de média de público.
+- Sondagem de 1 ano simulado: 386 torcidas IA, nenhuma no vermelho
+  (a caravana maior custa mais, mas o comércio segura).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

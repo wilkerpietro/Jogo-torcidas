@@ -1437,8 +1437,9 @@ TO.feed = (function(){
          linha com o efetivo de cada torcida dos dois clubes. Jogo na
          nossa praça usa a MESMA conta da rua (naRuaEm — escolta e
          caravana inclusas); jogo fora refaz com as mesmas réguas:
-         60% do efetivo pra torcida da casa, caravana pra quem viaja,
-         e a nossa saída é a que o planejamento diz. */
+         todo o efetivo de pé pra torcida da casa, caravana pra quem
+         viaja (a régua do jogador nos dois casos — ordem do dono,
+         31/08/2026), e a nossa saída é a que o planejamento diz. */
       const idsCasa = new Set((M().torcidasDe(nosso.c)||[]).map(o=>o.id));
       const casaMapa = (M().time(nosso.c)||{}).mapa;
       let presentes = [];
@@ -1455,7 +1456,7 @@ TO.feed = (function(){
             if(o.id === E.torcida.id) n = TO.planejamento.efetivoDaSaida(E);
             /* ferido e preso da IA ficam em casa (dono, 27/08/2026) */
             else if(o.mapa === casaMapa)
-              n = Math.round(TO.relacoes.disponiveisIA(E, o.id)*0.6);
+              n = TO.relacoes.disponiveisIA(E, o.id);
             else {
               n = TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id], E);
               if(n < 5) continue;   // caravana pequena demais não viaja

@@ -384,12 +384,12 @@ TO.praca = (function(){
     for(const jogo of doDia){
       for(const o of M().torcidasDe(jogo.casa.id)){
         if(!podeSair(E, o) || !pontoDaSede(mo, o)) continue;
-        /* ferido e preso da IA não vão ao estádio (conferência do
-           dono, 27/08/2026): a base é `disponiveisIA`, não o total */
+        /* EM CASA VAI TODO MUNDO DE PÉ (ordem do dono, 31/08/2026): a
+           mesma régua da nossa torcida — os 60% caíram. Ferido e preso
+           seguem em casa: a base é `disponiveisIA`, não o total. */
         põe(o, o.id === E.torcida.id
                ? menosAEscolta(o, PL().efetivoDaSaida(E))
-               : menosAEscolta(o, Math.round(
-                   TO.relacoes.disponiveisIA(E, o.id) * 0.6)),
+               : menosAEscolta(o, TO.relacoes.disponiveisIA(E, o.id)),
             jogo, {deFora:false});
       }
       for(const o of M().torcidasDe(jogo.vis.id)){
@@ -399,8 +399,7 @@ TO.praca = (function(){
         if(pontoDaSede(mo, o)){
           põe(o, o.id === E.torcida.id
                  ? menosAEscolta(o, PL().efetivoDaSaida(E))
-                 : menosAEscolta(o, Math.round(
-                     TO.relacoes.disponiveisIA(E, o.id) * 0.6)),
+                 : menosAEscolta(o, TO.relacoes.disponiveisIA(E, o.id)),
               jogo, {deFora:false});
           continue;
         }
@@ -691,10 +690,12 @@ TO.praca = (function(){
     if(!o || M().saoIrmas(E.torcida.id, o.id)) return null;
     const onde = (PL().ONDE_ATAQUE.find(x=>x.id === PL().ondeDoPlano(p))
                   || {}).id || 'arredores';
-    /* O EFETIVO DELES É O DE CASA, a mesma conta de `naRuaHoje`: 60% do
-       que a torcida tem. O nosso é quem embarcou, e mais ninguém. */
-    const deles = Math.max(4, Math.round(
-      (((TO.relacoes && TO.relacoes.mundo(E)[o.id]) || o).membros || 20) * 0.6));
+    /* O EFETIVO DELES É O DE CASA, a mesma conta de `naRuaEm`: todo o
+       efetivo de pé — a régua do jogador (ordem do dono, 31/08/2026).
+       O nosso é quem embarcou, e mais ninguém. */
+    const deles = Math.max(4, TO.relacoes && TO.relacoes.disponiveisIA
+      ? TO.relacoes.disponiveisIA(E, o.id)
+      : Math.round((o.membros || 20) * 0.6));
     const nossos = Math.max(2, PL().efetivoDoAtaque(E).vao);
     const cores = M().coresDaTorcida(o);
     const nossaCor = M().coresDaTorcida(E.torcida);

@@ -4796,24 +4796,25 @@
     return vistaComp;
   }
 
-  /* A MÉDIA DE PÚBLICO sai da régua que o jogo já usa no dia de jogo:
-     em casa a organizada põe 60% do efetivo vivo na rua (a nossa leva
-     os aptos); como visitante vai a caravana típica — 18% do efetivo,
-     30% a mais pra quem tem ônibus. */
+  /* A MÉDIA DE PÚBLICO sai da régua que o jogo já usa no dia de jogo —
+     a MESMA do jogador pros dois lados (ordem do dono, 31/08/2026):
+     em casa a organizada põe todo o efetivo de pé na rua (a nossa leva
+     os aptos); como visitante vai a caravana da conta da vontade, a
+     mesma que `caravanaDe` faz. */
   function painelPublico(e, clubes, rotulo){
     const set = new Set(clubes||[]);
     const linhas = [];
     for(const o of TO.mundo.todasTorcidas){
       if(o.incompleta || !set.has(o.clubeId)) continue;
       const nossa = o.id === e.torcida.id;
-      const viva = !nossa && (TO.relacoes.mundo(e)||{})[o.id];
-      const membros = nossa ? e.membros.length
-                            : ((viva && viva.membros) || o.membros || 0);
       const casa = nossa ? TO.membros.aptosParaOEstadio(e).length
-                         : Math.round(membros * 0.6);
-      const bus = nossa ? TO.financeiro.onibusDe(e) > 0
-                        : !!(viva && viva.onibus);
-      const fora = Math.max(4, Math.round(membros * 0.18 * (bus ? 1.3 : 1)));
+                         : TO.relacoes.disponiveisIA(e, o.id);
+      let fora;
+      if(nossa){
+        const est = TO.planejamento.estimativaCaravana(e);
+        fora = est ? est.vao : Math.max(5, Math.round(casa * TO.util.limitar(
+          0.72 - 0.18 + (e.indicadores.moral/20)*0.4, 0.08, 0.95)));
+      } else fora = TO.planejamento.caravanaDe(o, 0, e);
       linhas.push({nome:o.nome, nossa, casa, fora,
         clube:(TO.mundo.time(o.clubeId)||{}).nome || ''});
     }
@@ -4838,10 +4839,10 @@
     const esq = el('div'), dir = el('div');
     esq.appendChild(quadroDe(`Média de público — em casa`, 'casa',
       `${rotulo||'A competição'}: quanto cada organizada põe no estádio `+
-      `jogando em casa — 60% do efetivo vivo (a nossa leva os aptos).`));
+      `jogando em casa — todo o efetivo de pé.`));
     dir.appendChild(quadroDe('Média como visitante', 'fora',
-      'A caravana típica na estrada: 18% do efetivo — 30% a mais pra '+
-      'quem tem ônibus.'));
+      'A caravana típica na estrada: quem está de pé vezes a vontade '+
+      'de viajar, que sobe com a moral.'));
     cx.appendChild(esq); cx.appendChild(dir);
     return cx;
   }

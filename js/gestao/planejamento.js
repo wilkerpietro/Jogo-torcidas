@@ -129,7 +129,14 @@ TO.planejamento = (function(){
       ? TO.relacoes.disponiveisIA(E, idTorcida)
       : (((TO.relacoes && TO.relacoes.mundo(E)[idTorcida]) || {}).membros
          || o.membros || 20);
-    const efetivo = Math.max(6, Math.round(vivos * 0.62));
+    /* A RÉGUA DO JOGADOR AQUI TAMBÉM (ordem do dono, 31/08/2026): o
+       olheiro lê a presença de verdade — se a torcida joga na praça
+       DELA (nosso jogo fora, ou rival da nossa cidade), desce todo o
+       efetivo de pé; se ela vem de fora pro nosso jogo em casa, o que
+       chega é a caravana. Os 62% avulsos morreram. */
+    const j = E.proximoJogo;
+    const vemDeFora = j && j.casa && o.mapa !== E.torcida.mapa;
+    const efetivo = Math.max(6, vemDeFora ? caravanaDe(o, 0, E) : vivos);
     const r = baralhoFixo(`${idTorcida}|${E.data.ano}|${E.data.semana}`);
 
     /* torcida grande se divide mais; torcida pequena anda junto */
@@ -334,21 +341,22 @@ TO.planejamento = (function(){
      quando não somos nada deles. */
   const RELACAO_ALIADO = 20;
   function caravanaDe(torcida, relacao, E){
-    const v = relacao || 0;
-    /* ônibus delas (decisão do dono, 18/08/2026): torcida que comprou
-       o ônibus viaja de graça, e ônibus de graça sai cheio — a
-       caravana cresce 30% */
-    const t = E && E.mundoTorcidas && E.mundoTorcidas[torcida.id];
-    const bus = t && t.onibus ? 1.3 : 1;
-    /* QUEM VIAJA É QUEM ESTÁ DE PÉ (conferência do dono, 27/08/2026):
-       a conta usava o número estático da fonte — nem o efetivo vivo
-       nem o desconto de ferido e preso da IA entravam. Agora a base é
-       `disponiveisIA`: membros de agora menos quem está fora de
-       combate, a mesma régua do nosso `aptosParaOEstadio`. */
+    /* A MESMA RÉGUA DO JOGADOR (ordem do dono, 31/08/2026): a caravana
+       da IA sai da MESMA conta da nossa — vontade = 0,72 − 0,09 por
+       trecho + 0,4 × moral − 0,15 × risco — com a viagem média de 2
+       trechos que a estrada delas já assume no custo, e risco zero
+       porque elas não traçam rota. Caíram os 18%, o "cresce com a
+       relação" e o "ônibus enche 30%": a nossa caravana não tem nada
+       disso — ônibus só barateia. `relacao` ficou na assinatura por
+       compatibilidade, mas não manda mais em nada. A base segue
+       `disponiveisIA` (de pé, sem ferido nem preso). */
     const vivos = E && TO.relacoes && TO.relacoes.disponiveisIA
-      ? TO.relacoes.disponiveisIA(E, torcida.id) : null;
-    const base = vivos != null ? vivos : (torcida.membros||20);
-    return Math.max(4, Math.round(base * 0.18 * (1 + v/150) * bus));
+      ? TO.relacoes.disponiveisIA(E, torcida.id) : (torcida.membros||20);
+    if(vivos <= 0) return 0;
+    const t = E && E.mundoTorcidas && E.mundoTorcidas[torcida.id];
+    const moral = (t && t.moral != null ? t.moral : 12) / 20;
+    const vontade = U.limitar(0.72 - 2*0.09 + moral*0.4, 0.08, 0.95);
+    return Math.min(vivos, Math.max(MINIMO, Math.round(vivos * vontade)));
   }
 
   /* A ESTRADA COBRA DAS IAs TAMBÉM (assimetria fechada pelo dono,
@@ -918,10 +926,12 @@ TO.planejamento = (function(){
       .filter(o=>!o.incompleta && !M().saoIrmas(E.torcida.id, o.id))
       .map(o=>{
         const rel = (E.relacoes||{})[o.id];
-        /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
+        /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026);
+           em casa deles vai TODO o efetivo de pé, a régua do jogador
+           (ordem do dono, 31/08/2026) */
         const vivos = TO.relacoes && TO.relacoes.disponiveisIA
           ? TO.relacoes.disponiveisIA(E, o.id) : (o.membros || 20);
-        const n = Math.max(4, Math.round(vivos * 0.6));
+        const n = Math.max(4, vivos);
         return {id:o.id, torcida:o, nome:o.nome, n,
                 faixa: faixaDeEfetivo(E, n, o.id),
                 relacao: rel === undefined ? M().valorInicial(
