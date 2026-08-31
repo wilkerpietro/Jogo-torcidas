@@ -315,13 +315,15 @@ TO.praca = (function(){
             id: bons[0].id, nome: bons[0].nome};
   }
 
-  /* Quanta gente o anfitrião manda junto. GDD §11.1: acolher bem sobe a
-     relação, e escoltar é acolher com bonde. São 5 a 10% do efetivo de
-     quem recebe — a TUF, com 150, empresta de 8 a 15. */
+  /* Quanta gente o anfitrião manda junto. A NOSSA escolta é destacada
+     na régua do dono (28/08/2026): 10 membros, ou quantos aptos
+     houver se não der 10. A dos anfitriões IA segue os 5 a 10% do
+     efetivo de sempre. */
   function escoltaDe(E, anfitriao, visitante){
     if(anfitriao.id === E.torcida.id){
       const nivel = PL().nivelDe(E, visitante.id);
       if(nivel !== 'escolta' && nivel !== 'churrasco') return 0;
+      return Math.min(10, TO.membros.aptosParaOEstadio(E).length);
     }
     const pct = 5 + (MP().hash(`escolta|${anfitriao.id}|${visitante.id}`) % 6);
     return Math.max(1, Math.round((anfitriao.membros || 20) * pct / 100));

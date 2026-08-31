@@ -636,7 +636,10 @@ TO.diaJogo.combate = (function(){
       d.cor2 = dono ? dono.cor2 : null;
       d.cor3 = dono ? dono.cor3 : null;
       d.torcida = dono ? dono.nome : null;
-      d.doJogador = meu;
+      /* bonde `controlado` é o aliado escoltado (dono, 28/08/2026):
+         cor e ficha dele, mas o comando é do jogador — os discos
+         seguem a formação do nosso líder e obedecem R e F */
+      d.doJogador = meu || !!(g.bonde && g.bonde.controlado);
       J.discos.push(d);
     }
     J.total[s.lado] += qtd;

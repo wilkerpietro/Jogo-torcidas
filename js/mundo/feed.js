@@ -172,6 +172,9 @@ TO.feed = (function(){
     assaltoDeHoje(E);
     barRivalDeHoje(E);
     aniversariosDeHoje(E);
+    /* a recepção do aliado vira dinheiro no dia do jogo dele (dono,
+       28/08/2026) */
+    if(PL().cobrarRecepcoes) PL().cobrarRecepcoes(E);
     filialDeHoje(E);
     filialSugestaoDeHoje(E);
     hospedagemDaFilialSemana(E);
@@ -749,10 +752,17 @@ TO.feed = (function(){
       botoes.splice(1, 0,
         {id:'caravana', rot:'Montar a caravana', acao:'tela-caravana'});
     }
+    /* O BLOCO DA RECEPÇÃO (pedido do dono, 28/08/2026): a lista de
+       aliados que vêm pros jogos da mensagem, com o número exato de
+       membros — os quatro botões de recepção são desenhados pelo
+       cartão da mensagem, e a conta vira no dia do jogo de cada um */
+    const aliados = PL().aliadosNaCidade(E, E.data.semana)
+      .map(a=>({id:a.id, nome:a.torcida.nome, n:a.estimativa,
+                dia:a.dia, clube:a.clube.nome}));
     propor(E, {
       kind:'olheiro', peso:'decisao', voz:'olheiro',
       chave:`olheiro|${E.data.ano}|${E.data.semana}|${hoje}`,
-      texto, dados:{grupos, fora:!!fora, tabela}, botoes
+      texto, dados:{grupos, fora:!!fora, tabela, aliados}, botoes
     });
   }
 

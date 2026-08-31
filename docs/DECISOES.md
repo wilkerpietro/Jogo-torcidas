@@ -2770,6 +2770,34 @@ Os 141 clubes menores sem data conferível seguem no sorteio por hash
 (determinístico); o dono pode completar a lista quando quiser — é só
 adicionar `id: [dia, mes]` no arquivo.
 
+## A recepção do aliado: bloco na mensagem, conta no dia do jogo (dono, 28/08/2026)
+
+O dono flagrou que o custo de hospedar aliado não entrava nas
+despesas — a recepção só era paga quando o jogador CONFIRMAVA a tela
+de planejamento; decidindo pelo padrão, a despesa nunca caía. O
+pacote:
+
+- **O bloco na mensagem do olheiro**: abaixo da tabela dos jogos da
+  semana, a lista de aliados que vêm pra cidade — nome, clube, número
+  EXATO de membros e o dia do jogo — com os quatro botões (Não
+  receber / Hospedar na sede / Hospedar e escoltar / Churrasco e
+  escolta), cada um mostrando o custo total e a relação. A escolha
+  acende na hora e fica anotada no plano; os botões apagam depois de
+  paga.
+- **A conta vira no DIA DO JOGO do aliado** (`cobrarRecepcoes`, no
+  relógio diário): paga o combinado por cabeça, move a relação da
+  tabela — não receber cobra a dela também, o que antes nunca
+  acontecia — e carimba como pago. Sem caixa, vira 'nada'. O
+  pagamento saiu da confirmação do planejamento.
+- **Escolta destacada**: escoltar destaca 10 membros nossos (ou os
+  aptos que houver). A escolta das IAs anfitriãs segue os 5–10%.
+- **A cena da hostilidade com escolta**: o aliado atacado na nossa
+  cidade abre a cena com TRÊS bondes — os nossos 10 com a nossa cor e
+  ficha de membro, o bonde do aliado com a cor e a ficha gerada DELE,
+  e o rival. O jogador comanda os dois primeiros (bonde `controlado`:
+  segue a formação do nosso líder e obedece R e F), e as consequências
+  de ferido/preso continuam só nos nossos 10.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

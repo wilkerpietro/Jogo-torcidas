@@ -1312,6 +1312,30 @@ table.dados tr.selecionada td{background:#252525}
 .tab-presenca td b{font-family:var(--mono);font-size:12.5px;color:var(--ouro)}
 .tab-presenca td.fora{background:rgba(255,255,255,.03)}
 .tab-presenca td.fora span,.tab-presenca td.fora b{opacity:.88}
+/* o bloco da recepção de aliado na mensagem do olheiro (dono, 28/08/2026) */
+.bloco-recepcao{
+  margin-top:9px;border:1px solid var(--linha);padding:8px 10px;
+  background:rgba(255,255,255,.02);
+}
+.rec-titulo{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--fraco);margin-bottom:6px;
+}
+.rec-aliado{margin-bottom:7px}
+.rec-aliado:last-child{margin-bottom:0}
+.rec-aliado.pago{opacity:.6}
+.rec-nome{font-size:12.5px;margin-bottom:4px}
+.rec-botoes{display:flex;gap:5px;flex-wrap:wrap}
+.rec-bt{
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  background:#16160f;border:1px solid var(--linha);color:var(--texto);
+  font-size:11.5px;padding:4px 8px;cursor:pointer;line-height:1.2;
+}
+.rec-bt small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+.rec-bt:hover:not(:disabled){border-color:var(--ouro)}
+.rec-bt.on{border-color:var(--ouro);color:#fff}
+.rec-bt.on small{color:var(--ouro)}
+.rec-bt:disabled{cursor:default}
 .msg-abaixo{
   margin-top:5px;font-size:11.5px;color:var(--fraco);
   display:flex;align-items:center;gap:8px;

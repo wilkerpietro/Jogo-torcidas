@@ -417,6 +417,39 @@ TO.planejamento = (function(){
     (plano(E).recepcao[idAliado]) || recepcaoPadrao(E) || 'nada';
   const custoRecepcao = (nivel, gente) => recepcaoDe(nivel).porCabeca * gente;
 
+  /* a escolha do bloco de recepção da mensagem do olheiro (dono,
+     28/08/2026): fica anotada no plano e só vira dinheiro no dia do
+     jogo do aliado */
+  function definirRecepcao(E, idAliado, nivel){
+    plano(E).recepcao[idAliado] = nivel;
+    return nivel;
+  }
+
+  /* A COBRANÇA DO DIA (correção do dono, 28/08/2026): a recepção era
+     paga só quando o jogador CONFIRMAVA a tela de planejamento — quem
+     decidia pelo padrão ou pela mensagem nunca via a despesa cair. A
+     conta agora vira no DIA DO JOGO do aliado: paga o combinado, move
+     a relação da tabela (não receber cobra a dela também) e carimba
+     como pago. Sem caixa pro combinado, vira 'nada' — e a mensagem de
+     consequência é o extrato. */
+  function cobrarRecepcoes(E){
+    const p = plano(E);
+    for(const a of aliadosNaCidade(E, E.data.semana)){
+      if(a.dia !== E.data.dia) continue;
+      if((p.pago||{})[a.id]) continue;
+      let nivel = nivelDe(E, a.id);
+      let custo = custoRecepcao(nivel, a.estimativa);
+      if(custo > E.dinheiro){ nivel = 'nada'; custo = 0; }
+      if(custo > 0)
+        TO.estado.lancar(E, `Recepção da ${a.torcida.nome} `+
+                            `(${a.estimativa} cabeças)`, -custo);
+      E.relacoes[a.id] = U.limitar((E.relacoes[a.id]||0)
+        + recepcaoDe(nivel).relacao, -100, 100);
+      if(nivel !== 'nada') TO.relacoes.marcarAjuda(E, a.id);
+      p.pago = p.pago || {}; p.pago[a.id] = true;
+    }
+  }
+
   /* =======================================================
      ESTRADA (rodovias das 30 praças)
      Duas praças ligadas pela mesma rodovia são vizinhas. O
@@ -985,20 +1018,11 @@ TO.planejamento = (function(){
   function confirmar(E){
     const p = plano(E);
     p.decidido = true;
-    /* a recepção do aliado é paga na hora: comida e colchão não fiam */
+    /* A RECEPÇÃO NÃO É MAIS PAGA AQUI (correção do dono, 28/08/2026):
+       a escolha fica no plano e `cobrarRecepcoes` vira a conta no DIA
+       do jogo do aliado — pagar na confirmação deixava sem despesa
+       quem decidia pelo padrão ou pela mensagem. */
     let gasto = 0;
-    for(const a of aliadosNaCidade(E, E.data.semana)){
-      const nivel = nivelDe(E, a.id);
-      if(!nivel || nivel === 'nada' || (p.pago||{})[a.id]) continue;
-      const custo = custoRecepcao(nivel, a.estimativa);
-      if(custo > E.dinheiro) continue;
-      TO.estado.lancar(E, `Recepção da ${a.torcida.nome}`, -custo);
-      E.relacoes[a.id] = U.limitar((E.relacoes[a.id]||0) + recepcaoDe(nivel).relacao,
-                                   -100, 100);
-      TO.relacoes.marcarAjuda(E, a.id);
-      p.pago = p.pago || {}; p.pago[a.id] = true;
-      gasto += custo;
-    }
     /* as investidas nos outros jogos da cidade gastam ação da semana */
     let usadas = 0;
     E.investidas = E.investidas || [];
@@ -1255,6 +1279,7 @@ TO.planejamento = (function(){
           ehRival, alvosDaPolitica, aplicarPolitica,
           alvosDoJogo, soAliados, ruaCrua, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
+          definirRecepcao, cobrarRecepcoes,
           COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,
           ONDE_ATAQUE, ondeDoPlano, alvosNaRua, alvosDaViagem, alvosDoAtaque,
           definirAtaque,

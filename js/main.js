@@ -2160,6 +2160,46 @@
       art.appendChild(rolinho);
     }
 
+    /* O BLOCO DA RECEPÇÃO DE ALIADO (pedido do dono, 28/08/2026):
+       abaixo da tabela dos jogos, cada aliado que vem pra cidade com o
+       número exato de membros e os quatro botões — cada um com o
+       custo. A escolha fica anotada e a conta vira no dia do jogo;
+       depois de paga, os botões apagam. */
+    const alds = m.kind === 'olheiro' && m.dados && m.dados.aliados;
+    if(alds && alds.length){
+      const P2 = TO.planejamento;
+      const bloco = el('div',{class:'bloco-recepcao'});
+      bloco.appendChild(el('div',{class:'rec-titulo',
+        texto:'Aliados na cidade — como vamos receber?'}));
+      for(const a of alds){
+        const pago = ((P2.plano(e).pago)||{})[a.id];
+        const linha = el('div',{class:'rec-aliado'+(pago?' pago':'')});
+        linha.appendChild(el('div',{class:'rec-nome', html:
+          `<b>${a.nome}</b> <span class="fraco">(${a.clube}) · vêm `+
+          `${a.n} · jogo ${['','seg','ter','qua','qui','sex','sáb','dom'][a.dia]||'dia '+a.dia}</span>`+
+          (pago ? ' <span class="tag">resolvido</span>' : '')}));
+        const bts = el('div',{class:'rec-botoes'});
+        const atual = P2.nivelDe(e, a.id);
+        for(const r of P2.RECEPCAO){
+          const custo = r.porCabeca * a.n;
+          const b = el('button',{class:'rec-bt'+(atual===r.id?' on':''),
+            html:`${r.rot}<small>${custo ? U.dinheiro(custo) : 'de graça'}`+
+                 ` · ${r.relacao>0?'+':''}${r.relacao} rel.</small>`});
+          b.disabled = !!pago;
+          b.onclick = ()=>{
+            P2.definirRecepcao(e, a.id, r.id);
+            for(const x of bts.children) x.classList.remove('on');
+            b.classList.add('on');
+            TO.estado.salvar();
+          };
+          bts.appendChild(b);
+        }
+        linha.appendChild(bts);
+        bloco.appendChild(linha);
+      }
+      art.appendChild(bloco);
+    }
+
     /* a linha de consequência sai dos efeitos aplicados, nunca do texto */
     if(m.consequencia)
       art.appendChild(el('div',{class:'msg-efeitos', texto:m.consequencia}));
@@ -6150,16 +6190,23 @@
     }
     const cN = TO.mundo.coresDaTorcida(e.torcida);
     const cR = TO.mundo.coresDaTorcida(rival);
-    const nossos = (d.escolta||6) + (d.aliados||10);
+    const cA = TO.mundo.coresDaTorcida(aliado);
     const deles = Math.max(4, Math.round((((TO.relacoes.mundo(e)||{})[d.rival]
       || rival).membros || 30) * 0.5));
+    /* DOIS BONDES DO NOSSO LADO (régua do dono, 28/08/2026): os nossos
+       10 destacados com a nossa cor, e o bonde do aliado com a cor
+       DELE — o jogador comanda os dois, mas ficha de membro só os
+       nossos têm; o aliado desce com a ficha gerada do perfil dele. */
     const enc = {
-      a:{torcida:e.torcida.id, nome:`${e.torcida.sigla} + ${aliado.nome||'aliado'}`,
-         sigla:e.torcida.sigla, n:nossos,
+      a:{torcida:e.torcida.id, nome:e.torcida.nome,
+         sigla:e.torcida.sigla, n:(d.escolta||6),
          cor:cN.cor, cor2:cN.cor2, cor3:cN.cor3, nossa:true},
       b:{torcida:d.rival, nome:rival.nome||'Rival',
          sigla:TO.mundo.siglaTorcida(rival)||'RIV', n:deles,
          cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3, nossa:false},
+      junto:{torcida:d.aliado, nome:aliado.nome||'Aliado',
+         sigla:TO.mundo.siglaTorcida(aliado)||'ALI', n:(d.aliados||10),
+         cor:cA.cor, cor2:cA.cor2, cor3:cA.cor3},
       local:'rua', bairro:'', nossa:true,
       /* a briga é DELES: o prestígio da noite vai pro aliado escoltado,
          não pra nós (decisão do dono, 17/08/2026) */
@@ -6277,6 +6324,13 @@
        sigla:deles.sigla, nome:deles.nome,  nossa:false,
        perfil: perfilDe(deles.torcida)}
     ];
+    /* o bonde do aliado escoltado desce JUNTO e na mão do jogador
+       (régua do dono, 28/08/2026): cor e ficha dele, comando nosso */
+    if(enc.junto) bondes.push(
+      {lado:nossoLado, n:Math.max(1, Math.round(enc.junto.n)),
+       cor:enc.junto.cor, cor2:enc.junto.cor2, cor3:enc.junto.cor3,
+       sigla:enc.junto.sigla, nome:enc.junto.nome, nossa:false,
+       controlado:true, perfil: perfilDe(enc.junto.torcida)});
     encontroAberto = enc;
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
