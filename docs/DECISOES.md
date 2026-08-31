@@ -2872,6 +2872,10 @@ Mandante e visitante IA vão pro jogo pela MESMA conta da nossa torcida:
   viagem, relatório do olheiro (que agora lê caravana pra quem vem de
   fora e efetivo inteiro pra quem joga na própria praça — os 62%
   avulsos morreram) e o painel de média de público.
+- **O redutor do visitante** (calibragem do dono, mais tarde no
+  mesmo dia): a caravana da IA é a régua do jogador **× 0,6** — na
+  régua cheia a estrada lotava demais. A nossa caravana segue sem
+  redutor: o corte é só na quantidade que a IA põe na estrada.
 - Sondagem de 1 ano simulado: 386 torcidas IA, nenhuma no vermelho
   (a caravana maior custa mais, mas o comércio segura).
 
@@ -2896,10 +2900,11 @@ Advogado se contrata no Financeiro, no molde da comissão técnica:
   conta o que não cabe (mesma régua dos professores).
 - **As IAs também têm** (pedido do dono, mais tarde no mesmo dia):
   'advogado' entrou na fila de compras delas com o cofre de três
-  meses de folha que a fila já exige do professor — e SUBIU pra logo
-  depois do professor de MMA (ordem do dono: atrás do ônibus ninguém
-  contratava no primeiro ano; na posição antiga, 48 das 386 tinham
-  advogado em 3 anos). A
+  meses de folha que a fila já exige do professor. A posição foi
+  calibrada em três rodadas do dono: atrás do ônibus ninguém
+  contratava (48 de 386 em 3 anos), colado no professor contratava o
+  mundo inteiro (329 de 386) — assentou **depois do bar** (4º da
+  ordem). A
   mesma régua inteira: R$ 5.000/mês na fatia semanal do balanço,
   escada da sede 0/1/2/4/8, prisão nova de IA já sai com 10 dias a
   menos por advogado, a contratação alivia os lotes de `presosIA` na

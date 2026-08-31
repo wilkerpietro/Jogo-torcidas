@@ -356,7 +356,11 @@ TO.planejamento = (function(){
     const t = E && E.mundoTorcidas && E.mundoTorcidas[torcida.id];
     const moral = (t && t.moral != null ? t.moral : 12) / 20;
     const vontade = U.limitar(0.72 - 2*0.09 + moral*0.4, 0.08, 0.95);
-    return Math.min(vivos, Math.max(MINIMO, Math.round(vivos * vontade)));
+    /* O REDUTOR DO VISITANTE (calibragem do dono, 31/08/2026): a
+       caravana da IA sai da régua do jogador com uns 40% a menos —
+       na régua cheia a estrada lotava demais pro gosto do dono. */
+    return Math.min(vivos, Math.max(MINIMO,
+      Math.round(vivos * vontade * 0.6)));
   }
 
   /* A ESTRADA COBRA DAS IAs TAMBÉM (assimetria fechada pelo dono,
