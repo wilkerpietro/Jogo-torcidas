@@ -191,6 +191,17 @@ TO.patrimonio = (function(){
       nota:`força e defesa evoluem +${Math.round((F().ganhoDoTreino(E)-1)*100)}% no treino`,
       receita:0, despesa:F().MMA_MES * profs});
 
+    /* o escritório aparece na Estrutura como a comissão técnica
+       (correção do dono, 31/08/2026: contratou, tem que registrar) */
+    const advs = F().advogadosDe(E);
+    if(advs) fora.push({tipo:'advogado',
+      rot: advs === 1 ? 'Advogado' : `Advogados (${advs})`,
+      bairro:'',
+      nota:(advs === 1 ? `corta ${F().ADVOGADO_DIAS}`
+                       : `cortam ${advs * F().ADVOGADO_DIAS}`)+
+           ' dias de cadeia de todo membro preso',
+      receita:0, despesa:F().ADVOGADO_MES * advs});
+
     /* A LINHA DE MATERIAL POR MEMBRO SAIU do financeiro, e sai daqui
        junto: a tabela de patrimônio mostrava a mesma despesa que as
        contas cobravam, e deixar a sombra dela aqui faria a tela cobrar

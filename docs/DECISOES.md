@@ -2888,12 +2888,18 @@ Advogado se contrata no Financeiro, no molde da comissão técnica:
   ele de fato cumpriu).
 - **Demitir é livre**: sem multa, a mensalidade para no próximo
   fechamento e pena já cortada não volta.
+- **Aparece em Patrimônio > Estrutura** (correção do dono,
+  31/08/2026): o advogado contratado ganha linha na tabela como a
+  comissão técnica — nome, nota do corte e a despesa de R$ 5.000/mês.
 - **Escada própria da sede**: nível 1 não comporta nenhum, o 2
   comporta 1, o 3 comporta 2, o 4 quatro e o 5, oito. Sede menor não
   conta o que não cabe (mesma régua dos professores).
 - **As IAs também têm** (pedido do dono, mais tarde no mesmo dia):
-  'advogado' entrou na fila de compras delas, depois do ônibus, com o
-  cofre de três meses de folha que a fila já exige do professor. A
+  'advogado' entrou na fila de compras delas com o cofre de três
+  meses de folha que a fila já exige do professor — e SUBIU pra logo
+  depois do professor de MMA (ordem do dono: atrás do ônibus ninguém
+  contratava no primeiro ano; na posição antiga, 48 das 386 tinham
+  advogado em 3 anos). A
   mesma régua inteira: R$ 5.000/mês na fatia semanal do balanço,
   escada da sede 0/1/2/4/8, prisão nova de IA já sai com 10 dias a
   menos por advogado, a contratação alivia os lotes de `presosIA` na

@@ -134,8 +134,11 @@ TO.relacoes = (function(){
      sede nível 1, bar nível 2 só existe em sede nível 3. Comprar
      sede não roda a fila: o item travado segue com a vez.
      ======================================================= */
-  const ORDEM = ['mma', 'loja', 'bar', 'filial', 'elenco', 'onibus',
-                 'advogado', 'subsede',
+  /* o advogado subiu pra logo depois do professor (ordem do dono,
+     31/08/2026 — antes ficava atrás do ônibus e ninguém contratava
+     no primeiro ano) */
+  const ORDEM = ['mma', 'advogado', 'loja', 'bar', 'filial', 'elenco',
+                 'onibus', 'subsede',
                  'bombas', 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede',
                  'evoluir:filial'];
 
