@@ -501,8 +501,10 @@ TO.porrada = (function(){
               venceuB: venc ? venc.nome === b.nome : false},
       /* O QUADRO DA NOITE, no lugar da classificação */
       quadro:{
-        lados:[{nome:a.nome, nossa:true,  n:nA, feridos:fA, presos:pA},
-               {nome:b.nome, nossa:false, n:nB, feridos:fB, presos:pB}],
+        /* o id vai junto pro nome virar link de perfil (crivo do dono,
+           31/08/2026) */
+        lados:[{nome:a.nome, id:a.id, nossa:true,  n:nA, feridos:fA, presos:pA},
+               {nome:b.nome, id:b.id, nossa:false, n:nB, feridos:fB, presos:pB}],
         vencedor: venc ? venc.nome : null,
         empate
       },
@@ -554,8 +556,10 @@ TO.porrada = (function(){
                       {A:venc.nome, B:perd.nome, P:presos}),
         cidade: x.cidade || '',
         motivo: /×/.test(x.jogo||'') ? `na sombra de ${x.jogo}` : (x.jogo || ''),
-        lados:[{nome:x.a.nome, n:x.a.n, feridos:x.a.feridos, presos:x.a.presos},
-               {nome:x.b.nome, n:x.b.n, feridos:x.b.feridos, presos:x.b.presos}],
+        lados:[{nome:x.a.nome, id:x.a.id, n:x.a.n,
+                feridos:x.a.feridos, presos:x.a.presos},
+               {nome:x.b.nome, id:x.b.id, n:x.b.n,
+                feridos:x.b.feridos, presos:x.b.presos}],
         vencedor: x.vencedor
       };
     });

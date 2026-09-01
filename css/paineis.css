@@ -1629,3 +1629,16 @@ td.placar small.pen{
 .tab-ranking .rk-pais{display:inline-block;margin-left:8px;font-style:normal;
   font-family:var(--mono);font-size:9px;letter-spacing:.05em;
   text-transform:uppercase;color:var(--fraco)}
+
+/* =======================================================
+   O PERFIL DA TORCIDA (crivo do dono, 31/08/2026)
+   O nome da torcida em tabela ou quadro é link; o perfil
+   abre em overlay com a faixa nas cores dela.
+   ======================================================= */
+.t-link{cursor:pointer; border-bottom:1px dotted currentColor}
+.t-link:hover{opacity:.75}
+.perfil-torcida .perfil-t-faixa{height:10px; border-radius:3px;
+  margin-bottom:10px}
+.perfil-torcida .filtros{margin-bottom:10px}
+.perfil-torcida table.dados{width:100%}
+.perfil-torcida .recado{margin:6px 0}

@@ -3034,6 +3034,33 @@ R$ 600/mês × bairro × fator, então no custo novo ela deixa de se
 pagar sozinha — passa a ser estrutura de estratégia (recruta, núcleo,
 presença), não fonte de renda.
 
+## O perfil das torcidas (crivo do dono, 31/08/2026)
+
+Toda torcida tem perfil, aberto em OVERLAY pelo nome dela nas tabelas
+e quadros (texto corrido fica de fora, por ordem do dono). As abas:
+
+- **Visão geral**: clube, praça, fundação, membros e de pé, moral e
+  prestígio na régua de 100, relação com a gente, placar de brigas do
+  ano, torcida irmã.
+- **Patrimônio**: sede, bares/lojas por nível, subsedes, filiais com
+  núcleo, ônibus, professores, advogados, bombas, fábrica. A CABEÇA DA
+  FILA de compras NÃO aparece (ordem do dono: sem espionagem de graça).
+- **Membros**: a MESMA tabela de Torcida > Membros. O elenco é FIXO E
+  UNIVERSAL (ordem do dono): o membro nº 37 da Cearamor é o mesmo
+  homem em qualquer save — nome do banco determinístico, cargo pela
+  pirâmide da fonte, ficha na régua do povoarInicial (base por cargo
+  + 0..3, por hash), idade e XP idem. O que é vivo entra por cima:
+  o tamanho (t.membros), ferido/preso de hoje (lotes) e a origem
+  (núcleos de filial no fim da lista).
+- **Brigas**: placar do ano + as últimas brigas registradas.
+- **Finanças**: caixa, balanço mensal e o EXTRATO DE VERDADE — a IA
+  passou a guardar um anel de 36 lançamentos (semana fechada, compras
+  da fila, caravanas, saque sofrido).
+
+Links aplicados na onda 1: ranking, Diplomacia, tabela de presença da
+partida, painel de média de público, quadro da noite e notas do
+jornal, bloco de recepção de aliado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

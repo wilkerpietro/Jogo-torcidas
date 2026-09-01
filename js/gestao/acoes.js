@@ -482,6 +482,10 @@ TO.acoes = (function(){
         if(levou > 0){
           if(m) m.caixa = Math.max(0, m.caixa - levou);
           TO.estado.lancar(E, `Saque — ${alvo.nome}`, levou);
+          /* o prejuízo entra no extrato DELA (crivo do dono, 31/08) */
+          if(TO.relacoes.lancarIA)
+            TO.relacoes.lancarIA(E, alvo.torcidaId,
+                                 'Saque sofrido no bar', -levou);
           linhas.push(`${U.dinheiro(levou)} do caixa deles`);
         }
       }

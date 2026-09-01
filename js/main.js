@@ -1974,7 +1974,8 @@
     const g = el('div',{class:'grade'});
     g.appendChild(el('div',{class:'cab', html:
       `<span class="rot"></span>`+
-      q.lados.map(l=>`<span class="lado${l.nossa?' nossa':''}">${l.nome}</span>`).join('')}));
+      q.lados.map(l=>`<span class="lado${l.nossa?' nossa':''}">`+
+        `${linkTorcida(l.id, l.nome)}</span>`).join('')}));
     const linha = (rot, chave, destaque)=>{
       const vals = q.lados.map(l=>l[chave] || 0);
       const pior = Math.max(...vals);
@@ -2008,7 +2009,7 @@
         `<div class="onde">${[it.cidade, it.motivo].filter(Boolean).join(' · ')}</div>`+
         `<div class="numeros">`+
         it.lados.map(l=>
-          `<span class="lado"><b>${l.nome}</b> ${l.n} na treta · `+
+          `<span class="lado"><b>${linkTorcida(l.id, l.nome)}</b> ${l.n} na treta · `+
           `${l.feridos} ${l.feridos===1?'ferido':'feridos'}`+
           `${l.presos ? ` · ${l.presos} ${l.presos===1?'preso':'presos'}` : ''}</span>`
         ).join('')+
@@ -2153,7 +2154,7 @@
         tr.appendChild(el('td',{class: p.casa ? '' : 'fora',
           estilo:{borderLeftColor:cor},
           title: p.casa ? 'torcida do mandante' : 'torcida do visitante',
-          html:`<span>${p.nome}</span><b>${p.n}</b>`}));
+          html:`<span>${linkTorcida(p.id, p.nome)}</span><b>${p.n}</b>`}));
       }
       tb.appendChild(tr);
       rolinho.appendChild(tb);
@@ -2175,7 +2176,7 @@
         const pago = ((P2.plano(e).pago)||{})[a.id];
         const linha = el('div',{class:'rec-aliado'+(pago?' pago':'')});
         linha.appendChild(el('div',{class:'rec-nome', html:
-          `<b>${a.nome}</b> <span class="fraco">(${a.clube}) · vêm `+
+          `<b>${linkTorcida(a.id, a.nome)}</b> <span class="fraco">(${a.clube}) · vêm `+
           `${a.n} · jogo ${['','seg','ter','qua','qui','sex','sáb','dom'][a.dia]||'dia '+a.dia}</span>`+
           (pago ? ' <span class="tag">resolvido</span>' : '')}));
         const bts = el('div',{class:'rec-botoes'});
@@ -2488,8 +2489,8 @@
         ? `<em class="rk-pais">${TO.relacoes.paisDaTorcida(r.id)}</em>` : '';
       tr.innerHTML =
         `<td class="pos">${r.pos}º</td>
-         <td><i class="to-chip" style="background:${cor}"></i>${r.nome}`+
-        `${bandeirinha}</td>
+         <td><i class="to-chip" style="background:${cor}"></i>`+
+        `${linkTorcida(r.id, r.nome)}${bandeirinha}</td>
          <td class="nu">${U.numero(r.membros)}${vario(r.varMembros)}</td>
          <td class="nu">${r.prestigio}${vario(r.varPrestigio)}</td>
          <td class="nu">${(Math.round(r.forca*10)/10).toFixed(1)}`+
@@ -4052,6 +4053,237 @@
   }
 
   /* =======================================================
+     O PERFIL DA TORCIDA (crivo do dono, 31/08/2026)
+     Overlay por cima de onde você estiver. Toda torcida tem o
+     seu: visão geral, patrimônio, MEMBROS (a mesma tabela de
+     Torcida > Membros — o elenco fixo é universal), brigas e
+     finanças com o extrato de verdade. O nome da torcida nas
+     tabelas e quadros do jogo abre isto (só tabelas e quadros,
+     por ordem do dono — texto corrido fica de fora).
+     ======================================================= */
+  const linkTorcida = (id, nome) =>
+    id ? `<span class="t-link" data-torcida="${id}">${nome}</span>` : nome;
+
+  let abaPerfilT = 'visao';
+  function abrirPerfilTorcida(id){
+    const e = E();
+    if(!e || !id || id === true) return;
+    const nossa = id === e.torcida.id;
+    const o = TO.mundo.torcida(id);
+    const t = nossa ? null : TO.relacoes.mundo(e)[id];
+    if(!o || (!nossa && !t)) return;
+    abaPerfilT = 'visao';
+    const clube = TO.mundo.time(o.clubeId) || {};
+    const cidade = (TO.mundo.cidade(o.mapa)||{}).nome || o.mapa || '';
+    const cores = TO.mundo.coresDaTorcida(o);
+    const corpo = el('div',{class:'perfil-torcida'});
+
+    const linhaD = (rot, val)=>`<div class="linha-dado"><span>${rot}</span>`+
+                               `<b>${val}</b></div>`;
+    const nomeCid = c => (TO.financeiro.nomeCidade &&
+                          TO.financeiro.nomeCidade(c)) || c;
+
+    const abaVisao = ()=>{
+      const cx = el('div');
+      const membros = nossa ? e.membros.length : t.membros;
+      const dePe = nossa ? TO.membros.aptosParaOEstadio(e).length
+                         : TO.relacoes.disponiveisIA(e, id);
+      const moral = nossa ? e.indicadores.moral : t.moral;
+      const prest = nossa ? e.indicadores.prestigio : t.prestigio;
+      const p = TO.relacoes.placarDoAno(e, id) || {v:0, d:0};
+      const irmas = (o.irmas||[]).map(x=>{
+        const ir = TO.mundo.torcida(x);
+        return ir ? linkTorcida(ir.id, ir.nome) : null;
+      }).filter(Boolean);
+      const fund = o.fundacaoDia
+        ? `${o.fundacaoDia}/${String(o.fundacaoMes).padStart(2,'0')}` : '—';
+      cx.innerHTML =
+        linhaD('Clube', clube.nome || '—') +
+        linhaD('Praça', cidade) +
+        linhaD('Fundação', fund) +
+        linhaD('Membros', `${Math.round(membros)} `+
+          `<small class="fraco">· ${dePe} de pé</small>`) +
+        linhaD('Moral', `${Math.round(moral*5)} <small class="fraco">de 100</small>`) +
+        linhaD('Prestígio', `${Math.round(prest*5)} <small class="fraco">de 100</small>`) +
+        (nossa ? '' : linhaD('Relação com a gente',
+          Math.round(TO.relacoes.nivel(e, id)))) +
+        linhaD('Brigas no ano', `${p.v}V · ${p.d}D `+
+          `<small class="fraco">saldo ${p.v - p.d >= 0 ? '+' : ''}${p.v - p.d}</small>`) +
+        (irmas.length ? linhaD('Torcida irmã', irmas.join(', ')) : '');
+      return cx;
+    };
+
+    const abaPatrimonio = ()=>{
+      const cx = el('div');
+      const conta = lista => {
+        const por = {};
+        for(const x of (lista||[])) por[x.nivel||1] = (por[x.nivel||1]||0)+1;
+        const tot = (lista||[]).length;
+        return tot ? `${tot} <small class="fraco">(${Object.keys(por)
+          .sort().map(nv=>`${por[nv]}× nível ${nv}`).join(', ')})</small>` : '—';
+      };
+      if(nossa){
+        const pat = TO.financeiro.patrimonio(e);
+        cx.innerHTML =
+          linhaD('Sede', `nível ${e.torcida.sedeNivel}`) +
+          linhaD('Bares', conta(pat.bares)) +
+          linhaD('Lojas', conta(pat.lojas)) +
+          linhaD('Subsedes na cidade', conta(pat.subsedes)) +
+          ((pat.filiais||[]).map(f=>linhaD(`Subsede — ${nomeCid(f.cidade)}`,
+            `nível ${f.nivel} · núcleo ${TO.membros.daFilial
+              ? TO.membros.daFilial(e, f.cidade).length
+              : e.membros.filter(m=>m.filial === f.cidade).length}`)).join('')) +
+          linhaD('Ônibus', TO.financeiro.onibusDe(e) || '—') +
+          linhaD('Professores de MMA', TO.financeiro.professoresDe(e) || '—') +
+          linhaD('Advogados', TO.financeiro.advogadosDe(e) || '—') +
+          linhaD('Bombas', TO.patrimonio.bombas(e)) +
+          linhaD('Fábrica de material', pat.fabrica ? 'sim' : '—');
+      } else {
+        cx.innerHTML =
+          linhaD('Sede', `nível ${t.sede}`) +
+          linhaD('Bares', conta(t.bares)) +
+          linhaD('Lojas', conta(t.lojas)) +
+          linhaD('Subsedes na cidade', t.subsedes || '—') +
+          ((t.filiais||[]).map(f=>linhaD(`Subsede — ${nomeCid(f.cidade)}`,
+            `nível ${f.nivel} · núcleo ${f.membros||0}`)).join('')) +
+          linhaD('Ônibus', t.onibus || '—') +
+          linhaD('Professores de MMA', TO.relacoes.mmaDe(t) || '—') +
+          linhaD('Advogados', t.advogados || '—') +
+          linhaD('Bombas', t.bombas != null ? t.bombas : '—') +
+          linhaD('Fábrica de material', t.fabrica ? 'sim' : '—');
+      }
+      return cx;
+    };
+
+    const abaMembros = ()=>{
+      const cx = el('div');
+      const rows = nossa
+        ? e.membros.map(m=>({
+            nome: TO.membros.nomeDe(m),
+            cargo: TO.membros.CARGOS[m.cargo].nome,
+            origem: m.filial ? nomeCid(m.filial) : 'Sede',
+            idade: m.idade, forca: m.forca, defesa: m.defesa, xp: m.xp,
+            sit: m.preso ? `Preso · ${TO.membros.diasPresos(m)}d`
+               : m.ferido ? `Ferido · ${m.ferido.dias}d` : 'Apto'}))
+        : TO.relacoes.elencoDaTorcida(e, id).map(m=>({
+            nome: m.nome,
+            cargo: (TO.membros.CARGOS[m.cargo]||{nome:m.cargo}).nome,
+            origem: m.origem ? nomeCid(m.origem) : 'Sede',
+            idade: m.idade, forca: m.forca, defesa: m.defesa, xp: m.xp,
+            sit: m.preso ? `Preso · ${m.preso}d`
+               : m.ferido ? `Ferido · ${m.ferido}d` : 'Apto'}));
+      const temFilial = rows.some(r=>r.origem !== 'Sede');
+      const tab = el('table',{class:'dados'});
+      tab.appendChild(el('thead', null, [el('tr',{html:
+        `<th>Membro</th><th>Função</th>${temFilial?'<th>Origem</th>':''}`+
+        `<th>Idade</th><th>Força</th><th>Defesa</th><th>XP</th>`+
+        `<th>Situação</th>`})]));
+      const tb = el('tbody');
+      for(const r of rows)
+        tb.appendChild(el('tr',{class: /Preso/.test(r.sit) ? 'preso'
+          : /Ferido/.test(r.sit) ? 'ferido' : '', html:
+          `<td>${r.nome}</td><td>${r.cargo}</td>`+
+          `${temFilial?`<td>${r.origem}</td>`:''}`+
+          `<td class="num">${r.idade != null ? r.idade : '—'}</td>`+
+          `<td>${medida(r.forca, 20)}</td><td>${medida(r.defesa, 20)}</td>`+
+          `<td class="num">${r.xp}</td><td>${r.sit}</td>`}));
+      tab.appendChild(tb);
+      cx.appendChild(el('div',{class:'recado',
+        html:`<b>${rows.length}</b> membros`}));
+      cx.appendChild(tab);
+      return cx;
+    };
+
+    const abaBrigas = ()=>{
+      const cx = el('div');
+      const p = TO.relacoes.placarDoAno(e, id) || {v:0, d:0};
+      cx.appendChild(el('div',{class:'recado', html:
+        `Placar do ano: <b>${p.v}</b> vitórias · <b>${p.d}</b> derrotas`}));
+      const minhas = (e.brigasIA||[])
+        .filter(x=>(x.a && x.a.id === id) || (x.b && x.b.id === id))
+        .slice(0, 12);
+      if(!minhas.length)
+        cx.appendChild(el('div',{class:'em-construcao',
+          texto: nossa ? 'As nossas brigas moram no feed e no jornal.'
+                       : 'Nenhuma briga registrada por aí.'}));
+      for(const x of minhas)
+        cx.appendChild(el('div',{class:'transacao', html:
+          `<span class="dia">s${x.semana}</span>
+           <span class="desc">${linkTorcida(x.a.id, x.a.nome)} ${x.a.n} × `+
+          `${x.b.n} ${linkTorcida(x.b.id, x.b.nome)}`+
+          `${x.cidade ? ` <small class="fraco">· ${x.cidade}</small>` : ''}</span>
+           <span class="val ${x.vencedor === o.nome ? 'positivo' : 'negativo'}">`+
+          `${x.vencedor === o.nome ? 'venceu' : 'perdeu'}</span>`}));
+      return cx;
+    };
+
+    const abaFinancas = ()=>{
+      const cx = el('div');
+      if(nossa){
+        cx.innerHTML = linhaD('Caixa', U.dinheiro(e.dinheiro));
+        for(const tr of (e.transacoes||[]).slice(0, 15))
+          cx.appendChild(el('div',{class:'transacao', html:
+            `<span class="dia">${tr.dia}</span>
+             <span class="desc">${tr.descricao}</span>
+             <span class="val ${tr.valor<0?'negativo':'positivo'}">`+
+            `${U.dinheiro(tr.valor)}</span>`}));
+      } else {
+        const b = TO.relacoes.balanco(t, e, id);
+        cx.innerHTML =
+          linhaD('Caixa', U.dinheiro(Math.round(t.caixa))) +
+          linhaD('Balanço mensal', `${U.dinheiro(Math.round(b.rec))} `+
+            `<small class="fraco">−${U.dinheiro(Math.round(b.des))
+              .replace('R$','R$ ')} = </small>`+
+            `${U.dinheiro(Math.round(b.saldo))}`);
+        if(!(t.extrato||[]).length)
+          cx.appendChild(el('div',{class:'em-construcao',
+            texto:'O extrato começa a contar daqui pra frente.'}));
+        for(const tr of (t.extrato||[]))
+          cx.appendChild(el('div',{class:'transacao', html:
+            `<span class="dia">${tr.q}</span>
+             <span class="desc">${tr.d}</span>
+             <span class="val ${tr.v<0?'negativo':'positivo'}">`+
+            `${U.dinheiro(tr.v)}</span>`}));
+      }
+      return cx;
+    };
+
+    const pintar = ()=>{
+      corpo.innerHTML = '';
+      const faixa = el('div',{class:'perfil-t-faixa'});
+      faixa.style.background = cores.cor || '#666';
+      if(cores.cor2) faixa.style.borderBottom = `4px solid ${cores.cor2}`;
+      corpo.appendChild(faixa);
+      const abas = el('div',{class:'filtros'});
+      for(const [aid, rot] of [['visao','Visão geral'],
+          ['patrimonio','Patrimônio'], ['membros','Membros'],
+          ['brigas','Brigas'], ['financas','Finanças']]){
+        const b = el('button',{class: aid === abaPerfilT ? 'on' : '',
+                               texto: rot});
+        b.onclick = ()=>{ abaPerfilT = aid; pintar(); };
+        abas.appendChild(b);
+      }
+      corpo.appendChild(abas);
+      corpo.appendChild(
+        abaPerfilT === 'patrimonio' ? abaPatrimonio()
+        : abaPerfilT === 'membros' ? abaMembros()
+        : abaPerfilT === 'brigas' ? abaBrigas()
+        : abaPerfilT === 'financas' ? abaFinancas()
+        : abaVisao());
+    };
+    pintar();
+    modal(o.nome, `${TO.mundo.siglaTorcida(o) || ''}${clube.nome
+      ? ` · ${clube.nome}` : ''} · ${cidade}`, corpo);
+  }
+
+  /* o clique nos nomes é delegado: qualquer .t-link, em qualquer
+     tabela ou quadro, abre o perfil */
+  document.addEventListener('click', ev=>{
+    const l = ev.target.closest && ev.target.closest('.t-link');
+    if(l && l.dataset.torcida) abrirPerfilTorcida(l.dataset.torcida);
+  });
+
+  /* =======================================================
      PATRIMÔNIO
      Duas abas porque são duas decisões diferentes com o mesmo
      caixa: ESTRUTURA é o que rende todo mês e MATERIAL é o
@@ -4831,7 +5063,7 @@
         fora = est ? est.vao : Math.max(5, Math.round(casa * TO.util.limitar(
           0.72 - 0.18 + (e.indicadores.moral/20)*0.4, 0.08, 0.95)));
       } else fora = TO.planejamento.caravanaDe(o, 0, e);
-      linhas.push({nome:o.nome, nossa, casa, fora,
+      linhas.push({id:o.id, nome:o.nome, nossa, casa, fora,
         clube:(TO.mundo.time(o.clubeId)||{}).nome || ''});
     }
     const quadroDe = (titulo, chave, nota)=>{
@@ -4843,7 +5075,8 @@
         rolo.appendChild(el('div',{class:'transacao',
           estilo: l.nossa ? {background:'var(--rubro-fundo)'} : null, html:
           `<span class="dia">${i+1}º</span>
-           <span class="desc">${l.nome} <small class="fraco">· ${l.clube}</small></span>
+           <span class="desc">${linkTorcida(l.id, l.nome)} `+
+          `<small class="fraco">· ${l.clube}</small></span>
            <span class="val">${U.numero(l[chave])}</span>`}));
       });
       if(!linhas.length) q.corpo.appendChild(el('div',
@@ -5936,7 +6169,7 @@
       const est = TO.mundo.estiloRelacao(l.tipo);
       const tr = el('tr');
       tr.innerHTML =
-        `<td>${l.o.nome}</td>
+        `<td>${linkTorcida(l.id, l.o.nome)}</td>
          <td>${l.o.clube}</td>
          <td>${barraRelacao(l.valor)}<span class="rel-num">${l.valor>0?'+':''}${Math.round(l.valor)}</span></td>
          <td style="color:${est.corTexto}">${l.tipo}</td>
@@ -6992,6 +7225,7 @@
      e o jogo continuaria quebrado. Nada aqui é chamado pelo jogo. */
   TO.tela = {
     passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
+    abrirPerfilTorcida,
     rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
     get pausasDoTempo(){ return [...pausasT]; },
     abrirPainel, fecharPainel, get painel(){ return painel; },

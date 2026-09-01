@@ -310,6 +310,106 @@ TO.relacoes = (function(){
     return {rec, des, saldo:rec - des};
   }
 
+  /* =======================================================
+     O ELENCO FIXO DE QUALQUER TORCIDA (crivo do dono, 31/08/2026)
+     A lista completa de membros de uma torcida IA, DETERMINÍSTICA:
+     neste save ou em qualquer outro, o membro nº 37 da Cearamor é
+     sempre o mesmo homem, com o mesmo nome e a mesma ficha de
+     nascença. O que é VIVO entra por cima: quantos são (t.membros),
+     quem está ferido ou preso hoje (os lotes da IA, espalhados por
+     índice determinístico) e quem mora na filial (os núcleos, no
+     rabo da lista). O formato é o da tabela de Torcida > Membros.
+     ======================================================= */
+  function elencoDaTorcida(E, id){
+    const t = mundo(E)[id];
+    const o = M().torcida(id);
+    if(!t || !o) return [];
+    const H = TO.mapa.hash;
+    const n = Math.max(0, Math.round(t.membros));
+    if(!n) return [];
+    const nomes = TO.membros.nomesDaTorcida(o.nome, 0, n);
+    /* a pirâmide de cargos da fonte, esticada pro tamanho de hoje */
+    let plano = TO.membros.planoDeCargos(n, o.cargos);
+    const somaP = plano.reduce((s,p)=>s+p[1], 0);
+    if(somaP > n){
+      const fator = n/somaP;
+      plano = plano.map(p=>[p[0], Math.floor(p[1]*fator)]);
+    }
+    const cargoDe = [];
+    for(const p of plano)
+      for(let i=0; i<p[1] && cargoDe.length<n; i++) cargoDe.push(p[0]);
+    while(cargoDe.length < n) cargoDe.push('novato');
+    /* ferido e preso de hoje, em índices determinísticos do lote */
+    const hoje = E.data.absoluto || 0;
+    const sit = new Array(n).fill(null);
+    const marca = (lotes, rot)=>{
+      for(const l of (lotes||[])){
+        let i = H(`${o.nome}|${rot}|${l.ate}`) % n;
+        for(let k=0; k<(l.n||0); k++){
+          let voltas = 0;
+          while(sit[i] && voltas++ < n) i = (i+1) % n;
+          if(!sit[i]) sit[i] = {rot, dias: Math.max(1, l.ate - hoje)};
+          i = (i+1) % n;
+        }
+      }
+    };
+    marca(t.presosIA, 'Preso');
+    marca(t.feridosIA, 'Ferido');
+    /* os núcleos de filial fecham a lista, na ordem das filiais */
+    const origem = new Array(n).fill(null);
+    let fim = n;
+    for(const f of (t.filiais||[])){
+      const q = Math.min(f.membros||0, fim);
+      for(let i=fim-q; i<fim; i++) origem[i] = f.cidade;
+      fim -= q;
+    }
+    /* a ficha de nascença sai da MESMA régua do povoarInicial —
+       base por cargo + 0..3 —, só que por hash em vez de dado, pra
+       ser a mesma em qualquer save */
+    const BASE_F = {novato:1, componente:5, frente:10, diretoria:14};
+    const XP_DE = {novato:[0,30], componente:[40,95],
+                   frente:[100,290], diretoria:[300,500]};
+    const fora = [];
+    for(let i=0; i<n; i++){
+      const c = cargoDe[i];
+      const cfg = TO.membros.CARGOS[c] || {};
+      const h = k => H(`${o.nome}|elenco|${i}|${k}`);
+      const teto = cfg.teto || 10;
+      const ficha = k => Math.min(teto, (BASE_F[c]||1) + h(k) % 4);
+      const [x0, x1] = XP_DE[c] || [0, 40];
+      fora.push({
+        nome: nomes[i], cargo: c, origem: origem[i],
+        idade: c === 'diretoria' ? 28 + h('id') % 17 : 17 + h('id') % 22,
+        forca: ficha('f'), defesa: ficha('d'),
+        xp: x0 + h('x') % (x1 - x0 + 1),
+        preso: sit[i] && sit[i].rot === 'Preso' ? sit[i].dias : 0,
+        ferido: sit[i] && sit[i].rot === 'Ferido' ? sit[i].dias : 0
+      });
+    }
+    return fora;
+  }
+
+  /* O EXTRATO DELAS (crivo do dono, 31/08/2026): a IA guarda um anel
+     de lançamentos de verdade — semana fechada, compra da fila,
+     caravanas e saque sofrido — pro perfil da torcida mostrar. */
+  function lancarIA(E, id, descricao, valor){
+    const t = (E.mundoTorcidas||{})[id];
+    const v = Math.round(valor);
+    if(!t || !v) return;
+    (t.extrato = t.extrato || []).unshift(
+      {q:`${E.data.ano} s${E.data.semana}`, d:descricao, v});
+    if(t.extrato.length > 36) t.extrato.pop();
+  }
+  const ROTULO_COMPRA = {
+    sede:'Ampliação da sede', bar:'Bar novo', loja:'Loja nova',
+    subsede:'Subsede nova', filial:'Subsede em outra cidade',
+    elenco:'Investimento no clube', onibus:'Ônibus novo',
+    bombas:'Bombas ×5', fabrica:'Fábrica de material',
+    'ampliar:bar':'Ampliação do bar', 'ampliar:loja':'Ampliação da loja',
+    'ampliar:subsede':'Ampliação da subsede',
+    'ampliar:filial':'Ampliação da filial'
+  };
+
   function espacoDaPraca(E, t){
     const m = E.mundoTorcidas;
     let ocupado = 0;
@@ -469,6 +569,8 @@ TO.relacoes = (function(){
       }
       const b = balanco(t, E, id);
       t.caixa += Math.round(b.saldo * SEM);
+      lancarIA(E, id, 'Semana — comércio, folhas e manutenção',
+               Math.round(b.saldo * SEM));
 
       /* A CARAVANA DELAS PAGA ESTRADA (assimetria fechada pelo dono,
          27/08/2026): semana com jogo fora da praça cobra a mesma
@@ -485,7 +587,9 @@ TO.relacoes = (function(){
         });
         if(viaja && TO.planejamento.custoCaravanaIA){
           const n = TO.planejamento.caravanaDe(o, 0, E);
-          t.caixa -= TO.planejamento.custoCaravanaIA(n, frotaIA(t));
+          const cv = TO.planejamento.custoCaravanaIA(n, frotaIA(t));
+          t.caixa -= cv;
+          lancarIA(E, id, `Caravana — jogo fora (${n} cabeças)`, -cv);
         }
         /* A CARAVANA SILENCIOSA DA SUBSEDE DELAS (ordem do dono,
            31/08/2026): em todo jogo da semana — em casa e fora — o
@@ -506,8 +610,10 @@ TO.relacoes = (function(){
               const nF = Math.min(f.membros,
                 Math.round(f.membros * vontade));
               if(nF < 2) continue;
-              t.caixa -= TO.planejamento.custoCaravanaFilial(
+              const cvf = TO.planejamento.custoCaravanaFilial(
                 nF, saltos, frotaIA(t));
+              t.caixa -= cvf;
+              lancarIA(E, id, `Caravana da subsede (${nF} cabeças)`, -cvf);
               if(U.rng() >= 0.04) continue;
               const hostil = M().torcidasEm(destino)
                 .filter(x=>x.id !== id && x.id !== E.torcida.id &&
@@ -577,6 +683,9 @@ TO.relacoes = (function(){
         }
         else if(compra.tipo.startsWith('ampliar:')) compra.alvo.nivel++;
         else t[P().PONTO[compra.tipo].plural].push({nivel:1});
+        /* a compra entra no extrato dela (crivo do dono, 31/08/2026) */
+        if(compra.custo) lancarIA(E, id,
+          ROTULO_COMPRA[compra.tipo] || compra.tipo, -compra.custo);
         /* UMA POR VEZ (dono, 26/08/2026): comprou, a vez desse item
            vai pro fim da fila da torcida. Sede e fábrica não rodam
            nada — não estão na fila. */
@@ -2031,6 +2140,7 @@ TO.relacoes = (function(){
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
           conquistaDoClube, passarSemana, guerraDeFiliais, panorama,
+          elencoDaTorcida, lancarIA,
           MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,
           quadroDe, mediaDoQuadro, treinarDelas, promoverDelas, xpDeBrigaIA,
