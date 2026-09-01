@@ -375,6 +375,43 @@ TO.planejamento = (function(){
     return Math.round(porCabeca * n * (1 - RATEIO) * (1 - desconto));
   }
 
+  /* =======================================================
+     A CARAVANA SILENCIOSA DA SUBSEDE (ordem do dono, 31/08/2026)
+     Em todo jogo nosso — em casa e fora — o núcleo da filial
+     tenta se deslocar pra praça da partida. Nada de feed, nada
+     de itinerário: a rota é SEMPRE a mais curta, e o custo segue
+     o padrão da caravana normal — por cabeça e por trecho, 40%
+     pra torcida, frota abatendo 30% por ônibus. Vale pra nossa
+     torcida e pras IAs.
+     ======================================================= */
+  function saltosEntre(E, origem, destino){
+    if(!origem || !destino || origem === destino) return 0;
+    const c = caminho(E, origem, destino, false);
+    return c ? c.saltos : 4;      // sem estrada ligando: vale viagem longa
+  }
+  function custoCaravanaFilial(n, saltos, frota){
+    if(!n) return 0;
+    const porCabeca = CABECA_BASE + CABECA_TRECHO * Math.max(1, saltos || 0);
+    const desconto = TO.financeiro.DESCONTO_ONIBUS[
+      Math.min(3, frota || 0)] || 0;
+    return Math.round(porCabeca * n * (1 - RATEIO) * (1 - desconto));
+  }
+  /* quem embarca do núcleo: a mesma vontade da caravana da sede,
+     com os trechos REAIS da rota mais curta */
+  function caravanaDaFilial(E, f, destino){
+    if(!f || f.cidade === destino) return {n:0, membros:[], saltos:0};
+    const aptos = TO.membros.aptosDaFilial(E, f.cidade);
+    if(aptos.length < 2) return {n:0, membros:[], saltos:0};
+    const saltos = saltosEntre(E, f.cidade, destino);
+    const moral = E.indicadores.moral/20;
+    const vontade = U.limitar(0.72 - saltos*0.09 + moral*0.4, 0.08, 0.95);
+    const n = Math.min(aptos.length,
+                       Math.max(2, Math.round(aptos.length * vontade)));
+    const membros = aptos.slice()
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa)).slice(0, n);
+    return {n, membros, saltos};
+  }
+
   function aliadosNaCidade(E, semana){
     if(!E.temporada) return [];
     const nossa = E.torcida.mapa;
@@ -1303,6 +1340,7 @@ TO.planejamento = (function(){
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
           aliadosNaCidade, caravanaDe, custoCaravanaIA, RELACAO_ALIADO,
+          saltosEntre, custoCaravanaFilial, caravanaDaFilial,
           RECEPCAO, recepcaoDe, custoRecepcao,
           emboscadaDaRota, emboscadaNaPraca, hostisNaPraca,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,

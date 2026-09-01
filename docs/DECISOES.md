@@ -2986,6 +2986,37 @@ Três acertos no mesmo pacote:
   entra em `brigasIA` com os bondes do tamanho dos núcleos, e o
   jornal dá a nota. Irmãs e torcidas do mesmo clube ficam de fora.
 
+## A caravana silenciosa da subsede (ordem do dono, 31/08/2026)
+
+No dia de TODO jogo — em casa e fora — o núcleo de cada filial tenta
+se deslocar pra praça da partida. Régua:
+
+- **Sem feed e sem itinerário**: nenhuma mensagem, nenhuma parada —
+  só a transação do custo no extrato.
+- **Rota sempre a mais curta** (Dijkstra da malha do dono), e o custo
+  no padrão da caravana normal: por cabeça e por trecho
+  (18 + 12×trechos), 40% pra torcida, frota abatendo 30% por ônibus.
+  Sem caixa pro frete, ninguém embarca.
+- **Quem embarca**: núcleo de pé × a vontade do jogador
+  (0,72 − 0,09×trechos + 0,4×moral). Na IA, com o redutor de
+  visitante (×0,6), e o destino sai dos jogos da semana do clube.
+- **A estrada cobra**: chance pequena (5% nossa, 4% IA) de a caravana
+  do núcleo se pegar com torcida hostil da praça de destino — a nossa
+  resolve por simulação e cai no feed como briga normal (cena
+  emb-onibus, ferido e preso em quem viajou); a da IA entra em
+  brigasIA com o bonde do tamanho do que embarcou.
+
+## O bote na caravana rival (ordem do dono, 31/08/2026)
+
+Quando o clube de uma torcida hostil (relação ≤ −15) joga como
+visitante na cidade de uma subsede NOSSA, a caravana deles está na
+pista ou na praça — e o olheiro de lá propõe a descida por mensagem
+(núcleo com 6+; caravana rival com 5+, senão nem viajou). O "Atacar"
+abre a CENA (praça ou pista, sorteio estável por dia) com a escalação
+do núcleo contra a caravana QUE VIAJOU — o efetivo rival é o
+`caravanaDe` da mensagem, não a torcida inteira. O fechamento passa
+pelo fecharAtaque de sempre. Texto da mensagem aguardando o crivo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

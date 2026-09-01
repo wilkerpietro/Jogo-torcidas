@@ -486,6 +486,39 @@ TO.relacoes = (function(){
           const n = TO.planejamento.caravanaDe(o, 0, E);
           t.caixa -= TO.planejamento.custoCaravanaIA(n, frotaIA(t));
         }
+        /* A CARAVANA SILENCIOSA DA SUBSEDE DELAS (ordem do dono,
+           31/08/2026): em todo jogo da semana — em casa e fora — o
+           núcleo de cada filial viaja pra praça da partida pela rota
+           mais curta, pagando o mesmo padrão da caravana, com a
+           vontade do jogador e o redutor de visitante (×0,6). E a
+           estrada cobra de vez em quando: a caravana do núcleo pode
+           se pegar com uma torcida hostil da praça de destino. */
+        if(TO.planejamento.custoCaravanaFilial && (t.filiais||[]).length){
+          for(const j of jogos){
+            const destino = j.casa ? o.mapa
+              : ((M().time(j.adversario)||{}).mapa || o.mapa);
+            for(const f of t.filiais){
+              if(f.cidade === destino || (f.membros||0) < 2) continue;
+              const saltos = TO.planejamento.saltosEntre(E, f.cidade, destino);
+              const vontade = U.limitar(0.72 - saltos*0.09
+                + (t.moral/20)*0.4, 0.08, 0.95) * 0.6;
+              const nF = Math.min(f.membros,
+                Math.round(f.membros * vontade));
+              if(nF < 2) continue;
+              t.caixa -= TO.planejamento.custoCaravanaFilial(
+                nF, saltos, frotaIA(t));
+              if(U.rng() >= 0.04) continue;
+              const hostil = M().torcidasEm(destino)
+                .filter(x=>x.id !== id && x.id !== E.torcida.id &&
+                  !x.incompleta && x.clubeId !== o.clubeId &&
+                  !(M().saoIrmas && M().saoIrmas(id, x.id)) &&
+                  relacaoDelas(E, id, x.id) <= -20)
+                .sort((x,y)=>relacaoDelas(E,id,x.id) -
+                             relacaoDelas(E,id,y.id))[0];
+              if(hostil) brigaIA(E, o, hostil, destino, '', {tetoA:nF});
+            }
+          }
+        }
       }
 
       /* PERDA DE MEMBROS IGUAL À NOSSA (decisão do dono, 18/08/2026):

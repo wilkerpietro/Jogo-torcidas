@@ -177,6 +177,8 @@ TO.feed = (function(){
     if(PL().cobrarRecepcoes) PL().cobrarRecepcoes(E);
     filialDeHoje(E);
     filialSugestaoDeHoje(E);
+    caravanaDasFiliais(E);
+    boteNaCaravanaRival(E);
     hospedagemDaFilialSemana(E);
     mundoDeHoje(E, ctx);
     placarDoDia(E, ctx.jogos || []);
@@ -251,6 +253,99 @@ TO.feed = (function(){
                  nota:'abre a cena com o núcleo da sub-sede — a briga '+
                       'vale prestígio como qualquer ataque a bar'},
                 {id:'quieto', rot:'Não atacar', acao:'nada'}]});
+    }
+  }
+
+  /* A CARAVANA SILENCIOSA DA SUBSEDE (ordem do dono, 31/08/2026): no
+     dia do NOSSO jogo — em casa e fora — o núcleo de cada filial tenta
+     se deslocar pra praça da partida. Sem mensagem e sem parada de
+     itinerário: só a transação do custo (rota mais curta, padrão da
+     caravana normal, frota abatendo) e, de vez em quando, a estrada
+     cobra — uma emboscada resolvida por simulação que cai no feed como
+     briga normal, com ferido e preso no pessoal que viajou. Sem caixa
+     pro frete, ninguém embarca. */
+  function caravanaDasFiliais(E){
+    const j = E.proximoJogo;
+    if(!j || E.data.dia !== (j.dia || 6)) return;
+    if(!PL().caravanaDaFilial || !TO.diaJogo || !TO.diaJogo.simular) return;
+    const destino = j.casa ? E.torcida.mapa : (j.mapaAdv || E.torcida.mapa);
+    for(const f of (((E.patrimonio||{}).filiais)||[])){
+      const c = PL().caravanaDaFilial(E, f, destino);
+      if(!c.n) continue;
+      const custo = PL().custoCaravanaFilial(c.n, c.saltos,
+        TO.financeiro.onibusDe(E));
+      if(custo > E.dinheiro) continue;         // sem caixa, ninguém embarca
+      if(custo > 0) TO.estado.lancar(E,
+        `Caravana da subsede ${TO.financeiro.nomeCidade(f.cidade)} `+
+        `(${c.n} cabeças)`, -custo);
+      /* a estrada tem dono de vez em quando */
+      if(U.rng() >= 0.05) continue;
+      const rival = M().torcidasEm(destino)
+        .filter(o=>o.id !== E.torcida.id && !o.incompleta &&
+                   !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) &&
+                   TO.relacoes.nivel(E, o.id) <= -15)
+        .sort((a,b)=>TO.relacoes.nivel(E,a.id) - TO.relacoes.nivel(E,b.id))[0];
+      if(!rival) continue;
+      const deles = Math.max(4, Math.round(c.n * U.entre(0.8, 1.4)));
+      const res = TO.diaJogo.simular.rodar({config:{
+        escalacao: c.membros, efetivoRival: deles,
+        bondes:[{nossa:true, lado:'mandante', n:c.n}]}});
+      if(!res.prestigio) res.prestigio = res.ganhamos ? 1 : -1;
+      TO.membros.aplicarResultadoDaNoite(E, res);
+      TO.acoes.fecharCena(E, {acao:'defender', alvo:{
+        torcidaId:rival.id, nome:rival.nome, tipo:'caravana',
+        cena:'emb-onibus', bairro:'',
+        nossos:c.n, efetivo:deles}}, res);
+    }
+  }
+
+  /* O BOTE NA CARAVANA RIVAL (ordem do dono, 31/08/2026): quando o
+     clube de uma torcida hostil joga na cidade de uma subsede NOSSA,
+     a caravana deles está na pista ou na praça — e o olheiro de lá
+     propõe a descida. O efetivo rival da cena é o que VIAJOU
+     (caravanaDe), não a torcida inteira. */
+  function boteNaCaravanaRival(E){
+    const fs = ((E.patrimonio||{}).filiais)||[];
+    if(!fs.length || !E.temporada) return;
+    const H = TO.mapa.hash;
+    for(const f of fs){
+      const nucleo = TO.membros.aptosDaFilial(E, f.cidade);
+      if(nucleo.length < 6) continue;
+      for(const comp of E.temporada.competicoes)
+        for(const etapa of [...comp.rodadas, ...comp.mata]){
+          if(etapa.semana !== E.data.semana) continue;
+          for(const jg of etapa.jogos){
+            if(!jg.f) continue;
+            if((jg.d || etapa.dia || 6) !== E.data.dia) continue;
+            const casa = M().time(jg.c), vis = M().time(jg.f);
+            if(!casa || !vis || casa.mapa !== f.cidade) continue;
+            if(vis.mapa === f.cidade) continue;      // não viajou: mora lá
+            for(const o of M().torcidasDe(vis.id)){
+              if(o.id === E.torcida.id || o.incompleta) continue;
+              if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
+              if(TO.relacoes.nivel(E, o.id) > -15) continue;
+              const n = PL().caravanaDe(o, (E.relacoes||{})[o.id], E);
+              if(n < 5) continue;                    // caravana pequena não viaja
+              const cena = H(`bote|${f.cidade}|${o.id}|${E.data.absoluto}`) % 2
+                ? 'praca' : 'rua';
+              const cid = TO.financeiro.nomeCidade(f.cidade);
+              propor(E, {
+                kind:'filial-caravana', peso:'decisao', voz:'olheiro',
+                tipo:'ruim',
+                chave:`bote|${f.cidade}|${o.id}|${E.data.ano}|${E.data.semana}`,
+                /* texto AGUARDANDO O CRIVO do dono (31/08/2026) */
+                texto:`Chefe, a caravana da ${o.nome} desceu em ${cid} pro `+
+                      `jogo de hoje — uns ${n} ${cena === 'praca'
+                        ? 'na praça' : 'na pista'}. O pessoal da nossa `+
+                      `Sub-Sede tá com ${nucleo.length}. Manda dar o bote?`,
+                dados:{cidade:f.cidade, rival:o.id, n, cena},
+                botoes:[{id:'bote', rot:'Atacar', acao:'filial-caravana',
+                         nota:'abre a cena com o núcleo da sub-sede contra '+
+                              'a caravana que viajou'},
+                        {id:'quieto', rot:'Não atacar', acao:'nada'}]});
+            }
+          }
+        }
     }
   }
 
@@ -1833,6 +1928,30 @@ TO.feed = (function(){
                 tipo:'bar', cena:'bar',
                 bairro:TO.financeiro.nomeCidade(d.cidade),
                 nossos:nucleo.length, efetivo:defensores}}}}};
+      }
+
+      /* O BOTE NA CARAVANA RIVAL (ordem do dono, 31/08/2026): a cena
+         abre na pista ou na praça, o nosso lado é o núcleo da
+         sub-sede e o rival é a caravana QUE VIAJOU — o número da
+         mensagem, não a torcida inteira. */
+      case 'filial-caravana': {
+        const d = m.dados || {};
+        const rival = M().torcida(d.rival);
+        const nucleo = TO.membros.aptosDaFilial(E, d.cidade);
+        if(!rival || nucleo.length < 4){
+          marcar('Atacar — não rolou');
+          m.consequencia = 'Não rolou: o núcleo de lá não tem gente de pé.';
+          return {ok:true};
+        }
+        const viajaram = Math.max(4, d.n || 10);
+        marcar();
+        return {ok:true, abrir:{tela:'cena-acao', args:{cena:{
+          cena: d.cena === 'praca' ? 'praca' : 'rua', acao:'atacar',
+          escalacao: nucleo, efetivoRival: viajaram,
+          alvo:{torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,
+                tipo:'caravana', cena: d.cena === 'praca' ? 'praca' : 'rua',
+                bairro:TO.financeiro.nomeCidade(d.cidade),
+                nossos:nucleo.length, efetivo:viajaram}}}}};
       }
 
       /* recusas com preço (dono, 19/08/2026) */
