@@ -2006,7 +2006,8 @@
       const n = el('div',{class:'pp-nota'});
       n.innerHTML =
         `<p>${it.frase}</p>`+
-        `<div class="onde">${[it.cidade, it.motivo].filter(Boolean).join(' · ')}</div>`+
+        `<div class="onde">${[linkCidadePorNome(it.cidade), it.motivo]
+          .filter(Boolean).join(' · ')}</div>`+
         `<div class="numeros">`+
         it.lados.map(l=>
           `<span class="lado"><b>${linkTorcida(l.id, l.nome)}</b> ${l.n} na treta · `+
@@ -3198,7 +3199,8 @@
       linha.innerHTML =
         `<td>${pontinho}${TO.membros.nomeDe(m)}</td>
          <td>${TO.membros.CARGOS[m.cargo].nome}</td>
-         ${temFilial ? `<td>${origemDe(m)}</td>` : ''}
+         ${temFilial ? `<td>${m.filial
+           ? linkCidade(m.filial, origemDe(m)) : 'Sede'}</td>` : ''}
          <td class="num${m.idade >= TO.membros.IDADE_DECLINIO ? ' velho' : ''}"`+
         ` title="${m.idade >= TO.membros.IDADE_DECLINIO
           ? 'em declínio: perde 0,6 de força e defesa por ano; pendura a bandeira aos '
@@ -4065,19 +4067,39 @@
   const linkTorcida = (id, nome) =>
     id ? `<span class="t-link" data-torcida="${id}">${nome}</span>` : nome;
 
-  /* A ONDA 2 (ordem do dono, 31/08/2026): o nome da torcida no TEXTO
-     CORRIDO das mensagens também vira link. O texto puro é escapado e
-     os nomes conhecidos são casados do maior pro menor — "Fúria Jovem
-     do Botafogo" ganha de "Fúria" —, sem mexer no que já é tag. */
-  let _rxNomes = null, _idPorNome = null;
+  /* o link da CIDADE (pedido do dono, 31/08/2026): mesmo cano do link
+     de torcida, abrindo o perfil da praça */
+  const linkCidade = (id, nome) =>
+    id ? `<span class="c-link" data-cidade="${id}">${nome}</span>` : nome;
+  const cidadePorNome = nome =>
+    (TO.dados.cidades||[]).find(c=>c.nome === nome) || null;
+  const linkCidadePorNome = nome => {
+    const c = nome && cidadePorNome(nome);
+    return c ? linkCidade(c.id, nome) : (nome || '');
+  };
+
+  /* A ONDA 2 (ordem do dono, 31/08/2026): o nome de torcida — e agora
+     o de cidade — no TEXTO CORRIDO das mensagens também vira link. O
+     texto puro é escapado e os nomes conhecidos são casados do maior
+     pro menor — "Fúria Jovem do Botafogo" ganha de "Fúria". Cidade
+     homônima de CLUBE fica fora do texto corrido (num "ABC × Fortaleza"
+     o Fortaleza é o clube, não a praça); torcida homônima de cidade
+     ganha da cidade. */
+  let _rxNomes = null, _alvoPorNome = null;
   function regexDeNomes(){
     if(_rxNomes) return _rxNomes;
-    const lista = TO.mundo.jogaveis().filter(o=>!o.incompleta && o.nome)
-      .sort((a,b)=>b.nome.length - a.nome.length);
-    _idPorNome = {};
-    for(const o of lista) _idPorNome[o.nome] = o.id;
+    _alvoPorNome = {};
+    const clubes = new Set((TO.dados.times||[]).map(t=>t.nome));
+    for(const c of (TO.dados.cidades||[]))
+      if(c.nome && !clubes.has(c.nome))
+        _alvoPorNome[c.nome] = {tipo:'c', id:c.id};
+    for(const o of TO.mundo.jogaveis())
+      if(!o.incompleta && o.nome)
+        _alvoPorNome[o.nome] = {tipo:'t', id:o.id};
     const esc = s=>s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    _rxNomes = new RegExp('('+lista.map(o=>esc(o.nome)).join('|')+')', 'g');
+    const nomes = Object.keys(_alvoPorNome)
+      .sort((a,b)=>b.length - a.length);
+    _rxNomes = new RegExp('('+nomes.map(esc).join('|')+')', 'g');
     return _rxNomes;
   }
   const escHTML = s => String(s == null ? '' : s)
@@ -4085,7 +4107,10 @@
   function linkificarNomes(txt){
     if(!txt) return '';
     const rx = regexDeNomes();
-    return escHTML(txt).replace(rx, n=>linkTorcida(_idPorNome[n], n));
+    return escHTML(txt).replace(rx, n=>{
+      const a = _alvoPorNome[n];
+      return a.tipo === 'c' ? linkCidade(a.id, n) : linkTorcida(a.id, n);
+    });
   }
 
   let abaPerfilT = 'visao';
@@ -4123,7 +4148,7 @@
         ? `${o.fundacaoDia}/${String(o.fundacaoMes).padStart(2,'0')}` : '—';
       cx.innerHTML =
         linhaD('Clube', clube.nome || '—') +
-        linhaD('Praça', cidade) +
+        linhaD('Praça', linkCidade(o.mapa, cidade)) +
         linhaD('Fundação', fund) +
         linhaD('Membros', `${Math.round(membros)} `+
           `<small class="fraco">· ${dePe} de pé</small>`) +
@@ -4153,7 +4178,8 @@
           linhaD('Bares', conta(pat.bares)) +
           linhaD('Lojas', conta(pat.lojas)) +
           linhaD('Subsedes na cidade', conta(pat.subsedes)) +
-          ((pat.filiais||[]).map(f=>linhaD(`Subsede — ${nomeCid(f.cidade)}`,
+          ((pat.filiais||[]).map(f=>linhaD(
+            `Subsede — ${linkCidade(f.cidade, nomeCid(f.cidade))}`,
             `nível ${f.nivel} · núcleo ${TO.membros.daFilial
               ? TO.membros.daFilial(e, f.cidade).length
               : e.membros.filter(m=>m.filial === f.cidade).length}`)).join('')) +
@@ -4168,7 +4194,8 @@
           linhaD('Bares', conta(t.bares)) +
           linhaD('Lojas', conta(t.lojas)) +
           linhaD('Subsedes na cidade', t.subsedes || '—') +
-          ((t.filiais||[]).map(f=>linhaD(`Subsede — ${nomeCid(f.cidade)}`,
+          ((t.filiais||[]).map(f=>linhaD(
+            `Subsede — ${linkCidade(f.cidade, nomeCid(f.cidade))}`,
             `nível ${f.nivel} · núcleo ${f.membros||0}`)).join('')) +
           linhaD('Ônibus', t.onibus || '—') +
           linhaD('Professores de MMA', TO.relacoes.mmaDe(t) || '—') +
@@ -4185,14 +4212,14 @@
         ? e.membros.map(m=>({
             nome: TO.membros.nomeDe(m),
             cargo: TO.membros.CARGOS[m.cargo].nome,
-            origem: m.filial ? nomeCid(m.filial) : 'Sede',
+            origem: m.filial ? linkCidade(m.filial, nomeCid(m.filial)) : 'Sede',
             idade: m.idade, forca: m.forca, defesa: m.defesa, xp: m.xp,
             sit: m.preso ? `Preso · ${TO.membros.diasPresos(m)}d`
                : m.ferido ? `Ferido · ${m.ferido.dias}d` : 'Apto'}))
         : TO.relacoes.elencoDaTorcida(e, id).map(m=>({
             nome: m.nome,
             cargo: (TO.membros.CARGOS[m.cargo]||{nome:m.cargo}).nome,
-            origem: m.origem ? nomeCid(m.origem) : 'Sede',
+            origem: m.origem ? linkCidade(m.origem, nomeCid(m.origem)) : 'Sede',
             idade: m.idade, forca: m.forca, defesa: m.defesa, xp: m.xp,
             sit: m.preso ? `Preso · ${m.preso}d`
                : m.ferido ? `Ferido · ${m.ferido}d` : 'Apto'}));
@@ -4235,7 +4262,8 @@
           `<span class="dia">s${x.semana}</span>
            <span class="desc">${linkTorcida(x.a.id, x.a.nome)} ${x.a.n} × `+
           `${x.b.n} ${linkTorcida(x.b.id, x.b.nome)}`+
-          `${x.cidade ? ` <small class="fraco">· ${x.cidade}</small>` : ''}</span>
+          `${x.cidade ? ` <small class="fraco">· `+
+            `${linkCidadePorNome(x.cidade)}</small>` : ''}</span>
            <span class="val ${x.vencedor === o.nome ? 'positivo' : 'negativo'}">`+
           `${x.vencedor === o.nome ? 'venceu' : 'perdeu'}</span>`}));
       return cx;
@@ -4300,11 +4328,147 @@
       ? ` · ${clube.nome}` : ''} · ${cidade}`, corpo);
   }
 
-  /* o clique nos nomes é delegado: qualquer .t-link, em qualquer
-     tabela ou quadro, abre o perfil */
+  /* =======================================================
+     O PERFIL DA CIDADE (pedido do dono, 31/08/2026)
+     Mesmo estilo do perfil da torcida: overlay com o retrato
+     da praça — times, estádios, estradas — e a aba de torcidas
+     e estruturas, com tudo que cada uma tem ali (sede, bares,
+     lojas, subsedes) e as subsedes de fora com os núcleos.
+     ======================================================= */
+  let abaPerfilC = 'visao';
+  function abrirPerfilCidade(id){
+    const e = E();
+    const c = (TO.dados.cidades||[]).find(x=>x.id === id);
+    if(!e || !c) return;
+    abaPerfilC = 'visao';
+    TO.relacoes.mundo(e);
+    const corpo = el('div',{class:'perfil-torcida'});
+    const linhaD = (rot, val)=>`<div class="linha-dado"><span>${rot}</span>`+
+                               `<b>${val}</b></div>`;
+
+    const abaVisaoC = ()=>{
+      const cx = el('div');
+      const times = (c.times||[]).map(x=>{
+        const tm = TO.mundo.time(x.clubeId) || {};
+        return {nome:tm.nome || x.clubeId, torcedores:x.torcedores,
+                estadio:tm.estadio, cap:tm.capacidade};
+      }).sort((a,b)=>b.torcedores - a.torcedores);
+      let html =
+        linhaD('Onde', `${c.uf || ''}${c.regiao ? ` · ${c.regiao}` : ''}`) +
+        linhaD('Tamanho', `${c.tamanho || '—'}`+
+          `${c.populacao ? ` · ${U.numero(c.populacao)} de população` : ''}`) +
+        linhaD('Metrô', c.temMetro ? 'sim' : 'não') +
+        linhaD('Policiamento', `${c.pms || 0} PMs · ${c.guardas || 0} guardas`+
+          `${c.choque ? ' · tropa de choque' : ''}`);
+      for(const tm of times)
+        html += linhaD(tm.nome, `${U.numero(tm.torcedores)} torcedores`+
+          `${tm.estadio ? ` · ${tm.estadio}` : ''}`+
+          `${tm.cap ? ` (${U.numero(tm.cap)})` : ''}`);
+      const soTime = new Set(times.map(t=>t.estadio));
+      const extras = (c.estadios||[]).filter(x=>!soTime.has(x));
+      if(extras.length) html += linhaD('Outros estádios', extras.join(', '));
+      if((c.rodovias||[]).length)
+        html += linhaD('Rodovias', c.rodovias.join(', '));
+      /* as vizinhas pela estrada, cada uma com o próprio link */
+      try{
+        const g = TO.planejamento.grafo();
+        const viz = [...((g.get(c.id)||new Map()).keys())]
+          .map(v=>linkCidadePorNome((TO.financeiro.nomeCidade(v)) || v))
+          .filter(Boolean);
+        if(viz.length) html += linhaD('Vizinhas pela estrada', viz.join(', '));
+      }catch(x){}
+      cx.innerHTML = html;
+      return cx;
+    };
+
+    const abaTorcidasC = ()=>{
+      const cx = el('div');
+      const tab = el('table',{class:'dados'});
+      tab.appendChild(el('thead', null, [el('tr',{html:
+        `<th>Torcida</th><th>Membros</th><th>Sede</th>`+
+        `<th>Bares</th><th>Lojas</th><th>Subsedes</th>`})]));
+      const tb = el('tbody');
+      for(const o of TO.mundo.torcidasEm(c.id)){
+        if(o.incompleta) continue;
+        const nossa = o.id === e.torcida.id;
+        const t = nossa ? null : (e.mundoTorcidas||{})[o.id];
+        if(!nossa && !t) continue;
+        const pat = nossa ? TO.financeiro.patrimonio(e) : t;
+        tb.appendChild(el('tr',{class: nossa ? 'nossa' : '', html:
+          `<td>${linkTorcida(o.id, o.nome)}</td>`+
+          `<td class="num">${nossa ? e.membros.length
+            : Math.round(t.membros)}</td>`+
+          `<td class="num">n${nossa ? e.torcida.sedeNivel : t.sede}</td>`+
+          `<td class="num">${(pat.bares||[]).length || '—'}</td>`+
+          `<td class="num">${(pat.lojas||[]).length || '—'}</td>`+
+          `<td class="num">${nossa ? ((pat.subsedes||[]).length || '—')
+            : (t.subsedes || '—')}</td>`}));
+      }
+      tab.appendChild(tb);
+      cx.appendChild(el('div',{class:'recado', html:'<b>Da casa</b>'}));
+      cx.appendChild(tab);
+
+      /* subsedes de fora: quem plantou núcleo nesta praça */
+      const deFora = [];
+      if(TO.patrimonio.temFilialEm && TO.patrimonio.temFilialEm(e, c.id)){
+        const f = ((e.patrimonio||{}).filiais||[])
+          .find(x=>x.cidade === c.id);
+        if(f) deFora.push({id:e.torcida.id, nome:e.torcida.nome,
+          nivel:f.nivel,
+          nucleo:e.membros.filter(m=>m.filial === c.id).length});
+      }
+      for(const [tid, t] of Object.entries(e.mundoTorcidas||{})){
+        const f = (t.filiais||[]).find(x=>x.cidade === c.id);
+        if(!f) continue;
+        const o = TO.mundo.torcida(tid);
+        if(o) deFora.push({id:tid, nome:o.nome, nivel:f.nivel,
+                           nucleo:f.membros || 0});
+      }
+      if(deFora.length){
+        cx.appendChild(el('div',{class:'recado',
+          html:'<b>Subsedes de fora</b>'}));
+        const tab2 = el('table',{class:'dados'});
+        tab2.appendChild(el('thead', null, [el('tr',{html:
+          `<th>Torcida</th><th>Nível</th><th>Núcleo</th>`})]));
+        const tb2 = el('tbody');
+        for(const f of deFora.sort((a,b)=>b.nucleo - a.nucleo))
+          tb2.appendChild(el('tr',{html:
+            `<td>${linkTorcida(f.id, f.nome)}</td>`+
+            `<td class="num">n${f.nivel}</td>`+
+            `<td class="num">${f.nucleo}</td>`}));
+        tab2.appendChild(tb2);
+        cx.appendChild(tab2);
+      }
+      return cx;
+    };
+
+    const pintar = ()=>{
+      corpo.innerHTML = '';
+      const abas = el('div',{class:'filtros'});
+      for(const [aid, rot] of [['visao','Visão geral'],
+          ['torcidas','Torcidas e estruturas']]){
+        const b = el('button',{class: aid === abaPerfilC ? 'on' : '',
+                               texto: rot});
+        b.onclick = ()=>{ abaPerfilC = aid; pintar(); };
+        abas.appendChild(b);
+      }
+      corpo.appendChild(abas);
+      corpo.appendChild(abaPerfilC === 'torcidas' ? abaTorcidasC()
+                                                  : abaVisaoC());
+    };
+    pintar();
+    modal(c.nome, `${c.uf || ''}${c.regiao ? ` · ${c.regiao}` : ''} · `+
+      `${TO.mundo.torcidasEm(c.id).filter(o=>!o.incompleta).length} torcidas`,
+      corpo);
+  }
+
+  /* o clique nos nomes é delegado: qualquer .t-link ou .c-link, em
+     qualquer tabela, quadro ou texto, abre o perfil */
   document.addEventListener('click', ev=>{
     const l = ev.target.closest && ev.target.closest('.t-link');
-    if(l && l.dataset.torcida) abrirPerfilTorcida(l.dataset.torcida);
+    if(l && l.dataset.torcida) return abrirPerfilTorcida(l.dataset.torcida);
+    const lc = ev.target.closest && ev.target.closest('.c-link');
+    if(lc && lc.dataset.cidade) abrirPerfilCidade(lc.dataset.cidade);
   });
 
   /* =======================================================
@@ -4343,7 +4507,8 @@
       '<span>Local</span><span>Receita</span><span>Despesa</span><span>Mês</span>'}));
     for(const l of linhas){
       tab.appendChild(el('div',{class:'linha', html:
-        `<span class="nome">${l.rot}${l.bairro?`<small>${l.bairro}</small>`:''}`+
+        `<span class="nome">${l.rot}${l.bairro
+          ? `<small>${linkCidadePorNome(l.bairro)}</small>` : ''}`+
         `${l.nota?`<small>${l.nota}</small>`:''}</span>
          <span class="v ${l.receita?'positivo':''}">${l.receita?U.dinheiro(l.receita):'—'}</span>
          <span class="v ${l.despesa?'negativo':''}">${l.despesa?U.dinheiro(-l.despesa):'—'}</span>
@@ -7249,7 +7414,7 @@
      e o jogo continuaria quebrado. Nada aqui é chamado pelo jogo. */
   TO.tela = {
     passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
-    abrirPerfilTorcida,
+    abrirPerfilTorcida, abrirPerfilCidade,
     rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
     get pausasDoTempo(){ return [...pausasT]; },
     abrirPainel, fecharPainel, get painel(){ return painel; },

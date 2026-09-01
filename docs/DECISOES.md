@@ -3069,6 +3069,28 @@ maior pro menor ("Fúria Jovem do Botafogo" ganha de "Fúria"), o
 texto é escapado antes (HTML em mensagem continua sendo texto), e
 clicar no nome dentro de uma opção seleciona E abre o perfil.
 
+## O perfil das cidades (pedido do dono, 31/08/2026)
+
+Mesmo estilo do perfil da torcida, em overlay, aberto pelo nome da
+cidade. Duas abas:
+
+- **Visão geral**: UF e região, tamanho e população, metrô,
+  policiamento (PMs, guardas, tropa de choque), os TIMES da praça com
+  torcedores e estádio (capacidade), outros estádios, rodovias e as
+  VIZINHAS PELA ESTRADA (cada uma com o próprio link, via grafo da
+  malha).
+- **Torcidas e estruturas**: as torcidas DA CASA numa tabela — nome
+  (link), membros, sede, bares, lojas, subsedes — e o quadro das
+  SUBSEDES DE FORA, com nível e núcleo de cada torcida que plantou
+  casa ali (a nossa inclusa).
+
+Os links de cidade seguem o cano dos de torcida: texto corrido das
+mensagens (cidade homônima de CLUBE fica de fora do texto — num
+"ABC × Fortaleza" o Fortaleza é o clube; torcida homônima ganha da
+cidade), Praça e filiais no perfil da torcida, coluna Origem das
+tabelas de membros, linhas de filial no Patrimônio > Estrutura e a
+cidade das notas do jornal.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

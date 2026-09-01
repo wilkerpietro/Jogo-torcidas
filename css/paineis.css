@@ -1642,3 +1642,5 @@ td.placar small.pen{
 .perfil-torcida .filtros{margin-bottom:10px}
 .perfil-torcida table.dados{width:100%}
 .perfil-torcida .recado{margin:6px 0}
+.c-link{cursor:pointer; border-bottom:1px dotted currentColor}
+.c-link:hover{opacity:.75}
