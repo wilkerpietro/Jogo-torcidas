@@ -3017,6 +3017,23 @@ do núcleo contra a caravana QUE VIAJOU — o efetivo rival é o
 `caravanaDe` da mensagem, não a torcida inteira. O fechamento passa
 pelo fecharAtaque de sempre. Texto da mensagem aguardando o crivo.
 
+## Crivo do dono (31/08/2026): textos aprovados
+
+O dono aprovou em bloco os textos que aguardavam crivo: as 60
+manchetes por cenário + 6 de apoio a aliado do Futebol e Porrada
+(com o chapéu "Desceu junto") e a mensagem do bote na caravana rival
+("Chefe, a caravana da... Manda dar o bote?"). Estão todos de pé.
+
+## Manutenção da subsede: 700/1.200/1.800 por nível (reajuste do dono, 31/08/2026)
+
+A manutenção mensal da subsede saiu dos R$ 90 fixos pra uma tabela
+por nível — **700 / 1.200 / 1.800** —, valendo pra subsede LOCAL
+(sempre nível 1: R$ 700) e pra FILIAL em outra cidade (pelo nível
+dela). A IA paga pela mesma tabela. Nota de régua: a subsede rende
+R$ 600/mês × bairro × fator, então no custo novo ela deixa de se
+pagar sozinha — passa a ser estrutura de estratégia (recruta, núcleo,
+presença), não fonte de renda.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

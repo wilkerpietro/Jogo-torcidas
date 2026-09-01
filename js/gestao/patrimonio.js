@@ -172,9 +172,10 @@ TO.patrimonio = (function(){
       nucleo: (E.membros||[]).filter(m=>m.filial === f.cidade).length,
       teto: FILIAL.teto[f.nivel],
       receita: REC.subsede * F().multFilial(E, f) * fator,
-      despesa: MAN.subsede * f.nivel});
+      despesa: MAN.subsede[f.nivel] || MAN.subsede[1]});
     for(const s of p.subsedes) fora.push({tipo:'subsede', rot:'Subsede', bairro:s.bairro,
-      receita: REC.subsede*mult(s.bairro)*fator, despesa: MAN.subsede});
+      receita: REC.subsede*mult(s.bairro)*fator,
+      despesa: MAN.subsede[s.nivel || 1]});
 
     const frota = F().onibusDe(E);
     if(frota) fora.push({tipo:'onibus',

@@ -43,10 +43,11 @@ TO.financeiro = (function(){
                    subsede:600};
   /* custo fixo de bar e loja DOBROU (reajuste do dono, 31/08/2026), e
      o do bar dobrou DE NOVO no mesmo dia ("despesa de bar tá com valor
-     muito baixo"); a subsede ficou como era. A IA paga pela mesma
-     tabela. */
+     muito baixo"). A SUBSEDE subiu pra 700/1.200/1.800 por nível
+     (reajuste do dono, 31/08/2026) — vale pra local (sempre nível 1)
+     e pra filial em outra cidade, e a IA paga pela mesma tabela. */
   const MANUT   = {bar:[null, 480, 960, 1800],  loja:[null, 300, 600, 1080],
-                   subsede:90};
+                   subsede:[null, 700, 1200, 1800]};
 
   const INSUMO   = 0.25;   // GDD §8.3: loja sem insumo não fatura
   const CARAVANA = 3000;   // GDD §7.3
@@ -277,8 +278,9 @@ TO.financeiro = (function(){
     let manutCom = 0;
     for(const b of p.bares)    manutCom += MANUT.bar[b.nivel];
     for(const l of p.lojas)    manutCom += MANUT.loja[l.nivel];
-    for(const s of p.subsedes) manutCom += MANUT.subsede;
-    for(const f of (p.filiais||[])) manutCom += MANUT.subsede * f.nivel;
+    for(const s of p.subsedes) manutCom += MANUT.subsede[s.nivel || 1];
+    for(const f of (p.filiais||[]))
+      manutCom += MANUT.subsede[f.nivel] || MANUT.subsede[1];
     juntar(des, 'Manutenção do comércio', manutCom*SEM);
 
     /* e corta 60% do insumo, que é o outro lado do mesmo negócio */

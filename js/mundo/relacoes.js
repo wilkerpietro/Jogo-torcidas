@@ -294,8 +294,9 @@ TO.relacoes = (function(){
     for(const b of t.bares) des += MAN.bar[b.nivel];
     for(const l of t.lojas) des += MAN.loja[l.nivel]
                                  + R.loja[l.nivel]*FIN().INSUMO*(t.fabrica ? 1-fab.corteInsumo : 1);
-    des += t.subsedes * MAN.subsede;
-    for(const f of (t.filiais||[])) des += MAN.subsede * f.nivel;
+    des += t.subsedes * MAN.subsede[1];
+    for(const f of (t.filiais||[]))
+      des += MAN.subsede[f.nivel] || MAN.subsede[1];
     /* ônibus e professor de MMA custam o mesmo que pro jogador:
        R$ 1.500 e R$ 2.000 por mês, aqui na fatia semanal */
     /* a frota delas cobra por ônibus, como a do jogador */
