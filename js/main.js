@@ -3024,10 +3024,15 @@
     {k:'situacao',rot:'Situação'}
   ];
 
+  /* de onde é o membro: a sede, ou a cidade da sub-sede dele */
+  const origemDe = m => m.filial
+    ? (TO.financeiro.nomeCidade(m.filial) || m.filial) : 'Sede';
   function valorCol(m,k){
     if(k==='nome') return TO.membros.nomeDe(m).toLowerCase();
     if(k==='cargo') return TO.membros.CARGOS[m.cargo].ordem;
     if(k==='situacao') return m.preso?2 : m.ferido?1 : 0;
+    /* a sede vem antes de toda sub-sede na ordenação */
+    if(k==='origem') return m.filial ? origemDe(m).toLowerCase() : '';
     return m[k];
   }
   function combina(m,t){
@@ -3036,6 +3041,7 @@
     const sit = m.preso?'preso' : m.ferido?'ferido' : 'apto';
     return TO.membros.nomeDe(m).toLowerCase().includes(t)
         || TO.membros.CARGOS[m.cargo].nome.toLowerCase().includes(t)
+        || origemDe(m).toLowerCase().includes(t)
         || (m.arquetipo||'').includes(t) || sit.includes(t);
   }
 
@@ -3145,7 +3151,16 @@
 
     const tab = el('table',{class:'dados'});
     const tr = el('tr');
-    for(const col of COLUNAS){
+    /* TORCIDA COM SUB-SEDE GANHA A COLUNA "ORIGEM" (pedido do dono,
+       31/08/2026): de onde é cada membro — a sede, ou a cidade da
+       filial dele. Sem filial a tabela segue como sempre foi. */
+    const temFilial = (((e.patrimonio||{}).filiais)||[]).length > 0;
+    const colunas = temFilial
+      ? [Object.assign({}, COLUNAS[0], {larg:'22%'}),
+         Object.assign({}, COLUNAS[1], {larg:'16%'}),
+         {k:'origem', rot:'Origem', larg:'12%'}].concat(COLUNAS.slice(2))
+      : COLUNAS;
+    for(const col of colunas){
       const seta = ordem.col===col.k ? (ordem.dir<0?' ▼':' ▲') : '';
       const th = el('th',{class:'ordenavel',
         html:`${col.rot}<span class="seta">${seta}</span>`});
@@ -3181,6 +3196,7 @@
       linha.innerHTML =
         `<td>${pontinho}${TO.membros.nomeDe(m)}</td>
          <td>${TO.membros.CARGOS[m.cargo].nome}</td>
+         ${temFilial ? `<td>${origemDe(m)}</td>` : ''}
          <td class="num${m.idade >= TO.membros.IDADE_DECLINIO ? ' velho' : ''}"`+
         ` title="${m.idade >= TO.membros.IDADE_DECLINIO
           ? 'em declínio: perde 0,6 de força e defesa por ano; pendura a bandeira aos '

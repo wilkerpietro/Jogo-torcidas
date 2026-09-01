@@ -2955,6 +2955,14 @@ resolvia por simulação. Agora ABRE A CENA do ataque a bar, jogável:
 - A nota do botão mudou junto: "abre a cena com o núcleo da sub-sede —
   a briga vale prestígio como qualquer ataque a bar".
 
+## Coluna "Origem" em Torcida > Membros (pedido do dono, 31/08/2026)
+
+Torcida com sub-sede ganha uma coluna a mais na tabela de membros,
+entre Função e Idade: **Origem** — "Sede" pra quem é da matriz, o
+nome da cidade pra quem é do núcleo da filial. A coluna ordena (Sede
+antes das sub-sedes) e a busca acha pela origem também. Sem filial,
+a tabela segue com as sete colunas de sempre.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
