@@ -2110,7 +2110,7 @@
       `<span class="msg-voz">${quem}</span>`+
       `<span class="msg-papel">${papel}</span>`+
       `<time>${quando}</time>`}));
-    art.appendChild(el('p',{class:'msg-txt', texto:m.texto}));
+    art.appendChild(el('p',{class:'msg-txt', html: linkificarNomes(m.texto)}));
 
     /* O RELATÓRIO DO OLHEIRO É TABELA (decisão do dono, 17/08/2026):
        coluna 1 a competição, o dia e o jogo com a cor de cada clube;
@@ -2130,7 +2130,7 @@
         tr.appendChild(el('td',{class:'to-torcidas', html:
           r.torcidas.map(t=>
             `<div${t.hostil ? '' : ' class="to-mansa"'}>`+
-            `${chip(t.cor, t.nome)} <span class="to-faixa">`+
+            `${chip(t.cor, linkificarNomes(t.nome))} <span class="to-faixa">`+
             `${String(t.faixa).replace(' a ','–')} membros</span></div>`)
             .join('') || '<div class="to-mansa">ninguém na rua</div>'}));
         tb.appendChild(tr);
@@ -2203,7 +2203,8 @@
 
     /* a linha de consequência sai dos efeitos aplicados, nunca do texto */
     if(m.consequencia)
-      art.appendChild(el('div',{class:'msg-efeitos', texto:m.consequencia}));
+      art.appendChild(el('div',{class:'msg-efeitos',
+        html: linkificarNomes(m.consequencia)}));
 
     /* links informativos não consomem nada — "Ver Competições" */
     for(const l of (m.links || [])){
@@ -3629,7 +3630,7 @@
         /* --- quem --- */
         corpo.appendChild(el('div',{class:'fase-rot', texto:'Quem atacar'}));
         corpo.appendChild(opcoes(alvos.map(a=>({
-          id:a.id, rot:a.nome,
+          id:a.id, rot:linkTorcida(a.id, a.nome),
           nota:`${a.faixa} na rua · relação ${Math.round(a.relacao)}`
         })), (alvo||alvos[0]||{}).id, id=>{
           P.definirAtaque(e, {alvo:id, onde, bombas:p.bombas}); pintar();
@@ -3812,7 +3813,7 @@
       /* --- 1: quem atacar --- */
       corpo.appendChild(el('div',{class:'fase-rot', texto:'Quem atacar'}));
       corpo.appendChild(opcoes(lista.map(a=>({
-        id:a.id, rot:a.nome + (a.aliada ? ' · aliada' : ''),
+        id:a.id, rot:linkTorcida(a.id, a.nome) + (a.aliada ? ' · aliada' : ''),
         /* o efetivo é ESTIMATIVA, em faixa, como o olheiro dá: número
            exato de bonde alheio é coisa que ninguém tem */
         nota:`${a.faixa} na rua · relação ${Math.round(a.relacao)}`+
@@ -4063,6 +4064,29 @@
      ======================================================= */
   const linkTorcida = (id, nome) =>
     id ? `<span class="t-link" data-torcida="${id}">${nome}</span>` : nome;
+
+  /* A ONDA 2 (ordem do dono, 31/08/2026): o nome da torcida no TEXTO
+     CORRIDO das mensagens também vira link. O texto puro é escapado e
+     os nomes conhecidos são casados do maior pro menor — "Fúria Jovem
+     do Botafogo" ganha de "Fúria" —, sem mexer no que já é tag. */
+  let _rxNomes = null, _idPorNome = null;
+  function regexDeNomes(){
+    if(_rxNomes) return _rxNomes;
+    const lista = TO.mundo.jogaveis().filter(o=>!o.incompleta && o.nome)
+      .sort((a,b)=>b.nome.length - a.nome.length);
+    _idPorNome = {};
+    for(const o of lista) _idPorNome[o.nome] = o.id;
+    const esc = s=>s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    _rxNomes = new RegExp('('+lista.map(o=>esc(o.nome)).join('|')+')', 'g');
+    return _rxNomes;
+  }
+  const escHTML = s => String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  function linkificarNomes(txt){
+    if(!txt) return '';
+    const rx = regexDeNomes();
+    return escHTML(txt).replace(rx, n=>linkTorcida(_idPorNome[n], n));
+  }
 
   let abaPerfilT = 'visao';
   function abrirPerfilTorcida(id){

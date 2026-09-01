@@ -3061,6 +3061,14 @@ Links aplicados na onda 1: ranking, Diplomacia, tabela de presença da
 partida, painel de média de público, quadro da noite e notas do
 jornal, bloco de recepção de aliado.
 
+**Onda 2 (ordem do dono, mais tarde no mesmo dia)**: o nome da
+torcida vira link também no TEXTO CORRIDO de toda mensagem do feed
+(e na consequência), na tabela do olheiro, nos alvos da tela de
+ataque e nos alvos da tela de caravana. O casamento de nomes é do
+maior pro menor ("Fúria Jovem do Botafogo" ganha de "Fúria"), o
+texto é escapado antes (HTML em mensagem continua sendo texto), e
+clicar no nome dentro de uma opção seleciona E abre o perfil.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
