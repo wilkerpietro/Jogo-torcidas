@@ -2963,6 +2963,29 @@ nome da cidade pra quem é do núcleo da filial. A coluna ordena (Sede
 antes das sub-sedes) e a busca acha pela origem também. Sem filial,
 a tabela segue com as sete colunas de sempre.
 
+## A vida da subsede, corrigida e completada (ordens do dono, 31/08/2026)
+
+Três acertos no mesmo pacote:
+
+- **O núcleo da filial IA entra no TOTAL de membros**: a Cearamor
+  abria subsede e seguia com os mesmos 200, porque `f.membros` era um
+  contador paralelo. Agora o recruta da filial soma no `t.membros`
+  (migração única pra save antigo conta os núcleos existentes), e o
+  teto de recrutamento diário da sede ganhou o tamanho dos núcleos —
+  quem mora na filial não come a vaga de quem recruta na cidade-mãe.
+- **Fundar subsede destaca gente da sede**: 1 diretor + 2 linha de
+  frente descem pra abrir a filial — na nossa, os aptos de ficha mais
+  fraca de cada cargo (pra não desfalcar o bonde principal), com
+  registro no histórico; na IA, o núcleo nasce com 3 (mudaram de
+  cidade, não de torcida — o total não muda na compra) e cresce no
+  ritmo de sempre.
+- **Subsede × subsede na mesma cidade**: duas torcidas com filial na
+  mesma praça (Gaviões e Jovem Fla em Fortaleza) podem se pegar por
+  lá — passa semanal, núcleos com 6+, relação entre as duas abaixo de
+  −20, chance pequena que cresce com o ódio e a briga delas. A briga
+  entra em `brigasIA` com os bondes do tamanho dos núcleos, e o
+  jornal dá a nota. Irmãs e torcidas do mesmo clube ficam de fora.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

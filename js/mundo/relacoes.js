@@ -447,11 +447,25 @@ TO.relacoes = (function(){
          fantasma no cadastro, invisível na ficha e imune à demissão */
       t.mma = mmaDe(t);
       t.onibus = frotaIA(t);
+      /* MIGRAÇÃO (correção do dono, 31/08/2026): o núcleo das filiais
+         nunca tinha entrado no TOTAL de membros — a Cearamor abria
+         subsede e seguia com os mesmos 200. Conta uma vez e marca. */
+      if(!t.nucleoContado){
+        t.membros += (t.filiais||[]).reduce((s,f)=>s+(f.membros||0), 0);
+        t.nucleoContado = true;
+      }
       /* o núcleo das filiais delas cresce devagar até o teto do nível
-         (dose do dono, 26/08/2026): ~1 membro a cada 3 semanas */
-      for(const f of (t.filiais = t.filiais || []))
-        f.membros = Math.min(P().FILIAL.teto[f.nivel] || 0,
-                             (f.membros || 8) + (U.rng() < 1/3 ? 1 : 0));
+         (dose do dono, 26/08/2026): ~1 membro a cada 3 semanas — e o
+         recruta da filial é recruta DA TORCIDA: entra no total
+         (correção do dono, 31/08/2026) */
+      for(const f of (t.filiais = t.filiais || [])){
+        f.membros = f.membros || 8;
+        const tetoF = P().FILIAL.teto[f.nivel] || 0;
+        if(f.membros < tetoF && U.rng() < 1/3){
+          f.membros += 1;
+          t.membros += 1;
+        } else if(f.membros > tetoF) f.membros = tetoF;
+      }
       const b = balanco(t, E, id);
       t.caixa += Math.round(b.saldo * SEM);
 
@@ -516,8 +530,12 @@ TO.relacoes = (function(){
         else if(compra.tipo === 'onibus') t.onibus = frotaIA(t) + 1;
         else if(compra.tipo === 'subsede') t.subsedes++;
         else if(compra.tipo === 'filial')
+          /* a fundação desce com gente da sede (ordem do dono,
+             31/08/2026): 3 destacados — um diretor e dois linha de
+             frente — mudam de cidade, não de torcida, então o total
+             não muda; o resto o núcleo recruta lá, no ritmo dele */
           (t.filiais = t.filiais || []).push(
-            {cidade:compra.cidade, nivel:1, membros:8});
+            {cidade:compra.cidade, nivel:1, membros:3});
         else if(compra.tipo === 'elenco'){
           E.investimento = E.investimento || {};
           E.investimento[compra.clube] = (E.investimento[compra.clube] || 0) + 1;
@@ -1640,7 +1658,10 @@ TO.relacoes = (function(){
       /* --- os 3 turnos do expediente --- */
       for(const op of expedienteIA()){
         if(op === 'recrutar'){
-          const teto = tetoDe(E, t);
+          /* o teto da sede vale pra SEDE: quem mora na filial não come
+             a vaga de quem recruta na cidade-mãe (dono, 31/08/2026) */
+          const teto = tetoDe(E, t)
+            + (t.filiais||[]).reduce((s,f)=>s+(f.membros||0), 0);
           if(t.membros >= teto || t.caixa < 10) continue;
           const tab = TAB[regimeIA(E, t)] || {um:0.10, dois:0.05};
           const r = U.rng();
@@ -1910,6 +1931,37 @@ TO.relacoes = (function(){
     return x ? x.pos : 0;
   }
 
+  /* SUBSEDE × SUBSEDE (pedido do dono, 31/08/2026): duas torcidas com
+     filial na MESMA cidade podem se pegar por lá — Gaviões e Jovem Fla
+     se enfrentando em Fortaleza. Régua: núcleos com 6+ (a mesma que
+     libera as descidas), relação ruim entre as duas, dose semanal
+     pequena. A briga entra em brigasIA como qualquer outra — os bondes
+     têm o TAMANHO DOS NÚCLEOS — e o jornal dá a nota. */
+  function guerraDeFiliais(E){
+    const m = E.mundoTorcidas || {};
+    const porCidade = {};
+    for(const id of Object.keys(m))
+      for(const f of (m[id].filiais||[]))
+        if((f.membros||0) >= 6)
+          (porCidade[f.cidade] = porCidade[f.cidade] || []).push({id, f});
+    for(const cidade of Object.keys(porCidade)){
+      const lst = porCidade[cidade];
+      if(lst.length < 2) continue;
+      for(let x=0;x<lst.length;x++) for(let y=x+1;y<lst.length;y++){
+        const a = M().torcida(lst[x].id), b = M().torcida(lst[y].id);
+        if(!a || !b || a.clubeId === b.clubeId) continue;
+        if(M().saoIrmas && M().saoIrmas(a.id, b.id)) continue;
+        const r = relacaoDelas(E, a.id, b.id);
+        if(r > -20) continue;
+        const chance = ((-20 - r)/120) * 0.10 *
+          Math.max(brigaDe(m[a.id]), brigaDe(m[b.id]));
+        if(U.rng() >= chance) continue;
+        brigaIA(E, a, b, cidade, '', {tetoA: lst[x].f.membros,
+                                      tetoB: lst[y].f.membros});
+      }
+    }
+  }
+
   function passarSemana(E){
     mundo(E);
     /* a foto do mês é tirada ANTES do que a semana faz: assim a
@@ -1917,6 +1969,7 @@ TO.relacoes = (function(){
     fotoDoMes(E);
     convivencia(E);
     economiaDelas(E);
+    guerraDeFiliais(E);
     return {ataques: ataquesContraNos(E)};
   }
 
@@ -1943,7 +1996,8 @@ TO.relacoes = (function(){
           mover, indicadoresDe, semanaAbs,
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
-          conquistaDoClube, passarSemana, panorama, MENSALIDADE,
+          conquistaDoClube, passarSemana, guerraDeFiliais, panorama,
+          MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,
           quadroDe, mediaDoQuadro, treinarDelas, promoverDelas, xpDeBrigaIA,
           envelhecerDelas, ferrugemDaPaz, desgasteDaNoite, desgastarQuadro,

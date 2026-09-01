@@ -417,9 +417,25 @@ TO.patrimonio = (function(){
       p.filiais = p.filiais || [];
       p.filiais.push({cidade:tipo, nivel:1});
       TO.estado.lancar(E, `Subsede em ${F().nomeCidade(tipo)}`, -o.custo);
+      /* A FUNDAÇÃO DESCE COM GENTE DA SEDE (ordem do dono, 31/08/2026):
+         um diretor e dois linha de frente saem destacados pra abrir a
+         subsede — os aptos de ficha mais fraca de cada cargo, pra não
+         desfalcar o bonde principal. */
+      const aptosDe = cargo => E.membros
+        .filter(m=>m.cargo === cargo && !m.ferido && !m.preso && !m.filial)
+        .sort((a,b)=>(a.forca+a.defesa)-(b.forca+b.defesa));
+      const destacados = aptosDe('diretoria').slice(0,1)
+        .concat(aptosDe('frente').slice(0,2));
+      for(const m of destacados){
+        m.filial = tipo;
+        m.historico.push(
+          `Destacado pra fundar a subsede de ${F().nomeCidade(tipo)}`);
+      }
       E.inauguracao = {tipo:'subsede', bairro:F().nomeCidade(tipo),
                        quando:(E.data||{}).absoluto || 0, contada:false};
-      return {ok:true, msg:`Subsede aberta em ${F().nomeCidade(tipo)}.`};
+      return {ok:true, msg:`Subsede aberta em ${F().nomeCidade(tipo)}`+
+        (destacados.length
+          ? ` — ${destacados.length} da sede destacados pra lá.` : '.')};
     }
     if(acao==='ampliar-filial'){
       const f = (p.filiais||[]).find(x=>x.cidade === tipo);
