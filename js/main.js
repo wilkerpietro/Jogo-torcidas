@@ -4408,19 +4408,29 @@
 
     const abaTorcidasC = ()=>{
       const cx = el('div');
+      /* a tabela completa voltou (ordem do dono, 01/09/2026): membros,
+         sede, subsedes, lojas e bares por torcida — e as zonas abaixo
+         dizem ONDE cada estrutura está */
       const tab = el('table',{class:'dados'});
       tab.appendChild(el('thead', null, [el('tr',{html:
-        `<th>Torcida</th><th>Membros</th>`})]));
+        `<th>Torcida</th><th>Membros</th><th>Sede</th>`+
+        `<th>Subsedes</th><th>Lojas</th><th>Bares</th>`})]));
       const tb = el('tbody');
       for(const o of TO.mundo.torcidasEm(c.id)){
         if(o.incompleta) continue;
         const nossa = o.id === e.torcida.id;
         const t = nossa ? null : (e.mundoTorcidas||{})[o.id];
         if(!nossa && !t) continue;
+        const pat = nossa ? TO.financeiro.patrimonio(e) : t;
         tb.appendChild(el('tr',{class: nossa ? 'nossa' : '', html:
           `<td>${linkTorcida(o.id, o.nome)}</td>`+
           `<td class="num">${nossa ? e.membros.length
-            : Math.round(t.membros)}</td>`}));
+            : Math.round(t.membros)}</td>`+
+          `<td class="num">n${nossa ? e.torcida.sedeNivel : t.sede}</td>`+
+          `<td class="num">${nossa ? ((pat.subsedes||[]).length || '—')
+            : (t.subsedes || '—')}</td>`+
+          `<td class="num">${(pat.lojas||[]).length || '—'}</td>`+
+          `<td class="num">${(pat.bares||[]).length || '—'}</td>`}));
       }
       tab.appendChild(tb);
       cx.appendChild(el('div',{class:'recado', html:'<b>Da casa</b>'}));
