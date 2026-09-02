@@ -3136,6 +3136,26 @@ Três acertos na tela:
   sorteia" do jogador. Subsedes de fora entram na zona delas com
   nível e núcleo.
 
+## Os escudos do acervo do dono — 108 brasileiros (02/09/2026)
+
+O dono subiu o acervo dele de escudos (a pasta do ranking, em dois
+rars) e mandou completar os 108 clubes brasileiros do jogo de uma
+vez. O casamento foi por nome com normalização (acento, sufixo de
+UF, apelidos tipo "América Mineiro" → América/MG, "Vasco da Gama" →
+Vasco), com a UF do arquivo desempatando homônimos (Vitória-ES NÃO
+casou com o Vitória-BA; os três Botafogo cada um no seu). O primeiro
+rar cobriu 85; o segundo, os 23 que faltavam.
+
+- Conversão no padrão da leva do FCLOGO: 64×64 RGBA, escudo centrado
+  em fundo transparente, `img/escudos/clube-<id>.png`.
+- Manifesto `dados/escudos.js` regenerado do que existe na pasta:
+  139 clubes (108 brasileiros + 31 argentinos do FCLOGO). Os 4
+  brasileiros que vinham do FCLOGO (Flamengo, Fluminense, Botafogo,
+  Palmeiras) foram sobrescritos pela versão do acervo do dono.
+- 51 escudos do acervo ficaram de fora por serem de clubes que não
+  existem no `times.js` (Brusque, Tombense, Aparecidense…).
+- Escudos de TORCIDAS seguem zerados — aguardando fonte.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
