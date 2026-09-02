@@ -3249,6 +3249,12 @@ de partida; o valor corrente mora no save (`E.torcedoresEv`,
 - Sondagem de 1 ano: 16 clubes em alta e 16 em baixa, crescimento
   de cada cidade dentro da régua do tamanho, Flamengo +4,2% num ano
   de G-4; sondagem de 10 anos entregue ao dono à parte.
+- A MESMA RÉGUA EM CADA PAÍS (ordem do dono, na sequência): as ligas
+  de fora fecham o ano com campeão, sobem e caem por divisão, e a
+  tabela anual dá o G-4 da primeira divisão e os 4 últimos da última
+  — tudo entra no mesmo bem/mal, lido ANTES do montar() rearmar o
+  ano. Com o mundo inteiro na régua: 63 clubes em alta e 61 em baixa
+  no primeiro ano sondado.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

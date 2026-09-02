@@ -310,6 +310,29 @@ TO.mundo = (function(){
       (C.subiu(m.de, m.para) ? bem : mal).add(m.id);
     }
     if(D) for(const id of C.piores(D, 4)) mal.add(id);
+
+    /* A MESMA RÉGUA EM CADA PAÍS (ordem do dono, 02/09/2026): as ligas
+       de fora fecham o ano com campeão, sobem e caem por divisão — e a
+       tabela anual dá o G-4 da primeira e os 4 últimos da última. Isto
+       roda ANTES do montar() rearmar o ano novo, então E.ligas ainda é
+       a temporada que fechou. */
+    const LIGAS = E.ligas && E.ligas.paises;
+    if(LIGAS) for(const pais of Object.keys(LIGAS)){
+      const nomes = Object.keys(LIGAS[pais].divisoes || {});
+      nomes.forEach((nome, k)=>{
+        const div = LIGAS[pais].divisoes[nome];
+        if(!div) return;
+        if(div.campeao) bem.add(div.campeao);
+        for(const id of (div.sobem||[])) bem.add(id);
+        for(const id of (div.caem||[]))  mal.add(id);
+        const tabela = Object.values(div.anual || {})
+          .sort((a,b)=> b.p - a.p || (b.gp-b.gc) - (a.gp-a.gc));
+        if(k === 0)
+          for(const l of tabela.slice(0, 4)) bem.add(l.id);
+        if(k === nomes.length-1 && tabela.length > 4)
+          for(const l of tabela.slice(-4)) mal.add(l.id);
+      });
+    }
     for(const id of [...bem]) if(mal.has(id)){ bem.delete(id); mal.delete(id); }
 
     E.torcedoresEv = E.torcedoresEv || {};
