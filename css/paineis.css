@@ -1804,3 +1804,10 @@ header.capa-cidade{background-size:cover; background-position:center;
 .tut-desfecho button{background:var(--rubro); border:0; padding:9px 18px;
   font-family:var(--titulo); font-size:13px; letter-spacing:.09em;
   text-transform:uppercase; margin:0 4px; cursor:pointer; color:inherit}
+
+/* a briga do tutorial na CENA REAL (dono, 02/09/2026): os balões e o
+   desfecho flutuam por cima da tela do dia de jogo */
+#tutBaloes{position:fixed; left:26px; top:70px; z-index:2400;
+  width:min(300px, 70vw)}
+#tutBaloes .tut-balao{position:static}
+#tutDesfecho{position:fixed; z-index:2410}

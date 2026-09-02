@@ -231,253 +231,138 @@
   }
 
   /* =======================================================
-     A BRIGA SIMULADA — palco próprio, fora do save.
-     Os três textos dos balões são do dono, ao pé da letra.
+     A BRIGA SIMULADA — a CENA DE VERDADE do jogo (ordem do dono,
+     02/09/2026): 5×5 na praça pelo palco real, com joystick, botões,
+     pedra e bomba. O main abre e fecha sem cobrar nada do save
+     (`abrirBrigaDoTutorial`); aqui ficam só os balões explicativos
+     por cima e o desfecho. Textos do dono ao pé da letra — exceto o
+     do movimento, adaptado do "mouse" da maquete pros controles
+     reais (WASD/direcional). Os balões avançam quando dá pra sentir
+     a ação (mexeu, jogou) e no "Entendi" quando não dá.
      ======================================================= */
-  let arena = null, cv, ctx, W, H, mira, nos, eles, pedras;
-  let rodando = false, etapa, feitos, moveuEm, fugindo, ultimoT;
+  let baloes = null, desfecho = null, etapa = 0, feitos = null;
+  let ouvindo = false;
 
-  function montarArena(){
-    if(arena) return arena;
-    arena = el('div',{id:'tutArena'});
-    arena.innerHTML =
-      `<div class="tut-arena-cab">
-        <span class="lado"><i style="background:#9d2222"></i>
-          <b id="tutArNos"></b> <em id="tutContaNos">8</em></span>
-        <span class="vs">×</span>
-        <span class="lado"><i style="background:#1d4f8a"></i>
-          <b id="tutArEles"></b> <em id="tutContaEles">8</em></span>
-        <span class="tut-barra"><i id="tutBarraEles"></i>
-          <u title="aqui ela corre"></u></span>
-        <button id="tutSairBriga">Encerrar a demonstração</button>
-      </div>
-      <div class="tut-palco"><canvas id="tutCv"></canvas>
-        <div class="tut-toques">
-          <button id="tutBtPedra"><b>Q</b> Pedra</button>
-          <button id="tutBtBomba"><b>E</b> Bomba</button>
-        </div>
-        <div class="tut-balao" id="tutBalao0">
-          <div class="rot">A pista · 1 de 4</div>
-          <p>O bonde anda com o <b>mouse</b> — aponta pra onde quer ir que
-            os seus vão atrás de você.</p>
-          <span class="feito">✓ isso — agora vai pra cima deles</span></div>
-        <div class="tut-balao" id="tutBalao1">
-          <div class="rot">A porrada · 2 de 4</div>
-          <p>Não precisa clicar no rival e nem em alguma tecla pra bater
-            nele: <b>basta encostar nele</b>.</p>
-          <span class="feito">✓ encostou, bateu</span></div>
-        <div class="tut-balao" id="tutBalao2">
-          <div class="rot">O arsenal · 3 de 4</div>
-          <p>Clique <kbd>Q</kbd> pra jogar pedra, <kbd>E</kbd> pra jogar
-            bomba.</p>
-          <span class="feito">✓ voou coisa na praça</span></div>
-        <div class="tut-balao" id="tutBalao3">
-          <div class="rot">A fuga · 4 de 4</div>
-          <p>Quando o rival perder uma <b>% dos envolvidos</b>, ela vai
-            correr da briga — a marquinha dourada na barra ali em cima é o
-            ponto em que ela quebra.</p>
-          <button class="entendi" id="tutEntendi">Entendi — terminar o
-            serviço</button></div>
-        <div class="tut-desfecho" id="tutDesfecho">
-          <h2>A rival correu!</h2>
-          <p>Ela quebrou e abandonou a praça. É assim que briga termina:
-            no número, não no clique.</p>
-          <button id="tutDeNovo">Brigar de novo</button>
-          <button id="tutVoltar">Voltar pro jogo</button></div>
-      </div>`;
-    document.body.appendChild(arena);
-    cv = arena.querySelector('#tutCv');
-    ctx = cv.getContext('2d');
-    arena.querySelector('#tutSairBriga').onclick = ()=>terminar(false);
-    arena.querySelector('#tutVoltar').onclick = ()=>terminar(false);
-    arena.querySelector('#tutDeNovo').onclick = armarBriga;
-    arena.querySelector('#tutBtPedra').onclick = jogarPedra;
-    arena.querySelector('#tutBtBomba').onclick = jogarBomba;
-    arena.querySelector('#tutEntendi').onclick = ()=>{
-      arena.querySelector('#tutBalao3').classList.remove('on');
-      feitos[3] = true;
+  function montarBaloes(){
+    if(baloes) return baloes;
+    baloes = el('div',{id:'tutBaloes'});
+    baloes.innerHTML =
+      `<div class="tut-balao" id="tutBalao0">
+        <div class="rot">A pista · 1 de 4</div>
+        <p>O bonde anda com o <b>WASD</b> — ou com o direcional na tela,
+          no toque. Aponta pra onde quer ir que os seus vão atrás de
+          você.</p>
+        <span class="feito">✓ isso — agora vai pra cima deles</span></div>
+      <div class="tut-balao" id="tutBalao1">
+        <div class="rot">A porrada · 2 de 4</div>
+        <p>Não precisa clicar no rival e nem em alguma tecla pra bater
+          nele: <b>basta encostar nele</b>.</p>
+        <button class="entendi" data-n="1">Entendi</button></div>
+      <div class="tut-balao" id="tutBalao2">
+        <div class="rot">O arsenal · 3 de 4</div>
+        <p>Clique <kbd>Q</kbd> pra jogar pedra, <kbd>E</kbd> pra jogar
+          bomba.</p>
+        <span class="feito">✓ voou coisa na praça</span></div>
+      <div class="tut-balao" id="tutBalao3">
+        <div class="rot">A fuga · 4 de 4</div>
+        <p>Quando o rival perder uma <b>% dos envolvidos</b>, ela vai
+          correr da briga.</p>
+        <button class="entendi" data-n="3">Entendi — terminar o
+          serviço</button></div>`;
+    document.body.appendChild(baloes);
+    baloes.addEventListener('click', ev=>{
+      const n = ev.target && ev.target.dataset && ev.target.dataset.n;
+      if(n != null) cumprir(+n);
+    });
+    return baloes;
+  }
+
+  function montarDesfecho(){
+    if(desfecho) return desfecho;
+    desfecho = el('div',{class:'tut-desfecho', id:'tutDesfecho'});
+    desfecho.innerHTML =
+      `<h2 id="tutDfRot">A rival correu!</h2>
+       <p id="tutDfSub">Ela quebrou e abandonou a praça. É assim que
+         briga termina: no número, não no clique.</p>
+       <button id="tutDeNovo">Brigar de novo</button>
+       <button id="tutVoltar">Voltar pro jogo</button>`;
+    document.body.appendChild(desfecho);
+    desfecho.querySelector('#tutDeNovo').onclick = ()=>{
+      desfecho.style.display = 'none';
+      abrirBriga();
     };
-    cv.addEventListener('pointermove', ev=>{
-      const r = cv.getBoundingClientRect();
-      mira.x = ev.clientX - r.left; mira.y = ev.clientY - r.top;
-      moveuEm += 1;
-      if(etapa === 0 && moveuEm > 25) cumprir(0);
-    });
-    addEventListener('keydown', ev=>{
-      if(!arena || arena.style.display !== 'block') return;
-      const k = ev.key.toLowerCase();
-      if(k === 'q') jogarPedra();
-      if(k === 'e') jogarBomba();
-    });
-    addEventListener('resize', ()=>{
-      if(arena && arena.style.display === 'block') medir();
-    });
-    return arena;
+    desfecho.querySelector('#tutVoltar').onclick = ()=>terminar(false);
+    return desfecho;
   }
 
-  function medir(){
-    const r = arena.querySelector('.tut-palco').getBoundingClientRect();
-    cv.width = Math.round(r.width * devicePixelRatio);
-    cv.height = Math.round(r.height * devicePixelRatio);
-    cv.style.width = r.width+'px'; cv.style.height = r.height+'px';
-    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-    W = r.width; H = r.height;
+  function cumprir(n){
+    if(!feitos || feitos[n]) return;
+    feitos[n] = true;
+    const b = baloes.querySelector('#tutBalao'+n);
+    b.classList.add('cumprido');
+    setTimeout(()=>{
+      b.classList.remove('on');
+      if(n+1 < 4){ etapa = n+1;
+        baloes.querySelector('#tutBalao'+(n+1)).classList.add('on'); }
+    }, n === 1 || n === 3 ? 80 : 700);
   }
-  const novoDisco = (x,y,cor,sigla,nosso)=>
-    ({x, y, cor, sigla, nosso, vida:100, vivo:true, pisca:0});
-  const vivos = l => l.filter(d=>d.vivo);
 
-  function armarBriga(){
-    medir();
-    mira = {x: W*0.3, y: H*0.55};
-    nos = []; eles = []; pedras = [];
-    for(let i=0;i<8;i++){
-      nos.push(novoDisco(W*0.16 + (i%4)*34, H*0.5 + Math.floor(i/4)*40 +
-        (i%2)*8, '#9d2222', i? '' : 'VOCÊ', true));
-      eles.push(novoDisco(W*0.78 + (i%4)*30, H*0.42 + Math.floor(i/4)*44 +
-        (i%3)*7, '#1d4f8a', '', false));
-    }
-    etapa = 0; feitos = [false,false,false,false];
-    fugindo = false; moveuEm = 0;
-    arena.querySelector('#tutDesfecho').style.display = 'none';
-    arena.querySelectorAll('.tut-balao').forEach(b=>
-      b.classList.remove('on','cumprido'));
-    arena.querySelector('#tutBalao0').classList.add('on');
-    atualizarPlacar();
+  /* os sinais da cena real: mexeu (WASD ou direcional) e jogou
+     (botão de pedra/bomba, o pad do toque ou as teclas Q/E) */
+  function aoTeclar(ev){
+    if(!feitos) return;
+    const k = (ev.key || '').toLowerCase();
+    if(etapa === 0 && 'wasd'.includes(k) && k) cumprir(0);
+    if(etapa === 2 && (k === 'q' || k === 'e')) cumprir(2);
+  }
+  function aoTocar(ev){
+    if(!feitos) return;
+    const alvo = ev.target;
+    if(etapa === 0 && alvo.closest &&
+       (alvo.closest('.pad-bola') || alvo.closest('canvas'))) cumprir(0);
+    if(etapa === 2 && alvo.closest &&
+       (alvo.closest('#djBtPedra') || alvo.closest('#djBtBomba') ||
+        alvo.closest('.pad-q') || alvo.closest('.pad-e'))) cumprir(2);
+  }
+  function escutar(liga){
+    if(liga === ouvindo) return;
+    ouvindo = liga;
+    const f = liga ? 'addEventListener' : 'removeEventListener';
+    window[f]('keydown', aoTeclar, true);
+    document[f]('pointerdown', aoTocar, true);
   }
 
   function abrirBriga(){
     limparCirculos();
     if(overlay) overlay.style.display = 'none';
     TO.tela.fecharPainel();
-    montarArena();
-    /* o rival da demonstração é o nosso pior desafeto de verdade */
-    const e = E();
-    const rival = e && Object.entries(e.relacoes||{})
-      .sort((a,b)=>a[1]-b[1]).map(([id])=>TO.mundo.torcida(id))
-      .find(Boolean);
-    arena.querySelector('#tutArNos').textContent =
-      (e && e.torcida.nome) || 'A nossa';
-    arena.querySelector('#tutArEles').textContent =
-      (rival && rival.nome) || 'A rival';
-    arena.style.display = 'block';
-    armarBriga();
-    if(!rodando){ rodando = true; ultimoT = performance.now();
-      requestAnimationFrame(rodar); }
-  }
-  function fecharBriga(){
-    if(arena) arena.style.display = 'none';
-    rodando = false;
+    montarBaloes(); montarDesfecho();
+    etapa = 0; feitos = [false,false,false,false];
+    baloes.style.display = 'block';
+    desfecho.style.display = 'none';
+    baloes.querySelectorAll('.tut-balao').forEach(b=>
+      b.classList.remove('on','cumprido'));
+    baloes.querySelector('#tutBalao0').classList.add('on');
+    escutar(true);
+    TO.tela.abrirBrigaDoTutorial(res => {
+      escutar(false);
+      baloes.style.display = 'none';
+      const venceu = !!(res && res.ganhamos);
+      desfecho.querySelector('#tutDfRot').textContent =
+        venceu ? 'A rival correu!' : 'Fim da demonstração';
+      desfecho.querySelector('#tutDfSub').textContent = venceu
+        ? 'Ela quebrou e abandonou a praça. É assim que briga termina: '+
+          'no número, não no clique.'
+        : 'Na briga de verdade seria dia de lamber ferida — aqui não '+
+          'custou nada. Quer tentar de novo?';
+      desfecho.style.display = 'block';
+    });
   }
 
-  function cumprir(n){
-    if(feitos[n]) return;
-    feitos[n] = true;
-    const b = arena.querySelector('#tutBalao'+n);
-    b.classList.add('cumprido');
-    setTimeout(()=>{
-      b.classList.remove('on');
-      if(n+1 < 4){ etapa = n+1;
-        arena.querySelector('#tutBalao'+(n+1)).classList.add('on'); }
-    }, n === 0 ? 500 : 900);
-  }
-  function jogarPedra(){
-    const de = vivos(nos)[0], alvo = vivos(eles)[0];
-    if(!de || !alvo) return;
-    const dx = alvo.x-de.x, dy = alvo.y-de.y, d = Math.hypot(dx,dy)||1;
-    pedras.push({x:de.x, y:de.y, vx:dx/d*7.5, vy:dy/d*7.5, r:3.5,
-                 bomba:false, t:120});
-    if(etapa === 2) cumprir(2);
-  }
-  function jogarBomba(){
-    const de = vivos(nos)[0], alvo = vivos(eles)[0];
-    if(!de || !alvo) return;
-    const dx = alvo.x-de.x, dy = alvo.y-de.y, d = Math.hypot(dx,dy)||1;
-    pedras.push({x:de.x, y:de.y, vx:dx/d*4.6, vy:dy/d*4.6, r:5.5,
-                 bomba:true, t:70});
-    if(etapa === 2) cumprir(2);
-  }
-  function atualizarPlacar(){
-    const ne = vivos(eles).length;
-    arena.querySelector('#tutContaNos').textContent = vivos(nos).length;
-    arena.querySelector('#tutContaEles').textContent = ne;
-    arena.querySelector('#tutBarraEles').style.transform = `scaleX(${ne/8})`;
-  }
-  function derrubar(d){
-    if(!d.vivo) return;
-    d.vida -= 34; d.pisca = 8;
-    if(d.vida <= 0) d.vivo = false;
-    atualizarPlacar();
-    /* a régua da fuga: perdeu 40% dos envolvidos, corre */
-    if(!fugindo && vivos(eles).length <= Math.ceil(8*0.6)){
-      fugindo = true;
-      if(!feitos[3]){
-        arena.querySelector('#tutBalao3').classList.remove('on');
-        feitos[3] = true;
-      }
-      setTimeout(()=>{
-        arena.querySelector('#tutDesfecho').style.display = 'block';
-      }, 1400);
-    }
-  }
-  function rodar(t){
-    if(!rodando) return;
-    const dt = Math.min(32, t-ultimoT)/16.6; ultimoT = t;
-    ctx.clearRect(0,0,W,H);
-    ctx.strokeStyle = '#1b1b1b';
-    for(let x=0;x<W;x+=46){ ctx.beginPath(); ctx.moveTo(x,0);
-      ctx.lineTo(x,H); ctx.stroke(); }
-    for(let y=0;y<H;y+=46){ ctx.beginPath(); ctx.moveTo(0,y);
-      ctx.lineTo(W,y); ctx.stroke(); }
-    vivos(nos).forEach((d,i)=>{
-      const alvo = i === 0 ? mira : vivos(nos)[0];
-      const ang = i * 2.4, raio = i === 0 ? 0 : 26 + (i%3)*16;
-      const ax = alvo.x + Math.cos(ang)*raio;
-      const ay = alvo.y + Math.sin(ang)*raio;
-      d.x += (ax-d.x) * (i===0? .14 : .08) * dt;
-      d.y += (ay-d.y) * (i===0? .14 : .08) * dt;
-    });
-    vivos(eles).forEach((d,i)=>{
-      if(fugindo){ d.x += 3.2*dt; d.y += (i%2? .6 : -.6)*dt; return; }
-      const cap = vivos(nos)[0]; if(!cap) return;
-      const dx = cap.x-d.x, dy = cap.y-d.y, dist = Math.hypot(dx,dy)||1;
-      d.x += dx/dist * .5 * dt + Math.sin(t/300+i)*.3;
-      d.y += dy/dist * .5 * dt + Math.cos(t/260+i)*.3;
-    });
-    if(!fugindo) for(const a of vivos(nos)) for(const b of vivos(eles)){
-      if(Math.hypot(a.x-b.x, a.y-b.y) < 22){
-        if(b.pisca <= 0){ derrubar(b); if(etapa <= 1) cumprir(1); }
-      }
-    }
-    pedras = pedras.filter(p=>{
-      p.x += p.vx*dt; p.y += p.vy*dt; p.t -= dt;
-      for(const b of vivos(eles)){
-        if(Math.hypot(p.x-b.x, p.y-b.y) < (p.bomba? 40 : 16)){
-          if(p.bomba){ vivos(eles).forEach(o=>{
-            if(Math.hypot(p.x-o.x,p.y-o.y) < 60) derrubar(o); }); }
-          else derrubar(b);
-          return false;
-        }
-      }
-      return p.t > 0 && p.x > -20 && p.x < W+20 && p.y > -20 && p.y < H+20;
-    });
-    for(const p of pedras){
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7);
-      ctx.fillStyle = p.bomba ? '#d9a441' : '#bcbcbc'; ctx.fill();
-    }
-    for(const d of [...eles, ...nos]){
-      if(!d.vivo) ctx.globalAlpha = .18;
-      ctx.beginPath(); ctx.arc(d.x, d.y, 13, 0, 7);
-      ctx.fillStyle = d.pisca > 0 ? '#e8e8e8' : d.cor; ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = d.nosso ? '#e05555' : '#4d7fb5'; ctx.stroke();
-      if(d.pisca > 0) d.pisca -= dt;
-      if(d.sigla){ ctx.fillStyle = '#fff';
-        ctx.font = '600 9px "IBM Plex Mono", monospace';
-        ctx.textAlign = 'center'; ctx.fillText(d.sigla, d.x, d.y-18); }
-      ctx.globalAlpha = 1;
-    }
-    requestAnimationFrame(rodar);
+  function fecharBriga(){
+    escutar(false);
+    if(baloes) baloes.style.display = 'none';
+    if(desfecho) desfecho.style.display = 'none';
   }
 
   TO.tutorial = { iniciar };

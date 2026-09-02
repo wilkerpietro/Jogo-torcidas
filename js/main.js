@@ -7026,6 +7026,57 @@
   }
 
   /* =======================================================
+     A BRIGA DO TUTORIAL (ordem do dono, 02/09/2026): a MESMA cena
+     do jogo — joystick, botões, pedra e bomba —, 5×5 na praça,
+     contra o nosso pior desafeto. SIMULADA de verdade: o fecho
+     descarta o resultado — nem ferido, nem preso, nem bomba do
+     estoque, nem prestígio. As bombas da cena são cortesia da casa.
+     ======================================================= */
+  function abrirBrigaDoTutorial(aoFechar){
+    const e = E();
+    const fila = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa)).slice(0, 5);
+    const cores = TO.mundo.coresDaTorcida(e.torcida);
+    const bondes = [{lado:'mandante', n:5, nossa:true, nome:e.torcida.nome,
+                     cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3,
+                     sigla:TO.mundo.siglaTorcida(e.torcida)}];
+    const rivalId = Object.entries(e.relacoes||{})
+      .sort((a,b)=>a[1]-b[1]).map(([id])=>id)
+      .find(id=>TO.mundo.torcida(id)) || null;
+    const o = rivalId ? TO.mundo.torcida(rivalId) : null;
+    const cR = o ? TO.mundo.coresDaTorcida(o) : null;
+    /* o rival também desce como BONDE: é o que garante o 5×5 exato —
+       pelo efetivoRival a cena arredonda por spawn e 5 virava 6 */
+    bondes.push({lado:'visitante', n:5, nossa:false,
+                 nome: o ? o.nome : 'A rival',
+                 cor: cR ? cR.cor : '#1d4f8a',
+                 cor2: cR ? cR.cor2 : '#e8e8e8',
+                 cor3: cR ? cR.cor3 : null,
+                 sigla: o ? TO.mundo.siglaTorcida(o) : 'RIV',
+                 perfil: perfilDe(rivalId)});
+    $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
+    TO.estado.bloquear(true);
+    pararTudo('cena');
+    simularProxima = false;
+    abrirPalco({
+      canvas: $('djPrincipal'),
+      config: { escalacao: fila, intencao:'atacar', bondes,
+                bombas: 3, efetivoRival: 5, local:'praca',
+                rival: o ? {nome:o.nome, cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3}
+                         : {nome:'A rival', cor:'#1d4f8a', cor2:'#e8e8e8', cor3:null},
+                perfilRival: perfilDe(rivalId) },
+      aoTerminar: res => {
+        TO.estado.bloquear(false);
+        soltarTudo('cena');
+        $('telaDiaJogo').classList.add('oculto');
+        document.body.classList.remove('em-cena');
+        if(aoFechar) aoFechar(res || {});
+      }
+    });
+  }
+
+  /* =======================================================
      AÇÃO QUE VIRA CENA (GDD §4.1)
      Atacar bar ou sede, assaltar comércio e pressionar o clube
      abrem a mesma tela do dia de jogo, num cenário próprio.
@@ -7504,6 +7555,7 @@
     resolverIda: e => TO.praca.resolverIda(e || E()),
     abrirCaravana, abrirAtaque, abrirIdeologia,
     abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena,
+    abrirBrigaDoTutorial,
     /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */
     widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima,
     abrirItinerario,

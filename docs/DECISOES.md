@@ -3211,11 +3211,17 @@ tutorial entrou no jogo de verdade (`js/gestao/tutorial.js`):
   (Membros, Patrimônio, Expediente, Alianças, Rivalidades, Brigas) e
   circulando o pedaço que o texto descreve. Textos todos do dono, ao
   pé da letra.
-- A BRIGA SIMULADA fecha o tutorial: palco próprio em canvas (não
-  toca no save), o rival é o nosso pior desafeto de verdade, e os
-  balões avançam quando o jogador FAZ a coisa — mover, encostar
-  (texto do dono), Q/E (dele), a régua da fuga nos 40% com a
-  marquinha dourada na barra (dele).
+- A BRIGA SIMULADA fecha o tutorial NA CENA DE VERDADE (ordem do
+  dono, 02/09/2026): 5×5 na praça pelo palco real — joystick de
+  toque, formações, PEDRA (Q), BOMBA (E, 3 de cortesia), recuo e
+  fuga —, contra o nosso pior desafeto, com o rival descendo como
+  BONDE de 5 (pelo efetivoRival a cena arredondava por spawn e 5
+  virava 6). O fecho descarta o resultado: nem ferido, nem preso,
+  nem bomba do estoque, nem dinheiro, nem prestígio (provado no
+  teste). Os balões do dono ficam por cima e avançam quando o
+  jogador FAZ a coisa (mexeu, jogou); o do movimento foi adaptado
+  do "mouse" da maquete pros controles reais (WASD/direcional) —
+  ÚNICO texto fora do pé da letra, marcado pra crivo.
 - "COMO FUNCIONA" no painel Jogo reabre o passo a passo quando
   quiser — é o que a mensagem de pular promete.
 
