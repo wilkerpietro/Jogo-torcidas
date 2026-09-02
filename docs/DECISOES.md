@@ -3352,6 +3352,20 @@ loja é vendida no valor de 90.000,00 pra ajudar nas finanças."
   ganha a frase "Fechamos também N subsedes pra estancar a
   sangria." (⚠ frase minha, no crivo).
 
+## A área de treino ampliável (ordem do dono, 02/09/2026)
+
+Oferta nova no Financeiro > Patrimônio, degrau por degrau:
+
+- Nível 1: R$ 100.000 → **+25%** de membros treinando por dia.
+- Nível 2: R$ 200.000 → **+50%**.
+- Nível 3: R$ 500.000 → **+75%**.
+
+O bônus multiplica as vagas da sede (`capTreino`): sede nv5 vai de
+20 pra 25/30/35. Linha na Estrutura (sem mensalidade), lançamento na
+compra, e a IA compra pela fila dela (depois das bombas) esticando
+as vagas do treino diário delas na mesma régua. A frase do aviso da
+venda forçada foi APROVADA pelo dono nesta mesma ordem.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

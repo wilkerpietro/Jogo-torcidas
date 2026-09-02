@@ -301,7 +301,12 @@ TO.membros = (function(){
     filiais(E).reduce((s,f)=>s+tetoFilial(f), 0);
   const naMatriz = m => !m.filial;
   const daFilial = (E, cidade) => E.membros.filter(m=>m.filial === cidade);
-  const capTreino  = E => SEDE[E.torcida.sedeNivel].treino;
+  /* A ÁREA DE TREINO AMPLIADA (ordem do dono, 02/09/2026): três
+     níveis de obra — 100/200/500 mil — que aumentam as vagas de
+     treino por dia em 25%, 50% e 75% sobre a régua da sede */
+  const AREA_TREINO = [1, 1.25, 1.50, 1.75];
+  const capTreino  = E => Math.round(SEDE[E.torcida.sedeNivel].treino *
+    AREA_TREINO[(E.patrimonio && E.patrimonio.areaTreino) || 0]);
   const capDiretoria = E => SEDE[E.torcida.sedeNivel].diretoria;
 
   function contar(E){
@@ -667,7 +672,7 @@ TO.membros = (function(){
   }
 
   return {
-    CARGOS, ACIMA, SEDE, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
+    CARGOS, ACIMA, SEDE, AREA_TREINO, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
     criar, nomeDe, nomeCompletoDe, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe,
     disponivel, capacidade, capacidadeMatriz, capTreino, capDiretoria,
     contar, emCampanha, naMatriz, daFilial, aptosDaFilial,

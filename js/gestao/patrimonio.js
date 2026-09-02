@@ -160,6 +160,13 @@ TO.patrimonio = (function(){
      (manutenção e insumo). Produto próprio sai mais barato. */
   const FABRICA = {custo:400000, sede:5, corteCusto:0.5, rot:'Fábrica'};
 
+  /* A ÁREA DE TREINO (ordem do dono, 02/09/2026): obra em três
+     níveis, cada um esticando as vagas de treino da sede */
+  const AREA_TREINO = {
+    custo: [null, 100000, 200000, 500000],
+    bonus: [0, 25, 50, 75]
+  };
+
   const nivelSede = E => E.torcida.sedeNivel;
   /* qual sede é preciso ter pra caber o enésimo ônibus/professor */
   function proximaSedeQueCabe(n){
@@ -195,6 +202,11 @@ TO.patrimonio = (function(){
       if(p[chave]) fora.push({tipo:'anexo', rot:ANEXOS[chave].rot,
         bairro:'', nota:ANEXOS[chave].nota,
         receita:0, despesa:ANEXOS[chave].mes});
+    const nArea = (E.patrimonio && E.patrimonio.areaTreino) || 0;
+    if(nArea) fora.push({tipo:'anexo',
+      rot:`Área de treino (nível ${nArea})`, bairro:'',
+      nota:`+${[0,25,50,75][nArea]}% de membros treinando por dia`,
+      receita:0, despesa:0});
 
     for(const b of p.bares) fora.push({tipo:'bar',
       rot:`Bar (nível ${b.nivel})${b.gratis?' · da sede':''}`, bairro:b.bairro,
@@ -438,6 +450,18 @@ TO.patrimonio = (function(){
       trava:trava(FABRICA.custo,
         n < FABRICA.sede ? `precisa de sede nível ${FABRICA.sede}` : null)});
 
+    /* a área de treino: um degrau por vez, até o nível 3 */
+    const nAT = (E.patrimonio && E.patrimonio.areaTreino) || 0;
+    if(AREA_TREINO.custo[nAT+1]) lista.push({
+      id:'area-treino',
+      rot: nAT ? `Ampliar a área de treino — nível ${nAT+1}`
+               : 'Ampliar a área de treino',
+      nota:`+${AREA_TREINO.bonus[nAT+1]}% de membros treinando por dia `+
+           `(hoje: ${AREA_TREINO.bonus[nAT]
+             ? '+'+AREA_TREINO.bonus[nAT]+'%' : 'a régua da sede'})`,
+      custo:AREA_TREINO.custo[nAT+1],
+      trava:trava(AREA_TREINO.custo[nAT+1])});
+
     /* os anexos da sede, um botão cada, enquanto não existirem */
     for(const chave of Object.keys(ANEXOS)){
       const a = ANEXOS[chave];
@@ -510,6 +534,10 @@ TO.patrimonio = (function(){
     } else if(acao==='anexo'){
       p[tipo] = true;
       TO.estado.lancar(E, ANEXOS[tipo].rot, -o.custo);
+    } else if(acao==='area-treino'){
+      E.patrimonio.areaTreino = ((E.patrimonio.areaTreino||0) + 1);
+      TO.estado.lancar(E, `Área de treino — nível `+
+                          `${E.patrimonio.areaTreino}`, -o.custo);
     } else if(acao==='onibus'){
       const tinha = F().onibusDe(E);
       E.onibus = {desde:(E.onibus && E.onibus.desde) || (E.data||{}).absoluto || 0,
@@ -601,5 +629,5 @@ TO.patrimonio = (function(){
           filiaisDe, temFilialEm, cidadesCandidatas,
           linhas, opcoes, comprar,
           PRECO_BOMBA, precoBomba, bombas, comprarBombas,
-          ANEXOS, protegerPerda};
+          ANEXOS, AREA_TREINO, protegerPerda};
 })();

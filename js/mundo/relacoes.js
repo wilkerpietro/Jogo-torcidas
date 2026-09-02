@@ -140,7 +140,7 @@ TO.relacoes = (function(){
      inteiro (329 de 386) — o meio da fila é a régua. */
   const ORDEM = ['mma', 'loja', 'bar', 'advogado', 'filial', 'elenco',
                  'onibus', 'subsede',
-                 'bombas', 'galpao', 'enfermaria', 'cofre',
+                 'bombas', 'area-treino', 'galpao', 'enfermaria', 'cofre',
                  'evoluir:bar', 'evoluir:loja', 'evoluir:subsede',
                  'evoluir:filial'];
 
@@ -460,6 +460,7 @@ TO.relacoes = (function(){
     'anexo:galpao':'Galpão de material',
     'anexo:enfermaria':'Enfermaria da sede',
     'anexo:cofre':'Cofre blindado',
+    'area-treino':'Área de treino ampliada',
     'ampliar:bar':'Ampliação do bar', 'ampliar:loja':'Ampliação da loja',
     'ampliar:subsede':'Ampliação da subsede',
     'ampliar:filial':'Ampliação da filial'
@@ -502,6 +503,11 @@ TO.relacoes = (function(){
                ? Math.round(BOMBA.custo * 0.85) : BOMBA.custo};
     /* os ANEXOS da sede (pacote do dono, 02/09/2026): as IAs compram
        pelo mesmo preço e porta de sede do jogador */
+    if(chave === 'area-treino'){
+      const AT = P().AREA_TREINO;
+      const n = t.areaTreino || 0;
+      return AT.custo[n+1] ? {tipo:'area-treino', custo:AT.custo[n+1]} : null;
+    }
     if(chave === 'galpao' || chave === 'enfermaria' || chave === 'cofre'){
       if(t[chave]) return null;
       const ax = P().ANEXOS[chave];
@@ -764,6 +770,8 @@ TO.relacoes = (function(){
         else if(compra.tipo === 'fabrica') t.fabrica = true;
         else if(compra.tipo.indexOf('anexo:') === 0)
           t[compra.tipo.slice(6)] = true;
+        else if(compra.tipo === 'area-treino')
+          t.areaTreino = (t.areaTreino || 0) + 1;
         else if(compra.tipo === 'onibus') t.onibus = frotaIA(t) + 1;
         else if(compra.tipo === 'subsede') t.subsedes++;
         else if(compra.tipo === 'filial')
@@ -1253,7 +1261,8 @@ TO.relacoes = (function(){
       const t = m[id];
       const q = quadroDe(E, id);
       if(!q || !q.total) continue;
-      const vagas = TO.membros.SEDE[t.sede].treino;
+      const vagas = Math.round(TO.membros.SEDE[t.sede].treino *
+        TO.membros.AREA_TREINO[t.areaTreino || 0]);
       const fatia = Math.min(vagas, q.total)/q.total;
       const passo = fatia * 0.15 * ganhoDeleas(t);
       for(const c of ESCADA){
