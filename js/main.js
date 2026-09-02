@@ -11,7 +11,16 @@
   /* =======================================================
      PEÇAS REUSADAS
      ======================================================= */
-  function escudo(cores, sigla, classe){
+  function escudo(cores, sigla, classe, marca){
+    /* com escudo de verdade no manifesto (['c', clubeId] ou
+       ['t', torcidaId]), a imagem entra no lugar do gradiente —
+       ordem do dono de 02/09/2026, inclusive na seleção */
+    const src = marca && escudoDe(marca[0], marca[1]);
+    if(src){
+      const i = el('img',{class:'escudo escudo-img '+(classe||'')});
+      i.src = src; i.alt = sigla || '';
+      return i;
+    }
     const [a,b] = cores || ['#9d2222','#e8e8e8'];
     const s = el('span',{class:'escudo '+(classe||''), texto:sigla||''});
     s.style.background = `linear-gradient(135deg, ${a} 0 52%, ${b} 52% 100%)`;
@@ -328,7 +337,8 @@
       linhaSel(selClube && selClube.id===c.time.id?' on':'',
         /* `escudo` quer o ARRAY de cores; `coresDaTorcida` devolve
            {cor, cor2, cor3} e não se desestrutura */
-        escudo(c.time.cores, c.time.sigla || c.time.nome.slice(0,3)),
+        escudo(c.time.cores, c.time.sigla || c.time.nome.slice(0,3),
+          null, ['c', c.time.id]),
         c.time.nome, `${c.time.cidade}${c.time.uf?' - '+c.time.uf:''}`,
         c.torcidas ? `${c.torcidas}<small>${c.torcidas===1?'torcida':'torcidas'}</small>`
                    : `<small>sem torcida</small>`,
@@ -359,7 +369,7 @@
       const cx = el('div',{class:'sel-torcidas'});
       for(const f of lista){
         cx.appendChild(linhaSel(escolhida && escolhida.id===f.id?' on':'',
-          escudo(f.cores, TO.mundo.sigla(f)), f.nome,
+          escudo(f.cores, TO.mundo.sigla(f), null, ['t', f.id]), f.nome,
           `${f.cidade} - ${f.uf} · fundada em ${f.fundacao}`,
           `${U.numero(f.membros)}<small>membros</small>`, false,
           ()=>{ escolhida = f; pintarSelecao(); }));
@@ -376,7 +386,7 @@
 
   function montarFicha(cxF, f){
     const cab = el('div',{class:'ficha-torcida'});
-    cab.appendChild(escudo(f.cores, TO.mundo.sigla(f)));
+    cab.appendChild(escudo(f.cores, TO.mundo.sigla(f), null, ['t', f.id]));
     cab.appendChild(el('div',{html:
       `<h3>${f.nome}</h3>
        <span>${f.clube} · ${f.cidade} - ${f.uf} · fundada em ${f.fundacao}</span>`}));
@@ -2789,8 +2799,7 @@
       const o = TO.mundo.torcida(id);
       return (o && TO.mundo.coresDaTorcida(o).cor) || '#888';
     };
-    const chip = (id, nome) =>
-      `<i class="to-chip" style="background:${corDe(id)}"></i>${nome}`;
+    const chip = (id, nome) => `${chipTorcida(id, corDe(id))}${nome}`;
     for(const b of brigas.slice(0, 60)){
       const baixa = l => `${l.feridos} ferido${l.feridos===1?'':'s'}`+
         (l.presos ? `, ${l.presos} preso${l.presos===1?'':'s'}` : '');
@@ -2857,9 +2866,12 @@
          continente vai no title, pra quem quiser saber */
       const pos = TO.relacoes.posicaoNoRanking(e);
       const posMundo = TO.relacoes.posicaoNoMundo ? TO.relacoes.posicaoNoMundo(e) : 0;
+      const srcFaixa = escudoDe('t', e.torcida.id);
       noFeedTopo.innerHTML =
-        `<span class="escudo" style="background:linear-gradient(135deg,${c1} 0 52%,${c2} 52% 100%)"
-           >${e.torcida.sigla}</span>`+
+        (srcFaixa
+          ? `<img class="escudo escudo-img" src="${srcFaixa}" alt="${e.torcida.sigla}">`
+          : `<span class="escudo" style="background:linear-gradient(135deg,${c1} 0 52%,${c2} 52% 100%)"
+           >${e.torcida.sigla}</span>`)+
         `<b>${e.torcida.nome}</b>`+
         `<span class="num pos-rank" title="${pos||'—'}º no ranking nacional`+
         `${posMundo?` · ${posMundo}º na América do Sul`:''}">`+
@@ -4951,7 +4963,7 @@
       const tr = el('tr',{class:cls.join(' ')});
       tr.innerHTML =
         `<td class="pos">${i+1}</td>
-         <td class="time"><i style="background:${corClube(l.id)}"></i>${nomeClube(l.id)}</td>
+         <td class="time">${chipClube(l.id, corClube(l.id))}${nomeClube(l.id)}</td>
          <td>${l.p}</td><td>${l.v}</td><td>${l.e}</td><td>${l.d}</td>
          <td>${l.gp}</td><td>${l.gc}</td><td>${l.sg>0?'+':''}${l.sg}</td>`;
       tb.appendChild(tr);
@@ -4971,9 +4983,9 @@
     const cx = el('div',{class:'jogo'+(j.c===meu||j.f===meu?' meu':'')+(feito?' feito':'')});
     cx.appendChild(el('div',{class:'quando', texto:quando}));
     cx.appendChild(el('div',{class:'duelo', html:
-      `<span class="casa">${nomeClube(j.c)}<i style="background:${corClube(j.c)}"></i></span>
+      `<span class="casa">${nomeClube(j.c)}${chipClube(j.c, corClube(j.c))}</span>
        <span class="${feito?'placar':'x'}">${feito?`${j.gc} × ${j.gf}`:'×'}</span>
-       <span class="fora"><i style="background:${corClube(j.f)}"></i>${nomeClube(j.f)}</span>`}));
+       <span class="fora">${chipClube(j.f, corClube(j.f))}${nomeClube(j.f)}</span>`}));
     return cx;
   }
 
@@ -5620,7 +5632,7 @@
         const nosso = id === e.torcida.clubeId;
         q.corpo.appendChild(el('div',{class:'vaga-cm '+classe+(nosso?' meu':''), html:
           `<span class="pos">${n}º</span>`+
-          `<i style="background:${corT(id)}"></i>`+
+          `${chipClube(id, corT(id))}`+
           `<span class="nm">${nomeT(id)}</span>`}));
       }
     };
@@ -5771,7 +5783,7 @@
       const tr = el('tr',{class:cls.join(' ')});
       const sg = l.gp - l.gc;
       tr.innerHTML = `<td class="pos">${i+1}</td>
-        <td class="time"><i style="background:${corT(l.id)}"></i>${nomeT(l.id)}</td>
+        <td class="time">${chipClube(l.id, corT(l.id))}${nomeT(l.id)}</td>
         <td>${l.p}</td><td>${l.j}</td><td>${l.v}</td><td>${l.e}</td><td>${l.d}</td>
         <td>${l.gp}</td><td>${l.gc}</td><td>${sg>0?'+':''}${sg}</td>`;
       tb.appendChild(tr);
@@ -6055,7 +6067,7 @@
       const tr = el('tr',{class:cls.join(' ')});
       tr.innerHTML =
         `<td class="pos">${i+1}</td>
-         <td class="time"><i style="background:${corT(l.id)}"></i>${nomeT(l.id)}</td>
+         <td class="time">${chipTorcida(l.id, corT(l.id))}${nomeT(l.id)}</td>
          <td>${l.p}</td><td>${l.v}</td><td>${l.d}</td>
          <td>${l.fez}</td><td>${l.tomou}</td><td>${l.sf>0?'+':''}${l.sf}</td>`;
       tb.appendChild(tr);
@@ -6244,7 +6256,7 @@
       if(j){
         classes.push('jogo');
         cel.appendChild(el('span',{class:'rot', html:
-          `<i style="background:${corClube(j.adversario)}"></i>`+
+          `${chipClube(j.adversario, corClube(j.adversario))}`+
           `${j.casa?'':'@ '}${nomeClube(j.adversario)}`}));
         cel.appendChild(el('span',{class:'sub',
           texto: j.jogado
@@ -6351,7 +6363,7 @@
     col.appendChild(sel);
     escolha.appendChild(col);
     escolha.appendChild(el('div',{class:'quem', html:
-      `<i style="background:${corClube(clube.id)}"></i>
+      `${chipClube(clube.id, corClube(clube.id))}
        <div><b>${clube.nome}</b>
          <small style="margin-left:8px">${clube.cidade} · `+
       `${clube.divisao.replace('Brasileirão ','')}</small></div>`}));
@@ -6382,7 +6394,7 @@
                                           f:j.casa?j.adversario:clube.id})}</td>
          <td class="comp"><b>${j.comp}</b><small>${j.fase}</small></td>
          <td><span class="local ${j.casa?'casa':'fora'}">${j.casa?'Casa':'Fora'}</span></td>
-         <td><span class="adv"><i style="background:${corClube(j.adversario)}"></i>
+         <td><span class="adv">${chipClube(j.adversario, corClube(j.adversario))}
            ${nomeClube(j.adversario)}</span></td>
          <td class="placar">${j.jogado ? `${j.gp} × ${j.gc}` : '—'}`+
         `${j.pen ? `<small class="pen">${j.pen.c} × ${j.pen.f} nos pênaltis</small>` : ''}</td>`;

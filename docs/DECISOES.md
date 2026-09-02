@@ -3156,6 +3156,27 @@ rar cobriu 85; o segundo, os 23 que faltavam.
   existem no `times.js` (Brusque, Tombense, Aparecidense…).
 - Escudos de TORCIDAS seguem zerados — aguardando fonte.
 
+## A onda 2 dos escudos — quadradinho nenhum fica (ordem do dono, 02/09/2026)
+
+"Substitua os quadrados com a cor primária dos times pelos escudos em
+todas as partes faltantes, substituindo inclusive na tela seleção de
+torcidas." Os nove pontos que ainda pintavam `<i>` cru de cor de clube
+passaram pelo cano do `chipClube` (imagem quando há escudo, quadradinho
+quando não): classificação das ligas, jogos da rodada, vagas da
+Conmebol, classificação dos outros países, célula de jogo do
+calendário, cabeçalho e agenda do time. A tabela da LNT e as brigas
+pelo país usam `chipTorcida` (sem pack de torcidas ainda, seguem no
+chip — mas já pelo cano novo).
+
+- A SELEÇÃO DE TORCIDA: o `escudo()` de gradiente+sigla ganhou o
+  parâmetro `marca` (['c', clubeId] ou ['t', torcidaId]) — a coluna de
+  clubes do passo 1 mostra o escudo de verdade; passo 2, ficha e faixa
+  do topo ficam prontos pro pack de torcidas (hoje caem no gradiente).
+- CSS: cada contexto já dimensionava o `<i>`, então `.to-escudo` herda
+  a medida do lugar (13px na célula do mês, 16px nas tabelas, 22px no
+  "quem" da agenda); a coluna da `.vaga-cm` alargou de 11 pra 16px.
+- Os DISCOS das cenas ficam como estão, por ordem antiga do dono.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

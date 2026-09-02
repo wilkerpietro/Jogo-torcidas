@@ -221,7 +221,7 @@ table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
 /* A VAGA CONTINENTAL (dono, 23/08/2026): posição, cor do clube, nome e
    a etiqueta do torneio. Libertadores em ouro, Sul-Americana em prata —
    é a hierarquia que a arquibancada enxerga de longe. */
-.vaga-cm{display:grid;grid-template-columns:26px 11px 1fr;
+.vaga-cm{display:grid;grid-template-columns:26px 16px 1fr;
   align-items:center;gap:8px;padding:5px 0;font-size:12px;
   border-bottom:1px solid var(--sulco)}
 .vaga-cm:last-child{border-bottom:0}
@@ -1649,6 +1649,24 @@ td.placar small.pen{
 .to-escudo{width:16px; height:16px; object-fit:contain;
   vertical-align:-3px; margin-right:6px; display:inline-block}
 .tab-ranking .to-escudo{width:18px; height:18px}
+/* a onda que faltava (ordem do dono, 02/09/2026): o escudo entra em
+   TODO canto que tinha quadradinho de cor de clube — cada contexto
+   dimensionava o <i>, então a imagem herda a medida do lugar */
+.jogo .duelo .to-escudo{vertical-align:-4px}
+.jogo .duelo .casa .to-escudo{margin:0 0 0 7px}
+.jogo .duelo .casa .to-chip{margin:0 0 0 7px}
+.jogo .duelo .fora .to-escudo{margin:0 7px 0 0}
+.vaga-cm .to-escudo,.vaga-cm .to-chip{margin:0; vertical-align:middle}
+.vaga-cm .to-escudo{width:16px; height:16px}
+table.agenda .adv .to-escudo,
+table.agenda .adv .to-chip{margin:0; flex:none}
+.escolha-time .quem .to-escudo{width:22px; height:22px; margin:0; flex:none}
+.escolha-time .quem .to-chip{margin:0; flex:none}
+.mes .dia .rot .to-escudo{width:13px; height:13px; margin:0; flex:none}
+.mes .dia .rot .to-chip{margin:0; flex:none}
+/* o escudo-imagem nos lugares do gradiente com sigla (seleção de
+   torcida, ficha, faixa do topo): mesma medida do span que ele rende */
+img.escudo-img{object-fit:contain; background:none; border:none; flex:none}
 /* a capa do perfil da cidade: foto embaixo, gradiente por cima */
 header.capa-cidade{background-size:cover; background-position:center;
   min-height:92px; display:flex; flex-direction:column;
