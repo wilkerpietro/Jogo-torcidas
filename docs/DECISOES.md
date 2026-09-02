@@ -3281,9 +3281,34 @@ O dono aprovou o pacote recomendado com as réguas dele:
   800 de custo; com moral 90, 1.905 contra 800). A subsede ficou
   como está: pela régua de 31/08 ela já é prejuízo direto sempre.
   A IA paga pelas mesmas tabelas; sondagem de 1 ano: 0 no vermelho.
-- Festa da sede nv6: R$ 2.600 (extrapolação da escada — a conferir).
-- Os anexos são do JOGADOR por ora; entrar na fila de compras da IA
-  fica pra ordem futura do dono.
+- Festa da sede nv6: R$ 2.600 (crivo do dono na sequência).
+
+## O financeiro das IAs na complexidade do nosso (ordem do dono, 02/09/2026)
+
+"O fluxo de caixa delas não chega nem perto da complexidade da nossa
+torcida. Tem que ser a mesma complexidade." O `balanco` virou
+`balancoDetalhado`, espelho linha a linha do `contas()` do jogador
+(unidades mensais; a economiaDelas aplica a fatia semanal):
+
+- MENSALIDADE POR CARGO (pirâmide da fonte dá o valor por cabeça ×
+  pagantes) e PRESO NÃO PAGA — era média chapada de R$ 45.
+- RECEITA POR PONTO NO BAIRRO DELE: o mesmo hash fixo que o perfil
+  da cidade mostra (chaves `id|bar|i` etc.) — era um multiplicador
+  único da sede pra tudo. Bares irmãos agora rendem diferente.
+- FOLHAS NAS MENSALIDADES CHEIAS: ônibus R$ 1.500, professor
+  R$ 2.000 e advogado R$ 5.000 por mês — entravam na fatia errada
+  (~¼ do custo do jogador). Assimetria fechada.
+- ANEXOS NA FILA DA IA (após bombas): galpão → enfermaria → cofre,
+  mesmo preço e porta de sede; compra marca no extrato, mensalidade
+  no balanço, e os efeitos valem — cama de 3–9 nos feridosIA (as 3
+  camas), bomba do lote 15% mais barata, e o SAQUE contra elas
+  respeita galpão (×0,7) e cofre (×0,5) — quem rouba IA protegida
+  leva menos.
+- O perfil da torcida IA (Finanças) mostra o balanço do mês linha a
+  linha, receitas e despesas, como o nosso Financeiro.
+- Sondagens pós-espelho: 1 ano — 0 no vermelho, 22 advogados;
+  3 anos — 0 no vermelho, 48 advogados (eram 76 com a folha
+  subcobrada), mediana de caixa 22,7 mil. Calibração de pé.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

@@ -4335,13 +4335,23 @@
              <span class="val ${tr.valor<0?'negativo':'positivo'}">`+
             `${U.dinheiro(tr.valor)}</span>`}));
       } else {
+        /* o balanço delas linha a linha (ordem do dono, 02/09/2026):
+           a mesma complexidade do nosso Financeiro */
         const b = TO.relacoes.balanco(t, e, id);
         cx.innerHTML =
           linhaD('Caixa', U.dinheiro(Math.round(t.caixa))) +
-          linhaD('Balanço mensal', `${U.dinheiro(Math.round(b.rec))} `+
+          linhaD('Balanço do mês', `${U.dinheiro(Math.round(b.rec))} `+
             `<small class="fraco">−${U.dinheiro(Math.round(b.des))
               .replace('R$','R$ ')} = </small>`+
             `${U.dinheiro(Math.round(b.saldo))}`);
+        for(const linha of (b.receitas||[]))
+          cx.appendChild(el('div',{class:'transacao', html:
+            `<span class="dia"></span><span class="desc">${linha.rot}</span>
+             <span class="val positivo">${U.dinheiro(linha.v)}</span>`}));
+        for(const linha of (b.despesas||[]))
+          cx.appendChild(el('div',{class:'transacao', html:
+            `<span class="dia"></span><span class="desc">${linha.rot}</span>
+             <span class="val negativo">${U.dinheiro(-linha.v)}</span>`}));
         if(!(t.extrato||[]).length)
           cx.appendChild(el('div',{class:'em-construcao',
             texto:'O extrato começa a contar daqui pra frente.'}));

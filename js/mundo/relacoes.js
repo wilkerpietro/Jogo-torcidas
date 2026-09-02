@@ -140,7 +140,8 @@ TO.relacoes = (function(){
      inteiro (329 de 386) — o meio da fila é a régua. */
   const ORDEM = ['mma', 'loja', 'bar', 'advogado', 'filial', 'elenco',
                  'onibus', 'subsede',
-                 'bombas', 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede',
+                 'bombas', 'galpao', 'enfermaria', 'cofre',
+                 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede',
                  'evoluir:filial'];
 
   /* a fila viva da torcida: nasce da ORDEM e roda a cada compra.
@@ -211,6 +212,9 @@ TO.relacoes = (function(){
   /* o lote de 5 acompanha os R$ 400 por bomba do jogador (reajuste do
      dono, 31/08/2026): a IA paga o mesmo preço unitário */
   const BOMBA = {lote:5, custo:2000, teto:10};
+  /* a cama da enfermaria delas é a nossa: 3–9 dias com o anexo */
+  const camaIA = t => (t && t.enfermaria) ? U.inteiro(3, 9)
+                                          : U.inteiro(5, 15);
   /* SEM ARQUÉTIPO, a vontade de brigar vem da OUSADIA, que cada
      torcida já tem desde que nasce (sai do poder dela). A escala
      mantém a média de ataques por mês que a tabela dava. */
@@ -265,50 +269,96 @@ TO.relacoes = (function(){
     return Math.max(bolo, jaTem);
   }
 
-  function balanco(t, E, id){
+  /* =======================================================
+     O BALANÇO DELAS É O NOSSO (ordem do dono, 02/09/2026: "tem que
+     ser a mesma complexidade"). Linha a linha, a mesma régua do
+     contas() do jogador, em unidades MENSAIS (a economiaDelas aplica
+     a fatia semanal): mensalidade POR CARGO com preso não pagando,
+     receita de cada ponto no bairro DELE (o mesmo hash fixo que o
+     perfil da cidade mostra), fator comercial, moral, fábrica,
+     insumo, manutenção, ônibus, professores, advogados e anexos nas
+     MESMAS mensalidades cheias — as folhas delas entravam na fatia
+     errada (~¼ do que o jogador paga) e a assimetria fechou.
+     ======================================================= */
+  function bairroIA(o, tipo, i){
+    const bs = M().bairrosDe(o.mapa) || [];
+    if(!bs.length) return null;
+    if(tipo === 'sede'){
+      const fixo = o.bairroSede && bs.find(x=>x.nome === o.bairroSede);
+      if(fixo) return fixo;
+      return bs[TO.mapa.hash(`${o.id}|sede`) % bs.length];
+    }
+    return bs[TO.mapa.hash(`${o.id}|${tipo}|${i}`) % bs.length];
+  }
+
+  function balancoDetalhado(t, E, id){
     const R = FIN().RECEITA, MAN = FIN().MANUT, fab = P().FABRICA;
-    let rec = t.membros * MENSALIDADE;
-    /* a moral manda no movimento delas também (régua do dono,
-       24/08/2026): a mesma faixa de 0,4 a 1,3, na moral da torcida
-       (interna 0–20, ×5 pra régua de 100) */
+    const o = M().torcida(id) || {};
+    const rec = [], des = [];
+    const pon = (l, rot, v)=>{ v = Math.round(v); if(v) l.push({rot, v}); };
+
+    /* mensalidade por cargo, preso não paga — a régua do jogador.
+       O plano da fonte é absoluto, então a pirâmide dá o valor por
+       cabeça e os pagantes multiplicam. */
+    const total = Math.max(1, Math.round(t.membros));
+    const presos = (t.presosIA||[]).reduce((s,x)=>s+x.n, 0);
+    const pagantes = Math.max(0, total - presos);
+    let mensCheia = 0;
+    for(const [cargo, n] of TO.membros.planoDeCargos(total, o.cargos))
+      mensCheia += TO.membros.CARGOS[cargo].mensalidade * n;
+    pon(rec, `Mensalidades (${pagantes})`, mensCheia * pagantes / total);
+
     const fx = FIN().faixaDaMoral ? FIN().faixaDaMoral((t.moral||12)*5) : 1;
-    /* O FATOR COMERCIAL VALE PRA ELAS (assimetria fechada pelo dono,
-       27/08/2026): a mesma conta do jogador — 0,7 + prestígio×0,4 +
-       tamanho×0,3 —, com o prestígio e o efetivo DELAS. IA nanica
-       parava de faturar como média. */
     const fator = fx * (0.7 + ((t.prestigio||0)/20)*0.4
                             + U.limitar(t.membros/150, 0, 1)*0.3);
-    for(const b of t.bares) rec += R.bar[b.nivel] * t.mult * fator;
-    for(const l of t.lojas) rec += R.loja[l.nivel] * t.mult * fator * (t.fabrica ? fab.multLoja : 1);
-    rec += t.subsedes * R.subsede * t.mult * fator;
-    /* a filial delas rende pelo bairro da CIDADE DELA, como a nossa
-       (assimetria fechada pelo dono, 27/08/2026) — não mais pelo
-       bairro da sede-mãe */
-    for(const f of (t.filiais||[])){
-      rec += R.subsede * (E && id && FIN().multFilial
-        ? FIN().multFilial(E, f, id) : t.mult) * fator;
-      // manutenção da filial entra junto das despesas abaixo
-    }
+    const multB = b => b ? M().multiplicador(b) : (t.mult || 1);
 
-    let des = FIN().MANUT_SEDE[t.sede];
-    for(const b of t.bares) des += MAN.bar[b.nivel];
-    for(const l of t.lojas) des += MAN.loja[l.nivel]
-                                 + R.loja[l.nivel]*FIN().INSUMO*(t.fabrica ? 1-fab.corteInsumo : 1);
-    des += t.subsedes * MAN.subsede[1];
+    (t.bares||[]).forEach((b, i)=>{
+      const ba = bairroIA(o, 'bar', i);
+      pon(rec, `Bar${ba?' — '+ba.nome:''} (n${b.nivel})`,
+          R.bar[b.nivel] * multB(ba) * fator);
+    });
+    (t.lojas||[]).forEach((l, i)=>{
+      const ba = bairroIA(o, 'loja', i);
+      pon(rec, `Loja${ba?' — '+ba.nome:''} (n${l.nivel})`+
+               `${t.fabrica?' · fábrica':''}`,
+          R.loja[l.nivel] * multB(ba) * fator * (t.fabrica ? fab.multLoja : 1));
+    });
+    for(let i=0; i<(t.subsedes||0); i++){
+      const ba = bairroIA(o, 'subsede', i);
+      pon(rec, `Subsede${ba?' — '+ba.nome:''}`,
+          R.subsede * multB(ba) * fator);
+    }
     for(const f of (t.filiais||[]))
-      des += MAN.subsede[f.nivel] || MAN.subsede[1];
-    /* ônibus e professor de MMA custam o mesmo que pro jogador:
-       R$ 1.500 e R$ 2.000 por mês, aqui na fatia semanal */
-    /* a frota delas cobra por ônibus, como a do jogador */
-    des += frotaIA(t) * 350;
-    /* a folha da comissão delas: R$ 2.000 por mês por professor, na
-       fatia semanal, do mesmo jeito que a nossa cobra no fechamento */
-    des += mmaDe(t) * (FIN().MMA_MES/4.33);
-    /* e a folha do escritório: R$ 5.000 por mês por advogado, na
-       mesma fatia (pedido do dono, 31/08/2026) */
-    des += advogadosIA(t) * (FIN().ADVOGADO_MES/4.33);
-    return {rec, des, saldo:rec - des};
+      pon(rec, `Subsede — ${(TO.dados.cidades.find(x=>x.id===f.cidade)||{}).nome
+                 || f.cidade} (n${f.nivel})`,
+          R.subsede * (E && id && FIN().multFilial
+            ? FIN().multFilial(E, f, id) : (t.mult||1)) * fator);
+
+    pon(des, `Manutenção da sede (n${t.sede})`, FIN().MANUT_SEDE[t.sede]);
+    let manutCom = 0;
+    for(const b of (t.bares||[])) manutCom += MAN.bar[b.nivel];
+    for(const l of (t.lojas||[])) manutCom += MAN.loja[l.nivel];
+    manutCom += (t.subsedes||0) * MAN.subsede[1];
+    for(const f of (t.filiais||[]))
+      manutCom += MAN.subsede[f.nivel] || MAN.subsede[1];
+    pon(des, 'Manutenção do comércio', manutCom);
+    let insumo = 0;
+    for(const l of (t.lojas||[]))
+      insumo += R.loja[l.nivel]*FIN().INSUMO*(t.fabrica ? 1-fab.corteInsumo : 1);
+    pon(des, `Insumos das lojas${t.fabrica?' · fábrica':''}`, insumo);
+    /* as folhas nas mensalidades CHEIAS do jogador */
+    pon(des, 'Ônibus da torcida', frotaIA(t) * FIN().ONIBUS_MES);
+    pon(des, 'Professores de MMA', mmaDe(t) * FIN().MMA_MES);
+    pon(des, 'Advogados', advogadosIA(t) * FIN().ADVOGADO_MES);
+    if(t.enfermaria) pon(des, 'Enfermaria da sede', P().ANEXOS.enfermaria.mes);
+    if(t.galpao)     pon(des, 'Galpão de material', P().ANEXOS.galpao.mes);
+
+    const soma = l => l.reduce((s,x)=>s+x.v, 0);
+    return {receitas:rec, despesas:des,
+            rec:soma(rec), des:soma(des), saldo:soma(rec)-soma(des)};
   }
+  const balanco = balancoDetalhado;
 
   /* =======================================================
      O ELENCO FIXO DE QUALQUER TORCIDA (crivo do dono, 31/08/2026)
@@ -405,6 +455,9 @@ TO.relacoes = (function(){
     subsede:'Subsede nova', filial:'Subsede em outra cidade',
     elenco:'Investimento no clube', onibus:'Ônibus novo',
     bombas:'Bombas ×5', fabrica:'Fábrica de material',
+    'anexo:galpao':'Galpão de material',
+    'anexo:enfermaria':'Enfermaria da sede',
+    'anexo:cofre':'Cofre blindado',
     'ampliar:bar':'Ampliação do bar', 'ampliar:loja':'Ampliação da loja',
     'ampliar:subsede':'Ampliação da subsede',
     'ampliar:filial':'Ampliação da filial'
@@ -443,7 +496,16 @@ TO.relacoes = (function(){
     }
     if(chave === 'bombas')
       return t.bombas >= BOMBA.teto ? null
-           : {tipo:'bombas', custo:BOMBA.custo};
+           : {tipo:'bombas', custo: t.galpao
+               ? Math.round(BOMBA.custo * 0.85) : BOMBA.custo};
+    /* os ANEXOS da sede (pacote do dono, 02/09/2026): as IAs compram
+       pelo mesmo preço e porta de sede do jogador */
+    if(chave === 'galpao' || chave === 'enfermaria' || chave === 'cofre'){
+      if(t[chave]) return null;
+      const ax = P().ANEXOS[chave];
+      if(t.sede < ax.sede) return {sede:true};
+      return {tipo:'anexo:'+chave, custo:ax.custo};
+    }
     if(chave === 'elenco') return elencoAlvo(E, id);
     if(chave === 'onibus'){
       if(frotaIA(t) < FIN().cabeNaSede(t.sede))
@@ -667,6 +729,8 @@ TO.relacoes = (function(){
         else if(compra.tipo === 'bombas')
           t.bombas = Math.min(BOMBA.teto, t.bombas + BOMBA.lote);
         else if(compra.tipo === 'fabrica') t.fabrica = true;
+        else if(compra.tipo.indexOf('anexo:') === 0)
+          t[compra.tipo.slice(6)] = true;
         else if(compra.tipo === 'onibus') t.onibus = frotaIA(t) + 1;
         else if(compra.tipo === 'subsede') t.subsedes++;
         else if(compra.tipo === 'filial')
@@ -1441,7 +1505,7 @@ TO.relacoes = (function(){
     const abs = E.data.absoluto || 0;
     if(feridos > 0)
       (t.feridosIA = t.feridosIA||[]).push({n:Math.round(feridos),
-                                          ate: abs + U.inteiro(5, 15)});
+                                          ate: abs + camaIA(t)});
     if(presos > 0)
       (t.presosIA = t.presosIA||[]).push({n:Math.round(presos),
                                           ate: abs + penaIA(t)});
@@ -1491,7 +1555,7 @@ TO.relacoes = (function(){
                                              : U.entre(0.01, 0.04)));
       if(t){
         if(feridos) (t.feridosIA = t.feridosIA||[])
-          .push({n:feridos, ate: abs + U.inteiro(5, 15)});
+          .push({n:feridos, ate: abs + camaIA(t)});
         if(presos) (t.presosIA = t.presosIA||[])
           .push({n:presos, ate: abs + penaIA(t)});
       }
@@ -1648,7 +1712,7 @@ TO.relacoes = (function(){
       const t = (E.mundoTorcidas||{})[id];
       const n = Math.round(tam * (perdeu ? U.entre(0.25, 0.45)
                                          : U.entre(0.08, 0.20)));
-      if(t && n) (t.feridosIA = t.feridosIA||[]).push({n, ate: abs + U.inteiro(5, 15)});
+      if(t && n) (t.feridosIA = t.feridosIA||[]).push({n, ate: abs + camaIA(t)});
       return n;
     };
     const fA = machuca(o.id, !ganhouA), fB = machuca(r.id, ganhouA);

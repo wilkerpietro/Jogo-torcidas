@@ -482,6 +482,12 @@ TO.acoes = (function(){
       if(alvo.tipo === 'bar'){
         const gaveta = 60 * alvo.efetivo;
         levou = Math.round(gaveta + (m ? m.caixa : 1200) * 0.22);
+        /* galpão e cofre da VÍTIMA seguram o saque (dono, 02/09/2026):
+           a mesma proteção que o jogador tem — quem rouba leva menos */
+        if(m){
+          if(m.galpao) levou = Math.round(levou * 0.7);
+          if(m.cofre)  levou = Math.round(levou * 0.5);
+        }
         if(levou > 0){
           if(m) m.caixa = Math.max(0, m.caixa - levou);
           TO.estado.lancar(E, `Saque — ${alvo.nome}`, levou);
