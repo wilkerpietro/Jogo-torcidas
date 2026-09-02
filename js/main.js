@@ -4533,10 +4533,10 @@
         cx.appendChild(el('div',{class:'recado',
           html:`<b>${z === 'Centro' ? 'Centro' : 'Zona '+z}</b>`}));
         for(const it of doz)
-          cx.appendChild(el('div',{class:'transacao', html:
+          cx.appendChild(el('div',{class:'transacao linha-zona', html:
             `<span class="desc">${it.rot} da `+
             `${linkTorcida(it.tid, it.tnome)}</span>
-             <span class="dia">${it.bairro}</span>`}));
+             <span class="dia" title="${it.bairro}">${it.bairro}</span>`}));
       }
       return cx;
     };

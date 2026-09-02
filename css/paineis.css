@@ -1653,3 +1653,13 @@ td.placar small.pen{
 header.capa-cidade{background-size:cover; background-position:center;
   min-height:92px; display:flex; flex-direction:column;
   justify-content:flex-end}
+
+/* a linha das estruturas por zona: o bairro não é data de 44px — vai
+   à direita, numa linha só, com reticências se o nome for comprido
+   (ajuste do dono, 01/09/2026) */
+.transacao.linha-zona{flex-wrap:nowrap; align-items:baseline}
+.transacao.linha-zona .desc{white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; min-width:0}
+.transacao.linha-zona .dia{width:auto; max-width:45%; flex:none;
+  text-align:right; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis}
