@@ -322,7 +322,7 @@ TO.relacoes = (function(){
       const ba = bairroIA(o, 'loja', i);
       pon(rec, `Loja${ba?' — '+ba.nome:''} (n${l.nivel})`+
                `${t.fabrica?' · fábrica':''}`,
-          R.loja[l.nivel] * multB(ba) * fator * (t.fabrica ? fab.multLoja : 1));
+          R.loja[l.nivel] * multB(ba) * fator);
     });
     for(let i=0; i<(t.subsedes||0); i++){
       const ba = bairroIA(o, 'subsede', i);
@@ -336,16 +336,18 @@ TO.relacoes = (function(){
             ? FIN().multFilial(E, f, id) : (t.mult||1)) * fator);
 
     pon(des, `Manutenção da sede (n${t.sede})`, FIN().MANUT_SEDE[t.sede]);
+    /* a fábrica delas corta os MESMOS 50% do custo da loja */
+    const corteFab = t.fabrica ? fab.corteCusto : 0;
     let manutCom = 0;
     for(const b of (t.bares||[])) manutCom += MAN.bar[b.nivel];
-    for(const l of (t.lojas||[])) manutCom += MAN.loja[l.nivel];
+    for(const l of (t.lojas||[])) manutCom += MAN.loja[l.nivel]*(1-corteFab);
     manutCom += (t.subsedes||0) * MAN.subsede[1];
     for(const f of (t.filiais||[]))
       manutCom += MAN.subsede[f.nivel] || MAN.subsede[1];
     pon(des, 'Manutenção do comércio', manutCom);
     let insumo = 0;
     for(const l of (t.lojas||[]))
-      insumo += R.loja[l.nivel]*FIN().INSUMO*(t.fabrica ? 1-fab.corteInsumo : 1);
+      insumo += R.loja[l.nivel]*FIN().INSUMO*(1-corteFab);
     pon(des, `Insumos das lojas${t.fabrica?' · fábrica':''}`, insumo);
     /* as folhas nas mensalidades CHEIAS do jogador */
     pon(des, 'Ônibus da torcida', frotaIA(t) * FIN().ONIBUS_MES);

@@ -72,11 +72,11 @@ TO.patrimonio = (function(){
        o dinheiro grande não dorme no balcão.
      ======================================================= */
   const ANEXOS = {
-    enfermaria: {rot:'Enfermaria da sede', custo:60000,  mes:1200, sede:4,
+    enfermaria: {rot:'Enfermaria da sede', custo:150000, mes:1200, sede:4,
       nota:'ferido volta em 3 a 9 dias em vez de 5 a 15'},
-    galpao:     {rot:'Galpão de material', custo:45000,  mes:600,  sede:3,
+    galpao:     {rot:'Galpão de material', custo:150000, mes:600,  sede:3,
       nota:'bomba 15% mais barata e o saque no nosso bar leva 30% menos'},
-    cofre:      {rot:'Cofre blindado',     custo:150000, mes:0,    sede:5,
+    cofre:      {rot:'Cofre blindado',     custo:300000, mes:0,    sede:5,
       nota:'metade do prejuízo de qualquer saque fica guardada'},
   };
 
@@ -95,13 +95,15 @@ TO.patrimonio = (function(){
       compra: 40000,
       /* ampliar baixou na reforma do comércio (dono, 24/08/2026):
          era 80/150 mil — a ampliação nunca se pagava */
-      ampliar:[null, 50000, 90000, null]
+      /* escala progressiva (ordem do dono, 02/09/2026): cada nível
+         custa o dobro do anterior */
+      ampliar:[null, 60000, 120000, null]
     },
     loja: {
       rot:'Loja', plural:'lojas',
       compra: 50000,
       /* idem: era 100/150 mil */
-      ampliar:[null, 60000, 90000, null]
+      ampliar:[null, 70000, 140000, null]
     },
     subsede: {
       rot:'Subsede', plural:'subsedes',
@@ -110,7 +112,9 @@ TO.patrimonio = (function(){
          manutenção e dobra o recrutamento da zona — na escala que os
          pontos tinham antes da reforma de 24/08/2026 (bar 40k pra
          680/mês), 30k era o equivalente, e o preço ficou. */
-      compra: 30000,
+      /* 90 mil (reajuste do dono, 02/09/2026): o preço da filial —
+         subsede é subsede, na cidade ou fora */
+      compra: 90000,
       ampliar:[null, null]
     }
   };
@@ -125,7 +129,7 @@ TO.patrimonio = (function(){
      ======================================================= */
   const FILIAL = {
     compra: 90000,
-    ampliar: [null, 70000, 70000, null],
+    ampliar: [null, 70000, 140000, null],  // progressiva (dono, 02/09)
     teto:    [0, 20, 40, 80],
     porSede: [0, 0, 0, 1, 3, 8],
     prestigioMin: 12            // 60 na régua de 0 a 100
@@ -151,8 +155,10 @@ TO.patrimonio = (function(){
   /* A fábrica não corta material: ela é fábrica de produto de loja.
      Triplica o faturamento das lojas e derruba o insumo em 60%
      (GDD V4 §8.3), e só existe em sede nível 5. */
-  const FABRICA = {custo:400000, sede:5, multLoja:3, corteInsumo:0.6,
-                   rot:'Fábrica'};
+  /* A FÁBRICA REPENSADA (ordem do dono, 02/09/2026): nada de
+     triplicar faturamento — ela corta 50% do CUSTO da loja
+     (manutenção e insumo). Produto próprio sai mais barato. */
+  const FABRICA = {custo:400000, sede:5, corteCusto:0.5, rot:'Fábrica'};
 
   const nivelSede = E => E.torcida.sedeNivel;
   /* qual sede é preciso ter pra caber o enésimo ônibus/professor */
@@ -197,10 +203,9 @@ TO.patrimonio = (function(){
     for(const l of p.lojas) fora.push({tipo:'loja',
       rot:`Loja (nível ${l.nivel})${l.semInsumo?' · sem insumo':fab?' · fábrica':''}`,
       bairro:l.bairro,
-      receita: l.semInsumo ? 0
-             : REC.loja[l.nivel]*mult(l.bairro)*fator*(fab?fab.multLoja:1),
-      despesa: MAN.loja[l.nivel]
-             + REC.loja[l.nivel]*INSUMO*(fab?1-fab.corteInsumo:1)});
+      receita: l.semInsumo ? 0 : REC.loja[l.nivel]*mult(l.bairro)*fator,
+      despesa: (MAN.loja[l.nivel] + REC.loja[l.nivel]*INSUMO)
+               * (fab ? 1-fab.corteCusto : 1)});
     for(const f of (p.filiais||[])) fora.push({tipo:'filial',
       rot:`Subsede de ${F().nomeCidade(f.cidade)} (nível ${f.nivel})`,
       bairro:F().nomeCidade(f.cidade),
@@ -428,7 +433,7 @@ TO.patrimonio = (function(){
 
     if(!p.fabrica) lista.push({
       id:'fabrica', rot:FABRICA.rot,
-      nota:`triplica o faturamento das lojas e corta ${Math.round(FABRICA.corteInsumo*100)}% do insumo`,
+      nota:`corta ${Math.round(FABRICA.corteCusto*100)}% do custo das lojas — manutenção e insumo`,
       custo:FABRICA.custo,
       trava:trava(FABRICA.custo,
         n < FABRICA.sede ? `precisa de sede nível ${FABRICA.sede}` : null)});

@@ -261,12 +261,12 @@ TO.financeiro = (function(){
     for(const b of p.bares)
       juntar(rec, `Bar${b.bairro?' — '+b.bairro:''} (n${b.nivel})`,
              RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM);
-    /* GDD §8.3: a fábrica triplica o que a loja fatura */
-    const multFab = p.fabrica ? (TO.patrimonio ? TO.patrimonio.FABRICA.multLoja : 3) : 1;
+    /* a fábrica REPENSADA (ordem do dono, 02/09/2026): não mexe mais
+       na receita — ela corta 50% do CUSTO da loja, lá nas despesas */
     for(const l of p.lojas){
       if(l.semInsumo){ des.push({rot:`Loja — ${l.bairro}: sem insumo`, v:0, nota:true}); continue; }
-      juntar(rec, `Loja${l.bairro?' — '+l.bairro:''} (n${l.nivel})${multFab>1?' · fábrica':''}`,
-             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*multFab*SEM);
+      juntar(rec, `Loja${l.bairro?' — '+l.bairro:''} (n${l.nivel})${p.fabrica?' · fábrica':''}`,
+             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM);
     }
     for(const s of p.subsedes)
       juntar(rec, `Subsede${s.bairro?' — '+s.bairro:''}`,
@@ -280,9 +280,11 @@ TO.financeiro = (function(){
     /* --- despesas --- */
     juntar(des, `Manutenção da sede (n${E.torcida.sedeNivel})`,
            MANUT_SEDE[E.torcida.sedeNivel]*SEM);
+    const corteFab = p.fabrica
+      ? (TO.patrimonio ? TO.patrimonio.FABRICA.corteCusto : 0.5) : 0;
     let manutCom = 0;
     for(const b of p.bares)    manutCom += MANUT.bar[b.nivel];
-    for(const l of p.lojas)    manutCom += MANUT.loja[l.nivel];
+    for(const l of p.lojas)    manutCom += MANUT.loja[l.nivel]*(1-corteFab);
     for(const s of p.subsedes) manutCom += MANUT.subsede[s.nivel || 1];
     for(const f of (p.filiais||[]))
       manutCom += MANUT.subsede[f.nivel] || MANUT.subsede[1];
@@ -296,11 +298,10 @@ TO.financeiro = (function(){
     if(px.galpao) juntar(des, 'Galpão de material',
       (TO.patrimonio ? TO.patrimonio.ANEXOS.galpao.mes : 600)*SEM);
 
-    /* e corta 60% do insumo, que é o outro lado do mesmo negócio */
-    const corteIns = p.fabrica ? (TO.patrimonio ? TO.patrimonio.FABRICA.corteInsumo : 0.6) : 0;
+    /* o insumo entra no mesmo corte de 50% da fábrica */
     let insumo = 0;
-    for(const l of p.lojas) insumo += RECEITA.loja[l.nivel]*INSUMO*(1-corteIns);
-    juntar(des, `Insumos das lojas${corteIns?' · fábrica':''}`, insumo*SEM);
+    for(const l of p.lojas) insumo += RECEITA.loja[l.nivel]*INSUMO*(1-corteFab);
+    juntar(des, `Insumos das lojas${corteFab?' · fábrica':''}`, insumo*SEM);
 
     const soma = l => l.reduce((s,x)=>s+x.v, 0);
     return {receitas:rec, despesas:des,

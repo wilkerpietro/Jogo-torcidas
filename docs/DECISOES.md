@@ -3310,6 +3310,22 @@ torcida. Tem que ser a mesma complexidade." O `balanco` virou
   3 anos — 0 no vermelho, 48 advogados (eram 76 com a folha
   subcobrada), mediana de caixa 22,7 mil. Calibração de pé.
 
+## O reajuste dos imóveis (ordens do dono, 02/09/2026)
+
+- SUBSEDE DA CIDADE: R$ 30 mil → **R$ 90 mil** (o preço da filial —
+  subsede é subsede, na cidade ou fora).
+- FÁBRICA REPENSADA: nada de triplicar o faturamento da loja — agora
+  ela **corta 50% do CUSTO da loja** (manutenção e insumo). Vale pro
+  jogador e pra IA; a receita da loja voltou à tabela crua.
+- ANEXOS reprecificados: enfermaria **R$ 150 mil**, galpão
+  **R$ 150 mil**, cofre blindado **R$ 300 mil** (mensalidades e
+  portas de sede como estavam).
+- AMPLIAÇÃO EM ESCALA PROGRESSIVA: bar nv2/nv3 = 60/120 mil, loja
+  70/140 mil, filial 70/140 mil — cada nível custa o dobro do
+  anterior (eram quase chapadas: 50/90, 60/90, 70/70).
+- Sondagem de 1 ano pós-reajuste: 0 IAs no vermelho, 21 escritórios,
+  mediana de caixa 16,3 mil. De pé.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
