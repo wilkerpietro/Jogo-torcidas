@@ -4383,16 +4383,15 @@
                 torcedores:x.torcedores,
                 cor:(tm.cores||[])[0] || '#888'};
       }).sort((a,b)=>b.torcedores - a.torcedores);
-      let html =
-        linhaD('Onde', `${c.uf || ''}${c.regiao ? ` · ${c.regiao}` : ''}`) +
-        linhaD('Tamanho', `${c.tamanho || '—'}`+
-          `${c.populacao ? ` · ${U.numero(c.populacao)} de população` : ''}`) +
-        linhaD('Metrô', c.temMetro ? 'sim' : 'não') +
-        linhaD('Policiamento', `${c.pms || 0} PMs · ${c.guardas || 0} guardas`+
-          `${c.choque ? ' · tropa de choque' : ''}`);
+      /* Onde/Tamanho/Metrô/Policiamento saíram (ordem do dono,
+         01/09/2026): fica só a quantidade — a população. E cada time
+         mostra a fatia dele na cidade ao lado dos torcedores. */
+      let html = linhaD('População', U.numero(c.populacao || 0));
+      const somaT = times.reduce((s,x)=>s+(x.torcedores||0), 0) || 1;
       for(const tm of times)
         html += linhaD(`${chipClube(tm.id, tm.cor)}${tm.nome}`,
-          `${U.numero(tm.torcedores)} torcedores`);
+          `${U.numero(tm.torcedores)} torcedores <small class="fraco">· `+
+          `${Math.round(tm.torcedores/somaT*100)}% da cidade</small>`);
       if((c.rodovias||[]).length)
         html += linhaD('Rodovias', c.rodovias.join(', '));
       /* as vizinhas pela estrada, cada uma com o próprio link */
@@ -4411,24 +4410,17 @@
       const cx = el('div');
       const tab = el('table',{class:'dados'});
       tab.appendChild(el('thead', null, [el('tr',{html:
-        `<th>Torcida</th><th>Membros</th><th>Sede</th>`+
-        `<th>Bares</th><th>Lojas</th><th>Subsedes</th>`})]));
+        `<th>Torcida</th><th>Membros</th>`})]));
       const tb = el('tbody');
       for(const o of TO.mundo.torcidasEm(c.id)){
         if(o.incompleta) continue;
         const nossa = o.id === e.torcida.id;
         const t = nossa ? null : (e.mundoTorcidas||{})[o.id];
         if(!nossa && !t) continue;
-        const pat = nossa ? TO.financeiro.patrimonio(e) : t;
         tb.appendChild(el('tr',{class: nossa ? 'nossa' : '', html:
           `<td>${linkTorcida(o.id, o.nome)}</td>`+
           `<td class="num">${nossa ? e.membros.length
-            : Math.round(t.membros)}</td>`+
-          `<td class="num">n${nossa ? e.torcida.sedeNivel : t.sede}</td>`+
-          `<td class="num">${(pat.bares||[]).length || '—'}</td>`+
-          `<td class="num">${(pat.lojas||[]).length || '—'}</td>`+
-          `<td class="num">${nossa ? ((pat.subsedes||[]).length || '—')
-            : (t.subsedes || '—')}</td>`}));
+            : Math.round(t.membros)}</td>`}));
       }
       tab.appendChild(tb);
       cx.appendChild(el('div',{class:'recado', html:'<b>Da casa</b>'}));
@@ -4464,6 +4456,77 @@
             `<td class="num">${f.nucleo}</td>`}));
         tab2.appendChild(tb2);
         cx.appendChild(tab2);
+      }
+
+      /* ESTRUTURAS POR ZONA (ordem do dono, 01/09/2026): a praça
+         contada rua a rua — cada zona diz o que tem e em qual bairro.
+         O endereço da IA não se sorteia: a sede vem da fonte
+         (bairroSede) e bar, loja e subsede saem de hash fixo por
+         torcida e índice — o mesmo espírito do nosso "endereço não
+         se sorteia". */
+      const H = TO.mapa.hash;
+      const bairros = c.bairros || [];
+      const porNome = {};
+      for(const b of bairros) porNome[b.nome] = b;
+      const bairroFixo = chave =>
+        bairros.length ? bairros[H(chave) % bairros.length] : null;
+      const itens = [];
+      const põe = (bairro, rot, tid, tnome)=>{
+        const b = typeof bairro === 'string'
+          ? (porNome[bairro] || null) : bairro;
+        itens.push({zona: (b && b.zona) || 'Sem zona',
+                    bairro: b ? b.nome
+                      : (typeof bairro === 'string' ? bairro : '—'),
+                    rot, tid, tnome});
+      };
+      for(const o of TO.mundo.torcidasEm(c.id)){
+        if(o.incompleta) continue;
+        const nossa = o.id === e.torcida.id;
+        const t = nossa ? null : (e.mundoTorcidas||{})[o.id];
+        if(!nossa && !t) continue;
+        if(nossa){
+          const bs = TO.mundo.bairroDaSede(e.torcida);
+          põe(bs ? bs.nome : o.bairroSede,
+              `Sede (nível ${e.torcida.sedeNivel})`, o.id, o.nome);
+          const pat = TO.financeiro.patrimonio(e);
+          (pat.bares||[]).forEach((b,i)=>põe(
+            b.bairro || bairroFixo(`${o.id}|bar|${i}`),
+            `Bar (nível ${b.nivel})`, o.id, o.nome));
+          (pat.lojas||[]).forEach((l,i)=>põe(
+            l.bairro || bairroFixo(`${o.id}|loja|${i}`),
+            `Loja (nível ${l.nivel})`, o.id, o.nome));
+          (pat.subsedes||[]).forEach((s,i)=>põe(
+            s.bairro || bairroFixo(`${o.id}|subsede|${i}`),
+            'Subsede', o.id, o.nome));
+        } else {
+          põe(o.bairroSede || bairroFixo(`${o.id}|sede`),
+              `Sede (nível ${t.sede})`, o.id, o.nome);
+          (t.bares||[]).forEach((b,i)=>põe(bairroFixo(`${o.id}|bar|${i}`),
+            `Bar (nível ${b.nivel||1})`, o.id, o.nome));
+          (t.lojas||[]).forEach((l,i)=>põe(bairroFixo(`${o.id}|loja|${i}`),
+            `Loja (nível ${l.nivel||1})`, o.id, o.nome));
+          for(let i=0;i<(t.subsedes||0);i++)
+            põe(bairroFixo(`${o.id}|subsede|${i}`), 'Subsede', o.id, o.nome);
+        }
+      }
+      for(const f of deFora)
+        põe(bairroFixo(`${f.id}|filial`),
+            `Subsede de fora (nível ${f.nivel} · núcleo ${f.nucleo})`,
+            f.id, f.nome);
+      const ordem = [];
+      for(const b of bairros)
+        if(b.zona && !ordem.includes(b.zona)) ordem.push(b.zona);
+      if(itens.some(x=>x.zona === 'Sem zona')) ordem.push('Sem zona');
+      for(const z of ordem){
+        const doz = itens.filter(x=>x.zona === z);
+        if(!doz.length) continue;
+        cx.appendChild(el('div',{class:'recado',
+          html:`<b>${z === 'Centro' ? 'Centro' : 'Zona '+z}</b>`}));
+        for(const it of doz)
+          cx.appendChild(el('div',{class:'transacao', html:
+            `<span class="desc">${it.rot} da `+
+            `${linkTorcida(it.tid, it.tnome)}</span>
+             <span class="dia">${it.bairro}</span>`}));
       }
       return cx;
     };

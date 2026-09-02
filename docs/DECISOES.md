@@ -3117,6 +3117,25 @@ saiu em duas partes:
   Chegando os arquivos, é só salvar nas convenções acima e regerar o
   manifesto que tudo acende sozinho.
 
+## O perfil da cidade enxuto e por zona (ordens do dono, 01/09/2026)
+
+Três acertos na tela:
+
+- **Visão geral enxuta**: saíram Onde, Tamanho, Metrô e Policiamento
+  (o UF·região já mora no subtítulo) — ficou só a QUANTIDADE: a linha
+  "População". O estádio já tinha saído na ordem anterior.
+- **A fatia de cada time**: ao lado dos torcedores, a porcentagem
+  daquela torcida na cidade — a divisão da praça entre os clubes
+  (torcedores do clube ÷ soma dos torcedores da cidade).
+- **Torcidas e estruturas POR ZONA**: a tabela "Da casa" ficou só
+  torcida × membros, e as estruturas viraram seções por zona (na
+  ordem dos bairros da cidade), cada linha dizendo a estrutura, a
+  dona (com link) e o BAIRRO. O endereço da IA não se sorteia: a sede
+  vem da fonte (`bairroSede`) e bar/loja/subsede saem de hash fixo
+  por torcida e índice — o mesmo espírito do "endereço não se
+  sorteia" do jogador. Subsedes de fora entram na zona delas com
+  nível e núcleo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
