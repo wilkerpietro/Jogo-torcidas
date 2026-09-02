@@ -3193,6 +3193,34 @@ inteiro em SVG 4×3; os dez países do jogo foram copiados pra
   `BANDEIRAS` de paths saiu do main.js, ficou só o mapa país→ISO.
 - Se um dia entrar país novo, é copiar o SVG do banco pra pasta.
 
+## O tutorial no jogo (crivo do dono, 02/09/2026)
+
+Depois de maquetado em artefato à parte e aprovado texto a texto, o
+tutorial entrou no jogo de verdade (`js/gestao/tutorial.js`):
+
+- O CONVITE é a primeira decisão da partida, pelo cano normal do feed
+  (`abertura`, chave `abertura|tutorial`): "Bem vindo ao jogo, chefe…"
+  com "Mostra o jogo" e "Já sei jogar — pular". Pular marca
+  `E.tutorial` e responde com a consequência aprovada ("…o 'Como
+  funciona' fica no menu do Jogo").
+- O PASSO A PASSO são 15 passos num cartão em overlay (o tempo pausa):
+  4 de indicadores — um por passo, com o círculo dourado pulsando no
+  número certo da FAIXA (prestígio ⭐, moral ⚡, recrutar nos membros
+  👥; relações sem círculo) — e 11 de telas, cada um ABRINDO A TELA
+  REAL atrás (com os dados do save), clicando a subaba certa
+  (Membros, Patrimônio, Expediente, Alianças, Rivalidades, Brigas) e
+  circulando o pedaço que o texto descreve. Textos todos do dono, ao
+  pé da letra.
+- A BRIGA SIMULADA fecha o tutorial: palco próprio em canvas (não
+  toca no save), o rival é o nosso pior desafeto de verdade, e os
+  balões avançam quando o jogador FAZ a coisa — mover, encostar
+  (texto do dono), Q/E (dele), a régua da fuga nos 40% com a
+  marquinha dourada na barra (dele).
+- "COMO FUNCIONA" no painel Jogo reabre o passo a passo quando
+  quiser — é o que a mensagem de pular promete.
+
+A maquete (artefato separado) fica como documento de design.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

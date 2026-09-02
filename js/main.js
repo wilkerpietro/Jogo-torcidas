@@ -2383,6 +2383,7 @@
       else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
       else if(t === 'cena-treta') abrirTreta(m && m.dados);
       else if(t === 'cena-acao') abrirAcaoEmCena(a.cena);
+      else if(t === 'tutorial') TO.tutorial.iniciar();
       else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
     }
     /* A BOLA ROLANDO ABRE O DIA INTEIRO (régua do dono, 20/08/2026):
@@ -2715,6 +2716,15 @@
 
     duas.appendChild(esq);
     duas.appendChild(dir);
+    /* o "Como funciona" que a mensagem de pular promete: reabre o
+       passo a passo do tutorial a qualquer hora (dono, 02/09/2026) */
+    const qt = quadro('Como funciona');
+    const btTut = el('button',{class:'bt', texto:'Rever o passo a passo'});
+    btTut.style.margin = '10px 14px';
+    btTut.onclick = ()=>TO.tutorial.iniciar();
+    qt.corpo.appendChild(btTut);
+    dir.appendChild(qt);
+
     pg.appendChild(duas);
   }
 
@@ -2889,10 +2899,10 @@
         `<span class="num semana ${sem>0?'sobra':sem<0?'falta':''}"`+
         ` title="saldo desta semana">${sinal}${U.dinheiro(Math.abs(sem))}`+
         `<em>/sem</em></span>`+
-        `<span class="num">${IC.get('membros')}${U.numero(c.total)}</span>`+
-        `<span class="num">${IC.get('estrela')}`+
+        `<span class="num ind-membros">${IC.get('membros')}${U.numero(c.total)}</span>`+
+        `<span class="num ind-prestigio">${IC.get('estrela')}`+
         `${Math.round(e.indicadores.prestigio*5)}</span>`+
-        `<span class="num" title="moral da torcida">`+
+        `<span class="num ind-moral" title="moral da torcida">`+
         `${IC.get('raio')}${Math.round(e.indicadores.moral*5)}</span>`+
         `<span class="num" title="ataque médio dos membros">`+
         `${IC.get('halter')}${mForca}</span>`+

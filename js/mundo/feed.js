@@ -723,6 +723,16 @@ TO.feed = (function(){
         a ideologia e o Expediente da Sede.
      ------------------------------------------------------- */
   function abertura(E){
+    /* o tutorial vem antes de tudo (crivo do dono, 02/09/2026) */
+    propor(E, {
+      kind:'tutorial', peso:'decisao', voz:'diretor',
+      chave:'abertura|tutorial',
+      texto:'Bem vindo ao jogo, chefe. Se quiser, a gente te mostra o '+
+            'jogo — menu por menu, e no fim uma briga simulada pra você '+
+            'sentir como funciona a pista. Leva uns dois minutos.',
+      botoes:[{id:'abrir', rot:'Mostra o jogo', acao:'tutorial'},
+              {id:'pular', rot:'Já sei jogar — pular', acao:'tutorial'}]
+    });
     propor(E, {
       kind:'abertura', peso:'decisao', voz:'diretor',
       chave:'abertura|ideologia',
@@ -1805,6 +1815,16 @@ TO.feed = (function(){
       case 'nada':
         marcar();
         return {ok:true};
+      case 'tutorial': {
+        marcar();
+        if(idBotao === 'pular'){
+          E.tutorial = {feito:true, pulou:true};
+          m.consequencia = 'Fechado, chefe. Qualquer coisa, o "Como '+
+            'funciona" fica no menu do Jogo.';
+          return {ok:true};
+        }
+        return {ok:true, abrir:{tela:'tutorial'}};
+      }
       case 'tela-assalto':
         /* a lista de alvos também dá pra fechar sem assaltar */
         return {ok:true, abrir:{tela:'tela-assalto', msg:m,

@@ -1685,3 +1685,122 @@ header.capa-cidade{background-size:cover; background-position:center;
 .transacao.linha-zona .dia{width:auto; max-width:45%; flex:none;
   text-align:right; white-space:nowrap; overflow:hidden;
   text-overflow:ellipsis}
+
+/* =========================================================
+   O TUTORIAL (crivo do dono, 02/09/2026): o cartão do passo a
+   passo em overlay, os círculos dourados na tela de verdade e o
+   palco da briga simulada.
+   ========================================================= */
+#tutOverlay{position:fixed; left:50%; bottom:18px; z-index:1200;
+  transform:translateX(-50%); width:min(640px, calc(100vw - 24px))}
+#tutOverlay .tut-msg{background:var(--painel); border:1px solid #3a3a3a;
+  border-left:3px solid var(--rubro); padding:10px 13px;
+  box-shadow:0 14px 44px rgba(0,0,0,.75)}
+.tut-cab{display:flex; align-items:baseline; gap:8px; margin-bottom:6px}
+.tut-cab span{font-family:var(--titulo); font-size:12.5px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--rubro-vivo)}
+.tut-cab small{font-size:10.5px; color:var(--fraco)}
+.tut-progresso{display:flex; align-items:center; gap:10px; margin:2px 0 10px}
+.tut-progresso small{font-family:var(--mono); font-size:10.5px;
+  color:var(--fraco); letter-spacing:.06em; white-space:nowrap}
+.tut-tracos{display:flex; gap:3px; flex:1}
+.tut-tracos i{height:3px; flex:1; background:var(--linha)}
+.tut-tracos i.feito{background:var(--rubro-vivo)}
+.tut-tela{font-family:var(--titulo); font-size:17px; letter-spacing:.08em;
+  text-transform:uppercase; margin-bottom:4px}
+.tut-tela .ic{display:inline-block; width:20px; text-align:center;
+  margin-right:6px; color:var(--ouro)}
+.tut-corpo{font-size:13.5px; line-height:1.5}
+.tut-corpo em{color:var(--ouro); font-style:normal}
+.tut-acoes{display:flex; gap:8px; margin-top:10px}
+.tut-acoes button{background:var(--painel-alto); border:1px solid var(--linha);
+  padding:7px 14px; font-family:var(--titulo); font-size:12.5px;
+  letter-spacing:.09em; text-transform:uppercase; cursor:pointer;
+  color:inherit}
+.tut-acoes button:hover{background:#262626}
+.tut-acoes .tut-forte{background:var(--rubro); border-color:var(--rubro)}
+.tut-acoes .tut-forte:hover{background:#b32a2a}
+.tut-acoes #tutPular{margin-left:auto}
+
+/* o círculo dourado do tutorial — no indicador da faixa e nos
+   pedaços da tela que o passo descreve */
+.tut-circulado{position:relative}
+.tut-circulado::after{content:''; position:absolute; inset:-7px -10px;
+  border:2px solid var(--ouro); border-radius:16px; pointer-events:none;
+  z-index:1150; animation:tut-pulso 1.2s ease-in-out infinite}
+#feedTopo .tut-circulado::after, .feed-marca .tut-circulado::after{
+  border-radius:50%}
+@keyframes tut-pulso{
+  0%,100%{transform:scale(1); opacity:1}
+  50%{transform:scale(1.06); opacity:.55}
+}
+@media (prefers-reduced-motion:reduce){
+  .tut-circulado::after{animation:none}
+}
+
+/* ---------- o palco da briga simulada ---------- */
+#tutArena{display:none; position:fixed; inset:0; z-index:1300;
+  background:#0a0a0a}
+.tut-arena-cab{display:flex; align-items:center; gap:14px; padding:8px 14px;
+  background:var(--painel); border-bottom:1px solid var(--linha)}
+.tut-arena-cab .lado{display:flex; align-items:center; gap:8px;
+  font-family:var(--titulo); font-size:14px; letter-spacing:.07em;
+  text-transform:uppercase}
+.tut-arena-cab .lado i{width:11px; height:11px; display:inline-block;
+  border:1px solid rgba(255,255,255,.25)}
+.tut-arena-cab .lado em{font-family:var(--mono); font-size:12px;
+  font-style:normal}
+.tut-arena-cab .vs{font-family:var(--mono); font-size:11px;
+  color:var(--apagado)}
+.tut-barra{width:130px; height:7px; background:#222; position:relative;
+  border:1px solid var(--linha); display:inline-block}
+.tut-barra>i{position:absolute; inset:0; transform-origin:left;
+  background:#1d4f8a}
+.tut-barra>u{position:absolute; top:-3px; bottom:-3px; left:60%; width:1px;
+  background:var(--ouro)}
+#tutSairBriga{margin-left:auto; background:var(--painel-alto);
+  border:1px solid var(--linha); padding:6px 12px; font-family:var(--titulo);
+  font-size:12px; letter-spacing:.09em; text-transform:uppercase;
+  cursor:pointer; color:inherit}
+.tut-palco{position:absolute; inset:44px 0 0 0}
+.tut-palco canvas{display:block; width:100%; height:100%; cursor:crosshair}
+.tut-toques{position:absolute; right:14px; bottom:14px; display:flex;
+  gap:8px; z-index:1310}
+.tut-toques button{background:var(--painel-alto); border:1px solid var(--linha);
+  padding:10px 14px; font-family:var(--titulo); font-size:13px;
+  letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  color:inherit}
+.tut-toques button b{color:var(--ouro); font-family:var(--mono);
+  font-size:11px}
+.tut-balao{position:absolute; left:26px; top:22px; max-width:300px;
+  background:var(--painel-alto); border:1px solid var(--ouro);
+  padding:11px 13px; z-index:1320; box-shadow:0 10px 30px rgba(0,0,0,.65);
+  opacity:0; transform:translateY(6px);
+  transition:opacity .25s, transform .25s; pointer-events:none}
+.tut-balao.on{opacity:1; transform:none; pointer-events:auto}
+.tut-balao .rot{font-family:var(--titulo); font-size:11.5px;
+  letter-spacing:.11em; text-transform:uppercase; color:var(--ouro);
+  margin-bottom:4px}
+.tut-balao p{font-size:12.5px; line-height:1.45}
+.tut-balao p b{color:var(--ouro)}
+.tut-balao .feito{margin-top:8px; font-family:var(--mono); font-size:10.5px;
+  color:var(--verde-vivo); display:none}
+.tut-balao.cumprido{border-color:var(--verde-vivo)}
+.tut-balao.cumprido .feito{display:block}
+.tut-balao .entendi{margin-top:8px; background:var(--rubro); border:0;
+  width:100%; padding:7px; font-family:var(--titulo); font-size:12px;
+  letter-spacing:.09em; text-transform:uppercase; cursor:pointer;
+  color:inherit}
+.tut-balao kbd{font-family:var(--mono); font-size:11px; background:#0d0d0d;
+  border:1px solid var(--linha); border-bottom-width:2px; padding:1px 6px;
+  border-radius:3px; color:var(--ouro)}
+.tut-desfecho{display:none; position:absolute; left:50%; top:38%;
+  transform:translate(-50%,-50%); z-index:1330; text-align:center;
+  background:var(--painel); border:1px solid var(--rubro);
+  padding:22px 34px; box-shadow:0 16px 50px rgba(0,0,0,.7)}
+.tut-desfecho h2{font-family:var(--titulo); font-size:30px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--verde-vivo)}
+.tut-desfecho p{color:var(--fraco); font-size:13px; margin:6px 0 14px}
+.tut-desfecho button{background:var(--rubro); border:0; padding:9px 18px;
+  font-family:var(--titulo); font-size:13px; letter-spacing:.09em;
+  text-transform:uppercase; margin:0 4px; cursor:pointer; color:inherit}
