@@ -263,6 +263,92 @@ TO.mundo = (function(){
     return fora;
   }
 
+  /* =======================================================
+     A TORCIDA DO CLUBE NA CIDADE É VIVA (ordem do dono, 02/09/2026)
+
+     O número da planilha é só o PONTO DE PARTIDA: a cada virada de
+     ano a fase do clube mexe nele (foi bem: +3 a 5%; foi mal: −3 a
+     5%) e a cidade cresce (grande +30–50, média +10–20, pequena
+     +5–10 pessoas/ano), com o crescimento repartido de forma NÃO
+     proporcional entre os clubes que já têm torcida na praça. O
+     valor corrente mora em E.torcedoresEv ("cidade|clube" → n);
+     quem quer saber quantos são AGORA pergunta aqui, nunca à
+     planilha.
+     ======================================================= */
+  function torcedoresDoClubeNa(cidadeId, clubeId){
+    const E = TO.estado && TO.estado.E;
+    const ev = E && E.torcedoresEv;
+    const ch = cidadeId + '|' + clubeId;
+    if(ev && ev[ch] != null) return ev[ch];
+    const c = cidade(cidadeId);
+    const t = c && (c.times||[]).find(x=>x.clubeId === clubeId);
+    return t ? (t.torcedores||0) : 0;
+  }
+
+  /* a virada do ano: `mov` é o sobe-e-desce que a temporada fechou.
+     Vai bem = campeão de série, acesso ou G-4 da Série A; vai mal =
+     rebaixado ou entre os 4 últimos da Série D. Quem faz os dois no
+     mesmo ano (não deveria existir) fica neutro. */
+  function evoluirTorcedores(E, mov){
+    const S = E && E.temporada;
+    if(!S || !S.competicoes) return null;
+    const C = TO.competicoes;
+    const por = {};
+    for(const c of S.competicoes) por[c.nome] = c;
+    const bem = new Set(), mal = new Set();
+    const A = por['Brasileirão Série A'], D = por['Brasileirão Série D'];
+    if(A) for(const id of C.melhores(A, 4)) bem.add(id);
+    for(const nome of ['Brasileirão Série A','Brasileirão Série B',
+                       'Brasileirão Série C','Brasileirão Série D']){
+      const comp = por[nome];
+      if(!comp) continue;
+      const campeao = comp.campeao || (C.melhores(comp, 1)||[])[0];
+      if(campeao) bem.add(campeao);
+    }
+    for(const m of (mov||[])){
+      if(!/Série/.test(m.de || '') || !/Série/.test(m.para || '')) continue;
+      (C.subiu(m.de, m.para) ? bem : mal).add(m.id);
+    }
+    if(D) for(const id of C.piores(D, 4)) mal.add(id);
+    for(const id of [...bem]) if(mal.has(id)){ bem.delete(id); mal.delete(id); }
+
+    E.torcedoresEv = E.torcedoresEv || {};
+    const irand = n => Math.floor(Math.random()*n);
+    const registro = {ano:S.ano, bem:[...bem], mal:[...mal], cidades:{}};
+    for(const c of (TO.dados.cidades||[])){
+      const ts = c.times || [];
+      if(!ts.length) continue;
+      /* 1 · a fase do clube mexe na torcida dele em CADA praça */
+      for(const t of ts){
+        const f = bem.has(t.clubeId) ? 1 + (3 + Math.random()*2)/100
+                : mal.has(t.clubeId) ? 1 - (3 + Math.random()*2)/100 : 0;
+        if(!f) continue;
+        const atual = torcedoresDoClubeNa(c.id, t.clubeId);
+        E.torcedoresEv[c.id+'|'+t.clubeId] =
+          Math.max(1, Math.round(atual * f));
+      }
+      /* 2 · a cidade cresce, e o crescimento se reparte de forma NÃO
+         proporcional entre quem já tem torcida nela */
+      const cresce = c.tamanho === 'Grande' ? 30 + irand(21)
+                   : c.tamanho === 'Médio'  ? 10 + irand(11)
+                   :                           5 + irand(6);
+      registro.cidades[c.id] = cresce;
+      const pesos = ts.map(()=>0.2 + Math.random());
+      const soma = pesos.reduce((a,b)=>a+b, 0);
+      let resto = cresce;
+      ts.forEach((t, i)=>{
+        const q = i === ts.length-1 ? resto
+                : Math.round(cresce * pesos[i] / soma);
+        resto -= q;
+        if(q <= 0) return;
+        E.torcedoresEv[c.id+'|'+t.clubeId] =
+          torcedoresDoClubeNa(c.id, t.clubeId) + q;
+      });
+    }
+    E.torcedoresRegistro = registro;
+    return registro;
+  }
+
   /* GDD §6.2: base não organizada = torcedores do clube na cidade,
      menos quem já está em alguma organizada daquele clube */
   /* Quem sobra pra recrutar: o torcedor do clube que mora na praça e
@@ -278,7 +364,7 @@ TO.mundo = (function(){
     const organizados = torcidasEm(idCidade)
       .filter(o=>o.clubeId===idClube)
       .reduce((s,o)=>s+conta(o), 0);
-    return Math.max(0, (t.torcedores||0) - organizados);
+    return Math.max(0, torcedoresDoClubeNa(idCidade, idClube) - organizados);
   }
 
   function sigla(f){
@@ -471,6 +557,7 @@ TO.mundo = (function(){
           torcidasDe, torcidasEm, timesEm,
           CLASSES, ZONAS, bairrosDe, bairro, bairroDaSede, multiplicador,
           bairrosPorZona, baseDeRecrutamento,
+          torcedoresDoClubeNa, evoluirTorcedores,
           estadio, estadiosEm, estadioDoClube,
           TIPOS, valorInicial, statusDoValor, relacaoBase, saoIrmas,
           estiloRelacao, relacoesDe,

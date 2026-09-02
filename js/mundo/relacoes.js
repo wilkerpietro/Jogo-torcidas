@@ -167,9 +167,9 @@ TO.relacoes = (function(){
     for(const c of (TO.dados.cidades||[])){
       if(tem.has(c.id)) continue;
       const x = (c.times||[]).find(y=>y.clubeId === o.clubeId);
-      if(x && x.torcedores > 0 &&
-         (!melhor || x.torcedores > melhor.torcedores))
-        melhor = {cidade:c.id, torcedores:x.torcedores};
+      const n = x ? M().torcedoresDoClubeNa(c.id, o.clubeId) : 0;
+      if(n > 0 && (!melhor || n > melhor.torcedores))
+        melhor = {cidade:c.id, torcedores:n};
     }
     return melhor && melhor.cidade;
   }

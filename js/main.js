@@ -3406,9 +3406,8 @@
     const p = TO.acoes.previsaoRecrutamento(e);
     const cid = TO.mundo.cidade(e.torcida.mapa);
     const clube = TO.mundo.time(e.torcida.clubeId);
-    const naPraca = ((cid && cid.times) || [])
-      .find(x=>x.clubeId===e.torcida.clubeId) || {};
-    const torcedores = naPraca.torcedores || 0;
+    const torcedores = cid
+      ? TO.mundo.torcedoresDoClubeNa(cid.id, e.torcida.clubeId) : 0;
     const org = TO.acoes.organizadasDaPraca(e);
     const organizados = org.reduce((s,o)=>s+o.membros, 0);
 
@@ -4410,7 +4409,7 @@
       const times = (c.times||[]).map(x=>{
         const tm = TO.mundo.time(x.clubeId) || {};
         return {id:x.clubeId, nome:tm.nome || x.clubeId,
-                torcedores:x.torcedores,
+                torcedores:TO.mundo.torcedoresDoClubeNa(c.id, x.clubeId),
                 cor:(tm.cores||[])[0] || '#888'};
       }).sort((a,b)=>b.torcedores - a.torcedores);
       /* Onde/Tamanho/Metrô/Policiamento saíram (ordem do dono,

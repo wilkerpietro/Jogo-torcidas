@@ -382,6 +382,9 @@ TO.estado = (function(){
         } : null;
         const movForca = TO.competicoes.evoluirForca(E);
         const mov = TO.competicoes.aplicarSobeDesce(E);
+        /* a torcida do clube nas cidades é viva (dono, 02/09/2026):
+           fase do ano + crescimento vegetativo das praças */
+        TO.mundo.evoluirTorcedores(E, mov);
         if(colheita){
           colheita.sobeDesce = mov;
           colheita.forca = movForca;

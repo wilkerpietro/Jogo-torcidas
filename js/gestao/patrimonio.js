@@ -111,8 +111,8 @@ TO.patrimonio = (function(){
     for(const c of (TO.dados.cidades||[])){
       if(nossas.has(c.id)) continue;
       const t = (c.times||[]).find(x=>x.clubeId === clube);
-      if(t && t.torcedores > 0)
-        fora.push({cidade:c.id, nome:c.nome, torcedores:t.torcedores});
+      const n = t ? TO.mundo.torcedoresDoClubeNa(c.id, clube) : 0;
+      if(n > 0) fora.push({cidade:c.id, nome:c.nome, torcedores:n});
     }
     return fora.sort((a,b)=>b.torcedores - a.torcedores);
   }

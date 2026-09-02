@@ -3227,6 +3227,29 @@ tutorial entrou no jogo de verdade (`js/gestao/tutorial.js`):
 
 A maquete (artefato separado) fica como documento de design.
 
+## A torcida do clube nas cidades é viva (ordem do dono, 02/09/2026)
+
+"Preciso fazer um fluxo dinâmico da evolução da quantidade de
+torcedores do time por cidade por ano." A planilha virou só o ponto
+de partida; o valor corrente mora no save (`E.torcedoresEv`,
+"cidade|clube" → n) e evolui na VIRADA DO ANO
+(`TO.mundo.evoluirTorcedores`, chamada junto do sobe-e-desce):
+
+- FOI BEM (campeão de qualquer série nacional, acesso, ou G-4 da
+  Série A): a torcida dele sobe 3 a 5% em CADA cidade. FOI MAL
+  (rebaixado, ou entre os 4 últimos da Série D): perde 3 a 5%. Quem
+  cai nos dois no mesmo ano fica neutro.
+- CRESCIMENTO VEGETATIVO: cidade Grande ganha 30–50 pessoas/ano,
+  Média 10–20, Pequena 5–10 — repartidas de forma NÃO proporcional
+  (pesos sorteados) entre os clubes que JÁ têm torcida na praça.
+- Todos os leitores passam pelo helper `torcedoresDoClubeNa`:
+  base de recrutamento (GDD §6.2), painel Recrutamento, perfil da
+  cidade (torcedores e % da cidade), candidatas a filial do jogador
+  e a escolha de praça da filial IA.
+- Sondagem de 1 ano: 16 clubes em alta e 16 em baixa, crescimento
+  de cada cidade dentro da régua do tamanho, Flamengo +4,2% num ano
+  de G-4; sondagem de 10 anos entregue ao dono à parte.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
