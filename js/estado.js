@@ -312,6 +312,11 @@ TO.estado = (function(){
     E.data.dia++;
     E.data.absoluto = (E.data.absoluto||0) + 1;
 
+    /* a dívida cobra a loja: 30 dias no vermelho e uma vai embora
+       por R$ 90 mil (ordem do dono, 02/09/2026) */
+    if(TO.financeiro.venderLojaSeEndividado)
+      TO.financeiro.venderLojaSeEndividado(E);
+
     let fecho = null;
     if(E.data.dia > 7){
       /* recolhe qualquer jogo que tenha sobrado e avança as fases */

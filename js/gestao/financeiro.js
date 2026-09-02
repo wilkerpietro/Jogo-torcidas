@@ -55,6 +55,38 @@ TO.financeiro = (function(){
                    subsede:[null, 700, 1200, 1800]};
 
   const INSUMO   = 0.25;   // GDD §8.3: loja sem insumo não fatura
+
+  /* =======================================================
+     A VENDA FORÇADA (ordem do dono, 02/09/2026): 30 dias
+     seguidos com o caixa no vermelho e uma loja é vendida por
+     R$ 90 mil pra ajudar nas finanças — vai embora a de nível
+     mais baixo. Vale pro jogador (aqui, contado dia a dia no
+     avancarDia) e pras IAs (relacoes, na fatia semanal).
+     ======================================================= */
+  const VENDA_LOJA = 90000, DIAS_DIVIDA = 30;
+  function venderLojaSeEndividado(E){
+    if(E.dinheiro >= 0){ E.diasNoVermelho = 0; return null; }
+    E.diasNoVermelho = (E.diasNoVermelho || 0) + 1;
+    if(E.diasNoVermelho < DIAS_DIVIDA) return null;
+    const p = patrimonio(E);
+    if(!(p.lojas||[]).length) return null;   // sem loja, segue devendo
+    /* vai a de nível mais baixo — ninguém entrega a joia primeiro */
+    let i = 0;
+    for(let k=1; k<p.lojas.length; k++)
+      if((p.lojas[k].nivel||1) < (p.lojas[i].nivel||1)) i = k;
+    const loja = p.lojas.splice(i, 1)[0];
+    E.dinheiro += VENDA_LOJA;
+    E.diasNoVermelho = 0;
+    TO.estado.lancar(E, `Loja${loja.bairro?' — '+loja.bairro:''} vendida `+
+                        `— 30 dias no vermelho`, VENDA_LOJA);
+    if(TO.feed && TO.feed.propor) TO.feed.propor(E, {
+      kind:'aviso', peso:'info', voz:'diretor',
+      texto:`Chefe, 30 dias no vermelho e não deu mais pra segurar: `+
+        `vendemos a loja${loja.bairro?' do bairro '+loja.bairro:''} por `+
+        `R$ 90.000 pra botar as contas em dia.`
+    });
+    return loja;
+  }
   const CARAVANA = 3000;   // GDD §7.3
 
   /* =======================================================
@@ -662,6 +694,7 @@ TO.financeiro = (function(){
           precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
           postura, fecharSemana,
           semanaDaMensalidade, fimDoMes, mesCorrente, fecharMes,
+          venderLojaSeEndividado, VENDA_LOJA,
           onibusDe, descontoCaravana,
           ONIBUS_MAX, ONIBUS_MES, ONIBUS_CUSTO, DESCONTO_ONIBUS,
           FESTA, pisoDaFesta,

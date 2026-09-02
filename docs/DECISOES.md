@@ -3326,6 +3326,25 @@ torcida. Tem que ser a mesma complexidade." O `balanco` virou
 - Sondagem de 1 ano pós-reajuste: 0 IAs no vermelho, 21 escritórios,
   mediana de caixa 16,3 mil. De pé.
 
+## A venda forçada da loja (ordem do dono, 02/09/2026)
+
+"Quando uma torcida fica por muito tempo endividada (30 dias), uma
+loja é vendida no valor de 90.000,00 pra ajudar nas finanças."
+
+- JOGADOR: contador dia a dia no `avancarDia` (`E.diasNoVermelho`);
+  caixa positivo zera. Aos 30 dias, sai a loja de NÍVEL MAIS BAIXO,
+  entram R$ 90 mil, o contador zera e o feed avisa (⚠ TEXTO MEU no
+  crivo: "Chefe, 30 dias no vermelho e não deu mais pra segurar:
+  vendemos a loja do bairro X por R$ 90.000 pra botar as contas em
+  dia."). Sem loja nenhuma, segue devendo — ninguém vende o que não
+  tem.
+- IA: mesma régua na fatia semanal do economiaDelas
+  (`t.diasVermelho` soma 7 por semana no vermelho → vende na 5ª
+  semana, ~35 dias), mesma escolha da loja mais fraca, mesmos
+  R$ 90 mil, linha no extrato.
+- Testado: jogador vende a nível 1 e guarda a nível 2, o caso sem
+  loja não quebra, e a IA vende na 5ª semana com o extrato certo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
