@@ -3344,6 +3344,13 @@ loja é vendida no valor de 90.000,00 pra ajudar nas finanças."
   R$ 90 mil, linha no extrato.
 - Testado: jogador vende a nível 1 e guarda a nível 2, o caso sem
   loja não quebra, e a IA vende na 5ª semana com o extrato certo.
+- TEXTO APROVADO pelo dono na sequência; e a régua cresceu: além da
+  loja, FECHAM ATÉ 3 SUBSEDES no mesmo evento — as da cidade
+  primeiro, depois a filial mais fraca, com os destacados voltando
+  pra sede (fechar não rende dinheiro; corta a manutenção). Vale
+  igual pra IA, com o núcleo voltando pro total. O aviso do feed
+  ganha a frase "Fechamos também N subsedes pra estancar a
+  sangria." (⚠ frase minha, no crivo).
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
