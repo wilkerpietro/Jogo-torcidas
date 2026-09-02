@@ -439,7 +439,7 @@ TO.relacoes = (function(){
       if(advogadosIA(t) < teto)
         return {tipo:'advogado', custo:0, cofre:cofreDoAdvogado(t)};
       /* o escritório está cheio: sede maior comporta mais? */
-      return t.sede < 5 ? {sede:true} : null;
+      return t.sede < 6 ? {sede:true} : null;
     }
     if(chave === 'bombas')
       return t.bombas >= BOMBA.teto ? null
@@ -454,7 +454,7 @@ TO.relacoes = (function(){
     if(chave === 'filial'){
       const FL = P().FILIAL;
       if((t.filiais||[]).length >= (FL.porSede[t.sede]||0))
-        return t.sede < 5 ? {sede:true} : null;
+        return t.sede < 6 ? {sede:true} : null;
       if((t.prestigio||0) < FL.prestigioMin) return null;
       const cidade = melhorCidadeFilial(E, id, t);
       return cidade ? {tipo:'filial', custo:FL.compra, cidade} : null;

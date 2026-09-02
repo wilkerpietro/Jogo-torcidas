@@ -110,7 +110,9 @@ TO.membros = (function(){
     {membros:90,  diretoria:4,  treino:4},
     {membros:150, diretoria:6,  treino:8},
     {membros:200, diretoria:10, treino:12},
-    {membros:500, diretoria:15, treino:20}
+    {membros:500, diretoria:15, treino:20},
+    /* o COMPLEXO (sede nível 6, régua do dono, 02/09/2026) */
+    {membros:700, diretoria:20, treino:30}
   ];
 
   /* ferido volta em 5 a 15 dias, sorteado na hora (decisão do dono,
@@ -428,7 +430,11 @@ TO.membros = (function(){
      dia de jogo, que é de onde vem a maioria. */
   function ferir(E, m, dias, motivo){
     if(m.ferido) return;
-    const d = dias || U.inteiro(FERIDO_MIN, FERIDO_MAX);
+    /* a ENFERMARIA da sede encurta a cama (pacote do dono, 02/09/2026):
+       com ela o ferido volta em 3 a 9 dias em vez de 5 a 15 */
+    const temEnfermaria = E && E.patrimonio && E.patrimonio.enfermaria;
+    const d = dias || (temEnfermaria ? U.inteiro(3, 9)
+                                     : U.inteiro(FERIDO_MIN, FERIDO_MAX));
     m.ferido = { dias:d };
     m.naFila = false;
     m.historico.push(`${motivo || 'Ferido no dia de jogo'}, ${d} dias fora`);

@@ -16,7 +16,7 @@ TO.financeiro = (function(){
   const SEM = 1/4;                                   // mês → semana
 
   /* GDD §8.1 — manutenção mensal por nível de sede */
-  const MANUT_SEDE = [null, 200, 480, 960, 1800, 3000];
+  const MANUT_SEDE = [null, 200, 480, 960, 1800, 3000, 5000];
   /* =======================================================
      O CUSTO DA FESTA, POR NÍVEL DE SEDE
      (régua do dono, 20/08/2026 — pra ser viável pra todos)
@@ -29,7 +29,7 @@ TO.financeiro = (function(){
      por cabeça) paga o custo. Sede nível 4 continua nos R$ 700
      de sempre: o que mudou foi embaixo, não o que já existia.
      ======================================================= */
-  const FESTA = [null, 170, 300, 500, 700, 1700];
+  const FESTA = [null, 170, 300, 500, 700, 1700, 2600];
   /* quanta gente a festa deste nível precisa pra se pagar */
   const pisoDaFesta = nivel => Math.ceil((FESTA[nivel] || 700)/4.8);
 
@@ -46,7 +46,12 @@ TO.financeiro = (function(){
      muito baixo"). A SUBSEDE subiu pra 700/1.200/1.800 por nível
      (reajuste do dono, 31/08/2026) — vale pra local (sempre nível 1)
      e pra filial em outra cidade, e a IA paga pela mesma tabela. */
-  const MANUT   = {bar:[null, 480, 960, 1800],  loja:[null, 300, 600, 1080],
+  /* CUSTO FIXO NA RÉGUA DA MORAL (reajuste do dono, 02/09/2026):
+     bar e loja sobem até ~50% da receita cheia — com a moral baixa
+     (×0,4–0,6) o ponto FECHA NO VERMELHO e só volta a dar lucro com a
+     torcida animada. A subsede fica como está: pela régua do dono de
+     31/08 ela já é prejuízo direto em qualquer moral. */
+  const MANUT   = {bar:[null, 800, 1800, 3800],  loja:[null, 600, 1300, 2600],
                    subsede:[null, 700, 1200, 1800]};
 
   const INSUMO   = 0.25;   // GDD §8.3: loja sem insumo não fatura
@@ -108,9 +113,9 @@ TO.financeiro = (function(){
      dos dois; a partir do 2 cabe um, do 3 cabem dois, e o
      terceiro só na sede nível 5.
      ======================================================= */
-  const TETO_SEDE = [null, 0, 1, 2, 2, 3];
+  const TETO_SEDE = [null, 0, 1, 2, 2, 3, 4];
   const nivelDaSede = E => (E && E.torcida && E.torcida.sedeNivel) || 1;
-  const cabeNaSede = nivel => TETO_SEDE[U.limitar(nivel || 1, 1, 5)] || 0;
+  const cabeNaSede = nivel => TETO_SEDE[U.limitar(nivel || 1, 1, 6)] || 0;
   const onibusMax = E => cabeNaSede(nivelDaSede(E));
   const mmaMax    = E => cabeNaSede(nivelDaSede(E));
   /* =======================================================
@@ -133,9 +138,9 @@ TO.financeiro = (function(){
      oito.
      ======================================================= */
   const ADVOGADO_MES = 5000, ADVOGADO_DIAS = 10;
-  const ADVOGADOS_SEDE = [null, 0, 1, 2, 4, 8];
+  const ADVOGADOS_SEDE = [null, 0, 1, 2, 4, 8, 12];
   const advogadosMax = E => ADVOGADOS_SEDE[U.limitar(
-    (E && E.torcida && E.torcida.sedeNivel) || 1, 1, 5)] || 0;
+    (E && E.torcida && E.torcida.sedeNivel) || 1, 1, 6)] || 0;
   function advogadosDe(E){
     const a = E && E.advogados;
     if(!a) return 0;
@@ -282,6 +287,14 @@ TO.financeiro = (function(){
     for(const f of (p.filiais||[]))
       manutCom += MANUT.subsede[f.nivel] || MANUT.subsede[1];
     juntar(des, 'Manutenção do comércio', manutCom*SEM);
+
+    /* os ANEXOS da sede (pacote do dono, 02/09/2026): enfermaria e
+       galpão têm mensalidade; o cofre é obra paga uma vez */
+    const px = E.patrimonio || {};
+    if(px.enfermaria) juntar(des, 'Enfermaria da sede',
+      (TO.patrimonio ? TO.patrimonio.ANEXOS.enfermaria.mes : 1200)*SEM);
+    if(px.galpao) juntar(des, 'Galpão de material',
+      (TO.patrimonio ? TO.patrimonio.ANEXOS.galpao.mes : 600)*SEM);
 
     /* e corta 60% do insumo, que é o outro lado do mesmo negócio */
     const corteIns = p.fabrica ? (TO.patrimonio ? TO.patrimonio.FABRICA.corteInsumo : 0.6) : 0;

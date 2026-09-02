@@ -39,7 +39,9 @@ TO.patrimonio = (function(){
     {custo: 40000,  rot:'Sede nível 2'},
     {custo:100000,  rot:'Sede nível 3'},
     {custo:200000,  rot:'Sede nível 4'},
-    {custo:400000,  rot:'Sede nível 5'}
+    {custo:400000,  rot:'Sede nível 5'},
+    /* o COMPLEXO (dono, 02/09/2026): um milhão pra virar império */
+    {custo:1000000, rot:'Sede nível 6'}
   ];
 
   /* Quanto de cada coisa cabe por nível de sede (GDD V4 §8.1). Duas
@@ -47,17 +49,46 @@ TO.patrimonio = (function(){
      nível eles podem chegar. Bar nível 3 só existe em sede nível 5. */
   const TETO = {
     bar:     [null, {qtd:1, nivel:1}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
-                    {qtd:2, nivel:2}, {qtd:2, nivel:3}],
+                    {qtd:2, nivel:2}, {qtd:2, nivel:3}, {qtd:2, nivel:3}],
     loja:    [null, {qtd:0, nivel:0}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
-                    {qtd:2, nivel:2}, {qtd:2, nivel:3}],
+                    {qtd:2, nivel:2}, {qtd:2, nivel:3}, {qtd:2, nivel:3}],
     /* subsede na cidade e fora somadas: a cena não distingue as duas
        ainda, então o teto é a soma das duas colunas do GDD */
+    /* o nível 6 NÃO abre ponto comercial novo (ordem do dono,
+       02/09/2026): o Complexo é membro, estrutura e anexo */
     subsede: [null, {qtd:0, nivel:1}, {qtd:1, nivel:1}, {qtd:2, nivel:1},
-                    {qtd:5, nivel:1}, {qtd:8, nivel:1}]
+                    {qtd:5, nivel:1}, {qtd:8, nivel:1}, {qtd:8, nivel:1}]
   };
 
   /* GDD V4 §8.3. O preço de cada nível é o preço de ter o ponto
      naquele nível, então ampliar custa o cheio do nível novo. */
+  /* =======================================================
+     OS ANEXOS DA SEDE (pacote do dono, 02/09/2026)
+     Obras únicas, cada uma com a sua porta por nível de sede:
+     - ENFERMARIA (nv4): ferido volta em 3–9 dias, não 5–15.
+     - GALPÃO (nv3): bomba 15% mais barata e o saque no nosso bar
+       leva 30% menos (o material fica trancado).
+     - COFRE BLINDADO (nv5): metade do prejuízo de saque não existe —
+       o dinheiro grande não dorme no balcão.
+     ======================================================= */
+  const ANEXOS = {
+    enfermaria: {rot:'Enfermaria da sede', custo:60000,  mes:1200, sede:4,
+      nota:'ferido volta em 3 a 9 dias em vez de 5 a 15'},
+    galpao:     {rot:'Galpão de material', custo:45000,  mes:600,  sede:3,
+      nota:'bomba 15% mais barata e o saque no nosso bar leva 30% menos'},
+    cofre:      {rot:'Cofre blindado',     custo:150000, mes:0,    sede:5,
+      nota:'metade do prejuízo de qualquer saque fica guardada'},
+  };
+
+  /* a perda de saque passa por aqui: galpão corta 30%, cofre corta
+     metade do que sobrar */
+  function protegerPerda(E, v){
+    const px = (E && E.patrimonio) || {};
+    if(px.galpao) v *= 0.7;
+    if(px.cofre)  v *= 0.5;
+    return Math.round(v);
+  }
+
   const PONTO = {
     bar: {
       rot:'Bar', plural:'bares',
@@ -154,6 +185,10 @@ TO.patrimonio = (function(){
     fora.push({tipo:'sede', rot:`Sede (nível ${nivelSede(E)})`,
                bairro:(TO.mundo.bairroDaSede(E.torcida)||{}).nome || '',
                receita:0, despesa:F().MANUT_SEDE[nivelSede(E)]});
+    for(const chave of Object.keys(ANEXOS))
+      if(p[chave]) fora.push({tipo:'anexo', rot:ANEXOS[chave].rot,
+        bairro:'', nota:ANEXOS[chave].nota,
+        receita:0, despesa:ANEXOS[chave].mes});
 
     for(const b of p.bares) fora.push({tipo:'bar',
       rot:`Bar (nível ${b.nivel})${b.gratis?' · da sede':''}`, bairro:b.bairro,
@@ -322,7 +357,7 @@ TO.patrimonio = (function(){
        nv4 quatro, nv5 oito. */
     const temAdv = F().advogadosDe(E);
     const maxAdv = F().advogadosMax(E);
-    if(temAdv >= maxAdv && n < 5){
+    if(temAdv >= maxAdv && n < 6){
       lista.push({id:'advogado',
         rot: maxAdv ? 'Contratar mais um advogado' : 'Contratar advogado',
         nota:`a sede nível ${n} comporta `+
@@ -398,6 +433,18 @@ TO.patrimonio = (function(){
       trava:trava(FABRICA.custo,
         n < FABRICA.sede ? `precisa de sede nível ${FABRICA.sede}` : null)});
 
+    /* os anexos da sede, um botão cada, enquanto não existirem */
+    for(const chave of Object.keys(ANEXOS)){
+      const a = ANEXOS[chave];
+      if(p[chave]) continue;
+      lista.push({id:'anexo:'+chave, rot:a.rot,
+        nota:a.nota + (a.mes ? ` · R$ ${a.mes.toLocaleString('pt-BR')}/mês`
+                             : ' · sem mensalidade'),
+        custo:a.custo,
+        trava:trava(a.custo,
+          n < a.sede ? `precisa de sede nível ${a.sede}` : null)});
+    }
+
     return lista;
   }
 
@@ -455,6 +502,9 @@ TO.patrimonio = (function(){
     } else if(acao==='fabrica'){
       p.fabrica = true;
       TO.estado.lancar(E, 'Fábrica de material', -o.custo);
+    } else if(acao==='anexo'){
+      p[tipo] = true;
+      TO.estado.lancar(E, ANEXOS[tipo].rot, -o.custo);
     } else if(acao==='onibus'){
       const tinha = F().onibusDe(E);
       E.onibus = {desde:(E.onibus && E.onibus.desde) || (E.data||{}).absoluto || 0,
@@ -519,8 +569,11 @@ TO.patrimonio = (function(){
      hora do planejamento do ataque e vai pro estoque que a
      cena gasta.
      ======================================================= */
-  /* R$ 400 a unidade (reajuste do dono, 31/08/2026 — era 120) */
+  /* R$ 400 a unidade (reajuste do dono, 31/08/2026 — era 120);
+     com o GALPÃO a compra sai 15% mais barata (pacote de 02/09/2026) */
   const PRECO_BOMBA = 400;
+  const precoBomba = E => (E && E.patrimonio && E.patrimonio.galpao)
+    ? Math.round(PRECO_BOMBA * 0.85) : PRECO_BOMBA;
 
   function estoquePiro(E){
     if(!E.estoque) E.estoque = {bombas:0};
@@ -532,7 +585,7 @@ TO.patrimonio = (function(){
   function comprarBombas(E, qtd){
     qtd = Math.max(0, Math.round(qtd||0));
     if(!qtd) return {ok:true, compradas:0};
-    const custo = qtd * PRECO_BOMBA;
+    const custo = qtd * precoBomba(E);
     if(E.dinheiro < custo) return {ok:false, msg:'falta caixa'};
     estoquePiro(E).bombas += qtd;
     TO.estado.lancar(E, `Bombas ×${qtd}`, -custo);
@@ -542,5 +595,6 @@ TO.patrimonio = (function(){
   return {SEDE, TETO, PONTO, FABRICA, FILIAL,
           filiaisDe, temFilialEm, cidadesCandidatas,
           linhas, opcoes, comprar,
-          PRECO_BOMBA, bombas, comprarBombas};
+          PRECO_BOMBA, precoBomba, bombas, comprarBombas,
+          ANEXOS, protegerPerda};
 })();

@@ -3256,6 +3256,35 @@ de partida; o valor corrente mora no save (`E.torcedoresEv`,
   ano. Com o mundo inteiro na régua: 63 clubes em alta e 61 em baixa
   no primeiro ano sondado.
 
+## A sede nível 6 e os anexos (pacote do dono, 02/09/2026)
+
+O dono aprovou o pacote recomendado com as réguas dele:
+
+- **SEDE NÍVEL 6 — o Complexo**: R$ 1.000.000 de obra (ordem dele),
+  manutenção R$ 5.000/mês. Teto de membros **700** (ele reformulou o
+  1.000 proposto), diretoria 20, treino 30, 4 ônibus/professores,
+  12 advogados. **Sem ponto comercial novo** (ordem dele): bares,
+  lojas e subsedes ficam no teto da nv5. A IA sobe pela mesma escada
+  (a fila lê a tabela).
+- **ENFERMARIA DA SEDE** (nv4, R$ 60 mil + R$ 1.200/mês): ferido
+  volta em 3–9 dias em vez de 5–15.
+- **GALPÃO DE MATERIAL** (nv3, R$ 45 mil + R$ 600/mês): bomba 15%
+  mais barata (R$ 340) e o saque no nosso bar leva 30% menos.
+- **COFRE BLINDADO** (nv5, R$ 150 mil, sem mensalidade): metade do
+  prejuízo de saque não existe. Galpão e cofre acumulam: perda de
+  R$ 1.000 vira R$ 350.
+- **CUSTO FIXO NA RÉGUA DA MORAL** (ordem dele: "deficitário quando
+  a moral estiver baixa"): bar subiu pra 800/1.800/3.800 e loja pra
+  600/1.300/2.600 — ~50% da receita cheia, então com moral no chão
+  (×0,4–0,6) o ponto fecha no vermelho e só volta a lucrar com a
+  torcida animada (provado: bar nv1 com moral 10 rende 635 contra
+  800 de custo; com moral 90, 1.905 contra 800). A subsede ficou
+  como está: pela régua de 31/08 ela já é prejuízo direto sempre.
+  A IA paga pelas mesmas tabelas; sondagem de 1 ano: 0 no vermelho.
+- Festa da sede nv6: R$ 2.600 (extrapolação da escada — a conferir).
+- Os anexos são do JOGADOR por ora; entrar na fila de compras da IA
+  fica pra ordem futura do dono.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

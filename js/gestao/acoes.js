@@ -386,6 +386,9 @@ TO.acoes = (function(){
       if(alvo.tipo === 'bar'){
         perdeu = Math.round(60 * Math.max(4, alvo.efetivo||40)
                             + Math.max(0, E.dinheiro) * 0.10);
+        /* galpão tranca o material e o cofre guarda o caixa
+           (pacote do dono, 02/09/2026) */
+        perdeu = TO.patrimonio.protegerPerda(E, perdeu);
         if(perdeu > 0){
           TO.estado.lancar(E, 'Levaram do nosso bar', -perdeu);
           linhas.push(`${U.dinheiro(perdeu)} da gaveta e do caixa`);

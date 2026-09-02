@@ -3883,7 +3883,7 @@
       /* --- 4: quantas bombas --- */
       const tem = (e.estoque||{}).bombas || 0;
       const podeComprar = Math.floor(Math.max(0, e.dinheiro) /
-                                     TO.patrimonio.PRECO_BOMBA);
+                                     TO.patrimonio.precoBomba(e));
       const teto = tem + podeComprar;
       corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantas bombas'}));
       const lb = el('div',{class:'contador'});
@@ -3892,7 +3892,7 @@
       bM.disabled = bombas >= teto;
       bB.onclick = ()=>{ bombas = Math.max(0, bombas-1); pintar(); };
       bM.onclick = ()=>{ bombas = Math.min(teto, bombas+1); pintar(); };
-      const custoExtra = Math.max(0, bombas - tem) * TO.patrimonio.PRECO_BOMBA;
+      const custoExtra = Math.max(0, bombas - tem) * TO.patrimonio.precoBomba(e);
       lb.append(bB, el('b',{texto:String(bombas)}), bM,
         el('small',{texto:`${tem} no estoque`+
           (custoExtra ? ` · comprar ${bombas-tem} por ${U.dinheiro(custoExtra)}`
