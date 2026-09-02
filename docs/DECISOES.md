@@ -3091,6 +3091,32 @@ cidade), Praça e filiais no perfil da torcida, coluna Origem das
 tabelas de membros, linhas de filial no Patrimônio > Estrutura e a
 cidade das notas do jornal.
 
+## Escudos e capas de cidade (pedido do dono, 01/09/2026)
+
+O dono mandou trocar os quadradinhos de cor por escudos (exceto os
+discos das cenas) e pôr foto turística no cabeçalho do perfil da
+cidade. A REDE deste ambiente barrou quase tudo (organizadasbrasil,
+Wikipedia, OneDrive — só GitHub e registries passam), então o pacote
+saiu em duas partes:
+
+- **A fiação, completa**: convenção `img/escudos/clube-<id>.png` e
+  `img/escudos/torcida-<id>.png` + manifesto gerado
+  (`dados/escudos.js`). Onde houver escudo, o chip vira `<img>`; sem
+  arquivo, o quadradinho de cor continua. Aplicado na tabela do
+  olheiro (clubes e torcidas), no ranking, no perfil da torcida
+  (clube) e no perfil da cidade (times). A capa da cidade lê
+  `img/cidades/<id>.jpg` sob um gradiente — sem foto, fica só o
+  gradiente, sem quebrar.
+- **Os escudos que a rede deixou**: 35 clubes importados da coleção
+  FCLOGO do GitHub (Flamengo, Fluminense, Botafogo, Palmeiras + a
+  elite argentina, Boca incluso), 64px, 240KB no total.
+- **Pendentes da rede/pack do dono**: escudos dos demais clubes
+  brasileiros e sul-americanos (o dono tem pasta no OneDrive — chega
+  por anexo ou por sessão nova com a política de rede liberada),
+  escudos das torcidas (organizadasbrasil) e as fotos das cidades.
+  Chegando os arquivos, é só salvar nas convenções acima e regerar o
+  manifesto que tudo acende sozinho.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -796,9 +796,11 @@ TO.feed = (function(){
          as torcidas do jogo, cada uma com sua cor e sua estimativa */
       tabela.push({
         comp: j.comp, dia: NOME_DIA[j.dia],
-        clubes: [{nome:j.casa.nome, cor:(j.casa.cores||[])[0]||'#888'},
-                 {nome:j.vis.nome,  cor:(j.vis.cores||[])[0]||'#888'}],
-        torcidas: ests.map(x=>({nome:x.nome, cor:corDe(x.id),
+        clubes: [{id:j.casa.id, nome:j.casa.nome,
+                  cor:(j.casa.cores||[])[0]||'#888'},
+                 {id:j.vis.id, nome:j.vis.nome,
+                  cor:(j.vis.cores||[])[0]||'#888'}],
+        torcidas: ests.map(x=>({id:x.id, nome:x.nome, cor:corDe(x.id),
                                 faixa:x.faixa, hostil:x.hostil}))
       });
     }
@@ -837,11 +839,11 @@ TO.feed = (function(){
         `ou pra cima.`;
       tabela.push({
         comp: fora.competicao || 'fora de casa', dia: NOME_DIA[fora.dia||6],
-        clubes: [{nome:fora.mandante.nome,
+        clubes: [{id:fora.mandante.id, nome:fora.mandante.nome,
                   cor:(fora.mandante.cores||[])[0]||'#888'},
-                 {nome:fora.visitante.nome,
+                 {id:fora.visitante.id, nome:fora.visitante.nome,
                   cor:(fora.visitante.cores||[])[0]||'#888'}],
-        torcidas: alvos.map(a=>({nome:a.nome, cor:corDe(a.id),
+        torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id),
                                  faixa:a.faixa, hostil:!a.aliada}))
       });
       botoes.splice(1, 0,
@@ -899,9 +901,11 @@ TO.feed = (function(){
     };
     const tabela = [{
       comp: j.competicao || 'fora de casa', dia: NOME_DIA[j.dia||6],
-      clubes: [{nome:j.mandante.nome,  cor:(j.mandante.cores||[])[0]||'#888'},
-               {nome:j.visitante.nome, cor:(j.visitante.cores||[])[0]||'#888'}],
-      torcidas: alvos.map(a=>({nome:a.nome, cor:corDe(a.id),
+      clubes: [{id:j.mandante.id, nome:j.mandante.nome,
+                cor:(j.mandante.cores||[])[0]||'#888'},
+               {id:j.visitante.id, nome:j.visitante.nome,
+                cor:(j.visitante.cores||[])[0]||'#888'}],
+      torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id),
                                faixa:a.faixa, hostil:!a.aliada}))
     }];
     propor(E, {

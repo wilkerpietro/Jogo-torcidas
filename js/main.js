@@ -2118,20 +2118,18 @@
        coluna 2 as torcidas do jogo, cada uma com sua cor e estimativa. */
     const tab = m.dados && m.dados.tabela;
     if(tab && tab.length){
-      const chip = (cor, nome) =>
-        `<i class="to-chip" style="background:${cor}"></i>${nome}`;
       const tb = el('table',{class:'tab-olheiro'});
       for(const r of tab){
         const tr = el('tr');
         tr.appendChild(el('td',{class:'to-jogo', html:
           `<small>${r.comp || ''}${r.dia ? ` · ${r.dia}` : ''}</small>`+
-          `<div>${chip(r.clubes[0].cor, r.clubes[0].nome)}`+
+          `<div>${chipClube(r.clubes[0].id, r.clubes[0].cor)}${r.clubes[0].nome}`+
           `<span class="to-x">×</span>`+
-          `${chip(r.clubes[1].cor, r.clubes[1].nome)}</div>`}));
+          `${chipClube(r.clubes[1].id, r.clubes[1].cor)}${r.clubes[1].nome}</div>`}));
         tr.appendChild(el('td',{class:'to-torcidas', html:
           r.torcidas.map(t=>
             `<div${t.hostil ? '' : ' class="to-mansa"'}>`+
-            `${chip(t.cor, linkificarNomes(t.nome))} <span class="to-faixa">`+
+            `${chipTorcida(t.id, t.cor)}${linkificarNomes(t.nome)} <span class="to-faixa">`+
             `${String(t.faixa).replace(' a ','–')} membros</span></div>`)
             .join('') || '<div class="to-mansa">ninguém na rua</div>'}));
         tb.appendChild(tr);
@@ -2491,7 +2489,7 @@
         ? `<em class="rk-pais">${TO.relacoes.paisDaTorcida(r.id)}</em>` : '';
       tr.innerHTML =
         `<td class="pos">${r.pos}º</td>
-         <td><i class="to-chip" style="background:${cor}"></i>`+
+         <td>${chipTorcida(r.id, cor)}`+
         `${linkTorcida(r.id, r.nome)}${bandeirinha}</td>
          <td class="nu">${U.numero(r.membros)}${vario(r.varMembros)}</td>
          <td class="nu">${r.prestigio}${vario(r.varPrestigio)}</td>
@@ -4067,6 +4065,27 @@
   const linkTorcida = (id, nome) =>
     id ? `<span class="t-link" data-torcida="${id}">${nome}</span>` : nome;
 
+  /* O ESCUDO NO LUGAR DO QUADRADINHO (pedido do dono, 01/09/2026):
+     onde houver escudo em img/escudos/ ele entra no lugar do chip de
+     cor; sem arquivo, o quadradinho de cor continua — os discos das
+     cenas ficam como estão, por ordem do dono. clube-<id>.png vem da
+     coleção importada; torcida-<id>.png espera o pack do dono. */
+  const escudoDe = (tipo, id) => {
+    const m = (TO.dados.escudos||{})[tipo === 'c' ? 'clubes' : 'torcidas'];
+    return m && id && m[id]
+      ? `img/escudos/${tipo === 'c' ? 'clube' : 'torcida'}-${id}.png` : null;
+  };
+  const chipClube = (id, cor) => {
+    const src = escudoDe('c', id);
+    return src ? `<img class="to-escudo" src="${src}" alt="">`
+               : `<i class="to-chip" style="background:${cor}"></i>`;
+  };
+  const chipTorcida = (id, cor) => {
+    const src = escudoDe('t', id);
+    return src ? `<img class="to-escudo" src="${src}" alt="">`
+               : `<i class="to-chip" style="background:${cor}"></i>`;
+  };
+
   /* o link da CIDADE (pedido do dono, 31/08/2026): mesmo cano do link
      de torcida, abrindo o perfil da praça */
   const linkCidade = (id, nome) =>
@@ -4147,7 +4166,9 @@
       const fund = o.fundacaoDia
         ? `${o.fundacaoDia}/${String(o.fundacaoMes).padStart(2,'0')}` : '—';
       cx.innerHTML =
-        linhaD('Clube', clube.nome || '—') +
+        linhaD('Clube', clube.nome
+          ? `${chipClube(o.clubeId, (clube.cores||[])[0] || '#888')}${clube.nome}`
+          : '—') +
         linhaD('Praça', linkCidade(o.mapa, cidade)) +
         linhaD('Fundação', fund) +
         linhaD('Membros', `${Math.round(membros)} `+
@@ -4350,7 +4371,9 @@
       const cx = el('div');
       const times = (c.times||[]).map(x=>{
         const tm = TO.mundo.time(x.clubeId) || {};
-        return {nome:tm.nome || x.clubeId, torcedores:x.torcedores,
+        return {id:x.clubeId, nome:tm.nome || x.clubeId,
+                torcedores:x.torcedores,
+                cor:(tm.cores||[])[0] || '#888',
                 estadio:tm.estadio, cap:tm.capacidade};
       }).sort((a,b)=>b.torcedores - a.torcedores);
       let html =
@@ -4361,7 +4384,8 @@
         linhaD('Policiamento', `${c.pms || 0} PMs · ${c.guardas || 0} guardas`+
           `${c.choque ? ' · tropa de choque' : ''}`);
       for(const tm of times)
-        html += linhaD(tm.nome, `${U.numero(tm.torcedores)} torcedores`+
+        html += linhaD(`${chipClube(tm.id, tm.cor)}${tm.nome}`,
+          `${U.numero(tm.torcedores)} torcedores`+
           `${tm.estadio ? ` · ${tm.estadio}` : ''}`+
           `${tm.cap ? ` (${U.numero(tm.cap)})` : ''}`);
       const soTime = new Set(times.map(t=>t.estadio));
@@ -4460,6 +4484,18 @@
     modal(c.nome, `${c.uf || ''}${c.regiao ? ` · ${c.regiao}` : ''} · `+
       `${TO.mundo.torcidasEm(c.id).filter(o=>!o.incompleta).length} torcidas`,
       corpo);
+    /* A CAPA DA CIDADE (pedido do dono, 01/09/2026): o cabeçalho do
+       perfil vira cartão-postal — a foto mora em img/cidades/<id>.jpg
+       e entra por baixo do gradiente; sem arquivo, fica o gradiente
+       escuro de sempre, sem quebrar nada. */
+    const ov = [...document.querySelectorAll('.tela-cheia')].pop();
+    const cab = ov && ov.querySelector('.moldura > header');
+    if(cab){
+      cab.classList.add('capa-cidade');
+      cab.style.backgroundImage =
+        'linear-gradient(180deg, rgba(8,9,12,.30), rgba(8,9,12,.86)), '+
+        `url("img/cidades/${c.id}.jpg")`;
+    }
   }
 
   /* o clique nos nomes é delegado: qualquer .t-link ou .c-link, em
