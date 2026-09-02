@@ -4070,10 +4070,15 @@
      cor; sem arquivo, o quadradinho de cor continua — os discos das
      cenas ficam como estão, por ordem do dono. clube-<id>.png vem da
      coleção importada; torcida-<id>.png espera o pack do dono. */
+  /* no jogo de arquivo único as imagens dinâmicas moram num dicionário
+     embutido pelo empacotador; servido normal, o caminho vale como é */
+  const IMG = caminho =>
+    (window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho;
   const escudoDe = (tipo, id) => {
     const m = (TO.dados.escudos||{})[tipo === 'c' ? 'clubes' : 'torcidas'];
     return m && id && m[id]
-      ? `img/escudos/${tipo === 'c' ? 'clube' : 'torcida'}-${id}.png` : null;
+      ? IMG(`img/escudos/${tipo === 'c' ? 'clube' : 'torcida'}-${id}.png`)
+      : null;
   };
   const chipClube = (id, cor) => {
     const src = escudoDe('c', id);
@@ -4494,7 +4499,7 @@
       cab.classList.add('capa-cidade');
       cab.style.backgroundImage =
         'linear-gradient(180deg, rgba(8,9,12,.30), rgba(8,9,12,.86)), '+
-        `url("img/cidades/${c.id}.jpg")`;
+        `url("${IMG('img/cidades/' + c.id + '.jpg')}")`;
     }
   }
 
