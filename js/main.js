@@ -4374,12 +4374,14 @@
 
     const abaVisaoC = ()=>{
       const cx = el('div');
+      /* sem estádio aqui (ordem do dono, 01/09/2026): o perfil da
+         cidade fala da PRAÇA — clube e torcedor; estádio fica pras
+         telas de jogo */
       const times = (c.times||[]).map(x=>{
         const tm = TO.mundo.time(x.clubeId) || {};
         return {id:x.clubeId, nome:tm.nome || x.clubeId,
                 torcedores:x.torcedores,
-                cor:(tm.cores||[])[0] || '#888',
-                estadio:tm.estadio, cap:tm.capacidade};
+                cor:(tm.cores||[])[0] || '#888'};
       }).sort((a,b)=>b.torcedores - a.torcedores);
       let html =
         linhaD('Onde', `${c.uf || ''}${c.regiao ? ` · ${c.regiao}` : ''}`) +
@@ -4390,12 +4392,7 @@
           `${c.choque ? ' · tropa de choque' : ''}`);
       for(const tm of times)
         html += linhaD(`${chipClube(tm.id, tm.cor)}${tm.nome}`,
-          `${U.numero(tm.torcedores)} torcedores`+
-          `${tm.estadio ? ` · ${tm.estadio}` : ''}`+
-          `${tm.cap ? ` (${U.numero(tm.cap)})` : ''}`);
-      const soTime = new Set(times.map(t=>t.estadio));
-      const extras = (c.estadios||[]).filter(x=>!soTime.has(x));
-      if(extras.length) html += linhaD('Outros estádios', extras.join(', '));
+          `${U.numero(tm.torcedores)} torcedores`);
       if((c.rodovias||[]).length)
         html += linhaD('Rodovias', c.rodovias.join(', '));
       /* as vizinhas pela estrada, cada uma com o próprio link */
