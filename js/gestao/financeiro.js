@@ -69,23 +69,50 @@ TO.financeiro = (function(){
     E.diasNoVermelho = (E.diasNoVermelho || 0) + 1;
     if(E.diasNoVermelho < DIAS_DIVIDA) return null;
     const p = patrimonio(E);
-    if(!(p.lojas||[]).length) return null;   // sem loja, segue devendo
-    /* vai a de nível mais baixo — ninguém entrega a joia primeiro */
-    let i = 0;
-    for(let k=1; k<p.lojas.length; k++)
-      if((p.lojas[k].nivel||1) < (p.lojas[i].nivel||1)) i = k;
-    const loja = p.lojas.splice(i, 1)[0];
-    E.dinheiro += VENDA_LOJA;
+    /* a loja de nível mais baixo é vendida — ninguém entrega a joia
+       primeiro — e ATÉ 3 SUBSEDES FECHAM junto (ordem do dono,
+       02/09/2026): primeiro as da cidade, depois a filial mais fraca,
+       com os destacados voltando pra sede */
+    let loja = null;
+    if((p.lojas||[]).length){
+      let i = 0;
+      for(let k=1; k<p.lojas.length; k++)
+        if((p.lojas[k].nivel||1) < (p.lojas[i].nivel||1)) i = k;
+      loja = p.lojas.splice(i, 1)[0];
+      E.dinheiro += VENDA_LOJA;
+      TO.estado.lancar(E, `Loja${loja.bairro?' — '+loja.bairro:''} vendida `+
+                          `— 30 dias no vermelho`, VENDA_LOJA);
+    }
+    let fechadas = 0;
+    while(fechadas < 3 && (p.subsedes||[]).length){
+      p.subsedes.pop(); fechadas++;
+    }
+    while(fechadas < 3 && (p.filiais||[]).length){
+      let i = 0;
+      for(let k=1; k<p.filiais.length; k++)
+        if((p.filiais[k].nivel||1) < (p.filiais[i].nivel||1)) i = k;
+      const fil = p.filiais.splice(i, 1)[0];
+      for(const m of (E.membros||[]))
+        if(m.filial === fil.cidade){
+          m.filial = null;
+          m.historico.push('De volta à sede — a subsede de '+
+            nomeCidade(fil.cidade)+' fechou nas dívidas');
+        }
+      fechadas++;
+    }
+    if(!loja && !fechadas) return null;      // nada a vender, segue devendo
     E.diasNoVermelho = 0;
-    TO.estado.lancar(E, `Loja${loja.bairro?' — '+loja.bairro:''} vendida `+
-                        `— 30 dias no vermelho`, VENDA_LOJA);
     if(TO.feed && TO.feed.propor) TO.feed.propor(E, {
       kind:'aviso', peso:'info', voz:'diretor',
-      texto:`Chefe, 30 dias no vermelho e não deu mais pra segurar: `+
-        `vendemos a loja${loja.bairro?' do bairro '+loja.bairro:''} por `+
-        `R$ 90.000 pra botar as contas em dia.`
+      texto:(loja
+        ? `Chefe, 30 dias no vermelho e não deu mais pra segurar: `+
+          `vendemos a loja${loja.bairro?' do bairro '+loja.bairro:''} por `+
+          `R$ 90.000 pra botar as contas em dia.`
+        : `Chefe, 30 dias no vermelho e não deu mais pra segurar.`)+
+        (fechadas ? ` Fechamos também ${fechadas} subsede`+
+          `${fechadas>1?'s':''} pra estancar a sangria.` : '')
     });
-    return loja;
+    return loja || {fechadas};
   }
   const CARAVANA = 3000;   // GDD §7.3
 

@@ -709,15 +709,31 @@ TO.relacoes = (function(){
            de dívida — aqui contados na fatia semanal — e uma loja sai
            por R$ 90 mil, a de nível mais baixo */
         t.diasVermelho = (t.diasVermelho || 0) + 7;
-        if(t.diasVermelho >= 30 && (t.lojas||[]).length){
-          let iL = 0;
-          for(let k=1; k<t.lojas.length; k++)
-            if((t.lojas[k].nivel||1) < (t.lojas[iL].nivel||1)) iL = k;
-          t.lojas.splice(iL, 1);
-          t.caixa += FIN().VENDA_LOJA || 90000;
-          t.diasVermelho = 0;
-          lancarIA(E, id, 'Loja vendida — 30 dias no vermelho',
-                   FIN().VENDA_LOJA || 90000);
+        if(t.diasVermelho >= 30){
+          let mexeu = false;
+          if((t.lojas||[]).length){
+            let iL = 0;
+            for(let k=1; k<t.lojas.length; k++)
+              if((t.lojas[k].nivel||1) < (t.lojas[iL].nivel||1)) iL = k;
+            t.lojas.splice(iL, 1);
+            t.caixa += FIN().VENDA_LOJA || 90000;
+            lancarIA(E, id, 'Loja vendida — 30 dias no vermelho',
+                     FIN().VENDA_LOJA || 90000);
+            mexeu = true;
+          }
+          /* e até 3 subsedes fecham junto (ordem do dono, 02/09/2026):
+             as da cidade primeiro, depois a filial mais fraca — o
+             núcleo volta pra sede, o total de membros não muda */
+          let fechou = 0;
+          while(fechou < 3 && (t.subsedes||0) > 0){ t.subsedes--; fechou++; }
+          while(fechou < 3 && (t.filiais||[]).length){
+            let iF = 0;
+            for(let k=1; k<t.filiais.length; k++)
+              if((t.filiais[k].nivel||1) < (t.filiais[iF].nivel||1)) iF = k;
+            t.filiais.splice(iF, 1);
+            fechou++;
+          }
+          if(mexeu || fechou) t.diasVermelho = 0;
         }
         continue;
       }
