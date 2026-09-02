@@ -278,7 +278,15 @@
     b.onclick = aoClicar;
     return b;
   };
-  const selo = txt => el('div',{class:'sel-bandeira', texto:txt});
+  /* o selo do país na seleção: a bandeira do banco quando há, a sigla
+     escrita quando não (ordem do dono, 02/09/2026) */
+  const selo = pais => {
+    const d = el('div',{class:'sel-bandeira'});
+    const img = bandeira(pais);
+    if(img) d.innerHTML = img;
+    else d.textContent = pais.slice(0,3).toUpperCase();
+    return d;
+  };
 
   function pintarSelecao(){
     const p2 = passoSel === 2 && selClube;
@@ -311,7 +319,7 @@
 
     const paises = paisesComTorcida();
     grade.appendChild(coluna('País', `${paises.length}`, paises, p=>
-      linhaSel(selPais===p.pais?' on':'', selo(p.pais.slice(0,3).toUpperCase()),
+      linhaSel(selPais===p.pais?' on':'', selo(p.pais),
         p.pais, `${p.clubes} clubes`,
         p.torcidas ? `${p.torcidas}<small>torcidas</small>`
                    : `<small>sem torcidas</small>`,
@@ -5034,87 +5042,29 @@
   let nivelComp = 'nacional', paisComp = null;
 
   /* =======================================================
-     AS BANDEIRAS DOS DEZ PAÍSES (pedido do dono, 23/08/2026)
+     AS BANDEIRAS DOS DEZ PAÍSES (pedido do dono, 23/08/2026;
+     banco de verdade em 02/09/2026)
 
-     O filtro do país era dez nomes escritos, que em duas linhas
-     quebravam a leitura da tela. Virou uma fileira de dez
-     bandeirinhas na mesma linha.
-
-     São desenhadas aqui, em SVG, e não emoji: a bandeira emoji não
-     aparece no Windows — o navegador de lá mostra as duas letras do
-     país no lugar do desenho, e a tela ficaria com "AR" e "BR" em vez
-     de bandeira. Cada uma é a bandeira civil simplificada, com o
-     detalhe que separa as parecidas: o sol da Argentina e do Uruguai,
-     a estrela do Chile, o escudo do Equador e as estrelas da
-     Venezuela — sem eles, Colômbia, Equador e Venezuela seriam três
-     retângulos amarelo-azul-vermelho iguais.
+     O filtro do país era dez nomes escritos; virou uma fileira de
+     bandeirinhas. Elas eram desenhadas à mão em SVG — o dono mandou
+     buscar um banco com as bandeiras de todos os países: entrou o
+     flag-icons (lipis, MIT, npm v7.5.0), que cobre o mundo inteiro
+     em SVG 4×3. Os dez países do jogo moram em img/bandeiras/<iso>.svg
+     e a fileira, a seleção de torcida e o que mais precisar de país
+     puxam dali pelo mesmo cano IMG() dos escudos. País sem arquivo
+     cai na sigla escrita, como o escudo cai no quadradinho.
      ======================================================= */
-  const BANDEIRAS = {
-    'Brasil':
-      `<rect width="24" height="16" fill="#009b3a"/>`+
-      `<path d="M12 1.6 22.4 8 12 14.4 1.6 8Z" fill="#fedf00"/>`+
-      `<circle cx="12" cy="8" r="3.4" fill="#002776"/>`+
-      `<path d="M8.9 6.7a6 6 0 0 1 6.4 1.2" stroke="#fff" stroke-width="1.3" fill="none"/>`,
-    'Argentina':
-      `<rect width="24" height="16" fill="#fff"/>`+
-      `<rect width="24" height="5.33" fill="#74acdf"/>`+
-      `<rect y="10.67" width="24" height="5.33" fill="#74acdf"/>`+
-      `<circle cx="12" cy="8" r="2.4" fill="#f6b40e" stroke="#85340a" stroke-width=".5"/>`,
-    'Bolívia':
-      `<rect width="24" height="5.33" fill="#d52b1e"/>`+
-      `<rect y="5.33" width="24" height="5.34" fill="#f9e300"/>`+
-      `<rect y="10.67" width="24" height="5.33" fill="#007934"/>`,
-    'Chile':
-      `<rect width="24" height="8" fill="#fff"/>`+
-      `<rect y="8" width="24" height="8" fill="#d52b1e"/>`+
-      `<rect width="8" height="8" fill="#0039a6"/>`+
-      `<path d="M4 1.3 4.63 3.13 6.57 3.17 5.03 4.33 5.59 6.18 4 5.08 `+
-      `2.41 6.18 2.97 4.33 1.43 3.17 3.37 3.13Z" fill="#fff"/>`,
-    'Colômbia':
-      `<rect width="24" height="8" fill="#fcd116"/>`+
-      `<rect y="8" width="24" height="4" fill="#003893"/>`+
-      `<rect y="12" width="24" height="4" fill="#ce1126"/>`,
-    'Equador':
-      `<rect width="24" height="8" fill="#ffdd00"/>`+
-      `<rect y="8" width="24" height="4" fill="#034ea2"/>`+
-      `<rect y="12" width="24" height="4" fill="#ed1c24"/>`+
-      `<circle cx="12" cy="8" r="3.2" fill="#ffdd00" stroke="#7a5c1e" stroke-width=".8"/>`+
-      `<path d="M12 5.4 14.1 10.2H9.9Z" fill="#8a6a22"/>`+
-      `<path d="M8.6 7.4 12 5.2l3.4 2.2" stroke="#8a6a22" stroke-width=".9" `+
-      `fill="none" stroke-linecap="round"/>`,
-    'Paraguai':
-      `<rect width="24" height="5.33" fill="#d52b1e"/>`+
-      `<rect y="5.33" width="24" height="5.34" fill="#fff"/>`+
-      `<rect y="10.67" width="24" height="5.33" fill="#0038a8"/>`+
-      `<circle cx="12" cy="8" r="1.9" fill="#fff" stroke="#0038a8" stroke-width=".5"/>`+
-      `<circle cx="12" cy="8" r=".8" fill="#009b3a"/>`,
-    'Peru':
-      `<rect width="24" height="16" fill="#fff"/>`+
-      `<rect width="8" height="16" fill="#d91023"/>`+
-      `<rect x="16" width="8" height="16" fill="#d91023"/>`,
-    'Uruguai':
-      `<rect width="24" height="16" fill="#fff"/>`+
-      `<rect y="3.2" width="24" height="1.8" fill="#0038a8"/>`+
-      `<rect y="6.8" width="24" height="1.8" fill="#0038a8"/>`+
-      `<rect y="10.4" width="24" height="1.8" fill="#0038a8"/>`+
-      `<rect y="14" width="24" height="1.8" fill="#0038a8"/>`+
-      `<rect width="9.6" height="8" fill="#fff"/>`+
-      `<circle cx="4.8" cy="4" r="2.4" fill="#fcd116" stroke="#85340a" stroke-width=".45"/>`,
-    'Venezuela':
-      `<rect width="24" height="5.33" fill="#fcd116"/>`+
-      `<rect y="5.33" width="24" height="5.34" fill="#00247d"/>`+
-      `<rect y="10.67" width="24" height="5.33" fill="#cf142b"/>`+
-      `<g fill="#fff">`+
-      `<circle cx="7.6" cy="9.8" r=".8"/><circle cx="9.8" cy="8.8" r=".8"/>`+
-      `<circle cx="12" cy="8.4" r=".8"/><circle cx="14.2" cy="8.8" r=".8"/>`+
-      `<circle cx="16.4" cy="9.8" r=".8"/></g>`,
+  const PAIS_ISO = {
+    'Brasil':'br', 'Argentina':'ar', 'Bolívia':'bo', 'Chile':'cl',
+    'Colômbia':'co', 'Equador':'ec', 'Paraguai':'py', 'Peru':'pe',
+    'Uruguai':'uy', 'Venezuela':'ve'
   };
 
   function bandeira(pais){
-    const d = BANDEIRAS[pais];
-    if(!d) return '';
-    return `<svg class="bandeira" viewBox="0 0 24 16" width="30" height="20" `+
-           `aria-hidden="true">${d}</svg>`;
+    const iso = PAIS_ISO[pais];
+    if(!iso) return '';
+    return `<img class="bandeira" src="${IMG('img/bandeiras/'+iso+'.svg')}" `+
+           `width="30" height="20" alt="${pais}">`;
   }
 
   const NIVEIS = [

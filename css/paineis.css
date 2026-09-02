@@ -1614,6 +1614,10 @@ td.placar small.pen{
 .filtros-linha.paises button.minha{box-shadow:inset 0 -2px 0 var(--vermelho)}
 .filtros-linha.paises .bandeira{display:block;border-radius:2px;
   box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+/* a bandeira agora é imagem do banco (dono, 02/09/2026): mesma medida
+   do svg antigo na fileira, e encaixada no selo quadrado da seleção */
+img.bandeira{width:30px;height:20px;object-fit:cover;border-radius:2px}
+.sel-bandeira img.bandeira{box-shadow:0 0 0 1px rgba(0,0,0,.55)}
 .filtros-linha.torneios{padding-top:0}
 
 

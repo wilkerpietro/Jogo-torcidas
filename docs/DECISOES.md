@@ -3177,6 +3177,22 @@ chip — mas já pelo cano novo).
   "quem" da agenda); a coluna da `.vaga-cm` alargou de 11 pra 16px.
 - Os DISCOS das cenas ficam como estão, por ordem antiga do dono.
 
+## As bandeiras do banco — flag-icons (ordem do dono, 02/09/2026)
+
+"Procure um banco com as bandeiras de todos os países pra inserir no
+seleção de torcidas e substituir em competições." Entrou o
+**flag-icons** (lipis, MIT, npm v7.5.0) — o banco cobre o mundo
+inteiro em SVG 4×3; os dez países do jogo foram copiados pra
+`img/bandeiras/<iso>.svg` e servem pelos mesmos canos dos escudos
+(`IMG()` + dicionário do arquivo único).
+
+- SELEÇÃO DE TORCIDA: o selo "BRA"/"ARG" escrito virou a bandeira do
+  país na coluna do passo 1 (país sem arquivo cai na sigla escrita).
+- COMPETIÇÕES: a fileira do filtro nacional trocou os dez SVGs
+  desenhados à mão pelo desenho oficial do banco — o dicionário
+  `BANDEIRAS` de paths saiu do main.js, ficou só o mapa país→ISO.
+- Se um dia entrar país novo, é copiar o SVG do banco pra pasta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
