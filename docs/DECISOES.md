@@ -3473,6 +3473,41 @@ sozinha.
 **O gasto de recepção das IAs** também passa a aparecer no balanço
 mensal do perfil delas, como linha de despesa das últimas 4 semanas.
 
+## Escudos das torcidas (entrega do dono, 03/09/2026)
+
+O dono mandou o pack com o escudo de todas as torcidas e a ordem foi
+clara: **tirar o fundo de todas antes de qualquer coisa, sem comprometer
+a integridade da imagem**.
+
+A régua da limpeza (`scratchpad/rar/tirar-fundo.py`):
+
+- a cor do fundo é a **moda das bordas** da imagem, não um branco
+  chutado — assim funciona em fundo preto, cinza ou colorido;
+- só sai o fundo **ligado à borda**: branco de dentro do escudo fica
+  onde está, que é o que "não comprometer a integridade" quer dizer;
+- a franja não é cortada no talho — o alfa cresce junto com a distância
+  da cor de fundo, então a borda continua suave em qualquer escala;
+- o pixel meio-transparente é **descontaminado** (tira a tinta do fundo
+  que estava misturada nele), senão sobra auréola clara em fundo escuro.
+
+Dois escudos vinham sobre **arte** e não sobre cor chapada — *Força
+Alviverde* (fundo verde texturizado com moldura vermelha) e *Tubarões da
+Fiel* (foto de bandeira amarela). Nesses dois o flood fill não serve, e o
+escudo foi recortado no próprio círculo dele, com borda suavizada por
+supersampling ×4.
+
+**138 dos 140** casaram com a fonte. Ficaram sem escudo **Jovem do
+Floresta** e **Mancha Negra** — o dono não mandou essas duas. Doze
+arquivos vieram com sigla ou apelido em vez do nome da fonte (TUF, TOC,
+TMV, JGT, "Gaviões da Fiel", "Força Jovem Paysandu" para a Facção Jovem
+Paysandu, entre outros) e foram casados no olho, um a um.
+
+Os arquivos vão pra `img/escudos/torcida-<id>.png` em 128×128, quantizados
+em 128 cores com alfa — o pack inteiro pesa **0,78 MB** em vez de 3 MB, e
+o olho não vê diferença. O manifesto `dados/escudos.js` ganhou a seção
+`torcidas`, que é o que faz a UI trocar o quadradinho de cor pelo escudo
+em todas as telas de uma vez.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
