@@ -39,8 +39,11 @@ TO.financeiro = (function(){
      ninguém compra isso. Com a receita nova, ponto novo se paga em
      ~2 anos e ampliar (que também baixou de preço no patrimônio)
      passou a valer a conta. A subsede ficou como era. */
-  const RECEITA = {bar:[null, 1600, 3600, 7500], loja:[null, 2200, 5000, 10000],
-                   subsede:600};
+  /* RECEITAS +10% (reajuste do dono, 02/09/2026): a régua da moral
+     tinha deixado o comércio deficitário demais — o vermelho de moral
+     baixa continua, mas o ponto respira antes */
+  const RECEITA = {bar:[null, 1760, 3960, 8250], loja:[null, 2420, 5500, 11000],
+                   subsede:660};
   /* custo fixo de bar e loja DOBROU (reajuste do dono, 31/08/2026), e
      o do bar dobrou DE NOVO no mesmo dia ("despesa de bar tá com valor
      muito baixo"). A SUBSEDE subiu pra 700/1.200/1.800 por nível

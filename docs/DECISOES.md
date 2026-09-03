@@ -3366,6 +3366,16 @@ compra, e a IA compra pela fila dela (depois das bombas) esticando
 as vagas do treino diário delas na mesma régua. A frase do aviso da
 venda forçada foi APROVADA pelo dono nesta mesma ordem.
 
+## Receitas do comércio +10% (reajuste do dono, 02/09/2026)
+
+"O ajuste que fizemos deixou muito deficitário. Ajuste o cálculo pra
+ficar melhor em torno de uns 10% as receitas em todos os casos." A
+tabela-mãe subiu 10%: bar 1.760/3.960/8.250, loja 2.420/5.500/11.000,
+subsede 660 — jogador e IA bebem da mesma fonte. A régua da moral
+fica: bar nv1 com moral no chão ainda fecha em 698 contra 800 de
+custo (vermelho), e com moral alta rende 2.095. Sondagem de 1 ano:
+0 IAs no vermelho, mediana de caixa 18,6 mil (subiu de 16,3).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
