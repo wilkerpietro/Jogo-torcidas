@@ -414,13 +414,30 @@ TO.relacoes = (function(){
     };
     marca(t.presosIA, 'Preso');
     marca(t.feridosIA, 'Ferido');
-    /* os núcleos de filial fecham a lista, na ordem das filiais */
+    /* O NÚCLEO DA SUBSEDE DELAS TEM CHEFIA (ordem do dono, 03/09/2026)
+       Antes o núcleo saía inteiro do fim da lista — ou seja, subsede só
+       de novato. Agora a IA destaca a MESMA gente que a gente destaca
+       ao fundar: um da diretoria e dois da linha de frente; o que
+       passar disso fecha com o fim da lista, como antes. */
     const origem = new Array(n).fill(null);
+    const tomado = new Array(n).fill(false);
+    const ultimoLivreDe = cargo => {
+      for(let i=n-1; i>=0; i--) if(!tomado[i] && cargoDe[i] === cargo) return i;
+      return -1;
+    };
     let fim = n;
+    const doFim = () => {
+      while(fim > 0 && tomado[fim-1]) fim--;
+      return fim > 0 ? --fim : -1;
+    };
     for(const f of (t.filiais||[])){
-      const q = Math.min(f.membros||0, fim);
-      for(let i=fim-q; i<fim; i++) origem[i] = f.cidade;
-      fim -= q;
+      let q = Math.min(f.membros||0, n);
+      const pega = i => {
+        if(i < 0 || q <= 0) return;
+        tomado[i] = true; origem[i] = f.cidade; q--;
+      };
+      for(const c of ['diretoria','frente','frente']) pega(ultimoLivreDe(c));
+      while(q > 0){ const i = doFim(); if(i < 0) break; pega(i); }
     }
     /* a ficha de nascença sai da MESMA régua do povoarInicial —
        base por cargo + 0..3 —, só que por hash em vez de dado, pra
@@ -712,6 +729,7 @@ TO.relacoes = (function(){
           t.caixa -= cv;
           lancarIA(E, id, `Caravana — jogo fora (${n} cabeças)`, -cv);
         }
+        if(viaja) recepcaoIA(E, o, t, jogos);
         /* A CARAVANA SILENCIOSA DA SUBSEDE DELAS (ordem do dono,
            31/08/2026): em todo jogo da semana — em casa e fora — o
            núcleo de cada filial viaja pra praça da partida pela rota
@@ -1415,7 +1433,12 @@ TO.relacoes = (function(){
   function disponiveisIA(E, id){
     const t = (E.mundoTorcidas||{})[id];
     const total = t ? t.membros : ((M().torcida(id)||{}).membros || 0);
-    return Math.max(0, Math.round(total) - foraDeCombate(E, id));
+    /* o núcleo destacado pra subsede não está na praça da sede — a
+       mesma régua nossa, onde o membro com `filial` sai do bonde de
+       casa (ordem do dono, 03/09/2026) */
+    const naFilial = t
+      ? (t.filiais||[]).reduce((s,f)=>s + (f.membros||0), 0) : 0;
+    return Math.max(0, Math.round(total) - foraDeCombate(E, id) - naFilial);
   }
 
   /* quantos ônibus a torcida da IA tem: save antigo guardava `true` */
@@ -1754,6 +1777,49 @@ TO.relacoes = (function(){
   }
 
   /* =======================================================
+     A RECEPÇÃO ENTRE ELAS (ordem do dono, 03/09/2026)
+     O mundo acolhe aliado como a gente acolhe. Quando a torcida
+     vai jogar na praça de uma aliada e NÃO tem subsede lá, quem
+     decide é a dona da casa — a aliada mais próxima da praça:
+     30% hospeda e escolta, 20% só hospeda, 50% não recebe. A
+     conta é a nossa (R$ 50 e R$ 25 por cabeça, da tabela de
+     RECEPÇÃO do planejamento) e a relação anda pela mesma
+     tabela: +12, +7 ou −7. Casa sem caixa pro combinado não
+     recebe — igualzinho ao nosso fechamento.
+     ======================================================= */
+  function recepcaoIA(E, o, t, jogos){
+    for(const j of (jogos||[])){
+      if(j.casa) continue;
+      const adv = M().time(j.adversario);
+      if(!adv || adv.mapa === o.mapa) continue;
+      const destino = adv.mapa;
+      if((t.filiais||[]).some(f=>f.cidade === destino)) continue;
+      const n = TO.planejamento.caravanaDe(o, 0, E);
+      if(n < 2) continue;
+      /* a casa é UMA só: a aliada mais próxima que mora na praça */
+      const anf = M().torcidasEm(destino)
+        .filter(x => x.id !== o.id && x.id !== E.torcida.id && !x.incompleta &&
+                     relacaoDelas(E, o.id, x.id) >= ALIADO)
+        .sort((x,y)=>relacaoDelas(E,o.id,y.id) - relacaoDelas(E,o.id,x.id))[0];
+      if(!anf) continue;
+      const ta = (E.mundoTorcidas||{})[anf.id];
+      const d = U.rng();
+      let nivel = d < 0.30 ? 'escolta' : d < 0.50 ? 'hospedar' : 'nada';
+      const porCabeca = {escolta:50, hospedar:25, nada:0}[nivel];
+      let custo = porCabeca * n;
+      if(ta && custo > ta.caixa){ nivel = 'nada'; custo = 0; }
+      if(custo > 0 && ta){
+        ta.caixa -= custo;
+        lancarIA(E, anf.id, `Recepção da ${o.nome} (${n} cabeças)`, -custo);
+      }
+      moverRelacao(E, o.id, anf.id,
+        nivel === 'escolta'  ? REL.hospedarEscolta
+      : nivel === 'hospedar' ? REL.hospedar
+      : -REL.naoReceber);
+    }
+  }
+
+  /* =======================================================
      O MUNDO VIVE COMO A GENTE (decisão do dono, 18/08/2026)
      As mecânicas do jogador — menos o olheiro — replicadas pras
      138: cada torcida tem o próprio calendário do trimestre
@@ -1844,8 +1910,17 @@ TO.relacoes = (function(){
       const tDono = (E.mundoTorcidas||{})[o.id];
       const saque = Math.round(60*reg.b.n +
         0.22*Math.max(0, tDono ? tDono.caixa : 0));
-      if(tDono) tDono.caixa -= saque;
-      if(tAtk)  tAtk.caixa  += saque;
+      /* o dinheiro já mudava de mão, mas em silêncio: agora entra no
+         extrato dos dois lados, como qualquer conta delas (ordem do
+         dono, 03/09/2026) */
+      if(tDono){
+        tDono.caixa -= saque;
+        lancarIA(E, o.id, `Bar saqueado pela ${atk.nome}`, -saque);
+      }
+      if(tAtk){
+        tAtk.caixa += saque;
+        lancarIA(E, atk.id, `Saque no bar da ${o.nome}`, saque);
+      }
       reg.saque = saque;
     }
     return reg;
@@ -2297,7 +2372,7 @@ TO.relacoes = (function(){
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
           conquistaDoClube, passarSemana, guerraDeFiliais, panorama,
-          elencoDaTorcida, lancarIA,
+          elencoDaTorcida, lancarIA, recepcaoIA,
           MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,
           quadroDe, mediaDoQuadro, treinarDelas, promoverDelas, xpDeBrigaIA,

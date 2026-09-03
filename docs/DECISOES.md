@@ -3426,6 +3426,30 @@ novo na semana seguinte.
   pro jogador e pra IA. Ficou em 8, o teto da nv5, que é a régua do
   dono de o nível 6 não abrir ponto comercial novo.
 
+## Subsede, saque e recepção entre as IAs (decisão do dono, 03/09/2026)
+
+O dono percebeu duas coisas e mandou uma terceira:
+
+1. **A subsede da IA não levava chefia.** O núcleo da filial delas saía
+   inteiro do fim da lista do elenco — ou seja, subsede só de novato.
+   Agora a IA destaca a MESMA gente que a gente destaca ao fundar: **1 da
+   diretoria e 2 da linha de frente**; o que passar de 3 fecha com o fim
+   da lista. E, como no nosso caso, esse núcleo **sai do bonde da sede**:
+   `disponiveisIA` desconta quem está destacado.
+
+2. **O saque do ataque ao bar era mudo.** O dinheiro já mudava de mão
+   (60 por cabeça do bonde da casa + 22% do caixa do dono, quando a
+   atacante vence), mas não aparecia em lugar nenhum. Agora vira linha no
+   extrato dos dois lados.
+
+3. **Recepção de aliado passa a existir entre elas.** Quando uma torcida
+   vai jogar na praça de uma aliada e **não tem subsede lá**, a dona da
+   casa — a aliada mais próxima da praça — decide na régua ditada pelo
+   dono: **30% hospeda e escolta**, **20% só hospeda**, **50% não
+   recebe**. A conta é a nossa (R$ 50 e R$ 25 por cabeça) e a relação
+   anda pela mesma tabela: +12, +7 ou −7. Casa sem caixa pro combinado
+   não recebe.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
