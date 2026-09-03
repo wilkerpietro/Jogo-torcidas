@@ -131,7 +131,12 @@ TO.patrimonio = (function(){
     compra: 90000,
     ampliar: [null, 70000, 140000, null],  // progressiva (dono, 02/09)
     teto:    [0, 20, 40, 80],
-    porSede: [0, 0, 0, 1, 3, 8],
+    /* a coluna da sede 6 faltava (conserto de 03/09/2026): sem ela
+       o Complexo lia `undefined` e voltava a permitir ZERO filiais,
+       fechando a porta pra quem mais tinha condição de abrir. Fica
+       em 8, o teto da nv5 — a ordem do dono foi que o nível 6 não
+       abre ponto comercial novo. */
+    porSede: [0, 0, 0, 1, 3, 8, 8],
     prestigioMin: 12            // 60 na régua de 0 a 100
   };
   const filiaisDe = E => F().patrimonio(E).filiais || [];

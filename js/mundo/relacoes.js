@@ -134,25 +134,28 @@ TO.relacoes = (function(){
      sede nível 1, bar nível 2 só existe em sede nível 3. Comprar
      sede não roda a fila: o item travado segue com a vez.
      ======================================================= */
-  /* o advogado assentou DEPOIS DO BAR (calibragem do dono,
-     31/08/2026): atrás do ônibus ninguém contratava no primeiro ano
-     (48 de 386 em três anos), colado no professor contratava o mundo
-     inteiro (329 de 386) — o meio da fila é a régua. */
-  const ORDEM = ['mma', 'loja', 'bar', 'advogado', 'filial', 'elenco',
-                 'onibus', 'subsede',
-                 'bombas', 'area-treino', 'galpao', 'enfermaria', 'cofre',
-                 'evoluir:bar', 'evoluir:loja', 'evoluir:subsede',
-                 'evoluir:filial'];
+  /* A FILA DITADA PELO DONO (03/09/2026). Ela REPETE de propósito:
+     professor, loja, bar, filial, investimento e bomba aparecem mais
+     de uma vez, e a segunda rodada delas vem ANTES das obras caras —
+     galpão, enfermaria e cofre só entram quando o barato já rodou
+     duas vezes. A bomba aparece três vezes porque munição é o que se
+     gasta. Item repetido não é engano: é a ordem dele. */
+  const ORDEM = ['mma', 'loja', 'bar', 'bombas', 'filial', 'onibus',
+                 'bombas', 'elenco', 'bombas', 'advogado', 'subsede',
+                 'mma', 'loja', 'bar', 'area-treino', 'filial', 'elenco',
+                 'evoluir:sorteio',
+                 'galpao', 'enfermaria', 'cofre'];
+  /* muda a ORDEM? sobe o número, e toda torcida recomeça a fila nova.
+     A fila viva de save antigo tem outras chaves e outra contagem de
+     repetições — comparar por conjunto não daria conta. */
+  const FILA_V = 3;
 
   /* a fila viva da torcida: nasce da ORDEM e roda a cada compra.
-     Save antigo entra aqui — chave nova vai pro fim, aposentada sai */
+     Save de fila antiga recomeça na ordem nova, do começo. */
   function filaDe(t){
-    if(!Array.isArray(t.fila)) t.fila = ORDEM.slice();
-    else{
-      const tem = new Set(t.fila);
-      if(ORDEM.some(ch=>!tem.has(ch)) || t.fila.some(ch=>ORDEM.indexOf(ch)<0))
-        t.fila = t.fila.filter(ch=>ORDEM.indexOf(ch)>=0)
-                       .concat(ORDEM.filter(ch=>!tem.has(ch)));
+    if(!Array.isArray(t.fila) || t.filaV !== FILA_V){
+      t.fila = ORDEM.slice();
+      t.filaV = FILA_V;
     }
     return t.fila;
   }
@@ -537,6 +540,14 @@ TO.relacoes = (function(){
                   : null;
     }
 
+    /* AMPLIAR NO SORTEIO (ordem do dono, 03/09/2026): um item só na
+       fila, e a vez é de bar, loja OU filial — tirado na hora. Deu
+       num que não tem o que ampliar, a fila anda; semana que vem o
+       dado rola de novo e outro pode sair. */
+    if(chave === 'evoluir:sorteio')
+      return itemDaFila(E, t, id, 'evoluir:'+
+        ['bar','loja','filial'][Math.floor(U.rng()*3)]);
+
     /* evoluir: sobe o ponto de nível mais baixo que ainda cabe */
     if(chave.indexOf('evoluir:') === 0){
       const tipo = chave.slice(8), cfg = PT[tipo];
@@ -559,26 +570,36 @@ TO.relacoes = (function(){
   }
 
   function proximaCompra(E, t, id){
-    /* A SEDE SÓ ENTRA COMO DESTRAVADORA. Ela não fura a fila do dono
-       nem quando o efetivo encosta no teto: torcida lotada com a loja
-       ainda por comprar compra a LOJA. O teto de gente sobe sozinho
-       logo atrás, porque assim que a sede atual não comporta mais
-       nenhum ponto, é ela que a fila pede. */
-    const subirSede = () => P().SEDE[t.sede+1]
-      ? {tipo:'sede', custo:P().SEDE[t.sede+1].custo} : null;
+    /* QUEM PEDE SEDE MAIOR PERDE A VEZ (ordem do dono, 03/09/2026):
+       antes o item travado mandava comprar a ampliação da sede na
+       hora — um cheque gordo furando a fila do barato. Agora ele é
+       PULADO e vai pro fim da fila; a torcida segue gastando no que
+       cabe. A sede só é comprada quando não sobrou mais nada pra
+       fazer (lá embaixo), que é quando ela vira, de novo, a única
+       coisa que destrava o resto. */
+    const fila = filaDe(t);
+    const travados = [];
+    let achou = null;
 
-    for(const chave of filaDe(t)){
+    for(const chave of fila.slice()){
       const it = itemDaFila(E, t, id, chave);
       if(!it) continue;                    // cumprido: a fila anda
-      if(it.sede){                         // travado: quem destrava é a sede
-        const s = subirSede();
-        if(s) return s;
-        continue;                          // sede no teto: segue a fila
-      }
+      if(it.sede){ travados.push(chave); continue; }
       it.chave = chave;                    // pra rodar a fila na compra
-      return it;                           // a vez é desta — e ela ESPERA
+      achou = it;                          // a vez é desta — e ela ESPERA
+      break;
     }
-    /* cumprida a fila do dono inteira, o que sobra vai pra fábrica */
+    for(const chave of travados){
+      const i = fila.indexOf(chave);
+      if(i >= 0){ fila.splice(i, 1); fila.push(chave); }
+    }
+    if(achou) return achou;
+
+    /* fila inteira cumprida ou toda travada: o que sobra é obra
+       grande. A sede primeiro — é ela que destrava todo o resto —,
+       a fábrica depois. */
+    if(P().SEDE[t.sede+1])
+      return {tipo:'sede', custo:P().SEDE[t.sede+1].custo};
     if(!t.fabrica && t.sede >= P().FABRICA.sede)
       return {tipo:'fabrica', custo:P().FABRICA.custo};
     return null;

@@ -3376,6 +3376,38 @@ fica: bar nv1 com moral no chão ainda fecha em 698 contra 800 de
 custo (vermelho), e com moral alta rende 2.095. Sondagem de 1 ano:
 0 IAs no vermelho, mediana de caixa 18,6 mil (subiu de 16,3).
 
+## A fila de compras ditada pelo dono (03/09/2026)
+
+Depois da sonda de 10 anos mostrar que nenhuma IA chegava à sede 6 e
+nenhuma construía fábrica, o dono ditou a fila inteira, com
+repetições de propósito:
+
+    professor · loja · bar · BOMBA · filial · ônibus · BOMBA ·
+    investimento · BOMBA · advogado · subsede ·
+    professor · loja · bar · área de treino · filial · investimento ·
+    ampliar (bar, loja OU filial, no sorteio) ·
+    galpão · enfermaria · cofre
+
+O barato roda DUAS VEZES antes de a obra cara entrar; a bomba
+aparece três vezes porque munição é o que se gasta. A ampliação
+virou um item só, que sorteia na hora entre bar, loja e filial —
+deu num que não tem o que ampliar, a fila anda e o dado rola de
+novo na semana seguinte.
+
+- QUEM PEDE SEDE MAIOR PERDE A VEZ (ordem dele): o item travado é
+  PULADO e vai pro fim da fila, em vez de mandar comprar a
+  ampliação da sede na hora. A torcida segue gastando no que cabe.
+- A SEDE VIROU SOBRA, não fura-fila: ela só é comprada quando a
+  fila inteira está cumprida ou travada — e aí é a única coisa que
+  destrava o resto. (Assumido por mim pra não matar o crescimento
+  da sede, que só acontecia por esse caminho; no crivo do dono.)
+- `FILA_V` versiona a fila: mudou a ORDEM, toda torcida recomeça na
+  nova. O casamento por conjunto não daria conta das repetições.
+- CONSERTO DE ARRASTO: `FILIAL.porSede` não tinha a coluna da sede 6
+  — o Complexo lia `undefined` e voltava a permitir ZERO filiais,
+  pro jogador e pra IA. Ficou em 8, o teto da nv5, que é a régua do
+  dono de o nível 6 não abrir ponto comercial novo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
