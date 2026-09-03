@@ -3490,11 +3490,28 @@ A régua da limpeza (`scratchpad/rar/tirar-fundo.py`):
 - o pixel meio-transparente é **descontaminado** (tira a tinta do fundo
   que estava misturada nele), senão sobra auréola clara em fundo escuro.
 
-Dois escudos vinham sobre **arte** e não sobre cor chapada — *Força
-Alviverde* (fundo verde texturizado com moldura vermelha) e *Tubarões da
-Fiel* (foto de bandeira amarela). Nesses dois o flood fill não serve, e o
-escudo foi recortado no próprio círculo dele, com borda suavizada por
-supersampling ×4.
+**A revisão do dono (03/09/2026).** Ele apontou sete escudos ruins —
+Esquadrão Alvinegro do Athletic, Camisa 13 do Ceilândia, Força Alviverde,
+Força Jovem Paysandu, Garra do CRB, Império Americano e Tubarões da Fiel
+— e a conferência achou um oitavo, a Torcida Jovem Águia. Eram duas
+doenças diferentes:
+
+1. **O miolo branco era comido.** A mancha de fundo nascia de "tudo que
+   não é desenho puro", e isso inclui o antialias das linhas: a franja
+   fazia PONTE por dentro de um anel fino e o fundo entrava, apagando o
+   disco branco de dentro do escudo. Corrigido em duas mãos: a mancha
+   agora nasce só do fundo **chapado** (e depois cresce 3 px pra
+   alcançar a própria franja), e — o que fecha de vez — **quando a tinta
+   forma um anel que fecha a volta, o que está dentro do anel não é
+   fundo por definição**: só se apaga o lado de fora. Isso vale para
+   todo o pack, não só pros sete.
+
+2. **Alguns vinham sobre ARTE, não sobre cor chapada** — fundo
+   texturizado, moldura decorativa, raios soltos, foto de bandeira,
+   crédito do desenhista na lateral. Nesses não existe cor de fundo pra
+   remover, e o escudo é recortado no próprio círculo, medido no olho e
+   conferido um a um (tabela `RECORTE` em `scratchpad/rar/recortes.py`):
+   Força Alviverde, Tubarões da Fiel, Camisa 13 e Torcida Jovem Águia.
 
 **138 dos 140** casaram com a fonte. Ficaram sem escudo **Jovem do
 Floresta** e **Mancha Negra** — o dono não mandou essas duas. Doze
