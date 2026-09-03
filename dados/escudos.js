@@ -224,6 +224,7 @@ TO.dados.escudos = {
   "jovem_chape": 1,
   "jovem_confianca": 1,
   "jovem_do_botafogo_pb": 1,
+  "jovem_do_floresta": 1,
   "jovem_do_salgueiro": 1,
   "jovem_do_voltaco": 1,
   "jovem_fla": 1,

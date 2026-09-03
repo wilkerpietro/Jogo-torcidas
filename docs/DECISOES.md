@@ -3511,10 +3511,11 @@ doenças diferentes:
    crédito do desenhista na lateral. Nesses não existe cor de fundo pra
    remover, e o escudo é recortado no próprio círculo, medido no olho e
    conferido um a um (tabela `RECORTE` em `scratchpad/rar/recortes.py`):
-   Força Alviverde, Tubarões da Fiel, Camisa 13 e Torcida Jovem Águia.
+   Força Alviverde, Tubarões da Fiel, Camisa 13, Torcida Jovem Águia e
+   Jovem do Floresta (faixas verdes verticais atrás do escudo).
 
-**138 dos 140** casaram com a fonte. Ficaram sem escudo **Jovem do
-Floresta** e **Mancha Negra** — o dono não mandou essas duas. Doze
+**139 dos 140** casaram com a fonte — a Jovem do Floresta veio depois,
+em pacote próprio (03/09/2026). Falta só a **Mancha Negra**. Doze
 arquivos vieram com sigla ou apelido em vez do nome da fonte (TUF, TOC,
 TMV, JGT, "Gaviões da Fiel", "Força Jovem Paysandu" para a Facção Jovem
 Paysandu, entre outros) e foram casados no olho, um a um.
