@@ -360,6 +360,14 @@ TO.relacoes = (function(){
     pon(des, 'Ônibus da torcida', frotaIA(t) * FIN().ONIBUS_MES);
     pon(des, 'Professores de MMA', mmaDe(t) * FIN().MMA_MES);
     pon(des, 'Advogados', advogadosIA(t) * FIN().ADVOGADO_MES);
+    /* recepção de aliado: o que ela gastou hospedando nas últimas 4
+       semanas — o mês corrido, na mesma unidade do resto do balanço */
+    if(E && (t.recepcoes||[]).length){
+      const sa = semanaAbs(E);
+      t.recepcoes = t.recepcoes.filter(x=>sa - x.sem < 4);
+      const gasto = t.recepcoes.reduce((s,x)=>s+x.v, 0);
+      pon(des, `Recepção de aliados (${t.recepcoes.length})`, gasto);
+    }
     if(t.enfermaria) pon(des, 'Enfermaria da sede', P().ANEXOS.enfermaria.mes);
     if(t.galpao)     pon(des, 'Galpão de material', P().ANEXOS.galpao.mes);
 
@@ -1227,6 +1235,27 @@ TO.relacoes = (function(){
      zera na última briga (marcaHostil, via hostilidade) e na
      última ajuda (marcaAjuda: escolta, recepção, reunião).
      ======================================================= */
+  /* A RÉGUA REVISTA (ordem do dono, 03/09/2026): a paz pagava +1 por
+     mês e a secura cobrava −1 a cada dois — saldo de +0,5 por mês, ou
+     +65 numa década. Era isso que deixava o mundo inteiro aliado sem
+     ninguém fazer nada. Agora a paz paga +0,2 e a secura cobra os
+     mesmos −1: relação sem contato APODRECE, e aliado de verdade só
+     se sustenta com evento — recepção, escolta, descer pela outra. */
+  const PAZ_MES  =  0.2;
+  const SECO_MES = -1;
+
+  /* A COTA DE ALIADOS (ordem do dono, 03/09/2026)
+     Ninguém sustenta trinta irmandades. A torcida banca um número de
+     aliados que sai da sede e do prestígio; o que passar do teto
+     esfria 1 por semana — os mais fracos primeiro — até cair fora da
+     faixa de aliado. É pressão, não corte: nada é apagado de uma vez. */
+  const COTA_SEDE = [null, 2, 3, 4, 5, 6, 8];
+  function cotaDeAliados(E){
+    const n = COTA_SEDE[E.torcida.sedeNivel] || COTA_SEDE[1];
+    const prest = Math.round((E.indicadores.prestigio||0) * 5);  // 0 a 100
+    return n + Math.floor(prest/25);                             // +0 a +4
+  }
+
   function convivencia(E){
     const sa = semanaAbs(E);
     E.marcaHostil = E.marcaHostil || {};
@@ -1236,15 +1265,31 @@ TO.relacoes = (function(){
       if(o.id === E.torcida.id || o.incompleta) continue;
       const h0 = E.marcaHostil[o.id] || E.convivenciaDesde;
       if(sa - h0 >= 4){
-        E.relacoes[o.id] = U.limitar(nivel(E, o.id) + 1, -100, 100);
-        E.marcaHostil[o.id] = h0 + 4;      // um +1 por mês cheio de paz
+        E.relacoes[o.id] = U.limitar(nivel(E, o.id) + PAZ_MES, -100, 100);
+        E.marcaHostil[o.id] = h0 + 4;      // um passo por mês cheio de paz
       }
       const a0 = E.marcaAjuda[o.id] || E.convivenciaDesde;
       if(sa - a0 >= 8){
-        E.relacoes[o.id] = U.limitar(nivel(E, o.id) - 1, -100, 100);
-        E.marcaAjuda[o.id] = a0 + 8;       // um −1 a cada dois meses secos
+        E.relacoes[o.id] = U.limitar(nivel(E, o.id) + SECO_MES, -100, 100);
+        E.marcaAjuda[o.id] = a0 + 8;       // e a conta dos dois meses secos
       }
     }
+    esfriarExcedente(E);
+  }
+
+  /* quem está acima da cota esfria: 1 por semana, do mais fraco pro
+     mais forte, até o excedente sair da faixa de aliado */
+  function esfriarExcedente(E){
+    const cota = cotaDeAliados(E);
+    const aliados = Object.keys(E.relacoes||{})
+      .filter(id => id !== 'undefined' && id !== E.torcida.id &&
+                    E.relacoes[id] >= ALIADO)
+      .sort((a,b)=>E.relacoes[a] - E.relacoes[b]);
+    const sobra = aliados.length - cota;
+    if(sobra <= 0){ delete E.aliadosAcimaDaCota; return; }
+    E.aliadosAcimaDaCota = sobra;
+    for(const id of aliados.slice(0, sobra))
+      E.relacoes[id] = U.limitar(E.relacoes[id] - 1, -100, 100);
   }
 
   /* =======================================================
@@ -1811,6 +1856,10 @@ TO.relacoes = (function(){
       if(custo > 0 && ta){
         ta.caixa -= custo;
         lancarIA(E, anf.id, `Recepção da ${o.nome} (${n} cabeças)`, -custo);
+        /* e fica anotado pro balanço mensal do perfil dela (ordem do
+           dono, 03/09/2026): a recepção é gasto de evento, então o
+           balanço mostra o que ela gastou nas últimas 4 semanas */
+        (ta.recepcoes = ta.recepcoes || []).push({sem: semanaAbs(E), v: custo});
       }
       moverRelacao(E, o.id, anf.id,
         nivel === 'escolta'  ? REL.hospedarEscolta
@@ -2372,7 +2421,8 @@ TO.relacoes = (function(){
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
           conquistaDoClube, passarSemana, guerraDeFiliais, panorama,
-          elencoDaTorcida, lancarIA, recepcaoIA,
+          elencoDaTorcida, lancarIA, recepcaoIA, cotaDeAliados,
+          convivencia,
           MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,
           quadroDe, mediaDoQuadro, treinarDelas, promoverDelas, xpDeBrigaIA,

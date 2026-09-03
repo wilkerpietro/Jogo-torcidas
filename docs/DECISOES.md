@@ -3450,6 +3450,38 @@ O dono percebeu duas coisas e mandou uma terceira:
    anda pela mesma tabela: +12, +7 ou −7. Casa sem caixa pro combinado
    não recebe.
 
+## Fim da inflação de alianças (decisão do dono, 03/09/2026)
+
+Em 10 anos o mundo inteiro aparecia em **+65 / Aliado**. Não era jogo
+emergente, era aritmética: a convivência pagava **+1** por mês de paz e
+cobrava **−1** a cada dois meses secos — saldo de **+0,5 por mês**, ou
+**+65 numa década**. Como toda Neutra nasce em 0 e a faixa de Aliado
+começa em +20, a tela virava um mar de aliadas sem ninguém fazer nada.
+
+Duas correções, ditadas pelo dono:
+
+1. **A régua da convivência.** Mês sem hostilidade paga **+0,2**; dois
+   meses sem ajuda cobram **−1**. O saldo passivo agora é NEGATIVO
+   (−0,3 por mês): relação sem contato apodrece, e aliado de verdade só
+   se sustenta com evento — recepção, escolta, descer pela outra.
+
+2. **A cota de aliados.** Ninguém sustenta trinta irmandades. A torcida
+   banca um número de alianças que sai da sede mais o prestígio:
+
+   | Sede | 1 | 2 | 3 | 4 | 5 | 6 |
+   |---|---|---|---|---|---|---|
+   | Cota base | 2 | 3 | 4 | 5 | 6 | 8 |
+
+   e o prestígio soma **+1 a cada 25** na régua de 0 a 100 (de +0 a +4).
+   Sede 1 sem nome banca 2; sede 6 no topo banca 12. O que passar do
+   teto **esfria 1 por semana**, das relações mais frias pras mais
+   quentes, até cair fora da faixa de aliado (+45). É pressão, não
+   corte: nada é apagado de uma vez, e a Diplomacia mostra o placar
+   ("Alianças de verdade: X de Y que a sede banca").
+
+**O gasto de recepção das IAs** também passa a aparecer no balanço
+mensal do perfil delas, como linha de despesa das últimas 4 semanas.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
