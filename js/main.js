@@ -6429,16 +6429,6 @@
     const c = cartao('Relações', `${aliados} aliadas · ${rivais} rivais · `+
       `${TO.mundo.jogaveis().length-1-linhas.length} neutras`);
 
-    /* A COTA DE ALIADOS À VISTA (ordem do dono, 03/09/2026): sem isso
-       na tela, o esfriar do excedente vira mistério */
-    const cota = TO.relacoes.cotaDeAliados(e);
-    const banca = linhas.filter(l=>l.valor >= 45).length;
-    c.corpo.appendChild(el('div', {class: banca > cota ? 'negativo' : 'fraco',
-      texto: banca > cota
-        ? `Alianças de verdade: ${banca} de ${cota} que a sede banca — `+
-          `as mais frias esfriam até caber`
-        : `Alianças de verdade: ${banca} de ${cota} que a sede banca`}));
-
     const bs = el('input',{class:'busca', type:'search',
       placeholder:'torcida, clube ou cidade…'});
     bs.value = buscaDip;

@@ -3458,26 +3458,17 @@ cobrava **−1** a cada dois meses secos — saldo de **+0,5 por mês**, ou
 **+65 numa década**. Como toda Neutra nasce em 0 e a faixa de Aliado
 começa em +20, a tela virava um mar de aliadas sem ninguém fazer nada.
 
-Duas correções, ditadas pelo dono:
+A correção, ditada pelo dono:
 
-1. **A régua da convivência.** Mês sem hostilidade paga **+0,2**; dois
-   meses sem ajuda cobram **−1**. O saldo passivo agora é NEGATIVO
-   (−0,3 por mês): relação sem contato apodrece, e aliado de verdade só
-   se sustenta com evento — recepção, escolta, descer pela outra.
+- **A régua da convivência.** Mês sem hostilidade paga **+0,2**; dois
+  meses sem ajuda cobram **−1**. O saldo passivo agora é NEGATIVO
+  (−0,3 por mês): relação sem contato apodrece, e aliado de verdade só
+  se sustenta com evento — recepção, escolta, descer pela outra.
 
-2. **A cota de aliados.** Ninguém sustenta trinta irmandades. A torcida
-   banca um número de alianças que sai da sede mais o prestígio:
-
-   | Sede | 1 | 2 | 3 | 4 | 5 | 6 |
-   |---|---|---|---|---|---|---|
-   | Cota base | 2 | 3 | 4 | 5 | 6 | 8 |
-
-   e o prestígio soma **+1 a cada 25** na régua de 0 a 100 (de +0 a +4).
-   Sede 1 sem nome banca 2; sede 6 no topo banca 12. O que passar do
-   teto **esfria 1 por semana**, das relações mais frias pras mais
-   quentes, até cair fora da faixa de aliado (+45). É pressão, não
-   corte: nada é apagado de uma vez, e a Diplomacia mostra o placar
-   ("Alianças de verdade: X de Y que a sede banca").
+**Cota de aliados: DESCARTADA** (dono, 03/09/2026). Chegou a existir —
+teto de alianças pela sede e pelo prestígio, com o excedente esfriando 1
+por semana — e o dono mandou tirar. A régua da convivência dá conta
+sozinha.
 
 **O gasto de recepção das IAs** também passa a aparecer no balanço
 mensal do perfil delas, como linha de despesa das últimas 4 semanas.

@@ -1244,17 +1244,6 @@ TO.relacoes = (function(){
   const PAZ_MES  =  0.2;
   const SECO_MES = -1;
 
-  /* A COTA DE ALIADOS (ordem do dono, 03/09/2026)
-     Ninguém sustenta trinta irmandades. A torcida banca um número de
-     aliados que sai da sede e do prestígio; o que passar do teto
-     esfria 1 por semana — os mais fracos primeiro — até cair fora da
-     faixa de aliado. É pressão, não corte: nada é apagado de uma vez. */
-  const COTA_SEDE = [null, 2, 3, 4, 5, 6, 8];
-  function cotaDeAliados(E){
-    const n = COTA_SEDE[E.torcida.sedeNivel] || COTA_SEDE[1];
-    const prest = Math.round((E.indicadores.prestigio||0) * 5);  // 0 a 100
-    return n + Math.floor(prest/25);                             // +0 a +4
-  }
 
   function convivencia(E){
     const sa = semanaAbs(E);
@@ -1274,22 +1263,6 @@ TO.relacoes = (function(){
         E.marcaAjuda[o.id] = a0 + 8;       // e a conta dos dois meses secos
       }
     }
-    esfriarExcedente(E);
-  }
-
-  /* quem está acima da cota esfria: 1 por semana, do mais fraco pro
-     mais forte, até o excedente sair da faixa de aliado */
-  function esfriarExcedente(E){
-    const cota = cotaDeAliados(E);
-    const aliados = Object.keys(E.relacoes||{})
-      .filter(id => id !== 'undefined' && id !== E.torcida.id &&
-                    E.relacoes[id] >= ALIADO)
-      .sort((a,b)=>E.relacoes[a] - E.relacoes[b]);
-    const sobra = aliados.length - cota;
-    if(sobra <= 0){ delete E.aliadosAcimaDaCota; return; }
-    E.aliadosAcimaDaCota = sobra;
-    for(const id of aliados.slice(0, sobra))
-      E.relacoes[id] = U.limitar(E.relacoes[id] - 1, -100, 100);
   }
 
   /* =======================================================
@@ -2421,8 +2394,7 @@ TO.relacoes = (function(){
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
           conquistaDoClube, passarSemana, guerraDeFiliais, panorama,
-          elencoDaTorcida, lancarIA, recepcaoIA, cotaDeAliados,
-          convivencia,
+          elencoDaTorcida, lancarIA, recepcaoIA, convivencia,
           MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,
           quadroDe, mediaDoQuadro, treinarDelas, promoverDelas, xpDeBrigaIA,
