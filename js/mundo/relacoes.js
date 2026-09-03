@@ -149,6 +149,10 @@ TO.relacoes = (function(){
      A fila viva de save antigo tem outras chaves e outra contagem de
      repetições — comparar por conjunto não daria conta. */
   const FILA_V = 3;
+  /* os que NUNCA acabam: bomba se gasta e o clube sempre aceita
+     dinheiro. Eles não podem segurar a sede pra sempre (ver a nota
+     no proximaCompra). */
+  const INFINITO = new Set(['bombas', 'elenco']);
 
   /* a fila viva da torcida: nasce da ORDEM e roda a cada compra.
      Save de fila antiga recomeça na ordem nova, do começo. */
@@ -593,13 +597,26 @@ TO.relacoes = (function(){
       const i = fila.indexOf(chave);
       if(i >= 0){ fila.splice(i, 1); fila.push(chave); }
     }
+    /* CONSTRUÇÃO vem na ordem do dono, sem exceção */
+    if(achou && !INFINITO.has(achou.chave)) return achou;
+
+    /* mas BOMBA e INVESTIMENTO NO CLUBE nunca acabam: enquanto eles
+       estiverem na vez, a torcida gastaria o século em munição e o
+       item travado esperaria a sede que ninguém compra — foi o que a
+       década sondada mostrou, 250 das 386 paradas na sede 1 com
+       dinheiro no bolso. Então: havendo item travado pela sede E o
+       caixa já pagando a obra, a sede passa na frente do consumível.
+       Quem está pobre segue comprando bomba e juntando. */
+    const sedeNova = P().SEDE[t.sede+1];
+    if(travados.length && sedeNova && t.caixa >= sedeNova.custo)
+      return {tipo:'sede', custo:sedeNova.custo};
     if(achou) return achou;
 
     /* fila inteira cumprida ou toda travada: o que sobra é obra
        grande. A sede primeiro — é ela que destrava todo o resto —,
        a fábrica depois. */
-    if(P().SEDE[t.sede+1])
-      return {tipo:'sede', custo:P().SEDE[t.sede+1].custo};
+    if(sedeNova)
+      return {tipo:'sede', custo:sedeNova.custo};
     if(!t.fabrica && t.sede >= P().FABRICA.sede)
       return {tipo:'fabrica', custo:P().FABRICA.custo};
     return null;

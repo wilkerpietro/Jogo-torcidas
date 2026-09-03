@@ -3401,6 +3401,15 @@ novo na semana seguinte.
   fila inteira está cumprida ou travada — e aí é a única coisa que
   destrava o resto. (Assumido por mim pra não matar o crescimento
   da sede, que só acontecia por esse caminho; no crivo do dono.)
+- O DESTRAVE (conserto de 03/09/2026, no crivo do dono). A sobra
+  não bastava: a fila NUNCA acaba, porque bomba se gasta e volta, e
+  investimento no clube sempre aceita dinheiro. A década sondada
+  deu 250 das 386 torcidas paradas na sede 1, quatro delas com mais
+  de R$ 400 mil no bolso. Agora `INFINITO` separa consumível de
+  construção: a ordem do dono vale inteira pro que se constrói, mas
+  quando só sobra bomba ou investimento na vez, havendo item
+  travado pela sede E caixa que já paga a obra, a sede passa na
+  frente. Pobre segue no barato, juntando.
 - `FILA_V` versiona a fila: mudou a ORDEM, toda torcida recomeça na
   nova. O casamento por conjunto não daria conta das repetições.
 - CONSERTO DE ARRASTO: `FILIAL.porSede` não tinha a coluna da sede 6
