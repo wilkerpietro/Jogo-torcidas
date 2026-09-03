@@ -3410,6 +3410,15 @@ novo na semana seguinte.
   quando só sobra bomba ou investimento na vez, havendo item
   travado pela sede E caixa que já paga a obra, a sede passa na
   frente. Pobre segue no barato, juntando.
+- O SEGUNDO FURO, da mesma década: separar consumível de construção
+  não bastou. Uma CONSTRUÇÃO CARA na vez — a área de treino, R$ 100
+  mil — segurava a fila enquanto a torcida juntava, e ela juntava
+  para sempre, porque tudo que era barato estava travado pela sede
+  que ninguém comprava. Deu 179 torcidas paradas na sede 1 COM o
+  dinheiro da sede 2 no bolso. O destrave passou a olhar o CAIXA: a
+  ordem do dono vale pra construção que a torcida pode pagar agora;
+  quando a vez é de consumível ou de coisa fora do bolso, e há item
+  travado, a sede passa na frente — se ela couber no caixa.
 - `FILA_V` versiona a fila: mudou a ORDEM, toda torcida recomeça na
   nova. O casamento por conjunto não daria conta das repetições.
 - CONSERTO DE ARRASTO: `FILIAL.porSede` não tinha a coluna da sede 6

@@ -597,17 +597,26 @@ TO.relacoes = (function(){
       const i = fila.indexOf(chave);
       if(i >= 0){ fila.splice(i, 1); fila.push(chave); }
     }
-    /* CONSTRUÇÃO vem na ordem do dono, sem exceção */
-    if(achou && !INFINITO.has(achou.chave)) return achou;
+    /* A SEDE DESTRAVA QUANDO A VEZ NÃO ANDA (dois consertos da mesma
+       década sondada, 03/09/2026). Dois jeitos de a fila emperrar
+       para sempre com a regra do pulo:
 
-    /* mas BOMBA e INVESTIMENTO NO CLUBE nunca acabam: enquanto eles
-       estiverem na vez, a torcida gastaria o século em munição e o
-       item travado esperaria a sede que ninguém compra — foi o que a
-       década sondada mostrou, 250 das 386 paradas na sede 1 com
-       dinheiro no bolso. Então: havendo item travado pela sede E o
-       caixa já pagando a obra, a sede passa na frente do consumível.
-       Quem está pobre segue comprando bomba e juntando. */
+       1. BOMBA e INVESTIMENTO NO CLUBE nunca acabam — a torcida
+          gastaria o século em munição e o travado esperaria a sede
+          que ninguém compra.
+       2. Uma CONSTRUÇÃO CARA na vez (a área de treino, 100 mil)
+          segura a fila enquanto a torcida junta — e ela junta para
+          sempre, porque o que sobraria barato está tudo travado pela
+          sede. Foram 179 torcidas paradas na sede 1 com o dinheiro
+          da sede 2 no bolso.
+
+       Então: havendo item travado, e a vez sendo de consumível ou de
+       coisa que o caixa ainda não paga, a sede passa na frente — se
+       o caixa já paga ELA. Quem não paga nem a sede segue no barato,
+       juntando. */
     const sedeNova = P().SEDE[t.sede+1];
+    const paga = it => t.caixa >= Math.max(it.custo || 0, it.cofre || 0);
+    if(achou && !INFINITO.has(achou.chave) && paga(achou)) return achou;
     if(travados.length && sedeNova && t.caixa >= sedeNova.custo)
       return {tipo:'sede', custo:sedeNova.custo};
     if(achou) return achou;
