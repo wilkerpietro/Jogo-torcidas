@@ -583,39 +583,43 @@ TO.relacoes = (function(){
        coisa que destrava o resto. */
     const fila = filaDe(t);
     const travados = [];
+    const paga = it => t.caixa >= Math.max(it.custo || 0, it.cofre || 0);
     let achou = null;
 
+    /* O LAÇO NÃO PARA NO PRIMEIRO ACHADO quando a vez é fraca — e
+       isso é o conserto do conserto (03/09/2026). Empurrar o travado
+       pro fim tem um efeito colateral: na semana seguinte o laço
+       encontra a vez ANTES de chegar nos travados, que agora moram no
+       rabo, e conclui que não há nada travado. Foi assim que o
+       destrave nunca disparou e 241 torcidas passaram a década na
+       sede 1 com dinheiro no bolso. Agora: se a vez é construção que
+       o caixa paga, a fila para ali mesmo (é o caso comum e barato);
+       se a vez é consumível ou coisa fora do bolso, o laço segue até
+       o fim pra saber se existe alguém travado esperando sede. */
     for(const chave of fila.slice()){
       const it = itemDaFila(E, t, id, chave);
       if(!it) continue;                    // cumprido: a fila anda
       if(it.sede){ travados.push(chave); continue; }
+      if(achou) continue;                  // a vez já é de outro
       it.chave = chave;                    // pra rodar a fila na compra
       achou = it;                          // a vez é desta — e ela ESPERA
-      break;
+      if(!INFINITO.has(chave) && paga(it)) break;
     }
     for(const chave of travados){
       const i = fila.indexOf(chave);
       if(i >= 0){ fila.splice(i, 1); fila.push(chave); }
     }
-    /* A SEDE DESTRAVA QUANDO A VEZ NÃO ANDA (dois consertos da mesma
-       década sondada, 03/09/2026). Dois jeitos de a fila emperrar
-       para sempre com a regra do pulo:
 
-       1. BOMBA e INVESTIMENTO NO CLUBE nunca acabam — a torcida
-          gastaria o século em munição e o travado esperaria a sede
-          que ninguém compra.
-       2. Uma CONSTRUÇÃO CARA na vez (a área de treino, 100 mil)
-          segura a fila enquanto a torcida junta — e ela junta para
-          sempre, porque o que sobraria barato está tudo travado pela
-          sede. Foram 179 torcidas paradas na sede 1 com o dinheiro
-          da sede 2 no bolso.
-
-       Então: havendo item travado, e a vez sendo de consumível ou de
-       coisa que o caixa ainda não paga, a sede passa na frente — se
-       o caixa já paga ELA. Quem não paga nem a sede segue no barato,
-       juntando. */
+    /* A SEDE DESTRAVA QUANDO A VEZ NÃO ANDA. Duas coisas emperravam
+       a fila para sempre com a regra do pulo: BOMBA e INVESTIMENTO NO
+       CLUBE nunca acabam (a torcida gastaria o século em munição), e
+       uma CONSTRUÇÃO CARA na vez segura tudo enquanto ela junta — e
+       ela junta para sempre, porque o barato está travado pela sede
+       que ninguém compra. Então: havendo travado, e a vez sendo de
+       consumível ou de coisa que o caixa não paga, a sede passa na
+       frente — se o caixa já paga ELA. Quem não paga nem a sede segue
+       no barato, juntando. */
     const sedeNova = P().SEDE[t.sede+1];
-    const paga = it => t.caixa >= Math.max(it.custo || 0, it.cofre || 0);
     if(achou && !INFINITO.has(achou.chave) && paga(achou)) return achou;
     if(travados.length && sedeNova && t.caixa >= sedeNova.custo)
       return {tipo:'sede', custo:sedeNova.custo};
