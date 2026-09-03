@@ -3526,6 +3526,35 @@ o olho não vê diferença. O manifesto `dados/escudos.js` ganhou a seção
 `torcidas`, que é o que faz a UI trocar o quadradinho de cor pelo escudo
 em todas as telas de uma vez.
 
+## As capas das praças (entrega do dono, 03/09/2026)
+
+O dono coletou a foto das 30 praças brasileiras e mandou: **comprimir e
+tirar qualidade se preciso pra caber no artifact**. O gancho já existia
+desde 01/09 — o cabeçalho do perfil da praça vira cartão-postal — mas
+nunca tinha chegado foto.
+
+A régua do tratamento (`scratchpad/rar/capas.py`):
+
+- **corte 16:9 puxado pra cima**: 40% do excesso sai do topo e 60% do
+  pé, porque a metade de baixo some no gradiente escuro que leva o nome
+  da cidade;
+- **1024 px de largura**, e nunca ampliando o original — 8 das 30 vieram
+  menores que isso e ficaram no tamanho que tinham;
+- **WebP com a qualidade caindo em degrau** até o pacote inteiro caber
+  no orçamento: parou em **54**, com 1,91 MB nas 30 (65 KB por praça).
+  Em base64 dentro do arquivo único isso vira ~2,5 MB, e o jogo fechou
+  em **15,21 MB** — dentro do teto de 16 do artifact, com folga curta.
+
+Duas fotos vinham com marca que o gradiente não engoliria e foram
+aparadas antes do corte (tabela `APARO`): **Brasília**, com um logo
+circular no canto direito, e **Interior do RS**, com o crédito do
+fotógrafo no pé.
+
+**O manifesto `dados/capas.js`** lista quem tem foto. Sem isso o perfil
+pediria o arquivo de todas as 94 praças e encheria o console de 404: as
+64 da América do Sul ainda não têm cartão-postal e seguem no gradiente
+escuro de sempre.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -4599,16 +4599,19 @@
       `${TO.mundo.torcidasEm(c.id).filter(o=>!o.incompleta).length} torcidas`,
       corpo);
     /* A CAPA DA CIDADE (pedido do dono, 01/09/2026): o cabeçalho do
-       perfil vira cartão-postal — a foto mora em img/cidades/<id>.jpg
+       perfil vira cartão-postal — a foto mora em img/cidades/<id>.webp
        e entra por baixo do gradiente; sem arquivo, fica o gradiente
        escuro de sempre, sem quebrar nada. */
     const ov = [...document.querySelectorAll('.tela-cheia')].pop();
     const cab = ov && ov.querySelector('.moldura > header');
-    if(cab){
+    /* o manifesto manda: sem foto listada, nem se pede o arquivo — as
+       praças de fora do Brasil ainda não têm cartão-postal e não é pra
+       encher o console de 404 por causa disso */
+    if(cab && (TO.dados.capas||{})[c.id]){
       cab.classList.add('capa-cidade');
       cab.style.backgroundImage =
         'linear-gradient(180deg, rgba(8,9,12,.30), rgba(8,9,12,.86)), '+
-        `url("${IMG('img/cidades/' + c.id + '.jpg')}")`;
+        `url("${IMG('img/cidades/' + c.id + '.webp')}")`;
     }
   }
 
