@@ -1301,6 +1301,7 @@ TO.diaJogo.tres = (function(){
   const cam = {
     yaw:Math.PI/2, pitch:0.46, dist:170, modo:0, zoom:1,
     alvo:[768, 0, 512], olho:[600,60,512], PV:null, P:null, V:null,
+    _J:null,                 // a noite pra que a câmera já foi enquadrada
     arrastando:false, ultimoArrasto:-9, fwd:[1,0,0]
   };
   const FOV = 62*Math.PI/180;
@@ -1321,6 +1322,23 @@ TO.diaJogo.tres = (function(){
 
   function atualizarCamera(J, dt, agora){
     const a = alvoDaCamera(J);
+    /* NOITE NOVA: A CÂMERA JÁ NASCE ENQUADRADA.
+       O alvo começava no centro da tela e ia sendo perseguido, então a
+       cena abria com a câmera deslizando meia quadra até achar o líder —
+       e, no primeiro segundo, o bonde do jogador ficava atrás dela.
+       Aqui ela cola no líder de uma vez e vira pro lado de quem está
+       do outro lado da rua: quem abre a cena vê o próprio bonde na
+       frente e o rival ao fundo, que é o que a briga é. */
+    if(cam._J !== J){
+      cam._J = J;
+      cam.alvo[0] = a.x; cam.alvo[2] = a.z;
+      const l = J.discos.find(d=>d.lider) || {lado:'mandante'};
+      let ex=0, ez=0, n=0;
+      for(const d of J.discos) if(d.vivo && d.lado !== l.lado){ ex+=d.x; ez+=d.y; n++; }
+      if(n) cam.yaw = Math.atan2(ex/n - a.x, ez/n - a.z);
+      cam.dist = MODOS[cam.modo].dist*cam.zoom;
+      cam.pitch = MODOS[cam.modo].pitch;
+    }
     const k = Math.min(1, dt*6);
     cam.alvo[0] += (a.x - cam.alvo[0])*k;
     cam.alvo[2] += (a.z - cam.alvo[2])*k;
