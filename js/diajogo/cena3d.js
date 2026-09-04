@@ -740,14 +740,16 @@ export function criar(canvas) {
       const areaPx = cels.length * CEL * CEL;
       const media = corMedia(px, cels);
       const mr = media[0], mg = media[1], mb = media[2];
-      /* verde da foto: mato, copa de árvore, canteiro. O corte era
-         1,05 e deixava passar copa em sombra, que na foto aérea é
-         quase todo o canteiro de avenida. As cenas que sobraram no
-         jogo são todas foto com máscara — `blocos` com tipo não
-         existe mais em nenhuma delas —, então esta é a ÚNICA
-         maneira de saber onde é verde fora dos polígonos nomeados
-         de `cena_arredores.js`. */
-      const verde = mg > mr * 1.03 && mg > mb * 1.03;
+      /* Verde da foto: mato, copa de árvore, canteiro. As cenas que
+         sobraram no jogo são todas foto com máscara — `blocos` com
+         tipo não existe mais em nenhuma delas —, então este teste é
+         a ÚNICA maneira de saber onde é verde fora dos polígonos
+         nomeados de `cena_arredores.js`.
+         1,05 e não 1,03: afrouxando pra 1,03 na esperança de pegar
+         copa em sombra, o que entrou junto foi o mato que cresce em
+         laje de telhado. O quarteirão virava canteiro e nasciam
+         árvores em cima dos prédios — 81 no lugar de 26. */
+      const verde = mg > mr * 1.05 && mg > mb * 1.05;
 
       const nome = nomeDoPoligono(D, caixa);
       const daCena = nome && (CLASSE_POR_NOME.find(par => par[0].test(nome)) || [])[1];
@@ -1672,29 +1674,30 @@ export function criar(canvas) {
   /* =======================================================
      API
      ======================================================= */
-  let esperando = 0, cenaAtual = null, conta = null;
+  /* NÃO SE MONTA CIDADE EM CIMA DO DESENHO DE ESPERA.
+     Enquanto a foto não chega, `desenharFundo` pinta o fallback —
+     fundo #14150f com a malha em cinza. Esse verde-escuro passa no
+     teste de mato (`g > r·1,03`), e o mapa inteiro virava canteiro:
+     oitenta e uma árvores e nenhum prédio. Agora o chão vai pra
+     textura na hora, mas a cidade só sobe quando a imagem estiver
+     de pé. Cena desenhada não espera nada. */
+  let comFoto = false, cenaAtual = null, conta = null;
 
   function montar(D) {
     cenaAtual = D;
     anda.clear();
+    comFoto = !D.imagem;
     repintarChao();
-    conta = montarPredios(D);
+    conta = comFoto ? montarPredios(D) : null;
     montarPortoes(D);
-    esperando = D.imagem ? 240 : 0;
     irPara(vista);
     return conta;
   }
-  /* a foto chega depois do primeiro quadro; quando chegar, o chão
-     é repintado E os prédios refeitos, porque a cor da parede e a
-     altura saem da foto */
   function conferirFoto() {
-    if (esperando <= 0) return;
-    esperando--;
-    if (A.imagemOk) {
-      esperando = 0;
-      repintarChao();
-      conta = montarPredios(cenaAtual);
-    }
+    if (comFoto || !A.imagemOk) return;
+    comFoto = true;
+    repintarChao();
+    conta = montarPredios(cenaAtual);
   }
 
   /* A sombra é o item mais caro da cena: o mapa de 2048² redesenha
@@ -1709,7 +1712,7 @@ export function criar(canvas) {
 
   function trocarModo() {
     modo = modo === 'rua' ? 'maquete' : 'rua';
-    conta = montarPredios(cenaAtual);
+    if (comFoto) conta = montarPredios(cenaAtual);
     return modo;
   }
 

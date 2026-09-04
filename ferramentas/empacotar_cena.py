@@ -11,6 +11,8 @@ Tudo entra embutido: CSS, JS, a foto em data URI e as fontes em
 restrito ela falha calada e a tipografia inteira troca sem aviso.
 
     python3 ferramentas/empacotar_cena.py            # gera dist/arredores_unico.html
+    python3 ferramentas/empacotar_cena.py --jogo     # o jogo inteiro
+    python3 ferramentas/empacotar_cena.py --3d       # a cena 3D
     python3 ferramentas/empacotar_cena.py --parcial  # sem <title>, pra publicar como artifact
 """
 import base64, pathlib, re, sys, urllib.request
@@ -52,7 +54,47 @@ ALVOS = {
                'js/ui/icones.js', 'js/main.js'],
         'inicio': '',
     },
+    # a cena 3D: mesmo conteudo da bancada, com o three.js embutido e
+    # o desenhista 3D no lugar da ponte 2D
+    'cena3d': {
+        'pagina': 'arredores3d.html',
+        'js': ['js/nucleo.js', 'dados/nomes.js', 'dados/cena_arredores.js',
+               'dados/cenas_foto.js', 'dados/cenas_editadas.js',
+               'dados/cenas.js', 'js/diajogo/cenario.js',
+               'js/diajogo/arredores.js', 'js/diajogo/combate.js',
+               'js/diajogo/bancada.js'],
+        'inicio': '',
+        'modulo': True,
+    },
 }
+
+
+def three_como_objeto():
+    """O three.js e modulo ES e termina em `export{a as Vector3,...}`.
+    Aqui esse export vira um `const THREE={Vector3:a,...}` devolvido
+    por uma IIFE — assim a pagina inteira cabe num
+    <script type="module"> so, sem CDN, sem import map e sem depender
+    do build UMD, que a propria three ja marcou como deprecado.
+
+    A IIFE nao e capricho: empacotado, tudo divide o mesmo escopo, e
+    o three minificado declara nomes de uma letra (`A`, `W`, `B`) que
+    batem de frente com os do `cena3d.js`. Cada parte no seu bloco."""
+    src = (RAIZ / 'vendor/three/three.module.min.js').read_text(encoding='utf-8')
+    m = re.search(r'export\{([^}]*)\};?\s*$', src)
+    assert m, 'nao achei o export do three.module.min.js'
+    pares = []
+    for item in m.group(1).split(','):
+        item = item.strip()
+        if not item:
+            continue
+        if ' as ' in item:
+            local, publico = [q.strip() for q in item.split(' as ')]
+        else:
+            local = publico = item
+        pares.append(f'{publico}:{local}')
+    print(f'  three.js: {len(src)//1024} KB, {len(pares)} nomes exportados')
+    return ('const THREE=(function(){\n' + src[:m.start()] +
+            '\nreturn{' + ','.join(pares) + '};\n})();\n')
 
 FONTES = [
     ('Barlow Condensed', 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700'),
@@ -93,9 +135,11 @@ def baixar_fontes():
 
 def main():
     parcial = '--parcial' in sys.argv
-    alvo = 'jogo' if '--jogo' in sys.argv else 'cena'
+    alvo = ('cena3d' if '--3d' in sys.argv else
+            'jogo' if '--jogo' in sys.argv else 'cena')
     cfg = ALVOS[alvo]
     JS = cfg['js']
+    modulo = cfg.get('modulo', False)
 
     css = '\n'.join((RAIZ / c).read_text(encoding='utf-8') for c in CSS)
     # o @import de CDN nao sobrevive a CSP restrito; as fontes vao embutidas
@@ -121,20 +165,47 @@ def main():
 
     fontes = baixar_fontes()
 
-    corpo = (RAIZ / cfg['pagina']).read_text(encoding='utf-8')
-    corpo = corpo.split('<body>', 1)[1].split('</body>', 1)[0]
+    pagina = (RAIZ / cfg['pagina']).read_text(encoding='utf-8')
+    # o <style> da propria pagina (layout do palco) tambem tem de ir
+    for bloco in re.findall(r'<style>(.*?)</style>', pagina, re.S):
+        css += '\n' + bloco
+    corpo = pagina.split('<body>', 1)[1].split('</body>', 1)[0]
+    # o glue da pagina 3D e um modulo inline: sai do corpo e entra no fim
+    cola = ''
+    for m in re.finditer(r'<script type="module">(.*?)</script>', corpo, re.S):
+        cola += m.group(1)
+    corpo = re.sub(r'<script type="module">.*?</script>\s*', '', corpo, flags=re.S)
     # tira as tags de script externas: tudo ja esta embutido
     corpo = re.sub(r'<script[^>]*src=[^>]*></script>\s*', '', corpo)
     corpo = re.sub(r'<script>[^<]*</script>\s*', '', corpo)
 
-    nomes = {'cena': 'Arredores do estádio', 'jogo': 'Torcida Organizada'}
-    titulo = '' if parcial else f'<title>{nomes[alvo]}</title>\n'
+    if modulo:
+        alvo3d = (RAIZ / 'js/diajogo/cena3d.js').read_text(encoding='utf-8')
+        alvo3d = re.sub(r'^import .*$', '', alvo3d, flags=re.M)
+        alvo3d = alvo3d.replace('export function criar(', 'function criar(')
+        # mesmo motivo do three: `const A` do cena3d bate com o `A` do
+        # glue da pagina. Cada um no seu bloco, e so `criar` sai.
+        alvo3d = ('const criar=(function(){\n' + alvo3d + '\nreturn criar;\n})();\n')
+        cola = re.sub(r'^import .*$', '', cola, flags=re.M)
+        js = (three_como_objeto() +
+              '\n/* ===== jogo ===== */\n' + js +
+              '\n/* ===== js/diajogo/cena3d.js ===== */\n' + alvo3d +
+              '\n/* ===== a pagina ===== */\n' + cola)
+
+    nomes = {'cena': 'Arredores do estádio', 'jogo': 'Torcida Organizada',
+             'cena3d': 'Arredores em 3D'}
+    # o artifact ja recebe charset do envelope; o arquivo solto, nao —
+    # e sem ele o acento vira mojibake ao abrir por file://
+    titulo = '' if parcial else (
+        '<meta charset="utf-8">\n'
+        f'<title>{nomes[alvo]}</title>\n')
+    tag = '<script type="module">' if modulo else '<script>'
     saida = (titulo +
              '<style>\n' + fontes + '\n' + css + '\n</style>\n' +
              corpo +
-             '\n<script>\n' + js + '\n' + cfg['inicio'] + '\n</script>\n')
+             '\n' + tag + '\n' + js + '\n' + cfg['inicio'] + '\n</script>\n')
 
-    base = 'arredores' if alvo == 'cena' else 'jogo'
+    base = {'cena': 'arredores', 'jogo': 'jogo', 'cena3d': 'arredores3d'}[alvo]
     destino = RAIZ / 'dist' / (f'{base}_artifact.html' if parcial else f'{base}_unico.html')
     destino.parent.mkdir(exist_ok=True)
     destino.write_text(saida, encoding='utf-8')
