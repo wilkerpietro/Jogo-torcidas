@@ -756,10 +756,17 @@ TO.diaJogo.combate = (function(){
     const l=J.discos.find(d=>d.lider&&d.vivo);
     if(!l||l.fugindo||l.entrando||!podeControlar) return;
     let dx=0,dy=0;
-    if(teclas['a']||teclas['arrowleft'])  dx--;
-    if(teclas['d']||teclas['arrowright']) dx++;
-    if(teclas['w']||teclas['arrowup'])    dy--;
-    if(teclas['s']||teclas['arrowdown'])  dy++;
+    /* A CENA 3D MANDA UM VETOR, NÃO TECLAS. Lá o W é "pra onde a câmera
+       olha", e quem sabe pra onde a câmera olha é o renderizador — ele
+       já converte pro eixo da cena e entrega aqui. Sem vetor, as
+       teclas valem no eixo do mapa, como sempre. */
+    if(teclas.vetor){ dx=teclas.vetor.x; dy=teclas.vetor.y; }
+    else {
+      if(teclas['a']||teclas['arrowleft'])  dx--;
+      if(teclas['d']||teclas['arrowright']) dx++;
+      if(teclas['w']||teclas['arrowup'])    dy--;
+      if(teclas['s']||teclas['arrowdown'])  dy++;
+    }
     const m=Math.hypot(dx,dy);
     if(!m) return;
     /* o jogador corre atrás no mesmo passo de quem foge — a mesma

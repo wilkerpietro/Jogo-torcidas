@@ -673,6 +673,24 @@ TO.dados.cenas = (function(){
   const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
                  bar, comercio, ct};
 
+  /* =======================================================
+     AS RUAS EM 3D
+     A foto, logo abaixo, apaga os blocos da cena desenhada — e
+     é dos blocos que a versão 3D levanta parede, telhado e
+     poste. Então cada rua ganha uma cópia ANTES da foto passar,
+     com a mesma planta, os mesmos spawns e a mesma malha que o
+     desenho tinha: `rua-3d` é a rua de periferia vista de
+     perto, e o combate roda nela sem saber que é 3D.
+     ======================================================= */
+  const copia = o => JSON.parse(JSON.stringify(o));
+  for(const id of ['rua', 'rua-media', 'rua-nobre']){
+    const c = copia(cenas[id]);
+    c.base = id; c.tres = true;
+    c.id = id + '-3d';
+    c.nome = cenas[id].nome + ' em 3D';
+    cenas[c.id] = c;
+  }
+
   /* Quem manda é a ordem: desenho, depois foto, depois mão. As duas
      últimas varrem o que existir — cena que ganhar foto amanhã entra
      sozinha, sem ninguém lembrar de acrescentar a linha aqui (o bar

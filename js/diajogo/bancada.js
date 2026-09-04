@@ -37,8 +37,21 @@ TO.diaJogo.bancada = (function(){
      cfg:{intencao:'atacar', bombas:0, efetivoRival:10}}
   ];
 
+  /* A BANCADA 3D (briga3d.html) usa a mesma bancada com outra lista: as
+     três ruas na versão de perto. É a mesma ponte e o mesmo combate — o
+     que muda é o canvas, que ali é WebGL e tem a camada de nomes por
+     cima. */
+  const CENAS_3D = [
+    {id:'rua-3d', rot:'Rua · periferia', titulo:'Rua de periferia, vista de perto',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}},
+    {id:'rua-media-3d', rot:'Rua · classe média', titulo:'Rua de classe média, vista de perto',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}},
+    {id:'rua-nobre-3d', rot:'Rua · classe alta', titulo:'Rua de bairro nobre, vista de perto',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}}
+  ];
+
   const botoes = {};
-  let atual = null;
+  let atual = null, lista = CENAS, extra = {};
 
   function abrir(c){
     atual = c;
@@ -48,14 +61,15 @@ TO.diaJogo.bancada = (function(){
     const t = document.getElementById('cenaTitulo');
     if(t) t.textContent = c.titulo;
     document.title = c.titulo + ' — Torcida Organizada';
-    TO.diaJogo.ponte.montar({config: Object.assign({local:c.id}, c.cfg)});
+    TO.diaJogo.ponte.montar(Object.assign({config: Object.assign({local:c.id}, c.cfg)}, extra));
   }
 
-  function montar(){
+  function montar(cenas, opc){
+    lista = cenas || CENAS; extra = opc || {};
     const abas = document.getElementById('cenaAbas');
     if(!abas) return;
     abas.innerHTML = '';
-    for(const c of CENAS){
+    for(const c of lista){
       const b = document.createElement('button');
       b.textContent = c.rot;
       b.onclick = ()=>abrir(c);
@@ -63,10 +77,12 @@ TO.diaJogo.bancada = (function(){
       abas.appendChild(b);
     }
     const dica = document.createElement('small');
-    dica.textContent = 'trocar de aba recomeça a noite · F2 abre o editor';
+    dica.textContent = extra.tres
+      ? 'trocar de aba recomeça a noite · C troca a câmera'
+      : 'trocar de aba recomeça a noite · F2 abre o editor';
     abas.appendChild(dica);
-    abrir(CENAS[0]);
+    abrir(lista[0]);
   }
 
-  return {CENAS, montar, abrir, get atual(){return atual;}};
+  return {CENAS, CENAS_3D, montar, abrir, get atual(){return atual;}};
 })();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cenas de briga — Torcida Organizada</title>
+<title>Briga de rua em 3D — Torcida Organizada</title>
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/paineis.css">
 <link rel="stylesheet" href="css/cenas.css">
@@ -13,7 +13,6 @@
     border-bottom:2px solid var(--linha);padding:10px 16px}
   header#topo h1{font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
   header#topo span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);letter-spacing:.08em}
-  /* a barra de cenas: uma aba por cenário, pra abrir e conferir cada um */
   #cenaAbas{display:flex;flex-wrap:wrap;gap:7px;padding:9px 16px;
     border-bottom:1px solid var(--linha);background:#141412}
   #cenaAbas button{
@@ -24,22 +23,26 @@
   #cenaAbas button.on{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
   #cenaAbas small{font-family:var(--mono);font-size:10px;color:var(--fraco);
     align-self:center;margin-left:6px}
+  #semGL{display:none;padding:14px 16px;font-family:var(--mono);font-size:11px;color:#d9705f}
 </style>
 </head>
 <body>
 
 <header id="topo">
-  <h1 id="cenaTitulo">Arredores do estádio</h1>
-  <span>CENA SOBRE FOTO · MALHA DE CAMINHABILIDADE · <b style="color:var(--ouro)">F2</b> EDITOR ·
-    <a href="briga3d.html" style="color:var(--ouro)">RUA EM 3D →</a></span>
+  <h1 id="cenaTitulo">Rua de periferia, vista de perto</h1>
+  <span>VERSÃO 3D · A MESMA BRIGA, VISTA DE TRÁS DO LÍDER ·
+    <a href="arredores.html" style="color:var(--ouro)">← CENAS DE CIMA</a></span>
 </header>
 
 <div id="cenaAbas"></div>
+<div id="semGL">Este navegador não abriu WebGL. A cena vai abrir na versão de cima.</div>
 
 <div id="djGrade">
   <div>
     <div id="djPalco">
-      <canvas id="djPrincipal" width="1152" height="768"></canvas>
+      <!-- o palco é WebGL; a camada de cima é um canvas 2D só de nomes, vida e radar -->
+      <canvas id="djPrincipal" class="tres" width="1152" height="768"></canvas>
+      <canvas id="djSobre" width="1152" height="768"></canvas>
 
       <div class="hud" id="djRelogio">18:00</div>
       <div class="hud" id="djSubrelogio"></div>
@@ -65,12 +68,12 @@
 
   <div>
     <div class="painel">
-      <h2 id="djLocal">Nos arredores</h2>
+      <h2 id="djLocal">Na rua</h2>
       <div id="djFormacoes"></div>
       <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
       <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
       <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
-      <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
+      <button class="acao-btn entrar" id="djBtEntrar">Furar pra fora <b>ENTER</b></button>
     </div>
     <div class="painel">
       <h2>Calibragem <span class="tag">debug</span></h2>
@@ -88,8 +91,25 @@
 <script src="js/diajogo/cenario.js"></script>
 <script src="js/diajogo/arredores.js"></script>
 <script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/tres.js"></script>
 <script src="js/diajogo/ponte.js"></script>
 <script src="js/diajogo/bancada.js"></script>
-<script>TO.diaJogo.bancada.montar();</script>
+<script>
+  /* o canvas do palco é o WebGL; se não abrir, a ponte cai na cena 2D
+     — e aí o canvas precisa ser um 2D, então a bancada troca o elemento */
+  (function(){
+    const B = TO.diaJogo.bancada;
+    const cv = document.getElementById('djPrincipal');
+    const ok = (()=>{ try{ return !!(cv.getContext('webgl')||cv.getContext('experimental-webgl')); }catch(_){ return false; } })();
+    if(!ok){
+      document.getElementById('semGL').style.display='block';
+      const novo = document.createElement('canvas'); novo.id='djPrincipal'; novo.width=1152; novo.height=768;
+      cv.replaceWith(novo); document.getElementById('djSobre').remove();
+      B.montar(B.CENAS.filter(c=>/^rua/.test(c.id)));
+      return;
+    }
+    B.montar(B.CENAS_3D, {tres:true, sobre:document.getElementById('djSobre')});
+  })();
+</script>
 </body>
 </html>

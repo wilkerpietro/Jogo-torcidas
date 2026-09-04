@@ -10,6 +10,16 @@
 #djPrincipal{display:block;width:100%;height:auto;background:#16150f;
   border:1px solid #45443f;cursor:crosshair}
 
+/* ---------- a cena 3D ----------
+   O canvas WebGL fica no lugar do de cima, e a camada de nomes (2D)
+   deita por cima dele sem pegar o mouse: quem gira a câmera é o canvas
+   de baixo. Os botões da HUD vêm depois no DOM e continuam clicáveis. */
+#djPalco canvas.tres{cursor:grab}
+#djPalco canvas.tres:active{cursor:grabbing}
+#djSobre{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+/* o `display:block` de cima ganharia do `hidden` do navegador */
+#djPalco canvas[hidden]{display:none}
+
 /* ---------- mini-mapa ---------- */
 #djCaixaMini{position:absolute;right:10px;bottom:10px;width:182px;
   border:1px solid #55534d;background:#0e0e0de6;cursor:pointer;

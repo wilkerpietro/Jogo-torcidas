@@ -162,6 +162,7 @@ atravessando a cidade é perigoso demais. Guardado para quando o mapa entrar.
 - **Cenas fixas, não mundo aberto.** ~8 templates: sede, bar/loja, arredores do estádio, estrada, alvo comercial genérico (4 skins), praça, delegacia, CT do clube.
 - **1 a 3 ações por semana**, definidas pelo nível da sede. Upgradar a sede compra tempo, não só dinheiro.
 - **NPCs em combate são discos** estilo futebol de botão, com nome em cima. Bonecos exigiriam sprite por variação/ação/direção.
+  *Revisto em §8.31:* na versão 3D da rua o disco virou boneco de caixas montado em código — sem sprite, sem arquivo de modelo. A cena de cima continua com disco.
 - **Duas lojas separadas:** clandestina (consumíveis: bomba, rojão, sinalizador — pedra é infinita e fraca) e de materiais (patrimônio: bambu, faixa, bandeirão, bateria — pode ser roubado em derrota).
 - **A briga termina por quebra de linha e debandada**, não por aniquilação.
 - **Líder é âncora física**, não cursor de comando. Formação é a decisão principal.
@@ -4471,3 +4472,78 @@ cena.
 
 **O que ainda falta no mundo:** a Série E do GDD §18.2 — os dados têm 108 clubes, não
 156, então ninguém cai da Série D.
+
+## 8.31 A rua vista de perto: a versão 3D, com boneco no lugar do disco
+
+O pedido era uma **versão paralela** das cenas de briga, em 3D e com a câmera perto, no
+estilo dos jogos de rua em terceira pessoa — e que os discos virassem gente. Ficou assim:
+
+- **A simulação não mudou.** `combate.js`, `arredores.js` e a ponte são os mesmos; a
+  versão 3D é só outro desenhista (`js/diajogo/tres.js`) lendo o mesmo `J` e o mesmo `D`.
+  O que acontece na rua de cima acontece igual na rua de perto — moral, formação, pedra,
+  bomba, PM, debandada, presos. Uma única mudança no combate: `moverLider` aceita
+  `teclas.vetor`, um rumo já resolvido, porque em 3D o **W é "pra onde a câmera olha"** e
+  quem sabe isso é o renderizador.
+- **Sem biblioteca.** O jogo roda solto, sem rede; three.js por CDN não serve. O
+  renderizador é WebGL cru: caixa, prisma, cilindro e esfera com cor por vértice, luz de
+  fim de tarde, neblina de distância, céu em gradiente, e uma camada 2D por cima só pra
+  nome do líder, barra de vida, "PRESO" e o **radar** no canto, que gira com a câmera.
+  Letreiro de bar, placa de rua e pichação são texto desenhado num canvas e colado na
+  parede como textura — é assim que "BAR DO ZÉ" e "SÓ VAI" aparecem sem imagem nenhuma.
+- **A rua é levantada dos mesmos blocos que a pintura 2D usa.** A foto apaga os blocos
+  da cena ao carregar (`sobreFoto`), então `dados/cenas.js` guarda uma cópia de cada rua
+  ANTES da foto passar: `rua-3d`, `rua-media-3d` e `rua-nobre-3d`, com a mesma planta,
+  os mesmos spawns e a malha vinda dos polígonos dos blocos. Parede que barra o disco é
+  parede que aparece na tela. A régua é 1 unidade = 1 px da cena: o boneco tem 50 de
+  altura (1,75 m), a casa 85, o poste 230, o carro 96 de comprimento — a escala em que a
+  cena foi desenhada, só com o eixo de cima.
+- **Ambientação brasileira, tipo a tipo.** Periferia: casa de laje com platibanda, caixa
+  d'água azul, varal de roupa, antena e o segundo andar no tijolo; telhado de duas águas;
+  sobrado com sacada; boteco de fachada viva, toldo listrado, freezer na porta, engradado
+  empilhado e letreiro; caçamba com entulho; carro no meio-fio; poste com braço e
+  luminária, fiação de poste a poste e a gambiarra até a casa mais perta; bandeirinha de
+  festa junina atravessando a rua; meio-fio pintado de preto e branco; asfalto remendado,
+  buraco e o trecho de paralelepípedo; lombada; mesa de plástico com quatro cadeiras e
+  garrafa em cima; placa azul de rua na esquina. Classe média: muro baixo com portão,
+  jardim, garagem de porta de aço, predinho de três andares, padaria com letreiro, árvore
+  no meio-fio, ponto de ônibus, vaga pintada. Classe alta: torre com grade de janelas nos
+  quatro lados, muro alto com cerca elétrica, guarita, mangueira grande. Além da borda da
+  cena a rua **continua**: casario de fora nas quatro saídas e morros com casinha na
+  encosta no horizonte, pra ninguém ver o fim do mundo a duas quadras.
+- **O boneco.** Pernas, tronco em três faixas (a camisa na primária da torcida, a faixa
+  do meio na secundária), braços, cabeça, cabelo ou boné. Tom de pele, calça ou bermuda,
+  boné e altura vêm de semente por nome, então o mesmo membro é sempre o mesmo boneco.
+  Anda com a velocidade do disco (o passo acompanha), corre inclinado quando foge,
+  cambaleia quando atordoado, **soca virado pra quem apanha** quando `golpe` acende, fica
+  de guarda com os braços meio erguidos quando está hostil e parado. Caído deita no chão;
+  preso senta com as mãos pra trás. O líder é um pouco maior, de bandana na segunda cor,
+  com o nome em cima e um anel dourado no chão. PM de farda verde e quepe, com cassetete,
+  e escudo quando está em carga. Pedra e bomba voam em parábola; a bomba estoura num anel
+  laranja no chão.
+- **Câmera.** Três modos na tecla **C**: *ombro* (170 atrás, olhando por cima do bonde),
+  *alta* e *drone* (de cima, quase o mapa). Segue o líder e, se ninguém arrastou nos
+  últimos segundos, gira devagar pra ficar atrás do rumo dele. Arrastar com o mouse gira,
+  a roda aproxima. Parede no caminho encurta a distância — a câmera não entra em casa.
+  Boneco colado na lente não se desenha, senão o próprio bonde tapa o líder. Sem líder de
+  pé, ela segue o centro de quem sobrou do nosso lado.
+- **Onde abre.** `briga3d.html` é a bancada: uma aba por rua, mesmo HUD, mesmos sliders,
+  mesma ponte. No jogo, **Opções → "Briga de rua em 3D"** (ligada por padrão): o esbarrão
+  na rua abre a cena `*-3d` no canvas WebGL do palco (`#djPrincipal3d` + `#djSobre`),
+  e o resto — praça, bar, comércio, CT, arredores — continua de cima. Um canvas não troca
+  de contexto, então o 2D e o WebGL são dois elementos e `montarCena` em `main.js` decide
+  qual aparece. Sem WebGL a ponte cai sozinha na cena 2D de mesmo nome.
+- **Medido no Chromium headless (SwiftShader, sem GPU):** as três ruas abrem sem erro de
+  console; 52 bonecos de pé, 9 no chão e presos, líder andando com a câmera atrás, os três
+  modos de câmera. Uma correção que só a captura mostrou: o plano de fundo de oito mil
+  unidades saía bege inteiro (os quatro cantos dentro da neblina) e brigava no z-buffer
+  com o asfalto — virou ladrilho de 400 a três unidades abaixo. Outra: a normal do
+  telhado de duas águas apontava pra baixo e todo telhado saía preto.
+
+**O que fica pra depois:** a praça, o bar, o comércio, o CT e os arredores em 3D — os
+construtores de bloco cobrem parte dos tipos (igreja, coreto, quiosque e banca caem num
+genérico), mas a esplanada é foto e não tem bloco nenhum; precisaria de uma planta
+desenhada. Desempenho com 250 bonecos ainda não foi medido em GPU de verdade (o
+dinâmico refaz a malha inteira a cada quadro, ~17 caixas por boneco). E o boneco não
+tem rosto nem mão de verdade: é caixa, de propósito — é o que dá pra manter sem
+ferramenta de modelagem.
+

@@ -122,6 +122,11 @@
   <div id="djGrade">
     <div id="djPalco">
       <canvas id="djPrincipal" width="1140" height="820"></canvas>
+      <!-- a versão 3D da rua: o palco WebGL e a camada de nomes por cima.
+           Ficam escondidos até a opção pedir; um canvas não troca de
+           contexto, então o 2D e o WebGL são elementos separados. -->
+      <canvas id="djPrincipal3d" class="tres" width="1140" height="820" hidden></canvas>
+      <canvas id="djSobre" width="1140" height="820" hidden></canvas>
       <div class="hud" id="djRelogio">18:00</div>
       <button class="hud" id="djVelocidade" title="Velocidade da cena">1×</button>
       <!-- a PM numa linha só: duas barras empilhadas com rótulo em caixa
@@ -205,6 +210,7 @@
 <script src="js/diajogo/cenario.js"></script>
 <script src="js/diajogo/arredores.js"></script>
 <script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/tres.js"></script>
 <script src="js/diajogo/ponte.js"></script>
 
 <!-- interface -->

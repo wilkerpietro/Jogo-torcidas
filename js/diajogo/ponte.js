@@ -29,6 +29,11 @@ TO.diaJogo.ponte = (function(){
 
   let cv, ctx, J=null, teclas={}, rodando=false, ant=0;
   let aoTerminar=null;
+  /* A VERSÃO 3D. A mesma ponte, o mesmo combate, o mesmo HUD — só quem
+     desenha muda. `tres` liga quando a cena é uma das `*-3d` ou quando
+     quem monta pede; T é o renderizador (js/diajogo/tres.js). Sem WebGL
+     a ponte cai na tela de cima, na cena 2D de mesmo nome. */
+  let tres=false, T=null, dtQuadro=0.016;
   /* chamado a cada quadro enquanto a cena roda: quem monta a cena usa
      isso pra continuar o relógio da rua e mandar pra cá o bonde que
      acabou de chegar na esplanada */
@@ -44,12 +49,28 @@ TO.diaJogo.ponte = (function(){
   function montar(opc){
     opc=opc||{};
     cv  = opc.canvas || document.getElementById('djPrincipal');
-    ctx = cv.getContext('2d');
     aoTerminar = opc.aoTerminar || null;
     aCadaQuadro = opc.aCadaQuadro || null;
 
+    let local = (opc.config||{}).local;
+    tres = !!opc.tres || /-3d$/.test(String(local||''));
+    if(tres){
+      T = TO.diaJogo.tres;
+      if(!T || !T.montar(cv, opc.sobre || document.getElementById('djSobre'))){
+        /* sem WebGL: a mesma briga, vista de cima */
+        tres = false; T = null;
+        local = String(local||'').replace(/-3d$/, '');
+        if(opc.config) opc.config.local = local;
+        console.warn('cena 3D indisponível: abrindo a cena 2D');
+      }
+    }
+    if(!tres){
+      ctx = cv.getContext('2d');
+      if(!ctx) throw new Error('o canvas da cena já é WebGL; a cena 2D precisa de outro canvas');
+    }
+
     /* rua, praça ou arredores: a cena vem do encontro que abriu a tela */
-    A.usarCena((opc.config||{}).local);
+    A.usarCena(local);
     montarBotoes();
     atualizarBotaoVelocidade();
     acharHudDeBancada();
@@ -101,6 +122,9 @@ TO.diaJogo.ponte = (function(){
   function quadro(agora){
     let dt=(agora-ant)/1000; ant=agora;
     if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
+    dtQuadro=dt;
+    /* em 3D o WASD é relativo à câmera: o renderizador resolve o vetor */
+    teclas.vetor = (tres && T) ? T.vetorDoTeclado(teclas) : null;
     if(J && !ED.ativo){
       for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
       /* a rua não para porque a briga começou: quem ainda estava andando
@@ -127,6 +151,7 @@ TO.diaJogo.ponte = (function(){
 
   function desenhar(){
     if(!J) return;
+    if(tres && T){ T.desenhar(J, {dt:dtQuadro}); return; }
     escala=ajustar(ctx,cv,A.W,A.H);
     C.desenhar(J,ctx,{editor:ED.ativo,
                       mostrarMalha:ED.ativo&&ED.mostrarMalha,
@@ -264,6 +289,10 @@ TO.diaJogo.ponte = (function(){
       : espera
       ? `<b style="color:var(--ouro)">${espera.toUpperCase()}</b> · `+
         '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação'
+      : tres
+      ? '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>1</kbd>–<kbd>4</kbd> formação · '+
+        '<kbd>Q</kbd> pedra · <kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>C</kbd> câmera · '+
+        'arrastar gira · roda aproxima'
       : '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação · <kbd>Q</kbd> pedra · '+
         '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>F2</kbd> editor de cena';
   }
@@ -483,6 +512,7 @@ TO.diaJogo.ponte = (function(){
       const k=e.key.toLowerCase();
       teclas[k]=true;
       if(k==='f2'){e.preventDefault(); alternarEditor(); return;}
+      if(k==='c' && tres && T && J){ C.aviso(J, 'câmera '+T.trocarCamera(), '#e0b040'); return; }
       if(ED.ativo){
         if(k==='[') ED.pincel=Math.max(4,ED.pincel-4);
         if(k===']') ED.pincel=Math.min(80,ED.pincel+4);
@@ -710,6 +740,8 @@ TO.diaJogo.ponte = (function(){
      EDITOR DE CENA
      ======================================================= */
   function alternarEditor(){
+    /* o editor pinta a malha na tela de cima; em 3D não há onde pintar */
+    if(tres){ if(J) C.aviso(J, 'o editor é da cena 2D', '#e0b040'); return; }
     ED.ativo=!ED.ativo;
     if(ED.ativo) montarBarraEditor(); else { const b=$('editorBarra'); if(b) b.remove(); }
   }
@@ -887,6 +919,7 @@ ${D.grades.map(g=>'    '+j(g)).join(',\n')}
   }
 
   return {montar, novaNoite, encerrar, alternarEditor, gerarArquivo,
+          get tres(){ return tres; },
           alternarVelocidade,
           get velocidade(){return velocidade;},
           set velocidade(v){ velocidade = velocidades.includes(v) ? v : 1;

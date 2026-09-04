@@ -238,6 +238,9 @@
     e = e || E(); if(!e) return {relatorio:false, perguntarJogo:true};
     e.opcoes = e.opcoes || {};
     if(e.opcoes.relatorio === undefined) e.opcoes.relatorio = false;
+    /* a briga de rua abre de perto, atrás do líder, com boneco no lugar
+       do disco. Liga por padrão: é a versão que existe pra ser vista. */
+    if(e.opcoes.briga3d === undefined) e.opcoes.briga3d = true;
     if(e.opcoes.perguntarJogo === undefined)
       e.opcoes.perguntarJogo = e.opcoes.abrirGestao === undefined
                              ? true : !!e.opcoes.abrirGestao;
@@ -558,6 +561,11 @@
       l.append(i, el('div',{html:`<b>${rot}</b><small>${nota}</small>`}));
       q.appendChild(l);
     };
+    chave('briga3d', 'Briga de rua em 3D',
+      'o esbarrão na rua abre em terceira pessoa, com a câmera atrás do líder '+
+      'e bonecos no lugar dos discos. WASD anda pra onde a câmera olha, arrastar '+
+      'gira, a roda aproxima e C troca a câmera. Só as três ruas por enquanto: '+
+      'praça, bar, comércio, CT e arredores continuam vistos de cima.');
     chave('relatorio', 'Abrir o relatório toda semana',
       'desligado, a semana fecha sem interromper: o resumo vai pro feed e o '+
       'relatório continua no botão do Financeiro. Semana no vermelho ou com '+
@@ -3768,6 +3776,31 @@
     return pico;
   }
 
+  /* =======================================================
+     O PALCO: DE CIMA OU DE PERTO
+     Um canvas não troca de contexto, então o 2D e o WebGL são dois
+     elementos no mesmo palco. Quem decide é a opção e a cena: só a
+     rua tem versão 3D, e ela abre pela cena `*-3d` de dados/cenas.js —
+     a mesma planta, sem a foto. O resto passa reto pra ponte.
+     ======================================================= */
+  function montarCena(m){
+    const local = String((m.config||{}).local || '');
+    const em3d = !!opc(E()).briga3d && /^rua(-media|-nobre)?$/.test(local)
+              && !!(TO.dados.cenas && TO.dados.cenas[local+'-3d']) && !!TO.diaJogo.tres;
+    const c2 = $('djPrincipal'), c3 = $('djPrincipal3d'), sobre = $('djSobre');
+    if(c3) c3.hidden = !em3d;
+    if(sobre) sobre.hidden = !em3d;
+    if(c2) c2.hidden = em3d;
+    if(em3d){
+      m.config.local = local + '-3d';
+      m.canvas = c3; m.sobre = sobre;
+    } else m.canvas = c2;
+    TO.diaJogo.ponte.montar(m);
+    /* sem WebGL a ponte volta pra cena 2D sozinha, no mesmo canvas; só
+       a camada de nomes não tem mais o que mostrar */
+    if(em3d && !TO.diaJogo.ponte.tres && sobre) sobre.hidden = true;
+  }
+
   function comecarDiaDeJogo(){
     const lista = E().membros.filter(m=>escalados.has(m.id));
     if(lista.length < 2){ aviso('Escale pelo menos dois.','ruim'); return; }
@@ -3777,8 +3810,7 @@
     TO.estado.bloquear(true);
     pararTudo('cena');
     const p = TO.planejamento.plano(E());
-    TO.diaJogo.ponte.montar({
-      canvas: $('djPrincipal'),
+    montarCena({
       /* o plano da semana entra na cena: intenção e bombas levadas.
          A tensão vai junto porque é ela que diz quantos bondes chegam
          nos arredores dispostos a procurar rival — noite de Calmaria
@@ -3844,8 +3876,7 @@
     TO.estado.bloquear(true);
     pararTudo('cena');
     const p = TO.planejamento.plano(e);
-    TO.diaJogo.ponte.montar({
-      canvas: $('djPrincipal'),
+    montarCena({
       config: { escalacao: aptos, intencao:'atacar', bombas: p.bombas,
                 bondes, efetivoRival: deles.n, local: enc.local },
       aoTerminar: res => fecharDiaDeJogo(res, enc)
@@ -3925,8 +3956,7 @@
     TO.estado.bloquear(true);
     pararTudo('cena');
     const p = TO.planejamento.plano(e);
-    TO.diaJogo.ponte.montar({
-      canvas: $('djPrincipal'),
+    montarCena({
       config: { escalacao: aptos, intencao:'atacar', bondes,
                 /* assalto não é briga anunciada: ninguém leva bomba */
                 bombas: cena.acao === 'assalto' ? 0 : p.bombas,
@@ -4003,8 +4033,7 @@
     TO.estado.bloquear(true);
     pararTudo('cena');
     const p = TO.planejamento.plano(e);
-    TO.diaJogo.ponte.montar({
-      canvas: $('djPrincipal'),
+    montarCena({
       config: { escalacao: aptos, intencao:'atacar', paz:false, bombas:p.bombas,
                 efetivoRival: deles, local: atq.cena || 'bar', bondes },
       aoTerminar: res => fecharDiaDeJogo(res, null,
