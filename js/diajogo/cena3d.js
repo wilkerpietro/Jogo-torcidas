@@ -146,13 +146,13 @@ export function criar(canvas) {
   }
   /* a mesma pichação da cena 2D, redesenhada em pé */
   function pichar(g, x, y, w, h, semente) {
-    const n = 1 + (CN.dado('p3|' + semente, 3));
+    const n = 1 + (CN.dado('p3|' + semente, 2));
     for (let i = 0; i < n; i++) {
       const s = CN.hash('pich3|' + semente + '|' + i);
       const px = x + (s % Math.max(1, w - 40));
       const py = y + ((s >>> 7) % Math.max(1, h - 14));
       g.save();
-      g.globalAlpha = 0.5;
+      g.globalAlpha = 0.34;
       g.strokeStyle = CN.PICHACAO[s % CN.PICHACAO.length];
       g.lineWidth = 4; g.lineCap = 'round'; g.lineJoin = 'round';
       g.beginPath(); g.moveTo(px, py);
@@ -170,7 +170,7 @@ export function criar(canvas) {
     const L = larg || 256, A = alt || 256, y = A * 0.74;
     const grad = g.createLinearGradient(0, y, 0, A);
     grad.addColorStop(0, 'rgba(60,52,44,0)');
-    grad.addColorStop(1, 'rgba(60,52,44,.34)');
+    grad.addColorStop(1, 'rgba(60,52,44,.18)');
     g.fillStyle = grad; g.fillRect(0, y, L, A - y);
   };
   const janela = (g, x, y, w, h) => {
@@ -213,19 +213,17 @@ export function criar(canvas) {
       base(g, '#e2d8c4');
       g.fillStyle = '#9a8f7c'; g.fillRect(0, 0, 256, 12);          // topo do muro
       g.fillStyle = '#6d6a60'; g.fillRect(18, 128, 104, 128);      // portão
-      g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2;
-      for (let y = 136; y < 250; y += 14) {
+      g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 2;
+      for (let y = 146; y < 250; y += 26) {
         g.beginPath(); g.moveTo(20, y); g.lineTo(120, y); g.stroke();
       }
-      janela(g, 160, 118, 68, 62); grade(g, 160, 118, 68, 62);
-      pichar(g, 8, 150, 250, 90, 'casa');
+      janela(g, 160, 128, 68, 60); grade(g, 160, 128, 68, 60);
       sujeira(g);
     },
     comercio(g) {                     // vitrine, toldo listrado e letreiro
       base(g, '#e8e4d6');
-      g.fillStyle = '#3a3a36'; g.fillRect(0, 22, 256, 40);         // letreiro
-      g.fillStyle = '#d8c86a';
-      for (let x = 14; x < 240; x += 26) g.fillRect(x, 34, 16, 16);
+      g.fillStyle = '#3a3a36'; g.fillRect(0, 24, 256, 36);         // letreiro
+      g.fillStyle = '#d8c86a'; g.fillRect(38, 36, 180, 12);
       toldo(g, 66, '#e8e2d2', '#2f7a3f');
       g.fillStyle = '#2b3138'; g.fillRect(12, 118, 232, 118);      // vitrine
       g.fillStyle = 'rgba(200,214,228,.22)';
@@ -237,9 +235,9 @@ export function criar(canvas) {
     sobrado(g) {                      // porta, janela e azulejo até meia altura
       base(g, '#dcd6c6');
       g.fillStyle = '#b9c6c2'; g.fillRect(0, 150, 256, 106);       // barra de azulejo
-      g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1;
-      for (let x = 0; x <= 256; x += 26) { g.beginPath(); g.moveTo(x, 150); g.lineTo(x, 256); g.stroke(); }
-      for (let y = 150; y <= 256; y += 26) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
+      g.strokeStyle = 'rgba(255,255,255,.32)'; g.lineWidth = 1;
+      for (let x = 0; x <= 256; x += 52) { g.beginPath(); g.moveTo(x, 150); g.lineTo(x, 256); g.stroke(); }
+      g.beginPath(); g.moveTo(0, 203); g.lineTo(256, 203); g.stroke();
       g.fillStyle = '#6b4a32'; g.fillRect(96, 128, 64, 128);       // porta de madeira
       g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(104, 140, 48, 44);
       janela(g, 18, 120, 58, 58); grade(g, 18, 120, 58, 58);
@@ -254,8 +252,7 @@ export function criar(canvas) {
         g.beginPath(); g.moveTo(12, y); g.lineTo(244, y); g.stroke();
       }
       g.fillStyle = '#4a4842'; g.fillRect(10, 84, 236, 10);
-      pichar(g, 14, 110, 230, 130, 'galpao');
-      pichar(g, 14, 160, 230, 90, 'galpao2');
+      pichar(g, 14, 120, 230, 110, 'galpao');
       sujeira(g);
     },
     muro(g) {                         // muro de lote: cobre-junta e pichação
@@ -264,8 +261,7 @@ export function criar(canvas) {
       g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 14, 256, 4);
       g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 2;          // fiada de bloco
       for (let y = 40; y < 256; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
-      pichar(g, 10, 60, 236, 150, 'muro1');
-      pichar(g, 10, 130, 236, 110, 'muro2');
+      pichar(g, 14, 90, 226, 120, 'muro1');
       sujeira(g);
     },
     /* O MURO DO ESTÁDIO, E ELE É BAIXO.
@@ -305,8 +301,7 @@ export function criar(canvas) {
         g.beginPath(); g.arc(x + 13, 20, 12, 0.15, Math.PI - 0.15); g.stroke();
       }
       g.fillStyle = 'rgba(0,0,0,.14)'; g.fillRect(0, 34, L, 6);
-      pichar(g, 210, 168, 80, 70, 'est1');
-      pichar(g, 430, 160, 76, 84, 'est2');
+      pichar(g, 430, 168, 76, 76, 'est');
       sujeira(g, L, A);
     }
   };
@@ -322,7 +317,6 @@ export function criar(canvas) {
       base(g, '#e2d8c4');
       g.fillStyle = '#cdc0a8'; g.fillRect(0, 0, 256, 12);
       janela(g, 96, 70, 64, 78); grade(g, 96, 70, 64, 78);
-      pichar(g, 10, 150, 240, 90, 'casaA');
     },
     comercio(g) {                     // parede quase cega, ar-condicionado
       base(g, '#e8e4d6');
@@ -331,7 +325,7 @@ export function criar(canvas) {
       g.fillStyle = '#b6b2a6'; g.fillRect(150, 84, 46, 34);        // condensadora
       g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1.5;
       for (let y = 90; y < 116; y += 6) { g.beginPath(); g.moveTo(152, y); g.lineTo(194, y); g.stroke(); }
-      g.fillStyle = 'rgba(60,52,44,.18)'; g.fillRect(150, 118, 46, 130);  // escorrido
+      g.fillStyle = 'rgba(60,52,44,.10)'; g.fillRect(150, 118, 46, 110);  // escorrido
     },
     sobrado(g) {                      // sacada com guarda-corpo
       base(g, '#dcd6c6');
@@ -483,9 +477,9 @@ export function criar(canvas) {
      mal aparece por cima. */
   const ALTURAS = {
     maquete: { casa: 24, sobrado: 40, comercio: 28, galpao: 30, predio: 62,
-               estadio: 48, muro: 18, verde: 26, baixo: 12 },
+               estadio: 48, muro: 18, verde: 6, baixo: 12 },
     rua:     { casa: 44, sobrado: 78, comercio: 52, galpao: 58, predio: 120,
-               estadio: 86, muro: 30, verde: 34, baixo: 14 }
+               estadio: 86, muro: 30, verde: 10, baixo: 14 }
   };
   let modo = 'rua';
 
@@ -600,7 +594,7 @@ export function criar(canvas) {
      resposta é exata. Na foto aérea não existe tipo: o que existe é
      tamanho, e um sorteio com semente na posição, pra o mesmo
      quarteirão dar sempre o mesmo prédio. */
-  function classeDoLote(semente) {
+  function classeDoBloco(semente) {
     const k = CN.frac('classe|' + semente);
     if (k < 0.56) return 'casa';        // o bairro é de casa
     if (k < 0.78) return 'comercio';    // a padaria, o boteco, a loja de esquina
@@ -610,26 +604,101 @@ export function criar(canvas) {
   }
   /* a fachada de uma classe que não tem textura própria */
   const FACHADA = { verde: null, baixo: null };
+  /* `molde` mora lá embaixo, com as instâncias; declarado aqui
+     porque `montarArvores` roda antes dele na leitura */
 
-  /* LOTE, NÃO QUARTEIRÃO.
-     A malha entrega o quarteirão inteiro como um retângulo só, e um
-     retângulo só vira um galpão de duzentos metros. Cortado em lotes
-     de ~78 unidades (uns 8 m na régua da foto), cada pedaço ganha
-     altura, cor e tipo próprios — e o quarteirão vira fileira de
-     casa, que é o que a rua de bairro é. */
-  function lotear(x0, y0, x1, y1) {
-    const w = x1 - x0, h = y1 - y0;
-    const eixoX = w >= h;
-    const comp = eixoX ? w : h;
-    if (comp <= 118) return [[x0, y0, x1, y1]];
-    const n = Math.max(2, Math.round(comp / 78));
-    const passo = comp / n;
-    const fora = [];
-    for (let i = 0; i < n; i++) {
-      const a = (eixoX ? x0 : y0) + i * passo, b = a + passo;
-      fora.push(eixoX ? [a, y0, b, y1] : [x0, a, x1, b]);
+  /* UMA ALTURA POR QUARTEIRÃO, E ISSO FOI APRENDIDO ERRANDO.
+     A tentativa anterior cortava o quarteirão em lotes de ~78 e dava
+     altura própria a cada um, atrás da ideia de "fileira de casa".
+     Não funciona: a malha não entrega o quarteirão como um retângulo
+     limpo, entrega uma PILHA DE TIRAS (o greedy meshing de um bloco
+     de canto arredondado sai assim). Altura por tira vira escada —
+     três paredes paralelas recuando uma atrás da outra, que é
+     informação demais e não é rua nenhuma.
+     Agora a variação é ENTRE quarteirões: cada bloco tem uma altura,
+     um tipo e uma cor, e as tiras dele são o mesmo volume. */
+
+  /* =======================================================
+     ÁRVORE NO CANTEIRO
+
+     A mancha verde da foto virava uma laje verde de 34 de altura —
+     um palco no meio da avenida. O que está ali é canteiro com
+     árvore: então o canteiro fica rasteiro (10, a altura do
+     meio-fio dele) e a árvore vira volume de verdade.
+
+     Tronco e copa são duas malhas instanciadas; a copa é um
+     icosaedro de vinte faces, esticado e girado por hash pra
+     nenhuma ficar igual à vizinha. Uma árvore a cada ~32 unidades,
+     só em célula cercada de canteiro dos quatro lados — assim
+     nenhuma nasce pendurada no meio-fio.
+     ======================================================= */
+  const VERDES = [0x3f5a2c, 0x4a6634, 0x36502a, 0x557038, 0x2f4726];
+  let iTronco = null, iCopa = null;
+  function montarArvores(verdes) {
+    const postos = [];
+    for (const cels of verdes) {
+      const dentro = new Set(cels);
+      const antes = postos.length;
+      for (const i of cels) {
+        const c = i % COLS, r = (i / COLS) | 0;
+        if (c % 6 || r % 6) continue;
+        if (!dentro.has(i - 1) || !dentro.has(i + 1) ||
+            !dentro.has(i - COLS) || !dentro.has(i + COLS)) continue;
+        const sem = c + '|' + r;
+        if (CN.frac('arv|' + sem) > 0.80) continue;          // nem toda vaga
+        postos.push({
+          x: (c + 0.5) * CEL + (CN.frac('ax|' + sem) - 0.5) * 12,
+          z: (r + 0.5) * CEL + (CN.frac('az|' + sem) - 0.5) * 12,
+          k: 0.78 + CN.frac('ak|' + sem) * 0.55,
+          g: CN.dado('ag|' + sem, VERDES.length),
+          giro: CN.frac('ar|' + sem) * 6.28
+        });
+      }
+      /* canteiro pequeno pode não ter nenhuma célula que passe no
+         crivo — e canteiro sem árvore é só um retângulo verde.
+         Nesse caso entra uma no meio dele, e pronto. */
+      if (postos.length === antes && cels.length >= 8) {
+        let sx = 0, sy = 0;
+        for (const i of cels) { sx += (i % COLS) + 0.5; sy += ((i / COLS) | 0) + 0.5; }
+        const sem = 'meio|' + cels[0];
+        postos.push({ x: sx / cels.length * CEL, z: sy / cels.length * CEL,
+                      k: 0.9, g: CN.dado('ag|' + sem, VERDES.length),
+                      giro: CN.frac('ar|' + sem) * 6.28 });
+      }
     }
-    return fora;
+    if (iTronco) { cena.remove(iTronco); cena.remove(iCopa);
+                   iTronco.geometry.dispose(); iCopa.geometry.dispose();
+                   iTronco.material.dispose(); iCopa.material.dispose(); }
+    if (!postos.length) { iTronco = iCopa = null; return 0; }
+
+    iTronco = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(1.6, 2.4, 1, 6),
+      new THREE.MeshLambertMaterial({ color: 0x4a3a2c }), postos.length);
+    /* sem `vertexColors`: quem pinta instância é `instanceColor`, e
+       pedir atributo de vértice que a geometria não tem sai preto */
+    iCopa = new THREE.InstancedMesh(
+      new THREE.IcosahedronGeometry(1, 0),
+      new THREE.MeshLambertMaterial({ flatShading: true }),
+      postos.length);
+    iTronco.castShadow = iCopa.castShadow = true;
+    iCopa.receiveShadow = true;
+    const c3 = new THREE.Color();
+    postos.forEach((p, i) => {
+      const tronco = 20 * p.k;
+      molde.position.set(p.x, tronco / 2, p.z);
+      molde.rotation.set(0, 0, 0);
+      molde.scale.set(1, tronco, 1);
+      molde.updateMatrix();
+      iTronco.setMatrixAt(i, molde.matrix);
+      molde.position.set(p.x, tronco + 8 * p.k, p.z);
+      molde.rotation.set(p.giro * 0.3, p.giro, 0);
+      molde.scale.set(12 * p.k, 10 * p.k, 12 * p.k);
+      molde.updateMatrix();
+      iCopa.setMatrixAt(i, molde.matrix);
+      iCopa.setColorAt(i, c3.set(VERDES[p.g]));
+    });
+    cena.add(iTronco); cena.add(iCopa);
+    return postos.length;
   }
 
   function montarPredios(D) {
@@ -639,6 +708,7 @@ export function criar(canvas) {
     alturaCel.fill(0);
 
     const pTopo = [], uvTopo = [], iTopo = [];
+    const verdes = [];
     const cor = new THREE.Color(), corFoto = new THREE.Color();
     const corTopo = new THREE.Color();
     const BRANCO = new THREE.Color(1, 1, 1);
@@ -670,7 +740,14 @@ export function criar(canvas) {
       const areaPx = cels.length * CEL * CEL;
       const media = corMedia(px, cels);
       const mr = media[0], mg = media[1], mb = media[2];
-      const verde = mg > mr * 1.05 && mg > mb * 1.05;
+      /* verde da foto: mato, copa de árvore, canteiro. O corte era
+         1,05 e deixava passar copa em sombra, que na foto aérea é
+         quase todo o canteiro de avenida. As cenas que sobraram no
+         jogo são todas foto com máscara — `blocos` com tipo não
+         existe mais em nenhuma delas —, então esta é a ÚNICA
+         maneira de saber onde é verde fora dos polígonos nomeados
+         de `cena_arredores.js`. */
+      const verde = mg > mr * 1.03 && mg > mb * 1.03;
 
       const nome = nomeDoPoligono(D, caixa);
       const daCena = nome && (CLASSE_POR_NOME.find(par => par[0].test(nome)) || [])[1];
@@ -679,36 +756,30 @@ export function criar(canvas) {
       const fixa = daCena || (verde ? 'verde' : areaPx < 5200 ? 'baixo' : null);
       const semBloco = Math.round(caixa[0]) + '|' + Math.round(caixa[1]);
 
-      for (const ret of rets) {
-        for (const lote of lotear(ret[0], ret[1], ret[2], ret[3])) {
-          const x0 = lote[0], y0 = lote[1], x1 = lote[2], y1 = lote[3];
-          nRet++;
-          const sem = Math.round(x0) + '|' + Math.round(y0);
-          /* CADA LOTE É UMA CASA.
-             Quando a cena nomeou o bloco, a classe é dela e não se
-             mexe. Quando veio da foto, cada lote sorteia a sua — e
-             é esse sorteio que faz o quarteirão virar fileira de
-             casa com um comércio no meio, em vez de um bloco só. */
-          const classe = fixa || classeDoLote(sem);
-          const alt = ALTURAS[modo][classe] *
-                      (fixa ? 1 : 0.86 + CN.frac('alt|' + sem) * 0.30);
-          const tipo = (classe in FACHADA) ? FACHADA[classe] : classe;
+      const classe = fixa || classeDoBloco(semBloco);
+      const alt = ALTURAS[modo][classe];
+      const tipo = (classe in FACHADA) ? FACHADA[classe] : classe;
 
-          /* A COR SAI DA PALETA DO BAIRRO, NÃO DO TELHADO.
-             Tingir pela cor média da foto dava a cidade em
-             cinza-esverdeado, porque telhado de laje suja é isso.
-             `PAREDE` de `cenario.js` é a paleta do pintor 2D — seis
-             tons de reboco de periferia. Uma pitada do telhado entra
-             junto pra a casa não descolar do que está na foto em
-             cima dela, e o tom varia por LOTE: casa vizinha pintada
-             igual é o que denuncia o gerador. */
-          const semCor = fixa ? semBloco : sem;
-          cor.set(CN.PAREDE[CN.dado('par|' + semCor, CN.PAREDE.length)]);
-          if (classe === 'verde') cor.multiplyScalar(0.6);
-          else {
-            cor.lerp(corFoto.setRGB(mr / 255, mg / 255, mb / 255), 0.14);
-            cor.multiplyScalar(0.78 + CN.frac('tom|' + semCor) * 0.30);
-          }
+      /* A COR SAI DA PALETA DO BAIRRO, NÃO DO TELHADO.
+         Tingir pela cor média da foto dava a cidade em
+         cinza-esverdeado, porque telhado de laje suja é isso.
+         `PAREDE` de `cenario.js` é a paleta do pintor 2D — seis tons
+         de reboco de periferia. Uma pitada do telhado entra junto
+         pra o quarteirão não descolar do que está na foto em cima
+         dele. */
+      cor.set(CN.PAREDE[CN.dado('par|' + semBloco, CN.PAREDE.length)]);
+      if (classe === 'verde') cor.multiplyScalar(0.6);
+      else {
+        cor.lerp(corFoto.setRGB(mr / 255, mg / 255, mb / 255), 0.14);
+        cor.multiplyScalar(0.80 + CN.frac('tom|' + semBloco) * 0.26);
+      }
+
+      if (classe === 'verde') verdes.push(cels);
+
+      {
+        for (const ret of rets) {
+          const x0 = ret[0], y0 = ret[1], x1 = ret[2], y1 = ret[3];
+          nRet++;
 
           for (let r = y0 / CEL; r < y1 / CEL; r++)
             for (let c = x0 / CEL; c < x1 / CEL; c++) {
@@ -773,6 +844,8 @@ export function criar(canvas) {
     mT.castShadow = true; mT.receiveShadow = true;
     grupoPredios.add(mT);
 
+    const nArv = montarArvores(verdes);
+
     let nPar = 0;
     for (const [k, d] of baldes) {
       const banda = k.split('|')[0], tipo = k.split('|')[1];
@@ -791,6 +864,7 @@ export function criar(canvas) {
     }
 
     return { blocos: comps.length, retangulos: nRet, fachadas: baldes.size,
+             arvores: nArv,
              triangulos: (iTopo.length + nPar) / 3 };
   }
 

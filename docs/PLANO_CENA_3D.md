@@ -101,12 +101,33 @@ de dois em dois metros e o muro virava sanfona. E é a única fachada em faixa
 
 ![o muro do estádio, da calçada](../img/cena3d/muro-estadio.jpg)
 
-**E o quarteirão virou lote.** A malha entrega o quarteirão inteiro como um
-retângulo, e um retângulo só vira um galpão de duzentos metros. Cortado em
-lotes de ~78 unidades (uns 8 m na régua da foto), cada pedaço ganha altura, cor
-e tipo próprios — e o quarteirão vira fileira de casa com um comércio no meio.
-A cor sai de `PAREDE` com uma pitada (14%) da cor do telhado na foto, pra a casa
-não descolar do que está desenhado em cima dela.
+**Uma altura por quarteirão — e isso foi aprendido errando.** A primeira
+tentativa cortava o quarteirão em lotes de ~78 e dava altura própria a cada um,
+atrás da ideia de "fileira de casa". Não funciona: a malha não entrega o
+quarteirão como um retângulo limpo, entrega uma **pilha de tiras** — é assim que
+o *greedy meshing* recorta um bloco de canto arredondado. Altura por tira vira
+escada: três paredes paralelas recuando uma atrás da outra, informação demais e
+rua nenhuma. Agora a variação é **entre** quarteirões: cada bloco tem uma
+altura, um tipo e uma cor, e as tiras dele são o mesmo volume. A cor sai de
+`PAREDE` com uma pitada (14%) da cor do telhado na foto, pra o quarteirão não
+descolar do que está desenhado em cima dele.
+
+**Árvore no canteiro.** A mancha verde da foto virava uma laje verde de 34 de
+altura — um palco no meio da avenida. Agora o canteiro fica rasteiro (10, a
+altura do meio-fio dele) e a árvore é volume: tronco e copa em malha
+instanciada, a copa um icosaedro de vinte faces esticado e girado por hash. Uma
+a cada ~48 unidades, só em célula cercada de canteiro dos quatro lados, e um
+canteiro pequeno demais pro crivo ganha uma no meio — canteiro sem árvore é só
+um retângulo verde. Nos arredores dá **26 árvores**.
+
+**Um achado que muda o plano:** varrendo as cenas pra ligar o tipo de bloco à
+fachada, apareceu que **`blocos` com tipo não existe mais em nenhuma cena do
+jogo**. Praça, rua, bar, comércio e CT foram todas convertidas pra foto +
+máscara (`cenas_foto.js` / `cenas_editadas.js`), e a única cena com polígonos
+nomeados é `cena_arredores.js`. Ou seja: fora dos arredores, o tipo de cada
+quarteirão sai do sorteio e o verde sai da cor média da foto, e não há como ser
+diferente sem dado novo. É o mesmo buraco da calçada (§9.1), e a mesma saída:
+uma camada pintada no editor.
 
 ---
 
@@ -262,11 +283,12 @@ Medidos no navegador, na cena dos arredores, com 63 pessoas em pé.
 | CPU do desenhista 3D por quadro, noite parada | **0,47 ms** |
 | CPU do desenhista 3D por quadro, **todo mundo em briga** | **0,49 ms** |
 | CPU da simulação por quadro (`combate.passo`) | **0,61 ms** |
-| montar os prédios do zero (BFS + greedy + lotes + geometria) | **35 ms** |
-| chamadas de desenho por quadro | **43** |
-| triângulos na cena | **~19 000** |
-| prédios / lotes nos arredores | 15 / 400 |
-| prédios / lotes na praça | 8 / 255 |
+| montar os prédios do zero (BFS + greedy + árvores + geometria) | **25 ms** |
+| chamadas de desenho por quadro | **37** |
+| triângulos na cena | **~12 400** |
+| quarteirões / retângulos nos arredores | 15 / 111 |
+| quarteirões / retângulos na praça | 8 / 105 |
+| árvores nos arredores | 26 |
 
 **Com a briga inteira animada, o desenhista 3D ainda custa menos do que a
 própria simulação.** Isso responde a pergunta de CPU e é o número que mais
