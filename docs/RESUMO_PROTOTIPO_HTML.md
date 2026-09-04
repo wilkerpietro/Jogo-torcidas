@@ -164,6 +164,11 @@ atravessando a cidade é perigoso demais. Guardado para quando o mapa entrar.
 - **NPCs em combate são discos** estilo futebol de botão, com nome em cima. Bonecos exigiriam sprite por variação/ação/direção.
 - **Duas lojas separadas:** clandestina (consumíveis: bomba, rojão, sinalizador — pedra é infinita e fraca) e de materiais (patrimônio: bambu, faixa, bandeirão, bateria — pode ser roubado em derrota).
 - **A briga termina por quebra de linha e debandada**, não por aniquilação.
+- **Só se bate na frente** (cone de 150°, §8.31), e quem apanha de fora do
+  próprio cone gira pra quem bateu. A briga de linha ficando **mais equilibrada**
+  por causa disso é o efeito desejado, não um desvio a corrigir: antes um lado
+  saía apanhando bem mais (6,1 × 7,6) e agora sai 7,2 × 7,2. `P.arcoGolpe` em
+  360° devolve o comportamento antigo e existe só como régua de medição.
 - **Líder é âncora física**, não cursor de comando. Formação é a decisão principal.
 - **Número de rival é estimativa**, não valor exato. Olheiro estreita a margem.
 - **3 layouts de mapa de cidade** (Grande/Médio/Pequeno) reutilizados pelas 38 cidades; o que muda é onde ficam sede, subsedes e estádio.
@@ -4557,11 +4562,12 @@ alguém, e o cone só corta os alvos de flanco, que eram bônus de graça.
 além do ruído das sementes (caídos nossos 6,0 / 3,2 / 6,1 / 5,8 / 6,9 nas cinco
 faixas, sem tendência). A velocidade de virar **não** é a alavanca; o ângulo é.
 
-### O que ficou ajustável
+### O que ficou ajustável, e o que ficou fechado
 
 `P.arcoGolpe` (150°, sliders de 60 a 360) e `P.giroCorpo` (7 rad/s). **360°
-devolve exatamente o comportamento antigo** — é com ele que se mede o que o cone
-mudou, e é a saída se a mudança não agradar.
+devolve exatamente o comportamento antigo** — ele fica como régua de medição, não
+como saída: **o equilíbrio novo é o desejado** e entrou na lista de decisões
+fechadas do §7.
 
 ![o cone no disco 2D](../img/cena3d/cone-2d.jpg)
 
