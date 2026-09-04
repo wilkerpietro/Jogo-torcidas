@@ -146,8 +146,37 @@ agora". Tem outra coisa, e ela basta:
 | `d.preso` | — | sentado no chão, mãos pra trás |
 | `p.cooldown` | salta pra 1,9 no quadro em que o PM acerta | cacetada |
 
+E a fuga, que a simulação separa em três estados e o desenho tratava como
+"andar mais rápido":
+
+| campo | o que é | vira |
+|---|---|---|
+| `d.correEm` ≠ null, `!d.fugindo` | quebrou e ainda não virou as costas | mãos altas, tronco pra trás, **encarando** |
+| `d.fugindo` | virou as costas, corre a 1,25× | tronco à frente, braço bombeando, **olhada por cima do ombro** |
+| `d._cacando` | corre atrás de quem fugiu, no mesmo passo | tronco à frente, **dois braços esticados** |
+| `d.agarrado` | mão em cima, 1,2 s até ir ao chão | tronco puxado pra trás, cabeça virada, arrastado |
+
 **Nada foi acrescentado ao combate.** Se o boneco levanta o braço, é porque o
 dano saiu de verdade — a pose é leitura do estado, não uma segunda simulação.
+
+**Os 2,6 s que ninguém via.** `soltarFuga` inventou de propósito um atraso entre
+"o bonde quebrou" e "este sujeito virou as costas" — quem está de frente pro
+inimigo é o último a correr, e é essa ponta atrasada que dá ao perseguidor o
+tempo de cobrir os 130 px do alcance de busca. O comentário no código diz que
+sem isso *"o jogador que rastreou o rival pela cidade abre a briga pra assistir
+ela terminar sozinha"*. O número existia desde sempre e **não aparecia na tela**:
+os quatro estados acima eram o mesmo boneco andando. Agora dá pra ver quem já
+quebrou antes de ele correr.
+
+Uma coisa que eu **não** fiz, e é a diferença entre desenhar o estado e inventar
+um: nesses 2,6 s o boneco não anda de costas. A simulação não manda ele recuar —
+ele continua fazendo o que fazia. Inverter a perna aqui dava moonwalk. O que
+muda é o corpo.
+
+**Quem está segurando quem.** `contatos` marca quem apanha (`agarrado`) e não
+marca quem segura. Mas segurar é bater em quem foge estando em cima: se eu
+acerto neste quadro e o inimigo mais perto está com a mão em cima dele, a mão é
+a minha. Sai do mesmo balde que já responde "pra quem virar o rosto".
 
 Duas coisas que a simulação não guarda e o desenho precisava:
 
@@ -171,6 +200,12 @@ cabeça jogada pra trás o tempo todo, olhando pro céu. O que interessa é a
 
 ![briga de bonde](../img/cena3d/briga.jpg)
 
+![quebrou e ainda não virou as costas](../img/cena3d/quebrou.jpg)
+
+![fuga e perseguição](../img/cena3d/fuga.jpg)
+
+![o agarrão](../img/cena3d/agarrao.jpg)
+
 ![caído e preso](../img/cena3d/caido-preso.jpg)
 
 ---
@@ -181,8 +216,8 @@ Medidos no navegador, na cena dos arredores, com 63 pessoas em pé.
 
 | o quê | valor |
 |---|---:|
-| CPU do desenhista 3D por quadro, noite parada | **0,42 ms** |
-| CPU do desenhista 3D por quadro, **todo mundo em briga** | **0,50 ms** |
+| CPU do desenhista 3D por quadro, noite parada | **0,47 ms** |
+| CPU do desenhista 3D por quadro, **todo mundo em briga** | **0,49 ms** |
 | CPU da simulação por quadro (`combate.passo`) | **0,61 ms** |
 | montar os prédios do zero (BFS + greedy + geometria) | **17 ms** |
 | chamadas de desenho por quadro | **30** |
@@ -192,9 +227,10 @@ Medidos no navegador, na cena dos arredores, com 63 pessoas em pé.
 
 **Com a briga inteira animada, o desenhista 3D ainda custa menos do que a
 própria simulação.** Isso responde a pergunta de CPU e é o número que mais
-importa: pôr em pé não é o gargalo. As poses de briga cobraram 0,11 ms — o
-índice espacial de "quem encarar" e as peças de braço a mais — e o joelho com o
-peso no passo cobrou outros 0,06 ms.
+importa: pôr em pé não é o gargalo. O caminho inteiro — soco, tranco, guarda,
+joelho, peso no passo, os três estados de fuga e o agarrão — cabe em meio
+milissegundo por quadro, e o índice espacial que descobre "pra quem virar o
+rosto" só é montado quando existe briga ou fuga na cena.
 
 **O que eu não pude medir: a placa de vídeo.** Este ambiente só tem rasterizador
 por software (SwiftShader), onde a cena roda a 4–5 quadros por segundo. Com 22
@@ -293,28 +329,22 @@ uma câmera só, que seja a `alta` (`X`), que é a que ainda mostra formação.
 
 Em ordem de quanto muda a impressão por hora gasta.
 
-1. **Fugir não tem cara de fugir.** `d.fugindo` existe na simulação e o desenho
-   só o vê pela velocidade. Correr olhando pra trás, braço protegendo a cabeça,
-   é o que faz uma debandada parecer uma debandada.
-2. **Meio-fio e calçada.** A malha diz "dá pra pisar" e mais nada, então a
+1. **Meio-fio e calçada.** A malha diz "dá pra pisar" e mais nada, então a
    calçada é chão pintado e o prédio nasce direto do asfalto. Um degrau de 15 cm
    em volta de cada quarteirão resolve 80% da sensação de rua.
-3. **Poste, semáforo, lixeira, carro parado.** As cenas desenhadas já têm
+2. **Poste, semáforo, lixeira, carro parado.** As cenas desenhadas já têm
    `enfeites` e `varais` em `cenas.js`, e o 3D **ignora os dois** hoje.
    Aproveitar essa lista é barato e é o que tira a cara de maquete vazia.
-4. **A textura do chão de perto.** A foto tem 1 texel por unidade de mundo e a
+3. **A textura do chão de perto.** A foto tem 1 texel por unidade de mundo e a
    câmera de ombro amplia isso ~14×. Tem um granulado por cima segurando, mas
    asfalto e calçada continuam borrados a dois metros. O certo é uma segunda
    camada de detalhe por tipo de piso, tirada da máscara.
-5. **Agarrão e debandada.** `d.agarrado` (mão em cima de quem foge) e
-   `d.correEm` (debandou mas ainda não virou as costas) existem na simulação e
-   não têm pose. São dois dos momentos mais fortes da cena.
-6. **Entrada por vetor.** `moverLider` lê quatro booleanos, então a câmera de
+4. **Entrada por vetor.** `moverLider` lê quatro booleanos, então a câmera de
    ombro só consegue mandar oito direções (giro a intenção e devolvo os quatro
    que mais se parecem com ela). Andar na diagonal contra a parede fica
    engasgado. O conserto é `moverLider` aceitar `{dx, dy}` — é uma mudança
    pequena em `combate.js` e a primeira que eu faria lá.
-7. **Rosto, roupa, variação.** Todo mundo tem o mesmo corpo. Cinco tons de pele
+5. **Rosto, roupa, variação.** Todo mundo tem o mesmo corpo. Cinco tons de pele
    e duas cores de camisa é o que separa uma pessoa da outra.
 
 ---

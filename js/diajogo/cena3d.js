@@ -570,6 +570,7 @@ export function criar(canvas) {
     if (!e) {
       e = { x: x, z: z, ang: 0, fase: Math.random() * TAU, vel: 0,
             guarda: 0, soco: 0, socoLado: 0, arremesso: 0, recuo: 0,
+            hesita: 0, foge: 0, caca: 0, agarrado: 0, agarrando: 0, olhar: 0,
             rumo: null, cdAnt: 0, tremAnt: 0 };
       anda.set(chave, e);
     }
@@ -606,7 +607,7 @@ export function criar(canvas) {
   }
   /* o PM não tem `lado`, então ele é inimigo de todo disco e de
      mais nenhum PM — que é exatamente a regra da cena */
-  function rumoDoInimigo(o) {
+  function inimigoPerto(o) {
     const cx = Math.floor(o.x / BALDE), cy = Math.floor(o.y / BALDE);
     let md = 68 * 68, alvo = null;
     for (let r = -1; r <= 1; r++) for (let c = -1; c <= 1; c++) {
@@ -618,8 +619,10 @@ export function criar(canvas) {
         if (dd < md) { md = dd; alvo = q; }
       }
     }
-    return alvo ? Math.atan2(alvo.x - o.x, alvo.y - o.y) : null;
+    return alvo;
   }
+  const rumoPara = (o, alvo) =>
+    alvo ? Math.atan2(alvo.x - o.x, alvo.y - o.y) : null;
 
   /* Quem jogou a pedra? A simulação não marca. Mas o projétil tem
      velocidade constante e guarda o tempo de voo, então a origem
@@ -663,13 +666,43 @@ export function criar(canvas) {
 
     if (e.arremesso > 0) e.arremesso = Math.max(0, e.arremesso - dt);
 
+    /* =====================================================
+       A FUGA SÃO TRÊS ESTADOS, E A SIMULAÇÃO JÁ OS SEPARA
+
+         correEm != null e !fugindo → quebrou e ainda não virou as
+           costas. São os 2,6 s de rabo que `soltarFuga` inventou de
+           propósito pra o perseguidor ter chance, e que o desenho
+           não mostrava. Recua encarando.
+         fugindo → virou as costas e corre a 1,25×.
+         _cacando → está correndo ATRÁS de quem fugiu, no mesmo passo.
+
+       Eram três coisas desenhadas como "andar mais rápido".
+       ===================================================== */
+    const quebrou = sin.correEm != null && !sin.fugindo;
+    e.hesita = chegar(e.hesita, quebrou ? 1 : 0, dt * 6);
+    e.foge   = chegar(e.foge,   sin.fugindo ? 1 : 0, dt * 5);
+    e.caca   = chegar(e.caca,   sin._cacando ? 1 : 0, dt * 5);
+    /* `agarrado` acumula até 1,2 e nessa marca o sujeito vai ao chão;
+       0,7 no divisor deixa a pose cheia antes da queda */
+    e.agarrado = chegar(e.agarrado, Math.min(1, (sin.agarrado || 0) / 0.7), dt * 9);
+    e.agarrando = chegar(e.agarrando, e.querAgarrar ? 1 : 0, dt * 9);
+
+    /* quem foge olha pra trás de vez em quando; é a olhada que faz
+       correr virar fugir */
+    e.olhar = e.foge > 0.3 ? e.olhar + dt * 1.35 : 0;
+
     /* Pra onde encarar: andando, pro rumo do passo; parado numa
-       briga, pro sujeito mais perto; arremessando, pro alvo.
-       Ninguém soca de lado. */
-    let rumo = e.rumo;
-    if (e.arremesso > 0 && e.rumoTiro != null) rumo = e.rumoTiro;
-    else if (e.inimigo != null && (e.vel < 0.3 || sin.golpe > 0)) rumo = e.inimigo;
-    if (rumo != null) e.ang += curto(e.ang, rumo) * Math.min(1, dt * (sin.golpe > 0 ? 12 : 6));
+       briga, pro sujeito mais perto; arremessando, pro alvo; quem
+       quebrou e ainda não virou as costas, pro inimigo — é ele que
+       anda pra trás. Ninguém soca de lado, e ninguém recua de costas
+       antes de virar. */
+    let rumo = e.rumo, pressa = 6;
+    if (e.arremesso > 0 && e.rumoTiro != null) { rumo = e.rumoTiro; }
+    else if (e.hesita > 0.4 && e.inimigo != null) { rumo = e.inimigo; pressa = 4; }
+    else if (e.inimigo != null && (e.vel < 0.3 || sin.golpe > 0)) {
+      rumo = e.inimigo; pressa = sin.golpe > 0 ? 12 : 6;
+    }
+    if (rumo != null) e.ang += curto(e.ang, rumo) * Math.min(1, dt * pressa);
   }
 
   const corAux = new THREE.Color();
@@ -776,6 +809,82 @@ export function criar(canvas) {
       oE.rotation.x = 0.9;  cE.rotation.x = -0.9;
       oD.rotation.x = -0.6; cD.rotation.x = -0.4;
     } else {
+      /* ---- QUEBROU E AINDA NÃO VIROU AS COSTAS ----
+         Mãos altas, tronco jogado pra trás, encarando. NÃO anda de
+         costas: a simulação não manda ele recuar nesses 2,6 s — ele
+         continua fazendo o que fazia, e inverter a perna aqui dava
+         moonwalk. O que muda é o corpo, e é o bastante: dá pra ver
+         quem já quebrou antes de ele virar as costas, que é o
+         instante em que o perseguidor cobre o terreno. */
+      if (e.hesita > 0.02) {
+        const h = e.hesita;
+        oE.rotation.set(chegar(oE.rotation.x, -0.55, h), 0,  0.42 * h);
+        oD.rotation.set(chegar(oD.rotation.x, -0.55, h), 0, -0.42 * h);
+        cE.rotation.x = chegar(cE.rotation.x, -2.25, h);
+        cD.rotation.x = chegar(cD.rotation.x, -2.25, h);
+        juntas.tronco.j.rotation.x -= 0.26 * h;
+        juntas.cabeca.j.rotation.x -= 0.14 * h;
+      }
+
+      /* ---- FUGINDO: corre e olha por cima do ombro ----
+         Sem a olhada, fugir e correr atrás são o mesmo desenho. */
+      if (e.foge > 0.02) {
+        const f = e.foge;
+        juntas.tronco.j.rotation.x += 0.32 * f;
+        const olha = Math.max(0, Math.sin(e.olhar)) * f;
+        juntas.cabeca.j.rotation.y = -1.15 * olha;
+        juntas.cabeca.j.rotation.z =  0.24 * olha;
+        juntas.cabeca.j.rotation.x -= 0.16 * f;
+        /* braço bombeando alto e fechado, e não balançando solto */
+        oE.rotation.x =  balBraco * sen * (1 + 0.7 * f);
+        oD.rotation.x = -balBraco * sen * (1 + 0.7 * f);
+        cE.rotation.x = chegar(cE.rotation.x, -1.55, f);
+        cD.rotation.x = chegar(cD.rotation.x, -1.55, f);
+      }
+
+      /* ---- CAÇANDO: mesma velocidade do que foge, pose oposta ----
+         Tronco jogado pra frente e os dois braços esticados, mão
+         pronta pra pegar. É o que transforma dois discos correndo
+         no mesmo passo em perseguição. */
+      if (e.caca > 0.02) {
+        const c = e.caca;
+        juntas.tronco.j.rotation.x += 0.36 * c;
+        oE.rotation.set(chegar(oE.rotation.x, -1.00, c), 0,  0.14 * c);
+        oD.rotation.set(chegar(oD.rotation.x, -1.00, c), 0, -0.14 * c);
+        cE.rotation.x = chegar(cE.rotation.x, -0.50, c);
+        cD.rotation.x = chegar(cD.rotation.x, -0.50, c);
+      }
+
+      /* ---- SEGURANDO ALGUÉM: os dois braços na frente, fechados ---- */
+      if (e.agarrando > 0.02) {
+        const g = e.agarrando;
+        oE.rotation.set(chegar(oE.rotation.x, -1.34, g), 0,  0.20 * g);
+        oD.rotation.set(chegar(oD.rotation.x, -1.34, g), 0, -0.20 * g);
+        cE.rotation.x = chegar(cE.rotation.x, -0.22, g);
+        cD.rotation.x = chegar(cD.rotation.x, -0.22, g);
+        juntas.tronco.j.rotation.x += 0.30 * g;
+      }
+
+      /* ---- COM A MÃO EM CIMA: 1,2 s até ir ao chão ----
+         O tronco é puxado pra trás, as pernas continuam correndo, e
+         a cabeça vira pra ver quem pegou. `d.agarrado` já existia na
+         simulação com esse tempo exato e não aparecia em lugar
+         nenhum — a pessoa fugia normal e caía do nada. */
+      if (e.agarrado > 0.02) {
+        const g = e.agarrado;
+        juntas.tronco.j.rotation.x -= 0.62 * g;
+        juntas.tronco.j.rotation.z += Math.sin(e.fase * 2.4) * 0.18 * g;
+        juntas.cabeca.j.rotation.y += 0.85 * g;
+        juntas.cabeca.j.rotation.x -= 0.20 * g;
+        oE.rotation.set(chegar(oE.rotation.x, 0.85, g), 0, -0.5 * g);
+        oD.rotation.set(chegar(oD.rotation.x, 1.05, g), 0,  0.5 * g);
+        cE.rotation.x = chegar(cE.rotation.x, -0.55, g);
+        cD.rotation.x = chegar(cD.rotation.x, -0.30, g);
+        /* arrastado pra trás: o corpo não acompanha mais o pé */
+        raiz.position.x -= Math.sin(e.ang) * 3.4 * g;
+        raiz.position.z -= Math.cos(e.ang) * 3.4 * g;
+      }
+
       /* ---- GUARDA: quem está em briga anda com o punho em cima.
          `hostil` dura 4 s depois do último contato, então o bonde
          inteiro fica de guarda enquanto a briga corre e larga
@@ -867,11 +976,17 @@ export function criar(canvas) {
   }
 
   function sincronizarGente(J, dt) {
-    /* o índice só existe se tiver briga. Numa noite tranquila isto
-       não custa nada, que é o caso mais comum dos arredores. */
-    let temBriga = false;
-    for (const d of J.discos) if (d.vivo && d.hostil > 0) { temBriga = true; break; }
-    if (temBriga) indexar(J);
+    /* O índice só existe se tiver briga ou fuga na cena. Numa noite
+       tranquila isto não custa nada, que é o caso mais comum dos
+       arredores — e é o caso em que ninguém precisa encarar ninguém. */
+    let temAlvo = false;
+    for (const d of J.discos) {
+      if (!d.vivo) continue;
+      if (d.hostil > 0 || d.agarrado > 0 || (d.correEm != null && !d.fugindo)) {
+        temAlvo = true; break;
+      }
+    }
+    if (temAlvo) indexar(J);
     acharArremesso(J);
 
     let n = 0;
@@ -881,7 +996,17 @@ export function criar(canvas) {
       const e = estado(d, d.x, d.y, d.vivo ? dt : 0);
       if (!d.vivo) e.vel = 0;
       const brigando = d.vivo && (d.hostil > 0 || d.golpe > 0 || e.arremesso > 0);
-      e.inimigo = (temBriga && brigando) ? rumoDoInimigo(d) : null;
+      const quebrou = d.vivo && d.correEm != null && !d.fugindo;
+      /* QUEM ESTÁ SEGURANDO QUEM.
+         `contatos` marca quem apanha (`agarrado`) e não marca quem
+         segura. Mas segurar é bater em quem foge estando em cima: se
+         eu acerto neste quadro (`golpe`) e o inimigo mais perto está
+         com a mão em cima dele, a mão é a minha. Sai do mesmo balde
+         que já responde "pra quem virar o rosto". */
+      const alvo = (temAlvo && (brigando || quebrou || d.agarrado > 0))
+        ? inimigoPerto(d) : null;
+      e.inimigo = rumoPara(d, alvo);
+      e.querAgarrar = !!(alvo && alvo.agarrado > 0.05 && d.golpe > 0);
       animar(e, d, dt, brigando);
 
       const camisa = d.cor ? hexDe(d.cor) : corLado(d.lado, false);
@@ -913,9 +1038,11 @@ export function criar(canvas) {
       const bateu = p.vivo && p.cooldown > e.cdAnt + 0.01;
       e.cdAnt = p.cooldown;
       const sin = { golpe: bateu ? 1 : 0, tremor: 0, atordoado: 0,
-                    caido: !p.vivo, preso: false };
+                    caido: !p.vivo, preso: false,
+                    correEm: null, fugindo: false, agarrado: 0 };
       const brigando = p.vivo && (p.carga || bateu || e.soco > 0);
-      e.inimigo = brigando ? rumoDoInimigo(p) : null;
+      e.inimigo = brigando ? rumoPara(p, inimigoPerto(p)) : null;
+      e.querAgarrar = false;
       animar(e, sin, dt, brigando);
       porPessoa(pm, n, e, sin, {
         cabeca: 0x20262b, tronco: 0x1e3a2c,
