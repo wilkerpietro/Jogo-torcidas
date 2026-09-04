@@ -59,6 +59,7 @@ TO.dados.malha = [
   {nome:'BR-364', fam:'BR', seg:[['manaus', 'mato-grosso']]},
   {nome:'BR-101 Sul', fam:'BR', seg:[['curitiba', 'litoral-catarinense']]},
   {nome:'BR-101 Leste', fam:'BR', seg:[['bahia', 'rio-de-janeiro']]},
+  {nome:'BR-040', fam:'BR', seg:[['belo-horizonte', 'suburbio-carioca']]},
   {nome:'BR-050', fam:'BR', seg:[['brasilia', 'interior-de-minas']]},
   {nome:'Rota de Foz', fam:'INT', seg:[['interior-do-pr', 'interior-do-paraguai']]},
   {nome:'BR-153', fam:'BR', seg:[['goiania', 'interior-do-pr']]},

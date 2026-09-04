@@ -3577,8 +3577,15 @@ Três correções na malha das praças, ditadas pelo dono:
    interior-de-pe → bahia`. E ele **segue ligado a Recife** pela
    **BR-232**, que é a estrada real do sertão pernambucano.
 
+4. **Belo Horizonte ao Subúrbio Carioca.** Entra a **BR-040**, que é a
+   estrada real desse trecho. BH ganha a quinta vizinha e o Rio deixa de
+   depender de São Paulo pra alcançar Minas.
+
 O Interior de PE fica então com três vizinhas: Interior do CE, Bahia e
-Recife. As 94 praças continuam todas alcançáveis.
+Recife; Belo Horizonte fica com cinco: Bahia, Brasília, Interior de
+Minas, São Paulo e Subúrbio Carioca. As 94 praças continuam todas
+alcançáveis. Os nomes BR-101 Leste, BR-232 e BR-040 estão no crivo do
+dono (aprovados em 03/09/2026).
 
 De quebra, o `docs/mapa-das-pracas.html` ganhou o `<meta charset>` que
 nunca teve — os acentos apareciam quebrados ("SertÃ£o") na ferramenta
