@@ -106,31 +106,254 @@ export function criar(canvas) {
      com o asfalto. É o que segura a câmera de perto sem
      nenhum arquivo de imagem novo.
      ======================================================= */
-  function texturaFachada() {
+  /* =======================================================
+     AS FACHADAS, COM O VOCABULÁRIO DA CENA 2D
+
+     Um azulejo só de "três janelas por módulo" faz toda a cidade
+     virar prédio de escritório. `cenario.js` já tem o vocabulário
+     certo — casa com laje e telha, boteco com toldo listrado,
+     muro pichado, sobrado, galpão de porta de rolo — e a paleta
+     desse bairro. As duas coisas vêm de lá, exportadas, pra não
+     existirem duas periferias diferentes no mesmo jogo.
+
+     Cada tipo tem DUAS texturas, e essa é a diferença que mais
+     conta: o TÉRREO não se repete. Rua é porta de rolo, vitrine,
+     toldo, portão de garagem e pichação na altura do braço; do
+     primeiro andar pra cima é janela e parede. Empilhar o mesmo
+     azulejo do chão ao topo é justamente o que deixava genérico.
+
+     A textura é quase branca de propósito: a cor do prédio entra
+     por cor de vértice, uma por bloco, tirada de `PAREDE`.
+     ======================================================= */
+  const CN = TO.diaJogo.cenario;
+  const TIPOS = ['predio', 'casa', 'comercio', 'sobrado', 'galpao', 'estadio', 'muro'];
+  const H_TERREO = 40;      // ~4 m na régua da foto: pé-direito térreo
+  const H_ANDAR  = 38;      // o andar de cima é sempre mais baixo
+  const PARAPEITO = 5;      // platibanda, a fatia lisa do topo
+  const MOD = 46;           // largura de um módulo de fachada
+
+  function tela(n) {
     const c = document.createElement('canvas');
-    c.width = c.height = 256;
-    const g = c.getContext('2d');
-    g.fillStyle = '#cfcabf'; g.fillRect(0, 0, 256, 256);
-    /* faixa de laje entre andares */
-    g.fillStyle = '#b9b3a7'; g.fillRect(0, 0, 256, 18);
-    g.fillStyle = '#dcd7cc'; g.fillRect(0, 18, 256, 4);
-    /* três janelas por módulo, com peitoril e vidro escuro */
-    for (let i = 0; i < 3; i++) {
-      const x = 22 + i * 76;
-      g.fillStyle = '#3a3f47'; g.fillRect(x, 52, 52, 150);
-      g.fillStyle = '#20252c'; g.fillRect(x + 4, 56, 44, 142);
-      /* reflexo diagonal, que é o que faz vidro parecer vidro */
-      g.fillStyle = 'rgba(190,205,220,.20)';
-      g.beginPath(); g.moveTo(x + 4, 198); g.lineTo(x + 30, 56);
-      g.lineTo(x + 48, 56); g.lineTo(x + 22, 198); g.closePath(); g.fill();
-      g.fillStyle = '#9d9689'; g.fillRect(x - 3, 200, 58, 7);
-    }
-    g.fillStyle = 'rgba(0,0,0,.10)'; g.fillRect(0, 232, 256, 24);
+    c.width = c.height = n;
+    return { c: c, g: c.getContext('2d') };
+  }
+  function comoTextura(c) {
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = rend.capabilities.getMaxAnisotropy();
     return t;
   }
+  /* a mesma pichação da cena 2D, redesenhada em pé */
+  function pichar(g, x, y, w, h, semente) {
+    const n = 1 + (CN.dado('p3|' + semente, 3));
+    for (let i = 0; i < n; i++) {
+      const s = CN.hash('pich3|' + semente + '|' + i);
+      const px = x + (s % Math.max(1, w - 40));
+      const py = y + ((s >>> 7) % Math.max(1, h - 14));
+      g.save();
+      g.globalAlpha = 0.5;
+      g.strokeStyle = CN.PICHACAO[s % CN.PICHACAO.length];
+      g.lineWidth = 4; g.lineCap = 'round'; g.lineJoin = 'round';
+      g.beginPath(); g.moveTo(px, py);
+      for (let k = 1; k < 5; k++) {
+        const q = CN.hash(s + '|' + k);
+        g.lineTo(px + k * 11 + (q % 12), py + ((q >>> 4) % 20) - 10);
+      }
+      g.stroke(); g.restore();
+    }
+  }
+  const base = (g, tom) => { g.fillStyle = tom || '#e6e2d8'; g.fillRect(0, 0, 256, 256); };
+  const sujeira = g => {
+    /* a barra escura do pé da parede: chuva, lama e ônibus */
+    const grad = g.createLinearGradient(0, 190, 0, 256);
+    grad.addColorStop(0, 'rgba(60,52,44,0)');
+    grad.addColorStop(1, 'rgba(60,52,44,.34)');
+    g.fillStyle = grad; g.fillRect(0, 190, 256, 66);
+  };
+  const janela = (g, x, y, w, h) => {
+    g.fillStyle = '#8e887c'; g.fillRect(x - 3, y - 3, w + 6, h + 6);   // moldura
+    g.fillStyle = '#2b3138'; g.fillRect(x, y, w, h);                    // vidro
+    g.fillStyle = 'rgba(190,205,220,.22)';                              // reflexo
+    g.beginPath(); g.moveTo(x, y + h); g.lineTo(x + w * 0.55, y);
+    g.lineTo(x + w * 0.9, y); g.lineTo(x + w * 0.35, y + h); g.closePath(); g.fill();
+    g.fillStyle = '#a49c8c'; g.fillRect(x - 5, y + h + 3, w + 10, 5);   // peitoril
+  };
+  const grade = (g, x, y, w, h) => {
+    g.strokeStyle = 'rgba(30,30,28,.75)'; g.lineWidth = 2;
+    for (let i = x + 4; i < x + w; i += 9) {
+      g.beginPath(); g.moveTo(i, y); g.lineTo(i, y + h); g.stroke();
+    }
+  };
+  const toldo = (g, y, a, b) => {
+    for (let x = 0, k = 0; x < 256; x += 26, k++) {
+      g.fillStyle = k % 2 ? a : b;
+      g.fillRect(x, y, 26, 30);
+    }
+    g.fillStyle = 'rgba(0,0,0,.30)'; g.fillRect(0, y + 30, 256, 6);
+  };
+
+  /* ---- TÉRREO, um por tipo ---- */
+  const TERREO = {
+    predio(g) {                       // portaria: vidro, granito e o número
+      base(g, '#dedad0');
+      g.fillStyle = '#5d5a52'; g.fillRect(0, 214, 256, 42);        // granito
+      g.fillStyle = '#2b3138'; g.fillRect(40, 96, 176, 118);       // vidro
+      g.fillStyle = '#8e887c'; g.fillRect(122, 96, 6, 118);        // montante
+      g.fillStyle = 'rgba(190,205,220,.18)';
+      g.beginPath(); g.moveTo(40, 214); g.lineTo(140, 96);
+      g.lineTo(178, 96); g.lineTo(78, 214); g.closePath(); g.fill();
+      g.fillStyle = '#3a3a34'; g.fillRect(96, 58, 64, 22);         // placa do número
+      g.fillStyle = '#c8c2b0'; g.fillRect(102, 64, 52, 10);
+      sujeira(g);
+    },
+    casa(g) {                         // muro, portão de garagem e janela gradeada
+      base(g, '#e2d8c4');
+      g.fillStyle = '#9a8f7c'; g.fillRect(0, 0, 256, 12);          // topo do muro
+      g.fillStyle = '#6d6a60'; g.fillRect(18, 128, 104, 128);      // portão
+      g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 2;
+      for (let y = 136; y < 250; y += 14) {
+        g.beginPath(); g.moveTo(20, y); g.lineTo(120, y); g.stroke();
+      }
+      janela(g, 160, 118, 68, 62); grade(g, 160, 118, 68, 62);
+      pichar(g, 8, 150, 250, 90, 'casa');
+      sujeira(g);
+    },
+    comercio(g) {                     // vitrine, toldo listrado e letreiro
+      base(g, '#e8e4d6');
+      g.fillStyle = '#3a3a36'; g.fillRect(0, 22, 256, 40);         // letreiro
+      g.fillStyle = '#d8c86a';
+      for (let x = 14; x < 240; x += 26) g.fillRect(x, 34, 16, 16);
+      toldo(g, 66, '#e8e2d2', '#2f7a3f');
+      g.fillStyle = '#2b3138'; g.fillRect(12, 118, 232, 118);      // vitrine
+      g.fillStyle = 'rgba(200,214,228,.22)';
+      g.beginPath(); g.moveTo(12, 236); g.lineTo(120, 118);
+      g.lineTo(168, 118); g.lineTo(60, 236); g.closePath(); g.fill();
+      g.fillStyle = '#6d6a60'; g.fillRect(0, 236, 256, 20);
+      sujeira(g);
+    },
+    sobrado(g) {                      // porta, janela e azulejo até meia altura
+      base(g, '#dcd6c6');
+      g.fillStyle = '#b9c6c2'; g.fillRect(0, 150, 256, 106);       // barra de azulejo
+      g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1;
+      for (let x = 0; x <= 256; x += 26) { g.beginPath(); g.moveTo(x, 150); g.lineTo(x, 256); g.stroke(); }
+      for (let y = 150; y <= 256; y += 26) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
+      g.fillStyle = '#6b4a32'; g.fillRect(96, 128, 64, 128);       // porta de madeira
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(104, 140, 48, 44);
+      janela(g, 18, 120, 58, 58); grade(g, 18, 120, 58, 58);
+      janela(g, 182, 120, 58, 58); grade(g, 182, 120, 58, 58);
+      sujeira(g);
+    },
+    galpao(g) {                       // porta de rolo e muito pichação
+      base(g, '#d6d2c6');
+      g.fillStyle = '#7c7a72'; g.fillRect(10, 92, 236, 164);       // porta de aço
+      g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 2;
+      for (let y = 98; y < 254; y += 10) {
+        g.beginPath(); g.moveTo(12, y); g.lineTo(244, y); g.stroke();
+      }
+      g.fillStyle = '#4a4842'; g.fillRect(10, 84, 236, 10);
+      pichar(g, 14, 110, 230, 130, 'galpao');
+      pichar(g, 14, 160, 230, 90, 'galpao2');
+      sujeira(g);
+    },
+    muro(g) {                         // muro de lote: cobre-junta e pichação
+      base(g, '#d8cdb6');
+      g.fillStyle = '#a89c86'; g.fillRect(0, 0, 256, 14);          // cobre-muro
+      g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 14, 256, 4);
+      g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 2;          // fiada de bloco
+      for (let y = 40; y < 256; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
+      pichar(g, 10, 60, 236, 150, 'muro1');
+      pichar(g, 10, 130, 236, 110, 'muro2');
+      sujeira(g);
+    },
+    estadio(g) {                      // concreto, gradil e um vão a cada dois
+      base(g, '#c6c2b8');
+      g.fillStyle = 'rgba(0,0,0,.10)';
+      for (let x = 0; x < 256; x += 64) g.fillRect(x, 0, 3, 256);  // junta
+      /* gradil corrido: é o que fecha o estádio por fora */
+      g.fillStyle = '#4a4a44'; g.fillRect(0, 96, 256, 8);
+      g.fillStyle = '#4a4a44'; g.fillRect(0, 244, 256, 12);
+      g.strokeStyle = 'rgba(50,50,46,.85)'; g.lineWidth = 5;
+      for (let x = 8; x < 256; x += 17) {
+        g.beginPath(); g.moveTo(x, 100); g.lineTo(x, 248); g.stroke();
+      }
+      /* o vão de acesso não é em toda parede: um a cada módulo duplo */
+      g.fillStyle = '#1d2024'; g.fillRect(150, 88, 76, 168);
+      g.fillStyle = '#8e887c'; g.fillRect(142, 80, 92, 10);
+      pichar(g, 10, 190, 120, 56, 'est');
+      sujeira(g);
+    }
+  };
+
+  /* ---- ANDARES, um por tipo ---- */
+  const ANDAR = {
+    predio(g) {
+      base(g, '#dedad0');
+      g.fillStyle = '#cdc8bd'; g.fillRect(0, 0, 256, 16);          // laje entre andares
+      for (let i = 0; i < 3; i++) janela(g, 22 + i * 78, 46, 52, 150);
+    },
+    casa(g) {                         // casa é baixa: quase só parede
+      base(g, '#e2d8c4');
+      g.fillStyle = '#cdc0a8'; g.fillRect(0, 0, 256, 12);
+      janela(g, 96, 70, 64, 78); grade(g, 96, 70, 64, 78);
+      pichar(g, 10, 150, 240, 90, 'casaA');
+    },
+    comercio(g) {                     // parede quase cega, ar-condicionado
+      base(g, '#e8e4d6');
+      g.fillStyle = '#cdc8bd'; g.fillRect(0, 0, 256, 14);
+      janela(g, 30, 60, 60, 96);
+      g.fillStyle = '#b6b2a6'; g.fillRect(150, 84, 46, 34);        // condensadora
+      g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1.5;
+      for (let y = 90; y < 116; y += 6) { g.beginPath(); g.moveTo(152, y); g.lineTo(194, y); g.stroke(); }
+      g.fillStyle = 'rgba(60,52,44,.18)'; g.fillRect(150, 118, 46, 130);  // escorrido
+    },
+    sobrado(g) {                      // sacada com guarda-corpo
+      base(g, '#dcd6c6');
+      g.fillStyle = '#cdc8bd'; g.fillRect(0, 0, 256, 14);
+      janela(g, 88, 44, 80, 120);
+      g.fillStyle = '#9a948a'; g.fillRect(70, 160, 116, 8);        // piso da sacada
+      g.strokeStyle = '#8e887c'; g.lineWidth = 3;
+      for (let x = 74; x < 186; x += 12) { g.beginPath(); g.moveTo(x, 118); g.lineTo(x, 160); g.stroke(); }
+      g.beginPath(); g.moveTo(70, 120); g.lineTo(186, 120); g.stroke();
+      janela(g, 12, 60, 44, 80); janela(g, 200, 60, 44, 80);
+    },
+    galpao(g) {                       // telha ondulada e um respiro
+      base(g, '#d6d2c6');
+      g.strokeStyle = 'rgba(0,0,0,.16)'; g.lineWidth = 3;
+      for (let x = 0; x < 256; x += 14) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 256); g.stroke(); }
+      g.fillStyle = '#3a3a36'; g.fillRect(90, 90, 76, 40);
+      grade(g, 90, 90, 76, 40);
+    },
+    muro(g) {                         // muro alto continua muro
+      base(g, '#d8cdb6');
+      g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 2;
+      for (let y = 20; y < 256; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
+      pichar(g, 10, 40, 236, 170, 'muroA');
+    },
+    estadio(g) {                      // arquibancada: viga, empena e fresta
+      base(g, '#c6c2b8');
+      /* a viga horizontal é o que faz ler estádio e não prédio:
+         concreto contínuo, com a fresta escura por baixo dela */
+      g.fillStyle = '#b4b0a6'; g.fillRect(0, 0, 256, 40);
+      g.fillStyle = 'rgba(0,0,0,.42)'; g.fillRect(0, 40, 256, 26);
+      g.fillStyle = '#c6c2b8'; g.fillRect(0, 66, 256, 190);
+      /* pilar a cada meio módulo, e a junta de dilatação */
+      g.fillStyle = 'rgba(0,0,0,.13)';
+      for (let x = 0; x < 256; x += 128) g.fillRect(x + 54, 66, 20, 190);
+      g.fillStyle = 'rgba(0,0,0,.20)'; g.fillRect(126, 0, 4, 256);
+      /* escorrido de chuva sob a viga */
+      g.fillStyle = 'rgba(60,52,44,.16)';
+      for (let x = 18; x < 250; x += 46) g.fillRect(x, 66, 9, 120);
+      sujeira(g);
+    }
+  };
+
+  const texTerreo = {}, texAndar = {};
+  for (const t of TIPOS) {
+    const a = tela(256); TERREO[t](a.g); texTerreo[t] = comoTextura(a.c);
+    const b = tela(256); ANDAR[t](b.g);  texAndar[t]  = comoTextura(b.c);
+  }
+
   /* o granulado: a foto aérea tem 1 texel por unidade de mundo e
      a câmera de ombro amplia isso umas 14 vezes. Sem uma segunda
      camada por cima, o chão de perto vira borrão. */
@@ -150,7 +373,6 @@ export function criar(canvas) {
     t.repeat.set(W / 26, H / 26);
     return t;
   }
-  const texFachada = texturaFachada();
 
   /* =======================================================
      CHÃO
@@ -212,22 +434,31 @@ export function criar(canvas) {
      mesmo que `cenario.js` usa pra escolher o pintor. Reaproveitar
      ele aqui é o que faz a praça e o bar subirem certo em vez de
      virarem quarteirão de prédio. */
-  const ALTURA_POR_NOME = [
-    [/est[áa]dio|arquibancada/,                      'estadio'],
-    [/pra[çc]a|canteiro|jardim/,                     'baixo'],
-    [/carro|mesa|banco|lixeira|engradado|ca[çc]amba/, 'baixo'],
-    [/fachada|muro|parede|vitrine/,                  'muro'],
-    [/[áa]rvore/,                                    'verde'],
-    [/coreto|quiosque|banca|guarita|ponto|balc[ãa]o|freezer|sinuca/, 'medio'],
-    [/onibus|ônibus|carroforte/,                     'medio'],
-    [/igreja|torre/,                                 'alto'],
-    [/pr[ée]dio|predinho|sobrado/,                   'base'],
-    [/casa|padaria|boteco|bar|joalheria|vestiario|vestiário/, 'medio']
+  /* CLASSE POR NOME, pras cenas desenhadas, onde o bloco já tem tipo */
+  const CLASSE_POR_NOME = [
+    [/est[áa]dio|arquibancada/,                       'estadio'],
+    [/pra[çc]a|canteiro|jardim|[áa]rvore/,            'verde'],
+    [/carro|mesa|banco|lixeira|engradado|ca[çc]amba|onibus|ônibus|carroforte/, 'baixo'],
+    [/muro|parede|fachada|vitrine/,                   'muro'],
+    [/coreto|quiosque|banca|guarita|ponto|balc[ãa]o|freezer|sinuca/, 'comercio'],
+    [/boteco|bar|padaria|joalheria|vestiario|vestiário/, 'comercio'],
+    [/igreja|torre|sobrado/,                          'sobrado'],
+    [/pr[ée]dio|predinho/,                            'predio'],
+    [/casa/,                                          'casa']
   ];
-  const MODOS = {
-    /* base = altura de um prédio comum, em px da cena */
-    maquete: { base: 62,  estadio: 118, muro: 22, verde: 26, baixo: 12, medio: 34, alto: 88 },
-    rua:     { base: 168, estadio: 300, muro: 52, verde: 34, baixo: 16, medio: 78, alto: 240 }
+
+  /* ALTURA POR CLASSE — E O BAIRRO É DE CASA.
+     A régua anterior tinha um "prédio comum" de 168 e mandava todo
+     quarteirão grande pra lá: o cenário virava centro de cidade.
+     Aqui a altura sai do TIPO, e o tipo é casa na esmagadora
+     maioria. Na régua da foto (~10 cm por unidade) casa térrea dá
+     44, sobrado 78 e prédio 120 — e prédio é 2% do sorteio, o
+     edifício solitário que todo bairro tem. */
+  const ALTURAS = {
+    maquete: { casa: 24, sobrado: 40, comercio: 28, galpao: 30, predio: 62,
+               estadio: 118, muro: 18, verde: 26, baixo: 12 },
+    rua:     { casa: 44, sobrado: 78, comercio: 52, galpao: 58, predio: 120,
+               estadio: 300, muro: 30, verde: 34, baixo: 14 }
   };
   let modo = 'rua';
 
@@ -336,18 +567,75 @@ export function criar(canvas) {
     return maior > 0 ? melhor : null;
   }
 
+  /* QUE TIPO DE PRÉDIO É ESTE.
+     Nas cenas desenhadas o bloco já vem com tipo (`rot`), que é o
+     mesmo que `cenario.js` usa pra escolher o pintor — então ali a
+     resposta é exata. Na foto aérea não existe tipo: o que existe é
+     tamanho, e um sorteio com semente na posição, pra o mesmo
+     quarteirão dar sempre o mesmo prédio. */
+  function classeDoLote(semente) {
+    const k = CN.frac('classe|' + semente);
+    if (k < 0.56) return 'casa';        // o bairro é de casa
+    if (k < 0.78) return 'comercio';    // a padaria, o boteco, a loja de esquina
+    if (k < 0.92) return 'sobrado';     // o de dois andares
+    if (k < 0.98) return 'galpao';      // a oficina, o depósito
+    return 'predio';                    // um só, e é o mais alto da rua
+  }
+  /* a fachada de uma classe que não tem textura própria */
+  const FACHADA = { verde: null, baixo: null };
+
+  /* LOTE, NÃO QUARTEIRÃO.
+     A malha entrega o quarteirão inteiro como um retângulo só, e um
+     retângulo só vira um galpão de duzentos metros. Cortado em lotes
+     de ~78 unidades (uns 8 m na régua da foto), cada pedaço ganha
+     altura, cor e tipo próprios — e o quarteirão vira fileira de
+     casa, que é o que a rua de bairro é. */
+  function lotear(x0, y0, x1, y1) {
+    const w = x1 - x0, h = y1 - y0;
+    const eixoX = w >= h;
+    const comp = eixoX ? w : h;
+    if (comp <= 118) return [[x0, y0, x1, y1]];
+    const n = Math.max(2, Math.round(comp / 78));
+    const passo = comp / n;
+    const fora = [];
+    for (let i = 0; i < n; i++) {
+      const a = (eixoX ? x0 : y0) + i * passo, b = a + passo;
+      fora.push(eixoX ? [a, y0, b, y1] : [x0, a, x1, b]);
+    }
+    return fora;
+  }
+
   function montarPredios(D) {
     limparGrupo(grupoPredios);
-    const M = MODOS[modo];
     const px = ctxChao.getImageData(0, 0, W, H).data;
     const { dono, comps } = componentes();
     alturaCel.fill(0);
 
     const pTopo = [], uvTopo = [], iTopo = [];
-    const pPar = [], nPar = [], uvPar = [], cPar = [];
-    const cor = new THREE.Color();
+    const cor = new THREE.Color(), corFoto = new THREE.Color();
+    const corTopo = new THREE.Color();
     const BRANCO = new THREE.Color(1, 1, 1);
     let nRet = 0;
+
+    /* Um balde por (faixa, tipo). Cada balde vira uma malha com a
+       sua textura — meia dúzia de chamadas de desenho a mais, em
+       troca de a cidade ter mais de uma cara. */
+    const baldes = new Map();
+    function faixa(banda, tipo, a, b, n, y0, y1, u, v, tinta) {
+      if (y1 - y0 < 0.5) return;
+      const k = banda + '|' + tipo;
+      let d = baldes.get(k);
+      if (!d) { d = { pos: [], nor: [], uv: [], cor: [] }; baldes.set(k, d); }
+      const vs = [[a[0], y0, a[1], 0, 0], [b[0], y0, b[1], u, 0],
+                  [b[0], y1, b[1], u, v], [a[0], y1, a[1], 0, v]];
+      for (const i of [0, 1, 2, 0, 2, 3]) {
+        const t = vs[i];
+        d.pos.push(t[0], t[1], t[2]);
+        d.nor.push(n[0], n[1], n[2]);
+        d.uv.push(t[3], t[4]);
+        d.cor.push(tinta.r, tinta.g, tinta.b);
+      }
+    }
 
     comps.forEach((cels, id) => {
       if (cels.length < 3) return;                    // cisco da máscara
@@ -358,63 +646,86 @@ export function criar(canvas) {
       const verde = mg > mr * 1.05 && mg > mb * 1.05;
 
       const nome = nomeDoPoligono(D, caixa);
-      const regra = nome && ALTURA_POR_NOME.find(par => par[0].test(nome));
-      let altBase;
-      if (regra) altBase = M[regra[1]];
-      else if (verde) altBase = M.verde;
-      else if (areaPx < 5200) altBase = M.baixo;
-      else altBase = M.base * (0.72 + Math.min(0.55, areaPx / 260000));
+      const daCena = nome && (CLASSE_POR_NOME.find(par => par[0].test(nome)) || [])[1];
+      /* verde é a mancha de mato que a foto entrega e a lista de
+         blocos não nomeia */
+      const fixa = daCena || (verde ? 'verde' : areaPx < 5200 ? 'baixo' : null);
+      const semBloco = Math.round(caixa[0]) + '|' + Math.round(caixa[1]);
 
-      /* A parede herda a cor do telhado — prédio de telha vermelha
-         não ganha parede cinza por acaso. Clarear multiplicando
-         satura: um telhado cinza-azulado × 1,5 estoura o vermelho e
-         o verde antes do azul e vira um bloco azul-piscina. Puxar
-         pro branco clareia sem mexer no matiz. */
-      cor.setRGB(mr / 255, mg / 255, mb / 255);
-      if (verde) cor.multiplyScalar(0.62);
-      else cor.lerp(BRANCO, 0.44);
-
-      /* o mesmo quarteirão com uma altura só vira muro; recortado
-         em prédios de altura diferente, vira quarteirão. O degrau
-         sai de um hash da posição, então é sempre o mesmo. */
-      const recorta = !regra && !verde && areaPx >= 5200;
-      const TILE = 40 + (id % 4) * 5;
       for (const ret of rets) {
-        const x0 = ret[0], y0 = ret[1], x1 = ret[2], y1 = ret[3];
-        nRet++;
-        const alt = recorta
-          ? altBase * (0.74 + ((Math.sin(x0 * 12.9898 + y0 * 78.233) * 43758.5) % 1 + 1) % 1 * 0.62)
-          : altBase;
-        for (let r = y0 / CEL; r < y1 / CEL; r++)
-          for (let c = x0 / CEL; c < x1 / CEL; c++) alturaCel[r * COLS + c] = alt;
-        /* --- telhado --- */
-        const base = pTopo.length / 3;
-        const q = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
-        for (const s of q) {
-          pTopo.push(s[0], alt, s[1]);
-          uvTopo.push(s[0] / W, 1 - s[1] / H);
-        }
-        iTopo.push(base, base + 2, base + 1, base, base + 3, base + 2);
+        for (const lote of lotear(ret[0], ret[1], ret[2], ret[3])) {
+          const x0 = lote[0], y0 = lote[1], x1 = lote[2], y1 = lote[3];
+          nRet++;
+          const sem = Math.round(x0) + '|' + Math.round(y0);
+          /* CADA LOTE É UMA CASA.
+             Quando a cena nomeou o bloco, a classe é dela e não se
+             mexe. Quando veio da foto, cada lote sorteia a sua — e
+             é esse sorteio que faz o quarteirão virar fileira de
+             casa com um comércio no meio, em vez de um bloco só. */
+          const classe = fixa || classeDoLote(sem);
+          const alt = ALTURAS[modo][classe] *
+                      (fixa ? 1 : 0.86 + CN.frac('alt|' + sem) * 0.30);
+          const tipo = (classe in FACHADA) ? FACHADA[classe] : classe;
 
-        /* --- paredes: quatro quadras, normal explícita --- */
-        const paredes = [
-          [[x0, y0], [x1, y0], [0, 0, -1]],
-          [[x1, y1], [x0, y1], [0, 0, 1]],
-          [[x1, y0], [x1, y1], [1, 0, 0]],
-          [[x0, y1], [x0, y0], [-1, 0, 0]]
-        ];
-        for (const par of paredes) {
-          const a = par[0], b = par[1], n = par[2];
-          const comp = Math.hypot(b[0] - a[0], b[1] - a[1]);
-          const u = comp / TILE, v = alt / TILE;
-          const vs = [[a[0], 0, a[1], 0, 0], [b[0], 0, b[1], u, 0],
-                      [b[0], alt, b[1], u, v], [a[0], alt, a[1], 0, v]];
-          for (const k of [0, 1, 2, 0, 2, 3]) {
-            const s = vs[k];
-            pPar.push(s[0], s[1], s[2]);
-            nPar.push(n[0], n[1], n[2]);
-            uvPar.push(s[3], s[4]);
-            cPar.push(cor.r, cor.g, cor.b);
+          /* A COR SAI DA PALETA DO BAIRRO, NÃO DO TELHADO.
+             Tingir pela cor média da foto dava a cidade em
+             cinza-esverdeado, porque telhado de laje suja é isso.
+             `PAREDE` de `cenario.js` é a paleta do pintor 2D — seis
+             tons de reboco de periferia. Uma pitada do telhado entra
+             junto pra a casa não descolar do que está na foto em
+             cima dela, e o tom varia por LOTE: casa vizinha pintada
+             igual é o que denuncia o gerador. */
+          const semCor = fixa ? semBloco : sem;
+          cor.set(CN.PAREDE[CN.dado('par|' + semCor, CN.PAREDE.length)]);
+          if (classe === 'verde') cor.multiplyScalar(0.6);
+          else {
+            cor.lerp(corFoto.setRGB(mr / 255, mg / 255, mb / 255), 0.14);
+            cor.multiplyScalar(0.78 + CN.frac('tom|' + semCor) * 0.30);
+          }
+
+          for (let r = y0 / CEL; r < y1 / CEL; r++)
+            for (let c = x0 / CEL; c < x1 / CEL; c++) {
+              const i = ((r | 0)) * COLS + (c | 0);
+              if (i >= 0 && i < alturaCel.length) alturaCel[i] = alt;
+            }
+
+          /* --- telhado --- */
+          const base = pTopo.length / 3;
+          const q = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+          for (const t of q) {
+            pTopo.push(t[0], alt, t[1]);
+            uvTopo.push(t[0] / W, 1 - t[1] / H);
+          }
+          iTopo.push(base, base + 2, base + 1, base, base + 3, base + 2);
+
+          /* --- paredes: quatro faces, cada uma em faixas ---
+             térreo (não repete), andar de cima (repete) e a
+             platibanda. É a faixa do térreo que faz a rua deixar
+             de ser genérica: porta, portão, vitrine e pichação na
+             altura do braço não podem se repetir subindo. */
+          const paredes = [
+            [[x0, y0], [x1, y0], [0, 0, -1]],
+            [[x1, y1], [x0, y1], [0, 0, 1]],
+            [[x1, y0], [x1, y1], [1, 0, 0]],
+            [[x0, y1], [x0, y0], [-1, 0, 0]]
+          ];
+          const topo = Math.max(0, alt - PARAPEITO);
+          for (const par of paredes) {
+            const a = par[0], b = par[1], n = par[2];
+            const comp = Math.hypot(b[0] - a[0], b[1] - a[1]);
+            const u = Math.max(0.5, comp / MOD);
+            if (!tipo) {                       // canteiro, carro: sem fachada
+              faixa('platibanda', 'liso', a, b, n, 0, alt, u, 1, cor);
+            } else if (topo <= H_TERREO) {     // casa térrea: só o térreo
+              faixa('terreo', tipo, a, b, n, 0, topo, u, topo / H_TERREO, cor);
+            } else {
+              faixa('terreo', tipo, a, b, n, 0, H_TERREO, u, 1, cor);
+              faixa('andar', tipo, a, b, n, H_TERREO, topo, u,
+                    (topo - H_TERREO) / H_ANDAR, cor);
+            }
+            if (tipo && alt > PARAPEITO)
+              faixa('platibanda', 'liso', a, b, n, topo, alt, u, 1,
+                    corTopo.copy(cor).lerp(BRANCO, 0.28));
           }
         }
       }
@@ -429,18 +740,25 @@ export function criar(canvas) {
     mT.castShadow = true; mT.receiveShadow = true;
     grupoPredios.add(mT);
 
-    const gP = new THREE.BufferGeometry();
-    gP.setAttribute('position', new THREE.Float32BufferAttribute(pPar, 3));
-    gP.setAttribute('normal', new THREE.Float32BufferAttribute(nPar, 3));
-    gP.setAttribute('uv', new THREE.Float32BufferAttribute(uvPar, 2));
-    gP.setAttribute('color', new THREE.Float32BufferAttribute(cPar, 3));
-    const mP = new THREE.Mesh(gP, new THREE.MeshLambertMaterial(
-      { map: texFachada, vertexColors: true }));
-    mP.castShadow = true; mP.receiveShadow = true;
-    grupoPredios.add(mP);
+    let nPar = 0;
+    for (const [k, d] of baldes) {
+      const banda = k.split('|')[0], tipo = k.split('|')[1];
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(d.pos, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(d.nor, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(d.uv, 2));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(d.cor, 3));
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true,
+        map: banda === 'terreo' ? texTerreo[tipo]
+           : banda === 'andar'  ? texAndar[tipo] : null });
+      const m = new THREE.Mesh(g, mat);
+      m.castShadow = true; m.receiveShadow = true;
+      grupoPredios.add(m);
+      nPar += d.pos.length / 3;
+    }
 
-    return { blocos: comps.length, retangulos: nRet,
-             triangulos: (iTopo.length + pPar.length) / 3 };
+    return { blocos: comps.length, retangulos: nRet, fachadas: baldes.size,
+             triangulos: (iTopo.length + nPar) / 3 };
   }
 
   /* =======================================================

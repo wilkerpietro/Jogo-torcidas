@@ -68,10 +68,35 @@ projetada de cima, recortada na região que a caixa ocupa. O telhado da caixa é
 o telhado que está na foto, alinhado ao pixel — foi isso que dispensou material
 de telhado.
 
-A parede é uma fachada procedural desenhada em canvas (laje, três janelas,
-peitoril, reflexo no vidro), em ladrilho, tingida pela cor média do próprio
-telhado. Prédio de telha vermelha ganha parede avermelhada sem ninguém
-escolher.
+### A fachada, com o vocabulário da cena 2D
+
+A primeira versão tinha um azulejo só — laje, três janelas, peitoril — repetido
+do chão ao topo em toda parede. A cidade inteira virava prédio de escritório.
+`cenario.js` já tinha o vocabulário certo e a paleta do bairro, então as duas
+coisas passaram a sair de lá (exportadas: `TELHADO`, `LAJE`, `PAREDE`,
+`PICHACAO`, `hash`, `dado`, `frac`), pra não existirem duas periferias
+diferentes no mesmo jogo.
+
+**Sete tipos, e cada um com duas texturas.** casa, sobrado, comércio, galpão,
+prédio, muro e estádio. A segunda textura é o que mais conta: **o térreo não se
+repete.** Rua é portão de garagem, vitrine com toldo listrado, porta de rolo,
+janela gradeada e pichação na altura do braço; do primeiro andar pra cima é
+janela e parede. Empilhar o mesmo azulejo do chão ao topo era exatamente o que
+deixava genérico. Cada parede sai em três faixas — térreo (não repete), andar
+(repete) e platibanda.
+
+**O bairro é de casa, não de prédio.** A régua anterior tinha um "prédio comum"
+de 168 unidades e mandava todo quarteirão grande pra lá. Agora a altura sai do
+tipo — casa térrea 44, sobrado 78, comércio 52, galpão 58 — e o sorteio dá
+**56% casa, 22% comércio, 14% sobrado, 6% galpão e 2% prédio**: o edifício
+solitário que todo bairro tem. Só o estádio continua alto (300).
+
+**E o quarteirão virou lote.** A malha entrega o quarteirão inteiro como um
+retângulo, e um retângulo só vira um galpão de duzentos metros. Cortado em
+lotes de ~78 unidades (uns 8 m na régua da foto), cada pedaço ganha altura, cor
+e tipo próprios — e o quarteirão vira fileira de casa com um comércio no meio.
+A cor sai de `PAREDE` com uma pitada (14%) da cor do telhado na foto, pra a casa
+não descolar do que está desenhado em cima dela.
 
 ---
 
@@ -227,11 +252,11 @@ Medidos no navegador, na cena dos arredores, com 63 pessoas em pé.
 | CPU do desenhista 3D por quadro, noite parada | **0,47 ms** |
 | CPU do desenhista 3D por quadro, **todo mundo em briga** | **0,49 ms** |
 | CPU da simulação por quadro (`combate.passo`) | **0,61 ms** |
-| montar os prédios do zero (BFS + greedy + geometria) | **17 ms** |
-| chamadas de desenho por quadro | **30** |
-| triângulos na cena | **~10 400** |
-| prédios / caixas nos arredores | 15 / 111 |
-| prédios / caixas na praça | 8 / 105 |
+| montar os prédios do zero (BFS + greedy + lotes + geometria) | **35 ms** |
+| chamadas de desenho por quadro | **43** |
+| triângulos na cena | **~19 000** |
+| prédios / lotes nos arredores | 15 / 400 |
+| prédios / lotes na praça | 8 / 255 |
 
 **Com a briga inteira animada, o desenhista 3D ainda custa menos do que a
 própria simulação.** Isso responde a pergunta de CPU e é o número que mais

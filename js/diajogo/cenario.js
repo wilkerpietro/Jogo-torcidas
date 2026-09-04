@@ -1278,5 +1278,10 @@ TO.diaJogo.cenario = (function(){
 
   return {pintar, CENAS, ENFEITE, PINTOR, arvore, varal,
           asfalto, calcadaPortuguesa, calcadaComum, paralelepipedo,
-          bloquete, pedraClara, terreno, meioFio, faixaPedestre};
+          bloquete, pedraClara, terreno, meioFio, faixaPedestre,
+          /* a paleta e o sorteio com semente saem daqui pra fora
+             porque a cena 3D pinta fachada com o MESMO vocabulário:
+             duas paletas diferentes pro mesmo bairro seriam dois
+             bairros. Ver `js/diajogo/cena3d.js`. */
+          TELHADO, LAJE, PAREDE, PICHACAO, hash, dado, frac};
 })();
