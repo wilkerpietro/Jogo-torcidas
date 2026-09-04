@@ -3555,6 +3555,35 @@ pediria o arquivo de todas as 94 praças e encheria o console de 404: as
 64 da América do Sul ainda não têm cartão-postal e seguem no gradiente
 escuro de sempre.
 
+## O sertão e a costa (planta do dono, 03/09/2026)
+
+Três correções na malha das praças, ditadas pelo dono:
+
+1. **Estrada da Bahia ao Rio.** Não existia: pra ir de uma à outra a
+   caravana dava a volta por Belo Horizonte e São Paulo — três saltos
+   por dentro do continente pra uma viagem que na vida real é de costa.
+   Entra a **BR-101 Leste** (`bahia ↔ rio-de-janeiro`), e agora é **1
+   salto**.
+
+2. **O Interior de PE desce pro sertão.** Estava em `920.4, 425.6`,
+   colado no litoral entre Recife e Alagoas. Vai pra **`856, 456`**: a
+   oeste de Recife e ao sul do Interior do CE, que é onde o sertão
+   pernambucano fica de verdade. Com isso ele **sai da Rodovia Nordeste
+   2** — o corredor da costa passa a ser `paraíba → recife → alagoas →
+   sergipe → bahia`, sem desvio pra dentro.
+
+3. **A estrada do sertão fura o Interior de PE.** A **BR-116 Sertão**
+   ia direto do Interior do CE à Bahia; agora é `interior-do-ce →
+   interior-de-pe → bahia`. E ele **segue ligado a Recife** pela
+   **BR-232**, que é a estrada real do sertão pernambucano.
+
+O Interior de PE fica então com três vizinhas: Interior do CE, Bahia e
+Recife. As 94 praças continuam todas alcançáveis.
+
+De quebra, o `docs/mapa-das-pracas.html` ganhou o `<meta charset>` que
+nunca teve — os acentos apareciam quebrados ("SertÃ£o") na ferramenta
+que serve justamente pra conferir a malha.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
