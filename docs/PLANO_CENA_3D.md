@@ -393,18 +393,45 @@ aprenda por aí.**
 
 ---
 
-## 9. As decisões que travam o resto
+## 9. As decisões
 
-Nenhuma linha nova deveria ser escrita antes destas três:
+**Duas fechadas pelo autor:**
 
-1. **A câmera de perto é o jogo, ou é uma das câmeras?** Se for o jogo, a
-   formação precisa de outro corpo (indicador em tela, marcação no chão) ou o
-   sistema morre. Se for uma das câmeras, não morre nada e o trabalho é menor.
-2. **Escala (a) ou (b)?** Boneco grande de tabuleiro, ou reescalar a cena e
-   recalibrar `P` inteiro. Amarra toda a arte daqui pra frente.
-3. **Isto substitui a cena 2D ou convive com ela?** Conviver custa manter dois
-   desenhistas — hoje é barato porque os dois leem o mesmo `J`, e continua
-   barato enquanto ninguém pedir efeito que só existe num dos dois.
+1. **A câmera de perto é UMA DAS CÂMERAS, não o jogo.** Isso desarma o problema
+   do §6 inteiro: a formação e o cordão continuam legíveis porque continuam
+   tendo uma câmera que os mostra, e o trabalho de dar outro corpo à formação
+   (indicador em tela, marcação no chão) não precisa ser feito.
+2. **A cena 2D é a que está no jogo. O 3D é teste de viabilidade**, e segue
+   página à parte. Conviver é barato enquanto os dois desenhistas leem o mesmo
+   `J` — e continua barato enquanto ninguém pedir efeito que só exista num dos
+   dois.
+
+**Uma ainda aberta, e é a que amarra a arte:**
+
+3. **Escala (a) ou (b)?** Boneco grande de tabuleiro, ou reescalar a cena e
+   recalibrar `P` inteiro (§5). Enquanto ela não for respondida, não vale
+   começar arte definitiva de cenário nem de personagem.
+
+---
+
+## 9.1 O que foi tentado e desfeito
+
+Fica escrito pra ninguém refazer sem saber que já foi feito.
+
+**Meio-fio e calçada.** Implementado e removido a pedido do autor: *ficou feio*.
+A faixa de calçada era inferida (célula andável a até 30 px de prédio e que não
+fosse asfalto escuro), extrudada 2,6 unidades, com meio-fio só na borda que dá
+pra pista, e os corpos subiam o degrau. Funcionava — a detecção pegava 17% do
+mapa e acompanhava as calçadas da foto —, mas a borda saía escadeada na
+resolução de 8 px da malha e a laje ficava lisa demais ao lado do asfalto
+granulado. **Se voltar, o caminho não é inferir:** é uma segunda máscara pintada
+no editor F2, como a de caminhabilidade já é, guardada em `cena_arredores.js`.
+
+**Boneco de dezesseis peças** (pé, mão, e o tronco partido em bacia e peito, com
+tornozelo cancelando o giro acumulado da perna). Implementado e removido junto.
+Custava 0,54 ms de CPU por quadro contra 0,47 do de dez peças. O boneco em pé
+segue o de **dez**: cabeça, tronco, dois braços com cotovelo e duas pernas com
+joelho.
 
 ---
 
