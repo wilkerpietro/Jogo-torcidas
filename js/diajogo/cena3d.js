@@ -132,9 +132,9 @@ export function criar(canvas) {
   const PARAPEITO = 5;      // platibanda, a fatia lisa do topo
   const MOD = 46;           // largura de um módulo de fachada
 
-  function tela(n) {
+  function tela(w, h) {
     const c = document.createElement('canvas');
-    c.width = c.height = n;
+    c.width = w; c.height = h === undefined ? w : h;
     return { c: c, g: c.getContext('2d') };
   }
   function comoTextura(c) {
@@ -163,13 +163,15 @@ export function criar(canvas) {
       g.stroke(); g.restore();
     }
   }
-  const base = (g, tom) => { g.fillStyle = tom || '#e6e2d8'; g.fillRect(0, 0, 256, 256); };
-  const sujeira = g => {
+  const base = (g, tom, L, A) => { g.fillStyle = tom || '#e6e2d8';
+    g.fillRect(0, 0, L || 256, A || 256); };
+  const sujeira = (g, larg, alt) => {
     /* a barra escura do pé da parede: chuva, lama e ônibus */
-    const grad = g.createLinearGradient(0, 190, 0, 256);
+    const L = larg || 256, A = alt || 256, y = A * 0.74;
+    const grad = g.createLinearGradient(0, y, 0, A);
     grad.addColorStop(0, 'rgba(60,52,44,0)');
     grad.addColorStop(1, 'rgba(60,52,44,.34)');
-    g.fillStyle = grad; g.fillRect(0, 190, 256, 66);
+    g.fillStyle = grad; g.fillRect(0, y, L, A - y);
   };
   const janela = (g, x, y, w, h) => {
     g.fillStyle = '#8e887c'; g.fillRect(x - 3, y - 3, w + 6, h + 6);   // moldura
@@ -266,22 +268,46 @@ export function criar(canvas) {
       pichar(g, 10, 130, 236, 110, 'muro2');
       sujeira(g);
     },
-    estadio(g) {                      // concreto, gradil e um vão a cada dois
-      base(g, '#c6c2b8');
-      g.fillStyle = 'rgba(0,0,0,.10)';
-      for (let x = 0; x < 256; x += 64) g.fillRect(x, 0, 3, 256);  // junta
-      /* gradil corrido: é o que fecha o estádio por fora */
-      g.fillStyle = '#4a4a44'; g.fillRect(0, 96, 256, 8);
-      g.fillStyle = '#4a4a44'; g.fillRect(0, 244, 256, 12);
-      g.strokeStyle = 'rgba(50,50,46,.85)'; g.lineWidth = 5;
-      for (let x = 8; x < 256; x += 17) {
-        g.beginPath(); g.moveTo(x, 100); g.lineTo(x, 248); g.stroke();
+    /* O MURO DO ESTÁDIO, E ELE É BAIXO.
+       Estádio de bairro visto da calçada não é um paredão de trinta
+       metros: é muro pintado, portão de ferro numerado, a
+       bilheteria com o guichê e a concertina em cima. A arquibancada
+       aparece por cima do muro, e é só isso que se vê da rua.
+       O módulo aqui é 172 e não 46 — com o módulo curto o mesmo
+       portão se repetia a cada dois passos e o muro virava sanfona. */
+    estadio(g) {
+      const L = 512, A = 256;
+      base(g, '#cfc9ba', L, A);
+      /* pilastra a cada meio módulo */
+      g.fillStyle = 'rgba(0,0,0,.09)';
+      for (let x = 0; x < L; x += 128) g.fillRect(x, 0, 14, A);
+      /* a faixa pintada: é o que dá cara de estádio a um muro */
+      g.fillStyle = '#b8492f'; g.fillRect(0, 96, L, 34);
+      g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(0, 130, L, 7);
+      /* portão de ferro, com a placa do número em cima */
+      g.fillStyle = '#3d3f42'; g.fillRect(40, 140, 150, 116);
+      g.strokeStyle = 'rgba(150,152,150,.5)'; g.lineWidth = 4;
+      for (let x = 48; x < 186; x += 13) {
+        g.beginPath(); g.moveTo(x, 146); g.lineTo(x, 254); g.stroke();
       }
-      /* o vão de acesso não é em toda parede: um a cada módulo duplo */
-      g.fillStyle = '#1d2024'; g.fillRect(150, 88, 76, 168);
-      g.fillStyle = '#8e887c'; g.fillRect(142, 80, 92, 10);
-      pichar(g, 10, 190, 120, 56, 'est');
-      sujeira(g);
+      g.fillStyle = '#5a5c5e'; g.fillRect(36, 134, 158, 10);
+      g.fillStyle = '#e4dcc4'; g.fillRect(92, 62, 46, 30);        // placa
+      g.fillStyle = '#2a2a28'; g.fillRect(104, 70, 22, 15);       // número
+      /* bilheteria: guichê fundo, balcão e toldo */
+      g.fillStyle = '#b6b0a2'; g.fillRect(300, 150, 118, 106);
+      g.fillStyle = '#1d2024'; g.fillRect(318, 178, 82, 46);
+      g.fillStyle = '#8e887c'; g.fillRect(312, 222, 94, 9);       // balcão
+      g.fillStyle = '#2f6a44'; g.fillRect(294, 140, 130, 14);     // toldo
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(294, 154, 130, 5);
+      /* concertina no alto do muro */
+      g.strokeStyle = 'rgba(70,70,66,.85)'; g.lineWidth = 3;
+      for (let x = 0; x < L; x += 26) {
+        g.beginPath(); g.arc(x + 13, 20, 12, 0.15, Math.PI - 0.15); g.stroke();
+      }
+      g.fillStyle = 'rgba(0,0,0,.14)'; g.fillRect(0, 34, L, 6);
+      pichar(g, 210, 168, 80, 70, 'est1');
+      pichar(g, 430, 160, 76, 84, 'est2');
+      sujeira(g, L, A);
     }
   };
 
@@ -330,29 +356,26 @@ export function criar(canvas) {
       for (let y = 20; y < 256; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
       pichar(g, 10, 40, 236, 170, 'muroA');
     },
-    estadio(g) {                      // arquibancada: viga, empena e fresta
+    /* o muro do estádio é uma faixa só; isto existe pro caso de a
+       arquibancada um dia subir acima dele */
+    estadio(g) {
       base(g, '#c6c2b8');
-      /* a viga horizontal é o que faz ler estádio e não prédio:
-         concreto contínuo, com a fresta escura por baixo dela */
-      g.fillStyle = '#b4b0a6'; g.fillRect(0, 0, 256, 40);
-      g.fillStyle = 'rgba(0,0,0,.42)'; g.fillRect(0, 40, 256, 26);
-      g.fillStyle = '#c6c2b8'; g.fillRect(0, 66, 256, 190);
-      /* pilar a cada meio módulo, e a junta de dilatação */
       g.fillStyle = 'rgba(0,0,0,.13)';
-      for (let x = 0; x < 256; x += 128) g.fillRect(x + 54, 66, 20, 190);
-      g.fillStyle = 'rgba(0,0,0,.20)'; g.fillRect(126, 0, 4, 256);
-      /* escorrido de chuva sob a viga */
-      g.fillStyle = 'rgba(60,52,44,.16)';
-      for (let x = 18; x < 250; x += 46) g.fillRect(x, 66, 9, 120);
-      sujeira(g);
+      for (let x = 0; x < 256; x += 64) g.fillRect(x, 0, 16, 256);
+      g.fillStyle = 'rgba(0,0,0,.30)'; g.fillRect(0, 0, 256, 18);
     }
   };
 
   const texTerreo = {}, texAndar = {};
   for (const t of TIPOS) {
-    const a = tela(256); TERREO[t](a.g); texTerreo[t] = comoTextura(a.c);
+    const a = t === 'estadio' ? tela(512, 256) : tela(256);
+    TERREO[t](a.g); texTerreo[t] = comoTextura(a.c);
     const b = tela(256); ANDAR[t](b.g);  texAndar[t]  = comoTextura(b.c);
   }
+  /* Largura de um módulo de fachada, por tipo. O muro do estádio é
+     comprido e sem porta a cada passo: com o módulo de casa o portão
+     e a bilheteria se repetiam de dois em dois metros. */
+  const MOD_TIPO = { estadio: 172 };
 
   /* o granulado: a foto aérea tem 1 texel por unidade de mundo e
      a câmera de ombro amplia isso umas 14 vezes. Sem uma segunda
@@ -453,12 +476,16 @@ export function criar(canvas) {
      Aqui a altura sai do TIPO, e o tipo é casa na esmagadora
      maioria. Na régua da foto (~10 cm por unidade) casa térrea dá
      44, sobrado 78 e prédio 120 — e prédio é 2% do sorteio, o
-     edifício solitário que todo bairro tem. */
+     edifício solitário que todo bairro tem.
+     O estádio é 86: o dobro de uma casa e nada mais. Ele era 300 e
+     virava um paredão que dominava o fundo inteiro da cena; da
+     calçada, estádio de bairro é muro com portão, e a arquibancada
+     mal aparece por cima. */
   const ALTURAS = {
     maquete: { casa: 24, sobrado: 40, comercio: 28, galpao: 30, predio: 62,
-               estadio: 118, muro: 18, verde: 26, baixo: 12 },
+               estadio: 48, muro: 18, verde: 26, baixo: 12 },
     rua:     { casa: 44, sobrado: 78, comercio: 52, galpao: 58, predio: 120,
-               estadio: 300, muro: 30, verde: 34, baixo: 14 }
+               estadio: 86, muro: 30, verde: 34, baixo: 14 }
   };
   let modo = 'rua';
 
@@ -713,19 +740,25 @@ export function criar(canvas) {
           for (const par of paredes) {
             const a = par[0], b = par[1], n = par[2];
             const comp = Math.hypot(b[0] - a[0], b[1] - a[1]);
-            const u = Math.max(0.5, comp / MOD);
+            const u = Math.max(0.5, comp / (MOD_TIPO[tipo] || MOD));
             if (!tipo) {                       // canteiro, carro: sem fachada
               faixa('platibanda', 'liso', a, b, n, 0, alt, u, 1, cor);
+            } else if (tipo === 'estadio') {
+              /* muro do estádio: uma faixa só, do chão ao topo. A
+                 concertina já está desenhada no alto da textura, e
+                 uma platibanda por cima dela cortaria o arame. */
+              faixa('terreo', tipo, a, b, n, 0, alt, u, 1, cor);
             } else if (topo <= H_TERREO) {     // casa térrea: só o térreo
               faixa('terreo', tipo, a, b, n, 0, topo, u, topo / H_TERREO, cor);
+              faixa('platibanda', 'liso', a, b, n, topo, alt, u, 1,
+                    corTopo.copy(cor).lerp(BRANCO, 0.28));
             } else {
               faixa('terreo', tipo, a, b, n, 0, H_TERREO, u, 1, cor);
               faixa('andar', tipo, a, b, n, H_TERREO, topo, u,
                     (topo - H_TERREO) / H_ANDAR, cor);
-            }
-            if (tipo && alt > PARAPEITO)
               faixa('platibanda', 'liso', a, b, n, topo, alt, u, 1,
                     corTopo.copy(cor).lerp(BRANCO, 0.28));
+            }
           }
         }
       }

@@ -89,7 +89,17 @@ deixava genérico. Cada parede sai em três faixas — térreo (não repete), an
 de 168 unidades e mandava todo quarteirão grande pra lá. Agora a altura sai do
 tipo — casa térrea 44, sobrado 78, comércio 52, galpão 58 — e o sorteio dá
 **56% casa, 22% comércio, 14% sobrado, 6% galpão e 2% prédio**: o edifício
-solitário que todo bairro tem. Só o estádio continua alto (300).
+solitário que todo bairro tem.
+
+**O estádio também é baixo: 86.** Ele era 300 e virava um paredão cinza que
+dominava o fundo inteiro da cena. Da calçada, estádio de bairro não é isso — é
+muro pintado, portão de ferro numerado, a bilheteria com guichê e balcão, e
+concertina em cima; a arquibancada mal aparece por trás. Ganhou textura própria,
+num módulo de 172 e não de 46: com o módulo de casa o mesmo portão se repetia
+de dois em dois metros e o muro virava sanfona. E é a única fachada em faixa
+única, do chão ao topo — uma platibanda por cima cortaria o arame.
+
+![o muro do estádio, da calçada](../img/cena3d/muro-estadio.jpg)
 
 **E o quarteirão virou lote.** A malha entrega o quarteirão inteiro como um
 retângulo, e um retângulo só vira um galpão de duzentos metros. Cortado em
