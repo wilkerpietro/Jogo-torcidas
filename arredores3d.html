@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cena 3D — Arredores do estádio</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<link rel="stylesheet" href="css/cenas.css">
+<style>
+  body{display:block;padding:0}
+  header#topo{display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:2px solid var(--linha);padding:10px 16px}
+  header#topo h1{font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  header#topo span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);letter-spacing:.08em}
+  #abas{display:flex;flex-wrap:wrap;gap:7px;padding:9px 16px;
+    border-bottom:1px solid var(--linha);background:#141412}
+  #abas button{background:#1e1e1a;border:1px solid var(--linha);color:var(--apagado);
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;padding:6px 13px;cursor:pointer}
+  #abas button:hover{color:#fff;border-color:var(--ouro)}
+  #abas button.on{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+  #abas small{font-family:var(--mono);font-size:10px;color:var(--fraco);
+    align-self:center;margin-left:6px}
+
+  #palco{position:relative;width:100%;max-width:1460px;margin:12px auto;padding:0 12px}
+  #caixa{position:relative;aspect-ratio:16/10;border:1px solid #45443f;background:#0e0e0d;
+    overflow:hidden}
+  #cv3d,#cv2d{position:absolute;inset:0;width:100%;height:100%;display:block;
+    touch-action:none;cursor:grab}
+  #cv3d:active{cursor:grabbing}
+  #cv2d{background:#16150f}
+  .escondido{display:none}
+  #rotulos{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .rot3d{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
+    font-family:var(--mono);font-size:10px;font-weight:600;color:#e0b040;
+    text-shadow:0 1px 3px #000,0 0 6px #000;padding-bottom:3px}
+
+  #legenda{position:absolute;left:14px;bottom:12px;font-family:var(--mono);font-size:10px;
+    line-height:1.75;color:#cfcabd;background:#0e0e0dcc;border:1px solid #45443f;
+    padding:8px 11px;pointer-events:none;letter-spacing:.04em}
+  #legenda b{color:var(--ouro)}
+  #estado{position:absolute;right:14px;top:12px;font-family:var(--mono);font-size:11px;
+    line-height:1.8;color:#cfcabd;background:#0e0e0dcc;border:1px solid #45443f;
+    padding:8px 12px;pointer-events:none;text-align:right;letter-spacing:.04em}
+  #estado b{color:#fff;font-size:15px}
+  #erro{padding:20px;font-family:var(--mono);font-size:12px;color:#e07a6a;
+    white-space:pre-wrap;display:none}
+</style>
+</head>
+<body>
+
+<header id="topo">
+  <h1 id="titulo">Arredores do estádio</h1>
+  <span>MESMA SIMULAÇÃO, OUTRO DESENHISTA · <b style="color:var(--ouro)">V</b> ALTERNA 2D/3D</span>
+</header>
+
+<div id="abas"></div>
+
+<div id="palco">
+  <div id="caixa">
+    <canvas id="cv3d"></canvas>
+    <canvas id="cv2d" class="escondido" width="1280" height="800"></canvas>
+    <div id="rotulos"></div>
+    <div id="estado"></div>
+    <div id="legenda">
+      <b>WASD</b> anda (relativo à câmera) &nbsp; <b>1–4</b> formação &nbsp;
+      <b>Q</b> pedra &nbsp; <b>E</b> bomba &nbsp; <b>R</b> recuar<br>
+      <b>arrastar</b> gira a câmera &nbsp; <b>roda</b> aproxima e afasta<br>
+      câmera: <b>Z</b> ombro · <b>X</b> alta · <b>C</b> maquete · <b>F</b> zenital &nbsp;
+      <b>B</b> altura dos prédios &nbsp; <b>H</b> sombra<br>
+      <b>V</b> alterna 2D ↔ 3D na mesma partida &nbsp; <b>ESPAÇO</b> pausa
+    </div>
+  </div>
+</div>
+
+<pre id="erro"></pre>
+
+<script src="js/nucleo.js"></script>
+<script src="dados/nomes.js"></script>
+<script src="dados/cena_arredores.js"></script>
+<script src="dados/cenas_foto.js"></script>
+<script src="dados/cenas_editadas.js"></script>
+<script src="dados/cenas.js"></script>
+<script src="js/diajogo/cenario.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/bancada.js"></script>
+
+<script type="module">
+/* =========================================================
+   BANCADA 3D
+   Roda a MESMA cena da bancada 2D (`arredores.html`), com o
+   mesmo `combate.js` e o mesmo `criarEstado`. O que muda é só
+   quem desenha. É por isso que o V alterna sem recomeçar nada:
+   os dois desenhistas leem o mesmo `J`.
+   ========================================================= */
+import { criar } from './js/diajogo/cena3d.js';
+
+const A = TO.diaJogo.arredores;
+const C = TO.diaJogo.combate;
+
+const cv3d = document.getElementById('cv3d');
+const cv2d = document.getElementById('cv2d');
+const caixa = document.getElementById('caixa');
+const ctx2d = cv2d.getContext('2d');
+const elEstado = document.getElementById('estado');
+
+let tela3d = true, pausado = false, J = null, ant = 0;
+const brutas = {};
+let vista;
+
+try { vista = criar(cv3d); }
+catch (e) { falhar(e); }
+
+function falhar(e) {
+  const p = document.getElementById('erro');
+  p.style.display = 'block';
+  p.textContent = 'A cena 3D não subiu:\n\n' + ((e && e.stack) || e) +
+    '\n\nSe a mensagem fala de módulo ou de CORS, a página está aberta ' +
+    'em file:// — abra por um servidor local:\n  python3 -m http.server\n' +
+    '  http://localhost:8000/arredores3d.html';
+  throw e;
+}
+
+/* ---- abas: a mesma lista da bancada 2D ---- */
+const CENAS = TO.diaJogo.bancada.CENAS;
+const botoes = {};
+function abrir(c) {
+  for (const k in botoes) botoes[k].classList.toggle('on', k === c.rot);
+  document.getElementById('titulo').textContent = c.titulo;
+  document.title = c.titulo + ' — cena 3D';
+  const D = A.usarCena(c.id);
+  J = C.criarEstado(Object.assign({ local: c.id }, c.cfg));
+  TO.diaJogo.J = J;
+  vista.montar(D);
+}
+const barra = document.getElementById('abas');
+for (const c of CENAS) {
+  const b = document.createElement('button');
+  b.textContent = c.rot;
+  b.onclick = () => { abrir(c); cv3d.focus(); };
+  botoes[c.rot] = b;
+  barra.appendChild(b);
+}
+const dica = document.createElement('small');
+dica.textContent = 'trocar de aba recomeça a noite';
+barra.appendChild(dica);
+
+vista.ligarRotulos(document.getElementById('rotulos'));
+
+/* ---- teclado ---- */
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  brutas[k] = true;
+  if (!J) return;
+  if (k >= '1' && k <= '4') J.form = Object.keys(C.FORMACOES)[+k - 1];
+  else if (k === 'q') C.arremessar(J, 'pedra');
+  else if (k === 'e') C.arremessar(J, 'bomba');
+  else if (k === 'r') C.alternarRecuo(J);
+  else if (k === 'v') { tela3d = !tela3d; aplicarTela(); }
+  else if (k === 'z') vista.irPara('ombro');
+  else if (k === 'x') vista.irPara('alto');
+  else if (k === 'c') vista.irPara('maquete');
+  else if (k === 'f') vista.irPara('zenital');
+  else if (k === 'b') vista.trocarModo();
+  else if (k === 'h') vista.trocarSombra();
+  else if (k === ' ') { pausado = !pausado; e.preventDefault(); }
+});
+addEventListener('keyup', e => { brutas[e.key.toLowerCase()] = false; });
+
+function aplicarTela() {
+  cv3d.classList.toggle('escondido', !tela3d);
+  cv2d.classList.toggle('escondido', tela3d);
+  document.getElementById('rotulos').style.display = tela3d ? 'block' : 'none';
+}
+
+/* ---- o desenhista 2D, igualzinho ao da ponte ---- */
+function desenhar2d() {
+  const s = Math.min(cv2d.width / A.W, cv2d.height / A.H);
+  ctx2d.setTransform(1, 0, 0, 1, 0, 0);
+  ctx2d.fillStyle = '#0e0e0d';
+  ctx2d.fillRect(0, 0, cv2d.width, cv2d.height);
+  ctx2d.setTransform(s, 0, 0, s, (cv2d.width - A.W * s) / 2,
+                                 (cv2d.height - A.H * s) / 2);
+  C.desenhar(J, ctx2d, {});
+  ctx2d.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+/* Na câmera de ombro, W tem que ser "pra frente da câmera" e não
+   "pro norte da cena". `moverLider` só lê quatro booleanos, então a
+   intenção é girada aqui antes de entrar. Ver `girarEntrada`. */
+function entradaDoQuadro() {
+  const t = Object.assign({}, brutas);
+  const g = vista.girarEntrada(brutas);
+  t.w = !!g.w; t.a = !!g.a; t.s = !!g.s; t.d = !!g.d;
+  t.arrowup = t.arrowdown = t.arrowleft = t.arrowright = false;
+  return t;
+}
+
+let quadrosFps = 0, fps = 0, marcoFps = 0;
+
+function laco(agora) {
+  let dt = (agora - ant) / 1000; ant = agora;
+  if (dt > 0.05) dt = 0.05;
+  if (J && !pausado) C.passo(J, dt, entradaDoQuadro(), true);
+  if (J) {
+    if (tela3d) { vista.redimensionar(); vista.quadro(J, dt); }
+    else desenhar2d();
+    /* medido em tempo de parede, não no dt já limitado a 0,05:
+       com o limite, uma queda pra 2 quadros por segundo aparecia
+       como 20 e a conta mentia justo quando importava */
+    quadrosFps++;
+    if (agora - marcoFps >= 500) {
+      fps = Math.round(quadrosFps * 1000 / (agora - marcoFps));
+      marcoFps = agora; quadrosFps = 0;
+    }
+    const dePe = l => J.discos.filter(
+      d => d.lado === l && d.vivo && !d.entrou && !d.sumiu).length;
+    const c = vista.conta || {};
+    elEstado.innerHTML =
+      '<b>' + (tela3d ? '3D · ' + vista.vista : '2D') + '</b> · ' + fps + ' fps<br>' +
+      'mandante <b>' + dePe('mandante') + '</b> · visitante <b>' + dePe('visitante') + '</b><br>' +
+      'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · CORDÃO ROMPIDO' : '') + '<br>' +
+      'prédios ' + (c.blocos || 0) + ' · caixas ' + (c.retangulos || 0) +
+      ' · altura ' + vista.modo + (vista.sombra ? '' : ' · sem sombra') +
+      (pausado ? '<br>PAUSADO' : '');
+  }
+  requestAnimationFrame(laco);
+}
+
+new ResizeObserver(() => { if (tela3d) vista.redimensionar(); }).observe(caixa);
+aplicarTela();
+abrir(CENAS[0]);
+ant = marcoFps = performance.now();
+requestAnimationFrame(laco);
+
+/* à mão no console, pra medir sem instrumentar nada */
+window.cena3d = { get J() { return J; }, vista };
+</script>
+</body>
+</html>
