@@ -24,7 +24,9 @@ python3 -m http.server 8000
 ```
 
 **Controles:** WASD anda (relativo à câmera), 1–4 formação, Q pedra, E bomba,
-R recuar, arrastar gira a câmera, roda aproxima. `Z` ombro, `X` alta,
+R recuar, arrastar gira a câmera, roda aproxima. A briga acontece sozinha
+quando os dois bondes se encostam — o soco, o tranco e a queda são pose, não
+botão. `Z` ombro, `X` alta,
 `C` maquete, `F` zenital, `B` troca a altura dos prédios, `H` liga e desliga a sombra,
 **`V` alterna 2D ↔ 3D na mesma partida** — é a tecla que interessa, porque
 mostra os dois desenhistas lendo o mesmo estado, sem recomeçar nada.
@@ -75,19 +77,69 @@ escolher.
 
 ## 3. O boneco
 
-Seis peças de caixa — cabeça, tronco, dois braços, duas pernas — e **uma malha
-instanciada por peça**: 400 pessoas custam 6 chamadas de desenho, não 400. A
-passada é procedural: o desenhista guarda a posição do quadro anterior, tira
-dali a direção e a velocidade, e balança quadril e ombro com isso. O tronco
-sobe e desce meio pixel na passada, que é o que separa "boneco deslizando" de
-"gente andando". Quem cai deita com o mesmo boneco.
+Oito peças de caixa — cabeça, tronco, dois braços com **cotovelo** (braço e
+antebraço) e duas pernas — e **uma malha instanciada por peça**: 400 pessoas
+custam 8 chamadas de desenho, não 400. A passada é procedural: o desenhista
+guarda a posição do quadro anterior, tira dali a direção e a velocidade, e
+balança quadril e ombro com isso. O tronco sobe e desce meio pixel na passada,
+que é o que separa "boneco deslizando" de "gente andando".
 
-**Nenhum arquivo de modelo, nenhum osso, nenhuma animação importada.** É de
-propósito: o boneco de caixa é o *lugar* onde o boneco do Blender entra depois,
-com a mesma interface — `porPessoa(alvo, i, estado, caído, cores)`.
+**O cotovelo não é capricho.** Com um osso por braço, guarda e soco são o mesmo
+gesto com dois ângulos parecidos e ninguém distingue um do outro a três metros.
+Com dois ossos, guarda é braço baixo com o antebraço em pé na frente do rosto, e
+soco é o antebraço abrindo — são silhuetas diferentes, e leem de longe. Custou
+duas malhas instanciadas e 4 chamadas de desenho a mais.
 
-O líder usa boné dourado. A camisa é a cor primária da torcida e o calção é a
-secundária — as mesmas duas cores que o disco 2D usa (§8.12).
+**Nenhum arquivo de modelo, nenhum osso importado, nenhuma animação de fora.**
+É de propósito: o boneco de caixa é o *lugar* onde o boneco do Blender entra
+depois, com a mesma interface — `porPessoa(alvo, i, estado, sinais, cores)`.
+
+A manga é a cor primária da torcida e o antebraço é pele; o calção é a cor
+secundária. São as mesmas duas cores que o disco 2D usa (§8.12). O líder usa
+boné dourado.
+
+---
+
+## 3.1 Bater e apanhar — tirado do que a simulação já guarda
+
+`combate.js` não tem pose, não tem direção e não tem "estou dando um soco
+agora". Tem outra coisa, e ela basta:
+
+| campo | o que é | vira |
+|---|---|---|
+| `d.golpe` | 0,12 e caindo — acertei alguém neste quadro | soco, alternando o braço |
+| `d.tremor` | até 6, caindo a 9/s — levei pancada agora | tranco: cabeça pra trás, braços abrindo |
+| `d.hostil` | até 4 s depois do último contato | guarda alta |
+| `d.atordoado` | cassetete da PM, 0,7 s | perna bamba |
+| `d.preso` | — | sentado no chão, mãos pra trás |
+| `p.cooldown` | salta pra 1,9 no quadro em que o PM acerta | cacetada |
+
+**Nada foi acrescentado ao combate.** Se o boneco levanta o braço, é porque o
+dano saiu de verdade — a pose é leitura do estado, não uma segunda simulação.
+
+Duas coisas que a simulação não guarda e o desenho precisava:
+
+**Pra quem virar o rosto.** Ninguém soca de lado. Quem está em briga encara o
+inimigo mais perto, e isso é uma busca — que a 400 pessoas seria 400 × 400 por
+quadro. Resolvido com o mesmo truque de balde que `combate.js` usa na separação:
+O(n) pra montar, nove baldes pra consultar, e só montado quando existe alguém
+em briga na cena.
+
+**Quem jogou a pedra.** `arremessar` não marca ninguém. Mas o projétil tem
+velocidade constante e guarda o tempo de voo, então a origem volta por
+`x − vx·t` — e quem está em cima dela é o braço. Daí sai a pose de armar atrás
+da cabeça e soltar à frente.
+
+**Um erro que valeu a nota:** a primeira versão lia `tremor` como *nível*. Como
+ele satura em 6 e fica lá enquanto o contato durar, o boneco brigava com a
+cabeça jogada pra trás o tempo todo, olhando pro céu. O que interessa é a
+**subida**: cada pancada nova dá um tranco de 0,3 s e o tranco passa.
+
+![soco](../img/cena3d/soco.jpg)
+
+![briga de bonde](../img/cena3d/briga.jpg)
+
+![caído e preso](../img/cena3d/caido-preso.jpg)
 
 ---
 
@@ -97,17 +149,19 @@ Medidos no navegador, na cena dos arredores, com 63 pessoas em pé.
 
 | o quê | valor |
 |---|---:|
-| CPU do desenhista 3D por quadro | **0,25 ms** |
+| CPU do desenhista 3D por quadro, noite parada | **0,36 ms** |
+| CPU do desenhista 3D por quadro, **todo mundo em briga** | **0,47 ms** |
 | CPU da simulação por quadro (`combate.passo`) | **0,61 ms** |
-| montar os prédios do zero (BFS + greedy + geometria) | **20 ms** |
-| chamadas de desenho por quadro | **22** |
-| triângulos na cena | **~7 000** |
+| montar os prédios do zero (BFS + greedy + geometria) | **21 ms** |
+| chamadas de desenho por quadro | **26** |
+| triângulos na cena | **~8 700** |
 | prédios / caixas nos arredores | 15 / 111 |
 | prédios / caixas na praça | 8 / 105 |
 
-**O desenhista 3D custa menos da metade do que a própria simulação custa.**
-Isso responde a pergunta de CPU e é o número que mais importa: pôr em pé não é
-o gargalo.
+**Com a briga inteira animada, o desenhista 3D ainda custa menos do que a
+própria simulação.** Isso responde a pergunta de CPU e é o número que mais
+importa: pôr em pé não é o gargalo. As poses de briga cobraram 0,11 ms — o
+índice espacial de "quem encarar" e as duas peças de braço a mais.
 
 **O que eu não pude medir: a placa de vídeo.** Este ambiente só tem rasterizador
 por software (SwiftShader), onde a cena roda a 4–5 quadros por segundo. Com 22
@@ -185,6 +239,15 @@ desenhada; em 3D é altura). O portão do estádio deixa de ser uma barra
 vermelha e vira uma coisa em que você corre. Isso não é pouco, mas é *outra*
 coisa — é ambiente, não é tática.
 
+**A câmera já não entra em prédio.** Ela caminha do jogador até a posição e
+compara a altura de cada célula com a altura do olho ali; achou parede mais
+alta, encosta e olha de cima pra baixo. O campo de altura por célula é
+preenchido quando os prédios são montados — a malha de caminhabilidade sozinha
+não servia, porque ela não sabe se o obstáculo tem 16 ou 300 de alto e canteiro
+não tapa nada. A primeira tentativa subia a câmera por cima do prédio; com
+prédio de 280 isso virava vista de pássaro no meio da briga, e foi trocado por
+encostar.
+
 **A saída honesta é não escolher uma câmera só.** Já está no ar: `Z` ombro para
 o deslocamento e a chegada, `X` alta para a briga, `C` maquete para ler o
 cordão. Um jogo que troca de câmera pela fase da noite mantém a decisão
@@ -197,10 +260,10 @@ uma câmera só, que seja a `alta` (`X`), que é a que ainda mostra formação.
 
 Em ordem de quanto muda a impressão por hora gasta.
 
-1. **Animação de briga.** Hoje o boneco só anda. Bater, apanhar, arremessar e
-   ser preso não têm pose nenhuma — numa briga o corpo vira um poste. É o buraco
-   mais visível. Dá pra fazer procedural (braço avança no `d.golpe`, corpo
-   recua no dano) sem sair do boneco de caixa: **é a próxima coisa a fazer.**
+1. **Joelho, e peso no passo.** O braço ganhou cotovelo; a perna não. Andar
+   ainda é perna reta indo e voltando, e correr é a mesma coisa mais rápida.
+   Um joelho e um agachamento no apoio separam andar de correr de fugir — e
+   fugir é um estado que a simulação já tem (`d.fugindo`) e o desenho ignora.
 2. **Meio-fio e calçada.** A malha diz "dá pra pisar" e mais nada, então a
    calçada é chão pintado e o prédio nasce direto do asfalto. Um degrau de 15 cm
    em volta de cada quarteirão resolve 80% da sensação de rua.
@@ -211,8 +274,9 @@ Em ordem de quanto muda a impressão por hora gasta.
    câmera de ombro amplia isso ~14×. Tem um granulado por cima segurando, mas
    asfalto e calçada continuam borrados a dois metros. O certo é uma segunda
    camada de detalhe por tipo de piso, tirada da máscara.
-5. **Colisão da câmera.** Ela atravessa parede. Num corredor estreito o
-   jogador vê o miolo do prédio.
+5. **Agarrão e debandada.** `d.agarrado` (mão em cima de quem foge) e
+   `d.correEm` (debandou mas ainda não virou as costas) existem na simulação e
+   não têm pose. São dois dos momentos mais fortes da cena.
 6. **Entrada por vetor.** `moverLider` lê quatro booleanos, então a câmera de
    ombro só consegue mandar oito direções (giro a intenção e devolvo os quatro
    que mais se parecem com ela). Andar na diagonal contra a parede fica

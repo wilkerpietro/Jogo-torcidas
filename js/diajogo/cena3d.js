@@ -55,10 +55,17 @@ const MAX_MODS  = 120;
    desenho. Mexer nisso é mexer na colisão, não aqui.
    --------------------------------------------------------- */
 const B = {
-  perna:  { l: 3.2, a: 12, p: 3.2, quadril: 13, lado: 2.1 },
-  tronco: { l: 6.6, a: 12, p: 4.4, centro: 19 },
+  perna:  { l: 3.2, a: 12,  p: 3.2, quadril: 13, lado: 2.1 },
+  tronco: { l: 6.6, a: 12,  p: 4.4, centro: 19 },
   cabeca: { l: 5.4, a: 5.4, p: 5.4, centro: 28.4 },
-  braco:  { l: 2.4, a: 11, p: 2.4, ombro: 24.4, lado: 4.4 }
+  /* O BRAÇO TEM COTOVELO, E ISSO NÃO É CAPRICHO.
+     Com um osso só, guarda e soco são o mesmo gesto com dois
+     ângulos parecidos, e de longe ninguém distingue um do outro.
+     Com dois, guarda é braço baixo e antebraço em pé na frente do
+     rosto, e soco é o antebraço abrindo — leem-se de longe e são
+     coisas diferentes. Custa duas malhas instanciadas a mais. */
+  bracoS: { l: 2.5, a: 6,   p: 2.5, ombro: 24.4, lado: 4.4 },
+  bracoI: { l: 2.2, a: 6.5, p: 2.2 }
 };
 const PELE = [0x8d5f42, 0xa87a56, 0x6f4a34, 0xc09270, 0x53382a];
 
@@ -221,6 +228,18 @@ export function criar(canvas) {
   const grupoPredios = new THREE.Group();
   cena.add(grupoPredios);
 
+  /* Altura de cada célula da malha, preenchida quando os prédios
+     são montados. Serve pra câmera: "tem prédio entre mim e o
+     jogador?" é uma pergunta que a malha de caminhabilidade não
+     responde — ela não sabe se o obstáculo tem 16 ou 300 de alto,
+     e canteiro não é parede. */
+  const alturaCel = new Float32Array(COLS * ROWS);
+  function alturaEm(x, z) {
+    const c = Math.floor(x / CEL), r = Math.floor(z / CEL);
+    if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return 0;
+    return alturaCel[r * COLS + c];
+  }
+
   function limparGrupo(g) {
     for (const o of [...g.children]) {
       g.remove(o);
@@ -316,6 +335,7 @@ export function criar(canvas) {
     const M = MODOS[modo];
     const px = ctxChao.getImageData(0, 0, W, H).data;
     const { dono, comps } = componentes();
+    alturaCel.fill(0);
 
     const pTopo = [], uvTopo = [], iTopo = [];
     const pPar = [], nPar = [], uvPar = [], cPar = [];
@@ -359,6 +379,8 @@ export function criar(canvas) {
         const alt = recorta
           ? altBase * (0.74 + ((Math.sin(x0 * 12.9898 + y0 * 78.233) * 43758.5) % 1 + 1) % 1 * 0.62)
           : altBase;
+        for (let r = y0 / CEL; r < y1 / CEL; r++)
+          for (let c = x0 / CEL; c < x1 / CEL; c++) alturaCel[r * COLS + c] = alt;
         /* --- telhado --- */
         const base = pTopo.length / 3;
         const q = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
@@ -453,7 +475,8 @@ export function criar(canvas) {
     return m;
   };
 
-  const PECAS = ['cabeca', 'tronco', 'bracoE', 'bracoD', 'pernaE', 'pernaD'];
+  const PECAS = ['cabeca', 'tronco', 'bracoSE', 'bracoIE', 'bracoSD', 'bracoID',
+                 'pernaE', 'pernaD'];
   const gente = {}, pm = {};
   for (const p of PECAS) {
     gente[p] = instanciar(caixa1, MAX_GENTE);
@@ -482,30 +505,158 @@ export function criar(canvas) {
   }
   membro('tronco', raiz, 0, B.tronco.centro, 0, B.tronco, false);
   membro('cabeca', raiz, 0, B.cabeca.centro, 0, B.cabeca, false);
-  membro('bracoE', raiz, -B.braco.lado, B.braco.ombro, 0, B.braco, true);
-  membro('bracoD', raiz,  B.braco.lado, B.braco.ombro, 0, B.braco, true);
+  membro('bracoSE', raiz, -B.bracoS.lado, B.bracoS.ombro, 0, B.bracoS, true);
+  membro('bracoSD', raiz,  B.bracoS.lado, B.bracoS.ombro, 0, B.bracoS, true);
+  /* o cotovelo pendura na ponta do braço, então o antebraço herda
+     o giro do ombro de graça */
+  membro('bracoIE', juntas.bracoSE.j, 0, -B.bracoS.a, 0, B.bracoI, true);
+  membro('bracoID', juntas.bracoSD.j, 0, -B.bracoS.a, 0, B.bracoI, true);
   membro('pernaE', raiz, -B.perna.lado, B.perna.quadril, 0, B.perna, true);
   membro('pernaD', raiz,  B.perna.lado, B.perna.quadril, 0, B.perna, true);
 
-  /* o que o desenho precisa saber e a simulação não guarda:
-     pra onde a pessoa está virada e em que ponto da passada.
-     Sai da diferença de posição entre dois quadros. */
+  /* =======================================================
+     O QUE A SIMULAÇÃO NÃO GUARDA
+
+     `combate.js` não tem pose, não tem direção e não tem "estou
+     dando um soco agora". Tem outra coisa, e ela basta:
+
+       d.golpe      0,12 e caindo — acertei alguém neste quadro
+       d.tremor     até 6, caindo a 9/s — levei pancada agora
+       d.hostil     até 4 s — estou em briga, mesmo sem contato
+       d.atordoado  cassetete da PM, 0,7 s
+       p.cooldown   sobe pra 1,9 no quadro em que o PM acerta
+
+     A pose sai daí, e só daí. Nada foi acrescentado ao combate:
+     se o boneco levanta o braço, é porque o dano saiu de verdade.
+     A direção e a fase da passada saem da diferença de posição
+     entre dois quadros — também sem tocar na simulação.
+     ======================================================= */
+  const TAU = Math.PI * 2;
+  const curto = (de, para) => ((para - de + Math.PI * 3) % TAU) - Math.PI;
+  const chegar = (a, b, k) => a + (b - a) * Math.min(1, Math.max(0, k));
+
+  /* ombro (S) e cotovelo (I) de cada pose. Ângulo negativo no
+     ombro joga o braço pra frente; negativo no cotovelo dobra o
+     antebraço pra cima. */
+  const POSE = {
+    guardaS: -0.32, guardaI: -2.05, guardaZ: 0.34,  // punho no queixo
+    socoS:   -1.46, socoI:   -0.14,                 // braço aberto
+    armaS:    0.95, armaI:   -2.35,                 // pedra atrás da cabeça
+    soltaS:  -1.95, soltaI:  -0.20                  // já soltou
+  };
+
+  /* Sai rápido, segura estendido um instante e volta devagar. É o
+     desenho de curva de qualquer soco, e é o que separa "braço
+     subindo e descendo" de "soco". */
+  function curvaSoco(t) {
+    if (t < 0.30) { const k = t / 0.30; return k * k * (3 - 2 * k); }
+    if (t < 0.46) return 1;
+    const k = (t - 0.46) / 0.54;
+    return 1 - k * k;
+  }
+
   const anda = new Map();
-  function passada(chave, x, z, dt) {
+  function estado(chave, x, z, dt) {
     let e = anda.get(chave);
     if (!e) {
-      e = { x: x, z: z, ang: 0, fase: Math.random() * 6.28, vel: 0 };
+      e = { x: x, z: z, ang: 0, fase: Math.random() * TAU, vel: 0,
+            guarda: 0, soco: 0, socoLado: 0, arremesso: 0, recuo: 0,
+            rumo: null, cdAnt: 0, tremAnt: 0 };
       anda.set(chave, e);
     }
     const dx = x - e.x, dz = z - e.z;
     const d = Math.hypot(dx, dz);
-    if (d > 0.05) {
-      e.ang = Math.atan2(dx, dz);
-      e.fase += d * 0.19;
-    }
     e.vel = dt > 0 ? Math.min(1, (d / dt) / 70) : 0;
+    if (d > 0.05) { e.fase += d * 0.19; e.rumo = Math.atan2(dx, dz); }
     e.x = x; e.z = z;
     return e;
+  }
+
+  /* Índice espacial, só pra descobrir pra quem virar o rosto. É o
+     mesmo truque de balde que `combate.js` usa na separação: O(n)
+     pra montar, nove baldes pra consultar. Sem ele, "encarar quem
+     está batendo em mim" seria 400 × 400 por quadro. Só é montado
+     quando existe alguém em briga na cena. */
+  const BALDE = 52;
+  const baldes = new Map();
+  const chave = (x, y) => (Math.floor(x / BALDE) + 64) * 4096 +
+                          (Math.floor(y / BALDE) + 64);
+  function indexar(J) {
+    baldes.clear();
+    const por = o => {
+      const k = chave(o.x, o.y);
+      const l = baldes.get(k);
+      if (l) l.push(o); else baldes.set(k, [o]);
+    };
+    for (const d of J.discos) if (d.vivo) por(d);
+    for (const p of J.policiais) if (p.vivo) por(p);
+  }
+  /* o PM não tem `lado`, então ele é inimigo de todo disco e de
+     mais nenhum PM — que é exatamente a regra da cena */
+  function rumoDoInimigo(o) {
+    const cx = Math.floor(o.x / BALDE), cy = Math.floor(o.y / BALDE);
+    let md = 68 * 68, alvo = null;
+    for (let r = -1; r <= 1; r++) for (let c = -1; c <= 1; c++) {
+      const l = baldes.get((cx + c + 64) * 4096 + (cy + r + 64));
+      if (!l) continue;
+      for (const q of l) {
+        if (q === o || q.lado === o.lado) continue;
+        const dx = q.x - o.x, dy = q.y - o.y, dd = dx * dx + dy * dy;
+        if (dd < md) { md = dd; alvo = q; }
+      }
+    }
+    return alvo ? Math.atan2(alvo.x - o.x, alvo.y - o.y) : null;
+  }
+
+  /* Quem jogou a pedra? A simulação não marca. Mas o projétil tem
+     velocidade constante e guarda o tempo de voo, então a origem
+     volta por `x − vx·t` — e quem está em cima dela é o braço. */
+  const vistos = new WeakSet();
+  function acharArremesso(J) {
+    for (const p of J.projeteis) {
+      if (vistos.has(p)) continue;
+      vistos.add(p);
+      const ox = p.x - p.vx * p.t, oy = p.y - p.vy * p.t;
+      let melhor = null, md = 20 * 20;
+      for (const d of J.discos) {
+        if (!d.vivo || d.lado !== p.lado) continue;
+        const dx = d.x - ox, dy = d.y - oy, dd = dx * dx + dy * dy;
+        if (dd < md) { md = dd; melhor = d; }
+      }
+      const e = melhor && anda.get(melhor);
+      if (e) { e.arremesso = 0.58; e.rumoTiro = Math.atan2(p.vx, p.vy); }
+    }
+  }
+
+  /* avança a máquina de pose de uma pessoa, um quadro */
+  function animar(e, sin, dt, brigando) {
+    const querGuarda = brigando && !sin.fugindo && !sin.entrando;
+    e.guarda = chegar(e.guarda, querGuarda ? 1 : 0, dt * (querGuarda ? 5 : 2));
+
+    if (e.soco > 0) { e.soco += dt * 2.4; if (e.soco >= 1) e.soco = 0; }
+    if (e.soco === 0 && sin.golpe > 0 && e.arremesso <= 0) {
+      e.soco = 0.001; e.socoLado ^= 1;
+    }
+
+    /* O RECUO É EVENTO, NÃO NÍVEL.
+       `tremor` satura em 6 e fica lá enquanto o contato durar, então
+       ler o valor cru deixava a cabeça jogada pra trás a briga
+       inteira — o boneco brigava olhando pro céu. O que interessa é
+       a SUBIDA: cada pancada nova dá um tranco, e o tranco passa. */
+    const tr = sin.tremor || 0;
+    if (tr > e.tremAnt + 0.25) e.recuo = 1;
+    e.tremAnt = tr;
+    e.recuo = Math.max(0, e.recuo - dt * 3.4);
+
+    if (e.arremesso > 0) e.arremesso = Math.max(0, e.arremesso - dt);
+
+    /* Pra onde encarar: andando, pro rumo do passo; parado numa
+       briga, pro sujeito mais perto; arremessando, pro alvo.
+       Ninguém soca de lado. */
+    let rumo = e.rumo;
+    if (e.arremesso > 0 && e.rumoTiro != null) rumo = e.rumoTiro;
+    else if (e.inimigo != null && (e.vel < 0.3 || sin.golpe > 0)) rumo = e.inimigo;
+    if (rumo != null) e.ang += curto(e.ang, rumo) * Math.min(1, dt * (sin.golpe > 0 ? 12 : 6));
   }
 
   const corAux = new THREE.Color();
@@ -513,31 +664,123 @@ export function criar(canvas) {
   const corLado = (l, claro) => l === 'visitante'
     ? (claro ? 0xe8e8e8 : 0x2a5fa8) : (claro ? 0xe8e4dc : 0xc0392b);
 
-  /* põe uma pessoa: posiciona a raiz, gira as quatro juntas e
-     copia as seis matrizes do mundo pras seis instâncias */
-  function porPessoa(alvo, i, e, caido, cores) {
+  /* põe uma pessoa: posiciona a raiz, gira as juntas e copia as
+     seis matrizes do mundo pras seis instâncias */
+  function porPessoa(alvo, i, e, sin, cores) {
+    const bal = Math.sin(e.fase) * 0.95 * e.vel;
+    const sobe = Math.abs(Math.cos(e.fase)) * 0.9 * e.vel;
+    const oE = juntas.bracoSE.j, oD = juntas.bracoSD.j;   // ombros
+    const cE = juntas.bracoIE.j, cD = juntas.bracoID.j;   // cotovelos
+
     raiz.position.set(e.x, 0, e.z);
     raiz.rotation.set(0, e.ang, 0);
-    const bal = Math.sin(e.fase) * 0.95 * e.vel;
-    juntas.pernaE.j.rotation.x =  bal;
-    juntas.pernaD.j.rotation.x = -bal;
-    juntas.bracoE.j.rotation.x = -bal * 0.72;
-    juntas.bracoD.j.rotation.x =  bal * 0.72;
-    /* o tronco sobe e desce com a passada; é o que separa
-       "boneco deslizando" de "gente andando" */
-    const sobe = Math.abs(Math.cos(e.fase)) * 0.9 * e.vel;
+    juntas.tronco.j.rotation.set(0, 0, 0);
+    juntas.cabeca.j.rotation.set(0, 0, 0);
+    oE.rotation.set(-bal * 0.72, 0, 0);
+    oD.rotation.set( bal * 0.72, 0, 0);
+    cE.rotation.set(-0.22, 0, 0);
+    cD.rotation.set(-0.22, 0, 0);
+    juntas.pernaE.j.rotation.set( bal, 0, 0);
+    juntas.pernaD.j.rotation.set(-bal, 0, 0);
     juntas.tronco.j.position.y = B.tronco.centro + sobe;
     juntas.cabeca.j.position.y = B.cabeca.centro + sobe;
-    if (caido) {
-      /* caído deita: gira o corpo inteiro e desce pro chão.
-         O mesmo boneco, sem peça nova. */
+
+    if (sin.preso) {
+      /* Preso senta no chão com as mãos pra trás. É o outro fim da
+         cena e no 2D ele era só um disco verde apagado.
+         −11 põe a perna deitada encostando no asfalto: o quadril
+         nasce em 13, a perna tem 3,2 de grossura, então o eixo dela
+         precisa cair pra ~1,6. */
+      raiz.position.y = -11.2;
+      juntas.pernaE.j.rotation.x = -1.45;
+      juntas.pernaD.j.rotation.x = -1.35;
+      oE.rotation.set(1.05, 0, -0.25); cE.rotation.set(-0.55, 0, 0);
+      oD.rotation.set(1.05, 0,  0.25); cD.rotation.set(-0.55, 0, 0);
+      juntas.tronco.j.rotation.x = -0.12;
+      juntas.cabeca.j.rotation.x =  0.35;   // cabeça baixa
+    } else if (sin.caido) {
       raiz.rotation.set(-Math.PI / 2, e.ang, 0, 'YXZ');
       raiz.position.set(e.x, 4.6, e.z);
       juntas.pernaE.j.rotation.x = 0.25;
       juntas.pernaD.j.rotation.x = -0.15;
-      juntas.bracoE.j.rotation.x = 0.9;
-      juntas.bracoD.j.rotation.x = -0.6;
+      oE.rotation.x = 0.9;  cE.rotation.x = -0.9;
+      oD.rotation.x = -0.6; cD.rotation.x = -0.4;
+    } else {
+      /* ---- GUARDA: quem está em briga anda com o punho em cima.
+         `hostil` dura 4 s depois do último contato, então o bonde
+         inteiro fica de guarda enquanto a briga corre e larga
+         sozinho quando ela acaba — sem nenhuma flag nova. */
+      const g = e.guarda;
+      if (g > 0.01) {
+        oE.rotation.x = oE.rotation.x * (1 - g) + POSE.guardaS * g;
+        oD.rotation.x = oD.rotation.x * (1 - g) + POSE.guardaS * g;
+        cE.rotation.x = cE.rotation.x * (1 - g) + POSE.guardaI * g;
+        cD.rotation.x = cD.rotation.x * (1 - g) + POSE.guardaI * g;
+        oE.rotation.z =  POSE.guardaZ * g;
+        oD.rotation.z = -POSE.guardaZ * g;
+        juntas.tronco.j.rotation.x = 0.15 * g;
+      }
+
+      /* ---- SOCO */
+      if (e.soco > 0) {
+        const k = curvaSoco(e.soco);
+        const o = e.socoLado ? oD : oE, c = e.socoLado ? cD : cE;
+        o.rotation.x = POSE.guardaS + (POSE.socoS - POSE.guardaS) * k;
+        c.rotation.x = POSE.guardaI + (POSE.socoI - POSE.guardaI) * k;
+        o.rotation.z = (e.socoLado ? -POSE.guardaZ : POSE.guardaZ) * (1 - k * 0.9);
+        /* o tronco vai junto, e o pé entra meio passo: soco de braço
+           só é soco de brinquedo */
+        raiz.rotation.y = e.ang + (e.socoLado ? -1 : 1) * 0.34 * k;
+        juntas.tronco.j.rotation.x = 0.15 + 0.22 * k;
+        raiz.position.x += Math.sin(e.ang) * 2.6 * k;
+        raiz.position.z += Math.cos(e.ang) * 2.6 * k;
+        juntas.pernaE.j.rotation.x =  0.34 * k;
+        juntas.pernaD.j.rotation.x = -0.26 * k;
+      }
+
+      /* ---- ARREMESSO: arma atrás da cabeça e solta à frente */
+      if (e.arremesso > 0) {
+        const p = 1 - e.arremesso / 0.58;
+        const arma = p < 0.42;
+        const k = arma ? p / 0.42 : (p - 0.42) / 0.58;
+        const de = arma ? POSE.guardaS : POSE.armaS;
+        const ate = arma ? POSE.armaS : POSE.soltaS;
+        const dei = arma ? POSE.guardaI : POSE.armaI;
+        const atei = arma ? POSE.armaI : POSE.soltaI;
+        oD.rotation.set(de + (ate - de) * k, 0, -0.18);
+        cD.rotation.set(dei + (atei - dei) * k, 0, 0);
+        oE.rotation.set(-0.5, 0, 0.24); cE.rotation.set(-1.5, 0, 0);
+        raiz.rotation.y = e.ang + (arma ? 0.55 * k : 0.55 - 1.05 * k);
+        juntas.tronco.j.rotation.x = arma ? -0.22 * k : -0.22 + 0.62 * k;
+      }
+
+      /* ---- APANHAR: aditivo, porque se apanha no meio de tudo.
+         Cabeça pra trás, tronco quebrado, braços abrindo, e o
+         tremor que o 2D já desenhava, agora no corpo. */
+      if (e.recuo > 0.02) {
+        const r = e.recuo;
+        juntas.tronco.j.rotation.x -= 0.55 * r;
+        juntas.cabeca.j.rotation.x -= 0.62 * r;
+        juntas.cabeca.j.rotation.z  = (e.socoLado ? 0.3 : -0.3) * r;
+        oE.rotation.x += 0.55 * r; oE.rotation.z -= 0.45 * r;
+        oD.rotation.x += 0.55 * r; oD.rotation.z += 0.45 * r;
+        cE.rotation.x -= 0.40 * r;
+        cD.rotation.x -= 0.40 * r;
+        juntas.tronco.j.position.y -= 1.5 * r;
+        juntas.cabeca.j.position.y -= 2.1 * r;
+        raiz.position.x += (Math.random() - 0.5) * r * 2.4;
+        raiz.position.z += (Math.random() - 0.5) * r * 2.4;
+      }
+
+      /* ---- CASSETETE: 0,7 s de perna bamba */
+      if (sin.atordoado > 0) {
+        const t = sin.atordoado;
+        raiz.rotation.z = Math.sin(t * 26) * 0.20 * Math.min(1, t / 0.3);
+        juntas.pernaE.j.rotation.x = 0.30;
+        juntas.pernaD.j.rotation.x = -0.22;
+      }
     }
+
     raiz.updateMatrixWorld(true);
     for (const nome of PECAS) {
       alvo[nome].setMatrixAt(i, juntas[nome].m.matrixWorld);
@@ -554,19 +797,32 @@ export function criar(canvas) {
   }
 
   function sincronizarGente(J, dt) {
+    /* o índice só existe se tiver briga. Numa noite tranquila isto
+       não custa nada, que é o caso mais comum dos arredores. */
+    let temBriga = false;
+    for (const d of J.discos) if (d.vivo && d.hostil > 0) { temBriga = true; break; }
+    if (temBriga) indexar(J);
+    acharArremesso(J);
+
     let n = 0;
     for (const d of J.discos) {
       if (d.sumiu || d.entrou) continue;
       if (n >= MAX_GENTE) break;
-      const e = passada(d, d.x, d.y, d.vivo ? dt : 0);
+      const e = estado(d, d.x, d.y, d.vivo ? dt : 0);
       if (!d.vivo) e.vel = 0;
+      const brigando = d.vivo && (d.hostil > 0 || d.golpe > 0 || e.arremesso > 0);
+      e.inimigo = (temBriga && brigando) ? rumoDoInimigo(d) : null;
+      animar(e, d, dt, brigando);
+
       const camisa = d.cor ? hexDe(d.cor) : corLado(d.lado, false);
       const calcao = d.cor2 ? hexDe(d.cor2) : corLado(d.lado, true);
       const pele = PELE[(d.nome.charCodeAt(0) + d.nome.length) % PELE.length];
-      porPessoa(gente, n, e, !d.vivo, {
+      porPessoa(gente, n, e, d, {
         cabeca: d.lider ? 0xe0b040 : pele,      // o líder usa boné
         tronco: d.preso ? 0x2c4f3c : camisa,
-        bracoE: pele, bracoD: pele,
+        bracoSE: d.preso ? 0x2c4f3c : camisa,   // manga
+        bracoSD: d.preso ? 0x2c4f3c : camisa,
+        bracoIE: pele, bracoID: pele,           // antebraço
         pernaE: calcao, pernaD: calcao
       });
       n++;
@@ -578,11 +834,23 @@ export function criar(canvas) {
     let n = 0;
     for (const p of J.policiais) {
       if (n >= MAX_PMS) break;
-      const e = passada(p, p.x, p.y, p.vivo ? dt : 0);
+      const e = estado(p, p.x, p.y, p.vivo ? dt : 0);
       if (!p.vivo) e.vel = 0;
-      porPessoa(pm, n, e, !p.vivo, {
-        cabeca: 0x20262b, tronco: 0x1e3a2c, bracoE: 0x1e3a2c,
-        bracoD: 0x1e3a2c, pernaE: 0x15221a, pernaD: 0x15221a
+      /* O PM não guarda golpe nem tremor. O que ele guarda é o
+         `cooldown`, que salta pra 1,9 no quadro em que o cassetete
+         acerta — a subida dele é a cacetada. */
+      const bateu = p.vivo && p.cooldown > e.cdAnt + 0.01;
+      e.cdAnt = p.cooldown;
+      const sin = { golpe: bateu ? 1 : 0, tremor: 0, atordoado: 0,
+                    caido: !p.vivo, preso: false };
+      const brigando = p.vivo && (p.carga || bateu || e.soco > 0);
+      e.inimigo = brigando ? rumoDoInimigo(p) : null;
+      animar(e, sin, dt, brigando);
+      porPessoa(pm, n, e, sin, {
+        cabeca: 0x20262b, tronco: 0x1e3a2c,
+        bracoSE: 0x1e3a2c, bracoSD: 0x1e3a2c,
+        bracoIE: 0x2c4a38, bracoID: 0x2c4a38,
+        pernaE: 0x15221a, pernaD: 0x15221a
       });
       n++;
     }
@@ -685,6 +953,29 @@ export function criar(canvas) {
       alvoSuave.x + dist * Math.cos(incl) * Math.sin(giro),
       alvoSuave.y + dist * Math.sin(incl),
       alvoSuave.z + dist * Math.cos(incl) * Math.cos(giro));
+    /* A CÂMERA NÃO ENTRA EM PRÉDIO.
+       Caminha do jogador até a posição e compara a altura de cada
+       célula com a altura do olho ali. Achou parede mais alta que o
+       olho: encosta a câmera e sobe por cima dela. Testar contra a
+       malha de caminhabilidade em vez do campo de altura era o
+       errado — canteiro e meio-fio não são passáveis e não tapam
+       nada, e a câmera vivia colada na nuca. */
+    const dx = posSuave.x - alvoSuave.x, dz = posSuave.z - alvoSuave.z;
+    const dy = posSuave.y - alvoSuave.y;
+    for (let k = 1; k <= 14; k++) {
+      const t = k / 14;
+      const alt = alturaEm(alvoSuave.x + dx * t, alvoSuave.z + dz * t);
+      if (alt <= alvoSuave.y + dy * t + 8) continue;
+      /* encolhe só a distância horizontal e MANTÉM a altura do
+         olho. Subir por cima do prédio parece a solução e não é:
+         com prédio de 280 a câmera saltava pra 300 e a cena virava
+         vista de pássaro no meio da briga. Encostar e olhar de cima
+         pra baixo é o que todo jogo de terceira pessoa faz. */
+      const u = Math.max(0.30, (k - 1) / 14);
+      posSuave.x = alvoSuave.x + dx * u;
+      posSuave.z = alvoSuave.z + dz * u;
+      break;
+    }
     if (posSuave.y < 10) posSuave.y = 10;
     cam.position.copy(posSuave);
     cam.lookAt(alvoSuave);
@@ -832,5 +1123,6 @@ export function criar(canvas) {
            get conta() { return conta; },
            get info() { return rend.info; },
            /* expostos pra medir e depurar da consola, não pro jogo */
-           _rend: rend, _cena: cena, _cam: cam, _sol: sol };
+           _rend: rend, _cena: cena, _cam: cam, _sol: sol,
+           _cameras: CAMERAS, _alturaEm: alturaEm };
 }
