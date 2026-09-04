@@ -55,7 +55,13 @@ const MAX_MODS  = 120;
    desenho. Mexer nisso é mexer na colisão, não aqui.
    --------------------------------------------------------- */
 const B = {
-  perna:  { l: 3.2, a: 12,  p: 3.2, quadril: 13, lado: 2.1 },
+  /* A PERNA TAMBÉM TEM JOELHO.
+     Perna reta indo e voltando é pêndulo, não passada: o pé varre o
+     chão na volta e o corpo não tem peso. Com joelho, a perna solta
+     dobra pra passar e a perna de apoio fica reta — que é o que faz
+     o quadril subir e descer sozinho. */
+  coxa:   { l: 3.2, a: 6.4, p: 3.2, quadril: 13, lado: 2.1 },
+  canela: { l: 2.9, a: 6.6, p: 2.9 },
   tronco: { l: 6.6, a: 12,  p: 4.4, centro: 19 },
   cabeca: { l: 5.4, a: 5.4, p: 5.4, centro: 28.4 },
   /* O BRAÇO TEM COTOVELO, E ISSO NÃO É CAPRICHO.
@@ -475,8 +481,9 @@ export function criar(canvas) {
     return m;
   };
 
-  const PECAS = ['cabeca', 'tronco', 'bracoSE', 'bracoIE', 'bracoSD', 'bracoID',
-                 'pernaE', 'pernaD'];
+  const PECAS = ['cabeca', 'tronco',
+                 'bracoSE', 'bracoIE', 'bracoSD', 'bracoID',
+                 'coxaE', 'canelaE', 'coxaD', 'canelaD'];
   const gente = {}, pm = {};
   for (const p of PECAS) {
     gente[p] = instanciar(caixa1, MAX_GENTE);
@@ -511,8 +518,10 @@ export function criar(canvas) {
      o giro do ombro de graça */
   membro('bracoIE', juntas.bracoSE.j, 0, -B.bracoS.a, 0, B.bracoI, true);
   membro('bracoID', juntas.bracoSD.j, 0, -B.bracoS.a, 0, B.bracoI, true);
-  membro('pernaE', raiz, -B.perna.lado, B.perna.quadril, 0, B.perna, true);
-  membro('pernaD', raiz,  B.perna.lado, B.perna.quadril, 0, B.perna, true);
+  membro('coxaE', raiz, -B.coxa.lado, B.coxa.quadril, 0, B.coxa, true);
+  membro('coxaD', raiz,  B.coxa.lado, B.coxa.quadril, 0, B.coxa, true);
+  membro('canelaE', juntas.coxaE.j, 0, -B.coxa.a, 0, B.canela, true);
+  membro('canelaD', juntas.coxaD.j, 0, -B.coxa.a, 0, B.canela, true);
 
   /* =======================================================
      O QUE A SIMULAÇÃO NÃO GUARDA
@@ -566,7 +575,11 @@ export function criar(canvas) {
     }
     const dx = x - e.x, dz = z - e.z;
     const d = Math.hypot(dx, dz);
-    e.vel = dt > 0 ? Math.min(1, (d / dt) / 70) : 0;
+    /* 88 e não 60 (a velocidade de todo mundo na cena): com 60 no
+       divisor qualquer deslocamento normal batia no teto e o boneco
+       vivia em pose de corrida. Em 88, andar no passo do bonde dá
+       0,68 e sobra topo pra quem persegue e pra quem foge. */
+    e.vel = dt > 0 ? Math.min(1, (d / dt) / 88) : 0;
     if (d > 0.05) { e.fase += d * 0.19; e.rumo = Math.atan2(dx, dz); }
     e.x = x; e.z = z;
     return e;
@@ -664,26 +677,83 @@ export function criar(canvas) {
   const corLado = (l, claro) => l === 'visitante'
     ? (claro ? 0xe8e8e8 : 0x2a5fa8) : (claro ? 0xe8e4dc : 0xc0392b);
 
-  /* põe uma pessoa: posiciona a raiz, gira as juntas e copia as
-     seis matrizes do mundo pras seis instâncias */
+  /* =======================================================
+     A PASSADA, COM JOELHO E COM PESO
+
+     Quatro coisas, e cada uma responde por um pedaço do "isto é
+     gente andando" em vez de "isto é caixa deslizando":
+
+     1. AMPLITUDE CRESCE COM A VELOCIDADE. Andar abre 0,30 rad de
+        quadril; correr abre 0,64. É o que separa o bonde subindo a
+        rua do bonde correndo da PM, sem estado novo nenhum — a
+        velocidade sai da diferença de posição entre dois quadros.
+
+     2. O JOELHO SÓ DOBRA NA PERNA SOLTA. Dobra máxima no meio do
+        balanço (quando a perna passa por baixo do corpo) e zero no
+        apoio. É `max(0, −cos fase)`: a perna de apoio fica reta e
+        aguenta o corpo, a solta encolhe pra passar sem varrer o
+        chão. Sem isso o pé atravessa o asfalto meio ciclo inteiro.
+
+     3. O QUADRIL DESCE QUANDO AS PERNAS ABREM. Não é enfeite, é
+        trigonometria: com as pernas abertas em θ o pé fica
+        `L·(1−cos θ)` mais longe do quadril, então o corpo baixa
+        outro tanto. É esta descida — duas por ciclo — que dá peso.
+        A versão anterior subia o tronco com `|cos|` e deixava os
+        pés no lugar, o que é o contrário: corpo flutuando sobre
+        perna rígida.
+
+     4. O TRONCO GINGA E INCLINA. Meio pixel de bamboleio lateral por
+        passo, e o tronco cai pra frente com a velocidade enquanto a
+        cabeça compensa pra o olhar ficar no horizonte.
+     ======================================================= */
   function porPessoa(alvo, i, e, sin, cores) {
-    const bal = Math.sin(e.fase) * 0.95 * e.vel;
-    const sobe = Math.abs(Math.cos(e.fase)) * 0.9 * e.vel;
+    const v = e.vel;
+    /* A ABERTURA DO QUADRIL É CONSTANTE, E ISSO NÃO É PREGUIÇA.
+       A fase anda com a DISTÂNCIA (0,19 rad por pixel), então o ciclo
+       fecha a cada 33 px e cada passo cobre 16,5 px de chão. Pra o pé
+       não patinar, a perna tem que abrir o tanto que dá esses 16,5:
+       `asin(16,5 / 26) ≈ 0,66`, e esse número não depende da
+       velocidade. Quem anda devagar dá o mesmo passo mais espaçado —
+       é a cadência que muda, e ela já muda sozinha.
+       O que a velocidade controla é o resto: joelho, braço, inclinação.
+       `forca` só apaga a passada quando a pessoa para de verdade. */
+    const forca = Math.min(1, v / 0.18);
+    const sen = Math.sin(e.fase), cos = Math.cos(e.fase);
+    const abertura = 0.66 * forca;                 // rad de quadril
+    const dobra    = (0.42 + 0.55 * v) * forca;    // rad de joelho
+    const balBraco = (0.40 + 0.45 * v) * forca;
+
     const oE = juntas.bracoSE.j, oD = juntas.bracoSD.j;   // ombros
     const cE = juntas.bracoIE.j, cD = juntas.bracoID.j;   // cotovelos
+    const qE = juntas.coxaE.j,   qD = juntas.coxaD.j;     // quadris
+    const jE = juntas.canelaE.j, jD = juntas.canelaD.j;   // joelhos
 
     raiz.position.set(e.x, 0, e.z);
     raiz.rotation.set(0, e.ang, 0);
-    juntas.tronco.j.rotation.set(0, 0, 0);
-    juntas.cabeca.j.rotation.set(0, 0, 0);
-    oE.rotation.set(-bal * 0.72, 0, 0);
-    oD.rotation.set( bal * 0.72, 0, 0);
-    cE.rotation.set(-0.22, 0, 0);
-    cD.rotation.set(-0.22, 0, 0);
-    juntas.pernaE.j.rotation.set( bal, 0, 0);
-    juntas.pernaD.j.rotation.set(-bal, 0, 0);
-    juntas.tronco.j.position.y = B.tronco.centro + sobe;
-    juntas.cabeca.j.position.y = B.cabeca.centro + sobe;
+
+    /* perna: ângulo negativo no quadril joga a coxa pra frente;
+       positivo no joelho dobra o calcanhar pra trás, que é o único
+       lado pra onde joelho dobra */
+    qE.rotation.set(-abertura * sen, 0, 0);
+    qD.rotation.set( abertura * sen, 0, 0);
+    jE.rotation.set(0.06 + dobra * Math.max(0, -cos), 0, 0);
+    jD.rotation.set(0.06 + dobra * Math.max(0,  cos), 0, 0);
+
+    /* braço contrário à perna do mesmo lado, e cotovelo fechando
+       conforme a coisa vira corrida */
+    oE.rotation.set( balBraco * sen, 0, 0);
+    oD.rotation.set(-balBraco * sen, 0, 0);
+    cE.rotation.set(-(0.22 + 1.0 * v), 0, 0);
+    cD.rotation.set(-(0.22 + 1.0 * v), 0, 0);
+
+    /* o peso: quanto o quadril desce por causa da abertura */
+    raiz.position.y = -(B.coxa.a + B.canela.a) *
+                      (1 - Math.cos(abertura * Math.abs(sen)));
+
+    juntas.tronco.j.rotation.set(0.16 * v, 0, -sen * 0.05 * forca);
+    juntas.cabeca.j.rotation.set(-0.10 * v, 0, 0);
+    juntas.tronco.j.position.set(sen * 0.55 * forca, B.tronco.centro, 0);
+    juntas.cabeca.j.position.set(-sen * 0.14 * forca, B.cabeca.centro, 0);
 
     if (sin.preso) {
       /* Preso senta no chão com as mãos pra trás. É o outro fim da
@@ -692,8 +762,8 @@ export function criar(canvas) {
          nasce em 13, a perna tem 3,2 de grossura, então o eixo dela
          precisa cair pra ~1,6. */
       raiz.position.y = -11.2;
-      juntas.pernaE.j.rotation.x = -1.45;
-      juntas.pernaD.j.rotation.x = -1.35;
+      qE.rotation.set(-1.48, 0, -0.10); jE.rotation.set(0.12, 0, 0);
+      qD.rotation.set(-1.40, 0,  0.10); jD.rotation.set(0.20, 0, 0);
       oE.rotation.set(1.05, 0, -0.25); cE.rotation.set(-0.55, 0, 0);
       oD.rotation.set(1.05, 0,  0.25); cD.rotation.set(-0.55, 0, 0);
       juntas.tronco.j.rotation.x = -0.12;
@@ -701,8 +771,8 @@ export function criar(canvas) {
     } else if (sin.caido) {
       raiz.rotation.set(-Math.PI / 2, e.ang, 0, 'YXZ');
       raiz.position.set(e.x, 4.6, e.z);
-      juntas.pernaE.j.rotation.x = 0.25;
-      juntas.pernaD.j.rotation.x = -0.15;
+      qE.rotation.set(0.28, 0, 0);  jE.rotation.set(0.55, 0, 0);
+      qD.rotation.set(-0.16, 0, 0); jD.rotation.set(0.18, 0, 0);
       oE.rotation.x = 0.9;  cE.rotation.x = -0.9;
       oD.rotation.x = -0.6; cD.rotation.x = -0.4;
     } else {
@@ -734,8 +804,8 @@ export function criar(canvas) {
         juntas.tronco.j.rotation.x = 0.15 + 0.22 * k;
         raiz.position.x += Math.sin(e.ang) * 2.6 * k;
         raiz.position.z += Math.cos(e.ang) * 2.6 * k;
-        juntas.pernaE.j.rotation.x =  0.34 * k;
-        juntas.pernaD.j.rotation.x = -0.26 * k;
+        qE.rotation.x =  0.34 * k; jE.rotation.x = 0.30 * k;
+        qD.rotation.x = -0.30 * k; jD.rotation.x = 0.12 * k;
       }
 
       /* ---- ARREMESSO: arma atrás da cabeça e solta à frente */
@@ -776,8 +846,8 @@ export function criar(canvas) {
       if (sin.atordoado > 0) {
         const t = sin.atordoado;
         raiz.rotation.z = Math.sin(t * 26) * 0.20 * Math.min(1, t / 0.3);
-        juntas.pernaE.j.rotation.x = 0.30;
-        juntas.pernaD.j.rotation.x = -0.22;
+        qE.rotation.x = 0.30; jE.rotation.x = 0.42;
+        qD.rotation.x = -0.22; jD.rotation.x = 0.16;
       }
     }
 
@@ -823,7 +893,8 @@ export function criar(canvas) {
         bracoSE: d.preso ? 0x2c4f3c : camisa,   // manga
         bracoSD: d.preso ? 0x2c4f3c : camisa,
         bracoIE: pele, bracoID: pele,           // antebraço
-        pernaE: calcao, pernaD: calcao
+        coxaE: calcao, coxaD: calcao,           // calção
+        canelaE: pele, canelaD: pele            // canela de fora
       });
       n++;
     }
@@ -850,7 +921,8 @@ export function criar(canvas) {
         cabeca: 0x20262b, tronco: 0x1e3a2c,
         bracoSE: 0x1e3a2c, bracoSD: 0x1e3a2c,
         bracoIE: 0x2c4a38, bracoID: 0x2c4a38,
-        pernaE: 0x15221a, pernaD: 0x15221a
+        coxaE: 0x15221a, coxaD: 0x15221a,
+        canelaE: 0x15221a, canelaD: 0x15221a
       });
       n++;
     }

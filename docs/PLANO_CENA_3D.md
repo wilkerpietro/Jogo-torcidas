@@ -77,18 +77,16 @@ escolher.
 
 ## 3. O boneco
 
-Oito peças de caixa — cabeça, tronco, dois braços com **cotovelo** (braço e
-antebraço) e duas pernas — e **uma malha instanciada por peça**: 400 pessoas
-custam 8 chamadas de desenho, não 400. A passada é procedural: o desenhista
-guarda a posição do quadro anterior, tira dali a direção e a velocidade, e
-balança quadril e ombro com isso. O tronco sobe e desce meio pixel na passada,
-que é o que separa "boneco deslizando" de "gente andando".
+Dez peças de caixa — cabeça, tronco, dois braços com **cotovelo** e duas pernas
+com **joelho** — e **uma malha instanciada por peça**: 400 pessoas custam 10
+chamadas de desenho, não 400. Tudo procedural: o desenhista guarda a posição do
+quadro anterior e tira dali a direção, a velocidade e a fase da passada.
 
-**O cotovelo não é capricho.** Com um osso por braço, guarda e soco são o mesmo
-gesto com dois ângulos parecidos e ninguém distingue um do outro a três metros.
-Com dois ossos, guarda é braço baixo com o antebraço em pé na frente do rosto, e
-soco é o antebraço abrindo — são silhuetas diferentes, e leem de longe. Custou
-duas malhas instanciadas e 4 chamadas de desenho a mais.
+**Cotovelo e joelho não são capricho.** Com um osso por braço, guarda e soco são
+o mesmo gesto com dois ângulos parecidos e ninguém distingue um do outro a três
+metros; com dois, guarda é o antebraço em pé na frente do rosto e soco é o
+antebraço abrindo. Com um osso por perna, andar é pêndulo: o pé varre o chão na
+volta e o corpo não tem peso. Cada junta custou duas malhas instanciadas.
 
 **Nenhum arquivo de modelo, nenhum osso importado, nenhuma animação de fora.**
 É de propósito: o boneco de caixa é o *lugar* onde o boneco do Blender entra
@@ -97,6 +95,40 @@ depois, com a mesma interface — `porPessoa(alvo, i, estado, sinais, cores)`.
 A manga é a cor primária da torcida e o antebraço é pele; o calção é a cor
 secundária. São as mesmas duas cores que o disco 2D usa (§8.12). O líder usa
 boné dourado.
+
+### A passada, com peso
+
+Quatro coisas, e cada uma responde por um pedaço:
+
+**A abertura do quadril é constante, e isso não é preguiça.** A fase anda com a
+*distância* — 0,19 rad por pixel — então o ciclo fecha a cada 33 px e cada passo
+cobre 16,5 px de chão. Pra o pé não patinar, a perna tem que abrir exatamente o
+tanto que dá esses 16,5: `asin(16,5 / 26) ≈ 0,66`, e esse número não depende da
+velocidade. Quem anda devagar dá o mesmo passo mais espaçado; a cadência já muda
+sozinha. O que a velocidade controla é joelho, braço e inclinação.
+
+**O joelho só dobra na perna solta.** Dobra máxima no meio do balanço, quando a
+perna passa por baixo do corpo, e zero no apoio: é `max(0, −cos fase)`. A perna
+de apoio fica reta e aguenta o corpo, a solta encolhe pra passar sem varrer o
+chão.
+
+**O quadril desce quando as pernas abrem.** Não é enfeite, é trigonometria: com
+as pernas abertas em θ o pé fica `L·(1−cos θ)` mais longe do quadril, então o
+corpo baixa outro tanto — 2,7 px no passo cheio, duas vezes por ciclo. É esta
+descida que dá peso, e ela fecha a conta: no ponto mais baixo o pé encosta no
+chão exatamente. A versão anterior fazia o contrário, subia o *tronco* com
+`|cos|` e deixava os pés parados — corpo flutuando sobre perna rígida.
+
+**O tronco ginga e inclina.** Meio pixel de bamboleio lateral por passo, e o
+tronco cai pra frente com a velocidade enquanto a cabeça compensa pra o olhar
+ficar no horizonte.
+
+Uma correção de escala junto: `e.vel` divide por **88** e não por 60, que é a
+velocidade de todo mundo na cena. Com 60 no divisor qualquer deslocamento normal
+batia no teto e o boneco vivia em pose de corrida; em 88, andar no passo do
+bonde dá 0,68 e sobra topo pra quem persegue e pra quem foge.
+
+![passada](../img/cena3d/passada.jpg)
 
 ---
 
@@ -149,19 +181,20 @@ Medidos no navegador, na cena dos arredores, com 63 pessoas em pé.
 
 | o quê | valor |
 |---|---:|
-| CPU do desenhista 3D por quadro, noite parada | **0,36 ms** |
-| CPU do desenhista 3D por quadro, **todo mundo em briga** | **0,47 ms** |
+| CPU do desenhista 3D por quadro, noite parada | **0,42 ms** |
+| CPU do desenhista 3D por quadro, **todo mundo em briga** | **0,50 ms** |
 | CPU da simulação por quadro (`combate.passo`) | **0,61 ms** |
-| montar os prédios do zero (BFS + greedy + geometria) | **21 ms** |
-| chamadas de desenho por quadro | **26** |
-| triângulos na cena | **~8 700** |
+| montar os prédios do zero (BFS + greedy + geometria) | **17 ms** |
+| chamadas de desenho por quadro | **30** |
+| triângulos na cena | **~10 400** |
 | prédios / caixas nos arredores | 15 / 111 |
 | prédios / caixas na praça | 8 / 105 |
 
 **Com a briga inteira animada, o desenhista 3D ainda custa menos do que a
 própria simulação.** Isso responde a pergunta de CPU e é o número que mais
 importa: pôr em pé não é o gargalo. As poses de briga cobraram 0,11 ms — o
-índice espacial de "quem encarar" e as duas peças de braço a mais.
+índice espacial de "quem encarar" e as peças de braço a mais — e o joelho com o
+peso no passo cobrou outros 0,06 ms.
 
 **O que eu não pude medir: a placa de vídeo.** Este ambiente só tem rasterizador
 por software (SwiftShader), onde a cena roda a 4–5 quadros por segundo. Com 22
@@ -260,10 +293,9 @@ uma câmera só, que seja a `alta` (`X`), que é a que ainda mostra formação.
 
 Em ordem de quanto muda a impressão por hora gasta.
 
-1. **Joelho, e peso no passo.** O braço ganhou cotovelo; a perna não. Andar
-   ainda é perna reta indo e voltando, e correr é a mesma coisa mais rápida.
-   Um joelho e um agachamento no apoio separam andar de correr de fugir — e
-   fugir é um estado que a simulação já tem (`d.fugindo`) e o desenho ignora.
+1. **Fugir não tem cara de fugir.** `d.fugindo` existe na simulação e o desenho
+   só o vê pela velocidade. Correr olhando pra trás, braço protegendo a cabeça,
+   é o que faz uma debandada parecer uma debandada.
 2. **Meio-fio e calçada.** A malha diz "dá pra pisar" e mais nada, então a
    calçada é chão pintado e o prédio nasce direto do asfalto. Um degrau de 15 cm
    em volta de cada quarteirão resolve 80% da sensação de rua.
