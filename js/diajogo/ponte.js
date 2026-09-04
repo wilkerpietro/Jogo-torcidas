@@ -344,6 +344,10 @@ TO.diaJogo.ponte = (function(){
       ['efetivoRival','Efetivo visitante',6,120,2,v=>v],
       ['velocidade','Velocidade',30,160,2,v=>v],
       ['dano','Intensidade do dano',0.5,3,0.1,v=>v.toFixed(1)+'×'],
+      /* 360 devolve o comportamento antigo, de bater em volta: é com
+         ele que se mede o que o cone mudou */
+      ['arcoGolpe','Cone do golpe',60,360,10,v=>v+'°'],
+      ['giroCorpo','Velocidade de virar',2,20,0.5,v=>v.toFixed(1)+' rad/s'],
       ['vidaGrade','Resistência da grade',150,900,25,v=>v],
       ['forcaPM','Força do cassetete',10,60,2,v=>v],
       ['debandada','Debandada em',20,80,5,v=>v+'%'],

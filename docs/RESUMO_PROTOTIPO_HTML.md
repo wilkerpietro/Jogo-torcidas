@@ -4471,3 +4471,98 @@ cena.
 
 **O que ainda falta no mundo:** a Série E do GDD §18.2 — os dados têm 108 clubes, não
 156, então ninguém cai da Série D.
+
+---
+
+## 8.31 Só se bate na frente, e quem apanha por trás se vira
+
+O corpo a corpo não tinha direção. Encostou, bateu — e batia em **todos** os
+inimigos encostados ao mesmo tempo, os da frente e os das costas. Estar cercado
+não custava nada: um sujeito no meio de seis devolvia praticamente o mesmo que
+recebia, porque ele acertava os seis e cada um dos seis acertava ele.
+
+Agora o golpe tem cone, e quem está atrás não leva.
+
+### 1. A direção virou estado da simulação
+
+`Disco` e `Policial` ganharam `ang` (radianos, no espaço da cena) e `px`/`py`
+(onde estavam no quadro anterior). Um passe novo, `apontar()`, roda uma vez por
+quadro depois de todo mundo andar e antes de qualquer um bater:
+
+- tem inimigo ao alcance do braço (`r + 26`), encara ele;
+- não tem, olha pra onde andou;
+- o giro custa tempo — `P.giroCorpo`, 7 rad/s, meia-volta em 0,45 s.
+
+Ficam de fora quem está caído, preso, **fugindo** ou entrando. Fugir é virar as
+costas por definição, e a busca aqui desfaria isso.
+
+**Isso não é detalhe de desenho, é o contrário.** A cena 3D inventava um rumo
+pra pose, tirado da diferença de posição. Com o dano preso à frente, um boneco
+encarando um lado e ferindo outro é a tela mentindo sobre a regra — então
+`cena3d.js` passou a **ler** `d.ang` em vez de calcular o seu, e o disco 2D
+ganhou o cone desenhado no contorno, com a abertura exata de `P.arcoGolpe`. Sem
+isso o jogador veria dois corpos encostados e um deles apanhando sem motivo.
+
+### 2. Quem apanha por trás se vira
+
+Sem isto o cone viraria "flanco de graça": bastava encostar nas costas de alguém
+pra bater sem risco a noite inteira. Quem leva pancada de fora do próprio cone
+larga o alvo que tinha e gira pra quem bateu — meio segundo de prioridade, 1,5×
+de pressa, e o giro custa o mesmo tempo de sempre.
+
+O preço é real e é a graça da coisa: **virando pra quem está atrás, você entrega
+as costas pra quem estava na frente.** É essa troca que faz cercar valer a pena
+e faz formação importar. Quem foge não vira — girar ali punha o sujeito correndo
+de ré.
+
+### 3. O que NÃO entrou no cone
+
+Pedra e bomba continuam sem direção nenhuma. Explosão não pergunta pra onde a
+vítima estava olhando, e prender o estilhaço a um cone transformaria a bomba
+numa arma de precisão, que ela não é. O cone vale pro soco, pro empurrão de
+grade e pro cassetete.
+
+### Os números, medidos
+
+**Um cercado por seis, todos imortais, 20 s, 20 sementes.** Ninguém morre,
+ninguém debanda, ninguém perde moral: mede-se só quanto dano o cercado consegue
+distribuir. É a medida limpa do mecanismo.
+
+| arco | dano que ele distribui | vs. antigo | dano que ele leva |
+|---:|---:|---:|---:|
+| **360°** (o de antes) | 279 | 100% | 335 |
+| 180° | 222 | 80% | 347 |
+| **150°** (o novo padrão) | 218 | **78%** | 364 |
+| 120° | 169 | 61% | 330 |
+| 90° | 123 | 44% | 340 |
+
+A leitura: no 360° antigo, cercar quase não pagava — o cercado devolvia 279 e
+levava 335, quase empate. A 150° a conta vira **1,7 : 1 contra ele**. E o dano
+que ele leva não muda, porque os seis continuam todos de frente pra ele.
+
+**Linha de 16 × 16 na praça, 24 sementes**, sem PM e sem arremesso:
+
+| arco | quebra em | dura | caíram nossos | caíram deles | total |
+|---:|---:|---:|---:|---:|---:|
+| 360° | 14,9 s | 24,7 s | 6,1 | 7,6 | 13,7 |
+| 150° | **18,2 s** | 27,3 s | 7,2 | 7,2 | 14,3 |
+
+A briga de linha **demora 22% mais pra quebrar** e o total de caídos é o mesmo
+(13,7 → 14,3) — o que muda é a distribuição: de 6,1 × 7,6 (um lado apanhando
+mais) pra 7,2 × 7,2. Faz sentido: numa linha todo mundo já está de frente pra
+alguém, e o cone só corta os alvos de flanco, que eram bônus de graça.
+
+**Uma medição que não deu em nada, e fica anotada porque foi feita:**
+`P.giroCorpo` varrido de 2 a 40 rad/s não moveu nenhum dos resultados acima
+além do ruído das sementes (caídos nossos 6,0 / 3,2 / 6,1 / 5,8 / 6,9 nas cinco
+faixas, sem tendência). A velocidade de virar **não** é a alavanca; o ângulo é.
+
+### O que ficou ajustável
+
+`P.arcoGolpe` (150°, sliders de 60 a 360) e `P.giroCorpo` (7 rad/s). **360°
+devolve exatamente o comportamento antigo** — é com ele que se mede o que o cone
+mudou, e é a saída se a mudança não agradar.
+
+![o cone no disco 2D](../img/cena3d/cone-2d.jpg)
+
+![o mesmo corpo a corpo em 3D](../img/cena3d/cone-3d.jpg)

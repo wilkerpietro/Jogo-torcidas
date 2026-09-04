@@ -696,6 +696,16 @@ export function criar(canvas) {
        quebrou e ainda não virou as costas, pro inimigo — é ele que
        anda pra trás. Ninguém soca de lado, e ninguém recua de costas
        antes de virar. */
+    /* A DIREÇÃO AGORA É DA SIMULAÇÃO, E O DESENHO SÓ LÊ.
+       Enquanto o dano era em volta, o rumo do corpo era enfeite e
+       podia sair daqui. Com o dano preso à frente ele decide quem
+       apanha, e um boneco encarando um lado enquanto fere outro é a
+       tela mentindo sobre a regra. `apontar` (combate.js) é quem
+       manda; a conversão é só de eixo — o jogo mede o ângulo de x
+       pra y, o mundo 3D mede de z pra x.
+       O cálculo antigo fica de reserva pra quando `ang` não existir
+       (cena velha, save antigo, disco forjado num teste). */
+    if (sin.ang !== undefined) { e.ang = Math.PI / 2 - sin.ang; return; }
     let rumo = e.rumo, pressa = 6;
     if (e.arremesso > 0 && e.rumoTiro != null) { rumo = e.rumoTiro; }
     else if (e.hesita > 0.4 && e.inimigo != null) { rumo = e.inimigo; pressa = 4; }
@@ -1038,7 +1048,7 @@ export function criar(canvas) {
       const bateu = p.vivo && p.cooldown > e.cdAnt + 0.01;
       e.cdAnt = p.cooldown;
       const sin = { golpe: bateu ? 1 : 0, tremor: 0, atordoado: 0,
-                    caido: !p.vivo, preso: false,
+                    caido: !p.vivo, preso: false, ang: p.ang,
                     correEm: null, fugindo: false, agarrado: 0 };
       const brigando = p.vivo && (p.carga || bateu || e.soco > 0);
       e.inimigo = brigando ? rumoPara(p, inimigoPerto(p)) : null;

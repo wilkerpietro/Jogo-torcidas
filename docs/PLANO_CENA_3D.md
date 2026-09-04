@@ -159,6 +159,14 @@ E a fuga, que a simulação separa em três estados e o desenho tratava como
 **Nada foi acrescentado ao combate.** Se o boneco levanta o braço, é porque o
 dano saiu de verdade — a pose é leitura do estado, não uma segunda simulação.
 
+**Uma exceção, e ela foi na direção contrária.** O rumo do corpo era invenção
+daqui: saía da diferença de posição entre dois quadros e servia só pra pose.
+Quando o dano passou a valer só na frente (RESUMO §8.31), o rumo virou estado de
+simulação — `d.ang`, atualizado por `apontar()` em `combate.js` — e este arquivo
+passou a **ler** em vez de calcular. Um boneco encarando um lado e ferindo outro
+é a tela mentindo sobre a regra. O cálculo antigo ficou como reserva, pra quando
+`ang` não existir.
+
 **Os 2,6 s que ninguém via.** `soltarFuga` inventou de propósito um atraso entre
 "o bonde quebrou" e "este sujeito virou as costas" — quem está de frente pro
 inimigo é o último a correr, e é essa ponta atrasada que dá ao perseguidor o

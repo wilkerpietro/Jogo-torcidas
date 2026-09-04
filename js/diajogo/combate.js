@@ -17,6 +17,15 @@ TO.diaJogo.P = {
   vidaGrade:420, forcaPM:18, debandada:30,
   atrasoCarga:7, tropaCarga:8, duracaoCarga:18, aguentaPM:10,
   cdPedra:2, cdBomba:2.5, alcancePedra:170, alcanceBomba:210,
+  /* SÓ SE BATE NA FRENTE.
+     `arcoGolpe` é o cone de golpe em graus, contado inteiro (150 =
+     75° pra cada lado do nariz). Quem está atrás não leva. Vale pro
+     corpo a corpo e pra empurrar grade; pedra e bomba não olham
+     direção nenhuma — explosão não pergunta pra onde você olha.
+     `giroCorpo` é em rad/s: é ele que faz virar custar tempo, e sem
+     custo de virar o cone não muda nada, porque todo mundo estaria
+     sempre de frente pra alguém. */
+  arcoGolpe:150, giroCorpo:7.0,
   bombas:4, bombasRival:2, chancePaz:50,
   /* noite tranquila nos arredores: o relógio da cena anda 0,6 min por
      segundo, e o pessoal fica de conversa em volta do próprio ponto até
@@ -68,6 +77,17 @@ TO.diaJogo.combate = (function(){
       this.guarda=!!spawn.guarda;
       this.daCasa=!!spawn.guarda;
       this.x=x; this.y=y; this.vx=0; this.vy=0;
+      /* PRA ONDE O CORPO ESTÁ VIRADO, em radianos no espaço da cena
+         (x pra direita, y pra baixo). Até agora o combate não guardava
+         direção nenhuma: quem batia batia em volta, e o desenho 3D
+         inventava um rumo só pra pose. Com o dano preso à frente a
+         direção vira estado de simulação, e o desenho passa a LER ela
+         — senão a tela mostra um boneco encarando um lado e ferindo
+         outro. `px`/`py` guardam onde ele estava no quadro anterior,
+         que é de onde sai o rumo de quem anda sem alvo. */
+      this.ang=0; this.px=x; this.py=y;
+      /* levou por trás: até quando vira pra reagir, e pra onde */
+      this.reagirAte=0; this.reagirPara=0;
       this.r=lider?9:7; this.lider=!!lider;
       this.forca  = lider?14+U.inteiro(0,4):5+U.inteiro(0,8);
       this.defesa = lider?12+U.inteiro(0,4):4+U.inteiro(0,8);
@@ -90,6 +110,8 @@ TO.diaJogo.combate = (function(){
     constructor(posto){
       this.postoX=posto.x; this.postoY=posto.y;
       this.x=posto.x; this.y=posto.y; this.vx=0; this.vy=0;
+      this.ang=0; this.px=posto.x; this.py=posto.y;
+      this.reagirAte=0; this.reagirPara=0;
       this.r=9; this.hpMax=340; this.hp=this.hpMax;
       this.caido=false; this.giro=U.entre(0,7); this.cooldown=0; this.carga=false;
     }
@@ -477,6 +499,7 @@ TO.diaJogo.combate = (function(){
     refazerGrade(J);      // uma vez por quadro, antes de qualquer busca
     if(J.fase==='voltando'){
       moverDiscos(J,dt);
+      apontar(J,dt);
       separar(J);
       conferirVolta(J);
       return;
@@ -486,6 +509,7 @@ TO.diaJogo.combate = (function(){
     moverLider(J,dt,teclas,podeControlar);
     moverDiscos(J,dt);
     moverPoliciais(J,dt);
+    apontar(J,dt);        // depois de andar, antes de bater
     contatos(J,dt);
     iaArremesso(J,dt);
     moverProjeteis(J,dt);
@@ -1343,6 +1367,89 @@ TO.diaJogo.combate = (function(){
   }
 
   /* ---------- contatos ---------- */
+  /* =======================================================
+     PARA ONDE CADA UM ESTÁ VIRADO
+
+     Uma varredura por quadro, depois que todo mundo já andou. A
+     regra é curta: tem inimigo ao alcance do braço, encara ele;
+     não tem, olha pra onde andou. Nada mais.
+
+     O giro custa tempo (`P.giroCorpo`), e é isso que dá sentido ao
+     cone: se virar fosse instantâneo, todo mundo estaria sempre de
+     frente pra alguém e o cone não mudaria uma linha do resultado.
+     Com 7 rad/s, dar meia-volta leva 0,45 s — tempo de quem está
+     nas suas costas encaixar dois ou três golpes.
+
+     O alcance de busca é o mesmo do soco mais 26 px, e não o de
+     visão: quem está longe não muda a cara de ninguém. Fica de fora
+     quem está caído, preso, fugindo ou entrando — fugir é virar as
+     costas por definição, e a busca aqui desfaria isso.
+
+     Uma coisa passa na frente da regra: quem acabou de levar pancada
+     de fora do próprio cone gira pra quem bateu (`reagirAte`), com
+     meio segundo de prioridade e 1,5× de pressa. Ver `contatos`.
+     ======================================================= */
+  function apontar(J,dt){
+    const k = Math.min(1, dt*P.giroCorpo);
+    const alcance = 26 + (J._raioMax||8);
+    for(const lista of [J.discos, J.policiais]){
+      for(const d of lista){
+        if(!d.vivo){ d.px=d.x; d.py=d.y; continue; }
+        let mira=null, pressa=1;
+        /* quem levou por trás gira pra lá antes de qualquer coisa */
+        if(d.reagirAte > J.t && !d.fugindo){ mira=d.reagirPara; pressa=1.5; }
+        else if(!d.fugindo && !d.entrando){
+          const o = maisPertoHostil(J, d, d.r+alcance);
+          if(o) mira = Math.atan2(o.y-d.y, o.x-d.x);
+        }
+        if(mira===null){
+          const dx=d.x-d.px, dy=d.y-d.py;
+          if(dx*dx+dy*dy > 0.09) mira = Math.atan2(dy,dx);
+        }
+        d.px=d.x; d.py=d.y;
+        if(mira===null) continue;
+        const dif = ((mira - d.ang + Math.PI*3) % (Math.PI*2)) - Math.PI;
+        d.ang += dif*Math.min(1, k*pressa);
+      }
+    }
+  }
+
+  /* o mais perto que conta como inimigo pra este corpo. O PM não tem
+     `lado`, então ele é hostil a todo disco e a nenhum outro PM —
+     que é exatamente a regra da cena. */
+  function maisPertoHostil(J,d,raio){
+    let melhor=null, md=raio*raio;
+    for(const o of porPerto(J,d.x,d.y,raio)){
+      if(o===d || !o.vivo || o.lado===d.lado) continue;
+      const q=U.dist2(d.x,d.y,o.x,o.y);
+      if(q<md){md=q; melhor=o;}
+    }
+    if(d.lado) for(const p of J.policiais){
+      if(!p.vivo) continue;
+      const q=U.dist2(d.x,d.y,p.x,p.y);
+      if(q<md){md=q; melhor=p;}
+    }
+    return melhor;
+  }
+
+  /* =======================================================
+     SÓ SE BATE NA FRENTE
+
+     O golpe sai do corpo de quem bate, e corpo tem frente. Quem
+     está nas costas não leva — nem soco, nem empurrão de grade.
+     Pedra e bomba ficam de fora de propósito: explosão não
+     pergunta pra onde a vítima nem o dono do braço estavam
+     olhando, e prender o estilhaço a um cone transformaria a bomba
+     numa arma de precisão, que ela não é.
+     ======================================================= */
+  function naFrente(a, bx, by){
+    const dx=bx-a.x, dy=by-a.y;
+    const d=Math.hypot(dx,dy);
+    if(d<1e-6) return true;                     // colado: conta como frente
+    const cosLim = Math.cos(P.arcoGolpe*Math.PI/360);
+    return (Math.cos(a.ang)*dx + Math.sin(a.ang)*dy)/d >= cosLim;
+  }
+
   function contatos(J,dt){
     const vivos=J.discos.filter(d=>d.vivo);
     for(const a of vivos){
@@ -1353,9 +1460,25 @@ TO.diaJogo.combate = (function(){
       if(bate) for(const b of porPerto(J,a.x,a.y,a.r+(J._raioMax||8)+5)){
         if(a===b||!b.vivo||!inimigos(a.lado,b.lado)) continue;
         if(U.dist(a.x,a.y,b.x,b.y)>a.r+b.r+5) continue;
+        if(!naFrente(a,b.x,b.y)) continue;              // nas costas não leva
         const bruto=(a.forca*nivelMoral(a.moral)*U.entre(0.8,1.2))-b.defesa*0.5;
         b.hp-=Math.max(1,bruto)*P.dano*dt*(b.fugindo?1.6:1);
         b.tremor=Math.min(6,b.tremor+0.6); a.golpe=0.12; a.hostil=3.0;
+        /* LEVOU POR TRÁS: VIRA.
+           Sem isto o cone vira "flanco de graça": bastava encostar nas
+           costas de alguém pra bater sem risco a noite inteira. Quem
+           apanha de fora do próprio cone larga o alvo que tinha e gira
+           pra quem bateu — e o giro custa o mesmo tempo de sempre, com
+           um empurrãozinho de pressa porque é reação e não decisão.
+           O preço é real: virando pra quem está atrás, você entrega as
+           costas pra quem estava na frente. É essa troca que faz
+           cercar valer a pena e faz formação importar.
+           Quem foge não vira: fugir é ter virado as costas de
+           propósito, e girar aqui punha o sujeito correndo de ré. */
+        if(!b.fugindo && !naFrente(b,a.x,a.y)){
+          b.reagirAte = J.t + 0.55;
+          b.reagirPara = Math.atan2(a.y-b.y, a.x-b.x);
+        }
         atacado(J,b);
         /* ALCANÇOU, PEGOU — e só pra quem correu sem brigar.
            Quem debanda por inferioridade sai com a vida cheia, e no
@@ -1396,6 +1519,7 @@ TO.diaJogo.combate = (function(){
       if(bate || a.entrando) for(const g of J.grades){
         if(g.hp<=0 || g.tipo==='fila') continue;   // fila não quebra
         if(U.dist(g.x,g.y,a.x,a.y)>a.r+g.meia+4) continue;
+        if(!naFrente(a,g.x,g.y)) continue;              // empurra o que está à frente
         g.hp-=a.forca*nivelMoral(a.moral)*P.dano*dt*1.6;
         g.tremor=Math.min(5,g.tremor+0.5); a.hostil=3.5;
         if(g.hp<=0){
@@ -1413,10 +1537,12 @@ TO.diaJogo.combate = (function(){
       for(const p of J.policiais){
         if(!p.vivo) continue;
         if(U.dist(p.x,p.y,a.x,a.y)>a.r+p.r+5) continue;
+        if(!naFrente(a,p.x,p.y)) continue;
         p.hp-=a.forca*P.dano*dt*0.55; a.hostil=4.0;
         J.alerta=Math.min(100,J.alerta+7*dt);
         if(p.hp<=0){p.caido=true; J.alerta=Math.min(100,J.alerta+18); logar(J,'Um PM foi ao chão.','pm');}
-        if(p.cooldown<=0){
+        /* o cassetete também tem frente: PM de costas não acerta */
+        if(p.cooldown<=0 && naFrente(p,a.x,a.y)){
           p.cooldown=1.9; a.hp-=P.forcaPM*P.dano; a.atordoado=0.7; a.tremor=5;
           if(a.hp<=0) prender(J,a);
         }
@@ -1986,6 +2112,20 @@ TO.diaJogo.combate = (function(){
     c.fillStyle=corDisco(d,false); c.beginPath(); c.arc(x,y,d.r,0,7); c.fill();
     c.fillStyle=corDisco(d,true);  c.beginPath(); c.arc(x,y,d.r*.62,0,7); c.fill();
     c.fillStyle='#2b2320'; c.beginPath(); c.arc(x,y,d.r*.34,0,7); c.fill();
+    /* A FRENTE DO DISCO, DESENHADA COMO O CONE QUE ELA É.
+       Com o dano preso à frente, um disco sem direção na tela é um
+       disco que mente: o jogador veria dois corpos encostados e um
+       deles apanhando sem motivo aparente. O arco tem a abertura
+       exata de `P.arcoGolpe` — o que está dentro dele leva. */
+    const meio=P.arcoGolpe*Math.PI/360;
+    c.strokeStyle=corDisco(d,true); c.lineWidth=2.2;
+    c.beginPath(); c.arc(x,y,d.r+1.6,d.ang-meio,d.ang+meio); c.stroke();
+    c.fillStyle=corDisco(d,true);
+    c.beginPath();
+    c.moveTo(x+Math.cos(d.ang)*(d.r+4.6), y+Math.sin(d.ang)*(d.r+4.6));
+    c.lineTo(x+Math.cos(d.ang+2.5)*d.r*.55, y+Math.sin(d.ang+2.5)*d.r*.55);
+    c.lineTo(x+Math.cos(d.ang-2.5)*d.r*.55, y+Math.sin(d.ang-2.5)*d.r*.55);
+    c.closePath(); c.fill();
     if(d.lider){c.strokeStyle='#e0b040';c.lineWidth=3;c.beginPath();c.arc(x,y,d.r+3,0,7);c.stroke();}
     if(d.golpe>0){c.strokeStyle=`rgba(255,235,190,${d.golpe*6})`;c.lineWidth=2;
       c.beginPath();c.arc(x,y,d.r+6,0,7);c.stroke();}
@@ -2009,6 +2149,9 @@ TO.diaJogo.combate = (function(){
     c.fillStyle='#1e3a2c'; c.beginPath(); c.arc(p.x,p.y,p.r,0,7); c.fill();
     c.fillStyle='#3f7d5a'; c.beginPath(); c.arc(p.x,p.y,p.r*.62,0,7); c.fill();
     c.fillStyle='#0f1a14'; c.beginPath(); c.arc(p.x,p.y,p.r*.32,0,7); c.fill();
+    const meioPM=P.arcoGolpe*Math.PI/360;
+    c.strokeStyle='#3f7d5a'; c.lineWidth=2.2;
+    c.beginPath(); c.arc(p.x,p.y,p.r+1.6,p.ang-meioPM,p.ang+meioPM); c.stroke();
     const b=(Math.sin(t*6+p.giro)+1)/2;
     c.strokeStyle=`rgba(${b>0.5?'220,70,60':'80,140,235'},.8)`; c.lineWidth=2;
     c.beginPath(); c.arc(p.x,p.y,p.r+4,0,7); c.stroke();
