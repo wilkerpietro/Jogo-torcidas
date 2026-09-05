@@ -4547,3 +4547,38 @@ dinâmico refaz a malha inteira a cada quadro, ~17 caixas por boneco). E o bonec
 tem rosto nem mão de verdade: é caixa, de propósito — é o que dá pra manter sem
 ferramenta de modelagem.
 
+### 8.31.1 Os movimentos: joelho, cotovelo e cada momento da briga
+
+O boneco de caixas ganhou articulação de verdade — quadril → joelho, ombro → cotovelo,
+pescoço — e a pose passou a ser um objeto de ângulos que cada momento da briga preenche
+(`poseNeutra` em `tres.js`). O combate ganhou **três marcadores só de desenho**, que
+ninguém lê pra decidir nada: `apanhou` (acende por 0,35–0,5 s em quem leva pancada de
+mão, cassetete, pedra ou bomba), `arremesso` (quem acabou de jogar, e o quê, por 0,55 s)
+e `_alvo` (em quem se está batendo). Dano, alcance e regra não mudaram.
+
+- **Andar e correr**: o passo vem da velocidade real do disco; o joelho dobra quando a
+  perna vem pra frente, o tronco gira contra o passo, o corpo sobe e desce. Parado,
+  respira e muda o peso de perna.
+- **Bater**: jab e direto alternando a 5,5 por segundo, com o tronco girando pro lado
+  do soco, o outro braço de guarda e o corpo virado pra quem apanha (`_alvo`).
+- **Defender**: quem leva pancada cobre com os dois braços ou encolhe virando a cara —
+  decidido por semente, então o mesmo membro reage sempre igual — e recua um pouco.
+  Atordoado, cambaleia: o corpo pende, os braços abrem, as pernas não obedecem.
+- **Fugir**: passo largo, tronco pra frente, e o olhar por cima do ombro de vez em
+  quando. Agarrado (`agarrado` > 0), tropeça.
+- **Cair**: em 0,62 s — o joelho cede primeiro, depois o corpo vai, de bruços ou de
+  costas por semente, com um quique leve no fim. Quem já estava no chão quando a cena
+  abriu não tomba de novo. Preso senta com as mãos pra trás.
+- **Arremessar**: no instante do lançamento o braço já está lá em cima (a pedra já saiu
+  do combate); o que se vê é o acompanhamento — braço descendo, tronco indo junto, perna
+  de trás vindo pra frente. A bomba tem pavio piscando e rastro de fumaça; ao estourar,
+  clarão no chão, dezesseis fragmentos com gravidade e quique, oito nuvens de fumaça
+  subindo, e a lente sacode se foi perto. Pedra que some solta poeira onde bateu — o
+  combate apaga o projétil no mesmo quadro, então a cena lembra onde ele estava.
+- **PM**: cassetete que desce de trás da cabeça em 0,3 s (`golpe` no policial), escudo
+  no braço esquerdo em carga.
+
+Medido no headless: sem erro de console nas três ruas, no jogo e na bancada 2D; capturas
+com o líder andando 18 s até o rival mostram guarda, socos, corrida com braço bombeando,
+caídos deitados e o cartaz de fim.
+

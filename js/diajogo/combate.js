@@ -81,6 +81,10 @@ TO.diaJogo.combate = (function(){
       this.voltando=false;  // defendeu, ganhou, e está voltando pro posto
       this.vadiando=false;  // noite tranquila: fica de conversa até a hora
       this.atordoado=0; this.tremor=0; this.golpe=0; this.hostil=0;
+      /* sinais só de desenho: a cena 3D lê e anima, ninguém decide nada
+         por eles. `apanhou` acende quando leva pancada; `arremesso` marca
+         quem acabou de jogar (e o quê); `_alvo` é em quem se está batendo. */
+      this.apanhou=0; this.arremesso=null; this._alvo=null;
       this.membroId=null;   // costura com a gestão
     }
     get vivo(){return !this.caido && !this.preso && !this.entrou && !this.sumiu;}
@@ -1269,6 +1273,7 @@ TO.diaJogo.combate = (function(){
     for(const p of J.policiais){
       if(!p.vivo) continue;
       p.cooldown=Math.max(0,p.cooldown-dt);
+      p.golpe=Math.max(0,(p.golpe||0)-dt);   // o cassetete, só pra cena 3D
       let ax,ay,vel=54;
 
       if(p.carga){
@@ -1280,6 +1285,7 @@ TO.diaJogo.combate = (function(){
           if(p.cooldown>0) break;
           p.cooldown=1.25;
           d.hp-=P.forcaPM*P.dano*1.4; d.atordoado=1.0; d.tremor=6;
+          d.apanhou=0.5; p.golpe=0.3;
           d.moral=Math.max(0,d.moral-0.6);
           if(d.hp<=0) prender(J,d);
           break;
@@ -1305,6 +1311,7 @@ TO.diaJogo.combate = (function(){
           if(p.cooldown<=0 && pd<perto.r+p.r+8){
             p.cooldown=2.0;
             perto.hp-=P.forcaPM*P.dano; perto.atordoado=0.6; perto.tremor=5;
+            perto.apanhou=0.5; p.golpe=0.3;
             if(perto.hp<=0) prender(J,perto);
           }
         } else {
@@ -1363,6 +1370,7 @@ TO.diaJogo.combate = (function(){
         const bruto=(a.forca*nivelMoral(a.moral)*U.entre(0.8,1.2))-b.defesa*0.5;
         b.hp-=Math.max(1,bruto)*P.dano*dt*(b.fugindo?1.6:1);
         b.tremor=Math.min(6,b.tremor+0.6); a.golpe=0.12; a.hostil=3.0;
+        b.apanhou=0.35; a._alvo=b;
         atacado(J,b);
         /* ALCANÇOU, PEGOU — e só pra quem correu sem brigar.
            Quem debanda por inferioridade sai com a vida cheia, e no
@@ -1425,6 +1433,7 @@ TO.diaJogo.combate = (function(){
         if(p.hp<=0){p.caido=true; J.alerta=Math.min(100,J.alerta+18); logar(J,'Um PM foi ao chão.','pm');}
         if(p.cooldown<=0){
           p.cooldown=1.9; a.hp-=P.forcaPM*P.dano; a.atordoado=0.7; a.tremor=5;
+          a.apanhou=0.5; p.golpe=0.3;
           if(a.hp<=0) prender(J,a);
         }
       }
@@ -1432,6 +1441,8 @@ TO.diaJogo.combate = (function(){
     for(const d of J.discos){
       d.tremor=Math.max(0,d.tremor-dt*9);
       d.golpe =Math.max(0,d.golpe-dt);
+      if(d.apanhou) d.apanhou=Math.max(0,d.apanhou-dt);
+      if(d.arremesso){ d.arremesso.t-=dt; if(d.arremesso.t<=0) d.arremesso=null; }
       d.hostil=Math.max(0,d.hostil-dt);
       if(d.agarrado) d.agarrado=Math.max(0,d.agarrado-dt);
     }
@@ -1602,7 +1613,7 @@ TO.diaJogo.combate = (function(){
       const alvos=J.discos.filter(d=>d.vivo&&inimigos(p.lado,d.lado));
       if(p.tipo==='pedra'){
         for(const d of alvos) if(U.dist(d.x,d.y,p.x,p.y)<32){
-          d.hp-=22*P.dano; d.tremor=5; atacado(J,d);
+          d.hp-=22*P.dano; d.tremor=5; d.apanhou=0.4; atacado(J,d);
           if(d.hp<=0) derrubar(J,d); break;
         }
         for(const g of J.grades) if(g.hp>0&&g.tipo!=='fila'&&U.dist(g.x,g.y,p.x,p.y)<26){g.hp-=30;g.tremor=4;break;}
@@ -1611,7 +1622,7 @@ TO.diaJogo.combate = (function(){
         for(const d of alvos){
           const dist=U.dist(d.x,d.y,p.x,p.y);
           if(dist<92){
-            d.hp-=(58-dist*0.4)*P.dano; d.atordoado=1.1; d.tremor=6; atacado(J,d);
+            d.hp-=(58-dist*0.4)*P.dano; d.atordoado=1.1; d.tremor=6; d.apanhou=0.5; atacado(J,d);
             const a=Math.atan2(d.y-p.y,d.x-p.x);
             d.vx=Math.cos(a)*150; d.vy=Math.sin(a)*150;
             if(d.hp<=0) derrubar(J,d);
@@ -1887,7 +1898,7 @@ TO.diaJogo.combate = (function(){
 
     if(tipo==='bomba'){ if(J.bombas<=0) return; J.bombas--; }
     if(tipo==='pedra') J.cdPedraAte=J.t+P.cdPedra; else J.cdBombaAte=J.t+P.cdBomba;
-    l.hostil=4.0;
+    l.hostil=4.0; l.arremesso={t:0.55, tipo};
     J.armas[l.lado][tipo]++;
     J.projeteis.push(new Projetil(l.x,l.y,ax,ay,tipo,l.lado));
   }
@@ -1939,7 +1950,7 @@ TO.diaJogo.combate = (function(){
     const ax = alvo.x + U.entre(-erro,erro), ay = alvo.y + U.entre(-erro,erro);
     if(tipo==='bomba') J.bombasRival--;
     J.cdRival = J.t + (tipo==='bomba' ? P.cdBomba*2.2 : P.cdPedra*1.7);
-    b.hostil=4.0;
+    b.hostil=4.0; b.arremesso={t:0.55, tipo};
     J.armas[b.lado][tipo]++;
     J.projeteis.push(new Projetil(b.x,b.y,ax,ay,tipo,b.lado));
     if(tipo==='bomba'){
