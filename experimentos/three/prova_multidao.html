@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prova de Multidão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* =========================================================
+   PROVA DE MULTIDÃO — mesma família das provas em
+   ferramentas/prova_*.py: não é tela de jogo, é bancada de
+   teste. Uma pergunta só: quantos discos a GPU aguenta antes
+   de cair dos 60, com a rua do jogo em volta.
+
+   Tema único, escuro. É a cor do Blender e do Unity, é a cor
+   da cena (jogo à noite), e é a cor certa pra uma bancada.
+   ========================================================= */
+:root{
+  --asfalto:#0e1013;      /* fundo da página */
+  --painel:#171b20;       /* faixas e cartões */
+  --borda:#272d35;
+  --cal:#e9e5dc;          /* texto — branco de cal de muro */
+  --fumaca:#8d949e;       /* texto secundário, cinza frio */
+  --sodio:#ff8a3d;        /* luz de poste: o único destaque */
+  --ladoA:#c8352b;
+  --ladoB:#dcd6c8;
+  --verde:#6a9c4a;
+  --amarelo:#c8a03c;
+  --vermelho:#b6432f;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--asfalto); color:var(--cal);
+  font-family:'Barlow',system-ui,-apple-system,sans-serif;
+  font-size:15px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.faixa{max-width:1080px; margin:0 auto; padding:0 20px}
+
+/* ---------- cabeçalho ---------- */
+header.topo{padding:28px 20px 18px; max-width:1080px; margin:0 auto}
+.marca{
+  font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--sodio); margin:0 0 6px;
+}
+h1{
+  font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  font-size:clamp(30px,5vw,44px); line-height:1.02; margin:0 0 8px;
+  letter-spacing:-.005em; text-wrap:balance;
+}
+.linha-fina{margin:0; max-width:62ch; color:var(--fumaca); font-size:16px}
+
+/* ---------- palco ---------- */
+.palco-caixa{
+  max-width:1080px; margin:20px auto 0; padding:0 20px;
+}
+.moldura{
+  position:relative; border:1px solid var(--borda); border-radius:3px;
+  overflow:hidden; background:#0a0c0e; line-height:0;
+}
+canvas#palco{display:block; width:100%; height:auto; touch-action:none; cursor:grab}
+canvas#palco:active{cursor:grabbing}
+#semGL{
+  display:none; padding:40px 24px; text-align:center; color:var(--fumaca);
+  font-size:14px; line-height:1.6;
+}
+.marcador{
+  position:absolute; top:10px; left:12px; display:flex; gap:14px;
+  font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500;
+  color:var(--cal); background:rgba(10,12,14,.72); border:1px solid var(--borda);
+  border-radius:2px; padding:6px 10px; line-height:1.2;
+  font-variant-numeric:tabular-nums; pointer-events:none;
+}
+.marcador b{color:var(--sodio); font-weight:500}
+.marcador i{color:var(--fumaca); font-style:normal}
+.dica{
+  position:absolute; right:12px; bottom:10px; font-size:11px; color:#6d747d;
+  background:rgba(10,12,14,.6); padding:4px 8px; border-radius:2px;
+  letter-spacing:.02em; line-height:1.2; pointer-events:none;
+}
+
+/* ---------- comandos ---------- */
+.comandos{
+  max-width:1080px; margin:0 auto; padding:14px 20px 0;
+  display:flex; flex-wrap:wrap; gap:18px 26px; align-items:flex-end;
+}
+.grupo{display:flex; flex-direction:column; gap:6px}
+.rot{
+  font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:11px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--fumaca);
+}
+.bts{display:flex; gap:0}
+.bts button{
+  font-family:'Barlow',sans-serif; font-size:13px; font-weight:500;
+  color:var(--fumaca); background:var(--painel);
+  border:1px solid var(--borda); border-right-width:0;
+  padding:7px 13px; cursor:pointer; transition:color .12s, background .12s;
+  font-variant-numeric:tabular-nums;
+}
+.bts button:first-child{border-radius:2px 0 0 2px}
+.bts button:last-child{border-right-width:1px; border-radius:0 2px 2px 0}
+.bts button:hover{color:var(--cal); background:#1e242b}
+.bts button.on{color:#0e1013; background:var(--cal); border-color:var(--cal)}
+.bts button:focus-visible{outline:2px solid var(--sodio); outline-offset:1px; z-index:1}
+button.carga{
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:var(--sodio); background:transparent; border:1px solid var(--sodio);
+  border-radius:2px; padding:7px 16px; cursor:pointer; transition:.12s;
+}
+button.carga:hover{background:var(--sodio); color:#0e1013}
+button.carga:focus-visible{outline:2px solid var(--cal); outline-offset:2px}
+
+/* ---------- texto corrido ---------- */
+section.texto{padding:44px 20px 0; max-width:1080px; margin:0 auto}
+h2{
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:22px;
+  letter-spacing:.01em; margin:0 0 4px; text-wrap:balance;
+}
+.sub{color:var(--fumaca); font-size:14px; margin:0 0 18px; max-width:62ch}
+p{max-width:64ch; margin:0 0 14px}
+strong{font-weight:600; color:var(--cal)}
+code{
+  font-family:'IBM Plex Mono',monospace; font-size:12.5px;
+  background:var(--painel); border:1px solid var(--borda);
+  padding:1px 5px; border-radius:2px; color:#cfc9bd;
+}
+
+/* ---------- tabela de custo ---------- */
+.rolagem{overflow-x:auto; margin-bottom:8px}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:14px}
+th,td{text-align:left; padding:9px 14px 9px 0; border-bottom:1px solid var(--borda); vertical-align:top}
+th{
+  font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:11px;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--fumaca);
+  border-bottom-color:#3a424c;
+}
+td:first-child{color:var(--cal); font-weight:500; white-space:nowrap; padding-right:22px}
+td.nota{color:var(--fumaca)}
+.selo{
+  display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:11px;
+  padding:1px 7px; border-radius:2px; white-space:nowrap;
+}
+.selo.ganha{color:var(--verde); border:1px solid rgba(106,156,74,.45)}
+.selo.perde{color:var(--vermelho); border:1px solid rgba(182,67,47,.45)}
+.selo.empata{color:var(--fumaca); border:1px solid var(--borda)}
+
+/* ---------- as três rotas ---------- */
+.rotas{
+  display:grid; gap:1px; background:var(--borda);
+  border:1px solid var(--borda); border-radius:3px; margin-top:6px;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+}
+.rota{background:var(--painel); padding:16px 18px 18px}
+.rota .n{
+  font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--sodio);
+  display:block; margin-bottom:5px;
+}
+.rota h3{
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:17px;
+  margin:0 0 7px; letter-spacing:.01em;
+}
+.rota p{font-size:13.5px; color:var(--fumaca); margin:0 0 10px; max-width:none}
+.rota p:last-child{margin-bottom:0}
+.rota code{display:block; padding:7px 9px; font-size:11.5px; line-height:1.7; white-space:pre; overflow-x:auto}
+
+footer{
+  max-width:1080px; margin:44px auto 0; padding:16px 20px 40px;
+  border-top:1px solid var(--borda); color:#666d76; font-size:12.5px;
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <p class="marca">Bancada · three.js r128</p>
+  <h1>Prova de Multidão</h1>
+  <p class="linha-fina">A pergunta é uma só: quantos discos a placa de vídeo aguenta na rua do jogo antes de cair dos 60 quadros. Arraste pra girar a câmera.</p>
+</header>
+
+<div class="palco-caixa">
+  <div class="moldura">
+    <canvas id="palco"></canvas>
+    <div class="marcador" id="marcador">
+      <span><b id="mFps">—</b> <i>fps</i></span>
+      <span><b id="mDiscos">—</b> <i>discos</i></span>
+      <span><b id="mTri">—</b> <i>triângulos</i></span>
+      <span><b id="mChamadas">—</b> <i>chamadas</i></span>
+    </div>
+    <div class="dica" id="dica">arraste pra girar</div>
+    <div id="semGL">Esta tela precisa de WebGL. O navegador aqui não deu conta —
+      tente em outro aparelho ou com a aceleração de vídeo ligada.</div>
+  </div>
+</div>
+
+<div class="comandos">
+  <div class="grupo">
+    <span class="rot">Discos</span>
+    <div class="bts" id="btsQtd">
+      <button data-v="600">600</button>
+      <button data-v="2400" class="on">2.400</button>
+      <button data-v="8000">8.000</button>
+      <button data-v="20000">20.000</button>
+    </div>
+  </div>
+  <div class="grupo">
+    <span class="rot">Câmera</span>
+    <div class="bts" id="btsCam">
+      <button data-v="cima" class="on">De cima</button>
+      <button data-v="rasante">Rasante</button>
+    </div>
+  </div>
+  <div class="grupo">
+    <span class="rot">Hora</span>
+    <div class="bts" id="btsHora">
+      <button data-v="noite" class="on">Noite</button>
+      <button data-v="tarde">Fim de tarde</button>
+    </div>
+  </div>
+  <div class="grupo">
+    <span class="rot">&nbsp;</span>
+    <button class="carga" id="btCarga">Carga da esquerda</button>
+  </div>
+</div>
+
+<section class="texto">
+  <h2>O que a rua tem</h2>
+  <p class="sub">Nada aqui é modelo do Blender: é tudo caixa, cilindro e plano gerados no código, com as cores que já estão em <code>js/diajogo/cenario.js</code>.</p>
+  <p>Asfalto <code>#33333a</code> com meio-fio preto e branco, calçada dos dois lados, casas de altura sorteada com telhado da paleta <code>TELHADO</code>, três postes com luz de sódio e a bandeirinha de festa junina atravessando de um lado ao outro — a mesma lista que o comentário do cenário descreve. A multidão inteira é <strong>uma malha só</strong>: corpo e cabeça costurados numa geometria e repetidos por <code>InstancedMesh</code>. Por isso a contagem de chamadas de desenho quase não sobe quando os discos passam de 600 pra 20.000.</p>
+
+  <h2 style="margin-top:36px">O que isso custa</h2>
+  <p class="sub">Comparação honesta com o que o jogo já faz hoje em canvas 2D, pro caso específico do dia de jogo.</p>
+  <div class="rolagem">
+    <table>
+      <thead><tr><th>Frente</th><th>Canvas 2D (hoje)</th><th>three.js</th><th>Veredito</th></tr></thead>
+      <tbody>
+        <tr><td>Multidão grande</td><td class="nota">Cada disco é um <code>arc()</code> na CPU. Passa de ~800 e o quadro começa a doer.</td><td class="nota">Dezenas de milhares numa chamada de desenho.</td><td><span class="selo ganha">3D ganha</span></td></tr>
+        <tr><td>Cena por cima de foto</td><td class="nota">Já funciona, com máscara de caminhabilidade tirada da imagem.</td><td class="nota">Refazer a rua em geometria, ou usar a foto como plano — e aí perde o motivo de ser 3D.</td><td><span class="selo perde">2D ganha</span></td></tr>
+        <tr><td>Câmera e altura</td><td class="nota">Vista de cima e ponto final.</td><td class="nota">Gira, aproxima, deita a câmera; dá pra ver o portão de dentro do bonde.</td><td><span class="selo ganha">3D ganha</span></td></tr>
+        <tr><td>Uso pro Blender</td><td class="nota">Nenhum. A arte vira imagem ou nada.</td><td class="nota">Exporta <code>.glb</code> e entra direto na cena.</td><td><span class="selo ganha">3D ganha</span></td></tr>
+        <tr><td>Celular</td><td class="nota">Roda em qualquer coisa.</td><td class="nota">Roda, mas sombra e luz custam caro em aparelho fraco.</td><td><span class="selo perde">2D ganha</span></td></tr>
+        <tr><td>Painéis de gestão</td><td class="nota">HTML e CSS, que é onde 90% do jogo vive.</td><td class="nota">Igual — three.js não muda uma linha disso.</td><td><span class="selo empata">empata</span></td></tr>
+        <tr><td>Trabalho pra migrar</td><td class="nota">Zero, já está pronto.</td><td class="nota">Só a pintura da cena são ~2.000 linhas em <code>cenario.js</code> e no <code>desenhar</code> do combate.</td><td><span class="selo perde">2D ganha</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:14px">A separação que já existe no código é o que torna a troca viável sem reescrever o jogo: <code>combate.js</code> tem <code>passo</code> (simulação) e <code>desenhar</code> (pintura) como funções distintas. A simulação continua igual, em coordenadas de mundo. Só o <code>desenhar</code> muda de destinatário.</p>
+
+  <h2 style="margin-top:36px">Três jeitos de rodar three.js aqui</h2>
+  <p class="sub">Todos servem; o que muda é quem vê o resultado e quanto dura.</p>
+  <div class="rotas">
+    <div class="rota">
+      <span class="n">rota 1</span>
+      <h3>Artefato</h3>
+      <p>Uma página publicada com link próprio, que abre no celular. É esta que você está lendo. Boa pra experimento e pra mostrar pros outros.</p>
+      <p>Limite: script só de CDN liberada, e nada de arquivo externo — o <code>.glb</code> do Blender tem que entrar embutido na página.</p>
+    </div>
+    <div class="rota">
+      <span class="n">rota 2</span>
+      <h3>Dentro do repositório</h3>
+      <p>O arquivo fica em <code>experimentos/three/</code> e roda como o resto do jogo: um servidor local e o navegador.</p>
+      <code>python3 -m http.server 8000
+# abre localhost:8000</code>
+      <p>Aqui o <code>.glb</code> é um arquivo normal na pasta. É a rota pra virar parte do jogo.</p>
+    </div>
+    <div class="rota">
+      <span class="n">rota 3</span>
+      <h3>GitHub Pages</h3>
+      <p>O repositório já é HTML puro. Ligando Pages nas configurações, o jogo inteiro ganha um endereço público e atualiza a cada push.</p>
+      <p>Sem build, sem npm, sem servidor. É o caminho mais curto pra ter o jogo jogável num link.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Prova gerada pro repositório <strong>Jogo-torcidas</strong> · arquivo em <code>experimentos/three/prova_multidao.html</code> · three.js carregado de CDN, sem dependência instalada.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =========================================================
+   A BANCADA
+   Simulação boba de propósito: dois lados que se empurram.
+   O que está em teste é a pintura, não a briga.
+   ========================================================= */
+(function(){
+  const cv = document.getElementById('palco');
+  if(typeof THREE === 'undefined' || !cv.getContext('webgl')){
+    cv.style.display='none';
+    document.getElementById('marcador').style.display='none';
+    document.getElementById('dica').style.display='none';
+    document.getElementById('semGL').style.display='block';
+    return;
+  }
+
+  /* cores do jogo — vêm de js/diajogo/cenario.js */
+  const TELHADO = ['#a64a32','#8a4030','#7a4a3a','#6a504a','#56524a','#5a4030'];
+  const PAREDE  = ['#c8b89a','#b8a488','#d4c3a5','#9fb0a8','#c2a48f','#a8b6c0'];
+  const ASFALTO = 0x33333a;
+
+  const RUA_C = 120;   /* comprimento */
+  const RUA_L = 19;    /* largura entre calçadas */
+
+  const cena = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(46, 16/9, 0.5, 400);
+  const renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  /* ---------- cenário fixo ---------- */
+  const chao = new THREE.Mesh(
+    new THREE.PlaneGeometry(RUA_C, RUA_L),
+    new THREE.MeshStandardMaterial({color:ASFALTO, roughness:.96}));
+  chao.rotation.x = -Math.PI/2; chao.receiveShadow = true;
+  cena.add(chao);
+
+  /* calçada dos dois lados */
+  const matCalcada = new THREE.MeshStandardMaterial({color:0x8e8878, roughness:.92});
+  for(const s of [-1,1]){
+    const c = new THREE.Mesh(new THREE.BoxGeometry(RUA_C, .45, 5), matCalcada);
+    c.position.set(0, .22, s*(RUA_L/2 + 2.5));
+    c.receiveShadow = true; cena.add(c);
+  }
+
+  /* meio-fio preto e branco: uma malha só, cor por instância */
+  (function(){
+    const n = 2*Math.floor(RUA_C/2.4);
+    const m = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(2.3, .5, .5),
+      new THREE.MeshStandardMaterial({roughness:.9}), n);
+    const d = new THREE.Object3D(), cor = new THREE.Color();
+    let i = 0;
+    for(const s of [-1,1]){
+      for(let k=0; k<n/2; k++){
+        d.position.set(-RUA_C/2 + 1.2 + k*2.4, .25, s*(RUA_L/2 + .25));
+        d.updateMatrix(); m.setMatrixAt(i, d.matrix);
+        m.setColorAt(i, cor.set(k%2 ? 0xe4e0d6 : 0x181818));
+        i++;
+      }
+    }
+    m.frustumCulled = false; cena.add(m);
+  })();
+
+  /* casas: altura e cor sorteadas, telhado por cima */
+  (function(){
+    const n = 2*24;
+    const parede = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1,1,1),
+      new THREE.MeshStandardMaterial({roughness:.95}), n);
+    const telha = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1,1,1),
+      new THREE.MeshStandardMaterial({roughness:.9}), n);
+    const d = new THREE.Object3D(), cor = new THREE.Color();
+    let i = 0;
+    for(const s of [-1,1]){
+      for(let k=0; k<24; k++){
+        const x = -RUA_C/2 + 2.5 + k*5, larg = 4 + (k*7%3), alt = 3.5 + (k*13%5);
+        const z = s*(RUA_L/2 + 8);
+        d.position.set(x, alt/2, z); d.scale.set(larg, alt, 7);
+        d.updateMatrix(); parede.setMatrixAt(i, d.matrix);
+        parede.setColorAt(i, cor.set(PAREDE[(k*5+ (s>0?1:0))%PAREDE.length]));
+        d.position.set(x, alt + .25, z); d.scale.set(larg+.5, .5, 7.5);
+        d.updateMatrix(); telha.setMatrixAt(i, d.matrix);
+        telha.setColorAt(i, cor.set(TELHADO[(k*3+(s>0?2:0))%TELHADO.length]));
+        i++;
+      }
+    }
+    parede.castShadow = telha.castShadow = true;
+    parede.receiveShadow = true;
+    parede.frustumCulled = telha.frustumCulled = false;
+    cena.add(parede, telha);
+  })();
+
+  /* postes com luz de sódio */
+  const luzesPoste = [];
+  (function(){
+    const matPoste = new THREE.MeshStandardMaterial({color:0x4a4a4e, roughness:.8});
+    const matLamp = new THREE.MeshBasicMaterial({color:0xffc98a});
+    for(const x of [-38, 0, 38]){
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(.16,.22,9,6), matPoste);
+      p.position.set(x, 4.5, RUA_L/2 + 1.4); p.castShadow = true; cena.add(p);
+      const l = new THREE.Mesh(new THREE.BoxGeometry(1.1,.3,.6), matLamp);
+      l.position.set(x, 8.9, RUA_L/2 + .6); cena.add(l);
+      const luz = new THREE.PointLight(0xff9a45, 1.15, 46, 2);
+      luz.position.set(x, 8.6, RUA_L/2 + .4); cena.add(luz);
+      luzesPoste.push(luz);
+    }
+  })();
+
+  /* bandeirinha de festa junina atravessando a rua */
+  (function(){
+    const cores = [0xd94f3d, 0xf0c04a, 0x4a8fd9, 0x6aa84f, 0xe0e0e0];
+    const n = 3*22;
+    const m = new THREE.InstancedMesh(
+      new THREE.PlaneGeometry(.8,.9),
+      new THREE.MeshBasicMaterial({side:THREE.DoubleSide}), n);
+    const d = new THREE.Object3D(), cor = new THREE.Color();
+    let i = 0;
+    for(const x of [-25, 8, 44]){
+      for(let k=0; k<22; k++){
+        const t = k/21, z = -RUA_L/2 - 2 + t*(RUA_L + 4);
+        const y = 8.4 - Math.sin(t*Math.PI)*1.9;   /* barriga do varal */
+        d.position.set(x + Math.sin(k)*.15, y - .5, z);
+        d.rotation.set(0, Math.PI/2, Math.sin(k*1.7)*.25);
+        d.updateMatrix(); m.setMatrixAt(i, d.matrix);
+        m.setColorAt(i, cor.set(cores[k%cores.length]));
+        i++;
+      }
+    }
+    m.frustumCulled = false; cena.add(m);
+  })();
+
+  /* ---------- luz ---------- */
+  const hemi = new THREE.HemisphereLight(0x8fa6c4, 0x2a2622, .55);
+  cena.add(hemi);
+  const sol = new THREE.DirectionalLight(0xffd7a8, 1.0);
+  sol.position.set(40, 48, 26); sol.castShadow = true;
+  sol.shadow.mapSize.set(1024,1024);
+  const cam = sol.shadow.camera;
+  cam.left=-62; cam.right=62; cam.top=34; cam.bottom=-34; cam.far=140;
+  cam.updateProjectionMatrix();
+  cena.add(sol);
+
+  let hora = 'noite';
+  function aplicarHora(){
+    const noite = hora === 'noite';
+    cena.background = new THREE.Color(noite ? 0x0b0d11 : 0x2e2a2c);
+    cena.fog = new THREE.Fog(noite ? 0x0b0d11 : 0x2e2a2c, 70, 175);
+    hemi.intensity = noite ? .30 : .75;
+    hemi.color.set(noite ? 0x35415a : 0xa8bcd6);
+    sol.intensity = noite ? .12 : 1.15;
+    sol.color.set(noite ? 0x5a6a8a : 0xffc98a);
+    for(const l of luzesPoste) l.intensity = noite ? 1.35 : .25;
+  }
+  aplicarHora();
+
+  /* =======================================================
+     A MULTIDÃO — corpo e cabeça costurados numa geometria só,
+     pra multidão inteira sair numa chamada de desenho.
+     ======================================================= */
+  function costurar(a, b){
+    const A = a.toNonIndexed(), B = b.toNonIndexed();
+    const g = new THREE.BufferGeometry();
+    for(const nome of ['position','normal']){
+      const x = A.attributes[nome].array, y = B.attributes[nome].array;
+      const j = new Float32Array(x.length + y.length);
+      j.set(x, 0); j.set(y, x.length);
+      g.setAttribute(nome, new THREE.BufferAttribute(j, 3));
+    }
+    return g;
+  }
+  const gCorpo = new THREE.CylinderGeometry(.30,.34,1.35,6);
+  gCorpo.translate(0,.68,0);
+  const gCabeca = new THREE.SphereGeometry(.20,6,4);
+  gCabeca.translate(0,1.52,0);
+  const gDisco = costurar(gCorpo, gCabeca);
+
+  const MAX = 20000;
+  const px = new Float32Array(MAX), pz = new Float32Array(MAX);
+  const vx = new Float32Array(MAX), vz = new Float32Array(MAX);
+  const fase = new Float32Array(MAX), lado = new Uint8Array(MAX);
+  let n = 2400, multidao = null;
+
+  /* grade de vizinhança: lista ligada, o clássico */
+  const CEL = 1.6;
+  const GX = Math.ceil(RUA_C/CEL)+2, GZ = Math.ceil(RUA_L/CEL)+2;
+  const cabeca = new Int32Array(GX*GZ), proximo = new Int32Array(MAX);
+  const celDe = (x,z)=>{
+    const i = Math.min(GX-1, Math.max(0, ((x + RUA_C/2)/CEL)|0));
+    const j = Math.min(GZ-1, Math.max(0, ((z + RUA_L/2)/CEL)|0));
+    return j*GX + i;
+  };
+
+  const CORES = {
+    0:[0xc8352b, 0x9d2222, 0xa82b26],   /* nós: vermelho e branco */
+    1:[0xdcd6c8, 0xb8b2a4, 0xcac4b6]    /* eles */
+  };
+
+  function povoar(quantos){
+    n = quantos;
+    if(multidao){ cena.remove(multidao); multidao.dispose(); }
+    multidao = new THREE.InstancedMesh(
+      gDisco, new THREE.MeshLambertMaterial(), n);
+    multidao.frustumCulled = false;
+    /* sombra de multidão só até 2.400: acima disso o mapa de sombra
+       é o gargalo, e a prova aqui é de quantidade, não de sombra */
+    multidao.castShadow = n <= 2400;
+    const cor = new THREE.Color();
+    for(let i=0;i<n;i++){
+      const l = i % 2;
+      lado[i] = l;
+      const base = l ? 15 : -15;
+      px[i] = base + (Math.random()-.5)*22;
+      pz[i] = (Math.random()-.5)*(RUA_L-2.5);
+      vx[i] = vz[i] = 0;
+      fase[i] = Math.random()*6.283;
+      const p = CORES[l];
+      multidao.setColorAt(i, cor.set(p[i%p.length]));
+    }
+    cena.add(multidao);
+  }
+
+  let carga = 0;
+  const alvo = new THREE.Object3D();
+
+  function passo(dt){
+    cabeca.fill(-1);
+    for(let i=0;i<n;i++){ const c = celDe(px[i],pz[i]); proximo[i]=cabeca[c]; cabeca[c]=i; }
+
+    for(let i=0;i<n;i++){
+      const l = lado[i];
+      /* avança pra linha de frente do outro lado */
+      const destino = l ? -2.5 : 2.5;
+      let ax = (destino - px[i]) * .05;
+      if(!l && carga > 0) ax += 2.4;
+      let az = -pz[i] * .01;
+
+      /* separação: só as células vizinhas, no máximo 10 checagens */
+      const ci = Math.min(GX-1, Math.max(0, ((px[i]+RUA_C/2)/CEL)|0));
+      const cj = Math.min(GZ-1, Math.max(0, ((pz[i]+RUA_L/2)/CEL)|0));
+      let checou = 0;
+      for(let dj=-1; dj<=1 && checou<10; dj++){
+        const jj = cj+dj; if(jj<0||jj>=GZ) continue;
+        for(let di=-1; di<=1 && checou<10; di++){
+          const ii = ci+di; if(ii<0||ii>=GX) continue;
+          for(let k=cabeca[jj*GX+ii]; k!==-1 && checou<10; k=proximo[k]){
+            if(k===i) continue;
+            const dx = px[i]-px[k], dz = pz[i]-pz[k];
+            const d2 = dx*dx + dz*dz;
+            if(d2 > 0.0001 && d2 < .58){
+              const f = (.58-d2) * (lado[k]===l ? 5.5 : 9.0);
+              ax += dx*f; az += dz*f;
+              checou++;
+            }
+          }
+        }
+      }
+
+      /* meio-fio empurra de volta pra rua */
+      const lim = RUA_L/2 - .8;
+      if(pz[i] >  lim) az -= (pz[i]-lim)*9;
+      if(pz[i] < -lim) az += (-lim-pz[i])*9;
+
+      vx[i] = (vx[i] + ax*dt) * .90;
+      vz[i] = (vz[i] + az*dt) * .90;
+      const v2 = vx[i]*vx[i] + vz[i]*vz[i], vmax = 6.5;
+      if(v2 > vmax*vmax){ const e = vmax/Math.sqrt(v2); vx[i]*=e; vz[i]*=e; }
+      px[i] += vx[i]*dt; pz[i] += vz[i]*dt;
+      if(px[i] >  RUA_C/2-1) px[i] =  RUA_C/2-1;
+      if(px[i] < -RUA_C/2+1) px[i] = -RUA_C/2+1;
+    }
+    if(carga > 0) carga -= dt;
+  }
+
+  function pintar(t){
+    for(let i=0;i<n;i++){
+      const passada = Math.sin(t*7 + fase[i]);
+      alvo.position.set(px[i], Math.abs(passada)*.10, pz[i]);
+      alvo.rotation.set(0, Math.atan2(vx[i], vz[i]), passada*.055);
+      alvo.updateMatrix();
+      multidao.setMatrixAt(i, alvo.matrix);
+    }
+    multidao.instanceMatrix.needsUpdate = true;
+  }
+
+  /* ---------- câmera: dois presets, mais o arrasto ---------- */
+  const PRESETS = {
+    cima:    {raio:52, alt:.90, giro:-.35},
+    rasante: {raio:34, alt:.24, giro:-.05}
+  };
+  let mira = Object.assign({}, PRESETS.cima);
+  let atual = Object.assign({}, PRESETS.cima);
+  let arrastando = false, ultimoX = 0, ultimoY = 0;
+
+  cv.addEventListener('pointerdown', e=>{
+    arrastando = true; ultimoX = e.clientX; ultimoY = e.clientY;
+    cv.setPointerCapture(e.pointerId);
+    const d = document.getElementById('dica'); if(d) d.style.opacity = '0';
+  });
+  cv.addEventListener('pointermove', e=>{
+    if(!arrastando) return;
+    mira.giro += (e.clientX - ultimoX) * .006;
+    mira.alt = Math.min(1.35, Math.max(.10, mira.alt - (e.clientY - ultimoY)*.004));
+    ultimoX = e.clientX; ultimoY = e.clientY;
+  });
+  const solta = e => { arrastando = false; };
+  cv.addEventListener('pointerup', solta);
+  cv.addEventListener('pointercancel', solta);
+
+  function moverCamera(){
+    for(const k of ['raio','alt','giro']) atual[k] += (mira[k]-atual[k])*.06;
+    camera.position.set(
+      Math.sin(atual.giro)*atual.raio,
+      6 + atual.alt*30,
+      Math.cos(atual.giro)*atual.raio + 6);
+    camera.lookAt(0, 2, 0);
+  }
+
+  /* ---------- comandos ---------- */
+  function ligar(id, aoClicar){
+    const cx = document.getElementById(id);
+    cx.addEventListener('click', e=>{
+      const b = e.target.closest('button'); if(!b) return;
+      for(const o of cx.querySelectorAll('button')) o.classList.toggle('on', o===b);
+      aoClicar(b.dataset.v);
+    });
+  }
+  ligar('btsQtd', v => povoar(parseInt(v,10)));
+  ligar('btsCam', v => { const p = PRESETS[v]; mira.raio=p.raio; mira.alt=p.alt; });
+  ligar('btsHora', v => { hora = v; aplicarHora(); });
+  document.getElementById('btCarga').addEventListener('click', ()=>{ carga = 2.2; });
+
+  /* ---------- medidores ---------- */
+  const mFps = document.getElementById('mFps'), mDiscos = document.getElementById('mDiscos');
+  const mTri = document.getElementById('mTri'), mChamadas = document.getElementById('mChamadas');
+  const br = v => v.toLocaleString('pt-BR');
+  let quadros = 0, marca = performance.now(), fps = 0;
+
+  function medir(agora){
+    quadros++;
+    if(agora - marca >= 500){
+      fps = Math.round(quadros*1000/(agora-marca));
+      quadros = 0; marca = agora;
+      mFps.textContent = fps;
+      mDiscos.textContent = br(n);
+      mTri.textContent = br(renderer.info.render.triangles);
+      mChamadas.textContent = renderer.info.render.calls;
+    }
+  }
+
+  /* ---------- tamanho ---------- */
+  function redimensionar(){
+    const larg = cv.parentElement.clientWidth;
+    const alt = Math.round(Math.min(larg*9/16, Math.max(320, window.innerHeight*.62)));
+    renderer.setSize(larg, alt, false);
+    cv.style.height = alt + 'px';
+    camera.aspect = larg/alt; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', redimensionar);
+
+  /* ---------- laço ---------- */
+  povoar(2400);
+  redimensionar();
+  let ant = performance.now();
+  function quadro(agora){
+    const dt = Math.min(.05, (agora - ant)/1000); ant = agora;
+    passo(dt);
+    pintar(agora/1000);
+    moverCamera();
+    renderer.render(cena, camera);
+    medir(agora);
+    requestAnimationFrame(quadro);
+  }
+  requestAnimationFrame(quadro);
+})();
+</script>
+</body>
+</html>
