@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vitrine dos Bonecos — Torcida Organizada</title>
+<style>
+  html,body{margin:0;height:100%;background:#1c1c1a;color:#e8e4da;font-family:system-ui,sans-serif;overflow:hidden}
+  #palco{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #topo{position:fixed;left:0;right:0;top:0;padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    background:linear-gradient(#1c1c1aee,#1c1c1a00);pointer-events:none}
+  #topo h1{font-size:14px;letter-spacing:.14em;text-transform:uppercase;margin:0 10px 0 0}
+  #topo button{pointer-events:auto;background:#2a2a26;border:1px solid #444;color:#e8e4da;font:11px ui-monospace,monospace;
+    letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;cursor:pointer;border-radius:3px}
+  #topo button.on{background:#c0392b;border-color:#e0533f;color:#fff}
+  #rotulos{position:fixed;inset:0;pointer-events:none}
+  #rotulos div{position:absolute;transform:translate(-50%,0);font:11px ui-monospace,monospace;letter-spacing:.08em;
+    text-transform:uppercase;color:#f0d68a;text-shadow:0 1px 2px #000}
+  #dica{position:fixed;left:14px;bottom:12px;font:11px ui-monospace,monospace;color:#9a968c}
+</style>
+</head>
+<body>
+<canvas id="palco"></canvas>
+<div id="rotulos"></div>
+<div id="topo"><h1>Vitrine dos bonecos</h1></div>
+<div id="dica">arraste pra girar · rodinha aproxima · clique num estado pra isolar</div>
+
+<script src="js/nucleo.js"></script>
+<script src="js/lib/three.min.js"></script>
+<script src="js/diajogo/bonecos3.js"></script>
+<script>
+(function(){
+  const B = TO.diaJogo.bonecos3;
+  const cv = document.getElementById('palco');
+  if(!B.montar(cv)){ document.body.innerHTML = '<p style="padding:20px">Sem WebGL.</p>'; return; }
+
+  /* cada estado é um disco de mentira com os sinais que o combate
+     escreveria; a animação só lê */
+  const ESTADOS = [
+    ['parado',   (d,t)=>{}],
+    ['andar',    (d,t)=>{ anda(d,t,60); }],
+    ['correr',   (d,t)=>{ anda(d,t,78); d._cacando=true; }],
+    ['socar',    (d,t)=>{ d.golpe=0.12; d.hostil=3; }],
+    ['guarda',   (d,t)=>{ d.hostil=3; }],
+    ['apanhar',  (d,t)=>{ d.apanhou=Math.max(0, 0.5-(t%1.3)); d.tremor=d.apanhou>0.3?3:0; }],
+    ['atordoado',(d,t)=>{ d.atordoado=1; }],
+    ['arremesso',(d,t)=>{ const k=t%1.6; d.arremesso = k<0.55 ? {t:0.55-k, tipo:'pedra'} : null; d.hostil=3; }],
+    ['fugir',    (d,t)=>{ anda(d,t,78); d.fugindo=true; }],
+    ['bomba',    (d,t)=>{ anda(d,t,78); d.fugaBomba=true; }],
+    ['cair',     (d,t)=>{ d.caido = (t%4.5) > 0.9; }],
+    ['preso',    (d,t)=>{ d.preso=true; }],
+    ['torcer',   (d,t)=>{ d.linha='retaguarda'; }],
+    ['policial', null]
+  ];
+  /* anda e volta num trecho de 60 px, virado pro lado que vai */
+  function anda(d,t,v){
+    const per = 120/v, k=(t%(2*per))/per;
+    const dir = k<1 ? 1 : -1, x = k<1 ? -30 + 60*k : 30 - 60*(k-1);
+    d.x = d.x0 + x; d.rumo = Math.atan2(dir, 0);
+  }
+  const PASSO = 46, cols = 7;
+  const discos = [], pms = [];
+  ESTADOS.forEach(([nome, fn], i)=>{
+    const x0 = (i%cols - (cols-1)/2)*PASSO, z0 = (Math.floor(i/cols) - 0.5)*70;
+    if(nome==='policial'){
+      pms.push({nome, x:x0, y:z0, x0, vivo:true, carga:false, golpe:0, cooldown:0, fn:(d,t)=>{ const k=t%2.4; d.golpe = k<0.3 ? 0.3-k : 0; d.carga = k>1.4; }});
+      return;
+    }
+    discos.push({nome:nome.toUpperCase(), lado: i%2 ? 'visitante':'mandante', cor: i%2?'#1e4fa0':'#c0392b', cor2:'#f0f0f0',
+      x:x0, y:z0, x0, r:7, hp:150, hpMax:150, vivo:true, caido:false, preso:false, fugindo:false, fugaBomba:null,
+      atordoado:0, apanhou:0, golpe:0, hostil:0, arremesso:null, tremor:0, rumo:0, linha:'frente', lider: nome==='socar',
+      _cacando:false, fn});
+  });
+  Object.defineProperty(discos[0], 'vivo', {get(){ return !this.caido && !this.preso; }});
+  for(const d of discos) Object.defineProperty(d, 'vivo', {get(){ return !this.caido && !this.preso; }});
+  const J = {t:0, discos, policiais:pms, projeteis:[], grades:[], paz:false};
+
+  let ang = 0.4, dist = 330, auto = true, isolado = null, ant = performance.now();
+  const alvoDe = ()=> isolado ? {x:isolado.x, z:isolado.y} : {x:0, z:0};
+  function quadro(agora){
+    let dt = (agora-ant)/1000; ant = agora; if(dt>0.05) dt=0.05;
+    J.t += dt;
+    for(const d of discos){
+      d.golpe=0; d.hostil=0; d.apanhou=0; d.atordoado=0; d.arremesso=null; d.fugindo=false; d.fugaBomba=null; d._cacando=false; d.tremor=0; d.linha='frente';
+      if(d.fn) d.fn(d, J.t);
+      if(!('x' in d) || d.fn.toString().indexOf('anda')<0) { d.x = d.x0; d.rumo = 0; }
+    }
+    for(const p of pms) p.fn(p, J.t);
+    if(auto) ang += dt*0.25;
+    const alvo = alvoDe();
+    B.desenharVitrine(J, {dt, angulo:ang, dist: isolado ? 125 : dist, altura: isolado ? 48 : 150, alvo, mira: isolado ? 16 : 8});
+    rotular();
+    requestAnimationFrame(quadro);
+  }
+  /* rótulo de cada estado, projetado pela mesma câmera */
+  const caixa = document.getElementById('rotulos');
+  const rot = discos.concat(pms).map(d=>{ const e=document.createElement('div'); e.textContent=(d.nome||'PM').toUpperCase(); caixa.appendChild(e); return e; });
+  function rotular(){
+    const D = B._dbg; if(!D) return;
+    const camV = D.camV; if(!camV) return;
+    const r = cv.getBoundingClientRect();
+    discos.concat(pms).forEach((d,i)=>{
+      const v = new THREE.Vector3(d.x0!==undefined?d.x0:d.x, 0, d.y).project(camV);
+      rot[i].style.left = ((v.x+1)/2*r.width)+'px'; rot[i].style.top = ((1-(v.y+1)/2)*r.height+6)+'px';
+      rot[i].style.display = (v.z<1 && (!isolado || isolado===d)) ? 'block' : 'none';
+    });
+  }
+  /* botões: um por estado; clicar isola */
+  const topo = document.getElementById('topo');
+  const bts = [];
+  const todos = document.createElement('button'); todos.textContent='todos'; todos.className='on';
+  todos.onclick=()=>{ isolado=null; bts.forEach(b=>b.classList.remove('on')); todos.classList.add('on'); };
+  topo.appendChild(todos);
+  discos.concat(pms).forEach(d=>{
+    const b=document.createElement('button'); b.textContent=(d.nome||'PM').toLowerCase();
+    b.onclick=()=>{ isolado=d; bts.forEach(x=>x.classList.remove('on')); todos.classList.remove('on'); b.classList.add('on'); };
+    topo.appendChild(b); bts.push(b);
+  });
+  /* arrastar gira, rodinha aproxima */
+  let arr=null;
+  cv.addEventListener('pointerdown', e=>{ arr={x:e.clientX, a:ang}; auto=false; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e=>{ if(arr) ang = arr.a + (e.clientX-arr.x)*0.01; });
+  cv.addEventListener('pointerup', ()=>{ arr=null; });
+  cv.addEventListener('wheel', e=>{ e.preventDefault(); dist = Math.min(700, Math.max(60, dist*Math.exp(e.deltaY*0.0015))); }, {passive:false});
+  requestAnimationFrame(quadro);
+})();
+</script>
+</body>
+</html>

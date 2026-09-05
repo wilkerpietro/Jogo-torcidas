@@ -4768,3 +4768,49 @@ modo". A cena fica a de cima, com os bonecos; o esforço vai pro motor de briga.
   membros de verdade. Com esta regra a bancada dá rua 0/8 e praça 1/6, contra 5/8 e
   3/6 quando a retaguarda recuava: a retaguarda deles agora entra na briga, como a
   nossa.
+
+## 8.35 O boneco refeito em Three.js
+
+Pedido do dono (05/09/2026): refazer toda a animação do boneco num desenho em Three.js,
+com mais detalhe na construção e nos movimentos. A cena de cima continua sendo o canvas
+2D de sempre; o que mudou é a camada transparente por cima dela.
+
+- **Three.js entrou no repositório** (`js/lib/three.min.js`, 0.147, a última versão com o
+  pacote UMD que roda sem módulos; licença MIT em `js/lib/THREE-LICENSE`). O CDN é
+  bloqueado no ambiente de trabalho e o jogo tem de abrir sem rede, então a biblioteca
+  é vendida junto, e o empacotador a embute no artifact como qualquer outro script.
+- **`js/diajogo/bonecos3.js`** desenha gente, PM, pedra, bomba, explosão, fumaça e grade
+  com a mesma API que `tres.js` dava à ponte (`montar`, `desenharDeCima`,
+  `limparDeCima`, `escalaDeCima`); a ponte prefere este quando `THREE` existe e cai no
+  renderizador próprio quando não. A cena de perto (`briga3d.html`) continua no
+  `tres.js`.
+- **O corpo** é uma hierarquia de juntas (Group por junta): pélvis → tronco → peito →
+  pescoço → cabeça; ombro → cotovelo → mão; quadril → joelho → pé. Cabeça com olhos
+  (esclera e pupila), sobrancelha, nariz, boca, orelha; cabelo, boné com aba, bandana
+  (sempre no líder) ou careca; barba em 30%; camisa nas cores da torcida lisa ou com
+  duas ou três listras e gola; bermuda (com a coxa aparecendo) ou calça; tênis com
+  sola. PM de colete com faixa refletiva, quepe, cassetete e escudo na carga. Largura
+  de ombro, altura, pele e tudo o mais são sorteados por semente da ficha. As peças
+  fixas de cada osso são fundidas numa malha só com cor por vértice (`Acumulador`):
+  eram 27 chamadas de desenho por figura, ficaram 15 — sessenta figuras são ~900.
+- **O movimento** é procedural com mistura: cada figura tem uma pose atual que persegue
+  a pose-alvo do estado com velocidade própria (soco 30/s, levar pancada 22/s,
+  descanso 5/s), então troca de estado nunca dá pulo. Estados: parado (respira, pesa
+  numa perna, olha em volta), andar e correr (ciclo pela velocidade medida, joelho
+  dobra na perna da frente, ombro contra quadril, corrida inclinada com braço a 90°),
+  socar (jab e direto alternando de lado, gancho em 28%, tronco gira, passo à frente, a
+  outra mão em guarda), guarda (punhos no queixo, quicando), levar (cabeça vai, tronco
+  atrás, passo pra trás), atordoado (balança, joelho mole, cabeça rodando), arremessar
+  (arma atrás com o peso na perna de trás, solta com o corpo todo), fugir (corre olhando
+  pra trás de vez em quando), correr da bomba (braço cobrindo a cabeça), cair (de
+  bruços ou de costas, quica, tremor deitado), preso (sentado, mãos atrás), e a
+  **retaguarda torce**: braço no alto bombando, "vem" de braços abertos, pulo, ou
+  apontando e gritando, em turnos de 1,6 a 3,4 s.
+- **A câmera** de cima é ortográfica casada com a transformação do 2D, com cisalhamento
+  de 0,42 (a altura sobe na tela): o corpo tem volume e o pé fica exatamente onde o disco
+  está. Registrado o tombo: o Three.js guarda a matriz por coluna, e o cisalhamento
+  posto no índice 6 (era pra ser o 9) jogava a altura na profundidade e a cena inteira
+  pra fora do quadro.
+- **`bonecos.html` é a vitrine**: um boneco por estado, câmera em perspectiva girando,
+  clique num estado pra isolar, arrasto gira e rodinha aproxima. Serve pra avaliar o
+  detalhe de perto sem depender da briga acontecer.

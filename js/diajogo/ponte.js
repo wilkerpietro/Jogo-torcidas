@@ -81,7 +81,13 @@ TO.diaJogo.ponte = (function(){
     bonecos = false;
     if(sg){
       sg.classList.remove('tres');
-      if(!tres && opc.bonecos && TO.diaJogo.tres && TO.diaJogo.tres.montar(sg, null)){
+      /* o boneco em Three.js (bonecos3.js) quando a biblioteca está
+         carregada; o renderizador próprio (tres.js) de reserva */
+      const B3 = TO.diaJogo.bonecos3;
+      if(!tres && opc.bonecos && B3 && B3.montar(sg)){
+        bonecos = true; T = B3;
+        sg.classList.add('sobre-gl'); sg.hidden = false;
+      } else if(!tres && opc.bonecos && TO.diaJogo.tres && TO.diaJogo.tres.montar(sg, null)){
         bonecos = true; T = TO.diaJogo.tres;
         sg.classList.add('sobre-gl'); sg.hidden = false;
       } else if(!tres){ sg.classList.remove('sobre-gl'); sg.hidden = true; }
