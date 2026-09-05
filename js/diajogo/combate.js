@@ -137,6 +137,9 @@ TO.diaJogo.combate = (function(){
          e bomba (`arremessador`, com cadência própria em `cdBracoAte`).
          `fugaBomba` é a bomba no chão de que este disco está correndo. */
       this.linha='frente'; this.arremessador=false; this.cdBracoAte=0;
+      /* o posto de cada um na retaguarda: a que distância do inimigo
+         e quanto pro lado (ver `postoDaRetaguarda`) */
+      this.recuo=130; this.desvio=0; this.recuoAte=0;
       this.fugaBomba=null; this.bombaVista=null; this.reageBombaEm=0;
       this.membroId=null;   // costura com a gestão
     }
@@ -1388,7 +1391,7 @@ TO.diaJogo.combate = (function(){
         const retaguarda = d.linha==='retaguarda' && !d._cacando && !J.paz && agressivo(J,d);
         const visto = retaguarda ? (alvo || inimigoAlcancavel(J,d,RAIO_VISTA_RETAGUARDA)) : null;
         if(visto && !visto.fugindo){
-          const q = postoDaRetaguarda(d, visto);
+          const q = postoDaRetaguarda(J, d, visto);
           ax=q.x; ay=q.y; ramo='retaguarda'; d._olhaPara=visto;
         }
         else if(alvo && agressivo(J,d)){ ax=alvo.x; ay=alvo.y; }
@@ -1582,13 +1585,23 @@ TO.diaJogo.combate = (function(){
     return {bomba, dx:nb[0], dy:nb[1]};
   }
 
-  /* o posto da retaguarda: a 130 px do inimigo mais perto, na linha
-     dele até mim. Mais perto que isso recua; mais longe, avança. */
-  const DIST_RETAGUARDA = 130;
+  /* O POSTO DA RETAGUARDA. Na linha do inimigo mais perto até mim,
+     a uma distância que é de cada um — de 55 px (colado nas costas de
+     quem está brigando) a 170 (o mais assustado) — e um tanto pro
+     lado. Com todo mundo a exatos 130 px saía um arco perfeito em
+     volta do inimigo, que lia como fila e não como aglomeração (foto
+     do dono, 05/09/2026). A distância e o desvio são sorteados de
+     novo a cada 3 a 8 s: gente parada atrás de briga dá um passo pra
+     frente, volta, troca de lugar. */
   const RAIO_VISTA_RETAGUARDA = 260;
-  function postoDaRetaguarda(d, visto){
+  function postoDaRetaguarda(J, d, visto){
+    if(J.t >= d.recuoAte){
+      d.recuo = U.entre(55, 170); d.desvio = U.entre(-60, 60);
+      d.recuoAte = J.t + U.entre(3, 8);
+    }
     const dx=d.x-visto.x, dy=d.y-visto.y, l=Math.hypot(dx,dy)||1;
-    let x=visto.x+dx/l*DIST_RETAGUARDA, y=visto.y+dy/l*DIST_RETAGUARDA;
+    const ux=dx/l, uy=dy/l;
+    let x=visto.x+ux*d.recuo - uy*d.desvio, y=visto.y+uy*d.recuo + ux*d.desvio;
     if(!A.livrePara(x,y,A.raioMalha(d.r))){
       const q=A.pontoLivreMaisProximo(x,y,d.r);
       /* o vão livre pode estar do lado de lá do inimigo: nesse caso fica */

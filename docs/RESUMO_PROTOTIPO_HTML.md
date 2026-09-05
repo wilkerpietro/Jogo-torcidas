@@ -4691,9 +4691,14 @@ modo". A cena fica a de cima, com os bonecos; o esforço vai pro motor de briga.
   Cada disco nasce com `linha`: os 40% de cima do bonde por força+defesa (com um
   pouco de sorte pra não cortar reto) vão pra `frente`; o resto é `retaguarda`. Bonde de
   até cinco vai todo mundo. A retaguarda **vê o inimigo a 260 px mas não vai nele**:
-  fica a 130 px do mais perto (`postoDaRetaguarda`), recuando de frente pra ele quando
+  fica atrás do mais perto (`postoDaRetaguarda`), recuando de frente pra ele quando
   ele chega e avançando quando ele se afasta — o que a põe atrás de quem está no
-  contato. Ela entra de dois jeitos: **promovida** quando a frente do lado cai abaixo
+  contato. A distância é de cada um, 55 a 170 px, com desvio lateral de até 60 e
+  sorteio novo a cada 3 a 8 s: com todo mundo a exatos 130 px saía um arco perfeito
+  em volta do inimigo, que lia como fila (foto do dono no celular); espalhado, vira
+  aglomeração que encosta na linha de frente — e, medido, a briga ficou mais
+  equilibrada (rua 5/8 pro mandante, praça 2/6), porque quem está colado na frente
+  entra no contato mais cedo. Ela entra de dois jeitos: **promovida** quando a frente do lado cai abaixo
   de 40% de quem está de pé (mínimo 3; com cinco ou menos entra todo mundo), o mais
   forte primeiro e o arremessador por último; ou **na marra**, quando o contato chega
   até ela — quem apanha vira `frente` na hora. Sem isso a briga não acabava nunca; com
