@@ -4608,3 +4608,35 @@ caídos deitados e o cartaz de fim.
   que a tela menos o cabeçalho), porque o renderizador adapta o buffer ao quadro a
   cada volta. O radar foi pro canto de cima, que o de baixo é do pad.
 
+## 8.32 Frente e costas no combate, e o boneco na cena de cima
+
+- **O disco tem frente.** `rumo` entrou na simulação (combate.js): quem anda olha pra
+  onde vai, e parado gira devagar pra quem quer bater. **Só se acerta quem está no
+  cone de 140° da frente**; quem está do lado ou atrás não leva dano deste disco — o
+  disco vira pra ele (6,5 rad/s) e só depois bate. Quem **apanha pelas costas** sem
+  ninguém batendo na frente há 0,4 s vira pra quem bateu (`levouDe`); pancada de frente
+  segura a virada. Quem foge ou está atordoado não vira. Pedra por trás também vira. A PM
+  bate em qualquer lado — é cassetete, não briga de rua. O disco 2D ganhou um bico
+  branco mostrando o rumo.
+  Medido em Node, oito brigas de rua com semente fixa (26×22, o líder andando 18 s até o
+  rival e parando): antes 48 s de média e 15,5×3,5 caídos; com o cone 56 s e 15,6×2,6.
+  Nenhuma briga deixou de acabar. Ficar cercado passou a doer de verdade: quem está no
+  meio só bate em um lado por vez.
+- **O boneco no lugar do disco, na cena de cima, em todas as cenas.** A cena 2D continua
+  sendo pintada pelo canvas de sempre (foto ou desenho, malha, editor, nome e vida); um
+  canvas WebGL transparente por cima (`#djSobreGL` na bancada, o `#djPrincipal3d` do
+  jogo com a classe `sobre-gl`) desenha gente, PM, pedra, bomba, sombra e fumaça com o
+  **mesmo renderizador e as mesmas poses da cena 3D**, numa câmera ortográfica casada
+  ponto a ponto com a transformação do 2D (`ponte.ajustar`). Visto de cima o boneco vira
+  cabeça, ombro e braço — a figura de jogo de vôlei que o autor mandou de referência —
+  e nenhum sprite foi desenhado: a decisão de §7 ("boneco exigiria sprite por
+  variação/ação/direção") caiu de vez. `C.desenhar` ganhou `semCorpo`, que deixa no 2D
+  só o rótulo. O boneco de cima sai 1,25× o disco (`tres.escalaDeCima`, com slider na
+  bancada); a bancada de cima ganhou o botão **Bonecos/Discos** pra comparar e abre
+  numa aba por `#id` na URL. No jogo é a opção **"Bonecos na cena de cima"**, ligada por
+  padrão.
+- **Miúdos que a mudança pediu:** o contexto WebGL passou a ter alfa (a camada de cima
+  é transparente) e os planos com transparência saem pré-multiplicados; o cache de
+  textura zera quando o contexto troca de canvas; a fumaça vista de cima é disco no
+  chão, não cartaz em pé; o corte de boneco colado na lente só vale na câmera de perto.
+

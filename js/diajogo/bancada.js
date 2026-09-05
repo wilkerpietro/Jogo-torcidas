@@ -76,12 +76,25 @@ TO.diaJogo.bancada = (function(){
       botoes[c.rot] = b;
       abas.appendChild(b);
     }
+    /* na bancada de cima, o botão que troca boneco por disco e volta:
+       é a comparação que decide se o boneco fica */
+    if(extra.sobreGL){
+      const b = document.createElement('button');
+      const rot = ()=>{ b.textContent = extra.bonecos ? 'Bonecos ✓' : 'Discos ✓';
+                        b.classList.toggle('on', !!extra.bonecos); };
+      b.onclick = ()=>{ extra.bonecos = !extra.bonecos; rot(); if(atual) abrir(atual); };
+      b.style.marginLeft = 'auto';
+      rot();
+      abas.appendChild(b);
+    }
     const dica = document.createElement('small');
     dica.textContent = extra.tres
       ? 'trocar de aba recomeça a noite · C troca a câmera'
       : 'trocar de aba recomeça a noite · F2 abre o editor';
     abas.appendChild(dica);
-    abrir(lista[0]);
+    /* #praca, #rua-3d…: abre direto na aba pedida, pra link e pra teste */
+    const pedida = (location.hash||'').slice(1);
+    abrir(lista.find(c=>c.id===pedida) || lista[0]);
   }
 
   return {CENAS, CENAS_3D, montar, abrir, get atual(){return atual;}};

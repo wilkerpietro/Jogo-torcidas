@@ -349,11 +349,13 @@ TO.diaJogo.tres = (function(){
     ${FOG_GLSL}
     varying vec4 vCor; varying float vFog;
     void main(){ gl_Position=uPV*vec4(aPos,1.0); vCor=aCor; vFog=neblina(aPos); }`;
+  /* alfa pré-multiplicado: é o que o canvas transparente da vista de
+     cima espera, e no palco opaco dá no mesmo */
   const FS_SIMPLES = `
     precision mediump float;
     uniform vec3 uCorFog;
     varying vec4 vCor; varying float vFog;
-    void main(){ gl_FragColor = vec4(mix(vCor.rgb,uCorFog,vFog), vCor.a*(1.0-vFog)); }`;
+    void main(){ float a = vCor.a*(1.0-vFog); gl_FragColor = vec4(mix(vCor.rgb,uCorFog,vFog)*a, a); }`;
 
   const VS_TEX = `
     attribute vec3 aPos; attribute vec2 aUV;
@@ -1375,10 +1377,10 @@ TO.diaJogo.tres = (function(){
 
   function boneco(d, i, J, dt){
     if(d.entrou || d.sumiu) return;
-    if(cam.modo===0 && d.vivo && !d.lider && Math.hypot(d.x-cam.olho[0], d.y-cam.olho[2]) < 30) return;
+    if(!vistaDeCima && cam.modo===0 && d.vivo && !d.lider && Math.hypot(d.x-cam.olho[0], d.y-cam.olho[2]) < 30) return;
     const f = fichaDe(d, i);
     if(d.lider && !f.bandana && !f.bone) f.bandana = f.faixa;
-    const p = poseNeutra(); p.escala = f.escala;
+    const p = poseNeutra(); p.escala = f.escala*escalaGlobal;
     const t = J.t;
     const tx = d.tremor ? (Math.random()-0.5)*d.tremor*0.6 : 0;
     const tz = d.tremor ? (Math.random()-0.5)*d.tremor*0.6 : 0;
@@ -1394,11 +1396,11 @@ TO.diaJogo.tres = (function(){
 
     const vel = medirVelocidade(f, d.x, d.y, dt);
     const corre = !!(d.fugindo || d._cacando);
-    /* pra onde olha: pra onde anda; socando, pra quem apanha; jogando,
-       pra onde a pedra foi */
-    if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*10));
-    if(d.golpe > 0 && d._alvo && d._alvo.vivo)
-      f.yaw = girar(f.yaw, Math.atan2(d._alvo.x-d.x, d._alvo.y-d.y), Math.min(1, dt*14));
+    /* pra onde olha é o combate que diz (`rumo`): pra onde anda, pra quem
+       bate, pra quem bateu por trás. Aqui só se suaviza. Jogando, olha
+       pra onde a pedra foi. */
+    if(typeof d.rumo === 'number') f.yaw = girar(f.yaw, d.rumo, Math.min(1, dt*14));
+    else if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*10));
     if(d.arremesso && d.arremesso.t > 0.4){
       const pr = J.projeteis.find(q=>!q.morto && q.t < 0.2 && Math.hypot(q.x-d.x, q.y-d.y) < 60);
       if(pr) f.yaw = girar(f.yaw, Math.atan2(pr.vx, pr.vy), Math.min(1, dt*18));
@@ -1416,8 +1418,8 @@ TO.diaJogo.tres = (function(){
     else f.soco = 0;
 
     corpo(din, o, p, f);
-    planos.elipse(d.x, 0.5, d.y, 8.5*f.escala, 6*f.escala, [0,0,0,0.35], 8);
-    if(d.lider) planos.anel(d.x, 0.7, d.y, 12, 15, [0.88,0.69,0.25,0.85], 16);
+    planos.elipse(d.x, 0.5, d.y, 8.5*p.escala, 6*p.escala, [0,0,0,0.35], 8);
+    if(d.lider && !vistaDeCima) planos.anel(d.x, 0.7, d.y, 12, 15, [0.88,0.69,0.25,0.85], 16);
   }
 
   function policial(pm, i, J, dt){
@@ -1427,7 +1429,7 @@ TO.diaJogo.tres = (function(){
       viuVivo:false, queda:null, caiDeFrente:frac('pmq'+i)<0.5, cobre:true, sem:'pm'+i,
       px:null, pz:null, vx:0, vz:0};
     const f = pm._t3;
-    const p = poseNeutra(); p.escala = f.escala;
+    const p = poseNeutra(); p.escala = f.escala*escalaGlobal;
     const o = {x:pm.x, z:pm.y, yaw:f.yaw};
     if(!pm.vivo){ cair(p, f, dt); corpo(din, o, p, f); return; }
     f.viuVivo = true; f.queda = null;
@@ -1454,7 +1456,7 @@ TO.diaJogo.tres = (function(){
       p.ombro[1] = -0.7; p.cotovelo[1] = -1.8;
     }
     corpo(din, o, p, f);
-    planos.elipse(pm.x, 0.5, pm.y, 9, 6.5, [0,0,0,0.35], 8);
+    planos.elipse(pm.x, 0.5, pm.y, 9*p.escala, 6.5*p.escala, [0,0,0,0.35], 8);
   }
 
   /* =======================================================
@@ -1516,6 +1518,7 @@ TO.diaJogo.tres = (function(){
         din.caixaM(M, q.tam, q.tam, q.tam, q.cor);
       } else if(q.tipo==='fumo'){
         const h = q.tam, c = [q.cor[0], q.cor[1], q.cor[2], 0.38*k];
+        if(vistaDeCima){ planos.elipse(q.x, q.y, q.z, h, h*0.85, c, 8); continue; }
         const a=[q.x-rx*h, q.y-h*0.8, q.z-rz*h], b=[q.x+rx*h, q.y-h*0.8, q.z+rz*h];
         const cc=[q.x+rx*h, q.y+h*0.8, q.z+rz*h], d=[q.x-rx*h, q.y+h*0.8, q.z-rz*h];
         planos.v(...a,c); planos.v(...b,c); planos.v(...cc,c);
@@ -1805,9 +1808,11 @@ TO.diaJogo.tres = (function(){
   };
   const CEU = {cima:cor('#4f7fb5'), horizonte:cor('#e8c49c')};
 
+  let vistaDeCima = false, escalaGlobal = 1;
   function desenhar(J, opc){
     if(!gl || !J) return;
     opc = opc||{};
+    vistaDeCima = false;
     ajustarTamanho();
     if(A.D !== cenaAtual) levantar(A.D);
     const dt = Math.min(0.05, opc.dt || 0.016);
@@ -1859,12 +1864,63 @@ TO.diaJogo.tres = (function(){
     /* fios e varais */
     desenharSimples(buf.linhas, nLin, cam.PV, LUZ, gl.LINES);
     /* sombras e anéis, com transparência, por último */
-    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
     enviar(buf.planos, planos);
     desenharSimples(buf.planos, planos.vertices, cam.PV, LUZ, gl.TRIANGLES);
     gl.depthMask(true); gl.disable(gl.BLEND);
 
     if(ctx2) sobrepor(J);
+  }
+
+  /* =======================================================
+     A VISTA DE CIMA — o boneco no lugar do disco
+     A cena 2D continua sendo pintada pelo canvas de sempre (foto ou
+     desenho, malha, editor, nomes). Este canvas fica por cima dela,
+     transparente, e desenha só o que era disco: gente, PM, pedra,
+     bomba, sombra e fumaça, com uma câmera ortográfica olhando de
+     cima, casada ponto a ponto com a transformação do canvas 2D
+     (`escala` de ponte.ajustar). Os bonecos e as poses são os mesmos
+     da cena 3D — vistos de cima viram cabeça, ombro e braço.
+     ======================================================= */
+  let escalaDeCima = 1.25;     // o boneco um pouco maior que o disco, pra ler
+  const LUZ_CIMA = {
+    dir:(()=>{ const v=[0.45,0.62,-0.62], l=Math.hypot(...v); return [v[0]/l,v[1]/l,v[2]/l]; })(),
+    fog:[1e6, 2e6], corFog:[0,0,0], cam:[0,4000,0]
+  };
+  function desenharDeCima(J, opc){
+    if(!gl || !J) return;
+    vistaDeCima = true;
+    ajustarTamanho();
+    const dt = Math.min(0.05, opc.dt || 0.016);
+    const e = opc.escala, cw = opc.cw, ch = opc.ch;
+    /* ortográfica: x da cena → tela como o 2D faz; y da cena (z do
+       mundo) desce a tela; a altura vira profundidade, pra quem está
+       em pé cobrir quem está no chão */
+    const m = new Float32Array(16);
+    m[0] = 2*e.s/cw;  m[12] = 2*e.ox/cw - 1;
+    m[9] = -2*e.s/ch; m[13] = 1 - 2*e.oy/ch;
+    m[6] = -1/1200;   m[15] = 1;
+    cam.PV = m; cam.fwd = [0,0,-1];
+    escalaGlobal = escalaDeCima;
+
+    din.limpar(); planos.limpar();
+    J.discos.forEach((d,i)=>boneco(d,i,J,dt));
+    J.policiais.forEach((p,i)=>policial(p,i,J,dt));
+    projeteis(J);
+    atualizarParticulas(dt);
+    desenharParticulas();
+    gradesDeFerro(J.grades);
+    escalaGlobal = 1;
+
+    gl.viewport(0,0,cv.width,cv.height);
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    enviar(buf.dinamico, din);
+    desenharSolido(buf.dinamico, din.vertices, cam.PV, LUZ_CIMA);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+    enviar(buf.planos, planos);
+    desenharSimples(buf.planos, planos.vertices, cam.PV, LUZ_CIMA, gl.TRIANGLES);
+    gl.depthMask(true); gl.disable(gl.BLEND);
   }
 
   /* =======================================================
@@ -1874,10 +1930,13 @@ TO.diaJogo.tres = (function(){
     cv = canvas;
     if(gl && gl.canvas === cv) { sobre = camadaDeCima || sobre; ctx2 = sobre ? sobre.getContext('2d') : null; return true; }
     try{
-      gl = cv.getContext('webgl', {antialias:true, alpha:false}) || cv.getContext('experimental-webgl');
+      gl = cv.getContext('webgl', {antialias:true, alpha:true, premultipliedAlpha:true})
+        || cv.getContext('experimental-webgl');
     }catch(_){ gl=null; }
     if(!gl) return false;
     try{ montarGL(); }catch(err){ console.error('tres: '+err.message); gl=null; return false; }
+    /* contexto novo, recursos novos: textura e cena do anterior não valem */
+    _tex.clear(); letreiros=[]; cenaAtual=null;
     sobre = camadaDeCima || null;
     ctx2 = sobre ? sobre.getContext('2d') : null;
     cenaAtual = null;
@@ -1885,6 +1944,7 @@ TO.diaJogo.tres = (function(){
     return true;
   }
 
-  return {montar, desenhar, vetorDoTeclado, trocarCamera, MODOS,
+  return {montar, desenhar, desenharDeCima, vetorDoTeclado, trocarCamera, MODOS,
+          get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return !!gl; }, get cam(){ return cam; }};
 })();

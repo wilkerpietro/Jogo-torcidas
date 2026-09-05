@@ -40,6 +40,9 @@
   <div>
     <div id="djPalco">
       <canvas id="djPrincipal" width="1152" height="768"></canvas>
+      <!-- os bonecos por cima do disco: um canvas WebGL transparente,
+           que a ponte liga quando a bancada pede -->
+      <canvas id="djSobreGL" width="1152" height="768" hidden></canvas>
 
       <div class="hud" id="djRelogio">18:00</div>
       <div class="hud" id="djSubrelogio"></div>
@@ -88,8 +91,17 @@
 <script src="js/diajogo/cenario.js"></script>
 <script src="js/diajogo/arredores.js"></script>
 <script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/tres.js"></script>
 <script src="js/diajogo/ponte.js"></script>
 <script src="js/diajogo/bancada.js"></script>
-<script>TO.diaJogo.bancada.montar();</script>
+<script>
+  /* SEM_FOTO: a página empacotada não leva as fotos, então a esplanada
+     (que é só foto) fica de fora e as outras abrem no desenho */
+  (function(){
+    const B = TO.diaJogo.bancada;
+    B.montar(window.SEM_FOTO ? B.CENAS.filter(c=>c.id!=='arredores') : null,
+             {bonecos:true, sobreGL:document.getElementById('djSobreGL')});
+  })();
+</script>
 </body>
 </html>

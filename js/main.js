@@ -241,6 +241,8 @@
     /* a briga de rua abre de perto, atrás do líder, com boneco no lugar
        do disco. Liga por padrão: é a versão que existe pra ser vista. */
     if(e.opcoes.briga3d === undefined) e.opcoes.briga3d = true;
+    /* na cena de cima, boneco no lugar do disco — em todas as cenas */
+    if(e.opcoes.bonecos === undefined) e.opcoes.bonecos = true;
     if(e.opcoes.perguntarJogo === undefined)
       e.opcoes.perguntarJogo = e.opcoes.abrirGestao === undefined
                              ? true : !!e.opcoes.abrirGestao;
@@ -566,6 +568,10 @@
       'e bonecos no lugar dos discos. WASD anda pra onde a câmera olha, arrastar '+
       'gira, a roda aproxima e C troca a câmera. Só as três ruas por enquanto: '+
       'praça, bar, comércio, CT e arredores continuam vistos de cima.');
+    chave('bonecos', 'Bonecos na cena de cima',
+      'nas cenas vistas de cima — praça, rua, bar, comércio, CT e arredores — o '+
+      'disco vira o mesmo boneco da cena 3D, visto de cima: cabeça, ombro e braço, '+
+      'com os mesmos movimentos. Desligado, volta o disco de futebol de botão.');
     chave('relatorio', 'Abrir o relatório toda semana',
       'desligado, a semana fecha sem interromper: o resumo vai pro feed e o '+
       'relatório continua no botão do Financeiro. Semana no vermelho ou com '+
@@ -3794,7 +3800,11 @@
     if(em3d){
       m.config.local = local + '-3d';
       m.canvas = c3; m.sobre = sobre;
-    } else m.canvas = c2;
+    } else {
+      m.canvas = c2;
+      /* o canvas WebGL vira a camada dos bonecos por cima do 2D */
+      m.sobreGL = c3; m.bonecos = !!opc(E()).bonecos;
+    }
     TO.diaJogo.ponte.montar(m);
     /* sem WebGL a ponte volta pra cena 2D sozinha, no mesmo canvas; só
        a camada de nomes não tem mais o que mostrar */

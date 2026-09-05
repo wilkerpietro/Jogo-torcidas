@@ -54,6 +54,40 @@ TO.diaJogo.combate = (function(){
   const inimigos=(a,b)=> a!==b;
 
   /* =======================================================
+     O RUMO
+     O disco não é uma bola: tem frente e costas. A frente é um
+     cone de 140° em volta do rumo; fora dele não se acerta
+     ninguém. O rumo acompanha o andar (quem anda olha pra onde
+     vai) e, parado, gira pra quem se quer bater ou pra quem
+     bateu por trás — devagar o bastante pra virar as costas
+     ter custo.
+     ======================================================= */
+  const CONE_FRENTE = Math.cos(70*Math.PI/180);
+  const GIRO = 6.5;            // rad/s parado, virando pra alguém
+  const GIRO_ANDANDO = 11;     // rad/s acompanhando o próprio passo
+  const rumoPara = (d,o)=>Math.atan2(o.x-d.x, o.y-d.y);
+  function naFrente(d,o){
+    const dx=o.x-d.x, dy=o.y-d.y, l=Math.hypot(dx,dy)||1;
+    return (Math.sin(d.rumo)*dx + Math.cos(d.rumo)*dy)/l >= CONE_FRENTE;
+  }
+  /* gira o rumo em direção a `alvo` no máximo `vel·dt`; true quando chegou */
+  function girarRumo(d, alvo, dt, vel){
+    let df=alvo-d.rumo;
+    while(df>Math.PI) df-=Math.PI*2;
+    while(df<-Math.PI) df+=Math.PI*2;
+    const passo=vel*dt;
+    if(Math.abs(df)<=passo){ d.rumo=alvo; return true; }
+    d.rumo+=Math.sign(df)*passo;
+    return false;
+  }
+  /* apanhou de `de`: de frente segura a virada; por trás, sem ninguém
+     batendo na frente há um instante, vira pra quem bateu */
+  function levouDe(J, d, de){
+    if(naFrente(d, de)) d.frenteEm=J.t;
+    else if(J.t - d.frenteEm > 0.4) d.viraPara = rumoPara(d, de);
+  }
+
+  /* =======================================================
      DISCO
      ======================================================= */
   class Disco{
@@ -85,6 +119,13 @@ TO.diaJogo.combate = (function(){
          por eles. `apanhou` acende quando leva pancada; `arremesso` marca
          quem acabou de jogar (e o quê); `_alvo` é em quem se está batendo. */
       this.apanhou=0; this.arremesso=null; this._alvo=null;
+      /* PRA ONDE ESTÁ VIRADO. Não é enfeite: só se bate em quem está no
+         cone da frente. Quem está nas costas não leva dano deste disco —
+         e este disco, se apanha pelas costas sem ninguém batendo na
+         frente, vira pra quem bateu. `viraPara` é o rumo que ele está
+         girando pra alcançar; `frenteEm` é a última vez que apanhou de
+         frente, que é o que segura a virada. */
+      this.rumo=0; this.viraPara=null; this.frenteEm=-9;
       this.membroId=null;   // costura com a gestão
     }
     get vivo(){return !this.caido && !this.preso && !this.entrou && !this.sumiu;}
@@ -426,6 +467,8 @@ TO.diaJogo.combate = (function(){
       }
       /* as duas cores da torcida que veio do mapa: o círculo externo é a
          primária, o miolo é a secundária */
+      /* nasce olhando pro meio da cena, que é de onde o outro lado vem */
+      d.rumo = Math.atan2(A.W/2 - p.x, A.H/2 - p.y);
       d.cor  = g.bonde ? g.bonde.cor  : null;
       d.cor2 = g.bonde ? g.bonde.cor2 : null;
       d.torcida = g.bonde ? g.bonde.nome : null;
@@ -777,8 +820,11 @@ TO.diaJogo.combate = (function(){
        regra dos discos, e pelo mesmo motivo (ver `inimigoFugindo`) */
     const cacando = J.discos.some(o=>o.vivo && o.fugindo && inimigos(l.lado,o.lado));
     const v = P.velocidade * (cacando ? 1.25 : 1);
+    const px=l.x, py=l.y;
     A.mover(l, dx/m*v*dt, dy/m*v*dt);
     A.barrarGrades(l,J.grades);
+    const mx=l.x-px, my=l.y-py;
+    if(Math.hypot(mx,my) > v*dt*0.2){ girarRumo(l, Math.atan2(mx,my), dt, GIRO_ANDANDO); l.viraPara=null; }
   }
 
   /* ---------- slots de formação ---------- */
@@ -1157,6 +1203,8 @@ TO.diaJogo.combate = (function(){
          ele pode "andar" 0,9 px e ser desfeito logo depois por um
          empurrão, e aí o disco nunca é considerado travado. */
       const andou = Math.hypot(d.x-px, d.y-py) > vel*dt*0.25;
+      /* quem anda olha pra onde vai */
+      if(andou){ girarRumo(d, Math.atan2(d.x-px, d.y-py), dt, GIRO_ANDANDO); d.viraPara=null; }
 
       /* Rede de segurança: se nem deslizando nem contornando ele saiu
          do lugar, larga o steering e vai direto pela célula que o campo
@@ -1285,7 +1333,7 @@ TO.diaJogo.combate = (function(){
           if(p.cooldown>0) break;
           p.cooldown=1.25;
           d.hp-=P.forcaPM*P.dano*1.4; d.atordoado=1.0; d.tremor=6;
-          d.apanhou=0.5; p.golpe=0.3;
+          d.apanhou=0.5; p.golpe=0.3; levouDe(J, d, p);
           d.moral=Math.max(0,d.moral-0.6);
           if(d.hp<=0) prender(J,d);
           break;
@@ -1311,7 +1359,7 @@ TO.diaJogo.combate = (function(){
           if(p.cooldown<=0 && pd<perto.r+p.r+8){
             p.cooldown=2.0;
             perto.hp-=P.forcaPM*P.dano; perto.atordoado=0.6; perto.tremor=5;
-            perto.apanhou=0.5; p.golpe=0.3;
+            perto.apanhou=0.5; p.golpe=0.3; levouDe(J, perto, p);
             if(perto.hp<=0) prender(J,perto);
           }
         } else {
@@ -1367,10 +1415,15 @@ TO.diaJogo.combate = (function(){
       if(bate) for(const b of porPerto(J,a.x,a.y,a.r+(J._raioMax||8)+5)){
         if(a===b||!b.vivo||!inimigos(a.lado,b.lado)) continue;
         if(U.dist(a.x,a.y,b.x,b.y)>a.r+b.r+5) continue;
+        /* SÓ SE BATE EM QUEM ESTÁ NA FRENTE. Quem está do lado ou atrás
+           não leva; o disco vira pra ele, e só depois bate. Virar leva
+           tempo, e é o tempo que ficar de costas custa. */
+        if(!naFrente(a,b)){ if(a.viraPara==null) a.viraPara = rumoPara(a,b); continue; }
         const bruto=(a.forca*nivelMoral(a.moral)*U.entre(0.8,1.2))-b.defesa*0.5;
         b.hp-=Math.max(1,bruto)*P.dano*dt*(b.fugindo?1.6:1);
         b.tremor=Math.min(6,b.tremor+0.6); a.golpe=0.12; a.hostil=3.0;
         b.apanhou=0.35; a._alvo=b;
+        levouDe(J, b, a);
         atacado(J,b);
         /* ALCANÇOU, PEGOU — e só pra quem correu sem brigar.
            Quem debanda por inferioridade sai com a vida cheia, e no
@@ -1433,12 +1486,18 @@ TO.diaJogo.combate = (function(){
         if(p.hp<=0){p.caido=true; J.alerta=Math.min(100,J.alerta+18); logar(J,'Um PM foi ao chão.','pm');}
         if(p.cooldown<=0){
           p.cooldown=1.9; a.hp-=P.forcaPM*P.dano; a.atordoado=0.7; a.tremor=5;
-          a.apanhou=0.5; p.golpe=0.3;
+          a.apanhou=0.5; p.golpe=0.3; levouDe(J, a, p);
           if(a.hp<=0) prender(J,a);
         }
       }
     }
     for(const d of J.discos){
+      /* a virada: pra quem se quer bater, ou pra quem bateu por trás.
+         Quem foge ou está atordoado não vira — corre, ou cambaleia. */
+      if(d.viraPara!=null){
+        if(!d.vivo || d.fugindo || d.atordoado>0) d.viraPara=null;
+        else if(girarRumo(d, d.viraPara, dt, GIRO)) d.viraPara=null;
+      }
       d.tremor=Math.max(0,d.tremor-dt*9);
       d.golpe =Math.max(0,d.golpe-dt);
       if(d.apanhou) d.apanhou=Math.max(0,d.apanhou-dt);
@@ -1614,6 +1673,7 @@ TO.diaJogo.combate = (function(){
       if(p.tipo==='pedra'){
         for(const d of alvos) if(U.dist(d.x,d.y,p.x,p.y)<32){
           d.hp-=22*P.dano; d.tremor=5; d.apanhou=0.4; atacado(J,d);
+          if(J.t - d.frenteEm > 0.4) d.viraPara = Math.atan2(p.x-d.x, p.y-d.y);
           if(d.hp<=0) derrubar(J,d); break;
         }
         for(const g of J.grades) if(g.hp>0&&g.tipo!=='fila'&&U.dist(g.x,g.y,p.x,p.y)<26){g.hp-=30;g.tremor=4;break;}
@@ -2004,9 +2064,21 @@ TO.diaJogo.combate = (function(){
     c.fillStyle=corDisco(d,false); c.beginPath(); c.arc(x,y,d.r,0,7); c.fill();
     c.fillStyle=corDisco(d,true);  c.beginPath(); c.arc(x,y,d.r*.62,0,7); c.fill();
     c.fillStyle='#2b2320'; c.beginPath(); c.arc(x,y,d.r*.34,0,7); c.fill();
+    /* o bico: pra onde está virado, que é pra onde bate */
+    { const fx=Math.sin(d.rumo), fy=Math.cos(d.rumo), px=-fy, py=fx, r=d.r;
+      c.fillStyle='rgba(255,255,255,.85)'; c.beginPath();
+      c.moveTo(x+fx*(r+2.5), y+fy*(r+2.5));
+      c.lineTo(x+fx*(r-2)+px*2.4, y+fy*(r-2)+py*2.4);
+      c.lineTo(x+fx*(r-2)-px*2.4, y+fy*(r-2)-py*2.4);
+      c.closePath(); c.fill(); }
     if(d.lider){c.strokeStyle='#e0b040';c.lineWidth=3;c.beginPath();c.arc(x,y,d.r+3,0,7);c.stroke();}
     if(d.golpe>0){c.strokeStyle=`rgba(255,235,190,${d.golpe*6})`;c.lineWidth=2;
       c.beginPath();c.arc(x,y,d.r+6,0,7);c.stroke();}
+    desenharRotulo(c,d,x,y);
+  }
+  /* vida e nome ficam no 2D mesmo quando o corpo é boneco por cima */
+  function desenharRotulo(c,d,x,y){
+    if(x===undefined){ x=d.x; y=d.y; }
     if(d.hp<d.hpMax){
       const w=d.r*2, p=Math.max(0,d.hp/d.hpMax);
       c.fillStyle='rgba(0,0,0,.6)'; c.fillRect(x-w/2,y-d.r-9,w,3);
@@ -2016,6 +2088,8 @@ TO.diaJogo.combate = (function(){
       c.font='600 10px "IBM Plex Mono",monospace'; c.textAlign='center';
       c.fillStyle='rgba(0,0,0,.75)'; c.fillText(d.nome,x+1,y-d.r-13);
       c.fillStyle='#e0b040';         c.fillText(d.nome,x,y-d.r-14);
+      c.strokeStyle='rgba(224,176,64,.9)'; c.lineWidth=2;
+      c.beginPath(); c.arc(x,y,d.r+5,0,7); c.stroke();
     }
   }
   function desenharPolicial(c,p,t){
@@ -2054,14 +2128,18 @@ TO.diaJogo.combate = (function(){
   function desenhar(J,c,opc){
     A.desenharFundo(c);
     A.desenharSobreposicoes(c,J.grades,Object.assign({t:J.t},opc||{}));
-    for(const p of J.policiais) desenharPolicial(c,p,J.t);
+    /* `semCorpo`: os bonecos da vista de cima (tres.js) desenham gente,
+       PM e projétil num canvas por cima; aqui fica só nome e vida */
+    const corpo = !(opc && opc.semCorpo);
+    if(corpo) for(const p of J.policiais) desenharPolicial(c,p,J.t);
     const ord=[...J.discos].sort((a,b)=>a.y-b.y);
-    for(const d of ord) if(!d.vivo) desenharDisco(c,d);
-    for(const d of ord) if(d.vivo)  desenharDisco(c,d);
-    for(const p of J.projeteis) desenharProjetil(c,p);
+    if(corpo) for(const d of ord) if(!d.vivo) desenharDisco(c,d);
+    for(const d of ord) if(d.vivo){ if(corpo) desenharDisco(c,d); else desenharRotulo(c,d); }
+    if(corpo) for(const p of J.projeteis) desenharProjetil(c,p);
   }
 
   return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar,
+          naFrente, rumoPara,
           ladoDoJogador, ladoDeles, OUTRO_LADO,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,

@@ -125,6 +125,8 @@
       <!-- a versão 3D da rua: o palco WebGL e a camada de nomes por cima.
            Ficam escondidos até a opção pedir; um canvas não troca de
            contexto, então o 2D e o WebGL são elementos separados. -->
+      <!-- na cena de cima o mesmo canvas vira a camada transparente dos
+           bonecos (classe sobre-gl); a ponte troca a classe conforme o modo -->
       <canvas id="djPrincipal3d" class="tres" width="1140" height="820" hidden></canvas>
       <canvas id="djSobre" width="1140" height="820" hidden></canvas>
       <div class="hud" id="djRelogio">18:00</div>

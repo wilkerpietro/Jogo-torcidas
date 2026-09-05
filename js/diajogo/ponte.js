@@ -34,6 +34,10 @@ TO.diaJogo.ponte = (function(){
      quem monta pede; T é o renderizador (js/diajogo/tres.js). Sem WebGL
      a ponte cai na tela de cima, na cena 2D de mesmo nome. */
   let tres=false, T=null, dtQuadro=0.016;
+  /* a vista de cima com boneco: o canvas 2D pinta a cena, e um canvas
+     WebGL transparente por cima (`opc.sobreGL`) pinta gente, PM e
+     projétil com o mesmo renderizador da cena 3D, olhando de cima */
+  let bonecos=false;
   /* chamado a cada quadro enquanto a cena roda: quem monta a cena usa
      isso pra continuar o relógio da rua e mandar pra cá o bonde que
      acabou de chegar na esplanada */
@@ -68,6 +72,19 @@ TO.diaJogo.ponte = (function(){
       ctx = cv.getContext('2d');
       if(!ctx) throw new Error('o canvas da cena já é WebGL; a cena 2D precisa de outro canvas');
     }
+    /* os bonecos por cima do 2D: só quando quem monta passa o canvas e
+       pede — e some quando não pede, porque o canvas é o mesmo elemento
+       que a cena 3D usa no jogo */
+    const sg = opc.sobreGL || null;
+    bonecos = false;
+    if(sg){
+      sg.classList.remove('tres');
+      if(!tres && opc.bonecos && TO.diaJogo.tres && TO.diaJogo.tres.montar(sg, null)){
+        bonecos = true; T = TO.diaJogo.tres;
+        sg.classList.add('sobre-gl'); sg.hidden = false;
+      } else if(!tres){ sg.classList.remove('sobre-gl'); sg.hidden = true; }
+    }
+    if(tres && cv) cv.classList.remove('sobre-gl');
 
     /* rua, praça ou arredores: a cena vem do encontro que abriu a tela */
     A.usarCena(local);
@@ -164,9 +181,11 @@ TO.diaJogo.ponte = (function(){
     escala=ajustar(ctx,cv,A.W,A.H);
     C.desenhar(J,ctx,{editor:ED.ativo,
                       mostrarMalha:ED.ativo&&ED.mostrarMalha,
-                      mostrarPostos:ED.ativo&&ED.mostrarPostos});
+                      mostrarPostos:ED.ativo&&ED.mostrarPostos,
+                      semCorpo:bonecos});
     if(ED.ativo) desenharEditor(ctx);
     ctx.setTransform(1,0,0,1,0,0);
+    if(bonecos && T) T.desenharDeCima(J, {escala, cw:cv.width, ch:cv.height, dt:dtQuadro});
   }
 
   /* converte posição do mouse para coordenada da cena */
@@ -404,6 +423,18 @@ TO.diaJogo.ponte = (function(){
         <input type="range" min="${mi}" max="${ma}" step="${pa}" value="${P[k]}">`;
       const i=d.querySelector('input');
       i.oninput=()=>{P[k]=parseFloat(i.value); d.querySelector('b').textContent=fmt(P[k]);};
+      cs.appendChild(d);
+    }
+    /* o tamanho do boneco visto de cima: o disco tem 14 px de largura e
+       o boneco, na mesma pegada, lê pequeno; um pouco maior que o disco
+       é o que se compara aqui */
+    if(TO.diaJogo.tres){
+      const T3=TO.diaJogo.tres;
+      const d=document.createElement('div'); d.className='slider';
+      d.innerHTML=`<label>Tamanho do boneco de cima<b>${T3.escalaDeCima.toFixed(2)}×</b></label>
+        <input type="range" min="0.8" max="2.2" step="0.05" value="${T3.escalaDeCima}">`;
+      const i=d.querySelector('input');
+      i.oninput=()=>{T3.escalaDeCima=parseFloat(i.value); d.querySelector('b').textContent=T3.escalaDeCima.toFixed(2)+'×';};
       cs.appendChild(d);
     }
     const b=document.createElement('button');
@@ -936,7 +967,7 @@ ${D.grades.map(g=>'    '+j(g)).join(',\n')}
   }
 
   return {montar, novaNoite, encerrar, alternarEditor, gerarArquivo,
-          get tres(){ return tres; },
+          get tres(){ return tres; }, get bonecos(){ return bonecos; },
           alternarVelocidade,
           get velocidade(){return velocidade;},
           set velocidade(v){ velocidade = velocidades.includes(v) ? v : 1;

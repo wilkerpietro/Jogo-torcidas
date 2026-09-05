@@ -17,6 +17,9 @@
 #djPalco canvas.tres{cursor:grab}
 #djPalco canvas.tres:active{cursor:grabbing}
 #djSobre{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+/* o canvas WebGL transparente com os bonecos por cima da cena 2D */
+#djPalco canvas.sobre-gl{position:absolute;left:0;top:0;width:100%;height:100%;
+  pointer-events:none;background:transparent;border:0}
 /* o `display:block` de cima ganharia do `hidden` do navegador */
 #djPalco canvas[hidden]{display:none}
 
