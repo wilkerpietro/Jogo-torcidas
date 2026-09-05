@@ -170,6 +170,9 @@ TO.diaJogo.bonecos3 = (function(){
       camisa, faixa,
       escala: (d.lider ? 1.1 : 0.93 + frac(s+'e')*0.12),
       largo: 0.9 + frac(s+'lg')*0.24,
+      /* O ESTILO: o que faz dois bonecos no mesmo estado não se
+         mexerem igual (pedido do dono, 05/09/2026) */
+      estilo: estiloDe(s, d.lider),
       /* memória da animação */
       ladoSoco:dado(s+'ls2',2), ataque:null, pausa:0.2+frac(s+'pa')*0.4, combo:0,
       impacto:null, cobre: frac(s+'cb') < 0.6,
@@ -180,6 +183,34 @@ TO.diaJogo.bonecos3 = (function(){
     };
     return d._b3;
   }
+
+  /* cada um anda, guarda e bate do seu jeito; tudo sorteado da semente */
+  function estiloDe(s, lider){
+    const GUARDAS = ['fechada','fechada','alta','baixa','aberta'];
+    const REP = ['misto','misto','tecnico','brigao','chutador'];
+    const rc = frac(s+'cv');
+    return {
+      passada: 0.85 + frac(s+'e1')*0.3,     // tamanho do passo
+      cadencia: 0.9 + frac(s+'e2')*0.2,     // frequência do passo
+      balanco: 0.7 + frac(s+'e3')*0.6,      // braço balançando
+      curvado: rc < 0.3 ? 0.05 + rc*0.3 : 0, // postura curvada
+      gingado: 0.5 + frac(s+'e5')*1.0,      // balanço lateral
+      pesado: frac(s+'e6') < 0.25,          // pisa pesado, quadril baixo
+      inquieto: 0.4 + frac(s+'e7')*1.2,     // olha em volta, se mexe parado
+      guarda: lider ? 'alta' : GUARDAS[dado(s+'e8', GUARDAS.length)],
+      canhoto: frac(s+'e9') < 0.15,
+      repertorio: lider ? 'brigao' : REP[dado(s+'e10', REP.length)],
+      ritmo: 0.85 + frac(s+'e11')*0.3,      // velocidade dos golpes
+      folego: 2 + dado(s+'e12', 4),         // golpes por sequência
+      duro: 0.6 + frac(s+'e13')*0.7,        // quanto sente a pancada (menor = mais duro)
+      finta: 0.06 + frac(s+'e14')*0.14,     // chance de fintar
+      olhaTras: 0.5 + frac(s+'e15')*1.0,
+      gestoFav: dado(s+'e16', 4)
+    };
+  }
+  /* um ruído lento e particular de cada figura: produto de dois senos
+     com frequências que não batem, deslocado pela fase */
+  const ruido = (f, t, a, b) => Math.sin(t*a + f.fase) * Math.sin(t*b*0.73 + f.fase*1.7);
 
   /* =======================================================
      O CORPO: construção
@@ -408,62 +439,80 @@ TO.diaJogo.bonecos3 = (function(){
      OS MOVIMENTOS: cada um escreve na pose-alvo `p`
      ======================================================= */
   /* parado: respira, pesa numa perna, olha em volta de vez em quando */
+  /* parado: respira, pesa numa perna, olha em volta — cada um no seu
+     tempo e na sua postura */
   function parado(p, f, t){
+    const e = f.estilo;
     const r = Math.sin(t*1.7 + f.fase);
     p.peito = 1 + 0.02*r;
-    p.inclina = 0.02 + 0.012*r;
-    p.tomba = 0.03*Math.sin(t*0.6 + f.fase);
-    p.coxa = [0.06, -0.04]; p.joelho = [0.10, 0.06];
-    p.olhaY = 0.35*Math.sin(t*0.45 + f.fase*2) * (Math.sin(t*0.13+f.fase) > 0.3 ? 1 : 0.2);
-    p.olhaX = 0.05*Math.sin(t*0.8+f.fase);
-    p.ombro = [0.08, 0.08]; p.cotovelo = [-0.3, -0.35];
+    p.inclina = 0.02 + 0.012*r + e.curvado;
+    p.tomba = 0.03*e.gingado*Math.sin(t*0.6 + f.fase) + 0.02*ruido(f, t, 0.9, 1.3);
+    p.gira = 0.05*e.inquieto*ruido(f, t, 0.5, 0.8);
+    const lado = Math.sin(f.fase) > 0 ? 1 : -1;
+    p.coxa = [0.06*lado, -0.04*lado]; p.joelho = [0.10, 0.06];
+    if(e.pesado){ p.joelho = [0.16, 0.12]; p.y = -0.6; }
+    const olha = Math.sin(t*0.13+f.fase) > (0.6 - e.inquieto*0.3) ? 1 : 0.2;
+    p.olhaY = 0.35*e.inquieto*Math.sin(t*0.45 + f.fase*2)*olha;
+    p.olhaX = 0.05*Math.sin(t*0.8+f.fase) + e.curvado*0.5;
+    p.ombro = [0.08 + 0.03*ruido(f,t,1.1,0.7), 0.08 - 0.03*ruido(f,t,0.8,1.2)];
+    p.cotovelo = [-0.3, -0.35]; p.ombroZ = [0.10+0.02*e.gingado, 0.10+0.02*e.gingado];
   }
-  /* andar e correr: ciclo pela velocidade medida */
+
+  /* andar e correr: ciclo pela velocidade medida, na passada, cadência
+     e balanço de cada um */
   function passo(p, f, vel, dt, corre, minimo){
     /* abaixo do mínimo é empurra-empurra da separação, não passo: quem
        está na troca de socos não fica marchando no lugar */
     if(vel < (minimo||6)){ f.ciclo += dt*0.6; return false; }
-    const freq = corre ? 0.085 : 0.075;
+    const e = f.estilo;
+    const freq = (corre ? 0.085 : 0.075) * e.cadencia / e.passada;
     f.ciclo += vel*freq*dt*6.28*0.36;
     const c = f.ciclo, s = Math.sin(c), s2 = Math.sin(c+Math.PI);
-    const amp = corre ? 0.95 : 0.55;
-    const lev = corre ? 1.1 : 0.7;
+    const amp = (corre ? 0.95 : 0.55) * e.passada;
+    const lev = (corre ? 1.1 : 0.7) * e.passada;
     p.coxa = [s*amp, s2*amp];
     /* o joelho dobra na perna que vai pra frente (coxa negativa) */
-    p.joelho = [Math.max(0, -s)*lev + 0.08, Math.max(0, -s2)*lev + 0.08];
+    const base = e.pesado ? 0.16 : 0.08;
+    p.joelho = [Math.max(0, -s)*lev + base, Math.max(0, -s2)*lev + base];
     p.pe = [Math.max(0, s)*0.35, Math.max(0, s2)*0.35];
-    const bs = corre ? 0.9 : 0.42;
+    const bs = (corre ? 0.9 : 0.42) * e.balanco;
     p.ombro = [s2*bs - (corre?0.4:0.05), s*bs - (corre?0.4:0.05)];
-    p.cotovelo = corre ? [-1.5, -1.5] : [-0.45 - Math.max(0,s2)*0.3, -0.45 - Math.max(0,s)*0.3];
+    p.cotovelo = corre ? [-1.5, -1.5] : [-0.45 - Math.max(0,s2)*0.3*e.balanco, -0.45 - Math.max(0,s)*0.3*e.balanco];
     p.ombroZ = [0.12, 0.12];
-    p.gira = -s*(corre?0.22:0.10);          // ombros contra o quadril
-    p.tomba = Math.sin(c)*(corre?0.05:0.035);
-    p.inclina = corre ? 0.30 : 0.07;
-    p.y = Math.abs(Math.sin(c))*(corre?1.4:0.6) - (corre?0.6:0);
-    p.olhaX = corre ? -0.1 : 0.02;
+    p.gira = -s*(corre?0.22:0.10)*e.balanco;          // ombros contra o quadril
+    p.tomba = Math.sin(c)*(corre?0.05:0.035)*e.gingado;
+    p.inclina = (corre ? 0.30 : 0.07) + e.curvado;
+    p.y = Math.abs(Math.sin(c))*(corre?1.4:0.6)*e.passada - (corre?0.6:0) - (e.pesado?0.8:0);
+    p.olhaX = (corre ? -0.1 : 0.02) + e.curvado*0.4;
+    p.olhaY = 0.06*ruido(f, c*0.3, 1, 1.4);
     return true;
   }
-  /* socar: jab e direto alternados, gancho de vez em quando; o corpo vai junto */
-  /* A TROCA DE SOCOS. Não é um soco repetido: é uma sequência — jab da
-     mão da frente, direto da de trás, gancho, uppercut, um chute e um
-     empurrão de vez em quando — com pausa em guarda entre as
-     sequências, que é o que dá ritmo de briga de verdade. Cada golpe
-     tem armar (o quadril e o tronco vão antes do ombro), estender e
-     recolher. NO MOMENTO DO IMPACTO (42% do golpe) o alvo é avisado
-     (`f.impacto`): é ele quem move a cabeça de quem apanha, e não o
-     `apanhou` contínuo do combate — era isso que deixava dois discos
-     tremendo um na frente do outro. */
+
   const GOLPES = {
     jab:{dur:0.30, forca:0.5}, direto:{dur:0.40, forca:0.85}, gancho:{dur:0.46, forca:1.1},
     uppercut:{dur:0.44, forca:1.0}, chute:{dur:0.62, forca:1.2}, empurrao:{dur:0.52, forca:0.7}
   };
+  const REPERTORIO = {
+    misto:   {jab:.36, direto:.28, gancho:.16, uppercut:.09, chute:.06, empurrao:.05},
+    tecnico: {jab:.45, direto:.35, gancho:.10, uppercut:.05, chute:.00, empurrao:.05},
+    brigao:  {jab:.15, direto:.20, gancho:.35, uppercut:.15, chute:.05, empurrao:.10},
+    chutador:{jab:.20, direto:.20, gancho:.15, uppercut:.05, chute:.30, empurrao:.10}
+  };
   function escolherGolpe(f){
-    const r = Math.random();
-    const tipo = r<0.36?'jab' : r<0.64?'direto' : r<0.80?'gancho' : r<0.89?'uppercut' : r<0.95?'chute' : 'empurrao';
-    const lado = tipo==='jab' ? 0 : tipo==='direto' ? 1 : (f.ladoSoco = 1 - f.ladoSoco);
-    f.ataque = {tipo, t:0, dur:GOLPES[tipo].dur, lado, bateu:false};
+    const e = f.estilo;
+    const pesos = REPERTORIO[e.repertorio] || REPERTORIO.misto;
+    let r = Math.random(), tipo = 'jab';
+    for(const k in pesos){ r -= pesos[k]; if(r <= 0){ tipo = k; break; } }
+    /* a mão da frente é a esquerda, ou a direita se é canhoto */
+    const frente = e.canhoto ? 1 : 0;
+    const lado = tipo==='jab' ? frente : tipo==='direto' ? 1-frente : (f.ladoSoco = 1 - f.ladoSoco);
+    /* a finta: um jab que para na metade e volta rápido */
+    const finta = tipo==='jab' && Math.random() < e.finta;
+    f.ataque = {tipo, t:0, dur:GOLPES[tipo].dur/e.ritmo*(finta?0.7:1), lado, bateu:finta,
+                amp: 0.88 + Math.random()*0.24, finta};
     f.combo++;
   }
+
   function lutar(p, f, d, dt, t){
     guarda(p, f, t);
     if(!f.ataque){
@@ -482,7 +531,8 @@ TO.diaJogo.bonecos3 = (function(){
         alvo._b3.impacto = {t:0, dur: a.tipo==='jab'?0.26:0.36, forca:GOLPES[a.tipo].forca, lado, tipo:a.tipo};
       }
     }
-    const ida = suave(k/0.42), volta = suave((k-0.55)/0.45), ext = ida*(1-volta);
+    const ida = suave(k/0.42), volta = suave((k-0.55)/0.45);
+    const ext = ida*(1-volta)*(a.amp||1)*(a.finta ? 0.5 : 1);
     const b = a.lado, o = 1-b, sg = b===1 ? 1 : -1;
     /* o quadril vai antes do ombro: a rotação do tronco arma um pouco antes */
     const arma = suave(k/0.25);
@@ -524,28 +574,44 @@ TO.diaJogo.bonecos3 = (function(){
     }
     if(k >= 1){
       f.ataque = null;
-      /* a cada três golpes, respira: 0,35 a 0,9 s em guarda */
-      f.pausa = (f.combo % 3 === 0) ? 0.35 + Math.random()*0.55 : 0.04 + Math.random()*0.16;
+      /* no fim da sequência, respira: 0,35 a 0,9 s em guarda; o fôlego
+         (quantos golpes por sequência) é de cada um */
+      f.pausa = (f.combo % f.estilo.folego === 0) ? 0.35 + Math.random()*0.55 : 0.04 + Math.random()*0.16;
     }
   }
 
   /* guarda: punhos em frente ao queixo, quicando na ponta do pé, com
      um balanço lateral e o ombro rolando — o corpo nunca está duro */
+  /* guarda: cada um tem a sua — fechada (punho no queixo), alta (punho
+     na têmpora, queixo enterrado), baixa (mão no peito, queixo pra
+     cima, o folgado) ou aberta (braço largo, o que vem pra agarrar).
+     Todas quicam na ponta do pé com balanço lateral e ombro rolando. */
   function guarda(p, f, t){
-    const w = t*5.5 + f.fase;
+    const e = f.estilo;
+    const w = t*(5.0 + e.gingado*0.8) + f.fase;
     const q = Math.abs(Math.sin(w));
-    p.ombro = [-1.3, -1.2]; p.cotovelo = [-2.35, -2.3]; p.ombroZ = [0.22, 0.28]; p.maoZ = [0.15, 0.15];
+    switch(e.guarda){
+      case 'alta':   p.ombro = [-1.55, -1.5]; p.cotovelo = [-2.55, -2.5]; p.ombroZ = [0.35, 0.4]; p.maoZ = [0.3, 0.3]; p.olhaX = 0.3; break;
+      case 'baixa':  p.ombro = [-0.7, -0.6]; p.cotovelo = [-1.7, -1.6]; p.ombroZ = [0.2, 0.25]; p.maoZ = [0.1, 0.1]; p.olhaX = -0.08; break;
+      case 'aberta': p.ombro = [-1.05, -1.0]; p.cotovelo = [-1.3, -1.25]; p.ombroZ = [0.95, 1.0]; p.maoZ = [0, 0]; p.olhaX = 0.12; break;
+      default:       p.ombro = [-1.3, -1.2]; p.cotovelo = [-2.35, -2.3]; p.ombroZ = [0.22, 0.28]; p.maoZ = [0.15, 0.15]; p.olhaX = 0.18;
+    }
     p.punho = [1, 1];
-    p.inclina = 0.2 + 0.03*Math.sin(w*0.5); p.olhaX = 0.18;
+    p.inclina = (e.guarda==='aberta' ? 0.3 : e.guarda==='baixa' ? 0.08 : 0.2) + 0.03*Math.sin(w*0.5) + e.curvado*0.5;
     p.coxa = [-0.3, 0.3]; p.joelho = [0.42, 0.38];
-    p.y = -1.6 + q*0.9;
-    p.gira = 0.12*Math.sin(t*2.2+f.fase); p.tomba = 0.06*Math.sin(t*1.7+f.fase*2);
-    p.olhaY = 0.08*Math.sin(t*1.3+f.fase);
+    if(e.pesado){ p.joelho = [0.5, 0.46]; }
+    p.y = -1.6 + q*0.9*e.gingado - (e.pesado?0.5:0);
+    p.gira = 0.12*e.gingado*Math.sin(t*2.2+f.fase) + 0.04*ruido(f,t,1.4,0.9);
+    p.tomba = 0.06*e.gingado*Math.sin(t*1.7+f.fase*2);
+    p.olhaY = 0.08*Math.sin(t*1.3+f.fase) + 0.05*ruido(f,t,0.7,1.1);
   }
 
   function torcer(p, f, t, dt){
     f.tGesto -= dt;
-    if(f.tGesto <= 0){ f.gesto = dado(f.sem+'|g'+Math.floor(t/2.3), 4); f.tGesto = 1.6 + Math.random()*1.8; }
+    if(f.tGesto <= 0){
+      f.gesto = Math.random() < 0.5 ? f.estilo.gestoFav : dado(f.sem+'|g'+Math.floor(t/2.3), 4);
+      f.tGesto = 1.6 + Math.random()*1.8;
+    }
     parado(p, f, t);
     const w = t*7 + f.fase;
     if(f.gesto===0){           // braço no alto, bombando
@@ -586,7 +652,7 @@ TO.diaJogo.bonecos3 = (function(){
     if(im.t >= im.dur){ f.impacto = null; return; }
     const k = im.t/im.dur;
     const r = Math.sin(Math.min(1, k*1.6)*Math.PI/2) * (1 - suave((k-0.4)/0.6));   // sobe rápido, desce devagar
-    const F = im.forca, L = im.lado;
+    const F = im.forca * f.estilo.duro, L = im.lado;
     p.olhaX -= 0.55*F*r; p.olhaY += L*0.45*F*r;
     p.inclina -= 0.28*F*r; p.tomba += L*0.14*F*r; p.gira += L*0.18*F*r;
     p.y -= 0.6*F*r;
@@ -596,8 +662,9 @@ TO.diaJogo.bonecos3 = (function(){
   }
 
   function cambalear(p, f, t){
-    const w = t*3.2 + f.fase;
-    p.tomba = 0.25*Math.sin(w); p.inclina = 0.12 + 0.12*Math.sin(w*0.7);
+    const w = t*(2.6 + f.estilo.gingado*0.8) + f.fase;
+    const g = 0.7 + f.estilo.duro*0.5;
+    p.tomba = 0.25*g*Math.sin(w); p.inclina = 0.12 + 0.12*g*Math.sin(w*0.7);
     p.gira = 0.2*Math.sin(w*0.5);
     p.olhaX = -0.15 + 0.2*Math.sin(w*1.3); p.olhaY = 0.45*Math.sin(w*0.9);
     p.coxa = [0.15*Math.sin(w), -0.15*Math.sin(w)]; p.joelho = [0.5, 0.45];
@@ -624,7 +691,7 @@ TO.diaJogo.bonecos3 = (function(){
   /* fugir: corre e olha pra trás de vez em quando */
   function fugir(p, f, t, dt){
     f.olhaTras -= dt;
-    if(f.olhaTras <= -1.5) f.olhaTras = 0.7 + Math.random()*1.2;
+    if(f.olhaTras <= -1.5/f.estilo.olhaTras) f.olhaTras = (0.7 + Math.random()*1.2)/f.estilo.olhaTras;
     if(f.olhaTras > 0){ p.olhaY = 1.3*(Math.sin(f.fase)>0?1:-1); p.gira += 0.3*(Math.sin(f.fase)>0?1:-1); }
     p.inclina += 0.12;
   }
@@ -694,6 +761,7 @@ TO.diaJogo.bonecos3 = (function(){
       pele:PELE[dado(s+'p',PELE.length)], calca:'#1b2620', cabelo:'#111', tenis:'#111',
       bermuda:false, listras:0, tipoCabeca:'bone', corBone:'#1c2a22', barba:frac(s+'bb')<0.3,
       camisa:'#233a2c', faixa:'#2d4a38', escala:1.06, largo:1.08,
+      estilo: estiloDe(s, false),
       ladoSoco:1, ataque:null, pausa:0.3, combo:0, impacto:null, olhaTras:0, tGesto:0, gesto:0,
       sobrancelha:0.3, cabecaX:1, queixo:1.1, barriga:1, oculos:0, barba:frac(s+'bb')<0.3?2:0,
       queda:null, caiDeFrente:frac(s+'q')<0.5, cobre:true, px:null, pz:null, vx:0, vz:0, ciclo:0, pose:null};

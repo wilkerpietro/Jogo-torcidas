@@ -4837,3 +4837,14 @@ com mais detalhe na construção e nos movimentos. A cena de cima continua sendo
   antes do ombro), estender e recolher, e pausa em guarda a cada três golpes. A
   guarda quica na ponta do pé com balanço lateral e ombro rolando. A vitrine ganhou
   "troca": dois de frente batendo um no outro, pra ver a coreografia.
+- **Terceira passada (05/09/2026): variação dentro dos movimentos.** Cada figura ganha
+  um `estilo` sorteado da semente (`estiloDe`): passada (0,85–1,15), cadência, balanço
+  de braço, postura curvada (30%), gingado, pisada pesada (25%, quadril mais baixo),
+  inquietação parado, tipo de guarda (fechada, alta com o queixo enterrado, baixa do
+  folgado, aberta de quem vem pra agarrar; o líder é sempre alta), canhoto (15%, o jab
+  sai da direita), repertório de golpes (misto, técnico, brigão de gancho, chutador),
+  ritmo dos golpes, fôlego (2 a 5 golpes por sequência antes de respirar), quanto sente
+  a pancada, chance de finta (jab que para na metade), frequência de olhar pra trás na
+  fuga, gesto favorito na retaguarda. Cada golpe sai com amplitude própria (±12%). Por
+  cima de tudo, um ruído lento particular (`ruido`: produto de dois senos deslocados
+  pela fase) em ombro, tronco e olhar, pra dois parados nunca serem gêmeos.
