@@ -4751,3 +4751,20 @@ modo". A cena fica a de cima, com os bonecos; o esforço vai pro motor de briga.
   faixa fina por cima da cena que rola de lado com a aberta à vista. O portão fica em
   cima das formações, e em 430 px as ações do pad encolhem pra caber as duas metades.
   Vale pro jogo também: é o mesmo CSS e a mesma ponte.
+- **Provocado, revida** (decisão do dono, 05/09/2026: "se o jogador pega um desses que
+  estão atrás da linha eles não dão dano"). No motor o promovido já revidava; o que se
+  via era outra coisa: o da retaguarda andava pra trás olhando pro jogador, no mesmo
+  passo dele, e ninguém encostava em ninguém. Agora a retaguarda **nunca recua de
+  inimigo chegando**: mais perto que o posto, fica parada de frente pra ele
+  (`postoDaRetaguarda` devolve o próprio lugar e vira o rumo), e `contatos` não olha
+  linha — quem encosta leva. Pancada, pedra ou bomba tiram o disco da retaguarda de
+  vez. Medido em Node (líder colado num inimigo, 4 s, cinco sementes): contra um da
+  retaguarda o líder perde 64 e o inimigo 56; contra um da frente, 85 e 48. Testada e
+  descartada a promoção por proximidade (inimigo a 36 px): dissolvia a retaguarda dos
+  dois lados no primeiro avanço.
+  Aviso sobre a bancada: as fichas geradas do rival saem mais fortes que as nossas
+  genéricas (força 12,6 × 9,9, defesa 13 × 9,9), então "mandante venceu N/8" ali mede
+  mudança relativa, não equilíbrio do jogo — no jogo o nosso lado vem com a ficha dos
+  membros de verdade. Com esta regra a bancada dá rua 0/8 e praça 1/6, contra 5/8 e
+  3/6 quando a retaguarda recuava: a retaguarda deles agora entra na briga, como a
+  nossa.

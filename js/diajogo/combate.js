@@ -1388,9 +1388,18 @@ TO.diaJogo.combate = (function(){
            do mais próximo — atrás de quem está no contato — olhando pra
            ele, e só entra quando é promovido (`conferirLinhas`) ou
            quando o contato chega até ele (`contatos`). */
+        /* PROVOCADO, REVIDA (decisão do dono, 05/09/2026). A retaguarda
+           segura atrás, mas NUNCA anda pra trás de inimigo chegando —
+           era isso que lia como "não dá dano": o jogador chegava, o
+           disco recuava olhando pra ele, e ninguém encostava em
+           ninguém. Agora, mais perto que o posto dele, ele fica parado
+           de frente pro inimigo: quem encosta leva (`contatos` não olha
+           a linha), e quem bate nele o tira da retaguarda de vez —
+           pancada, pedra ou bomba. Mais longe que o posto, avança até
+           o posto. */
         const retaguarda = d.linha==='retaguarda' && !d._cacando && !J.paz && agressivo(J,d);
         const visto = retaguarda ? (alvo || inimigoAlcancavel(J,d,RAIO_VISTA_RETAGUARDA)) : null;
-        if(visto && !visto.fugindo){
+        if(retaguarda && visto && !visto.fugindo){
           const q = postoDaRetaguarda(J, d, visto);
           ax=q.x; ay=q.y; ramo='retaguarda'; d._olhaPara=visto;
         }
@@ -1600,6 +1609,8 @@ TO.diaJogo.combate = (function(){
       d.recuoAte = J.t + U.entre(3, 8);
     }
     const dx=d.x-visto.x, dy=d.y-visto.y, l=Math.hypot(dx,dy)||1;
+    /* mais perto que o posto: fica onde está, de frente pra ele */
+    if(l <= d.recuo){ d.viraPara = rumoPara(d, visto); return {x:d.x, y:d.y}; }
     const ux=dx/l, uy=dy/l;
     let x=visto.x+ux*d.recuo - uy*d.desvio, y=visto.y+uy*d.recuo + ux*d.desvio;
     if(!A.livrePara(x,y,A.raioMalha(d.r))){
@@ -2111,7 +2122,7 @@ TO.diaJogo.combate = (function(){
       const alvos=J.discos.filter(d=>d.vivo&&inimigos(p.lado,d.lado));
       if(p.tipo==='pedra'){
         for(const d of alvos) if(U.dist(d.x,d.y,p.x,p.y)<32){
-          d.hp-=22*P.dano; d.tremor=5; d.apanhou=0.4; atacado(J,d);
+          d.hp-=22*P.dano; d.tremor=5; d.apanhou=0.4; d.linha='frente'; atacado(J,d);
           if(J.t - d.frenteEm > 0.4) d.viraPara = Math.atan2(p.x-d.x, p.y-d.y);
           if(d.hp<=0) derrubar(J,d); break;
         }
@@ -2121,7 +2132,7 @@ TO.diaJogo.combate = (function(){
         for(const d of alvos){
           const dist=U.dist(d.x,d.y,p.x,p.y);
           if(dist<RAIO_BOMBA){
-            d.hp-=(58-dist*0.4)*P.dano; d.atordoado=1.1; d.tremor=6; d.apanhou=0.5; atacado(J,d);
+            d.hp-=(58-dist*0.4)*P.dano; d.atordoado=1.1; d.tremor=6; d.apanhou=0.5; d.linha='frente'; atacado(J,d);
             const a=Math.atan2(d.y-p.y,d.x-p.x);
             d.vx=Math.cos(a)*150; d.vy=Math.sin(a)*150;
             if(d.hp<=0) derrubar(J,d);
