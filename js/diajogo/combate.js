@@ -131,6 +131,13 @@ TO.diaJogo.combate = (function(){
          girando pra alcançar; `frenteEm` é a última vez que apanhou de
          frente, que é o que segura a virada. */
       this.rumo=0; this.viraPara=null; this.frenteEm=-9;
+      /* LINHA DE FRENTE E RETAGUARDA (ver `conferirLinhas`). Nem todo
+         mundo procura contato: quem tem mais briga nas costas vai pra
+         frente, o resto fica atrás da linha e alguns dali tacam pedra
+         e bomba (`arremessador`, com cadência própria em `cdBracoAte`).
+         `fugaBomba` é a bomba no chão de que este disco está correndo. */
+      this.linha='frente'; this.arremessador=false; this.cdBracoAte=0;
+      this.fugaBomba=null; this.bombaVista=null; this.reageBombaEm=0;
       this.membroId=null;   // costura com a gestão
     }
     get vivo(){return !this.caido && !this.preso && !this.entrou && !this.sumiu;}
@@ -146,14 +153,22 @@ TO.diaJogo.combate = (function(){
     get vivo(){return !this.caido;}
   }
 
+  const RAIO_BOMBA = 92;   // raio de dano da bomba, em px de cena
   class Projetil{
     constructor(x,y,ax,ay,tipo,lado){
-      this.x=x; this.y=y; this.tipo=tipo; this.lado=lado;
+      this.x=x; this.y=y; this.ox=x; this.oy=y; this.tipo=tipo; this.lado=lado;
       const dx=ax-x, dy=ay-y, d=Math.hypot(dx,dy)||1;
       const v = tipo==='pedra'?430:300;
       this.vx=dx/d*v; this.vy=dy/d*v;
       this.t=0; this.dur=d/v; this.morto=false;
+      /* A BOMBA NÃO ESTOURA AO CAIR. Cai, o pavio queima de 1 a 1,5 s
+         e só então explode. `parada` é o instante em que caiu,
+         `explodeEm` o do estouro — e nesse meio tempo quem está no raio
+         tem chance de sair dele (ver `fugirDaBomba`). */
+      this.parada=null; this.explodeEm=null;
+      this.pavio = tipo==='bomba' ? 1 + U.rng()*0.5 : 0;
     }
+    get noChao(){ return this.parada!==null && !this.morto; }
   }
 
   /* =======================================================
@@ -429,7 +444,9 @@ TO.diaJogo.combate = (function(){
                    ? 'visitante' : 'mandante';
       const doLado=J.discos.filter(d=>d.lado===ladoIA);
       if(doLado.length){
-        const braco=doLado.reduce((a,b)=> b.forca>a.forca ? b : a);
+        /* o braço principal sai da retaguarda: quem está no contato usa a mão */
+        const atras=doLado.filter(d=>d.linha==='retaguarda');
+        const braco=(atras.length?atras:doLado).reduce((a,b)=> b.forca>a.forca ? b : a);
         braco.arremessador=true;
         J.bracos[ladoIA]=braco;
       }
@@ -583,6 +600,7 @@ TO.diaJogo.combate = (function(){
     const ocupados = (J._ocupadosNasc = J._ocupadosNasc || new Set());
     const chave = q => `${Math.round(q.x/CEL)}|${Math.round(q.y/CEL)}`;
     const vago = q => A.caminhavel(q.x, q.y) && !ocupados.has(chave(q));
+    const nascidos=[];
     for(let i=0;i<qtd;i++){
       let p=A.pontoLivreMaisProximo(x0 + (i%cols)*PASSO,
                                     y0 + Math.floor(i/cols)*PASSO, 7);
@@ -644,8 +662,61 @@ TO.diaJogo.combate = (function(){
       d.torcida = dono ? dono.nome : null;
       d.doJogador = meu;
       J.discos.push(d);
+      nascidos.push(d);
     }
     J.total[s.lado] += qtd;
+    repartirLinhas(nascidos, meu);
+  }
+
+  /* =======================================================
+     QUEM VAI PRA FRENTE
+     Numa briga de torcida a maioria não procura contato de cara:
+     fica atrás da linha de frente, e são normalmente os de menos
+     experiência. A régua aqui é força+defesa com um pouco de sorte
+     pra não cortar reto; os 40% de cima do bonde vão pro contato,
+     o resto segura atrás (ver `postoDaRetaguarda`) e entra conforme
+     a frente vai caindo (`conferirLinhas`). Bonde pequeno (até 5)
+     vai todo mundo — não tem "atrás" com quatro pessoas.
+
+     Dali de trás saem os arremessadores: os mais fortes da
+     retaguarda, entre um e quatro. Só do lado da IA — a pedra e a
+     bomba nossas são sempre manuais (decisão do dono, 17/08/2026). */
+  const FRACAO_FRENTE = 0.4;
+  function repartirLinhas(nascidos, meu){
+    const ordem = nascidos.filter(d=>!d.lider);
+    for(const d of ordem) d._sorte = U.rng()*5;
+    ordem.sort((a,b)=>(b.forca+b.defesa+b._sorte)-(a.forca+a.defesa+a._sorte));
+    const nFrente = nascidos.length<=5 ? ordem.length
+                  : Math.max(2, Math.round(ordem.length*FRACAO_FRENTE));
+    ordem.forEach((d,i)=>{ d.linha = i<nFrente ? 'frente' : 'retaguarda'; });
+    const atras = ordem.filter(d=>d.linha==='retaguarda');
+    if(!meu && atras.length){
+      const n = Math.min(3, Math.max(1, Math.round(atras.length*0.25)));
+      atras.sort((a,b)=>b.forca-a.forca).slice(0,n).forEach(d=>{ d.arremessador=true; });
+    }
+  }
+
+  /* A frente vai caindo e a retaguarda entra no lugar: a linha de
+     frente de cada lado tem de ter pelo menos 40% de quem está de pé
+     (mínimo 3), e quem sobrou com cinco ou menos entra todo mundo.
+     Sobe primeiro o mais forte, e o arremessador por último — ele
+     rende mais tacando pedra. */
+  function conferirLinhas(J){
+    for(const lado of ['mandante','visitante']){
+      const vivos=[];
+      for(const d of J.discos)
+        if(d.lado===lado && d.vivo && !d.fugindo && !d.entrando) vivos.push(d);
+      if(!vivos.length) continue;
+      const min = vivos.length<=5 ? vivos.length
+                : Math.max(3, Math.ceil(vivos.length*FRACAO_FRENTE));
+      let frente=0;
+      for(const d of vivos) if(d.linha==='frente') frente++;
+      if(frente>=min) continue;
+      const fila = vivos.filter(d=>d.linha==='retaguarda')
+        .sort((a,b)=>(b.forca+b.defesa-(b.arremessador?50:0))
+                    -(a.forca+a.defesa-(a.arremessador?50:0)));
+      for(const d of fila){ if(frente>=min) break; d.linha='frente'; frente++; }
+    }
   }
 
   /* =======================================================
@@ -701,6 +772,7 @@ TO.diaJogo.combate = (function(){
     destravarEncalhados(J, dt);
     conferirGatilho(J);
     conferirBondes(J);
+    conferirLinhas(J);
     moverLider(J,dt,teclas,podeControlar);
     moverDiscos(J,dt);
     moverPoliciais(J,dt);
@@ -1209,7 +1281,8 @@ TO.diaJogo.combate = (function(){
 
       const recua = d.fugindo || recuando(J, d.lado);
 
-      let ax,ay, usarCampo=false, campo=null;
+      let ax,ay, usarCampo=false, campo=null, ramo=null;
+      d._olhaPara=null;
 
       /* de guarda: fica no posto. Sem isto o dono do bar sai andando
          pro fim da rua no primeiro segundo, porque o padrão de quem
@@ -1221,7 +1294,16 @@ TO.diaJogo.combate = (function(){
         continue;
       }
 
-      if(d.voltando){
+      /* BOMBA NO CHÃO, PAVIO ACESO: quem está no raio larga tudo e
+         corre — pra fora do raio e pra longe do rival, que é de onde
+         vem a próxima. Vale pra qualquer um, inclusive quem está no
+         meio da troca de socos: é assim que bomba abre roda. */
+      const fuga = fugirDaBomba(J, d);
+      d.fugaBomba = fuga ? fuga.bomba : null;
+      if(fuga){
+        ax = d.x + fuga.dx*140; ay = d.y + fuga.dy*140; ramo='bomba';
+        d.acomodado=false; d.melhorDist=undefined; d.semGanho=0;
+      } else if(d.voltando){
         /* acabou e a casa é deles: volta pro lugar de onde saiu */
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
         if(U.dist(d.x,d.y,s.x,s.y)<44){ d.vx*=0.8; d.vy*=0.8; d._ramo='voltou'; continue; }
@@ -1299,7 +1381,17 @@ TO.diaJogo.combate = (function(){
           alvo = inimigoFugindo(J, d, RAIO_CACA);
         d._cacando = !!(alvo && alvo.fugindo);
         const meuBonde = J.bondes[d.spawn];
-        if(alvo && agressivo(J,d)){ ax=alvo.x; ay=alvo.y; }
+        /* RETAGUARDA: vê o inimigo, mas não vai nele. Fica a uns 130 px
+           do mais próximo — atrás de quem está no contato — olhando pra
+           ele, e só entra quando é promovido (`conferirLinhas`) ou
+           quando o contato chega até ele (`contatos`). */
+        const retaguarda = d.linha==='retaguarda' && !d._cacando && !J.paz && agressivo(J,d);
+        const visto = retaguarda ? (alvo || inimigoAlcancavel(J,d,RAIO_VISTA_RETAGUARDA)) : null;
+        if(visto && !visto.fugindo){
+          const q = postoDaRetaguarda(d, visto);
+          ax=q.x; ay=q.y; ramo='retaguarda'; d._olhaPara=visto;
+        }
+        else if(alvo && agressivo(J,d)){ ax=alvo.x; ay=alvo.y; }
         /* veio pra brigar e não tem ninguém por perto: vai até onde o
            rival está. Sem isto ele só ficava disposto — andava pro
            próprio portão e a hostilidade não encontrava ninguém. */
@@ -1337,7 +1429,7 @@ TO.diaJogo.combate = (function(){
       }
 
       // rastro de diagnóstico: qual decisão e qual alvo, por disco
-      d._ramo = recua?'recuo' : usarCampo?'campo' : (d.doJogador&&lider)?'formacao':'inimigo';
+      d._ramo = ramo || (recua?'recuo' : usarCampo?'campo' : (d.doJogador&&lider)?'formacao':'inimigo');
       d._alvo = usarCampo?null:[Math.round(ax),Math.round(ay)];
 
       let dirx,diry;
@@ -1391,7 +1483,7 @@ TO.diaJogo.combate = (function(){
       /* quem está de conversa anda devagar: é passeio, não deslocamento */
       const passeio = d.vadiando && !agressivo(J,d) && J.t < d.entraEm;
       /* quem corre atrás corre igual — ver `inimigoFugindo` */
-      const vel=P.velocidade*(d.fugindo||d._cacando?1.25:recua?1.15:passeio?0.5:1);
+      const vel=P.velocidade*(d.fugindo||d._cacando||d.fugaBomba?1.25:recua?1.15:passeio?0.5:1);
       if(!dirx && !diry && d.acomodado){
         /* Chegou: para de verdade. Deixar o steering rodando com alvo
            a 8 px mantém micromovimento que, com 60 discos na tela,
@@ -1417,7 +1509,11 @@ TO.diaJogo.combate = (function(){
          empurrão, e aí o disco nunca é considerado travado. */
       const andou = Math.hypot(d.x-px, d.y-py) > vel*dt*0.25;
       /* quem anda olha pra onde vai */
-      if(andou){ girarRumo(d, Math.atan2(d.x-px, d.y-py), dt, GIRO_ANDANDO); d.viraPara=null; }
+      if(andou){
+        /* a retaguarda recua de frente pro inimigo; o resto olha pra onde vai */
+        const olha = d._olhaPara ? rumoPara(d, d._olhaPara) : Math.atan2(d.x-px, d.y-py);
+        girarRumo(d, olha, dt, GIRO_ANDANDO); d.viraPara=null;
+      }
 
       /* Rede de segurança: se nem deslizando nem contornando ele saiu
          do lugar, larga o steering e vai direto pela célula que o campo
@@ -1439,6 +1535,67 @@ TO.diaJogo.combate = (function(){
         }
       }
     }
+  }
+
+  /* =======================================================
+     CORRER DA BOMBA
+     A bomba caiu perto e o pavio está aceso. A saída é pra fora do
+     raio E na direção oposta ao rival — quem sai correndo pra cima de
+     quem tacou não sai da área, sai da briga. Primeiro tenta a soma
+     das duas direções; se dá em parede, só pra longe do rival; se
+     ainda dá em parede, só pra longe da bomba. `ox/oy` é de onde a
+     bomba saiu, e serve de rival quando não se vê nenhum.
+     ======================================================= */
+  const FOLGA_BOMBA = 16;
+  function fugirDaBomba(J, d){
+    let bomba=null, md=1e9;
+    for(const p of J.projeteis){
+      if(p.tipo!=='bomba' || !p.noChao || !inimigos(p.lado,d.lado)) continue;
+      const q=U.dist(d.x,d.y,p.x,p.y);
+      if(q < RAIO_BOMBA+FOLGA_BOMBA && q<md){ md=q; bomba=p; }
+    }
+    if(!bomba){ d.bombaVista=null; return null; }
+    /* NINGUÉM VÊ A BOMBA NA HORA. Leva de 0,2 a 0,6 s pra perceber que
+       aquilo no chão é uma bomba — e quem está no meio da troca de socos
+       demora mais. Sem isto, com 1 a 1,5 s de pavio, TODO MUNDO saía do
+       raio (medido: zero atingidos em seis bombas em cima de sete
+       juntos) e a bomba virava só barulho. */
+    if(d.bombaVista!==bomba){
+      d.bombaVista=bomba;
+      d.reageBombaEm = J.t + U.entre(0.2,0.6) + (J.t - d.frenteEm < 0.5 ? 0.3 : 0);
+    }
+    if(J.t < d.reageBombaEm) return null;
+    let rx=bomba.ox, ry=bomba.oy, mr=1e9;
+    for(const o of porPerto(J,d.x,d.y,260)){
+      if(!o.vivo || !inimigos(d.lado,o.lado)) continue;
+      const q=U.dist2(d.x,d.y,o.x,o.y);
+      if(q<mr){ mr=q; rx=o.x; ry=o.y; }
+    }
+    const norma = (x,y)=>{ const l=Math.hypot(x,y); return l<1e-3 ? null : [x/l,y/l]; };
+    const nb = norma(d.x-bomba.x, d.y-bomba.y) || norma(Math.cos(d.rumo), -Math.sin(d.rumo)) || [1,0];
+    const nr = norma(d.x-rx, d.y-ry) || nb;
+    const opcoes = [norma(nb[0]+1.3*nr[0], nb[1]+1.3*nr[1]) || nr, nr, nb,
+                    [nb[1],-nb[0]], [-nb[1],nb[0]]];
+    const r = A.raioMalha(d.r);
+    for(const o of opcoes)
+      if(A.livrePara(d.x+o[0]*36, d.y+o[1]*36, r)) return {bomba, dx:o[0], dy:o[1]};
+    return {bomba, dx:nb[0], dy:nb[1]};
+  }
+
+  /* o posto da retaguarda: a 130 px do inimigo mais perto, na linha
+     dele até mim. Mais perto que isso recua; mais longe, avança. */
+  const DIST_RETAGUARDA = 130;
+  const RAIO_VISTA_RETAGUARDA = 260;
+  function postoDaRetaguarda(d, visto){
+    const dx=d.x-visto.x, dy=d.y-visto.y, l=Math.hypot(dx,dy)||1;
+    let x=visto.x+dx/l*DIST_RETAGUARDA, y=visto.y+dy/l*DIST_RETAGUARDA;
+    if(!A.livrePara(x,y,A.raioMalha(d.r))){
+      const q=A.pontoLivreMaisProximo(x,y,d.r);
+      /* o vão livre pode estar do lado de lá do inimigo: nesse caso fica */
+      if(U.dist(q.x,q.y,visto.x,visto.y) >= l*0.9) { x=q.x; y=q.y; }
+      else { x=d.x; y=d.y; }
+    }
+    return {x,y};
   }
 
   /* Anda um pouco, para um pouco, sempre em volta do próprio ponto.
@@ -1652,7 +1809,7 @@ TO.diaJogo.combate = (function(){
   function contatos(J,dt){
     const vivos=J.discos.filter(d=>d.vivo);
     for(const a of vivos){
-      if(a.fugindo||a.atordoado>0) continue;
+      if(a.fugindo||a.atordoado>0||a.fugaBomba) continue;
       if(recuando(J, a.lado)) continue;
 
       const bate = agressivo(J,a);
@@ -1671,6 +1828,8 @@ TO.diaJogo.combate = (function(){
         b.hp-=Math.max(1,bruto)*P.dano*dt*(b.fugindo?1.6:1);
         b.tremor=Math.min(6,b.tremor+0.6); a.golpe=0.12; a.hostil=3.0;
         b.apanhou=0.35; a._alvo=b; levouDe(J, b, a);
+        /* o contato chegou até a retaguarda: agora ele está na briga */
+        b.linha='frente';
         atacado(J,b);
         /* ALCANÇOU, PEGOU — e só pra quem correu sem brigar.
            Quem debanda por inferioridade sai com a vida cheia, e no
@@ -1922,10 +2081,18 @@ TO.diaJogo.combate = (function(){
   function moverProjeteis(J,dt){
     for(const p of J.projeteis){
       if(p.morto) continue;
-      p.t+=dt; p.x+=p.vx*dt; p.y+=p.vy*dt;
-      const bateu = p.t>0.07 && p.t<p.dur && !A.caminhavel(p.x,p.y);
-      if(bateu && p.tipo==='pedra'){p.morto=true;continue;}
-      if(!bateu && p.t<p.dur) continue;
+      p.t+=dt;
+      if(p.parada===null){
+        p.x+=p.vx*dt; p.y+=p.vy*dt;
+        const bateu = p.t>0.07 && p.t<p.dur && !A.caminhavel(p.x,p.y);
+        if(bateu && p.tipo==='pedra'){p.morto=true;continue;}
+        if(!bateu && p.t<p.dur) continue;
+        if(p.tipo==='bomba'){
+          /* caiu (ou bateu na parede e caiu ali): pavio aceso */
+          p.parada=p.t; p.explodeEm=p.t+p.pavio; p.vx=p.vy=0;
+          continue;
+        }
+      } else if(p.t < p.explodeEm) continue;
       p.morto=true;
 
       const alvos=J.discos.filter(d=>d.vivo&&inimigos(p.lado,d.lado));
@@ -1940,7 +2107,7 @@ TO.diaJogo.combate = (function(){
         p.explosao=0;
         for(const d of alvos){
           const dist=U.dist(d.x,d.y,p.x,p.y);
-          if(dist<92){
+          if(dist<RAIO_BOMBA){
             d.hp-=(58-dist*0.4)*P.dano; d.atordoado=1.1; d.tremor=6; d.apanhou=0.5; atacado(J,d);
             const a=Math.atan2(d.y-p.y,d.x-p.x);
             d.vx=Math.cos(a)*150; d.vy=Math.sin(a)*150;
@@ -1950,7 +2117,7 @@ TO.diaJogo.combate = (function(){
         for(const g of J.grades){
           if(g.tipo==='fila') continue;
           const dist=U.dist(g.x,g.y,p.x,p.y);
-          if(g.hp>0&&dist<92){
+          if(g.hp>0&&dist<RAIO_BOMBA){
             g.hp-=110-dist*0.6; g.tremor=5;
             if(g.hp<=0){g.hp=0; J.versaoGrades++; J.alerta=Math.min(100,J.alerta+13); romperCordao(J);}
           }
@@ -2195,19 +2362,28 @@ TO.diaJogo.combate = (function(){
   function restaCd(J,tipo){
     return Math.max(0,(tipo==='pedra'?J.cdPedraAte:J.cdBombaAte)-J.t);
   }
-  function arremessar(J,tipo){
+  /* dá pra jogar agora? (a cena de cima pergunta antes de abrir a mira) */
+  function podeArremessar(J,tipo){
+    if(!J || J.fase!=='ativo' || J.semArmas || restaCd(J,tipo)>0) return false;
+    if(tipo==='bomba' && J.bombas<=0) return false;
+    return !!J.discos.find(d=>d.lider&&d.vivo);
+  }
+  /* `mira` é o ponto escolhido pelo jogador (a mira em arco da cena de
+     cima); sem ela, joga no inimigo mais perto, como sempre */
+  function arremessar(J,tipo,mira){
     if(J.fase!=='ativo'||J.semArmas||restaCd(J,tipo)>0) return;
     const l=J.discos.find(d=>d.lider&&d.vivo);
     if(!l) return;
     const alcance = tipo==='pedra'?P.alcancePedra:P.alcanceBomba;
 
-    let alvo=null, md=1e9;
+    let alvo=mira ? {x:mira.x, y:mira.y} : null, md=1e9;
+    if(!alvo)
     for(const o of porPerto(J,l.x,l.y,alcance*1.6)){
       if(!o.vivo||!inimigos(l.lado,o.lado)) continue;
       const d=U.dist(l.x,l.y,o.x,o.y);
       if(d<md){md=d;alvo=o;}
     }
-    if(!alvo||md>alcance*1.6){
+    if(!mira && (!alvo||md>alcance*1.6)){
       let g=null; md=1e9;
       for(const x of J.grades){
         if(x.hp<=0) continue;
@@ -2240,21 +2416,31 @@ TO.diaJogo.combate = (function(){
   function iaArremesso(J, dt){
     if(J.semArmas) return;
     J.cdBraco = J.cdBraco || {};
-    for(const lado of ['mandante','visitante']){
-      const b=(J.bracos||{})[lado] ||
-              (J.bracoRival && J.bracoRival.lado===lado ? J.bracoRival : null);
-      if(!b || !b.vivo || b.fugindo || J.t < (J.cdBraco[lado]||0)) continue;
+    const ladoIA = (J.ladoNosso||'mandante')==='mandante' ? 'visitante' : 'mandante';
+    if(J.t < (J.cdBraco._varredura||0)) return;
+    J.cdBraco._varredura = J.t + 0.15;   // seis olhadas por segundo bastam
+
+    let alvos=null;
+    for(const b of J.discos){
+      if(b.lado!==ladoIA || !b.arremessador || !b.vivo || b.fugindo || b.fugaBomba) continue;
+      if(b.atordoado>0 || J.t < (b.cdBracoAte||0)) continue;
       if(!agressivo(J,b)) continue;
       if(b.guarda && !J.acordou) continue;
-
-      const alvos=J.discos.filter(d=>d.vivo && inimigos(b.lado,d.lado) && !d.fugindo);
-      if(!alvos.length) continue;
+      /* já está no contato: usa a mão, não a pedra */
+      if(b.linha==='frente' && inimigoAlcancavel(J,b,40)) continue;
+      if(!alvos){
+        alvos=J.discos.filter(d=>d.vivo && inimigos(ladoIA,d.lado) && !d.fugindo);
+        if(!alvos.length) return;
+      }
 
       /* bomba automática é só da IA: a nossa bomba é decisão do
-         jogador, na tecla E */
+         jogador, na tecla E. Ela sai quando compensa — quatro ou mais
+         juntos no raio — e nunca em cima do próprio pé. Uma por vez
+         por lado: `cdBraco[lado]` é o intervalo entre bombas do lado. */
       let melhor=null, maior=0;
-      if(!b.doJogador && J.bombasRival>0) for(const a of alvos){
-        if(U.dist(b.x,b.y,a.x,a.y) > P.alcanceBomba*0.6) continue;
+      if(J.bombasRival>0 && J.t >= (J.cdBraco[ladoIA]||0)) for(const a of alvos){
+        const da=U.dist(b.x,b.y,a.x,a.y);
+        if(da > P.alcanceBomba*0.6 || da < RAIO_BOMBA*0.8) continue;
         if(!A.livre(b.x,b.y,a.x,a.y)) continue;
         let n=0;
         for(const o of alvos) if(U.dist(o.x,o.y,a.x,a.y)<80) n++;
@@ -2265,8 +2451,8 @@ TO.diaJogo.combate = (function(){
       else {
         let md=1e9;
         for(const a of alvos){
-          const d=U.dist(b.x,b.y,a.x,a.y);
-          if(d<md && d<=P.alcancePedra && A.livre(b.x,b.y,a.x,a.y)){md=d; alvo=a;}
+          const da=U.dist(b.x,b.y,a.x,a.y);
+          if(da<md && da<=P.alcancePedra && da>28 && A.livre(b.x,b.y,a.x,a.y)){md=da; alvo=a;}
         }
         if(alvo) tipo='pedra';
       }
@@ -2276,9 +2462,15 @@ TO.diaJogo.combate = (function(){
          que impede que um único braço decida a briga sozinho */
       const erro = tipo==='bomba' ? 34 : 22;
       const ax = alvo.x + U.entre(-erro,erro), ay = alvo.y + U.entre(-erro,erro);
-      if(tipo==='bomba') J.bombasRival--;
-      J.cdBraco[lado] = J.t + (tipo==='bomba' ? P.cdBomba*2.2 : P.cdPedra*1.7);
+      if(tipo==='bomba'){ J.bombasRival--; J.cdBraco[ladoIA] = J.t + P.cdBomba*1.5; }
+      /* cada braço tem a cadência dele, bem mais lenta que a do jogador:
+         com três tacando, o lado da IA soma uma pedra a cada 2,5 s.
+         Medido na bancada: com 2,4–3,6× eram 20 pedras por briga contra
+         5 do braço único de antes, e o lado do jogador — cuja pedra é
+         manual — não ganhava mais nenhuma. */
+      b.cdBracoAte = J.t + (tipo==='bomba' ? P.cdBomba*2.2 : P.cdPedra*U.entre(3.2,4.8));
       b.hostil=4.0; b.arremesso={t:0.55, tipo};
+      b.viraPara = rumoPara(b, {x:ax, y:ay});
       J.armas[b.lado][tipo]++;
       J.projeteis.push(new Projetil(b.x,b.y,ax,ay,tipo,b.lado));
       if(tipo==='bomba'){
@@ -2417,6 +2609,21 @@ TO.diaJogo.combate = (function(){
     }
   }
   function desenharProjetil(c,p){
+    if(p.noChao){
+      /* no chão, pavio queimando: a zona de perigo aparece pra todo
+         mundo, e a faísca pisca mais rápido perto do estouro */
+      const k = 1 - (p.explodeEm - p.t)/p.pavio;
+      c.setLineDash([6,5]); c.lineWidth=1.5;
+      c.strokeStyle=`rgba(226,80,40,${0.3+0.4*k})`;
+      c.beginPath(); c.arc(p.x,p.y,RAIO_BOMBA,0,7); c.stroke(); c.setLineDash([]);
+      c.fillStyle=`rgba(226,80,40,${0.05+0.08*k})`; c.fill();
+      c.fillStyle='rgba(0,0,0,.28)'; c.beginPath(); c.ellipse(p.x,p.y+3,6,3,0,0,7); c.fill();
+      c.fillStyle='#c8562f'; c.beginPath(); c.arc(p.x,p.y-2,7,0,7); c.fill();
+      if(Math.sin(p.t*(30+k*70))>0){
+        c.fillStyle='#ffd35a'; c.beginPath(); c.arc(p.x+5,p.y-9,2.5,0,7); c.fill();
+      }
+      return;
+    }
     if(p.morto){
       if(p.explosao!==undefined){
         const k=p.explosao/0.45;
@@ -2445,7 +2652,7 @@ TO.diaJogo.combate = (function(){
   }
 
   return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar,
-          naFrente, rumoPara,
+          naFrente, rumoPara, RAIO_BOMBA, podeArremessar,
           ladoDoJogador, ladoDeles, OUTRO_LADO,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,

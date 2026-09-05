@@ -112,7 +112,7 @@ TO.diaJogo.ponte = (function(){
   function novaNoite(cfg){
     const fim=$('djFim'); if(fim) fim.remove();
     if(cfg) config=cfg;
-    J = C.criarEstado(config);
+    J = C.criarEstado(config); mira=null;
     TO.diaJogo.J = J;
     atualizarBotoes();
   }
@@ -211,12 +211,104 @@ TO.diaJogo.ponte = (function(){
                       mostrarMalha:ED.ativo&&ED.mostrarMalha,
                       mostrarPostos:ED.ativo&&ED.mostrarPostos,
                       semCorpo:bonecos});
+    if(mira && !ED.ativo) desenharMira(ctx);
     if(ED.ativo) desenharEditor(ctx);
     ctx.setTransform(1,0,0,1,0,0);
     /* o editor pinta a malha e arrasta marcador: ali o boneco atrapalha */
     if(bonecos && T && !ED.ativo)
       T.desenharDeCima(J, {escala, cw:cv.width, ch:cv.height, dt:dtQuadro});
     else if(bonecos && T) T.limparDeCima();
+  }
+
+  /* =======================================================
+     A MIRA DA BOMBA
+     A bomba não sai mais no aperto: o aperto abre a mira, e a mira é
+     um arco do líder até onde a bomba vai cair, com o raio de dano
+     desenhado no chão — no espírito do Angry Birds, a grosso modo.
+     Três jeitos de apontar, todos caindo no mesmo `mira`:
+       · mouse: E abre, o ponto segue o mouse, clique (ou E de novo) joga;
+       · pad/toque: segura BOMBA e arrasta — o ponto anda com o dedo
+         (1,5 px de cena por px de tela) — e solta pra jogar;
+       · toque curto no BOMBA: abre a mira; o próximo toque na cena é
+         onde ela cai.
+     Esc cancela. Fora do alcance o ponto é puxado pra borda do
+     alcance, que aparece tracejada em volta do líder. A cena de perto
+     (3D) continua jogando direto: lá a mira em arco não faz sentido
+     de cima pra baixo.
+     ======================================================= */
+  let mira=null;   // {x,y, arrasto:{x0,y0,mexeu}|null}
+  const liderVivo = ()=> J && J.discos.find(d=>d.lider&&d.vivo);
+  function pontoAdiante(l){
+    const a=P.alcanceBomba*0.55;
+    return {x:l.x+Math.sin(l.rumo)*a, y:l.y+Math.cos(l.rumo)*a};
+  }
+  function limitarMira(){
+    const l=liderVivo(); if(!l){ mira=null; return; }
+    const dx=mira.x-l.x, dy=mira.y-l.y, d=Math.hypot(dx,dy);
+    if(d>P.alcanceBomba){ mira.x=l.x+dx/d*P.alcanceBomba; mira.y=l.y+dy/d*P.alcanceBomba; }
+  }
+  function abrirMira(arrasto){
+    if(!J) return false;
+    if(tres){ C.arremessar(J,'bomba'); return false; }
+    if(!C.podeArremessar(J,'bomba')){
+      C.aviso(J, J.bombas<=0 ? 'Sem bomba na mochila.' : 'Bomba recarregando.', '#e0b040');
+      return false;
+    }
+    const l=liderVivo(); if(!l) return false;
+    const ini = (!arrasto && ultimoMouse) ? ultimoMouse : pontoAdiante(l);
+    mira={x:ini.x, y:ini.y, arrasto:arrasto||null};
+    limitarMira();
+    return true;
+  }
+  function moverMira(x,y){ if(!mira) return; mira.x=x; mira.y=y; limitarMira(); }
+  function soltarBomba(){
+    if(!mira) return;
+    limitarMira();
+    if(mira) C.arremessar(J,'bomba',{x:mira.x, y:mira.y});
+    mira=null;
+  }
+  function cancelarMira(){ mira=null; }
+  /* E: abre a mira; com ela aberta, joga */
+  function alternarMira(){ if(mira) soltarBomba(); else abrirMira(null); }
+  let ultimoMouse=null;
+
+  function desenharMira(c){
+    const l=liderVivo(); if(!l){ mira=null; return; }
+    limitarMira(); if(!mira) return;
+    const alc=P.alcanceBomba, raio=C.RAIO_BOMBA||92;
+    const puls=0.5+0.5*Math.sin(performance.now()/140);
+    c.save();
+    /* até onde dá pra jogar */
+    c.setLineDash([4,7]); c.lineWidth=1; c.strokeStyle='rgba(255,255,255,.22)';
+    c.beginPath(); c.arc(l.x,l.y,alc,0,7); c.stroke();
+    /* a zona onde ela cai */
+    c.setLineDash([]);
+    c.fillStyle=`rgba(226,80,40,${0.10+0.08*puls})`;
+    c.beginPath(); c.arc(mira.x,mira.y,raio,0,7); c.fill();
+    c.lineWidth=2; c.strokeStyle=`rgba(255,120,70,${0.7+0.3*puls})`; c.stroke();
+    c.strokeStyle='rgba(255,220,90,.95)'; c.lineWidth=1.5;
+    c.beginPath(); c.moveTo(mira.x-7,mira.y-7); c.lineTo(mira.x+7,mira.y+7);
+    c.moveTo(mira.x+7,mira.y-7); c.lineTo(mira.x-7,mira.y+7); c.stroke();
+    /* o arco: mesma altura aparente que a bomba voando usa (36 px) */
+    c.setLineDash([5,4]); c.lineWidth=2; c.strokeStyle='rgba(255,220,90,.9)';
+    c.beginPath();
+    for(let i=0;i<=24;i++){
+      const k=i/24;
+      const x=l.x+(mira.x-l.x)*k, y=l.y+(mira.y-l.y)*k - Math.sin(k*Math.PI)*36;
+      if(i) c.lineTo(x,y); else c.moveTo(x,y);
+    }
+    c.stroke();
+    c.setLineDash([]);
+    c.fillStyle='#c8562f'; c.beginPath(); c.arc(l.x,l.y-14,5,0,7); c.fill();
+    /* a dica fica pequena, junto do ponto — o aviso grande do HUD é
+       pra coisa que acontece, não pra instrução */
+    c.font='bold 11px system-ui, sans-serif'; c.textAlign='center';
+    c.fillStyle='rgba(0,0,0,.55)';
+    const dica = mira.arrasto ? 'solte pra jogar' : 'clique · E joga · Esc cancela';
+    const tw=c.measureText(dica).width+10;
+    c.fillRect(mira.x-tw/2, mira.y+raio+6, tw, 16);
+    c.fillStyle='#ffd35a'; c.fillText(dica, mira.x, mira.y+raio+18);
+    c.restore();
   }
 
   /* converte posição do mouse para coordenada da cena */
@@ -368,7 +460,7 @@ TO.diaJogo.ponte = (function(){
         '<kbd>Q</kbd> pedra · <kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>C</kbd> câmera · '+
         'arrastar gira · roda aproxima'
       : '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação · <kbd>Q</kbd> pedra · '+
-        '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · rodinha = zoom · <kbd>F2</kbd> editor de cena';
+        '<kbd>E</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · rodinha = zoom · <kbd>F2</kbd> editor de cena';
   }
 
   /* =======================================================
@@ -392,7 +484,7 @@ TO.diaJogo.ponte = (function(){
     }
     const liga=(id,fn)=>{const e=$(id); if(e) e.onclick=fn;};
     liga('djBtPedra', ()=>C.arremessar(J,'pedra'));
-    liga('djBtBomba', ()=>C.arremessar(J,'bomba'));
+    liga('djBtBomba', alternarMira);
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
     liga('djVelocidade', alternarVelocidade);
     liga('djBtEntrar', mandarEntrarOuSair);
@@ -552,9 +644,39 @@ TO.diaJogo.ponte = (function(){
     esq.className = 'pad-lado pad-esq';
     const acoes = document.createElement('div');
     acoes.className = 'pad-acoes';
+    /* BOMBA é segurar e arrastar: o ponto de queda anda com o dedo e
+       a bomba sai quando solta. Toque curto só abre a mira — aí o
+       próximo toque na cena é onde ela cai (ver A MIRA DA BOMBA). */
+    const bomba = document.createElement('button');
+    bomba.className = 'pad-bt pad-acao pad-e'; bomba.textContent = 'BOMBA';
+    bomba.addEventListener('pointerdown', ev=>{
+      ev.preventDefault();
+      try{ bomba.setPointerCapture(ev.pointerId); }catch(_){}
+      bomba.classList.add('apertado');
+      teclas.e=true; setTimeout(()=>{teclas.e=false;}, 60);
+      if(mira){ soltarBomba(); return; }
+      abrirMira({x0:ev.clientX, y0:ev.clientY, mexeu:false});
+    });
+    bomba.addEventListener('pointermove', ev=>{
+      if(!mira || !mira.arrasto) return;
+      const a=mira.arrasto, l=liderVivo(); if(!l) return;
+      const dx=ev.clientX-a.x0, dy=ev.clientY-a.y0;
+      if(Math.hypot(dx,dy)>10) a.mexeu=true;
+      if(a.mexeu) moverMira(l.x+dx*1.5, l.y+dy*1.5);
+    });
+    const soltaBomba = ev=>{
+      if(ev) ev.preventDefault();
+      bomba.classList.remove('apertado');
+      if(!mira || !mira.arrasto) return;
+      if(mira.arrasto.mexeu) soltarBomba();
+      else mira.arrasto=null;
+    };
+    bomba.addEventListener('pointerup', soltaBomba);
+    bomba.addEventListener('pointercancel', soltaBomba);
+    bomba.addEventListener('contextmenu', ev=>ev.preventDefault());
     acoes.append(
       disparo('q','PEDRA', ()=>{ if(J) C.arremessar(J,'pedra'); }),
-      disparo('e','BOMBA', ()=>{ if(J) C.arremessar(J,'bomba'); }),
+      bomba,
       disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }));
     const cruz = document.createElement('div');
     cruz.className = 'pad-cruz';
@@ -618,7 +740,8 @@ TO.diaJogo.ponte = (function(){
       if(!J) return;
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
       if(k==='q') C.arremessar(J,'pedra');
-      if(k==='e') C.arremessar(J,'bomba');
+      if(k==='e') alternarMira();
+      if(k==='escape') cancelarMira();
       if(k==='enter') mandarEntrarOuSair();
       for(const [id,f] of Object.entries(C.FORMACOES))
         if(k===f.tecla){J.form=id;atualizarBotoes();}
@@ -636,6 +759,11 @@ TO.diaJogo.ponte = (function(){
 
     cv.addEventListener('contextmenu',e=>{if(ED.ativo)e.preventDefault();});
     cv.addEventListener('pointerdown',e=>{
+      if(mira && !ED.ativo && e.button===0){
+        e.preventDefault();
+        const p=paraCena(e); moverMira(p.x,p.y); soltarBomba();
+        return;
+      }
       if(!ED.ativo) return;
       e.preventDefault();
       const p=paraCena(e);
@@ -667,7 +795,11 @@ TO.diaJogo.ponte = (function(){
       ED.sujo=true;
     });
     addEventListener('pointermove',e=>{
-      if(!ED.ativo) return;
+      if(!ED.ativo){
+        if(e.pointerType!=='touch'){ ultimoMouse=paraCena(e); }
+        if(mira && !mira.arrasto && e.pointerType!=='touch') moverMira(ultimoMouse.x, ultimoMouse.y);
+        return;
+      }
       const p=paraCena(e);
       ED.mouse=p;
       if(ED.pegou){ ED.pegou.mover(p.x,p.y); ED.sujo=true; return; }

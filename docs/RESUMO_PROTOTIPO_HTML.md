@@ -4677,3 +4677,61 @@ de frente eram 14 de 18 — a regra nova fecha mais briga do que fechava.
 **A lição de processo:** o que só existe em artifact publicado não existe. Daqui pra
 frente, cena nova entra no repositório antes de virar link.
 
+
+## 8.34 Linha de frente e retaguarda, pavio da bomba e a mira em arco
+
+Pedido do dono (05/09/2026, com a foto de uma briga de arquibancada): nem todo mundo
+procura contato de cara; a maioria fica atrás da linha de frente — normalmente os de
+menos experiência —, e alguns dali tacam pedra e bomba. A bomba leva de 1 a 1,5 s pra
+estourar depois de cair, e quem está no raio tenta sair dele pelo lado oposto ao rival.
+E a bomba nossa sai apontada, com um arco mostrando onde cai — "Angry Birds, a grosso
+modo". A cena fica a de cima, com os bonecos; o esforço vai pro motor de briga.
+
+- **Linha de frente e retaguarda** (`combate.js`, `repartirLinhas` / `conferirLinhas`).
+  Cada disco nasce com `linha`: os 40% de cima do bonde por força+defesa (com um
+  pouco de sorte pra não cortar reto) vão pra `frente`; o resto é `retaguarda`. Bonde de
+  até cinco vai todo mundo. A retaguarda **vê o inimigo a 260 px mas não vai nele**:
+  fica a 130 px do mais perto (`postoDaRetaguarda`), recuando de frente pra ele quando
+  ele chega e avançando quando ele se afasta — o que a põe atrás de quem está no
+  contato. Ela entra de dois jeitos: **promovida** quando a frente do lado cai abaixo
+  de 40% de quem está de pé (mínimo 3; com cinco ou menos entra todo mundo), o mais
+  forte primeiro e o arremessador por último; ou **na marra**, quando o contato chega
+  até ela — quem apanha vira `frente` na hora. Sem isso a briga não acabava nunca; com
+  isso acaba em todas as cenas medidas, só que em 68–76 s em vez de 36–48.
+- **Os arremessadores.** Da retaguarda do lado da IA saem de um a três `arremessador`
+  (os mais fortes de trás, 25%), cada um com a própria cadência (`cdBracoAte`, 3,2 a
+  4,8× a recarga da pedra). Bomba continua uma por vez por lado, só quando há quatro ou
+  mais juntos, nunca a menos de 74 px do próprio pé. O braço único de antes
+  (`J.bracos`) continua existindo, mas agora nasce na retaguarda. **A pedra e a bomba
+  nossas continuam manuais** (decisão de 17/08/2026): a retaguarda do jogador segura
+  atrás mas não taca sozinha. Medido em Node (rua, 26×22, oito sementes): o lado da IA
+  passou de 5 pedras por briga pra 15–22; com o jogador apertando Q a cada recarga o
+  mandante vence 3/8 (era 2/8). Na praça, com o líder parado da bancada, caiu de 5/6
+  pra 1/6 — a bancada não modela o jogador tacando nem andando, então o número é
+  pessimista, mas fica registrado: se a briga pesar contra o jogador, o primeiro
+  ajuste a testar é deixar a retaguarda nossa tacar também.
+- **Pavio** (`Projetil.parada` / `explodeEm` / `pavio`). A bomba cai (ou bate na parede
+  e cai ali) e fica no chão de 1 a 1,5 s com a faísca piscando cada vez mais rápido e o
+  raio de dano (92 px) desenhado tracejado — na cena de cima e na de perto. Só então
+  `moverProjeteis` aplica o dano de sempre. `J.projeteis` continua sendo filtrado do
+  mesmo jeito: bomba no chão não é `morto`.
+- **Correr da bomba** (`fugirDaBomba`). Quem é inimigo de quem tacou e está a menos de
+  108 px da bomba no chão larga o que está fazendo — inclusive o soco — e corre a 1,25×
+  pra fora: a direção é a soma de "longe da bomba" com 1,3× "longe do rival" (o inimigo
+  mais perto; sem nenhum à vista, de onde a bomba saiu); se dá em parede, só longe do
+  rival; depois só longe da bomba; depois de lado. Quem corre não bate
+  (`contatos` pula `fugaBomba`). **Ninguém vê a bomba na hora**: 0,2 a 0,6 s pra
+  reagir, mais 0,3 pra quem está trocando soco. Sem essa demora, medido, zero atingidos
+  em seis bombas em cima de sete juntos — a bomba virava só barulho. Com ela, de quem
+  estava no raio ao cair, um em três ainda está lá no estouro.
+- **A mira em arco** (`ponte.js`, "A MIRA DA BOMBA"). E não joga mais: abre a mira. O
+  arco vai do líder até o ponto de queda com a mesma altura aparente da bomba voando,
+  o raio de dano aparece pulsando no ponto, e o alcance máximo fica tracejado em volta do
+  líder — fora dele o ponto é puxado pra borda. Três jeitos de apontar: **mouse** (E
+  abre, o ponto segue o mouse, clique ou E joga, Esc cancela); **pad** (segura BOMBA e
+  arrasta, 1,5 px de cena por px de tela, solta pra jogar); **toque curto** no BOMBA
+  abre e o próximo toque na cena é onde cai. `C.arremessar(J,'bomba',{x,y})` aceita o
+  ponto; sem ele continua mirando no inimigo mais perto (a pedra do Q é assim). A cena
+  de perto (3D) continua jogando direto. `C.podeArremessar` diz se dá pra abrir a mira.
+  Conferido no Chromium sem tela: teclado+mouse, arrasto no pad (dedo a +96,−80 px de
+  tela → bomba a +144,−120 de cena) e toque curto + toque na cena.

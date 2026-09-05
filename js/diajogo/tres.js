@@ -1538,6 +1538,24 @@ TO.diaJogo.tres = (function(){
       agora.add(p);
       let v = vistos.get(p);
       if(!v){ v = {tipo:p.tipo, ultimoFumo:0, explodiu:false}; vistos.set(p, v); }
+      if(p.noChao){
+        /* no chão com o pavio aceso: o raio de dano aparece pra todo
+           mundo e a faísca pisca mais rápido perto do estouro */
+        const k = 1 - (p.explodeEm - p.t)/(p.pavio||1);
+        v.x = p.x; v.y = p.y; v.t = p.t;
+        const raio = (TO.diaJogo.combate && TO.diaJogo.combate.RAIO_BOMBA) || 92;
+        const M = M4.trans(p.x, 4.5, p.y);
+        din.caixaM(M, 9, 9, 9, cor('#c8562f'));
+        const pisca = Math.sin(p.t*(30+k*70))>0 ? 3 : 1.2;
+        din.caixaM(M, pisca, pisca, pisca, cor('#ffd35a'), 2.5, 6.5, 0);
+        if(p.t - v.ultimoFumo > 0.07){
+          v.ultimoFumo = p.t;
+          soltar(p.x+2.5, 12, p.y, {tipo:'fumo', vy:10, dur:0.5, tam:2, cresce:8, cor:[0.55,0.55,0.55]});
+        }
+        planos.anel(p.x, 0.7, p.y, raio-2, raio+1, [0.9,0.3,0.15,0.25+0.45*k], 32);
+        planos.elipse(p.x, 0.45, p.y, 6, 4, [0,0,0,0.28], 6);
+        continue;
+      }
       if(!p.morto){
         const alt = Math.sin((p.t/p.dur)*Math.PI)*36 + 8;
         v.x = p.x; v.y = p.y; v.t = p.t;
