@@ -31,6 +31,19 @@ ALVOS = {
                'js/diajogo/bancada.js'],
         'inicio': 'TO.diaJogo.bancada.montar();',
     },
+    # a bancada do renderizador 3D: mesma cena, mesma briga, three.js
+    # no lugar do canvas 2D. O three vem de CDN e continua vindo — e por
+    # isso este alvo tem `externos`.
+    'cena3d': {
+        'pagina': 'experimentos/three/bancada3d.html',
+        'js': ['js/nucleo.js', 'dados/nomes.js', 'dados/cena_arredores.js',
+               'dados/cenas_foto.js', 'dados/cenas_editadas.js',
+               'dados/cenas.js', 'js/diajogo/cenario.js',
+               'js/diajogo/arredores.js', 'js/diajogo/combate.js',
+               'js/diajogo/cena3d.js', 'experimentos/three/bancada3d.js'],
+        'inicio': 'TO.diaJogo.bancada3d.montar();',
+        'externos': ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'],
+    },
     'jogo': {
         'pagina': 'index.html',
         'js': ['js/nucleo.js',
@@ -93,7 +106,8 @@ def baixar_fontes():
 
 def main():
     parcial = '--parcial' in sys.argv
-    alvo = 'jogo' if '--jogo' in sys.argv else 'cena'
+    alvo = ('jogo' if '--jogo' in sys.argv else
+            'cena3d' if '--cena3d' in sys.argv else 'cena')
     cfg = ALVOS[alvo]
     JS = cfg['js']
 
@@ -121,20 +135,31 @@ def main():
 
     fontes = baixar_fontes()
 
-    corpo = (RAIZ / cfg['pagina']).read_text(encoding='utf-8')
-    corpo = corpo.split('<body>', 1)[1].split('</body>', 1)[0]
+    pagina = (RAIZ / cfg['pagina']).read_text(encoding='utf-8')
+    # o <style> da propria pagina fica no <head>, e o <head> nao entra no
+    # pacote: sem isto o HTML unico sai com a folha do jogo e sem a folha
+    # da pagina, que e onde mora o layout dela.
+    estilo_pagina = '\n'.join(
+        re.findall(r'<style[^>]*>(.*?)</style>', pagina.split('<body>', 1)[0], re.S))
+    corpo = pagina.split('<body>', 1)[1].split('</body>', 1)[0]
     # tira as tags de script externas: tudo ja esta embutido
     corpo = re.sub(r'<script[^>]*src=[^>]*></script>\s*', '', corpo)
     corpo = re.sub(r'<script>[^<]*</script>\s*', '', corpo)
 
-    nomes = {'cena': 'Arredores do estádio', 'jogo': 'Torcida Organizada'}
+    # script de fora que NAO vira embutido: o CSP do artifact libera
+    # cdnjs, e 600 KB de three.js em base64 nao ajudam ninguem.
+    externos = '\n'.join(f'<script src="{u}"></script>' for u in cfg.get('externos', []))
+
+    nomes = {'cena': 'Arredores do estádio', 'jogo': 'Torcida Organizada',
+             'cena3d': 'Bancada 3D'}
     titulo = '' if parcial else f'<title>{nomes[alvo]}</title>\n'
     saida = (titulo +
-             '<style>\n' + fontes + '\n' + css + '\n</style>\n' +
+             '<style>\n' + fontes + '\n' + css + '\n' + estilo_pagina + '\n</style>\n' +
              corpo +
+             ('\n' + externos if externos else '') +
              '\n<script>\n' + js + '\n' + cfg['inicio'] + '\n</script>\n')
 
-    base = 'arredores' if alvo == 'cena' else 'jogo'
+    base = {'cena': 'arredores', 'jogo': 'jogo', 'cena3d': 'bancada3d'}[alvo]
     destino = RAIZ / 'dist' / (f'{base}_artifact.html' if parcial else f'{base}_unico.html')
     destino.parent.mkdir(exist_ok=True)
     destino.write_text(saida, encoding='utf-8')
