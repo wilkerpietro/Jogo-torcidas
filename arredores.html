@@ -100,7 +100,7 @@
   (function(){
     const B = TO.diaJogo.bancada;
     B.montar(window.SEM_FOTO ? B.CENAS.filter(c=>c.id!=='arredores') : null,
-             {bonecos:true, sobreGL:document.getElementById('djSobreGL')});
+             {bonecos:!/discos/.test(location.search), sobreGL:document.getElementById('djSobreGL')});
   })();
 </script>
 </body>
