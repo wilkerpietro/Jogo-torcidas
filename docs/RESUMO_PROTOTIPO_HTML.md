@@ -4640,3 +4640,40 @@ caídos deitados e o cartaz de fim.
   textura zera quando o contexto troca de canvas; a fumaça vista de cima é disco no
   chão, não cartaz em pé; o corte de boneco colado na lente só vale na câmera de perto.
 
+## 8.33 O que estava fora do repositório: oito cenas, nove fotos e o editor de grades
+
+O autor lembrou que existia uma bancada mais completa, "com os estádios e edição manual de
+grades", e estava certo. O repositório parou no upload de **14/08**; o artifact publicado
+**"Cenas de briga"** de **20/08** carregava seis dias de trabalho que nunca foram
+commitados. Ele foi lido, desempacotado e devolvido ao repositório.
+
+**As oito cenas que faltavam** (todas sobre foto aérea, com máscara própria):
+`treta-beco` (5×5 no beco), `treta-galpao` (7×7 no pátio), `treta-campo` (10×10 no campo
+de terra), `emb-posto` e `emb-onibus` (as duas emboscadas), e as três arquibancadas —
+`estadio-10`, `estadio-20`, `estadio-40`. Com elas voltaram **nove fotos**
+(`treta_*.webp`, `emb_*.webp`, `estadio_*.webp`, `ct.webp`), extraídas dos data URIs do
+artifact; as cinco que o repositório já tinha conferiram byte a byte, o que prova que o
+artifact nasceu deste mesmo repositório.
+
+**O que o código trazia a mais**, além das cenas:
+- `combate.js` (+423 linhas): **setores de arquibancada** (`setorInimigo`, `setoresDePe`),
+  `bombasDaCena`, `fichasDoPerfil`, `destravarEncalhados`. E as decisões de 17–18/08 que
+  o repositório não tinha: moral fora da conta de dano, todas as cores da torcida no
+  disco, o rival das cenas de ação com identidade própria (`J.rivalInfo`).
+- `ponte.js` (+258 linhas): a **edição manual de grades** — `novaGrade`, `ajustarModulos`,
+  `apagarSob`, `selecionar`, `pintarBarraGrade` —, mais zoom no editor (`focoDoZoom`) e a
+  conferência de rotas de fuga (`conferirFugas`, `mexeuNasFugas`).
+- `arredores.js` (+113 linhas): `campoDoPonto`, `fugasDaMao`, `podarIlhas`.
+- `membros.js`: ferido volta em 5 a 15 dias sorteados (o 30 fixo saiu), e a ficha inicial
+  perdeu o bônus de poder da torcida.
+
+**O que foi reaplicado por cima**, do trabalho desta sessão: a regra de frente e costas
+(§8.32), a camada de bonecos vista de cima, as cópias `*-3d` das ruas e o pad de toque.
+
+**Medido em Node, as 18 cenas com o líder andando pro inimigo:** 17 acabam sozinhas; só a
+`treta-beco` não fecha, e é o beco estreito onde o caminhante do teste encalha. Sem o cone
+de frente eram 14 de 18 — a regra nova fecha mais briga do que fechava.
+
+**A lição de processo:** o que só existe em artifact publicado não existe. Daqui pra
+frente, cena nova entra no repositório antes de virar link.
+

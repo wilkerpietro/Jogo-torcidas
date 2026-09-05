@@ -1944,7 +1944,15 @@ TO.diaJogo.tres = (function(){
     return true;
   }
 
-  return {montar, desenhar, desenharDeCima, vetorDoTeclado, trocarCamera, MODOS,
+  /* o editor da cena de cima pinta malha e arrasta marcador; enquanto ele
+     está aberto os bonecos saem da frente, e este é o apagador */
+  function limparDeCima(){
+    if(!gl) return;
+    gl.viewport(0,0,cv.width,cv.height);
+    gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  }
+
+  return {montar, desenhar, desenharDeCima, limparDeCima, vetorDoTeclado, trocarCamera, MODOS,
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return !!gl; }, get cam(){ return cam; }};
 })();

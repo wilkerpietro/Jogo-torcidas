@@ -1,3 +1,4 @@
+
 /* =========================================================
    ARREDORES — cena sobre a foto aérea
    ---------------------------------------------------------
@@ -78,9 +79,60 @@ TO.diaJogo.arredores = (function(){
   function reconstruir(){
     if(D.mascara) decodificarMascara(D.mascara);
     else construirMalhaDosPoligonos();
+    podarIlhas();            // quintal marcado por engano não é rua
     construirMalhaCorpo();   // onde o corpo cabe, base das rotas
     limparCampos();          // a navegação depende da malha
-    fugas = acharFugas();    // por onde se some, quando se corre
+    fugas = fugasDaMao() || acharFugas();   // por onde se some, quando se corre
+  }
+
+  /* =======================================================
+     PODA DAS ILHAS
+     As máscaras editadas à mão trazem manchas andáveis DENTRO
+     de quintal e telhado — ilhas que não encostam na rua. Um
+     disco que nasce ou é empurrado pra lá é "válido" pra
+     malha, mas não alcança a briga nem é alcançado, e segura o
+     fim da cena pra sempre. Aqui a malha fica só com o que se
+     conecta aos spawns e portões da cena: o resto vira parede,
+     e aí o nascimento e a rede de segurança fazem o trabalho
+     deles.
+     ======================================================= */
+  function podarIlhas(){
+    const sementes = [];
+    const semear = (x, y)=>{
+      const c0 = U.limitar(Math.floor(x/CEL), 0, COLS-1);
+      const r0 = U.limitar(Math.floor(y/CEL), 0, ROWS-1);
+      if(malha[r0*COLS+c0]){ sementes.push(r0*COLS+c0); return; }
+      /* âncora fora do chão: pega a célula andável mais perto */
+      for(let a=1; a<=8; a++)
+        for(let dr=-a; dr<=a; dr++) for(let dc=-a; dc<=a; dc++){
+          if(Math.max(Math.abs(dr), Math.abs(dc)) !== a) continue;
+          const c = c0+dc, r = r0+dr;
+          if(c<0||r<0||c>=COLS||r>=ROWS) continue;
+          if(malha[r*COLS+c]){ sementes.push(r*COLS+c); return; }
+        }
+    };
+    for(const s of (D.spawns   || [])) semear(s.x, s.y);
+    for(const e of (D.entradas || [])) semear(e.x, e.y);
+    for(const p of (D.pmPostos || [])) semear(p.x, p.y);
+    if(!sementes.length) return;              // cena sem âncora: não mexe
+
+    const visto = new Uint8Array(COLS*ROWS);
+    const fila = [...new Set(sementes)];
+    for(const i of fila) visto[i] = 1;
+    while(fila.length){
+      const i = fila.pop();
+      const c = i % COLS, r = (i / COLS) | 0;
+      for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+        if(!dr && !dc) continue;
+        const nc = c+dc, nr = r+dr;
+        if(nc<0||nr<0||nc>=COLS||nr>=ROWS) continue;
+        const j = nr*COLS+nc;
+        if(visto[j] || !malha[j]) continue;
+        visto[j] = 1; fila.push(j);
+      }
+    }
+    for(let i=0; i<malha.length; i++)
+      if(malha[i] && !visto[i]) malha[i] = 0;
   }
 
   /* =======================================================
@@ -131,6 +183,22 @@ TO.diaJogo.arredores = (function(){
       return {x:Math.round(q.x), y:Math.round(q.y), raio:34};
     });
   }
+  /* PONTO DE FUGA MARCADO À MÃO
+     A leitura da máscara é boa regra e péssimo detalhe: ela acha TODA
+     boca da borda, inclusive a que o dono não quer que sirva de saída
+     (o túnel do rival, o canto que na foto é muro). Quando a cena
+     declara `fugas`, é ela que vale, e o automático nem roda. O ponto
+     ainda reencosta no chão mais perto, porque marcador de mão cai em
+     cima de parede o tempo todo. */
+  function fugasDaMao(){
+    const lista = D.fugas;
+    if(!lista || !lista.length) return null;
+    return lista.map(f=>{
+      const q = cabe(f.x, f.y, 9) ? f : pontoLivreMaisProximo(f.x, f.y, 9);
+      return {x:Math.round(q.x), y:Math.round(q.y), raio:f.raio||34, mao:true};
+    });
+  }
+
   /* a mais perto de quem está correndo */
   function fugaMaisPerto(x, y){
     let melhor=null, md=Infinity;
@@ -470,6 +538,22 @@ TO.diaJogo.arredores = (function(){
     campos[id]=criarCampo(e.x, e.y, custoAtual);
     return campos[id];
   }
+  /* O MESMO CAMPO, PARA UM PONTO QUALQUER DA CENA.
+     Na arquibancada não existe portão pra onde marchar: o que existe é
+     o setor do rival do outro lado do gradil. O campo é o mesmo do
+     portão — com o custo das grades DE PÉ —, então enquanto houver
+     volta ele manda dar a volta, e só quando não houver é que `semRota`
+     acende e a grade vira alvo. */
+  function campoDoPonto(id, x, y, mods, versao){
+    if(versao!==undefined && versao!==versaoGrades){
+      versaoGrades=versao; custoAtual=celulasDeGrades(mods);
+      for(const k of Object.keys(campos)) delete campos[k];
+    }
+    const k='pt:'+id;
+    if(campos[k]) return campos[k];
+    campos[k]=criarCampo(x, y, custoAtual);
+    return campos[k];
+  }
   function limparCampos(){
     for(const k of Object.keys(campos)) delete campos[k];
     versaoGrades=-1; custoAtual=null;
@@ -743,6 +827,29 @@ TO.diaJogo.arredores = (function(){
         c.beginPath(); c.arc(p.x,p.y,9,0,7); c.stroke();
       }
     }
+
+    /* ---- por onde se some e por onde a tropa entra: invisíveis em
+       jogo (quem corre não vê placa), desenhados só no editor, que é
+       onde eles são marcados. */
+    if(opc.editor){
+      for(const f of fugas){
+        const cor = f.mao ? '#e0b040' : 'rgba(224,176,64,.45)';
+        c.strokeStyle=cor; c.lineWidth=2;
+        c.setLineDash([4,4]);
+        c.beginPath(); c.arc(f.x,f.y,f.raio||34,0,7); c.stroke();
+        c.setLineDash([]);
+        c.beginPath(); c.arc(f.x,f.y,5,0,7); c.fillStyle=cor; c.fill();
+        if(f.mao) etiqueta(c,'FUGA',f.x,f.y-(f.raio||34)-8,'#e0b040');
+      }
+      if(D.tropaEm){
+        const t=D.tropaEm;
+        c.strokeStyle='#5fa87d'; c.lineWidth=2;
+        c.beginPath(); c.arc(t.x,t.y,16,0,7); c.stroke();
+        c.beginPath(); c.moveTo(t.x-9,t.y); c.lineTo(t.x+9,t.y);
+        c.moveTo(t.x,t.y-9); c.lineTo(t.x,t.y+9); c.stroke();
+        etiqueta(c,'TROPA',t.x,t.y-26,'#5fa87d');
+      }
+    }
   }
 
   /* =======================================================
@@ -757,8 +864,11 @@ TO.diaJogo.arredores = (function(){
     codificarMascara, decodificarMascara,
     caminhavel, cabe, celulaLivre, cabeCorpo, pontoLivreMaisProximo,
     get fugas(){return fugas;}, fugaMaisPerto,
+    /* o editor mexe na lista de bocas sem repintar a malha: refazer a
+       cena inteira ali jogaria fora o que o pincel acabou de pintar */
+    recarregarFugas(){ fugas = fugasDaMao() || acharFugas(); return fugas; },
     mover, empurrar, livre, livrePara, raioMalha, atravessaGrade,
-    criarCampo, campoDaEntrada, limparCampos, celulasDeGrades,
+    criarCampo, campoDaEntrada, campoDoPonto, limparCampos, celulasDeGrades,
     montarGrades, barrarGrades,
     desenharFundo, desenharSobreposicoes,
     usarImagemLocal,
@@ -776,3 +886,4 @@ TO.diaJogo.arredores = (function(){
     }
   };
 })();
+

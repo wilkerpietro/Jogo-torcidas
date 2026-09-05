@@ -1,3 +1,4 @@
+
 /* =========================================================
    PONTE — laço, HUD, entrada do jogador e editor de cena
    Liga arredores.js + combate.js a uma tela concreta.
@@ -28,16 +29,14 @@ TO.diaJogo.ponte = (function(){
                         dica:'Leve o líder até o portão da sua torcida.'};
 
   let cv, ctx, J=null, teclas={}, rodando=false, ant=0;
+  /* A VERSÃO DE PERTO. A mesma ponte, o mesmo combate, o mesmo HUD — só
+     quem desenha muda. `tres` liga quando a cena é uma das `*-3d` ou
+     quando quem monta pede; T é o renderizador (js/diajogo/tres.js).
+     `bonecos` é a outra ponta do mesmo renderizador: a cena continua
+     sendo a de cima, e um canvas WebGL transparente por cima dela põe
+     boneco no lugar do disco. */
+  let tres=false, T=null, dtQuadro=0.016, bonecos=false;
   let aoTerminar=null;
-  /* A VERSÃO 3D. A mesma ponte, o mesmo combate, o mesmo HUD — só quem
-     desenha muda. `tres` liga quando a cena é uma das `*-3d` ou quando
-     quem monta pede; T é o renderizador (js/diajogo/tres.js). Sem WebGL
-     a ponte cai na tela de cima, na cena 2D de mesmo nome. */
-  let tres=false, T=null, dtQuadro=0.016;
-  /* a vista de cima com boneco: o canvas 2D pinta a cena, e um canvas
-     WebGL transparente por cima (`opc.sobreGL`) pinta gente, PM e
-     projétil com o mesmo renderizador da cena 3D, olhando de cima */
-  let bonecos=false;
   /* chamado a cada quadro enquanto a cena roda: quem monta a cena usa
      isso pra continuar o relógio da rua e mandar pra cá o bonde que
      acabou de chegar na esplanada */
@@ -45,7 +44,8 @@ TO.diaJogo.ponte = (function(){
 
   /* editor */
   const ED={ativo:false, modo:'pincel', pincel:16, pintando:0,
-            pegou:null, mostrarMalha:true, mostrarPostos:true, sujo:false};
+            pegou:null, mostrarMalha:true, mostrarPostos:true, sujo:false,
+            sel:null, aviso:''};
 
   /* =======================================================
      MONTAGEM
@@ -53,9 +53,11 @@ TO.diaJogo.ponte = (function(){
   function montar(opc){
     opc=opc||{};
     cv  = opc.canvas || document.getElementById('djPrincipal');
+    ctx = null;
     aoTerminar = opc.aoTerminar || null;
     aCadaQuadro = opc.aCadaQuadro || null;
 
+    /* rua, praça ou arredores: a cena vem do encontro que abriu a tela */
     let local = (opc.config||{}).local;
     tres = !!opc.tres || /-3d$/.test(String(local||''));
     if(tres){
@@ -68,13 +70,13 @@ TO.diaJogo.ponte = (function(){
         console.warn('cena 3D indisponível: abrindo a cena 2D');
       }
     }
-    if(!tres){
+    if(!tres && !ctx){
       ctx = cv.getContext('2d');
       if(!ctx) throw new Error('o canvas da cena já é WebGL; a cena 2D precisa de outro canvas');
     }
     /* os bonecos por cima do 2D: só quando quem monta passa o canvas e
-       pede — e some quando não pede, porque o canvas é o mesmo elemento
-       que a cena 3D usa no jogo */
+       pede — e some quando não pede, porque no jogo o canvas é o mesmo
+       elemento que a cena de perto usa */
     const sg = opc.sobreGL || null;
     bonecos = false;
     if(sg){
@@ -86,18 +88,17 @@ TO.diaJogo.ponte = (function(){
     }
     if(tres && cv) cv.classList.remove('sobre-gl');
 
-    /* rua, praça ou arredores: a cena vem do encontro que abriu a tela */
     A.usarCena(local);
     montarBotoes();
     atualizarBotaoVelocidade();
     acharHudDeBancada();
-    /* O PAD NA CENA 3D, em qualquer largura. Na de cima ele só entra
-       no celular; na de perto entra sempre, porque a cena é jogada
-       olhando pro boneco e não pro teclado — e a cruz escreve nas
-       mesmas teclas, que o renderizador converte pro rumo da câmera. */
+    /* O PAD NA CENA DE PERTO, em qualquer largura. Na de cima ele só
+       entra no celular; na de perto entra sempre, porque a cena é
+       jogada olhando pro boneco e não pro teclado — e a cruz escreve
+       nas mesmas teclas, que o renderizador converte pro rumo da
+       câmera. */
     if(estreito() || tres) montarPad();
     else {
-      /* cena de cima em tela larga: o pad some e os botões voltam pro HUD */
       const pad=$('djPad'); if(pad) pad.hidden=true;
       const pai=cv.parentElement; if(pai) pai.classList.remove('com-pad');
     }
@@ -149,7 +150,7 @@ TO.diaJogo.ponte = (function(){
     let dt=(agora-ant)/1000; ant=agora;
     if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
     dtQuadro=dt;
-    /* em 3D o WASD é relativo à câmera: o renderizador resolve o vetor */
+    /* na cena de perto o WASD é relativo à câmera: o renderizador resolve */
     teclas.vetor = (tres && T) ? T.vetorDoTeclado(teclas) : null;
     if(J && !ED.ativo){
       for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
@@ -166,12 +167,39 @@ TO.diaJogo.ponte = (function(){
     requestAnimationFrame(quadro);
   }
 
+  /* =======================================================
+     ZOOM PELA RODINHA
+
+     Em 1× a cena inteira cabe no canvas, como sempre coube. Rolando
+     pra cima a escala cresce até 4× e a câmera passa a seguir o disco
+     do jogador — é ele que anda com WASD, então é ele que não pode
+     sair do quadro. Sem líder de pé, segue quem sobrou do nosso lado.
+     O `paraCena` continua certo de graça: ele lê `escala`, e a escala
+     devolvida por `ajustar` já carrega o zoom e o deslocamento.
+     ======================================================= */
+  let zoom=1;
+  const ZOOM_MAX=4;
+  function focoDoZoom(){
+    if(!J) return null;
+    const l=J.discos.find(d=>d.lider&&d.vivo);
+    if(l) return l;
+    const meu=C.ladoDoJogador(J);
+    return J.discos.find(d=>d.lado===meu&&d.vivo) || null;
+  }
+
   function ajustar(c,alvo,W,H){
-    const s=Math.min(alvo.width/W, alvo.height/H);
+    const s=Math.min(alvo.width/W, alvo.height/H)*zoom;
+    let cx=W/2, cy=H/2;
+    if(zoom>1){ const f=focoDoZoom(); if(f){cx=f.x; cy=f.y;} }
+    /* o ponto de foco vai pro centro do canvas, mas a câmera não passa
+       da borda da cena: encostou no canto, o foco sai do centro */
+    let ox=alvo.width/2 - cx*s, oy=alvo.height/2 - cy*s;
+    ox = W*s<=alvo.width  ? (alvo.width -W*s)/2 : U.limitar(ox, alvo.width -W*s, 0);
+    oy = H*s<=alvo.height ? (alvo.height-H*s)/2 : U.limitar(oy, alvo.height-H*s, 0);
     c.setTransform(1,0,0,1,0,0);
     c.fillStyle='#0e0e0d'; c.fillRect(0,0,alvo.width,alvo.height);
-    c.setTransform(s,0,0,s,(alvo.width-W*s)/2,(alvo.height-H*s)/2);
-    return {s, ox:(alvo.width-W*s)/2, oy:(alvo.height-H*s)/2};
+    c.setTransform(s,0,0,s,ox,oy);
+    return {s, ox, oy};
   }
   let escala={s:1,ox:0,oy:0};
 
@@ -185,7 +213,10 @@ TO.diaJogo.ponte = (function(){
                       semCorpo:bonecos});
     if(ED.ativo) desenharEditor(ctx);
     ctx.setTransform(1,0,0,1,0,0);
-    if(bonecos && T) T.desenharDeCima(J, {escala, cw:cv.width, ch:cv.height, dt:dtQuadro});
+    /* o editor pinta a malha e arrasta marcador: ali o boneco atrapalha */
+    if(bonecos && T && !ED.ativo)
+      T.desenharDeCima(J, {escala, cw:cv.width, ch:cv.height, dt:dtQuadro});
+    else if(bonecos && T) T.limparDeCima();
   }
 
   /* converte posição do mouse para coordenada da cena */
@@ -222,9 +253,12 @@ TO.diaJogo.ponte = (function(){
     }
 
     const btP=el('djBtPedra'), btB=el('djBtBomba');
-    if(btP){const r=C.restaCd(J,'pedra'); btP.disabled=r>0;
+    /* cena sem armas (treta marcada): os botões de arremesso somem */
+    if(btP) btP.style.display = J.semArmas ? 'none' : '';
+    if(btB) btB.style.display = J.semArmas ? 'none' : '';
+    if(btP && !J.semArmas){const r=C.restaCd(J,'pedra'); btP.disabled=r>0;
       btP.firstChild.textContent=r>0?`Pedra ${r.toFixed(1)}s `:'Pedra ';}
-    if(btB){const r=C.restaCd(J,'bomba'); btB.disabled=J.bombas<=0||r>0;
+    if(btB && !J.semArmas){const r=C.restaCd(J,'bomba'); btB.disabled=J.bombas<=0||r>0;
       btB.firstChild.textContent=r>0?`Bomba ${r.toFixed(1)}s `:'Bomba ';}
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
 
@@ -264,9 +298,21 @@ TO.diaJogo.ponte = (function(){
       const man=J.discos.filter(d=>d.lado==='mandante' &&d.vivo).length;
       const vis=J.discos.filter(d=>d.lado==='visitante'&&d.vivo).length;
       const ent=(J.entraram.mandante||0)+(J.entraram.visitante||0);
+      /* O PLACAR FALA O NOME DAS TORCIDAS (pedido do dono, 18/08/2026):
+         MANDANTE/VISITANTE é convenção interna dos lados, não coisa que
+         se lê na rua. O nome vem do bonde do lado; no ataque ao bar o
+         defensor não tem bonde e o nome é o da dona (rivalInfo). Só a
+         bancada, que monta cena sem identidade, cai no rótulo antigo. */
+      const nomeDoLado = lado=>{
+        const b=(J.bondes_||[]).find(x=>x.lado===lado);
+        if(b && b.nome) return b.nome;
+        const nosso=(((J.bondes_||[]).find(x=>x.nossa))||{}).lado||'mandante';
+        if(lado!==nosso && J.rivalInfo && J.rivalInfo.nome) return J.rivalInfo.nome;
+        return lado==='mandante'?'MANDANTE':'VISITANTE';
+      };
       el('djPlacar').innerHTML=
-        `<b style="color:#c0392b">MANDANTE</b> ${man} de pé<br>`+
-        `<b style="color:#2a5fa8">VISITANTE</b> ${vis} de pé<br>`+
+        `<b style="color:#c0392b">${nomeDoLado('mandante')}</b> ${man} de pé<br>`+
+        `<b style="color:#2a5fa8">${nomeDoLado('visitante')}</b> ${vis} de pé<br>`+
         `<span style="color:#8b867d">${J.caidos.mandante} × ${J.caidos.visitante} caídos · ${ent} entraram</span><br>`+
         `<span style="color:${J.paz?'#7fc2a0':'#d9705f'}">CLIMA ${J.paz?'TRANQUILO':'PESADO'}</span>`;
     }
@@ -322,13 +368,15 @@ TO.diaJogo.ponte = (function(){
         '<kbd>Q</kbd> pedra · <kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>C</kbd> câmera · '+
         'arrastar gira · roda aproxima'
       : '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação · <kbd>Q</kbd> pedra · '+
-        '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>F2</kbd> editor de cena';
+        '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · rodinha = zoom · <kbd>F2</kbd> editor de cena';
   }
 
   /* =======================================================
      BOTÕES E ENTRADA
      ======================================================= */
-  /* a cena tem portão de estádio de verdade? só os arredores têm */
+  /* a cena tem portão de estádio de verdade? só os arredores. Na
+     arquibancada (estadio-*) o mesmo botão é a SAÍDA pelo túnel, com
+     os textos que a cena declara. */
   const entradaDeVerdade = () => !A.D.id || A.D.id === 'arredores';
 
   function montarBotoes(){
@@ -425,18 +473,6 @@ TO.diaJogo.ponte = (function(){
       i.oninput=()=>{P[k]=parseFloat(i.value); d.querySelector('b').textContent=fmt(P[k]);};
       cs.appendChild(d);
     }
-    /* o tamanho do boneco visto de cima: o disco tem 14 px de largura e
-       o boneco, na mesma pegada, lê pequeno; um pouco maior que o disco
-       é o que se compara aqui */
-    if(TO.diaJogo.tres){
-      const T3=TO.diaJogo.tres;
-      const d=document.createElement('div'); d.className='slider';
-      d.innerHTML=`<label>Tamanho do boneco de cima<b>${T3.escalaDeCima.toFixed(2)}×</b></label>
-        <input type="range" min="0.8" max="2.2" step="0.05" value="${T3.escalaDeCima}">`;
-      const i=d.querySelector('input');
-      i.oninput=()=>{T3.escalaDeCima=parseFloat(i.value); d.querySelector('b').textContent=T3.escalaDeCima.toFixed(2)+'×';};
-      cs.appendChild(d);
-    }
     const b=document.createElement('button');
     b.className='acao-btn'; b.style.marginTop='6px';
     b.textContent='Nova noite';
@@ -469,7 +505,8 @@ TO.diaJogo.ponte = (function(){
     const pai = cv.parentElement || document.body;
     if(!pai) return;
     if(padMontado){
-      const pad=$('djPad'); if(pad){ pad.hidden=false; if(pad.parentElement!==pai) pai.appendChild(pad); }
+      const pad=$('djPad');
+      if(pad){ pad.hidden=false; if(pad.parentElement!==pai) pai.appendChild(pad); }
       pai.classList.add('com-pad');
       return;
     }
@@ -550,12 +587,22 @@ TO.diaJogo.ponte = (function(){
     const pad = $('djPad');
     if(!pad || !J) return;
     const q = pad.querySelector('.pad-q'), e = pad.querySelector('.pad-e');
-    if(q) q.classList.toggle('gasto', C.restaCd(J,'pedra') > 0);
-    if(e) e.classList.toggle('gasto', J.bombas <= 0 || C.restaCd(J,'bomba') > 0);
+    if(q){ q.style.display = J.semArmas ? 'none' : '';
+           q.classList.toggle('gasto', C.restaCd(J,'pedra') > 0); }
+    if(e){ e.style.display = J.semArmas ? 'none' : '';
+           e.classList.toggle('gasto', J.bombas <= 0 || C.restaCd(J,'bomba') > 0); }
     marcarFormacaoNoPad();
   }
 
+  /* UMA VEZ SÓ. `montar` roda a cada cena aberta — troca de aba na
+     bancada, cada briga do jogo — e os ouvintes iam se empilhando no
+     mesmo canvas e na mesma janela: com duas cenas abertas, uma tecla
+     Q jogava duas pedras, a rodinha dava zoom dobrado e o F2 abria e
+     fechava o editor no mesmo aperto (que foi como isto apareceu). */
+  let entradaLigada=false;
   function ligarEntrada(){
+    if(entradaLigada) return;
+    entradaLigada=true;
     addEventListener('keydown',e=>{
       const k=e.key.toLowerCase();
       teclas[k]=true;
@@ -565,6 +612,7 @@ TO.diaJogo.ponte = (function(){
         if(k==='[') ED.pincel=Math.max(4,ED.pincel-4);
         if(k===']') ED.pincel=Math.min(80,ED.pincel+4);
         if(k==='m') ED.mostrarMalha=!ED.mostrarMalha;
+        if((k==='delete'||k==='backspace') && ED.mouse) apagarSob(ED.mouse.x, ED.mouse.y);
         return;
       }
       if(!J) return;
@@ -577,12 +625,43 @@ TO.diaJogo.ponte = (function(){
     });
     addEventListener('keyup',e=>{teclas[e.key.toLowerCase()]=false;});
 
+    /* rodinha = zoom. `passive:false` porque sem o preventDefault a
+       página rola junto e o zoom vira briga com o scroll. O passo é
+       exponencial pra rodinha de degrau (±100) e trackpad (deltas
+       miúdos) andarem na mesma velocidade percebida. */
+    cv.addEventListener('wheel',e=>{
+      e.preventDefault();
+      zoom=U.limitar(zoom*Math.exp(-e.deltaY*0.0018), 1, ZOOM_MAX);
+    },{passive:false});
+
     cv.addEventListener('contextmenu',e=>{if(ED.ativo)e.preventDefault();});
     cv.addEventListener('pointerdown',e=>{
       if(!ED.ativo) return;
       e.preventDefault();
       const p=paraCena(e);
-      if(ED.modo==='marcador'){ ED.pegou=acharMarcador(p.x,p.y); return; }
+      const apagando = (e.button===2 || e.shiftKey);
+      if(ED.modo!=='pincel'){
+        if(apagando){ apagarSob(p.x,p.y); return; }
+        if(ED.modo==='marcador'){ ED.pegou=acharMarcador(p.x,p.y); return; }
+        if(ED.modo==='grade'){
+          const g=novaGrade(p.x,p.y); selecionar(g);
+          ED.pegou={mover:(nx,ny)=>{ g.ate.x=Math.round(nx); g.ate.y=Math.round(ny);
+                                    ajustarModulos(g); regrade(); pintarBarraGrade(); }};
+          ED.sujo=true; return;
+        }
+        if(ED.modo==='pm'){
+          D.pmPostos.push({x:Math.round(p.x), y:Math.round(p.y)});
+          ED.sujo=true; return;
+        }
+        if(ED.modo==='fuga'){
+          (D.fugas = D.fugas || []).push({x:Math.round(p.x), y:Math.round(p.y), raio:34});
+          mexeuNasFugas(); return;
+        }
+        if(ED.modo==='tropa'){
+          D.tropaEm={x:Math.round(p.x), y:Math.round(p.y)};
+          ED.sujo=true; return;
+        }
+      }
       ED.pintando = (e.button===2||e.shiftKey) ? 2 : 1;
       A.pintar(p.x,p.y,ED.pincel, ED.pintando===1);
       ED.sujo=true;
@@ -731,9 +810,16 @@ TO.diaJogo.ponte = (function(){
          soma isso ao indicador sem virar nada — ganhar fora custava
          prestígio e ainda fazia perder material. A fórmula continua a
          mesma; o que muda é de quem são os caídos. */
+      /* O PRESTÍGIO FALA NA ESCALA DE 0 A 100 (decisão do dono,
+         17/08/2026): vitória rende no máximo +10, derrota tira no
+         máximo −10 — e o −10 é só quando o prejuízo de feridos e
+         presos é grande. A conta de caídos continua dando o degrau;
+         o ÷3 e o teto seguram a banalização (um 51×0 dava +102). */
       prestigio: correram ? prestigioDaFuga(J)
-        : (Math.round(J.caidos[outroLado]*2 - J.caidos[nossoLado]*1.5
-                      - J.presosPor[nossoLado]*2 + (J.rompido?6:0)) || 0),
+        : (U.limitar(Math.round((J.caidos[outroLado]*2
+                      - J.caidos[nossoLado]*1.5
+                      - J.presosPor[nossoLado]*2 + (J.rompido?6:0)) / 3),
+                     -10, 10) || 0),
       membros
     };
     J.resultado=r;
@@ -789,7 +875,7 @@ TO.diaJogo.ponte = (function(){
      ======================================================= */
   function alternarEditor(){
     /* o editor pinta a malha na tela de cima; em 3D não há onde pintar */
-    if(tres){ if(J) C.aviso(J, 'o editor é da cena 2D', '#e0b040'); return; }
+    if(tres){ if(J) C.aviso(J, 'o editor é da cena de cima', '#e0b040'); return; }
     ED.ativo=!ED.ativo;
     if(ED.ativo) montarBarraEditor(); else { const b=$('editorBarra'); if(b) b.remove(); }
   }
@@ -800,10 +886,90 @@ TO.diaJogo.ponte = (function(){
     for(const e of D.entradas) if(perto(e.x,e.y,30)) return {mover:(nx,ny)=>{e.x=Math.round(nx);e.y=Math.round(ny);}};
     for(const p of D.pmPostos) if(perto(p.x,p.y,16)) return {mover:(nx,ny)=>{p.x=Math.round(nx);p.y=Math.round(ny);}};
     for(const g of D.grades){
-      if(perto(g.de.x,g.de.y,18))  return {mover:(nx,ny)=>{g.de.x=Math.round(nx); g.de.y=Math.round(ny); regrade();}};
-      if(perto(g.ate.x,g.ate.y,18))return {mover:(nx,ny)=>{g.ate.x=Math.round(nx);g.ate.y=Math.round(ny);regrade();}};
+      if(perto(g.de.x,g.de.y,18))  return {mover:(nx,ny)=>{g.de.x=Math.round(nx); g.de.y=Math.round(ny); selecionar(g); regrade();}};
+      if(perto(g.ate.x,g.ate.y,18))return {mover:(nx,ny)=>{g.ate.x=Math.round(nx);g.ate.y=Math.round(ny);selecionar(g); regrade();}};
     }
+    for(const f of (D.fugas||[])) if(perto(f.x,f.y,20))
+      return {mover:(nx,ny)=>{f.x=Math.round(nx); f.y=Math.round(ny); mexeuNasFugas();}};
+    if(D.tropaEm && perto(D.tropaEm.x,D.tropaEm.y,20))
+      return {mover:(nx,ny)=>{D.tropaEm.x=Math.round(nx); D.tropaEm.y=Math.round(ny);}};
     return null;
+  }
+
+  /* =======================================================
+     MARCAR À MÃO: GRADE, POSTO DE PM, BOCA DE FUGA E A TROPA
+     Até aqui o editor só movia o que já existia — e a lista de
+     marcadores de uma cena é decisão de quem desenha a cena, não
+     coisa pra pedir por mensagem. Cada modo da barra põe um tipo de
+     marcador; o botão direito, em qualquer um deles, tira o que
+     estiver embaixo do cursor (menos bonde e portão, que são a
+     identidade da cena e saem só do arquivo).
+     ======================================================= */
+  function selecionar(g){ ED.sel = g; pintarBarraGrade(); }
+
+  /* comprimento vira número de módulos: 22 px por módulo é o passo que
+     as grades da praça e dos estádios já usam */
+  const compr = g => Math.hypot(g.ate.x-g.de.x, g.ate.y-g.de.y);
+  function ajustarModulos(g){
+    g.modulos = Math.max(1, Math.round(compr(g)/22));
+  }
+  function novaGrade(x,y){
+    let n=1; const usado=id=>D.grades.some(g=>g.id===id);
+    while(usado('grade_'+n)) n++;
+    const g={id:'grade_'+n, rot:'GRADE', de:{x:Math.round(x),y:Math.round(y)},
+             ate:{x:Math.round(x),y:Math.round(y)}, modulos:1, espessura:10};
+    D.grades.push(g);
+    return g;
+  }
+
+  /* a lista de bocas de fuga é lida uma vez e guardada; mexeu, recarrega
+     — e o campo de rota da fuga é indexado pela versão das grades */
+  function mexeuNasFugas(){
+    A.recarregarFugas();
+    if(J) J.versaoGrades++;
+    ED.sujo=true;
+    conferirFugas();
+  }
+
+  /* AVISO NA HORA: boca de fuga em lugar sem rota é bonde correndo pra
+     parede pelo resto da noite. Confere-se do jeito que o jogo confere
+     na hora de correr: campo até a boca, com as grades de pé, e cada
+     bonde da cena tem de ter caminho. */
+  function conferirFugas(){
+    const lista = (D.fugas||[]);
+    if(!lista.length){ ED.aviso=''; pintarAviso(); return; }
+    const bloq = A.celulasDeGrades(J ? J.grades : A.montarGrades());
+    const ruins = [];
+    for(const f of A.fugas){
+      const campo = A.criarCampo(f.x, f.y, bloq);
+      const sem = D.spawns.filter(s=>campo.passo(s.x,s.y).semRota).map(s=>s.rot||s.id);
+      if(sem.length) ruins.push(`${Math.round(f.x)},${Math.round(f.y)} sem rota de ${sem.join(' e ')}`);
+    }
+    ED.aviso = ruins.length
+      ? 'FUGA SEM ROTA · ' + ruins.join(' · ')
+      : `${A.fugas.length} boca(s) de fuga à mão — todas com rota`;
+    pintarAviso();
+  }
+
+  function apagarSob(x,y){
+    const perto=(a,b,r)=>U.dist(x,y,a,b)<r;
+    for(let i=0;i<D.grades.length;i++){
+      const g=D.grades[i];
+      if(perto(g.de.x,g.de.y,18) || perto(g.ate.x,g.ate.y,18) ||
+         U.dist(x,y,(g.de.x+g.ate.x)/2,(g.de.y+g.ate.y)/2) < 18){
+        if(ED.sel===g) selecionar(null);
+        D.grades.splice(i,1); regrade(); ED.sujo=true; return true;
+      }
+    }
+    for(let i=0;i<D.pmPostos.length;i++)
+      if(perto(D.pmPostos[i].x,D.pmPostos[i].y,16)){
+        D.pmPostos.splice(i,1); ED.sujo=true; return true; }
+    const fg=D.fugas||[];
+    for(let i=0;i<fg.length;i++)
+      if(perto(fg[i].x,fg[i].y,20)){ fg.splice(i,1); mexeuNasFugas(); return true; }
+    if(D.tropaEm && perto(D.tropaEm.x,D.tropaEm.y,20)){
+      D.tropaEm=null; ED.sujo=true; return true; }
+    return false;
   }
   function regrade(){ if(J){ const hp=P.vidaGrade;
     J.grades=A.montarGrades(); for(const g of J.grades){g.hpMax=hp;g.hp=hp;} } }
@@ -823,6 +989,32 @@ TO.diaJogo.ponte = (function(){
     }
   }
 
+  /* a grade que a mão está mexendo ganha os dois números que não dá
+     pra arrastar: quantos módulos ela tem e quão grossa ela é */
+  function pintarBarraGrade(){
+    const cx=$('edGrade'); if(!cx) return;
+    const g=ED.sel;
+    if(!g || !D.grades.includes(g)){ cx.innerHTML=''; return; }
+    cx.innerHTML=
+      `<span style="color:#e0b040">${g.id}</span>`+
+      `<button data-g="mod-">módulos −</button><b id="edMod">${g.modulos}</b><button data-g="mod+">+</button>`+
+      `<button data-g="esp-">espessura −</button><b id="edEsp">${g.espessura}</b><button data-g="esp+">+</button>`;
+    cx.querySelectorAll('[data-g]').forEach(bt=>bt.onclick=()=>{
+      const a=bt.dataset.g;
+      if(a==='mod-') g.modulos=Math.max(1,g.modulos-1);
+      if(a==='mod+') g.modulos=Math.min(40,g.modulos+1);
+      if(a==='esp-') g.espessura=Math.max(4,g.espessura-1);
+      if(a==='esp+') g.espessura=Math.min(24,g.espessura+1);
+      regrade(); ED.sujo=true; pintarBarraGrade();
+    });
+  }
+  function pintarAviso(){
+    const n=$('edAviso'); if(!n) return;
+    const ruim = ED.aviso.startsWith('FUGA SEM ROTA');
+    n.style.color = ruim ? '#d9705f' : 'var(--fraco)';
+    n.textContent = ED.aviso;
+  }
+
   function montarBarraEditor(){
     if($('editorBarra')) return;
     const b=document.createElement('div');
@@ -834,20 +1026,43 @@ TO.diaJogo.ponte = (function(){
         <button data-modo="marcador">Marcadores</button>
       </div>
       <div class="grupo">
+        <button data-modo="grade">Grade nova</button>
+        <button data-modo="pm">Posto de PM</button>
+        <button data-modo="fuga">Boca de fuga</button>
+        <button data-modo="tropa">Entrada da tropa</button>
+      </div>
+      <div class="grupo" id="edGrade"></div>
+      <div class="grupo">
         <button id="edMalha" class="on">Malha (M)</button>
         <button id="edRefazer">Refazer dos polígonos</button>
         <button id="edExportar">Exportar arquivo</button>
       </div>
-      <div class="dica">
-        clique = libera passagem · shift/direito = bloqueia · <b>[</b> <b>]</b> tamanho do pincel<br>
-        arraste uma imagem pra usar de fundo · F2 sai
-      </div>`;
+      <div class="dica" id="edDica"></div>
+      <div class="dica" id="edAviso"></div>`;
     document.body.appendChild(b);
     b.querySelectorAll('[data-modo]').forEach(bt=>bt.onclick=()=>{
       ED.modo=bt.dataset.modo;
       b.querySelectorAll('[data-modo]').forEach(o=>o.classList.toggle('on',o===bt));
+      pintarDica();
     });
+    pintarDica(); pintarBarraGrade(); conferirFugas();
     $('edMalha').onclick=e=>{ED.mostrarMalha=!ED.mostrarMalha;e.target.classList.toggle('on',ED.mostrarMalha);};
+
+    /* cada ferramenta explica a si mesma: a barra é a única
+       documentação que quem desenha a cena tem na frente */
+    function pintarDica(){
+      const d=$('edDica'); if(!d) return;
+      const comum='<b>direito/shift</b> ou <b>Delete</b> = apagar o que estiver sob o cursor · F2 sai';
+      d.innerHTML = ({
+        pincel:'clique = libera passagem · shift/direito = bloqueia · <b>[</b> <b>]</b> tamanho do pincel<br>'+
+               'arraste uma imagem pra usar de fundo · F2 sai',
+        marcador:'arraste bonde, portão, posto de PM, ponta de grade, boca de fuga ou a tropa<br>'+comum,
+        grade:'aperte e arraste pra traçar a grade — o número de módulos sai do comprimento<br>'+comum,
+        pm:'clique põe um posto de PM (é de lá que sai reforço, e a viatura volta pra lá)<br>'+comum,
+        fuga:'clique marca por onde se some quando debanda. Marcou uma, as automáticas da máscara desligam<br>'+comum,
+        tropa:'clique marca por onde a tropa de choque entra. Sem marcador, ela entra pelo buraco da grade<br>'+comum
+      })[ED.modo] || comum;
+    }
     $('edRefazer').onclick=()=>{D.mascara=null;A.reconstruir();ED.sujo=true;};
     $('edExportar').onclick=exportar;
   }
@@ -887,7 +1102,11 @@ ${lista(D.pmPostos)}
 
     grades:[
 ${lista(D.grades)}
-    ]
+    ],
+
+    fugas:[
+${lista(D.fugas||[])}
+    ]${D.tropaEm ? ',\n\n    tropaEm:'+j(D.tropaEm) : ''}
   },
 `;
   }
@@ -935,7 +1154,11 @@ ${D.pmPostos.map(p=>'    '+j(p)).join(',\n')}
 
   grades:[
 ${D.grades.map(g=>'    '+j(g)).join(',\n')}
-  ]
+  ],
+
+  fugas:[
+${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
+  ]${D.tropaEm ? ',\n\n  tropaEm:'+j(D.tropaEm) : ''}
 };
 `;
   }
@@ -969,9 +1192,12 @@ ${D.grades.map(g=>'    '+j(g)).join(',\n')}
   return {montar, novaNoite, encerrar, alternarEditor, gerarArquivo,
           get tres(){ return tres; }, get bonecos(){ return bonecos; },
           alternarVelocidade,
+          get zoom(){return zoom;},
+          set zoom(v){ zoom=U.limitar(+v||1, 1, ZOOM_MAX); },
           get velocidade(){return velocidade;},
           set velocidade(v){ velocidade = velocidades.includes(v) ? v : 1;
                              atualizarBotaoVelocidade(); },
           get config(){return config;},
           get J(){return J;}};
 })();
+

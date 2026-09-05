@@ -25,13 +25,15 @@ TO.membros = (function(){
   const SEDE = [
     null,
     {membros:50,  diretoria:2,  treino:2},
-    {membros:100, diretoria:4,  treino:4},
+    {membros:90,  diretoria:4,  treino:4},
     {membros:150, diretoria:6,  treino:8},
     {membros:200, diretoria:10, treino:12},
     {membros:500, diretoria:15, treino:20}
   ];
 
-  const DIAS_FERIDO = 30;   // GDD §17.2
+  /* ferido volta em 5 a 15 dias, sorteado na hora (decisão do dono,
+     18/08/2026) — o 30 fixo do GDD §17.2 saiu */
+  const FERIDO_MIN = 5, FERIDO_MAX = 15;
 
   /* -------------------------------------------------------
      CRIAÇÃO
@@ -110,9 +112,10 @@ TO.membros = (function(){
 
   function povoarInicial(E, total, cargos){
     const plano = planoDeCargos(total || 34, cargos);
-    /* torcida forte tem gente mais rodada — o `poder` da fonte é o que
-       separa a Gaviões de uma organizada de interior */
-    const peso = U.limitar((E.torcida.poder || 60)/250, 0, 1);
+    /* SEM BÔNUS DE PODER (decisão do dono, 18/08/2026): a ficha inicial
+       sai só do cargo, a mesma régua das IAs — o que separa a Gaviões
+       de uma organizada de interior é o tamanho e a pirâmide, não um
+       +3 de berço em cada membro. */
     const moralBase = Math.round(E.indicadores.moral);
 
     for(const [cargo, n] of plano){
@@ -120,11 +123,10 @@ TO.membros = (function(){
       for(let i=0;i<n;i++){
         const base = cargo==='novato' ? 1 : cargo==='componente' ? 5
                    : cargo==='frente' ? 10 : 14;
-        const bonus = Math.round(peso*3);
         E.membros.push(criar(E, {
           cargo,
-          forca:  Math.min(c.teto, base + U.inteiro(0,3) + bonus),
-          defesa: Math.min(c.teto, base + U.inteiro(0,3) + bonus),
+          forca:  Math.min(c.teto, base + U.inteiro(0,3)),
+          defesa: Math.min(c.teto, base + U.inteiro(0,3)),
           moral:  U.limitar(moralBase + U.inteiro(-3,3), 1, 20),
           xp: cargo==='novato' ? U.inteiro(0,30)
             : cargo==='componente' ? U.inteiro(40,95)
@@ -206,8 +208,11 @@ TO.membros = (function(){
     if(!disponivel(m)) return false;
     const c = CARGOS[m.cargo];
     const teto = c.teto + (m.veterano?2:0);
-    m.fracForca  += U.entre(0, 0.3);
-    m.fracDefesa += U.entre(0, 0.3);
+    /* professor de MMA (pedido do dono, 18/08/2026): a evolução de
+       ataque e defesa dobra enquanto ele estiver contratado */
+    const ganho = E && E.professorMMA ? 2 : 1;
+    m.fracForca  += U.entre(0, 0.3) * ganho;
+    m.fracDefesa += U.entre(0, 0.3) * ganho;
     while(m.fracForca >= 1 && m.forca < teto){ m.fracForca -= 1; m.forca++; }
     while(m.fracDefesa >= 1 && m.defesa < teto){ m.fracDefesa -= 1; m.defesa++; }
     if(m.forca >= teto) m.fracForca = 0;
@@ -261,38 +266,38 @@ TO.membros = (function(){
      dia de jogo, que é de onde vem a maioria. */
   function ferir(E, m, dias, motivo){
     if(m.ferido) return;
-    const d = dias || DIAS_FERIDO;
+    const d = dias || U.inteiro(FERIDO_MIN, FERIDO_MAX);
     m.ferido = { dias:d };
     m.naFila = false;
     m.moral = Math.max(0, m.moral - 3);
     m.historico.push(`${motivo || 'Ferido no dia de jogo'}, ${d} dias fora`);
   }
 
-  /* A PRISÃO GANHOU PRAZO, espelhando o ferido.
-     `m.preso` era um booleano e a soltura era sorteio de 3% ao dia —
-     pena desenhada pra briga de dia de jogo (GDD §17.2), que dá uma
-     média de uns 33 dias. Assalto tem pena de tabela: 30 dias nos alvos
-     pequenos, 60 no banco e na joalheria. Agora é `{dias, motivo}`, com
-     `dias:null` pra prisão sem prazo, que continua saindo no sorteio.
-     Objeto é truthy, então `disponivel` e tudo o que só pergunta "está
-     preso?" seguem valendo sem mudar uma linha. */
+  /* TODA PRISÃO TEM PRAZO. Na briga o teto segue 90 dias, sorteado na
+     hora; pena EXPLÍCITA de quem chamou pode ir a 360 — é a régua dos
+     assaltos do dono (banco = 360 dias). A tela mostra quantos dias
+     faltam pra sair da cadeia. */
+  const PENA_MAX = 90;
+  const PENA_TETO = 360;
   function prender(E, m, dias, motivo){
     if(m.preso) return;
     const txt = motivo || 'Preso no dia de jogo';
-    /* `desde` é o dia absoluto da prisão. Ele não existia porque nada
-       perguntava HÁ QUANTO TEMPO alguém está preso — só se estava. A
-       visita ao preso (interna 6.9) pergunta, e sem esta linha ela teria
-       de adivinhar pelo prazo, que muda de alvo pra alvo. */
-    m.preso = { dias: dias || null, motivo: txt,
+    const pena = dias ? Math.min(PENA_TETO, dias)
+                      : Math.min(PENA_MAX, U.inteiro(15, PENA_MAX));
+    m.preso = { dias: pena, motivo: txt,
                 desde: (E && E.data && E.data.absoluto) || 0 };
     m.naFila = false;
     m.moral = Math.max(0, m.moral - 4);
-    m.historico.push(dias ? `${txt} — ${dias} dias` : txt);
+    m.historico.push(`${txt} — ${pena} dias`);
   }
-  /* quantos dias faltam, ou null pra prisão sem prazo. Save antigo
-     guardou `true` aqui dentro: aí não há prazo nenhum. */
-  const diasPresos = m => (m.preso && typeof m.preso === 'object')
-                          ? m.preso.dias : null;
+  /* quantos dias faltam pra sair. Save antigo pode ter prisão sem
+     prazo: ganha um na primeira leitura. */
+  const diasPresos = m => {
+    if(!m.preso) return null;
+    if(typeof m.preso !== 'object') m.preso = {dias:PENA_MAX/2, motivo:'Preso'};
+    if(m.preso.dias == null) m.preso.dias = Math.round(PENA_MAX/2);
+    return m.preso.dias;
+  };
 
   /* GDD §17.2: preso fica até resgate (dinheiro) ou soltura.
      Com pena de tabela a fiança acompanha o que falta cumprir: tirar
@@ -322,24 +327,13 @@ TO.membros = (function(){
           m.historico.push('Recuperado, de volta');
         }
       }
-      /* DOIS MODELOS DE PRISÃO, e eles não se atrapalham.
-         Com prazo, o contador desce e ele sai no dia certo — é a pena
-         do assalto. Sem prazo, continua o sorteio de 3% ao dia da briga
-         de dia de jogo: preso pode ser solto sozinho, devagar, senão o
-         jogador é obrigado a pagar fiança sempre e a prisão vira só
-         imposto. */
+      /* a pena desce um dia por dia; no zero ele sai sozinho */
       else if(m.preso){
-        const d = diasPresos(m);
-        if(d != null){
-          m.preso.dias--;
-          if(m.preso.dias <= 0){
-            m.preso = null;
-            m.historico.push('Cumpriu a pena, de volta');
-          }
-        }
-        else if(U.rng() < 0.03){
+        diasPresos(m);
+        m.preso.dias--;
+        if(m.preso.dias <= 0){
           m.preso = null;
-          m.historico.push('Solto pela justiça');
+          m.historico.push('Cumpriu a pena, de volta');
         }
       }
     }
@@ -371,12 +365,14 @@ TO.membros = (function(){
       m.moral = U.limitar(m.moral + (r.moral||0), 0, 20);
     }
 
-    /* indicadores da torcida */
-    const I = E.indicadores;
-    I.prestigio = U.limitar(I.prestigio + (res.prestigio||0)/6, 0, 20);
-    I.moral     = U.limitar(I.moral + (res.moralTorcida||0), 0, 20);
-    if(res.rompido) I.policia = U.limitar(I.policia - 2, 0, 20);
-    if(resumo.presos.length) I.policia = U.limitar(I.policia - 1, 0, 20);
+    /* indicadores da torcida. O prestígio da noite fala na escala de
+       0 a 100 (teto ±10, decisão do dono); o indicador vive em 0–20,
+       então divide por 5 — e o limitador é o cinto de segurança.
+       Os dois movimentos passam pelo livro, com motivo. */
+    TO.estado.mexerIndicador(E, 'prestigio',
+      U.limitar((res.prestigio||0)/5, -2, 2), 'Resultado da briga');
+    TO.estado.mexerIndicador(E, 'moral',
+      res.moralTorcida||0, 'Resultado da briga');
 
     E.historicoNoites.unshift({
       semana:E.data.semana,
@@ -389,7 +385,7 @@ TO.membros = (function(){
   }
 
   return {
-    CARGOS, ACIMA, SEDE, DIAS_FERIDO, DA_FONTE,
+    CARGOS, ACIMA, SEDE, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
     criar, nomeDe, povoarInicial, planoDeCargos, nivelQueCabe,
     disponivel, capacidade, capTreino, capDiretoria, contar, emCampanha,
     darXP, podePromover, promover, treinar, treinarFila,
@@ -398,3 +394,4 @@ TO.membros = (function(){
     aptosParaOEstadio, aplicarResultadoDaNoite
   };
 })();
+
