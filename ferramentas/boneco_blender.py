@@ -82,9 +82,9 @@ def ponto(nome, x, y, z, rx, ry=None, mat='pele'):
 ponto('pelvis',   0, 0.00, 0.97, 0.150, 0.110, 'calca')
 ponto('cintura',  0, 0.00, 1.08, 0.130, 0.100, 'camisa')
 ponto('peito',    0, 0.00, 1.26, 0.170, 0.115, 'camisa')
-ponto('ombros',   0, 0.00, 1.40, 0.185, 0.100, 'camisa')
-ponto('pescoco',  0, 0.00, 1.47, 0.058, 0.058, 'pele')
-ponto('nuca',     0, 0.00, 1.53, 0.050, 0.050, 'pele')
+ponto('ombros',   0, 0.00, 1.40, 0.165, 0.098, 'camisa')
+ponto('pescoco',  0, 0.00, 1.47, 0.062, 0.062, 'pele')
+ponto('nuca',     0, 0.00, 1.53, 0.054, 0.054, 'pele')
 for lado, sx in (('D', -1), ('E', 1)):
     ponto('ombro'+lado,   sx*0.215, 0.00, 1.395, 0.062, 0.062, 'camisa')
     ponto('manga'+lado,   sx*0.245, 0.00, 1.27, 0.052, 0.052, 'camisa')
@@ -92,8 +92,14 @@ for lado, sx in (('D', -1), ('E', 1)):
     ponto('cotovelo'+lado,sx*0.265, 0.00, 1.13, 0.043, 0.043, 'pele')
     ponto('antebr'+lado,  sx*0.275, 0.00, 1.02, 0.040, 0.040, 'pele')
     ponto('pulso'+lado,   sx*0.285, 0.00, 0.90, 0.032, 0.026, 'pele')
-    ponto('mao'+lado,     sx*0.290, 0.00, 0.82, 0.045, 0.022, 'pele')
-    ponto('dedos'+lado,   sx*0.292, 0.00, 0.76, 0.030, 0.016, 'pele')
+    ponto('mao'+lado,     sx*0.290, 0.00, 0.82, 0.042, 0.020, 'pele')
+    ponto('nos'+lado,     sx*0.292, -0.004, 0.785, 0.040, 0.016, 'pele')
+    # dedos: quatro ramos curtos mais o polegar, pra mão ter mão
+    for k, (dx, dy, comp) in enumerate([(-0.030, 0.0, 0.055), (-0.011, -0.002, 0.062), (0.008, -0.002, 0.060), (0.026, 0.0, 0.050)]):
+        ponto('dedo%d%s' % (k, lado), sx*0.292 + dx, dy - 0.004, 0.785 - comp*0.55, 0.0075, 0.0065, 'pele')
+        ponto('ponta%d%s' % (k, lado), sx*0.292 + dx, dy - 0.006, 0.785 - comp, 0.0060, 0.0055, 'pele')
+    ponto('polegar'+lado, sx*0.292 + sx*(-0.030), -0.020, 0.80, 0.0085, 0.0075, 'pele')
+    ponto('polegarp'+lado, sx*0.292 + sx*(-0.038), -0.036, 0.785, 0.0065, 0.0060, 'pele')
     ponto('quadril'+lado, sx*0.095, 0.00, 0.94, 0.095, 0.095, 'calca')
     ponto('coxa'+lado,    sx*0.105, 0.00, 0.74, 0.082, 0.085, 'calca')
     ponto('bermuda'+lado, sx*0.110, 0.00, 0.66, 0.078, 0.080, 'calca')
@@ -106,7 +112,8 @@ for lado, sx in (('D', -1), ('E', 1)):
 ARESTAS = [('pelvis','cintura'),('cintura','peito'),('peito','ombros'),('ombros','pescoco'),('pescoco','nuca')]
 for L in ('D','E'):
     ARESTAS += [('ombros','ombro'+L),('ombro'+L,'manga'+L),('manga'+L,'braco'+L),('braco'+L,'cotovelo'+L),
-                ('cotovelo'+L,'antebr'+L),('antebr'+L,'pulso'+L),('pulso'+L,'mao'+L),('mao'+L,'dedos'+L),
+                ('cotovelo'+L,'antebr'+L),('antebr'+L,'pulso'+L),('pulso'+L,'mao'+L),('mao'+L,'nos'+L),
+                ('mao'+L,'polegar'+L),('polegar'+L,'polegarp'+L)] + [('nos'+L,'dedo%d%s'%(k,L)) for k in range(4)] + [('dedo%d%s'%(k,L),'ponta%d%s'%(k,L)) for k in range(4)] + [
                 ('pelvis','quadril'+L),('quadril'+L,'coxa'+L),('coxa'+L,'bermuda'+L),('bermuda'+L,'joelho'+L),
                 ('joelho'+L,'canela'+L),('canela'+L,'tornoz'+L),('tornoz'+L,'pe'+L),('pe'+L,'ponta'+L)]
 
@@ -161,8 +168,8 @@ for m in ('pele','camisa','calca','tenis','sola','faixa','meia'):
 IDX = {m.name: k for k, m in enumerate(corpo.data.materials)}
 pontos = [(P[n]['co'], n) for n in NOMES]
 def membro(n):
-    if n.startswith(('ombro','manga','braco','cotovelo','antebr','pulso','mao','dedos')): return 'braco'
-    if n.startswith(('quadril','coxa','bermuda','joelho','canela','tornoz','pe','ponta')): return 'perna'
+    if n.startswith(('ombro','manga','braco','cotovelo','antebr','pulso','mao','nos','dedo','ponta0','ponta1','ponta2','ponta3','polegar')): return 'braco'
+    if n.startswith(('quadril','coxa','bermuda','joelho','canela','tornoz','pe')) or n in ('pontaD','pontaE'): return 'perna'
     if n in ('pescoco','nuca'): return 'pescoco'
     return 'tronco'
 for poly in corpo.data.polygons:
@@ -189,41 +196,163 @@ for poly in corpo.data.polygons:
         m = 'pele'
     poly.material_index = IDX[m]
 
-# ---------------------------------------------------------------- a cabeça (metaballs → malha)
-def cabeca_metaball():
+# ---------------------------------------------------------------- A CABEÇA ESCULPIDA
+# (refeita a pedido do dono, 05/09/2026: "todos os detalhes do rosto
+# devem ser bem similares à realidade"). Não é mais bola + peças
+# soltas. É uma cabeça de metaballs REMALHADA em voxels de 3,5 mm
+# (topologia uniforme, ~10 mil faces) e depois ESCULPIDA por
+# deslocamento ao longo da normal: cada traço do rosto é uma
+# gaussiana 3D centrada num ponto medido na própria superfície —
+# órbita funda, arco da sobrancelha, dorso, ponta e narinas do
+# nariz, maçã do rosto, cova da bochecha, lábio de cima e de baixo
+# com o sulco entre eles, filtro, queixo com a covinha acima,
+# têmpora, ângulo da mandíbula. Depois um alisamento leve e uma
+# subdivisão. Olho de verdade (globo, íris, pupila) dentro da
+# órbita, com pálpebra em casca; sobrancelha curva; orelha com
+# hélice e concha. Cabelo, boné e barba são gerados DA PRÓPRIA
+# superfície (as faces da cabeça acima da linha do cabelo, ou do
+# queixo, deslocadas pra fora), então assentam perfeitos.
+import mathutils
+from mathutils import Matrix, kdtree
+
+def cabeca_base():
     mb = bpy.data.metaballs.new('cabecaMB')
-    mb.resolution = 0.012
+    mb.resolution = 0.008
     mb.threshold = 0.6
     ob = bpy.data.objects.new('cabecaMB', mb)
     col.objects.link(ob)
     def bola(x, y, z, rx, ry, rz, stiff=2.0):
         e = mb.elements.new(); e.type = 'ELLIPSOID'
         e.co = (x, y, z); e.size_x = rx; e.size_y = ry; e.size_z = rz; e.stiffness = stiff
-        return e
-    bola(0, 0.005, 1.640, 0.066, 0.074, 0.070)      # crânio
-    bola(0, -0.018, 1.590, 0.056, 0.056, 0.050)     # rosto de baixo / mandíbula
-    bola(0, -0.046, 1.562, 0.032, 0.024, 0.022)     # queixo
-    bola(-0.044, -0.034, 1.602, 0.024, 0.021, 0.021)  # bochecha D
-    bola( 0.044, -0.034, 1.602, 0.024, 0.021, 0.021)  # bochecha E
-    bola(0, 0.008, 1.525, 0.036, 0.036, 0.048)      # pescoço (emenda com o corpo)
+    bola(0, 0.008, 1.648, 0.071, 0.082, 0.076)      # crânio
+    bola(0, -0.015, 1.596, 0.061, 0.062, 0.054)     # rosto de baixo / mandíbula
+    bola(0, -0.047, 1.560, 0.036, 0.028, 0.025)     # queixo
+    bola(-0.047, -0.032, 1.606, 0.027, 0.024, 0.024)  # bochecha D
+    bola( 0.047, -0.032, 1.606, 0.027, 0.024, 0.024)  # bochecha E
+    bola(0, 0.010, 1.520, 0.040, 0.040, 0.052)      # pescoço (emenda com o corpo)
     deps = bpy.context.evaluated_depsgraph_get()
-    ev = ob.evaluated_get(deps)
-    me = bpy.data.meshes.new_from_object(ev, depsgraph=deps)
-    for poly in me.polygons: poly.use_smooth = True
+    me = bpy.data.meshes.new_from_object(ob.evaluated_get(deps), depsgraph=deps)
     cab = bpy.data.objects.new('cabeca', me)
     col.objects.link(cab)
     bpy.data.objects.remove(ob)
-    me.materials.append(M['pele'])
+    # remalha em voxels: topologia uniforme pra esculpir
+    rm = cab.modifiers.new('Remesh', 'REMESH'); rm.mode = 'VOXEL'; rm.voxel_size = 0.0035; rm.use_smooth_shade = True
+    aplicar_modificadores(cab)
     return cab
 
-cabeca = cabeca_metaball()
+cabeca = cabeca_base()
+_me = cabeca.data
+_verts = _me.vertices
+_kd = kdtree.KDTree(len(_verts))
+for v in _verts: _kd.insert(v.co, v.index)
+_kd.balance()
+
+def superficie_frente(x, z, folga=0.02):
+    """o ponto da superfície na frente do rosto em (x, z): o mais à frente (menor y) na vizinhança"""
+    cands = [v for v in _verts if abs(v.co.x - x) < folga and abs(v.co.z - z) < folga]
+    return min(cands, key=lambda v: v.co.y).co.copy()
+def superficie_lado(y, z, sx, folga=0.02):
+    cands = [v for v in _verts if abs(v.co.y - y) < folga and abs(v.co.z - z) < folga and v.co.x*sx > 0]
+    return max(cands, key=lambda v: v.co.x*sx).co.copy()
+
+topoZ = max(v.co.z for v in _verts)
+queixoZ = min(v.co.z for v in _verts if v.co.y < -0.03)
+olhosZ = queixoZ + 0.57*(topoZ - queixoZ)
+alt = topoZ - queixoZ                    # ~0,22 m
+E = 0.0
+# os traços: (centro, amplitude, sigmas) — amplitude positiva é relevo, negativa é cova
+tracos = []
+def traco(c, a, sx, sy=None, sz=None):
+    tracos.append((Vector(c), a, sx, sy if sy is not None else sx, sz if sz is not None else sx))
+for sx in (-1, 1):
+    oc = superficie_frente(sx*0.031, olhosZ)                      # centro da órbita
+    traco(oc, -0.011, 0.019, 0.016, 0.013)                        # órbita
+    traco(superficie_frente(sx*0.030, olhosZ + 0.022), 0.0055, 0.028, 0.012, 0.008)  # arco da sobrancelha
+    traco(superficie_frente(sx*0.052, olhosZ - 0.018), 0.0065, 0.020, 0.018, 0.016)  # maçã do rosto
+    traco(superficie_frente(sx*0.046, olhosZ - 0.052), -0.0045, 0.018, 0.018, 0.018) # cova da bochecha
+    traco(superficie_lado(0.020, olhosZ + 0.030, sx), -0.004, 0.018, 0.020, 0.018)   # têmpora
+    traco(superficie_lado(0.020, olhosZ - 0.070, sx), 0.0045, 0.016, 0.018, 0.016)   # ângulo da mandíbula
+    traco(superficie_frente(sx*0.016, olhosZ - 0.046), 0.0040, 0.008, 0.009, 0.007)  # asa do nariz
+    traco(superficie_frente(sx*0.010, olhosZ - 0.052), -0.0035, 0.005, 0.007, 0.004) # narina
+# o nariz: dorso do meio das sobrancelhas até a ponta
+for k in range(7):
+    t = k/6.0
+    z = olhosZ + 0.006 - t*0.048
+    traco(superficie_frente(0, z), 0.004 + 0.008*t, 0.009 + 0.003*t, 0.012, 0.009)
+traco(superficie_frente(0, olhosZ - 0.044), 0.007, 0.012, 0.012, 0.009)              # ponta
+traco(superficie_frente(0, olhosZ - 0.060), -0.003, 0.006, 0.006, 0.005)             # base/columela
+traco(superficie_frente(0, olhosZ - 0.066), -0.0025, 0.004, 0.006, 0.006)            # filtro
+traco(superficie_frente(0, olhosZ - 0.073), 0.0045, 0.022, 0.008, 0.005)             # lábio de cima
+traco(superficie_frente(0, olhosZ - 0.079), -0.0045, 0.024, 0.006, 0.0022)           # a boca (sulco)
+traco(superficie_frente(0, olhosZ - 0.086), 0.0055, 0.019, 0.008, 0.0055)            # lábio de baixo
+traco(superficie_frente(0, olhosZ - 0.095), -0.0035, 0.016, 0.008, 0.004)            # sulco do queixo
+traco(superficie_frente(0, olhosZ - 0.108), 0.0060, 0.020, 0.013, 0.014)             # queixo
+traco(superficie_frente(0, olhosZ + 0.050), 0.0025, 0.045, 0.020, 0.030)             # testa
+
+def esculpir(me, tracos):
+    novos = []
+    for v in me.vertices:
+        n = v.normal
+        d = 0.0
+        for c, a, sx, sy, sz in tracos:
+            dx = (v.co.x - c.x)/sx; dy = (v.co.y - c.y)/sy; dz = (v.co.z - c.z)/sz
+            q = dx*dx + dy*dy + dz*dz
+            if q < 9.0: d += a*math.exp(-0.5*q)
+        novos.append(v.co + n*d)
+    for v, p in zip(me.vertices, novos): v.co = p
+esculpir(_me, tracos)
+_me.update()
+# alisa de leve e subdivide
+sm = cabeca.modifiers.new('Smooth', 'SMOOTH'); sm.factor = 0.35; sm.iterations = 2
+aplicar_modificadores(cabeca)
+_me = cabeca.data; _verts = _me.vertices
+_me.materials.append(M['pele'])
+print('cabeça esculpida: %d vértices, topo %.3f queixo %.3f olhos %.3f' % (len(_verts), topoZ, queixoZ, olhosZ))
 
 # ---------------------------------------------------------------- peças presas a ossos
-def esfera(nome, x, y, z, rx, ry, rz, mat, seg=16, an=10):
+def esfera(nome, x, y, z, rx, ry, rz, mat, seg=24, an=16, rot=(0,0,0)):
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=seg, v_segments=an, radius=1.0)
+    R = mathutils.Euler(rot).to_matrix()
     for v in bm.verts:
-        v.co = Vector((v.co.x*rx, v.co.y*ry, v.co.z*rz)) + Vector((x, y, z))
+        v.co = R @ Vector((v.co.x*rx, v.co.y*ry, v.co.z*rz)) + Vector((x, y, z))
+    me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
+    for p in me.polygons: p.use_smooth = True
+    ob = bpy.data.objects.new(nome, me); col.objects.link(ob)
+    me.materials.append(M[mat])
+    return ob
+
+def casca(nome, x, y, z, rx, ry, rz, mat, abre_dir, abre_ang, rot=(0,0,0)):
+    """esfera com um buraco: as faces cuja normal faz menos de `abre_ang` com `abre_dir` saem — a pálpebra"""
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=28, v_segments=18, radius=1.0)
+    d = Vector(abre_dir).normalized(); ca = math.cos(abre_ang)
+    tirar = [f for f in bm.faces if f.normal.dot(d) > ca]
+    bmesh.ops.delete(bm, geom=tirar, context='FACES')
+    R = mathutils.Euler(rot).to_matrix()
+    for v in bm.verts:
+        v.co = R @ Vector((v.co.x*rx, v.co.y*ry, v.co.z*rz)) + Vector((x, y, z))
+    me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
+    for p in me.polygons: p.use_smooth = True
+    ob = bpy.data.objects.new(nome, me); col.objects.link(ob)
+    me.materials.append(M[mat])
+    return ob
+
+def tubo(nome, pontos, raio, mat, seg=10):
+    """um tubo ao longo de uma polilinha (sobrancelha, haste de óculos, aro)"""
+    bm = bmesh.new()
+    aneis = []
+    for i, p in enumerate(pontos):
+        p = Vector(p)
+        d = (Vector(pontos[min(i+1, len(pontos)-1)]) - Vector(pontos[max(i-1, 0)])).normalized()
+        u = d.cross(Vector((0, 0, 1))); u = u.normalized() if u.length > 1e-6 else Vector((1, 0, 0))
+        w = d.cross(u).normalized()
+        r = raio[i] if isinstance(raio, (list, tuple)) else raio
+        aneis.append([bm.verts.new(p + (u*math.cos(a) + w*math.sin(a))*r) for a in [2*math.pi*k/seg for k in range(seg)]])
+    for i in range(len(aneis)-1):
+        for k in range(seg):
+            bm.faces.new((aneis[i][k], aneis[i+1][k], aneis[i+1][(k+1)%seg], aneis[i][(k+1)%seg]))
+    bmesh.ops.contextual_create(bm, geom=aneis[0]); bmesh.ops.contextual_create(bm, geom=aneis[-1])
     me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
     for p in me.polygons: p.use_smooth = True
     ob = bpy.data.objects.new(nome, me); col.objects.link(ob)
@@ -233,18 +362,15 @@ def esfera(nome, x, y, z, rx, ry, rz, mat, seg=16, an=10):
 def caixa(nome, x, y, z, sx, sy, sz, mat, rot=(0,0,0)):
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
-    for v in bm.verts:
-        v.co = Vector((v.co.x*sx, v.co.y*sy, v.co.z*sz))
+    for v in bm.verts: v.co = Vector((v.co.x*sx, v.co.y*sy, v.co.z*sz))
     me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
     ob = bpy.data.objects.new(nome, me); col.objects.link(ob)
     ob.location = (x, y, z); ob.rotation_euler = rot
     me.materials.append(M[mat])
     return ob
 
-def toro(nome, x, y, z, raio, esp, mat, rot=(0,0,0)):
+def toro(nome, x, y, z, raio, esp, mat, rot=(0,0,0), segs=32, anel=10):
     bm = bmesh.new()
-    # anel por revolução simples
-    segs, anel = 24, 8
     verts = []
     for i in range(segs):
         a = 2*math.pi*i/segs
@@ -254,9 +380,7 @@ def toro(nome, x, y, z, raio, esp, mat, rot=(0,0,0)):
             verts.append(bm.verts.new((r*math.cos(a), r*math.sin(a), esp*math.sin(b))))
     for i in range(segs):
         for j in range(anel):
-            v1 = verts[i*anel+j]; v2 = verts[((i+1)%segs)*anel+j]
-            v3 = verts[((i+1)%segs)*anel+(j+1)%anel]; v4 = verts[i*anel+(j+1)%anel]
-            bm.faces.new((v1, v2, v3, v4))
+            bm.faces.new((verts[i*anel+j], verts[((i+1)%segs)*anel+j], verts[((i+1)%segs)*anel+(j+1)%anel], verts[i*anel+(j+1)%anel]))
     me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
     for p in me.polygons: p.use_smooth = True
     ob = bpy.data.objects.new(nome, me); col.objects.link(ob)
@@ -264,84 +388,142 @@ def toro(nome, x, y, z, raio, esp, mat, rot=(0,0,0)):
     me.materials.append(M[mat])
     return ob
 
-# A CABEÇA MEDIDA: tudo que vai no rosto é posicionado pela superfície
-# real da malha, não por número decorado — foi assim que o rosto
-# ficou enterrado na primeira versão.
-_hv = [v.co for v in cabeca.data.vertices]
-def frenteY(z, x=0.0, folga=0.012):
-    vs = [v.y for v in _hv if abs(v.z - z) < folga and abs(v.x - x) < folga]
-    return min(vs) if vs else min(v.y for v in _hv)
-def ladoX(z, folga=0.012):
-    vs = [v.x for v in _hv if abs(v.z - z) < folga]
-    return max(vs) if vs else max(v.x for v in _hv)
-topoZ = max(v.z for v in _hv)
-queixoZ = min(v.z for v in _hv if v.y < -0.03)
-tras = max(v.y for v in _hv)
-olhosZ = queixoZ + 0.56*(topoZ - queixoZ)
-olhoX = 0.38*ladoX(olhosZ)
-olhoY = frenteY(olhosZ, olhoX) + 0.004
-print('cabeça: topo %.3f queixo %.3f olhos z %.3f x %.3f y %.3f lado %.3f' % (topoZ, queixoZ, olhosZ, olhoX, olhoY, ladoX(olhosZ)))
+def tampa(nome, mat, sel, desloc, ruido=0.0, semente=1):
+    """uma casca feita das faces da cabeça que passam em `sel(centro, normal)`,
+    deslocada `desloc` pra fora — cabelo, boné, barba assentam perfeitos"""
+    import random
+    rnd = random.Random(semente)
+    bm = bmesh.new(); bm.from_mesh(_me)
+    tirar = [f for f in bm.faces if not sel(f.calc_center_median(), f.normal)]
+    bmesh.ops.delete(bm, geom=tirar, context='FACES')
+    for v in bm.verts:
+        v.co = v.co + v.normal*(desloc + (rnd.random()-0.5)*ruido)
+    # engrossa: extrusão pra dentro fecha a casca
+    res = bmesh.ops.extrude_face_region(bm, geom=list(bm.faces))
+    novos = [g for g in res['geom'] if isinstance(g, bmesh.types.BMVert)]
+    for v in novos: v.co = v.co - v.normal*(desloc*0.9)
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
+    for p in me.polygons: p.use_smooth = True
+    ob = bpy.data.objects.new(nome, me); col.objects.link(ob)
+    me.materials.append(M[mat])
+    return ob
 
+# ---- o rosto (sempre ligado)
 rosto = []
 for sx in (-1, 1):
-    rosto.append(esfera('olho%s' % sx, sx*olhoX, olhoY, olhosZ, 0.015, 0.010, 0.012, 'olho'))
-    rosto.append(esfera('iris%s' % sx, sx*olhoX, olhoY-0.0075, olhosZ, 0.0080, 0.005, 0.0080, 'iris'))
-    rosto.append(esfera('pupila%s' % sx, sx*olhoX, olhoY-0.011, olhosZ, 0.0038, 0.003, 0.0038, 'pupila'))
-    rosto.append(esfera('palpebra%s' % sx, sx*olhoX, olhoY+0.001, olhosZ+0.008, 0.017, 0.011, 0.006, 'pele'))
-    rosto.append(caixa('sobrancelha%s' % sx, sx*olhoX, frenteY(olhosZ+0.022, olhoX)-0.002, olhosZ+0.022, 0.032, 0.008, 0.006, 'cabelo', (0, sx*0.18, 0)))
-    ez = olhosZ - 0.012
-    rosto.append(esfera('orelha%s' % sx, sx*(ladoX(ez)-0.004), -0.005, ez, 0.010, 0.018, 0.022, 'pele'))
-nz = olhosZ - 0.032
-rosto.append(esfera('nariz', 0, frenteY(nz, 0)-0.010, nz, 0.012, 0.020, 0.022, 'pele'))
-bz = olhosZ - 0.066
-rosto.append(caixa('boca', 0, frenteY(bz, 0)-0.002, bz, 0.034, 0.008, 0.007, 'boca'))
+    oc = superficie_frente(sx*0.031, olhosZ)
+    cx, cy, cz = oc.x, oc.y + 0.004, oc.z          # o globo fica um pouco dentro da órbita
+    rosto.append(esfera('olho%s' % sx, cx, cy, cz, 0.0125, 0.0125, 0.0125, 'olho'))
+    rosto.append(esfera('iris%s' % sx, cx, cy - 0.0105, cz, 0.0058, 0.0025, 0.0058, 'iris'))
+    rosto.append(esfera('pupila%s' % sx, cx, cy - 0.0125, cz, 0.0026, 0.0015, 0.0026, 'pupila'))
+    # pálpebras: uma casca com a abertura amendoada (mais estreita em z)
+    rosto.append(casca('palpebra%s' % sx, cx, cy + 0.0005, cz + 0.001, 0.0138, 0.0138, 0.0105, 'pele', (0, -1, 0), 0.62))
+    # sobrancelha: tubo curvo que acompanha o arco
+    pts = []
+    for k in range(7):
+        t = k/6.0
+        x = sx*(0.012 + 0.040*t)
+        z = olhosZ + 0.020 + 0.010*math.sin(t*math.pi) - 0.004*t
+        p = superficie_frente(x, z, 0.018); p.y -= 0.0025
+        pts.append(p)
+    rosto.append(tubo('sobrancelha%s' % sx, pts, [0.0032, 0.0036, 0.0036, 0.0034, 0.0030, 0.0024, 0.0016], 'cabelo'))
+    # orelha: a hélice (tubo em arco) e a concha (casca funda)
+    ez = olhosZ - 0.010
+    eo = superficie_lado(0.0, ez, sx)
+    hel = []
+    for k in range(9):
+        a = math.pi*(-0.55 + 1.6*k/8)
+        hel.append((eo.x + sx*(0.004 + 0.006*math.cos(a)), eo.y + 0.012*math.cos(a) - 0.004, ez + 0.022*math.sin(a)))
+    rosto.append(tubo('orelha_helice%s' % sx, hel, 0.0035, 'pele'))
+    rosto.append(casca('orelha_concha%s' % sx, eo.x + sx*0.004, eo.y - 0.002, ez - 0.002, 0.010, 0.014, 0.018, 'pele', (sx, 0, 0), 0.9))
+    rosto.append(esfera('lobulo%s' % sx, eo.x + sx*0.004, eo.y + 0.002, ez - 0.020, 0.006, 0.006, 0.006, 'pele'))
+# a boca: só a linha entre os lábios, escura (os lábios são relevo)
+bc = superficie_frente(0, olhosZ - 0.079); bc.y -= 0.0005
+rosto.append(esfera('boca', bc.x, bc.y, bc.z, 0.021, 0.004, 0.0018, 'boca'))
 for ob in rosto: ob.name = 'rosto_' + ob.name
 
-# variantes (o jogo liga uma de cada grupo por nome)
+# ---- as variantes, geradas da própria cabeça
 var = []
-hz = olhosZ + 0.03                      # onde o cabelo começa
-hw, hd = ladoX(hz), (tras - frenteY(hz, 0))/2
-cy = (tras + frenteY(hz, 0))/2
-hh = topoZ - hz
-def touca(nome, mat, fx=1.06, fy=1.05, fz=1.3, dz=0.0):
-    return esfera(nome, 0, cy + 0.004, hz + dz, hw*fx, hd*fy, hh*fz, mat, 20, 12)
-var.append(touca('cabelo_curto', 'cabelo', 1.07, 1.06, 1.35))
-var.append(touca('cabelo_raspado', 'cabelo', 1.035, 1.03, 1.25))
-var.append(touca('cabelo_black', 'cabelo', 1.35, 1.35, 1.75, 0.01))
-var.append(touca('cabelo_moicano', 'cabelo', 1.035, 1.03, 1.25))
-var.append(caixa('cabelo_moicano_crista', 0, cy, topoZ + 0.02, 0.028, 0.15, 0.06, 'cabelo'))
-var.append(touca('cabelo_comprido', 'cabelo', 1.10, 1.08, 1.40))
-var.append(caixa('cabelo_comprido_nuca', 0, tras - 0.01, hz - 0.05, hw*2.0, 0.05, 0.14, 'cabelo'))
-# bonés e chapéus
-var.append(touca('bone_copa', 'bone', 1.10, 1.09, 1.30, 0.004))
-abaZ = topoZ - 0.045
-var.append(caixa('bone_aba', 0, frenteY(abaZ, 0) - 0.05, abaZ, 0.10, 0.10, 0.010, 'bone', (0.10, 0, 0)))
-var.append(caixa('bone_aba_tras', 0, tras + 0.05, abaZ, 0.10, 0.10, 0.010, 'bone', (-0.10, 0, 0)))
-var.append(touca('bucket_copa', 'bone', 1.14, 1.12, 1.30, 0.008))
-var.append(toro('bucket_aba', 0, cy + 0.004, hz + 0.01, hw*1.30, 0.012, 'bone'))
-var.append(toro('bandana', 0, cy + 0.004, hz + 0.012, hw*1.02, 0.014, 'faixa'))
-var.append(caixa('bandana_ponta', 0.025, tras + 0.008, hz - 0.03, 0.028, 0.012, 0.07, 'faixa', (0.3, 0, 0)))
-# barbas
-var.append(esfera('barba_cavanhaque', 0, frenteY(queixoZ + 0.012, 0) - 0.006, queixoZ + 0.012, 0.024, 0.018, 0.018, 'cabelo'))
-var.append(esfera('barba_cheia', 0, cy - 0.012, queixoZ + 0.032, ladoX(queixoZ + 0.03)*1.05, hd*1.0, 0.040, 'cabelo', 20, 12))
-var.append(caixa('barba_bigode', 0, frenteY(bz + 0.012, 0) - 0.004, bz + 0.012, 0.036, 0.010, 0.009, 'cabelo'))
-# óculos
-oy = olhoY - 0.012
-for sx in (-1, 1):
-    var.append(caixa('oculos_grau_aro%s' % sx, sx*olhoX, oy, olhosZ, 0.036, 0.006, 0.028, 'armacao'))
-    var.append(caixa('oculos_grau_lente%s' % sx, sx*olhoX, oy + 0.001, olhosZ, 0.030, 0.002, 0.022, 'lente'))
-    var.append(caixa('oculos_grau_haste%s' % sx, sx*(ladoX(olhosZ) - 0.004), oy + 0.055, olhosZ + 0.002, 0.004, 0.110, 0.004, 'armacao'))
-    var.append(caixa('oculos_escuros_lente%s' % sx, sx*olhoX, oy, olhosZ, 0.038, 0.006, 0.028, 'escuros'))
-    var.append(caixa('oculos_escuros_haste%s' % sx, sx*(ladoX(olhosZ) - 0.004), oy + 0.055, olhosZ + 0.002, 0.004, 0.110, 0.004, 'escuros'))
-var.append(caixa('oculos_grau_ponte', 0, oy, olhosZ + 0.002, 0.012, 0.004, 0.004, 'armacao'))
-var.append(caixa('oculos_escuros_ponte', 0, oy, olhosZ + 0.002, 0.012, 0.004, 0.004, 'escuros'))
+def acima_do_cabelo(c, n):
+    # linha do cabelo: mais baixa atrás (nuca) e nos lados, mais alta na testa
+    frente = max(0.0, -n.y)
+    lim = olhosZ + 0.052*frente + 0.012*(1-frente) - 0.030*max(0.0, n.y)
+    if n.z < -0.4: return False
+    return c.z > lim
+var.append(tampa('cabelo_curto', 'cabelo', acima_do_cabelo, 0.006, 0.002, 1))
+var.append(tampa('cabelo_raspado', 'cabelo', acima_do_cabelo, 0.0022, 0.0005, 2))
+var.append(tampa('cabelo_black', 'cabelo', acima_do_cabelo, 0.030, 0.012, 3))
+var.append(tampa('cabelo_moicano', 'cabelo', acima_do_cabelo, 0.0022, 0.0005, 4))
+var.append(tampa('cabelo_moicano_crista', 'cabelo', lambda c, n: acima_do_cabelo(c, n) and abs(c.x) < 0.014 and n.z > 0.3, 0.045, 0.006, 5))
+var.append(tampa('cabelo_comprido', 'cabelo', lambda c, n: acima_do_cabelo(c, n) or (n.y > 0.3 and c.z > olhosZ - 0.06), 0.009, 0.003, 6))
+var.append(caixa('cabelo_comprido_nuca', 0, 0.075, olhosZ - 0.075, 0.13, 0.05, 0.12, 'cabelo'))
+# bonés: a copa é uma tampa mais alta e lisa; a aba, uma fatia curva
+def copa(c, n): return c.z > olhosZ + 0.040 - 0.012*max(0.0, n.y) and n.z > -0.3
+var.append(tampa('bone_copa', 'bone', copa, 0.012, 0.0, 7))
+def aba(nome, tras):
+    bm = bmesh.new()
+    s = -1 if not tras else 1
+    base = superficie_frente(0, olhosZ + 0.045) if not tras else Vector((0, max(v.co.y for v in _verts) , olhosZ + 0.045))
+    z0 = olhosZ + 0.046
+    linhas = []
+    for i in range(7):
+        t = i/6.0
+        y = base.y + s*(0.010 + 0.075*t)
+        linha = []
+        for k in range(9):
+            u = -1 + 2*k/8
+            x = u*(0.075 + 0.02*t)
+            z = z0 - 0.006*t*t*4 - 0.010*u*u
+            linha.append(bm.verts.new((x, y, z)))
+        linhas.append(linha)
+    for i in range(6):
+        for k in range(8):
+            bm.faces.new((linhas[i][k], linhas[i][k+1], linhas[i+1][k+1], linhas[i+1][k]))
+    res = bmesh.ops.extrude_face_region(bm, geom=list(bm.faces))
+    for g in res['geom']:
+        if isinstance(g, bmesh.types.BMVert): g.co.z -= 0.004
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
+    for p in me.polygons: p.use_smooth = True
+    ob = bpy.data.objects.new(nome, me); col.objects.link(ob)
+    me.materials.append(M['bone'])
+    return ob
+var.append(aba('bone_aba', False))
+var.append(aba('bone_aba_tras', True))
+var.append(tampa('bucket_copa', 'bone', lambda c, n: c.z > olhosZ + 0.030 and n.z > -0.3, 0.014, 0.0, 8))
+var.append(toro('bucket_aba', 0, 0.006, olhosZ + 0.032, superficie_lado(0.0, olhosZ + 0.032, 1).x + 0.030, 0.010, 'bone'))
+var.append(toro('bandana', 0, 0.006, olhosZ + 0.038, superficie_lado(0.0, olhosZ + 0.038, 1).x + 0.004, 0.011, 'faixa'))
+var.append(caixa('bandana_ponta', 0.025, max(v.co.y for v in _verts) + 0.006, olhosZ - 0.005, 0.028, 0.012, 0.07, 'faixa', (0.3, 0, 0)))
+# barbas: tampas da mandíbula
+def na_barba(c, n): return c.z < olhosZ - 0.060 and c.z > queixoZ - 0.01 and n.y < 0.35 and n.z < 0.5 and not (abs(c.x) < 0.024 and c.z > olhosZ - 0.083 and n.y < -0.5)
+var.append(tampa('barba_cheia', 'cabelo', na_barba, 0.006, 0.002, 9))
+var.append(tampa('barba_cavanhaque', 'cabelo', lambda c, n: na_barba(c, n) and abs(c.x) < 0.024 and n.y < -0.3, 0.005, 0.002, 10))
+var.append(tampa('barba_bigode', 'cabelo', lambda c, n: abs(c.x) < 0.026 and olhosZ - 0.076 < c.z < olhosZ - 0.064 and n.y < -0.5, 0.004, 0.001, 11))
+# óculos: aros em tubo, ponte e hastes
+def oculos(prefixo, mat_aro, com_lente):
+    for sx in (-1, 1):
+        oc = superficie_frente(sx*0.031, olhosZ); oc.y -= 0.014
+        pts = [(oc.x + 0.019*math.cos(a), oc.y, oc.z + 0.014*math.sin(a)) for a in [2*math.pi*k/24 for k in range(25)]]
+        var.append(tubo(prefixo + '_aro%s' % sx, pts, 0.0014, mat_aro, 8))
+        if com_lente:
+            var.append(esfera(prefixo + '_lente%s' % sx, oc.x, oc.y, oc.z, 0.018, 0.001, 0.013, 'lente'))
+        else:
+            var.append(esfera(prefixo + '_lente%s' % sx, oc.x, oc.y + 0.001, oc.z, 0.019, 0.002, 0.014, 'escuros'))
+        eo = superficie_lado(0.0, olhosZ + 0.004, sx)
+        var.append(tubo(prefixo + '_haste%s' % sx, [(oc.x + sx*0.020, oc.y, oc.z + 0.004), (eo.x + sx*0.002, eo.y - 0.02, eo.z + 0.004), (eo.x + sx*0.002, eo.y + 0.012, eo.z - 0.004)], 0.0012, mat_aro, 6))
+    ponte = superficie_frente(0, olhosZ + 0.004); ponte.y -= 0.010
+    var.append(tubo(prefixo + '_ponte', [(-0.012, ponte.y, ponte.z), (0, ponte.y - 0.002, ponte.z + 0.002), (0.012, ponte.y, ponte.z)], 0.0012, mat_aro, 6))
+oculos('oculos_grau', 'armacao', True)
+oculos('oculos_escuros', 'escuros', False)
 # brinco, corrente
-var.append(esfera('brinco', -(ladoX(olhosZ - 0.012) - 0.002), -0.003, olhosZ - 0.032, 0.006, 0.006, 0.006, 'metal'))
-var.append(toro('corrente', 0, -0.010, 1.455, 0.075, 0.005, 'metal', (0.35, 0, 0)))
+eo = superficie_lado(0.0, olhosZ - 0.010, -1)
+var.append(toro('brinco', eo.x - 0.004, eo.y + 0.002, olhosZ - 0.032, 0.0045, 0.0012, 'metal', (0, math.pi/2, 0)))
+var.append(toro('corrente', 0, -0.010, 1.455, 0.075, 0.004, 'metal', (0.35, 0, 0)))
 # relógio (pulso D) e pulseira (pulso E) — presos ao pulso
-var.append(toro('relogio_pulseira', -0.285, 0.0, 0.905, 0.034, 0.008, 'pulseira', (0, 0, 0)))
-var.append(caixa('relogio_mostrador', -0.285, -0.030, 0.905, 0.022, 0.008, 0.024, 'relogio'))
-var.append(toro('pulseira', 0.285, 0.0, 0.905, 0.034, 0.010, 'faixa', (0, 0, 0)))
+var.append(toro('relogio_pulseira', -0.285, 0.0, 0.905, 0.034, 0.007, 'pulseira', (0, 0, 0)))
+var.append(caixa('relogio_mostrador', -0.285, -0.030, 0.905, 0.022, 0.007, 0.024, 'relogio'))
+var.append(toro('pulseira', 0.285, 0.0, 0.905, 0.034, 0.009, 'faixa', (0, 0, 0)))
 
 # ---------------------------------------------------------------- o esqueleto (armature)
 arm_data = bpy.data.armatures.new('esqueleto')

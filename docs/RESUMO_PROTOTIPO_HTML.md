@@ -4936,3 +4936,23 @@ verdade (aba Scripting → Run Script).
   nomes: `ombro.D` chega como `ombroD`.
 - A vitrine (`bonecos.html`) mostra o modelo novo em todos os estados e a rodinha aproxima
   também no boneco isolado.
+- **A cabeça esculpida** (pedido do dono, 05/09/2026, com o print da cabeça aberta no
+  Blender: "todos os detalhes do rosto devem ser bem similares à realidade"). Não é
+  mais bola com peças soltas: a cabeça de metaballs é **remalhada em voxels de 3,5 mm**
+  (~14 mil vértices, topologia uniforme) e **esculpida por deslocamento** ao longo da
+  normal — cada traço é uma gaussiana 3D centrada num ponto medido na própria
+  superfície: órbita funda, arco da sobrancelha, dorso do nariz em sete passos até a
+  ponta, asas e narinas, columela, maçã do rosto, cova da bochecha, têmpora, ângulo da
+  mandíbula, filtro, lábio de cima, sulco da boca, lábio de baixo, sulco do queixo,
+  queixo e testa. Alisamento leve depois. Olho de verdade (globo, íris, pupila) dentro
+  da órbita com **pálpebra em casca** (esfera com a abertura amendoada recortada),
+  sobrancelha como **tubo curvo** que acompanha o arco, orelha com hélice em tubo,
+  concha em casca e lóbulo. **Cabelo, boné e barba são gerados da própria cabeça**: as
+  faces acima da linha do cabelo (mais alta na testa, mais baixa na nuca) ou sobre a
+  mandíbula, deslocadas pra fora e engrossadas — assentam perfeitos, o black é a mesma
+  tampa com 3 cm e ruído. Óculos de aro em tubo com lente, ponte e hastes até a
+  orelha. Mãos com quatro dedos e polegar como ramos do Skin. Uma primeira versão com
+  subdivisão extra deu 56 mil vértices na cabeça e 14,7 MB de GLB — não cabe no
+  artifact (16 MB com o base64) nem em sessenta figuras; ficou a remalha sem
+  subdivisão: 4 MB. A vitrine aceita `?estado=parado&ang=0&dist=42&alt=33&mira=32`
+  pra travar a câmera no rosto.

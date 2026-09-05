@@ -97,6 +97,9 @@
   const J = {t:0, discos, policiais:pms, projeteis:[], grades:[], paz:false};
 
   let ang = 0.4, dist = 330, distIso = 125, auto = true, isolado = null, ant = performance.now();
+  /* ?estado=parado&ang=0&dist=40&alt=30&mira=28 — câmera fixa, pra capturar o rosto de perto */
+  const PAR = new URLSearchParams(location.search);
+  const parN = (k, d)=> PAR.has(k) ? parseFloat(PAR.get(k)) : d;
   const alvoDe = ()=> isolado ? {x:isolado.x, z:isolado.y} : {x:0, z:0};
   function quadro(agora){
     let dt = (agora-ant)/1000; ant = agora; if(dt>0.05) dt=0.05;
@@ -110,7 +113,8 @@
     for(const p of pms) p.fn(p, J.t);
     if(auto) ang += dt*0.25;
     const alvo = alvoDe();
-    B.desenharVitrine(J, {dt, angulo:ang, dist: isolado ? distIso : dist, altura: isolado ? 48*distIso/125 : 150, alvo, mira: isolado ? 16 : 8});
+    B.desenharVitrine(J, {dt, angulo:ang, dist: isolado ? parN('dist', distIso) : dist,
+      altura: isolado ? parN('alt', 48*distIso/125) : 150, alvo, mira: isolado ? parN('mira', 16) : 8});
     rotular();
     requestAnimationFrame(quadro);
   }
@@ -144,6 +148,12 @@
   cv.addEventListener('pointermove', e=>{ if(arr) ang = arr.a + (e.clientX-arr.x)*0.01; });
   cv.addEventListener('pointerup', ()=>{ arr=null; });
   cv.addEventListener('wheel', e=>{ e.preventDefault(); const k=Math.exp(e.deltaY*0.0015); dist = Math.min(700, Math.max(60, dist*k)); distIso = Math.min(300, Math.max(30, distIso*k)); }, {passive:false});
+  if(PAR.has('estado')){
+    const nome = PAR.get('estado').toUpperCase();
+    const d = discos.concat(pms).find(x=>(x.nome||'PM')===nome);
+    if(d){ isolado = d; bts.forEach(x=>x.classList.toggle('on', x.textContent.toUpperCase()===nome)); todos.classList.remove('on'); }
+    if(PAR.has('ang')){ ang = parN('ang', 0); auto = false; }
+  }
   requestAnimationFrame(quadro);
 })();
 </script>
