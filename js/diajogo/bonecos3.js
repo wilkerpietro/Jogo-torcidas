@@ -388,6 +388,148 @@ TO.diaJogo.bonecos3 = (function(){
   }
 
   /* =======================================================
+     O BONECO DO BLENDER (ferramentas/boneco_blender.py → img/boneco.glb,
+     embutido em dados/boneco_glb.js). Quando o GLB e o GLTFLoader estão
+     carregados, cada figura é um clone do modelo com esqueleto
+     (SkeletonUtils.clone); as variantes (cabelo, boné, barba, óculos,
+     brinco, relógio, corrente) são ligadas por nome a partir da ficha,
+     e os materiais recoloridos por nome (pele, camisa, faixa, calça,
+     tênis, cabelo, boné). Enquanto o GLB não chegou — ou onde ele não
+     existe — fica o corpo de caixas.
+
+     A POSE NOS OSSOS. A animação escreve ângulos por junta no meu
+     referencial (junta com o filho pendurado em −Y, frente em +Z, e
+     todas as juntas alinhadas com a raiz no repouso). O osso do Blender
+     tem outro referencial (o Y dele aponta ao longo do osso). A
+     conversão: a rotação R que eu quero, expressa no espaço do PAI do
+     osso, é Cp⁻¹·R·Cp, onde Cp é a rotação de repouso do pai em relação
+     à raiz do modelo; a rotação local nova é isso vezes a local de
+     repouso. Guardo Cp e a local de repouso de cada osso no clone.
+     ======================================================= */
+  let modeloGLB = null, carregandoGLB = false;
+  const ALTURA_GLB = 1.75;          // metros, no Blender
+  const ALTURA_CAIXAS = 34;         // a altura do corpo de caixas, na escala 1
+  function carregarGLB(){
+    if(modeloGLB || carregandoGLB) return;
+    const dados = TO.dados && TO.dados.bonecoGLB;
+    if(!dados || typeof THREE.GLTFLoader !== 'function') return;
+    carregandoGLB = true;
+    new THREE.GLTFLoader().load(dados, gltf=>{
+      modeloGLB = gltf.scene;
+      modeloGLB.updateMatrixWorld(true);
+      /* Lambert é mais barato que Standard e a cena não tem PBR */
+      modeloGLB.traverse(o=>{
+        if(o.isMesh){
+          const m = o.material;
+          const novo = new THREE.MeshLambertMaterial({color: m.color ? m.color.clone() : new THREE.Color('#ccc'),
+            transparent: !!m.transparent, opacity: m.opacity!==undefined ? m.opacity : 1});
+          novo.name = m.name; o.material = novo;
+          o.frustumCulled = false;
+        }
+      });
+      /* troca as figuras já feitas de caixa pelo modelo */
+      for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); figuras.delete(d); }
+      carregandoGLB = false;
+    }, undefined, err=>{ console.warn('boneco.glb: '+(err && err.message)); carregandoGLB = false; });
+  }
+
+  /* que peças da ficha ficam ligadas */
+  function variantesDe(f, pm){
+    const on = new Set();
+    if(pm){ on.add('cabelo_raspado'); return on; }
+    const tc = f.tipoCabeca;
+    if(tc==='curto') on.add('cabelo_curto');
+    else if(tc==='raspado') on.add('cabelo_raspado');
+    else if(tc==='black') on.add('cabelo_black');
+    else if(tc==='moicano'){ on.add('cabelo_moicano'); on.add('cabelo_moicano_crista'); }
+    else if(tc==='comprido'){ on.add('cabelo_comprido'); on.add('cabelo_comprido_nuca'); }
+    else if(tc==='bone'){ on.add('bone_copa'); on.add('bone_aba'); on.add('cabelo_raspado'); }
+    else if(tc==='bone-tras'){ on.add('bone_copa'); on.add('bone_aba_tras'); on.add('cabelo_raspado'); }
+    else if(tc==='bucket'){ on.add('bucket_copa'); on.add('bucket_aba'); on.add('cabelo_raspado'); }
+    else if(tc==='bandana'){ on.add('bandana'); on.add('bandana_ponta'); on.add('cabelo_raspado'); }
+    if(f.barba===1) on.add('barba_cavanhaque'); else if(f.barba===2) on.add('barba_cheia'); else if(f.barba===3) on.add('barba_bigode');
+    if(f.oculos===1) for(const n of ['oculos_grau_aro-1','oculos_grau_aro1','oculos_grau_lente-1','oculos_grau_lente1','oculos_grau_haste-1','oculos_grau_haste1','oculos_grau_ponte']) on.add(n);
+    if(f.oculos===2) for(const n of ['oculos_escuros_lente-1','oculos_escuros_lente1','oculos_escuros_haste-1','oculos_escuros_haste1','oculos_escuros_ponte']) on.add(n);
+    if(f.brinco) on.add('brinco');
+    if(f.corrente) on.add('corrente');
+    if(f.relogio){ on.add('relogio_pulseira'); on.add('relogio_mostrador'); }
+    if(f.pulseira) on.add('pulseira');
+    return on;
+  }
+  const VARIANTE = /^(cabelo_|bone_|bucket_|bandana|barba_|oculos_|brinco|corrente|relogio_|pulseira)/;
+
+  function construirCorpoGLB(f, pm){
+    const g = G();
+    const raiz = new THREE.Group();
+    const modelo = THREE.SkeletonUtils.clone(modeloGLB);
+    const on = variantesDe(f, pm);
+    const cores = {pele:f.pele, camisa: pm ? '#233a2c' : f.camisa, faixa: pm ? '#c9d64a' : f.faixa,
+                   calca: pm ? '#1b2620' : f.calca, tenis: pm ? '#111' : f.tenis, cabelo:f.cabelo,
+                   bone: f.corBone, sola:'#2a2a2a'};
+    const matsFig = new Map();
+    modelo.traverse(o=>{
+      if(!o.isMesh) return;
+      if(VARIANTE.test(o.name)) o.visible = on.has(o.name);
+      const nome = o.material.name;
+      if(cores[nome]){
+        let m = matsFig.get(nome);
+        if(!m){ m = o.material.clone(); m.color.set(cores[nome]); matsFig.set(nome, m); }
+        o.material = m;
+      }
+    });
+    /* escala: o GLB tem 1,75 m; o corpo de caixas tinha 34 na escala 1 */
+    modelo.scale.setScalar(ALTURA_CAIXAS/ALTURA_GLB);
+    raiz.add(modelo);
+    raiz.updateMatrixWorld(true);
+    /* ossos: a local de repouso e a rotação de repouso do pai */
+    const osso = n => { const b = modelo.getObjectByName(n); if(!b) console.warn('sem osso '+n); return b; };
+    const prep = b => {
+      if(!b) return null;
+      const Lrest = b.quaternion.clone();
+      const Cp = new THREE.Quaternion(); b.parent.getWorldQuaternion(Cp);
+      const Rq = raiz.getWorldQuaternion(new THREE.Quaternion()).invert();
+      Cp.premultiply(Rq);                       // relativo à raiz da figura
+      return {b, Lrest, Cp, CpInv: Cp.clone().invert()};
+    };
+    const J = {
+      pelvis: prep(osso('pelvis')), tronco: prep(osso('tronco')), pescoco: prep(osso('pescoco')), cabeca: prep(osso('cabeca')),
+      ombro: [prep(osso('ombroD')), prep(osso('ombroE'))],
+      cotovelo: [prep(osso('cotoveloD')), prep(osso('cotoveloE'))],
+      mao: [prep(osso('maoD')), prep(osso('maoE'))],
+      quadril: [prep(osso('quadrilD')), prep(osso('quadrilE'))],
+      joelho: [prep(osso('joelhoD')), prep(osso('joelhoE'))],
+      pe: [prep(osso('peD')), prep(osso('peE'))]
+    };
+    const sombra = new THREE.Mesh(g.disco, mat(PRETO, {transparent:true, opacity:0.34, depthWrite:false}));
+    sombra.rotation.x = -Math.PI/2; sombra.position.y = 0.3; sombra.scale.set(8.5, 6.5, 1);
+    raiz.add(sombra);
+    return {raiz, modelo, J, sombra, glb:true, escudo:null};
+  }
+
+  const _e = new THREE.Euler(), _q = new THREE.Quaternion();
+  function girarOsso(j, x, y, z){
+    if(!j) return;
+    _q.setFromEuler(_e.set(x||0, y||0, z||0, 'XYZ'));
+    j.b.quaternion.copy(j.CpInv).multiply(_q).multiply(j.Cp).multiply(j.Lrest);
+  }
+  function aplicarPoseGLB(c, p, escala){
+    c.raiz.scale.setScalar(escala);
+    c.modelo.rotation.set(p.rotRaiz, 0, p.rolo);
+    c.modelo.position.y = p.y + (p.peito-1)*8;
+    const J = c.J;
+    girarOsso(J.pelvis, 0, 0, 0);
+    girarOsso(J.tronco, p.inclina, p.gira, p.tomba);
+    girarOsso(J.cabeca, p.olhaX, p.olhaY, 0);
+    for(let k=0;k<2;k++){
+      girarOsso(J.quadril[k], p.coxa[k], 0, 0);
+      girarOsso(J.joelho[k], p.joelho[k], 0, 0);
+      girarOsso(J.pe[k], p.pe[k], 0, 0);
+      girarOsso(J.ombro[k], p.ombro[k], 0, (k===0?1:-1)*p.ombroZ[k]);
+      girarOsso(J.cotovelo[k], p.cotovelo[k], 0, (k===0?1:-1)*p.maoZ[k]);
+    }
+  }
+
+  /* =======================================================
      A POSE: ângulos por junta
      coxa[k]  : rotação x do quadril (+ perna pra trás)
      joelho[k]: rotação x (+ dobra natural)
@@ -413,6 +555,7 @@ TO.diaJogo.bonecos3 = (function(){
     }
   }
   function aplicarPose(c, p, escala){
+    if(c.glb){ aplicarPoseGLB(c, p, escala); return; }
     c.raiz.scale.setScalar(escala);
     c.raiz.rotation.x = p.rotRaiz; c.raiz.rotation.z = p.rolo;
     c.pelvis.position.y = 16.5 + p.y;
@@ -796,7 +939,7 @@ TO.diaJogo.bonecos3 = (function(){
     let fg = figuras.get(d);
     if(fg) return fg;
     const f = pm ? fichaPM(d, i) : fichaDe(d, i);
-    const corpo = construirCorpo(f, pm);
+    const corpo = (modeloGLB && !pm) ? construirCorpoGLB(f, pm) : construirCorpo(f, pm);
     f.pose = poseNeutra();
     scene.add(corpo.raiz);
     fg = {corpo, f, pm};
@@ -1085,6 +1228,7 @@ TO.diaJogo.bonecos3 = (function(){
     const contra = new THREE.DirectionalLight(0xa0c0ff, 0.25); contra.position.set(0.6, 0.5, 0.8); scene.add(contra);
     figuras.clear(); projMeshes.clear(); gradeMeshes.clear();
     ativo = true;
+    carregarGLB();
     return true;
   }
 
@@ -1141,5 +1285,5 @@ TO.diaJogo.bonecos3 = (function(){
   return {montar, desenharDeCima, desenharVitrine, limparDeCima,
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },
-          get _dbg(){ return {scene, cam, camV, renderer, figuras}; }};
+          get _dbg(){ return {scene, cam, camV, renderer, figuras, modeloGLB}; }};
 })();

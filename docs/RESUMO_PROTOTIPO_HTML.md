@@ -4889,3 +4889,50 @@ dá dano batendo e escapa defendendo; e animações de provocação.
 - **Medido** (Node, rua e praça, líder batendo a cada quadro e tacando pedra): a briga
   acaba em todas as cenas, mais devagar (86–101 s); rua 3/6 pro mandante, praça 1/6 —
   na faixa de antes, com a ressalva de sempre sobre a ficha do rival na bancada.
+
+## 8.37 O boneco humano, feito no Blender por script
+
+O dono instalou o MCP do Blender na máquina dele, mas esta sessão roda na nuvem e não
+alcança o Blender de lá. O caminho foi o outro: o Blender 5.0 instalado aqui como módulo
+Python (`pip install bpy`, que o PyPI liberado permite) e um script que constrói o boneco
+inteiro sem janela — `ferramentas/boneco_blender.py`. Roda também dentro do Blender de
+verdade (aba Scripting → Run Script).
+
+- **O corpo** é um esqueleto de pontos com raio por ponto (46 pontos: pélvis, cintura,
+  peito achatado, ombros largos, manga, braço, cotovelo, antebraço, pulso, mão, dedos,
+  quadril, coxa, bermuda, joelho, canela, tornozelo fino, pé, ponta do pé), inflado
+  pelo modificador **Skin** e alisado por **Subdivision Surface** nível 2: 3,5 mil
+  vértices, orgânico, sem esculpir. **A cabeça** são seis metaballs (crânio,
+  mandíbula, queixo, duas bochechas, pescoço) convertidas em malha — a metaball funde
+  as formas sem emenda, que é o que a mandíbula em caixa não tinha. **O rosto** (olho
+  com esclera, íris e pupila, pálpebra, sobrancelha inclinada, nariz, boca, orelha) é
+  posicionado pela **superfície medida** da cabeça gerada (`frenteY`, `ladoX`,
+  `topoZ`, `queixoZ`): a primeira versão colocou tudo por número decorado e o rosto
+  ficou enterrado, porque a metaball passa 25% do tamanho nominal.
+- **Variantes** como malhas presas ao osso da cabeça ou do pulso, ligadas por nome pelo
+  jogo: cabelo curto, raspado, black, moicano (com crista), comprido (com nuca); boné
+  com aba pra frente ou pra trás, bucket, bandana com ponta; cavanhaque, barba cheia,
+  bigode; óculos de grau (lente transparente) e escuros; brinco; corrente; relógio
+  no pulso direito; pulseira no esquerdo. Materiais por nome (pele, camisa, faixa,
+  calça, tênis, sola, meia, cabelo, boné…), recoloridos por figura no jogo.
+- **O esqueleto** tem os nomes das juntas da animação: pelvis, tronco, pescoco, cabeca,
+  ombro/cotovelo/mao/quadril/joelho/pe .D e .E (D = x negativo, o índice 0). **Os
+  pesos** são calculados no script (o automático do Blender precisa de janela): cada
+  vértice vai pros dois ossos mais próximos com peso 1/d², e só divide quando o
+  segundo está perto de verdade — transição suave na junta, osso inteiro no meio do
+  membro. **Materiais por regra de altura** (camisa até a cintura, manga curta,
+  bermuda até um palmo acima do joelho, meia, tênis, sola), com borda reta.
+- **Saída**: `img/boneco.glb` (432 KB) e `dados/boneco_glb.js`, o mesmo GLB em base64,
+  pra abrir sem rede e entrar no empacotador do artifact. `js/lib/GLTFLoader.js` e
+  `js/lib/SkeletonUtils.js` vieram do pacote do Three.js 0.147.
+- **No Three.js** (`bonecos3.js`): quando o GLB está carregado, cada figura é um clone
+  com esqueleto (`SkeletonUtils.clone`), variantes ligadas pela ficha, materiais
+  clonados e recoloridos; o corpo de caixas fica de reserva (e a PM continua nele, por
+  ora). **A pose nos ossos**: a animação escreve ângulos no meu referencial (filho em −Y,
+  frente em +Z, juntas alinhadas com a raiz no repouso); o osso do Blender tem o Y ao
+  longo do osso. A rotação R que eu quero, no espaço do PAI do osso, é Cp⁻¹·R·Cp (Cp = a
+  rotação de repouso do pai em relação à raiz); a local nova é isso vezes a local de
+  repouso, guardadas por osso no clone (`girarOsso`). O exportador tira o ponto dos
+  nomes: `ombro.D` chega como `ombroD`.
+- A vitrine (`bonecos.html`) mostra o modelo novo em todos os estados e a rodinha aproxima
+  também no boneco isolado.
