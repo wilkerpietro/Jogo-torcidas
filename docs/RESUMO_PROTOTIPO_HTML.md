@@ -4582,3 +4582,29 @@ Medido no headless: sem erro de console nas três ruas, no jogo e na bancada 2D;
 com o líder andando 18 s até o rival mostram guarda, socos, corrida com braço bombeando,
 caídos deitados e o cartaz de fim.
 
+### 8.31.1 Movimento articulado, pad e o líder que andava sem mexer as pernas
+
+- **O boneco ganhou articulação** (joelho, cotovelo, pescoço) e uma pose por momento
+  da briga: andar e correr com o passo vindo da velocidade, socar alternando jab e
+  direto virado pra quem apanha, cobrir ou encolher ao levar pancada, cambalear
+  atordoado, fugir olhando por cima do ombro, cair (joelho cede, corpo vai, de bruços
+  ou de costas) e sentar preso. Pedra e bomba com acompanhamento do braço; a bomba tem
+  pavio e rastro, e estoura em clarão, fragmento com gravidade e fumaça; pedra solta
+  poeira onde bate. O combate ganhou três marcadores só de desenho — `apanhou`,
+  `arremesso` e `_alvo` — que ninguém lê pra decidir nada.
+- **O líder andava sem mexer as pernas.** `moverDiscos` pula o líder e `moverLider`
+  move a posição direto por `A.mover`, sem escrever `vx`/`vy`: pela conta do combate
+  ele está sempre parado. A animação passou a **medir** a velocidade pelo deslocamento
+  de posição entre quadros (`medirVelocidade`), pra todo mundo — e a câmera também
+  passou a seguir o rumo medido, então ela vira atrás do líder quando ele anda.
+- **O pad de toque entra na cena 3D em qualquer largura**, o mesmo da cena 2D no
+  celular: cruz de WASD, pedra, bomba, recuar e as quatro formações, escrevendo nas
+  mesmas teclas que o renderizador converte pro rumo da câmera. O CSS do pad saiu da
+  regra de celular (`mobile.css`) e foi pra `cenas.css`; quando o pad é montado, o palco
+  ganha `com-pad` e o HUD de comandos vira só o botão do portão, como no celular. Na
+  cena de cima em tela larga o pad some e a classe sai junto.
+- **A bancada 3D (`briga3d.html`) passou a ter a HUD do jogo** — comandos sobre o
+  palco, relógio, 1×/2×, PM numa linha — e o palco cabe na janela (3:2, nunca mais alto
+  que a tela menos o cabeçalho), porque o renderizador adapta o buffer ao quadro a
+  cada volta. O radar foi pro canto de cima, que o de baixo é do pad.
+

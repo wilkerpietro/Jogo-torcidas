@@ -1138,9 +1138,26 @@ TO.diaJogo.tres = (function(){
       /* o que a animação precisa lembrar de um quadro pro outro */
       viuVivo:false, queda:null, caiDeFrente: frac(s+'q') < 0.55,
       cobre: frac(s+'cb') < 0.6,          // cobre com os dois braços, ou só encolhe
-      soco:0, olhaTras:0, ultimoLado:frac(s+'ul')<0.5 ? 0 : 1
+      soco:0, olhaTras:0, ultimoLado:frac(s+'ul')<0.5 ? 0 : 1,
+      /* a velocidade que a animação usa é MEDIDA, não a do combate:
+         o líder anda por `A.mover` direto e nunca escreve `vx`, então
+         pela conta do combate ele está sempre parado — e o boneco saía
+         do lugar sem mexer as pernas */
+      px:null, pz:null, vx:0, vz:0
     };
     return d._t3;
+  }
+  function medirVelocidade(f, x, z, dt){
+    if(f.px!==null && dt>0){
+      const vx=(x-f.px)/dt, vz=(z-f.pz)/dt;
+      /* um pouco de suavização: o passo não pode gaguejar com o quadro */
+      const k=Math.min(1, dt*14);
+      f.vx += (vx-f.vx)*k; f.vz += (vz-f.vz)*k;
+      /* teletransporte (reencosto no chão livre) não é corrida */
+      if(Math.hypot(vx,vz) > 400){ f.vx=0; f.vz=0; }
+    }
+    f.px=x; f.pz=z;
+    return Math.hypot(f.vx, f.vz);
   }
 
   function girar(atual, alvo, k){
@@ -1375,11 +1392,11 @@ TO.diaJogo.tres = (function(){
     }
     f.viuVivo = true; f.queda = null;
 
-    const vel = Math.hypot(d.vx||0, d.vy||0);
+    const vel = medirVelocidade(f, d.x, d.y, dt);
     const corre = !!(d.fugindo || d._cacando);
     /* pra onde olha: pra onde anda; socando, pra quem apanha; jogando,
        pra onde a pedra foi */
-    if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(d.vx, d.vy), Math.min(1, dt*10));
+    if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*10));
     if(d.golpe > 0 && d._alvo && d._alvo.vivo)
       f.yaw = girar(f.yaw, Math.atan2(d._alvo.x-d.x, d._alvo.y-d.y), Math.min(1, dt*14));
     if(d.arremesso && d.arremesso.t > 0.4){
@@ -1407,14 +1424,15 @@ TO.diaJogo.tres = (function(){
     if(!pm._t3) pm._t3 = {yaw:frac('pm|'+i)*6.28, fase:frac('pm|'+i+'f')*6.28, soco:0, olhaTras:0,
       pele:cor(PELE[dado('pmp'+i,PELE.length)]), calca:cor('#1b2620'), cabelo:cor('#111'),
       camisa:cor('#233a2c'), faixa:cor('#2d4a38'), bone:true, corBone:cor('#1c2a22'), escala:1.05,
-      viuVivo:false, queda:null, caiDeFrente:frac('pmq'+i)<0.5, cobre:true, sem:'pm'+i};
+      viuVivo:false, queda:null, caiDeFrente:frac('pmq'+i)<0.5, cobre:true, sem:'pm'+i,
+      px:null, pz:null, vx:0, vz:0};
     const f = pm._t3;
     const p = poseNeutra(); p.escala = f.escala;
     const o = {x:pm.x, z:pm.y, yaw:f.yaw};
     if(!pm.vivo){ cair(p, f, dt); corpo(din, o, p, f); return; }
     f.viuVivo = true; f.queda = null;
-    const vel = Math.hypot(pm.vx||0, pm.vy||0);
-    if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(pm.vx, pm.vy), Math.min(1, dt*8));
+    const vel = medirVelocidade(f, pm.x, pm.y, dt);
+    if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*8));
     o.yaw = f.yaw;
     passo(p, f, vel, dt, false, i);
     p.cassetete = true;
@@ -1580,7 +1598,8 @@ TO.diaJogo.tres = (function(){
 
   function alvoDaCamera(J){
     const l = J.discos.find(d=>d.lider && d.vivo);
-    if(l) return {x:l.x, z:l.y, vx:l.vx, vy:l.vy, lider:true};
+    /* o rumo do líder vem da velocidade medida (ver `medirVelocidade`) */
+    if(l) return {x:l.x, z:l.y, vx:l._t3 ? l._t3.vx : 0, vy:l._t3 ? l._t3.vz : 0, lider:true};
     /* sem líder de pé, o centro de quem sobrou do nosso lado */
     const meu = J.discos.filter(d=>d.doJogador && d.vivo);
     if(meu.length){
@@ -1739,7 +1758,10 @@ TO.diaJogo.tres = (function(){
   }
 
   function radar(J){
-    const c=ctx2, R=64, cx=R+14, cy=sobre.height-R-14, alc=560, esc=R/alc;
+    /* no canto de cima, à esquerda, embaixo da barra da PM: o de baixo é
+       do pad de toque, que mora ali em qualquer largura na cena 3D */
+    const dpr=sobre.width/Math.max(1,(cv.clientWidth||sobre.width));
+    const c=ctx2, R=Math.round(58*dpr), cx=R+Math.round(14*dpr), cy=R+Math.round(58*dpr), alc=560, esc=R/alc;
     c.save();
     c.beginPath(); c.arc(cx,cy,R,0,Math.PI*2);
     c.fillStyle='rgba(14,14,13,.72)'; c.fill();

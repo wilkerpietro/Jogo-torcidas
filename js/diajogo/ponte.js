@@ -74,7 +74,16 @@ TO.diaJogo.ponte = (function(){
     montarBotoes();
     atualizarBotaoVelocidade();
     acharHudDeBancada();
-    if(estreito()) montarPad();
+    /* O PAD NA CENA 3D, em qualquer largura. Na de cima ele só entra
+       no celular; na de perto entra sempre, porque a cena é jogada
+       olhando pro boneco e não pro teclado — e a cruz escreve nas
+       mesmas teclas, que o renderizador converte pro rumo da câmera. */
+    if(estreito() || tres) montarPad();
+    else {
+      /* cena de cima em tela larga: o pad some e os botões voltam pro HUD */
+      const pad=$('djPad'); if(pad) pad.hidden=true;
+      const pai=cv.parentElement; if(pai) pai.classList.remove('com-pad');
+    }
     montarSliders();
     ligarEntrada();
     novaNoite(opc.config||{});
@@ -425,10 +434,18 @@ TO.diaJogo.ponte = (function(){
   let padMontado = false;
 
   function montarPad(){
-    if(padMontado || !cv) return;
+    if(!cv) return;
     const pai = cv.parentElement || document.body;
     if(!pai) return;
+    if(padMontado){
+      const pad=$('djPad'); if(pad){ pad.hidden=false; if(pad.parentElement!==pai) pai.appendChild(pad); }
+      pai.classList.add('com-pad');
+      return;
+    }
     padMontado = true;
+    /* com o pad na tela, o HUD de comandos vira só o botão do portão
+       (ver cenas.css): pedra, bomba, recuar e formação já estão no pad */
+    pai.classList.add('com-pad');
 
     const caixa = document.createElement('div');
     caixa.id = 'djPad'; caixa.className = 'dj-pad';
