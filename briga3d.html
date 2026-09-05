@@ -70,6 +70,16 @@
      fixo embaixo, igual à cena do jogo. O canvas não rola a página:
      o dedo nele é mira. */
   @media (max-width: 900px){
+    /* a cena é a tela inteira (cenas.css); o cabeçalho some e as abas
+       viram uma faixa fina por cima da cena, que rola de lado */
+    header#topo{display:none}
+    #cenaAbas{position:fixed;left:0;right:0;top:0;z-index:65;
+      background:rgba(14,14,13,.72);border-bottom:1px solid rgba(255,255,255,.08)}
+    /* em tela cheia o palco não tem proporção fixa nem altura mínima,
+       e o pad é da tela, não do palco */
+    #djPalco{width:auto;aspect-ratio:auto;min-height:0}
+    #djPalco .dj-pad{position:fixed}
+    #djRelogio, #djSubrelogio, #djAlerta, #djPlacar{margin-top:44px}
     header#topo{padding:6px 10px;gap:4px 10px}
     header#topo h1{font-size:13px;letter-spacing:.1em}
     header#topo span, header#topo p, #comandos{display:none}

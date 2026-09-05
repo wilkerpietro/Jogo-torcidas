@@ -30,6 +30,13 @@ body{display:block;padding:0}
      fixo embaixo, igual à cena do jogo. O canvas não rola a página:
      o dedo nele é mira. */
   @media (max-width: 900px){
+    /* a cena é a tela inteira (cenas.css); o cabeçalho some e as abas
+       viram uma faixa fina por cima da cena, que rola de lado */
+    header#topo{display:none}
+    #cenaAbas{position:fixed;left:0;right:0;top:0;z-index:65;
+      background:rgba(14,14,13,.72);border-bottom:1px solid rgba(255,255,255,.08)}
+    /* o HUD desce pra não ficar embaixo da faixa de abas */
+    #djRelogio, #djSubrelogio, #djAlerta, #djPlacar{margin-top:44px}
     header#topo{padding:6px 10px;gap:4px 10px}
     header#topo h1{font-size:13px;letter-spacing:.1em}
     header#topo span, header#topo p{display:none}
@@ -39,8 +46,9 @@ body{display:block;padding:0}
     #cenaAbas button{white-space:nowrap;padding:8px 10px;font-size:10.5px;flex:0 0 auto}
     #cenaAbas small{display:none}
     #djGrade{padding:0;gap:0}
-    #djPalco canvas{touch-action:none}
     html, body{overflow-x:hidden}
+    /* as ocorrências são coisa de mesa: no celular só a cena e o pad */
+    #djGrade > div:first-child > .painel{display:none}
     /* a coluna da direita some: formação, pedra, bomba e recuar já
        estão no pad, e calibragem é coisa de mesa. Só o portão fica —
        no vão entre as duas metades do pad, como no jogo. As

@@ -4740,3 +4740,14 @@ modo". A cena fica a de cima, com os bonecos; o esforço vai pro motor de briga.
   de perto (3D) continua jogando direto. `C.podeArremessar` diz se dá pra abrir a mira.
   Conferido no Chromium sem tela: teclado+mouse, arrasto no pad (dedo a +96,−80 px de
   tela → bomba a +144,−120 de cena) e toque curto + toque na cena.
+- **A cena no celular é a tela inteira** (pedido do dono, 05/09/2026, jogando a bancada
+  pelo telefone). Abaixo de 900 px o palco cobre a tela (`body.em-cena #djPalco`,
+  cenas.css), o canvas ganha a resolução da tela até 1,5× de densidade
+  (`ponte.ajustarCanvasCelular`, refeito no `resize`) e o zoom sobe até a cena
+  preencher a tela sem barra preta, seguindo o líder — 3× em pé, 2,4× deitado. A pinça
+  de dois dedos ajusta o zoom na mesma escala da rodinha (`ligarPinca`). O pad fica por
+  cima da cena; a bancada marca `em-cena` ao abrir qualquer aba (sem isso o pad não
+  existia no celular), esconde cabeçalho, ocorrências e calibragem, e as abas viram uma
+  faixa fina por cima da cena que rola de lado com a aberta à vista. O portão fica em
+  cima das formações, e em 430 px as ações do pad encolhem pra caber as duas metades.
+  Vale pro jogo também: é o mesmo CSS e a mesma ponte.

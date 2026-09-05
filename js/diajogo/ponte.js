@@ -97,6 +97,11 @@ TO.diaJogo.ponte = (function(){
        jogada olhando pro boneco e não pro teclado — e a cruz escreve
        nas mesmas teclas, que o renderizador converte pro rumo da
        câmera. */
+    /* NO CELULAR A CENA É A TELA INTEIRA, aproximada no líder (ver
+       `ajustarCanvasCelular`); a pinça de dois dedos ajusta o zoom
+       (`ligarPinca`). */
+    ajustarCanvasCelular();
+    if(!redimensionarLigado){ redimensionarLigado=true; addEventListener('resize', ajustarCanvasCelular); }
     if(estreito() || tres) montarPad();
     else {
       const pad=$('djPad'); if(pad) pad.hidden=true;
@@ -179,6 +184,30 @@ TO.diaJogo.ponte = (function(){
      ======================================================= */
   let zoom=1;
   const ZOOM_MAX=4;
+  const ZOOM_CELULAR=2.4;
+  /* CELULAR: A CENA É A TELA INTEIRA (pedido do dono, 05/09/2026).
+     O palco vira tela cheia pelo CSS (cenas.css, ≤900 px) e o pad fica
+     por cima dela; aqui o canvas ganha a resolução da tela (até 1,5×
+     de densidade) e o zoom sobe até a cena preencher a tela sem
+     barra preta — o que, seguindo o líder, é a visão de perto que se
+     queria. Volta ao tamanho original em tela larga. O canvas dos
+     bonecos por cima segue o tamanho mostrado sozinho
+     (tres.ajustarTamanho). */
+  let redimensionarLigado=false;
+  function ajustarCanvasCelular(){
+    if(!cv || tres) return;
+    cv._original = cv._original || {w:cv.width, h:cv.height};
+    if(!estreito()){
+      if(cv.width!==cv._original.w || cv.height!==cv._original.h){ cv.width=cv._original.w; cv.height=cv._original.h; }
+      return;
+    }
+    const dpr = Math.min(1.5, devicePixelRatio||1);
+    const w = Math.round(innerWidth*dpr), h = Math.round(innerHeight*dpr);
+    if(cv.width!==w || cv.height!==h){ cv.width=w; cv.height=h; }
+    /* preencher: o zoom mínimo é o que faz a menor razão alcançar a maior */
+    const enche = Math.max(w/A.W, h/A.H) / Math.min(w/A.W, h/A.H);
+    zoom = U.limitar(Math.max(zoom, ZOOM_CELULAR, enche), 1, ZOOM_MAX);
+  }
   function focoDoZoom(){
     if(!J) return null;
     const l=J.discos.find(d=>d.lider&&d.vivo);
@@ -757,6 +786,7 @@ TO.diaJogo.ponte = (function(){
       zoom=U.limitar(zoom*Math.exp(-e.deltaY*0.0018), 1, ZOOM_MAX);
     },{passive:false});
 
+    ligarPinca();
     cv.addEventListener('contextmenu',e=>{if(ED.ativo)e.preventDefault();});
     cv.addEventListener('pointerdown',e=>{
       if(mira && !ED.ativo && e.button===0){
@@ -818,6 +848,28 @@ TO.diaJogo.ponte = (function(){
       e.preventDefault(); mostrarAlvoSolta(false);
       const f=e.dataTransfer.files&&e.dataTransfer.files[0];
       if(f&&f.type.startsWith('image/')) A.usarImagemLocal(f);
+    });
+  }
+
+  /* A PINÇA: dois dedos no canvas mudam o zoom, na mesma escala da
+     rodinha. Um dedo só continua sendo mira/editor; os dedos são
+     acompanhados por pointerId, e a pinça só conta enquanto houver
+     exatamente dois no canvas. */
+  function ligarPinca(){
+    const dedos=new Map(); let dist0=0, zoom0=1;
+    const afast=()=>{ const [a,b]=[...dedos.values()]; return Math.hypot(a.x-b.x,a.y-b.y); };
+    cv.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='touch') return;
+      dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(dedos.size===2){ dist0=afast(); zoom0=zoom; cancelarMira(); }
+    });
+    const solta=e=>{ dedos.delete(e.pointerId); };
+    cv.addEventListener('pointerup',solta); cv.addEventListener('pointercancel',solta);
+    cv.addEventListener('pointermove',e=>{
+      if(e.pointerType!=='touch' || !dedos.has(e.pointerId)) return;
+      dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(dedos.size!==2 || dist0<10) return;
+      zoom=U.limitar(zoom0*afast()/dist0, 1, ZOOM_MAX);
     });
   }
 

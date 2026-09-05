@@ -263,3 +263,15 @@ body:not(.em-cena) #djPad{ display:none; }
 @media (max-width: 480px){
   .pad-acao{ width:62px; font-size:10px; }
 }
+/* CELULAR: A CENA É A TELA INTEIRA. O palco cobre a tela e o pad
+   (z 70) e o portão (z 71) ficam por cima dele; o canvas tem a
+   resolução da tela (ponte.ajustarCanvasCelular) e o zoom segue o
+   líder. O dedo no canvas é mira e pinça, não rolagem da página. */
+@media (max-width: 900px){
+  body.em-cena{ overflow:hidden; }
+  body.em-cena #djPalco{ position:fixed; inset:0; z-index:60; border:0; box-shadow:none;
+    max-width:none; background:#0e0e0d; }
+  body.em-cena #djPalco canvas{ width:100%; height:100%; max-width:none; border:0;
+    touch-action:none; }
+  body.em-cena #djGrade{ padding:0; max-height:none; }
+}
