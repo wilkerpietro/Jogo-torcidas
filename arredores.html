@@ -24,6 +24,39 @@ body{display:block;padding:0}
   #cenaAbas button.on{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
   #cenaAbas small{font-family:var(--mono);font-size:10px;color:var(--fraco);
     align-self:center;margin-left:6px}
+
+  /* NO CELULAR (mesmo limiar do jogo, 900px): cabeçalho de uma linha,
+     abas numa fileira que rola de lado, palco colado em cima e o pad
+     fixo embaixo, igual à cena do jogo. O canvas não rola a página:
+     o dedo nele é mira. */
+  @media (max-width: 900px){
+    header#topo{padding:6px 10px;gap:4px 10px}
+    header#topo h1{font-size:13px;letter-spacing:.1em}
+    header#topo span, header#topo p{display:none}
+    #cenaAbas{flex-wrap:nowrap;overflow-x:auto;gap:5px;padding:6px 8px;
+      -webkit-overflow-scrolling:touch;scrollbar-width:none}
+    #cenaAbas::-webkit-scrollbar{display:none}
+    #cenaAbas button{white-space:nowrap;padding:8px 10px;font-size:10.5px;flex:0 0 auto}
+    #cenaAbas small{display:none}
+    #djGrade{padding:0;gap:0}
+    #djPalco canvas{touch-action:none}
+    html, body{overflow-x:hidden}
+    /* a coluna da direita some: formação, pedra, bomba e recuar já
+       estão no pad, e calibragem é coisa de mesa. Só o portão fica —
+       no vão entre as duas metades do pad, como no jogo. As
+       ocorrências continuam embaixo do palco, com folga pra rolar
+       por cima do pad. */
+    body{padding-bottom:calc(190px + env(safe-area-inset-bottom))}
+    #djGrade > div:last-child .painel{display:none}
+    #djGrade > div:last-child .painel:first-child{display:block;padding:0;border:0;background:none;margin:0}
+    #djLocal, #djFormacoes, #djBtPedra, #djBtBomba, #djBtRecuar{display:none}
+    /* o portão fica em cima da fileira de formações, à direita: numa
+       tela de 430 px o vão entre as metades do pad não existe */
+    #djBtEntrar{position:fixed;z-index:71;right:10px;left:auto;
+      bottom:calc(64px + env(safe-area-inset-bottom));width:auto;max-width:46vw;
+      font-size:10px;padding:8px 8px;line-height:1.2}
+    #djBtEntrar b{display:none}
+  }
 </style>
 </head>
 <body>

@@ -256,3 +256,10 @@ body:not(.em-cena) #djPad{ display:none; }
 .pad-mov{ font-size:15px; font-weight:700; }
 
 
+
+/* Em 430 px de largura (celular em pé) as duas metades do pad não
+   cabem lado a lado: três ações de 74 px à esquerda mais quatro
+   formações de 46 à direita passam de 450. As ações encolhem pra 62. */
+@media (max-width: 480px){
+  .pad-acao{ width:62px; font-size:10px; }
+}

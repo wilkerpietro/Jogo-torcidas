@@ -78,9 +78,18 @@ TO.diaJogo.bancada = (function(){
 
   function abrir(c){
     atual = c;
+    /* A BANCADA ESTÁ SEMPRE EM CENA. O pad de toque só aparece com
+       `em-cena` no body (cenas.css) — no jogo é quem entra na cena que
+       marca; aqui a cena é a página inteira, e sem isto no celular não
+       havia botão nenhum. */
+    document.body.classList.add('em-cena');
     /* a chave é o rótulo e não o id: as duas abas de arredores são a
        mesma cena em situação diferente, e por id uma apagava a outra */
     for(const k of Object.keys(botoes)) botoes[k].classList.toggle('on', k === c.rot);
+    /* no celular as abas rolam de lado: a aba aberta tem de estar à vista */
+    const bt = botoes[c.rot], abas = bt && bt.parentElement;
+    if(abas && abas.scrollWidth > abas.clientWidth + 2)
+      bt.scrollIntoView({inline:'center', block:'nearest'});
     const t = document.getElementById('cenaTitulo');
     if(t) t.textContent = c.titulo;
     document.title = c.titulo + ' — Torcida Organizada';

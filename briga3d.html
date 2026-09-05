@@ -64,6 +64,24 @@
   #djComandos .acao-btn b{display:inline}
   details.painel summary{cursor:pointer;font-family:var(--titulo);font-size:13px;
     letter-spacing:.1em;text-transform:uppercase;color:var(--fraco)}
+
+  /* NO CELULAR (mesmo limiar do jogo, 900px): cabeçalho de uma linha,
+     abas numa fileira que rola de lado, palco colado em cima e o pad
+     fixo embaixo, igual à cena do jogo. O canvas não rola a página:
+     o dedo nele é mira. */
+  @media (max-width: 900px){
+    header#topo{padding:6px 10px;gap:4px 10px}
+    header#topo h1{font-size:13px;letter-spacing:.1em}
+    header#topo span, header#topo p, #comandos{display:none}
+    #cenaAbas{flex-wrap:nowrap;overflow-x:auto;gap:5px;padding:6px 8px;
+      -webkit-overflow-scrolling:touch;scrollbar-width:none}
+    #cenaAbas::-webkit-scrollbar{display:none}
+    #cenaAbas button{white-space:nowrap;padding:8px 10px;font-size:10.5px;flex:0 0 auto}
+    #cenaAbas small{display:none}
+    #djGrade{padding:0;gap:0}
+    #djPalco canvas{touch-action:none}
+    html, body{overflow-x:hidden}
+  }
 </style>
 </head>
 <body class="em-cena">
