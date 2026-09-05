@@ -385,6 +385,7 @@ TO.diaJogo.ponte = (function(){
     if(btB) btB.style.display = J.semArmas ? 'none' : '';
     if(btP && !J.semArmas){const r=C.restaCd(J,'pedra'); btP.disabled=r>0;
       btP.firstChild.textContent=r>0?`Pedra ${r.toFixed(1)}s `:'Pedra ';}
+    const btQ=el('djBtBater'); if(btQ) btQ.style.display = '';
     if(btB && !J.semArmas){const r=C.restaCd(J,'bomba'); btB.disabled=J.bombas<=0||r>0;
       btB.firstChild.textContent=r>0?`Bomba ${r.toFixed(1)}s `:'Bomba ';}
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
@@ -494,8 +495,8 @@ TO.diaJogo.ponte = (function(){
       ? '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>1</kbd>–<kbd>4</kbd> formação · '+
         '<kbd>Q</kbd> pedra · <kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>C</kbd> câmera · '+
         'arrastar gira · roda aproxima'
-      : '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação · <kbd>Q</kbd> pedra · '+
-        '<kbd>E</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · rodinha = zoom · <kbd>F2</kbd> editor de cena';
+      : '<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>2</kbd> pedra · '+
+        '<kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · rodinha = zoom · <kbd>F2</kbd> editor de cena';
   }
 
   /* =======================================================
@@ -508,7 +509,7 @@ TO.diaJogo.ponte = (function(){
 
   function montarBotoes(){
     const cf=$('djFormacoes');
-    if(cf && !cf.childElementCount){
+    if(cf && !cf.childElementCount && Object.keys(C.FORMACOES).length > 1){
       for(const [id,f] of Object.entries(C.FORMACOES)){
         const b=document.createElement('button');
         b.className='form-btn'; b.dataset.f=id;
@@ -520,6 +521,7 @@ TO.diaJogo.ponte = (function(){
     const liga=(id,fn)=>{const e=$(id); if(e) e.onclick=fn;};
     liga('djBtPedra', ()=>C.arremessar(J,'pedra'));
     liga('djBtBomba', alternarMira);
+    liga('djBtBater', ()=>{ if(J) C.bater(J, liderVivo()); });
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
     liga('djVelocidade', alternarVelocidade);
     liga('djBtEntrar', mandarEntrarOuSair);
@@ -709,9 +711,12 @@ TO.diaJogo.ponte = (function(){
     bomba.addEventListener('pointerup', soltaBomba);
     bomba.addEventListener('pointercancel', soltaBomba);
     bomba.addEventListener('contextmenu', ev=>ev.preventDefault());
+    /* Q bate (toque), E defende (segurar), R recua; pedra e bomba
+       ficam do outro lado, nos números 2 e 3 */
+    const defender = botao('DEFENDER', 'pad-acao pad-e', ()=>{ teclas.e=true; }, ()=>{ teclas.e=false; });
     acoes.append(
-      disparo('q','PEDRA', ()=>{ if(J) C.arremessar(J,'pedra'); }),
-      bomba,
+      disparo('q','BATER', ()=>{ if(J){ const l=liderVivo(); if(l) C.bater(J, l); } }),
+      defender,
       disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }));
     const cruz = document.createElement('div');
     cruz.className = 'pad-cruz';
@@ -720,30 +725,21 @@ TO.diaJogo.ponte = (function(){
 
     const dir = document.createElement('div');
     dir.className = 'pad-lado pad-dir';
-    for(const [id,f] of Object.entries(C.FORMACOES))
-      dir.appendChild(botao(f.tecla, 'pad-form', ()=>{
-        if(!J) return;
-        J.form = id; atualizarBotoes(); marcarFormacaoNoPad();
-      }));
+    const pedra = botao('2', 'pad-form pad-2', ()=>{ if(J) C.arremessar(J,'pedra'); });
+    pedra.innerHTML = '2<small>PEDRA</small>';
+    bomba.className = 'pad-bt pad-form pad-3'; bomba.innerHTML = '3<small>BOMBA</small>';
+    dir.append(pedra, bomba);
     caixa.append(esq, dir);
     pai.appendChild(caixa);
-    marcarFormacaoNoPad();
   }
 
-  function marcarFormacaoNoPad(){
-    const pad = $('djPad');
-    if(!pad || !J) return;
-    const teclasForm = Object.values(C.FORMACOES).map(f=>f.tecla);
-    const atual = (C.FORMACOES[J.form]||{}).tecla;
-    pad.querySelectorAll('.pad-form').forEach((b,i)=>
-      b.classList.toggle('on', teclasForm[i] === atual));
-  }
+  function marcarFormacaoNoPad(){ /* só existe o Quadrado */ }
 
   /* a recarga da pedra e o estoque de bomba aparecem no pad, como no HUD */
   function atualizarPad(){
     const pad = $('djPad');
     if(!pad || !J) return;
-    const q = pad.querySelector('.pad-q'), e = pad.querySelector('.pad-e');
+    const q = pad.querySelector('.pad-2'), e = pad.querySelector('.pad-3');
     if(q){ q.style.display = J.semArmas ? 'none' : '';
            q.classList.toggle('gasto', C.restaCd(J,'pedra') > 0); }
     if(e){ e.style.display = J.semArmas ? 'none' : '';
@@ -774,12 +770,12 @@ TO.diaJogo.ponte = (function(){
       }
       if(!J) return;
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
-      if(k==='q') C.arremessar(J,'pedra');
-      if(k==='e') alternarMira();
+      if(k==='q'){ const l=liderVivo(); if(l) C.bater(J, l); }
+      /* E é segurar: a defesa é lida por `teclas.e` no moverLider */
+      if(k==='2') C.arremessar(J,'pedra');
+      if(k==='3') alternarMira();
       if(k==='escape') cancelarMira();
       if(k==='enter') mandarEntrarOuSair();
-      for(const [id,f] of Object.entries(C.FORMACOES))
-        if(k===f.tecla){J.form=id;atualizarBotoes();}
     });
     addEventListener('keyup',e=>{teclas[e.key.toLowerCase()]=false;});
 

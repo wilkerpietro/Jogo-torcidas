@@ -40,8 +40,11 @@
     ['parado',   (d,t)=>{}],
     ['andar',    (d,t)=>{ anda(d,t,60); }],
     ['correr',   (d,t)=>{ anda(d,t,78); d._cacando=true; }],
-    ['socar',    (d,t)=>{ d.golpe=0.12; d.hostil=3; }],
+    ['socar',    (d,t)=>{ golpeia(d,t,0.75); d.hostil=3; }],
     ['guarda',   (d,t)=>{ d.hostil=3; }],
+    ['defender', (d,t)=>{ d.defendendo=1; d.hostil=3; }],
+    ['esquivar', (d,t)=>{ d.defendendo=1; d.hostil=3; const k=t%1.4; d.esquivou = k<0.4 ? 0.4-k : 0; }],
+    ['provocar', (d,t)=>{ d.hostil=3; d.inimigoPerto=50; if(d._b3) d._b3.estilo.provocador=1; }],
     ['apanhar',  (d,t)=>{ d.apanhou=0.3; if(d._b3 && !d._b3.impacto && (t%1.1)<0.03) d._b3.impacto={t:0,dur:0.36,forca:0.9,lado:(Math.floor(t/1.1)%2?1:-1),tipo:'direto'}; }],
     ['atordoado',(d,t)=>{ d.atordoado=1; }],
     ['arremesso',(d,t)=>{ const k=t%1.6; d.arremesso = k<0.55 ? {t:0.55-k, tipo:'pedra'} : null; d.hostil=3; }],
@@ -51,9 +54,19 @@
     ['preso',    (d,t)=>{ d.preso=true; }],
     ['torcer',   (d,t)=>{ d.linha='retaguarda'; }],
     ['policial', null],
-    ['troca', (d,t)=>{ d.golpe=0.12; d.hostil=3; d.apanhou=0.3; d._alvo=d.par; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); }],
-    ['troca2', (d,t)=>{ d.golpe=0.12; d.hostil=3; d.apanhou=0.3; d._alvo=d.par; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); }]
+    ['troca', (d,t)=>{ golpeia(d,t,0.9,0); d.hostil=3; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); if(d.par.ataque && d.par.ataque.t<0.15 && !d.ataque && (Math.floor(t/0.9)%3===0)) d.defendendo=0.5; }],
+    ['troca2', (d,t)=>{ golpeia(d,t,0.9,0.45); d.hostil=3; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); }]
   ];
+  /* um golpe do combate a cada `cada` segundos: {t, dur, alvo, bateu} */
+  function golpeia(d, t, cada, desloc){
+    const k = (t + (desloc||0)) % cada;
+    if(k < 0.36){
+      if(!d.ataque || d.ataque.k0 > k) d.ataque = {t:0, dur:0.36, alvo:d.par||null, bateu:false, k0:k};
+      d.ataque.t = k; d.ataque.k0 = k;
+      if(k >= 0.15 && !d.ataque.bateu){ d.ataque.bateu = true; if(d.par && d.par.defendendo>0) d.par.esquivou = 0.4; }
+      d.golpe = 0.36 - k;
+    } else d.ataque = null;
+  }
   /* anda e volta num trecho de 60 px, virado pro lado que vai */
   function anda(d,t,v){
     const per = 120/v, k=(t%(2*per))/per;
@@ -69,7 +82,7 @@
       return;
     }
     discos.push({nome:nome.toUpperCase(), lado: i%2 ? 'visitante':'mandante', cor: i%2?'#1e4fa0':'#c0392b', cor2:'#f0f0f0',
-      x:x0, y:z0, x0, r:7, hp:150, hpMax:150, vivo:true, caido:false, preso:false, fugindo:false, fugaBomba:null,
+      x:x0, y:z0, x0, r:7, hp:150, hpMax:150, vivo:true, caido:false, preso:false, fugindo:false, fugaBomba:null, ataque:null, defendendo:0, esquivou:0, inimigoPerto:999,
       atordoado:0, apanhou:0, golpe:0, hostil:0, arremesso:null, tremor:0, rumo:0, linha:'frente', lider: nome==='socar',
       _cacando:false, fn});
   });
@@ -86,7 +99,8 @@
     let dt = (agora-ant)/1000; ant = agora; if(dt>0.05) dt=0.05;
     J.t += dt;
     for(const d of discos){
-      d.golpe=0; d.hostil=0; d.apanhou=0; d.atordoado=0; d.arremesso=null; d.fugindo=false; d.fugaBomba=null; d._cacando=false; d.tremor=0; d.linha='frente'; d._alvo=null;
+      d.golpe=0; d.hostil=0; d.apanhou=0; d.atordoado=0; d.arremesso=null; d.fugindo=false; d.fugaBomba=null; d._cacando=false; d.tremor=0; d.linha='frente'; d._alvo=null; d.defendendo=0; d.inimigoPerto=999;
+      if(d.esquivou>0) d.esquivou=Math.max(0,d.esquivou-dt);
       if(d.fn) d.fn(d, J.t);
       if(d.fn.toString().indexOf('anda')<0 && !d.par) { d.x = d.x0; d.rumo = 0; }
     }

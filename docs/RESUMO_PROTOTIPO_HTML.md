@@ -4848,3 +4848,44 @@ com mais detalhe na construção e nos movimentos. A cena de cima continua sendo
   fuga, gesto favorito na retaguarda. Cada golpe sai com amplitude própria (±12%). Por
   cima de tudo, um ruído lento particular (`ruido`: produto de dois senos deslocados
   pela fase) em ombro, tronco e olhar, pra dois parados nunca serem gêmeos.
+
+## 8.36 Bater e Defender, só o Quadrado, provocações — e a cabeça sem caixa
+
+Pedido do dono (05/09/2026): a mandíbula em caixa ficou feia; Bater no Q no lugar da
+pedra, Defender no E, pedra no 2 e bomba no 3; só a formação Quadrado fica; todo boneco
+dá dano batendo e escapa defendendo; e animações de provocação.
+
+- **A cabeça** virou três elipsoides (crânio; rosto de baixo mais estreito e mais fundo,
+  deslocado pra frente, que faz bochecha e linha do queixo; queixo pequeno na ponta).
+  Barba e boca acompanham a curva. Nenhuma aresta.
+- **Dano por golpe** (`bater`, `contatos`, `acertar` em combate.js). O contato contínuo
+  acabou: o soco é um evento de 0,36 s com impacto aos 0,15 (`d.ataque`). O alvo é quem
+  estava na frente e ao alcance (`r+r+9`) quando o golpe saiu e continua lá no impacto.
+  Dano por golpe = a régua de sempre (força contra defesa) × 0,55, que com um golpe a
+  cada ~0,6 s dá o mesmo dano por segundo. Sem ninguém na frente o golpe sai no ar
+  (jogador apertando Q). Recarga de 0,18–0,38 s.
+- **Defender** (`defender`): quem está defendendo DE FRENTE pro golpe esquiva de 3 em 4
+  (`esquivou`, só de desenho) e leva 35% do quarto. Não se defende no meio do próprio
+  golpe. O líder defende segurando E (`teclas.e` lido em `moverLider`) e anda a 60%.
+- **Todo mundo bate e defende** (`iaLuta`): quem não é o líder decide sozinho — bate
+  quando pode e tem alguém na frente; defende quando vê o golpe vindo em si, com chance
+  0,25 + defesa/40 (defesa 4 → 35%, 20 → 75%); respira meio segundo a um a cada `folego`
+  (3–5) golpes. Vale pro nosso bonde também: só o líder é teclado. `inimigoPerto`, a
+  distância do inimigo mais perto, sai daqui pro desenho provocar.
+- **Só o Quadrado**: `FORMACOES` ficou com `investida`, o padrão é ele, os botões e as
+  teclas 1–4 sumiram. Teclas: Q bate, E defende (segurar), 2 pedra, 3 mira da bomba, R
+  recuar. No pad: BATER (toque), DEFENDER (segurar), RECUAR à esquerda; 2 PEDRA e 3 BOMBA
+  (segurar e arrastar) à direita. HUD: "Bater Q · Defender E", "Pedra 2", "Bomba 3".
+- **Na animação** (bonecos3.js) o golpe passou a ser o do combate: `lutar` lê `d.ataque`
+  e só escolhe COMO ele sai (jab, direto, gancho, uppercut, chute, empurrão, pelo
+  repertório de cada um), preso àquele golpe até acabar; o aviso de impacto ao alvo só
+  vai se ele não esquivou. `bloquear` (antebraços na frente do rosto, meio de lado) é o
+  E; `esquivar` joga o corpo pra trás e pro lado quando o combate marca `esquivou`.
+  **Provocar**: inimigo a 24–90 px, sem golpe nem defesa, parado — de vez em quando (a
+  vontade é de cada um, `provocador`) em vez de guarda: "vem" com as duas mãos, bate no
+  peito, aponta e ri, mão na orelha, aplauso de deboche, braços pra cima. A vitrine ganhou
+  defender, esquivar e provocar, e a troca usa golpes do combate com uma defesa a cada
+  três.
+- **Medido** (Node, rua e praça, líder batendo a cada quadro e tacando pedra): a briga
+  acaba em todas as cenas, mais devagar (86–101 s); rua 3/6 pro mandante, praça 1/6 —
+  na faixa de antes, com a ressalva de sempre sobre a ficha do rival na bancada.

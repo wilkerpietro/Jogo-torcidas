@@ -205,7 +205,9 @@ TO.diaJogo.bonecos3 = (function(){
       duro: 0.6 + frac(s+'e13')*0.7,        // quanto sente a pancada (menor = mais duro)
       finta: 0.06 + frac(s+'e14')*0.14,     // chance de fintar
       olhaTras: 0.5 + frac(s+'e15')*1.0,
-      gestoFav: dado(s+'e16', 4)
+      gestoFav: dado(s+'e16', 4),
+      provocaFav: dado(s+'e17', 6),
+      provocador: 0.3 + frac(s+'e18')*0.7    // vontade de provocar
     };
   }
   /* um ruído lento e particular de cada figura: produto de dois senos
@@ -258,12 +260,16 @@ TO.diaJogo.bonecos3 = (function(){
     /* CABEÇA: crânio, mandíbula e queixo (não é uma bola), rosto,
        cabelo ou chapéu, óculos, barba, brinco — numa malha só */
     const cabeca = junta(pescoco, 0, 1.4, 0);
+    /* A cabeça (refeita a pedido do dono, 05/09/2026: a mandíbula em
+       caixa ficou feia). Agora é tudo arredondado: o crânio é um
+       elipsoide; o rosto de baixo é outro, um pouco mais estreito e
+       mais fundo, deslocado pra frente e pra baixo, que faz a
+       bochecha e a linha do queixo; o queixo é uma esfera pequena
+       na ponta. Sem aresta nenhuma. */
     const cb = new Acumulador()
-      .add(g.esfera, pele, 3.15*CX, 3.0, 3.05, 0, 3.6, 0)                     // crânio
-      .add(g.caixa, pele, 4.9*CX, 2.3*QX, 3.9, 0, 1.75, 0.35)                  // mandíbula
-      .add(g.caixa, pele, 3.4*CX, 1.9*QX, 3.0, 0, 1.3, 1.0)                    // maxilar da frente
-      .add(g.caixa, pele, 2.0*CX, 1.2, 1.6, 0, 0.75, 1.7)                      // queixo
-      .add(g.caixa, pele, 5.6*CX, 1.6, 3.2, 0, 2.7, 0.2);                      // maçãs do rosto
+      .add(g.esfera, pele, 3.2*CX, 3.15, 3.1, 0, 3.7, -0.1)                   // crânio
+      .add(g.esfera, pele, 2.85*CX, 2.5*QX, 2.9, 0, 2.15, 0.55)                // rosto de baixo (bochecha, mandíbula)
+      .add(g.esfera, pele, 1.5*CX, 1.15, 1.4, 0, 1.05, 1.55);                  // queixo
     for(const sx of [-1,1]){
       cb.add(g.esfera, BRANCO, 0.66, 0.5, 0.36, sx*1.15*CX, 3.55, 2.8)
         .add(g.esfera, '#2a1a10', 0.34, 0.34, 0.26, sx*1.15*CX, 3.55, 3.1)
@@ -274,12 +280,12 @@ TO.diaJogo.bonecos3 = (function(){
     }
     cb.add(g.caixa, pele, 0.9, 1.6, 0.9, 0, 2.85, 2.9)                        // nariz
       .add(g.caixa, pele, 0.6, 1.2, 0.8, 0, 3.6, 2.75)                        // dorso do nariz
-      .add(g.caixa, '#5a2a24', 1.5, 0.32, 0.3, 0, 1.75, 2.62);                // boca
+      .add(g.caixa, '#5a2a24', 1.4, 0.3, 0.3, 0, 1.85, 2.75);                 // boca
     if(f.brinco) cb.add(g.esfera, OURO, 0.28, 0.28, 0.28, -3.35*CX, 2.75, 0.4);
     /* barba: cavanhaque, cheia ou bigode */
-    if(f.barba===1) cb.add(g.caixa, cabelo, 2.2, 1.7, 1.7, 0, 0.95, 1.85);
-    else if(f.barba===2) cb.add(g.caixa, cabelo, 5.1*CX, 2.3*QX, 4.1, 0, 1.6, 0.45).add(g.caixa, cabelo, 3.5*CX, 1.6, 3.2, 0, 1.2, 1.15);
-    else if(f.barba===3) cb.add(g.caixa, cabelo, 2.3, 0.45, 0.5, 0, 2.25, 2.85);
+    if(f.barba===1) cb.add(g.esfera, cabelo, 1.35*CX, 1.1, 1.2, 0, 0.95, 1.9);
+    else if(f.barba===2) cb.add(g.esfera, cabelo, 3.0*CX, 2.55*QX, 3.0, 0, 1.95, 0.6).add(g.esfera, cabelo, 1.6*CX, 1.25, 1.5, 0, 0.9, 1.6);
+    else if(f.barba===3) cb.add(g.caixa, cabelo, 2.2, 0.42, 0.5, 0, 2.35, 2.9);
     /* óculos: de grau (lente à parte, transparente) ou escuros */
     if(f.oculos){
       const arm = f.oculos===2 ? PRETO : '#3a3a3a';
@@ -498,41 +504,39 @@ TO.diaJogo.bonecos3 = (function(){
     brigao:  {jab:.15, direto:.20, gancho:.35, uppercut:.15, chute:.05, empurrao:.10},
     chutador:{jab:.20, direto:.20, gancho:.15, uppercut:.05, chute:.30, empurrao:.10}
   };
-  function escolherGolpe(f){
+  /* O GOLPE É DO COMBATE (`d.ataque`: 0,36 s, impacto aos 0,15). Aqui
+     só se escolhe COMO ele sai — jab, direto, gancho… pelo repertório
+     de cada um — e o tipo fica preso àquele golpe até ele acabar. */
+  function escolherGolpe(f, ref){
     const e = f.estilo;
     const pesos = REPERTORIO[e.repertorio] || REPERTORIO.misto;
     let r = Math.random(), tipo = 'jab';
     for(const k in pesos){ r -= pesos[k]; if(r <= 0){ tipo = k; break; } }
-    /* a mão da frente é a esquerda, ou a direita se é canhoto */
     const frente = e.canhoto ? 1 : 0;
     const lado = tipo==='jab' ? frente : tipo==='direto' ? 1-frente : (f.ladoSoco = 1 - f.ladoSoco);
-    /* a finta: um jab que para na metade e volta rápido */
-    const finta = tipo==='jab' && Math.random() < e.finta;
-    f.ataque = {tipo, t:0, dur:GOLPES[tipo].dur/e.ritmo*(finta?0.7:1), lado, bateu:finta,
-                amp: 0.88 + Math.random()*0.24, finta};
-    f.combo++;
+    f.ataque = {tipo, lado, ref, amp: 0.88 + Math.random()*0.24, avisou:false};
   }
 
   function lutar(p, f, d, dt, t){
     guarda(p, f, t);
-    if(!f.ataque){
-      f.pausa -= dt;
-      if(f.pausa <= 0) escolherGolpe(f);
-      else return;
-    }
-    const a = f.ataque; a.t += dt;
-    const k = Math.min(1, a.t/a.dur);
-    if(!a.bateu && k >= 0.42){
-      a.bateu = true;
-      const alvo = d._alvo;
-      if(alvo && alvo._b3 && alvo.vivo){
+    const at = d.ataque;
+    if(!at){ f.ataque = null; return; }
+    if(!f.ataque || f.ataque.ref !== at) escolherGolpe(f, at);
+    const a = f.ataque;
+    const k = Math.min(1, at.t/at.dur);
+    /* o impacto é do combate; aqui só se avisa o desenho do alvo — e
+       se ele esquivou, é a esquiva que aparece, não a pancada */
+    if(!a.avisou && at.bateu){
+      a.avisou = true;
+      const alvo = at.alvo;
+      if(alvo && alvo._b3 && alvo.vivo && !(alvo.esquivou > 0)){
         const dx = alvo.x-d.x, dz = alvo.y-d.y;
         const lado = Math.sign(Math.sin(alvo._b3.yaw)*dz - Math.cos(alvo._b3.yaw)*dx) || 1;
         alvo._b3.impacto = {t:0, dur: a.tipo==='jab'?0.26:0.36, forca:GOLPES[a.tipo].forca, lado, tipo:a.tipo};
       }
     }
     const ida = suave(k/0.42), volta = suave((k-0.55)/0.45);
-    const ext = ida*(1-volta)*(a.amp||1)*(a.finta ? 0.5 : 1);
+    const ext = ida*(1-volta)*(a.amp||1);
     const b = a.lado, o = 1-b, sg = b===1 ? 1 : -1;
     /* o quadril vai antes do ombro: a rotação do tronco arma um pouco antes */
     const arma = suave(k/0.25);
@@ -572,20 +576,8 @@ TO.diaJogo.bonecos3 = (function(){
         p.inclina = 0.15 + ext*0.3; p.coxa = [-0.5, 0.35]; p.joelho = [0.45, 0.25]; p.pe[1] = ext*0.5;
         p.y = -1.4 - ext*0.6; break;
     }
-    if(k >= 1){
-      f.ataque = null;
-      /* no fim da sequência, respira: 0,35 a 0,9 s em guarda; o fôlego
-         (quantos golpes por sequência) é de cada um */
-      f.pausa = (f.combo % f.estilo.folego === 0) ? 0.35 + Math.random()*0.55 : 0.04 + Math.random()*0.16;
-    }
   }
 
-  /* guarda: punhos em frente ao queixo, quicando na ponta do pé, com
-     um balanço lateral e o ombro rolando — o corpo nunca está duro */
-  /* guarda: cada um tem a sua — fechada (punho no queixo), alta (punho
-     na têmpora, queixo enterrado), baixa (mão no peito, queixo pra
-     cima, o folgado) ou aberta (braço largo, o que vem pra agarrar).
-     Todas quicam na ponta do pé com balanço lateral e ombro rolando. */
   function guarda(p, f, t){
     const e = f.estilo;
     const w = t*(5.0 + e.gingado*0.8) + f.fase;
@@ -642,6 +634,63 @@ TO.diaJogo.bonecos3 = (function(){
     p.coxa = [-0.2, 0.3]; p.joelho = [0.55, 0.5];
     p.y = -2.6;
   }
+  /* DEFENDER (E segurado / decisão da IA): antebraços na frente do
+     rosto, queixo enterrado, meio de lado, pé de trás firme */
+  function bloquear(p, f, t){
+    const w = t*4 + f.fase;
+    p.ombro = [-1.75, -1.7]; p.cotovelo = [-2.6, -2.55]; p.ombroZ = [0.42, 0.38]; p.maoZ = [0.4, 0.4];
+    p.punho = [1, 1];
+    p.inclina = 0.32 + 0.02*Math.sin(w); p.gira = -0.28; p.tomba = 0.08;
+    p.olhaX = 0.42; p.olhaY = -0.15;
+    p.coxa = [-0.25, 0.35]; p.joelho = [0.5, 0.45];
+    p.y = -2.4;
+  }
+  /* ESQUIVOU: o golpe passou — o corpo vai pra trás e pro lado, o
+     queixo foge, e volta em 0,4 s */
+  function esquivar(p, f, d){
+    const k = 1 - d.esquivou/0.4;
+    const r = Math.sin(Math.min(1, k*1.5)*Math.PI);
+    const lado = Math.sin(f.fase*2) > 0 ? 1 : -1;
+    p.inclina -= 0.45*r; p.tomba += lado*0.28*r; p.gira += lado*0.2*r;
+    p.olhaX -= 0.3*r; p.olhaY += lado*0.35*r;
+    p.coxa[0] += 0.3*r; p.joelho[0] += 0.25*r; p.joelho[1] += 0.2*r;
+    p.y -= 1.2*r;
+  }
+  /* PROVOCAR (pedido do dono, 05/09/2026): inimigo perto mas fora do
+     alcance, sem golpe no ar — de vez em quando, em vez de ficar só
+     em guarda, cutuca: "vem" com as duas mãos, bate no peito, aponta
+     e ri, mão na orelha ("não ouvi"), aplauso de deboche, ou joga os
+     braços pra cima. Cada um tem o seu favorito. */
+  function provocar(p, f, t, dt){
+    const pv = f.provoca;
+    const k = pv.t/pv.dur, w = t*7 + f.fase;
+    const sobe = suave(k/0.2), desce = suave((k-0.8)/0.2), r = sobe*(1-desce);
+    parado(p, f, t);
+    switch(pv.tipo){
+      case 0:   // "vem": as duas mãos chamando, corpo pra frente
+        p.ombro = [-1.1*r, -1.1*r]; p.ombroZ = [0.9*r, 0.9*r]; p.cotovelo = [-(1.2+0.5*Math.max(0,Math.sin(w)))*r, -(1.2+0.5*Math.max(0,Math.sin(w+1)))*r];
+        p.inclina = 0.25*r; p.olhaX = -0.1*r; break;
+      case 1:   // bate no peito
+        p.ombro[1] = -1.3*r; p.cotovelo[1] = -2.5*r; p.ombroZ[1] = 0.3; p.maoZ[1] = 0.9*r;
+        p.inclina = (-0.15 + 0.06*Math.sin(w*1.3))*r; p.olhaX = -0.25*r; p.punho[1] = 1;
+        p.y = -0.3*Math.abs(Math.sin(w*1.3))*r; break;
+      case 2:   // aponta e ri
+        p.ombro[1] = -1.55*r; p.cotovelo[1] = -0.1; p.ombroZ[1] = 0.1; p.punho[1] = 0;
+        p.inclina = 0.15*r; p.gira = -0.2*r; p.olhaX = 0.1*r; p.tomba = 0.08*Math.sin(w)*r;
+        p.peito = 1 + 0.04*Math.abs(Math.sin(w))*r; break;
+      case 3:   // mão na orelha: "não ouvi"
+        p.ombro[0] = -2.3*r; p.cotovelo[0] = -2.55*r; p.ombroZ[0] = 0.8*r; p.maoZ[0] = 0.6*r;
+        p.olhaY = 0.5*r; p.olhaX = -0.1*r; p.inclina = 0.1*r; p.gira = 0.25*r; break;
+      case 4:   // aplauso de deboche, lento
+        p.ombro = [-1.2*r, -1.2*r]; p.cotovelo = [-2.0*r, -2.0*r];
+        p.ombroZ = [(0.35 + 0.25*Math.max(0,Math.sin(w*0.6)))*r, (0.35 + 0.25*Math.max(0,Math.sin(w*0.6)))*r];
+        p.punho = [0, 0]; p.olhaX = -0.12*r; p.inclina = -0.08*r; break;
+      default:  // braços pra cima, "e aí?"
+        p.ombro = [-2.4*r, -2.4*r]; p.ombroZ = [1.0*r, 1.0*r]; p.cotovelo = [-0.7*r, -0.7*r];
+        p.inclina = -0.12*r; p.olhaX = -0.2*r; p.gira = 0.1*Math.sin(w*0.8)*r;
+    }
+  }
+
   /* O IMPACTO: avisado por quem bateu (`lutar`), ou pela pedra/bomba
      (`tremor` alto). Vai por cima da pose que estiver valendo: a cabeça
      vai pro lado de onde veio, o tronco atrás, um passo pra trás; forte
@@ -799,14 +848,31 @@ TO.diaJogo.bonecos3 = (function(){
       if(corre && d.fugindo) fugir(p, f, t, dt);
       if(d.fugaBomba) cobrir(p);
 
+      /* a provocação: inimigo a 24–90 px, sem golpe, sem defesa, parado */
+      const podeProvocar = !andando && d.inimigoPerto > 24 && d.inimigoPerto < 90 && !d.ataque && d.defendendo<=0 && d.atordoado<=0 && !d.arremesso && (d.hostil > 0 || d.linha==='frente');
+      if(f.provoca){
+        f.provoca.t += dt;
+        if(f.provoca.t >= f.provoca.dur || d.ataque || d.defendendo>0 || d.atordoado>0 || andando) f.provoca = null;
+      } else if(podeProvocar){
+        f.tProvoca = (f.tProvoca||0) - dt;
+        if(f.tProvoca <= 0){
+          f.tProvoca = 1.5 + Math.random()*3;
+          if(Math.random() < f.estilo.provocador*0.6)
+            f.provoca = {t:0, dur:1.4 + Math.random()*1.2, tipo: Math.random()<0.5 ? f.estilo.provocaFav : Math.floor(Math.random()*6)};
+        }
+      }
+
       if(d.atordoado > 0){ cambalear(p, f, t); rapidez = 7; f.ataque = null; }
       else if(d.arremesso){ arremessar(p, f, d.arremesso); rapidez = 26; f.ataque = null; }
-      else if(d.golpe > 0){ lutar(p, f, d, dt, t); rapidez = 30; }
+      else if(d.ataque){ lutar(p, f, d, dt, t); rapidez = 30; }
+      else if(d.defendendo > 0 && !andando){ bloquear(p, f, t); rapidez = 20; f.ataque = null; }
+      else if(f.provoca){ provocar(p, f, t, dt); rapidez = 10; f.ataque = null; }
       else if(d.apanhou > 0 && !andando){ cobrirSe(p, f, t); rapidez = 16; f.ataque = null; }
       else if(d.hostil > 0 && !andando && !corre){ guarda(p, f, t); rapidez = 12; f.ataque = null; }
       else if(!andando && d.linha==='retaguarda' && !J.paz){ torcer(p, f, t, dt); rapidez = 9; f.ataque = null; }
       else { f.ataque = null; rapidez = andando ? 14 : 5; }
-      flinch(p, f, d, dt);
+      if(d.esquivou > 0) esquivar(p, f, d);
+      else flinch(p, f, d, dt);
     }
 
     misturarPose(f.pose, p, Math.min(1, dt*rapidez));

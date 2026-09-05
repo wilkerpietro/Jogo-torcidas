@@ -200,7 +200,8 @@
 .com-pad #djComandos #djFormacoes,
 .com-pad #djComandos #djBtPedra,
 .com-pad #djComandos #djBtBomba,
-.com-pad #djComandos #djBtRecuar{ display:none; }
+.com-pad #djComandos #djBtRecuar,
+.com-pad #djComandos #djBtBater{ display:none; }
 /* o botão fixo de avançar dia não entra na cena */
 
 /* ---------- o pad ---------- */
@@ -241,7 +242,8 @@ body:not(.em-cena) #djPad{ display:none; }
 
 .pad-acoes{ display:flex; gap:6px; pointer-events:none; }
 .pad-acao{ width:74px; height:44px; font-size:11px; }
-.pad-form{ width:46px; height:44px; font-size:16px; font-weight:700; }
+.pad-form{ width:58px; height:44px; font-size:16px; font-weight:700; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; }
+.pad-form small{ font-size:8px; font-weight:400; letter-spacing:.08em; margin-top:2px; }
 .pad-form.on{ background:var(--rubro); border-color:var(--rubro-vivo); }
 
 /* a cruz: W em cima, A e D nos lados, S embaixo */

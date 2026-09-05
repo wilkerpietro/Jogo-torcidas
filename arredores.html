@@ -57,7 +57,7 @@ body{display:block;padding:0}
     body{padding-bottom:calc(190px + env(safe-area-inset-bottom))}
     #djGrade > div:last-child .painel{display:none}
     #djGrade > div:last-child .painel:first-child{display:block;padding:0;border:0;background:none;margin:0}
-    #djLocal, #djFormacoes, #djBtPedra, #djBtBomba, #djBtRecuar{display:none}
+    #djLocal, #djFormacoes, #djBtBater, #djBtPedra, #djBtBomba, #djBtRecuar{display:none}
     /* o portão fica em cima da fileira de formações, à direita: numa
        tela de 430 px o vão entre as metades do pad não existe */
     #djBtEntrar{position:fixed;z-index:71;right:10px;left:auto;
@@ -111,8 +111,9 @@ body{display:block;padding:0}
     <div class="painel">
       <h2 id="djLocal">Nos arredores</h2>
       <div id="djFormacoes"></div>
-      <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
-      <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
+      <button class="acao-btn" id="djBtBater">Bater <b>Q</b> · Defender <b>E</b></button>
+      <button class="acao-btn" id="djBtPedra">Pedra <b>2</b></button>
+      <button class="acao-btn" id="djBtBomba">Bomba <b>3</b> · <span id="djQtdBomba">0</span></button>
       <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
       <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
     </div>
