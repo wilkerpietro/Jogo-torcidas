@@ -4814,3 +4814,26 @@ com mais detalhe na construção e nos movimentos. A cena de cima continua sendo
 - **`bonecos.html` é a vitrine**: um boneco por estado, câmera em perspectiva girando,
   clique num estado pra isolar, arrasto gira e rodinha aproxima. Serve pra avaliar o
   detalhe de perto sem depender da briga acontecer.
+- **Segunda passada (05/09/2026): mais gente, briga mais fina, e o fim da tremedeira.**
+  A cabeça deixou de ser bola: crânio, mandíbula, maxilar, queixo e maçãs do rosto,
+  pálpebra, íris e pupila, dorso do nariz, sobrancelha com inclinação sorteada. Cabeça:
+  curto, raspado, black, moicano, comprido, boné (aba pra frente ou pra trás, escudo da
+  torcida), bucket, bandana, careca. Barba: cavanhaque, cheia ou bigode. Óculos de grau
+  (lente transparente à parte) ou escuros, brinco, relógio no pulso esquerdo, pulseira
+  no direito, corrente, cachecol da torcida, tatuagem no antebraço, meia com bermuda,
+  cinto com calça, regata, barriga em 25%, camisa lisa, listrada (duas ou três),
+  vertical ou com faixa atravessada, tênis com friso. PM de coturno, luva e quepe.
+  **A tremedeira tinha duas causas**, as duas minhas: um deslocamento aleatório por
+  quadro proporcional a `tremor`, e o `apanhou` contínuo do combate vencendo o soco —
+  em contato os dois ficavam travados numa pose de recuo, sacudindo. Saiu o
+  deslocamento; a pancada agora é um **evento de impacto** que quem bate dispara no
+  alvo aos 42% do golpe (`lutar` → `f.impacto`), e é isso que joga a cabeça de quem
+  apanha pro lado de onde veio, com o tronco atrás e um passo pra trás — forte, ou
+  com pouca vida, cambaleia. Pedra e bomba viram impacto pelo salto de `tremor`.
+  Quem apanha sem revidar se cobre (braços em volta da cabeça, de lado). E o passo só
+  anima acima de 6 px/s (20 na briga): o empurra-empurra da separação não é marcha.
+  **A troca de socos** virou sequência: jab da mão da frente, direto da de trás, gancho,
+  uppercut, chute e empurrão de vez em quando, cada um com armar (quadril e tronco vão
+  antes do ombro), estender e recolher, e pausa em guarda a cada três golpes. A
+  guarda quica na ponta do pé com balanço lateral e ombro rolando. A vitrine ganhou
+  "troca": dois de frente batendo um no outro, pra ver a coreografia.

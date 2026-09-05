@@ -76,6 +76,7 @@ TO.diaJogo.bonecos3 = (function(){
     geo.disco   = new THREE.CircleGeometry(1, 20);
     geo.anel    = new THREE.RingGeometry(0.9, 1, 40);
     geo.pedra   = new THREE.DodecahedronGeometry(1, 0);
+    geo.toro    = new THREE.TorusGeometry(1, 0.18, 8, 20);
     geo.pronto = true;
     return geo;
   }
@@ -138,7 +139,10 @@ TO.diaJogo.bonecos3 = (function(){
     const s = (d.nome||'')+'|'+(d.spawn||'')+'|'+i;
     const camisa = d.cor || corLado(d.lado,false);
     const faixa  = d.cor2 || corLado(d.lado,true);
-    const cabeca = dado(s+'cab', 10);   // 0-4 cabelo, 5-7 boné, 8 bandana, 9 careca
+    /* cabeça: o que tem em cima dela */
+    const CABECAS = ['curto','curto','curto','raspado','raspado','black','moicano','comprido','bone','bone','bone-tras','bucket','bandana','careca'];
+    const tipoCabeca = d.lider ? 'bandana' : CABECAS[dado(s+'cab', CABECAS.length)];
+    const rBarba = frac(s+'bb');
     d._b3 = {
       sem:s, fase:frac(s+'f')*6.28, yaw:frac(s+'y')*6.28,
       pele:PELE[dado(s+'p',PELE.length)],
@@ -146,19 +150,33 @@ TO.diaJogo.bonecos3 = (function(){
       cabelo:CABELO[dado(s+'h',CABELO.length)],
       tenis:TENIS[dado(s+'t',TENIS.length)],
       bermuda: frac(s+'bm') < 0.5,
-      listras: dado(s+'ls', 3),           // 0 lisa, 1 duas faixas, 2 três faixas
-      tipoCabeca: d.lider ? 'bandana' : (cabeca<=4?'cabelo':cabeca<=7?'bone':cabeca===8?'bandana':'careca'),
-      corBone: frac(s+'bc') < 0.6 ? camisa : PRETO,
-      barba: frac(s+'bb') < 0.3,
+      regata: frac(s+'rg') < 0.12,
+      listras: dado(s+'ls', 5),           // 0 lisa, 1 duas faixas, 2 três faixas, 3 vertical, 4 faixa atravessada
+      tipoCabeca,
+      corBone: frac(s+'bc') < 0.55 ? camisa : (frac(s+'bc2') < 0.5 ? PRETO : '#e8e2d0'),
+      barba: rBarba < 0.55 ? 0 : rBarba < 0.72 ? 1 : rBarba < 0.86 ? 2 : 3,   // 0 nada, 1 cavanhaque, 2 cheia, 3 bigode
+      oculos: frac(s+'oc') < 0.80 ? 0 : frac(s+'oc2') < 0.5 ? 1 : 2,       // 0 nada, 1 de grau, 2 escuros
+      brinco: frac(s+'br') < 0.18,
+      relogio: frac(s+'rl') < 0.35,
+      pulseira: frac(s+'pu') < 0.25,
+      corrente: frac(s+'co') < 0.15,
+      cachecol: frac(s+'ca') < 0.14,
+      meia: frac(s+'me') < 0.45,
+      tatuagem: frac(s+'ta') < 0.18,
+      sobrancelha: 0.10 + frac(s+'sb')*0.28,   // inclinação (zangado)
+      cabecaX: 0.92 + frac(s+'cx')*0.16,
+      queixo: 0.85 + frac(s+'qx')*0.3,
+      barriga: frac(s+'bg') < 0.25 ? 1.15 + frac(s+'bg2')*0.2 : 1,
       camisa, faixa,
-      escala: (d.lider ? 1.1 : 0.94 + frac(s+'e')*0.1),
-      largo: 0.92 + frac(s+'lg')*0.2,     // largura de ombro
+      escala: (d.lider ? 1.1 : 0.93 + frac(s+'e')*0.12),
+      largo: 0.9 + frac(s+'lg')*0.24,
       /* memória da animação */
-      soco:0, ladoSoco:dado(s+'ls2',2), tSoco:0, gancho:false,
-      grito:frac(s+'gr')*6, olhaTras:0, tGesto:0, gesto:0,
-      queda:null, caiDeFrente: frac(s+'q') < 0.55, cobre: frac(s+'cb') < 0.6,
+      ladoSoco:dado(s+'ls2',2), ataque:null, pausa:0.2+frac(s+'pa')*0.4, combo:0,
+      impacto:null, cobre: frac(s+'cb') < 0.6,
+      olhaTras:0, tGesto:0, gesto:0,
+      queda:null, caiDeFrente: frac(s+'q') < 0.55,
       px:null, pz:null, vx:0, vz:0, ciclo:0,
-      pose:null, corpo:null
+      pose:null
     };
     return d._b3;
   }
@@ -171,78 +189,147 @@ TO.diaJogo.bonecos3 = (function(){
   function construirCorpo(f, pm){
     const g = G();
     const raiz = new THREE.Group();
-    const L = f.largo;
+    const L = f.largo, B = f.barriga||1, CX = f.cabecaX||1, QX = f.queixo||1;
     const pele=f.pele, camisa=f.camisa, faixa=f.faixa, calca=f.calca, tenis=f.tenis, cabelo=f.cabelo;
+    const OURO = '#d8b04a';
 
     /* pélvis (a raiz do tronco, a 16,5 do chão) */
     const pelvis = junta(raiz, 0, 16.5, 0);
-    new Acumulador().add(g.caixa, calca, 6.4*L, 3.2, 4.2, 0, 0.4, 0).mesh(pelvis);
-    /* tronco: barriga e peito numa malha só, com as listras da torcida */
+    const pv = new Acumulador().add(g.caixa, calca, 6.4*L*B, 3.2, 4.2*B, 0, 0.4, 0);
+    if(!f.bermuda || pm) pv.add(g.caixa, '#2a2420', 6.6*L*B, 0.7, 4.4*B, 0, 1.6, 0);   // cinto
+    pv.mesh(pelvis);
+    /* tronco: barriga e peito numa malha só, com a camisa da torcida */
     const tronco = junta(pelvis, 0, 1.6, 0);
     const tr = new Acumulador()
-      .add(g.caixa, camisa, 6.2*L, 4.2, 4.0, 0, 2.1, 0)             // barriga
-      .add(g.caixa, camisa, 7.2*L, 4.6, 4.4, 0, 6.5, 0);            // peito
-    if(!pm && f.listras>0){
-      tr.add(g.caixa, faixa, 7.3*L, 1.1, 4.5, 0, 6.5, 0);
-      if(f.listras===2) tr.add(g.caixa, faixa, 6.3*L, 1.0, 4.1, 0, 2.1, 0);
-      tr.add(g.caixa, faixa, 7.3*L, 0.6, 4.5, 0, 8.6, 0);           // gola
+      .add(g.caixa, camisa, 6.2*L*B, 4.2, 4.0*B, 0, 2.1, 0)             // barriga
+      .add(g.caixa, camisa, 7.2*L, 4.6, 4.4, 0, 6.5, 0);              // peito
+    if(!pm){
+      if(f.listras===1 || f.listras===2){
+        tr.add(g.caixa, faixa, 7.3*L, 1.1, 4.5, 0, 6.5, 0);
+        if(f.listras===2) tr.add(g.caixa, faixa, 6.3*L*B, 1.0, 4.1*B, 0, 2.1, 0);
+      } else if(f.listras===3){
+        for(const sx of [-1,1]) tr.add(g.caixa, faixa, 1.3, 4.7, 4.5, sx*1.9*L, 6.5, 0);
+      } else if(f.listras===4){
+        tr.add(g.caixa, faixa, 1.6, 9.2, 4.6, 0, 4.6, 0, 0, 0, 0.55);   // faixa atravessada
+      }
+      tr.add(g.caixa, faixa, 7.3*L, 0.6, 4.5, 0, 8.6, 0);              // gola
+      if(f.corrente) tr.add(g.toro, OURO, 2.2, 2.2, 2.2, 0, 8.4, 1.2, 1.2, 0, 0);
+      if(f.cachecol) tr.add(g.toro, faixa, 2.8, 2.8, 2.8, 0, 8.9, 0.4, 1.35, 0, 0).add(g.caixa, faixa, 1.6, 4.5, 0.8, 1.6, 6.2, 2.4);
+    } else {
+      tr.add(g.caixa, '#1b2a22', 7.4*L, 4.7, 4.6, 0, 6.5, 0).add(g.caixa, '#c9d64a', 7.5*L, 0.7, 4.7, 0, 6.8, 0)
+        .add(g.caixa, '#c9d64a', 7.5*L, 0.5, 4.7, 0, 5.4, 0);
     }
-    if(pm){ tr.add(g.caixa, '#1b2a22', 7.4*L, 4.7, 4.6, 0, 6.5, 0).add(g.caixa, '#c9d64a', 7.5*L, 0.7, 4.7, 0, 6.8, 0); }
-    tr.add(g.cil, pele, 1.8, 1.4, 1.8, 0, 9.5, 0);                  // pescoço
+    tr.add(g.cil, pele, 1.9, 1.5, 1.9, 0, 9.5, 0);                    // pescoço
     tr.mesh(tronco);
-    const peito = junta(tronco, 0, 4.2, 0);      // só uma junta de referência (ombros pendem daqui)
+    const peito = junta(tronco, 0, 4.2, 0);
     const pescoco = junta(peito, 0, 4.6, 0);
 
-    /* cabeça: crânio, rosto e o que tem por cima, numa malha só */
+    /* CABEÇA: crânio, mandíbula e queixo (não é uma bola), rosto,
+       cabelo ou chapéu, óculos, barba, brinco — numa malha só */
     const cabeca = junta(pescoco, 0, 1.4, 0);
-    const cb = new Acumulador().add(g.esfera, pele, 3.1, 3.4, 3.1, 0, 3.0, 0);
+    const cb = new Acumulador()
+      .add(g.esfera, pele, 3.15*CX, 3.0, 3.05, 0, 3.6, 0)                     // crânio
+      .add(g.caixa, pele, 4.9*CX, 2.3*QX, 3.9, 0, 1.75, 0.35)                  // mandíbula
+      .add(g.caixa, pele, 3.4*CX, 1.9*QX, 3.0, 0, 1.3, 1.0)                    // maxilar da frente
+      .add(g.caixa, pele, 2.0*CX, 1.2, 1.6, 0, 0.75, 1.7)                      // queixo
+      .add(g.caixa, pele, 5.6*CX, 1.6, 3.2, 0, 2.7, 0.2);                      // maçãs do rosto
     for(const sx of [-1,1]){
-      cb.add(g.esfera, BRANCO, 0.62, 0.5, 0.35, sx*1.1, 3.4, 2.75)
-        .add(g.esfera, PRETO, 0.3, 0.3, 0.25, sx*1.1, 3.4, 3.05)
-        .add(g.caixa, cabelo, 1.1, 0.25, 0.3, sx*1.1, 4.05, 2.85)
-        .add(g.esfera, pele, 0.45, 0.7, 0.4, sx*3.1, 3.1, 0.3);
+      cb.add(g.esfera, BRANCO, 0.66, 0.5, 0.36, sx*1.15*CX, 3.55, 2.8)
+        .add(g.esfera, '#2a1a10', 0.34, 0.34, 0.26, sx*1.15*CX, 3.55, 3.1)
+        .add(g.esfera, PRETO, 0.16, 0.16, 0.16, sx*1.15*CX, 3.55, 3.3)
+        .add(g.caixa, pele, 1.4, 0.35, 0.5, sx*1.15*CX, 3.95, 2.85)             // pálpebra
+        .add(g.caixa, cabelo, 1.3, 0.28, 0.35, sx*1.15*CX, 4.25, 2.9, 0, 0, sx*f.sobrancelha)
+        .add(g.esfera, pele, 0.5, 0.8, 0.45, sx*3.1*CX, 3.2, 0.2);            // orelha
     }
-    cb.add(g.caixa, pele, 0.7, 1.0, 0.8, 0, 2.9, 3.0)               // nariz
-      .add(g.caixa, '#5a2a24', 1.3, 0.3, 0.3, 0, 2.0, 2.95);         // boca
-    if(f.barba) cb.add(g.caixa, cabelo, 3.0, 1.4, 2.2, 0, 1.6, 1.6);
+    cb.add(g.caixa, pele, 0.9, 1.6, 0.9, 0, 2.85, 2.9)                        // nariz
+      .add(g.caixa, pele, 0.6, 1.2, 0.8, 0, 3.6, 2.75)                        // dorso do nariz
+      .add(g.caixa, '#5a2a24', 1.5, 0.32, 0.3, 0, 1.75, 2.62);                // boca
+    if(f.brinco) cb.add(g.esfera, OURO, 0.28, 0.28, 0.28, -3.35*CX, 2.75, 0.4);
+    /* barba: cavanhaque, cheia ou bigode */
+    if(f.barba===1) cb.add(g.caixa, cabelo, 2.2, 1.7, 1.7, 0, 0.95, 1.85);
+    else if(f.barba===2) cb.add(g.caixa, cabelo, 5.1*CX, 2.3*QX, 4.1, 0, 1.6, 0.45).add(g.caixa, cabelo, 3.5*CX, 1.6, 3.2, 0, 1.2, 1.15);
+    else if(f.barba===3) cb.add(g.caixa, cabelo, 2.3, 0.45, 0.5, 0, 2.25, 2.85);
+    /* óculos: de grau (lente à parte, transparente) ou escuros */
+    if(f.oculos){
+      const arm = f.oculos===2 ? PRETO : '#3a3a3a';
+      for(const sx of [-1,1]){
+        cb.add(g.caixa, arm, 1.9, 1.4, 0.18, sx*1.15*CX, 3.55, 3.32);
+        cb.add(g.caixa, arm, 0.16, 0.16, 3.4, sx*2.2*CX, 3.7, 1.6);            // haste
+      }
+      cb.add(g.caixa, arm, 0.7, 0.18, 0.18, 0, 3.75, 3.35);                    // ponte
+      if(f.oculos===1){
+        const lente = new Acumulador();
+        for(const sx of [-1,1]) lente.add(g.caixa, '#9ec6e8', 1.6, 1.15, 0.12, sx*1.15*CX, 3.55, 3.4);
+        lente.mesh(cabeca, true);
+      }
+    }
+    /* cabelo ou chapéu */
     if(pm){
-      cb.add(g.cil, '#1c2a22', 3.4, 1.5, 3.4, 0, 5.4, 0).add(g.caixa, '#1c2a22', 3.2, 0.3, 2.2, 0, 4.9, 3.1);
-    } else if(f.tipoCabeca==='cabelo'){
-      cb.add(g.esfera, cabelo, 3.25, 3.0, 3.25, 0, 3.7, -0.3).add(g.caixa, cabelo, 6.2, 1.2, 1.2, 0, 4.6, 0.9);
-    } else if(f.tipoCabeca==='bone'){
-      cb.add(g.esfera, f.corBone, 3.3, 2.2, 3.3, 0, 4.6, 0).add(g.caixa, f.corBone, 3.4, 0.35, 2.6, 0, 4.9, 3.3)
-        .add(g.caixa, cabelo, 6.0, 0.8, 5.6, 0, 3.7, -0.4);
+      cb.add(g.cil, '#1c2a22', 3.5, 1.6, 3.5, 0, 5.6, 0).add(g.caixa, '#1c2a22', 3.3, 0.3, 2.3, 0, 5.1, 3.1)
+        .add(g.caixa, OURO, 0.9, 0.6, 0.2, 0, 5.6, 3.4);
+    } else if(f.tipoCabeca==='curto'){
+      cb.add(g.esfera, cabelo, 3.35*CX, 2.9, 3.25, 0, 4.2, -0.35).add(g.caixa, cabelo, 6.0*CX, 1.0, 1.4, 0, 5.3, 1.0);
+    } else if(f.tipoCabeca==='raspado'){
+      cb.add(g.esfera, cabelo, 3.22*CX, 2.7, 3.1, 0, 4.15, -0.3);
+    } else if(f.tipoCabeca==='black'){
+      cb.add(g.esfera, cabelo, 4.4*CX, 4.0, 4.3, 0, 4.9, -0.2);
+    } else if(f.tipoCabeca==='moicano'){
+      cb.add(g.esfera, cabelo, 3.22*CX, 2.6, 3.1, 0, 4.1, -0.3).add(g.caixa, cabelo, 1.5, 2.4, 5.6, 0, 6.4, -0.3);
+    } else if(f.tipoCabeca==='comprido'){
+      cb.add(g.esfera, cabelo, 3.4*CX, 3.0, 3.35, 0, 4.2, -0.35).add(g.caixa, cabelo, 5.2*CX, 4.6, 2.2, 0, 1.6, -2.5)
+        .add(g.caixa, cabelo, 6.1*CX, 1.0, 1.4, 0, 5.3, 1.0);
+    } else if(f.tipoCabeca==='bone' || f.tipoCabeca==='bone-tras'){
+      const tras = f.tipoCabeca==='bone-tras';
+      cb.add(g.esfera, f.corBone, 3.4*CX, 2.3, 3.3, 0, 5.0, 0).add(g.toro, f.corBone, 3.1*CX, 3.1, 3.1, 0, 4.45, 0, 1.57, 0, 0)
+        .add(g.caixa, f.corBone, 3.6, 0.35, 2.8, 0, 4.9, tras ? -3.5 : 3.5)
+        .add(g.caixa, cabelo, 6.1*CX, 0.9, 5.6, 0, 3.9, -0.4);
+      if(!tras) cb.add(g.caixa, faixa, 1.4, 0.8, 0.2, 0, 5.4, 3.35);          // escudo do boné
+    } else if(f.tipoCabeca==='bucket'){
+      cb.add(g.cil, f.corBone, 6.6*CX, 2.4, 6.4, 0, 5.2, 0).add(g.cil, f.corBone, 9.4*CX, 0.35, 9.2, 0, 4.1, 0);
     } else if(f.tipoCabeca==='bandana'){
-      cb.add(g.cil, faixa, 6.5, 1.1, 6.5, 0, 4.5, 0).add(g.caixa, faixa, 1.0, 2.2, 0.4, 1.6, 3.6, -3.0)
-        .add(g.esfera, cabelo, 3.15, 2.2, 3.15, 0, 4.8, -0.3);
+      cb.add(g.cil, faixa, 6.7*CX, 1.2, 6.5, 0, 4.7, 0).add(g.caixa, faixa, 1.0, 2.4, 0.4, 1.7, 3.7, -3.1)
+        .add(g.esfera, cabelo, 3.2*CX, 2.3, 3.1, 0, 5.0, -0.3);
     } else {
-      cb.add(g.caixa, cabelo, 5.0, 0.5, 4.0, 0, 3.2, -1.2);
+      cb.add(g.caixa, cabelo, 5.2*CX, 0.5, 3.5, 0, 3.3, -1.4);                 // careca: só a nuca
     }
     cb.mesh(cabeca);
 
-    /* braços: ombro no topo do peito; manga + braço numa malha, antebraço, mão */
+    /* braços: ombro no topo do peito; manga + braço, antebraço (com
+       relógio, pulseira ou tatuagem), mão */
     const bracos = [], antebracos = [], maos = [];
-    for(const sx of [-1,1]){
+    for(const [k, sx] of [[0,-1],[1,1]]){
       const ombro = junta(peito, sx*(3.9*L+0.4), 4.0, 0);
-      new Acumulador().capsula(6.0, 1.05, pele, 0, -3.0, 0).capsula(3.4, 1.3, camisa, 0, -1.5, 0).mesh(ombro);
+      const br = new Acumulador().capsula(6.0, 1.1, pele, 0, -3.0, 0);
+      if(!f.regata || pm) br.capsula(3.4, 1.35, pm ? '#233a2c' : camisa, 0, -1.5, 0);
+      br.mesh(ombro);
       const cotovelo = junta(ombro, 0, -6.0, 0);
-      new Acumulador().capsula(5.6, 0.95, pele, 0, -2.8, 0).mesh(cotovelo);
+      const ab = new Acumulador().capsula(5.6, 0.98, pele, 0, -2.8, 0);
+      if(k===1 && f.tatuagem && !pm) ab.capsula(2.6, 1.02, '#4a3a34', 0, -2.6, 0);
+      if(k===0 && f.relogio && !pm) ab.add(g.cil, '#222', 2.4, 0.7, 2.4, 0, -5.0, 0).add(g.caixa, '#cfd3d8', 1.3, 0.75, 0.5, 0, -5.0, 1.05);
+      if(k===1 && f.pulseira && !pm) ab.add(g.cil, faixa, 2.35, 0.8, 2.35, 0, -5.0, 0);
+      if(pm) ab.add(g.cil, '#111', 2.5, 0.9, 2.5, 0, -5.0, 0);               // luva
+      ab.mesh(cotovelo);
       const mao = junta(cotovelo, 0, -5.6, 0);
-      const punho = new Acumulador().add(g.esfera, pele, 1.25, 1.35, 1.2, 0, -0.9, 0).mesh(mao);
+      const punho = new Acumulador().add(g.esfera, pm ? '#111' : pele, 1.25, 1.4, 1.15, 0, -0.9, 0).mesh(mao);
       bracos.push(ombro); antebracos.push(cotovelo); maos.push({j:mao, punho});
     }
 
-    /* pernas: quadril pendurado na pélvis; coxa, canela, pé */
+    /* pernas: quadril pendurado na pélvis; coxa, canela (com meia), pé */
     const coxas = [], joelhos = [], pes = [];
     for(const sx of [-1,1]){
       const quadril = junta(pelvis, sx*2.0*L, -0.6, 0);
-      const cx = new Acumulador().capsula(7.6, 1.5, calca, 0, -3.8, 0);
-      if(f.bermuda && !pm) cx.capsula(3.2, 1.25, pele, 0, -6.6, 0);
+      const cx = new Acumulador().capsula(7.6, 1.55, calca, 0, -3.8, 0);
+      if(f.bermuda && !pm) cx.capsula(3.2, 1.3, pele, 0, -6.6, 0);
       cx.mesh(quadril);
       const joelho = junta(quadril, 0, -7.6, 0);
-      new Acumulador().capsula(7.0, 1.2, (f.bermuda && !pm) ? pele : calca, 0, -3.5, 0).mesh(joelho);
+      const cn = new Acumulador().capsula(7.0, 1.22, (f.bermuda && !pm) ? pele : calca, 0, -3.5, 0);
+      if(f.bermuda && f.meia && !pm) cn.add(g.cil, frac(f.sem+'mc')<0.7 ? BRANCO : PRETO, 2.6, 1.6, 2.6, 0, -6.0, 0);
+      if(pm) cn.add(g.cil, '#111', 2.8, 3.2, 2.8, 0, -5.4, 0);               // coturno
+      cn.mesh(joelho);
       const pe = junta(joelho, 0, -7.0, 0);
-      new Acumulador().add(g.caixa, tenis, 2.6, 1.6, 4.2, 0, -0.6, 0.9).add(g.caixa, '#333', 2.7, 0.5, 4.3, 0, -1.25, 0.9).mesh(pe);
+      new Acumulador().add(g.caixa, pm ? '#111' : tenis, 2.7, 1.7, 4.4, 0, -0.6, 0.9)
+        .add(g.caixa, '#333', 2.8, 0.5, 4.5, 0, -1.25, 0.9)
+        .add(g.caixa, tenis===BRANCO||tenis==='#f0f0f0'||tenis==='#e8e8e8' ? '#c0392b' : BRANCO, 2.85, 0.35, 1.6, 0, -0.7, 0.4).mesh(pe);
       coxas.push(quadril); joelhos.push(joelho); pes.push(pe);
     }
 
@@ -332,8 +419,10 @@ TO.diaJogo.bonecos3 = (function(){
     p.ombro = [0.08, 0.08]; p.cotovelo = [-0.3, -0.35];
   }
   /* andar e correr: ciclo pela velocidade medida */
-  function passo(p, f, vel, dt, corre){
-    if(vel < 3){ f.ciclo += dt*0.6; return false; }
+  function passo(p, f, vel, dt, corre, minimo){
+    /* abaixo do mínimo é empurra-empurra da separação, não passo: quem
+       está na troca de socos não fica marchando no lugar */
+    if(vel < (minimo||6)){ f.ciclo += dt*0.6; return false; }
     const freq = corre ? 0.085 : 0.075;
     f.ciclo += vel*freq*dt*6.28*0.36;
     const c = f.ciclo, s = Math.sin(c), s2 = Math.sin(c+Math.PI);
@@ -355,47 +444,105 @@ TO.diaJogo.bonecos3 = (function(){
     return true;
   }
   /* socar: jab e direto alternados, gancho de vez em quando; o corpo vai junto */
-  function socar(p, f, dt, t){
-    f.tSoco -= dt;
-    if(f.tSoco <= 0){
-      f.ladoSoco = 1 - f.ladoSoco; f.soco = 0;
-      f.gancho = Math.random() < 0.28;
-      f.tSoco = f.gancho ? 0.46 : 0.34;
-    }
-    f.soco += dt;
-    const k = f.soco/(f.gancho?0.46:0.34);
-    const ida = suave(k/0.38), volta = suave((k-0.55)/0.45);
-    const ext = ida*(1-volta);              // 0→1→0
-    const b = f.ladoSoco, o = 1-b;
-    if(f.gancho){
-      p.ombro[b] = mistura(-0.6, -1.5, ext); p.ombroZ[b] = mistura(1.2, 0.5, ext);
-      p.cotovelo[b] = mistura(-1.9, -1.4, ext); p.maoZ[b] = mistura(0, 0.6, ext);
-      p.gira = (b===1?1:-1)*mistura(0.35, -0.55, ext);
-    } else {
-      p.ombro[b] = mistura(-0.7, -1.62, ext); p.ombroZ[b] = mistura(0.3, 0.05, ext);
-      p.cotovelo[b] = mistura(-2.0, -0.12, ext);
-      p.gira = (b===1?1:-1)*mistura(0.25, -0.35, ext);
-    }
-    p.punho[b] = 1; p.punho[o] = 1;
-    /* a outra mão fica em guarda, o corpo entra no golpe */
-    p.ombro[o] = -1.35; p.cotovelo[o] = -2.25; p.ombroZ[o] = 0.25;
-    p.inclina = 0.22 + ext*0.18;
-    p.coxa = [b===0?-0.35:0.25, b===1?-0.35:0.25];
-    p.joelho = [0.35, 0.35]; p.pe = [0, 0];
-    p.y = -1.2 - ext*0.6;
-    p.olhaX = 0.18; p.olhaY = (b===1?1:-1)*ext*0.15;
+  /* A TROCA DE SOCOS. Não é um soco repetido: é uma sequência — jab da
+     mão da frente, direto da de trás, gancho, uppercut, um chute e um
+     empurrão de vez em quando — com pausa em guarda entre as
+     sequências, que é o que dá ritmo de briga de verdade. Cada golpe
+     tem armar (o quadril e o tronco vão antes do ombro), estender e
+     recolher. NO MOMENTO DO IMPACTO (42% do golpe) o alvo é avisado
+     (`f.impacto`): é ele quem move a cabeça de quem apanha, e não o
+     `apanhou` contínuo do combate — era isso que deixava dois discos
+     tremendo um na frente do outro. */
+  const GOLPES = {
+    jab:{dur:0.30, forca:0.5}, direto:{dur:0.40, forca:0.85}, gancho:{dur:0.46, forca:1.1},
+    uppercut:{dur:0.44, forca:1.0}, chute:{dur:0.62, forca:1.2}, empurrao:{dur:0.52, forca:0.7}
+  };
+  function escolherGolpe(f){
+    const r = Math.random();
+    const tipo = r<0.36?'jab' : r<0.64?'direto' : r<0.80?'gancho' : r<0.89?'uppercut' : r<0.95?'chute' : 'empurrao';
+    const lado = tipo==='jab' ? 0 : tipo==='direto' ? 1 : (f.ladoSoco = 1 - f.ladoSoco);
+    f.ataque = {tipo, t:0, dur:GOLPES[tipo].dur, lado, bateu:false};
+    f.combo++;
   }
-  /* guarda: punhos em frente ao queixo, quicando */
+  function lutar(p, f, d, dt, t){
+    guarda(p, f, t);
+    if(!f.ataque){
+      f.pausa -= dt;
+      if(f.pausa <= 0) escolherGolpe(f);
+      else return;
+    }
+    const a = f.ataque; a.t += dt;
+    const k = Math.min(1, a.t/a.dur);
+    if(!a.bateu && k >= 0.42){
+      a.bateu = true;
+      const alvo = d._alvo;
+      if(alvo && alvo._b3 && alvo.vivo){
+        const dx = alvo.x-d.x, dz = alvo.y-d.y;
+        const lado = Math.sign(Math.sin(alvo._b3.yaw)*dz - Math.cos(alvo._b3.yaw)*dx) || 1;
+        alvo._b3.impacto = {t:0, dur: a.tipo==='jab'?0.26:0.36, forca:GOLPES[a.tipo].forca, lado, tipo:a.tipo};
+      }
+    }
+    const ida = suave(k/0.42), volta = suave((k-0.55)/0.45), ext = ida*(1-volta);
+    const b = a.lado, o = 1-b, sg = b===1 ? 1 : -1;
+    /* o quadril vai antes do ombro: a rotação do tronco arma um pouco antes */
+    const arma = suave(k/0.25);
+    switch(a.tipo){
+      case 'jab':
+        p.ombro[b] = mistura(-1.25, -1.62, ext); p.ombroZ[b] = mistura(0.25, 0.05, ext);
+        p.cotovelo[b] = mistura(-2.3, -0.1, ext); p.maoZ[b] = 0;
+        p.gira = sg*mistura(0.05, -0.18, ext); p.inclina = 0.2 + ext*0.06;
+        p.y = -1.5 - ext*0.3; break;
+      case 'direto':
+        p.ombro[b] = mistura(-1.1, -1.65, ext); p.ombroZ[b] = mistura(0.35, 0.02, ext);
+        p.cotovelo[b] = mistura(-2.35, -0.08, ext);
+        p.gira = sg*mistura(mistura(0.15, 0.4, arma), -0.5, ext); p.inclina = 0.2 + ext*0.22;
+        p.coxa = [b===0?-0.4:0.3, b===1?-0.4:0.3]; p.joelho = [0.4, 0.3]; p.pe[o] = ext*0.5;
+        p.y = -1.6 - ext*0.7; p.olhaY = -sg*ext*0.12; break;
+      case 'gancho':
+        p.ombro[b] = mistura(-0.9, -1.55, ext); p.ombroZ[b] = mistura(1.35, 0.35, ext);
+        p.cotovelo[b] = mistura(-1.7, -1.5, ext); p.maoZ[b] = mistura(0.2, 0.8, ext);
+        p.gira = sg*mistura(mistura(0.2, 0.5, arma), -0.65, ext); p.inclina = 0.22;
+        p.coxa = [b===0?-0.3:0.25, b===1?-0.3:0.25]; p.joelho = [0.4, 0.4];
+        p.y = -1.8 - ext*0.4; break;
+      case 'uppercut':
+        p.ombro[b] = mistura(0.25, -1.35, ext); p.ombroZ[b] = mistura(0.35, 0.15, ext);
+        p.cotovelo[b] = mistura(-1.1, -2.35, ext); p.maoZ[b] = 0.3;
+        p.gira = sg*mistura(0.35, -0.3, ext); p.inclina = mistura(0.35, -0.05, ext);
+        p.joelho = [mistura(0.7, 0.2, ext), mistura(0.7, 0.2, ext)];
+        p.y = mistura(-3.0, -0.4, ext); p.olhaX = mistura(0.25, -0.15, ext); break;
+      case 'chute':
+        p.coxa[b] = mistura(mistura(0.1, 0.55, arma), -1.55, ext); p.joelho[b] = mistura(1.3, 0.15, ext); p.pe[b] = mistura(0.4, -0.3, ext);
+        p.coxa[o] = 0.15; p.joelho[o] = 0.25;
+        p.ombro = [-0.7, -0.7]; p.ombroZ = [0.7, 0.7]; p.cotovelo = [-1.3, -1.3];
+        p.inclina = mistura(0.2, -0.3, ext); p.gira = sg*mistura(0.2, -0.25, ext);
+        p.y = -1.2 - ext*0.6; break;
+      case 'empurrao':
+        p.ombro = [mistura(-0.8, -1.5, ext), mistura(-0.8, -1.5, ext)]; p.ombroZ = [0.35, 0.35];
+        p.cotovelo = [mistura(-2.2, -0.15, ext), mistura(-2.2, -0.15, ext)]; p.punho = [0, 0];
+        p.inclina = 0.15 + ext*0.3; p.coxa = [-0.5, 0.35]; p.joelho = [0.45, 0.25]; p.pe[1] = ext*0.5;
+        p.y = -1.4 - ext*0.6; break;
+    }
+    if(k >= 1){
+      f.ataque = null;
+      /* a cada três golpes, respira: 0,35 a 0,9 s em guarda */
+      f.pausa = (f.combo % 3 === 0) ? 0.35 + Math.random()*0.55 : 0.04 + Math.random()*0.16;
+    }
+  }
+
+  /* guarda: punhos em frente ao queixo, quicando na ponta do pé, com
+     um balanço lateral e o ombro rolando — o corpo nunca está duro */
   function guarda(p, f, t){
-    const q = Math.abs(Math.sin(t*5.5 + f.fase));
-    p.ombro = [-1.25, -1.25]; p.cotovelo = [-2.3, -2.3]; p.ombroZ = [0.25, 0.25];
+    const w = t*5.5 + f.fase;
+    const q = Math.abs(Math.sin(w));
+    p.ombro = [-1.3, -1.2]; p.cotovelo = [-2.35, -2.3]; p.ombroZ = [0.22, 0.28]; p.maoZ = [0.15, 0.15];
     p.punho = [1, 1];
-    p.inclina = 0.2; p.olhaX = 0.2;
-    p.coxa = [-0.25, 0.25]; p.joelho = [0.4, 0.4];
-    p.y = -1.5 + q*0.8;
-    p.gira = 0.15*Math.sin(t*2.2+f.fase);
+    p.inclina = 0.2 + 0.03*Math.sin(w*0.5); p.olhaX = 0.18;
+    p.coxa = [-0.3, 0.3]; p.joelho = [0.42, 0.38];
+    p.y = -1.6 + q*0.9;
+    p.gira = 0.12*Math.sin(t*2.2+f.fase); p.tomba = 0.06*Math.sin(t*1.7+f.fase*2);
+    p.olhaY = 0.08*Math.sin(t*1.3+f.fase);
   }
-  /* a retaguarda: grita, aponta, levanta o braço, pula — em turnos */
+
   function torcer(p, f, t, dt){
     f.tGesto -= dt;
     if(f.tGesto <= 0){ f.gesto = dado(f.sem+'|g'+Math.floor(t/2.3), 4); f.tGesto = 1.6 + Math.random()*1.8; }
@@ -417,16 +564,37 @@ TO.diaJogo.bonecos3 = (function(){
     }
   }
   /* levar pancada: cabeça vai, tronco vai atrás, um passo pra trás */
-  function apanhar(p, f, k, t){
-    const r = suave(k);
-    const lado = Math.sin(f.fase*3) > 0 ? 1 : -1;
-    p.olhaX = -0.6*r; p.olhaY = lado*0.5*r;
-    p.inclina = -0.35*r; p.tomba = lado*0.18*r; p.gira = lado*0.2*r;
-    p.coxa = [0.35*r, -0.15*r]; p.joelho = [0.3*r, 0.35*r];
-    p.ombro = [-0.9*r, -0.6*r]; p.ombroZ = [0.7*r, 0.5*r]; p.cotovelo = [-1.4*r, -1.1*r];
-    p.y = -0.8*r;
+  /* quem está apanhando sem revidar se cobre: braços em volta da
+     cabeça, queixo enterrado, meio de lado, encolhido */
+  function cobrirSe(p, f, t){
+    const w = t*6 + f.fase;
+    if(f.cobre){ p.ombro = [-2.4, -2.5]; p.cotovelo = [-2.5, -2.5]; p.ombroZ = [0.5, 0.45]; p.maoZ = [0.5, 0.5]; }
+    else { p.ombro = [-1.5, -1.4]; p.cotovelo = [-2.4, -2.4]; p.ombroZ = [0.3, 0.3]; }
+    p.punho = [1, 1];
+    p.inclina = 0.4 + 0.03*Math.sin(w); p.gira = -0.35; p.tomba = 0.12;
+    p.olhaX = 0.5; p.olhaY = -0.3;
+    p.coxa = [-0.2, 0.3]; p.joelho = [0.55, 0.5];
+    p.y = -2.6;
   }
-  /* atordoado: balança, joelho mole, braço solto, cabeça rodando */
+  /* O IMPACTO: avisado por quem bateu (`lutar`), ou pela pedra/bomba
+     (`tremor` alto). Vai por cima da pose que estiver valendo: a cabeça
+     vai pro lado de onde veio, o tronco atrás, um passo pra trás; forte
+     e com pouca vida, cambaleia. */
+  function flinch(p, f, d, dt){
+    const im = f.impacto; if(!im) return;
+    im.t += dt;
+    if(im.t >= im.dur){ f.impacto = null; return; }
+    const k = im.t/im.dur;
+    const r = Math.sin(Math.min(1, k*1.6)*Math.PI/2) * (1 - suave((k-0.4)/0.6));   // sobe rápido, desce devagar
+    const F = im.forca, L = im.lado;
+    p.olhaX -= 0.55*F*r; p.olhaY += L*0.45*F*r;
+    p.inclina -= 0.28*F*r; p.tomba += L*0.14*F*r; p.gira += L*0.18*F*r;
+    p.y -= 0.6*F*r;
+    p.ombro[0] += 0.5*F*r; p.ombro[1] += 0.4*F*r; p.ombroZ[0] += 0.35*F*r; p.ombroZ[1] += 0.3*F*r;
+    const fraco = d.hpMax ? d.hp/d.hpMax < 0.35 : false;
+    if(F >= 1 || fraco){ p.coxa[0] += 0.45*r; p.joelho[0] += 0.3*r; p.joelho[1] += 0.25*r; p.inclina -= 0.15*r; }
+  }
+
   function cambalear(p, f, t){
     const w = t*3.2 + f.fase;
     p.tomba = 0.25*Math.sin(w); p.inclina = 0.12 + 0.12*Math.sin(w*0.7);
@@ -526,7 +694,8 @@ TO.diaJogo.bonecos3 = (function(){
       pele:PELE[dado(s+'p',PELE.length)], calca:'#1b2620', cabelo:'#111', tenis:'#111',
       bermuda:false, listras:0, tipoCabeca:'bone', corBone:'#1c2a22', barba:frac(s+'bb')<0.3,
       camisa:'#233a2c', faixa:'#2d4a38', escala:1.06, largo:1.08,
-      soco:0, ladoSoco:1, tSoco:0, gancho:false, grito:0, olhaTras:0, tGesto:0, gesto:0,
+      ladoSoco:1, ataque:null, pausa:0.3, combo:0, impacto:null, olhaTras:0, tGesto:0, gesto:0,
+      sobrancelha:0.3, cabecaX:1, queixo:1.1, barriga:1, oculos:0, barba:frac(s+'bb')<0.3?2:0,
       queda:null, caiDeFrente:frac(s+'q')<0.5, cobre:true, px:null, pz:null, vx:0, vz:0, ciclo:0, pose:null};
     return pm._b3;
   }
@@ -540,10 +709,12 @@ TO.diaJogo.bonecos3 = (function(){
     if(!d.vivo){
       if(d.preso){ sentar(p, f, t); f.queda = null; rapidez = 6; }
       else { cair(p, f, dt); rapidez = 14; }
+      f.impacto = null; f.ataque = null;
     } else {
       f.queda = null;
       const vel = medirVelocidade(f, d.x, d.y, dt);
       const corre = !!(d.fugindo || d._cacando || d.fugaBomba);
+      const emBriga = d.golpe > 0 || d.apanhou > 0 || d.hostil > 0;
       if(typeof d.rumo === 'number') f.yaw = girar(f.yaw, d.rumo, Math.min(1, dt*14));
       else if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*10));
       if(d.arremesso && d.arremesso.t > 0.4){
@@ -551,24 +722,29 @@ TO.diaJogo.bonecos3 = (function(){
         if(pr) f.yaw = girar(f.yaw, Math.atan2(pr.vx, pr.vy), Math.min(1, dt*18));
       }
 
-      const andando = passo(p, f, vel, dt, corre);
+      /* pedra ou bomba: o combate sobe `tremor` de uma vez; vira um impacto */
+      if(d.tremor >= 4.5 && !f.impacto && d.golpe <= 0)
+        f.impacto = {t:0, dur:0.4, forca:1.1, lado: Math.sin(f.fase)>0?1:-1, tipo:'pedra'};
+
+      const andando = passo(p, f, vel, dt, corre, emBriga ? 20 : 6);
       if(!andando) parado(p, f, t);
       if(corre && d.fugindo) fugir(p, f, t, dt);
       if(d.fugaBomba) cobrir(p);
 
-      if(d.atordoado > 0){ cambalear(p, f, t); rapidez = 7; }
-      else if(d.apanhou > 0){ apanhar(p, f, d.apanhou/0.5, t); rapidez = 22; }
-      else if(d.arremesso){ arremessar(p, f, d.arremesso); rapidez = 26; }
-      else if(d.golpe > 0){ socar(p, f, dt, t); rapidez = 30; }
-      else if(d.hostil > 0 && vel < 6 && !corre){ guarda(p, f, t); rapidez = 12; f.soco = 0; f.tSoco = 0; }
-      else if(!andando && d.linha==='retaguarda' && !J.paz){ torcer(p, f, t, dt); rapidez = 9; }
-      else { f.soco = 0; f.tSoco = 0; rapidez = andando ? 14 : 5; }
+      if(d.atordoado > 0){ cambalear(p, f, t); rapidez = 7; f.ataque = null; }
+      else if(d.arremesso){ arremessar(p, f, d.arremesso); rapidez = 26; f.ataque = null; }
+      else if(d.golpe > 0){ lutar(p, f, d, dt, t); rapidez = 30; }
+      else if(d.apanhou > 0 && !andando){ cobrirSe(p, f, t); rapidez = 16; f.ataque = null; }
+      else if(d.hostil > 0 && !andando && !corre){ guarda(p, f, t); rapidez = 12; f.ataque = null; }
+      else if(!andando && d.linha==='retaguarda' && !J.paz){ torcer(p, f, t, dt); rapidez = 9; f.ataque = null; }
+      else { f.ataque = null; rapidez = andando ? 14 : 5; }
+      flinch(p, f, d, dt);
     }
 
     misturarPose(f.pose, p, Math.min(1, dt*rapidez));
-    const tx = d.tremor ? (Math.random()-0.5)*d.tremor*0.6 : 0;
-    const tz = d.tremor ? (Math.random()-0.5)*d.tremor*0.6 : 0;
-    c.raiz.position.set(d.x+tx, 0, d.y+tz);
+    /* sem deslocamento aleatório: o disco fica onde o combate o pôs.
+       A pancada aparece no corpo (`flinch`), não no chão. */
+    c.raiz.position.set(d.x, 0, d.y);
     c.raiz.rotation.y = f.yaw;
     aplicarPose(c, f.pose, f.escala*escalaDeCima*0.86);
     c.sombra.scale.set(8.5*(d.vivo?1:1.6), 6.5*(d.vivo?1:1.3), 1);
@@ -584,7 +760,7 @@ TO.diaJogo.bonecos3 = (function(){
       f.queda = null;
       const vel = medirVelocidade(f, pm.x, pm.y, dt);
       if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*8));
-      const andando = passo(p, f, vel, dt, false);
+      const andando = passo(p, f, vel, dt, false, 6);
       if(!andando) parado(p, f, J.t);
       /* cassetete na mão: braço direito meio dobrado */
       p.ombro[1] = Math.min(p.ombro[1], -0.5); p.cotovelo[1] = -1.6;

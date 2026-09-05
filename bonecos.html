@@ -42,7 +42,7 @@
     ['correr',   (d,t)=>{ anda(d,t,78); d._cacando=true; }],
     ['socar',    (d,t)=>{ d.golpe=0.12; d.hostil=3; }],
     ['guarda',   (d,t)=>{ d.hostil=3; }],
-    ['apanhar',  (d,t)=>{ d.apanhou=Math.max(0, 0.5-(t%1.3)); d.tremor=d.apanhou>0.3?3:0; }],
+    ['apanhar',  (d,t)=>{ d.apanhou=0.3; if(d._b3 && !d._b3.impacto && (t%1.1)<0.03) d._b3.impacto={t:0,dur:0.36,forca:0.9,lado:(Math.floor(t/1.1)%2?1:-1),tipo:'direto'}; }],
     ['atordoado',(d,t)=>{ d.atordoado=1; }],
     ['arremesso',(d,t)=>{ const k=t%1.6; d.arremesso = k<0.55 ? {t:0.55-k, tipo:'pedra'} : null; d.hostil=3; }],
     ['fugir',    (d,t)=>{ anda(d,t,78); d.fugindo=true; }],
@@ -50,7 +50,9 @@
     ['cair',     (d,t)=>{ d.caido = (t%4.5) > 0.9; }],
     ['preso',    (d,t)=>{ d.preso=true; }],
     ['torcer',   (d,t)=>{ d.linha='retaguarda'; }],
-    ['policial', null]
+    ['policial', null],
+    ['troca', (d,t)=>{ d.golpe=0.12; d.hostil=3; d.apanhou=0.3; d._alvo=d.par; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); }],
+    ['troca2', (d,t)=>{ d.golpe=0.12; d.hostil=3; d.apanhou=0.3; d._alvo=d.par; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); }]
   ];
   /* anda e volta num trecho de 60 px, virado pro lado que vai */
   function anda(d,t,v){
@@ -58,7 +60,7 @@
     const dir = k<1 ? 1 : -1, x = k<1 ? -30 + 60*k : 30 - 60*(k-1);
     d.x = d.x0 + x; d.rumo = Math.atan2(dir, 0);
   }
-  const PASSO = 46, cols = 7;
+  const PASSO = 46, cols = 8;
   const discos = [], pms = [];
   ESTADOS.forEach(([nome, fn], i)=>{
     const x0 = (i%cols - (cols-1)/2)*PASSO, z0 = (Math.floor(i/cols) - 0.5)*70;
@@ -73,6 +75,9 @@
   });
   Object.defineProperty(discos[0], 'vivo', {get(){ return !this.caido && !this.preso; }});
   for(const d of discos) Object.defineProperty(d, 'vivo', {get(){ return !this.caido && !this.preso; }});
+  /* os dois da troca ficam frente a frente, a 17 px um do outro */
+  const tr1 = discos.find(d=>d.nome==='TROCA'), tr2 = discos.find(d=>d.nome==='TROCA2');
+  tr1.x0 = tr1.x = tr2.x0 - 17; tr1.y = tr2.y; tr1.par = tr2; tr2.par = tr1; tr1.nome='TROCA'; tr2.nome='';
   const J = {t:0, discos, policiais:pms, projeteis:[], grades:[], paz:false};
 
   let ang = 0.4, dist = 330, auto = true, isolado = null, ant = performance.now();
@@ -81,9 +86,9 @@
     let dt = (agora-ant)/1000; ant = agora; if(dt>0.05) dt=0.05;
     J.t += dt;
     for(const d of discos){
-      d.golpe=0; d.hostil=0; d.apanhou=0; d.atordoado=0; d.arremesso=null; d.fugindo=false; d.fugaBomba=null; d._cacando=false; d.tremor=0; d.linha='frente';
+      d.golpe=0; d.hostil=0; d.apanhou=0; d.atordoado=0; d.arremesso=null; d.fugindo=false; d.fugaBomba=null; d._cacando=false; d.tremor=0; d.linha='frente'; d._alvo=null;
       if(d.fn) d.fn(d, J.t);
-      if(!('x' in d) || d.fn.toString().indexOf('anda')<0) { d.x = d.x0; d.rumo = 0; }
+      if(d.fn.toString().indexOf('anda')<0 && !d.par) { d.x = d.x0; d.rumo = 0; }
     }
     for(const p of pms) p.fn(p, J.t);
     if(auto) ang += dt*0.25;
