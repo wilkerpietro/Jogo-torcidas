@@ -4977,3 +4977,22 @@ verdade (aba Scripting → Run Script).
   narinas; a remalha desceu pra 2,8 mm (25 mil vértices, GLB de 6,6 MB). Saiu o
   bucket; entraram cordão de ouro grosso caído no peito com medalha, anel e pulseira
   dourada (presos ao tronco e às mãos).
+- **Dois modelos do mesmo script** (dono, 05/09/2026: "separe a vitrine detalhada da
+  cena de cima com modelo leve; a cabeça como formato único com o rosto como textura").
+  `python3 ferramentas/boneco_blender.py` gera o detalhado (`img/boneco.glb`, 6,4 MB,
+  a vitrine); `--leve` gera `img/boneco_leve.glb` (1,4 MB, a cena de cima e o jogo):
+  corpo com subdivisão 1 e sem dedos (1 mil vértices), cabeça única remalhada a 6,2 mm
+  (5 mil) com o **rosto pintado numa textura** gerada no script — UV por projeção
+  cilíndrica (a frente em u=0,5, a costura atrás) e uma imagem 512×512 de base branca,
+  pra cor da pele entrar por multiplicação, com sombra da órbita, esclera amendoada,
+  íris, pupila e brilho, linha da pálpebra, sobrancelha, sombra do nariz e narinas,
+  dorso claro, boca, lábios, sulco do queixo e orelha com concha nos lados. Só cabelos
+  como malha, nenhum acessório na cabeça; ficam o cordão de ouro, anel, relógio e
+  pulseira. Registrado o tropeço: as medidas da pintura foram escritas em unidades de
+  UV como se fossem metros e o rosto saiu com metade do tamanho; agora é tudo em
+  metros convertido (u pela circunferência, v pela altura). **A roupa voltou a ser
+  material na malha do corpo**, mas cortada por plano antes de pintar (`cortar_corpo`):
+  borda reta, e sem o rasgo no sovaco que a casca separada dava quando o braço subia —
+  nos dois modelos. A cena inclui `dados/boneco_leve_glb.js`, a vitrine
+  `dados/boneco_glb.js` (com `?modelo=leve` pra conferir o leve fora do artifact); o
+  carregador prefere o leve quando ele existe.

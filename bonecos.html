@@ -30,6 +30,8 @@
 <script src="js/lib/GLTFLoader.js"></script>
 <script src="js/lib/SkeletonUtils.js"></script>
 <script src="dados/boneco_glb.js"></script>
+<!-- ?modelo=leve testa o modelo da cena (fora do empacotado) -->
+<script>if(/modelo=leve/.test(location.search)) document.write('<script src="dados/boneco_leve_glb.js"><\/script>');</script>
 <script src="js/diajogo/bonecos3.js"></script>
 <script>
 (function(){

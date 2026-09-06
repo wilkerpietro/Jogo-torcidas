@@ -411,7 +411,10 @@ TO.diaJogo.bonecos3 = (function(){
   const ALTURA_CAIXAS = 34;         // a altura do corpo de caixas, na escala 1
   function carregarGLB(){
     if(modeloGLB || carregandoGLB) return;
-    const dados = TO.dados && TO.dados.bonecoGLB;
+    /* a cena de cima carrega o modelo LEVE (dados/boneco_leve_glb.js);
+       a vitrine, o detalhado (dados/boneco_glb.js). Cada página inclui
+       só o que quer; aqui vale o leve se ele existir. */
+    const dados = TO.dados && (TO.dados.bonecoLeveGLB || TO.dados.bonecoGLB);
     if(!dados || typeof THREE.GLTFLoader !== 'function') return;
     carregandoGLB = true;
     /* SEM FETCH: o artifact bloqueia requisição até de data-URI, e o
@@ -431,7 +434,7 @@ TO.diaJogo.bonecos3 = (function(){
         if(o.isMesh){
           const m = o.material;
           const novo = new THREE.MeshLambertMaterial({color: m.color ? m.color.clone() : new THREE.Color('#ccc'),
-            transparent: !!m.transparent, opacity: m.opacity!==undefined ? m.opacity : 1});
+            map: m.map || null, transparent: !!m.transparent, opacity: m.opacity!==undefined ? m.opacity : 1});
           novo.name = m.name; o.material = novo;
           o.frustumCulled = false;
         }
