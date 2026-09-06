@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duas torcidas na cena — Torcida Organizada</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<link rel="stylesheet" href="css/cenas.css">
+<style>
+/* A BANCADA DAS DUAS TORCIDAS (pedido do dono, 06/09/2026): escolhe
+   duas torcidas do jogo, abre a cena com os bondes das duas e mostra
+   o que as regras da paleta fazem — calção, anel e camisa. É a mesma
+   ponte e o mesmo combate do jogo; o que muda é quem entra. */
+body{display:block;padding:0}
+header#topo{display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:2px solid var(--linha);padding:10px 16px}
+header#topo h1{font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+header#topo span{font-family:var(--mono);font-size:10px;color:var(--fraco);letter-spacing:.1em}
+header#topo a{color:var(--ouro)}
+#escolha{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;padding:12px 16px;
+  border-bottom:1px solid var(--linha);background:var(--painel);align-items:end}
+.lado{display:flex;flex-direction:column;gap:6px}
+.lado .rot{font-family:var(--titulo);font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:var(--fraco)}
+.lado .rot b{color:var(--texto)}
+.lado input.busca{margin:0}
+.lado select.campo{padding:8px 10px}
+.ficha{display:flex;align-items:center;gap:10px;min-height:38px;font-size:12.5px}
+.ficha .cores{display:flex;gap:2px}
+.ficha .cores i{width:16px;height:16px;display:block;border:1px solid rgba(255,255,255,.28)}
+.ficha .nm{font-family:var(--titulo);font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+.ficha small{display:block;font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.regras{display:flex;flex-wrap:wrap;gap:6px;font-family:var(--mono);font-size:10.5px}
+.regras span{display:inline-flex;align-items:center;gap:5px;background:#111;border:1px solid var(--linha);padding:3px 7px}
+.regras span i{width:11px;height:11px;display:block;border:1px solid rgba(255,255,255,.3);border-radius:50%}
+.regras span.aviso{border-color:var(--ouro);color:var(--ouro)}
+#abrir{display:flex;flex-direction:column;gap:8px;min-width:230px}
+#abrir label{font-family:var(--mono);font-size:10px;color:var(--fraco);letter-spacing:.1em;text-transform:uppercase;display:flex;justify-content:space-between}
+#abrir .contador{gap:6px;padding:0}
+#abrir .bt{width:100%}
+#legenda{padding:8px 16px;border-bottom:1px solid var(--linha);font-family:var(--mono);font-size:11px;color:var(--fraco);
+  display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+#legenda b{color:var(--texto)}
+#djGrade{padding:12px 16px}
+  /* O HUD DA BANCADA: no jogo esses elementos moram na faixa da
+     transmissão (cenas.css); aqui não há faixa, então cada um ganha o
+     seu canto do palco. */
+  #djPalco > #djRelogio{left:12px;top:10px;font-size:22px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}
+  #djPalco > #djSubrelogio{left:12px;top:40px;font-size:11px;color:#ddd;text-shadow:0 1px 3px #000}
+  #djPalco > #djAlerta{right:12px;top:10px;width:190px;font-size:9.5px;letter-spacing:.1em;color:#ddd;
+    background:rgba(10,10,9,.6);padding:6px 8px;border-radius:3px}
+  #djPalco > #djAlerta .barra{height:5px;background:#333;border:1px solid #555;margin-top:3px}
+  #djPalco > #djAlerta .barra i{display:block;height:100%;background:#5ec472}
+  #djPalco > #djPlacar{left:12px;bottom:34px;font-size:12px;color:#fff;text-shadow:0 1px 3px #000;background:rgba(10,10,9,.6);padding:6px 9px;border-radius:3px}
+  #djPalco > #djAviso{left:50%;top:38%;transform:translateX(-50%);font-size:22px;font-weight:700;letter-spacing:.1em;color:#e8b0b0;text-shadow:0 2px 6px #000;text-align:center}
+  #djPalco > #djDica{left:12px;bottom:10px;font-size:10px;color:#bbb;text-shadow:0 1px 3px #000}
+@media (max-width:900px){
+  #escolha{grid-template-columns:1fr}
+  header#topo span{display:none}
+  #djGrade{padding:0}
+  #djGrade > div:last-child{display:none}
+  #djGrade > div:first-child > .painel{display:none}
+  body{padding-bottom:calc(190px + env(safe-area-inset-bottom))}
+}
+</style>
+</head>
+<body>
+
+<header id="topo">
+  <h1>Duas torcidas na cena</h1>
+  <span>CALÇÃO · ANEL · CAMISA, PELAS REGRAS DO JOGO ·
+    <a href="arredores.html">BANCADA DE CENAS →</a> ·
+    <a href="bonecos.html">VITRINE DOS BONECOS →</a></span>
+</header>
+
+<div id="escolha">
+  <div class="lado">
+    <div class="rot"><b>A nossa</b> · lado mandante</div>
+    <input class="busca" id="buscaA" placeholder="procurar torcida, clube ou praça…">
+    <select class="campo" id="selA" size="1"></select>
+    <div class="ficha" id="fichaA"></div>
+  </div>
+  <div class="lado">
+    <div class="rot"><b>A outra</b> · lado visitante</div>
+    <input class="busca" id="buscaB" placeholder="procurar torcida, clube ou praça…">
+    <select class="campo" id="selB" size="1"></select>
+    <div class="ficha" id="fichaB"></div>
+  </div>
+  <div id="abrir">
+    <label>Cena
+      <select class="campo" id="selCena" style="width:auto;padding:4px 8px">
+        <option value="praca">Praça</option>
+        <option value="rua">Rua de periferia</option>
+        <option value="rua-media">Rua de classe média</option>
+        <option value="rua-nobre">Rua de bairro nobre</option>
+        <option value="bar">Bar da outra</option>
+        <option value="treta-campo">Treta 10×10 no campo</option>
+        <option value="emb-onibus">Emboscada na estrada</option>
+        <option value="estadio-20">Arquibancada · 20 mil</option>
+      </select>
+    </label>
+    <label>Efetivo da nossa <span id="nA">30</span></label>
+    <input type="range" id="rangeA" min="4" max="80" value="30">
+    <label>Efetivo da outra <span id="nB">30</span></label>
+    <input type="range" id="rangeB" min="4" max="80" value="30">
+    <label><span>Trocar de lado</span><input type="checkbox" id="inverter"></label>
+    <button class="bt destaque" id="btAbrir">Abrir a cena</button>
+  </div>
+</div>
+
+<div id="legenda">escolha as duas torcidas e abra a cena</div>
+
+<div id="djGrade">
+  <div>
+    <div id="djPalco">
+      <canvas id="djPrincipal" width="1152" height="768"></canvas>
+      <canvas id="djSobreGL" width="1152" height="768" hidden></canvas>
+      <div class="hud" id="djRelogio">18:00</div>
+      <div class="hud" id="djSubrelogio"></div>
+      <div class="hud" id="djAlerta">
+        <div class="rot">ATENÇÃO POLICIAL</div>
+        <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
+        <div class="rot" id="djRotPressao" style="margin-top:6px;color:#d9705f">PRESSÃO SOBRE VOCÊ</div>
+        <div class="barra" style="border-color:#6b3a32">
+          <i id="djBarraPressao" style="width:0%;background:#c0392b"></i>
+        </div>
+        <div id="djCarga"></div>
+      </div>
+      <div class="hud" id="djPlacar"></div>
+      <div class="hud" id="djAviso"></div>
+      <div class="hud" id="djDica"></div>
+    </div>
+    <div class="painel" style="margin-top:11px">
+      <h2>Ocorrências</h2>
+      <div id="djLog"></div>
+    </div>
+  </div>
+  <div>
+    <div class="painel">
+      <h2 id="djLocal">Na cena</h2>
+      <div id="djFormacoes"></div>
+      <button class="acao-btn" id="djBtBater" title="Soltar o E na hora do golpe é o contragolpe">Bater <b>Q</b> · Defender <b>E</b> · Agarrar <b>F</b> · Chamar <b>C</b></button>
+      <button class="acao-btn" id="djBtPedra">Pedra <b>2</b></button>
+      <button class="acao-btn" id="djBtBomba">Bomba <b>3</b> · <span id="djQtdBomba">0</span></button>
+      <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
+      <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
+    </div>
+    <div class="painel">
+      <h2>Calibragem <span class="tag">debug</span></h2>
+      <div id="djSliders"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/nucleo.js"></script>
+<script src="dados/nomes.js"></script>
+<script src="dados/cidades.js"></script>
+<script src="dados/times.js"></script>
+<script src="dados/torcidas.js"></script>
+<script src="dados/barras.js"></script>
+<script src="dados/diplomacia.js"></script>
+<script src="dados/cena_arredores.js"></script>
+<script src="dados/cenas_foto.js"></script>
+<script src="dados/cenas_editadas.js"></script>
+<script src="dados/cenas.js"></script>
+<script src="js/mundo/mundo.js"></script>
+<script src="js/gestao/membros.js"></script>
+<script src="js/diajogo/cenario.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/tres.js"></script>
+<script src="js/lib/three.min.js"></script>
+<script src="js/lib/GLTFLoader.js"></script>
+<script src="js/lib/SkeletonUtils.js"></script>
+<script src="dados/boneco_leve_glb.js"></script>
+<script src="js/diajogo/bonecos3.js"></script>
+<script src="js/diajogo/ponte.js"></script>
+<script>
+(function(){
+  const M = TO.mundo, B3 = TO.diaJogo.bonecos3, P = TO.diaJogo.ponte;
+  const $ = id => document.getElementById(id);
+  /* todas as torcidas que existem no mundo, ordenadas por praça e nome */
+  const TODAS = M.jogaveis().slice().sort((a,b)=>
+    String(a.mapa).localeCompare(String(b.mapa)) || String(a.nome).localeCompare(String(b.nome)));
+  const praca = o => { const c = M.cidade(o.mapa); return (c && c.nome) || o.cidade || o.mapa || ''; };
+  const rotulo = o => `${o.nome} — ${o.clube || ''}`;
+
+  function preencher(sel, filtro){
+    const f = (filtro||'').trim().toLowerCase();
+    const atual = sel.value;
+    sel.innerHTML = '';
+    let grupo = null, ultima = null;
+    for(const o of TODAS){
+      const txt = `${o.nome} ${o.clube||''} ${praca(o)} ${o.uf||''}`.toLowerCase();
+      if(f && txt.indexOf(f) < 0) continue;
+      if(o.mapa !== ultima){ grupo = document.createElement('optgroup'); grupo.label = praca(o); sel.appendChild(grupo); ultima = o.mapa; }
+      const op = document.createElement('option'); op.value = o.id; op.textContent = rotulo(o);
+      grupo.appendChild(op);
+    }
+    if(atual && [...sel.options].some(x=>x.value===atual)) sel.value = atual;
+  }
+  const escolhida = sel => M.torcida(sel.value) || TODAS.find(o=>o.id===sel.value) || null;
+
+  /* a camisa pela regra do dono: três cores → gola e punho duplo;
+     duas → metade lisa, metade gola e punhos, pelo nome */
+  const camisaDe = (o, c) => B3.desenhoDaTorcida
+    ? B3.DESENHOS[B3.desenhoDaTorcida({torcida:o.nome, cor:c.cor, cor2:c.cor2, cor3:c.cor3}, null)]
+    : '?';
+  const NOME_CAMISA = {'lisa':'camisa lisa', 'gola':'gola e punhos', 'gola-dupla':'gola e punho duplo'};
+
+  function bondes(){
+    const A = escolhida($('selA')), B = escolhida($('selB'));
+    if(!A || !B) return null;
+    const inv = $('inverter').checked;
+    const cA = M.coresDaTorcida(A), cB = M.coresDaTorcida(B);
+    const nA = +$('rangeA').value, nB = +$('rangeB').value;
+    return [
+      {lado: inv ? 'visitante' : 'mandante', n:nA, nossa:true, nome:A.nome, cor:cA.cor, cor2:cA.cor2, cor3:cA.cor3, sigla:M.siglaTorcida(A)},
+      {lado: inv ? 'mandante' : 'visitante', n:nB, nossa:false, nome:B.nome, cor:cB.cor, cor2:cB.cor2, cor3:cB.cor3, sigla:M.siglaTorcida(B),
+       perfil:{poder:B.poder, cargos:B.cargos, membros:B.membros||60}}
+    ];
+  }
+
+  /* a ficha de cada lado, com o que a paleta da cena vai fazer */
+  function fichas(){
+    const bs = bondes();
+    const pal = bs ? B3.paletaDaCena({bondes_:bs, discos:[]}) : null;
+    for(const [id, sel] of [['fichaA', 'selA'], ['fichaB', 'selB']]){
+      const o = escolhida($(sel)), el = $(id);
+      if(!o){ el.innerHTML = '<small>nenhuma torcida</small>'; continue; }
+      const c = M.coresDaTorcida(o);
+      const t = pal && pal.torcidas[o.nome];
+      const sw = [c.cor, c.cor2, c.cor3].filter(Boolean).map(x=>`<i style="background:${x}"></i>`).join('');
+      const regras = t ? `<div class="regras">
+          <span>camisa: ${NOME_CAMISA[camisaDe(o, c)] || camisaDe(o, c)}</span>
+          <span>calção <i style="background:${t.calcao||'#333'};border-radius:0"></i>${t.repete ? '2ª cor (repete a primária)' : '1ª cor'}</span>
+          <span>${pal.colisao ? `anel <i style="background:${t.anel||'#333'}"></i>ligado` : 'sem anel'}</span>
+        </div>` : '';
+      el.innerHTML = `<div class="cores">${sw}</div><div><div class="nm">${o.nome}</div><small>${o.clube||''} · ${praca(o)}${o.uf?' · '+o.uf:''}</small>${regras}</div>`;
+    }
+    const bA = escolhida($('selA')), bB = escolhida($('selB'));
+    if(pal && bA && bB){
+      const mesma = pal.colisao;
+      $('legenda').innerHTML = mesma
+        ? `<span class="aviso" style="color:var(--ouro)">mesma cor primária:</span> a <b>${bB.nome}</b> sai com o calção na 2ª cor e as duas ganham o anel no chão`
+        : `cores primárias diferentes: calção na 1ª cor nas duas, sem anel`;
+    }
+  }
+
+  function abrir(){
+    const bs = bondes(); if(!bs) return;
+    const local = $('selCena').value;
+    document.body.classList.add('em-cena');
+    const cfg = {local, intencao:'atacar', paz:false, bombas:1, efetivoRival: bs[1].n, bondes: bs};
+    if(/^estadio/.test(local)) cfg.setores = true;
+    if(/^treta/.test(local)) cfg.semArmas = true;
+    P.montar({canvas:$('djPrincipal'), sobreGL:$('djSobreGL'), bonecos:true, config:cfg});
+    P.zoom = 2.2;
+    fichas();
+    $('djPalco').scrollIntoView({block:'start', behavior:'smooth'});
+  }
+
+  preencher($('selA')); preencher($('selB'));
+  /* abre com um caso que mostra a regra: TUF × Aliança, as duas de branco */
+  const tuf = TODAS.find(o=>/TUF/i.test(o.nome)), ali = TODAS.find(o=>/^Aliança$/i.test(o.nome));
+  if(tuf) $('selA').value = tuf.id;
+  if(ali) $('selB').value = ali.id; else if(TODAS[1]) $('selB').value = TODAS[1].id;
+  $('buscaA').oninput = ()=>{ preencher($('selA'), $('buscaA').value); fichas(); };
+  $('buscaB').oninput = ()=>{ preencher($('selB'), $('buscaB').value); fichas(); };
+  for(const id of ['selA','selB','inverter']) $(id).onchange = fichas;
+  $('rangeA').oninput = ()=>{ $('nA').textContent = $('rangeA').value; };
+  $('rangeB').oninput = ()=>{ $('nB').textContent = $('rangeB').value; };
+  $('btAbrir').onclick = abrir;
+  fichas();
+  window.__vitrineTorcidas = {abrir, bondes, TODAS};
+})();
+</script>
+</body>
+</html>

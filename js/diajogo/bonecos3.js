@@ -1859,7 +1859,7 @@ TO.diaJogo.bonecos3 = (function(){
     renderer.clear();
   }
 
-  return {montar, desenharDeCima, desenharVitrine, limparDeCima, estudo, DESENHOS, paletaDaCena, anelDe,
+  return {montar, desenharDeCima, desenharVitrine, limparDeCima, estudo, DESENHOS, paletaDaCena, anelDe, desenhoDaTorcida,
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },
           get _dbg(){ return {scene, cam, camV, renderer, figuras, modeloGLB}; }};

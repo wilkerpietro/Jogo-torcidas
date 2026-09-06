@@ -25,6 +25,18 @@ body{display:block;padding:0}
   #cenaAbas small{font-family:var(--mono);font-size:10px;color:var(--fraco);
     align-self:center;margin-left:6px}
 
+  /* O HUD DA BANCADA: no jogo esses elementos moram na faixa da
+     transmissão (cenas.css); aqui não há faixa, então cada um ganha o
+     seu canto do palco. */
+  #djPalco > #djRelogio{left:12px;top:10px;font-size:22px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000}
+  #djPalco > #djSubrelogio{left:12px;top:40px;font-size:11px;color:#ddd;text-shadow:0 1px 3px #000}
+  #djPalco > #djAlerta{right:12px;top:10px;width:190px;font-size:9.5px;letter-spacing:.1em;color:#ddd;
+    background:rgba(10,10,9,.6);padding:6px 8px;border-radius:3px}
+  #djPalco > #djAlerta .barra{height:5px;background:#333;border:1px solid #555;margin-top:3px}
+  #djPalco > #djAlerta .barra i{display:block;height:100%;background:#5ec472}
+  #djPalco > #djPlacar{left:12px;bottom:34px;font-size:12px;color:#fff;text-shadow:0 1px 3px #000;background:rgba(10,10,9,.6);padding:6px 9px;border-radius:3px}
+  #djPalco > #djAviso{left:50%;top:38%;transform:translateX(-50%);font-size:22px;font-weight:700;letter-spacing:.1em;color:#e8b0b0;text-shadow:0 2px 6px #000;text-align:center}
+  #djPalco > #djDica{left:12px;bottom:10px;font-size:10px;color:#bbb;text-shadow:0 1px 3px #000}
   /* NO CELULAR (mesmo limiar do jogo, 900px): cabeçalho de uma linha,
      abas numa fileira que rola de lado, palco colado em cima e o pad
      fixo embaixo, igual à cena do jogo. O canvas não rola a página:
@@ -72,7 +84,8 @@ body{display:block;padding:0}
 <header id="topo">
   <h1 id="cenaTitulo">Arredores do estádio</h1>
   <span>CENA SOBRE FOTO · MALHA DE CAMINHABILIDADE · <b style="color:var(--ouro)">F2</b> EDITOR ·
-    <a href="briga3d.html" style="color:var(--ouro)">RUA EM 3D →</a></span>
+    <a href="briga3d.html" style="color:var(--ouro)">RUA EM 3D →</a> ·
+    <a href="vitrine-torcidas.html" style="color:var(--ouro)">DUAS TORCIDAS →</a></span>
 </header>
 
 <div id="cenaAbas"></div>
