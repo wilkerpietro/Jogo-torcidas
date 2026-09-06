@@ -103,6 +103,19 @@
   #djGrade{ grid-template-columns:1fr; }
   #telaDiaJogo{ padding:0; }
   #djPalco{ max-width:100vw; }
+  /* CELULAR: A CENA É A TELA INTEIRA (pedido do dono, 05/09/2026). O
+     palco cobre a tela e o pad (z 70) fica por cima dele; o canvas tem
+     a resolução da tela (ponte.ajustarCanvasCelular) e o zoom segue o
+     líder. O dedo no canvas é mira e pinça, não rolagem da página. */
+  body.em-cena{ overflow:hidden; }
+  body.em-cena #djPalco{ position:fixed; inset:0; z-index:60; border:0; box-shadow:none;
+    width:auto; max-width:none; background:#0e0e0d;
+    display:flex; flex-direction:column; }
+  body.em-cena #djPalco #djFaixa{ flex:none; }
+  body.em-cena #djPalco #djCanvases{ flex:1 1 auto; min-height:0; }
+  body.em-cena #djPalco canvas{ width:100%; height:100%; max-width:none; max-height:none;
+    border:0; touch-action:none; }
+  body.em-cena #djGrade{ padding:0; max-height:none; }
   /* NO CELULAR A CENA É SÓ A CENA (decisão do dono, 22/08/2026): a
      barra de comandos saiu inteira de cima do palco. O botão do
      portão/saída era o único que ainda ficava lá, com um rótulo comprido
@@ -150,7 +163,10 @@
   .pad-bt.apertado{ background:var(--rubro); border-color:var(--rubro-vivo); }
   .pad-bt.gasto{ opacity:.4; }
 
-  .pad-acoes{ display:flex; gap:6px; pointer-events:none; flex-wrap:wrap; }
+  /* sete ações (bater, defender, recuar, agarrar, chamar, fugir, sair)
+     em três colunas acima da bola: numa fileira só elas atravessavam
+     a tela por cima da briga */
+  .pad-acoes{ display:flex; gap:6px; pointer-events:none; flex-wrap:wrap; max-width:246px; }
 
   /* ---- PAD EMPILHADO: quando as duas colunas não cabem lado a lado ----
      A classe é posta por `medirPad`, em ponte.js — o número de ações
@@ -166,9 +182,12 @@
   .dj-pad.medindo .pad-dir{ flex:0 0 auto; }
   .dj-pad.medindo .pad-acoes{ flex-wrap:nowrap; }
   .pad-acao{ width:74px; height:44px; font-size:11px; }
-  .pad-f{ border-color:var(--vermelho); color:var(--vermelho); }
+  .pad-x{ border-color:var(--vermelho); color:var(--vermelho); }
   .pad-enter{ border-color:var(--ouro); color:var(--ouro); }
-  .pad-form{ width:46px; height:44px; font-size:16px; font-weight:700; }
+  /* pedra e bomba nos números 2 e 3, com o nome pequeno embaixo */
+  .pad-form{ width:58px; height:44px; font-size:16px; font-weight:700;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; }
+  .pad-form small{ font-size:8px; font-weight:400; letter-spacing:.08em; margin-top:2px; }
   .pad-form.on{ background:var(--rubro); border-color:var(--rubro-vivo); }
 
   /* A BOLA DE CONTROLE, no lugar da cruz de WASD (pedido do dono,

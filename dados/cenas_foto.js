@@ -1,3 +1,4 @@
+
 /* CENAS SOBRE FOTO — máscara de caminhabilidade tirada da imagem
    GERADO por ferramentas/importar_cena_foto.py — nao editar a mao.
    Correção fica em dados/cenas_editadas.js, que entra depois deste

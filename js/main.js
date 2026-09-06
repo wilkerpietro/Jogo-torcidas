@@ -470,6 +470,13 @@
     e = e || E(); if(!e) return {relatorio:false};
     e.opcoes = e.opcoes || {};
     if(e.opcoes.relatorio === undefined) e.opcoes.relatorio = false;
+    /* na cena de cima, boneco no lugar do disco — em todas as cenas
+       (pedido do dono, 06/09/2026: o formato da bancada "Cenas de
+       Briga de Cima" entra no jogo) */
+    if(e.opcoes.bonecos === undefined) e.opcoes.bonecos = true;
+    /* a rua vista de perto (tres.js) existe, mas não abre sozinha:
+       o jogo é o de cima; a de perto liga por opção do save */
+    if(e.opcoes.briga3d === undefined) e.opcoes.briga3d = false;
     return e.opcoes;
   }
 
@@ -6944,9 +6951,39 @@
 
 
   function abrirPalco(op){
-    if(!simularProxima) { TO.diaJogo.ponte.montar(op); return; }
+    if(!simularProxima) { montarCena(op); return; }
     simularProxima = false;
     TO.diaJogo.simular.rodar(op);
+  }
+
+  /* =======================================================
+     O PALCO: DE CIMA OU DE PERTO
+     Um canvas não troca de contexto, então o 2D e o WebGL são dois
+     elementos no mesmo palco. Na cena de cima o canvas WebGL vira a
+     camada transparente dos bonecos por cima do 2D (bonecos3.js). Só
+     a rua tem versão de perto, e ela abre pela cena `*-3d` de
+     dados/cenas.js quando a opção briga3d está ligada.
+     ======================================================= */
+  function montarCena(m){
+    const o = opc(E());
+    const local = String((m.config||{}).local || '');
+    const em3d = !!o.briga3d && /^rua(-media|-nobre)?$/.test(local)
+              && !!(TO.dados.cenas && TO.dados.cenas[local+'-3d']) && !!TO.diaJogo.tres;
+    const c2 = $('djPrincipal'), c3 = $('djPrincipal3d'), sobre = $('djSobre');
+    if(c3) c3.hidden = !em3d;
+    if(sobre) sobre.hidden = !em3d;
+    if(c2) c2.hidden = em3d;
+    if(em3d){
+      m.config.local = local + '-3d';
+      m.canvas = c3; m.sobre = sobre;
+    } else {
+      m.canvas = c2;
+      m.sobreGL = c3; m.bonecos = o.bonecos !== false;
+    }
+    TO.diaJogo.ponte.montar(m);
+    /* sem WebGL a ponte volta pra cena 2D sozinha, no mesmo canvas; só
+       a camada de nomes não tem mais o que mostrar */
+    if(em3d && !TO.diaJogo.ponte.tres && sobre) sobre.hidden = true;
   }
 
   /* o resultado da última cena: o itinerário escreve o saldo dela no

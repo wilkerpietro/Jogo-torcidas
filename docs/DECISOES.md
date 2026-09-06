@@ -3591,6 +3591,67 @@ De quebra, o `docs/mapa-das-pracas.html` ganhou o `<meta charset>` que
 nunca teve — os acentos apareciam quebrados ("SertÃ£o") na ferramenta
 que serve justamente pra conferir a malha.
 
+## Bonecos no lugar dos discos (pedido do dono, 06/09/2026)
+
+O dono refez o formato da briga na bancada "Cenas de Briga de Cima"
+(branch `claude/briga-3d-gta-style-k4zjky`) e mandou trazer tudo pro
+jogo. Entrou por merge a três vias, arquivo a arquivo, com a base no
+upload de 17–19/08 de onde aquela branch nasceu — o que era nosso
+(relação, elenco fixo, quadro vivo, aliado escoltado, placar de
+transmissão, bola de controle) ficou; o que era deles (o boneco e o
+sistema de golpes) entrou por cima.
+
+**O que mudou na briga:**
+
+1. **Boneco humano em vez de disco.** `js/diajogo/bonecos3.js` desenha,
+   num canvas WebGL transparente por cima da cena 2D, o boneco do
+   Blender (`img/boneco_leve.glb`, embutido em
+   `dados/boneco_leve_glb.js`) com Three.js r147 (`js/lib/`). Cabeça,
+   ombro, braço, cassetete e escudo da PM, pedra, bomba e fumaça. A
+   cena de cima continua sendo o canvas 2D de sempre — foto, malha,
+   nome e vida —; o boneco é só a pele. Sem WebGL, cai no disco.
+2. **Golpes, não contato contínuo.** O dano era força contra defesa
+   por segundo de encosto. Agora cada golpe é um evento com tempo de
+   impacto: soco, chute (derruba), joelhada, contragolpe. Quem apanha
+   no chão fica esperando socorro; o companheiro livre levanta.
+3. **As teclas do líder.** `Q` bate, `E` segura a defesa (soltar na
+   hora do golpe é o contragolpe), `F` agarra (com companheiro do lado
+   pra aproveitar), `C` chama o bonde pra cima. Pedra foi pro `2` e
+   bomba pro `3` — a bomba abre a mira em arco e o clique joga.
+   **Fugir saiu do F e foi pro `X`.** No pad de toque, sete ações em
+   três colunas acima da bola; pedra e bomba nos números, à direita.
+4. **Só o Quadrado.** As quatro formações viraram uma: bloco fechado
+   atrás do líder. Linha de frente e retaguarda saem sozinhas; os
+   arremessadores são os mais fortes da retaguarda, cada um com a sua
+   cadência.
+5. **Cerco conta.** Inimigo ao alcance dos dois lados (110° ou mais)
+   deixa o boneco cercado: defende pior e apanha mais. Perfil por cargo
+   decide quem agarra, quem contragolpeia, quem pisoteia.
+6. **Celular: a cena é a tela inteira.** O palco cobre a tela, o canvas
+   tem a resolução dela e o zoom segue o líder; a faixa da transmissão
+   fica em cima. A camada dos bonecos mora numa caixa própria
+   (`#djCanvases`) pra nascer alinhada com o canvas 2D, e não com o
+   palco — que tem a faixa.
+
+**O que NÃO entrou por padrão:** a rua vista de perto (`tres.js`,
+`briga3d.html`, câmera atrás do líder). Ela existe e abre com a opção
+`briga3d` do save ligada; o jogo é o de cima. A vitrine dos bonecos
+(`bonecos.html`) e o gerador do Blender (`ferramentas/boneco_blender.py`)
+vieram junto.
+
+**Regras nossas mantidas dentro do sistema novo:** recuado bate de
+costas (27/08) — o recuado não procura golpe, mas quem colar nele leva
+o soco; alcançou, pegou (fuga por minoria) — dois golpes em cima e ele
+fica; bonde correndo não joga pedra nem bomba.
+
+**O empacotado passou de 16 MB** com o GLB (3,6 MB em base64) e a
+biblioteca (0,7 MB): o bundler recomprime as fotos das cenas e as capas
+de cidade (WebP q52/q48) e converte os escudos PNG pra WebP com alfa.
+Ficou em 15,5 MB. O repositório segue com as originais.
+
+Pendente de crivo do dono: a tecla `X` pra fugir; o peso do pad de sete
+ações em tela de 390 px de altura.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

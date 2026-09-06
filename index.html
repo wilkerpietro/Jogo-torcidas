@@ -125,16 +125,30 @@
         </div>
         <div class="fx fx-placar" id="djPlacar"></div>
       </div>
-      <canvas id="djPrincipal" width="1140" height="820"></canvas>
+      <!-- OS TRÊS CANVAS NUMA CAIXA SÓ: a faixa da transmissão mora
+           acima do canvas, então a camada dos bonecos (absoluta) precisa
+           de um pai que seja exatamente o canvas 2D, e não o palco
+           inteiro — senão ela nasce deslocada pela altura da faixa. -->
+      <div id="djCanvases">
+        <canvas id="djPrincipal" width="1140" height="820"></canvas>
+        <!-- a versão 3D da rua: o palco WebGL e a camada de nomes por cima.
+             Ficam escondidos até a opção pedir; um canvas não troca de
+             contexto, então o 2D e o WebGL são elementos separados. -->
+        <!-- na cena de cima o mesmo canvas vira a camada transparente dos
+             bonecos (classe sobre-gl); a ponte troca a classe conforme o modo -->
+        <canvas id="djPrincipal3d" class="tres" width="1140" height="820" hidden></canvas>
+        <canvas id="djSobre" width="1140" height="820" hidden></canvas>
+      </div>
       <div class="hud" id="djAviso"></div>
       <!-- os comandos ficam sobre o palco: a cena é a tela inteira -->
       <div class="hud" id="djComandos">
         <div id="djFormacoes"></div>
         <div class="dj-botoes">
-          <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
-          <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
+          <button class="acao-btn" id="djBtBater" title="Soltar o E na hora do golpe é o contragolpe">Bater <b>Q</b> · Defender <b>E</b> · Agarrar <b>F</b> · Chamar <b>C</b></button>
+          <button class="acao-btn" id="djBtPedra">Pedra <b>2</b></button>
+          <button class="acao-btn" id="djBtBomba">Bomba <b>3</b> · <span id="djQtdBomba">0</span></button>
           <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
-          <button class="acao-btn fugir" id="djBtFugir">Fugir <b>F</b></button>
+          <button class="acao-btn fugir" id="djBtFugir">Fugir <b>X</b></button>
           <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
         </div>
       </div>
@@ -211,6 +225,14 @@
 <script src="js/diajogo/cenario.js"></script>
 <script src="js/diajogo/arredores.js"></script>
 <script src="js/diajogo/combate.js"></script>
+<!-- os bonecos: Three.js e o modelo leve do Blender por cima da cena 2D;
+     tres.js é a rua vista de perto (opção briga3d) -->
+<script src="js/diajogo/tres.js"></script>
+<script src="js/lib/three.min.js"></script>
+<script src="js/lib/GLTFLoader.js"></script>
+<script src="js/lib/SkeletonUtils.js"></script>
+<script src="dados/boneco_leve_glb.js"></script>
+<script src="js/diajogo/bonecos3.js"></script>
 <script src="js/diajogo/ponte.js"></script>
 <script src="js/diajogo/simular.js"></script>
 

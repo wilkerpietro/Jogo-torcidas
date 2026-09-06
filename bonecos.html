@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vitrine dos Bonecos — Torcida Organizada</title>
+<style>
+  html,body{margin:0;height:100%;background:#1c1c1a;color:#e8e4da;font-family:system-ui,sans-serif;overflow:hidden}
+  #palco{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #topo{position:fixed;left:0;right:0;top:0;padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    background:linear-gradient(#1c1c1aee,#1c1c1a00);pointer-events:none}
+  #topo h1{font-size:14px;letter-spacing:.14em;text-transform:uppercase;margin:0 10px 0 0}
+  #topo button{pointer-events:auto;background:#2a2a26;border:1px solid #444;color:#e8e4da;font:11px ui-monospace,monospace;
+    letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;cursor:pointer;border-radius:3px}
+  #topo button.on{background:#c0392b;border-color:#e0533f;color:#fff}
+  #rotulos{position:fixed;inset:0;pointer-events:none}
+  #rotulos div{position:absolute;transform:translate(-50%,0);font:11px ui-monospace,monospace;letter-spacing:.08em;
+    text-transform:uppercase;color:#f0d68a;text-shadow:0 1px 2px #000}
+  #dica{position:fixed;left:14px;bottom:12px;font:11px ui-monospace,monospace;color:#9a968c}
+</style>
+</head>
+<body>
+<canvas id="palco"></canvas>
+<div id="rotulos"></div>
+<div id="topo"><h1>Vitrine dos bonecos</h1></div>
+<div id="dica">arraste pra girar · rodinha aproxima · clique num estado pra isolar</div>
+
+<script src="js/nucleo.js"></script>
+<script src="js/lib/three.min.js"></script>
+<script src="js/lib/GLTFLoader.js"></script>
+<script src="js/lib/SkeletonUtils.js"></script>
+<script src="dados/boneco_leve_glb.js"></script>
+<!-- ?modelo=detalhado abre o modelo pesado da escultura (fora do empacotado) -->
+<script>if(/modelo=detalhado/.test(location.search)){ window.MODELO_BONECO='detalhado'; document.write('<script src="dados/boneco_glb.js"><\/script>'); }</script>
+<script src="js/diajogo/bonecos3.js"></script>
+<script>
+(function(){
+  const B = TO.diaJogo.bonecos3;
+  const cv = document.getElementById('palco');
+  if(!B.montar(cv)){ document.body.innerHTML = '<p style="padding:20px">Sem WebGL.</p>'; return; }
+
+  /* cada estado é um disco de mentira com os sinais que o combate
+     escreveria; a animação só lê */
+  const CABELOS = ['curto','raspado','degrade','black','cacheado','topete','franja','entradas','moicano','comprido','rabo','coque','careca'];
+  const SO_CABELOS = new URLSearchParams(location.search).has('cabelos');
+  let ESTADOS = SO_CABELOS ? CABELOS.map(c=>[c, (d,t)=>{ d.cabecaForcada=c; }]) : [
+    ['parado',   (d,t)=>{}],
+    ['andar',    (d,t)=>{ anda(d,t,60); }],
+    ['correr',   (d,t)=>{ anda(d,t,78); d._cacando=true; }],
+    ['socar',    (d,t)=>{ golpeia(d,t,0.75); d.hostil=3; }],
+    ['chutar',   (d,t)=>{ golpeia(d,t,1.1,0,'chute'); d.hostil=3; }],
+    ['guarda',   (d,t)=>{ d.hostil=3; }],
+    ['defender', (d,t)=>{ d.defendendo=1; d.hostil=3; }],
+    ['esquivar', (d,t)=>{ d.defendendo=1; d.hostil=3; const k=t%1.4; d.esquivou = k<0.4 ? 0.4-k : 0; }],
+    ['provocar', (d,t)=>{ d.hostil=3; d.inimigoPerto=50; if(d._b3){ d._b3.estilo.provocador=1; const f=d._b3;
+                          /* na vitrine provoca sem parar: o "vem" da variação forçada, ou os oito em roda */
+                          if(!f.provoca) f.provoca = {t:0, dur:2.6, tipo: f.varianteForcada!=null ? f.varianteForcada : Math.floor(t/2.6)%8}; } }],
+    ['apanhar',  (d,t)=>{ d.apanhou=0.3; if(d._b3 && !d._b3.impacto && (t%1.1)<0.03) d._b3.impacto={t:0,dur:0.36,forca:0.9,lado:(Math.floor(t/1.1)%2?1:-1),tipo:'direto'}; }],
+    ['atordoado',(d,t)=>{ d.atordoado=1; }],
+    ['arremesso',(d,t)=>{ const k=t%1.6; d.arremesso = k<0.55 ? {t:0.55-k, tipo:'pedra'} : null; d.hostil=3; }],
+    ['fugir',    (d,t)=>{ anda(d,t,78); d.fugindo=true; }],
+    ['bomba',    (d,t)=>{ anda(d,t,78); d.fugaBomba=true; }],
+    ['derrubado',(d,t)=>{ const k=t%4.2; d.derrubadoDur=2.2; d.derrubado = k<2.2 ? 2.2-k : 0; }],
+    ['socorrer', (d,t)=>{ d.socorrendo = d.socorrendo || {noChao:true, vivo:true}; }],
+    ['chamar',   (d,t)=>{ d.chamou = t - (t % 3); d.hostil = 3; }],
+    ['contra',   (d,t)=>{ golpeia(d,t,1.2,0,'contra'); d.hostil=3; }],
+    ['cair',     (d,t)=>{ d.caido = (t%4.5) > 0.9; }],
+    ['preso',    (d,t)=>{ d.preso=true; }],
+    ['torcer',   (d,t)=>{ d.linha='retaguarda'; }],
+    ['policial', null],
+    ['troca', (d,t)=>{ golpeia(d,t,0.9,0); d.hostil=3; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); if(d.par.ataque && d.par.ataque.t<0.15 && !d.ataque && (Math.floor(t/0.9)%3===0)) d.defendendo=0.5; }],
+    ['troca2', (d,t)=>{ golpeia(d,t,0.9,0.45); d.hostil=3; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); }],
+    /* agarrão: um segura (e dá joelhada de vez em quando), o outro se debate */
+    ['agarrar', (d,t)=>{ if(!d.par) return; d.segurando=d.par; d.hostil=3; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); const k=t%2.6; if(k<0.42){ golpeia(d,t,2.6,0,'joelhada'); } else if(k<1.2){ golpeia(d,t,2.6,-1.2+0.5,'agarrar'); } }],
+    ['agarrado',(d,t)=>{ if(!d.par) return; d.seguradoPor=d.par; d.hostil=3; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); }]
+  ];
+  /* um golpe do combate a cada `cada` segundos: {t, dur, alvo, bateu} */
+  function golpeia(d, t, cada, desloc, tipo){
+    const k = (t + (desloc||0)) % cada;
+    const DUR = {chute:0.58, contra:0.28, joelhada:0.42, agarrar:0.5}, IMP = {chute:0.28, contra:0.10, joelhada:0.2, agarrar:0.22};
+    const dur = DUR[tipo] || 0.36, imp = IMP[tipo] || 0.15;
+    if(k < dur){
+      if(!d.ataque || d.ataque.k0 > k) d.ataque = {t:0, dur, impacto:imp, tipo: tipo||'soco', alvo:d.par||null, bateu:false, k0:k};
+      d.ataque.t = k; d.ataque.k0 = k;
+      if(k >= imp && !d.ataque.bateu){ d.ataque.bateu = true; if(d.par && d.par.defendendo>0) d.par.esquivou = 0.4; }
+      d.golpe = dur - k;
+    } else d.ataque = null;
+  }
+  /* anda e volta num trecho de 60 px, virado pro lado que vai */
+  function anda(d,t,v){
+    const per = 120/v, k=(t%(2*per))/per;
+    const dir = k<1 ? 1 : -1, x = k<1 ? -30 + 60*k : 30 - 60*(k-1);
+    d.x = d.x0 + x; d.rumo = Math.atan2(dir, 0);
+  }
+  /* ?estado=X&so: só esse estado na cena (pra capturar de perto) */
+  if(new URLSearchParams(location.search).has('so')){ const q = new URLSearchParams(location.search).get('estado'); const PAR2 = {troca:'troca2', agarrar:'agarrado'}; ESTADOS = ESTADOS.filter(e=>e[0]===q || e[0]===PAR2[q]); }
+  /* ?trio (ou o botão ×3): cada estado com as três variações lado a lado (0, 1, 2) */
+  let TRIO = new URLSearchParams(location.search).has('trio');
+  let discos = [], pms = [], tr1 = null, tr2 = null;
+  function montarEstados(){
+  const PASSO = TRIO ? 62 : 46, cols = SO_CABELOS ? 7 : TRIO ? 6 : 8;
+  discos = []; pms = [];
+  ESTADOS.forEach(([nome, fn], i)=>{
+    const x0 = (i%cols - (cols-1)/2)*PASSO, z0 = (Math.floor(i/cols) - 0.5)*(TRIO ? 62 : 70);
+    if(nome==='policial'){
+      pms.push({nome, x:x0, y:z0, x0, vivo:true, carga:false, golpe:0, cooldown:0, fn:(d,t)=>{ const k=t%2.4; d.golpe = k<0.3 ? 0.3-k : 0; d.carga = k>1.4; }});
+      return;
+    }
+    const n = (TRIO && nome!=='troca' && nome!=='troca2' && nome!=='agarrar' && nome!=='agarrado') ? 3 : 1;
+    for(let v=0; v<n; v++){
+      const dx = n===1 ? 0 : (v-1)*16;
+      discos.push({nome: (n===1 || v===1) ? nome.toUpperCase() : '', lado: i%2 ? 'visitante':'mandante', cor: i%2?'#1e4fa0':'#c0392b', cor2:'#f0f0f0',
+        x:x0+dx, y:z0, x0:x0+dx, r:7, hp:150, hpMax:150, vivo:true, caido:false, preso:false, fugindo:false, fugaBomba:null, ataque:null, defendendo:0, esquivou:0, inimigoPerto:999,
+        atordoado:0, apanhou:0, golpe:0, hostil:0, arremesso:null, tremor:0, rumo:0, linha:'frente', lider: nome==='socar' && v===1,
+        varianteForcada: n===1 ? null : v, derrubado:0, derrubadoDur:0,
+        _cacando:false, fn});
+    }
+  });
+  for(const d of discos) Object.defineProperty(d, 'vivo', {get(){ return !this.caido && !this.preso; }});
+  /* os dois da troca ficam frente a frente, a 17 px um do outro */
+  tr1 = discos.find(d=>d.nome==='TROCA'); tr2 = discos.find(d=>d.nome==='TROCA2');
+  if(tr1 && tr2){ tr1.x0 = tr1.x = tr2.x0 - 17; tr1.y = tr2.y; tr1.par = tr2; tr2.par = tr1; tr1.nome='TROCA'; tr2.nome=''; }
+  const ag1 = discos.find(d=>d.nome==='AGARRAR'), ag2 = discos.find(d=>d.nome==='AGARRADO');
+  if(ag1 && ag2){ ag1.x0 = ag1.x = ag2.x0 - 15; ag1.y = ag2.y; ag1.par = ag2; ag2.par = ag1; ag2.nome=''; }
+  J.discos = discos; J.policiais = pms;
+  }
+  const J = {t:0, discos:[], policiais:[], projeteis:[], grades:[], paz:false};
+  montarEstados();
+
+  let ang = 0.4, dist = 330, distIso = 125, auto = true, isolado = null, ant = performance.now();
+  /* ?estado=parado&ang=0&dist=40&alt=30&mira=28 — câmera fixa, pra capturar o rosto de perto */
+  const PAR = new URLSearchParams(location.search);
+  const parN = (k, d)=> PAR.has(k) ? parseFloat(PAR.get(k)) : d;
+  const alvoDe = ()=> isolado ? {x:isolado.x, z:isolado.y} : {x:0, z:0};
+  function quadro(agora){
+    let dt = (agora-ant)/1000; ant = agora; if(dt>0.05) dt=0.05;
+    passoVitrine(dt);
+    requestAnimationFrame(quadro);
+  }
+  /* um passo da vitrine com dt fixo — `?manual` desliga o relógio e a
+     captura chama window.__vitrine.passo(dt) quantas vezes quiser */
+  function passoVitrine(dt){
+    J.t += dt;
+    for(const d of discos){
+      d.golpe=0; d.hostil=0; d.apanhou=0; d.atordoado=0; d.arremesso=null; d.fugindo=false; d.fugaBomba=null; d._cacando=false; d.tremor=0; d.linha='frente'; d._alvo=null; d.defendendo=0; d.inimigoPerto=999; d.derrubado=0; d.segurando=null; d.seguradoPor=null; d.chamou=-9;
+      if(d.esquivou>0) d.esquivou=Math.max(0,d.esquivou-dt);
+      if(d.fn) d.fn(d, J.t);
+      if(d.fn.toString().indexOf('anda')<0 && !d.par) { d.x = d.x0; d.rumo = 0; }
+    }
+    for(const p of pms) p.fn(p, J.t);
+    if(auto) ang += dt*0.25;
+    const alvo = alvoDe();
+    B.desenharVitrine(J, {dt, angulo:ang, dist: isolado ? parN('dist', distIso) : dist,
+      altura: isolado ? parN('alt', 48*distIso/125) : 150, alvo, mira: isolado ? parN('mira', 16) : 8});
+    rotular();
+  }
+  window.__vitrine = {J, discos, passo: passoVitrine};
+  /* rótulo de cada estado, projetado pela mesma câmera */
+  const caixa = document.getElementById('rotulos');
+  let rot = [];
+  function montarRotulos(){
+    caixa.innerHTML = '';
+    rot = discos.concat(pms).map(d=>{ const e=document.createElement('div'); e.textContent=(d.nome===''?'':(d.nome||'PM')).toUpperCase(); caixa.appendChild(e); return e; });
+  }
+  montarRotulos();
+  function rotular(){
+    const D = B._dbg; if(!D) return;
+    const camV = D.camV; if(!camV) return;
+    const r = cv.getBoundingClientRect();
+    discos.concat(pms).forEach((d,i)=>{
+      const v = new THREE.Vector3(d.x0!==undefined?d.x0:d.x, 0, d.y).project(camV);
+      rot[i].style.left = ((v.x+1)/2*r.width)+'px'; rot[i].style.top = ((1-(v.y+1)/2)*r.height+6)+'px';
+      rot[i].style.display = (v.z<1 && (!isolado || isolado===d)) ? 'block' : 'none';
+    });
+  }
+  /* botões: um por estado; clicar isola; ×3 mostra as três variações */
+  const topo = document.getElementById('topo');
+  let bts = [];
+  const todos = document.createElement('button'); todos.textContent='todos'; todos.className='on';
+  todos.onclick=()=>{ isolado=null; bts.forEach(b=>b.classList.remove('on')); todos.classList.add('on'); };
+  topo.appendChild(todos);
+  const tres = document.createElement('button'); tres.title = 'as três variações de cada movimento lado a lado';
+  tres.onclick=()=>{ TRIO = !TRIO; const nome = isolado && isolado.nome; montarEstados(); montarRotulos(); montarBotoes();
+    isolado = nome ? discos.concat(pms).find(d=>d.nome===nome) || null : null;
+    bts.forEach(x=>x.classList.toggle('on', isolado && x.textContent.toUpperCase()===isolado.nome)); todos.classList.toggle('on', !isolado); };
+  topo.appendChild(tres);
+  function montarBotoes(){
+    bts.forEach(b=>b.remove()); bts = [];
+    tres.textContent = TRIO ? '×1' : '×3';
+    discos.concat(pms).forEach(d=>{
+      if(d.nome==='' ) return;
+      const b=document.createElement('button'); b.textContent=(d.nome||'PM').toLowerCase();
+      b.onclick=()=>{ isolado=d; bts.forEach(x=>x.classList.remove('on')); todos.classList.remove('on'); b.classList.add('on'); };
+      topo.appendChild(b); bts.push(b);
+    });
+  }
+  montarBotoes();
+  /* arrastar gira, rodinha aproxima */
+  let arr=null;
+  cv.addEventListener('pointerdown', e=>{ arr={x:e.clientX, a:ang}; auto=false; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e=>{ if(arr) ang = arr.a + (e.clientX-arr.x)*0.01; });
+  cv.addEventListener('pointerup', ()=>{ arr=null; });
+  cv.addEventListener('wheel', e=>{ e.preventDefault(); const k=Math.exp(e.deltaY*0.0015); dist = Math.min(700, Math.max(60, dist*k)); distIso = Math.min(300, Math.max(30, distIso*k)); }, {passive:false});
+  if(PAR.has('estado')){
+    const nome = PAR.get('estado').toUpperCase();
+    const d = discos.concat(pms).find(x=>(x.nome||'PM').toUpperCase()===nome);
+    if(d){ isolado = d; bts.forEach(x=>x.classList.toggle('on', x.textContent.toUpperCase()===nome)); todos.classList.remove('on'); }
+    if(PAR.has('ang')){ ang = parN('ang', 0); auto = false; }
+  }
+  if(!PAR.has('manual')) requestAnimationFrame(quadro);
+  else passoVitrine(0.05);
+})();
+</script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+
 /* =========================================================
    PONTE — laço, HUD, entrada do jogador e editor de cena
    Liga arredores.js + combate.js a uma tela concreta.
@@ -28,6 +29,13 @@ TO.diaJogo.ponte = (function(){
                         dica:'Leve o líder até o portão da sua torcida.'};
 
   let cv, ctx, J=null, teclas={}, rodando=false, ant=0;
+  /* A VERSÃO DE PERTO. A mesma ponte, o mesmo combate, o mesmo HUD — só
+     quem desenha muda. `tres` liga quando a cena é uma das `*-3d` ou
+     quando quem monta pede; T é o renderizador (js/diajogo/tres.js).
+     `bonecos` é a outra ponta do mesmo renderizador: a cena continua
+     sendo a de cima, e um canvas WebGL transparente por cima dela põe
+     boneco no lugar do disco. */
+  let tres=false, T=null, dtQuadro=0.016, bonecos=false;
   let aoTerminar=null;
   /* chamado a cada quadro enquanto a cena roda: quem monta a cena usa
      isso pra continuar o relógio da rua e mandar pra cá o bonde que
@@ -45,17 +53,66 @@ TO.diaJogo.ponte = (function(){
   function montar(opc){
     opc=opc||{};
     cv  = opc.canvas || document.getElementById('djPrincipal');
-    ctx = cv.getContext('2d');
+    ctx = null;
     aoTerminar = opc.aoTerminar || null;
     aCadaQuadro = opc.aCadaQuadro || null;
 
     /* rua, praça ou arredores: a cena vem do encontro que abriu a tela */
-    A.usarCena((opc.config||{}).local);
+    let local = (opc.config||{}).local;
+    tres = !!opc.tres || /-3d$/.test(String(local||''));
+    if(tres){
+      T = TO.diaJogo.tres;
+      if(!T || !T.montar(cv, opc.sobre || document.getElementById('djSobre'))){
+        /* sem WebGL: a mesma briga, vista de cima */
+        tres = false; T = null;
+        local = String(local||'').replace(/-3d$/, '');
+        if(opc.config) opc.config.local = local;
+        console.warn('cena 3D indisponível: abrindo a cena 2D');
+      }
+    }
+    if(!tres && !ctx){
+      ctx = cv.getContext('2d');
+      if(!ctx) throw new Error('o canvas da cena já é WebGL; a cena 2D precisa de outro canvas');
+    }
+    /* os bonecos por cima do 2D: só quando quem monta passa o canvas e
+       pede — e some quando não pede, porque no jogo o canvas é o mesmo
+       elemento que a cena de perto usa */
+    const sg = opc.sobreGL || null;
+    bonecos = false;
+    if(sg){
+      sg.classList.remove('tres');
+      /* o boneco em Three.js (bonecos3.js) quando a biblioteca está
+         carregada; o renderizador próprio (tres.js) de reserva */
+      const B3 = TO.diaJogo.bonecos3;
+      if(!tres && opc.bonecos && B3 && B3.montar(sg)){
+        bonecos = true; T = B3;
+        sg.classList.add('sobre-gl'); sg.hidden = false;
+      } else if(!tres && opc.bonecos && TO.diaJogo.tres && TO.diaJogo.tres.montar(sg, null)){
+        bonecos = true; T = TO.diaJogo.tres;
+        sg.classList.add('sobre-gl'); sg.hidden = false;
+      } else if(!tres){ sg.classList.remove('sobre-gl'); sg.hidden = true; }
+    }
+    if(tres && cv) cv.classList.remove('sobre-gl');
+
+    A.usarCena(local);
     montarBotoes();
     atualizarBotaoVelocidade();
     acharHudDeBancada();
-    if(estreito()) montarPad();
-    zoomDeCelular();
+    /* O PAD NA CENA DE PERTO, em qualquer largura. Na de cima ele só
+       entra no celular; na de perto entra sempre, porque a cena é
+       jogada olhando pro boneco e não pro teclado — e a cruz escreve
+       nas mesmas teclas, que o renderizador converte pro rumo da
+       câmera. */
+    /* NO CELULAR A CENA É A TELA INTEIRA, aproximada no líder (ver
+       `ajustarCanvasCelular`); a pinça de dois dedos ajusta o zoom
+       (`ligarPinca`). */
+    ajustarCanvasCelular();
+    if(!redimensionarLigado){ redimensionarLigado=true; addEventListener('resize', ajustarCanvasCelular); }
+    if(estreito() || tres) montarPad();
+    else {
+      const pad=$('djPad'); if(pad) pad.hidden=true;
+      const pai=cv.parentElement; if(pai) pai.classList.remove('com-pad');
+    }
     montarSliders();
     ligarEntrada();
     novaNoite(opc.config||{});
@@ -66,7 +123,7 @@ TO.diaJogo.ponte = (function(){
   function novaNoite(cfg){
     const fim=$('djFim'); if(fim) fim.remove();
     if(cfg) config=cfg;
-    J = C.criarEstado(config);
+    J = C.criarEstado(config); mira=null;
     TO.diaJogo.J = J;
     atualizarBotoes();
   }
@@ -103,6 +160,9 @@ TO.diaJogo.ponte = (function(){
   function quadro(agora){
     let dt=(agora-ant)/1000; ant=agora;
     if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
+    dtQuadro=dt;
+    /* na cena de perto o WASD é relativo à câmera: o renderizador resolve */
+    teclas.vetor = (tres && T) ? T.vetorDoTeclado(teclas) : null;
     if(J && !ED.ativo){
       for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
       /* a rua não para porque a briga começou: quem ainda estava andando
@@ -130,33 +190,33 @@ TO.diaJogo.ponte = (function(){
      ======================================================= */
   let zoom=1;
   const ZOOM_MAX=4;
-  /* =======================================================
-     NO CELULAR A CÂMERA CHEGA PERTO (pedido do dono, 22/08/2026)
-
-     A cena inteira num palco de 500 px deixava cada disco com dois
-     pixels de raio: o jogador via formiga, não briga. Agora, em tela
-     estreita, a câmera nasce colada no disco que ele controla — a
-     mesma câmera do zoom da rodinha, que já seguia o líder.
-
-     O valor não é chutado: parte do tamanho que um disco tem de ter na
-     tela de verdade (RAIO_ALVO) e volta pela conta da escala. Palco
-     maior pede menos zoom; palco menor pede mais. O teto continua
-     sendo o ZOOM_MAX.
-
-     Em troca de não ver o mapa todo, a seta da borda diz onde eles
-     estão (ver `setaDoRival`).
-     ======================================================= */
-  const RAIO_ALVO = 9;   // px de verdade que o disco do jogador deve ter
-  const RAIO_LIDER = 9;  // o raio dele na cena (ver a classe Disco)
-  function zoomDeCelular(){
-    if(!cv || !estreito()) return;
-    const larguraReal = cv.getBoundingClientRect().width || cv.width;
-    if(!larguraReal) return;
-    /* raio na tela = raio na cena × zoom × (largura real ÷ largura da cena) */
-    const z = RAIO_ALVO * A.W / (RAIO_LIDER * larguraReal);
-    zoom = U.limitar(z, 1, ZOOM_MAX);
+  const ZOOM_CELULAR=2.4;
+  /* CELULAR: A CENA É A TELA INTEIRA (pedido do dono, 05/09/2026).
+     O palco vira tela cheia pelo CSS (cenas.css, ≤900 px) e o pad fica
+     por cima dela; aqui o canvas ganha a resolução da tela (até 1,5×
+     de densidade) e o zoom sobe até a cena preencher a tela sem
+     barra preta — o que, seguindo o líder, é a visão de perto que se
+     queria. Volta ao tamanho original em tela larga. O canvas dos
+     bonecos por cima segue o tamanho mostrado sozinho
+     (tres.ajustarTamanho). */
+  let redimensionarLigado=false;
+  function ajustarCanvasCelular(){
+    if(!cv || tres) return;
+    cv._original = cv._original || {w:cv.width, h:cv.height};
+    if(!estreito()){
+      if(cv.width!==cv._original.w || cv.height!==cv._original.h){ cv.width=cv._original.w; cv.height=cv._original.h; }
+      return;
+    }
+    const dpr = Math.min(1.5, devicePixelRatio||1);
+    /* a caixa vem do CSS (a faixa fica com o topo, o resto é canvas);
+       o buffer segue a caixa pra imagem não esticar */
+    const rc = cv.getBoundingClientRect();
+    const w = Math.round((rc.width||innerWidth)*dpr), h = Math.round((rc.height||innerHeight)*dpr);
+    if(cv.width!==w || cv.height!==h){ cv.width=w; cv.height=h; }
+    /* preencher: o zoom mínimo é o que faz a menor razão alcançar a maior */
+    const enche = Math.max(w/A.W, h/A.H) / Math.min(w/A.W, h/A.H);
+    zoom = U.limitar(Math.max(zoom, ZOOM_CELULAR, enche), 1, ZOOM_MAX);
   }
-  addEventListener('resize', zoomDeCelular);
   function focoDoZoom(){
     if(!J) return null;
     const l=J.discos.find(d=>d.lider&&d.vivo);
@@ -183,13 +243,20 @@ TO.diaJogo.ponte = (function(){
 
   function desenhar(){
     if(!J) return;
+    if(tres && T){ T.desenhar(J, {dt:dtQuadro}); return; }
     escala=ajustar(ctx,cv,A.W,A.H);
     C.desenhar(J,ctx,{editor:ED.ativo,
                       mostrarMalha:ED.ativo&&ED.mostrarMalha,
-                      mostrarPostos:ED.ativo&&ED.mostrarPostos});
+                      mostrarPostos:ED.ativo&&ED.mostrarPostos,
+                      semCorpo:bonecos});
+    if(mira && !ED.ativo) desenharMira(ctx);
     if(ED.ativo) desenharEditor(ctx);
     ctx.setTransform(1,0,0,1,0,0);
     setaDoRival(ctx);
+    /* o editor pinta a malha e arrasta marcador: ali o boneco atrapalha */
+    if(bonecos && T && !ED.ativo)
+      T.desenharDeCima(J, {escala, cw:cv.width, ch:cv.height, dt:dtQuadro});
+    else if(bonecos && T) T.limparDeCima();
   }
 
   /* =======================================================
@@ -266,6 +333,98 @@ TO.diaJogo.ponte = (function(){
     c.beginPath();
     c.moveTo(13, 0); c.lineTo(-7, -10); c.lineTo(-3, 0); c.lineTo(-7, 10);
     c.closePath(); c.fill(); c.stroke();
+    c.restore();
+  }
+
+
+  /* =======================================================
+     A MIRA DA BOMBA
+     A bomba não sai mais no aperto: o aperto abre a mira, e a mira é
+     um arco do líder até onde a bomba vai cair, com o raio de dano
+     desenhado no chão — no espírito do Angry Birds, a grosso modo.
+     Três jeitos de apontar, todos caindo no mesmo `mira`:
+       · mouse: E abre, o ponto segue o mouse, clique (ou E de novo) joga;
+       · pad/toque: segura BOMBA e arrasta — o ponto anda com o dedo
+         (1,5 px de cena por px de tela) — e solta pra jogar;
+       · toque curto no BOMBA: abre a mira; o próximo toque na cena é
+         onde ela cai.
+     Esc cancela. Fora do alcance o ponto é puxado pra borda do
+     alcance, que aparece tracejada em volta do líder. A cena de perto
+     (3D) continua jogando direto: lá a mira em arco não faz sentido
+     de cima pra baixo.
+     ======================================================= */
+  let mira=null;   // {x,y, arrasto:{x0,y0,mexeu}|null}
+  const liderVivo = ()=> J && J.discos.find(d=>d.lider&&d.vivo);
+  function pontoAdiante(l){
+    const a=P.alcanceBomba*0.55;
+    return {x:l.x+Math.sin(l.rumo)*a, y:l.y+Math.cos(l.rumo)*a};
+  }
+  function limitarMira(){
+    const l=liderVivo(); if(!l){ mira=null; return; }
+    const dx=mira.x-l.x, dy=mira.y-l.y, d=Math.hypot(dx,dy);
+    if(d>P.alcanceBomba){ mira.x=l.x+dx/d*P.alcanceBomba; mira.y=l.y+dy/d*P.alcanceBomba; }
+  }
+  function abrirMira(arrasto){
+    if(!J) return false;
+    if(tres){ C.arremessar(J,'bomba'); return false; }
+    if(!C.podeArremessar(J,'bomba')){
+      C.aviso(J, J.bombas<=0 ? 'Sem bomba na mochila.' : 'Bomba recarregando.', '#e0b040');
+      return false;
+    }
+    const l=liderVivo(); if(!l) return false;
+    const ini = (!arrasto && ultimoMouse) ? ultimoMouse : pontoAdiante(l);
+    mira={x:ini.x, y:ini.y, arrasto:arrasto||null};
+    limitarMira();
+    return true;
+  }
+  function moverMira(x,y){ if(!mira) return; mira.x=x; mira.y=y; limitarMira(); }
+  function soltarBomba(){
+    if(!mira) return;
+    limitarMira();
+    if(mira) C.arremessar(J,'bomba',{x:mira.x, y:mira.y});
+    mira=null;
+  }
+  function cancelarMira(){ mira=null; }
+  /* E: abre a mira; com ela aberta, joga */
+  function alternarMira(){ if(mira) soltarBomba(); else abrirMira(null); }
+  let ultimoMouse=null;
+
+  function desenharMira(c){
+    const l=liderVivo(); if(!l){ mira=null; return; }
+    limitarMira(); if(!mira) return;
+    const alc=P.alcanceBomba, raio=C.RAIO_BOMBA||92;
+    const puls=0.5+0.5*Math.sin(performance.now()/140);
+    c.save();
+    /* até onde dá pra jogar */
+    c.setLineDash([4,7]); c.lineWidth=1; c.strokeStyle='rgba(255,255,255,.22)';
+    c.beginPath(); c.arc(l.x,l.y,alc,0,7); c.stroke();
+    /* a zona onde ela cai */
+    c.setLineDash([]);
+    c.fillStyle=`rgba(226,80,40,${0.10+0.08*puls})`;
+    c.beginPath(); c.arc(mira.x,mira.y,raio,0,7); c.fill();
+    c.lineWidth=2; c.strokeStyle=`rgba(255,120,70,${0.7+0.3*puls})`; c.stroke();
+    c.strokeStyle='rgba(255,220,90,.95)'; c.lineWidth=1.5;
+    c.beginPath(); c.moveTo(mira.x-7,mira.y-7); c.lineTo(mira.x+7,mira.y+7);
+    c.moveTo(mira.x+7,mira.y-7); c.lineTo(mira.x-7,mira.y+7); c.stroke();
+    /* o arco: mesma altura aparente que a bomba voando usa (36 px) */
+    c.setLineDash([5,4]); c.lineWidth=2; c.strokeStyle='rgba(255,220,90,.9)';
+    c.beginPath();
+    for(let i=0;i<=24;i++){
+      const k=i/24;
+      const x=l.x+(mira.x-l.x)*k, y=l.y+(mira.y-l.y)*k - Math.sin(k*Math.PI)*36;
+      if(i) c.lineTo(x,y); else c.moveTo(x,y);
+    }
+    c.stroke();
+    c.setLineDash([]);
+    c.fillStyle='#c8562f'; c.beginPath(); c.arc(l.x,l.y-14,5,0,7); c.fill();
+    /* a dica fica pequena, junto do ponto — o aviso grande do HUD é
+       pra coisa que acontece, não pra instrução */
+    c.font='bold 11px system-ui, sans-serif'; c.textAlign='center';
+    c.fillStyle='rgba(0,0,0,.55)';
+    const dica = mira.arrasto ? 'solte pra jogar' : 'clique · E joga · Esc cancela';
+    const tw=c.measureText(dica).width+10;
+    c.fillRect(mira.x-tw/2, mira.y+raio+6, tw, 16);
+    c.fillStyle='#ffd35a'; c.fillText(dica, mira.x, mira.y+raio+18);
     c.restore();
   }
 
@@ -404,6 +563,7 @@ TO.diaJogo.ponte = (function(){
     if(btB) btB.style.display = J.semArmas ? 'none' : '';
     if(btP && !J.semArmas){const r=C.restaCd(J,'pedra'); btP.disabled=r>0;
       btP.firstChild.textContent=r>0?`Pedra ${r.toFixed(1)}s `:'Pedra ';}
+    const btQ=el('djBtBater'); if(btQ) btQ.style.display = '';
     if(btB && !J.semArmas){const r=C.restaCd(J,'bomba'); btB.disabled=J.bombas<=0||r>0;
       btB.firstChild.textContent=r>0?`Bomba ${r.toFixed(1)}s `:'Bomba ';}
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
@@ -571,9 +731,13 @@ TO.diaJogo.ponte = (function(){
       : espera
       ? `<b style="color:var(--ouro)">${espera.toUpperCase()}</b> · `+
         '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação'
-      : '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação · <kbd>Q</kbd> pedra · '+
-        '<kbd>E</kbd> bomba · <kbd>R</kbd> recuar · <kbd>F</kbd> fugir · '+
-        'rodinha = zoom · <kbd>F2</kbd> editor de cena';
+      : tres
+      ? '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · '+
+        '<kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · '+
+        'arrastar gira · roda aproxima'
+      : '<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · '+
+        '<kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · '+
+        '<kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena';
   }
 
   /* =======================================================
@@ -586,7 +750,7 @@ TO.diaJogo.ponte = (function(){
 
   function montarBotoes(){
     const cf=$('djFormacoes');
-    if(cf && !cf.childElementCount){
+    if(cf && !cf.childElementCount && Object.keys(C.FORMACOES).length > 1){
       for(const [id,f] of Object.entries(C.FORMACOES)){
         const b=document.createElement('button');
         b.className='form-btn'; b.dataset.f=id;
@@ -597,7 +761,8 @@ TO.diaJogo.ponte = (function(){
     }
     const liga=(id,fn)=>{const e=$(id); if(e) e.onclick=fn;};
     liga('djBtPedra', ()=>C.arremessar(J,'pedra'));
-    liga('djBtBomba', ()=>C.arremessar(J,'bomba'));
+    liga('djBtBomba', alternarMira);
+    liga('djBtBater', ()=>{ if(J) C.bater(J, liderVivo()); });
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
     liga('djBtFugir', mandarCorrer);
     liga('djVelocidade', alternarVelocidade);
@@ -647,7 +812,7 @@ TO.diaJogo.ponte = (function(){
        Os botões de briga apagam junto, senão ficam prometendo pedra e
        recuo pra quem está correndo. */
     const correndo = C.emFuga(J);
-    for(const id of ['djBtFugir','djBtRecuar','djBtPedra','djBtBomba']){
+    for(const id of ['djBtFugir','djBtRecuar','djBtPedra','djBtBomba','djBtBater']){
       const b = $(id);
       if(b){ b.disabled = correndo; b.classList.toggle('gasto', correndo); }
     }
@@ -656,7 +821,7 @@ TO.diaJogo.ponte = (function(){
     const pad = $('djPad');
     if(!pad || !J) return;
     const correndo = C.emFuga(J);
-    pad.querySelectorAll('.pad-f, .pad-r, .pad-q, .pad-e').forEach(b=>{
+    pad.querySelectorAll('.pad-x, .pad-r, .pad-2, .pad-3, .pad-q, .pad-f, .pad-c').forEach(b=>{
       b.disabled = correndo; b.classList.toggle('gasto', correndo);
     });
   }
@@ -803,10 +968,19 @@ TO.diaJogo.ponte = (function(){
   let padMontado = false;
 
   function montarPad(){
-    if(padMontado || !cv) return;
+    if(!cv) return;
     const pai = cv.parentElement || document.body;
     if(!pai) return;
+    if(padMontado){
+      const pad=$('djPad');
+      if(pad){ pad.hidden=false; if(pad.parentElement!==pai) pai.appendChild(pad); }
+      pai.classList.add('com-pad');
+      return;
+    }
     padMontado = true;
+    /* com o pad na tela, o HUD de comandos vira só o botão do portão
+       (ver cenas.css): pedra, bomba, recuar e formação já estão no pad */
+    pai.classList.add('com-pad');
 
     const caixa = document.createElement('div');
     caixa.id = 'djPad'; caixa.className = 'dj-pad';
@@ -842,11 +1016,47 @@ TO.diaJogo.ponte = (function(){
     esq.className = 'pad-lado pad-esq';
     const acoes = document.createElement('div');
     acoes.className = 'pad-acoes';
+    /* BOMBA é segurar e arrastar: o ponto de queda anda com o dedo e
+       a bomba sai quando solta. Toque curto só abre a mira — aí o
+       próximo toque na cena é onde ela cai (ver A MIRA DA BOMBA). */
+    const bomba = document.createElement('button');
+    bomba.className = 'pad-bt pad-acao pad-e'; bomba.textContent = 'BOMBA';
+    bomba.addEventListener('pointerdown', ev=>{
+      ev.preventDefault();
+      try{ bomba.setPointerCapture(ev.pointerId); }catch(_){}
+      bomba.classList.add('apertado');
+      teclas.e=true; setTimeout(()=>{teclas.e=false;}, 60);
+      if(mira){ soltarBomba(); return; }
+      abrirMira({x0:ev.clientX, y0:ev.clientY, mexeu:false});
+    });
+    bomba.addEventListener('pointermove', ev=>{
+      if(!mira || !mira.arrasto) return;
+      const a=mira.arrasto, l=liderVivo(); if(!l) return;
+      const dx=ev.clientX-a.x0, dy=ev.clientY-a.y0;
+      if(Math.hypot(dx,dy)>10) a.mexeu=true;
+      if(a.mexeu) moverMira(l.x+dx*1.5, l.y+dy*1.5);
+    });
+    const soltaBomba = ev=>{
+      if(ev) ev.preventDefault();
+      bomba.classList.remove('apertado');
+      if(!mira || !mira.arrasto) return;
+      if(mira.arrasto.mexeu) soltarBomba();
+      else mira.arrasto=null;
+    };
+    bomba.addEventListener('pointerup', soltaBomba);
+    bomba.addEventListener('pointercancel', soltaBomba);
+    bomba.addEventListener('contextmenu', ev=>ev.preventDefault());
+    /* Q bate (toque), E defende (segurar), R recua; pedra e bomba
+       ficam do outro lado, nos números 2 e 3 */
+    const defender = botao('DEFENDER', 'pad-acao pad-e', ()=>{ teclas.e=true; }, ()=>{ teclas.e=false; if(J) C.soltarDefesa(J, liderVivo()); });
     acoes.append(
-      disparo('q','PEDRA', ()=>{ if(J) C.arremessar(J,'pedra'); }),
-      disparo('e','BOMBA', ()=>{ if(J) C.arremessar(J,'bomba'); }),
+      disparo('q','BATER', ()=>{ if(J){ const l=liderVivo(); if(l) C.bater(J, l); } }),
+      defender,
       disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
-      disparo('f','FUGIR', ()=>{ mandarCorrer(); }),
+      disparo('f','AGARRAR',()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }),
+      disparo('c','CHAMAR',()=>{ if(J) C.chamar(J, C.ladoDoJogador(J)); }),
+      /* FUGIR SAIU DO F (que virou agarrar) e foi pro X */
+      disparo('x','FUGIR', ()=>{ mandarCorrer(); }),
       /* O PORTÃO/SAÍDA VEIO PRO PAD (decisão do dono, 22/08/2026): ele
          era o último botão em cima do palco, com o rótulo comprido
          atravessado no meio da briga. Aqui o rótulo é curto e o estado
@@ -856,30 +1066,21 @@ TO.diaJogo.ponte = (function(){
 
     const dir = document.createElement('div');
     dir.className = 'pad-lado pad-dir';
-    for(const [id,f] of Object.entries(C.FORMACOES))
-      dir.appendChild(botao(f.tecla, 'pad-form', ()=>{
-        if(!J) return;
-        J.form = id; atualizarBotoes(); marcarFormacaoNoPad();
-      }));
+    const pedra = botao('2', 'pad-form pad-2', ()=>{ if(J) C.arremessar(J,'pedra'); });
+    pedra.innerHTML = '2<small>PEDRA</small>';
+    bomba.className = 'pad-bt pad-form pad-3'; bomba.innerHTML = '3<small>BOMBA</small>';
+    dir.append(pedra, bomba);
     caixa.append(esq, dir);
     pai.appendChild(caixa);
-    marcarFormacaoNoPad();
   }
 
-  function marcarFormacaoNoPad(){
-    const pad = $('djPad');
-    if(!pad || !J) return;
-    const teclasForm = Object.values(C.FORMACOES).map(f=>f.tecla);
-    const atual = (C.FORMACOES[J.form]||{}).tecla;
-    pad.querySelectorAll('.pad-form').forEach((b,i)=>
-      b.classList.toggle('on', teclasForm[i] === atual));
-  }
+  function marcarFormacaoNoPad(){ /* só existe o Quadrado */ }
 
   /* a recarga da pedra e o estoque de bomba aparecem no pad, como no HUD */
   function atualizarPad(){
     const pad = $('djPad');
     if(!pad || !J) return;
-    const q = pad.querySelector('.pad-q'), e = pad.querySelector('.pad-e');
+    const q = pad.querySelector('.pad-2'), e = pad.querySelector('.pad-3');
     if(q){ q.style.display = J.semArmas ? 'none' : '';
            q.classList.toggle('gasto', C.restaCd(J,'pedra') > 0); }
     if(e){ e.style.display = J.semArmas ? 'none' : '';
@@ -912,6 +1113,7 @@ TO.diaJogo.ponte = (function(){
       const k=e.key.toLowerCase();
       teclas[k]=true;
       if(k==='f2'){e.preventDefault(); alternarEditor(); return;}
+      if(k==='c' && tres && T && J){ C.aviso(J, 'câmera '+T.trocarCamera(), '#e0b040'); return; }
       if(ED.ativo){
         if(k==='[') ED.pincel=Math.max(4,ED.pincel-4);
         if(k===']') ED.pincel=Math.min(80,ED.pincel+4);
@@ -921,14 +1123,18 @@ TO.diaJogo.ponte = (function(){
       }
       if(!J) return;
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
-      if(k==='f'){C.mandarFugir(J);atualizarBotoes();}
-      if(k==='q') C.arremessar(J,'pedra');
-      if(k==='e') C.arremessar(J,'bomba');
+      if(k==='x'){C.mandarFugir(J);atualizarBotoes();}
+      if(k==='q'){ const l=liderVivo(); if(l) C.bater(J, l); }
+      if(k==='f'){ const l=liderVivo(); if(l) C.agarrar(J, l); }
+      if(k==='c'){ C.chamar(J, C.ladoDoJogador(J)); }
+      /* E é segurar: a defesa é lida por `teclas.e` no moverLider;
+         SOLTAR o E na hora do golpe é o contragolpe */
+      if(k==='2') C.arremessar(J,'pedra');
+      if(k==='3') alternarMira();
+      if(k==='escape') cancelarMira();
       if(k==='enter') mandarEntrarOuSair();
-      for(const [id,f] of Object.entries(C.FORMACOES))
-        if(k===f.tecla){J.form=id;atualizarBotoes();}
     });
-    addEventListener('keyup',e=>{teclas[e.key.toLowerCase()]=false;});
+    addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); if(k==='e' && teclas.e && J) C.soltarDefesa(J, liderVivo()); teclas[k]=false; });
 
     /* rodinha = zoom. `passive:false` porque sem o preventDefault a
        página rola junto e o zoom vira briga com o scroll. O passo é
@@ -939,8 +1145,14 @@ TO.diaJogo.ponte = (function(){
       zoom=U.limitar(zoom*Math.exp(-e.deltaY*0.0018), 1, ZOOM_MAX);
     },{passive:false});
 
+    ligarPinca();
     cv.addEventListener('contextmenu',e=>{if(ED.ativo)e.preventDefault();});
     cv.addEventListener('pointerdown',e=>{
+      if(mira && !ED.ativo && e.button===0){
+        e.preventDefault();
+        const p=paraCena(e); moverMira(p.x,p.y); soltarBomba();
+        return;
+      }
       if(!ED.ativo) return;
       e.preventDefault();
       const p=paraCena(e);
@@ -972,7 +1184,11 @@ TO.diaJogo.ponte = (function(){
       ED.sujo=true;
     });
     addEventListener('pointermove',e=>{
-      if(!ED.ativo) return;
+      if(!ED.ativo){
+        if(e.pointerType!=='touch'){ ultimoMouse=paraCena(e); }
+        if(mira && !mira.arrasto && e.pointerType!=='touch') moverMira(ultimoMouse.x, ultimoMouse.y);
+        return;
+      }
       const p=paraCena(e);
       ED.mouse=p;
       if(ED.pegou){ ED.pegou.mover(p.x,p.y); ED.sujo=true; return; }
@@ -991,6 +1207,28 @@ TO.diaJogo.ponte = (function(){
       e.preventDefault(); mostrarAlvoSolta(false);
       const f=e.dataTransfer.files&&e.dataTransfer.files[0];
       if(f&&f.type.startsWith('image/')) A.usarImagemLocal(f);
+    });
+  }
+
+  /* A PINÇA: dois dedos no canvas mudam o zoom, na mesma escala da
+     rodinha. Um dedo só continua sendo mira/editor; os dedos são
+     acompanhados por pointerId, e a pinça só conta enquanto houver
+     exatamente dois no canvas. */
+  function ligarPinca(){
+    const dedos=new Map(); let dist0=0, zoom0=1;
+    const afast=()=>{ const [a,b]=[...dedos.values()]; return Math.hypot(a.x-b.x,a.y-b.y); };
+    cv.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='touch') return;
+      dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(dedos.size===2){ dist0=afast(); zoom0=zoom; cancelarMira(); }
+    });
+    const solta=e=>{ dedos.delete(e.pointerId); };
+    cv.addEventListener('pointerup',solta); cv.addEventListener('pointercancel',solta);
+    cv.addEventListener('pointermove',e=>{
+      if(e.pointerType!=='touch' || !dedos.has(e.pointerId)) return;
+      dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(dedos.size!==2 || dist0<10) return;
+      zoom=U.limitar(zoom0*afast()/dist0, 1, ZOOM_MAX);
     });
   }
 
@@ -1202,6 +1440,8 @@ TO.diaJogo.ponte = (function(){
      EDITOR DE CENA
      ======================================================= */
   function alternarEditor(){
+    /* o editor pinta a malha na tela de cima; em 3D não há onde pintar */
+    if(tres){ if(J) C.aviso(J, 'o editor é da cena de cima', '#e0b040'); return; }
     ED.ativo=!ED.ativo;
     if(ED.ativo) montarBarraEditor(); else { const b=$('editorBarra'); if(b) b.remove(); }
   }
@@ -1516,6 +1756,7 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
   }
 
   return {montar, novaNoite, encerrar, alternarEditor, gerarArquivo,
+          get tres(){ return tres; }, get bonecos(){ return bonecos; },
           alternarVelocidade,
           get zoom(){return zoom;},
           set zoom(v){ zoom=U.limitar(+v||1, 1, ZOOM_MAX); },
@@ -1529,3 +1770,4 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
           get seta(){return ultimaSeta;},
           get J(){return J;}};
 })();
+

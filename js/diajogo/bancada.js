@@ -1,3 +1,4 @@
+
 /* =========================================================
    BANCADA DE CENAS — a página solta de arredores.html
    ---------------------------------------------------------
@@ -59,36 +60,73 @@ TO.diaJogo.bancada = (function(){
      cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:90}}
   ];
 
+  /* A BANCADA DE PERTO (briga3d.html) usa a mesma bancada com outra
+     lista: as três ruas na versão vista de trás do líder. É a mesma
+     ponte e o mesmo combate — o que muda é o canvas, que ali é WebGL e
+     tem a camada de nomes por cima. */
+  const CENAS_3D = [
+    {id:'rua-3d', rot:'Rua · periferia', titulo:'Rua de periferia, vista de perto',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}},
+    {id:'rua-media-3d', rot:'Rua · classe média', titulo:'Rua de classe média, vista de perto',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}},
+    {id:'rua-nobre-3d', rot:'Rua · classe alta', titulo:'Rua de bairro nobre, vista de perto',
+     cfg:{intencao:'atacar', bombas:1, efetivoRival:18}}
+  ];
+
   const botoes = {};
-  let atual = null;
+  let atual = null, lista = CENAS, extra = {};
 
   function abrir(c){
     atual = c;
+    /* A BANCADA ESTÁ SEMPRE EM CENA. O pad de toque só aparece com
+       `em-cena` no body (cenas.css) — no jogo é quem entra na cena que
+       marca; aqui a cena é a página inteira, e sem isto no celular não
+       havia botão nenhum. */
+    document.body.classList.add('em-cena');
     /* a chave é o rótulo e não o id: as duas abas de arredores são a
        mesma cena em situação diferente, e por id uma apagava a outra */
     for(const k of Object.keys(botoes)) botoes[k].classList.toggle('on', k === c.rot);
+    /* no celular as abas rolam de lado: a aba aberta tem de estar à vista */
+    const bt = botoes[c.rot], abas = bt && bt.parentElement;
+    if(abas && abas.scrollWidth > abas.clientWidth + 2)
+      bt.scrollIntoView({inline:'center', block:'nearest'});
     const t = document.getElementById('cenaTitulo');
     if(t) t.textContent = c.titulo;
     document.title = c.titulo + ' — Torcida Organizada';
-    TO.diaJogo.ponte.montar({config: Object.assign({local:c.id}, c.cfg)});
+    TO.diaJogo.ponte.montar(Object.assign({config: Object.assign({local:c.id}, c.cfg)}, extra));
   }
 
-  function montar(){
+  function montar(cenas, opc){
+    lista = cenas || CENAS; extra = opc || {};
     const abas = document.getElementById('cenaAbas');
     if(!abas) return;
     abas.innerHTML = '';
-    for(const c of CENAS){
+    for(const c of lista){
       const b = document.createElement('button');
       b.textContent = c.rot;
       b.onclick = ()=>abrir(c);
       botoes[c.rot] = b;
       abas.appendChild(b);
     }
+    /* na bancada de cima, o botão que troca boneco por disco e volta:
+       é a comparação que decide se o boneco fica */
+    if(extra.sobreGL){
+      const bt = document.createElement('button');
+      const rot = ()=>{ bt.textContent = extra.bonecos ? 'Bonecos ✓' : 'Discos ✓';
+                        bt.classList.toggle('on', !!extra.bonecos); };
+      bt.onclick = ()=>{ extra.bonecos = !extra.bonecos; rot(); if(atual) abrir(atual); };
+      bt.style.marginLeft = 'auto';
+      rot();
+      abas.appendChild(bt);
+    }
     const dica = document.createElement('small');
     dica.textContent = 'trocar de aba recomeça a noite · F2 abre o editor';
     abas.appendChild(dica);
-    abrir(CENAS[0]);
+    /* #praca, #estadio-20…: abre direto na aba pedida, pra link e pra teste */
+    const pedida = (location.hash||'').slice(1);
+    abrir(lista.find(c=>c.id===pedida) || lista[0]);
   }
 
-  return {CENAS, montar, abrir, get atual(){return atual;}};
+  return {CENAS, CENAS_3D, montar, abrir, get atual(){return atual;}};
 })();
+

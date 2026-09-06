@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="css/paineis.css">
 <link rel="stylesheet" href="css/cenas.css">
 <style>
-  body{display:block;padding:0}
+body{display:block;padding:0}
   header#topo{display:flex;justify-content:space-between;align-items:baseline;
     border-bottom:2px solid var(--linha);padding:10px 16px}
   header#topo h1{font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
@@ -24,13 +24,55 @@
   #cenaAbas button.on{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
   #cenaAbas small{font-family:var(--mono);font-size:10px;color:var(--fraco);
     align-self:center;margin-left:6px}
+
+  /* NO CELULAR (mesmo limiar do jogo, 900px): cabeçalho de uma linha,
+     abas numa fileira que rola de lado, palco colado em cima e o pad
+     fixo embaixo, igual à cena do jogo. O canvas não rola a página:
+     o dedo nele é mira. */
+  @media (max-width: 900px){
+    /* a cena é a tela inteira (cenas.css); o cabeçalho some e as abas
+       viram uma faixa fina por cima da cena, que rola de lado */
+    header#topo{display:none}
+    #cenaAbas{position:fixed;left:0;right:0;top:0;z-index:65;
+      background:rgba(14,14,13,.72);border-bottom:1px solid rgba(255,255,255,.08)}
+    /* o HUD desce pra não ficar embaixo da faixa de abas */
+    #djRelogio, #djSubrelogio, #djAlerta, #djPlacar{margin-top:44px}
+    header#topo{padding:6px 10px;gap:4px 10px}
+    header#topo h1{font-size:13px;letter-spacing:.1em}
+    header#topo span, header#topo p{display:none}
+    #cenaAbas{flex-wrap:nowrap;overflow-x:auto;gap:5px;padding:6px 8px;
+      -webkit-overflow-scrolling:touch;scrollbar-width:none}
+    #cenaAbas::-webkit-scrollbar{display:none}
+    #cenaAbas button{white-space:nowrap;padding:8px 10px;font-size:10.5px;flex:0 0 auto}
+    #cenaAbas small{display:none}
+    #djGrade{padding:0;gap:0}
+    html, body{overflow-x:hidden}
+    /* as ocorrências são coisa de mesa: no celular só a cena e o pad */
+    #djGrade > div:first-child > .painel{display:none}
+    /* a coluna da direita some: formação, pedra, bomba e recuar já
+       estão no pad, e calibragem é coisa de mesa. Só o portão fica —
+       no vão entre as duas metades do pad, como no jogo. As
+       ocorrências continuam embaixo do palco, com folga pra rolar
+       por cima do pad. */
+    body{padding-bottom:calc(190px + env(safe-area-inset-bottom))}
+    #djGrade > div:last-child .painel{display:none}
+    #djGrade > div:last-child .painel:first-child{display:block;padding:0;border:0;background:none;margin:0}
+    #djLocal, #djFormacoes, #djBtBater, #djBtPedra, #djBtBomba, #djBtRecuar{display:none}
+    /* o portão fica em cima da fileira de formações, à direita: numa
+       tela de 430 px o vão entre as metades do pad não existe */
+    #djBtEntrar{position:fixed;z-index:71;right:10px;left:auto;
+      bottom:calc(64px + env(safe-area-inset-bottom));width:auto;max-width:46vw;
+      font-size:10px;padding:8px 8px;line-height:1.2}
+    #djBtEntrar b{display:none}
+  }
 </style>
 </head>
 <body>
 
 <header id="topo">
   <h1 id="cenaTitulo">Arredores do estádio</h1>
-  <span>CENA SOBRE FOTO · MALHA DE CAMINHABILIDADE · <b style="color:var(--ouro)">F2</b> EDITOR</span>
+  <span>CENA SOBRE FOTO · MALHA DE CAMINHABILIDADE · <b style="color:var(--ouro)">F2</b> EDITOR ·
+    <a href="briga3d.html" style="color:var(--ouro)">RUA EM 3D →</a></span>
 </header>
 
 <div id="cenaAbas"></div>
@@ -39,6 +81,9 @@
   <div>
     <div id="djPalco">
       <canvas id="djPrincipal" width="1152" height="768"></canvas>
+      <!-- os bonecos por cima do disco: um canvas WebGL transparente,
+           que a ponte liga quando a bancada pede -->
+      <canvas id="djSobreGL" width="1152" height="768" hidden></canvas>
 
       <div class="hud" id="djRelogio">18:00</div>
       <div class="hud" id="djSubrelogio"></div>
@@ -66,8 +111,9 @@
     <div class="painel">
       <h2 id="djLocal">Nos arredores</h2>
       <div id="djFormacoes"></div>
-      <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
-      <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
+      <button class="acao-btn" id="djBtBater" title="Soltar o E na hora do golpe é o contragolpe">Bater <b>Q</b> · Defender <b>E</b> · Agarrar <b>F</b> · Chamar <b>C</b></button>
+      <button class="acao-btn" id="djBtPedra">Pedra <b>2</b></button>
+      <button class="acao-btn" id="djBtBomba">Bomba <b>3</b> · <span id="djQtdBomba">0</span></button>
       <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
       <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
     </div>
@@ -88,8 +134,23 @@
 <script src="js/diajogo/cenario.js"></script>
 <script src="js/diajogo/arredores.js"></script>
 <script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/tres.js"></script>
+<script src="js/lib/three.min.js"></script>
+<script src="js/lib/GLTFLoader.js"></script>
+<script src="js/lib/SkeletonUtils.js"></script>
+<script src="dados/boneco_leve_glb.js"></script>
+<script src="js/diajogo/bonecos3.js"></script>
 <script src="js/diajogo/ponte.js"></script>
 <script src="js/diajogo/bancada.js"></script>
-<script>TO.diaJogo.bancada.montar();</script>
+<script>
+  /* SEM_FOTO: se a página for empacotada sem as imagens, a esplanada
+     (que é só foto) fica de fora. ?discos abre sem boneco, pra comparar. */
+  (function(){
+    const B = TO.diaJogo.bancada;
+    B.montar(window.SEM_FOTO ? B.CENAS.filter(c=>c.id!=='arredores') : null,
+             {bonecos: !/discos/.test(location.search),
+              sobreGL: document.getElementById('djSobreGL')});
+  })();
+</script>
 </body>
 </html>

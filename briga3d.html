@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Briga de rua em 3D — Torcida Organizada</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<link rel="stylesheet" href="css/cenas.css">
+<link rel="stylesheet" href="css/mobile.css">
+<style>
+  /* =========================================================
+     A BANCADA 3D
+     O palco é o do jogo: a HUD flutua sobre a cena, o pad de
+     toque fica dentro do palco e os comandos, no vão entre as
+     duas metades dele. Embaixo, o que só a bancada tem — as
+     ocorrências e a calibragem.
+     ========================================================= */
+  body{display:block;padding:0;background:var(--fundo)}
+  header#topo{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between;
+    align-items:baseline;border-bottom:2px solid var(--linha);padding:10px 16px}
+  header#topo h1{font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  header#topo p{font-family:var(--mono);font-size:10.5px;color:var(--fraco);letter-spacing:.08em;
+    text-transform:uppercase}
+  header#topo p b{color:var(--ouro);font-weight:600}
+  header#topo a{color:var(--ouro)}
+  #cenaAbas{display:flex;flex-wrap:wrap;gap:7px;padding:9px 16px;
+    border-bottom:1px solid var(--linha);background:#141412}
+  #cenaAbas button{
+    background:#1e1e1a;border:1px solid var(--linha);color:var(--apagado);
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;padding:6px 13px;cursor:pointer}
+  #cenaAbas button:hover{color:#fff;border-color:var(--ouro)}
+  #cenaAbas button:focus-visible{outline:2px solid var(--ouro);outline-offset:2px}
+  #cenaAbas button.on{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+  #cenaAbas small{font-family:var(--mono);font-size:10px;color:var(--fraco);
+    align-self:center;margin-left:6px}
+  /* os comandos, em linha, na letra do resto do jogo */
+  #comandos{display:flex;flex-wrap:wrap;gap:5px 16px;align-items:center;
+    padding:9px 16px;border-bottom:1px solid var(--linha);
+    font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+  #comandos span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  #comandos kbd{font-family:var(--mono);font-size:10px;background:#00000099;
+    border:1px solid #55534d;border-radius:2px;padding:1px 6px;color:var(--texto)}
+  #semGL{display:none;padding:12px 16px;font-family:var(--mono);font-size:11px;
+    line-height:1.6;color:#d9705f;border-bottom:1px solid var(--linha)}
+
+  /* o palco ocupa a largura toda; o que sobra vai embaixo dele */
+  #djGrade{display:block;max-width:1460px;margin:0 auto;padding:12px}
+  #bancada{display:grid;grid-template-columns:1fr 300px;gap:12px;margin-top:11px}
+  @media(max-width:1100px){#bancada{grid-template-columns:1fr}}
+  /* O PALCO CABE NA JANELA. O renderizador 3D adapta o buffer ao
+     tamanho do quadro a cada volta, então o palco pode ter qualquer
+     caixa: aqui ele é 3:2 e nunca mais alto que a janela menos o
+     cabeçalho — senão o pad, que mora no pé do palco, fica fora da
+     vista em tela baixa e o jogador rola a página pra andar. */
+  #djPalco{width:min(100%, calc((100vh - 170px) * 1.5)); aspect-ratio:3/2;
+    margin:0 auto; min-height:360px}
+  #djPalco canvas.tres{width:100%; height:100%}
+  /* o pad fica dentro do palco, não colado na janela */
+  #djPalco .dj-pad{position:absolute}
+  #djPalco #djComandos{bottom:calc(12px + env(safe-area-inset-bottom))}
+  /* a dica de tecla no botão do portão: a bancada é de desktop também */
+  #djComandos .acao-btn b{display:inline}
+  details.painel summary{cursor:pointer;font-family:var(--titulo);font-size:13px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--fraco)}
+
+  /* NO CELULAR (mesmo limiar do jogo, 900px): cabeçalho de uma linha,
+     abas numa fileira que rola de lado, palco colado em cima e o pad
+     fixo embaixo, igual à cena do jogo. O canvas não rola a página:
+     o dedo nele é mira. */
+  @media (max-width: 900px){
+    /* a cena é a tela inteira (cenas.css); o cabeçalho some e as abas
+       viram uma faixa fina por cima da cena, que rola de lado */
+    header#topo{display:none}
+    #cenaAbas{position:fixed;left:0;right:0;top:0;z-index:65;
+      background:rgba(14,14,13,.72);border-bottom:1px solid rgba(255,255,255,.08)}
+    /* em tela cheia o palco não tem proporção fixa nem altura mínima,
+       e o pad é da tela, não do palco */
+    #djPalco{width:auto;aspect-ratio:auto;min-height:0}
+    #djPalco .dj-pad{position:fixed}
+    #djRelogio, #djSubrelogio, #djAlerta, #djPlacar{margin-top:44px}
+    header#topo{padding:6px 10px;gap:4px 10px}
+    header#topo h1{font-size:13px;letter-spacing:.1em}
+    header#topo span, header#topo p, #comandos{display:none}
+    #cenaAbas{flex-wrap:nowrap;overflow-x:auto;gap:5px;padding:6px 8px;
+      -webkit-overflow-scrolling:touch;scrollbar-width:none}
+    #cenaAbas::-webkit-scrollbar{display:none}
+    #cenaAbas button{white-space:nowrap;padding:8px 10px;font-size:10.5px;flex:0 0 auto}
+    #cenaAbas small{display:none}
+    #djGrade{padding:0;gap:0}
+    #djPalco canvas{touch-action:none}
+    html, body{overflow-x:hidden}
+  }
+</style>
+</head>
+<body class="em-cena">
+
+<header id="topo">
+  <h1 id="cenaTitulo">Rua de periferia, vista de perto</h1>
+  <p>Torcida Organizada · a briga de rua <b>em 3D</b>, atrás do líder ·
+    <a href="arredores.html">← cenas de cima</a></p>
+</header>
+
+<div id="cenaAbas"></div>
+
+<div id="comandos">
+  <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ou a cruz: anda com o líder</span>
+  <span>arrastar gira a câmera</span>
+  <span>roda aproxima</span>
+  <span><kbd>C</kbd> troca a câmera</span>
+  <span><kbd>1</kbd>–<kbd>4</kbd> formação</span>
+  <span><kbd>Q</kbd> pedra</span>
+  <span><kbd>E</kbd> bomba</span>
+  <span><kbd>R</kbd> recuar</span>
+</div>
+
+<div id="semGL">Este navegador não abriu WebGL, então a cena vai abrir na
+  versão vista de cima — a mesma briga, com discos no lugar dos bonecos.</div>
+
+<div id="djGrade">
+  <div id="djPalco">
+    <!-- o palco é WebGL; a camada de cima é um canvas 2D só de nome,
+         barra de vida e radar -->
+    <canvas id="djPrincipal" class="tres" width="1152" height="768"></canvas>
+    <canvas id="djSobre" width="1152" height="768"></canvas>
+
+    <div class="hud" id="djRelogio">18:00</div>
+    <button class="hud" id="djVelocidade" title="Velocidade da cena">1×</button>
+    <div class="hud" id="djSubrelogio"></div>
+    <div class="hud" id="djAlerta">
+      <span class="rot">PM</span>
+      <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
+      <div class="barra pressao"><i id="djBarraPressao" style="width:0%"></i></div>
+      <div id="djCarga"></div>
+    </div>
+    <div class="hud" id="djPlacar"></div>
+    <div class="hud" id="djAviso"></div>
+    <div class="hud" id="djDica"></div>
+    <!-- os comandos sobre o palco, como no jogo. Com o pad montado, só o
+         botão do portão fica aqui; pedra, bomba, recuar e formação já
+         estão no pad. -->
+    <div class="hud" id="djComandos">
+      <div id="djFormacoes"></div>
+      <div class="dj-botoes">
+        <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
+        <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
+        <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
+        <button class="acao-btn entrar" id="djBtEntrar">Furar pra fora <b>ENTER</b></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bancada">
+    <div class="painel">
+      <h2>Ocorrências</h2>
+      <div id="djLog"></div>
+    </div>
+    <details class="painel">
+      <summary>Calibragem · debug</summary>
+      <div id="djSliders"></div>
+    </details>
+  </div>
+</div>
+
+<script src="js/nucleo.js"></script>
+<script src="dados/nomes.js"></script>
+<script src="dados/cena_arredores.js"></script>
+<script src="dados/cenas_foto.js"></script>
+<script src="dados/cenas_editadas.js"></script>
+<script src="dados/cenas.js"></script>
+<script src="js/gestao/membros.js"></script>
+<script src="js/diajogo/cenario.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/tres.js"></script>
+<script src="js/diajogo/ponte.js"></script>
+<script src="js/diajogo/bancada.js"></script>
+<script>
+  /* o canvas do palco é o WebGL; se não abrir, a ponte cai na cena 2D —
+     e aí o canvas precisa ser um 2D, então a bancada troca o elemento */
+  (function(){
+    document.body.classList.add('em-cena');
+    const B = TO.diaJogo.bancada;
+    const cv = document.getElementById('djPrincipal');
+    const ok = (()=>{ try{ return !!(cv.getContext('webgl')||cv.getContext('experimental-webgl')); }
+                      catch(_){ return false; } })();
+    if(!ok){
+      document.getElementById('semGL').style.display='block';
+      const novo = document.createElement('canvas');
+      novo.id='djPrincipal'; novo.width=1152; novo.height=768;
+      cv.replaceWith(novo);
+      document.getElementById('djSobre').remove();
+      B.montar(B.CENAS.filter(c=>/^rua/.test(c.id)));
+      return;
+    }
+    B.montar(B.CENAS_3D, {tres:true, sobre:document.getElementById('djSobre')});
+  })();
+</script>
+</body>
+</html>

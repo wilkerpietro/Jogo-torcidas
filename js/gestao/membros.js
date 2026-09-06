@@ -196,7 +196,13 @@ TO.membros = (function(){
      prefixo. */
   function nomesDaTorcida(nomeTorcida, inicio, qtd){
     const N = TO.dados.nomes;
-    const H = TO.mapa.hash;
+    /* a bancada (arredores.html) não carrega mapa.js: o hash FNV-1a
+       vem de lá quando existe, e daqui quando não */
+    const H = (TO.mapa && TO.mapa.hash) || (txt=>{
+      let h = 2166136261;
+      for(let i=0;i<txt.length;i++){ h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return h >>> 0;
+    });
     let B = N;
     if(nomeTorcida && TO.mundo && TO.mundo.jogaveis){
       const o = TO.mundo.jogaveis().find(x => x.nome &&

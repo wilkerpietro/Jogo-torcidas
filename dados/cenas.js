@@ -1,3 +1,4 @@
+
 /* =========================================================
    CENAS DE BRIGA — praça e rua
    ---------------------------------------------------------
@@ -949,6 +950,25 @@ TO.dados.cenas = (function(){
                  'estadio-10':estadio10, 'estadio-20':estadio20,
                  'estadio-40':estadio40};
 
+  /* =======================================================
+     AS RUAS EM 3D
+     A foto, logo abaixo, apaga os blocos da cena desenhada — e
+     é dos blocos que a versão 3D levanta parede, telhado e
+     poste. Então cada rua ganha uma cópia ANTES da foto passar,
+     com a mesma planta, os mesmos spawns e a mesma malha que o
+     desenho tinha: `rua-3d` é a rua de periferia vista de
+     perto, e o combate roda nela sem saber que é 3D.
+     ======================================================= */
+  const copia3d = o => JSON.parse(JSON.stringify(o));
+  for(const id of ['rua', 'rua-media', 'rua-nobre']){
+    if(!cenas[id]) continue;
+    const c = copia3d(cenas[id]);
+    c.base = id; c.tres = true;
+    c.id = id + '-3d';
+    c.nome = (cenas[id].nome || id) + ' em 3D';
+    cenas[c.id] = c;
+  }
+
   /* Quem manda é a ordem: desenho, depois foto, depois mão. As duas
      últimas varrem o que existir — cena que ganhar foto amanhã entra
      sozinha, sem ninguém lembrar de acrescentar a linha aqui (o bar
@@ -961,3 +981,4 @@ TO.dados.cenas = (function(){
 
   return cenas;
 })();
+
