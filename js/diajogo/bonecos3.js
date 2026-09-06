@@ -414,7 +414,16 @@ TO.diaJogo.bonecos3 = (function(){
     const dados = TO.dados && TO.dados.bonecoGLB;
     if(!dados || typeof THREE.GLTFLoader !== 'function') return;
     carregandoGLB = true;
-    new THREE.GLTFLoader().load(dados, gltf=>{
+    /* SEM FETCH: o artifact bloqueia requisição até de data-URI, e o
+       `load` do GLTFLoader passa por fetch. O base64 é decodificado
+       aqui e o binário entregue direto ao `parse`. */
+    const b64 = dados.indexOf(',') >= 0 ? dados.slice(dados.indexOf(',')+1) : dados;
+    let bin;
+    try{
+      const txt = atob(b64); bin = new Uint8Array(txt.length);
+      for(let i=0;i<txt.length;i++) bin[i] = txt.charCodeAt(i);
+    }catch(err){ console.warn('boneco.glb: base64 inválido'); carregandoGLB = false; return; }
+    new THREE.GLTFLoader().parse(bin.buffer, '', gltf=>{
       modeloGLB = gltf.scene;
       modeloGLB.updateMatrixWorld(true);
       /* Lambert é mais barato que Standard e a cena não tem PBR */
@@ -430,7 +439,7 @@ TO.diaJogo.bonecos3 = (function(){
       /* troca as figuras já feitas de caixa pelo modelo */
       for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); figuras.delete(d); }
       carregandoGLB = false;
-    }, undefined, err=>{ console.warn('boneco.glb: '+(err && err.message)); carregandoGLB = false; });
+    }, err=>{ console.warn('boneco.glb: '+(err && err.message)); carregandoGLB = false; });
   }
 
   /* que peças da ficha ficam ligadas */
