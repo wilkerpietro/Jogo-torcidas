@@ -3683,6 +3683,38 @@ Duas coisas mudaram, uma pra causa e outra pra consequência:
 Se a placa do dono continuar derrubando, o próximo passo é um teto de
 bonecos por cena (acima dele, disco), que fica pro crivo dele.
 
+## Quem é quem quando a camisa é da mesma cor (estudo, 06/09/2026)
+
+O dono viu uma arquibancada com Aliança, Falange Coral, Leões da TUF e
+Jovem Garra Tricolor de branco e não distinguiu ninguém. Medido nos
+dados: de 697 pares de rivais na mesma praça, 139 têm a mesma cor
+primária e 50 têm a 1ª E a 2ª iguais (Gaviões × Pavilhão 9). Vista de
+cima, de um boneco de 30 px o que aparece é o chão em volta, a cabeça
+e o alto dos ombros — o peito (onde mora a faixa da 2ª cor) e o calção
+somem na projeção; faixa no peito e camisa metade a metade foram
+testadas e caíram por isso.
+
+Protótipo em `bonecos3.estudo`, com chaves, fotografado na rua com as
+quatro torcidas brancas e na praça com Gaviões × Pavilhão 9 (prancha
+"Quem É Quem na Briga"):
+
+- `calcao` — calção na 1ª cor da torcida. **Pedido do dono; ligado.**
+  Não separa torcidas iguais, mas o uniforme inteiro passa a ser da
+  torcida. A variante `'segunda'` (calção na 2ª cor) lê-se pouco.
+- `desenho` — desenho fixo da camisa por torcida (ombros, mangas ou
+  listras na 2ª cor), pintado por vértice na malha do GLB, com registro
+  na cena que nunca repete desenho entre torcidas de paleta igual. É a
+  única marca que separa Gaviões de Pavilhão 9. Desligado (`'lisa'`).
+- `boneCor2` — boné e bandana na 2ª cor. Ajuda; só metade usa boné.
+  Desligado.
+- `anel` — anel contornado no chão, na 2ª cor (ou na do lado). A marca
+  mais legível do estudo e a mais "de tabuleiro"; sozinha não resolve
+  os 50 pares de paleta igual. Desligado.
+
+Recomendação submetida: uniforme por torcida sempre ligado (calção,
+desenho, boné) e o anel como opção do jogador, ligado só no nosso
+bonde; nunca a cor do lado, que apaga o aliado. Fica no crivo do dono.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

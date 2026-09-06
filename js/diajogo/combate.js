@@ -3149,6 +3149,20 @@ TO.diaJogo.combate = (function(){
   /* vida e nome ficam no 2D mesmo quando o corpo é boneco por cima */
   function desenharRotulo(c,d,x,y){
     if(x===undefined){ x=d.x; y=d.y; }
+    /* ESTUDO (06/09/2026): a sombra da torcida no chão, na 2ª cor —
+       por baixo do boneco, que a camada 3D desenha por cima */
+    /* ESTUDO: o anel no chão, na 2ª cor da torcida (ou na cor do lado),
+       contornado de escuro pra ler em qualquer chão e por baixo da
+       sombra do boneco */
+    const B3 = TO.diaJogo.bonecos3;
+    if(B3 && B3.estudo && B3.estudo.anel){
+      const cor = B3.estudo.anel === 'lado' ? corLado(d.lado, false) : (d.cor2 || d.cor3 || corLado(d.lado, true));
+      c.save();
+      c.beginPath(); c.ellipse(x, y+d.r*0.45, d.r*1.15, d.r*0.62, 0, 0, 7);
+      c.lineWidth = 4; c.strokeStyle = 'rgba(0,0,0,.55)'; c.stroke();
+      c.lineWidth = 2.2; c.strokeStyle = cor; c.stroke();
+      c.restore();
+    }
     if(d.hp<d.hpMax){
       const w=d.r*2, p=Math.max(0,d.hp/d.hpMax);
       c.fillStyle='rgba(0,0,0,.6)'; c.fillRect(x-w/2,y-d.r-9,w,3);

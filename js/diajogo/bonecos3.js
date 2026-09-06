@@ -147,14 +147,18 @@ TO.diaJogo.bonecos3 = (function(){
     d._b3 = {
       sem:s, fase:frac(s+'f')*6.28, yaw:frac(s+'y')*6.28,
       pele:PELE[dado(s+'p',PELE.length)],
-      calca:CALCA[dado(s+'c',CALCA.length)],
+      calca: estudo.calcao==='primaria' && d.cor ? d.cor
+           : estudo.calcao==='segunda' && (d.cor2||d.cor3) ? (d.cor2||d.cor3)
+           : CALCA[dado(s+'c',CALCA.length)],
       cabelo:CABELO[dado(s+'h',CABELO.length)],
       tenis:TENIS[dado(s+'t',TENIS.length)],
       bermuda: frac(s+'bm') < 0.5,
       regata: frac(s+'rg') < 0.12,
       listras: dado(s+'ls', 5),           // 0 lisa, 1 duas faixas, 2 três faixas, 3 vertical, 4 faixa atravessada
       tipoCabeca,
-      corBone: frac(s+'bc') < 0.55 ? camisa : (frac(s+'bc2') < 0.5 ? PRETO : '#e8e2d0'),
+      corBone: estudo.boneCor2 && d.cor2 ? d.cor2
+             : frac(s+'bc') < 0.55 ? camisa : (frac(s+'bc2') < 0.5 ? PRETO : '#e8e2d0'),
+      desenho: desenhoDaTorcida(d, TO.diaJogo.J), cor3: d.cor3 || null,
       barba: rBarba < 0.55 ? 0 : rBarba < 0.72 ? 1 : rBarba < 0.86 ? 2 : 3,   // 0 nada, 1 cavanhaque, 2 cheia, 3 bigode
       oculos: frac(s+'oc') < 0.80 ? 0 : frac(s+'oc2') < 0.5 ? 1 : 2,       // 0 nada, 1 de grau, 2 escuros
       brinco: frac(s+'br') < 0.18,
@@ -515,6 +519,86 @@ TO.diaJogo.bonecos3 = (function(){
   }
   const VARIANTE = /^(cabelo_|bone_|bandana|barba_|oculos_|brinco|corrente|cordao_|anel|relogio_|pulseira)/;
 
+  /* =======================================================
+     ESTUDO (06/09/2026): QUEM É QUEM QUANDO A CAMISA É DA MESMA COR
+     Um quinto das rivalidades de praça tem a mesma cor primária (139
+     de 697 pares) e uma em catorze tem primária E secundária iguais
+     (Gaviões × Pavilhão 9, Aliança × Falange Coral). Vista de cima,
+     o que se enxerga do boneco é cabeça, ombros e o chão em volta —
+     é aí que a torcida tem de se dizer. Três recursos, cada um com a
+     sua chave em `estudo`, pro dono comparar na bancada:
+       · desenho — a camisa tem um DESENHO fixo por torcida (lisa,
+         ombros na 2ª cor, listras verticais, metade a metade, faixa
+         no peito), pintado por vértice na malha do GLB. Duas torcidas
+         da mesma cena com as mesmas cores nunca ficam com o mesmo
+         desenho: o registro da cena desempata.
+       · boneCor2 — todo boné e bandana na 2ª cor da torcida.
+       · sombra — uma sombra colorida no chão, por baixo dos pés, na
+         2ª cor (desenhada pela camada 2D, em combate.desenharRotulo).
+     ======================================================= */
+  /* calcao (pedido do dono, 06/09/2026): o calção na cor primária da
+     torcida — o uniforme inteiro é da torcida; 'segunda' é a variante
+     de comparação, com o calção na 2ª cor */
+  const estudo = {desenho:'lisa', boneCor2:false, anel:false, calcao:'primaria'};
+  /* VISTO DE CIMA o que aparece da camisa é o alto dos ombros e as
+     mangas — faixa no peito e metade a metade somem na projeção
+     (medido nas fotos do estudo). Os desenhos são os que se leem de
+     cima: ombros na 2ª cor, mangas na 2ª cor, listras verticais. */
+  const DESENHOS = ['lisa','ombros','mangas','listras'];
+  let registroDesenhos = new Map(), registroJ = null;
+  function desenhoDaTorcida(d, J){
+    if(estudo.desenho !== 'auto') return estudo.desenho === 'lisa' ? 0 : Math.max(0, DESENHOS.indexOf(estudo.desenho));
+    if(J && J !== registroJ){ registroDesenhos = new Map(); registroJ = J; }
+    const chave = d.torcida || d.lado;
+    if(registroDesenhos.has(chave)) return registroDesenhos.get(chave).idx;
+    const c1 = String(d.cor||'').toLowerCase(), c2 = String(d.cor2||'').toLowerCase();
+    let idx = Math.abs(hash32(chave)) % DESENHOS.length;
+    /* desempate: mesma cor (e mesma 2ª cor) que alguém já registrado
+       na cena não pode repetir o desenho */
+    const usados = new Set();
+    for(const [k, v] of registroDesenhos){
+      const o = v.cores;
+      if(o.c1 === c1 && (o.c2 === c2 || !c2 || !o.c2)) usados.add(v.idx);
+    }
+    for(let k=0; k<DESENHOS.length && usados.has(idx); k++) idx = (idx+1) % DESENHOS.length;
+    registroDesenhos.set(chave, {idx, cores:{c1, c2}});
+    return idx;
+  }
+  function hash32(txt){
+    let h = 2166136261; const s = String(txt);
+    for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h | 0;
+  }
+  /* a malha da camisa pintada por vértice, uma por (desenho, cores) */
+  const geomCamisa = new Map();
+  const matCamisaVC = new THREE.MeshLambertMaterial({vertexColors:true, color:0xffffff});
+  matCamisaVC.name = 'camisa';
+  function geometriaCamisa(base, idx, c1, c2, c3){
+    const chave = idx+'|'+c1+'|'+c2+'|'+c3;
+    let g = geomCamisa.get(chave);
+    if(g) return g;
+    g = base.clone();
+    const pos = g.getAttribute('position'); const n = pos.count;
+    const cor = new Float32Array(n*3);
+    const A = new THREE.Color(c1), B = new THREE.Color(c2 || c3 || '#202020');
+    let xmin=1e9,xmax=-1e9,ymin=1e9,ymax=-1e9;
+    for(let i=0;i<n;i++){ const x=pos.getX(i), y=pos.getY(i); if(x<xmin)xmin=x; if(x>xmax)xmax=x; if(y<ymin)ymin=y; if(y>ymax)ymax=y; }
+    const desenho = DESENHOS[idx] || 'lisa';
+    for(let i=0;i<n;i++){
+      const x=pos.getX(i), y=pos.getY(i);
+      const fx=(x-xmin)/(xmax-xmin||1), fy=(y-ymin)/(ymax-ymin||1);
+      let segunda = false;
+      if(desenho==='ombros')       segunda = fy > 0.80;                     // o alto dos ombros e a gola
+      else if(desenho==='mangas')  segunda = Math.abs(x) > 0.21;            // as mangas
+      else if(desenho==='listras') segunda = Math.floor(fx*5) % 2 === 1;    // cinco listras verticais
+      const c = segunda ? B : A;
+      cor[i*3]=c.r; cor[i*3+1]=c.g; cor[i*3+2]=c.b;
+    }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(cor, 3));
+    geomCamisa.set(chave, g);
+    return g;
+  }
+
   function construirCorpoGLB(f, pm){
     const g = G();
     const raiz = new THREE.Group();
@@ -528,6 +612,12 @@ TO.diaJogo.bonecos3 = (function(){
       if(!o.isMesh) return;
       if(VARIANTE.test(o.name)) o.visible = on.has(o.name);
       const nome = o.material.name;
+      /* o desenho da camisa (estudo): cor por vértice na malha */
+      if(nome === 'camisa' && !pm && f.desenho > 0 && o.geometry.getAttribute('position')){
+        o.geometry = geometriaCamisa(o.geometry, f.desenho, f.camisa, f.faixa, f.cor3);
+        o.material = matCamisaVC;
+        return;
+      }
       if(cores[nome]){
         let m = matsFig.get(nome);
         if(!m){ m = o.material.clone(); m.color.set(cores[nome]); matsFig.set(nome, m); }
@@ -1704,7 +1794,7 @@ TO.diaJogo.bonecos3 = (function(){
     renderer.clear();
   }
 
-  return {montar, desenharDeCima, desenharVitrine, limparDeCima,
+  return {montar, desenharDeCima, desenharVitrine, limparDeCima, estudo, DESENHOS,
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },
           get _dbg(){ return {scene, cam, camV, renderer, figuras, modeloGLB}; }};
