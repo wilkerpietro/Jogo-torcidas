@@ -3743,6 +3743,16 @@ entrega calção e cor do anel por torcida. `estudo.calcao` e
 `estudo.anel` em `'auto'` aplicam a regra; os outros valores ficam pra
 bancada.
 
+Ajustes do dono no mesmo dia, vendo Imbatíveis × Aliança (as duas
+branco e preto): **o anel nunca repete a cor** de quem veio antes —
+quem repete a primária escolhe calção e anel entre as cores da própria
+paleta que não se pareçam com as já usadas, e esgotada a paleta entra
+uma cor de reserva (Aliança sai de anel branco contra o preto dos
+Imbatíveis); **o anel fica no pé do boneco**, desenhado na camada 3D
+junto da sombra (a mesma projeção cisalhada), e não no canvas 2D, onde
+caía no meio do desenho; e **o rival caído fica a 70% de opacidade**
+(o nosso segue a 50%, onde o olho procura o socorro).
+
 Limite técnico registrado: a camisa do GLB tem 206 vértices e não tem
 UV, então a cor por vértice sai esfumada — listra fina não se lê.
 Listra nítida pede reexportar o boneco com UV na camisa.

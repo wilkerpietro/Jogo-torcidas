@@ -386,9 +386,10 @@ TO.diaJogo.bonecos3 = (function(){
     const sombra = new THREE.Mesh(g.disco, mat(PRETO, {transparent:true, opacity:0.34, depthWrite:false}));
     sombra.rotation.x = -Math.PI/2; sombra.position.y = 0.3; sombra.scale.set(8.5, 6.5, 1);
     raiz.add(sombra);
+    const {anel, anelFundo} = anelNoChao(raiz);
 
     return {raiz, pelvis, tronco, peito, pescoco, cabeca, bracos, antebracos, maos, coxas, joelhos, pes,
-            sombra, cassetete, escudo};
+            sombra, anel, anelFundo, cassetete, escudo};
   }
 
   /* =======================================================
@@ -568,14 +569,27 @@ TO.diaJogo.bonecos3 = (function(){
       }
     }
     lista.sort((a,b)=>(b.nossa?1:0)-(a.nossa?1:0));
+    /* QUEM REPETE DESEMPATA CONTRA QUEM VEIO ANTES (correção do dono,
+       06/09/2026, Imbatíveis × Aliança: as duas branco e preto, e o anel
+       saía preto nas duas). O calção e o anel de quem repete a primária
+       são a primeira cor da paleta dela que não se parece com a que as
+       anteriores de mesma primária já usam — cai na 2ª, depois na 3ª,
+       e no anel até na própria 1ª (Aliança: anel branco contra o preto
+       dos Imbatíveis). */
+    const escolher = (cands, evitar) =>
+      cands.find(c => c && !evitar.some(e => parecidas(e, c))) || cands.find(Boolean) || null;
     const vistas = [];
     for(const t of lista){
       if(paleta.torcidas[t.nome]) continue;
-      const repete = !!t.cor && vistas.some(v=>parecidas(v.cor, t.cor));
+      const iguais = vistas.filter(v=>parecidas(v.cor, t.cor)).map(v=>paleta.torcidas[v.nome]);
+      const repete = !!t.cor && iguais.length > 0;
       if(repete) paleta.colisao = true;
-      paleta.torcidas[t.nome] = {
-        calcao: repete ? (t.cor2 || t.cor3 || '#202020') : (t.cor || null),
-        repete, anel: t.cor2 || t.cor3 || null};
+      paleta.torcidas[t.nome] = repete
+        ? {repete, calcao: escolher([t.cor2, t.cor3, '#202020', '#e8e2d0'], iguais.map(i=>i.calcao)),
+                   /* o anel NUNCA repete o de quem veio antes (ordem do dono):
+                      esgotada a paleta, entra uma cor de reserva */
+                   anel:   escolher([t.cor2, t.cor3, t.cor, '#FFFFFF', '#000000', '#E8C020', '#1B4F9C'], iguais.map(i=>i.anel))}
+        : {repete, calcao: t.cor || null, anel: t.cor2 || t.cor3 || null};
       vistas.push(t);
     }
     return paleta;
@@ -664,6 +678,20 @@ TO.diaJogo.bonecos3 = (function(){
     return g;
   }
 
+  /* O ANEL NO CHÃO (decisão do dono, 06/09/2026), na camada 3D e não
+     no canvas 2D: assim ele nasce onde o pé está — a raiz da figura,
+     com a mesma projeção cisalhada da sombra — e não no meio do
+     desenho. Um anel escuro por baixo, pra ler em qualquer chão. */
+  const geoAnel = new THREE.RingGeometry(0.80, 1.0, 40);
+  const geoAnelFundo = new THREE.RingGeometry(0.70, 1.10, 40);
+  function anelNoChao(raiz){
+    const anelFundo = new THREE.Mesh(geoAnelFundo, new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.55, depthWrite:false}));
+    anelFundo.rotation.x = -Math.PI/2; anelFundo.position.y = 0.32; anelFundo.scale.set(10.2, 7.6, 1); anelFundo.visible = false;
+    const anel = new THREE.Mesh(geoAnel, new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.95, depthWrite:false}));
+    anel.rotation.x = -Math.PI/2; anel.position.y = 0.34; anel.scale.set(10.2, 7.6, 1); anel.visible = false;
+    raiz.add(anelFundo); raiz.add(anel);
+    return {anel, anelFundo};
+  }
   function construirCorpoGLB(f, pm){
     const g = G();
     const raiz = new THREE.Group();
@@ -744,7 +772,8 @@ TO.diaJogo.bonecos3 = (function(){
     const sombra = new THREE.Mesh(g.disco, mat(PRETO, {transparent:true, opacity:0.34, depthWrite:false}));
     sombra.rotation.x = -Math.PI/2; sombra.position.y = 0.3; sombra.scale.set(8.5, 6.5, 1);
     raiz.add(sombra);
-    return {raiz, modelo, J, sombra, glb:true, escudo, cassetete};
+    const {anel, anelFundo} = anelNoChao(raiz);
+    return {raiz, modelo, J, sombra, anel, anelFundo, glb:true, escudo, cassetete};
   }
 
   const _e = new THREE.Euler(), _q = new THREE.Quaternion(), _v = new THREE.Vector3();
@@ -1441,7 +1470,7 @@ TO.diaJogo.bonecos3 = (function(){
       c.matsProprios = [];
       const vistos = new Map();
       c.raiz.traverse(o=>{
-        if(!o.isMesh || o === c.sombra) return;
+        if(!o.isMesh || o === c.sombra || o === c.anel || o === c.anelFundo) return;
         let m = vistos.get(o.material);
         if(!m){ m = o.material.clone(); vistos.set(o.material, m); c.matsProprios.push(m); }
         o.material = m;
@@ -1504,7 +1533,12 @@ TO.diaJogo.bonecos3 = (function(){
       if(d.preso){ sentar(p, f, t); f.queda = null; rapidez = 6; esmaecer(c, 1); }
       else {
         cair(p, f, dt); rapidez = 14;
-        esmaecer(c, +Math.max(0.5, 1 - 0.5*suave((f.queda.t-0.4)/0.5)).toFixed(2));
+        /* O RIVAL CAÍDO FICA A 70% (pedido do dono, 06/09/2026): some um
+           pouco do bolo sem sumir da conta. O nosso caído segue a
+           régua antiga (50%), que é onde o olho procura o socorro. */
+        const meu = J.ladoNosso || (TO.diaJogo.combate && TO.diaJogo.combate.ladoDoJogador(J));
+        const piso = d.lado === meu ? 0.5 : 0.7;
+        esmaecer(c, +Math.max(piso, 1 - (1-piso)*suave((f.queda.t-0.4)/0.5)).toFixed(2));
       }
       f.impacto = null; f.ataque = null; f.provoca = null;
     } else if(d.derrubado > 0){
@@ -1575,6 +1609,14 @@ TO.diaJogo.bonecos3 = (function(){
     c.raiz.position.set(d.x, 0, d.y);
     c.raiz.rotation.y = f.yaw;
     aplicarPose(c, f.pose, f.escala*escalaDeCima*0.86);
+    if(c.anel){
+      const cor = anelDe(J, d);
+      const hex = cor === 'lado' ? corLado(d.lado, false) : cor;
+      c.anel.visible = c.anelFundo.visible = !!hex;
+      if(hex && c.anelCor !== hex){ c.anel.material.color.set(hex); c.anelCor = hex; }
+      /* o anel não gira com o corpo: fica deitado no chão, alinhado à tela */
+      c.anel.rotation.z = c.anelFundo.rotation.z = -f.yaw;
+    }
     const chao = !d.vivo || d.derrubado > 0;
     c.sombra.scale.set(8.5*(chao?1.6:1), 6.5*(chao?1.3:1), 1);
     c.raiz.visible = true;
