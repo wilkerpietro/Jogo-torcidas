@@ -5097,3 +5097,38 @@ fisionomia dos bonecos" e "quem cai no chão por levar um chute morre logo".
   multiplicador do chão (2,6) é o botão: 2,0 dava 132 s com brigas sem fim, 1,2 dava 148 s.
   O bar sempre foi de um lado só neste harness (14,8 × 0 já antes do chute): é a ficha do
   rival, não o chute.
+
+## 8.40 Contragolpe, agarrar, cerco, Chamar — e o que cada cargo sabe
+
+Pedido do dono (06/09/2026). Tudo vale pros dois lados: a IA usa o mesmo código.
+
+- **Contragolpe (soltar o E)**: `soltarDefesa` marca a hora em que o E (ou o botão
+  DEFENDER) foi solto; se um golpe chega de frente até 0,16 s depois, esquiva na certa
+  e abre 0,6 s de `contra`: o próximo Q sai em 0,28 s (impacto aos 0,10), bate 1,8× e
+  não se defende. A IA solta a defesa a 0,05 s do impacto numa parte das vezes
+  (20% + defesa/50) quando tem o perfil.
+- **Agarrar (F)**: pega quem está na frente de pé, com 0,5 + (força − defesa)/40 (20 a
+  85%). Segurado não bate, não defende, não esquiva e leva 1,5× de quem chegar; quem
+  segura só dá joelhada nele (o Q vira joelhada, 1,2×, sempre entra) e leva 1,3× dos
+  outros. Solta em 1,6–2,4 s (×0,7 se é mais fraco), se levar golpe de 9+, ou se alguém
+  cai ou foge. A IA agarra quando tem companheiro a 40 px pra aproveitar (14%/s).
+  Os dois param no lugar (`moverDiscos` e `moverLider`).
+- **Cerco conta**: inimigo ao alcance de dois lados (110° ou mais entre dois deles,
+  contado no laço da `iaLuta`) → `cercado`: leva 1,3× e a defesa esquiva 45% em vez
+  de 75%.
+- **Chamar (C, 20 s de espera)**: quem chama (o líder, ou o mais forte do lado da IA)
+  faz o gesto e cada um do bonde atende com 25% + 60%·moral/20 — quem atende vai pra
+  linha de frente por 5 s, não respira entre golpes e bate 1,1×. Se quem atendeu mais
+  um passa dos inimigos à vista (300 px), o outro lado recua 2,5 s (`recuoChamado`
+  entra em `recuando`). A IA chama a cada 4–7 s de checagem quando está com 80% ou
+  mais do nosso tamanho, moral média ≥ 9 e gente em guarda (60%).
+- **Perfil por cargo** (`perfilDe`): novato só bate e defende; componente chuta; linha de
+  frente chuta, agarra e contragolpeia; diretoria e o líder tudo. Sem ficha, a força
+  diz (≥10 frente, ≥5 componente).
+- **Desenho**: `segurarPose`, `seguradoPose` (se debate), `chamarPose` (braço girando
+  no alto), o golpe `agarrar` (as duas mãos à frente fechando) e o contragolpe é o
+  direto/gancho com 1,25 de amplitude; o pico do golpe agora vem de
+  `ataque.impacto/dur`, o que serve pra todos os tempos. Vitrine: agarrar (par), chamar,
+  contra. Pad: AGARRAR e CHAMAR numa segunda fileira; HUD lista Q E F C.
+- **Medido** (rua, líder de taca, seis brigas): 99 s (era 119 s com o socorro, 89 s
+  antes do chute).

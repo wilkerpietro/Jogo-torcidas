@@ -758,7 +758,7 @@ TO.diaJogo.bonecos3 = (function(){
   const GOLPES = {
     jab:{dur:0.30, forca:0.5}, direto:{dur:0.40, forca:0.85}, gancho:{dur:0.46, forca:1.1},
     uppercut:{dur:0.44, forca:1.0}, empurrao:{dur:0.52, forca:0.7},
-    chute:{dur:0.62, forca:1.3}, chuteBaixo:{dur:0.6, forca:1.2}, joelhada:{dur:0.55, forca:1.2}
+    chute:{dur:0.62, forca:1.3}, chuteBaixo:{dur:0.6, forca:1.2}, joelhada:{dur:0.55, forca:1.2}, agarrar:{dur:0.5, forca:0.4}
   };
   const REPERTORIO = {
     misto:   {jab:.38, direto:.30, gancho:.17, uppercut:.09, empurrao:.06},
@@ -778,6 +778,9 @@ TO.diaJogo.bonecos3 = (function(){
     const vr = f.varianteForcada!=null ? f.varianteForcada : Math.floor(Math.random()*3);
     let tipo;
     if(ref.tipo==='chute') tipo = CHUTES[vr];
+    else if(ref.tipo==='joelhada') tipo = 'joelhada';
+    else if(ref.tipo==='agarrar') tipo = 'agarrar';
+    else if(ref.tipo==='contra') tipo = vr===2 ? 'gancho' : 'direto';
     else {
       const pesos = REPERTORIO[e.repertorio] || REPERTORIO.misto;
       let r = Math.random(); tipo = 'jab';
@@ -785,7 +788,7 @@ TO.diaJogo.bonecos3 = (function(){
     }
     const frente = e.canhoto ? 1 : 0;
     const lado = tipo==='jab' ? frente : tipo==='direto' ? 1-frente : (f.ladoSoco = 1 - f.ladoSoco);
-    f.ataque = {tipo, lado, ref, amp: 0.88 + Math.random()*0.24, avisou:false, var: vr};
+    f.ataque = {tipo, lado, ref, amp: (0.88 + Math.random()*0.24)*(ref.tipo==='contra' ? 1.25 : 1), avisou:false, var: vr};
   }
 
   function lutar(p, f, d, dt, t){
@@ -807,12 +810,15 @@ TO.diaJogo.bonecos3 = (function(){
       }
     }
     const chute = at.tipo==='chute';
-    /* o impacto do combate cai no pico da extensão: 0,15/0,36 no soco, 0,28/0,58 no chute */
-    const ida = suave(k/(chute ? 0.48 : 0.42)), volta = suave((k-(chute ? 0.62 : 0.55))/(chute ? 0.38 : 0.45));
+    /* o impacto do combate cai no pico da extensão: `ataque.impacto`
+       sobre `ataque.dur` (0,15/0,36 no soco, 0,28/0,58 no chute, 0,10/0,28
+       no contragolpe, 0,22/0,5 no agarrão) */
+    const pico = Math.min(0.6, Math.max(0.3, (at.impacto!==undefined ? at.impacto : 0.15)/at.dur + 0.06));
+    const ida = suave(k/pico), volta = suave((k-pico-0.12)/Math.max(0.2, 1-pico-0.12));
     const ext = ida*(1-volta)*(a.amp||1);
     const b = a.lado, o = 1-b, sg = b===1 ? 1 : -1;
     /* o quadril vai antes do ombro: a rotação do tronco arma um pouco antes */
-    const arma = suave(k/(chute ? 0.4 : 0.25));
+    const arma = suave(k/(pico*0.7));
     const vr = a.var||0;
     switch(a.tipo){
       case 'jab':
@@ -856,6 +862,11 @@ TO.diaJogo.bonecos3 = (function(){
         p.ombro = [mistura(-1.5, -0.55, ext), mistura(-1.5, -0.55, ext)]; p.ombroZ = [0.3, 0.3]; p.cotovelo = [mistura(-1.2, -1.9, ext), mistura(-1.2, -1.9, ext)]; p.punho = [1, 1];
         p.inclina = mistura(0.1, 0.42, ext); p.gira = sg*0.1; p.olhaX = 0.35;
         p.y = -1.0 - ext*1.4; break;
+      case 'agarrar':    // os dois braços vão à frente, as mãos abertas fecham na gola
+        p.ombro = [mistura(-0.9, -1.45, ext), mistura(-0.9, -1.45, ext)]; p.ombroZ = [0.4, 0.4];
+        p.cotovelo = [mistura(-1.6, -0.35, ext), mistura(-1.6, -0.35, ext)]; p.maoZ = [0.25*ext, 0.25*ext]; p.punho = [ext, ext];
+        p.inclina = 0.2 + ext*0.25; p.coxa = [-0.45, 0.3]; p.joelho = [0.45, 0.3]; p.olhaX = 0.2;
+        p.y = -1.6 - ext*0.8; break;
       case 'empurrao':
         p.ombro = [mistura(-0.8, -1.5, ext), mistura(-0.8, -1.5, ext)]; p.ombroZ = [0.35, 0.35];
         p.cotovelo = [mistura(-2.2, -0.15, ext), mistura(-2.2, -0.15, ext)]; p.punho = [0, 0];
@@ -1212,6 +1223,35 @@ TO.diaJogo.bonecos3 = (function(){
     if(k < 0.2){ const b = Math.sin(Math.min(1, (k-0.16)/0.04)*Math.PI); if(k>0.16) p.y += 1.2*b; }
   }
   /* preso: sentado, mãos atrás das costas, cabeça baixa */
+  /* SEGURANDO alguém: os dois braços à frente na gola dele, o corpo
+     travado pra trás e o peso nas pernas; puxa e empurra no compasso */
+  function segurarPose(p, f, t){
+    const w = t*4.5 + f.fase, puxa = 0.5 + 0.5*Math.sin(w);
+    p.ombro = [-1.35 + 0.15*puxa, -1.3 + 0.15*puxa]; p.ombroZ = [0.35, 0.35]; p.cotovelo = [-0.55 - 0.35*puxa, -0.5 - 0.35*puxa];
+    p.maoZ = [0.3, 0.3]; p.punho = [1, 1];
+    p.inclina = 0.15 + 0.12*puxa; p.gira = 0.08*Math.sin(w*0.7); p.olhaX = 0.2;
+    p.coxa = [-0.5, 0.4]; p.joelho = [0.55, 0.4]; p.y = -2.4;
+  }
+  /* SEGURADO: se debate — as mãos nos braços de quem segura, o tronco
+     torcendo, um pé arrastando */
+  function seguradoPose(p, f, t){
+    const w = t*5.5 + f.fase, s = Math.sin(w);
+    p.ombro = [-1.1 + 0.2*s, -1.05 - 0.2*s]; p.ombroZ = [0.55, 0.5]; p.cotovelo = [-1.2 - 0.3*s, -1.25 + 0.3*s];
+    p.maoZ = [0.4, 0.4]; p.punho = [1, 1];
+    p.inclina = -0.12 + 0.08*s; p.gira = 0.35*s; p.tomba = 0.12*Math.sin(w*0.6);
+    p.olhaX = -0.2; p.olhaY = 0.3*s;
+    p.coxa = [-0.2 + 0.25*s, 0.2 - 0.25*s]; p.joelho = [0.5, 0.45]; p.y = -2.0;
+  }
+  /* CHAMAR: o braço no alto girando pra frente ("vem todo mundo"),
+     o corpo virado meio pra trás, gritando — 1,3 s */
+  function chamarPose(p, f, t, k){
+    const w = t*9 + f.fase, sobe = suave(k/0.15), desce = suave((k-0.8)/0.2), r = sobe*(1-desce);
+    const roda = 0.5 + 0.5*Math.sin(w);
+    p.ombro[1] = mistura(-2.2, -3.0, roda)*r; p.ombroZ[1] = 0.45*r; p.cotovelo[1] = mistura(-1.1, -0.3, roda)*r; p.punho[1] = 0;
+    p.ombro[0] = -0.4*r; p.ombroZ[0] = 0.5*r; p.cotovelo[0] = -0.9*r; p.punho[0] = 1;
+    p.gira = -0.45*r; p.inclina = -0.1*r; p.olhaY = -0.5*r; p.olhaX = -0.3*r; p.peito = 1 + 0.05*r;
+    p.coxa = [-0.35*r, 0.3*r]; p.joelho = [0.35*r, 0.3*r]; p.y = -1.0*r;
+  }
   /* SOCORRER: agachado em cima do companheiro caído, os dois braços
      pra baixo puxando, e o corpo fazendo força pra trás no compasso */
   function socorrerPose(p, f, t){
@@ -1360,6 +1400,9 @@ TO.diaJogo.bonecos3 = (function(){
       if(d.atordoado > 0){ cambalear(p, f, t); rapidez = 7; f.ataque = null; }
       else if(d.arremesso){ arremessar(p, f, d.arremesso); rapidez = 26; f.ataque = null; }
       else if(d.ataque){ lutar(p, f, d, dt, t); rapidez = 30; }
+      else if(d.segurando){ segurarPose(p, f, t); rapidez = 14; f.ataque = null; f.provoca = null; }
+      else if(d.seguradoPor){ seguradoPose(p, f, t); rapidez = 14; f.ataque = null; f.provoca = null; }
+      else if(d.chamou > t - 1.3){ chamarPose(p, f, t, (t - d.chamou)/1.3); rapidez = 16; f.ataque = null; f.provoca = null; }
       else if(d.defendendo > 0 && !andando){ bloquear(p, f, t); rapidez = 20; f.ataque = null; }
       else if(d.socorrendo && d.socorrendo.noChao && !andando){ socorrerPose(p, f, t); rapidez = 12; f.ataque = null; f.provoca = null; }
       else if(f.provoca){ provocar(p, f, t, dt); rapidez = 10; f.ataque = null; }

@@ -163,6 +163,15 @@ TO.diaJogo.combate = (function(){
          embora (2,5 s sem inimigo a 70 px). No chão leva 1,2× e morre
          pelo HP como todo mundo. */
       this.noChao=false; this.sozinho=0; this.socorro=0; this.socorrista=null; this.socorrendo=null;
+      /* OS COMANDOS (dono, 06/09/2026): contragolpe (soltar o E na hora
+         do impacto), agarrar (segurar o inimigo pros outros baterem),
+         cerco (inimigo dos dois lados) e chamar (o bonde inteiro pra
+         cima). O que cada um sabe fazer vem do CARGO (`perfilDe`). */
+      this.cargo=null;          // preenchido pela escalação; sem ficha, inferido da força
+      this.soltouEm=-9;         // quando soltou a defesa (o contragolpe lê)
+      this.contra=0;            // janela aberta pro contragolpe (segundos)
+      this.segurando=null; this.seguradoPor=null; this.seguraAte=0; this.cdAgarrar=0;
+      this.cercado=false; this.chamado=0; this.chamou=-9;
       this.chutador = lider ? 0.30 : U.entre(0.06, 0.22);
       /* nem todo mundo bate em quem está no chão: esta é a chance de
          cada um ir em cima (o resto espera o cara levantar ou procura
@@ -807,7 +816,7 @@ TO.diaJogo.combate = (function(){
     moverLider(J,dt,teclas,podeControlar);
     moverDiscos(J,dt);
     moverPoliciais(J,dt);
-    iaLuta(J,dt); socorrer(J,dt);
+    iaLuta(J,dt); socorrer(J,dt); conferirAgarroes(J); iaChamar(J);
     contatos(J,dt);
     iaArremesso(J,dt);
     moverProjeteis(J,dt);
@@ -1098,6 +1107,7 @@ TO.diaJogo.combate = (function(){
   function moverLider(J,dt,teclas,podeControlar){
     const l=J.discos.find(d=>d.lider&&d.vivo);
     if(!l||l.fugindo||l.entrando||!podeControlar) return;
+    if(l.segurando||l.seguradoPor||l.derrubado>0){ l.vx=l.vy=0; return; }
     let dx=0,dy=0;
     /* A CENA 3D MANDA UM VETOR, NÃO TECLAS. Lá o W é "pra onde a câmera
        olha", e quem sabe pra onde a câmera olha é o renderizador — ele
@@ -1301,6 +1311,7 @@ TO.diaJogo.combate = (function(){
     for(const d of J.discos){
       if(!d.vivo) continue;
 
+      if(d.segurando || d.seguradoPor){ d.vx=d.vy=0; d._ramo='agarrao'; continue; }
       if(d.derrubado>0){
         d.vx=d.vy=0;
         if(d.noChao){
@@ -1895,7 +1906,23 @@ TO.diaJogo.combate = (function(){
      vezes 0,55: com um golpe a cada ~0,6 s dá o dano por segundo
      que o contato contínuo dava.
      ======================================================= */
+  /* O QUE CADA CARGO SABE (dono, 06/09/2026): novato só bate e
+     defende; componente chuta; linha de frente chuta, agarra e dá o
+     contragolpe; diretoria (e o líder) tudo. Sem ficha, a força diz. */
+  const PERFIS = {
+    novato:     {chuta:false, agarra:false, contra:false},
+    componente: {chuta:true,  agarra:false, contra:false},
+    frente:     {chuta:true,  agarra:true,  contra:true},
+    diretoria:  {chuta:true,  agarra:true,  contra:true}
+  };
+  function perfilDe(d){
+    if(d.lider) return PERFIS.diretoria;
+    const c = d.cargo || (d.forca>=10 ? 'frente' : d.forca>=5 ? 'componente' : 'novato');
+    return PERFIS[c] || PERFIS.novato;
+  }
   const DUR_GOLPE = 0.36, IMPACTO_EM = 0.15, CD_GOLPE = 0.18;
+  const DUR_CONTRA = 0.28, IMPACTO_CONTRA = 0.10, JANELA_CONTRA = 0.16;
+  const DUR_AGARRAO = 0.5, IMPACTO_AGARRAO = 0.22;
   /* O CHUTE (pedido do dono, 06/09/2026): uma parte dos golpes — do Q
      e da IA — sai de perna. É mais lento (dá mais tempo de ver vindo
      e defender), bate mais forte, e SE ENTRA derruba: o atingido vai
@@ -1918,27 +1945,133 @@ TO.diaJogo.combate = (function(){
     return melhor || (soDePe ? null : chao);
   }
   function podeBater(J,d){
-    return d.vivo && !d.ataque && J.t>=d.cdBater && d.defendendo<=0 && d.derrubado<=0 &&
+    return d.vivo && !d.ataque && J.t>=d.cdBater && d.defendendo<=0 && d.derrubado<=0 && !d.seguradoPor &&
            !d.fugindo && d.atordoado<=0 && !d.fugaBomba && !d.entrando && !d.preso;
   }
   function bater(J,d,tipo){
     if(!podeBater(J,d)) return false;
+    const pf = perfilDe(d);
+    /* segurando alguém: o golpe é a joelhada nele, e sempre entra */
+    if(d.segurando){
+      const b = d.segurando;
+      d.ataque = {t:0, dur:0.42, impacto:0.2, tipo:'joelhada', alvo:b, bateu:false};
+      d.golpe = 0.42; d.hostil = 3.0; d._alvo = b; d.golpesDados++;
+      return true;
+    }
     const b = alvoNaFrente(J,d);
-    if(!tipo) tipo = (U.rng() < d.chutador && !(b && b.derrubado>0)) ? 'chute' : 'soco';
-    const chute = tipo==='chute';
-    d.ataque = {t:0, dur: chute?DUR_CHUTE:DUR_GOLPE, impacto: chute?IMPACTO_CHUTE:IMPACTO_EM, tipo, alvo:b, bateu:false};
+    if(!tipo && d.contra>0) tipo = 'contra';
+    if(!tipo) tipo = (pf.chuta && U.rng() < d.chutador && !(b && b.derrubado>0)) ? 'chute' : 'soco';
+    const chute = tipo==='chute', contra = tipo==='contra';
+    if(contra) d.contra = 0;
+    d.ataque = {t:0, dur: chute?DUR_CHUTE:contra?DUR_CONTRA:DUR_GOLPE, impacto: chute?IMPACTO_CHUTE:contra?IMPACTO_CONTRA:IMPACTO_EM, tipo, alvo:b, bateu:false};
     d.golpe = d.ataque.dur; d.hostil = 3.0; d._alvo = b; d.golpesDados++;
     if(b){ b.linha='frente'; }
     return true;
   }
   function defender(J,d,dur){
-    if(!d.vivo || d.fugindo || d.atordoado>0 || d.derrubado>0) return false;
+    if(!d.vivo || d.fugindo || d.atordoado>0 || d.derrubado>0 || d.seguradoPor || d.segurando) return false;
     if(d.ataque && d.ataque.t < d.ataque.impacto) return false;   // no meio do golpe não dá
     d.defendendo = Math.max(d.defendendo, dur); d.hostil = Math.max(d.hostil, 2);
     return true;
   }
+  /* CONTRAGOLPE: soltar o E (ou o botão) na hora do golpe vindo — até
+     0,16 s antes do impacto — esquiva na certa e abre 0,6 s pra um soco
+     mais rápido (0,28 s), mais forte (1,8×) e que não se defende. Só
+     quem tem o perfil (linha de frente, diretoria, líder). */
+  function soltarDefesa(J,d){ if(d && d.vivo) d.soltouEm = J.t; }
+
+  /* AGARRAR (tecla F): pega quem está na frente de pé. Entra com
+     0,5 + (força − defesa)/40 (20% a 85%); segurado, o outro não bate,
+     não defende e leva 1,5× de quem chegar — e quem segura só dá
+     joelhada nele e leva 1,3× dos outros. Solta em 1,6–2,4 s (menos se
+     é mais fraco), se levar um golpe de 9+ ou se alguém cair. */
+  function podeAgarrar(J,d){
+    return podeBater(J,d) && !d.segurando && J.t>=d.cdAgarrar && perfilDe(d).agarra;
+  }
+  function agarrar(J,d){
+    if(!podeAgarrar(J,d)) return false;
+    const b = alvoNaFrente(J,d,true);
+    if(!b || b.seguradoPor || b.segurando) return false;
+    d.ataque = {t:0, dur:DUR_AGARRAO, impacto:IMPACTO_AGARRAO, tipo:'agarrar', alvo:b, bateu:false};
+    d.golpe = DUR_AGARRAO; d.hostil = 3.0; d._alvo = b;
+    return true;
+  }
+  function resolverAgarrao(J,a,b){
+    a.cdAgarrar = J.t + 1.5;
+    if(!b || !b.vivo || b.derrubado>0 || b.seguradoPor || b.segurando) return;
+    if(U.dist(a.x,a.y,b.x,b.y) > alcanceDe(a,b)*1.25 || !naFrente(a,b)) return;
+    const chance = U.limitar(0.5 + (a.forca - b.defesa)/40, 0.2, 0.85);
+    if(U.rng() > chance){ b.esquivou = 0.3; return; }
+    a.segurando = b; b.seguradoPor = a;
+    a.seguraAte = J.t + U.entre(1.6, 2.4) * (a.forca >= b.forca ? 1 : 0.7);
+    b.ataque = null; b.defendendo = 0; b.linha = 'frente'; b.hostil = 3; a.hostil = 3;
+    b.viraPara = rumoPara(b,a); levouDe(J, b, a); atacado(J,b);
+    if(b.lider) aviso(J,'Te agarraram — o bonde solta','#d9705f');
+  }
+  function soltar(J,a){
+    const b = a.segurando; if(!b) return;
+    a.segurando = null; b.seguradoPor = null;
+    a.cdAgarrar = J.t + 2.5; a.cdBater = Math.max(a.cdBater, J.t + 0.3); b.cdBater = Math.max(b.cdBater, J.t + 0.3);
+  }
+  function conferirAgarroes(J){
+    for(const a of J.discos){
+      if(!a.segurando) continue;
+      const b = a.segurando;
+      if(!a.vivo || !b.vivo || a.derrubado>0 || b.derrubado>0 || a.fugindo || b.fugindo || J.t >= a.seguraAte) soltar(J,a);
+    }
+  }
+
+  /* CHAMAR (tecla C, 20 s de espera): quem chama puxa o bonde inteiro
+     pra cima. Cada um atende com 25% + 60%·moral/20 — moral alta, quase
+     todo mundo vem. Se atendeu gente bastante pra ficar em MAIS que os
+     inimigos à vista (300 px), o outro lado recua 2,5 s. A IA chama
+     também (`iaChamar`). */
+  const CD_CHAMAR = 20;
+  function chamar(J,lado){
+    J.chamouEm = J.chamouEm || {}; J.recuoChamado = J.recuoChamado || {};
+    if(J.fase!=='ativo' || J.t < (J.chamouEm[lado]||-99) + CD_CHAMAR) return null;
+    const meus = J.discos.filter(d=>d.lado===lado && d.vivo && !d.fugindo && !d.entrando);
+    if(!meus.length) return null;
+    const quem = meus.find(d=>d.lider) || meus.reduce((m,d)=>(d.forca+d.defesa)>(m.forca+m.defesa)?d:m, meus[0]);
+    J.chamouEm[lado] = J.t; quem.chamou = J.t;
+    let atenderam = 0;
+    for(const d of meus){
+      if(d===quem || d.derrubado>0 || d.preso) continue;
+      const p = 0.25 + U.limitar((d.moral||12)/20, 0, 1)*0.6;
+      if(U.rng() < p){ atenderam++; d.chamado = J.t + 5; d.linha = 'frente'; d.hostil = Math.max(d.hostil, 3); d.respirou = false; }
+    }
+    const outro = OUTRO_LADO[lado];
+    const inimigosVista = J.discos.filter(d=>d.lado===outro && d.vivo && !d.fugindo && U.dist(d.x,d.y,quem.x,quem.y) < 300).length;
+    const recuou = atenderam + 1 > inimigosVista && inimigosVista > 0;
+    if(recuou) J.recuoChamado[outro] = J.t + 2.5;
+    const nosso = lado === ladoDoJogador(J);
+    if(nosso) aviso(J, `CHAMOU! ${atenderam} atenderam${recuou ? ' · o rival recua' : ''}`, recuou ? '#7fc2a0' : '#f0d68a');
+    else aviso(J, `O rival chamou${recuou ? ' — recua um pouco' : ''}`, '#d9705f');
+    logar(J, nosso ? `Chamou: ${atenderam} de ${meus.length-1} atenderam.` : `O rival chamou o bonde dele.`, nosso ? 'r' : 'pm');
+    return {atenderam, recuou};
+  }
+  function iaChamar(J){
+    const ladoIA = OUTRO_LADO[ladoDoJogador(J)];
+    if(J.t < (J._iaChamaEm||8)) return;
+    J._iaChamaEm = J.t + U.entre(4, 7);
+    const deles = J.discos.filter(d=>d.lado===ladoIA && d.vivo && !d.fugindo);
+    const nossos = J.discos.filter(d=>d.lado!==ladoIA && d.vivo && !d.fugindo);
+    if(!deles.length || !deles.some(d=>d.hostil>0)) return;
+    const moral = deles.reduce((a,d)=>a+(d.moral||12),0)/deles.length;
+    if(deles.length >= nossos.length*0.8 && moral >= 9 && U.rng() < 0.6) chamar(J, ladoIA);
+  }
+
   function acertar(J,a,b){
     const chute = !!(a.ataque && a.ataque.tipo==='chute');
+    const contra = !!(a.ataque && a.ataque.tipo==='contra');
+    const joelhada = !!(a.ataque && a.ataque.tipo==='joelhada');
+    /* o contragolpe do alvo: soltou a defesa na hora certa, de frente */
+    if(!b.seguradoPor && b.derrubado<=0 && naFrente(b,a) && perfilDe(b).contra && J.t - b.soltouEm >= 0 && J.t - b.soltouEm <= JANELA_CONTRA){
+      b.esquivou = 0.4; b.contra = 0.6; b.cdBater = 0; b.soltouEm = -9; b.defendendo = 0;
+      b.contraEm = J.t;
+      if(b.lider) aviso(J,'CONTRA!','#7fc2a0');
+      return;
+    }
     /* no chão não se defende — e quem apanha no chão fica lá */
     if(b.derrubado>0){
       b.hp -= Math.max(1,(a.forca*U.entre(0.8,1.2))-b.defesa*0.5)*P.dano*0.55*2.6;
@@ -1948,16 +2081,23 @@ TO.diaJogo.combate = (function(){
       if(b.hp<=0) derrubar(J,b);
       return;
     }
-    const defende = b.defendendo>0 && naFrente(b,a);
-    if(defende && U.rng() < 0.75){ b.esquivou = 0.4; return; }
+    /* segurado não defende nem esquiva; cercado defende pior; o
+       contragolpe e a joelhada de quem segura não se defendem */
+    const defende = b.defendendo>0 && naFrente(b,a) && !b.seguradoPor && !contra && !joelhada;
+    if(defende && U.rng() < (b.cercado ? 0.45 : 0.75)){ b.esquivou = 0.4; return; }
     /* o chute é lento: mesmo sem defender, quem tem defesa desvia
        uma parte (28% a 53%) — o pé passa no ar */
-    if(chute && !defende && U.rng() < 0.28 + b.defesa/48){ b.esquivou = 0.4; return; }
+    if(chute && !defende && !b.seguradoPor && U.rng() < 0.28 + b.defesa/48){ b.esquivou = 0.4; return; }
     const bruto=(a.forca*U.entre(0.8,1.2))-b.defesa*0.5;
-    const dano = Math.max(1,bruto)*P.dano*0.55*(b.fugindo?1.6:1)*(defende?0.35:1)*(chute?1.3:1);
+    const dano = Math.max(1,bruto)*P.dano*0.55*(b.fugindo?1.6:1)*(defende?0.35:1)*(chute?1.3:1)
+                 *(contra?1.8:1)*(joelhada?1.2:1)*(b.seguradoPor?1.5:1)*(b.segurando?1.3:1)*(b.cercado?1.3:1)*(a.chamado>J.t?1.1:1);
     b.hp-=dano;
+    /* quem segura e leva um golpe de 9+ solta */
+    if(b.segurando && dano >= 9) soltar(J,b);
     b.tremor=Math.min(6,b.tremor+2.4); b.apanhou=0.35; levouDe(J, b, a);
     if(chute && !defende && b.hp>0){
+      if(b.seguradoPor) soltar(J, b.seguradoPor);
+      if(b.segurando) soltar(J, b);
       b.derrubadoDur = b.derrubado = U.entre(QUEDA_MIN, QUEDA_MAX);
       b.quedas++; b.ataque=null; b.defendendo=0; b.esquivou=0; b.vx=b.vy=0;
       b.caiuDe = a; b.linha='frente'; atacado(J,b);
@@ -2015,13 +2155,24 @@ TO.diaJogo.combate = (function(){
     for(const d of J.discos){
       if(!d.vivo) continue;
       /* o inimigo mais perto, pro desenho provocar e pra decidir */
-      let perto=null, md=1e9;
+      let perto=null, md=1e9, aliados=0;
+      const angs = [];
       for(const o of porPerto(J,d.x,d.y,90)){
-        if(o===d||!o.vivo||!inimigos(d.lado,o.lado)) continue;
+        if(o===d||!o.vivo) continue;
         const q=U.dist(d.x,d.y,o.x,o.y);
+        if(!inimigos(d.lado,o.lado)){ if(q<40) aliados++; continue; }
         if(q<md){ md=q; perto=o; }
+        if(q < alcanceDe(d,o)*1.4) angs.push(Math.atan2(o.y-d.y, o.x-d.x));
       }
-      d.inimigoPerto = perto ? md : 999;
+      d.inimigoPerto = perto ? md : 999; d.aliadosPerto = aliados;
+      /* CERCADO: inimigo ao alcance dos dois lados (110° ou mais entre dois deles) */
+      let cercado = false;
+      for(let i=0;i<angs.length && !cercado;i++) for(let j=i+1;j<angs.length;j++){
+        let df = Math.abs(angs[i]-angs[j]); if(df > Math.PI) df = 2*Math.PI - df;
+        if(df >= 1.92){ cercado = true; break; }
+      }
+      d.cercado = cercado;
+      if(d.contra > 0) d.contra -= dt;
       if(d.lider) continue;
       if(d.fugindo || d.atordoado>0 || d.derrubado>0 || d.fugaBomba || d.entrando) continue;
       if(recuando(J, d.lado) || !agressivo(J,d)) continue;
@@ -2029,17 +2180,26 @@ TO.diaJogo.combate = (function(){
       const alcance = alcanceDe(d,perto);
       /* golpe vindo em mim: defender, com a chance que a defesa dá */
       const vindo = perto.ataque && perto.ataque.alvo===d && perto.ataque.t < perto.ataque.impacto;
-      if(vindo && d.defendendo<=0 && !d.ataque){
+      const pf = perfilDe(d);
+      if(vindo && d.defendendo<=0 && !d.ataque && !d.seguradoPor){
         const pDef = 0.25 + d.defesa/40;
-        if(U.rng() < pDef*Math.min(1, dt*30)) { defender(J, d, U.entre(0.35, 0.7)); continue; }
+        if(U.rng() < pDef*Math.min(1, dt*30)){
+          const falta = perto.ataque.impacto - perto.ataque.t;
+          /* quem sabe o contragolpe solta a defesa a 0,05 s do impacto (uma parte das vezes) */
+          if(pf.contra && U.rng() < 0.2 + d.defesa/50){ defender(J, d, Math.max(0.1, falta)); d.soltouEm = J.t + Math.max(0, falta - 0.05); }
+          else defender(J, d, U.entre(0.35, 0.7));
+          continue;
+        }
       }
       if(md > alcance) continue;
       if(!naFrente(d,perto)){ if(d.viraPara==null) d.viraPara = rumoPara(d,perto); continue; }
+      /* agarra quando tem companheiro do lado pra aproveitar */
+      if(pf.agarra && !d.segurando && !perto.seguradoPor && perto.derrubado<=0 && d.aliadosPerto>=1 && podeAgarrar(J,d) && U.rng() < 0.14*Math.min(1, dt*30)){ agarrar(J,d); continue; }
       if(podeBater(J,d)){
         /* só tem gente no chão na frente: uns vão em cima, outros esperam */
         if(perto.derrubado>0 && !alvoNaFrente(J,d,true) && U.rng() > d.pisoteia){ d.cdBater = J.t + U.entre(0.3, 0.6); continue; }
         /* respira: a cada `folego` golpes, meio segundo a um em guarda */
-        if(d.golpesDados>0 && d.golpesDados % d.folego === 0 && !d.respirou){
+        if(d.golpesDados>0 && d.golpesDados % d.folego === 0 && !d.respirou && !(d.chamado > J.t) && !d.segurando){
           d.respirou = true; d.cdBater = J.t + U.entre(0.45, 1.0); continue;
         }
         d.respirou = false;
@@ -2058,7 +2218,8 @@ TO.diaJogo.combate = (function(){
           at.bateu=true;
           let b=at.alvo;
           if(!(b && b.vivo && U.dist(a.x,a.y,b.x,b.y)<=alcanceDe(a,b)*1.25 && naFrente(a,b))) b=alvoNaFrente(J,a);
-          if(b && !a.fugindo && a.atordoado<=0) acertar(J,a,b);
+          if(at.tipo==='agarrar') resolverAgarrao(J,a,b);
+          else if(b && !a.fugindo && a.atordoado<=0) acertar(J,a,b);
         }
         if(at.t>=at.dur){ a.ataque=null; a.cdBater=J.t+(at.tipo==='chute'?CD_CHUTE:CD_GOLPE)+U.rng()*0.2; }
       }
@@ -2128,6 +2289,8 @@ TO.diaJogo.combate = (function(){
     d.caido=true; d.hp=0; d.vx=d.vy=0; d.derrubado=0; d.ataque=null;
     if(d.socorrista){ d.socorrista.socorrendo=null; d.socorrista=null; }
     if(d.socorrendo){ d.socorrendo.socorrista=null; d.socorrendo=null; }
+    if(d.segurando) soltar(J,d);
+    if(d.seguradoPor) soltar(J,d.seguradoPor);
     J.caidos[d.lado]++;
     /* a cascata de moral saiu junto com a moral da briga (decisão do
        dono): cada caído derrubava o lado dele e subia o outro, e era
@@ -2489,8 +2652,8 @@ TO.diaJogo.combate = (function(){
 
   /* recuar é do LADO, e cada lado tem a sua bandeira: a nossa é a tecla
      R (`J.recuando`), a deles é a decisão da IA (`J.recuoVisitante`) */
-  const recuando = (J, lado) => lado === ladoDoJogador(J)
-    ? !!J.recuando : !!J.recuoVisitante;
+  const recuando = (J, lado) => (lado === ladoDoJogador(J)
+    ? !!J.recuando : !!J.recuoVisitante) || !!(J.recuoChamado && J.t < (J.recuoChamado[lado]||0));
 
   function checarDebandada(J){
     const meuLado = ladoDoJogador(J);
@@ -2856,6 +3019,7 @@ TO.diaJogo.combate = (function(){
 
   return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar,
           naFrente, rumoPara, RAIO_BOMBA, podeArremessar, bater, defender, DUR_GOLPE,
+          soltarDefesa, agarrar, podeAgarrar, chamar, perfilDe, CD_CHAMAR,
           ladoDoJogador, ladoDeles, OUTRO_LADO,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,

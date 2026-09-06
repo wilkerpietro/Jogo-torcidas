@@ -713,11 +713,13 @@ TO.diaJogo.ponte = (function(){
     bomba.addEventListener('contextmenu', ev=>ev.preventDefault());
     /* Q bate (toque), E defende (segurar), R recua; pedra e bomba
        ficam do outro lado, nos números 2 e 3 */
-    const defender = botao('DEFENDER', 'pad-acao pad-e', ()=>{ teclas.e=true; }, ()=>{ teclas.e=false; });
+    const defender = botao('DEFENDER', 'pad-acao pad-e', ()=>{ teclas.e=true; }, ()=>{ teclas.e=false; if(J) C.soltarDefesa(J, liderVivo()); });
     acoes.append(
       disparo('q','BATER', ()=>{ if(J){ const l=liderVivo(); if(l) C.bater(J, l); } }),
       defender,
-      disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }));
+      disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
+      disparo('f','AGARRAR',()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }),
+      disparo('c','CHAMAR',()=>{ if(J) C.chamar(J, C.ladoDoJogador(J)); }));
     const cruz = document.createElement('div');
     cruz.className = 'pad-cruz';
     cruz.append(segurar('w'), segurar('a'), segurar('s'), segurar('d'));
@@ -771,13 +773,16 @@ TO.diaJogo.ponte = (function(){
       if(!J) return;
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
       if(k==='q'){ const l=liderVivo(); if(l) C.bater(J, l); }
-      /* E é segurar: a defesa é lida por `teclas.e` no moverLider */
+      if(k==='f'){ const l=liderVivo(); if(l) C.agarrar(J, l); }
+      if(k==='c'){ C.chamar(J, C.ladoDoJogador(J)); }
+      /* E é segurar: a defesa é lida por `teclas.e` no moverLider;
+         SOLTAR o E na hora do golpe é o contragolpe */
       if(k==='2') C.arremessar(J,'pedra');
       if(k==='3') alternarMira();
       if(k==='escape') cancelarMira();
       if(k==='enter') mandarEntrarOuSair();
     });
-    addEventListener('keyup',e=>{teclas[e.key.toLowerCase()]=false;});
+    addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); if(k==='e' && teclas.e && J) C.soltarDefesa(J, liderVivo()); teclas[k]=false; });
 
     /* rodinha = zoom. `passive:false` porque sem o preventDefault a
        página rola junto e o zoom vira briga com o scroll. O passo é

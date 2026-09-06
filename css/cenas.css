@@ -240,7 +240,7 @@ body:not(.em-cena) #djPad{ display:none; }
 .pad-bt.apertado{ background:var(--rubro); border-color:var(--rubro-vivo); }
 .pad-bt.gasto{ opacity:.4; }
 
-.pad-acoes{ display:flex; gap:6px; pointer-events:none; }
+.pad-acoes{ display:flex; gap:6px; pointer-events:none; flex-wrap:wrap; max-width:246px; }
 .pad-acao{ width:74px; height:44px; font-size:11px; }
 .pad-form{ width:58px; height:44px; font-size:16px; font-weight:700; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; }
 .pad-form small{ font-size:8px; font-weight:400; letter-spacing:.08em; margin-top:2px; }
