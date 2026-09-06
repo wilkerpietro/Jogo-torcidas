@@ -3151,12 +3151,14 @@ TO.diaJogo.combate = (function(){
     if(x===undefined){ x=d.x; y=d.y; }
     /* ESTUDO (06/09/2026): a sombra da torcida no chão, na 2ª cor —
        por baixo do boneco, que a camada 3D desenha por cima */
-    /* ESTUDO: o anel no chão, na 2ª cor da torcida (ou na cor do lado),
-       contornado de escuro pra ler em qualquer chão e por baixo da
-       sombra do boneco */
+    /* O ANEL NO CHÃO (decisão do dono, 06/09/2026): na 2ª cor da
+       torcida, só na cena em que há torcidas de primária igual — quem
+       decide é bonecos3.anelDe. Contornado de escuro pra ler em
+       qualquer chão e por baixo da sombra do boneco. */
     const B3 = TO.diaJogo.bonecos3;
-    if(B3 && B3.estudo && B3.estudo.anel){
-      const cor = B3.estudo.anel === 'lado' ? corLado(d.lado, false) : (d.cor2 || d.cor3 || corLado(d.lado, true));
+    const anel = B3 && B3.anelDe ? B3.anelDe(TO.diaJogo.J, d) : null;
+    if(anel){
+      const cor = anel === 'lado' ? corLado(d.lado, false) : anel;
       c.save();
       c.beginPath(); c.ellipse(x, y+d.r*0.45, d.r*1.15, d.r*0.62, 0, 0, 7);
       c.lineWidth = 4; c.strokeStyle = 'rgba(0,0,0,.55)'; c.stroke();

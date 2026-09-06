@@ -3715,6 +3715,34 @@ Recomendação submetida: uniforme por torcida sempre ligado (calção,
 desenho, boné) e o anel como opção do jogador, ligado só no nosso
 bonde; nunca a cor do lado, que apaga o aliado. Fica no crivo do dono.
 
+## Calção, anel e as propostas de camisa (decisão do dono, 06/09/2026)
+
+Depois do estudo "Quem É Quem na Briga", o dono decidiu:
+
+1. **Calção sempre na 1ª cor da torcida.** Quando outra torcida da cena
+   tem a mesma primária, a que chegou depois sai com o calção na 2ª cor
+   — a nossa é sempre a primeira da fila. Na arquibancada das quatro
+   brancas: TUF de calção branco, Terror Tricolor azul-claro, Aliança e
+   Falange Coral de preto. Gaviões × Pavilhão 9: preto e branco.
+2. **Anel no chão, na 2ª cor, só na cena com primária repetida.** Sem
+   colisão não há anel. Contornado de escuro, por baixo da sombra.
+3. **Desenho da camisa: escolher antes.** Nove propostas pintadas por
+   vértice (lisa, ombros, mangas, listras, faixa larga, listra fina,
+   tiracolo, gola e punhos, tricolor), fotografadas de cima em três
+   paletas na prancha "Propostas de Camisa". Ficam no crivo; nenhuma
+   ligada (`estudo.desenho = 'lisa'`).
+
+Quem decide calção e anel é `bonecos3.paletaDaCena(J)`: lê os bondes
+da configuração (nossa primeiro), marca quem repete a primária de quem
+veio antes (`coresParecidas`, a mesma régua da paleta da torcida) e
+entrega calção e cor do anel por torcida. `estudo.calcao` e
+`estudo.anel` em `'auto'` aplicam a regra; os outros valores ficam pra
+bancada.
+
+Limite técnico registrado: a camisa do GLB tem 206 vértices e não tem
+UV, então a cor por vértice sai esfumada — listra fina não se lê.
+Listra nítida pede reexportar o boneco com UV na camisa.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -147,9 +147,7 @@ TO.diaJogo.bonecos3 = (function(){
     d._b3 = {
       sem:s, fase:frac(s+'f')*6.28, yaw:frac(s+'y')*6.28,
       pele:PELE[dado(s+'p',PELE.length)],
-      calca: estudo.calcao==='primaria' && d.cor ? d.cor
-           : estudo.calcao==='segunda' && (d.cor2||d.cor3) ? (d.cor2||d.cor3)
-           : CALCA[dado(s+'c',CALCA.length)],
+      calca: calcaoDe(TO.diaJogo.J, d, CALCA[dado(s+'c',CALCA.length)]),
       cabelo:CABELO[dado(s+'h',CABELO.length)],
       tenis:TENIS[dado(s+'t',TENIS.length)],
       bermuda: frac(s+'bm') < 0.5,
@@ -536,15 +534,78 @@ TO.diaJogo.bonecos3 = (function(){
        · sombra — uma sombra colorida no chão, por baixo dos pés, na
          2ª cor (desenhada pela camada 2D, em combate.desenharRotulo).
      ======================================================= */
-  /* calcao (pedido do dono, 06/09/2026): o calção na cor primária da
-     torcida — o uniforme inteiro é da torcida; 'segunda' é a variante
-     de comparação, com o calção na 2ª cor */
-  const estudo = {desenho:'lisa', boneCor2:false, anel:false, calcao:'primaria'};
+  /* DECISÃO DO DONO (06/09/2026), depois do estudo:
+       · calção sempre na 1ª cor da torcida; quando OUTRA torcida da cena
+         tem a mesma primária, a que chegou depois (a nossa é sempre a
+         primeira) sai com o calção na 2ª cor;
+       · anel no chão, na 2ª cor, ligado só na cena em que há torcidas
+         de primária igual.
+     `calcao` e `anel` em 'auto' aplicam a regra; os outros valores
+     seguem existindo pra bancada. `desenho` e `boneCor2` continuam
+     desligados até o dono escolher as variações de camisa. */
+  const estudo = {desenho:'lisa', boneCor2:false, anel:'auto', calcao:'auto'};
+
+  /* A PALETA DA CENA: por torcida, a cor do calção e a do anel, e se
+     a cena tem primária repetida. Lê os bondes da configuração
+     (a nossa primeiro) e, sem bondes, o que os discos trazem. */
+  let paletaJ = null, paleta = null;
+  function paletaDaCena(J){
+    if(J && J === paletaJ && paleta) return paleta;
+    paletaJ = J; paleta = {torcidas:{}, colisao:false};
+    if(!J) return paleta;
+    const M = TO.mundo;
+    const parecidas = (a,b)=> !!(a && b) && (M && M.coresParecidas
+      ? M.coresParecidas(String(a).toUpperCase(), String(b).toUpperCase())
+      : String(a).toLowerCase() === String(b).toLowerCase());
+    let lista = [];
+    if(J.bondes_ && J.bondes_.length)
+      lista = J.bondes_.map(b=>({nome:b.nome||b.lado, cor:b.cor, cor2:b.cor2, cor3:b.cor3, nossa:!!b.nossa}));
+    else {
+      const vistos = new Set();
+      for(const d of J.discos){
+        const k = d.torcida || d.lado; if(vistos.has(k)) continue; vistos.add(k);
+        lista.push({nome:k, cor:d.cor, cor2:d.cor2, cor3:d.cor3, nossa:!!d.doJogador});
+      }
+    }
+    lista.sort((a,b)=>(b.nossa?1:0)-(a.nossa?1:0));
+    const vistas = [];
+    for(const t of lista){
+      if(paleta.torcidas[t.nome]) continue;
+      const repete = !!t.cor && vistas.some(v=>parecidas(v.cor, t.cor));
+      if(repete) paleta.colisao = true;
+      paleta.torcidas[t.nome] = {
+        calcao: repete ? (t.cor2 || t.cor3 || '#202020') : (t.cor || null),
+        repete, anel: t.cor2 || t.cor3 || null};
+      vistas.push(t);
+    }
+    return paleta;
+  }
+  function calcaoDe(J, d, sorteio){
+    const m = estudo.calcao;
+    if(m === false) return sorteio;
+    if(m === 'primaria') return d.cor || sorteio;
+    if(m === 'segunda') return d.cor2 || d.cor3 || sorteio;
+    const t = paletaDaCena(J).torcidas[d.torcida || d.lado];
+    return (t && t.calcao) || d.cor || sorteio;
+  }
+  /* a cor do anel do disco, 'lado' pra cor do lado, ou null sem anel */
+  function anelDe(J, d){
+    const m = estudo.anel;
+    if(!m) return null;
+    if(m === 'lado') return 'lado';
+    const p = paletaDaCena(J);
+    if(m === 'auto' && !p.colisao) return null;
+    const t = p.torcidas[d.torcida || d.lado];
+    return (t && t.anel) || d.cor2 || d.cor3 || 'lado';
+  }
   /* VISTO DE CIMA o que aparece da camisa é o alto dos ombros e as
      mangas — faixa no peito e metade a metade somem na projeção
      (medido nas fotos do estudo). Os desenhos são os que se leem de
      cima: ombros na 2ª cor, mangas na 2ª cor, listras verticais. */
-  const DESENHOS = ['lisa','ombros','mangas','listras'];
+  /* as PROPOSTAS de camisa (06/09/2026), todas pintadas por vértice na
+     malha do GLB; o dono escolhe quais ficam. A 3ª cor entra na
+     'tricolor' e na 'ombros' quando existe. */
+  const DESENHOS = ['lisa','ombros','mangas','listras','faixa-central','diagonal','gola','tricolor','listras-largas'];
   let registroDesenhos = new Map(), registroJ = null;
   function desenhoDaTorcida(d, J){
     if(estudo.desenho !== 'auto') return estudo.desenho === 'lisa' ? 0 : Math.max(0, DESENHOS.indexOf(estudo.desenho));
@@ -580,18 +641,23 @@ TO.diaJogo.bonecos3 = (function(){
     g = base.clone();
     const pos = g.getAttribute('position'); const n = pos.count;
     const cor = new Float32Array(n*3);
-    const A = new THREE.Color(c1), B = new THREE.Color(c2 || c3 || '#202020');
+    const A = new THREE.Color(c1), B = new THREE.Color(c2 || c3 || '#202020'), C3 = new THREE.Color(c3 || c2 || '#202020');
     let xmin=1e9,xmax=-1e9,ymin=1e9,ymax=-1e9;
     for(let i=0;i<n;i++){ const x=pos.getX(i), y=pos.getY(i); if(x<xmin)xmin=x; if(x>xmax)xmax=x; if(y<ymin)ymin=y; if(y>ymax)ymax=y; }
     const desenho = DESENHOS[idx] || 'lisa';
     for(let i=0;i<n;i++){
       const x=pos.getX(i), y=pos.getY(i);
       const fx=(x-xmin)/(xmax-xmin||1), fy=(y-ymin)/(ymax-ymin||1);
-      let segunda = false;
+      let segunda = false, terceira = false;
       if(desenho==='ombros')       segunda = fy > 0.80;                     // o alto dos ombros e a gola
       else if(desenho==='mangas')  segunda = Math.abs(x) > 0.21;            // as mangas
       else if(desenho==='listras') segunda = Math.floor(fx*5) % 2 === 1;    // cinco listras verticais
-      const c = segunda ? B : A;
+      else if(desenho==='listras-largas') segunda = Math.floor(fx*3) === 1; // uma faixa larga no meio
+      else if(desenho==='faixa-central') segunda = Math.abs(x) < 0.075;    // uma listra fina no meio
+      else if(desenho==='diagonal') segunda = Math.abs(x - 1.1*(y-1.20)) < 0.08;   // a faixa a tiracolo
+      else if(desenho==='gola'){ segunda = (fy > 0.92 && Math.abs(x) < 0.16) || Math.abs(x) > 0.265; } // gola e punhos
+      else if(desenho==='tricolor'){ segunda = fy > 0.80; terceira = !segunda && Math.abs(x) > 0.21; }  // ombros na 2ª, mangas na 3ª
+      const c = terceira ? C3 : segunda ? B : A;
       cor[i*3]=c.r; cor[i*3+1]=c.g; cor[i*3+2]=c.b;
     }
     g.setAttribute('color', new THREE.Float32BufferAttribute(cor, 3));
@@ -1794,7 +1860,7 @@ TO.diaJogo.bonecos3 = (function(){
     renderer.clear();
   }
 
-  return {montar, desenharDeCima, desenharVitrine, limparDeCima, estudo, DESENHOS,
+  return {montar, desenharDeCima, desenharVitrine, limparDeCima, estudo, DESENHOS, paletaDaCena, anelDe,
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },
           get _dbg(){ return {scene, cam, camV, renderer, figuras, modeloGLB}; }};
