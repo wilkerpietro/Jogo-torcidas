@@ -140,7 +140,7 @@ TO.diaJogo.bonecos3 = (function(){
     const camisa = d.cor || corLado(d.lado,false);
     const faixa  = d.cor2 || corLado(d.lado,true);
     /* cabeça: o que tem em cima dela */
-    const CABECAS = ['curto','curto','curto','raspado','raspado','black','moicano','comprido','bone','bone','bone-tras','bucket','bandana','careca'];
+    const CABECAS = ['curto','curto','curto','raspado','raspado','raspado','black','moicano','comprido','bone','bone','bone-tras','bandana','careca'];
     const tipoCabeca = d.lider ? 'bandana' : CABECAS[dado(s+'cab', CABECAS.length)];
     const rBarba = frac(s+'bb');
     d._b3 = {
@@ -160,6 +160,8 @@ TO.diaJogo.bonecos3 = (function(){
       relogio: frac(s+'rl') < 0.35,
       pulseira: frac(s+'pu') < 0.25,
       corrente: frac(s+'co') < 0.15,
+      cordao: frac(s+'cg') < 0.22,          // o cordão de ouro grosso com medalha
+      anel: frac(s+'an') < 0.25,
       cachecol: frac(s+'ca') < 0.14,
       meia: frac(s+'me') < 0.45,
       tatuagem: frac(s+'ta') < 0.18,
@@ -321,8 +323,6 @@ TO.diaJogo.bonecos3 = (function(){
         .add(g.caixa, f.corBone, 3.6, 0.35, 2.8, 0, 4.9, tras ? -3.5 : 3.5)
         .add(g.caixa, cabelo, 6.1*CX, 0.9, 5.6, 0, 3.9, -0.4);
       if(!tras) cb.add(g.caixa, faixa, 1.4, 0.8, 0.2, 0, 5.4, 3.35);          // escudo do boné
-    } else if(f.tipoCabeca==='bucket'){
-      cb.add(g.cil, f.corBone, 6.6*CX, 2.4, 6.4, 0, 5.2, 0).add(g.cil, f.corBone, 9.4*CX, 0.35, 9.2, 0, 4.1, 0);
     } else if(f.tipoCabeca==='bandana'){
       cb.add(g.cil, faixa, 6.7*CX, 1.2, 6.5, 0, 4.7, 0).add(g.caixa, faixa, 1.0, 2.4, 0.4, 1.7, 3.7, -3.1)
         .add(g.esfera, cabelo, 3.2*CX, 2.3, 3.1, 0, 5.0, -0.3);
@@ -454,18 +454,19 @@ TO.diaJogo.bonecos3 = (function(){
     else if(tc==='comprido'){ on.add('cabelo_comprido'); on.add('cabelo_comprido_nuca'); }
     else if(tc==='bone'){ on.add('bone_copa'); on.add('bone_aba'); on.add('cabelo_raspado'); }
     else if(tc==='bone-tras'){ on.add('bone_copa'); on.add('bone_aba_tras'); on.add('cabelo_raspado'); }
-    else if(tc==='bucket'){ on.add('bucket_copa'); on.add('bucket_aba'); on.add('cabelo_raspado'); }
     else if(tc==='bandana'){ on.add('bandana'); on.add('bandana_ponta'); on.add('cabelo_raspado'); }
     if(f.barba===1) on.add('barba_cavanhaque'); else if(f.barba===2) on.add('barba_cheia'); else if(f.barba===3) on.add('barba_bigode');
     if(f.oculos===1) for(const n of ['oculos_grau_aro-1','oculos_grau_aro1','oculos_grau_lente-1','oculos_grau_lente1','oculos_grau_haste-1','oculos_grau_haste1','oculos_grau_ponte']) on.add(n);
     if(f.oculos===2) for(const n of ['oculos_escuros_lente-1','oculos_escuros_lente1','oculos_escuros_haste-1','oculos_escuros_haste1','oculos_escuros_ponte']) on.add(n);
     if(f.brinco) on.add('brinco');
     if(f.corrente) on.add('corrente');
+    if(f.cordao){ on.add('cordao_grosso'); on.add('cordao_medalha'); }
+    if(f.anel) on.add('anel');
     if(f.relogio){ on.add('relogio_pulseira'); on.add('relogio_mostrador'); }
     if(f.pulseira) on.add('pulseira');
     return on;
   }
-  const VARIANTE = /^(cabelo_|bone_|bucket_|bandana|barba_|oculos_|brinco|corrente|relogio_|pulseira)/;
+  const VARIANTE = /^(cabelo_|bone_|bandana|barba_|oculos_|brinco|corrente|cordao_|anel|relogio_|pulseira)/;
 
   function construirCorpoGLB(f, pm){
     const g = G();

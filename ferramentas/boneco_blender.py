@@ -203,7 +203,7 @@ def cabeca_base():
     col.objects.link(cab)
     bpy.data.objects.remove(ob)
     # remalha em voxels: topologia uniforme pra esculpir
-    rm = cab.modifiers.new('Remesh', 'REMESH'); rm.mode = 'VOXEL'; rm.voxel_size = 0.0035; rm.use_smooth_shade = True
+    rm = cab.modifiers.new('Remesh', 'REMESH'); rm.mode = 'VOXEL'; rm.voxel_size = 0.0028; rm.use_smooth_shade = True
     aplicar_modificadores(cab)
     return cab
 
@@ -229,25 +229,28 @@ alt = topoZ - queixoZ                    # ~0,22 m
 E = 0.0
 # os traços: (centro, amplitude, sigmas) — amplitude positiva é relevo, negativa é cova
 tracos = []
+ORBITA = {}     # o centro da órbita medido ANTES da escultura: é onde o olho vai
 def traco(c, a, sx, sy=None, sz=None):
     tracos.append((Vector(c), a, sx, sy if sy is not None else sx, sz if sz is not None else sx))
 for sx in (-1, 1):
-    oc = superficie_frente(sx*0.031, olhosZ)                      # centro da órbita
+    oc = superficie_frente(sx*0.031, olhosZ, 0.010)               # centro da órbita
+    ORBITA[sx] = oc.copy()
     traco(oc, -0.014, 0.019, 0.016, 0.013)                        # órbita
     traco(superficie_frente(sx*0.030, olhosZ + 0.022), 0.0055, 0.028, 0.012, 0.008)  # arco da sobrancelha
     traco(superficie_frente(sx*0.052, olhosZ - 0.018), 0.0065, 0.020, 0.018, 0.016)  # maçã do rosto
     traco(superficie_frente(sx*0.046, olhosZ - 0.052), -0.0045, 0.018, 0.018, 0.018) # cova da bochecha
     traco(superficie_lado(0.020, olhosZ + 0.030, sx), -0.004, 0.018, 0.020, 0.018)   # têmpora
     traco(superficie_lado(0.020, olhosZ - 0.070, sx), 0.0045, 0.016, 0.018, 0.016)   # ângulo da mandíbula
-    traco(superficie_frente(sx*0.016, olhosZ - 0.046), 0.0040, 0.008, 0.009, 0.007)  # asa do nariz
-    traco(superficie_frente(sx*0.010, olhosZ - 0.052), -0.0035, 0.005, 0.007, 0.004) # narina
+    traco(superficie_frente(sx*0.015, olhosZ - 0.046, 0.008), 0.0055, 0.010, 0.010, 0.008)  # asa do nariz
+    traco(superficie_frente(sx*0.009, olhosZ - 0.054, 0.008), -0.0030, 0.0045, 0.006, 0.0035) # narina
 # o nariz: dorso do meio das sobrancelhas até a ponta
-for k in range(7):
-    t = k/6.0
-    z = olhosZ + 0.006 - t*0.048
-    traco(superficie_frente(0, z), 0.005 + 0.011*t, 0.009 + 0.003*t, 0.012, 0.009)
-traco(superficie_frente(0, olhosZ - 0.044), 0.010, 0.012, 0.012, 0.009)              # ponta
-traco(superficie_frente(0, olhosZ - 0.060), -0.003, 0.006, 0.006, 0.005)             # base/columela
+traco(superficie_frente(0, olhosZ + 0.008, 0.008), -0.0030, 0.010, 0.010, 0.008)   # raiz do nariz (afunda)
+for k in range(8):
+    t = k/7.0
+    z = olhosZ - 0.002 - t*0.040
+    traco(superficie_frente(0, z, 0.008), 0.004 + 0.009*t, 0.0065 + 0.0045*t, 0.014, 0.008)   # dorso, alargando
+traco(superficie_frente(0, olhosZ - 0.046, 0.008), 0.0085, 0.013, 0.016, 0.010)     # ponta, redonda e ligada à face
+traco(superficie_frente(0, olhosZ - 0.058, 0.008), -0.0025, 0.007, 0.006, 0.004)    # base/columela
 traco(superficie_frente(0, olhosZ - 0.066), -0.0025, 0.004, 0.006, 0.006)            # filtro
 traco(superficie_frente(0, olhosZ - 0.073), 0.0060, 0.022, 0.008, 0.005)             # lábio de cima
 traco(superficie_frente(0, olhosZ - 0.079), -0.0060, 0.024, 0.006, 0.0022)           # a boca (sulco)
@@ -379,8 +382,8 @@ def tampa(nome, mat, sel, desloc, ruido=0.0, semente=1):
 # ---- o rosto (sempre ligado)
 rosto = []
 for sx in (-1, 1):
-    oc = superficie_frente(sx*0.031, olhosZ)
-    cx, cy, cz = oc.x, oc.y + 0.0040, oc.z         # o globo dentro da órbita, sem esbugalhar
+    oc = ORBITA[sx]
+    cx, cy, cz = oc.x, oc.y + 0.0045, oc.z         # o globo dentro da órbita (medida antes do nariz existir)
     rosto.append(esfera('olho%s' % sx, cx, cy, cz, 0.0125, 0.0125, 0.0125, 'olho'))
     rosto.append(esfera('iris%s' % sx, cx, cy - 0.0105, cz, 0.0058, 0.0025, 0.0058, 'iris'))
     rosto.append(esfera('pupila%s' % sx, cx, cy - 0.0125, cz, 0.0026, 0.0015, 0.0026, 'pupila'))
@@ -392,7 +395,8 @@ for sx in (-1, 1):
         t = k/6.0
         x = sx*(0.012 + 0.040*t)
         z = olhosZ + 0.020 + 0.010*math.sin(t*math.pi) - 0.004*t
-        p = superficie_frente(x, z, 0.018); p.y -= 0.0025
+        p = superficie_frente(x, z, 0.010); p.y -= 0.0025
+        if abs(x) < 0.02: p.y = min(p.y, ORBITA[sx].y - 0.004)   # perto do nariz, não sobe nele
         pts.append(p)
     rosto.append(tubo('sobrancelha%s' % sx, pts, [0.0024, 0.0028, 0.0028, 0.0026, 0.0022, 0.0018, 0.0012], 'cabelo'))
     # orelha: a hélice (tubo em arco) e a concha (casca funda)
@@ -458,8 +462,6 @@ def aba(nome, tras):
     return ob
 var.append(aba('bone_aba', False))
 var.append(aba('bone_aba_tras', True))
-var.append(tampa('bucket_copa', 'bone', lambda c, n: c.z > olhosZ + 0.030 and n.z > -0.3, 0.014, 0.0, 8))
-var.append(toro('bucket_aba', 0, 0.006, olhosZ + 0.032, superficie_lado(0.0, olhosZ + 0.032, 1).x + 0.030, 0.010, 'bone'))
 var.append(toro('bandana', 0, 0.006, olhosZ + 0.038, superficie_lado(0.0, olhosZ + 0.038, 1).x + 0.004, 0.011, 'faixa'))
 var.append(caixa('bandana_ponta', 0.025, max(v.co.y for v in _verts) + 0.006, olhosZ - 0.005, 0.028, 0.012, 0.07, 'faixa', (0.3, 0, 0)))
 # barbas: tampas da mandíbula
@@ -470,7 +472,7 @@ var.append(tampa('barba_bigode', 'cabelo', lambda c, n: abs(c.x) < 0.026 and olh
 # óculos: aros em tubo, ponte e hastes
 def oculos(prefixo, mat_aro, com_lente):
     for sx in (-1, 1):
-        oc = superficie_frente(sx*0.031, olhosZ); oc.y -= 0.014
+        oc = ORBITA[sx].copy(); oc.y -= 0.016
         pts = [(oc.x + 0.019*math.cos(a), oc.y, oc.z + 0.014*math.sin(a)) for a in [2*math.pi*k/24 for k in range(25)]]
         var.append(tubo(prefixo + '_aro%s' % sx, pts, 0.0014, mat_aro, 8))
         if com_lente:
@@ -487,10 +489,14 @@ oculos('oculos_escuros', 'escuros', False)
 eo = superficie_lado(0.0, olhosZ - 0.010, -1)
 var.append(toro('brinco', eo.x - 0.004, eo.y + 0.002, olhosZ - 0.032, 0.0045, 0.0012, 'metal', (0, math.pi/2, 0)))
 var.append(toro('corrente', 0, -0.010, 1.455, 0.075, 0.004, 'metal', (0.35, 0, 0)))
+# o cordão de ouro grosso, caído no peito, com medalha
+var.append(toro('cordao_grosso', 0, -0.052, 1.418, 0.105, 0.0075, 'metal', (0.78, 0, 0), 40, 12))
+var.append(esfera('cordao_medalha', 0, -0.130, 1.338, 0.020, 0.004, 0.024, 'metal'))
+var.append(toro('anel', -0.292 - 0.011, -0.006, 0.755, 0.0085, 0.0022, 'metal', (0, 0, 0)))
 # relógio (pulso D) e pulseira (pulso E) — presos ao pulso
 var.append(toro('relogio_pulseira', -0.285, 0.0, 0.905, 0.034, 0.007, 'pulseira', (0, 0, 0)))
 var.append(caixa('relogio_mostrador', -0.285, -0.030, 0.905, 0.022, 0.007, 0.024, 'relogio'))
-var.append(toro('pulseira', 0.285, 0.0, 0.905, 0.034, 0.009, 'faixa', (0, 0, 0)))
+var.append(toro('pulseira', 0.285, 0.0, 0.905, 0.034, 0.006, 'metal', (0, 0, 0)))
 
 # ---------------------------------------------------------------- o esqueleto (armature)
 arm_data = bpy.data.armatures.new('esqueleto')
@@ -614,8 +620,9 @@ def prender(ob, osso_nome):
     ob.matrix_parent_inverse = (arm.matrix_world @ arm.pose.bones[osso_nome].matrix @ Matrix.Translation((0, b.length, 0))).inverted()
 
 for ob in rosto + var:
-    if ob.name.startswith('relogio'): prender(ob, 'mao.D')
+    if ob.name.startswith('relogio') or ob.name == 'anel': prender(ob, 'mao.D')
     elif ob.name == 'pulseira': prender(ob, 'mao.E')
+    elif ob.name.startswith('cordao') or ob.name == 'corrente': prender(ob, 'tronco')
     else: prender(ob, 'cabeca')
 prender(cabeca, 'cabeca')
 

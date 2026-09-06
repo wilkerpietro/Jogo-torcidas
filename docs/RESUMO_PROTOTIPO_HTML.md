@@ -4969,3 +4969,11 @@ verdade (aba Scripting → Run Script).
   dentro da órbita sem esbugalhar e sobrancelha mais fina. O GLB embutido entra pelo
   `parse` do GLTFLoader, decodificado em memória: o sandbox do artifact bloqueia o
   `fetch` até de data-URI, e sem isso a página caía no corpo de caixas.
+- **Olho no lugar, nariz refeito, adereços de gangue** (dono, 05/09/2026). O olho estava
+  na ponta do nariz porque a órbita era medida DEPOIS da escultura, e o ponto mais à
+  frente na janela passou a ser o nariz; agora `ORBITA` é fixada antes de esculpir e
+  olho, sobrancelha e óculos usam ela. O nariz ganhou raiz afundada, dorso que alarga
+  em oito passos, ponta redonda ligada à face (sigma maior em y) e asas largas com
+  narinas; a remalha desceu pra 2,8 mm (25 mil vértices, GLB de 6,6 MB). Saiu o
+  bucket; entraram cordão de ouro grosso caído no peito com medalha, anel e pulseira
+  dourada (presos ao tronco e às mãos).
