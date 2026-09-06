@@ -101,29 +101,26 @@ for lado, sx in (('D', -1), ('E', 1)):
     ponto('pulso'+lado,   sx*0.285, 0.00, 0.90, 0.032, 0.026, 'pele')
     ponto('mao'+lado,     sx*0.290, 0.00, 0.82, 0.042, 0.020, 'pele')
     ponto('nos'+lado,     sx*0.292, -0.004, 0.785, 0.040, 0.016, 'pele')
-    # dedos: quatro ramos curtos mais o polegar, pra mão ter mão (só no detalhado)
-    for k, (dx, dy, comp) in enumerate([] if LEVE else [(-0.030, 0.0, 0.055), (-0.011, -0.002, 0.062), (0.008, -0.002, 0.060), (0.026, 0.0, 0.050)]):
+    # dedos: quatro ramos curtos mais o polegar, pra mão ter mão (nos dois modelos)
+    for k, (dx, dy, comp) in enumerate([(-0.030, 0.0, 0.055), (-0.011, -0.002, 0.062), (0.008, -0.002, 0.060), (0.026, 0.0, 0.050)]):
         ponto('dedo%d%s' % (k, lado), sx*0.292 + dx, dy - 0.004, 0.785 - comp*0.55, 0.0075, 0.0065, 'pele')
         ponto('ponta%d%s' % (k, lado), sx*0.292 + dx, dy - 0.006, 0.785 - comp, 0.0060, 0.0055, 'pele')
-    if not LEVE:
-        ponto('polegar'+lado, sx*0.292 + sx*(-0.030), -0.020, 0.80, 0.0085, 0.0075, 'pele')
-        ponto('polegarp'+lado, sx*0.292 + sx*(-0.038), -0.036, 0.785, 0.0065, 0.0060, 'pele')
-    else:
-        ponto('dedos'+lado, sx*0.292, -0.004, 0.755, 0.030, 0.014, 'pele')
+    ponto('polegar'+lado, sx*0.292 + sx*(-0.030), -0.020, 0.80, 0.0085, 0.0075, 'pele')
+    ponto('polegarp'+lado, sx*0.292 + sx*(-0.038), -0.036, 0.785, 0.0065, 0.0060, 'pele')
     ponto('quadril'+lado, sx*0.095, 0.00, 0.94, 0.095, 0.095, 'calca')
     ponto('coxa'+lado,    sx*0.105, 0.00, 0.74, 0.082, 0.085, 'calca')
     ponto('bermuda'+lado, sx*0.110, 0.00, 0.66, 0.078, 0.080, 'calca')
     ponto('joelho'+lado,  sx*0.115, 0.00, 0.52, 0.062, 0.066, 'pele')
     ponto('canela'+lado,  sx*0.118, 0.00, 0.35, 0.058, 0.064, 'pele')
-    ponto('tornoz'+lado,  sx*0.120, 0.00, 0.10, 0.042, 0.046, 'tenis')
-    ponto('pe'+lado,      sx*0.122, -0.06, 0.045, 0.048, 0.030, 'tenis')
-    ponto('ponta'+lado,   sx*0.124, -0.15, 0.035, 0.045, 0.025, 'tenis')
+    ponto('tornoz'+lado,  sx*0.120, 0.00, 0.10, 0.046, 0.052, 'tenis')
+    ponto('pe'+lado,      sx*0.124, -0.07, 0.046, 0.058, 0.038, 'tenis')
+    ponto('ponta'+lado,   sx*0.126, -0.19, 0.036, 0.054, 0.032, 'tenis')
 
 ARESTAS = [('pelvis','cintura'),('cintura','peito'),('peito','ombros'),('ombros','pescoco'),('pescoco','nuca')]
 for L in ('D','E'):
     ARESTAS += [('ombros','ombro'+L),('ombro'+L,'manga'+L),('manga'+L,'braco'+L),('braco'+L,'cotovelo'+L),
                 ('cotovelo'+L,'antebr'+L),('antebr'+L,'pulso'+L),('pulso'+L,'mao'+L),('mao'+L,'nos'+L),
-                ] + ([('nos'+L,'dedos'+L)] if LEVE else [('mao'+L,'polegar'+L),('polegar'+L,'polegarp'+L)] + [('nos'+L,'dedo%d%s'%(k,L)) for k in range(4)] + [('dedo%d%s'%(k,L),'ponta%d%s'%(k,L)) for k in range(4)]) + [
+                ('mao'+L,'polegar'+L),('polegar'+L,'polegarp'+L)] + [('nos'+L,'dedo%d%s'%(k,L)) for k in range(4)] + [('dedo%d%s'%(k,L),'ponta%d%s'%(k,L)) for k in range(4)] + [
                 ('pelvis','quadril'+L),('quadril'+L,'coxa'+L),('coxa'+L,'bermuda'+L),('bermuda'+L,'joelho'+L),
                 ('joelho'+L,'canela'+L),('canela'+L,'tornoz'+L),('tornoz'+L,'pe'+L),('pe'+L,'ponta'+L)]
 

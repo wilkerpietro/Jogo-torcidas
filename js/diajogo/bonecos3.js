@@ -428,7 +428,35 @@ TO.diaJogo.bonecos3 = (function(){
       const txt = atob(b64); bin = new Uint8Array(txt.length);
       for(let i=0;i<txt.length;i++) bin[i] = txt.charCodeAt(i);
     }catch(err){ console.warn('boneco.glb: base64 inválido'); carregandoGLB = false; return; }
-    new THREE.GLTFLoader().parse(bin.buffer, '', gltf=>{
+    /* A TEXTURA DO ROSTO SEM BLOB: o GLTFLoader tira a imagem do GLB e
+       carrega por `blob:` — com ImageBitmapLoader, que usa fetch —, e o
+       sandbox do artifact bloqueia. Aqui o PNG é achado no próprio GLB
+       (o primeiro image com bufferView), vira data-URI, e um
+       modificador de URL troca qualquer `blob:` por ele; o carregador
+       de imagem passa a ser o de <img>, que aceita data-URI. */
+    let dataPng = null;
+    try{
+      const dv = new DataView(bin.buffer);
+      const lenJson = dv.getUint32(12, true);
+      const json = JSON.parse(new TextDecoder().decode(new Uint8Array(bin.buffer, 20, lenJson)));
+      const img = (json.images||[]).find(i=>i.bufferView!==undefined);
+      if(img){
+        const bv = json.bufferViews[img.bufferView];
+        const ini = 20 + lenJson + 8 + (bv.byteOffset||0);
+        const bytes = new Uint8Array(bin.buffer, ini, bv.byteLength);
+        let str=''; for(let i=0;i<bytes.length;i+=8192) str += String.fromCharCode.apply(null, bytes.subarray(i, i+8192));
+        dataPng = 'data:'+(img.mimeType||'image/png')+';base64,'+btoa(str);
+      }
+    }catch(err){ console.warn('boneco.glb: sem textura ('+err.message+')'); }
+    const gerente = new THREE.LoadingManager();
+    if(dataPng) gerente.setURLModifier(u => (typeof u==='string' && u.indexOf('blob:')===0) ? dataPng : u);
+    const carregador = new THREE.GLTFLoader(gerente);
+    /* o parser escolhe ImageBitmapLoader (fetch) quando `createImageBitmap`
+       existe; escondendo a função durante o `parse` ele cai no
+       TextureLoader, que carrega por <img> e aceita a data-URI */
+    const cib = window.createImageBitmap;
+    try{ window.createImageBitmap = undefined; }catch(_){}
+    carregador.parse(bin.buffer, '', gltf=>{
       modeloGLB = gltf.scene;
       modeloGLB.updateMatrixWorld(true);
       nomesGLB = new Set(); modeloGLB.traverse(o=>{ if(o.isMesh) nomesGLB.add(o.name); });
@@ -446,6 +474,7 @@ TO.diaJogo.bonecos3 = (function(){
       for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); figuras.delete(d); }
       carregandoGLB = false;
     }, err=>{ console.warn('boneco.glb: '+(err && err.message)); carregandoGLB = false; });
+    try{ window.createImageBitmap = cib; }catch(_){}
   }
 
   /* que peças da ficha ficam ligadas */

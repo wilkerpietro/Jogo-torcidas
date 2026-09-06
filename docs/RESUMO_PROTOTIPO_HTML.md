@@ -5007,3 +5007,13 @@ verdade (aba Scripting → Run Script).
   carrega o pesado da escultura fora do artifact; `?cabelos=1` enfileira um boneco por
   penteado. Tamanhos: leve 2,7 MB, detalhado 11,4 MB (as tampas duplicam faces da
   cabeça; o detalhado não entra mais em artifact nenhum).
+- **O rosto no artifact, mãos com dedos e pé maior** (dono, 06/09/2026). A textura do
+  rosto não aparecia no artifact: o GLTFLoader tira a imagem do GLB e a carrega por
+  `blob:` com ImageBitmapLoader, que usa fetch — e o sandbox bloqueia. Agora o PNG é
+  achado no próprio GLB (o primeiro `image` com `bufferView`), vira data-URI, um
+  `LoadingManager.setURLModifier` troca qualquer `blob:` por ela, e `createImageBitmap`
+  é escondida durante o `parse` pra o parser cair no TextureLoader (<img>, que aceita
+  data-URI). Conferido com um CSP simulado igual ao do artifact (sem blob, sem fetch
+  fora do host): a textura carrega. Os dedos (quatro ramos e polegar do Skin) entraram
+  no modelo leve também, e o pé cresceu (tornozelo, peito do pé e ponta mais largos, a
+  ponta 4 cm mais à frente).
