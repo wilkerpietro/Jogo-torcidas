@@ -157,24 +157,50 @@ TO.diaJogo.ponte = (function(){
     b.classList.toggle('rapido', velocidade > 1);
   }
 
+  /* A CENA NÃO MORRE NUM QUADRO. Uma exceção dentro do
+     requestAnimationFrame matava o laço: o canvas ficava com o último
+     quadro (ou em branco, se a placa de vídeo tinha acabado de perder o
+     contexto) e a briga congelava sem aviso — foi o que o dono viu na
+     emboscada (06/09/2026). Agora cada parte do quadro é cercada: a
+     simulação e o desenho 2D registram o erro e o laço continua; a
+     camada dos bonecos, que é a mais pesada, se desliga no primeiro
+     erro e a cena segue com o disco. */
+  let errosDoQuadro = 0;
+  function registrarErro(onde, e){
+    errosDoQuadro++;
+    if(errosDoQuadro <= 5 || errosDoQuadro % 200 === 0)
+      console.error(`cena (${onde}, erro ${errosDoQuadro}):`, e && e.stack || e);
+  }
+  function desligarBonecos(motivo){
+    if(!bonecos) return;
+    bonecos = false;
+    try{ if(T && T.limparDeCima) T.limparDeCima(); }catch(_){}
+    const sg = $('djPrincipal3d') || $('djSobreGL');
+    if(sg && sg !== cv){ sg.hidden = true; sg.classList.remove('sobre-gl'); }
+    T = null;
+    console.warn('bonecos desligados: ' + motivo);
+    if(J) C.aviso(J, 'Bonecos desligados — a cena segue com os discos', '#e0b040');
+  }
   function quadro(agora){
     let dt=(agora-ant)/1000; ant=agora;
     if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
     dtQuadro=dt;
-    /* na cena de perto o WASD é relativo à câmera: o renderizador resolve */
-    teclas.vetor = (tres && T) ? T.vetorDoTeclado(teclas) : null;
-    if(J && !ED.ativo){
-      for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
-      /* a rua não para porque a briga começou: quem ainda estava andando
-         chega no meio dela */
-      if(aCadaQuadro)
-        for(const b of (aCadaQuadro(dt*velocidade, J) || [])) C.reforcar(J, b);
-    }
-    /* a briga pode acabar sozinha: um lado sem ninguém de pé. Quem
-       decide isso é o combate; aqui só se abre a tela. */
-    if(J && J.acabou && J.fase==='acabando') encerrar(J.acabou.motivo);
-    desenhar();
-    atualizarHUD();
+    try{
+      /* na cena de perto o WASD é relativo à câmera: o renderizador resolve */
+      teclas.vetor = (tres && T) ? T.vetorDoTeclado(teclas) : null;
+      if(J && !ED.ativo){
+        for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
+        /* a rua não para porque a briga começou: quem ainda estava andando
+           chega no meio dela */
+        if(aCadaQuadro)
+          for(const b of (aCadaQuadro(dt*velocidade, J) || [])) C.reforcar(J, b);
+      }
+      /* a briga pode acabar sozinha: um lado sem ninguém de pé. Quem
+         decide isso é o combate; aqui só se abre a tela. */
+      if(J && J.acabou && J.fase==='acabando') encerrar(J.acabou.motivo);
+    }catch(e){ registrarErro('simulação', e); }
+    try{ desenhar(); }catch(e){ registrarErro('desenho', e); }
+    try{ atualizarHUD(); }catch(e){ registrarErro('hud', e); }
     requestAnimationFrame(quadro);
   }
 
@@ -254,9 +280,15 @@ TO.diaJogo.ponte = (function(){
     ctx.setTransform(1,0,0,1,0,0);
     setaDoRival(ctx);
     /* o editor pinta a malha e arrasta marcador: ali o boneco atrapalha */
-    if(bonecos && T && !ED.ativo)
-      T.desenharDeCima(J, {escala, cw:cv.width, ch:cv.height, dt:dtQuadro});
-    else if(bonecos && T) T.limparDeCima();
+    if(bonecos && T){
+      /* a placa de vídeo perdeu o contexto (bonecos3 avisa por `ativo`):
+         o disco volta e a briga não para */
+      if(T.ativo === false){ desligarBonecos('contexto WebGL perdido'); return; }
+      try{
+        if(!ED.ativo) T.desenharDeCima(J, {escala, cw:cv.width, ch:cv.height, dt:dtQuadro});
+        else T.limparDeCima();
+      }catch(e){ registrarErro('bonecos', e); desligarBonecos('erro no desenho: '+(e && e.message)); }
+    }
   }
 
   /* =======================================================

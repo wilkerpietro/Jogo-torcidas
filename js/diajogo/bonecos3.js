@@ -1606,13 +1606,38 @@ TO.diaJogo.bonecos3 = (function(){
 
   function montar(canvas){
     if(typeof THREE === 'undefined') return false;
-    if(renderer && cv === canvas) return true;
+    if(renderer && cv === canvas && ativo) return true;
+    /* contexto perdido e ainda não devolvido pelo navegador: a cena
+       abre com disco. Quando a placa devolve (`webglcontextrestored`),
+       o Three reconstrói o estado sozinho e `ativo` volta a true — a
+       cena seguinte já abre com boneco de novo. */
+    if(renderer && cv === canvas && !ativo) return false;
     cv = canvas;
     try{
-      renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:true, premultipliedAlpha:true});
+      /* SEM ANTIALIAS: o MSAA quadruplica o preenchimento de um canvas
+         de 1140×820 e é o que menos se vê num boneco de 30 px. Com 140
+         bonecos numa emboscada a diferença é entre a placa integrada
+         aguentar ou perder o contexto. `high-performance` pede a GPU
+         dedicada em notebook com duas. */
+      renderer = new THREE.WebGLRenderer({canvas:cv, antialias:false, alpha:true, premultipliedAlpha:true,
+                                          powerPreference:'high-performance'});
     }catch(err){ console.error('bonecos3: '+err.message); renderer=null; return false; }
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(1);
+    /* A PLACA PODE DESISTIR. Com muita gente em cena (140 bonecos numa
+       emboscada) a GPU fraca — ou o iframe do artifact — perde o
+       contexto WebGL; sem tratar, o Three lança no quadro seguinte e o
+       laço da cena morre com o canvas em branco. Aqui a perda vira
+       `ativo=false`, que a ponte lê e troca o boneco pelo disco. */
+    cv.addEventListener('webglcontextlost', ev=>{
+      ev.preventDefault();
+      console.warn('bonecos3: contexto WebGL perdido');
+      ativo = false;
+    }, false);
+    cv.addEventListener('webglcontextrestored', ()=>{
+      console.warn('bonecos3: contexto WebGL de volta');
+      ativo = true;
+    }, false);
     scene = new THREE.Scene();
     cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, ALTURA_CAM*2);
     cam.position.set(0, ALTURA_CAM, 0);

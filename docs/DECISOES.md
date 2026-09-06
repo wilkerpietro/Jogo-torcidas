@@ -3652,6 +3652,37 @@ Ficou em 15,5 MB. O repositório segue com as originais.
 Pendente de crivo do dono: a tecla `X` pra fugir; o peso do pad de sete
 ações em tela de 390 px de altura.
 
+## A cena não morre num quadro (tela branca da emboscada, 06/09/2026)
+
+O dono abriu uma emboscada na estrada no artifact e a cena ficou em
+branco com o ícone de imagem quebrada no canto — a briga tinha rodado
+uns dez minutos de relógio (caídos 1–1) e apagou. Varredura em todas
+as cenas com o jogo de verdade (torcida escolhida, membros reais,
+perfil vivo do rival, emboscada pelo lado visitante), sem boneco até o
+fim e com boneco em estados avançados (queda, agarrão, PM, fuga): nenhuma
+exceção em simulação, desenho 2D ou bonecos. O que sobra é a placa de
+vídeo: 143 bonecos esqueletizados numa emboscada e o contexto WebGL
+cai — e o ícone de imagem quebrada em cima de um canvas é exatamente
+como o Chrome mostra canvas cujo contexto morreu.
+
+Duas coisas mudaram, uma pra causa e outra pra consequência:
+
+1. **O laço da cena é cercado.** Uma exceção dentro do
+   `requestAnimationFrame` matava o laço e o canvas ficava com o último
+   quadro, ou em branco. Agora simulação, desenho 2D e HUD registram o
+   erro no console e o quadro seguinte vem; a camada dos bonecos, que é
+   a pesada, se desliga no primeiro erro e a cena segue com o disco, com
+   aviso na tela. Perda de contexto WebGL (`webglcontextlost`) é lida
+   por `bonecos3.ativo` e tem o mesmo destino; quando o navegador
+   devolve o contexto, a cena seguinte já abre com boneco de novo.
+   Testado forçando a perda com `WEBGL_lose_context`.
+2. **Renderizador mais leve.** Sem antialias (MSAA quadruplica o
+   preenchimento e não se vê num boneco de 30 px) e pedindo a GPU
+   dedicada (`powerPreference:'high-performance'`).
+
+Se a placa do dono continuar derrubando, o próximo passo é um teto de
+bonecos por cena (acima dele, disco), que fica pro crivo dele.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
