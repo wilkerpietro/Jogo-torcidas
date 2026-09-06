@@ -5017,3 +5017,57 @@ verdade (aba Scripting → Run Script).
   fora do host): a textura carrega. Os dedos (quatro ramos e polegar do Skin) entraram
   no modelo leve também, e o pé cresceu (tornozelo, peito do pé e ponta mais largos, a
   ponta 4 cm mais à frente).
+
+## 8.38 Três jeitos de cada movimento, o chute que derruba, o "vem" e as palmas
+
+Pedido do dono (06/09/2026), em cima da vitrine e da cena de cima.
+
+- **Três variações por movimento** (`variante(f, nome, t, periodo)` em `bonecos3.js`):
+  cada figura escolhe pelo próprio número e troca de tempos em tempos, deslocada pela
+  fase — na aglomeração o vizinho cai noutro jeito. Parado (solto, mãos na cintura, uma
+  mão na cintura com o peso numa perna), andar (solto, gingado, duro), correr (normal,
+  braço aberto, curvado), guarda (plantado, quicando, rolando os ombros), soco (o de
+  sempre, de baixo com o corpo, de cima e aberto), chute (frontal, baixo, joelhada),
+  cobrir-se, bloquear, esquivar (pra trás, pro lado, abaixando), cambalear, arremesso
+  (por cima, de lado, por baixo), fugir, cair (de frente, de costas, de lado) e sentar.
+  A vitrine ganhou `?trio` (botão ×3): três figuras por estado com a variação forçada
+  (`d.varianteForcada` → `f.varianteForcada`); `?so` deixa só o estado pedido na cena e
+  `?manual` desliga o relógio (`window.__vitrine.passo(dt)`), que é como as capturas
+  determinísticas foram feitas — no renderizador por software o tempo da vitrine anda a
+  um décimo, e as capturas por espera pegavam sempre o mesmo instante.
+- **O chute** (`combate.js`): `bater(J,d,tipo)` sorteia chute numa fatia dos golpes
+  (`chutador`: 6–22% por disco, 30% no líder — o Q também), com 0,58 s e impacto aos
+  0,28 (`ataque.impacto`; a IA vê vindo por esse tempo, que é maior, e defende mais).
+  Bate 1,3×; quem tem defesa desvia uma parte sem defender (28% + defesa/48). **Se
+  entra, derruba**: `derrubado`/`derrubadoDur` (1,3–2,1 s), o disco não anda, não bate,
+  não defende e não é alvo preferido — `alvoNaFrente` põe quem está de pé na frente de
+  quem está no chão, e `pisoteia` (8–40%) é a chance de cada um ir em cima de quem só
+  tem gente caída na frente; o resto espera. **Apanhou no chão, fica no chão**:
+  `acertar` em quem está `derrubado` chama `derrubar` (vira `caido`, `noChao`). Nada
+  disso conta o defendido: o chute defendido só machuca. Medido na rua com o líder de
+  taca (harness `medir3.js`): a briga passou de 89 s pra ~60 s e quase toda baixa vem do
+  chão — sem o chute a média volta aos 89 s. É o preço da regra "quem cai e apanha
+  fica"; a fatia de chutes e o `pisoteia` são os dois botões pra recalibrar.
+- **Derrubado no desenho** (`derrubado()`): cai de costas ou de lado (a variação),
+  fica com a mão na cabeça e os joelhos subindo, e nos últimos 38% levanta — rola,
+  apoia a mão, sobe pelo joelho. Quem apanha deitado cai de vez do jeito que estava
+  (`f.jazido`). **O GLB girava pelos pés**: `aplicarPoseGLB` girava o modelo na origem
+  (nos pés) e somava `y=−13` — deitado, o corpo afundava no chão; agora o `y` vai
+  girado junto com a raiz, como a pélvis do corpo de caixas. Isso valia pro `cair`
+  também desde a chegada do GLB.
+- **Provocar é chamar pra vir**: braço estendido, mão aberta, o punho dobrando pra
+  dentro e voltando três vezes por segundo (`p.pulso`, novo na pose: gira o osso da mão
+  no GLB e a junta da mão nas caixas). Três jeitos: uma mão na altura do peito e a
+  outra na cintura; as duas mãos baixas com o corpo indo pra frente; a mão alta do lado
+  da cabeça. Saem em 72% das provocações; bate no peito, aponta e ri, mão na orelha,
+  aplauso e braços pra cima dividem o resto.
+- **Torcer bate palma**: palmas baixas (na altura do peito) e palmas altas (acima da
+  cabeça), no compasso de cada um; o "braços abertos" saiu. Ficam o braço no alto
+  bombando, o pulo e o apontar.
+- **Quem caiu fica a 50%** (`esmaecer`): os materiais viram cópias transparentes na
+  primeira vez (o corpo de caixas compartilha um material por vértice; o GLB
+  compartilha os que não são recoloridos) e a opacidade desce de 1 pra 0,5 ao bater no
+  chão. Derrubado (que levanta) fica sólido.
+- **Preso senta no chão mesmo**: quadril a 2 px do chão (`y=−14,3`), tronco caído pra
+  frente; joelhos pra cima com a testa quase neles, pernas esticadas, ou uma dobrada e
+  outra esticada.
