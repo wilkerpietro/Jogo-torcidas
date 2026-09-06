@@ -5071,3 +5071,29 @@ Pedido do dono (06/09/2026), em cima da vitrine e da cena de cima.
 - **Preso senta no chão mesmo**: quadril a 2 px do chão (`y=−14,3`), tronco caído pra
   frente; joelhos pra cima com a testa quase neles, pernas esticadas, ou uma dobrada e
   outra esticada.
+
+## 8.39 O PM com o rosto dos bonecos, e o chão que não mata
+
+Pedido do dono (06/09/2026): "aprimore o visual do policial pra ficar com a mesma
+fisionomia dos bonecos" e "quem cai no chão por levar um chute morre logo".
+
+- **O PM é o mesmo modelo humano** (`construirCorpoGLB(f, pm)`): pele, rosto e cabelo
+  raspado do sorteio, camisa e bermuda nas cores da farda, faixa amarela. O que a malha
+  não tem vem pendurado nos ossos: um grupo filho do osso com a rotação inversa à de
+  repouso fica com os eixos do modelo (`noOsso`), e nele se colocam, em metros, o
+  cassetete (mão direita, 56 cm pra frente), o escudo (mão esquerda, 46×72 cm, só na
+  carga) e um cano escuro em cada canela (osso do joelho) fazendo a calça comprida que
+  o modelo leve não tem. Tudo gira com a mão e o joelho. Quem cai também esmaece.
+- **Apanhar no chão não mata mais na hora.** Vira `noChao`: o disco não levanta sozinho
+  enquanto tiver inimigo a 70 px, leva 2,6× por golpe e morre pelo HP como todo mundo
+  (uns dez golpes). **Socorro** (`socorrer`): o companheiro livre mais perto (sem inimigo
+  a 45 px, sem golpe no ar, a até 110 px) vai até ele e fica 1,2 s em cima puxando; o
+  líder do jogador levanta também, basta parar do lado sem bater. Se o socorrista apanha
+  ou o inimigo chega a 30 px, larga e outro tenta. Sem ninguém por perto por 2,5 s ele se
+  arrasta e levanta sozinho. No desenho o socorrista agacha e puxa (`socorrerPose`); o
+  caído que levanta faz o mesmo levantar do derrubado (`derrubado` a 38% da duração).
+- **Medido** (rua, líder de taca, seis brigas): antes do chute 89 s; chute com morte no
+  chão 60 s; agora 119 s, com ~35 levantados por seis brigas e ~90 mortos no chão. O
+  multiplicador do chão (2,6) é o botão: 2,0 dava 132 s com brigas sem fim, 1,2 dava 148 s.
+  O bar sempre foi de um lado só neste harness (14,8 × 0 já antes do chute): é a ficha do
+  rival, não o chute.

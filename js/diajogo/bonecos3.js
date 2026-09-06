@@ -557,10 +557,39 @@ TO.diaJogo.bonecos3 = (function(){
       joelho: [prep(osso('joelhoD')), prep(osso('joelhoE'))],
       pe: [prep(osso('peD')), prep(osso('peE'))]
     };
+    /* PM (dono, 06/09/2026: a mesma fisionomia dos bonecos): cassetete
+       na mão direita, escudo na esquerda. Um grupo pendurado no osso da
+       mão com a rotação inversa à de repouso do osso fica com os eixos
+       do MODELO (frente +Z, cima +Y) — as peças se colocam em metros
+       nesse referencial e giram junto com a mão. */
+    let escudo = null, cassetete = null;
+    if(pm){
+      const noOsso = j => { const gr = new THREE.Group(); gr.quaternion.copy(j.Cp).multiply(j.Lrest).invert(); j.b.add(gr); return gr; };
+      if(J.mao[1]){
+        const gr = noOsso(J.mao[1]);
+        cassetete = new THREE.Mesh(g.cil, mat('#1a1a1a')); cassetete.scale.set(0.034, 0.56, 0.034);
+        cassetete.rotation.x = Math.PI/2; cassetete.position.set(0, -0.07, 0.17); gr.add(cassetete);
+        const cabo = new THREE.Mesh(g.cil, mat('#3a3a3a')); cabo.scale.set(0.042, 0.12, 0.042);
+        cabo.rotation.x = Math.PI/2; cabo.position.set(0, -0.07, -0.02); gr.add(cabo);
+      }
+      /* calça comprida: o modelo leve só tem bermuda na malha, então a
+         canela do PM ganha um cano escuro pendurado no osso do joelho */
+      for(let k=0;k<2;k++) if(J.joelho[k]){
+        const gr = noOsso(J.joelho[k]);
+        const cano = new THREE.Mesh(g.cil, mat('#1b2620')); cano.scale.set(0.145, 0.62, 0.145); cano.position.set(0, -0.10, 0.004); gr.add(cano);
+      }
+      if(J.mao[0]){
+        const gr = noOsso(J.mao[0]);
+        escudo = new THREE.Mesh(g.caixa, mat('#cfd8e0', {transparent:true, opacity:0.75})); escudo.scale.set(0.46, 0.72, 0.02);
+        escudo.position.set(0, 0.12, 0.16); gr.add(escudo);
+        const faixaE = new THREE.Mesh(g.caixa, mat('#1f2f26')); faixaE.scale.set(0.46, 0.09, 0.022); faixaE.position.set(0, 0.36, 0.16); gr.add(faixaE);
+        escudo.visible = false; faixaE.visible = false; escudo.faixa = faixaE;
+      }
+    }
     const sombra = new THREE.Mesh(g.disco, mat(PRETO, {transparent:true, opacity:0.34, depthWrite:false}));
     sombra.rotation.x = -Math.PI/2; sombra.position.y = 0.3; sombra.scale.set(8.5, 6.5, 1);
     raiz.add(sombra);
-    return {raiz, modelo, J, sombra, glb:true, escudo:null};
+    return {raiz, modelo, J, sombra, glb:true, escudo, cassetete};
   }
 
   const _e = new THREE.Euler(), _q = new THREE.Quaternion(), _v = new THREE.Vector3();
@@ -590,6 +619,7 @@ TO.diaJogo.bonecos3 = (function(){
       girarOsso(J.cotovelo[k], p.cotovelo[k], 0, (k===0?1:-1)*p.maoZ[k]);
       girarOsso(J.mao[k], p.pulso[k], 0, 0);
     }
+    if(c.escudo){ c.escudo.visible = !!p.escudo; if(c.escudo.faixa) c.escudo.faixa.visible = !!p.escudo; }
   }
 
   /* =======================================================
@@ -1148,7 +1178,7 @@ TO.diaJogo.bonecos3 = (function(){
      encolhendo), e levanta — rola pro lado, apoia a mão, sobe pelo
      joelho. `d.derrubado` é o que falta; `d.derrubadoDur` o total. */
   function derrubado(p, f, d, dt){
-    const dur = d.derrubadoDur || 2, k = 1 - Math.max(0, d.derrubado)/dur;
+    const dur = d.derrubadoDur || 2, k = d.noChao ? 0.45 : 1 - Math.max(0, d.derrubado)/dur;
     if(f.derrubadoRef !== d.derrubadoDur || k < 0.02){
       f.derrubadoRef = d.derrubadoDur;
       f.quedaVar = f.varianteForcada!=null ? f.varianteForcada : Math.floor(Math.random()*3);
@@ -1182,6 +1212,14 @@ TO.diaJogo.bonecos3 = (function(){
     if(k < 0.2){ const b = Math.sin(Math.min(1, (k-0.16)/0.04)*Math.PI); if(k>0.16) p.y += 1.2*b; }
   }
   /* preso: sentado, mãos atrás das costas, cabeça baixa */
+  /* SOCORRER: agachado em cima do companheiro caído, os dois braços
+     pra baixo puxando, e o corpo fazendo força pra trás no compasso */
+  function socorrerPose(p, f, t){
+    const w = t*3.2 + f.fase, puxa = 0.5 + 0.5*Math.sin(w);
+    p.coxa = [-0.9, -0.5]; p.joelho = [1.2, 0.8]; p.pe = [0.2, 0.1]; p.y = -5.5 + 1.2*puxa;
+    p.inclina = 0.7 - 0.25*puxa; p.olhaX = 0.15;
+    p.ombro = [-1.15 + 0.3*puxa, -1.1 + 0.3*puxa]; p.ombroZ = [0.25, 0.25]; p.cotovelo = [-0.3 - 0.5*puxa, -0.3 - 0.5*puxa]; p.punho = [1, 1];
+  }
   /* preso: sentado no chão mesmo, as nádegas encostadas (pedido do
      dono, 06/09/2026) — o quadril fica a 2 px do chão, o tronco cai
      pra frente. Mãos atrás das costas, cabeça baixa. Três jeitos: os
@@ -1240,7 +1278,7 @@ TO.diaJogo.bonecos3 = (function(){
     let fg = figuras.get(d);
     if(fg) return fg;
     const f = pm ? fichaPM(d, i) : fichaDe(d, i);
-    const corpo = (modeloGLB && !pm) ? construirCorpoGLB(f, pm) : construirCorpo(f, pm);
+    const corpo = modeloGLB ? construirCorpoGLB(f, pm) : construirCorpo(f, pm);
     f.pose = poseNeutra();
     scene.add(corpo.raiz);
     fg = {corpo, f, pm};
@@ -1253,7 +1291,7 @@ TO.diaJogo.bonecos3 = (function(){
     pm._b3 = {sem:s, fase:frac(s+'f')*6.28, yaw:frac(s+'y')*6.28,
       pele:PELE[dado(s+'p',PELE.length)], calca:'#1b2620', cabelo:'#111', tenis:'#111',
       bermuda:false, listras:0, tipoCabeca:'bone', corBone:'#1c2a22', barba:frac(s+'bb')<0.3,
-      camisa:'#233a2c', faixa:'#2d4a38', escala:1.06, largo:1.08,
+      camisa:'#233a2c', faixa:'#2d4a38', escala:1.06, largo:1.08, corBone:'#1c2a22', varianteForcada:null,
       estilo: estiloDe(s, false),
       ladoSoco:1, ataque:null, pausa:0.3, combo:0, impacto:null, olhaTras:0, tGesto:0, gesto:0,
       sobrancelha:0.3, cabecaX:1, queixo:1.1, barriga:1, oculos:0, barba:frac(s+'bb')<0.3?2:0,
@@ -1323,6 +1361,7 @@ TO.diaJogo.bonecos3 = (function(){
       else if(d.arremesso){ arremessar(p, f, d.arremesso); rapidez = 26; f.ataque = null; }
       else if(d.ataque){ lutar(p, f, d, dt, t); rapidez = 30; }
       else if(d.defendendo > 0 && !andando){ bloquear(p, f, t); rapidez = 20; f.ataque = null; }
+      else if(d.socorrendo && d.socorrendo.noChao && !andando){ socorrerPose(p, f, t); rapidez = 12; f.ataque = null; f.provoca = null; }
       else if(f.provoca){ provocar(p, f, t, dt); rapidez = 10; f.ataque = null; }
       else if(d.apanhou > 0 && !andando){ cobrirSe(p, f, t); rapidez = 16; f.ataque = null; }
       else if(d.hostil > 0 && !andando && !corre){ guarda(p, f, t); rapidez = 12; f.ataque = null; }

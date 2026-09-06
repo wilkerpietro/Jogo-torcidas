@@ -156,6 +156,13 @@ TO.diaJogo.combate = (function(){
          apanha no chão fica no chão (vira `caido`). `chutador` é a
          fatia dos golpes deste disco que sai de perna. */
       this.derrubado=0; this.derrubadoDur=0; this.quedas=0;
+      /* NO CHÃO PRECISANDO DE SOCORRO (dono, 06/09/2026: "quem cai por
+         chute morre logo"): apanhou deitado não morre — fica no chão
+         sem levantar sozinho até um companheiro chegar e puxar
+         (`socorrista`, 1,2 s parado em cima dele), ou até a briga ir
+         embora (2,5 s sem inimigo a 70 px). No chão leva 1,2× e morre
+         pelo HP como todo mundo. */
+      this.noChao=false; this.sozinho=0; this.socorro=0; this.socorrista=null; this.socorrendo=null;
       this.chutador = lider ? 0.30 : U.entre(0.06, 0.22);
       /* nem todo mundo bate em quem está no chão: esta é a chance de
          cada um ir em cima (o resto espera o cara levantar ou procura
@@ -800,7 +807,7 @@ TO.diaJogo.combate = (function(){
     moverLider(J,dt,teclas,podeControlar);
     moverDiscos(J,dt);
     moverPoliciais(J,dt);
-    iaLuta(J,dt);
+    iaLuta(J,dt); socorrer(J,dt);
     contatos(J,dt);
     iaArremesso(J,dt);
     moverProjeteis(J,dt);
@@ -1295,8 +1302,14 @@ TO.diaJogo.combate = (function(){
       if(!d.vivo) continue;
 
       if(d.derrubado>0){
-        d.derrubado-=dt; d.vx=d.vy=0;
-        if(d.derrubado<=0){ d.derrubado=0; d.derrubadoDur=0; d.cdBater=Math.max(d.cdBater, J.t+0.4); }
+        d.vx=d.vy=0;
+        if(d.noChao){
+          /* sem ninguém por perto ele se arrasta e levanta sozinho */
+          if(inimigoAlcancavel(J,d,70)) d.sozinho=0; else { d.sozinho+=dt; if(d.sozinho>=2.5) levantar(J,d); }
+        } else {
+          d.derrubado-=dt;
+          if(d.derrubado<=0){ d.derrubado=0; d.derrubadoDur=0; d.cdBater=Math.max(d.cdBater, J.t+0.4); }
+        }
         continue;
       }
       if(d.atordoado>0){
@@ -1335,6 +1348,17 @@ TO.diaJogo.combate = (function(){
       if(fuga){
         ax = d.x + fuga.dx*140; ay = d.y + fuga.dy*140; ramo='bomba';
         d.acomodado=false; d.melhorDist=undefined; d.semGanho=0;
+      } else if(d.socorrendo && d.socorrendo.vivo && d.socorrendo.noChao){
+        /* SOCORRO: vai até o companheiro no chão e fica em cima dele
+           até ele levantar (ver `socorrer`) */
+        const c=d.socorrendo; ramo='socorro'; d._olhaPara=c;
+        if(U.dist(d.x,d.y,c.x,c.y) < d.r+c.r+8){
+          d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
+          d._ramo='socorro'; d._alvo=null;
+          c.socorro+=dt; if(c.socorro>=1.2) levantar(J,c);
+          continue;
+        }
+        ax=c.x; ay=c.y;
       } else if(d.voltando){
         /* acabou e a casa é deles: volta pro lugar de onde saiu */
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
@@ -1917,9 +1941,11 @@ TO.diaJogo.combate = (function(){
     const chute = !!(a.ataque && a.ataque.tipo==='chute');
     /* no chão não se defende — e quem apanha no chão fica lá */
     if(b.derrubado>0){
-      b.hp -= Math.max(1,(a.forca*U.entre(0.8,1.2))-b.defesa*0.5)*P.dano*0.55;
-      b.apanhou=0.35; b.tremor=Math.min(6,b.tremor+2.4);
-      derrubar(J,b); b.noChao=true;
+      b.hp -= Math.max(1,(a.forca*U.entre(0.8,1.2))-b.defesa*0.5)*P.dano*0.55*2.6;
+      b.apanhou=0.35; b.tremor=Math.min(6,b.tremor+2.4); b.sozinho=0;
+      if(!b.noChao){ b.noChao=true; b.socorro=0; if(b.lider) aviso(J,'Você está no chão — o bonde te levanta','#d9705f'); }
+      b.linha='frente'; atacado(J,b);
+      if(b.hp<=0) derrubar(J,b);
       return;
     }
     const defende = b.defendendo>0 && naFrente(b,a);
@@ -1947,6 +1973,38 @@ TO.diaJogo.combate = (function(){
       if(b.agarrado>=1.2 && b.hp>0) derrubar(J,b);
     }
     if(b.hp<=0) derrubar(J,b);
+  }
+
+  function levantar(J,c){
+    if(!c.vivo || c.derrubado<=0) return;
+    c.noChao=false; c.sozinho=0; c.socorro=0;
+    c.derrubado = (c.derrubadoDur||1.6)*0.38;      // o resto é o levantar, no desenho
+    if(c.socorrista){ c.socorrista.socorrendo=null; c.socorrista=null; }
+  }
+  /* quem está no chão precisando: o companheiro livre mais perto (sem
+     inimigo a 45 px, sem golpe no ar, a até 110 px) vai lá e puxa. O
+     líder também levanta: basta parar em cima do caído sem bater. Se o
+     socorrista apanha ou o inimigo chega nele, larga — outro tenta. */
+  function socorrer(J,dt){
+    const lider = J.discos.find(d=>d.lider&&d.vivo);
+    for(const c of J.discos){
+      if(!c.vivo || !c.noChao) continue;
+      if(lider && lider!==c && lider.lado===c.lado && !lider.ataque && lider.derrubado<=0 && U.dist(lider.x,lider.y,c.x,c.y) < lider.r+c.r+8){
+        c.socorro+=dt; if(c.socorro>=1.2){ levantar(J,c); continue; }
+      }
+      const s=c.socorrista;
+      if(s && (!s.vivo || s.socorrendo!==c || s.apanhou>0 || s.inimigoPerto<30 || s.fugindo || s.derrubado>0)){
+        s.socorrendo=null; c.socorrista=null; c.socorro=0;
+      }
+      if(c.socorrista) continue;
+      let melhor=null, md=1e9;
+      for(const d of porPerto(J,c.x,c.y,110)){
+        if(d===c || d.lado!==c.lado || !d.vivo || d.lider || d.fugindo || d.derrubado>0 || d.socorrendo || d.fugaBomba || d.entrando || d.ataque) continue;
+        if(d.inimigoPerto<45) continue;
+        const q=U.dist(d.x,d.y,c.x,c.y); if(q<md){ md=q; melhor=d; }
+      }
+      if(melhor){ melhor.socorrendo=c; c.socorrista=melhor; c.socorro=0; }
+    }
   }
 
   /* quem não é o líder decide sozinho: bate quando pode e tem alguém
@@ -2068,6 +2126,8 @@ TO.diaJogo.combate = (function(){
   function derrubar(J,d){
     if(d.caido||d.preso) return;
     d.caido=true; d.hp=0; d.vx=d.vy=0; d.derrubado=0; d.ataque=null;
+    if(d.socorrista){ d.socorrista.socorrendo=null; d.socorrista=null; }
+    if(d.socorrendo){ d.socorrendo.socorrista=null; d.socorrendo=null; }
     J.caidos[d.lado]++;
     /* a cascata de moral saiu junto com a moral da briga (decisão do
        dono): cada caído derrubava o lado dele e subia o outro, e era

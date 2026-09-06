@@ -61,6 +61,7 @@
     ['fugir',    (d,t)=>{ anda(d,t,78); d.fugindo=true; }],
     ['bomba',    (d,t)=>{ anda(d,t,78); d.fugaBomba=true; }],
     ['derrubado',(d,t)=>{ const k=t%4.2; d.derrubadoDur=2.2; d.derrubado = k<2.2 ? 2.2-k : 0; }],
+    ['socorrer', (d,t)=>{ d.socorrendo = d.socorrendo || {noChao:true, vivo:true}; }],
     ['cair',     (d,t)=>{ d.caido = (t%4.5) > 0.9; }],
     ['preso',    (d,t)=>{ d.preso=true; }],
     ['torcer',   (d,t)=>{ d.linha='retaguarda'; }],
@@ -194,7 +195,7 @@
   cv.addEventListener('wheel', e=>{ e.preventDefault(); const k=Math.exp(e.deltaY*0.0015); dist = Math.min(700, Math.max(60, dist*k)); distIso = Math.min(300, Math.max(30, distIso*k)); }, {passive:false});
   if(PAR.has('estado')){
     const nome = PAR.get('estado').toUpperCase();
-    const d = discos.concat(pms).find(x=>(x.nome||'PM')===nome);
+    const d = discos.concat(pms).find(x=>(x.nome||'PM').toUpperCase()===nome);
     if(d){ isolado = d; bts.forEach(x=>x.classList.toggle('on', x.textContent.toUpperCase()===nome)); todos.classList.remove('on'); }
     if(PAR.has('ang')){ ang = parN('ang', 0); auto = false; }
   }
