@@ -140,8 +140,9 @@ TO.diaJogo.bonecos3 = (function(){
     const camisa = d.cor || corLado(d.lado,false);
     const faixa  = d.cor2 || corLado(d.lado,true);
     /* cabeça: o que tem em cima dela */
-    const CABECAS = ['curto','curto','curto','raspado','raspado','raspado','black','moicano','comprido','bone','bone','bone-tras','bandana','careca'];
-    const tipoCabeca = d.lider ? 'bandana' : CABECAS[dado(s+'cab', CABECAS.length)];
+    const CABECAS = ['curto','curto','raspado','raspado','degrade','degrade','black','cacheado','topete','franja',
+                     'entradas','moicano','comprido','rabo','coque','bone','bone','bone-tras','bandana','careca'];
+    const tipoCabeca = d.cabecaForcada || (d.lider ? 'bandana' : CABECAS[dado(s+'cab', CABECAS.length)]);
     const rBarba = frac(s+'bb');
     d._b3 = {
       sem:s, fase:frac(s+'f')*6.28, yaw:frac(s+'y')*6.28,
@@ -414,7 +415,8 @@ TO.diaJogo.bonecos3 = (function(){
     /* a cena de cima carrega o modelo LEVE (dados/boneco_leve_glb.js);
        a vitrine, o detalhado (dados/boneco_glb.js). Cada página inclui
        só o que quer; aqui vale o leve se ele existir. */
-    const dados = TO.dados && (TO.dados.bonecoLeveGLB || TO.dados.bonecoGLB);
+    const dados = TO.dados && (window.MODELO_BONECO==='detalhado' && TO.dados.bonecoGLB ? TO.dados.bonecoGLB
+                               : (TO.dados.bonecoLeveGLB || TO.dados.bonecoGLB));
     if(!dados || typeof THREE.GLTFLoader !== 'function') return;
     carregandoGLB = true;
     /* SEM FETCH: o artifact bloqueia requisição até de data-URI, e o
@@ -429,6 +431,7 @@ TO.diaJogo.bonecos3 = (function(){
     new THREE.GLTFLoader().parse(bin.buffer, '', gltf=>{
       modeloGLB = gltf.scene;
       modeloGLB.updateMatrixWorld(true);
+      nomesGLB = new Set(); modeloGLB.traverse(o=>{ if(o.isMesh) nomesGLB.add(o.name); });
       /* Lambert é mais barato que Standard e a cena não tem PBR */
       modeloGLB.traverse(o=>{
         if(o.isMesh){
@@ -446,15 +449,26 @@ TO.diaJogo.bonecos3 = (function(){
   }
 
   /* que peças da ficha ficam ligadas */
+  let nomesGLB = new Set();   // as malhas que o modelo carregado tem
   function variantesDe(f, pm){
     const on = new Set();
     if(pm){ on.add('cabelo_raspado'); return on; }
-    const tc = f.tipoCabeca;
+    let tc = f.tipoCabeca;
+    /* o modelo leve não tem boné nem bandana: cai num penteado */
+    if((tc==='bone' || tc==='bone-tras') && !nomesGLB.has('bone_copa')) tc = 'degrade';
+    if(tc==='bandana' && !nomesGLB.has('bandana')) tc = 'raspado';
     if(tc==='curto') on.add('cabelo_curto');
     else if(tc==='raspado') on.add('cabelo_raspado');
     else if(tc==='black') on.add('cabelo_black');
     else if(tc==='moicano'){ on.add('cabelo_moicano'); on.add('cabelo_moicano_crista'); }
     else if(tc==='comprido'){ on.add('cabelo_comprido'); on.add('cabelo_comprido_nuca'); }
+    else if(tc==='cacheado') on.add('cabelo_cacheado');
+    else if(tc==='degrade') on.add('cabelo_degrade');
+    else if(tc==='topete') on.add('cabelo_topete');
+    else if(tc==='franja') on.add('cabelo_franja');
+    else if(tc==='entradas') on.add('cabelo_entradas');
+    else if(tc==='rabo'){ on.add('cabelo_rabo'); on.add('cabelo_rabo_elastico'); on.add('cabelo_rabo_ponta'); }
+    else if(tc==='coque'){ on.add('cabelo_coque'); on.add('cabelo_coque_bola'); }
     else if(tc==='bone'){ on.add('bone_copa'); on.add('bone_aba'); on.add('cabelo_raspado'); }
     else if(tc==='bone-tras'){ on.add('bone_copa'); on.add('bone_aba_tras'); on.add('cabelo_raspado'); }
     else if(tc==='bandana'){ on.add('bandana'); on.add('bandana_ponta'); on.add('cabelo_raspado'); }

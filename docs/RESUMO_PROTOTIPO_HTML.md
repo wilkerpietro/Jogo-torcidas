@@ -4996,3 +4996,14 @@ verdade (aba Scripting → Run Script).
   nos dois modelos. A cena inclui `dados/boneco_leve_glb.js`, a vitrine
   `dados/boneco_glb.js` (com `?modelo=leve` pra conferir o leve fora do artifact); o
   carregador prefere o leve quando ele existe.
+- **Treze penteados e a vitrine no modelo leve** (dono, 06/09/2026). A `tampa` passou a
+  aceitar altura por face (função do centro e da normal), e com isso vieram: degradê
+  (fino no lado, cheio em cima), topete (sobe na frente do topo), cacheado (14 mm com
+  ruído forte), franja (linha do cabelo baixa na testa), entradas (têmporas
+  recuadas), rabo de cavalo (elástico e ponta caída) e coque (bola no topo), além de
+  curto, raspado, black, moicano, comprido e careca. O sorteio da ficha usa os treze;
+  no modelo leve, boné e bandana caem num penteado (`nomesGLB` diz o que o modelo tem).
+  A vitrine abre agora com o **modelo leve** (é o formato que vale) e `?modelo=detalhado`
+  carrega o pesado da escultura fora do artifact; `?cabelos=1` enfileira um boneco por
+  penteado. Tamanhos: leve 2,7 MB, detalhado 11,4 MB (as tampas duplicam faces da
+  cabeça; o detalhado não entra mais em artifact nenhum).

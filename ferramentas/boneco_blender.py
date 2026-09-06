@@ -410,11 +410,14 @@ def tampa(nome, mat, sel, desloc, ruido=0.0, semente=1):
     tirar = [f for f in bm.faces if not sel(f.calc_center_median(), f.normal)]
     bmesh.ops.delete(bm, geom=tirar, context='FACES')
     for v in bm.verts:
-        v.co = v.co + v.normal*(desloc + (rnd.random()-0.5)*ruido)
+        d = desloc(v.co, v.normal) if callable(desloc) else desloc
+        v.co = v.co + v.normal*(d + (rnd.random()-0.5)*ruido)
     # engrossa: extrusão pra dentro fecha a casca
     res = bmesh.ops.extrude_face_region(bm, geom=list(bm.faces))
     novos = [g for g in res['geom'] if isinstance(g, bmesh.types.BMVert)]
-    for v in novos: v.co = v.co - v.normal*(desloc*0.9)
+    for v in novos:
+        d = desloc(v.co, v.normal) if callable(desloc) else desloc
+        v.co = v.co - v.normal*(d*0.9)
     bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
     me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
     for p in me.polygons: p.use_smooth = True
@@ -539,13 +542,35 @@ def acima_do_cabelo(c, n):
     lim = olhosZ + 0.052*frente + 0.012*(1-frente) - 0.030*max(0.0, n.y)
     if n.z < -0.4: return False
     return c.z > lim
+# OS PENTEADOS (mais variação a pedido do dono, 06/09/2026). Cada um é
+# uma tampa da própria cabeça: o que muda é a linha do cabelo, a altura
+# por região (função do centro e da normal da face) e o ruído.
+topo = lambda n: max(0.0, n.z)                 # quanto a face olha pra cima
+frente = lambda n: max(0.0, -n.y)              # quanto olha pra frente
+def hairline(c, n, testa=0.052, lados=0.012, nuca=-0.030):
+    f = frente(n)
+    lim = olhosZ + testa*f + lados*(1-f) + nuca*max(0.0, n.y)
+    return n.z > -0.4 and c.z > lim
+def franja_sel(c, n): return hairline(c, n, testa=0.030) or (frente(n) > 0.6 and c.z > olhosZ + 0.024 and abs(c.x) < 0.05)
+def entradas_sel(c, n): return hairline(c, n, testa=0.052) and not (frente(n) > 0.4 and abs(c.x) > 0.032 and c.z < olhosZ + 0.085)
 var.append(tampa('cabelo_curto', 'cabelo', acima_do_cabelo, 0.006, 0.002, 1))
 var.append(tampa('cabelo_raspado', 'cabelo', acima_do_cabelo, 0.0022, 0.0005, 2))
 var.append(tampa('cabelo_black', 'cabelo', acima_do_cabelo, 0.030, 0.012, 3))
+var.append(tampa('cabelo_cacheado', 'cabelo', acima_do_cabelo, 0.014, 0.010, 12))
+var.append(tampa('cabelo_degrade', 'cabelo', acima_do_cabelo, lambda c, n: 0.0015 + 0.009*topo(n)**2, 0.0008, 13))   # fino no lado, cheio em cima
+var.append(tampa('cabelo_topete', 'cabelo', acima_do_cabelo, lambda c, n: 0.004 + 0.026*max(0.0, (c.z - olhosZ - 0.06)/0.05)*frente(n)*topo(n)*2, 0.002, 14))
+var.append(tampa('cabelo_franja', 'cabelo', franja_sel, lambda c, n: 0.007 + 0.004*frente(n), 0.002, 15))
+var.append(tampa('cabelo_entradas', 'cabelo', entradas_sel, 0.005, 0.0015, 16))
 var.append(tampa('cabelo_moicano', 'cabelo', acima_do_cabelo, 0.0022, 0.0005, 4))
 var.append(tampa('cabelo_moicano_crista', 'cabelo', lambda c, n: acima_do_cabelo(c, n) and abs(c.x) < 0.014 and n.z > 0.3, 0.045, 0.006, 5))
 var.append(tampa('cabelo_comprido', 'cabelo', lambda c, n: acima_do_cabelo(c, n) or (n.y > 0.3 and c.z > olhosZ - 0.06), 0.009, 0.003, 6))
 var.append(caixa('cabelo_comprido_nuca', 0, 0.075, olhosZ - 0.075, 0.13, 0.05, 0.12, 'cabelo'))
+var.append(tampa('cabelo_rabo', 'cabelo', acima_do_cabelo, 0.005, 0.001, 17))
+_tras = max(v.co.y for v in _verts)
+var.append(esfera('cabelo_rabo_elastico', 0, _tras + 0.006, olhosZ + 0.045, 0.014, 0.010, 0.012, 'cabelo'))
+var.append(esfera('cabelo_rabo_ponta', 0, _tras + 0.030, olhosZ - 0.010, 0.016, 0.026, 0.060, 'cabelo', 14, 10, (0.55, 0, 0)))
+var.append(tampa('cabelo_coque', 'cabelo', acima_do_cabelo, 0.005, 0.001, 18))
+var.append(esfera('cabelo_coque_bola', 0, 0.010, topoZ + 0.020, 0.030, 0.030, 0.024, 'cabelo', 14, 10))
 if not LEVE:
     # bonés: a copa é uma tampa mais alta e lisa; a aba, uma fatia curva
     def copa(c, n): return c.z > olhosZ + 0.040 - 0.012*max(0.0, n.y) and n.z > -0.3

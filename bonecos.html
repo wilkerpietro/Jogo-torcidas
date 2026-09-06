@@ -29,9 +29,9 @@
 <script src="js/lib/three.min.js"></script>
 <script src="js/lib/GLTFLoader.js"></script>
 <script src="js/lib/SkeletonUtils.js"></script>
-<script src="dados/boneco_glb.js"></script>
-<!-- ?modelo=leve testa o modelo da cena (fora do empacotado) -->
-<script>if(/modelo=leve/.test(location.search)) document.write('<script src="dados/boneco_leve_glb.js"><\/script>');</script>
+<script src="dados/boneco_leve_glb.js"></script>
+<!-- ?modelo=detalhado abre o modelo pesado da escultura (fora do empacotado) -->
+<script>if(/modelo=detalhado/.test(location.search)){ window.MODELO_BONECO='detalhado'; document.write('<script src="dados/boneco_glb.js"><\/script>'); }</script>
 <script src="js/diajogo/bonecos3.js"></script>
 <script>
 (function(){
@@ -41,7 +41,9 @@
 
   /* cada estado é um disco de mentira com os sinais que o combate
      escreveria; a animação só lê */
-  const ESTADOS = [
+  const CABELOS = ['curto','raspado','degrade','black','cacheado','topete','franja','entradas','moicano','comprido','rabo','coque','careca'];
+  const SO_CABELOS = new URLSearchParams(location.search).has('cabelos');
+  const ESTADOS = SO_CABELOS ? CABELOS.map(c=>[c, (d,t)=>{ d.cabecaForcada=c; }]) : [
     ['parado',   (d,t)=>{}],
     ['andar',    (d,t)=>{ anda(d,t,60); }],
     ['correr',   (d,t)=>{ anda(d,t,78); d._cacando=true; }],
@@ -78,7 +80,7 @@
     const dir = k<1 ? 1 : -1, x = k<1 ? -30 + 60*k : 30 - 60*(k-1);
     d.x = d.x0 + x; d.rumo = Math.atan2(dir, 0);
   }
-  const PASSO = 46, cols = 8;
+  const PASSO = 46, cols = SO_CABELOS ? 7 : 8;
   const discos = [], pms = [];
   ESTADOS.forEach(([nome, fn], i)=>{
     const x0 = (i%cols - (cols-1)/2)*PASSO, z0 = (Math.floor(i/cols) - 0.5)*70;
@@ -95,7 +97,7 @@
   for(const d of discos) Object.defineProperty(d, 'vivo', {get(){ return !this.caido && !this.preso; }});
   /* os dois da troca ficam frente a frente, a 17 px um do outro */
   const tr1 = discos.find(d=>d.nome==='TROCA'), tr2 = discos.find(d=>d.nome==='TROCA2');
-  tr1.x0 = tr1.x = tr2.x0 - 17; tr1.y = tr2.y; tr1.par = tr2; tr2.par = tr1; tr1.nome='TROCA'; tr2.nome='';
+  if(tr1 && tr2){ tr1.x0 = tr1.x = tr2.x0 - 17; tr1.y = tr2.y; tr1.par = tr2; tr2.par = tr1; tr1.nome='TROCA'; tr2.nome=''; }
   const J = {t:0, discos, policiais:pms, projeteis:[], grades:[], paz:false};
 
   let ang = 0.4, dist = 330, distIso = 125, auto = true, isolado = null, ant = performance.now();
