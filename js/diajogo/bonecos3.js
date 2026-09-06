@@ -543,7 +543,7 @@ TO.diaJogo.bonecos3 = (function(){
      `calcao` e `anel` em 'auto' aplicam a regra; os outros valores
      seguem existindo pra bancada. `desenho` e `boneCor2` continuam
      desligados até o dono escolher as variações de camisa. */
-  const estudo = {desenho:'lisa', boneCor2:false, anel:'auto', calcao:'auto'};
+  const estudo = {desenho:'auto', boneCor2:false, anel:'auto', calcao:'auto'};
 
   /* A PALETA DA CENA: por torcida, a cor do calção e a do anel, e se
      a cena tem primária repetida. Lê os bondes da configuração
@@ -605,25 +605,19 @@ TO.diaJogo.bonecos3 = (function(){
   /* as PROPOSTAS de camisa (06/09/2026), todas pintadas por vértice na
      malha do GLB; o dono escolhe quais ficam. A 3ª cor entra na
      'tricolor' e na 'ombros' quando existe. */
-  const DESENHOS = ['lisa','ombros','mangas','listras','faixa-central','diagonal','gola','tricolor','listras-largas'];
-  let registroDesenhos = new Map(), registroJ = null;
+  const DESENHOS = ['lisa','ombros','mangas','listras','faixa-central','diagonal','gola','tricolor','listras-largas','gola-dupla'];
+  /* A CAMISA DA TORCIDA (decisão do dono, 06/09/2026, sobre as nove
+     propostas): torcida de TRÊS cores veste gola e punho duplo — a gola
+     na 2ª cor, o punho com uma faixa na 2ª e outra na 3ª; torcida de
+     DUAS cores é metade lisa, metade gola e punhos na 2ª cor, sorteada
+     pelo nome — fixa em todo save, como o elenco. Sem desempate na
+     cena: a camisa é identidade da torcida, não muda conforme o rival
+     (quem separa paleta igual é o calção e o anel). */
   function desenhoDaTorcida(d, J){
     if(estudo.desenho !== 'auto') return estudo.desenho === 'lisa' ? 0 : Math.max(0, DESENHOS.indexOf(estudo.desenho));
-    if(J && J !== registroJ){ registroDesenhos = new Map(); registroJ = J; }
-    const chave = d.torcida || d.lado;
-    if(registroDesenhos.has(chave)) return registroDesenhos.get(chave).idx;
-    const c1 = String(d.cor||'').toLowerCase(), c2 = String(d.cor2||'').toLowerCase();
-    let idx = Math.abs(hash32(chave)) % DESENHOS.length;
-    /* desempate: mesma cor (e mesma 2ª cor) que alguém já registrado
-       na cena não pode repetir o desenho */
-    const usados = new Set();
-    for(const [k, v] of registroDesenhos){
-      const o = v.cores;
-      if(o.c1 === c1 && (o.c2 === c2 || !c2 || !o.c2)) usados.add(v.idx);
-    }
-    for(let k=0; k<DESENHOS.length && usados.has(idx); k++) idx = (idx+1) % DESENHOS.length;
-    registroDesenhos.set(chave, {idx, cores:{c1, c2}});
-    return idx;
+    if(d.cor3) return DESENHOS.indexOf('gola-dupla');
+    const chave = d.torcida || d.lado || '';
+    return (Math.abs(hash32(chave)) % 2) ? DESENHOS.indexOf('gola') : 0;
   }
   function hash32(txt){
     let h = 2166136261; const s = String(txt);
@@ -655,7 +649,12 @@ TO.diaJogo.bonecos3 = (function(){
       else if(desenho==='listras-largas') segunda = Math.floor(fx*3) === 1; // uma faixa larga no meio
       else if(desenho==='faixa-central') segunda = Math.abs(x) < 0.075;    // uma listra fina no meio
       else if(desenho==='diagonal') segunda = Math.abs(x - 1.1*(y-1.20)) < 0.08;   // a faixa a tiracolo
-      else if(desenho==='gola'){ segunda = (fy > 0.92 && Math.abs(x) < 0.16) || Math.abs(x) > 0.265; } // gola e punhos
+      else if(desenho==='gola'){ segunda = (fy > 0.92 && Math.abs(x) < 0.16) || Math.abs(x) >= 0.25; } // gola e punhos
+      else if(desenho==='gola-dupla'){                                       // gola na 2ª; punho duplo: 2ª e, na ponta, 3ª
+        const ax = Math.abs(x);
+        segunda = (fy > 0.92 && ax < 0.16) || (ax >= 0.236 && ax < 0.268);
+        terceira = ax >= 0.268;
+      }
       else if(desenho==='tricolor'){ segunda = fy > 0.80; terceira = !segunda && Math.abs(x) > 0.21; }  // ombros na 2ª, mangas na 3ª
       const c = terceira ? C3 : segunda ? B : A;
       cor[i*3]=c.r; cor[i*3+1]=c.g; cor[i*3+2]=c.b;

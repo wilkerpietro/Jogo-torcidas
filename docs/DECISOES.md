@@ -3726,11 +3726,15 @@ Depois do estudo "Quem É Quem na Briga", o dono decidiu:
    Falange Coral de preto. Gaviões × Pavilhão 9: preto e branco.
 2. **Anel no chão, na 2ª cor, só na cena com primária repetida.** Sem
    colisão não há anel. Contornado de escuro, por baixo da sombra.
-3. **Desenho da camisa: escolher antes.** Nove propostas pintadas por
-   vértice (lisa, ombros, mangas, listras, faixa larga, listra fina,
-   tiracolo, gola e punhos, tricolor), fotografadas de cima em três
-   paletas na prancha "Propostas de Camisa". Ficam no crivo; nenhuma
-   ligada (`estudo.desenho = 'lisa'`).
+3. **A camisa da torcida (decidido em cima das nove propostas):**
+   torcida de **três cores** veste gola e **punho duplo** — gola na 2ª
+   cor, punho com uma faixa na 2ª e a ponta na 3ª; torcida de **duas
+   cores** é metade lisa, metade gola e punhos na 2ª cor, sorteada pelo
+   nome (72 de 140 saem com gola) e fixa em todo save, como o elenco.
+   Sem desempate na cena: a camisa é identidade da torcida e não muda
+   conforme o rival — paleta igual é problema do calção e do anel.
+   As outras propostas (ombros, mangas, listras, tiracolo, tricolor)
+   continuam no código pra bancada, por `estudo.desenho`.
 
 Quem decide calção e anel é `bonecos3.paletaDaCena(J)`: lê os bondes
 da configuração (nossa primeiro), marca quem repete a primária de quem
