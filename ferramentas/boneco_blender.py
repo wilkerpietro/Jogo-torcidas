@@ -158,43 +158,10 @@ def aplicar_modificadores(ob):
 
 aplicar_modificadores(corpo)
 
-# MATERIAIS POR REGRA, com borda reta: o ponto do esqueleto mais perto
-# diz o membro; a altura diz a peça de roupa. Camisa até a cintura e
-# manga curta; bermuda até um palmo acima do joelho; meia; tênis.
-NOMES = list(P.keys())
-for m in ('pele','camisa','calca','tenis','sola','faixa','meia'):
-    if m == 'meia': corpo.data.materials.append(material('meia', (0.95, 0.95, 0.93)))
-    else: corpo.data.materials.append(M[m])
-IDX = {m.name: k for k, m in enumerate(corpo.data.materials)}
-pontos = [(P[n]['co'], n) for n in NOMES]
-def membro(n):
-    if n.startswith(('ombro','manga','braco','cotovelo','antebr','pulso','mao','nos','dedo','ponta0','ponta1','ponta2','ponta3','polegar')): return 'braco'
-    if n.startswith(('quadril','coxa','bermuda','joelho','canela','tornoz','pe')) or n in ('pontaD','pontaE'): return 'perna'
-    if n in ('pescoco','nuca'): return 'pescoco'
-    return 'tronco'
-for poly in corpo.data.polygons:
-    c = poly.center
-    n = min(pontos, key=lambda pm: (pm[0]-c).length)[1]
-    mb = membro(n)
-    # a altura manda mais que o ponto mais perto: barriga é tronco,
-    # mesmo que o quadril esteja mais perto (era o remendo escuro no peito)
-    if abs(c.x) > 0.19 and c.z > 0.7: mb = 'braco'
-    elif c.z > 1.0 and abs(c.x) < 0.20: mb = 'tronco'
-    elif c.z <= 1.0 and mb != 'braco': mb = 'perna'
-    if mb == 'tronco':
-        m = 'calca' if c.z < 1.015 else 'camisa'
-        if m == 'camisa' and 1.22 < c.z < 1.285 and abs(c.x) < 0.17: m = 'faixa'
-    elif mb == 'braco':
-        m = 'camisa' if c.z > 1.235 else 'pele'
-    elif mb == 'perna':
-        if c.z < 0.06 or (c.z < 0.11 and c.y < -0.02): m = 'tenis'
-        elif c.z < 0.16: m = 'meia'
-        elif c.z < 0.60: m = 'pele'
-        else: m = 'calca'
-        if m == 'tenis' and poly.normal.z < -0.6: m = 'sola'
-    else:
-        m = 'pele'
-    poly.material_index = IDX[m]
+# O CORPO É SÓ PELE. A roupa (camisa com faixa, calção, tênis com meia)
+# é feita depois como malha própria, cortada por plano — ver `roupa`.
+corpo.data.materials.append(M['pele'])
+for poly in corpo.data.polygons: poly.material_index = 0
 
 # ---------------------------------------------------------------- A CABEÇA ESCULPIDA
 # (refeita a pedido do dono, 05/09/2026: "todos os detalhes do rosto
@@ -266,7 +233,7 @@ def traco(c, a, sx, sy=None, sz=None):
     tracos.append((Vector(c), a, sx, sy if sy is not None else sx, sz if sz is not None else sx))
 for sx in (-1, 1):
     oc = superficie_frente(sx*0.031, olhosZ)                      # centro da órbita
-    traco(oc, -0.011, 0.019, 0.016, 0.013)                        # órbita
+    traco(oc, -0.014, 0.019, 0.016, 0.013)                        # órbita
     traco(superficie_frente(sx*0.030, olhosZ + 0.022), 0.0055, 0.028, 0.012, 0.008)  # arco da sobrancelha
     traco(superficie_frente(sx*0.052, olhosZ - 0.018), 0.0065, 0.020, 0.018, 0.016)  # maçã do rosto
     traco(superficie_frente(sx*0.046, olhosZ - 0.052), -0.0045, 0.018, 0.018, 0.018) # cova da bochecha
@@ -278,15 +245,15 @@ for sx in (-1, 1):
 for k in range(7):
     t = k/6.0
     z = olhosZ + 0.006 - t*0.048
-    traco(superficie_frente(0, z), 0.004 + 0.008*t, 0.009 + 0.003*t, 0.012, 0.009)
-traco(superficie_frente(0, olhosZ - 0.044), 0.007, 0.012, 0.012, 0.009)              # ponta
+    traco(superficie_frente(0, z), 0.005 + 0.011*t, 0.009 + 0.003*t, 0.012, 0.009)
+traco(superficie_frente(0, olhosZ - 0.044), 0.010, 0.012, 0.012, 0.009)              # ponta
 traco(superficie_frente(0, olhosZ - 0.060), -0.003, 0.006, 0.006, 0.005)             # base/columela
 traco(superficie_frente(0, olhosZ - 0.066), -0.0025, 0.004, 0.006, 0.006)            # filtro
-traco(superficie_frente(0, olhosZ - 0.073), 0.0045, 0.022, 0.008, 0.005)             # lábio de cima
-traco(superficie_frente(0, olhosZ - 0.079), -0.0045, 0.024, 0.006, 0.0022)           # a boca (sulco)
-traco(superficie_frente(0, olhosZ - 0.086), 0.0055, 0.019, 0.008, 0.0055)            # lábio de baixo
-traco(superficie_frente(0, olhosZ - 0.095), -0.0035, 0.016, 0.008, 0.004)            # sulco do queixo
-traco(superficie_frente(0, olhosZ - 0.108), 0.0060, 0.020, 0.013, 0.014)             # queixo
+traco(superficie_frente(0, olhosZ - 0.073), 0.0060, 0.022, 0.008, 0.005)             # lábio de cima
+traco(superficie_frente(0, olhosZ - 0.079), -0.0060, 0.024, 0.006, 0.0022)           # a boca (sulco)
+traco(superficie_frente(0, olhosZ - 0.086), 0.0070, 0.019, 0.008, 0.0055)            # lábio de baixo
+traco(superficie_frente(0, olhosZ - 0.095), -0.0045, 0.016, 0.008, 0.004)            # sulco do queixo
+traco(superficie_frente(0, olhosZ - 0.108), 0.0080, 0.020, 0.013, 0.014)             # queixo
 traco(superficie_frente(0, olhosZ + 0.050), 0.0025, 0.045, 0.020, 0.030)             # testa
 
 def esculpir(me, tracos):
@@ -413,12 +380,12 @@ def tampa(nome, mat, sel, desloc, ruido=0.0, semente=1):
 rosto = []
 for sx in (-1, 1):
     oc = superficie_frente(sx*0.031, olhosZ)
-    cx, cy, cz = oc.x, oc.y + 0.004, oc.z          # o globo fica um pouco dentro da órbita
+    cx, cy, cz = oc.x, oc.y + 0.0040, oc.z         # o globo dentro da órbita, sem esbugalhar
     rosto.append(esfera('olho%s' % sx, cx, cy, cz, 0.0125, 0.0125, 0.0125, 'olho'))
     rosto.append(esfera('iris%s' % sx, cx, cy - 0.0105, cz, 0.0058, 0.0025, 0.0058, 'iris'))
     rosto.append(esfera('pupila%s' % sx, cx, cy - 0.0125, cz, 0.0026, 0.0015, 0.0026, 'pupila'))
     # pálpebras: uma casca com a abertura amendoada (mais estreita em z)
-    rosto.append(casca('palpebra%s' % sx, cx, cy + 0.0005, cz + 0.001, 0.0138, 0.0138, 0.0105, 'pele', (0, -1, 0), 0.62))
+    rosto.append(casca('palpebra%s' % sx, cx, cy + 0.0005, cz + 0.001, 0.0138, 0.0138, 0.0108, 'pele', (0, -1, 0), 0.74))
     # sobrancelha: tubo curvo que acompanha o arco
     pts = []
     for k in range(7):
@@ -427,7 +394,7 @@ for sx in (-1, 1):
         z = olhosZ + 0.020 + 0.010*math.sin(t*math.pi) - 0.004*t
         p = superficie_frente(x, z, 0.018); p.y -= 0.0025
         pts.append(p)
-    rosto.append(tubo('sobrancelha%s' % sx, pts, [0.0032, 0.0036, 0.0036, 0.0034, 0.0030, 0.0024, 0.0016], 'cabelo'))
+    rosto.append(tubo('sobrancelha%s' % sx, pts, [0.0024, 0.0028, 0.0028, 0.0026, 0.0022, 0.0018, 0.0012], 'cabelo'))
     # orelha: a hélice (tubo em arco) e a concha (casca funda)
     ez = olhosZ - 0.010
     eo = superficie_lado(0.0, ez, sx)
@@ -572,6 +539,70 @@ def pesar(ob):
     mod = ob.modifiers.new('Armature', 'ARMATURE'); mod.object = arm
     ob.parent = arm
 pesar(corpo)
+
+# ---------------------------------------------------------------- A ROUPA
+# (refeita a pedido do dono, 05/09/2026: a camisa pintada face a face na
+# malha subdividida saía com bainha e faixa serrilhadas). Cada peça é
+# uma cópia da região do corpo CORTADA POR PLANO (`bisect_plane`), que
+# dá bainha, boca de manga e gola retas; deslocada 4 mm pra fora e
+# engrossada. Os pesos vêm do vértice do corpo mais próximo, então a
+# roupa acompanha o esqueleto igual à pele.
+from mathutils import kdtree as _kdt
+_kdc = _kdt.KDTree(len(corpo.data.vertices))
+for v in corpo.data.vertices: _kdc.insert(v.co, v.index)
+_kdc.balance()
+_grupos_corpo = {g.index: g.name for g in corpo.vertex_groups}
+
+def roupa(nome, mat, sel, cortes, desloc=0.0065, esp=0.0035):
+    """sel(centro)→bool escolhe as faces; cortes = [(co, normal, limpa_fora, filtro_faces)]"""
+    bm = bmesh.new(); bm.from_mesh(corpo.data)
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if not sel(f.calc_center_median())], context='FACES')
+    for co, no, limpa, filtro in cortes:
+        faces = [f for f in bm.faces if (filtro is None or filtro(f.calc_center_median()))]
+        geom = list(set(faces) | set(e for f in faces for e in f.edges) | set(v for f in faces for v in f.verts))
+        bmesh.ops.bisect_plane(bm, geom=geom, plane_co=co, plane_no=no, clear_outer=limpa, clear_inner=False)
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+    for v in bm.verts: v.co = v.co + v.normal*desloc
+    res = bmesh.ops.extrude_face_region(bm, geom=list(bm.faces))
+    for g in res['geom']:
+        if isinstance(g, bmesh.types.BMVert): g.co = g.co - g.normal*esp
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
+    for pl in me.polygons: pl.use_smooth = True
+    ob = bpy.data.objects.new(nome, me); col.objects.link(ob)
+    me.materials.append(M[mat])
+    # pesos copiados do vértice do corpo mais perto
+    grupos = {n: ob.vertex_groups.new(name=n) for n in _grupos_corpo.values()}
+    for v in me.vertices:
+        _, idx, _ = _kdc.find(v.co)
+        for g in corpo.data.vertices[idx].groups:
+            grupos[_grupos_corpo[g.group]].add([v.index], g.weight, 'REPLACE')
+    mod = ob.modifiers.new('Armature', 'ARMATURE'); mod.object = arm
+    ob.parent = arm
+    return ob
+
+Z = Vector((0, 0, 1))
+braco = lambda c: abs(c.x) > 0.19
+tronco = lambda c: abs(c.x) <= 0.19
+camisa = roupa('camisa', 'camisa',
+    lambda c: c.z > 0.93 and not (abs(c.x) > 0.19 and c.z < 1.15) and not (c.z > 1.42 and abs(c.x) < 0.10),
+    [((0, 0, 0.985), -Z, True, tronco),        # bainha (abaixo da cintura do calção)
+     ((0, 0, 1.235), -Z, True, braco),         # boca da manga
+     ((0, 0, 1.445), Z, True, lambda c: abs(c.x) < 0.11),   # gola
+     ((0, 0, 1.225), Z, False, tronco), ((0, 0, 1.285), Z, False, tronco)])   # a faixa
+camisa.data.materials.append(M['faixa'])
+for pl in camisa.data.polygons:
+    c = pl.center
+    if 1.225 <= c.z <= 1.285 and abs(c.x) < 0.19 and pl.normal.z > -0.5 and pl.normal.z < 0.5: pl.material_index = 1
+calcao = roupa('calcao', 'calca',
+    lambda c: 0.55 < c.z < 1.06 and abs(c.x) < 0.24,
+    [((0, 0, 0.62), -Z, True, None), ((0, 0, 1.035), Z, True, None)], 0.0035, 0.003)
+tenis = roupa('tenis', 'tenis', lambda c: c.z < 0.17, [((0, 0, 0.165), Z, True, None), ((0, 0, 0.115), Z, False, None)], 0.003, 0.003)
+tenis.data.materials.append(material('meia', (0.95, 0.95, 0.93))); tenis.data.materials.append(M['sola'])
+for pl in tenis.data.polygons:
+    c = pl.center
+    if c.z > 0.115: pl.material_index = 1
+    elif pl.normal.z < -0.6: pl.material_index = 2
 # a cabeça vai inteira no osso da cabeça (sem heat: é uma peça só)
 from mathutils import Matrix
 def prender(ob, osso_nome):

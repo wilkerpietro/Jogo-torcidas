@@ -4956,3 +4956,16 @@ verdade (aba Scripting → Run Script).
   artifact (16 MB com o base64) nem em sessenta figuras; ficou a remalha sem
   subdivisão: 4 MB. A vitrine aceita `?estado=parado&ang=0&dist=42&alt=33&mira=32`
   pra travar a câmera no rosto.
+- **A roupa como malha própria** (dono, 05/09/2026: "a camisa também está estranha").
+  Pintar a roupa face a face na malha subdividida do corpo dava bainha, boca de manga e
+  faixa serrilhadas. Agora o corpo é só pele, e camisa (com a faixa entre dois cortes),
+  calção e tênis com meia são cópias da região do corpo **cortadas por plano**
+  (`bmesh.ops.bisect_plane`, que dá borda reta), deslocadas pra fora (6,5 mm a camisa,
+  3,5 o calção, que fica por baixo da bainha) e engrossadas; os pesos vêm do vértice
+  do corpo mais próximo (KD-tree), então a roupa acompanha o esqueleto igual à pele.
+  Registrado o tropeço: `clear_outer` apaga o lado pra onde a normal aponta — com a
+  normal invertida o calção saiu vazio ("no primitives"). O rosto ganhou relevo mais
+  fundo (órbita −14 mm, ponta do nariz +10, lábios ±6/7, queixo +8), globo ocular
+  dentro da órbita sem esbugalhar e sobrancelha mais fina. O GLB embutido entra pelo
+  `parse` do GLTFLoader, decodificado em memória: o sandbox do artifact bloqueia o
+  `fetch` até de data-URI, e sem isso a página caía no corpo de caixas.
