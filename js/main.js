@@ -857,13 +857,15 @@
 
   /* =======================================================
      A PARTIDA AO VIVO (decisão do dono, 17/08/2026)
-     O cartão vira uma barra de minutos: 2 minutos de jogo por
-     segundo real (45 s a partida). Os gols já estão sorteados
+     O cartão vira uma barra de minutos: 4 minutos de jogo por
+     segundo real em 1× (22 s a partida; em 4×, o padrão, uns 6 s) —
+     o dobro do que era (pedido do dono, 08/09/2026). Os gols já
+     estão sorteados
      em dados.gols; cada um aparece quando a barra alcança o
      minuto dele. Aos 90' o cartão apita: fecha a decisão no
      feed e o relógio das mensagens volta a correr.
      ======================================================= */
-  const MIN_POR_SEG = 2;
+  const MIN_POR_SEG = 4;   // era 2: o tempo real da partida dobrou (dono, 08/09/2026)
 
   /* =======================================================
      A CHANCE DE O CLIMA SUBIR (pedido do dono, 19/08/2026)

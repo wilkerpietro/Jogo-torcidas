@@ -4001,6 +4001,13 @@ senão nada. Um pedido por jogo; fica no plano da semana.
 debitado; Camisa 12 do Vitória (relação 22) não recebe. Pedir de novo não
 cobra de novo; o efetivo em casa não leva a escolta.
 
+## A partida corre o dobro (pedido do dono, 08/09/2026)
+
+O relógio da partida no cartão "O jogo" do itinerário passa de 2 pra 4
+minutos de jogo por segundo real. Em 1× os 90 minutos levam 22 s; no
+padrão da casa (4×), uns 6 s. O botão 1×/2×/4× e o espaço (pausa)
+continuam iguais; o clima do estádio segue sorteado minuto a minuto.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
