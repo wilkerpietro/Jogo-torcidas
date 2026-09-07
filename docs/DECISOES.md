@@ -4237,6 +4237,24 @@ volta no dia seguinte nem cai pro segundo hostil da lista. Medido numa
 temporada de 330 dias com a TUF: 37 → 12 contra rivais e 44 → 28 contra
 maiores rivais. A constante é `FREIO_OLHEIRO` em `feed.js`.
 
+## As IAs brigam na faixa do jogador (pedido do dono, 08/09/2026)
+
+Com o olheiro sugerindo menos, o mundo ficou brigando muito acima da
+gente: medido numa temporada de 330 dias, a mediana era de 40 a 42 brigas
+por torcida brasileira no ano (quartis 29–53, Jovem Fla com 139). A faixa
+de um jogador comum fica entre ~20 (quem recusa toda sugestão: calendário
+do trimestre, ataques sofridos e ocorridos do dia de jogo) e ~40 (quem
+aceita metade das sugestões).
+
+Entra `FREIO_IA = 0,4` por cima do `FREIO_BRIGA`, só nas brigas
+espontâneas de IA contra IA: ataque-surpresa (60% das brigas do mundo),
+sombra do jogo, emboscada de estrada, caravana de subsede e guerra de
+filiais. O calendário do trimestre delas (treta marcada e bar), que é o
+mesmo nosso, e os ataques contra nós ficam como estão. Resultado medido:
+mediana 24 por torcida no ano, quartis 17–31, máximo 73; na nossa praça
+(TUF) as rivais ficaram entre 11 e 38. As brigas do mundo no ano caíram
+de ~5.750 pra ~3.700.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

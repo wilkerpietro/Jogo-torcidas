@@ -89,6 +89,15 @@ TO.relacoes = (function(){
      entra na frente. Maior rival é o declarado na fonte, de um lado ou
      do outro, ou relação viva de −70 pra baixo. */
   const FREIO_BRIGA = 0.6;
+  /* O FREIO DAS IAs ENTRE SI (pedido do dono, 08/09/2026): com o olheiro
+     sugerindo menos, o mundo brigava numa faixa muito acima da nossa —
+     mediana de 42 brigas por torcida no ano, contra as ~15 a 25 de um
+     jogador comum. Este fator só entra nas brigas espontâneas de IA
+     contra IA (surpresa, sombra do jogo, estrada, caravana de subsede e
+     guerra de filiais); o calendário do trimestre delas (treta marcada e
+     bar) e os ataques contra nós ficam como estão. Vale por cima do
+     FREIO_BRIGA. */
+  const FREIO_IA = 0.4;
   const PESO_OUTROS = 0.5;
   function ehMaiorRival(E, idA, idB){
     if(!idA || !idB || idA === idB) return false;
@@ -791,7 +800,7 @@ TO.relacoes = (function(){
                 nF, saltos, frotaIA(t));
               t.caixa -= cvf;
               lancarIA(E, id, `Caravana da subsede (${nF} cabeças)`, -cvf);
-              if(U.rng() >= 0.04 * FREIO_BRIGA) continue;   // 2,4% (dono, 08/09/2026)
+              if(U.rng() >= 0.04 * FREIO_BRIGA * FREIO_IA) continue;   // 2,4% × freio das IAs
               const hostil = M().torcidasEm(destino)
                 .filter(x=>x.id !== id && x.id !== E.torcida.id &&
                   !x.incompleta && x.clubeId !== o.clubeId &&
@@ -1487,7 +1496,7 @@ TO.relacoes = (function(){
      registro que a aba Brigas das Notícias mostra — e mexe no
      ranking, porque lá contam os DISPONÍVEIS.
      ======================================================= */
-  const CHANCE_BRIGA_JOGO = 0.18 * FREIO_BRIGA;   // 10,8% por jogo (dono, 08/09/2026)
+  const CHANCE_BRIGA_JOGO = 0.18 * FREIO_BRIGA * FREIO_IA;   // 10,8% × freio das IAs
   function foraDeCombate(E, id){
     const t = (E.mundoTorcidas||{})[id];
     if(!t) return 0;
@@ -2020,7 +2029,7 @@ TO.relacoes = (function(){
       const t = (E.mundoTorcidas||{})[o.id];
       const briga = brigaDe(t);
       const chance = ((QUENTE - rel)/(100 + QUENTE)) * 0.28 * briga / 7
-                     * FREIO_BRIGA * pesoDoRival(E, o.id, v.id);
+                     * FREIO_BRIGA * FREIO_IA * pesoDoRival(E, o.id, v.id);
       if(U.rng() > chance) continue;
       return brigaIA(E, o, v, o.mapa, 'ataque-surpresa');
     }
@@ -2032,7 +2041,7 @@ TO.relacoes = (function(){
   function estradaIA(E, jogos, fora){
     if(!TO.planejamento || !TO.planejamento.caminho) return;
     for(const j of (jogos||[])){
-      if(U.rng() > 0.10 * FREIO_BRIGA) continue;      // 6% (dono, 08/09/2026)
+      if(U.rng() > 0.10 * FREIO_BRIGA * FREIO_IA) continue;      // 6% × freio das IAs
       const casa = M().time(j.c), vis = M().time(j.f);
       if(!casa || !vis || casa.mapa === vis.mapa) continue;
       const viajantes = M().torcidasDe(vis.id)
@@ -2416,7 +2425,7 @@ TO.relacoes = (function(){
         if(r > -20) continue;
         const chance = ((-20 - r)/120) * 0.10 *
           Math.max(brigaDe(m[a.id]), brigaDe(m[b.id]))
-          * FREIO_BRIGA * pesoDoRival(E, a.id, b.id);
+          * FREIO_BRIGA * pesoDoRival(E, a.id, b.id) * FREIO_IA;
         if(U.rng() >= chance) continue;
         brigaIA(E, a, b, cidade, '', {tetoA: lst[x].f.membros,
                                       tetoB: lst[y].f.membros});
@@ -2448,7 +2457,7 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, ehMaiorRival, pesoDoRival, emTregua,
+  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, ehMaiorRival, pesoDoRival, emTregua,
           nivel, hostilidade, marcarAjuda,
           ranking, rankingDoPais, posicaoNoRanking, posicaoNoMundo,
           paisDaTorcida, situacaoFinanceira,
