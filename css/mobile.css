@@ -127,75 +127,65 @@
   #djDica{ display:none; }
   /* o botão fixo de avançar dia não entra na cena */
 
-  /* ---------- o pad ---------- */
+  /* ---------- o pad: o rodapé da cena ----------
+     OS BOTÕES NÃO FICAM NA FRENTE DA BRIGA (pedido do dono, 08/09/2026).
+     O pad deixou de boiar sobre o canvas: é o último bloco da coluna
+     do palco (faixa → cena → pad), com fundo próprio, e o canvas fica
+     com o que sobra da altura. Os nove botões — bater, defender,
+     recuar, agarrar, chamar, fugir, sair, pedra, bomba — dividem UMA
+     linha em partes iguais; a bola de controle vai embaixo dela. */
   .dj-pad{
-    position:fixed; z-index:70;
-    left:0; right:0; bottom:0;
-    display:flex; justify-content:space-between; align-items:flex-end;
-    padding:0 calc(10px + env(safe-area-inset-left))
-            calc(10px + env(safe-area-inset-bottom))
-            calc(10px + env(safe-area-inset-right));
-    pointer-events:none;
+    flex:none; position:relative; z-index:70;
+    display:flex; flex-direction:column; gap:8px;
+    padding:8px calc(8px + env(safe-area-inset-right))
+            calc(8px + env(safe-area-inset-bottom))
+            calc(8px + env(safe-area-inset-left));
+    background:#0e0e0d; border-top:1px solid rgba(255,255,255,.12);
     touch-action:none; user-select:none; -webkit-user-select:none;
   }
-  /* CADA PAD NA SUA TELA.
-     `#djPad` é montado uma vez e nunca era desmontado: depois da
-     primeira briga ele ficava boiando por cima de todas as páginas de
-     gestão. O pad do mapa, que dividia este canto, saiu com o mapa;
-     esta linha fica porque o problema dela é outro e continua de pé: a
-     cruz da cena só existe dentro da cena. Resolve no CSS de propósito:
-     não depende de nenhum código lembrar de apagar nada. */
+  /* CADA PAD NA SUA TELA: `#djPad` é montado uma vez e não é
+     desmontado; fora da cena ele simplesmente não existe na tela. */
   body:not(.em-cena) #djPad{ display:none; }
 
-  .pad-lado{ display:flex; flex-direction:column; gap:8px; pointer-events:none; }
-  /* as quatro formações numa linha só: em paisagem a tela tem 390px de
-     altura e duas fileiras de botão saem pela borda de baixo */
-  .pad-dir{ flex-direction:row; align-items:flex-end; gap:6px; }
-
   .pad-bt{
-    pointer-events:auto;
     touch-action:none; user-select:none; -webkit-user-select:none;
     -webkit-tap-highlight-color:transparent;
-    background:rgba(20,20,22,.82); border:1px solid rgba(255,255,255,.16);
-    color:#e8e4da; font-family:var(--titulo); letter-spacing:.06em;
+    background:#1b1b1d; border:1px solid rgba(255,255,255,.16);
+    color:#e8e4da; font-family:var(--titulo); letter-spacing:.02em;
     border-radius:6px; cursor:pointer;
   }
   .pad-bt.apertado{ background:var(--rubro); border-color:var(--rubro-vivo); }
   .pad-bt.gasto{ opacity:.4; }
 
-  /* sete ações (bater, defender, recuar, agarrar, chamar, fugir, sair)
-     em três colunas acima da bola: numa fileira só elas atravessavam
-     a tela por cima da briga */
-  .pad-acoes{ display:flex; gap:6px; pointer-events:none; flex-wrap:wrap; max-width:246px; }
-
-  /* ---- PAD EMPILHADO: quando as duas colunas não cabem lado a lado ----
-     A classe é posta por `medirPad`, em ponte.js — o número de ações
-     muda com a cena, então corte fixo de largura erra em metade delas.
-     `wrap-reverse` faz a linha nova nascer ACIMA: embaixo fica o que o
-     dedo já procura (ações e bola), e as formações sobem. */
-  .dj-pad.empilhado{ flex-wrap:wrap-reverse; gap:8px; }
-  .dj-pad.empilhado .pad-dir{ flex:1 0 100%; justify-content:flex-end; }
-  .dj-pad.empilhado .pad-esq{ flex:1 1 auto; min-width:0; }
-  .dj-pad.empilhado .pad-acao{ width:auto; min-width:0; padding:0 9px; }
-  /* o estado de medir: ninguém encolhe, ninguém quebra */
-  .dj-pad.medindo{ flex-wrap:nowrap; }
-  .dj-pad.medindo .pad-dir{ flex:0 0 auto; }
-  .dj-pad.medindo .pad-acoes{ flex-wrap:nowrap; }
-  .pad-acao{ width:74px; height:44px; font-size:11px; }
+  .pad-acoes{ display:flex; gap:4px; }
+  /* nove rótulos em 390 px: 38 px por botão. Em Barlow Condensed 9 px
+     "DEFENDER" cabe; se a fonte não carregar, `ajustarRotulosDoPad`
+     (ponte.js) desce o corpo até caber — o rótulo nunca sai cortado */
+  .pad-acoes .pad-bt{
+    flex:1 1 0; min-width:0; height:42px; padding:0 1px;
+    font-size:9px; font-weight:600; line-height:1; letter-spacing:0;
+    font-stretch:condensed; white-space:nowrap; overflow:hidden;
+  }
   .pad-x{ border-color:var(--vermelho); color:var(--vermelho); }
   .pad-enter{ border-color:var(--ouro); color:var(--ouro); }
-  /* pedra e bomba nos números 2 e 3, com o nome pequeno embaixo */
-  .pad-form{ width:58px; height:44px; font-size:16px; font-weight:700;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1; }
-  .pad-form small{ font-size:8px; font-weight:400; letter-spacing:.08em; margin-top:2px; }
-  .pad-form.on{ background:var(--rubro); border-color:var(--rubro-vivo); }
+  .pad-2, .pad-3{ border-color:rgba(232,192,32,.45); }
+  .pad-bola-linha{ display:flex; justify-content:center; }
+  /* DEITADO a tela tem 390 px de altura: a bola vai pro lado da linha
+     de botões, no mesmo rodapé, e a cena fica com o que sobra */
+  @media (orientation: landscape){
+    .dj-pad{ flex-direction:row; align-items:center; gap:10px; }
+    .pad-acoes{ flex:1 1 auto; min-width:0; }
+    .pad-bola-linha{ flex:none; }
+    .pad-bola-linha .pad-bola{ width:88px; height:88px; }
+    .pad-bola-linha .pad-bola-nucleo{ width:44px; height:44px; }
+  }
 
   /* A BOLA DE CONTROLE, no lugar da cruz de WASD (pedido do dono,
      22/08/2026): base redonda, quatro setas discretas marcando os
      pontos cardeais e o núcleo que acompanha o dedo até a borda. O
      curso do núcleo é de 46px — o mesmo BOLA_RAIO de ponte.js. */
   .pad-bola{
-    position:relative; width:132px; height:132px; border-radius:50%;
+    position:relative; width:116px; height:116px; border-radius:50%;
     pointer-events:auto; touch-action:none;
     user-select:none; -webkit-user-select:none;
     -webkit-tap-highlight-color:transparent;

@@ -108,10 +108,10 @@ TO.diaJogo.ponte = (function(){
        (`ligarPinca`). */
     ajustarCanvasCelular();
     if(!redimensionarLigado){ redimensionarLigado=true; addEventListener('resize', ajustarCanvasCelular); }
-    if(estreito() || tres) montarPad();
+    if(estreito() || tres){ montarPad(); ajustarCanvasCelular(); }   // o pad tira altura da cena: mede de novo
     else {
-      const pad=$('djPad'); if(pad) pad.hidden=true;
-      const pai=cv.parentElement; if(pai) pai.classList.remove('com-pad');
+      const pad=$('djPad'); if(pad){ pad.hidden=true; if(pad.parentElement) pad.parentElement.classList.remove('com-pad'); }
+      if(cv.parentElement) cv.parentElement.classList.remove('com-pad');
     }
     montarSliders();
     ligarEntrada();
@@ -558,27 +558,32 @@ TO.diaJogo.ponte = (function(){
      uma linha só delas — a mesma régua da faixa lá em cima.
      ======================================================= */
   let padChave = null;
-  function medirPad(){
+  /* O PAD É O RODAPÉ DA CENA (pedido do dono, 08/09/2026): uma linha
+     só com os nove botões, embaixo do canvas e fora dele, e a bola de
+     controle abaixo. Não há mais duas colunas pra medir — a linha
+     divide a largura em partes iguais (mobile.css). A função fica
+     porque é chamada do laço; não faz nada. */
+  function medirPad(){ ajustarRotulosDoPad(); }
+  /* o rótulo cabe ou o corpo desce: sem a fonte condensada carregada
+     "DEFENDER" não entra em 38 px a 9 px, e rótulo cortado é botão sem
+     nome. Mede uma vez por largura. */
+  let rotulosChave = null;
+  function ajustarRotulosDoPad(){
     const pad = $('djPad');
-    if(!pad || !pad.clientWidth) return;
-    const esq = pad.querySelector('.pad-esq');
-    const dir = pad.querySelector('.pad-dir');
-    if(!esq || !dir) return;
-    const chave = `${pad.clientWidth}|${esq.childElementCount}|`+
-                  `${dir.childElementCount}|`+
-                  `${(esq.querySelector('.pad-acoes')||{}).childElementCount}`;
-    if(chave === padChave) return;
-    padChave = chave;
-    /* medir é perguntar quanto PRECISA: empilhado, a conta daria
-       sempre "coube" e a classe nunca mais sairia */
-    pad.classList.add('medindo');
-    const precisa = esq.scrollWidth + dir.scrollWidth + 24 > pad.clientWidth;
-    pad.classList.remove('medindo');
-    pad.classList.toggle('empilhado', precisa);
+    if(!pad || pad.hidden || !pad.clientWidth) return;
+    const bts = [...pad.querySelectorAll('.pad-acoes .pad-bt')];
+    if(!bts.length) return;
+    const chave = pad.clientWidth + '|' + bts.length + '|' + bts.map(b=>b.textContent).join(',');
+    if(chave === rotulosChave) return;
+    rotulosChave = chave;
+    for(const b of bts) b.style.fontSize = '';
+    const corta = () => bts.some(b => b.scrollWidth > b.clientWidth);
+    let tam = 9;
+    while(corta() && tam > 6.5){ tam -= 0.5; for(const b of bts) b.style.fontSize = tam + 'px'; }
   }
 
   addEventListener('resize', ()=>{
-    palcoLargo = null; faixaChave = null; padChave = null; medirPalco();
+    palcoLargo = null; faixaChave = null; padChave = null; rotulosChave = null; medirPalco();
   });
 
   function atualizarHUD(){
@@ -1014,7 +1019,9 @@ TO.diaJogo.ponte = (function(){
 
   function montarPad(){
     if(!cv) return;
-    const pai = cv.parentElement || document.body;
+    /* o pad mora no PALCO, depois do canvas, e não dentro da caixa dos
+       canvases: é o rodapé da coluna faixa → cena → pad (mobile.css) */
+    const pai = $('djPalco') || cv.parentElement || document.body;
     if(!pai) return;
     if(padMontado){
       const pad=$('djPad');
@@ -1057,8 +1064,6 @@ TO.diaJogo.ponte = (function(){
       setTimeout(()=>{teclas[k]=false;}, 60);
     });
 
-    const esq = document.createElement('div');
-    esq.className = 'pad-lado pad-esq';
     const acoes = document.createElement('div');
     acoes.className = 'pad-acoes';
     /* BOMBA é segurar e arrastar: o ponto de queda anda com o dedo e
@@ -1107,15 +1112,15 @@ TO.diaJogo.ponte = (function(){
          atravessado no meio da briga. Aqui o rótulo é curto e o estado
          (ligado/desligado) sai do mesmo lugar que o do HUD. */
       disparo('enter','SAIR', ()=>{ mandarEntrarOuSair(); }));
-    esq.append(acoes, bolaDeControle());
-
-    const dir = document.createElement('div');
-    dir.className = 'pad-lado pad-dir';
-    const pedra = botao('2', 'pad-form pad-2', ()=>{ if(J) C.arremessar(J,'pedra'); });
-    pedra.innerHTML = '2<small>PEDRA</small>';
-    bomba.className = 'pad-bt pad-form pad-3'; bomba.innerHTML = '3<small>BOMBA</small>';
-    dir.append(pedra, bomba);
-    caixa.append(esq, dir);
+    /* pedra e bomba fecham a mesma linha (os números 2 e 3 são do
+       teclado, não dizem nada no dedo) */
+    const pedra = botao('PEDRA', 'pad-acao pad-2', ()=>{ if(J) C.arremessar(J,'pedra'); });
+    bomba.className = 'pad-bt pad-acao pad-3'; bomba.textContent = 'BOMBA';
+    acoes.append(pedra, bomba);
+    const linhaBola = document.createElement('div');
+    linhaBola.className = 'pad-bola-linha';
+    linhaBola.appendChild(bolaDeControle());
+    caixa.append(acoes, linhaBola);
     pai.appendChild(caixa);
   }
 

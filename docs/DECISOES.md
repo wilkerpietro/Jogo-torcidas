@@ -3851,6 +3851,24 @@ apanhou levanta em 1 s; o boneco do jogador sempre em 1 s.
 bondes debandados, na rua e na praça: todos levantam e a cena fecha com
 "eles correram". Antes, um par ficava deitado até o fim.
 
+## O pad é o rodapé da cena (pedido do dono, 08/09/2026)
+
+**O que o dono viu.** No celular os sete botões de ação ficavam em três
+colunas boiando por cima do canvas, bem onde a briga acontece.
+
+**A decisão.** Os botões não ficam na frente da briga. O pad deixou de
+ser fixo sobre o canvas e virou o último bloco da coluna do palco
+(faixa → cena → pad), com fundo próprio; a cena fica com a altura que
+sobra. Os nove botões — bater, defender, recuar, agarrar, chamar, fugir,
+sair, pedra, bomba — dividem UMA linha em partes iguais, e a bola de
+controle vai embaixo. Deitado, a bola vai pro lado da linha, no mesmo
+rodapé. Pedra e bomba perderam os números 2 e 3 (são teclas, não dizem
+nada no dedo).
+
+**Detalhe.** Nove rótulos em 390 px dão 38 px por botão: em Barlow
+Condensed a 9 px "DEFENDER" cabe; se a fonte não carregar,
+`ajustarRotulosDoPad` desce o corpo até caber.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
