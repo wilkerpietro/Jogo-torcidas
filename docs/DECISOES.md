@@ -3896,6 +3896,29 @@ passa:
 Os recados e a partida abrem embaixo da linha, como antes abriam ao lado
 da parada. A lógica (itinerario.js) não mudou: só o desenho.
 
+## Os aniversários de aliadas numa mensagem por mês (pedido do dono, 08/09/2026)
+
+**O que incomodava.** Um convite por aliada, dez dias antes de cada
+festa, cada um parando o relógio: com trinta aliadas o feed virava spam
+de aniversário.
+
+**A decisão.** Sai UMA mensagem no começo de cada mês (na primeira
+passagem de dia do mês) com as aliadas — relação ≥ 20 ou irmã de clube —
+que fazem aniversário nele, em ordem de data. Cada aliada tem o seu "Ir
+pra festa" e "Não ir" dentro do cartão; quem já respondeu mostra a
+etiqueta ("vamos" / "não vamos") e perde os botões. A mensagem é uma
+decisão: o relógio fica parado até a última aliada ter resposta. Festa
+que já passou quando a lista sai (partida começada no meio do mês) não
+entra.
+
+**Conferido por desencargo, como o dono pediu.** O efeito de cada
+resposta é o mesmo de antes, aliada por aliada: ir lança −R$ 2.000 no
+caixa (6.000 → 4.000 no teste) e soma +8 de relação (30 → 38); não ir
+tira −6 de relação (30 → 24) e −2 de prestígio (12 → 11,6 na régua
+interna). A consequência no cartão soma as festas e as furadas. Os
+botões antigos (`aniv-ir` / `aniv-nao`) continuam existindo pra
+mensagem já dropada em save antigo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

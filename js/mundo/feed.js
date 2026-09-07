@@ -133,6 +133,49 @@ TO.feed = (function(){
   const decisaoAberta = E =>
     (caixas(E), E.feed.find(m => m.peso === 'decisao' && !m.respondido) || null);
 
+  /* A RESPOSTA POR ALIADA na lista mensal de aniversários (dono,
+     08/09/2026). O efeito é exatamente o dos botões antigos
+     (`aniv-ir` / `aniv-nao`, mantidos pra save antigo): ir lança
+     −R$ 2.000 no caixa e soma REL.irAniversario na relação; não ir
+     tira REL.furarAniversario e −2 de prestígio (−0,4 na régua
+     interna). A mensagem fecha quando a última aliada tiver resposta. */
+  function responderAniversario(E, idMsg, torcidaId, ir){
+    caixas(E);
+    const m = E.feed.find(x=>x.id === idMsg);
+    if(!m || m.kind !== 'aniversarios' || m.respondido) return {ok:false};
+    const item = ((m.dados||{}).lista||[]).find(x=>x.torcida === torcidaId);
+    if(!item || item.resposta) return {ok:false};
+    E.relacoes = E.relacoes || {};
+    const REL = TO.relacoes.REL;
+    if(ir){
+      TO.estado.lancar(E, `Presença na festa da ${item.nome}`, -2000);
+      E.relacoes[torcidaId] = Math.max(-100, Math.min(100,
+        TO.relacoes.nivel(E, torcidaId) + REL.irAniversario));
+      TO.relacoes.marcarAjuda(E, torcidaId);
+      item.resposta = 'ir';
+    } else {
+      E.relacoes[torcidaId] = Math.max(-100, Math.min(100,
+        TO.relacoes.nivel(E, torcidaId) - REL.furarAniversario));
+      TO.estado.mexerIndicador(E, 'prestigio', -0.4,
+        `Furamos o aniversário da ${item.nome}`);
+      item.resposta = 'nao';
+    }
+    const lista = m.dados.lista;
+    const foi = lista.filter(x=>x.resposta==='ir').length;
+    const furou = lista.filter(x=>x.resposta==='nao').length;
+    const cada = n => n === 1 ? 'com ela' : 'com cada uma';
+    m.consequencia =
+      (foi ? `${foi} ${foi===1?'festa':'festas'}: ${U.dinheiro(-2000*foi)} · `+
+             `+${REL.irAniversario} de relação ${cada(foi)}. ` : '') +
+      (furou ? `${furou} ${furou===1?'furada':'furadas'}: −${REL.furarAniversario} `+
+               `de relação ${cada(furou)} · Prestígio −${2*furou}.` : '');
+    if(lista.every(x=>x.resposta)){
+      m.respondido = {botao:'lista',
+        rot:`${foi} ${foi===1?'festa':'festas'}, ${furou} ${furou===1?'furada':'furadas'}`};
+    }
+    return {ok:true, fechou: !!m.respondido};
+  }
+
   /* -------------------------------------------------------
      A LINHA DE CONSEQUÊNCIA — sai dos efeitos aplicados,
      nunca do texto.
@@ -481,29 +524,49 @@ TO.feed = (function(){
     /* o convite das outras — SÓ DE ALIADA (correção do dono,
        18/08/2026): a Garra do CRB chamando a TUF pra festa não faz
        sentido. Convida quem a Diplomacia rotula Aliado ou Irmandade
-       (relação viva ≥ 20) e as irmãs de clube. */
-    for(const o of M().jogaveis()){
-      if(o.id === E.torcida.id || o.incompleta || !o.fundacao) continue;
-      const irma = M().saoIrmas && M().saoIrmas(E.torcida.id, o.id);
-      if(!irma && TO.relacoes.nivel(E, o.id) < 20) continue;
-      const aniv = dataDoAniversario(o.id, em10.getFullYear());
-      if(!mesmoDia(aniv, em10)) continue;
-      const idade = em10.getFullYear() - o.fundacao;
-      if(idade <= 0) continue;
-      propor(E, {
-        kind:'aniversario', peso:'decisao', voz:'rua',
-        chave:`aniv|${em10.getFullYear()}|${o.id}`,
-        texto:`Fala irmão, dia ${fmtDia(aniv)} comemoramos ${idade} anos `+
-              `de história. A presença de vocês seria uma honra pra gente. `+
-              `— ${o.nome}`,
-        dados:{torcida:o.id, nome:o.nome},
-        botoes:[
-          {id:'ir',  rot:'Ir pra festa', acao:'aniv-ir',
-           nota:'R$ 2.000 · +3 de relação'},
-          {id:'nao', rot:'Não ir', acao:'aniv-nao',
-           nota:'−3 de relação · −2 de prestígio'}
-        ]
-      });
+       (relação viva ≥ 20) e as irmãs de clube.
+
+       UMA MENSAGEM POR MÊS (pedido do dono, 08/09/2026): um convite
+       por aliada, dez dias antes de cada festa, era spam — com trinta
+       aliadas o feed parava trinta vezes. Agora sai UMA lista no
+       começo de cada mês com as aliadas que fazem aniversário nele, e
+       cada uma tem o seu Ir / Não ir dentro do cartão
+       (`responderAniversario`). O efeito de cada resposta é o mesmo de
+       antes: ir custa R$ 2.000 e aproxima; não ir afasta e queima
+       prestígio. A mensagem só é dada por respondida quando todas
+       tiverem resposta — até lá o relógio fica parado, como em toda
+       decisão. */
+    {
+      const ano = hoje.getFullYear(), mes = hoje.getMonth();
+      const chave = `aniv-mes|${ano}|${mes+1}`;
+      const lista = [];
+      for(const o of M().jogaveis()){
+        if(o.id === E.torcida.id || o.incompleta || !o.fundacao) continue;
+        const irma = M().saoIrmas && M().saoIrmas(E.torcida.id, o.id);
+        if(!irma && TO.relacoes.nivel(E, o.id) < 20) continue;
+        const aniv = dataDoAniversario(o.id, ano);
+        if(aniv.getMonth() !== mes) continue;
+        /* festa que já passou quando a lista sai (partida começada no
+           meio do mês) não entra: não se decide o que já aconteceu */
+        if(aniv.getDate() < hoje.getDate()) continue;
+        const idade = ano - o.fundacao;
+        if(idade <= 0) continue;
+        lista.push({torcida:o.id, nome:o.nome, data:fmtDia(aniv),
+                    dia:aniv.getDate(), idade, resposta:null});
+      }
+      if(lista.length){
+        lista.sort((a,b)=>a.dia-b.dia);
+        const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+                       'agosto','setembro','outubro','novembro','dezembro'];
+        propor(E, {
+          kind:'aniversarios', peso:'decisao', voz:'rua', chave,
+          texto:`Os convites de ${MESES[mes]} chegaram: ${lista.length} `+
+                `${lista.length===1?'aliada faz':'aliadas fazem'} aniversário `+
+                `este mês. Ir custa R$ 2.000 por festa e aproxima; furar afasta `+
+                `e queima na rua. Em quais a gente aparece?`,
+          dados:{ano, mes:mes+1, lista}
+        });
+      }
     }
 
     /* a nossa festa e a do clube */
@@ -2172,7 +2235,7 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
-          registrarConfronto, responder, marcarResposta,
+          registrarConfronto, responder, marcarResposta, responderAniversario,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,

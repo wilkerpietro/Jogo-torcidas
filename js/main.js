@@ -808,6 +808,11 @@
        montava o cartão de novo e a página voltava a fechar */
     : m.kind === 'rodada' ? (m.gzAberto ? 'gz-aberto' : 'gz')
     : m.kind === 'confronto' ? (m.ppAberto ? 'pp-aberto' : 'pp')
+    /* a lista de aniversários responde aliada por aliada: cada resposta
+       muda o cartão antes de a mensagem inteira fechar */
+    : m.kind === 'aniversarios'
+      ? 'aniv-'+(((m.dados||{}).lista||[]).filter(x=>x.resposta).length)+
+        (m.respondido ? '-fim' : '')
     : m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim')
     : (m.kind === 'partida' && m.dados && m.dados.iniciada) ? 'aovivo' : '';
 
@@ -840,7 +845,8 @@
   const ROT_KIND = {abertura:'Abertura', olheiro:'Olheiro',
                     guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
-                    aniversario:'Aniversário', barrival:'Bar rival',
+                    aniversario:'Aniversário', aniversarios:'Aniversários do mês',
+                    barrival:'Bar rival',
                     provocacao:'Provocação', dica:'Dica',
                     /* `placar` fica só por causa de save antigo: a
                        mensagem deixou de ser criada em 22/08/2026 */
@@ -2222,6 +2228,44 @@
           bts.appendChild(b);
         }
         linha.appendChild(bts);
+        bloco.appendChild(linha);
+      }
+      art.appendChild(bloco);
+    }
+
+    /* A LISTA DE ANIVERSÁRIOS DO MÊS (pedido do dono, 08/09/2026): cada
+       aliada numa linha com a data, a idade e o seu Ir / Não ir. Quem
+       já tem resposta mostra a etiqueta e apaga os botões. */
+    const anivs = m.kind === 'aniversarios' && m.dados && m.dados.lista;
+    if(anivs && anivs.length){
+      const REL = TO.relacoes.REL;
+      const bloco = el('div',{class:'bloco-recepcao bloco-anivs'});
+      for(const a of anivs){
+        const linha = el('div',{class:'rec-aliado'+(a.resposta?' pago':'')});
+        linha.appendChild(el('div',{class:'rec-nome', html:
+          `<b>${linkTorcida(a.torcida, a.nome)}</b> <span class="fraco">· dia `+
+          `${a.data} · ${a.idade} anos</span>`+
+          (a.resposta === 'ir' ? ' <span class="tag">vamos</span>'
+           : a.resposta === 'nao' ? ' <span class="tag">não vamos</span>' : '')}));
+        if(!a.resposta){
+          const bts = el('div',{class:'rec-botoes'});
+          const opcoes = [
+            ['Ir pra festa', `R$ 2.000 · +${REL.irAniversario} rel.`, true],
+            ['Não ir', `−${REL.furarAniversario} rel. · −2 prestígio`, false]];
+          for(const [rot, nota, ir] of opcoes){
+            const b = el('button',{class:'rec-bt'+(ir?' on':''),
+              html:`${rot}<small>${nota}</small>`});
+            b.onclick = ()=>{
+              const r = TO.feed.responderAniversario(e, m.id, a.torcida, ir);
+              if(!r.ok) return;
+              TO.estado.salvar();
+              atualizarFeed(); pintarTopo();
+              if(r.fechou) redesenhar();
+            };
+            bts.appendChild(b);
+          }
+          linha.appendChild(bts);
+        }
         bloco.appendChild(linha);
       }
       art.appendChild(bloco);
