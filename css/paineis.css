@@ -981,12 +981,14 @@ table.dados tr.selecionada td{background:#252525}
 }
 .nav-item{position:relative}
 .nav-item .ic-badge{right:auto;left:26px;bottom:6px}
-/* o aviso ao lado do ícone: "Mensagem de {torcida}" */
+/* o aviso ao lado do ícone: "Mensagem de {torcida}" — abaixo das telas
+   cheias (z 55): a página do feed fica viva por baixo do relatório, e o
+   balão aparecia solto em cima do Fim da noite */
 .ic-balao{
   position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
   white-space:nowrap;background:#1b1b1d;border:1px solid var(--rubro-vivo);
   color:#f3dcdc;font-family:var(--corpo);font-size:11.5px;padding:4px 9px;
-  border-radius:4px;z-index:60;pointer-events:none;
+  border-radius:4px;z-index:40;pointer-events:none;
   animation:balao-entra .22s ease-out;box-shadow:0 4px 14px rgba(0,0,0,.5);
 }
 .ic-balao::before{
@@ -1848,3 +1850,40 @@ header.capa-cidade{background-size:cover; background-position:center;
   width:min(300px, 70vw)}
 #tutBaloes .tut-balao{position:static}
 #tutDesfecho{position:fixed; z-index:2410}
+
+/* ---------- O RESUMO DA NOITE (dono, 08/09/2026) ---------- */
+.fim-titulo{
+  font-family:var(--titulo);font-size:24px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;padding:6px 0 12px;border-bottom:3px solid var(--fraco);margin-bottom:12px;
+}
+.fim-titulo.boa{color:var(--verde-vivo);border-color:var(--verde-vivo)}
+.fim-titulo.ruim{color:var(--vermelho);border-color:var(--vermelho)}
+.fim-titulo.neutra{color:var(--texto)}
+.fim-lados{
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:0 10px;align-items:center;margin-bottom:14px;
+}
+.fim-cab{
+  display:flex;align-items:center;gap:7px;padding:6px 0 8px;
+  font-family:var(--titulo);font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  border-bottom:1px solid var(--linha);min-width:0;
+}
+.fim-cab b{min-width:0;overflow-wrap:anywhere;line-height:1.15}
+.fim-cab.nos{grid-column:1}
+.fim-cab.eles{grid-column:3;justify-content:flex-end;text-align:right}
+.fim-val{font-family:var(--mono);font-size:18px;font-variant-numeric:tabular-nums;padding:7px 0;border-bottom:1px solid var(--sulco)}
+.fim-val.nos{text-align:left;color:var(--texto)}
+.fim-val.eles{text-align:right;color:var(--texto)}
+.fim-rot{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--fraco);text-align:center;padding:7px 4px;border-bottom:1px solid var(--sulco);white-space:nowrap;
+}
+.fim-cons .linha-dado b{font-size:14px}
+/* no celular o nome quebra em duas linhas em vez de virar "LEÕE…";
+   o rótulo do meio fica estreito pra sobrar largura pras colunas */
+@media (max-width:480px){
+  .fim-titulo{font-size:19px} .fim-val{font-size:16px}
+  .fim-cab{font-size:11px;letter-spacing:.03em;gap:5px} .fim-cab .brasao-mini,.fim-cab svg{flex:none}
+  .fim-rot{font-size:8px;letter-spacing:.04em;padding:7px 2px}
+  .fim-lados{gap:0 6px}
+}

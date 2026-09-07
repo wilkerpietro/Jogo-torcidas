@@ -7309,6 +7309,15 @@
     TO.estado.bloquear(false);
     /* bomba jogada é bomba que não volta pro estoque (GDD §9.1) */
     const e = E();
+    /* O RESUMO DA NOITE LÊ A DIFERENÇA (pedido do dono, 08/09/2026): o
+       que a briga mudou em relação, moral, prestígio e caixa é medido
+       aqui, antes e depois dos fechamentos — vale pra toda cena, seja
+       qual for o caminho que aplicou o efeito. */
+    const rivalIdCtx = (acao && acao.alvo && acao.alvo.torcidaId) ||
+                       (enc && ((enc.a && enc.a.nossa ? enc.b : enc.a) || {}).torcida) || null;
+    const foto = {dinheiro: e.dinheiro, moral: e.indicadores.moral,
+                  prestigio: e.indicadores.prestigio,
+                  relacao: rivalIdCtx ? TO.relacoes.nivel(e, rivalIdCtx) : null};
     e.estoque = e.estoque || {bombas:0};
     e.estoque.bombas = Math.max(0, e.estoque.bombas - (res.bombasUsadas||0));
     /* bomba deles também sai de estoque (decisão do dono, 18/08/2026):
@@ -7387,11 +7396,28 @@
     soltarTudo('cena');
     /* a cena leva 1,4s pra assentar antes do relatório; a simulada
        não tem o que assentar, e esperar seria tela preta à toa */
+    const rivalCtx = (acao && acao.alvo) ? {id: acao.alvo.torcidaId, nome: acao.alvo.nome}
+                   : enc ? (()=>{ const d = (enc.a && enc.a.nossa) ? enc.b : enc.a;
+                                 return d ? {id: d.torcida, nome: d.nome} : null; })()
+                   : null;
+    const ctxRelatorio = {
+      rival: rivalCtx,
+      cena: (acao && acao.alvo && (acao.alvo.cena || acao.alvo.local)) || (acao && acao.cena) ||
+            (acao && acao.alvo && acao.alvo.tipo) || (enc && enc.local) || '',
+      atacamos: !!(acao && acao.acao === 'atacar') || !!(enc && !enc.sofrido),
+      delta: {
+        dinheiro: Math.round(e.dinheiro - foto.dinheiro),
+        moral: Math.round((e.indicadores.moral - foto.moral)*5*10)/10,
+        prestigio: Math.round((e.indicadores.prestigio - foto.prestigio)*5*10)/10,
+        relacao: foto.relacao == null ? null
+               : Math.round((TO.relacoes.nivel(e, rivalIdCtx) - foto.relacao)*10)/10
+      }
+    };
     setTimeout(()=>{
       TO.diaJogo.ponte.parar();
       $('telaDiaJogo').classList.add('oculto');
       document.body.classList.remove('em-cena');
-      mostrarRelatorio(res, resumo, fecho);
+      mostrarRelatorio(res, resumo, fecho, ctxRelatorio);
     }, res.simulada ? 0 : 1400 / (TO.diaJogo.ponte.velocidade || 1));
   }
 
@@ -7621,6 +7647,7 @@
                 efetivoRival: deles, local: atq.cena || 'bar', bondes },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida,
+                                cena: atq.cena || 'bar',
                                 nome:(o&&o.nome)||'Rival',
                                 nossos, rateio: est && est.rateio,
                                 efetivo:(o&&o.membros)||40}})
@@ -7716,65 +7743,93 @@
       `</div>`});
   }
 
-  function mostrarRelatorio(res, resumo, fecho){
-    /* mesma régua do cartaz: o lado é o que a cena nos deu */
+  /* =======================================================
+     O RESUMO DA NOITE (pedido do dono, 08/09/2026)
+     Título com o resultado e o lugar — "VITÓRIA NO BAR RIVAL",
+     "DERROTA NA ARQUIBANCADA" —, duas colunas (a gente à esquerda,
+     eles à direita) com envolvidos, feridos, presos e "bombas+pedras",
+     e embaixo as consequências: relação, moral, prestígio e dinheiro.
+     ======================================================= */
+  const LUGAR_CENA = [
+    [/^estadio/, 'NA ARQUIBANCADA'], [/^emb-|^emboscada/, 'NA EMBOSCADA'],
+    [/^treta/, 'NA TRETA'], [/^concentracao|^praca/, 'NA PRAÇA'],
+    [/^pista|^rua/, 'NA PISTA'], [/^arredores/, 'NOS ARREDORES'],
+    [/^ct$/, 'NO CT'], [/^comercio/, 'NO COMÉRCIO'], [/^sede/, 'NA SEDE'],
+    [/^loja/, 'NA LOJA'], [/^subsede/, 'NA SUBSEDE'], [/^bar/, 'NO BAR']
+  ];
+  function lugarDaCena(cena, atacamos){
+    const c = String(cena || '');
+    for(const [re, rot] of LUGAR_CENA)
+      if(re.test(c)) return rot === 'NO BAR' ? (atacamos ? 'NO BAR RIVAL' : 'NO NOSSO BAR') : rot;
+    return 'NA RUA';
+  }
+
+  function mostrarRelatorio(res, resumo, fecho, ctx){
+    ctx = ctx || {};
+    const e = E();
     const nossoLado = res.nossoLado === 'visitante' ? 'visitante' : 'mandante';
     const outro = nossoLado === 'mandante' ? 'visitante' : 'mandante';
     const Cap = l => l === 'mandante' ? 'Mandante' : 'Visitante';
-    const caidosDeles  = res['caidos' + Cap(outro)] || 0;
-    const caidosNossos = res['caidos' + Cap(nossoLado)] || 0;
-    $('subRelatorio').textContent = res.motivo;
+    const ganhou = fecho ? !!fecho.ganhou
+                 : (res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu);
+    const correu = !!res.correram;
+    const lugar = lugarDaCena(ctx.cena, ctx.atacamos);
+    const titulo = correu ? `ELES CORRERAM ${lugar}`
+                 : res.tranquila ? 'NOITE TRANQUILA'
+                 : `${ganhou ? 'VITÓRIA' : 'DERROTA'} ${lugar}`;
+    $('subRelatorio').textContent = res.motivo || '';
     const cx = $('corpoRelatorio');
     cx.innerHTML = '';
-    cx.appendChild(cartazDaCena(res, fecho));
-    cx.insertAdjacentHTML('beforeend',
-      `<div class="colunas">
-         <div>
-           <div class="valorao"><span>Prestígio da noite</span>
-             <b class="${res.prestigio>=0?'positivo':'negativo'}">`+
-      `${res.prestigio>0?'+':''}${res.prestigio}</b></div>
-           <div class="linha-dado"><span>Caídos deles / seus</span>
-             <b>${caidosDeles} / ${caidosNossos}</b></div>
-           <div class="linha-dado">
-             <span>${fecho ? 'Chegaram no alvo' : 'Entraram no estádio'}</span>
-             <b>${resumo.entraram.length}</b></div>
-         </div>
-         <div>
-           <div class="linha-dado"><span>XP distribuído</span><b>${resumo.xpTotal}</b></div>
-           <div class="linha-dado"><span>Grade rompida</span><b>${res.rompido?'sim':'não'}</b></div>
-           <div class="linha-dado"><span>Presos</span><b>${resumo.presos.length}</b></div>`+
-      /* na simulada o jogador não viu a briga: então o relatório diz de
-         que lado estava a força, que é o que decidiu o duelo */
-      (res.forca ? `<div class="linha-dado"><span>Força na rua</span>`+
-        `<b>${Math.round(res.forca.nossa)} × ${Math.round(res.forca.deles)}`+
-        ` <small class="fraco">${res.forca.favoritoNosso?'éramos favoritos':'eram favoritos'}</small></b></div>` : '')+
-      `
-         </div>
-       </div>`);
-    /* o que a investida, o assalto ou a cobrança no CT deixaram */
-    if(fecho && (fecho.linhas||[]).length){
+    cx.appendChild(el('h3',{class:`fim-titulo ${correu?'neutra':ganhou?'boa':'ruim'}`, texto:titulo}));
+
+    /* as duas colunas */
+    const ef = res.efetivo || {};
+    const armasDe = l => (res.armas && res.armas[l]) || {pedra:0, bomba:0};
+    const lado = (l, nome, id) => ({
+      nome, id,
+      envolvidos: ef[l] || 0,
+      feridos: res['caidos' + Cap(l)] || 0,
+      presos: res['presos' + Cap(l)] || 0,
+      armas: `${armasDe(l).bomba||0}+${armasDe(l).pedra||0}`
+    });
+    const nos = lado(nossoLado, e.torcida.nome, e.torcida.id);
+    const eles = lado(outro, (ctx.rival && ctx.rival.nome) || 'Rival', ctx.rival && ctx.rival.id);
+    const corDe = id => { const o = id && TO.mundo.torcida(id); return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
+    const linhas = [['Membros envolvidos','envolvidos'], ['Membros feridos','feridos'],
+                    ['Membros presos','presos'], ['Bombas + pedras','armas']];
+    const grade = el('div',{class:'fim-lados'});
+    grade.appendChild(el('div',{class:'fim-cab nos', html:
+      `${chipTorcida(nos.id, corDe(nos.id))}<b>${nos.nome}</b>`}));
+    grade.appendChild(el('div',{class:'fim-cab eles', html:
+      `<b>${eles.id ? linkTorcida(eles.id, eles.nome) : eles.nome}</b>${chipTorcida(eles.id, corDe(eles.id))}`}));
+    for(const [rot, k] of linhas){
+      grade.appendChild(el('div',{class:'fim-val nos', html:`<b>${nos[k]}</b>`}));
+      grade.appendChild(el('div',{class:'fim-rot', texto:rot}));
+      grade.appendChild(el('div',{class:'fim-val eles', html:`<b>${eles[k]}</b>`}));
+    }
+    cx.appendChild(grade);
+
+    /* as consequências */
+    const d = ctx.delta || {};
+    const cons = el('div',{class:'fim-cons'});
+    const item = (rot, v, fmt)=>{
+      if(!v) return;
+      const sobe = v > 0;
+      cons.appendChild(el('div',{class:'linha-dado', html:
+        `<span>${rot}</span><b class="${sobe?'positivo':'negativo'}">${sobe?'+':'−'}${fmt(Math.abs(v))}</b>`}));
+    };
+    if(d.relacao != null && eles.id) item(`Relação com a ${eles.nome}`, d.relacao, v=>String(Math.round(v)));
+    item('Moral', d.moral, v=>String(v));
+    item('Prestígio', d.prestigio, v=>String(v));
+    item('Dinheiro', d.dinheiro, v=>U.dinheiro(v));
+    if(!cons.children.length)
+      cons.appendChild(el('div',{class:'linha-dado', html:'<span class="fraco">Sem consequência além dos feridos.</span>'}));
+    cx.appendChild(el('div',{class:'fase-rot', texto:'Consequências'}));
+    cx.appendChild(cons);
+    /* o que a ação deixou (aposta, saque, faixa rasgada) fica em uma linha */
+    if(fecho && (fecho.linhas||[]).length)
       cx.appendChild(el('div',{class:`fecho-cena ${fecho.ganhou?'boa':'ruim'}`,
         html:(fecho.linhas||[]).map(l=>`<small>${l}</small>`).join('')}));
-    }
-    if(resumo.feridos.length){
-      cx.appendChild(el('div',{class:'titulo-pagina',
-        texto:'Feridos — de 5 a 15 dias fora',
-        estilo:{fontSize:'14px', paddingTop:'12px'}}));
-      for(const m of resumo.feridos)
-        cx.appendChild(el('div',{class:'item ferido', html:
-          `<div class="l1"><span class="nm">${TO.membros.nomeDe(m)}</span>
-             <span class="qt">${TO.membros.CARGOS[m.cargo].nome}</span></div>`}));
-    }
-    if(resumo.presos.length){
-      cx.appendChild(el('div',{class:'titulo-pagina', texto:'Presos',
-        estilo:{fontSize:'14px', paddingTop:'12px'}}));
-      for(const m of resumo.presos)
-        cx.appendChild(el('div',{class:'item preso', html:
-          `<div class="l1"><span class="nm">${TO.membros.nomeDe(m)}</span>
-             <span class="qt">fiança ${U.dinheiro(TO.membros.fianca(m))}</span></div>`}));
-    }
-    if(!resumo.feridos.length && !resumo.presos.length)
-      cx.appendChild(el('div',{class:'em-construcao', texto:'Ninguém ficou pra trás.'}));
     $('telaRelatorio').classList.remove('oculto');
   }
 

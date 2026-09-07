@@ -4142,6 +4142,38 @@ deles)."). O jogo fica com o incidente do estádio (o clima). A escolta
 da aliada anda com a gente no jogo e em qualquer ocorrido na cidade
 dela; nas caravanas, não.
 
+## O resumo da noite (pedido do dono, 08/09/2026)
+
+A tela "Fim da noite" deixa de ser o relatório longo de fichas e vira um
+resumo só:
+
+- **Título com resultado e lugar**: "VITÓRIA NO NOSSO BAR", "DERROTA NA
+  ARQUIBANCADA", "VITÓRIA NA EMBOSCADA", "VITÓRIA NA PISTA"… Quando eles
+  amarelaram e saíram inteiros, "ELES CORRERAM {lugar}"; noite sem ninguém
+  no chão, "NOITE TRANQUILA". O lugar sai da cena (`lugarDaCena`): estádio →
+  arquibancada, emboscada, treta, praça/concentração, pista/rua, arredores,
+  CT, comércio, sede, loja, sub-sede; bar é "NO BAR RIVAL" quando fomos nós
+  que atacamos e "NO NOSSO BAR" quando defendemos.
+- **Duas colunas**, a nossa à esquerda e a outra torcida à direita, com
+  brasão e nome: membros envolvidos, feridos, presos e "bombas + pedras" na
+  forma `2+5` (2 bombas e 5 pedras arremessadas por aquele lado). Ferido
+  aqui é caído sem contar preso, como o resto do jogo já contava.
+- **Consequências** logo abaixo: relação com a outra torcida, moral e
+  prestígio (na régua de 0 a 100) e dinheiro ganho ou perdido, este só
+  quando houve. Os números são a diferença real entre antes e depois de
+  fechar a noite (tirada uma foto dos indicadores antes de aplicar), então
+  já incluem o "defendemos o que é nosso" e o que o teto de 100 deixou
+  entrar.
+- A linha final do fecho (o que o Itinerário/a ação dizia da noite) continua
+  embaixo, como um recado curto.
+
+Fica de fora o bloco ficha a ficha (quem entrou, quem caiu, XP): isso já
+mora na tela da torcida e na notícia única do itinerário.
+
+Corrigido de quebra: o balão "Mensagem de {torcida}" ficava por cima das
+telas cheias (ele mora no ícone do feed, que segue vivo por baixo do
+relatório) — agora fica abaixo delas.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
