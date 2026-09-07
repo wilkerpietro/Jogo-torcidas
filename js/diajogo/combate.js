@@ -2229,7 +2229,11 @@ TO.diaJogo.combate = (function(){
     if(b.derrubado>0){
       b.hp -= Math.max(1,(a.forca*U.entre(0.8,1.2))-b.defesa*0.5)*P.dano*0.55*2.6;
       b.apanhou=0.35; b.tremor=Math.min(6,b.tremor+2.4); b.sozinho=0;
-      if(!b.noChao){ b.noChao=true; b.socorro=0; if(b.lider) aviso(J,'Você está no chão — o bonde te levanta','#d9705f'); }
+      /* O BONECO DO JOGADOR SEMPRE LEVANTA EM 1 S (régua do dono,
+         06/09/2026), mesmo apanhando no chão: o soco lá embaixo machuca,
+         mas não o prende esperando socorro — é o único da cena assim. */
+      const doJogador = b.lider && b.doJogador;
+      if(!b.noChao && !doJogador){ b.noChao=true; b.socorro=0; }
       b.linha='frente'; atacado(J,b);
       if(b.hp<=0) derrubar(J,b);
       return;

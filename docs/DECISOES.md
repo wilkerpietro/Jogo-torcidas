@@ -3752,7 +3752,8 @@ Imbatíveis); **o anel fica no pé do boneco**, desenhado na camada 3D
 junto da sombra (a mesma projeção cisalhada), e não no canvas 2D, onde
 caía no meio do desenho; e **o caído fica com 70% de transparência** (30% de opacidade), nos
 dois lados; e **o derrubado que não apanhou no chão levanta em 1 s**
-(quem apanha lá embaixo continua esperando socorro).
+(quem apanha lá embaixo continua esperando socorro) — **menos o boneco
+do jogador, que levanta em 1 s sempre**, mesmo apanhando no chão.
 
 Limite técnico registrado: a camisa do GLB tem 206 vértices e não tem
 UV, então a cor por vértice sai esfumada — listra fina não se lê.
