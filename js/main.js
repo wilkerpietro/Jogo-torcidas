@@ -495,6 +495,12 @@
       if(painel === 'noticias' && subNoticias === 'mensagens'){ redesenhar(); return; }
       balaoNoIcone('noticias', `Mensagem de ${m.nome}`);
     };
+    TO.feed.ganchos.aoSairTreta = (e, m)=>{
+      atualizarBadges();
+      if(painel === 'noticias' && subNoticias === 'tretas'){ redesenhar(); return; }
+      const b = (m.dados||{}).b || {};
+      balaoNoIcone('noticias', b.nome ? `Treta com a ${b.nome}` : 'Saiu a notícia da treta');
+    };
     montarLateral();
     ligarTelaEstreita();
     pagina = 'feed';
@@ -733,6 +739,11 @@
      ======================================================= */
   const TETO_LISTA = 60;          // quantas mensagens ficam no DOM
   let tetoFeed = TETO_LISTA;
+  /* AS NOTÍCIAS DE TRETA SAÍRAM DO FEED (pedido do dono, 08/09/2026): o
+     Fim da noite já conta a briga; a página do Futebol e Porrada mora em
+     Notícias → Tretas. A história (`e.feed`) continua com elas — é só o
+     rolo do feed que não as desenha. */
+  const feedVisivel = e => (e.feed || []).filter(m => m.kind !== 'confronto');
   let noFeedLista = null, noFeedTopo = null, noFeedQuando = null;
   let feedVistas = new Map();
 
@@ -781,7 +792,7 @@
     const rolo = el('div',{class:'feed-rolo'});
     noFeedLista = el('div',{class:'feed-lista'});
     rolo.appendChild(noFeedLista);
-    const hist = e.feed || [];
+    const hist = feedVisivel(e);
     if(hist.length > tetoFeed){
       const b = el('button',{class:'bt feed-mais',
         texto:`Mostrar mais antigas (${hist.length - tetoFeed})`});
@@ -829,7 +840,7 @@
   function atualizarFeed(){
     const e = E();
     if(!e || !noFeedLista || !noFeedLista.isConnected) return;
-    const hist = (e.feed || []).slice(0, tetoFeed);
+    const hist = feedVisivel(e).slice(0, tetoFeed);
     /* de trás pra frente: cada uma entra por cima da anterior, então a
        última a entrar é a mais nova — que é a que fica no topo */
     for(let i = hist.length - 1; i >= 0; i--){
@@ -2935,14 +2946,17 @@
     pg.innerHTML = '';
     pg.appendChild(el('div',{class:'titulo-pagina', texto:'Notícias'}));
     const naoLidas = TO.feed.mensagensNaoLidas ? TO.feed.mensagensNaoLidas(e) : 0;
+    const tretasNovas = TO.feed.tretasNaoLidas ? TO.feed.tretasNaoLidas(e) : 0;
     pg.appendChild(subabas([
       {id:'mensagens', rot:'Mensagens' + (naoLidas ? ` (${naoLidas})` : '')},
+      {id:'tretas',  rot:'Tretas' + (tretasNovas ? ` (${tretasNovas})` : '')},
       {id:'arquivo', rot:'Arquivo do feed'},
       {id:'brigas',  rot:'Brigas'}
     ], subNoticias, id=>{subNoticias=id; redesenhar();}));
 
     if(subNoticias === 'brigas'){ pg.appendChild(painelBrigasIA(e)); return; }
     if(subNoticias === 'mensagens'){ pg.appendChild(painelMensagens(e)); return; }
+    if(subNoticias === 'tretas'){ pg.appendChild(painelTretas(e)); return; }
 
     const hist = e.feed || [];
     const lista = el('div',{class:'feed-lista'});
@@ -3027,6 +3041,25 @@
   /* a aba BRIGAS: o que o mundo se pegou por conta própria, briga a
      briga, com efetivos, feridos, presos e o jogo que deu o motivo
      (decisão do dono, 17/08/2026) */
+  /* NOTÍCIAS → TRETAS (pedido do dono, 08/09/2026): as brigas NOSSAS,
+     cada uma com a página do Futebol e Porrada, fora do rolo do feed.
+     Abrir a aba dá as notícias por lidas e apaga o número vermelho. */
+  function painelTretas(e){
+    const cx = el('div',{class:'feed-lista tretas-lista'});
+    const lista = TO.feed.tretas ? TO.feed.tretas(e) : [];
+    if(TO.feed.lerTretas){ TO.feed.lerTretas(e); atualizarBadges(); }
+    if(!lista.length){
+      cx.appendChild(el('div',{class:'em-construcao',
+        texto:'Nenhuma treta nossa ainda. Quando sair uma, a notícia cai aqui.'}));
+      return cx;
+    }
+    for(const m of lista.slice(0, 100)) cx.appendChild(cartaoMensagem(e, m));
+    if(lista.length > 100)
+      cx.appendChild(el('div',{class:'linha-dado', html:
+        `<span class="fraco">…e mais ${lista.length-100} tretas mais antigas.</span>`}));
+    return cx;
+  }
+
   function painelBrigasIA(e){
     const cx = el('div');
     const brigas = e.brigasIA || [];
@@ -3093,7 +3126,8 @@
     const e = E();
     if(!e) return;
     const conta = {torcida: pendenciasDaTorcida(e),
-                   noticias: TO.feed.mensagensNaoLidas ? TO.feed.mensagensNaoLidas(e) : 0};
+                   noticias: (TO.feed.mensagensNaoLidas ? TO.feed.mensagensNaoLidas(e) : 0)
+                           + (TO.feed.tretasNaoLidas ? TO.feed.tretasNaoLidas(e) : 0)};
     for(const [pag, n] of Object.entries(conta)){
       for(const b of document.querySelectorAll(`.mapa-ic[data-pag="${pag}"] .ic-badge, .nav-item[data-pag="${pag}"] .ic-badge`)){
         b.textContent = n > 99 ? '99+' : String(n);

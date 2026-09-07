@@ -63,7 +63,7 @@ TO.feed = (function(){
      casca (main.js) pendura em `aoChegarMensagem` o aviso ao lado
      do ícone e o número vermelho.
      ======================================================= */
-  const ganchos = {aoChegarMensagem:null};
+  const ganchos = {aoChegarMensagem:null, aoSairTreta:null};
   function mensagemDe(E, torcidaId, texto, tipo, extra){
     caixas(E);
     const o = M().torcida(torcidaId);
@@ -259,9 +259,21 @@ TO.feed = (function(){
     const m = E.feedFila.shift();
     if(!m) return null;
     E.feed.unshift(m);
+    /* A NOTÍCIA DE TRETA NÃO PASSA PELO FEED (pedido do dono, 08/09/2026):
+       ela continua na história (é dela que o Futebol e Porrada e o
+       arquivo lêem), mas quem a mostra é Notícias → Tretas. Nasce
+       não lida, pro número vermelho e pro balão no ícone. */
+    if(m.kind === 'confronto'){
+      m.lida = false;
+      try{ if(ganchos.aoSairTreta) ganchos.aoSairTreta(E, m); }catch(_){}
+    }
     return m;
   }
   const pendentes = E => (caixas(E), E.feedFila.length);
+  /* as tretas nossas que ainda não foram abertas em Notícias */
+  const tretas = E => (caixas(E), E.feed.filter(m => m.kind === 'confronto'));
+  const tretasNaoLidas = E => tretas(E).filter(m => m.lida === false).length;
+  function lerTretas(E){ for(const m of tretas(E)) if(m.lida === false) m.lida = true; }
 
   /* decisão dropada e sem resposta = tempo parado */
   function travado(E){
@@ -2443,6 +2455,7 @@ TO.feed = (function(){
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
+          tretas, tretasNaoLidas, lerTretas,
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida,

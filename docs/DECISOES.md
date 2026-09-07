@@ -4174,6 +4174,22 @@ Corrigido de quebra: o balão "Mensagem de {torcida}" ficava por cima das
 telas cheias (ele mora no ícone do feed, que segue vivo por baixo do
 relatório) — agora fica abaixo delas.
 
+## As notícias de treta saem do feed (pedido do dono, 08/09/2026)
+
+Com o Fim da noite contando a briga na hora, a notícia do confronto (a
+página do Futebol e Porrada) deixa de rolar no feed. Ela continua
+existindo do mesmo jeito — nasce em `registrarConfronto`, passa pela fila
+e entra na história `e.feed`, de onde o jornal, o arquivo e os saves já
+liam — mas o rolo do feed simplesmente não a desenha.
+
+Quem a mostra é **Notícias → Tretas**, uma aba nova só com as nossas
+brigas, cada uma com o recorte do jornal. Na hora em que a notícia cai,
+o ícone de Notícias ganha o número vermelho (que soma mensagens não
+lidas e tretas não abertas) e o balão "Treta com a {torcida}"; abrir a
+aba dá tudo por lido. Os efeitos da briga não mudam de lugar: relação,
+moral, prestígio e baixas seguem aplicados no fechamento da noite, e a
+linha de consequência continua no cartão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
