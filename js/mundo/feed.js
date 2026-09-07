@@ -48,8 +48,96 @@ TO.feed = (function(){
   function caixas(E){
     if(!Array.isArray(E.feed)) E.feed = [];
     if(!Array.isArray(E.feedFila)) E.feedFila = [];
+    if(!Array.isArray(E.mensagens)) E.mensagens = [];
     E.feedSeq = E.feedSeq || 1;
     return E;
+  }
+
+  /* =======================================================
+     MENSAGENS ENTRE TORCIDAS (pedido do dono, 08/09/2026)
+     O recado de outra torcida não é notícia do feed: mora numa
+     caixa própria (Notícias → Mensagens), com remetente, data e
+     texto. Provocação, convite de aniversário, agradecimento pela
+     presença na festa, agradecimento por receber na nossa cidade e
+     o "estamos juntos" de quem recebe a gente na cidade dela. A
+     casca (main.js) pendura em `aoChegarMensagem` o aviso ao lado
+     do ícone e o número vermelho.
+     ======================================================= */
+  const ganchos = {aoChegarMensagem:null};
+  function mensagemDe(E, torcidaId, texto, tipo){
+    caixas(E);
+    const o = M().torcida(torcidaId);
+    if(!o || !texto) return null;
+    const m = {id: E.feedSeq++, de:torcidaId, nome:o.nome, texto, tipo:tipo||'recado',
+               quando:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
+                       abs:E.data.absoluto||0}, lida:false};
+    E.mensagens.unshift(m);
+    if(E.mensagens.length > 200) E.mensagens.length = 200;
+    try{ if(ganchos.aoChegarMensagem) ganchos.aoChegarMensagem(E, m); }catch(_){}
+    return m;
+  }
+  const mensagensNaoLidas = E => (caixas(E), E.mensagens.filter(m=>!m.lida).length);
+  function lerMensagens(E){ caixas(E); for(const m of E.mensagens) m.lida = true; }
+
+  /* =======================================================
+     O LOTE DE BRIGAS DO DIA DE JOGO (pedido do dono, 08/09/2026)
+     Três brigas num itinerário eram três notícias. Com o lote
+     aberto (a linha do dia abre e fecha), `registrarConfronto`
+     faz TUDO o que fazia — anota a briga, tira as baixas deles
+     de circulação, alimenta o almanaque, manda a provocação — e
+     só guarda a notícia. No fim do dia sai UMA: a página é da
+     maior briga, as outras vão numa lista dentro dela, e a linha
+     de consequência SOMA os efeitos de todas, indicador por
+     indicador. Os efeitos em si já foram aplicados em cada
+     fechamento de cena; aqui é só o registro.
+     ======================================================= */
+  function abrirLote(E){
+    caixas(E);
+    if(E.loteBrigas && E.loteBrigas.aberto) fecharLote(E);
+    E.loteBrigas = {aberto:true, brigas:[]};
+  }
+  const somarEfeitos = lista =>{
+    const soma = new Map();
+    for(const ef of lista) for(const x of (ef||[])){
+      const k = `${x.ind}|${x.dono||''}`;
+      const cur = soma.get(k) || {ind:x.ind, dono:x.dono, delta:0};
+      cur.delta = Math.round((cur.delta + (x.delta||0))*100)/100;
+      soma.set(k, cur);
+    }
+    return [...soma.values()].filter(x=>x.delta);
+  };
+  function fecharLote(E){
+    caixas(E);
+    const L = E.loteBrigas;
+    if(!L || !L.aberto) return null;
+    E.loteBrigas = null;
+    const brigas = L.brigas || [];
+    if(!brigas.length) return null;
+    if(brigas.length === 1) return propor(E, brigas[0]);
+    /* a maior briga manda na página; as outras vão dentro dela */
+    const tam = m => ((m.dados.a||{}).n||0) + ((m.dados.b||{}).n||0);
+    const ord = brigas.slice().sort((x,y)=>tam(y)-tam(x));
+    const principal = ord[0], outras = ord.slice(1);
+    const ganhas = brigas.filter(m=>m.dados.ganhamos).length;
+    const efeitos = somarEfeitos(brigas.map(m=>m.efeitos));
+    const fA = brigas.reduce((s,m)=>s+((m.dados.a||{}).caidos||0),0);
+    const fB = brigas.reduce((s,m)=>s+((m.dados.b||{}).caidos||0),0);
+    const pA = brigas.reduce((s,m)=>s+((m.dados.a||{}).presos||0),0);
+    const rivais = [...new Set(brigas.map(m=>m.dados.b && m.dados.b.nome).filter(Boolean))];
+    return propor(E, Object.assign({}, principal, {
+      tipo: ganhas*2 >= brigas.length ? 'boa' : 'ruim',
+      texto: `Dia de jogo com ${brigas.length} brigas`+
+             (rivais.length ? ` (${rivais.join(', ')})` : '')+
+             `: ${fA} ${fA===1?'ferido nosso':'feridos nossos'}, ${fB} do lado deles`+
+             (pA ? `, ${pA} ${pA===1?'preso nosso':'presos nossos'}` : '')+
+             `. Levamos a melhor em ${ganhas} de ${brigas.length}.`,
+      efeitos,
+      consequencia: linhaDeConsequencia(efeitos),
+      dados: Object.assign({}, principal.dados, {
+        outrasNossas: outras.map(m=>Object.assign({}, m.dados, {efeitos:m.efeitos})),
+        totalNoite:{brigas:brigas.length, ganhas, feridosNossos:fA, feridosDeles:fB, presosNossos:pA}
+      })
+    }));
   }
 
   const horaDe = (E, chave) => {
@@ -153,6 +241,8 @@ TO.feed = (function(){
         TO.relacoes.nivel(E, torcidaId) + REL.irAniversario));
       TO.relacoes.marcarAjuda(E, torcidaId);
       item.resposta = 'ir';
+      mensagemDe(E, torcidaId, `Valeu pela presença, irmão. A festa ficou completa `+
+        `com o bonde de vocês. Casa aberta sempre.`, 'agradecimento');
     } else {
       E.relacoes[torcidaId] = Math.max(-100, Math.min(100,
         TO.relacoes.nivel(E, torcidaId) - REL.furarAniversario));
@@ -558,6 +648,10 @@ TO.feed = (function(){
         if(idade <= 0) continue;
         lista.push({torcida:o.id, nome:o.nome, data:fmtDia(aniv),
                     dia:aniv.getDate(), idade, resposta:null});
+        /* o convite de antes, sem botão, vira mensagem da aliada
+           (pedido do dono, 08/09/2026) */
+        mensagemDe(E, o.id, `Fala irmão, dia ${fmtDia(aniv)} comemoramos ${idade} `+
+          `anos de história. A presença de vocês seria uma honra pra gente.`, 'convite');
       }
       if(lista.length){
         lista.sort((a,b)=>a.dia-b.dia);
@@ -1767,7 +1861,8 @@ TO.feed = (function(){
         b:{id:d.torcidaId, nome:b.nome || 'Rival', n:b.n || 0,
            feridos:b.caidos || 0, presos:b.presos || 0}
       });
-    propor(E, {
+    const noLote = !!(E.loteBrigas && E.loteBrigas.aberto);
+    (noLote ? (m=>E.loteBrigas.brigas.push(m)) : (m=>propor(E, m)))({
       kind:'confronto', peso:'info', tipo: d.ganhamos ? 'boa' : 'ruim',
       voz:'diretor',
       texto: semResistencia
@@ -1832,11 +1927,9 @@ TO.feed = (function(){
       const lista = d.ganhamos ? VOLTA : DEBOCHE;
       const fala = lista[TO.mapa.hash(
         `provoca|${E.data.absoluto}|${d.torcidaId}`) % lista.length];
-      propor(E, {
-        kind:'provocacao', peso:'info', voz:'rua',
-        tipo: d.ganhamos ? '' : 'ruim',
-        texto:`${fala} — ${b.nome}`
-      });
+      /* AS PROVOCAÇÕES SAÍRAM DO FEED (pedido do dono, 08/09/2026): vão
+         pra caixa de mensagens entre torcidas */
+      mensagemDe(E, d.torcidaId, fala, 'provocacao');
     }
   }
 
@@ -2090,6 +2183,8 @@ TO.feed = (function(){
       case 'aniv-ir': {
         marcar();
         const id = (m.dados||{}).torcida;
+        mensagemDe(E, id, `Valeu pela presença, irmão. A festa ficou completa `+
+          `com o bonde de vocês. Casa aberta sempre.`, 'agradecimento');
         TO.estado.lancar(E, `Presença na festa da ${(m.dados||{}).nome}`, -2000);
         E.relacoes = E.relacoes || {};
         E.relacoes[id] = Math.max(-100, Math.min(100,
@@ -2241,6 +2336,8 @@ TO.feed = (function(){
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario,
+          mensagemDe, mensagensNaoLidas, lerMensagens, ganchos,
+          abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,

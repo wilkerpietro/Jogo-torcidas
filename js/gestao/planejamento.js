@@ -321,6 +321,17 @@ TO.planejamento = (function(){
     p.ajuda = {aliado:aliadoId, nome:o.nome, nivel:r.nivel, escolta,
                relacao:rec.relacao, moral: Math.round(moral*5),
                mapa:j.mapaAdv, chave:j.chave};
+    /* a resposta chega como mensagem dela (mensagens entre torcidas) */
+    if(TO.feed && TO.feed.mensagemDe){
+      const TXT = {
+        hospedar: `Estamos juntos. A sede fica aberta pra caravana de vocês — colchão, banho e café. Chega cedo.`,
+        escolta:  `Estamos juntos. Dormem na sede e o nosso bonde anda com vocês até o portão. Aqui ninguém encosta.`,
+        churrasco:`Estamos juntos. Churrasco na sede quando chegarem, e a gente sobe pro estádio de bonde junto. Cidade de vocês.`,
+        nada:     `Irmão, dessa vez não vai dar. Semana pesada por aqui. Fica pra próxima.`
+      };
+      TO.feed.mensagemDe(E, aliadoId, TXT[r.nivel] || TXT.nada,
+                         r.nivel === 'nada' ? 'recusa' : 'juntos');
+    }
     return p.ajuda;
   }
 
@@ -608,6 +619,17 @@ TO.planejamento = (function(){
         + recepcaoDe(nivel).relacao, -100, 100);
       if(nivel !== 'nada') TO.relacoes.marcarAjuda(E, a.id);
       p.pago = p.pago || {}; p.pago[a.id] = true;
+      /* o aliado agradece — ou anota (mensagens entre torcidas, 08/09/2026) */
+      if(TO.feed && TO.feed.mensagemDe){
+        const TXT = {
+          hospedar: 'Obrigado pela casa, irmão. Colchão no salão e café de manhã: ninguém recebe assim. Vocês têm crédito com a gente.',
+          escolta:  'Andar até o portão com o bonde de vocês do lado foi outra coisa. Fica registrado: o que precisar, é só chamar.',
+          churrasco:'Que recepção. Carne, bebida e o bonde junto — isso é irmandade. Quando vierem, a casa é de vocês.',
+          nada:     'Passamos pela cidade de vocês e ninguém apareceu. Anotado.'
+        };
+        TO.feed.mensagemDe(E, a.id, TXT[nivel] || TXT.nada,
+                           nivel === 'nada' ? 'cobranca' : 'agradecimento');
+      }
     }
   }
 

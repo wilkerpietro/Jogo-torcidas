@@ -4027,6 +4027,47 @@ Ficaram de fora, por decisão do dono: o olheiro virar informação, o
 pulo de paradas da linha, o "avançar até", as respostas padrão e o
 simular a semana inteira.
 
+## Uma notícia por dia de jogo (pedido do dono, 08/09/2026)
+
+Três brigas num itinerário eram três "Futebol e Porrada". Agora a linha
+do dia abre um LOTE ao começar e fecha no fim: cada briga continua
+fazendo tudo o que fazia — aplica os efeitos na hora do fechamento da
+cena, anota o placar do ano, tira as baixas deles de circulação,
+alimenta o almanaque, manda a provocação —, só a notícia fica guardada.
+No fim do dia sai UMA: a página é da maior briga, as outras vão numa
+lista dentro dela ("A mesma noite: mais 2 tretas nossas", com quadro
+curto e a consequência de cada uma), e a linha de consequência da
+notícia SOMA os efeitos de todas, indicador por indicador — atenção
+pedida pelo dono. Um lote esquecido num save (aba fechada no meio do
+dia) é fechado ao entrar no jogo. Conferido: três brigas de teste
+viraram uma notícia com "Prestígio nosso +7 · Relação −22 · Moral +0,5",
+que é a soma exata das três.
+
+## O número vermelho nos ícones (pedido do dono, 08/09/2026)
+
+- **Torcida:** quantos membros estão com o status "Pronto p/ promoção"
+  da tabela — a mesma régua (preso e ferido não contam, mesmo com XP).
+- **Notícias:** quantas mensagens de outras torcidas ainda não foram
+  lidas. Abrir a aba Mensagens dá tudo por lido.
+O número fica no canto de baixo à direita do ícone, na coluna do feed e
+na barra lateral, e é refeito a cada repintura do cabeçalho.
+
+## Mensagens entre torcidas (pedido do dono, 08/09/2026)
+
+Notícias ganhou a aba MENSAGENS (a primeira): a comunicação entre
+torcidas, com remetente, data, tipo e texto. Quando uma chega, aparece
+"Mensagem de {torcida}" ao lado do ícone de Notícias por uns segundos, e
+o número do ícone sobe. O que vai pra lá:
+- a **provocação** do rival depois da briga (saiu do feed);
+- o **convite de aniversário** de cada aliada, sem botão (a decisão
+  continua na lista mensal do feed);
+- o **agradecimento** por ir à festa dela;
+- o **agradecimento** por receber o bonde dela na nossa cidade
+  (hospedar, escoltar, churrasco) — e a **cobrança** quando não recebe;
+- o **"estamos juntos"** quando ela topa receber a gente na cidade dela,
+  e a **recusa** quando não dá.
+Os textos estão em feed.js e planejamento.js, sujeitos ao crivo do dono.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

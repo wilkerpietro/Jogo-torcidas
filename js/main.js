@@ -486,6 +486,13 @@
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.add('oculto');
     $('jogo').classList.remove('oculto');
+    /* lote de brigas que ficou aberto num save (a aba fechou no meio
+       do dia): sai agora, senão as próximas brigas seriam engolidas */
+    if(TO.feed.fecharLote) TO.feed.fecharLote(E());
+    TO.feed.ganchos.aoChegarMensagem = (e, m)=>{
+      atualizarBadges();
+      balaoNoIcone('noticias', `Mensagem de ${m.nome}`);
+    };
     montarLateral();
     ligarTelaEstreita();
     pagina = 'feed';
@@ -514,7 +521,8 @@
   function montarMenuIcones(classe){
     const cx = el('div',{class: classe || 'feed-menu'});
     for(const n of NAV){
-      const b = el('button',{class:'mapa-ic', 'data-pag':n.id, html: IC.get(n.ic)});
+      const b = el('button',{class:'mapa-ic', 'data-pag':n.id,
+        html: IC.get(n.ic) + '<i class="ic-badge" hidden></i>'});
       b.title = n.rot;
       b.setAttribute('aria-label', n.rot);
       if(painel === n.id) b.classList.add('aceso');
@@ -531,7 +539,7 @@
     const nav = $('lateral'); nav.innerHTML='';
     for(const n of NAV){
       const b = el('button',{class:'nav-item','data-pag':n.id,
-        html:`${IC.get(n.ic)}<span>${n.rot}</span>`});
+        html:`${IC.get(n.ic)}<span>${n.rot}</span><i class="ic-badge" hidden></i>`});
       b.onclick = ()=>{
         fecharGaveta();
         if(n.id === 'feed'){ fecharPainel(); return; }
@@ -1433,6 +1441,9 @@
     const recados = el('div',{class:'itn-recados'});
     raiz.appendChild(recados);
 
+    /* UMA NOTÍCIA POR DIA DE JOGO (pedido do dono, 08/09/2026): as
+       brigas da linha entram num lote, e a notícia sai no fim do dia */
+    TO.feed.abrirLote(e);
     ITN.raiz = raiz; ITN.linha = linha; ITN.ic = ic; ITN.hora = hora;
     ITN.nome = nome; ITN.estado = estado; ITN.conta = conta;
     ITN.pontos = pontos; ITN.recados = recados;
@@ -1776,6 +1787,8 @@
        sai aqui é só a trava do relógio */
     itnProntos[ITN.msg.id] = ITN.raiz;
     ITN = null;
+    /* a notícia única do dia: as brigas do lote, somadas */
+    TO.feed.fecharLote(E());
     soltarTudo('itinerario');
     redesenhar();
   }
@@ -1978,6 +1991,27 @@
     topo.appendChild(man);
     topo.appendChild(quadroDaNoite(p.quadro));
     rec.appendChild(topo);
+
+    /* AS OUTRAS TRETAS NOSSAS DA NOITE (lote do itinerário): uma
+       linha por briga, com o quadro curto e a consequência dela */
+    if(p.nossasOutras && p.nossasOutras.length){
+      const bl = el('div',{class:'pp-outras pp-nossas'});
+      bl.appendChild(el('div',{class:'gz-secao', texto:
+        `A mesma noite: mais ${p.nossasOutras.length} ${p.nossasOutras.length===1?'treta nossa':'tretas nossas'}`}));
+      for(const x of p.nossasOutras){
+        const veredito = x.semResistencia ? 'sem resistência'
+          : x.empate ? 'ninguém levou a melhor'
+          : x.ganhamos ? 'levamos a melhor' : `a ${x.b.nome} levou a melhor`;
+        bl.appendChild(el('div',{class:'pp-nota', html:
+          `<p><b>${linkTorcida(x.a.id, x.a.nome)}</b> ${x.a.n} × ${x.b.n} `+
+          `<b>${linkTorcida(x.b.id, x.b.nome)}</b> <span class="onde">${x.onde}</span></p>`+
+          `<small>${x.a.feridos} ${x.a.feridos===1?'ferido nosso':'feridos nossos'}`+
+          `${x.a.presos ? `, ${x.a.presos} ${x.a.presos===1?'preso':'presos'}` : ''} · `+
+          `${x.b.feridos} do lado deles · ${veredito}`+
+          `${x.consequencia ? `<br><span class="fraco">${x.consequencia}</span>` : ''}</small>`}));
+      }
+      rec.appendChild(bl);
+    }
 
     /* as outras brigas do dia, atrás do botão */
     const c = p.completo;
@@ -2640,7 +2674,7 @@
     pg.appendChild(rolo);
   }
 
-  let subNoticias = 'arquivo';
+  let subNoticias = 'mensagens';
   /* =======================================================
      O COFRE DE SAVES (pedido do dono, 23/08/2026)
 
@@ -2891,12 +2925,15 @@
     if(!e || !pg) return;
     pg.innerHTML = '';
     pg.appendChild(el('div',{class:'titulo-pagina', texto:'Notícias'}));
+    const naoLidas = TO.feed.mensagensNaoLidas ? TO.feed.mensagensNaoLidas(e) : 0;
     pg.appendChild(subabas([
+      {id:'mensagens', rot:'Mensagens' + (naoLidas ? ` (${naoLidas})` : '')},
       {id:'arquivo', rot:'Arquivo do feed'},
       {id:'brigas',  rot:'Brigas'}
     ], subNoticias, id=>{subNoticias=id; redesenhar();}));
 
     if(subNoticias === 'brigas'){ pg.appendChild(painelBrigasIA(e)); return; }
+    if(subNoticias === 'mensagens'){ pg.appendChild(painelMensagens(e)); return; }
 
     const hist = e.feed || [];
     const lista = el('div',{class:'feed-lista'});
@@ -2909,6 +2946,35 @@
         `<span class="fraco">…e mais ${hist.length-200} mensagens mais `+
         `antigas.</span>`}));
     pg.appendChild(lista);
+  }
+
+  /* A ABA MENSAGENS (pedido do dono, 08/09/2026): a comunicação entre
+     torcidas — provocação, convite, agradecimento, o "estamos juntos".
+     Abrir a aba dá tudo por lido, e o número do ícone some. */
+  const ROT_MSG = {provocacao:'Provocação', convite:'Convite', agradecimento:'Agradecimento',
+                   juntos:'Estamos juntos', recusa:'Recusa', cobranca:'Cobrança', recado:'Recado'};
+  function painelMensagens(e){
+    const cx = el('div');
+    const lista = e.mensagens || [];
+    const c = cartao('Mensagens de outras torcidas', `${lista.length} ${lista.length===1?'recado':'recados'}`);
+    if(!lista.length)
+      c.corpo.innerHTML = '<div class="em-construcao">Ninguém mandou recado ainda.</div>';
+    const corDe = id => { const o = TO.mundo.torcida(id); return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
+    for(const m of lista.slice(0, 120)){
+      const q = m.quando || {};
+      const dia = TO.feed.NOME_DIA ? (TO.feed.NOME_DIA[q.dia] || '') : '';
+      const quando = q.semana ? `${q.ano} · sem. ${q.semana}${dia ? ' · '+dia : ''}` : '';
+      c.corpo.appendChild(el('div',{class:'msg-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo, html:
+        `<div class="mt-cab">${chipTorcida(m.de, corDe(m.de))}<b>${linkTorcida(m.de, m.nome)}</b>`+
+        `<span class="tag">${ROT_MSG[m.tipo]||m.tipo}</span><span class="quando">${quando}</span></div>`+
+        `<p>${m.texto}</p>`}));
+    }
+    cx.appendChild(c);
+    /* lido: ao pintar */
+    if(TO.feed.lerMensagens && lista.some(m=>!m.lida)){
+      TO.feed.lerMensagens(e); TO.estado.salvar(); atualizarBadges();
+    }
+    return cx;
   }
 
   /* a aba BRIGAS: o que o mundo se pegou por conta própria, briga a
@@ -2963,9 +3029,45 @@
      Membros e prestígio não foram pedidos em lugar nenhum, e sumir sem
      destino não é opção: vão junto do saldo na faixa, que é onde os três
      já eram lidos lado a lado. */
+  /* OS NÚMEROS VERMELHOS NOS ÍCONES (pedido do dono, 08/09/2026):
+     Torcida mostra quantos membros estão prontos pra promoção; Notícias
+     mostra as mensagens de outras torcidas ainda não lidas. */
+  /* a MESMA régua do status "Pronto p/ promoção" da tabela de membros:
+     preso e ferido não contam, mesmo com XP de sobra */
+  function pendenciasDaTorcida(e){
+    let n = 0;
+    for(const m of (e.membros||[])){
+      if(m.preso || m.ferido) continue;
+      if(TO.membros.podePromover(e, m).ok) n++;
+    }
+    return n;
+  }
+  function atualizarBadges(){
+    const e = E();
+    if(!e) return;
+    const conta = {torcida: pendenciasDaTorcida(e),
+                   noticias: TO.feed.mensagensNaoLidas ? TO.feed.mensagensNaoLidas(e) : 0};
+    for(const [pag, n] of Object.entries(conta)){
+      for(const b of document.querySelectorAll(`.mapa-ic[data-pag="${pag}"] .ic-badge, .nav-item[data-pag="${pag}"] .ic-badge`)){
+        b.textContent = n > 99 ? '99+' : String(n);
+        b.hidden = !n;
+      }
+    }
+  }
+  /* o aviso ao lado do ícone: "Mensagem de {torcida}", uns segundos */
+  function balaoNoIcone(pag, texto){
+    const ic = document.querySelector(`.feed-menu .mapa-ic[data-pag="${pag}"]`);
+    if(!ic || !ic.isConnected) return;
+    const velho = ic.querySelector('.ic-balao'); if(velho) velho.remove();
+    const b = el('span',{class:'ic-balao', texto});
+    ic.appendChild(b);
+    setTimeout(()=>b.remove(), 3800);
+  }
+
   function pintarTopo(){
     const e = E();
     if(!e) return;
+    atualizarBadges();
     const dt = TO.estado.dataTexto();
     const txtQuando = noFeedQuando && noFeedQuando.querySelector('.quando-txt');
     if(txtQuando && txtQuando.isConnected){

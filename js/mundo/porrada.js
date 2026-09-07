@@ -509,7 +509,22 @@ TO.porrada = (function(){
         empate
       },
       /* as outras brigas do dia, atrás do botão */
-      completo: outrasBrigas(E, q, proxima)
+      completo: outrasBrigas(E, q, proxima),
+      /* AS OUTRAS TRETAS NOSSAS DA MESMA NOITE (lote do itinerário,
+         08/09/2026): uma linha por briga, sempre à vista */
+      nossasOutras: (d.outrasNossas || []).map(x=>{
+        const xa = x.a || {}, xb = x.b || {};
+        const emp = !x.ganhamos && (xa.caidos||0) === (xb.caidos||0);
+        return {
+          onde: x.lnt ? 'na LNT' : ondeDe(x),
+          a:{nome:xa.nome, id:xa.id, n:xa.n||0, feridos:xa.caidos||0, presos:xa.presos||0},
+          b:{nome:xb.nome, id:xb.id, n:xb.n||0, feridos:xb.caidos||0, presos:xb.presos||0},
+          ganhamos: !!x.ganhamos, empate: emp, semResistencia: !!x.semResistencia,
+          consequencia: TO.feed && TO.feed.linhaDeConsequencia
+            ? TO.feed.linhaDeConsequencia(x.efeitos || []) : ''
+        };
+      }),
+      totalNoite: d.totalNoite || null
     };
   }
 
