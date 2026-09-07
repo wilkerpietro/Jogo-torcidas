@@ -157,7 +157,10 @@
   .pad-bt.apertado{ background:var(--rubro); border-color:var(--rubro-vivo); }
   .pad-bt.gasto{ opacity:.4; }
 
+  .pad-linhas{ display:flex; flex-direction:column; gap:6px; min-width:0; }
   .pad-acoes{ display:flex; gap:4px; }
+  /* a linha de cima é a dos mais usados: quatro botões maiores */
+  .pad-acoes.pad-principais .pad-bt{ height:52px; font-size:12px; letter-spacing:.04em; }
   /* nove rótulos em 390 px: 38 px por botão. Em Barlow Condensed 9 px
      "DEFENDER" cabe; se a fonte não carregar, `ajustarRotulosDoPad`
      (ponte.js) desce o corpo até caber — o rótulo nunca sai cortado */
@@ -174,7 +177,8 @@
      de botões, no mesmo rodapé, e a cena fica com o que sobra */
   @media (orientation: landscape){
     .dj-pad{ flex-direction:row; align-items:center; gap:10px; }
-    .pad-acoes{ flex:1 1 auto; min-width:0; }
+    .pad-linhas{ flex:1 1 auto; min-width:0; }
+    .pad-acoes.pad-principais .pad-bt{ height:46px; }
     .pad-bola-linha{ flex:none; }
     .pad-bola-linha .pad-bola{ width:88px; height:88px; }
     .pad-bola-linha .pad-bola-nucleo{ width:44px; height:44px; }

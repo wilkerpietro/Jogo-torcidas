@@ -3869,6 +3869,17 @@ nada no dedo).
 Condensed a 9 px "DEFENDER" cabe; se a fonte não carregar,
 `ajustarRotulosDoPad` desce o corpo até caber.
 
+## Os mais usados em cima, maiores; e a câmera mais perto (pedido do dono, 08/09/2026)
+
+- O rodapé da cena ganha duas linhas: em cima, maiores (52 px, corpo
+  12), Bater, Defender, Pedra e Bomba — os que o dedo procura o tempo
+  todo; embaixo, Recuar, Agarrar, Chamar, Fugir e Sair. A bola de
+  controle continua abaixo (ao lado, deitado).
+- O zoom padrão do celular sobe de 2,4× pra 3,4× e o teto da pinça de
+  4× pra 5×: com a briga refinada nos bonecos, de longe não dava pra
+  ler quem bate em quem. A câmera segue o líder como antes, e a seta
+  da borda diz onde está o outro bonde.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

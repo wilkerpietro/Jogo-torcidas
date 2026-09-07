@@ -228,8 +228,11 @@ TO.diaJogo.ponte = (function(){
      devolvida por `ajustar` já carrega o zoom e o deslocamento.
      ======================================================= */
   let zoom=1;
-  const ZOOM_MAX=4;
-  const ZOOM_CELULAR=2.4;
+  const ZOOM_MAX=5;
+  /* MAIS PERTO (pedido do dono, 08/09/2026): com a briga refinada nos
+     bonecos, 2,4× já não deixava ler quem bate em quem. 3,4× no celular;
+     o teto sobe junto pra pinça ainda ter pra onde ir. */
+  const ZOOM_CELULAR=3.4;
   /* CELULAR: A CENA É A TELA INTEIRA (pedido do dono, 05/09/2026).
      O palco vira tela cheia pelo CSS (cenas.css, ≤900 px) e o pad fica
      por cima dela; aqui o canvas ganha a resolução da tela (até 1,5×
@@ -1099,9 +1102,14 @@ TO.diaJogo.ponte = (function(){
     /* Q bate (toque), E defende (segurar), R recua; pedra e bomba
        ficam do outro lado, nos números 2 e 3 */
     const defender = botao('DEFENDER', 'pad-acao pad-e', ()=>{ teclas.e=true; }, ()=>{ teclas.e=false; if(J) C.soltarDefesa(J, liderVivo()); });
-    acoes.append(
+    /* OS MAIS USADOS NA LINHA DE CIMA, MAIORES (pedido do dono,
+       08/09/2026): bater, defender, pedra e bomba; o resto embaixo */
+    const principais = document.createElement('div');
+    principais.className = 'pad-acoes pad-principais';
+    principais.append(
       disparo('q','BATER', ()=>{ if(J){ const l=liderVivo(); if(l) C.bater(J, l); } }),
-      defender,
+      defender);
+    acoes.append(
       disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
       disparo('f','AGARRAR',()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }),
       disparo('c','CHAMAR',()=>{ if(J) C.chamar(J, C.ladoDoJogador(J)); }),
@@ -1116,11 +1124,14 @@ TO.diaJogo.ponte = (function(){
        teclado, não dizem nada no dedo) */
     const pedra = botao('PEDRA', 'pad-acao pad-2', ()=>{ if(J) C.arremessar(J,'pedra'); });
     bomba.className = 'pad-bt pad-acao pad-3'; bomba.textContent = 'BOMBA';
-    acoes.append(pedra, bomba);
+    principais.append(pedra, bomba);
+    const linhas = document.createElement('div');
+    linhas.className = 'pad-linhas';
+    linhas.append(principais, acoes);
     const linhaBola = document.createElement('div');
     linhaBola.className = 'pad-bola-linha';
     linhaBola.appendChild(bolaDeControle());
-    caixa.append(acoes, linhaBola);
+    caixa.append(linhas, linhaBola);
     pai.appendChild(caixa);
   }
 
