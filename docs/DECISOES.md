@@ -4068,6 +4068,78 @@ o número do ícone sobe. O que vai pra lá:
   e a **recusa** quando não dá.
 Os textos estão em feed.js e planejamento.js, sujeitos ao crivo do dono.
 
+## O olheiro só sugere; o planejamento vai pra Mensagens; a dívida cobra vingança (pedido do dono, 08/09/2026)
+
+**O relatório semanal saiu do feed.** A tabela dos jogos com "Atacar /
+Ir em paz / Seguir padrão" não existe mais. O planejamento virou coisa
+que o jogador faz quando quer, pelo botão "Planejar ataque" em Notícias
+→ Mensagens (abre a mesma tela de sempre, com os alvos da semana). A
+CARAVANA continua no feed, sempre: "Chefe, domingo o Fortaleza joga
+fora, em Goiânia. Monta a caravana."
+
+**No feed fica só a sugestão do olheiro**, e ela só aparece com
+OPORTUNIDADE do calendário — nunca inventa jogo:
+- rival na nossa cidade (jogo dela aqui, o nosso ou de outro clube):
+  "Chefe, o time da {torcida} vai jogar aqui em {cidade} {dia}. Acho
+  interessante a gente bolar um ataque pra cima deles, esses vermes na
+  nossa cidade não tem vez." — botões "Bolar o ataque" e "Deixar quieto";
+- a gente na cidade dela (nosso jogo fora): "Chefe, como vamos viajar
+  pra {cidade} {dia}, bora aproveitar pra pegar os vermes da {torcida}
+  na casa deles.";
+- vale sugestão só contra rival de verdade: dívida, rivalidade declarada
+  (rival ou maior rival) ou relação de −45 pra baixo; hostil de −15 não
+  para o dia.
+
+**A dívida.** Apanhou de uma torcida (perdeu a briga), fica anotado onde
+e em que mês (`E.dividas`). Na próxima oportunidade do calendário com
+ela, a sugestão passa na frente das outras e cobra: "Chefe, a gente
+ainda não engoliu o que esses caras da {torcida} fizeram com a gente em
+{cidade}. Eles vão jogar em {nossa cidade} {dia}. É uma oportunidade de
+vingar o que eles fizeram com a gente em {mês}." (fora: "A gente vai
+jogar em {cidade deles} {dia}…"). O botão vira "Vingar". Ganhar dela
+quita a dívida.
+
+**Os pedidos de recepção saíram do olheiro**: a aliada que vem pra nossa
+cidade pede casa por mensagem (ver abaixo).
+
+## Cinco mensagens novas entre torcidas (pedido do dono, 08/09/2026)
+
+1. **Pedido de casa.** A aliada que vem pra nossa cidade esta semana
+   manda "Fala irmão, vamos a {cidade} {dia} pro jogo do {clube}, uns
+   {n} de bonde. Tem como receber a gente?" — com os quatro níveis de
+   recepção e o custo por cabeça na hora; a escolha entra no plano e a
+   conta vira no dia do jogo, como sempre.
+2. **Agradecimento pela escolta.** Depois da briga da escolta em que a
+   gente desceu: "Voltamos inteiros por causa do bonde de vocês no
+   portão. Isso a gente não esquece." (perdendo: "Apanhamos juntos, mas
+   vocês desceram…").
+3. **Cobrança.** Ficamos de fora da briga da escolta: "Nosso pessoal
+   apanhou na cidade de vocês e ninguém desceu. A gente veio de longe
+   confiando. Anotado."
+4. **Proposta de trégua.** Rival com quem já houve 3 brigas no ano e
+   relação de −55 pra baixo manda "Muito sangue esse ano… Trégua até o
+   fim da temporada?" — uma vez por ano, por rival. Aceitar: +15 de
+   relação e trégua até o fim do ano civil — ela não marca ataque contra
+   nós, não entra nos nossos alvos, não emboscamos nem somos emboscados
+   por ela na rota, não há encontro de rua e ela não provoca. Recusar:
+   −5.
+5. **Aviso de treta marcada.** O rival manda "Hoje à noite, no {bairro},
+   {n} contra {n}. {aposta} na roda. Aparece." — a decisão continua no
+   feed.
+
+## O itinerário em três fases (pedido do dono, 08/09/2026)
+
+Caravana · ida, O jogo, Caravana · volta (em casa: Ida ao estádio, O
+jogo, Volta do estádio). As paradas detalhadas continuam sendo montadas
+por baixo — são elas que sabem ONDE e QUEM —, mas a linha mostra só as
+três fases, e cada fase tem NO MÁXIMO UM ocorrido: a investida marcada
+pelo jogador passa na frente, depois o ataque sofrido, depois a
+emboscada. O cartão diz o lugar e a torcida ("Pegaram a caravana na
+estrada. A Os Imbatíveis fechou a pista. Foi em Bahia (Chegada na praça
+deles)."). O jogo fica com o incidente do estádio (o clima). A escolta
+da aliada anda com a gente no jogo e em qualquer ocorrido na cidade
+dela; nas caravanas, não.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

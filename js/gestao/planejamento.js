@@ -1116,6 +1116,7 @@ TO.planejamento = (function(){
       /* `crua` é pra quem precisa saber se são TODAS aliadas — quem
          responde isso é a lista sem o filtro */
       .filter(a=>(ctx && ctx.crua) || !a.aliada)
+      .filter(a => !(TO.relacoes.emTregua && TO.relacoes.emTregua(E, a.id)))
       .sort((a,b)=> a.relacao - b.relacao);
   }
 
@@ -1163,6 +1164,8 @@ TO.planejamento = (function(){
          porta de quem PRECISA das aliadas — quem pergunta se são todas
          da casa, e a tela da traição. */
       .filter(a => ctx.crua || !a.aliada)
+      /* trégua aceita: fora da lista até o fim do ano */
+      .filter(a => !(TO.relacoes.emTregua && TO.relacoes.emTregua(E, a.id)))
       .sort((a,b)=> a.relacao - b.relacao);
   }
 
@@ -1385,6 +1388,7 @@ TO.planejamento = (function(){
       if(M().saoIrmas(E.torcida.id, o.id)) continue;
       const rel = TO.relacoes.nivel(E, o.id);
       if(rel > -15) continue;
+      if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, o.id)) continue;
       /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
       const viva = TO.relacoes.disponiveisIA(E, o.id);
       if(viva < crew * 0.7) continue;

@@ -64,16 +64,20 @@ TO.feed = (function(){
      do ícone e o número vermelho.
      ======================================================= */
   const ganchos = {aoChegarMensagem:null};
-  function mensagemDe(E, torcidaId, texto, tipo){
+  function mensagemDe(E, torcidaId, texto, tipo, extra){
     caixas(E);
     const o = M().torcida(torcidaId);
     if(!o || !texto) return null;
+    extra = extra || {};
+    /* chave: a mesma mensagem não sai duas vezes (pedido da semana, trégua do ano) */
+    if(extra.chave && E.mensagens.some(x=>x.chave === extra.chave)) return null;
     /* a mesma torcida não repete o mesmo recado no mesmo dia (duas
        brigas com ela no mesmo dia davam a mesma provocação em dobro) */
     const abs = E.data.absoluto||0;
     if(E.mensagens.some(x=>x.de===torcidaId && x.texto===texto && (x.quando||{}).abs===abs))
       return null;
     const m = {id: E.feedSeq++, de:torcidaId, nome:o.nome, texto, tipo:tipo||'recado',
+               chave: extra.chave || null, dados: extra.dados || null, resposta:null,
                quando:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
                        abs:E.data.absoluto||0}, lida:false};
     E.mensagens.unshift(m);
@@ -143,6 +147,47 @@ TO.feed = (function(){
         totalNoite:{brigas:brigas.length, ganhas, feridosNossos:fA, feridosDeles:fB, presosNossos:pA}
       })
     }));
+  }
+
+  const MES_NOME = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+                    'agosto','setembro','outubro','novembro','dezembro'];
+  /* a cidade onde a briga de hoje aconteceu: na viagem, a deles */
+  function cidadeDeHoje(E){
+    const j = E.proximoJogo;
+    if(j && !j.casa && j.cidadeAdv && Math.abs(E.data.dia - (j.dia||6)) <= 1)
+      return j.cidadeAdv;
+    return TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(E.torcida.mapa) : E.torcida.mapa;
+  }
+
+  /* RESPOSTA A UMA MENSAGEM COM BOTÕES (pedido de recepção, trégua) */
+  function responderMensagemDe(E, idMsg, escolha){
+    caixas(E);
+    const m = E.mensagens.find(x=>x.id === idMsg);
+    if(!m || m.resposta) return {ok:false};
+    const d = m.dados || {};
+    if(m.tipo === 'pedido'){
+      PL().definirRecepcao(E, m.de, escolha);
+      const r = PL().recepcaoDe(escolha);
+      m.resposta = escolha;
+      m.consequencia = `${r.rot}: ${r.porCabeca ? U.dinheiro(r.porCabeca * (d.n||0)) + ' no dia do jogo · ' : ''}`+
+                       `${r.relacao>0?'+':''}${r.relacao} de relação`;
+      return {ok:true};
+    }
+    if(m.tipo === 'tregua'){
+      E.relacoes = E.relacoes || {};
+      if(escolha === 'aceitar'){
+        E.treguas = E.treguas || {};
+        E.treguas[m.de] = E.data.ano;
+        E.relacoes[m.de] = U.limitar(TO.relacoes.nivel(E, m.de) + 15, -100, 100);
+        m.consequencia = 'Trégua até o fim do ano: ninguém procura ninguém. Relação +15.';
+      } else {
+        E.relacoes[m.de] = U.limitar(TO.relacoes.nivel(E, m.de) - 5, -100, 100);
+        m.consequencia = 'Recusada. Relação −5 — e eles sabem.';
+      }
+      m.resposta = escolha;
+      return {ok:true};
+    }
+    return {ok:false};
   }
 
   const horaDe = (E, chave) => {
@@ -299,8 +344,27 @@ TO.feed = (function(){
      simular os jogos do dia. A ordem aqui é a ordem em que as
      mensagens caem.
      ======================================================= */
+  /* A PROPOSTA DE TRÉGUA (mensagens entre torcidas, 08/09/2026): rival
+     com quem já houve 3 brigas no ano, relação de −55 pra baixo, manda
+     "muito sangue esse ano" — uma vez por ano, por rival. Aceitar ou
+     recusar é na tela de Mensagens. */
+  function treguasDoDia(E){
+    const bc = E.brigasCom || {};
+    for(const [id, c] of Object.entries(bc)){
+      if(c.ano !== E.data.ano || c.n < 3) continue;
+      if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, id)) continue;
+      if(TO.relacoes.nivel(E, id) > TO.relacoes.QUENTE) continue;
+      const o = M().torcida(id);
+      if(!o) continue;
+      mensagemDe(E, id, `Muito sangue esse ano. ${c.n} vezes a gente se pegou, e dos dois `+
+        `lados tem gente no hospital. Trégua até o fim da temporada?`, 'tregua',
+        {chave:`tregua|${E.data.ano}|${id}`, dados:{ano:E.data.ano}});
+    }
+  }
+
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
+    treguasDoDia(E);
     olheiroDoDia(E);
     guerraDeHoje(E);
     eventoDoTrimestreHoje(E);
@@ -944,107 +1008,112 @@ TO.feed = (function(){
      que reportam hoje entram na MESMA mensagem, cada um com suas
      estimativas. O jogo fora entra no mesmo relatório quando cai no
      mesmo dia — o botão da caravana vem junto. */
+  /* =======================================================
+     O OLHEIRO SÓ SUGERE (pedido do dono, 08/09/2026)
+     O relatório semanal com tabela e três botões saiu do feed. O
+     planejamento virou coisa que o jogador faz quando quer, em
+     Notícias → Mensagens ("Planejar ataque"). No feed fica só a
+     SUGESTÃO do olheiro, e ela só aparece com OPORTUNIDADE do
+     calendário: rival na nossa cidade (jogo dela aqui), ou a gente
+     na cidade dela (nosso jogo fora). A DÍVIDA passa na frente:
+     apanhou dela em outra praça, o olheiro cobra a vingança na
+     primeira oportunidade. A caravana continua no feed, sempre.
+     Nada aqui inventa jogo: tudo sai do calendário da temporada.
+     ======================================================= */
   function olheiroDoDia(E){
     const hoje = E.data.dia;
     const meu = E.torcida.clubeId;
+    const cidadeNossa = TO.financeiro.nomeCidade
+      ? TO.financeiro.nomeCidade(E.torcida.mapa) : E.torcida.mapa;
+    const dividas = E.dividas || {};
+    /* a régua de "quem vale a sugestão": dívida > maior rival > relação */
+    const nota = id => (dividas[id] ? 1000 : 0)
+      + (TO.relacoes.ehMaiorRival && TO.relacoes.ehMaiorRival(E, E.torcida.id, id) ? 100 : 0)
+      - TO.relacoes.nivel(E, id);
+    const emTregua = id => TO.relacoes.emTregua && TO.relacoes.emTregua(E, id);
+    /* vale sugestão: dívida, rivalidade declarada (rival ou maior rival)
+       ou relação de −45 pra baixo — hostil de −15 não faz o olheiro
+       parar o dia */
+    const valeSugestao = id => !emTregua(id) && (!!dividas[id] ||
+      ['Rival','Maior Rival'].includes(M().relacaoBase(E.torcida.id, id)) ||
+      TO.relacoes.nivel(E, id) <= -45);
 
     /* situações 1 e 2: os jogos da NOSSA praça que reportam hoje */
-    const grupos = [];
-    const tabela = [];
-    const corDe = id => {
-      const o = M().torcida(id);
-      return (o && M().coresDaTorcida(o).cor) || '#888';
-    };
     for(const j of TO.praca.jogosDaPraca(E)){
       if(diaDoOlheiro(j.dia) !== hoje) continue;
       const nosso = j.casa.id === meu || j.vis.id === meu;
-      const ests = estimativasDaRua(E, j.dia, j);
-      /* SEM RIVAL, SEM PAUTA — MAS O NOSSO JOGO SEMPRE TEM PAUTA
-         (correção do dono, 23/08/2026). A regra vale pro jogo dos
-         outros na nossa praça: sem rival na rua não há o que planejar
-         ali. No NOSSO jogo há sempre — quantos descem, quantas bombas,
-         a intenção do dia —, e o relatório sumia justamente nos jogos
-         em que ninguém hostil pisava na rua: Fortaleza × Vitória com a
-         TUF, com a irmã do lado e o visitante em casa, ficava sem
-         planejamento nenhum. */
-      if(!nosso && !ests.filter(x=>x.hostil).length) continue;
+      const hostis = estimativasDaRua(E, j.dia, j)
+        .filter(x=>x.hostil && valeSugestao(x.id))
+        .sort((a,b)=>nota(b.id)-nota(a.id));
+      if(!hostis.length) continue;
+      const alvo = hostis[0];
       const chaveJogo = nosso ? null : chaveDoJogoDaPraca(E, j);
-      grupos.push({dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id});
-      /* o relatório é uma TABELA (decisão do dono, 17/08/2026): coluna 1
-         a competição, a data e o jogo com as cores dos clubes; coluna 2
-         as torcidas do jogo, cada uma com sua cor e sua estimativa */
-      tabela.push({
-        comp: j.comp, dia: NOME_DIA[j.dia],
-        clubes: [{id:j.casa.id, nome:j.casa.nome,
-                  cor:(j.casa.cores||[])[0]||'#888'},
-                 {id:j.vis.id, nome:j.vis.nome,
-                  cor:(j.vis.cores||[])[0]||'#888'}],
-        torcidas: ests.map(x=>({id:x.id, nome:x.nome, cor:corDe(x.id),
-                                faixa:x.faixa, hostil:x.hostil}))
+      const grupos = [{dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id}];
+      const dv = dividas[alvo.id];
+      const texto = dv
+        ? `Chefe, a gente ainda não engoliu o que esses caras da ${alvo.nome} `+
+          `fizeram com a gente em ${dv.cidade}. Eles vão jogar em ${cidadeNossa} `+
+          `${NOME_DIA[j.dia]}. É uma oportunidade de vingar o que eles fizeram `+
+          `com a gente em ${dv.mes}.`
+        : `Chefe, o time da ${alvo.nome} vai jogar aqui em ${cidadeNossa} `+
+          `${NOME_DIA[j.dia]}. Acho interessante a gente bolar um ataque pra `+
+          `cima deles, esses vermes na nossa cidade não tem vez.`;
+      propor(E, {
+        kind:'olheiro', peso:'decisao', voz:'olheiro',
+        chave:`olheiro|${E.data.ano}|${E.data.semana}|${j.dia}|${j.casa.id}|${j.vis.id}`,
+        texto, dados:{grupos, alvo:alvo.id, divida:!!dv},
+        botoes:[
+          {id:'atacar', rot: dv ? 'Vingar' : 'Bolar o ataque', acao:'tela-ataque',
+           args:{ctx:{grupos}}},
+          {id:'paz', rot:'Deixar quieto', acao:'paz-grupo', args:{grupos}}
+        ]
       });
     }
 
-    /* situação 3: nosso jogo fora que reporta hoje */
+    /* situação 3: nosso jogo fora que reporta hoje — a caravana sempre,
+       e a sugestão só se há rival na praça deles */
     const jf = E.proximoJogo;
     const fora = (jf && !jf.casa && jf.mapaAdv && jf.mapaAdv !== E.torcida.mapa &&
                   diaDoOlheiro(jf.dia||6) === hoje) ? jf : null;
-
-    if(!grupos.length && !fora) return;
-    if(!grupos.length && fora){ olheiroFora(E, fora); return; }
-
-    const nossos = TO.membros.aptosParaOEstadio(E).length;
-    /* sem ninguém hostil na rua não há a quem descer, e o texto não
-       pode perguntar "vamos pra cima de alguém?" pra uma rua vazia */
-    const temAlvo = tabela.some(t=>(t.torcidas||[]).some(x=>x.hostil));
-    /* texto do dono (26/08/2026) */
-    let texto = temAlvo
-      ? `Chefe, esses são os jogos dos próximos dias na cidade. Nosso `+
-        `bonde vai pro jogo com ${nossos} membros. Fale as ações das `+
-        `torcidas.`
-      : `Chefe, esses são os jogos dos próximos dias na cidade. Nosso `+
-        `bonde vai pro jogo com ${nossos} membros, e rival na rua não `+
-        `tem. Deve ser um dia tranquilo`;
-    const botoes = [];
-    if(temAlvo) botoes.push({id:'atacar', rot:'Atacar', acao:'tela-ataque',
-                             args:{ctx:{grupos}}});
-    botoes.push(
-      {id:'paz',    rot: temAlvo ? 'Ir em paz' : 'Avançar',
-       acao:'paz-grupo', args:{grupos}},
-      {id:'padrao', rot:'Seguir padrão', acao:'padrao-grupo', args:{grupos}});
     if(fora){
-      const alvos = PL().alvosDaViagem(E, {advId:fora.advId, crua:true});
-      texto += ` E ${NOME_DIA[fora.dia||6]} o ${E.torcida.clube} joga fora, `+
-        `em ${fora.cidadeAdv}. Monta a caravana e diz se vamos em paz `+
-        `ou pra cima.`;
-      tabela.push({
-        comp: fora.competicao || 'fora de casa', dia: NOME_DIA[fora.dia||6],
-        clubes: [{id:fora.mandante.id, nome:fora.mandante.nome,
-                  cor:(fora.mandante.cores||[])[0]||'#888'},
-                 {id:fora.visitante.id, nome:fora.visitante.nome,
-                  cor:(fora.visitante.cores||[])[0]||'#888'}],
-        torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id),
-                                 faixa:a.faixa, hostil:!a.aliada}))
-      });
-      botoes.splice(1, 0,
-        {id:'caravana', rot:'Montar a caravana', acao:'tela-caravana'});
+      olheiroFora(E, fora);
+      const hostis = PL().alvosDaViagem(E, {advId:fora.advId})
+        .filter(a=>!a.aliada && ehHostil(E, a.id) && valeSugestao(a.id))
+        .sort((a,b)=>nota(b.id)-nota(a.id));
+      if(hostis.length){
+        const alvo = hostis[0], dv = dividas[alvo.id];
+        const texto = dv
+          ? `Chefe, a gente ainda não engoliu o que esses caras da ${alvo.nome} `+
+            `fizeram com a gente em ${dv.cidade}. A gente vai jogar em `+
+            `${fora.cidadeAdv} ${NOME_DIA[fora.dia||6]}. É uma oportunidade de `+
+            `vingar o que eles fizeram com a gente em ${dv.mes}.`
+          : `Chefe, como vamos viajar pra ${fora.cidadeAdv} ${NOME_DIA[fora.dia||6]}, `+
+            `bora aproveitar pra pegar os vermes da ${alvo.nome} na casa deles.`;
+        propor(E, {
+          kind:'olheiro', peso:'decisao', voz:'olheiro',
+          chave:`olheiro|${E.data.ano}|${E.data.semana}|fora|${alvo.id}`,
+          texto, dados:{fora:true, alvo:alvo.id, divida:!!dv},
+          botoes:[
+            {id:'atacar', rot: dv ? 'Vingar' : 'Bolar o ataque', acao:'tela-ataque',
+             args:{ctx:{fora:true, advId:fora.advId}}},
+            {id:'paz', rot:'Deixar quieto', acao:'paz-grupo', args:{grupos:[]}}
+          ]
+        });
+      }
     }
-    /* O BLOCO DA RECEPÇÃO (pedido do dono, 28/08/2026): a lista de
-       aliados que vêm pros jogos DA MENSAGEM, com o número exato de
-       membros — os quatro botões de recepção são desenhados pelo
-       cartão da mensagem, e a conta vira no dia do jogo de cada um.
-       SÓ OS JOGOS DE CIMA (correção do dono, 31/08/2026): cada
-       mensagem do olheiro cobre os jogos que reportam naquele dia, e
-       o bloco tem de bater com eles — aliado de jogo que reporta em
-       outro dia aparece na mensagem daquele dia. */
-    const aliados = PL().aliadosNaCidade(E, E.data.semana)
-      .filter(a=>grupos.some(g=>g.vis === a.clube.id && g.dia === a.dia))
-      .map(a=>({id:a.id, nome:a.torcida.nome, n:a.estimativa,
-                dia:a.dia, clube:a.clube.nome}));
-    propor(E, {
-      kind:'olheiro', peso:'decisao', voz:'olheiro',
-      chave:`olheiro|${E.data.ano}|${E.data.semana}|${hoje}`,
-      texto, dados:{grupos, fora:!!fora, tabela, aliados}, botoes
-    });
+
+    /* O PEDIDO DA ALIADA (mensagens entre torcidas, 08/09/2026): quem
+       vem pra nossa cidade esta semana pede casa — a resposta, com os
+       quatro níveis de recepção, é na tela de Mensagens. O bloco de
+       recepção saiu da mensagem do olheiro. */
+    for(const a of PL().aliadosNaCidade(E, E.data.semana)){
+      if(diaDoOlheiro(a.dia) !== hoje) continue;
+      mensagemDe(E, a.id, `Fala irmão, vamos a ${cidadeNossa} ${NOME_DIA[a.dia]} `+
+        `pro jogo do ${a.clube.nome}, uns ${a.estimativa} de bonde. Tem como receber `+
+        `a gente? Qualquer coisa já ajuda.`, 'pedido',
+        {chave:`pedido|${E.data.ano}|${E.data.semana}|${a.id}`,
+         dados:{n:a.estimativa, dia:a.dia, clube:a.clube.nome}});
+    }
   }
 
   /* a lista de estimativas DAQUELE JOGO: as torcidas dos dois clubes
@@ -1090,8 +1159,7 @@ TO.feed = (function(){
     propor(E, {
       kind:'olheiro', peso:'decisao', chave, voz:'olheiro',
       texto:`Chefe, ${NOME_DIA[j.dia||6]} o ${E.torcida.clube} joga fora, `+
-            `em ${j.cidadeAdv}. `+
-            `Monta a caravana e diz se vamos em paz ou pra cima.`,
+            `em ${j.cidadeAdv}. Monta a caravana.`,
       dados:{situacao:'fora', dia:j.dia||6, tabela},
       botoes:[
         {id:'caravana', rot:'Montar a caravana', acao:'tela-caravana'},
@@ -1314,6 +1382,9 @@ TO.feed = (function(){
          nota:`Prestígio −1 · ${U.dinheiro(multa)} de multa (20% da aposta)`}
       ]
     });
+    /* o recado do rival, na caixa de mensagens (dono, 08/09/2026) */
+    mensagemDe(E, rival.id, `Hoje à noite, no ${b.nome}, ${tam} contra ${tam}. `+
+      `${U.dinheiro(aposta)} na roda. Aparece.`, 'treta', {chave:`treta-msg|${ev.chave}`});
   }
 
   /* -------------------------------------------------------
@@ -1850,6 +1921,23 @@ TO.feed = (function(){
        manchete, e agora as duas dizem a mesma coisa. */
     const empatou = !d.ganhamos && (a.caidos||0) === (b.caidos||0) &&
                     ((a.caidos||0) || (b.caidos||0) || (a.n||0));
+    /* A DÍVIDA (pedido do dono, 08/09/2026): apanhou deles, fica anotado
+       onde e quando; o olheiro cobra a vingança na próxima oportunidade
+       do calendário. Ganhar deles quita. E o contador de brigas do ano
+       com cada uma é o que faz o rival propor trégua. */
+    if(d.torcidaId && d.torcidaId !== E.torcida.id){
+      E.dividas = E.dividas || {};
+      if(d.ganhamos) delete E.dividas[d.torcidaId];
+      else if(!empatou){
+        const dt = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
+        E.dividas[d.torcidaId] = {ano:E.data.ano, semana:E.data.semana,
+          mes: MES_NOME[dt.getMonth()], cidade: cidadeDeHoje(E), onde};
+      }
+      E.brigasCom = E.brigasCom || {};
+      const bc = E.brigasCom[d.torcidaId];
+      E.brigasCom[d.torcidaId] = (bc && bc.ano === E.data.ano) ? {ano:E.data.ano, n:bc.n+1}
+                                                                : {ano:E.data.ano, n:1};
+    }
     const vencedor = empatou ? '' : d.ganhamos ? (a.nome || E.torcida.nome)
                                                : (b.nome || '');
     const presosTxt = (a.presos || 0) > 0 ? ` ${a.presos} dos nossos presos.` : '';
@@ -1936,7 +2024,8 @@ TO.feed = (function(){
         `provoca|${E.data.absoluto}|${d.torcidaId}`) % lista.length];
       /* AS PROVOCAÇÕES SAÍRAM DO FEED (pedido do dono, 08/09/2026): vão
          pra caixa de mensagens entre torcidas */
-      mensagemDe(E, d.torcidaId, fala, 'provocacao');
+      if(!(TO.relacoes.emTregua && TO.relacoes.emTregua(E, d.torcidaId)))
+        mensagemDe(E, d.torcidaId, fala, 'provocacao');
     }
   }
 
@@ -2076,6 +2165,8 @@ TO.feed = (function(){
         if(d.aliado){
           E.relacoes[d.aliado] = U.limitar(
             (E.relacoes[d.aliado]||0) - TO.relacoes.REL.largarAliado, -100, 100);
+          mensagemDe(E, d.aliado, `Nosso pessoal apanhou na cidade de vocês e ninguém `+
+            `desceu. A gente veio de longe confiando. Anotado.`, 'cobranca');
         }
         marcar();
         return {ok:true};
@@ -2343,7 +2434,7 @@ TO.feed = (function(){
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario,
-          mensagemDe, mensagensNaoLidas, lerMensagens, ganchos,
+          mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida,

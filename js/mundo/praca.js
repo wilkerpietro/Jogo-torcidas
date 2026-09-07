@@ -442,6 +442,7 @@ TO.praca = (function(){
     const meu = E.torcida.id;
     if(ida === meu || idb === meu){
       const outro = ida === meu ? idb : ida;
+      if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, outro)) return false;
       return TO.relacoes.nivel(E, outro) <= -15;
     }
     const t = M().relacaoBase(ida, idb);

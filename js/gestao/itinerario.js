@@ -295,9 +295,46 @@ TO.itinerario = (function(){
       for(const o of paradas) if(naCidade(o)) o.comEscolta = true;
     }
 
+    /* ---- TRÊS FASES (pedido do dono, 08/09/2026) ----
+       Caravana · ida, O jogo, Caravana · volta (em casa: ida ao estádio,
+       o jogo, volta do estádio). As paradas detalhadas continuam sendo
+       montadas acima — são elas que sabem ONDE e QUEM —, mas a linha
+       do dia mostra só as três fases, e cada fase tem NO MÁXIMO UM
+       ocorrido: a investida marcada pelo jogador passa na frente, depois
+       o ataque sofrido, depois a emboscada. O ocorrido carrega o lugar
+       (parada e praça) pra o cartão dizer onde foi e quem atacou. O
+       jogo fica com o incidente do estádio, que é o clima. */
+    const iJogo = paradas.findIndex(o=>o.jogo);
+    const antes = paradas.slice(0, iJogo), jogo = paradas[iJogo], depois = paradas.slice(iJogo+1);
+    const PRIO = {investida:0, sofrido:1, emboscada:2};
+    const fase = (id, nome, lugar, lista, simbolo) => {
+      const prim = lista[0];
+      const evs = [];
+      for(const o of lista) for(const ev of (o.eventos||[]))
+        evs.push(Object.assign({}, ev, {
+          lugarTxt: o.cidade ? `${o.nome} (${o.lugar || 'estrada'})` : `${o.nome} · ${o.lugar || ''}`,
+          naCidade: !o.cidade || o.cidade === (j.mapaAdv || ''),
+          cidade: o.cidade || null}));
+      evs.sort((a,b)=>(PRIO[a.tipo] ?? 3) - (PRIO[b.tipo] ?? 3));
+      return {id, nome, lugar, simbolo, min:prim.min, hora:prim.hora, dia:prim.dia,
+              eventos: evs.slice(0, 1), comEscolta:false, detalhe: lista.map(o=>o.id)};
+    };
+    const origem = (M().cidade(E.torcida.mapa) || {}).nome || E.torcida.mapa;
+    const destino = j.cidadeAdv || ((M().cidade(j.mapaAdv) || {}).nome) || 'lá';
+    const fases = viaja
+      ? [fase('ida', 'Caravana · ida', `${origem} → ${destino}`, antes, 'onibus'),
+         Object.assign(jogo, {simbolo:'estadio'}),
+         fase('volta', 'Caravana · volta', `${destino} → ${origem}`, depois, 'onibus')]
+      : [fase('ida', 'Ida ao estádio', 'concentração, pista e arredores', antes, 'cidade'),
+         Object.assign(jogo, {simbolo:'estadio'}),
+         fase('volta', 'Volta do estádio', 'saída dos portões e pista', depois, 'cidade')];
+    if(escolta) jogo.comEscolta = true;
+    const detalhadas = paradas;
+    paradas.length = 0; paradas.push(...fases);
+
     /* ---- os marcos de virada de dia ---- */
     const dias = {};
-    for(const o of paradas) dias[o.dia] = true;
+    for(const o of paradas){ delete o.abreDia; dias[o.dia] = true; }
     const rotDia = d => {
       const t = TO.estado.dataTextoEm ? TO.estado.dataTextoEm(E, d) : null;
       const quando = t ? `${t.semana} ${t.curta.slice(0,5)}` : '';
@@ -322,7 +359,9 @@ TO.itinerario = (function(){
       destino: casa ? E.torcida.mapa : (j.mapaAdv || ''),
       cidade: casa ? '' : (j.cidadeAdv || ''),
       dias: Object.keys(dias).length,
-      paradas
+      paradas,
+      /* as paradas de verdade, pra quem precisar do detalhe */
+      detalhadas
     };
   }
 

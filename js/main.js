@@ -1473,6 +1473,7 @@
      cidade, arredores e o jogo são o estádio */
   function itnSimbolo(p){
     if(!p) return 'estadio';
+    if(p.simbolo) return p.simbolo;
     if(p.cidade) return 'onibus';
     if(/^(concentracao|pista)/.test(p.id)) return 'cidade';
     return 'estadio';
@@ -1487,7 +1488,11 @@
   function itnEscoltaAtiva(){
     if(!ITN || !ITN.escolta || ITN.escolta.n <= 0) return 0;
     const p = ITN.it.paradas[ITN.ponto];
-    return (p && p.comEscolta) ? ITN.escolta.n : 0;
+    if(p && p.comEscolta) return ITN.escolta.n;
+    /* ocorrido na cidade deles dentro da fase da caravana: a escolta
+       está junto (a partir da chegada) */
+    const ev = ITN.esperando && ITN.esperando.ev;
+    return (ev && ev.naCidade && ev.cidade) ? ITN.escolta.n : 0;
   }
   /* o número que a linha carrega: o nosso bonde e o deles */
   function itnContar(){
@@ -1570,8 +1575,8 @@
     const chegou = ITN.escolta && ITN.escolta.n > 0 && p.comEscolta && !(antes && antes.comEscolta);
     const ficou  = ITN.escolta && ITN.escolta.n > 0 && !p.comEscolta && antes && antes.comEscolta;
     if(!fila.length){                 /* parada sem nada não fala */
-      itnDizer(chegou ? `chegada · a ${ITN.escolta.nome} manda ${ITN.escolta.n} pra escolta`
-             : ficou ? `saída · a escolta da ${ITN.escolta.nome} fica`
+      itnDizer(chegou ? `a ${ITN.escolta.nome} manda ${ITN.escolta.n} pra escolta`
+             : ficou ? `a escolta da ${ITN.escolta.nome} fica`
              : 'passando · ' + p.nome.toLowerCase());
       itnAgenda(chegou || ficou ? 1400 : 900);
       return;
@@ -1599,22 +1604,24 @@
     const cx = el('div',{class:'itn-cartao '+ev.tipo});
     const S = (TO.feed.SOFRIDO || {});
     let voz, texto, bts;
+    /* onde foi: a parada de verdade dentro da fase (dono, 08/09/2026) */
+    const onde = ev.lugarTxt || p.nome;
     if(ev.tipo === 'investida'){
       voz = 'Diretor de rua · investida marcada no planejamento';
-      texto = `Hoje é o dia. A ${ev.nome} vai estar ${p.nome.toLowerCase()==='arredores'
-        ? 'nos arredores' : 'na '+p.nome.toLowerCase()}, e a gente vai pra cima.`;
+      texto = `Hoje é o dia. A ${ev.nome} vai estar em ${onde}, e a gente vai pra cima.`;
       bts = [{rot:'Ir pra cima', briga:true}];
     } else if(ev.tipo === 'emboscada'){
       voz = `Emboscada · ${ev.nome}`;
       texto = (S.emboscada ? S.emboscada.texto(ev.nome)
-                           : `Pegaram a caravana na estrada. A ${ev.nome} fechou a pista.`);
+                           : `Pegaram a caravana na estrada. A ${ev.nome} fechou a pista.`)
+              + ` Foi em ${onde}.`;
       bts = [{rot:(S.emboscada||{}).brigar || 'Descer pra treta', briga:true},
              {rot:(S.emboscada||{}).fugir  || 'Mandar seguir viagem', briga:false}];
     } else {
       const cfg = S[ev.ponto] || S.bar || {};
       voz = `Caiu em cima da gente · ${ev.nome}`;
-      texto = cfg.texto ? cfg.texto(ev.nome)
-                        : `A ${ev.nome} caiu em cima da gente.`;
+      texto = (cfg.texto ? cfg.texto(ev.nome)
+                         : `A ${ev.nome} caiu em cima da gente.`) + ` Foi em ${onde}.`;
       bts = [{rot:cfg.brigar || 'Pra cima deles', briga:true},
              {rot:cfg.fugir  || 'Deixar quieto',  briga:false}];
     }
@@ -2954,10 +2961,24 @@
      torcidas — provocação, convite, agradecimento, o "estamos juntos".
      Abrir a aba dá tudo por lido, e o número do ícone some. */
   const ROT_MSG = {provocacao:'Provocação', convite:'Convite', agradecimento:'Agradecimento',
-                   juntos:'Estamos juntos', recusa:'Recusa', cobranca:'Cobrança', recado:'Recado'};
+                   juntos:'Estamos juntos', recusa:'Recusa', cobranca:'Cobrança', recado:'Recado',
+                   pedido:'Pedido de casa', tregua:'Proposta de trégua', treta:'Treta marcada'};
   function painelMensagens(e){
     const cx = el('div');
     const lista = e.mensagens || [];
+    /* O PLANEJAMENTO MORA AQUI AGORA (pedido do dono, 08/09/2026): quem
+       quiser bolar o ataque da semana sem esperar o olheiro abre a tela
+       por este botão. A caravana continua no feed. */
+    const P2 = TO.planejamento;
+    const alvos = P2.alvosDoAtaque(e) || [];
+    const j = e.proximoJogo;
+    const pl = el('div',{class:'linha-dado', html:
+      `<span>Planejar o ataque da semana${j ? ` · ${j.casa ? 'jogo em casa' : 'jogo fora, em '+(j.cidadeAdv||'')}` : ''}</span>`});
+    const bp = el('button',{class:'bt', texto: alvos.length ? 'Planejar ataque' : 'Sem rival na rua'});
+    bp.disabled = !alvos.length || !j;
+    bp.onclick = ()=>{ decisaoAberta = null; abrirAtaque(j && !j.casa ? {fora:true, advId:j.advId} : null); };
+    pl.appendChild(bp);
+    cx.appendChild(pl);
     const c = cartao('Mensagens de outras torcidas', `${lista.length} ${lista.length===1?'recado':'recados'}`);
     if(!lista.length)
       c.corpo.innerHTML = '<div class="em-construcao">Ninguém mandou recado ainda.</div>';
@@ -2966,10 +2987,34 @@
       const q = m.quando || {};
       const dia = TO.feed.NOME_DIA ? (TO.feed.NOME_DIA[q.dia] || '') : '';
       const quando = q.semana ? `${q.ano} · sem. ${q.semana}${dia ? ' · '+dia : ''}` : '';
-      c.corpo.appendChild(el('div',{class:'msg-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo, html:
+      const art = el('div',{class:'msg-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo, html:
         `<div class="mt-cab">${chipTorcida(m.de, corDe(m.de))}<b>${linkTorcida(m.de, m.nome)}</b>`+
         `<span class="tag">${ROT_MSG[m.tipo]||m.tipo}</span><span class="quando">${quando}</span></div>`+
-        `<p>${m.texto}</p>`}));
+        `<p>${m.texto}</p>`});
+      /* as que pedem resposta: recepção (quatro níveis) e trégua */
+      if(!m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua')){
+        const bts = el('div',{class:'rec-botoes'});
+        const opcoes = m.tipo === 'pedido'
+          ? P2.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
+              nota:`${r.porCabeca ? U.dinheiro(r.porCabeca*((m.dados||{}).n||0)) : 'de graça'} · ${r.relacao>0?'+':''}${r.relacao} rel.`}))
+          : [{id:'aceitar', rot:'Aceitar a trégua', nota:'ninguém procura ninguém até o fim do ano · +15 rel.'},
+             {id:'recusar', rot:'Recusar', nota:'−5 rel.'}];
+        for(const o of opcoes){
+          const b = el('button',{class:'rec-bt', html:`${o.rot}<small>${o.nota}</small>`});
+          b.onclick = ()=>{
+            const r = TO.feed.responderMensagemDe(e, m.id, o.id);
+            if(!r.ok) return;
+            TO.estado.salvar(); redesenhar();
+          };
+          bts.appendChild(b);
+        }
+        art.appendChild(bts);
+      } else if(m.resposta){
+        art.appendChild(el('div',{class:'msg-efeitos', html:
+          `Você respondeu: <b>${m.tipo==='pedido' ? (P2.recepcaoDe(m.resposta).rot) : (m.resposta==='aceitar'?'Aceitar a trégua':'Recusar')}</b>`+
+          (m.consequencia ? ` · ${m.consequencia}` : '')}));
+      }
+      c.corpo.appendChild(art);
     }
     cx.appendChild(c);
     /* lido: ao pintar */
@@ -7314,6 +7359,12 @@
       TO.relacoes.mover(e, enc.escoltaAliado, 'prestigio', res.prestigio/5);
       res.prestigio = 0;
     }
+    /* a aliada agradece a escolta (mensagens entre torcidas, 08/09/2026) */
+    if(enc && enc.escoltaAliado && TO.feed.mensagemDe)
+      TO.feed.mensagemDe(e, enc.escoltaAliado, res.ganhamos
+        ? 'Voltamos inteiros por causa do bonde de vocês no portão. Isso a gente não esquece.'
+        : 'Apanhamos juntos, mas vocês desceram. Irmão é quem aparece na hora ruim. Valeu.',
+        'agradecimento');
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     if(enc){
       /* o encontro da rua também é briga: o registro (e a mensagem de

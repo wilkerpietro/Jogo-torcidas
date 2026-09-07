@@ -100,6 +100,10 @@ TO.relacoes = (function(){
     return rel <= -70;
   }
   const pesoDoRival = (E, a, b) => ehMaiorRival(E, a, b) ? 1 : PESO_OUTROS;
+  /* A TRÉGUA (mensagens entre torcidas, 08/09/2026): aceita a proposta
+     do rival, ninguém procura ninguém até o fim da temporada — nem eles
+     vêm, nem a gente marca. Vale o ano civil da proposta. */
+  const emTregua = (E, id) => !!(E && E.treguas && E.treguas[id] === E.data.ano);
   /* os maiores rivais primeiro, depois a relação mais azeda */
   const maioresPrimeiro = (E, ids, relDe) => ids.slice().sort((a,b)=>
     (ehMaiorRival(E, E.torcida.id, b)?1:0) - (ehMaiorRival(E, E.torcida.id, a)?1:0) ||
@@ -998,6 +1002,7 @@ TO.relacoes = (function(){
     for(const o of candidatas){
       const r = nivel(E, o.id);
       if(r > QUENTE) continue;
+      if(emTregua(E, o.id)) continue;
       if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
       if(!alcanca(E, o.id)) continue;
       const t = (E.mundoTorcidas||{})[o.id];
@@ -1101,6 +1106,7 @@ TO.relacoes = (function(){
         id => nivel(E, id)).map(id => M().torcida(id));
       for(const o of daPraca){
         if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
+        if(emTregua(E, o.id)) continue;
         const r = nivel(E, o.id);
         if(r > QUENTE) continue;
         if(disponiveisIA(E, o.id) < crew * 0.5) continue;
@@ -2442,7 +2448,7 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, ehMaiorRival, pesoDoRival,
+  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, ehMaiorRival, pesoDoRival, emTregua,
           nivel, hostilidade, marcarAjuda,
           ranking, rankingDoPais, posicaoNoRanking, posicaoNoMundo,
           paisDaTorcida, situacaoFinanceira,
