@@ -1032,6 +1032,9 @@ TO.feed = (function(){
      primeira oportunidade. A caravana continua no feed, sempre.
      Nada aqui inventa jogo: tudo sai do calendário da temporada.
      ======================================================= */
+  /* quanto das oportunidades vira sugestão do olheiro (dono, 08/09/2026) */
+  const FREIO_OLHEIRO = {rival:0.4, maior:0.7};
+
   function olheiroDoDia(E){
     const hoje = E.data.dia;
     const meu = E.torcida.clubeId;
@@ -1049,6 +1052,18 @@ TO.feed = (function(){
     const valeSugestao = id => !emTregua(id) && (!!dividas[id] ||
       ['Rival','Maior Rival'].includes(M().relacaoBase(E.torcida.id, id)) ||
       TO.relacoes.nivel(E, id) <= -45);
+    /* O FREIO DO OLHEIRO (pedido do dono, 08/09/2026): ele sugere menos.
+       Contra rival comum (ou hostil de −45) só 40% das oportunidades
+       viram sugestão (−60%); contra maior rival, 70% (−30%). A dívida
+       passa sempre: vingança não é sugestão, é cobrança. O sorteio é
+       por hash da chave da mensagem, então o mesmo dia dá sempre a
+       mesma resposta e a oportunidade perdida não volta no dia seguinte. */
+    const freio = (id, chave) => {
+      if(dividas[id]) return true;
+      const maior = TO.relacoes.ehMaiorRival && TO.relacoes.ehMaiorRival(E, E.torcida.id, id);
+      const teto = maior ? FREIO_OLHEIRO.maior : FREIO_OLHEIRO.rival;
+      return (TO.mapa.hash(`freio-olheiro|${chave}`) % 1000) / 1000 < teto;
+    };
 
     /* situações 1 e 2: os jogos da NOSSA praça que reportam hoje */
     for(const j of TO.praca.jogosDaPraca(E)){
@@ -1059,6 +1074,8 @@ TO.feed = (function(){
         .sort((a,b)=>nota(b.id)-nota(a.id));
       if(!hostis.length) continue;
       const alvo = hostis[0];
+      const chave = `olheiro|${E.data.ano}|${E.data.semana}|${j.dia}|${j.casa.id}|${j.vis.id}`;
+      if(!freio(alvo.id, chave)) continue;
       const chaveJogo = nosso ? null : chaveDoJogoDaPraca(E, j);
       const grupos = [{dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id}];
       const dv = dividas[alvo.id];
@@ -1079,8 +1096,7 @@ TO.feed = (function(){
           `${NOME_DIA[j.dia]}. Acho interessante a gente bolar um ataque pra `+
           `cima deles, esses vermes na nossa cidade não tem vez.`;
       propor(E, {
-        kind:'olheiro', peso:'decisao', voz:'olheiro',
-        chave:`olheiro|${E.data.ano}|${E.data.semana}|${j.dia}|${j.casa.id}|${j.vis.id}`,
+        kind:'olheiro', peso:'decisao', voz:'olheiro', chave,
         texto, dados:{grupos, alvo:alvo.id, divida:!!dv},
         botoes:[
           {id:'atacar', rot: dv ? 'Vingar' : 'Bolar o ataque', acao:'tela-ataque',
@@ -1100,7 +1116,8 @@ TO.feed = (function(){
       const hostis = PL().alvosDaViagem(E, {advId:fora.advId})
         .filter(a=>!a.aliada && ehHostil(E, a.id) && valeSugestao(a.id))
         .sort((a,b)=>nota(b.id)-nota(a.id));
-      if(hostis.length){
+      const chaveFora = hostis.length ? `olheiro|${E.data.ano}|${E.data.semana}|fora|${hostis[0].id}` : '';
+      if(hostis.length && freio(hostis[0].id, chaveFora)){
         const alvo = hostis[0], dv = dividas[alvo.id];
         const texto = dv
           ? `Chefe, a gente ainda não engoliu o que esses caras da ${alvo.nome} `+
@@ -1111,7 +1128,7 @@ TO.feed = (function(){
             `bora aproveitar pra pegar os vermes da ${alvo.nome} na casa deles.`;
         propor(E, {
           kind:'olheiro', peso:'decisao', voz:'olheiro',
-          chave:`olheiro|${E.data.ano}|${E.data.semana}|fora|${alvo.id}`,
+          chave: chaveFora,
           texto, dados:{fora:true, alvo:alvo.id, divida:!!dv},
           botoes:[
             {id:'atacar', rot: dv ? 'Vingar' : 'Bolar o ataque', acao:'tela-ataque',
@@ -2455,7 +2472,7 @@ TO.feed = (function(){
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
-          tretas, tretasNaoLidas, lerTretas,
+          tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida,

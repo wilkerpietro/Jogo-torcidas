@@ -4226,6 +4226,17 @@ A relação em si sempre mexeu na torcida certa (é por id). Agora o rival
 do relatório é resolvido pela torcida (`deQuem`, senão o nome da torcida
 pelo id), inclusive nos encontros de rua.
 
+## O olheiro sugere menos (pedido do dono, 08/09/2026)
+
+Das oportunidades que o calendário dá, só uma parte vira sugestão de
+ataque: contra rival comum (declarado ou hostil de −45 pra baixo) 40%
+(−60%); contra maior rival 70% (−30%). A dívida passa sempre: vingança é
+cobrança, não sugestão. O corte é por hash da chave da mensagem, então a
+mesma oportunidade dá sempre a mesma resposta, e a que foi cortada não
+volta no dia seguinte nem cai pro segundo hostil da lista. Medido numa
+temporada de 330 dias com a TUF: 37 → 12 contra rivais e 44 → 28 contra
+maiores rivais. A constante é `FREIO_OLHEIRO` em `feed.js`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
