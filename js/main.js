@@ -1500,10 +1500,23 @@
     ITN.timer = setTimeout(itnProximo, ms || 1400);
   }
 
+  /* O OCORRIDO SOME DA TELA quando a linha segue (pedido do dono,
+     08/09/2026): o cartão do recado — emboscada, ataque sofrido,
+     investida — fica enquanto a ação dele está de pé (botões, cena,
+     saldo) e sai quando a linha chega na parada seguinte. As notícias e
+     as consequências já saíram pelas portas de sempre (Futebol e
+     Porrada, prestígio, feridos); o cartão era só o pedido de decisão.
+     A partida fica: o placar é o registro do dia. */
+  function itnLimparOcorridos(){
+    if(!ITN || !ITN.recados) return;
+    for(const c of [...ITN.recados.querySelectorAll('.itn-cartao')]) c.remove();
+  }
+
   function itnProximo(){
     if(!ITN || ITN.travado) return;
     const paradas = ITN.it.paradas;
     if(ITN.ponto >= paradas.length - 1) return itnAcabou();
+    itnLimparOcorridos();
     ITN.ponto++;
     itnPintar();
     itnMarcarEfetivo();
@@ -1701,8 +1714,10 @@
       m.dados.vel = m.dados.vel || 4; m.dados.pausada = false;
     }
     const caixa = widgetPartida(m, ()=>{
-      /* apito final: a linha volta a andar */
+      /* apito final: a linha volta a andar, e o aviso da trava sai */
       atualizarFeed(); pintarTopo();
+      if(ITN && ITN.recados)
+        for(const t of [...ITN.recados.querySelectorAll('.itn-trava')]) t.remove();
       itnDizer('apito final · seguindo pros arredores');
       ITN.travado = false;
       itnAgenda(1100);
@@ -1716,6 +1731,7 @@
   function itnAcabou(){
     if(!ITN) return;
     ITN.travado = true;
+    itnLimparOcorridos();
     itnDizer('dia encerrado');
     ITN.raiz.classList.add('fechado');
     TO.estado.salvar();
@@ -2260,7 +2276,11 @@
               if(!r.ok) return;
               TO.estado.salvar();
               atualizarFeed(); pintarTopo();
-              if(r.fechou) redesenhar();
+              /* respondida a última aliada, o relógio volta a andar na
+                 hora — é o que `responderMensagem` faz por toda decisão;
+                 sem isto o feed ficava parado até outra coisa acordar o
+                 relógio (delay visto pelo dono, 08/09/2026) */
+              if(r.fechou){ redesenhar(); if(!TO.feed.travado(e)) retomarTempo('decisao'); }
             };
             bts.appendChild(b);
           }

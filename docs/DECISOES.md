@@ -3919,6 +3919,23 @@ interna). A consequência no cartão soma as festas e as furadas. Os
 botões antigos (`aniv-ir` / `aniv-nao`) continuam existindo pra
 mensagem já dropada em save antigo.
 
+## O ocorrido some da linha; o relógio volta na hora depois da lista de aniversários (pedido do dono, 08/09/2026)
+
+- **O ocorrido some da tela.** O cartão do recado no itinerário —
+  emboscada, ataque sofrido, investida — fica enquanto a ação dele está
+  de pé (botões, cena, saldo) e sai quando a linha chega na parada
+  seguinte, ou no fim do dia. As notícias e as consequências continuam
+  saindo pelas portas de sempre (Futebol e Porrada, prestígio, feridos,
+  presos): o cartão era só o pedido de decisão. A partida fica na linha,
+  porque o placar é o registro do dia; o aviso "os arredores só abrem no
+  apito final" sai no apito.
+- **O delay depois da lista de aniversários.** Respondida a última
+  aliada, a mensagem fechava, mas o relógio do feed não era acordado —
+  `responderMensagem` faz isso pra toda decisão, e o botão por aliada
+  não passava por ele. Agora o clique que fecha a lista chama
+  `retomarTempo('decisao')`, e o dia segue na hora (conferido: 2 s
+  depois do último clique o dia já tinha virado).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
