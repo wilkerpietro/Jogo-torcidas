@@ -4190,6 +4190,30 @@ aba dá tudo por lido. Os efeitos da briga não mudam de lugar: relação,
 moral, prestígio e baixas seguem aplicados no fechamento da noite, e a
 linha de consequência continua no cartão.
 
+## O ticker de manchetes voltou (pedido do dono, 08/09/2026)
+
+Uma fita logo abaixo do cabeçalho do feed, com as manchetes das
+principais notícias dos últimos 21 dias. A ordem é de prioridade, não de
+data:
+
+1. **A nossa torcida e o nosso clube**: a manchete do Futebol e Porrada de
+   cada treta nossa e a manchete do jornal da rodada (que é sempre o nosso
+   jogo). Saem em branco, com o ponto dourado.
+2. **O que fala de nós de tabela**: página do almanaque com tom bom ou
+   ruim pra gente, LNT que cite a torcida ou o clube, e as brigas do país
+   na nossa praça.
+3. **O resto do país**: as maiores brigas do mundo, no máximo quatro, pra
+   fita não virar boletim.
+
+Dez manchetes no máximo; as do mesmo nível vêm da mais nova pra mais
+velha. A fita anda em CSS (metade a metade, emenda sem vão), para no
+mouse, e clicar numa manchete abre Notícias na aba certa (Tretas,
+Arquivo do feed ou Brigas). Os jornais são de molde determinístico, então
+montar a manchete aqui dá o mesmo texto do cartão; ela fica guardada por
+id de mensagem pra não refazer página a cada tique. Sem manchete, a fita
+some. (O "ticker" da lista de descartados de 17/08 é este, de volta por
+pedido do dono.)
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

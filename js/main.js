@@ -744,7 +744,7 @@
      Notícias → Tretas. A história (`e.feed`) continua com elas — é só o
      rolo do feed que não as desenha. */
   const feedVisivel = e => (e.feed || []).filter(m => m.kind !== 'confronto');
-  let noFeedLista = null, noFeedTopo = null, noFeedQuando = null;
+  let noFeedLista = null, noFeedTopo = null, noFeedQuando = null, noFeedTicker = null;
   let feedVistas = new Map();
 
   function pintarFeed(){
@@ -803,10 +803,124 @@
        navegação inteira e vai da borda de cima à de baixo, do mesmo
        jeito que ia dentro do mapa */
     const corpo = el('div',{class:'feed-corpo'});
-    corpo.append(barra, rolo);
+    /* O TICKER VOLTOU (pedido do dono, 08/09/2026): a fita de manchetes
+       logo abaixo do cabeçalho, com as notícias da nossa torcida e do
+       nosso clube na frente. Quem a enche é `atualizarTicker`. */
+    noFeedTicker = el('div',{class:'feed-ticker', html:
+      `<span class="ticker-rot">Últimas</span>`+
+      `<div class="ticker-caixa"><div class="ticker-fita"></div></div>`});
+    noFeedTicker.addEventListener('click', ev=>{
+      const a = ev.target.closest('.ticker-item');
+      if(!a) return;
+      subNoticias = a.dataset.aba || 'arquivo';
+      abrirPainel('noticias');
+    });
+    tickerAss = null;
+    corpo.append(barra, noFeedTicker, rolo);
     pg.append(montarMenuIcones('feed-menu'), corpo);
     atualizarFeed();
     pintarTopo();
+  }
+
+  /* =======================================================
+     O TICKER DE MANCHETES (pedido do dono, 08/09/2026)
+     Uma fita abaixo do cabeçalho com as manchetes das principais
+     notícias dos últimos dias. A ordem é de prioridade: primeiro
+     as da NOSSA torcida (a manchete do Futebol e Porrada de cada
+     treta nossa) e do NOSSO clube (a manchete do jornal da rodada),
+     depois o que fala de nós de tabela (almanaque, LNT, brigas na
+     nossa praça) e por fim o resto do país. Os jornais são montados
+     de molde determinístico, então montar de novo aqui dá o mesmo
+     texto que o cartão; mesmo assim a manchete de cada mensagem
+     fica guardada por id pra não refazer página a cada tique.
+     Clicar numa manchete abre Notícias na aba certa.
+     ======================================================= */
+  const TICKER_DIAS = 21, TICKER_MAX = 10, TICKER_PX_S = 42;
+  const tickerManchetes = new Map();
+  const tickerEsc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  let tickerAss = null;
+  function mancheteDe(e, m){
+    if(tickerManchetes.has(m.id)) return tickerManchetes.get(m.id);
+    let r = null;
+    try{
+      const pg = m.kind === 'confronto' && TO.porrada ? TO.porrada.montar(e, m)
+        : m.kind === 'rodada' && TO.gazeta ? TO.gazeta.montar(e, m)
+        : (m.kind === 'lnt-fundacao' || m.kind === 'lnt-fim') && TO.porrada && TO.porrada.montarLNT
+          ? TO.porrada.montarLNT(e, m)
+        : m.kind === 'almanaque' ? (m.dados || {}).pagina
+        : null;
+      if(pg && pg.manchete)
+        r = {texto: String(pg.manchete).replace(/<[^>]+>/g,'').trim(),
+             aba: m.kind === 'confronto' ? 'tretas' : 'arquivo'};
+    }catch(_){ r = null; }
+    tickerManchetes.set(m.id, r);
+    if(tickerManchetes.size > 400)
+      tickerManchetes.delete(tickerManchetes.keys().next().value);
+    return r;
+  }
+  function manchetesDoTicker(e){
+    const abs = e.data.absoluto || 0;
+    const nomeT = e.torcida.nome, clube = TO.mundo.time(e.torcida.clubeId);
+    const nomeC = clube ? clube.nome : '';
+    const falaDeNos = t => (nomeT && t.includes(nomeT)) || (nomeC && t.includes(nomeC));
+    const itens = [];
+    for(const m of (e.feed || [])){
+      const idade = abs - ((m.quando || {}).abs || 0);
+      if(idade > TICKER_DIAS) break;
+      const h = mancheteDe(e, m);
+      if(!h) continue;
+      /* a nossa treta e o nosso jogo vêm na frente; o almanaque e a
+         LNT só quando falam de nós; o resto fecha a fita */
+      const prio = m.kind === 'confronto' || m.kind === 'rodada' ? 0
+                 : (m.tipo === 'boa' || m.tipo === 'ruim' || falaDeNos(h.texto)) ? 1 : 2;
+      itens.push({texto:h.texto, aba:h.aba, prio, abs:(m.quando||{}).abs||0});
+    }
+    /* as brigas do país: as da nossa praça primeiro, e das outras só
+       as maiores — a fita é de manchete, não de boletim */
+    const diasAno = TO.competicoes.SEMANAS_ANO * 7;
+    const recentes = (e.brigasIA || []).slice(0, 40).filter(b => b && b.a && b.b)
+      .sort((x,y) => ((y.a.n||0)+(y.b.n||0)) - ((x.a.n||0)+(x.b.n||0)));
+    for(const b of recentes){
+      const bAbs = ((b.ano || e.data.ano) - 2026) * diasAno + ((b.semana||1)-1)*7 + ((b.dia||1)-1);
+      const idade = abs - bAbs;
+      if(idade > TICKER_DIAS || idade < 0) continue;
+      const daPraca = [b.a.id, b.b.id].some(id => { const o = TO.mundo.torcida(id);
+                                                     return o && o.mapa === e.torcida.mapa; });
+      itens.push({aba:'brigas', prio: daPraca ? 1 : 2, abs:bAbs,
+        texto:`${b.a.nome} e ${b.b.nome} se pegaram em ${b.cidade || 'algum lugar'}`+
+              `${b.vencedor && !/ningu/i.test(b.vencedor) ? `: a ${b.vencedor} levou a melhor` : ''}`});
+    }
+    itens.sort((x,y)=> x.prio - y.prio || y.abs - x.abs);
+    /* o resto do país fecha a fita, mas não a toma: no máximo quatro */
+    let resto = 0;
+    return itens.filter(it => it.prio < 2 || ++resto <= 4).slice(0, TICKER_MAX);
+  }
+  function atualizarTicker(){
+    const e = E();
+    if(!e || !noFeedTicker || !noFeedTicker.isConnected) return;
+    const caixa = noFeedTicker.querySelector('.ticker-caixa');
+    const fita = noFeedTicker.querySelector('.ticker-fita');
+    if(!caixa || !fita) return;
+    const larg = caixa.clientWidth;
+    if(!larg) return;                         // sem layout: tenta no próximo tique
+    const ass = `${(e.feed[0]||{}).id}|${e.feed.length}|${(e.brigasIA||[]).length}|${larg}`;
+    if(ass === tickerAss) return;
+    tickerAss = ass;
+    const itens = manchetesDoTicker(e);
+    noFeedTicker.hidden = !itens.length;
+    if(!itens.length) return;
+    const copia = itens.map(it =>
+      `<a class="ticker-item${it.prio===0?' nossa':''}" data-aba="${it.aba}">${tickerEsc(it.texto)}</a>`).join('');
+    /* a fita é duas metades iguais e anda meia volta: emenda sem salto.
+       Cada metade precisa cobrir a caixa, senão aparece o vão */
+    fita.style.animation = 'none';
+    fita.innerHTML = copia;
+    const umaVez = Math.max(1, fita.scrollWidth);
+    const n = Math.max(1, Math.ceil(larg / umaVez));
+    fita.innerHTML = copia.repeat(n * 2);
+    const dur = Math.max(12, (fita.scrollWidth / 2) / TICKER_PX_S);
+    fita.style.animation = '';
+    fita.style.animationDuration = `${dur.toFixed(1)}s`;
   }
 
   /* o estado visível de uma mensagem: enquanto ele não muda, o nó dela
@@ -3149,6 +3263,7 @@
     const e = E();
     if(!e) return;
     atualizarBadges();
+    atualizarTicker();
     const dt = TO.estado.dataTexto();
     const txtQuando = noFeedQuando && noFeedQuando.querySelector('.quando-txt');
     if(txtQuando && txtQuando.isConnected){

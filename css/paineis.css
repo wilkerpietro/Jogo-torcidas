@@ -1154,6 +1154,32 @@ table.dados tr.selecionada td{background:#252525}
   padding:6px 10px;background:var(--painel);
   border-bottom:1px solid var(--linha);flex:none;
 }
+/* o ticker de manchetes, logo abaixo do cabeçalho (dono, 08/09/2026) */
+.feed-ticker{
+  display:flex;align-items:stretch;height:24px;flex:none;overflow:hidden;
+  background:#101012;border-bottom:1px solid var(--linha);
+}
+.feed-ticker[hidden]{display:none}
+.ticker-rot{
+  flex:none;display:flex;align-items:center;padding:0 10px;
+  background:var(--rubro);color:#fff;font-family:var(--mono);
+  font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;
+}
+.ticker-caixa{flex:1;min-width:0;position:relative;overflow:hidden}
+.ticker-fita{
+  position:absolute;left:0;top:0;white-space:nowrap;width:max-content;
+  font-family:var(--corpo);font-size:11.5px;line-height:24px;color:var(--fraco);
+  animation:ticker-roda 40s linear infinite;will-change:transform;
+}
+.feed-ticker:hover .ticker-fita{animation-play-state:paused}
+.ticker-item{color:inherit;text-decoration:none;cursor:pointer;margin-right:18px}
+.ticker-item::before{content:'●';color:var(--rubro-vivo);margin-right:7px;font-size:7px;vertical-align:2px}
+.ticker-item.nossa{color:var(--texto)}
+.ticker-item.nossa::before{color:var(--ouro)}
+.ticker-item:hover{color:#fff;text-decoration:underline}
+@keyframes ticker-roda{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){ .ticker-fita{animation-duration:120s !important} }
+
 .feed-marca{display:flex;align-items:center;gap:9px;min-width:0;flex:1 1 auto;
   flex-wrap:nowrap;overflow:hidden}
 .feed-marca .escudo{
@@ -1427,6 +1453,7 @@ table.dados tr.selecionada td{background:#252525}
   .feed-marca .num{font-size:11px}
   .feed-quando b{font-size:12.5px}
   .feed-rolo{padding:8px 8px 24px}
+  .feed-ticker{height:22px} .ticker-fita{font-size:11px;line-height:22px} .ticker-rot{padding:0 7px;font-size:8px}
   .msg-txt{font-size:13px}
 }
 
