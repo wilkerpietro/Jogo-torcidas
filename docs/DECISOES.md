@@ -4008,6 +4008,25 @@ minutos de jogo por segundo real. Em 1× os 90 minutos levam 22 s; no
 padrão da casa (4×), uns 6 s. O botão 1×/2×/4× e o espaço (pausa)
 continuam iguais; o clima do estádio segue sorteado minuto a minuto.
 
+## O tempo anda mais (pedido do dono, 08/09/2026)
+
+Das medidas propostas, entraram quatro:
+1. **O 2× vale em tudo.** O botão de velocidade já dividia o intervalo
+   das mensagens; agora divide também o passo do dia vazio, as paradas
+   da linha do dia (e os recados dela) e o 1,4 s de assentar a cena
+   antes do relatório.
+2. **Dia vazio quase sem espera.** Dia sem mensagem passa em 120 ms
+   (era 450).
+3. **Informação em rajada.** Notícia que não pede resposta — rodada,
+   jornal, olheiro informativo, almanaque — sai a 500 ms uma da outra;
+   o compasso de 1,5 s fica só pra ANTES de uma decisão, que é o que
+   merece ser lido com calma.
+4. **A dica só no primeiro mês.** Saem as das semanas 1 e 3 e mais
+   nenhuma; o "Como funciona" do menu do Jogo continua com todas.
+Ficaram de fora, por decisão do dono: o olheiro virar informação, o
+pulo de paradas da linha, o "avançar até", as respostas padrão e o
+simular a semana inteira.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

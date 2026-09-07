@@ -470,6 +470,11 @@ TO.feed = (function(){
   ];
   function dicaDeHoje(E){
     const sa = TO.relacoes.semanaAbs(E);
+    /* SÓ NO PRIMEIRO MÊS (pedido do dono, 08/09/2026): a dica a cada
+       duas semanas virava ruído depois que o jogador já sabe jogar.
+       Saem as das semanas 1 e 3 e mais nenhuma; o "Como funciona" do
+       menu do Jogo continua com todas. */
+    if(sa > 4) return;
     if(sa % 2 !== 1 || E.data.dia !== 2) return;
     const i = (E.dicaSeq || 0) % DICAS.length;
     const m = propor(E, {kind:'dica', peso:'info', voz:'diretor',

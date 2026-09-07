@@ -1445,7 +1445,7 @@
     pararTudo('itinerario');
     itnPintar();
     itnContar();
-    ITN.timer = setTimeout(itnProximo, 700);
+    ITN.timer = setTimeout(itnProximo, 700 / (TO.diaJogo.ponte.velocidade || 1));
     return true;
   }
 
@@ -1515,10 +1515,12 @@
     }
   }
 
+  /* o 2× do feed vale na linha do dia também (dono, 08/09/2026) */
+  const velTempo = () => TO.diaJogo.ponte.velocidade || 1;
   function itnAgenda(ms){
     if(!ITN) return;
     clearTimeout(ITN.timer);
-    ITN.timer = setTimeout(itnProximo, ms || 1400);
+    ITN.timer = setTimeout(itnProximo, (ms || 1400) / velTempo());
   }
 
   /* O OCORRIDO SOME DA TELA quando a linha segue (pedido do dono,
@@ -1642,7 +1644,7 @@
              'Relação −6</span>'}));
       TO.estado.salvar();
       pintarTopo();
-      setTimeout(itnRecado, 900);       // o próximo recado da mesma parada
+      setTimeout(itnRecado, 900 / velTempo());   // o próximo recado da mesma parada
       return;
     }
     /* vai pra briga: a cena é a do jogo, e o fecho dela é o de sempre.
@@ -1731,7 +1733,7 @@
        primeiro, mede depois */
     atualizarFeed();
     itnPintar();
-    setTimeout(itnRecado, 800);
+    setTimeout(itnRecado, 800 / velTempo());
     return true;
   }
 
@@ -6701,9 +6703,21 @@
   /* O RITMO É DA MENSAGEM, NÃO DO DIA (decisão do autor): cada
      mensagem dropada segura a próxima por 1,5s. Dia sem mensagem passa
      rápido; decisão sem resposta trava tudo. */
-  const MS_DROP      = TO.feed.INTERVALO_DROP;   // 1500 ms entre mensagens
-  const MS_DIA_VAZIO = 450;                      // dia calado passa ligeiro
+  const MS_DROP      = TO.feed.INTERVALO_DROP;   // 1500 ms antes de uma DECISÃO
+  /* O TEMPO ANDA MAIS (pedido do dono, 08/09/2026):
+     · informação sai em rajada — 500 ms entre notícias que não pedem
+       resposta; só a decisão merece o compasso de 1,5 s;
+     · dia calado passa em 120 ms (era 450);
+     · e o 2× vale em tudo: dia vazio, mensagem e as paradas da linha
+       do dia (ver `itnAgenda`), não só o intervalo das mensagens. */
+  const MS_INFO      = 500;
+  const MS_DIA_VAZIO = 120;
   let relogioTempo = null;
+  /* o compasso da PRÓXIMA mensagem da fila: decisão espera 1,5 s */
+  const compassoDaFila = e => {
+    const prox = (e.feedFila || [])[0];
+    return prox && prox.peso === 'decisao' ? MS_DROP : MS_INFO;
+  };
 
   function pausarTempo(motivo){
     pausasT.add(motivo);
@@ -6729,14 +6743,14 @@
         TO.feed.dropar(e);
         pintarTopo(); atualizarFeed();
         if(TO.feed.travado(e)) return;         // decisão dropada: espera
-        relogioTempo = setTimeout(tique, MS_DROP/vel);
+        relogioTempo = setTimeout(tique, compassoDaFila(e)/vel);
         return;
       }
       passarUmDia(e);
       pintarTopo(); atualizarFeed();
       if(pausasT.size || TO.feed.travado(E())) return;
       relogioTempo = setTimeout(tique,
-        (TO.feed.pendentes(E()) > 0 ? MS_DROP : MS_DIA_VAZIO)/vel);
+        (TO.feed.pendentes(E()) > 0 ? compassoDaFila(E()) : MS_DIA_VAZIO)/vel);
     };
     /* O PRIMEIRO TIQUE TAMBÉM É DE 1,5s quando há fila (correção do
        dono, 24/08/2026): o relógio abria em 450ms — o passo do dia
@@ -6744,7 +6758,8 @@
        anterior. Fila cheia entra no compasso da mensagem; só o dia sem
        nada passa ligeiro. */
     relogioTempo = setTimeout(tique,
-      TO.feed.pendentes(e0) > 0 ? MS_DROP : MS_DIA_VAZIO);
+      (TO.feed.pendentes(e0) > 0 ? compassoDaFila(e0) : MS_DIA_VAZIO)
+        / (TO.diaJogo.ponte.velocidade || 1));
   }
 
   /* um dia inteiro: a virada da data — os jogos do dia e as mensagens
@@ -7222,7 +7237,7 @@
       $('telaDiaJogo').classList.add('oculto');
       document.body.classList.remove('em-cena');
       mostrarRelatorio(res, resumo, fecho);
-    }, res.simulada ? 0 : 1400);
+    }, res.simulada ? 0 : 1400 / (TO.diaJogo.ponte.velocidade || 1));
   }
 
   /* =======================================================
