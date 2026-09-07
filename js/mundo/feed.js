@@ -1562,7 +1562,7 @@ TO.feed = (function(){
         for(const lado of ['c','f'])
           for(const o of (M().torcidasDe(nosso[lado])||[])){
             let n;
-            if(o.id === E.torcida.id) n = TO.planejamento.efetivoDaSaida(E);
+            if(o.id === E.torcida.id) n = TO.planejamento.efetivoDaSaida(E, {mapa: casaMapa});
             /* ferido e preso da IA ficam em casa (dono, 27/08/2026) */
             else if(o.mapa === casaMapa)
               n = TO.relacoes.disponiveisIA(E, o.id);

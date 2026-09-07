@@ -388,7 +388,7 @@ TO.praca = (function(){
            mesma régua da nossa torcida — os 60% caíram. Ferido e preso
            seguem em casa: a base é `disponiveisIA`, não o total. */
         põe(o, o.id === E.torcida.id
-               ? menosAEscolta(o, PL().efetivoDaSaida(E))
+               ? menosAEscolta(o, PL().efetivoDaSaida(E, {mapa: E.torcida.mapa}))
                : menosAEscolta(o, TO.relacoes.disponiveisIA(E, o.id)),
             jogo, {deFora:false});
       }
@@ -398,7 +398,7 @@ TO.praca = (function(){
            Azul é visitante no jogo e moradora da cidade. */
         if(pontoDaSede(mo, o)){
           põe(o, o.id === E.torcida.id
-                 ? menosAEscolta(o, PL().efetivoDaSaida(E))
+                 ? menosAEscolta(o, PL().efetivoDaSaida(E, {mapa: E.torcida.mapa}))
                  : menosAEscolta(o, TO.relacoes.disponiveisIA(E, o.id)),
               jogo, {deFora:false});
           continue;

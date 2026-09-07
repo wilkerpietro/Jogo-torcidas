@@ -201,13 +201,25 @@ TO.planejamento = (function(){
      Jogo na cidade de uma SUB-SEDE nossa (dono, 26/08/2026): todos os
      membros daquele núcleo vão pro jogo, fora os demais que fazem
      caravana normalmente — o núcleo já mora lá. */
-  function efetivoDaSaida(E){
+  /* O JOGO DO DIA MANDA, NÃO O DA SEMANA (correção do dono, 06/09/2026).
+     `E.proximoJogo` é um por semana — o mata-mata ou o de fim de semana
+     —, e numa semana com jogo em casa na quarta e jogo fora no domingo
+     o estádio de quarta lia o tamanho da CARAVANA de domingo: a TUF
+     punha 8 na arquibancada com 100 aptos. Quem chama passa a partida
+     do dia (`{mapa}` da praça onde ela é, ou `{casa}`); jogo na nossa
+     praça leva todo mundo apto, e a caravana só vale pra viagem. Sem
+     partida, segue lendo o jogo da semana, como antes. */
+  function efetivoDaSaida(E, partida){
     const aptos = TO.membros.aptosParaOEstadio(E).length;
     const j = E.proximoJogo;
-    const nucleo = (j && !j.casa && TO.patrimonio.temFilialEm &&
-                    TO.patrimonio.temFilialEm(E, j.mapaAdv))
-      ? TO.membros.aptosDaFilial(E, j.mapaAdv).length : 0;
-    if(!TO.financeiro.precisaCaravana(E)) return aptos + nucleo;
+    const emCasa = partida
+      ? (partida.mapa ? partida.mapa === E.torcida.mapa : !!partida.casa)
+      : !TO.financeiro.precisaCaravana(E);
+    if(emCasa) return aptos;
+    const mapaAdv = (partida && partida.mapa) || (j && j.mapaAdv);
+    const nucleo = (mapaAdv && TO.patrimonio.temFilialEm &&
+                    TO.patrimonio.temFilialEm(E, mapaAdv))
+      ? TO.membros.aptosDaFilial(E, mapaAdv).length : 0;
     const est = estimativaCaravana(E);
     return (est ? est.vao : aptos) + nucleo;
   }

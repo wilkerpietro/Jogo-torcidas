@@ -3774,6 +3774,18 @@ Limite técnico registrado: a camisa do GLB tem 206 vértices e não tem
 UV, então a cor por vértice sai esfumada — listra fina não se lê.
 Listra nítida pede reexportar o boneco com UV na camisa.
 
+## O estádio lê o jogo do dia, não o da semana (correção, 06/09/2026)
+
+O dono viu a TUF pôr 8 na arquibancada do Castelão com 100 aptos e
+moral razoável. Causa: `E.proximoJogo` é UM por semana (o mata-mata ou o
+de fim de semana ganham), e numa semana com jogo em casa na quarta e
+jogo fora no domingo o `efetivoDaSaida` via `precisaCaravana` verdadeiro
+e devolvia o tamanho da CARAVANA de domingo — 8 (num save novo, semana
+24, dava 13: a caravana pra Novorizontino). Reproduzido e corrigido:
+`efetivoDaSaida(E, partida)` recebe a partida do dia; jogo na nossa
+praça leva todo mundo apto (menos a escolta), e a caravana só vale pra
+viagem. Semana 24 num save novo: 150 em casa, como deve.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
