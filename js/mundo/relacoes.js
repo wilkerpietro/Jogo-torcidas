@@ -79,6 +79,32 @@ TO.relacoes = (function(){
   const QUENTE  = -55;   // daqui pra baixo o rival vem sozinho
   const ALIADO  =  45;   // daqui pra cima é aliado de verdade
 
+  /* MENOS BRIGA, E ENTRE OS MAIORES RIVAIS (régua do dono, 08/09/2026).
+     `FREIO_BRIGA` corta 40% de toda chance de briga do jogo — a nossa e
+     a das IAs, na rua, na estrada, na arquibancada, na treta, entre
+     filiais. Ficam de fora o BAR (calendário do trimestre e bar do
+     rival) e a LNT, que não sorteiam. `pesoDoRival` é o viés: contra
+     maior rival a chance vale cheia; contra rival comum ou hostil,
+     metade — e onde o alvo é escolhido de uma lista, o maior rival
+     entra na frente. Maior rival é o declarado na fonte, de um lado ou
+     do outro, ou relação viva de −70 pra baixo. */
+  const FREIO_BRIGA = 0.6;
+  const PESO_OUTROS = 0.5;
+  function ehMaiorRival(E, idA, idB){
+    if(!idA || !idB || idA === idB) return false;
+    const base = M().relacaoBase(idA, idB), base2 = M().relacaoBase(idB, idA);
+    if(base === 'Maior Rival' || base2 === 'Maior Rival') return true;
+    const rel = (idA === E.torcida.id) ? nivel(E, idB)
+              : (idB === E.torcida.id) ? nivel(E, idA)
+              : relacaoDelas(E, idA, idB);
+    return rel <= -70;
+  }
+  const pesoDoRival = (E, a, b) => ehMaiorRival(E, a, b) ? 1 : PESO_OUTROS;
+  /* os maiores rivais primeiro, depois a relação mais azeda */
+  const maioresPrimeiro = (E, ids, relDe) => ids.slice().sort((a,b)=>
+    (ehMaiorRival(E, E.torcida.id, b)?1:0) - (ehMaiorRival(E, E.torcida.id, a)?1:0) ||
+    relDe(a) - relDe(b));
+
   const nivel = (E, id) => (E.relacoes||{})[id] !== undefined
     ? E.relacoes[id]
     : M().valorInicial(M().relacaoBase(E.torcida.id, id));
@@ -761,7 +787,7 @@ TO.relacoes = (function(){
                 nF, saltos, frotaIA(t));
               t.caixa -= cvf;
               lancarIA(E, id, `Caravana da subsede (${nF} cabeças)`, -cvf);
-              if(U.rng() >= 0.04) continue;
+              if(U.rng() >= 0.04 * FREIO_BRIGA) continue;   // 2,4% (dono, 08/09/2026)
               const hostil = M().torcidasEm(destino)
                 .filter(x=>x.id !== id && x.id !== E.torcida.id &&
                   !x.incompleta && x.clubeId !== o.clubeId &&
@@ -965,8 +991,11 @@ TO.relacoes = (function(){
     const fora = [];
     if(E.ataqueMarcado && !E.ataqueMarcado.resolvido &&
        E.ataqueMarcado.semana === E.data.semana) return fora;
-    for(const o of M().jogaveis()){
-      if(o.id === E.torcida.id || o.incompleta) continue;
+    /* os maiores rivais são testados primeiro (dono, 08/09/2026) */
+    const candidatas = maioresPrimeiro(E,
+      M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta).map(o=>o.id),
+      id => nivel(E, id)).map(id => M().torcida(id));
+    for(const o of candidatas){
       const r = nivel(E, o.id);
       if(r > QUENTE) continue;
       if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
@@ -983,7 +1012,8 @@ TO.relacoes = (function(){
       const briga = brigaDe(t);
       /* de −55 pra baixo a chance cresce; em −100, com torcida bem
          ousada, é quase um ataque por mês */
-      const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * briga;
+      const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * briga
+                     * FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id);
       if(U.rng() > chance) continue;
 
       /* concentração e pista só existem em semana de jogo em casa */
@@ -1024,13 +1054,15 @@ TO.relacoes = (function(){
         if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
         const r = nivel(E, o.id);
         if(r > QUENTE) continue;
-        const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.18 * brigaDe(t);
-        if(U.rng() > chance) continue;
-
         const jogoEmCasa = E.proximoJogo && E.proximoJogo.casa;
         const aptos = TO.membros.aptosParaOEstadio
           ? TO.membros.aptosParaOEstadio(E).length : E.membros.length;
         const podeRua = jogoEmCasa && f.membros >= aptos * 0.5;
+        /* o bar fica fora do freio (dono, 08/09/2026); a rua leva */
+        const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.18 * brigaDe(t)
+                       * (podeRua ? FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id) : 1);
+        if(U.rng() > chance) continue;
+
         const alvo = podeRua ? U.escolher(ALVOS) : {id:'bar', cena:'bar'};
         const dia = alvo.id === 'bar'
           ? diaDoAtaque(E, o.id) : (E.proximoJogo.dia || 6);
@@ -1064,14 +1096,17 @@ TO.relacoes = (function(){
         ? TO.planejamento.estimativaCaravana(E) : null;
       const crew = (est && est.vao) ||
         TO.membros.aptosParaOEstadio(E).length;
-      for(const o of M().torcidasEm(j.mapaAdv)){
-        if(o.id === E.torcida.id || o.incompleta) continue;
+      const daPraca = maioresPrimeiro(E,
+        M().torcidasEm(j.mapaAdv).filter(o=>o.id !== E.torcida.id && !o.incompleta).map(o=>o.id),
+        id => nivel(E, id)).map(id => M().torcida(id));
+      for(const o of daPraca){
         if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
         const r = nivel(E, o.id);
         if(r > QUENTE) continue;
         if(disponiveisIA(E, o.id) < crew * 0.5) continue;
         const t = (E.mundoTorcidas||{})[o.id];
-        const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * brigaDe(t);
+        const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * brigaDe(t)
+                       * FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id);
         if(U.rng() > chance) continue;
         const sorteio = [];
         for(const a of ALVOS) for(let i=0;i<a.peso;i++) sorteio.push(a);
@@ -1115,7 +1150,10 @@ TO.relacoes = (function(){
     const H = TO.mapa.hash;
     const bloco = Math.floor((semanaAbs(E) - 1) / SEMANAS_TRI);
     const chave = `tri|${bloco}|${id || E.torcida.id}`;
-    const nTreta = 1 + H(chave + '|nt') % 2;      // 1 a 2 (média 1,5)
+    /* 0, 1 ou 2 tretas (30% / 50% / 20%, média 0,9): os 40% a menos do
+       dono (08/09/2026) sobre a média antiga de 1,5. O bar não muda. */
+    const dado = H(chave + '|nt') % 10;
+    const nTreta = dado < 3 ? 0 : dado < 8 ? 1 : 2;
     const nBar   = H(chave + '|nb') % 4 ? 1 : 0;  // 0 ou 1 (média 0,75)
     const fora = [], usados = new Set();
     const poe = (tipo, i)=>{
@@ -1174,6 +1212,11 @@ TO.relacoes = (function(){
     if(semente){
       const balde = [...new Set(mrs.concat(hostis.map(x=>x.o)))];
       if(!balde.length) return null;
+      /* três em quatro tretas são com maior rival, se houver (dono,
+         08/09/2026); a quarta continua sorteando no balde inteiro */
+      const maiores = balde.filter(o=>ehMaiorRival(E, E.torcida.id, o.id));
+      if(maiores.length && TO.mapa.hash(`${semente}|mr`) % 4)
+        return maiores[TO.mapa.hash(`${semente}|rival`) % maiores.length];
       return balde[TO.mapa.hash(`${semente}|rival`) % balde.length];
     }
     /* sem semente (o bar): a MAIOR rival declarada da praça — pegar a
@@ -1438,7 +1481,7 @@ TO.relacoes = (function(){
      registro que a aba Brigas das Notícias mostra — e mexe no
      ranking, porque lá contam os DISPONÍVEIS.
      ======================================================= */
-  const CHANCE_BRIGA_JOGO = 0.18;
+  const CHANCE_BRIGA_JOGO = 0.18 * FREIO_BRIGA;   // 10,8% por jogo (dono, 08/09/2026)
   function foraDeCombate(E, id){
     const t = (E.mundoTorcidas||{})[id];
     if(!t) return 0;
@@ -1774,7 +1817,11 @@ TO.relacoes = (function(){
         pares.push([a, b]);
       }
       if(!pares.length) continue;
-      const [a, b] = pares[Math.floor(U.rng()*pares.length)];
+      /* a maioria das brigas é entre maiores rivais quando há par assim
+         (dono, 08/09/2026): três em quatro vezes o sorteio é só entre eles */
+      const paresMR = pares.filter(([a,b])=>ehMaiorRival(E, a.id, b.id));
+      const balde = (paresMR.length && U.rng() < 0.75) ? paresMR : pares;
+      const [a, b] = balde[Math.floor(U.rng()*balde.length)];
       /* quem viajou pode estar hospedado num aliado da cidade: metade
          das vezes o anfitrião desce junto (a escolta do mundo) */
       const anfitriaoDe = (o, outro) => {
@@ -1873,7 +1920,12 @@ TO.relacoes = (function(){
   function rivalDaPracaIA(E, o, semente){
     const lista = hostisLocaisIA(E, o);
     if(!lista.length) return null;
-    if(semente) return lista[TO.mapa.hash(`${semente}|rv`) % lista.length];
+    if(semente){
+      const maiores = lista.filter(x=>ehMaiorRival(E, o.id, x.id));
+      if(maiores.length && TO.mapa.hash(`${semente}|mr`) % 4)
+        return maiores[TO.mapa.hash(`${semente}|rv`) % maiores.length];
+      return lista[TO.mapa.hash(`${semente}|rv`) % lista.length];
+    }
     return lista.sort((x,y)=>vivoDe(E,y.id)-vivoDe(E,x.id))[0];
   }
 
@@ -1952,13 +2004,17 @@ TO.relacoes = (function(){
      dia comum — a mesma régua nossa (chance cresce com a mágoa e com
      a ousadia dela), diluída no dia */
   function surpresaIA(E, o){
-    for(const v of hostisLocaisIA(E, o)){
+    const hostis = hostisLocaisIA(E, o).sort((x,y)=>
+      (ehMaiorRival(E, o.id, y.id)?1:0) - (ehMaiorRival(E, o.id, x.id)?1:0) ||
+      relacaoDelas(E, o.id, x.id) - relacaoDelas(E, o.id, y.id));
+    for(const v of hostis){
       const rel = relacaoDelas(E, o.id, v.id);
       if(rel > QUENTE) continue;
       if(vivoDe(E, o.id) < vivoDe(E, v.id) * 0.5) continue;
       const t = (E.mundoTorcidas||{})[o.id];
       const briga = brigaDe(t);
-      const chance = ((QUENTE - rel)/(100 + QUENTE)) * 0.28 * briga / 7;
+      const chance = ((QUENTE - rel)/(100 + QUENTE)) * 0.28 * briga / 7
+                     * FREIO_BRIGA * pesoDoRival(E, o.id, v.id);
       if(U.rng() > chance) continue;
       return brigaIA(E, o, v, o.mapa, 'ataque-surpresa');
     }
@@ -1970,7 +2026,7 @@ TO.relacoes = (function(){
   function estradaIA(E, jogos, fora){
     if(!TO.planejamento || !TO.planejamento.caminho) return;
     for(const j of (jogos||[])){
-      if(U.rng() > 0.10) continue;
+      if(U.rng() > 0.10 * FREIO_BRIGA) continue;      // 6% (dono, 08/09/2026)
       const casa = M().time(j.c), vis = M().time(j.f);
       if(!casa || !vis || casa.mapa === vis.mapa) continue;
       const viajantes = M().torcidasDe(vis.id)
@@ -1981,12 +2037,14 @@ TO.relacoes = (function(){
       const rota = TO.planejamento.caminho(E, vis.mapa, casa.mapa, false);
       if(!rota) continue;
       for(const cid of rota.cidades.slice(1, -1)){
-        const emb = M().torcidasEm(cid).find(x =>
+        const hostis = M().torcidasEm(cid).filter(x =>
           !x.incompleta && x.id !== E.torcida.id && x.id !== o.id &&
           x.clubeId !== o.clubeId &&
           !(M().saoIrmas && M().saoIrmas(o.id, x.id)) &&
           (relacaoDelas(E, o.id, x.id) <= HOSTIL ||
            ['Rival','Maior Rival'].includes(M().relacaoBase(o.id, x.id))));
+        /* o maior rival da praça fecha a pista primeiro */
+        const emb = hostis.find(x=>ehMaiorRival(E, o.id, x.id)) || hostis[0];
         if(!emb) continue;
         const r = brigaIA(E, emb, o, cid, 'emboscada na estrada');
         if(r) fora.push(r);
@@ -2351,7 +2409,8 @@ TO.relacoes = (function(){
         const r = relacaoDelas(E, a.id, b.id);
         if(r > -20) continue;
         const chance = ((-20 - r)/120) * 0.10 *
-          Math.max(brigaDe(m[a.id]), brigaDe(m[b.id]));
+          Math.max(brigaDe(m[a.id]), brigaDe(m[b.id]))
+          * FREIO_BRIGA * pesoDoRival(E, a.id, b.id);
         if(U.rng() >= chance) continue;
         brigaIA(E, a, b, cidade, '', {tetoA: lst[x].f.membros,
                                       tetoB: lst[y].f.membros});
@@ -2383,7 +2442,8 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {REL, HOSTIL, QUENTE, ALIADO, nivel, hostilidade, marcarAjuda,
+  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, ehMaiorRival, pesoDoRival,
+          nivel, hostilidade, marcarAjuda,
           ranking, rankingDoPais, posicaoNoRanking, posicaoNoMundo,
           paisDaTorcida, situacaoFinanceira,
           brigasDeHoje, mundoDia, brigaIA, disponiveisIA, foraDeCombate, baixasIA,

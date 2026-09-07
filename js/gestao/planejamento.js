@@ -221,7 +221,94 @@ TO.planejamento = (function(){
                     TO.patrimonio.temFilialEm(E, mapaAdv))
       ? TO.membros.aptosDaFilial(E, mapaAdv).length : 0;
     const est = estimativaCaravana(E);
-    return (est ? est.vao : aptos) + nucleo;
+    /* A ESCOLTA DO ALIADO DA PRAÇA DELES (pedido do dono, 08/09/2026):
+       se a ajuda pedida no planejamento veio com escolta, o bonde deles
+       anda junto do nosso na praça do jogo — entra no efetivo da saída
+       como a filial entra: gente do nosso lado na rua e no estádio. */
+    const aj = ajudaDe(E);
+    const escolta = (aj && aj.mapa === mapaAdv && aj.escolta) ? aj.escolta : 0;
+    return (est ? est.vao : aptos) + nucleo + escolta;
+  }
+
+  /* =======================================================
+     PEDIR AJUDA A ALIADO NO JOGO FORA (pedido do dono, 08/09/2026)
+     O espelho da recepção: na praça do jogo fora, uma aliada
+     (relação ≥ 20 ou irmã de clube) pode nos receber. O pedido
+     sai da tela da caravana e a resposta vem na hora, com o
+     tipo de ajuda — a MESMA tabela que a gente usa pra receber
+     aliado: só hospedagem, hospedagem e escolta, escolta e
+     churrasco, ou não recebe. Quem decide é a relação, com um
+     pouco de sorte fixa por semana. Cada nível custa a ela o
+     que custaria a nós (25/50/75 por cabeça da nossa caravana),
+     pago do caixa dela até onde ele alcança — o caixa das IAs é
+     curto e, se ele mandasse no nível, escolta e churrasco nunca
+     sairiam; quem manda é a relação.
+     O que muda pra gente:
+       · relação: receber soma a tabela da recepção (+7, +12,
+         +20); não receber tira −7 — é o que ELA cobra de nós
+         no caso inverso;
+       · moral: dormir na sede deles dá +1; churrasco dá +2;
+       · escolta: 5 a 10% do efetivo dela anda com o nosso
+         bonde na praça do jogo (efetivoDaSaida).
+     Um pedido por jogo; a resposta fica no plano da semana.
+     ======================================================= */
+  const ajudaDe = E => (E.plano && E.plano.ajuda) || null;
+
+  /* as aliadas da praça do jogo fora, e a resposta que cada uma daria */
+  function aliadasNaPracaDeles(E, jogo){
+    const j = jogo || E.proximoJogo;
+    if(!j || j.casa || !j.mapaAdv) return [];
+    const fora = [];
+    for(const o of M().torcidasEm(j.mapaAdv)){
+      if(o.id === E.torcida.id || o.incompleta) continue;
+      const irma = M().saoIrmas && M().saoIrmas(E.torcida.id, o.id);
+      const rel = TO.relacoes.nivel(E, o.id);
+      if(!irma && rel < RELACAO_ALIADO) continue;
+      fora.push({id:o.id, torcida:o, nome:o.nome, relacao:rel, irma});
+    }
+    return fora.sort((a,b)=>b.relacao-a.relacao);
+  }
+
+  /* a resposta: nível pela relação com uma sorte fixa da semana; o
+     caixa dela pode descer o nível */
+  function respostaDaAjuda(E, aliadoId, jogo){
+    const j = jogo || E.proximoJogo;
+    const rel = TO.relacoes.nivel(E, aliadoId);
+    const h = TO.mapa.hash(`ajuda|${E.data.ano}|${E.data.semana}|${aliadoId}`);
+    const nota = rel + (h % 21) - 10;
+    let nivel = nota >= 60 ? 'churrasco' : nota >= 42 ? 'escolta'
+              : nota >= 26 ? 'hospedar' : 'nada';
+    const est = estimativaCaravana(E, j);
+    const cabecas = est ? est.vao : 0;
+    return {nivel, custo: custoRecepcao(nivel, cabecas), cabecas, nota};
+  }
+
+  function pedirAjuda(E, aliadoId){
+    const p = plano(E);
+    if(p.ajuda) return p.ajuda;                       // um pedido por jogo
+    const j = E.proximoJogo;
+    const o = M().torcida(aliadoId);
+    if(!j || j.casa || !o) return null;
+    const r = respostaDaAjuda(E, aliadoId, j);
+    const rec = recepcaoDe(r.nivel);
+    E.relacoes = E.relacoes || {};
+    E.relacoes[aliadoId] = U.limitar(TO.relacoes.nivel(E, aliadoId)
+                                     + rec.relacao, -100, 100);
+    let moral = 0;
+    if(r.nivel !== 'nada'){
+      TO.relacoes.marcarAjuda(E, aliadoId);
+      moral = r.nivel === 'churrasco' ? 0.4 : r.nivel === 'hospedar' || r.nivel === 'escolta' ? 0.2 : 0;
+      if(moral) TO.estado.mexerIndicador(E, 'moral', moral,
+        `Recebidos pela ${o.nome} em ${j.cidadeAdv || 'fora'}`);
+      const t = (E.mundoTorcidas||{})[aliadoId];
+      if(t && r.custo) t.caixa = Math.max(0, (t.caixa||0) - r.custo);   // até onde alcança
+    }
+    const escolta = (r.nivel === 'escolta' || r.nivel === 'churrasco')
+      ? TO.praca.escoltaDe(E, o, E.torcida) : 0;
+    p.ajuda = {aliado:aliadoId, nome:o.nome, nivel:r.nivel, escolta,
+               relacao:rec.relacao, moral: Math.round(moral*5),
+               mapa:j.mapaAdv, chave:j.chave};
+    return p.ajuda;
   }
 
   /* =======================================================
@@ -1282,8 +1369,14 @@ TO.planejamento = (function(){
     const lista = hostisNaPraca(E, cidadeId, crew);
     if(!lista.length) return null;
     const chave = `emb|${E.data.ano}|${E.data.semana}|${cidadeId}|${ida?'ida':'volta'}`;
-    const alvo = lista[H(chave+'|quem') % lista.length];
-    let chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45);
+    /* o maior rival da praça fecha a pista primeiro (dono, 08/09/2026):
+       havendo um, três em quatro vezes é ele; senão, qualquer hostil */
+    const maiores = lista.filter(x=>TO.relacoes.ehMaiorRival(E, E.torcida.id, x.id));
+    const balde = (maiores.length && H(chave+'|mr') % 4) ? maiores : lista;
+    const alvo = balde[H(chave+'|quem') % balde.length];
+    /* e 40% a menos de chance em toda emboscada (FREIO_BRIGA) */
+    let chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45)
+                 * TO.relacoes.FREIO_BRIGA;
     if(!ida) chance = chance/2;
     /* praça com SUB-SEDE nossa é parada meio segura (dono, 26/08/2026):
        o núcleo local conhece as ruas e a chance cai pela metade */
@@ -1326,7 +1419,8 @@ TO.planejamento = (function(){
     candidatos.sort((a,b)=>a.relacao-b.relacao || (a.id<b.id?-1:1));
     const alvo = candidatos[H(chave+'|quem') % candidatos.length];
     /* quanto pior a relação, maior a chance de fecharem a pista */
-    let chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45);
+    let chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45)
+                 * TO.relacoes.FREIO_BRIGA;
     /* trecho passando por praça com SUB-SEDE nossa: metade da chance
        (dono, 26/08/2026) — o núcleo local segura a barra da estrada */
     if(TO.patrimonio.temFilialEm && TO.patrimonio.temFilialEm(E, alvo.cidade))
@@ -1352,6 +1446,7 @@ TO.planejamento = (function(){
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
           aliadosNaCidade, caravanaDe, custoCaravanaIA, RELACAO_ALIADO,
+          aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe,
           saltosEntre, custoCaravanaFilial, caravanaDaFilial,
           RECEPCAO, recepcaoDe, custoRecepcao,
           emboscadaDaRota, emboscadaNaPraca, hostisNaPraca,

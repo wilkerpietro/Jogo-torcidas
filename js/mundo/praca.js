@@ -470,11 +470,15 @@ TO.praca = (function(){
      fora do fator, trinta caras com ódio viriam pra cima de duzentos,
      que é exatamente o que não acontece na rua.
      ======================================================= */
-  const BASE_PROCURA = {maior:88, rival:72, hostil:20};
+  /* MENOS BRIGA, E COM O MAIOR RIVAL (régua do dono, 08/09/2026): a
+     base era 88/72/20. O maior rival cai 30% (62), o rival comum e o
+     hostil caem 50% (36/10) — na média a rua briga 40% menos, e quando
+     briga é quase sempre com quem importa. */
+  const BASE_PROCURA = {maior:62, rival:36, hostil:10};
   /* o agravante que era da tensão agora é a MÁGOA: quanto a relação
      está abaixo de −45 — briga recente derruba a relação além do
      natural, e é isso que esquenta a semana seguinte */
-  const K_MAGOA = 0.5;
+  const K_MAGOA = 0.3;      // era 0,5: os 40% a menos valem na mágoa também
   const magoa = rel => Math.max(0, -(rel||0) - 45);
 
   /* A PARIDADE COMPARA TORCIDAS, NÃO BONDES, e o motivo é medido.
@@ -539,7 +543,7 @@ TO.praca = (function(){
     U.limitar((BASE_PROCURA[grauDeRivalidade(E, outro)]
                + magoa(TO.relacoes.nivel(E, outro))*K_MAGOA)
               * fatorParidade(efetivoDe(E, E.torcida.id), efetivoDe(E, outro)),
-              0, 95);
+              0, 57);
 
   /* O ACASO É MUITO MENOR QUE A INTENÇÃO, e tem de ser: dois bondes que
      não estão se procurando só se pegam se derem de cara um com o
@@ -558,8 +562,8 @@ TO.praca = (function(){
      hostilidade (−15) dá 1,25%. Somado à intenção, é uma surpresa a
      cada dez pares hostis — três ou quatro na temporada, e a esmagadora
      maioria dos dias sem plano em paz, que é o que o prompt pede. */
-  const chanceDeAcaso = relacao => Math.min(12,
-    Math.max(0, -(relacao || 0)) / 12);
+  const chanceDeAcaso = relacao => Math.min(7.2,
+    Math.max(0, -(relacao || 0)) / 20);    // 40% a menos (dono, 08/09/2026)
 
   /* OS BAIRROS QUE LIGAM DUAS PONTAS. Não há rota pra percorrer, mas há
      geometria: o bairro que fica ao longo da reta entre a sede e o

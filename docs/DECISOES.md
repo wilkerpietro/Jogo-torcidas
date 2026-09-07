@@ -3936,6 +3936,65 @@ mensagem já dropada em save antigo.
   `retomarTempo('decisao')`, e o dia segue na hora (conferido: 2 s
   depois do último clique o dia já tinha virado).
 
+## 40% menos briga, e entre os maiores rivais (régua do dono, 08/09/2026)
+
+**A régua.** Toda chance de briga do jogo cai 40% — a nossa e a das
+IAs — MENOS o bar (calendário do trimestre, bar do rival, sub-sede que
+desce no bar) e a LNT, que não sorteia. E quando há oportunidade, a
+briga é em sua maioria com o MAIOR RIVAL: o declarado na fonte, de um
+lado ou do outro, ou relação viva de −70 pra baixo.
+
+**Onde mora.** `TO.relacoes.FREIO_BRIGA = 0,6` e `pesoDoRival` (1 contra
+maior rival, 0,5 contra os outros), aplicados em:
+- ataque-surpresa contra nós (concentração/pista, em casa e fora): a
+  lista é varrida com os maiores rivais primeiro, e a chance leva freio
+  e peso; a sub-sede inimiga que desce no bar fica sem freio;
+- emboscada de rota (ida e volta): chance × 0,6; havendo maior rival na
+  praça, três em quatro vezes é ele quem fecha a pista;
+- encontro de rua no dia de jogo: base 88/72/20 → 62/36/10, mágoa 0,5 →
+  0,3, teto 95 → 57, acaso 12 → 7,2;
+- arquibancada: chance por minuto × 0,6; o alvo é o maior rival presente
+  antes da maior torcida;
+- tretas do trimestre: 1–2 (média 1,5) → 0/1/2 com 30/50/20% (média
+  0,9); três em quatro contra maior rival, se houver (nós e as IAs);
+- IA × IA: briga por jogo 18% → 10,8%, com o sorteio do par entre maiores
+  rivais em três de quatro vezes; ataque-surpresa delas com freio e peso,
+  maiores primeiro; emboscada delas 10% → 6%, maior rival da praça
+  primeiro; caravana de filial 4% → 2,4%; guerra de filiais × 0,6 e peso;
+- filiais nossas: apanhar sozinha 0,5% → 0,3% ao dia; caravana da filial
+  5% → 3%.
+Fora do freio, além de bar e LNT: o que o jogador manda (assalto, CT,
+investida, bote na caravana rival) e o que acontece dentro da cena.
+
+**Medido** em 200 dias de mundo, sem erro; os números estão no registro
+da conversa.
+
+## Pedir ajuda a aliado no jogo fora (pedido do dono, 08/09/2026)
+
+Na tela da caravana, o bloco "Ajuda de aliado na praça deles" lista as
+aliadas da cidade do jogo (relação ≥ 20 ou irmã de clube) com o botão
+"Pedir ajuda". A resposta vem na hora, com o tipo — a MESMA tabela da
+nossa recepção: só hospedagem, hospedagem e escolta, escolta e churrasco,
+ou não recebe. Quem decide é a relação (mais uma sorte fixa da semana):
+nota = relação ± 10; ≥ 60 churrasco, ≥ 42 escolta, ≥ 26 hospedagem,
+senão nada. Um pedido por jogo; fica no plano da semana.
+
+**O que muda.**
+- Relação: receber soma a tabela da recepção (+7 / +12 / +20); não
+  receber tira −7, o que ela cobra de nós no caso inverso.
+- Moral: dormir na sede deles +1; churrasco +2.
+- Escolta: 5 a 10% do efetivo dela anda com o nosso bonde na praça do
+  jogo — entra no efetivo da saída (rua, estádio e itinerário), como a
+  filial entra.
+- O caixa dela paga a recepção até onde alcança (25/50/75 por cabeça da
+  nossa caravana). O caixa das IAs é curto e, se mandasse no nível,
+  escolta e churrasco nunca sairiam — quem manda é a relação.
+
+**Conferido.** Bamor (relação 70) respondeu escolta e churrasco: relação
+70 → 90, moral +2, 8 na escolta somados ao efetivo pra Bahia, caixa dela
+debitado; Camisa 12 do Vitória (relação 22) não recebe. Pedir de novo não
+cobra de novo; o efetivo em casa não leva a escolta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

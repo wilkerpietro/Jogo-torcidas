@@ -242,7 +242,7 @@ TO.feed = (function(){
   function filialDeHoje(E){
     if(!TO.patrimonio || !TO.diaJogo || !TO.diaJogo.simular) return;
     for(const f of (((E.patrimonio||{}).filiais)||[])){
-      if(U.rng() >= 0.005) continue;                // dose do dono: 0,5% ao dia
+      if(U.rng() >= 0.005 * TO.relacoes.FREIO_BRIGA) continue;   // 0,3% ao dia (dono, 08/09/2026)
       const nucleo = TO.membros.aptosDaFilial(E, f.cidade);
       if(nucleo.length < 4) continue;
       const hostis = M().torcidasEm(f.cidade)
@@ -322,7 +322,7 @@ TO.feed = (function(){
         `Caravana da subsede ${TO.financeiro.nomeCidade(f.cidade)} `+
         `(${c.n} cabeças)`, -custo);
       /* a estrada tem dono de vez em quando */
-      if(U.rng() >= 0.05) continue;
+      if(U.rng() >= 0.05 * TO.relacoes.FREIO_BRIGA) continue;   // 3% (dono, 08/09/2026)
       const rival = M().torcidasEm(destino)
         .filter(o=>o.id !== E.torcida.id && !o.incompleta &&
                    !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) &&

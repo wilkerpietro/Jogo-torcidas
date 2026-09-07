@@ -905,9 +905,11 @@
       (TO.mundo.saoIrmas && TO.mundo.saoIrmas(e.torcida.id, p.id)));
     if(temAliado) return {pMin:0, temAliado:true, pior:0, rivais:outras.length};
     const pior = Math.min(...outras.map(rel));
-    let pMin = pior <= -70 ? 0.035
+    /* 40% a menos em toda arquibancada (dono, 08/09/2026): era
+       0,035 / 0,030 / 0,020 / 0,010 por minuto */
+    let pMin = (pior <= -70 ? 0.035
              : pior <= -55 ? 0.030
-             : pior <= -15 ? 0.020 : 0.010;
+             : pior <= -15 ? 0.020 : 0.010) * TO.relacoes.FREIO_BRIGA;
     /* BONDE MUITO MENOR NÃO COMPRA BRIGA (régua do dono, 22/08/2026):
        quando eles chegam com 40% do nosso número ou menos — ou seja,
        são 60% menores —, a chance de a arquibancada se pegar cai pela
@@ -1263,8 +1265,11 @@
     const pres = (d.presenca || []).filter(p => p.id);
     const nossos = pres.filter(p => p.casa === !!d.somosCasa)
       .sort((a,b) => b.n - a.n);
+    /* o maior rival presente é o alvo, antes da maior torcida (dono,
+       08/09/2026); entre iguais, a maior */
+    const mr = p => TO.relacoes.ehMaiorRival(e, e.torcida.id, p.id) ? 1 : 0;
     const deles = pres.filter(p => p.casa !== !!d.somosCasa)
-      .sort((a,b) => b.n - a.n);
+      .sort((a,b) => mr(b) - mr(a) || b.n - a.n);
     if(!deles.length || !nossos.some(p => p.id === e.torcida.id)){
       /* sem rival na casa (ou nós nem fomos): nada abre, e a bola
          volta a rolar na hora */
@@ -3806,6 +3811,52 @@
               i===r.cidades.length-1?' chegada':''}${hostil>40?' hostil':''}`+
               `">${nome}</span>`;
           }).join('<i>›</i>')}));
+
+      /* --- AJUDA DE ALIADO NA PRAÇA DELES (pedido do dono, 08/09/2026) ---
+         a resposta vem na hora, com o tipo de ajuda; um pedido por jogo */
+      const aliadas = P.aliadasNaPracaDeles(e);
+      const ajuda = P.ajudaDe(e);
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Ajuda de aliado na praça deles'}));
+      const NIVEL_ROT = {nada:'não vai receber a gente', hospedar:'só hospedagem',
+                         escolta:'hospedagem e escolta', churrasco:'escolta e churrasco'};
+      if(ajuda){
+        const rec = P.recepcaoDe(ajuda.nivel);
+        corpo.appendChild(el('div',{class:'linha-dado', html:
+          `<span>${linkTorcida(ajuda.aliado, ajuda.nome)} respondeu: `+
+          `<b>${NIVEL_ROT[ajuda.nivel] || ajuda.nivel}</b></span>`+
+          `<b class="${ajuda.nivel==='nada'?'negativo':'positivo'}">`+
+          `${rec.relacao>0?'+':''}${rec.relacao} rel.`+
+          `${ajuda.moral ? ` · +${ajuda.moral} moral` : ''}`+
+          `${ajuda.escolta ? ` · ${ajuda.escolta} na escolta` : ''}</b>`}));
+      } else if(!aliadas.length){
+        corpo.appendChild(el('div',{class:'linha-dado', html:
+          `<span class="fraco">Nenhuma aliada em ${j.cidadeAdv || 'lá'} — `+
+          `só aliada de verdade (relação 20+) ou irmã de clube recebe</span>`}));
+      } else {
+        const bloco = el('div',{class:'bloco-recepcao'});
+        for(const a of aliadas){
+          const linha = el('div',{class:'rec-aliado'});
+          linha.appendChild(el('div',{class:'rec-nome', html:
+            `<b>${linkTorcida(a.id, a.nome)}</b> <span class="fraco">· relação `+
+            `${Math.round(a.relacao)}${a.irma ? ' · irmã de clube' : ''}</span>`}));
+          const bts = el('div',{class:'rec-botoes'});
+          const b = el('button',{class:'rec-bt on', html:
+            `Pedir ajuda<small>a resposta vem na hora · pesa na relação</small>`});
+          b.onclick = ()=>{
+            const r = P.pedirAjuda(e, a.id);
+            if(!r) return;
+            aviso(r.nivel === 'nada'
+              ? `A ${r.nome} não vai receber a gente.`
+              : `A ${r.nome} topou: ${NIVEL_ROT[r.nivel]}.`,
+              r.nivel === 'nada' ? 'ruim' : 'boa');
+            TO.estado.salvar(); pintarTopo(); pintar();
+          };
+          bts.appendChild(b);
+          linha.appendChild(bts);
+          bloco.appendChild(linha);
+        }
+        corpo.appendChild(bloco);
+      }
 
       /* --- quantas bombas --- */
       const temBomba = (e.estoque||{}).bombas || 0;
