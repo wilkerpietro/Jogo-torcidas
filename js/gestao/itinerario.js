@@ -79,15 +79,19 @@ TO.itinerario = (function(){
      o nosso bonde e o da torcida do time que a gente enfrenta,
      em casa ou fora.
      ======================================================= */
-  function efetivoInicial(E, msg){
+  function efetivoInicial(E, msg, escolta){
     const pres = ((msg||{}).dados || {}).presenca || [];
     const somosCasa = !!((msg||{}).dados || {}).somosCasa;
     const nosso = pres.find(p => p.id === E.torcida.id);
     /* do outro lado conta a MAIOR: é ela que a gente encontra */
     const deles = pres.filter(p => p.id && p.casa !== somosCasa)
                       .sort((a,b)=>b.n - a.n)[0];
+    /* a presença do estádio já traz a escolta da aliada somada
+       (efetivoDaSaida); a linha parte SEM ela — a escolta só entra na
+       chegada à cidade, e a própria linha soma na hora certa */
+    const semEscolta = n => Math.max(1, n - (escolta ? escolta.n : 0));
     return {
-      nos: nosso ? Math.round(nosso.n)
+      nos: nosso ? semEscolta(Math.round(nosso.n))
                  : Math.max(1, (E.membros||[]).filter(m=>!m.ferido && !m.preso).length),
       eles: deles ? Math.round(deles.n) : 0,
       nomeDeles: deles ? deles.nome : ''
@@ -276,6 +280,21 @@ TO.itinerario = (function(){
       });
     }
 
+    /* ---- A ESCOLTA DA ALIADA (régua do dono, 08/09/2026) ----
+       Se o pedido de ajuda do planejamento veio com escolta, 10 dela
+       andam com o nosso bonde a partir da CHEGADA na cidade — e ficam
+       lá quando a caravana pega a estrada de volta. As paradas da
+       cidade ganham `comEscolta`; a linha do dia soma e desconta. */
+    const aj = PL().ajudaDe ? PL().ajudaDe(E) : null;
+    const escolta = (!casa && aj && aj.escolta > 0 && aj.mapa === (j.mapaAdv || ''))
+      ? {aliado:aj.aliado, nome:aj.nome, n:aj.escolta} : null;
+    if(escolta){
+      const naCidade = o => o.id === 'concentracao' || o.id === 'pista' ||
+        o.id === 'arredores' || o.id === 'jogo' || o.id === 'arredores-volta' ||
+        o.id === 'pista-volta' || o.id === 'praca:' + j.mapaAdv;
+      for(const o of paradas) if(naCidade(o)) o.comEscolta = true;
+    }
+
     /* ---- os marcos de virada de dia ---- */
     const dias = {};
     for(const o of paradas) dias[o.dia] = true;
@@ -293,7 +312,8 @@ TO.itinerario = (function(){
 
     return {
       casa, viaja,
-      efetivo: efetivoInicial(E, msg),
+      escolta,
+      efetivo: efetivoInicial(E, msg, escolta),
       hora: j.hora || '21:00',
       titulo: `${j.mandante.nome} × ${j.visitante.nome}`,
       /* de que jogo é esta linha, e pra onde ela vai: sem isto não dá

@@ -3983,12 +3983,18 @@ senão nada. Um pedido por jogo; fica no plano da semana.
 - Relação: receber soma a tabela da recepção (+7 / +12 / +20); não
   receber tira −7, o que ela cobra de nós no caso inverso.
 - Moral: dormir na sede deles +1; churrasco +2.
-- Escolta: 5 a 10% do efetivo dela anda com o nosso bonde na praça do
-  jogo — entra no efetivo da saída (rua, estádio e itinerário), como a
-  filial entra.
+- Escolta: 10 membros dela (régua do dono) andam com o nosso bonde a
+  partir da CHEGADA na cidade — chegada, concentração, pista, arredores,
+  estádio e a saída dos portões — e ficam quando a caravana pega a
+  estrada de volta. Na linha do dia o número aparece como "+ 10 da
+  Bamor" só nas paradas da cidade; a cena aberta pela linha na cidade
+  leva os 10 no nosso lado, e as baixas de uma briga lá saem primeiro
+  da escolta. Na estrada (ida e volta) a caravana vai sozinha.
 - O caixa dela paga a recepção até onde alcança (25/50/75 por cabeça da
-  nossa caravana). O caixa das IAs é curto e, se mandasse no nível,
-  escolta e churrasco nunca sairiam — quem manda é a relação.
+  nossa caravana), e o gasto entra no EXTRATO dela pela mesma porta da
+  economia das IAs (`lancarIA`) — conferência pedida pelo dono. O caixa
+  das IAs é curto e, se mandasse no nível, escolta e churrasco nunca
+  sairiam — quem manda é a relação.
 
 **Conferido.** Bamor (relação 70) respondeu escolta e churrasco: relação
 70 → 90, moral +2, 8 na escolta somados ao efetivo pra Bahia, caixa dela

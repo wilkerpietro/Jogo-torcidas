@@ -248,8 +248,11 @@ TO.planejamento = (function(){
          +20); não receber tira −7 — é o que ELA cobra de nós
          no caso inverso;
        · moral: dormir na sede deles dá +1; churrasco dá +2;
-       · escolta: 5 a 10% do efetivo dela anda com o nosso
-         bonde na praça do jogo (efetivoDaSaida).
+       · escolta: 10 membros dela (régua do dono, 08/09/2026)
+         andam com o nosso bonde a partir da CHEGADA na cidade —
+         concentração, pista, arredores e estádio — e ficam quando
+         a caravana pega a estrada de volta (efetivoDaSaida e a
+         linha do dia).
      Um pedido por jogo; a resposta fica no plano da semana.
      ======================================================= */
   const ajudaDe = E => (E.plano && E.plano.ajuda) || null;
@@ -300,11 +303,21 @@ TO.planejamento = (function(){
       moral = r.nivel === 'churrasco' ? 0.4 : r.nivel === 'hospedar' || r.nivel === 'escolta' ? 0.2 : 0;
       if(moral) TO.estado.mexerIndicador(E, 'moral', moral,
         `Recebidos pela ${o.nome} em ${j.cidadeAdv || 'fora'}`);
+      /* O GASTO ENTRA NAS FINANÇAS DELA (conferência do dono, 08/09/2026):
+         a mesma porta do resto da economia das IAs — `lancarIA` escreve
+         no extrato que o perfil da torcida mostra; o caixa paga até
+         onde alcança */
       const t = (E.mundoTorcidas||{})[aliadoId];
-      if(t && r.custo) t.caixa = Math.max(0, (t.caixa||0) - r.custo);   // até onde alcança
+      if(t && r.custo){
+        const pago = Math.min(r.custo, Math.max(0, t.caixa || 0));
+        t.caixa = Math.max(0, (t.caixa||0) - r.custo);
+        if(pago && TO.relacoes.lancarIA)
+          TO.relacoes.lancarIA(E, aliadoId,
+            `Recepção da ${E.torcida.nome} (${r.cabecas} cabeças · ${rec.rot.toLowerCase()})`, -pago);
+      }
     }
     const escolta = (r.nivel === 'escolta' || r.nivel === 'churrasco')
-      ? TO.praca.escoltaDe(E, o, E.torcida) : 0;
+      ? Math.min(10, Math.max(0, TO.relacoes.disponiveisIA(E, aliadoId))) : 0;
     p.ajuda = {aliado:aliadoId, nome:o.nome, nivel:r.nivel, escolta,
                relacao:rec.relacao, moral: Math.round(moral*5),
                mapa:j.mapaAdv, chave:j.chave};

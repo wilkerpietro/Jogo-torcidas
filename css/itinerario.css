@@ -160,6 +160,9 @@
   text-align:right;
 }
 .itn-efetivo b{color:var(--texto); font-weight:600}
+/* a escolta da aliada, somada ao nosso número só nas paradas da cidade */
+.itn-efetivo .escolta{color:var(--verde-vivo)}
+.itn-efetivo .escolta b{color:var(--verde-vivo)}
 
 
 /* O SIMULAR NA LINHA DO DIA (dono, 23/08/2026): mesma família do botão

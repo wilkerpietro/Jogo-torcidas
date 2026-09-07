@@ -1387,7 +1387,13 @@
            /* O EFETIVO ANDA COM A LINHA (régua do dono, 20/08/2026): a
               caravana parte com o que tem e cada baixa some do número
               que chega no próximo ponto. Vale pros dois lados. */
-           nos: it.efetivo.nos, eles: it.efetivo.eles};
+           nos: it.efetivo.nos, eles: it.efetivo.eles,
+           /* A ESCOLTA DA ALIADA (régua do dono, 08/09/2026): 10 dela
+              entram na chegada à cidade e ficam quando a caravana sai.
+              `escolta.n` é o que sobrou deles; as baixas de uma briga
+              na cidade saem primeiro da escolta. */
+           escolta: it.escolta ? {aliado:it.escolta.aliado, nome:it.escolta.nome,
+                                  n:it.escolta.n} : null};
 
     /* A LINHA MORA NA MENSAGEM (correção do dono, 20/08/2026): a tela
        cheia saiu. O nó é montado UMA vez e guardado em `ITN.raiz`; o
@@ -1462,12 +1468,20 @@
     ITN.estado.classList.toggle('travado', !!trava);
   }
 
+  /* a escolta da aliada só anda com a gente nas paradas da cidade */
+  function itnEscoltaAtiva(){
+    if(!ITN || !ITN.escolta || ITN.escolta.n <= 0) return 0;
+    const p = ITN.it.paradas[ITN.ponto];
+    return (p && p.comEscolta) ? ITN.escolta.n : 0;
+  }
   /* o número que a linha carrega: o nosso bonde e o deles */
   function itnContar(){
     if(!ITN || !ITN.conta) return;
     const nome = ITN.it.efetivo.nomeDeles;
+    const esc = itnEscoltaAtiva();
     ITN.conta.innerHTML =
       `<b>${ITN.nos}</b> ${ITN.nos===1?'nosso':'nossos'}` +
+      (esc ? ` <span class="escolta">+ <b>${esc}</b> da ${ITN.escolta.nome}</span>` : '') +
       /* zerado continua aparecendo: sumir com a linha esconderia
          justamente a informação de que não sobrou ninguém deles */
       (ITN.it.efetivo.eles ? ` · <b>${ITN.eles}</b> da ${nome}` : '');
@@ -1534,9 +1548,15 @@
       return;
     }
     const fila = (p.eventos || []).slice();
+    /* a escolta se junta na primeira parada da cidade, e fica na última */
+    const antes = paradas[ITN.ponto - 1];
+    const chegou = ITN.escolta && ITN.escolta.n > 0 && p.comEscolta && !(antes && antes.comEscolta);
+    const ficou  = ITN.escolta && ITN.escolta.n > 0 && !p.comEscolta && antes && antes.comEscolta;
     if(!fila.length){                 /* parada sem nada não fala */
-      itnDizer('passando · ' + p.nome.toLowerCase());
-      itnAgenda(900);
+      itnDizer(chegou ? `chegada · a ${ITN.escolta.nome} manda ${ITN.escolta.n} pra escolta`
+             : ficou ? `saída · a escolta da ${ITN.escolta.nome} fica`
+             : 'passando · ' + p.nome.toLowerCase());
+      itnAgenda(chegou || ficou ? 1400 : 900);
       return;
     }
     /* uma parada pode ter dois recados — a gente sofrer um ataque no
@@ -1657,7 +1677,13 @@
     const baixasDeles  = cap(res['caidos' + (outro==='mandante'?'Mandante':'Visitante')],
                              res['presos' + (outro==='mandante'?'Mandante':'Visitante')]);
     const antesNos = ITN.nos, antesEles = ITN.eles;
-    ITN.nos  = Math.max(0, ITN.nos  - baixasNossas);
+    /* a escolta da aliada apanha primeiro: é ela que vai na frente */
+    let sobra = baixasNossas;
+    if(itnEscoltaAtiva()){
+      const daEscolta = Math.min(ITN.escolta.n, sobra);
+      ITN.escolta.n -= daEscolta; sobra -= daEscolta;
+    }
+    ITN.nos  = Math.max(0, ITN.nos  - sobra);
     ITN.eles = Math.max(0, ITN.eles - baixasDeles);
     /* FERIDO NÃO VOLTA PRA BRIGA (régua do dono, 24/08/2026): o que
        cada torcida perdeu NESTE itinerário fica anotado, e o próximo
@@ -6940,7 +6966,8 @@
   /* o nosso corte é o mesmo dos outros, com a caravana viva de teto */
   const tetoNossoItn = n =>
     doItinerario()
-      ? Math.max(2, Math.min(descontoItn(E().torcida.id, n), ITN.nos || 0))
+      ? Math.max(2, Math.min(descontoItn(E().torcida.id, n),
+                             (ITN.nos || 0) + itnEscoltaAtiva()))
       : n;
 
   function abrirConfronto(e, enc){
