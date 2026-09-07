@@ -3755,6 +3755,14 @@ dois lados; e **o derrubado que não apanhou no chão levanta em 1 s**
 (quem apanha lá embaixo continua esperando socorro) — **menos o boneco
 do jogador, que levanta em 1 s sempre**, mesmo apanhando no chão.
 
+A regra vale em TODA cena de briga (correção do dono, 06/09/2026: o
+bar abria sem anel). Nas cenas de ação — bar da rival, comércio, CT,
+recepção na praça — o rival não entra como bonde: chega por
+`cfg.rival` e os defensores nascem soltos pelos pontos da cena; e nos
+arredores chegam bondes no meio da noite. A paleta da cena agora junta
+os bondes da configuração, o rival informado e o que os discos trazem,
+e se refaz quando entra gente nova.
+
 Limite técnico registrado: a camisa do GLB tem 206 vértices e não tem
 UV, então a cor por vértice sai esfumada — listra fina não se lê.
 Listra nítida pede reexportar o boneco com UV na camisa.

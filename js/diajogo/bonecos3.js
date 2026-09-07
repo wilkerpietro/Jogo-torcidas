@@ -549,25 +549,33 @@ TO.diaJogo.bonecos3 = (function(){
   /* A PALETA DA CENA: por torcida, a cor do calção e a do anel, e se
      a cena tem primária repetida. Lê os bondes da configuração
      (a nossa primeiro) e, sem bondes, o que os discos trazem. */
-  let paletaJ = null, paleta = null;
+  let paletaJ = null, paleta = null, paletaN = -1;
   function paletaDaCena(J){
-    if(J && J === paletaJ && paleta) return paleta;
-    paletaJ = J; paleta = {torcidas:{}, colisao:false};
+    if(J && J === paletaJ && paleta && J.discos.length === paletaN) return paleta;
+    paletaJ = J; paleta = {torcidas:{}, colisao:false}; paletaN = J ? J.discos.length : -1;
     if(!J) return paleta;
     const M = TO.mundo;
     const parecidas = (a,b)=> !!(a && b) && (M && M.coresParecidas
       ? M.coresParecidas(String(a).toUpperCase(), String(b).toUpperCase())
       : String(a).toLowerCase() === String(b).toLowerCase());
-    let lista = [];
-    if(J.bondes_ && J.bondes_.length)
-      lista = J.bondes_.map(b=>({nome:b.nome||b.lado, cor:b.cor, cor2:b.cor2, cor3:b.cor3, nossa:!!b.nossa}));
-    else {
-      const vistos = new Set();
-      for(const d of J.discos){
-        const k = d.torcida || d.lado; if(vistos.has(k)) continue; vistos.add(k);
-        lista.push({nome:k, cor:d.cor, cor2:d.cor2, cor3:d.cor3, nossa:!!d.doJogador});
-      }
-    }
+    /* TODA TORCIDA DA CENA, venha por onde vier (correção do dono,
+       06/09/2026: o bar abria sem anel). Nas cenas de ação — bar,
+       comércio, CT, recepção na praça — o rival não é bonde: ele chega
+       por `cfg.rival` (J.rivalInfo) e os defensores nascem soltos pelos
+       pontos da cena. E nos arredores chegam bondes no meio da noite
+       (`reforcar`). Então a lista junta os bondes da configuração, o
+       rival informado e o que os discos trazem; a nossa vai primeiro. */
+    const lista = [], porNome = new Map();
+    const juntar = (nome, cor, cor2, cor3, nossa)=>{
+      if(!nome) return;
+      const k = String(nome);
+      if(porNome.has(k)){ if(nossa) porNome.get(k).nossa = true; return; }
+      const t = {nome:k, cor:cor||null, cor2:cor2||null, cor3:cor3||null, nossa:!!nossa};
+      porNome.set(k, t); lista.push(t);
+    };
+    for(const b of (J.bondes_||[])) juntar(b.nome||b.lado, b.cor, b.cor2, b.cor3, b.nossa);
+    if(J.rivalInfo) juntar(J.rivalInfo.nome, J.rivalInfo.cor, J.rivalInfo.cor2, J.rivalInfo.cor3, false);
+    for(const d of J.discos) juntar(d.torcida || d.lado, d.cor, d.cor2, d.cor3, d.doJogador && !(d.torcida && porNome.has(d.torcida) && !porNome.get(d.torcida).nossa && J.bondes_));
     lista.sort((a,b)=>(b.nossa?1:0)-(a.nossa?1:0));
     /* QUEM REPETE DESEMPATA CONTRA QUEM VEIO ANTES (correção do dono,
        06/09/2026, Imbatíveis × Aliança: as duas branco e preto, e o anel
