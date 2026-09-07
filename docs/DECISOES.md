@@ -3763,6 +3763,13 @@ arredores chegam bondes no meio da noite. A paleta da cena agora junta
 os bondes da configuração, o rival informado e o que os discos trazem,
 e se refaz quando entra gente nova.
 
+**O ferido some** (régua do dono, 06/09/2026): com muita gente no chão
+não se sabia quem estava de pé. O caído fica 3 s no chão (a 30%),
+esvanece por 1,5 s e desaparece da cena — nos dois lados, no boneco e
+no disco. A conta dos caídos não muda. E o anel só existe em quem está
+de pé: caído e preso não têm anel, o que por si já diz quem está de pé
+no bolo.
+
 Limite técnico registrado: a camisa do GLB tem 206 vértices e não tem
 UV, então a cor por vértice sai esfumada — listra fina não se lê.
 Listra nítida pede reexportar o boneco com UV na camisa.

@@ -1545,7 +1545,12 @@ TO.diaJogo.bonecos3 = (function(){
            70% de transparência, ou seja, 30% de opacidade — nos dois
            lados. Some do bolo sem sumir da conta. */
         const piso = 0.3;
-        esmaecer(c, +Math.max(piso, 1 - (1-piso)*suave((f.queda.t-0.4)/0.5)).toFixed(2));
+        let opac = Math.max(piso, 1 - (1-piso)*suave((f.queda.t-0.4)/0.5));
+        /* e depois de CAIDO_FICA s no chão, esvanece até sumir */
+        const C = TO.diaJogo.combate, FICA = (C && C.CAIDO_FICA) || 3.0, SOME = (C && C.CAIDO_SOME) || 1.5;
+        const noChaoHa = t - (d.caiuEm != null ? d.caiuEm : t);
+        if(noChaoHa > FICA) opac = Math.min(opac, piso * Math.max(0, 1 - (noChaoHa - FICA)/SOME));
+        esmaecer(c, +opac.toFixed(2));
       }
       f.impacto = null; f.ataque = null; f.provoca = null;
     } else if(d.derrubado > 0){
@@ -1619,7 +1624,9 @@ TO.diaJogo.bonecos3 = (function(){
     if(c.anel){
       const cor = anelDe(J, d);
       const hex = cor === 'lado' ? corLado(d.lado, false) : cor;
-      c.anel.visible = c.anelFundo.visible = !!hex;
+      /* anel só em quem está de pé: caído e preso não têm anel, e isso
+         também diz quem está de pé no bolo */
+      c.anel.visible = c.anelFundo.visible = !!hex && !!d.vivo;
       if(hex && c.anelCor !== hex){ c.anel.material.color.set(hex); c.anelCor = hex; }
       /* o anel não gira com o corpo: fica deitado no chão, alinhado à tela */
       c.anel.rotation.z = c.anelFundo.rotation.z = -f.yaw;
@@ -1860,7 +1867,15 @@ TO.diaJogo.bonecos3 = (function(){
 
   function atualizarCena(J, dt){
     for(const fg of figuras.values()) fg.corpo.raiz.visible = false;
-    J.discos.forEach((d,i)=>{ if(!(d.entrou||d.sumiu)) animarDisco(d, i, J, dt); });
+    const C = TO.diaJogo.combate;
+    const FICA = (C && C.CAIDO_FICA) || 3.0, SOME = (C && C.CAIDO_SOME) || 1.5;
+    J.discos.forEach((d,i)=>{
+      if(d.entrou || d.sumiu) return;
+      /* o ferido some depois do prazo: não anima, e a limpeza abaixo
+         tira a figura da cena */
+      if(d.caido && J.t - (d.caiuEm||0) >= FICA + SOME) return;
+      animarDisco(d, i, J, dt);
+    });
     (J.policiais||[]).forEach((p,i)=>animarPM(p, i, J, dt));
     /* figuras que saíram da cena: some da lista, não só da tela */
     for(const [d,fg] of figuras) if(!fg.corpo.raiz.visible){ scene.remove(fg.corpo.raiz); figuras.delete(d); }

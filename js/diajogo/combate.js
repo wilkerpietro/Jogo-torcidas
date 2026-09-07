@@ -2084,6 +2084,8 @@ TO.diaJogo.combate = (function(){
      apanhou no chão levanta em 1 s. Quem apanha lá embaixo vira
      `noChao` e fica esperando socorro — isso não mudou. */
   const QUEDA_MIN = 1.0, QUEDA_MAX = 1.0;
+  /* o ferido fica no chão CAIDO_FICA s, esvanece por CAIDO_SOME s e some */
+  const CAIDO_FICA = 3.0, CAIDO_SOME = 1.5, CAIDO_SOME_EM = CAIDO_FICA + CAIDO_SOME;
   function alcanceDe(a,b){ return a.r+b.r+9; }
   function alvoNaFrente(J, a, soDePe){
     let melhor=null, md=1e9, chao=null, mc=1e9;
@@ -2450,7 +2452,7 @@ TO.diaJogo.combate = (function(){
 
   function derrubar(J,d){
     if(d.caido||d.preso) return;
-    d.caido=true; d.hp=0; d.vx=d.vy=0; d.derrubado=0; d.ataque=null;
+    d.caido=true; d.caiuEm=J.t; d.hp=0; d.vx=d.vy=0; d.derrubado=0; d.ataque=null;
     if(d.socorrista){ d.socorrista.socorrendo=null; d.socorrista=null; }
     if(d.socorrendo){ d.socorrendo.socorrista=null; d.socorrendo=null; }
     if(d.segurando) soltar(J,d);
@@ -3229,7 +3231,10 @@ TO.diaJogo.combate = (function(){
     const corpo = !(opc && opc.semCorpo);
     if(corpo) for(const p of J.policiais) desenharPolicial(c,p,J.t);
     const ord=[...J.discos].sort((a,b)=>a.y-b.y);
-    if(corpo) for(const d of ord) if(!d.vivo) desenharDisco(c,d);
+    /* O FERIDO SOME (régua do dono, 06/09/2026): fica uns segundos no
+       chão e desaparece — com muita gente caída não se sabia quem
+       estava de pé. A conta (J.caidos) não muda; só o desenho. */
+    if(corpo) for(const d of ord) if(!d.vivo && !(d.caido && J.t-(d.caiuEm||0) > CAIDO_SOME_EM)) desenharDisco(c,d);
     for(const d of ord) if(d.vivo){ if(corpo) desenharDisco(c,d); else desenharRotulo(c,d); }
     if(corpo) for(const p of J.projeteis) desenharProjetil(c,p);
   }
@@ -3238,7 +3243,7 @@ TO.diaJogo.combate = (function(){
           /* o simulador precisa das MESMAS fichas que a cena geraria:
              simular não pode dar ao rival um bonde diferente */
           fichasDoPerfil,
-          naFrente, rumoPara, RAIO_BOMBA, podeArremessar, bater, defender, DUR_GOLPE,
+          naFrente, rumoPara, RAIO_BOMBA, podeArremessar, bater, defender, DUR_GOLPE, CAIDO_FICA, CAIDO_SOME,
           soltarDefesa, agarrar, podeAgarrar, chamar, perfilDe, CD_CHAMAR,
           ladoDoJogador, ladoDeles, OUTRO_LADO,
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
