@@ -159,8 +159,8 @@ TO.diaJogo.combate = (function(){
       /* NO CHÃO PRECISANDO DE SOCORRO (dono, 06/09/2026: "quem cai por
          chute morre logo"): apanhou deitado não morre — fica no chão
          sem levantar sozinho até um companheiro chegar e puxar
-         (`socorrista`, 1,2 s parado em cima dele), ou até a briga ir
-         embora (2,5 s sem inimigo a 70 px). No chão leva 1,2× e morre
+         (`socorrista`, 1,2 s parado em cima dele), ou até 2 s depois
+         do último golpe que levou (régua do dono, 07/09/2026). No chão leva 1,2× e morre
          pelo HP como todo mundo. */
       this.noChao=false; this.sozinho=0; this.socorro=0; this.socorrista=null; this.socorrendo=null;
       this.noChaoQuieto=0;  // segundos no chão sem apanhar: o teto de espera por socorro
@@ -1302,15 +1302,6 @@ TO.diaJogo.combate = (function(){
     return fora;
   }
 
-  /* inimigo em pé (não deitado, não fugindo) a até `raio` px: é o que
-     segura um caído no chão — deitado não bate, quem corre não volta */
-  function inimigoDePe(J,d,raio){
-    for(const o of porPerto(J,d.x,d.y,raio)){
-      if(!o.vivo || !inimigos(d.lado,o.lado) || o.derrubado>0 || o.fugindo || o.sumiu) continue;
-      if(U.dist2(d.x,d.y,o.x,o.y) <= raio*raio) return o;
-    }
-    return null;
-  }
   function inimigoAlcancavel(J,d,raio){
     const cands=[];
     for(const o of porPerto(J,d.x,d.y,raio)){
@@ -1377,18 +1368,16 @@ TO.diaJogo.combate = (function(){
       if(d.derrubado>0){
         d.vx=d.vy=0;
         if(d.noChao){
-          /* sem ninguém DE PÉ por perto ele se arrasta e levanta sozinho.
-             O CAÍDO NÃO SEGURA CAÍDO (bug do dono, 07/09/2026): a conta
-             usava `inimigoAlcancavel`, que devolve qualquer inimigo vivo
-             — inclusive um deitado ou correndo. Dois caídos de lados
-             opostos a 30 px se seguravam no chão um ao outro pra sempre,
-             e com as duas torcidas debandadas ninguém vinha socorrer: a
-             cena virava eterna (TUF × Cearamor na rua). Só quem está em
-             pé e não está fugindo ameaça alguém no chão. */
-          if(inimigoDePe(J,d,70)) d.sozinho=0; else { d.sozinho+=dt; if(d.sozinho>=2.5) levantar(J,d); }
-          /* e o teto: 5 s sem levar um golpe sequer, levanta de qualquer
-             jeito — quem está em cima dele e não bate não o prende */
-          d.noChaoQuieto+=dt; if(d.noChaoQuieto>=5) levantar(J,d);
+          /* QUEM APANHA NO CHÃO LEVANTA 2 S DEPOIS DO ÚLTIMO GOLPE (régua
+             do dono, 07/09/2026), tenha ou não inimigo por perto. A
+             versão anterior esperava 2,5 s sem "inimigo alcançável", e
+             a conta incluía inimigo deitado ou fugindo: dois caídos de
+             lados opostos se seguravam no chão pra sempre e a cena
+             virava eterna (TUF × Cearamor na rua). Agora o que prende
+             no chão é só o golpe — cada soco zera o relógio
+             (`acertar`). O socorro do companheiro (1,2 s) continua
+             sendo o caminho mais curto. */
+          d.noChaoQuieto+=dt; if(d.noChaoQuieto>=NO_CHAO_LEVANTA) levantar(J,d);
         } else {
           d.derrubado-=dt;
           if(d.derrubado<=0){ d.derrubado=0; d.derrubadoDur=0; d.cdBater=Math.max(d.cdBater, J.t+0.4); }
@@ -2104,6 +2093,8 @@ TO.diaJogo.combate = (function(){
      apanhou no chão levanta em 1 s. Quem apanha lá embaixo vira
      `noChao` e fica esperando socorro — isso não mudou. */
   const QUEDA_MIN = 1.0, QUEDA_MAX = 1.0;
+  /* apanhou no chão: levanta 2 s depois do último golpe (dono, 07/09/2026) */
+  const NO_CHAO_LEVANTA = 2.0;
   /* o ferido fica no chão CAIDO_FICA s, esvanece por CAIDO_SOME s e some */
   const CAIDO_FICA = 3.0, CAIDO_SOME = 1.5, CAIDO_SOME_EM = CAIDO_FICA + CAIDO_SOME;
   function alcanceDe(a,b){ return a.r+b.r+9; }
