@@ -68,6 +68,11 @@ TO.feed = (function(){
     caixas(E);
     const o = M().torcida(torcidaId);
     if(!o || !texto) return null;
+    /* a mesma torcida não repete o mesmo recado no mesmo dia (duas
+       brigas com ela no mesmo dia davam a mesma provocação em dobro) */
+    const abs = E.data.absoluto||0;
+    if(E.mensagens.some(x=>x.de===torcidaId && x.texto===texto && (x.quando||{}).abs===abs))
+      return null;
     const m = {id: E.feedSeq++, de:torcidaId, nome:o.nome, texto, tipo:tipo||'recado',
                quando:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
                        abs:E.data.absoluto||0}, lida:false};
@@ -648,16 +653,12 @@ TO.feed = (function(){
         if(idade <= 0) continue;
         lista.push({torcida:o.id, nome:o.nome, data:fmtDia(aniv),
                     dia:aniv.getDate(), idade, resposta:null});
-        /* o convite de antes, sem botão, vira mensagem da aliada
-           (pedido do dono, 08/09/2026) */
-        mensagemDe(E, o.id, `Fala irmão, dia ${fmtDia(aniv)} comemoramos ${idade} `+
-          `anos de história. A presença de vocês seria uma honra pra gente.`, 'convite');
       }
       if(lista.length){
         lista.sort((a,b)=>a.dia-b.dia);
         const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
                        'agosto','setembro','outubro','novembro','dezembro'];
-        propor(E, {
+        const m = propor(E, {
           kind:'aniversarios', peso:'decisao', voz:'rua', chave,
           texto:`Os convites de ${MESES[mes]} chegaram: ${lista.length} `+
                 `${lista.length===1?'aliada faz':'aliadas fazem'} aniversário `+
@@ -665,6 +666,12 @@ TO.feed = (function(){
                 `e queima na rua. Em quais a gente aparece?`,
           dados:{ano, mes:mes+1, lista}
         });
+        /* o convite de antes, sem botão, vira mensagem de cada aliada —
+           só quando a lista do mês de fato nasce (pedido do dono,
+           08/09/2026) */
+        if(m) for(const a of lista)
+          mensagemDe(E, a.torcida, `Fala irmão, dia ${a.data} comemoramos ${a.idade} `+
+            `anos de história. A presença de vocês seria uma honra pra gente.`, 'convite');
       }
     }
 

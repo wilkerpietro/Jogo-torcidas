@@ -491,6 +491,8 @@
     if(TO.feed.fecharLote) TO.feed.fecharLote(E());
     TO.feed.ganchos.aoChegarMensagem = (e, m)=>{
       atualizarBadges();
+      /* com a aba Mensagens aberta a lista já mostra o recado: sem balão */
+      if(painel === 'noticias' && subNoticias === 'mensagens'){ redesenhar(); return; }
       balaoNoIcone('noticias', `Mensagem de ${m.nome}`);
     };
     montarLateral();
