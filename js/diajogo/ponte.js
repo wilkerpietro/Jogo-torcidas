@@ -181,7 +181,20 @@ TO.diaJogo.ponte = (function(){
     console.warn('bonecos desligados: ' + motivo);
     if(J) C.aviso(J, 'Bonecos desligados — a cena segue com os discos', '#e0b040');
   }
+  /* O LAÇO PARA QUANDO A CENA FECHA (crash do celular, 07/09/2026).
+     Ele nunca parava: com o palco escondido, a simulação e as duas
+     camadas de desenho seguiam rodando por trás do feed até fechar a
+     aba — e foi num quadro desses, com o canvas sem caixa, que o
+     buffer WebGL cresceu até estourar o iPhone. Quem esconde o palco
+     chama `parar`; e o próprio laço se desliga se a briga acabou e o
+     canvas saiu da tela. `montar` religa. */
+  function parar(){ rodando=false; }
+  function cenaSumiu(){
+    return !!(J && J.fase==='fim' && cv && !cv.getClientRects().length);
+  }
   function quadro(agora){
+    if(!rodando) return;
+    if(cenaSumiu()){ rodando=false; return; }
     let dt=(agora-ant)/1000; ant=agora;
     if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
     dtQuadro=dt;
@@ -1787,7 +1800,7 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
     };
   }
 
-  return {montar, novaNoite, encerrar, alternarEditor, gerarArquivo,
+  return {montar, parar, novaNoite, encerrar, alternarEditor, gerarArquivo,
           get tres(){ return tres; }, get bonecos(){ return bonecos; },
           alternarVelocidade,
           get zoom(){return zoom;},

@@ -447,7 +447,9 @@
      ======================================================= */
   /* os sete itens que o dono do jogo apontou — e mais nenhum */
   const NAV = [
-    {id:'feed',        rot:'Feed',        ic:'megafone'},
+    /* o feed com ícone próprio (pedido do dono, 07/09/2026): o
+       megafone era um alto-falante genérico e não dizia "início" */
+    {id:'feed',        rot:'Feed',        ic:'feed'},
     {id:'torcida',     rot:'Torcida',     ic:'torcida'},
     {id:'financeiro',  rot:'Financeiro',  ic:'dinheiro'},
     {id:'calendario',  rot:'Calendário',  ic:'jornal'},
@@ -742,8 +744,9 @@
        nem sozinho nem no dedo. */
     noFeedQuando = el('div',{class:'feed-quando'});
     const txtQuando = el('div',{class:'quando-txt'});
+    txtQuando.title = 'Data do jogo — o dia corre sozinho; um painel aberto ou uma decisão pendente param o tempo';
     const bDia = el('button',{class:'mapa-ic', html:'<span class="rot">≫</span>'});
-    bDia.title = 'Empurrar o dia';
+    bDia.title = 'Empurrar o dia: passa pro dia seguinte sem esperar';
     bDia.setAttribute('aria-label', 'Empurrar o dia');
     bDia.onclick = ()=>{
       const at = E(); if(!at) return;
@@ -760,7 +763,7 @@
        botão da cena, uma velocidade só pro jogo */
     const bVel = el('button',{class:'mapa-ic', html:
       `<span class="rot">${TO.diaJogo.ponte.velocidade}×</span>`});
-    bVel.title = `Velocidade do tempo — agora em ${TO.diaJogo.ponte.velocidade}×`;
+    bVel.title = `Velocidade do tempo (vale pro dia e pra briga) — agora em ${TO.diaJogo.ponte.velocidade}×; clique pra alternar 1×/2×`;
     bVel.onclick = ()=>{ TO.diaJogo.ponte.alternarVelocidade(); redesenhar(); };
     if(TO.diaJogo.ponte.velocidade > 1) bVel.classList.add('aceso');
     barra.append(noFeedTopo, noFeedQuando, bVel);
@@ -2897,23 +2900,27 @@
           ? `<img class="escudo escudo-img" src="${srcFaixa}" alt="${e.torcida.sigla}">`
           : `<span class="escudo" style="background:linear-gradient(135deg,${c1} 0 52%,${c2} 52% 100%)"
            >${e.torcida.sigla}</span>`)+
-        `<b>${e.torcida.nome}</b>`+
-        `<span class="num pos-rank" title="${pos||'—'}º no ranking nacional`+
+        /* CADA NÚMERO DO CABEÇALHO DIZ O QUE É no `title` (pedido do
+           dono, 07/09/2026): o ícone sozinho é adivinhação, e no
+           celular o nome da torcida sai cortado — o nome inteiro vai
+           no title também */
+        `<b title="${e.torcida.nome}${e.torcida.clube ? ' — torcida do '+e.torcida.clube : ''}${e.torcida.cidade ? ' · '+e.torcida.cidade : ''}">${e.torcida.nome}</b>`+
+        `<span class="num pos-rank" title="Ranking: ${pos||'—'}º no Brasil`+
         `${posMundo?` · ${posMundo}º na América do Sul`:''}">`+
         `#${pos||'—'}</span>`+
-        `<span class="num${e.dinheiro<0?' negativo':''}">${IC.get('dinheiro')}`+
+        `<span class="num${e.dinheiro<0?' negativo':''}" title="Caixa: dinheiro da torcida agora">${IC.get('dinheiro')}`+
         `${U.dinheiro(e.dinheiro)}</span>`+
         `<span class="num semana ${sem>0?'sobra':sem<0?'falta':''}"`+
-        ` title="saldo desta semana">${sinal}${U.dinheiro(Math.abs(sem))}`+
+        ` title="Saldo da semana: receitas menos despesas previstas">${sinal}${U.dinheiro(Math.abs(sem))}`+
         `<em>/sem</em></span>`+
-        `<span class="num ind-membros">${IC.get('membros')}${U.numero(c.total)}</span>`+
-        `<span class="num ind-prestigio">${IC.get('estrela')}`+
+        `<span class="num ind-membros" title="Membros: ${U.numero(c.total)} no total · ${c.aptos} aptos · ${c.feridos} feridos · ${c.presos} presos">${IC.get('membros')}${U.numero(c.total)}</span>`+
+        `<span class="num ind-prestigio" title="Prestígio da torcida (0 a 100)">${IC.get('estrela')}`+
         `${Math.round(e.indicadores.prestigio*5)}</span>`+
-        `<span class="num ind-moral" title="moral da torcida">`+
+        `<span class="num ind-moral" title="Moral da torcida (0 a 100)">`+
         `${IC.get('raio')}${Math.round(e.indicadores.moral*5)}</span>`+
-        `<span class="num" title="ataque médio dos membros">`+
+        `<span class="num" title="Ataque: força média dos membros">`+
         `${IC.get('halter')}${mForca}</span>`+
-        `<span class="num" title="defesa média dos membros">`+
+        `<span class="num" title="Defesa: defesa média dos membros">`+
         `${IC.get('tijolo')}${mDef}</span>`;
     }
 
@@ -7068,6 +7075,7 @@
     /* a cena leva 1,4s pra assentar antes do relatório; a simulada
        não tem o que assentar, e esperar seria tela preta à toa */
     setTimeout(()=>{
+      TO.diaJogo.ponte.parar();
       $('telaDiaJogo').classList.add('oculto');
       document.body.classList.remove('em-cena');
       mostrarRelatorio(res, resumo, fecho);
@@ -7118,6 +7126,7 @@
       aoTerminar: res => {
         TO.estado.bloquear(false);
         soltarTudo('cena');
+        TO.diaJogo.ponte.parar();
         $('telaDiaJogo').classList.add('oculto');
         document.body.classList.remove('em-cena');
         if(aoFechar) aoFechar(res || {});

@@ -26,6 +26,8 @@ TO.icones = (function(){
     estrela:   env('<path d="m12 3.5 2.6 5.6 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.9l6-.8z"/>'),
     play:      env('<path d="M8 5.5v13l10-6.5z" fill="currentColor" stroke="none"/>'),
     halter:    env('<path d="M4 9v6"/><path d="M20 9v6"/><path d="M7 6.5v11"/><path d="M17 6.5v11"/><path d="M7 12h10"/>'),
+    /* o feed: a linha do tempo, cartão sobre cartão (dono, 07/09/2026) */
+    feed:      env('<circle cx="5.5" cy="6" r="1.6"/><circle cx="5.5" cy="12" r="1.6"/><circle cx="5.5" cy="18" r="1.6"/><path d="M10 6h10"/><path d="M10 12h10"/><path d="M10 18h10"/>'),
     megafone:  env('<path d="M4 10v4a1 1 0 0 0 1 1h3l7 4V5L8 9H5a1 1 0 0 0-1 1z"/><path d="M18 9.5a4 4 0 0 1 0 5"/>'),
     copo:      env('<path d="M6 4h12l-1.2 15a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M6.6 10h10.8"/>'),
     tijolo:    env('<path d="M3 8h18v8H3z"/><path d="M3 12h18"/><path d="M9 8v4"/><path d="M15 12v4"/>'),

@@ -3786,6 +3786,48 @@ e devolvia o tamanho da CARAVANA de domingo — 8 (num save novo, semana
 praça leva todo mundo apto (menos a escolta), e a caravana só vale pra
 viagem. Semana 24 num save novo: 150 em casa, como deve.
 
+## O celular caía depois da primeira briga (crash, 07/09/2026)
+
+**O que o dono viu.** No iPhone, logo depois da primeira cena de briga, o
+artifact fechava com "Algo deu errado — Tentar novamente".
+
+**A causa.** Fechada a cena, o palco fica com `display:none` e o canvas
+dos bonecos com `clientWidth` zero. `ajustarTamanho` (bonecos3.js) caía
+então em `cv.width` como reserva — e multiplicava por `dpr`. No desktop
+o dpr é 1 e nada mudava; no celular ele é 1,5, e como o laço da cena
+nunca parava, o buffer WebGL crescia 1,5× a CADA QUADRO. Medido num
+iPhone emulado: 585 px de largura na cena, 1 976 no quadro seguinte,
+um bilhão dois segundos depois. O WebKit do iPhone estoura a memória
+alocando isso e o sistema mata a página.
+
+**A correção.**
+- O tamanho do canvas dos bonecos vem só da caixa CSS. Sem caixa,
+  `ajustarTamanho` devolve false e o quadro não desenha.
+- O laço da cena (`ponte.quadro`) para quando o palco fecha: quem esconde
+  o palco chama `ponte.parar()`, e o próprio laço se desliga se a briga
+  acabou e o canvas saiu da tela. `montar` religa. Antes a simulação e
+  as duas camadas de desenho rodavam por trás do feed até fechar a aba.
+- Os materiais clonados por boneco (roupa, esmaecido do caído, os dois
+  anéis) são liberados da GPU quando a figura sai da cena. Geometria e
+  material compartilhados ficam.
+
+**Conferido.** Três brigas do tutorial seguidas num iPhone emulado:
+canvas parado em 585×1194 com o palco fechado, zero quadros por segundo
+no feed, 14 figuras em cena (não acumulam), sem aviso do WebGL. As
+cenas bar, praça, emboscada e estádio rodam com disco e boneco como antes.
+
+## O feed com ícone próprio e o cabeçalho explicado (pedido do dono, 07/09/2026)
+
+Da análise de UI só entram duas coisas, por decisão do dono:
+- O ícone do Feed deixa de ser o megafone (um alto-falante genérico) e
+  vira a linha do tempo — três pontos com três linhas.
+- Todo item do cabeçalho tem texto ao passar o mouse (`title`): nome
+  completo da torcida com o clube e a cidade, ranking (Brasil e América
+  do Sul), caixa, saldo da semana, membros (total, aptos, feridos,
+  presos), prestígio, moral, ataque, defesa, a data, o ≫ e o 1×/2×.
+
+O que ficou de fora fica registrado na conversa, não aqui.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

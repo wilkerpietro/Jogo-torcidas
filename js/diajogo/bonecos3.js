@@ -697,6 +697,7 @@ TO.diaJogo.bonecos3 = (function(){
     anelFundo.rotation.x = -Math.PI/2; anelFundo.position.y = 0.32; anelFundo.scale.set(10.2, 7.6, 1); anelFundo.visible = false;
     const anel = new THREE.Mesh(geoAnel, new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.95, depthWrite:false}));
     anel.rotation.x = -Math.PI/2; anel.position.y = 0.34; anel.scale.set(10.2, 7.6, 1); anel.visible = false;
+    anelFundo.material._propria = true; anel.material._propria = true;
     raiz.add(anelFundo); raiz.add(anel);
     return {anel, anelFundo};
   }
@@ -721,7 +722,7 @@ TO.diaJogo.bonecos3 = (function(){
       }
       if(cores[nome]){
         let m = matsFig.get(nome);
-        if(!m){ m = o.material.clone(); m.color.set(cores[nome]); matsFig.set(nome, m); }
+        if(!m){ m = o.material.clone(); m.color.set(cores[nome]); m._propria = true; matsFig.set(nome, m); }
         o.material = m;
       }
     });
@@ -1480,7 +1481,7 @@ TO.diaJogo.bonecos3 = (function(){
       c.raiz.traverse(o=>{
         if(!o.isMesh || o === c.sombra || o === c.anel || o === c.anelFundo) return;
         let m = vistos.get(o.material);
-        if(!m){ m = o.material.clone(); vistos.set(o.material, m); c.matsProprios.push(m); }
+        if(!m){ m = o.material.clone(); m._propria = true; vistos.set(o.material, m); c.matsProprios.push(m); }
         o.material = m;
       });
     }
@@ -1808,11 +1809,23 @@ TO.diaJogo.bonecos3 = (function(){
     cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
   }
 
+  /* O TAMANHO VEM DA CAIXA CSS, NUNCA DO BUFFER (crash do celular,
+     07/09/2026). Fechada a cena, o palco fica com display:none e o
+     canvas com clientWidth 0; a versão anterior caía então em
+     `cv.width`, e como no celular o dpr é 1,5 o buffer era
+     multiplicado por 1,5 A CADA QUADRO — em dois segundos passava de
+     um bilhão de pixels de largura, o WebKit do iPhone estourava a
+     memória e o artifact mostrava "Algo deu errado". Sem caixa não se
+     redimensiona nem se desenha: devolve false e a ponte pula o
+     quadro. */
   function ajustarTamanho(){
     const dpr = Math.min(1.5, window.devicePixelRatio||1);
-    const w = Math.max(320, Math.round((cv.clientWidth||cv.width)*dpr));
-    const h = Math.max(200, Math.round((cv.clientHeight||cv.height)*dpr));
+    const cw = cv.clientWidth, ch = cv.clientHeight;
+    if(!cw || !ch) return false;
+    const w = Math.max(320, Math.round(cw*dpr));
+    const h = Math.max(200, Math.round(ch*dpr));
     if(cv.width!==w || cv.height!==h){ renderer.setSize(w, h, false); }
+    return true;
   }
 
   function montar(canvas){
@@ -1878,15 +1891,28 @@ TO.diaJogo.bonecos3 = (function(){
     });
     (J.policiais||[]).forEach((p,i)=>animarPM(p, i, J, dt));
     /* figuras que saíram da cena: some da lista, não só da tela */
-    for(const [d,fg] of figuras) if(!fg.corpo.raiz.visible){ scene.remove(fg.corpo.raiz); figuras.delete(d); }
+    for(const [d,fg] of figuras) if(!fg.corpo.raiz.visible){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
     projeteis(J);
     atualizarParticulas(dt);
     gradesDeFerro(J.grades);
   }
 
+  /* O QUE É SÓ DA FIGURA SAI DA PLACA COM ELA: os materiais clonados
+     por boneco (cores da roupa, o esmaecido do caído, os dois anéis)
+     ficam marcados `_propria` e são liberados aqui; geometria e
+     material compartilhados (a camisa por desenho, o cache `mats`)
+     ficam, porque a próxima cena usa de novo. Sem isto cada briga
+     deixava uns 400 materiais na GPU do celular. */
+  function liberar(fg){
+    fg.corpo.raiz.traverse(o=>{
+      const m = o.material;
+      if(m && m._propria) m.dispose();
+    });
+  }
+
   function desenharDeCima(J, opc){
     if(!renderer || !J) return;
-    ajustarTamanho();
+    if(!ajustarTamanho()) return;
     const dt = Math.min(0.05, opc.dt || 0.016);
     ajustarCamera(opc.escala, opc.cw, opc.ch);
     atualizarCena(J, dt);
@@ -1899,7 +1925,7 @@ TO.diaJogo.bonecos3 = (function(){
   let camV=null, chaoV=null;
   function desenharVitrine(J, opc){
     if(!renderer || !J) return;
-    ajustarTamanho();
+    if(!ajustarTamanho()) return;
     const dt = Math.min(0.05, opc.dt || 0.016);
     if(!camV){
       camV = new THREE.PerspectiveCamera(32, 1, 1, 4000);
