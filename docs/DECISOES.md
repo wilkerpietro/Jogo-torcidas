@@ -4202,8 +4202,11 @@ data:
 2. **O que fala de nós de tabela**: página do almanaque com tom bom ou
    ruim pra gente, LNT que cite a torcida ou o clube, e as brigas do país
    na nossa praça.
-3. **O resto do país**: as maiores brigas do mundo, no máximo quatro, pra
-   fita não virar boletim.
+3. **O resto do país**: as maiores brigas do nosso país, no máximo quatro,
+   pra fita não virar boletim. **Nada de outros países** na fita (ajuste
+   do dono, 08/09/2026): a briga entra só se um dos lados é torcida de
+   clube do nosso país (`time.pais`, Brasil por padrão), e as da nossa
+   cidade vêm na frente das outras.
 
 Dez manchetes no máximo; as do mesmo nível vêm da mais nova pra mais
 velha. A fita anda em CSS (metade a metade, emenda sem vão), para no
@@ -4213,6 +4216,15 @@ montar a manchete aqui dá o mesmo texto do cartão; ela fica guardada por
 id de mensagem pra não refazer página a cada tique. Sem manchete, a fita
 some. (O "ticker" da lista de descartados de 17/08 é este, de volta por
 pedido do dono.)
+
+## "Relação com a Bar da Falange Coral" (correção do dono, 08/09/2026)
+
+O alvo do ataque chama "Bar da Falange Coral" e guarda a torcida dona em
+`deQuem`; o resumo da noite novo usava o nome do alvo como se fosse a
+torcida, e a coluna da direita e a linha de relação saíam com o endereço.
+A relação em si sempre mexeu na torcida certa (é por id). Agora o rival
+do relatório é resolvido pela torcida (`deQuem`, senão o nome da torcida
+pelo id), inclusive nos encontros de rua.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

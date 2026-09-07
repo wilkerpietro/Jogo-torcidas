@@ -863,6 +863,14 @@
     const nomeT = e.torcida.nome, clube = TO.mundo.time(e.torcida.clubeId);
     const nomeC = clube ? clube.nome : '';
     const falaDeNos = t => (nomeT && t.includes(nomeT)) || (nomeC && t.includes(nomeC));
+    /* SÓ O NOSSO PAÍS (pedido do dono, 08/09/2026): nada de outros países
+       na fita; e dentro dele, a nossa cidade na frente. O país mora no
+       clube (`time.pais`, Brasil por padrão), então torcida → clube → país. */
+    const paisDe = id => { const o = id && TO.mundo.torcida(id);
+                           const t = o && TO.mundo.time(o.clubeId);
+                           return (t && t.pais) || 'Brasil'; };
+    const nossoPais = paisDe(e.torcida.id);
+    const daCidade = id => { const o = id && TO.mundo.torcida(id); return !!o && o.mapa === e.torcida.mapa; };
     const itens = [];
     for(const m of (e.feed || [])){
       const idade = abs - ((m.quando || {}).abs || 0);
@@ -884,8 +892,8 @@
       const bAbs = ((b.ano || e.data.ano) - 2026) * diasAno + ((b.semana||1)-1)*7 + ((b.dia||1)-1);
       const idade = abs - bAbs;
       if(idade > TICKER_DIAS || idade < 0) continue;
-      const daPraca = [b.a.id, b.b.id].some(id => { const o = TO.mundo.torcida(id);
-                                                     return o && o.mapa === e.torcida.mapa; });
+      if(paisDe(b.a.id) !== nossoPais && paisDe(b.b.id) !== nossoPais) continue;
+      const daPraca = daCidade(b.a.id) || daCidade(b.b.id);
       itens.push({aba:'brigas', prio: daPraca ? 1 : 2, abs:bAbs,
         texto:`${b.a.nome} e ${b.b.nome} se pegaram em ${b.cidade || 'algum lugar'}`+
               `${b.vencedor && !/ningu/i.test(b.vencedor) ? `: a ${b.vencedor} levou a melhor` : ''}`});
@@ -7545,9 +7553,16 @@
     soltarTudo('cena');
     /* a cena leva 1,4s pra assentar antes do relatório; a simulada
        não tem o que assentar, e esperar seria tela preta à toa */
-    const rivalCtx = (acao && acao.alvo) ? {id: acao.alvo.torcidaId, nome: acao.alvo.nome}
+    /* O RIVAL É A TORCIDA, NÃO O ENDEREÇO (correção do dono, 08/09/2026):
+       o alvo do ataque chama "Bar da Falange Coral" e guarda a dona em
+       `deQuem`; o relatório dizia "Relação com a Bar da Falange Coral" */
+    const nomeDaTorcida = (id, fallback) =>
+      ((id && TO.mundo.torcida(id)) || {}).nome || fallback;
+    const rivalCtx = (acao && acao.alvo)
+                   ? {id: acao.alvo.torcidaId,
+                      nome: acao.alvo.deQuem || nomeDaTorcida(acao.alvo.torcidaId, acao.alvo.nome)}
                    : enc ? (()=>{ const d = (enc.a && enc.a.nossa) ? enc.b : enc.a;
-                                 return d ? {id: d.torcida, nome: d.nome} : null; })()
+                                 return d ? {id: d.torcida, nome: nomeDaTorcida(d.torcida, d.nome)} : null; })()
                    : null;
     const ctxRelatorio = {
       rival: rivalCtx,
