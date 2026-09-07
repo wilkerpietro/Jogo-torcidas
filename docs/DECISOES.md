@@ -3880,6 +3880,22 @@ Condensed a 9 px "DEFENDER" cabe; se a fonte não carregar,
   ler quem bate em quem. A câmera segue o líder como antes, e a seta
   da borda diz onde está o outro bonde.
 
+## O itinerário é uma linha só (pedido do dono, 08/09/2026)
+
+A trilha de paradas de baixo pra cima saiu do cartão do dia de jogo. O
+que fica é a parada de AGORA, numa linha que se atualiza conforme o dia
+passa:
+- à esquerda, o símbolo do lugar: ônibus na estrada (ida e volta da
+  caravana), cidade na concentração e na pista, estádio nos arredores e
+  no jogo;
+- a hora (e o dia, quando a viagem ocupa mais de um), o nome da parada
+  com o lugar ao lado, o estado do dia embaixo ("passando", "recado na
+  parada", "a partida rolando", "dia encerrado") e o efetivo à direita;
+- embaixo da linha, um pontinho por parada diz quanto do dia já passou
+  (o do jogo é maior; parada com briga fica vermelha).
+Os recados e a partida abrem embaixo da linha, como antes abriam ao lado
+da parada. A lógica (itinerario.js) não mudou: só o desenho.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

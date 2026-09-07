@@ -1382,49 +1382,44 @@
        cheia saiu. O nó é montado UMA vez e guardado em `ITN.raiz`; o
        cartão do feed só o adota a cada repintura, então o estado, os
        cartões abertos e o widget da partida sobrevivem inteiros —
-       appendChild de um nó que já existe move, não recria. */
+       appendChild de um nó que já existe move, não recria.
+
+       UMA LINHA SÓ (pedido do dono, 08/09/2026): a trilha de paradas
+       de baixo pra cima saiu. O que fica é a parada de AGORA, numa
+       linha que se atualiza conforme o dia passa: o símbolo do lugar à
+       esquerda (ônibus na estrada, cidade na concentração e na pista,
+       estádio nos arredores e no jogo), a hora, o nome e o efetivo.
+       Os recados e a partida abrem embaixo dela. */
     const raiz = el('div',{class:'itn-mini'});
-
-    const barra = el('div',{class:'itn-mini-barra'});
+    const linha = el('div',{class:'itn-linha'});
+    const ic = el('div',{class:'itn-ic'});
+    const hora = el('div',{class:'itn-hora'});
+    const corpo = el('div',{class:'itn-corpo'});
+    const nome = el('div',{class:'itn-nome', texto:'Dia de jogo'});
     const estado = el('div',{class:'estado', texto:'o dia ainda não começou'});
-    barra.appendChild(estado);
+    corpo.append(nome, estado);
     const conta = el('div',{class:'itn-efetivo'});
-    barra.appendChild(conta);
-    raiz.appendChild(barra);
-    ITN.conta = conta;
-
-    const trilha = el('div',{class:'itn-mini-trilha'});
-    trilha.appendChild(el('div',{class:'itn-feito'}));
-    raiz.appendChild(trilha);
-
-    ITN.raiz = raiz;
-    ITN.trilha = trilha;
-    ITN.estado = estado;
-
+    linha.append(ic, hora, corpo, conta);
+    raiz.appendChild(linha);
+    /* os pontinhos do dia: um por parada, pra se saber quanto falta */
+    const pontos = el('div',{class:'itn-pontos'});
     it.paradas.forEach((p, i)=>{
-      const linha = el('div',{class:'itn-parada'+(p.jogo?' jogo':'')+
-        (p.estrada?' estrada':'')});
-      linha.dataset.i = i;
-      linha.appendChild(el('div',{class:'hora', texto:p.hora}));
-      const marca = el('div',{class:'marca'});
-      marca.appendChild(el('div',{class:'itn-bola'}));
-      linha.appendChild(marca);
-      const corpo = el('div',{class:'corpo'});
-      corpo.appendChild(el('div',{class:'nome', texto:p.nome}));
-      corpo.appendChild(el('div',{class:'efetivo'}));
-      corpo.appendChild(el('div',{class:'vaga'}));
-      linha.appendChild(corpo);
-      /* o marco do dia fica ABAIXO da primeira parada daquele dia:
-         embaixo é mais cedo. Por isso entra antes dela. */
-      if(p.abreDia){
-        const mk = el('div',{class:'itn-marco'+(p.dia===0?' doJogo':'')});
-        mk.appendChild(el('div'));
-        mk.appendChild(el('div',{class:'risco'}));
-        mk.appendChild(el('div',{class:'rot', texto:p.abreDia}));
-        trilha.prepend(mk);
-      }
-      trilha.prepend(linha);
+      /* `dojogo`, não `jogo`: a classe curta é a das linhas de partida
+         das tabelas (painéis.css) e vestia o pontinho de padding */
+      const b = el('i',{class:'itn-ponto'+(p.jogo?' dojogo':'')});
+      b.dataset.i = i; b.title = `${p.hora} · ${p.nome}`;
+      pontos.appendChild(b);
     });
+    raiz.appendChild(pontos);
+    const recados = el('div',{class:'itn-recados'});
+    raiz.appendChild(recados);
+
+    ITN.raiz = raiz; ITN.linha = linha; ITN.ic = ic; ITN.hora = hora;
+    ITN.nome = nome; ITN.estado = estado; ITN.conta = conta;
+    ITN.pontos = pontos; ITN.recados = recados;
+    /* o rótulo do dia de cada parada (véspera, dia do jogo, volta) */
+    ITN.rotDia = {};
+    for(const p of it.paradas) if(p.abreDia) ITN.rotDia[p.dia] = p.abreDia;
 
     /* o cartão do feed é quem hospeda: repinta pra ele adotar a linha */
     atualizarFeed();
@@ -1442,8 +1437,14 @@
     return itnProntos[m.id] || null;
   }
 
-  function itnParadas(){ return [...ITN.trilha.querySelectorAll('.itn-parada')]; }
-  function itnLinhaDe(i){ return itnParadas().find(el=>+el.dataset.i === i); }
+  /* o símbolo do lugar: estrada é ônibus, concentração e pista são a
+     cidade, arredores e o jogo são o estádio */
+  function itnSimbolo(p){
+    if(!p) return 'estadio';
+    if(p.cidade) return 'onibus';
+    if(/^(concentracao|pista)/.test(p.id)) return 'cidade';
+    return 'estadio';
+  }
   function itnDizer(txt, trava){
     if(!ITN) return;
     ITN.estado.textContent = txt;
@@ -1460,32 +1461,31 @@
          justamente a informação de que não sobrou ninguém deles */
       (ITN.it.efetivo.eles ? ` · <b>${ITN.eles}</b> da ${nome}` : '');
   }
-  /* marca no ponto de agora quantos chegaram nele */
-  function itnMarcarEfetivo(){
-    if(!ITN) return;
-    const linha = itnLinhaDe(ITN.ponto);
-    if(!linha) return;
-    const cx = linha.querySelector('.efetivo');
-    if(cx) cx.textContent = ITN.eles
-      ? `${ITN.nos} nossos · ${ITN.eles} deles`
-      : `${ITN.nos} ${ITN.nos===1?'nosso':'nossos'}`;
-  }
+  /* a linha só tem um número, o da barra: o efetivo anda com ela */
+  function itnMarcarEfetivo(){ itnContar(); }
 
+  /* a linha vira a parada de agora: símbolo, hora, nome e o ponto aceso */
   function itnPintar(){
     if(!ITN) return;
-    for(const linha of itnParadas()){
-      const i = +linha.dataset.i, p = ITN.it.paradas[i];
-      linha.classList.toggle('passou', i < ITN.ponto);
-      linha.classList.toggle('agora',  i === ITN.ponto);
-      linha.classList.toggle('brigou', !!p.brigou);
+    const p = ITN.it.paradas[ITN.ponto];
+    const simb = itnSimbolo(p);
+    ITN.ic.innerHTML = IC.get(simb);
+    ITN.linha.dataset.lugar = simb;
+    ITN.linha.classList.toggle('dojogo', !!(p && p.jogo));
+    ITN.linha.classList.toggle('estrada', !!(p && p.cidade));
+    if(p){
+      const dia = ITN.it.dias > 1 && ITN.rotDia[p.dia]
+        ? `<small>${ITN.rotDia[p.dia].split(' · ')[0]}</small>` : '';
+      ITN.hora.innerHTML = `${p.hora}${dia}`;
+      ITN.nome.innerHTML = `${p.nome}` +
+        (p.lugar ? `<span class="lugar">${p.lugar}</span>` : '');
     }
-    const atual = itnLinhaDe(ITN.ponto);
-    const feito = ITN.trilha.querySelector('.itn-feito');
-    if(!atual){ feito.style.height = '0px'; return; }
-    const bola = atual.querySelector('.itn-bola');
-    const alto = ITN.trilha.getBoundingClientRect();
-    const b = bola.getBoundingClientRect();
-    feito.style.height = Math.max(0, alto.bottom - b.top - b.height/2) + 'px';
+    for(const b of ITN.pontos.children){
+      const i = +b.dataset.i, q = ITN.it.paradas[i];
+      b.classList.toggle('passou', i < ITN.ponto);
+      b.classList.toggle('agora',  i === ITN.ponto);
+      b.classList.toggle('brigou', !!(q && q.brigou));
+    }
   }
 
   function itnAgenda(ms){
@@ -1502,12 +1502,11 @@
     itnPintar();
     itnMarcarEfetivo();
     const p = paradas[ITN.ponto];
-    const vaga = itnLinhaDe(ITN.ponto).querySelector('.vaga');
 
     if(p.jogo){                       /* O JOGO SEGURA A LINHA */
       ITN.travado = true;
       itnDizer('a partida rolando · o dia só segue no apito final', true);
-      itnPartida(vaga);
+      itnPartida(ITN.recados);
       return;
     }
     const fila = (p.eventos || []).slice();
@@ -1531,7 +1530,7 @@
     if(!ev){ ITN.travado = false; itnDizer('seguindo'); itnAgenda(1200); return; }
     ITN.travado = true;
     itnDizer('recado na parada · esperando você responder', true);
-    itnLinhaDe(ITN.ponto).querySelector('.vaga').appendChild(itnCartao(p, ev));
+    ITN.recados.appendChild(itnCartao(p, ev));
   }
 
   /* ---------- o cartão de cada recado ---------- */

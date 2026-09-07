@@ -35,6 +35,13 @@ TO.icones = (function(){
     tambor:    env('<path d="M4 9.5c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5S16.4 7 12 7 4 8.1 4 9.5z"/>'+
                    '<path d="M4 9.5V17c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5V9.5"/>'+
                    '<path d="m6.5 3 4 4.5"/><path d="m17.5 3-4 4.5"/>'),
+    /* a linha do dia de jogo (dono, 08/09/2026): a cidade — a praça
+       da concentração e a pista — e o estádio — arredores e o jogo */
+    cidade:    env('<path d="M3 21h18"/><path d="M4 21V9h6v12"/><path d="M10 21V4h7v17"/><path d="M17 21V12h3v9"/>'+
+                   '<path d="M6 12h2"/><path d="M6 15h2"/><path d="M12.5 7h2"/><path d="M12.5 10h2"/><path d="M12.5 13h2"/>'),
+    estadio:   env('<path d="M3 9.5c0-2 4-3.5 9-3.5s9 1.5 9 3.5v5c0 2-4 3.5-9 3.5s-9-1.5-9-3.5z"/>'+
+                   '<path d="M3 9.5c0 2 4 3.5 9 3.5s9-1.5 9-3.5"/><path d="M8.5 6.5V4"/><path d="M15.5 6.5V4"/>'+
+                   '<path d="M8.5 4h7"/>'),
     onibus:    env('<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5V17H4z"/>'+
                    '<path d="M4 10.5h16"/><path d="M7 17v2.6"/><path d="M17 17v2.6"/>'+
                    '<circle cx="7.4" cy="14" r=".9" fill="currentColor" stroke="none"/>'+

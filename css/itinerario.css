@@ -13,95 +13,77 @@
   margin-top:12px; border-top:1px solid var(--linha); padding-top:10px;
 }
 
-/* ---------- a linha de estado ---------- */
-.itn-mini-barra{margin-bottom:4px}
-.itn-mini-barra .estado{
-  font-family:var(--mono); font-size:9.5px; letter-spacing:.14em;
-  text-transform:uppercase; color:var(--ouro);
+/* ---------- A LINHA ÚNICA (pedido do dono, 08/09/2026) ----------
+   A trilha de paradas saiu. O que fica é a parada de agora: o símbolo
+   do lugar à esquerda (ônibus na estrada, cidade na concentração e na
+   pista, estádio nos arredores e no jogo), a hora, o nome com o lugar
+   embaixo, o estado do dia e o efetivo à direita. Embaixo, um ponto
+   por parada diz quanto do dia já passou. */
+.itn-linha{
+  display:grid; grid-template-columns:34px auto minmax(0,1fr) auto;
+  gap:0 12px; align-items:center;
+  background:var(--painel-alto); border:1px solid var(--linha);
+  border-left:3px solid var(--linha); padding:9px 12px 9px 10px;
+  transition:border-color .25s;
 }
-.itn-mini-barra .estado.travado{color:var(--rubro-vivo)}
-.itn-mini.fechado .itn-mini-barra .estado{color:var(--apagado)}
+.itn-linha[data-lugar="onibus"]{border-left-color:var(--ouro)}
+.itn-linha[data-lugar="cidade"]{border-left-color:#7fa3d6}
+.itn-linha[data-lugar="estadio"]{border-left-color:var(--verde)}
+.itn-linha.dojogo{border-left-color:var(--ouro); background:#1e1a12}
+.itn-ic{
+  width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; background:var(--fundo); border:1px solid var(--linha);
+  color:var(--texto);
+}
+.itn-ic svg{width:19px; height:19px}
+.itn-linha[data-lugar="onibus"] .itn-ic{color:var(--ouro); border-color:#4a3a18}
+.itn-linha[data-lugar="cidade"] .itn-ic{color:#9fc0ea; border-color:#2b3a4f}
+.itn-linha[data-lugar="estadio"] .itn-ic{color:var(--verde-vivo); border-color:#24402c}
+.itn-hora{
+  font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums;
+  color:var(--texto); letter-spacing:.03em; text-align:center; line-height:1.15;
+}
+.itn-hora small{
+  display:block; font-size:8px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--apagado); margin-top:2px;
+}
+.itn-corpo{min-width:0}
+.itn-nome{
+  font-family:var(--titulo); font-weight:700; font-size:15px; letter-spacing:.06em;
+  text-transform:uppercase; line-height:1.15; color:var(--texto);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.itn-nome .lugar{
+  font-family:var(--corpo); font-weight:400; font-size:11px; letter-spacing:0;
+  text-transform:none; color:var(--fraco); margin-left:8px;
+}
+.itn-linha .estado{
+  font-family:var(--mono); font-size:9px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ouro); margin-top:3px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.itn-linha .estado.travado{color:var(--rubro-vivo)}
+.itn-mini.fechado .itn-linha .estado{color:var(--apagado)}
+.itn-mini.fechado .itn-linha{border-left-color:var(--linha)}
+.itn-mini.fechado .itn-ic{color:var(--fraco); border-color:var(--linha)}
 
-/* ---------- a trilha ---------- */
-.itn-mini-trilha{
-  position:relative; padding:6px 0 2px;
-  --gutter:44px; --rail:16px;
+/* ---------- os pontinhos do dia ---------- */
+.itn-pontos{display:flex; gap:4px; padding:6px 2px 0 47px; flex-wrap:wrap}
+.itn-ponto{
+  display:block; width:6px; height:6px; border-radius:50%;
+  background:var(--fundo); border:1px solid var(--linha); transition:.25s;
 }
-.itn-mini-trilha::before{
-  content:''; position:absolute; top:0; bottom:0;
-  left:calc(var(--gutter) + var(--rail)/2); width:2px; background:var(--linha);
-}
-.itn-feito{
-  position:absolute; left:calc(var(--gutter) + var(--rail)/2); width:2px;
-  bottom:0; height:0; background:linear-gradient(to top, var(--rubro), var(--ouro));
-  transition:height .45s cubic-bezier(.4,0,.2,1);
-}
-.itn-parada{
-  position:relative; display:grid;
-  grid-template-columns:var(--gutter) var(--rail) 1fr;
-  gap:0 10px; align-items:start; padding:0 0 9px;
-}
-.itn-parada .hora{
-  font-family:var(--mono); font-size:10px; font-variant-numeric:tabular-nums;
-  color:var(--apagado); text-align:right; padding-top:1px; letter-spacing:.03em;
-}
-.itn-parada .marca{position:relative; display:flex; justify-content:center; padding-top:2px}
-
-.itn-bola{
-  width:10px; height:10px; border-radius:50%; background:var(--fundo);
-  border:2px solid var(--linha); position:relative; z-index:2; transition:.25s;
-}
-.itn-parada.passou .itn-bola{background:var(--fraco); border-color:var(--fraco)}
-.itn-parada.passou.brigou .itn-bola{background:var(--rubro-vivo); border-color:var(--rubro-vivo)}
-.itn-parada.agora .itn-bola{
-  background:var(--ouro); border-color:var(--ouro); transform:scale(1.3);
-  box-shadow:0 0 0 4px rgba(217,164,65,.14);
-}
-.itn-parada.agora .itn-bola::after{
-  content:''; position:absolute; inset:-7px; border-radius:50%;
-  border:1px solid var(--ouro); opacity:.55; animation:itn-pulso 1.9s ease-out infinite;
-}
-@keyframes itn-pulso{
-  0%{transform:scale(.75); opacity:.6}
-  70%{transform:scale(1.5); opacity:0}
-  100%{opacity:0}
-}
-.itn-parada.jogo .itn-bola{width:15px; height:15px; margin-top:-2px}
-/* o trecho de rodovia que a caravana acabou de rodar */
-.itn-parada.estrada .marca::before{
-  content:''; position:absolute; top:14px; height:22px; width:3px;
-  left:50%; margin-left:-1.5px; z-index:1;
-  background:repeating-linear-gradient(to bottom,
-    var(--linha) 0 4px, var(--fundo) 4px 8px);
+.itn-ponto.dojogo{width:8px; height:8px; margin-top:-1px}
+.itn-ponto.passou{background:var(--fraco); border-color:var(--fraco)}
+.itn-ponto.passou.brigou{background:var(--rubro-vivo); border-color:var(--rubro-vivo)}
+.itn-ponto.agora{
+  background:var(--ouro); border-color:var(--ouro); transform:scale(1.35);
+  box-shadow:0 0 0 3px rgba(217,164,65,.16);
 }
 
-.itn-parada .corpo{min-width:0}
-.itn-parada .nome{
-  font-family:var(--titulo); font-weight:600; font-size:13px; letter-spacing:.05em;
-  text-transform:uppercase; line-height:1.2; color:var(--apagado); transition:.25s;
-}
-.itn-parada.passou .nome{color:var(--fraco)}
-.itn-parada.agora .nome{color:var(--texto)}
-.itn-parada.jogo .nome{font-size:15px; font-weight:700}
-
-/* ---------- virada de dia ---------- */
-.itn-marco{
-  display:grid; grid-template-columns:var(--gutter) var(--rail) 1fr;
-  gap:0 10px; align-items:center; padding:1px 0 9px;
-}
-.itn-marco .risco{position:relative; display:flex; justify-content:center}
-.itn-marco .risco::before{
-  content:''; position:absolute; left:50%; margin-left:-5px;
-  width:10px; height:2px; background:var(--linha);
-}
-.itn-marco .rot{
-  display:flex; align-items:center; gap:8px;
-  font-family:var(--mono); font-size:8.5px; letter-spacing:.18em;
-  text-transform:uppercase; color:var(--apagado); white-space:nowrap;
-}
-.itn-marco .rot::after{content:''; flex:1; height:1px; background:var(--linha)}
-.itn-marco.doJogo .rot{color:var(--ouro)}
-.itn-marco.doJogo .risco::before{background:var(--ouro); opacity:.5}
+/* ---------- os recados embaixo da linha ---------- */
+.itn-recados{display:flex; flex-direction:column; gap:4px}
+.itn-recados:empty{display:none}
 
 /* ---------- o cartão do recado ---------- */
 .itn-cartao{
@@ -146,8 +128,8 @@
 .itn-cartao .saldo .ruim{color:var(--rubro-vivo)}
 
 /* ---------- a partida dentro da parada ---------- */
-/* é o MESMO cartão do feed (partida-live), só que dentro da parada */
-.itn-parada .partida-live{
+/* é o MESMO cartão do feed (partida-live), só que embaixo da linha */
+.itn-recados .partida-live{
   margin-top:9px; background:var(--painel-alto); border:1px solid #33301f;
   padding:10px 12px;
 }
@@ -157,12 +139,16 @@
 }
 
 @media (max-width:620px){
-  .itn-mini-trilha{--gutter:38px}
+  .itn-linha{grid-template-columns:30px auto minmax(0,1fr); gap:0 9px; padding:8px 10px 8px 8px}
+  .itn-ic{width:30px; height:30px}
+  .itn-ic svg{width:17px; height:17px}
+  .itn-linha .itn-efetivo{grid-column:2 / -1; margin-top:2px}
+  .itn-nome .lugar{display:block; margin:1px 0 0; white-space:normal}
+  .itn-pontos{padding-left:2px}
 }
 @media (prefers-reduced-motion:reduce){
-  .itn-parada.agora .itn-bola::after{animation:none}
   .itn-cartao{animation:none}
-  .itn-feito{transition:none}
+  .itn-ponto{transition:none}
 }
 
 /* O EFETIVO QUE ANDA COM A LINHA (régua do dono, 20/08/2026): o bonde
@@ -170,15 +156,10 @@
    e, ponto a ponto, embaixo do nome da parada. */
 .itn-efetivo{
   font-family:var(--mono); font-size:9.5px; letter-spacing:.12em;
-  text-transform:uppercase; color:var(--fraco); margin-top:2px;
+  text-transform:uppercase; color:var(--fraco); white-space:nowrap;
+  text-align:right;
 }
 .itn-efetivo b{color:var(--texto); font-weight:600}
-.itn-parada .efetivo{
-  font-family:var(--mono); font-size:9px; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--apagado); margin-top:2px;
-  font-variant-numeric:tabular-nums;
-}
-.itn-parada.agora .efetivo{color:var(--fraco)}
 
 
 /* O SIMULAR NA LINHA DO DIA (dono, 23/08/2026): mesma família do botão
