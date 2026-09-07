@@ -3828,6 +3828,31 @@ Da análise de UI só entram duas coisas, por decisão do dono:
 
 O que ficou de fora fica registrado na conversa, não aqui.
 
+## O caído não segura caído (bug do dono, 07/09/2026)
+
+**O que o dono viu.** TUF × Cearamor na rua: as duas torcidas correram,
+sobraram uns bonecos deitados de cada lado que nunca levantavam, e a cena
+não acabava — ficaria eterna.
+
+**A causa.** Quem apanha no chão (`noChao`) espera socorro, e só levanta
+sozinho depois de 2,5 s sem "inimigo alcançável" a 70 px. Essa conta
+devolvia qualquer inimigo vivo — inclusive um deitado ou fugindo. Dois
+caídos de lados opostos, um perto do outro, se seguravam no chão pra
+sempre; com os dois bondes debandados ninguém vinha puxar, e como o
+deitado conta como vivo a cena nunca esvaziava.
+
+**A correção.**
+- Só inimigo EM PÉ, que não está fugindo, segura alguém no chão
+  (`inimigoDePe`).
+- Teto de espera: 5 s no chão sem levar um golpe sequer, levanta de
+  qualquer jeito. Quem está em cima dele e não bate não o prende.
+- As réguas anteriores ficam: 1 s no chão sem apanhar, socorro em 1,2 s,
+  o boneco do jogador sempre em 1 s.
+
+**Conferido.** Três pares de caídos de lados opostos a 30 px, os dois
+bondes debandados, na rua e na praça: todos levantam e a cena fecha em
+13 s com "eles correram". Antes, um par ficava deitado até o fim.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

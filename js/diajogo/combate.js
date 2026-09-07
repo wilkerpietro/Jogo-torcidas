@@ -163,6 +163,7 @@ TO.diaJogo.combate = (function(){
          embora (2,5 s sem inimigo a 70 px). No chão leva 1,2× e morre
          pelo HP como todo mundo. */
       this.noChao=false; this.sozinho=0; this.socorro=0; this.socorrista=null; this.socorrendo=null;
+      this.noChaoQuieto=0;  // segundos no chão sem apanhar: o teto de espera por socorro
       /* OS COMANDOS (dono, 06/09/2026): contragolpe (soltar o E na hora
          do impacto), agarrar (segurar o inimigo pros outros baterem),
          cerco (inimigo dos dois lados) e chamar (o bonde inteiro pra
@@ -1301,6 +1302,15 @@ TO.diaJogo.combate = (function(){
     return fora;
   }
 
+  /* inimigo em pé (não deitado, não fugindo) a até `raio` px: é o que
+     segura um caído no chão — deitado não bate, quem corre não volta */
+  function inimigoDePe(J,d,raio){
+    for(const o of porPerto(J,d.x,d.y,raio)){
+      if(!o.vivo || !inimigos(d.lado,o.lado) || o.derrubado>0 || o.fugindo || o.sumiu) continue;
+      if(U.dist2(d.x,d.y,o.x,o.y) <= raio*raio) return o;
+    }
+    return null;
+  }
   function inimigoAlcancavel(J,d,raio){
     const cands=[];
     for(const o of porPerto(J,d.x,d.y,raio)){
@@ -1367,8 +1377,18 @@ TO.diaJogo.combate = (function(){
       if(d.derrubado>0){
         d.vx=d.vy=0;
         if(d.noChao){
-          /* sem ninguém por perto ele se arrasta e levanta sozinho */
-          if(inimigoAlcancavel(J,d,70)) d.sozinho=0; else { d.sozinho+=dt; if(d.sozinho>=2.5) levantar(J,d); }
+          /* sem ninguém DE PÉ por perto ele se arrasta e levanta sozinho.
+             O CAÍDO NÃO SEGURA CAÍDO (bug do dono, 07/09/2026): a conta
+             usava `inimigoAlcancavel`, que devolve qualquer inimigo vivo
+             — inclusive um deitado ou correndo. Dois caídos de lados
+             opostos a 30 px se seguravam no chão um ao outro pra sempre,
+             e com as duas torcidas debandadas ninguém vinha socorrer: a
+             cena virava eterna (TUF × Cearamor na rua). Só quem está em
+             pé e não está fugindo ameaça alguém no chão. */
+          if(inimigoDePe(J,d,70)) d.sozinho=0; else { d.sozinho+=dt; if(d.sozinho>=2.5) levantar(J,d); }
+          /* e o teto: 5 s sem levar um golpe sequer, levanta de qualquer
+             jeito — quem está em cima dele e não bate não o prende */
+          d.noChaoQuieto+=dt; if(d.noChaoQuieto>=5) levantar(J,d);
         } else {
           d.derrubado-=dt;
           if(d.derrubado<=0){ d.derrubado=0; d.derrubadoDur=0; d.cdBater=Math.max(d.cdBater, J.t+0.4); }
@@ -2230,7 +2250,7 @@ TO.diaJogo.combate = (function(){
     /* no chão não se defende — e quem apanha no chão fica lá */
     if(b.derrubado>0){
       b.hp -= Math.max(1,(a.forca*U.entre(0.8,1.2))-b.defesa*0.5)*P.dano*0.55*2.6;
-      b.apanhou=0.35; b.tremor=Math.min(6,b.tremor+2.4); b.sozinho=0;
+      b.apanhou=0.35; b.tremor=Math.min(6,b.tremor+2.4); b.sozinho=0; b.noChaoQuieto=0;
       /* O BONECO DO JOGADOR SEMPRE LEVANTA EM 1 S (régua do dono,
          06/09/2026), mesmo apanhando no chão: o soco lá embaixo machuca,
          mas não o prende esperando socorro — é o único da cena assim. */
@@ -2276,7 +2296,7 @@ TO.diaJogo.combate = (function(){
 
   function levantar(J,c){
     if(!c.vivo || c.derrubado<=0) return;
-    c.noChao=false; c.sozinho=0; c.socorro=0;
+    c.noChao=false; c.sozinho=0; c.socorro=0; c.noChaoQuieto=0;
     c.derrubado = (c.derrubadoDur||1.6)*0.38;      // o resto é o levantar, no desenho
     if(c.socorrista){ c.socorrista.socorrendo=null; c.socorrista=null; }
   }
