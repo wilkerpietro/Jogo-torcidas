@@ -3750,8 +3750,9 @@ paleta que não se pareçam com as já usadas, e esgotada a paleta entra
 uma cor de reserva (Aliança sai de anel branco contra o preto dos
 Imbatíveis); **o anel fica no pé do boneco**, desenhado na camada 3D
 junto da sombra (a mesma projeção cisalhada), e não no canvas 2D, onde
-caía no meio do desenho; e **o rival caído fica a 70% de opacidade**
-(o nosso segue a 50%, onde o olho procura o socorro).
+caía no meio do desenho; e **o caído fica com 70% de transparência** (30% de opacidade), nos
+dois lados; e **o derrubado que não apanhou no chão levanta em 1 s**
+(quem apanha lá embaixo continua esperando socorro).
 
 Limite técnico registrado: a camisa do GLB tem 206 vértices e não tem
 UV, então a cor por vértice sai esfumada — listra fina não se lê.

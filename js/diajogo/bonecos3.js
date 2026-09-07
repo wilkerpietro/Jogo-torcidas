@@ -1533,11 +1533,10 @@ TO.diaJogo.bonecos3 = (function(){
       if(d.preso){ sentar(p, f, t); f.queda = null; rapidez = 6; esmaecer(c, 1); }
       else {
         cair(p, f, dt); rapidez = 14;
-        /* O RIVAL CAÍDO FICA A 70% (pedido do dono, 06/09/2026): some um
-           pouco do bolo sem sumir da conta. O nosso caído segue a
-           régua antiga (50%), que é onde o olho procura o socorro. */
-        const meu = J.ladoNosso || (TO.diaJogo.combate && TO.diaJogo.combate.ladoDoJogador(J));
-        const piso = d.lado === meu ? 0.5 : 0.7;
+        /* O CAÍDO FICA QUASE TRANSPARENTE (régua do dono, 06/09/2026):
+           70% de transparência, ou seja, 30% de opacidade — nos dois
+           lados. Some do bolo sem sumir da conta. */
+        const piso = 0.3;
         esmaecer(c, +Math.max(piso, 1 - (1-piso)*suave((f.queda.t-0.4)/0.5)).toFixed(2));
       }
       f.impacto = null; f.ataque = null; f.provoca = null;

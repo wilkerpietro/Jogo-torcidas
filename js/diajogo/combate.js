@@ -2080,7 +2080,10 @@ TO.diaJogo.combate = (function(){
      levanta mais. Defendido (não esquivado) o chute só machuca, não
      derruba. Em cima de quem já está no chão ninguém chuta: é soco. */
   const DUR_CHUTE = 0.58, IMPACTO_CHUTE = 0.28, CD_CHUTE = 0.42;
-  const QUEDA_MIN = 1.3, QUEDA_MAX = 2.1;
+  /* UM SEGUNDO NO CHÃO (régua do dono, 06/09/2026): derrubado que não
+     apanhou no chão levanta em 1 s. Quem apanha lá embaixo vira
+     `noChao` e fica esperando socorro — isso não mudou. */
+  const QUEDA_MIN = 1.0, QUEDA_MAX = 1.0;
   function alcanceDe(a,b){ return a.r+b.r+9; }
   function alvoNaFrente(J, a, soDePe){
     let melhor=null, md=1e9, chao=null, mc=1e9;
