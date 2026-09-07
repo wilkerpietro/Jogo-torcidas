@@ -300,13 +300,14 @@ TO.itinerario = (function(){
        o jogo, volta do estádio). As paradas detalhadas continuam sendo
        montadas acima — são elas que sabem ONDE e QUEM —, mas a linha
        do dia mostra só as três fases, e cada fase tem NO MÁXIMO UM
-       ocorrido: a investida marcada pelo jogador passa na frente, depois
-       o ataque sofrido, depois a emboscada. O ocorrido carrega o lugar
+       ocorrido: o ataque sofrido passa na frente (régua do dono,
+       08/09/2026), depois a emboscada, e a investida marcada pelo
+       jogador só entra se ninguém caiu em cima da gente na fase. O ocorrido carrega o lugar
        (parada e praça) pra o cartão dizer onde foi e quem atacou. O
        jogo fica com o incidente do estádio, que é o clima. */
     const iJogo = paradas.findIndex(o=>o.jogo);
     const antes = paradas.slice(0, iJogo), jogo = paradas[iJogo], depois = paradas.slice(iJogo+1);
-    const PRIO = {investida:0, sofrido:1, emboscada:2};
+    const PRIO = {sofrido:0, emboscada:1, investida:2};
     const fase = (id, nome, lugar, lista, simbolo) => {
       const prim = lista[0];
       const evs = [];

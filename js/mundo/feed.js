@@ -1050,12 +1050,20 @@ TO.feed = (function(){
       const chaveJogo = nosso ? null : chaveDoJogoDaPraca(E, j);
       const grupos = [{dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id}];
       const dv = dividas[alvo.id];
+      /* de fora entrando na cidade, ou da nossa praça na pista do jogo
+         dela (textos do dono, 08/09/2026) */
+      const oAlvo = M().torcida(alvo.id) || {};
+      const daCidade = oAlvo.mapa === E.torcida.mapa;
+      const clubeDela = oAlvo.clube || (M().time(oAlvo.clubeId) || {}).nome || '';
       const texto = dv
         ? `Chefe, a gente ainda não engoliu o que esses caras da ${alvo.nome} `+
           `fizeram com a gente em ${dv.cidade}. Eles vão jogar em ${cidadeNossa} `+
           `${NOME_DIA[j.dia]}. É uma oportunidade de vingar o que eles fizeram `+
           `com a gente em ${dv.mes}.`
-        : `Chefe, o time da ${alvo.nome} vai jogar aqui em ${cidadeNossa} `+
+        : daCidade
+        ? `Chefe, vai ter jogo do ${clubeDela} ${NOME_DIA[j.dia]} e a ${alvo.nome} `+
+          `vai estar na pista. Acho interessante a gente bolar um ataque pra cima deles.`
+        : `Chefe, a ${alvo.nome} vai jogar aqui em ${cidadeNossa} `+
           `${NOME_DIA[j.dia]}. Acho interessante a gente bolar um ataque pra `+
           `cima deles, esses vermes na nossa cidade não tem vez.`;
       propor(E, {

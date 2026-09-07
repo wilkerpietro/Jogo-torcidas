@@ -4079,10 +4079,12 @@ fora, em Goiânia. Monta a caravana."
 
 **No feed fica só a sugestão do olheiro**, e ela só aparece com
 OPORTUNIDADE do calendário — nunca inventa jogo:
-- rival na nossa cidade (jogo dela aqui, o nosso ou de outro clube):
-  "Chefe, o time da {torcida} vai jogar aqui em {cidade} {dia}. Acho
-  interessante a gente bolar um ataque pra cima deles, esses vermes na
-  nossa cidade não tem vez." — botões "Bolar o ataque" e "Deixar quieto";
+- rival DE FORA entrando na nossa cidade: "Chefe, a {torcida} vai jogar
+  aqui em {cidade} {dia}. Acho interessante a gente bolar um ataque pra
+  cima deles, esses vermes na nossa cidade não tem vez."; rival DA NOSSA
+  praça na pista do jogo dela: "Chefe, vai ter jogo do {clube} {dia} e a
+  {torcida} vai estar na pista. Acho interessante a gente bolar um
+  ataque pra cima deles." — botões "Bolar o ataque" e "Deixar quieto";
 - a gente na cidade dela (nosso jogo fora): "Chefe, como vamos viajar
   pra {cidade} {dia}, bora aproveitar pra pegar os vermes da {torcida}
   na casa deles.";
@@ -4132,9 +4134,9 @@ cidade pede casa por mensagem (ver abaixo).
 Caravana · ida, O jogo, Caravana · volta (em casa: Ida ao estádio, O
 jogo, Volta do estádio). As paradas detalhadas continuam sendo montadas
 por baixo — são elas que sabem ONDE e QUEM —, mas a linha mostra só as
-três fases, e cada fase tem NO MÁXIMO UM ocorrido: a investida marcada
-pelo jogador passa na frente, depois o ataque sofrido, depois a
-emboscada. O cartão diz o lugar e a torcida ("Pegaram a caravana na
+três fases, e cada fase tem NO MÁXIMO UM ocorrido: o ataque sofrido
+passa na frente (régua do dono), depois a emboscada, e a investida
+marcada pelo jogador só entra se ninguém caiu em cima da gente na fase. O cartão diz o lugar e a torcida ("Pegaram a caravana na
 estrada. A Os Imbatíveis fechou a pista. Foi em Bahia (Chegada na praça
 deles)."). O jogo fica com o incidente do estádio (o clima). A escolta
 da aliada anda com a gente no jogo e em qualquer ocorrido na cidade
