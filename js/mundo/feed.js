@@ -1035,8 +1035,11 @@ TO.feed = (function(){
      primeira oportunidade. A caravana continua no feed, sempre.
      Nada aqui inventa jogo: tudo sai do calendário da temporada.
      ======================================================= */
-  /* quanto das oportunidades vira sugestão do olheiro (dono, 08/09/2026) */
-  const FREIO_OLHEIRO = {rival:0.4, maior:0.7};
+  /* quanto das oportunidades vira sugestão do olheiro (dono, 08/09/2026).
+     Segunda volta do dono no mesmo dia: maior rival cai pela metade
+     (0,7 → 0,35), EXCETO o maior rival de sede do mesmo nível que a
+     nossa, que continua em 0,7; rival comum cai mais 30% (0,4 → 0,28). */
+  const FREIO_OLHEIRO = {rival:0.28, maior:0.35, maiorParelho:0.7};
 
   function olheiroDoDia(E){
     const hoje = E.data.dia;
@@ -1064,7 +1067,11 @@ TO.feed = (function(){
     const freio = (id, chave) => {
       if(dividas[id]) return true;
       const maior = TO.relacoes.ehMaiorRival && TO.relacoes.ehMaiorRival(E, E.torcida.id, id);
-      const teto = maior ? FREIO_OLHEIRO.maior : FREIO_OLHEIRO.rival;
+      /* o maior rival "parelho" é o de sede do mesmo nível que a nossa */
+      const t = (E.mundoTorcidas||{})[id];
+      const parelho = maior && t && Number(t.sede) === Number(E.torcida.sedeNivel);
+      const teto = parelho ? FREIO_OLHEIRO.maiorParelho
+                 : maior ? FREIO_OLHEIRO.maior : FREIO_OLHEIRO.rival;
       return (TO.mapa.hash(`freio-olheiro|${chave}`) % 1000) / 1000 < teto;
     };
 

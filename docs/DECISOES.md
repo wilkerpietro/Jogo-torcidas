@@ -4298,6 +4298,15 @@ cobrar em 35 a 49 dias. Com a vingança, a mediana anual do mundo foi de
 do jogador. A régua de tamanho continua valendo: torcida com menos
 da metade do nosso efetivo não vem, dívida ou não.
 
+## O olheiro sugere ainda menos (segunda volta do dono, 08/09/2026)
+
+Sobre a régua do mesmo dia: maior rival cai pela metade (0,7 → 0,35),
+exceto o maior rival cuja sede é do mesmo nível que a nossa, que continua
+em 0,7 — é a rivalidade parelha, a que interessa; rival comum cai mais
+30% (0,4 → 0,28). A dívida continua passando sempre. Medido em 330 dias
+com a TUF (sede nível 4): rivais 24 → 6, maiores rivais de outro nível
+22 → 4, maior rival parelho 20 → 15. `FREIO_OLHEIRO` em `feed.js`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
