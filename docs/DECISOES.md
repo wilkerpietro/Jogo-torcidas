@@ -4327,6 +4327,24 @@ vingança custa mais que uma derrota comum:
   consequência (`VINGANCA_NOSSA` em `feed.js`).
 - A derrota comum continua anotando a dívida, dos dois lados.
 
+## A ordem de compras das IAs, versão 4 (dono, 08/09/2026)
+
+Nova fila-modelo (`ORDEM`, `FILA_V = 4` — toda torcida recomeça nela):
+
+```
+loja → bar → bombas → evoluir:loja → evoluir:bar → mma → advogado →
+loja → bar → bombas → evoluir:loja → evoluir:bar → onibus → filial →
+elenco → bombas → mma → subsede → filial → elenco → evoluir:sorteio →
+galpao → enfermaria → cofre
+```
+
+Comércio primeiro, com a ampliação de loja e bar logo atrás; professor e
+advogado depois; a segunda rodada de comércio antes de ônibus, filial e
+clube; a área de treino saiu da fila. A mecânica não mudou: fila
+rodante por torcida, uma compra por semana, item travado pela sede vai
+pro fim, sede só quando não sobra mais nada ou quando destrava o
+consumível.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -219,15 +219,20 @@ TO.relacoes = (function(){
      galpão, enfermaria e cofre só entram quando o barato já rodou
      duas vezes. A bomba aparece três vezes porque munição é o que se
      gasta. Item repetido não é engano: é a ordem dele. */
-  const ORDEM = ['mma', 'loja', 'bar', 'bombas', 'filial', 'onibus',
-                 'bombas', 'elenco', 'bombas', 'advogado', 'subsede',
-                 'mma', 'loja', 'bar', 'area-treino', 'filial', 'elenco',
-                 'evoluir:sorteio',
+  /* A ORDEM NOVA (dono, 08/09/2026): comércio primeiro — loja, bar e a
+     ampliação dos dois — antes de professor e advogado; a segunda
+     rodada de comércio vem antes de ônibus, filial e clube; a área de
+     treino saiu da fila. */
+  const ORDEM = ['loja', 'bar', 'bombas', 'evoluir:loja', 'evoluir:bar',
+                 'mma', 'advogado',
+                 'loja', 'bar', 'bombas', 'evoluir:loja', 'evoluir:bar',
+                 'onibus', 'filial', 'elenco', 'bombas', 'mma', 'subsede',
+                 'filial', 'elenco', 'evoluir:sorteio',
                  'galpao', 'enfermaria', 'cofre'];
   /* muda a ORDEM? sobe o número, e toda torcida recomeça a fila nova.
      A fila viva de save antigo tem outras chaves e outra contagem de
      repetições — comparar por conjunto não daria conta. */
-  const FILA_V = 3;
+  const FILA_V = 4;
   /* os que NUNCA acabam: bomba se gasta e o clube sempre aceita
      dinheiro. Eles não podem segurar a sede pra sempre (ver a nota
      no proximaCompra). */
