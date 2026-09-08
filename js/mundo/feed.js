@@ -1106,32 +1106,35 @@ TO.feed = (function(){
       });
     }
 
-    /* situação 3: nosso jogo fora que reporta hoje — a caravana sempre,
-       e a sugestão só se há rival na praça deles */
+    /* situação 3: nosso jogo fora que reporta hoje — a caravana sempre.
+       A SUGESTÃO DE VIAGEM SAIU (pedido do dono, 08/09/2026): "como
+       vamos viajar pra X, bora pegar os vermes da Y na casa deles" era
+       redundante com o planejamento da caravana, que já oferece o
+       ataque. Só a DÍVIDA continua falando: apanhou dela na praça
+       dela, o olheiro cobra a vingança quando o calendário leva a gente
+       de volta lá. */
     const jf = E.proximoJogo;
     const fora = (jf && !jf.casa && jf.mapaAdv && jf.mapaAdv !== E.torcida.mapa &&
                   diaDoOlheiro(jf.dia||6) === hoje) ? jf : null;
     if(fora){
       olheiroFora(E, fora);
       const hostis = PL().alvosDaViagem(E, {advId:fora.advId})
-        .filter(a=>!a.aliada && ehHostil(E, a.id) && valeSugestao(a.id))
+        .filter(a=>!a.aliada && ehHostil(E, a.id) && !!dividas[a.id] && !emTregua(a.id))
         .sort((a,b)=>nota(b.id)-nota(a.id));
       const chaveFora = hostis.length ? `olheiro|${E.data.ano}|${E.data.semana}|fora|${hostis[0].id}` : '';
-      if(hostis.length && freio(hostis[0].id, chaveFora)){
+      if(hostis.length){
         const alvo = hostis[0], dv = dividas[alvo.id];
-        const texto = dv
-          ? `Chefe, a gente ainda não engoliu o que esses caras da ${alvo.nome} `+
+        const texto =
+            `Chefe, a gente ainda não engoliu o que esses caras da ${alvo.nome} `+
             `fizeram com a gente em ${dv.cidade}. A gente vai jogar em `+
             `${fora.cidadeAdv} ${NOME_DIA[fora.dia||6]}. É uma oportunidade de `+
-            `vingar o que eles fizeram com a gente em ${dv.mes}.`
-          : `Chefe, como vamos viajar pra ${fora.cidadeAdv} ${NOME_DIA[fora.dia||6]}, `+
-            `bora aproveitar pra pegar os vermes da ${alvo.nome} na casa deles.`;
+            `vingar o que eles fizeram com a gente em ${dv.mes}.`;
         propor(E, {
           kind:'olheiro', peso:'decisao', voz:'olheiro',
           chave: chaveFora,
           texto, dados:{fora:true, alvo:alvo.id, divida:!!dv},
           botoes:[
-            {id:'atacar', rot: dv ? 'Vingar' : 'Bolar o ataque', acao:'tela-ataque',
+            {id:'atacar', rot:'Vingar', acao:'tela-ataque',
              args:{ctx:{fora:true, advId:fora.advId}}},
             {id:'paz', rot:'Deixar quieto', acao:'paz-grupo', args:{grupos:[]}}
           ]

@@ -4255,6 +4255,16 @@ mediana 24 por torcida no ano, quartis 17–31, máximo 73; na nossa praça
 (TUF) as rivais ficaram entre 11 e 38. As brigas do mundo no ano caíram
 de ~5.750 pra ~3.700.
 
+## A sugestão de viagem do olheiro saiu (pedido do dono, 08/09/2026)
+
+"Chefe, como vamos viajar pra Mato Grosso sábado, bora aproveitar pra
+pegar os vermes da Raça Cuiabana na casa deles" não existe mais: a
+mensagem anterior é sempre o planejamento da caravana, que já oferece o
+ataque, e a sugestão virava repetição. Fica só a cobrança da dívida
+("a gente ainda não engoliu… é uma oportunidade de vingar"), que é
+memória de derrota e não sugestão espontânea; ela sai sem freio, como
+antes.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
