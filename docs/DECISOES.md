@@ -4345,6 +4345,39 @@ rodante por torcida, uma compra por semana, item travado pela sede vai
 pro fim, sede só quando não sobra mais nada ou quando destrava o
 consumível.
 
+## O fps da cena de briga (pedido do dono, 08/09/2026)
+
+Medido com o perfilador do navegador numa defesa do bar (52 discos): o
+JavaScript custava quase nada — o tempo era da placa. Cortando camada
+por camada: sem a camada 3D dos bonecos o quadro ia de 4,8 pra 48 fps;
+sem a 2D não mudava nada. Dentro da 3D: resolução, anéis, luz e material
+mexiam pouco; o número de bonecos mexia tudo (12 bonecos, 49 fps). A
+causa era a malha: o GLB "leve" tem ~61 mil vértices e ~23 mil
+triângulos por boneco (a cabeça sozinha tem 10 mil, cada cabelo 8 mil),
+e 52 bonecos de 30 px eram 1,26 milhão de triângulos por quadro.
+
+Três medidas, em `bonecos3.js`:
+
+1. **A malha é afinada na chegada** (`afinarMalha`): agrupamento de
+   vértices por célula fixa de 1,75 m ÷ 48 (≈3,6 cm), média das posições,
+   demais atributos (uv, ossos, pesos) do primeiro vértice da célula,
+   triângulo degenerado some, normais recalculadas. O modelo inteiro cai
+   de 119 mil pra 7,3 mil triângulos; o quadro, de 1,26 milhão pra 139 mil.
+   Na vitrine com o modelo detalhado não afina.
+2. **Quem está fora da tela não é animado nem desenhado**: corte pela
+   posição do disco contra a vista da câmera, com margem de 60 unidades.
+   A figura fica na lista (não é liberada), só não entra no quadro. Vale
+   pouco no bar (3 de 55) e muito na emboscada a 3,4× no celular.
+3. **Resolução adaptativa** da camada dos bonecos: 1,5× → 1× → 0,75×
+   quando a média do quadro passa de 1/28 s por 1,2 s; volta a subir com
+   4 s de folga abaixo de 1/55 s. A camada 2D do celular acompanha.
+
+Medido no navegador sem placa (software), celular 390×844: 3,6 → 15,4
+fps; desktop 1000×800: 3,4 → 8,9 fps. Numa placa de verdade a
+proporção é a mesma — o custo era triângulo. Os controles ficam em
+`bonecos3.cfg` (cortarForaDaTela, resolucaoAdaptativa, afinarMalha,
+afinarCelulas).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

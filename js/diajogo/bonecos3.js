@@ -411,8 +411,85 @@ TO.diaJogo.bonecos3 = (function(){
      à raiz do modelo; a rotação local nova é isso vezes a local de
      repouso. Guardo Cp e a local de repouso de cada osso no clone.
      ======================================================= */
-  let modeloGLB = null, carregandoGLB = false;
+  let modeloGLB = null, carregandoGLB = false, estatMalha = null;
   const ALTURA_GLB = 1.75;          // metros, no Blender
+
+  /* =======================================================
+     AFINAR A MALHA — agrupamento de vértices por célula
+     Divide a caixa da peça numa grade (cfg.afinarCelulas células na
+     maior dimensão); todo vértice que cai na mesma célula vira um só,
+     na média das posições, com os outros atributos (uv, ossos, pesos)
+     do primeiro que chegou. Triângulo que ficou com dois cantos na
+     mesma célula some. As normais são recalculadas. Pra um boneco de
+     30 px na tela a diferença não se vê; pra placa é 10× menos
+     triângulo. A geometria de entrada não é alterada.
+     ======================================================= */
+  function triangulosDe(g){
+    const idx = g.getIndex();
+    return Math.floor((idx ? idx.count : g.getAttribute('position').count) / 3);
+  }
+  function afinarMalha(g, celulas){
+    const pos = g.getAttribute('position');
+    if(!pos || pos.count < 300) return null;        // peça miúda: não vale
+    const idx = g.getIndex();
+    const nTri = triangulosDe(g);
+    g.computeBoundingBox();
+    const bb = g.boundingBox, tam = new THREE.Vector3(); bb.getSize(tam);
+    /* a célula é fixa em metros do modelo — a altura do boneco dividida
+       em `celulas` —, e não relativa à caixa da peça: a cabeça tem 27 cm
+       e 10 mil triângulos, e uma grade relativa a ela não afinava nada */
+    const cel = ALTURA_GLB / (celulas || 48);
+    const nx = Math.max(1, Math.ceil(tam.x/cel)+1), ny = Math.max(1, Math.ceil(tam.y/cel)+1);
+    const chaveDe = i => {
+      const cx = Math.floor((pos.getX(i) - bb.min.x)/cel);
+      const cy = Math.floor((pos.getY(i) - bb.min.y)/cel);
+      const cz = Math.floor((pos.getZ(i) - bb.min.z)/cel);
+      return (cz*ny + cy)*nx + cx;
+    };
+    /* célula → índice novo; soma das posições pra tirar a média */
+    const novoDe = new Int32Array(pos.count).fill(-1);
+    const celulaIdx = new Map();
+    const repr = [];                 // vértice representante (o primeiro)
+    const soma = [], conta = [];
+    for(let i=0;i<pos.count;i++){
+      const k = chaveDe(i);
+      let n = celulaIdx.get(k);
+      if(n === undefined){ n = repr.length; celulaIdx.set(k, n); repr.push(i); soma.push([0,0,0]); conta.push(0); }
+      novoDe[i] = n;
+      soma[n][0] += pos.getX(i); soma[n][1] += pos.getY(i); soma[n][2] += pos.getZ(i); conta[n]++;
+    }
+    const nNovo = repr.length;
+    if(nNovo > pos.count * 0.8) return null;         // já era magra
+    /* os triângulos que sobrevivem */
+    const tri = [];
+    const lerIdx = idx ? (t => idx.getX(t)) : (t => t);
+    for(let t=0; t<nTri; t++){
+      const a = novoDe[lerIdx(t*3)], b = novoDe[lerIdx(t*3+1)], c = novoDe[lerIdx(t*3+2)];
+      if(a===b || b===c || a===c) continue;
+      tri.push(a, b, c);
+    }
+    if(!tri.length) return null;
+    const out = new THREE.BufferGeometry();
+    for(const nome of Object.keys(g.attributes)){
+      const at = g.attributes[nome];
+      const dim = at.itemSize;
+      const Ctor = at.array.constructor;
+      const arr = new Ctor(nNovo * dim);
+      for(let n=0; n<nNovo; n++){
+        const i = repr[n];
+        if(nome === 'position'){
+          arr[n*3] = soma[n][0]/conta[n]; arr[n*3+1] = soma[n][1]/conta[n]; arr[n*3+2] = soma[n][2]/conta[n];
+        } else for(let k=0;k<dim;k++) arr[n*dim+k] = at.array[i*dim+k];
+      }
+      out.setAttribute(nome, new THREE.BufferAttribute(arr, dim, at.normalized));
+    }
+    out.setIndex(tri);
+    out.computeVertexNormals();
+    out.computeBoundingBox(); out.computeBoundingSphere();
+    for(const gr of (g.groups||[])) out.addGroup(0, tri.length, gr.materialIndex||0);
+    if(g.groups && g.groups.length > 1) out.clearGroups();   // vários materiais: fica um só (não é o caso do boneco)
+    return out;
+  }
   const ALTURA_CAIXAS = 34;         // a altura do corpo de caixas, na escala 1
   function carregarGLB(){
     if(modeloGLB || carregandoGLB) return;
@@ -463,6 +540,25 @@ TO.diaJogo.bonecos3 = (function(){
     carregador.parse(bin.buffer, '', gltf=>{
       modeloGLB = gltf.scene;
       modeloGLB.updateMatrixWorld(true);
+      /* A MALHA É AFINADA NA CHEGADA (fps do dono, 08/09/2026): o GLB
+         "leve" tem ~61 mil vértices e ~23 mil triângulos por boneco;
+         com 52 bonecos na tela eram 1,26 milhão de triângulos por
+         quadro pra figuras de 30 px — era isso, e não a resolução nem
+         a luz, que derrubava o fps (medido: 12 bonecos, 49 fps; 52,
+         4 fps). Cada peça passa uma vez por `afinarMalha` e todo
+         boneco nasce da malha afinada. */
+      /* a vitrine com o modelo detalhado é pra olhar de perto: sem afinar */
+      if(cfg.afinarMalha && window.MODELO_BONECO !== 'detalhado'){
+        let antes = 0, depois = 0;
+        modeloGLB.traverse(o=>{
+          if(!o.isMesh || !o.geometry) return;
+          antes += triangulosDe(o.geometry);
+          const g = afinarMalha(o.geometry, cfg.afinarCelulas);
+          if(g){ o.geometry.dispose(); o.geometry = g; }
+          depois += triangulosDe(o.geometry);
+        });
+        estatMalha = {antes, depois};
+      }
       nomesGLB = new Set(); modeloGLB.traverse(o=>{ if(o.isMesh) nomesGLB.add(o.name); });
       /* Lambert é mais barato que Standard e a cena não tem PBR */
       modeloGLB.traverse(o=>{
@@ -1795,9 +1891,13 @@ TO.diaJogo.bonecos3 = (function(){
   /* =======================================================
      A CÂMERA DE CIMA, casada com o 2D
      ======================================================= */
+  /* O QUE A CÂMERA VÊ, em coordenadas da cena (x, e z = y do disco).
+     Serve pro corte de quem está fora da tela (ver atualizarCena). */
+  const vista = {x0:-Infinity, x1:Infinity, z0:-Infinity, z1:Infinity};
   function ajustarCamera(e, cw, ch){
     const x0 = -e.ox/e.s, x1 = (cw-e.ox)/e.s;
     const z0 = -e.oy/e.s, z1 = (ch-e.oy)/e.s;
+    vista.x0 = x0; vista.x1 = x1; vista.z0 = z0; vista.z1 = z1;
     cam.left = x0; cam.right = x1; cam.top = -z0; cam.bottom = -z1;
     cam.near = 1; cam.far = ALTURA_CAM*2;
     cam.updateProjectionMatrix();
@@ -1818,8 +1918,33 @@ TO.diaJogo.bonecos3 = (function(){
      memória e o artifact mostrava "Algo deu errado". Sem caixa não se
      redimensiona nem se desenha: devolve false e a ponte pula o
      quadro. */
+  /* RESOLUÇÃO QUE SE AJUSTA AO QUADRO (fps do dono, 08/09/2026): a
+     camada dos bonecos nasce a 1,5× de densidade e desce pra 1× e
+     0,75× quando a média do quadro passa de 1/28 s; volta a subir
+     quando sobra folga (média abaixo de 1/55 s) por uns segundos. Um
+     boneco de 30 px não sente a diferença; a placa do celular sente
+     — 1,5× é 2,25 vezes mais pixel que 1×. */
+  const DPR_NIVEIS = [1.5, 1.0, 0.75];
+  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48};
+  let dprNivel = 0, mediaDt = 1/60, tempoNoNivel = 0;
+  const dprAtual = () => Math.min(cfg.resolucaoAdaptativa ? DPR_NIVEIS[dprNivel] : 1.5,
+                                  window.devicePixelRatio||1);
+  /* o relógio é de tempo, não de quadros: a 4 fps, 45 quadros são 11 s
+     de tela travada antes de reagir. Desce depois de 1,2 s ruins, sobe
+     depois de 4 s folgados. */
+  function ajustarResolucao(dt){
+    if(!cfg.resolucaoAdaptativa) return;
+    const d = Math.min(0.25, Math.max(0.001, dt));
+    mediaDt = mediaDt*0.85 + d*0.15;
+    tempoNoNivel += d;
+    if(tempoNoNivel > 1.2 && mediaDt > 1/28 && dprNivel < DPR_NIVEIS.length-1){
+      dprNivel++; tempoNoNivel = 0; mediaDt = 1/40;
+    } else if(tempoNoNivel > 4 && mediaDt < 1/55 && dprNivel > 0){
+      dprNivel--; tempoNoNivel = 0; mediaDt = 1/45;
+    }
+  }
   function ajustarTamanho(){
-    const dpr = Math.min(1.5, window.devicePixelRatio||1);
+    const dpr = dprAtual();
     const cw = cv.clientWidth, ch = cv.clientHeight;
     if(!cw || !ch) return false;
     const w = Math.max(320, Math.round(cw*dpr));
@@ -1878,20 +2003,48 @@ TO.diaJogo.bonecos3 = (function(){
     return true;
   }
 
+  /* QUEM ESTÁ FORA DA TELA NÃO É ANIMADO NEM DESENHADO (fps do dono,
+     08/09/2026). Com a câmera a 3,4× no celular a tela mostra uma dúzia
+     de bonecos, e mesmo assim os 52 (ou 140 numa emboscada) eram
+     posados osso a osso e mandados pra placa todo quadro — o
+     `frustumCulled=false` das peças do GLB era pra evitar sumiço por
+     caixa errada, e deixava a placa desenhar tudo. Aqui o corte é
+     pela posição do disco contra a vista da câmera, com margem de um
+     boneco e meio. A figura fica na lista (não é liberada), só não
+     entra no quadro; quando o disco volta pra tela, volta a animar. */
+  const MARGEM_VISTA = 60;
+  const naVista = (x, z) =>
+    x >= vista.x0 - MARGEM_VISTA && x <= vista.x1 + MARGEM_VISTA &&
+    z >= vista.z0 - MARGEM_VISTA && z <= vista.z1 + MARGEM_VISTA;
+  const conta = {vistos:0, cortados:0};
   function atualizarCena(J, dt){
-    for(const fg of figuras.values()) fg.corpo.raiz.visible = false;
+    for(const fg of figuras.values()){ fg.corpo.raiz.visible = false; fg.viva = false; }
     const C = TO.diaJogo.combate;
     const FICA = (C && C.CAIDO_FICA) || 3.0, SOME = (C && C.CAIDO_SOME) || 1.5;
+    const cortar = cfg.cortarForaDaTela;
+    conta.vistos = 0; conta.cortados = 0;
+    const animar = (d, i, pm) => {
+      if(cortar && !naVista(d.x, d.y)){
+        const fg = figuras.get(d);
+        if(fg) fg.viva = true;            // fica na lista, fora do quadro
+        conta.cortados++;
+        return;
+      }
+      if(pm) animarPM(d, i, J, dt); else animarDisco(d, i, J, dt);
+      const fg = figuras.get(d);
+      if(fg) fg.viva = true;
+      conta.vistos++;
+    };
     J.discos.forEach((d,i)=>{
       if(d.entrou || d.sumiu) return;
       /* o ferido some depois do prazo: não anima, e a limpeza abaixo
          tira a figura da cena */
       if(d.caido && J.t - (d.caiuEm||0) >= FICA + SOME) return;
-      animarDisco(d, i, J, dt);
+      animar(d, i, false);
     });
-    (J.policiais||[]).forEach((p,i)=>animarPM(p, i, J, dt));
+    (J.policiais||[]).forEach((p,i)=>animar(p, i, true));
     /* figuras que saíram da cena: some da lista, não só da tela */
-    for(const [d,fg] of figuras) if(!fg.corpo.raiz.visible){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
+    for(const [d,fg] of figuras) if(!fg.viva){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
     projeteis(J);
     atualizarParticulas(dt);
     gradesDeFerro(J.grades);
@@ -1912,6 +2065,7 @@ TO.diaJogo.bonecos3 = (function(){
 
   function desenharDeCima(J, opc){
     if(!renderer || !J) return;
+    ajustarResolucao(opc.dt || 0.016);
     if(!ajustarTamanho()) return;
     const dt = Math.min(0.05, opc.dt || 0.016);
     ajustarCamera(opc.escala, opc.cw, opc.ch);
@@ -1950,6 +2104,7 @@ TO.diaJogo.bonecos3 = (function(){
   }
 
   return {montar, desenharDeCima, desenharVitrine, limparDeCima, estudo, DESENHOS, paletaDaCena, anelDe, desenhoDaTorcida,
+          cfg, dprAtual, conta, get dprNivel(){ return dprNivel; }, get estatMalha(){ return estatMalha; },
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },
           get _dbg(){ return {scene, cam, camV, renderer, figuras, modeloGLB}; }};

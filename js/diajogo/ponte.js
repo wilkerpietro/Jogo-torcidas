@@ -214,6 +214,9 @@ TO.diaJogo.ponte = (function(){
     }catch(e){ registrarErro('simulação', e); }
     try{ desenhar(); }catch(e){ registrarErro('desenho', e); }
     try{ atualizarHUD(); }catch(e){ registrarErro('hud', e); }
+    /* a densidade dos bonecos mudou: a camada 2D do celular segue */
+    if(bonecos && T && T.dprAtual && estreito() && dprUsado != null &&
+       Math.min(1.5, devicePixelRatio||1, T.dprAtual()) !== dprUsado) ajustarCanvasCelular();
     requestAnimationFrame(quadro);
   }
 
@@ -241,7 +244,7 @@ TO.diaJogo.ponte = (function(){
      queria. Volta ao tamanho original em tela larga. O canvas dos
      bonecos por cima segue o tamanho mostrado sozinho
      (tres.ajustarTamanho). */
-  let redimensionarLigado=false;
+  let redimensionarLigado=false, dprUsado=null;
   function ajustarCanvasCelular(){
     if(!cv || tres) return;
     cv._original = cv._original || {w:cv.width, h:cv.height};
@@ -249,7 +252,12 @@ TO.diaJogo.ponte = (function(){
       if(cv.width!==cv._original.w || cv.height!==cv._original.h){ cv.width=cv._original.w; cv.height=cv._original.h; }
       return;
     }
-    const dpr = Math.min(1.5, devicePixelRatio||1);
+    /* a camada 2D acompanha a densidade que os bonecos escolheram
+       (resolução adaptativa, 08/09/2026): três camadas de tela cheia a
+       1,5× é o que mais pesa na placa do celular */
+    const dpr = Math.min(1.5, devicePixelRatio||1,
+                         (bonecos && T && T.dprAtual) ? T.dprAtual() : 1.5);
+    dprUsado = dpr;
     /* a caixa vem do CSS (a faixa fica com o topo, o resto é canvas);
        o buffer segue a caixa pra imagem não esticar */
     const rc = cv.getBoundingClientRect();
