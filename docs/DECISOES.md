@@ -4307,6 +4307,26 @@ em 0,7 — é a rivalidade parelha, a que interessa; rival comum cai mais
 com a TUF (sede nível 4): rivais 24 → 6, maiores rivais de outro nível
 22 → 4, maior rival parelho 20 → 15. `FREIO_OLHEIRO` em `feed.js`.
 
+## Quem tenta se vingar e se dá mal deixa quieto (regra do dono, 08/09/2026)
+
+A dívida não renasce quando a cobrança falha — sem isso a Cearamor
+voltava toda semana num save da TUF. E a derrota numa tentativa de
+vingança custa mais que uma derrota comum:
+
+- **IA contra IA** (`registrarBrigaIA`): se a perdedora devia à vencedora,
+  a dívida some em vez de ser reanotada. Se ela era quem tomou a
+  iniciativa (o lado `a` da briga), a briga sai como `vingancaFrustrada`
+  e ela perde, além do normal, 0,6 de moral e 0,3 de prestígio na régua
+  interna (`VINGANCA_FRUSTRADA`) — o dobro da derrota comum.
+- **IA contra nós** (`registrarConfronto`): se ela nos devia e perdeu, a
+  dívida some. Se veio cobrar (o ataque marcado carrega `cobranca`, e o
+  alvo da defesa leva a marca), paga os mesmos 0,6 e 0,3 a mais.
+- **A nossa**: fomos cobrar (atacamos com dívida aberta) e apanhamos: a
+  dívida some e custa −1,0 de moral e −1,0 de prestígio na régua interna
+  (−5 e −5 na régua de 0 a 100), com a linha "vingança frustrada" na
+  consequência (`VINGANCA_NOSSA` em `feed.js`).
+- A derrota comum continua anotando a dívida, dos dois lados.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

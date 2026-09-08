@@ -7811,7 +7811,7 @@
       config: { escalacao: aptos, intencao:'atacar', paz:false, bombas:p.bombas,
                 efetivoRival: deles, local: atq.cena || 'bar', bondes },
       aoTerminar: res => fecharDiaDeJogo(res, null,
-        {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida,
+        {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
                                 cena: atq.cena || 'bar',
                                 nome:(o&&o.nome)||'Rival',
                                 nossos, rateio: est && est.rateio,

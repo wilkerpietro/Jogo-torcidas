@@ -198,7 +198,7 @@ TO.acoes = (function(){
       {ind:'moral', delta: dmNossa, dono:'nossa'}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
-      torcidaId: deles.torcida, ganhamos,
+      torcidaId: deles.torcida, ganhamos, atacamos: !enc.sofrido,
       local:{cena: enc.local || '', bairro: enc.bairro || ''},
       /* a escolta desce com o aliado junto: o carimbo vai pro jornal
          montar a manchete de apoio (pedido do dono, 31/08/2026) */
@@ -431,6 +431,7 @@ TO.acoes = (function(){
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: seguramos,
+      atacamos: false, cobranca: !!alvo.cobranca,
       local:{cena: alvo.cena || (naEstrada ? 'rua' : alvo.tipo),
              bairro: alvo.bairro || ''},
       a: nossoLado(E, alvo, res, seguramos),
@@ -519,7 +520,7 @@ TO.acoes = (function(){
     const dona = alvo.deQuem
       || ((TO.mundo.torcida(alvo.torcidaId)||{}).nome) || alvo.nome;
     if(TO.feed) TO.feed.registrarConfronto(E, {
-      torcidaId: alvo.torcidaId, ganhamos: ganhou,
+      torcidaId: alvo.torcidaId, ganhamos: ganhou, atacamos: true,
       local:{cena: alvo.cena || alvo.tipo, bairro: alvo.bairro || ''},
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),

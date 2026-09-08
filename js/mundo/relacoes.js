@@ -112,6 +112,9 @@ TO.relacoes = (function(){
      inteira cada briga virava revanche da revanche e a mediana do mundo
      subia de 22 pra 36 no ano. Contra nós o dobro fica. */
   const VALIDADE_DIVIDA = 16;   // semanas
+  /* o que a vingança frustrada custa A MAIS, na régua interna de 0–20
+     (a derrota comum da IA já tira 0,6 de moral e o swing de prestígio) */
+  const VINGANCA_FRUSTRADA = {moral:0.6, prestigio:0.3};
   function dividaIA(E, devedor, credor){
     const t = (E.mundoTorcidas||{})[devedor];
     const d = t && t.dividas && t.dividas[credor];
@@ -1624,11 +1627,25 @@ TO.relacoes = (function(){
     /* a dívida entre elas: a briga é revanche se algum lado devia ao
        outro; depois, quem perdeu anota e quem ganhou quita */
     if(reg.a && reg.b && reg.a.id && reg.b.id){
-      reg.revanche = reg.revanche ||
-        !!(dividaIA(E, reg.a.id, reg.b.id) || dividaIA(E, reg.b.id, reg.a.id));
+      const devA = !!dividaIA(E, reg.a.id, reg.b.id);
+      const devB = !!dividaIA(E, reg.b.id, reg.a.id);
+      reg.revanche = reg.revanche || devA || devB;
       const venc = reg.ganhouA ? reg.a.id : reg.b.id;
       const perd = reg.ganhouA ? reg.b.id : reg.a.id;
-      anotarDividaIA(E, perd, venc);
+      const perdDevia = reg.ganhouA ? devB : devA;
+      /* QUEM TENTA SE VINGAR E SE DÁ MAL DEIXA QUIETO (regra do dono,
+         08/09/2026): a dívida da perdedora some em vez de renascer — sem
+         isso a Cearamor voltava toda semana. E se ela era a que veio
+         cobrar (o lado `a` é quem toma a iniciativa), a derrota custa
+         mais que uma derrota comum: moral e prestígio em dobro. */
+      if(perdDevia){
+        quitarDividaIA(E, perd, venc);
+        if(perd === reg.a.id){
+          reg.vingancaFrustrada = true;
+          mover(E, perd, 'moral', -VINGANCA_FRUSTRADA.moral);
+          mover(E, perd, 'prestigio', -VINGANCA_FRUSTRADA.prestigio);
+        }
+      } else anotarDividaIA(E, perd, venc);
       quitarDividaIA(E, venc, perd);
     }
     E.brigasIA.unshift(reg);
@@ -2515,7 +2532,7 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, COBRANCA_MULT, dividaIA, anotarDividaIA, quitarDividaIA, brigaIA,
+  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, COBRANCA_MULT, VINGANCA_FRUSTRADA, dividaIA, anotarDividaIA, quitarDividaIA, brigaIA,
           ehMaiorRival, pesoDoRival, emTregua,
           nivel, hostilidade, marcarAjuda,
           ranking, rankingDoPais, posicaoNoRanking, posicaoNoMundo,

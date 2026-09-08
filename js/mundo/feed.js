@@ -1942,6 +1942,9 @@ TO.feed = (function(){
      7. O RESULTADO DE TODO CONFRONTO
         A porta única: todo fecho de cena passa por aqui.
      ------------------------------------------------------- */
+  /* o que a NOSSA vingança frustrada custa a mais, na régua interna de
+     0–20 (−5 de moral e −5 de prestígio na régua de 0 a 100) */
+  const VINGANCA_NOSSA = {moral:1.0, prestigio:1.0};
   function registrarConfronto(E, d){
     if(!d) return;
     /* toda briga zera o relógio da paz — é ele que deprecia prestígio
@@ -1979,13 +1982,38 @@ TO.feed = (function(){
        com cada uma é o que faz o rival propor trégua. */
     if(d.torcidaId && d.torcidaId !== E.torcida.id){
       E.dividas = E.dividas || {};
-      /* e a dívida DELA com a gente: apanhou, anota; nos bateu, quita */
-      if(TO.relacoes.anotarDividaIA){
-        if(d.ganhamos) TO.relacoes.anotarDividaIA(E, d.torcidaId, E.torcida.id);
-        else if(!empatou) TO.relacoes.quitarDividaIA(E, d.torcidaId, E.torcida.id);
+      /* e a dívida DELA com a gente: apanhou, anota; nos bateu, quita.
+         QUEM TENTA SE VINGAR E SE DÁ MAL DEIXA QUIETO (regra do dono,
+         08/09/2026): se ela veio cobrar (ataque marcado com `cobranca`)
+         e perdeu, a dívida some em vez de renascer, e a derrota custa
+         mais — moral e prestígio a mais na ficha dela. */
+      const R = TO.relacoes;
+      if(R.anotarDividaIA){
+        const devia = !!R.dividaIA(E, d.torcidaId, E.torcida.id);
+        if(d.ganhamos && devia){
+          R.quitarDividaIA(E, d.torcidaId, E.torcida.id);
+          if(d.cobranca && R.mover){
+            R.mover(E, d.torcidaId, 'moral', -R.VINGANCA_FRUSTRADA.moral);
+            R.mover(E, d.torcidaId, 'prestigio', -R.VINGANCA_FRUSTRADA.prestigio);
+            d.vingancaFrustrada = 'deles';
+          }
+        }
+        else if(d.ganhamos) R.anotarDividaIA(E, d.torcidaId, E.torcida.id);
+        else if(!empatou) R.quitarDividaIA(E, d.torcidaId, E.torcida.id);
+      }
+      /* a NOSSA vingança frustrada: fomos cobrar (atacamos com dívida
+         aberta) e apanhamos — deixa quieto, e paga a mais */
+      if(!d.ganhamos && !empatou && E.dividas[d.torcidaId] && d.atacamos){
+        delete E.dividas[d.torcidaId];
+        const dm = TO.estado.mexerIndicador(E, 'moral', -VINGANCA_NOSSA.moral, 'Vingança frustrada');
+        const dp = TO.estado.mexerIndicador(E, 'prestigio', -VINGANCA_NOSSA.prestigio, 'Vingança frustrada');
+        d.efeitos = d.efeitos || [];
+        if(dm) d.efeitos.push({ind:'moral', delta:Math.round(dm*10)/10, dono:'nossa (vingança frustrada)'});
+        if(dp) d.efeitos.push({ind:'prestigio', delta:Math.round(dp*10)/10, dono:'nosso (vingança frustrada)'});
+        d.vingancaFrustrada = 'nossa';
       }
       if(d.ganhamos) delete E.dividas[d.torcidaId];
-      else if(!empatou){
+      else if(!empatou && d.vingancaFrustrada !== 'nossa'){
         const dt = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
         E.dividas[d.torcidaId] = {ano:E.data.ano, semana:E.data.semana,
           mes: MES_NOME[dt.getMonth()], cidade: cidadeDeHoje(E), onde};
@@ -2453,7 +2481,7 @@ TO.feed = (function(){
     /* ataque vindo de FILIAL (dono, 25/08/2026): o nome já vem
        decorado ("Jovem Fla Sub-Sede Fortaleza") e o efetivo é o do
        núcleo local, não o da torcida inteira */
-    return {torcidaId:a.torcida, nome:a.nome || o.nome,
+    return {cobranca: !!a.cobranca, torcidaId:a.torcida, nome:a.nome || o.nome,
             tipo: a.alvo === 'emboscada' ? 'emboscada'
                 : a.alvo === 'bar' ? 'bar' : a.alvo,
             cena: a.cena,
