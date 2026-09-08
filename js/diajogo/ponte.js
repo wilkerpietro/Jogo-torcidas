@@ -214,9 +214,6 @@ TO.diaJogo.ponte = (function(){
     }catch(e){ registrarErro('simulação', e); }
     try{ desenhar(); }catch(e){ registrarErro('desenho', e); }
     try{ atualizarHUD(); }catch(e){ registrarErro('hud', e); }
-    /* a densidade dos bonecos mudou: a camada 2D do celular segue */
-    if(bonecos && T && T.dprAtual && estreito() && dprUsado != null &&
-       Math.min(1.5, devicePixelRatio||1, T.dprAtual()) !== dprUsado) ajustarCanvasCelular();
     requestAnimationFrame(quadro);
   }
 
@@ -252,11 +249,11 @@ TO.diaJogo.ponte = (function(){
       if(cv.width!==cv._original.w || cv.height!==cv._original.h){ cv.width=cv._original.w; cv.height=cv._original.h; }
       return;
     }
-    /* a camada 2D acompanha a densidade que os bonecos escolheram
-       (resolução adaptativa, 08/09/2026): três camadas de tela cheia a
-       1,5× é o que mais pesa na placa do celular */
-    const dpr = Math.min(1.5, devicePixelRatio||1,
-                         (bonecos && T && T.dprAtual) ? T.dprAtual() : 1.5);
+    /* A CAMADA 2D FICA NA DENSIDADE CHEIA (correção do dono, 08/09/2026):
+       ela chegou a acompanhar a densidade adaptativa dos bonecos, e o
+       nome do líder saía pixelado. Medido, a camada 2D não pesa; quem
+       pesa é a 3D, e só ela desce de densidade. */
+    const dpr = Math.min(1.5, devicePixelRatio||1);
     dprUsado = dpr;
     /* a caixa vem do CSS (a faixa fica com o topo, o resto é canvas);
        o buffer segue a caixa pra imagem não esticar */
@@ -298,7 +295,10 @@ TO.diaJogo.ponte = (function(){
     C.desenhar(J,ctx,{editor:ED.ativo,
                       mostrarMalha:ED.ativo&&ED.mostrarMalha,
                       mostrarPostos:ED.ativo&&ED.mostrarPostos,
-                      semCorpo:bonecos});
+                      semCorpo:bonecos,
+                      /* com boneco por cima, o nome e a marca do líder
+                         vão pra camada de cima (desenharSobre) */
+                      semNomeDoLider:bonecos});
     if(mira && !ED.ativo) desenharMira(ctx);
     if(ED.ativo) desenharEditor(ctx);
     ctx.setTransform(1,0,0,1,0,0);
@@ -312,7 +312,77 @@ TO.diaJogo.ponte = (function(){
         if(!ED.ativo) T.desenharDeCima(J, {escala, cw:cv.width, ch:cv.height, dt:dtQuadro});
         else T.limparDeCima();
       }catch(e){ registrarErro('bonecos', e); desligarBonecos('erro no desenho: '+(e && e.message)); }
+      try{ desenharSobre(); }catch(e){ registrarErro('sobre', e); }
     }
+  }
+
+  /* =======================================================
+     A MARCA DO LÍDER POR CIMA DE TUDO (pedido do dono, 08/09/2026)
+     O anel e o nome do líder eram pintados na camada 2D, que fica
+     POR BAIXO dos bonecos: no meio da briga os outros corpos cobriam
+     a marca e não dava pra saber quem se controla. Agora a camada
+     `djSobre` — o canvas que fica acima da 3D — recebe, a cada
+     quadro, um anel duplo no pé, uma seta pulsando sobre a cabeça e
+     o nome numa etiqueta escura. Só pra quem o jogador controla: o
+     mesmo disco que a câmera segue (`focoDoZoom`). Densidade cheia,
+     sem pixel.
+     ======================================================= */
+  let sobreCtx = null, sobreCv = null;
+  function desenharSobre(){
+    const sc = $('djSobre');
+    if(!sc) return;
+    if(sobreCv !== sc){ sobreCv = sc; sobreCtx = sc.getContext('2d'); }
+    if(!sobreCtx) return;
+    if(sc.width !== cv.width || sc.height !== cv.height){ sc.width = cv.width; sc.height = cv.height; }
+    /* a caixa CSS acompanha a do canvas principal (no celular ele não
+       ocupa o palco inteiro: a faixa fica em cima e o pad embaixo) */
+    if(sc.hidden) sc.hidden = false;
+    /* em retângulos de tela, relativos ao pai posicionado da camada: o
+       offsetParent do canvas principal não é o mesmo em toda largura */
+    const rc = cv.getBoundingClientRect();
+    const rp = sc.offsetParent ? sc.offsetParent.getBoundingClientRect() : {left:0, top:0};
+    const l = Math.round(rc.left - rp.left)+'px', t = Math.round(rc.top - rp.top)+'px';
+    const w = Math.round(rc.width)+'px', h = Math.round(rc.height)+'px';
+    if(sc.style.left!==l || sc.style.top!==t || sc.style.width!==w || sc.style.height!==h){
+      sc.style.left=l; sc.style.top=t; sc.style.width=w; sc.style.height=h;
+    }
+    const c = sobreCtx;
+    c.setTransform(1,0,0,1,0,0);
+    c.clearRect(0,0,sc.width,sc.height);
+    const f = focoDoZoom();
+    if(!f || !f.vivo || ED.ativo) return;
+    const s = escala.s;
+    c.setTransform(s,0,0,s,escala.ox,escala.oy);
+    const x=f.x, y=f.y, r=f.r||7;
+    /* o facho no chão: um halo dourado translúcido que os outros
+       bonecos não cobrem, porque está na camada de cima */
+    const halo = c.createRadialGradient(x, y, r*0.4, x, y, r+11);
+    halo.addColorStop(0, 'rgba(255,211,90,.34)'); halo.addColorStop(1, 'rgba(255,211,90,0)');
+    c.fillStyle = halo; c.beginPath(); c.arc(x,y,r+11,0,7); c.fill();
+    /* o anel duplo no pé: dourado grosso com contorno escuro */
+    c.lineWidth = 5.4/Math.sqrt(s); c.strokeStyle='rgba(0,0,0,.75)';
+    c.beginPath(); c.arc(x,y,r+5,0,7); c.stroke();
+    c.lineWidth = 3.2/Math.sqrt(s); c.strokeStyle='#ffd35a';
+    c.beginPath(); c.arc(x,y,r+5,0,7); c.stroke();
+    /* a seta pulsando sobre a cabeça, grande o bastante pra achar no bolo */
+    const tt = (J && J.t) || 0, sobe = Math.sin(tt*5)*2;
+    const ay = y - r - 25 + sobe, aw = 8, ah = 9.5;
+    c.beginPath(); c.moveTo(x, ay+ah); c.lineTo(x-aw, ay); c.lineTo(x+aw, ay); c.closePath();
+    c.fillStyle='#ffd35a'; c.fill();
+    c.lineWidth = 1.8; c.strokeStyle='rgba(0,0,0,.85)'; c.stroke();
+    /* o nome numa etiqueta escura; a letra tem teto pra não virar
+       cartaz no zoom de 3,4× do celular */
+    const nome = String(f.nome||'').toUpperCase();
+    if(nome){
+      const px = Math.max(9, Math.min(12, 33/s));
+      c.font = `700 ${px}px "IBM Plex Mono",monospace`; c.textAlign='center'; c.textBaseline='middle';
+      const tw = c.measureText(nome).width + 8, th = px + 5;
+      const bx = x - tw/2, by = ay - th - 3;
+      c.fillStyle='rgba(12,12,12,.82)';
+      c.beginPath(); if(c.roundRect) c.roundRect(bx, by, tw, th, 2); else c.rect(bx, by, tw, th); c.fill();
+      c.fillStyle='#ffd35a'; c.fillText(nome, x, by + th/2 + 0.5);
+    }
+    c.setTransform(1,0,0,1,0,0);
   }
 
   /* =======================================================

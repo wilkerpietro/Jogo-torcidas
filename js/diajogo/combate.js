@@ -3166,7 +3166,10 @@ TO.diaJogo.combate = (function(){
       c.beginPath();c.arc(x,y,d.r+6,0,7);c.stroke();}
     desenharRotulo(c,d,x,y);
   }
-  /* vida e nome ficam no 2D mesmo quando o corpo é boneco por cima */
+  /* vida e nome ficam no 2D mesmo quando o corpo é boneco por cima —
+     salvo o nome e o anel do líder, que a ponte passa pra camada de
+     cima com `semNomeDoLider` (pedido do dono, 08/09/2026) */
+  let semNomeDoLider = false;
   function desenharRotulo(c,d,x,y){
     if(x===undefined){ x=d.x; y=d.y; }
     /* ESTUDO (06/09/2026): a sombra da torcida no chão, na 2ª cor —
@@ -3178,7 +3181,7 @@ TO.diaJogo.combate = (function(){
       c.fillStyle='rgba(0,0,0,.6)'; c.fillRect(x-w/2,y-d.r-9,w,3);
       c.fillStyle=p>.5?'#6a9c4a':p>.25?'#c8a03c':'#b6432f'; c.fillRect(x-w/2,y-d.r-9,w*p,3);
     }
-    if(d.lider){
+    if(d.lider && !semNomeDoLider){
       c.font='600 10px "IBM Plex Mono",monospace'; c.textAlign='center';
       c.fillStyle='rgba(0,0,0,.75)'; c.fillText(d.nome,x+1,y-d.r-13);
       c.fillStyle='#e0b040';         c.fillText(d.nome,x,y-d.r-14);
@@ -3235,6 +3238,7 @@ TO.diaJogo.combate = (function(){
   }
 
   function desenhar(J,c,opc){
+    semNomeDoLider = !!(opc && opc.semNomeDoLider);
     A.desenharFundo(c);
     A.desenharSobreposicoes(c,J.grades,Object.assign({t:J.t},opc||{}));
     /* `semCorpo`: os bonecos da vista de cima (tres.js) desenham gente,

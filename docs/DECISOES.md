@@ -4387,6 +4387,26 @@ proporção é a mesma — o custo era triângulo. Os controles ficam em
 `bonecos3.cfg` (cortarForaDaTela, resolucaoAdaptativa, afinarMalha,
 afinarCelulas).
 
+## A marca do líder por cima da briga, sem pixel (pedido do dono, 08/09/2026)
+
+Duas correções na cena:
+
+- **A camada 2D volta à densidade cheia.** Ela tinha passado a acompanhar
+  a densidade adaptativa dos bonecos, e o nome do líder (que é pintado
+  nela) saía pixelado. Medido, a camada 2D não pesa nada; só a 3D desce
+  de densidade.
+- **A marca de quem o jogador controla vai pra camada de cima.** O anel e
+  o nome do líder eram pintados na camada 2D, que fica POR BAIXO dos
+  bonecos: no bolo da briga os corpos cobriam a marca. Agora o canvas
+  `djSobre`, acima da 3D, recebe a cada quadro (`ponte.desenharSobre`):
+  um halo dourado translúcido no chão, um anel duplo grosso (dourado com
+  contorno escuro), uma seta dourada pulsando sobre a cabeça e o nome
+  numa etiqueta escura, com letra que tem teto pra não virar cartaz no
+  zoom de 3,4× do celular. É pro mesmo disco que a câmera segue
+  (`focoDoZoom`), e nada disso é coberto por boneco nenhum. A camada de
+  baixo deixa de pintar o nome e o anel do líder quando há boneco por
+  cima (`semNomeDoLider`).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
