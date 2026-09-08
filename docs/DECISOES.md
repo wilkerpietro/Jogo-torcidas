@@ -4372,8 +4372,17 @@ Três medidas, em `bonecos3.js`:
    quando a média do quadro passa de 1/28 s por 1,2 s; volta a subir com
    4 s de folga abaixo de 1/55 s. A camada 2D do celular acompanha.
 
-Medido no navegador sem placa (software), celular 390×844: 3,6 → 15,4
-fps; desktop 1000×800: 3,4 → 8,9 fps. Numa placa de verdade a
+4. **Uma malha só por boneco** (`juntarPecas`, pedido do dono no mesmo
+   dia): as sete peças esqueletizadas, a cabeça e o cabelo (pendurados
+   no osso da cabeça) e os adereços viram um SkinnedMesh com cor por
+   vértice — peça pendurada em osso entra com o vértice levado ao espaço
+   do corpo e peso 1 naquele osso, que é o mesmo que ser filha dele. A
+   textura da pele sai (invisível a 30 px). A geometria juntada é
+   guardada por (variantes, cores, desenho) e compartilhada. Chamadas de
+   desenho: 725 → 211 (quatro por boneco: corpo, sombra, dois anéis).
+
+Medido no navegador sem placa (software), celular 390×844: 3,6 → 16,9
+fps; desktop 1000×800: 3,4 → 10,4 fps. Numa placa de verdade a
 proporção é a mesma — o custo era triângulo. Os controles ficam em
 `bonecos3.cfg` (cortarForaDaTela, resolucaoAdaptativa, afinarMalha,
 afinarCelulas).

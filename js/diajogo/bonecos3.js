@@ -797,6 +797,99 @@ TO.diaJogo.bonecos3 = (function(){
     raiz.add(anelFundo); raiz.add(anel);
     return {anel, anelFundo};
   }
+  /* =======================================================
+     UMA MALHA SÓ POR BONECO (pedido do dono, 08/09/2026)
+     O clone do GLB tem sete peças esqueletizadas (pele, camisa, faixa,
+     calça, tênis, sola, meia), a cabeça e o cabelo pendurados no osso
+     da cabeça e os adereços em outros ossos — catorze chamadas de
+     desenho por boneco. Aqui tudo vira UM SkinnedMesh com cor por
+     vértice: as peças esqueletizadas entram como estão (mesmos ossos,
+     pesos remapeados pelo nome do osso), as penduradas em osso entram
+     com o vértice levado ao espaço do corpo e peso 1 no osso de que
+     pendem — o resultado é o mesmo de serem filhas dele. O material é
+     um Lambert com vertexColors, sem a textura da pele (invisível a
+     30 px). A geometria juntada é guardada por (variantes, cores,
+     desenho): boneco da mesma torcida com o mesmo visual compartilha.
+     ======================================================= */
+  const geomJuntas = new Map();
+  const matJunto = new THREE.MeshLambertMaterial({vertexColors:true, color:0xffffff});
+  matJunto.name = 'junto';
+  function juntarPecas(modelo, chave){
+    const base = (()=>{ let b=null; modelo.traverse(o=>{ if(!b && o.isSkinnedMesh) b=o; }); return b; })();
+    if(!base) return null;
+    modelo.updateMatrixWorld(true);
+    const ossosBase = base.skeleton.bones;
+    const idxOsso = new Map(ossosBase.map((b,i)=>[b.name, i]));
+    const pecas = [];
+    modelo.traverse(o=>{ if(o.isMesh && o.visible && o.geometry && o.geometry.getAttribute('position')) pecas.push(o); });
+    let geo = geomJuntas.get(chave);
+    if(!geo){
+      const P=[], N=[], C=[], SI=[], SW=[], IDX=[];
+      const invBase = new THREE.Matrix4().copy(base.matrixWorld).invert();
+      const m4 = new THREE.Matrix4(), m3 = new THREE.Matrix3(), v = new THREE.Vector3(), n = new THREE.Vector3();
+      const cor = new THREE.Color();
+      let deslocamento = 0;
+      for(const o of pecas){
+        const g = o.geometry, pos = g.getAttribute('position'), nor = g.getAttribute('normal');
+        const col = g.getAttribute('color'), si = g.getAttribute('skinIndex'), sw = g.getAttribute('skinWeight');
+        const idx = g.getIndex();
+        const nV = pos.count;
+        /* transformação: peça pendurada em osso vai pro espaço do corpo */
+        const pendurada = !o.isSkinnedMesh;
+        let osso = -1;
+        if(pendurada){
+          m4.copy(invBase).multiply(o.matrixWorld);
+          m3.getNormalMatrix(m4);
+          let x = o.parent; while(x && !x.isBone) x = x.parent;
+          osso = x ? (idxOsso.has(x.name) ? idxOsso.get(x.name) : -1) : -1;
+        }
+        /* remapeia os índices de osso de peças com esqueleto próprio pelo nome */
+        let remap = null;
+        if(o.isSkinnedMesh && o.skeleton !== base.skeleton){
+          remap = o.skeleton.bones.map(b => idxOsso.has(b.name) ? idxOsso.get(b.name) : 0);
+        }
+        if(o.material && o.material.color) cor.copy(o.material.color); else cor.set('#cccccc');
+        for(let i=0;i<nV;i++){
+          v.fromBufferAttribute(pos, i); if(pendurada) v.applyMatrix4(m4);
+          P.push(v.x, v.y, v.z);
+          if(nor){ n.fromBufferAttribute(nor, i); if(pendurada) n.applyMatrix3(m3).normalize(); N.push(n.x, n.y, n.z); }
+          else N.push(0, 1, 0);
+          if(col) C.push(col.getX(i), col.getY(i), col.getZ(i)); else C.push(cor.r, cor.g, cor.b);
+          if(pendurada){ SI.push(Math.max(0, osso), 0, 0, 0); SW.push(1, 0, 0, 0); }
+          else {
+            const a = si.getX(i), b = si.getY(i), c = si.getZ(i), d = si.getW(i);
+            SI.push(remap ? remap[a] : a, remap ? remap[b] : b, remap ? remap[c] : c, remap ? remap[d] : d);
+            SW.push(sw.getX(i), sw.getY(i), sw.getZ(i), sw.getW(i));
+          }
+        }
+        const nT = idx ? idx.count : nV;
+        for(let t=0;t<nT;t++) IDX.push(deslocamento + (idx ? idx.getX(t) : t));
+        deslocamento += nV;
+      }
+      geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+      geo.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+      geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(SI, 4));
+      geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(SW, 4));
+      geo.setIndex(IDX);
+      geo.computeBoundingSphere();
+      geomJuntas.set(chave, geo);
+      if(geomJuntas.size > 400){ const k0 = geomJuntas.keys().next().value; geomJuntas.get(k0).dispose(); geomJuntas.delete(k0); }
+    }
+    const junto = new THREE.SkinnedMesh(geo, matJunto);
+    junto.name = 'junto';
+    junto.frustumCulled = false;
+    junto.bind(base.skeleton, base.bindMatrix);
+    base.parent.add(junto);
+    junto.position.copy(base.position); junto.quaternion.copy(base.quaternion); junto.scale.copy(base.scale);
+    for(const o of pecas) o.parent.remove(o);
+    /* as peças escondidas (variantes desligadas) também saem: são só peso */
+    const sobras = []; modelo.traverse(o=>{ if(o.isMesh && o !== junto) sobras.push(o); });
+    for(const o of sobras) o.parent.remove(o);
+    return junto;
+  }
+
   function construirCorpoGLB(f, pm){
     const g = G();
     const raiz = new THREE.Group();
@@ -822,6 +915,13 @@ TO.diaJogo.bonecos3 = (function(){
         o.material = m;
       }
     });
+    /* uma malha só (cfg.juntarPecas): catorze chamadas viram uma */
+    let junto = null;
+    if(cfg.juntarPecas){
+      const chave = [pm?'pm':'', [...on].sort().join(','), f.desenho||0,
+                     cores.pele, cores.camisa, cores.faixa, cores.calca, cores.tenis, cores.cabelo, cores.bone, f.cor3||''].join('|');
+      try{ junto = juntarPecas(modelo, chave); }catch(err){ console.warn('juntarPecas: '+(err && err.message)); junto = null; }
+    }
     /* escala: o GLB tem 1,75 m; o corpo de caixas tinha 34 na escala 1 */
     modelo.scale.setScalar(ALTURA_CAIXAS/ALTURA_GLB);
     raiz.add(modelo);
@@ -878,7 +978,7 @@ TO.diaJogo.bonecos3 = (function(){
     sombra.rotation.x = -Math.PI/2; sombra.position.y = 0.3; sombra.scale.set(8.5, 6.5, 1);
     raiz.add(sombra);
     const {anel, anelFundo} = anelNoChao(raiz);
-    return {raiz, modelo, J, sombra, anel, anelFundo, glb:true, escudo, cassetete};
+    return {raiz, modelo, J, sombra, anel, anelFundo, glb:true, escudo, cassetete, junto};
   }
 
   const _e = new THREE.Euler(), _q = new THREE.Quaternion(), _v = new THREE.Vector3();
@@ -1925,7 +2025,7 @@ TO.diaJogo.bonecos3 = (function(){
      boneco de 30 px não sente a diferença; a placa do celular sente
      — 1,5× é 2,25 vezes mais pixel que 1×. */
   const DPR_NIVEIS = [1.5, 1.0, 0.75];
-  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48};
+  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true};
   let dprNivel = 0, mediaDt = 1/60, tempoNoNivel = 0;
   const dprAtual = () => Math.min(cfg.resolucaoAdaptativa ? DPR_NIVEIS[dprNivel] : 1.5,
                                   window.devicePixelRatio||1);
