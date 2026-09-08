@@ -895,7 +895,7 @@
       if(paisDe(b.a.id) !== nossoPais && paisDe(b.b.id) !== nossoPais) continue;
       const daPraca = daCidade(b.a.id) || daCidade(b.b.id);
       itens.push({aba:'brigas', prio: daPraca ? 1 : 2, abs:bAbs,
-        texto:`${b.a.nome} e ${b.b.nome} se pegaram em ${b.cidade || 'algum lugar'}`+
+        texto:`${b.revanche ? 'Revanche: ' : ''}${b.a.nome} e ${b.b.nome} se pegaram em ${b.cidade || 'algum lugar'}`+
               `${b.vencedor && !/ningu/i.test(b.vencedor) ? `: a ${b.vencedor} levou a melhor` : ''}`});
     }
     itens.sort((x,y)=> x.prio - y.prio || y.abs - x.abs);
@@ -3210,6 +3210,7 @@
         `${baixa(b.a)} · ${b.b.nome}: ${baixa(b.b)}`+
         `${b.a.ajuda ? ` · escolta de ${b.a.ajuda.nome} (${b.a.ajuda.n})` : ''}`+
         `${b.b.ajuda ? ` · escolta de ${b.b.ajuda.nome} (${b.b.ajuda.n})` : ''}`+
+        `${b.revanche ? ' · revanche' : ''}`+
         `${b.saque ? ` · saque de ${U.dinheiro(b.saque)}` : ''}`+
         `${b.prestigio ? ` · prestígio ±${b.prestigio}` : ''}</small>`}));
     }

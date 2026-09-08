@@ -179,6 +179,9 @@ TO.feed = (function(){
         E.treguas = E.treguas || {};
         E.treguas[m.de] = E.data.ano;
         E.relacoes[m.de] = U.limitar(TO.relacoes.nivel(E, m.de) + 15, -100, 100);
+        /* trégua apaga a dívida dos dois lados */
+        if(E.dividas) delete E.dividas[m.de];
+        if(TO.relacoes.quitarDividaIA) TO.relacoes.quitarDividaIA(E, m.de, E.torcida.id);
         m.consequencia = 'Trégua até o fim do ano: ninguém procura ninguém. Relação +15.';
       } else {
         E.relacoes[m.de] = U.limitar(TO.relacoes.nivel(E, m.de) - 5, -100, 100);
@@ -1249,8 +1252,10 @@ TO.feed = (function(){
       : `Fala presida, me passaram a fita de que os caras da ${av.nome} `+
         `vai atacar a gente ${LUGAR[av.alvo] || 'na rua'} no dia do jogo. `+
         `Vale ficar de olho.`;
+    const cobranca = av.cobranca
+      ? ' É cobrança: eles não engoliram a surra que levaram da gente.' : '';
     propor(E, {kind:'campana', peso:'info', tipo:'ruim', voz:'olheiro',
-               chave, texto});
+               chave, texto: texto + cobranca});
   }
 
   /* -------------------------------------------------------
@@ -1967,6 +1972,11 @@ TO.feed = (function(){
        com cada uma é o que faz o rival propor trégua. */
     if(d.torcidaId && d.torcidaId !== E.torcida.id){
       E.dividas = E.dividas || {};
+      /* e a dívida DELA com a gente: apanhou, anota; nos bateu, quita */
+      if(TO.relacoes.anotarDividaIA){
+        if(d.ganhamos) TO.relacoes.anotarDividaIA(E, d.torcidaId, E.torcida.id);
+        else if(!empatou) TO.relacoes.quitarDividaIA(E, d.torcidaId, E.torcida.id);
+      }
       if(d.ganhamos) delete E.dividas[d.torcidaId];
       else if(!empatou){
         const dt = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);

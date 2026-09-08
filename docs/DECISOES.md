@@ -4265,6 +4265,39 @@ ataque, e a sugestão virava repetição. Fica só a cobrança da dívida
 memória de derrota e não sugestão espontânea; ela sai sem freio, como
 antes.
 
+## As IAs guardam vingança (pedido do dono, 08/09/2026)
+
+Até aqui só o jogador tinha dívida; a IA só tinha a relação piorando
+depois da briga, sem memória de quem apanhou de quem. Agora cada torcida
+do mundo guarda a própria dívida por torcida (`mundoTorcidas[id].dividas`):
+
+- **Anota** quando perde uma briga — de nós (fechamento em
+  `registrarConfronto`) ou de outra IA (toda briga do mundo passa por
+  `registrarBrigaIA`). **Quita** quando vence a credora. Vale até o fim
+  da temporada (o ano da anotação); a trégua com a gente apaga os dois
+  lados.
+- **Na fila de alvos a credora passa na frente**: no ataque-surpresa, na
+  treta marcada e no bar (`rivalDaPracaIA`), e nos ataques contra nós
+  (praça nossa, filial e praça deles).
+- **A tentativa sai sem freio**: entre elas a cobrança pula o freio das
+  IAs e o peso do rival (sem dobrar — com o dobro e validade de
+  temporada inteira cada briga virava revanche da revanche e a mediana
+  do mundo subia de 22 pra 36); contra nós sai com o dobro
+  (`COBRANCA_MULT = 2`) no lugar do freio geral e do peso. A dívida
+  vence em 16 semanas (`VALIDADE_DIVIDA`), além do fim da temporada.
+- **Contra nós** o ataque marcado vem com `cobranca` e o aviso do olheiro
+  (quando a campana está paga) termina com "É cobrança: eles não
+  engoliram a surra que levaram da gente." **Entre elas** a briga sai
+  como revanche: em Notícias → Brigas ("· revanche") e no ticker
+  ("Revanche: …").
+
+Medido: Falange Coral × MOFI, a perdedora anota e a volta sai como
+revanche quitando; contra nós, rival de −80 com efetivo suficiente veio
+cobrar em 35 a 49 dias. Com a vingança, a mediana anual do mundo foi de
+22 pra 29 brigas por torcida (quartil de cima 37), ainda dentro da faixa
+do jogador. A régua de tamanho continua valendo: torcida com menos
+da metade do nosso efetivo não vem, dívida ou não.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

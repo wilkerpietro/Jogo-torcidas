@@ -98,6 +98,43 @@ TO.relacoes = (function(){
      bar) e os ataques contra nós ficam como estão. Vale por cima do
      FREIO_BRIGA. */
   const FREIO_IA = 0.4;
+
+  /* A DÍVIDA DAS IAs (pedido do dono, 08/09/2026): a mesma memória que
+     o jogador tem. Quem apanha anota de quem apanhou — de nós ou de
+     outra IA — e vale até o fim da temporada; vencer a credora quita, e
+     a trégua com a gente apaga. Na hora de escolher alvo a credora passa
+     na frente da fila, e a tentativa sai com o dobro da chance em vez
+     de passar pelo freio das IAs. Contra nós vira ataque marcado com
+     `cobranca`; entre elas, a briga sai como revanche. */
+  const COBRANCA_MULT = 2;
+  /* ENTRE ELAS a cobrança só pula o freio das IAs (sem dobrar) e a
+     dívida vence em 16 semanas: com o dobro e validade de temporada
+     inteira cada briga virava revanche da revanche e a mediana do mundo
+     subia de 22 pra 36 no ano. Contra nós o dobro fica. */
+  const VALIDADE_DIVIDA = 16;   // semanas
+  function dividaIA(E, devedor, credor){
+    const t = (E.mundoTorcidas||{})[devedor];
+    const d = t && t.dividas && t.dividas[credor];
+    if(!d || d.ano !== E.data.ano) return null;
+    if(d.sa != null && semanaAbs(E) - d.sa > VALIDADE_DIVIDA) return null;
+    return d;
+  }
+  function anotarDividaIA(E, devedor, credor){
+    const t = (E.mundoTorcidas||{})[devedor];
+    if(!t || !credor || devedor === credor) return;
+    t.dividas = t.dividas || {};
+    t.dividas[credor] = {ano:E.data.ano, semana:E.data.semana, sa:semanaAbs(E)};
+  }
+  function quitarDividaIA(E, devedor, credor){
+    const t = (E.mundoTorcidas||{})[devedor];
+    if(t && t.dividas) delete t.dividas[credor];
+  }
+  /* credoras na frente, sem mexer na ordem do resto */
+  const credorasPrimeiro = (E, devedor, lista) =>
+    lista.slice().sort((x,y)=>(dividaIA(E, devedor, y.id)?1:0) - (dividaIA(E, devedor, x.id)?1:0));
+  /* quem nos deve na frente: cada candidata é a devedora e nós a credora */
+  const devedorasPrimeiro = (E, lista) =>
+    lista.slice().sort((x,y)=>(dividaIA(E, y.id, E.torcida.id)?1:0) - (dividaIA(E, x.id, E.torcida.id)?1:0));
   const PESO_OUTROS = 0.5;
   function ehMaiorRival(E, idA, idB){
     if(!idA || !idB || idA === idB) return false;
@@ -1005,9 +1042,9 @@ TO.relacoes = (function(){
     if(E.ataqueMarcado && !E.ataqueMarcado.resolvido &&
        E.ataqueMarcado.semana === E.data.semana) return fora;
     /* os maiores rivais são testados primeiro (dono, 08/09/2026) */
-    const candidatas = maioresPrimeiro(E,
+    const candidatas = devedorasPrimeiro(E, maioresPrimeiro(E,
       M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta).map(o=>o.id),
-      id => nivel(E, id)).map(id => M().torcida(id));
+      id => nivel(E, id)).map(id => M().torcida(id)));
     for(const o of candidatas){
       const r = nivel(E, o.id);
       if(r > QUENTE) continue;
@@ -1026,8 +1063,9 @@ TO.relacoes = (function(){
       const briga = brigaDe(t);
       /* de −55 pra baixo a chance cresce; em −100, com torcida bem
          ousada, é quase um ataque por mês */
+      const cobra = !!dividaIA(E, o.id, E.torcida.id);
       const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * briga
-                     * FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id);
+                     * (cobra ? COBRANCA_MULT : FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id));
       if(U.rng() > chance) continue;
 
       /* concentração e pista só existem em semana de jogo em casa */
@@ -1039,13 +1077,14 @@ TO.relacoes = (function(){
       const dia = E.proximoJogo.dia || 6;
       E.ataqueMarcado = {torcida:o.id, nome:o.nome, alvo:alvo.id,
                          cena:alvo.cena, mapa:E.torcida.mapa,
-                         ano:E.data.ano, semana:E.data.semana, dia};
+                         ano:E.data.ano, semana:E.data.semana, dia,
+                         cobranca: cobra};
       hostilidade(E, o.id, REL.ataqueMarcado);
       /* a campana do olheiro pode farejar a fita (dono, 24/08/2026) */
       if(TO.feed && TO.feed.avisoDoOlheiro)
         TO.feed.avisoDoOlheiro(E, {
           chave:`atq|${E.data.ano}|${E.data.semana}|${o.id}|${alvo.id}`,
-          alvo:alvo.id, nome:o.nome});
+          alvo:alvo.id, nome:o.nome, cobranca: cobra});
       fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia});
       break;              // um ataque-surpresa por semana já é guerra
     }
@@ -1073,8 +1112,10 @@ TO.relacoes = (function(){
           ? TO.membros.aptosParaOEstadio(E).length : E.membros.length;
         const podeRua = jogoEmCasa && f.membros >= aptos * 0.5;
         /* o bar fica fora do freio (dono, 08/09/2026); a rua leva */
+        const cobra = !!dividaIA(E, o.id, E.torcida.id);
         const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.18 * brigaDe(t)
-                       * (podeRua ? FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id) : 1);
+                       * (cobra ? COBRANCA_MULT
+                          : podeRua ? FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id) : 1);
         if(U.rng() > chance) continue;
 
         const alvo = podeRua ? U.escolher(ALVOS) : {id:'bar', cena:'bar'};
@@ -1086,12 +1127,13 @@ TO.relacoes = (function(){
                            alvo:alvo.id, cena:alvo.cena,
                            efetivo:f.membros, filial:true,
                            mapa:E.torcida.mapa,
-                           ano:E.data.ano, semana:E.data.semana, dia};
+                           ano:E.data.ano, semana:E.data.semana, dia,
+                           cobranca: cobra};
         hostilidade(E, o.id, REL.ataqueMarcado);
         if(TO.feed && TO.feed.avisoDoOlheiro)
           TO.feed.avisoDoOlheiro(E, {
             chave:`atqf|${E.data.ano}|${E.data.semana}|${o.id}`,
-            alvo:alvo.id, nome:`${o.nome} Sub-Sede ${nomeCid}`});
+            alvo:alvo.id, nome:`${o.nome} Sub-Sede ${nomeCid}`, cobranca: cobra});
         fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia, filial:true});
         break;
       }
@@ -1110,9 +1152,9 @@ TO.relacoes = (function(){
         ? TO.planejamento.estimativaCaravana(E) : null;
       const crew = (est && est.vao) ||
         TO.membros.aptosParaOEstadio(E).length;
-      const daPraca = maioresPrimeiro(E,
+      const daPraca = devedorasPrimeiro(E, maioresPrimeiro(E,
         M().torcidasEm(j.mapaAdv).filter(o=>o.id !== E.torcida.id && !o.incompleta).map(o=>o.id),
-        id => nivel(E, id)).map(id => M().torcida(id));
+        id => nivel(E, id)).map(id => M().torcida(id)));
       for(const o of daPraca){
         if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
         if(emTregua(E, o.id)) continue;
@@ -1120,8 +1162,9 @@ TO.relacoes = (function(){
         if(r > QUENTE) continue;
         if(disponiveisIA(E, o.id) < crew * 0.5) continue;
         const t = (E.mundoTorcidas||{})[o.id];
+        const cobra = !!dividaIA(E, o.id, E.torcida.id);
         const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.28 * brigaDe(t)
-                       * FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id);
+                       * (cobra ? COBRANCA_MULT : FREIO_BRIGA * pesoDoRival(E, E.torcida.id, o.id));
         if(U.rng() > chance) continue;
         const sorteio = [];
         for(const a of ALVOS) for(let i=0;i<a.peso;i++) sorteio.push(a);
@@ -1129,12 +1172,13 @@ TO.relacoes = (function(){
         const dia = j.dia || 6;
         E.ataqueMarcado = {torcida:o.id, nome:o.nome, alvo:alvo.id,
                            cena:alvo.cena, mapa:j.mapaAdv,
-                           ano:E.data.ano, semana:E.data.semana, dia};
+                           ano:E.data.ano, semana:E.data.semana, dia,
+                           cobranca: cobra};
         hostilidade(E, o.id, REL.ataqueMarcado);
         if(TO.feed && TO.feed.avisoDoOlheiro)
           TO.feed.avisoDoOlheiro(E, {
             chave:`atq|${E.data.ano}|${E.data.semana}|${o.id}|${alvo.id}`,
-            alvo:alvo.id, nome:o.nome, cidade:j.cidadeAdv || '',
+            alvo:alvo.id, nome:o.nome, cidade:j.cidadeAdv || '', cobranca: cobra,
             forcar: !!(TO.patrimonio && TO.patrimonio.temFilialEm &&
                        TO.patrimonio.temFilialEm(E, j.mapaAdv))});
         fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia});
@@ -1577,6 +1621,16 @@ TO.relacoes = (function(){
      segunda e o contador que invalida o cache do ranking */
   function registrarBrigaIA(E, reg){
     E.brigasIA = E.brigasIA || [];
+    /* a dívida entre elas: a briga é revanche se algum lado devia ao
+       outro; depois, quem perdeu anota e quem ganhou quita */
+    if(reg.a && reg.b && reg.a.id && reg.b.id){
+      reg.revanche = reg.revanche ||
+        !!(dividaIA(E, reg.a.id, reg.b.id) || dividaIA(E, reg.b.id, reg.a.id));
+      const venc = reg.ganhouA ? reg.a.id : reg.b.id;
+      const perd = reg.ganhouA ? reg.b.id : reg.a.id;
+      anotarDividaIA(E, perd, venc);
+      quitarDividaIA(E, venc, perd);
+    }
     E.brigasIA.unshift(reg);
     /* a maior treta do ano é medida na hora: o anuário lê no fim, e
        varrer o feed lá na frente não acharia a briga de janeiro */
@@ -1935,6 +1989,9 @@ TO.relacoes = (function(){
   function rivalDaPracaIA(E, o, semente){
     const lista = hostisLocaisIA(E, o);
     if(!lista.length) return null;
+    /* a credora passa na frente: treta marcada e bar viram cobrança */
+    const credora = lista.find(x=>dividaIA(E, o.id, x.id));
+    if(credora) return credora;
     if(semente){
       const maiores = lista.filter(x=>ehMaiorRival(E, o.id, x.id));
       if(maiores.length && TO.mapa.hash(`${semente}|mr`) % 4)
@@ -2019,17 +2076,18 @@ TO.relacoes = (function(){
      dia comum — a mesma régua nossa (chance cresce com a mágoa e com
      a ousadia dela), diluída no dia */
   function surpresaIA(E, o){
-    const hostis = hostisLocaisIA(E, o).sort((x,y)=>
+    const hostis = credorasPrimeiro(E, o.id, hostisLocaisIA(E, o).sort((x,y)=>
       (ehMaiorRival(E, o.id, y.id)?1:0) - (ehMaiorRival(E, o.id, x.id)?1:0) ||
-      relacaoDelas(E, o.id, x.id) - relacaoDelas(E, o.id, y.id));
+      relacaoDelas(E, o.id, x.id) - relacaoDelas(E, o.id, y.id)));
     for(const v of hostis){
       const rel = relacaoDelas(E, o.id, v.id);
       if(rel > QUENTE) continue;
       if(vivoDe(E, o.id) < vivoDe(E, v.id) * 0.5) continue;
       const t = (E.mundoTorcidas||{})[o.id];
       const briga = brigaDe(t);
+      const cobra = !!dividaIA(E, o.id, v.id);
       const chance = ((QUENTE - rel)/(100 + QUENTE)) * 0.28 * briga / 7
-                     * FREIO_BRIGA * FREIO_IA * pesoDoRival(E, o.id, v.id);
+                     * FREIO_BRIGA * (cobra ? 1 : FREIO_IA * pesoDoRival(E, o.id, v.id));
       if(U.rng() > chance) continue;
       return brigaIA(E, o, v, o.mapa, 'ataque-surpresa');
     }
@@ -2457,7 +2515,8 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, ehMaiorRival, pesoDoRival, emTregua,
+  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, COBRANCA_MULT, dividaIA, anotarDividaIA, quitarDividaIA, brigaIA,
+          ehMaiorRival, pesoDoRival, emTregua,
           nivel, hostilidade, marcarAjuda,
           ranking, rankingDoPais, posicaoNoRanking, posicaoNoMundo,
           paisDaTorcida, situacaoFinanceira,
