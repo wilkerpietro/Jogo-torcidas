@@ -4595,6 +4595,17 @@ alambrado ou na respectiva parede."
 - SEM DEFORMAÇÃO (ordem do dono, 09/09/2026): a barriga e a ondinha de
   pano foram testadas e reprovadas ("está feia"). A faixa é lisa; o que
   dá naturalidade é a curva do alambrado.
+- AS CURVAS MEDIDAS, NÃO CHUTADAS (correção do dono, 09/09/2026: "a faixa
+  não está alinhada com o alambrado, vasculhe todas as curvas"): o
+  script `faixa-ajuste-arco.js` amostra a beira da pisada em frente a
+  cada setor (janelas de 150/110/80 px), ajusta círculo e reta por
+  mínimos quadrados e escolhe o maior comprimento com erro ≤ 5 px; a
+  âncora é projetada na curva ajustada. Resultado: arco no leste do
+  estádio de 10 mil (R≈126), nos dois setores do canto noroeste do de
+  20 mil (R≈104–127, faixas de 110 e 80 px), na lateral leste e no
+  setor sudoeste-baixo do de 40 mil (R≈115–319); reta onde a beira é
+  reta. Onde a malha da foto é irregular (escadas dos cantos do de 40
+  mil) a faixa fica reta na tangente medida — arco ali só piorava.
 - Espremida: na cena a faixa tem proporção 6:1 (a imagem em si continua
   4:1 no Patrimônio), pra caber na linha do alambrado sem invadir o
   campo. Bar: parede leste do salão; praça: fachada leste (rival) e

@@ -723,8 +723,8 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante1:{x:1236, y:300, len:150, dir:[-1,0], arco:[1050,330]}, mandante2:{x:1000, y:853, len:150, dir:[0,-1]}, mandante3:{x:523, y:853, len:150, dir:[0,-1]},
-            visitante1:{x:470, y:186, len:150, dir:[0,1]}, visitante2:{x:640, y:186, len:150, dir:[0,1]}},
+    faixas:{mandante1:{x:1252, y:298, len:150, dir:[-1,0.09], arco:[1116,310]}, mandante2:{x:1000, y:842, len:150, dir:[0,-1]}, mandante3:{x:523, y:842, len:150, dir:[0,-1]},
+            visitante1:{x:515, y:197, len:110, dir:[0,1]}, visitante2:{x:655, y:197, len:150, dir:[0,1]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:300,
        jogador:true, entrada:'portao_mandante'},
@@ -758,8 +758,8 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante1:{x:1204, y:516, len:160, dir:[-1,0]}, mandante2:{x:675, y:812, len:150, dir:[0,-1]}, mandante3:{x:875, y:211, len:150, dir:[0,1]},
-            visitante1:{x:339, y:516, len:160, dir:[1,0]}, visitante2:{x:385, y:235, len:150, dir:[0,1], arco:[520,360]}, visitante3:{x:350, y:275, len:150, dir:[1,0], arco:[520,360]}},
+    faixas:{mandante1:{x:1194, y:516, len:150, dir:[-1,0]}, mandante2:{x:675, y:802, len:150, dir:[0,-1]}, mandante3:{x:875, y:221, len:150, dir:[0,1]},
+            visitante1:{x:349, y:516, len:150, dir:[1,0]}, visitante2:{x:387, y:247, len:80, dir:[0.67,0.75], arco:[478,349]}, visitante3:{x:362, y:276, len:110, dir:[0.88,0.47], arco:[463,330]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:490,
        jogador:true, entrada:'portao_mandante'},
@@ -797,8 +797,8 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante1:{x:1244, y:374, len:160, dir:[-0.96,0.27], arco:[768,512]}, mandante2:{x:515, y:140, len:150, dir:[0.56,0.83], arco:[768,512]},
-            visitante1:{x:360, y:815, len:140, dir:[0.8,-0.6], arco:[768,512]}, visitante2:{x:251, y:585, len:150, dir:[0.99,-0.14], arco:[768,512]}, visitante3:{x:423, y:706, len:140, dir:[0.87,-0.49], arco:[768,512]}},
+    faixas:{mandante1:{x:1256, y:370, len:150, dir:[-0.95,0.31], arco:[943,471]}, mandante2:{x:515, y:140, len:110, dir:[0.56,0.83]},
+            visitante1:{x:360, y:815, len:110, dir:[0.8,-0.6]}, visitante2:{x:251, y:585, len:150, dir:[0.99,-0.14], arco:[768,512]}, visitante3:{x:436, y:697, len:150, dir:[0.79,-0.61], arco:[535,621]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1310, y:360,
        jogador:true, entrada:'portao_mandante'},
