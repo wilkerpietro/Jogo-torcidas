@@ -4682,6 +4682,15 @@ ganhou, no perfil de cada torcida."
   Sem a peça sorteada, sai a outra; sem nenhuma, nada.
 - O portador (`d.comFaixa`) vai pro próprio spawn — o fundo do setor ou
   do salão — e fica ali; não caça ninguém, só bate em quem colar.
+- QUEM SAI DA EQUIPE LARGA A FAIXA (correção do dono, 09/09/2026, "o
+  boneco fica insistentemente tentando tirar o material"): o recolhedor
+  que debandava, caía ou sumia era tirado da equipe mas continuava
+  marcado `faixaIndo`/`tirando` — ficava plantado na faixa pra sempre,
+  e a equipe vazia nunca achava outro. `peneirarEquipe` limpa as marcas
+  de quem sai, o ramo de movimento ignora quem foge ou está no chão, e
+  a escolha seguinte pega outro apto. Testado: um recolhedor que foge é
+  substituído e a faixa sai na mão; debandada geral não deixa ninguém
+  plantado.
 - Entre duas IAs (aliada perdeu pro rival na arquibancada) a peça muda
   de mão e o prestígio delas move; o nosso caixa não entra.
 - Perfil da torcida, aba Visão: "Faixas: N na sede · K tomadas (de

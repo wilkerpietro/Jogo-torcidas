@@ -1450,7 +1450,7 @@ TO.diaJogo.combate = (function(){
           continue;
         }
         ax=c.x; ay=c.y;
-      } else if(d.faixaIndo && d.faixaIndo.estado==='recolhendo'){
+      } else if(d.faixaIndo && d.faixaIndo.estado==='recolhendo' && !d.fugindo && !d.noChao){
         /* A FAIXA: vai até ela e fica ali tirando (ver atualizarFaixa).
            `d.faixaIndo` é a própria faixa — no estádio há uma por lado */
         const F=d.faixaIndo; ramo='faixa'; d._olhaPara=null;
@@ -3398,8 +3398,18 @@ TO.diaJogo.combate = (function(){
     }
     return F;
   }
+  /* QUEM SAI DA EQUIPE LARGA A FAIXA (correção do dono, 09/09/2026): o
+     recolhedor que debandou, caiu ou sumiu era tirado da equipe mas
+     continuava marcado `faixaIndo`/`tirando` — ficava plantado na faixa
+     "tirando" pra sempre, e a equipe vazia nunca achava outro. */
+  const aptoARecolher = d => d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu;
+  function peneirarEquipe(F){
+    const fora = (F.equipe||[]).filter(d=>!aptoARecolher(d));
+    for(const d of fora){ d.faixaIndo=false; d.tirando=false; }
+    F.equipe = (F.equipe||[]).filter(aptoARecolher);
+  }
   function escolherRecolhedores(J, F){
-    F.equipe = (F.equipe||[]).filter(d=>d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu);
+    peneirarEquipe(F);
     const n = F.equipeN || 2;
     const cands = J.discos.filter(d=>d.lado===F.lado && (!F.spawn || d.spawn===F.spawn) && d.vivo && !d.lider && !d.fugindo &&
       d.derrubado<=0 && !d.noChao && !d.entrando && !d.sumiu && !d.faixaIndo && !d.comFaixa && !F.equipe.includes(d))
@@ -3426,7 +3436,7 @@ TO.diaJogo.combate = (function(){
     }
     if(F.estado==='recolhendo'){
       const antes = F.equipe.length;
-      F.equipe = F.equipe.filter(d=>d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu);
+      peneirarEquipe(F);
       if(F.equipe.length < (F.equipeN||2) && J.t - F.tEscolha > 0.5) escolherRecolhedores(J, F);
       const noLugar = F.equipe.filter(d=>U.dist(d.x,d.y,F.x,F.y) < d.r+(F.dir ? 30 : 18));
       for(const d of F.equipe) d.tirando = noLugar.includes(d);
