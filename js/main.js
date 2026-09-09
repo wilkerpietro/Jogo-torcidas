@@ -3117,6 +3117,107 @@
   const ROT_MSG = {provocacao:'Provocação', convite:'Convite', agradecimento:'Agradecimento',
                    juntos:'Estamos juntos', recusa:'Recusa', cobranca:'Cobrança', recado:'Recado',
                    pedido:'Pedido de casa', tregua:'Proposta de trégua', treta:'Treta marcada'};
+  /* a tabela dos jogos da semana com os botões de cada jogo, e o bloco
+     da recepção dos aliados que chegam (o cartão antigo do olheiro,
+     vivo em Notícias → Mensagens desde 09/09/2026) */
+  function painelPautaDaSemana(e){
+    const P2 = TO.planejamento;
+    const pauta = TO.feed.pautaDosJogos ? TO.feed.pautaDosJogos(e) : {linhas:[], aliados:[]};
+    const c = cartao('Planejamento da semana',
+      pauta.linhas.length ? `${pauta.linhas.length} ${pauta.linhas.length===1?'jogo':'jogos'}` : 'sem jogo');
+    if(!pauta.linhas.length){
+      c.corpo.innerHTML = '<div class="em-construcao">Nenhum jogo nos próximos dias: nada pra planejar.</div>';
+      return c;
+    }
+    const plano = P2.plano(e);
+    const nomeDe = id => { const o = id && TO.mundo.torcida(id); return o ? o.nome : ''; };
+    const tb = el('table',{class:'tab-olheiro'});
+    for(const r of pauta.linhas){
+      const tr = el('tr');
+      tr.appendChild(el('td',{class:'to-jogo', html:
+        `<small>${r.comp || ''}${r.dia ? ` · ${r.dia}` : ''}${r.tipo==='fora' ? ` · em ${r.cidade||''}` : ''}</small>`+
+        `<div>${chipClube(r.clubes[0].id, r.clubes[0].cor)}${r.clubes[0].nome}`+
+        `<span class="to-x">×</span>`+
+        `${chipClube(r.clubes[1].id, r.clubes[1].cor)}${r.clubes[1].nome}</div>`}));
+      tr.appendChild(el('td',{class:'to-torcidas', html:
+        r.torcidas.map(t=>
+          `<div${t.hostil ? '' : ' class="to-mansa"'}>`+
+          `${chipTorcida(t.id, t.cor)}${linkificarNomes(t.nome)} <span class="to-faixa">`+
+          `${String(t.faixa).replace(' a ','–')} membros</span></div>`)
+          .join('') || '<div class="to-mansa">ninguém na rua</div>'}));
+      tb.appendChild(tr);
+      /* a linha de botões do jogo, com o que o plano já diz */
+      const tr2 = el('tr',{class:'to-acoes'});
+      const td = el('td'); td.colSpan = 2;
+      const bts = el('div',{class:'rec-botoes'});
+      let estado = '';
+      if(r.tipo === 'nosso'){
+        estado = plano.intencao === 'atacar' && plano.alvoTorcida
+          ? `plano: atacar a ${nomeDe(plano.alvoTorcida)}` : 'plano: ir em paz';
+      } else if(r.tipo === 'praca'){
+        const inv = ((plano.investidas||{})[r.grupo.chaveJogo]);
+        estado = inv && inv.alvo ? `plano: atacar a ${nomeDe(inv.alvo)}` : 'plano: deixar passar';
+      } else estado = 'caravana pro jogo fora';
+      const bt = (rot, nota, ligado, fn) => {
+        const b = el('button',{class:'rec-bt', html:`${rot}${nota ? `<small>${nota}</small>` : ''}`});
+        b.disabled = !ligado; b.onclick = fn; bts.appendChild(b); return b;
+      };
+      if(r.tipo === 'fora'){
+        bt('Montar a caravana', `${r.dia||''}${r.cidade ? ' · '+r.cidade : ''}`, true, ()=>{ decisaoAberta = null; abrirCaravana(); });
+        bt('Atacar na praça deles', r.temAlvo ? 'escolher o alvo' : 'sem rival lá', r.temAlvo, ()=>{ decisaoAberta = null; abrirAtaque({fora:true, advId:r.advId}); });
+      } else {
+        bt('Atacar', r.temAlvo ? 'escolher o alvo' : 'sem rival na rua', r.temAlvo || r.tipo==='nosso', ()=>{ decisaoAberta = null; abrirAtaque({grupos:[r.grupo]}); });
+        bt('Ir em paz', r.tipo==='nosso' ? 'entrar pelo portão' : 'deixar passar', true, ()=>{
+          if(r.tipo === 'nosso') P2.definirIntencao(e, 'paz');
+          else if(r.grupo.chaveJogo) P2.definirInvestida(e, r.grupo.chaveJogo, null);
+          TO.estado.salvar(); redesenhar();
+        });
+        bt('Seguir padrão', 'a política da torcida', true, ()=>{
+          if(r.tipo === 'nosso') P2.aplicarPolitica(e);
+          else if(r.grupo.chaveJogo){
+            const pol = P2.politicas(e);
+            const og = P2.outrosJogosNaCidade(e, e.data.semana).find(x=>x.chave === r.grupo.chaveJogo);
+            const alvos = og ? P2.alvosDaPolitica(e, og.visitantes, pol.outros) : [];
+            P2.definirInvestida(e, r.grupo.chaveJogo, alvos.length ? {alvo:alvos[0].id, como:'arredores', olheiro:null} : null);
+          }
+          TO.estado.salvar(); redesenhar();
+        });
+      }
+      td.appendChild(el('div',{class:'to-estado fraco', texto: estado}));
+      td.appendChild(bts);
+      tr2.appendChild(td);
+      tb.appendChild(tr2);
+    }
+    c.corpo.appendChild(tb);
+    /* a recepção dos aliados que chegam pros jogos da semana */
+    if(pauta.aliados.length){
+      const bloco = el('div',{class:'bloco-recepcao'});
+      bloco.appendChild(el('div',{class:'rec-titulo', texto:'Aliados na cidade — como vamos receber?'}));
+      for(const a of pauta.aliados){
+        const pago = ((P2.plano(e).pago)||{})[a.id];
+        const linha = el('div',{class:'rec-aliado'+(pago?' pago':'')});
+        linha.appendChild(el('div',{class:'rec-nome', html:
+          `<b>${linkTorcida(a.id, a.nome)}</b> <span class="fraco">(${a.clube}) · vêm `+
+          `${a.n} · jogo ${['','seg','ter','qua','qui','sex','sáb','dom'][a.dia]||'dia '+a.dia}</span>`+
+          (pago ? ' <span class="tag">resolvido</span>' : '')}));
+        const bts = el('div',{class:'rec-botoes'});
+        const atual = P2.nivelDe(e, a.id);
+        for(const r of P2.RECEPCAO){
+          const custo = r.porCabeca * a.n;
+          const b = el('button',{class:'rec-bt'+(atual===r.id?' on':''),
+            html:`${r.rot}<small>${custo ? U.dinheiro(custo) : 'de graça'} · ${r.relacao>0?'+':''}${r.relacao} rel.</small>`});
+          b.disabled = !!pago;
+          b.onclick = ()=>{ P2.definirRecepcao(e, a.id, r.id); for(const x of bts.children) x.classList.remove('on'); b.classList.add('on'); TO.estado.salvar(); };
+          bts.appendChild(b);
+        }
+        linha.appendChild(bts);
+        bloco.appendChild(linha);
+      }
+      c.corpo.appendChild(bloco);
+    }
+    return c;
+  }
+
   function painelMensagens(e){
     const cx = el('div');
     const lista = e.mensagens || [];
@@ -3124,15 +3225,10 @@
        quiser bolar o ataque da semana sem esperar o olheiro abre a tela
        por este botão. A caravana continua no feed. */
     const P2 = TO.planejamento;
-    const alvos = P2.alvosDoAtaque(e) || [];
-    const j = e.proximoJogo;
-    const pl = el('div',{class:'linha-dado', html:
-      `<span>Planejar o ataque da semana${j ? ` · ${j.casa ? 'jogo em casa' : 'jogo fora, em '+(j.cidadeAdv||'')}` : ''}</span>`});
-    const bp = el('button',{class:'bt', texto: alvos.length ? 'Planejar ataque' : 'Sem rival na rua'});
-    bp.disabled = !alvos.length || !j;
-    bp.onclick = ()=>{ decisaoAberta = null; abrirAtaque(j && !j.casa ? {fora:true, advId:j.advId} : null); };
-    pl.appendChild(bp);
-    cx.appendChild(pl);
+    /* A PAUTA DA SEMANA (pedido do dono, 09/09/2026): a tabela de cada
+       jogo, como o olheiro mandava, agora mora aqui — o jogador pode
+       bolar ataque contra qualquer torcida que passe pela cidade */
+    cx.appendChild(painelPautaDaSemana(e));
     const c = cartao('Mensagens de outras torcidas', `${lista.length} ${lista.length===1?'recado':'recados'}`);
     if(!lista.length)
       c.corpo.innerHTML = '<div class="em-construcao">Ninguém mandou recado ainda.</div>';

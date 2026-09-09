@@ -1166,6 +1166,59 @@ TO.feed = (function(){
     }
   }
 
+  /* =======================================================
+     A PAUTA DA SEMANA (pedido do dono, 09/09/2026)
+     A tabela que o olheiro mandava todo dia de jogo — cada jogo da
+     praça nos próximos dias, com as torcidas que pisam na rua e a
+     estimativa de cada uma — volta, mas em Notícias → Mensagens, e
+     cobrindo a semana inteira de uma vez: é de lá que o jogador pode
+     bolar ataque contra qualquer torcida que passe pela cidade, e não
+     só contra a que o olheiro sugeriu. Vem também o nosso jogo fora
+     (a caravana e a praça deles) e os aliados que chegam.
+     ======================================================= */
+  function pautaDosJogos(E){
+    const meu = E.torcida.clubeId;
+    const corDe = id => {
+      const o = M().torcida(id);
+      return (o && M().coresDaTorcida(o).cor) || '#888';
+    };
+    const linhas = [];
+    for(const j of TO.praca.jogosDaPraca(E)){
+      if(j.dia < E.data.dia) continue;                 // já passou
+      const nosso = j.casa.id === meu || j.vis.id === meu;
+      const ests = estimativasDaRua(E, j.dia, j);
+      const chaveJogo = nosso ? null : chaveDoJogoDaPraca(E, j);
+      linhas.push({
+        tipo: nosso ? 'nosso' : 'praca',
+        grupo:{dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id},
+        comp: j.comp, diaN: j.dia, dia: NOME_DIA[j.dia],
+        clubes: [{id:j.casa.id, nome:j.casa.nome, cor:(j.casa.cores||[])[0]||'#888'},
+                 {id:j.vis.id, nome:j.vis.nome, cor:(j.vis.cores||[])[0]||'#888'}],
+        torcidas: ests.map(x=>({id:x.id, nome:x.nome, cor:corDe(x.id), faixa:x.faixa, hostil:x.hostil})),
+        temAlvo: ests.some(x=>x.hostil)
+      });
+    }
+    const jf = E.proximoJogo;
+    const fora = (jf && !jf.casa && jf.mapaAdv && jf.mapaAdv !== E.torcida.mapa) ? jf : null;
+    if(fora){
+      const alvos = PL().alvosDaViagem(E, {advId:fora.advId, crua:true});
+      linhas.push({
+        tipo:'fora', advId: fora.advId, cidade: fora.cidadeAdv,
+        comp: fora.competicao || 'fora de casa', diaN: fora.dia||6, dia: NOME_DIA[fora.dia||6],
+        clubes: [{id:fora.mandante.id, nome:fora.mandante.nome, cor:(fora.mandante.cores||[])[0]||'#888'},
+                 {id:fora.visitante.id, nome:fora.visitante.nome, cor:(fora.visitante.cores||[])[0]||'#888'}],
+        torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id), faixa:a.faixa, hostil:!a.aliada})),
+        temAlvo: alvos.some(a=>!a.aliada)
+      });
+    }
+    linhas.sort((a,b)=>a.diaN - b.diaN);
+    const jogosDaSemana = linhas.filter(l=>l.tipo!=='fora');
+    const aliados = PL().aliadosNaCidade(E, E.data.semana)
+      .filter(a=>jogosDaSemana.some(l=>l.grupo.vis === a.clube.id && l.grupo.dia === a.dia))
+      .map(a=>({id:a.id, nome:a.torcida.nome, n:a.estimativa, dia:a.dia, clube:a.clube.nome}));
+    return {linhas, aliados};
+  }
+
   /* a lista de estimativas DAQUELE JOGO: as torcidas dos dois clubes
      que pisam na rua naquele dia */
   function estimativasDaRua(E, dia, jogo){
@@ -2523,7 +2576,7 @@ TO.feed = (function(){
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
-          alvoDaDefesa, encerrarPartida,
+          alvoDaDefesa, encerrarPartida, pautaDosJogos,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu};
 })();

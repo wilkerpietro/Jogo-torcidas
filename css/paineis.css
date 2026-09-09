@@ -997,6 +997,11 @@ table.dados tr.selecionada td{background:#252525}
 }
 @keyframes balao-entra{from{opacity:0;transform:translate(-6px,-50%)}to{opacity:1;transform:translateY(-50%)}}
 
+/* a pauta da semana em Notícias → Mensagens: a linha de botões de cada jogo */
+.tab-olheiro tr.to-acoes td{padding:4px 8px 10px;border-bottom:1px solid var(--linha)}
+.tab-olheiro tr.to-acoes .to-estado{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px}
+.tab-olheiro tr.to-acoes .rec-botoes{margin-top:0}
+
 /* as mensagens de outras torcidas (Notícias → Mensagens) */
 .msg-torcida{padding:9px 0;border-bottom:1px solid var(--sulco)}
 .msg-torcida:last-child{border-bottom:0}

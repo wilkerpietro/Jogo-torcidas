@@ -4442,6 +4442,21 @@ anterior estava, contando o tempo que passou. Medido: 0,138 → 0,144 da
 volta depois de uma mensagem nova, com a manchete nova dentro e as
 anteriores mantidas.
 
+## A pauta da semana em Notícias → Mensagens (pedido do dono, 09/09/2026)
+
+O cartão antigo do olheiro — a tabela de cada jogo com as torcidas que
+pisam na rua e a estimativa de cada uma — volta, mas em Notícias →
+Mensagens e cobrindo a semana inteira: é de lá que o jogador pode bolar
+ataque contra QUALQUER torcida que passe pela cidade, e não só contra a
+que o olheiro sugeriu. `feed.pautaDosJogos` monta a pauta (jogos da praça
+que ainda não passaram, o nosso jogo fora com a praça deles, e os aliados
+que chegam); `main.painelPautaDaSemana` desenha: por jogo, a linha do
+plano atual e os botões **Atacar** (abre a tela de ataque com os alvos
+daquele jogo, hostis ou não), **Ir em paz** e **Seguir padrão**; no jogo
+fora, **Montar a caravana** e **Atacar na praça deles**. Abaixo, o bloco
+"Aliados na cidade — como vamos receber?" com os quatro níveis. O botão
+solto "Planejar ataque" saiu: a pauta o substitui.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
