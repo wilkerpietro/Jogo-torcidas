@@ -359,11 +359,8 @@ TO.diaJogo.ponte = (function(){
     const halo = c.createRadialGradient(x, y, r*0.4, x, y, r+11);
     halo.addColorStop(0, 'rgba(255,211,90,.34)'); halo.addColorStop(1, 'rgba(255,211,90,0)');
     c.fillStyle = halo; c.beginPath(); c.arc(x,y,r+11,0,7); c.fill();
-    /* o anel duplo no pé: dourado grosso com contorno escuro */
-    c.lineWidth = 5.4/Math.sqrt(s); c.strokeStyle='rgba(0,0,0,.75)';
-    c.beginPath(); c.arc(x,y,r+5,0,7); c.stroke();
-    c.lineWidth = 3.2/Math.sqrt(s); c.strokeStyle='#ffd35a';
-    c.beginPath(); c.arc(x,y,r+5,0,7); c.stroke();
+    /* o anel amarelo no pé saiu (pedido do dono, 09/09/2026): fica o
+       halo, a seta e o nome */
     /* a seta pulsando sobre a cabeça, grande o bastante pra achar no bolo */
     const tt = (J && J.t) || 0, sobe = Math.sin(tt*5)*2;
     const ay = y - r - 25 + sobe, aw = 8, ah = 9.5;
