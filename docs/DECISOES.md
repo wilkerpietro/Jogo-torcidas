@@ -4692,8 +4692,9 @@ ganhou, no perfil de cada torcida."
   fugiu vivo levou junto).
 - O PORTADOR VAI JUNTO, MAS ATRÁS (correção do dono, 09/09/2026): não
   fica no spawn — acompanha a aglomeração do PRÓPRIO bonde (quem tem
-  inimigo a menos de 160 px; sem briga aberta, o grupo) e para 70 px
-  atrás dela, do lado oposto ao centro dos inimigos, pelo campo de
+  inimigo a menos de 200 px; sem briga aberta, o grupo) e para 150 px
+  atrás dela (régua do dono, 09/09/2026: era 160/70), do lado oposto
+  ao centro dos inimigos, pelo campo de
   fluxo da cena (alvo quantizado em células de 64 px, empurrado pra
   célula pisável). Não caça, só bate em quem colar, e não vira
   socorrista. Medido no estádio: portadores a 30–97 px do bonde e

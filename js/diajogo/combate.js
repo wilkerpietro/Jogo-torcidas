@@ -1469,14 +1469,15 @@ TO.diaJogo.combate = (function(){
            dela, do lado oposto ao inimigo, sem agredir — antes ficava
            plantado no spawn, longe da briga */
         /* a aglomeração é quem está TROCANDO: os nossos com inimigo a
-           menos de 160 px; sem briga aberta, o grupo inteiro */
+           menos de 200 px; sem briga aberta, o grupo inteiro (régua do
+           dono, 09/09/2026: 200 px e 150 px atrás) */
         /* os SEUS: o próprio bonde (mesmo setor) antes do lado inteiro —
            no estádio o bonde da torcida dele pode estar trocando num
            setor e outro bonde aliado noutro, atrás de grade */
         const doLado = J.discos.filter(x=>x.lado===d.lado && x!==d && x.vivo && !x.comFaixa && !x.fugindo);
         const doBonde = d.spawn ? doLado.filter(x=>x.spawn===d.spawn) : [];
         const vivos = doBonde.length ? doBonde : doLado;
-        const brigando = vivos.filter(x=>(x.inimigoPerto||999) < 160);
+        const brigando = vivos.filter(x=>(x.inimigoPerto||999) < 200);
         const meus = brigando.length ? brigando : vivos;
         const eles = J.discos.filter(x=>x.lado!==d.lado && x.vivo);
         let tx, ty;
@@ -1487,7 +1488,7 @@ TO.diaJogo.combate = (function(){
             const ce = eles.reduce((a,x)=>({x:a.x+x.x, y:a.y+x.y}), {x:0,y:0});
             ce.x /= eles.length; ce.y /= eles.length;
             let bx = cm.x - ce.x, by = cm.y - ce.y; const n = Math.hypot(bx,by) || 1; bx/=n; by/=n;
-            tx = cm.x + bx*70; ty = cm.y + by*70;
+            tx = cm.x + bx*150; ty = cm.y + by*150;
           } else { tx = cm.x; ty = cm.y; }
         } else {
           const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0]; tx = s.x; ty = s.y;
