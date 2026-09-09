@@ -488,7 +488,20 @@ TO.patrimonio = (function(){
           n < a.sede ? `precisa de sede nível ${a.sede}` : null)});
     }
 
+    /* A NATUREZA de cada item (a Loja do dono, 09/09/2026): a tela
+       agrupa por ela — material de cena, sede, pontos comerciais,
+       subsedes de fora, pessoal e frota */
+    for(const o of lista) o.natureza = naturezaDe(o.id);
     return lista;
+  }
+  function naturezaDe(id){
+    if(/^(faixa|bandeira|bombas)$/.test(id)) return 'material';
+    if(/^(sede|anexo:|area-treino|fabrica)/.test(id)) return 'sede';
+    if(/^(comprar|ampliar):(bar|loja|subsede)$/.test(id)) return 'pontos';
+    if(/^(filial|ampliar-filial)/.test(id)) return 'filiais';
+    if(/^(mma|advogado)/.test(id)) return 'pessoal';
+    if(id === 'onibus') return 'frota';
+    return 'outros';
   }
 
   /* =======================================================

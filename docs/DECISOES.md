@@ -4827,6 +4827,47 @@ tenham, vão comprar como prioridade."
   mil repôs as duas; Galoucura com R$ 3 mil só a bandeira; Cearamor com
   R$ 1 mil nada.
 
+## A Loja do Financeiro e a peça que muda de mão na rua (pedido do dono, 09/09/2026)
+
+"Reorganize as compras em uma nova tela do financeiro chamada Loja,
+organizando por natureza, numa proposta de layout diferente, facilitando
+as compras rápidas como bomba, faixa e bandeira. Faça com que algumas
+brigas entre torcidas IA dêem faixa ou bandeira para o vencedor, em
+torno de 5% das brigas."
+
+- A aba LOJA entra no Financeiro (Resumo · Loja · Patrimônio · Elenco ·
+  Transações). O cartão "Adquirir e ampliar" SAIU do Patrimônio, que
+  ficou com a Estrutura (o que rende) e as faixas e bandeiras (o que a
+  torcida tem), mais um botão que leva pra Loja.
+- `opcoes(E)` em `patrimonio.js` etiqueta cada item com a `natureza`
+  (`naturezaDe(id)`): material (faixa, bandeira, bombas), sede (sede,
+  anexos, área de treino, fábrica), pontos (bar, loja, subsede — abrir e
+  ampliar), filiais (subsede de fora e ampliação), pessoal (professor
+  de MMA, advogado, dispensas), frota (ônibus).
+- O layout (`pintarLoja` em `main.js`, CSS `.loja-*`): a faixa do caixa
+  em cima; a COMPRA RÁPIDA em três cartões grandes — Bombas com contador
+  (−/+, atalhos 5/10/20, total na hora, compra `comprarBombas` na
+  quantidade), Faixa e Bandeira com a prévia da PRÓXIMA peça, a
+  contagem na sede e um botão; embaixo, uma seção por natureza, com os
+  itens em grade de cartões (título, nota, preço, botão; o dropdown da
+  cidade dentro do cartão da subsede de fora; "sem custo · Confirmar"
+  nas dispensas). Item travado fica apagado com o motivo em vermelho.
+- Cinco sub-abas não cabiam em 390px (cortava "Transações"): em tela
+  estreita a fileira de sub-abas quebra linha.
+- A PEÇA NA RUA: `registrarBrigaIA` — por onde passam a briga de dia de
+  jogo, a treta marcada e o bar delas — sorteia `CHANCE_PANO_BRIGA =
+  5%`. Saindo, o vencedor leva a faixa ou a bandeira do perdedor (a que
+  ele tem; as duas, tira na sorte): a contagem do perdedor desce, a lista
+  de tomadas do vencedor sobe, prestígio como na arquibancada (faixa
+  −10/+5, bandeira −5/+2 na régua de 0 a 100), e `reg.pano` fica no
+  registro. Aparece na fita ("e ficou com a faixa da X"), em Notícias →
+  Brigas (em ouro) e no perfil da torcida ("tomou/perdeu a faixa"). Na
+  semana seguinte o perdedor repõe na loja (regra anterior).
+- Medido: 524 brigas simuladas, 23 com peça (4,4%), contagens batendo
+  (10 faixas e 13 bandeiras mudaram de mão). A Loja: compra de bandeira,
+  faixa, 7 bombas e a sede pela tela, extrato com os três lançamentos,
+  sem rolagem horizontal em 1280 nem em 390.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

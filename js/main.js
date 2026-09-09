@@ -896,7 +896,8 @@
       const daPraca = daCidade(b.a.id) || daCidade(b.b.id);
       itens.push({aba:'brigas', prio: daPraca ? 1 : 2, abs:bAbs,
         texto:`${b.revanche ? 'Revanche: ' : ''}${b.a.nome} e ${b.b.nome} se pegaram em ${b.cidade || 'algum lugar'}`+
-              `${b.vencedor && !/ningu/i.test(b.vencedor) ? `: a ${b.vencedor} levou a melhor` : ''}`});
+              `${b.vencedor && !/ningu/i.test(b.vencedor) ? `: a ${b.vencedor} levou a melhor` : ''}`+
+              `${b.pano ? ` e ficou com a ${b.pano.tipo} da ${b.pano.de}` : ''}`});
     }
     itens.sort((x,y)=> x.prio - y.prio || y.abs - x.abs);
     /* o resto do país fecha a fita, mas não a toma: no máximo quatro */
@@ -3334,6 +3335,7 @@
         `${b.b.ajuda ? ` · escolta de ${b.b.ajuda.nome} (${b.b.ajuda.n})` : ''}`+
         `${b.revanche ? ' · revanche' : ''}`+
         `${b.saque ? ` · saque de ${U.dinheiro(b.saque)}` : ''}`+
+        `${b.pano ? ` · <b class="pano-tomado">${b.pano.para} tomou a ${b.pano.tipo} da ${b.pano.de}</b>` : ''}`+
         `${b.prestigio ? ` · prestígio ±${b.prestigio}` : ''}</small>`}));
     }
     cx.appendChild(c);
@@ -4920,7 +4922,8 @@
           `${x.cidade ? ` <small class="fraco">· `+
             `${linkCidadePorNome(x.cidade)}</small>` : ''}</span>
            <span class="val ${x.vencedor === o.nome ? 'positivo' : 'negativo'}">`+
-          `${x.vencedor === o.nome ? 'venceu' : 'perdeu'}</span>`}));
+          `${x.vencedor === o.nome ? 'venceu' : 'perdeu'}`+
+          `${x.pano ? ` <small>· ${x.pano.para === o.nome ? 'tomou' : 'perdeu'} a ${x.pano.tipo}</small>` : ''}</span>`}));
       return cx;
     };
 
@@ -5277,31 +5280,11 @@
     c.corpo.appendChild(tab);
     pg.appendChild(c);
 
-    const c2 = cartao('Adquirir e ampliar', `caixa: ${U.dinheiro(e.dinheiro)}`);
-    for(const o of PAT.opcoes(e)){
-      /* oferta com ESCOLHA (pedido do dono, 26/08/2026): um botão só
-         e o dropdown do destino dentro — a subsede de fora usa isso */
-      if(o.escolhas){
-        const d = el('div',{class:'oferta escolha'+(o.trava?' travada':'')});
-        d.appendChild(el('span',{class:'txt',
-          html:`<b>${o.rot}</b>${o.nota?`<small>${o.nota}</small>`:''}`}));
-        const sel = el('select',{class:'sel-oferta'});
-        for(const esc of o.escolhas)
-          sel.appendChild(el('option',{value:esc.id, texto:esc.rot}));
-        sel.disabled = !!o.trava;
-        d.appendChild(sel);
-        const b = el('button',{class:'bt-oferta', texto:U.dinheiro(o.custo)});
-        b.disabled = !!o.trava;
-        b.onclick = ()=>comprar(()=>PAT.comprar(e, o.id+':'+sel.value));
-        d.appendChild(b);
-        if(o.trava) d.appendChild(el('small',{class:'trava', texto:o.trava}));
-        c2.corpo.appendChild(d);
-        continue;
-      }
-      c2.corpo.appendChild(oferta(o.rot, o.nota, o.custo, o.trava,
-        ()=>comprar(()=>PAT.comprar(e, o.id))));
-    }
-    pg.appendChild(c2);
+    /* AS COMPRAS SAÍRAM DAQUI (a Loja do dono, 09/09/2026): o Patrimônio
+       mostra o que a torcida tem e o que rende; comprar é na aba Loja */
+    const irLoja = el('button',{class:'bt', texto:'Comprar e ampliar é na Loja →'});
+    irLoja.onclick = ()=>{ subFin='loja'; redesenhar(); };
+    pg.appendChild(el('div',{class:'loja-chamada'},[irLoja]));
 
     /* AS FAIXAS (pedido do dono, 09/09/2026): as nossas e as que tomamos,
        estas de cabeça pra baixo */
@@ -5310,7 +5293,7 @@
     const bl = el('div',{class:'faixas'});
     bl.appendChild(el('div',{class:'faixas-rot', texto:'As nossas'}));
     const nossas = el('div',{class:'faixas-lista'});
-    if(!fx.nossas.length) nossas.appendChild(el('div',{class:'fraco', texto:'Nenhuma: sem faixa na sede, nada a expor — nem a perder. Compre uma acima.'}));
+    if(!fx.nossas.length) nossas.appendChild(el('div',{class:'fraco', texto:'Nenhuma: sem faixa na sede, nada a expor — nem a perder. Compre uma na Loja.'}));
     const imgFaixa = (o, cls, title, k) => {
       const im = el('img',{class:cls, title});
       im.src = PAT.imagemDaFaixa(o, url => { im.src = url; }, 'faixa', k || 0) || '';
@@ -5338,7 +5321,7 @@
     };
     bl.appendChild(el('div',{class:'faixas-rot', texto:`Bandeiras · ${bd.nossas.length} ${bd.nossas.length===1?'nossa':'nossas'} · ${bd.tomadas.length} ${bd.tomadas.length===1?'tomada':'tomadas'}`}));
     const bands = el('div',{class:'faixas-lista bandeiras'});
-    if(!bd.nossas.length && !bd.tomadas.length) bands.appendChild(el('div',{class:'fraco', texto:'Nenhuma. Compre uma acima: sai no lugar da faixa no bar e na concentração, e junto dela no estádio.'}));
+    if(!bd.nossas.length && !bd.tomadas.length) bands.appendChild(el('div',{class:'fraco', texto:'Nenhuma. Compre uma na Loja: sai no lugar da faixa no bar e na concentração, e junto dela no estádio.'}));
     for(const f of bd.nossas) bands.appendChild(imgBand(e.torcida, 'bandeira-img', `Bandeira da ${e.torcida.nome} · desde ${f.desde}`));
     for(const f of bd.tomadas){
       const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
@@ -5400,6 +5383,142 @@
   }
 
   /* =======================================================
+     A LOJA (pedido do dono, 09/09/2026)
+     Tudo que se compra, numa aba só do Financeiro, agrupado por
+     natureza. Em cima, a COMPRA RÁPIDA: bomba, faixa e bandeira
+     são o que se repõe toda semana, então têm cartão grande, com
+     estoque, prévia e um botão — a bomba com contador. Embaixo,
+     a sede e os anexos, os pontos comerciais, as subsedes de
+     fora, o pessoal e a frota, em cartões numa grade.
+     ======================================================= */
+  let lojaBombas = 5;
+  function pintarLoja(pg, e){
+    const PAT = TO.patrimonio;
+    const comprar = (fn)=>{
+      const r = fn();
+      aviso(r.msg, r.ok?'boa':'ruim');
+      if(r.ok) redesenhar();
+    };
+    const todas = PAT.opcoes(e);
+    const de = nat => todas.filter(o=>o.natureza===nat);
+    const acha = id => todas.find(o=>o.id===id);
+
+    pg.appendChild(el('div',{class:'loja-caixa', html:
+      `<span>Caixa da torcida</span><b>${U.dinheiro(e.dinheiro)}</b>`}));
+
+    /* ---- compra rápida ---- */
+    const rap = el('div',{class:'loja-rapida'});
+    const botao = (rot, trava, aoClicar)=>{
+      const b = el('button',{class:'loja-bt', texto:rot});
+      b.disabled = !!trava; b.onclick = aoClicar;
+      return b;
+    };
+    /* bombas: contador e total na hora */
+    {
+      const preco = PAT.precoBomba(e), est = PAT.bombas(e);
+      const t = el('div',{class:'loja-tile'});
+      t.appendChild(el('h3',{texto:'Bombas'}));
+      t.appendChild(el('span',{class:'estoque', html:
+        `estoque: <b>${est}</b> · ${U.dinheiro(preco)} cada`+
+        `${(e.patrimonio||{}).galpao ? ' · galpão: 15% mais barata' : ''}`}));
+      const st = el('div',{class:'stepper'});
+      const menos = el('button',{texto:'−'}), mais = el('button',{texto:'+'});
+      const num = el('b',{texto:String(lojaBombas)});
+      const total = el('span',{class:'preco'});
+      const pe = el('div',{class:'pe'});
+      const bt = botao('Comprar', null, ()=>comprar(()=>{
+        const r = PAT.comprarBombas(e, lojaBombas);
+        return r.ok ? {ok:true, msg:`${r.compradas} bomba${r.compradas===1?'':'s'} no estoque.`}
+                    : {ok:false, msg:'Não dá: '+(r.msg||'falta caixa')+'.'};
+      }));
+      const atualiza = ()=>{
+        num.textContent = String(lojaBombas);
+        const c = lojaBombas * preco;
+        total.textContent = U.dinheiro(c);
+        bt.disabled = e.dinheiro < c;
+        menos.disabled = lojaBombas <= 1;
+      };
+      menos.onclick = ()=>{ lojaBombas = Math.max(1, lojaBombas-1); atualiza(); };
+      mais.onclick  = ()=>{ lojaBombas = Math.min(50, lojaBombas+1); atualiza(); };
+      st.appendChild(menos); st.appendChild(num); st.appendChild(mais);
+      for(const q of [5,10,20]){
+        const b = el('button',{class:'atalho', texto:String(q)});
+        b.onclick = ()=>{ lojaBombas = q; atualiza(); };
+        st.appendChild(b);
+      }
+      t.appendChild(st);
+      pe.appendChild(total); pe.appendChild(bt); t.appendChild(pe);
+      atualiza();
+      rap.appendChild(t);
+    }
+    /* faixa e bandeira: prévia da próxima e um clique */
+    const pano = (tipo, rot, o, quantas, img)=>{
+      const t = el('div',{class:'loja-tile'});
+      t.appendChild(el('h3',{texto:rot}));
+      t.appendChild(el('span',{class:'estoque', html:
+        `na sede: <b>${quantas}</b> · ${o.nota.split(' · ').slice(1).join(' · ')}`}));
+      const pv = el('div',{class:'previa'});
+      const im = el('img',{class:tipo==='faixa'?'faixa-img':'bandeira-img', title:'a próxima'});
+      im.src = img(url=>{ im.src = url; }) || '';
+      pv.appendChild(im); t.appendChild(pv);
+      const pe = el('div',{class:'pe'});
+      pe.appendChild(el('span',{class:'preco', texto:U.dinheiro(o.custo)}));
+      pe.appendChild(botao('Comprar', o.trava, ()=>comprar(()=>PAT.comprar(e, o.id))));
+      t.appendChild(pe);
+      if(o.trava) t.appendChild(el('small',{class:'trava', texto:o.trava}));
+      rap.appendChild(t);
+    };
+    const oF = acha('faixa'), oB = acha('bandeira');
+    if(oF) pano('faixa', 'Faixa', oF, PAT.faixasDe(e).nossas.length,
+      cb=>PAT.imagemDaFaixa(e.torcida, cb, 'faixa', PAT.faixasDe(e).nossas.length));
+    if(oB) pano('bandeira', 'Bandeira', oB, PAT.bandeirasDe(e).nossas.length,
+      cb=>PAT.imagemDaBandeira(e.torcida, cb));
+    const sec0 = el('div',{class:'loja-secao'});
+    sec0.appendChild(el('h3',{html:'Compra rápida <small>material de cena — o que se repõe toda semana</small>'}));
+    sec0.appendChild(rap);
+    pg.appendChild(sec0);
+
+    /* ---- o resto, por natureza ---- */
+    const SECOES = [
+      ['sede',    'Sede e anexos',        'o que a sede comporta, e o que ela ganha'],
+      ['pontos',  'Pontos comerciais',    'bar, loja e subsede: rendem todo mês'],
+      ['filiais', 'Subsedes em outras cidades', 'núcleo local que recruta, defende e ataca lá'],
+      ['pessoal', 'Pessoal',              'professor de MMA e advogado: mensalidade no fechamento'],
+      ['frota',   'Frota',                'ônibus: a caravana de estrada sai mais barata'],
+      ['outros',  'Outros',               ''],
+    ];
+    for(const [nat, rot, sub] of SECOES){
+      const itens = de(nat);
+      if(!itens.length) continue;
+      const sec = el('div',{class:'loja-secao'});
+      sec.appendChild(el('h3',{html:`${rot}${sub?` <small>${sub}</small>`:''}`}));
+      const gr = el('div',{class:'loja-grade'});
+      for(const o of itens){
+        const it = el('div',{class:'loja-item'+(o.trava?' travada':'')});
+        it.appendChild(el('b',{texto:o.rot}));
+        if(o.nota) it.appendChild(el('small',{class:'loja-nota', texto:o.nota}));
+        const pe = el('div',{class:'pe'});
+        let sel = null;
+        if(o.escolhas){
+          sel = el('select',{class:'sel-oferta'});
+          for(const esc of o.escolhas) sel.appendChild(el('option',{value:esc.id, texto:esc.rot}));
+          sel.disabled = !!o.trava;
+          it.appendChild(sel);
+        }
+        const gratis = !o.custo;
+        pe.appendChild(el('span',{class:'preco', texto: gratis ? 'sem custo' : U.dinheiro(o.custo)}));
+        pe.appendChild(botao(gratis ? 'Confirmar' : 'Comprar', o.trava,
+          ()=>comprar(()=>PAT.comprar(e, sel ? o.id+':'+sel.value : o.id))));
+        it.appendChild(pe);
+        if(o.trava) it.appendChild(el('small',{class:'trava', texto:o.trava}));
+        gr.appendChild(it);
+      }
+      sec.appendChild(gr);
+      pg.appendChild(sec);
+    }
+  }
+
+  /* =======================================================
      FINANCEIRO
      ======================================================= */
   let subFin = 'resumo';
@@ -5410,11 +5529,13 @@
     pg.appendChild(el('div',{class:'titulo-pagina', texto:'Financeiro'}));
     pg.appendChild(subabas([
       {id:'resumo', rot:'Resumo'},
+      {id:'loja', rot:'Loja'},
       {id:'patrimonio', rot:'Patrimônio'},
       {id:'elenco', rot:'Elenco'},
       {id:'transacoes', rot:'Transações'}
     ], subFin, id=>{subFin=id; redesenhar();}));
 
+    if(subFin==='loja'){ pintarLoja(pg, e); return; }
     if(subFin==='patrimonio'){ pintarPatrimonio(pg, e); return; }
     if(subFin==='elenco'){
       /* investir no clube tem aba própria (pedido do dono): estava

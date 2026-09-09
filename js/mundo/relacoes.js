@@ -1601,7 +1601,9 @@ TO.relacoes = (function(){
      registro que a aba Brigas das Notícias mostra — e mexe no
      ranking, porque lá contam os DISPONÍVEIS.
      ======================================================= */
-  const CHANCE_BRIGA_JOGO = 0.18 * FREIO_BRIGA * FREIO_IA;   // 10,8% × freio das IAs
+  const CHANCE_BRIGA_JOGO = 0.18 * FREIO_BRIGA * FREIO_IA;
+  /* a fatia de brigas entre elas em que a faixa ou a bandeira muda de mão */
+  const CHANCE_PANO_BRIGA = 0.05;   // 10,8% × freio das IAs
   function foraDeCombate(E, id){
     const t = (E.mundoTorcidas||{})[id];
     if(!t) return 0;
@@ -1705,6 +1707,31 @@ TO.relacoes = (function(){
         }
       } else anotarDividaIA(E, perd, venc);
       quitarDividaIA(E, venc, perd);
+    }
+    /* A PEÇA MUDA DE MÃO NA RUA (ordem do dono, 09/09/2026): em cerca de
+       5% das brigas entre elas o vencedor leva a faixa ou a bandeira do
+       perdedor — a que ele tem; as duas, tira na sorte. Vale o mesmo
+       prestígio da arquibancada (faixa −10/+5, bandeira −5/+2 na régua
+       de 0 a 100), e a semana seguinte o perdedor repõe na loja. */
+    if(reg.a && reg.b && reg.a.id && reg.b.id && reg.ganhouA != null &&
+       U.rng() < CHANCE_PANO_BRIGA){
+      const venc = reg.ganhouA ? reg.a : reg.b, perd = reg.ganhouA ? reg.b : reg.a;
+      const dona = P().faixasIA(E, perd.id), quem = P().faixasIA(E, venc.id);
+      if(dona && quem){
+        const tem = [];
+        if(dona.faixas > 0) tem.push('faixa');
+        if(dona.bandeiras > 0) tem.push('bandeira');
+        if(tem.length){
+          const tipo = tem[Math.floor(U.rng()*tem.length)];
+          const V = tipo === 'bandeira' ? P().BANDEIRA : P().FAIXA;
+          if(tipo === 'bandeira') dona.bandeiras--; else dona.faixas--;
+          quem[tipo === 'bandeira' ? 'bandeirasTomadas' : 'faixasTomadas']
+            .push({de:perd.id, nome:perd.nome, ano:E.data.ano});
+          mover(E, perd.id, 'prestigio', -V.perda/5);
+          mover(E, venc.id, 'prestigio', V.ganho/5);
+          reg.pano = {tipo, de:perd.nome, deId:perd.id, para:venc.nome};
+        }
+      }
     }
     E.brigasIA.unshift(reg);
     /* a maior treta do ano é medida na hora: o anuário lê no fim, e
@@ -2111,7 +2138,7 @@ TO.relacoes = (function(){
       cidade:(M().cidade(o.mapa)||{}).nome || o.mapa, jogo:'treta marcada',
       a:{id:o.id, nome:o.nome, n:tam, feridos:fA, presos:0},
       b:{id:r.id, nome:r.nome, n:tam, feridos:fB, presos:0},
-      vencedor: ganhouA ? o.nome : r.nome, prestigio:display
+      vencedor: ganhouA ? o.nome : r.nome, prestigio:display, ganhouA
     });
   }
 
