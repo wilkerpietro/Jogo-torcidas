@@ -4807,6 +4807,26 @@ aglomeração" não protege de um inimigo solto que vem por outro lado.
   `faixa-tomada-regra`, `faixa-debandada`, `faixas` e `faixa-fuga-cedo`
   seguem passando.
 
+## As IAs sempre repõem faixa e bandeira (ordem do dono, 09/09/2026)
+
+"As torcidas IA sempre vão tentar ter uma faixa e uma bandeira; caso não
+tenham, vão comprar como prioridade."
+
+- `reporPanos(E, t, id)` em `relacoes.js`, chamada na semana de cada
+  torcida logo depois de `promoverDelas` e ANTES da fila de compras: sem
+  faixa na sede (`faixas < 1`) e com R$ 5.000 em caixa, compra uma; sem
+  bandeira e com R$ 2.000, compra uma. A faixa vem primeiro por ser a
+  mais cara. Cada compra entra no extrato dela ("Faixa nova", "Bandeira
+  nova"), pelo preço da loja do jogador.
+- É a compra da semana: quem repôs não anda a fila naquela semana. A
+  torcida que perde a faixa toda semana gasta a semana nisso — é o que
+  "prioridade" quer dizer.
+- Quem está no vermelho não compra (o ramo do vermelho vem antes e
+  segue pra próxima torcida), como qualquer outra compra.
+- Medido (`panos-ia.js`): com faixa e bandeira zeradas, Gaviões com R$ 20
+  mil repôs as duas; Galoucura com R$ 3 mil só a bandeira; Cearamor com
+  R$ 1 mil nada.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -917,6 +917,13 @@ TO.relacoes = (function(){
          patrimônio, e o que sobrar depois é que vai pra fila */
       promoverDelas(E, t, id);
 
+      /* FAIXA E BANDEIRA ANTES DE TUDO (ordem do dono, 09/09/2026): toda
+         torcida IA quer ter uma faixa e uma bandeira na sede. Ficou sem
+         — tomada na arquibancada, no bar, na praça — repõe como
+         prioridade, na frente da fila, pelo preço da loja. É a compra
+         da semana quando acontece. */
+      if(reporPanos(E, t, id)) continue;
+
       const compra = proximaCompra(E, t, id);
       if(compra && t.caixa >= Math.max(compra.custo, compra.cofre || 0)){
         t.caixa -= compra.custo;
@@ -1504,6 +1511,23 @@ TO.relacoes = (function(){
      o caixa (cada promoção custa o que custa pra nós) e o teto da
      Diretoria por sede — o apto barrado continua apto, esperando a
      vaga. A promoção vai pro extrato delas. */
+  /* a reposição de faixa e bandeira das IAs: uma de cada, a mais cara
+     primeiro; devolve true se comprou alguma */
+  function reporPanos(E, t, id){
+    const pan = P().faixasIA(E, id);
+    if(!pan) return false;
+    let comprou = false;
+    if(pan.faixas < 1 && t.caixa >= P().FAIXA.custo){
+      t.caixa -= P().FAIXA.custo; pan.faixas = 1; comprou = true;
+      lancarIA(E, id, 'Faixa nova', -P().FAIXA.custo);
+    }
+    if(pan.bandeiras < 1 && t.caixa >= P().BANDEIRA.custo){
+      t.caixa -= P().BANDEIRA.custo; pan.bandeiras = 1; comprou = true;
+      lancarIA(E, id, 'Bandeira nova', -P().BANDEIRA.custo);
+    }
+    return comprou;
+  }
+
   function promoverDelas(E, t, id){
     const q = quadroDe(E, id);
     if(!q) return 0;
