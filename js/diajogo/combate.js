@@ -3328,6 +3328,9 @@ TO.diaJogo.combate = (function(){
       F.x = lugar.x; F.y = lugar.y; F.dir = lugar.dir || null;
       /* no estádio ela pende do alambrado pro lado do CAMPO */
       F.campo = /^estadio-/.test(D.id);
+      /* alambrado curvo (dono, 09/09/2026): `arco` é o centro da curva;
+         a faixa acompanha o arco que passa pela grade */
+      F.arco = lugar.arco || null;
       /* espremida pra caber na parede (dono, 09/09/2026): 6:1 na cena */
       F.w = lugar.len || 140; F.h = Math.round(F.w/6);
     }
@@ -3428,7 +3431,47 @@ TO.diaJogo.combate = (function(){
       }
       c.restore();
     };
-    if(F.estado==='exposta' || F.estado==='recolhendo'){
+    if((F.estado==='exposta' || F.estado==='recolhendo') && F.arco && F.dir){
+      /* CURVADA NO ALAMBRADO: a grade é um arco com centro em `arco`;
+         o topo da faixa fica na grade e o corpo pende pro campo (pra
+         dentro do arco), fatiada pra acompanhar a curva */
+      const d = F.dir, beira = 10;
+      const gx = F.x + d[0]*beira, gy = F.y + d[1]*beira;   // o ponto da grade
+      const cx = F.arco[0], cy = F.arco[1];
+      const R = Math.max(40, Math.hypot(gx-cx, gy-cy));
+      const a0 = Math.atan2(gy-cy, gx-cx);
+      const w = F.w, h = F.h, N = 28, vao = w / R;
+      const img = (F.img && (F.img.naturalWidth || F.img.width)) ? F.img : null;
+      const iw = img ? (img.naturalWidth || img.width) : 0, ih = img ? (img.naturalHeight || img.height) : 0;
+      const rm = R - h/2 - 2;
+      c.save();
+      /* sombra caída pro campo */
+      c.strokeStyle='rgba(0,0,0,.35)'; c.lineWidth=4;
+      c.beginPath(); c.arc(cx, cy, rm - h/2 - 2, a0 - vao/2, a0 + vao/2); c.stroke();
+      c.strokeStyle='rgba(0,0,0,.55)'; c.lineWidth=h+3;
+      c.beginPath(); c.arc(cx, cy, rm, a0 - vao/2, a0 + vao/2); c.stroke();
+      for(let i=0;i<N;i++){
+        const a = a0 + vao*((i+0.5)/N - 0.5);
+        c.save();
+        c.translate(cx + rm*Math.cos(a), cy + rm*Math.sin(a));
+        c.rotate(a + Math.PI/2);
+        const fw = w/N;
+        if(img) c.drawImage(img, i*iw/N, 0, iw/N, ih, -fw/2 - 0.6, -h/2, fw + 1.2, h);
+        else { c.fillStyle = F.cores.cor || '#555'; c.fillRect(-fw/2 - 0.6, -h/2, fw + 1.2, h); }
+        c.restore();
+      }
+      if(!img){
+        c.save(); c.translate(cx + rm*Math.cos(a0), cy + rm*Math.sin(a0)); c.rotate(a0 + Math.PI/2);
+        c.fillStyle=F.cores.cor2 || '#fff'; c.font=`700 ${Math.max(6, h*0.5)}px "Barlow Condensed",sans-serif`; c.textAlign='center'; c.textBaseline='middle';
+        c.fillText(String(F.nome||'').toUpperCase().slice(0,18), 0, 0.5); c.restore();
+      }
+      if(F.estado==='recolhendo'){
+        c.strokeStyle=`rgba(255,211,90,${0.5+0.4*Math.sin(J.t*8)})`; c.lineWidth=2;
+        c.beginPath(); c.arc(cx, cy, rm + h/2 + 3, a0 - vao/2 - 3/R, a0 + vao/2 + 3/R); c.stroke();
+        c.beginPath(); c.arc(cx, cy, rm - h/2 - 3, a0 - vao/2 - 3/R, a0 + vao/2 + 3/R); c.stroke();
+      }
+      c.restore();
+    } else if(F.estado==='exposta' || F.estado==='recolhendo'){
       /* na parede: desloca pra dentro dela e gira. Na lateral o topo
          vira pra parede (leste +90°, oeste −90°); atrás do gol e nas
          paredes de cima/baixo fica deitada e legível — de cabeça pra

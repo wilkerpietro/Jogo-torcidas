@@ -4579,6 +4579,17 @@ alambrado ou na respectiva parede."
   legível. A visitante do estádio de 40 foi pra lateral oeste, pra não
   sobrar faixa de cabeça pra baixo atrás do gol sul. Uma sombra fina
   cai pro lado do corpo, pra ler como coisa pendurada.
+- No estádio ela pende do alambrado pro lado do CAMPO (correção do
+  dono, 09/09/2026): o topo fica na grade e o corpo cai sobre o
+  gramado, como quem vê do campo — na lateral leste lê de cima pra
+  baixo, na oeste de baixo pra cima, atrás do gol fica deitada. No bar
+  e na praça o corpo pende pro salão/calçada, onde está quem vê. A
+  faixa do visitante do estádio de 40 mil saiu do setor sudoeste (atrás
+  do gol, ficaria de cabeça pra baixo) pra lateral oeste.
+- Curvada no alambrado (dono, 09/09/2026): a âncora pode trazer `arco`,
+  o centro da curva da grade; a faixa é então desenhada em 28 fatias ao
+  longo do arco que passa pela grade, com o topo pra fora e o corpo pro
+  campo. Vale nas duas laterais do estádio de 40 mil, que é oval.
 - Espremida: na cena a faixa tem proporção 6:1 (a imagem em si continua
   4:1 no Patrimônio), pra caber na linha do alambrado sem invadir o
   campo. Bar: parede leste do salão; praça: fachada leste (rival) e
