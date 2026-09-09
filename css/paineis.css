@@ -1006,7 +1006,8 @@ table.dados tr.selecionada td{background:#252525}
 /* as faixas no Patrimônio: as nossas, e as tomadas de cabeça pra baixo */
 .faixas-rot{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco);margin:6px 0 5px}
 .faixas-lista{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
-.faixa-img{width:180px;height:45px;display:block;border:1px solid var(--linha);box-shadow:0 3px 10px rgba(0,0,0,.45);image-rendering:auto}
+/* o pano ondulado tem margem transparente: sem borda nem caixa de sombra (dono, 09/09/2026) */
+.faixa-img{width:180px;height:56px;display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5));image-rendering:auto}
 .faixa-img.virada{transform:rotate(180deg)}
 .faixa-tomada{display:flex;flex-direction:column;gap:3px;align-items:center}
 .faixa-tomada small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}

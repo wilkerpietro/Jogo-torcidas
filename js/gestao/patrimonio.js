@@ -543,6 +543,38 @@ TO.patrimonio = (function(){
     const caminho = `img/escudos/${tipo === 'c' ? 'clube' : 'torcida'}-${id}.png`;
     return (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho;
   };
+  /* O PANO NO VARAL (referência do dono, 09/09/2026): a faixa não é
+     reta — está presa em TRÊS pontos (esquerda, meio, direita), como
+     num varal com três pregadores que não aparecem, e o tecido cai
+     entre eles. A tela final é mais alta que a arte (margem
+     transparente em cima e embaixo) e a arte lisa entra nela em fatias:
+     cada fatia desce conforme a distância ao pregador mais perto, a
+     barra de baixo cai um pouco mais que o topo, e o declive pinta a
+     dobra — sombra leve descendo do pregador, brilho subindo pro outro. */
+  const FAIXA_HP = 124, PANO_MARGEM = (FAIXA_HP - FAIXA_H)/2;
+  function ondularPano(lisa, c, semente){
+    const x = c.getContext('2d');
+    x.clearRect(0, 0, c.width, c.height);
+    let sd = 0; for(const ch of String(semente || '')) sd = (sd*31 + ch.charCodeAt(0)) >>> 0;
+    /* quanto cai entre os pregadores: 6 a 9 px no topo, e a barra de
+       baixo cai mais 3 a 5 px — varia um pouco por faixa */
+    const queda = 6 + (sd % 4), extra = 3 + ((sd >> 2) % 3);
+    const N = 100, fw = FAIXA_W/N;
+    /* 0 nos pregadores (t = 0, 0,5 e 1), 1 no meio de cada vão — em
+       cosseno, que chega redondo no pregador: o seno partido em dois
+       vãos fazia um bico no meio com costura de sombra */
+    const cai = t => (1 - Math.cos(4*Math.PI*t))/2;
+    for(let i=0;i<N;i++){
+      const t = (i+0.5)/N, s = cai(t);
+      const dy = queda*s, hh = FAIXA_H + extra*s;
+      const y0 = PANO_MARGEM + dy;
+      x.drawImage(lisa, i*fw, 0, fw, FAIXA_H, i*fw - 0.5, y0, fw + 1, hh);
+      const decl = (cai(t + 0.01) - cai(t - 0.01))/0.02;
+      const a = Math.max(-0.14, Math.min(0.14, decl*0.035));
+      x.fillStyle = a > 0 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${-a*0.55})`;
+      x.fillRect(i*fw - 0.5, y0, fw + 1, hh);
+    }
+  }
   /* AS VARIAÇÕES DE TEXTO (pedido do dono, 09/09/2026): pra não ser
      sempre o nome, a faixa k de cada torcida sai com um dos dizeres —
      o nome, "DESDE {fundação}" ou "SEMPRE COM O {mascote do clube}" —
@@ -562,6 +594,12 @@ TO.patrimonio = (function(){
     return opcoes[(h + (k||0)) % opcoes.length];
   }
   function pintarFaixa(c, o, escudos, variante){
+    /* a arte lisa vai numa tela auxiliar; o pano ondulado é o que sai */
+    const lisa = c._lisa || (c._lisa = (()=>{ const l = document.createElement('canvas'); l.width = FAIXA_W; l.height = FAIXA_H; return l; })());
+    pintarFaixaLisa(lisa, o, escudos, variante);
+    ondularPano(lisa, c, `${o.id || o.nome}|${variante||0}`);
+  }
+  function pintarFaixaLisa(c, o, escudos, variante){
     const x = c.getContext('2d');
     const cores = (TO.mundo && TO.mundo.coresDaTorcida) ? TO.mundo.coresDaTorcida(o) : {};
     const c1 = cores.cor || '#555', c2 = cores.cor2 || (c1.toLowerCase() === '#ffffff' ? '#141414' : '#f4f4f4');
@@ -622,7 +660,7 @@ TO.patrimonio = (function(){
     if(typeof document === 'undefined') return null;
     const bandeira = tipo === 'bandeira';
     const c = document.createElement('canvas');
-    c.width = bandeira ? BAND_W : FAIXA_W; c.height = bandeira ? BAND_W : FAIXA_H;
+    c.width = bandeira ? BAND_W : FAIXA_W; c.height = bandeira ? BAND_W : FAIXA_HP;
     c.versao = 1; c.avisos = [];
     const pinta = (esc) => bandeira ? pintarBandeira(c, o, esc) : pintarFaixa(c, o, esc, variante);
     const dado = TO.dados && TO.dados[bandeira ? 'bandeiras' : 'faixas'];

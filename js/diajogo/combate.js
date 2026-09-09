@@ -3488,7 +3488,10 @@ TO.diaJogo.combate = (function(){
         F.x = ok[0]; F.y = ok[1];
       } else {
         F.x = lugar.x; F.y = lugar.y;
-        F.w = len; F.h = Math.round(len/6);
+        /* a tela da faixa tem margem transparente em cima e embaixo
+           (o pano ondula): a altura sobe na mesma proporção pra que o
+           tecido visível continue com 1/6 do comprimento */
+        F.w = len; F.h = Math.round(len/6 * 1.24);
       }
     }
     return F;
@@ -3595,11 +3598,18 @@ TO.diaJogo.combate = (function(){
      desenhado em fatias, o topo preso na corda e a barra de baixo
      caindo mais no meio, com uma ondinha pra parecer tecido.
      ======================================================= */
-  function fatiasDoPano(c, F, w, h, N, dySag){
-    /* desenha no referencial já transladado/girado: topo em -h/2 */
+  function fatiasDoPano(c, F, w, h, N, dySag, sombra){
+    /* desenha no referencial já transladado/girado: topo em -h/2.
+       `sombra`: o mesmo pano em preto, deslocado — a sombra acompanha a
+       ondulação em vez de ser um retângulo atrás */
     const img = (F.img && (F.img.naturalWidth || F.img.width)) ? F.img : null;
     const iw = img ? (img.naturalWidth || img.width) : 0, ih = img ? (img.naturalHeight || img.height) : 0;
     const fw = w/N;
+    if(sombra && img){
+      c.save(); c.globalAlpha = 0.5; c.filter = 'brightness(0)'; c.translate(1.5, 3);
+      for(let i=0;i<N;i++){ const x0 = -w/2 + i*fw; c.drawImage(img, i*iw/N, 0, iw/N, ih, x0 - 0.6, -h/2, fw + 1.2, h); }
+      c.restore();
+    } else if(sombra){ c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3); }
     for(let i=0;i<N;i++){
       const t = (i+0.5)/N;
       const dy = dySag(t);
@@ -3633,20 +3643,27 @@ TO.diaJogo.combate = (function(){
       const rm = R - h/2 - 2;
       const cai = caidaDoPano(F, h);
       c.save();
-      c.strokeStyle='rgba(0,0,0,.35)'; c.lineWidth=4;
-      c.beginPath(); c.arc(cx, cy, rm - h/2 - 3, a0 - vao/2, a0 + vao/2); c.stroke();
-      c.strokeStyle='rgba(0,0,0,.55)'; c.lineWidth=h+3;
-      c.beginPath(); c.arc(cx, cy, rm, a0 - vao/2, a0 + vao/2); c.stroke();
       const img = (F.img && (F.img.naturalWidth || F.img.width)) ? F.img : null;
       const iw = img ? (img.naturalWidth || img.width) : 0, ih = img ? (img.naturalHeight || img.height) : 0;
-      for(let i=0;i<N;i++){
-        const t = (i+0.5)/N, a = a0 + vao*(t - 0.5);
+      if(!img || bandeira){
+        c.strokeStyle='rgba(0,0,0,.55)'; c.lineWidth=h+3;
+        c.beginPath(); c.arc(cx, cy, rm, a0 - vao/2, a0 + vao/2); c.stroke();
+      }
+      /* duas passadas: a sombra (o pano em preto, 3 px pro campo) e o pano */
+      for(const passo of (img && !bandeira ? ['sombra','pano'] : ['pano'])){
         c.save();
-        c.translate(cx + rm*Math.cos(a), cy + rm*Math.sin(a));
-        c.rotate(a + Math.PI/2);
-        const fw = w/N, dy = cai(t);
-        if(img) c.drawImage(img, i*iw/N, 0, iw/N, ih, -fw/2 - 0.6, -h/2, fw + 1.2, h + dy);
-        else { c.fillStyle = F.cores.cor || '#555'; c.fillRect(-fw/2 - 0.6, -h/2, fw + 1.2, h + dy); }
+        if(passo === 'sombra'){ c.globalAlpha = 0.5; c.filter = 'brightness(0)'; }
+        for(let i=0;i<N;i++){
+          const t = (i+0.5)/N, a = a0 + vao*(t - 0.5);
+          c.save();
+          c.translate(cx + rm*Math.cos(a), cy + rm*Math.sin(a));
+          c.rotate(a + Math.PI/2);
+          if(passo === 'sombra') c.translate(0, 3);
+          const fw = w/N, dy = cai(t);
+          if(img) c.drawImage(img, i*iw/N, 0, iw/N, ih, -fw/2 - 0.6, -h/2, fw + 1.2, h + dy);
+          else { c.fillStyle = F.cores.cor || '#555'; c.fillRect(-fw/2 - 0.6, -h/2, fw + 1.2, h + dy); }
+          c.restore();
+        }
         c.restore();
       }
       if(!img && !bandeira){
@@ -3685,8 +3702,8 @@ TO.diaJogo.combate = (function(){
       const w = F.w, h = F.h;
       c.save(); c.translate(x, y); c.rotate(ang);
       if(d){ c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-w/2-2, h/2, w+4, 4); }
-      c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3);
-      fatiasDoPano(c, F, w, h, N, caidaDoPano(F, h));
+      if(bandeira){ c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3); }
+      fatiasDoPano(c, F, w, h, N, caidaDoPano(F, h), !bandeira);
       if(F.estado==='recolhendo'){
         c.strokeStyle=`rgba(255,211,90,${0.5+0.4*Math.sin(J.t*8)})`; c.lineWidth=2;
         c.strokeRect(-w/2-3, -h/2-3, w+6, h+6);

@@ -4868,6 +4868,42 @@ torno de 5% das brigas."
   faixa, 7 bombas e a sede pela tela, extrato com os três lançamentos,
   sem rolagem horizontal em 1280 nem em 390.
 
+## A faixa no varal, presa em três pontos (referência do dono, 09/09/2026)
+
+O dono mandou a foto de uma faixa da TUF estendida: "segue a forma que
+eu queria que a faixa ficasse, sem ser perfeitamente reta. Veja o que
+você consegue replicar, se ficar ruim, descarte." E corrigiu a primeira
+leitura: "não é efeito de pano ondulado, mas sim de pano estendido num
+varal, com 3 pregadores segurando — sem os pregadores." A tentativa
+anterior (barriga caindo no meio) tinha sido reprovada; a onda de tecido
+balançando foi a primeira versão desta e também caiu.
+
+- `ondularPano(lisa, c, semente)` em `patrimonio.js`: a arte lisa
+  (400×100, a mesma de antes) entra numa tela de 400×124 com margem
+  transparente em cima e embaixo, em 100 fatias verticais. A faixa está
+  presa nas pontas e no meio (t = 0, 0,5 e 1) e cai entre os pregadores
+  por um cosseno — `(1 − cos 4πt)/2`, que chega redondo no pregador; o
+  seno partido em dois vãos fazia um bico no meio com costura de sombra.
+  O topo cai 6 a 9 px, a barra de baixo 3 a 5 px a mais (varia por faixa
+  pela semente `id|variante`), e o declive pinta a dobra: sombra até 14%
+  descendo do pregador, brilho até 8% subindo pro próximo.
+- A bandeira segue lisa (é um quadrado com escudo, não um pano
+  comprido).
+- Na cena, `F.h` sobe 24% pra que o tecido visível continue com 1/6 do
+  comprimento; a sombra deixou de ser um retângulo preto atrás e virou
+  o próprio pano em preto (`filter: brightness(0)`, 50%), deslocado 3 px
+  — reta ou no arco do alambrado. Sem imagem carregada, o retângulo
+  volta.
+- `.faixa-img` no Patrimônio e na Loja ficou 180×56 sem borda nem caixa
+  de sombra (a margem transparente mostraria a caixa); a sombra é
+  `drop-shadow`, que acompanha o recorte.
+- No meio do caminho um recorte errado apagou `dizerDaFaixa`,
+  `telasFaixa` e `escudoSrc` do arquivo (o módulo nem carregava);
+  voltaram do git antes do commit.
+- Conferido em prévia grande (Gaviões, Galoucura, Cearamor, TUF) e nos
+  cortes de cena; testes `faixas`, `faixa-tomada-regra`,
+  `faixa-bandeira` e `loja` seguem passando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
