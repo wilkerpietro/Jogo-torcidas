@@ -393,6 +393,10 @@ TO.estado = (function(){
         if(colheita){
           colheita.sobeDesce = mov;
           colheita.forca = movForca;
+          /* os prêmios da virada (dono, 09/09/2026): pagos aqui, com o
+             ranking e o placar do ano fechado ainda na mão */
+          if(TO.almanaque.premiar)
+            colheita.premios = TO.almanaque.premiar(E, colheita);
           /* as páginas ficam guardadas: quem as derrama no feed é o
              `eventosDoDia`, junto com o resto do dia */
           E.almanaquePendente = TO.almanaque.fecharAno(E, colheita);

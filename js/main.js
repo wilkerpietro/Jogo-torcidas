@@ -1513,6 +1513,8 @@
       canvas: $('djPrincipal'),
       config:{escalacao:aptos, intencao:'atacar', paz:false, setores:true,
               bondes, efetivoRival: delesT, local,
+              /* no estádio todo mundo estende faixa (dono, 09/09/2026) */
+              faixaDefensor:'ambos', rivalId: rivalTop.id,
               perfilRival: perfilDe(rivalTop.id)},
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'estadio', alvo:{torcidaId: rivalTop.id,
@@ -3098,6 +3100,12 @@
     if(subNoticias === 'mensagens'){ pg.appendChild(painelMensagens(e)); return; }
     if(subNoticias === 'tretas'){ pg.appendChild(painelTretas(e)); return; }
 
+    /* a retrospectiva do último ano, pra rever (dono, 09/09/2026) */
+    if(e.retrospectiva && (e.retrospectiva.paginas||[]).length){
+      const bR = el('button',{class:'bt larga retro-rever', texto:`Rever a retrospectiva de ${e.retrospectiva.ano}`});
+      bR.onclick = ()=>abrirRetrospectiva(e.retrospectiva);
+      pg.appendChild(bR);
+    }
     const hist = e.feed || [];
     const lista = el('div',{class:'feed-lista'});
     if(!hist.length)
@@ -5290,7 +5298,12 @@
     bl.appendChild(el('div',{class:'faixas-rot', texto:'As nossas'}));
     const nossas = el('div',{class:'faixas-lista'});
     if(!fx.nossas.length) nossas.appendChild(el('div',{class:'fraco', texto:'Nenhuma: sem faixa na sede, nada a expor — nem a perder. Compre uma acima.'}));
-    for(const f of fx.nossas) nossas.appendChild(el('img',{class:'faixa-img', src:PAT.imagemDaFaixa(e.torcida), title:`Faixa da ${e.torcida.nome} · desde ${f.desde}`}));
+    const imgFaixa = (o, cls, title) => {
+      const im = el('img',{class:cls, title});
+      im.src = PAT.imagemDaFaixa(o, url => { im.src = url; }) || '';
+      return im;
+    };
+    for(const f of fx.nossas) nossas.appendChild(imgFaixa(e.torcida, 'faixa-img', `Faixa da ${e.torcida.nome} · desde ${f.desde}`));
     bl.appendChild(nossas);
     bl.appendChild(el('div',{class:'faixas-rot', texto:'Tomadas'}));
     const tomadas = el('div',{class:'faixas-lista'});
@@ -5298,7 +5311,7 @@
     for(const f of fx.tomadas){
       const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
       const cx = el('div',{class:'faixa-tomada'});
-      cx.appendChild(el('img',{class:'faixa-img virada', src:PAT.imagemDaFaixa(o), title:`Faixa da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`}));
+      cx.appendChild(imgFaixa(o, 'faixa-img virada', `Faixa da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
       cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
       tomadas.appendChild(cx);
     }
@@ -7193,6 +7206,8 @@
       }
       passarUmDia(e);
       pintarTopo(); atualizarFeed();
+      /* a virada do ano abre a retrospectiva e segura o relógio */
+      if(abrirRetrospectivaSePendente()) return;
       if(pausasT.size || TO.feed.travado(E())) return;
       relogioTempo = setTimeout(tique,
         (TO.feed.pendentes(E()) > 0 ? compassoDaFila(E()) : MS_DIA_VAZIO)/vel);
@@ -7706,8 +7721,9 @@
                                  return d ? {id: d.torcida, nome: nomeDaTorcida(d.torcida, d.nome)} : null; })()
                    : null;
     /* a faixa tomada muda de dono e mexe no prestígio (dono, 09/09/2026) */
-    if(res && res.faixa && res.faixa.tomada && fecho && TO.acoes.aplicarFaixa)
-      TO.acoes.aplicarFaixa(e, res, fecho, rivalIdCtx);
+    if(res && fecho && TO.acoes.aplicarFaixa)
+      for(const fx of (res.faixas || (res.faixa ? [res.faixa] : [])))
+        if(fx && fx.tomada) TO.acoes.aplicarFaixa(e, res, fecho, rivalIdCtx, fx);
     const ctxRelatorio = {
       rival: rivalCtx,
       cena: (acao && acao.alvo && (acao.alvo.cena || acao.alvo.local)) || (acao && acao.cena) ||
@@ -8076,6 +8092,216 @@
     return 'NA RUA';
   }
 
+  /* =======================================================
+     A RETROSPECTIVA DO ANO (pedido do dono, 09/09/2026)
+     As notícias da virada saem de Mensagens e viram uma tela
+     própria, aberta em 01/01: uma página por assunto — sobe e
+     desce, torcida do ano, rei da pista, a janela, o balanço e
+     a treta do ano —, cada uma com o destaque dela e a tabela de
+     prêmios onde há prêmio. Fecha, e o relógio volta a andar.
+     ======================================================= */
+  let retroPag = 0, retroAtual = null;
+  const ROT_RETRO = {sobeDesce:'Sobe e desce', torcidaDoAno:'Torcida do ano',
+                     reiDaPista:'Rei da pista', janela:'A janela',
+                     patrimonio:'O balanço', tretaDoAno:'A treta do ano'};
+  function abrirRetrospectivaSePendente(){
+    const e = E();
+    const r = e && e.retrospectiva;
+    if(!r || r.vista || !(r.paginas||[]).length) return false;
+    if(document.body.classList.contains('em-cena')) return false;
+    if(!$('telaRelatorio').classList.contains('oculto')) return false;
+    abrirRetrospectiva(r);
+    return true;
+  }
+  function abrirRetrospectiva(r){
+    const e = E();
+    r = r || (e && e.retrospectiva);
+    if(!r || !(r.paginas||[]).length) return;
+    retroAtual = r; retroPag = 0;
+    pausarTempo('retro');
+    $('retroTitulo').textContent = `Retrospectiva ${r.ano}`;
+    $('telaRetro').classList.remove('oculto');
+    pintarRetro();
+  }
+  function fecharRetrospectiva(){
+    const e = E();
+    if(retroAtual){ retroAtual.vista = true; }
+    retroAtual = null;
+    $('telaRetro').classList.add('oculto');
+    if(e) TO.estado.salvar();
+    retomarTempo('retro');
+  }
+  function pintarRetro(){
+    const r = retroAtual; if(!r) return;
+    const e = E();
+    const pags = r.paginas, n = pags.length;
+    retroPag = Math.max(0, Math.min(n-1, retroPag));
+    const p = pags[retroPag];
+    $('retroSub').textContent = `${retroPag+1} de ${n} · ${ROT_RETRO[p.tipo] || p.edicao || ''}`;
+    const cx = $('corpoRetro'); cx.innerHTML = '';
+    const pg = el('div',{class:`retro-pag ${p.tipo||''}${p.tom?' '+p.tom:''}`});
+    /* o índice das páginas, clicável */
+    const idx = el('div',{class:'retro-indice'});
+    pags.forEach((q, i)=>{
+      const b = el('button',{class:'retro-ponto'+(i===retroPag?' on':''), texto:ROT_RETRO[q.tipo] || String(i+1)});
+      b.onclick = ()=>{ retroPag = i; pintarRetro(); };
+      idx.appendChild(b);
+    });
+    pg.appendChild(idx);
+    pg.appendChild(el('div',{class:'retro-ano', texto:String(p.ano || r.ano)}));
+    pg.appendChild(el('div',{class:'retro-chapeu', texto:p.chapeu || ''}));
+    pg.appendChild(el('h2',{class:'retro-manchete', html:p.manchete || ''}));
+    if(p.olho) pg.appendChild(el('p',{class:'retro-olho', html:p.olho}));
+    if(p.tarja && p.tarja.length)
+      pg.appendChild(el('div',{class:'retro-tarja', html:p.tarja.map(t=>`<span>${t}</span>`).join('')}));
+    const dest = destaqueDaRetro(e, p);
+    if(dest) pg.appendChild(dest);
+    if(p.premios && p.premios.length) pg.appendChild(tabelaDePremios(e, p));
+    cx.appendChild(pg);
+    /* o rodapé: anterior / próxima / fechar */
+    const pe = $('peRetro'); pe.innerHTML = '';
+    const bAnt = el('button',{class:'bt', texto:'Anterior'});
+    bAnt.disabled = retroPag === 0;
+    bAnt.onclick = ()=>{ retroPag--; pintarRetro(); };
+    pe.appendChild(bAnt);
+    if(retroPag < n-1){
+      const bProx = el('button',{class:'bt destaque', texto:'Próxima'});
+      bProx.onclick = ()=>{ retroPag++; pintarRetro(); };
+      pe.appendChild(bProx);
+    } else {
+      const bFim = el('button',{class:'bt destaque', texto:'Fechar'});
+      bFim.onclick = fecharRetrospectiva;
+      pe.appendChild(bFim);
+    }
+    cx.scrollTop = 0;
+  }
+  const corDaTorcida = id => { const o = id && TO.mundo.torcida(id); return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
+  const corDoClube = id => { const t = id && TO.mundo.time(id); return (t && t.cores && t.cores[0]) || '#888'; };
+  /* o destaque de cada página: o que ela tem pra mostrar em grande */
+  function destaqueDaRetro(e, p){
+    const q = p.quadro || {};
+    const linhas = q.linhas || [];
+    const vazio = txt => el('div',{class:'retro-vazio', texto:txt});
+    if(p.tipo === 'torcidaDoAno' || p.tipo === 'reiDaPista'){
+      if(!linhas.length) return vazio(p.tipo === 'reiDaPista' ? 'Ninguém fechou o ano com saldo na rua.' : 'Sem ranking fechado.');
+      const idDe = l => (p.premios||[]).find(x=>x.nome === l.valor) ? (p.premios||[]).find(x=>x.nome === l.valor).id
+                      : ((TO.mundo.todasTorcidas||[]).find(o=>o.nome === l.valor)||{}).id;
+      const podio = el('div',{class:'retro-podio'});
+      const ordem = [1, 0, 2].filter(i => linhas[i]);
+      for(const i of ordem){
+        const l = linhas[i], id = idDe(l);
+        const c = el('div',{class:`retro-lugar p${i+1}${l.nossa?' nossa':''}`});
+        c.appendChild(el('div',{class:'retro-pos', texto:`${i+1}º`}));
+        c.appendChild(el('div',{class:'retro-escudo', html:chipTorcida(id, corDaTorcida(id))}));
+        c.appendChild(el('div',{class:'retro-nome', html:linkTorcida(id, l.valor)}));
+        c.appendChild(el('div',{class:'retro-dado', texto:l.nota || ''}));
+        podio.appendChild(c);
+      }
+      const cx = el('div',{class:'retro-destaque'});
+      cx.appendChild(podio);
+      if(linhas.length > 3){
+        const resto = el('div',{class:'retro-resto'});
+        linhas.slice(3).forEach((l, k)=>{
+          const id = idDe(l);
+          resto.appendChild(el('div',{class:'retro-linha'+(l.nossa?' nossa':''), html:
+            `<span class="pos">${k+4}º</span>${chipTorcida(id, corDaTorcida(id))}`+
+            `<span class="nome">${linkTorcida(id, l.valor)}</span><span class="dado">${l.nota||''}</span>`}));
+        });
+        cx.appendChild(resto);
+      }
+      return cx;
+    }
+    if(p.tipo === 'sobeDesce'){
+      if(!linhas.length) return vazio('Nenhum clube trocou de divisão.');
+      const cx = el('div',{class:'retro-destaque retro-colunas'});
+      const bloco = (rot, cls, lista)=>{
+        const b = el('div',{class:'retro-col '+cls});
+        b.appendChild(el('div',{class:'retro-col-tit', texto:rot}));
+        if(!lista.length) b.appendChild(el('div',{class:'retro-vazio', texto:'ninguém'}));
+        for(const l of lista){
+          const id = ((TO.mundo.todosTimes||[]).find(t=>t.nome === l.valor)||{}).id;
+          b.appendChild(el('div',{class:'retro-linha'+(l.nossa?' nossa':''), html:
+            `${chipClube(id, corDoClube(id))}<span class="nome">${l.valor}</span>`+
+            `<span class="dado">${l.nota ? `→ ${l.nota}` : ''}</span>`}));
+        }
+        return b;
+      };
+      cx.appendChild(bloco('Subiram', 'sobe', linhas.filter(l=>l.sobe)));
+      cx.appendChild(bloco('Caíram', 'desce', linhas.filter(l=>!l.sobe)));
+      if(q.resto) cx.appendChild(el('div',{class:'retro-mais', texto:`e mais ${q.resto}`}));
+      return cx;
+    }
+    if(p.tipo === 'janela'){
+      if(!linhas.length) return vazio('Janela magra: nenhum elenco mudou de patamar.');
+      const cx = el('div',{class:'retro-destaque retro-barras'});
+      const maior = Math.max(1, ...linhas.map(l=>Math.abs(parseInt(l.rot,10)||0)));
+      for(const l of linhas){
+        const v = parseInt(l.rot,10) || 0;
+        const id = ((TO.mundo.todosTimes||[]).find(t=>t.nome === l.valor)||{}).id;
+        const w = Math.round(100*Math.abs(v)/maior);
+        cx.appendChild(el('div',{class:'retro-barra'+(v>0?' sobe':' desce')+(l.nossa?' nossa':''), html:
+          `<span class="nome">${chipClube(id, corDoClube(id))}${l.valor}</span>`+
+          `<span class="trilho"><i style="width:${w}%"></i></span><span class="dado">${l.rot}</span>`}));
+      }
+      return cx;
+    }
+    if(p.tipo === 'patrimonio'){
+      if(!linhas.length) return vazio('Ninguém levantou parede este ano.');
+      const cx = el('div',{class:'retro-destaque retro-obras'});
+      for(const l of linhas){
+        const id = ((TO.mundo.todasTorcidas||[]).find(o=>o.nome === l.valor)||{}).id;
+        cx.appendChild(el('div',{class:'retro-obra'+(l.nossa?' nossa':''), html:
+          `<b class="mais">${l.rot}</b>${chipTorcida(id, corDaTorcida(id))}`+
+          `<span class="nome">${linkTorcida(id, l.valor)}</span><span class="dado">${l.nota||''}</span>`}));
+      }
+      return cx;
+    }
+    if(p.tipo === 'tretaDoAno'){
+      if(!linhas.length) return vazio('O ano passou sem uma treta que valesse a página.');
+      const cx = el('div',{class:'retro-destaque retro-treta'});
+      const a = linhas[0], b = linhas[1], c = linhas[2];
+      const lado = (l, cls)=>{
+        const id = ((TO.mundo.todasTorcidas||[]).find(o=>o.nome === l.valor)||{}).id;
+        const d = el('div',{class:'retro-lado '+cls+(l.nossa?' nossa':'')});
+        d.appendChild(el('div',{class:'retro-rot', texto:l.rot}));
+        d.appendChild(el('div',{class:'retro-escudo', html:chipTorcida(id, corDaTorcida(id))}));
+        d.appendChild(el('div',{class:'retro-nome', html:linkTorcida(id, l.valor)}));
+        d.appendChild(el('div',{class:'retro-dado', texto:l.nota || ''}));
+        return d;
+      };
+      if(a) cx.appendChild(lado(a, 'venceu'));
+      cx.appendChild(el('div',{class:'retro-x', texto:'×'}));
+      if(b) cx.appendChild(lado(b, 'perdeu'));
+      if(c) cx.appendChild(el('div',{class:'retro-nota', texto:`${c.rot}: ${c.valor} · ${c.nota||''}`}));
+      return cx;
+    }
+    /* página que não conheço: lista simples */
+    if(!linhas.length) return null;
+    const cx = el('div',{class:'retro-destaque'});
+    for(const l of linhas) cx.appendChild(el('div',{class:'retro-linha'+(l.nossa?' nossa':''), html:
+      `<span class="pos">${l.rot}</span><span class="nome">${l.valor}</span><span class="dado">${l.nota||''}</span>`}));
+    return cx;
+  }
+  function tabelaDePremios(e, p){
+    const cx = el('div',{class:'retro-premios'});
+    cx.appendChild(el('div',{class:'retro-col-tit', texto:'Premiação'}));
+    const t = el('table',{class:'tab-olheiro retro-tab'});
+    t.innerHTML = `<thead><tr><th></th><th>Torcida</th><th class="num">${p.tipo === 'reiDaPista' ? 'Saldo' : 'Pontos'}</th><th class="num">Prêmio</th></tr></thead>`;
+    const tb = el('tbody');
+    for(const x of p.premios){
+      tb.appendChild(el('tr',{class:x.nossa?'nossa':'', html:
+        `<td class="pos">${x.pos}º</td>`+
+        `<td>${chipTorcida(x.id, corDaTorcida(x.id))}${linkTorcida(x.id, x.nome)}</td>`+
+        `<td class="num">${p.tipo === 'reiDaPista' ? `${x.v}–${x.d} · +${x.saldo}` : `${x.pontos} pt`}</td>`+
+        `<td class="num premio">${U.dinheiro(x.valor)}</td>`}));
+    }
+    t.appendChild(tb);
+    cx.appendChild(t);
+    const nosso = p.premios.find(x=>x.nossa);
+    if(nosso) cx.appendChild(el('div',{class:'retro-nosso', html:`A nossa levou <b>${U.dinheiro(nosso.valor)}</b> — já está no caixa.`}));
+    return cx;
+  }
+
   function mostrarRelatorio(res, resumo, fecho, ctx){
     ctx = ctx || {};
     const e = E();
@@ -8296,6 +8522,8 @@
     abrirBrigaDoTutorial,
     /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */
     widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima,
+    /* a retrospectiva da virada (dono, 09/09/2026) */
+    abrirRetrospectiva, abrirRetrospectivaSePendente, fecharRetrospectiva,
     abrirItinerario,
     /* o cofre de saves, pra bateria dirigir */
     pintarJogo, abrirCofreNoMenu, montarMenu,

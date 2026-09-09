@@ -4491,6 +4491,68 @@ Junto: **o ponto de fuga é o spawn** (pedido do mesmo dia) — quem
 debanda corre pra entrada por onde chegou, em toda cena, e só cai nas
 outras bocas se dali não houver rota (`rotaDeFuga`).
 
+## A cara da faixa e o estádio (régua do dono, 09/09/2026)
+
+**Pedido.** "A cor do texto da faixa é sempre a cor secundária da torcida,
+a cor de fundo é sempre a primária. Coloque o escudo da torcida do lado
+esquerdo do texto e o escudo do time do lado direito. No estádio sempre
+todas as torcidas vão estender faixa."
+
+**Como ficou.**
+- A imagem da faixa (`TO.patrimonio.imagemDaFaixa`) é um canvas 400×100:
+  fundo na cor primária, borda e nome na secundária, escudo da torcida à
+  esquerda e escudo do clube à direita (os mesmos `img/escudos/` da UI;
+  sem escudo no manifesto, o texto ocupa o espaço). Os escudos carregam
+  depois: a faixa nasce só com cor e nome e é redesenhada no mesmo canvas
+  quando eles chegam — a cena vê a versão nova sozinha, e o Patrimônio
+  recebe um aviso pra trocar o `src`.
+- No estádio há UMA FAIXA POR LADO (`J.faixas`): a nossa no primeiro
+  setor da nossa ala, a deles no primeiro setor da ala deles, cada uma
+  recolhida pela própria torcida. Nas outras cenas continua só a da
+  atacada. `J.faixa` segue apontando pra primeira (a de quem defende).
+  A ponte devolve `faixas` (lista) além de `faixa`; o fechamento aplica
+  cada tomada — no estádio dá pra tomar a deles e perder a nossa na
+  mesma noite.
+
+## A retrospectiva de 01/01 e os prêmios (pedido do dono, 09/09/2026)
+
+**Pedido.** "Prefiro que as notícias do almanaque de virada de ano
+apareçam no dia 01/01 num overview com uma página pra cada detalhe,
+saindo das mensagens, e sem ser mais no layout do almanaque. A torcida
+do ano ganha 300 mil, a segunda 150, terceiro 100, quarto 70 e quinto
+50. As 5 que tiveram mais saldo positivo de pista também ganham
+premiação nos mesmos valores."
+
+**Como ficou.**
+- As seis páginas da virada (sobe e desce, torcida do ano, rei da
+  pista, a janela, o balanço, a treta do ano) não caem mais no feed:
+  viram `E.retrospectiva` e abrem numa tela própria (`#telaRetro`) no
+  primeiro dia do ano, segurando o relógio até o jogador fechar. Uma
+  página por assunto, com índice clicável, Anterior/Próxima e Fechar.
+  Notícias → Arquivo ganha o botão "Rever a retrospectiva de {ano}".
+- Layout novo (`.retro-*`): ano em marca-d'água, chapéu, manchete
+  grande, olho, tarja de números e um destaque por assunto — pódio com
+  escudos (torcida do ano e rei da pista), duas colunas subiram/caíram,
+  barras da janela, lista das obras, os dois lados da treta.
+- Prêmios (`TO.almanaque.PREMIOS = [300, 150, 100, 70, 50] mil`): o
+  top 5 do ranking nacional e as 5 de maior saldo positivo de brigas
+  do ano recebem na virada — nós pelo extrato ("Prêmio Torcida do Ano
+  2026 — 1º lugar"), as IAs pelo caixa e extrato delas. As páginas
+  trazem a tabela "Premiação" e o olho diz quanto a campeã levou.
+- As edições de abertura e de campeão continuam no feed, no layout do
+  almanaque: o pedido era sobre a virada.
+
+## A subsede nasce com 8 (ordem do dono, 09/09/2026)
+
+**Pedido.** "Além de um diretor e dois linhas de frente, 5 componentes
+também se mudam pra subsede da outra cidade. Todos eles saem da sede,
+portanto a subsede já surge com 8 membros."
+
+**Como ficou.** Abrir subsede em outra cidade destaca 1 diretor, 2
+linha de frente e 5 componentes — os aptos de ficha mais fraca de cada
+cargo, como antes. Nas IAs a filial nasce com `membros: 8`. O total da
+torcida não muda: é mudança de cidade, não de torcida.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

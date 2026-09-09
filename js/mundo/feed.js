@@ -829,8 +829,11 @@ TO.feed = (function(){
     /* 1. as páginas da virada, guardadas pelo fecho da temporada */
     const fila = E.almanaquePendente || [];
     if(fila.length){
-      for(const pg of fila) proporAlmanaque(E, pg,
-        `almanaque|${pg.tipo}|${pg.ano || E.data.ano}`);
+      /* A RETROSPECTIVA (pedido do dono, 09/09/2026): as páginas da
+         virada não caem mais em Mensagens — viram uma tela própria,
+         aberta em 01/01, uma página por assunto. O main.js abre. */
+      E.retrospectiva = {ano: fila[0].ano || (E.data.ano - 1),
+                         paginas: fila, vista:false};
       E.almanaquePendente = null;
     }
 

@@ -501,7 +501,10 @@ TO.diaJogo.combate = (function(){
     J.bracoRival = J.bracos[(J.ladoNosso||'mandante')==='mandante'
                             ? 'visitante' : 'mandante'] || null;
     conferirPortoes(J);
-    J.faixa = montarFaixa(J, cfg);
+    J.faixas = montarFaixas(J, cfg);
+    /* `J.faixa` continua apontando pra faixa de quem defende (a
+       primeira): é o nome que a ponte e os testes conhecem */
+    J.faixa = J.faixas[0] || null;
     return J;
   }
 
@@ -865,7 +868,7 @@ TO.diaJogo.combate = (function(){
     moverDiscos(J,dt);
     moverPoliciais(J,dt);
     iaLuta(J,dt); socorrer(J,dt); conferirAgarroes(J); iaChamar(J);
-    atualizarFaixa(J,dt);
+    atualizarFaixas(J,dt);
     contatos(J,dt);
     iaArremesso(J,dt);
     moverProjeteis(J,dt);
@@ -1442,9 +1445,10 @@ TO.diaJogo.combate = (function(){
           continue;
         }
         ax=c.x; ay=c.y;
-      } else if(d.faixaIndo && J.faixa && J.faixa.estado==='recolhendo'){
-        /* A FAIXA: vai até ela e fica ali tirando (ver atualizarFaixa) */
-        const F=J.faixa; ramo='faixa'; d._olhaPara=null;
+      } else if(d.faixaIndo && d.faixaIndo.estado==='recolhendo'){
+        /* A FAIXA: vai até ela e fica ali tirando (ver atualizarFaixa).
+           `d.faixaIndo` é a própria faixa — no estádio há uma por lado */
+        const F=d.faixaIndo; ramo='faixa'; d._olhaPara=null;
         if(U.dist(d.x,d.y,F.x,F.y) < d.r+16){
           d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
           d._ramo='faixa'; d._alvo=null;
@@ -3265,14 +3269,33 @@ TO.diaJogo.combate = (function(){
      ======================================================= */
   const CENAS_FAIXA = /^(bar|praca|estadio-)/;
   const FAIXA_TIRAR = 3.0, FAIXA_ALCANCE = 180;
-  function montarFaixa(J, cfg){
-    if(!cfg || !cfg.faixaDefensor || !D.id || !CENAS_FAIXA.test(D.id)) return null;
+  /* NO ESTÁDIO TODO MUNDO ESTENDE (pedido do dono, 09/09/2026): as duas
+     torcidas armam a faixa no setor delas, cada uma recolhe a sua. Nas
+     outras cenas continua só a atacada. */
+  function montarFaixas(J, cfg){
+    if(!cfg || !D.id || !CENAS_FAIXA.test(D.id)) return [];
     const PAT = TO.patrimonio, E = TO.estado && TO.estado.E;
-    if(!PAT || !E) return null;
+    if(!PAT || !E) return [];
+    const estadio = /^estadio-/.test(D.id);
+    let quem = cfg.faixaDefensor;
+    if(estadio && !quem) quem = 'ambos';
+    if(!quem) return [];
+    const ordem = quem === 'ambos' || estadio
+      ? (quem === 'eles' ? ['eles','nos'] : ['nos','eles'])
+      : [quem];
+    const fora = [];
+    for(const lado of ordem){
+      const F = montarFaixa(J, cfg, lado);
+      if(F) fora.push(F);
+    }
+    return fora;
+  }
+  function montarFaixa(J, cfg, deQuem){
+    const PAT = TO.patrimonio, E = TO.estado && TO.estado.E;
     const meu = ladoDoJogador(J), outro = OUTRO_LADO[meu];
-    const lado = cfg.faixaDefensor === 'nos' ? meu : outro;
+    const lado = deQuem === 'nos' ? meu : outro;
     let o, nossa;
-    if(cfg.faixaDefensor === 'nos'){
+    if(deQuem === 'nos'){
       if(!PAT.faixasDe(E).nossas.length) return null;
       o = E.torcida; nossa = true;
     } else {
@@ -3283,7 +3306,11 @@ TO.diaJogo.combate = (function(){
       nossa = false;
     }
     const guardas = D.spawns.filter(sp=>sp.lado===lado && sp.guarda);
-    const base = guardas.length ? guardas : D.spawns.filter(sp=>sp.lado===lado);
+    /* sem spawn de guarda (o estádio), a faixa fica no PRIMEIRO setor do
+       lado — o centro dos três setores caía no meio do campo */
+    const doLado = D.spawns.filter(sp=>sp.lado===lado);
+    const base = guardas.length ? guardas
+               : doLado.length ? [doLado.find(sp=>sp.jogador) || doLado[0]] : [];
     if(!base.length) return null;
     const cx = base.reduce((a,sp)=>a+sp.x,0)/base.length;
     const cy = base.reduce((a,sp)=>a+sp.y,0)/base.length;
@@ -3297,14 +3324,17 @@ TO.diaJogo.combate = (function(){
   function escolherRecolhedores(J, F){
     F.equipe = (F.equipe||[]).filter(d=>d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu);
     const cands = J.discos.filter(d=>d.lado===F.lado && d.vivo && !d.lider && !d.fugindo &&
-      d.derrubado<=0 && !d.noChao && !d.entrando && !d.sumiu && !F.equipe.includes(d))
+      d.derrubado<=0 && !d.noChao && !d.entrando && !d.sumiu && !d.faixaIndo && !F.equipe.includes(d))
       .sort((a,b)=>U.dist2(a.x,a.y,F.x,F.y)-U.dist2(b.x,b.y,F.x,F.y));
     while(F.equipe.length < 2 && cands.length) F.equipe.push(cands.shift());
-    for(const d of F.equipe) d.faixaIndo = true;
+    for(const d of F.equipe) d.faixaIndo = F;
     F.tEscolha = J.t;
   }
-  function atualizarFaixa(J, dt){
-    const F = J.faixa; if(!F || F.estado==='tomada') return;
+  function atualizarFaixas(J, dt){
+    for(const F of (J.faixas || [])) atualizarFaixa(J, F, dt);
+  }
+  function atualizarFaixa(J, F, dt){
+    if(!F || F.estado==='tomada') return;
     const inimigo = OUTRO_LADO[F.lado];
     if(F.estado==='exposta'){
       const perto = J.discos.some(d=>d.lado===inimigo && d.vivo && !d.entrou && !d.sumiu &&
@@ -3342,9 +3372,9 @@ TO.diaJogo.combate = (function(){
       }
     }
   }
-  /* o que a cena devolve no fim: tomada ou não, e por quem */
-  function fimDaFaixa(J, venceuMandante){
-    const F = J.faixa; if(!F) return null;
+  /* o que a cena devolve no fim, faixa a faixa: tomada ou não, e por quem */
+  function fimDeUmaFaixa(J, F, venceuMandante){
+    if(!F) return null;
     const inimigo = OUTRO_LADO[F.lado];
     let tomada = F.estado==='tomada', por = F.tomadaPor;
     if(!tomada && F.estado!=='na-mao'){
@@ -3354,16 +3384,28 @@ TO.diaJogo.combate = (function(){
     }
     return {tomada, por, lado:F.lado, torcidaId:F.torcidaId, nome:F.nome, nossa:F.nossa, estado:F.estado};
   }
-  function desenharFaixa(c, J){
-    const F = J.faixa; if(!F || F.estado==='tomada') return;
+  function fimDasFaixas(J, venceuMandante){
+    return (J.faixas || []).map(F=>fimDeUmaFaixa(J, F, venceuMandante)).filter(Boolean);
+  }
+  /* a de quem defende (a primeira) — o nome antigo, pra ponte e testes */
+  function fimDaFaixa(J, venceuMandante){
+    const todas = fimDasFaixas(J, venceuMandante);
+    return todas.find(f=>f.tomada) || todas[0] || null;
+  }
+  function desenharFaixas(c, J){
+    for(const F of (J.faixas || [])) desenharFaixa(c, J, F);
+  }
+  function desenharFaixa(c, J, F){
+    if(!F || F.estado==='tomada') return;
     const pinta = (x, y, w, h, alfa) => {
       c.save(); c.globalAlpha = alfa;
       c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(x-w/2-1.5, y-h/2-1.5, w+3, h+3);
-      if(F.img && F.img.complete && F.img.naturalWidth) c.drawImage(F.img, x-w/2, y-h/2, w, h);
+      if(F.img && (F.img.naturalWidth || F.img.width)) c.drawImage(F.img, x-w/2, y-h/2, w, h);
       else {
         c.fillStyle = F.cores.cor || '#555'; c.fillRect(x-w/2, y-h/2, w, h);
         c.fillStyle = F.cores.cor2 || '#eee'; c.fillRect(x-w/2, y-h/2, w, 2); c.fillRect(x-w/2, y+h/2-2, w, 2);
-        c.fillStyle='#fff'; c.font=`700 ${Math.max(6, h*0.5)}px "Barlow Condensed",sans-serif`; c.textAlign='center'; c.textBaseline='middle';
+        /* texto na cor secundária, fundo na primária (dono, 09/09/2026) */
+        c.fillStyle=F.cores.cor2 || '#fff'; c.font=`700 ${Math.max(6, h*0.5)}px "Barlow Condensed",sans-serif`; c.textAlign='center'; c.textBaseline='middle';
         c.fillText(String(F.nome||'').toUpperCase().slice(0,18), x, y+0.5);
       }
       c.restore();
@@ -3384,7 +3426,7 @@ TO.diaJogo.combate = (function(){
     semNomeDoLider = !!(opc && opc.semNomeDoLider);
     A.desenharFundo(c);
     A.desenharSobreposicoes(c,J.grades,Object.assign({t:J.t},opc||{}));
-    desenharFaixa(c, J);
+    desenharFaixas(c, J);
     /* `semCorpo`: os bonecos da vista de cima (tres.js) desenham gente,
        PM e projétil num canvas por cima; aqui fica só nome e vida */
     const corpo = !(opc && opc.semCorpo);
@@ -3398,7 +3440,7 @@ TO.diaJogo.combate = (function(){
     if(corpo) for(const p of J.projeteis) desenharProjetil(c,p);
   }
 
-  return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa,
+  return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa, fimDasFaixas,
           /* o simulador precisa das MESMAS fichas que a cena geraria:
              simular não pode dar ao rival um bonde diferente */
           fichasDoPerfil,

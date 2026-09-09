@@ -939,11 +939,12 @@ TO.relacoes = (function(){
         else if(compra.tipo === 'subsede') t.subsedes++;
         else if(compra.tipo === 'filial')
           /* a fundação desce com gente da sede (ordem do dono,
-             31/08/2026): 3 destacados — um diretor e dois linha de
-             frente — mudam de cidade, não de torcida, então o total
-             não muda; o resto o núcleo recruta lá, no ritmo dele */
+             31/08/2026, ampliada em 09/09/2026): 8 destacados — um
+             diretor, dois linha de frente e cinco componentes — mudam
+             de cidade, não de torcida, então o total não muda; o resto
+             o núcleo recruta lá, no ritmo dele */
           (t.filiais = t.filiais || []).push(
-            {cidade:compra.cidade, nivel:1, membros:3});
+            {cidade:compra.cidade, nivel:1, membros:8});
         else if(compra.tipo === 'elenco'){
           E.investimento = E.investimento || {};
           E.investimento[compra.clube] = (E.investimento[compra.clube] || 0) + 1;

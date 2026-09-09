@@ -223,8 +223,8 @@ TO.acoes = (function(){
      de dono no Patrimônio (a nossa some da sede, a deles entra nas
      tomadas — de cabeça pra baixo). `outroId` é a outra torcida da
      cena, quem tomou a nossa ou de quem tomamos. */
-  function aplicarFaixa(E, res, fecho, outroId){
-    const fx = res && res.faixa;
+  function aplicarFaixa(E, res, fecho, outroId, qual){
+    const fx = qual || (res && res.faixa);
     if(!fx || !fx.tomada || !fecho) return null;
     const PAT = TO.patrimonio, R = TO.relacoes;
     const nossoLado = res.nossoLado || 'mandante';

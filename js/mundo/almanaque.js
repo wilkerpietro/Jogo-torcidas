@@ -374,9 +374,10 @@ TO.almanaque = (function(){
   }
 
   /* 3 · TORCIDA DO ANO — a 1ª do ranking no fechamento */
-  function torcidaDoAno(E, lista, ano){
+  function torcidaDoAno(E, lista, ano, premios){
     lista = soDaqui(E, lista);
     if(!lista || !lista.length) return null;
+    premios = premios || [];
     const primeira = lista[0], segunda = lista[1];
     const nossa = primeira.id === E.torcida.id;
     const TA = MOLDES.torcidaDoAno;
@@ -389,8 +390,10 @@ TO.almanaque = (function(){
       jornal:'O Almanaque', edicao:'Prêmio do ano',
       chapeu: nossa ? TA.chapeu.nossa[0] : TA.chapeu.padrao[0],
       manchete: encher(daFila(TA.manchete[nossa?'nossa':'padrao'], ano), v),
-      olho: encher(segunda ? TA.olho.comSegunda[0] : TA.olho.sozinha[0], v),
+      olho: encher(segunda ? TA.olho.comSegunda[0] : TA.olho.sozinha[0], v) +
+            (premios[0] ? ` Leva ${reais(premios[0].valor)} de prêmio.` : ''),
       tarja:[`fechamento de <b>31/12/${ano}</b>`, 'ranking geral'],
+      premios,
       quadro:{
         titulo:'O pódio do ranking',
         linhas: lista.slice(0, LINHAS).map((x,i)=>({
@@ -402,8 +405,9 @@ TO.almanaque = (function(){
   }
 
   /* 4 · REI DA PISTA — maior saldo de brigas do ano */
-  function reiDaPista(E, placar, ano){
+  function reiDaPista(E, placar, ano, premios){
     const RP = MOLDES.reiDaPista;
+    premios = premios || [];
     const lista = soDaqui(E, placar).filter(x => x.saldo > 0)
                               .sort((a,b)=> b.saldo - a.saldo || b.v - a.v);
     if(!lista.length) return {
@@ -423,9 +427,11 @@ TO.almanaque = (function(){
       jornal:'O Almanaque', edicao:'Prêmio do ano',
       chapeu: nossa ? RP.chapeu.nossa[0] : RP.chapeu.padrao[0],
       manchete: encher(daFila(RP.manchete[nossa?'nossa':'padrao'], ano), v),
-      olho: encher(RP.olho.cheio[0], v),
+      olho: encher(RP.olho.cheio[0], v) +
+            (premios[0] ? ` Leva ${reais(premios[0].valor)} de prêmio.` : ''),
       tarja:[`<b>${rei.v}</b> ganhas`, `<b>${rei.d}</b> perdidas`,
              `saldo <b>+${rei.saldo}</b>`],
+      premios,
       quadro:{
         titulo:'O saldo do ano',
         linhas: lista.slice(0, LINHAS).map((x,i)=>({
@@ -694,12 +700,48 @@ TO.almanaque = (function(){
     };
   }
 
+  /* =======================================================
+     OS PRÊMIOS DA VIRADA (pedido do dono, 09/09/2026)
+     A Torcida do Ano leva R$ 300 mil; a 2ª, 150; a 3ª, 100; a 4ª,
+     70; a 5ª, 50. As cinco de maior saldo positivo de pista levam
+     a mesma tabela. Paga na virada, pra quem joga e pras IAs, e a
+     retrospectiva de 01/01 mostra quem levou o quê.
+     ======================================================= */
+  const PREMIOS = [300000, 150000, 100000, 70000, 50000];
+  function pagarPremio(E, id, rot, valor){
+    if(!id || !valor) return;
+    if(E.torcida && id === E.torcida.id){
+      if(TO.estado && TO.estado.lancar) TO.estado.lancar(E, rot, valor);
+      return;
+    }
+    const t = (E.mundoTorcidas || {})[id];
+    if(!t) return;
+    t.caixa = (t.caixa || 0) + valor;
+    if(TO.relacoes && TO.relacoes.lancarIA) TO.relacoes.lancarIA(E, id, rot, valor);
+  }
+  function premiar(E, ctx){
+    const ano = (ctx && ctx.ano) || E.data.ano;
+    const nossa = id => !!(E.torcida && id === E.torcida.id);
+    const ranking = soDaqui(E, (ctx && ctx.ranking) || []).slice(0, PREMIOS.length)
+      .map((x, i) => ({id:x.id, nome:x.nome || nomeTorcida(x.id), pos:i+1,
+                       valor:PREMIOS[i], nossa:nossa(x.id), pontos:Math.round(x.pontos)}));
+    const pista = soDaqui(E, (ctx && ctx.placar) || []).filter(x => x.saldo > 0)
+      .sort((a,b)=> b.saldo - a.saldo || b.v - a.v).slice(0, PREMIOS.length)
+      .map((x, i) => ({id:x.id, nome:x.nome || nomeTorcida(x.id), pos:i+1,
+                       valor:PREMIOS[i], nossa:nossa(x.id), v:x.v, d:x.d, saldo:x.saldo}));
+    for(const r of ranking) pagarPremio(E, r.id, `Prêmio Torcida do Ano ${ano} — ${r.pos}º lugar`, r.valor);
+    for(const r of pista)   pagarPremio(E, r.id, `Prêmio Rei da Pista ${ano} — ${r.pos}º lugar`, r.valor);
+    return {ranking, pista};
+  }
+  const reais = v => 'R$ ' + (v >= 1000 && v % 1000 === 0 ? `${v/1000} mil` : String(v));
+
   function fecharAno(E, ctx){
     const ano = (ctx && ctx.ano) || E.data.ano;
+    const pr = (ctx && ctx.premios) || {};
     return [
       sobeDesce(E, (ctx && ctx.sobeDesce) || [], ano),
-      torcidaDoAno(E, (ctx && ctx.ranking) || [], ano),
-      reiDaPista(E, (ctx && ctx.placar) || [], ano),
+      torcidaDoAno(E, (ctx && ctx.ranking) || [], ano, pr.ranking),
+      reiDaPista(E, (ctx && ctx.placar) || [], ano, pr.pista),
       janela(E, (ctx && ctx.forca) || [], ano + 1),
       patrimonio(E, ano),
       tretaDoAno(E, ano)
@@ -724,7 +766,7 @@ TO.almanaque = (function(){
   }
 
   return {MOLDES, encher, tirarFoto, prediosDe, LINHAS, abertura,
-          fecharAno, placarDoAnoTodo, anotarTreta,
+          fecharAno, placarDoAnoTodo, anotarTreta, PREMIOS, premiar,
           campeao, sobeDesce, torcidaDoAno, reiDaPista, janela, patrimonio,
           tretaDoAno};
 })();

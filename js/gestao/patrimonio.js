@@ -504,49 +504,86 @@ TO.patrimonio = (function(){
     if(!p.faixas) p.faixas = {nossas:[{n:1, desde:(E.data||{}).ano||2026}], tomadas:[]};
     return p.faixas;
   }
-  const imgFaixas = new Map(), objFaixas = new Map();
-  function contraste(hex){
-    const h = String(hex||'#888').replace('#','');
-    const r = parseInt(h.slice(0,2),16)||0, g = parseInt(h.slice(2,4),16)||0, b = parseInt(h.slice(4,6),16)||0;
-    return (r*299 + g*587 + b*114)/1000 > 150 ? '#141414' : '#f4f4f4';
+  /* A CARA DA FAIXA (régua do dono, 09/09/2026): fundo na cor
+     PRIMÁRIA da torcida, texto na SECUNDÁRIA, o escudo da torcida à
+     esquerda do nome e o escudo do clube à direita. Os escudos são
+     imagens e chegam depois: a faixa nasce só com cor e nome e é
+     redesenhada no MESMO canvas quando eles carregam — quem guardou o
+     canvas (a cena) vê a versão nova sozinho; quem precisa de URL
+     (o Patrimônio) recebe um aviso pra trocar o `src`. */
+  const FAIXA_W = 400, FAIXA_H = 100;
+  const telasFaixa = new Map();        // chave → canvas (com .versao)
+  const escudoSrc = (tipo, id) => {
+    const m = (TO.dados && TO.dados.escudos || {})[tipo === 'c' ? 'clubes' : 'torcidas'];
+    if(!m || !id || !m[id]) return null;
+    const caminho = `img/escudos/${tipo === 'c' ? 'clube' : 'torcida'}-${id}.png`;
+    return (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho;
+  };
+  function pintarFaixa(c, o, escudos){
+    const x = c.getContext('2d');
+    const cores = (TO.mundo && TO.mundo.coresDaTorcida) ? TO.mundo.coresDaTorcida(o) : {};
+    const c1 = cores.cor || '#555', c2 = cores.cor2 || (c1.toLowerCase() === '#ffffff' ? '#141414' : '#f4f4f4');
+    x.clearRect(0, 0, FAIXA_W, FAIXA_H);
+    x.fillStyle = c1; x.fillRect(0, 0, FAIXA_W, FAIXA_H);
+    x.strokeStyle = c2; x.lineWidth = 4; x.strokeRect(2, 2, FAIXA_W-4, FAIXA_H-4);
+    const E = 72, M = 12;
+    const temT = !!(escudos && escudos.t), temC = !!(escudos && escudos.c);
+    if(temT) x.drawImage(escudos.t, M, (FAIXA_H-E)/2, E, E);
+    if(temC) x.drawImage(escudos.c, FAIXA_W-M-E, (FAIXA_H-E)/2, E, E);
+    const esq = temT ? M+E+8 : 14, dir = temC ? FAIXA_W-M-E-8 : FAIXA_W-14;
+    const larg = dir - esq;
+    const nome = String(o.nome || '').toUpperCase();
+    let px = 44;
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    do { x.font = `700 ${px}px "Barlow Condensed", system-ui, sans-serif`; px -= 2; }
+    while(x.measureText(nome).width > larg && px > 12);
+    x.fillStyle = 'rgba(0,0,0,.35)'; x.fillText(nome, (esq+dir)/2 + 1.5, FAIXA_H/2 + 1.5);
+    x.fillStyle = c2; x.fillText(nome, (esq+dir)/2, FAIXA_H/2);
   }
-  function imagemDaFaixa(o){
+  function telaDaFaixa(o){
     if(!o) return null;
     const chave = o.id || o.nome;
-    if(imgFaixas.has(chave)) return imgFaixas.get(chave);
+    if(telasFaixa.has(chave)) return telasFaixa.get(chave);
+    if(typeof document === 'undefined') return null;
+    const c = document.createElement('canvas'); c.width = FAIXA_W; c.height = FAIXA_H;
+    c.versao = 1; c.avisos = [];
     const pronta = TO.dados && TO.dados.faixas && TO.dados.faixas[o.id];
-    let url = pronta || null;
-    if(!url && typeof document !== 'undefined'){
-      const c = document.createElement('canvas'); c.width = 320; c.height = 80;
-      const x = c.getContext('2d');
-      const cores = (TO.mundo && TO.mundo.coresDaTorcida) ? TO.mundo.coresDaTorcida(o) : {};
-      const c1 = cores.cor || '#555', c2 = cores.cor2 || '#eee';
-      x.fillStyle = c1; x.fillRect(0, 0, 320, 80);
-      x.fillStyle = c2; x.fillRect(0, 0, 320, 8); x.fillRect(0, 72, 320, 8);
-      if(cores.cor3){ x.fillStyle = cores.cor3; x.fillRect(0, 8, 320, 3); x.fillRect(0, 69, 320, 3); }
-      const nome = String(o.nome || '').toUpperCase();
-      let px = 34;
-      x.textAlign = 'center'; x.textBaseline = 'middle';
-      do { x.font = `700 ${px}px "Barlow Condensed", system-ui, sans-serif`; px -= 2; }
-      while(x.measureText(nome).width > 292 && px > 12);
-      x.fillStyle = 'rgba(0,0,0,.45)'; x.fillText(nome, 161, 42);
-      x.fillStyle = contraste(c1); x.fillText(nome, 160, 40);
-      try{ url = c.toDataURL('image/png'); }catch(_){ url = null; }
+    if(pronta){
+      /* arte do dono, quando chegar: entra inteira no lugar */
+      const im = new Image();
+      im.onload = ()=>{ const x = c.getContext('2d'); x.clearRect(0,0,FAIXA_W,FAIXA_H);
+        x.drawImage(im, 0, 0, FAIXA_W, FAIXA_H); c.versao++; avisar(c); };
+      im.src = pronta;
     }
-    imgFaixas.set(chave, url);
-    return url;
+    pintarFaixa(c, o, null);
+    const escudos = {};
+    let faltam = 0;
+    for(const [tipo, id] of [['t', o.id], ['c', o.clubeId]]){
+      const src = escudoSrc(tipo, id);
+      if(!src || typeof Image === 'undefined') continue;
+      faltam++;
+      const im = new Image();
+      im.onload = ()=>{ escudos[tipo] = im; if(!pronta){ pintarFaixa(c, o, escudos); c.versao++; avisar(c); } };
+      im.onerror = ()=>{};
+      im.src = src;
+    }
+    telasFaixa.set(chave, c);
+    return c;
   }
-  /* a mesma imagem como objeto Image, pra cena desenhar */
-  function imagemDaFaixaObj(o){
-    const chave = o && (o.id || o.nome);
-    if(!chave) return null;
-    if(objFaixas.has(chave)) return objFaixas.get(chave);
-    const url = imagemDaFaixa(o);
-    let im = null;
-    if(url && typeof Image !== 'undefined'){ im = new Image(); im.src = url; }
-    objFaixas.set(chave, im);
-    return im;
+  function avisar(c){
+    const fila = c.avisos || []; c.avisos = [];
+    for(const f of fila){ try{ f(c.toDataURL('image/png')); }catch(_){} }
   }
+  /* a faixa como URL (Patrimônio). `aoAtualizar(url)` é chamado quando
+     os escudos chegarem depois. */
+  function imagemDaFaixa(o, aoAtualizar){
+    const c = telaDaFaixa(o);
+    if(!c) return null;
+    if(aoAtualizar) c.avisos.push(aoAtualizar);
+    try{ return c.toDataURL('image/png'); }catch(_){ return null; }
+  }
+  /* a mesma faixa como canvas, pra cena desenhar com drawImage */
+  function imagemDaFaixaObj(o){ return telaDaFaixa(o); }
   /* as faixas das IAs vivem na ficha viva do mundo */
   function faixasIA(E, id){
     const t = TO.relacoes && TO.relacoes.mundo(E)[id];
@@ -579,15 +616,17 @@ TO.patrimonio = (function(){
       p.filiais = p.filiais || [];
       p.filiais.push({cidade:tipo, nivel:1});
       TO.estado.lancar(E, `Subsede em ${F().nomeCidade(tipo)}`, -o.custo);
-      /* A FUNDAÇÃO DESCE COM GENTE DA SEDE (ordem do dono, 31/08/2026):
-         um diretor e dois linha de frente saem destacados pra abrir a
-         subsede — os aptos de ficha mais fraca de cada cargo, pra não
-         desfalcar o bonde principal. */
+      /* A FUNDAÇÃO DESCE COM GENTE DA SEDE (ordem do dono, 31/08/2026;
+         ampliada em 09/09/2026): um diretor, dois linha de frente e
+         CINCO componentes saem destacados pra abrir a subsede — ela já
+         nasce com 8. São os aptos de ficha mais fraca de cada cargo,
+         pra não desfalcar o bonde principal. */
       const aptosDe = cargo => E.membros
         .filter(m=>m.cargo === cargo && !m.ferido && !m.preso && !m.filial)
         .sort((a,b)=>(a.forca+a.defesa)-(b.forca+b.defesa));
       const destacados = aptosDe('diretoria').slice(0,1)
-        .concat(aptosDe('frente').slice(0,2));
+        .concat(aptosDe('frente').slice(0,2))
+        .concat(aptosDe('componente').slice(0,5));
       for(const m of destacados){
         m.filial = tipo;
         m.historico.push(
