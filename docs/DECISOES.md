@@ -4569,18 +4569,21 @@ alambrado ou na respectiva parede."
   direção da parede. Os pontos foram medidos na malha de pisada de cada
   foto: são a última célula livre antes da parede, saindo do spawn do
   lado — a equipe que recolhe chega neles (alcance de 30 px).
-- A faixa é desenhada deslocada pra dentro da parede e GIRADA: na
-  lateral do campo (dir leste/oeste) o topo vira pra parede, então ela
-  fica vertical (+90° a leste, −90° a oeste); atrás do gol e nas paredes
-  de cima/baixo fica deitada e legível — de cabeça pra baixo é o sinal
-  de faixa TOMADA, não de faixa pendurada. Uma sombra fina cai pro lado
-  de dentro, pra ler como coisa pendurada.
+- A faixa é desenhada GIRADA, com o topo na parede. No bar e na praça
+  o corpo pende pra dentro do salão/calçada, onde está quem vê. NO
+  ESTÁDIO ela pende do alambrado pro lado do CAMPO (correção do dono,
+  09/09/2026: "ela sempre deve estar virada simulando uma faixa
+  estendida mesmo"): o topo fica na grade e o corpo cai sobre o
+  gramado, como quem vê do campo — na lateral leste lê de cima pra
+  baixo, na oeste de baixo pra cima, atrás do gol fica deitada e
+  legível. A visitante do estádio de 40 foi pra lateral oeste, pra não
+  sobrar faixa de cabeça pra baixo atrás do gol sul. Uma sombra fina
+  cai pro lado do corpo, pra ler como coisa pendurada.
 - Espremida: na cena a faixa tem proporção 6:1 (a imagem em si continua
   4:1 no Patrimônio), pra caber na linha do alambrado sem invadir o
   campo. Bar: parede leste do salão; praça: fachada leste (rival) e
   oeste (nós); estádio de 10: lateral leste (mandante) e atrás do gol
-  norte (visitante); de 20: as duas laterais; de 40: lateral leste e o
-  setor sudoeste. Sem ponto marcado, vale o lugar antigo, no spawn.
+  norte (visitante); de 20: as duas laterais; de 40: as duas laterais. Sem ponto marcado, vale o lugar antigo, no spawn.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

@@ -795,7 +795,7 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante:{x:1246, y:380, len:160, dir:[-1,0]}, visitante:{x:470, y:738, len:150, dir:[0,-1]}},
+    faixas:{mandante:{x:1246, y:380, len:160, dir:[-1,0]}, visitante:{x:386, y:590, len:150, dir:[1,0]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1310, y:360,
        jogador:true, entrada:'portao_mandante'},

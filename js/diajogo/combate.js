@@ -3326,6 +3326,8 @@ TO.diaJogo.combate = (function(){
     const lugar = D.faixas && D.faixas[lado];
     if(lugar){
       F.x = lugar.x; F.y = lugar.y; F.dir = lugar.dir || null;
+      /* no estádio ela pende do alambrado pro lado do CAMPO */
+      F.campo = /^estadio-/.test(D.id);
       /* espremida pra caber na parede (dono, 09/09/2026): 6:1 na cena */
       F.w = lugar.len || 140; F.h = Math.round(F.w/6);
     }
@@ -3432,8 +3434,21 @@ TO.diaJogo.combate = (function(){
          paredes de cima/baixo fica deitada e legível — de cabeça pra
          baixo é faixa TOMADA, não faixa pendurada */
       const d = F.dir;
-      const ang = (!d || !d[0]) ? 0 : Math.atan2(d[1], d[0]) + Math.PI/2;
-      const x = F.x + (d ? d[0]*(F.h/2+3) : 0), y = F.y + (d ? d[1]*(F.h/2+3) : 0);
+      let ang = 0, x = F.x, y = F.y;
+      if(d && F.campo){
+        /* ESTENDIDA NO ALAMBRADO (correção do dono, 09/09/2026): o topo
+           fica na grade e o corpo pende pro lado do campo, como quem vê
+           do gramado — na lateral leste lê de cima pra baixo, na oeste
+           de baixo pra cima; atrás do gol fica deitada e legível */
+        const beira = 10;
+        x = F.x + d[0]*(beira + F.h/2 + 2); y = F.y + d[1]*(beira + F.h/2 + 2);
+        ang = d[0] ? Math.atan2(-d[1], -d[0]) + Math.PI/2 : 0;
+      } else if(d){
+        /* na parede do bar e da praça: topo na parede, corpo pra dentro
+           do salão/calçada, onde está quem vê */
+        ang = d[0] ? Math.atan2(d[1], d[0]) + Math.PI/2 : 0;
+        x = F.x + d[0]*(F.h/2+3); y = F.y + d[1]*(F.h/2+3);
+      }
       pinta(x, y, F.w, F.h, 1, ang, !!d);
       if(F.estado==='recolhendo'){
         c.save(); c.translate(x, y); c.rotate(ang);
