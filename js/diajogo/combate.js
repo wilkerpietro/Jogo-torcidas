@@ -3345,17 +3345,21 @@ TO.diaJogo.combate = (function(){
   function montarUma(J, cfg, id, lado, spawn, tipo){
     const PAT = TO.patrimonio, E = TO.estado.E;
     const nossa = id === E.torcida.id;
-    let o;
+    let o, quantas = 1;
     if(nossa){
       const lista = tipo === 'bandeira' ? PAT.bandeirasDe(E).nossas : PAT.faixasDe(E).nossas;
       if(!lista.length) return null;
-      o = E.torcida;
+      o = E.torcida; quantas = lista.length;
     } else {
       o = TO.mundo.torcida(id);
       if(!o) return null;
       const t = PAT.faixasIA(E, o.id);
       if(!t || (tipo === 'bandeira' ? t.bandeiras : t.faixas) <= 0) return null;
+      quantas = tipo === 'bandeira' ? t.bandeiras : t.faixas;
     }
+    /* qual das faixas da torcida sai hoje: sorteio entre as que ela tem
+       (cada uma tem o seu dizer — ver `dizerDaFaixa`) */
+    const variante = Math.floor(U.rng() * Math.max(1, quantas));
     const guardas = D.spawns.filter(sp=>sp.lado===lado && sp.guarda);
     const doLado = D.spawns.filter(sp=>sp.lado===lado);
     const base = spawn ? [spawn] : guardas.length ? guardas
@@ -3370,7 +3374,7 @@ TO.diaJogo.combate = (function(){
             w: bandeira ? 19 : 76, h:19, dir:null, estado:'exposta', equipe:[], portador:null,
             equipeN: bandeira ? 1 : 2, semente: (U.rng()*6.28),
             tChegou:null, tEscolha:0, tomadaPor:null,
-            img: PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o, tipo) : null};
+            img: PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o, tipo, variante) : null};
     /* ESTENDIDA NA PAREDE (dono, 09/09/2026): a cena diz onde fica a
        parede (ou o alambrado) de cada lado ou de cada setor; a faixa
        pendura ali, e a bandeira fica ao lado dela na mesma parede */

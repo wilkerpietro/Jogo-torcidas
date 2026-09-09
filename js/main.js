@@ -5311,12 +5311,12 @@
     bl.appendChild(el('div',{class:'faixas-rot', texto:'As nossas'}));
     const nossas = el('div',{class:'faixas-lista'});
     if(!fx.nossas.length) nossas.appendChild(el('div',{class:'fraco', texto:'Nenhuma: sem faixa na sede, nada a expor — nem a perder. Compre uma acima.'}));
-    const imgFaixa = (o, cls, title) => {
+    const imgFaixa = (o, cls, title, k) => {
       const im = el('img',{class:cls, title});
-      im.src = PAT.imagemDaFaixa(o, url => { im.src = url; }) || '';
+      im.src = PAT.imagemDaFaixa(o, url => { im.src = url; }, 'faixa', k || 0) || '';
       return im;
     };
-    for(const f of fx.nossas) nossas.appendChild(imgFaixa(e.torcida, 'faixa-img', `Faixa da ${e.torcida.nome} · desde ${f.desde}`));
+    fx.nossas.forEach((f, k) => nossas.appendChild(imgFaixa(e.torcida, 'faixa-img', `Faixa da ${e.torcida.nome} · desde ${f.desde}`, k)));
     bl.appendChild(nossas);
     bl.appendChild(el('div',{class:'faixas-rot', texto:'Tomadas'}));
     const tomadas = el('div',{class:'faixas-lista'});

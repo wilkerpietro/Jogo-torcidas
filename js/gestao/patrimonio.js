@@ -530,7 +530,25 @@ TO.patrimonio = (function(){
     const caminho = `img/escudos/${tipo === 'c' ? 'clube' : 'torcida'}-${id}.png`;
     return (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho;
   };
-  function pintarFaixa(c, o, escudos){
+  /* AS VARIAÇÕES DE TEXTO (pedido do dono, 09/09/2026): pra não ser
+     sempre o nome, a faixa k de cada torcida sai com um dos dizeres —
+     o nome, "DESDE {fundação}" ou "SEMPRE COM O {mascote do clube}" —
+     rodando por um hash do id, pra torcidas diferentes não repetirem
+     o mesmo dizer na mesma faixa. */
+  function dizerDaFaixa(o, k){
+    const t = (TO.mundo && TO.mundo.time && o.clubeId) ? TO.mundo.time(o.clubeId) : null;
+    const nome = String(o.nome || '').toUpperCase();
+    const opcoes = [{grande:nome, pequeno:''}];
+    if(o.fundacao) opcoes.push({grande:`DESDE ${o.fundacao}`, pequeno:nome});
+    if(t && t.mascote){
+      const m = String(t.mascote).toUpperCase();
+      const fem = /A$/.test(m) && !/HOMEM$/.test(m);
+      opcoes.push({grande:`SEMPRE COM ${fem ? 'A' : 'O'} ${m}`, pequeno:nome});
+    }
+    let h = 0; for(const ch of String(o.id || o.nome || '')) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+    return opcoes[(h + (k||0)) % opcoes.length];
+  }
+  function pintarFaixa(c, o, escudos, variante){
     const x = c.getContext('2d');
     const cores = (TO.mundo && TO.mundo.coresDaTorcida) ? TO.mundo.coresDaTorcida(o) : {};
     const c1 = cores.cor || '#555', c2 = cores.cor2 || (c1.toLowerCase() === '#ffffff' ? '#141414' : '#f4f4f4');
@@ -543,13 +561,21 @@ TO.patrimonio = (function(){
     if(temC) x.drawImage(escudos.c, FAIXA_W-M-E, (FAIXA_H-E)/2, E, E);
     const esq = temT ? M+E+8 : 14, dir = temC ? FAIXA_W-M-E-8 : FAIXA_W-14;
     const larg = dir - esq;
-    const nome = String(o.nome || '').toUpperCase();
-    let px = 44;
+    const dz = dizerDaFaixa(o, variante);
+    const nome = dz.grande;
+    const yG = dz.pequeno ? FAIXA_H/2 + 8 : FAIXA_H/2;
+    let px = dz.pequeno ? 40 : 44;
     x.textAlign = 'center'; x.textBaseline = 'middle';
     do { x.font = `700 ${px}px "Barlow Condensed", system-ui, sans-serif`; px -= 2; }
     while(x.measureText(nome).width > larg && px > 12);
-    x.fillStyle = 'rgba(0,0,0,.35)'; x.fillText(nome, (esq+dir)/2 + 1.5, FAIXA_H/2 + 1.5);
-    x.fillStyle = c2; x.fillText(nome, (esq+dir)/2, FAIXA_H/2);
+    x.fillStyle = 'rgba(0,0,0,.35)'; x.fillText(nome, (esq+dir)/2 + 1.5, yG + 1.5);
+    x.fillStyle = c2; x.fillText(nome, (esq+dir)/2, yG);
+    if(dz.pequeno){
+      let ps = 16;
+      do { x.font = `600 ${ps}px "Barlow Condensed", system-ui, sans-serif`; ps -= 1; }
+      while(x.measureText(dz.pequeno).width > larg && ps > 9);
+      x.fillStyle = c2; x.globalAlpha = 0.9; x.fillText(dz.pequeno, (esq+dir)/2, 22); x.globalAlpha = 1;
+    }
   }
   /* a bandeira: quadrada, fundo primário, borda de fora secundária, de
      dentro terciária (sem terciária, a secundária escurecida) e o
@@ -574,17 +600,18 @@ TO.patrimonio = (function(){
       x.fillText(String(sigla || (o.nome||'').slice(0,3)).toUpperCase(), W/2, W/2);
     }
   }
-  function telaDaFaixa(o, tipo){
+  function telaDaFaixa(o, tipo, variante){
     if(!o) return null;
     tipo = tipo || 'faixa';
-    const chave = `${tipo}|${o.id || o.nome}`;
+    variante = variante || 0;
+    const chave = `${tipo}|${o.id || o.nome}|${variante}`;
     if(telasFaixa.has(chave)) return telasFaixa.get(chave);
     if(typeof document === 'undefined') return null;
     const bandeira = tipo === 'bandeira';
     const c = document.createElement('canvas');
     c.width = bandeira ? BAND_W : FAIXA_W; c.height = bandeira ? BAND_W : FAIXA_H;
     c.versao = 1; c.avisos = [];
-    const pinta = (esc) => bandeira ? pintarBandeira(c, o, esc) : pintarFaixa(c, o, esc);
+    const pinta = (esc) => bandeira ? pintarBandeira(c, o, esc) : pintarFaixa(c, o, esc, variante);
     const dado = TO.dados && TO.dados[bandeira ? 'bandeiras' : 'faixas'];
     const pronta = dado && dado[o.id];
     if(pronta){
@@ -614,15 +641,15 @@ TO.patrimonio = (function(){
   }
   /* a faixa como URL (Patrimônio). `aoAtualizar(url)` é chamado quando
      os escudos chegarem depois. */
-  function imagemDaFaixa(o, aoAtualizar, tipo){
-    const c = telaDaFaixa(o, tipo);
+  function imagemDaFaixa(o, aoAtualizar, tipo, variante){
+    const c = telaDaFaixa(o, tipo, variante);
     if(!c) return null;
     if(aoAtualizar) c.avisos.push(aoAtualizar);
     try{ return c.toDataURL('image/png'); }catch(_){ return null; }
   }
   const imagemDaBandeira = (o, aoAtualizar) => imagemDaFaixa(o, aoAtualizar, 'bandeira');
   /* a mesma faixa como canvas, pra cena desenhar com drawImage */
-  function imagemDaFaixaObj(o, tipo){ return telaDaFaixa(o, tipo); }
+  function imagemDaFaixaObj(o, tipo, variante){ return telaDaFaixa(o, tipo, variante); }
   /* as faixas das IAs vivem na ficha viva do mundo */
   function faixasIA(E, id){
     const t = TO.relacoes && TO.relacoes.mundo(E)[id];
@@ -796,7 +823,7 @@ TO.patrimonio = (function(){
     return {ok:true, compradas:qtd, custo};
   }
 
-  return {FAIXA, BANDEIRA, faixasDe, bandeirasDe, imagemDaFaixa, imagemDaBandeira, imagemDaFaixaObj, faixasIA,
+  return {FAIXA, BANDEIRA, faixasDe, bandeirasDe, imagemDaFaixa, imagemDaBandeira, imagemDaFaixaObj, dizerDaFaixa, faixasIA,
           SEDE, TETO, PONTO, FABRICA, FILIAL,
           filiaisDe, temFilialEm, cidadesCandidatas,
           linhas, opcoes, comprar,

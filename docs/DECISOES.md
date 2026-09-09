@@ -4697,6 +4697,23 @@ ganhou, no perfil de cada torcida."
   quem)" e o mesmo pra bandeiras. Patrimônio: fileira de bandeiras,
   nossas e tomadas (de cabeça pra baixo).
 
+## Os dizeres da faixa (pedido do dono, 09/09/2026)
+
+**Pedido.** "Faça uma variação de faixas pra não ficar repetitivo demais
+com esse texto: 'DESDE {ANO DE FUNDAÇÃO}', 'SEMPRE COM O {MASCOTE DO
+TIME}'."
+
+**Como ficou.** `TO.patrimonio.dizerDaFaixa(o, k)` dá o dizer da faixa
+k de cada torcida entre três: o nome; "DESDE {fundação}" (só com
+`fundacao` na ficha); "SEMPRE COM O {mascote}" (só com `mascote` no
+clube; "A" quando o mascote termina em -a, tirando "Super-Homem"). O
+primeiro dizer roda por um hash do id, então torcidas diferentes com
+uma faixa só não repetem o mesmo. Quando o dizer não é o nome, o nome
+vai em letra pequena no alto, pra faixa continuar identificável de
+longe. No Patrimônio a faixa k mostra o dizer k; na cena a torcida
+sorteia uma entre as que tem. A arte do dono, quando chegar
+(`TO.dados.faixas[id]`), continua entrando inteira no lugar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
