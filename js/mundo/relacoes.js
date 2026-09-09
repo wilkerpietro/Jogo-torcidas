@@ -1465,6 +1465,25 @@ TO.relacoes = (function(){
         TO.membros.AREA_TREINO[t.areaTreino || 0]);
       const fatia = Math.min(vagas, q.total)/q.total;
       const passo = fatia * 0.15 * ganhoDeleas(t);
+      /* QUEM TREINA CHEGA LÁ (ordem do dono, 09/09/2026): a média do
+         grupo sobe devagar porque as vagas se diluem em todo mundo, mas
+         as vagas são gente de verdade: quem senta na sala todo dia sobe
+         0,15 por sessão (o dobro com professor) e em ~50 dias sai de 1
+         pra 8, que é a régua da promoção. `aptos[c]` conta essa gente:
+         as vagas do dia repartidas pelos cargos promovíveis, cada uma
+         entregando 0,15·ganho de força, e o apto nasce quando junta a
+         força que falta do piso do cargo até a exigência. */
+      q.aptos = q.aptos || {novato:0, componente:0, frente:0};
+      const promoviveis = ESCADA.slice(0, 3);
+      const somaN = promoviveis.reduce((a,c)=>a + q.cargos[c], 0);
+      if(somaN > 0){
+        const vagasReais = Math.min(vagas, somaN);
+        for(const c of promoviveis){
+          const vagasC = vagasReais * q.cargos[c] / somaN;
+          const falta = Math.max(1, TO.membros.CARGOS[c].forcaPromo - BASE_FICHA[c]);
+          q.aptos[c] = Math.min(q.cargos[c], q.aptos[c] + vagasC * 0.15 * ganhoDeleas(t) / falta);
+        }
+      }
       for(const c of ESCADA){
         /* o teto do grupo é o do cargo menos o desgaste permanente que
            sequela e idade já cobraram — treino não devolve isso */
@@ -1477,36 +1496,43 @@ TO.relacoes = (function(){
     }
   }
 
-  /* A PROMOÇÃO DELAS, uma vez por semana e pelas NOSSAS regras: o
-     grupo só sobe quando a força média dele alcança a que a promoção
-     exige, o preço é o mesmo (componente R$ 1.000, frente R$ 5.000) e
-     a Diretoria não passa do teto da sede. De cima pra baixo, pra a
-     vaga que abre na Diretoria ser ocupada na mesma semana. */
+  /* A PROMOÇÃO DELAS, toda semana, ANTES da compra da fila e pelas
+     NOSSAS regras — e TODO APTO SOBE (ordem do dono, 09/09/2026): "se
+     tem membro pra promover e dinheiro em caixa, promove, registra no
+     financeiro". Os aptos são os que o treino formou (`q.aptos`, ver
+     treinarDelas) e que têm o XP rodado do cargo. Limites que ficam:
+     o caixa (cada promoção custa o que custa pra nós) e o teto da
+     Diretoria por sede — o apto barrado continua apto, esperando a
+     vaga. A promoção vai pro extrato delas. */
   function promoverDelas(E, t, id){
     const q = quadroDe(E, id);
     if(!q) return 0;
+    q.aptos = q.aptos || {novato:0, componente:0, frente:0};
     const C = TO.membros.CARGOS;
     let subiram = 0;
     for(let i = ESCADA.length - 2; i >= 0; i--){
       const cargo = ESCADA[i], acima = ESCADA[i+1], c = C[cargo];
-      if(!q.cargos[cargo]) continue;
-      /* AS NOSSAS REGRAS, inteiras: XP rodado, força de sobra e o
-         dinheiro no caixa. Faltando qualquer uma, ninguém sobe. */
+      if(!q.cargos[cargo]) { q.aptos[cargo] = 0; continue; }
       if(q.xp[cargo] < c.xpPromo) continue;
-      if(q.forca[cargo] < c.forcaPromo) continue;
-      let quantos = Math.max(1, Math.round(q.cargos[cargo]*FATIA_PROMO));
-      quantos = Math.min(quantos, q.cargos[cargo]);
+      let quantos = Math.min(q.cargos[cargo], Math.floor(q.aptos[cargo] + 1e-9));
+      if(quantos <= 0) continue;
       if(acima === 'diretoria')
         quantos = Math.min(quantos,
           Math.max(0, TO.membros.SEDE[t.sede].diretoria - q.cargos.diretoria));
       if(c.custoPromo) quantos = Math.min(quantos, Math.floor(t.caixa/c.custoPromo));
       if(quantos <= 0) continue;
-      t.caixa -= quantos * c.custoPromo;
-      const n = q.cargos[acima];
-      q.forca[acima] = (n*q.forca[acima] + quantos*q.forca[cargo])/(n + quantos);
-      q.xp[acima]    = (n*q.xp[acima]    + quantos*q.xp[cargo])/(n + quantos);
+      const custo = quantos * c.custoPromo;
+      t.caixa -= custo;
+      if(custo) lancarIA(E, id, `Promoção de ${quantos} a ${C[acima].nome}`, -custo);
+      /* quem sobe chega com a força da régua; quem fica perde essa
+         gente de cima e a média do cargo cede um pouco */
+      const n = q.cargos[acima], N = q.cargos[cargo], resto = N - quantos;
+      const fSobe = Math.max(c.forcaPromo, q.forca[cargo]);
+      q.forca[acima] = (n*q.forca[acima] + quantos*fSobe)/(n + quantos);
+      if(resto > 0) q.forca[cargo] = U.limitar((N*q.forca[cargo] - quantos*fSobe)/resto, BASE_FICHA[cargo], q.forca[cargo]);
       q.cargos[acima] += quantos;
       q.cargos[cargo] -= quantos;
+      q.aptos[cargo] -= quantos;
       subiram += quantos;
     }
     return subiram;

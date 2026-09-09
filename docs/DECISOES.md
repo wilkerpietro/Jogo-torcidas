@@ -4714,6 +4714,41 @@ longe. No Patrimônio a faixa k mostra o dizer k; na cena a torcida
 sorteia uma entre as que tem. A arte do dono, quando chegar
 (`TO.dados.faixas[id]`), continua entrando inteira no lugar.
 
+## A promoção das IAs: todo apto sobe (ordem do dono, 09/09/2026)
+
+**Pergunta e pedido.** "Me diga se os membros das torcidas IA treinam e
+evoluem, e implemente que os aptos para promoção deles sejam promovidos,
+com prioridade permanente na fila (se tem membro pra promover e dinheiro
+em caixa, promove, registra no financeiro)."
+
+**O que havia.** Cada torcida IA tem um quadro por cargo (quantos, força
+média, XP média). Treina todo dia com as vagas de treino da sede (2 a
+30) e o dobro com professor de MMA; o XP de briga entra inteiro. A
+promoção rodava toda semana antes da compra da fila, mas subia só 10%
+do grupo e só quando a MÉDIA do cargo alcançava a força exigida — e
+como as vagas se diluem em toda a torcida, a média de novato subia 1,6
+por ano e nunca chegava aos 8. Resultado medido: 3 de 386 torcidas
+promoveram alguém num ano.
+
+**Como ficou.**
+- `q.aptos[cargo]` (treinarDelas): as vagas de treino são gente de
+  verdade. As vagas do dia se repartem pelos cargos promovíveis na
+  proporção do efetivo, cada uma entrega 0,15·ganho de força por
+  sessão, e um apto nasce quando junta a força que falta do piso do
+  cargo até a exigência (novato 1→8: ~47 sessões; componente 5→12;
+  frente 10→18). Nunca passa do efetivo do cargo.
+- `promoverDelas`: toda semana, antes da compra da fila, sobe TODO apto
+  que tem o XP do cargo, limitado só pelo caixa (componente R$ 0,
+  frente R$ 1.000, diretoria R$ 5.000 por cabeça, como nós) e pelo teto
+  da Diretoria da sede — o barrado continua apto esperando vaga. Quem
+  sobe chega com a força da régua; a média de quem fica cede um pouco.
+  Cada promoção paga entra no extrato ("Promoção de N a Linha de
+  Frente").
+- Medido num ano: 272 de 386 torcidas promoveram; Gaviões foi de
+  127/75/38/10 pra 111/90/80/15 (novato/componente/frente/diretoria),
+  gastando R$ 19 mil; a pirâmide do mundo ficou 13,5 mil novatos, 9,5
+  mil componentes, 6,2 mil linha de frente, 1,2 mil diretoria.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
