@@ -4399,9 +4399,9 @@ Duas correções na cena:
   o nome do líder eram pintados na camada 2D, que fica POR BAIXO dos
   bonecos: no bolo da briga os corpos cobriam a marca. Agora o canvas
   `djSobre`, acima da 3D, recebe a cada quadro (`ponte.desenharSobre`):
-  um halo dourado translúcido no chão, uma seta dourada pulsando sobre a
-  cabeça e o nome numa etiqueta escura (o anel amarelo no pé chegou a
-  existir e saiu no dia seguinte, a pedido do dono), com letra que tem teto pra não virar cartaz no
+  uma seta dourada pulsando sobre a cabeça e o nome numa etiqueta escura
+  (o anel amarelo e o halo no pé chegaram a existir e saíram no dia
+  seguinte, a pedido do dono), com letra que tem teto pra não virar cartaz no
   zoom de 3,4× do celular. É pro mesmo disco que a câmera segue
   (`focoDoZoom`), e nada disso é coberto por boneco nenhum. A camada de
   baixo deixa de pintar o nome e o anel do líder quando há boneco por
