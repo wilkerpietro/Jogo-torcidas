@@ -80,7 +80,12 @@ TO.dados.cenas = (function(){
     bp(cx, cy, 92, 46, 'carro');
 
   const praca = montar({
-    id:'praca', nome:'Praça', pintura:'praca', blocos:blocosPraca,
+    id:'praca', nome:'Praça',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    faixas:{mandante:{x:207, y:490, len:150, dir:[-1,0]}, visitante:{x:1306, y:493, len:150, dir:[1,0]}}, pintura:'praca', blocos:blocosPraca,
     /* aqui não se entra em estádio nenhum: quem sai da praça sai pela rua */
     local:'Na praça',
     /* praça de bairro não tem operação montada: quem responde é a PM
@@ -356,7 +361,12 @@ TO.dados.cenas = (function(){
   bb(1442, 544, 70, 60, 'engradado');
 
   const bar = montar({
-    id:'bar', nome:'Bar', pintura:'bar', blocos:blocosBar,
+    id:'bar', nome:'Bar',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    faixas:{mandante:{x:324, y:190, len:130, dir:[-1,0]}, visitante:{x:900, y:500, len:130, dir:[1,0]}}, pintura:'bar', blocos:blocosBar,
     local:'No bar deles',
     saida:{perto:'Tomar o bar', longe:'Balcão do bar (leve o líder)',
            feito:'sua torcida tomou o bar deles',
@@ -709,6 +719,11 @@ TO.dados.cenas = (function(){
 
   const estadio10 = fazEstadio({
     id:'estadio-10', nome:'Estádio de 10 mil',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    faixas:{mandante:{x:1248, y:330, len:150, dir:[-1,0]}, visitante:{x:540, y:186, len:150, dir:[0,1]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:300,
        jogador:true, entrada:'portao_mandante'},
@@ -738,6 +753,11 @@ TO.dados.cenas = (function(){
 
   const estadio20 = fazEstadio({
     id:'estadio-20', nome:'Estádio de 20 mil',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    faixas:{mandante:{x:1202, y:516, len:160, dir:[-1,0]}, visitante:{x:342, y:516, len:160, dir:[1,0]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:490,
        jogador:true, entrada:'portao_mandante'},
@@ -771,6 +791,11 @@ TO.dados.cenas = (function(){
 
   const estadio40 = fazEstadio({
     id:'estadio-40', nome:'Estádio de 40 mil',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    faixas:{mandante:{x:1246, y:380, len:160, dir:[-1,0]}, visitante:{x:470, y:738, len:150, dir:[0,-1]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1310, y:360,
        jogador:true, entrada:'portao_mandante'},

@@ -4553,6 +4553,35 @@ linha de frente e 5 componentes — os aptos de ficha mais fraca de cada
 cargo, como antes. Nas IAs a filial nasce com `membros: 8`. O total da
 torcida não muda: é mudança de cidade, não de torcida.
 
+## A faixa estendida na parede e no alambrado (pedido do dono, 09/09/2026)
+
+**Pedido.** "Preciso que a imagem da faixa apareça como estendida em
+alguma parede, e quando estiver no estádio ela fique estendida no
+alambrado. Dependendo da posição da torcida na arquibancada, como a
+faixa sempre vai estar virada pro campo, a faixa vai ficar na posição
+vertical." E depois: "Você pode espremer o layout da faixa pra caber no
+alambrado ou na respectiva parede."
+
+**Como ficou.**
+- Cada cena de faixa (bar, praça, os três estádios) ganhou em
+  `dados/cenas.js` um `faixas:{mandante, visitante}` com o ponto no chão
+  em frente à parede/alambrado de cada lado, o comprimento e `dir`, a
+  direção da parede. Os pontos foram medidos na malha de pisada de cada
+  foto: são a última célula livre antes da parede, saindo do spawn do
+  lado — a equipe que recolhe chega neles (alcance de 30 px).
+- A faixa é desenhada deslocada pra dentro da parede e GIRADA: na
+  lateral do campo (dir leste/oeste) o topo vira pra parede, então ela
+  fica vertical (+90° a leste, −90° a oeste); atrás do gol e nas paredes
+  de cima/baixo fica deitada e legível — de cabeça pra baixo é o sinal
+  de faixa TOMADA, não de faixa pendurada. Uma sombra fina cai pro lado
+  de dentro, pra ler como coisa pendurada.
+- Espremida: na cena a faixa tem proporção 6:1 (a imagem em si continua
+  4:1 no Patrimônio), pra caber na linha do alambrado sem invadir o
+  campo. Bar: parede leste do salão; praça: fachada leste (rival) e
+  oeste (nós); estádio de 10: lateral leste (mandante) e atrás do gol
+  norte (visitante); de 20: as duas laterais; de 40: lateral leste e o
+  setor sudoeste. Sem ponto marcado, vale o lugar antigo, no spawn.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

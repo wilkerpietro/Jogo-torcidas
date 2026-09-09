@@ -3315,11 +3315,21 @@ TO.diaJogo.combate = (function(){
     const cx = base.reduce((a,sp)=>a+sp.x,0)/base.length;
     const cy = base.reduce((a,sp)=>a+sp.y,0)/base.length;
     const cores = TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(o) : {};
-    return {lado, torcidaId:o.id, nome:o.nome, nossa, cores,
+    const F = {lado, torcidaId:o.id, nome:o.nome, nossa, cores,
             x: U.limitar(cx, 60, A.W-60), y: U.limitar(cy-30, 24, A.H-24),
-            w:76, h:19, estado:'exposta', equipe:[], portador:null,
+            w:76, h:19, dir:null, estado:'exposta', equipe:[], portador:null,
             tChegou:null, tEscolha:0, tomadaPor:null,
             img: PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o) : null};
+    /* ESTENDIDA NA PAREDE (dono, 09/09/2026): a cena diz onde fica a
+       parede (ou o alambrado) de cada lado; a faixa pendura ali, com
+       o topo virado pra parede — na lateral do campo fica vertical */
+    const lugar = D.faixas && D.faixas[lado];
+    if(lugar){
+      F.x = lugar.x; F.y = lugar.y; F.dir = lugar.dir || null;
+      /* espremida pra caber na parede (dono, 09/09/2026): 6:1 na cena */
+      F.w = lugar.len || 140; F.h = Math.round(F.w/6);
+    }
+    return F;
   }
   function escolherRecolhedores(J, F){
     F.equipe = (F.equipe||[]).filter(d=>d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu);
@@ -3349,7 +3359,7 @@ TO.diaJogo.combate = (function(){
       const antes = F.equipe.length;
       F.equipe = F.equipe.filter(d=>d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu);
       if(F.equipe.length < 2 && J.t - F.tEscolha > 0.5) escolherRecolhedores(J, F);
-      const noLugar = F.equipe.filter(d=>U.dist(d.x,d.y,F.x,F.y) < d.r+18);
+      const noLugar = F.equipe.filter(d=>U.dist(d.x,d.y,F.x,F.y) < d.r+(F.dir ? 30 : 18));
       for(const d of F.equipe) d.tirando = noLugar.includes(d);
       if(noLugar.length){
         if(F.tChegou==null) F.tChegou = J.t;
@@ -3397,28 +3407,43 @@ TO.diaJogo.combate = (function(){
   }
   function desenharFaixa(c, J, F){
     if(!F || F.estado==='tomada') return;
-    const pinta = (x, y, w, h, alfa) => {
+    /* `ang` gira a faixa: o topo dela aponta pra `dir` (a parede) */
+    const pinta = (x, y, w, h, alfa, ang, sombra) => {
       c.save(); c.globalAlpha = alfa;
-      c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(x-w/2-1.5, y-h/2-1.5, w+3, h+3);
-      if(F.img && (F.img.naturalWidth || F.img.width)) c.drawImage(F.img, x-w/2, y-h/2, w, h);
+      c.translate(x, y); c.rotate(ang || 0);
+      if(sombra){
+        /* pendurada: sombra caída pro lado de dentro */
+        c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-w/2-2, h/2, w+4, 4);
+      }
+      c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3);
+      if(F.img && (F.img.naturalWidth || F.img.width)) c.drawImage(F.img, -w/2, -h/2, w, h);
       else {
-        c.fillStyle = F.cores.cor || '#555'; c.fillRect(x-w/2, y-h/2, w, h);
-        c.fillStyle = F.cores.cor2 || '#eee'; c.fillRect(x-w/2, y-h/2, w, 2); c.fillRect(x-w/2, y+h/2-2, w, 2);
+        c.fillStyle = F.cores.cor || '#555'; c.fillRect(-w/2, -h/2, w, h);
+        c.fillStyle = F.cores.cor2 || '#eee'; c.fillRect(-w/2, -h/2, w, 2); c.fillRect(-w/2, h/2-2, w, 2);
         /* texto na cor secundária, fundo na primária (dono, 09/09/2026) */
         c.fillStyle=F.cores.cor2 || '#fff'; c.font=`700 ${Math.max(6, h*0.5)}px "Barlow Condensed",sans-serif`; c.textAlign='center'; c.textBaseline='middle';
-        c.fillText(String(F.nome||'').toUpperCase().slice(0,18), x, y+0.5);
+        c.fillText(String(F.nome||'').toUpperCase().slice(0,18), 0, 0.5);
       }
       c.restore();
     };
     if(F.estado==='exposta' || F.estado==='recolhendo'){
-      pinta(F.x, F.y, F.w, F.h, 1);
+      /* na parede: desloca pra dentro dela e gira. Na lateral o topo
+         vira pra parede (leste +90°, oeste −90°); atrás do gol e nas
+         paredes de cima/baixo fica deitada e legível — de cabeça pra
+         baixo é faixa TOMADA, não faixa pendurada */
+      const d = F.dir;
+      const ang = (!d || !d[0]) ? 0 : Math.atan2(d[1], d[0]) + Math.PI/2;
+      const x = F.x + (d ? d[0]*(F.h/2+3) : 0), y = F.y + (d ? d[1]*(F.h/2+3) : 0);
+      pinta(x, y, F.w, F.h, 1, ang, !!d);
       if(F.estado==='recolhendo'){
+        c.save(); c.translate(x, y); c.rotate(ang);
         c.strokeStyle=`rgba(255,211,90,${0.5+0.4*Math.sin(J.t*8)})`; c.lineWidth=2;
-        c.strokeRect(F.x-F.w/2-3, F.y-F.h/2-3, F.w+6, F.h+6);
+        c.strokeRect(-F.w/2-3, -F.h/2-3, F.w+6, F.h+6);
+        c.restore();
       }
     } else if(F.estado==='na-mao' && F.portador){
       const p = F.portador;
-      pinta(p.x + p.r + 9, p.y - p.r - 2, 30, 8, 0.95);
+      pinta(p.x + p.r + 9, p.y - p.r - 2, 30, 8, 0.95, 0, false);
     }
   }
 
