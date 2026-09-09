@@ -1477,9 +1477,12 @@ TO.diaJogo.combate = (function(){
         const doLado = J.discos.filter(x=>x.lado===d.lado && x!==d && x.vivo && !x.comFaixa && !x.fugindo);
         const doBonde = d.spawn ? doLado.filter(x=>x.spawn===d.spawn) : [];
         const vivos = doBonde.length ? doBonde : doLado;
-        const brigando = vivos.filter(x=>(x.inimigoPerto||999) < 200);
-        const meus = brigando.length ? brigando : vivos;
         const eles = J.discos.filter(x=>x.lado!==d.lado && x.vivo);
+        /* distância REAL ao inimigo mais perto: `inimigoPerto` só enxerga
+           a vizinhança de 90 px da grade, e a régua aqui é 200 */
+        const maisPerto = (x)=>{ let m=1e9; for(const e of eles){ const q=U.dist(x.x,x.y,e.x,e.y); if(q<m) m=q; } return m; };
+        const brigando = vivos.filter(x=>maisPerto(x) < 200);
+        const meus = brigando.length ? brigando : vivos;
         let tx, ty;
         if(meus.length){
           const cm = meus.reduce((a,x)=>({x:a.x+x.x, y:a.y+x.y}), {x:0,y:0});
@@ -1494,7 +1497,41 @@ TO.diaJogo.combate = (function(){
           const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0]; tx = s.x; ty = s.y;
         }
         ramo='faixa-atras'; d._olhaPara=null;
-        if(U.dist(d.x,d.y,tx,ty) < 34){
+        /* E FOGE DE QUEM CHEGA PERTO (pedido do dono, 09/09/2026): um
+           inimigo pode se aproximar do portador sem estar trocando com
+           ninguém dos nossos, e aí o ponto "atrás da aglomeração" não
+           protege nada. Com inimigo a menos de 200 px ele tenta se
+           afastar: soma a repulsão de cada um (mais forte quanto mais
+           perto) com um quarto de puxão pro ponto atrás dos seus, pra
+           não fugir do próprio bonde, e anda 120 px nessa direção. */
+        let evadindo = false;
+        if(maisPerto(d) < FAIXA_AFASTA){
+          let rx=0, ry=0;
+          for(const e of eles){
+            const q=U.dist(d.x,d.y,e.x,e.y); if(q >= FAIXA_AFASTA) continue;
+            const w=(FAIXA_AFASTA-q)/Math.max(q,8); rx += (d.x-e.x)*w; ry += (d.y-e.y)*w;
+          }
+          const rn=Math.hypot(rx,ry)||1; rx/=rn; ry/=rn;
+          let gx=tx-d.x, gy=ty-d.y; const gn=Math.hypot(gx,gy)||1; gx/=gn; gy/=gn;
+          let mx=rx*0.75+gx*0.25, my=ry*0.75+gy*0.25; const mn=Math.hypot(mx,my)||1; mx/=mn; my/=mn;
+          /* a direção ideal pode dar em muro, grade ou fora da cena — o
+             portador encostado na parede do fundo andava PRO inimigo
+             porque o alvo caía fora do mapa. Sonda um leque de rumos em
+             volta do ideal, só aceita ponto onde o corpo cabe, e fica
+             com o que deixa o inimigo mais longe (desempate: o rumo
+             mais parecido com o ideal). Se nenhum rumo afasta, não
+             sai do lugar. */
+          const a0 = Math.atan2(my,mx); let melhor=null, mScore=maisPerto(d)+4;
+          for(const off of [0,25,-25,50,-50,75,-75,100,-100,125,-125,150,-150,180]){
+            const a=a0+off*Math.PI/180, px=d.x+Math.cos(a)*110, py=d.y+Math.sin(a)*110;
+            if(!A.livrePara(px,py,A.raioMalha(d.r))) continue;
+            const sc = maisPerto({x:px,y:py}) - Math.abs(off)*0.15;
+            if(sc>mScore){ mScore=sc; melhor=[px,py]; }
+          }
+          if(melhor){ tx=melhor[0]; ty=melhor[1]; evadindo=true; ramo='faixa-evade'; }
+          else { d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt); d._ramo='faixa-encurralado'; d._alvo=null; continue; }
+        }
+        if(!evadindo && U.dist(d.x,d.y,tx,ty) < 34){
           d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
           d._ramo='faixa-atras'; d._alvo=null;
           continue;
@@ -3340,7 +3377,8 @@ TO.diaJogo.combate = (function(){
      ninguém de pé: tomada também.
      ======================================================= */
   const CENAS_FAIXA = /^(bar|praca|estadio-)/;
-  const FAIXA_TIRAR = 3.0, FAIXA_ALCANCE = 180;
+  /* FAIXA_AFASTA: o portador tenta ficar a pelo menos isto de qualquer inimigo */
+  const FAIXA_TIRAR = 3.0, FAIXA_ALCANCE = 180, FAIXA_AFASTA = 200;
   /* O QUE CADA CENA EXPÕE (pedido do dono, 09/09/2026): no bar, bandeira
      em 70% das vezes e faixa nas outras; na concentração (a praça),
      meio a meio; no estádio, faixa E bandeira lado a lado — e TODO

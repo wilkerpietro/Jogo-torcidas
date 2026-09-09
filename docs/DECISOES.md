@@ -4777,6 +4777,36 @@ promoveram alguém num ano.
   gastando R$ 19 mil; a pirâmide do mundo ficou 13,5 mil novatos, 9,5
   mil componentes, 6,2 mil linha de frente, 1,2 mil diretoria.
 
+## O portador foge de quem chega perto (pedido do dono, 09/09/2026)
+
+"Acho que o ideal é o portador tentar se distanciar a 200 px de um
+inimigo. Pode ser que em algum momento um inimigo se aproxime, sem estar
+trocando com um parceiro de torcida." O ponto "150 px atrás da
+aglomeração" não protege de um inimigo solto que vem por outro lado.
+
+- `FAIXA_AFASTA = 200` em `combate.js`. No ramo do portador (`comFaixa`),
+  depois de escolher o ponto atrás dos seus, com inimigo a menos de 200
+  px ele entra em `faixa-evade`: soma a repulsão de cada inimigo dentro
+  do raio (peso `(200-d)/d`, mais forte quanto mais perto) com um quarto
+  de puxão pro ponto atrás do bonde — pra não fugir da própria torcida —
+  e sonda um leque de rumos (0°, ±25°… 180°) a 110 px em volta dessa
+  direção. Só aceita ponto onde o corpo cabe (`livrePara`), e fica com o
+  que deixa o inimigo mais perto MAIS LONGE (desempate: o rumo mais
+  parecido com o ideal). Se nenhum rumo afasta, `faixa-encurralado`: não
+  sai do lugar. Sem inimigo a 200 px, volta ao comportamento anterior.
+- A distância ao inimigo passou a ser medida de verdade (`maisPerto`),
+  inclusive pra decidir quem do bonde está "trocando": `inimigoPerto` só
+  enxerga a vizinhança de 90 px da grade de colisão, e a régua é 200.
+- Tentou-se andar em linha reta pro ponto sondado: piorou (o ramo
+  direto tem histerese e separação; 17 de 25 portadores travaram). O
+  campo de fluxo pra célula quantizada ficou.
+- Medido (`faixa-evade.js`: peça na mão, todo mundo congelado, um inimigo
+  plantado a 100 px do portador num ângulo sorteado, 4 s): nos três
+  estádios e no bar, 21 a 25 de 25 portadores chegam a ~200 px; os que
+  ficam é parede ou a aglomeração congelada do teste fechando a saída.
+  `faixa-tomada-regra`, `faixa-debandada`, `faixas` e `faixa-fuga-cedo`
+  seguem passando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
