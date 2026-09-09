@@ -382,6 +382,11 @@ TO.diaJogo.combate = (function(){
       }
     }
 
+    /* QUAL BONDE SENTA EM QUAL SETOR (dono, 09/09/2026): é por aqui que
+       cada setor do estádio sabe de que torcida é a faixa dele */
+    J.setores = {};
+    for(const g of grupos) if(g.bonde) J.setores[g.s.id] = g.bonde;
+
     /* A escalação diz quem tem NOME — força, defesa, ficha e consequência
        depois da briga. Ela não diz quantos foram: o resto é povão, sem
        ficha, que é o que o povão é. Quando o bonde veio do mapa os
@@ -1455,6 +1460,18 @@ TO.diaJogo.combate = (function(){
           continue;
         }
         ax=F.x; ay=F.y;
+      } else if(d.comFaixa && !d.fugindo){
+        /* QUEM CARREGA A FAIXA FICA ATRÁS (dono, 09/09/2026): vai pro
+           próprio spawn — o fundo do setor / do salão — e fica lá, longe
+           da linha de frente, pra faixa não ser tomada */
+        const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
+        ramo='faixa-atras'; d._olhaPara=null;
+        if(U.dist(d.x,d.y,s.x,s.y) < 40){
+          d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
+          d._ramo='faixa-atras'; d._alvo=null;
+          continue;
+        }
+        campo = campoDoSpawn(s); usarCampo=true;
       } else if(d.voltando){
         /* acabou e a casa é deles: volta pro lugar de onde saiu */
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
@@ -2368,6 +2385,8 @@ TO.diaJogo.combate = (function(){
          reposiciona, não desarma. O recuado não vai atrás de golpe —
          mas quem COLAR nele leva o soco normal. */
       if(recuando(J, d.lado) && !(perto && md <= alcanceDe(d,perto))) continue;
+      /* o portador da faixa também não caça: só bate em quem colar */
+      if(d.comFaixa && !(perto && md <= alcanceDe(d,perto))) continue;
       if(!perto) continue;
       const alcance = alcanceDe(d,perto);
       /* golpe vindo em mim: defender, com a chance que a defesa dá */
@@ -3269,85 +3288,130 @@ TO.diaJogo.combate = (function(){
      ======================================================= */
   const CENAS_FAIXA = /^(bar|praca|estadio-)/;
   const FAIXA_TIRAR = 3.0, FAIXA_ALCANCE = 180;
-  /* NO ESTÁDIO TODO MUNDO ESTENDE (pedido do dono, 09/09/2026): as duas
-     torcidas armam a faixa no setor delas, cada uma recolhe a sua. Nas
-     outras cenas continua só a atacada. */
+  /* O QUE CADA CENA EXPÕE (pedido do dono, 09/09/2026): no bar, bandeira
+     em 70% das vezes e faixa nas outras; na concentração (a praça),
+     meio a meio; no estádio, faixa E bandeira lado a lado — e TODO
+     setor de toda torcida presente estende as suas. */
+  const CHANCE_BANDEIRA = {bar:0.7, praca:0.5};
   function montarFaixas(J, cfg){
     if(!cfg || !D.id || !CENAS_FAIXA.test(D.id)) return [];
     const PAT = TO.patrimonio, E = TO.estado && TO.estado.E;
     if(!PAT || !E) return [];
     const estadio = /^estadio-/.test(D.id);
-    let quem = cfg.faixaDefensor;
-    if(estadio && !quem) quem = 'ambos';
-    if(!quem) return [];
-    const ordem = quem === 'ambos' || estadio
-      ? (quem === 'eles' ? ['eles','nos'] : ['nos','eles'])
-      : [quem];
     const fora = [];
-    for(const lado of ordem){
-      const F = montarFaixa(J, cfg, lado);
-      if(F) fora.push(F);
+    if(estadio){
+      /* um par por SETOR: cada bonde com torcida conhecida estende */
+      const meu = ladoDoJogador(J);
+      const vistos = new Set();
+      for(const [sid, b] of Object.entries(J.setores || {})){
+        if(!b) continue;
+        const id = b.nossa ? E.torcida.id : b.id;
+        if(!id) continue;
+        const sp = D.spawns.find(x=>x.id === sid);
+        if(!sp) continue;
+        /* dois setores do mesmo bonde (bonde espalhado): uma faixa só */
+        if(vistos.has(id)) continue; vistos.add(id);
+        const lado = sp.lado;
+        const fx = montarUma(J, cfg, id, lado, sp, 'faixa');
+        const bd = montarUma(J, cfg, id, lado, sp, 'bandeira');
+        if(fx) fora.push(fx);
+        if(bd) fora.push(bd);
+      }
+      /* a de quem defende primeiro (a ponte e os testes olham J.faixa) */
+      const def = cfg.faixaDefensor === 'eles' ? OUTRO_LADO[meu] : meu;
+      fora.sort((x,y)=>(x.lado===def?0:1)-(y.lado===def?0:1) || (x.tipo==='faixa'?0:1)-(y.tipo==='faixa'?0:1));
+      return fora;
+    }
+    const quem = cfg.faixaDefensor;
+    if(!quem) return [];
+    const meu = ladoDoJogador(J), outro = OUTRO_LADO[meu];
+    const ordem = quem === 'ambos' ? ['nos','eles'] : [quem];
+    for(const q of ordem){
+      const lado = q === 'nos' ? meu : outro;
+      const id = q === 'nos' ? E.torcida.id : cfg.rivalId;
+      if(!id) continue;
+      const chave = D.id === 'bar' ? 'bar' : 'praca';
+      const querBandeira = U.rng() < (CHANCE_BANDEIRA[chave] || 0);
+      const ordemTipos = querBandeira ? ['bandeira','faixa'] : ['faixa','bandeira'];
+      for(const tipo of ordemTipos){
+        const F = montarUma(J, cfg, id, lado, null, tipo);
+        if(F){ fora.push(F); break; }
+      }
     }
     return fora;
   }
-  function montarFaixa(J, cfg, deQuem){
-    const PAT = TO.patrimonio, E = TO.estado && TO.estado.E;
-    const meu = ladoDoJogador(J), outro = OUTRO_LADO[meu];
-    const lado = deQuem === 'nos' ? meu : outro;
-    let o, nossa;
-    if(deQuem === 'nos'){
-      if(!PAT.faixasDe(E).nossas.length) return null;
-      o = E.torcida; nossa = true;
+  /* monta UMA peça (faixa ou bandeira) de uma torcida num lado/setor;
+     null se a torcida não tem a peça */
+  function montarUma(J, cfg, id, lado, spawn, tipo){
+    const PAT = TO.patrimonio, E = TO.estado.E;
+    const nossa = id === E.torcida.id;
+    let o;
+    if(nossa){
+      const lista = tipo === 'bandeira' ? PAT.bandeirasDe(E).nossas : PAT.faixasDe(E).nossas;
+      if(!lista.length) return null;
+      o = E.torcida;
     } else {
-      o = cfg.rivalId ? TO.mundo.torcida(cfg.rivalId) : null;
+      o = TO.mundo.torcida(id);
       if(!o) return null;
       const t = PAT.faixasIA(E, o.id);
-      if(!t || t.faixas <= 0) return null;
-      nossa = false;
+      if(!t || (tipo === 'bandeira' ? t.bandeiras : t.faixas) <= 0) return null;
     }
     const guardas = D.spawns.filter(sp=>sp.lado===lado && sp.guarda);
-    /* sem spawn de guarda (o estádio), a faixa fica no PRIMEIRO setor do
-       lado — o centro dos três setores caía no meio do campo */
     const doLado = D.spawns.filter(sp=>sp.lado===lado);
-    const base = guardas.length ? guardas
+    const base = spawn ? [spawn] : guardas.length ? guardas
                : doLado.length ? [doLado.find(sp=>sp.jogador) || doLado[0]] : [];
     if(!base.length) return null;
     const cx = base.reduce((a,sp)=>a+sp.x,0)/base.length;
     const cy = base.reduce((a,sp)=>a+sp.y,0)/base.length;
     const cores = TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(o) : {};
-    const F = {lado, torcidaId:o.id, nome:o.nome, nossa, cores,
+    const bandeira = tipo === 'bandeira';
+    const F = {tipo, lado, spawn: spawn ? spawn.id : null, torcidaId:o.id, nome:o.nome, nossa, cores,
             x: U.limitar(cx, 60, A.W-60), y: U.limitar(cy-30, 24, A.H-24),
-            w:76, h:19, dir:null, estado:'exposta', equipe:[], portador:null,
+            w: bandeira ? 19 : 76, h:19, dir:null, estado:'exposta', equipe:[], portador:null,
+            equipeN: bandeira ? 1 : 2, semente: (U.rng()*6.28),
             tChegou:null, tEscolha:0, tomadaPor:null,
-            img: PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o) : null};
+            img: PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o, tipo) : null};
     /* ESTENDIDA NA PAREDE (dono, 09/09/2026): a cena diz onde fica a
-       parede (ou o alambrado) de cada lado; a faixa pendura ali, com
-       o topo virado pra parede — na lateral do campo fica vertical */
-    const lugar = D.faixas && D.faixas[lado];
+       parede (ou o alambrado) de cada lado ou de cada setor; a faixa
+       pendura ali, e a bandeira fica ao lado dela na mesma parede */
+    const lugar = D.faixas && ((spawn && D.faixas[spawn.id]) || D.faixas[lado]);
     if(lugar){
-      F.x = lugar.x; F.y = lugar.y; F.dir = lugar.dir || null;
-      /* no estádio ela pende do alambrado pro lado do CAMPO */
+      F.dir = lugar.dir || null;
       F.campo = /^estadio-/.test(D.id);
-      /* alambrado curvo (dono, 09/09/2026): `arco` é o centro da curva;
-         a faixa acompanha o arco que passa pela grade */
       F.arco = lugar.arco || null;
-      /* espremida pra caber na parede (dono, 09/09/2026): 6:1 na cena */
-      F.w = lugar.len || 140; F.h = Math.round(F.w/6);
+      const len = lugar.len || 140;
+      if(bandeira){
+        /* a bandeira: quadrada, do tamanho de duas alturas de faixa, ao
+           lado da faixa (deslocada ao longo da parede) */
+        F.w = F.h = Math.round(len/6*1.8);
+        const t = F.dir ? [-F.dir[1], F.dir[0]] : [1,0];
+        const off = len/2 + F.w/2 + 10;
+        /* de um lado ou do outro da faixa — o que tiver chão (o setor
+           norte do estádio de 10 mil acaba antes do lado esquerdo) */
+        const cand = [[lugar.x + t[0]*off, lugar.y + t[1]*off], [lugar.x - t[0]*off, lugar.y - t[1]*off]];
+        const ok = cand.find(([x,y]) => A.livrePara(x, y, 8)) || [lugar.x, lugar.y];
+        F.x = ok[0]; F.y = ok[1];
+      } else {
+        F.x = lugar.x; F.y = lugar.y;
+        F.w = len; F.h = Math.round(len/6);
+      }
     }
     return F;
   }
   function escolherRecolhedores(J, F){
     F.equipe = (F.equipe||[]).filter(d=>d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu);
-    const cands = J.discos.filter(d=>d.lado===F.lado && d.vivo && !d.lider && !d.fugindo &&
-      d.derrubado<=0 && !d.noChao && !d.entrando && !d.sumiu && !d.faixaIndo && !F.equipe.includes(d))
+    const n = F.equipeN || 2;
+    const cands = J.discos.filter(d=>d.lado===F.lado && (!F.spawn || d.spawn===F.spawn) && d.vivo && !d.lider && !d.fugindo &&
+      d.derrubado<=0 && !d.noChao && !d.entrando && !d.sumiu && !d.faixaIndo && !d.comFaixa && !F.equipe.includes(d))
       .sort((a,b)=>U.dist2(a.x,a.y,F.x,F.y)-U.dist2(b.x,b.y,F.x,F.y));
-    while(F.equipe.length < 2 && cands.length) F.equipe.push(cands.shift());
+    while(F.equipe.length < n && cands.length) F.equipe.push(cands.shift());
     for(const d of F.equipe) d.faixaIndo = F;
     F.tEscolha = J.t;
   }
   function atualizarFaixas(J, dt){
     for(const F of (J.faixas || [])) atualizarFaixa(J, F, dt);
   }
+  const rotDe = F => F.tipo === 'bandeira' ? 'bandeira' : 'faixa';
   function atualizarFaixa(J, F, dt){
     if(!F || F.estado==='tomada') return;
     const inimigo = OUTRO_LADO[F.lado];
@@ -3356,14 +3420,14 @@ TO.diaJogo.combate = (function(){
                                     U.dist(d.x,d.y,F.x,F.y) < FAIXA_ALCANCE);
       if(perto || (!J.paz && J.t > 1.5)){
         F.estado='recolhendo'; escolherRecolhedores(J, F);
-        logar(J, `A ${F.nome} corre pra recolher a faixa.`, 'a');
+        if(F.tipo !== 'bandeira') logar(J, `A ${F.nome} corre pra recolher a faixa.`, 'a');
       }
       return;
     }
     if(F.estado==='recolhendo'){
       const antes = F.equipe.length;
       F.equipe = F.equipe.filter(d=>d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu);
-      if(F.equipe.length < 2 && J.t - F.tEscolha > 0.5) escolherRecolhedores(J, F);
+      if(F.equipe.length < (F.equipeN||2) && J.t - F.tEscolha > 0.5) escolherRecolhedores(J, F);
       const noLugar = F.equipe.filter(d=>U.dist(d.x,d.y,F.x,F.y) < d.r+(F.dir ? 30 : 18));
       for(const d of F.equipe) d.tirando = noLugar.includes(d);
       if(noLugar.length){
@@ -3371,8 +3435,8 @@ TO.diaJogo.combate = (function(){
         if(J.t - F.tChegou >= FAIXA_TIRAR){
           const p = noLugar[0];
           for(const d of F.equipe){ d.faixaIndo=false; d.tirando=false; }
-          F.equipe = []; F.estado='na-mao'; F.portador=p; p.comFaixa=true;
-          logar(J, `${p.nome} saiu com a faixa da ${F.nome} na mão.`, 'a');
+          F.equipe = []; F.estado='na-mao'; F.portador=p; p.comFaixa=F;
+          logar(J, `${p.nome} saiu com a ${rotDe(F)} da ${F.nome} na mão.`, 'a');
         }
       } else if(antes && !F.equipe.length) F.tChegou = null;
       return;
@@ -3383,21 +3447,22 @@ TO.diaJogo.combate = (function(){
       F.x = p.x; F.y = p.y;
       if(!p.vivo){
         p.comFaixa=false; F.estado='tomada'; F.tomadaPor=inimigo; F.tTomada=J.t;
-        logar(J, `Tomaram a faixa da ${F.nome}!`, 'r'); aviso(J, 'Faixa tomada!', '#ffd35a');
+        logar(J, `Tomaram a ${rotDe(F)} da ${F.nome}!`, 'r');
+        aviso(J, F.tipo === 'bandeira' ? 'Bandeira tomada!' : 'Faixa tomada!', '#ffd35a');
       }
     }
   }
-  /* o que a cena devolve no fim, faixa a faixa: tomada ou não, e por quem */
+  /* o que a cena devolve no fim, peça a peça: tomada ou não, e por quem */
   function fimDeUmaFaixa(J, F, venceuMandante){
     if(!F) return null;
     const inimigo = OUTRO_LADO[F.lado];
     let tomada = F.estado==='tomada', por = F.tomadaPor;
     if(!tomada && F.estado!=='na-mao'){
-      const donaDePe = J.discos.some(d=>d.lado===F.lado && d.vivo && !d.sumiu);
+      const donaDePe = J.discos.some(d=>d.lado===F.lado && (!F.spawn || d.spawn===F.spawn) && d.vivo && !d.sumiu);
       const inimigoVenceu = inimigo==='mandante' ? venceuMandante : !venceuMandante;
       if(!donaDePe && inimigoVenceu){ tomada = true; por = inimigo; }
     }
-    return {tomada, por, lado:F.lado, torcidaId:F.torcidaId, nome:F.nome, nossa:F.nossa, estado:F.estado};
+    return {tomada, por, tipo:F.tipo || 'faixa', lado:F.lado, torcidaId:F.torcidaId, nome:F.nome, nossa:F.nossa, estado:F.estado};
   }
   function fimDasFaixas(J, venceuMandante){
     return (J.faixas || []).map(F=>fimDeUmaFaixa(J, F, venceuMandante)).filter(Boolean);
@@ -3410,27 +3475,40 @@ TO.diaJogo.combate = (function(){
   function desenharFaixas(c, J){
     for(const F of (J.faixas || [])) desenharFaixa(c, J, F);
   }
+  /* =======================================================
+     O DESENHO DA PEÇA ESTENDIDA
+     Nunca reta demais (régua do dono, 09/09/2026): o pano é
+     desenhado em fatias, o topo preso na corda e a barra de baixo
+     caindo mais no meio, com uma ondinha pra parecer tecido.
+     ======================================================= */
+  function fatiasDoPano(c, F, w, h, N, dySag){
+    /* desenha no referencial já transladado/girado: topo em -h/2 */
+    const img = (F.img && (F.img.naturalWidth || F.img.width)) ? F.img : null;
+    const iw = img ? (img.naturalWidth || img.width) : 0, ih = img ? (img.naturalHeight || img.height) : 0;
+    const fw = w/N;
+    for(let i=0;i<N;i++){
+      const t = (i+0.5)/N;
+      const dy = dySag(t);
+      const x0 = -w/2 + i*fw;
+      if(img) c.drawImage(img, i*iw/N, 0, iw/N, ih, x0 - 0.6, -h/2, fw + 1.2, h + dy);
+      else { c.fillStyle = F.cores.cor || '#555'; c.fillRect(x0 - 0.6, -h/2, fw + 1.2, h + dy); }
+    }
+    if(!img){
+      c.fillStyle=F.cores.cor2 || '#fff'; c.font=`700 ${Math.max(6, h*0.5)}px "Barlow Condensed",sans-serif`; c.textAlign='center'; c.textBaseline='middle';
+      c.fillText(F.tipo === 'bandeira' ? '' : String(F.nome||'').toUpperCase().slice(0,18), 0, 0.5);
+    }
+  }
+  const caidaDoPano = (F, h) => t => {
+    /* barriga no meio (o pano cede entre as duas pontas presas) e uma
+       onda leve, diferente em cada faixa pela semente */
+    const barriga = h*0.16*(1 - Math.pow(2*t-1, 2));
+    const onda = Math.sin(t*Math.PI*3 + (F.semente||0))*h*0.05;
+    return Math.max(0, barriga + onda);
+  };
   function desenharFaixa(c, J, F){
     if(!F || F.estado==='tomada') return;
-    /* `ang` gira a faixa: o topo dela aponta pra `dir` (a parede) */
-    const pinta = (x, y, w, h, alfa, ang, sombra) => {
-      c.save(); c.globalAlpha = alfa;
-      c.translate(x, y); c.rotate(ang || 0);
-      if(sombra){
-        /* pendurada: sombra caída pro lado de dentro */
-        c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-w/2-2, h/2, w+4, 4);
-      }
-      c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3);
-      if(F.img && (F.img.naturalWidth || F.img.width)) c.drawImage(F.img, -w/2, -h/2, w, h);
-      else {
-        c.fillStyle = F.cores.cor || '#555'; c.fillRect(-w/2, -h/2, w, h);
-        c.fillStyle = F.cores.cor2 || '#eee'; c.fillRect(-w/2, -h/2, w, 2); c.fillRect(-w/2, h/2-2, w, 2);
-        /* texto na cor secundária, fundo na primária (dono, 09/09/2026) */
-        c.fillStyle=F.cores.cor2 || '#fff'; c.font=`700 ${Math.max(6, h*0.5)}px "Barlow Condensed",sans-serif`; c.textAlign='center'; c.textBaseline='middle';
-        c.fillText(String(F.nome||'').toUpperCase().slice(0,18), 0, 0.5);
-      }
-      c.restore();
-    };
+    const bandeira = F.tipo === 'bandeira';
+    const N = bandeira ? 10 : 28;
     if((F.estado==='exposta' || F.estado==='recolhendo') && F.arco && F.dir){
       /* CURVADA NO ALAMBRADO: a grade é um arco com centro em `arco`;
          o topo da faixa fica na grade e o corpo pende pro campo (pra
@@ -3440,27 +3518,27 @@ TO.diaJogo.combate = (function(){
       const cx = F.arco[0], cy = F.arco[1];
       const R = Math.max(40, Math.hypot(gx-cx, gy-cy));
       const a0 = Math.atan2(gy-cy, gx-cx);
-      const w = F.w, h = F.h, N = 28, vao = w / R;
-      const img = (F.img && (F.img.naturalWidth || F.img.width)) ? F.img : null;
-      const iw = img ? (img.naturalWidth || img.width) : 0, ih = img ? (img.naturalHeight || img.height) : 0;
+      const w = F.w, h = F.h, vao = w / R;
       const rm = R - h/2 - 2;
+      const cai = caidaDoPano(F, h);
       c.save();
-      /* sombra caída pro campo */
       c.strokeStyle='rgba(0,0,0,.35)'; c.lineWidth=4;
-      c.beginPath(); c.arc(cx, cy, rm - h/2 - 2, a0 - vao/2, a0 + vao/2); c.stroke();
+      c.beginPath(); c.arc(cx, cy, rm - h/2 - 3, a0 - vao/2, a0 + vao/2); c.stroke();
       c.strokeStyle='rgba(0,0,0,.55)'; c.lineWidth=h+3;
       c.beginPath(); c.arc(cx, cy, rm, a0 - vao/2, a0 + vao/2); c.stroke();
+      const img = (F.img && (F.img.naturalWidth || F.img.width)) ? F.img : null;
+      const iw = img ? (img.naturalWidth || img.width) : 0, ih = img ? (img.naturalHeight || img.height) : 0;
       for(let i=0;i<N;i++){
-        const a = a0 + vao*((i+0.5)/N - 0.5);
+        const t = (i+0.5)/N, a = a0 + vao*(t - 0.5);
         c.save();
         c.translate(cx + rm*Math.cos(a), cy + rm*Math.sin(a));
         c.rotate(a + Math.PI/2);
-        const fw = w/N;
-        if(img) c.drawImage(img, i*iw/N, 0, iw/N, ih, -fw/2 - 0.6, -h/2, fw + 1.2, h);
-        else { c.fillStyle = F.cores.cor || '#555'; c.fillRect(-fw/2 - 0.6, -h/2, fw + 1.2, h); }
+        const fw = w/N, dy = cai(t);
+        if(img) c.drawImage(img, i*iw/N, 0, iw/N, ih, -fw/2 - 0.6, -h/2, fw + 1.2, h + dy);
+        else { c.fillStyle = F.cores.cor || '#555'; c.fillRect(-fw/2 - 0.6, -h/2, fw + 1.2, h + dy); }
         c.restore();
       }
-      if(!img){
+      if(!img && !bandeira){
         c.save(); c.translate(cx + rm*Math.cos(a0), cy + rm*Math.sin(a0)); c.rotate(a0 + Math.PI/2);
         c.fillStyle=F.cores.cor2 || '#fff'; c.font=`700 ${Math.max(6, h*0.5)}px "Barlow Condensed",sans-serif`; c.textAlign='center'; c.textBaseline='middle';
         c.fillText(String(F.nome||'').toUpperCase().slice(0,18), 0, 0.5); c.restore();
@@ -3473,35 +3551,44 @@ TO.diaJogo.combate = (function(){
       c.restore();
     } else if(F.estado==='exposta' || F.estado==='recolhendo'){
       /* na parede: desloca pra dentro dela e gira. Na lateral o topo
-         vira pra parede (leste +90°, oeste −90°); atrás do gol e nas
-         paredes de cima/baixo fica deitada e legível — de cabeça pra
-         baixo é faixa TOMADA, não faixa pendurada */
+         vira pra parede (leste +90°, oeste −90°); nas paredes de
+         cima/baixo fica deitada e legível — de cabeça pra baixo é faixa
+         TOMADA, não faixa pendurada */
       const d = F.dir;
       let ang = 0, x = F.x, y = F.y;
       if(d && F.campo){
         /* ESTENDIDA NO ALAMBRADO (correção do dono, 09/09/2026): o topo
            fica na grade e o corpo pende pro lado do campo, como quem vê
            do gramado — na lateral leste lê de cima pra baixo, na oeste
-           de baixo pra cima; atrás do gol fica deitada e legível */
+           de baixo pra cima; atrás do gol norte fica deitada; atrás do
+           gol sul, de cabeça pra baixo — é o que a foto aérea mostra */
         const beira = 10;
         x = F.x + d[0]*(beira + F.h/2 + 2); y = F.y + d[1]*(beira + F.h/2 + 2);
-        ang = d[0] ? Math.atan2(-d[1], -d[0]) + Math.PI/2 : 0;
+        ang = Math.atan2(-d[1], -d[0]) + Math.PI/2;
       } else if(d){
         /* na parede do bar e da praça: topo na parede, corpo pra dentro
            do salão/calçada, onde está quem vê */
         ang = d[0] ? Math.atan2(d[1], d[0]) + Math.PI/2 : 0;
         x = F.x + d[0]*(F.h/2+3); y = F.y + d[1]*(F.h/2+3);
       }
-      pinta(x, y, F.w, F.h, 1, ang, !!d);
+      const w = F.w, h = F.h;
+      c.save(); c.translate(x, y); c.rotate(ang);
+      if(d){ c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-w/2-2, h/2 + h*0.12, w+4, 4); }
+      c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3);
+      fatiasDoPano(c, F, w, h, N, caidaDoPano(F, h));
       if(F.estado==='recolhendo'){
-        c.save(); c.translate(x, y); c.rotate(ang);
         c.strokeStyle=`rgba(255,211,90,${0.5+0.4*Math.sin(J.t*8)})`; c.lineWidth=2;
-        c.strokeRect(-F.w/2-3, -F.h/2-3, F.w+6, F.h+6);
-        c.restore();
+        c.strokeRect(-w/2-3, -h/2-3, w+6, h+6+h*0.16);
       }
+      c.restore();
     } else if(F.estado==='na-mao' && F.portador){
       const p = F.portador;
-      pinta(p.x + p.r + 9, p.y - p.r - 2, 30, 8, 0.95, 0, false);
+      const w = bandeira ? 10 : 30, h = bandeira ? 10 : 8;
+      c.save(); c.globalAlpha = 0.95; c.translate(p.x + p.r + 9, p.y - p.r - 2);
+      c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3);
+      if(F.img && (F.img.naturalWidth || F.img.width)) c.drawImage(F.img, -w/2, -h/2, w, h);
+      else { c.fillStyle = F.cores.cor || '#555'; c.fillRect(-w/2, -h/2, w, h); }
+      c.restore();
     }
   }
 

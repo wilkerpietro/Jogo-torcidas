@@ -2040,3 +2040,8 @@ header.capa-cidade{background-size:cover; background-position:center;
   .retro-barra{grid-template-columns:minmax(0,1.5fr) 1.6fr auto}
   .retro-barra .nome{font-size:13px}
 }
+
+/* as bandeiras no Patrimônio (dono, 09/09/2026) */
+.faixas-lista.bandeiras{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
+.bandeira-img{width:72px;height:72px;display:block;border:1px solid var(--linha)}
+.bandeira-img.virada{transform:rotate(180deg)}

@@ -723,7 +723,8 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante:{x:1248, y:330, len:150, dir:[-1,0]}, visitante:{x:540, y:186, len:150, dir:[0,1]}},
+    faixas:{mandante1:{x:1236, y:300, len:150, dir:[-1,0]}, mandante2:{x:1000, y:853, len:150, dir:[0,-1]}, mandante3:{x:523, y:853, len:150, dir:[0,-1]},
+            visitante1:{x:470, y:186, len:150, dir:[0,1]}, visitante2:{x:640, y:186, len:150, dir:[0,1]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:300,
        jogador:true, entrada:'portao_mandante'},
@@ -757,7 +758,8 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante:{x:1202, y:516, len:160, dir:[-1,0]}, visitante:{x:342, y:516, len:160, dir:[1,0]}},
+    faixas:{mandante1:{x:1204, y:516, len:160, dir:[-1,0]}, mandante2:{x:675, y:812, len:150, dir:[0,-1]}, mandante3:{x:875, y:211, len:150, dir:[0,1]},
+            visitante1:{x:339, y:516, len:160, dir:[1,0]}, visitante2:{x:385, y:235, len:150, dir:[0,1]}, visitante3:{x:350, y:275, len:150, dir:[1,0]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:490,
        jogador:true, entrada:'portao_mandante'},
@@ -795,7 +797,8 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante:{x:1246, y:380, len:160, dir:[-1,0], arco:[768,512]}, visitante:{x:386, y:590, len:150, dir:[1,0], arco:[768,512]}},
+    faixas:{mandante1:{x:1244, y:374, len:160, dir:[-0.96,0.27], arco:[768,512]}, mandante2:{x:515, y:140, len:150, dir:[0.56,0.83], arco:[768,512]},
+            visitante1:{x:360, y:815, len:140, dir:[0.8,-0.6], arco:[768,512]}, visitante2:{x:251, y:585, len:150, dir:[0.99,-0.14], arco:[768,512]}, visitante3:{x:423, y:706, len:140, dir:[0.87,-0.49], arco:[768,512]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1310, y:360,
        jogador:true, entrada:'portao_mandante'},

@@ -330,7 +330,7 @@ TO.relacoes = (function(){
            são comprados com o caixa delas, como o jogador faz */
         onibus:0, mma:0, bombas:10,
         /* a faixa da torcida (dono, 09/09/2026): uma, e as que ela tomou */
-        faixas:1, faixasTomadas:[],
+        faixas:1, faixasTomadas:[], bandeiras:1, bandeirasTomadas:[],
         /* subsedes em OUTRAS cidades (dono, 25/08/2026) */
         filiais:[],
         /* a fila de compras rodante de cada uma (dono, 26/08/2026) */

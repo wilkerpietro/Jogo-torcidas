@@ -229,29 +229,45 @@ TO.acoes = (function(){
     const PAT = TO.patrimonio, R = TO.relacoes;
     const nossoLado = res.nossoLado || 'mandante';
     const tomamos = fx.por === nossoLado;
+    const bandeira = fx.tipo === 'bandeira';
+    const V = bandeira ? PAT.BANDEIRA : PAT.FAIXA;
+    const rot = bandeira ? 'bandeira' : 'faixa';
+    const listaNossa = () => bandeira ? PAT.bandeirasDe(E) : PAT.faixasDe(E);
+    const contaIA = (t) => bandeira ? 'bandeiras' : 'faixas';
+    const tomadasIA = (t) => bandeira ? 'bandeirasTomadas' : 'faixasTomadas';
     fecho.linhas = fecho.linhas || [];
     if(tomamos && !fx.nossa){
       const t = PAT.faixasIA(E, fx.torcidaId);
-      if(t) t.faixas = Math.max(0, t.faixas - 1);
-      PAT.faixasDe(E).tomadas.push({de:fx.torcidaId, nome:fx.nome,
+      if(t) t[contaIA(t)] = Math.max(0, t[contaIA(t)] - 1);
+      listaNossa().tomadas.push({de:fx.torcidaId, nome:fx.nome,
         quando:{ano:E.data.ano, semana:E.data.semana}});
-      TO.estado.mexerIndicador(E, 'prestigio', PAT.FAIXA.ganho/5, `Tomamos a faixa da ${fx.nome}`);
-      R.mover(E, fx.torcidaId, 'prestigio', -PAT.FAIXA.perda/5);
-      fecho.linhas.push(`tomamos a faixa da ${fx.nome}`);
+      TO.estado.mexerIndicador(E, 'prestigio', V.ganho/5, `Tomamos a ${rot} da ${fx.nome}`);
+      R.mover(E, fx.torcidaId, 'prestigio', -V.perda/5);
+      fecho.linhas.push(`tomamos a ${rot} da ${fx.nome}`);
       fecho.faixa = 'tomamos';
       return 'tomamos';
     }
     if(!tomamos && fx.nossa){
-      const nossas = PAT.faixasDe(E).nossas;
+      const nossas = listaNossa().nossas;
       if(nossas.length) nossas.pop();
       const o = outroId ? TO.mundo.torcida(outroId) : null;
       const t = outroId ? PAT.faixasIA(E, outroId) : null;
-      if(t) t.faixasTomadas.push({de:E.torcida.id, nome:E.torcida.nome, ano:E.data.ano});
-      TO.estado.mexerIndicador(E, 'prestigio', -PAT.FAIXA.perda/5, `Perdemos a nossa faixa`+(o?` pra ${o.nome}`:''));
-      if(outroId) R.mover(E, outroId, 'prestigio', PAT.FAIXA.ganho/5);
-      fecho.linhas.push(`perdemos a nossa faixa${o ? ` pra ${o.nome}` : ''}`);
+      if(t) t[tomadasIA(t)].push({de:E.torcida.id, nome:E.torcida.nome, ano:E.data.ano});
+      TO.estado.mexerIndicador(E, 'prestigio', -V.perda/5, `Perdemos a nossa ${rot}`+(o?` pra ${o.nome}`:''));
+      if(outroId) R.mover(E, outroId, 'prestigio', V.ganho/5);
+      fecho.linhas.push(`perdemos a nossa ${rot}${o ? ` pra ${o.nome}` : ''}`);
       fecho.faixa = 'perdemos';
       return 'perdemos';
+    }
+    /* entre duas IAs (a aliada perdeu pro rival na arquibancada, ou o
+       contrário): muda de mão sem mexer no nosso caixa de prestígio */
+    if(!fx.nossa && fx.torcidaId && outroId && fx.torcidaId !== outroId){
+      const dona = PAT.faixasIA(E, fx.torcidaId);
+      const quem = tomamos ? null : PAT.faixasIA(E, outroId);
+      if(dona) dona[contaIA(dona)] = Math.max(0, dona[contaIA(dona)] - 1);
+      if(quem) quem[tomadasIA(quem)].push({de:fx.torcidaId, nome:fx.nome, ano:E.data.ano});
+      if(quem){ R.mover(E, fx.torcidaId, 'prestigio', -V.perda/5); R.mover(E, outroId, 'prestigio', V.ganho/5); }
+      return null;
     }
     return null;
   }

@@ -1484,7 +1484,7 @@
     const bondeDe = (p, lado)=>{
       const o = TO.mundo.torcida(p.id) || {nome:p.nome};
       const c = TO.mundo.coresDaTorcida(o);
-      return {lado, n:p.n, nossa: p.id === e.torcida.id,
+      return {lado, n:p.n, nossa: p.id === e.torcida.id, id:p.id,
               nome:o.nome || p.nome, cor:c.cor, cor2:c.cor2, cor3:c.cor3,
               sigla:TO.mundo.siglaTorcida(o),
               perfil: p.id === e.torcida.id ? null : perfilDe(p.id)};
@@ -4800,8 +4800,21 @@
           Math.round(TO.relacoes.nivel(e, id)))) +
         linhaD('Brigas no ano', `${p.v}V · ${p.d}D `+
           `<small class="fraco">saldo ${p.v - p.d >= 0 ? '+' : ''}${p.v - p.d}</small>`) +
-        (irmas.length ? linhaD('Torcida irmã', irmas.join(', ')) : '');
+        (irmas.length ? linhaD('Torcida irmã', irmas.join(', ')) : '') +
+        linhasDePano();
       return cx;
+    };
+    /* AS FAIXAS E BANDEIRAS NO PERFIL (dono, 09/09/2026): quantas a
+       torcida tem na sede e quais ela tomou dos outros */
+    const linhasDePano = ()=>{
+      const PAT = TO.patrimonio;
+      if(!PAT || !PAT.faixasDe) return '';
+      let fx, bd;
+      if(nossa){ const f = PAT.faixasDe(e); fx = {n:f.nossas.length, tomadas:f.tomadas}; bd = {n:f.bandeiras.nossas.length, tomadas:f.bandeiras.tomadas}; }
+      else { const t2 = PAT.faixasIA(e, id) || {}; fx = {n:t2.faixas||0, tomadas:t2.faixasTomadas||[]}; bd = {n:t2.bandeiras||0, tomadas:t2.bandeirasTomadas||[]}; }
+      const lista = l => l.length ? ` <small class="fraco">(${l.map(x=>linkTorcida(x.de, x.nome)).join(', ')})</small>` : '';
+      return linhaD('Faixas', `${fx.n} na sede · ${fx.tomadas.length} ${fx.tomadas.length===1?'tomada':'tomadas'}${lista(fx.tomadas)}`) +
+             linhaD('Bandeiras', `${bd.n} na sede · ${bd.tomadas.length} ${bd.tomadas.length===1?'tomada':'tomadas'}${lista(bd.tomadas)}`);
     };
 
     const abaPatrimonio = ()=>{
@@ -5316,6 +5329,25 @@
       tomadas.appendChild(cx);
     }
     bl.appendChild(tomadas);
+    /* as bandeiras (dono, 09/09/2026): mesma lógica, quadradas */
+    const bd = PAT.bandeirasDe(e);
+    const imgBand = (o, cls, title) => {
+      const im = el('img',{class:cls, title});
+      im.src = PAT.imagemDaBandeira(o, url => { im.src = url; }) || '';
+      return im;
+    };
+    bl.appendChild(el('div',{class:'faixas-rot', texto:`Bandeiras · ${bd.nossas.length} ${bd.nossas.length===1?'nossa':'nossas'} · ${bd.tomadas.length} ${bd.tomadas.length===1?'tomada':'tomadas'}`}));
+    const bands = el('div',{class:'faixas-lista bandeiras'});
+    if(!bd.nossas.length && !bd.tomadas.length) bands.appendChild(el('div',{class:'fraco', texto:'Nenhuma. Compre uma acima: sai no lugar da faixa no bar e na concentração, e junto dela no estádio.'}));
+    for(const f of bd.nossas) bands.appendChild(imgBand(e.torcida, 'bandeira-img', `Bandeira da ${e.torcida.nome} · desde ${f.desde}`));
+    for(const f of bd.tomadas){
+      const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
+      const cx = el('div',{class:'faixa-tomada'});
+      cx.appendChild(imgBand(o, 'bandeira-img virada', `Bandeira da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
+      cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}`}));
+      bands.appendChild(cx);
+    }
+    bl.appendChild(bands);
     c3.corpo.appendChild(bl);
     pg.appendChild(c3);
   }

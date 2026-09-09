@@ -290,6 +290,10 @@ TO.patrimonio = (function(){
     lista.push({id:'faixa', rot:'Faixa nova',
       nota:`${faixasDe(E).nossas.length} na sede · é a que a torcida expõe quando é atacada`,
       custo:FAIXA.custo, trava:trava(FAIXA.custo)});
+    /* a bandeira (dono, 09/09/2026): R$ 2.000 */
+    lista.push({id:'bandeira', rot:'Bandeira nova',
+      nota:`${bandeirasDe(E).nossas.length} na sede · quadrada, com o escudo; sai no lugar da faixa no bar e na concentração, e junto dela no estádio`,
+      custo:BANDEIRA.custo, trava:trava(BANDEIRA.custo)});
 
     if(SEDE[n+1]) lista.push({
       id:'sede', rot:`Ampliar a sede para o nível ${n+1}`,
@@ -499,11 +503,18 @@ TO.patrimonio = (function(){
      nome da torcida; `TO.dados.faixas[id]` (data-URI) substitui.
      ======================================================= */
   const FAIXA = {custo:5000, ganho:5, perda:10};
+  /* A BANDEIRA (pedido do dono, 09/09/2026): quadrada, fundo na cor
+     primária, bordas na secundária e na terciária, o escudo da torcida
+     no meio. R$ 2.000. Um membro só recolhe. Tomada como a faixa, mas
+     vale menos: −5 pra quem perde, +2 pra quem toma. */
+  const BANDEIRA = {custo:2000, ganho:2, perda:5};
   function faixasDe(E){
     const p = F().patrimonio(E);
     if(!p.faixas) p.faixas = {nossas:[{n:1, desde:(E.data||{}).ano||2026}], tomadas:[]};
+    if(!p.faixas.bandeiras) p.faixas.bandeiras = {nossas:[{n:1, desde:(E.data||{}).ano||2026}], tomadas:[]};
     return p.faixas;
   }
+  const bandeirasDe = E => faixasDe(E).bandeiras;
   /* A CARA DA FAIXA (régua do dono, 09/09/2026): fundo na cor
      PRIMÁRIA da torcida, texto na SECUNDÁRIA, o escudo da torcida à
      esquerda do nome e o escudo do clube à direita. Os escudos são
@@ -511,7 +522,7 @@ TO.patrimonio = (function(){
      redesenhada no MESMO canvas quando eles carregam — quem guardou o
      canvas (a cena) vê a versão nova sozinho; quem precisa de URL
      (o Patrimônio) recebe um aviso pra trocar o `src`. */
-  const FAIXA_W = 400, FAIXA_H = 100;
+  const FAIXA_W = 400, FAIXA_H = 100, BAND_W = 200;
   const telasFaixa = new Map();        // chave → canvas (com .versao)
   const escudoSrc = (tipo, id) => {
     const m = (TO.dados && TO.dados.escudos || {})[tipo === 'c' ? 'clubes' : 'torcidas'];
@@ -540,30 +551,57 @@ TO.patrimonio = (function(){
     x.fillStyle = 'rgba(0,0,0,.35)'; x.fillText(nome, (esq+dir)/2 + 1.5, FAIXA_H/2 + 1.5);
     x.fillStyle = c2; x.fillText(nome, (esq+dir)/2, FAIXA_H/2);
   }
-  function telaDaFaixa(o){
+  /* a bandeira: quadrada, fundo primário, borda de fora secundária, de
+     dentro terciária (sem terciária, a secundária escurecida) e o
+     escudo da torcida no meio; sem escudo, a sigla */
+  function pintarBandeira(c, o, escudos){
+    const x = c.getContext('2d');
+    const cores = (TO.mundo && TO.mundo.coresDaTorcida) ? TO.mundo.coresDaTorcida(o) : {};
+    const c1 = cores.cor || '#555', c2 = cores.cor2 || (c1.toLowerCase() === '#ffffff' ? '#141414' : '#f4f4f4');
+    const c3 = cores.cor3 || 'rgba(0,0,0,.35)';
+    const W = BAND_W;
+    x.clearRect(0, 0, W, W);
+    x.fillStyle = c2; x.fillRect(0, 0, W, W);
+    x.fillStyle = c3; x.fillRect(12, 12, W-24, W-24);
+    x.fillStyle = c1; x.fillRect(20, 20, W-40, W-40);
+    const esc = escudos && escudos.t;
+    if(esc){
+      const E = 112; x.drawImage(esc, (W-E)/2, (W-E)/2, E, E);
+    } else {
+      const sigla = (TO.mundo && TO.mundo.siglaTorcida) ? TO.mundo.siglaTorcida(o) : '';
+      x.fillStyle = c2; x.font = `700 64px "Barlow Condensed", system-ui, sans-serif`;
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillText(String(sigla || (o.nome||'').slice(0,3)).toUpperCase(), W/2, W/2);
+    }
+  }
+  function telaDaFaixa(o, tipo){
     if(!o) return null;
-    const chave = o.id || o.nome;
+    tipo = tipo || 'faixa';
+    const chave = `${tipo}|${o.id || o.nome}`;
     if(telasFaixa.has(chave)) return telasFaixa.get(chave);
     if(typeof document === 'undefined') return null;
-    const c = document.createElement('canvas'); c.width = FAIXA_W; c.height = FAIXA_H;
+    const bandeira = tipo === 'bandeira';
+    const c = document.createElement('canvas');
+    c.width = bandeira ? BAND_W : FAIXA_W; c.height = bandeira ? BAND_W : FAIXA_H;
     c.versao = 1; c.avisos = [];
-    const pronta = TO.dados && TO.dados.faixas && TO.dados.faixas[o.id];
+    const pinta = (esc) => bandeira ? pintarBandeira(c, o, esc) : pintarFaixa(c, o, esc);
+    const dado = TO.dados && TO.dados[bandeira ? 'bandeiras' : 'faixas'];
+    const pronta = dado && dado[o.id];
     if(pronta){
       /* arte do dono, quando chegar: entra inteira no lugar */
       const im = new Image();
-      im.onload = ()=>{ const x = c.getContext('2d'); x.clearRect(0,0,FAIXA_W,FAIXA_H);
-        x.drawImage(im, 0, 0, FAIXA_W, FAIXA_H); c.versao++; avisar(c); };
+      im.onload = ()=>{ const x = c.getContext('2d'); x.clearRect(0,0,c.width,c.height);
+        x.drawImage(im, 0, 0, c.width, c.height); c.versao++; avisar(c); };
       im.src = pronta;
     }
-    pintarFaixa(c, o, null);
+    pinta(null);
     const escudos = {};
-    let faltam = 0;
-    for(const [tipo, id] of [['t', o.id], ['c', o.clubeId]]){
-      const src = escudoSrc(tipo, id);
+    for(const [t, id] of [['t', o.id], ['c', o.clubeId]]){
+      if(bandeira && t === 'c') continue;
+      const src = escudoSrc(t, id);
       if(!src || typeof Image === 'undefined') continue;
-      faltam++;
       const im = new Image();
-      im.onload = ()=>{ escudos[tipo] = im; if(!pronta){ pintarFaixa(c, o, escudos); c.versao++; avisar(c); } };
+      im.onload = ()=>{ escudos[t] = im; if(!pronta){ pinta(escudos); c.versao++; avisar(c); } };
       im.onerror = ()=>{};
       im.src = src;
     }
@@ -576,20 +614,23 @@ TO.patrimonio = (function(){
   }
   /* a faixa como URL (Patrimônio). `aoAtualizar(url)` é chamado quando
      os escudos chegarem depois. */
-  function imagemDaFaixa(o, aoAtualizar){
-    const c = telaDaFaixa(o);
+  function imagemDaFaixa(o, aoAtualizar, tipo){
+    const c = telaDaFaixa(o, tipo);
     if(!c) return null;
     if(aoAtualizar) c.avisos.push(aoAtualizar);
     try{ return c.toDataURL('image/png'); }catch(_){ return null; }
   }
+  const imagemDaBandeira = (o, aoAtualizar) => imagemDaFaixa(o, aoAtualizar, 'bandeira');
   /* a mesma faixa como canvas, pra cena desenhar com drawImage */
-  function imagemDaFaixaObj(o){ return telaDaFaixa(o); }
+  function imagemDaFaixaObj(o, tipo){ return telaDaFaixa(o, tipo); }
   /* as faixas das IAs vivem na ficha viva do mundo */
   function faixasIA(E, id){
     const t = TO.relacoes && TO.relacoes.mundo(E)[id];
     if(!t) return null;
     if(t.faixas == null) t.faixas = 1;
     if(!t.faixasTomadas) t.faixasTomadas = [];
+    if(t.bandeiras == null) t.bandeiras = 1;
+    if(!t.bandeirasTomadas) t.bandeirasTomadas = [];
     return t;
   }
 
@@ -599,6 +640,12 @@ TO.patrimonio = (function(){
       faixasDe(E).nossas.push({n: faixasDe(E).nossas.length + 1, desde:(E.data||{}).ano||2026});
       TO.estado.lancar(E, 'Faixa nova', -FAIXA.custo);
       return {ok:true, msg:'Faixa nova na sede.'};
+    }
+    if(id === 'bandeira'){
+      if(E.dinheiro < BANDEIRA.custo) return {ok:false, msg:'Não dá: falta caixa.'};
+      bandeirasDe(E).nossas.push({n: bandeirasDe(E).nossas.length + 1, desde:(E.data||{}).ano||2026});
+      TO.estado.lancar(E, 'Bandeira nova', -BANDEIRA.custo);
+      return {ok:true, msg:'Bandeira nova na sede.'};
     }
     const p = F().patrimonio(E);
     let o = opcoes(E).find(x=>x.id===id);
@@ -749,7 +796,7 @@ TO.patrimonio = (function(){
     return {ok:true, compradas:qtd, custo};
   }
 
-  return {FAIXA, faixasDe, imagemDaFaixa, imagemDaFaixaObj, faixasIA,
+  return {FAIXA, BANDEIRA, faixasDe, bandeirasDe, imagemDaFaixa, imagemDaBandeira, imagemDaFaixaObj, faixasIA,
           SEDE, TETO, PONTO, FABRICA, FILIAL,
           filiaisDe, temFilialEm, cidadesCandidatas,
           linhas, opcoes, comprar,

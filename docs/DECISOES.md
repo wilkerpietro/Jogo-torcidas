@@ -4596,6 +4596,47 @@ alambrado ou na respectiva parede."
   oeste (nós); estádio de 10: lateral leste (mandante) e atrás do gol
   norte (visitante); de 20: as duas laterais; de 40: as duas laterais. Sem ponto marcado, vale o lugar antigo, no spawn.
 
+## Bandeiras, faixa em todo setor e o pano que cede (pedido do dono, 09/09/2026)
+
+**Pedido.** "Todas as torcidas, não importa o escalão, também estendem
+faixa nas cenas de briga na arquibancada. O membro que possui a faixa
+vai ficar na parte de trás da briga sempre. Adicione também bandeiras
+no formato quadrado, com bordas com as cores secundária e terciária, e
+o fundo com cor primária; a imagem é a logo da torcida; custa 2.000;
+outro membro vai recolher. Concentração: uma bandeira (50%) ou uma
+faixa (50%); bar: bandeira 70% ou faixa 30%; estádio estende os dois
+lado a lado. A faixa estendida tem uma deformidade pra não ser
+extremamente reta. É possível consultar quais faixas cada torcida tem
+e quantas ganhou, no perfil de cada torcida."
+
+**Como ficou.**
+- No estádio cada SETOR estende: `J.setores` guarda que bonde sentou em
+  que spawn, e cada bonde com torcida conhecida expõe a faixa e a
+  bandeira dele, na âncora do próprio setor (`faixas:{mandante1, …}` em
+  `dados/cenas.js`, medidas na malha de pisada). O setor atrás do gol
+  sul fica de cabeça pra baixo, porque o pano pende pro campo e a foto
+  é de cima — é o que a régua "virada pro campo" manda.
+- O portador (faixa ou bandeira) vai pro próprio spawn e fica lá
+  (`faixa-atras`); não caça ninguém, só bate em quem colar nele.
+- A bandeira: canvas 200×200, fundo primário, borda de fora secundária,
+  de dentro terciária (sem terciária, sombra), escudo da torcida no
+  meio (sem escudo, a sigla). R$ 2.000 na loja; toda torcida nasce com
+  uma; um membro só recolhe; tomada como a faixa, valendo −5/+2 de
+  prestígio (faixa: −10/+5). Fica ao lado da faixa na mesma parede, do
+  lado que tiver chão. O Patrimônio mostra as nossas e as tomadas (de
+  cabeça pra baixo).
+- O sorteio por cena (`CHANCE_BANDEIRA`): bar 70% bandeira, praça
+  (concentração) 50%; sem a peça sorteada, sai a outra; estádio, as
+  duas. Testado em 12 aberturas: bar 7×5, praça 6×6.
+- O pano cede: a faixa (reta ou curva) é desenhada em 28 fatias com o
+  topo preso e a barra de baixo caindo mais no meio (16% da altura),
+  com uma onda leve semeada por peça; a bandeira em 10 fatias.
+- Perfil da torcida (aba Visão): "Faixas — N na sede · K tomadas (de
+  quem)" e a mesma linha pras bandeiras, pra nós e pras IAs
+  (`faixasTomadas`, `bandeirasTomadas`).
+- Entre duas IAs na arquibancada (aliada perde pro rival), a peça muda
+  de mão e o prestígio delas se ajusta, sem mexer no nosso.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
