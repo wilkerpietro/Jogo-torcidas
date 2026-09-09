@@ -3498,13 +3498,10 @@ TO.diaJogo.combate = (function(){
       c.fillText(F.tipo === 'bandeira' ? '' : String(F.nome||'').toUpperCase().slice(0,18), 0, 0.5);
     }
   }
-  const caidaDoPano = (F, h) => t => {
-    /* barriga no meio (o pano cede entre as duas pontas presas) e uma
-       onda leve, diferente em cada faixa pela semente */
-    const barriga = h*0.16*(1 - Math.pow(2*t-1, 2));
-    const onda = Math.sin(t*Math.PI*3 + (F.semente||0))*h*0.05;
-    return Math.max(0, barriga + onda);
-  };
+  /* SEM DEFORMAÇÃO (ordem do dono, 09/09/2026): a barriga e a ondinha
+     do pano foram testadas e reprovadas — a faixa fica lisa; o que dá
+     naturalidade é acompanhar a curva do alambrado */
+  const caidaDoPano = () => () => 0;
   function desenharFaixa(c, J, F){
     if(!F || F.estado==='tomada') return;
     const bandeira = F.tipo === 'bandeira';
@@ -3573,12 +3570,12 @@ TO.diaJogo.combate = (function(){
       }
       const w = F.w, h = F.h;
       c.save(); c.translate(x, y); c.rotate(ang);
-      if(d){ c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-w/2-2, h/2 + h*0.12, w+4, 4); }
+      if(d){ c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-w/2-2, h/2, w+4, 4); }
       c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3);
       fatiasDoPano(c, F, w, h, N, caidaDoPano(F, h));
       if(F.estado==='recolhendo'){
         c.strokeStyle=`rgba(255,211,90,${0.5+0.4*Math.sin(J.t*8)})`; c.lineWidth=2;
-        c.strokeRect(-w/2-3, -h/2-3, w+6, h+6+h*0.16);
+        c.strokeRect(-w/2-3, -h/2-3, w+6, h+6);
       }
       c.restore();
     } else if(F.estado==='na-mao' && F.portador){

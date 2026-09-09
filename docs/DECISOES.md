@@ -4589,7 +4589,12 @@ alambrado ou na respectiva parede."
 - Curvada no alambrado (dono, 09/09/2026): a âncora pode trazer `arco`,
   o centro da curva da grade; a faixa é então desenhada em 28 fatias ao
   longo do arco que passa pela grade, com o topo pra fora e o corpo pro
-  campo. Vale nas duas laterais do estádio de 40 mil, que é oval.
+  campo. Vale em todos os setores do estádio de 40 mil (oval), nos dois
+  setores do canto noroeste do de 20 mil e no setor leste do de 10 mil,
+  cujo alambrado faz curva no alto.
+- SEM DEFORMAÇÃO (ordem do dono, 09/09/2026): a barriga e a ondinha de
+  pano foram testadas e reprovadas ("está feia"). A faixa é lisa; o que
+  dá naturalidade é a curva do alambrado.
 - Espremida: na cena a faixa tem proporção 6:1 (a imagem em si continua
   4:1 no Patrimônio), pra caber na linha do alambrado sem invadir o
   campo. Bar: parede leste do salão; praça: fachada leste (rival) e
@@ -4636,6 +4641,41 @@ e quantas ganhou, no perfil de cada torcida."
   (`faixasTomadas`, `bandeirasTomadas`).
 - Entre duas IAs na arquibancada (aliada perde pro rival), a peça muda
   de mão e o prestígio delas se ajusta, sem mexer no nosso.
+
+## Bandeiras, faixa por setor e portador na retaguarda (pedido do dono, 09/09/2026)
+
+**Pedido.** "Todas as torcidas, não importa o escalão, também estendem
+faixa nas cenas de briga na arquibancada. O membro que possui a faixa
+vai ficar na parte de trás da briga sempre. Adicione bandeiras no
+formato quadrado, com bordas com as cores secundária e terciária, e o
+fundo com cor primária; a imagem é a logo da torcida; custa 2.000,00;
+outro membro vai recolher. Concentração: uma bandeira (50%) ou uma faixa
+(50%); bar: bandeira 70% ou faixa 30%; estádio estende os dois lado a
+lado. É possível consultar quais faixas cada torcida tem e quantas
+ganhou, no perfil de cada torcida."
+
+**Como ficou.**
+- No estádio cada SETOR expõe: `J.setores` guarda qual bonde sentou em
+  qual spawn, e cada bonde com torcida conhecida estende faixa e
+  bandeira na âncora do próprio setor (`faixas[<spawn>]` em
+  `dados/cenas.js`, medidas na malha de pisada). O bonde espalhado em
+  dois setores estende uma vez só. Quem recolhe é gente do mesmo setor.
+- A bandeira (`TO.patrimonio.BANDEIRA`): quadrada 200×200, fundo
+  primário, borda de fora secundária, de dentro terciária, escudo da
+  torcida no meio (sem escudo, a sigla). R$ 2.000 na loja; toda torcida
+  nasce com uma (`bandeiras:1` nas IAs). UM membro recolhe. Na cena é um
+  quadrado de 1,8 altura de faixa, ao lado da faixa na mesma parede, do
+  lado que tiver chão. Tomada como a faixa, valendo menos: −5 pra quem
+  perde, +2 pra quem toma (régua de 100) — valores meus, não do pedido.
+- O sorteio: bar 70% bandeira / 30% faixa; praça 50/50; estádio os dois.
+  Sem a peça sorteada, sai a outra; sem nenhuma, nada.
+- O portador (`d.comFaixa`) vai pro próprio spawn — o fundo do setor ou
+  do salão — e fica ali; não caça ninguém, só bate em quem colar.
+- Entre duas IAs (aliada perdeu pro rival na arquibancada) a peça muda
+  de mão e o prestígio delas move; o nosso caixa não entra.
+- Perfil da torcida, aba Visão: "Faixas: N na sede · K tomadas (de
+  quem)" e o mesmo pra bandeiras. Patrimônio: fileira de bandeiras,
+  nossas e tomadas (de cabeça pra baixo).
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

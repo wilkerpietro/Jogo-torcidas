@@ -723,7 +723,7 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante1:{x:1236, y:300, len:150, dir:[-1,0]}, mandante2:{x:1000, y:853, len:150, dir:[0,-1]}, mandante3:{x:523, y:853, len:150, dir:[0,-1]},
+    faixas:{mandante1:{x:1236, y:300, len:150, dir:[-1,0], arco:[1050,330]}, mandante2:{x:1000, y:853, len:150, dir:[0,-1]}, mandante3:{x:523, y:853, len:150, dir:[0,-1]},
             visitante1:{x:470, y:186, len:150, dir:[0,1]}, visitante2:{x:640, y:186, len:150, dir:[0,1]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:300,
@@ -759,7 +759,7 @@ TO.dados.cenas = (function(){
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
     faixas:{mandante1:{x:1204, y:516, len:160, dir:[-1,0]}, mandante2:{x:675, y:812, len:150, dir:[0,-1]}, mandante3:{x:875, y:211, len:150, dir:[0,1]},
-            visitante1:{x:339, y:516, len:160, dir:[1,0]}, visitante2:{x:385, y:235, len:150, dir:[0,1]}, visitante3:{x:350, y:275, len:150, dir:[1,0]}},
+            visitante1:{x:339, y:516, len:160, dir:[1,0]}, visitante2:{x:385, y:235, len:150, dir:[0,1], arco:[520,360]}, visitante3:{x:350, y:275, len:150, dir:[1,0], arco:[520,360]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:490,
        jogador:true, entrada:'portao_mandante'},
