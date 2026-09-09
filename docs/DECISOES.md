@@ -4682,6 +4682,22 @@ ganhou, no perfil de cada torcida."
   Sem a peça sorteada, sai a outra; sem nenhuma, nada.
 - O portador (`d.comFaixa`) vai pro próprio spawn — o fundo do setor ou
   do salão — e fica ali; não caça ninguém, só bate em quem colar.
+- SÓ PERDE A PEÇA QUEM CAI (correção do dono, 09/09/2026, "estou
+  tomando a faixa e bandeira de todas as torcidas mesmo sem ferir"):
+  `vivo` é falso também pra quem SAIU pelo túnel, e a regra de fim de
+  cena tomava toda peça ainda na parede quando a torcida dona tinha
+  debandado inteira — e a peça na mão quando o portador entrava no
+  túnel. Agora a peça na mão só é tomada se o portador cai ferido ou
+  preso, e a peça na parede só se ninguém da dona está de pé (quem
+  fugiu vivo levou junto).
+- O PORTADOR VAI JUNTO, MAS ATRÁS (correção do dono, 09/09/2026): não
+  fica no spawn — acompanha a aglomeração do PRÓPRIO bonde (quem tem
+  inimigo a menos de 160 px; sem briga aberta, o grupo) e para 70 px
+  atrás dela, do lado oposto ao centro dos inimigos, pelo campo de
+  fluxo da cena (alvo quantizado em células de 64 px, empurrado pra
+  célula pisável). Não caça, só bate em quem colar, e não vira
+  socorrista. Medido no estádio: portadores a 30–97 px do bonde e
+  sempre mais longe do inimigo que o bonde.
 - QUEM SAI DA EQUIPE LARGA A FAIXA (correção do dono, 09/09/2026, "o
   boneco fica insistentemente tentando tirar o material"): o recolhedor
   que debandava, caía ou sumia era tirado da equipe mas continuava

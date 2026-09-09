@@ -1461,17 +1461,49 @@ TO.diaJogo.combate = (function(){
         }
         ax=F.x; ay=F.y;
       } else if(d.comFaixa && !d.fugindo){
-        /* QUEM CARREGA A FAIXA FICA ATRÁS (dono, 09/09/2026): vai pro
-           próprio spawn — o fundo do setor / do salão — e fica lá, longe
-           da linha de frente, pra faixa não ser tomada */
-        const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
+        /* QUEM CARREGA A FAIXA VAI JUNTO, MAS ATRÁS (correção do dono,
+           09/09/2026): acompanha a aglomeração dos seus e fica no fundo
+           dela, do lado oposto ao inimigo, sem agredir — antes ficava
+           plantado no spawn, longe da briga */
+        /* a aglomeração é quem está TROCANDO: os nossos com inimigo a
+           menos de 160 px; sem briga aberta, o grupo inteiro */
+        /* os SEUS: o próprio bonde (mesmo setor) antes do lado inteiro —
+           no estádio o bonde da torcida dele pode estar trocando num
+           setor e outro bonde aliado noutro, atrás de grade */
+        const doLado = J.discos.filter(x=>x.lado===d.lado && x!==d && x.vivo && !x.comFaixa && !x.fugindo);
+        const doBonde = d.spawn ? doLado.filter(x=>x.spawn===d.spawn) : [];
+        const vivos = doBonde.length ? doBonde : doLado;
+        const brigando = vivos.filter(x=>(x.inimigoPerto||999) < 160);
+        const meus = brigando.length ? brigando : vivos;
+        const eles = J.discos.filter(x=>x.lado!==d.lado && x.vivo);
+        let tx, ty;
+        if(meus.length){
+          const cm = meus.reduce((a,x)=>({x:a.x+x.x, y:a.y+x.y}), {x:0,y:0});
+          cm.x /= meus.length; cm.y /= meus.length;
+          if(eles.length){
+            const ce = eles.reduce((a,x)=>({x:a.x+x.x, y:a.y+x.y}), {x:0,y:0});
+            ce.x /= eles.length; ce.y /= eles.length;
+            let bx = cm.x - ce.x, by = cm.y - ce.y; const n = Math.hypot(bx,by) || 1; bx/=n; by/=n;
+            tx = cm.x + bx*70; ty = cm.y + by*70;
+          } else { tx = cm.x; ty = cm.y; }
+        } else {
+          const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0]; tx = s.x; ty = s.y;
+        }
         ramo='faixa-atras'; d._olhaPara=null;
-        if(U.dist(d.x,d.y,s.x,s.y) < 40){
+        if(U.dist(d.x,d.y,tx,ty) < 34){
           d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
           d._ramo='faixa-atras'; d._alvo=null;
           continue;
         }
-        campo = campoDoSpawn(s); usarCampo=true;
+        /* pelo campo de fluxo, que contorna grade e escada — o alvo é
+           quantizado em células de 64 px pra reaproveitar os campos */
+        let qx = Math.round(tx/64)*64, qy = Math.round(ty/64)*64, achou = A.caminhavel(qx, qy);
+        if(!achou) for(const [ox,oy] of [[32,0],[-32,0],[0,32],[0,-32],[32,32],[-32,-32],[32,-32],[-32,32],[64,0],[-64,0],[0,64],[0,-64]]){
+          if(A.caminhavel(qx+ox, qy+oy)){ qx+=ox; qy+=oy; achou=true; break; } }
+        if(achou){
+          campo = A.campoDoPonto('faixa:'+qx+':'+qy, qx, qy, J.grades, J.versaoGrades);
+          usarCampo = true;
+        } else { ax=tx; ay=ty; }
       } else if(d.voltando){
         /* acabou e a casa é deles: volta pro lugar de onde saiu */
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
@@ -2345,6 +2377,9 @@ TO.diaJogo.combate = (function(){
       let melhor=null, md=1e9;
       for(const d of porPerto(J,c.x,c.y,110)){
         if(d===c || d.lado!==c.lado || !d.vivo || d.lider || d.fugindo || d.derrubado>0 || d.socorrendo || d.fugaBomba || d.entrando || d.ataque) continue;
+        /* quem carrega faixa/bandeira ou está tirando não socorre: ia
+           parar na frente da briga com a peça na mão */
+        if(d.comFaixa || d.faixaIndo) continue;
         if(d.inimigoPerto<45) continue;
         const q=U.dist(d.x,d.y,c.x,c.y); if(q<md){ md=q; melhor=d; }
       }
@@ -3459,7 +3494,9 @@ TO.diaJogo.combate = (function(){
       const p = F.portador;
       if(!p) { F.estado='exposta'; return; }
       F.x = p.x; F.y = p.y;
-      if(!p.vivo){
+      /* `vivo` é falso também pra quem SAIU pelo túnel — e quem saiu
+         levou a peça. Só entrega quem cai ferido ou preso. */
+      if(p.caido || p.preso){
         p.comFaixa=false; F.estado='tomada'; F.tomadaPor=inimigo; F.tTomada=J.t;
         logar(J, `Tomaram a ${rotDe(F)} da ${F.nome}!`, 'r');
         aviso(J, F.tipo === 'bandeira' ? 'Bandeira tomada!' : 'Faixa tomada!', '#ffd35a');
@@ -3472,9 +3509,13 @@ TO.diaJogo.combate = (function(){
     const inimigo = OUTRO_LADO[F.lado];
     let tomada = F.estado==='tomada', por = F.tomadaPor;
     if(!tomada && F.estado!=='na-mao'){
-      const donaDePe = J.discos.some(d=>d.lado===F.lado && (!F.spawn || d.spawn===F.spawn) && d.vivo && !d.sumiu);
+      /* SÓ PERDE A PEÇA QUEM CAI (correção do dono, 09/09/2026): a
+         faixa ainda na parede só é tomada se a torcida dona não tem
+         NINGUÉM de pé — quem fugiu vivo pelo túnel levou a faixa
+         junto; antes, o time que debandava inteiro entregava todas */
+      const donaViva = J.discos.some(d=>d.lado===F.lado && (!F.spawn || d.spawn===F.spawn) && !d.caido && !d.preso);
       const inimigoVenceu = inimigo==='mandante' ? venceuMandante : !venceuMandante;
-      if(!donaDePe && inimigoVenceu){ tomada = true; por = inimigo; }
+      if(!donaViva && inimigoVenceu){ tomada = true; por = inimigo; }
     }
     return {tomada, por, tipo:F.tipo || 'faixa', lado:F.lado, torcidaId:F.torcidaId, nome:F.nome, nossa:F.nossa, estado:F.estado};
   }
