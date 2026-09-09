@@ -4430,6 +4430,18 @@ da MULTIDÃO encolhe e o custo cai junto (`cfg.movimentoLeve`, em
 Medido no celular, 52 bonecos parados antes da briga, só o JavaScript da
 animação (a placa fora da conta): 3,5 ms → 1,1 ms por quadro.
 
+## O ticker não recomeça do zero (correção do dono, 09/09/2026)
+
+Depois do jogo o feed solta várias mensagens em seguida e a tela repinta;
+a cada uma a fita era refeita e a animação voltava pro início — o jogador
+só via a cabeça da fita (as manchetes novas) e nunca chegava às
+anteriores. Agora a fração andada é lida da animação antes da troca e
+devolvida depois; quando o feed remonta a fita inteira, a fração e o
+instante ficam guardados (`tickerMemoria`) e a nova continua de onde a
+anterior estava, contando o tempo que passou. Medido: 0,138 → 0,144 da
+volta depois de uma mensagem nova, com a manchete nova dentro e as
+anteriores mantidas.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

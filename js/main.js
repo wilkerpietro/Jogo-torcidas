@@ -838,7 +838,7 @@
   const TICKER_DIAS = 21, TICKER_MAX = 10, TICKER_PX_S = 42;
   const tickerManchetes = new Map();
   const tickerEsc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  let tickerAss = null;
+  let tickerAss = null, tickerMemoria = null;
   function mancheteDe(e, m){
     if(tickerManchetes.has(m.id)) return tickerManchetes.get(m.id);
     let r = null;
@@ -921,14 +921,32 @@
       `<a class="ticker-item${it.prio===0?' nossa':''}" data-aba="${it.aba}">${tickerEsc(it.texto)}</a>`).join('');
     /* a fita é duas metades iguais e anda meia volta: emenda sem salto.
        Cada metade precisa cobrir a caixa, senão aparece o vão */
-    fita.style.animation = 'none';
+    /* A FITA NÃO RECOMEÇA DO ZERO (correção do dono, 09/09/2026): depois
+       do jogo o feed solta várias mensagens em seguida, e a cada uma a
+       fita era refeita e a animação voltava pro início — o jogador só
+       via a cabeça (as manchetes novas) e nunca chegava às anteriores.
+       Agora a fração andada é guardada e devolvida depois da troca. */
+    const anim = fita.getAnimations ? fita.getAnimations()[0] : null;
+    let fracao = 0;
+    if(anim && anim.effect && anim.currentTime > 200){
+      const durAntes = anim.effect.getTiming().duration || 1;
+      fracao = (anim.currentTime / durAntes) % 1;
+    } else if(tickerMemoria){
+      /* a fita foi remontada (o feed repintou): continua de onde a
+         anterior estava, contando o tempo que passou */
+      fracao = (tickerMemoria.fracao + (performance.now() - tickerMemoria.t)/1000/tickerMemoria.dur) % 1;
+    }
     fita.innerHTML = copia;
     const umaVez = Math.max(1, fita.scrollWidth);
     const n = Math.max(1, Math.ceil(larg / umaVez));
     fita.innerHTML = copia.repeat(n * 2);
     const dur = Math.max(12, (fita.scrollWidth / 2) / TICKER_PX_S);
-    fita.style.animation = '';
     fita.style.animationDuration = `${dur.toFixed(1)}s`;
+    const anim2 = fita.getAnimations ? fita.getAnimations()[0] : null;
+    if(anim2 && fracao > 0){
+      try{ anim2.currentTime = fracao * dur * 1000; }catch(_){}
+    }
+    tickerMemoria = {fracao, dur, t: performance.now()};
   }
 
   /* o estado visível de uma mensagem: enquanto ele não muda, o nó dela
