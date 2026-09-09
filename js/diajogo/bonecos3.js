@@ -1710,7 +1710,17 @@ TO.diaJogo.bonecos3 = (function(){
     const corpo = modeloGLB ? construirCorpoGLB(f, pm) : construirCorpo(f, pm);
     f.pose = poseNeutra();
     scene.add(corpo.raiz);
-    fg = {corpo, f, pm};
+    fg = {corpo, f, pm, mudou:true};
+    /* MOVIMENTO LEVE (pedido do dono, 09/09/2026): o esqueleto só recalcula
+       e sobe as matrizes dos ossos pra placa quando o boneco mudou de pose
+       ou de lugar neste quadro. Quem está parado na retaguarda, quieto,
+       não custa nada. */
+    const skel = corpo.junto && corpo.junto.skeleton;
+    if(skel && !skel._leve){
+      skel._leve = true;
+      const orig = THREE.Skeleton.prototype.update;
+      skel.update = function(){ if(!cfg.movimentoLeve || fg.mudou !== false) orig.call(this); };
+    }
     figuras.set(d, fg);
     return fg;
   }
@@ -1731,6 +1741,29 @@ TO.diaJogo.bonecos3 = (function(){
   function animarDisco(d, i, J, dt){
     const fg = figuraDe(d, i, false), f = fg.f, c = fg.corpo;
     const t = J.t;
+    /* MOVIMENTO LEVE (pedido do dono, 09/09/2026): a gama de movimento
+       da multidão encolhe. Quem não é o líder e não está no meio de
+       nada — não caiu, não bate, não apanha, não corre — só tem a pose
+       recalculada a cada três quadros (as vinte poses por segundo que
+       o olho não separa das sessenta), sem balanço de repouso, sem
+       provocação, sem torcida na retaguarda: para quieto. Nos quadros
+       pulados só a posição do disco é copiada; se nem ela mudou, o
+       esqueleto não sobe pra placa (ver figuraDe). O líder e quem está
+       brigando continuam em sessenta, com tudo. */
+    const leve = cfg.movimentoLeve && !d.lider;
+    const agitado = !d.vivo || d.derrubado > 0 || !!d.ataque || d.golpe > 0 || d.apanhou > 0 ||
+      d.atordoado > 0 || !!d.arremesso || !!d.segurando || !!d.seguradoPor || d.esquivou > 0 ||
+      d.tremor >= 4.5 || !!f.impacto || !!f.queda || !!d.fugindo || !!d.fugaBomba || (d.chamou > t - 1.3);
+    fg.mudou = true;
+    if(leve && !agitado && ((quadroN + i) % 3)){
+      const moveu = f.px == null || Math.abs(d.x - f.px) > 0.05 || Math.abs(d.y - f.pz) > 0.05;
+      if(moveu){ c.raiz.position.set(d.x, 0, d.y); f.px = d.x; f.pz = d.y; }
+      else fg.mudou = false;
+      c.raiz.visible = true;
+      return;
+    }
+    /* o relógio do repouso: congelado pra multidão, vivo pro líder */
+    const ti = leve ? f.fase * 10 : t;
     const p = poseNeutra();
     let rapidez = 10;                     // quão rápido a pose atual persegue a alvo
 
@@ -1774,12 +1807,12 @@ TO.diaJogo.bonecos3 = (function(){
         f.impacto = {t:0, dur:0.4, forca:1.1, lado: Math.sin(f.fase)>0?1:-1, tipo:'pedra'};
 
       const andando = passo(p, f, vel, dt, corre, emBriga ? 20 : 6);
-      if(!andando) parado(p, f, t);
+      if(!andando) parado(p, f, ti);
       if(corre && d.fugindo) fugir(p, f, t, dt);
       if(d.fugaBomba) cobrir(p);
 
       /* a provocação: inimigo a 24–90 px, sem golpe, sem defesa, parado */
-      const podeProvocar = !andando && d.inimigoPerto > 24 && d.inimigoPerto < 90 && !d.ataque && d.defendendo<=0 && d.atordoado<=0 && !d.arremesso && (d.hostil > 0 || d.linha==='frente');
+      const podeProvocar = !leve && !andando && d.inimigoPerto > 24 && d.inimigoPerto < 90 && !d.ataque && d.defendendo<=0 && d.atordoado<=0 && !d.arremesso && (d.hostil > 0 || d.linha==='frente');
       if(f.provoca){
         f.provoca.t += dt;
         if(f.provoca.t >= f.provoca.dur || d.ataque || d.defendendo>0 || d.atordoado>0 || andando) f.provoca = null;
@@ -1801,12 +1834,12 @@ TO.diaJogo.bonecos3 = (function(){
       else if(d.segurando){ segurarPose(p, f, t); rapidez = 14; f.ataque = null; f.provoca = null; }
       else if(d.seguradoPor){ seguradoPose(p, f, t); rapidez = 14; f.ataque = null; f.provoca = null; }
       else if(d.chamou > t - 1.3){ chamarPose(p, f, t, (t - d.chamou)/1.3); rapidez = 16; f.ataque = null; f.provoca = null; }
-      else if(d.defendendo > 0 && !andando){ bloquear(p, f, t); rapidez = 20; f.ataque = null; }
+      else if(d.defendendo > 0 && !andando){ bloquear(p, f, ti); rapidez = 20; f.ataque = null; }
       else if(d.socorrendo && d.socorrendo.noChao && !andando){ socorrerPose(p, f, t); rapidez = 12; f.ataque = null; f.provoca = null; }
       else if(f.provoca){ provocar(p, f, t, dt); rapidez = 10; f.ataque = null; }
       else if(d.apanhou > 0 && !andando){ cobrirSe(p, f, t); rapidez = 16; f.ataque = null; }
-      else if(d.hostil > 0 && !andando && !corre){ guarda(p, f, t); rapidez = 12; f.ataque = null; }
-      else if(!andando && d.linha==='retaguarda' && !J.paz){ torcer(p, f, t, dt); rapidez = 9; f.ataque = null; }
+      else if(d.hostil > 0 && !andando && !corre){ guarda(p, f, ti); rapidez = 12; f.ataque = null; }
+      else if(!andando && d.linha==='retaguarda' && !J.paz && !leve){ torcer(p, f, t, dt); rapidez = 9; f.ataque = null; }
       else { f.ataque = null; rapidez = andando ? 14 : 5; }
       if(d.esquivou > 0) esquivar(p, f, d);
       else flinch(p, f, d, dt);
@@ -2025,7 +2058,8 @@ TO.diaJogo.bonecos3 = (function(){
      boneco de 30 px não sente a diferença; a placa do celular sente
      — 1,5× é 2,25 vezes mais pixel que 1×. */
   const DPR_NIVEIS = [1.5, 1.0, 0.75];
-  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true};
+  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true, movimentoLeve:true};
+  let quadroN = 0;
   let dprNivel = 0, mediaDt = 1/60, tempoNoNivel = 0;
   const dprAtual = () => Math.min(cfg.resolucaoAdaptativa ? DPR_NIVEIS[dprNivel] : 1.5,
                                   window.devicePixelRatio||1);
@@ -2118,6 +2152,7 @@ TO.diaJogo.bonecos3 = (function(){
     z >= vista.z0 - MARGEM_VISTA && z <= vista.z1 + MARGEM_VISTA;
   const conta = {vistos:0, cortados:0};
   function atualizarCena(J, dt){
+    quadroN++;
     for(const fg of figuras.values()){ fg.corpo.raiz.visible = false; fg.viva = false; }
     const C = TO.diaJogo.combate;
     const FICA = (C && C.CAIDO_FICA) || 3.0, SOME = (C && C.CAIDO_SOME) || 1.5;

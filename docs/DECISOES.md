@@ -4407,6 +4407,29 @@ Duas correções na cena:
   baixo deixa de pintar o nome e o anel do líder quando há boneco por
   cima (`semNomeDoLider`).
 
+## Movimento leve: a multidão mexe menos (pedido do dono, 09/09/2026)
+
+O dono achou que a gama de movimentos pesava. Medido, a variedade em si
+não custa; o que custa é posar cada boneco a cada quadro. Então a gama
+da MULTIDÃO encolhe e o custo cai junto (`cfg.movimentoLeve`, em
+`bonecos3.js`):
+
+- Quem não é o líder e não está no meio de nada (não caiu, não bate, não
+  apanha, não corre, não foi chamado) tem a pose recalculada a cada três
+  quadros, intercalados — vinte poses por segundo, que o olho não separa
+  das sessenta. Nos quadros pulados só a posição do disco é copiada.
+- O balanço de repouso some pra multidão: o relógio das poses de parado,
+  guarda e bloqueio fica congelado na fase do boneco (ele para quieto em
+  vez de respirar e balançar). A provocação e a torcida de retaguarda
+  saem pra multidão. O líder e quem está brigando seguem com tudo, em
+  sessenta.
+- O esqueleto só recalcula e sobe as matrizes dos ossos pra placa quando
+  o boneco mudou de pose ou de lugar no quadro (`fg.mudou`): um boneco
+  parado não custa upload.
+
+Medido no celular, 52 bonecos parados antes da briga, só o JavaScript da
+animação (a placa fora da conta): 3,5 ms → 1,1 ms por quadro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
