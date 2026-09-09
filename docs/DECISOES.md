@@ -4698,6 +4698,17 @@ ganhou, no perfil de cada torcida."
   célula pisável). Não caça, só bate em quem colar, e não vira
   socorrista. Medido no estádio: portadores a 30–97 px do bonde e
   sempre mais longe do inimigo que o bonde.
+- A FAIXA SAI ANTES DO BONDE (correção do dono, 09/09/2026, "quando um
+  adversário corre logo de cara mesmo assim ativa a animação de dois
+  membros tirando a faixa pra depois fugir"): na hora da debandada
+  (`recolherAntesDeFugir`), toda peça daquele lado ainda exposta entra
+  em recolhimento e ganha equipe; `soltarFuga` não vira as costas de
+  quem está tirando; quando a peça sai na mão, quem tirou corre com
+  ela. Os recolhedores e o portador andam pelo campo de fluxo (em linha
+  reta esbarravam na mesa do bar), e o guarda escalado pra tirar sai do
+  posto mesmo com a cena ainda dormindo. Medido no ataque ao bar da
+  Aliança (4 contra 60): recolhem em 0,2 s, saem com a faixa na mão aos
+  4,7 s, o portador foge com ela; perde só quando é derrubado na fuga.
 - QUEM SAI DA EQUIPE LARGA A FAIXA (correção do dono, 09/09/2026, "o
   boneco fica insistentemente tentando tirar o material"): o recolhedor
   que debandava, caía ou sumia era tirado da equipe mas continuava

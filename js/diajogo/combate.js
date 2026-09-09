@@ -1423,7 +1423,7 @@ TO.diaJogo.combate = (function(){
       /* guarda que debandou não é mais guarda: sem o `!d.fugindo`,
          o dono do posto ficava plantado no lugar mesmo em fuga —
          o ramo de guarda rodava antes do ramo de correr (24/08/2026) */
-      if(d.guarda && !J.acordou && !d.fugindo){
+      if(d.guarda && !J.acordou && !d.fugindo && !d.faixaIndo && !d.comFaixa){
         d._ramo='guarda'; d._alvo=null;
         d.vx*=0.82; d.vy*=0.82;
         A.mover(d, d.vx*dt, d.vy*dt);
@@ -1459,7 +1459,10 @@ TO.diaJogo.combate = (function(){
           d._ramo='faixa'; d._alvo=null;
           continue;
         }
-        ax=F.x; ay=F.y;
+        /* pelo campo de fluxo: em linha reta ele esbarrava na mesa do
+           bar e ficava oscilando a 60 px da faixa (correção, 09/09/2026) */
+        campo = A.campoDoPonto('faixa:'+F.torcidaId+':'+F.tipo, F.x, F.y, J.grades, J.versaoGrades);
+        usarCampo = true;
       } else if(d.comFaixa && !d.fugindo){
         /* QUEM CARREGA A FAIXA VAI JUNTO, MAS ATRÁS (correção do dono,
            09/09/2026): acompanha a aglomeração dos seus e fica no fundo
@@ -2934,6 +2937,10 @@ TO.diaJogo.combate = (function(){
       if(!motivo) continue;
       J.debandou[lado]=true;
       J.debandouPor[lado]=motivo;
+      /* A FAIXA SAI ANTES DO BONDE (correção do dono, 09/09/2026):
+         quem corre logo de cara recolhe a faixa e a bandeira primeiro —
+         dois vão tirar, e só depois fogem com ela na mão */
+      recolherAntesDeFugir(J, lado);
       (J.correuEm=J.correuEm||{})[lado]=J.correuEm[lado]??J.t;
       const meu = lado === meuLado;
       const txt = motivo==='minoria'
@@ -2962,9 +2969,19 @@ TO.diaJogo.combate = (function(){
      `inimigoFugindo`) chega na boca da rua antes dos últimos.
      ======================================================= */
   const ATRASO_FUGA = 2.6;
+  function recolherAntesDeFugir(J, lado){
+    for(const F of (J.faixas || [])){
+      if(F.lado !== lado || F.estado !== 'exposta') continue;
+      F.estado = 'recolhendo'; escolherRecolhedores(J, F);
+      logar(J, `A ${F.nome} recolhe a ${F.tipo === 'bandeira' ? 'bandeira' : 'faixa'} antes de sair.`, 'a');
+    }
+  }
   function soltarFuga(J){
     for(const d of J.discos){
       if(!d.vivo || d.fugindo || !J.debandou[d.lado]) continue;
+      /* quem está tirando a faixa não vira as costas ainda: termina de
+         tirar e corre com ela (ver atualizarFaixa) */
+      if(d.faixaIndo) continue;
       /* quem chegou depois num lado que já quebrou também tem o seu
          instante — o retardatário entra na cena e vê o bonde correndo */
       if(d.correEm == null){
@@ -3483,9 +3500,12 @@ TO.diaJogo.combate = (function(){
         if(F.tChegou==null) F.tChegou = J.t;
         if(J.t - F.tChegou >= FAIXA_TIRAR){
           const p = noLugar[0];
+          const equipe = F.equipe.slice();
           for(const d of F.equipe){ d.faixaIndo=false; d.tirando=false; }
           F.equipe = []; F.estado='na-mao'; F.portador=p; p.comFaixa=F;
           logar(J, `${p.nome} saiu com a ${rotDe(F)} da ${F.nome} na mão.`, 'a');
+          /* o bonde já correu: quem tirou corre agora, com a peça */
+          if(J.debandou && J.debandou[F.lado]) for(const d of equipe) d.fugindo = true;
         }
       } else if(antes && !F.equipe.length) F.tChegou = null;
       return;
@@ -3662,7 +3682,7 @@ TO.diaJogo.combate = (function(){
     if(corpo) for(const p of J.projeteis) desenharProjetil(c,p);
   }
 
-  return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa, fimDasFaixas,
+  return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa, fimDasFaixas, recolherAntesDeFugir,
           /* o simulador precisa das MESMAS fichas que a cena geraria:
              simular não pode dar ao rival um bonde diferente */
           fichasDoPerfil,
