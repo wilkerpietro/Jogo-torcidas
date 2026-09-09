@@ -1836,6 +1836,7 @@ TO.diaJogo.bonecos3 = (function(){
       else if(d.chamou > t - 1.3){ chamarPose(p, f, t, (t - d.chamou)/1.3); rapidez = 16; f.ataque = null; f.provoca = null; }
       else if(d.defendendo > 0 && !andando){ bloquear(p, f, ti); rapidez = 20; f.ataque = null; }
       else if(d.socorrendo && d.socorrendo.noChao && !andando){ socorrerPose(p, f, t); rapidez = 12; f.ataque = null; f.provoca = null; }
+      else if(d.tirando && !andando){ socorrerPose(p, f, t); rapidez = 12; f.ataque = null; f.provoca = null; }
       else if(f.provoca){ provocar(p, f, t, dt); rapidez = 10; f.ataque = null; }
       else if(d.apanhou > 0 && !andando){ cobrirSe(p, f, t); rapidez = 16; f.ataque = null; }
       else if(d.hostil > 0 && !andando && !corre){ guarda(p, f, ti); rapidez = 12; f.ataque = null; }

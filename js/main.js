@@ -5281,6 +5281,30 @@
         ()=>comprar(()=>PAT.comprar(e, o.id))));
     }
     pg.appendChild(c2);
+
+    /* AS FAIXAS (pedido do dono, 09/09/2026): as nossas e as que tomamos,
+       estas de cabeça pra baixo */
+    const fx = PAT.faixasDe(e);
+    const c3 = cartao('Faixas', `${fx.nossas.length} ${fx.nossas.length===1?'nossa':'nossas'} · ${fx.tomadas.length} ${fx.tomadas.length===1?'tomada':'tomadas'}`);
+    const bl = el('div',{class:'faixas'});
+    bl.appendChild(el('div',{class:'faixas-rot', texto:'As nossas'}));
+    const nossas = el('div',{class:'faixas-lista'});
+    if(!fx.nossas.length) nossas.appendChild(el('div',{class:'fraco', texto:'Nenhuma: sem faixa na sede, nada a expor — nem a perder. Compre uma acima.'}));
+    for(const f of fx.nossas) nossas.appendChild(el('img',{class:'faixa-img', src:PAT.imagemDaFaixa(e.torcida), title:`Faixa da ${e.torcida.nome} · desde ${f.desde}`}));
+    bl.appendChild(nossas);
+    bl.appendChild(el('div',{class:'faixas-rot', texto:'Tomadas'}));
+    const tomadas = el('div',{class:'faixas-lista'});
+    if(!fx.tomadas.length) tomadas.appendChild(el('div',{class:'fraco', texto:'Nenhuma ainda. Faixa se toma na rua: quem carrega a deles cai, ela é nossa.'}));
+    for(const f of fx.tomadas){
+      const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
+      const cx = el('div',{class:'faixa-tomada'});
+      cx.appendChild(el('img',{class:'faixa-img virada', src:PAT.imagemDaFaixa(o), title:`Faixa da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`}));
+      cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
+      tomadas.appendChild(cx);
+    }
+    bl.appendChild(tomadas);
+    c3.corpo.appendChild(bl);
+    pg.appendChild(c3);
   }
 
   /* =======================================================
@@ -7471,7 +7495,9 @@
     abrirPalco({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', bombas: p.bombas,
-                bondes, efetivoRival: deles.n, local: enc.local },
+                bondes, efetivoRival: deles.n, local: enc.local,
+                /* a faixa: quem é atacado expõe — sofremos, é a nossa */
+                faixaDefensor: enc.sofrido ? 'nos' : 'eles', rivalId: deles.torcida },
       aoTerminar: res => fecharDiaDeJogo(res, enc)
     });
     /* GUERRA É BRIGA MARCADA: os dois lados vieram pra isso. As cenas
@@ -7679,6 +7705,9 @@
                    : enc ? (()=>{ const d = (enc.a && enc.a.nossa) ? enc.b : enc.a;
                                  return d ? {id: d.torcida, nome: nomeDaTorcida(d.torcida, d.nome)} : null; })()
                    : null;
+    /* a faixa tomada muda de dono e mexe no prestígio (dono, 09/09/2026) */
+    if(res && res.faixa && res.faixa.tomada && fecho && TO.acoes.aplicarFaixa)
+      TO.acoes.aplicarFaixa(e, res, fecho, rivalIdCtx);
     const ctxRelatorio = {
       rival: rivalCtx,
       cena: (acao && acao.alvo && (acao.alvo.cena || acao.alvo.local)) || (acao && acao.cena) ||
@@ -7813,6 +7842,8 @@
       config: { escalacao: aptos, intencao:'atacar', bondes,
                 bombas: p.bombas,
                 efetivoRival: cena.efetivoRival, local: cena.cena,
+                /* a faixa: quem é atacado expõe — aqui, eles */
+                faixaDefensor:'eles', rivalId: cena.alvo && cena.alvo.torcidaId,
                 rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
                   cor:cDono.cor, cor2:cDono.cor2, cor3:cDono.cor3} : SEGURANCA,
                 perfilRival: perfilDe(cena.alvo && cena.alvo.torcidaId) },
@@ -7923,7 +7954,9 @@
     abrirPalco({
       canvas: $('djPrincipal'),
       config: { escalacao: aptos, intencao:'atacar', paz:false, bombas:p.bombas,
-                efetivoRival: deles, local: atq.cena || 'bar', bondes },
+                efetivoRival: deles, local: atq.cena || 'bar', bondes,
+                /* a faixa: quem é atacado expõe — aqui, a gente */
+                faixaDefensor:'nos', rivalId: atq.torcida },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
                                 cena: atq.cena || 'bar',

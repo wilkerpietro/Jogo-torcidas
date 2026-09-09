@@ -329,6 +329,8 @@ TO.relacoes = (function(){
            18/08/2026): ônibus, professor de MMA e estoque de bombas
            são comprados com o caixa delas, como o jogador faz */
         onibus:0, mma:0, bombas:10,
+        /* a faixa da torcida (dono, 09/09/2026): uma, e as que ela tomou */
+        faixas:1, faixasTomadas:[],
         /* subsedes em OUTRAS cidades (dono, 25/08/2026) */
         filiais:[],
         /* a fila de compras rodante de cada uma (dono, 26/08/2026) */

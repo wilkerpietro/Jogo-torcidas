@@ -286,6 +286,11 @@ TO.patrimonio = (function(){
     const trava = (custo, extra)=> extra ? extra
       : E.dinheiro < custo ? 'falta caixa' : null;
 
+    /* a faixa (dono, 09/09/2026): R$ 5.000, quantas quiser */
+    lista.push({id:'faixa', rot:'Faixa nova',
+      nota:`${faixasDe(E).nossas.length} na sede · é a que a torcida expõe quando é atacada`,
+      custo:FAIXA.custo, trava:trava(FAIXA.custo)});
+
     if(SEDE[n+1]) lista.push({
       id:'sede', rot:`Ampliar a sede para o nível ${n+1}`,
       nota:'mais membros, mais diretoria, mais pontos comerciais',
@@ -482,7 +487,82 @@ TO.patrimonio = (function(){
     return lista;
   }
 
+  /* =======================================================
+     AS FAIXAS (pedido do dono, 09/09/2026)
+     Toda torcida nasce com uma faixa. Quem é ATACADO na praça, no
+     estádio ou no bar expõe a dela na cena; dois membros correm pra
+     recolher (3 s), um fica com ela na mão, e se esse cai a faixa é
+     tomada: −10 de prestígio pra quem perdeu, +5 pra quem tomou (na
+     régua de 0 a 100). Faixa nova custa R$ 5.000 aqui na loja. O
+     Patrimônio mostra as nossas e as que tomamos — estas de cabeça
+     pra baixo. A imagem de cada faixa é desenhada com as cores e o
+     nome da torcida; `TO.dados.faixas[id]` (data-URI) substitui.
+     ======================================================= */
+  const FAIXA = {custo:5000, ganho:5, perda:10};
+  function faixasDe(E){
+    const p = F().patrimonio(E);
+    if(!p.faixas) p.faixas = {nossas:[{n:1, desde:(E.data||{}).ano||2026}], tomadas:[]};
+    return p.faixas;
+  }
+  const imgFaixas = new Map(), objFaixas = new Map();
+  function contraste(hex){
+    const h = String(hex||'#888').replace('#','');
+    const r = parseInt(h.slice(0,2),16)||0, g = parseInt(h.slice(2,4),16)||0, b = parseInt(h.slice(4,6),16)||0;
+    return (r*299 + g*587 + b*114)/1000 > 150 ? '#141414' : '#f4f4f4';
+  }
+  function imagemDaFaixa(o){
+    if(!o) return null;
+    const chave = o.id || o.nome;
+    if(imgFaixas.has(chave)) return imgFaixas.get(chave);
+    const pronta = TO.dados && TO.dados.faixas && TO.dados.faixas[o.id];
+    let url = pronta || null;
+    if(!url && typeof document !== 'undefined'){
+      const c = document.createElement('canvas'); c.width = 320; c.height = 80;
+      const x = c.getContext('2d');
+      const cores = (TO.mundo && TO.mundo.coresDaTorcida) ? TO.mundo.coresDaTorcida(o) : {};
+      const c1 = cores.cor || '#555', c2 = cores.cor2 || '#eee';
+      x.fillStyle = c1; x.fillRect(0, 0, 320, 80);
+      x.fillStyle = c2; x.fillRect(0, 0, 320, 8); x.fillRect(0, 72, 320, 8);
+      if(cores.cor3){ x.fillStyle = cores.cor3; x.fillRect(0, 8, 320, 3); x.fillRect(0, 69, 320, 3); }
+      const nome = String(o.nome || '').toUpperCase();
+      let px = 34;
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      do { x.font = `700 ${px}px "Barlow Condensed", system-ui, sans-serif`; px -= 2; }
+      while(x.measureText(nome).width > 292 && px > 12);
+      x.fillStyle = 'rgba(0,0,0,.45)'; x.fillText(nome, 161, 42);
+      x.fillStyle = contraste(c1); x.fillText(nome, 160, 40);
+      try{ url = c.toDataURL('image/png'); }catch(_){ url = null; }
+    }
+    imgFaixas.set(chave, url);
+    return url;
+  }
+  /* a mesma imagem como objeto Image, pra cena desenhar */
+  function imagemDaFaixaObj(o){
+    const chave = o && (o.id || o.nome);
+    if(!chave) return null;
+    if(objFaixas.has(chave)) return objFaixas.get(chave);
+    const url = imagemDaFaixa(o);
+    let im = null;
+    if(url && typeof Image !== 'undefined'){ im = new Image(); im.src = url; }
+    objFaixas.set(chave, im);
+    return im;
+  }
+  /* as faixas das IAs vivem na ficha viva do mundo */
+  function faixasIA(E, id){
+    const t = TO.relacoes && TO.relacoes.mundo(E)[id];
+    if(!t) return null;
+    if(t.faixas == null) t.faixas = 1;
+    if(!t.faixasTomadas) t.faixasTomadas = [];
+    return t;
+  }
+
   function comprar(E, id){
+    if(id === 'faixa'){
+      if(E.dinheiro < FAIXA.custo) return {ok:false, msg:'Não dá: falta caixa.'};
+      faixasDe(E).nossas.push({n: faixasDe(E).nossas.length + 1, desde:(E.data||{}).ano||2026});
+      TO.estado.lancar(E, 'Faixa nova', -FAIXA.custo);
+      return {ok:true, msg:'Faixa nova na sede.'};
+    }
     const p = F().patrimonio(E);
     let o = opcoes(E).find(x=>x.id===id);
     /* a filial vem do dropdown: o id chega como 'filial:cidade', mas a
@@ -630,7 +710,8 @@ TO.patrimonio = (function(){
     return {ok:true, compradas:qtd, custo};
   }
 
-  return {SEDE, TETO, PONTO, FABRICA, FILIAL,
+  return {FAIXA, faixasDe, imagemDaFaixa, imagemDaFaixaObj, faixasIA,
+          SEDE, TETO, PONTO, FABRICA, FILIAL,
           filiaisDe, temFilialEm, cidadesCandidatas,
           linhas, opcoes, comprar,
           PRECO_BOMBA, precoBomba, bombas, comprarBombas,

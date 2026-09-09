@@ -218,6 +218,44 @@ TO.acoes = (function(){
     return {ganhamos};
   }
 
+  /* A FAIXA TOMADA (pedido do dono, 09/09/2026): −10 de prestígio pra
+     quem perdeu, +5 pra quem tomou, na régua de 0 a 100; a faixa muda
+     de dono no Patrimônio (a nossa some da sede, a deles entra nas
+     tomadas — de cabeça pra baixo). `outroId` é a outra torcida da
+     cena, quem tomou a nossa ou de quem tomamos. */
+  function aplicarFaixa(E, res, fecho, outroId){
+    const fx = res && res.faixa;
+    if(!fx || !fx.tomada || !fecho) return null;
+    const PAT = TO.patrimonio, R = TO.relacoes;
+    const nossoLado = res.nossoLado || 'mandante';
+    const tomamos = fx.por === nossoLado;
+    fecho.linhas = fecho.linhas || [];
+    if(tomamos && !fx.nossa){
+      const t = PAT.faixasIA(E, fx.torcidaId);
+      if(t) t.faixas = Math.max(0, t.faixas - 1);
+      PAT.faixasDe(E).tomadas.push({de:fx.torcidaId, nome:fx.nome,
+        quando:{ano:E.data.ano, semana:E.data.semana}});
+      TO.estado.mexerIndicador(E, 'prestigio', PAT.FAIXA.ganho/5, `Tomamos a faixa da ${fx.nome}`);
+      R.mover(E, fx.torcidaId, 'prestigio', -PAT.FAIXA.perda/5);
+      fecho.linhas.push(`tomamos a faixa da ${fx.nome}`);
+      fecho.faixa = 'tomamos';
+      return 'tomamos';
+    }
+    if(!tomamos && fx.nossa){
+      const nossas = PAT.faixasDe(E).nossas;
+      if(nossas.length) nossas.pop();
+      const o = outroId ? TO.mundo.torcida(outroId) : null;
+      const t = outroId ? PAT.faixasIA(E, outroId) : null;
+      if(t) t.faixasTomadas.push({de:E.torcida.id, nome:E.torcida.nome, ano:E.data.ano});
+      TO.estado.mexerIndicador(E, 'prestigio', -PAT.FAIXA.perda/5, `Perdemos a nossa faixa`+(o?` pra ${o.nome}`:''));
+      if(outroId) R.mover(E, outroId, 'prestigio', PAT.FAIXA.ganho/5);
+      fecho.linhas.push(`perdemos a nossa faixa${o ? ` pra ${o.nome}` : ''}`);
+      fecho.faixa = 'perdemos';
+      return 'perdemos';
+    }
+    return null;
+  }
+
   function fecharCena(E, ctx, res){
     if(!ctx || !ctx.acao) return null;
     if(ctx.acao === 'atacar')     return fecharAtaque(E, ctx.alvo, res);
@@ -950,7 +988,7 @@ TO.acoes = (function(){
     return fora;
   }
 
-  return {LISTA, TURNOS, REDUCAO, custoDe, efeitoDe, custoFesta,
+  return {aplicarFaixa, LISTA, TURNOS, REDUCAO, custoDe, efeitoDe, custoFesta,
           porId, agendaveis, expediente,
           maximo, restantes, executar, rodarExpediente,
           previsaoRecrutamento, TABELA_RECRUTA,

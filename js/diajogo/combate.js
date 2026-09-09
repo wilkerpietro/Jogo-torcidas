@@ -501,6 +501,7 @@ TO.diaJogo.combate = (function(){
     J.bracoRival = J.bracos[(J.ladoNosso||'mandante')==='mandante'
                             ? 'visitante' : 'mandante'] || null;
     conferirPortoes(J);
+    J.faixa = montarFaixa(J, cfg);
     return J;
   }
 
@@ -864,6 +865,7 @@ TO.diaJogo.combate = (function(){
     moverDiscos(J,dt);
     moverPoliciais(J,dt);
     iaLuta(J,dt); socorrer(J,dt); conferirAgarroes(J); iaChamar(J);
+    atualizarFaixa(J,dt);
     contatos(J,dt);
     iaArremesso(J,dt);
     moverProjeteis(J,dt);
@@ -1440,6 +1442,15 @@ TO.diaJogo.combate = (function(){
           continue;
         }
         ax=c.x; ay=c.y;
+      } else if(d.faixaIndo && J.faixa && J.faixa.estado==='recolhendo'){
+        /* A FAIXA: vai até ela e fica ali tirando (ver atualizarFaixa) */
+        const F=J.faixa; ramo='faixa'; d._olhaPara=null;
+        if(U.dist(d.x,d.y,F.x,F.y) < d.r+16){
+          d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
+          d._ramo='faixa'; d._alvo=null;
+          continue;
+        }
+        ax=F.x; ay=F.y;
       } else if(d.voltando){
         /* acabou e a casa é deles: volta pro lugar de onde saiu */
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
@@ -1917,7 +1928,10 @@ TO.diaJogo.combate = (function(){
      sempre pulando a saída que este disco marcou como emperrada
      (`fugaEvita`, ver o movimento) enquanto a marca vale. */
   function rotaDeFuga(J, d){
-    if(fugaPelaEntrada()){
+    /* O PONTO DE FUGA É O SPAWN (pedido do dono, 09/09/2026): quem
+       debanda corre pra entrada por onde chegou, em toda cena; só cai
+       nas outras bocas se dali não houver rota */
+    {
       const e = D.entradas.find(x=>x.id===d.entrada) ||
                 D.entradas.find(x=>x.lado===d.lado);
       if(e){
@@ -2464,6 +2478,7 @@ TO.diaJogo.combate = (function(){
   function derrubar(J,d){
     if(d.caido||d.preso) return;
     d.caido=true; d.caiuEm=J.t; d.hp=0; d.vx=d.vy=0; d.derrubado=0; d.ataque=null;
+    d.faixaIndo=false; d.tirando=false;
     if(d.socorrista){ d.socorrista.socorrendo=null; d.socorrista=null; }
     if(d.socorrendo){ d.socorrendo.socorrista=null; d.socorrendo=null; }
     if(d.segurando) soltar(J,d);
@@ -3237,10 +3252,139 @@ TO.diaJogo.combate = (function(){
     c.beginPath(); c.arc(p.x,p.y-alt,p.tipo==='pedra'?5:7,0,7); c.fill();
   }
 
+  /* =======================================================
+     A FAIXA NA CENA (pedido do dono, 09/09/2026)
+     Na praça, no estádio e no bar a torcida ATACADA expõe a faixa
+     dela, no pé do spawn de guarda. Quando o inimigo chega perto (ou
+     a briga estoura), dois dos dela largam o que estão fazendo e vão
+     recolher: chegando, ficam 3 s tirando; um dos dois sai com ela na
+     mão. Se o portador cai (ferido ou preso), a faixa é tomada pelo
+     outro lado — e é isso que o fechamento cobra em prestígio. A cena
+     fecha com a faixa ainda no muro e o lado dela derrotado sem
+     ninguém de pé: tomada também.
+     ======================================================= */
+  const CENAS_FAIXA = /^(bar|praca|estadio-)/;
+  const FAIXA_TIRAR = 3.0, FAIXA_ALCANCE = 180;
+  function montarFaixa(J, cfg){
+    if(!cfg || !cfg.faixaDefensor || !D.id || !CENAS_FAIXA.test(D.id)) return null;
+    const PAT = TO.patrimonio, E = TO.estado && TO.estado.E;
+    if(!PAT || !E) return null;
+    const meu = ladoDoJogador(J), outro = OUTRO_LADO[meu];
+    const lado = cfg.faixaDefensor === 'nos' ? meu : outro;
+    let o, nossa;
+    if(cfg.faixaDefensor === 'nos'){
+      if(!PAT.faixasDe(E).nossas.length) return null;
+      o = E.torcida; nossa = true;
+    } else {
+      o = cfg.rivalId ? TO.mundo.torcida(cfg.rivalId) : null;
+      if(!o) return null;
+      const t = PAT.faixasIA(E, o.id);
+      if(!t || t.faixas <= 0) return null;
+      nossa = false;
+    }
+    const guardas = D.spawns.filter(sp=>sp.lado===lado && sp.guarda);
+    const base = guardas.length ? guardas : D.spawns.filter(sp=>sp.lado===lado);
+    if(!base.length) return null;
+    const cx = base.reduce((a,sp)=>a+sp.x,0)/base.length;
+    const cy = base.reduce((a,sp)=>a+sp.y,0)/base.length;
+    const cores = TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(o) : {};
+    return {lado, torcidaId:o.id, nome:o.nome, nossa, cores,
+            x: U.limitar(cx, 60, A.W-60), y: U.limitar(cy-30, 24, A.H-24),
+            w:76, h:19, estado:'exposta', equipe:[], portador:null,
+            tChegou:null, tEscolha:0, tomadaPor:null,
+            img: PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o) : null};
+  }
+  function escolherRecolhedores(J, F){
+    F.equipe = (F.equipe||[]).filter(d=>d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu);
+    const cands = J.discos.filter(d=>d.lado===F.lado && d.vivo && !d.lider && !d.fugindo &&
+      d.derrubado<=0 && !d.noChao && !d.entrando && !d.sumiu && !F.equipe.includes(d))
+      .sort((a,b)=>U.dist2(a.x,a.y,F.x,F.y)-U.dist2(b.x,b.y,F.x,F.y));
+    while(F.equipe.length < 2 && cands.length) F.equipe.push(cands.shift());
+    for(const d of F.equipe) d.faixaIndo = true;
+    F.tEscolha = J.t;
+  }
+  function atualizarFaixa(J, dt){
+    const F = J.faixa; if(!F || F.estado==='tomada') return;
+    const inimigo = OUTRO_LADO[F.lado];
+    if(F.estado==='exposta'){
+      const perto = J.discos.some(d=>d.lado===inimigo && d.vivo && !d.entrou && !d.sumiu &&
+                                    U.dist(d.x,d.y,F.x,F.y) < FAIXA_ALCANCE);
+      if(perto || (!J.paz && J.t > 1.5)){
+        F.estado='recolhendo'; escolherRecolhedores(J, F);
+        logar(J, `A ${F.nome} corre pra recolher a faixa.`, 'a');
+      }
+      return;
+    }
+    if(F.estado==='recolhendo'){
+      const antes = F.equipe.length;
+      F.equipe = F.equipe.filter(d=>d.vivo && !d.fugindo && d.derrubado<=0 && !d.noChao && !d.sumiu);
+      if(F.equipe.length < 2 && J.t - F.tEscolha > 0.5) escolherRecolhedores(J, F);
+      const noLugar = F.equipe.filter(d=>U.dist(d.x,d.y,F.x,F.y) < d.r+18);
+      for(const d of F.equipe) d.tirando = noLugar.includes(d);
+      if(noLugar.length){
+        if(F.tChegou==null) F.tChegou = J.t;
+        if(J.t - F.tChegou >= FAIXA_TIRAR){
+          const p = noLugar[0];
+          for(const d of F.equipe){ d.faixaIndo=false; d.tirando=false; }
+          F.equipe = []; F.estado='na-mao'; F.portador=p; p.comFaixa=true;
+          logar(J, `${p.nome} saiu com a faixa da ${F.nome} na mão.`, 'a');
+        }
+      } else if(antes && !F.equipe.length) F.tChegou = null;
+      return;
+    }
+    if(F.estado==='na-mao'){
+      const p = F.portador;
+      if(!p) { F.estado='exposta'; return; }
+      F.x = p.x; F.y = p.y;
+      if(!p.vivo){
+        p.comFaixa=false; F.estado='tomada'; F.tomadaPor=inimigo; F.tTomada=J.t;
+        logar(J, `Tomaram a faixa da ${F.nome}!`, 'r'); aviso(J, 'Faixa tomada!', '#ffd35a');
+      }
+    }
+  }
+  /* o que a cena devolve no fim: tomada ou não, e por quem */
+  function fimDaFaixa(J, venceuMandante){
+    const F = J.faixa; if(!F) return null;
+    const inimigo = OUTRO_LADO[F.lado];
+    let tomada = F.estado==='tomada', por = F.tomadaPor;
+    if(!tomada && F.estado!=='na-mao'){
+      const donaDePe = J.discos.some(d=>d.lado===F.lado && d.vivo && !d.sumiu);
+      const inimigoVenceu = inimigo==='mandante' ? venceuMandante : !venceuMandante;
+      if(!donaDePe && inimigoVenceu){ tomada = true; por = inimigo; }
+    }
+    return {tomada, por, lado:F.lado, torcidaId:F.torcidaId, nome:F.nome, nossa:F.nossa, estado:F.estado};
+  }
+  function desenharFaixa(c, J){
+    const F = J.faixa; if(!F || F.estado==='tomada') return;
+    const pinta = (x, y, w, h, alfa) => {
+      c.save(); c.globalAlpha = alfa;
+      c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(x-w/2-1.5, y-h/2-1.5, w+3, h+3);
+      if(F.img && F.img.complete && F.img.naturalWidth) c.drawImage(F.img, x-w/2, y-h/2, w, h);
+      else {
+        c.fillStyle = F.cores.cor || '#555'; c.fillRect(x-w/2, y-h/2, w, h);
+        c.fillStyle = F.cores.cor2 || '#eee'; c.fillRect(x-w/2, y-h/2, w, 2); c.fillRect(x-w/2, y+h/2-2, w, 2);
+        c.fillStyle='#fff'; c.font=`700 ${Math.max(6, h*0.5)}px "Barlow Condensed",sans-serif`; c.textAlign='center'; c.textBaseline='middle';
+        c.fillText(String(F.nome||'').toUpperCase().slice(0,18), x, y+0.5);
+      }
+      c.restore();
+    };
+    if(F.estado==='exposta' || F.estado==='recolhendo'){
+      pinta(F.x, F.y, F.w, F.h, 1);
+      if(F.estado==='recolhendo'){
+        c.strokeStyle=`rgba(255,211,90,${0.5+0.4*Math.sin(J.t*8)})`; c.lineWidth=2;
+        c.strokeRect(F.x-F.w/2-3, F.y-F.h/2-3, F.w+6, F.h+6);
+      }
+    } else if(F.estado==='na-mao' && F.portador){
+      const p = F.portador;
+      pinta(p.x + p.r + 9, p.y - p.r - 2, 30, 8, 0.95);
+    }
+  }
+
   function desenhar(J,c,opc){
     semNomeDoLider = !!(opc && opc.semNomeDoLider);
     A.desenharFundo(c);
     A.desenharSobreposicoes(c,J.grades,Object.assign({t:J.t},opc||{}));
+    desenharFaixa(c, J);
     /* `semCorpo`: os bonecos da vista de cima (tres.js) desenham gente,
        PM e projétil num canvas por cima; aqui fica só nome e vida */
     const corpo = !(opc && opc.semCorpo);
@@ -3254,7 +3398,7 @@ TO.diaJogo.combate = (function(){
     if(corpo) for(const p of J.projeteis) desenharProjetil(c,p);
   }
 
-  return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar,
+  return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa,
           /* o simulador precisa das MESMAS fichas que a cena geraria:
              simular não pode dar ao rival um bonde diferente */
           fichasDoPerfil,

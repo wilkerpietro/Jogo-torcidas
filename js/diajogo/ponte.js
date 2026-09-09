@@ -1491,6 +1491,8 @@ TO.diaJogo.ponte = (function(){
          pagava +1. Vale `ganhamos`, e a debandada que pesa é a NOSSA. */
       moralTorcida: ganhamos ? +1
                   : (J.debandou && J.debandou[nossoLado]) ? -2 : -0.5,
+      /* a faixa (dono, 09/09/2026): tomada ou não, e por quem */
+      faixa: C.fimDaFaixa ? C.fimDaFaixa(J, venceu) : null,
       /* o `|| 0` não é enfeite: Math.round(-0.5) é -0, e a tela
          escrevia "Prestígio -0" numa noite que deu em nada */
       /* O PRESTÍGIO É NOSSO, e a conta era do mandante: derrubar 80

@@ -4457,6 +4457,40 @@ fora, **Montar a caravana** e **Atacar na praça deles**. Abaixo, o bloco
 "Aliados na cidade — como vamos receber?" com os quatro níveis. O botão
 solto "Planejar ataque" saiu: a pauta o substitui.
 
+## As faixas (pedido do dono, 09/09/2026)
+
+Toda torcida nasce com uma faixa; a nossa mora em `patrimonio.faixas`
+(`nossas` e `tomadas`), a das IAs na ficha viva (`faixas`,
+`faixasTomadas`). A imagem é desenhada com as cores e o nome da torcida
+(`patrimonio.imagemDaFaixa`); `TO.dados.faixas[id]` com um data-URI
+substitui pela arte real — as imagens do dono não estão no repositório,
+então o desenho vale até elas chegarem.
+
+- **Na cena** (praça, estádio e bar; `combate.montarFaixa`), quem é
+  ATACADO expõe a faixa no pé do spawn de guarda: a cena recebe
+  `faixaDefensor` ('nos' | 'eles') e `rivalId` de quem a abre — o
+  ataque ao bar/sede (eles), a defesa do nosso bar (nós) e o encontro do
+  dia de jogo (`enc.sofrido` decide). Sem faixa na sede, nada é exposto.
+- **Recolher**: quando o inimigo chega a 180 px da faixa ou a briga
+  estoura, dois da torcida dela (não o líder) largam o que fazem e vão
+  até ela; chegando, ficam tirando (pose de socorro) e 3 s depois um dos
+  dois sai com ela na mão (`comFaixa`). Se um dos dois cai no caminho,
+  outro é chamado.
+- **Tomar**: se o portador cai (ferido ou preso), a faixa é tomada pelo
+  outro lado. A cena que fecha com a faixa ainda no muro, a dona sem
+  ninguém de pé e o atacante vencedor, também conta como tomada.
+- **A conta** (`acoes.aplicarFaixa`, chamada no fechamento do dia de
+  jogo): −10 de prestígio pra quem perdeu e +5 pra quem tomou, na régua
+  de 0 a 100; a faixa muda de dono nos patrimônios e a linha "tomamos a
+  faixa da X" / "perdemos a nossa faixa pra X" entra no Fim da noite.
+- **Loja**: "Faixa nova" por R$ 5.000 no Patrimônio (`opcoes`/`comprar`,
+  id `faixa`), quantas quiser. **Patrimônio** ganha o cartão "Faixas":
+  as nossas e as tomadas, estas de cabeça pra baixo (`.faixa-img.virada`).
+
+Junto: **o ponto de fuga é o spawn** (pedido do mesmo dia) — quem
+debanda corre pra entrada por onde chegou, em toda cena, e só cai nas
+outras bocas se dali não houver rota (`rotaDeFuga`).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
