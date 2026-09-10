@@ -5280,6 +5280,56 @@ mais competitivas contra as grandes."
   desenho do jogo. Se algum dia voltar a fazer falta, a saída é a mesma
   — pré-renderizar o efeito uma vez, e não por quadro.
 
+## Cinco acertos de dados do censo (decisão do dono, 10/09/2026)
+- São José sobe de 1% pra 2% em Porto Alegre, e o ponto sai do Grêmio
+  (38 → 37). Com isso a regra do dono — toda torcida com pelo menos 2% na
+  cidade-sede — vale em 139 de 139.
+- A Mancha Negra é APAGADA. Era um registro sem clube, cidade, mapa, UF
+  nem região, marcado `incompleta` e mantido "pra não sumir sem ninguém
+  notar". O dono notou e mandou apagar. O importador (`importar_relacoes`)
+  agora descarta registro sem clube ou cidade e imprime o nome no fim.
+- Os sete nomes de praça ficam UNIFICADOS pelo nome canônico da praça
+  (Bahia, Mato Grosso, Alagoas, Maranhão, Interior de Minas, Região de
+  Campinas, Litoral Catarinense), que é a decisão já escrita no
+  importador de bairros ("o mapa representa a região inteira e não só a
+  capital"). O registro da torcida passa a carregar esse nome, lido de
+  `cidades.js`; a planilha só serve pra achar o id. 28 torcidas mudaram
+  de nome de cidade, nada mais.
+- O piso de 20 membros FICA.
+- As sete praças de interior sobem pra 1.000 mil habitantes (eram 800,
+  e o Interior do CE 600). Os `torcedoresEstimados` de cada clube foram
+  recalculados como perc% × população, que é a conta que a fonte já
+  usava (conferido: 0 divergências antes da mudança). A população do
+  jogo vai de 61.050 pra 62.650 mil.
+- ARMADILHA ENCONTRADA AO REGENERAR: `torcidas.js` carregava nove
+  divisões de clube decididas pelo dono em commits anteriores (Joinville,
+  Inter de Limeira, Amazonas, Ferroviário, Floresta, CSA, Sergipe,
+  Brasiliense) que existiam SÓ no arquivo gerado, não na fonte. Regenerar
+  as revertia. As nove foram levadas pra `torcidas_relacoes.json` antes
+  da regeneração; conferido campo a campo que o único diff além disso é
+  o nome de cidade. Lição: arquivo "gerado, não editar à mão" que foi
+  editado à mão precisa ter a edição levada pra fonte ANTES de qualquer
+  regeneração.
+- Os dois JSONs de fonte são CRLF; reescritos com o mesmo fim de linha
+  pra o diff ficar nas 128 linhas de conteúdo e não nas 9.123 do arquivo.
+
+## A Bamor não fecha a TUF em Fortaleza num dia em que não está lá (10/09/2026)
+- RELATO do dono, com print: jogo Fortaleza × Fluminense em casa, e o
+  cartão "Caiu em cima da gente · Bamor" na ida ao estádio. A Bamor é de
+  Salvador.
+- CAUSA: `alcanca(E, id)` decidia se uma torcida de outra praça pode nos
+  atacar consultando `naRuaEm` pra QUALQUER dia de 1 a 7. A Bamor estava
+  em Fortaleza noutro dia da semana, pelo Bahia, e o ataque era marcado
+  pro dia do nosso jogo — em que ela já tinha ido embora.
+- CORREÇÃO: `alcanca` aceita `dia`; o agendador do ataque em casa passa o
+  dia do nosso jogo, e visitante só alcança a gente se está na cidade
+  NESSE dia. Sem `dia` a função vale como antes, pros outros usos.
+- MEDIDO (`alcance-dia.js`, `naRuaEm` falseado): visitante na cidade só
+  no dia 3, jogo no dia 6, relação −100, 40 fechamentos de semana — ela
+  vem 0 vezes; a mesma visitante no dia 6 vem 4 em 40, que é a chance
+  normal. Continua valendo que visitante em dia de jogo pode fechar a
+  gente: é assim que se cruza torcida na cidade.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

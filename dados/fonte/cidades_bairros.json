@@ -3049,7 +3049,7 @@
     "bairrosEsperados": 8,
     "bairrosPorZonaEsperado": 2
    },
-   "populacao": 800,
+   "populacao": 1000,
    "temMetro": false,
    "quantidadeEstadios": 1,
    "estadios": [
@@ -3136,7 +3136,7 @@
      "clube": "Cruzeiro",
      "sigla": "CEC",
      "percentualTorcedores": 25.0,
-     "torcedoresEstimados": 200,
+     "torcedoresEstimados": 250,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3145,7 +3145,7 @@
      "clube": "Atlético Mineiro",
      "sigla": "CAM",
      "percentualTorcedores": 22.0,
-     "torcedoresEstimados": 176,
+     "torcedoresEstimados": 220,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3154,7 +3154,7 @@
      "clube": "Athletic",
      "sigla": "AC",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 80,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3163,7 +3163,7 @@
      "clube": "Mamoré",
      "sigla": "ECM",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 80,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3172,7 +3172,7 @@
      "clube": "URT",
      "sigla": "URT",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 80,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3181,7 +3181,7 @@
      "clube": "Flamengo",
      "sigla": "CRF",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 80,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3190,7 +3190,7 @@
      "clube": "São Paulo",
      "sigla": "SPFC",
      "percentualTorcedores": 2.0,
-     "torcedoresEstimados": 16,
+     "torcedoresEstimados": 20,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3199,7 +3199,7 @@
      "clube": "Palmeiras",
      "sigla": "SEP",
      "percentualTorcedores": 2.0,
-     "torcedoresEstimados": 16,
+     "torcedoresEstimados": 20,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3208,7 +3208,7 @@
      "clube": "Corinthians",
      "sigla": "SCCP",
      "percentualTorcedores": 2.0,
-     "torcedoresEstimados": 16,
+     "torcedoresEstimados": 20,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3217,7 +3217,7 @@
      "clube": "Vasco",
      "sigla": "CRVG",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3226,7 +3226,7 @@
      "clube": "Goiás",
      "sigla": "GEC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3235,7 +3235,7 @@
      "clube": "Fluminense",
      "sigla": "FFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3244,7 +3244,7 @@
      "clube": "Botafogo",
      "sigla": "BFR",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3253,7 +3253,7 @@
      "clube": "Guarani",
      "sigla": "GFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3262,7 +3262,7 @@
      "clube": "Ponte Preta",
      "sigla": "AAPP",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3271,7 +3271,7 @@
      "clube": "América/MG",
      "sigla": "AFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     }
@@ -3290,7 +3290,7 @@
     "bairrosEsperados": 8,
     "bairrosPorZonaEsperado": 2
    },
-   "populacao": 800,
+   "populacao": 1000,
    "temMetro": false,
    "quantidadeEstadios": 2,
    "estadios": [
@@ -3379,7 +3379,7 @@
      "clube": "Central",
      "sigla": "CSC",
      "percentualTorcedores": 20.0,
-     "torcedoresEstimados": 160,
+     "torcedoresEstimados": 200,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3388,7 +3388,7 @@
      "clube": "Sport Recife",
      "sigla": "SCR",
      "percentualTorcedores": 13.0,
-     "torcedoresEstimados": 104,
+     "torcedoresEstimados": 130,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3397,7 +3397,7 @@
      "clube": "Salgueiro",
      "sigla": "SAC",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 80,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3406,7 +3406,7 @@
      "clube": "Flamengo",
      "sigla": "CRF",
      "percentualTorcedores": 9.0,
-     "torcedoresEstimados": 72,
+     "torcedoresEstimados": 90,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3415,7 +3415,7 @@
      "clube": "Ypiranga/PE",
      "sigla": "SEY",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3424,7 +3424,7 @@
      "clube": "Corinthians",
      "sigla": "SCCP",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3433,7 +3433,7 @@
      "clube": "Santa Cruz",
      "sigla": "SCFC",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3442,7 +3442,7 @@
      "clube": "São Paulo",
      "sigla": "SPFC",
      "percentualTorcedores": 7.0,
-     "torcedoresEstimados": 56,
+     "torcedoresEstimados": 70,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3451,7 +3451,7 @@
      "clube": "Palmeiras",
      "sigla": "SEP",
      "percentualTorcedores": 7.0,
-     "torcedoresEstimados": 56,
+     "torcedoresEstimados": 70,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3460,7 +3460,7 @@
      "clube": "Náutico",
      "sigla": "CNC",
      "percentualTorcedores": 5.0,
-     "torcedoresEstimados": 40,
+     "torcedoresEstimados": 50,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3469,7 +3469,7 @@
      "clube": "Vasco",
      "sigla": "CRVG",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3478,7 +3478,7 @@
      "clube": "Internacional",
      "sigla": "SCI",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3487,7 +3487,7 @@
      "clube": "Paysandu",
      "sigla": "PSC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3496,7 +3496,7 @@
      "clube": "Fortaleza",
      "sigla": "FEC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3505,7 +3505,7 @@
      "clube": "Bahia",
      "sigla": "ECB",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     }
@@ -3524,7 +3524,7 @@
     "bairrosEsperados": 8,
     "bairrosPorZonaEsperado": 2
    },
-   "populacao": 800,
+   "populacao": 1000,
    "temMetro": false,
    "quantidadeEstadios": 3,
    "estadios": [
@@ -3616,7 +3616,7 @@
      "clube": "Grêmio",
      "sigla": "FBPA",
      "percentualTorcedores": 20.0,
-     "torcedoresEstimados": 160,
+     "torcedoresEstimados": 200,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3625,7 +3625,7 @@
      "clube": "Joinville",
      "sigla": "JEC",
      "percentualTorcedores": 15.0,
-     "torcedoresEstimados": 120,
+     "torcedoresEstimados": 150,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3634,7 +3634,7 @@
      "clube": "Criciúma",
      "sigla": "CEC",
      "percentualTorcedores": 15.0,
-     "torcedoresEstimados": 120,
+     "torcedoresEstimados": 150,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3643,7 +3643,7 @@
      "clube": "Internacional",
      "sigla": "SCI",
      "percentualTorcedores": 15.0,
-     "torcedoresEstimados": 120,
+     "torcedoresEstimados": 150,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3652,7 +3652,7 @@
      "clube": "Chapecoense",
      "sigla": "ACF",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 80,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3661,7 +3661,7 @@
      "clube": "Flamengo",
      "sigla": "CRF",
      "percentualTorcedores": 7.0,
-     "torcedoresEstimados": 56,
+     "torcedoresEstimados": 70,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3670,7 +3670,7 @@
      "clube": "Corinthians",
      "sigla": "SCCP",
      "percentualTorcedores": 4.0,
-     "torcedoresEstimados": 32,
+     "torcedoresEstimados": 40,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3679,7 +3679,7 @@
      "clube": "São Paulo",
      "sigla": "SPFC",
      "percentualTorcedores": 3.0,
-     "torcedoresEstimados": 24,
+     "torcedoresEstimados": 30,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3688,7 +3688,7 @@
      "clube": "Palmeiras",
      "sigla": "SEP",
      "percentualTorcedores": 3.0,
-     "torcedoresEstimados": 24,
+     "torcedoresEstimados": 30,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3697,7 +3697,7 @@
      "clube": "Vasco",
      "sigla": "CRVG",
      "percentualTorcedores": 2.0,
-     "torcedoresEstimados": 16,
+     "torcedoresEstimados": 20,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3706,7 +3706,7 @@
      "clube": "Juventude",
      "sigla": "ECJ",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3715,7 +3715,7 @@
      "clube": "Paysandu",
      "sigla": "PSC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3724,7 +3724,7 @@
      "clube": "Caxias",
      "sigla": "SERC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3733,7 +3733,7 @@
      "clube": "Coritiba",
      "sigla": "CFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3742,7 +3742,7 @@
      "clube": "Figueirense",
      "sigla": "FFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3751,7 +3751,7 @@
      "clube": "Avaí",
      "sigla": "AFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     }
@@ -3770,7 +3770,7 @@
     "bairrosEsperados": 8,
     "bairrosPorZonaEsperado": 2
    },
-   "populacao": 800,
+   "populacao": 1000,
    "temMetro": false,
    "quantidadeEstadios": 3,
    "estadios": [
@@ -3869,7 +3869,7 @@
      "clube": "Corinthians",
      "sigla": "SCCP",
      "percentualTorcedores": 16.0,
-     "torcedoresEstimados": 128,
+     "torcedoresEstimados": 160,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3878,7 +3878,7 @@
      "clube": "São Paulo",
      "sigla": "SPFC",
      "percentualTorcedores": 11.0,
-     "torcedoresEstimados": 88,
+     "torcedoresEstimados": 110,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3887,7 +3887,7 @@
      "clube": "Palmeiras",
      "sigla": "SEP",
      "percentualTorcedores": 11.0,
-     "torcedoresEstimados": 88,
+     "torcedoresEstimados": 110,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3896,7 +3896,7 @@
      "clube": "Mirassol",
      "sigla": "MFC",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3905,7 +3905,7 @@
      "clube": "Novorizontino",
      "sigla": "GEN",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3914,7 +3914,7 @@
      "clube": "Inter de Limeira",
      "sigla": "AAIL",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3923,7 +3923,7 @@
      "clube": "Botafogo/SP",
      "sigla": "BFC",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3932,7 +3932,7 @@
      "clube": "XV de Piracicaba",
      "sigla": "ECXV",
      "percentualTorcedores": 5.0,
-     "torcedoresEstimados": 40,
+     "torcedoresEstimados": 50,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3941,7 +3941,7 @@
      "clube": "Noroeste",
      "sigla": "ECN",
      "percentualTorcedores": 5.0,
-     "torcedoresEstimados": 40,
+     "torcedoresEstimados": 50,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3950,7 +3950,7 @@
      "clube": "Ituano",
      "sigla": "IFC",
      "percentualTorcedores": 5.0,
-     "torcedoresEstimados": 40,
+     "torcedoresEstimados": 50,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -3959,7 +3959,7 @@
      "clube": "Santos",
      "sigla": "SFC",
      "percentualTorcedores": 5.0,
-     "torcedoresEstimados": 40,
+     "torcedoresEstimados": 50,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3968,7 +3968,7 @@
      "clube": "Flamengo",
      "sigla": "CRF",
      "percentualTorcedores": 3.0,
-     "torcedoresEstimados": 24,
+     "torcedoresEstimados": 30,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3977,7 +3977,7 @@
      "clube": "Vasco",
      "sigla": "CRVG",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3986,7 +3986,7 @@
      "clube": "Athletico",
      "sigla": "CAP",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -3995,7 +3995,7 @@
      "clube": "Coritiba",
      "sigla": "CFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4004,7 +4004,7 @@
      "clube": "Londrina",
      "sigla": "LEC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4013,7 +4013,7 @@
      "clube": "Cruzeiro",
      "sigla": "CEC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4022,7 +4022,7 @@
      "clube": "Goiás",
      "sigla": "GEC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4031,7 +4031,7 @@
      "clube": "Portuguesa",
      "sigla": "AAP",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     }
@@ -4050,7 +4050,7 @@
     "bairrosEsperados": 8,
     "bairrosPorZonaEsperado": 2
    },
-   "populacao": 600,
+   "populacao": 1000,
    "temMetro": false,
    "quantidadeEstadios": 2,
    "estadios": [
@@ -4139,7 +4139,7 @@
      "clube": "Icasa",
      "sigla": "ADRC",
      "percentualTorcedores": 15.0,
-     "torcedoresEstimados": 90,
+     "torcedoresEstimados": 150,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4148,7 +4148,7 @@
      "clube": "Guarany de Sobral",
      "sigla": "GSC",
      "percentualTorcedores": 15.0,
-     "torcedoresEstimados": 90,
+     "torcedoresEstimados": 150,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4157,7 +4157,7 @@
      "clube": "Flamengo",
      "sigla": "CRF",
      "percentualTorcedores": 14.0,
-     "torcedoresEstimados": 84,
+     "torcedoresEstimados": 140,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4166,7 +4166,7 @@
      "clube": "Fortaleza",
      "sigla": "FEC",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 60,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4175,7 +4175,7 @@
      "clube": "Ceará",
      "sigla": "CSC",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 60,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4184,7 +4184,7 @@
      "clube": "Iguatu",
      "sigla": "ADI",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 48,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4193,7 +4193,7 @@
      "clube": "Corinthians",
      "sigla": "SCCP",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 48,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4202,7 +4202,7 @@
      "clube": "São Paulo",
      "sigla": "SPFC",
      "percentualTorcedores": 5.0,
-     "torcedoresEstimados": 30,
+     "torcedoresEstimados": 50,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4211,7 +4211,7 @@
      "clube": "Palmeiras",
      "sigla": "SEP",
      "percentualTorcedores": 5.0,
-     "torcedoresEstimados": 30,
+     "torcedoresEstimados": 50,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4220,7 +4220,7 @@
      "clube": "Vasco",
      "sigla": "CRVG",
      "percentualTorcedores": 3.0,
-     "torcedoresEstimados": 18,
+     "torcedoresEstimados": 30,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4229,7 +4229,7 @@
      "clube": "Treze",
      "sigla": "TFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 6,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4238,7 +4238,7 @@
      "clube": "Campinense",
      "sigla": "CC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 6,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4247,7 +4247,7 @@
      "clube": "Sampaio Corrêa",
      "sigla": "SCFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 6,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4256,7 +4256,7 @@
      "clube": "Sousa",
      "sigla": "SEC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 6,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4265,7 +4265,7 @@
      "clube": "Salgueiro",
      "sigla": "SAC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 6,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4274,7 +4274,7 @@
      "clube": "Ferroviário",
      "sigla": "FAC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 6,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4283,7 +4283,7 @@
      "clube": "Floresta",
      "sigla": "FEC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 6,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     }
@@ -4302,7 +4302,7 @@
     "bairrosEsperados": 8,
     "bairrosPorZonaEsperado": 2
    },
-   "populacao": 800,
+   "populacao": 1000,
    "temMetro": false,
    "quantidadeEstadios": 2,
    "estadios": [
@@ -4392,7 +4392,7 @@
      "clube": "Londrina",
      "sigla": "LEC",
      "percentualTorcedores": 20.0,
-     "torcedoresEstimados": 160,
+     "torcedoresEstimados": 200,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4401,7 +4401,7 @@
      "clube": "Operário/PR",
      "sigla": "OFEC",
      "percentualTorcedores": 15.0,
-     "torcedoresEstimados": 120,
+     "torcedoresEstimados": 150,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4410,7 +4410,7 @@
      "clube": "Corinthians",
      "sigla": "SCCP",
      "percentualTorcedores": 15.0,
-     "torcedoresEstimados": 120,
+     "torcedoresEstimados": 150,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4419,7 +4419,7 @@
      "clube": "Maringá",
      "sigla": "MFC",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 80,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4428,7 +4428,7 @@
      "clube": "São Paulo",
      "sigla": "SPFC",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4437,7 +4437,7 @@
      "clube": "Palmeiras",
      "sigla": "SEP",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4446,7 +4446,7 @@
      "clube": "Coritiba",
      "sigla": "CFC",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4455,7 +4455,7 @@
      "clube": "Athletico",
      "sigla": "CAP",
      "percentualTorcedores": 6.0,
-     "torcedoresEstimados": 48,
+     "torcedoresEstimados": 60,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4464,7 +4464,7 @@
      "clube": "Flamengo",
      "sigla": "CRF",
      "percentualTorcedores": 3.0,
-     "torcedoresEstimados": 24,
+     "torcedoresEstimados": 30,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4473,7 +4473,7 @@
      "clube": "Vasco",
      "sigla": "CRVG",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4482,7 +4482,7 @@
      "clube": "Internacional",
      "sigla": "SCI",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4491,7 +4491,7 @@
      "clube": "Grêmio",
      "sigla": "FBPA",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4500,7 +4500,7 @@
      "clube": "Chapecoense",
      "sigla": "ACF",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4509,7 +4509,7 @@
      "clube": "Paysandu",
      "sigla": "PSC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4518,7 +4518,7 @@
      "clube": "Remo",
      "sigla": "CR",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4527,7 +4527,7 @@
      "clube": "Paraná",
      "sigla": "PRC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     }
@@ -4546,7 +4546,7 @@
     "bairrosEsperados": 8,
     "bairrosPorZonaEsperado": 2
    },
-   "populacao": 800,
+   "populacao": 1000,
    "temMetro": false,
    "quantidadeEstadios": 3,
    "estadios": [
@@ -4640,7 +4640,7 @@
      "clube": "Grêmio",
      "sigla": "FBPA",
      "percentualTorcedores": 18.0,
-     "torcedoresEstimados": 144,
+     "torcedoresEstimados": 180,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4649,7 +4649,7 @@
      "clube": "Juventude",
      "sigla": "ECJ",
      "percentualTorcedores": 15.0,
-     "torcedoresEstimados": 120,
+     "torcedoresEstimados": 150,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4658,7 +4658,7 @@
      "clube": "Brasil de Pelotas",
      "sigla": "GEB",
      "percentualTorcedores": 14.0,
-     "torcedoresEstimados": 112,
+     "torcedoresEstimados": 140,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4667,7 +4667,7 @@
      "clube": "Internacional",
      "sigla": "SCI",
      "percentualTorcedores": 14.0,
-     "torcedoresEstimados": 112,
+     "torcedoresEstimados": 140,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4676,7 +4676,7 @@
      "clube": "Caxias",
      "sigla": "SERC",
      "percentualTorcedores": 10.0,
-     "torcedoresEstimados": 80,
+     "torcedoresEstimados": 100,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4685,7 +4685,7 @@
      "clube": "Pelotas",
      "sigla": "ECP",
      "percentualTorcedores": 8.0,
-     "torcedoresEstimados": 64,
+     "torcedoresEstimados": 80,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4694,7 +4694,7 @@
      "clube": "Ypiranga/RS",
      "sigla": "YFC",
      "percentualTorcedores": 5.0,
-     "torcedoresEstimados": 40,
+     "torcedoresEstimados": 50,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -4703,7 +4703,7 @@
      "clube": "Flamengo",
      "sigla": "CRF",
      "percentualTorcedores": 3.0,
-     "torcedoresEstimados": 24,
+     "torcedoresEstimados": 30,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4712,7 +4712,7 @@
      "clube": "São Paulo",
      "sigla": "SPFC",
      "percentualTorcedores": 2.0,
-     "torcedoresEstimados": 16,
+     "torcedoresEstimados": 20,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4721,7 +4721,7 @@
      "clube": "Palmeiras",
      "sigla": "SEP",
      "percentualTorcedores": 2.0,
-     "torcedoresEstimados": 16,
+     "torcedoresEstimados": 20,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4730,7 +4730,7 @@
      "clube": "Corinthians",
      "sigla": "SCCP",
      "percentualTorcedores": 2.0,
-     "torcedoresEstimados": 16,
+     "torcedoresEstimados": 20,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4739,7 +4739,7 @@
      "clube": "Vasco",
      "sigla": "CRVG",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4748,7 +4748,7 @@
      "clube": "Athletico",
      "sigla": "CAP",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4757,7 +4757,7 @@
      "clube": "Coritiba",
      "sigla": "CFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4766,7 +4766,7 @@
      "clube": "Chapecoense",
      "sigla": "ACF",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4775,7 +4775,7 @@
      "clube": "Criciúma",
      "sigla": "CEC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4784,7 +4784,7 @@
      "clube": "Santos",
      "sigla": "SFC",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     },
@@ -4793,7 +4793,7 @@
      "clube": "São José",
      "sigla": "ECSJ",
      "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 8,
+     "torcedoresEstimados": 10,
      "temEstadioProprio": false,
      "ehLocal": false
     }
@@ -6104,8 +6104,8 @@
      "nomeNoAsset": "Gremio",
      "clube": "Grêmio",
      "sigla": "FBPA",
-     "percentualTorcedores": 38.0,
-     "torcedoresEstimados": 570,
+     "percentualTorcedores": 37.0,
+     "torcedoresEstimados": 555,
      "temEstadioProprio": true,
      "ehLocal": true
     },
@@ -6266,8 +6266,8 @@
      "nomeNoAsset": "Sao Jose",
      "clube": "São José",
      "sigla": "ECSJ",
-     "percentualTorcedores": 1.0,
-     "torcedoresEstimados": 15,
+     "percentualTorcedores": 2.0,
+     "torcedoresEstimados": 30,
      "temEstadioProprio": false,
      "ehLocal": true
     }

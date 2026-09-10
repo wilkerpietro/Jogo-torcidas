@@ -1050,13 +1050,20 @@ TO.relacoes = (function(){
   }
 
   /* quem pode chegar até nós esta semana */
-  function alcanca(E, id){
+  /* QUEM ALCANÇA A GENTE. Da mesma praça, sempre. Visitante só quando
+     está na cidade — e NO DIA em que está (correção do dono, 10/09/2026:
+     a Bamor, de Salvador, fechou a TUF a caminho do Castelão num jogo
+     Fortaleza × Fluminense; ela estava em Fortaleza noutro dia da
+     semana, pelo Bahia, e a conta antiga aceitava qualquer dia de 1 a
+     7). Sem `dia`, vale qualquer dia — é o que os outros usos querem. */
+  function alcanca(E, id, dia){
     const o = M().torcida(id);
     if(!o) return false;
     if(o.mapa === E.torcida.mapa) return true;               // mesma praça
     if(TO.praca && TO.praca.naRuaEm){                        // visitante na cidade
-      for(let dia=1; dia<=7; dia++)
-        if(TO.praca.naRuaEm(E, dia).some(x=>x.id===id)) return true;
+      const dias = dia ? [dia] : [1,2,3,4,5,6,7];
+      for(const d of dias)
+        if(TO.praca.naRuaEm(E, d).some(x=>x.id===id)) return true;
     }
     return false;
   }
@@ -1074,7 +1081,9 @@ TO.relacoes = (function(){
       if(r > QUENTE) continue;
       if(emTregua(E, o.id)) continue;
       if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
-      if(!alcanca(E, o.id)) continue;
+      /* o ataque é no dia do nosso jogo: visitante tem de estar na
+         cidade NESSE dia, não em qualquer um da semana */
+      if(!alcanca(E, o.id, (E.proximoJogo && E.proximoJogo.dia) || 6)) continue;
       const t = (E.mundoTorcidas||{})[o.id];
       /* ATAQUE DE NANICA NÃO EXISTE (decisão do dono, 17/08/2026):
          torcida com menos da metade do nosso efetivo não vem — a cena
