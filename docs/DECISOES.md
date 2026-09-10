@@ -4904,6 +4904,49 @@ balançando foi a primeira versão desta e também caiu.
   cortes de cena; testes `faixas`, `faixa-tomada-regra`,
   `faixa-bandeira` e `loja` seguem passando.
 
+## A faixa alinhada com o alambrado, medido na imagem (correção do dono, 10/09/2026)
+
+"Perceba que a faixa não fica alinhada com o alambrado em muitos casos,
+como no da imagem. Vasculhe os casos que ela não fica alinhada e
+corrija." A foto era a quina do mandante 1 no estádio de 10 mil: a
+faixa curvava num arco que não era o do muro.
+
+- O ajuste anterior amostrava a borda da MÁSCARA caminhável com raios
+  paralelos a `dir`. Numa quina, raios paralelos cortam a curva de
+  través e o círculo ajustado sai com centro e raio errados; e a
+  máscara tem células de 8 px, então a borda dela é uma escada.
+- Agora a cerca é medida na própria imagem (`cerca-ajuste.js`): o fundo
+  é desenhado numa tela 1536×1024, o gramado é classificado por matiz
+  (42°–150°, saturação > 0,14), as linhas do campo são fechadas por
+  dilatação e erosão de 3 células, e só o componente ligado ao centro
+  conta como campo. A borda desse componente é a referência nos
+  estádios de 10 e 20 mil; no de 40 mil os setores ficam no anel de
+  cima, longe do gramado, e a referência é a frente do anel caminhável,
+  amostrada AO LONGO DA CURVA atual (raio radial) ficando com a
+  transição mais perto da cerca de hoje — os vomitórios no meio do anel
+  paravam o raio antes.
+- Onde a faixa pendura em cada estádio: no de 10 mil, 3 px fora do
+  gramado (o muro encosta na grama); no de 20 mil, 34 px fora — a linha
+  das placas, que é onde a arquibancada começa (medido nos quatro
+  setores retos: 33 a 38 px); no de 40 mil, a frente do anel.
+- Pra cada âncora, círculo (Kåsa) e reta por mínimos quadrados nos
+  pontos a até len/2 + 10 da cerca, com comprimentos 150, 110 e 80: fica
+  o maior comprimento com desvio ≤ 6 px (gramado) ou 7 px (anel); arco
+  só com raio ≥ 45 e desvio abaixo de 90% do da reta; reta quase no eixo
+  vira eixo. Atrás do gol do 20 mil a placa faz um degrau reto — arco
+  ali é ajuste ao degrau, então é reta, e a faixa encurta pra 110 pra
+  não atravessar o degrau.
+- O que mudou: 10 mil mandante 1 virou RETA (o trecho de 150 px é reto
+  dentro de 2,4 px; o arco que havia era o erro da foto) e moveu 20 px;
+  20 mil visitante 2 e 3 ganharam o centro medido (453,320) em vez de
+  (478,349)/(463,330), com 150 de comprimento; 40 mil mandante 1 e
+  visitante 2 viraram reta (o anel é reto dentro de 4 px nesses 150 px),
+  visitante 3 ficou em arco de centro (532,623). Os demais moveram
+  menos de 5 px.
+- Conferido em cortes de 300 px de cada setor dos três estádios com
+  todos os setores ocupados (`cortes-setores.js`); `faixa-tomada-regra`
+  e `faixa-setores` passam.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

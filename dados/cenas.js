@@ -723,8 +723,11 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante1:{x:1252, y:298, len:150, dir:[-1,0.09], arco:[1116,310]}, mandante2:{x:1000, y:842, len:150, dir:[0,-1]}, mandante3:{x:523, y:842, len:150, dir:[0,-1]},
-            visitante1:{x:515, y:197, len:110, dir:[0,1]}, visitante2:{x:655, y:197, len:150, dir:[0,1]}},
+    /* âncoras medidas na borda do gramado (ajuste de 10/09/2026): a
+       quina do mandante 1 é reta neste trecho — o arco que havia não
+       acompanhava o muro */
+    faixas:{mandante1:{x:1232, y:300, len:150, dir:[-1,0]}, mandante2:{x:1000, y:845, len:150, dir:[0,-1]}, mandante3:{x:523, y:844, len:150, dir:[0,-1]},
+            visitante1:{x:515, y:197, len:150, dir:[0,1]}, visitante2:{x:655, y:201, len:150, dir:[0,1]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:300,
        jogador:true, entrada:'portao_mandante'},
@@ -758,8 +761,12 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante1:{x:1194, y:516, len:150, dir:[-1,0]}, mandante2:{x:675, y:802, len:150, dir:[0,-1]}, mandante3:{x:875, y:221, len:150, dir:[0,1]},
-            visitante1:{x:349, y:516, len:150, dir:[1,0]}, visitante2:{x:387, y:247, len:80, dir:[0.67,0.75], arco:[478,349]}, visitante3:{x:362, y:276, len:110, dir:[0.88,0.47], arco:[463,330]}},
+    /* âncoras medidas na linha das placas (34 px fora do gramado —
+       ajuste de 10/09/2026); atrás do gol a placa faz um degrau, e a
+       faixa encurta pra 110 pra não atravessar o degrau; a quina dos
+       visitantes é um arco de centro (453,320) */
+    faixas:{mandante1:{x:1191, y:516, len:150, dir:[-1,0]}, mandante2:{x:675, y:802, len:110, dir:[0,-1]}, mandante3:{x:875, y:221, len:110, dir:[0,1]},
+            visitante1:{x:349, y:516, len:150, dir:[1,0]}, visitante2:{x:382, y:242, len:150, dir:[0.68,0.73], arco:[453,318]}, visitante3:{x:358, y:274, len:150, dir:[0.89,0.46], arco:[453,323]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:490,
        jogador:true, entrada:'portao_mandante'},
@@ -797,8 +804,11 @@ TO.dados.cenas = (function(){
        na frente da parede/alambrado; `dir` aponta pra parede, e o topo
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
-    faixas:{mandante1:{x:1256, y:370, len:150, dir:[-0.95,0.31], arco:[943,471]}, mandante2:{x:515, y:140, len:110, dir:[0.56,0.83]},
-            visitante1:{x:360, y:815, len:110, dir:[0.8,-0.6]}, visitante2:{x:251, y:585, len:150, dir:[0.99,-0.14], arco:[768,512]}, visitante3:{x:436, y:697, len:150, dir:[0.79,-0.61], arco:[535,621]}},
+    /* âncoras medidas na frente do anel caminhável, amostrada ao longo
+       da curva (ajuste de 10/09/2026): neste trecho de 150 px o anel é
+       reto dentro de 4 px, só o visitante 3 curva */
+    faixas:{mandante1:{x:1252, y:371, len:150, dir:[-0.94,0.33]}, mandante2:{x:521, y:148, len:150, dir:[0.28,0.96]},
+            visitante1:{x:368, y:808, len:110, dir:[0.53,-0.85]}, visitante2:{x:269, y:583, len:150, dir:[0.99,-0.14]}, visitante3:{x:436, y:697, len:150, dir:[0.79,-0.61], arco:[532,623]}},
     spawns:[
       {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1310, y:360,
        jogador:true, entrada:'portao_mandante'},
