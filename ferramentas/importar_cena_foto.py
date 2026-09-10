@@ -93,6 +93,20 @@ FONTES = [
                  (0.62, 0.00, 0.91, 0.72),    # a vertical leste
                  (0.35, 0.28, 0.64, 0.72)]},  # o bar e a calcada dele
 
+    # ---- as SEDES (pedido do dono, 10/09/2026): cena de DENTRO ------
+    # Aqui a construcao nao sai por cor: a sede nao tem telhado, entao o
+    # topo do muro e o mesmo concreto cinza do patio. Sem `crista` a
+    # parede virava chao (medido: 73% do quadro). O recorte segura a rua
+    # inteira — e dela que o atacante spawna e caminha ate o portao — e o
+    # quarteirao da sede, deixando quintal de vizinho de fora.
+    {'id': 'sede-1', 'arquivo': 'sede_nivel_1.png', 'saida': 'sede_1.webp',
+     'crista': 8,
+     # so a rua: as salas tem de acender pela porta, e nao pela semente.
+     # Se alguma nao acender, a porta nao existe na foto.
+     'sementes': [(0.477, 0.80), (0.10, 0.80), (0.90, 0.80)],
+     'recorte': [(0.00, 0.545, 1.00, 0.930),    # a rua e os dois passeios
+                 (0.255, 0.085, 0.750, 0.575)]},# o quarteirao da sede
+
     # ---- lote de 19/08 (pedido do dono): tretas, emboscadas, CT e
     #      os tres estadios por capacidade -------------------------------
     # 5x5: a viela entre os quintais — corredor apertado de ponta a ponta
@@ -233,7 +247,7 @@ def recortar(forma, retangulos):
 
 
 def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
-         terra=False, claro=False, engorda=0, excluir=None):
+         terra=False, claro=False, engorda=0, excluir=None, crista=0):
     """1 onde dá pra pisar. Cor dá o candidato; conectividade dá a resposta."""
     R, G, B = a[:, :, 0], a[:, :, 1], a[:, :, 2]
     mx, mn = a.max(2), a.min(2)
@@ -256,6 +270,18 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
         # passeio de concreto branco estourado de sol (o anel do estadio
         # pequeno): mais claro que o teto normal de 232
         cand |= cinza & (lum >= 232) & (lum < 253)
+
+    # PAREDE DE SEDE É CRISTA DE BRILHO (cenas de dentro, 10/09/2026).
+    # Nas cenas de fora a construção some por cor: telha é laranja, mato é
+    # verde. Dentro de uma sede sem telhado não há telha nenhuma — o topo
+    # do muro é o MESMO concreto cinza do pátio, e cor não separa os dois
+    # (medido: 73% do quadro virava chão, muro incluído). O que separa é a
+    # forma: o topo da parede é uma faixa mais clara que a vizinhança dela,
+    # e o piso é chapado. Tira-se o que está `crista` acima da mediana de
+    # janela larga, ANTES da morfologia, senão a textura do piso vira
+    # cisco e o vão da porta fecha.
+    if crista:
+        cand &= (lum - nd.uniform_filter(lum.astype(np.float32), 61)) <= crista
 
     # a faixa de quintal, em cima e embaixo, nunca é chão
     cand[:topo, :] = False
@@ -370,7 +396,7 @@ def main():
         m = chao(a, f['sementes'], topo, altura,
                  f.get('corredor', False), f.get('recorte'),
                  f.get('terra', False), f.get('claro', False),
-                 f.get('engorda', 0), f.get('excluir'))
+                 f.get('engorda', 0), f.get('excluir'), f.get('crista', 0))
         cel = para_celulas(m)
         anc = ancoras(cel)
         fora[f['id']] = {

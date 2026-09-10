@@ -5,7 +5,7 @@ ortofoto de zênite, dia nublado, cor dessaturada, periferia brasileira.
 
 | Cena | Nível | Planta de entrada | Saída pro jogo | Estado |
 |---|---|---|---|---|
-| Sede nv 1 | 1 | `docs/plantas/sede-nivel-1.jpg` | `sede_1.webp` | 2 tentativas, refazendo a projeção |
+| Sede nv 1 | 1 | `docs/plantas/sede-nivel-1.jpg` | `sede_1.webp` | **importada** — falta o colchão no pátio |
 | Sede nv 2 | 2 | `docs/plantas/sede-nivel-2.png` | `sede_2.webp` | a fazer |
 | Sede nv 3 | 3 | `docs/plantas/sede-nivel-3.png` | `sede_3.webp` | a fazer |
 | Sede nv 4 | 4 | `docs/plantas/sede-nivel-4.jpg` | `sede_4.webp` | a fazer |
@@ -100,13 +100,26 @@ cor e conectividade (`ferramentas/importar_cena_foto.py`).
   cimento queimado, ladrilho, cerâmica: claro. Parede: faixa escura e contínua;
 - **parede grossa**: pelo menos 1/60 da largura do quadro (uns 45 px numa
   imagem de 2752). Parede fina some na célula de 8 px da máscara;
-- **a sede ocupa o quadro**: o quarteirão murado toma uns 92% da largura e 88%
-  da altura, com só uma tira de rua e calçada de um lado. Sede pequena no meio
-  de terreno baldio desperdiça a tela;
+- **a rua inteira aparece**, de ponta a ponta, do lado do portão, com as duas
+  calçadas: é dela que o atacante nasce e é por ela que ele caminha até o
+  portão. Uma tira fina não dá espaço de spawn (pedido do dono, 10/09/2026);
+- **a sede ocupa o resto do quadro**, encostada nas bordas de cima e dos lados.
+  Sede pequena no meio de terreno baldio desperdiça a tela;
 - as salas ficam **no lugar e no tamanho da planta**, e o portão da rua fica na
   parede que a planta manda;
 - **nada de gente na imagem**: o povo são os bonecos 3D, desenhados por cima;
 - nada de texto, placa, número de sala ou marca d'água.
+
+## Colchão no pátio, só onde não há onde dormir
+
+Quem dorme na sede dorme onde dá. Nos níveis **1 e 2** não existe dormitório
+nem hotel, então os colchões ficam **no chão do pátio**, encostados na parede
+lateral, com o meio do pátio livre como sempre. É o detalhe que conta a
+história e alimenta a regra: à noite, os defensores da sede estão ali.
+
+Do **nível 3 em diante não entra colchão nenhum** no pátio — o nível 3 e o 4
+têm dormitório, o 5 tem a ala de hospedagem. Colchão solto numa sede que já tem
+cama vira bagunça.
 
 ## Formato do arquivo
 
@@ -194,8 +207,10 @@ a briga, não a decoração.
 ```
 SMALL COMPOUND, THREE SPACES ONLY.
 
-Left half: an open concrete yard, empty, cracked slab floor with a drain, one
-blue plastic water tank standing in the far corner and nothing else.
+Left half: an open concrete yard, cracked slab floor with a drain, one blue
+plastic water tank standing in the far corner, and three thin foam mattresses
+laid flat side by side on the ground along the side wall — people sleep here
+because there is no dormitory. The center of the yard stays completely clear.
 
 Right half: divided into two rooms of equal width, one above the other.
 Upper room, an office: one wooden desk with a chair pushed against the far wall,
@@ -218,7 +233,10 @@ wall; center a workshop with one long empty work table against the far wall;
 right a storeroom with one long empty shelf against the far wall and nothing
 else — no banners, no flags, no drums.
 
-Below them a wide open concrete yard running the full width, completely empty.
+Below them a wide open concrete yard running the full width, empty except for
+four thin foam mattresses laid flat side by side on the ground along one side
+wall — people sleep here because there is no dormitory. The center of the yard
+stays completely clear.
 
 Bottom-left corner: a narrow bar room with a tiled counter along its outer wall
 and nothing else, one open doorway onto the yard.
@@ -343,6 +361,24 @@ skyscrapers, european architecture, suburban american houses, snow
    na máscara e some do jogo.
 8. **Proporção 3:2?** Quadrada ou 4:3 perde muro no corte.
 9. **Tem gente ou texto?** Não pode ter nenhum dos dois.
+
+## A máscara das paredes: resolvido, não mexa na arte
+
+A 3ª rodada levantou um problema que **não é de prompt**. Nas cenas de fora a
+construção sai por cor — telha é laranja, mato é verde. Numa sede sem telhado
+não há telha nenhuma: o topo do muro é o **mesmo concreto cinza do pátio**, e
+cor não separa os dois. Medido na 3ª imagem: 73% do quadro virava chão de
+andar, parede incluída.
+
+Resolvido no importador (`crista`, 10/09/2026): o que separa não é cor, é
+forma. O topo da parede é uma faixa mais clara que a vizinhança dela; o piso é
+chapado. Tira-se do candidato tudo que estiver 8 níveis de brilho acima da
+mediana de janela larga, **antes** da morfologia. Medido na mesma imagem:
+partindo só da semente da rua, o chão entra pelo portão, atravessa as duas
+portas e enche as duas salas, com as paredes bloqueadas e 51,7% de chão.
+
+**Não mude a cor das paredes por causa disso.** Concreto cinza está certo e
+continua certo.
 
 ## Depois que a imagem estiver boa
 

@@ -5197,6 +5197,38 @@ mais competitivas contra as grandes."
 - NADA DISSO ESTÁ IMPLEMENTADO. A proposta desenhada está publicada como
   artifact ("Planta da Sede").
 
+## Parede de sede é crista de brilho, não cor (10/09/2026)
+- A cena de sede é de DENTRO, e isso quebrou a extração de máscara que
+  vale pras cenas de fora. Lá a construção sai por cor: telha é laranja
+  (`R > G+18 && R > B+22`), mato é verde, e o que sobra de cinza entre
+  luminância 42 e 232 é chão. Numa sede sem telhado não existe telha
+  nenhuma — o topo do muro é o MESMO concreto cinza do pátio.
+- MEDIDO na 3ª foto do nível 1: 73,3% do quadro virava chão de andar, com
+  todas as paredes internas e o muro externo dentro do chão. O jogador
+  atravessaria parede.
+- O QUE SEPARA É A FORMA. O topo da parede é uma faixa mais clara que a
+  vizinhança imediata dela; o piso, mesmo o de ladrilho claro, é chapado.
+  `chao()` ganhou o parâmetro `crista`: tira do candidato tudo que estiver
+  `crista` níveis de brilho acima da mediana de janela 61, e faz isso
+  ANTES da morfologia — depois dela a textura do piso vira cisco e o vão
+  da porta fecha.
+- CONFERIDO com a semente SÓ da rua: o chão entra pelo portão, toma o
+  pátio, atravessa as duas portas e enche o gabinete e o depósito. Se uma
+  sala não acendesse, seria porque a porta não existe na foto — o teste
+  de conectividade e o de porta viraram o mesmo teste.
+- O `recorte` da sede tem dois retângulos: a rua inteira com os dois
+  passeios (é dela que o atacante nasce) e o quarteirão da sede. Sem o
+  segundo, o quintal do vizinho entrava junto.
+- RESULTADO: 51,7% de chão, paredes bloqueadas, vizinhos de fora. As 14
+  cenas antigas saem com a máscara byte a byte idêntica — `crista` é 0 por
+  padrão e só a sede pede. `varredura-cenas` passa nas 18.
+- A ARTE NÃO MUDA por causa disso: parede de concreto cinza está certa.
+- A RUA INTEIRA entra no quadro, de ponta a ponta, com as duas calçadas
+  (pedido do dono): é o espaço de spawn e de aproximação do atacante.
+- COLCHÃO NO PÁTIO só onde não há onde dormir — níveis 1 e 2, encostado na
+  parede lateral, meio do pátio livre. Do 3 em diante tem dormitório (3 e
+  4) ou ala de hospedagem (5), e colchão solto vira bagunça.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
