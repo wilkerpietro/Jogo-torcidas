@@ -5002,14 +5002,31 @@ baixa". Feed e diplomacia ficaram como estão.
   (braços pra frente um pouco abaixo do ombro, lado a lado a 20 px), a
   cena virou noite (céu a 38%, poste amarelo a 1,6, tijolo mais escuro)
   e o muro ficou só com a sigla, maior. Os cartões de resumo da tela de
-  membros saíram (ficam os filtros e a tabela). O Patrimônio ganhou o
-  botão "← Voltar" pra sub-aba de onde se veio (`subFinAnterior`), e a
-  Loja, quando aberta do Patrimônio, o "← Voltar ao Patrimônio".
+  membros saíram (ficam os filtros e a tabela).
 - Testado (`telas-aprovadas.js`): as três telas em 1280 e 390 sem
   rolagem horizontal, perfil com cinco eventos na linha do tempo, e um
   ataque ao bar da Cearamor em que derrubamos o portador — o relatório
   abriu com o troféu, as legendas e a foto revelada. `faixas` (com o
   seletor novo do Patrimônio) e `loja` passam.
+
+## O Patrimônio volta ao layout antigo (correção do dono, 10/09/2026)
+
+"Preciso do retorno à tela anterior" foi lido como botão de voltar, e
+era o contrário: "eu te expliquei errado: preciso que a tela patrimônio
+tenha o layout antigo".
+
+- `pintarPatrimonio` volta ao que era em `0adabdd`: a tabela da
+  Estrutura (local, receita, despesa, mês, com o total), o botão
+  "Comprar e ampliar é na Loja →" e o quadro das Faixas — as nossas, as
+  tomadas de cabeça pra baixo e as bandeiras. Os auxiliares
+  `comprar`/`oferta` não voltaram: já estavam mortos ali desde que a
+  compra foi pra Loja.
+- Saíram junto os dois botões de voltar (Patrimônio e Loja) e o rastro
+  `subFinAnterior`, mais o CSS `.pat-*` e `.volta-linha`, que ficaram
+  sem uso.
+- O cartão de patrimônio EM CARTÕES fica descartado; as outras três
+  telas aprovadas (perfil do membro, membros, relatório com o troféu)
+  seguem como estão.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

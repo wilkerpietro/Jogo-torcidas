@@ -2170,20 +2170,3 @@ header.capa-cidade{background-size:cover; background-position:center;
 .mb-acao{width:88px;text-align:right}
 .mb-promo{width:auto;padding:0 9px;color:var(--verde-vivo);border-color:#2f5a38}
 @media (max-width:760px){.mb-resumo{grid-template-columns:repeat(2,1fr)}.mb-busca{width:100%;margin:6px 0 0}.mb-acao{width:auto}}
-/* ---- patrimônio ---- */
-.pat-cores{background:var(--painel);border:1px solid var(--linha);padding:12px 14px;margin-bottom:10px}
-.pat-cores h3,.pat-sede b{font-family:var(--titulo);font-size:13px;letter-spacing:.17em;text-transform:uppercase}
-.pat-cores h3{margin-bottom:10px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap} .pat-cores h3 small{font-family:var(--mono);font-size:10px;color:var(--fraco);letter-spacing:.04em;text-transform:none}
-.pat-cores-lista{display:flex;gap:14px;align-items:center;flex-wrap:wrap} .pat-cores-lista .bandeira-img{width:56px;height:56px} .pat-sep{width:1px;height:44px;background:var(--linha)}
-.pat-sede{display:flex;align-items:center;gap:16px;background:var(--painel);border:1px solid var(--linha);padding:10px 14px;margin-bottom:10px;flex-wrap:wrap}
-.pat-sede b{font-size:15px;display:block} .pat-sede small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
-.pat-sede .barra-g{width:200px;flex:1 1 140px} .pat-sede .mono{font-family:var(--mono);font-size:11px;color:var(--ouro);white-space:nowrap}
-.pat-pts{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-bottom:10px}
-.pat-pt{background:var(--painel);border:1px solid var(--linha);padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.pat-pt.no-vermelho{border-left:3px solid var(--vermelho)}
-.pat-pt .pt-cab{display:flex;justify-content:space-between;align-items:center;gap:8px} .pat-pt .pt-cab b{font-size:13.5px} .pat-pt>small{font-family:var(--mono);font-size:10px;color:var(--fraco)}
-.pat-pt .pt-b{display:grid;grid-template-columns:48px 1fr 52px;gap:8px;align-items:center;font-size:10.5px;color:var(--fraco)} .pat-pt .pt-b b{font-family:var(--mono);font-size:11.5px;text-align:right}
-.pat-pt .pt-pe{display:flex;align-items:baseline;gap:8px;border-top:1px solid var(--sulco);padding-top:6px;margin-top:2px;font-size:11px;color:var(--fraco)} .pat-pt .pt-pe b{font-family:var(--mono);font-size:15px}
-.pat-total{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;background:var(--painel);border:1px solid var(--linha);padding:10px 14px;font-size:11.5px;color:var(--fraco);margin-bottom:10px}
-.pat-total b{font-family:var(--mono);font-size:15px;margin-right:4px}
-.volta-linha{display:flex;margin-bottom:10px}

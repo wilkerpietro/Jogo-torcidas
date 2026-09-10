@@ -5248,92 +5248,88 @@
      ======================================================= */
   function pintarPatrimonio(pg, e){
     const PAT = TO.patrimonio;
-    /* o retorno à tela anterior (dono, 10/09/2026) */
-    const voltar = el('button',{class:'bt', texto:`← Voltar`});
-    voltar.onclick = ()=>{ subFin = subFinAnterior !== 'patrimonio' ? subFinAnterior : 'resumo'; subFinAnterior = 'patrimonio'; redesenhar(); };
-    pg.appendChild(el('div',{class:'volta-linha'},[voltar]));
-    /* O PATRIMÔNIO EM CARTÕES (layout aprovado pelo dono, 10/09/2026):
-       as cores da torcida no topo — faixas, bandeiras e as tomadas —,
-       a sede numa linha com a lotação, um cartão por ponto com receita
-       e despesa em barra e o saldo do mês, e o total no fim. Comprar e
-       ampliar é na Loja. */
+    /* O LAYOUT ANTIGO DE VOLTA (dono, 10/09/2026): a tabela da Estrutura
+       e o quadro das faixas. Os auxiliares `comprar`/`oferta` não voltam
+       porque já estavam mortos aqui desde que a compra foi pra Loja. */
+    const linhas = PAT.linhas(e);
+    const soma = k => linhas.reduce((s,l)=>s+l[k], 0);
+    const c = cartao('Estrutura',
+      'por mês · mensalidade e caravana ficam no Resumo');
+    const tab = el('div',{class:'tabela-pat'});
+    tab.appendChild(el('div',{class:'cab', html:
+      '<span>Local</span><span>Receita</span><span>Despesa</span><span>Mês</span>'}));
+    for(const l of linhas){
+      tab.appendChild(el('div',{class:'linha', html:
+        `<span class="nome">${l.rot}${l.bairro
+          ? `<small>${linkCidadePorNome(l.bairro)}</small>` : ''}`+
+        `${l.nota?`<small>${l.nota}</small>`:''}</span>
+         <span class="v ${l.receita?'positivo':''}">${l.receita?U.dinheiro(l.receita):'—'}</span>
+         <span class="v ${l.despesa?'negativo':''}">${l.despesa?U.dinheiro(-l.despesa):'—'}</span>
+         <span class="v ${l.saldo>0?'positivo':l.saldo<0?'negativo':''}">`+
+        `${U.dinheiro(l.saldo)}</span>`}));
+    }
+    const s = soma('receita')-soma('despesa');
+    tab.appendChild(el('div',{class:'linha total', html:
+      `<span class="nome">Total do patrimônio</span>
+       <span class="v positivo">${U.dinheiro(soma('receita'))}</span>
+       <span class="v negativo">${U.dinheiro(-soma('despesa'))}</span>
+       <span class="v ${s>=0?'positivo':'negativo'}">${U.dinheiro(s)}</span>`}));
+    c.corpo.appendChild(tab);
+    pg.appendChild(c);
+
+    /* AS COMPRAS SAÍRAM DAQUI (a Loja do dono, 09/09/2026): o Patrimônio
+       mostra o que a torcida tem e o que rende; comprar é na aba Loja */
+    const irLoja = el('button',{class:'bt', texto:'Comprar e ampliar é na Loja →'});
+    irLoja.onclick = ()=>{ subFin='loja'; redesenhar(); };
+    pg.appendChild(el('div',{class:'loja-chamada'},[irLoja]));
+
+    /* AS FAIXAS (pedido do dono, 09/09/2026): as nossas e as que tomamos,
+       estas de cabeça pra baixo */
+    const fx = PAT.faixasDe(e);
+    const c3 = cartao('Faixas', `${fx.nossas.length} ${fx.nossas.length===1?'nossa':'nossas'} · ${fx.tomadas.length} ${fx.tomadas.length===1?'tomada':'tomadas'}`);
+    const bl = el('div',{class:'faixas'});
+    bl.appendChild(el('div',{class:'faixas-rot', texto:'As nossas'}));
+    const nossas = el('div',{class:'faixas-lista'});
+    if(!fx.nossas.length) nossas.appendChild(el('div',{class:'fraco', texto:'Nenhuma: sem faixa na sede, nada a expor — nem a perder. Compre uma na Loja.'}));
     const imgFaixa = (o, cls, title, k) => {
       const im = el('img',{class:cls, title});
       im.src = PAT.imagemDaFaixa(o, url => { im.src = url; }, 'faixa', k || 0) || '';
       return im;
     };
+    fx.nossas.forEach((f, k) => nossas.appendChild(imgFaixa(e.torcida, 'faixa-img', `Faixa da ${e.torcida.nome} · desde ${f.desde}`, k)));
+    bl.appendChild(nossas);
+    bl.appendChild(el('div',{class:'faixas-rot', texto:'Tomadas'}));
+    const tomadas = el('div',{class:'faixas-lista'});
+    if(!fx.tomadas.length) tomadas.appendChild(el('div',{class:'fraco', texto:'Nenhuma ainda. Faixa se toma na rua: quem carrega a deles cai, ela é nossa.'}));
+    for(const f of fx.tomadas){
+      const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
+      const cx = el('div',{class:'faixa-tomada'});
+      cx.appendChild(imgFaixa(o, 'faixa-img virada', `Faixa da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
+      cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
+      tomadas.appendChild(cx);
+    }
+    bl.appendChild(tomadas);
+    /* as bandeiras (dono, 09/09/2026): mesma lógica, quadradas */
+    const bd = PAT.bandeirasDe(e);
     const imgBand = (o, cls, title) => {
       const im = el('img',{class:cls, title});
       im.src = PAT.imagemDaBandeira(o, url => { im.src = url; }) || '';
       return im;
     };
-    const fx = PAT.faixasDe(e), bd = PAT.bandeirasDe(e);
-    const cores = el('div',{class:'pat-cores'});
-    cores.appendChild(el('h3',{html:`As nossas cores <small>${fx.nossas.length} ${fx.nossas.length===1?'faixa':'faixas'} · ${bd.nossas.length} ${bd.nossas.length===1?'bandeira':'bandeiras'} · ${fx.tomadas.length+bd.tomadas.length} ${fx.tomadas.length+bd.tomadas.length===1?'tomada':'tomadas'}</small>`}));
-    const lista = el('div',{class:'pat-cores-lista'});
-    if(!fx.nossas.length && !bd.nossas.length) lista.appendChild(el('div',{class:'fraco', texto:'Sem faixa nem bandeira na sede: nada a expor — nem a perder. Compre na Loja.'}));
-    fx.nossas.forEach((f, k) => lista.appendChild(imgFaixa(e.torcida, 'faixa-img', `Faixa da ${e.torcida.nome} · desde ${f.desde}`, k)));
-    for(const f of bd.nossas) lista.appendChild(imgBand(e.torcida, 'bandeira-img', `Bandeira da ${e.torcida.nome} · desde ${f.desde}`));
-    if(fx.tomadas.length || bd.tomadas.length){
-      lista.appendChild(el('span',{class:'pat-sep'}));
-      for(const f of fx.tomadas){
-        const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
-        const cx = el('div',{class:'faixa-tomada'});
-        cx.appendChild(imgFaixa(o, 'faixa-img virada', `Faixa da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
-        cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
-        lista.appendChild(cx);
-      }
-      for(const f of bd.tomadas){
-        const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
-        const cx = el('div',{class:'faixa-tomada'});
-        cx.appendChild(imgBand(o, 'bandeira-img virada', `Bandeira da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
-        cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}`}));
-        lista.appendChild(cx);
-      }
+    bl.appendChild(el('div',{class:'faixas-rot', texto:`Bandeiras · ${bd.nossas.length} ${bd.nossas.length===1?'nossa':'nossas'} · ${bd.tomadas.length} ${bd.tomadas.length===1?'tomada':'tomadas'}`}));
+    const bands = el('div',{class:'faixas-lista bandeiras'});
+    if(!bd.nossas.length && !bd.tomadas.length) bands.appendChild(el('div',{class:'fraco', texto:'Nenhuma. Compre uma na Loja: sai no lugar da faixa no bar e na concentração, e junto dela no estádio.'}));
+    for(const f of bd.nossas) bands.appendChild(imgBand(e.torcida, 'bandeira-img', `Bandeira da ${e.torcida.nome} · desde ${f.desde}`));
+    for(const f of bd.tomadas){
+      const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
+      const cx = el('div',{class:'faixa-tomada'});
+      cx.appendChild(imgBand(o, 'bandeira-img virada', `Bandeira da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
+      cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}`}));
+      bands.appendChild(cx);
     }
-    cores.appendChild(lista);
-    pg.appendChild(cores);
-
-    /* a sede: nível, bairro, lotação e quem trabalha nela */
-    const linhas = PAT.linhas(e);
-    const n = e.torcida.sedeNivel || 1;
-    const teto = (TO.membros.SEDE && TO.membros.SEDE[n] && TO.membros.SEDE[n].membros) || 0;
-    const lot = teto ? Math.round(100 * e.membros.length / teto) : 0;
-    const sedeL = linhas.find(l=>l.tipo==='sede') || {despesa:0};
-    const profs = TO.financeiro.professoresDe(e), advs = TO.financeiro.advogadosDe(e);
-    const sede = el('div',{class:'pat-sede', html:
-      `<div><b>Sede nível ${n}</b><small>${e.torcida.bairroSede || ''}${e.torcida.bairroSede ? ' · ' : ''}${e.membros.length}${teto ? ' de '+teto : ''} membros`+
-      `${profs ? ` · ${profs} ${profs===1?'professor':'professores'}` : ''}${advs ? ` · ${advs} ${advs===1?'advogado':'advogados'}` : ''}</small></div>`+
-      `<div class="barra-g"><i style="width:${Math.min(100,lot)}%;background:${lot>=90?'var(--vermelho)':'var(--ouro)'}"></i></div>`+
-      `<span class="mono">${teto ? lot+'% cheia' : ''} · ${U.dinheiro(-sedeL.despesa)}/mês</span>`});
-    pg.appendChild(sede);
-
-    /* um cartão por ponto; a folha (professor, advogado) fica no fim */
-    const pontos = linhas.filter(l=>l.tipo!=='sede');
-    const maior = Math.max(1, ...pontos.map(l=>Math.max(l.receita, l.despesa)));
-    const grade = el('div',{class:'pat-pts'});
-    for(const l of pontos){
-      const nivel = (l.rot.match(/nível (\d)/i)||[])[1];
-      const rot = l.rot.replace(/\s*\(nível \d\)/i,'');
-      const b = (r, v, cls)=> `<div class="pt-b"><span>${r}</span><div class="barra-g"><i style="width:${Math.round(100*v/maior)}%;background:var(--${cls==='positivo'?'verde':'vermelho'})"></i></div><b class="${cls}">${v ? v.toLocaleString('pt-BR') : '—'}</b></div>`;
-      grade.appendChild(el('div',{class:'pat-pt'+(l.saldo<0?' no-vermelho':''), html:
-        `<div class="pt-cab"><b>${rot}</b>${nivel?`<span class="tag">nível ${nivel}</span>`:''}</div>`+
-        `<small>${l.bairro ? linkCidadePorNome(l.bairro) : ''}${l.bairro && l.nota ? ' · ' : ''}${l.nota||''}</small>`+
-        b('receita', l.receita, 'positivo')+b('despesa', l.despesa, 'negativo')+
-        `<div class="pt-pe"><span>por mês</span><b class="${l.saldo>=0?'positivo':'negativo'}">${U.dinheiro(l.saldo)}</b></div>`}));
-    }
-    if(!pontos.length) grade.appendChild(el('div',{class:'fraco', texto:'Só a sede por enquanto. Bar e loja são os primeiros pontos que rendem.'}));
-    pg.appendChild(grade);
-
-    const soma = k => linhas.reduce((s,l)=>s+l[k], 0);
-    const sd = soma('receita')-soma('despesa');
-    pg.appendChild(el('div',{class:'pat-total', html:
-      `<span>Total do patrimônio</span><b class="positivo">${U.dinheiro(soma('receita'))}</b><span>receita</span>`+
-      `<b class="negativo">${U.dinheiro(-soma('despesa'))}</b><span>despesa</span>`+
-      `<b class="${sd>=0?'positivo':'negativo'}">${U.dinheiro(sd)}</b><span>por mês · mensalidade e caravana ficam no Resumo</span>`}));
-    const irLoja = el('button',{class:'bt destaque', texto:'Comprar e ampliar na Loja →'});
-    irLoja.onclick = ()=>{ subFinAnterior='patrimonio'; subFin='loja'; redesenhar(); };
-    pg.appendChild(el('div',{class:'loja-chamada'},[irLoja]));
+    bl.appendChild(bands);
+    c3.corpo.appendChild(bl);
+    pg.appendChild(c3);
   }
 
   /* =======================================================
@@ -5404,11 +5400,6 @@
     const de = nat => todas.filter(o=>o.natureza===nat);
     const acha = id => todas.find(o=>o.id===id);
 
-    if(subFinAnterior === 'patrimonio'){
-      const voltar = el('button',{class:'bt', texto:'← Voltar ao Patrimônio'});
-      voltar.onclick = ()=>{ subFin = 'patrimonio'; subFinAnterior = 'loja'; redesenhar(); };
-      pg.appendChild(el('div',{class:'volta-linha'},[voltar]));
-    }
     pg.appendChild(el('div',{class:'loja-caixa', html:
       `<span>Caixa da torcida</span><b>${U.dinheiro(e.dinheiro)}</b>`}));
 
@@ -5527,7 +5518,7 @@
   /* =======================================================
      FINANCEIRO
      ======================================================= */
-  let subFin = 'resumo', subFinAnterior = 'resumo';
+  let subFin = 'resumo';
 
   function pintarFinanceiro(){
     const e = E(), pg = U.$('.pagina[data-pag="financeiro"]');
@@ -5539,7 +5530,7 @@
       {id:'patrimonio', rot:'Patrimônio'},
       {id:'elenco', rot:'Elenco'},
       {id:'transacoes', rot:'Transações'}
-    ], subFin, id=>{ subFinAnterior = subFin; subFin=id; redesenhar(); }));
+    ], subFin, id=>{subFin=id; redesenhar();}));
 
     if(subFin==='loja'){ pintarLoja(pg, e); return; }
     if(subFin==='patrimonio'){ pintarPatrimonio(pg, e); return; }
