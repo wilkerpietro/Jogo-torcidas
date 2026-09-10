@@ -213,9 +213,16 @@ TO.patrimonio = (function(){
       nota:`+${[0,25,50,75][nArea]}% de membros treinando por dia`,
       receita:0, despesa:0});
 
-    for(const b of p.bares) fora.push({tipo:'bar',
-      rot:`Bar (nível ${b.nivel})${b.gratis?' · da sede':''}`, bairro:b.bairro,
-      receita: REC.bar[b.nivel]*mult(b.bairro)*fator, despesa: MAN.bar[b.nivel]});
+    const hojeAbs = (E.data && E.data.absoluto) || 0;
+    for(const b of p.bares){
+      /* bar quebrado no ataque rende metade por 45 dias (dono, 10/09/2026) */
+      const dd = F().diasDeDano ? F().diasDeDano(b, hojeAbs) : 0;
+      fora.push({tipo:'bar',
+        rot:`Bar (nível ${b.nivel})${b.gratis?' · da sede':''}`, bairro:b.bairro,
+        nota: dd ? `quebrado no ataque: metade da receita por mais ${dd} dia${dd>1?'s':''}` : undefined,
+        receita: REC.bar[b.nivel]*mult(b.bairro)*fator*(F().multDano ? F().multDano(b, hojeAbs) : 1),
+        despesa: MAN.bar[b.nivel]});
+    }
     const fab = p.fabrica ? FABRICA : null;
     for(const l of p.lojas) fora.push({tipo:'loja',
       rot:`Loja (nível ${l.nivel})${l.semInsumo?' · sem insumo':fab?' · fábrica':''}`,

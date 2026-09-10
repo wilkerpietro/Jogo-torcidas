@@ -447,6 +447,15 @@ TO.acoes = (function(){
           TO.estado.lancar(E, 'Levaram do nosso bar', -perdeu);
           linhas.push(`${U.dinheiro(perdeu)} da gaveta e do caixa`);
         }
+        /* O BAR SAI QUEBRADO (ordem do dono, 10/09/2026): metade da
+           receita por 45 dias. Quebram o mais caro — é o que tem
+           vidro, mesa e geladeira pra quebrar. */
+        const F = TO.financeiro;
+        const meu = F.barMaisVisado((E.patrimonio||{}).bares);
+        if(meu){
+          F.danificarBar(meu, (E.data && E.data.absoluto) || 0);
+          linhas.push(`o bar ficou em cacos: metade da receita por ${F.DANO_BAR.dias} dias`);
+        }
       }
       TO.estado.mexerIndicador(E, 'moral', -3, 'Fugimos sem defender o que é nosso');
       TO.estado.mexerIndicador(E, 'prestigio', -0.7, 'Fugimos sem defender o que é nosso');
@@ -551,6 +560,14 @@ TO.acoes = (function(){
             TO.relacoes.lancarIA(E, alvo.torcidaId,
                                  'Saque sofrido no bar', -levou);
           linhas.push(`${U.dinheiro(levou)} do caixa deles`);
+        }
+        /* e o ponto deles fica quebrado 45 dias, na mesma régua que
+           vale pra gente (dono, 10/09/2026) */
+        const F = TO.financeiro;
+        const dele = m && F.barMaisVisado(m.bares);
+        if(dele){
+          F.danificarBar(dele, (E.data && E.data.absoluto) || 0);
+          linhas.push(`o bar deles ficou em cacos: metade da receita por ${F.DANO_BAR.dias} dias`);
         }
       }
       /* o corte permanente de membros saiu (18/08/2026): os caídos

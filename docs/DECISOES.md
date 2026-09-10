@@ -5123,6 +5123,36 @@ mais competitivas contra as grandes."
   invertido pelas pontas. `telas-aprovadas.js` segue passando: o relatório abre com o
   bloco do troféu, a foto revelada e a legenda da faixa tomada.
 
+## Bar atacado fica quebrado 45 dias (ordem do dono, 10/09/2026)
+- ORDEM: "bar atacado diminui 50% da receita por 45 dias, no sentido
+  dele ter sido danificado pelo ataque".
+- A marca fica no PRÓPRIO bar (`b.danoAte`, em dia absoluto), e não na
+  torcida: o nosso patrimônio e o das IAs guardam bar como objeto de
+  lista, então a mesma função serve pros dois lados. Em `financeiro.js`:
+  `DANO_BAR = {dias:45, corte:0.5}`, `danificarBar`, `diasDeDano`,
+  `multDano` e `barMaisVisado`.
+- QUEBRAM O BAR MAIS CARO. Quem invade vai no que tem vidro, mesa e
+  geladeira pra quebrar, então o alvo é o de maior nível — e não um
+  sorteado, que faria o estrago sumir na torcida com três bares.
+- ATAQUE EM CIMA DE ATAQUE NÃO EMPILHA, RENOVA: o prazo passa a contar
+  do estrago de agora. Empilhar deixaria o ponto morto por meio ano.
+- A DESPESA NÃO CAI. Conserto de vidro e de mesa é justamente o que dói:
+  o bar continua custando manutenção cheia enquanto rende metade.
+- Vale nos três lugares em que se quebra bar: defesa nossa perdida
+  (`fecharDefesa`), ataque nosso ganho (`fecharAtaque`) e briga de IA
+  contra IA (`barIA` em `relacoes.js`). Nos dois primeiros a linha entra
+  no relatório da cena ("o bar ficou em cacos: metade da receita por 45
+  dias").
+- ONDE APARECE: a linha semanal do financeiro ganha "· quebrado, N d" e
+  a Estrutura do Patrimônio ganha a nota "quebrado no ataque: metade da
+  receita por mais N dias". A mesma marca aparece no extrato delas.
+- MEDIDO (`bar-dano.js`): bar nível 1 em Antônio Bezerra sai de R$ 393
+  pra R$ 173 na semana do ataque e volta a R$ 345 no dia 45 (a diferença
+  entre 393 e 345 é a moral que caiu com a defesa perdida, não o dano).
+  Do lado da IA, o bar da Cearamor em Maraponga cai de R$ 2.204 pra
+  R$ 873. `caixabar`, `barataque`, `bardefesa` e `financeiroia` seguem
+  passando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

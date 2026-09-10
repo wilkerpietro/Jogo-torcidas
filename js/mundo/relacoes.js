@@ -406,10 +406,16 @@ TO.relacoes = (function(){
                             + U.limitar(t.membros/150, 0, 1)*0.3);
     const multB = b => b ? M().multiplicador(b) : (t.mult || 1);
 
+    const hojeAbs = (E && E.data && E.data.absoluto) || 0;
     (t.bares||[]).forEach((b, i)=>{
       const ba = bairroIA(o, 'bar', i);
-      pon(rec, `Bar${ba?' — '+ba.nome:''} (n${b.nivel})`,
-          R.bar[b.nivel] * multB(ba) * fator);
+      /* bar quebrado no ataque rende metade por 45 dias, pra elas
+         também (dono, 10/09/2026) */
+      const dd = FIN().diasDeDano ? FIN().diasDeDano(b, hojeAbs) : 0;
+      pon(rec, `Bar${ba?' — '+ba.nome:''} (n${b.nivel})`+
+               (dd ? ` · quebrado, ${dd} d` : ''),
+          R.bar[b.nivel] * multB(ba) * fator
+            * (FIN().multDano ? FIN().multDano(b, hojeAbs) : 1));
     });
     (t.lojas||[]).forEach((l, i)=>{
       const ba = bairroIA(o, 'loja', i);
@@ -2168,6 +2174,13 @@ TO.relacoes = (function(){
       if(tAtk){
         tAtk.caixa += saque;
         lancarIA(E, atk.id, `Saque no bar da ${o.nome}`, saque);
+      }
+      /* e o bar do dono sai quebrado, metade da receita por 45 dias —
+         a mesma régua do nosso (dono, 10/09/2026) */
+      const bd = tDono && FIN().barMaisVisado(tDono.bares);
+      if(bd){
+        FIN().danificarBar(bd, (E.data && E.data.absoluto) || 0);
+        reg.barQuebrado = true;
       }
       reg.saque = saque;
     }

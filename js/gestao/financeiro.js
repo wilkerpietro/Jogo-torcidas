@@ -57,6 +57,33 @@ TO.financeiro = (function(){
   const MANUT   = {bar:[null, 800, 1800, 3800],  loja:[null, 600, 1300, 2600],
                    subsede:[null, 700, 1200, 1800]};
 
+  /* BAR QUEBRADO NÃO FATURA IGUAL (ordem do dono, 10/09/2026): "bar
+     atacado diminui 50% da receita por 45 dias, no sentido dele ter
+     sido danificado pelo ataque". A marca fica no próprio bar
+     (`b.danoAte`, em dia absoluto), então a mesma função serve pro
+     nosso e pro das IAs — os dois lados guardam bar como objeto de
+     lista. Despesa NÃO cai: conserto de vidro e mesa é o que dói. */
+  const DANO_BAR = {dias:45, corte:0.5};
+  function danificarBar(b, abs){
+    if(!b) return null;
+    /* ataque em cima de ataque não empilha, RENOVA: o prazo passa a
+       contar do estrago de agora */
+    b.danoAte = (abs || 0) + DANO_BAR.dias;
+    return b;
+  }
+  /* o bar mais caro é o que o rival quebra: é o que tem o que quebrar */
+  function barMaisVisado(bares){
+    let m = null;
+    for(const b of (bares||[])) if(!m || (b.nivel||1) > (m.nivel||1)) m = b;
+    return m;
+  }
+  function diasDeDano(b, abs){
+    if(!b || !b.danoAte) return 0;
+    return Math.max(0, b.danoAte - (abs || 0));
+  }
+  function multDano(b, abs){ return diasDeDano(b, abs) > 0 ? 1 - DANO_BAR.corte : 1; }
+  const absDe = E => (E && E.data && E.data.absoluto) || 0;
+
   const INSUMO   = 0.25;   // GDD §8.3: loja sem insumo não fatura
 
   /* =======================================================
@@ -320,9 +347,13 @@ TO.financeiro = (function(){
       juntar(rec, `Mensalidades (${pagantes})`, mens);
 
     const fator = fatorComercial(E) * multMoral(E);
-    for(const b of p.bares)
-      juntar(rec, `Bar${b.bairro?' — '+b.bairro:''} (n${b.nivel})`,
-             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM);
+    const hoje = absDe(E);
+    for(const b of p.bares){
+      const dd = diasDeDano(b, hoje);
+      juntar(rec, `Bar${b.bairro?' — '+b.bairro:''} (n${b.nivel})`+
+                  (dd ? ` · quebrado, ${dd} d` : ''),
+             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje));
+    }
     /* a fábrica REPENSADA (ordem do dono, 02/09/2026): não mexe mais
        na receita — ela corta 50% do CUSTO da loja, lá nas despesas */
     for(const l of p.lojas){
@@ -732,5 +763,6 @@ TO.financeiro = (function(){
           ADVOGADO_MES, ADVOGADO_DIAS, ADVOGADOS_SEDE,
           advogadosDe, advogadosMax,
           TETO_SEDE, cabeNaSede, onibusMax, mmaMax,
-          MANUT_SEDE, RECEITA, MANUT, INSUMO, CARAVANA, SEM};
+          MANUT_SEDE, RECEITA, MANUT, INSUMO, CARAVANA, SEM,
+          DANO_BAR, danificarBar, barMaisVisado, diasDeDano, multDano};
 })();
