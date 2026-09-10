@@ -5153,6 +5153,50 @@ mais competitivas contra as grandes."
   R$ 873. `caixabar`, `barataque`, `bardefesa` e `financeiroia` seguem
   passando.
 
+## A sede tem uma planta por nível (projeto do dono, 10/09/2026)
+- O dono mandou o projeto ANTIGO das plantas de sede, cinco desenhos, um
+  por nível. Estão salvos em `docs/plantas/sede-nivel-1..5` — são a
+  referência, e a proposta de cena foi refeita em cima deles.
+- A PLANTA MUDA COM O NÍVEL, e isso responde a pergunta que a primeira
+  proposta deixava em aberto. As salas, na ordem em que aparecem:
+  - nv 1: pátio, presidência, patrimônio.
+  - nv 2: + bar, sala de criações, sala de treinos.
+  - nv 3: + centro de operações, dormitório, lojinha, corredor
+    (a sala de criações vira "setor criativo").
+  - nv 4: + garagem e loja grande.
+  - nv 5: + minifábrica, hotel, corredor central
+    (a sala de treinos vira "academia de treino").
+- PROFUNDIDADE NÃO É A VARIÁVEL. Foi o que a primeira proposta media, e
+  os desenhos derrubam: nas plantas do dono quase toda sala abre pro
+  pátio ou pro corredor, ninguém fica a cinco portas da rua. O que cresce
+  com o nível é a QUANTIDADE de sala — três no nv 1, onze no nv 5. A
+  régua vira orçamento de passos: o invasor entra com uns 4 passos (mais
+  1 a cada 15 caras de vantagem, teto 8), cada sala custa passo, e sede
+  grande não cabe numa invasão só.
+- CADA SALA DO DESENHO JÁ TEM DONO NO CÓDIGO: presidência = o caixa e a
+  diretoria; patrimônio = as faixas e bandeiras, nossas e tomadas; bar =
+  a régua de 45 dias que já roda; sala de criações = o material de faixa;
+  sala de treinos = `areaTreino`; centro de operações = o planejamento e
+  o olheiro; dormitório = quem dorme na sede; lojinha/loja = o ponto
+  comercial; garagem = a frota; minifábrica = `FABRICA` (sede nv 5, corta
+  50% do custo das lojas); hotel = a recepção de aliadas.
+- OS TRÊS ANEXOS NÃO GANHAM SALA, viram móvel dentro de sala do desenho:
+  cofre blindado (nv 5) na presidência, enfermaria (nv 4) no dormitório,
+  galpão de material (nv 3) no patrimônio. O efeito de cada um continua o
+  que já é no código.
+- O QUE OS DESENHOS REVELARAM: (a) nos nv 4 e 5 a presidência encosta na
+  parede externa, a um ou dois passos do portão — com o caixa lá dentro,
+  o cofre deixa de ser luxo, e fica assim de propósito; (b) o corredor
+  não guarda nada e custa passo do invasor, então é a defesa mais barata
+  da planta e justifica subir de nível sozinho; (c) loja e garagem têm
+  porta pra rua nos nv 4 e 5, então dá pra saquear a loja SEM entrar na
+  sede — talvez mereça ser um tipo de ataque separado.
+- EM ABERTO, com o dono: o nível 6 reusa a planta do 5 ou ganha desenho
+  próprio; o fundo vem de foto aérea ou de planta desenhada; o jogador
+  defende jogando ou só vê o resultado; quanto vale um passo em segundos.
+- NADA DISSO ESTÁ IMPLEMENTADO. A proposta desenhada está publicada como
+  artifact ("Planta da Sede").
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
