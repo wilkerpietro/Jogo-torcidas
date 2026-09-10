@@ -5068,6 +5068,61 @@ mais competitivas contra as grandes."
   abre com 2/6/7/5 no lugar de 1/3/6/10, ficha 7,6. `faixa-tomada-regra`
   e `promo-ia` seguem passando.
 
+## A foto do troféu é tirada dentro da cena da briga (pedido do dono, 10/09/2026)
+- PEDIDO: "vamos alterar essa imagem pra ser uma tela vista dentro da
+  cena que ocorreu a briga, por exemplo: se a tuf tomou a faixa no bar,
+  os 4 membros estão dentro do bar com a faixa estendida, com a visão de
+  longe, idêntica à visão do jogador".
+- A viela urbana genérica saiu. `fotoDoTrofeu` agora recebe a cena
+  (`ctx.cena`, ou a que os arredores estiverem mostrando), chama
+  `arredores.usarCena` se for outra, espera a foto aérea, desenha o fundo
+  da própria cena com `desenharFundo` e põe os quatro bonecos por cima
+  com a MESMA câmera de cima da briga: ortográfica a 1000 de altura,
+  `up` em −Z e o cisalhamento de 0,42 de `ajustarCamera`. O que sai é o
+  enquadramento que o jogador conhece, só que parado e de longe.
+- O recorte é de 400 unidades de cena de largura (a cena tem 1536), preso
+  às bordas: o boneco sai com uns 50 px de altura e o pano com 190 — dá
+  pra ler o pano e reconhecer o lugar ao mesmo tempo.
+- ONDE POSAR (o que deu trabalho): a primeira versão mirava a média dos
+  postos de saída. No bar essa média cai em (613, 356) — no meio da RUA
+  ao lado, porque o atacante nasce na vertical oeste e o salão fica a
+  nordeste. A foto do bar saía na rua. A ordem de preferência agora é:
+  1. a parede em que o pano do lado PERDEDOR estava pendurado
+     (`cenas.faixas[outroLado*]`), recuada 72 unidades pra dentro — é
+     literalmente onde o pano foi tomado;
+  2. o quartel do lado perdedor (média dos spawns dele);
+  3. o meio da briga (média de todos os spawns);
+  4. o centro da cena.
+  Cada centro tenta a fila de quatro em quatro folgas — passo 30/26/22/18
+  com raio de boneco 9/8/7/6 — antes de passar pro próximo, e o raio de
+  busca em espiral é curto no centro bom (150) e vai abrindo (220, 340,
+  420). Assim o salão apertado ganha da rua larga ao lado.
+- O PANO FICA NAS MÃOS E DE CABEÇA PRA BAIXO (pedido do dono, 10/09/2026:
+  "coloque os membros segurando a faixa e que ela fique esticada de
+  cabeça pra baixo"). Faixa tomada se exibe invertida — é assim que o
+  troféu se mostra —, então o desenho leva um `rotate(PI)` a mais, só na
+  imagem (a sombra fica no ângulo da fila, senão ela viraria pro lado
+  errado).
+- Pôr o pano "a tantas unidades dos pés" não serve: o cisalhamento levanta
+  o corpo na tela e o vão aparece. Agora os ossos das mãos (`c.J.mao`)
+  são projetados PELA PRÓPRIA câmera da foto e trazidos de volta ao
+  espaço da cena, que é o que o desenho 2D usa. O pano vai da mão mais à
+  esquerda até a mais à direita (mais 8 de folga) e pendura da linha das
+  mãos pra baixo.
+- OS BRAÇOS TIVERAM DE DESCER. Com `ombro` em −1,25 (que é braço pra
+  TRÁS, não pra frente — medido: a mão caía 20 unidades acima dos pés,
+  acima da própria cabeça) o pano pendurado na mão tapava o boneco
+  inteiro. Medido osso a osso na cena do bar: pé a 563,3 · cabeça a
+  549,0 · ombro a 550,2. Com `ombro` em +0,95 e `cotovelo` em +0,15 a mão
+  vai pra 560,4 — logo à frente do pé —, o pano começa ali e a torcida
+  inteira fica à vista atrás dele.
+- MEDIDO (`trofeu-foto.js`, 4,9 s pras três): bar → dentro do salão, piso
+  quadriculado, mesas e engradados; praça → a rua entre os sobrados e o
+  calçadão das barracas; estádio-20 → a arquibancada com o gramado à
+  direita. Nas três os quatro aparecem inteiros, segurando o pano
+  invertido pelas pontas. `telas-aprovadas.js` segue passando: o relatório abre com o
+  bloco do troféu, a foto revelada e a legenda da faixa tomada.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

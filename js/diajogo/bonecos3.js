@@ -2240,160 +2240,235 @@ TO.diaJogo.bonecos3 = (function(){
   }
 
   /* =======================================================
-     A FOTO DO TROFÉU (pedido do dono, 10/09/2026)
-     "A foto da faixa ou bandeira tomada vira uma imagem dos
-     bonecos do jogo segurando a faixa tomada, no fundo um cenário
-     de viela urbana de classe baixa." Uma cena THREE só dela, fora
-     da cena de cima: viela procedural (muro de tijolo com pichação
-     da nossa sigla, muros laterais, chão de asfalto, caçamba, saco
-     de lixo, pneu), quatro bonecos GLB dos nossos com as cores da
-     torcida, os dois do meio segurando o pano de cabeça pra baixo
-     entre as mãos erguidas, os das pontas de punho pro alto.
-     Devolve uma Promise com a URL da imagem (JPEG), ou null se não
-     há WebGL/GLB. `opc`: {pano: canvas|img, tipo:'faixa'|'bandeira',
-     torcida:{cor,cor2,cor3,sigla,id}, nomes:[...], largura, altura}
+     A FOTO DO TROFÉU (pedido do dono, 10/09/2026; refeita no mesmo
+     dia depois de ver a primeira: "vamos alterar essa imagem pra ser
+     uma tela vista dentro da cena que ocorreu a briga — se a TUF
+     tomou a faixa no bar, os 4 membros estão dentro do bar com a
+     faixa estendida, com a visão de longe, idêntica à visão do
+     jogador".)
+     Então a foto é a CENA: o mesmo fundo aéreo que a briga usou, a
+     mesma câmera de cima (ortogonal com o cisalhamento de sempre),
+     e quatro dos nossos em fila segurando o pano tomado, estendido
+     na frente deles. Nada disso encosta na cena viva: o fundo sai
+     num canvas 2D próprio e os bonecos num renderizador só desta
+     foto, jogado fora no fim.
+     `opc`: {pano, tipo:'faixa'|'bandeira', torcida:{...}, nomes:[],
+             cena:'bar'|'praca'|'estadio-20'…, lado:'mandante'|…,
+             largura, altura, vista}
      ======================================================= */
   function fotoDoTrofeu(opc){
     if(typeof THREE === 'undefined') return Promise.resolve(null);
     carregarGLB();
-    const espera = (n)=> new Promise(res=>{
+    const A = TO.diaJogo.arredores;
+    const trocou = opc.cena && A && A.D && A.D.id !== opc.cena && A.usarCena;
+    if(trocou) A.usarCena(opc.cena);
+    /* espera o GLB e, quando a cena teve de ser trocada, a foto aérea
+       dela — desenhar antes dá um fundo de malha cinza */
+    const espera = ()=> new Promise(res=>{
       const t0 = Date.now();
-      (function v(){ if(modeloGLB) return res(true); if(Date.now()-t0 > 6000) return res(false); setTimeout(v, 120); })();
+      (function v(){
+        if(modeloGLB && (!trocou || Date.now()-t0 > 900)) return res(!!modeloGLB);
+        if(Date.now()-t0 > 6000) return res(!!modeloGLB);
+        setTimeout(v, 120);
+      })();
     });
     return espera().then(ok=>{
       if(!ok) return null;
       try{ return renderizarTrofeu(opc); }catch(err){ console.warn('foto do troféu: '+err.message); return null; }
     });
   }
-  function texturaDeCanvas(w, h, pinta){
-    const c = document.createElement('canvas'); c.width = w; c.height = h;
-    pinta(c.getContext('2d'), w, h);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    return t;
+
+  /* ONDE OS QUATRO POSAM: no meio da ação, e sempre EM FILA
+     HORIZONTAL, com o pano estendido logo abaixo — é assim que uma
+     foto de faixa se lê vista de cima. Procura em volta do centro da
+     cena um lugar onde a fila inteira e o pano pisam chão livre; sem
+     achar, encosta na parede em que a torcida estende faixa. */
+  let POSE_PASSO = 30;
+  const POSE_N = 4;
+  /* ONDE POSAR. A foto é tirada onde o pano foi tomado, e não no meio
+     geométrico dos postos de saída — no bar, essa média cai na rua ao
+     lado do salão. A ordem de preferência é: a parede em que o pano do
+     lado perdedor estava pendurado, depois o quartel desse lado, e só
+     então o meio da briga. */
+  function centrosDaPose(A, lado){
+    const D = A.D, W = A.W || 1536, H = A.H || 1024, sp = D.spawns || [];
+    const outro = lado === 'mandante' ? 'visitante' : 'mandante';
+    const media = a => a.length
+      ? {x: a.reduce((s,p)=>s+p.x,0)/a.length, y: a.reduce((s,p)=>s+p.y,0)/a.length}
+      : null;
+    const cs = [];
+    const F = D.faixas || {};
+    for(const k of Object.keys(F)){
+      if(k.indexOf(outro) !== 0) continue;
+      const p = F[k]; if(!p) continue;
+      const d = (p.dir && (p.dir[0] || p.dir[1])) ? p.dir : [0,1];
+      const n = Math.hypot(d[0], d[1]) || 1;
+      cs.push({x: p.x - d[0]/n*72, y: p.y - d[1]/n*72, raio: 150});
+    }
+    const mo = media(sp.filter(s=>s.lado === outro));
+    if(mo) cs.push({x: mo.x, y: mo.y, raio: 220});
+    const mt = media(sp);
+    if(mt) cs.push({x: mt.x, y: mt.y, raio: 340});
+    cs.push({x: W/2, y: H/2, raio: 420});
+    return cs;
   }
-  function renderizarTrofeu(opc){
-    const W = opc.largura || 720, H = opc.altura || 405;
-    const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
-    const r = new THREE.WebGLRenderer({canvas:cv2, antialias:true, alpha:false, preserveDrawingBuffer:true});
-    r.setPixelRatio(1); r.setClearColor(0x0b0d12, 1);
-    const sc = new THREE.Scene();
-    sc.fog = new THREE.Fog(0x0e1014, 150, 420);
-    const g = G();
-    const t = opc.torcida || {};
-    const c1 = t.cor || '#444', c2 = t.cor2 || '#eee';
-    const sem = String(t.id || t.sigla || 'x');
 
-    /* ---- luz: fim de tarde, poste amarelo ---- */
-    /* noite: pouca luz do céu, o poste amarelo é o que ilumina (dono, 10/09/2026: "cenário mais escuro") */
-    sc.add(new THREE.HemisphereLight(0x50607a, 0x14100c, 0.38));
-    const sol = new THREE.DirectionalLight(0x9fb0d0, 0.28); sol.position.set(-50, 90, 70); sc.add(sol);
-    const poste = new THREE.PointLight(0xffb060, 1.6, 320, 1.3); poste.position.set(40, 66, 10); sc.add(poste);
-
-    /* ---- o muro do fundo: tijolo, reboco caído, pichação ---- */
-    const tijolo = texturaDeCanvas(1024, 512, (x,w,h)=>{
-      x.fillStyle = '#7a4a3a'; x.fillRect(0,0,w,h);
-      const bh = 22, bw = 54;
-      for(let j=0;j*bh<h;j++) for(let i=-1;i*bw<w+bw;i++){
-        const off = (j%2)?bw/2:0; const k = ((i*7+j*13)%9)/9;
-        x.fillStyle = `hsl(${12+k*10},${34+k*16}%,${22+k*11}%)`;
-        x.fillRect(i*bw+off+2, j*bh+2, bw-4, bh-4);
+  function pontoDaPose(A, lado){
+    const D = A.D, W = A.W || 1536, H = A.H || 1024;
+    /* O SALÃO DO BAR É APERTADO: entre as mesas não cabe uma fila de
+       quatro com folga. Tenta o passo cheio e a folga cheia primeiro;
+       depois aperta a fila e a folga, nesta ordem, sem sair do lugar
+       onde o pano estava. */
+    const TENTATIVAS = [[30,9,7], [26,8,6], [22,7,5], [18,6,4]];
+    for(const c of centrosDaPose(A, lado)){
+      for(const [passo, rb, rp] of TENTATIVAS){
+        const meia = (POSE_N-1)/2 * passo + 14;
+        const cabe = (x, y) => {
+          if(!A.cabe) return true;
+          for(let k=0;k<POSE_N;k++){
+            const ox = (k - (POSE_N-1)/2) * passo;
+            if(!A.cabe(x+ox, y, rb)) return false;        // o boneco
+            if(!A.cabe(x+ox, y+30, rp)) return false;     // o pano na frente
+          }
+          return A.cabe(x-meia, y, 5) && A.cabe(x+meia, y, 5);
+        };
+        for(let r=0; r<=c.raio; r+=14){
+          for(let a=0; a<360; a+=12){
+            const x = c.x + Math.cos(a*Math.PI/180)*r, y = c.y + Math.sin(a*Math.PI/180)*r;
+            if(x < meia+10 || x > W-meia-10 || y < 60 || y > H-70) continue;
+            if(!cabe(x, y)) continue;
+            POSE_PASSO = passo;
+            return {x, y, dir:[0,-1], t:[1,0]};
+          }
+        }
       }
-      /* reboco que sobrou, em manchas */
-      x.fillStyle = 'rgba(150,140,118,.8)';
-      for(let k=0;k<7;k++){ const px=(k*173)%w, py=(k*97)%h; x.beginPath(); x.ellipse(px, py, 90+ (k*37)%80, 50+(k*23)%40, 0, 0, 7); x.fill(); }
-      /* sujeira de baixo e escorrido */
-      const gr = x.createLinearGradient(0,h*0.55,0,h); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(20,10,5,.55)'); x.fillStyle = gr; x.fillRect(0,0,w,h);
-      /* a pichação: só a sigla da torcida, grande (dono, 10/09/2026) */
-      x.save(); x.translate(w*0.5, h*0.40); x.rotate(-0.04);
-      x.font = `900 170px "Barlow Condensed", Impact, sans-serif`; x.textAlign='center'; x.textBaseline='middle';
-      x.lineWidth = 16; x.strokeStyle = c2; x.strokeText(String(t.sigla||'').toUpperCase(), 0, 0);
-      x.fillStyle = c1; x.fillText(String(t.sigla||'').toUpperCase(), 0, 0);
-      x.restore();
-    });
-    const muro = new THREE.Mesh(new THREE.PlaneGeometry(260, 78), new THREE.MeshLambertMaterial({map:tijolo}));
-    muro.position.set(0, 39, -62); sc.add(muro);
-    /* laje e um pedaço de telhado por cima do muro */
-    const laje = new THREE.Mesh(g.caixa, mat('#4a4340')); laje.scale.set(262, 4, 10); laje.position.set(0, 80, -60); sc.add(laje);
-    /* muros laterais, em ângulo, com reboco sujo */
-    const reboco = texturaDeCanvas(512, 512, (x,w,h)=>{ x.fillStyle='#8d8474'; x.fillRect(0,0,w,h); for(let k=0;k<400;k++){ x.fillStyle=`rgba(40,30,20,${0.05+((k*31)%10)/40})`; x.fillRect((k*97)%w,(k*53)%h,2+(k%9),2+(k%5)); } const gr=x.createLinearGradient(0,h*0.6,0,h); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(0,0,0,.5)'); x.fillStyle=gr; x.fillRect(0,0,w,h); });
-    for(const lado of [-1, 1]){
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(200, 78), new THREE.MeshLambertMaterial({map:reboco, side:THREE.DoubleSide}));
-      m.position.set(lado*110, 39, 30); m.rotation.y = -lado*Math.PI/2; sc.add(m);
     }
-    /* chão: asfalto com poça e meio-fio */
-    const asfalto = texturaDeCanvas(512, 512, (x,w,h)=>{ x.fillStyle='#2b2b2b'; x.fillRect(0,0,w,h); for(let k=0;k<1500;k++){ x.fillStyle=`rgba(${60+(k%40)},${60+(k%40)},${58+(k%40)},.5)`; x.fillRect((k*61)%w,(k*37)%h,2,2); } x.fillStyle='rgba(90,100,120,.35)'; x.beginPath(); x.ellipse(w*0.7,h*0.6,110,40,0.3,0,7); x.fill(); });
-    asfalto.repeat.set(3,3);
-    const chao = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({map:asfalto}));
-    chao.rotation.x = -Math.PI/2; chao.position.y = 0; sc.add(chao);
-    const meioFio = new THREE.Mesh(g.caixa, mat('#6b6b66')); meioFio.scale.set(260, 3, 6); meioFio.position.set(0, 1.5, -58); sc.add(meioFio);
-    /* caçamba, saco de lixo, pneu, um poste */
-    const cac = new THREE.Mesh(g.caixa, mat('#2f6f9a')); cac.scale.set(34, 18, 20); cac.position.set(-78, 9, -40); sc.add(cac);
-    const cacT = new THREE.Mesh(g.caixa, mat('#1e4a66')); cacT.scale.set(36, 2, 22); cacT.position.set(-78, 19, -40); sc.add(cacT);
-    const saco = new THREE.Mesh(g.esfera, mat('#111')); saco.scale.set(7, 6, 7); saco.position.set(-52, 5, -44); sc.add(saco);
-    const saco2 = new THREE.Mesh(g.esfera, mat('#1a1a1a')); saco2.scale.set(5, 4.5, 5); saco2.position.set(-42, 4, -48); sc.add(saco2);
-    const pneu = new THREE.Mesh(g.toro, mat('#151515')); pneu.scale.setScalar(6); pneu.rotation.x = Math.PI/2; pneu.position.set(70, 1.2, -46); sc.add(pneu);
-    const postePau = new THREE.Mesh(g.cil, mat('#5a4a3a')); postePau.scale.set(2.2, 90, 2.2); postePau.position.set(96, 45, -30); sc.add(postePau);
-    const lampada = new THREE.Mesh(g.esfera, new THREE.MeshBasicMaterial({color:0xffe0a0})); lampada.scale.setScalar(3); lampada.position.set(88, 82, -30); sc.add(lampada);
-
-    /* ---- os bonecos: quatro dos nossos ---- */
-    const nomes = (opc.nomes && opc.nomes.length ? opc.nomes : ['Tico','Rafinha','Bidu','Neguinho']).slice(0,4);
-    /* os quatro lado a lado segurando o pano (dono, 10/09/2026) */
-    const postos = [[-30, 0, 0.10], [-10, 0, 0.04], [10, 0, -0.04], [30, 0, -0.10]];
-    const corpos = [];
-    nomes.forEach((nome, i)=>{
-      const d = {nome:nome+'|trofeu', lado:'mandante', torcida:t.id, cor:c1, cor2:c2, cor3:t.cor3||null};
-      const f = fichaDe(d, i); f.escala = 1;
-      const c = construirCorpoGLB(f, false);
-      c.sombra.visible = false; if(c.anel) c.anel.visible = false; if(c.anelFundo) c.anelFundo.visible = false;
-      const p = poseNeutra();
-      /* todos seguram o pano: braços pra frente, um pouco abaixo do
-         ombro, pra mão ficar a uns 65% da altura do corpo */
-      p.ombro = [-1.15, -1.15]; p.ombroZ = [0.10, 0.10]; p.cotovelo = [-0.25, -0.25]; p.olhaX = -0.08; p.olhaY = i<2 ? 0.12 : -0.12;
-      p.coxa = [0.12, -0.12]; p.inclina = -0.08;
-      aplicarPoseGLB(c, p, 1);
-      c.raiz.position.set(postos[i][0], 0, postos[i][1]); c.raiz.rotation.y = postos[i][2];
-      sc.add(c.raiz); corpos.push(c);
-    });
-    sc.updateMatrixWorld(true);
-    /* DE FRENTE PRA CÂMERA, medido e não adivinhado: com os braços pra
-       frente, a mão tem de estar do lado da câmera (+Z) em relação ao
-       corpo; se ficou atrás, o boneco está de costas — meia-volta */
-    for(const c of corpos){
-      const v = new THREE.Vector3(); c.J.mao[0].b.getWorldPosition(v);
-      if(v.z < c.raiz.position.z){ c.raiz.rotation.y += Math.PI; }
+    /* nem uma fila cabe: vale a parede da faixa, como a cena manda */
+    const F = D.faixas || {}, sp = D.spawns || [];
+    let p = F[lado] || F[lado+'1'] || F[lado+'2'] || sp.find(x=>x.lado===lado) || sp[0] || {x:W/2, y:H/2};
+    let dir = p.dir;
+    if(!dir || (!dir[0] && !dir[1])){
+      const dx = W/2 - p.x, dy = H/2 - p.y, n = Math.hypot(dx,dy) || 1;
+      dir = [-dx/n, -dy/n];
     }
-    sc.updateMatrixWorld(true);
-
-    /* ---- o pano entre as mãos dos dois do meio, de cabeça pra baixo ---- */
-    const maoDe = (c, k)=>{ const v = new THREE.Vector3(); c.J.mao[k].b.getWorldPosition(v); return v; };
-    const maos = corpos.map(c=>[maoDe(c,0), maoDe(c,1)]).flat();
-    const cy = maos.reduce((a,v)=>a+v.y, 0)/maos.length;        // a altura das mãos: o topo do pano
-    const cz = Math.max(...maos.map(v=>v.z)) + 2.5;
-    const xs = maos.map(v=>v.x), cx = (Math.min(...xs)+Math.max(...xs))/2;
-    if(opc.pano){
-      const tex = new THREE.CanvasTexture(opc.pano); tex.colorSpace = THREE.SRGBColorSpace;
-      const bandeira = opc.tipo === 'bandeira';
-      /* o pano vai das mãos ao chão (uns 65% da altura do boneco — dono,
-         10/09/2026); a faixa mantém a proporção da arte, a bandeira é
-         quadrada */
-      const alt = Math.max(18, cy - 0.5);
-      const larg = bandeira ? alt : Math.max(Math.max(...xs) - Math.min(...xs) + 14, alt * (opc.pano.width / opc.pano.height));
-      const pano = new THREE.Mesh(new THREE.PlaneGeometry(larg, alt), new THREE.MeshLambertMaterial({map:tex, transparent:true, side:THREE.DoubleSide}));
-      pano.position.set(cx, alt/2 + 0.3, cz); pano.rotation.z = Math.PI;   // de cabeça pra baixo, o topo nas mãos, a barra no chão
-      sc.add(pano);
+    const n = Math.hypot(dir[0], dir[1]) || 1, d = [dir[0]/n, dir[1]/n];
+    let x = p.x - d[0]*46, y = p.y - d[1]*46;
+    if(A.cabe && !A.cabe(x, y, 12) && A.pontoLivreMaisProximo){
+      const q = A.pontoLivreMaisProximo(x, y, 12);
+      if(q){ x = q.x; y = q.y; }
     }
-
-    /* ---- câmera na altura dos olhos, um pouco de baixo pra cima ---- */
-    const cam = new THREE.PerspectiveCamera(38, W/H, 1, 1000);
-    cam.position.set(2, 22, 98); cam.lookAt(0, 17, -10);
-    r.render(sc, cam);
-    let url = null;
-    try{ url = cv2.toDataURL('image/jpeg', 0.86); }catch(_){ url = null; }
-    /* limpa: é uma foto, não uma cena viva */
-    sc.traverse(o=>{ if(o.isMesh){ if(o.geometry && o.geometry !== g.caixa && o.geometry !== g.esfera && o.geometry !== g.cil && o.geometry !== g.toro && o.geometry !== g.disco) o.geometry.dispose(); if(o.material && o.material.map && !mats.has(o.material.color && o.material.color.getHexString())) { try{ o.material.map.dispose(); }catch(_){} } } });
-    r.dispose();
-    return url;
+    return {x, y, dir:d, t:[-d[1], d[0]]};
   }
+
+  function renderizarTrofeu(opc){
+    const A = TO.diaJogo.arredores;
+    const W = opc.largura || 720, H = opc.altura || 405;
+    const lado = opc.lado === 'visitante' ? 'visitante' : 'mandante';
+    const pose = pontoDaPose(A, lado);
+    const bandeira = opc.tipo === 'bandeira';
+    /* a vista: quanto da cena cabe no quadro. 470 unidades é a "visão
+       de longe" — o boneco sai com uns 50 px, o pano com 190 */
+    const VW = opc.vista || 400, VH = VW * H / W;
+    const cx = U.limitar(pose.x, VW/2, (A.W||1536) - VW/2);
+    const cy = U.limitar(pose.y + 18, VH/2, (A.H||1024) - VH/2);
+    const x0 = cx - VW/2, y0 = cy - VH/2, s = W/VW;
+
+    const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+    const x = cv2.getContext('2d');
+    /* 1. o fundo da cena, na escala do recorte */
+    x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
+    A.desenharFundo(x);
+    x.restore();
+
+    /* 2. os bonecos, na MESMA câmera de cima da briga */
+    const cvB = document.createElement('canvas'); cvB.width = W; cvB.height = H;
+    let r = null, maosCena = null;
+    try{
+      r = new THREE.WebGLRenderer({canvas:cvB, antialias:true, alpha:true, premultipliedAlpha:true, preserveDrawingBuffer:true});
+      r.setPixelRatio(1); r.setClearColor(0x000000, 0);
+      const sc = new THREE.Scene();
+      sc.add(new THREE.HemisphereLight(0xfff4e0, 0x6a5a48, 0.85));
+      const sol = new THREE.DirectionalLight(0xffffff, 0.75); sol.position.set(-0.5, 1, -0.6); sc.add(sol);
+      const contra = new THREE.DirectionalLight(0xa0c0ff, 0.25); contra.position.set(0.6, 0.5, 0.8); sc.add(contra);
+      const camF = new THREE.OrthographicCamera(x0, x0+VW, -y0, -(y0+VH), 1, ALTURA_CAM*2);
+      camF.position.set(0, ALTURA_CAM, 0); camF.up.set(0, 0, -1); camF.lookAt(0, 0, 0);
+      camF.updateProjectionMatrix();
+      /* o mesmo cisalhamento de `ajustarCamera`: a altura sobe na tela */
+      const el = camF.projectionMatrix.elements, a = 2/(camF.top - camF.bottom);
+      el[9] += a*CISALHA; el[13] += a*CISALHA*ALTURA_CAM;
+      camF.projectionMatrixInverse.copy(camF.projectionMatrix).invert();
+      sc.add(camF);
+
+      const t = opc.torcida || {};
+      const nomes = (opc.nomes && opc.nomes.length ? opc.nomes : ['Tico','Rafinha','Bidu','Neguinho']).slice(0,4);
+      const passo = POSE_PASSO, virado = Math.atan2(pose.dir[0], pose.dir[1]);
+      const ossos = [];
+      nomes.forEach((nome, i)=>{
+        const d = {nome:nome+'|trofeu', lado, torcida:t.id, cor:t.cor, cor2:t.cor2, cor3:t.cor3||null};
+        const f = fichaDe(d, i); f.escala = 1;
+        const c = construirCorpoGLB(f, false);
+        if(c.anel) c.anel.visible = false;
+        if(c.anelFundo) c.anelFundo.visible = false;
+        const p = poseNeutra();
+        /* braços BAIXOS e um pouco à frente, abertos de lado. Com o
+           braço na altura do peito a mão projeta 20 unidades ACIMA dos
+           pés — quase na cabeça — e o pano pendurado nela tapava o
+           boneco inteiro. Baixo, a mão cai logo à frente do pé e o pano
+           se estende no chão, com a torcida inteira à vista atrás. */
+        p.ombro = [0.95, 0.95]; p.ombroZ = [0.55, 0.55]; p.cotovelo = [0.15, 0.15];
+        p.coxa = [0.10, -0.10]; p.olhaX = -0.05;
+        aplicarPoseGLB(c, p, f.escala * escalaDeCima * 0.86);
+        const off = (i - (nomes.length-1)/2) * passo;
+        c.raiz.position.set(pose.x + pose.t[0]*off, 0, pose.y + pose.t[1]*off);
+        c.raiz.rotation.y = virado;              // de frente pro pano
+        sc.add(c.raiz);
+        if(c.J && c.J.mao) for(const j of c.J.mao) if(j && j.b) ossos.push(j.b);
+      });
+      sc.updateMatrixWorld(true);
+      /* ONDE ESTÃO AS MÃOS. O pano não pode ser posto "a tantas unidades
+         dos pés": o cisalhamento da câmera levanta o corpo na tela e o
+         vão aparece. Projeta-se cada osso da mão pela própria câmera e
+         volta-se ao espaço da cena, que é o que o desenho 2D usa. */
+      if(ossos.length){
+        const v = new THREE.Vector3(), ps = [];
+        for(const b of ossos){
+          b.getWorldPosition(v); v.project(camF);
+          ps.push({x: x0 + (v.x*0.5 + 0.5)*VW, y: y0 + (-v.y*0.5 + 0.5)*VH});
+        }
+        let ex = 1e9, dx = -1e9, sy = 0;
+        for(const q of ps){ if(q.x < ex) ex = q.x; if(q.x > dx) dx = q.x; sy += q.y; }
+        maosCena = {esq: ex, dir: dx, y: sy/ps.length};
+      }
+      r.render(sc, camF);
+      x.drawImage(cvB, 0, 0);
+    }catch(err){ console.warn('foto do troféu (bonecos): '+err.message); }
+    finally{ if(r) r.dispose(); }
+
+    /* 3. O PANO NAS MÃOS, DE CABEÇA PRA BAIXO. Faixa tomada se mostra
+       invertida — é assim que se exibe o troféu. Ele vai de uma mão da
+       ponta à outra e pendura da linha das mãos pra baixo. */
+    if(opc.pano){
+      const m = maosCena;
+      const comp = bandeira ? 46
+                 : m ? Math.max(m.dir - m.esq + 8, 40)
+                 : passoDoPano(POSE_N);
+      const alt = bandeira ? 46 : comp/6*1.24;
+      const cxp = m ? (m.esq + m.dir)/2 : pose.x - pose.dir[0]*16;
+      const cyp = m ? m.y + alt/2       : pose.y - pose.dir[1]*16;
+      x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
+      x.translate(cxp, cyp);
+      x.rotate(Math.atan2(pose.t[1], pose.t[0]));
+      x.fillStyle = 'rgba(0,0,0,.42)';
+      x.fillRect(-comp/2 + 1.5, -alt/2 + 3, comp, alt);
+      x.rotate(Math.PI);                       // o troféu vai invertido
+      x.drawImage(opc.pano, -comp/2, -alt/2, comp, alt);
+      x.restore();
+    }
+    try{ return cv2.toDataURL('image/jpeg', 0.88); }catch(_){ return null; }
+  }
+  /* o pano acompanha a fila: quatro a 30 de distância, e uma sobra de
+     cada lado pra mão segurar */
+  function passoDoPano(n){ return (n-1)*POSE_PASSO + 34; }
 
   return {montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, estudo, DESENHOS, paletaDaCena, anelDe, desenhoDaTorcida,
           cfg, dprAtual, conta, get dprNivel(){ return dprNivel; }, get estatMalha(){ return estatMalha; },

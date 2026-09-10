@@ -8483,7 +8483,11 @@
     im.onload = ()=>{
       const cores = TO.mundo.coresDaTorcida(e.torcida);
       const nomes = e.membros.filter(m=>!m.ferido && !m.preso && !m.filial).slice(0, 4).map(m=>TO.membros.nomeDe(m));
-      B.fotoDoTrofeu({pano:im, tipo:f0.tipo, nomes,
+      /* a cena da briga: o arredores ainda está nela quando o
+         relatório abre; o ctx é a reserva */
+      const arr = TO.diaJogo.arredores;
+      const cena = (arr && arr.D && arr.D.id) || ctx.cena || '';
+      B.fotoDoTrofeu({pano:im, tipo:f0.tipo, nomes, cena, lado:nossoLado,
         torcida:{id:e.torcida.id, cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3, sigla:TO.mundo.siglaTorcida(e.torcida)}})
        .then(url=>{
          if(!url || !foto.isConnected) { foto.remove(); return; }
