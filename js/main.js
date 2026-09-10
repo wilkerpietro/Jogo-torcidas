@@ -3677,22 +3677,10 @@
     if(subTorcida==='indicadores'){ pg.appendChild(painelIndicadores()); return; }
 
     const c = TO.membros.contar(e);
-    /* A TELA DE MEMBROS (layout aprovado pelo dono, 10/09/2026): o
-       resumo em cartões, os filtros em linha (cargo com contagem, e o
-       estado), a busca à direita, e a promoção na própria linha */
-    const prontosL = e.membros.filter(m=>TO.membros.podePromover(e, m).ok);
-    const custoPromo = prontosL.reduce((s,m)=>s+(TO.membros.podePromover(e, m).custo||0), 0);
-    const dePe = e.membros.filter(m=>!m.ferido && !m.preso).length;
-    const med = k => e.membros.length ? Math.round(e.membros.reduce((s,m)=>s+m[k],0)/e.membros.length*5) : 0;
-    const resumo = el('div',{class:'mb-resumo'});
-    const rc = (cls, v, rot, nota, aoClicar)=>{ const d = el('div',{class:'mb-rc '+cls, html:`<b>${v}</b><span>${rot}</span><small>${nota}</small>`}); if(aoClicar){ d.style.cursor='pointer'; d.onclick=aoClicar; } resumo.appendChild(d); };
-    rc('', c.total, 'efetivo', `${dePe} de pé`, ()=>{ filtroEstado='todos'; filtroCargo='todos'; redesenhar(); });
-    rc('ok', prontosL.length, prontosL.length===1?'apto a promoção':'aptos a promoção', prontosL.length ? `custo ${U.dinheiro(custoPromo)}` : 'ninguém bateu o corte', ()=>{ filtroEstado='apto'; redesenhar(); });
-    rc('ruim', c.feridos, c.feridos===1?'ferido':'feridos', c.feridos ? 'voltam em dias' : 'ninguém de cama', ()=>{ filtroEstado='ferido'; redesenhar(); });
-    rc('pm', c.presos, c.presos===1?'preso':'presos', TO.financeiro.advogadosDe(e) ? 'advogado corta a pena' : 'sem advogado', ()=>{ filtroEstado='preso'; redesenhar(); });
-    rc('', `${med('forca')} / ${med('defesa')}`, 'força / defesa', 'média da torcida');
-    pg.appendChild(resumo);
-
+    /* A TELA DE MEMBROS (layout aprovado pelo dono, 10/09/2026): os
+       filtros em linha (cargo com contagem, e o estado), a busca à
+       direita, e a promoção na própria linha */
+    /* os cartões de resumo saíram (dono, 10/09/2026); ficam os filtros e a tabela */
     const filtros = [
       ['todos','Todos', c.total],
       ['diretoria','Diretoria', c.diretoria],
@@ -5260,6 +5248,10 @@
      ======================================================= */
   function pintarPatrimonio(pg, e){
     const PAT = TO.patrimonio;
+    /* o retorno à tela anterior (dono, 10/09/2026) */
+    const voltar = el('button',{class:'bt', texto:`← Voltar`});
+    voltar.onclick = ()=>{ subFin = subFinAnterior !== 'patrimonio' ? subFinAnterior : 'resumo'; subFinAnterior = 'patrimonio'; redesenhar(); };
+    pg.appendChild(el('div',{class:'volta-linha'},[voltar]));
     /* O PATRIMÔNIO EM CARTÕES (layout aprovado pelo dono, 10/09/2026):
        as cores da torcida no topo — faixas, bandeiras e as tomadas —,
        a sede numa linha com a lotação, um cartão por ponto com receita
@@ -5340,7 +5332,7 @@
       `<b class="negativo">${U.dinheiro(-soma('despesa'))}</b><span>despesa</span>`+
       `<b class="${sd>=0?'positivo':'negativo'}">${U.dinheiro(sd)}</b><span>por mês · mensalidade e caravana ficam no Resumo</span>`}));
     const irLoja = el('button',{class:'bt destaque', texto:'Comprar e ampliar na Loja →'});
-    irLoja.onclick = ()=>{ subFin='loja'; redesenhar(); };
+    irLoja.onclick = ()=>{ subFinAnterior='patrimonio'; subFin='loja'; redesenhar(); };
     pg.appendChild(el('div',{class:'loja-chamada'},[irLoja]));
   }
 
@@ -5412,6 +5404,11 @@
     const de = nat => todas.filter(o=>o.natureza===nat);
     const acha = id => todas.find(o=>o.id===id);
 
+    if(subFinAnterior === 'patrimonio'){
+      const voltar = el('button',{class:'bt', texto:'← Voltar ao Patrimônio'});
+      voltar.onclick = ()=>{ subFin = 'patrimonio'; subFinAnterior = 'loja'; redesenhar(); };
+      pg.appendChild(el('div',{class:'volta-linha'},[voltar]));
+    }
     pg.appendChild(el('div',{class:'loja-caixa', html:
       `<span>Caixa da torcida</span><b>${U.dinheiro(e.dinheiro)}</b>`}));
 
@@ -5530,7 +5527,7 @@
   /* =======================================================
      FINANCEIRO
      ======================================================= */
-  let subFin = 'resumo';
+  let subFin = 'resumo', subFinAnterior = 'resumo';
 
   function pintarFinanceiro(){
     const e = E(), pg = U.$('.pagina[data-pag="financeiro"]');
@@ -5542,7 +5539,7 @@
       {id:'patrimonio', rot:'Patrimônio'},
       {id:'elenco', rot:'Elenco'},
       {id:'transacoes', rot:'Transações'}
-    ], subFin, id=>{subFin=id; redesenhar();}));
+    ], subFin, id=>{ subFinAnterior = subFin; subFin=id; redesenhar(); }));
 
     if(subFin==='loja'){ pintarLoja(pg, e); return; }
     if(subFin==='patrimonio'){ pintarPatrimonio(pg, e); return; }

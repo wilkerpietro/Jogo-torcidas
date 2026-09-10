@@ -2275,18 +2275,19 @@ TO.diaJogo.bonecos3 = (function(){
     const W = opc.largura || 720, H = opc.altura || 405;
     const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
     const r = new THREE.WebGLRenderer({canvas:cv2, antialias:true, alpha:false, preserveDrawingBuffer:true});
-    r.setPixelRatio(1); r.setClearColor(0x1a1d24, 1);
+    r.setPixelRatio(1); r.setClearColor(0x0b0d12, 1);
     const sc = new THREE.Scene();
-    sc.fog = new THREE.Fog(0x2a2b30, 140, 420);
+    sc.fog = new THREE.Fog(0x0e1014, 150, 420);
     const g = G();
     const t = opc.torcida || {};
     const c1 = t.cor || '#444', c2 = t.cor2 || '#eee';
     const sem = String(t.id || t.sigla || 'x');
 
     /* ---- luz: fim de tarde, poste amarelo ---- */
-    sc.add(new THREE.HemisphereLight(0x9fb0c8, 0x2a2420, 0.85));
-    const sol = new THREE.DirectionalLight(0xffd9a8, 1.05); sol.position.set(-50, 90, 70); sc.add(sol);
-    const poste = new THREE.PointLight(0xffb060, 0.9, 260, 1.4); poste.position.set(55, 62, -10); sc.add(poste);
+    /* noite: pouca luz do céu, o poste amarelo é o que ilumina (dono, 10/09/2026: "cenário mais escuro") */
+    sc.add(new THREE.HemisphereLight(0x50607a, 0x14100c, 0.38));
+    const sol = new THREE.DirectionalLight(0x9fb0d0, 0.28); sol.position.set(-50, 90, 70); sc.add(sol);
+    const poste = new THREE.PointLight(0xffb060, 1.6, 320, 1.3); poste.position.set(40, 66, 10); sc.add(poste);
 
     /* ---- o muro do fundo: tijolo, reboco caído, pichação ---- */
     const tijolo = texturaDeCanvas(1024, 512, (x,w,h)=>{
@@ -2294,22 +2295,20 @@ TO.diaJogo.bonecos3 = (function(){
       const bh = 22, bw = 54;
       for(let j=0;j*bh<h;j++) for(let i=-1;i*bw<w+bw;i++){
         const off = (j%2)?bw/2:0; const k = ((i*7+j*13)%9)/9;
-        x.fillStyle = `hsl(${12+k*10},${38+k*18}%,${30+k*14}%)`;
+        x.fillStyle = `hsl(${12+k*10},${34+k*16}%,${22+k*11}%)`;
         x.fillRect(i*bw+off+2, j*bh+2, bw-4, bh-4);
       }
       /* reboco que sobrou, em manchas */
-      x.fillStyle = 'rgba(190,178,150,.85)';
+      x.fillStyle = 'rgba(150,140,118,.8)';
       for(let k=0;k<7;k++){ const px=(k*173)%w, py=(k*97)%h; x.beginPath(); x.ellipse(px, py, 90+ (k*37)%80, 50+(k*23)%40, 0, 0, 7); x.fill(); }
       /* sujeira de baixo e escorrido */
       const gr = x.createLinearGradient(0,h*0.55,0,h); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(20,10,5,.55)'); x.fillStyle = gr; x.fillRect(0,0,w,h);
-      /* a pichação: a sigla da torcida, grande, e um "aqui é" pequeno */
-      x.save(); x.translate(w*0.5, h*0.42); x.rotate(-0.04);
-      x.font = `900 120px "Barlow Condensed", Impact, sans-serif`; x.textAlign='center'; x.textBaseline='middle';
-      x.lineWidth = 14; x.strokeStyle = c2; x.strokeText(String(t.sigla||'').toUpperCase(), 0, 0);
+      /* a pichação: só a sigla da torcida, grande (dono, 10/09/2026) */
+      x.save(); x.translate(w*0.5, h*0.40); x.rotate(-0.04);
+      x.font = `900 170px "Barlow Condensed", Impact, sans-serif`; x.textAlign='center'; x.textBaseline='middle';
+      x.lineWidth = 16; x.strokeStyle = c2; x.strokeText(String(t.sigla||'').toUpperCase(), 0, 0);
       x.fillStyle = c1; x.fillText(String(t.sigla||'').toUpperCase(), 0, 0);
-      x.font = `700 40px "Barlow Condensed", sans-serif`; x.fillStyle = 'rgba(0,0,0,.75)'; x.fillText('AQUI É', 0, -105);
       x.restore();
-      x.fillStyle = 'rgba(0,0,0,.7)'; x.font = '700 34px sans-serif'; x.fillText('ninguém segura', w*0.16, h*0.82);
     });
     const muro = new THREE.Mesh(new THREE.PlaneGeometry(260, 78), new THREE.MeshLambertMaterial({map:tijolo}));
     muro.position.set(0, 39, -62); sc.add(muro);
@@ -2338,7 +2337,8 @@ TO.diaJogo.bonecos3 = (function(){
 
     /* ---- os bonecos: quatro dos nossos ---- */
     const nomes = (opc.nomes && opc.nomes.length ? opc.nomes : ['Tico','Rafinha','Bidu','Neguinho']).slice(0,4);
-    const postos = [[-34, 4, 0.35], [-11, 0, 0.12], [11, 0, -0.12], [34, 4, -0.35]];
+    /* os quatro lado a lado segurando o pano (dono, 10/09/2026) */
+    const postos = [[-30, 0, 0.10], [-10, 0, 0.04], [10, 0, -0.04], [30, 0, -0.10]];
     const corpos = [];
     nomes.forEach((nome, i)=>{
       const d = {nome:nome+'|trofeu', lado:'mandante', torcida:t.id, cor:c1, cor2:c2, cor3:t.cor3||null};
@@ -2346,14 +2346,9 @@ TO.diaJogo.bonecos3 = (function(){
       const c = construirCorpoGLB(f, false);
       c.sombra.visible = false; if(c.anel) c.anel.visible = false; if(c.anelFundo) c.anelFundo.visible = false;
       const p = poseNeutra();
-      const meio = (i === 1 || i === 2);
-      if(meio){
-        /* segura o pano: os dois braços pra frente, na altura do peito */
-        p.ombro = [-1.35, -1.35]; p.ombroZ = [0.12, 0.12]; p.cotovelo = [-0.35, -0.35]; p.olhaX = -0.1;
-      } else {
-        /* punho pro alto e o outro braço apontando pra câmera */
-        p.ombro = [-2.9, -0.9]; p.ombroZ = [0.35, 0.25]; p.cotovelo = [-1.9, -0.3]; p.olhaX = -0.2; p.olhaY = i===0 ? 0.3 : -0.3;
-      }
+      /* todos seguram o pano: braços pra frente, um pouco abaixo do
+         ombro, pra mão ficar a uns 65% da altura do corpo */
+      p.ombro = [-1.15, -1.15]; p.ombroZ = [0.10, 0.10]; p.cotovelo = [-0.25, -0.25]; p.olhaX = -0.08; p.olhaY = i<2 ? 0.12 : -0.12;
       p.coxa = [0.12, -0.12]; p.inclina = -0.08;
       aplicarPoseGLB(c, p, 1);
       c.raiz.position.set(postos[i][0], 0, postos[i][1]); c.raiz.rotation.y = postos[i][2];
@@ -2371,21 +2366,26 @@ TO.diaJogo.bonecos3 = (function(){
 
     /* ---- o pano entre as mãos dos dois do meio, de cabeça pra baixo ---- */
     const maoDe = (c, k)=>{ const v = new THREE.Vector3(); c.J.mao[k].b.getWorldPosition(v); return v; };
-    const mA = maoDe(corpos[1], 1), mB = maoDe(corpos[2], 0);
-    const cx = (mA.x+mB.x)/2, cy = (mA.y+mB.y)/2, cz = Math.max(mA.z, mB.z) + 2.5;
+    const maos = corpos.map(c=>[maoDe(c,0), maoDe(c,1)]).flat();
+    const cy = maos.reduce((a,v)=>a+v.y, 0)/maos.length;        // a altura das mãos: o topo do pano
+    const cz = Math.max(...maos.map(v=>v.z)) + 2.5;
+    const xs = maos.map(v=>v.x), cx = (Math.min(...xs)+Math.max(...xs))/2;
     if(opc.pano){
       const tex = new THREE.CanvasTexture(opc.pano); tex.colorSpace = THREE.SRGBColorSpace;
       const bandeira = opc.tipo === 'bandeira';
-      const larg = bandeira ? 26 : Math.max(40, Math.abs(mB.x - mA.x) + 30);
-      const alt = bandeira ? 26 : larg * (opc.pano.height / opc.pano.width);
+      /* o pano vai das mãos ao chão (uns 65% da altura do boneco — dono,
+         10/09/2026); a faixa mantém a proporção da arte, a bandeira é
+         quadrada */
+      const alt = Math.max(18, cy - 0.5);
+      const larg = bandeira ? alt : Math.max(Math.max(...xs) - Math.min(...xs) + 14, alt * (opc.pano.width / opc.pano.height));
       const pano = new THREE.Mesh(new THREE.PlaneGeometry(larg, alt), new THREE.MeshLambertMaterial({map:tex, transparent:true, side:THREE.DoubleSide}));
-      pano.position.set(cx, cy - alt/2 + 1.5, cz); pano.rotation.z = Math.PI;   // de cabeça pra baixo, o topo nas mãos
+      pano.position.set(cx, alt/2 + 0.3, cz); pano.rotation.z = Math.PI;   // de cabeça pra baixo, o topo nas mãos, a barra no chão
       sc.add(pano);
     }
 
     /* ---- câmera na altura dos olhos, um pouco de baixo pra cima ---- */
     const cam = new THREE.PerspectiveCamera(38, W/H, 1, 1000);
-    cam.position.set(3, 24, 92); cam.lookAt(0, 19, -10);
+    cam.position.set(2, 22, 98); cam.lookAt(0, 17, -10);
     r.render(sc, cam);
     let url = null;
     try{ url = cv2.toDataURL('image/jpeg', 0.86); }catch(_){ url = null; }

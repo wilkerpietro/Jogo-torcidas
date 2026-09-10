@@ -4997,6 +4997,14 @@ baixa". Feed e diplomacia ficaram como estão.
   onde a mão ficou depois da pose e dá meia-volta em quem está de
   costas. 720×405, JPEG a 86%, ~60 KB, 2,2 s no swiftshader. Sem WebGL
   ou sem GLB carregado em 6 s, o bloco fica só com as legendas.
+- AJUSTES DO DONO (10/09/2026, depois de ver): na foto, o pano vai das
+  mãos ao chão — uns 65% da altura do boneco —, os QUATRO seguram
+  (braços pra frente um pouco abaixo do ombro, lado a lado a 20 px), a
+  cena virou noite (céu a 38%, poste amarelo a 1,6, tijolo mais escuro)
+  e o muro ficou só com a sigla, maior. Os cartões de resumo da tela de
+  membros saíram (ficam os filtros e a tabela). O Patrimônio ganhou o
+  botão "← Voltar" pra sub-aba de onde se veio (`subFinAnterior`), e a
+  Loja, quando aberta do Patrimônio, o "← Voltar ao Patrimônio".
 - Testado (`telas-aprovadas.js`): as três telas em 1280 e 390 sem
   rolagem horizontal, perfil com cinco eventos na linha do tempo, e um
   ataque ao bar da Cearamor em que derrubamos o portador — o relatório
