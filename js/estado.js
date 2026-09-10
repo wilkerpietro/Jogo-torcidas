@@ -92,7 +92,7 @@ TO.estado = (function(){
     }
 
     TO.membros.povoarInicial(E, opc.efetivo || E.efetivoAlvo || 34,
-                             (opc.torcida||{}).cargos);
+                             (opc.torcida||{}).cargos, E.torcida.sedeNivel);
     TO.membros.sortearFila(E);
     E.forcas = {};
     TO.competicoes.usarSave(E);

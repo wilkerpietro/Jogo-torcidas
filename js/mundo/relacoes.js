@@ -1423,7 +1423,7 @@ TO.relacoes = (function(){
     if(!t.quadro){
       const o = M().torcida(id);
       const cargos = {novato:0, componente:0, frente:0, diretoria:0}, forca = {};
-      for(const [c, n] of TO.membros.planoDeCargos(t.membros, o && o.cargos))
+      for(const [c, n] of TO.membros.planoDeCargos(t.membros, o && o.cargos, t.sede))
         cargos[c] = (cargos[c] || 0) + n;
       const xp = {}, desgaste = {};
       for(const c of ESCADA){ forca[c] = BASE_FICHA[c] + 1.5; xp[c] = 0; desgaste[c] = 0; }

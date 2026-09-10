@@ -401,9 +401,9 @@
     cxF.appendChild(cab);
 
     /* o efetivo que a torcida realmente tem, cargo a cargo (GDD §5.1) */
-    const plano = TO.membros.planoDeCargos(f.membros, f.cargos);
     const nivelSede = Math.max(f.sedeNivel||1,
       TO.membros.nivelQueCabe(f.membros, (f.cargos||{}).diretoria || 0));
+    const plano = TO.membros.planoDeCargos(f.membros, f.cargos, nivelSede);
     const barras = el('div',{class:'hierarquia-fina'});
     for(const [cargo, n] of plano){
       barras.appendChild(el('div',{html:

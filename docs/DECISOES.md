@@ -5028,6 +5028,46 @@ tenha o layout antigo".
   telas aprovadas (perfil do membro, membros, relatório com o troféu)
   seguem como estão.
 
+## A pirâmide da pequena (ordem do dono, 10/09/2026)
+
+"Quero que as torcidas menores surjam com mais membros da diretoria,
+linha de frente e componentes, pra compensar a falta de membros e serem
+mais competitivas contra as grandes."
+
+- COMO ERA: a fonte dá a mesma pirâmide pra todo mundo, do bonde de 20
+  ao de 250 — 5,0% diretoria, 14,9% frente, 30,0% componente, 50,0%
+  povão, medido nas 140 torcidas da planilha. Como a briga é efetivo ×
+  ficha média, a pequena entrava com a MESMA média (5,7) e um décimo do
+  efetivo: perdia duas vezes.
+- A RÉGUA NOVA (`compensarPequena` em `membros.js`, dentro de
+  `planoDeCargos`, que é por onde passam o elenco do jogador e o quadro
+  de toda IA): até 25 membros vale a pirâmide cheia — 12% diretoria,
+  28% frente, 35% componente, o resto de povão; de 150 pra cima nada
+  muda; no meio o peso cai em escala logarítmica, porque 20 e 40
+  membros são mundos diferentes e 200 e 220 não. Quem sobe SAI DO
+  POVÃO: o efetivo total continua o que a fonte diz.
+- A DIRETORIA NÃO PASSA DO TETO DA SEDE; o excedente vira linha de
+  frente. Sem isso, 58 das 140 torcidas precisariam de uma sede maior
+  só pra caber a diretoria nova, com a manutenção que vem junto — e
+  medido, a ficha média fica praticamente igual (7,90 contra 7,91 na
+  faixa até 30 membros). `planoDeCargos` passou a receber o nível da
+  sede; `estado.js`, `relacoes.js` (quadroDe) e a ficha da seleção em
+  `main.js` passam o que já calculavam.
+- MEDIDO no jogo, por faixa de efetivo (diretoria / frente / componente
+  / povão e a ficha média):
+  até 30: 8,7 / 30,8 / 35,2 / 25,3 · ficha 7,81 (era 5,70)
+  30 a 60: 7,9 / 27,5 / 33,8 / 30,8 · ficha 7,35 (era 5,72)
+  60 a 120: 6,4 / 21,2 / 32,1 / 40,3 · ficha 6,53 (era 5,70)
+  120 a 250: 4,9 / 15,3 / 30,1 / 49,6 · ficha 5,72 (era 5,70)
+  acima de 250: sem mudança.
+  Uma torcida de 20 sai de 114 de poder pra 156: contra a de 250 ainda
+  perde, contra as de 60 a 80 fica páreo — que é o que a compensação se
+  propõe a fazer.
+- Conferido (`piramide.js`): nenhum plano estoura o efetivo da fonte,
+  nenhuma diretoria passa do teto da sede, e a Aliança (20 membros)
+  abre com 2/6/7/5 no lugar de 1/3/6/10, ficha 7,6. `faixa-tomada-regra`
+  e `promo-ia` seguem passando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

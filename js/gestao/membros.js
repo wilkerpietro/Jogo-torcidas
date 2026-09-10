@@ -238,9 +238,64 @@ TO.membros = (function(){
     return SEDE.length-1;
   }
 
+  /* =======================================================
+     A PIRÂMIDE DA PEQUENA (ordem do dono, 10/09/2026)
+     "Quero que as torcidas menores surjam com mais membros da
+     diretoria, linha de frente e componentes, pra compensar a falta
+     de membros e serem mais competitivas contra as grandes."
+     A fonte dá 5/15/30/50 pra todo mundo, do bonde de 20 ao de 250 —
+     e numa briga o que conta é efetivo × ficha média, então a pequena
+     entrava com o mesmo 5,7 de média e um décimo do efetivo.
+     Agora a pirâmide dela é mais pesada em cima: até 25 membros vale
+     a régua cheia (12% diretoria, 28% frente, 35% componente, o resto
+     de novato), de 150 pra cima nada muda, e no meio o peso cai em
+     escala logarítmica — 20 e 40 membros são mundos diferentes, 200 e
+     220 não. O que sobe sai do POVÃO: o efetivo total não muda.
+     ======================================================= */
+  const PIRAMIDE_COMPENSADA = {diretoria:0.12, frente:0.28, componente:0.35};
+  const COMP_CHEIA = 25, COMP_ZERO = 150;
+  function compensacaoDe(total){
+    if(!(total > 0) || total >= COMP_ZERO) return 0;
+    if(total <= COMP_CHEIA) return 1;
+    return Math.log(COMP_ZERO/total) / Math.log(COMP_ZERO/COMP_CHEIA);
+  }
+  /* A DIRETORIA NÃO PASSA DO QUE A SEDE COMPORTA: o excedente vira
+     linha de frente. Sem isso a compensação empurraria 58 das 140
+     torcidas pra uma sede maior, com a manutenção que vem junto — e
+     medido, a ficha média fica praticamente a mesma (7,90 contra
+     7,91 na faixa até 30). */
+  function compensarPequena(plano, total, sedeNivel){
+    const k = compensacaoDe(total);
+    if(!k) return plano;
+    const p = {};
+    for(const [c, n] of plano) p[c] = (p[c] || 0) + n;
+    for(const c of ['diretoria','frente','componente']){
+      const alvo = Math.round(PIRAMIDE_COMPENSADA[c] * total);
+      if(alvo > (p[c] || 0)) p[c] = (p[c] || 0) + Math.round(k * (alvo - (p[c] || 0)));
+    }
+    const teto = (SEDE[U.limitar(sedeNivel || 1, 1, SEDE.length-1)] || {}).diretoria || 2;
+    if(p.diretoria > teto){ p.frente = (p.frente || 0) + (p.diretoria - teto); p.diretoria = teto; }
+    const cima = (p.diretoria||0) + (p.frente||0) + (p.componente||0);
+    /* o efetivo é o que a fonte diz: quem sobe sai do povão, e se o
+       topo passar do total (não acontece com 12+28+35=75%, mas save
+       torto existe) o excesso volta pro fim da fila */
+    if(cima > total){
+      let sobra = cima - total;
+      for(const c of ['componente','frente','diretoria']){
+        const leva = Math.min(sobra, p[c] || 0);
+        p[c] -= leva; sobra -= leva;
+        if(!sobra) break;
+      }
+    }
+    p.novato = Math.max(0, total - (p.diretoria||0) - (p.frente||0) - (p.componente||0));
+    return ['diretoria','frente','componente','novato']
+      .filter(c => p[c] > 0).map(c => [c, p[c]]);
+  }
+
   /* Quantos de cada cargo. Vem da fonte quando ela diz; a proporção do
-     GDD §5.1 (50/30/15/5) só entra quando não há dado nenhum. */
-  function planoDeCargos(total, cargos){
+     GDD §5.1 (50/30/15/5) só entra quando não há dado nenhum. A
+     pequena leva a compensação por cima, seja qual for a origem. */
+  function planoDeCargos(total, cargos, sedeNivel){
     const plano = [];
     if(cargos && Object.keys(cargos).length){
       for(const chave of ['diretoria','frente','componentes','povao']){
@@ -254,7 +309,7 @@ TO.membros = (function(){
         if(novatos) novatos[1] += total - soma;
         else plano.push(['novato', total - soma]);
       }
-      if(plano.length) return plano;
+      if(plano.length) return compensarPequena(plano, total, sedeNivel);
     }
     const p = [
       ['diretoria', Math.max(2, Math.round(total*0.05))],
@@ -262,11 +317,11 @@ TO.membros = (function(){
       ['componente',Math.round(total*0.30)]
     ];
     p.push(['novato', Math.max(0, total - p[0][1] - p[1][1] - p[2][1])]);
-    return p;
+    return compensarPequena(p, total, sedeNivel);
   }
 
-  function povoarInicial(E, total, cargos){
-    const plano = planoDeCargos(total || 34, cargos);
+  function povoarInicial(E, total, cargos, sedeNivel){
+    const plano = planoDeCargos(total || 34, cargos, sedeNivel);
     /* SEM BÔNUS DE PODER (decisão do dono, 18/08/2026): a ficha inicial
        sai só do cargo, a mesma régua das IAs — o que separa a Gaviões
        de uma organizada de interior é o tamanho e a pirâmide, não um
@@ -680,6 +735,7 @@ TO.membros = (function(){
   return {
     CARGOS, ACIMA, SEDE, AREA_TREINO, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
     criar, nomeDe, nomeCompletoDe, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe,
+    compensacaoDe, PIRAMIDE_COMPENSADA,
     disponivel, capacidade, capacidadeMatriz, capTreino, capDiretoria,
     contar, emCampanha, naMatriz, daFilial, aptosDaFilial,
     darXP, podePromover, promover, treinar, treinarFila,
