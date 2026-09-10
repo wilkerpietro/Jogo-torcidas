@@ -3598,16 +3598,50 @@ TO.diaJogo.combate = (function(){
      desenhado em fatias, o topo preso na corda e a barra de baixo
      caindo mais no meio, com uma ondinha pra parecer tecido.
      ======================================================= */
+  /* A SOMBRA DO PANO SEM `filter` (10/09/2026). Desenhar o pano em preto
+     com `c.filter='brightness(0)'` é o jeito curto e é o jeito caro: o
+     filtro do canvas 2D força um caminho de composição à parte, e ele
+     era pago em CADA fatia de CADA faixa de CADA quadro. Medido no
+     estádio de 40 mil, 8 faixas na tela: 1,98 ms por quadro só de pano,
+     dos quais 1,51 ms eram o filtro.
+     No lugar dele vai uma silhueta preta pré-rendida uma vez por
+     imagem, guardada num WeakMap — a sombra vira um `drawImage` comum.
+     Não se guarda silhueta de imagem ainda sem tamanho: a faixa chega
+     por `Image` e pode não ter carregado no primeiro quadro. */
+  const _silhuetas = new WeakMap();
+  function silhuetaDe(img){
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    if(!iw || !ih) return null;
+    const guardado = _silhuetas.get(img);
+    if(guardado && guardado.w === iw && guardado.h === ih) return guardado.cv;
+    const cv = document.createElement('canvas'); cv.width = iw; cv.height = ih;
+    const x = cv.getContext('2d');
+    x.drawImage(img, 0, 0, iw, ih);
+    x.globalCompositeOperation = 'source-in';
+    x.fillStyle = '#000'; x.fillRect(0, 0, iw, ih);
+    _silhuetas.set(img, {w:iw, h:ih, cv});
+    return cv;
+  }
+  /* o pano é liso (o dono reprovou a barriga em 09/09/2026), então
+     `dySag` devolve 0 sempre e as 28 fatias desenham o mesmo retângulo
+     lado a lado — um `drawImage` só dá o MESMO pixel por 1/20 do custo.
+     A conta fica genérica: se a queda for zero, uma fatia basta. */
+  function panoLiso(dySag){
+    return dySag(0) === 0 && dySag(0.5) === 0 && dySag(1) === 0;
+  }
   function fatiasDoPano(c, F, w, h, N, dySag, sombra){
     /* desenha no referencial já transladado/girado: topo em -h/2.
        `sombra`: o mesmo pano em preto, deslocado — a sombra acompanha a
        ondulação em vez de ser um retângulo atrás */
     const img = (F.img && (F.img.naturalWidth || F.img.width)) ? F.img : null;
     const iw = img ? (img.naturalWidth || img.width) : 0, ih = img ? (img.naturalHeight || img.height) : 0;
+    if(img && panoLiso(dySag)) N = 1;
     const fw = w/N;
     if(sombra && img){
-      c.save(); c.globalAlpha = 0.5; c.filter = 'brightness(0)'; c.translate(1.5, 3);
-      for(let i=0;i<N;i++){ const x0 = -w/2 + i*fw; c.drawImage(img, i*iw/N, 0, iw/N, ih, x0 - 0.6, -h/2, fw + 1.2, h); }
+      const sil = silhuetaDe(img);
+      c.save(); c.globalAlpha = 0.5; c.translate(1.5, 3);
+      if(sil) for(let i=0;i<N;i++){ const x0 = -w/2 + i*fw; c.drawImage(sil, i*iw/N, 0, iw/N, ih, x0 - 0.6, -h/2, fw + 1.2, h); }
+      else { c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3); }
       c.restore();
     } else if(sombra){ c.fillStyle='rgba(0,0,0,.55)'; c.fillRect(-w/2-1.5, -h/2-1.5, w+3, h+3); }
     for(let i=0;i<N;i++){
@@ -3629,7 +3663,7 @@ TO.diaJogo.combate = (function(){
   function desenharFaixa(c, J, F){
     if(!F || F.estado==='tomada') return;
     const bandeira = F.tipo === 'bandeira';
-    const N = bandeira ? 10 : 28;
+    let N = bandeira ? 10 : 28;
     if((F.estado==='exposta' || F.estado==='recolhendo') && F.arco && F.dir){
       /* CURVADA NO ALAMBRADO: a grade é um arco com centro em `arco`;
          o topo da faixa fica na grade e o corpo pende pro campo (pra
@@ -3640,6 +3674,13 @@ TO.diaJogo.combate = (function(){
       const R = Math.max(40, Math.hypot(gx-cx, gy-cy));
       const a0 = Math.atan2(gy-cy, gx-cx);
       const w = F.w, h = F.h, vao = w / R;
+      /* QUANTAS FATIAS A CURVA PEDE (10/09/2026). 28 era um número
+         redondo, não uma conta. Cada fatia é uma corda do arco, e o que
+         se vê é a flecha dela: s = R·(1−cos(vão/2N)) ≈ R·vão²/8N². Pra
+         flecha abaixo de 0,35 unidade — menos de meio pixel na tela —
+         basta N = vão·√(R/2,8). No alambrado do estádio de 20 mil isso
+         dá 7 fatias no lugar de 28. Piso de 6 e teto no valor antigo. */
+      N = U.limitar(Math.ceil(vao * Math.sqrt(R/2.8)), 6, N);
       const rm = R - h/2 - 2;
       const cai = caidaDoPano(F, h);
       c.save();
@@ -3650,9 +3691,14 @@ TO.diaJogo.combate = (function(){
         c.beginPath(); c.arc(cx, cy, rm, a0 - vao/2, a0 + vao/2); c.stroke();
       }
       /* duas passadas: a sombra (o pano em preto, 3 px pro campo) e o pano */
-      for(const passo of (img && !bandeira ? ['sombra','pano'] : ['pano'])){
+      /* aqui as fatias são necessárias — cada uma gira um pouco pra
+         acompanhar a curva do alambrado —, mas a sombra sai da
+         silhueta pré-rendida, e não do filtro do canvas */
+      const sil = img && !bandeira ? silhuetaDe(img) : null;
+      for(const passo of (sil ? ['sombra','pano'] : ['pano'])){
+        const fonte = passo === 'sombra' ? sil : img;
         c.save();
-        if(passo === 'sombra'){ c.globalAlpha = 0.5; c.filter = 'brightness(0)'; }
+        if(passo === 'sombra') c.globalAlpha = 0.5;
         for(let i=0;i<N;i++){
           const t = (i+0.5)/N, a = a0 + vao*(t - 0.5);
           c.save();
@@ -3660,7 +3706,7 @@ TO.diaJogo.combate = (function(){
           c.rotate(a + Math.PI/2);
           if(passo === 'sombra') c.translate(0, 3);
           const fw = w/N, dy = cai(t);
-          if(img) c.drawImage(img, i*iw/N, 0, iw/N, ih, -fw/2 - 0.6, -h/2, fw + 1.2, h + dy);
+          if(fonte) c.drawImage(fonte, i*iw/N, 0, iw/N, ih, -fw/2 - 0.6, -h/2, fw + 1.2, h + dy);
           else { c.fillStyle = F.cores.cor || '#555'; c.fillRect(-fw/2 - 0.6, -h/2, fw + 1.2, h + dy); }
           c.restore();
         }

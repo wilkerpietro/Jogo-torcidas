@@ -5229,6 +5229,57 @@ mais competitivas contra as grandes."
   parede lateral, meio do pátio livre. Do 3 em diante tem dormitório (3 e
   4) ou ala de hospedagem (5), e colchão solto vira bagunça.
 
+## A queda de FPS com faixas na tela era o `filter` do canvas (10/09/2026)
+- RELATO do dono: "as cenas que tem muitas faixas e bandeiras, como a
+  cena do estádio, ficam com a framagem baixa" e, decisivo,
+  "assim que as faixas sao recolhidas a framagem melhora".
+- MEDIDO antes de mexer, no estádio de 40 mil com 8 faixas expostas: a
+  camada 2D custava 2,58 ms por quadro com faixa e 0,10 ms sem — 96% da
+  camada era pano. No container o WebGL é software e engole o quadro
+  inteiro, então medir FPS de tela esconde isso; o jeito de enxergar foi
+  cronometrar só a passada 2D (`bench-faixas.js`).
+- ABLAÇÃO (`bench-pano.js`, determinística — mesma imagem, mesma
+  geometria, 8 faixas por quadro). Faixa RETA: hoje 1,98 ms · sem o
+  filtro 0,47 · sem filtro e sem fatiar 0,11. Faixa em ARCO: hoje
+  4,91 ms · sem o filtro 1,79 · com as fatias que a curva pede 0,35.
+  O `c.filter='brightness(0)'` sozinho respondia por 1,51 dos 1,98 na
+  reta e por 3,12 dos 4,91 no arco.
+- CAUSA 1, a grande: a sombra do pano era o próprio pano desenhado em
+  preto com `c.filter`. Filtro de canvas 2D força um caminho de
+  composição à parte, e ele era pago em CADA fatia de CADA faixa de CADA
+  quadro. Trocado por uma SILHUETA preta pré-rendida uma vez por imagem,
+  guardada num `WeakMap` — a sombra virou `drawImage` comum. Não se
+  guarda silhueta de imagem ainda sem tamanho: a faixa chega por `Image`
+  e pode não ter carregado no primeiro quadro.
+- CAUSA 2: o pano reto era fatiado em 28 pedaços pra acompanhar uma
+  barriga que NÃO EXISTE MAIS — o dono reprovou a deformação em
+  09/09/2026 e `caidaDoPano` devolve 0 desde então. 28 fatias iguais
+  lado a lado dão o mesmo pixel que um `drawImage` só. `panoLiso()`
+  detecta a queda zero e usa uma fatia.
+- CAUSA 3: no ramo do ARCO as fatias são necessárias (cada uma gira um
+  pouco pra acompanhar o alambrado), mas 28 era número redondo, não
+  conta. A flecha de cada corda é R·(1−cos(vão/2N)) ≈ R·vão²/8N²; pra
+  ficar abaixo de 0,35 unidade — menos de meio pixel na tela — basta
+  N = vão·√(R/2,8), com piso 6 e teto nos 28 de antes. No alambrado do
+  estádio de 20 mil dá 7.
+- MEDIDO DEPOIS, no jogo, pares casados na mesma cena: estádio de 40 mil
+  (só faixa reta) 0,68 → 0,08 ms de custo de pano; estádio de 20 mil
+  (2 em arco) 0,79 → 0,35 ms. ATENÇÃO ao ler esse par: a medida de cena
+  é RUIDOSA — quais faixas saem é sorteio, e com a máquina ocupada o
+  próprio piso sem faixa varia de 0,08 a 1,6 ms. Quem manda no registro
+  é a ablação determinística acima; o par de cena serve pra confirmar a
+  ordem de grandeza, não pra cravar número.
+- O PIXEL FOI CONFERIDO, e não só o relógio (`pano-pixel.js`): o desenho
+  novo difere do antigo em 5% dos pixels, e a diferença está NAS EMENDAS
+  das 28 fatias e no reamostrar de cada pedaço. O antigo tinha costura;
+  o novo não. É melhora, não regressão. No ramo do arco a diferença
+  ficou em 0,08% dos pixels.
+- Na tela, o estádio de 20 mil sai idêntico antes e depois da troca
+  (`faixa-tela.js`), e `varredura-cenas` passa nas 18.
+- ONDE MAIS ISSO VALE: não sobrou nenhum `c.filter` no caminho de
+  desenho do jogo. Se algum dia voltar a fazer falta, a saída é a mesma
+  — pré-renderizar o efeito uma vez, e não por quadro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
