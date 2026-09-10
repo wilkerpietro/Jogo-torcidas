@@ -11,6 +11,8 @@ foto de drone a prumo, dia nublado, cor dessaturada, cidade brasileira.
 | Rua de classe alta | Nobre | `planta-rua-nobre-2048.png` | `rua_nobre.webp` | **feita** — `Aerial_view_of_residential_avenue_202608131501.jpeg` |
 | Bar da rival | ação *atacar a sede/bar* | `planta-bar-2048.png` | `bar.webp` | **feita** — `Aerial_view_of_roofless_bar_202608131633.jpeg` |
 
+As cinco sedes (uma por nível) têm prompt próprio: `PROMPT-SEDE.md`.
+
 A briga abre a cena do bairro onde ela cai: esbarrão no Pirambu não pode
 abrir a mesma rua do esbarrão na Aldeota. As três ruas têm **a mesma
 geometria** — pista larga no meio, calçada larga dos dois lados,
