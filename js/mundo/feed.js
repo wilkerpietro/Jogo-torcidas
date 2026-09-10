@@ -538,24 +538,39 @@ TO.feed = (function(){
             const casa = M().time(jg.c), vis = M().time(jg.f);
             if(!casa || !vis || casa.mapa !== f.cidade) continue;
             if(vis.mapa === f.cidade) continue;      // não viajou: mora lá
+            /* A INVESTIDA MARCADA NA SEGUNDA (cartão da semana, dono,
+               10/09/2026): o bote só existe se a aba da subsede marcou
+               Investir naquele jogo — no alvo e no ponto escolhidos. O
+               "Manda dar o bote?" sem plano saiu do feed por ordem do
+               dono, no mesmo dia. */
+            const inv = PL().investidaDe(E,
+              chaveDoJogoDaFilial(f.cidade, E.data.semana, casa.id, vis.id));
+            if(!inv || !inv.alvo) continue;
             for(const o of M().torcidasDe(vis.id)){
               if(o.id === E.torcida.id || o.incompleta) continue;
               if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
-              if(TO.relacoes.nivel(E, o.id) > -15) continue;
+              if(inv.alvo !== o.id) continue;
               const n = PL().caravanaDe(o, (E.relacoes||{})[o.id], E);
               if(n < 5) continue;                    // caravana pequena não viaja
-              const cena = H(`bote|${f.cidade}|${o.id}|${E.data.absoluto}`) % 2
-                ? 'praca' : 'rua';
+              const cena = inv && inv.alvo
+                ? (inv.como === 'ida' && inv.olheiro === 'praca' ? 'praca' : 'rua')
+                : (H(`bote|${f.cidade}|${o.id}|${E.data.absoluto}`) % 2
+                    ? 'praca' : 'rua');
               const cid = TO.financeiro.nomeCidade(f.cidade);
               propor(E, {
                 kind:'filial-caravana', peso:'decisao', voz:'olheiro',
                 tipo:'ruim',
                 chave:`bote|${f.cidade}|${o.id}|${E.data.ano}|${E.data.semana}`,
                 /* texto AGUARDANDO O CRIVO do dono (31/08/2026) */
-                texto:`Chefe, a caravana da ${o.nome} desceu em ${cid} pro `+
-                      `jogo de hoje — uns ${n} ${cena === 'praca'
-                        ? 'na praça' : 'na pista'}. O pessoal da nossa `+
-                      `Sub-Sede tá com ${nucleo.length}. Manda dar o bote?`,
+                texto: inv && inv.alvo
+                  ? `Chefe, como combinado na segunda: a caravana da ${o.nome} `+
+                    `desceu em ${cid} pro jogo de hoje — uns ${n} ${cena === 'praca'
+                      ? 'na praça' : 'na pista'}. O pessoal da nossa Sub-Sede `+
+                    `tá com ${nucleo.length}, pronto pro bote.`
+                  : `Chefe, a caravana da ${o.nome} desceu em ${cid} pro `+
+                    `jogo de hoje — uns ${n} ${cena === 'praca'
+                      ? 'na praça' : 'na pista'}. O pessoal da nossa `+
+                    `Sub-Sede tá com ${nucleo.length}. Manda dar o bote?`,
                 dados:{cidade:f.cidade, rival:o.id, n, cena},
                 botoes:[{id:'bote', rot:'Atacar', acao:'filial-caravana',
                          nota:'abre a cena com o núcleo da sub-sede contra '+
@@ -1079,8 +1094,14 @@ TO.feed = (function(){
       return (TO.mapa.hash(`freio-olheiro|${chave}`) % 1000) / 1000 < teto;
     };
 
+    /* AS SUGESTÕES DE ATAQUE SAÍRAM (ordem do dono, 10/09/2026): com o
+       planejamento de volta no cartão de segunda, o olheiro não para
+       mais o dia pra sugerir ataque em jogo da praça nem cobrar dívida
+       na viagem — quem decide é o cartão. Ficam o relatório de quem
+       está na pista do jogo fora e o pedido de casa da aliada. */
+    const SUGESTOES_DO_OLHEIRO = false;
     /* situações 1 e 2: os jogos da NOSSA praça que reportam hoje */
-    for(const j of TO.praca.jogosDaPraca(E)){
+    for(const j of SUGESTOES_DO_OLHEIRO ? TO.praca.jogosDaPraca(E) : []){
       if(diaDoOlheiro(j.dia) !== hoje) continue;
       const nosso = j.casa.id === meu || j.vis.id === meu;
       const hostis = estimativasDaRua(E, j.dia, j)
@@ -1136,7 +1157,7 @@ TO.feed = (function(){
         .filter(a=>!a.aliada && ehHostil(E, a.id) && !!dividas[a.id] && !emTregua(a.id))
         .sort((a,b)=>nota(b.id)-nota(a.id));
       const chaveFora = hostis.length ? `olheiro|${E.data.ano}|${E.data.semana}|fora|${hostis[0].id}` : '';
-      if(hostis.length){
+      if(SUGESTOES_DO_OLHEIRO && hostis.length){
         const alvo = hostis[0], dv = dividas[alvo.id];
         const texto =
             `Chefe, a gente ainda não engoliu o que esses caras da ${alvo.nome} `+
@@ -1268,7 +1289,11 @@ TO.feed = (function(){
     for(const j of TO.praca.jogosDaPraca(E, semana, cidadeId)){
       const nosso = emCasa && (j.casa.id === meu || j.vis.id === meu);
       const ests = ruaDe(j);
-      const chaveJogo = nosso ? null : (emCasa ? chaveDoJogoDaPraca(E, j) : null);
+      /* na subsede a chave é da praça de lá: é ela que o bote do dia do
+         jogo lê (`boteNaCaravanaRival`) pra achar a investida marcada */
+      const chaveJogo = nosso ? null
+        : emCasa ? chaveDoJogoDaPraca(E, j)
+        : chaveDoJogoDaFilial(cidadeId, semana, j.casa.id, j.vis.id);
       linhas.push({
         tipo: nosso ? 'nosso' : 'praca',
         grupo:{dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id},
@@ -1317,8 +1342,8 @@ TO.feed = (function(){
       kind:'semana', voz:'diretor', peso: temJogo ? 'decisao' : 'info',
       chave:`semana|${E.data.ano}|${E.data.semana}`,
       texto: temJogo
-        ? 'Segunda-feira: a semana na mesa. Cada praça em que a gente tem pé, os jogos que vão rolar e o que a torcida vai fazer em cada um.'
-        : 'Segunda-feira de folga do time. Os jogos da praça continuam, e torcida rival na rua continua sendo torcida rival na rua.',
+        ? 'A semana na mesa: os jogos de cada praça e o que a torcida faz em cada um.'
+        : 'Semana de folga do time. Os jogos da praça continuam.',
       dados:{cidades, semana:E.data.semana, ano:E.data.ano},
       botoes: temJogo
         ? [{id:'fechar', rot:'Fechar o planejamento', acao:'fechar-semana',
@@ -1342,6 +1367,8 @@ TO.feed = (function(){
                   hostil: ehHostil(E, b.id)}));
   }
 
+  const chaveDoJogoDaFilial = (cidade, semana, casa, vis) =>
+    `sub|${cidade}|${semana}|${casa}|${vis}`;
   function chaveDoJogoDaPraca(E, j){
     const o = PL().outrosJogosNaCidade(E, E.data.semana)
       .find(x => x.casa.id === j.casa.id && x.vis.id === j.vis.id);

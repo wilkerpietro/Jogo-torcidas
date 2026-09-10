@@ -2580,23 +2580,28 @@
       const p = P.plano(e);
       const bloco = el('div',{class:'sem-jogo'+(r.passou?' passou':'')});
       bloco.innerHTML = rotuloJogo(r) + ruaDe(r);
-      if(r.passou || !vigente || !emCasa || !r.grupo.chaveJogo) return bloco;
+      if(r.passou || !vigente || !r.grupo.chaveJogo) return bloco;
+      /* na subsede o bote é do núcleo de lá, na caravana rival que
+         viajou (pista ou praça); marcar aqui pré-decide o bote do dia */
       const inv = (p.investidas||{})[r.grupo.chaveJogo];
-      const hostis = r.torcidas.filter(t=>t.hostil);
+      const hostis = r.torcidas.filter(t=>t.hostil && (emCasa || t.deFora));
+      const ondes = emCasa ? P.ONDE_ATAQUE : P.ONDE_ATAQUE.filter(o=>o.id!=='arredores');
+      const base = emCasa ? {como:'arredores', olheiro:null} : {como:'ida', olheiro:'avenida', filial:m.abaSemana};
       const linha = el('div',{class:'sem-invest'});
       linha.appendChild(chips([
         {id:'passa', rot:'Deixar passar'},
-        {id:'ataca', rot:'Investir', nota: hostis.length ? 'em cima de quem passa' : 'sem rival nesse jogo', off:!hostis.length}
+        {id:'ataca', rot:'Investir', off:!hostis.length}
       ], inv && inv.alvo ? 'ataca' : 'passa', id=>{
         if(id==='passa') P.definirInvestida(e, r.grupo.chaveJogo, null);
-        else P.definirInvestida(e, r.grupo.chaveJogo, {alvo:(inv&&inv.alvo)||hostis[0].id, como:'arredores', olheiro:null});
+        else P.definirInvestida(e, r.grupo.chaveJogo, Object.assign({alvo:(inv&&inv.alvo)||hostis[0].id}, base));
         salvar(); pintar();
       }));
       if(inv && inv.alvo){
-        linha.appendChild(chips(hostis.map(t=>({id:t.id, rot:linkTorcida(t.id,t.nome), nota:String(t.faixa).replace(' a ','–')})),
-          inv.alvo, id=>{ P.definirInvestida(e, r.grupo.chaveJogo, Object.assign({}, inv, {alvo:id})); salvar(); pintar(); }));
-        linha.appendChild(chips(P.ONDE_ATAQUE.map(o=>({id:o.id, rot:o.rot})),
-          (P.ONDE_ATAQUE.find(o=>o.como===inv.como && (o.olheiro||null)===(inv.olheiro||null))||P.ONDE_ATAQUE[2]).id,
+        if(hostis.length > 1)
+          linha.appendChild(chips(hostis.map(t=>({id:t.id, rot:linkTorcida(t.id,t.nome), nota:String(t.faixa).replace(' a ','–')})),
+            inv.alvo, id=>{ P.definirInvestida(e, r.grupo.chaveJogo, Object.assign({}, inv, {alvo:id})); salvar(); pintar(); }));
+        linha.appendChild(chips(ondes.map(o=>({id:o.id, rot:o.rot})),
+          (ondes.find(o=>o.como===inv.como && (o.olheiro||null)===(inv.olheiro||null))||ondes[ondes.length-1]).id,
           id=>{ const o = P.ONDE_ATAQUE.find(x=>x.id===id); P.definirInvestida(e, r.grupo.chaveJogo, Object.assign({}, inv, {como:o.como, olheiro:o.olheiro})); salvar(); pintar(); }));
       }
       bloco.appendChild(linha);
@@ -2612,7 +2617,7 @@
       if(!pauta.emCasa && vigente){
         const nucleo = TO.membros.aptosDaFilial ? TO.membros.aptosDaFilial(e, m.abaSemana).length : 0;
         corpo.appendChild(el('div',{class:'sem-nucleo', html:
-          `<b>${nucleo}</b> do núcleo de ${cid.nome||''} de pé · a subsede desce por conta própria, e as sugestões chegam como cartão`}));
+          `<b>${nucleo}</b> do núcleo de ${cid.nome||''} de pé`}));
       }
       const nosso = pauta.linhas.find(l=>l.tipo==='nosso' || l.tipo==='fora');
       if(nosso) corpo.appendChild(blocoNosso(nosso));
@@ -2918,7 +2923,10 @@
         bt.onclick = ()=>responderMensagem(m.id, b.id);
         bs.appendChild(bt);
       });
-      art.appendChild(bs);
+      /* o cartão de segunda leva o botão no próprio cabeçalho, pra
+         fechar o plano sem rolar a tela (pedido do dono, 10/09/2026) */
+      const cab = m.kind === 'semana' && art.querySelector('.sem-cab');
+      if(cab) cab.appendChild(bs); else art.appendChild(bs);
     }
     return art;
   }

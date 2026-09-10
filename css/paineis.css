@@ -2173,118 +2173,127 @@ header.capa-cidade{background-size:cover; background-position:center;
 
 /* =======================================================
    O CARTÃO DE SEGUNDA — o planejamento da semana no feed
-   (pedido do dono, 10/09/2026). Um quadro escuro por semana, com
-   abas por praça, o dia de cada jogo num selo, os clubes com escudo,
-   quem estará na rua, e o plano da caravana e do ataque embutido no
-   nosso jogo. Chips e contadores no lugar de modais.
+   (pedido do dono, 10/09/2026). Denso e discreto: o botão de fechar
+   mora no cabeçalho do cartão (sem rolar), cada jogo é uma linha com
+   o selo do dia, os clubes e quem está na rua, e os chips ficam
+   miúdos. O plano do nosso jogo é um bloco de linhas curtas.
    ======================================================= */
-.msg.kind-semana{border-left-color:var(--ouro);padding-bottom:11px}
-.sem{margin-top:8px;border:1px solid #333;background:#121212;overflow:hidden}
+.msg.kind-semana{padding-bottom:9px}
+.msg.kind-semana .msg-txt{font-size:12.5px;color:var(--fraco)}
+.sem{margin-top:6px;border:1px solid #2c2c2c;background:#121212}
 .sem-cab{
-  display:flex;align-items:baseline;gap:10px;padding:8px 11px;
-  background:linear-gradient(90deg,#26201c,#151515);border-bottom:1px solid #333;
+  display:flex;align-items:center;gap:9px;padding:5px 9px;
+  background:#181818;border-bottom:1px solid #2c2c2c;
 }
-.sem-sem{font-family:var(--titulo);font-size:19px;letter-spacing:.06em;text-transform:uppercase;color:#f0e2c8}
-.sem-datas{font-family:var(--mono);font-size:11px;color:var(--fraco)}
+.sem-sem{font-family:var(--titulo);font-size:14.5px;letter-spacing:.07em;text-transform:uppercase;color:#e6d9c0}
+.sem-datas{font-family:var(--mono);font-size:10px;color:var(--fraco)}
 .sem-selo{
-  margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--ouro);border:1px solid var(--ouro);padding:2px 7px;
+  font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ouro);border:1px solid #5a4a1e;padding:1px 6px;
 }
+.sem-selo.passada{color:var(--fraco);border-color:#3a3a3a}
+.sem-cab .msg-bts{margin:0 0 0 auto;gap:5px}
+.sem-cab .msg-bts .bt{padding:4px 10px;font-size:11px;letter-spacing:.08em;line-height:1.15}
+.sem-cab .msg-bts .bt small{display:none}
 /* as abas, uma por praça */
-.sem-abas{display:flex;background:#0f0f0f;border-bottom:1px solid #333;overflow-x:auto}
+.sem-abas{display:flex;background:#0f0f0f;border-bottom:1px solid #2c2c2c;overflow-x:auto}
 .sem-aba{
-  display:flex;flex-direction:column;align-items:flex-start;gap:0;flex:1;min-width:110px;
-  background:none;border:0;border-bottom:2px solid transparent;border-right:1px solid #262626;
-  color:var(--fraco);padding:7px 11px 6px;cursor:pointer;text-align:left;
+  display:flex;align-items:baseline;gap:6px;background:none;border:0;
+  border-bottom:2px solid transparent;color:var(--fraco);padding:5px 11px 4px;cursor:pointer;
 }
-.sem-aba:last-child{border-right:0}
-.sem-aba span{font-family:var(--titulo);font-size:14.5px;letter-spacing:.05em;text-transform:uppercase}
-.sem-aba small{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
-.sem-aba:hover{color:var(--texto);background:#161616}
-.sem-aba.on{color:#fff;border-bottom-color:var(--ouro);background:#181818}
+.sem-aba span{font-family:var(--titulo);font-size:13px;letter-spacing:.05em;text-transform:uppercase}
+.sem-aba small{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;opacity:.65}
+.sem-aba:hover{color:var(--texto)}
+.sem-aba.on{color:#fff;border-bottom-color:var(--ouro)}
 .sem-aba.on small{color:var(--ouro);opacity:1}
-.sem-corpo{padding:9px 11px 4px}
-.sem-nucleo{font-size:12px;color:var(--fraco);padding:4px 0 8px}
-.sem-nucleo b{font-family:var(--mono);color:var(--texto);font-size:13px}
+.sem-corpo{padding:6px 9px 2px}
+.sem-nucleo{font-size:11.5px;color:var(--fraco);padding:2px 0 5px}
+.sem-nucleo b{font-family:var(--mono);color:var(--texto);font-size:12px}
 /* os rótulos de seção */
 .sem-rot{
-  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--fraco);margin:0 0 5px;display:flex;align-items:baseline;gap:7px;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fraco);display:flex;align-items:baseline;gap:6px;margin:0 0 3px;
 }
-.sem-rot small{font-family:var(--corpo);font-size:11px;letter-spacing:0;text-transform:none;opacity:.8}
-.sem-rot.alto{margin:12px 0 6px;padding-top:9px;border-top:1px dashed #2e2e2e}
-/* um jogo da praça */
-.sem-jogo{border:1px solid #2a2a2a;background:#171717;margin-bottom:7px;padding:7px 9px 8px}
-.sem-jogo.nosso{border-color:#4a3a1a;background:linear-gradient(180deg,#1d1a14,#171717)}
-.sem-jogo.passou{opacity:.5}
-.sem-jogo-cab{display:flex;align-items:center;gap:10px}
+.sem-rot small{font-family:var(--corpo);font-size:10.5px;letter-spacing:0;text-transform:none;opacity:.8}
+.sem-rot.alto{margin:6px 0 3px;padding-top:5px;border-top:1px dashed #2a2a2a}
+/* um jogo da praça: uma linha com o selo do dia à esquerda */
+.sem-jogo{display:grid;grid-template-columns:38px 1fr;gap:3px 8px;padding:5px 0;border-bottom:1px solid #202020}
+.sem-jogo:last-child{border-bottom:0}
+.sem-jogo.nosso{padding:6px 8px;margin-bottom:4px;border:1px solid #3d3218;background:#181610}
+.sem-jogo.passou{opacity:.45}
+.sem-jogo-cab{display:contents}
 .sem-dia{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;
-  width:44px;height:40px;background:#0e0e0e;border:1px solid #333;
-  font-family:var(--titulo);font-size:15px;letter-spacing:.08em;color:#f0e2c8;line-height:1;
+  grid-row:1 / span 3;align-self:start;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:38px;height:34px;background:#0e0e0e;border:1px solid #2c2c2c;
+  font-family:var(--titulo);font-size:13px;letter-spacing:.06em;color:#e6d9c0;line-height:1;
 }
-.sem-jogo.nosso .sem-dia{border-color:var(--ouro);color:var(--ouro)}
-.sem-dia small{font-family:var(--mono);font-size:9.5px;color:var(--fraco);letter-spacing:0;margin-top:2px}
+.sem-jogo.nosso .sem-dia{border-color:#6a5420;color:var(--ouro)}
+.sem-dia small{font-family:var(--mono);font-size:8.5px;color:var(--fraco);letter-spacing:0;margin-top:2px}
 .sem-dia.passou{color:var(--apagado);border-color:#262626}
-.sem-duelo{min-width:0;flex:1}
-.sem-clubes{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:13.5px}
+.sem-duelo{min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sem-clubes{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:12.5px}
 .sem-clubes b{font-weight:600}
-.sem-clubes i{color:var(--fraco);font-style:normal;margin:0 3px}
-.sem-clubes .to-escudo{width:18px;height:18px;vertical-align:-4px}
-.sem-duelo small{display:block;color:var(--fraco);font-size:11px;margin-top:1px}
-/* quem estará na rua */
-.sem-rua{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;padding-top:6px;border-top:1px solid #242424;font-size:12px}
+.sem-clubes i{color:var(--fraco);font-style:normal;margin:0 2px}
+.sem-clubes .to-escudo{width:15px;height:15px;vertical-align:-3px}
+.sem-duelo small{color:var(--fraco);font-size:10.5px}
+/* quem estará na rua: uma linha corrida */
+.sem-rua{display:flex;flex-wrap:wrap;gap:2px 9px;font-size:11px;line-height:1.5}
 .sem-rua.vazia{color:var(--apagado);font-style:italic}
-.sem-torcida{display:inline-flex;align-items:center;gap:5px;opacity:.7}
+.sem-torcida{display:inline-flex;align-items:center;gap:4px;opacity:.65}
 .sem-torcida.hostil{opacity:1}
 .sem-torcida.hostil .t-link{color:#f4d6d4}
-.sem-torcida small{font-family:var(--mono);font-size:10px;color:var(--fraco)}
-/* o plano dentro do nosso jogo */
-.sem-plano{margin-top:8px;display:grid;gap:8px}
-.sem-sec{background:#111;border:1px solid #262626;padding:7px 9px}
-.sem-sec .sem-rot{margin-bottom:6px}
-.sem-contador{padding:2px 0 4px;flex-wrap:wrap}
-.sem-contador b{font-size:18px;color:#fff;min-width:34px}
-.sem-contador small{flex-basis:100%;margin-top:-2px}
-.sem-chips{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0}
+.sem-torcida .to-escudo{width:13px;height:13px}
+.sem-torcida small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+/* os chips miúdos */
+.sem-chips{display:flex;flex-wrap:wrap;gap:3px;margin:2px 0}
 .sem-chip{
-  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
-  background:#16160f;border:1px solid #333;color:var(--texto);
-  font-size:11.5px;padding:4px 9px;cursor:pointer;line-height:1.2;text-align:left;
+  display:flex;align-items:baseline;gap:5px;background:#161616;border:1px solid #333;color:var(--texto);
+  font-size:11px;padding:2px 7px;cursor:pointer;line-height:1.3;
 }
-.sem-chip small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+.sem-chip small{font-family:var(--mono);font-size:9px;color:var(--fraco)}
 .sem-chip:hover:not(:disabled){border-color:var(--ouro)}
 .sem-chip.on{border-color:var(--ouro);color:#fff;background:#221c10}
 .sem-chip.on small{color:var(--ouro)}
 .sem-chip.off{opacity:.4}
 .sem-chip:disabled{cursor:default}
 .sem-chip .t-link{border-bottom:0}
-.sem-trajeto{display:flex;flex-wrap:wrap;align-items:center;gap:3px;font-size:11.5px;margin:4px 0 2px;color:var(--fraco)}
-.sem-trajeto span{padding:1px 6px;border:1px solid #2e2e2e;background:#171717}
+.sem-invest{display:flex;flex-wrap:wrap;gap:3px 8px;align-items:center}
+.sem-invest .sem-chips{margin:0}
+/* o plano dentro do nosso jogo: linhas curtas, rótulo à esquerda */
+.sem-plano{grid-column:1 / -1;display:grid;gap:3px;margin-top:3px;padding-top:5px;border-top:1px solid #2a2418}
+.sem-sec{display:grid;grid-template-columns:78px 1fr;gap:2px 8px;align-items:start;padding:2px 0}
+.sem-sec .sem-rot{flex-direction:column;gap:1px;margin:3px 0 0}
+.sem-sec .sem-rot small{font-size:10px;line-height:1.2}
+.sem-sec > *:not(.sem-rot){grid-column:2}
+.sem-contador{padding:0;gap:6px;flex-wrap:wrap}
+.sem-contador button{width:24px;height:24px;font-size:13px}
+.sem-contador b{font-size:14px;color:#fff;min-width:28px}
+.sem-contador small{font-size:10.5px}
+.sem-trajeto{display:flex;flex-wrap:wrap;align-items:center;gap:2px;font-size:10.5px;color:var(--fraco)}
+.sem-trajeto span{padding:0 5px;border:1px solid #2e2e2e;background:#171717}
 .sem-trajeto span.saida,.sem-trajeto span.chegada{color:var(--texto);border-color:#3a3a3a}
 .sem-trajeto span.hostil{color:#f4d6d4;border-color:#5a2a2a}
 .sem-trajeto i{color:var(--apagado);font-style:normal}
-.sem-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;padding:4px 0}
+.sem-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11.5px;padding:2px 0}
 .sem-linha.pago{opacity:.6}
-.sem-linha > b{font-family:var(--mono);font-size:11px;white-space:nowrap}
+.sem-linha > b{font-family:var(--mono);font-size:10.5px;white-space:nowrap}
 .sem-linha .sem-chips{flex-basis:100%}
 .sem-mini{
-  background:none;border:1px solid var(--ouro);color:var(--ouro);font-size:11px;
-  padding:3px 9px;cursor:pointer;font-family:var(--titulo);letter-spacing:.06em;text-transform:uppercase;
+  background:none;border:1px solid var(--ouro);color:var(--ouro);font-size:10px;
+  padding:2px 8px;cursor:pointer;font-family:var(--titulo);letter-spacing:.06em;text-transform:uppercase;
 }
 .sem-mini:hover{background:rgba(217,164,65,.12)}
 .sem-resumo{
   display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
-  font-size:12.5px;padding:6px 9px;background:#0e0e0e;border:1px solid #2e2e2e;border-left:3px solid var(--ouro);
+  font-size:11.5px;padding:3px 8px;background:#0e0e0e;border-left:2px solid var(--ouro);margin-top:2px;
 }
-.sem-resumo b{font-family:var(--mono);font-size:12.5px}
-.sem-invest{margin-top:6px}
-.sem-recep{margin-top:8px}
+.sem-resumo b{font-family:var(--mono);font-size:11.5px}
+.sem-recep{margin-top:4px;padding-top:4px;border-top:1px dashed #2a2a2a}
+.sem-recep .sem-rot{grid-column:1 / -1;flex-direction:row}
+.sem-recep .sem-linha{grid-column:1 / -1}
 @media (max-width:640px){
-  .sem-cab{flex-wrap:wrap;gap:6px 10px}
-  .sem-selo{margin-left:0}
-  .sem-jogo-cab{gap:8px}
-  .sem-dia{width:40px;height:38px;font-size:13.5px}
+  .sem-cab{flex-wrap:wrap;gap:4px 9px}
+  .sem-cab .msg-bts{flex-basis:100%;margin:2px 0 0}
+  .sem-sec{grid-template-columns:1fr}
+  .sem-sec > *:not(.sem-rot){grid-column:1}
 }
-.sem-selo.passada{color:var(--fraco);border-color:#3a3a3a}
-.msg.kind-semana.respondida .sem-cab,.msg.kind-semana.peso-info .sem-cab{background:linear-gradient(90deg,#1c1c1c,#151515)}

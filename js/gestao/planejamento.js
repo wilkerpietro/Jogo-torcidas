@@ -1217,6 +1217,10 @@ TO.planejamento = (function(){
     for(const chave of Object.keys(p.investidas || {})){
       const inv = investidaDe(E, chave);
       if(!inv || !inv.alvo || (p.pago||{})['inv-'+chave]) continue;
+      /* a investida da subsede é do núcleo de lá: não gasta ação da
+         semana nem entra na lista da praça — o bote do dia do jogo lê
+         o plano direto (cartão da semana, dono, 10/09/2026) */
+      if(inv.filial) continue;
       if(TO.acoes.restantes(E) <= 0) break;
       E.acoes.usadas = (E.acoes.usadas||0) + 1;
       p.pago = p.pago || {}; p.pago['inv-'+chave] = true;

@@ -5392,6 +5392,47 @@ mais competitivas contra as grandes."
   (`smoke`, `telas-aprovadas`, `varredura-cenas`, `ver-itinerario`) sem
   erro.
 
+## O cartão de segunda fica discreto, com Investir na subsede; as sugestões do olheiro saem (dono, 10/09/2026)
+- PEDIDO: "menos extravagante, a ponto do botão de fechar o planejamento
+  não precisar de scroll pra ser clicado"; "senti falta dos botões de
+  deixar passar e investir nas cidades subsedes"; e, na sequência,
+  remover do feed o "Manda dar o bote?" da subsede e "as mensagens de
+  sugestão de atacar torcidas na cidade também, já que o planejamento
+  voltou".
+- O BOTÃO SUBIU PRO CABEÇALHO do cartão: `cartaoMensagem` monta a barra
+  de botões como sempre e, no cartão de semana, a encaixa em `.sem-cab`
+  (à direita de "Semana N"). Dá pra fechar sem rolar em qualquer semana.
+- DENSIDADE: cada jogo virou uma linha em grade (selo do dia de 38px à
+  esquerda; clubes, competição e quem está na rua correndo à direita);
+  os chips ficaram miúdos (11px, 2×7px de recheio), o plano do nosso
+  jogo é uma pilha de linhas com rótulo à esquerda de 78px, e o texto do
+  cartão ficou numa frase. Medido no mesmo cenário (semana 6, jogo em
+  casa, 2 jogos alheios, 1 aliado): 880px → 527px de altura.
+- INVESTIR NA SUBSEDE: a linha do jogo alheio na aba da subsede ganha
+  Deixar passar / Investir, com alvo só entre as torcidas de fora
+  hostis (a caravana que viajou, que é o que o bote pega) e o ponto em
+  concentração ou pista. A investida vai pra `E.plano.investidas` com a
+  chave `sub|cidade|semana|casa|visitante` e a marca `filial`; ela não
+  gasta ação da semana nem entra em `E.investidas` (o núcleo de lá se
+  vira sozinho, como o dono definiu em 25/08). No dia do jogo,
+  `boteNaCaravanaRival` lê essa chave e propõe o bote SÓ no alvo e no
+  ponto marcados, com o texto "como combinado na segunda".
+- O QUE SAIU DO FEED: o "Manda dar o bote?" sem plano (o bote agora só
+  existe com Investir marcado na segunda) e as sugestões de ataque do
+  olheiro — "bolar um ataque" nos jogos da praça e o "Vingar" da dívida
+  na viagem — desligadas por `SUGESTOES_DO_OLHEIRO = false` em
+  `olheiroDoDia`, com o código no lugar. Ficam: o relatório de quem está
+  na pista do jogo fora (informação), o pedido de casa da aliada, e a
+  sugestão esporádica de bar da subsede (não é jogo, o cartão de semana
+  não cobre).
+- MEDIDO (`sem-sugestoes.js`, 70 dias com filial de 10 e relação −60
+  com todas): nenhuma decisão `olheiro` nem `filial-caravana`; as
+  decisões que apareceram foram abertura, aniversários, bar rival,
+  assalto, semana, partida e a sugestão de bar da subsede.
+  `cartao-semana-subsede.js`: Investir na aba ABC Paulista grava a
+  investida com `filial`, e no domingo o bote vem "como combinado" na
+  Leões da Fabulosa, na praça. Fotos em 1000px e 390px conferidas.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
