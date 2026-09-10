@@ -537,20 +537,25 @@ TO.feed = (function(){
             if((jg.d || etapa.dia || 6) !== E.data.dia) continue;
             const casa = M().time(jg.c), vis = M().time(jg.f);
             if(!casa || !vis || casa.mapa !== f.cidade) continue;
-            if(vis.mapa === f.cidade) continue;      // não viajou: mora lá
             /* A INVESTIDA MARCADA NA SEGUNDA (cartão da semana, dono,
                10/09/2026): o bote só existe se a aba da subsede marcou
                Investir naquele jogo — no alvo e no ponto escolhidos. O
                "Manda dar o bote?" sem plano saiu do feed por ordem do
-               dono, no mesmo dia. */
+               dono, no mesmo dia. O alvo pode ser a caravana rival que
+               viajou ou a torcida local do mandante (dono, 10/09/2026):
+               a local pisa na rua com o mesmo 60% que a pauta estima. */
             const inv = PL().investidaDe(E,
               chaveDoJogoDaFilial(f.cidade, E.data.semana, casa.id, vis.id));
             if(!inv || !inv.alvo) continue;
-            for(const o of M().torcidasDe(vis.id)){
+            for(const o of [...M().torcidasDe(casa.id), ...M().torcidasDe(vis.id)]){
               if(o.id === E.torcida.id || o.incompleta) continue;
               if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
               if(inv.alvo !== o.id) continue;
-              const n = PL().caravanaDe(o, (E.relacoes||{})[o.id], E);
+              const local = o.mapa === f.cidade;
+              const t = (E.mundoTorcidas||{})[o.id];
+              const n = local
+                ? Math.round(((t && t.membros) || o.membros || 20) * 0.6)
+                : PL().caravanaDe(o, (E.relacoes||{})[o.id], E);
               if(n < 5) continue;                    // caravana pequena não viaja
               const cena = inv && inv.alvo
                 ? (inv.como === 'ida' && inv.olheiro === 'praca' ? 'praca' : 'rua')
@@ -562,7 +567,12 @@ TO.feed = (function(){
                 tipo:'ruim',
                 chave:`bote|${f.cidade}|${o.id}|${E.data.ano}|${E.data.semana}`,
                 /* texto AGUARDANDO O CRIVO do dono (31/08/2026) */
-                texto: inv && inv.alvo
+                texto: local
+                  ? `Chefe, como combinado na segunda: a ${o.nome} vai estar `+
+                    `${cena === 'praca' ? 'na praça' : 'na pista'} em ${cid} pro `+
+                    `jogo de hoje — uns ${n}. O pessoal da nossa Sub-Sede `+
+                    `tá com ${nucleo.length}, pronto pro bote.`
+                  : inv && inv.alvo
                   ? `Chefe, como combinado na segunda: a caravana da ${o.nome} `+
                     `desceu em ${cid} pro jogo de hoje — uns ${n} ${cena === 'praca'
                       ? 'na praça' : 'na pista'}. O pessoal da nossa Sub-Sede `+

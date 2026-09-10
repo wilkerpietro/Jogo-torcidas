@@ -5425,6 +5425,14 @@ mais competitivas contra as grandes."
   na pista do jogo fora (informação), o pedido de casa da aliada, e a
   sugestão esporádica de bar da subsede (não é jogo, o cartão de semana
   não cobre).
+- A SUBSEDE ATACA A TORCIDA DO MANDANTE TAMBÉM (dono, 10/09/2026, na
+  sequência): o alvo do Investir na aba da subsede passa a ser qualquer
+  torcida hostil do jogo — a caravana de fora ou a local do mandante. No
+  dia, `boteNaCaravanaRival` varre as torcidas dos dois clubes; a local
+  entra com 60% dos membros (a mesma conta da pauta) e o texto muda pra
+  "a X vai estar na praça/pista em Y pro jogo de hoje". Medido em
+  `cartao-semana-mandante.js`: Investir na Fúria Andreense (local do
+  Santo André) grava a investida e no domingo o bote vem nela, na praça.
 - MEDIDO (`sem-sugestoes.js`, 70 dias com filial de 10 e relação −60
   com todas): nenhuma decisão `olheiro` nem `filial-caravana`; as
   decisões que apareceram foram abertura, aniversários, bar rival,

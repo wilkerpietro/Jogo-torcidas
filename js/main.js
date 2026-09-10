@@ -2581,10 +2581,11 @@
       const bloco = el('div',{class:'sem-jogo'+(r.passou?' passou':'')});
       bloco.innerHTML = rotuloJogo(r) + ruaDe(r);
       if(r.passou || !vigente || !r.grupo.chaveJogo) return bloco;
-      /* na subsede o bote é do núcleo de lá, na caravana rival que
-         viajou (pista ou praça); marcar aqui pré-decide o bote do dia */
+      /* na subsede o bote é do núcleo de lá, na pista ou na praça, em
+         cima da caravana rival que viajou OU da torcida local do
+         mandante (dono, 10/09/2026); marcar aqui pré-decide o bote */
       const inv = (p.investidas||{})[r.grupo.chaveJogo];
-      const hostis = r.torcidas.filter(t=>t.hostil && (emCasa || t.deFora));
+      const hostis = r.torcidas.filter(t=>t.hostil);
       const ondes = emCasa ? P.ONDE_ATAQUE : P.ONDE_ATAQUE.filter(o=>o.id!=='arredores');
       const base = emCasa ? {como:'arredores', olheiro:null} : {como:'ida', olheiro:'avenida', filial:m.abaSemana};
       const linha = el('div',{class:'sem-invest'});
