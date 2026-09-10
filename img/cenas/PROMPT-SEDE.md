@@ -1,11 +1,11 @@
 # Prompts para as cinco sedes
 
 Uma imagem por nível de sede. Alvo: o mesmo acabamento das outras cenas —
-foto de drone a prumo, dia nublado, cor dessaturada, periferia brasileira.
+ortofoto de zênite, dia nublado, cor dessaturada, periferia brasileira.
 
 | Cena | Nível | Planta de entrada | Saída pro jogo | Estado |
 |---|---|---|---|---|
-| Sede nv 1 | 1 | `docs/plantas/sede-nivel-1.jpg` | `sede_1.webp` | 1ª tentativa feita, refazendo |
+| Sede nv 1 | 1 | `docs/plantas/sede-nivel-1.jpg` | `sede_1.webp` | 2 tentativas, refazendo a projeção |
 | Sede nv 2 | 2 | `docs/plantas/sede-nivel-2.png` | `sede_2.webp` | a fazer |
 | Sede nv 3 | 3 | `docs/plantas/sede-nivel-3.png` | `sede_3.webp` | a fazer |
 | Sede nv 4 | 4 | `docs/plantas/sede-nivel-4.jpg` | `sede_4.webp` | a fazer |
@@ -25,12 +25,13 @@ tem cena. O precedente já existe e funciona:
 Então toda sede é um **quarteirão murado sem cobertura**, visto de 90°, com as
 paredes aparecendo de cima como faixas grossas e o piso de cada sala à mostra.
 
-## As três coisas que a 1ª tentativa errou
+## O que cada rodada errou
 
-A imagem de teste do nível 1 acertou o essencial — sem telhado, a prumo, luz de
-dia nublado — e errou três, todas com consequência no jogo.
+O nível 1 já foi gerado duas vezes. A 1ª acertou o essencial — sem telhado, luz
+de dia nublado — e errou três coisas de arrumação. A 2ª arrumou as três e
+esbarrou na que mais importa: **não é zênite de verdade**.
 
-### 1. O miolo de cada sala tem de ficar VAZIO
+### Rodada 1 · O miolo de cada sala tem de ficar VAZIO
 
 A sala não é cenário de fundo: é **piso de briga**. É ali que 40 bonecos se
 empurram. Móvel no meio da sala vira parede na máscara de colisão, e sala com o
@@ -40,7 +41,7 @@ meio ocupado simplesmente não recebe briga.
 - o **centro de cada sala fica limpo**, chão à mostra, sem nada;
 - nada de pilha, nada de caixa empilhada, nada de objeto solto no meio do pátio.
 
-### 2. O patrimônio é a sala mais vazia de todas
+### Rodada 1 · O patrimônio é a sala mais vazia de todas
 
 A primeira tentativa encheu o patrimônio de faixa dobrada, bandeira de mastro e
 bumbo. **Não pode.** As faixas e bandeiras da torcida são desenhadas pelo jogo
@@ -50,7 +51,7 @@ significa pano duplicado, e da torcida errada.
 O patrimônio é uma **sala vazia com uma prateleira comprida vazia** encostada
 numa parede. Só isso.
 
-### 3. Toda sala precisa de UMA porta, e ela precisa abrir
+### Rodada 1 · Toda sala precisa de UMA porta, e ela precisa abrir
 
 Na imagem de teste a sala do presidente ficou **fechada dos quatro lados**. Sala
 sem porta é sala que o invasor nunca alcança e que o jogo nunca usa.
@@ -62,13 +63,39 @@ sem porta é sala que o invasor nunca alcança e que o jogo nunca usa.
 - o **portão da rua fica aberto**, com a folha encostada por dentro do muro —
   não desenhe portão de correr fechado tapando a entrada.
 
+### Rodada 2 · Zênite de verdade, e não drone quase em cima
+
+A 2ª imagem ficou limpa e com porta em toda sala, mas dá pra **ver a face de
+dentro das três paredes externas**, e a mesa e o arquivo aparecem de lado, com
+pé e frente à mostra. Isso é lente grande-angular a prumo, não é zênite: no
+centro do quadro a projeção fica certa e nas bordas as paredes se abrem pra
+fora.
+
+Compare com a foto que o jogo já usa,
+`Aerial_view_of_roofless_bar_202608131633.jpeg`: ali só se vê **o topo** de tudo
+— topo de mesa, topo de cadeira, topo de muro como faixa lisa. Nenhuma face
+vertical em lugar nenhum do quadro. É esse o alvo.
+
+O que resolve, em ordem de eficácia:
+
+1. **Anexe a foto do bar junto com a planta**, como referência de estilo. Ela
+   carrega a projeção certa melhor do que qualquer adjetivo.
+2. Peça **projeção ortográfica de ortofoto de satélite**, e não &ldquo;drone&rdquo;: drone
+   sugere lente larga e altura baixa, que é exatamente o defeito.
+3. Peça **teleobjetiva de altitude muito alta**, que comprime a perspectiva e
+   zera o paralaxe das bordas.
+4. Diga o teste em palavras dentro do prompt: **só superfície de cima é
+   visível**, nenhuma face de parede, nenhum pé de mesa, nenhum encosto de
+   cadeira.
+
 ## O que mais não pode mudar
 
 A imagem vira o chão da cena, e a máscara de colisão sai da própria foto por
 cor e conectividade (`ferramentas/importar_cena_foto.py`).
 
-- **enquadramento a prumo** (nadir, 90°). Nada de perspectiva, nada de
-  horizonte, nada de sombra comprida de prédio;
+- **zênite ortográfico**, não drone a prumo. Só superfície de cima aparece:
+  topo de muro, topo de mesa, topo de armário. Face de parede visível é o
+  defeito da 2ª rodada;
 - **piso claro, parede escura.** É esse contraste que o importador lê. Piso de
   cimento queimado, ladrilho, cerâmica: claro. Parede: faixa escura e contínua;
 - **parede grossa**: pelo menos 1/60 da largura do quadro (uns 45 px numa
@@ -89,8 +116,11 @@ cor e conectividade (`ferramentas/importar_cena_foto.py`).
   importador encaixa a largura inteira e completa em cima e embaixo com uma
   faixa de terra. Só perde área útil, não quebra nada.
 - **Nunca 1:1 nem 4:3.** Mais alta que a tela, o importador **corta** em cima e
-  embaixo. Medido na imagem quadrada de teste (1254 × 1254): o corte comeria os
-  256 px de cada ponta, e o muro de cima da sede sairia junto.
+  embaixo. Medido nas duas tentativas, ambas quadradas (1254 × 1254): o corte
+  comeria os 256 px de cada ponta, e o muro de cima da sede sairia junto.
+- Se a ferramenta só fizer quadrado, dá pra contornar: mantenha a sede inteira
+  dentro dos **dois terços centrais da altura**, que é justamente a fatia que
+  sobrevive ao corte. Perde resolução, mas não perde muro.
 - Guarde o original em PNG ou JPEG grande em `img/cenas/`, e o jogo carrega o
   `.webp`:
   `Image.open(...).convert('RGB').save('img/cenas/sede_1.webp','WEBP',quality=82,method=6)`
@@ -112,12 +142,21 @@ Se a ferramenta aceitar imagem de referência (é o caso), **anexe a planta**:
 
 ## Prompt base (vale pras cinco)
 
-Cole isto e emende, no fim, o bloco do nível.
+Cole isto e emende, no fim, o bloco do nível. E **anexe junto a planta e a foto
+do bar** (`img/cenas/Aerial_view_of_roofless_bar_202608131633.jpeg`): a planta
+dá a disposição, a foto do bar dá a projeção.
 
 ```
-top-down nadir aerial drone photograph of a roofless walled compound in a
-Brazilian working-class neighborhood, shot straight down at exactly 90 degrees,
-orthographic feel, no perspective, no horizon,
+true orthographic zenith satellite orthophoto of a roofless walled compound in a
+Brazilian working-class neighborhood, camera pointing straight down at exactly
+90 degrees from very high altitude with an extreme telephoto lens, orthographic
+projection, zero parallax, zero perspective, no horizon, no lens distortion,
+
+ONLY TOP SURFACES ARE VISIBLE ANYWHERE IN THE FRAME: the top of every wall reads
+as a flat even band, the top of every piece of furniture reads as a flat shape.
+No vertical surface is visible: no inner or outer wall faces, no table legs, no
+chair backs, no cabinet fronts. The walls at the edges of the frame do not lean
+or splay outward — they read exactly like the walls at the center,
 
 the building has NO ROOF: seen from directly above, the interior rooms are fully
 exposed, thick painted masonry walls read as continuous light-grey bands, each
@@ -136,9 +175,9 @@ gate stands wide open with its leaf folded flat against the inside of the wall,
 polished cement and worn ceramic tile floors in pale grey and cream, clearly
 lighter than the walls, swept clean and empty,
 
-overcast diffuse daylight, soft shadows, desaturated muted colors, documentary
-photography, sun-bleached concrete, weathered paint, damp stains at the base of
-the walls, tropical northeast Brazil,
+flat overcast diffuse daylight, almost no cast shadows, desaturated muted
+colors, documentary photography, sun-bleached concrete, weathered paint, damp
+stains at the base of the walls, tropical northeast Brazil,
 
 the walled compound fills the frame almost edge to edge, with only a narrow
 strip of cracked asphalt street and painted curb along the gate side,
@@ -267,6 +306,11 @@ The street gate stands open in the bottom wall of the yard.
 ## Negative prompt (vale pras cinco)
 
 ```
+wide angle lens, fisheye, lens distortion, parallax, perspective, vanishing
+point, walls leaning outward, splayed walls, visible wall faces, inner wall
+surfaces visible, vertical surfaces, furniture seen from the side, table legs
+visible, chair backs visible, cabinet fronts visible, three-quarter view,
+oblique angle, bird's eye at 45 degrees, tilted camera, low altitude drone,
 roof, roofed building, terracotta tiles, corrugated metal roof, rooftop,
 cluttered, clutter, messy, busy composition, stacked crates, piles of boxes,
 furniture in the middle of the room, objects on the floor, decorated interior,
@@ -275,8 +319,7 @@ closed room, sealed room, room without a doorway, walls without openings,
 closed gate, closed door, door leaf blocking the entrance, narrow doorway,
 illustration, cartoon, isometric, 3d render, video game asset, painting,
 floor plan, blueprint, diagram, map icons, labels, text, numbers, watermark,
-tilted perspective, oblique angle, bird's eye at 45 degrees, fisheye, vignette,
-people, crowd, players, characters,
+vignette, people, crowd, players, characters,
 dark floors, black interiors,
 saturated colors, hdr, dramatic lighting, night, sunset, long shadows,
 skyscrapers, european architecture, suburban american houses, snow
@@ -284,19 +327,22 @@ skyscrapers, european architecture, suburban american houses, snow
 
 ## Conferência antes de aceitar
 
-1. **Tem telhado?** Se alguma sala estiver coberta, refaça. Cobertura mata a
+1. **É zênite mesmo?** Olhe as paredes das quatro bordas do quadro. Se der pra
+   ver a face de dentro de alguma, ou o pé de uma mesa, é lente larga e não
+   zênite. Foi o erro da 2ª rodada.
+2. **Tem telhado?** Se alguma sala estiver coberta, refaça. Cobertura mata a
    cena.
-2. **Toda sala tem porta?** Percorra sala por sala. Uma fechada dos quatro lados
-   já é motivo de refazer — foi o erro da primeira tentativa.
-3. **Dá pra andar de sala em sala?** Siga o piso com o olho, do portão até a
+3. **Toda sala tem porta?** Percorra sala por sala. Uma fechada dos quatro lados
+   já é motivo de refazer — foi o erro da 1ª rodada.
+4. **Dá pra andar de sala em sala?** Siga o piso com o olho, do portão até a
    sala mais funda, sem tirar o dedo da tela.
-4. **O meio de cada sala está limpo?** Móvel no centro vira parede na máscara.
-5. **O patrimônio está vazio?** Se tiver faixa, bandeira ou bumbo dentro,
+5. **O meio de cada sala está limpo?** Móvel no centro vira parede na máscara.
+6. **O patrimônio está vazio?** Se tiver faixa, bandeira ou bumbo dentro,
    refaça: esse pano o jogo desenha por cima, com as cores da torcida certa.
-6. **Piso mais claro que parede em toda sala?** Sala de piso escuro vira parede
+7. **Piso mais claro que parede em toda sala?** Sala de piso escuro vira parede
    na máscara e some do jogo.
-7. **Proporção 3:2?** Quadrada ou 4:3 perde muro no corte.
-8. **Tem gente ou texto?** Não pode ter nenhum dos dois.
+8. **Proporção 3:2?** Quadrada ou 4:3 perde muro no corte.
+9. **Tem gente ou texto?** Não pode ter nenhum dos dois.
 
 ## Depois que a imagem estiver boa
 
