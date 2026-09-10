@@ -2239,7 +2239,163 @@ TO.diaJogo.bonecos3 = (function(){
     renderer.clear();
   }
 
-  return {montar, desenharDeCima, desenharVitrine, limparDeCima, estudo, DESENHOS, paletaDaCena, anelDe, desenhoDaTorcida,
+  /* =======================================================
+     A FOTO DO TROFÉU (pedido do dono, 10/09/2026)
+     "A foto da faixa ou bandeira tomada vira uma imagem dos
+     bonecos do jogo segurando a faixa tomada, no fundo um cenário
+     de viela urbana de classe baixa." Uma cena THREE só dela, fora
+     da cena de cima: viela procedural (muro de tijolo com pichação
+     da nossa sigla, muros laterais, chão de asfalto, caçamba, saco
+     de lixo, pneu), quatro bonecos GLB dos nossos com as cores da
+     torcida, os dois do meio segurando o pano de cabeça pra baixo
+     entre as mãos erguidas, os das pontas de punho pro alto.
+     Devolve uma Promise com a URL da imagem (JPEG), ou null se não
+     há WebGL/GLB. `opc`: {pano: canvas|img, tipo:'faixa'|'bandeira',
+     torcida:{cor,cor2,cor3,sigla,id}, nomes:[...], largura, altura}
+     ======================================================= */
+  function fotoDoTrofeu(opc){
+    if(typeof THREE === 'undefined') return Promise.resolve(null);
+    carregarGLB();
+    const espera = (n)=> new Promise(res=>{
+      const t0 = Date.now();
+      (function v(){ if(modeloGLB) return res(true); if(Date.now()-t0 > 6000) return res(false); setTimeout(v, 120); })();
+    });
+    return espera().then(ok=>{
+      if(!ok) return null;
+      try{ return renderizarTrofeu(opc); }catch(err){ console.warn('foto do troféu: '+err.message); return null; }
+    });
+  }
+  function texturaDeCanvas(w, h, pinta){
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    pinta(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+  }
+  function renderizarTrofeu(opc){
+    const W = opc.largura || 720, H = opc.altura || 405;
+    const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+    const r = new THREE.WebGLRenderer({canvas:cv2, antialias:true, alpha:false, preserveDrawingBuffer:true});
+    r.setPixelRatio(1); r.setClearColor(0x1a1d24, 1);
+    const sc = new THREE.Scene();
+    sc.fog = new THREE.Fog(0x2a2b30, 140, 420);
+    const g = G();
+    const t = opc.torcida || {};
+    const c1 = t.cor || '#444', c2 = t.cor2 || '#eee';
+    const sem = String(t.id || t.sigla || 'x');
+
+    /* ---- luz: fim de tarde, poste amarelo ---- */
+    sc.add(new THREE.HemisphereLight(0x9fb0c8, 0x2a2420, 0.85));
+    const sol = new THREE.DirectionalLight(0xffd9a8, 1.05); sol.position.set(-50, 90, 70); sc.add(sol);
+    const poste = new THREE.PointLight(0xffb060, 0.9, 260, 1.4); poste.position.set(55, 62, -10); sc.add(poste);
+
+    /* ---- o muro do fundo: tijolo, reboco caído, pichação ---- */
+    const tijolo = texturaDeCanvas(1024, 512, (x,w,h)=>{
+      x.fillStyle = '#7a4a3a'; x.fillRect(0,0,w,h);
+      const bh = 22, bw = 54;
+      for(let j=0;j*bh<h;j++) for(let i=-1;i*bw<w+bw;i++){
+        const off = (j%2)?bw/2:0; const k = ((i*7+j*13)%9)/9;
+        x.fillStyle = `hsl(${12+k*10},${38+k*18}%,${30+k*14}%)`;
+        x.fillRect(i*bw+off+2, j*bh+2, bw-4, bh-4);
+      }
+      /* reboco que sobrou, em manchas */
+      x.fillStyle = 'rgba(190,178,150,.85)';
+      for(let k=0;k<7;k++){ const px=(k*173)%w, py=(k*97)%h; x.beginPath(); x.ellipse(px, py, 90+ (k*37)%80, 50+(k*23)%40, 0, 0, 7); x.fill(); }
+      /* sujeira de baixo e escorrido */
+      const gr = x.createLinearGradient(0,h*0.55,0,h); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(20,10,5,.55)'); x.fillStyle = gr; x.fillRect(0,0,w,h);
+      /* a pichação: a sigla da torcida, grande, e um "aqui é" pequeno */
+      x.save(); x.translate(w*0.5, h*0.42); x.rotate(-0.04);
+      x.font = `900 120px "Barlow Condensed", Impact, sans-serif`; x.textAlign='center'; x.textBaseline='middle';
+      x.lineWidth = 14; x.strokeStyle = c2; x.strokeText(String(t.sigla||'').toUpperCase(), 0, 0);
+      x.fillStyle = c1; x.fillText(String(t.sigla||'').toUpperCase(), 0, 0);
+      x.font = `700 40px "Barlow Condensed", sans-serif`; x.fillStyle = 'rgba(0,0,0,.75)'; x.fillText('AQUI É', 0, -105);
+      x.restore();
+      x.fillStyle = 'rgba(0,0,0,.7)'; x.font = '700 34px sans-serif'; x.fillText('ninguém segura', w*0.16, h*0.82);
+    });
+    const muro = new THREE.Mesh(new THREE.PlaneGeometry(260, 78), new THREE.MeshLambertMaterial({map:tijolo}));
+    muro.position.set(0, 39, -62); sc.add(muro);
+    /* laje e um pedaço de telhado por cima do muro */
+    const laje = new THREE.Mesh(g.caixa, mat('#4a4340')); laje.scale.set(262, 4, 10); laje.position.set(0, 80, -60); sc.add(laje);
+    /* muros laterais, em ângulo, com reboco sujo */
+    const reboco = texturaDeCanvas(512, 512, (x,w,h)=>{ x.fillStyle='#8d8474'; x.fillRect(0,0,w,h); for(let k=0;k<400;k++){ x.fillStyle=`rgba(40,30,20,${0.05+((k*31)%10)/40})`; x.fillRect((k*97)%w,(k*53)%h,2+(k%9),2+(k%5)); } const gr=x.createLinearGradient(0,h*0.6,0,h); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(0,0,0,.5)'); x.fillStyle=gr; x.fillRect(0,0,w,h); });
+    for(const lado of [-1, 1]){
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(200, 78), new THREE.MeshLambertMaterial({map:reboco, side:THREE.DoubleSide}));
+      m.position.set(lado*110, 39, 30); m.rotation.y = -lado*Math.PI/2; sc.add(m);
+    }
+    /* chão: asfalto com poça e meio-fio */
+    const asfalto = texturaDeCanvas(512, 512, (x,w,h)=>{ x.fillStyle='#2b2b2b'; x.fillRect(0,0,w,h); for(let k=0;k<1500;k++){ x.fillStyle=`rgba(${60+(k%40)},${60+(k%40)},${58+(k%40)},.5)`; x.fillRect((k*61)%w,(k*37)%h,2,2); } x.fillStyle='rgba(90,100,120,.35)'; x.beginPath(); x.ellipse(w*0.7,h*0.6,110,40,0.3,0,7); x.fill(); });
+    asfalto.repeat.set(3,3);
+    const chao = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({map:asfalto}));
+    chao.rotation.x = -Math.PI/2; chao.position.y = 0; sc.add(chao);
+    const meioFio = new THREE.Mesh(g.caixa, mat('#6b6b66')); meioFio.scale.set(260, 3, 6); meioFio.position.set(0, 1.5, -58); sc.add(meioFio);
+    /* caçamba, saco de lixo, pneu, um poste */
+    const cac = new THREE.Mesh(g.caixa, mat('#2f6f9a')); cac.scale.set(34, 18, 20); cac.position.set(-78, 9, -40); sc.add(cac);
+    const cacT = new THREE.Mesh(g.caixa, mat('#1e4a66')); cacT.scale.set(36, 2, 22); cacT.position.set(-78, 19, -40); sc.add(cacT);
+    const saco = new THREE.Mesh(g.esfera, mat('#111')); saco.scale.set(7, 6, 7); saco.position.set(-52, 5, -44); sc.add(saco);
+    const saco2 = new THREE.Mesh(g.esfera, mat('#1a1a1a')); saco2.scale.set(5, 4.5, 5); saco2.position.set(-42, 4, -48); sc.add(saco2);
+    const pneu = new THREE.Mesh(g.toro, mat('#151515')); pneu.scale.setScalar(6); pneu.rotation.x = Math.PI/2; pneu.position.set(70, 1.2, -46); sc.add(pneu);
+    const postePau = new THREE.Mesh(g.cil, mat('#5a4a3a')); postePau.scale.set(2.2, 90, 2.2); postePau.position.set(96, 45, -30); sc.add(postePau);
+    const lampada = new THREE.Mesh(g.esfera, new THREE.MeshBasicMaterial({color:0xffe0a0})); lampada.scale.setScalar(3); lampada.position.set(88, 82, -30); sc.add(lampada);
+
+    /* ---- os bonecos: quatro dos nossos ---- */
+    const nomes = (opc.nomes && opc.nomes.length ? opc.nomes : ['Tico','Rafinha','Bidu','Neguinho']).slice(0,4);
+    const postos = [[-34, 4, 0.35], [-11, 0, 0.12], [11, 0, -0.12], [34, 4, -0.35]];
+    const corpos = [];
+    nomes.forEach((nome, i)=>{
+      const d = {nome:nome+'|trofeu', lado:'mandante', torcida:t.id, cor:c1, cor2:c2, cor3:t.cor3||null};
+      const f = fichaDe(d, i); f.escala = 1;
+      const c = construirCorpoGLB(f, false);
+      c.sombra.visible = false; if(c.anel) c.anel.visible = false; if(c.anelFundo) c.anelFundo.visible = false;
+      const p = poseNeutra();
+      const meio = (i === 1 || i === 2);
+      if(meio){
+        /* segura o pano: os dois braços pra frente, na altura do peito */
+        p.ombro = [-1.35, -1.35]; p.ombroZ = [0.12, 0.12]; p.cotovelo = [-0.35, -0.35]; p.olhaX = -0.1;
+      } else {
+        /* punho pro alto e o outro braço apontando pra câmera */
+        p.ombro = [-2.9, -0.9]; p.ombroZ = [0.35, 0.25]; p.cotovelo = [-1.9, -0.3]; p.olhaX = -0.2; p.olhaY = i===0 ? 0.3 : -0.3;
+      }
+      p.coxa = [0.12, -0.12]; p.inclina = -0.08;
+      aplicarPoseGLB(c, p, 1);
+      c.raiz.position.set(postos[i][0], 0, postos[i][1]); c.raiz.rotation.y = postos[i][2];
+      sc.add(c.raiz); corpos.push(c);
+    });
+    sc.updateMatrixWorld(true);
+    /* DE FRENTE PRA CÂMERA, medido e não adivinhado: com os braços pra
+       frente, a mão tem de estar do lado da câmera (+Z) em relação ao
+       corpo; se ficou atrás, o boneco está de costas — meia-volta */
+    for(const c of corpos){
+      const v = new THREE.Vector3(); c.J.mao[0].b.getWorldPosition(v);
+      if(v.z < c.raiz.position.z){ c.raiz.rotation.y += Math.PI; }
+    }
+    sc.updateMatrixWorld(true);
+
+    /* ---- o pano entre as mãos dos dois do meio, de cabeça pra baixo ---- */
+    const maoDe = (c, k)=>{ const v = new THREE.Vector3(); c.J.mao[k].b.getWorldPosition(v); return v; };
+    const mA = maoDe(corpos[1], 1), mB = maoDe(corpos[2], 0);
+    const cx = (mA.x+mB.x)/2, cy = (mA.y+mB.y)/2, cz = Math.max(mA.z, mB.z) + 2.5;
+    if(opc.pano){
+      const tex = new THREE.CanvasTexture(opc.pano); tex.colorSpace = THREE.SRGBColorSpace;
+      const bandeira = opc.tipo === 'bandeira';
+      const larg = bandeira ? 26 : Math.max(40, Math.abs(mB.x - mA.x) + 30);
+      const alt = bandeira ? 26 : larg * (opc.pano.height / opc.pano.width);
+      const pano = new THREE.Mesh(new THREE.PlaneGeometry(larg, alt), new THREE.MeshLambertMaterial({map:tex, transparent:true, side:THREE.DoubleSide}));
+      pano.position.set(cx, cy - alt/2 + 1.5, cz); pano.rotation.z = Math.PI;   // de cabeça pra baixo, o topo nas mãos
+      sc.add(pano);
+    }
+
+    /* ---- câmera na altura dos olhos, um pouco de baixo pra cima ---- */
+    const cam = new THREE.PerspectiveCamera(38, W/H, 1, 1000);
+    cam.position.set(3, 24, 92); cam.lookAt(0, 19, -10);
+    r.render(sc, cam);
+    let url = null;
+    try{ url = cv2.toDataURL('image/jpeg', 0.86); }catch(_){ url = null; }
+    /* limpa: é uma foto, não uma cena viva */
+    sc.traverse(o=>{ if(o.isMesh){ if(o.geometry && o.geometry !== g.caixa && o.geometry !== g.esfera && o.geometry !== g.cil && o.geometry !== g.toro && o.geometry !== g.disco) o.geometry.dispose(); if(o.material && o.material.map && !mats.has(o.material.color && o.material.color.getHexString())) { try{ o.material.map.dispose(); }catch(_){} } } });
+    r.dispose();
+    return url;
+  }
+
+  return {montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, estudo, DESENHOS, paletaDaCena, anelDe, desenhoDaTorcida,
           cfg, dprAtual, conta, get dprNivel(){ return dprNivel; }, get estatMalha(){ return estatMalha; },
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },

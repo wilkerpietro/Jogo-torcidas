@@ -3578,7 +3578,7 @@
   /* =======================================================
      TORCIDA
      ======================================================= */
-  let subTorcida = 'membros', filtroCargo = 'todos', busca = '';
+  let subTorcida = 'membros', filtroCargo = 'todos', filtroEstado = 'todos', busca = '';
   let ordem = {col:'forca', dir:-1}, selecionado = null;
   /* O DOIS-CLIQUES É CONTADO NA MÃO: o primeiro clique repinta a lista
      inteira, então a linha que recebe o segundo clique já é outra e o
@@ -3677,10 +3677,22 @@
     if(subTorcida==='indicadores'){ pg.appendChild(painelIndicadores()); return; }
 
     const c = TO.membros.contar(e);
-    const grade = el('div',{class:'lista-detalhe'});
+    /* A TELA DE MEMBROS (layout aprovado pelo dono, 10/09/2026): o
+       resumo em cartões, os filtros em linha (cargo com contagem, e o
+       estado), a busca à direita, e a promoção na própria linha */
+    const prontosL = e.membros.filter(m=>TO.membros.podePromover(e, m).ok);
+    const custoPromo = prontosL.reduce((s,m)=>s+(TO.membros.podePromover(e, m).custo||0), 0);
+    const dePe = e.membros.filter(m=>!m.ferido && !m.preso).length;
+    const med = k => e.membros.length ? Math.round(e.membros.reduce((s,m)=>s+m[k],0)/e.membros.length*5) : 0;
+    const resumo = el('div',{class:'mb-resumo'});
+    const rc = (cls, v, rot, nota, aoClicar)=>{ const d = el('div',{class:'mb-rc '+cls, html:`<b>${v}</b><span>${rot}</span><small>${nota}</small>`}); if(aoClicar){ d.style.cursor='pointer'; d.onclick=aoClicar; } resumo.appendChild(d); };
+    rc('', c.total, 'efetivo', `${dePe} de pé`, ()=>{ filtroEstado='todos'; filtroCargo='todos'; redesenhar(); });
+    rc('ok', prontosL.length, prontosL.length===1?'apto a promoção':'aptos a promoção', prontosL.length ? `custo ${U.dinheiro(custoPromo)}` : 'ninguém bateu o corte', ()=>{ filtroEstado='apto'; redesenhar(); });
+    rc('ruim', c.feridos, c.feridos===1?'ferido':'feridos', c.feridos ? 'voltam em dias' : 'ninguém de cama', ()=>{ filtroEstado='ferido'; redesenhar(); });
+    rc('pm', c.presos, c.presos===1?'preso':'presos', TO.financeiro.advogadosDe(e) ? 'advogado corta a pena' : 'sem advogado', ()=>{ filtroEstado='preso'; redesenhar(); });
+    rc('', `${med('forca')} / ${med('defesa')}`, 'força / defesa', 'média da torcida');
+    pg.appendChild(resumo);
 
-    /* filtros por cargo, com contagem */
-    const cf = cartao();
     const filtros = [
       ['todos','Todos', c.total],
       ['diretoria','Diretoria', c.diretoria],
@@ -3688,35 +3700,36 @@
       ['componente','Componentes', c.componente],
       ['novato','Apoiadores', c.novato]
     ];
-    cf.corpo.style.padding='0';
-    const fl = el('div',{class:'filtros'});
+    const fl = el('div',{class:'filtros-linha mb-filtros'});
+    fl.appendChild(el('span',{class:'rot', texto:'Cargo'}));
     for(const [id,rot,n] of filtros){
-      const b = el('button',{class:(id===filtroCargo?'on':''),
-        html:`<span>${rot}</span><span class="conta">${n}</span>`});
+      const b = el('button',{class:(id===filtroCargo?'on':''), html:`${rot} <span class="conta">${n}</span>`});
       b.onclick = ()=>{ filtroCargo=id; redesenhar(); };
       fl.appendChild(b);
     }
-    cf.corpo.appendChild(fl);
-    grade.appendChild(cf);
-
-    /* tabela */
-    const ct = cartao('Membros', `${c.aptos} aptos · ${c.feridos} feridos · ${c.presos} presos`);
-    const bs = el('input',{class:'busca', type:'search',
-      placeholder:'nome, cargo, arquétipo, situação…'});
+    pg.appendChild(fl);
+    const fe = el('div',{class:'filtros-linha mb-filtros'});
+    fe.appendChild(el('span',{class:'rot', texto:'Estado'}));
+    for(const [id,rot] of [['todos','Todos'],['pe','De pé'],['ferido','Ferido'],['preso','Preso'],['apto','Apto a promoção']]){
+      const b = el('button',{class:(id===filtroEstado?'on':'')+(id==='apto'?' minha':''), texto:rot});
+      b.onclick = ()=>{ filtroEstado=id; redesenhar(); };
+      fe.appendChild(b);
+    }
+    const bs = el('input',{class:'busca mb-busca', type:'search', placeholder:'buscar por nome, arquétipo…'});
     bs.value = busca;
     bs.oninput = ev=>{ busca = ev.target.value; pintarTorcida(); };
-    ct.corpo.appendChild(bs);
+    fe.appendChild(bs);
+    pg.appendChild(fe);
 
-    /* A PROMOÇÃO MORA NO PERFIL, e ninguém a achava. O aviso vem
-       ANTES da lista — no fim de 250 linhas não adiantava nada. */
-    const prontos = e.membros.filter(m=>TO.membros.podePromover(e, m).ok).length;
-    if(prontos) ct.corpo.appendChild(el('div',{class:'recado', html:
-      `<b>${prontos}</b> ${prontos===1?'membro está pronto':'membros estão prontos'} `+
-      `pra subir de cargo. Dois cliques no nome abrem o perfil, e a `+
-      `promoção está lá em <b>Pendências</b>.`}));
-
+    const ct = cartao('Membros', `${c.aptos} de pé · ${c.feridos} feridos · ${c.presos} presos`);
+    const passaEstado = m => filtroEstado==='todos' ? true
+      : filtroEstado==='pe' ? (!m.ferido && !m.preso)
+      : filtroEstado==='ferido' ? !!m.ferido
+      : filtroEstado==='preso' ? !!m.preso
+      : TO.membros.podePromover(e, m).ok;
     const lista = e.membros
       .filter(m=>filtroCargo==='todos' || m.cargo===filtroCargo)
+      .filter(passaEstado)
       .filter(m=>combina(m,busca))
       .sort((a,b)=>{
         const va=valorCol(a,ordem.col), vb=valorCol(b,ordem.col);
@@ -3748,6 +3761,7 @@
       };
       tr.appendChild(th);
     }
+    tr.appendChild(el('th',{texto:''}));
     tab.appendChild(el('thead',null,[tr]));
 
     const tb = el('tbody');
@@ -3763,7 +3777,7 @@
       const sit = m.preso ? (penaDele != null ? `Preso · ${penaDele}d` : 'Preso')
                 : m.ferido ? `Ferido · ${m.ferido.dias}d`
                 : pronto.ok ? '<b class="pronto-promo">Pronto p/ promoção</b>'
-                : m.naFila ? 'Treinando' : 'Apto';
+                : m.naFila ? 'Treinando' : 'De pé';
       const linha = el('tr',{class:(m.preso?'preso':m.ferido?'ferido':'')
         + (selecionado===m.id?' selecionada':'')});
       const pontinho = (m.cargo==='diretoria'||m.veterano) ? '<span class="ponto"></span>' : '';
@@ -3780,7 +3794,15 @@
          <td>${medida(m.forca,20)}</td>
          <td>${medida(m.defesa,20)}</td>
          <td class="num">${m.xp}</td>
-         <td>${sit}</td>`;
+         <td>${sit}</td>
+         <td class="mb-acao"></td>`;
+      if(pronto.ok){
+        const bp = el('button',{class:'mini-bt mb-promo', texto:'Promover'});
+        bp.title = pronto.custo ? `promove a ${TO.membros.CARGOS[pronto.para].nome} por ${U.dinheiro(pronto.custo)}` : `promove a ${TO.membros.CARGOS[pronto.para].nome}`;
+        bp.onclick = ev=>{ ev.stopPropagation(); const r = TO.membros.promover(e, m);
+          aviso(r.ok ? `${TO.membros.nomeDe(m)} promovido` : r.motivo, r.ok ? 'boa' : 'ruim'); redesenhar(); };
+        linha.querySelector('.mb-acao').appendChild(bp);
+      }
       linha.style.cursor='pointer';
       /* DOIS CLIQUES ABREM O PERFIL: é de lá que sai fiança e
          promoção, sem passar por outro botão.
@@ -3812,9 +3834,7 @@
     btPerfil.disabled = !alvo;
     if(alvo) btPerfil.onclick = ()=>abrirFicha(alvo);
     ct.rodape(btPerfil);
-
-    grade.appendChild(ct);
-    pg.appendChild(grade);
+    pg.appendChild(ct);
   }
 
   /* =======================================================
@@ -4626,48 +4646,51 @@
         pend.forEach(b=>corpo.appendChild(b));
       }
 
-      /* o dossiê */
+      /* O DOSSIÊ EM COLUNA ÚNICA (layout aprovado pelo dono, 10/09/2026):
+         cabeçalho com as iniciais nas cores da torcida, etiquetas,
+         barras grandes, os números da carreira e a linha do tempo */
       const teto = TO.membros.tetoDe(m);
       const sit = m.preso ? 'Preso' : m.ferido ? `Ferido · ${m.ferido.dias} dias`
-                : m.naFila ? 'Escalado pro treino de hoje' : 'Apto';
+                : m.naFila ? 'Escalado pro treino de hoje' : 'De pé';
       const velho = m.idade != null && m.idade >= TO.membros.IDADE_DECLINIO;
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Ficha',
-        estilo:{paddingTop: pend.length ? '14px' : '0'}}));
-      corpo.appendChild(el('div',{html:
-        (TO.membros.nomeCompletoDe(m)
-          ? `<div class="linha-dado"><span>Nome</span>`+
-            `<b>${TO.membros.nomeCompletoDe(m)}</b></div>` : '')+
-        `<div class="linha-dado"><span>Cargo</span>`+
-        `<b>${C.nome}${m.veterano?' · Veterano':''}</b></div>`+
-        (m.filial ? `<div class="linha-dado"><span>Núcleo</span>`+
-          `<b>Sub-Sede ${TO.financeiro.nomeCidade(m.filial)}</b></div>` : '')+
-        `<div class="linha-dado"><span>Situação</span><b>${sit}</b></div>
-         <div class="linha-dado"><span>Idade</span>`+
-        `<b>${m.idade != null ? m.idade : '—'}`+
-        `${velho ? ' <small class="fraco">em declínio</small>' : ''}</b></div>
-         <div class="linha-dado"><span>Força / Defesa</span>`+
-        `<b>${m.forca} / ${m.defesa} <small class="fraco">teto ${teto}</small></b></div>
-         <div class="linha-dado"><span>Frações acumuladas</span>
-           <b>${m.fracForca.toFixed(2)} / ${m.fracDefesa.toFixed(2)}</b></div>`+
-        (m.desgaste ? `<div class="linha-dado"><span>Desgaste</span>`+
-          `<b class="negativo">−${m.desgaste.toFixed(1)} no teto</b></div>` : '')+
-        `<div class="linha-dado"><span>XP</span>`+
-        `<b>${m.xp}${C.xpPromo?` <small class="fraco">promove com ${C.xpPromo}</small>`:''}</b></div>
-         <div class="linha-dado"><span>Arquétipo</span><b>${m.arquetipo}</b></div>
-         <div class="linha-dado"><span>Mensalidade</span>
-           <b>${U.dinheiro(C.mensalidade)}</b></div>`}));
-
-      if(m.historico.length){
-        corpo.appendChild(el('div',{class:'fase-rot', texto:'Histórico',
-          estilo:{paddingTop:'14px'}}));
-        for(const h of m.historico.slice(-8))
-          corpo.appendChild(el('div',{class:'transacao',
-            html:`<span class="desc">${h}</span>`}));
-      }
+      const cores = TO.mundo.coresDaTorcida(e.torcida);
+      const nomeC = TO.membros.nomeCompletoDe(m) || TO.membros.nomeDe(m);
+      const iniciais = TO.membros.nomeDe(m).split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
+      const tags = [C.nome + (m.veterano ? ' · Veterano' : ''), `${m.idade != null ? m.idade + ' anos' : ''}${velho ? ' · em declínio' : ''}`,
+                    sit, m.filial ? `Subsede ${TO.financeiro.nomeCidade(m.filial)}` : 'Sede', m.arquetipo || ''].filter(Boolean);
+      const cab = el('div',{class:'pm-cab'});
+      const av = el('div',{class:'pm-av', texto:iniciais}); av.style.background = cores.cor || '#444'; av.style.color = cores.cor2 || '#fff';
+      cab.appendChild(av);
+      cab.appendChild(el('div',{class:'pm-id', html:`<h2>${nomeC}</h2><div class="pm-tags">${tags.map(t=>`<span class="tag${t===sit?(m.preso?' pm':m.ferido?' ruim':' ok'):''}">${t}</span>`).join('')}</div>`}));
+      corpo.insertBefore(cab, corpo.firstChild);
+      /* as barras: força e defesa contra o teto, XP contra o corte do cargo */
+      const barra = (rot, v, max, cor, txt)=> `<div class="pm-f"><span>${rot}</span><div class="barra-g"><i style="width:${Math.round(100*U.limitar(v/max,0,1))}%;background:${cor}"></i></div><b>${txt}</b></div>`;
+      corpo.appendChild(el('div',{class:'pm-forca', html:
+        barra('Força', m.forca, teto, 'var(--verde)', `${m.forca}<small>/${teto}</small>`)+
+        barra('Defesa', m.defesa, teto, 'var(--ouro)', `${m.defesa}<small>/${teto}</small>`)+
+        (C.xpPromo ? barra('XP pro próximo cargo', m.xp, C.xpPromo, 'var(--azul)', `${m.xp}<small>/${C.xpPromo}</small>`)
+                   : barra('XP', m.xp, Math.max(1, m.xp), 'var(--azul)', String(m.xp)))+
+        (m.desgaste ? `<small class="pm-nota negativo">desgaste: −${m.desgaste.toFixed(1)} no teto</small>` : '')}));
+      /* os números da carreira, lidos do histórico */
+      const h = m.historico || [];
+      const conta = re => h.filter(x=>re.test(x)).length;
+      const nums = [[conta(/ferid|sequela/i), 'feridas'], [conta(/^preso|cadeia|— \d+ dias/i), 'prisões'],
+                    [conta(/promovid|veterano/i), 'promoções'], [conta(/faixa|bandeira/i), 'faixas'],
+                    [U.dinheiro(C.mensalidade).replace('R$ ',''), 'mensalidade']];
+      corpo.appendChild(el('div',{class:'pm-nums', html:nums.map(([v,r])=>`<div><b>${v}</b><span>${r}</span></div>`).join('')}));
+      /* a linha do tempo: do mais recente pro mais antigo, com a cor do tipo */
+      const corDe = x => /ferid|sequela/i.test(x) ? 'vermelho' : /preso|cadeia|solto|fiança|advogado/i.test(x) ? 'pm'
+                       : /promovid|veterano|entrou/i.test(x) ? 'verde' : /faixa|bandeira/i.test(x) ? 'ouro' : 'fraco';
+      const linha = el('div',{class:'pm-linha'});
+      if(!h.length) linha.appendChild(el('div',{class:'fraco', texto:'Sem registro ainda: a história começa na primeira briga.'}));
+      for(const x of h.slice().reverse().slice(0, 40))
+        linha.appendChild(el('div',{class:'pm-ev '+corDe(x), html:`<i></i><p>${x}</p>`}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:'Linha do tempo', estilo:{paddingTop:'12px'}}));
+      corpo.appendChild(linha);
     };
 
     pintar();
-    fechar = modal(TO.membros.nomeDe(m), TO.membros.CARGOS[m.cargo].nome, corpo);
+    fechar = modal('Perfil do membro', TO.membros.CARGOS[m.cargo].nome, corpo, null, 'media');
     return fechar;
   }
 
@@ -5237,102 +5260,88 @@
      ======================================================= */
   function pintarPatrimonio(pg, e){
     const PAT = TO.patrimonio;
-    const comprar = (fn)=>{
-      const r = fn();
-      aviso(r.msg, r.ok?'boa':'ruim');
-      if(r.ok) redesenhar();
-    };
-    /* uma linha de loja: o que é, quanto custa, e o botão */
-    const oferta = (rot, nota, custo, trava, aoClicar)=>{
-      const b = el('button',{class:'oferta'+(trava?' travada':'')});
-      b.innerHTML =
-        `<span class="txt"><b>${rot}</b>${nota?`<small>${nota}</small>`:''}</span>
-         <span class="preco">${U.dinheiro(custo)}</span>`;
-      if(trava) b.appendChild(el('small',{class:'trava', texto:trava}));
-      b.disabled = !!trava;
-      b.onclick = aoClicar;
-      return b;
-    };
-
-    const linhas = PAT.linhas(e);
-    const soma = k => linhas.reduce((s,l)=>s+l[k], 0);
-    const c = cartao('Estrutura',
-      'por mês · mensalidade e caravana ficam no Resumo');
-    const tab = el('div',{class:'tabela-pat'});
-    tab.appendChild(el('div',{class:'cab', html:
-      '<span>Local</span><span>Receita</span><span>Despesa</span><span>Mês</span>'}));
-    for(const l of linhas){
-      tab.appendChild(el('div',{class:'linha', html:
-        `<span class="nome">${l.rot}${l.bairro
-          ? `<small>${linkCidadePorNome(l.bairro)}</small>` : ''}`+
-        `${l.nota?`<small>${l.nota}</small>`:''}</span>
-         <span class="v ${l.receita?'positivo':''}">${l.receita?U.dinheiro(l.receita):'—'}</span>
-         <span class="v ${l.despesa?'negativo':''}">${l.despesa?U.dinheiro(-l.despesa):'—'}</span>
-         <span class="v ${l.saldo>0?'positivo':l.saldo<0?'negativo':''}">`+
-        `${U.dinheiro(l.saldo)}</span>`}));
-    }
-    const s = soma('receita')-soma('despesa');
-    tab.appendChild(el('div',{class:'linha total', html:
-      `<span class="nome">Total do patrimônio</span>
-       <span class="v positivo">${U.dinheiro(soma('receita'))}</span>
-       <span class="v negativo">${U.dinheiro(-soma('despesa'))}</span>
-       <span class="v ${s>=0?'positivo':'negativo'}">${U.dinheiro(s)}</span>`}));
-    c.corpo.appendChild(tab);
-    pg.appendChild(c);
-
-    /* AS COMPRAS SAÍRAM DAQUI (a Loja do dono, 09/09/2026): o Patrimônio
-       mostra o que a torcida tem e o que rende; comprar é na aba Loja */
-    const irLoja = el('button',{class:'bt', texto:'Comprar e ampliar é na Loja →'});
-    irLoja.onclick = ()=>{ subFin='loja'; redesenhar(); };
-    pg.appendChild(el('div',{class:'loja-chamada'},[irLoja]));
-
-    /* AS FAIXAS (pedido do dono, 09/09/2026): as nossas e as que tomamos,
-       estas de cabeça pra baixo */
-    const fx = PAT.faixasDe(e);
-    const c3 = cartao('Faixas', `${fx.nossas.length} ${fx.nossas.length===1?'nossa':'nossas'} · ${fx.tomadas.length} ${fx.tomadas.length===1?'tomada':'tomadas'}`);
-    const bl = el('div',{class:'faixas'});
-    bl.appendChild(el('div',{class:'faixas-rot', texto:'As nossas'}));
-    const nossas = el('div',{class:'faixas-lista'});
-    if(!fx.nossas.length) nossas.appendChild(el('div',{class:'fraco', texto:'Nenhuma: sem faixa na sede, nada a expor — nem a perder. Compre uma na Loja.'}));
+    /* O PATRIMÔNIO EM CARTÕES (layout aprovado pelo dono, 10/09/2026):
+       as cores da torcida no topo — faixas, bandeiras e as tomadas —,
+       a sede numa linha com a lotação, um cartão por ponto com receita
+       e despesa em barra e o saldo do mês, e o total no fim. Comprar e
+       ampliar é na Loja. */
     const imgFaixa = (o, cls, title, k) => {
       const im = el('img',{class:cls, title});
       im.src = PAT.imagemDaFaixa(o, url => { im.src = url; }, 'faixa', k || 0) || '';
       return im;
     };
-    fx.nossas.forEach((f, k) => nossas.appendChild(imgFaixa(e.torcida, 'faixa-img', `Faixa da ${e.torcida.nome} · desde ${f.desde}`, k)));
-    bl.appendChild(nossas);
-    bl.appendChild(el('div',{class:'faixas-rot', texto:'Tomadas'}));
-    const tomadas = el('div',{class:'faixas-lista'});
-    if(!fx.tomadas.length) tomadas.appendChild(el('div',{class:'fraco', texto:'Nenhuma ainda. Faixa se toma na rua: quem carrega a deles cai, ela é nossa.'}));
-    for(const f of fx.tomadas){
-      const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
-      const cx = el('div',{class:'faixa-tomada'});
-      cx.appendChild(imgFaixa(o, 'faixa-img virada', `Faixa da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
-      cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
-      tomadas.appendChild(cx);
-    }
-    bl.appendChild(tomadas);
-    /* as bandeiras (dono, 09/09/2026): mesma lógica, quadradas */
-    const bd = PAT.bandeirasDe(e);
     const imgBand = (o, cls, title) => {
       const im = el('img',{class:cls, title});
       im.src = PAT.imagemDaBandeira(o, url => { im.src = url; }) || '';
       return im;
     };
-    bl.appendChild(el('div',{class:'faixas-rot', texto:`Bandeiras · ${bd.nossas.length} ${bd.nossas.length===1?'nossa':'nossas'} · ${bd.tomadas.length} ${bd.tomadas.length===1?'tomada':'tomadas'}`}));
-    const bands = el('div',{class:'faixas-lista bandeiras'});
-    if(!bd.nossas.length && !bd.tomadas.length) bands.appendChild(el('div',{class:'fraco', texto:'Nenhuma. Compre uma na Loja: sai no lugar da faixa no bar e na concentração, e junto dela no estádio.'}));
-    for(const f of bd.nossas) bands.appendChild(imgBand(e.torcida, 'bandeira-img', `Bandeira da ${e.torcida.nome} · desde ${f.desde}`));
-    for(const f of bd.tomadas){
-      const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
-      const cx = el('div',{class:'faixa-tomada'});
-      cx.appendChild(imgBand(o, 'bandeira-img virada', `Bandeira da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
-      cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}`}));
-      bands.appendChild(cx);
+    const fx = PAT.faixasDe(e), bd = PAT.bandeirasDe(e);
+    const cores = el('div',{class:'pat-cores'});
+    cores.appendChild(el('h3',{html:`As nossas cores <small>${fx.nossas.length} ${fx.nossas.length===1?'faixa':'faixas'} · ${bd.nossas.length} ${bd.nossas.length===1?'bandeira':'bandeiras'} · ${fx.tomadas.length+bd.tomadas.length} ${fx.tomadas.length+bd.tomadas.length===1?'tomada':'tomadas'}</small>`}));
+    const lista = el('div',{class:'pat-cores-lista'});
+    if(!fx.nossas.length && !bd.nossas.length) lista.appendChild(el('div',{class:'fraco', texto:'Sem faixa nem bandeira na sede: nada a expor — nem a perder. Compre na Loja.'}));
+    fx.nossas.forEach((f, k) => lista.appendChild(imgFaixa(e.torcida, 'faixa-img', `Faixa da ${e.torcida.nome} · desde ${f.desde}`, k)));
+    for(const f of bd.nossas) lista.appendChild(imgBand(e.torcida, 'bandeira-img', `Bandeira da ${e.torcida.nome} · desde ${f.desde}`));
+    if(fx.tomadas.length || bd.tomadas.length){
+      lista.appendChild(el('span',{class:'pat-sep'}));
+      for(const f of fx.tomadas){
+        const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
+        const cx = el('div',{class:'faixa-tomada'});
+        cx.appendChild(imgFaixa(o, 'faixa-img virada', `Faixa da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
+        cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
+        lista.appendChild(cx);
+      }
+      for(const f of bd.tomadas){
+        const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
+        const cx = el('div',{class:'faixa-tomada'});
+        cx.appendChild(imgBand(o, 'bandeira-img virada', `Bandeira da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
+        cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}`}));
+        lista.appendChild(cx);
+      }
     }
-    bl.appendChild(bands);
-    c3.corpo.appendChild(bl);
-    pg.appendChild(c3);
+    cores.appendChild(lista);
+    pg.appendChild(cores);
+
+    /* a sede: nível, bairro, lotação e quem trabalha nela */
+    const linhas = PAT.linhas(e);
+    const n = e.torcida.sedeNivel || 1;
+    const teto = (TO.membros.SEDE && TO.membros.SEDE[n] && TO.membros.SEDE[n].membros) || 0;
+    const lot = teto ? Math.round(100 * e.membros.length / teto) : 0;
+    const sedeL = linhas.find(l=>l.tipo==='sede') || {despesa:0};
+    const profs = TO.financeiro.professoresDe(e), advs = TO.financeiro.advogadosDe(e);
+    const sede = el('div',{class:'pat-sede', html:
+      `<div><b>Sede nível ${n}</b><small>${e.torcida.bairroSede || ''}${e.torcida.bairroSede ? ' · ' : ''}${e.membros.length}${teto ? ' de '+teto : ''} membros`+
+      `${profs ? ` · ${profs} ${profs===1?'professor':'professores'}` : ''}${advs ? ` · ${advs} ${advs===1?'advogado':'advogados'}` : ''}</small></div>`+
+      `<div class="barra-g"><i style="width:${Math.min(100,lot)}%;background:${lot>=90?'var(--vermelho)':'var(--ouro)'}"></i></div>`+
+      `<span class="mono">${teto ? lot+'% cheia' : ''} · ${U.dinheiro(-sedeL.despesa)}/mês</span>`});
+    pg.appendChild(sede);
+
+    /* um cartão por ponto; a folha (professor, advogado) fica no fim */
+    const pontos = linhas.filter(l=>l.tipo!=='sede');
+    const maior = Math.max(1, ...pontos.map(l=>Math.max(l.receita, l.despesa)));
+    const grade = el('div',{class:'pat-pts'});
+    for(const l of pontos){
+      const nivel = (l.rot.match(/nível (\d)/i)||[])[1];
+      const rot = l.rot.replace(/\s*\(nível \d\)/i,'');
+      const b = (r, v, cls)=> `<div class="pt-b"><span>${r}</span><div class="barra-g"><i style="width:${Math.round(100*v/maior)}%;background:var(--${cls==='positivo'?'verde':'vermelho'})"></i></div><b class="${cls}">${v ? v.toLocaleString('pt-BR') : '—'}</b></div>`;
+      grade.appendChild(el('div',{class:'pat-pt'+(l.saldo<0?' no-vermelho':''), html:
+        `<div class="pt-cab"><b>${rot}</b>${nivel?`<span class="tag">nível ${nivel}</span>`:''}</div>`+
+        `<small>${l.bairro ? linkCidadePorNome(l.bairro) : ''}${l.bairro && l.nota ? ' · ' : ''}${l.nota||''}</small>`+
+        b('receita', l.receita, 'positivo')+b('despesa', l.despesa, 'negativo')+
+        `<div class="pt-pe"><span>por mês</span><b class="${l.saldo>=0?'positivo':'negativo'}">${U.dinheiro(l.saldo)}</b></div>`}));
+    }
+    if(!pontos.length) grade.appendChild(el('div',{class:'fraco', texto:'Só a sede por enquanto. Bar e loja são os primeiros pontos que rendem.'}));
+    pg.appendChild(grade);
+
+    const soma = k => linhas.reduce((s,l)=>s+l[k], 0);
+    const sd = soma('receita')-soma('despesa');
+    pg.appendChild(el('div',{class:'pat-total', html:
+      `<span>Total do patrimônio</span><b class="positivo">${U.dinheiro(soma('receita'))}</b><span>receita</span>`+
+      `<b class="negativo">${U.dinheiro(-soma('despesa'))}</b><span>despesa</span>`+
+      `<b class="${sd>=0?'positivo':'negativo'}">${U.dinheiro(sd)}</b><span>por mês · mensalidade e caravana ficam no Resumo</span>`}));
+    const irLoja = el('button',{class:'bt destaque', texto:'Comprar e ampliar na Loja →'});
+    irLoja.onclick = ()=>{ subFin='loja'; redesenhar(); };
+    pg.appendChild(el('div',{class:'loja-chamada'},[irLoja]));
   }
 
   /* =======================================================
@@ -8455,6 +8464,50 @@
     return cx;
   }
 
+  /* o bloco do troféu: só quando TOMAMOS faixa ou bandeira na cena. A
+     foto é assíncrona (o GLB e a arte do pano carregam antes); enquanto
+     revela, o bloco mostra as legendas */
+  function blocoTrofeu(res, nossoLado, e, ctx){
+    const PAT = TO.patrimonio, B = TO.diaJogo && TO.diaJogo.bonecos3;
+    const pecas = (res.faixas || (res.faixa ? [res.faixa] : []))
+      .filter(f => f && f.tomada && f.por === nossoLado && !f.nossa && f.torcidaId);
+    if(!pecas.length) return null;
+    const cx = el('div',{class:'trofeu'});
+    cx.appendChild(el('h3',{texto:'Troféu da noite'}));
+    const foto = el('div',{class:'trofeu-foto revelando', html:'<span>revelando a foto…</span>'});
+    cx.appendChild(foto);
+    const leg = el('div',{class:'trofeu-legendas'});
+    for(const f of pecas){
+      const V = f.tipo === 'bandeira' ? PAT.BANDEIRA : PAT.FAIXA;
+      leg.appendChild(el('div',{class:'peca', html:
+        `<b>Tomamos a ${f.tipo} da ${linkTorcida(f.torcidaId, f.nome)}</b>`+
+        `<small>+${V.ganho} de prestígio pra nós · −${V.perda} pra eles</small>`}));
+    }
+    cx.appendChild(leg);
+    /* a foto: a primeira peça (faixa antes de bandeira), nas mãos de
+       quatro dos nossos que estão de pé */
+    const f0 = pecas.find(f=>f.tipo === 'faixa') || pecas[0];
+    const o = TO.mundo.torcida(f0.torcidaId);
+    if(!B || !B.fotoDoTrofeu || !o){ foto.remove(); return cx; }
+    const src = f0.tipo === 'bandeira' ? PAT.imagemDaBandeira(o, null) : PAT.imagemDaFaixa(o, null, 'faixa', 0);
+    if(!src){ foto.remove(); return cx; }
+    const im = new Image();
+    im.onload = ()=>{
+      const cores = TO.mundo.coresDaTorcida(e.torcida);
+      const nomes = e.membros.filter(m=>!m.ferido && !m.preso && !m.filial).slice(0, 4).map(m=>TO.membros.nomeDe(m));
+      B.fotoDoTrofeu({pano:im, tipo:f0.tipo, nomes,
+        torcida:{id:e.torcida.id, cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3, sigla:TO.mundo.siglaTorcida(e.torcida)}})
+       .then(url=>{
+         if(!url || !foto.isConnected) { foto.remove(); return; }
+         foto.classList.remove('revelando'); foto.innerHTML = '';
+         foto.appendChild(el('img',{src:url, alt:`Os nossos com a ${f0.tipo} da ${f0.nome}`}));
+       });
+    };
+    im.onerror = ()=>foto.remove();
+    im.src = src;
+    return cx;
+  }
+
   function mostrarRelatorio(res, resumo, fecho, ctx){
     ctx = ctx || {};
     const e = E();
@@ -8472,6 +8525,10 @@
     const cx = $('corpoRelatorio');
     cx.innerHTML = '';
     cx.appendChild(el('h3',{class:`fim-titulo ${correu?'neutra':ganhou?'boa':'ruim'}`, texto:titulo}));
+    /* O TROFÉU DA NOITE (pedido do dono, 10/09/2026): a peça tomada
+       vira uma foto dos nossos segurando o pano numa viela */
+    const trofeu = blocoTrofeu(res, nossoLado, e, ctx);
+    if(trofeu) cx.appendChild(trofeu);
 
     /* as duas colunas */
     const ef = res.efetivo || {};

@@ -2122,3 +2122,67 @@ header.capa-cidade{background-size:cover; background-position:center;
   font-family:var(--mono);font-size:10px;color:var(--vermelho);
   text-transform:uppercase;letter-spacing:.06em;
 }
+
+/* =========================================================
+   AS QUATRO TELAS APROVADAS (dono, 10/09/2026): troféu da noite,
+   perfil do membro, membros com resumo, patrimônio em cartões
+   ========================================================= */
+.barra-g{height:10px;background:#242424;position:relative;min-width:0}
+.barra-g i{position:absolute;left:0;top:0;bottom:0;display:block}
+/* ---- o troféu da noite ---- */
+.trofeu{background:#16160f;border:1px solid var(--linha);border-top:3px solid var(--ouro);padding:12px 14px;margin-bottom:14px}
+.trofeu h3{font-family:var(--titulo);font-size:13px;letter-spacing:.17em;text-transform:uppercase;color:var(--ouro);margin-bottom:10px}
+.trofeu-foto{background:#0d0d0d;border:1px solid var(--linha);min-height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;overflow:hidden}
+.trofeu-foto.revelando span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);letter-spacing:.1em;text-transform:uppercase;animation:pisca 1.2s infinite}
+@keyframes pisca{50%{opacity:.35}}
+.trofeu-foto img{display:block;width:100%;height:auto}
+.trofeu-legendas{display:flex;flex-direction:column;gap:6px}
+.trofeu-legendas .peca b{display:block;font-size:14px}
+.trofeu-legendas .peca small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+/* ---- o perfil do membro ---- */
+.pm-cab{display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--linha);margin-bottom:12px}
+.pm-av{width:64px;height:64px;border-radius:50%;border:3px solid #fff2;display:flex;align-items:center;justify-content:center;font-family:var(--titulo);font-size:22px;font-weight:700;letter-spacing:.04em}
+.pm-id h2{font-family:var(--titulo);font-size:22px;letter-spacing:.06em;text-transform:uppercase;line-height:1.05;margin-bottom:6px}
+.pm-tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag.ok{color:var(--verde-vivo);border-color:#2f5a38} .tag.ruim{color:var(--vermelho);border-color:#5a2a2a} .tag.pm{color:#8fd0a8;border-color:#2f5a48}
+.pm-forca{display:flex;flex-direction:column;gap:9px;padding:12px 0}
+.pm-f{display:grid;grid-template-columns:130px 1fr 60px;gap:12px;align-items:center;font-size:12.5px;color:var(--fraco)}
+.pm-f .barra-g{height:16px} .pm-f b{font-family:var(--mono);font-size:17px;color:var(--texto);text-align:right} .pm-f b small{font-size:10px;color:var(--fraco)}
+.pm-nota{font-family:var(--mono);font-size:10.5px}
+.pm-nums{display:grid;grid-template-columns:repeat(5,1fr);background:var(--painel-alto);border:1px solid var(--linha)}
+.pm-nums div{padding:9px 6px;text-align:center;border-right:1px solid var(--sulco);min-width:0} .pm-nums div:last-child{border-right:0}
+.pm-nums b{display:block;font-family:var(--mono);font-size:18px;white-space:nowrap} .pm-nums span{font-size:9.5px;color:var(--fraco);text-transform:uppercase;letter-spacing:.08em}
+.pm-linha{position:relative;padding-left:4px}
+.pm-linha:before{content:'';position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--linha)}
+.pm-ev{display:grid;grid-template-columns:12px 1fr;gap:10px;align-items:start;padding:5px 0}
+.pm-ev i{width:12px;height:12px;border-radius:50%;background:var(--fraco);border:2px solid var(--painel);margin-top:2px;position:relative;z-index:1}
+.pm-ev p{font-size:12.5px;line-height:1.35}
+.pm-ev.ouro i{background:var(--ouro)} .pm-ev.vermelho i{background:var(--vermelho)} .pm-ev.verde i{background:var(--verde-vivo)} .pm-ev.pm i{background:var(--pm)}
+@media (max-width:560px){.pm-nums{grid-template-columns:repeat(3,1fr)}.pm-f{grid-template-columns:96px 1fr 52px}}
+/* ---- membros ---- */
+.mb-resumo{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.mb-rc{background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--fraco);padding:9px 12px;min-width:0}
+.mb-rc b{display:block;font-family:var(--mono);font-size:21px;white-space:nowrap} .mb-rc span{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco)} .mb-rc small{font-size:10.5px;color:var(--apagado)}
+.mb-rc.ok{border-left-color:var(--verde-vivo)} .mb-rc.ruim{border-left-color:var(--vermelho)} .mb-rc.pm{border-left-color:var(--pm)}
+.mb-filtros{align-items:center;margin-bottom:8px}
+.mb-filtros .rot{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco);margin-right:4px;min-width:48px}
+.mb-busca{width:220px;margin:0 0 0 auto}
+.mb-acao{width:88px;text-align:right}
+.mb-promo{width:auto;padding:0 9px;color:var(--verde-vivo);border-color:#2f5a38}
+@media (max-width:760px){.mb-resumo{grid-template-columns:repeat(2,1fr)}.mb-busca{width:100%;margin:6px 0 0}.mb-acao{width:auto}}
+/* ---- patrimônio ---- */
+.pat-cores{background:var(--painel);border:1px solid var(--linha);padding:12px 14px;margin-bottom:10px}
+.pat-cores h3,.pat-sede b{font-family:var(--titulo);font-size:13px;letter-spacing:.17em;text-transform:uppercase}
+.pat-cores h3{margin-bottom:10px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap} .pat-cores h3 small{font-family:var(--mono);font-size:10px;color:var(--fraco);letter-spacing:.04em;text-transform:none}
+.pat-cores-lista{display:flex;gap:14px;align-items:center;flex-wrap:wrap} .pat-cores-lista .bandeira-img{width:56px;height:56px} .pat-sep{width:1px;height:44px;background:var(--linha)}
+.pat-sede{display:flex;align-items:center;gap:16px;background:var(--painel);border:1px solid var(--linha);padding:10px 14px;margin-bottom:10px;flex-wrap:wrap}
+.pat-sede b{font-size:15px;display:block} .pat-sede small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+.pat-sede .barra-g{width:200px;flex:1 1 140px} .pat-sede .mono{font-family:var(--mono);font-size:11px;color:var(--ouro);white-space:nowrap}
+.pat-pts{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-bottom:10px}
+.pat-pt{background:var(--painel);border:1px solid var(--linha);padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pat-pt.no-vermelho{border-left:3px solid var(--vermelho)}
+.pat-pt .pt-cab{display:flex;justify-content:space-between;align-items:center;gap:8px} .pat-pt .pt-cab b{font-size:13.5px} .pat-pt>small{font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.pat-pt .pt-b{display:grid;grid-template-columns:48px 1fr 52px;gap:8px;align-items:center;font-size:10.5px;color:var(--fraco)} .pat-pt .pt-b b{font-family:var(--mono);font-size:11.5px;text-align:right}
+.pat-pt .pt-pe{display:flex;align-items:baseline;gap:8px;border-top:1px solid var(--sulco);padding-top:6px;margin-top:2px;font-size:11px;color:var(--fraco)} .pat-pt .pt-pe b{font-family:var(--mono);font-size:15px}
+.pat-total{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;background:var(--painel);border:1px solid var(--linha);padding:10px 14px;font-size:11.5px;color:var(--fraco);margin-bottom:10px}
+.pat-total b{font-family:var(--mono);font-size:15px;margin-right:4px}

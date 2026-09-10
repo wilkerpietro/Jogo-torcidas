@@ -4947,6 +4947,62 @@ faixa curvava num arco que não era o do muro.
   todos os setores ocupados (`cortes-setores.js`); `faixa-tomada-regra`
   e `faixa-setores` passam.
 
+## Quatro telas reformadas e a foto do troféu (aprovado pelo dono, 10/09/2026)
+
+Dos seis mockups apresentados o dono aprovou quatro: perfil do membro,
+tela de membros, patrimônio e relatório da noite — este com uma mudança:
+"a foto da faixa ou bandeira tomada vira uma imagem dos bonecos do jogo
+segurando a faixa tomada, no fundo um cenário de viela urbana de classe
+baixa". Feed e diplomacia ficaram como estão.
+
+- PERFIL DO MEMBRO (`abrirFicha`): coluna única. Cabeçalho com as
+  iniciais num círculo nas cores da torcida, nome completo e etiquetas
+  (cargo, idade e declínio, situação, sede ou subsede, arquétipo); as
+  pendências (fiança, promoção) continuam em cima; força e defesa em
+  barra grande contra o teto, XP contra o corte do cargo; cinco números
+  lidos do histórico (feridas, prisões, promoções, faixas, mensalidade);
+  a linha do tempo do histórico do mais recente pro mais antigo, com a
+  cor do tipo (ferida vermelha, cadeia verde-PM, promoção verde, faixa
+  ouro). O modal passou a `media` e o título é "Perfil do membro".
+- MEMBROS (`pintarTorcida`): a coluna de filtros à esquerda saiu. Em
+  cima, cinco cartões de resumo (efetivo e de pé, aptos a promoção com o
+  custo total, feridos, presos com ou sem advogado, média de força e
+  defesa na régua ×5) — os quatro primeiros clicam e filtram; depois os
+  filtros em linha por cargo com contagem e por estado (de pé, ferido,
+  preso, apto a promoção — `filtroEstado`), a busca à direita; a tabela
+  ganha a coluna de ação com o botão Promover na linha de quem bateu o
+  corte (o recado "a promoção mora no perfil" saiu). "Apto" na Situação
+  virou "De pé" — apto agora é apto a promoção.
+- PATRIMÔNIO (`pintarPatrimonio`): as cores no topo (faixas, bandeiras e
+  as tomadas, de cabeça pra baixo, num bloco só), a sede numa linha com
+  bairro, lotação em barra (vermelha de 90% pra cima), professores,
+  advogados e a manutenção; um cartão por ponto de `PAT.linhas` com
+  receita e despesa em barra na mesma escala e o saldo do mês (borda
+  vermelha quando negativo); o total; e o botão pra Loja no fim.
+- RELATÓRIO: o bloco "Troféu da noite" entra logo abaixo do título
+  quando TOMAMOS faixa ou bandeira (`blocoTrofeu`): as legendas (peça,
+  torcida, prestígio movido) aparecem na hora e a foto revela em
+  seguida.
+- A FOTO (`fotoDoTrofeu` em `bonecos3.js`): uma cena THREE própria,
+  descartada depois do quadro. A viela é procedural — muro de tijolo em
+  canvas com reboco caído e a pichação "AQUI É {SIGLA}" nas cores da
+  torcida, muros laterais de reboco sujo, chão de asfalto com poça,
+  caçamba, sacos de lixo, pneu e um poste com lâmpada acesa; luz de fim
+  de tarde mais o poste amarelo, névoa ao fundo. Quatro bonecos GLB dos
+  nossos (os quatro primeiros de pé da sede, na ficha de sempre com as
+  cores da torcida), os dois do meio com os braços pra frente segurando
+  o pano — um plano com a textura da peça tomada, de cabeça pra baixo,
+  com o topo nas mãos — e os das pontas de punho pro alto. O modelo
+  olha pra −Z e a câmera está em +Z: em vez de adivinhar, a função mede
+  onde a mão ficou depois da pose e dá meia-volta em quem está de
+  costas. 720×405, JPEG a 86%, ~60 KB, 2,2 s no swiftshader. Sem WebGL
+  ou sem GLB carregado em 6 s, o bloco fica só com as legendas.
+- Testado (`telas-aprovadas.js`): as três telas em 1280 e 390 sem
+  rolagem horizontal, perfil com cinco eventos na linha do tempo, e um
+  ataque ao bar da Cearamor em que derrubamos o portador — o relatório
+  abriu com o troféu, as legendas e a foto revelada. `faixas` (com o
+  seletor novo do Patrimônio) e `loja` passam.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
