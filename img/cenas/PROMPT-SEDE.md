@@ -31,10 +31,11 @@ paredes aparecendo de cima como faixas grossas e o piso de cada sala à mostra.
 
 ## O que cada rodada errou
 
-Três rodadas até aqui. A 1ª acertou o essencial — sem telhado, luz de dia
+Quatro rodadas até aqui. A 1ª acertou o essencial — sem telhado, luz de dia
 nublado — e errou três coisas de arrumação. A 2ª arrumou as três e esbarrou na
 projeção: não era zênite de verdade. A 3ª acertou a projeção e o colchão, e saiu
-sem rua — por erro meu no texto do prompt.
+sem rua — por erro meu no texto do prompt. A 4ª saiu com um filete de rua e nada
+mais: o quadro fechava na sede.
 
 ### Rodada 1 · O miolo de cada sala tem de ficar VAZIO
 
@@ -105,6 +106,31 @@ A frase que entrou no lugar diz a proporção, e não o adjetivo: **dois terços
 sede em cima, um terço de rua embaixo, de ponta a ponta**. Proporção o modelo
 respeita; &ldquo;mostre a rua&rdquo; ele ignora.
 
+### Rodada 4 · O quadro é o QUARTEIRÃO, não o prédio
+
+Com a rua já pedida no texto, o Flow deu um filete de asfalto e mais nada: o
+quadro fechava na sede. Não adianta pedir rua larga — o modelo enquadra **o que
+você descreve**, e o prompt descrevia um prédio com uma rua ao lado.
+
+A foto do bar mostra o que se quer: o lote sem telhado ocupa menos de um quarto
+da largura, e o resto do quadro é casa de vizinho com telha, laje com caixa
+d'água, calçada, meio-fio, faixa de pedestre e rua. É por isso que o rival tem
+onde nascer e por onde vir.
+
+A correção foi inverter o assunto. O primeiro parágrafo agora descreve **o
+quarteirão** — vizinhos à esquerda e à direita até a borda, rua no quarto de
+baixo, quintal da rua de trás no topo — e a sede entra como *&ldquo;um lote entre
+muitos&rdquo;*, com a fração do quadro dita em número.
+
+Efeito colateral bom: telha de barro sai por cor no importador
+(`R > G+18 && R > B+22`), então casa de vizinho se exclui sozinha do chão de
+andar. Vizinho no quadro custa zero de trabalho na máscara.
+
+Uma armadilha que isso criou e já está corrigida: a negativa antiga dizia
+*&ldquo;no roof, no roof tiles&rdquo;* de forma solta, e isso brigava com os vizinhos, que
+PRECISAM ter telhado. Agora a negativa é específica: sem telhado **sobre o
+quarteirão murado**, e os vizinhos mantêm o deles.
+
 ## O que mais não pode mudar
 
 A imagem vira o chão da cena, e a máscara de colisão sai da própria foto por
@@ -117,11 +143,13 @@ cor e conectividade (`ferramentas/importar_cena_foto.py`).
   cimento queimado, ladrilho, cerâmica: claro. Parede: faixa escura e contínua;
 - **parede grossa**: pelo menos 1/60 da largura do quadro (uns 45 px numa
   imagem de 2752). Parede fina some na célula de 8 px da máscara;
-- **a rua inteira aparece**, de ponta a ponta, do lado do portão, com as duas
-  calçadas: é dela que o atacante nasce e é por ela que ele caminha até o
-  portão. Uma tira fina não dá espaço de spawn (pedido do dono, 10/09/2026);
-- **a sede ocupa o resto do quadro**, encostada nas bordas de cima e dos lados.
-  Sede pequena no meio de terreno baldio desperdiça a tela;
+- **o quadro é o quarteirão inteiro**: vizinhos com telhado à esquerda e à
+  direita até a borda, rua de ponta a ponta no quarto de baixo com as duas
+  calçadas, quintal da rua de trás no topo. É dessa rua que o atacante nasce e
+  é por ela que ele vem (pedido do dono, 10/09/2026);
+- **a sede é um lote entre muitos**, de um terço a três quintos da largura
+  conforme o nível, no meio do quarteirão. Sede sozinha no quadro não dá espaço
+  de spawn pro rival;
 - as salas ficam **no lugar e no tamanho da planta**, e o portão da rua fica na
   parede que a planta manda;
 - **nada de gente na imagem**: o povo são os bonecos 3D, desenhados por cima;
