@@ -3,6 +3,10 @@
 Uma imagem por nível de sede. Alvo: o mesmo acabamento das outras cenas —
 ortofoto de zênite, dia nublado, cor dessaturada, periferia brasileira.
 
+> **Pra colar e gerar, use `PROMPTS-SEDE-PRONTOS.md`**: cinco blocos completos,
+> um por nível, com a negativa junto. Este arquivo aqui é o porquê de cada
+> regra — leia quando uma geração sair errada, não na hora de gerar.
+
 | Cena | Nível | Planta de entrada | Saída pro jogo | Estado |
 |---|---|---|---|---|
 | Sede nv 1 | 1 | `docs/plantas/sede-nivel-1.jpg` | `sede_1.webp` | **importada** — falta o colchão no pátio |
@@ -27,9 +31,10 @@ paredes aparecendo de cima como faixas grossas e o piso de cada sala à mostra.
 
 ## O que cada rodada errou
 
-O nível 1 já foi gerado duas vezes. A 1ª acertou o essencial — sem telhado, luz
-de dia nublado — e errou três coisas de arrumação. A 2ª arrumou as três e
-esbarrou na que mais importa: **não é zênite de verdade**.
+Três rodadas até aqui. A 1ª acertou o essencial — sem telhado, luz de dia
+nublado — e errou três coisas de arrumação. A 2ª arrumou as três e esbarrou na
+projeção: não era zênite de verdade. A 3ª acertou a projeção e o colchão, e saiu
+sem rua — por erro meu no texto do prompt.
 
 ### Rodada 1 · O miolo de cada sala tem de ficar VAZIO
 
@@ -87,6 +92,18 @@ O que resolve, em ordem de eficácia:
 4. Diga o teste em palavras dentro do prompt: **só superfície de cima é
    visível**, nenhuma face de parede, nenhum pé de mesa, nenhum encosto de
    cadeira.
+
+### Rodada 3 · A rua não saiu, e a culpa era do prompt
+
+Quatro gerações no Google Flow, nenhuma com rua. Conferido: a exigência da rua
+estava escrita na **prosa** deste arquivo, mas o **bloco de prompt** que se cola
+ainda dizia *&ldquo;only a narrow strip of cracked asphalt street&rdquo;*. O modelo obedeceu
+ao que leu. Corrigido — e é por isso que os blocos prontos existem: prosa que o
+modelo não lê não vale nada.
+
+A frase que entrou no lugar diz a proporção, e não o adjetivo: **dois terços de
+sede em cima, um terço de rua embaixo, de ponta a ponta**. Proporção o modelo
+respeita; &ldquo;mostre a rua&rdquo; ele ignora.
 
 ## O que mais não pode mudar
 
@@ -192,8 +209,14 @@ flat overcast diffuse daylight, almost no cast shadows, desaturated muted
 colors, documentary photography, sun-bleached concrete, weathered paint, damp
 stains at the base of the walls, tropical northeast Brazil,
 
-the walled compound fills the frame almost edge to edge, with only a narrow
-strip of cracked asphalt street and painted curb along the gate side,
+FRAME COMPOSITION, top to bottom, and this is mandatory: THE UPPER TWO THIRDS
+of the image is the walled compound, touching the top, left and right edges of
+the frame. THE LOWER THIRD OF THE IMAGE IS A FULL-WIDTH RESIDENTIAL STREET, and
+it must be there and must be wide: the compound sidewalk, a painted curb,
+cracked grey asphalt with a faded worn center line, then the opposite curb and
+sidewalk, all running unbroken from the left edge of the frame to the right
+edge,
+
 photorealistic, natural materials, 8k detail, no people visible
 ```
 
