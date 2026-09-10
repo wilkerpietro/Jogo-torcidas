@@ -5,7 +5,7 @@ foto de drone a prumo, dia nublado, cor dessaturada, periferia brasileira.
 
 | Cena | Nível | Planta de entrada | Saída pro jogo | Estado |
 |---|---|---|---|---|
-| Sede nv 1 | 1 | `docs/plantas/sede-nivel-1.jpg` | `sede_1.webp` | a fazer |
+| Sede nv 1 | 1 | `docs/plantas/sede-nivel-1.jpg` | `sede_1.webp` | 1ª tentativa feita, refazendo |
 | Sede nv 2 | 2 | `docs/plantas/sede-nivel-2.png` | `sede_2.webp` | a fazer |
 | Sede nv 3 | 3 | `docs/plantas/sede-nivel-3.png` | `sede_3.webp` | a fazer |
 | Sede nv 4 | 4 | `docs/plantas/sede-nivel-4.jpg` | `sede_4.webp` | a fazer |
@@ -25,38 +25,72 @@ tem cena. O precedente já existe e funciona:
 Então toda sede é um **quarteirão murado sem cobertura**, visto de 90°, com as
 paredes aparecendo de cima como faixas grossas e o piso de cada sala à mostra.
 
-## O que não pode mudar
+## As três coisas que a 1ª tentativa errou
+
+A imagem de teste do nível 1 acertou o essencial — sem telhado, a prumo, luz de
+dia nublado — e errou três, todas com consequência no jogo.
+
+### 1. O miolo de cada sala tem de ficar VAZIO
+
+A sala não é cenário de fundo: é **piso de briga**. É ali que 40 bonecos se
+empurram. Móvel no meio da sala vira parede na máscara de colisão, e sala com o
+meio ocupado simplesmente não recebe briga.
+
+- **no máximo 3 objetos grandes por sala**, todos **encostados na parede**;
+- o **centro de cada sala fica limpo**, chão à mostra, sem nada;
+- nada de pilha, nada de caixa empilhada, nada de objeto solto no meio do pátio.
+
+### 2. O patrimônio é a sala mais vazia de todas
+
+A primeira tentativa encheu o patrimônio de faixa dobrada, bandeira de mastro e
+bumbo. **Não pode.** As faixas e bandeiras da torcida são desenhadas pelo jogo
+por cima da foto, com as cores e o escudo de cada torcida. Foto com pano dentro
+significa pano duplicado, e da torcida errada.
+
+O patrimônio é uma **sala vazia com uma prateleira comprida vazia** encostada
+numa parede. Só isso.
+
+### 3. Toda sala precisa de UMA porta, e ela precisa abrir
+
+Na imagem de teste a sala do presidente ficou **fechada dos quatro lados**. Sala
+sem porta é sala que o invasor nunca alcança e que o jogo nunca usa.
+
+- **cada sala tem exatamente um vão de porta**, aberto, sem folha e sem batente;
+- o vão dá **pro pátio ou pro corredor**, nunca pra outra sala fechada;
+- o vão é **largo**: pelo menos 1/18 da largura da imagem (uns 150 px numa de
+  2752). Porta estreita demais engarrafa a briga inteira;
+- o **portão da rua fica aberto**, com a folha encostada por dentro do muro —
+  não desenhe portão de correr fechado tapando a entrada.
+
+## O que mais não pode mudar
 
 A imagem vira o chão da cena, e a máscara de colisão sai da própria foto por
-cor e conectividade (`ferramentas/importar_cena_foto.py`). Se a IA fechar uma
-porta ou escurecer um piso, o disco passa a andar por cima de parede — ou não
-anda.
+cor e conectividade (`ferramentas/importar_cena_foto.py`).
 
 - **enquadramento a prumo** (nadir, 90°). Nada de perspectiva, nada de
   horizonte, nada de sombra comprida de prédio;
 - **piso claro, parede escura.** É esse contraste que o importador lê. Piso de
   cimento queimado, ladrilho, cerâmica: claro. Parede: faixa escura e contínua;
-- **porta é vão de verdade na parede**, não porta desenhada fechada. O piso das
-  salas tem de ser uma mancha contínua, ligada de sala em sala pelos vãos —
-  é isso que faz o invasor andar. Vão fechado é bug;
 - **parede grossa**: pelo menos 1/60 da largura do quadro (uns 45 px numa
   imagem de 2752). Parede fina some na célula de 8 px da máscara;
+- **a sede ocupa o quadro**: o quarteirão murado toma uns 92% da largura e 88%
+  da altura, com só uma tira de rua e calçada de um lado. Sede pequena no meio
+  de terreno baldio desperdiça a tela;
 - as salas ficam **no lugar e no tamanho da planta**, e o portão da rua fica na
   parede que a planta manda;
-- o muro externo fecha o quarteirão dos quatro lados, com uma faixa de rua ou
-  de calçada aparecendo só do lado do portão;
 - **nada de gente na imagem**: o povo são os bonecos 3D, desenhados por cima;
 - nada de texto, placa, número de sala ou marca d'água.
 
 ## Formato do arquivo
 
-- **3:2 é o ideal** — a tela da cena é 1536 × 1024. Peça 2304 × 1536 ou
+- **3:2, sempre.** A tela da cena é 1536 × 1024. Peça 2304 × 1536 ou
   3072 × 2048 e a sede ocupa a tela inteira.
-- 16:9 também serve (as fotos de hoje vieram 2752 × 1536): o importador encaixa
-  a largura inteira e completa em cima e embaixo com uma faixa de terra. Só
-  perde área útil, não quebra nada.
-- Nunca 4:3 nem 1:1 — mais alta que a tela o importador **corta** em cima e
-  embaixo, e leva parede junto.
+- 16:9 serve de segunda opção (as fotos de hoje vieram 2752 × 1536): o
+  importador encaixa a largura inteira e completa em cima e embaixo com uma
+  faixa de terra. Só perde área útil, não quebra nada.
+- **Nunca 1:1 nem 4:3.** Mais alta que a tela, o importador **corta** em cima e
+  embaixo. Medido na imagem quadrada de teste (1254 × 1254): o corte comeria os
+  256 px de cada ponta, e o muro de cima da sede sairia junto.
 - Guarde o original em PNG ou JPEG grande em `img/cenas/`, e o jogo carrega o
   `.webp`:
   `Image.open(...).convert('RGB').save('img/cenas/sede_1.webp','WEBP',quality=82,method=6)`
@@ -89,95 +123,161 @@ the building has NO ROOF: seen from directly above, the interior rooms are fully
 exposed, thick painted masonry walls read as continuous light-grey bands, each
 room shows its own floor,
 
+BARE MINIMALIST INTERIORS: every room is almost empty, at most three large
+objects per room and all of them pushed flat against the walls, the entire
+center of every room is clear bare floor with nothing on it, no clutter, no
+stacked crates, no piles, no loose objects,
+
+EVERY ROOM HAS ONE WIDE OPEN DOORWAY: a broad gap cut clean through the wall,
+no door leaf, no frame, each doorway opening onto the central yard or corridor
+so that all the floors connect into one continuous walkable surface, the street
+gate stands wide open with its leaf folded flat against the inside of the wall,
+
 polished cement and worn ceramic tile floors in pale grey and cream, clearly
-lighter than the walls, wide open doorways cut through the interior walls so the
-floors connect from room to room,
+lighter than the walls, swept clean and empty,
 
 overcast diffuse daylight, soft shadows, desaturated muted colors, documentary
 photography, sun-bleached concrete, weathered paint, damp stains at the base of
 the walls, tropical northeast Brazil,
 
-an outer perimeter wall closes the compound on all four sides, a strip of
-cracked asphalt street and painted curb runs along one edge with the main gate,
+the walled compound fills the frame almost edge to edge, with only a narrow
+strip of cracked asphalt street and painted curb along the gate side,
 photorealistic, natural materials, 8k detail, no people visible
 ```
 
 ## Bloco por nível — emende no fim do prompt base
 
+Repare que os móveis foram cortados ao osso de propósito: o que enche a sala é
+a briga, não a decoração.
+
 ### Nível 1 — o galpão
 
 ```
-SMALL COMPOUND, THREE SPACES ONLY: the left half is an open concrete yard with
-a cracked slab floor, a drain, a plastic water tank and stacked crates; the
-right half is split into two roofed-off rooms of equal width — the upper one an
-office with a wooden desk, metal filing cabinets and a sagging couch, the lower
-one a storeroom with rolled banners, folded flags on shelves and a stack of
-drums; a wide gate opening in the bottom wall of the yard leads to the street.
+SMALL COMPOUND, THREE SPACES ONLY.
+
+Left half: an open concrete yard, empty, cracked slab floor with a drain, one
+blue plastic water tank standing in the far corner and nothing else.
+
+Right half: divided into two rooms of equal width, one above the other.
+Upper room, an office: one wooden desk with a chair pushed against the far wall,
+one metal filing cabinet beside it, bare floor everywhere else.
+Lower room, a storeroom: one long empty metal shelf against the far wall,
+completely bare otherwise, no banners, no flags, no drums, no boxes.
+
+Each of the two rooms has one wide open doorway onto the yard. The street gate
+stands open in the bottom wall of the yard.
 ```
 
 ### Nível 2 — a casa
 
 ```
-SIX SPACES: across the top, three rooms side by side — left an office with desk
-and filing cabinets, center a workshop with long trestle tables, paint cans,
-rolls of fabric and stencils, right a storeroom with rolled banners and flags on
-shelves; below them a wide open concrete yard running the full width; in the
-bottom-left corner a narrow bar room with a tiled counter, stools and beer
-crates; in the bottom-right corner a training room with punching bags and a mat;
-a gate opening in the bottom wall of the yard.
+SIX SPACES.
+
+Across the top, three rooms side by side, each with one wide open doorway onto
+the yard below: left an office with a desk and a filing cabinet against the far
+wall; center a workshop with one long empty work table against the far wall;
+right a storeroom with one long empty shelf against the far wall and nothing
+else — no banners, no flags, no drums.
+
+Below them a wide open concrete yard running the full width, completely empty.
+
+Bottom-left corner: a narrow bar room with a tiled counter along its outer wall
+and nothing else, one open doorway onto the yard.
+Bottom-right corner: a training room with two punching bags hanging near one
+wall and a mat rolled against another, center floor clear, one open doorway onto
+the yard.
+
+The street gate stands open in the bottom wall of the yard.
 ```
 
 ### Nível 3 — o sobrado
 
 ```
-TEN SPACES: top-left two stacked small rooms — upper an office with a desk,
-lower a planning room with a corkboard wall, radios and a big table; top-center
-a wide empty hall of bare polished cement, a circulation corridor with nothing in
-it; down the right side a column of four rooms — bunk beds, then a storeroom of
-rolled banners and flags, then a small workshop with paint and fabric, then a
-shop with clothing racks and a counter; across the bottom an open concrete yard
-with a narrow bar in the bottom-left corner and a training room with punching
-bags and a mat at bottom-center-right; a gate opening in the bottom wall.
+TEN SPACES, every one with a single wide open doorway.
+
+Top-left: two small rooms stacked, an office above with a desk against the wall,
+a planning room below with one long table against the wall and a bare corkboard.
+Both open onto the hall to their right.
+
+Top-center: a wide empty hall of bare polished cement, a circulation corridor
+with absolutely nothing in it.
+
+Right side: a column of four rooms, each opening onto that hall — bunk beds
+lined against one wall; then a storeroom with one long empty shelf and nothing
+else; then a small workshop with one work table against the wall; then a shop
+with two clothing racks against the wall and a counter.
+
+Bottom: an open concrete yard, empty, with a narrow bar in the bottom-left
+corner (tiled counter along the wall) and a training room at bottom-center-right
+(two hanging punching bags, clear center floor).
+
+The street gate stands open in the bottom wall of the yard.
 ```
 
 ### Nível 4 — o clube
 
 ```
-ELEVEN SPACES: top-left two stacked small rooms, an office above a planning room
-with corkboard and radios; a narrow vertical corridor of bare cement beside them;
-across the top three rooms — a storeroom of rolled banners and flags, a workshop
-with trestle tables and paint, and a dormitory with bunk beds; bottom-left an
-open concrete yard with a narrow bar along the outer wall; bottom-center a
-training room with punching bags and a mat; bottom-center-right a large vehicle
-garage with an old intercity bus parked inside and a wide roll-up door to the
-street; bottom-right a shop with clothing racks, a counter and its own door to
-the street; a gate opening in the bottom wall of the yard.
+ELEVEN SPACES, every one with a single wide open doorway.
+
+Top-left: two small rooms stacked, an office above, a planning room below with
+one long table and a bare corkboard. A narrow vertical corridor of bare cement
+runs beside them, empty.
+
+Across the top, three rooms opening onto that corridor: a storeroom with one
+long empty shelf and nothing else; a workshop with one long work table against
+the wall; a dormitory with bunk beds lined against the walls, center clear.
+
+Bottom-left: an open concrete yard, empty, with a narrow bar along the outer
+wall.
+Bottom-center: a training room, two hanging punching bags, clear center floor.
+Bottom-center-right: a large vehicle garage, one old intercity bus parked
+against the far wall, the rest of the floor bare, a wide open roll-up door to
+the street.
+Bottom-right: a shop, two clothing racks and a counter against the walls, clear
+center, its own open door to the street.
+
+The street gate stands open in the bottom wall of the yard.
 ```
 
 ### Nível 5 e 6 — o complexo
 
 ```
-WIDE COMPOUND, ELEVEN SPACES: top-left two stacked small rooms, an office above
-an administration room with desks, filing cabinets and a corkboard wall; across
-the top three large rooms — a storeroom of rolled banners and flags, a small
-factory with rows of sewing machines and screen-printing tables, and a lodging
-wing with rows of single beds; a long horizontal corridor of bare polished cement
-runs the full width beneath them, empty; along the bottom a row of five spaces —
-a narrow bar with a tiled counter, a small concrete yard, a gym with mats,
-punching bags and weight racks, a shop with clothing racks and a counter, and a
-garage with two buses; the shop and the garage each have their own door to the
-street; a gate opening in the bottom wall of the yard.
+WIDE COMPOUND, ELEVEN SPACES, every one with a single wide open doorway.
+
+Top-left: two small rooms stacked, an office above, an administration room below
+with two desks and a filing cabinet against the walls.
+
+Across the top, three large rooms: a storeroom with one long empty shelf and
+nothing else; a small factory with two rows of sewing machines against the side
+walls and a clear aisle down the middle; a lodging wing with single beds lined
+along the walls, center clear.
+
+A long horizontal corridor of bare polished cement runs the full width beneath
+them, completely empty, and every room above opens onto it.
+
+Along the bottom, a row of five spaces: a narrow bar with a tiled counter along
+the wall; a small empty concrete yard; a gym with mats and hanging punching bags
+around the edges and a clear center; a shop with clothing racks and a counter
+against the walls; a garage with two buses parked against the far wall. The shop
+and the garage each have their own wide open door to the street.
+
+The street gate stands open in the bottom wall of the yard.
 ```
 
 ## Negative prompt (vale pras cinco)
 
 ```
 roof, roofed building, terracotta tiles, corrugated metal roof, rooftop,
+cluttered, clutter, messy, busy composition, stacked crates, piles of boxes,
+furniture in the middle of the room, objects on the floor, decorated interior,
+banners, flags, flagpoles, drums, percussion instruments, sports memorabilia,
+closed room, sealed room, room without a doorway, walls without openings,
+closed gate, closed door, door leaf blocking the entrance, narrow doorway,
 illustration, cartoon, isometric, 3d render, video game asset, painting,
 floor plan, blueprint, diagram, map icons, labels, text, numbers, watermark,
 tilted perspective, oblique angle, bird's eye at 45 degrees, fisheye, vignette,
 people, crowd, players, characters,
-dark floors, black interiors, closed doors, walls without openings,
+dark floors, black interiors,
 saturated colors, hdr, dramatic lighting, night, sunset, long shadows,
 skyscrapers, european architecture, suburban american houses, snow
 ```
@@ -186,13 +286,17 @@ skyscrapers, european architecture, suburban american houses, snow
 
 1. **Tem telhado?** Se alguma sala estiver coberta, refaça. Cobertura mata a
    cena.
-2. **Dá pra andar de sala em sala?** Siga o piso com o olho, do portão até a
-   sala mais funda. Se em algum ponto a parede fecha, o invasor não passa.
-3. **Piso mais claro que parede em toda sala?** Sala de piso escuro vira parede
+2. **Toda sala tem porta?** Percorra sala por sala. Uma fechada dos quatro lados
+   já é motivo de refazer — foi o erro da primeira tentativa.
+3. **Dá pra andar de sala em sala?** Siga o piso com o olho, do portão até a
+   sala mais funda, sem tirar o dedo da tela.
+4. **O meio de cada sala está limpo?** Móvel no centro vira parede na máscara.
+5. **O patrimônio está vazio?** Se tiver faixa, bandeira ou bumbo dentro,
+   refaça: esse pano o jogo desenha por cima, com as cores da torcida certa.
+6. **Piso mais claro que parede em toda sala?** Sala de piso escuro vira parede
    na máscara e some do jogo.
-4. **Tem gente ou texto?** Não pode ter nenhum dos dois.
-5. **É a prumo mesmo?** Se der pra ver a lateral de uma parede, o ângulo está
-   torto e os bonecos vão flutuar.
+7. **Proporção 3:2?** Quadrada ou 4:3 perde muro no corte.
+8. **Tem gente ou texto?** Não pode ter nenhum dos dois.
 
 ## Depois que a imagem estiver boa
 
