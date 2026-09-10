@@ -380,6 +380,7 @@ TO.feed = (function(){
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
     treguasDoDia(E);
+    semanaDeHoje(E);
     olheiroDoDia(E);
     guerraDeHoje(E);
     eventoDoTrimestreHoje(E);
@@ -1222,6 +1223,110 @@ TO.feed = (function(){
     return {linhas, aliados};
   }
 
+  /* =======================================================
+     A PAUTA DE UMA CIDADE (planejamento por subsede, dono, 10/09/2026)
+     A mesma leitura de `pautaDosJogos`, pra QUALQUER praça em que a
+     torcida tenha pé: a sede e cada subsede. Na nossa praça a rua sai
+     de `naRuaEm`, que já sabe quem pisa nela; numa praça de subsede
+     não há modelo de rua, então a estimativa é a das torcidas do
+     mandante (efetivo de casa) mais a caravana de cada visitante,
+     pela mesma régua `caravanaDe` que o mundo usa.
+     ======================================================= */
+  function pautaDaCidade(E, cidadeId, semana, ano){
+    const meu = E.torcida.clubeId;
+    const emCasa = cidadeId === E.torcida.mapa;
+    /* a pauta é DA SEMANA DO CARTÃO: o cartão de uma segunda passada
+       continua no feed e mostra a semana dele, já toda passada, sem
+       controle nenhum — o de hoje é o único vivo */
+    if(semana == null) semana = E.data.semana;
+    if(ano == null) ano = E.data.ano;
+    const vigente = ano === E.data.ano && semana === E.data.semana;
+    const passada = ano < E.data.ano || (ano === E.data.ano && semana < E.data.semana);
+    const passou = dia => passada || (vigente && dia < E.data.dia);
+    const corDe = id => {
+      const o = M().torcida(id);
+      return (o && M().coresDaTorcida(o).cor) || '#888';
+    };
+    const ruaDe = (j) => {
+      if(emCasa) return estimativasDaRua(E, j.dia, j);
+      const fora = [];
+      for(const o of M().torcidasDe(j.casa.id)){
+        if(o.id === E.torcida.id || o.incompleta || o.mapa !== cidadeId) continue;
+        const t = (E.mundoTorcidas||{})[o.id];
+        const n = t ? Math.round((t.membros||20) * 0.6) : (o.membros||20);
+        fora.push({id:o.id, nome:o.nome, n, faixa:PL().faixaDeEfetivo(E, n, o.id), hostil:ehHostil(E, o.id)});
+      }
+      for(const o of M().torcidasDe(j.vis.id)){
+        if(o.id === E.torcida.id || o.incompleta || o.mapa === cidadeId) continue;
+        const n = PL().caravanaDe(o, (E.relacoes||{})[o.id], E);
+        if(n < 5) continue;
+        fora.push({id:o.id, nome:o.nome, n, faixa:PL().faixaDeEfetivo(E, n, o.id), hostil:ehHostil(E, o.id), deFora:true});
+      }
+      return fora;
+    };
+    const linhas = [];
+    for(const j of TO.praca.jogosDaPraca(E, semana, cidadeId)){
+      const nosso = emCasa && (j.casa.id === meu || j.vis.id === meu);
+      const ests = ruaDe(j);
+      const chaveJogo = nosso ? null : (emCasa ? chaveDoJogoDaPraca(E, j) : null);
+      linhas.push({
+        tipo: nosso ? 'nosso' : 'praca',
+        grupo:{dia:j.dia, chaveJogo, casa:j.casa.id, vis:j.vis.id},
+        comp:j.comp, diaN:j.dia, dia:NOME_DIA[j.dia], hora:j.hora || '',
+        estadio: j.casa.estadio || '', passou: passou(j.dia),
+        clubes:[{id:j.casa.id, nome:j.casa.nome, cor:(j.casa.cores||[])[0]||'#888'},
+                {id:j.vis.id, nome:j.vis.nome, cor:(j.vis.cores||[])[0]||'#888'}],
+        torcidas: ests.map(x=>({id:x.id, nome:x.nome, cor:corDe(x.id), faixa:x.faixa, hostil:x.hostil, deFora:!!x.deFora})),
+        temAlvo: ests.some(x=>x.hostil)
+      });
+    }
+    /* o nosso jogo fora entra na aba da sede: é de lá que a caravana sai */
+    const jf = E.proximoJogo;
+    if(vigente && emCasa && jf && !jf.casa && jf.mapaAdv && jf.mapaAdv !== E.torcida.mapa){
+      const alvos = PL().alvosDaViagem(E, {advId:jf.advId, crua:true});
+      linhas.push({
+        tipo:'fora', advId:jf.advId, cidade:jf.cidadeAdv, mapaAdv:jf.mapaAdv,
+        comp:jf.competicao || 'fora de casa', diaN:jf.dia||6, dia:NOME_DIA[jf.dia||6],
+        hora:jf.hora || '', estadio:jf.estadio || '', passou:passou(jf.dia||6),
+        clubes:[{id:jf.mandante.id, nome:jf.mandante.nome, cor:(jf.mandante.cores||[])[0]||'#888'},
+                {id:jf.visitante.id, nome:jf.visitante.nome, cor:(jf.visitante.cores||[])[0]||'#888'}],
+        torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id), faixa:a.faixa, hostil:!a.aliada})),
+        temAlvo: alvos.some(a=>!a.aliada)
+      });
+    }
+    linhas.sort((a,b)=>a.diaN - b.diaN);
+    const aliados = !emCasa || !vigente ? [] : PL().aliadosNaCidade(E, semana)
+      .filter(a=>linhas.some(l=>l.tipo!=='fora' && l.grupo.vis === a.clube.id && l.grupo.dia === a.dia))
+      .map(a=>({id:a.id, nome:a.torcida.nome, n:a.estimativa, dia:a.dia, clube:a.clube.nome}));
+    return {cidade:cidadeId, emCasa, vigente, passada, linhas, aliados};
+  }
+
+  /* O CARTÃO DE SEGUNDA (pedido do dono, 10/09/2026): o planejamento
+     da semana mora no feed, uma tela por semana, sempre na segunda. O
+     cartão é DECISÃO quando há jogo nosso — o relógio espera o plano
+     fechar, como esperava a caravana —, e informação na semana de
+     folga. O conteúdo é montado pelo cartão, que lê a pauta de cada
+     cidade na hora; aqui só se registra a semana. */
+  function semanaDeHoje(E){
+    if(E.data.dia !== 1) return;
+    if(!E.temporada) return;
+    const temJogo = !!E.proximoJogo;
+    const cidades = [E.torcida.mapa].concat(
+      ((E.patrimonio||{}).filiais||[]).map(f=>f.cidade));
+    propor(E, {
+      kind:'semana', voz:'diretor', peso: temJogo ? 'decisao' : 'info',
+      chave:`semana|${E.data.ano}|${E.data.semana}`,
+      texto: temJogo
+        ? 'Segunda-feira: a semana na mesa. Cada praça em que a gente tem pé, os jogos que vão rolar e o que a torcida vai fazer em cada um.'
+        : 'Segunda-feira de folga do time. Os jogos da praça continuam, e torcida rival na rua continua sendo torcida rival na rua.',
+      dados:{cidades, semana:E.data.semana, ano:E.data.ano},
+      botoes: temJogo
+        ? [{id:'fechar', rot:'Fechar o planejamento', acao:'fechar-semana',
+            nota:'confirma o plano da semana'}]
+        : null
+    });
+  }
+
   /* a lista de estimativas DAQUELE JOGO: as torcidas dos dois clubes
      que pisam na rua naquele dia */
   function estimativasDaRua(E, dia, jogo){
@@ -1243,9 +1348,10 @@ TO.feed = (function(){
     return o ? o.chave : `${j.casa.id}|${j.vis.id}|${E.data.semana}`;
   }
 
-  /* situação 3 — nosso jogo fora: caravana sempre; olheiro aponta as
-     torcidas de lá (se houver rival, as opções de ataque moram na tela
-     da caravana) */
+  /* situação 3 — nosso jogo fora: o olheiro aponta as torcidas de lá.
+     A CARAVANA JÁ FOI MONTADA NA SEGUNDA (cartão da semana, dono,
+     10/09/2026): o relatório vira informação — quem está na pista de
+     lá e o tamanho de cada uma —, sem botão de montar de novo. */
   function olheiroFora(E, j){
     const alvos = PL().alvosDaViagem(E, {advId:j.advId, crua:true});
     const chave = `olheiro|${E.data.ano}|${E.data.semana}|fora|${j.advId}`;
@@ -1262,15 +1368,15 @@ TO.feed = (function(){
       torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id),
                                faixa:a.faixa, hostil:!a.aliada}))
     }];
+    const p = PL().plano(E);
+    const vao = p.decidido ? PL().estimativaCaravana(E).vao : 0;
     propor(E, {
-      kind:'olheiro', peso:'decisao', chave, voz:'olheiro',
+      kind:'olheiro', peso:'info', chave, voz:'olheiro',
       texto:`Chefe, ${NOME_DIA[j.dia||6]} o ${E.torcida.clube} joga fora, `+
-            `em ${j.cidadeAdv}. Monta a caravana.`,
-      dados:{situacao:'fora', dia:j.dia||6, tabela},
-      botoes:[
-        {id:'caravana', rot:'Montar a caravana', acao:'tela-caravana'},
-        {id:'padrao',   rot:'Seguir padrão',     acao:'seguir-padrao'}
-      ]
+            `em ${j.cidadeAdv}. `+
+            (vao ? `A caravana está fechada em ${vao}. ` : '')+
+            `Olha quem vai estar na pista de lá.`,
+      dados:{situacao:'fora', dia:j.dia||6, tabela}
     });
   }
 
@@ -2478,6 +2584,20 @@ TO.feed = (function(){
          `travado(E)` faz enquanto a mensagem não tem resposta.
          Antes elas marcavam na abertura, e fechar a tela valia como
          ter decidido: o turno era consumido sem nada ter acontecido. */
+      case 'fechar-semana': {
+        /* o plano já foi escrito pelos controles do cartão; fechar é
+           o `confirmar` de sempre — gasta ação, paga recepção e
+           investida, e a estrada continua compromisso da semana */
+        const r = PL().confirmar(E);
+        marcar();
+        const p = PL().plano(E), j = E.proximoJogo;
+        const est = j && !j.casa ? PL().estimativaCaravana(E) : null;
+        const alvo = p.intencao !== 'paz' && p.alvoTorcida ? M().torcida(p.alvoTorcida) : null;
+        m.consequencia = (est ? `Caravana: ${est.vao} para ${j.cidadeAdv || 'fora'}. ` : '')+
+          (alvo ? `Plano: em cima da ${alvo.nome}.` : 'Plano: ir em paz.')+
+          (r && r.gasto ? ` ${U.dinheiro(r.gasto)} pagos agora.` : '');
+        return {ok:true};
+      }
       case 'tela-ataque':
       case 'tela-caravana':
         return {ok:true, abrir:{tela:b.acao, args:b.args || {}, msg:m,
@@ -2579,7 +2699,7 @@ TO.feed = (function(){
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
-          alvoDaDefesa, encerrarPartida, pautaDosJogos,
+          alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu};
 })();

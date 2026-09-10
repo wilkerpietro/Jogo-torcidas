@@ -975,6 +975,10 @@
     : m.kind === 'aniversarios'
       ? 'aniv-'+(((m.dados||{}).lista||[]).filter(x=>x.resposta).length)+
         (m.respondido ? '-fim' : '')
+    /* o planejamento de segunda muda por dentro do cartão: a chave
+       carrega o que o plano diz, e a aba aberta */
+    : m.kind === 'semana'
+      ? 'sem-'+(m.respondido ? 'fim' : chaveDoPlano(e))+'-'+(m.abaSemana||'')
     : m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim')
     : (m.kind === 'partida' && m.dados && m.dados.iniciada) ? 'aovivo' : '';
 
@@ -1015,6 +1019,7 @@
                     confronto:'Confronto', placar:'Resultado',
                     rodada:'Rodada', partida:'Nossa partida',
                     assalto:'Assalto', brigas:'Brigas da semana',
+                    semana:'Planejamento da semana',
                     itinerario:'Dia de jogo'};
 
   /* =======================================================
@@ -2379,6 +2384,267 @@
     return rec;
   }
 
+  /* =======================================================
+     O CARTÃO DE SEGUNDA — o planejamento da semana no feed
+     (pedido do dono, 10/09/2026). Uma aba por praça em que a torcida
+     tem pé — a sede e cada subsede —, os jogos da semana daquela
+     praça em ordem de dia, e o nosso jogo no alto da aba da sede com
+     o plano embutido: caravana (quantos, estrada, ajuda), intenção
+     (paz ou ataque), alvo, onde, efetivo e bombas. O estado vive em
+     `E.plano`, escrito pelas mesmas funções que os modais de Caravana
+     e Atacar escreviam; o cartão se repinta por dentro a cada toque.
+     ======================================================= */
+  const chaveDoPlano = e => {
+    const p = (TO.planejamento && e.plano) || {};
+    return [p.chave, p.intencao, p.alvoTorcida, p.alvo, p.caravana, p.rota,
+            p.bombas, p.efetivoAtaque, Object.keys(p.investidas||{}).length,
+            JSON.stringify(p.recepcao||{}), p.ajuda ? p.ajuda.nivel : ''].join('|');
+  };
+  const DIA_ABREV = ['','SEG','TER','QUA','QUI','SEX','SÁB','DOM'];
+
+  function cartaoSemana(e, m){
+    const P = TO.planejamento, F = TO.feed, M = TO.mundo;
+    const raiz = el('div',{class:'sem'});
+    const cidades = ((m.dados||{}).cidades || [e.torcida.mapa])
+      .filter((c,i,a)=>a.indexOf(c)===i && M.cidade(c));
+    if(!m.abaSemana || !cidades.includes(m.abaSemana)) m.abaSemana = cidades[0];
+    /* só o cartão da semana corrente tem controle; os das segundas
+       passadas ficam no feed como registro, já sem botão nenhum */
+    const vigente = (m.dados.ano||e.data.ano) === e.data.ano &&
+                    (m.dados.semana||e.data.semana) === e.data.semana;
+    const fechado = !!m.respondido || !vigente;
+    const nomeDe = id => { const o = id && M.torcida(id); return o ? o.nome : ''; };
+    const salvar = ()=>{ TO.estado.salvar(); };
+
+    /* ---- o cabeçalho da semana ---- */
+    const d0 = TO.estado.dataDaSemana(e.data.ano, m.dados.semana || e.data.semana, 1);
+    const d6 = TO.estado.dataDaSemana(e.data.ano, m.dados.semana || e.data.semana, 7);
+    const dd = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+    raiz.appendChild(el('div',{class:'sem-cab', html:
+      `<span class="sem-sem">Semana ${m.dados.semana || e.data.semana}</span>`+
+      `<span class="sem-datas">${dd(d0)} a ${dd(d6)}</span>`+
+      (m.respondido ? `<span class="sem-selo">plano fechado</span>` : !vigente ? `<span class="sem-selo passada">semana passada</span>` : '')}));
+
+    /* ---- as abas, uma por praça (só se houver subsede) ---- */
+    const corpo = el('div',{class:'sem-corpo'});
+    if(cidades.length > 1){
+      const abas = el('div',{class:'sem-abas'});
+      for(const c of cidades){
+        const cid = M.cidade(c);
+        const b = el('button',{class:'sem-aba'+(m.abaSemana===c?' on':''),
+          html:`<span>${cid.nome}</span><small>${c===e.torcida.mapa ? 'sede' : 'subsede'}</small>`});
+        b.onclick = ()=>{ m.abaSemana = c; pintar(); };
+        abas.appendChild(b);
+      }
+      raiz.appendChild(abas);
+    }
+    raiz.appendChild(corpo);
+
+    /* ---- controles reutilizados ---- */
+    const contador = (valor, min, max, passo, aoMudar, nota)=>{
+      const linha = el('div',{class:'contador sem-contador'});
+      const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
+      bMenos.disabled = fechado || valor <= min; bMais.disabled = fechado || valor >= max;
+      bMenos.onclick = ()=>aoMudar(Math.max(min, valor - passo));
+      bMais.onclick  = ()=>aoMudar(Math.min(max, valor + passo));
+      linha.append(bMenos, el('b',{texto:String(valor)}), bMais);
+      if(nota) linha.appendChild(el('small',{texto:nota}));
+      return linha;
+    };
+    const chips = (itens, atual, aoTrocar)=>{
+      const cx = el('div',{class:'sem-chips'});
+      for(const it of itens){
+        const b = el('button',{class:'sem-chip'+(it.id===atual?' on':'')+(it.off?' off':''),
+          html:`<span>${it.rot}</span>${it.nota?`<small>${it.nota}</small>`:''}`});
+        b.disabled = fechado || !!it.off;
+        b.onclick = ()=>aoTrocar(it.id);
+        cx.appendChild(b);
+      }
+      return cx;
+    };
+    const rotuloJogo = (r)=>
+      `<div class="sem-jogo-cab"><span class="sem-dia${r.passou?' passou':''}">${DIA_ABREV[r.diaN]||''}`+
+      `<small>${r.hora||''}</small></span>`+
+      `<div class="sem-duelo"><div class="sem-clubes">${chipClube(r.clubes[0].id, r.clubes[0].cor)}`+
+      `<b>${r.clubes[0].nome}</b><i>×</i>${chipClube(r.clubes[1].id, r.clubes[1].cor)}<b>${r.clubes[1].nome}</b></div>`+
+      `<small>${r.comp||''}${r.estadio?` · ${r.estadio}`:''}${r.tipo==='fora'?` · em ${r.cidade||''}`:''}</small></div></div>`;
+    const ruaDe = (r)=> r.torcidas.length
+      ? `<div class="sem-rua">${r.torcidas.map(t=>
+          `<span class="sem-torcida${t.hostil?' hostil':''}">${chipTorcida(t.id,t.cor)}`+
+          `${linkTorcida(t.id,t.nome)}<small>${String(t.faixa).replace(' a ','–')}${t.deFora?' · de fora':''}</small></span>`).join('')}</div>`
+      : `<div class="sem-rua vazia">ninguém na rua</div>`;
+
+    /* ---- o nosso jogo, com o plano dentro ---- */
+    const blocoNosso = (r)=>{
+      const p = P.plano(e);
+      const bloco = el('div',{class:'sem-jogo nosso'+(r.passou?' passou':'')});
+      bloco.innerHTML = rotuloJogo(r) + ruaDe(r);
+      if(r.passou || !vigente) return bloco;
+      const plano = el('div',{class:'sem-plano'});
+      const fora = r.tipo === 'fora';
+      const briga = p.intencao !== 'paz';
+      const alvos = fora ? P.alvosDaViagem(e)
+                         : (()=>{ const doJogo = new Set([...M.torcidasDe(r.grupo.casa), ...M.torcidasDe(r.grupo.vis)].map(o=>o.id));
+                                  return P.alvosNaRua(e, {dia:r.grupo.dia}).filter(a=>doJogo.has(a.id)); })();
+      let onde = P.ondeDoPlano(p);
+
+      /* caravana: quantos vão e por qual estrada */
+      let est = null;
+      if(fora){
+        est = P.estimativaCaravana(e);
+        const rotas = P.rotas(e);
+        const sec = el('div',{class:'sem-sec'});
+        sec.appendChild(el('div',{class:'sem-rot', html:`Caravana <small>${est.interessados} querem ir · ${est.aptos} aptos</small>`}));
+        const passo = Math.max(1, Math.round(est.interessados/10));
+        sec.appendChild(contador(est.vao, est.minimo, est.interessados, passo,
+          v=>{ p.caravana = v; p.decidido = false; salvar(); pintar(); }, `embarcam · ${U.dinheiro(est.porCabeca)} por cabeça`));
+        if(rotas.length) sec.appendChild(chips(rotas.map(rt=>({id:rt.id, rot:rt.nome,
+          nota:`${U.dinheiro(rt.custo)}${rt.risco?` · emboscada ${Math.round(rt.risco)}`:' · sem hostil'}`})),
+          p.rota || rotas[0].id, id=>{ p.rota = id; p.decidido = false; salvar(); pintar(); }));
+        const rt = P.rotaEscolhida(e);
+        if(rt && rt.cidades.length > 1)
+          sec.appendChild(el('div',{class:'sem-trajeto', html: rt.cidades.map((c,i)=>{
+            const nome = (M.cidade(c)||{}).nome || c; const h = P.hostilidade(e, c);
+            return `<span class="${i===0?'saida':i===rt.cidades.length-1?'chegada':''}${h>40?' hostil':''}">${nome}</span>`;
+          }).join('<i>›</i>')}));
+        /* ajuda de aliado na praça deles */
+        const aliadas = P.aliadasNaPracaDeles(e), ajuda = P.ajudaDe(e);
+        const NR = {nada:'não vai receber', hospedar:'hospedagem', escolta:'hospedagem e escolta', churrasco:'escolta e churrasco'};
+        if(ajuda){
+          const rec = P.recepcaoDe(ajuda.nivel);
+          sec.appendChild(el('div',{class:'sem-linha', html:`<span>${linkTorcida(ajuda.aliado, ajuda.nome)}: <b>${NR[ajuda.nivel]||ajuda.nivel}</b></span>`+
+            `<b class="${ajuda.nivel==='nada'?'negativo':'positivo'}">${rec.relacao>0?'+':''}${rec.relacao} rel.${ajuda.escolta?` · ${ajuda.escolta} na escolta`:''}</b>`}));
+        } else if(aliadas.length && !fechado){
+          const linha = el('div',{class:'sem-linha'});
+          linha.appendChild(el('span',{html:`Aliada em ${r.cidade||'lá'}: ${aliadas.map(a=>linkTorcida(a.id,a.nome)).join(', ')}`}));
+          const b = el('button',{class:'sem-mini', texto:'Pedir ajuda'});
+          b.onclick = ()=>{ const rr = P.pedirAjuda(e, aliadas[0].id); if(!rr) return;
+            aviso(rr.nivel==='nada' ? `A ${rr.nome} não vai receber a gente.` : `A ${rr.nome} topou: ${NR[rr.nivel]}.`, rr.nivel==='nada'?'ruim':'boa');
+            salvar(); pintarTopo(); pintar(); };
+          linha.appendChild(b); sec.appendChild(linha);
+        }
+        plano.appendChild(sec);
+      }
+
+      /* intenção: paz ou ataque; alvo; onde; efetivo; bombas */
+      const sec2 = el('div',{class:'sem-sec'});
+      sec2.appendChild(el('div',{class:'sem-rot', html:`Na rua <small>${fora ? 'na praça deles' : 'na nossa praça'}</small>`}));
+      sec2.appendChild(chips([
+        {id:'paz', rot:'Ir em paz', nota:'portão, bandeira e bateria'},
+        {id:'atacar', rot:'Atacar', nota: alvos.length ? 'em cima de uma torcida' : 'ninguém pra atacar', off:!alvos.length}
+      ], briga ? 'atacar' : 'paz', id=>{
+        if(id==='paz') P.definirIntencao(e, 'paz');
+        else P.definirAtaque(e, {alvo: p.alvoTorcida || (alvos[0]&&alvos[0].id), onde, bombas:p.bombas});
+        salvar(); pintar();
+      }));
+      if(briga && alvos.length){
+        const alvoAtual = alvos.find(a=>a.id===p.alvoTorcida) ? p.alvoTorcida : alvos[0].id;
+        sec2.appendChild(chips(alvos.map(a=>({id:a.id, rot:linkTorcida(a.id,a.nome)+(a.aliada?' · aliada':''),
+          nota:`${a.faixa} · rel. ${Math.round(a.relacao)}`})), alvoAtual,
+          id=>{ P.definirAtaque(e, {alvo:id, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}); salvar(); pintar(); }));
+        sec2.appendChild(chips(P.ONDE_ATAQUE.map(o=>({id:o.id, rot:o.rot,
+          nota: fora && o.id==='arredores' ? 'lá a gente é o visitante' : o.nota})), onde,
+          id=>{ onde = id; P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}); salvar(); pintar(); }));
+        if(!fora){
+          const f = P.efetivoDoAtaque(e);
+          const ef = p.efetivoAtaque != null ? U.limitar(p.efetivoAtaque, f.piso, f.teto) : f.teto;
+          sec2.appendChild(contador(ef, f.piso, f.teto, Math.max(1, Math.round(f.teto/10)),
+            v=>{ P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:v}); salvar(); pintar(); },
+            `atacam · de ${f.teto} · menor número rende mais prestígio`));
+        }
+      }
+      /* bombas: pra caravana, só o estoque; em casa, compra na hora */
+      const tem = (e.estoque||{}).bombas || 0;
+      const podeComprar = fora ? 0 : Math.floor(Math.max(0, e.dinheiro) / TO.patrimonio.precoBomba(e));
+      const leva = U.limitar(p.bombas || 0, 0, tem + podeComprar);
+      sec2.appendChild(contador(leva, 0, tem + podeComprar, 1,
+        v=>{ if(v > tem) TO.patrimonio.comprarBombas(e, v - tem); p.bombas = Math.min(v, (e.estoque||{}).bombas||0); p.decidido=false; salvar(); pintarTopo(); pintar(); },
+        tem ? `bombas · ${tem} no estoque${!fora && podeComprar ? ` · a mais compra a ${U.dinheiro(TO.patrimonio.precoBomba(e))}` : ''}`
+            : (fora ? 'bombas · estoque vazio' : `bombas · compra a ${U.dinheiro(TO.patrimonio.precoBomba(e))}`)));
+      plano.appendChild(sec2);
+
+      /* o resumo do plano */
+      const alvoN = briga && p.alvoTorcida ? nomeDe(p.alvoTorcida) : null;
+      const ondeRot = (P.ONDE_ATAQUE.find(o=>o.id===onde)||{}).rot || '';
+      plano.appendChild(el('div',{class:'sem-resumo', html:
+        `<span>${fora && est ? `${est.vao} para ${r.cidade||'fora'}` : 'Jogo em casa'}`+
+        `${alvoN ? ` · em cima da ${alvoN} ${ondeRot.toLowerCase()}` : ' · em paz'}`+
+        `${leva ? ` · ${leva} bomba${leva>1?'s':''}` : ''}</span>`+
+        (est ? `<b class="negativo">${U.dinheiro(-est.custo)}</b>` : '')}));
+      bloco.appendChild(plano);
+      return bloco;
+    };
+
+    /* ---- um jogo alheio da praça: deixar passar ou investir ---- */
+    const blocoOutro = (r, emCasa)=>{
+      const p = P.plano(e);
+      const bloco = el('div',{class:'sem-jogo'+(r.passou?' passou':'')});
+      bloco.innerHTML = rotuloJogo(r) + ruaDe(r);
+      if(r.passou || !vigente || !emCasa || !r.grupo.chaveJogo) return bloco;
+      const inv = (p.investidas||{})[r.grupo.chaveJogo];
+      const hostis = r.torcidas.filter(t=>t.hostil);
+      const linha = el('div',{class:'sem-invest'});
+      linha.appendChild(chips([
+        {id:'passa', rot:'Deixar passar'},
+        {id:'ataca', rot:'Investir', nota: hostis.length ? 'em cima de quem passa' : 'sem rival nesse jogo', off:!hostis.length}
+      ], inv && inv.alvo ? 'ataca' : 'passa', id=>{
+        if(id==='passa') P.definirInvestida(e, r.grupo.chaveJogo, null);
+        else P.definirInvestida(e, r.grupo.chaveJogo, {alvo:(inv&&inv.alvo)||hostis[0].id, como:'arredores', olheiro:null});
+        salvar(); pintar();
+      }));
+      if(inv && inv.alvo){
+        linha.appendChild(chips(hostis.map(t=>({id:t.id, rot:linkTorcida(t.id,t.nome), nota:String(t.faixa).replace(' a ','–')})),
+          inv.alvo, id=>{ P.definirInvestida(e, r.grupo.chaveJogo, Object.assign({}, inv, {alvo:id})); salvar(); pintar(); }));
+        linha.appendChild(chips(P.ONDE_ATAQUE.map(o=>({id:o.id, rot:o.rot})),
+          (P.ONDE_ATAQUE.find(o=>o.como===inv.como && (o.olheiro||null)===(inv.olheiro||null))||P.ONDE_ATAQUE[2]).id,
+          id=>{ const o = P.ONDE_ATAQUE.find(x=>x.id===id); P.definirInvestida(e, r.grupo.chaveJogo, Object.assign({}, inv, {como:o.como, olheiro:o.olheiro})); salvar(); pintar(); }));
+      }
+      bloco.appendChild(linha);
+      return bloco;
+    };
+
+    /* ---- a aba de uma praça ---- */
+    function pintar(){
+      corpo.innerHTML = '';
+      for(const b of raiz.querySelectorAll('.sem-aba')) b.classList.toggle('on', b.querySelector('span').textContent === (M.cidade(m.abaSemana)||{}).nome);
+      const pauta = F.pautaDaCidade(e, m.abaSemana, m.dados.semana, m.dados.ano);
+      const cid = M.cidade(m.abaSemana) || {};
+      if(!pauta.emCasa && vigente){
+        const nucleo = TO.membros.aptosDaFilial ? TO.membros.aptosDaFilial(e, m.abaSemana).length : 0;
+        corpo.appendChild(el('div',{class:'sem-nucleo', html:
+          `<b>${nucleo}</b> do núcleo de ${cid.nome||''} de pé · a subsede desce por conta própria, e as sugestões chegam como cartão`}));
+      }
+      const nosso = pauta.linhas.find(l=>l.tipo==='nosso' || l.tipo==='fora');
+      if(nosso) corpo.appendChild(blocoNosso(nosso));
+      else if(pauta.emCasa) corpo.appendChild(el('div',{class:'sem-nucleo', texto: vigente ? 'Semana de folga do time: nenhum jogo nosso.' : 'Semana sem jogo nosso.'}));
+      const outros = pauta.linhas.filter(l=>l !== nosso);
+      if(outros.length){
+        corpo.appendChild(el('div',{class:'sem-rot alto', html:`Outros jogos em ${cid.nome||''} <small>${outros.length}</small>`}));
+        for(const r of outros) corpo.appendChild(blocoOutro(r, pauta.emCasa));
+      } else if(!nosso){
+        corpo.appendChild(el('div',{class:'sem-rua vazia', texto:'Nenhum jogo nesta praça na semana.'}));
+      }
+      /* aliados que chegam: como receber */
+      if(pauta.aliados.length){
+        const bloco = el('div',{class:'sem-sec sem-recep'});
+        bloco.appendChild(el('div',{class:'sem-rot', html:`Aliados na cidade <small>como receber</small>`}));
+        for(const a of pauta.aliados){
+          const pago = ((P.plano(e).pago)||{})[a.id];
+          const linha = el('div',{class:'sem-linha'+(pago?' pago':'')});
+          linha.appendChild(el('span',{html:`<b>${linkTorcida(a.id,a.nome)}</b> <small class="fraco">(${a.clube}) · vêm ${a.n} · ${DIA_ABREV[a.dia]||''}</small>`+(pago?' <span class="tag">resolvido</span>':'')}));
+          const atual = P.nivelDe(e, a.id);
+          linha.appendChild(chips(P.RECEPCAO.map(rc=>({id:rc.id, rot:rc.rot,
+            nota:`${rc.porCabeca*a.n ? U.dinheiro(rc.porCabeca*a.n) : 'de graça'} · ${rc.relacao>0?'+':''}${rc.relacao}`, off:!!pago})),
+            atual, id=>{ P.definirRecepcao(e, a.id, id); salvar(); pintar(); }));
+          bloco.appendChild(linha);
+        }
+        corpo.appendChild(bloco);
+      }
+    }
+    pintar();
+    return raiz;
+  }
+
   function cartaoMensagem(e, m){
     const art = el('article',{class:`msg kind-${m.kind||'msg'} peso-${m.peso}`+
       (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : '')});
@@ -2393,6 +2659,8 @@
       `<span class="msg-papel">${papel}</span>`+
       `<time>${quando}</time>`}));
     art.appendChild(el('p',{class:'msg-txt', html: linkificarNomes(m.texto)}));
+
+    if(m.kind === 'semana') art.appendChild(cartaoSemana(e, m));
 
     /* O RELATÓRIO DO OLHEIRO É TABELA (decisão do dono, 17/08/2026):
        coluna 1 a competição, o dia e o jogo com a cor de cada clube;
@@ -3129,104 +3397,6 @@
   /* a tabela dos jogos da semana com os botões de cada jogo, e o bloco
      da recepção dos aliados que chegam (o cartão antigo do olheiro,
      vivo em Notícias → Mensagens desde 09/09/2026) */
-  function painelPautaDaSemana(e){
-    const P2 = TO.planejamento;
-    const pauta = TO.feed.pautaDosJogos ? TO.feed.pautaDosJogos(e) : {linhas:[], aliados:[]};
-    const c = cartao('Planejamento da semana',
-      pauta.linhas.length ? `${pauta.linhas.length} ${pauta.linhas.length===1?'jogo':'jogos'}` : 'sem jogo');
-    if(!pauta.linhas.length){
-      c.corpo.innerHTML = '<div class="em-construcao">Nenhum jogo nos próximos dias: nada pra planejar.</div>';
-      return c;
-    }
-    const plano = P2.plano(e);
-    const nomeDe = id => { const o = id && TO.mundo.torcida(id); return o ? o.nome : ''; };
-    const tb = el('table',{class:'tab-olheiro'});
-    for(const r of pauta.linhas){
-      const tr = el('tr');
-      tr.appendChild(el('td',{class:'to-jogo', html:
-        `<small>${r.comp || ''}${r.dia ? ` · ${r.dia}` : ''}${r.tipo==='fora' ? ` · em ${r.cidade||''}` : ''}</small>`+
-        `<div>${chipClube(r.clubes[0].id, r.clubes[0].cor)}${r.clubes[0].nome}`+
-        `<span class="to-x">×</span>`+
-        `${chipClube(r.clubes[1].id, r.clubes[1].cor)}${r.clubes[1].nome}</div>`}));
-      tr.appendChild(el('td',{class:'to-torcidas', html:
-        r.torcidas.map(t=>
-          `<div${t.hostil ? '' : ' class="to-mansa"'}>`+
-          `${chipTorcida(t.id, t.cor)}${linkificarNomes(t.nome)} <span class="to-faixa">`+
-          `${String(t.faixa).replace(' a ','–')} membros</span></div>`)
-          .join('') || '<div class="to-mansa">ninguém na rua</div>'}));
-      tb.appendChild(tr);
-      /* a linha de botões do jogo, com o que o plano já diz */
-      const tr2 = el('tr',{class:'to-acoes'});
-      const td = el('td'); td.colSpan = 2;
-      const bts = el('div',{class:'rec-botoes'});
-      let estado = '';
-      if(r.tipo === 'nosso'){
-        estado = plano.intencao === 'atacar' && plano.alvoTorcida
-          ? `plano: atacar a ${nomeDe(plano.alvoTorcida)}` : 'plano: ir em paz';
-      } else if(r.tipo === 'praca'){
-        const inv = ((plano.investidas||{})[r.grupo.chaveJogo]);
-        estado = inv && inv.alvo ? `plano: atacar a ${nomeDe(inv.alvo)}` : 'plano: deixar passar';
-      } else estado = 'caravana pro jogo fora';
-      const bt = (rot, nota, ligado, fn) => {
-        const b = el('button',{class:'rec-bt', html:`${rot}${nota ? `<small>${nota}</small>` : ''}`});
-        b.disabled = !ligado; b.onclick = fn; bts.appendChild(b); return b;
-      };
-      if(r.tipo === 'fora'){
-        bt('Montar a caravana', `${r.dia||''}${r.cidade ? ' · '+r.cidade : ''}`, true, ()=>{ decisaoAberta = null; abrirCaravana(); });
-        bt('Atacar na praça deles', r.temAlvo ? 'escolher o alvo' : 'sem rival lá', r.temAlvo, ()=>{ decisaoAberta = null; abrirAtaque({fora:true, advId:r.advId}); });
-      } else {
-        bt('Atacar', r.temAlvo ? 'escolher o alvo' : 'sem rival na rua', r.temAlvo || r.tipo==='nosso', ()=>{ decisaoAberta = null; abrirAtaque({grupos:[r.grupo]}); });
-        bt('Ir em paz', r.tipo==='nosso' ? 'entrar pelo portão' : 'deixar passar', true, ()=>{
-          if(r.tipo === 'nosso') P2.definirIntencao(e, 'paz');
-          else if(r.grupo.chaveJogo) P2.definirInvestida(e, r.grupo.chaveJogo, null);
-          TO.estado.salvar(); redesenhar();
-        });
-        bt('Seguir padrão', 'a política da torcida', true, ()=>{
-          if(r.tipo === 'nosso') P2.aplicarPolitica(e);
-          else if(r.grupo.chaveJogo){
-            const pol = P2.politicas(e);
-            const og = P2.outrosJogosNaCidade(e, e.data.semana).find(x=>x.chave === r.grupo.chaveJogo);
-            const alvos = og ? P2.alvosDaPolitica(e, og.visitantes, pol.outros) : [];
-            P2.definirInvestida(e, r.grupo.chaveJogo, alvos.length ? {alvo:alvos[0].id, como:'arredores', olheiro:null} : null);
-          }
-          TO.estado.salvar(); redesenhar();
-        });
-      }
-      td.appendChild(el('div',{class:'to-estado fraco', texto: estado}));
-      td.appendChild(bts);
-      tr2.appendChild(td);
-      tb.appendChild(tr2);
-    }
-    c.corpo.appendChild(tb);
-    /* a recepção dos aliados que chegam pros jogos da semana */
-    if(pauta.aliados.length){
-      const bloco = el('div',{class:'bloco-recepcao'});
-      bloco.appendChild(el('div',{class:'rec-titulo', texto:'Aliados na cidade — como vamos receber?'}));
-      for(const a of pauta.aliados){
-        const pago = ((P2.plano(e).pago)||{})[a.id];
-        const linha = el('div',{class:'rec-aliado'+(pago?' pago':'')});
-        linha.appendChild(el('div',{class:'rec-nome', html:
-          `<b>${linkTorcida(a.id, a.nome)}</b> <span class="fraco">(${a.clube}) · vêm `+
-          `${a.n} · jogo ${['','seg','ter','qua','qui','sex','sáb','dom'][a.dia]||'dia '+a.dia}</span>`+
-          (pago ? ' <span class="tag">resolvido</span>' : '')}));
-        const bts = el('div',{class:'rec-botoes'});
-        const atual = P2.nivelDe(e, a.id);
-        for(const r of P2.RECEPCAO){
-          const custo = r.porCabeca * a.n;
-          const b = el('button',{class:'rec-bt'+(atual===r.id?' on':''),
-            html:`${r.rot}<small>${custo ? U.dinheiro(custo) : 'de graça'} · ${r.relacao>0?'+':''}${r.relacao} rel.</small>`});
-          b.disabled = !!pago;
-          b.onclick = ()=>{ P2.definirRecepcao(e, a.id, r.id); for(const x of bts.children) x.classList.remove('on'); b.classList.add('on'); TO.estado.salvar(); };
-          bts.appendChild(b);
-        }
-        linha.appendChild(bts);
-        bloco.appendChild(linha);
-      }
-      c.corpo.appendChild(bloco);
-    }
-    return c;
-  }
-
   function painelMensagens(e){
     const cx = el('div');
     const lista = e.mensagens || [];
@@ -3234,10 +3404,8 @@
        quiser bolar o ataque da semana sem esperar o olheiro abre a tela
        por este botão. A caravana continua no feed. */
     const P2 = TO.planejamento;
-    /* A PAUTA DA SEMANA (pedido do dono, 09/09/2026): a tabela de cada
-       jogo, como o olheiro mandava, agora mora aqui — o jogador pode
-       bolar ataque contra qualquer torcida que passe pela cidade */
-    cx.appendChild(painelPautaDaSemana(e));
+    /* A PAUTA DA SEMANA SAIU DAQUI (pedido do dono, 10/09/2026): virou
+       o cartão de segunda-feira do feed, com uma aba por praça */
     const c = cartao('Mensagens de outras torcidas', `${lista.length} ${lista.length===1?'recado':'recados'}`);
     if(!lista.length)
       c.corpo.innerHTML = '<div class="em-construcao">Ninguém mandou recado ainda.</div>';

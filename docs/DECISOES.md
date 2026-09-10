@@ -5330,6 +5330,68 @@ mais competitivas contra as grandes."
   normal. Continua valendo que visitante em dia de jogo pode fechar a
   gente: é assim que se cruza torcida na cidade.
 
+## O planejamento é o cartão de segunda-feira do feed (pedido do dono, 10/09/2026)
+- PEDIDO: "reimplementar a tela de planejamento no feed num visual
+  overview mais detalhado, com uma aba por cidade (caso tenha subsedes),
+  sendo uma tela por semana mostrando todos os jogos daquela semana,
+  sempre na segunda-feira. O planejamento de caravana também será por
+  essa tela, que vai ter um visual estilizado, prático e bonito."
+- O CARTÃO (`kind:'semana'`, voz da diretoria) nasce em `semanaDeHoje`,
+  dentro de `eventosDoDia`, todo dia 1 de semana com temporada. Com
+  jogo nosso é DECISÃO: trava o relógio até "Fechar o planejamento",
+  como a caravana travava; na folga é informação sem botão. A chave é
+  `semana|ano|semana`, uma por semana.
+- UMA ABA POR PRAÇA: a sede e cada subsede de `E.patrimonio.filiais`
+  (`m.dados.cidades`); sem subsede não há linha de abas. A aba da
+  subsede mostra os jogos daquela praça e quantos do núcleo local estão
+  de pé; ela continua descendo por conta própria (as sugestões chegam
+  como cartão, como antes).
+- A PAUTA de cada aba sai de `pautaDaCidade(E, cidade, semana, ano)`
+  (feed.js): os jogos da praça naquela semana via `jogosDaPraca`, que
+  ganhou o parâmetro `cidade`; quem estará na rua com faixa de efetivo e
+  hostilidade (na sede, `estimativasDaRua`; na subsede, as torcidas
+  locais do mandante a 60% e as visitantes por `caravanaDe`); o nosso
+  jogo fora entra na aba da sede, que é de onde a caravana sai; e os
+  aliados que chegam, pra recepção.
+- O PLANO MORA DENTRO DO NOSSO JOGO, com os mesmos gravadores dos modais
+  antigos (`definirIntencao`, `definirAtaque`, `definirInvestida`,
+  `definirRecepcao`, `pedirAjuda`, `comprarBombas`): contador da
+  caravana (do mínimo aos interessados, passo de 10%), chips de estrada
+  com custo e risco, o trajeto cidade a cidade com as hostis marcadas,
+  ajuda da aliada de lá; chips Ir em paz / Atacar, alvo, onde
+  (`ONDE_ATAQUE`), contador de efetivo em casa, contador de bombas (em
+  casa compra na hora; fora só o estoque); o resumo do plano com o custo
+  no rodapé. Nos outros jogos da praça, Deixar passar / Investir com
+  alvo e onde. "Fechar o planejamento" é o `confirmar` de sempre (gasta
+  ação de investida, marca `decidido`) e escreve a consequência no
+  cartão.
+- O CARTÃO SE REPINTA POR DENTRO a cada toque; pro `atualizarFeed` não
+  remontar o cartão a cada tique, a chave de estado (`estadoDaMsg`) leva
+  o plano inteiro (`chaveDoPlano`) e a aba aberta.
+- SÓ A SEMANA CORRENTE TEM CONTROLE: o cartão de uma segunda passada
+  fica no feed como registro, lê a semana dele (não a de hoje), todos os
+  jogos como passados e sem botão nenhum — selo "semana passada". Sem
+  isso, seis cartões de semanas antigas mostravam a semana de hoje com
+  chips vivos escrevendo no mesmo plano (visto no teste, corrigido).
+- O QUE SAIU: `painelPautaDaSemana` (a lista de jogos em Mensagens) e o
+  cartão "Monta a caravana" do olheiro no dia do relatório — a caravana
+  já foi fechada na segunda; o relatório do olheiro do jogo fora vira
+  informação (quem vai estar na pista de lá, e o tamanho da caravana
+  fechada). As sugestões de ataque do olheiro (dívida, rival) continuam
+  como decisões, como o dono definiu em 08/09.
+- MEDIDO (`cartao-semana.js`, `cartao-semana-fora.js`): cartão de decisão
+  na semana 6 (jogo em casa) com 3 jogos, 10 chips, 1 contador; Atacar
+  escreve intenção e alvo (Facção Jovem), o resumo acompanha ("em cima da
+  Facção Jovem nos arredores · 1 bomba"), Ir em paz volta; Investir num
+  jogo alheio grava a investida; Fechar marca respondido, `decidido`,
+  solta o relógio e desabilita todos os chips. Semana 7 fora: contador
+  129→116, custo −R$ 1.548→−R$ 1.392, rota, alvo da viagem (Garra
+  Alvinegra), consequência "Caravana: 116 para Rio Grande do Norte". Com
+  uma filial injetada aparecem as abas Fortaleza/sede e ABC
+  Paulista/subsede, e a aba da subsede lista os jogos de lá. Regressões
+  (`smoke`, `telas-aprovadas`, `varredura-cenas`, `ver-itinerario`) sem
+  erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -33,8 +33,10 @@ TO.praca = (function(){
   /* o dia de jogo da praça: todo jogo com mando aqui na semana pedida,
      que por omissão é a corrente. A semana entra por parâmetro porque
      a janela de dez dias da ameaça (§8.27) atravessa a virada. */
-  function jogosDaPraca(E, semana){
-    const nossa = E.torcida.mapa;
+  function jogosDaPraca(E, semana, cidade){
+    /* a cidade entra por parâmetro (planejamento por subsede, dono,
+       10/09/2026): sem ela, é a nossa praça, como sempre foi */
+    const nossa = cidade || E.torcida.mapa;
     const fora = [];
     if(!E.temporada) return fora;
     const alvo = semana != null ? semana : E.data.semana;
