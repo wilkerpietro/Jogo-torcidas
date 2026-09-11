@@ -5611,6 +5611,25 @@ mais competitivas contra as grandes."
   nascença (mesma dose de antes) e 2 entradas nos novos. Nenhum convite
   à TUF no período.
 
+## Um eixo convida uma vez a cada 15 dias (dono, 11/09/2026)
+- PEDIDO: "um eixo pode convidar uma vez a cada 15 dias". Sai o relógio
+  de 26 semanas com 50%; cada eixo tenta a cada 15 dias, com fase
+  própria por hash pra não convidarem todos no mesmo dia, e convida o
+  melhor candidato que passar na régua (aliada de metade do eixo, sem
+  rival nem maior rival dentro, menos de dois eixos).
+- MEDIDO (2 anos, jogo novo, TUF recusando os convites): 40 entradas nos
+  cinco eixos de nascença, quase todas no primeiro semestre — Lado B
+  7→21, Dedo pro Alto 6→18, Lado A 6→13, Punho Cruzado 6→11, Punho
+  Colado 7→9 —, e depois o crescimento para sozinho: quanto maior o
+  eixo, mais difícil ser aliada da metade dele. Três eixos novos (União
+  Firma Forte, União Ponta a Ponta, União Bate Forte) e 17 entradas
+  neles. A TUF foi convidada três vezes pela União Firma Forte, pela
+  Jovem Garra Tricolor, com o intervalo de 26 semanas entre recusas.
+- CONFERIDO a pergunta do dono: os fundadores de um eixo novo são
+  aliados dois a dois por construção (relação mínima entre eles na
+  fundação foi 56 e 59 nos dois primeiros; o terceiro mediu 42 no fim
+  da simulação, depois de meses de deriva).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

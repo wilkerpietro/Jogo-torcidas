@@ -19,8 +19,7 @@ TO.eixos = (function(){
   const MAX_POR_TORCIDA = 2;
   const ALIADO_AO_ENTRAR = 45;     // o valor inicial de "Aliado" da fonte
   const RIVAL_AO_ENTRAR  = -45;    // o de "Rival"
-  const RECRUTA_CADA     = 26;     // semanas entre tentativas de cada eixo
-  const RECRUTA_CHANCE   = 0.5;    // ...e metade delas vinga: ~1 por ano por eixo
+  const RECRUTA_CADA_DIAS = 15;    // cada eixo convida uma vez a cada 15 dias (dono, 11/09/2026)
   const FUNDA_CADA       = 13;     // eixo novo: quatro tentativas por ano...
   const FUNDA_CHANCE     = 0.75;   // ...três vingando (dono, 11/09/2026: aliadas
                                    // entre si fundam eixo naturalmente)
@@ -203,9 +202,9 @@ TO.eixos = (function(){
     /* 1. cada eixo tenta recrutar */
     for(const x of X.lista){
       if(!forcar){
-        if((sa + H('eixo|'+x.id)) % RECRUTA_CADA !== 0) continue;
-        if((H(`eixo|${x.id}|${sa}`) % 7) + 1 !== E.data.dia) continue;
-        if((H(`eixo|vinga|${x.id}|${sa}`) % 1000) / 1000 >= RECRUTA_CHANCE) continue;
+        /* o relógio de cada eixo tem a própria fase, pra não convidarem
+           todos no mesmo dia */
+        if(((E.data.absoluto||0) + H('eixo|'+x.id)) % RECRUTA_CADA_DIAS !== 0) continue;
       }
       const cands = candidatos(E, x.id);
       if(!cands.length) continue;
