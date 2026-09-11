@@ -5646,6 +5646,39 @@ mais competitivas contra as grandes."
   outras 1 ou 2. Os Imbatíveis fundaram a Bate Forte com Falange Azul,
   Os Fanáticos e Comando Alvirrubro.
 
+## A tela dos Eixos, o feed só do nosso eixo e o cartão de segunda com pauta (dono, 11/09/2026)
+- SEM JOGO NENHUM NA PRAÇA, SEM CARTÃO: `semanaDeHoje` só propõe se
+  houver jogo nosso OU jogo em alguma praça em que temos pé (sede e
+  subsedes). A semana que só dizia "nenhum jogo nesta praça na semana"
+  não existe mais. Medido: com `jogosDaPraca` vazio e sem `proximoJogo`,
+  zero cartões; com um jogo na praça e sem jogo nosso, um cartão.
+- O FEED SÓ FALA DO NOSSO EIXO: ficaram o convite pra gente entrar
+  (decisão) e a PROPOSTA DE NOME NOVO no eixo em que já estamos —
+  cartão novo `eixo-proposta`, com a voz do eixo pelo membro mais
+  próximo: "Aceitar no eixo" chama `entrar`, "Vetar" tira o nome da
+  mesa por 26 semanas (`E.eixos.vetos`). Entrada e fundação alheias
+  saíram do feed.
+- A TELA (Diplomacia → Eixos, subaba nova): em cima, NOVIDADES DAS
+  ALIANÇAS com o mundo inteiro — quem entrou onde, que eixo nasceu —,
+  as nossas em destaque e as não vistas com selo "novo"; o contador na
+  subaba conta só as do nosso eixo. Abrir a aba marca como vistas. Cada
+  linha do histórico ganhou número próprio (`seqHist`), então duas
+  coisas no mesmo dia contam separado. Embaixo, um cartão por eixo com
+  sigla, fundação, praças, a lista inteira de membros (escudo, link e
+  praça de cada uma) e os maiores rivais do eixo. O nome do eixo é
+  link: abre o perfil (`abrirPerfilEixo`) — conferido no teste, o
+  clique no cartão do Lado A abre "LADO A · eixo de aliança · 7
+  torcidas" com as sete linhas.
+- O quadro de eixos que ficava na aba Alianças saiu: a aba voltou a ser
+  só a lista de relações positivas.
+- MEDIDO (`eixos-tela.js`): dia forçado com 6 eventos — quatro entradas
+  alheias, uma fundação e uma proposta no Lado A —, e o feed recebeu só
+  `eixo-proposta`, travando o relógio; "Vetar" manteve o eixo em 6 e
+  anotou `lado_a|furia_independente_do_guarani`; aceitar levou a 7 com
+  relação 45. A aba mostrou 12 novidades e 6 cartões de eixo.
+  Regressões (telas aprovadas, cartão de semana em casa/fora/subsede,
+  status e intermediação, itinerário) sem erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

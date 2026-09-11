@@ -2302,3 +2302,23 @@ header.capa-cidade{background-size:cover; background-position:center;
 .x-link:hover{opacity:.75}
 .linha-dado.eixo-nosso{background:#1d1a14;padding-left:6px;padding-right:6px}
 .linha-dado .fraco .t-link{white-space:nowrap}
+/* a tela dos eixos de aliança (dono, 11/09/2026) */
+.nov-eixo{display:flex;align-items:baseline;gap:10px;padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12.5px}
+.nov-eixo:last-child{border-bottom:0}
+.nov-eixo .data{font-family:var(--mono);font-size:10px;color:var(--fraco);flex:none;width:62px}
+.nov-eixo .txt{flex:1}
+.nov-eixo .tag{flex:none;color:var(--ouro);border-color:#5a4a1e;background:#1d1a14}
+.nov-eixo.nova{background:rgba(217,164,65,.05)}
+.nov-eixo.nosso .txt b{color:#f0e2c8}
+.eixos-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:11px;align-items:start}
+.eixo-card.nosso{border-color:#4a3a1a}
+.eixo-card.nosso>h2{background:#1d1a14;color:#f0e2c8}
+.eixo-praças{font-size:11px;margin-bottom:7px}
+.eixo-membros{display:flex;flex-direction:column;gap:3px}
+.eixo-membro{display:flex;align-items:baseline;gap:6px;font-size:12.5px}
+.eixo-membro small{color:var(--fraco);font-size:10.5px;margin-left:auto;white-space:nowrap}
+.eixo-membro.nossa{color:#f0e2c8;font-weight:600}
+.eixo-membro .to-escudo{width:15px;height:15px;flex:none;vertical-align:-3px}
+.eixo-membro .to-chip{width:9px;height:9px;flex:none;display:inline-block;border:1px solid rgba(255,255,255,.22)}
+.eixo-rivais{margin-top:8px;padding-top:7px;border-top:1px solid var(--sulco);font-size:11.5px;color:var(--fraco);line-height:1.45}
+.eixo-rivais .rot{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}

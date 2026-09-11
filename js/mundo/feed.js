@@ -1473,27 +1473,30 @@ TO.feed = (function(){
                   {id:'nao', rot:'Ficar de fora', acao:'eixo-nao',
                    nota:`−3 com a ${nome(ev.porta)} · eles voltam a chamar em meio ano`}]
         });
-      } else if(ev.tipo === 'entrou'){
-        const nosso = x.membros.includes(E.torcida.id);
-        const ficouRival = ev.novosRivais.includes(E.torcida.id);
+      } else if(ev.tipo === 'proposta'){
+        /* NO NOSSO EIXO O DONO DÁ O AVAL (dono, 11/09/2026): o eixo põe
+           o nome na mesa e a gente concorda ou veta. */
+        const o = M().torcida(ev.torcida) || {};
+        const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(o.mapa) : o.mapa;
+        const rivaisDela = TO.eixos.maioresRivaisDoEixo(E, x).includes(ev.torcida);
         propor(E, {
-          kind:'eixo', peso:'info', voz:'rua', tipo: ficouRival ? 'ruim' : (nosso ? 'boa' : ''),
-          chave:`eixo-entrou|${x.id}|${ev.torcida}`,
-          texto: nosso
-            ? `O ${x.nome} cresceu: a ${nome(ev.torcida)} entrou pro nosso eixo. Aliada de todos nós agora.`
-            : ficouRival
-            ? `A ${nome(ev.torcida)} entrou pro ${x.nome} — e o eixo tem maior rival nosso: ela virou rival da gente.`
-            : `A ${nome(ev.torcida)} entrou pro ${x.nome}.`,
-          dados:{de:x.id, nome:x.nome, torcida:ev.torcida}
-        });
-      } else if(ev.tipo === 'fundou'){
-        propor(E, {
-          kind:'eixo', peso:'info', voz:'rua',
-          chave:`eixo-fundou|${x.id}`,
-          texto:`Nasceu um eixo novo na rua: o ${x.nome}, com ${ev.membros.map(nome).join(', ')}.`,
-          dados:{de:x.id, nome:x.nome, membros:ev.membros}
+          kind:'eixo-proposta', peso:'decisao', voz:'eixo',
+          chave:`eixo-proposta|${x.id}|${ev.torcida}|${E.data.ano}|${E.data.semana}`,
+          texto:`Fala irmão, aqui é a ${nome(ev.porta)}. O ${x.nome} sentou pra falar `+
+                `da ${o.nome || ''}, de ${cid}. O pessoal quer eles dentro do eixo — `+
+                `com vocês também, claro. Tá fechado pra vocês?`,
+          dados:{de:x.id, nome:x.nome, torcida:ev.torcida, porta:ev.porta},
+          botoes:[{id:'sim', rot:'Aceitar no eixo', acao:'eixo-aceita',
+                   nota:`a ${o.nome || ''} vira aliada de todo o eixo`},
+                  {id:'nao', rot:'Vetar', acao:'eixo-veta',
+                   nota:`o nome sai da mesa por meio ano`}]
         });
       }
+      /* ENTRADA E FUNDAÇÃO ALHEIAS NÃO VÃO PRO FEED (ordem do dono,
+         11/09/2026): o feed só trata do NOSSO eixo — o convite à gente
+         e a proposta de nome novo. Toda a movimentação do mundo vira a
+         lista de novidades da aba Eixos, em Diplomacia, que o histórico
+         de `E.eixos` já guarda. */
     }
     return evs;
   }
@@ -1510,6 +1513,13 @@ TO.feed = (function(){
     const temJogo = !!E.proximoJogo;
     const cidades = [E.torcida.mapa].concat(
       ((E.patrimonio||{}).filiais||[]).map(f=>f.cidade));
+    /* SEM JOGO NENHUM NA PRAÇA, NÃO HÁ CARTÃO (ordem do dono,
+       11/09/2026): a semana de folga em que também não rola nada na
+       sede nem nas subsedes não tem o que planejar — o cartão só
+       dizia "nenhum jogo nesta praça na semana". */
+    const temPauta = temJogo ||
+      cidades.some(c => TO.praca.jogosDaPraca(E, E.data.semana, c).length);
+    if(!temPauta) return;
     propor(E, {
       kind:'semana', voz:'diretor', peso: temJogo ? 'decisao' : 'info',
       chave:`semana|${E.data.ano}|${E.data.semana}`,
@@ -2834,6 +2844,25 @@ TO.feed = (function(){
           : `Dentro do ${d.nome}. `+
             (r.novasAliadas.length ? `Novas aliadas: ${r.novasAliadas.map(nome).join(', ')}. ` : 'Já éramos aliados de todos. ')+
             (r.novosRivais.length ? `Novos rivais: ${r.novosRivais.map(nome).join(', ')}.` : '');
+        return {ok:true};
+      }
+      case 'eixo-aceita': {
+        const d = m.dados || {};
+        const r = TO.eixos.entrar(E, d.de, d.torcida);
+        marcar();
+        const nome = id => (M().torcida(id)||{}).nome || id;
+        m.consequencia = !r ? 'Não rolou.'
+          : `A ${nome(d.torcida)} está dentro do ${d.nome}. `+
+            (r.novasAliadas.includes(E.torcida.id) || TO.relacoes.nivel(E, d.torcida) >= 20
+              ? 'Aliada nossa agora.' : '');
+        return {ok:true};
+      }
+      case 'eixo-veta': {
+        const d = m.dados || {};
+        TO.eixos.vetar(E, d.de, d.torcida);
+        marcar();
+        const nome = id => (M().torcida(id)||{}).nome || id;
+        m.consequencia = `A gente vetou a ${nome(d.torcida)} no ${d.nome}.`;
         return {ok:true};
       }
       case 'eixo-nao': {

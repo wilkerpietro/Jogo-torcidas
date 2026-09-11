@@ -38,7 +38,8 @@ TO.eixos = (function(){
         fundado:{ano:E.data.ano, semana:E.data.semana},
         membros: x.membros.filter(id=>ids.has(id))
       })),
-      historico:[], recusas:{}, nomesUsados:[], seq:1
+      historico:[], recusas:{}, vetos:{}, nomesUsados:[], seq:1,
+      seqHist:0, vistoAte:0
     };
     /* os membros de nascença já são aliados entre si: onde a fonte
        deixou a relação abaixo do corte, ela sobe; nada de rivalidade
@@ -63,6 +64,17 @@ TO.eixos = (function(){
   }
   const noMinimo = (E, a, b, v) => { if(relDe(E, a, b) < v) porRel(E, a, b, v); };
   const noMaximo = (E, a, b, v) => { if(relDe(E, a, b) > v) porRel(E, a, b, v); };
+
+  /* cada linha do histórico tem número próprio: é por ele que a tela
+     sabe o que é novidade, e não pela data (duas coisas no mesmo dia
+     também contam) */
+  function anotar(E, linha){
+    const X = caixas(E);
+    X.seqHist = (X.seqHist || 0) + 1;
+    X.historico.unshift(Object.assign({
+      seq:X.seqHist, abs:E.data.absoluto||0, ano:E.data.ano, semana:E.data.semana
+    }, linha));
+  }
 
   function consolidar(E, x){
     for(let i=0;i<x.membros.length;i++)
@@ -166,8 +178,7 @@ TO.eixos = (function(){
       for(const m of antes) marcar(m, torcidaId);
       for(const r of rivais) marcar(r, torcidaId);
     }
-    caixas(E).historico.unshift({abs:E.data.absoluto||0, ano:E.data.ano, semana:E.data.semana,
-      tipo:'entrou', eixo:eixoId, torcida:torcidaId});
+    anotar(E, {tipo:'entrou', eixo:eixoId, torcida:torcidaId});
     return {eixo:x, novasAliadas, novosRivais};
   }
 
@@ -197,8 +208,7 @@ TO.eixos = (function(){
     X.lista.push(x);
     x.membros.push(membros[0]);
     for(const m of membros.slice(1)) entrar(E, x.id, m);
-    X.historico.unshift({abs:E.data.absoluto||0, ano:E.data.ano, semana:E.data.semana,
-      tipo:'fundou', eixo:x.id, membros:membros.slice()});
+    anotar(E, {tipo:'fundou', eixo:x.id, membros:membros.slice()});
     return x;
   }
 
@@ -227,6 +237,15 @@ TO.eixos = (function(){
         /* quem chama é o membro mais próximo da gente */
         const porta = x.membros.slice().sort((a,b)=>R().nivel(E,b) - R().nivel(E,a))[0];
         evs.push({tipo:'convite', eixo:x.id, porta});
+      } else if(x.membros.includes(E.torcida.id)){
+        /* NO NOSSO EIXO QUEM DECIDE É O DONO (dono, 11/09/2026): o eixo
+           propõe o nome e espera a gente concordar. Vetado, o nome só
+           volta à mesa depois de meio ano. */
+        const veto = X.vetos[`${x.id}|${esc.id}`];
+        if(veto && sa - veto < RECUSA_CADA) continue;
+        const porta = x.membros.filter(m=>m !== E.torcida.id)
+          .sort((a,b)=>R().nivel(E,b) - R().nivel(E,a))[0];
+        evs.push({tipo:'proposta', eixo:x.id, torcida:esc.id, porta});
       } else {
         const r = entrar(E, x.id, esc.id);
         if(r) evs.push({tipo:'entrou', eixo:x.id, torcida:esc.id,
@@ -277,6 +296,35 @@ TO.eixos = (function(){
     caixas(E).recusas[eixoId] = R().semanaAbs(E);
     if(porta) E.relacoes[porta] = U.limitar(R().nivel(E, porta) - 3, -100, 100);
   }
+  /* o dono vetou um nome no eixo dele: some da mesa por meio ano */
+  function vetar(E, eixoId, torcidaId){
+    caixas(E).vetos[`${eixoId}|${torcidaId}`] = R().semanaAbs(E);
+  }
+
+  /* AS NOVIDADES (dono, 11/09/2026): as entradas e fundações saíram do
+     feed e viram a lista da aba Eixos, em Diplomacia. `nova` é o que
+     aconteceu depois da última visita; `marcarVistas` zera o contador. */
+  function novidades(E, quantas){
+    const X = caixas(E);
+    /* A TELA MOSTRA O MUNDO INTEIRO (dono, 11/09/2026): o feed só fala
+       do nosso eixo; toda a movimentação das outras alianças aparece
+       aqui, com as nossas em destaque. */
+    return (X.historico||[]).slice(0, quantas || 40).map(h=>{
+      const x = eixo(E, h.eixo);
+      return {
+        abs:h.abs, ano:h.ano, semana:h.semana, tipo:h.tipo,
+        eixo:h.eixo, nomeEixo: x ? x.nome : '', nosso: !!x && x.membros.includes(E.torcida.id),
+        torcida:h.torcida || null, membros:h.membros || null,
+        nova: (h.seq||0) > (X.vistoAte||0)
+      };
+    });
+  }
+  const naoVistas = E => novidades(E, 60).filter(n=>n.nova).length;
+  const naoVistasNossas = E => novidades(E, 60).filter(n=>n.nova && n.nosso).length;
+  function marcarVistas(E){
+    const X = caixas(E);
+    X.vistoAte = Math.max(X.vistoAte||0, X.seqHist||0);
+  }
 
   /* pro perfil e pra Diplomacia */
   function resumo(E, id){
@@ -293,5 +341,6 @@ TO.eixos = (function(){
 
   return {caixas, lista, eixo, de, podeEntrar, candidatos, entrar, fundar,
           eventosDoDia, recusar, resumo, maioresRivaisDoEixo,
+          novidades, naoVistas, naoVistasNossas, marcarVistas, vetar,
           MAX_POR_TORCIDA, ALIADO_AO_ENTRAR, RIVAL_AO_ENTRAR};
 })();

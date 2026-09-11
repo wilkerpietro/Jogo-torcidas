@@ -1011,6 +1011,7 @@
   const ROT_KIND = {abertura:'Abertura', olheiro:'Olheiro',
                     status:'Relação', intermediacao:'Aproximação',
                     eixo:'Eixo de aliança', 'eixo-convite':'Eixo de aliança',
+                    'eixo-proposta':'Eixo de aliança',
                     guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
                     aniversario:'Aniversário', aniversarios:'Aniversários do mês',
@@ -7404,12 +7405,85 @@
       <u></u></span>`;
   }
 
+  /* =======================================================
+     A TELA DOS EIXOS (pedido do dono, 11/09/2026)
+     Diplomacia → Eixos: em cima, o que mudou no mundo das alianças —
+     quem entrou onde e que eixo nasceu, com o que é novidade em
+     destaque —, e embaixo cada eixo com a lista inteira de membros. O
+     nome do eixo é link pro perfil dele.
+     ======================================================= */
+  function painelEixos(e){
+    const cx = el('div');
+    const X = TO.eixos;
+    if(!X){ cx.appendChild(emConstrucao('Sem eixos','Comece um jogo novo.')); return cx; }
+    const nomeT = id => (TO.mundo.torcida(id)||{}).nome || id;
+    const corT  = id => { const o = TO.mundo.torcida(id);
+                          return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
+    const nomeCid = c => (TO.financeiro.nomeCidade && TO.financeiro.nomeCidade(c)) || c;
+
+    /* ---- as novidades ---- */
+    const nov = X.novidades(e, 30);
+    const novas = nov.filter(n=>n.nova).length;
+    const cN = cartao('Novidades das alianças',
+      novas ? `${novas} nova${novas>1?'s':''}` : 'nada novo desde a última visita');
+    if(!nov.length)
+      cN.corpo.innerHTML = '<div class="em-construcao">Nada se mexeu ainda.</div>';
+    for(const n of nov){
+      const quando = `${n.ano} · s${n.semana}`;
+      const txt = n.tipo === 'fundou'
+        ? `Nasceu o <b>${linkEixo(n.eixo, n.nomeEixo)}</b>, com `+
+          (n.membros||[]).map(m=>linkTorcida(m, nomeT(m))).join(', ')
+        : `${linkTorcida(n.torcida, nomeT(n.torcida))} entrou `+
+          `${n.nosso ? 'pro nosso' : 'pro'} <b>${linkEixo(n.eixo, n.nomeEixo)}</b>`;
+      cN.corpo.appendChild(el('div',{class:'nov-eixo'+(n.nova?' nova':'')+(n.nosso?' nosso':''), html:
+        `<span class="data">${quando}</span><span class="txt">${txt}</span>`+
+        (n.nova ? '<span class="tag">novo</span>' : '')}));
+    }
+    cx.appendChild(cN);
+
+    /* ---- cada eixo, com os membros ---- */
+    const ordem = X.lista(e).slice().sort((a,b)=>
+      (b.membros.includes(e.torcida.id)?1:0) - (a.membros.includes(e.torcida.id)?1:0) ||
+      b.membros.length - a.membros.length);
+    const grade = el('div',{class:'eixos-grade'});
+    for(const x of ordem){
+      const r = X.resumo(e, x.id) || {membros:[], pracas:[], forca:0, rivais:[]};
+      const c = cartao(linkEixo(x.id, x.nome) + (r.nosso ? ' <span class="tag">a gente</span>' : ''),
+        `${x.membros.length} torcidas · ${U.numero(Math.round(r.forca))} membros`);
+      c.classList.add('eixo-card');
+      if(r.nosso) c.classList.add('nosso');
+      c.corpo.appendChild(el('div',{class:'eixo-praças fraco', html:
+        `${x.sigla ? `<b>${x.sigla}</b> · ` : ''}${x.base ? 'de nascença' : `fundado em ${x.fundado.ano}`}`+
+        ` · ${r.pracas.length} praça${r.pracas.length>1?'s':''}`}));
+      const lista = el('div',{class:'eixo-membros'});
+      for(const o of r.membros){
+        const nossa = o.id === e.torcida.id;
+        lista.appendChild(el('span',{class:'eixo-membro'+(nossa?' nossa':''), html:
+          `${chipTorcida(o.id, corT(o.id))}${linkTorcida(o.id, o.nome)}`+
+          `<small>${nomeCid(o.mapa)}</small>`}));
+      }
+      c.corpo.appendChild(lista);
+      if(r.rivais.length)
+        c.corpo.appendChild(el('div',{class:'eixo-rivais', html:
+          `<span class="rot">Maiores rivais do eixo</span>`+
+          r.rivais.slice(0, 14).map(id=>linkTorcida(id, nomeT(id))).join(', ')+
+          (r.rivais.length > 14 ? ` <small class="fraco">e mais ${r.rivais.length-14}</small>` : '')}));
+      grade.appendChild(c);
+    }
+    cx.appendChild(grade);
+    /* abriu, leu: o contador zera no próximo repinte */
+    X.marcarVistas(e);
+    return cx;
+  }
+
   function pintarDiplomacia(){
     const e = E(), pg = U.$('.pagina[data-pag="diplomacia"]');
     pg.innerHTML='';
     pg.appendChild(el('div',{class:'titulo-pagina', texto:'Diplomacia'}));
+    const novas = TO.eixos ? TO.eixos.naoVistasNossas(e) : 0;
     pg.appendChild(subabas([
       {id:'relacoes',    rot:'Relações'},
+      {id:'eixos',       rot:'Eixos' + (novas ? ` (${novas})` : '')},
       {id:'aliancas',    rot:'Alianças'},
       {id:'rivalidades', rot:'Rivalidades'},
       {id:'ideologia',   rot:'Ideologia'}
@@ -7417,6 +7491,8 @@
 
     /* a ideologia mora aqui: é o padrão de como tratamos os outros */
     if(subDip === 'ideologia'){ pg.appendChild(caixaDeIdeologia(e)); return; }
+    /* os eixos de aliança têm tela própria (dono, 11/09/2026) */
+    if(subDip === 'eixos'){ pg.appendChild(painelEixos(e)); return; }
 
     /* o valor corrente manda; o tipo da fonte é só o ponto de partida */
     const linhas = Object.entries(e.relacoes||{}).map(([id,v])=>{
@@ -7435,20 +7511,6 @@
     const aliados = linhas.filter(l=>l.valor>0).length;
     const rivais  = linhas.filter(l=>l.valor<0).length;
 
-    /* OS EIXOS DE ALIANÇA (dono, 11/09/2026): na aba Alianças, antes
-       da lista, cada eixo com os membros — o nosso em cima */
-    if(subDip === 'aliancas' && TO.eixos){
-      const cx = cartao('Eixos de aliança', `${TO.eixos.lista(e).length} eixos · cada torcida cabe em até ${TO.eixos.MAX_POR_TORCIDA}`);
-      const ordem = TO.eixos.lista(e).slice().sort((a,b)=>(b.membros.includes(e.torcida.id)?1:0)-(a.membros.includes(e.torcida.id)?1:0) || b.membros.length - a.membros.length);
-      for(const x of ordem){
-        const nosso = x.membros.includes(e.torcida.id);
-        cx.corpo.appendChild(el('div',{class:'linha-dado'+(nosso?' eixo-nosso':''), html:
-          `<span><b>${linkEixo(x.id, x.nome)}</b>${nosso ? ' <span class="tag">a gente</span>' : ''}`+
-          `<small class="fraco"> · ${x.membros.length} torcidas</small></span>`+
-          `<span class="fraco">${x.membros.map(m=>linkTorcida(m, (TO.mundo.torcida(m)||{}).nome||m)).join(', ')}</span>`}));
-      }
-      pg.appendChild(cx);
-    }
     const c = cartao('Relações', `${aliados} aliadas · ${rivais} rivais · `+
       `${TO.mundo.jogaveis().length-1-linhas.length} neutras`);
 
