@@ -21,8 +21,9 @@ TO.eixos = (function(){
   const RIVAL_AO_ENTRAR  = -45;    // o de "Rival"
   const RECRUTA_CADA     = 26;     // semanas entre tentativas de cada eixo
   const RECRUTA_CHANCE   = 0.5;    // ...e metade delas vinga: ~1 por ano por eixo
-  const FUNDA_CADA       = 52;     // uma tentativa de eixo novo por ano
-  const FUNDA_CHANCE     = 0.6;
+  const FUNDA_CADA       = 13;     // eixo novo: quatro tentativas por ano...
+  const FUNDA_CHANCE     = 0.75;   // ...três vingando (dono, 11/09/2026: aliadas
+                                   // entre si fundam eixo naturalmente)
   const METADE_ALIADA    = 0.5;    // faz sentido: aliada de metade do eixo
   const RECUSA_CADA      = 26;     // semanas até o eixo convidar o dono de novo
   const MIN_FUNDADORES   = 3;
@@ -173,13 +174,15 @@ TO.eixos = (function(){
     const lista = Array.isArray(pool) ? pool : (pool[lingua] || pool.pt || []);
     const livres = lista.filter(n=>!X.nomesUsados.includes(n.nome));
     const esc = livres[0];
-    if(!esc) return {nome:`Eixo ${X.seq}`, sigla:`E${X.seq}`};
+    if(!esc) return null;                 // acabaram os nomes: não nasce mais eixo
     X.nomesUsados.push(esc.nome);
     return {nome:esc.nome, sigla:esc.sigla || ''};
   }
   function fundar(E, membros, nomeDado){
     const X = caixas(E);
-    const {nome, sigla} = nomeDado || nomeNovo(E, membros);
+    const n = nomeDado || nomeNovo(E, membros);
+    if(!n) return null;
+    const {nome, sigla} = n;
     const x = {id:`novo_${X.seq++}`, nome, sigla, base:false,
                fundado:{ano:E.data.ano, semana:E.data.semana}, membros:[]};
     X.lista.push(x);
@@ -224,24 +227,35 @@ TO.eixos = (function(){
     /* 2. um eixo novo: aliadas sem eixo que se fecham num grupo */
     if(forcar || ((sa + H('eixo|novo')) % FUNDA_CADA === 0 && (H(`eixo|novo|${sa}`) % 7) + 1 === E.data.dia
                   && (H(`eixo|novo|vinga|${sa}`) % 1000) / 1000 < FUNDA_CHANCE)){
-      /* só quem não tem eixo funda um: eixo novo é de quem ficou de fora */
+      /* ALIADAS ENTRE SI FUNDAM EIXO NATURALMENTE (dono, 11/09/2026: Os
+         Imbatíveis, Remista, Jovem Sport e Jovem Garra Tricolor são
+         aliadas duas a duas — e a Jovem Sport já é do Punho Cruzado). A
+         semente é quem
+         não tem eixo; os outros fundadores podem ter um, desde que
+         metade do grupo ainda esteja sem eixo. Todos aliados dois a dois
+         a +45, sem maior rival entre si, e o grupo não pode ser pedaço
+         de um eixo que já existe. */
       const livres = M().jogaveis().filter(o=>!o.incompleta && o.id !== E.torcida.id && de(E, o.id).length === 0);
-      const cabem = livres;
+      const cabem  = M().jogaveis().filter(o=>!o.incompleta && o.id !== E.torcida.id && de(E, o.id).length < MAX_POR_TORCIDA);
       let melhor = null;
       for(const s of livres){
         const grupo = [s.id];
         const alis = cabem.filter(o=>o.id !== s.id && relDe(E, s.id, o.id) >= ALIADO_AO_ENTRAR)
-          .sort((a,b)=>relDe(E, s.id, b.id) - relDe(E, s.id, a.id));
+          .sort((a,b)=>(de(E, a.id).length - de(E, b.id).length) || (relDe(E, s.id, b.id) - relDe(E, s.id, a.id)));
         for(const a of alis){
           if(grupo.length >= 5) break;
-          if(grupo.every(g=>relDe(E, g, a.id) >= 20 && !R().ehMaiorRival(E, g, a.id))) grupo.push(a.id);
+          const semEixo = grupo.filter(g=>de(E, g).length === 0).length + (de(E, a.id).length ? 0 : 1);
+          if(semEixo * 2 < grupo.length + 1) continue;
+          if(grupo.every(g=>relDe(E, g, a.id) >= ALIADO_AO_ENTRAR && !R().ehMaiorRival(E, g, a.id))) grupo.push(a.id);
         }
-        if(grupo.length >= MIN_FUNDADORES && (!melhor || grupo.length > melhor.length ||
-           (grupo.length === melhor.length && H(`eixo|semente|${sa}|${s.id}`) % 2))) melhor = grupo;
+        if(grupo.length < MIN_FUNDADORES) continue;
+        if(X.lista.some(x=>grupo.every(g=>x.membros.includes(g)))) continue;
+        if(!melhor || grupo.length > melhor.length ||
+           (grupo.length === melhor.length && H(`eixo|semente|${sa}|${s.id}`) % 2)) melhor = grupo;
       }
       if(melhor){
         const x = fundar(E, melhor);
-        evs.push({tipo:'fundou', eixo:x.id, membros:melhor});
+        if(x) evs.push({tipo:'fundou', eixo:x.id, membros:melhor});
       }
     }
     return evs;

@@ -5588,6 +5588,29 @@ mais competitivas contra as grandes."
   Alto +2, Punho Colado +2); nenhum convite à TUF. A lista completa
   está na conversa do dia.
 
+## Aliadas entre si fundam eixo naturalmente (dono, 11/09/2026)
+- PEDIDO: "torcidas que nutrem uma aliança entre si naturalmente fundam
+  eixos, como Os Imbatíveis, Remoçada (a Remista), Jovem Sport, Jovem
+  Garra Tricolor, que são todos aliados entre si". Conferido na fonte:
+  as quatro são aliadas duas a duas, sem maior rival entre si, e só a
+  Jovem Sport já tem eixo (Punho Cruzado). A regra anterior — só quem
+  não tem eixo nenhum funda — barrava exatamente esse grupo.
+- REGRA NOVA: a semente é uma torcida sem eixo; os outros fundadores
+  podem ter um, desde que metade do grupo ainda esteja sem eixo (quem
+  não tem eixo entra primeiro na fila). Todos aliados dois a dois a
+  +45, sem maior rival entre si, 3 a 5 fundadores, e o grupo não pode
+  ser pedaço de um eixo que já existe. Cadência: tentativa a cada 13
+  semanas, 75% vingando (~3 eixos por ano). Quando os nomes da lista
+  acabam, não nasce mais eixo (antes caía num "Eixo N").
+- MEDIDO (fonte): a aliança mútua é densa — 468 cliques de 3 ou mais,
+  as maiores com 15 torcidas; 58 só com torcidas sem eixo. Simulação de
+  dois anos (jogo novo, TUF, sem forçar): nasceram União Firma Forte
+  (2026 s31), União Ponta a Ponta (2027 s5) e União Bate Forte (2027
+  s18), com Cearamor, Aliança, Comando Alvinegro, Facção Jovem Paysandu
+  e Fúria do Botafogo/PB ficando em dois eixos; 12 entradas nos cinco de
+  nascença (mesma dose de antes) e 2 entradas nos novos. Nenhum convite
+  à TUF no período.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
