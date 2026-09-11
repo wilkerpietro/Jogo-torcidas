@@ -5704,6 +5704,22 @@ mais competitivas contra as grandes."
   outros eixos seguem no ritmo de 15 dias. Medido depois: 4 propostas
   no ano.
 
+## Mais 16 nomes nos eixos, da simulação pro arquivo (dono, 11/09/2026)
+- O dono mandou o print das novidades de uma simulação e pediu as
+  entradas de lá como base: Dedo pro Alto + Mancha Azul do CSA, TUP,
+  Força Jovem Goiás, Império Alviverde, Mancha Azul, Ira Jovem do Gama,
+  Mancha Verde Juventude; Lado B + Ultras do ABC, Força Alviverde, Fúria
+  do Botafogo/PB, Terror Bicolor, Facção Jovem Paysandu, Gavirmãos,
+  MOFI; Punho Cruzado + Camisa 12 do Vitória, Os Imbatíveis.
+- CONFERIDO antes de escrever: dos pares dentro dos cinco eixos, 40 não
+  eram aliados na fonte e todos eram NEUTROS — nenhum rival ou maior
+  rival virou aliado à força. A Mancha Azul do CSA passa a ficar em dois
+  eixos (Lado A e Dedo pro Alto), ao lado do Inferno Coral e da Máfia
+  Vermelha; ninguém em três.
+- Tamanhos no arquivo: Punho Cruzado 11, Dedo pro Alto 17, Lado A 10,
+  Lado B 18, Punho Colado 9. Em jogo eles já nascem um ou dois maiores,
+  porque o recrutamento de 15 dias roda na primeira semana.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
