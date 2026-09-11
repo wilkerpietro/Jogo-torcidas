@@ -1165,7 +1165,9 @@ TO.feed = (function(){
     const fora = (jf && !jf.casa && jf.mapaAdv && jf.mapaAdv !== E.torcida.mapa &&
                   diaDoOlheiro(jf.dia||6) === hoje) ? jf : null;
     if(fora){
-      olheiroFora(E, fora);
+      /* O RELATÓRIO DA PISTA DE LÁ SAIU (ordem do dono, 11/09/2026):
+         com a caravana e o alvo fechados no cartão de segunda, dizer
+         de novo quem estará na pista virou repetição. */
       const hostis = PL().alvosDaViagem(E, {advId:fora.advId})
         .filter(a=>!a.aliada && ehHostil(E, a.id) && !!dividas[a.id] && !emTregua(a.id))
         .sort((a,b)=>nota(b.id)-nota(a.id));
@@ -1557,37 +1559,11 @@ TO.feed = (function(){
     return o ? o.chave : `${j.casa.id}|${j.vis.id}|${E.data.semana}`;
   }
 
-  /* situação 3 — nosso jogo fora: o olheiro aponta as torcidas de lá.
-     A CARAVANA JÁ FOI MONTADA NA SEGUNDA (cartão da semana, dono,
-     10/09/2026): o relatório vira informação — quem está na pista de
-     lá e o tamanho de cada uma —, sem botão de montar de novo. */
-  function olheiroFora(E, j){
-    const alvos = PL().alvosDaViagem(E, {advId:j.advId, crua:true});
-    const chave = `olheiro|${E.data.ano}|${E.data.semana}|fora|${j.advId}`;
-    const corDe = id => {
-      const o = M().torcida(id);
-      return (o && M().coresDaTorcida(o).cor) || '#888';
-    };
-    const tabela = [{
-      comp: j.competicao || 'fora de casa', dia: NOME_DIA[j.dia||6],
-      clubes: [{id:j.mandante.id, nome:j.mandante.nome,
-                cor:(j.mandante.cores||[])[0]||'#888'},
-               {id:j.visitante.id, nome:j.visitante.nome,
-                cor:(j.visitante.cores||[])[0]||'#888'}],
-      torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id),
-                               faixa:a.faixa, hostil:!a.aliada}))
-    }];
-    const p = PL().plano(E);
-    const vao = p.decidido ? PL().estimativaCaravana(E).vao : 0;
-    propor(E, {
-      kind:'olheiro', peso:'info', chave, voz:'olheiro',
-      texto:`Chefe, ${NOME_DIA[j.dia||6]} o ${E.torcida.clube} joga fora, `+
-            `em ${j.cidadeAdv}. `+
-            (vao ? `A caravana está fechada em ${vao}. ` : '')+
-            `Olha quem vai estar na pista de lá.`,
-      dados:{situacao:'fora', dia:j.dia||6, tabela}
-    });
-  }
+  /* SITUAÇÃO 3 — nosso jogo fora: não há mais cartão nenhum. O
+     `olheiroFora` dizia quem estava na pista de lá e o tamanho da
+     caravana; o cartão de segunda já decide os dois, e o dono mandou
+     tirar (11/09/2026). Quem quiser ver a pista de lá abre o cartão da
+     semana, que lista as torcidas de cada jogo. */
 
   /* -------------------------------------------------------
      1b. A CAMPANA DO OLHEIRO (Inteligência — pedido do dono,

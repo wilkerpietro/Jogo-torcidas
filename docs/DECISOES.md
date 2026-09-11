@@ -5679,6 +5679,31 @@ mais competitivas contra as grandes."
   Regressões (telas aprovadas, cartão de semana em casa/fora/subsede,
   status e intermediação, itinerário) sem erro.
 
+## O olheiro do jogo fora cala, e os cinco eixos crescem (dono, 11/09/2026)
+- SAIU DO FEED o relatório "Chefe, sábado o Fortaleza joga fora, em X. A
+  caravana está fechada em N. Olha quem vai estar na pista de lá":
+  `olheiroFora` foi apagado e a chamada dele saiu de `olheiroDoDia`. Com
+  a caravana e o alvo fechados no cartão de segunda, o texto repetia o
+  que a segunda já mostrou — o cartão da semana lista as torcidas de
+  cada jogo, inclusive o nosso fora. Medido: um ano de jogo, zero
+  cartões de olheiro e zero cartões com `dados.situacao === 'fora'`.
+- OS CINCO EIXOS GANHARAM 17 MEMBROS (lista do dono): Dedo pro Alto +
+  Dragões Alviverdes, Esquadrão Atleticano, Super Raça Gremista, Ira
+  Jovem do Vasco; Lado B + Fúria Icasiana, Aliança, Império Vermelho,
+  Comando Alvinegro; Punho Colado + Força Flu, Força Jovem Guarany;
+  Punho Cruzado + Dragões da Real, Pavilhão Independente, Jovem Chape;
+  Lado A + Fúria Jovem Baraúnas, Mancha Negra do ASA, Raça Coral, Fúria
+  Jovem Ypiranga. Conferido antes de escrever: dos 238 pares dentro dos
+  eixos, 17 não eram aliados na fonte e TODOS eram neutros — nenhum
+  rival ou maior rival foi forçado a aliado. Ninguém ficou em três
+  eixos (Inferno Coral e Máfia Vermelha seguem nos dois de sempre).
+- A PROPOSTA AO DONO PASSOU A SER TRIMESTRAL: com o convite a cada 15
+  dias e o aval obrigatório no nosso eixo, um ano de jogo trazia 24
+  cartões `eixo-proposta` — mesa de reunião no feed. `PROPOSTA_CADA =
+  13` semanas deixa o nosso eixo pôr um nome na mesa por trimestre; os
+  outros eixos seguem no ritmo de 15 dias. Medido depois: 4 propostas
+  no ano.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

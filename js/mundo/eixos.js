@@ -20,6 +20,10 @@ TO.eixos = (function(){
   const ALIADO_AO_ENTRAR = 45;     // o valor inicial de "Aliado" da fonte
   const RIVAL_AO_ENTRAR  = -45;    // o de "Rival"
   const RECRUTA_CADA_DIAS = 15;    // cada eixo convida uma vez a cada 15 dias (dono, 11/09/2026)
+  const PROPOSTA_CADA    = 13;     // ...mas o eixo NOSSO só põe um nome na
+                                   // mesa a cada 13 semanas: cada nome é uma
+                                   // decisão nossa, e a cada 15 dias era 24
+                                   // cartão por ano
   const FUNDA_CADA       = 13;     // eixo novo: quatro tentativas por ano...
   const FUNDA_CHANCE     = 0.75;   // ...três vingando (dono, 11/09/2026: aliadas
                                    // entre si fundam eixo naturalmente)
@@ -38,7 +42,7 @@ TO.eixos = (function(){
         fundado:{ano:E.data.ano, semana:E.data.semana},
         membros: x.membros.filter(id=>ids.has(id))
       })),
-      historico:[], recusas:{}, vetos:{}, nomesUsados:[], seq:1,
+      historico:[], recusas:{}, vetos:{}, propostas:{}, nomesUsados:[], seq:1,
       seqHist:0, vistoAte:0
     };
     /* os membros de nascença já são aliados entre si: onde a fonte
@@ -240,9 +244,14 @@ TO.eixos = (function(){
       } else if(x.membros.includes(E.torcida.id)){
         /* NO NOSSO EIXO QUEM DECIDE É O DONO (dono, 11/09/2026): o eixo
            propõe o nome e espera a gente concordar. Vetado, o nome só
-           volta à mesa depois de meio ano. */
+           volta à mesa depois de meio ano; e entre uma proposta e outra
+           passa um trimestre, senão o feed vira mesa de reunião. */
         const veto = X.vetos[`${x.id}|${esc.id}`];
         if(veto && sa - veto < RECUSA_CADA) continue;
+        const ult = X.propostas && X.propostas[x.id];
+        if(!forcar && ult && sa - ult < PROPOSTA_CADA) continue;
+        X.propostas = X.propostas || {};
+        X.propostas[x.id] = sa;
         const porta = x.membros.filter(m=>m !== E.torcida.id)
           .sort((a,b)=>R().nivel(E,b) - R().nivel(E,a))[0];
         evs.push({tipo:'proposta', eixo:x.id, torcida:esc.id, porta});
