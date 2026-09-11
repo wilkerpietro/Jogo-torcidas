@@ -5630,6 +5630,22 @@ mais competitivas contra as grandes."
   fundação foi 56 e 59 nos dois primeiros; o terceiro mediu 42 no fim
   da simulação, depois de meses de deriva).
 
+## No máximo três membros em comum entre um eixo novo e qualquer outro (dono, 11/09/2026)
+- MOTIVO: na simulação anterior a União Firma Forte nasceu de aliadas
+  do Punho Cruzado e virou quase cópia dele (cinco em comum), e dividia
+  outros cinco com a Ponta a Ponta.
+- REGRA (`MAX_EM_COMUM = 3`): na fundação, o grupo não pode ter mais de
+  três membros em comum com nenhum eixo existente (a montagem do grupo
+  já pula quem estouraria); nos convites, a convidada só entra se, com
+  ela dentro, o eixo continuar com no máximo três em comum com cada
+  eixo em que ela já está — sempre que um dos dois eixos é novo. Entre
+  dois eixos de nascença a regra não vale (são do dono).
+- MEDIDO (2 anos, mesma simulação): três eixos novos (Firma Forte 7,
+  Ponta a Ponta 8, Bate Forte 5), 40 entradas nos de nascença e 17 nos
+  novos; maior sobreposição Punho Cruzado × Firma Forte = 3, todas as
+  outras 1 ou 2. Os Imbatíveis fundaram a Bate Forte com Falange Azul,
+  Os Fanáticos e Comando Alvirrubro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

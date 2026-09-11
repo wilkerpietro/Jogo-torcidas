@@ -26,6 +26,8 @@ TO.eixos = (function(){
   const METADE_ALIADA    = 0.5;    // faz sentido: aliada de metade do eixo
   const RECUSA_CADA      = 26;     // semanas até o eixo convidar o dono de novo
   const MIN_FUNDADORES   = 3;
+  const MAX_EM_COMUM     = 3;      // membros em comum entre um eixo novo e
+                                   // qualquer outro (dono, 11/09/2026)
 
   function caixas(E){
     if(E.eixos) return E.eixos;
@@ -106,6 +108,14 @@ TO.eixos = (function(){
        irmã de um maior rival do eixo não entra: irmã não vira rival. */
     for(const r of maioresRivaisDoEixo(E, x))
       if(M().saoIrmas && M().saoIrmas(torcidaId, r)) return {ok:false, motivo:`irmã da ${(M().torcida(r)||{}).nome}, maior rival do eixo`};
+    /* eixo novo não pode virar cópia de outro: com ela dentro, no
+       máximo MAX_EM_COMUM membros em comum com qualquer eixo em que ela
+       já esteja — quando um dos dois é novo */
+    for(const y of de(E, torcidaId)){
+      if(x.base && y.base) continue;
+      const comum = x.membros.filter(m=>y.membros.includes(m)).length + 1;
+      if(comum > MAX_EM_COMUM) return {ok:false, motivo:`o ${x.nome} ficaria com ${comum} em comum com o ${y.nome}`};
+    }
     return {ok:true};
   }
   /* a nota de um candidato: soma das relações com os membros, e o
@@ -245,10 +255,14 @@ TO.eixos = (function(){
           if(grupo.length >= 5) break;
           const semEixo = grupo.filter(g=>de(E, g).length === 0).length + (de(E, a.id).length ? 0 : 1);
           if(semEixo * 2 < grupo.length + 1) continue;
-          if(grupo.every(g=>relDe(E, g, a.id) >= ALIADO_AO_ENTRAR && !R().ehMaiorRival(E, g, a.id))) grupo.push(a.id);
+          if(!grupo.every(g=>relDe(E, g, a.id) >= ALIADO_AO_ENTRAR && !R().ehMaiorRival(E, g, a.id))) continue;
+          if(X.lista.some(x=>grupo.filter(g=>x.membros.includes(g)).length + (x.membros.includes(a.id) ? 1 : 0) > MAX_EM_COMUM)) continue;
+          grupo.push(a.id);
         }
         if(grupo.length < MIN_FUNDADORES) continue;
-        if(X.lista.some(x=>grupo.every(g=>x.membros.includes(g)))) continue;
+        /* no máximo MAX_EM_COMUM membros em comum com qualquer eixo que
+           já existe (dono, 11/09/2026) */
+        if(X.lista.some(x=>grupo.filter(g=>x.membros.includes(g)).length > MAX_EM_COMUM)) continue;
         if(!melhor || grupo.length > melhor.length ||
            (grupo.length === melhor.length && H(`eixo|semente|${sa}|${s.id}`) % 2)) melhor = grupo;
       }
