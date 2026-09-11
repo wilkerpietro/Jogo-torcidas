@@ -380,6 +380,8 @@ TO.feed = (function(){
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
     treguasDoDia(E);
+    statusDeHoje(E);
+    intermediacaoDeHoje(E);
     semanaDeHoje(E);
     olheiroDoDia(E);
     guerraDeHoje(E);
@@ -1334,6 +1336,112 @@ TO.feed = (function(){
       .filter(a=>linhas.some(l=>l.tipo!=='fora' && l.grupo.vis === a.clube.id && l.grupo.dia === a.dia))
       .map(a=>({id:a.id, nome:a.torcida.nome, n:a.estimativa, dia:a.dia, clube:a.clube.nome}));
     return {cidade:cidadeId, emCasa, vigente, passada, linhas, aliados};
+  }
+
+  /* =======================================================
+     MUDANÇA DE STATUS PEDE O AVAL DO DONO (pedido do dono, 11/09/2026)
+     A relação é um número, e o status (rival, neutro, aliada) é o corte
+     dele. Quando o número cruza o corte pra NEUTRO — rival que esfriou,
+     aliada que sumiu — a torcida manda um cartão de decisão no feed:
+     concorda com o novo status ou não? Recusando, o número volta pra
+     beira do status antigo e ela só volta a perguntar depois de 12
+     semanas. Subir de status (neutro → aliada, neutro → rival) não
+     pergunta: é o jogo andando. `E.statusRel.visto` é o status que o
+     dono reconheceu por último; nasce do valor corrente no save antigo.
+     ======================================================= */
+  const RECUSA_STATUS = 12;                       // semanas
+  const grupoDoStatus = st =>
+    (st === 'Maior Rival' || st === 'Rival') ? 'rival'
+    : st === 'Neutro' ? 'neutro' : 'aliado';
+  const BEIRA = {rival:-16, aliado:20};           // onde o recusado fica
+  function statusDeHoje(E){
+    const S = E.statusRel = E.statusRel || {};
+    S.visto = S.visto || {}; S.recusa = S.recusa || {};
+    const R = TO.relacoes, sa = R.semanaAbs(E);
+    const pendente = id => [...E.feed, ...E.feedFila]
+      .some(m => m.kind === 'status' && !m.respondido && m.dados && m.dados.de === id);
+    for(const o of M().jogaveis()){
+      if(o.id === E.torcida.id || o.incompleta) continue;
+      const agora = grupoDoStatus(M().statusDoValor(R.nivel(E, o.id)));
+      const antes = S.visto[o.id];
+      if(antes === undefined){ S.visto[o.id] = agora; continue; }
+      if(agora === antes) continue;
+      const cai = agora === 'neutro' && (antes === 'rival' || antes === 'aliado');
+      if(!cai){ S.visto[o.id] = agora; continue; }
+      if(pendente(o.id)) continue;
+      /* recusou há pouco: segura na beira do status antigo, sem perguntar */
+      if(S.recusa[o.id] && sa - S.recusa[o.id] < RECUSA_STATUS){
+        E.relacoes[o.id] = BEIRA[antes]; continue;
+      }
+      const nos = E.torcida.nome;
+      propor(E, {
+        kind:'status', peso:'decisao', voz:'torcida',
+        chave:`status|${o.id}|${antes}|${sa}`,
+        texto: antes === 'rival'
+          ? `Fala, ${nos}. Faz tempo que a gente não se pega na rua, e da nossa `+
+            `parte a treta esfriou. Dá pra tratar como neutro daqui pra frente. Fechado?`
+          : `Fala, ${nos}. Faz um tempão que ninguém ajuda ninguém, e a rua já `+
+            `nota. Melhor cada um pro seu lado, sem mágoa. Encerra a aliança?`,
+        dados:{de:o.id, nome:o.nome, antes},
+        botoes: antes === 'rival'
+          ? [{id:'sim', rot:'Fechado, neutro', acao:'status-sim',
+              nota:'a treta acaba: ninguém procura ninguém'},
+             {id:'nao', rot:'Rival continua rival', acao:'status-nao',
+              nota:'a relação volta pra −16 e eles perguntam de novo em 12 semanas'}]
+          : [{id:'sim', rot:'Encerrar a aliança', acao:'status-sim',
+              nota:'vira neutra: sem ajuda, sem convite'},
+             {id:'nao', rot:'A aliança fica', acao:'status-nao',
+              nota:'a relação segura em +20 — mas precisa de ajuda pra se manter'}]
+      });
+    }
+  }
+
+  /* =======================================================
+     A ALIADA APRESENTA UMA ALIADA DELA (pedido do dono, 11/09/2026)
+     Umas duas vezes por ano, uma aliada nossa oferece aproximar a gente
+     de uma torcida que é aliada dela, neutra com a gente e que não é
+     maior rival de nenhuma aliada nossa — de preferência numa praça
+     onde a gente não tem ninguém. Aceitando, a torcida vira aliada
+     (relação sobe a pelo menos +20) e a intermediária ganha +3; recusando,
+     a intermediária perde 3. Dose por hash: a cada 26 semanas, num dia
+     da semana sorteado, como a sugestão da filial.
+     ======================================================= */
+  function intermediacaoDeHoje(E, forcar){
+    const R = TO.relacoes, H = TO.mapa.hash, sa = R.semanaAbs(E);
+    if(!forcar){
+      if((sa + H('interm|'+E.torcida.id)) % 26 !== 0) return;
+      if((H(`interm|${sa}`) % 7) + 1 !== E.data.dia) return;
+    }
+    const todas = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
+    const st = id => grupoDoStatus(M().statusDoValor(R.nivel(E, id)));
+    const aliadas = todas.filter(o=>st(o.id) === 'aliado');
+    if(!aliadas.length) return;
+    const pracas = new Set(aliadas.map(a=>a.mapa));
+    const cands = [];
+    for(const a of aliadas) for(const c of todas){
+      if(c.id === a.id || st(c.id) !== 'neutro') continue;
+      if(M().saoIrmas && M().saoIrmas(E.torcida.id, c.id)) continue;
+      if(grupoDoStatus(M().statusDoValor(R.relacaoDelas(E, a.id, c.id))) !== 'aliado') continue;
+      if(aliadas.some(x=>R.ehMaiorRival(E, x.id, c.id))) continue;
+      cands.push({a, c, semAliada: !pracas.has(c.mapa)});
+    }
+    if(!cands.length) return null;
+    const nota = x => H(`interm|${sa}|${x.a.id}|${x.c.id}`) % 1000;
+    cands.sort((x,y)=>(y.semAliada?1:0) - (x.semAliada?1:0) || nota(x) - nota(y));
+    const {a, c, semAliada} = cands[0];
+    const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
+    return propor(E, {
+      kind:'intermediacao', peso:'decisao', voz:'torcida',
+      chave:`interm|${a.id}|${c.id}|${E.data.ano}`,
+      texto:`Fala irmão. A gente é de boa com a ${c.nome} (${cid})`+
+            (semAliada ? `, e vocês não têm ninguém lá` : '')+
+            `. Se quiser, a gente senta os dois pra aproximar. Topa?`,
+      dados:{de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome},
+      botoes:[{id:'sim', rot:'Aproximar', acao:'interm-sim',
+               nota:`a ${c.nome} vira aliada (+25 no mínimo) · +3 com a ${a.nome}`},
+              {id:'nao', rot:'Deixar como está', acao:'interm-nao',
+               nota:`−3 com a ${a.nome}`}]
+    });
   }
 
   /* O CARTÃO DE SEGUNDA (pedido do dono, 10/09/2026): o planejamento
@@ -2621,6 +2729,48 @@ TO.feed = (function(){
          `travado(E)` faz enquanto a mensagem não tem resposta.
          Antes elas marcavam na abertura, e fechar a tela valia como
          ter decidido: o turno era consumido sem nada ter acontecido. */
+      case 'status-sim': {
+        const S = E.statusRel = E.statusRel || {visto:{}, recusa:{}};
+        S.visto[b.args && b.args.de || m.dados.de] = 'neutro';
+        marcar();
+        m.consequencia = m.dados.antes === 'rival'
+          ? `A treta com a ${m.dados.nome} esfriou de vez: neutras.`
+          : `A aliança com a ${m.dados.nome} acabou: neutras.`;
+        return {ok:true};
+      }
+      case 'status-nao': {
+        const S = E.statusRel = E.statusRel || {visto:{}, recusa:{}};
+        const id = m.dados.de, antes = m.dados.antes;
+        E.relacoes[id] = BEIRA[antes];
+        S.visto[id] = antes;
+        S.recusa[id] = TO.relacoes.semanaAbs(E);
+        marcar();
+        m.consequencia = antes === 'rival'
+          ? `A ${m.dados.nome} segue rival (−16). Se nada mudar, eles perguntam de novo em ${RECUSA_STATUS} semanas.`
+          : `A aliança com a ${m.dados.nome} fica (+20). Sem ajuda, ela esfria de novo.`;
+        return {ok:true};
+      }
+      case 'interm-sim': {
+        const d = m.dados || {};
+        const S = E.statusRel = E.statusRel || {visto:{}, recusa:{}};
+        const v = TO.relacoes.nivel(E, d.alvo);
+        /* +25 no mínimo: a +20 cravado, dois meses secos já devolviam a
+           pergunta de "encerra a aliança?" */
+        E.relacoes[d.alvo] = U.limitar(Math.max(v + 15, 25), -100, 100);
+        E.relacoes[d.de]   = U.limitar(TO.relacoes.nivel(E, d.de) + 3, -100, 100);
+        S.visto[d.alvo] = 'aliado';
+        marcar();
+        m.consequencia = `A ${d.nome} sentou os dois: a ${d.alvoNome} agora é aliada `+
+          `(${Math.round(E.relacoes[d.alvo])}) · +3 com a ${d.nome}.`;
+        return {ok:true};
+      }
+      case 'interm-nao': {
+        const d = m.dados || {};
+        E.relacoes[d.de] = U.limitar(TO.relacoes.nivel(E, d.de) - 3, -100, 100);
+        marcar();
+        m.consequencia = `Ficou como está. A ${d.nome} não gostou: −3.`;
+        return {ok:true};
+      }
       case 'fechar-semana': {
         /* o plano já foi escrito pelos controles do cartão; fechar é
            o `confirmar` de sempre — gasta ação, paga recepção e
@@ -2737,6 +2887,7 @@ TO.feed = (function(){
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
+          statusDeHoje, intermediacaoDeHoje,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu};
 })();

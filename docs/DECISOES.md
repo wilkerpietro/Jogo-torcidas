@@ -5451,6 +5451,57 @@ mais competitivas contra as grandes."
 - A REORGANIZAÇÃO DO MENU foi pedida como sugestão no mesmo dia e está
   na conversa, aguardando o crivo do dono; nada mudou de lugar.
 
+## Mudança de status pede o aval do dono; a aliada apresenta uma aliada dela (dono, 11/09/2026)
+- PEDIDO 1: "se uma relação com uma torcida muda o status de rival pra
+  neutro e aliado pra neutro, gera uma mensagem no feed da respectiva
+  torcida comunicando e perguntando se você concorda".
+- COMO: a relação é número e o status é o corte (`statusDoValor`); não há
+  setter central — a relação muda em vinte lugares. Então o vigia é
+  diário: `statusDeHoje` (feed.js, em `eventosDoDia`) compara o status
+  de cada torcida com o último que o dono reconheceu (`E.statusRel.visto`,
+  que nasce do valor corrente no save antigo). Cruzou pra NEUTRO vindo de
+  rival ou de aliada, sai um cartão de decisão com a voz da própria
+  torcida (voz `torcida`: o nome dela, com link, no lugar de "Diretoria")
+  e trava o relógio. Subir de status (neutro → aliada, neutro → rival) e
+  mudar dentro do mesmo grupo (Rival ↔ Maior Rival, Aliado ↔ Irmandade)
+  não pergunta.
+- RESPOSTAS: "Fechado, neutro" / "Encerrar a aliança" reconhecem o novo
+  status. "Rival continua rival" / "A aliança fica" devolvem a relação
+  pra beira do status antigo (−16 ou +20), anotam a recusa e, por 12
+  semanas, o vigia segura o valor na beira sem perguntar; depois disso,
+  se nada mudou, a torcida pergunta de novo. A aliança recusada precisa
+  de ajuda pra se manter: o −1 dos dois meses secos continua valendo.
+- PEDIDO 2: "torcida aliada ajuda a gente a fechar novos aliados que sejam
+  aliados deles, caso eles sejam neutros nossos e não sejam maiores
+  rivais de algum aliado nosso, principalmente sendo de praças que não
+  temos aliados. Em torno de 2x por ano."
+- COMO: `intermediacaoDeHoje`, no mesmo relógio por hash da sugestão da
+  filial (a cada 26 semanas, num dia da semana sorteado). Candidatas: a
+  aliada A (status aliado com a gente) e a torcida C neutra com a gente,
+  aliada de A pela relação delas (`relacaoDelas`), não irmã nossa e não
+  maior rival de nenhuma aliada nossa (`ehMaiorRival`, que lê a fonte e
+  o valor). Praça sem aliada nossa vem primeiro; o desempate é hash.
+  Cartão de decisão com a voz de A: "Aproximar" leva C a pelo menos +25
+  (aliada) e dá +3 em A; "Deixar como está" tira 3 de A. Uma por par por
+  ano (`chave interm|A|C|ano`).
+- +25 E NÃO +20: a +20 cravado, os dois meses secos (−1) já devolviam a
+  pergunta "encerra a aliança?" — visto no teste, corrigido.
+- BUG ACHADO NO CAMINHO: numa semana com dois jogos nossos (copa no meio
+  da semana em casa e campeonato fora), o cartão de segunda pintava o
+  jogo fora como "jogo alheio" e quebrava em `r.grupo.chaveJogo` — o
+  feed inteiro parava de pintar. Agora o jogo principal da aba é o que
+  bate com `proximoJogo`, e o outro jogo nosso entra como linha sem
+  controle; `blocoOutro` também tolera linha sem `grupo`.
+- MEDIDO (`status-interm.js`): Cearamor de −85 pra −10 → cartão "Fala,
+  Leões da TUF… Fechado?"; "Rival continua rival" → −16, recusa anotada,
+  nova queda pra −10 no mesmo período → sem cartão e valor de volta a
+  −16. Camisa 12 do Inter de 25 pra 15 → cartão "Encerra a aliança?";
+  "Encerrar" → visto neutro; subir pra 25 depois → sem cartão. Forçando
+  a intermediação: Nação Independente oferece a Camisa 12 do Vitória
+  (Bahia, praça sem aliada nossa); "Aproximar" → 0 → 25, Aliado, e +3 na
+  Nação. 200 dias de jogo novo sem mexer: nenhum cartão de status (não há
+  relação na beira do corte na abertura). Regressões sem erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

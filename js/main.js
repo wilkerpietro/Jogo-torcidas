@@ -1009,6 +1009,7 @@
   const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Na rua',
                    jornal:'Jornal'};
   const ROT_KIND = {abertura:'Abertura', olheiro:'Olheiro',
+                    status:'Relação', intermediacao:'Aproximação',
                     guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
                     aniversario:'Aniversário', aniversarios:'Aniversários do mês',
@@ -2580,7 +2581,10 @@
       const p = P.plano(e);
       const bloco = el('div',{class:'sem-jogo'+(r.passou?' passou':'')});
       bloco.innerHTML = rotuloJogo(r) + ruaDe(r);
-      if(r.passou || !vigente || !r.grupo.chaveJogo) return bloco;
+      /* o segundo jogo nosso da semana (ex.: copa no meio da semana e
+         campeonato no fim) entra como linha sem controle: o plano é do
+         `proximoJogo`, um por vez */
+      if(r.passou || !vigente || !r.grupo || !r.grupo.chaveJogo) return bloco;
       /* na subsede o bote é do núcleo de lá, na pista ou na praça, em
          cima da caravana rival que viajou OU da torcida local do
          mandante (dono, 10/09/2026); marcar aqui pré-decide o bote */
@@ -2620,7 +2624,9 @@
         corpo.appendChild(el('div',{class:'sem-nucleo', html:
           `<b>${nucleo}</b> do núcleo de ${cid.nome||''} de pé`}));
       }
-      const nosso = pauta.linhas.find(l=>l.tipo==='nosso' || l.tipo==='fora');
+      const meus = pauta.linhas.filter(l=>l.tipo==='nosso' || l.tipo==='fora');
+      const pj = e.proximoJogo || {};
+      const nosso = meus.find(l=> l.tipo==='fora' ? !pj.casa : (pj.casa && l.diaN === pj.dia)) || meus[0];
       if(nosso) corpo.appendChild(blocoNosso(nosso));
       else if(pauta.emCasa) corpo.appendChild(el('div',{class:'sem-nucleo', texto: vigente ? 'Semana de folga do time: nenhum jogo nosso.' : 'Semana sem jogo nosso.'}));
       const outros = pauta.linhas.filter(l=>l !== nosso);
@@ -2654,7 +2660,9 @@
   function cartaoMensagem(e, m){
     const art = el('article',{class:`msg kind-${m.kind||'msg'} peso-${m.peso}`+
       (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : '')});
-    const quem  = ROT_VOZ[m.voz] || 'A rua';
+    /* a voz 'torcida' é a própria torcida falando (status, intermediação) */
+    const quem  = m.voz === 'torcida' && m.dados && m.dados.nome
+      ? linkTorcida(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || 'A rua');
     const papel = ROT_KIND[m.kind] || '';
     const q = m.quando || {};
     const d = TO.estado.dataDaSemana(q.ano||e.data.ano, q.semana||1, q.dia||1);
