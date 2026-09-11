@@ -5811,6 +5811,82 @@ a Galoucura saiu de −45 pra 0 (Neutro) e a Raça Coral subiu 3; noventa
 dias depois a relação seguia neutra e a pergunta de status não voltou.
 Recusando, −3 na aliada e nada no rival.
 
+## A nossa mesa nos eixos: fundar e pedir entrada (pedido do dono, 11/09/2026)
+
+Até aqui os eixos eram coisa que acontecia com a gente: a IA convidava,
+a IA punha nomes na mesa. O dono pediu o lado ativo — **estando em um
+eixo só, a torcida pode fundar o próprio eixo, escolhendo o nome e
+procurando membros, ou se candidatar a entrar num eixo que já existe**.
+Quem está nos dois eixos que cabem não senta mesa nenhuma: o teto é o
+mesmo que vale pra IA.
+
+Tudo mora em **Diplomacia → Eixos**, num cartão novo no alto, *A nossa
+mesa*.
+
+### Fundar um eixo
+
+Um modal com o campo do nome (sigla derivada das iniciais, editável),
+uma fileira com os nomes da lista que a rua ainda não usou — clicar num
+preenche os dois campos — e a lista de quem dá pra chamar: aliada de
+verdade (+45 ou mais), com lugar em mais um eixo e que não seja maior
+rival nossa. Cada nome mostra a **chance de topar**, e o rodapé soma a
+chance de a mesa inteira fechar.
+
+Um eixo nasce com três torcidas, então é preciso chamar pelo menos duas,
+e elas não podem ser rivais entre si. Cada convidado responde na hora
+pelo sorteio da própria chance; vindo menos de dois, o eixo não nasce —
+e o nome escolhido não é gasto. Quem disse não some da lista por meio
+ano.
+
+### Pedir entrada num eixo
+
+**A regra é do dono (11/09/2026): dá pra bater na porta de qualquer eixo
+que não tenha rival nosso dentro.** Isso é mais frouxo do que o crivo da
+IA, e de propósito: pra a IA CONVIDAR alguém, o nome tem que "fazer
+sentido" — ser aliada de metade do eixo. Pra a gente PEDIR basta não ter
+treta lá dentro: nenhum membro rival, nenhum maior rival dos dois lados.
+O quanto eles gostam da gente não barra o pedido — manda na chance de a
+porta abrir.
+
+Continuam de pé as regras de estrutura, que não são de simpatia: o teto
+de dois eixos por torcida, a irmã de um maior rival do eixo e o limite
+de três membros em comum entre eixos.
+
+Porta fechada só volta a ouvir em meio ano. Com a TUF, no começo de
+jogo, nenhum dos cinco eixos de nascença está aberto — todos têm rival
+nosso dentro —, então fundar é o caminho natural até a diplomacia
+esfriar alguma treta.
+
+### Chamar um nome pro eixo que já é nosso
+
+Todo eixo de que a gente participa — o fundado e os de nascença — ganhou
+um **Chamar um nome** no pé do cartão, com a mesma lista de chances. O
+compasso é o dos eixos da IA: **um nome a cada 15 dias**, por eixo.
+Quem entra vira aliada de todo o eixo e rival dos maiores rivais dele,
+exatamente como na entrada da IA.
+
+### As chances e os freios
+
+- **Convite nosso**: manda a relação com a gente — `(relação − 5) / 80`,
+  com −20 pontos percentuais pra quem já anda em outro eixo e +10 pra
+  quem não tem nenhum. Fica entre 8% e 92%.
+- **Candidatura**: manda a média das relações com os membros —
+  `(média + 10) / 90`, +10 pontos se a gente abre praça nova pra eles e
+  −15 se a gente já anda em outro eixo. Fica entre 5% e 90%.
+- **Uma mesa por trimestre**: fundar e se candidatar dividem o mesmo
+  relógio de 13 semanas, gasto tenha dado certo ou não.
+- **Um convite por eixo a cada 15 dias**, e quem disse não — a nós ou a
+  um convite nosso — fica fora por 26 semanas.
+
+**Verificado no navegador.** A TUF (num eixo, o Lado A) fundou a União
+Firma Forte com a Jovem Garra Tricolor e o Esquadrão Vilanovense — 55%
+de chance de fechar, e fechou; o relógio da mesa foi pra 13 semanas e o
+cartão passou a dizer que não cabe em mais nenhum. Zerando a treta com
+os membros do Punho Colado, a porta abriu a 43% e a candidatura entrou,
+trazendo três aliadas novas e dois rivais. No Lado A, o Chamar um nome
+trouxe a Jovem Confiança a 60% e travou o botão por 15 dias. Varredura
+de dois anos sem exceção.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

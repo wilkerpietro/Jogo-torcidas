@@ -2322,3 +2322,40 @@ header.capa-cidade{background-size:cover; background-position:center;
 .eixo-membro .to-chip{width:9px;height:9px;flex:none;display:inline-block;border:1px solid rgba(255,255,255,.22)}
 .eixo-rivais{margin-top:8px;padding-top:7px;border-top:1px solid var(--sulco);font-size:11.5px;color:var(--fraco);line-height:1.45}
 .eixo-rivais .rot{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+
+/* ---------- a nossa mesa nos eixos (dono, 11/09/2026) ---------- */
+.eixo-mesa-card{border-left:3px solid var(--ouro)}
+.eixo-mesa-card .corpo p{line-height:1.5}
+.eixo-mesa{display:flex;flex-direction:column;gap:10px}
+.eixo-mesa>p{line-height:1.5;font-size:12px}
+.eixo-nome{display:flex;gap:7px}
+.eixo-nome .busca{margin-bottom:0}
+.eixo-nome .sigla{width:84px;flex:none;text-align:center;
+  font-family:var(--mono);letter-spacing:.1em}
+.eixo-sugestoes{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.eixo-sugestoes .rot{width:100%;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--fraco)}
+.eixo-cands{display:flex;flex-direction:column;gap:3px;
+  max-height:46vh;overflow-y:auto}
+.eixo-cand{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;text-align:left;cursor:pointer;color:var(--texto);
+  background:#171717;border:1px solid var(--linha);border-left:3px solid transparent;
+  padding:7px 10px;font-size:12.5px}
+.eixo-cand:hover:not(:disabled){background:#1f1f1f}
+.eixo-cand.on{background:#241717;border-left-color:var(--rubro-vivo)}
+.eixo-cand.off{opacity:.45;cursor:default}
+.eixo-cand .qm{display:flex;align-items:baseline;gap:7px;min-width:0;flex-wrap:wrap}
+.eixo-cand .qm b{font-weight:600}
+.eixo-cand .qm small{color:var(--fraco);font-size:10.5px}
+.eixo-cand .qm .to-chip{width:9px;height:9px;flex:none;display:inline-block;
+  border:1px solid rgba(255,255,255,.22)}
+.eixo-cand .ch{flex:none;font-family:var(--mono);font-size:13px;text-align:right;line-height:1.05}
+.eixo-cand .ch small{display:block;font-size:8.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--fraco)}
+.eixo-cand .ch.boa{color:var(--verde-vivo)}
+.eixo-cand .ch.meia{color:var(--ouro)}
+.eixo-cand .ch.magra{color:var(--vermelho)}
+.eixo-cand .nao{flex:none;font-size:10.5px;color:var(--fraco);text-align:right;max-width:46%}
+.eixo-nota{font-size:11.5px;color:var(--ouro);padding:6px 9px;
+  background:#1d1a14;border-left:3px solid #5a4a1e}
+.eixo-nota.pronta{color:var(--verde-vivo);background:#131a13;border-left-color:var(--verde)}

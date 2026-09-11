@@ -7413,6 +7413,184 @@
      destaque —, e embaixo cada eixo com a lista inteira de membros. O
      nome do eixo é link pro perfil dele.
      ======================================================= */
+  /* =======================================================
+     A NOSSA MESA NOS EIXOS (pedido do dono, 11/09/2026)
+     Em UM eixo só, a torcida pode sentar a própria mesa: fundar um
+     eixo — nome escolhido por nós e os fundadores que a gente chamar —
+     ou bater na porta de um eixo que já existe. E todo eixo nosso pode
+     chamar um nome a cada 15 dias. As telas são três modais; quem diz
+     o que pode e o que não pode é `TO.eixos`.
+     ======================================================= */
+  const pctChance = c => `${Math.round(c*100)}%`;
+  const classeChance = c => c >= .6 ? 'boa' : c >= .35 ? 'meia' : 'magra';
+
+  /* a lista de torcidas de um modal: chip, nome, praça, relação e chance */
+  function linhaCandidata(c, marcada, aoClicar){
+    const b = el('button',{class:'eixo-cand'+(marcada?' on':'')+(c.ok===false?' off':'')});
+    b.disabled = c.ok === false || !aoClicar;
+    b.innerHTML =
+      `<span class="qm">${chipTorcida(c.id, (TO.mundo.coresDaTorcida(TO.mundo.torcida(c.id))||{}).cor || '#888')}`+
+      `<b>${c.nome}</b><small>${(TO.financeiro.nomeCidade && TO.financeiro.nomeCidade(c.mapa)) || c.mapa||''}`+
+      `${c.eixos ? ` · ${c.eixos} eixo${c.eixos>1?'s':''}` : ''}</small></span>`+
+      (c.ok === false
+        ? `<span class="nao">${c.motivo||'não dá'}</span>`
+        : `<span class="ch ${classeChance(c.chance)}">${pctChance(c.chance)}<small>topa</small></span>`);
+    if(aoClicar) b.onclick = ()=>aoClicar(c);
+    return b;
+  }
+
+  /* ---- fundar o nosso eixo ---- */
+  function abrirFundarEixo(){
+    const e = E(), X = TO.eixos;
+    const cx = el('div',{class:'eixo-mesa'});
+    const escolhidos = new Set();
+    let nome = '', sigla = '';
+    const sugestoes = X.nomesLivres(e, 6);
+
+    const cabecalho = el('div');
+    cx.appendChild(cabecalho);
+    const lista = el('div',{class:'eixo-cands'});
+    const aviso1 = el('div',{class:'eixo-nota'});
+    cx.append(lista, aviso1);
+
+    const possiveis = X.fundadoresPossiveis(e);
+    const pintar = ()=>{
+      cabecalho.innerHTML = '';
+      cabecalho.appendChild(el('p',{class:'fraco', texto:
+        `Um eixo nasce com ${X.MIN_FUNDADORES} torcidas. A gente escolhe o nome e chama `+
+        `as aliadas; cada uma responde na hora. Vale uma mesa por trimestre, dando certo ou não.`}));
+      const campo = el('div',{class:'eixo-nome'});
+      const iN = el('input',{class:'busca'}); iN.placeholder = 'Nome do eixo'; iN.value = nome;
+      iN.oninput = ()=>{ nome = iN.value; if(!sigla) iS.value = auto(); atualizar(); };
+      const iS = el('input',{class:'busca sigla'}); iS.placeholder = 'sigla'; iS.maxLength = 5; iS.value = sigla;
+      iS.oninput = ()=>{ sigla = iS.value.toUpperCase(); iS.value = sigla; };
+      const auto = ()=> nome.trim().split(/\s+/).filter(p=>p.length>2)
+        .map(p=>p[0]).join('').toUpperCase().slice(0,4);
+      campo.append(iN, iS);
+      cabecalho.appendChild(campo);
+      if(sugestoes.length){
+        const sg = el('div',{class:'eixo-sugestoes'});
+        sg.appendChild(el('span',{class:'rot', texto:'Nomes que a rua ainda não usou'}));
+        for(const n of sugestoes){
+          const b = el('button',{class:'sem-chip', html:`<span>${n.nome}</span><small>${n.sigla||''}</small>`});
+          b.onclick = ()=>{ nome = n.nome; sigla = n.sigla || ''; pintar(); };
+          sg.appendChild(b);
+        }
+        cabecalho.appendChild(sg);
+      }
+    };
+    const atualizar = ()=>{
+      const ids = [...escolhidos];
+      const nm = X.nomeServe(e, nome);
+      const briga = X.brigaNoGrupo(e, ids);
+      const falta = Math.max(0, (X.MIN_FUNDADORES - 1) - ids.length);
+      aviso1.className = 'eixo-nota' + (nm.ok && !briga && !falta ? ' pronta' : '');
+      aviso1.textContent = !nm.ok ? nm.motivo
+        : briga ? briga
+        : falta ? `Falta${falta>1?'m':''} ${falta} pra fechar a mesa`
+        : `${ids.length + 1} na mesa — chance de fechar: `+
+          pctChance(ids.reduce((p,id)=>p * (possiveis.find(x=>x.id===id)||{chance:0}).chance, 1));
+      btFundar.disabled = !nm.ok || !!briga || !!falta;
+    };
+    const pintarLista = ()=>{
+      lista.innerHTML = '';
+      if(!possiveis.length)
+        lista.appendChild(el('div',{class:'em-construcao', texto:
+          'Nenhuma aliada cabe numa mesa dessas agora: é preciso relação de aliada e lugar em mais um eixo.'}));
+      for(const c of possiveis)
+        lista.appendChild(linhaCandidata(c, escolhidos.has(c.id), ()=>{
+          escolhidos.has(c.id) ? escolhidos.delete(c.id) : escolhidos.add(c.id);
+          pintarLista(); atualizar();
+        }));
+    };
+    const btFundar = el('button',{class:'bt destaque', texto:'Fundar o eixo'});
+    pintar(); pintarLista(); atualizar();
+
+    const fechar = modal('Fundar um eixo',
+      `a gente cabe em mais ${X.MAX_POR_TORCIDA - X.eixosNossos(e).length}`, cx, [], 'media');
+    /* o botão de ação vai pro rodapé do modal, junto do Fechar */
+    const rod = cx.closest('.moldura').querySelector('footer');
+    /* o destaque é a AÇÃO, não o Fechar: o rodapé do modal dá o vermelho
+       ao Fechar por padrão, e aqui quem manda é fundar */
+    for(const b of rod.querySelectorAll('button')) b.classList.remove('destaque');
+    rod.insertBefore(btFundar, rod.firstChild);
+    btFundar.onclick = ()=>{
+      const r = X.fundarNosso(e, nome, sigla, [...escolhidos]);
+      TO.estado.salvar();
+      fechar();
+      if(!r.ok && !r.dentro) return aviso(r.motivo, 'ruim');
+      if(!r.nasceu){
+        const nomes = (r.fora||[]).map(id=>(TO.mundo.torcida(id)||{}).nome).join(', ');
+        aviso(`A mesa não fechou: ${r.motivo}.${nomes ? ` Fora: ${nomes}.` : ''}`, 'ruim');
+      } else {
+        aviso(`Nasceu o ${r.eixo.nome}, com a gente e `+
+              r.dentro.map(id=>(TO.mundo.torcida(id)||{}).nome).join(', ')+'.', 'boa');
+      }
+      redesenhar();
+    };
+  }
+
+  /* ---- bater na porta de um eixo ---- */
+  function abrirCandidatura(){
+    const e = E(), X = TO.eixos;
+    const cx = el('div',{class:'eixo-mesa'});
+    cx.appendChild(el('p',{class:'fraco', texto:
+      'Dá pra bater na porta de qualquer eixo que não tenha rival nosso dentro. '+
+      'Quem abre é eles: a chance é o quanto a turma de lá anda com a gente. '+
+      'Vale uma mesa por trimestre, e porta fechada só volta a ouvir em meio ano.'}));
+    const lista = el('div',{class:'eixo-cands'});
+    cx.appendChild(lista);
+    const linhas = X.eixosPraCandidatar(e);
+    for(const c of linhas){
+      const b = el('button',{class:'eixo-cand'+(c.ok?'':' off')});
+      b.disabled = !c.ok;
+      b.innerHTML = `<span class="qm"><b>${c.nome}</b><small>${c.membros} torcidas</small></span>`+
+        (c.ok ? `<span class="ch ${classeChance(c.chance)}">${pctChance(c.chance)}<small>abrem</small></span>`
+              : `<span class="nao">${c.motivo||'não dá'}</span>`);
+      b.onclick = ()=>{
+        const r = X.candidatar(e, c.id);
+        TO.estado.salvar();
+        fechar();
+        if(!r.ok) return aviso(r.motivo, 'ruim');
+        if(!r.aceito) return aviso(`O ${c.nome} ouviu e disse não. Só voltam a ouvir em meio ano.`, 'ruim');
+        const nm = id => (TO.mundo.torcida(id)||{}).nome || id;
+        aviso(`A gente entrou pro ${c.nome}. `+
+          (r.novasAliadas.length ? `Novas aliadas: ${r.novasAliadas.map(nm).join(', ')}. ` : '')+
+          (r.novosRivais.length ? `Novos rivais: ${r.novosRivais.map(nm).join(', ')}.` : ''), 'boa');
+        redesenhar();
+      };
+      lista.appendChild(b);
+    }
+    if(!linhas.length)
+      lista.appendChild(el('div',{class:'em-construcao', texto:'Nenhum eixo pra bater na porta agora.'}));
+    const fechar = modal('Pedir entrada num eixo', 'uma mesa por trimestre', cx, [], 'media');
+  }
+
+  /* ---- chamar um nome pro nosso eixo ---- */
+  function abrirConviteEixo(eixoId){
+    const e = E(), X = TO.eixos, x = X.eixo(e, eixoId);
+    const cx = el('div',{class:'eixo-mesa'});
+    cx.appendChild(el('p',{class:'fraco', texto:
+      `O ${x.nome} chama um nome a cada ${X.CONVITE_CADA_DIAS} dias. Quem entra vira aliada `+
+      `de todo o eixo — e rival dos maiores rivais dele.`}));
+    const lista = el('div',{class:'eixo-cands'});
+    cx.appendChild(lista);
+    for(const c of X.convidaveis(e, eixoId).slice(0, 40))
+      lista.appendChild(linhaCandidata(c, false, c.ok ? ()=>{
+        const r = X.convidar(e, eixoId, c.id);
+        TO.estado.salvar();
+        fechar();
+        if(!r.ok) return aviso(r.motivo, 'ruim');
+        if(!r.aceito) return aviso(`A ${c.nome} agradeceu e ficou de fora. Volta a ouvir em meio ano.`, 'ruim');
+        const nm = id => (TO.mundo.torcida(id)||{}).nome || id;
+        aviso(`A ${c.nome} está dentro do ${x.nome}. `+
+          (r.novosRivais.length ? `Virou rival de ${r.novosRivais.map(nm).join(', ')}.` : ''), 'boa');
+        redesenhar();
+      } : null));
+    const fechar = modal(`Chamar um nome · ${x.nome}`,
+      `${x.membros.length} torcidas`, cx, [], 'media');
+  }
+
   function painelEixos(e){
     const cx = el('div');
     const X = TO.eixos;
@@ -7421,6 +7599,31 @@
     const corT  = id => { const o = TO.mundo.torcida(id);
                           return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
     const nomeCid = c => (TO.financeiro.nomeCidade && TO.financeiro.nomeCidade(c)) || c;
+
+    /* ---- a nossa mesa (dono, 11/09/2026) ---- */
+    const nossos = X.eixosNossos(e), cabe = X.cabemosEmMais(e);
+    const espera = X.esperaDaMesa(e);
+    const cM = cartao('A nossa mesa',
+      nossos.length ? nossos.map(x=>x.nome).join(' · ') : 'sem eixo nenhum');
+    cM.classList.add('eixo-mesa-card');
+    cM.corpo.appendChild(el('p',{class:'fraco', html: cabe
+      ? `A gente está em ${nossos.length} de ${X.MAX_POR_TORCIDA} eixos — cabe em mais um. `+
+        `Dá pra fundar um eixo nosso, com nome e fundadores escolhidos por nós, `+
+        `ou bater na porta de um eixo que não tenha rival nosso dentro.`
+      : `A gente está nos dois eixos que cabem. Pra entrar em outro, teria que sair de um.`}));
+    if(cabe){
+      const bF = el('button',{class:'bt destaque', texto:'Fundar um eixo'});
+      const bC = el('button',{class:'bt', texto:'Pedir entrada num eixo'});
+      bF.disabled = bC.disabled = !!espera;
+      bF.onclick = abrirFundarEixo; bC.onclick = abrirCandidatura;
+      if(espera){
+        const t = `a mesa só senta de novo em ${espera} semana${espera>1?'s':''}`;
+        bF.title = bC.title = t;
+        cM.corpo.appendChild(el('div',{class:'eixo-nota', texto: t[0].toUpperCase()+t.slice(1)}));
+      }
+      cM.rodape(bF, bC);
+    }
+    cx.appendChild(cM);
 
     /* ---- as novidades ---- */
     const nov = X.novidades(e, 30);
@@ -7469,6 +7672,14 @@
           `<span class="rot">Maiores rivais do eixo</span>`+
           r.rivais.slice(0, 14).map(id=>linkTorcida(id, nomeT(id))).join(', ')+
           (r.rivais.length > 14 ? ` <small class="fraco">e mais ${r.rivais.length-14}</small>` : '')}));
+      if(r.nosso){
+        const dias = X.esperaDoConvite(e, x.id);
+        const b = el('button',{class:'bt', texto:'Chamar um nome'});
+        b.disabled = !!dias;
+        if(dias) b.title = `o eixo já chamou alguém: o próximo nome sai em ${dias} dia${dias>1?'s':''}`;
+        b.onclick = ()=>abrirConviteEixo(x.id);
+        c.rodape(b);
+      }
       grade.appendChild(c);
     }
     cx.appendChild(grade);

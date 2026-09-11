@@ -43,7 +43,10 @@ TO.eixos = (function(){
         membros: x.membros.filter(id=>ids.has(id))
       })),
       historico:[], recusas:{}, vetos:{}, propostas:{}, nomesUsados:[], seq:1,
-      seqHist:0, vistoAte:0
+      seqHist:0, vistoAte:0,
+      /* as jogadas do dono: o relógio da mesa, o convite de cada eixo
+         nosso e quem já disse não (dono, 11/09/2026) */
+      nossos:{mesa:0, convites:{}, recusaram:{}, recusaramNos:{}}
     };
     /* os membros de nascença já são aliados entre si: onde a fonte
        deixou a relação abaixo do corte, ela sobe; nada de rivalidade
@@ -70,6 +73,11 @@ TO.eixos = (function(){
     if(typeof X.seq      !== 'number') X.seq = X.lista.filter(x=>!x.base).length + 1;
     if(typeof X.seqHist  !== 'number') X.seqHist = X.historico.length;
     if(typeof X.vistoAte !== 'number') X.vistoAte = X.seqHist;
+    if(!X.nossos || typeof X.nossos !== 'object')
+      X.nossos = {mesa:0, convites:{}, recusaram:{}, recusaramNos:{}};
+    X.nossos.convites     = X.nossos.convites     || {};
+    X.nossos.recusaram    = X.nossos.recusaram    || {};
+    X.nossos.recusaramNos = X.nossos.recusaramNos || {};
     /* os eixos de nascença acompanham a fonte: eixo novo entra inteiro,
        e membro que o dono somou depois entra no eixo que já estava no
        save — sempre respeitando o teto de eixos por torcida */
@@ -375,6 +383,247 @@ TO.eixos = (function(){
     X.vistoAte = Math.max(X.vistoAte||0, X.seqHist||0);
   }
 
+  /* =========================================================
+     AS JOGADAS DO DONO (pedido do dono, 11/09/2026)
+     Estando em UM eixo só, a nossa torcida pode sentar a própria
+     mesa: fundar um eixo — com nome escolhido por nós e os fundadores
+     que a gente chamar — ou se candidatar a entrar num eixo que já
+     existe. Quem está em dois eixos não cabe em mais nenhum: o teto é
+     o mesmo que vale pra IA.
+
+     Freio: uma mesa dessas por trimestre (fundar ou se candidatar,
+     deu certo ou não), e cada eixo nosso chama um nome a cada 15
+     dias — o mesmo compasso de recrutamento dos eixos da IA. Quem diz
+     não some da lista por meio ano.
+     ========================================================= */
+  const MESA_CADA        = 13;   // semanas entre uma jogada nossa e outra
+  const CONVITE_CADA_DIAS= 15;   // cada eixo nosso chama um nome a cada 15 dias
+  const RECUSA_NOSSA     = 26;   // semanas até voltar a chamar quem disse não
+
+  const cabemosEmMais = E => de(E, E.torcida.id).length < MAX_POR_TORCIDA;
+  const eixosNossos   = E => de(E, E.torcida.id);
+
+  /* quantas semanas faltam pra próxima mesa (0 = pode agora) */
+  function esperaDaMesa(E){
+    const X = caixas(E), sa = R().semanaAbs(E);
+    const falta = MESA_CADA - (sa - (X.nossos.mesa || -MESA_CADA));
+    return Math.max(0, falta);
+  }
+  /* quantos dias faltam pro próximo convite DESTE eixo nosso */
+  function esperaDoConvite(E, eixoId){
+    const X = caixas(E), abs = E.data.absoluto || 0;
+    const ult = X.nossos.convites[eixoId];
+    if(ult === undefined) return 0;
+    return Math.max(0, CONVITE_CADA_DIAS - (abs - ult));
+  }
+
+  /* a chance de alguém aceitar o nosso convite: manda a relação com a
+     gente, e quem já tem eixo pensa duas vezes */
+  function chanceDoConvite(E, eixoId, torcidaId){
+    const v = relDe(E, E.torcida.id, torcidaId);
+    let c = (v - 5) / 80;
+    c += de(E, torcidaId).length ? -0.2 : 0.1;
+    return Math.max(0.08, Math.min(0.92, c));
+  }
+  /* a chance de um eixo aceitar a NOSSA candidatura: a média das
+     relações com os membros, com bônus se a gente abre praça nova e
+     desconto se a gente já anda em outro eixo */
+  function chanceDaCandidatura(E, eixoId){
+    const x = eixo(E, eixoId); if(!x || !x.membros.length) return 0;
+    const nos = E.torcida.id;
+    const media = x.membros.reduce((sm, m)=>sm + relDe(E, m, nos), 0) / x.membros.length;
+    let c = (media + 10) / 90;
+    const pracas = new Set(x.membros.map(m=>(M().torcida(m)||{}).mapa));
+    if(!pracas.has((M().torcida(nos)||{}).mapa)) c += 0.1;
+    if(de(E, nos).length) c -= 0.15;
+    return Math.max(0.05, Math.min(0.9, c));
+  }
+
+  /* PEDIR ENTRADA NÃO É SER RECRUTADO (regra do dono, 11/09/2026): pra
+     a IA convidar alguém, o nome tem que "fazer sentido" — ser aliada
+     de metade do eixo. Pra a gente BATER NA PORTA basta que o eixo não
+     tenha rival nosso dentro: nenhum membro rival, nenhum maior rival
+     dos dois lados. O quanto eles gostam da gente não barra o pedido —
+     manda na CHANCE de a porta abrir. O resto continua de pé: o teto de
+     dois eixos, a irmã de um maior rival do eixo e o limite de membros
+     em comum, que são regras de estrutura, não de simpatia. */
+  function podemosPedir(E, eixoId){
+    const x = eixo(E, eixoId); const nos = E.torcida.id;
+    if(!x) return {ok:false, motivo:'não existe'};
+    if(x.membros.includes(nos)) return {ok:false, motivo:'a gente já é do eixo'};
+    if(de(E, nos).length >= MAX_POR_TORCIDA) return {ok:false, motivo:'a gente já está em dois eixos'};
+    for(const m of x.membros){
+      if(R().ehMaiorRival(E, m, nos)) return {ok:false, motivo:`maior rival da ${(M().torcida(m)||{}).nome}`};
+      if(relDe(E, m, nos) < -15)      return {ok:false, motivo:`rival da ${(M().torcida(m)||{}).nome}`};
+    }
+    for(const r of maioresRivaisDoEixo(E, x))
+      if(M().saoIrmas && M().saoIrmas(nos, r))
+        return {ok:false, motivo:`a gente é irmã da ${(M().torcida(r)||{}).nome}, maior rival do eixo`};
+    for(const y of de(E, nos)){
+      if(x.base && y.base) continue;
+      const comum = x.membros.filter(m=>y.membros.includes(m)).length + 1;
+      if(comum > MAX_EM_COMUM) return {ok:false, motivo:`o ${x.nome} ficaria com ${comum} em comum com o ${y.nome}`};
+    }
+    return {ok:true};
+  }
+
+  /* os eixos a que a gente pode se candidatar, com a chance de cada um */
+  function eixosPraCandidatar(E){
+    const X = caixas(E), sa = R().semanaAbs(E), nos = E.torcida.id;
+    return lista(E).map(x=>{
+      const pode = podemosPedir(E, x.id);
+      const neg = X.nossos.recusaramNos[x.id];
+      const espera = neg ? Math.max(0, RECUSA_NOSSA - (sa - neg)) : 0;
+      return {id:x.id, nome:x.nome, membros:x.membros.length,
+              ok: pode.ok && !espera, motivo: espera ? `disseram não — voltam a ouvir em ${espera} semanas` : pode.motivo,
+              chance: pode.ok ? chanceDaCandidatura(E, x.id) : 0};
+    }).sort((a,b)=>(b.ok?1:0) - (a.ok?1:0) || b.chance - a.chance);
+  }
+
+  /* os nomes da lista que ainda ninguém usou, pra sugerir no campo */
+  function nomesLivres(E, quantos){
+    const X = caixas(E);
+    const pais = R().paisDaTorcida ? R().paisDaTorcida(E.torcida.id) : 'Brasil';
+    const pool = TO.dados.eixos.nomesNovos || {};
+    const lst = Array.isArray(pool) ? pool : (pool[pais === 'Brasil' ? 'pt' : 'es'] || pool.pt || []);
+    const usados = new Set([...X.nomesUsados, ...lista(E).map(x=>x.nome)]);
+    return lst.filter(n=>!usados.has(n.nome)).slice(0, quantos || 99);
+  }
+  /* o nome serve? não pode ser vazio nem repetir eixo que existe */
+  function nomeServe(E, nome){
+    const n = String(nome || '').trim();
+    if(n.length < 3)  return {ok:false, motivo:'o nome precisa de pelo menos 3 letras'};
+    if(n.length > 32) return {ok:false, motivo:'nome comprido demais'};
+    const igual = s2 => String(s2||'').trim().toLowerCase() === n.toLowerCase();
+    if(lista(E).some(x=>igual(x.nome))) return {ok:false, motivo:'já existe um eixo com esse nome'};
+    return {ok:true, nome:n};
+  }
+
+  /* quem a gente pode chamar pra FUNDAR: aliada de verdade, que cabe
+     em mais um eixo e não é maior rival nossa */
+  function fundadoresPossiveis(E){
+    const X = caixas(E), sa = R().semanaAbs(E), nos = E.torcida.id;
+    return M().jogaveis().filter(o=>{
+      if(o.incompleta || o.id === nos) return false;
+      if(de(E, o.id).length >= MAX_POR_TORCIDA) return false;
+      if(R().ehMaiorRival(E, nos, o.id)) return false;
+      const neg = X.nossos.recusaram[o.id];
+      if(neg && sa - neg < RECUSA_NOSSA) return false;
+      return relDe(E, nos, o.id) >= ALIADO_AO_ENTRAR;
+    }).map(o=>({id:o.id, nome:o.nome, mapa:o.mapa,
+                rel: Math.round(relDe(E, nos, o.id)),
+                eixos: de(E, o.id).length,
+                chance: Math.max(0.08, Math.min(0.92, (relDe(E, nos, o.id) - 5)/80 +
+                                                     (de(E, o.id).length ? -0.2 : 0.1)))}))
+      .sort((a,b)=>b.chance - a.chance);
+  }
+  /* dois convidados não podem ser maiores rivais entre si */
+  function brigaNoGrupo(E, ids){
+    for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++){
+      if(R().ehMaiorRival(E, ids[i], ids[j]))
+        return `${(M().torcida(ids[i])||{}).nome} e ${(M().torcida(ids[j])||{}).nome} são maiores rivais`;
+      if(relDe(E, ids[i], ids[j]) < -15)
+        return `${(M().torcida(ids[i])||{}).nome} e ${(M().torcida(ids[j])||{}).nome} são rivais`;
+    }
+    return null;
+  }
+
+  /* ---- fundar o NOSSO eixo ---- */
+  function fundarNosso(E, nome, sigla, convidados){
+    const X = caixas(E), sa = R().semanaAbs(E), nos = E.torcida.id;
+    if(!cabemosEmMais(E)) return {ok:false, motivo:'a gente já está em dois eixos'};
+    if(esperaDaMesa(E))   return {ok:false, motivo:`a mesa só senta de novo em ${esperaDaMesa(E)} semanas`};
+    const nm = nomeServe(E, nome);
+    if(!nm.ok) return {ok:false, motivo:nm.motivo};
+    const ids = [...new Set(convidados || [])].filter(id=>id !== nos);
+    if(ids.length < MIN_FUNDADORES - 1)
+      return {ok:false, motivo:`um eixo nasce com ${MIN_FUNDADORES}: chame pelo menos ${MIN_FUNDADORES-1}`};
+    const briga = brigaNoGrupo(E, ids);
+    if(briga) return {ok:false, motivo:briga};
+    /* gasta a mesa do trimestre, tenha dado certo ou não */
+    X.nossos.mesa = sa;
+    const H = TO.mapa.hash;
+    const dentro = [], fora = [];
+    for(const id of ids){
+      const c = chanceDoConvite(E, null, id);
+      const sorte = (H(`fundar|${sa}|${nos}|${id}`) % 1000) / 1000;
+      if(sorte < c) dentro.push(id);
+      else { fora.push(id); X.nossos.recusaram[id] = sa; }
+    }
+    if(dentro.length < MIN_FUNDADORES - 1)
+      return {ok:false, nasceu:false, dentro, fora,
+              motivo:`só ${dentro.length} toparam — um eixo nasce com ${MIN_FUNDADORES}`};
+    const x = fundar(E, [nos, ...dentro], {nome:nm.nome, sigla:String(sigla||'').trim().toUpperCase().slice(0,5)});
+    if(!x) return {ok:false, motivo:'não rolou'};
+    X.nomesUsados.push(nm.nome);
+    X.nossos.convites[x.id] = E.data.absoluto || 0;
+    return {ok:true, nasceu:true, eixo:x, dentro, fora};
+  }
+
+  /* ---- pedir entrada num eixo que já existe ---- */
+  function candidatar(E, eixoId){
+    const X = caixas(E), sa = R().semanaAbs(E), nos = E.torcida.id;
+    const x = eixo(E, eixoId);
+    if(!x) return {ok:false, motivo:'esse eixo não existe'};
+    if(!cabemosEmMais(E)) return {ok:false, motivo:'a gente já está em dois eixos'};
+    if(esperaDaMesa(E))   return {ok:false, motivo:`a mesa só senta de novo em ${esperaDaMesa(E)} semanas`};
+    const neg = X.nossos.recusaramNos[eixoId];
+    if(neg && sa - neg < RECUSA_NOSSA)
+      return {ok:false, motivo:`eles disseram não faz pouco — voltam a ouvir em ${RECUSA_NOSSA - (sa - neg)} semanas`};
+    const pode = podemosPedir(E, eixoId);
+    if(!pode.ok) return {ok:false, motivo:pode.motivo};
+    X.nossos.mesa = sa;
+    const c = chanceDaCandidatura(E, eixoId);
+    const sorte = (TO.mapa.hash(`cand|${sa}|${nos}|${eixoId}`) % 1000) / 1000;
+    if(sorte >= c){ X.nossos.recusaramNos[eixoId] = sa;
+                    return {ok:true, aceito:false, chance:c, eixo:x}; }
+    const r = entrar(E, eixoId, nos);
+    return {ok:true, aceito:true, chance:c, eixo:x,
+            novasAliadas:(r||{}).novasAliadas || [], novosRivais:(r||{}).novosRivais || []};
+  }
+
+  /* ---- chamar um nome pro nosso eixo ---- */
+  function convidar(E, eixoId, torcidaId){
+    const X = caixas(E), sa = R().semanaAbs(E), abs = E.data.absoluto || 0;
+    const x = eixo(E, eixoId);
+    if(!x) return {ok:false, motivo:'esse eixo não existe'};
+    if(!x.membros.includes(E.torcida.id)) return {ok:false, motivo:'esse eixo não é nosso'};
+    const espera = esperaDoConvite(E, eixoId);
+    if(espera) return {ok:false, motivo:`o eixo já chamou alguém: o próximo nome sai em ${espera} dias`};
+    const neg = X.nossos.recusaram[torcidaId];
+    if(neg && sa - neg < RECUSA_NOSSA)
+      return {ok:false, motivo:`eles disseram não faz pouco — voltam a ouvir em ${RECUSA_NOSSA - (sa - neg)} semanas`};
+    const pode = podeEntrar(E, eixoId, torcidaId);
+    if(!pode.ok) return {ok:false, motivo:pode.motivo};
+    X.nossos.convites[eixoId] = abs;
+    const c = chanceDoConvite(E, eixoId, torcidaId);
+    const sorte = (TO.mapa.hash(`conv|${sa}|${eixoId}|${torcidaId}`) % 1000) / 1000;
+    if(sorte >= c){ X.nossos.recusaram[torcidaId] = sa;
+                    return {ok:true, aceito:false, chance:c}; }
+    const r = entrar(E, eixoId, torcidaId);
+    return {ok:true, aceito:true, chance:c,
+            novasAliadas:(r||{}).novasAliadas || [], novosRivais:(r||{}).novosRivais || []};
+  }
+
+  /* quem o NOSSO eixo pode chamar, com a chance de cada um */
+  function convidaveis(E, eixoId){
+    const X = caixas(E), sa = R().semanaAbs(E);
+    return M().jogaveis().filter(o=>!o.incompleta && o.id !== E.torcida.id)
+      .map(o=>{
+        const pode = podeEntrar(E, eixoId, o.id);
+        const neg = X.nossos.recusaram[o.id];
+        const espera = neg ? Math.max(0, RECUSA_NOSSA - (sa - neg)) : 0;
+        return {id:o.id, nome:o.nome, mapa:o.mapa,
+                rel: Math.round(relDe(E, E.torcida.id, o.id)),
+                eixos: de(E, o.id).length,
+                ok: pode.ok && !espera,
+                motivo: espera ? `disseram não — voltam a ouvir em ${espera} semanas` : pode.motivo,
+                chance: pode.ok ? chanceDoConvite(E, eixoId, o.id) : 0};
+      })
+      .filter(c=>c.ok || c.chance > 0 || c.rel >= 20)
+      .sort((a,b)=>(b.ok?1:0) - (a.ok?1:0) || b.chance - a.chance || b.rel - a.rel);
+  }
+
   /* pro perfil e pra Diplomacia */
   function resumo(E, id){
     const x = eixo(E, id); if(!x) return null;
@@ -391,5 +640,11 @@ TO.eixos = (function(){
   return {caixas, lista, eixo, de, podeEntrar, candidatos, entrar, fundar,
           eventosDoDia, recusar, resumo, maioresRivaisDoEixo,
           novidades, naoVistas, naoVistasNossas, marcarVistas, vetar,
-          MAX_POR_TORCIDA, ALIADO_AO_ENTRAR, RIVAL_AO_ENTRAR};
+          /* as jogadas do dono (11/09/2026) */
+          cabemosEmMais, eixosNossos, esperaDaMesa, esperaDoConvite,
+          eixosPraCandidatar, podemosPedir, nomesLivres, nomeServe, fundadoresPossiveis,
+          brigaNoGrupo, fundarNosso, candidatar, convidar, convidaveis,
+          chanceDoConvite, chanceDaCandidatura,
+          MAX_POR_TORCIDA, MIN_FUNDADORES, MESA_CADA, CONVITE_CADA_DIAS,
+          ALIADO_AO_ENTRAR, RIVAL_AO_ENTRAR};
 })();
