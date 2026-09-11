@@ -2297,3 +2297,8 @@ header.capa-cidade{background-size:cover; background-position:center;
   .sem-sec{grid-template-columns:1fr}
   .sem-sec > *:not(.sem-rot){grid-column:1}
 }
+/* os eixos de aliança (dono, 11/09/2026) */
+.x-link{cursor:pointer;border-bottom:1px dotted currentColor;color:#f0e2c8}
+.x-link:hover{opacity:.75}
+.linha-dado.eixo-nosso{background:#1d1a14;padding-left:6px;padding-right:6px}
+.linha-dado .fraco .t-link{white-space:nowrap}

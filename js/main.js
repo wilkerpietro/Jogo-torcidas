@@ -1010,6 +1010,7 @@
                    jornal:'Jornal'};
   const ROT_KIND = {abertura:'Abertura', olheiro:'Olheiro',
                     status:'Relação', intermediacao:'Aproximação',
+                    eixo:'Eixo de aliança', 'eixo-convite':'Eixo de aliança',
                     guerra:'Dia de jogo',
                     sofrido:'Ataque sofrido', escolta:'Aliados',
                     aniversario:'Aniversário', aniversarios:'Aniversários do mês',
@@ -2662,7 +2663,9 @@
       (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : '')});
     /* a voz 'torcida' é a própria torcida falando (status, intermediação) */
     const quem  = m.voz === 'torcida' && m.dados && m.dados.nome
-      ? linkTorcida(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || 'A rua');
+      ? linkTorcida(m.dados.de, m.dados.nome)
+      : m.voz === 'eixo' && m.dados && m.dados.nome
+      ? linkEixo(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || 'A rua');
     const papel = ROT_KIND[m.kind] || '';
     const q = m.quando || {};
     const d = TO.estado.dataDaSemana(q.ano||e.data.ano, q.semana||1, q.dia||1);
@@ -4999,6 +5002,8 @@
         linhaD('Brigas no ano', `${p.v}V · ${p.d}D `+
           `<small class="fraco">saldo ${p.v - p.d >= 0 ? '+' : ''}${p.v - p.d}</small>`) +
         (irmas.length ? linhaD('Torcida irmã', irmas.join(', ')) : '') +
+        (TO.eixos && TO.eixos.de(e, id).length
+          ? linhaD('Eixos de aliança', TO.eixos.de(e, id).map(x=>linkEixo(x.id, x.nome)).join(', ')) : '') +
         linhasDePano();
       return cx;
     };
@@ -5420,8 +5425,58 @@
     const l = ev.target.closest && ev.target.closest('.t-link');
     if(l && l.dataset.torcida) return abrirPerfilTorcida(l.dataset.torcida);
     const lc = ev.target.closest && ev.target.closest('.c-link');
-    if(lc && lc.dataset.cidade) abrirPerfilCidade(lc.dataset.cidade);
+    if(lc && lc.dataset.cidade) return abrirPerfilCidade(lc.dataset.cidade);
+    const lx = ev.target.closest && ev.target.closest('.x-link');
+    if(lx && lx.dataset.eixo) abrirPerfilEixo(lx.dataset.eixo);
   });
+
+  /* =======================================================
+     O PERFIL DO EIXO DE ALIANÇA (pedido do dono, 11/09/2026)
+     Mesmo overlay das torcidas e cidades: os membros com clube,
+     praça e relação com a gente; os maiores rivais do eixo; as
+     praças cobertas; a força somada; a história de quem entrou.
+     ======================================================= */
+  const linkEixo = (id, nome) =>
+    id ? `<span class="x-link" data-eixo="${id}">${nome}</span>` : nome;
+  function abrirPerfilEixo(id){
+    const e = E(); const X = TO.eixos;
+    if(!e || !X) return;
+    const r = X.resumo(e, id); if(!r) return;
+    const corpo = el('div',{class:'perfil-torcida'});
+    const linhaD = (rot, val)=>`<div class="linha-dado"><span>${rot}</span><b>${val}</b></div>`;
+    const nomeCid = c => (TO.financeiro.nomeCidade && TO.financeiro.nomeCidade(c)) || c;
+    const faixa = el('div',{class:'perfil-t-faixa'}); faixa.style.background = r.nosso ? 'var(--ouro)' : '#444';
+    corpo.appendChild(faixa);
+    corpo.appendChild(el('div',{html:
+      linhaD('Torcidas', `${r.membros.length}${r.nosso ? ' <small class="fraco">· a gente está dentro</small>' : ''}`)+
+      linhaD('Força somada', `${U.numero(Math.round(r.forca))} membros`)+
+      linhaD('Praças', r.pracas.map(c=>linkCidade(c, nomeCid(c))).join(', ') || '—')+
+      linhaD('Fundação', r.x.base ? 'de nascença' : `${r.x.fundado.ano}, semana ${r.x.fundado.semana}`)+
+      (r.rivais.length ? linhaD('Maiores rivais do eixo', r.rivais.map(x=>linkTorcida(x, (TO.mundo.torcida(x)||{}).nome || x)).join(', ')) : '')}));
+    const tab = el('table',{class:'dados'});
+    tab.appendChild(el('thead', null, [el('tr',{html:`<th>Torcida</th><th>Clube</th><th>Praça</th><th>Relação</th></tr>`})]));
+    const tb = el('tbody');
+    for(const o of r.membros){
+      const nossa = o.id === e.torcida.id;
+      const clube = TO.mundo.time(o.clubeId) || {};
+      const v = nossa ? null : Math.round(TO.relacoes.nivel(e, o.id));
+      tb.appendChild(el('tr',{class: nossa ? 'nossa' : '', html:
+        `<td>${chipTorcida(o.id, (TO.mundo.coresDaTorcida(o)||{}).cor)} ${linkTorcida(o.id, o.nome)}</td>`+
+        `<td>${clube.nome ? chipClube(o.clubeId, (clube.cores||[])[0]||'#888')+' '+clube.nome : '—'}</td>`+
+        `<td>${linkCidade(o.mapa, nomeCid(o.mapa))}</td>`+
+        `<td class="num">${nossa ? '—' : `${v} <small class="fraco">${TO.mundo.statusDoValor(v)}</small>`}</td>`}));
+    }
+    tab.appendChild(tb); corpo.appendChild(tab);
+    const hist = (X.caixas(e).historico||[]).filter(h=>h.eixo === id).slice(0, 12);
+    if(hist.length){
+      corpo.appendChild(el('div',{class:'rec-titulo', texto:'Movimento', estilo:{marginTop:'10px'}}));
+      for(const h of hist) corpo.appendChild(el('div',{class:'noticia', html:
+        `<span class="data">${h.ano} · s${h.semana}</span><span class="txt">${
+          h.tipo === 'fundou' ? `Fundado por ${h.membros.map(m=>linkTorcida(m, (TO.mundo.torcida(m)||{}).nome||m)).join(', ')}`
+          : `${linkTorcida(h.torcida, (TO.mundo.torcida(h.torcida)||{}).nome||h.torcida)} entrou`}</span>`}));
+    }
+    modal(r.x.nome, `${r.x.sigla ? r.x.sigla+' · ' : ''}eixo de aliança · ${r.membros.length} torcidas`, corpo);
+  }
 
   /* =======================================================
      PATRIMÔNIO
@@ -7380,6 +7435,20 @@
     const aliados = linhas.filter(l=>l.valor>0).length;
     const rivais  = linhas.filter(l=>l.valor<0).length;
 
+    /* OS EIXOS DE ALIANÇA (dono, 11/09/2026): na aba Alianças, antes
+       da lista, cada eixo com os membros — o nosso em cima */
+    if(subDip === 'aliancas' && TO.eixos){
+      const cx = cartao('Eixos de aliança', `${TO.eixos.lista(e).length} eixos · cada torcida cabe em até ${TO.eixos.MAX_POR_TORCIDA}`);
+      const ordem = TO.eixos.lista(e).slice().sort((a,b)=>(b.membros.includes(e.torcida.id)?1:0)-(a.membros.includes(e.torcida.id)?1:0) || b.membros.length - a.membros.length);
+      for(const x of ordem){
+        const nosso = x.membros.includes(e.torcida.id);
+        cx.corpo.appendChild(el('div',{class:'linha-dado'+(nosso?' eixo-nosso':''), html:
+          `<span><b>${linkEixo(x.id, x.nome)}</b>${nosso ? ' <span class="tag">a gente</span>' : ''}`+
+          `<small class="fraco"> · ${x.membros.length} torcidas</small></span>`+
+          `<span class="fraco">${x.membros.map(m=>linkTorcida(m, (TO.mundo.torcida(m)||{}).nome||m)).join(', ')}</span>`}));
+      }
+      pg.appendChild(cx);
+    }
     const c = cartao('Relações', `${aliados} aliadas · ${rivais} rivais · `+
       `${TO.mundo.jogaveis().length-1-linhas.length} neutras`);
 

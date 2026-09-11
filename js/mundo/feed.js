@@ -382,6 +382,7 @@ TO.feed = (function(){
     treguasDoDia(E);
     statusDeHoje(E);
     intermediacaoDeHoje(E);
+    eixosDoDia(E);
     semanaDeHoje(E);
     olheiroDoDia(E);
     guerraDeHoje(E);
@@ -1442,6 +1443,59 @@ TO.feed = (function(){
               {id:'nao', rot:'Deixar como está', acao:'interm-nao',
                nota:`−3 com a ${a.nome}`}]
     });
+  }
+
+  /* =======================================================
+     OS EIXOS DE ALIANÇA NO FEED (pedido do dono, 11/09/2026)
+     O modelo (eixos.js) decide quem entra e quem funda; aqui vira
+     cartão: o convite ao dono é decisão com a voz do eixo, e o resto
+     é notícia da rua — quem entrou onde, e o eixo que nasceu.
+     ======================================================= */
+  function eixosDoDia(E, forcar){
+    const X = TO.eixos; if(!X) return [];
+    const evs = X.eventosDoDia(E, forcar);
+    const nome = id => (M().torcida(id)||{}).nome || id;
+    for(const ev of evs){
+      const x = X.eixo(E, ev.eixo); if(!x) continue;
+      if(ev.tipo === 'convite'){
+        const rivais = X.maioresRivaisDoEixo(E, x).filter(r=>TO.relacoes.nivel(E, r) > -15);
+        const outros = x.membros.filter(m=>m !== ev.porta);
+        propor(E, {
+          kind:'eixo-convite', peso:'decisao', voz:'eixo',
+          chave:`eixo-convite|${x.id}|${E.data.ano}|${E.data.semana}`,
+          texto:`Fala irmão, aqui é a ${nome(ev.porta)}. O pessoal do ${x.nome} sentou e o `+
+                `nome de vocês saiu na mesa: ${outros.length ? outros.map(nome).join(', ')+' e a gente' : 'a gente'} `+
+                `queremos vocês dentro. Entrando, vocês são aliados de todos nós`+
+                (rivais.length ? ` — e rivais de quem é maior rival da gente: ${rivais.map(nome).join(', ')}` : '')+`. Fecha?`,
+          dados:{de:x.id, nome:x.nome, porta:ev.porta, rivais},
+          botoes:[{id:'sim', rot:`Entrar no ${x.nome}`, acao:'eixo-sim',
+                   nota:`aliada de ${x.membros.length} torcidas`+(rivais.length ? ` · rival de ${rivais.length}` : '')},
+                  {id:'nao', rot:'Ficar de fora', acao:'eixo-nao',
+                   nota:`−3 com a ${nome(ev.porta)} · eles voltam a chamar em meio ano`}]
+        });
+      } else if(ev.tipo === 'entrou'){
+        const nosso = x.membros.includes(E.torcida.id);
+        const ficouRival = ev.novosRivais.includes(E.torcida.id);
+        propor(E, {
+          kind:'eixo', peso:'info', voz:'rua', tipo: ficouRival ? 'ruim' : (nosso ? 'boa' : ''),
+          chave:`eixo-entrou|${x.id}|${ev.torcida}`,
+          texto: nosso
+            ? `O ${x.nome} cresceu: a ${nome(ev.torcida)} entrou pro nosso eixo. Aliada de todos nós agora.`
+            : ficouRival
+            ? `A ${nome(ev.torcida)} entrou pro ${x.nome} — e o eixo tem maior rival nosso: ela virou rival da gente.`
+            : `A ${nome(ev.torcida)} entrou pro ${x.nome}.`,
+          dados:{de:x.id, nome:x.nome, torcida:ev.torcida}
+        });
+      } else if(ev.tipo === 'fundou'){
+        propor(E, {
+          kind:'eixo', peso:'info', voz:'rua',
+          chave:`eixo-fundou|${x.id}`,
+          texto:`Nasceu um eixo novo na rua: o ${x.nome}, com ${ev.membros.map(nome).join(', ')}.`,
+          dados:{de:x.id, nome:x.nome, membros:ev.membros}
+        });
+      }
+    }
+    return evs;
   }
 
   /* O CARTÃO DE SEGUNDA (pedido do dono, 10/09/2026): o planejamento
@@ -2771,6 +2825,24 @@ TO.feed = (function(){
         m.consequencia = `Ficou como está. A ${d.nome} não gostou: −3.`;
         return {ok:true};
       }
+      case 'eixo-sim': {
+        const d = m.dados || {};
+        const r = TO.eixos.entrar(E, d.de, E.torcida.id);
+        marcar();
+        const nome = id => (M().torcida(id)||{}).nome || id;
+        m.consequencia = !r ? 'Não rolou.'
+          : `Dentro do ${d.nome}. `+
+            (r.novasAliadas.length ? `Novas aliadas: ${r.novasAliadas.map(nome).join(', ')}. ` : 'Já éramos aliados de todos. ')+
+            (r.novosRivais.length ? `Novos rivais: ${r.novosRivais.map(nome).join(', ')}.` : '');
+        return {ok:true};
+      }
+      case 'eixo-nao': {
+        const d = m.dados || {};
+        TO.eixos.recusar(E, d.de, d.porta);
+        marcar();
+        m.consequencia = `Ficamos de fora do ${d.nome}. −3 com a ${(M().torcida(d.porta)||{}).nome || ''}.`;
+        return {ok:true};
+      }
       case 'fechar-semana': {
         /* o plano já foi escrito pelos controles do cartão; fechar é
            o `confirmar` de sempre — gasta ação, paga recepção e
@@ -2887,7 +2959,7 @@ TO.feed = (function(){
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
-          statusDeHoje, intermediacaoDeHoje,
+          statusDeHoje, intermediacaoDeHoje, eixosDoDia,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu};
 })();

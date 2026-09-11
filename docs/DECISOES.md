@@ -5502,6 +5502,69 @@ mais competitivas contra as grandes."
   Nação. 200 dias de jogo novo sem mexer: nenhum cartão de status (não há
   relação na beira do corte na abertura). Regressões sem erro.
 
+## Os eixos de aliança — os clãs (pedido do dono, 11/09/2026)
+- PEDIDO: cinco eixos com os fundadores nomeados pelo dono (União Punho
+  Cruzado, Dedo pro Alto, Lado A, Lado B, União Punho Colado); cada eixo
+  com perfil como cidade e torcida; as torcidas buscam fortalecer o
+  eixo com membros novos "se fizerem sentido e não forem maiores rivais
+  de outros membros"; entrar vira aliado de todos e rival dos maiores
+  rivais de todos; nomes genéricos pra eixos que podem nascer; cada
+  torcida em no máximo dois eixos.
+- DADOS: `dados/eixos.js`, editado à mão (não é gerado): os cinco eixos
+  com os ids dos fundadores e a lista de 16 nomes pra eixos novos, sete
+  com região (Frente Norte, União do Nordeste, Aliança Sertaneja, Bloco
+  do Cerrado, União Sudeste, Frente Sul, Aliança da Serra) e nove sem
+  (Pacto das Fiéis, Aliança Independente, União das Capitais, Frente do
+  Interior, Bloco Litorâneo, União dos Bondes, Frente Unida, Aliança
+  Ribeirinha, Pacto do Meio-Campo). Nome com região entra quando a
+  maioria dos fundadores é de lá; cada nome sai uma vez por save.
+- MODELO (`js/mundo/eixos.js`, `E.eixos`): lista de eixos com membros,
+  histórico, recusas e nomes usados. Na primeira carga os fundadores
+  são CONSOLIDADOS: par dentro do mesmo eixo abaixo de +45 sobe a +45
+  (10 pares mudaram: 7 neutros e 3 rivais da fonte — Mancha Azul com
+  TUF, Máfia Vermelha e Jovem do Galo, todos do Lado A por lista do
+  dono). Nada de rivalidade nova na carga: isso é só pra quem ENTRA.
+- QUEM PODE ENTRAR (`podeEntrar`): não ser do eixo; ter menos de dois
+  eixos; não ser maior rival de nenhum membro (`ehMaiorRival`: fonte dos
+  dois lados ou valor ≤ −70); não ser rival (< −15) de nenhum membro;
+  ser aliada (≥ +20) de pelo menos metade do eixo — é o "fazer
+  sentido"; e não ser irmã de um maior rival do eixo (irmã não vira
+  rival). A nota do candidato é a soma das relações com os membros,
+  com +40 se a praça dele não tem ninguém do eixo.
+- ENTRAR (`entrar`): aliada de todos (relação com cada membro sobe a
+  pelo menos +45) e rival dos maiores rivais de todos (relação cai a no
+  máximo −45, pulando irmãs). Vale pra IA–IA (`relacoesDelas`) e pro
+  dono (`E.relacoes`); o vigia de status reconhece as mudanças na hora,
+  sem perguntar "virou rival?".
+- A DOSE (por hash, como a sugestão da filial): cada eixo tenta
+  recrutar a cada 26 semanas e metade das tentativas vinga (~1 por ano
+  por eixo); um eixo novo é tentado uma vez por ano com 60%, só entre
+  torcidas SEM eixo, aliadas duas a duas a +45 e sem maior rival entre
+  si, 3 a 5 fundadoras. Medido em 2 anos de jogo novo: os cinco eixos
+  foram de 6–7 pra 9–11 membros, nasceram 2 eixos (Pacto das Fiéis,
+  Aliança Independente), 21 cartões de eixo, 8 torcidas em dois eixos e
+  nenhuma em três. Na primeira calibragem (13 semanas, sem a regra da
+  metade) eram 9 eixos novos e 15 membros por eixo — descartado.
+- O DONO: quando o candidato escolhido somos nós, sai um cartão de
+  decisão com a voz do eixo (o nome com link), falado pelo membro mais
+  próximo: lista quem quer a gente dentro e quem vira rival. "Entrar"
+  chama `entrar`; "Ficar de fora" tira 3 do porta-voz e o eixo só
+  chama de novo em 26 semanas. Entrada de IA em eixo nosso e eixo novo
+  saem como notícia da rua; entrada de alguém num eixo que tem a gente
+  como maior rival avisa que ela virou rival nossa.
+- TELA: perfil do eixo (overlay como os outros): torcidas, força
+  somada, praças, fundação, maiores rivais do eixo, tabela de membros
+  com clube, praça e relação com a gente, e o movimento (quem entrou,
+  quem fundou). Link `.x-link` em todo nome de eixo. O perfil da torcida
+  ganha a linha "Eixos de aliança"; Diplomacia → Alianças abre com o
+  quadro dos eixos, os nossos em cima.
+- MEDIDO (`eixos.js`): TUF não entra no Lado B (maior rival da
+  Cearamor), no Dedo pro Alto (rival da Mancha Verde) nem no Punho
+  Colado (rival da Fúria Independente) — com a relação corrigida, o
+  convite vem da Young Flu e "Entrar" deixa a TUF em dois eixos, com Os
+  Fanáticos e Ultras 92 caindo a −45 e o vigia marcando rival. Dia
+  forçado: cada eixo recrutou um e nasceu o União Sudeste com cinco.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
