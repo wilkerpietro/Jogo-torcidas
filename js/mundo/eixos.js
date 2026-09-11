@@ -164,13 +164,15 @@ TO.eixos = (function(){
   /* ---- fundar um eixo novo ---- */
   function nomeNovo(E, membros){
     const X = caixas(E);
-    const regioes = {};
-    for(const m of membros){ const o = M().torcida(m); if(o && o.regiao) regioes[o.regiao] = (regioes[o.regiao]||0)+1; }
-    const maioria = Object.entries(regioes).sort((a,b)=>b[1]-a[1])[0];
-    const livres = (TO.dados.eixos.nomesNovos||[]).filter(n=>!X.nomesUsados.includes(n.nome));
-    const daRegiao = maioria && maioria[1] > membros.length/2 ? livres.filter(n=>n.regiao === maioria[0]) : [];
-    const semRegiao = livres.filter(n=>!n.regiao);
-    const esc = daRegiao[0] || semRegiao[0] || livres[0];
+    /* a língua é a da maioria dos fundadores: Brasil fala português,
+       o resto do continente fala espanhol */
+    const pais = id => (R().paisDaTorcida ? R().paisDaTorcida(id) : 'Brasil');
+    const doBrasil = membros.filter(m=>pais(m) === 'Brasil').length;
+    const lingua = doBrasil * 2 >= membros.length ? 'pt' : 'es';
+    const pool = (TO.dados.eixos.nomesNovos || {});
+    const lista = Array.isArray(pool) ? pool : (pool[lingua] || pool.pt || []);
+    const livres = lista.filter(n=>!X.nomesUsados.includes(n.nome));
+    const esc = livres[0];
     if(!esc) return {nome:`Eixo ${X.seq}`, sigla:`E${X.seq}`};
     X.nomesUsados.push(esc.nome);
     return {nome:esc.nome, sigla:esc.sigla || ''};

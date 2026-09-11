@@ -5565,6 +5565,29 @@ mais competitivas contra as grandes."
   Fanáticos e Ultras 92 caindo a −45 e o vigia marcando rival. Dia
   forçado: cada eixo recrutou um e nasceu o União Sudeste com cinco.
 
+## Eixos: Mancha Azul do CSA, os nomes do dono e a versão em espanhol (dono, 11/09/2026)
+- A Mancha Azul do Lado A é a DO CSA (`mancha_azul_do_csa`), não a da
+  Paraíba: corrigido em `dados/eixos.js`. Com isso os três pares
+  "rivais na fonte" da consolidação anterior somem.
+- OS NOMES DOS EIXOS NOVOS são os do dono (os 16 meus saíram): União
+  Firma Forte, União Ponta a Ponta, União Bate Forte, União Bloco
+  Pesado, Frente Unida, Unidade Guerrilheira, União Terrorista, União
+  Suicida, União Rei da Pista, Bonde dos Toma Faixa, Bonde Soco & Chute,
+  União Terror do Brasil. Pros eixos que nascem nos outros países
+  latinos, a lista em espanhol da mesma natureza: Unión Mano Dura, Unión
+  Punta a Punta, Unión Golpe Fuerte, Unión Bloque Pesado, Frente Unido,
+  Unidad Guerrillera, Unión Terrorista, Unión Suicida, Unión Rey de la
+  Pista, Barra de los Roba Trapos, Barra Puño y Patada, Unión Terror del
+  Continente. A língua é a da maioria dos fundadores (`paisDaTorcida`
+  via o clube); a regra de região saiu. Ordem da lista, um nome por save.
+- SIMULAÇÃO DE DOIS ANOS (`eixos-2anos.js`, jogo novo com a TUF, sem
+  forçar nada, convites ao dono recusados): nasceu um eixo, a União
+  Firma Forte (2027, semana 18: Terror Bicolor, Facção Jovem Paysandu,
+  TUP, Dragões Alviverdes, Ira Jovem do Vasco); 12 entradas nos cinco
+  eixos de nascença (Punho Cruzado +3, Lado B +3, Lado A +2, Dedo pro
+  Alto +2, Punho Colado +2); nenhum convite à TUF. A lista completa
+  está na conversa do dia.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
