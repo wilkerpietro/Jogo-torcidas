@@ -20,6 +20,11 @@ TO.icones = (function(){
     diplomacia:env('<path d="M7 11a3.5 3.5 0 1 1 3.5-3.5"/><path d="M17 20a3.5 3.5 0 1 0-3.5-3.5"/><path d="M9.5 9.5 15 15"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/>'),
     conversa:  env('<path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1.1 0-2.2-.2-3.2-.5L4 20.5l1.7-4A7 7 0 0 1 3.5 12c0-4.1 3.8-7.4 8.5-7.4s8.5 3.3 8.5 7.4z"/>'),
     jornal:    env('<path d="M3 5h13v14H4.5A1.5 1.5 0 0 1 3 17.5z"/><path d="M16 8h5v9.5a1.5 1.5 0 0 1-3 0V8"/><path d="M6 8.5h7"/><path d="M6 11.5h7"/><path d="M6 14.5h5"/>'),
+    /* o calendário (dono, 11/09/2026): a folha com as duas argolas e a
+       grade de dias — era o mesmo jornal do menu Notícias */
+    calendario:env('<rect x="3.5" y="5" width="17" height="15.5" rx="1.5"/><path d="M3.5 10h17"/>'+
+                   '<path d="M8 3v4"/><path d="M16 3v4"/>'+
+                   '<path d="M8 14h2"/><path d="M13 14h2"/><path d="M8 17.5h2"/><path d="M13 17.5h2"/>'),
     medalha:   env('<circle cx="12" cy="15" r="5"/><path d="m8.5 10.5-2.5-7"/><path d="m15.5 10.5 2.5-7"/><path d="M9 3.5h6"/>'),
 
     membros:   env('<circle cx="12" cy="7" r="3.2"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>'),

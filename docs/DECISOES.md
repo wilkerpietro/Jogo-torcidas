@@ -5441,6 +5441,16 @@ mais competitivas contra as grandes."
   investida com `filial`, e no domingo o bote vem "como combinado" na
   Leões da Fabulosa, na praça. Fotos em 1000px e 390px conferidas.
 
+## O calendário ganha ícone próprio (dono, 11/09/2026)
+- PEDIDO: "altere o ícone do menu calendário, ele está idêntico ao do
+  menu notícias" — os dois usavam `jornal`.
+- Novo `calendario` em `icones.js`, no mesmo traço dos outros: a folha
+  com as duas argolas no alto, a linha do cabeçalho e quatro traços de
+  dia. `NAV` aponta pra ele. Conferido na coluna: 14 ícones distintos,
+  calendário ≠ jornal.
+- A REORGANIZAÇÃO DO MENU foi pedida como sugestão no mesmo dia e está
+  na conversa, aguardando o crivo do dono; nada mudou de lugar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

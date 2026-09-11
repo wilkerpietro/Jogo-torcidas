@@ -452,7 +452,7 @@
     {id:'feed',        rot:'Feed',        ic:'feed'},
     {id:'torcida',     rot:'Torcida',     ic:'torcida'},
     {id:'financeiro',  rot:'Financeiro',  ic:'dinheiro'},
-    {id:'calendario',  rot:'Calendário',  ic:'jornal'},
+    {id:'calendario',  rot:'Calendário',  ic:'calendario'},
     {id:'competicoes', rot:'Competições', ic:'trofeu'},
     {id:'ranking',     rot:'Ranking',     ic:'medalha'},
     {id:'diplomacia',  rot:'Diplomacia',  ic:'diplomacia'},
