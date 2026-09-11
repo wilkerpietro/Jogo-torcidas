@@ -377,34 +377,49 @@ TO.feed = (function(){
     }
   }
 
+  /* CADA PASSO DO DIA CORRE SOZINHO (correção do dono, 11/09/2026)
+     O dia era uma fila de chamadas cruas: bastava UMA estourar — um
+     save antigo sem um campo novo, por exemplo — pra todas as
+     seguintes não acontecerem, `avancarDia` sair pela metade e o
+     relógio da tela nunca ser reagendado. O jogo ficava parado sem
+     nada pra responder, que é exatamente o que não pode acontecer.
+     Agora o passo que quebra quebra sozinho: o erro vai pro console
+     com o nome do passo, e o dia segue. */
+  function passo(nome, fn){
+    try{ fn(); }
+    catch(err){
+      if(window.console) console.error(`[dia] o passo "${nome}" falhou:`, err);
+    }
+  }
+
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
-    treguasDoDia(E);
-    statusDeHoje(E);
-    intermediacaoDeHoje(E);
-    eixosDoDia(E);
-    semanaDeHoje(E);
-    olheiroDoDia(E);
-    guerraDeHoje(E);
-    eventoDoTrimestreHoje(E);
-    lntDeHoje(E);
-    ataqueSofridoHoje(E);
-    escoltaDeHoje(E);
-    assaltoDeHoje(E);
-    barRivalDeHoje(E);
-    aniversariosDeHoje(E);
+    passo('tréguas',        ()=>treguasDoDia(E));
+    passo('status',         ()=>statusDeHoje(E));
+    passo('intermediação',  ()=>intermediacaoDeHoje(E));
+    passo('eixos',          ()=>eixosDoDia(E));
+    passo('semana',         ()=>semanaDeHoje(E));
+    passo('olheiro',        ()=>olheiroDoDia(E));
+    passo('dia de jogo',    ()=>guerraDeHoje(E));
+    passo('trimestre',      ()=>eventoDoTrimestreHoje(E));
+    passo('LNT',            ()=>lntDeHoje(E));
+    passo('ataque sofrido', ()=>ataqueSofridoHoje(E));
+    passo('escolta',        ()=>escoltaDeHoje(E));
+    passo('assalto',        ()=>assaltoDeHoje(E));
+    passo('bar rival',      ()=>barRivalDeHoje(E));
+    passo('aniversários',   ()=>aniversariosDeHoje(E));
     /* a recepção do aliado vira dinheiro no dia do jogo dele (dono,
        28/08/2026) */
-    if(PL().cobrarRecepcoes) PL().cobrarRecepcoes(E);
-    filialDeHoje(E);
-    filialSugestaoDeHoje(E);
-    caravanaDasFiliais(E);
-    boteNaCaravanaRival(E);
-    hospedagemDaFilialSemana(E);
-    mundoDeHoje(E, ctx);
-    placarDoDia(E, ctx.jogos || []);
-    almanaqueDoDia(E);
-    dicaDeHoje(E);
+    passo('recepções',      ()=>{ if(PL().cobrarRecepcoes) PL().cobrarRecepcoes(E); });
+    passo('filial',         ()=>filialDeHoje(E));
+    passo('olheiro da filial', ()=>filialSugestaoDeHoje(E));
+    passo('caravana da filial', ()=>caravanaDasFiliais(E));
+    passo('bote na caravana',   ()=>boteNaCaravanaRival(E));
+    passo('hospedagem da filial', ()=>hospedagemDaFilialSemana(E));
+    passo('mundo',          ()=>mundoDeHoje(E, ctx));
+    passo('placar',         ()=>placarDoDia(E, ctx.jogos || []));
+    passo('almanaque',      ()=>almanaqueDoDia(E));
+    passo('dica',           ()=>dicaDeHoje(E));
   }
 
   /* =======================================================

@@ -5720,6 +5720,55 @@ mais competitivas contra as grandes."
   Lado B 18, Punho Colado 9. Em jogo eles já nascem um ou dois maiores,
   porque o recrutamento de 15 dias roda na primeira semana.
 
+## O jogo travado sem nada pra responder (correção do dono, 11/09/2026)
+
+O dono avisou: depois da versão nova o jogo parou, pedindo resposta sem
+haver cartão nenhum pra responder. A varredura achou a causa e ela não
+era do feed — era do dia.
+
+**O que acontecia.** Os eixos de aliança ganharam campos novos quando o
+aval do dono entrou no eixo dele: `vetos` (o nome que a gente vetou) e
+`propostas` (o intervalo entre um nome e outro). Quem já estava jogando
+carregava um `E.eixos` gravado ANTES desses campos, e `caixas()` devolvia
+o caixote velho como estava — sem migração. Na primeira vez que um eixo
+nosso ia pôr um nome na mesa, a leitura `X.vetos[...]` estourava num
+caixote `undefined`.
+
+E estourava DENTRO do dia. `eventosDoDia` era uma fila de chamadas cruas
+e os eixos são o quarto passo dela: o erro subia por `avancarDia`, o dia
+morria pela metade — sem planejamento da semana, sem olheiro, sem dia de
+jogo — e, pior, o tique do relógio (uma corrente de `setTimeout`) nunca
+era reagendado. O jogo ficava parado de vez. Como o eixo tenta recrutar
+a cada 15 dias, era exatamente isso que pegava o save do dono.
+
+**As três correções, da mais rasa pra mais funda:**
+
+1. **O save antigo é migrado** (`js/mundo/eixos.js`): `caixas()` agora
+   passa por `migrar()`, que põe no caixote os campos que faltam —
+   `vetos`, `propostas`, `recusas`, `nomesUsados`, `seq`, `seqHist`,
+   `vistoAte`, `lista`, `historico` — e, de quebra, sincroniza os eixos
+   de nascença com a fonte: eixo que passou a existir entra inteiro, e
+   torcida que o dono somou depois entra no eixo que já estava no save,
+   sempre respeitando o teto de dois eixos por torcida. Num save de
+   antes das últimas listas, o Dedo pro Alto sobe de 11 pra 17 e o Lado
+   B de 12 pra 18 na hora de abrir.
+2. **Cada passo do dia corre sozinho** (`js/mundo/feed.js`): os 24
+   passos de `eventosDoDia` passaram a rodar dentro de `passo(nome, fn)`.
+   O que quebrar quebra sozinho, com o nome dele no console; os outros
+   acontecem e o dia fecha inteiro. Nenhum gerador de mensagem volta a
+   ter poder de parar o jogo.
+3. **O relógio não morre com o dia** (`js/main.js`): `passarUmDia` põe
+   `avancarDia` num `try`. Se um dia estourar por outro motivo qualquer,
+   o erro vai pro console e o dia seguinte é agendado do mesmo jeito.
+
+**Como foi verificado.** Um save gerado no código anterior (60 dias
+jogados) foi carregado no código novo: antes da correção, `avancarDia`
+estourava nos dias 9, 24, 39, 54… — de 15 em 15, o compasso do
+recrutamento; depois, 462 dias sem uma exceção. Em paralelo, uma
+varredura de dois anos em jogo novo confirma que nenhuma decisão fica
+aberta sem botão clicável no cartão dela: o relógio só para quando há o
+que responder, e o que há está sempre na tela.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

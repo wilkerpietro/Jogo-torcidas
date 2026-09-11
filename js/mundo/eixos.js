@@ -34,7 +34,7 @@ TO.eixos = (function(){
                                    // qualquer outro (dono, 11/09/2026)
 
   function caixas(E){
-    if(E.eixos) return E.eixos;
+    if(E.eixos) return migrar(E);
     const ids = new Set(M().jogaveis().map(o=>o.id));
     E.eixos = {
       lista: (TO.dados.eixos.base||[]).map(x=>({
@@ -50,6 +50,46 @@ TO.eixos = (function(){
        nova aqui — isso é só pra quem ENTRA */
     for(const x of E.eixos.lista) consolidar(E, x);
     return E.eixos;
+  }
+
+  /* O SAVE ANTIGO NÃO PODE DERRUBAR O DIA (correção do dono, 11/09/2026)
+     Quem começou a jogar antes de um campo existir carregava um `E.eixos`
+     sem ele — e a primeira leitura (`X.vetos[...]`) estourava DENTRO do
+     dia, no meio de `eventosDoDia`: o dia morria pela metade, o relógio
+     não era reagendado e o jogo ficava parado sem nada pra responder.
+     Aqui o caixote velho ganha os campos que faltam, e os eixos de
+     nascença recebem os membros que a fonte passou a listar depois. */
+  function migrar(E){
+    const X = E.eixos;
+    if(!Array.isArray(X.lista))     X.lista = [];
+    if(!Array.isArray(X.historico)) X.historico = [];
+    if(!X.recusas   || typeof X.recusas   !== 'object') X.recusas = {};
+    if(!X.vetos     || typeof X.vetos     !== 'object') X.vetos = {};
+    if(!X.propostas || typeof X.propostas !== 'object') X.propostas = {};
+    if(!Array.isArray(X.nomesUsados)) X.nomesUsados = [];
+    if(typeof X.seq      !== 'number') X.seq = X.lista.filter(x=>!x.base).length + 1;
+    if(typeof X.seqHist  !== 'number') X.seqHist = X.historico.length;
+    if(typeof X.vistoAte !== 'number') X.vistoAte = X.seqHist;
+    /* os eixos de nascença acompanham a fonte: eixo novo entra inteiro,
+       e membro que o dono somou depois entra no eixo que já estava no
+       save — sempre respeitando o teto de eixos por torcida */
+    const ids = new Set(M().jogaveis().map(o=>o.id));
+    for(const base of (TO.dados.eixos.base||[])){
+      const membros = (base.membros||[]).filter(id=>ids.has(id));
+      let x = X.lista.find(y=>y.id === base.id), mexeu = false;
+      if(!x){
+        x = {id:base.id, nome:base.nome, sigla:base.sigla||'', base:true,
+             fundado:{ano:E.data.ano, semana:E.data.semana}, membros:[]};
+        X.lista.push(x); mexeu = true;
+      }
+      for(const id of membros){
+        if(x.membros.includes(id)) continue;
+        if(X.lista.filter(y=>y.membros.includes(id)).length >= MAX_POR_TORCIDA) continue;
+        x.membros.push(id); mexeu = true;
+      }
+      if(mexeu) consolidar(E, x);
+    }
+    return X;
   }
   const lista = E => caixas(E).lista;
   const eixo  = (E, id) => lista(E).find(x=>x.id === id) || null;
@@ -234,7 +274,7 @@ TO.eixos = (function(){
       if(!cands.length) continue;
       let esc = cands[0];
       if(esc.id === E.torcida.id){
-        const rec = X.recusas[x.id];
+        const rec = (X.recusas||{})[x.id];
         if(rec && sa - rec < RECUSA_CADA){ esc = cands[1]; if(!esc) continue; }
       }
       if(esc.id === E.torcida.id){
@@ -246,7 +286,7 @@ TO.eixos = (function(){
            propõe o nome e espera a gente concordar. Vetado, o nome só
            volta à mesa depois de meio ano; e entre uma proposta e outra
            passa um trimestre, senão o feed vira mesa de reunião. */
-        const veto = X.vetos[`${x.id}|${esc.id}`];
+        const veto = (X.vetos||{})[`${x.id}|${esc.id}`];
         if(veto && sa - veto < RECUSA_CADA) continue;
         const ult = X.propostas && X.propostas[x.id];
         if(!forcar && ult && sa - ult < PROPOSTA_CADA) continue;

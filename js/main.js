@@ -7690,9 +7690,15 @@
 
   /* um dia inteiro: a virada da data — os jogos do dia e as mensagens
      saem de dentro do estado */
+  /* O RELÓGIO NÃO MORRE COM O DIA (correção do dono, 11/09/2026): o
+     tique era uma corrente de `setTimeout` — o dia que estourasse
+     levava a corrente junto, e o jogo parava de vez, sem nada pra
+     responder. O erro agora fica no console e o dia seguinte é
+     agendado do mesmo jeito. */
   function passarUmDia(e){
     if(document.body.classList.contains('em-cena')) return null;
-    TO.estado.avancarDia();
+    try{ TO.estado.avancarDia(); }
+    catch(err){ if(window.console) console.error('[dia] avancarDia falhou:', err); }
     return null;
   }
 
