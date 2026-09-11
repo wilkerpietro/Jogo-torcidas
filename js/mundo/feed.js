@@ -397,6 +397,9 @@ TO.feed = (function(){
     passo('tréguas',        ()=>treguasDoDia(E));
     passo('status',         ()=>statusDeHoje(E));
     passo('eixos',          ()=>eixosDoDia(E));
+    /* a mesa das OUTRAS: elas se aproximam, pacificam e se afastam
+       entre si sem passar pelo nosso feed (dono, 11/09/2026) */
+    passo('diplomacia delas', ()=>{ if(TO.eixos) TO.eixos.diplomaciaDelas(E); });
     passo('reunião',        ()=>reuniaoDeHoje(E));
     passo('semana',         ()=>semanaDeHoje(E));
     passo('olheiro',        ()=>olheiroDoDia(E));

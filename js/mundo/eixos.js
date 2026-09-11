@@ -372,6 +372,7 @@ TO.eixos = (function(){
         abs:h.abs, ano:h.ano, semana:h.semana, tipo:h.tipo,
         eixo:h.eixo, nomeEixo: x ? x.nome : '', nosso: !!x && x.membros.includes(E.torcida.id),
         torcida:h.torcida || null, membros:h.membros || null,
+        outra:h.outra || null, porta:h.porta || null,
         nova: (h.seq||0) > (X.vistoAte||0)
       };
     });
@@ -381,6 +382,126 @@ TO.eixos = (function(){
   function marcarVistas(E){
     const X = caixas(E);
     X.vistoAte = Math.max(X.vistoAte||0, X.seqHist||0);
+  }
+
+  /* =========================================================
+     A DIPLOMACIA DAS OUTRAS (pedido do dono, 11/09/2026)
+     O que a gente faz na reunião do dia 5, elas fazem entre si: cada
+     torcida senta a própria mesa e usa as amizades que tem pra mexer
+     nas relações das outras — sempre pra fortalecer o eixo em que ela
+     está. São três jogadas, as mesmas nossas:
+
+       APROXIMAR   duas aliadas dela que são neutras entre si viram
+                   aliadas — é assim que nasce candidato pro eixo;
+       PACIFICAR   duas aliadas dela que são rivais entre si esfriam
+                   a treta até o neutro;
+       AFASTAR     uma aliada dela que anda com um MAIOR RIVAL do eixo
+                   é puxada pra escolher lado: a aliança com o
+                   inimigo esfria até o neutro (a "desaliança").
+
+     "Quanto melhor a relação entre duas torcidas, uma vai favorecer a
+     outra" (dono): quem manda no tamanho do empurrão e na chance de
+     ele pegar é a PIOR das duas relações da intermediária com o par —
+     ela só consegue sentar quem confia nela. Por isso cada torcida só
+     trabalha com as doze aliadas mais próximas.
+
+     Maior rival nunca vira aliado por mesa de terceiro, e ninguém
+     passa de Aliado (+45) por aqui: irmandade se constrói na rua.
+     Nada disso toca a NOSSA relação com ninguém — o que é nosso se
+     decide na nossa reunião.
+     ========================================================= */
+  const DIPLO_CADA_DIAS = 91;    // cada torcida senta a mesa dela 4x por ano
+  const DIPLO_ALIADO    = 20;    // o corte de "aliada" da régua
+  const DIPLO_NEUTRO    = -15;   // o corte de "rival"
+  const DIPLO_PARCEIRAS = 12;    // com quantas aliadas ela trabalha
+  const DIPLO_TETO      = ALIADO_AO_ENTRAR;  // até onde a mesa leva (+45)
+
+  /* o quanto ela puxa: a PIOR das duas relações dela com o par */
+  function forcaDaMesa(E, a, b, c){
+    const v = Math.min(relDe(E, a, b), relDe(E, a, c));
+    return Math.max(0, Math.min(1, (v - DIPLO_ALIADO) / 60));
+  }
+
+  function mesaDela(E, aId){
+    const H = TO.mapa.hash, sa = R().semanaAbs(E), nos = E.torcida.id;
+    const meus = de(E, aId);
+    const noEixo = id => meus.some(x=>x.membros.includes(id));
+    const rivaisDoEixo = new Set();
+    for(const x of meus) for(const r of maioresRivaisDoEixo(E, x)) rivaisDoEixo.add(r);
+    /* as doze mais próximas: é com quem ela tem voz */
+    const parceiras = M().jogaveis()
+      .filter(o=>!o.incompleta && o.id !== aId && o.id !== nos &&
+                 relDe(E, aId, o.id) >= DIPLO_ALIADO)
+      .sort((x,y)=>relDe(E, aId, y.id) - relDe(E, aId, x.id))
+      .slice(0, DIPLO_PARCEIRAS);
+    if(!parceiras.length) return null;
+
+    const jogadas = [];
+    /* 1 e 2: entre as parceiras dela */
+    for(let i=0;i<parceiras.length;i++) for(let j=i+1;j<parceiras.length;j++){
+      const b = parceiras[i].id, c = parceiras[j].id;
+      if(R().ehMaiorRival(E, b, c)) continue;
+      const v = relDe(E, b, c);
+      const dentro = (noEixo(b)?1:0) + (noEixo(c)?1:0);
+      if(v >= DIPLO_NEUTRO && v < DIPLO_TETO){
+        /* aproximar: o eixo ganha mais quando UMA está dentro e a outra
+           fora — é o nome de fora que vira candidato */
+        jogadas.push({tipo:'aproximar', b, c, v,
+          peso: 1 + (dentro === 1 ? 2 : dentro === 2 ? 1 : 0)});
+      } else if(v < DIPLO_NEUTRO){
+        jogadas.push({tipo:'pacificar', b, c, v,
+          peso: 1 + (dentro ? 2 : 0)});
+      }
+    }
+    /* 3: a parceira que anda com um maior rival do eixo */
+    if(rivaisDoEixo.size) for(const p of parceiras){
+      if(!noEixo(p.id)) continue;
+      for(const r of rivaisDoEixo){
+        if(r === nos || r === p.id) continue;
+        const v = relDe(E, p.id, r);
+        if(v < DIPLO_ALIADO) continue;
+        if(M().saoIrmas && M().saoIrmas(p.id, r)) continue;   // irmã não se larga
+        jogadas.push({tipo:'afastar', b:p.id, c:r, v, peso:3});
+      }
+    }
+    if(!jogadas.length) return null;
+    const nota = j => H(`mesa|${sa}|${aId}|${j.b}|${j.c}`) % 1000;
+    jogadas.sort((x,y)=>y.peso - x.peso || nota(x) - nota(y));
+    const j = jogadas[0];
+    const forca = forcaDaMesa(E, aId, j.b, j.c);
+    if((H(`mesa|ok|${sa}|${aId}|${j.b}`) % 1000) / 1000 >= 0.25 + 0.6 * forca) return null;
+
+    if(j.tipo === 'aproximar'){
+      const ganho = Math.round(5 + 15 * forca);
+      porRel(E, j.b, j.c, Math.min(DIPLO_TETO, j.v + ganho));
+    } else if(j.tipo === 'pacificar'){
+      const alivio = Math.round(5 + 15 * forca);
+      porRel(E, j.b, j.c, Math.min(0, j.v + alivio));
+    } else {
+      const perda = Math.round(4 + 10 * forca);
+      porRel(E, j.b, j.c, Math.max(0, j.v - perda));
+    }
+    /* o que mexe com gente do NOSSO eixo vira linha das novidades; o
+       resto do mundo se mexe em silêncio, senão a lista vira enxurrada */
+    if(meus.some(x=>x.membros.includes(nos)) ||
+       de(E, j.b).some(x=>x.membros.includes(nos)))
+      anotar(E, {tipo:j.tipo, eixo:(meus[0]||{}).id || null,
+                 porta:aId, torcida:j.b, outra:j.c});
+    return Object.assign({de:aId}, j, {forca});
+  }
+
+  /* o dia: as torcidas cuja vez chegou sentam a mesa delas */
+  function diplomaciaDelas(E, forcar){
+    const H = TO.mapa.hash, abs = E.data.absoluto || 0, nos = E.torcida.id;
+    const feitas = [];
+    for(const o of M().jogaveis()){
+      if(o.incompleta || o.id === nos) continue;
+      if(!forcar && ((abs + H('dip|'+o.id)) % DIPLO_CADA_DIAS) !== 0) continue;
+      const r = mesaDela(E, o.id);
+      if(r) feitas.push(r);
+      if(forcar && feitas.length >= 40) break;
+    }
+    return feitas;
   }
 
   /* =========================================================
@@ -639,6 +760,7 @@ TO.eixos = (function(){
 
   return {caixas, lista, eixo, de, podeEntrar, candidatos, entrar, fundar,
           eventosDoDia, recusar, resumo, maioresRivaisDoEixo,
+          diplomaciaDelas, mesaDela, DIPLO_CADA_DIAS,
           novidades, naoVistas, naoVistasNossas, marcarVistas, vetar,
           /* as jogadas do dono (11/09/2026) */
           cabemosEmMais, eixosNossos, esperaDaMesa, esperaDoConvite,

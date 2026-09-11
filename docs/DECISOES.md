@@ -5958,6 +5958,64 @@ poucas, e o que se vem ver aqui é o resto.
 A relação vem de onde ela mora: `relacoes` quando um dos dois somos nós,
 `relacoesDelas` entre duas torcidas de IA.
 
+## A diplomacia das outras torcidas (pedido do dono, 11/09/2026)
+
+O que a gente faz na reunião do dia 5, as torcidas de IA passaram a
+fazer **entre si**, com as mesmas mecânicas e sempre com o mesmo
+objetivo: **fortalecer o eixo a que elas pertencem**.
+
+**As três jogadas**, espelhando as nossas:
+
+- **Aproximar** — duas aliadas dela que são neutras entre si viram
+  aliadas. É assim que nasce candidato pro eixo: `podeEntrar` exige ser
+  aliada de metade do eixo, e é a mesa de terceiro que constrói isso.
+- **Pacificar** — duas aliadas dela que são rivais entre si esfriam a
+  treta até o neutro.
+- **Afastar** (a "desaliança" que o dono pediu) — uma aliada dela que
+  anda com um **maior rival do eixo** é puxada pra escolher lado: a
+  aliança com o inimigo esfria até o neutro, nunca vira rivalidade.
+
+**"Quanto melhor a relação, uma favorece a outra"** (régua do dono): o
+tamanho do empurrão e a chance de ele pegar saem da **pior das duas
+relações** da intermediária com o par — ela só consegue sentar quem
+confia nela. A força vai de 0 (aliada raspando, +20) a 1 (+80 ou mais);
+o empurrão é de 5 a 20 pontos e a chance, de 25% a 85%. Por isso cada
+torcida só trabalha com as **doze aliadas mais próximas**: é com quem
+ela tem voz.
+
+**A escolha da jogada** é por peso, e o peso é o eixo: aproximar vale
+mais quando UMA das duas está dentro do eixo dela e a outra fora — é o
+nome de fora que vira candidato —, e afastar tem sempre peso alto,
+porque aliança com o maior rival do eixo é a ferida aberta.
+
+**Os limites.** Maior rival nunca vira aliado por mesa de terceiro.
+Ninguém passa de Aliado (+45) por aqui: irmandade se constrói na rua, e
+não na conversa. Irmã de clube não se larga. E **nada disso toca a nossa
+relação com ninguém**: o que é nosso se decide na nossa reunião.
+
+**A cadência.** Cada torcida senta a própria mesa **quatro vezes por
+ano** (a cada 91 dias, com a fase por hash pra não sentarem todas no
+mesmo dia) — umas quatro mesas por dia no mapa inteiro.
+
+**O que aparece pra gente.** A movimentação do mundo corre em silêncio,
+como o dono pediu pro feed; o que envolve gente do NOSSO eixo vira linha
+da lista de novidades em Diplomacia → Eixos ("Fulana aproximou Beltrana
+e Sicrana", "Fulana puxou Beltrana pra longe de Sicrana"). Sem esse
+filtro a lista viraria enxurrada: são umas 1.400 mesas por ano.
+
+**A simulação de cinco anos (pedido do dono).** Com a régua acima, 320
+mesas pegam por ano — 176 aproximações, 132 pacificações e 12
+afastamentos —, e o mapa se mexe sem virar outra coisa: aliadas de 1,6%
+para 2,5% dos pares, rivais cravados em 8,5%, a média de −3,3 para −2,3.
+Os eixos passaram de **5 para 19** e as torcidas sem eixo nenhum caíram
+de 320 para 262. Os de nascença cresceram todos — Lado B de 19 para 25,
+Dedo pro Alto de 18 para 22, Punho Colado de 9 para 12, Lado A de 10
+para 13, Punho Cruzado de 11 para 12 — e nasceram catorze, com a União
+Bloco Pesado (11) e a Unidade Guerrilheira (9) na frente, além de quatro
+em espanhol (Unión Mano Dura, Unión Punta a Punta, Unión Golpe Fuerte,
+Unión Bloque Pesado), todas de três. É o crescimento vindo da mesa: a
+aproximação de terceiros é o que faz o candidato caber no `podeEntrar`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -7869,10 +7869,18 @@
       cN.corpo.innerHTML = '<div class="em-construcao">Nada se mexeu ainda.</div>';
     for(const n of nov){
       const quando = `${n.ano} · s${n.semana}`;
+      const T = id => linkTorcida(id, nomeT(id));
       const txt = n.tipo === 'fundou'
         ? `Nasceu o <b>${linkEixo(n.eixo, n.nomeEixo)}</b>, com `+
-          (n.membros||[]).map(m=>linkTorcida(m, nomeT(m))).join(', ')
-        : `${linkTorcida(n.torcida, nomeT(n.torcida))} entrou `+
+          (n.membros||[]).map(m=>T(m)).join(', ')
+        /* a mesa das outras: quem sentou quem (dono, 11/09/2026) */
+        : n.tipo === 'aproximar'
+        ? `${T(n.porta)} aproximou ${T(n.torcida)} e ${T(n.outra)}`
+        : n.tipo === 'pacificar'
+        ? `${T(n.porta)} esfriou a treta entre ${T(n.torcida)} e ${T(n.outra)}`
+        : n.tipo === 'afastar'
+        ? `${T(n.porta)} puxou ${T(n.torcida)} pra longe de ${T(n.outra)}`
+        : `${T(n.torcida)} entrou `+
           `${n.nosso ? 'pro nosso' : 'pro'} <b>${linkEixo(n.eixo, n.nomeEixo)}</b>`;
       cN.corpo.appendChild(el('div',{class:'nov-eixo'+(n.nova?' nova':'')+(n.nosso?' nosso':''), html:
         `<span class="data">${quando}</span><span class="txt">${txt}</span>`+
