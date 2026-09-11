@@ -396,9 +396,8 @@ TO.feed = (function(){
     ctx = ctx || {};
     passo('tréguas',        ()=>treguasDoDia(E));
     passo('status',         ()=>statusDeHoje(E));
-    passo('intermediação',  ()=>intermediacaoDeHoje(E));
-    passo('pacificação',    ()=>pacificacaoDeHoje(E));
     passo('eixos',          ()=>eixosDoDia(E));
+    passo('reunião',        ()=>reuniaoDeHoje(E));
     passo('semana',         ()=>semanaDeHoje(E));
     passo('olheiro',        ()=>olheiroDoDia(E));
     passo('dia de jogo',    ()=>guerraDeHoje(E));
@@ -1425,16 +1424,15 @@ TO.feed = (function(){
      a intermediária perde 3. Dose por hash: a cada 26 semanas, num dia
      da semana sorteado, como a sugestão da filial.
      ======================================================= */
-  function intermediacaoDeHoje(E, forcar){
+  function pautaAproximacao(E, forcar){
     const R = TO.relacoes, H = TO.mapa.hash, sa = R.semanaAbs(E);
-    if(!forcar){
-      if((sa + H('interm|'+E.torcida.id)) % 26 !== 0) return;
-      if((H(`interm|${sa}`) % 7) + 1 !== E.data.dia) return;
-    }
+    /* DUAS VEZES POR ANO, em doze reuniões (dono, 11/09/2026): a pauta
+       nasce na mesa, não no dia. */
+    if(!forcar && (H(`aprox|${E.data.ano}|${mesDe(E)}`) % 6) !== 0) return null;
     const todas = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
     const st = id => grupoDoStatus(M().statusDoValor(R.nivel(E, id)));
     const aliadas = todas.filter(o=>st(o.id) === 'aliado');
-    if(!aliadas.length) return;
+    if(!aliadas.length) return null;
     const pracas = new Set(aliadas.map(a=>a.mapa));
     const cands = [];
     for(const a of aliadas) for(const c of todas){
@@ -1449,18 +1447,15 @@ TO.feed = (function(){
     cands.sort((x,y)=>(y.semAliada?1:0) - (x.semAliada?1:0) || nota(x) - nota(y));
     const {a, c, semAliada} = cands[0];
     const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
-    return propor(E, {
-      kind:'intermediacao', peso:'decisao', voz:'torcida',
-      chave:`interm|${a.id}|${c.id}|${E.data.ano}`,
+    return {tipo:'aproximacao', chave:`interm|${a.id}|${c.id}|${E.data.ano}`,
+      rot:'Aproximação', voz:a.nome, de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
       texto:`Fala irmão. A gente é de boa com a ${c.nome} (${cid})`+
             (semAliada ? `, e vocês não têm ninguém lá` : '')+
             `. Se quiser, a gente senta os dois pra aproximar. Topa?`,
-      dados:{de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome},
       botoes:[{id:'sim', rot:'Aproximar', acao:'interm-sim',
                nota:`a ${c.nome} vira aliada (+25 no mínimo) · +3 com a ${a.nome}`},
               {id:'nao', rot:'Deixar como está', acao:'interm-nao',
-               nota:`−3 com a ${a.nome}`}]
-    });
+               nota:`−3 com a ${a.nome}`}]};
   }
 
   /* =======================================================
@@ -1477,12 +1472,10 @@ TO.feed = (function(){
      cada 17 semanas, num dia sorteado da semana —, o mesmo relógio da
      sugestão da filial, e o par não se repete no mesmo ano.
      ======================================================= */
-  function pacificacaoDeHoje(E, forcar){
+  function pautaPaz(E, forcar){
     const R = TO.relacoes, H = TO.mapa.hash, sa = R.semanaAbs(E);
-    if(!forcar){
-      if((sa + H('paz|'+E.torcida.id)) % 17 !== 0) return null;
-      if((H(`paz|${sa}`) % 7) + 1 !== E.data.dia) return null;
-    }
+    /* TRÊS VEZES POR ANO, em doze reuniões (dono, 11/09/2026) */
+    if(!forcar && (H(`paz|${E.data.ano}|${mesDe(E)}`) % 4) !== 0) return null;
     const todas = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
     const st = id => grupoDoStatus(M().statusDoValor(R.nivel(E, id)));
     const aliadas = todas.filter(o=>st(o.id) === 'aliado');
@@ -1490,32 +1483,26 @@ TO.feed = (function(){
     const cands = [];
     for(const a of aliadas) for(const c of todas){
       if(c.id === a.id || st(c.id) !== 'rival') continue;
-      /* maior rival da fonte não vira neutro por intermediação */
       if(R.ehMaiorRival(E, E.torcida.id, c.id)) continue;
-      /* ela precisa ser aliada DELE também: é isso que a põe no meio */
       if(grupoDoStatus(M().statusDoValor(R.relacaoDelas(E, a.id, c.id))) !== 'aliado') continue;
       cands.push({a, c, quente: R.nivel(E, c.id)});
     }
     if(!cands.length) return null;
     const nota = x => H(`paz|${sa}|${x.a.id}|${x.c.id}`) % 1000;
-    /* a treta mais fria primeiro: é a que mais faz sentido encerrar */
     cands.sort((x,y)=>(y.quente - x.quente) || nota(x) - nota(y));
     const {a, c} = cands[0];
     const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
-    return propor(E, {
-      kind:'pacificacao', peso:'decisao', voz:'torcida',
-      chave:`paz|${a.id}|${c.id}|${E.data.ano}`,
+    return {tipo:'paz', chave:`paz|${a.id}|${c.id}|${E.data.ano}`,
+      rot:'Fim de treta', voz:a.nome, de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
+      valor: Math.round(R.nivel(E, c.id)),
       texto:`Fala irmão. A ${c.nome} (${cid}) anda junto com a gente, e vocês dois `+
             `se pegando põe a gente no meio — a gente não quer escolher lado. `+
             `Se vocês toparem, a gente senta os dois e encerra essa treta: `+
             `ninguém vira aliado de ninguém, mas ninguém procura ninguém também. Topa?`,
-      dados:{de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
-             valor: Math.round(R.nivel(E, c.id))},
       botoes:[{id:'sim', rot:'Encerrar a treta', acao:'paz-sim',
                nota:`a ${c.nome} vira neutra · +3 com a ${a.nome}`},
               {id:'nao', rot:'Rival continua rival', acao:'paz-nao',
-               nota:`−3 com a ${a.nome} · nada muda com a ${c.nome}`}]
-    });
+               nota:`−3 com a ${a.nome} · nada muda com a ${c.nome}`}]};
   }
 
   /* =======================================================
@@ -1533,14 +1520,14 @@ TO.feed = (function(){
       if(ev.tipo === 'convite'){
         const rivais = X.maioresRivaisDoEixo(E, x).filter(r=>TO.relacoes.nivel(E, r) > -15);
         const outros = x.membros.filter(m=>m !== ev.porta);
-        propor(E, {
-          kind:'eixo-convite', peso:'decisao', voz:'eixo',
+        pautar(E, {
+          tipo:'eixo-convite', rot:'Convite de eixo', voz:nome(ev.porta),
           chave:`eixo-convite|${x.id}|${E.data.ano}|${E.data.semana}`,
           texto:`Fala irmão, aqui é a ${nome(ev.porta)}. O pessoal do ${x.nome} sentou e o `+
                 `nome de vocês saiu na mesa: ${outros.length ? outros.map(nome).join(', ')+' e a gente' : 'a gente'} `+
                 `queremos vocês dentro. Entrando, vocês são aliados de todos nós`+
                 (rivais.length ? ` — e rivais de quem é maior rival da gente: ${rivais.map(nome).join(', ')}` : '')+`. Fecha?`,
-          dados:{de:x.id, nome:x.nome, porta:ev.porta, rivais},
+          de:x.id, nomeEixo:x.nome, porta:ev.porta, rivais,
           botoes:[{id:'sim', rot:`Entrar no ${x.nome}`, acao:'eixo-sim',
                    nota:`aliada de ${x.membros.length} torcidas`+(rivais.length ? ` · rival de ${rivais.length}` : '')},
                   {id:'nao', rot:'Ficar de fora', acao:'eixo-nao',
@@ -1548,17 +1535,16 @@ TO.feed = (function(){
         });
       } else if(ev.tipo === 'proposta'){
         /* NO NOSSO EIXO O DONO DÁ O AVAL (dono, 11/09/2026): o eixo põe
-           o nome na mesa e a gente concorda ou veta. */
+           o nome na mesa e a gente concorda ou veta — na reunião do mês. */
         const o = M().torcida(ev.torcida) || {};
         const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(o.mapa) : o.mapa;
-        const rivaisDela = TO.eixos.maioresRivaisDoEixo(E, x).includes(ev.torcida);
-        propor(E, {
-          kind:'eixo-proposta', peso:'decisao', voz:'eixo',
+        pautar(E, {
+          tipo:'eixo-proposta', rot:'Nome na mesa', voz:nome(ev.porta),
           chave:`eixo-proposta|${x.id}|${ev.torcida}|${E.data.ano}|${E.data.semana}`,
           texto:`Fala irmão, aqui é a ${nome(ev.porta)}. O ${x.nome} sentou pra falar `+
                 `da ${o.nome || ''}, de ${cid}. O pessoal quer eles dentro do eixo — `+
                 `com vocês também, claro. Tá fechado pra vocês?`,
-          dados:{de:x.id, nome:x.nome, torcida:ev.torcida, porta:ev.porta},
+          de:x.id, nomeEixo:x.nome, torcida:ev.torcida, porta:ev.porta,
           botoes:[{id:'sim', rot:'Aceitar no eixo', acao:'eixo-aceita',
                    nota:`a ${o.nome || ''} vira aliada de todo o eixo`},
                   {id:'nao', rot:'Vetar', acao:'eixo-veta',
@@ -1566,12 +1552,155 @@ TO.feed = (function(){
         });
       }
       /* ENTRADA E FUNDAÇÃO ALHEIAS NÃO VÃO PRO FEED (ordem do dono,
-         11/09/2026): o feed só trata do NOSSO eixo — o convite à gente
-         e a proposta de nome novo. Toda a movimentação do mundo vira a
-         lista de novidades da aba Eixos, em Diplomacia, que o histórico
-         de `E.eixos` já guarda. */
+         11/09/2026): o feed só trata do NOSSO eixo, e desde a reunião
+         mensal nem isso — o que é nosso vira pauta da mesa do dia 5.
+         O mundo inteiro aparece na lista de novidades da aba Eixos. */
     }
     return evs;
+  }
+
+  /* =======================================================
+     A REUNIÃO MENSAL DE DIPLOMACIA (pedido do dono, 11/09/2026)
+     Toda diplomacia que pedia decisão estava espalhada pelo feed, um
+     cartão por assunto, no dia em que o assunto nascia. O dono pediu
+     mesa: TODO DIA 5 a diretoria senta e decide tudo de uma vez —
+     as aproximações que as aliadas oferecem, o fim de treta que elas
+     intermedeiam, os convites e os nomes que os eixos põem na mesa, e
+     a nossa própria jogada (fundar um eixo ou pedir entrada num).
+
+     O que nasce fora do dia 5 — um convite de eixo, por exemplo — fica
+     GUARDADO em `E.reuniao.pauta` até a reunião. Nada disso volta a
+     virar cartão solto: o feed tem um cartão por mês, e ele abre a
+     tela da reunião.
+     ======================================================= */
+  const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+                 'agosto','setembro','outubro','novembro','dezembro'];
+  const dataDeHoje = E => TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
+  const mesDe = E => dataDeHoje(E).getMonth() + 1;
+
+  function caixaReuniao(E){
+    if(!E.reuniao) E.reuniao = {pauta:[], seq:1, ultima:null};
+    E.reuniao.pauta = E.reuniao.pauta || [];
+    E.reuniao.seq = E.reuniao.seq || 1;
+    return E.reuniao;
+  }
+  /* guarda um assunto pra próxima mesa; a mesma chave não entra duas vezes */
+  function pautar(E, item){
+    const Rn = caixaReuniao(E);
+    if(item.chave && Rn.pauta.some(x=>x.chave === item.chave)) return null;
+    const it = Object.assign({id:Rn.seq++, decidido:null, consequencia:''}, item);
+    Rn.pauta.push(it);
+    return it;
+  }
+  const pautaAberta = E => caixaReuniao(E).pauta.filter(x=>!x.decidido);
+
+  /* O CARTÃO DA REUNIÃO: dia 5 de cada mês, uma vez só */
+  function reuniaoDeHoje(E){
+    const Rn = caixaReuniao(E);
+    const d = dataDeHoje(E);
+    if(d.getDate() !== 5) return null;
+    const marca = `${E.data.ano}|${mesDe(E)}`;
+    if(Rn.ultima === marca) return null;
+    Rn.ultima = marca;
+    /* o que as aliadas trazem nasce na própria mesa */
+    const a = pautaAproximacao(E); if(a) pautar(E, a);
+    const p = pautaPaz(E);         if(p) pautar(E, p);
+    const abertos = pautaAberta(E);
+    const X = TO.eixos;
+    const mesa = X && X.cabemosEmMais(E) && !X.esperaDaMesa(E);
+    /* mesa vazia e sem jogada nossa possível: não se chama reunião */
+    if(!abertos.length && !mesa) return null;
+    const quantos = abertos.length;
+    return propor(E, {
+      kind:'reuniao', peso:'decisao', voz:'diretor',
+      chave:`reuniao|${marca}`,
+      texto:`Reunião de diplomacia — ${MESES[d.getMonth()]}. `+
+        (quantos ? `${quantos} assunto${quantos>1?'s':''} na mesa` : 'Nada trazido de fora este mês')+
+        (mesa ? ', e a nossa jogada nos eixos em aberto.' : '.'),
+      dados:{ano:E.data.ano, mes:mesDe(E), assuntos:quantos},
+      botoes:[{id:'abrir', rot:'Sentar com a diretoria', acao:'abrir-reuniao',
+               nota: quantos ? `${quantos} na pauta` : 'só a nossa jogada'}]
+    });
+  }
+
+  /* a decisão de UM item da pauta, com o mesmo efeito que o cartão solto
+     tinha antes: quem aplica é o `responder` de sempre, por `acao` */
+  function decidirPauta(E, idItem, idBotao){
+    const Rn = caixaReuniao(E);
+    const it = Rn.pauta.find(x=>x.id === idItem);
+    if(!it || it.decidido) return {ok:false};
+    const b = (it.botoes||[]).find(x=>x.id === idBotao);
+    if(!b) return {ok:false};
+    const r = aplicarPauta(E, it, b);
+    it.decidido = {botao:idBotao, rot:b.rot};
+    return Object.assign({ok:true, item:it}, r || {});
+  }
+  /* os efeitos, um por ação — os mesmos números dos cartões antigos */
+  function aplicarPauta(E, it, b){
+    const nome = id => (M().torcida(id)||{}).nome || id;
+    switch(b.acao){
+      case 'interm-sim': {
+        const S = E.statusRel = E.statusRel || {visto:{}, recusa:{}};
+        S.visto = S.visto || {}; S.recusa = S.recusa || {};
+        const v = TO.relacoes.nivel(E, it.alvo);
+        E.relacoes[it.alvo] = U.limitar(Math.max(v + 15, 25), -100, 100);
+        E.relacoes[it.de]   = U.limitar(TO.relacoes.nivel(E, it.de) + 3, -100, 100);
+        S.visto[it.alvo] = 'aliado';
+        it.consequencia = `A ${it.nome} sentou os dois: a ${it.alvoNome} agora é aliada `+
+          `(${Math.round(E.relacoes[it.alvo])}) · +3 com a ${it.nome}.`;
+        return {};
+      }
+      case 'interm-nao':
+        E.relacoes[it.de] = U.limitar(TO.relacoes.nivel(E, it.de) - 3, -100, 100);
+        it.consequencia = `Ficou como está. A ${it.nome} não gostou: −3.`;
+        return {};
+      case 'paz-sim': {
+        const S = E.statusRel = E.statusRel || {visto:{}, recusa:{}};
+        S.visto = S.visto || {}; S.recusa = S.recusa || {};
+        E.relacoes[it.alvo] = 0;
+        E.relacoes[it.de]   = U.limitar(TO.relacoes.nivel(E, it.de) + 3, -100, 100);
+        S.visto[it.alvo] = 'neutro';
+        it.consequencia = `A ${it.nome} sentou os dois: a treta com a ${it.alvoNome} `+
+          `acabou — neutro daqui pra frente · +3 com a ${it.nome}.`;
+        return {};
+      }
+      case 'paz-nao':
+        E.relacoes[it.de] = U.limitar(TO.relacoes.nivel(E, it.de) - 3, -100, 100);
+        it.consequencia = `A treta com a ${it.alvoNome} fica de pé. A ${it.nome} não gostou: −3.`;
+        return {};
+      case 'eixo-sim': {
+        const r = TO.eixos.entrar(E, it.de, E.torcida.id);
+        it.consequencia = !r ? 'Não rolou.'
+          : `Dentro do ${it.nomeEixo}. `+
+            (r.novasAliadas.length ? `Novas aliadas: ${r.novasAliadas.map(nome).join(', ')}. ` : 'Já éramos aliados de todos. ')+
+            (r.novosRivais.length ? `Novos rivais: ${r.novosRivais.map(nome).join(', ')}.` : '');
+        return {};
+      }
+      case 'eixo-nao':
+        TO.eixos.recusar(E, it.de, it.porta);
+        it.consequencia = `A gente ficou de fora do ${it.nomeEixo}.`;
+        return {};
+      case 'eixo-aceita': {
+        const r = TO.eixos.entrar(E, it.de, it.torcida);
+        it.consequencia = !r ? 'Não rolou.'
+          : `A ${nome(it.torcida)} está dentro do ${it.nomeEixo}. `+
+            (r.novasAliadas.includes(E.torcida.id) || TO.relacoes.nivel(E, it.torcida) >= 20
+              ? 'Aliada nossa agora.' : '');
+        return {};
+      }
+      case 'eixo-veta':
+        TO.eixos.vetar(E, it.de, it.torcida);
+        it.consequencia = `A gente vetou a ${nome(it.torcida)} no ${it.nomeEixo}.`;
+        return {};
+    }
+    return {};
+  }
+  /* a mesa levanta: o que não foi decidido fica pra próxima */
+  function fecharReuniao(E){
+    const Rn = caixaReuniao(E);
+    const feitos = Rn.pauta.filter(x=>x.decidido);
+    Rn.pauta = Rn.pauta.filter(x=>!x.decidido);
+    return {decididos: feitos.length, sobrou: Rn.pauta.length};
   }
 
   /* O CARTÃO DE SEGUNDA (pedido do dono, 10/09/2026): o planejamento
@@ -2571,6 +2700,11 @@ TO.feed = (function(){
     const marcar = rot => { m.respondido = {botao:idBotao, rot:rot || b.rot}; };
 
     switch(b.acao){
+      /* A REUNIÃO ABRE TELA E NÃO SE RESPONDE AQUI (dono, 11/09/2026):
+         quem responde é o Encerrar a reunião, por `confirmarDecisao`.
+         Fechar a tela sem encerrar deixa a mesa de pé. */
+      case 'abrir-reuniao':
+        return {ok:true, abrir:{tela:'tela-reuniao', msg:m, cancelavel:true, botao:idBotao}};
       /* --- as que resolvem aqui --- */
       case 'nada':
         marcar();
@@ -3058,7 +3192,9 @@ TO.feed = (function(){
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
-          statusDeHoje, intermediacaoDeHoje, pacificacaoDeHoje, eixosDoDia,
+          statusDeHoje, eixosDoDia, reuniaoDeHoje,
+          caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
+          pautaAproximacao, pautaPaz,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu};
 })();

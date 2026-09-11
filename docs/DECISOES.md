@@ -5887,6 +5887,77 @@ trazendo três aliadas novas e dois rivais. No Lado A, o Chamar um nome
 trouxe a Jovem Confiança a 60% e travou o botão por 15 dias. Varredura
 de dois anos sem exceção.
 
+## A reunião mensal de diplomacia (pedido do dono, 11/09/2026)
+
+Toda decisão de diplomacia estava espalhada pelo feed, um cartão por
+assunto, no dia em que o assunto nascia. O dono pediu **mesa**: uma
+**reunião mensal com a diretoria, todo dia 5**, onde tudo é discutido de
+uma vez. É essa reunião que entra no feed — e só ela. O cartão abre um
+popup com um passo por assunto.
+
+**O que virou pauta da mesa:**
+
+1. **Aproximação** — a aliada apresenta uma aliada dela (2 a 3 vezes por
+   ano).
+2. **Fim de treta** — a aliada pede paz por um rival nosso que anda com
+   ela (3 vezes por ano).
+3. **Convite de eixo** — um eixo chama a gente.
+4. **Nome na mesa** — o nosso eixo quer admitir alguém e pede o aval.
+5. **A nossa jogada** — o passo final, sempre presente: fundar um eixo
+   (nome e fundadores por nossa conta), pedir entrada num eixo sem rival
+   nosso dentro, e chamar um nome pra cada eixo que já é nosso.
+
+O que nasce fora do dia 5 — um convite de eixo, por exemplo — fica
+**guardado em `E.reuniao.pauta`** até a reunião. Nada disso volta a
+virar cartão solto.
+
+**A tela.** Uma trilha de degraus no alto, um por assunto, com o último
+sempre sendo a nossa jogada; o assunto do passo no meio, com a fala de
+quem trouxe e os dois botões com o efeito escrito embaixo; e a **ata**
+no pé, listando o que já foi decidido nesta mesa. O rodapé tem um botão
+só: *Encerrar a reunião*.
+
+**Como a decisão se comporta.** O cartão do feed é decisão: o relógio
+fica parado até a mesa levantar. Fechar a tela sem encerrar deixa a
+reunião de pé — a decisão volta pro feed com o botão dela, que é o mesmo
+comportamento da caravana e do assalto. Assunto que a gente não decidiu
+fica pra próxima reunião; o que foi decidido sai da pauta.
+
+**Mesa vazia não se chama**: sem nada trazido de fora e sem jogada
+possível nos eixos (já estamos em dois, ou o relógio da mesa não virou),
+o cartão do mês não sai.
+
+**A mudança de status continua no feed** — a pergunta "a treta esfriou,
+trata como neutro?" nasce de a relação cruzar o corte e não é sugestão
+de ninguém. Se o dono quiser ela na mesa também, é uma linha.
+
+**Verificado.** Reunião em 05/01/2026 com quatro passos (aproximação,
+fim de treta, nome na mesa, a nossa jogada); cada decisão aplicou o
+efeito de sempre e foi pra ata; encerrar respondeu o cartão com "3
+decididos" e o relógio voltou a andar. Em dois anos de simulação: 24
+reuniões, uma por mês, 14 delas com assunto de fora — 6 aproximações,
+6 fins de treta e 3 nomes na mesa —, e a entrada num eixo novo aceita
+por convite, decidida na mesa. Varredura de dois anos sem exceção.
+
+## Diplomacia no perfil da torcida (pedido do dono, 11/09/2026)
+
+O perfil de cada torcida ganhou a aba **Diplomacia**: com quem ela anda
+e com quem se pega, de qualquer torcida do mapa — não só das nossas.
+
+No alto, os **eixos de aliança** dela, com quantos companheiros tem em
+cada um e a marca de quando a gente está dentro do mesmo. Embaixo, um
+bloco por faixa, do mais próximo ao mais distante — Irmandade, Aliadas,
+Neutras, Rivais, Maiores rivais —, cada linha com o escudo, a praça e o
+número da relação. Quem é **maior rival da fonte** aparece sempre no
+último bloco, mesmo com o número morno: é ódio de nascença e não muda de
+prateleira. A irmã de clube leva a etiqueta.
+
+As **neutras nascem dobradas** atrás de um botão: são trezentas e
+poucas, e o que se vem ver aqui é o resto.
+
+A relação vem de onde ela mora: `relacoes` quando um dos dois somos nós,
+`relacoesDelas` entre duas torcidas de IA.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
