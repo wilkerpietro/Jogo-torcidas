@@ -397,6 +397,7 @@ TO.feed = (function(){
     passo('tréguas',        ()=>treguasDoDia(E));
     passo('status',         ()=>statusDeHoje(E));
     passo('intermediação',  ()=>intermediacaoDeHoje(E));
+    passo('pacificação',    ()=>pacificacaoDeHoje(E));
     passo('eixos',          ()=>eixosDoDia(E));
     passo('semana',         ()=>semanaDeHoje(E));
     passo('olheiro',        ()=>olheiroDoDia(E));
@@ -1459,6 +1460,61 @@ TO.feed = (function(){
                nota:`a ${c.nome} vira aliada (+25 no mínimo) · +3 com a ${a.nome}`},
               {id:'nao', rot:'Deixar como está', acao:'interm-nao',
                nota:`−3 com a ${a.nome}`}]
+    });
+  }
+
+  /* =======================================================
+     A ALIADA PEDE PAZ POR UM RIVAL NOSSO (pedido do dono, 11/09/2026)
+     O outro lado da intermediação: umas TRÊS vezes por ano, uma aliada
+     nossa senta pra pedir que a gente baixe a treta com um RIVAL nosso
+     que é aliado dela — ela está no meio de duas turmas que se pegam e
+     quer o corredor livre. Quem decide é o dono: aceitando, a treta
+     zera (a relação sobe pro neutro) e a intermediária ganha +3;
+     recusando, ela perde 3 e o rival segue rival.
+
+     Maior rival não entra nessa conversa: é ódio de nascença, da fonte,
+     e nem a aliada mais próxima senta essa mesa. A dose é por hash — a
+     cada 17 semanas, num dia sorteado da semana —, o mesmo relógio da
+     sugestão da filial, e o par não se repete no mesmo ano.
+     ======================================================= */
+  function pacificacaoDeHoje(E, forcar){
+    const R = TO.relacoes, H = TO.mapa.hash, sa = R.semanaAbs(E);
+    if(!forcar){
+      if((sa + H('paz|'+E.torcida.id)) % 17 !== 0) return null;
+      if((H(`paz|${sa}`) % 7) + 1 !== E.data.dia) return null;
+    }
+    const todas = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
+    const st = id => grupoDoStatus(M().statusDoValor(R.nivel(E, id)));
+    const aliadas = todas.filter(o=>st(o.id) === 'aliado');
+    if(!aliadas.length) return null;
+    const cands = [];
+    for(const a of aliadas) for(const c of todas){
+      if(c.id === a.id || st(c.id) !== 'rival') continue;
+      /* maior rival da fonte não vira neutro por intermediação */
+      if(R.ehMaiorRival(E, E.torcida.id, c.id)) continue;
+      /* ela precisa ser aliada DELE também: é isso que a põe no meio */
+      if(grupoDoStatus(M().statusDoValor(R.relacaoDelas(E, a.id, c.id))) !== 'aliado') continue;
+      cands.push({a, c, quente: R.nivel(E, c.id)});
+    }
+    if(!cands.length) return null;
+    const nota = x => H(`paz|${sa}|${x.a.id}|${x.c.id}`) % 1000;
+    /* a treta mais fria primeiro: é a que mais faz sentido encerrar */
+    cands.sort((x,y)=>(y.quente - x.quente) || nota(x) - nota(y));
+    const {a, c} = cands[0];
+    const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
+    return propor(E, {
+      kind:'pacificacao', peso:'decisao', voz:'torcida',
+      chave:`paz|${a.id}|${c.id}|${E.data.ano}`,
+      texto:`Fala irmão. A ${c.nome} (${cid}) anda junto com a gente, e vocês dois `+
+            `se pegando põe a gente no meio — a gente não quer escolher lado. `+
+            `Se vocês toparem, a gente senta os dois e encerra essa treta: `+
+            `ninguém vira aliado de ninguém, mas ninguém procura ninguém também. Topa?`,
+      dados:{de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
+             valor: Math.round(R.nivel(E, c.id))},
+      botoes:[{id:'sim', rot:'Encerrar a treta', acao:'paz-sim',
+               nota:`a ${c.nome} vira neutra · +3 com a ${a.nome}`},
+              {id:'nao', rot:'Rival continua rival', acao:'paz-nao',
+               nota:`−3 com a ${a.nome} · nada muda com a ${c.nome}`}]
     });
   }
 
@@ -2826,6 +2882,29 @@ TO.feed = (function(){
         m.consequencia = `Ficou como está. A ${d.nome} não gostou: −3.`;
         return {ok:true};
       }
+      case 'paz-sim': {
+        const d = m.dados || {};
+        const S = E.statusRel = E.statusRel || {visto:{}, recusa:{}};
+        S.visto = S.visto || {}; S.recusa = S.recusa || {};
+        /* a treta ZERA: o rival vai pro meio do neutro. Zerando o número
+           o status já é "Neutro", e `visto` anda junto pra mudança não
+           voltar como pergunta de status no dia seguinte. */
+        E.relacoes[d.alvo] = 0;
+        E.relacoes[d.de]   = U.limitar(TO.relacoes.nivel(E, d.de) + 3, -100, 100);
+        S.visto[d.alvo] = 'neutro';
+        marcar();
+        m.consequencia = `A ${d.nome} sentou os dois: a treta com a ${d.alvoNome} `+
+          `acabou — neutro daqui pra frente · +3 com a ${d.nome}.`;
+        return {ok:true};
+      }
+      case 'paz-nao': {
+        const d = m.dados || {};
+        E.relacoes[d.de] = U.limitar(TO.relacoes.nivel(E, d.de) - 3, -100, 100);
+        marcar();
+        m.consequencia = `A treta com a ${d.alvoNome} fica de pé. `+
+          `A ${d.nome} não gostou: −3.`;
+        return {ok:true};
+      }
       case 'eixo-sim': {
         const d = m.dados || {};
         const r = TO.eixos.entrar(E, d.de, E.torcida.id);
@@ -2979,7 +3058,7 @@ TO.feed = (function(){
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
-          statusDeHoje, intermediacaoDeHoje, eixosDoDia,
+          statusDeHoje, intermediacaoDeHoje, pacificacaoDeHoje, eixosDoDia,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu};
 })();

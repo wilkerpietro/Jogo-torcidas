@@ -5769,6 +5769,48 @@ varredura de dois anos em jogo novo confirma que nenhuma decisão fica
 aberta sem botão clicável no cartão dela: o relógio só para quando há o
 que responder, e o que há está sempre na tela.
 
+## A aliada pede paz por um rival nosso (pedido do dono, 11/09/2026)
+
+O dono pediu o outro lado da intermediação: uma aliada nossa sugerindo
+que um RIVAL nosso — que é aliado dela — baixe a rivalidade e vire
+neutro. Quem decide é o dono, e isso acontece **em torno de três vezes
+por ano**.
+
+**A conversa.** A aliada está no meio de duas turmas que se pegam e não
+quer escolher lado: "a ${alvo} anda junto com a gente, e vocês dois se
+pegando põe a gente no meio. Se vocês toparem, a gente senta os dois e
+encerra essa treta: ninguém vira aliado de ninguém, mas ninguém procura
+ninguém também."
+
+**Quem pode entrar na mesa.** A intermediária é aliada nossa; o alvo é
+rival nosso e aliado DELA — é isso que a põe no meio. **Maior rival não
+entra**: é ódio de nascença, da fonte, e nem a aliada mais próxima senta
+essa mesa; o eixo de aliança também conta com essa rivalidade de pé.
+Entre os pares possíveis, sai primeiro a treta mais fria — a que mais
+faz sentido encerrar.
+
+**O que cada resposta faz:**
+
+- **Encerrar a treta** — a relação com o rival vai a zero, o meio do
+  Neutro: ninguém vira aliado de ninguém, mas ninguém procura ninguém.
+  A intermediária ganha +3. O status reconhecido anda junto, pra a
+  mudança não voltar no dia seguinte como a pergunta "concorda com o
+  novo status?".
+- **Rival continua rival** — nada muda com o rival, e a intermediária
+  perde 3 por ter ficado no vácuo.
+
+**A dose.** A cada 17 semanas, num dia da semana sorteado — o mesmo
+relógio da sugestão da filial. 52 ÷ 17 dá três por ano, e o par não se
+repete no mesmo ano. Uma simulação de três anos deu exatamente 3, 3 e 3:
+semanas 17/34/51 no primeiro ano, 16/33/50 no segundo, 15/32/49 no
+terceiro.
+
+**Verificado.** O cartão pinta com a voz da aliada e o selo "Fim de
+treta", com os dois botões e o relógio parado até a resposta. Aceitando,
+a Galoucura saiu de −45 pra 0 (Neutro) e a Raça Coral subiu 3; noventa
+dias depois a relação seguia neutra e a pergunta de status não voltou.
+Recusando, −3 na aliada e nada no rival.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

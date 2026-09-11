@@ -1010,6 +1010,7 @@
                    jornal:'Jornal'};
   const ROT_KIND = {abertura:'Abertura', olheiro:'Olheiro',
                     status:'Relação', intermediacao:'Aproximação',
+                    pacificacao:'Fim de treta',
                     eixo:'Eixo de aliança', 'eixo-convite':'Eixo de aliança',
                     'eixo-proposta':'Eixo de aliança',
                     guerra:'Dia de jogo',
