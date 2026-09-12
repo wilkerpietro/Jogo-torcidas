@@ -28,6 +28,30 @@
     return s;
   }
 
+  /* =======================================================
+     A LISTA DE OPÇÕES COMO DROPDOWN (pedido do dono, 12/09/2026)
+     Fileira de botões cresce pro lado e quebra a tela quando as
+     opções passam de meia dúzia — o regional tem uma por estado. O
+     mesmo conteúdo num `select`: rótulo à esquerda, escolha à direita,
+     uma linha só em qualquer largura.
+     `itens` é [{id, rot, nota}]; `nota` vira o número entre parênteses.
+     ======================================================= */
+  function escolha(rotulo, itens, atual, aoTrocar, extraClasse){
+    const cx = el('div',{class:'escolha-drop'+(extraClasse?' '+extraClasse:'')});
+    if(rotulo) cx.appendChild(el('span',{class:'rot', texto:rotulo}));
+    const sel = el('select',{class:'campo'});
+    for(const it of itens){
+      const o = el('option',{texto: it.rot + (it.nota != null && it.nota !== ''
+                                              ? ` (${it.nota})` : '')});
+      o.value = it.id;
+      if(it.id === atual) o.selected = true;
+      sel.appendChild(o);
+    }
+    sel.onchange = ()=>aoTrocar(sel.value);
+    cx.appendChild(sel);
+    return cx;
+  }
+
   function cartao(titulo, conta){
     const c = el('div',{class:'cartao'});
     if(titulo){
@@ -495,11 +519,13 @@
       if(painel === 'noticias' && subNoticias === 'mensagens'){ redesenhar(); return; }
       balaoNoIcone('noticias', `Mensagem de ${m.nome}`);
     };
+    /* TRETA NÃO NOTIFICA (pedido do dono, 12/09/2026): a briga já foi
+       contada no Fim da noite, e a página do Futebol e Porrada fica
+       guardada em Notícias → Tretas pra quem quiser ler. Balão no ícone
+       e número vermelho por cima disso era a mesma notícia três vezes.
+       O gancho fica, só pra repintar a lista se ela estiver aberta. */
     TO.feed.ganchos.aoSairTreta = (e, m)=>{
-      atualizarBadges();
-      if(painel === 'noticias' && subNoticias === 'tretas'){ redesenhar(); return; }
-      const b = (m.dados||{}).b || {};
-      balaoNoIcone('noticias', b.nome ? `Treta com a ${b.nome}` : 'Saiu a notícia da treta');
+      if(painel === 'noticias' && subNoticias === 'tretas') redesenhar();
     };
     montarLateral();
     ligarTelaEstreita();
@@ -3380,10 +3406,9 @@
     pg.innerHTML = '';
     pg.appendChild(el('div',{class:'titulo-pagina', texto:'Notícias'}));
     const naoLidas = TO.feed.mensagensNaoLidas ? TO.feed.mensagensNaoLidas(e) : 0;
-    const tretasNovas = TO.feed.tretasNaoLidas ? TO.feed.tretasNaoLidas(e) : 0;
     pg.appendChild(subabas([
       {id:'mensagens', rot:'Mensagens' + (naoLidas ? ` (${naoLidas})` : '')},
-      {id:'tretas',  rot:'Tretas' + (tretasNovas ? ` (${tretasNovas})` : '')},
+      {id:'tretas',  rot:'Tretas'},
       {id:'arquivo', rot:'Arquivo do feed'},
       {id:'brigas',  rot:'Brigas'}
     ], subNoticias, id=>{subNoticias=id; redesenhar();}));
@@ -3563,9 +3588,10 @@
   function atualizarBadges(){
     const e = E();
     if(!e) return;
+    /* o número do ícone Notícias conta só MENSAGEM: treta não notifica
+       mais (dono, 12/09/2026) */
     const conta = {torcida: pendenciasDaTorcida(e),
-                   noticias: (TO.feed.mensagensNaoLidas ? TO.feed.mensagensNaoLidas(e) : 0)
-                           + (TO.feed.tretasNaoLidas ? TO.feed.tretasNaoLidas(e) : 0)};
+                   noticias: (TO.feed.mensagensNaoLidas ? TO.feed.mensagensNaoLidas(e) : 0)};
     for(const [pag, n] of Object.entries(conta)){
       for(const b of document.querySelectorAll(`.mapa-ic[data-pag="${pag}"] .ic-badge, .nav-item[data-pag="${pag}"] .ic-badge`)){
         b.textContent = n > 99 ? '99+' : String(n);
@@ -3879,26 +3905,22 @@
       ['componente','Componentes', c.componente],
       ['novato','Apoiadores', c.novato]
     ];
-    const fl = el('div',{class:'filtros-linha mb-filtros'});
-    fl.appendChild(el('span',{class:'rot', texto:'Cargo'}));
-    for(const [id,rot,n] of filtros){
-      const b = el('button',{class:(id===filtroCargo?'on':''), html:`${rot} <span class="conta">${n}</span>`});
-      b.onclick = ()=>{ filtroCargo=id; redesenhar(); };
-      fl.appendChild(b);
-    }
-    pg.appendChild(fl);
-    const fe = el('div',{class:'filtros-linha mb-filtros'});
-    fe.appendChild(el('span',{class:'rot', texto:'Estado'}));
-    for(const [id,rot] of [['todos','Todos'],['pe','De pé'],['ferido','Ferido'],['preso','Preso'],['apto','Apto a promoção']]){
-      const b = el('button',{class:(id===filtroEstado?'on':'')+(id==='apto'?' minha':''), texto:rot});
-      b.onclick = ()=>{ filtroEstado=id; redesenhar(); };
-      fe.appendChild(b);
-    }
+    /* CARGO E ESTADO EM DROPDOWN (dono, 12/09/2026): duas fileiras de
+       botões viravam quatro linhas em tela estreita; agora é uma faixa
+       só, com a busca no fim. */
+    const fl = el('div',{class:'mb-filtros'});
+    fl.appendChild(escolha('Cargo',
+      filtros.map(([id,rot,n])=>({id, rot, nota:n})),
+      filtroCargo, id=>{ filtroCargo=id; redesenhar(); }));
+    fl.appendChild(escolha('Estado',
+      [['todos','Todos'],['pe','De pé'],['ferido','Ferido'],
+       ['preso','Preso'],['apto','Apto a promoção']].map(([id,rot])=>({id, rot})),
+      filtroEstado, id=>{ filtroEstado=id; redesenhar(); }));
     const bs = el('input',{class:'busca mb-busca', type:'search', placeholder:'buscar por nome, arquétipo…'});
     bs.value = busca;
     bs.oninput = ev=>{ busca = ev.target.value; pintarTorcida(); };
-    fe.appendChild(bs);
-    pg.appendChild(fe);
+    fl.appendChild(bs);
+    pg.appendChild(fl);
 
     const ct = cartao('Membros', `${c.aptos} de pé · ${c.feridos} feridos · ${c.presos} presos`);
     const passaEstado = m => filtroEstado==='todos' ? true
@@ -6292,15 +6314,25 @@
       return;
     }
     if(!menu.some(m=>m.id===compSel)) compSel = escolhaPadrao(e, menu);
-    const f2 = el('div',{class:'filtros-linha'});
-    for(const m of menu){
-      const b = el('button',{class:(m.id===compSel?'on':''), html:
-        `${m.rot}${m.conta?`<span class="conta">${m.conta}</span>`:''}`});
-      b.onclick = ()=>{ compSel = m.id; rodadaSel = null; faseSel = null;
-                        vistaComp = null; redesenhar(); };
-      f2.appendChild(b);
+    const trocarComp = id => { compSel = id; rodadaSel = null; faseSel = null;
+                               vistaComp = null; redesenhar(); };
+    /* NACIONAL E REGIONAL EM DROPDOWN (dono, 12/09/2026): são muitas —
+       o regional tem uma competição por estado. O internacional tem
+       duas e continua em botão. */
+    if(nivelComp === 'internacional'){
+      const f2 = el('div',{class:'filtros-linha'});
+      for(const m of menu){
+        const b = el('button',{class:(m.id===compSel?'on':''), html:
+          `${m.rot}${m.conta?`<span class="conta">${m.conta}</span>`:''}`});
+        b.onclick = ()=>trocarComp(m.id);
+        f2.appendChild(b);
+      }
+      pg.appendChild(f2);
+    } else {
+      pg.appendChild(escolha('Competição',
+        menu.map(m=>({id:m.id, rot:m.rot, nota:m.conta})),
+        compSel, trocarComp, 'drop-comp'));
     }
-    pg.appendChild(f2);
 
     /* ---- o corpo ---- */
     if(nivelComp === 'internacional'){ pintarConmebolUm(e, pg, compSel); return; }

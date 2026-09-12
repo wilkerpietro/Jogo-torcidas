@@ -6121,6 +6121,46 @@ os escolhia e só as brigas mexiam neles.
 É a mesma régua que já valia pra mesa de diplomacia das IAs, que nunca
 passa de +45.
 
+## Opções em dropdown, e a treta que não notifica (pedidos do dono, 12/09/2026)
+
+### As opções viram dropdown
+
+Fileira de botões cresce pro lado e quebra a tela quando as opções
+passam de meia dúzia — o regional tem uma competição por estado, e eram
+onze botões numa linha. Nasceu um ajudante único, `escolha(rótulo,
+itens, atual, aoTrocar)`, que monta rótulo + `select` numa linha só, com
+a contagem entre parênteses (o que era o `<span class="conta">`).
+
+Onde entrou:
+
+- **Competições → Nacional**: a competição (Série A, B, C, D, Copa do
+  Brasil, LNT) em dropdown. A fileira de **bandeiras do país fica** —
+  são dez ícones pequenos numa linha, já cabem, e a bandeira se lê mais
+  rápido que o nome numa lista.
+- **Competições → Regional**: a mesma coisa, e é onde mais pesava: onze
+  competições viraram uma linha.
+- **Torcida → Membros**: **Cargo** e **Estado** viram dois dropdowns, e
+  com a busca formam uma faixa só. Eram duas fileiras que viravam quatro
+  linhas em tela estreita.
+
+**Competições → Internacional continua em botão**: são duas opções
+(Libertadores e Sul-Americana), e dropdown de dois itens é pior que dois
+botões.
+
+### A treta não notifica mais
+
+A briga já é contada no Fim da noite, e a página do Futebol e Porrada
+fica guardada em Notícias → Tretas pra quem quiser ler. Balão no ícone e
+número vermelho por cima disso era a mesma notícia três vezes.
+
+Saíram as três: o **balão** no ícone de Notícias, a soma das tretas no
+**número do ícone** (que agora conta só mensagem) e a **contagem na
+sub-aba** Tretas. O gancho `aoSairTreta` ficou, mas só pra repintar a
+lista quando ela já está aberta na tela.
+
+Verificado com três tretas não lidas no feed: o número do ícone segue
+mostrando 2, que são as mensagens, e nenhum balão aparece.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
