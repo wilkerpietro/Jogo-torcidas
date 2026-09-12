@@ -6536,6 +6536,85 @@ pé e de pelo menos dois membros disponíveis.
 **Medido em quatro anos:** 9, 9, 9 e 9. A reunião de diplomacia segue
 em 6 por ano e o bar do rival em 7,5.
 
+## A limpeza da tela (ordem do dono, 12/09/2026)
+
+O dono escolheu, da varredura de ontem, o que sai. Tudo abaixo foi
+removido — o que sobrou em cada caso é o número, nunca a explicação.
+
+**Notas de botão que explicavam em vez de consequenciar:** "abre a cena
+com o núcleo da sub-sede", "abre a cena — a briga vale até ±10 de
+prestígio", "10 de cada lado, só linha de frente, sem pedra nem bomba",
+"confirma o plano da semana", "N na pauta / só a nossa jogada". A régua
+do "abre a cena" valeu pra todos os cartões que a usavam — defesa,
+escolta, treta marcada —, e não só pros três numerados: ficaram os
+números (Prestígio, Moral, Relação, dinheiro) e caiu a narração.
+
+**Moldura do cartão da semana:** "Outros jogos em Fortaleza · 2",
+"Aliados na cidade", "ninguém na rua", "Nenhum jogo nesta praça na
+semana", "Semana de folga do time: nenhum jogo nosso", e o texto de
+abertura "A semana na mesa: os jogos de cada praça e o que a torcida
+faz em cada um" — o cartão abre direto na semana.
+
+**Itinerário:** "apito final · seguindo pros arredores" e "dia
+encerrado".
+
+**O CABEÇALHO DE TODA MENSAGEM.** Eram três rótulos por cartão — quem
+fala (DIRETORIA), o que é (Planejamento da semana) e a data — numa
+faixa, e o feed tem dezenas de cartões. `ROT_VOZ` e `ROT_KIND` saíram
+junto: eram as tabelas que imprimiam esses rótulos e não sobrou quem as
+lesse. O texto e os botões dizem o que a mensagem é; a data está no
+relógio do jogo.
+
+## O planejamento vira planilha (pedido do dono, 12/09/2026)
+
+Não é mais uma lista de linhas: é `<table>` de **três colunas** —
+CAMPO, o que a escolha vale, e os BOTÕES na **última coluna**. Linhas
+rajadas e fio fino, como planilha. O `contador` devolveu a nota que
+carregava ao lado do "+": ela é agora a coluna do meio, que é onde
+moram os números de toda linha.
+
+A coluna dos botões não encolhe (`width:1%` com `white-space:nowrap`):
+botão empilhado não é planilha. Quando a fileira não cabe, a planilha
+**rola de lado** dentro do cartão (`.sem-rolo`) — menos na recepção dos
+aliados, que tem quatro opções compridas e aí a fileira quebra mesmo.
+Em 640px ou menos a tabela vira lista de blocos, com os botões ainda à
+direita.
+
+## O recorte de jornal pela metade (ordem do dono, 12/09/2026)
+
+**Saiu a cabeça inteira:** "Ano 2026 · Nº 4", "Fundada em 2026", a data
+com o nome da edição ("Edição de véspera") e a TARJA ("Copa do Nordeste
+· 16 clubes · 2 caem"). Ficou o nome do jornal, numa linha. Vale pros
+quatro recortes: Gazeta, Almanaque, Futebol e Porrada e a página da LNT.
+
+**O olho sai quando há quadro.** Ele repetia o quadro em prosa — *"16
+clubes na disputa. Favoritos ao título: Bahia, Vitória, Fortaleza.
+Ameaçados de queda: Ferroviário, Campinense"* ao lado de um quadro que
+lista FAVORITO Bahia, 2º Vitória, RISCO Ferroviário. Sem quadro o olho
+fica, porque aí ele é o corpo da notícia.
+
+**A régua de tipografia caiu junto**, não só o espaço em branco: a
+manchete de `clamp(25px,4.6vw,40px)` pra `clamp(15px,2.4vw,20px)`, o
+olho de 14 pra 11,5, o nome do jornal de até 29px pra até 17px, e os
+recuos de 15/17/13 pra 7/11/8. Sem isso a manchete sozinha comia o que
+a cabeça devolveu.
+
+**O recorte virou o cartão inteiro:** sem o cabeçalho da mensagem não
+sobrava nada em volta dele, então `.msg:has(> .gz)` zera o recuo da
+mensagem.
+
+**Medido em 400px de largura**, no mesmo save e na mesma notícia:
+
+| | antes | depois |
+|---|---|---|
+| recorte do almanaque | 492px | **251px (−49%)** |
+| cabeça do jornal | 101px | **18px** |
+| olho | 59px | **sai** |
+| quadro "Como chegam" | 164px | 116px |
+| altura média do cartão no feed | 218px | **166px (−24%)** |
+
+Dois anos de varredura sem exceção.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

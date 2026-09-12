@@ -488,9 +488,7 @@ TO.feed = (function(){
               `${alvo.nome}. São ${nucleo.length} dos nossos na cidade. `+
               `Manda descer?`,
         dados:{cidade:f.cidade, rival:alvo.id},
-        botoes:[{id:'desce',  rot:'Atacar', acao:'filial-ataque',
-                 nota:'abre a cena com o núcleo da sub-sede — a briga '+
-                      'vale prestígio como qualquer ataque a bar'},
+        botoes:[{id:'desce',  rot:'Atacar', acao:'filial-ataque'},
                 {id:'quieto', rot:'Não atacar', acao:'nada'}]});
     }
   }
@@ -603,9 +601,7 @@ TO.feed = (function(){
                       ? 'na praça' : 'na pista'}. O pessoal da nossa `+
                     `Sub-Sede tá com ${nucleo.length}. Manda dar o bote?`,
                 dados:{cidade:f.cidade, rival:o.id, n, cena},
-                botoes:[{id:'bote', rot:'Atacar', acao:'filial-caravana',
-                         nota:'abre a cena com o núcleo da sub-sede contra '+
-                              'a caravana que viajou'},
+                botoes:[{id:'bote', rot:'Atacar', acao:'filial-caravana'},
                         {id:'quieto', rot:'Não atacar', acao:'nada'}]});
             }
           }
@@ -1005,9 +1001,8 @@ TO.feed = (function(){
       dados:{alvo: alvo.id, nome: alvo.deQuem},
       botoes:[
         {id:'atacar', rot:'Atacar o bar', acao:'atacar-bar-rival',
-         nota:'abre a cena — a briga vale até ±10 de prestígio; ganhando, '+
-              'saque de R$ 60 por defensor + 22% do caixa deles · '+
-              'Relação −26 (perdendo, −18)'},
+         nota:'Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% '+
+              'do caixa · Relação −26 (perdendo, −18)'},
         {id:'nada', rot:'Deixar quieto', acao:'ignorar-bar-rival',
          nota:'Prestígio −1 · Moral −1'}
       ]
@@ -1651,8 +1646,7 @@ TO.feed = (function(){
                  : 'Nada trazido de fora no bimestre')+
         (mesa ? ', e a nossa jogada nos eixos em aberto.' : '.'),
       dados:{ano:E.data.ano, mes:mesDe(E), assuntos:quantos},
-      botoes:[{id:'abrir', rot:'Sentar com a diretoria', acao:'abrir-reuniao',
-               nota: quantos ? `${quantos} na pauta` : 'só a nossa jogada'}]
+      botoes:[{id:'abrir', rot:'Sentar com a diretoria', acao:'abrir-reuniao'}]
     });
   }
 
@@ -1758,13 +1752,10 @@ TO.feed = (function(){
     propor(E, {
       kind:'semana', voz:'diretor', peso: temJogo ? 'decisao' : 'info',
       chave:`semana|${E.data.ano}|${E.data.semana}`,
-      texto: temJogo
-        ? 'A semana na mesa: os jogos de cada praça e o que a torcida faz em cada um.'
-        : 'Semana de folga do time. Os jogos da praça continuam.',
+      texto: temJogo ? '' : 'Semana de folga do time.',
       dados:{cidades, semana:E.data.semana, ano:E.data.ano},
       botoes: temJogo
-        ? [{id:'fechar', rot:'Fechar o planejamento', acao:'fechar-semana',
-            nota:'confirma o plano da semana'}]
+        ? [{id:'fechar', rot:'Fechar o planejamento', acao:'fechar-semana'}]
         : null
     });
   }
@@ -1934,8 +1925,8 @@ TO.feed = (function(){
       dados:{torcida:a.torcida, alvo:a.alvo, cena:a.cena},
       botoes:[
         {id:'brigar', rot:cfg.brigar, acao:'cena-defesa',
-         nota:'abre a cena — a briga vale até ±10 de prestígio; segurando, '+
-              'Moral +1,5 · Prestígio +3,5; perdendo, Moral −3 · Prestígio −3,5'},
+         nota:'Segurando, Moral +1,5 · Prestígio +3,5; perdendo, '+
+              'Moral −3 · Prestígio −3,5'},
         {id:'fugir',  rot:cfg.fugir,  acao:'fugir-defesa',
          nota:'ninguém desce: Moral −3 · Prestígio −3,5 · Relação −6'+
               (a.alvo === 'bar' ? ' · levam R$ 60 por invasor + 10% do caixa' : '')}
@@ -2006,8 +1997,7 @@ TO.feed = (function(){
              classe:b.classe, tam, aposta},
       botoes:[
         {id:'bora',  rot:'Bora pro problema', acao:'cena-treta',
-         nota:`${tam} de cada lado, só linha de frente, sem pedra nem `+
-              `bomba — vencendo leva os ${U.dinheiro(aposta*2)} da roda · `+
+         nota:`Vencendo leva ${U.dinheiro(aposta*2)} · `+
               `Prestígio +${tam >= 10 ? 5 : tam >= 7 ? 4 : 3} vencendo, `+
               `−1 perdendo · Relação −2`},
         {id:'ficar', rot:'Ficar de fora', acao:'ignorar-treta',
@@ -2127,12 +2117,10 @@ TO.feed = (function(){
              lnt:{div:meu.div.n, nomeDiv:meu.div.nome, fase:meu.fase}},
       botoes:[
         {id:'bora', rot:'Escalar a linha de frente', acao:'cena-treta',
-         nota:'10 de cada lado, só linha de frente, sem pedra nem bomba '+
-              '— quem ganha segue na LNT · Prestígio +5 vencendo, −1 '+
+         nota:'Quem ganha segue na LNT · Prestígio +5 vencendo, −1 '+
               'perdendo · Relação −2'},
         {id:'ficar', rot:'Não botar bonde', acao:'lnt-wo',
-         nota:'W.O.: a vaga é deles e o prestígio cai 2 · sem briga, '+
-              'sem ferido, sem prêmio'}
+         nota:'A vaga é deles · Prestígio −2'}
       ]
     });
   }
@@ -2323,8 +2311,8 @@ TO.feed = (function(){
                aliados: a.estimativa},
         botoes:[
           {id:'entrar', rot:'Entrar na briga', acao:'cena-escolta',
-           nota:'abre a cena — Relação +10 com o aliado; o prestígio da '+
-                'noite (até ±10) vai pra ele'},
+           nota:'Relação +10 com o aliado · o prestígio da noite '+
+                '(até ±10) vai pra ele'},
           {id:'fora',   rot:'Ficar de fora',   acao:'abandonar-escolta',
            nota:`−${TO.relacoes.REL.largarAliado} de relação com o aliado`}
         ]

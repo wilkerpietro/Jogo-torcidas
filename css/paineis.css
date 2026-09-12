@@ -1259,6 +1259,10 @@ table.dados tr.selecionada td{background:#252525}
   border:1px solid var(--linha);border-left:3px solid var(--linha);
   background:var(--painel);padding:9px 11px;
 }
+/* o recorte de jornal é o cartão inteiro: sem o cabeçalho da mensagem
+   não sobra nada em volta dele pra justificar a moldura (dono, 12/09) */
+.msg:has(> .gz){padding:0;border-left-width:1px}
+.msg > .gz{margin-top:0}
 .msg-cab{
   display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
   font-size:11px;color:var(--fraco);margin-bottom:4px;
@@ -2261,28 +2265,42 @@ header.capa-cidade{background-size:cover; background-position:center;
    lê fica à esquerda, o que se clica vai pra direita */
 .sem-invest{display:flex;flex-wrap:wrap;gap:3px 8px;align-items:center;justify-content:flex-end}
 .sem-invest .sem-chips{margin:0;justify-content:flex-end}
-/* O PLANO É UMA TABELA (dono, 12/09/2026): uma linha por decisão,
-   rótulo à esquerda e os controles encostados à DIREITA. Antes era
-   `.sem-sec`, com o rótulo em cima e os chips embaixo — cada bloco
-   com uma altura, e nenhuma coluna pra correr o olho. */
-.sem-plano{grid-column:1 / -1;display:grid;margin-top:3px;padding-top:2px;border-top:1px solid #2a2418}
-.sem-lin{
-  display:grid;grid-template-columns:70px minmax(0,1fr);align-items:center;gap:4px 10px;
-  padding:4px 0;border-bottom:1px solid #232019;
+/* A PLANILHA DO PLANO (dono, 12/09/2026): `<table>` de três colunas —
+   CAMPO, o que a escolha vale, e os BOTÕES na última coluna, sempre
+   encostados à direita. Linhas rajadas e fio fino, como planilha. */
+.sem-plano{
+  grid-column:1 / -1;width:100%;border-collapse:collapse;
+  margin-top:3px;table-layout:auto;
 }
-.sem-lin:last-child{border-bottom:0}
-.sem-lin > .rot{
+.sem-plano tr{border-top:1px solid #232019}
+.sem-plano tr:nth-child(even){background:#00000026}
+.sem-plano th,.sem-plano td{padding:4px 8px;vertical-align:middle}
+.sem-plano th{
+  width:1%;white-space:nowrap;text-align:left;
   font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--fraco);
+  color:var(--fraco);font-weight:400;
 }
-.sem-lin > .val{
-  display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:4px 8px;
-  min-width:0;
+.sem-plano th.larga{
+  font-family:var(--corpo);font-size:11.5px;letter-spacing:0;text-transform:none;
+  color:var(--texto);
 }
-.sem-lin .sem-chips{margin:0;justify-content:flex-end}
-.sem-lin .sem-trajeto{justify-content:flex-end}
-.sem-val{font-size:11.5px;text-align:right}
-.sem-val b{font-family:var(--mono);font-size:10.5px;white-space:nowrap;margin-left:6px}
+/* a coluna do meio come a sobra; a dos botões não encolhe abaixo da
+   fileira inteira — botão empilhado não é planilha */
+.sem-plano td.dado{
+  font-size:10.5px;color:var(--fraco);line-height:1.3;
+  font-variant-numeric:tabular-nums;
+}
+.sem-plano td.dado b{font-family:var(--mono);font-size:10.5px}
+.sem-plano td.bts{width:1%;white-space:nowrap;text-align:right}
+.sem-plano .sem-chip{white-space:nowrap}
+.sem-rolo{grid-column:1 / -1;overflow-x:auto;margin-top:3px}
+.sem-rolo::-webkit-scrollbar{height:6px}
+.sem-rolo::-webkit-scrollbar-thumb{background:#3a3a3a}
+.sem-plano td.bts > *{display:inline-flex;vertical-align:middle}
+.sem-plano .sem-chips{margin:0;justify-content:flex-end;flex-wrap:nowrap}
+.sem-plano .sem-trajeto{justify-content:flex-end}
+.sem-plano tr.pago{opacity:.6}
+.sem-val{font-size:11.5px;text-align:right;white-space:nowrap}
 .sem-contador{padding:0;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .sem-contador button{width:24px;height:24px;font-size:13px}
 .sem-contador b{font-size:14px;color:#fff;min-width:28px}
@@ -2306,26 +2324,22 @@ header.capa-cidade{background-size:cover; background-position:center;
   font-size:11.5px;padding:3px 8px;background:#0e0e0e;border-left:2px solid var(--ouro);margin-top:2px;
 }
 .sem-resumo b{font-family:var(--mono);font-size:11.5px}
-.sem-recep{margin-top:4px;padding-top:4px;border-top:1px dashed #2a2a2a}
-.sem-recep .sem-rot{margin-bottom:2px}
-/* o nome do aliado ocupa a coluna do rótulo, mas em letra de texto */
-.sem-lin > .rot.larga{
-  font-family:var(--corpo);font-size:11.5px;letter-spacing:0;text-transform:none;
-  color:var(--texto);
-}
-.sem-lin > .rot.larga small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
-.sem-lin.pago{opacity:.6}
-.sem-recep .sem-lin{grid-template-columns:minmax(0,130px) minmax(0,1fr)}
+/* a recepção é uma linha por aliado: aqui a fileira PODE quebrar,
+   porque são quatro opções compridas e não vale rolar de lado */
+.sem-recep{margin-top:6px;padding-top:4px;border-top:1px dashed #2a2a2a;overflow-x:visible}
+.sem-recep .sem-chips{flex-wrap:wrap}
+.sem-recep td.bts{white-space:normal}
 @media (max-width:640px){
   .sem-cab{flex-wrap:wrap;gap:4px 9px}
   .sem-cab .msg-bts{flex-basis:100%;margin:2px 0 0}
-  /* em tela estreita a linha vira duas: rótulo em cima, controles
-     embaixo, ainda encostados à direita */
-  .sem-lin{grid-template-columns:1fr;gap:2px}
-  .sem-lin > .rot{grid-column:1}
-  /* o −/valor/+ não se parte: a nota desce pra linha de cima e os
-     três botões ficam juntos embaixo, à direita */
-  .sem-contador small{flex:1 0 100%;text-align:right}
+  /* em tela estreita a planilha vira lista: cada célula ocupa a
+     largura toda, e os botões continuam à direita */
+  .sem-plano,.sem-plano tbody,.sem-plano tr,.sem-plano th,.sem-plano td{display:block;width:auto}
+  .sem-plano tr{padding:3px 0}
+  .sem-plano th,.sem-plano td{padding:1px 0;white-space:normal}
+  .sem-plano td.bts{width:auto;text-align:right;white-space:normal}
+  .sem-plano .sem-chips{flex-wrap:wrap}
+  .sem-plano td.dado:empty{display:none}
 }
 /* os eixos de aliança (dono, 11/09/2026) */
 .x-link{cursor:pointer;border-bottom:1px dotted currentColor;color:#f0e2c8}

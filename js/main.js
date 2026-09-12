@@ -1032,25 +1032,8 @@
         if(!v.no.isConnected) feedVistas.delete(id);
   }
 
-  const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Na rua',
-                   jornal:'Jornal'};
-  const ROT_KIND = {abertura:'Abertura', olheiro:'Olheiro',
-                    status:'Relação', intermediacao:'Aproximação',
-                    reuniao:'Reunião de diplomacia',
-                    eixo:'Eixo de aliança', 'eixo-convite':'Eixo de aliança',
-                    'eixo-proposta':'Eixo de aliança',
-                    guerra:'Dia de jogo',
-                    sofrido:'Ataque sofrido', escolta:'Aliados',
-                    aniversario:'Aniversário', aniversarios:'Aniversários do mês',
-                    barrival:'Bar rival',
-                    provocacao:'Provocação', dica:'Dica',
-                    /* `placar` fica só por causa de save antigo: a
-                       mensagem deixou de ser criada em 22/08/2026 */
-                    confronto:'Confronto', placar:'Resultado',
-                    rodada:'Rodada', partida:'Nossa partida',
-                    assalto:'Assalto', brigas:'Brigas da semana',
-                    semana:'Planejamento da semana',
-                    itinerario:'Dia de jogo'};
+  /* ROT_VOZ e ROT_KIND saíram junto com o cabeçalho da mensagem
+     (dono, 12/09/2026): eram os rótulos que ele imprimia. */
 
   /* =======================================================
      A PARTIDA AO VIVO (decisão do dono, 17/08/2026)
@@ -1962,7 +1945,7 @@
       atualizarFeed(); pintarTopo();
       if(ITN && ITN.recados)
         for(const t of [...ITN.recados.querySelectorAll('.itn-trava')]) t.remove();
-      itnDizer('apito final · seguindo pros arredores');
+      /* o recado do apito final saiu (dono, 12/09/2026) */
       ITN.travado = false;
       itnAgenda(1100);
     });
@@ -1977,7 +1960,6 @@
     if(!ITN) return;
     ITN.travado = true;
     itnLimparOcorridos();
-    itnDizer('dia encerrado');
     ITN.raiz.classList.add('fechado');
     TO.estado.salvar();
     /* o dia não vira mensagem nova no feed (decisão do dono,
@@ -2006,14 +1988,13 @@
   function recorteDaRodada(p, msg){
     const rec = el('article',{class:'gz'});
 
+    /* A CABEÇA ENCOLHEU (ordem do dono, 12/09/2026): saíram o "Ano
+       2026 · Nº 4", o "Fundada em 2026", a data com o nome da edição e
+       a TARJA inteira ("Copa do Nordeste · 16 clubes · 2 caem"). Nada
+       daquilo decidia coisa nenhuma, e ocupava metade da altura do
+       recorte no feed. Ficou o nome do jornal. */
     const cab = el('div',{class:'gz-cabeca'});
-    cab.innerHTML =
-      `<div class="linha">
-         <div class="lado">Ano ${p.cabeca.ano} · Nº ${p.cabeca.edicao}<br>Fundada em 2026</div>
-         <div class="nome-jornal">Gazeta dos Sports</div>
-         <div class="lado dir">${p.cabeca.data}<br>Edição da rodada</div>
-       </div>
-       <div class="tarja">${p.tarja.map(t=>`<span>${t}</span>`).join('')}</div>`;
+    cab.innerHTML = `<div class="nome-jornal">Gazeta dos Sports</div>`;
     rec.appendChild(cab);
 
     const topo = el('div',{class:'gz-topo'+(p.tabela?'':' sozinha')});
@@ -2115,21 +2096,21 @@
     const rec = el('article',{class:'gz alm'+(p.tom?' '+p.tom:'')});
 
     const cab = el('div',{class:'gz-cabeca'});
-    cab.innerHTML =
-      `<div class="linha">
-         <div class="lado">Ano ${p.ano}<br>Fundada em 2026</div>
-         <div class="nome-jornal">${p.jornal}</div>
-         <div class="lado dir">${p.edicao}</div>
-       </div>
-       <div class="tarja">${(p.tarja||[]).map(t=>`<span>${t}</span>`).join('')}</div>`;
+    cab.innerHTML = `<div class="nome-jornal">${p.jornal}</div>`;
     rec.appendChild(cab);
 
-    const topo = el('div',{class:'gz-topo'+(p.quadro && p.quadro.linhas.length ? '' : ' sozinha')});
+    const temQuadro = !!(p.quadro && p.quadro.linhas.length);
+    const topo = el('div',{class:'gz-topo'+(temQuadro ? '' : ' sozinha')});
     const man = el('div',{class:'gz-manchete'});
+    /* O OLHO SAI QUANDO HÁ QUADRO (ordem do dono, 12/09/2026): ele
+       repetia o quadro em prosa — "Favoritos ao título: Bahia, Vitória,
+       Fortaleza. Ameaçados de queda: ..." ao lado de um quadro que lista
+       FAVORITO Bahia, 2º Vitória, RISCO Ferroviário. Sem quadro o olho
+       fica, porque aí ele é o corpo da notícia. */
     man.innerHTML =
       `<div class="chapeu">${p.chapeu}</div>
-       <h2>${p.manchete}</h2>
-       <p class="olho">${p.olho}</p>`;
+       <h2>${p.manchete}</h2>` +
+      (temQuadro ? '' : `<p class="olho">${p.olho}</p>`);
     topo.appendChild(man);
 
     const q = p.quadro;
@@ -2167,13 +2148,7 @@
     const rec = el('article',{class:'gz pp'});
 
     const cab = el('div',{class:'gz-cabeca'});
-    cab.innerHTML =
-      `<div class="linha">
-         <div class="lado">Ano ${p.cabeca.ano} · Nº ${p.cabeca.edicao}<br>Fundada em 2026</div>
-         <div class="nome-jornal">Futebol e Porrada</div>
-         <div class="lado dir">${p.cabeca.data}<br>Edição da treta</div>
-       </div>
-       <div class="tarja">${p.tarja.map(t=>`<span>${t}</span>`).join('')}</div>`;
+    cab.innerHTML = `<div class="nome-jornal">Futebol e Porrada</div>`;
     rec.appendChild(cab);
 
     const topo = el('div',{class:'gz-topo'});
@@ -2239,13 +2214,7 @@
   function recorteDaLNT(p){
     const rec = el('article',{class:'gz pp'});
     const cab = el('div',{class:'gz-cabeca'});
-    cab.innerHTML =
-      `<div class="linha">
-         <div class="lado">Ano ${p.cabeca.ano} · Nº ${p.cabeca.edicao}<br>Fundada em 2026</div>
-         <div class="nome-jornal">Futebol e Porrada</div>
-         <div class="lado dir">${p.cabeca.data}<br>${p.especial}</div>
-       </div>
-       <div class="tarja">${p.tarja.map(t=>`<span>${t}</span>`).join('')}</div>`;
+    cab.innerHTML = `<div class="nome-jornal">Futebol e Porrada</div>`;
     rec.appendChild(cab);
 
     const topo = el('div',{class:'gz-topo'});
@@ -2472,16 +2441,15 @@
     raiz.appendChild(corpo);
 
     /* ---- controles reutilizados ---- */
-    const contador = (valor, min, max, passo, aoMudar, nota)=>{
+    /* O CONTADOR É SÓ O CONTADOR (dono, 12/09/2026): a nota saiu de
+       dentro dele e virou a COLUNA DO MEIO da planilha — é lá que
+       moram os números de toda linha, e não colado no botão. */
+    const contador = (valor, min, max, passo, aoMudar)=>{
       const linha = el('div',{class:'contador sem-contador'});
       const bMenos = el('button',{texto:'−'}), bMais = el('button',{texto:'+'});
       bMenos.disabled = fechado || valor <= min; bMais.disabled = fechado || valor >= max;
       bMenos.onclick = ()=>aoMudar(Math.max(min, valor - passo));
       bMais.onclick  = ()=>aoMudar(Math.min(max, valor + passo));
-      /* a nota vem ANTES dos botões: na tabela do plano a coluna da
-         direita é dos controles, e texto depois do "+" empurrava eles
-         pro meio da linha (dono, 12/09/2026) */
-      if(nota) linha.appendChild(el('small',{texto:nota}));
       linha.append(bMenos, el('b',{texto:String(valor)}), bMais);
       return linha;
     };
@@ -2506,7 +2474,7 @@
       ? `<div class="sem-rua">${r.torcidas.map(t=>
           `<span class="sem-torcida${t.hostil?' hostil':''}">${chipTorcida(t.id,t.cor)}`+
           `${linkTorcida(t.id,t.nome)}<small>${String(t.faixa).replace(' a ','–')}${t.deFora?' · de fora':''}</small></span>`).join('')}</div>`
-      : `<div class="sem-rua vazia">ninguém na rua</div>`;
+      : '';
 
     /* ---- o nosso jogo, com o plano dentro ---- */
     const blocoNosso = (r)=>{
@@ -2514,22 +2482,25 @@
       const bloco = el('div',{class:'sem-jogo nosso'+(r.passou?' passou':'')});
       bloco.innerHTML = rotuloJogo(r) + ruaDe(r);
       if(r.passou || !vigente) return bloco;
-      const plano = el('div',{class:'sem-plano'});
-      /* A TABELA DO PLANO (pedido do dono, 12/09/2026): uma linha por
-         decisão, rótulo à esquerda e os botões à direita. Era uma pilha
-         de seções com o rótulo em cima e os chips embaixo, e cada bloco
-         tinha altura diferente — de olho batido não dava pra ver quantas
-         decisões a semana pedia. */
-      const linhaP = (rot, ...ctrls)=>{
+      /* A PLANILHA DO PLANO (pedido do dono, 12/09/2026): `<table>` de
+         três colunas — CAMPO, o que a escolha vale, e os BOTÕES na
+         ÚLTIMA coluna. Era uma pilha de seções com o rótulo em cima e
+         os chips embaixo: cada bloco com uma altura, e nenhuma coluna
+         pra correr o olho. */
+      const plano = el('table',{class:'sem-plano'});
+      const corpoP = el('tbody');
+      plano.appendChild(corpoP);
+      const linhaP = (rot, dado, ...ctrls)=>{
         const cs = ctrls.filter(Boolean);
         if(!cs.length) return null;
-        const l = el('div',{class:'sem-lin'});
-        l.appendChild(el('span',{class:'rot', texto:rot}));
-        const v = el('div',{class:'val'});
-        for(const c of cs) v.appendChild(c);
-        l.appendChild(v);
-        plano.appendChild(l);
-        return l;
+        const tr = el('tr');
+        tr.appendChild(el('th',{texto:rot}));
+        tr.appendChild(el('td',{class:'dado', html: dado || ''}));
+        const td = el('td',{class:'bts'});
+        for(const c of cs) td.appendChild(c);
+        tr.appendChild(td);
+        corpoP.appendChild(tr);
+        return tr;
       };
       const fora = r.tipo === 'fora';
       const briga = p.intencao !== 'paz';
@@ -2544,15 +2515,15 @@
         est = P.estimativaCaravana(e);
         const rotas = P.rotas(e);
         const passo = Math.max(1, Math.round(est.interessados/10));
-        linhaP('Caravana', contador(est.vao, est.minimo, est.interessados, passo,
-          v=>{ p.caravana = v; p.decidido = false; salvar(); pintar(); },
-          `de ${est.aptos} aptos · ${U.dinheiro(est.porCabeca)} cada`));
-        if(rotas.length) linhaP('Rota', chips(rotas.map(rt=>({id:rt.id, rot:rt.nome,
+        linhaP('Caravana', `de ${est.aptos} aptos · ${U.dinheiro(est.porCabeca)} cada`,
+          contador(est.vao, est.minimo, est.interessados, passo,
+            v=>{ p.caravana = v; p.decidido = false; salvar(); pintar(); }));
+        if(rotas.length) linhaP('Rota', '', chips(rotas.map(rt=>({id:rt.id, rot:rt.nome,
           nota:`${U.dinheiro(rt.custo)}${rt.risco?` · emboscada ${Math.round(rt.risco)}`:' · sem hostil'}`})),
           p.rota || rotas[0].id, id=>{ p.rota = id; p.decidido = false; salvar(); pintar(); }));
         const rt = P.rotaEscolhida(e);
         if(rt && rt.cidades.length > 1)
-          linhaP('Trajeto', el('div',{class:'sem-trajeto', html: rt.cidades.map((c,i)=>{
+          linhaP('Trajeto', '', el('div',{class:'sem-trajeto', html: rt.cidades.map((c,i)=>{
             const nome = (M.cidade(c)||{}).nome || c; const h = P.hostilidade(e, c);
             return `<span class="${i===0?'saida':i===rt.cidades.length-1?'chegada':''}${h>40?' hostil':''}">${nome}</span>`;
           }).join('<i>›</i>')}));
@@ -2561,17 +2532,18 @@
         const NR = {nada:'não vai receber', hospedar:'hospedagem', escolta:'hospedagem e escolta', churrasco:'escolta e churrasco'};
         if(ajuda){
           const rec = P.recepcaoDe(ajuda.nivel);
-          linhaP('Recepção', el('span',{class:'sem-val', html:
-            `${linkTorcida(ajuda.aliado, ajuda.nome)} · <b>${NR[ajuda.nivel]||ajuda.nivel}</b>`+
-            ` <b class="${ajuda.nivel==='nada'?'negativo':'positivo'}">${rec.relacao>0?'+':''}${rec.relacao} rel.`+
-            `${ajuda.escolta?` · ${ajuda.escolta} na escolta`:''}</b>`}));
+          linhaP('Recepção',
+            `<b class="${ajuda.nivel==='nada'?'negativo':'positivo'}">${rec.relacao>0?'+':''}${rec.relacao} rel.</b>`+
+            `${ajuda.escolta?` · ${ajuda.escolta} na escolta`:''}`,
+            el('span',{class:'sem-val', html:
+              `${linkTorcida(ajuda.aliado, ajuda.nome)} · ${NR[ajuda.nivel]||ajuda.nivel}`}));
         } else if(aliadas.length && !fechado){
           const b = el('button',{class:'sem-mini', texto:'Pedir ajuda'});
           b.onclick = ()=>{ const rr = P.pedirAjuda(e, aliadas[0].id); if(!rr) return;
             aviso(rr.nivel==='nada' ? `A ${rr.nome} não vai receber a gente.` : `A ${rr.nome} topou: ${NR[rr.nivel]}.`, rr.nivel==='nada'?'ruim':'boa');
             salvar(); pintarTopo(); pintar(); };
-          linhaP('Aliada lá', el('span',{class:'sem-val', html:
-            aliadas.map(a=>linkTorcida(a.id,a.nome)).join(', ')}), b);
+          linhaP('Aliada lá',
+            aliadas.map(a=>linkTorcida(a.id,a.nome)).join(', '), b);
         }
       }
 
@@ -2580,7 +2552,7 @@
          era enfeite — "portão, bandeira e bateria", "em cima de uma
          torcida", a prosa de cada ponto de ataque — saiu. Ficou o que
          muda a conta: o número que a escolha rende ou custa. */
-      linhaP('Na rua', chips([
+      linhaP('Na rua', '', chips([
         {id:'paz', rot:'Ir em paz'},
         {id:'atacar', rot:'Atacar', nota: alvos.length ? '' : 'ninguém pra atacar', off:!alvos.length}
       ], briga ? 'atacar' : 'paz', id=>{
@@ -2590,33 +2562,39 @@
       }));
       if(briga && alvos.length){
         const alvoAtual = alvos.find(a=>a.id===p.alvoTorcida) ? p.alvoTorcida : alvos[0].id;
-        linhaP('Alvo', chips(alvos.map(a=>({id:a.id, rot:linkTorcida(a.id,a.nome)+(a.aliada?' · aliada':''),
+        linhaP('Alvo', '', chips(alvos.map(a=>({id:a.id, rot:linkTorcida(a.id,a.nome)+(a.aliada?' · aliada':''),
           nota:`${a.faixa} · rel. ${Math.round(a.relacao)}`})), alvoAtual,
           id=>{ P.definirAtaque(e, {alvo:id, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}); salvar(); pintar(); }));
-        linhaP('Onde', chips(P.ONDE_ATAQUE.map(o=>({id:o.id, rot:o.rot})), onde,
+        linhaP('Onde', '', chips(P.ONDE_ATAQUE.map(o=>({id:o.id, rot:o.rot})), onde,
           id=>{ onde = id; P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}); salvar(); pintar(); }));
         if(!fora){
           const f = P.efetivoDoAtaque(e);
           const ef = p.efetivoAtaque != null ? U.limitar(p.efetivoAtaque, f.piso, f.teto) : f.teto;
-          linhaP('Efetivo', contador(ef, f.piso, f.teto, Math.max(1, Math.round(f.teto/10)),
-            v=>{ P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:v}); salvar(); pintar(); },
-            `de ${f.teto} · menos gente rende mais prestígio`));
+          linhaP('Efetivo', `de ${f.teto} · menos gente rende mais prestígio`,
+            contador(ef, f.piso, f.teto, Math.max(1, Math.round(f.teto/10)),
+              v=>{ P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:v}); salvar(); pintar(); }));
         }
       }
       /* bombas: pra caravana, só o estoque; em casa, compra na hora */
       const tem = (e.estoque||{}).bombas || 0;
       const podeComprar = fora ? 0 : Math.floor(Math.max(0, e.dinheiro) / TO.patrimonio.precoBomba(e));
       const leva = U.limitar(p.bombas || 0, 0, tem + podeComprar);
-      linhaP('Bombas', contador(leva, 0, tem + podeComprar, 1,
-        v=>{ if(v > tem) TO.patrimonio.comprarBombas(e, v - tem); p.bombas = Math.min(v, (e.estoque||{}).bombas||0); p.decidido=false; salvar(); pintarTopo(); pintar(); },
+      linhaP('Bombas',
         tem ? `${tem} no estoque${!fora && podeComprar ? ` · a mais ${U.dinheiro(TO.patrimonio.precoBomba(e))}` : ''}`
-            : (fora ? 'estoque vazio' : `${U.dinheiro(TO.patrimonio.precoBomba(e))} cada`)));
+            : (fora ? 'estoque vazio' : `${U.dinheiro(TO.patrimonio.precoBomba(e))} cada`),
+        contador(leva, 0, tem + podeComprar, 1,
+          v=>{ if(v > tem) TO.patrimonio.comprarBombas(e, v - tem); p.bombas = Math.min(v, (e.estoque||{}).bombas||0); p.decidido=false; salvar(); pintarTopo(); pintar(); }));
 
       /* O QUE A SEMANA CUSTA. Era uma frase — "Jogo em casa · em paz" —
          que repetia os botões logo acima; ficou só o dinheiro da
          caravana, que é o único número que não está em linha nenhuma. */
-      if(est) linhaP('Custo', el('b',{class:'negativo sem-val', texto:U.dinheiro(-est.custo)}));
-      bloco.appendChild(plano);
+      if(est) linhaP('Custo', `<b class="negativo">${U.dinheiro(-est.custo)}</b>`,
+        el('span',{class:'sem-val'}));
+      /* a planilha rola de lado quando a fileira de botões não cabe:
+         é o que uma tabela faz, e é melhor do que empilhar botão */
+      const rolo = el('div',{class:'sem-rolo'});
+      rolo.appendChild(plano);
+      bloco.appendChild(rolo);
       return bloco;
     };
 
@@ -2672,35 +2650,39 @@
       const pj = e.proximoJogo || {};
       const nosso = meus.find(l=> l.tipo==='fora' ? !pj.casa : (pj.casa && l.diaN === pj.dia)) || meus[0];
       if(nosso) corpo.appendChild(blocoNosso(nosso));
-      else if(pauta.emCasa) corpo.appendChild(el('div',{class:'sem-nucleo', texto: vigente ? 'Semana de folga do time: nenhum jogo nosso.' : 'Semana sem jogo nosso.'}));
+
       const outros = pauta.linhas.filter(l=>l !== nosso);
       if(outros.length){
-        corpo.appendChild(el('div',{class:'sem-rot alto', html:`Outros jogos em ${cid.nome||''} <small>${outros.length}</small>`}));
+        /* o rótulo "Outros jogos em X · N" saiu (dono, 12/09/2026):
+           o duelo de cada linha já diz o que é */
         for(const r of outros) corpo.appendChild(blocoOutro(r, pauta.emCasa));
-      } else if(!nosso){
-        corpo.appendChild(el('div',{class:'sem-rua vazia', texto:'Nenhum jogo nesta praça na semana.'}));
       }
       /* aliados que chegam: como receber */
       if(pauta.aliados.length){
         /* a recepção segue a mesma tabela do plano: o aliado à
            esquerda, as opções à direita */
-        const bloco = el('div',{class:'sem-plano sem-recep'});
-        bloco.appendChild(el('div',{class:'sem-rot', texto:'Aliados na cidade'}));
+        /* a recepção segue a mesma planilha: aliado, quando vem, e as
+           opções na última coluna */
+        const bloco = el('table',{class:'sem-plano'});
+        const tb = el('tbody'); bloco.appendChild(tb);
         for(const a of pauta.aliados){
           const pago = ((P.plano(e).pago)||{})[a.id];
-          const linha = el('div',{class:'sem-lin'+(pago?' pago':'')});
-          linha.appendChild(el('span',{class:'rot larga', html:
-            `${linkTorcida(a.id,a.nome)} <small>${a.n} · ${DIA_ABREV[a.dia]||''}</small>`+
-            (pago?' <span class="tag">resolvido</span>':'')}));
+          const tr = el('tr',{class: pago ? 'pago' : ''});
+          tr.appendChild(el('th',{class:'larga', html:
+            linkTorcida(a.id,a.nome) + (pago?' <span class="tag">resolvido</span>':'')}));
+          tr.appendChild(el('td',{class:'dado',
+            texto:`${a.n} · ${DIA_ABREV[a.dia]||''}`}));
           const atual = P.nivelDe(e, a.id);
-          const v = el('div',{class:'val'});
-          v.appendChild(chips(P.RECEPCAO.map(rc=>({id:rc.id, rot:rc.rot,
+          const td = el('td',{class:'bts'});
+          td.appendChild(chips(P.RECEPCAO.map(rc=>({id:rc.id, rot:rc.rot,
             nota:`${rc.porCabeca*a.n ? U.dinheiro(rc.porCabeca*a.n) : 'de graça'} · ${rc.relacao>0?'+':''}${rc.relacao}`, off:!!pago})),
             atual, id=>{ P.definirRecepcao(e, a.id, id); salvar(); pintar(); }));
-          linha.appendChild(v);
-          bloco.appendChild(linha);
+          tr.appendChild(td);
+          tb.appendChild(tr);
         }
-        corpo.appendChild(bloco);
+        const roloR = el('div',{class:'sem-rolo sem-recep'});
+        roloR.appendChild(bloco);
+        corpo.appendChild(roloR);
       }
     }
     pintar();
@@ -2710,21 +2692,13 @@
   function cartaoMensagem(e, m){
     const art = el('article',{class:`msg kind-${m.kind||'msg'} peso-${m.peso}`+
       (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : '')});
-    /* a voz 'torcida' é a própria torcida falando (status, intermediação) */
-    const quem  = m.voz === 'torcida' && m.dados && m.dados.nome
-      ? linkTorcida(m.dados.de, m.dados.nome)
-      : m.voz === 'eixo' && m.dados && m.dados.nome
-      ? linkEixo(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || 'A rua');
-    const papel = ROT_KIND[m.kind] || '';
-    const q = m.quando || {};
-    const d = TO.estado.dataDaSemana(q.ano||e.data.ano, q.semana||1, q.dia||1);
-    const quando = `${String(d.getDate()).padStart(2,'0')}/`+
-                   `${String(d.getMonth()+1).padStart(2,'0')} · ${m.hora||''}`;
-    art.appendChild(el('div',{class:'msg-cab', html:
-      `<span class="msg-voz">${quem}</span>`+
-      `<span class="msg-papel">${papel}</span>`+
-      `<time>${quando}</time>`}));
-    art.appendChild(el('p',{class:'msg-txt', html: linkificarNomes(m.texto)}));
+    /* O CABEÇALHO DE TODA MENSAGEM SAIU (ordem do dono, 12/09/2026):
+       eram três rótulos pro mesmo cartão — quem fala ("DIRETORIA"), o
+       que é ("Planejamento da semana") e a data — numa faixa por
+       cartão, e o feed tem dezenas deles. O texto e os botões dizem o
+       que a mensagem é; a data está no relógio do jogo. */
+    if(m.texto)
+      art.appendChild(el('p',{class:'msg-txt', html: linkificarNomes(m.texto)}));
 
     if(m.kind === 'semana') art.appendChild(cartaoSemana(e, m));
 
