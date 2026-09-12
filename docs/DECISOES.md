@@ -6666,14 +6666,50 @@ com o par**, normalizada: `força = (min(rel) − 20) / 60`, limitada a
 
 | jogada | movimento | limite |
 |---|---|---|
-| aproximar | `+5 a +20` (`5 + 15 × força`) | teto em **+45** (Aliado) |
-| pacificar | `+5 a +20` (`5 + 15 × força`) | teto em **0** (Neutro) |
-| afastar | `−4 a −14` (`4 + 10 × força`) | piso em **0** (Neutro) |
+| aproximar | `+15 a +25` (`15 + 10 × força`) | teto em **+45** (Aliado) |
+| pacificar | `+15 a +20` (`15 + 5 × força`) | teto em **0** (Neutro) |
+| afastar | `−15 a −25` (`15 + 10 × força`) | piso em **0** (Neutro) |
+
+**A régua acima é a nova** (ordem do dono, 12/09/2026). A antiga mexia
+pouco — +5 a +20 no aproximar, −4 a −14 no afastar — e uma jogada a cada
+91 dias nesse tamanho quase não mudava o mapa. Os limites não mudaram:
+aproximar não passa de Aliado, pacificar não passa de Neutro e afastar
+não desce abaixo de Neutro.
 
 A mesa só pega com chance de `0,25 + 0,6 × força` — de 25% a 85% —, e
 cada torcida senta a dela **a cada 91 dias** (4 por ano), com até doze
 parceiras na roda. Nada disso toca a NOSSA relação com ninguém: o que é
 nosso se decide na nossa reunião.
+
+## O mundo em cinco anos com a régua nova (medição, 12/09/2026)
+
+Simulação com a Young Flu, 387 torcidas, 74.691 pares vigiados, varredura
+semanal: **3.782 mudanças de status em 5 anos** — 756 por ano —, das
+quais **885 envolvem a nossa torcida**.
+
+| passo | total | por ano |
+|---|---|---|
+| Aliado → Irmandade | 1.232 | 246 |
+| Neutro → Rival | 830 | 166 |
+| Neutro → Aliado | 479 | 96 |
+| Irmandade → Aliado | 427 | 85 |
+| Rival → Maior Rival | 375 | 75 |
+| Rival → Neutro | 370 | 74 |
+| Aliado → Neutro | 51 | 10 |
+| Aliado → Rival | 15 | 3 |
+| Rival → Aliado | 2 | — |
+| Irmandade → Rival | 1 | — |
+
+**O que se lê nisso.** O lado da aliança agora respira: 479 promoções a
+Aliado e 1.232 a Irmandade contra 427 quedas de Irmandade e 51 de
+Aliado. A mesa não faz rival de aliado — Aliado → Rival são 15 em cinco
+anos, e vêm de briga, não de diplomacia.
+
+**As nossas** (885) são quase todas do lado da treta: 582 Neutro → Rival
+e 290 Rival → Neutro, contra 8 Aliado → Neutro, 3 Irmandade → Aliado e
+1 Aliado → Irmandade. Faz sentido: a mesa das IAs não toca na nossa
+relação com ninguém — o que é nosso se decide na nossa reunião, e ela
+acontece seis vezes por ano.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

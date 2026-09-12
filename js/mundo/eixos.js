@@ -559,14 +559,20 @@ TO.eixos = (function(){
     const forca = forcaDaMesa(E, aId, j.b, j.c);
     if((H(`mesa|ok|${sa}|${aId}|${j.b}`) % 1000) / 1000 >= 0.25 + 0.6 * forca) return null;
 
+    /* A RÉGUA DO DONO (12/09/2026): a mesa mexia pouco — de +5 a +20 no
+       aproximar e de −4 a −14 no afastar —, e uma jogada a cada 91 dias
+       nesse tamanho quase não muda o mapa. Agora aproximar vale +15 a
+       +25, pacificar +15 a +20 e afastar −15 a −25. Os limites são os
+       mesmos: aproximar não passa de Aliado, pacificar não passa de
+       Neutro e afastar não desce abaixo de Neutro. */
     if(j.tipo === 'aproximar'){
-      const ganho = Math.round(5 + 15 * forca);
+      const ganho = Math.round(15 + 10 * forca);
       porRel(E, j.b, j.c, Math.min(DIPLO_TETO, j.v + ganho));
     } else if(j.tipo === 'pacificar'){
-      const alivio = Math.round(5 + 15 * forca);
+      const alivio = Math.round(15 + 5 * forca);
       porRel(E, j.b, j.c, Math.min(0, j.v + alivio));
     } else {
-      const perda = Math.round(4 + 10 * forca);
+      const perda = Math.round(15 + 10 * forca);
       porRel(E, j.b, j.c, Math.max(0, j.v - perda));
     }
     /* o que mexe com gente do NOSSO eixo vira linha das novidades; o
