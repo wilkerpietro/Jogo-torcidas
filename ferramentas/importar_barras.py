@@ -729,6 +729,39 @@ CLASSICOS = [
  ('caracas','deportivo-tachira'), ('caracas','deportivo-la-guaira'),
 ]
 
+# ===================================================================
+# OS HERMANAMIENTOS (lista do dono, 12/09/2026)
+#
+# A aliança internacional era vazia de propósito -- o gerador dizia que
+# inventar hermanamiento seria inventar fato. O dono trouxe a lista, e
+# agora ela existe: cada par é uma organizada brasileira e a barra de
+# um clube de fora, ligadas por IRMANDADE nos dois sentidos.
+#
+# Irmandade e nao Aliado porque `relacaoBase` le a lista de quem
+# pergunta, e a irmandade e o degrau que nao piora com o tempo
+# (`podePiorar: false` em dados/diplomacia.js) -- hermanamiento nao
+# esfria por briga de arquibancada em outro pais.
+#
+# Quando o dono nomeou a organizada brasileira ("independente e garra
+# blanca"), e ela. Quando nomeou so o clube, fica com a MAIOR
+# organizada dele -- com uma excecao: o Sao Paulo tem tres pares na
+# lista e duas organizadas, entao a de Caracas foi pros Dragoes da
+# Real. Trocar qualquer um e trocar um id aqui.
+#
+# (organizada brasileira, clube da barra)
+HERMANAMIENTOS = [
+ ('young_flu',               'velez'),          # Young Flu · La Pandilla de Liniers
+ ('camisa_12_do_inter',      'independiente'),  # Camisa 12 · La Barra del Rojo
+ ('jovem_fla',               'lanus'),          # Jovem Fla · La Barra 14
+ ('torcida_jovem_do_gremio', 'nacional-uru'),   # Jovem do Grêmio · La Banda del Parque
+ ('camisa_12_do_inter',      'penarol'),        # Camisa 12 · Barra Amsterdam
+ ('independente',            'chacarita'),      # Independente · Los Funebreros
+ ('independente',            'colo-colo'),      # Independente · Garra Blanca
+ ('dragoes_da_real',         'caracas'),        # Dragões da Real · Los Demonios Rojos
+ ('mafia_azul',              'san-lorenzo'),    # Máfia Azul · La Gloriosa Butteler
+ ('torcida_jovem_do_gremio', 'almagro'),        # Jovem do Grêmio · La Banda del Tricolor
+]
+
 TAMANHO = {
  # tamanho: (nivel, quarteiroes, grade, guardas, pms, choque, fatia de rua)
  'Grande':  (1, 196, [14, 14], 5, 12, 3, 0.16),
@@ -1222,9 +1255,24 @@ def montar_torcidas(times, pracas):
             if mesma_praca or mesma_liga:
                 t['rivais'].append(o['id'])
 
+    # ---- os hermanamientos: a ponte com o Brasil ----
+    # so o lado de fora e escrito aqui. O lado brasileiro mora em
+    # torcidas.js, que e gerado por outra ferramenta -- barras.js
+    # carrega ele em `HERMANOS` e costura na hora de carregar.
+    velhas = {t['id'] for t in ler_torcidas()}
+    for br, clube in HERMANAMIENTOS:
+        if br not in velhas:
+            raise SystemExit(f'HERMANAMIENTOS: nao existe a organizada {br}')
+        t = por_clube.get(clube)
+        if not t:
+            raise SystemExit(f'HERMANAMIENTOS: nao existe barra do clube {clube}')
+        if br not in t['irmandade']:
+            t['irmandade'].append(br)
+
     for t in fora:
         t['rivais'].sort()
         t['maioresRivais'].sort()
+        t['irmandade'].sort()
     return fora, sem_sede
 
 
@@ -1243,6 +1291,8 @@ def main():
 
     lp = ',\n'.join('  ' + json.dumps(c, ensure_ascii=False) for c in pracas)
     lt = ',\n'.join('  ' + json.dumps(t, ensure_ascii=False) for t in torcidas)
+    lh = ',\n'.join(f'    ["{br}", "b-{clube}"]'
+                     for br, clube in HERMANAMIENTOS)
     saida = RAIZ / 'dados/barras.js'
     saida.write_text(
         f'/* BARRAS BRAVAS — {len(torcidas)} organizadas de nove países,\n'
@@ -1255,6 +1305,18 @@ def main():
         f'  const torcidas = [\n{lt}\n  ];\n'
         f'  TO.dados.cidades  = (TO.dados.cidades  || []).concat(pracas);\n'
         f'  TO.dados.torcidas = (TO.dados.torcidas || []).concat(torcidas);\n'
+        f'  /* os hermanamientos, do lado brasileiro: a barra ja nasce com\n'
+        f'     a organizada na irmandade dela, e aqui a volta e costurada\n'
+        f'     em torcidas.js, que e gerado por outra ferramenta. */\n'
+        f'  const HERMANOS = [\n{lh}\n  ];\n'
+        f'  const porId = {{}};\n'
+        f'  for(const t of TO.dados.torcidas) porId[t.id] = t;\n'
+        f'  for(const [br, barra] of HERMANOS){{\n'
+        f'    const t = porId[br];\n'
+        f'    if(!t) continue;\n'
+        f'    t.irmandade = t.irmandade || [];\n'
+        f'    if(!t.irmandade.includes(barra)) t.irmandade.push(barra);\n'
+        f'  }}\n'
         f'}})();\n', encoding='utf-8')
     print(f'  dados/barras.js: {saida.stat().st_size/1024:.0f} KB')
 

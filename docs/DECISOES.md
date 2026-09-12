@@ -6298,6 +6298,71 @@ depois Boca e River com 10% cada.
 O Brasil continua fora de tudo isto (ordem do dono): o `git diff` em
 `cidades.js` e `torcidas.js` é vazio.
 
+## Os hermanamientos (lista do dono, 12/09/2026)
+
+O gerador das barras dizia, em comentário, que **aliança internacional
+ficava vazia de propósito**: *"a barra brava não tem a rede de aliadas
+que a organizada brasileira tem, e inventar hermanamiento seria inventar
+fato"*. O dono trouxe a lista de fatos, e agora ela existe — dez pares,
+cada um uma organizada brasileira e a barra de um clube de fora.
+
+| organizada | barra | clube |
+|---|---|---|
+| Young Flu | La Pandilla de Liniers | Vélez |
+| Camisa 12 do Inter | La Barra del Rojo | Independiente |
+| Camisa 12 do Inter | Barra Amsterdam | Peñarol |
+| Jovem Fla | La Barra 14 | Lanús |
+| Torcida Jovem do Grêmio | La Banda del Parque | Nacional/URU |
+| Torcida Jovem do Grêmio | La Banda del Tricolor | Almagro |
+| Independente | Garra Blanca | Colo-Colo |
+| Independente | Los Funebreros | Chacarita |
+| Dragões da Real | Los Demonios Rojos | Caracas |
+| Máfia Azul | La Gloriosa Butteler | San Lorenzo |
+
+**Irmandade, e não Aliado.** `relacaoBase` lê a lista de quem pergunta,
+e a Irmandade vale +80 contra os +45 do Aliado. É também o degrau que
+`dados/diplomacia.js` marca com `podePiorar: false` — hermanamiento não é
+aliança de conveniência, e a palavra que o mundo usa pra ele é
+*irmandade* mesmo.
+
+**Qual organizada, quando o dono nomeou só o clube.** Fica com a MAIOR
+do clube — Young Flu no Flu, Jovem Fla no Flamengo, Camisa 12 no Inter,
+Torcida Jovem no Grêmio, Máfia Azul no Cruzeiro. Uma exceção: o São
+Paulo tem **três** pares na lista e duas organizadas, então, depois de
+Garra Blanca e Chacarita ficarem com a Independente (que o dono nomeou),
+Caracas foi pros Dragões da Real. Trocar qualquer um é trocar um id em
+`HERMANAMIENTOS`.
+
+**Os dois lados, em dois arquivos.** A barra nasce com a organizada na
+`irmandade` dela, dentro de `dados/barras.js`. O lado brasileiro mora em
+`dados/torcidas.js`, que é gerado por OUTRA ferramenta
+(`importar_relacoes.py`) e não conhece clube de fora — então `barras.js`
+carrega a lista numa constante `HERMANOS` e costura a volta na hora de
+carregar, logo depois do `concat`. Sem as duas pontas a relação só
+valeria de um lado: `nivel()` lê `relacaoBase(nossa, outra)`, a partir
+do registro de quem pergunta.
+
+**Conferência no gerador.** Id de organizada que não existe em
+`torcidas.js`, ou clube sem barra, **quebra** `importar_barras.py` em vez
+de gerar par morto.
+
+**A praça mostra o país.** Na aba Diplomacia do perfil, torcida de fora
+agora aparece como "Buenos Aires · Argentina": sem isso a linha não
+dizia que a irmandade atravessa a fronteira.
+
+**O que medi, com a Young Flu:** os dez pares dão Irmandade nos dois
+sentidos, nenhum deles é rival por outro caminho, `saoIrmas` continua
+falso (clubes diferentes — a regra de não brigar é só entre organizadas
+do MESMO clube), e cinco anos de jogo correm sem exceção, com **zero
+eixos misturando países**.
+
+**O que o dono precisa decidir.** A convivência (régua de 03/09/2026)
+cobra −1 por mês sem contato, e hermanamiento com barra de outro país
+quase não tem contato: em cinco anos a Young Flu × La Pandilla caiu de
+**+80 para +61** — ainda Aliado, mas já fora da Irmandade. Se a aliança
+real tem que ser permanente, a saída é isentar o par declarado da
+convivência; não mexi porque a régua do apodrecimento é dele.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

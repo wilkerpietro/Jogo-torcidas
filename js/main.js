@@ -5257,7 +5257,11 @@
             `${chipTorcida(l.p.id, cor)}${linkTorcida(l.p.id, l.p.nome)}`+
             `${l.irma ? '<span class="tag">irmã</span>' : ''}`+
             `${l.maior ? '<span class="tag ruim">maior rival</span>' : ''}`+
-            `<small>${(TO.financeiro.nomeCidade && TO.financeiro.nomeCidade(l.p.mapa)) || l.p.mapa}</small>`+
+            /* a praça, e o país junto quando ela é de fora: "Buenos
+               Aires" sozinho não diz que a irmandade atravessa a
+               fronteira, e os hermanamientos moram nesta lista */
+            `<small>${(TO.financeiro.nomeCidade && TO.financeiro.nomeCidade(l.p.mapa)) || l.p.mapa}`+
+            `${l.p.fora && l.p.regiao ? ' · ' + l.p.regiao : ''}</small>`+
             `<b class="${l.v>0?'positivo':l.v<0?'negativo':''}">${l.v>0?'+':''}${Math.round(l.v)}</b>`}));
         }
         c.corpo.appendChild(g);
