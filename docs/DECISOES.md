@@ -6561,8 +6561,11 @@ encerrado".
 **O CABEÇALHO DE TODA MENSAGEM: ficou SÓ A ORIGEM** (ordem do dono,
 12/09/2026). Eram três rótulos por cartão — quem fala (DIRETORIA), o
 que é (Planejamento da semana) e a data. Sobrou o primeiro: *Jornal*,
-*Olheiro*, *Diretoria*, *Na rua*, ou o nome da torcida/eixo quando é
-ela que fala. `ROT_KIND` — a tabela do segundo rótulo — não voltou, e
+*Olheiro*, *Diretoria*, *Diplomacia*, ou o nome da torcida/eixo quando
+é ela que fala. (*Na rua* virou **Diplomacia** por ordem do dono: a
+única voz que a usava é a dos convites de festa das aliadas, que é
+relação pura. A linha NA RUA da planilha do plano não mudou — lá é o
+dia de jogo, não é diplomacia.) `ROT_KIND` — a tabela do segundo rótulo — não voltou, e
 a data também não: ela está no relógio do jogo. A faixa encolheu junto
 com o resto (13px pra 11,5px, na cor fraca), e nos recortes de jornal
 ela fica por cima do papel, com o recuo que a mensagem perdeu.

@@ -1036,7 +1036,11 @@
      fala, e mais nada. `ROT_KIND` — o rótulo do tipo do cartão,
      "Planejamento da semana", "Bar rival" — não voltou: era o segundo
      rótulo pro mesmo cartão, e a data também ficou fora. */
-  const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Na rua',
+  /* "Na rua" virou DIPLOMACIA (dono, 12/09/2026): a única voz que a
+     usava é a dos convites de festa das aliadas, que é relação pura —
+     e o mesmo vale pra sobra, que são os cartões de torcida e de eixo
+     sem nome no `dados`. */
+  const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Diplomacia',
                    jornal:'Jornal'};
 
   /* =======================================================
@@ -2701,7 +2705,7 @@
     const quem = m.voz === 'torcida' && m.dados && m.dados.nome
       ? linkTorcida(m.dados.de, m.dados.nome)
       : m.voz === 'eixo' && m.dados && m.dados.nome
-      ? linkEixo(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || 'A rua');
+      ? linkEixo(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || 'Diplomacia');
     art.appendChild(el('div',{class:'msg-cab', html:
       `<span class="msg-voz">${quem}</span>`}));
     if(m.texto)
