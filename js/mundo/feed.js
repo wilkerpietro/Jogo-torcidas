@@ -1450,8 +1450,12 @@ TO.feed = (function(){
     cands.sort((x,y)=>(y.semAliada?1:0) - (x.semAliada?1:0) || nota(x) - nota(y));
     /* A LEALDADE VEM ANTES (correção do dono, 12/09/2026): ninguém se
        aproxima de quem é maior rival de uma aliada — dos dois lados */
-    const passa = cands.slice(0, 8).find(x=>!TO.eixos ||
-      !TO.eixos.trancaDeAliado(E, E.torcida.id, x.c.id));
+    /* e o CÍRCULO EM COMUM (dono, 12/09/2026): a gente só se aproxima
+       de quem já anda com mais da metade da nossa turma */
+    const cacheA = new Map();
+    const passa = cands.slice(0, 8).find(x=>!TO.eixos || (
+      TO.eixos.circuloEmComum(E, E.torcida.id, x.c.id, cacheA).ok &&
+      !TO.eixos.trancaDeAliado(E, E.torcida.id, x.c.id)));
     if(!passa) return null;
     const {a, c, semAliada} = passa;
     const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;

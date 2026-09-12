@@ -6047,6 +6047,39 @@ o inimigo do eixo.
 
 O corte de "aliada" pra valer a lealdade é o mesmo da régua: +20.
 
+## O círculo em comum (regra do dono, 12/09/2026)
+
+Outra linha que o dono pegou no jogo: *"Trovão Azul aproximou Fúria
+Jovem Baraúnas e Força Jovem Pelotas"*. Não faz sentido — **as duas não
+têm aliados em comum**. A regra que faltava: **uma só se aproxima da
+outra quando tem mais de 50% de aliados em comum**.
+
+Aproximação não é apresentação de estranhos: é duas turmas que já se
+cruzam na rua toda semana fechando o que faltava.
+
+**A conta** (`circuloEmComum`, em `eixos.js`) é sobre o **círculo
+menor**: mais da metade das aliadas da que tem MENOS aliadas precisa
+andar com a outra também. Quem intermedeia já conta como uma dessas —
+ela é aliada das duas, é o que a põe no meio. No caso do dono, a Fúria
+Jovem Baraúnas e a Força Jovem Pelotas têm **1 aliada em comum de um
+círculo menor de 7**: barrado.
+
+**Vale só pra aproximar.** Pacificar é outra coisa: encerrar uma treta
+não faz ninguém virar aliado de ninguém, e não exige convívio. Afastar,
+menos ainda.
+
+Entrou na mesa das outras e na aproximação da nossa reunião do dia 5 —
+a mesma régua nos dois lados.
+
+**O efeito, medido em cinco anos.** A regra podia ter matado a
+aproximação — um par do mesmo eixo, a Máfia Vermelha e o Inferno Coral,
+tem só 10 aliadas em comum de um círculo de 27 e seria barrado. Não
+matou: a mesa desce a lista de jogadas até achar um par que sirva, e as
+aproximações caíram de 176 para **156 por ano**. Os eixos continuam
+indo de 5 a 19 em cinco anos, e as torcidas sem eixo, de 320 a 262.
+Quem paga o preço são os pares de círculos distantes — que é
+exatamente o que o dono mandou barrar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

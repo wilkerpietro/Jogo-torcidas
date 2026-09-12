@@ -178,6 +178,43 @@ TO.eixos = (function(){
     `${(M().torcida(t.quem)||{}).nome} anda com a ${(M().torcida(t.aliada)||{}).nome}, `+
     `que é maior rival da ${(M().torcida(t.contra)||{}).nome}`;
 
+  /* =========================================================
+     O CÍRCULO EM COMUM (regra do dono, 12/09/2026)
+     "Uma só se aproxima da outra quando possui muitos aliados (mais de
+     50%) em comum." O caso que o dono pegou: *Trovão Azul aproximou
+     Fúria Jovem Baraúnas e Força Jovem Pelotas* — duas torcidas que
+     não andam com a mesma gente. Aproximação não é apresentação de
+     estranhos: é duas turmas que já se cruzam na rua toda semana
+     fechando o que faltava.
+
+     A conta é sobre o CÍRCULO MENOR: mais da metade das aliadas da que
+     tem menos aliadas precisa ser aliada da outra também. Quem
+     intermedeia já conta como uma dessas — ela é aliada das duas, é o
+     que a põe no meio.
+
+     Vale só pra APROXIMAR. Pacificar é outra coisa: encerrar uma treta
+     não faz ninguém virar aliado de ninguém, e não exige convívio.
+     ========================================================= */
+  const CIRCULO_EM_COMUM = 0.5;
+  function aliadasDe(E, id, cache){
+    if(cache && cache.has(id)) return cache.get(id);
+    const s = new Set();
+    for(const o of M().jogaveis()){
+      if(o.incompleta || o.id === id) continue;
+      if(relDe(E, id, o.id) >= TRANCA_ALIADO) s.add(o.id);
+    }
+    if(cache) cache.set(id, s);
+    return s;
+  }
+  function circuloEmComum(E, b, c, cache){
+    const A = aliadasDe(E, b, cache), B = aliadasDe(E, c, cache);
+    let comuns = 0;
+    for(const x of A) if(B.has(x)) comuns++;
+    const menor = Math.min(A.size, B.size);
+    return {comuns, nA:A.size, nB:B.size, menor,
+            ok: menor > 0 && comuns > menor * CIRCULO_EM_COMUM};
+  }
+
   /* ---- quem pode entrar ---- */
   function podeEntrar(E, eixoId, torcidaId){
     const x = eixo(E, eixoId); const o = M().torcida(torcidaId);
@@ -497,7 +534,11 @@ TO.eixos = (function(){
     /* a primeira que a lealdade deixa passar — oito tentativas, que a
        trava custa uma varredura do mapa por par */
     let j = null;
+    const cacheAliadas = new Map();
     for(const cand of jogadas.slice(0, 8)){
+      /* aproximar pede círculo em comum; pacificar, não (dono, 12/09/2026) */
+      if(cand.tipo === 'aproximar' &&
+         !circuloEmComum(E, cand.b, cand.c, cacheAliadas).ok) continue;
       if(cand.tipo !== 'afastar' && trancaDeAliado(E, cand.b, cand.c)) continue;
       j = cand; break;
     }
@@ -795,7 +836,7 @@ TO.eixos = (function(){
   return {caixas, lista, eixo, de, podeEntrar, candidatos, entrar, fundar,
           eventosDoDia, recusar, resumo, maioresRivaisDoEixo,
           diplomaciaDelas, mesaDela, DIPLO_CADA_DIAS,
-          trancaDeAliado, motivoDaTranca,
+          trancaDeAliado, motivoDaTranca, circuloEmComum, aliadasDe,
           novidades, naoVistas, naoVistasNossas, marcarVistas, vetar,
           /* as jogadas do dono (11/09/2026) */
           cabemosEmMais, eixosNossos, esperaDaMesa, esperaDoConvite,
