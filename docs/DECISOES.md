@@ -6558,12 +6558,14 @@ faz em cada um" — o cartão abre direto na semana.
 **Itinerário:** "apito final · seguindo pros arredores" e "dia
 encerrado".
 
-**O CABEÇALHO DE TODA MENSAGEM.** Eram três rótulos por cartão — quem
-fala (DIRETORIA), o que é (Planejamento da semana) e a data — numa
-faixa, e o feed tem dezenas de cartões. `ROT_VOZ` e `ROT_KIND` saíram
-junto: eram as tabelas que imprimiam esses rótulos e não sobrou quem as
-lesse. O texto e os botões dizem o que a mensagem é; a data está no
-relógio do jogo.
+**O CABEÇALHO DE TODA MENSAGEM: ficou SÓ A ORIGEM** (ordem do dono,
+12/09/2026). Eram três rótulos por cartão — quem fala (DIRETORIA), o
+que é (Planejamento da semana) e a data. Sobrou o primeiro: *Jornal*,
+*Olheiro*, *Diretoria*, *Na rua*, ou o nome da torcida/eixo quando é
+ela que fala. `ROT_KIND` — a tabela do segundo rótulo — não voltou, e
+a data também não: ela está no relógio do jogo. A faixa encolheu junto
+com o resto (13px pra 11,5px, na cor fraca), e nos recortes de jornal
+ela fica por cima do papel, com o recuo que a mensagem perdeu.
 
 ## O planejamento vira planilha (pedido do dono, 12/09/2026)
 
@@ -6611,7 +6613,7 @@ mensagem.
 | cabeça do jornal | 101px | **18px** |
 | olho | 59px | **sai** |
 | quadro "Como chegam" | 164px | 116px |
-| altura média do cartão no feed | 218px | **166px (−24%)** |
+| altura média do cartão no feed | 218px | **182px (−17%)** |
 
 Dois anos de varredura sem exceção.
 

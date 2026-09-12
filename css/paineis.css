@@ -1259,17 +1259,20 @@ table.dados tr.selecionada td{background:#252525}
   border:1px solid var(--linha);border-left:3px solid var(--linha);
   background:var(--painel);padding:9px 11px;
 }
-/* o recorte de jornal é o cartão inteiro: sem o cabeçalho da mensagem
-   não sobra nada em volta dele pra justificar a moldura (dono, 12/09) */
+/* o recorte de jornal é o cartão inteiro; a faixa de origem ("Jornal")
+   fica por cima dele, com o recuo que a mensagem perdeu */
 .msg:has(> .gz){padding:0;border-left-width:1px}
-.msg > .gz{margin-top:0}
+.msg:has(> .gz) > .msg-cab{padding:6px 11px 0;margin-bottom:0}
+.msg > .gz{margin-top:6px}
+/* o cabeçalho é uma linha só, com a origem e mais nada (dono,
+   12/09/2026) — por isso ele encolheu junto com o resto do feed */
 .msg-cab{
   display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
-  font-size:11px;color:var(--fraco);margin-bottom:4px;
+  font-size:11px;color:var(--fraco);margin-bottom:2px;
 }
 .msg-voz{
-  font-family:var(--titulo);font-size:13px;letter-spacing:.05em;
-  color:var(--texto);text-transform:uppercase;
+  font-family:var(--titulo);font-size:11.5px;letter-spacing:.08em;
+  color:var(--fraco);text-transform:uppercase;
 }
 .msg-papel{font-size:10.5px}
 .msg-cat{

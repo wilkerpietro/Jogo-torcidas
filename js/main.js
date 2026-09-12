@@ -1032,8 +1032,12 @@
         if(!v.no.isConnected) feedVistas.delete(id);
   }
 
-  /* ROT_VOZ e ROT_KIND saíram junto com o cabeçalho da mensagem
-     (dono, 12/09/2026): eram os rótulos que ele imprimia. */
+  /* O CABEÇALHO VOLTOU, SÓ COM A ORIGEM (dono, 12/09/2026): quem
+     fala, e mais nada. `ROT_KIND` — o rótulo do tipo do cartão,
+     "Planejamento da semana", "Bar rival" — não voltou: era o segundo
+     rótulo pro mesmo cartão, e a data também ficou fora. */
+  const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Na rua',
+                   jornal:'Jornal'};
 
   /* =======================================================
      A PARTIDA AO VIVO (decisão do dono, 17/08/2026)
@@ -2692,11 +2696,14 @@
   function cartaoMensagem(e, m){
     const art = el('article',{class:`msg kind-${m.kind||'msg'} peso-${m.peso}`+
       (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : '')});
-    /* O CABEÇALHO DE TODA MENSAGEM SAIU (ordem do dono, 12/09/2026):
-       eram três rótulos pro mesmo cartão — quem fala ("DIRETORIA"), o
-       que é ("Planejamento da semana") e a data — numa faixa por
-       cartão, e o feed tem dezenas deles. O texto e os botões dizem o
-       que a mensagem é; a data está no relógio do jogo. */
+    /* a voz 'torcida' é a própria torcida falando (status, intermediação),
+       e a 'eixo' é o eixo de aliança: nesses dois a origem é o nome */
+    const quem = m.voz === 'torcida' && m.dados && m.dados.nome
+      ? linkTorcida(m.dados.de, m.dados.nome)
+      : m.voz === 'eixo' && m.dados && m.dados.nome
+      ? linkEixo(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || 'A rua');
+    art.appendChild(el('div',{class:'msg-cab', html:
+      `<span class="msg-voz">${quem}</span>`}));
     if(m.texto)
       art.appendChild(el('p',{class:'msg-txt', html: linkificarNomes(m.texto)}));
 
