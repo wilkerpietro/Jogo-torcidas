@@ -6080,6 +6080,47 @@ indo de 5 a 19 em cinco anos, e as torcidas sem eixo, de 320 a 262.
 Quem paga o preço são os pares de círculos distantes — que é
 exatamente o que o dono mandou barrar.
 
+## A reunião de diretoria delas não faz amigo de inimigo (correção do dono, 12/09/2026)
+
+O dono pegou duas coisas impossíveis no relatório de cinco anos:
+
+- a **Independente do Anápolis** virou **Irmandade** da Força Jovem
+  Goiás E do Esquadrão Vilanovense **ao mesmo tempo** — e esses dois são
+  maiores rivais um do outro, na fonte;
+- a **Fúria Azul do Iguatu** virou **Irmandade** da **Fúria Icasiana**,
+  que é rival dela de nascença.
+
+**O rastro.** Instrumentando `E.relacoesDelas` com um Proxy e rodando os
+cinco anos de novo, **346 das 358 mudanças naqueles pares saíram de uma
+única função**: `reuniaoIA`, em `relacoes.js`. A assinatura é
+inconfundível — −45 → −39 → −33 → −27, **+6 por dia, todo dia**.
+
+**A causa.** O comentário da função sempre disse "o mesmo passo da nossa
+(+4,2 com o **aliado** mais próximo)", mas o código abria em
+`melhor = -70` e escolhia a melhor torcida da PRÓPRIA praça fosse ela
+quem fosse — bastava ser a menos pior. Sem teto, sem checar maior rival,
+e rodando todo dia.
+
+Em Goiânia, Força Jovem Goiás e Esquadrão Vilanovense são maiores rivais
+entre si, então a Independente do Anápolis era a única outra torcida da
+praça pros dois: os dois a escolhiam todo dia, e de −45 a +100 dá
+**vinte e cinco dias**. No interior do Ceará, Iguatu e Icasa eram
+praticamente a única companhia uma da outra. De quebra, o par Força
+Jovem Goiás × Esquadrão Vilanovense terminava em −100: a reunião nunca
+os escolhia e só as brigas mexiam neles.
+
+**As três travas**, e o código volta a fazer o que o comentário promete:
+
+1. **Só senta com aliada de verdade** — +20 ou mais, da própria praça —
+   e **nunca com um maior rival**.
+2. **Uma vez por semana**, não todo dia: a nossa reunião gasta ação da
+   semana, a delas não gastava nada.
+3. **A mesa não constrói Irmandade**: leva até o fim do Aliado (+69) e
+   para. Irmandade se constrói na rua e vem da fonte.
+
+É a mesma régua que já valia pra mesa de diplomacia das IAs, que nunca
+passa de +45.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

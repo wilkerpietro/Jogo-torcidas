@@ -2254,6 +2254,7 @@ TO.relacoes = (function(){
      três turnos, todo dia, pra toda torcida — recrutar, festa e
      reunião de diretoria. Sem sorteio e sem arquétipo. */
   const EXPEDIENTE = ['recrutar', 'festa', 'reuniao'];
+  const REL_ALIADA_DA_MESA = 20;   // o corte de Aliado na régua
   function expedienteIA(){ return EXPEDIENTE; }
 
   /* A REUNIÃO DE DIRETORIA delas: o mesmo passo da nossa (+4,2 com o
@@ -2261,15 +2262,47 @@ TO.relacoes = (function(){
      que aqui vêm da ficha da torcida. Ela conversa com as torcidas da
      PRÓPRIA praça — a mesa da diretoria delas não mexe na relação
      conosco, que continua vindo do que a gente faz. */
+  /* =======================================================
+     A REUNIÃO NÃO FAZ AMIGO DE INIMIGO (correção do dono, 12/09/2026)
+     O dono pegou no jogo: a Independente do Anápolis virou IRMANDADE da
+     Força Jovem Goiás E do Esquadrão Vilanovense ao mesmo tempo — e os
+     dois são maiores rivais entre si. E a Fúria Azul do Iguatu virou
+     irmandade da Fúria Icasiana, que é rival dela de nascença.
+
+     O rastro apontou para cá: 346 das 358 mudanças naqueles pares saíram
+     desta função. O comentário acima sempre disse "com o ALIADO mais
+     próximo", mas o código abria em `melhor = -70` e escolhia a melhor
+     torcida da praça FOSSE ELA QUEM FOSSE — bastava ser a menos pior.
+     Em Goiânia, a Independente do Anápolis era a única não-maior-rival
+     dos dois; no interior do Ceará, Iguatu e Icasa só tinham uma à
+     outra. Rodando TODO DIA a +6, uma rival a −45 virava irmandade em
+     vinte e cinco dias.
+
+     Três travas, e o código volta a fazer o que o comentário promete:
+       · só senta com ALIADA de verdade (+20 ou mais) da própria praça,
+         e nunca com um maior rival;
+       · UMA VEZ POR SEMANA, não todo dia — a nossa gasta ação da
+         semana, a delas não gastava nada;
+       · e a mesa não constrói IRMANDADE: ela leva até o fim do Aliado
+         (+69) e para. Irmandade se constrói na rua e na fonte.
+     ======================================================= */
+  const TETO_DA_REUNIAO = 69;      // o degrau antes da Irmandade
   function reuniaoIA(E, o, t){
     if(((o.cargos||{}).diretoria || 0) < 2) return;
-    let alvo = null, melhor = -70;
+    if(E.data.dia !== 1) return;                    // uma vez por semana
+    let alvo = null, melhor = -Infinity;
     for(const v of M().torcidasEm(o.mapa)){
       if(v.id === o.id || v.incompleta || v.id === E.torcida.id) continue;
+      if(ehMaiorRival(E, o.id, v.id)) continue;
       const r = relacaoDelas(E, o.id, v.id);
+      if(r < REL_ALIADA_DA_MESA) continue;          // rival não vira amigo na mesa
       if(r > melhor){ melhor = r; alvo = v; }
     }
-    if(alvo) moverRelacao(E, o.id, alvo.id, REL.iaReuniao);
+    if(!alvo) return;
+    const atual = relacaoDelas(E, o.id, alvo.id);
+    if(atual >= TETO_DA_REUNIAO) return;
+    moverRelacao(E, o.id, alvo.id,
+                 Math.min(REL.iaReuniao, TETO_DA_REUNIAO - atual));
   }
   function regimeIA(E, t){
     const sa = semanaAbs(E);
