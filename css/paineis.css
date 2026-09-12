@@ -2426,6 +2426,14 @@ header.capa-cidade{background-size:cover; background-position:center;
   padding:7px 10px;flex:0 1 auto}
 .drop-comp{margin-bottom:11px}
 .drop-comp select.campo{min-width:260px;max-width:440px}
+/* o país das competições: a bandeira do escolhido antes do rótulo */
+.drop-pais{margin-bottom:9px}
+.drop-pais img.bandeira{flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+.drop-pais select.campo{min-width:200px;max-width:320px}
+/* os dois campos do nacional começam na mesma coluna: rótulo de
+   largura fixa, e o de baixo recuado pela bandeira (30px + o gap) */
+.drop-pais .rot,.drop-comp.com-pais .rot{min-width:102px}
+.drop-comp.com-pais{padding-left:38px}
 /* a faixa de filtros dos membros: cargo, estado e a busca numa linha só */
 .mb-filtros{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;
   margin-bottom:11px}
@@ -2434,4 +2442,7 @@ header.capa-cidade{background-size:cover; background-position:center;
   .escolha-drop{width:100%}
   .escolha-drop select.campo{min-width:0}
   .drop-comp select.campo{min-width:0}
+  .drop-pais select.campo{min-width:0}
+  .drop-comp.com-pais{padding-left:0}
+  .drop-pais .rot,.drop-comp.com-pais .rot{min-width:0}
 }

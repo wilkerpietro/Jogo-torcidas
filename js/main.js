@@ -6291,18 +6291,20 @@
       const meuPais = TO.competicoes.paisDoJogador(e);
       if(!paises.includes(paisComp))
         paisComp = paises.includes(meuPais) ? meuPais : 'Brasil';
-      const f = el('div',{class:'filtros-linha paises'});
+      /* O PAÍS TAMBÉM EM DROPDOWN (dono, 12/09/2026). Eram dez
+         bandeiras numa fileira, e no celular elas quebravam em duas
+         linhas antes mesmo do dropdown da competição. A bandeira do
+         país escolhido fica ao lado do seletor: ela é o que se
+         reconhece de longe, e o nome está logo ali dentro. */
       const meu = TO.competicoes.paisDe(TO.mundo.time(e.torcida.clubeId)||{});
-      for(const p of paises){
-        const b = el('button',{class:(p===paisComp?'on':'')+
-          (p===meu?' minha':''), html: bandeira(p) || p});
-        b.title = p;
-        b.setAttribute('aria-label', p);
-        b.onclick = ()=>{ paisComp = p; compSel = null;
-                          vistaComp = null; redesenhar(); };
-        f.appendChild(b);
-      }
-      pg.appendChild(f);
+      const cxP = escolha('País',
+        paises.map(p=>({id:p, rot:p + (p===meu ? ' · a nossa' : '')})),
+        paisComp,
+        p => { paisComp = p; compSel = null; vistaComp = null; redesenhar(); },
+        'drop-pais');
+      const bd = bandeira(paisComp);
+      if(bd) cxP.insertAdjacentHTML('afterbegin', bd);
+      pg.appendChild(cxP);
     }
 
     /* ---- o filtro da competição ---- */
@@ -6320,23 +6322,17 @@
     if(!menu.some(m=>m.id===compSel)) compSel = escolhaPadrao(e, menu);
     const trocarComp = id => { compSel = id; rodadaSel = null; faseSel = null;
                                vistaComp = null; redesenhar(); };
-    /* NACIONAL E REGIONAL EM DROPDOWN (dono, 12/09/2026): são muitas —
-       o regional tem uma competição por estado. O internacional tem
-       duas e continua em botão. */
-    if(nivelComp === 'internacional'){
-      const f2 = el('div',{class:'filtros-linha'});
-      for(const m of menu){
-        const b = el('button',{class:(m.id===compSel?'on':''), html:
-          `${m.rot}${m.conta?`<span class="conta">${m.conta}</span>`:''}`});
-        b.onclick = ()=>trocarComp(m.id);
-        f2.appendChild(b);
-      }
-      pg.appendChild(f2);
-    } else {
-      pg.appendChild(escolha('Competição',
-        menu.map(m=>({id:m.id, rot:m.rot, nota:m.conta})),
-        compSel, trocarComp, 'drop-comp'));
-    }
+    /* TODA COMPETIÇÃO EM DROPDOWN (dono, 12/09/2026). O regional tem
+       uma por estado e o nacional uma por divisão de dez países; o
+       internacional tem só duas, mas ficar de botão fazia a tela
+       trocar de vocabulário de uma aba pra outra. */
+    pg.appendChild(escolha('Competição',
+      menu.map(m=>({id:m.id, rot:m.rot, nota:m.conta})),
+      compSel, trocarComp,
+      /* no nacional os dois seletores ficam um embaixo do outro: o
+         `com-pais` recua o de baixo pela largura da bandeira, pra que
+         os dois campos comecem na mesma coluna */
+      'drop-comp' + (nivelComp === 'nacional' ? ' com-pais' : '')));
 
     /* ---- o corpo ---- */
     if(nivelComp === 'internacional'){ pintarConmebolUm(e, pg, compSel); return; }

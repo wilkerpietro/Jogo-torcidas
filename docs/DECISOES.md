@@ -6420,6 +6420,42 @@ sobrou na lista de rivais do outro, dois anos de varredura não levantam
 uma exceção e cinco anos de jogo voltam a fechar com **zero eixos
 misturando países**.
 
+## O país e o internacional em dropdown (pedido do dono, 12/09/2026)
+
+Ontem o dropdown pegou o nacional, o regional e os membros; o
+internacional ficou de fora porque só tem duas competições. O dono pediu
+os dois que faltavam: **Competições → Internacional** e o **seletor de
+país** do nacional.
+
+**O internacional agora usa o mesmo `escolha`.** Duas opções cabiam numa
+fileira de botões, mas a tela trocava de vocabulário de uma aba pra
+outra — botão no internacional, dropdown no nacional e no regional. O
+`if(nivelComp === 'internacional')` que montava a fileira saiu inteiro:
+sobrou uma chamada só, para os três níveis.
+
+**O país virou dropdown com a bandeira do escolhido ao lado.** Eram dez
+bandeiras numa `filtros-linha`, e em 400px elas quebravam em duas linhas
+antes mesmo do dropdown da competição. A bandeira do país selecionado
+continua na tela, antes do rótulo: é ela que se reconhece de longe, e o
+nome está logo ali dentro do campo. O país da nossa torcida aparece na
+lista como **"Brasil · a nossa"**, que é o que a classe `.minha` marcava
+no botão.
+
+**Os dois campos começam na mesma coluna.** No nacional os seletores
+ficam um embaixo do outro, e o de baixo nasce recuado pela largura da
+bandeira (`.drop-comp.com-pais`, 38px = 30 da bandeira + 8 do gap), com
+o rótulo numa coluna de 102px — a largura de "COMPETIÇÃO". Em 560px ou
+menos os dois recuos somem e cada campo ocupa a linha inteira. A classe
+`com-pais` só entra no nacional: no internacional e no regional não há
+linha de país pra alinhar.
+
+**Medido:** Brasil (Série A/B/C/D + Copa do Brasil), Argentina (Primera,
+Primera Nacional, Primera B, Copa Argentina) e Uruguai (Primera, Copa
+Uruguay) trocam pelo dropdown com a bandeira acompanhando, a tabela de
+cada um vem com o número certo de clubes, o internacional troca entre
+Libertadores e Sul-Americana, e em 400px o documento não passa da
+largura da janela.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
