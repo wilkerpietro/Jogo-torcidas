@@ -6225,6 +6225,79 @@ O Atlético Tucumán, o caso do pedido: 54,5% em Tucumã (casa), 3,0% no
 Norte da Argentina (a vizinha) e 0,3% em Buenos Aires (a capital) — duas
 candidatas a subsede.
 
+## Os escalões das torcidas de fora (regra do dono, 12/09/2026)
+
+O dono deu a régua da Argentina e mandou copiar pros outros oito
+países: *"os 5 grandes sempre vão ter torcida em todas as praças,
+Estudiantes, Vélez e Huracán terão todas as praças ao redor de Buenos
+Aires. Boca e River vão ter 5% em todas as demais praças fora as da
+região de Buenos Aires que terão no mínimo 10% cada. Os demais times
+terão 2 ou 1% nas praças vizinhas"*.
+
+São **quatro escalões**, e cada um alcança mais longe que o de baixo.
+Tudo em `ferramentas/importar_barras.py`, que gera `dados/barras.js`.
+
+**1. Os grandes — toda praça do país.** `GRANDES` lista os grandes de
+cada país, e os **dois primeiros são os maiores**: levam **10%** nas
+praças da sua própria região e **5%** no resto do país. Os outros
+grandes levam **4%** na região de casa e **2%** fora dela. Na Argentina
+isso é Boca e River a 10% nas treze praças de Buenos Aires e a 5% em
+Córdoba, Rosário, Tucumã e companhia, com Racing, Independiente e San
+Lorenzo atrás.
+
+**2. O escalão de baixo — toda praça da sua região, a 2%.** `SEGUNDOS`.
+Estudiantes, Vélez e Huracán aparecem nas treze praças de Buenos Aires e
+em nenhuma de Córdoba ou Mendoza. A generalização é a que o próprio
+pedido sugere: o segundo escalão alcança a **região de casa**, seja ela
+qual for — o Junior pega a Costa Colombiana, o Danúbio pega Montevidéu,
+o Once Caldas pega o Eixo Cafeteiro.
+
+**3. Os demais — uma praça vizinha só.** **2%** pra quem tem qualidade
+12 pra cima, **1%** pro resto. É a regra de ontem com a fatia trocada: a
+conta de "um terço do que tem em casa, teto 3%" virou os dois degraus
+que o dono pediu.
+
+**4. A capital — o país inteiro no piso.** Sem mudança: 0,3% em Buenos
+Aires, 0,5% nas outras oito.
+
+**As regiões.** `REGIOES` reparte as 64 praças de fora em regiões, e a
+conferência no começo de `espalhar()` **quebra o gerador** se alguma
+praça ficar sem região ou aparecer em duas — a mesma proteção vale pros
+ids de `GRANDES` e `SEGUNDOS`, que são conferidos contra `times.js`
+antes de qualquer praça ser tocada. A região de Buenos Aires é a AMBA
+(as treze praças da capital e do conurbano); o interior da província
+fica no *Interior*, que é onde Boca e River valem 5%.
+
+**Os forasteiros saíram de `montar_pracas()`.** Ela empurrava os dois
+melhores do país em toda praça a 3% fixos. Agora quem mora na praça
+divide 100% e **todo** forasteiro entra por `espalhar()`, que é onde a
+régua mora. Sem isso o Boca ficaria preso nos 3% de antes.
+
+**Teto de 60% pro de fora.** Praça é de quem mora nela: se a soma dos
+forasteiros passar de 60%, todos encolhem proporcionalmente antes do
+fechamento em 100%. Nenhuma praça chegou lá — a mais tomada é Quilmes e
+Berazategui, com 49,9% dos locais.
+
+**O que ficou, medido:**
+
+| | antes | depois |
+|---|---|---|
+| praças por clube de fora (média) | 3,1 | **3,5** |
+| praças do Boca e do River | 3 | **22 (todo o país)** |
+| praças do Estudiantes, Vélez, Huracán | 2 a 3 | **13 (toda a AMBA)** |
+| clubes de fora numa praça só | 0 | **0** |
+
+Buenos Aires: Boca 19,1% e River 19,1%, Vélez 12,1%, San Lorenzo 9,6%,
+Huracán 6,1%, Independiente 4,0%, Racing 4,0%, Estudiantes 2,0% e os
+outros 80 a 0,3%. Avellaneda: Racing 27,0%, Independiente 24,4%, Boca
+10,0%, River 10,0%. Tucumã: Atlético Tucumán 52,7%, San Martín 27,3%,
+Boca 5,0%, River 5,0%. La Matanza, sem clube grande em casa, é a que
+mais mostra a régua: Almirante Brown 38,4%, Laferrere 14,6% e logo
+depois Boca e River com 10% cada.
+
+O Brasil continua fora de tudo isto (ordem do dono): o `git diff` em
+`cidades.js` e `torcidas.js` é vazio.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

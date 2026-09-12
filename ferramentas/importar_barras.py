@@ -815,17 +815,13 @@ def montar_pracas(times):
 
         locais = sorted(por_mapa.get(pid, []), key=lambda t: -t.get('qualidade', 0))
         pais = PAIS_DE_UF.get(uf, uf)
-        # os grandes do pais que nao moram aqui ainda tem torcedor na praca
-        forasteiros = [t for t in times
-                       if t.get('pais') == pais and t.get('mapa') != pid][:0]
-        gr = sorted([t for t in times if t.get('pais') == pais
-                     and t.get('mapa') != pid],
-                    key=lambda t: -t.get('qualidade', 0))[:2]
-        forasteiros = gr
+        # quem mora aqui divide os 100%; quem vem de fora entra depois,
+        # em espalhar(), que e onde moram os escaloes e as porcentagens
+        forasteiros = []
 
         peso = {t['id']: max(1, t.get('qualidade', 10)) ** 1.4 for t in locais}
         soma = sum(peso.values()) or 1
-        sobra = 100.0 - 3.0 * len(forasteiros)
+        sobra = 100.0
         lista_times = []
         for t in locais:
             perc = round(sobra * peso[t['id']] / soma, 1)
@@ -857,14 +853,28 @@ def montar_pracas(times):
 # ===================================================================
 # ESPALHAR AS TORCIDAS PELAS PRACAS (regra do dono, 12/09/2026)
 #
-#   1. FORA DO BRASIL, todo clube tem torcida em PELO MENOS DUAS pracas:
-#      a dele e uma VIZINHA na malha, com porcentagem menor. Sem isso o
-#      save com o Atletico Tucuman nascia sem nenhuma cidade candidata a
-#      subsede -- `patrimonio.cidadesCandidatas` so olha onde o NOSSO
-#      clube tem torcedor.
-#   2. A CAPITAL de cada pais comporta TODAS as torcidas do pais, com
-#      0,5% no minimo -- o piso da faixa que o dono deu (0,5 a 1%), que
-#      e o que deixa os 88 clubes argentinos caberem em Buenos Aires.
+# FORA DO BRASIL a torcida nao para na fronteira da praca. Sao quatro
+# escaloes, e cada um alcanca mais longe que o de baixo:
+#
+#   1. OS GRANDES tem torcida em TODA praca do pais. Os dois maiores
+#      levam 10% nas pracas da sua regiao e 5% no resto do pais -- e a
+#      regra que o dono deu pro Boca e o River. Os outros grandes (na
+#      Argentina, Racing, Independiente e San Lorenzo) levam 4% em casa
+#      e 2% fora.
+#   2. O ESCALAO DE BAIXO tem torcida em toda praca da SUA REGIAO, a 2%
+#      -- Estudiantes, Velez e Huracan em tudo que e Buenos Aires, e
+#      nada em Cordoba ou Tucuman.
+#   3. OS DEMAIS tem uma unica praca vizinha, a 2% (os de qualidade 12
+#      pra cima) ou 1%. Sem isso o save com o Atletico Tucuman nascia
+#      sem nenhuma cidade candidata a subsede -- `cidadesCandidatas` so
+#      olha onde o NOSSO clube tem torcedor.
+#   4. A CAPITAL comporta TODAS as torcidas do pais, no piso: 0,3% em
+#      Buenos Aires (88 clubes a 0,5% comiam 40 pontos da praca) e 0,5%
+#      nas outras oito, que e o minimo da faixa que o dono deu.
+#
+# Quem chegou fica com a sua fatia e quem mora na praca encolhe junto
+# pra fechar em 100% -- e por isso que montar_pracas() da 100% aos
+# locais e nao guarda sobra pra ninguem.
 #
 # O Brasil NAO entra nesta regra (ordem do dono): cidades.js continua
 # como a planilha o deixou.
@@ -873,15 +883,104 @@ CAPITAL = {'Argentina': 'buenos-aires', 'Bolívia': 'la-paz',
            'Chile': 'santiago', 'Colômbia': 'bogota', 'Equador': 'quito',
            'Paraguai': 'assuncao', 'Peru': 'lima', 'Uruguai': 'montevideu',
            'Venezuela': 'caracas'}
-PISO_CAPITAL = 0.5      # o minimo da faixa do dono (0,5 a 1%)
-# BUENOS AIRES TEM PISO PROPRIO (ordem do dono, 12/09/2026): 88 clubes a
-# 0,5% comiam 40 pontos da praca e derrubavam o Boca de 27% pra 16%. A
-# 0,3% a conta cai pra 24 pontos e o Boca fica em 20%. As outras oito
-# capitais seguem em 0,5%: nenhuma tem gente suficiente pra doer.
+
+# AS REGIOES. Toda praca de fora mora em exatamente uma -- a conferencia
+# no comeco de espalhar() quebra o gerador se alguma ficar de fora.
+REGIOES = {
+ 'Argentina': {
+   'Buenos Aires': ['buenos-aires', 'buenos-aires-norte', 'buenos-aires-oeste',
+                    'buenos-aires-sul', 'avellaneda', 'lanus-e-lomas', 'la-plata',
+                    'quilmes-e-berazategui', 'varela-e-ezeiza', 'la-matanza',
+                    'san-martin-e-tres-de-febrero', 'norte-de-buenos-aires',
+                    'moron-e-merlo'],
+   'Interior': ['cordoba', 'rosario', 'mendoza', 'tucuman', 'santiago-del-estero',
+                'norte-da-argentina', 'litoral-argentino', 'cuyo-e-patagonia',
+                'interior-de-buenos-aires'],
+ },
+ 'Bolívia': {
+   'Altiplano': ['la-paz', 'oruro-e-potosi'],
+   'Vales': ['cochabamba', 'interior-da-bolivia'],
+   'Oriente': ['santa-cruz'],
+ },
+ 'Chile': {
+   'Santiago': ['santiago', 'santiago-sul'],
+   'Centro': ['valparaiso', 'centro-do-chile'],
+   'Sul': ['concepcion', 'sul-do-chile'],
+   'Norte': ['norte-do-chile', 'norte-chico'],
+ },
+ 'Colômbia': {
+   'Bogotá': ['bogota', 'bogota-sul', 'interior-da-colombia'],
+   'Antioquia': ['medellin', 'eixo-cafeteiro'],
+   'Costa': ['costa-colombiana', 'norte-da-colombia'],
+   'Valle': ['cali', 'sul-da-colombia'],
+ },
+ 'Equador': {
+   'Serra': ['quito', 'ambato', 'sul-do-equador'],
+   'Costa': ['guayaquil', 'costa-equatoriana'],
+ },
+ 'Paraguai': {
+   'Assunção': ['assuncao', 'grande-assuncao'],
+   'Interior': ['interior-do-paraguai'],
+ },
+ 'Peru': {
+   'Lima': ['lima'],
+   'Norte': ['norte-do-peru'],
+   'Sul': ['sul-do-peru', 'cusco'],
+ },
+ 'Uruguai': {
+   'Montevidéu': ['montevideu', 'montevideu-leste', 'montevideu-oeste'],
+   'Interior': ['interior-do-uruguai'],
+ },
+ 'Venezuela': {
+   'Caracas': ['caracas'],
+   'Centro': ['centro-da-venezuela'],
+   'Oeste': ['oeste-da-venezuela'],
+   'Oriente': ['oriente-da-venezuela'],
+ },
+}
+
+# OS ESCALOES. Os dois primeiros de GRANDES sao os maiores do pais --
+# os que levam 10% na propria regiao. SEGUNDOS e o escalao de baixo,
+# que so alcanca a regiao de casa. Quem nao esta em nenhuma das duas
+# listas e "os demais": uma praca vizinha e mais nada.
+GRANDES = {
+ 'Argentina': ['boca-juniors', 'river-plate', 'racing', 'independiente',
+               'san-lorenzo'],
+ 'Bolívia':   ['bolivar', 'the-strongest'],
+ 'Chile':     ['colo-colo', 'universidad-de-chile', 'u-catolica'],
+ 'Colômbia':  ['atletico-nacional', 'millonarios', 'america-de-cali'],
+ 'Equador':   ['barcelona-sc', 'emelec', 'ldu-quito'],
+ 'Paraguai':  ['olimpia', 'cerro-porteno', 'libertad'],
+ 'Peru':      ['universitario', 'alianza-lima', 'sporting-cristal'],
+ 'Uruguai':   ['penarol', 'nacional-uru'],
+ 'Venezuela': ['caracas', 'deportivo-tachira'],
+}
+SEGUNDOS = {
+ 'Argentina': ['estudiantes', 'velez', 'huracan'],
+ 'Bolívia':   ['always-ready', 'oriente-petrolero', 'blooming', 'wilstermann'],
+ 'Chile':     ['union-espanola', 'palestino', 'audax-italiano',
+               'santiago-wanderers', 'everton'],
+ 'Colômbia':  ['independiente-medellin', 'santa-fe', 'junior', 'deportivo-cali',
+               'once-caldas'],
+ 'Equador':   ['independiente-del-valle', 'aucas', 'el-nacional',
+               'deportivo-cuenca'],
+ 'Paraguai':  ['guarani-par', 'nacional-par', 'sportivo-luqueno'],
+ 'Peru':      ['melgar', 'cienciano', 'sport-boys'],
+ 'Uruguai':   ['defensor-sporting', 'liverpool', 'danubio', 'wanderers'],
+ 'Venezuela': ['carabobo', 'zamora', 'deportivo-la-guaira', 'monagas'],
+}
+
+PERC_MAIOR_REGIAO = 10.0   # Boca e River nas pracas de Buenos Aires
+PERC_MAIOR_FORA = 5.0      # e no resto do pais
+PERC_GRANDE_REGIAO = 4.0   # Racing, Independiente, San Lorenzo em casa
+PERC_GRANDE_FORA = 2.0     # e longe de casa
+PERC_SEGUNDO = 2.0         # Estudiantes, Velez, Huracan na sua regiao
+PERC_VIZINHA = 2.0         # os demais, quando tem tamanho
+PERC_VIZINHA_FRACA = 1.0   # e quando nao tem
+CORTE_VIZINHA = 12         # a qualidade que separa os 2% dos 1%
+PISO_CAPITAL = 0.5         # o minimo da faixa do dono (0,5 a 1%)
 PISO_DA_CAPITAL = {'buenos-aires': 0.3}
-PISO_VIZINHA = 0.5      # o chao da praca vizinha, esse nao muda
-TETO_VIZINHA = 3.0      # a vizinha nunca passa disto
-FATIA_VIZINHA = 3.0     # e leva um terco do que o clube tem em casa
+TETO_DE_FORA = 60.0        # o de fora nunca passa disto: a praca e de quem mora nela
 
 
 def vizinhas_da_malha():
@@ -899,11 +998,31 @@ def vizinhas_da_malha():
 
 def espalhar(cidades, times):
     por_id = {c['id']: c for c in cidades}
+    por_time = {t['id']: t for t in times}
     viz = vizinhas_da_malha()
     por_pais = {}
     for t in times:
         if t.get('pais') and t['pais'] != 'Brasil':
             por_pais.setdefault(t['pais'], []).append(t)
+
+    # ---- conferencia das listas antes de mexer em qualquer praca ----
+    regiao_de, da_regiao = {}, {}
+    for pais, regs in REGIOES.items():
+        for reg, ps in regs.items():
+            for p in ps:
+                if p in regiao_de:
+                    raise SystemExit(f'praca {p} em duas regioes')
+                regiao_de[p] = reg
+                da_regiao.setdefault((pais, reg), []).append(p)
+    soltas = [c['id'] for c in cidades if c['id'] not in regiao_de]
+    if soltas:
+        raise SystemExit('praca sem regiao: ' + ', '.join(soltas))
+    for tabela, nome in ((GRANDES, 'GRANDES'), (SEGUNDOS, 'SEGUNDOS')):
+        for pais, ids in tabela.items():
+            for cid in ids:
+                if cid not in por_time:
+                    raise SystemExit(f'{nome}[{pais}]: nao existe clube {cid}')
+
     # de onde partiram: o que ja estava na praca antes de espalhar
     antigos = {c['id']: {t['clubeId'] for t in c['times']} for c in cidades}
 
@@ -920,18 +1039,47 @@ def espalhar(cidades, times):
                            'local': False})
         return True
 
-    # ---- 1. a praca vizinha ----
-    novas_viz = 0
+    # ---- 1. os grandes: toda praca do pais ----
+    n_gr = 0
+    for pais, ts in sorted(por_pais.items()):
+        grandes = GRANDES.get(pais, [])
+        for pos, cid in enumerate(grandes):
+            t = por_time[cid]
+            casa = regiao_de.get(t.get('mapa'))
+            perto, longe = ((PERC_MAIOR_REGIAO, PERC_MAIOR_FORA) if pos < 2
+                            else (PERC_GRANDE_REGIAO, PERC_GRANDE_FORA))
+            for c in cidades:
+                if c['regiao'] != pais:
+                    continue
+                p = perto if regiao_de[c['id']] == casa else longe
+                if entrar(c['id'], t, p):
+                    n_gr += 1
+
+    # ---- 2. o escalao de baixo: toda praca da sua regiao ----
+    n_seg = 0
+    for pais, ids in sorted(SEGUNDOS.items()):
+        for cid in ids:
+            t = por_time[cid]
+            casa = regiao_de.get(t.get('mapa'))
+            for p in da_regiao.get((pais, casa), []):
+                if entrar(p, t, PERC_SEGUNDO):
+                    n_seg += 1
+
+    # ---- 3. os demais: uma praca vizinha ----
+    def quantas(t):
+        return sum(1 for c in cidades if por_clube(c['id'], t['id']))
+
+    n_viz = 0
     for pais, ts in sorted(por_pais.items()):
         for t in sorted(ts, key=lambda x: x['id']):
             casa = t.get('mapa')
-            if casa not in por_id:
+            if casa not in por_id or quantas(t) >= 2:
                 continue
             emcasa = por_clube(casa, t['id'])
             if not emcasa:
                 continue
             # a CAPITAL fica de fora desta conta: ela ja recebe o pais
-            # inteiro na regra 2, e somar as duas afundava o clube da
+            # inteiro na regra 4, e somar as duas afundava o clube da
             # casa -- o Boca caia de 27% pra 7% em Buenos Aires
             cands = [v for v in sorted(viz.get(casa, ()))
                      if v in por_id and por_id[v].get('regiao') == pais
@@ -941,29 +1089,34 @@ def espalhar(cidades, times):
                 continue
             # a maior vizinha da conta: e onde a filial tem publico
             alvo = max(cands, key=lambda v: (por_id[v]['populacao'], v))
-            perc = max(PISO_VIZINHA,
-                       min(TETO_VIZINHA, round(emcasa['perc'] / FATIA_VIZINHA, 1)))
-            perc = min(perc, max(PISO_VIZINHA, emcasa['perc'] - 0.1))
+            perc = (PERC_VIZINHA if t.get('qualidade', 0) >= CORTE_VIZINHA
+                    else PERC_VIZINHA_FRACA)
+            perc = min(perc, max(PERC_VIZINHA_FRACA, emcasa['perc'] - 0.1))
             if entrar(alvo, t, perc):
-                novas_viz += 1
+                n_viz += 1
 
-    # ---- 2. a capital comporta o pais inteiro ----
-    novas_cap = 0
+    # ---- 4. a capital comporta o pais inteiro ----
+    n_cap = 0
     for pais, cap in sorted(CAPITAL.items()):
         if cap not in por_id:
             continue
         piso = PISO_DA_CAPITAL.get(cap, PISO_CAPITAL)
         for t in sorted(por_pais.get(pais, []), key=lambda x: x['id']):
             if entrar(cap, t, piso):
-                novas_cap += 1
+                n_cap += 1
 
-    # ---- 3. fechar em 100%: quem chegou fica com o piso, o resto encolhe ----
+    # ---- 5. fechar em 100%: quem chegou fica com a fatia, o resto encolhe ----
     for c in cidades:
         pop = c['populacao']
         novos = [t for t in c['times'] if t['clubeId'] not in antigos[c['id']]]
         velhos = [t for t in c['times'] if t['clubeId'] in antigos[c['id']]]
         soma_nova = sum(t['perc'] for t in novos)
         soma_velha = sum(t['perc'] for t in velhos) or 1
+        if soma_nova > TETO_DE_FORA:
+            corte = TETO_DE_FORA / soma_nova
+            for t in novos:
+                t['perc'] = round(t['perc'] * corte, 1)
+            soma_nova = sum(t['perc'] for t in novos)
         if novos:
             escala = max(0.0, 100.0 - soma_nova) / soma_velha
             for t in velhos:
@@ -971,7 +1124,7 @@ def espalhar(cidades, times):
         for t in c['times']:
             t['torcedores'] = round(t['perc'] / 100 * pop)
         c['times'].sort(key=lambda t: (-t['perc'], t['clube']))
-    return novas_viz, novas_cap
+    return n_gr, n_seg, n_viz, n_cap
 
 
 def cargos_de(m):
@@ -1078,7 +1231,7 @@ def montar_torcidas(times, pracas):
 def main():
     times = ler_times()
     pracas, avisos = montar_pracas(times)
-    n_viz, n_cap = espalhar(pracas, times)
+    n_gr, n_seg, n_viz, n_cap = espalhar(pracas, times)
     torcidas, sem_sede = montar_torcidas(times, pracas)
 
     # a sede tambem mora no bairro, que e o que o mapa da praca le
@@ -1109,7 +1262,8 @@ def main():
     print('\nconferencia:')
     print(f'  barras: {len(torcidas)} · praças: {len(pracas)} · '
           f'bairros: {sum(len(c["bairros"]) for c in pracas)}')
-    print(f'  espalhadas: {n_viz} em praça vizinha · {n_cap} nas capitais')
+    print(f'  espalhadas: {n_gr} dos grandes · {n_seg} do escalão de baixo · '
+          f'{n_viz} em praça vizinha · {n_cap} nas capitais')
     ids_clube = {t['id'] for t in times}
     orfas = [t['clubeId'] for t in torcidas if t['clubeId'] not in ids_clube]
     print(f'  clube fora de times.js: {orfas or "nenhum"}')
