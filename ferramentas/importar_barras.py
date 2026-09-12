@@ -20,7 +20,7 @@ Regua do efetivo:
   250-200  as maiores do continente   199-140  grandes
   139- 60  medias                      59- 20  pequenas e de divisao de baixo
 """
-import json, pathlib, unicodedata
+import json, pathlib, re, unicodedata
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 
@@ -854,6 +854,119 @@ def montar_pracas(times):
     return cidades, avisos
 
 
+# ===================================================================
+# ESPALHAR AS TORCIDAS PELAS PRACAS (regra do dono, 12/09/2026)
+#
+#   1. FORA DO BRASIL, todo clube tem torcida em PELO MENOS DUAS pracas:
+#      a dele e uma VIZINHA na malha, com porcentagem menor. Sem isso o
+#      save com o Atletico Tucuman nascia sem nenhuma cidade candidata a
+#      subsede -- `patrimonio.cidadesCandidatas` so olha onde o NOSSO
+#      clube tem torcedor.
+#   2. A CAPITAL de cada pais comporta TODAS as torcidas do pais, com
+#      0,5% no minimo -- o piso da faixa que o dono deu (0,5 a 1%), que
+#      e o que deixa os 88 clubes argentinos caberem em Buenos Aires.
+#
+# O Brasil NAO entra nesta regra (ordem do dono): cidades.js continua
+# como a planilha o deixou.
+# ===================================================================
+CAPITAL = {'Argentina': 'buenos-aires', 'Bolívia': 'la-paz',
+           'Chile': 'santiago', 'Colômbia': 'bogota', 'Equador': 'quito',
+           'Paraguai': 'assuncao', 'Peru': 'lima', 'Uruguai': 'montevideu',
+           'Venezuela': 'caracas'}
+PISO_CAPITAL = 0.5      # o minimo da faixa do dono
+TETO_VIZINHA = 3.0      # a vizinha nunca passa disto
+FATIA_VIZINHA = 3.0     # e leva um terco do que o clube tem em casa
+
+
+def vizinhas_da_malha():
+    """praca vizinha e a PROXIMA do corredor, como diz dados/malha.js --
+       a malha e do dono e e a mesma que o planejamento usa pra rota."""
+    txt = (RAIZ / 'dados/malha.js').read_text(encoding='utf-8')
+    viz = {}
+    for trecho in re.findall(r"\[([^\[\]]*'[^\[\]]*)\]", txt):
+        seq = re.findall(r"'([a-z0-9\-]+)'", trecho)
+        for a, b in zip(seq, seq[1:]):
+            viz.setdefault(a, set()).add(b)
+            viz.setdefault(b, set()).add(a)
+    return viz
+
+
+def espalhar(cidades, times):
+    por_id = {c['id']: c for c in cidades}
+    viz = vizinhas_da_malha()
+    por_pais = {}
+    for t in times:
+        if t.get('pais') and t['pais'] != 'Brasil':
+            por_pais.setdefault(t['pais'], []).append(t)
+    # de onde partiram: o que ja estava na praca antes de espalhar
+    antigos = {c['id']: {t['clubeId'] for t in c['times']} for c in cidades}
+
+    def por_clube(cid, clube):
+        return next((t for t in por_id[cid]['times'] if t['clubeId'] == clube), None)
+
+    def entrar(cid, t, perc):
+        c = por_id.get(cid)
+        if not c or por_clube(cid, t['id']):
+            return False
+        c['times'].append({'clube': t['nome'], 'clubeId': t['id'],
+                           'sigla': t.get('sigla', ''), 'perc': round(perc, 1),
+                           'torcedores': 0, 'estadioProprio': False,
+                           'local': False})
+        return True
+
+    # ---- 1. a praca vizinha ----
+    novas_viz = 0
+    for pais, ts in sorted(por_pais.items()):
+        for t in sorted(ts, key=lambda x: x['id']):
+            casa = t.get('mapa')
+            if casa not in por_id:
+                continue
+            emcasa = por_clube(casa, t['id'])
+            if not emcasa:
+                continue
+            # a CAPITAL fica de fora desta conta: ela ja recebe o pais
+            # inteiro na regra 2, e somar as duas afundava o clube da
+            # casa -- o Boca caia de 27% pra 7% em Buenos Aires
+            cands = [v for v in sorted(viz.get(casa, ()))
+                     if v in por_id and por_id[v].get('regiao') == pais
+                     and v != CAPITAL.get(pais)
+                     and not por_clube(v, t['id'])]
+            if not cands:
+                continue
+            # a maior vizinha da conta: e onde a filial tem publico
+            alvo = max(cands, key=lambda v: (por_id[v]['populacao'], v))
+            perc = max(PISO_CAPITAL,
+                       min(TETO_VIZINHA, round(emcasa['perc'] / FATIA_VIZINHA, 1)))
+            perc = min(perc, max(PISO_CAPITAL, emcasa['perc'] - 0.1))
+            if entrar(alvo, t, perc):
+                novas_viz += 1
+
+    # ---- 2. a capital comporta o pais inteiro ----
+    novas_cap = 0
+    for pais, cap in sorted(CAPITAL.items()):
+        if cap not in por_id:
+            continue
+        for t in sorted(por_pais.get(pais, []), key=lambda x: x['id']):
+            if entrar(cap, t, PISO_CAPITAL):
+                novas_cap += 1
+
+    # ---- 3. fechar em 100%: quem chegou fica com o piso, o resto encolhe ----
+    for c in cidades:
+        pop = c['populacao']
+        novos = [t for t in c['times'] if t['clubeId'] not in antigos[c['id']]]
+        velhos = [t for t in c['times'] if t['clubeId'] in antigos[c['id']]]
+        soma_nova = sum(t['perc'] for t in novos)
+        soma_velha = sum(t['perc'] for t in velhos) or 1
+        if novos:
+            escala = max(0.0, 100.0 - soma_nova) / soma_velha
+            for t in velhos:
+                t['perc'] = round(t['perc'] * escala, 1)
+        for t in c['times']:
+            t['torcedores'] = round(t['perc'] / 100 * pop)
+        c['times'].sort(key=lambda t: (-t['perc'], t['clube']))
+    return novas_viz, novas_cap
+
+
 def cargos_de(m):
     return {'povao': round(m * 0.5), 'componentes': round(m * 0.3),
             'frente': round(m * 0.15), 'diretoria': min(10, round(m * 0.05))}
@@ -958,6 +1071,7 @@ def montar_torcidas(times, pracas):
 def main():
     times = ler_times()
     pracas, avisos = montar_pracas(times)
+    n_viz, n_cap = espalhar(pracas, times)
     torcidas, sem_sede = montar_torcidas(times, pracas)
 
     # a sede tambem mora no bairro, que e o que o mapa da praca le
@@ -988,6 +1102,7 @@ def main():
     print('\nconferencia:')
     print(f'  barras: {len(torcidas)} · praças: {len(pracas)} · '
           f'bairros: {sum(len(c["bairros"]) for c in pracas)}')
+    print(f'  espalhadas: {n_viz} em praça vizinha · {n_cap} nas capitais')
     ids_clube = {t['id'] for t in times}
     orfas = [t['clubeId'] for t in torcidas if t['clubeId'] not in ids_clube]
     print(f'  clube fora de times.js: {orfas or "nenhum"}')

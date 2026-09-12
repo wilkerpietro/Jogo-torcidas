@@ -6161,6 +6161,64 @@ lista quando ela já está aberta na tela.
 Verificado com três tretas não lidas no feed: o número do ícone segue
 mostrando 2, que são as mensagens, e nenhum balão aparece.
 
+## As torcidas de fora espalhadas pelas praças (regra do dono, 12/09/2026)
+
+O dono pediu duas regras pro mundo de fora do Brasil, e o motivo é
+concreto: **poder abrir subsede num save com um clube de lá**.
+`patrimonio.cidadesCandidatas` só oferece cidade onde o NOSSO clube tem
+torcedor — e, do jeito que o gerador montava as praças, cada praça
+listava só os clubes DE CASA mais os dois melhores do país. Resultado:
+**214 dos 248 clubes de fora apareciam numa praça só** e nasciam sem
+nenhuma candidata a subsede. O Atlético Tucumán era um deles.
+
+**Regra 1 — pelo menos duas praças.** Todo clube de fora aparece na
+praça dele e numa **vizinha**, com porcentagem menor. Vizinha é a
+PRÓXIMA do corredor em `dados/malha.js` — a malha do dono, a mesma que o
+planejamento usa pra traçar rota —, e entre as vizinhas do mesmo país
+ganha a de maior população, que é onde a subsede tem público. A fatia é
+um terço do que o clube tem em casa, no teto de 3% e no piso de 0,5%, e
+nunca igual ou maior que a de casa.
+
+**Regra 2 — a capital comporta o país inteiro.** A capital de cada um
+dos nove países lista **todas** as torcidas do país, com **0,5%** no
+mínimo — o piso da faixa que o dono deu (0,5 a 1%), e é ele que deixa os
+88 clubes argentinos caberem em Buenos Aires.
+
+**A capital fica de fora da regra 1.** Somar as duas afundava o clube da
+casa: com as vizinhas despejando até 3% cada em cima dos 0,5% do país
+inteiro, o Boca caía de 27,2% para **7%** em Buenos Aires. Como a regra 2
+já garante a segunda praça de todo clube que não mora na capital, a
+regra 1 só precisa achar vizinha pra quem já mora nela.
+
+**Fechamento em 100%.** Quem chega fica com o piso e quem já estava
+encolhe proporcionalmente, e o `torcedores` de cada linha é recalculado.
+Nenhuma praça saiu da faixa 99–101%.
+
+**O Brasil não entra nesta regra** (ordem do dono): `cidades.js` e
+`torcidas.js` continuam como a planilha os deixou — o `git diff` neles é
+vazio. Tudo isto vive em `ferramentas/importar_barras.py`, que gera
+`dados/barras.js`.
+
+**O que mudou, medido:**
+
+| | antes | depois |
+|---|---|---|
+| clubes de fora numa praça só | 214 de 248 | **0** |
+| praças por clube de fora (média) | 1,3 | **3,1** |
+| torcidas de fora sem candidata a subsede | 214 | **0** |
+
+Nas capitais, o clube da casa cede espaço pro país inteiro: Boca
+27,2 → 16,2%, Millonarios 38,4 → 32,6%, Colo-Colo 30,9 → 27,0%,
+Universitario 30,7 → 28,8%, Bolívar 36,2 → 34,2%, Caracas 36,3 → 34,8%,
+Peñarol 24,4 → 23,4%, Olimpia 22,5 → 22,0%, Independiente del Valle
+27,4 → 26,3%. Buenos Aires é a que mais sente, porque é a única com 88
+clubes pra acomodar; **se o dono quiser o Boca mais alto, o número a
+mexer é o piso de 0,5%** (`PISO_CAPITAL`).
+
+O Atlético Tucumán, o caso do pedido: 54,5% em Tucumã (casa), 3,0% no
+Norte da Argentina (a vizinha) e 0,5% em Buenos Aires (a capital) — duas
+candidatas a subsede.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
