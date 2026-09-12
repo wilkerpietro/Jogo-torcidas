@@ -6181,8 +6181,14 @@ nunca igual ou maior que a de casa.
 
 **Regra 2 — a capital comporta o país inteiro.** A capital de cada um
 dos nove países lista **todas** as torcidas do país, com **0,5%** no
-mínimo — o piso da faixa que o dono deu (0,5 a 1%), e é ele que deixa os
-88 clubes argentinos caberem em Buenos Aires.
+mínimo — o piso da faixa que o dono deu (0,5 a 1%).
+
+**Buenos Aires tem piso próprio: 0,3%** (ordem do dono, 12/09/2026). Ela
+é a única com 88 clubes pra acomodar, e a 0,5% eles comiam 40 pontos da
+praça — o Boca caía de 27,2% pra 16,2%. A 0,3% a conta cai pra 24 pontos
+e o Boca fica em **20,6%**, empatado com o River, com Vélez 13,0%, San
+Lorenzo 10,3% e Huracán 6,6% atrás. As outras oito capitais seguem em
+0,5%: nenhuma tem clube suficiente pra doer.
 
 **A capital fica de fora da regra 1.** Somar as duas afundava o clube da
 casa: com as vizinhas despejando até 3% cada em cima dos 0,5% do país
@@ -6208,15 +6214,15 @@ vazio. Tudo isto vive em `ferramentas/importar_barras.py`, que gera
 | torcidas de fora sem candidata a subsede | 214 | **0** |
 
 Nas capitais, o clube da casa cede espaço pro país inteiro: Boca
-27,2 → 16,2%, Millonarios 38,4 → 32,6%, Colo-Colo 30,9 → 27,0%,
+27,2 → 20,6% (no piso de 0,3%), Millonarios 38,4 → 32,6%, Colo-Colo 30,9 → 27,0%,
 Universitario 30,7 → 28,8%, Bolívar 36,2 → 34,2%, Caracas 36,3 → 34,8%,
 Peñarol 24,4 → 23,4%, Olimpia 22,5 → 22,0%, Independiente del Valle
 27,4 → 26,3%. Buenos Aires é a que mais sente, porque é a única com 88
-clubes pra acomodar; **se o dono quiser o Boca mais alto, o número a
-mexer é o piso de 0,5%** (`PISO_CAPITAL`).
+clubes pra acomodar — e é por isso que ela tem o piso de 0,3%, em
+`PISO_DA_CAPITAL`, enquanto `PISO_CAPITAL` (0,5%) vale pras outras.
 
 O Atlético Tucumán, o caso do pedido: 54,5% em Tucumã (casa), 3,0% no
-Norte da Argentina (a vizinha) e 0,5% em Buenos Aires (a capital) — duas
+Norte da Argentina (a vizinha) e 0,3% em Buenos Aires (a capital) — duas
 candidatas a subsede.
 
 ## Descartado (decisão do dono, 17/08/2026)

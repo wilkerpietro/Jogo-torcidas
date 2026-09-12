@@ -873,7 +873,13 @@ CAPITAL = {'Argentina': 'buenos-aires', 'Bolívia': 'la-paz',
            'Chile': 'santiago', 'Colômbia': 'bogota', 'Equador': 'quito',
            'Paraguai': 'assuncao', 'Peru': 'lima', 'Uruguai': 'montevideu',
            'Venezuela': 'caracas'}
-PISO_CAPITAL = 0.5      # o minimo da faixa do dono
+PISO_CAPITAL = 0.5      # o minimo da faixa do dono (0,5 a 1%)
+# BUENOS AIRES TEM PISO PROPRIO (ordem do dono, 12/09/2026): 88 clubes a
+# 0,5% comiam 40 pontos da praca e derrubavam o Boca de 27% pra 16%. A
+# 0,3% a conta cai pra 24 pontos e o Boca fica em 20%. As outras oito
+# capitais seguem em 0,5%: nenhuma tem gente suficiente pra doer.
+PISO_DA_CAPITAL = {'buenos-aires': 0.3}
+PISO_VIZINHA = 0.5      # o chao da praca vizinha, esse nao muda
 TETO_VIZINHA = 3.0      # a vizinha nunca passa disto
 FATIA_VIZINHA = 3.0     # e leva um terco do que o clube tem em casa
 
@@ -935,9 +941,9 @@ def espalhar(cidades, times):
                 continue
             # a maior vizinha da conta: e onde a filial tem publico
             alvo = max(cands, key=lambda v: (por_id[v]['populacao'], v))
-            perc = max(PISO_CAPITAL,
+            perc = max(PISO_VIZINHA,
                        min(TETO_VIZINHA, round(emcasa['perc'] / FATIA_VIZINHA, 1)))
-            perc = min(perc, max(PISO_CAPITAL, emcasa['perc'] - 0.1))
+            perc = min(perc, max(PISO_VIZINHA, emcasa['perc'] - 0.1))
             if entrar(alvo, t, perc):
                 novas_viz += 1
 
@@ -946,8 +952,9 @@ def espalhar(cidades, times):
     for pais, cap in sorted(CAPITAL.items()):
         if cap not in por_id:
             continue
+        piso = PISO_DA_CAPITAL.get(cap, PISO_CAPITAL)
         for t in sorted(por_pais.get(pais, []), key=lambda x: x['id']):
-            if entrar(cap, t, PISO_CAPITAL):
+            if entrar(cap, t, piso):
                 novas_cap += 1
 
     # ---- 3. fechar em 100%: quem chegou fica com o piso, o resto encolhe ----
