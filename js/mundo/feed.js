@@ -1432,9 +1432,10 @@ TO.feed = (function(){
      ======================================================= */
   function pautaAproximacao(E, forcar){
     const R = TO.relacoes, H = TO.mapa.hash, sa = R.semanaAbs(E);
-    /* DUAS VEZES POR ANO, em doze reuniões (dono, 11/09/2026): a pauta
-       nasce na mesa, não no dia. */
-    if(!forcar && (H(`aprox|${E.data.ano}|${mesDe(E)}`) % 6) !== 0) return null;
+    /* DUAS VEZES POR ANO (dono, 11/09/2026): a pauta nasce na mesa, não
+       no dia. O divisor era 6 para DOZE reuniões; com a mesa bimestral
+       (12/09/2026) são SEIS por ano, e 1 em 3 devolve as duas. */
+    if(!forcar && (H(`aprox|${E.data.ano}|${mesDe(E)}`) % 3) !== 0) return null;
     const todas = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
     const st = id => grupoDoStatus(M().statusDoValor(R.nivel(E, id)));
     const aliadas = todas.filter(o=>st(o.id) === 'aliado');
@@ -1489,8 +1490,9 @@ TO.feed = (function(){
      ======================================================= */
   function pautaPaz(E, forcar){
     const R = TO.relacoes, H = TO.mapa.hash, sa = R.semanaAbs(E);
-    /* TRÊS VEZES POR ANO, em doze reuniões (dono, 11/09/2026) */
-    if(!forcar && (H(`paz|${E.data.ano}|${mesDe(E)}`) % 4) !== 0) return null;
+    /* TRÊS VEZES POR ANO (dono, 11/09/2026); com a mesa bimestral são
+       seis reuniões, então 1 em 2 (era 1 em 4, para doze) */
+    if(!forcar && (H(`paz|${E.data.ano}|${mesDe(E)}`) % 2) !== 0) return null;
     const todas = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
     const st = id => grupoDoStatus(M().statusDoValor(R.nivel(E, id)));
     const aliadas = todas.filter(o=>st(o.id) === 'aliado');
@@ -1524,6 +1526,62 @@ TO.feed = (function(){
                nota:`a ${c.nome} vira neutra · +3 com a ${a.nome}`},
               {id:'nao', rot:'Rival continua rival', acao:'paz-nao',
                nota:`−3 com a ${a.nome} · nada muda com a ${c.nome}`}]};
+  }
+
+  /* =======================================================
+     A ALIADA PEDE QUE A GENTE LARGUE OUTRA ALIADA
+     (pedido do dono, 12/09/2026)
+
+     O terceiro lado da mesa, e o espelho do que as IAs já faziam entre
+     si: `eixos.mesaDela` tem a jogada AFASTAR — a parceira que anda com
+     um maior rival do eixo é cobrada a largar. Faltava o mesmo chegando
+     em NÓS. Umas duas vezes por ano uma aliada senta e diz que não dá
+     pra andar com ela e com a outra ao mesmo tempo, porque as duas se
+     pegam de verdade.
+
+     Quem pede tem que ser aliada nossa; a cobrada também tem que ser
+     ALIADA NOSSA — largar quem já é neutro não custa nada —, e as duas
+     precisam ser RIVAIS entre si. Irmã não se larga (`saoIrmas`), que
+     é a mesma trava da jogada das IAs.
+
+     Aceitar zera a relação com a cobrada (neutro, nunca rival: a gente
+     para de andar junto, não vira inimigo) e rende +3 com quem pediu.
+     Recusar custa 3 com quem pediu e não mexe com a outra — a mesma
+     régua da aproximação e do fim de treta.
+     ======================================================= */
+  function pautaAfastar(E, forcar){
+    const R = TO.relacoes, H = TO.mapa.hash, sa = R.semanaAbs(E);
+    /* DUAS VEZES POR ANO, em seis reuniões */
+    if(!forcar && (H(`afasta|${E.data.ano}|${mesDe(E)}`) % 3) !== 0) return null;
+    const todas = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
+    const st = id => grupoDoStatus(M().statusDoValor(R.nivel(E, id)));
+    const aliadas = todas.filter(o=>st(o.id) === 'aliado');
+    if(aliadas.length < 2) return null;
+    const cands = [];
+    for(const a of aliadas) for(const c of aliadas){
+      if(c.id === a.id) continue;
+      if(M().saoIrmas && M().saoIrmas(E.torcida.id, c.id)) continue;
+      const entre = R.relacaoDelas(E, a.id, c.id);
+      if(grupoDoStatus(M().statusDoValor(entre)) !== 'rival') continue;
+      cands.push({a, c, entre, maior: R.ehMaiorRival(E, a.id, c.id)});
+    }
+    if(!cands.length) return null;
+    const nota = x => H(`afasta|${sa}|${x.a.id}|${x.c.id}`) % 1000;
+    /* o maior rival dela vem primeiro: é a cobrança que mais dói */
+    cands.sort((x,y)=>(y.maior?1:0) - (x.maior?1:0) || (x.entre - y.entre) || nota(x) - nota(y));
+    const {a, c, maior} = cands[0];
+    const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
+    return {tipo:'afastar', chave:`afasta|${a.id}|${c.id}|${E.data.ano}`,
+      rot:'Cobrança de aliada', voz:a.nome, de:a.id, nome:a.nome,
+      alvo:c.id, alvoNome:c.nome,
+      texto:`Fala irmão. Vocês andam com a ${c.nome} (${cid}), e a gente `+
+            (maior ? `se pega com eles desde sempre` : `não se bica com eles`)+
+            `. Não dá pra ficar de bem com os dois lados: ou é a gente, ou é eles. `+
+            `Larga a ${c.nome}?`,
+      botoes:[{id:'sim', rot:`Largar a ${c.nome}`, acao:'afastar-sim',
+               nota:`a ${c.nome} vira neutra · +3 com a ${a.nome}`},
+              {id:'nao', rot:'Continuar com as duas', acao:'afastar-nao',
+               nota:`−3 com a ${a.nome}`}]};
   }
 
   /* =======================================================
@@ -1632,6 +1690,7 @@ TO.feed = (function(){
     /* o que as aliadas trazem nasce na própria mesa */
     const a = pautaAproximacao(E); if(a) pautar(E, a);
     const p = pautaPaz(E);         if(p) pautar(E, p);
+    const f = pautaAfastar(E);     if(f) pautar(E, f);
     const abertos = pautaAberta(E);
     const X = TO.eixos;
     const mesa = X && X.cabemosEmMais(E) && !X.esperaDaMesa(E);
@@ -1694,6 +1753,21 @@ TO.feed = (function(){
       case 'paz-nao':
         E.relacoes[it.de] = U.limitar(TO.relacoes.nivel(E, it.de) - 3, -100, 100);
         it.consequencia = `A treta com a ${it.alvoNome} fica de pé. A ${it.nome} não gostou: −3.`;
+        return {};
+      case 'afastar-sim': {
+        const S = E.statusRel = E.statusRel || {visto:{}, recusa:{}};
+        S.visto = S.visto || {}; S.recusa = S.recusa || {};
+        /* neutro, nunca rival: a gente para de andar junto, não vira inimigo */
+        E.relacoes[it.alvo] = 0;
+        E.relacoes[it.de]   = U.limitar(TO.relacoes.nivel(E, it.de) + 3, -100, 100);
+        S.visto[it.alvo] = 'neutro';
+        it.consequencia = `A gente largou a ${it.alvoNome} — neutro daqui pra frente · `+
+          `+3 com a ${it.nome}.`;
+        return {};
+      }
+      case 'afastar-nao':
+        E.relacoes[it.de] = U.limitar(TO.relacoes.nivel(E, it.de) - 3, -100, 100);
+        it.consequencia = `A gente fica com as duas. A ${it.nome} não gostou: −3.`;
         return {};
       case 'eixo-sim': {
         const r = TO.eixos.entrar(E, it.de, E.torcida.id);
@@ -3215,7 +3289,7 @@ TO.feed = (function(){
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
           statusDeHoje, eixosDoDia, reuniaoDeHoje,
           caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
-          pautaAproximacao, pautaPaz,
+          pautaAproximacao, pautaPaz, pautaAfastar,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu};
 })();

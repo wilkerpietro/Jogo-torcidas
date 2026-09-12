@@ -6620,6 +6620,61 @@ mensagem.
 
 Dois anos de varredura sem exceção.
 
+## A aliada pede que a gente largue outra aliada (pedido do dono, 12/09/2026)
+
+O dono sentiu falta do terceiro lado da mesa, e ele já existia **entre
+as IAs**: `eixos.mesaDela` tem a jogada **afastar** — a parceira que
+anda com um maior rival do eixo é cobrada a largar. Faltava a mesma
+cobrança chegando em NÓS.
+
+**Como é.** Umas **duas vezes por ano** uma aliada senta na reunião e
+diz que não dá pra andar com ela e com a outra ao mesmo tempo. Quem
+pede é aliada nossa; a cobrada **também é aliada nossa** (largar quem
+já é neutro não custa nada), e as duas são **rivais entre si**. Se for
+maior rival, o texto muda — "a gente se pega com eles desde sempre" —,
+e esse par entra na frente da fila. **Irmã não se larga** (`saoIrmas`),
+que é a mesma trava da jogada das IAs.
+
+**Aceitar** zera a relação com a cobrada — neutro, nunca rival: a gente
+para de andar junto, não vira inimigo — e rende **+3** com quem pediu.
+**Recusar** custa **3** com quem pediu e não mexe com a outra. É a
+mesma régua da aproximação e do fim de treta.
+
+## A cadência das pautas com a mesa bimestral (correção, 12/09/2026)
+
+Os divisores da aproximação e do fim de treta foram escritos para
+**doze** reuniões por ano. Com a mesa bimestral (12/09/2026) são
+**seis**, e as duas caíram pela metade sem ninguém pedir: a aproximação
+de 2 para 1 por ano, o fim de treta de 3 para 1,5. Os divisores foram
+refeitos — aproximação `% 6 → % 3`, fim de treta `% 4 → % 2` —, e a
+cobrança nova entra com `% 3`.
+
+**Medido em vinte anos de calendário** (só o portão do hash, sem contar
+se há candidato na hora):
+
+| pauta | pretendido | medido |
+|---|---|---|
+| aproximação | 2/ano | **2,10** |
+| fim de treta | 3/ano | **3,00** |
+| cobrança de aliada | 2/ano | **2,25** |
+
+## O que as mesas das IAs mexem, em pontos (resposta ao dono, 12/09/2026)
+
+A força de cada jogada é a **pior das duas relações da intermediária
+com o par**, normalizada: `força = (min(rel) − 20) / 60`, limitada a
+0..1 — força 0 em +20, força 1 em +80.
+
+| jogada | movimento | limite |
+|---|---|---|
+| aproximar | `+5 a +20` (`5 + 15 × força`) | teto em **+45** (Aliado) |
+| pacificar | `+5 a +20` (`5 + 15 × força`) | teto em **0** (Neutro) |
+| afastar | `−4 a −14` (`4 + 10 × força`) | piso em **0** (Neutro) |
+
+A mesa só pega com chance de `0,25 + 0,6 × força` — de 25% a 85% —, e
+cada torcida senta a dela **a cada 91 dias** (4 por ano), com até doze
+parceiras na roda. Nada disso toca a NOSSA relação com ninguém: o que é
+nosso se decide na nossa reunião.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
