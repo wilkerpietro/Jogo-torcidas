@@ -221,6 +221,19 @@ TO.eixos = (function(){
     if(!x || !o || o.incompleta) return {ok:false, motivo:'não existe'};
     if(x.membros.includes(torcidaId)) return {ok:false, motivo:'já é do eixo'};
     if(de(E, torcidaId).length >= MAX_POR_TORCIDA) return {ok:false, motivo:'já está em dois eixos'};
+    /* O EIXO NÃO ATRAVESSA A FRONTEIRA (12/09/2026). Eixo é política de
+       arquibancada perto de casa — quem entra desce junto, escolta e
+       cobra. Antes dos hermanamientos isto se garantia sozinho: relação
+       entre torcida daqui e barra de fora era sempre neutra, e entrar
+       pede +45. Com a irmandade internacional valendo +80, uma barra
+       chilena passou a caber num eixo brasileiro; a fronteira agora é
+       regra, e não efeito colateral de não haver relação. */
+    const pais = t => (t && t.fora) ? t.regiao : 'Brasil';
+    for(const m of x.membros){
+      const mo = M().torcida(m);
+      if(mo && pais(mo) !== pais(o))
+        return {ok:false, motivo:`a ${mo.nome} é de outro país`};
+    }
     let aliadas = 0;
     for(const m of x.membros){
       if(R().ehMaiorRival(E, m, torcidaId)) return {ok:false, motivo:`maior rival da ${(M().torcida(m)||{}).nome}`};

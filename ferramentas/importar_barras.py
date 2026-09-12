@@ -760,6 +760,41 @@ HERMANAMIENTOS = [
  ('dragoes_da_real',         'caracas'),        # Dragões da Real · Los Demonios Rojos
  ('mafia_azul',              'san-lorenzo'),    # Máfia Azul · La Gloriosa Butteler
  ('torcida_jovem_do_gremio', 'almagro'),        # Jovem do Grêmio · La Banda del Tricolor
+ ('imperio_alviverde',       'belgrano'),       # Império Alviverde · Los Piratas Celestes
+ ('jovem_chape',             'atletico-nacional'),  # Jovem Chape · Los del Sur
+ ('forca_jovem_vasco',       'universidad-de-chile'),  # Força Jovem · Los de Abajo
+]
+
+# ===================================================================
+# AS IRMANDADES ENTRE BARRAS (lista do dono + pesquisa, 12/09/2026)
+#
+# O mesmo que HERMANAMIENTOS, mas dos dois lados de fora do Brasil --
+# aqui os dois campos sao clube, porque a barra e sempre a do clube.
+#
+# A irmandade TIRA o par da lista de rivais: `relacaoBase` le rivais
+# ANTES de irmandade, e dois clubes do mesmo pais e da mesma divisao
+# nascem rivais pela regra do grafo. Par que e classico (CLASSICOS)
+# quebra o gerador: amizade nao passa por cima de odio de nascenca.
+#
+# origem 'dono'     veio da lista do dono.
+# origem 'pesquisa' a busca confirmou a amizade.
+# ===================================================================
+HERMANDADES = [
+ # ---- a lista do dono ----
+ ('deportivo-tachira', 'the-strongest'),        # Avalancha Sur · Ultra Sur
+ ('danubio',           'racing'),               # La Banda del Franjeado · La Guardia Imperial
+ ('millonarios',       'river-plate'),          # Comandos Azules · Los Borrachos
+ ('america-de-cali',   'independiente'),        # Barón Rojo Sur · La Barra del Rojo
+ ('wanderers',         'santiago-wanderers'),   # La Banda del Bohemio · Los Panzers
+ ('estudiantes',       'penarol'),              # Los Leales · Barra Amsterdam, do churrasco de 1989
+ ('olimpia',           'once-caldas'),          # La Barra 79 · Holocausto Norte
+ ('deportivo-pereira', 'union-espanola'),       # Lobo Sur · Los Marginales
+ # ---- o que a pesquisa achou depois ----
+ ('san-lorenzo',       'rosario-central'),      # La Gloriosa Butteler · Los Guerreros
+ ('nacional-uru',      'argentinos'),           # La Banda del Parque · Los Ninjas
+ ('chacarita',         'rosario-central'),      # Los Funebreros · Los Guerreros (a outra de Central)
+ ('atletico-nacional', 'banfield'),             # Los del Sur · La Banda del Sur
+ ('universidad-de-chile', 'racing'),            # Los de Abajo · La Guardia Imperial
 ]
 
 TAMANHO = {
@@ -1255,6 +1290,21 @@ def montar_torcidas(times, pracas):
             if mesma_praca or mesma_liga:
                 t['rivais'].append(o['id'])
 
+    # ---- as irmandades entre barras ----
+    for a, b in HERMANDADES:
+        ta, tb = por_clube.get(a), por_clube.get(b)
+        if not ta:
+            raise SystemExit(f'HERMANDADES: nao existe barra do clube {a}')
+        if not tb:
+            raise SystemExit(f'HERMANDADES: nao existe barra do clube {b}')
+        if tb['id'] in ta['maioresRivais'] or ta['id'] in tb['maioresRivais']:
+            raise SystemExit(f'HERMANDADES: {a} e {b} sao classico, nao da irmandade')
+        for x, y in ((ta, tb), (tb, ta)):
+            if y['id'] in x['rivais']:
+                x['rivais'].remove(y['id'])
+            if y['id'] not in x['irmandade']:
+                x['irmandade'].append(y['id'])
+
     # ---- os hermanamientos: a ponte com o Brasil ----
     # so o lado de fora e escrito aqui. O lado brasileiro mora em
     # torcidas.js, que e gerado por outra ferramenta -- barras.js
@@ -1329,6 +1379,9 @@ def main():
     ids_clube = {t['id'] for t in times}
     orfas = [t['clubeId'] for t in torcidas if t['clubeId'] not in ids_clube]
     print(f'  clube fora de times.js: {orfas or "nenhum"}')
+
+    print(f'  irmandades: {len(HERMANDADES)} entre barras · '
+          f'{len(HERMANAMIENTOS)} com organizada brasileira')
 
     velhas = ler_torcidas()
     colisao = ({t['id'] for t in torcidas} & {t['id'] for t in velhas})

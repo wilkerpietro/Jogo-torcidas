@@ -6363,6 +6363,63 @@ quase não tem contato: em cinco anos a Young Flu × La Pandilla caiu de
 real tem que ser permanente, a saída é isentar o par declarado da
 convivência; não mexi porque a régua do apodrecimento é dele.
 
+## As irmandades entre barras (lista do dono + pesquisa, 12/09/2026)
+
+O dono trouxe mais onze pares e mandou procurar outros. Agora são
+**duas tabelas** em `ferramentas/importar_barras.py`:
+
+- `HERMANAMIENTOS` — organizada brasileira × barra de fora, **13 pares**
+  (os 10 de ontem mais Império Alviverde × Los Piratas Celestes,
+  Jovem Chape × Los del Sur e Força Jovem Vasco × Los de Abajo);
+- `HERMANDADES` — barra × barra, os dois lados fora do Brasil,
+  **13 pares**.
+
+**A lista do dono, em `HERMANDADES`:** Avalancha Sur (Táchira) × Ultra
+Sur (The Strongest); La Banda del Franjeado (Danubio) × La Guardia
+Imperial (Racing); Comandos Azules (Millonarios) × Los Borrachos del
+Tablón (River); Barón Rojo Sur (América de Cali) × La Barra del Rojo
+(Independiente); La Banda del Bohemio (Montevideo Wanderers) × Los
+Panzers (Santiago Wanderers); Los Leales (Estudiantes) × Barra Amsterdam
+(Peñarol); La Barra 79 (Olimpia) × Holocausto Norte (Once Caldas); Lobo
+Sur (Deportivo Pereira) × Los Marginales (Unión Española).
+
+**O que a pesquisa achou depois**, com a fonte de cada um:
+
+| par | o que a fonte diz |
+|---|---|
+| San Lorenzo × Rosario Central | "uma das mais antigas e sentidas do futebol argentino", que passou da barra pro torcedor comum |
+| Nacional/URU × Argentinos Juniors | vem dos confrontos de copa, firmada pelo "Flaco Pera" |
+| Chacarita × Rosario Central | amizade documentada entre as duas hinchadas |
+| Atlético Nacional × Banfield | os chefes das duas barras são amigos |
+| Universidad de Chile × Racing | Los de Abajo lista La Guardia Imperial entre as hinchadas amigas |
+
+Dois pares que o dono deu também vieram com fonte: **Estudiantes ×
+Peñarol** nasceu do churrasco que "El Barba" esperava a barra do Peñarol
+com, em La Plata, na Supercopa de 1989; e **Chapecoense × Atlético
+Nacional** vem de 2016, quando o Nacional cedeu o título da Sul-Americana
+e o Atanasio pro velório — a Chape ainda homenageia o clube na camisa.
+
+**A irmandade TIRA o par da lista de rivais.** `relacaoBase` lê `rivais`
+ANTES de `irmandade`, e o grafo das barras faz rival automático de quem
+divide praça ou divisão no mesmo país. Sem essa limpeza, San Lorenzo ×
+Rosario Central e Chacarita × Rosario Central nasceriam **rivais** apesar
+da tabela. Par que é **clássico** (está em `CLASSICOS`) quebra o gerador:
+amizade não passa por cima de ódio de nascença.
+
+**O eixo não atravessa a fronteira** (`podeEntrar`, em `js/mundo/eixos.js`).
+Isto era garantido sozinho até ontem: relação entre torcida daqui e barra
+de fora era sempre neutra, e entrar num eixo pede +45. Com a irmandade
+internacional valendo +80, a simulação de cinco anos passou a fechar um
+eixo **Brasil + Chile de 14 membros** — a Força Jovem levou Los de Abajo
+pra dentro do União Punho Cruzado. Eixo é política de arquibancada perto
+de casa: quem entra desce junto, escolta e cobra. A fronteira virou regra
+explícita, e não efeito colateral de não haver relação.
+
+**Medido:** os 26 pares dão Irmandade nos dois sentidos, nenhum deles
+sobrou na lista de rivais do outro, dois anos de varredura não levantam
+uma exceção e cinco anos de jogo voltam a fechar com **zero eixos
+misturando países**.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
