@@ -941,13 +941,21 @@ TO.feed = (function(){
   /* -------------------------------------------------------
      3c. A SUGESTÃO DE ASSALTO (decisão do dono, 17/08/2026):
          de tempos em tempos um diretor chega com alvo mapeado.
-         Cai uma vez por mês, em dia comum, e só se há diretor
-         de pé e gente disponível pro menor dos alvos.
+         NOVE POR ANO (dono, 12/09/2026) — eram 13, uma semana em
+         cada 4 —, em dia comum, e só se há diretor de pé e gente
+         disponível pro menor dos alvos.
      ------------------------------------------------------- */
+  const ASSALTOS_ANO = 9, SEMANAS_DO_ANO = 52;
   function assaltoDeHoje(E){
     const sa = TO.relacoes.semanaAbs(E);
     const H = TO.mapa.hash;
-    if(sa % 4 !== H(`assalto|${E.torcida.id}`) % 4) return;
+    /* NOVE EM CADA 52, sem sorteio: o contador `n × 9 / 52` vira de
+       degrau exatamente nove vezes por ano, e as semanas saem
+       espalhadas em vez de agrupadas. O deslocamento por torcida é o
+       que faz dois saves caírem em semanas diferentes. */
+    const n = sa + H(`assalto|${E.torcida.id}`) % SEMANAS_DO_ANO;
+    const deg = k => Math.floor(k * ASSALTOS_ANO / SEMANAS_DO_ANO);
+    if(deg(n) === deg(n - 1)) return;
     let dia = 1 + H(`assalto|${sa}|${E.torcida.id}`) % 7;
     for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
     if(dia !== E.data.dia) return;

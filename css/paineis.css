@@ -2257,15 +2257,33 @@ header.capa-cidade{background-size:cover; background-position:center;
 .sem-chip.off{opacity:.4}
 .sem-chip:disabled{cursor:default}
 .sem-chip .t-link{border-bottom:0}
-.sem-invest{display:flex;flex-wrap:wrap;gap:3px 8px;align-items:center}
-.sem-invest .sem-chips{margin:0}
-/* o plano dentro do nosso jogo: linhas curtas, rótulo à esquerda */
-.sem-plano{grid-column:1 / -1;display:grid;gap:3px;margin-top:3px;padding-top:5px;border-top:1px solid #2a2418}
-.sem-sec{display:grid;grid-template-columns:78px 1fr;gap:2px 8px;align-items:start;padding:2px 0}
-.sem-sec .sem-rot{flex-direction:column;gap:1px;margin:3px 0 0}
-.sem-sec .sem-rot small{font-size:10px;line-height:1.2}
-.sem-sec > *:not(.sem-rot){grid-column:2}
-.sem-contador{padding:0;gap:6px;flex-wrap:wrap}
+/* os outros jogos da praça seguem a mesma regra do plano: o que se
+   lê fica à esquerda, o que se clica vai pra direita */
+.sem-invest{display:flex;flex-wrap:wrap;gap:3px 8px;align-items:center;justify-content:flex-end}
+.sem-invest .sem-chips{margin:0;justify-content:flex-end}
+/* O PLANO É UMA TABELA (dono, 12/09/2026): uma linha por decisão,
+   rótulo à esquerda e os controles encostados à DIREITA. Antes era
+   `.sem-sec`, com o rótulo em cima e os chips embaixo — cada bloco
+   com uma altura, e nenhuma coluna pra correr o olho. */
+.sem-plano{grid-column:1 / -1;display:grid;margin-top:3px;padding-top:2px;border-top:1px solid #2a2418}
+.sem-lin{
+  display:grid;grid-template-columns:70px minmax(0,1fr);align-items:center;gap:4px 10px;
+  padding:4px 0;border-bottom:1px solid #232019;
+}
+.sem-lin:last-child{border-bottom:0}
+.sem-lin > .rot{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fraco);
+}
+.sem-lin > .val{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:4px 8px;
+  min-width:0;
+}
+.sem-lin .sem-chips{margin:0;justify-content:flex-end}
+.sem-lin .sem-trajeto{justify-content:flex-end}
+.sem-val{font-size:11.5px;text-align:right}
+.sem-val b{font-family:var(--mono);font-size:10.5px;white-space:nowrap;margin-left:6px}
+.sem-contador{padding:0;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .sem-contador button{width:24px;height:24px;font-size:13px}
 .sem-contador b{font-size:14px;color:#fff;min-width:28px}
 .sem-contador small{font-size:10.5px}
@@ -2289,13 +2307,25 @@ header.capa-cidade{background-size:cover; background-position:center;
 }
 .sem-resumo b{font-family:var(--mono);font-size:11.5px}
 .sem-recep{margin-top:4px;padding-top:4px;border-top:1px dashed #2a2a2a}
-.sem-recep .sem-rot{grid-column:1 / -1;flex-direction:row}
-.sem-recep .sem-linha{grid-column:1 / -1}
+.sem-recep .sem-rot{margin-bottom:2px}
+/* o nome do aliado ocupa a coluna do rótulo, mas em letra de texto */
+.sem-lin > .rot.larga{
+  font-family:var(--corpo);font-size:11.5px;letter-spacing:0;text-transform:none;
+  color:var(--texto);
+}
+.sem-lin > .rot.larga small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+.sem-lin.pago{opacity:.6}
+.sem-recep .sem-lin{grid-template-columns:minmax(0,130px) minmax(0,1fr)}
 @media (max-width:640px){
   .sem-cab{flex-wrap:wrap;gap:4px 9px}
   .sem-cab .msg-bts{flex-basis:100%;margin:2px 0 0}
-  .sem-sec{grid-template-columns:1fr}
-  .sem-sec > *:not(.sem-rot){grid-column:1}
+  /* em tela estreita a linha vira duas: rótulo em cima, controles
+     embaixo, ainda encostados à direita */
+  .sem-lin{grid-template-columns:1fr;gap:2px}
+  .sem-lin > .rot{grid-column:1}
+  /* o −/valor/+ não se parte: a nota desce pra linha de cima e os
+     três botões ficam juntos embaixo, à direita */
+  .sem-contador small{flex:1 0 100%;text-align:right}
 }
 /* os eixos de aliança (dono, 11/09/2026) */
 .x-link{cursor:pointer;border-bottom:1px dotted currentColor;color:#f0e2c8}

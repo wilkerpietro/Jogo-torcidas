@@ -1968,8 +1968,9 @@
     });
     caixa.classList.add('itn-partida-caixa');
     vaga.appendChild(caixa);
-    vaga.appendChild(el('div',{class:'itn-trava',
-      texto:'▲ os arredores só abrem no apito final'}));
+    /* O AVISO DA TRAVA SAIU (dono, 12/09/2026): "os arredores só abrem
+       no apito final" dizia o óbvio — a linha do itinerário já está
+       parada e o placar está rodando na frente do jogador. */
   }
 
   function itnAcabou(){
@@ -2477,8 +2478,11 @@
       bMenos.disabled = fechado || valor <= min; bMais.disabled = fechado || valor >= max;
       bMenos.onclick = ()=>aoMudar(Math.max(min, valor - passo));
       bMais.onclick  = ()=>aoMudar(Math.min(max, valor + passo));
-      linha.append(bMenos, el('b',{texto:String(valor)}), bMais);
+      /* a nota vem ANTES dos botões: na tabela do plano a coluna da
+         direita é dos controles, e texto depois do "+" empurrava eles
+         pro meio da linha (dono, 12/09/2026) */
       if(nota) linha.appendChild(el('small',{texto:nota}));
+      linha.append(bMenos, el('b',{texto:String(valor)}), bMais);
       return linha;
     };
     const chips = (itens, atual, aoTrocar)=>{
@@ -2511,6 +2515,22 @@
       bloco.innerHTML = rotuloJogo(r) + ruaDe(r);
       if(r.passou || !vigente) return bloco;
       const plano = el('div',{class:'sem-plano'});
+      /* A TABELA DO PLANO (pedido do dono, 12/09/2026): uma linha por
+         decisão, rótulo à esquerda e os botões à direita. Era uma pilha
+         de seções com o rótulo em cima e os chips embaixo, e cada bloco
+         tinha altura diferente — de olho batido não dava pra ver quantas
+         decisões a semana pedia. */
+      const linhaP = (rot, ...ctrls)=>{
+        const cs = ctrls.filter(Boolean);
+        if(!cs.length) return null;
+        const l = el('div',{class:'sem-lin'});
+        l.appendChild(el('span',{class:'rot', texto:rot}));
+        const v = el('div',{class:'val'});
+        for(const c of cs) v.appendChild(c);
+        l.appendChild(v);
+        plano.appendChild(l);
+        return l;
+      };
       const fora = r.tipo === 'fora';
       const briga = p.intencao !== 'paz';
       const alvos = fora ? P.alvosDaViagem(e)
@@ -2523,17 +2543,16 @@
       if(fora){
         est = P.estimativaCaravana(e);
         const rotas = P.rotas(e);
-        const sec = el('div',{class:'sem-sec'});
-        sec.appendChild(el('div',{class:'sem-rot', html:`Caravana <small>${est.interessados} querem ir · ${est.aptos} aptos</small>`}));
         const passo = Math.max(1, Math.round(est.interessados/10));
-        sec.appendChild(contador(est.vao, est.minimo, est.interessados, passo,
-          v=>{ p.caravana = v; p.decidido = false; salvar(); pintar(); }, `embarcam · ${U.dinheiro(est.porCabeca)} por cabeça`));
-        if(rotas.length) sec.appendChild(chips(rotas.map(rt=>({id:rt.id, rot:rt.nome,
+        linhaP('Caravana', contador(est.vao, est.minimo, est.interessados, passo,
+          v=>{ p.caravana = v; p.decidido = false; salvar(); pintar(); },
+          `de ${est.aptos} aptos · ${U.dinheiro(est.porCabeca)} cada`));
+        if(rotas.length) linhaP('Rota', chips(rotas.map(rt=>({id:rt.id, rot:rt.nome,
           nota:`${U.dinheiro(rt.custo)}${rt.risco?` · emboscada ${Math.round(rt.risco)}`:' · sem hostil'}`})),
           p.rota || rotas[0].id, id=>{ p.rota = id; p.decidido = false; salvar(); pintar(); }));
         const rt = P.rotaEscolhida(e);
         if(rt && rt.cidades.length > 1)
-          sec.appendChild(el('div',{class:'sem-trajeto', html: rt.cidades.map((c,i)=>{
+          linhaP('Trajeto', el('div',{class:'sem-trajeto', html: rt.cidades.map((c,i)=>{
             const nome = (M.cidade(c)||{}).nome || c; const h = P.hostilidade(e, c);
             return `<span class="${i===0?'saida':i===rt.cidades.length-1?'chegada':''}${h>40?' hostil':''}">${nome}</span>`;
           }).join('<i>›</i>')}));
@@ -2542,26 +2561,28 @@
         const NR = {nada:'não vai receber', hospedar:'hospedagem', escolta:'hospedagem e escolta', churrasco:'escolta e churrasco'};
         if(ajuda){
           const rec = P.recepcaoDe(ajuda.nivel);
-          sec.appendChild(el('div',{class:'sem-linha', html:`<span>${linkTorcida(ajuda.aliado, ajuda.nome)}: <b>${NR[ajuda.nivel]||ajuda.nivel}</b></span>`+
-            `<b class="${ajuda.nivel==='nada'?'negativo':'positivo'}">${rec.relacao>0?'+':''}${rec.relacao} rel.${ajuda.escolta?` · ${ajuda.escolta} na escolta`:''}</b>`}));
+          linhaP('Recepção', el('span',{class:'sem-val', html:
+            `${linkTorcida(ajuda.aliado, ajuda.nome)} · <b>${NR[ajuda.nivel]||ajuda.nivel}</b>`+
+            ` <b class="${ajuda.nivel==='nada'?'negativo':'positivo'}">${rec.relacao>0?'+':''}${rec.relacao} rel.`+
+            `${ajuda.escolta?` · ${ajuda.escolta} na escolta`:''}</b>`}));
         } else if(aliadas.length && !fechado){
-          const linha = el('div',{class:'sem-linha'});
-          linha.appendChild(el('span',{html:`Aliada em ${r.cidade||'lá'}: ${aliadas.map(a=>linkTorcida(a.id,a.nome)).join(', ')}`}));
           const b = el('button',{class:'sem-mini', texto:'Pedir ajuda'});
           b.onclick = ()=>{ const rr = P.pedirAjuda(e, aliadas[0].id); if(!rr) return;
             aviso(rr.nivel==='nada' ? `A ${rr.nome} não vai receber a gente.` : `A ${rr.nome} topou: ${NR[rr.nivel]}.`, rr.nivel==='nada'?'ruim':'boa');
             salvar(); pintarTopo(); pintar(); };
-          linha.appendChild(b); sec.appendChild(linha);
+          linhaP('Aliada lá', el('span',{class:'sem-val', html:
+            aliadas.map(a=>linkTorcida(a.id,a.nome)).join(', ')}), b);
         }
-        plano.appendChild(sec);
       }
 
-      /* intenção: paz ou ataque; alvo; onde; efetivo; bombas */
-      const sec2 = el('div',{class:'sem-sec'});
-      sec2.appendChild(el('div',{class:'sem-rot', html:`Na rua <small>${fora ? 'na praça deles' : 'na nossa praça'}</small>`}));
-      sec2.appendChild(chips([
-        {id:'paz', rot:'Ir em paz', nota:'portão, bandeira e bateria'},
-        {id:'atacar', rot:'Atacar', nota: alvos.length ? 'em cima de uma torcida' : 'ninguém pra atacar', off:!alvos.length}
+      /* intenção: paz ou ataque; alvo; onde; efetivo; bombas.
+         OS BOTÕES DIZEM SÓ A CONSEQUÊNCIA (dono, 12/09/2026): o que
+         era enfeite — "portão, bandeira e bateria", "em cima de uma
+         torcida", a prosa de cada ponto de ataque — saiu. Ficou o que
+         muda a conta: o número que a escolha rende ou custa. */
+      linhaP('Na rua', chips([
+        {id:'paz', rot:'Ir em paz'},
+        {id:'atacar', rot:'Atacar', nota: alvos.length ? '' : 'ninguém pra atacar', off:!alvos.length}
       ], briga ? 'atacar' : 'paz', id=>{
         if(id==='paz') P.definirIntencao(e, 'paz');
         else P.definirAtaque(e, {alvo: p.alvoTorcida || (alvos[0]&&alvos[0].id), onde, bombas:p.bombas});
@@ -2569,38 +2590,32 @@
       }));
       if(briga && alvos.length){
         const alvoAtual = alvos.find(a=>a.id===p.alvoTorcida) ? p.alvoTorcida : alvos[0].id;
-        sec2.appendChild(chips(alvos.map(a=>({id:a.id, rot:linkTorcida(a.id,a.nome)+(a.aliada?' · aliada':''),
+        linhaP('Alvo', chips(alvos.map(a=>({id:a.id, rot:linkTorcida(a.id,a.nome)+(a.aliada?' · aliada':''),
           nota:`${a.faixa} · rel. ${Math.round(a.relacao)}`})), alvoAtual,
           id=>{ P.definirAtaque(e, {alvo:id, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}); salvar(); pintar(); }));
-        sec2.appendChild(chips(P.ONDE_ATAQUE.map(o=>({id:o.id, rot:o.rot,
-          nota: fora && o.id==='arredores' ? 'lá a gente é o visitante' : o.nota})), onde,
+        linhaP('Onde', chips(P.ONDE_ATAQUE.map(o=>({id:o.id, rot:o.rot})), onde,
           id=>{ onde = id; P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}); salvar(); pintar(); }));
         if(!fora){
           const f = P.efetivoDoAtaque(e);
           const ef = p.efetivoAtaque != null ? U.limitar(p.efetivoAtaque, f.piso, f.teto) : f.teto;
-          sec2.appendChild(contador(ef, f.piso, f.teto, Math.max(1, Math.round(f.teto/10)),
+          linhaP('Efetivo', contador(ef, f.piso, f.teto, Math.max(1, Math.round(f.teto/10)),
             v=>{ P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:v}); salvar(); pintar(); },
-            `atacam · de ${f.teto} · menor número rende mais prestígio`));
+            `de ${f.teto} · menos gente rende mais prestígio`));
         }
       }
       /* bombas: pra caravana, só o estoque; em casa, compra na hora */
       const tem = (e.estoque||{}).bombas || 0;
       const podeComprar = fora ? 0 : Math.floor(Math.max(0, e.dinheiro) / TO.patrimonio.precoBomba(e));
       const leva = U.limitar(p.bombas || 0, 0, tem + podeComprar);
-      sec2.appendChild(contador(leva, 0, tem + podeComprar, 1,
+      linhaP('Bombas', contador(leva, 0, tem + podeComprar, 1,
         v=>{ if(v > tem) TO.patrimonio.comprarBombas(e, v - tem); p.bombas = Math.min(v, (e.estoque||{}).bombas||0); p.decidido=false; salvar(); pintarTopo(); pintar(); },
-        tem ? `bombas · ${tem} no estoque${!fora && podeComprar ? ` · a mais compra a ${U.dinheiro(TO.patrimonio.precoBomba(e))}` : ''}`
-            : (fora ? 'bombas · estoque vazio' : `bombas · compra a ${U.dinheiro(TO.patrimonio.precoBomba(e))}`)));
-      plano.appendChild(sec2);
+        tem ? `${tem} no estoque${!fora && podeComprar ? ` · a mais ${U.dinheiro(TO.patrimonio.precoBomba(e))}` : ''}`
+            : (fora ? 'estoque vazio' : `${U.dinheiro(TO.patrimonio.precoBomba(e))} cada`)));
 
-      /* o resumo do plano */
-      const alvoN = briga && p.alvoTorcida ? nomeDe(p.alvoTorcida) : null;
-      const ondeRot = (P.ONDE_ATAQUE.find(o=>o.id===onde)||{}).rot || '';
-      plano.appendChild(el('div',{class:'sem-resumo', html:
-        `<span>${fora && est ? `${est.vao} para ${r.cidade||'fora'}` : 'Jogo em casa'}`+
-        `${alvoN ? ` · em cima da ${alvoN} ${ondeRot.toLowerCase()}` : ' · em paz'}`+
-        `${leva ? ` · ${leva} bomba${leva>1?'s':''}` : ''}</span>`+
-        (est ? `<b class="negativo">${U.dinheiro(-est.custo)}</b>` : '')}));
+      /* O QUE A SEMANA CUSTA. Era uma frase — "Jogo em casa · em paz" —
+         que repetia os botões logo acima; ficou só o dinheiro da
+         caravana, que é o único número que não está em linha nenhuma. */
+      if(est) linhaP('Custo', el('b',{class:'negativo sem-val', texto:U.dinheiro(-est.custo)}));
       bloco.appendChild(plano);
       return bloco;
     };
@@ -2667,16 +2682,22 @@
       }
       /* aliados que chegam: como receber */
       if(pauta.aliados.length){
-        const bloco = el('div',{class:'sem-sec sem-recep'});
-        bloco.appendChild(el('div',{class:'sem-rot', html:`Aliados na cidade <small>como receber</small>`}));
+        /* a recepção segue a mesma tabela do plano: o aliado à
+           esquerda, as opções à direita */
+        const bloco = el('div',{class:'sem-plano sem-recep'});
+        bloco.appendChild(el('div',{class:'sem-rot', texto:'Aliados na cidade'}));
         for(const a of pauta.aliados){
           const pago = ((P.plano(e).pago)||{})[a.id];
-          const linha = el('div',{class:'sem-linha'+(pago?' pago':'')});
-          linha.appendChild(el('span',{html:`<b>${linkTorcida(a.id,a.nome)}</b> <small class="fraco">(${a.clube}) · vêm ${a.n} · ${DIA_ABREV[a.dia]||''}</small>`+(pago?' <span class="tag">resolvido</span>':'')}));
+          const linha = el('div',{class:'sem-lin'+(pago?' pago':'')});
+          linha.appendChild(el('span',{class:'rot larga', html:
+            `${linkTorcida(a.id,a.nome)} <small>${a.n} · ${DIA_ABREV[a.dia]||''}</small>`+
+            (pago?' <span class="tag">resolvido</span>':'')}));
           const atual = P.nivelDe(e, a.id);
-          linha.appendChild(chips(P.RECEPCAO.map(rc=>({id:rc.id, rot:rc.rot,
+          const v = el('div',{class:'val'});
+          v.appendChild(chips(P.RECEPCAO.map(rc=>({id:rc.id, rot:rc.rot,
             nota:`${rc.porCabeca*a.n ? U.dinheiro(rc.porCabeca*a.n) : 'de graça'} · ${rc.relacao>0?'+':''}${rc.relacao}`, off:!!pago})),
             atual, id=>{ P.definirRecepcao(e, a.id, id); salvar(); pintar(); }));
+          linha.appendChild(v);
           bloco.appendChild(linha);
         }
         corpo.appendChild(bloco);

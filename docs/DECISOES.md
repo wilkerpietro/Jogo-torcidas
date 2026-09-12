@@ -6487,6 +6487,55 @@ O assalto ainda exige **diretor de pé e pelo menos dois membros
 disponíveis** no dia sorteado; com o elenco cheio isso nunca barrou —
 os quatro anos deram 13, 13, 13 e 13.
 
+## O planejamento da semana vira tabela (pedido do dono, 12/09/2026)
+
+O cartão de segunda era uma pilha de seções: rótulo em cima, chips
+embaixo, cada bloco com uma altura diferente. De olho batido não dava
+pra ver quantas decisões a semana pedia.
+
+**Agora é tabela: uma linha por decisão, rótulo à esquerda e os botões
+encostados à direita.** `Na rua`, `Alvo`, `Onde`, `Efetivo`, `Bombas`
+— e, quando o jogo é fora, `Caravana`, `Rota`, `Trajeto`, `Recepção`
+e `Custo`. Os outros jogos da praça e a recepção dos aliados seguem a
+mesma regra: o que se lê fica à esquerda, o que se clica vai pra
+direita. Em 640px ou menos a linha vira duas — rótulo em cima,
+controles embaixo, ainda à direita — e o `−/valor/+` não se parte,
+porque a nota desce pra linha de cima.
+
+No código: `.sem-sec` (rótulo em cima) deu lugar a `.sem-lin` (grade de
+duas colunas com `justify-content:flex-end` na segunda), e o `contador`
+passou a pôr a nota ANTES dos botões — texto depois do "+" empurrava os
+botões pro meio da linha.
+
+**Os botões dizem só a consequência.** Saiu o enfeite: *"portão,
+bandeira e bateria"* no Ir em paz, *"em cima de uma torcida"* no
+Atacar, e a prosa de cada ponto de ataque (*"a praça onde eles se
+juntam antes de subir pro estádio"*). Ficou o que muda a conta —
+"menos gente rende mais prestígio" no efetivo, o preço e o estoque nas
+bombas, a faixa e a relação no alvo, o custo e o risco de emboscada na
+rota.
+
+**Saiu a frase de resumo** *"Jogo em casa · em paz"*: ela repetia os
+botões logo acima. Sobrou a linha `Custo`, com o dinheiro da caravana,
+que é o único número que não estava em linha nenhuma.
+
+**Saiu o aviso da trava** *"▲ os arredores só abrem no apito final"*
+(ordem do dono): dizia o óbvio — a linha do itinerário já está parada e
+o placar está rodando na frente do jogador.
+
+## Assalto: nove por ano (ordem do dono, 12/09/2026)
+
+Eram **13** — uma semana em cada quatro (`sa % 4`), e o ano tem 52
+semanas. Agora são **9**, e a conta não sorteia: o degrau
+`floor(n × 9 / 52)` vira exatamente nove vezes a cada 52 semanas, e as
+semanas saem espalhadas em vez de agrupadas. O deslocamento por torcida
+(`hash(assalto|id) % 52`) é o que faz dois saves caírem em semanas
+diferentes. As duas travas de sempre continuam: precisa de diretor de
+pé e de pelo menos dois membros disponíveis.
+
+**Medido em quatro anos:** 9, 9, 9 e 9. A reunião de diplomacia segue
+em 6 por ano e o bar do rival em 7,5.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
