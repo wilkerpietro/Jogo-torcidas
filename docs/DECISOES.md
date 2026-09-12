@@ -6016,6 +6016,37 @@ em espanhol (Unión Mano Dura, Unión Punta a Punta, Unión Golpe Fuerte,
 Unión Bloque Pesado), todas de três. É o crescimento vindo da mesa: a
 aproximação de terceiros é o que faz o candidato caber no `podeEntrar`.
 
+## A lealdade vem antes da mesa (correção do dono, 12/09/2026)
+
+O dono pegou no jogo uma linha que não podia existir: *"Gaviões
+Alvinegros esfriou a treta entre Máfia Vermelha e Raça Fla"*. Não pode:
+**a Máfia Vermelha anda com a Young Flu, e a Raça Fla é maior rival da
+Young**. Encerrar essa treta seria pedir pra Máfia trair quem já anda
+com ela.
+
+A regra que faltava, agora escrita num lugar só (`trancaDeAliado`, em
+`eixos.js`): **duas torcidas não se acertam quando uma delas é maior
+rival de uma aliada da outra**. Vale nos dois sentidos — nem A se
+aproxima de B se B é maior rival de uma aliada de A, nem se B tem uma
+aliada que tem A como maior rival.
+
+Onde entrou:
+
+- **Na mesa das outras**, no aproximar e no pacificar. A mesa agora
+  desce a lista de jogadas até achar uma que a lealdade deixa passar
+  (até oito tentativas, que a trava custa uma varredura do mapa por
+  par); não achando, aquela torcida não senta a mesa naquele trimestre.
+- **Na nossa reunião do dia 5**, na aproximação e no fim de treta —
+  o furo era o mesmo do nosso lado. A aproximação já barrava um dos
+  sentidos ("não é maior rival de nenhuma aliada nossa"); agora barra os
+  dois, e o fim de treta, que não barrava nenhum, passa a barrar.
+
+**O AFASTAR passa livre**: ele é o contrário disto — separa em vez de
+juntar —, e é justamente a jogada que existe pra resolver a aliança com
+o inimigo do eixo.
+
+O corte de "aliada" pra valer a lealdade é o mesmo da régua: +20.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

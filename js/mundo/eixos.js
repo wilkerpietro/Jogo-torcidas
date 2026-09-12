@@ -151,6 +151,33 @@ TO.eixos = (function(){
     return [...s];
   }
 
+  /* =========================================================
+     A LEALDADE VEM ANTES DA MESA (correção do dono, 12/09/2026)
+     Duas torcidas não se acertam — nem por aproximação, nem por fim de
+     treta — quando uma delas é MAIOR RIVAL de uma aliada da outra.
+     O caso que o dono pegou no jogo: a Máfia Vermelha não pode esfriar
+     a treta com a Raça Fla, porque anda com a Young Flu e a Raça Fla é
+     maior rival da Young. Quem senta essa mesa está pedindo pra uma
+     das duas trair quem já anda com ela, e isso não se faz.
+
+     Vale nos dois sentidos, e vale igual pra mesa das outras e pra
+     nossa reunião. O AFASTAR é o contrário disto — separa em vez de
+     juntar —, e por isso passa livre.
+     ========================================================= */
+  const TRANCA_ALIADO = 20;      // o corte de "aliada" pra valer a lealdade
+  function trancaDeAliado(E, b, c){
+    const anda = (x, y) => x !== y && relDe(E, x, y) >= TRANCA_ALIADO;
+    for(const r of maioresRivaisDe(E, c)) if(anda(b, r))
+      return {quem:b, aliada:r, contra:c};
+    for(const r of maioresRivaisDe(E, b)) if(anda(c, r))
+      return {quem:c, aliada:r, contra:b};
+    return null;
+  }
+  /* o motivo em português, pra nota de tela e pra teste */
+  const motivoDaTranca = (E, t) => !t ? '' :
+    `${(M().torcida(t.quem)||{}).nome} anda com a ${(M().torcida(t.aliada)||{}).nome}, `+
+    `que é maior rival da ${(M().torcida(t.contra)||{}).nome}`;
+
   /* ---- quem pode entrar ---- */
   function podeEntrar(E, eixoId, torcidaId){
     const x = eixo(E, eixoId); const o = M().torcida(torcidaId);
@@ -467,7 +494,14 @@ TO.eixos = (function(){
     if(!jogadas.length) return null;
     const nota = j => H(`mesa|${sa}|${aId}|${j.b}|${j.c}`) % 1000;
     jogadas.sort((x,y)=>y.peso - x.peso || nota(x) - nota(y));
-    const j = jogadas[0];
+    /* a primeira que a lealdade deixa passar — oito tentativas, que a
+       trava custa uma varredura do mapa por par */
+    let j = null;
+    for(const cand of jogadas.slice(0, 8)){
+      if(cand.tipo !== 'afastar' && trancaDeAliado(E, cand.b, cand.c)) continue;
+      j = cand; break;
+    }
+    if(!j) return null;
     const forca = forcaDaMesa(E, aId, j.b, j.c);
     if((H(`mesa|ok|${sa}|${aId}|${j.b}`) % 1000) / 1000 >= 0.25 + 0.6 * forca) return null;
 
@@ -761,6 +795,7 @@ TO.eixos = (function(){
   return {caixas, lista, eixo, de, podeEntrar, candidatos, entrar, fundar,
           eventosDoDia, recusar, resumo, maioresRivaisDoEixo,
           diplomaciaDelas, mesaDela, DIPLO_CADA_DIAS,
+          trancaDeAliado, motivoDaTranca,
           novidades, naoVistas, naoVistasNossas, marcarVistas, vetar,
           /* as jogadas do dono (11/09/2026) */
           cabemosEmMais, eixosNossos, esperaDaMesa, esperaDoConvite,

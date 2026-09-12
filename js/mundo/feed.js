@@ -1448,7 +1448,12 @@ TO.feed = (function(){
     if(!cands.length) return null;
     const nota = x => H(`interm|${sa}|${x.a.id}|${x.c.id}`) % 1000;
     cands.sort((x,y)=>(y.semAliada?1:0) - (x.semAliada?1:0) || nota(x) - nota(y));
-    const {a, c, semAliada} = cands[0];
+    /* A LEALDADE VEM ANTES (correção do dono, 12/09/2026): ninguém se
+       aproxima de quem é maior rival de uma aliada — dos dois lados */
+    const passa = cands.slice(0, 8).find(x=>!TO.eixos ||
+      !TO.eixos.trancaDeAliado(E, E.torcida.id, x.c.id));
+    if(!passa) return null;
+    const {a, c, semAliada} = passa;
     const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
     return {tipo:'aproximacao', chave:`interm|${a.id}|${c.id}|${E.data.ano}`,
       rot:'Aproximação', voz:a.nome, de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
@@ -1493,7 +1498,13 @@ TO.feed = (function(){
     if(!cands.length) return null;
     const nota = x => H(`paz|${sa}|${x.a.id}|${x.c.id}`) % 1000;
     cands.sort((x,y)=>(y.quente - x.quente) || nota(x) - nota(y));
-    const {a, c} = cands[0];
+    /* A LEALDADE VEM ANTES (correção do dono, 12/09/2026): não se
+       encerra treta com quem é maior rival de uma aliada nossa — nem
+       com quem tem uma aliada que nos tem como maior rival */
+    const passa = cands.slice(0, 8).find(x=>!TO.eixos ||
+      !TO.eixos.trancaDeAliado(E, E.torcida.id, x.c.id));
+    if(!passa) return null;
+    const {a, c} = passa;
     const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
     return {tipo:'paz', chave:`paz|${a.id}|${c.id}|${E.data.ano}`,
       rot:'Fim de treta', voz:a.nome, de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
