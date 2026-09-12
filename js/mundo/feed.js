@@ -1588,7 +1588,7 @@ TO.feed = (function(){
 
      O que nasce fora do dia 5 — um convite de eixo, por exemplo — fica
      GUARDADO em `E.reuniao.pauta` até a reunião. Nada disso volta a
-     virar cartão solto: o feed tem um cartão por mês, e ele abre a
+     virar cartão solto: o feed tem um cartão por bimestre, e ele abre a
      tela da reunião.
      ======================================================= */
   const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
@@ -1612,11 +1612,17 @@ TO.feed = (function(){
   }
   const pautaAberta = E => caixaReuniao(E).pauta.filter(x=>!x.decidido);
 
-  /* O CARTÃO DA REUNIÃO: dia 5 de cada mês, uma vez só */
+  /* O CARTÃO DA REUNIÃO: dia 5, DE DOIS EM DOIS MESES (dono, 12/09/2026).
+     Era todo mês; o dono pediu bimestral. Fica nos meses ÍMPARES —
+     janeiro, março, maio, julho, setembro e novembro —, que é o mês em
+     que o jogo começa: seis mesas por ano em vez de doze. O que nasce
+     entre uma e outra continua guardado em `E.reuniao.pauta` e espera
+     a próxima; nada vira cartão solto. */
+  const MES_DA_MESA = m => (m % 2) === 1;
   function reuniaoDeHoje(E){
     const Rn = caixaReuniao(E);
     const d = dataDeHoje(E);
-    if(d.getDate() !== 5) return null;
+    if(d.getDate() !== 5 || !MES_DA_MESA(mesDe(E))) return null;
     const marca = `${E.data.ano}|${mesDe(E)}`;
     if(Rn.ultima === marca) return null;
     Rn.ultima = marca;
@@ -1633,7 +1639,8 @@ TO.feed = (function(){
       kind:'reuniao', peso:'decisao', voz:'diretor',
       chave:`reuniao|${marca}`,
       texto:`Reunião de diplomacia — ${MESES[d.getMonth()]}. `+
-        (quantos ? `${quantos} assunto${quantos>1?'s':''} na mesa` : 'Nada trazido de fora este mês')+
+        (quantos ? `${quantos} assunto${quantos>1?'s':''} na mesa`
+                 : 'Nada trazido de fora no bimestre')+
         (mesa ? ', e a nossa jogada nos eixos em aberto.' : '.'),
       dados:{ano:E.data.ano, mes:mesDe(E), assuntos:quantos},
       botoes:[{id:'abrir', rot:'Sentar com a diretoria', acao:'abrir-reuniao',

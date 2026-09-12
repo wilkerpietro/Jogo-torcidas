@@ -6456,6 +6456,37 @@ cada um vem com o número certo de clubes, o internacional troca entre
 Libertadores e Sul-Americana, e em 400px o documento não passa da
 largura da janela.
 
+## A reunião de diplomacia vira bimestral (ordem do dono, 12/09/2026)
+
+Era todo dia 5 de todo mês. Passa a ser **de dois em dois meses**, nos
+meses ímpares — janeiro, março, maio, julho, setembro e novembro —, que
+é o mês em que o jogo começa. **Seis mesas por ano em vez de doze.**
+
+Uma linha em `reuniaoDeHoje`: `MES_DA_MESA = m => (m % 2) === 1`, ao
+lado do teste do dia 5. Nada mais muda de lugar — o que nasce entre uma
+reunião e outra (convite de eixo, aproximação que uma aliada oferece,
+fim de treta que ela intermedeia) continua guardado em
+`E.reuniao.pauta` e espera a próxima; nada volta a virar cartão solto.
+O único texto que falava em mês virou bimestre: *"Nada trazido de fora
+no bimestre"*, quando a mesa abre só pela nossa jogada nos eixos.
+
+**Medido em quatro anos de jogo:** 24 reuniões, **6 por ano**, sempre
+nos seis meses ímpares, sempre no dia 5. Dois anos de varredura sem
+exceção.
+
+**De quebra, a cadência das outras chamadas do diretor**, medida na
+mesma corrida (a pergunta do dono sobre o assalto):
+
+| cartão | régua no código | medido |
+|---|---|---|
+| assalto | uma semana em cada 4 (`sa % 4`), em dia comum | **13 por ano**, cravado |
+| bar do rival | 15% das semanas | 7,5 por ano (a régua diz ~8) |
+| reunião de diplomacia | dia 5 dos meses ímpares | **6 por ano** |
+
+O assalto ainda exige **diretor de pé e pelo menos dois membros
+disponíveis** no dia sorteado; com o elenco cheio isso nunca barrou —
+os quatro anos deram 13, 13, 13 e 13.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
