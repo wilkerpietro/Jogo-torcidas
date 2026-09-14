@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Estádio 3D — briga na arquibancada</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<link rel="stylesheet" href="css/cenas.css">
+<link rel="stylesheet" href="css/pad3d.css">
+<style>
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{display:block;padding:0;background:#0e0e0d}
+  #caixa{position:fixed;inset:0}
+  #cv3d,#cv2d{position:absolute;inset:0;width:100%;height:100%;display:block;
+    touch-action:none;cursor:grab}
+  #cv3d:active{cursor:grabbing}
+  #cv2d{background:#16150f;object-fit:contain}
+  .escondido{display:none}
+  #rotulos{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .rot3d{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
+    font-family:var(--mono);font-size:10px;font-weight:600;color:#e0b040;
+    text-shadow:0 1px 3px #000,0 0 6px #000;padding-bottom:3px}
+  #estado{position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top));
+    font-family:var(--mono);font-size:11px;line-height:1.7;color:#cfcabd;
+    background:#0e0e0dcc;border:1px solid #45443f;padding:7px 10px;
+    pointer-events:none;letter-spacing:.04em;max-width:60vw}
+  #estado b{color:#fff}
+  #estado i{color:var(--ouro);font-style:normal}
+  #legenda{position:absolute;left:12px;bottom:calc(112px + env(safe-area-inset-bottom));
+    font-family:var(--mono);font-size:10px;line-height:1.7;color:#9a968c;
+    pointer-events:none;letter-spacing:.04em}
+  #legenda b{color:var(--ouro)}
+  @media (max-width:900px){ #legenda{display:none} }
+  #erro{padding:20px;font-family:var(--mono);font-size:12px;color:#e07a6a;
+    white-space:pre-wrap;display:none;position:fixed;inset:0;background:#0e0e0d;
+    z-index:99;overflow:auto}
+</style>
+</head>
+<body>
+
+<div id="caixa">
+  <canvas id="cv3d"></canvas>
+  <canvas id="cv2d" class="escondido" width="1536" height="1024"></canvas>
+  <div id="rotulos"></div>
+  <div id="estado"></div>
+  <div id="legenda">
+    <b>WASD</b> anda (relativo à câmera) &nbsp; <b>1–4</b> formação &nbsp;
+    <b>Q</b> pedra &nbsp; <b>E</b> bomba &nbsp; <b>R</b> recuar<br>
+    <b>arrastar</b> gira a câmera &nbsp; <b>roda</b> aproxima<br>
+    câmera <b>Z</b> ombro · <b>X</b> alta · <b>C</b> maquete · <b>F</b> zenital &nbsp;
+    <b>H</b> sombra &nbsp; <b>V</b> 2D/3D &nbsp; <b>ESPAÇO</b> pausa
+  </div>
+</div>
+
+<pre id="erro"></pre>
+
+<script src="js/nucleo.js"></script>
+<script src="dados/nomes.js"></script>
+<script src="dados/cena_arredores.js"></script>
+<script src="dados/cenas_foto.js"></script>
+<script src="dados/cenas_editadas.js"></script>
+<script src="dados/cenas.js"></script>
+<!-- depois de cenas.js: a cena do estádio se acrescenta ao mapa -->
+<script src="dados/cena_estadio.js"></script>
+<script src="js/diajogo/cenario.js"></script>
+<!-- depois de cenario.js: o pintor do estádio se acrescenta ao pintor -->
+<script src="js/diajogo/estadio_pintura.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+
+<script type="module">
+/* =========================================================
+   A PÁGINA DO ESTÁDIO
+   A mesma simulação de sempre — `combate.js` intacto, o mesmo
+   `criarEstado`, a mesma malha — num cenário que tem dois
+   andares. O que muda é só quem desenha e onde é o chão.
+   ========================================================= */
+import { criar } from './js/diajogo/estadio3d.js';
+import { montarPad } from './js/diajogo/pad3d.js';
+
+const A = TO.diaJogo.arredores;
+const C = TO.diaJogo.combate;
+
+const cv3d = document.getElementById('cv3d');
+const cv2d = document.getElementById('cv2d');
+const caixa = document.getElementById('caixa');
+const ctx2d = cv2d.getContext('2d');
+const elEstado = document.getElementById('estado');
+
+let tela3d = true, pausado = false, J = null, ant = 0;
+const teclas = {};
+let vista;
+
+try { vista = criar(cv3d); }
+catch (e) { falhar(e); }
+
+function falhar(e) {
+  const p = document.getElementById('erro');
+  p.style.display = 'block';
+  p.textContent = 'A cena 3D não subiu:\n\n' + ((e && e.stack) || e) +
+    '\n\nSe a mensagem fala de módulo ou de CORS, a página está aberta ' +
+    'em file:// — abra por um servidor local:\n  python3 -m http.server\n' +
+    '  http://localhost:8000/estadio3d.html';
+  throw e;
+}
+
+function abrir() {
+  const D = A.usarCena('estadio');
+  J = C.criarEstado({ local: 'estadio', intencao: 'atacar',
+                      bombas: 2, efetivoRival: 34 });
+  TO.diaJogo.J = J;
+  vista.montar(D);
+  pad.marcarFormacao(J.form);
+  pad.marcarCamera('ombro');
+}
+
+vista.ligarRotulos(document.getElementById('rotulos'));
+
+/* ---- os botões de movimento, os mesmos da cena 2D ---- */
+const pad = montarPad({
+  pai: document.body,
+  teclas,
+  acoes: [
+    { tecla: 'q', rot: 'PEDRA',  fn: () => { if (J) C.arremessar(J, 'pedra'); } },
+    { tecla: 'e', rot: 'BOMBA',  fn: () => { if (J) C.arremessar(J, 'bomba'); } },
+    { tecla: 'r', rot: 'RECUAR', fn: () => { if (J) C.alternarRecuo(J); } }
+  ],
+  formacoes: Object.entries(C.FORMACOES).map(([id, f]) => ({
+    id, tecla: f.tecla, fn: () => { if (J) J.form = id; }
+  })),
+  cameras: {
+    lista: [{ id: 'ombro', rot: 'OMBRO' }, { id: 'alto', rot: 'ALTA' },
+            { id: 'maquete', rot: 'MAQUETE' }, { id: 'zenital', rot: 'ZENITAL' }],
+    fn: id => vista.irPara(id)
+  }
+});
+
+/* ---- teclado ---- */
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  teclas[k] = true;
+  if (!J) return;
+  if (k >= '1' && k <= '4') { J.form = Object.keys(C.FORMACOES)[+k - 1]; pad.marcarFormacao(J.form); }
+  else if (k === 'q') C.arremessar(J, 'pedra');
+  else if (k === 'e') C.arremessar(J, 'bomba');
+  else if (k === 'r') C.alternarRecuo(J);
+  else if (k === 'v') { tela3d = !tela3d; aplicarTela(); }
+  else if (k === 'z') { vista.irPara('ombro');   pad.marcarCamera('ombro'); }
+  else if (k === 'x') { vista.irPara('alto');    pad.marcarCamera('alto'); }
+  else if (k === 'c') { vista.irPara('maquete'); pad.marcarCamera('maquete'); }
+  else if (k === 'f') { vista.irPara('zenital'); pad.marcarCamera('zenital'); }
+  else if (k === 'h') vista.trocarSombra();
+  else if (k === ' ') { pausado = !pausado; e.preventDefault(); }
+});
+addEventListener('keyup', e => { teclas[e.key.toLowerCase()] = false; });
+
+function aplicarTela() {
+  cv3d.classList.toggle('escondido', !tela3d);
+  cv2d.classList.toggle('escondido', tela3d);
+  document.getElementById('rotulos').style.display = tela3d ? 'block' : 'none';
+}
+
+/* o desenhista 2D, pra ler a briga de cima sem recomeçar nada */
+function desenhar2d() {
+  const s = Math.min(cv2d.width / A.W, cv2d.height / A.H);
+  ctx2d.setTransform(1, 0, 0, 1, 0, 0);
+  ctx2d.fillStyle = '#0e0e0d';
+  ctx2d.fillRect(0, 0, cv2d.width, cv2d.height);
+  ctx2d.setTransform(s, 0, 0, s, (cv2d.width - A.W * s) / 2,
+                                 (cv2d.height - A.H * s) / 2);
+  C.desenhar(J, ctx2d, {});
+  ctx2d.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+/* Na câmera de ombro, W tem que ser "pra frente da câmera" e não
+   "pro norte da cena". `moverLider` só lê quatro booleanos, então
+   a intenção é girada antes de entrar. */
+function entradaDoQuadro() {
+  const t = Object.assign({}, teclas);
+  const g = vista.girarEntrada(teclas);
+  t.w = !!g.w; t.a = !!g.a; t.s = !!g.s; t.d = !!g.d;
+  t.arrowup = t.arrowdown = t.arrowleft = t.arrowright = false;
+  return t;
+}
+
+let quadrosFps = 0, fps = 0, marcoFps = 0;
+
+function laco(agora) {
+  let dt = (agora - ant) / 1000; ant = agora;
+  if (dt > 0.05) dt = 0.05;
+  if (J && !pausado) C.passo(J, dt, entradaDoQuadro(), true);
+  if (J) {
+    if (tela3d) { vista.redimensionar(); vista.quadro(J, dt); }
+    else desenhar2d();
+    quadrosFps++;
+    if (agora - marcoFps >= 500) {
+      fps = Math.round(quadrosFps * 1000 / (agora - marcoFps));
+      marcoFps = agora; quadrosFps = 0;
+    }
+    pad.gastar('q', C.restaCd(J, 'pedra') > 0);
+    pad.gastar('e', J.bombas <= 0 || C.restaCd(J, 'bomba') > 0);
+    /* quem está onde: é a conta que esta cena inventou, porque é
+       a primeira em que "onde" quer dizer alguma coisa */
+    const P = vista._planta;
+    let naArq = 0, noCorr = 0, naEsc = 0;
+    for (const d of J.discos) {
+      if (!d.vivo || d.entrou || d.sumiu) continue;
+      let esc = false;
+      for (const e of P.ESCADAS) {
+        const q = P.ondeNaEscada(e, d.x, d.y);
+        if (q && (q.lance || q.vao)) { esc = true; break; }
+      }
+      const dd = P.dist(d.x, d.y);
+      if (esc) naEsc++;
+      else if (dd < P.D.arq) naArq++;
+      else if (dd < P.D.corr) noCorr++;
+    }
+    const c = vista.conta || {};
+    elEstado.innerHTML =
+      '<b>' + (tela3d ? '3D · ' + vista.vista : '2D') + '</b> · ' + fps + ' fps · ' +
+      (vista.comModelo ? 'boneco do Blender' : 'boneco de cápsula') +
+      (vista.corte ? ' · ' + vista.corte.vistos + ' na tela, ' + vista.corte.cortados + ' fora' : '') + '<br>' +
+      'arquibancada <b>' + naArq + '</b> · escada <b>' + naEsc + '</b> · corredor <b>' + noCorr + '</b><br>' +
+      'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') +
+      (J.acordou ? '' : ' · <i>setor deles parado</i>') + '<br>' +
+      c.degraus + ' degraus · ' + c.escadas + ' escadas · ' +
+      (c.triangulos || 0).toLocaleString('pt-BR') + ' triângulos' +
+      (vista.sombra ? '' : ' · sem sombra') +
+      (pausado ? '<br>PAUSADO' : '');
+  }
+  requestAnimationFrame(laco);
+}
+
+new ResizeObserver(() => { if (tela3d) vista.redimensionar(); }).observe(caixa);
+aplicarTela();
+abrir();
+ant = marcoFps = performance.now();
+requestAnimationFrame(laco);
+
+/* à mão no console, pra medir sem instrumentar nada */
+window.estadio = { get J() { return J; }, vista };
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+/* =========================================================
+   O PAD DAS PÁGINAS 3D
+   ---------------------------------------------------------
+   As mesmas classes e o mesmo desenho do pad da cena 2D
+   (`css/mobile.css`), com uma diferença de propósito: aqui ele
+   NÃO está atrás de `@media (max-width:900px)`.
+
+   O motivo é a cena, não o aparelho. Na cena 2D o teclado dá
+   conta em tela grande, e o pad só existe porque no celular não
+   dá pra apertar tecla com o jogo rodando. A cena 3D de ombro é
+   outra coisa: a mão esquerda anda, a direita gira a câmera
+   arrastando na tela, e isso vale no monitor tanto quanto no
+   telefone. Quem não quiser, continua no WASD — as duas entradas
+   escrevem no mesmo objeto `teclas`.
+
+   As duas folhas nunca se encontram: `mobile.css` é do
+   `index.html`, e esta é das páginas 3D.
+   ========================================================= */
+.dj-pad{
+  position:fixed; z-index:70;
+  left:0; right:0; bottom:0;
+  display:flex; justify-content:space-between; align-items:flex-end;
+  padding:0 calc(10px + env(safe-area-inset-left))
+          calc(10px + env(safe-area-inset-bottom))
+          calc(10px + env(safe-area-inset-right));
+  pointer-events:none;
+  touch-action:none; user-select:none; -webkit-user-select:none;
+}
+.pad-lado{ display:flex; flex-direction:column; gap:8px; pointer-events:none; }
+/* as quatro formações numa linha só: em paisagem a tela tem 390px
+   de altura e duas fileiras de botão saem pela borda de baixo */
+.pad-dir{ flex-direction:row; align-items:flex-end; gap:6px; }
+
+.pad-bt{
+  pointer-events:auto;
+  touch-action:none; user-select:none; -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  background:rgba(20,20,22,.82); border:1px solid rgba(255,255,255,.16);
+  color:#e8e4da; font-family:var(--titulo, system-ui); letter-spacing:.06em;
+  border-radius:6px; cursor:pointer;
+}
+.pad-bt.apertado{ background:var(--rubro,#c0392b); border-color:var(--rubro-vivo,#e0533f); }
+.pad-bt.gasto{ opacity:.4; }
+
+.pad-acoes{ display:flex; gap:6px; pointer-events:none; }
+.pad-acao{ width:74px; height:44px; font-size:11px; }
+.pad-form{ width:46px; height:44px; font-size:16px; font-weight:700; }
+.pad-form.on{ background:var(--rubro,#c0392b); border-color:var(--rubro-vivo,#e0533f); }
+
+/* a cruz: W em cima, A e D nos lados, S embaixo */
+.pad-cruz{
+  display:grid; gap:5px; pointer-events:none;
+  grid-template-columns:repeat(3, 50px);
+  grid-template-rows:repeat(3, 44px);
+  grid-template-areas: ".  w  ." "a  .  d" ".  s  .";
+}
+.pad-w{ grid-area:w } .pad-a{ grid-area:a }
+.pad-s{ grid-area:s } .pad-d{ grid-area:d }
+.pad-mov{ font-size:15px; font-weight:700; }
+
+/* a fila de câmeras, encostada no alto */
+.pad-cam{
+  position:fixed; z-index:70; right:calc(10px + env(safe-area-inset-right));
+  top:calc(10px + env(safe-area-inset-top));
+  display:flex; gap:5px; pointer-events:none;
+}
+.pad-cam .pad-bt{ width:auto; min-width:40px; height:32px; font-size:10px; padding:0 9px; }
+
+@media (max-width: 640px){
+  .pad-cruz{ grid-template-columns:repeat(3, 46px); grid-template-rows:repeat(3, 40px); }
+  .pad-acao{ width:62px; height:40px; font-size:10px; }
+  .pad-form{ width:40px; height:40px; font-size:14px; }
+}
