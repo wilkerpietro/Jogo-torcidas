@@ -207,11 +207,28 @@ TO.dados.plantaEstadio = (function(){
      alto (da geral) ou pelo pé (do corredor), e mais nada. É o
      funil, e é onde a briga de arquibancada acontece.
      ======================================================= */
+  /* A RÉGUA DA NORMA, convertida pra esta cena.
+     A prancha de vomitório que o dono mandou dá as medidas em
+     metro: guarda-corpo de concreto a 0,90 m, corrimão a 1,10 m,
+     faixa amarela de no mínimo 5 cm no nariz do degrau, corrimão
+     LATERAL em cima das muretas e corrimão CENTRAL partindo a
+     escada ao meio. Aqui o boneco tem 34 de altura pra 1,75 m,
+     então 1 m ≈ 19,4 — e é essa a conta que converte tudo.
+
+     OS DEGRAUS PASSARAM DE 16 PRA 10 por causa dessa mesma
+     régua: com 16, cada degrau tinha 4 de piso e 1,8 de subida,
+     que dá 20 cm por 9 cm — degrau de casa de boneca, e nem se
+     via. Com 10, dá 6,4 por 2,9 — **33 cm de piso por 15 de
+     espelho**, que é degrau de escada de verdade. */
+  const METRO = 34 / 1.75;
   const VOM = {
     dTop: 66, dFoot: 214,     // no tabuleiro
     larg: 44,                  // largura útil
-    corrim: 6,                 // corrimão de cada lado
-    degraus: 16
+    corrim: 6,                 // a mureta de cada lado
+    degraus: 10,
+    guarda:  0.90 * METRO,    // 17,5 — a mureta de concreto
+    mao:     1.10 * METRO,    // 21,4 — o corrimão
+    faixa:   0.05 * METRO * 1.6   // a faixa amarela, um tico mais larga pra se ver
   };
   VOM.rTop  = VOM.dTop;                                   // 66
   VOM.rFoot = R.corred0 + (VOM.dFoot - D.muro);           // 130

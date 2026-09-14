@@ -31,6 +31,7 @@ TO.diaJogo.estadioPintura = (function(){
     degrauBase:'#d3a32c',
     cadeira:   '#7d7a70',
     divisa:    '#e6e3d8',
+    faixa:     '#e8c22a',
     pista:     '#a3543f',
     raia:      '#e8e2d4',
     gramado:   '#3d7a36',
@@ -117,6 +118,15 @@ TO.diaJogo.estadioPintura = (function(){
       faixa(c, P, r0, r1, i < 2 ? COR.degrauBase : i % 2 ? COR.degrau : COR.degrauAlt);
       risco(c, P, r0, 'rgba(0,0,0,.30)', 1.6);
     }
+    /* A FAIXA AMARELA DO NARIZ DE CADA DEGRAU.
+       É norma (mínimo 5 cm), e é o que faz uma arquibancada
+       de concreto ter degrau visível em vez de ser uma rampa
+       listrada. Aqui ela é PINTURA e não volume: o degrau já é
+       geometria, e um filete de 1,6 de largura em relevo custaria
+       vinte mil triângulos pra aparecer menos do que assim.
+       Vai na beira DE FORA de cada piso, que é por onde se desce. */
+    for(let i=0;i<P.NDEG;i++)
+      risco(c, P, D.pista + (i+1)*P.ALT.degrau - 0.7, COR.faixa, 1.3);
     /* as divisas de setor: um risco claro de tempo em tempo */
     c.save();
     c.beginPath(); contorno(c, P, D.cadeira, false); contorno(c, P, D.pista, true); c.clip();

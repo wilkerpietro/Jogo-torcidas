@@ -64,7 +64,8 @@ const COR = {
   cadeira:    0x2f6ba8,
   cadeiraAlt: 0x2a5f97,
   escada:     0xa8a294,
-  corrimao:   0x53504a,
+  faixa:      0xe8c22a,     // a faixa amarela do nariz do degrau
+  corrimao:   0x6d6a63,
   alambrado:  0x5d6460,
   tela:       0xb9c0bb,
   cobertura:  0xd8d5cc,
@@ -380,10 +381,13 @@ export function criar(canvas) {
     for (let i = 0; i < P.N; i++) {
       const a = qp[i], b = qp[(i + 1) % P.N];
       acum += Math.hypot(b[0]-a[0], b[1]-a[1]);
-      if (acum < 132) continue;
+      /* 168 e não 92, e 13 de lado e não 18: com pilar de dois em
+         dois passos o corredor virava um bosque e a câmera de ombro
+         vivia atrás de um. Na foto eles são espaçados. */
+      if (acum < 168) continue;
       acum = 0;
       if (vomitorioEm(a[0], a[1], 10)) continue;
-      caixa(TC, a[0]-9, a[0]+9, 0, fundo(rp), a[1]-9, a[1]+9, 1.02);
+      caixa(TC, a[0]-6.5, a[0]+6.5, 0, fundo(rp), a[1]-6.5, a[1]+6.5, 1.02);
     }
 
     /* ---- a ARCADA: pilar, mureta e vazio por cima ---- */
@@ -459,40 +463,76 @@ export function criar(canvas) {
      OS VOMITÓRIOS — o buraco na arquibancada e a escada dentro
      ======================================================= */
   function montarVomitorios(T) {
-    const V = P.VOM, A = P.ALT;
+    const V = P.VOM;
+    const passo = (V.rFoot - V.rTop) / V.degraus;
+    /* a altura do piso do degrau k, já do jeito que a planta
+       devolve — desenho e colisão contam a mesma escada */
+    const pisoK = k => V.yTop * (1 - k / V.degraus);
+
     for (const v of P.VOMITORIOS) {
-      /* a escada, degrau por degrau, no espaço do MUNDO */
+      /* ---- os degraus, com a FAIXA AMARELA no nariz ----
+         A faixa não é enfeite de desenho: é a norma, e é o que
+         faz uma escada de concreto cinza ter degrau visível.
+         Ela vai no nariz — a beira de fora de cada piso, que é
+         por onde se desce. */
       for (let k = 0; k < V.degraus; k++) {
-        const t0 = k / V.degraus, t1 = (k + 1) / V.degraus;
-        const r0 = V.rTop + (V.rFoot - V.rTop) * t0;
-        const r1 = V.rTop + (V.rFoot - V.rTop) * t1;
-        const y = V.yTop * (1 - t1);
-        caixaLado(T, v.lado, v.s0, v.s1, r0, r1, 0, y + A.subida * 0.4, 0.98);
+        const r0 = V.rTop + passo * k, r1 = r0 + passo;
+        const y = pisoK(k + 1);
+        caixaLado(T, v.lado, v.s0, v.s1, r0, r1, 0, y, COR.escada);
+        caixaLado(T, v.lado, v.s0, v.s1, r1 - V.faixa, r1, y - 0.2, y + 0.5, COR.faixa);
       }
-      /* as paredes do poço: do piso do degrau vizinho até o fundo */
-      for (const s of [[v.e0, v.s0], [v.s1, v.e1]]) {
-        let acum = 0;
-        for (let k = 0; k < 10; k++) {
-          const t0 = k / 10, t1 = (k + 1) / 10;
-          const r0 = V.rTop + (V.rFoot - V.rTop) * t0;
-          const r1 = V.rTop + (V.rFoot - V.rTop) * t1;
-          const topo = P.alturaDegrau(Math.min(r1, P.D.cadeira - 1));
-          caixaLado(T, v.lado, s[0], s[1], r0, r1, 0, topo, 0.84);
+      /* o patamar de cima, rente ao degrau da geral de onde se sai */
+      caixaLado(T, v.lado, v.s0, v.s1, V.rTop - 5, V.rTop, 0, V.yTop, COR.escada);
+      caixaLado(T, v.lado, v.s0, v.s1, V.rTop - V.faixa, V.rTop,
+                V.yTop - 0.2, V.yTop + 0.5, COR.faixa);
+
+      /* ---- as MURETAS dos dois lados ----
+         Concreto até 0,90 m acima do degrau — ou até o piso da
+         arquibancada ao lado, o que for mais alto, porque de um
+         lado ela é guarda-corpo e do outro é arrimo da cadeira. */
+      const muros = [[v.e0, v.s0], [v.s1, v.e1]];
+      const topoDe = [];
+      for (let k = 0; k < V.degraus; k++) {
+        const r0 = V.rTop + passo * k, r1 = r0 + passo;
+        const chao = pisoK(k + 1);
+        const vizinho = P.alturaDegrau(Math.min((r0 + r1) / 2, P.D.cadeira - 1));
+        const topo = Math.max(vizinho, chao + V.guarda);
+        topoDe.push({ r0, r1, topo, chao });
+        for (const m of muros) caixaLado(T, v.lado, m[0], m[1], r0, r1, 0, topo, 1.04);
+      }
+      /* ---- o CORRIMÃO LATERAL, em cima das muretas ----
+         Tubo por cima e montante de tantos em tantos degraus. */
+      for (const m of muros) {
+        const meio = (m[0] + m[1]) / 2;
+        for (const q of topoDe) {
+          const alto = Math.max(q.topo, q.chao + V.mao);
+          caixaLado(T, v.lado, m[0] + 0.5, m[1] - 0.5, q.r0, q.r1,
+                    alto - 2.4, alto, COR.corrimao);
+          caixaLado(T, v.lado, meio - 1.1, meio + 1.1, q.r0 + 1, q.r0 + 3.2,
+                    q.topo - 1, alto, COR.corrimao);
         }
       }
-      /* o CAPUZ: da boca do túnel pra fora a laje volta, e é ela
-         que faz o buraco ser buraco e não rasgo. É concreto que
-         ninguém pisa — nem podia, porque as células de tabuleiro
-         dali são o túnel de baixo. */
+      /* ---- o CORRIMÃO CENTRAL, partindo a escada ao meio ----
+         É o da prancha, e ele também é o que quebra a descida:
+         quem corre numa escada de estádio corre de um lado só. */
+      for (const q of topoDe) {
+        const alto = q.chao + V.mao;
+        caixaLado(T, v.lado, v.c - 1.4, v.c + 1.4, q.r0, q.r1, alto - 2.2, alto, COR.corrimao);
+        caixaLado(T, v.lado, v.c - 1.1, v.c + 1.1, q.r0 + 1, q.r0 + 3.2,
+                  q.chao, alto, COR.corrimao);
+      }
+
+      /* ---- o CAPUZ: da boca do túnel pra fora a laje volta ----
+         É ela que faz o buraco ser buraco e não rasgo. Concreto
+         que ninguém pisa — nem podia, porque as células de
+         tabuleiro dali são o túnel de baixo. */
       const topoCapuz = P.alturaDegrau(Math.min(RVOM1, P.D.cadeira - 1));
       caixaLado(T, v.lado, v.e0, v.e1, RCAPUZ, RVOM1 + 4,
                 topoCapuz - 10, topoCapuz + 4, 1.1);
-      /* o corrimão em volta da boca, na altura da cintura */
-      const topoBoca = P.alturaDegrau(V.rTop);
-      for (const s of [[v.e0 - 3, v.s0 + 1], [v.s1 - 1, v.e1 + 3]])
-        caixaLado(T, v.lado, s[0], s[1], V.rTop - 4, RCAPUZ, topoBoca + 6, topoBoca + 24, 0.66);
-      caixaLado(T, v.lado, v.e0 - 3, v.e1 + 3, V.rTop - 6, V.rTop - 2,
-                topoBoca + 6, topoBoca + 24, 0.66);
+      /* a testeira do capuz, que é o que se lê de longe como
+         "aqui tem um vomitório" */
+      caixaLado(T, v.lado, v.e0 - 2, v.e1 + 2, RCAPUZ - 3, RCAPUZ,
+                topoCapuz - 13, topoCapuz + 5, 0.86);
     }
   }
 
@@ -678,10 +718,17 @@ export function criar(canvas) {
     incl = Math.max(0.05, Math.min(1.552, incl));
     const k = primeira ? 1 : Math.min(1, dt * 7);
     alvoSuave.lerp(alvo, k);
+    /* NO CORREDOR A CÂMERA CHEGA PERTO. O pé-direito é 39 e há
+       pilar e balcão no caminho: de longe a cena vira concreto.
+       Encurtar o braço é o que todo jogo faz em corredor, e aqui
+       ainda ajuda a ler a briga, que é de corpo colado. */
+    const sobLaje = !!mundoLider && mundoLider.y < 6 &&
+                    P.teto(mundoLider.x, mundoLider.z) < Infinity;
+    const braco = dist * (sobLaje && vista === 'ombro' ? 0.66 : 1);
     posSuave.set(
-      alvoSuave.x + dist * Math.cos(incl) * Math.sin(giro),
-      alvoSuave.y + dist * Math.sin(incl),
-      alvoSuave.z + dist * Math.cos(incl) * Math.cos(giro));
+      alvoSuave.x + braco * Math.cos(incl) * Math.sin(giro),
+      alvoSuave.y + braco * Math.sin(incl),
+      alvoSuave.z + braco * Math.cos(incl) * Math.cos(giro));
 
     /* O TETO PRENDE A CÂMERA — MAS SÓ QUANDO SE ESTÁ EMBAIXO.
        Foi assim que este bloco nasceu errado: `teto(x, z)` só
@@ -692,8 +739,6 @@ export function criar(canvas) {
        toda vez que o jogador andava na altura das cadeiras.
        Quem decide é a ALTURA do líder: no chão e com laje por
        cima, está no corredor. */
-    const sobLaje = !!mundoLider && mundoLider.y < 6 &&
-                    P.teto(mundoLider.x, mundoLider.z) < Infinity;
     if (sobLaje) {
       const tetoAli = P.teto(posSuave.x, posSuave.z);
       if (posSuave.y > tetoAli - 10) posSuave.y = tetoAli - 10;

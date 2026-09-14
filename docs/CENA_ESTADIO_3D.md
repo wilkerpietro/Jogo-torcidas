@@ -74,12 +74,31 @@ se vê e não se pisa, que é a mentira que este projeto não comete. Sendo
 cadeira, elas já eram bloqueadas em toda parte, e a tira só as usa por baixo,
 como túnel. A cadeira também é o que a foto mostra.
 
-### O vomitório
+### O vomitório, pela prancha
 
 Sai do degrau 5 da geral (r=66, altura 29) e desce até o chão do corredor
-(r=130): **64 de tiro pra 29 de queda, 24 graus**, que é escada de gente. O
-corrimão fecha os dois lados compridos — entra-se pelo alto ou pelo pé, e
-mais nada. São seis.
+(r=130): **64 de tiro pra 29 de queda, 24 graus**. São seis. As medidas vieram
+de uma prancha técnica de vomitório que o dono mandou, convertidas pela régua
+desta cena (o boneco tem 34 pra 1,75 m, então **1 m ≈ 19,4**):
+
+| na prancha | aqui |
+|---|---|
+| guarda-corpo de concreto, 0,90 m | mureta de 17,5 dos dois lados |
+| corrimão, 1,10 m | 21,4 acima do piso do degrau |
+| **corrimão central** partindo a escada | tubo no eixo, com montante por degrau |
+| **corrimão lateral** em cima das muretas | tubo + montante, acompanhando o degrau |
+| **faixa amarela, mínimo 5 cm**, no nariz | 1,6 em todo degrau — do vomitório E da geral |
+
+**Os degraus passaram de 16 pra 10 por causa dessa régua.** Com 16, cada
+degrau tinha 4 de piso e 1,8 de subida — **20 cm por 9 cm**, degrau de casa de
+boneca, e nem se via. Com 10, dá 6,4 por 2,9: **33 cm de piso por 15 de
+espelho**, que é escada de verdade. A colisão conta os mesmos dez: `rampa()`
+quantiza a altura em degrau, não em rampa, então o pé sobe o degrau inteiro
+de uma vez, como sobe na vida.
+
+**A faixa amarela da arquibancada é pintura, não volume**, e é decisão de
+custo: o degrau já é geometria, e um filete de 1,6 em relevo custaria vinte
+mil triângulos pra aparecer menos do que aparece pintado.
 
 ### O corredor saiu de duas fotos, não da planta
 
