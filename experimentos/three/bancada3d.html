@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- os dados citam a imagem como 'img/cenas/x.webp', relativo à raiz do
+     jogo. Sem isto a foto da cena 404 e o fundo cai na malha. -->
+<base href="../../">
+<title>Bancada 3D — Torcida Organizada</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<style>
+/* =========================================================
+   BANCADA 3D — a MESMA briga, dois renderizadores.
+   O ponto da página é esse: `passo` é um só, `desenhar` é
+   que muda. Se o jogo mudar de comportamento ao trocar o
+   botão, é bug — não é escolha de renderizador.
+   ========================================================= */
+body{display:block;padding:0;background:#0e0e0d}
+header#topo{display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:2px solid var(--linha);padding:10px 16px;flex-wrap:wrap;gap:6px}
+header#topo h1{font-size:19px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+header#topo span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);letter-spacing:.08em}
+
+.barra{display:flex;flex-wrap:wrap;gap:16px;align-items:center;
+  padding:9px 16px;border-bottom:1px solid var(--linha);background:#141412}
+.barra .rot{font-family:var(--mono);font-size:10px;color:var(--fraco);
+  letter-spacing:.1em;text-transform:uppercase;margin-right:5px}
+.barra button{background:#1e1e1a;border:1px solid var(--linha);color:var(--apagado);
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  padding:6px 12px;cursor:pointer}
+.barra button:hover{color:#fff;border-color:var(--ouro)}
+.barra button.on{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+.barra input[type=range]{width:120px;vertical-align:middle}
+.barra label{font-family:var(--mono);font-size:11px;color:var(--apagado);
+  display:flex;align-items:center;gap:6px}
+
+#palco{position:relative;width:100%;max-width:1536px;margin:14px auto;
+  aspect-ratio:3/2;background:#0a0a09;border:1px solid var(--linha)}
+#palco canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#sobre3d{pointer-events:none}
+#medidor{position:absolute;top:8px;left:10px;z-index:5;
+  font-family:var(--mono);font-size:11px;color:#e9e5dc;
+  background:rgba(10,12,14,.75);border:1px solid var(--linha);padding:5px 9px;
+  font-variant-numeric:tabular-nums;pointer-events:none;line-height:1.5}
+#medidor b{color:var(--ouro);font-weight:400}
+#ajuda{max-width:1536px;margin:0 auto 30px;padding:0 16px;
+  font-family:var(--mono);font-size:11px;color:var(--fraco);line-height:1.9}
+#ajuda b{color:var(--ouro);font-weight:400}
+#semGL{display:none;padding:60px 20px;text-align:center;color:var(--fraco);
+  font-family:var(--mono);font-size:12px}
+</style>
+</head>
+<body>
+
+<header id="topo">
+  <h1>Bancada 3D</h1>
+  <span>MESMO <b style="color:var(--ouro)">passo</b> · DOIS <b style="color:var(--ouro)">desenhar</b></span>
+</header>
+
+<div class="barra">
+  <span class="rot">Cena</span>
+  <span id="abasCena"></span>
+</div>
+<div class="barra">
+  <span class="rot">Pintura</span>
+  <button id="bt2d">2D (canvas)</button>
+  <button id="bt3d" class="on">3D (three.js)</button>
+  <label>inclinação <input type="range" id="incl" min="0" max="55" value="0"> <span id="incValor">0°</span></label>
+  <label><input type="checkbox" id="chBlocos"> extrudar blocos</label>
+  <button id="btReiniciar">Refazer briga</button>
+</div>
+
+<div id="palco">
+  <canvas id="cv2d" width="1536" height="1024" hidden></canvas>
+  <canvas id="gl3d"></canvas>
+  <canvas id="sobre3d"></canvas>
+  <div id="medidor">
+    <div><b id="mFps">—</b> fps · <b id="mModo">3D</b></div>
+    <div><b id="mVivos">—</b> de pé · <b id="mCaidos">—</b> no chão</div>
+  </div>
+</div>
+<div id="semGL">Sem WebGL neste navegador — só o renderizador 2D funciona aqui.</div>
+
+<div id="ajuda">
+  <b>WASD</b> move o líder · <b>1–4</b> formação · <b>Q</b> pedra · <b>E</b> bomba · <b>R</b> recuar
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/nucleo.js"></script>
+<script src="dados/nomes.js"></script>
+<script src="dados/cena_arredores.js"></script>
+<script src="dados/cenas_foto.js"></script>
+<script src="dados/cenas_editadas.js"></script>
+<script src="dados/cenas.js"></script>
+<script src="js/diajogo/cenario.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/cena3d.js"></script>
+<script src="experimentos/three/bancada3d.js"></script>
+<script>TO.diaJogo.bancada3d.montar();</script>
+</body>
+</html>
