@@ -84,13 +84,28 @@ cadeira e sem setor que não se pisa.**
 
 ### "Dá pra ver o corredor estando na arquibancada"
 
-Era a câmera, não a geometria — e era consequência direta da dobra. A
-arquibancada sobe pra fora, então a câmera de ombro atrás do jogador cai num
-ponto onde o concreto é mais alto do que ela; e como *embaixo daquele ponto é
-o corredor*, ela entrava no vão e o jogador passava a ver o corredor de dentro
-do concreto. Agora `planta.superficie(X, Z)` diz a altura da superfície de
-cima naquele ponto do mundo, e a câmera é obrigada a ficar acima dela sempre
-que o jogador não estiver sob a laje.
+Eram DUAS coisas, e eu achei a segunda só depois que o dono mandou a foto de
+dentro do jogo.
+
+**A câmera.** A arquibancada sobe pra fora, então a câmera de ombro atrás do
+jogador cai num ponto onde o concreto é mais alto do que ela; e como *embaixo
+daquele ponto é o corredor*, ela entrava no vão e se via o corredor de dentro
+do concreto. `planta.superficie(X, Z)` passou a dizer a altura da superfície
+de cima naquele ponto do mundo, e a câmera é obrigada a ficar acima dela
+sempre que o jogador não estiver sob a laje.
+
+**O espelho do degrau não aparecia**, e esse era o furo de verdade. Ele
+EXISTIA — a geometria estava lá desde o começo —, mas virado pro lado errado:
+`paredeAnel` monta o triângulo com normal PRA FORA do estádio, e o espelho do
+degrau é justamente a face que se olha DE DENTRO, do lado do gramado. Com
+`FrontSide` o resultado era uma arquibancada de fitas azuis flutuando, com o
+corredor visível entre elas.
+
+Todo material do estádio passou a `DoubleSide`. Catar face por face seria
+achar o mesmo bug de novo daqui a duas semanas: numa bacia fechada há
+superfície olhada dos dois lados em vários lugares — o espelho por dentro, a
+testeira por fora, a laje do teto por baixo. O three vira a normal na face de
+trás sozinho, então a luz continua certa.
 
 
 ### O vomitório, pela prancha

@@ -208,7 +208,20 @@ export function criar(canvas) {
       tri(T, A0, A1, B1, tom, ua, ub, ud);
     }
   }
-  /* cortina vertical sobre um anel, de y0 a y1 */
+  /* CORTINA VERTICAL SOBRE UM ANEL, DE y0 A y1 — E ELA TEM LADO.
+     Foi aqui o bug que deixava ver o corredor de dentro da
+     arquibancada. A ordem dos vértices abaixo dá normal PRA FORA
+     do estádio, e o espelho do degrau é justamente a face que se
+     olha DE DENTRO, do lado do gramado. Com `FrontSide` ele
+     existia e não aparecia: a arquibancada virava um empilhado de
+     fitas azuis flutuando, e por trás delas se via o corredor.
+
+     Todo material do estádio passou a `DoubleSide`, que é o que
+     resolve de verdade — numa bacia fechada há face olhada dos
+     dois lados em vários lugares (o espelho por dentro, a testeira
+     por fora, a laje do teto por baixo), e catar uma por uma é
+     achar o mesmo bug de novo daqui a duas semanas. O three vira a
+     normal na face de trás sozinho, então a luz continua certa. */
   function paredeAnel(T, r, y0, y1, tom, pula, uvR) {
     const q = P.anel(r), n = P.N;
     const qb = uvR === undefined ? q : P.anel(uvR);
@@ -267,10 +280,10 @@ export function criar(canvas) {
      ======================================================= */
   const grupo = new THREE.Group();
   cena.add(grupo);
-  const matPintado = new THREE.MeshLambertMaterial({ map: texChao, vertexColors: true });
-  const matConcreto = new THREE.MeshLambertMaterial({ color: COR.concreto, vertexColors: true });
-  const matPiso = new THREE.MeshLambertMaterial({ map: texPiso, vertexColors: true });
-  const matFaixa = new THREE.MeshLambertMaterial({ color: COR.faixa });
+  const matPintado = new THREE.MeshLambertMaterial({ map: texChao, vertexColors: true, side: THREE.DoubleSide });
+  const matConcreto = new THREE.MeshLambertMaterial({ color: COR.concreto, vertexColors: true, side: THREE.DoubleSide });
+  const matPiso = new THREE.MeshLambertMaterial({ map: texPiso, vertexColors: true, side: THREE.DoubleSide });
+  const matFaixa = new THREE.MeshLambertMaterial({ color: COR.faixa, side: THREE.DoubleSide });
 
   /* a faixa não tem textura nem tom: é uma cor chapada, então
      entra numa malha própria e sem uv nenhum */
@@ -290,8 +303,8 @@ export function criar(canvas) {
       const r0 = P.D.pista + i * A.degrau, r1 = r0 + A.degrau;
       const h = A.base + A.subida * i;
       const pula = puladorVom(r0);
-      paredeAnel(T, r0, h - A.subida - (i === 0 ? A.base - A.subida : 0), h, 0.74,
-                 pula, Math.max(0, r0 - A.degrau * 0.5));
+      paredeAnel(T, r0, h - A.subida - (i === 0 ? A.base - A.subida : 0), h, 0.78,
+                 pula, r0 + A.degrau * 0.5);
       lajeAnel(T, r0, r1, h, 1, puladorVom(r0));
       /* A FAIXA AMARELA DO NARIZ, EM VOLUME.
          Pintada na textura ela borrava e a arquibancada virava
