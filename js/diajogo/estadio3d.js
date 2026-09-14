@@ -720,8 +720,16 @@ export function criar(canvas) {
        pilar e balcão no caminho: de longe a cena vira concreto.
        Encurtar o braço é o que todo jogo faz em corredor, e aqui
        ainda ajuda a ler a briga, que é de corpo colado. */
-    const sobLaje = !!mundoLider && mundoLider.y < 6 &&
-                    P.teto(mundoLider.x, mundoLider.z) < Infinity;
+    /* ESTAR EMBAIXO DA LAJE NÃO É ESTAR NO CHÃO.
+       Isto media altura fixa — "y < 6" —, e na escada do vomitório
+       o jogador está a 7, a 15, a 30, sempre com a laje por cima.
+       Resultado: no meio da escada a câmera saía do modo de dentro,
+       era empurrada pra cima da arquibancada e enquadrava concreto.
+       O que decide é ter TETO acima da cabeça, com folga de um
+       boneco. */
+    const tetoLider = mundoLider ? P.teto(mundoLider.x, mundoLider.z) : Infinity;
+    const sobLaje = !!mundoLider && tetoLider < Infinity &&
+                    mundoLider.y < tetoLider - 12;
     const braco = dist * (sobLaje && vista === 'ombro' ? 0.66 : 1);
     posSuave.set(
       alvoSuave.x + braco * Math.cos(incl) * Math.sin(giro),
@@ -900,5 +908,15 @@ export function criar(canvas) {
            get comModelo() { return povo.comModelo; },
            get gente() { return povo.quantas; },
            get info() { return rend.info; },
-           _rend: rend, _cena: cena, _cam: cam, _planta: P };
+           /* expostos pra medir, depurar e enquadrar da consola — a
+              órbita da câmera é o que permite olhar um canto do
+              estádio sem depender de pra onde o líder está virado */
+           _rend: rend, _cena: cena, _cam: cam, _planta: P,
+           _mirar(g, i, d) {
+             if (g !== undefined) giro = g;
+             if (i !== undefined) incl = i;
+             if (d !== undefined) dist = d;
+             arrastou = 3; primeira = true;
+           },
+           get _orbita() { return { giro, incl, dist }; } };
 }
