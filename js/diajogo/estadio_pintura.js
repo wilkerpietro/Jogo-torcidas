@@ -8,7 +8,7 @@
    de cima não sabe pintar dois pisos no mesmo pixel.
 
    Então esta pintura é do MUNDO: gramado, pista, degrau,
-   cadeira, arcada e rua, todos no raio em que eles de fato
+   arcada e rua, todos no raio em que eles de fato
    estão. O 3D projeta ela de cima na geometria, como o
    telhado dos arredores já fazia. O piso do corredor, que
    mora embaixo, tem material próprio — é o único que não sai
@@ -29,7 +29,6 @@ TO.diaJogo.estadioPintura = (function(){
     degrau:    '#2f6ba8',
     degrauAlt: '#2a5f97',
     degrauBase:'#d3a32c',
-    cadeira:   '#7d7a70',
     divisa:    '#e6e3d8',
     faixa:     '#e8c22a',
     pista:     '#a3543f',
@@ -109,28 +108,26 @@ TO.diaJogo.estadioPintura = (function(){
     /* a arcada e o piso de trás dela */
     faixa(c, P, R.fachada0, R.rua0, COR.arcada);
 
-    /* as fileiras de cadeira (o volume é geometria; aqui é só o piso) */
-    faixa(c, P, D.geral, D.cadeira, COR.cadeira);
-
-    /* a geral, degrau por degrau, de fora pra dentro */
-    for(let i=P.NGERAL-1;i>=0;i--){
+    /* a arquibancada, degrau por degrau, de fora pra dentro.
+       CATORZE IGUAIS: não há mais faixa de cadeira. A barra
+       amarela de baixo é a única coisa que muda de cor, e ela é a
+       mureta do fosso, não um setor. */
+    for(let i=P.NDEG-1;i>=0;i--){
       const r0 = D.pista + i*P.ALT.degrau, r1 = r0 + P.ALT.degrau;
       faixa(c, P, r0, r1, i < 2 ? COR.degrauBase : i % 2 ? COR.degrau : COR.degrauAlt);
       risco(c, P, r0, 'rgba(0,0,0,.30)', 1.6);
     }
-    /* A FAIXA AMARELA DO NARIZ DE CADA DEGRAU.
-       É norma (mínimo 5 cm), e é o que faz uma arquibancada
-       de concreto ter degrau visível em vez de ser uma rampa
-       listrada. Aqui ela é PINTURA e não volume: o degrau já é
-       geometria, e um filete de 1,6 de largura em relevo custaria
-       vinte mil triângulos pra aparecer menos do que assim.
-       Vai na beira DE FORA de cada piso, que é por onde se desce. */
-    for(let i=0;i<P.NDEG;i++)
-      risco(c, P, D.pista + (i+1)*P.ALT.degrau - 0.7, COR.faixa, 1.3);
+    /* A FAIXA AMARELA DO NARIZ NÃO ESTÁ AQUI, e já esteve.
+       Pintada, ela virava uma tarja: um filete de 1,3 numa
+       textura de 2× passa por mipmap e por anisotropia e chega
+       na tela com três vezes a largura, e de longe a
+       arquibancada lia como listra amarela e azul alternada em
+       vez de degrau com nariz marcado. Agora ela é volume, em
+       `estadio3d.js` — custa 6,8 mil triângulos e sai nítida. */
     /* as divisas de setor: um risco claro de tempo em tempo */
     c.save();
-    c.beginPath(); contorno(c, P, D.cadeira, false); contorno(c, P, D.pista, true); c.clip();
-    const dentro = P.anel(D.pista), fora = P.anel(D.cadeira);
+    c.beginPath(); contorno(c, P, D.arq, false); contorno(c, P, D.pista, true); c.clip();
+    const dentro = P.anel(D.pista), fora = P.anel(D.arq);
     c.strokeStyle = COR.divisa; c.lineWidth = 2.6;
     for(let i=0;i<P.N;i+=Math.round(P.N/16)){
       c.beginPath(); c.moveTo(dentro[i][0], dentro[i][1]); c.lineTo(fora[i][0], fora[i][1]); c.stroke();

@@ -189,7 +189,7 @@ function laco(agora) {
       if (!d.vivo || d.entrou || d.sumiu) continue;
       if (P.noVomitorio(d.x, d.y)) { noVom++; continue; }
       const f = P.faixaDe(P.dist(d.x, d.y));
-      if (f === 'geral') naArq++;
+      if (f === 'arquibancada') naArq++;
       else if (f === 'corredor') noCorr++;
       else if (f === 'rua') naRua++;
     }
@@ -202,8 +202,8 @@ function laco(agora) {
       '</b> · corredor <b>' + noCorr + '</b> · rua <b>' + naRua + '</b><br>' +
       'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') +
       (J.acordou ? '' : ' · <i>setor deles parado</i>') + '<br>' +
-      c.degraus + ' degraus · ' + c.fileiras + ' fileiras de cadeira · ' +
-      c.vomitorios + ' vomitórios · ' + c.lojas + ' balcões · ' +
+      c.degraus + ' degraus · ' + c.vomitorios + ' vomitórios · ' +
+      c.lojas + ' balcões · ' +
       (c.triangulos || 0).toLocaleString('pt-BR') + ' triângulos' +
       (vista.sombra ? '' : ' · sem sombra') +
       (pausado ? '<br>PAUSADO' : '');

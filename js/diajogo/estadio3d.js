@@ -61,8 +61,6 @@ const COR = {
   placa:      0xd8622c,     // a placa laranja
   porta:      0x4a4438,
   toldo:      0xc03a2e,
-  cadeira:    0x2f6ba8,
-  cadeiraAlt: 0x2a5f97,
   escada:     0xa8a294,
   faixa:      0xe8c22a,     // a faixa amarela do nariz do degrau
   corrimao:   0x6d6a63,
@@ -265,16 +263,28 @@ export function criar(canvas) {
 
   /* =======================================================
      A ARQUIBANCADA
-     Geral (12 degraus que se pisam) e cadeira (6 fileiras que
-     não se pisam, e é isso que fecha a conta da dobra).
+     Catorze degraus de concreto iguais, todos andáveis.
      ======================================================= */
   const grupo = new THREE.Group();
   cena.add(grupo);
   const matPintado = new THREE.MeshLambertMaterial({ map: texChao, vertexColors: true });
   const matConcreto = new THREE.MeshLambertMaterial({ color: COR.concreto, vertexColors: true });
   const matPiso = new THREE.MeshLambertMaterial({ map: texPiso, vertexColors: true });
+  const matFaixa = new THREE.MeshLambertMaterial({ color: COR.faixa });
 
-  function montarArquibancada(T) {
+  /* a faixa não tem textura nem tom: é uma cor chapada, então
+     entra numa malha própria e sem uv nenhum */
+  function lajeAnelCor(T, r0, r1, y, pula) { lajeAnel(T, r0, r1, y, undefined, pula); }
+
+  /* A ARQUIBANCADA É UMA SÓ, DE PONTA A PONTA.
+     Catorze degraus de concreto iguais, todos andáveis, como na
+     arquibancada pré-moldada da referência. A versão anterior
+     tinha seis fileiras de cadeira em cima que não se pisava, e
+     elas saíram por dois motivos que apontam pro mesmo lugar:
+     ficava um setor diferente no meio de um estádio que devia
+     ser padronizado, e era superfície que o jogador via e não
+     podia usar. */
+  function montarArquibancada(T, F) {
     const A = P.ALT;
     for (let i = 0; i < P.NDEG; i++) {
       const r0 = P.D.pista + i * A.degrau, r1 = r0 + A.degrau;
@@ -283,50 +293,16 @@ export function criar(canvas) {
       paredeAnel(T, r0, h - A.subida - (i === 0 ? A.base - A.subida : 0), h, 0.74,
                  pula, Math.max(0, r0 - A.degrau * 0.5));
       lajeAnel(T, r0, r1, h, 1, puladorVom(r0));
+      /* A FAIXA AMARELA DO NARIZ, EM VOLUME.
+         Pintada na textura ela borrava e a arquibancada virava
+         listra amarela e azul; em volume sai nítida e custa 6,8
+         mil triângulos no estádio inteiro. Vai na beira DE FORA
+         de cada piso, que é por onde se desce, e é a norma
+         (mínimo 5 cm — aqui 1,4). */
+      lajeAnelCor(F, r1 - 1.4, r1, h + 0.35, puladorVom(r1));
     }
     /* a frente da arquibancada, do chão da pista até o primeiro degrau */
     paredeAnel(T, P.D.pista, 0, A.base, 0.8);
-  }
-
-  /* as cadeiras: uma malha instanciada pras 6 fileiras inteiras */
-  function montarCadeiras() {
-    const A = P.ALT;
-    const molde = new THREE.Object3D();
-    const postos = [];
-    for (let i = P.NGERAL; i < P.NDEG; i++) {
-      const r = P.D.pista + i * A.degrau + A.degrau * 0.55;
-      const h = A.base + A.subida * i;
-      const q = P.anel(r);
-      /* uma cadeira a cada ~11 de arco, medido de amostra a amostra */
-      let sobra = 0;
-      for (let k = 0; k < P.N; k++) {
-        const a = q[k], b = q[(k + 1) % P.N];
-        const dx = b[0] - a[0], dz = b[1] - a[1];
-        const L = Math.hypot(dx, dz);
-        const ang = Math.atan2(dx, dz);
-        for (let t = sobra; t < L; t += 11) {
-          const x = a[0] + dx * (t / L), z = a[1] + dz * (t / L);
-          if (vomitorioEm(x, z, 4)) continue;
-          postos.push([x, h, z, ang, i]);
-        }
-        sobra = (sobra - L) % 11; if (sobra < 0) sobra += 11;
-      }
-    }
-    const geo = new THREE.BoxGeometry(8.4, A.cadeira, 5);
-    const m = new THREE.InstancedMesh(geo,
-      new THREE.MeshLambertMaterial({ vertexColors: false, color: 0xffffff }), postos.length);
-    m.castShadow = true; m.receiveShadow = true;
-    const cor = new THREE.Color();
-    postos.forEach((p, n) => {
-      molde.position.set(p[0], p[1] + A.cadeira / 2, p[2]);
-      molde.rotation.set(0, p[3], 0);
-      molde.scale.set(1, 1, 1);
-      molde.updateMatrix();
-      m.setMatrixAt(n, molde.matrix);
-      m.setColorAt(n, cor.setHex(p[4] % 2 ? COR.cadeira : COR.cadeiraAlt));
-    });
-    grupo.add(m);
-    return postos.length;
   }
 
   /* =======================================================
@@ -334,21 +310,30 @@ export function criar(canvas) {
      ======================================================= */
   function montarCorredor(TC, TP) {
     const A = P.ALT, R = P.R;
-    const fundo = r => P.alturaDegrau(Math.min(r, P.D.cadeira - 1)) - A.laje;
+    const fundo = r => P.tetoDe(r);
 
     /* ---- o teto: a laje inclinada, com as VIGAS APARENTES ----
        É o fundo da arquibancada, e nele se lê o degrau de cima:
-       inclinado, nervurado, pesado. */
+       inclinado, nervurado, pesado. Da última fila pra fora ele
+       vira plano, que é a laje de trás do estádio. */
     const pulaTeto = r => puladorVom(r, -2);
     for (let i = 0; i < P.NDEG; i++) {
       const r0 = Math.max(R.corred0, P.D.pista + i * A.degrau);
-      const r1 = Math.min(R.fachada0, r0 + A.degrau);
+      const r1 = Math.min(P.D.arq, r0 + A.degrau);
       if (r1 <= r0) continue;
-      const h = P.alturaDegrau(r0) - A.laje;
+      const h = P.tetoDe(r0);
       lajeAnel(TC, r0, r1, h, 0.96, pulaTeto(r0));
-      /* o dente de cada degrau, visto por baixo */
       if (i > 0) paredeAnel(TC, r0, h - A.subida, h, 0.86, pulaTeto(r0));
     }
+    /* o teto plano de trás, e a mureta que fecha a última fila.
+       A mureta é o que impede o jogador de tentar andar nessa
+       laje: ela existe no desenho e não existe no tabuleiro, e
+       uma parede na frente é o que torna isso honesto. */
+    lajeAnel(TC, P.D.arq, R.fachada0, P.tetoDe(P.D.arq), 0.96);
+    lajeAnel(TC, P.D.arq, R.fachada0, P.TOPO_ARQ, 1.06);
+    paredeAnel(TC, P.D.arq, P.TOPO_ARQ - 2, A.parapeito, 1.12);
+    lajeAnel(TC, P.D.arq, P.D.parapeito, A.parapeito, 1.2);
+    paredeAnel(TC, P.D.parapeito, P.TOPO_ARQ, A.parapeito, 1.0);
     /* as vigas, correndo no sentido do degrau, de tantas em tantas
        amostras do anel */
     const qa = P.anel(R.corred0), qb = P.anel(R.fachada0);
@@ -395,7 +380,7 @@ export function criar(canvas) {
     const rm = (R.fachada0 + R.rua0) / 2;
     const qm = P.anel(rm);
     let acumA = 0;
-    const topoArc = P.alturaDegrau(P.D.cadeira - 1);
+    const topoArc = P.TOPO_ARQ;
     for (let i = 0; i < P.N; i++) {
       const a = qm[i], b = qm[(i + 1) % P.N];
       acumA += Math.hypot(b[0]-a[0], b[1]-a[1]);
@@ -430,7 +415,7 @@ export function criar(canvas) {
     const R = P.R;
     for (const o of P.LOJAS) {
       const r0 = R.corred0, r1 = R.corred0 + o.fundo;
-      const alto = P.alturaDegrau(P.D.pista + 10) - P.ALT.laje;
+      const alto = P.tetoDe(P.R.corred0);
       if (o.tipo === 'banheiro') {
         /* banheiro é vão escuro na parede, e nada mais */
         caixaLado(T, o.lado, o.s0, o.s1, r0, r1, 0, 44, COR.porta);
@@ -489,13 +474,13 @@ export function criar(canvas) {
       /* ---- as MURETAS dos dois lados ----
          Concreto até 0,90 m acima do degrau — ou até o piso da
          arquibancada ao lado, o que for mais alto, porque de um
-         lado ela é guarda-corpo e do outro é arrimo da cadeira. */
+         lado ela é guarda-corpo e do outro é arrimo do degrau. */
       const muros = [[v.e0, v.s0], [v.s1, v.e1]];
       const topoDe = [];
       for (let k = 0; k < V.degraus; k++) {
         const r0 = V.rTop + passo * k, r1 = r0 + passo;
         const chao = pisoK(k + 1);
-        const vizinho = P.alturaDegrau(Math.min((r0 + r1) / 2, P.D.cadeira - 1));
+        const vizinho = P.alturaDegrau(Math.min((r0 + r1) / 2, P.D.arq - 1));
         const topo = Math.max(vizinho, chao + V.guarda);
         topoDe.push({ r0, r1, topo, chao });
         for (const m of muros) caixaLado(T, v.lado, m[0], m[1], r0, r1, 0, topo, 1.04);
@@ -526,7 +511,7 @@ export function criar(canvas) {
          É ela que faz o buraco ser buraco e não rasgo. Concreto
          que ninguém pisa — nem podia, porque as células de
          tabuleiro dali são o túnel de baixo. */
-      const topoCapuz = P.alturaDegrau(Math.min(RVOM1, P.D.cadeira - 1));
+      const topoCapuz = P.alturaDegrau(Math.min(RVOM1, P.D.arq - 1));
       caixaLado(T, v.lado, v.e0, v.e1, RCAPUZ, RVOM1 + 4,
                 topoCapuz - 10, topoCapuz + 4, 1.1);
       /* a testeira do capuz, que é o que se lê de longe como
@@ -559,7 +544,7 @@ export function criar(canvas) {
     for (let k = 0; k <= 9; k++) {
       const z = z0 + (z1 - z0) * k / 9;
       caixa(T, xFora + 4, xDentro, A.cobertura - 5, A.cobertura, z - 2.4, z + 2.4, 0.9);
-      caixa(T, xFora + 4, xFora + 12, P.alturaDegrau(P.D.cadeira - 1), A.cobertura, z - 5, z + 5, 0.95);
+      caixa(T, xFora + 4, xFora + 12, P.TOPO_ARQ, A.cobertura, z - 5, z + 5, 0.95);
     }
     for (let k = 0; k < 22; k++) {
       const z = z0 + (z1 - z0) * (k + 0.5) / 22;
@@ -623,8 +608,8 @@ export function criar(canvas) {
       const o = grupo.children.pop();
       if (o.geometry) o.geometry.dispose();
     }
-    const TA = Tecido(), TC = Tecido(), TP = Tecido(), TL = Tecido();
-    montarArquibancada(TA);
+    const TA = Tecido(), TC = Tecido(), TP = Tecido(), TL = Tecido(), TF = Tecido();
+    montarArquibancada(TA, TF);
     montarCorredor(TC, TP);
     montarComercio(TC);
     montarVomitorios(TC);
@@ -633,6 +618,7 @@ export function criar(canvas) {
     montarAlambrado(TC, TL);
     grupo.add(malha(TA, matPintado));
     grupo.add(malha(TC, matConcreto));
+    grupo.add(malha(TF, matFaixa, false));
     const piso = malha(TP, matPiso, false);
     piso.castShadow = false;
     grupo.add(piso);
@@ -640,10 +626,9 @@ export function criar(canvas) {
       color: COR.tela, vertexColors: true, transparent: true,
       opacity: 0.17, depthWrite: false, side: THREE.DoubleSide }), false);
     grupo.add(tela);
-    const nCad = montarCadeiras();
-    conta = { degraus: P.NGERAL, fileiras: P.NCADEIRA, vomitorios: P.VOMITORIOS.length,
-              lojas: P.LOJAS.length, cadeiras: nCad,
-              triangulos: Math.round(nTri(TA) + nTri(TC) + nTri(TP) + nTri(TL)) };
+    conta = { degraus: P.NDEG, vomitorios: P.VOMITORIOS.length,
+              lojas: P.LOJAS.length,
+              triangulos: Math.round(nTri(TA) + nTri(TC) + nTri(TP) + nTri(TL) + nTri(TF)) };
     return conta;
   }
 
@@ -736,13 +721,23 @@ export function criar(canvas) {
        está no corredor quanto pra quem está EM CIMA da
        arquibancada, no mesmo ponto do mapa. Com a regra pelo
        plano, a câmera de cima era jogada pra dentro do concreto
-       toda vez que o jogador andava na altura das cadeiras.
+       toda vez que o jogador andava na altura da última fila.
        Quem decide é a ALTURA do líder: no chão e com laje por
        cima, está no corredor. */
     if (sobLaje) {
       const tetoAli = P.teto(posSuave.x, posSuave.z);
       if (posSuave.y > tetoAli - 10) posSuave.y = tetoAli - 10;
       if (posSuave.y < alvoSuave.y - 26) posSuave.y = alvoSuave.y - 26;
+    } else {
+      /* E EM CIMA ELA NÃO AFUNDA — foi este o bug de "dá pra ver o
+         corredor estando na arquibancada". A arquibancada sobe pra
+         fora, então a câmera atrás do jogador cai num ponto onde o
+         concreto é mais alto que ela; e como embaixo daquele ponto
+         é o corredor (a dobra), ela entrava no vão e o jogador
+         passava a ver o corredor de dentro do concreto. Agora ela é
+         obrigada a ficar acima da superfície de onde está. */
+      const chaoAli = P.superficie(posSuave.x, posSuave.z);
+      if (posSuave.y < chaoAli + 12) posSuave.y = chaoAli + 12;
     }
 
     /* e o sólido empurra ela pra perto: caminha do líder até a

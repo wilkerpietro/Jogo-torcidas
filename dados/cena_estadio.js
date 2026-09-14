@@ -28,31 +28,37 @@
    A DOBRA, faixa por faixa. `d` é a distância ao retângulo do
    gramado no TABULEIRO; `r` é a distância no MUNDO.
 
-     faixa       d              r                 altura
-     pista       0 → 26         r = d             0          bloqueia
-     geral       26 → 122       r = d             6 → 56,6   ANDA (12 degraus)
-     cadeira     122 → 170      r = d             61 → 84    bloqueia (6 fileiras)
-     muro        170 → 186      r = d             —          bloqueia
-     CORREDOR    186 → 254      r = 102 + (d−186) 0          ANDA  ← sob a arquibancada
-     fachada     254 → 270      r = 170 + (d−254) 0 → 108    bloqueia, com portões
-     rua         270 →          r = 186 + (d−270) 0          ANDA
+     faixa        d             r                 altura
+     pista        0 → 26        r = d             0          bloqueia
+     ARQUIBANCADA 26 → 138      r = d             6 → 65,8   ANDA (14 degraus)
+     parapeito    138 → 154     r = d             66 → 92    bloqueia
+     CORREDOR     154 → 226     r = 104 + (d−154) 0          ANDA ← sob a arquibancada
+     fachada      226 → 242     r = 176 + (d−226) 0 → 92     bloqueia, com portões
+     rua          242 →         r = 192 + (d−242) 0          ANDA
 
-   Repare no corredor: `d` de 186 a 254 vira `r` de 102 a 170,
-   que é exatamente onde a arquibancada está por cima. O
-   corredor tem 68 de fundo e o pé-direito é o fundo da laje —
-   39 no ponto mais apertado, contra 34 de boneco. É corredor
-   de estádio: baixo.
+   Repare no corredor: `d` de 154 a 226 vira `r` de 104 a 176,
+   que é exatamente onde a arquibancada está por cima. Ele tem
+   72 de fundo e o pé-direito é o fundo da laje — 39 no ponto
+   mais apertado, contra 34 de boneco. É corredor de estádio:
+   baixo.
 
-   POR QUE A ARQUIBANCADA DE CIMA É CADEIRA E NÃO SE PISA.
-   Não é enfeite: é o que fecha a conta da dobra. O vomitório
-   é uma tira do tabuleiro que atravessa da geral até o
-   corredor; ela COME as células da arquibancada no caminho,
-   porque uma célula só pode estar num lugar. Se a
-   arquibancada de cima fosse andável, essas células comidas
-   virariam laje que se vê e não se pisa — a mentira que este
-   projeto não comete. Sendo cadeira, elas já eram bloqueadas
-   em toda parte, e a tira só as usa por baixo, como túnel.
-   A cadeira também é o que a foto mostra.
+   A ARQUIBANCADA É INTEIRA ANDÁVEL, E ISSO CUSTOU A SAIR.
+   A primeira dobra tinha seis fileiras de cadeira em cima, que
+   não se pisava, e elas existiam por contabilidade: o vomitório
+   é uma tira do tabuleiro que atravessa da arquibancada até o
+   corredor, e ela COME as células da arquibancada no caminho —
+   uma célula só pode estar num lugar. Se as de cima fossem
+   andáveis, as comidas virariam laje que se vê e não se pisa.
+
+   A conta fecha de outro jeito, e é este: **o pé da escada tem
+   de cair DEPOIS da última fila**. Se a tira, no mundo, vai de
+   `rTop` até um raio MAIOR que a borda de fora da arquibancada,
+   então toda a superfície que ela apaga está dentro do buraco
+   dela mesma — não sobra laje órfã nenhuma. É por isso que o pé
+   está em r=150 e a arquibancada acaba em 138: aqueles 12 a
+   mais são o que paga a conta. E aí a arquibancada inteira pode
+   ser degrau de concreto igual, como na arquibancada
+   pré-moldada da foto — sem cadeira, sem setor que não se pisa.
 
    TRÊS LEITORES desta planta: a máscara de caminhabilidade
    (gerada aqui na carga, é o que `combate.js` enxerga), a
@@ -63,22 +69,21 @@ TO.dados = TO.dados || {};
 TO.dados.plantaEstadio = (function(){
   const W = 1536, H = 1024, CEL = 8;
   const CX = W/2, CY = H/2;
-  const AX = 294, AY = 190;          // meio retângulo do gramado (588 × 380)
+  const AX = 332, AY = 214;          // meio retângulo do gramado (664 × 428)
 
   /* as bordas das faixas, no tabuleiro */
   const D = {
-    pista:   26,
-    geral:  122,
-    cadeira:170,
-    muro:   186,
-    corred: 254,
-    fachada:270
+    pista:     26,
+    arq:      138,
+    parapeito:154,
+    corred:   226,
+    fachada:  242
   };
   /* onde cada faixa cai no mundo */
   const R = {
-    corred0: 102, corred1: 170,       // o corredor, sob a arquibancada
-    fachada0:170, fachada1:186,
-    rua0:    186
+    corred0: 104, corred1: 176,       // o corredor, sob a arquibancada
+    fachada0:176, fachada1:192,
+    rua0:    192
   };
   /* A ARCADA DA FACHADA, tirada da foto: o lado de fora do
      corredor não é muro cego. É pilar quadrado de tantos em
@@ -95,20 +100,21 @@ TO.dados.plantaEstadio = (function(){
     subida: 4.6,     // altura de um degrau
     base:   6,       // o primeiro degrau, sobre a pista
     laje:   8,       // espessura da laje da arquibancada
-    muro: 108,       // o topo do muro de fundo
-    cadeira: 13,     // a cadeira, sobre o degrau
+    parapeito: 92,   // o topo da mureta atrás da última fila
     alambrado: 30,
     cobertura: 150
   };
-  const NGERAL   = (D.geral - D.pista) / ALT.degrau;      // 12 degraus de geral
-  const NCADEIRA = (D.cadeira - D.geral) / ALT.degrau;    //  6 fileiras de cadeira
-  const NDEG     = NGERAL + NCADEIRA;                      // 18 ao todo
+  const NDEG = (D.arq - D.pista) / ALT.degrau;            // 14 degraus, todos andáveis
 
   /* a altura do degrau que está no raio r */
   function alturaDegrau(r){
     const i = Math.max(0, Math.min(NDEG-1, Math.floor((r - D.pista)/ALT.degrau)));
     return ALT.base + ALT.subida*i;
   }
+  const TOPO_ARQ = ALT.base + ALT.subida*(NDEG-1);        // 65,8
+  /* o fundo da laje: sob a arquibancada ela acompanha o degrau;
+     da última fila até a fachada é um teto plano */
+  const tetoDe = r => (r < D.arq ? alturaDegrau(r) : TOPO_ARQ) - ALT.laje;
 
   /* =======================================================
      O PONTO DO RETÂNGULO E A NORMAL
@@ -222,7 +228,7 @@ TO.dados.plantaEstadio = (function(){
      espelho**, que é degrau de escada de verdade. */
   const METRO = 34 / 1.75;
   const VOM = {
-    dTop: 66, dFoot: 214,     // no tabuleiro
+    dTop: 82, dFoot: 200,     // no tabuleiro
     larg: 44,                  // largura útil
     corrim: 6,                 // a mureta de cada lado
     degraus: 10,
@@ -230,13 +236,13 @@ TO.dados.plantaEstadio = (function(){
     mao:     1.10 * METRO,    // 21,4 — o corrimão
     faixa:   0.05 * METRO * 1.6   // a faixa amarela, um tico mais larga pra se ver
   };
-  VOM.rTop  = VOM.dTop;                                   // 66
-  VOM.rFoot = R.corred0 + (VOM.dFoot - D.muro);           // 130
-  VOM.yTop  = alturaDegrau(VOM.rTop);                     // 29
+  VOM.rTop  = VOM.dTop;                                    // 82
+  VOM.rFoot = R.corred0 + (VOM.dFoot - D.parapeito);       // 150 — DEPOIS da última fila
+  VOM.yTop  = alturaDegrau(VOM.rTop);                      // 38,2
 
   const VOMITORIOS = [
-    { lado:'n', c: 620 }, { lado:'n', c: 916 },
-    { lado:'s', c: 620 }, { lado:'s', c: 916 },
+    { lado:'n', c: 604 }, { lado:'n', c: 932 },
+    { lado:'s', c: 604 }, { lado:'s', c: 932 },
     { lado:'o', c: 512 }, { lado:'l', c: 512 }
   ].map(v => Object.assign(v, {
     s0: v.c - VOM.larg/2, s1: v.c + VOM.larg/2,
@@ -321,8 +327,8 @@ TO.dados.plantaEstadio = (function(){
   ].map(o => {
     const L = LOJA[o.tipo];
     /* encostada na parede de dentro: a borda interna do
-       corredor, que no tabuleiro é `D.muro` */
-    return Object.assign({}, o, L, { d0: D.muro, d1: D.muro + L.fundo,
+       corredor, que no tabuleiro é `D.parapeito` */
+    return Object.assign({}, o, L, { d0: D.parapeito, d1: D.parapeito + L.fundo,
       s0: o.c - L.larg/2, s1: o.c + L.larg/2 });
   });
   function naLoja(x, y){
@@ -338,20 +344,19 @@ TO.dados.plantaEstadio = (function(){
      A DOBRA: tabuleiro → mundo
      ======================================================= */
   function faixaDe(d){
-    if(d < D.pista)   return 'pista';
-    if(d < D.geral)   return 'geral';
-    if(d < D.cadeira) return 'cadeira';
-    if(d < D.muro)    return 'muro';
-    if(d < D.corred)  return 'corredor';
-    if(d < D.fachada) return 'fachada';
+    if(d < D.pista)     return 'pista';
+    if(d < D.arq)       return 'arquibancada';
+    if(d < D.parapeito) return 'parapeito';
+    if(d < D.corred)    return 'corredor';
+    if(d < D.fachada)   return 'fachada';
     return 'rua';
   }
   /* o raio do mundo e a altura, faixa por faixa */
   function dobra(d){
-    if(d < D.cadeira) return { r: d, y: d < D.pista ? 0 : alturaDegrau(d) };
-    if(d < D.muro)    return { r: d, y: ALT.muro };
-    if(d < D.corred)  return { r: R.corred0 + (d - D.muro), y: 0 };
-    if(d < D.fachada) return { r: R.fachada0 + (d - D.corred), y: 0 };
+    if(d < D.arq)       return { r: d, y: d < D.pista ? 0 : alturaDegrau(d) };
+    if(d < D.parapeito) return { r: d, y: ALT.parapeito };
+    if(d < D.corred)    return { r: R.corred0 + (d - D.parapeito), y: 0 };
+    if(d < D.fachada)   return { r: R.fachada0 + (d - D.corred), y: 0 };
     return { r: R.rua0 + (d - D.fachada), y: 0 };
   }
 
@@ -374,10 +379,10 @@ TO.dados.plantaEstadio = (function(){
     const v = noVomitorio(x, y);
     if(v) return !v.corrim;
     const f = faixaDe(dist(x, y));
-    if(f === 'pista' || f === 'cadeira' || f === 'muro') return false;
+    if(f === 'pista' || f === 'parapeito') return false;
     if(f === 'fachada') return noPortao(x, y);
     if(f === 'corredor') return !naLoja(x, y);
-    return true;                                  // geral e rua
+    return true;                                  // arquibancada e rua
   }
 
   /* =======================================================
@@ -388,28 +393,38 @@ TO.dados.plantaEstadio = (function(){
      ======================================================= */
   function solido(X, Y, Z){
     if(Y < 0) return true;
-    const a = ancora(X, Z);
-    const r = a.d;
+    const r = ancora(X, Z).d;
     if(r < D.pista) return false;
-    if(r < D.cadeira){
+    if(r < D.arq){
       const topo = alturaDegrau(r);
       /* de r=26 até o começo do corredor a arquibancada é maciça;
          dali pra fora ela é laje, e embaixo é o corredor */
       if(r < R.corred0) return Y < topo;
-      return Y > topo - ALT.laje && Y < topo + (r >= D.geral ? ALT.cadeira : 0);
+      return Y > topo - ALT.laje && Y < topo;
     }
-    if(r < R.fachada0){        // ainda é laje de arquibancada por cima do corredor
-      const topo = alturaDegrau(Math.min(r, D.cadeira - 1));
-      return Y > topo - ALT.laje && Y < topo + ALT.cadeira;
-    }
-    if(r < R.rua0) return Y < ALT.muro;            // a fachada
+    if(r < D.parapeito) return Y > tetoDe(r) && Y < ALT.parapeito;
+    if(r < R.fachada0)  return Y > tetoDe(r) && Y < TOPO_ARQ;
+    if(r < R.rua0) return Y < ALT.parapeito;
     return false;
   }
   /* o teto do corredor naquele ponto (pra prender a câmera lá embaixo) */
   function teto(X, Z){
     const r = ancora(X, Z).d;
     if(r < R.corred0 || r > R.fachada0) return Infinity;
-    return alturaDegrau(Math.min(r, D.cadeira - 1)) - ALT.laje;
+    return tetoDe(r);
+  }
+  /* A SUPERFÍCIE DE CIMA naquele ponto do mundo.
+     Serve pra uma coisa só, e é a razão de ela existir: prender a
+     câmera de ombro ACIMA da arquibancada quando o jogador está
+     em cima dela. Sem isso a câmera afundava pelo degrau e ia
+     parar no corredor — e daí se via o corredor de dentro da
+     arquibancada, que é justamente o que o concreto não deixa
+     ver. */
+  function superficie(X, Z){
+    const r = ancora(X, Z).d;
+    if(r >= D.pista && r < D.arq) return alturaDegrau(r);
+    if(r >= D.arq && r < R.fachada0) return TOPO_ARQ;
+    return 0;
   }
 
   /* =======================================================
@@ -432,8 +447,8 @@ TO.dados.plantaEstadio = (function(){
     return linhas.join(';');
   }
 
-  return { W, H, CEL, CX, CY, AX, AY, D, R, ALT, N, NGERAL, NCADEIRA, NDEG,
-           PERFIL, anel, ancora, dist, alturaDegrau,
+  return { W, H, CEL, CX, CY, AX, AY, D, R, ALT, N, NDEG, TOPO_ARQ, tetoDe,
+           PERFIL, anel, ancora, dist, alturaDegrau, superficie,
            LADOS, RETO, ponto, ondeNoReto,
            VOM, VOMITORIOS, noVomitorio, rampa,
            PORTOES, noPortao, LOJA, LOJAS, naLoja, ARCADA,
@@ -452,13 +467,13 @@ TO.dados.cenaEstadio = (function(){
      corredor, embaixo — sem isso o corredor começaria vazio, e
      ele é metade da cena. */
   const spawns = [
-    { id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:404, y:600,
+    { id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:366, y:620,
       jogador:true, entrada:'portao_oeste' },
-    { id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:254, y:640,
+    { id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:246, y:660,
       entrada:'portao_oeste' },
-    { id:'visitante1', rot:'SETOR VISITANTE', lado:'visitante', x:1132, y:420,
+    { id:'visitante1', rot:'SETOR VISITANTE', lado:'visitante', x:1170, y:400,
       guarda:true, entrada:'portao_leste' },
-    { id:'visitante2', rot:'RETAGUARDA', lado:'visitante', x:1282, y:400,
+    { id:'visitante2', rot:'RETAGUARDA', lado:'visitante', x:1290, y:360,
       guarda:true, entrada:'portao_leste' }
   ];
 
@@ -468,20 +483,20 @@ TO.dados.cenaEstadio = (function(){
 
   /* a PM fica no corredor, longe do pé dos vomitórios */
   const pmPostos = [
-    { x:768, y:102 }, { x:768, y:922 }, { x:254, y:380 }, { x:1282, y:644 }
+    { x:768, y:108 }, { x:768, y:916 }, { x:246, y:380 }, { x:1290, y:644 }
   ];
 
   /* grade que quebra e vira arma (GDD §12): duas no corredor,
      duas na geral, deitadas ao longo de um degrau */
   const grades = [
     { id:'cordao_norte', rot:'CORDÃO DA PM',
-      de:{x:660,y:102}, ate:{x:800,y:102}, modulos:3, espessura:9 },
+      de:{x:660,y:108}, ate:{x:800,y:108}, modulos:3, espessura:9 },
     { id:'cordao_sul',   rot:'CORDÃO DA PM',
-      de:{x:740,y:922}, ate:{x:880,y:922}, modulos:3, espessura:9 },
+      de:{x:740,y:916}, ate:{x:880,y:916}, modulos:3, espessura:9 },
     { id:'divisa_norte', rot:'DIVISA DE SETOR',
-      de:{x:700,y:252}, ate:{x:840,y:252}, modulos:3, espessura:9 },
+      de:{x:700,y:228}, ate:{x:840,y:228}, modulos:3, espessura:9 },
     { id:'divisa_sul',   rot:'DIVISA DE SETOR',
-      de:{x:700,y:772}, ate:{x:840,y:772}, modulos:3, espessura:9 }
+      de:{x:700,y:796}, ate:{x:840,y:796}, modulos:3, espessura:9 }
   ];
 
   return {
