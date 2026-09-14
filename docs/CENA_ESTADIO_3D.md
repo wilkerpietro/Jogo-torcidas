@@ -29,89 +29,98 @@ WASD, pedra, bomba, recuar, as quatro formações e as quatro câmeras.
 
 ## 2. O problema, e a saída
 
-A briga tem dois andares: arquibancada em cima, corredor embaixo, escada
-ligando. E `combate.js` é um tabuleiro **plano** de 1536 × 1024 — não tem
-andar, não tem altura, não tem escada. Mexer nele pra ter dois níveis é
-refazer a colisão, a malha de 8 px, os campos de fluxo e a PM.
+A briga tem dois andares: arquibancada em cima, corredor **embaixo dela**, e
+os vomitórios — os buracos na arquibancada — ligando os dois. E `combate.js`
+é um tabuleiro **plano** de 1536 × 1024: uma célula, um lugar. Não tem andar,
+não tem altura, não tem escada.
 
-**Nenhuma linha de `combate.js` foi tocada.** O tabuleiro continua plano, e o
-que é plano no tabuleiro é **dobrado no desenho**: a arquibancada não fica
-*em cima* do corredor, fica *ao lado* dele na planta e **sobe** no 3D. Quem
-anda do corredor pra arquibancada anda pra frente no tabuleiro e sobe na
-tela. A escada é um retângulo andável como qualquer outro — o que faz dela
-escada é uma função, `piso(x, y)`, e só ela.
+**Nenhuma linha de `combate.js` foi tocada.** O tabuleiro continua plano e
+continua sendo uma célula por lugar — o que mudou é o mapa que leva do
+tabuleiro pro mundo. `planta.mundo(x, y)` devolve um ponto em TRÊS dimensões,
+e **duas faixas distantes do tabuleiro caem no mesmo ponto do mundo, em
+alturas diferentes**: a arquibancada e o corredor. Andar do corredor pro
+degrau é andar uma distância no tabuleiro e subir no mundo.
+
+Foi assim depois de uma correção do dono. A primeira versão punha o corredor
+*ao lado* da arquibancada, não embaixo, com a escada por fora — e ficava um
+anel externo, não um estádio. A dobra é o que faz o corredor ser corredor.
+
+### A dobra, faixa por faixa
+
+`d` é a distância ao gramado no TABULEIRO; `r` é a distância no MUNDO.
+
+| faixa | d | r | altura | |
+|---|---|---|---|---|
+| pista | 0 → 26 | = d | 0 | bloqueia |
+| geral | 26 → 122 | = d | 6 → 56,6 | **anda** (12 degraus) |
+| cadeira | 122 → 170 | = d | 61 → 84 | bloqueia (6 fileiras) |
+| muro | 170 → 186 | = d | — | bloqueia |
+| **corredor** | 186 → 254 | **102 + (d−186)** | **0** | **anda** |
+| fachada | 254 → 270 | 170 + (d−254) | 0 → 108 | bloqueia, com portões |
+| rua | 270 → | 186 + (d−270) | 0 | anda |
+
+Repare no corredor: `d` de 186 a 254 vira `r` de 102 a 170, que é exatamente
+onde a arquibancada está por cima. O corredor tem 68 de fundo e o pé-direito
+é o fundo da laje — **39 no ponto mais apertado, contra 34 de boneco.** É
+corredor de estádio: baixo.
+
+### Por que a arquibancada de cima é cadeira, e não se pisa
+
+Não é enfeite: é o que fecha a conta da dobra. O vomitório é uma tira do
+tabuleiro que atravessa da geral até o corredor, e ela **come** as células da
+arquibancada no caminho — porque uma célula só pode estar num lugar. Se a
+arquibancada de cima fosse andável, essas células comidas virariam laje que
+se vê e não se pisa, que é a mentira que este projeto não comete. Sendo
+cadeira, elas já eram bloqueadas em toda parte, e a tira só as usa por baixo,
+como túnel. A cadeira também é o que a foto mostra.
+
+### O vomitório
+
+Sai do degrau 5 da geral (r=66, altura 29) e desce até o chão do corredor
+(r=130): **64 de tiro pra 29 de queda, 24 graus**, que é escada de gente. O
+corrimão fecha os dois lados compridos — entra-se pelo alto ou pelo pé, e
+mais nada. São seis.
+
+### O corredor saiu de duas fotos, não da planta
+
+O dono mandou dois quadros de dentro do Presidente Vargas, e eles mudaram
+quatro coisas que nenhuma planta teria dito:
+
+1. **O teto é a laje da arquibancada**, inclinada, com as **vigas aparentes**
+   correndo no sentido do degrau. Não é forro plano: é concreto nervurado, e
+   é ele que dá a sensação de estar embaixo de alguma coisa pesada.
+2. **Pilar quadrado** no meio do corredor, de tantos em tantos metros.
+3. **Um lado é aberto.** Balcão de um lado e, do outro, mureta na altura da
+   cintura com a luz estourando por cima. Então a fachada não é muro cego: é
+   **arcada** — pilar, mureta, e vazio até a laje.
+4. **O comércio é balcão na parede**, não quiosque solto: lanche, pipoca,
+   cerveja, cachorro-quente, banheiro e a loja da torcida, com toldo e placa.
+   São doze, e estão na MÁSCARA — o corpo esbarra neles.
 
 É a mesma regra que já valia na cena 3D dos arredores ("o que bloqueia a
 passagem é exatamente o que aparece na tela"), com um irmão novo: **a altura
 que o desenho mostra é exatamente a altura que a planta declara.** Não existe
 degrau que só o olho vê, nem corrimão que o corpo atravessa.
 
-### A planta é uma só, lida por três
+### A planta é uma só, lida por dois
 
-`dados/cena_estadio.js` é a fonte. Dela saem:
+`dados/cena_estadio.js` é a fonte. Dela saem a **máscara de caminhabilidade**
+(gerada na carga, é o que `combate.js` enxerga) e a **geometria 3D**. Mudar um
+número move os dois. A máscara é gerada e não colada: colada ela envelhece na
+primeira vez que alguém muda um número, e aí a planta e a colisão passam a
+discordar sem ninguém perceber.
 
-| leitor | o que tira dali |
-|---|---|
-| a máscara de caminhabilidade | gerada na carga, é o que `combate.js` enxerga |
-| `estadio_pintura.js` | a cena vista de cima — que é também a **textura** do 3D |
-| `estadio3d.js` | a bacia, o muro, a escada, a cobertura |
+**Confirmado por busca em largura sobre a máscara gerada:** 16 497 células
+andáveis, 100% alcançáveis do ponto de partida do jogador — geral, vomitório,
+corredor e rua, todos ligados só pelos caminhos que a planta declara.
 
-Mudar `D.arq` num lugar move a arquibancada nos três. A máscara é **gerada**,
-não colada: máscara colada envelhece na primeira vez que alguém muda um
-número, e aí a planta e a colisão passam a discordar sem ninguém perceber.
+### Não há cena 2D, e é decisão do dono
 
-### O truque que fez o desenho sair barato
-
-Todo anel do estádio — degrau, muro, pista, laje da cobertura — é a **mesma
-volta** em torno do retângulo do gramado, empurrada pra fora por uma
-distância diferente. A distância a um retângulo dá quina arredondada de
-graça, que é exatamente a forma da bacia na foto, sem desenhar uma curva
-sequer. `anel(d)` devolve essa volta sempre com o mesmo número de amostras,
-na mesma ordem — por isso o degrau de cima casa com o de baixo vértice a
-vértice e **a bacia inteira sai numa malha só**.
-
-E a pintura de cima é projetada em toda a geometria: o azul da arquibancada,
-a listra do gramado e a marcação do campo são pintura 2D, não geometria. É o
-truque do telhado dos arredores ("o telhado é a própria foto") levado ao
-estádio — e é o que garante que o `V` mostre a mesma arte nos dois
-desenhistas.
-
----
-
-## 3. A régua da planta
-
-Medidas do retângulo do gramado pra fora, em unidades de tabuleiro:
-
-| faixa | de → até | o que é |
-|---|---:|---|
-| pista | 0 → 26 | gramado e pista: não se pisa |
-| arquibancada | 26 → 154 | 16 degraus de 8 de piso e 4 de subida — topo a 66 |
-| muro de fundo | 154 → 172 | bloqueia, com vão só na escada |
-| corredor | 172 → 276 | 104 de fundo, no chão |
-| muro externo | 276 → 296 | bloqueia, com vão só no portão |
-| rua | 296 → | por onde se some |
-
-Gramado 496 × 320, estádio 1088 × 912, tela 1536 × 1024.
-
-**A escada.** Lance reto encostado no muro de fundo, subindo ao longo do
-corredor, e um patamar no alto que atravessa o muro e cai no degrau de cima.
-É o vomitório de qualquer estádio, e a razão de ser *assim* e não radial é
-aritmética: o topo está a 66 de altura e o corredor tem 104 de fundo; uma
-escada radial venceria 66 em menos de 104 e sairia a 40 graus — rampa de
-muro. De lado, o lance tem 144 de tiro pra 66 de subida: **25 graus**, que é
-escada de gente. São seis, duas em cada lado comprido e uma em cada curto.
-
-**O corrimão não é enfeite, e é ele que faz a cena.** Fecha o lado comprido
-do lance e a ponta de cima, então **só se entra pelo pé da escada**. Uma
-escada com três entradas é um corredor; com uma, é um funil — e o funil é
-onde a briga de arquibancada acontece. Ele está na *máscara*, não só no
-desenho.
-
-**Confirmado por busca em largura sobre a máscara gerada:** 19 428 células
-andáveis, 100% alcançáveis do ponto de partida do jogador. Arquibancada
-4 392, corredor 3 870, escada 778, rua 10 388.
-
----
+Este cenário é só 3D. Não é preguiça: a dobra torna a vista de cima uma
+mentira. Desenhado de cima, o tabuleiro mostra o corredor *ao lado* da
+arquibancada, que é onde ele está no tabuleiro e não é onde ele está no
+estádio. A pintura que existe (`estadio_pintura.js`) é do **mundo**, e serve
+só de textura pro 3D.
 
 ## 4. Os bonecos: os do jogo, não uns novos
 

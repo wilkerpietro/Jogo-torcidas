@@ -47,10 +47,20 @@
 
    2. O GLB VEM DE ARQUIVO. Ver `carregarGLB`.
 
-   3. O CHÃO PODE NÃO SER ZERO. `opc.piso(x, z)` diz a altura do
-      piso naquele ponto, e é o que faz o boneco subir o degrau da
-      arquibancada e descer a escada sem uma linha de pose nova.
-      Cena plana passa zero e nada muda.
+   3. O LUGAR NÃO É MAIS O LUGAR. `opc.pos(x, y)` traduz a
+      posição do tabuleiro num ponto de TRÊS dimensões. Na cena
+      plana ela devolve (x, 0, y) e nada muda. No estádio ela
+      DOBRA: duas faixas distantes do tabuleiro caem no mesmo
+      ponto do mundo em alturas diferentes, e é assim que o
+      corredor fica embaixo da arquibancada. O boneco não sabe de
+      nada disso — a passada, o soco, a queda e o agarrão
+      continuam escritos num mundo de chão zero.
+
+      A VELOCIDADE PASSOU A SER MEDIDA NO MUNDO, e não no
+      tabuleiro. Tinha de ser: subindo o vomitório, o sujeito
+      anda 148 no tabuleiro e 76 no mundo, e se a passada
+      continuasse saindo do tabuleiro o pé patinaria a escada
+      inteira.
 
    4. O CORTE FORA DA TELA ACEITA OUTRO TESTE. A cena de cima
       corta por retângulo do tabuleiro; a câmera de ombro do
@@ -66,8 +76,10 @@ import { GLTFLoader, SkeletonUtils } from '../../vendor/three/GLTFLoader.js';
 
 /* onde o modelo mora, quando não vem embutido em base64 */
 const URL_GLB = new URL('../../img/boneco.glb', import.meta.url).href;
-/* a altura do piso onde a figura pisa; a cena plana devolve zero */
-let piso = () => 0;
+/* onde, no mundo, fica a posição (x, y) do tabuleiro. A cena
+   plana devolve (x, 0, y); o estádio devolve a dobra. */
+const PLANO = { x:0, y:0, z:0 };
+let pos = (x, y) => { PLANO.x = x; PLANO.y = 0; PLANO.z = y; return PLANO; };
 /* quem está de fora e tem sol e mapa de sombra na cena */
 let sombraDeLuz = false;
 /* o teste de "cabe na tela" de quem tem a câmera */
@@ -1818,7 +1830,7 @@ let noQuadroExterno = null;
     fg.mudou = true;
     if(leve && !agitado && ((quadroN + i) % 3)){
       const moveu = f.px == null || Math.abs(d.x - f.px) > 0.05 || Math.abs(d.y - f.pz) > 0.05;
-      if(moveu){ c.raiz.position.set(d.x, piso(d.x, d.y), d.y); f.px = d.x; f.pz = d.y; }
+      if(moveu){ const q = pos(d.x, d.y); c.raiz.position.set(q.x, q.y, q.z); f.px = q.x; f.pz = q.z; }
       else fg.mudou = false;
       c.raiz.visible = true;
       return;
@@ -1853,7 +1865,8 @@ let noQuadroExterno = null;
     } else {
       f.queda = null; f.jazido = 0;
       esmaecer(c, 1);
-      const vel = medirVelocidade(f, d.x, d.y, dt);
+      const q0 = pos(d.x, d.y);
+      const vel = medirVelocidade(f, q0.x, q0.z, dt);
       const corre = !!(d.fugindo || d._cacando || d.fugaBomba);
       const emBriga = d.golpe > 0 || d.apanhou > 0 || d.hostil > 0;
       if(typeof d.rumo === 'number') f.yaw = girar(f.yaw, d.rumo, Math.min(1, dt*14));
@@ -1910,7 +1923,8 @@ let noQuadroExterno = null;
     misturarPose(f.pose, p, Math.min(1, dt*rapidez));
     /* sem deslocamento aleatório: o disco fica onde o combate o pôs.
        A pancada aparece no corpo (`flinch`), não no chão. */
-    c.raiz.position.set(d.x, piso(d.x, d.y), d.y);
+    const qd = pos(d.x, d.y);
+    c.raiz.position.set(qd.x, qd.y, qd.z);
     c.raiz.rotation.y = f.yaw;
     aplicarPose(c, f.pose, f.escala*escalaDeCima*0.86);
     if(c.anel){
@@ -1935,7 +1949,8 @@ let noQuadroExterno = null;
     if(!pm.vivo){ cair(p, f, dt); rapidez = 14; esmaecer(c, +Math.max(0.5, 1 - 0.5*suave((f.queda.t-0.4)/0.5)).toFixed(2)); }
     else {
       f.queda = null; esmaecer(c, 1);
-      const vel = medirVelocidade(f, pm.x, pm.y, dt);
+      const qp = pos(pm.x, pm.y);
+      const vel = medirVelocidade(f, qp.x, qp.z, dt);
       if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*8));
       const andando = passo(p, f, vel, dt, false, 6);
       if(!andando) parado(p, f, J.t);
@@ -1950,7 +1965,8 @@ let noQuadroExterno = null;
       } else if(pm.cooldown > 1.2 && !pm.carga){ p.ombro[1] = -0.7; p.cotovelo[1] = -1.9; }
     }
     misturarPose(f.pose, p, Math.min(1, dt*rapidez));
-    c.raiz.position.set(pm.x, piso(pm.x, pm.y), pm.y); c.raiz.rotation.y = f.yaw;
+    const qm = pos(pm.x, pm.y);
+    c.raiz.position.set(qm.x, qm.y, qm.z); c.raiz.rotation.y = f.yaw;
     aplicarPose(c, f.pose, f.escala*escalaDeCima*0.86);
     c.raiz.visible = true;
   }
@@ -2028,19 +2044,20 @@ let noQuadroExterno = null;
         projMeshes.set(p, v);
       }
       v.x = p.x; v.y = p.y; v.t = p.t;
-      v.sombra.position.set(p.x, piso(p.x, p.y) + 0.4, p.y);
+      const qs = pos(p.x, p.y);
+      v.sombra.position.set(qs.x, qs.y + 0.4, qs.z);
       if(p.noChao){
         const k = 1 - (p.explodeEm - p.t)/(p.pavio||1);
-        v.grupo.position.set(p.x, piso(p.x, p.y) + 4.6, p.y); v.grupo.rotation.set(0, 0, 0);
+        v.grupo.position.set(qs.x, qs.y + 4.6, qs.z); v.grupo.rotation.set(0, 0, 0);
         v.faisca.visible = Math.sin(p.t*(30+k*70)) > 0;
-        v.zona.visible = true; v.zona.position.set(p.x, piso(p.x, p.y) + 0.6, p.y);
+        v.zona.visible = true; v.zona.position.set(qs.x, qs.y + 0.6, qs.z);
         v.zona.material.opacity = 0.25 + 0.45*k;
         if(p.t - v.ultimoFumo > 0.07){ v.ultimoFumo = p.t; fumo(p.x+2.4, 8, p.y, false); }
         continue;
       }
       if(!p.morto){
         const alt = Math.sin((p.t/p.dur)*Math.PI)*36 + 8;
-        v.grupo.position.set(p.x, piso(p.x, p.y) + alt, p.y);
+        v.grupo.position.set(qs.x, qs.y + alt, qs.z);
         v.grupo.rotation.set(p.t*7, p.t*9, 0);
         if(p.tipo==='bomba' && p.t - v.ultimoFumo > 0.05){ v.ultimoFumo = p.t; fumo(p.x, alt, p.y, false); }
         continue;
@@ -2072,13 +2089,14 @@ let noQuadroExterno = null;
         scene.add(mesh); v = {mesh, hp:null}; gradeMeshes.set(m, v);
       }
       const ang = Math.atan2(m.ux, m.uy);
+      const qg = pos(m.x, m.y);
       const mesh = v.mesh;
       mesh.rotation.y = ang;
-      if(m.tipo==='fila'){ mesh.scale.set(m.esp*2, 30, m.meia*2); mesh.position.set(m.x, piso(m.x, m.y)+15, m.y); mesh.material = mat('#9aa0a6'); continue; }
-      if(m.hp<=0){ mesh.scale.set(m.esp*2+6, 3, m.meia*2); mesh.position.set(m.x, piso(m.x, m.y)+1.5, m.y); mesh.material = mat('#6a5a30'); continue; }
+      if(m.tipo==='fila'){ mesh.scale.set(m.esp*2, 30, m.meia*2); mesh.position.set(qg.x, qg.y+15, qg.z); mesh.material = mat('#9aa0a6'); continue; }
+      if(m.hp<=0){ mesh.scale.set(m.esp*2+6, 3, m.meia*2); mesh.position.set(qg.x, qg.y+1.5, qg.z); mesh.material = mat('#6a5a30'); continue; }
       const p = m.hp/m.hpMax;
       mesh.material = mat(p>0.6 ? '#e8b53c' : p>0.3 ? '#c08a2a' : '#8a5f22');
-      mesh.scale.set(m.esp*2, 30, m.meia*2); mesh.position.set(m.x, piso(m.x, m.y)+15, m.y);
+      mesh.scale.set(m.esp*2, 30, m.meia*2); mesh.position.set(qg.x, qg.y+15, qg.z);
     }
     for(const [m,v] of gradeMeshes) if(!agora.has(m)){ gradeMeshes.delete(m); scene.remove(v.mesh); }
   }
@@ -2551,7 +2569,7 @@ let noQuadroExterno = null;
   function entrarEm(cenaDoDono, opc){
     opc = opc || {};
     scene = cenaDoDono;
-    if(opc.piso) piso = opc.piso;
+    if(opc.pos) pos = opc.pos;
     if(opc.escala) escalaDeCima = opc.escala;
     sombraDeLuz = !!opc.sombra;
     noQuadroExterno = opc.noQuadro || null;

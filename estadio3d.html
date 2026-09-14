@@ -12,11 +12,9 @@
   html,body{margin:0;height:100%;overflow:hidden}
   body{display:block;padding:0;background:#0e0e0d}
   #caixa{position:fixed;inset:0}
-  #cv3d,#cv2d{position:absolute;inset:0;width:100%;height:100%;display:block;
+  #cv3d{position:absolute;inset:0;width:100%;height:100%;display:block;
     touch-action:none;cursor:grab}
   #cv3d:active{cursor:grabbing}
-  #cv2d{background:#16150f;object-fit:contain}
-  .escondido{display:none}
   #rotulos{position:absolute;inset:0;pointer-events:none;overflow:hidden}
   .rot3d{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
     font-family:var(--mono);font-size:10px;font-weight:600;color:#e0b040;
@@ -41,7 +39,6 @@
 
 <div id="caixa">
   <canvas id="cv3d"></canvas>
-  <canvas id="cv2d" class="escondido" width="1536" height="1024"></canvas>
   <div id="rotulos"></div>
   <div id="estado"></div>
   <div id="legenda">
@@ -49,7 +46,7 @@
     <b>Q</b> pedra &nbsp; <b>E</b> bomba &nbsp; <b>R</b> recuar<br>
     <b>arrastar</b> gira a câmera &nbsp; <b>roda</b> aproxima<br>
     câmera <b>Z</b> ombro · <b>X</b> alta · <b>C</b> maquete · <b>F</b> zenital &nbsp;
-    <b>H</b> sombra &nbsp; <b>V</b> 2D/3D &nbsp; <b>ESPAÇO</b> pausa
+    <b>H</b> sombra &nbsp; <b>ESPAÇO</b> pausa
   </div>
 </div>
 
@@ -83,12 +80,10 @@ const A = TO.diaJogo.arredores;
 const C = TO.diaJogo.combate;
 
 const cv3d = document.getElementById('cv3d');
-const cv2d = document.getElementById('cv2d');
 const caixa = document.getElementById('caixa');
-const ctx2d = cv2d.getContext('2d');
 const elEstado = document.getElementById('estado');
 
-let tela3d = true, pausado = false, J = null, ant = 0;
+let pausado = false, J = null, ant = 0;
 const teclas = {};
 let vista;
 
@@ -145,7 +140,6 @@ addEventListener('keydown', e => {
   else if (k === 'q') C.arremessar(J, 'pedra');
   else if (k === 'e') C.arremessar(J, 'bomba');
   else if (k === 'r') C.alternarRecuo(J);
-  else if (k === 'v') { tela3d = !tela3d; aplicarTela(); }
   else if (k === 'z') { vista.irPara('ombro');   pad.marcarCamera('ombro'); }
   else if (k === 'x') { vista.irPara('alto');    pad.marcarCamera('alto'); }
   else if (k === 'c') { vista.irPara('maquete'); pad.marcarCamera('maquete'); }
@@ -155,23 +149,11 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => { teclas[e.key.toLowerCase()] = false; });
 
-function aplicarTela() {
-  cv3d.classList.toggle('escondido', !tela3d);
-  cv2d.classList.toggle('escondido', tela3d);
-  document.getElementById('rotulos').style.display = tela3d ? 'block' : 'none';
-}
-
-/* o desenhista 2D, pra ler a briga de cima sem recomeçar nada */
-function desenhar2d() {
-  const s = Math.min(cv2d.width / A.W, cv2d.height / A.H);
-  ctx2d.setTransform(1, 0, 0, 1, 0, 0);
-  ctx2d.fillStyle = '#0e0e0d';
-  ctx2d.fillRect(0, 0, cv2d.width, cv2d.height);
-  ctx2d.setTransform(s, 0, 0, s, (cv2d.width - A.W * s) / 2,
-                                 (cv2d.height - A.H * s) / 2);
-  C.desenhar(J, ctx2d, {});
-  ctx2d.setTransform(1, 0, 0, 1, 0, 0);
-}
+/* NÃO HÁ CENA 2D AQUI, e é decisão do dono: este cenário é só
+   3D. Não é preguiça — é que a dobra torna a vista de cima uma
+   mentira. Desenhado de cima, o tabuleiro mostra o corredor ao
+   LADO da arquibancada, que é onde ele está no tabuleiro e não
+   é onde ele está no estádio. */
 
 /* Na câmera de ombro, W tem que ser "pra frente da câmera" e não
    "pro norte da cena". `moverLider` só lê quatro booleanos, então
@@ -191,8 +173,7 @@ function laco(agora) {
   if (dt > 0.05) dt = 0.05;
   if (J && !pausado) C.passo(J, dt, entradaDoQuadro(), true);
   if (J) {
-    if (tela3d) { vista.redimensionar(); vista.quadro(J, dt); }
-    else desenhar2d();
+    vista.redimensionar(); vista.quadro(J, dt);
     quadrosFps++;
     if (agora - marcoFps >= 500) {
       fps = Math.round(quadrosFps * 1000 / (agora - marcoFps));
@@ -203,28 +184,26 @@ function laco(agora) {
     /* quem está onde: é a conta que esta cena inventou, porque é
        a primeira em que "onde" quer dizer alguma coisa */
     const P = vista._planta;
-    let naArq = 0, noCorr = 0, naEsc = 0;
+    let naArq = 0, noCorr = 0, noVom = 0, naRua = 0;
     for (const d of J.discos) {
       if (!d.vivo || d.entrou || d.sumiu) continue;
-      let esc = false;
-      for (const e of P.ESCADAS) {
-        const q = P.ondeNaEscada(e, d.x, d.y);
-        if (q && (q.lance || q.vao)) { esc = true; break; }
-      }
-      const dd = P.dist(d.x, d.y);
-      if (esc) naEsc++;
-      else if (dd < P.D.arq) naArq++;
-      else if (dd < P.D.corr) noCorr++;
+      if (P.noVomitorio(d.x, d.y)) { noVom++; continue; }
+      const f = P.faixaDe(P.dist(d.x, d.y));
+      if (f === 'geral') naArq++;
+      else if (f === 'corredor') noCorr++;
+      else if (f === 'rua') naRua++;
     }
     const c = vista.conta || {};
     elEstado.innerHTML =
-      '<b>' + (tela3d ? '3D · ' + vista.vista : '2D') + '</b> · ' + fps + ' fps · ' +
+      '<b>' + vista.vista + '</b> · ' + fps + ' fps · ' +
       (vista.comModelo ? 'boneco do Blender' : 'boneco de cápsula') +
       (vista.corte ? ' · ' + vista.corte.vistos + ' na tela, ' + vista.corte.cortados + ' fora' : '') + '<br>' +
-      'arquibancada <b>' + naArq + '</b> · escada <b>' + naEsc + '</b> · corredor <b>' + noCorr + '</b><br>' +
+      'arquibancada <b>' + naArq + '</b> · vomitório <b>' + noVom +
+      '</b> · corredor <b>' + noCorr + '</b> · rua <b>' + naRua + '</b><br>' +
       'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') +
       (J.acordou ? '' : ' · <i>setor deles parado</i>') + '<br>' +
-      c.degraus + ' degraus · ' + c.escadas + ' escadas · ' +
+      c.degraus + ' degraus · ' + c.fileiras + ' fileiras de cadeira · ' +
+      c.vomitorios + ' vomitórios · ' + c.lojas + ' balcões · ' +
       (c.triangulos || 0).toLocaleString('pt-BR') + ' triângulos' +
       (vista.sombra ? '' : ' · sem sombra') +
       (pausado ? '<br>PAUSADO' : '');
@@ -232,8 +211,7 @@ function laco(agora) {
   requestAnimationFrame(laco);
 }
 
-new ResizeObserver(() => { if (tela3d) vista.redimensionar(); }).observe(caixa);
-aplicarTela();
+new ResizeObserver(() => vista.redimensionar()).observe(caixa);
 abrir();
 ant = marcoFps = performance.now();
 requestAnimationFrame(laco);
