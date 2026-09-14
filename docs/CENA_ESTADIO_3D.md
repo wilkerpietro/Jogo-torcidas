@@ -52,32 +52,51 @@ anel externo, não um estádio. A dobra é o que faz o corredor ser corredor.
 | faixa | d | r | altura | |
 |---|---|---|---|---|
 | pista | 0 → 26 | = d | 0 | bloqueia |
-| geral | 26 → 122 | = d | 6 → 56,6 | **anda** (12 degraus) |
-| cadeira | 122 → 170 | = d | 61 → 84 | bloqueia (6 fileiras) |
-| muro | 170 → 186 | = d | — | bloqueia |
-| **corredor** | 186 → 254 | **102 + (d−186)** | **0** | **anda** |
-| fachada | 254 → 270 | 170 + (d−254) | 0 → 108 | bloqueia, com portões |
-| rua | 270 → | 186 + (d−270) | 0 | anda |
+| **arquibancada** | 26 → 138 | = d | 6 → 65,8 | **anda** (14 degraus) |
+| parapeito | 138 → 154 | = d | 66 → 92 | bloqueia |
+| **corredor** | 154 → 226 | **104 + (d−154)** | **0** | **anda** |
+| fachada | 226 → 242 | 176 + (d−226) | 0 → 92 | bloqueia, com portões |
+| rua | 242 → | 192 + (d−242) | 0 | anda |
 
-Repare no corredor: `d` de 186 a 254 vira `r` de 102 a 170, que é exatamente
-onde a arquibancada está por cima. O corredor tem 68 de fundo e o pé-direito
-é o fundo da laje — **39 no ponto mais apertado, contra 34 de boneco.** É
-corredor de estádio: baixo.
+Repare no corredor: `d` de 154 a 226 vira `r` de 104 a 176, que é exatamente
+onde a arquibancada está por cima. Ele tem 72 de fundo e o pé-direito é o
+fundo da laje — **39 no ponto mais apertado, contra 34 de boneco.** É corredor
+de estádio: baixo.
 
-### Por que a arquibancada de cima é cadeira, e não se pisa
+### A arquibancada é inteira andável, e isso custou a sair
 
-Não é enfeite: é o que fecha a conta da dobra. O vomitório é uma tira do
-tabuleiro que atravessa da geral até o corredor, e ela **come** as células da
-arquibancada no caminho — porque uma célula só pode estar num lugar. Se a
-arquibancada de cima fosse andável, essas células comidas virariam laje que
-se vê e não se pisa, que é a mentira que este projeto não comete. Sendo
-cadeira, elas já eram bloqueadas em toda parte, e a tira só as usa por baixo,
-como túnel. A cadeira também é o que a foto mostra.
+A primeira dobra tinha **seis fileiras de cadeira** em cima, que não se
+pisava, e elas existiam por contabilidade: o vomitório é uma tira do tabuleiro
+que atravessa da arquibancada até o corredor, e ela **come** as células da
+arquibancada no caminho — uma célula só pode estar num lugar. Se as de cima
+fossem andáveis, as comidas virariam laje que se vê e não se pisa.
+
+A conta fecha de outro jeito, e é este: **o pé da escada tem de cair DEPOIS da
+última fila.** Se a tira, no mundo, vai de `rTop` até um raio *maior* que a
+borda de fora da arquibancada, então toda a superfície que ela apaga está
+dentro do buraco dela mesma — não sobra laje órfã nenhuma. É por isso que o pé
+está em r=150 e a arquibancada acaba em 138: aqueles 12 a mais são o que paga
+a conta.
+
+E aí a arquibancada inteira pode ser degrau de concreto igual, como na
+arquibancada pré-moldada da referência: **catorze degraus, todos andáveis, sem
+cadeira e sem setor que não se pisa.**
+
+### "Dá pra ver o corredor estando na arquibancada"
+
+Era a câmera, não a geometria — e era consequência direta da dobra. A
+arquibancada sobe pra fora, então a câmera de ombro atrás do jogador cai num
+ponto onde o concreto é mais alto do que ela; e como *embaixo daquele ponto é
+o corredor*, ela entrava no vão e o jogador passava a ver o corredor de dentro
+do concreto. Agora `planta.superficie(X, Z)` diz a altura da superfície de
+cima naquele ponto do mundo, e a câmera é obrigada a ficar acima dela sempre
+que o jogador não estiver sob a laje.
+
 
 ### O vomitório, pela prancha
 
-Sai do degrau 5 da geral (r=66, altura 29) e desce até o chão do corredor
-(r=130): **64 de tiro pra 29 de queda, 24 graus**. São seis. As medidas vieram
+Sai do degrau 7 da arquibancada (r=82, altura 38,2) e desce até depois da
+última fila (r=150): **68 de tiro pra 38 de queda, 29 graus**. São seis. As medidas vieram
 de uma prancha técnica de vomitório que o dono mandou, convertidas pela régua
 desta cena (o boneco tem 34 pra 1,75 m, então **1 m ≈ 19,4**):
 
@@ -87,7 +106,7 @@ desta cena (o boneco tem 34 pra 1,75 m, então **1 m ≈ 19,4**):
 | corrimão, 1,10 m | 21,4 acima do piso do degrau |
 | **corrimão central** partindo a escada | tubo no eixo, com montante por degrau |
 | **corrimão lateral** em cima das muretas | tubo + montante, acompanhando o degrau |
-| **faixa amarela, mínimo 5 cm**, no nariz | 1,6 em todo degrau — do vomitório E da geral |
+| **faixa amarela, mínimo 5 cm**, no nariz | 1,4 em todo degrau — do vomitório E da arquibancada |
 
 **Os degraus passaram de 16 pra 10 por causa dessa régua.** Com 16, cada
 degrau tinha 4 de piso e 1,8 de subida — **20 cm por 9 cm**, degrau de casa de
@@ -96,9 +115,12 @@ espelho**, que é escada de verdade. A colisão conta os mesmos dez: `rampa()`
 quantiza a altura em degrau, não em rampa, então o pé sobe o degrau inteiro
 de uma vez, como sobe na vida.
 
-**A faixa amarela da arquibancada é pintura, não volume**, e é decisão de
-custo: o degrau já é geometria, e um filete de 1,6 em relevo custaria vinte
-mil triângulos pra aparecer menos do que aparece pintado.
+**A faixa amarela da arquibancada foi pintura e virou volume.** Pintada ela
+não funcionava: um filete de 1,3 numa textura de 2× passa por mipmap e por
+anisotropia e chega na tela com três vezes a largura, e de longe a
+arquibancada lia como listra amarela e azul alternada em vez de degrau com
+nariz marcado. Em volume custa 6,8 mil triângulos no estádio inteiro e sai
+nítida.
 
 ### O corredor saiu de duas fotos, não da planta
 
@@ -129,9 +151,10 @@ número move os dois. A máscara é gerada e não colada: colada ela envelhece n
 primeira vez que alguém muda um número, e aí a planta e a colisão passam a
 discordar sem ninguém perceber.
 
-**Confirmado por busca em largura sobre a máscara gerada:** 16 497 células
-andáveis, 100% alcançáveis do ponto de partida do jogador — geral, vomitório,
-corredor e rua, todos ligados só pelos caminhos que a planta declara.
+**Confirmado por busca em largura sobre a máscara gerada:** 17 317 células
+andáveis, 100% alcançáveis do ponto de partida do jogador — arquibancada,
+vomitório, corredor e rua, todos ligados só pelos caminhos que a planta
+declara.
 
 ### Não há cena 2D, e é decisão do dono
 
@@ -260,11 +283,11 @@ câmera arrastando, e isso vale no monitor tanto quanto no telefone.
    as duas. A migração é pequena — trocar a multidão por `entrarEm` e passar
    o mesmo `sinais3d.js` —, mas é outra sessão e outro teste. **Não fiz de
    propósito:** `cena3d.js` está como estava, sem uma linha mexida.
-3. **A arquibancada não tem cadeira.** O azul é pintura, não volume. De perto
-   isso aparece. Cadeira instanciada é barata (uma chamada pra toda a bacia),
-   mas atravessa o boneco que está em pé em cima dela — e a torcida
-   organizada fica de pé. A saída certa é cadeira só nos setores onde não se
-   briga, e isso é dado de cena que ainda não existe.
+3. **A arquibancada não tem cadeira, e isso agora é escolha.** O dono pediu
+   tudo padronizado, como na arquibancada pré-moldada de concreto, e é o que
+   está no ar: catorze degraus iguais. Se um dia entrar setor de cadeira, ele
+   precisa ser um setor de verdade — separado, marcado, e com o vomitório dele
+   —, não seis fileiras diferentes no meio de uma bacia igual.
 4. **A cobertura é uma laje.** Sem treliça, sem calha, sem o beiral irregular
    da foto. É onde um kit de Blender entraria primeiro (§8 do plano antigo:
    "onde o Blender ganha muito mais rápido é no cenário, não na gente").
