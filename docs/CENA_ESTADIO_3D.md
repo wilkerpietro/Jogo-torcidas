@@ -239,6 +239,16 @@ cordão do portão da casa.
 7. **A cena não está no dia de jogo.** É uma página à parte, como antes.
 8. **Placar, bandeirão de mastro, fumaça de sinalizador**: continuam não
    existindo. O bandeirão de setor é uma faixa colorida na mureta.
+9. **O gatilho mede distância no tabuleiro, e o tabuleiro é dobrado.**
+   `conferirGatilho` acorda o setor de guarda quando qualquer mandante
+   chega a 300 de qualquer guarda — em coordenada de tabuleiro. Na dobra,
+   o corredor norte é vizinho da arquibancada leste: na caminhada medida,
+   o líder passando pelo vomitório 1 (no corredor, com laje por cima)
+   estava a 269 de um guarda parado no alto do setor deles, e a casa
+   acordou "através do concreto". Não incomoda no jogo — o setor acorda
+   um pouco antes de ver o bonde —, mas é a dobra vazando pra simulação,
+   e é o único lugar em que ela vaza. Corrigir é medir em coordenada de
+   mundo dentro de `combate.js`, que ficou intacto de propósito.
 
 ## 10. O que este trabalho NÃO mexeu
 

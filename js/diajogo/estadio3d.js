@@ -659,7 +659,10 @@ export function criar(canvas) {
     for (let n = 1; n <= 14; n++) {
       const t = n / 14;
       if (!P.solido(alvoSuave.x + dx * t, yL + dy * t, alvoSuave.z + dz * t)) continue;
-      const u = Math.max(0.55, (n - 1) / 14);
+      /* fica ANTES da parede. O mínimo de 55% do braço era contra pilar,
+         que não está no sólido; com 55%, a câmera barrada pelo parapeito
+         ia parar do lado de fora dele. */
+      const u = Math.max(0.15, (n - 1) / 14);
       posSuave.x = alvoSuave.x + dx * u;
       posSuave.z = alvoSuave.z + dz * u;
       posSuave.y = yL + dy * u;
