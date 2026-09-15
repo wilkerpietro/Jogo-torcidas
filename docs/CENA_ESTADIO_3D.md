@@ -189,9 +189,22 @@ Nada de mecânica nova. O que há:
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
   do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
   leve corta a sombra primeiro por isso).
-- Boneco do Blender ativo (`comModelo: true`). Planta carregada em 0,3 s.
-- A caminhada do líder e a briga estão no §8 (medidas no bairro de oito
-  quarteirões; a cidade grande alonga o caminho, não muda o mecanismo).
+- Boneco do Blender ativo (`comModelo: true`). Planta carregada em 0,3 s;
+  a cena montada (máscara decodificada, malha de corpo, campos de fluxo dos
+  quatro spawns, geometria) em **? ms** no navegador do teste.
+- **O custo da simulação no tabuleiro grande**: 3,4 ms por passo de 1/60
+  com as duas torcidas e a PM na rua (400 passos em 1,38 s). A 60 fps é um
+  quinto do quadro; a 3 fps, com vinte passos por quadro, são 70 ms — cabe.
+- **A cidade atravessada**: sem ninguém jogar, o 2º escalão mandante saiu
+  da sede do canto sudoeste e chegou ao setor mandante (17 entraram) entre
+  106 e 168 s de relógio — uns 4.600 de caminho pela avenida diagonal, o
+  portão oeste, o corredor e o vomitório. A retaguarda visitante, sorteada
+  hostil, atravessou a cidade da orla até a sede mandante e brigou lá:
+  dez mandantes e dois visitantes caídos aos 168 s. O setor de guarda
+  ficou no lugar, porque o líder não se mexeu.
+- A caminhada do líder e a briga dentro do estádio estão no §8 (medidas no
+  bairro de oito quarteirões; a cidade grande alonga o caminho, não muda o
+  mecanismo).
 
 ## 7. Bugs achados no caminho, e o que eram
 
