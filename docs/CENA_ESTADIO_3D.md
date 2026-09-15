@@ -191,7 +191,7 @@ Nada de mecânica nova. O que há:
   leve corta a sombra primeiro por isso).
 - Boneco do Blender ativo (`comModelo: true`). Planta carregada em 0,3 s;
   a cena montada (máscara decodificada, malha de corpo, campos de fluxo dos
-  quatro spawns, geometria) em **? ms** no navegador do teste.
+  quatro spawns, geometria) em **618 ms** no navegador do teste.
 - **O custo da simulação no tabuleiro grande**: 3,4 ms por passo de 1/60
   com as duas torcidas e a PM na rua (400 passos em 1,38 s). A 60 fps é um
   quinto do quadro; a 3 fps, com vinte passos por quadro, são 70 ms — cabe.
