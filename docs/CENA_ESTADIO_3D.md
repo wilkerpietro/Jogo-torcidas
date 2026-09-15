@@ -245,6 +245,23 @@ do combate é caminhar pro destino — a saída leste, a 13 segundos. Dezesseis
 dos dezessete foram embora antes de o líder subir a escada. Foi isso que
 mudou `perto` pra 200, a saída deles pro portão sul e a tensão pra 80.
 
+**A rodada de confirmação, com os três ajustes.** O setor acordou aos 63 s,
+com o líder na quina nordeste do corredor — o alerta da PM subiu 11 → 40
+→ 82 → 100 conforme ele se aproximava —, e veio pra cima ("SETOR
+VISITANTE: veio pra cima"). A briga desceu ao encontro dele:
+
+| relógio | arquibancada | vomitório | corredor | rua | caídos (mand./vis.) |
+|---|---|---|---|---|---|
+| 71 s (chegada) | 1 | **21** | 6 | 40 | 7 / 0 |
+| 77 s | 1 | 6 | **22** | 39 | 13 / 0 |
+| 84 s | **18** | 12 | 4 | 33 | 15 / 0 |
+| 96 s | 18 | 6 | 3 | 25 | 15 / 0 |
+
+Escada, corredor e arquibancada, nessa ordem. O bonde do jogador apanhou
+porque no roteiro ninguém joga — o líder só anda —, e o 2º escalão chegou
+ao setor mandante (16 entraram) sem se envolver. O equilíbrio da briga é
+calibragem de `combate.js`, não desta cena.
+
 **O encontro.** O setor visitante, de guarda, acordou aos 58 s ("o setor
 deles viu o bonde chegar") e a PM foi a 100% ("A PM encostou no seu
 pessoal"). Dali a 124 s a briga já estava em dois andares:
