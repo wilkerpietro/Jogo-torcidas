@@ -1,43 +1,36 @@
 /* =========================================================
-   O ESTÁDIO, PINTADO — e agora em coordenada de MUNDO
+   O ESTÁDIO E O BAIRRO, PINTADOS — em coordenada de MUNDO
    ---------------------------------------------------------
-   Antes esta pintura servia a dois donos: era a cena 2D e era
-   a textura do 3D. Com a dobra ela só pode servir a um. O
-   motivo é a dobra em si: o corredor e a arquibancada caem no
-   MESMO ponto do mundo, em alturas diferentes, e uma projeção
-   de cima não sabe pintar dois pisos no mesmo pixel.
+   Esta pintura é a textura do chão do 3D, projetada de cima.
+   Fora do estádio o mundo é o próprio tabuleiro, então rua,
+   calçada e quarteirão saem no lugar em que estão. O estádio
+   sai no raio do MUNDO (`P.anel`), que é onde a geometria está.
+   O piso do corredor mora EMBAIXO da arquibancada e a projeção
+   de cima já está ocupada: ele tem material próprio.
 
-   Então esta pintura é do MUNDO: gramado, pista, degrau,
-   arcada e rua, todos no raio em que eles de fato
-   estão. O 3D projeta ela de cima na geometria, como o
-   telhado dos arredores já fazia. O piso do corredor, que
-   mora embaixo, tem material próprio — é o único que não sai
-   daqui, e é por isso que ele não sai.
-
-   A paleta saiu da foto do Presidente Vargas: gramado puxando
-   pro seco, pista avermelhada, arquibancada azul com a barra
-   de baixo amarela, concreto encardido.
+   A paleta é a da foto aérea: concreto claro e encardido,
+   asfalto, gramado puxando pro seco.
    ========================================================= */
 window.TO = window.TO || {};
 TO.diaJogo = TO.diaJogo || {};
 
 TO.diaJogo.estadioPintura = (function(){
   const COR = {
-    rua:       '#3b3b39',
-    calcada:   '#8a867b',
-    arcada:    '#b8b1a0',
-    degrau:    '#2f6ba8',
-    degrauAlt: '#2a5f97',
-    degrauBase:'#d3a32c',
-    divisa:    '#e6e3d8',
-    faixa:     '#e8c22a',
-    pista:     '#a3543f',
-    raia:      '#e8e2d4',
-    gramado:   '#3d7a36',
-    gramadoA:  '#437f3a',
-    gramadoB:  '#377232',
-    linha:     '#eef0e6',
-    concreto:  '#9d998e'
+    rua:        '#3a3a38',
+    calcada:    '#8d897d',
+    lote:       '#7d7668',
+    calcadaEst: '#9c9789',
+    arcada:     '#b3ac9b',
+    laje:       '#a39e91',
+    degrau:     '#c6bfab',
+    degrauAlt:  '#b9b29e',
+    meioFio:    '#6a675f',
+    faixaPed:   '#d9d6cc',
+    eixo:       '#c9b96a',
+    pista:      '#8f8b80',
+    gramadoA:   '#437f3a',
+    gramadoB:   '#377232',
+    linha:      '#eef0e6'
   };
 
   function contorno(c, P, r, inverso){
@@ -52,16 +45,13 @@ TO.diaJogo.estadioPintura = (function(){
     c.closePath();
   }
   function faixa(c, P, r0, r1, cor){
-    c.beginPath();
-    contorno(c, P, r1, false);
-    contorno(c, P, r0, true);
+    c.beginPath(); contorno(c, P, r1, false); contorno(c, P, r0, true);
     c.fillStyle = cor; c.fill();
   }
   function risco(c, P, r, cor, larg){
     c.beginPath(); contorno(c, P, r, false);
     c.strokeStyle = cor; c.lineWidth = larg || 1; c.stroke();
   }
-  /* granulado, pra o concreto não sair chapado na câmera de perto */
   function sujar(c, x, y, w, h, n, alfa){
     for(let i=0;i<n;i++){
       c.fillStyle = 'rgba(0,0,0,'+(alfa*Math.random()).toFixed(3)+')';
@@ -97,59 +87,75 @@ TO.diaJogo.estadioPintura = (function(){
     }
   }
 
+  /* faixa de pedestre: barras atravessando a rua */
+  function faixaPedestre(c, x0, y0, w, h, horizontal){
+    c.fillStyle = COR.faixaPed;
+    if(horizontal){ for(let x = x0; x < x0 + w; x += 12) c.fillRect(x, y0, 6, h); }
+    else { for(let y = y0; y < y0 + h; y += 12) c.fillRect(x0, y, w, 6); }
+  }
+
+  function bairro(c, P, W, H){
+    c.fillStyle = COR.rua; c.fillRect(0, 0, W, H);
+    sujar(c, 0, 0, W, H, 9000, 0.16);
+    /* o eixo das ruas, tracejado */
+    c.strokeStyle = COR.eixo; c.lineWidth = 1.6; c.setLineDash([18, 14]);
+    const R = P.RUA;
+    for(const y of [R/2, P.QEST_Y0 - R/2, P.QEST_Y1 + R/2, H - R/2]){
+      c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke();
+    }
+    for(const x of [R/2, P.QEST_X0 - R/2, P.QEST_X1 + R/2, W - R/2]){
+      c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke();
+    }
+    c.setLineDash([]);
+    /* os quarteirões: calçada por fora, terreno por dentro */
+    for(const q of P.QUADRAS){
+      c.fillStyle = COR.calcada; c.fillRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
+      c.fillStyle = COR.lote;    c.fillRect(q.ix0, q.iy0, q.ix1-q.ix0, q.iy1-q.iy0);
+      c.strokeStyle = COR.meioFio; c.lineWidth = 2;
+      c.strokeRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
+    }
+    /* faixas de pedestre: na frente dos três portões e no norte */
+    const { CX, CY } = P;
+    faixaPedestre(c, P.QEST_X0 - R, CY - 22, R, 44, true);
+    faixaPedestre(c, P.QEST_X1,     CY - 22, R, 44, true);
+    faixaPedestre(c, CX - 22, P.QEST_Y1,     44, R, false);
+    faixaPedestre(c, CX - 22, P.QEST_Y0 - R, 44, R, false);
+  }
+
   /* pinta o MUNDO inteiro no canvas do tabuleiro */
   function pintar(c, P, W, H){
     const D = P.D, R = P.R;
+    bairro(c, P, W, H);
 
-    c.fillStyle = COR.rua; c.fillRect(0, 0, W, H);
-    sujar(c, 0, 0, W, H, 2400, 0.18);
-    faixa(c, P, R.rua0, R.rua0 + 40, COR.calcada);      // a calçada do lado de fora
+    /* o quarteirão do estádio: calçada redonda, arcada, a laje de
+       trás e a arquibancada, de fora pra dentro */
+    c.fillStyle = COR.calcadaEst;
+    c.fillRect(P.QEST_X0, P.QEST_Y0, P.QEST_X1-P.QEST_X0, P.QEST_Y1-P.QEST_Y0);
+    faixa(c, P, R.calcada0, R.calcada1, COR.calcadaEst);
+    risco(c, P, R.calcada1, COR.meioFio, 2);
+    faixa(c, P, R.fachada0, R.fachada1, COR.arcada);
+    faixa(c, P, D.arq, R.fachada0, COR.laje);
+    sujar(c, P.QEST_X0, P.QEST_Y0, P.QEST_X1-P.QEST_X0, P.QEST_Y1-P.QEST_Y0, 2600, 0.14);
 
-    /* a arcada e o piso de trás dela */
-    faixa(c, P, R.fachada0, R.rua0, COR.arcada);
-
-    /* a arquibancada, degrau por degrau, de fora pra dentro.
-       CATORZE IGUAIS: não há mais faixa de cadeira. A barra
-       amarela de baixo é a única coisa que muda de cor, e ela é a
-       mureta do fosso, não um setor. */
+    /* a arquibancada: dezoito degraus de concreto, iguais */
     for(let i=P.NDEG-1;i>=0;i--){
       const r0 = D.pista + i*P.ALT.degrau, r1 = r0 + P.ALT.degrau;
-      faixa(c, P, r0, r1, i < 2 ? COR.degrauBase : i % 2 ? COR.degrau : COR.degrauAlt);
-      risco(c, P, r0, 'rgba(0,0,0,.30)', 1.6);
+      faixa(c, P, r0, r1, i % 2 ? COR.degrau : COR.degrauAlt);
+      risco(c, P, r0, 'rgba(0,0,0,.28)', 1.4);
     }
-    /* A FAIXA AMARELA DO NARIZ NÃO ESTÁ AQUI, e já esteve.
-       Pintada, ela virava uma tarja: um filete de 1,3 numa
-       textura de 2× passa por mipmap e por anisotropia e chega
-       na tela com três vezes a largura, e de longe a
-       arquibancada lia como listra amarela e azul alternada em
-       vez de degrau com nariz marcado. Agora ela é volume, em
-       `estadio3d.js` — custa 6,8 mil triângulos e sai nítida. */
-    /* as divisas de setor: um risco claro de tempo em tempo */
-    c.save();
-    c.beginPath(); contorno(c, P, D.arq, false); contorno(c, P, D.pista, true); c.clip();
-    const dentro = P.anel(D.pista), fora = P.anel(D.arq);
-    c.strokeStyle = COR.divisa; c.lineWidth = 2.6;
-    for(let i=0;i<P.N;i+=Math.round(P.N/16)){
-      c.beginPath(); c.moveTo(dentro[i][0], dentro[i][1]); c.lineTo(fora[i][0], fora[i][1]); c.stroke();
-    }
-    c.restore();
-
     /* a pista e o gramado */
     faixa(c, P, 0, D.pista, COR.pista);
-    for(let k=1;k<3;k++) risco(c, P, D.pista*k/3, 'rgba(238,232,218,.4)', 1.4);
+    risco(c, P, D.pista*0.5, 'rgba(238,232,218,.35)', 1.2);
     gramado(c, P);
   }
 
-  /* o piso do corredor tem material próprio: ele mora EMBAIXO
-     da arquibancada e a projeção de cima já está ocupada */
+  /* o piso do corredor: cimento queimado com junta */
   function pisoCorredor(lado){
     const cv = document.createElement('canvas');
     cv.width = cv.height = lado || 256;
     const c = cv.getContext('2d');
     c.fillStyle = '#7d7a73'; c.fillRect(0, 0, cv.width, cv.height);
     sujar(c, 0, 0, cv.width, cv.height, 5200, 0.26);
-    /* as juntas de dilatação, que é o que um piso de cimento
-       queimado tem e o que dá escala quando se anda nele */
     c.strokeStyle = 'rgba(0,0,0,.24)'; c.lineWidth = 1.4;
     for(let k=0;k<=4;k++){
       const p = k*cv.width/4;

@@ -1,328 +1,235 @@
-# O ESTÁDIO EM 3D — briga na arquibancada, no corredor e na escada
+# O estádio e o bairro em 3D — a segunda cena
 
-Documento de trabalho, no mesmo espírito do `PLANO_CENA_3D.md`: o que foi
-feito, o que custou, o que foi medido e o que ficou aberto.
+Este documento é o registro da cena `estadio3d.html` refeita do zero: o
+que foi pedido, como foi resolvido, o que foi medido e o que ficou aberto.
+Substitui o documento da primeira versão (histórico em `e3a617d`).
 
-O pedido era um cenário de estádio inspirado numa foto do Presidente Vargas,
-com os membros das torcidas brigando na arquibancada e embaixo, nos
-corredores, com escadas de acesso entre os dois — usando o movimento dos
-bonecos que já existe e os botões de movimento que já existem.
+## 1. O que foi pedido
 
----
+Um estádio de bairro inspirado na foto aérea (bacia retangular de quinas
+redondas, arquibancada única de concreto, sem cobertura), com:
 
-## 1. O que abrir
+- corredor de acesso **embaixo** da arquibancada, com comércio;
+- **oito vomitórios** furando a arquibancada, como na foto;
+- **três portões**: um atrás de cada gol e um na lateral sul;
+- **oito quarteirões** em volta, o estádio no meio;
+- a torcida nascendo **nas pontas do bairro** e caminhando até o estádio,
+  com briga possível em qualquer lugar — rua, portão, corredor, escada,
+  arquibancada — e a PM tentando evitar;
+- os bonecos, os sinais de combate e o pad de movimento **reaproveitados**
+  sem uma linha mexida: `bonecos3.js`, `boneco.glb`, `sinais3d.js`,
+  `pad3d.js` + `pad3d.css`;
+- `combate.js` intacto.
 
-```
-python3 -m http.server 8000
-# depois: http://localhost:8000/estadio3d.html
-```
+## 2. A dobra, engolida pelo gramado
 
-Módulo ES não carrega por `file://`; precisa de servidor.
+`combate.js` é um tabuleiro plano: uma célula, um lugar, sem altura. O
+corredor debaixo da arquibancada existe porque `mundo(x, y)` **dobra o
+tabuleiro**: duas faixas distantes dele caem no mesmo ponto do mundo em
+alturas diferentes. Isso já era assim na primeira versão.
 
-**Controles.** WASD anda (relativo à câmera), 1–4 formação, Q pedra, E bomba,
-R recuar, arrastar gira a câmera, roda aproxima. `Z` ombro, `X` alta, `C`
-maquete, `F` zenital, `H` sombra, `V` alterna 2D ↔ 3D na mesma partida,
-ESPAÇO pausa. **No celular, tudo isso está em botão na tela** — a cruz de
-WASD, pedra, bomba, recuar, as quatro formações e as quatro câmeras.
+O que mudou é quem paga a conta. Antes, a faixa do corredor empurrava tudo
+que estava do lado de fora pra longe do centro — em curva, porque a dobra é
+radial —, e uma rua reta atravessando isso entortava. Agora **o retângulo
+âncora do tabuleiro é 86 menor por lado que o gramado do mundo** (468 × 244
+contra 640 × 416). Ninguém pisa no gramado, então não custa nada. Fora do
+estádio, **tabuleiro = mundo**: rua reta é rua reta, prédio é retângulo nos
+dois lugares.
 
----
-
-## 2. O problema, e a saída
-
-A briga tem dois andares: arquibancada em cima, corredor **embaixo dela**, e
-os vomitórios — os buracos na arquibancada — ligando os dois. E `combate.js`
-é um tabuleiro **plano** de 1536 × 1024: uma célula, um lugar. Não tem andar,
-não tem altura, não tem escada.
-
-**Nenhuma linha de `combate.js` foi tocada.** O tabuleiro continua plano e
-continua sendo uma célula por lugar — o que mudou é o mapa que leva do
-tabuleiro pro mundo. `planta.mundo(x, y)` devolve um ponto em TRÊS dimensões,
-e **duas faixas distantes do tabuleiro caem no mesmo ponto do mundo, em
-alturas diferentes**: a arquibancada e o corredor. Andar do corredor pro
-degrau é andar uma distância no tabuleiro e subir no mundo.
-
-Foi assim depois de uma correção do dono. A primeira versão punha o corredor
-*ao lado* da arquibancada, não embaixo, com a escada por fora — e ficava um
-anel externo, não um estádio. A dobra é o que faz o corredor ser corredor.
-
-### A dobra, faixa por faixa
-
-`d` é a distância ao gramado no TABULEIRO; `r` é a distância no MUNDO.
-
-| faixa | d | r | altura | |
+| faixa | tabuleiro `d` | mundo `r` | altura | máscara |
 |---|---|---|---|---|
-| pista | 0 → 26 | = d | 0 | bloqueia |
-| **arquibancada** | 26 → 138 | = d | 6 → 65,8 | **anda** (14 degraus) |
-| parapeito | 138 → 154 | = d | 66 → 92 | bloqueia |
-| **corredor** | 154 → 226 | **104 + (d−154)** | **0** | **anda** |
-| fachada | 226 → 242 | 176 + (d−226) | 0 → 92 | bloqueia, com portões |
-| rua | 242 → | 192 + (d−242) | 0 | anda |
+| pista + placas | 0 → 24 | = d | 0 | bloqueia |
+| **arquibancada** (18 degraus de 8 × 4,6) | 24 → 168 | = d | 6 → 84,2 | anda |
+| parapeito | 168 → 182 | = d | 84 → 110 | bloqueia |
+| **corredor** | 182 → 310 | **96 → 224** | 0 | anda |
+| fachada (arcada, 3 portões) | 310 → 326 | 224 → 240 | 0 → 84 | bloqueia, menos o vão |
+| calçada do estádio | 326 → 358 | 240 → 272 | 0 | anda |
+| bairro | 358 → | = tabuleiro | 0 | anda, menos prédio e carro |
 
-Repare no corredor: `d` de 154 a 226 vira `r` de 104 a 176, que é exatamente
-onde a arquibancada está por cima. Ele tem 72 de fundo e o pé-direito é o
-fundo da laje — **39 no ponto mais apertado, contra 34 de boneco.** É corredor
-de estádio: baixo.
+Nos lados retos, "`r = d − 86`" é a identidade. Só nas quatro quinas os dois
+mapas divergem — uma lasca de até 36 unidades na diagonal —, e ela fica
+**bloqueada** (é o canto das torres, com gradil na curva da calçada).
+Ninguém pisa, ninguém vê, e "uma célula, um lugar" continua verdadeiro.
 
-### A arquibancada é inteira andável, e isso custou a sair
+O corredor tem **128 de fundo** (era 72), com pé-direito de 39 na parede de
+dentro e 76 na de fora. Era o que faltava pra câmera de ombro (braço de 105)
+parar de bater em pilar.
 
-A primeira dobra tinha **seis fileiras de cadeira** em cima, que não se
-pisava, e elas existiam por contabilidade: o vomitório é uma tira do tabuleiro
-que atravessa da arquibancada até o corredor, e ela **come** as células da
-arquibancada no caminho — uma célula só pode estar num lugar. Se as de cima
-fossem andáveis, as comidas virariam laje que se vê e não se pisa.
+## 3. Os vomitórios
 
-A conta fecha de outro jeito, e é este: **o pé da escada tem de cair DEPOIS da
-última fila.** Se a tira, no mundo, vai de `rTop` até um raio *maior* que a
-borda de fora da arquibancada, então toda a superfície que ela apaga está
-dentro do buraco dela mesma — não sobra laje órfã nenhuma. É por isso que o pé
-está em r=150 e a arquibancada acaba em 138: aqueles 12 a mais são o que paga
-a conta.
+Oito, como na foto: dois por lado. A boca é o 11º degrau (r = 112, altura
+56,6) e a escada desce **pra fora**, por baixo da arquibancada, até o chão
+do corredor em r = 192: 80 de tiro pra 57 de queda, 35°, doze degraus.
+Sobe-se de frente pro gramado. A régua da prancha de vomitório está toda lá:
+guarda-corpo a 0,90 m, corrimão a 1,10 m, faixa amarela no nariz, corrimão
+central. O buraco na arquibancada vai de r = 112 a 152 (cinco degraus, ~25%
+da profundidade, como os quadrados escuros da foto); dali pra fora é túnel
+coberto, com a laje voltando por cima.
 
-E aí a arquibancada inteira pode ser degrau de concreto igual, como na
-arquibancada pré-moldada da referência: **catorze degraus, todos andáveis, sem
-cadeira e sem setor que não se pisa.**
+A regra que não se burla: **o pé da escada cai depois da última fila**
+(192 > 168). A tira do vomitório consome as células da arquibancada no
+caminho, e se a escada acabasse antes da borda sobraria arquibancada que se
+vê e não se pisa. Sobram 32 atrás da escada pra circular no corredor.
 
-### "Dá pra ver o corredor estando na arquibancada"
+Entre a parede de dentro (r = 96) e a boca (r = 112), embaixo da
+arquibancada baixa, é concreto maciço (a "cabeceira"): as células dali são
+a escada, e nada anda embaixo dela.
 
-Eram DUAS coisas, e eu achei a segunda só depois que o dono mandou a foto de
-dentro do jogo.
+## 4. O bairro e o tabuleiro
 
-**A câmera.** A arquibancada sobe pra fora, então a câmera de ombro atrás do
-jogador cai num ponto onde o concreto é mais alto do que ela; e como *embaixo
-daquele ponto é o corredor*, ela entrava no vão e se via o corredor de dentro
-do concreto. `planta.superficie(X, Z)` passou a dizer a altura da superfície
-de cima naquele ponto do mundo, e a câmera é obrigada a ficar acima dela
-sempre que o jogador não estiver sob a laje.
+Grade 3 × 3, estádio no meio, rua de 72 em volta de tudo (é por onde a
+torcida chega e por onde se foge):
 
-**O espelho do degrau não aparecia**, e esse era o furo de verdade. Ele
-EXISTIA — a geometria estava lá desde o começo —, mas virado pro lado errado:
-`paredeAnel` monta o triângulo com normal PRA FORA do estádio, e o espelho do
-degrau é justamente a face que se olha DE DENTRO, do lado do gramado. Com
-`FrontSide` o resultado era uma arquibancada de fitas azuis flutuando, com o
-corredor visível entre elas.
+```
+ NO  560 | N  1184 | NE 560       quarteirão: calçada de 32,
+ --------+---------+--------      lotes de frente contínua (casa,
+ O   560 | ESTÁDIO | L  560       sobrado, prédio, galpão, muro),
+ --------+---------+--------      miolo de quintal; carro na guia
+ SO  560 | S  1184 | SE 560       das ruas norte e sul do estádio
+```
 
-Todo material do estádio passou a `DoubleSide`. Catar face por face seria
-achar o mesmo bug de novo daqui a duas semanas: numa bacia fechada há
-superfície olhada dos dois lados em vários lugares — o espelho por dentro, a
-testeira por fora, a laje do teto por baixo. O three vira a normal na face de
-trás sozinho, então a luz continua certa.
+Tabuleiro **2592 × 2048** (324 × 256 células). Os lotes, carros e árvores
+nascem na planta com sorteio de semente fixa (`semente(20260915)`): a
+máscara e o desenho leem a mesma lista.
 
+**A pegadinha que custou uma hora.** `arredores.js` lê `largura`, `altura`
+e `celula` **uma vez, na carga**, da cena padrão — e a malha, a malha de
+corpo e a memória de rota nascem daquele tamanho. O comentário do próprio
+módulo diz: "todas têm o mesmo tamanho de tela". Trocar de cena não
+redimensiona nada: o tabuleiro de 2592 × 2048 foi decodificado num buffer
+de 1536 × 1024 e tudo com `y ≥ 1024` virou parede — "PORTÃO SELADO, sem
+rota" nos quatro spawns, com a máscara certa. A saída, sem mexer no módulo:
+**nesta página a cena padrão é o estádio** (`TO.dados.cenaArredores =
+TO.dados.cenaEstadio`, antes de `arredores.js` subir). O jogo em
+`index.html` não passa por aqui. Se um dia uma cena do jogo 2D precisar de
+tamanho próprio, é `arredores.js` que tem de mudar (`const` → `let` e
+realocar em `usarCena`), não a cena.
 
-### O vomitório, pela prancha
+## 5. A vida da cena — o que o combate já fazia, e como foi ligado
 
-Sai do degrau 7 da arquibancada (r=82, altura 38,2) e desce até depois da
-última fila (r=150): **68 de tiro pra 38 de queda, 29 graus**. São seis. As medidas vieram
-de uma prancha técnica de vomitório que o dono mandou, convertidas pela régua
-desta cena (o boneco tem 34 pra 1,75 m, então **1 m ≈ 19,4**):
+Nada de mecânica nova. O que há:
 
-| na prancha | aqui |
+- **`id: 'arredores'`, de propósito.** `combate.js` só liga a vida do lado
+  de fora — ficar na sede até a hora, bonde hostil sair atrás do rival,
+  fugir é entrar — quando `D.id === 'arredores'` (`fugaPelaEntrada`). A
+  página acha a cena pelo registro `TO.dados.cenas.estadio`, não pelo id.
+- **O destino é o setor, não o portão.** `entradas` são os dois setores na
+  arquibancada (oeste mandante, leste visitante). O campo de fluxo leva
+  portão → corredor → vomitório → arquibancada sozinho, pela máscara. Quem
+  chega "entrou" e some, como quem entra no portão nos arredores.
+- **O setor visitante já está dentro, de guarda.** O combate só tem um
+  estado "fica parado esperando": `guarda`, que dorme até o rival chegar a
+  `gatilho.perto` (300). Sem isso todo mundo caminhava até o destino e
+  sumia em 50 segundos, e o estádio ficava vazio antes de você entrar. O
+  destino desse grupo é a **saída leste** (fora do portão): é por onde ele
+  vai embora depois. A retaguarda deles chega andando do quarteirão NE.
+- **O relógio.** `minutosAteJogo = 60` na página: a marcha pro estádio
+  começa perto de um minuto (tempo de você chegar antes), e o bonde hostil
+  sai atrás do rival entre 20 e 55 segundos. `raioVadiagem = 220` pra
+  ninguém vagar até o meio do estádio.
+- **O cordão da PM não fecha o portão.** Cobre 48 dos 80 e deixa um funil
+  de 32 num lado. Selado, o campo de fluxo não tem rota e todo mundo para
+  na grade batendo nela.
+- **As divisas de setor são radiais**, do 2º ao 17º degrau, em oito
+  módulos — cortam a arquibancada em duas metades (quatro vomitórios cada)
+  e quebram, como toda grade. `bonecos3` desenha grade como uma caixa por
+  módulo, na altura do centro dele; com três módulos virava uma escada de
+  blocos amarelos flutuando.
+- **PM:** posto nos três portões, dois no corredor, dois nas divisas e um
+  na rua sul, que é onde os dois lados se cruzam se alguém for caçar.
+  `tropaChoque: true`.
+
+## 6. O que foi medido
+
+- Máscara: 40.811 células andáveis, **34.213 onde um corpo cabe, 100%
+  alcançáveis** do spawn do jogador (BFS com a mesma régua do
+  `arredores.js`: as 8 vizinhas livres, grades e filas bloqueando). O campo
+  de fluxo do próprio módulo, no navegador, alcança 34.231.
+- Por andar (células de corpo): rua 25.506 · corredor 4.339 · vomitório
+  748 · arquibancada 3.572 · portão 48.
+- Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · 172 lotes ·
+  49 carros · 87 árvores · **83.436 triângulos** · **15–16 chamadas de
+  desenho** (estádio 5, bairro 1, chão 2, gente e grades o resto).
+- Boneco do Blender ativo (`comModelo: true`).
+- A caminhada do líder pela rota inteira está no §8.
+
+## 7. Bugs achados no caminho, e o que eram
+
+1. **Metade do gramado escura no zenital.** Não era sombra: era o plano
+   escuro de "além do mapa", a 0,3 abaixo do chão. A 2300 de distância o
+   z-buffer não separa 0,3, e o plano de baixo vazava por uma diagonal (a
+   diagonal dos dois triângulos do plano). Plano a −6 e `near` 2.
+2. **Barras vermelhas em cima da arquibancada.** Os toldos das lojas, em
+   46–50, atravessavam a laje: o pé-direito na parede de dentro é 39. O
+   comércio inteiro desceu pra baixo de 39.
+3. **Câmera livre olhando sempre pro centro.** `posicionarCamera` resetava
+   o alvo pro centro do estádio em toda câmera que não segue o líder — a
+   câmera de foto incluída. E ela também precisava saber se o *alvo* está
+   embaixo da laje, não só o líder.
+4. **PORTÃO SELADO** — o §4, e antes dele o cordão do tamanho do portão.
+
+## 8. A caminhada do líder
+
+(medida com o roteiro `sim3.js`: waypoints em rua, tecla apertada a cada
+passo até chegar; velocidade do líder ~41 px/s)
+
+| perna | chegou em | onde | altura 3D | tempo |
+|---|---|---|---|---|
+| sede → esquina da rua norte | (658, 551) | rua | 0 | 5,2 s |
+| rua oeste até a frente do portão | (664, 1013) | rua | 0 | 7,8 s |
+| calçada do portão | (700, 1019) | rua | 0 | 0,7 s |
+| portão → corredor | (796, 1019) | corredor | 0 | 1,6 s |
+| corredor → pé do vomitório 4 | (807, 945) | vomitório | 5 | 1,3 s |
+| escada acima → arquibancada | (954, 939) | arquibancada | 52 | 2,5 s |
+
+Do spawn à arquibancada: **19 segundos**, sem tocar em grade. (A travessia
+pelo corredor norte até o setor visitante e o encontro estão sendo medidos;
+entram na próxima revisão deste documento.)
+
+Na primeira tentativa o líder foi **preso**: o roteiro mirava reto no vão e
+encostou no cordão da PM do próprio portão; o alerta subiu a 79 em vinte
+segundos e a PM levou o líder antes de ele entrar. Foi isso que tirou o
+cordão do portão da casa.
+
+## 9. O que ficou aberto
+
+1. **Quem chega no setor some.** É a regra do combate ("entrou"). Ficar de
+   pé cantando seria mecânica nova. O setor visitante contorna isso sendo
+   guarda; o mandante não tem equivalente — o seu bonde é você.
+2. **A árvore é um pinheiro.** Duas pirâmides. Lê como árvore de longe; de
+   perto é árvore de Natal. Um dodecaedro achatado resolve, outra sessão.
+3. **A grade é uma caixa.** `bonecos3` desenha cada módulo como caixa de 30
+   de altura; o cordão e a fila na frente do portão são blocos amarelos e
+   cinza. Não mexi de propósito — `bonecos3.js` era pra ficar intacto.
+4. **A escala continua a (a)** do `PLANO_CENA_3D.md`: boneco de mesa vivo.
+   É consequência de `combate.js` intacto — a (b) é recalibrar ele
+   inteiro. A arquibancada tem 84 de altura pra um boneco de 34.
+5. **A câmera de ombro ainda encontra pilar** no corredor, menos que antes
+   (o corredor é 128 e não 72), mas encontra. O braço encurta pra 70% sob a
+   laje e o sólido empurra a câmera pra perto do líder.
+6. **O fps de verdade.** Este ambiente só tem rasterizador por software; os
+   números de chamada e triângulo valem, o fps não. Rode aí e olhe o
+   contador; `H` desliga a sombra, que é o primeiro suspeito.
+7. **A cena não está no dia de jogo.** É uma página à parte, como antes.
+8. **Placar, bandeirão de mastro, fumaça de sinalizador**: continuam não
+   existindo. O bandeirão de setor é uma faixa colorida na mureta.
+
+## 10. O que este trabalho NÃO mexeu
+
+- `combate.js`, `arredores.js`, `cenario.js`, `ponte.js`, `cena3d.js`,
+  `bonecos3.js`, `sinais3d.js`, `pad3d.js`, `pad3d.css`, `boneco.glb`:
+  intactos.
+- `cenas.js`, `cena_arredores.js` e todo dado de cena do jogo 2D: intactos.
+  A cena do estádio se acrescenta ao mapa de cenas de fora, e a troca da
+  cena padrão acontece só em `estadio3d.html`.
+- `index.html`, `arredores.html`, `arredores3d.html`: intactos.
+
+## 11. Os arquivos
+
+| arquivo | o que é |
 |---|---|
-| guarda-corpo de concreto, 0,90 m | mureta de 17,5 dos dois lados |
-| corrimão, 1,10 m | 21,4 acima do piso do degrau |
-| **corrimão central** partindo a escada | tubo no eixo, com montante por degrau |
-| **corrimão lateral** em cima das muretas | tubo + montante, acompanhando o degrau |
-| **faixa amarela, mínimo 5 cm**, no nariz | 1,4 em todo degrau — do vomitório E da arquibancada |
-
-**Os degraus passaram de 16 pra 10 por causa dessa régua.** Com 16, cada
-degrau tinha 4 de piso e 1,8 de subida — **20 cm por 9 cm**, degrau de casa de
-boneca, e nem se via. Com 10, dá 6,4 por 2,9: **33 cm de piso por 15 de
-espelho**, que é escada de verdade. A colisão conta os mesmos dez: `rampa()`
-quantiza a altura em degrau, não em rampa, então o pé sobe o degrau inteiro
-de uma vez, como sobe na vida.
-
-**A faixa amarela da arquibancada foi pintura e virou volume.** Pintada ela
-não funcionava: um filete de 1,3 numa textura de 2× passa por mipmap e por
-anisotropia e chega na tela com três vezes a largura, e de longe a
-arquibancada lia como listra amarela e azul alternada em vez de degrau com
-nariz marcado. Em volume custa 6,8 mil triângulos no estádio inteiro e sai
-nítida.
-
-### O corredor saiu de duas fotos, não da planta
-
-O dono mandou dois quadros de dentro do Presidente Vargas, e eles mudaram
-quatro coisas que nenhuma planta teria dito:
-
-1. **O teto é a laje da arquibancada**, inclinada, com as **vigas aparentes**
-   correndo no sentido do degrau. Não é forro plano: é concreto nervurado, e
-   é ele que dá a sensação de estar embaixo de alguma coisa pesada.
-2. **Pilar quadrado** no meio do corredor, de tantos em tantos metros.
-3. **Um lado é aberto.** Balcão de um lado e, do outro, mureta na altura da
-   cintura com a luz estourando por cima. Então a fachada não é muro cego: é
-   **arcada** — pilar, mureta, e vazio até a laje.
-4. **O comércio é balcão na parede**, não quiosque solto: lanche, pipoca,
-   cerveja, cachorro-quente, banheiro e a loja da torcida, com toldo e placa.
-   São doze, e estão na MÁSCARA — o corpo esbarra neles.
-
-É a mesma regra que já valia na cena 3D dos arredores ("o que bloqueia a
-passagem é exatamente o que aparece na tela"), com um irmão novo: **a altura
-que o desenho mostra é exatamente a altura que a planta declara.** Não existe
-degrau que só o olho vê, nem corrimão que o corpo atravessa.
-
-### A planta é uma só, lida por dois
-
-`dados/cena_estadio.js` é a fonte. Dela saem a **máscara de caminhabilidade**
-(gerada na carga, é o que `combate.js` enxerga) e a **geometria 3D**. Mudar um
-número move os dois. A máscara é gerada e não colada: colada ela envelhece na
-primeira vez que alguém muda um número, e aí a planta e a colisão passam a
-discordar sem ninguém perceber.
-
-**Confirmado por busca em largura sobre a máscara gerada:** 17 317 células
-andáveis, 100% alcançáveis do ponto de partida do jogador — arquibancada,
-vomitório, corredor e rua, todos ligados só pelos caminhos que a planta
-declara.
-
-### Não há cena 2D, e é decisão do dono
-
-Este cenário é só 3D. Não é preguiça: a dobra torna a vista de cima uma
-mentira. Desenhado de cima, o tabuleiro mostra o corredor *ao lado* da
-arquibancada, que é onde ele está no tabuleiro e não é onde ele está no
-estádio. A pintura que existe (`estadio_pintura.js`) é do **mundo**, e serve
-só de textura pro 3D.
-
-## 4. Os bonecos: os do jogo, não uns novos
-
-O pedido foi pegar o movimento dos bonecos que já existe. Havia dois
-candidatos no repositório e nos artefatos:
-
-- o **boneco de caixa** de `cena3d.js` — dez peças, instanciado, 10 chamadas
-  de desenho pra 400 pessoas;
-- o **boneco do jogo** (artefato *Torcida Organizada*, 12/09/2026) — modelo
-  humano feito no Blender, clonado com esqueleto, com cabelo, boné, barba,
-  óculos, camisa listrada da torcida, bermuda e tênis, e um repertório de
-  vinte e poucos movimentos com três variações cada.
-
-Entrou o **do jogo**, como `js/diajogo/bonecos3.js`, porque é o que está no
-jogo e porque dois bonecos diferentes no mesmo jogo seriam dois jogos.
-
-**Uma escolha que foi refeita.** A primeira tentativa trouxe a versão da
-*Vitrine dos Bonecos* (06/09), que é a mesma anatomia sem a camada de
-desempenho. O resultado, medido no navegador: **72 figuras, 819 chamadas de
-desenho, 1 668 996 triângulos por quadro.** Isso não roda em celular, e a
-cabeça saía cheia de particularidade de perto. A versão do jogo já tinha
-resolvido exatamente isso — a malha é afinada na chegada por agrupamento de
-vértices, as catorze peças viram uma chamada, quem está fora da tela não é
-animado nem desenhado. Trocada a versão, mesma cena:
-
-| | Vitrine (06/09) | Jogo (12/09) |
-|---|---:|---:|
-| chamadas de desenho | 819 | **28** |
-| triângulos por quadro | 1 668 996 | **60 100** |
-| figuras desenhadas | 72 | 16 (as que cabem na tela) |
-
-**29× menos chamada e 28× menos triângulo, com o mesmo boneco.** Foi por isso
-que a camada de desempenho do jogo entrou junto: ela não é detalhe, é o que
-separa a cena de rodar de não rodar.
-
-### O que mudou pra ele caber aqui — e nada disso é de pose
-
-1. **Virou módulo ES.** O artefato era script solto com `THREE` global (r147);
-   aqui o three é o r160 de módulo que já estava vendido. O `GLTFLoader` e o
-   `SkeletonUtils` entraram como `vendor/three/GLTFLoader.js`, com duas
-   adaptações e só duas: eles escrevem em `THREE` (que num módulo é selado, e
-   por isso recebem uma cópia mutável do namespace), e `encoding` virou
-   `colorSpace` no r152 — sem isso a textura do rosto sai lavada.
-2. **O GLB vem de arquivo.** No artefato ele vinha em base64 porque o sandbox
-   barra requisição; aqui é `img/boneco.glb` (2,7 MB) e quem busca é o
-   próprio carregador. Fica 3,6 MB de JavaScript a menos, e o modelo volta a
-   ser um arquivo que dá pra abrir no Blender.
-3. **O chão pode não ser zero.** `piso(x, z)` entra somado na raiz da figura,
-   no fim de toda a pose. A passada, o soco, a queda e o agarrão continuam
-   sem saber que existe degrau — e é por isso que a arquibancada não custou
-   uma linha de pose.
-4. **O corte fora da tela aceita outro teste.** A cena de cima corta por
-   retângulo do tabuleiro; a câmera de ombro não tem retângulo, então quem
-   tem a câmera passa o teste (tronco de visão, uma esfera por pessoa).
-5. **`entrarEm(cena)`.** No jogo o módulo é dono do renderizador, da câmera e
-   da luz; aqui quem é dono é `estadio3d.js`, e só entra a gente.
-
-### A ponte de sinais, e o que ela NÃO inventa
-
-O boneco do jogo lê um combate mais rico do que o deste branch: ele espera
-`ataque` com tipo e instante do impacto, `apanhou`, `derrubado`,
-`defendendo`, `esquivou`, `segurando`, `seguradoPor`, `linha`,
-`inimigoPerto`. O `combate.js` daqui guarda outra lista, mais curta.
-
-Havia dois caminhos: mexer no combate — e aí a briga muda, o balanceamento
-muda, e o que era pra ser uma cena nova vira um jogo novo — ou traduzir.
-`js/diajogo/sinais3d.js` traduz, sem tocar numa linha de simulação:
-
-| o que o combate guarda | o que o boneco passa a ler |
-|---|---|
-| `golpe` subindo | `ataque` com tipo, duração e instante do impacto |
-| `tremor` subindo | `apanhou` — o tranco é evento, não nível |
-| projétil novo | `arremesso`, com a origem de volta por `x − vx·t` |
-| `agarrado` | `seguradoPor`, e quem bate em cima é o `segurando` |
-| `ang` | `rumo` (só conversão de eixo) |
-| parado e sem briga | `linha:'retaguarda'` — **o boneco torce** |
-
-**O que não dá pra inventar fica em repouso, e é honesto que fique.**
-`derrubado`, `defendendo`, `esquivou`, `chamou`, `socorrendo` e `fugaBomba`
-ficam zerados, porque o combate daqui não tem esses estados — desenhar um
-sujeito esquivando quando a simulação não esquivou é a tela mentindo sobre a
-regra. No dia que o combate ganhar esses campos, o tradutor encolhe; ele é
-uma ponte, não um lugar.
-
-O `linha:'retaguarda'` merece uma nota: numa cena de rua ele seria enfeite;
-num estádio é o que a arquibancada **faz** quando não está brigando. Quem não
-está em briga, torce.
-
----
-
-## 5. Os botões de movimento
-
-São os mesmos de `ponte.js`, com as mesmas classes e o mesmo desenho, em
-`js/diajogo/pad3d.js` e `css/pad3d.css`. A regra que valia lá vale aqui e é a
-mesma frase: **o pad não implementa lógica nenhuma.** Cada botão escreve no
-MESMO objeto `teclas` que o teclado alimenta, e as ações de uma tecolada só
-chamam exatamente o que a tecla chama. Por isso `combate.js` não precisa
-saber que existe botão: `moverLider` continua lendo `teclas['w'|'a'|'s'|'d']`
-e a diagonal sai de encostar em dois botões ao mesmo tempo.
-
-**Uma diferença de propósito:** aqui o pad **não** está atrás de
-`@media (max-width:900px)`. Na cena 2D o teclado dá conta em tela grande, e o
-pad só existe porque no celular não dá pra apertar tecla com o jogo rodando.
-A câmera de ombro é outra coisa: a mão esquerda anda e a direita gira a
-câmera arrastando, e isso vale no monitor tanto quanto no telefone.
-
----
-
-## 6. O que ficou aberto
-
-1. **A escala continua sem resposta.** Vale aqui o §5 do `PLANO_CENA_3D.md`
-   inteiro: o gramado é 496 × 320 e não 105 × 68 m, porque o disco tem raio 7
-   e a pessoa tem 34 de altura. É a escolha (a) daquele documento — boneco de
-   mesa vivo — assumida e escrita num lugar só, pra mudar num lugar só.
-2. **Dois bonecos no mesmo repositório.** `cena3d.js` (arredores, praça, rua)
-   continua com o boneco de caixa; o estádio usa o do Blender. Não incomoda
-   hoje porque são páginas diferentes, e incomoda no dia que alguém comparar
-   as duas. A migração é pequena — trocar a multidão por `entrarEm` e passar
-   o mesmo `sinais3d.js` —, mas é outra sessão e outro teste. **Não fiz de
-   propósito:** `cena3d.js` está como estava, sem uma linha mexida.
-3. **A arquibancada não tem cadeira, e isso agora é escolha.** O dono pediu
-   tudo padronizado, como na arquibancada pré-moldada de concreto, e é o que
-   está no ar: catorze degraus iguais. Se um dia entrar setor de cadeira, ele
-   precisa ser um setor de verdade — separado, marcado, e com o vomitório dele
-   —, não seis fileiras diferentes no meio de uma bacia igual.
-4. **A cobertura é uma laje.** Sem treliça, sem calha, sem o beiral irregular
-   da foto. É onde um kit de Blender entraria primeiro (§8 do plano antigo:
-   "onde o Blender ganha muito mais rápido é no cenário, não na gente").
-5. **Placar, bandeirão, faixa, fumaça de sinalizador.** Nada disso existe. O
-   estádio está vazio de torcida que não briga — e um estádio de jogo não é
-   isso.
-6. **O fps de verdade.** Este ambiente só tem rasterizador por software, onde
-   qualquer cena roda a 4 quadros por segundo. Os números de chamada e de
-   triângulo acima são medidos e valem; o fps não foi medido em placa de
-   verdade. **Rode aí e olhe o contador antes de acreditar.** Se estiver
-   ruim, o primeiro suspeito é a sombra — `H` desliga, e a diferença entre os
-   dois números diz se é ela.
-
----
-
-## 7. O que este trabalho NÃO mexeu
-
-- `combate.js`, `arredores.js`, `cenario.js`, `ponte.js`, `cena3d.js`: intactos.
-- `cenas.js`, `cena_arredores.js` e todo dado de cena: intactos. A cena do
-  estádio se acrescenta ao mapa de cenas de fora, como `cenas_foto.js` já
-  fazia, e o pintor dela se acrescenta ao pintor do mesmo jeito.
-- `arredores.html`, `arredores3d.html` e o jogo em `index.html`: intactos. O
-  estádio é uma página à parte e não está ligado ao dia de jogo.
+| `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, bairro (lotes, carros, árvores, torres), máscara, spawns, setores, PM, grades, filas, gatilho |
+| `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera, ligação com a simulação e com a gente |
+| `js/diajogo/bairro3d.js` | os oito quarteirões, numa malha só |
+| `js/diajogo/estadio_pintura.js` | a textura do chão, em coordenada de mundo |
+| `estadio3d.html` | a página: a troca da cena padrão, o relógio, o pad, o teclado, a linha de estado |

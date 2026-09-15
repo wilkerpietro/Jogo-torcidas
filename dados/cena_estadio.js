@@ -1,141 +1,127 @@
 /* =========================================================
-   O ESTÁDIO — a planta dobrada
+   O ESTÁDIO E O BAIRRO — a planta
    ---------------------------------------------------------
-   Inspirado no Presidente Vargas (Fortaleza): estádio de
-   bairro, bacia retangular de quinas arredondadas, pista
-   avermelhada, arquibancada azul, cobertura de um lado só e o
-   muro com os portões dando na rua.
+   Estádio de bairro, bacia retangular de quinas redondas,
+   arquibancada única de concreto sem cobertura, corredor
+   EMBAIXO dela com comércio, oito vomitórios furando a
+   arquibancada, três portões — um atrás de cada gol e um na
+   lateral sul — e oito quarteirões em volta, com o estádio no
+   meio. A torcida nasce nas pontas do bairro, caminha até o
+   estádio e a briga acontece onde ela acontecer: na rua, no
+   portão, no corredor, na escada ou na arquibancada.
 
-   O PROBLEMA. A briga tem dois andares: arquibancada em cima,
-   corredor EMBAIXO DELA, e vomitórios — os buracos na
-   arquibancada — ligando os dois. E `combate.js` é um
-   tabuleiro plano de 1536 × 1024: uma célula, um lugar. Não
-   tem andar, não tem altura, não tem escada.
+   O PROBLEMA, de novo: `combate.js` é um tabuleiro plano —
+   uma célula, um lugar, sem altura — e o corredor fica
+   debaixo da arquibancada. A saída continua sendo DOBRAR O
+   TABULEIRO: duas faixas distantes dele caem no mesmo ponto do
+   mundo em alturas diferentes. É `mundo(x, y) → {x, y, z}`.
 
-   A SAÍDA: DOBRAR O TABULEIRO. O tabuleiro continua plano e
-   continua sendo uma célula por lugar — mas o mapa que leva
-   do tabuleiro pro mundo 3D não é mais "põe em pé onde está".
-   Duas faixas distantes do tabuleiro caem NO MESMO ponto do
-   mundo, em alturas diferentes: a faixa da arquibancada e a
-   faixa do corredor. Andar do corredor pro degrau é andar uma
-   distância no tabuleiro e subir no mundo.
+   O QUE MUDOU NA DOBRA: quem paga a conta agora é o GRAMADO.
+   Na versão anterior o corredor empurrava tudo que estava do
+   lado de fora pra longe do centro, em curva — e uma rua reta
+   atravessando isso entortava. Agora o retângulo âncora do
+   tabuleiro é 86 menor por lado que o gramado do mundo;
+   ninguém pisa no gramado, então não custa nada. Resultado:
+   FORA DO ESTÁDIO, TABULEIRO = MUNDO. Rua reta é rua reta.
 
-   É isso que `mundo(x, y) → {X, Y, Z}` faz, e é a única coisa
-   que esta cena tem de diferente de todas as outras. A
-   simulação não sabe de nada: `combate.js` não foi tocado.
+   A dobra, faixa por faixa. `d` é a distância ao retângulo
+   âncora no TABULEIRO; `r` é a distância ao gramado no MUNDO.
 
-   ---------------------------------------------------------
-   A DOBRA, faixa por faixa. `d` é a distância ao retângulo do
-   gramado no TABULEIRO; `r` é a distância no MUNDO.
+     faixa          d            r              altura
+     pista          0 → 24       r = d          0         bloqueia
+     ARQUIBANCADA   24 → 168     r = d          6 → 84    ANDA (18 degraus)
+     parapeito      168 → 182    r = d          84 → 110  bloqueia
+     CORREDOR       182 → 310    r = d − 86     0         ANDA ← sob a arquibancada
+     fachada        310 → 326    r = d − 86     0 → 84    bloqueia, com 3 portões
+     calçada        326 → 358    r = d − 86     0         ANDA
+     bairro         358 →        mundo = tabuleiro         ANDA, menos prédio e carro
 
-     faixa        d             r                 altura
-     pista        0 → 26        r = d             0          bloqueia
-     ARQUIBANCADA 26 → 138      r = d             6 → 65,8   ANDA (14 degraus)
-     parapeito    138 → 154     r = d             66 → 92    bloqueia
-     CORREDOR     154 → 226     r = 104 + (d−154) 0          ANDA ← sob a arquibancada
-     fachada      226 → 242     r = 176 + (d−226) 0 → 92     bloqueia, com portões
-     rua          242 →         r = 192 + (d−242) 0          ANDA
+   Nos lados retos "r = d − 86" É a identidade (o âncora está
+   86 pra dentro). Só nas quatro quinas redondas os dois mapas
+   divergem, e a lasca onde divergem — de até 36 unidades, na
+   diagonal — fica BLOQUEADA, atrás de um gradil de esquina.
+   Ninguém pisa, ninguém vê, e é isso que mantém "uma célula,
+   um lugar" verdadeiro.
 
-   Repare no corredor: `d` de 154 a 226 vira `r` de 104 a 176,
-   que é exatamente onde a arquibancada está por cima. Ele tem
-   72 de fundo e o pé-direito é o fundo da laje — 39 no ponto
-   mais apertado, contra 34 de boneco. É corredor de estádio:
-   baixo.
+   O VOMITÓRIO continua sendo uma tira radial do tabuleiro que
+   atravessa da arquibancada até o corredor. A regra que não
+   se burla: o pé da escada, no mundo, tem de cair DEPOIS da
+   última fila (192 > 168) — senão sobra arquibancada que se vê
+   e não se pisa.
 
-   A ARQUIBANCADA É INTEIRA ANDÁVEL, E ISSO CUSTOU A SAIR.
-   A primeira dobra tinha seis fileiras de cadeira em cima, que
-   não se pisava, e elas existiam por contabilidade: o vomitório
-   é uma tira do tabuleiro que atravessa da arquibancada até o
-   corredor, e ela COME as células da arquibancada no caminho —
-   uma célula só pode estar num lugar. Se as de cima fossem
-   andáveis, as comidas virariam laje que se vê e não se pisa.
-
-   A conta fecha de outro jeito, e é este: **o pé da escada tem
-   de cair DEPOIS da última fila**. Se a tira, no mundo, vai de
-   `rTop` até um raio MAIOR que a borda de fora da arquibancada,
-   então toda a superfície que ela apaga está dentro do buraco
-   dela mesma — não sobra laje órfã nenhuma. É por isso que o pé
-   está em r=150 e a arquibancada acaba em 138: aqueles 12 a
-   mais são o que paga a conta. E aí a arquibancada inteira pode
-   ser degrau de concreto igual, como na arquibancada
-   pré-moldada da foto — sem cadeira, sem setor que não se pisa.
-
-   TRÊS LEITORES desta planta: a máscara de caminhabilidade
-   (gerada aqui na carga, é o que `combate.js` enxerga), a
-   pintura do chão e a geometria 3D. Um número, três lugares.
+   TRÊS LEITORES desta planta: a máscara (gerada na carga, é o
+   que `combate.js` enxerga), a pintura do chão e a geometria
+   3D. Um número, três lugares — prédio inclusive.
    ========================================================= */
 TO.dados = TO.dados || {};
 
 TO.dados.plantaEstadio = (function(){
-  const W = 1536, H = 1024, CEL = 8;
-  const CX = W/2, CY = H/2;
-  const AX = 332, AY = 214;          // meio retângulo do gramado (664 × 428)
+  const CEL = 8;
 
-  /* as bordas das faixas, no tabuleiro */
-  const D = {
-    pista:     26,
-    arq:      138,
-    parapeito:154,
-    corred:   226,
-    fachada:  242
-  };
-  /* onde cada faixa cai no mundo */
+  /* =======================================================
+     AS MEDIDAS
+     ======================================================= */
+  const AX = 320, AY = 208;            // meio gramado, no MUNDO (640 × 416)
+  const DOBRA = 86;                    // o que o gramado engole
+  const AXb = AX - DOBRA, AYb = AY - DOBRA;   // 234 × 122 — o âncora do TABULEIRO
+
+  /* as bordas das faixas, no tabuleiro (distância ao âncora) */
+  const D = { pista:24, arq:168, parapeito:182, corred:310, fachada:326, calcada:358 };
+  /* onde cada faixa cai no mundo (distância ao gramado) */
   const R = {
-    corred0: 104, corred1: 176,       // o corredor, sob a arquibancada
-    fachada0:176, fachada1:192,
-    rua0:    192
+    corred0: D.parapeito - DOBRA, corred1: D.corred - DOBRA,     // 96 → 224
+    fachada0: D.corred - DOBRA,   fachada1: D.fachada - DOBRA,   // 224 → 240
+    calcada0: D.fachada - DOBRA,  calcada1: D.calcada - DOBRA    // 240 → 272
   };
-  /* A ARCADA DA FACHADA, tirada da foto: o lado de fora do
-     corredor não é muro cego. É pilar quadrado de tantos em
-     tantos metros, mureta na altura da cintura entre eles, e
-     vazio por cima até a laje — é de lá que vem a luz que
-     deixa o corredor claro de um lado e escuro do outro. A
-     mureta bloqueia (é o que a máscara já diz da fachada); o
-     vazio por cima é só desenho, porque ninguém pula mureta
-     neste jogo. */
-  const ARCADA = { mureta: 24, pilar: 18, passo: 74 };
+
+  /* o bairro: grade 3 × 3, estádio no meio, rua em volta de tudo */
+  const RUA = 72, CALC = 32, PONTA = 560, NS = 400;
+  const QEST = { larg: 2*(AX + R.calcada1), alt: 2*(AY + R.calcada1) };   // 1184 × 960
+  const W = RUA + PONTA + RUA + QEST.larg + RUA + PONTA + RUA;            // 2592
+  const H = RUA + NS + RUA + QEST.alt + RUA + NS + RUA;                    // 2048
+  const CX = W/2, CY = H/2;
 
   const ALT = {
-    degrau: 8,       // profundidade de um degrau
-    subida: 4.6,     // altura de um degrau
-    base:   6,       // o primeiro degrau, sobre a pista
-    laje:   8,       // espessura da laje da arquibancada
-    parapeito: 92,   // o topo da mureta atrás da última fila
-    alambrado: 30,
-    cobertura: 150
+    degrau: 8, subida: 4.6, base: 6, laje: 8,
+    alambrado: 30, torre: 310
   };
-  const NDEG = (D.arq - D.pista) / ALT.degrau;            // 14 degraus, todos andáveis
+  const NDEG = (D.arq - D.pista) / ALT.degrau;              // 18
+  const TOPO_ARQ = ALT.base + ALT.subida*(NDEG-1);          // 84,2
+  ALT.parapeito = TOPO_ARQ + 26;                            // a mureta atrás da última fila
+  ALT.fachada = TOPO_ARQ;                                   // o topo da arcada
+  const ARCADA = { mureta: 24, pilar: 18, passo: 84 };
+  const METRO = 34 / 1.75;                                  // o boneco tem 34 pra 1,75 m
 
-  /* a altura do degrau que está no raio r */
   function alturaDegrau(r){
     const i = Math.max(0, Math.min(NDEG-1, Math.floor((r - D.pista)/ALT.degrau)));
     return ALT.base + ALT.subida*i;
   }
-  const TOPO_ARQ = ALT.base + ALT.subida*(NDEG-1);        // 65,8
-  /* o fundo da laje: sob a arquibancada ela acompanha o degrau;
-     da última fila até a fachada é um teto plano */
+  /* o fundo da laje: sob a arquibancada acompanha o degrau; da
+     última fila até a fachada é teto plano */
   const tetoDe = r => (r < D.arq ? alturaDegrau(r) : TOPO_ARQ) - ALT.laje;
 
   /* =======================================================
-     O PONTO DO RETÂNGULO E A NORMAL
-     Toda a planta é "distância ao retângulo do gramado". O
-     ponto mais próximo dá a âncora, e a direção dá a normal —
-     nas quinas isso vira arco, que é a bacia arredondada da
-     foto, sem desenhar uma curva sequer.
+     O PONTO DO RETÂNGULO E A NORMAL — dois retângulos
+     `ancora` é do tabuleiro (âncora pequeno); `ancoraMundo` é
+     do mundo (gramado). `sx, sy` dizem de que lado o ponto
+     está, e é com eles que o âncora pequeno vira o grande.
      ======================================================= */
   const presa = (v, a, b) => v < a ? a : v > b ? b : v;
-  function ancora(x, y){
-    const cx = presa(x, CX-AX, CX+AX), cy = presa(y, CY-AY, CY+AY);
+  function ancorar(x, y, ax, ay){
+    const cx = presa(x, CX-ax, CX+ax), cy = presa(y, CY-ay, CY+ay);
     const dx = x - cx, dy = y - cy;
     const d = Math.hypot(dx, dy);
-    return d > 0.0001 ? {cx, cy, d, nx: dx/d, ny: dy/d}
-                      : {cx, cy, d: 0, nx: 0, ny: 0};
+    const sx = x > CX+ax ? 1 : x < CX-ax ? -1 : 0;
+    const sy = y > CY+ay ? 1 : y < CY-ay ? -1 : 0;
+    return d > 0.0001 ? {cx, cy, d, nx: dx/d, ny: dy/d, sx, sy}
+                      : {cx, cy, d: 0, nx: 0, ny: 0, sx, sy};
   }
-  const dist = (x, y) => ancora(x, y).d;
+  const ancora      = (x, y) => ancorar(x, y, AXb, AYb);
+  const ancoraMundo = (X, Z) => ancorar(X, Z, AX, AY);
+  const dist      = (x, y) => ancora(x, y).d;
+  const distMundo = (X, Z) => ancoraMundo(X, Z).d;
 
-  /* =======================================================
-     O PERFIL — a volta em torno do gramado, amostrada uma vez
-     ======================================================= */
+  /* o perfil do MUNDO: a volta em torno do gramado, amostrada */
   const PERFIL = (function(){
     const p = [];
     const PASSO = 14, ARCO = 26;
@@ -161,95 +147,68 @@ TO.dados.plantaEstadio = (function(){
     return p;
   })();
   const N = PERFIL.length;
-  /* o anel do MUNDO no raio r */
   const anel = r => PERFIL.map(q => [q.x + q.nx*r, q.y + q.ny*r]);
 
   /* =======================================================
-     OS LADOS RETOS — é neles que moram vomitório, portão e loja
+     OS LADOS RETOS — onde moram vomitório, portão e loja.
+     `s` (a posição ao longo do lado) é a MESMA no tabuleiro e
+     no mundo: o âncora pequeno e o gramado têm o mesmo centro.
      ======================================================= */
   const LADOS = { n:{eixo:'x', sinal:-1}, s:{eixo:'x', sinal:1},
                   o:{eixo:'y', sinal:-1}, l:{eixo:'y', sinal:1} };
-  const RETO = { n:[CX-AX, CX+AX], s:[CX-AX, CX+AX],
-                 o:[CY-AY, CY+AY], l:[CY-AY, CY+AY] };
-  /* (lado, s, distância) → ponto, no tabuleiro OU no mundo (a
-     conta é a mesma; muda só qual distância entra) */
-  function ponto(lado, s, dist){
+  function pontoEm(lado, s, dist, ax, ay){
     const L = LADOS[lado];
-    if(L.eixo === 'x') return [s, (L.sinal<0 ? CY-AY-dist : CY+AY+dist)];
-    return [(L.sinal<0 ? CX-AX-dist : CX+AX+dist), s];
+    if(L.eixo === 'x') return [s, (L.sinal<0 ? CY-ay-dist : CY+ay+dist)];
+    return [(L.sinal<0 ? CX-ax-dist : CX+ax+dist), s];
   }
-  /* o inverso: em que lado e em que `s` este ponto cai */
-  function ondeNoReto(x, y){
-    if(x >= CX-AX && x <= CX+AX){
-      if(y < CY-AY) return {lado:'n', s:x, d:(CY-AY)-y};
-      if(y > CY+AY) return {lado:'s', s:x, d:y-(CY+AY)};
+  const ponto      = (lado, s, d) => pontoEm(lado, s, d, AXb, AYb);   // tabuleiro
+  const pontoMundo = (lado, s, r) => pontoEm(lado, s, r, AX, AY);     // mundo
+  function ondeEm(x, y, ax, ay){
+    if(x >= CX-ax && x <= CX+ax){
+      if(y < CY-ay) return {lado:'n', s:x, d:(CY-ay)-y};
+      if(y > CY+ay) return {lado:'s', s:x, d:y-(CY+ay)};
     }
-    if(y >= CY-AY && y <= CY+AY){
-      if(x < CX-AX) return {lado:'o', s:y, d:(CX-AX)-x};
-      if(x > CX+AX) return {lado:'l', s:y, d:x-(CX+AX)};
+    if(y >= CY-ay && y <= CY+ay){
+      if(x < CX-ax) return {lado:'o', s:y, d:(CX-ax)-x};
+      if(x > CX+ax) return {lado:'l', s:y, d:x-(CX+ax)};
     }
     return null;      // quina
   }
+  const ondeNoReto      = (x, y) => ondeEm(x, y, AXb, AYb);
+  const ondeNoRetoMundo = (X, Z) => ondeEm(X, Z, AX, AY);
 
   /* =======================================================
-     OS VOMITÓRIOS
-
-     Uma tira radial do tabuleiro que vai da geral (d=66) até o
-     corredor (d=214). No mundo ela sai do degrau 5 da geral
-     (r=66, altura 29) e desce até o chão do corredor (r=130,
-     altura 0): 64 de tiro pra 29 de queda, **24 graus**, que é
-     escada de gente.
-
-     No caminho ela atravessa a cadeira e o muro — e é por isso
-     que a cadeira não se pisa: as células dela já eram
-     bloqueadas, então a tira pode usá-las por baixo, como
-     túnel, sem deixar laje órfã em lugar nenhum.
-
-     O BURACO na arquibancada é a parte da tira onde o teto
-     ainda não cabe em cima de uma pessoa: de r=66 a r≈110. Daí
-     pra fora vira túnel coberto, que é o que a foto mostra.
-
-     O corrimão fecha os dois lados compridos: entra-se pelo
-     alto (da geral) ou pelo pé (do corredor), e mais nada. É o
-     funil, e é onde a briga de arquibancada acontece.
+     OS VOMITÓRIOS — oito, como na foto aérea
+     A boca fica no 11º degrau (r = 112, altura 56,6) e a escada
+     desce PRA FORA, sob a arquibancada, até o chão do corredor
+     em r = 192: 80 de tiro pra 57 de queda, 35 graus, doze
+     degraus. Sobe-se de frente pro gramado, como no estádio de
+     verdade. A régua da prancha de vomitório: guarda-corpo de
+     concreto a 0,90 m, corrimão a 1,10 m, faixa amarela no
+     nariz, corrimão central partindo a escada ao meio.
      ======================================================= */
-  /* A RÉGUA DA NORMA, convertida pra esta cena.
-     A prancha de vomitório que o dono mandou dá as medidas em
-     metro: guarda-corpo de concreto a 0,90 m, corrimão a 1,10 m,
-     faixa amarela de no mínimo 5 cm no nariz do degrau, corrimão
-     LATERAL em cima das muretas e corrimão CENTRAL partindo a
-     escada ao meio. Aqui o boneco tem 34 de altura pra 1,75 m,
-     então 1 m ≈ 19,4 — e é essa a conta que converte tudo.
-
-     OS DEGRAUS PASSARAM DE 16 PRA 10 por causa dessa mesma
-     régua: com 16, cada degrau tinha 4 de piso e 1,8 de subida,
-     que dá 20 cm por 9 cm — degrau de casa de boneca, e nem se
-     via. Com 10, dá 6,4 por 2,9 — **33 cm de piso por 15 de
-     espelho**, que é degrau de escada de verdade. */
-  const METRO = 34 / 1.75;
   const VOM = {
-    dTop: 82, dFoot: 200,     // no tabuleiro
-    larg: 44,                  // largura útil
-    corrim: 6,                 // a mureta de cada lado
-    degraus: 10,
-    guarda:  0.90 * METRO,    // 17,5 — a mureta de concreto
-    mao:     1.10 * METRO,    // 21,4 — o corrimão
-    faixa:   0.05 * METRO * 1.6   // a faixa amarela, um tico mais larga pra se ver
+    dTop: 112, dFoot: 278,     // no tabuleiro
+    larg: 44, corrim: 6,       // largura útil e a mureta de cada lado
+    degraus: 12,
+    capuz: 152,                // daqui pra fora a laje volta por cima (raio do mundo; borda de degrau)
+    guarda: 0.90 * METRO, mao: 1.10 * METRO, faixa: 0.05 * METRO * 1.6
   };
-  VOM.rTop  = VOM.dTop;                                    // 82
-  VOM.rFoot = R.corred0 + (VOM.dFoot - D.parapeito);       // 150 — DEPOIS da última fila
-  VOM.yTop  = alturaDegrau(VOM.rTop);                      // 38,2
+  VOM.rTop  = VOM.dTop;                      // 112
+  VOM.rFoot = VOM.dFoot - DOBRA;             // 192 — DEPOIS da última fila
+  VOM.yTop  = alturaDegrau(VOM.rTop);        // 56,6
 
   const VOMITORIOS = [
-    { lado:'n', c: 604 }, { lado:'n', c: 932 },
-    { lado:'s', c: 604 }, { lado:'s', c: 932 },
-    { lado:'o', c: 512 }, { lado:'l', c: 512 }
-  ].map(v => Object.assign(v, {
+    { lado:'n', c: CX-192 }, { lado:'n', c: CX+192 },
+    { lado:'s', c: CX-192 }, { lado:'s', c: CX+192 },
+    { lado:'o', c: CY-90  }, { lado:'o', c: CY+90  },
+    { lado:'l', c: CY-90  }, { lado:'l', c: CY+90  }
+  ].map((v, i) => Object.assign(v, {
+    id: 'vom' + i,
     s0: v.c - VOM.larg/2, s1: v.c + VOM.larg/2,
     e0: v.c - VOM.larg/2 - VOM.corrim, e1: v.c + VOM.larg/2 + VOM.corrim
   }));
 
-  /* onde (x,y) cai em relação a um vomitório */
   function noVomitorio(x, y){
     const q = ondeNoReto(x, y);
     if(!q || q.d < VOM.dTop || q.d > VOM.dFoot) return null;
@@ -261,53 +220,49 @@ TO.dados.plantaEstadio = (function(){
     }
     return null;
   }
-  /* a rampa: onde no mundo cai a distância `d` de tabuleiro */
+  /* a rampa: onde no mundo cai a distância `d` de tabuleiro.
+     Degrau é degrau: a altura desce em degrau, não em rampa. */
   function rampa(d){
     const t = (d - VOM.dTop) / (VOM.dFoot - VOM.dTop);
     const r = VOM.rTop + (VOM.rFoot - VOM.rTop)*t;
-    /* degrau é degrau: a altura desce em degrau, não em rampa */
     const k = Math.ceil(t*VOM.degraus) / VOM.degraus;
     return { r, y: VOM.yTop*(1 - k) };
   }
-
-  /* =======================================================
-     OS PORTÕES — os vãos da fachada
-     ======================================================= */
-  const PORTOES = [
-    { id:'portao_oeste', lado:'o', c:CY, larg:80, rot:'PORTÃO 1', time:'mandante'  },
-    { id:'portao_leste', lado:'l', c:CY, larg:80, rot:'PORTÃO 4', time:'visitante' },
-    { id:'portao_norte', lado:'n', c:CX, larg:80, rot:'PORTÃO 2', time:'neutro'    },
-    { id:'portao_sul',   lado:'s', c:CX, larg:80, rot:'PORTÃO 3', time:'neutro'    }
-  ].map(p => {
-    const d = (D.corred + D.fachada)/2;
-    const [x, y] = ponto(p.lado, p.c, d);
-    const L = LADOS[p.lado];
-    return Object.assign(p, { x:Math.round(x), y:Math.round(y),
-      dir: L.eixo==='x' ? [0, L.sinal] : [L.sinal, 0] });
-  });
-  function noPortao(x, y){
-    const q = ondeNoReto(x, y);
-    if(!q) return false;
-    for(const p of PORTOES)
-      if(p.lado === q.lado && Math.abs(q.s - p.c) <= p.larg/2) return true;
-    return false;
+  /* a altura do piso da escada no raio r do mundo */
+  function pisoEscada(r){
+    const t = (r - VOM.rTop) / (VOM.rFoot - VOM.rTop);
+    const k = Math.ceil(Math.max(0, Math.min(1, t))*VOM.degraus) / VOM.degraus;
+    return VOM.yTop*(1 - k);
   }
 
   /* =======================================================
-     O COMÉRCIO DO CORREDOR
+     OS PORTÕES — três vãos na fachada
+     ======================================================= */
+  const PORTOES = [
+    { id:'portao_oeste', lado:'o', c:CY, larg:80, rot:'PORTÃO OESTE', time:'mandante'  },
+    { id:'portao_leste', lado:'l', c:CY, larg:80, rot:'PORTÃO LESTE', time:'visitante' },
+    { id:'portao_sul',   lado:'s', c:CX, larg:80, rot:'PORTÃO SUL',   time:'neutro'    }
+  ].map(p => {
+    const d = (D.corred + D.fachada)/2;
+    const [x, y] = ponto(p.lado, p.c, d);
+    const [xm, zm] = pontoMundo(p.lado, p.c, d - DOBRA);
+    const L = LADOS[p.lado];
+    return Object.assign(p, { x:Math.round(x), y:Math.round(y), xm, zm,
+      dir: L.eixo==='x' ? [0, L.sinal] : [L.sinal, 0] });
+  });
+  function portaoEm(q){
+    if(!q) return null;
+    for(const p of PORTOES)
+      if(p.lado === q.lado && Math.abs(q.s - p.c) <= p.larg/2) return p;
+    return null;
+  }
+  const noPortao      = (x, y) => !!portaoEm(ondeNoReto(x, y));         // tabuleiro
+  const noPortaoMundo = (X, Z) => !!portaoEm(ondeNoRetoMundo(X, Z));    // mundo
 
-     Corredor de estádio não é um túnel vazio: é carrinho de
-     pipoca, lanchonete, bar de cerveja, banheiro e a lojinha
-     da torcida. Eles estão na MÁSCARA, não só no desenho — o
-     corpo esbarra neles, e é isso que faz o corredor ter forma
-     em vez de ser um anel liso.
-
-     ENCOSTADOS NA PAREDE DE DENTRO, e isso veio da foto: o
-     corredor do Presidente Vargas tem o balcão pintado de
-     amarelo de um lado e o outro lado ABERTO, com mureta na
-     altura da cintura e a luz entrando por cima. O lado
-     fechado é o de dentro (r=102), onde a arquibancada baixa
-     é maciça; o aberto é o de fora, que aqui vira arcada.
+  /* =======================================================
+     O COMÉRCIO DO CORREDOR — encostado na parede de dentro,
+     que é onde a arquibancada baixa é maciça. Está na MÁSCARA,
+     não só no desenho: o corpo esbarra no balcão.
      ======================================================= */
   const LOJA = {
     pipoca:   { fundo:14, larg:26, rot:'PIPOCA' },
@@ -318,17 +273,15 @@ TO.dados.plantaEstadio = (function(){
     cachorro: { fundo:14, larg:30, rot:'CACHORRO-QUENTE' }
   };
   const LOJAS = [
-    { lado:'n', c: 520, tipo:'lanche'   }, { lado:'n', c: 700, tipo:'pipoca' },
-    { lado:'n', c: 820, tipo:'bar'      }, { lado:'n', c:1010, tipo:'cachorro' },
-    { lado:'s', c: 520, tipo:'banheiro' }, { lado:'s', c: 700, tipo:'cachorro' },
-    { lado:'s', c: 820, tipo:'loja'     }, { lado:'s', c:1010, tipo:'lanche' },
-    { lado:'o', c: 380, tipo:'pipoca'   }, { lado:'o', c: 644, tipo:'bar' },
-    { lado:'l', c: 380, tipo:'lanche'   }, { lado:'l', c: 644, tipo:'banheiro' }
+    { lado:'n', c: CX-118, tipo:'lanche'   }, { lado:'n', c: CX, tipo:'pipoca'   },
+    { lado:'n', c: CX+118, tipo:'bar'      },
+    { lado:'s', c: CX-118, tipo:'banheiro' }, { lado:'s', c: CX, tipo:'cachorro' },
+    { lado:'s', c: CX+118, tipo:'loja'     },
+    { lado:'o', c: CY,     tipo:'pipoca'   }, { lado:'l', c: CY, tipo:'cachorro' }
   ].map(o => {
     const L = LOJA[o.tipo];
-    /* encostada na parede de dentro: a borda interna do
-       corredor, que no tabuleiro é `D.parapeito` */
     return Object.assign({}, o, L, { d0: D.parapeito, d1: D.parapeito + L.fundo,
+      r0: R.corred0, r1: R.corred0 + L.fundo,
       s0: o.c - L.larg/2, s1: o.c + L.larg/2 });
   });
   function naLoja(x, y){
@@ -341,6 +294,149 @@ TO.dados.plantaEstadio = (function(){
   }
 
   /* =======================================================
+     O BAIRRO
+     Oito quarteirões em volta do estádio. Cada um tem calçada
+     de 24 em volta e, dentro, LOTES de frente contínua — casa,
+     sobrado, prédio, um muro de vez em quando — como um
+     quarteirão de bairro de estádio. O miolo é quintal, murado.
+     Tudo que está aqui bloqueia na máscara e sai no 3D.
+     ======================================================= */
+  const QEST_X0 = CX - QEST.larg/2, QEST_X1 = CX + QEST.larg/2;
+  const QEST_Y0 = CY - QEST.alt/2,  QEST_Y1 = CY + QEST.alt/2;
+  const QUADRAS = [
+    { id:'NO', x0: RUA,              x1: RUA+PONTA,      y0: RUA,              y1: RUA+NS },
+    { id:'N',  x0: QEST_X0,          x1: QEST_X1,        y0: RUA,              y1: RUA+NS },
+    { id:'NE', x0: QEST_X1+RUA,      x1: QEST_X1+RUA+PONTA, y0: RUA,           y1: RUA+NS },
+    { id:'O',  x0: RUA,              x1: RUA+PONTA,      y0: QEST_Y0,          y1: QEST_Y1 },
+    { id:'L',  x0: QEST_X1+RUA,      x1: QEST_X1+RUA+PONTA, y0: QEST_Y0,       y1: QEST_Y1 },
+    { id:'SO', x0: RUA,              x1: RUA+PONTA,      y0: QEST_Y1+RUA,      y1: QEST_Y1+RUA+NS },
+    { id:'S',  x0: QEST_X0,          x1: QEST_X1,        y0: QEST_Y1+RUA,      y1: QEST_Y1+RUA+NS },
+    { id:'SE', x0: QEST_X1+RUA,      x1: QEST_X1+RUA+PONTA, y0: QEST_Y1+RUA,   y1: QEST_Y1+RUA+NS }
+  ].map(q => Object.assign(q, { ix0: q.x0+CALC, ix1: q.x1-CALC, iy0: q.y0+CALC, iy1: q.y1-CALC }));
+
+  /* sorteio com semente: a planta tem de sair IGUAL toda vez,
+     porque a máscara e o desenho nascem dela separados */
+  function semente(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const rng = semente(20260915);
+  const entre = (a, b) => a + rng()*(b - a);
+  const escolher = l => l[Math.floor(rng()*l.length)];
+  const par8 = v => Math.round(v/8)*8;
+
+  const TIPOS = {
+    casa:    { alt:[34, 48],  cor:['#e8dcc0','#d9c9a3','#e2b9a6','#cfd8c9','#e6e2d6','#d8c8b0'] },
+    sobrado: { alt:[58, 76],  cor:['#e3d3b2','#c9b48a','#d4a48f','#b7c4c2','#ded9cd'] },
+    predio:  { alt:[96, 150], cor:['#cfcac0','#b9b4aa','#d5d0c4','#a9b0b6'] },
+    muro:    { alt:[12, 14],  cor:['#b8b09e'] },
+    galpao:  { alt:[40, 52],  cor:['#9fa4a6','#8f948f'] }
+  };
+  const SEDES = {
+    /* a sede de cada torcida: é onde a torcida nasce */
+    mandante:  { quadra:'O', frente:'n', s:300, larg:88, cor:'#b02a22', rot:'SEDE' },
+    visitante: { quadra:'L', frente:'s', s:QEST_X1+RUA+270, larg:88, cor:'#22439a', rot:'SEDE' }
+  };
+
+  const LOTES = [];
+  function lotear(q){
+    const prof = par8(entre(64, 88));
+    /* frentes norte e sul, de ponta a ponta; oeste e leste, entre elas */
+    const frentes = [
+      { f:'n', x0:q.ix0, x1:q.ix1, y0:q.iy0, y1:q.iy0+prof },
+      { f:'s', x0:q.ix0, x1:q.ix1, y0:q.iy1-prof, y1:q.iy1 },
+      { f:'o', x0:q.ix0, x1:q.ix0+prof, y0:q.iy0+prof, y1:q.iy1-prof },
+      { f:'l', x0:q.ix1-prof, x1:q.ix1, y0:q.iy0+prof, y1:q.iy1-prof }
+    ];
+    for(const fr of frentes){
+      const horizontal = fr.f === 'n' || fr.f === 's';
+      const a0 = horizontal ? fr.x0 : fr.y0, a1 = horizontal ? fr.x1 : fr.y1;
+      let a = a0;
+      while(a < a1 - 24){
+        let larg = par8(entre(64, 128));
+        if(a + larg > a1 - 40) larg = a1 - a;
+        const sede = Object.values(SEDES).find(s => s.quadra === q.id && s.frente === fr.f &&
+                       s.s >= a && s.s < a + larg);
+        let tipo = escolher(['casa','casa','casa','sobrado','sobrado','predio','muro','galpao']);
+        if(q.id === 'N' || q.id === 'S') tipo = escolher(['casa','sobrado','sobrado','predio','galpao','muro']);
+        const T = TIPOS[tipo];
+        const lote = {
+          quadra: q.id, frente: fr.f, tipo,
+          x0: horizontal ? a : fr.x0, x1: horizontal ? a + larg : fr.x1,
+          y0: horizontal ? fr.y0 : a, y1: horizontal ? fr.y1 : a + larg,
+          alt: par8(entre(T.alt[0], T.alt[1]))/8*8 || T.alt[0],
+          cor: escolher(T.cor)
+        };
+        if(sede){
+          lote.tipo = 'sede'; lote.alt = 62; lote.cor = sede.cor; lote.rot = sede.rot;
+          lote.lado = Object.keys(SEDES).find(k => SEDES[k] === sede);
+        }
+        /* prédio não fica colado em prédio: quebra a monotonia do quarteirão */
+        LOTES.push(lote);
+        a += larg;
+      }
+    }
+    /* o miolo: quintais murados, baixos */
+    LOTES.push({ quadra:q.id, frente:'miolo', tipo:'quintal',
+      x0:q.ix0+prof, x1:q.ix1-prof, y0:q.iy0+prof, y1:q.iy1-prof, alt: 10, cor:'#a8a08c' });
+  }
+  QUADRAS.forEach(lotear);
+
+  /* carros na guia, como na foto: nas ruas norte e sul do estádio,
+     do lado do estádio. Bloqueiam — são o que a torcida contorna. */
+  const CARROS = [];
+  const CORES_CARRO = ['#d9d9d9','#2b2b2b','#8a8f96','#b8242a','#2a4f9a','#e6e6e6','#6b7280'];
+  (function estacionar(){
+    const passo = 46;
+    for(const [y0, y1] of [[QEST_Y0-RUA+8, QEST_Y0-RUA+24], [QEST_Y1+RUA-24, QEST_Y1+RUA-8]]){
+      for(let x = QEST_X0 + 40; x < QEST_X1 - 60; x += passo){
+        if(rng() < 0.22) continue;                         // vaga vazia
+        if(Math.abs(x + 17 - CX) < 90 && y0 > CY) continue;  // a frente do portão sul
+        CARROS.push({ x0:x, x1:x+34, y0, y1, cor: escolher(CORES_CARRO) });
+      }
+    }
+    /* uns poucos na rua de fora, nas pontas */
+    for(const x of [RUA+60, RUA+160, RUA+260, W-RUA-100, W-RUA-200, W-RUA-300]){
+      CARROS.push({ x0:x, x1:x+34, y0:RUA-24, y1:RUA-8, cor: escolher(CORES_CARRO) });
+      CARROS.push({ x0:x, x1:x+34, y0:H-RUA+8, y1:H-RUA+24, cor: escolher(CORES_CARRO) });
+    }
+  })();
+
+  /* árvores nas calçadas: só desenho, não bloqueiam (tronco fino) */
+  const ARVORES = [];
+  for(const q of QUADRAS){
+    for(let x = q.x0 + 40; x < q.x1 - 30; x += par8(entre(88, 150))){
+      if(rng() < 0.5) ARVORES.push({ x, y: q.y0 + 12, r: entre(14, 22) });
+      if(rng() < 0.5) ARVORES.push({ x, y: q.y1 - 12, r: entre(14, 22) });
+    }
+    for(let y = q.y0 + 60; y < q.y1 - 40; y += par8(entre(100, 170))){
+      if(rng() < 0.5) ARVORES.push({ x: q.x0 + 12, y, r: entre(14, 22) });
+      if(rng() < 0.5) ARVORES.push({ x: q.x1 - 12, y, r: entre(14, 22) });
+    }
+  }
+
+  /* as torres de refletor, nos quatro cantos do quarteirão do
+     estádio — fora da calçada redonda, dentro do quadrado */
+  const TORRES = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx, sy]) => ({
+    x: CX + sx*(QEST.larg/2 - 44), z: CY + sy*(QEST.alt/2 - 44), alt: ALT.torre }));
+
+  const dentroRet = (x, y, o) => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1;
+  function noLote(x, y){
+    for(const l of LOTES) if(dentroRet(x, y, l)) return l;
+    return null;
+  }
+  function noCarro(x, y){
+    for(const c of CARROS) if(dentroRet(x, y, c)) return c;
+    return null;
+  }
+  const noQuadradoDoEstadio = (x, y) =>
+    x >= QEST_X0 && x < QEST_X1 && y >= QEST_Y0 && y < QEST_Y1;
+
+  /* =======================================================
      A DOBRA: tabuleiro → mundo
      ======================================================= */
   function faixaDe(d){
@@ -349,86 +445,97 @@ TO.dados.plantaEstadio = (function(){
     if(d < D.parapeito) return 'parapeito';
     if(d < D.corred)    return 'corredor';
     if(d < D.fachada)   return 'fachada';
+    if(d < D.calcada)   return 'calcada';
     return 'rua';
   }
-  /* o raio do mundo e a altura, faixa por faixa */
   function dobra(d){
     if(d < D.arq)       return { r: d, y: d < D.pista ? 0 : alturaDegrau(d) };
     if(d < D.parapeito) return { r: d, y: ALT.parapeito };
-    if(d < D.corred)    return { r: R.corred0 + (d - D.parapeito), y: 0 };
-    if(d < D.fachada)   return { r: R.fachada0 + (d - D.corred), y: 0 };
-    return { r: R.rua0 + (d - D.fachada), y: 0 };
+    return { r: d - DOBRA, y: 0 };            // corredor, fachada, calçada
   }
 
   const saida = { x:0, y:0, z:0 };
   function mundo(x, y, alvo){
+    const o = alvo || saida;
     const a = ancora(x, y);
+    if(a.d >= D.calcada){ o.x = x; o.z = y; o.y = 0; return o; }   // o bairro: identidade
     const v = noVomitorio(x, y);
     const m = v ? rampa(v.d) : dobra(a.d);
-    const o = alvo || saida;
-    o.x = a.cx + a.nx*m.r;
-    o.z = a.cy + a.ny*m.r;
+    o.x = a.cx + DOBRA*a.sx + a.nx*m.r;
+    o.z = a.cy + DOBRA*a.sy + a.ny*m.r;
     o.y = m.y;
     return o;
+  }
+  /* em que andar está um ponto do tabuleiro — pra quem quer contar gente */
+  function onde(x, y){
+    if(noVomitorio(x, y)) return 'vomitorio';
+    const f = faixaDe(dist(x, y));
+    return f === 'calcada' ? 'rua' : f;
   }
 
   /* =======================================================
      O QUE SE PISA
      ======================================================= */
   function anda(x, y){
+    const a = ancora(x, y);
+    if(a.d >= D.calcada){
+      /* a lasca da quina, e o canto das torres: dentro do quadrado do
+         estádio e fora da calçada redonda, nada se pisa */
+      if(noQuadradoDoEstadio(x, y)) return false;
+      if(x < 4 || y < 4 || x > W-4 || y > H-4) return false;
+      return !noLote(x, y) && !noCarro(x, y);
+    }
     const v = noVomitorio(x, y);
     if(v) return !v.corrim;
-    const f = faixaDe(dist(x, y));
+    const f = faixaDe(a.d);
     if(f === 'pista' || f === 'parapeito') return false;
     if(f === 'fachada') return noPortao(x, y);
     if(f === 'corredor') return !naLoja(x, y);
-    return true;                                  // arquibancada e rua
+    return true;                                  // arquibancada e calçada
   }
 
   /* =======================================================
-     O QUE É SÓLIDO, NO MUNDO
-     A câmera de ombro precisa saber onde ela não entra, e
-     agora "onde" é em três dimensões: o teto do corredor é
-     sólido por cima e vazio por baixo. Isto responde isso.
+     O QUE É SÓLIDO, NO MUNDO — pra câmera saber onde não entra
      ======================================================= */
   function solido(X, Y, Z){
     if(Y < 0) return true;
-    const r = ancora(X, Z).d;
+    const r = distMundo(X, Z);
+    if(r >= R.calcada1){
+      const l = noLote(X, Z);
+      if(l && Y < l.alt) return true;
+      /* a copa das árvores também é sólida pra câmera: sem isso ela
+         atravessa o pinheiro da calçada e a tela fica verde */
+      for(const a of ARVORES)
+        if(Y > 10 && Y < 13 + a.r*2.3 && Math.hypot(X - a.x, Z - a.y) < a.r) return true;
+      return false;
+    }
     if(r < D.pista) return false;
     if(r < D.arq){
       const topo = alturaDegrau(r);
-      /* de r=26 até o começo do corredor a arquibancada é maciça;
-         dali pra fora ela é laje, e embaixo é o corredor */
-      if(r < R.corred0) return Y < topo;
-      return Y > topo - ALT.laje && Y < topo;
+      if(r < R.corred0) return Y < topo;                   // maciça
+      return Y > topo - ALT.laje && Y < topo;              // laje, com o corredor embaixo
     }
     if(r < D.parapeito) return Y > tetoDe(r) && Y < ALT.parapeito;
     if(r < R.fachada0)  return Y > tetoDe(r) && Y < TOPO_ARQ;
-    if(r < R.rua0) return Y < ALT.parapeito;
+    if(r < R.calcada0)  return Y < ARCADA.mureta || (Y > TOPO_ARQ - 16 && Y < TOPO_ARQ);
     return false;
   }
-  /* o teto do corredor naquele ponto (pra prender a câmera lá embaixo) */
+  /* o teto do corredor naquele ponto (Infinity onde não há teto) */
   function teto(X, Z){
-    const r = ancora(X, Z).d;
-    if(r < R.corred0 || r > R.fachada0) return Infinity;
+    const r = distMundo(X, Z);
+    if(r < R.corred0 || r > R.fachada1) return Infinity;
     return tetoDe(r);
   }
-  /* A SUPERFÍCIE DE CIMA naquele ponto do mundo.
-     Serve pra uma coisa só, e é a razão de ela existir: prender a
-     câmera de ombro ACIMA da arquibancada quando o jogador está
-     em cima dela. Sem isso a câmera afundava pelo degrau e ia
-     parar no corredor — e daí se via o corredor de dentro da
-     arquibancada, que é justamente o que o concreto não deixa
-     ver. */
+  /* a superfície de cima naquele ponto do mundo */
   function superficie(X, Z){
-    const r = ancora(X, Z).d;
+    const r = distMundo(X, Z);
     if(r >= D.pista && r < D.arq) return alturaDegrau(r);
-    if(r >= D.arq && r < R.fachada0) return TOPO_ARQ;
+    if(r >= D.arq && r < R.fachada1) return TOPO_ARQ;
     return 0;
   }
 
   /* =======================================================
-     A MÁSCARA — o mesmo formato de `arredores.codificarMascara`
+     A MÁSCARA — o formato de `arredores.codificarMascara`
      ======================================================= */
   function mascara(){
     const COLS = Math.ceil(W/CEL), ROWS = Math.ceil(H/CEL);
@@ -447,12 +554,14 @@ TO.dados.plantaEstadio = (function(){
     return linhas.join(';');
   }
 
-  return { W, H, CEL, CX, CY, AX, AY, D, R, ALT, N, NDEG, TOPO_ARQ, tetoDe,
-           PERFIL, anel, ancora, dist, alturaDegrau, superficie,
-           LADOS, RETO, ponto, ondeNoReto,
-           VOM, VOMITORIOS, noVomitorio, rampa,
-           PORTOES, noPortao, LOJA, LOJAS, naLoja, ARCADA,
-           faixaDe, dobra, mundo, anda, solido, teto, mascara };
+  return { W, H, CEL, CX, CY, AX, AY, AXb, AYb, DOBRA, D, R, ALT, N, NDEG, TOPO_ARQ, tetoDe,
+           METRO, ARCADA, RUA, CALC, PONTA, NS, QEST, QEST_X0, QEST_X1, QEST_Y0, QEST_Y1,
+           PERFIL, anel, ancora, ancoraMundo, dist, distMundo, alturaDegrau,
+           LADOS, ponto, pontoMundo, ondeNoReto, ondeNoRetoMundo,
+           VOM, VOMITORIOS, noVomitorio, rampa, pisoEscada,
+           PORTOES, noPortao, noPortaoMundo, LOJA, LOJAS, naLoja,
+           QUADRAS, LOTES, CARROS, ARVORES, TORRES, SEDES, noLote, noCarro,
+           faixaDe, dobra, mundo, onde, anda, solido, teto, superficie, mascara };
 })();
 
 /* =========================================================
@@ -460,51 +569,110 @@ TO.dados.plantaEstadio = (function(){
    ========================================================= */
 TO.dados.cenaEstadio = (function(){
   const P = TO.dados.plantaEstadio;
-  const { W, H, CEL } = P;
+  const { W, H, CEL, CX, CY } = P;
 
-  /* Os dois setores ficam de frente um pro outro, na geral: é
-     lá que cabe gente. O segundo escalão de cada lado nasce no
-     corredor, embaixo — sem isso o corredor começaria vazio, e
-     ele é metade da cena. */
+  /* A TORCIDA NASCE NAS PONTAS DO BAIRRO, na porta da sede, e
+     caminha. O primeiro escalão mandante é o seu.
+
+     O SETOR VISITANTE JÁ ESTÁ DENTRO, de guarda na arquibancada
+     leste, e é de propósito: o combate só tem um estado "fica
+     parado esperando" — o de guarda, que dorme até o rival chegar
+     a `gatilho.perto`. Sem isso, todo mundo caminha até o destino
+     e some antes de você entrar, e o estádio fica vazio. Com o
+     setor deles lá dentro, a briga tem onde acontecer: corredor,
+     escada e arquibancada. A retaguarda deles chega andando pelo
+     quarteirão nordeste. */
+  const S = P.SEDES;
+  const [xSet, ySet] = P.ponto('l', CY + 26, 118);
   const spawns = [
-    { id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:366, y:620,
-      jogador:true, entrada:'portao_oeste' },
-    { id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:246, y:660,
-      entrada:'portao_oeste' },
-    { id:'visitante1', rot:'SETOR VISITANTE', lado:'visitante', x:1170, y:400,
-      guarda:true, entrada:'portao_leste' },
-    { id:'visitante2', rot:'RETAGUARDA', lado:'visitante', x:1290, y:360,
-      guarda:true, entrada:'portao_leste' }
+    { id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:S.mandante.s, y:P.QEST_Y0+12,
+      jogador:true, entrada:'setor_mandante' },
+    { id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:P.RUA+P.PONTA-12, y:P.QEST_Y1+P.RUA+200,
+      entrada:'setor_mandante' },
+    { id:'visitante1', rot:'SETOR VISITANTE', lado:'visitante', x:Math.round(xSet), y:Math.round(ySet),
+      guarda:true, entrada:'saida_leste' },
+    { id:'visitante2', rot:'RETAGUARDA', lado:'visitante', x:P.QEST_X1+P.RUA+300, y:P.RUA+P.NS-12,
+      entrada:'setor_visitante' }
   ];
 
-  const entradas = P.PORTOES.map(p => ({
-    id:p.id, rot:p.rot, lado:p.time, x:p.x, y:p.y, raio:44, dir:p.dir
-  }));
+  /* O DESTINO É O SETOR, não o portão. É isso que faz o caminho
+     atravessar o estádio inteiro — portão, corredor, vomitório,
+     arquibancada — e é isso que faz a briga poder acontecer em
+     qualquer ponto dele. Quem chega no setor "entrou", como quem
+     entra no portão nos arredores: some. O setor visitante, que já
+     está dentro, tem como destino a SAÍDA pelo portão leste: é por
+     onde ele vai embora quando a briga acaba. */
+  const setor = (lado, id, rot) => {
+    const [x, y] = P.ponto(lado, CY, 100);
+    return { id, rot, lado: lado === 'o' ? 'mandante' : 'visitante',
+             x:Math.round(x), y:Math.round(y), raio:44, dir: lado === 'o' ? [1,0] : [-1,0] };
+  };
+  const [xSai, ySai] = P.ponto('l', CY, 348);
+  const entradas = [
+    setor('o', 'setor_mandante',  'SETOR MANDANTE'),
+    setor('l', 'setor_visitante', 'SETOR VISITANTE'),
+    { id:'saida_leste', rot:'SAÍDA LESTE', lado:'visitante', x:Math.round(xSai), y:Math.round(ySai),
+      raio:40, dir:[1,0], saida:true }
+  ];
 
-  /* a PM fica no corredor, longe do pé dos vomitórios */
+  /* A PM: nos três portões, no corredor, nas divisas de setor e na
+     rua do sul, que é onde os dois lados se cruzam se alguém for caçar */
+  const calc = (lado, s) => { const [x, y] = P.ponto(lado, s, 342); return { x:Math.round(x), y:Math.round(y) }; };
+  const corr = (lado, s) => { const [x, y] = P.ponto(lado, s, 246); return { x:Math.round(x), y:Math.round(y) }; };
+  const arq  = (lado, s) => { const [x, y] = P.ponto(lado, s, 100); return { x:Math.round(x), y:Math.round(y) }; };
   const pmPostos = [
-    { x:768, y:108 }, { x:768, y:916 }, { x:246, y:380 }, { x:1290, y:644 }
+    calc('o', CY), calc('l', CY), calc('s', CX),
+    corr('n', CX-60), corr('s', CX+60),
+    arq('n', CX), arq('s', CX),
+    { x: CX, y: P.QEST_Y1 + P.RUA/2 }
   ];
 
-  /* grade que quebra e vira arma (GDD §12): duas no corredor,
-     duas na geral, deitadas ao longo de um degrau */
+  /* grade que quebra e vira arma (GDD §12): cordão da PM na boca
+     de cada portão, divisa de setor no meio das arquibancadas
+     norte e sul */
+  /* O CORDÃO NÃO FECHA O PORTÃO: cobre 48 dos 80 e deixa um funil
+     de 32 num lado — é por ali que a torcida entra em fila, e é a
+     PM tentando evitar sem selar. Selado, o campo de fluxo não tem
+     rota e todo mundo para na grade batendo nela. */
+  const cordao = (lado, s, id) => {
+    const a = P.ponto(lado, s-40, 344), b = P.ponto(lado, s+8, 344);
+    return { id, rot:'CORDÃO DA PM', de:{x:a[0], y:a[1]}, ate:{x:b[0], y:b[1]}, modulos:2, espessura:9 };
+  };
+  const divisa = (lado, s, id) => {
+    const a = P.ponto(lado, s, 34), b = P.ponto(lado, s, 160);
+    /* oito módulos e não três: a grade é uma caixa por módulo, na
+       altura do centro dele, e a arquibancada sobe 4,6 a cada 8 —
+       módulo comprido vira degrau de bloco amarelo flutuando */
+    return { id, rot:'DIVISA DE SETOR', de:{x:a[0], y:a[1]}, ate:{x:b[0], y:b[1]}, modulos:8, espessura:9 };
+  };
+  /* SEM CORDÃO NO PORTÃO DA CASA. Na primeira simulação o líder
+     encostou no cordão do próprio portão, o alerta subiu e a PM o
+     prendeu antes de ele entrar no estádio. A PM escolta quem vem de
+     fora: cordão no portão visitante e no neutro; no oeste, fila e
+     posto. */
   const grades = [
-    { id:'cordao_norte', rot:'CORDÃO DA PM',
-      de:{x:660,y:108}, ate:{x:800,y:108}, modulos:3, espessura:9 },
-    { id:'cordao_sul',   rot:'CORDÃO DA PM',
-      de:{x:740,y:916}, ate:{x:880,y:916}, modulos:3, espessura:9 },
-    { id:'divisa_norte', rot:'DIVISA DE SETOR',
-      de:{x:700,y:228}, ate:{x:840,y:228}, modulos:3, espessura:9 },
-    { id:'divisa_sul',   rot:'DIVISA DE SETOR',
-      de:{x:700,y:796}, ate:{x:840,y:796}, modulos:3, espessura:9 }
+    cordao('l', CY, 'cordao_leste'), cordao('s', CX, 'cordao_sul'),
+    divisa('n', CX, 'divisa_norte'), divisa('s', CX, 'divisa_sul')
   ];
+  /* a fila de cada portão: uma guia na calçada, do lado do vão,
+     que não quebra — é por onde a torcida se enfileira */
+  const fila = (lado, s, id) => {
+    const a = P.ponto(lado, s-40, 330), b = P.ponto(lado, s-40, 356);
+    const c = P.ponto(lado, s+40, 330), d = P.ponto(lado, s+40, 356);
+    return [{ id:id+'_a', pontos:[[a[0],a[1]],[b[0],b[1]]], espessura:9 },
+            { id:id+'_b', pontos:[[c[0],c[1]],[d[0],d[1]]], espessura:9 }];
+  };
+  const filas = [].concat(fila('o', CY, 'fila_o'), fila('l', CY, 'fila_l'), fila('s', CX, 'fila_s'));
 
   return {
-    id:'estadio', nome:'Estádio',
+    /* `id:'arredores'` DE PROPÓSITO. `combate.js` só liga a vida do
+       lado de fora — ficar na sede até a hora, bonde hostil sair
+       atrás do rival, fugir é entrar — quando a cena se chama
+       assim (`fugaPelaEntrada`). A página acha esta cena pelo
+       registro `TO.dados.cenas.estadio`, não pelo id; o id é só o
+       que o combate lê pra decidir como a noite começa. */
+    id:'arredores', nome:'Estádio e bairro',
     largura:W, altura:H, celula:CEL, imagem:null,
-    /* A MÁSCARA MANDA. Os polígonos existem só pra o editor F2
-       abrir a cena sem engasgar: a planta é curva e dobrada, e
-       polígono não descreve nem uma coisa nem outra. */
     poligonos:{
       caminhavel:[{rot:'chão', pontos:[[0,0],[W,0],[W,H],[0,H]]}],
       bloqueio:[]
@@ -512,11 +680,12 @@ TO.dados.cenaEstadio = (function(){
     mascara: P.mascara(),
     local:'No estádio',
     tropaChoque:true,
-    saida:{ perto:'Sair pelo portão', longe:'Portão (leve o líder)',
-            feito:'sua torcida saiu do estádio com a arquibancada na mão',
-            dica:'Leve o líder até o portão da sua torcida.' },
+    saida:{ perto:'Entrar no setor', longe:'Setor (leve o líder)',
+            feito:'sua torcida chegou no setor com a arquibancada na mão',
+            dica:'Leve o líder até o setor da sua torcida: portão, corredor, vomitório.' },
     enfeites:[], varais:[],
-    spawns, entradas, pmPostos, grades,
+    spawns, entradas, pmPostos, grades, filas,
+    /* o setor deles dorme até o seu bonde chegar a 300 */
     gatilho:{ lado:'mandante', perto:300, rot:'DE OLHO',
               espera:'o setor deles ainda não se mexeu',
               aviso:'o setor deles viu o bonde chegar' },

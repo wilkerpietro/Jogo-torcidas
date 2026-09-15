@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Estádio 3D — briga na arquibancada</title>
+<title>Estádio 3D — o bairro, o portão, o corredor, a arquibancada</title>
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/paineis.css">
 <link rel="stylesheet" href="css/cenas.css">
@@ -60,6 +60,17 @@
 <script src="dados/cenas.js"></script>
 <!-- depois de cenas.js: a cena do estádio se acrescenta ao mapa -->
 <script src="dados/cena_estadio.js"></script>
+<script>
+/* O TABULEIRO DESTA CENA É MAIOR QUE O DOS ARREDORES (2592 × 2048
+   contra 1536 × 1024), e `arredores.js` lê largura, altura e célula
+   UMA VEZ, na carga, da cena padrão — a malha, os campos e a memória
+   de rota nascem daquele tamanho e não crescem quando se troca de
+   cena. Então nesta página a cena padrão É o estádio: trocada aqui,
+   antes de `arredores.js` subir, ele já nasce do tamanho certo, e
+   `usarCena('estadio')` só reconstrói. O jogo em `index.html` não
+   passa por aqui e continua com os arredores de sempre. */
+TO.dados.cenaArredores = TO.dados.cenaEstadio;
+</script>
 <script src="js/diajogo/cenario.js"></script>
 <!-- depois de cenario.js: o pintor do estádio se acrescenta ao pintor -->
 <script src="js/diajogo/estadio_pintura.js"></script>
@@ -102,7 +113,17 @@ function falhar(e) {
 
 function abrir() {
   const D = A.usarCena('estadio');
-  J = C.criarEstado({ local: 'estadio', intencao: 'atacar',
+  /* A NOITE, ENCURTADA. `combate.js` conta em minutos até o jogo:
+     quem chega fica na sede e só marcha pro estádio faltando 25.
+     Com o relógio de 150 isso são três minutos e meio olhando a
+     torcida conversar; com 60, a marcha começa perto de um minuto
+     — tempo de você chegar no estádio antes deles — e o bonde
+     hostil sai atrás do rival entre 20 e 55 segundos. A vadiagem
+     encolhe junto, pra ninguém vagar até o meio do estádio. */
+  const PC = TO.diaJogo.P;
+  PC.minutosAteJogo = 60;
+  PC.raioVadiagem = 220;
+  J = C.criarEstado({ local: 'estadio', intencao: 'atacar', tensao: 60,
                       bombas: 2, efetivoRival: 34 });
   TO.diaJogo.J = J;
   vista.montar(D);
@@ -150,10 +171,9 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { teclas[e.key.toLowerCase()] = false; });
 
 /* NÃO HÁ CENA 2D AQUI, e é decisão do dono: este cenário é só
-   3D. Não é preguiça — é que a dobra torna a vista de cima uma
-   mentira. Desenhado de cima, o tabuleiro mostra o corredor ao
-   LADO da arquibancada, que é onde ele está no tabuleiro e não
-   é onde ele está no estádio. */
+   3D. A dobra torna a vista de cima do tabuleiro uma mentira:
+   nele o corredor está ao lado da arquibancada e o gramado é
+   menor do que é. */
 
 /* Na câmera de ombro, W tem que ser "pra frente da câmera" e não
    "pro norte da cena". `moverLider` só lê quatro booleanos, então
@@ -184,26 +204,22 @@ function laco(agora) {
     /* quem está onde: é a conta que esta cena inventou, porque é
        a primeira em que "onde" quer dizer alguma coisa */
     const P = vista._planta;
-    let naArq = 0, noCorr = 0, noVom = 0, naRua = 0;
+    const onde = { arquibancada: 0, vomitorio: 0, corredor: 0, rua: 0, fachada: 0 };
     for (const d of J.discos) {
       if (!d.vivo || d.entrou || d.sumiu) continue;
-      if (P.noVomitorio(d.x, d.y)) { noVom++; continue; }
-      const f = P.faixaDe(P.dist(d.x, d.y));
-      if (f === 'arquibancada') naArq++;
-      else if (f === 'corredor') noCorr++;
-      else if (f === 'rua') naRua++;
+      onde[P.onde(d.x, d.y)] = (onde[P.onde(d.x, d.y)] || 0) + 1;
     }
     const c = vista.conta || {};
     elEstado.innerHTML =
       '<b>' + vista.vista + '</b> · ' + fps + ' fps · ' +
       (vista.comModelo ? 'boneco do Blender' : 'boneco de cápsula') +
       (vista.corte ? ' · ' + vista.corte.vistos + ' na tela, ' + vista.corte.cortados + ' fora' : '') + '<br>' +
-      'arquibancada <b>' + naArq + '</b> · vomitório <b>' + noVom +
-      '</b> · corredor <b>' + noCorr + '</b> · rua <b>' + naRua + '</b><br>' +
-      'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') +
-      (J.acordou ? '' : ' · <i>setor deles parado</i>') + '<br>' +
-      c.degraus + ' degraus · ' + c.vomitorios + ' vomitórios · ' +
-      c.lojas + ' balcões · ' +
+      'rua <b>' + onde.rua + '</b> · portão <b>' + onde.fachada + '</b> · corredor <b>' + onde.corredor +
+      '</b> · vomitório <b>' + onde.vomitorio + '</b> · arquibancada <b>' + onde.arquibancada + '</b>' +
+      ' · entraram <b>' + ((J.entraram||{}).mandante||0) + '</b>/<b>' + ((J.entraram||{}).visitante||0) + '</b><br>' +
+      'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') + '<br>' +
+      c.degraus + ' degraus · ' + c.vomitorios + ' vomitórios · ' + c.portoes + ' portões · ' +
+      c.lojas + ' balcões · ' + c.lotes + ' lotes · ' +
       (c.triangulos || 0).toLocaleString('pt-BR') + ' triângulos' +
       (vista.sombra ? '' : ' · sem sombra') +
       (pausado ? '<br>PAUSADO' : '');
