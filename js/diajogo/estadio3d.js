@@ -629,50 +629,45 @@ export function criar(canvas) {
       alvoSuave.y + braco * Math.sin(incl),
       alvoSuave.z + braco * Math.cos(incl) * Math.cos(giro));
 
-    if (sobLaje) {
-      /* o teto prende a câmera — mas só quando se está embaixo */
-      const tetoAli = P.teto(posSuave.x, posSuave.z);
-      if (posSuave.y > tetoAli - 10) posSuave.y = tetoAli - 10;
-      if (posSuave.y < alvoSuave.y - 26) posSuave.y = alvoSuave.y - 26;
-    } else {
-      /* e em cima ela não afunda na arquibancada (senão vê o corredor
-         de dentro do concreto) */
-      const chaoAli = P.superficie(posSuave.x, posSuave.z);
-      if (posSuave.y < chaoAli + 12) posSuave.y = chaoAli + 12;
-    }
-
-    /* A MARCHA DO SÓLIDO: anda do líder até a posição da câmera.
-       CHÃO LEVANTA, PAREDE PARA. A regra antiga parava no primeiro
-       concreto e recuava pra 55% do braço — e numa escada, num degrau
-       ou num telhado 55% do braço é no chão: a câmera parava rente ao
-       piso e a tela virava concreto. Agora cada amostra do caminho
-       levanta a câmera pra 10 acima do chão dali (`P.piso` sabe em que
-       andar a amostra está), e só parede, teto, pilar ou árvore fazem
-       ela parar. É o que faz a câmera subir por cima do parapeito
-       quando o líder está na última fila, e olhar o buraco do
-       vomitório de cima quando ele desce. */
+    /* A LINHA DE VISTA LEVANTA A CÂMERA; PAREDE E TETO PARAM.
+       A regra antiga parava no primeiro concreto e recuava pra 55% do
+       braço — e numa escada, num degrau ou atrás de uma mureta 55% do
+       braço é dentro do concreto: descendo o vomitório a tela virava
+       degrau, e com o líder na boca virava parapeito. Levantar a câmera
+       até "10 acima do chão mais alto do caminho" também não bastava:
+       com o líder embaixo dela, a linha de vista ainda atravessava a
+       mureta. O que resolve é geometria: pra cada amostra do caminho,
+       `P.piso` diz o chão dali no andar em que a amostra está, e a
+       câmera sobe até a reta líder→câmera passar 6 acima de todos eles.
+       Com teto (100 acima da cabeça do líder) pra uma mureta colada nas
+       costas não virar guindaste. Depois disso, só parede, pilar, árvore
+       e a laje por cima fazem ela parar — e embaixo da laje o teto
+       continua mandando. */
     const dx = posSuave.x - alvoSuave.x, dz = posSuave.z - alvoSuave.z;
-    const dy = posSuave.y - alvoSuave.y;
-    let alturaMin = 0;
+    const yL = alvoSuave.y;
+    let cy = posSuave.y;
     for (let n = 1; n <= 14; n++) {
       const t = n / 14;
       const sx = alvoSuave.x + dx * t, sz = alvoSuave.z + dz * t;
-      let sy = alvoSuave.y + dy * t;
-      const ch = P.piso(sx, sy, sz) + 10;
-      if (ch > alturaMin) alturaMin = ch;
-      if (sy < ch) sy = ch;
-      if (!P.solido(sx, sy, sz)) continue;
+      const yi = yL + (cy - yL) * t;
+      const p = P.piso(sx, yi, sz) + (n === 14 ? 10 : 6);
+      const precisa = yL + (p - yL) / t;
+      if (precisa > cy) cy = Math.min(precisa, yL + 100);
+    }
+    posSuave.y = cy;
+    const dy = posSuave.y - yL;
+    for (let n = 1; n <= 14; n++) {
+      const t = n / 14;
+      if (!P.solido(alvoSuave.x + dx * t, yL + dy * t, alvoSuave.z + dz * t)) continue;
       const u = Math.max(0.55, (n - 1) / 14);
       posSuave.x = alvoSuave.x + dx * u;
       posSuave.z = alvoSuave.z + dz * u;
-      posSuave.y = alvoSuave.y + dy * u;
+      posSuave.y = yL + dy * u;
       break;
     }
-    if (posSuave.y < alturaMin) posSuave.y = alturaMin;
-    /* e embaixo da laje o teto continua mandando, depois de tudo */
     if (sobLaje) {
       const tetoAli = P.teto(posSuave.x, posSuave.z);
-      if (posSuave.y > tetoAli - 10) posSuave.y = Math.max(tetoAli - 10, alvoSuave.y - 26);
+      if (posSuave.y > tetoAli - 10) posSuave.y = Math.max(tetoAli - 10, yL - 26);
     }
     if (posSuave.y < 8) posSuave.y = 8;
     cam.position.copy(posSuave);

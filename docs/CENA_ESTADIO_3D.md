@@ -178,6 +178,21 @@ Nada de mecânica nova. O que há:
    do nariz tomava um terço da tela. `teto`, `superficie` e `solido` agora
    sabem que o buraco (r < 152) é aberto e que ali o chão é a escada; no
    túnel a laje continua laje.
+7. **A câmera parava rente ao chão.** A marcha do sólido parava no
+   primeiro concreto e recuava pra 55% do braço — numa escada, num degrau
+   ou atrás de uma mureta, 55% do braço é dentro do concreto. Levantar a
+   câmera até "10 acima do chão mais alto do caminho" também não bastou:
+   com o líder embaixo dela, a linha de vista ainda atravessava o
+   parapeito (a foto mostrava a arquibancada oposta em cima e mureta em
+   baixo). A regra que ficou é geométrica: `P.piso(X, Y, Z)` diz o chão
+   sob cada amostra do caminho *no andar em que ela está*, e a câmera
+   sobe até a reta líder→câmera passar 6 acima de todos eles, com teto de
+   100 acima da cabeça do líder. Só parede, pilar, árvore e laje param.
+8. **A cabeceira era vazio pra câmera.** Entre a parede de dentro (r = 96)
+   e a boca (r = 112), sob os degraus 9 e 10, é concreto maciço — as
+   células dali são a escada. `solido`, `piso` e `teto` não sabiam, e com
+   o líder no pé da escada a câmera entrava ali. Agora é maciço até a
+   arquibancada.
 
 ## 8. A caminhada do líder
 

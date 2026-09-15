@@ -499,10 +499,14 @@ TO.dados.plantaEstadio = (function(){
      túnel (laje por cima). É o que a câmera precisa saber. */
   function vomitorioMundo(X, Z){
     const q = ondeNoRetoMundo(X, Z);
-    if(!q || q.d < VOM.rTop || q.d > VOM.rFoot) return null;
-    for(const v of VOMITORIOS)
-      if(v.lado === q.lado && q.s >= v.e0 && q.s <= v.e1)
-        return { v, r: q.d, buraco: q.d < VOM.capuz, piso: pisoEscada(q.d) };
+    if(!q || q.d < R.corred0 || q.d > VOM.rFoot) return null;
+    for(const v of VOMITORIOS){
+      if(v.lado !== q.lado || q.s < v.e0 || q.s > v.e1) continue;
+      /* entre a parede de dentro e a boca é a CABECEIRA: concreto
+         maciço do chão até a arquibancada, sem vão nenhum */
+      if(q.d < VOM.rTop) return { v, r: q.d, cabeceira: true, buraco: false, piso: alturaDegrau(q.d) };
+      return { v, r: q.d, buraco: q.d < VOM.capuz, piso: pisoEscada(q.d) };
+    }
     return null;
   }
 
@@ -517,6 +521,7 @@ TO.dados.plantaEstadio = (function(){
        cima continua sendo laje */
     const vm = vomitorioMundo(X, Z);
     if(vm){
+      if(vm.cabeceira) return Y < vm.piso;         // maciço até a arquibancada
       if(Y < vm.piso) return true;                 // dentro do degrau da escada
       if(vm.buraco) return false;                  // céu aberto
       if(Y <= tetoDe(r)) return false;             // o vão do túnel
@@ -551,7 +556,7 @@ TO.dados.plantaEstadio = (function(){
     const r = distMundo(X, Z);
     if(r < R.corred0 || r > R.fachada1) return Infinity;
     const vm = vomitorioMundo(X, Z);
-    if(vm && vm.buraco) return Infinity;            // o buraco é céu aberto
+    if(vm && (vm.buraco || vm.cabeceira)) return Infinity;   // céu aberto, ou maciço
     return tetoDe(r);
   }
   /* O CHÃO SOB UM PONTO: a superfície andável (ou pisável pela câmera)
@@ -561,10 +566,10 @@ TO.dados.plantaEstadio = (function(){
      NÃO parar no chão: chão levanta a câmera; só parede e teto param. */
   function piso(X, Y, Z){
     const r = distMundo(X, Z);
-    if(r >= R.calcada1){ const l = noLote(X, Z); return l ? l.alt : 0; }
+    if(r >= R.calcada1) return 0;                   // prédio é parede (solido), não chão
     const vm = vomitorioMundo(X, Z);
     if(vm){
-      if(vm.buraco || Y < tetoDe(r)) return vm.piso;
+      if(vm.cabeceira || vm.buraco || Y < tetoDe(r)) return vm.piso;
       return r < D.arq ? alturaDegrau(r) : r < D.parapeito ? ALT.parapeito : TOPO_ARQ;
     }
     if(r < D.pista) return 0;
@@ -579,6 +584,7 @@ TO.dados.plantaEstadio = (function(){
     const r = distMundo(X, Z);
     const vm = vomitorioMundo(X, Z);
     if(vm && vm.buraco) return vm.piso;             // no buraco, o chão é a escada
+    if(vm && vm.cabeceira) return vm.piso;          // na cabeceira, a arquibancada
     if(r >= D.pista && r < D.arq) return alturaDegrau(r);
     if(r >= D.arq && r < R.fachada1) return TOPO_ARQ;
     return 0;
