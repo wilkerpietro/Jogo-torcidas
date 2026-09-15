@@ -46,7 +46,7 @@
     <b>Q</b> pedra &nbsp; <b>E</b> bomba &nbsp; <b>R</b> recuar<br>
     <b>arrastar</b> gira a câmera &nbsp; <b>roda</b> aproxima<br>
     câmera <b>Z</b> ombro · <b>X</b> alta · <b>C</b> maquete · <b>F</b> zenital &nbsp;
-    <b>H</b> sombra &nbsp; <b>ESPAÇO</b> pausa
+    <b>H</b> sombra &nbsp; <b>L</b> nível de qualidade · <b>K</b> automático &nbsp; <b>ESPAÇO</b> pausa
   </div>
 </div>
 
@@ -166,6 +166,8 @@ addEventListener('keydown', e => {
   else if (k === 'c') { vista.irPara('maquete'); pad.marcarCamera('maquete'); }
   else if (k === 'f') { vista.irPara('zenital'); pad.marcarCamera('zenital'); }
   else if (k === 'h') vista.trocarSombra();
+  else if (k === 'l') { const n = vista.fixarNivel(); vista.fixarNivel((n + 1) % 4); }
+  else if (k === 'k') vista.fixarNivel(null);
   else if (k === ' ') { pausado = !pausado; e.preventDefault(); }
 });
 addEventListener('keyup', e => { teclas[e.key.toLowerCase()] = false; });
@@ -188,10 +190,23 @@ function entradaDoQuadro() {
 
 let quadrosFps = 0, fps = 0, marcoFps = 0;
 
+/* A SIMULAÇÃO ANDA EM PASSO FIXO. Antes era um passo por quadro, com
+   dt travado em 50 ms: a 3 fps o jogo corria a um sexto da velocidade —
+   câmera lenta. Agora o tempo real acumula e a simulação dá quantos
+   passos de 1/60 forem necessários (até 24 por quadro, 0,4 s): a 3 fps
+   a tela pula, mas o jogo corre no tempo certo. */
+const PASSO = 1 / 60;
+let acumulado = 0;
 function laco(agora) {
   let dt = (agora - ant) / 1000; ant = agora;
-  if (dt > 0.05) dt = 0.05;
-  if (J && !pausado) C.passo(J, dt, entradaDoQuadro(), true);
+  if (dt > 0.4) dt = 0.4;
+  if (J && !pausado) {
+    acumulado += dt;
+    const teclas = entradaDoQuadro();
+    let n = 0;
+    while (acumulado >= PASSO && n < 24) { C.passo(J, PASSO, teclas, true); acumulado -= PASSO; n++; }
+    if (n === 24) acumulado = 0;
+  }
   if (J) {
     vista.redimensionar(); vista.quadro(J, dt);
     quadrosFps++;
@@ -211,7 +226,7 @@ function laco(agora) {
     }
     const c = vista.conta || {};
     elEstado.innerHTML =
-      '<b>' + vista.vista + '</b> · ' + fps + ' fps · ' +
+      '<b>' + vista.vista + '</b> · ' + fps + ' fps · <b>' + vista.nivel + '</b> · ' +
       (vista.comModelo ? 'boneco do Blender' : 'boneco de cápsula') +
       (vista.corte ? ' · ' + vista.corte.vistos + ' na tela, ' + vista.corte.cortados + ' fora' : '') + '<br>' +
       'rua <b>' + onde.rua + '</b> · portão <b>' + onde.fachada + '</b> · corredor <b>' + onde.corredor +
@@ -222,6 +237,9 @@ function laco(agora) {
       c.lojas + ' balcões · ' + c.lotes + ' lotes · ' +
       (c.triangulos || 0).toLocaleString('pt-BR') + ' triângulos' +
       (vista.sombra ? '' : ' · sem sombra') +
+      '<br><span style="color:#8a867b">' + String(vista.gpu).slice(0, 70) + '</span>' +
+      (vista.gpuSoftware ? '<br><i>SEM PLACA DE VÍDEO: o Chrome está desenhando por software. ' +
+        'Ligue "Usar aceleração gráfica" em chrome://settings/system e reinicie.</i>' : '') +
       (pausado ? '<br>PAUSADO' : '');
   }
   requestAnimationFrame(laco);

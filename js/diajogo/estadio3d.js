@@ -54,18 +54,76 @@ const COR_LADO = { mandante: 0xc0392b, visitante: 0x2a5fa8, neutro: 0x7a6a3a };
 const PLACAS = [0xe0b52a, 0x1f3f8f, 0xd8622c, 0xeeeeea, 0x2a7a3a, 0xb02a22, 0x2a5fa8, 0xf0e8d0];
 
 export function criar(canvas) {
+  /* `preserveDrawingBuffer` custa uma cópia do quadro por quadro e só
+     serve pra ler o canvas de fora (as fotos dos testes): liga com
+     `?foto=1` na URL, e mais nada */
+  const paraFoto = /[?&]foto=1/.test(location.search);
   const rend = new THREE.WebGLRenderer({ canvas, antialias: true,
-                                         preserveDrawingBuffer: true });
+                                         preserveDrawingBuffer: paraFoto });
   rend.setPixelRatio(Math.min(devicePixelRatio, 2));
   rend.shadowMap.enabled = true;
   rend.shadowMap.type = THREE.PCFSoftShadowMap;
   rend.outputColorSpace = THREE.SRGBColorSpace;
+
+  /* QUEM ESTÁ DESENHANDO. 55 mil triângulos a 3 fps não é cena pesada,
+     é Chrome sem placa de vídeo — SwiftShader, o rasterizador por
+     software que ele usa quando a aceleração está desligada ou o driver
+     está bloqueado. Nenhum modo leve resolve isso; o que resolve é
+     ligar a aceleração. Então a página diz na tela quem desenha. */
+  const gpu = (() => {
+    try {
+      const gl = rend.getContext();
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    } catch (_) { return '?'; }
+  })();
+  const gpuSoftware = /swiftshader|software|llvmpipe|mesa offscreen|basic render/i.test(gpu);
 
   const cena = new THREE.Scene();
   cena.background = new THREE.Color(COR.ceu);
   cena.fog = new THREE.Fog(COR.ceu, 2400, 5600);
 
   const cam = new THREE.PerspectiveCamera(54, 1, 2.0, 9000);
+
+  /* =======================================================
+     O MODO LEVE
+     Quatro níveis. O relógio é de tempo, não de quadros: desce
+     depois de 1,5 s ruins, sobe depois de 5 s folgados, pra não
+     ficar pulando. Sombra é o primeiro a cair (é a segunda
+     passada de desenho inteira); depois a resolução, que é o que
+     mais pesa numa placa fraca; por último a anisotropia da
+     textura do chão e a névoa, que encurta o que se desenha.
+     ======================================================= */
+  const NIVEIS = [
+    { rot: 'cheio',   sombra: true,  dpr: 2.0,  aniso: 8, nevoa: [2400, 5600] },
+    { rot: 'leve',    sombra: false, dpr: 1.0,  aniso: 4, nevoa: [2400, 5600] },
+    { rot: 'leve+',   sombra: false, dpr: 0.75, aniso: 1, nevoa: [1800, 4200] },
+    { rot: 'mínimo',  sombra: false, dpr: 0.5,  aniso: 1, nevoa: [1200, 3000] }
+  ];
+  let nivel = 0, mediaDt = 1 / 60, tempoNoNivel = 0, nivelFixo = false;
+  function aplicarNivel() {
+    const q = NIVEIS[nivel];
+    rend.setPixelRatio(Math.min(devicePixelRatio, q.dpr));
+    if (rend.shadowMap.enabled !== q.sombra) {
+      rend.shadowMap.enabled = q.sombra;
+      cena.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+    }
+    cena.fog.near = q.nevoa[0]; cena.fog.far = q.nevoa[1];
+    if (texChao) { texChao.anisotropy = Math.min(q.aniso, maxAniso); texChao.needsUpdate = true; }
+    redimensionar(true);
+  }
+  function ajustarQualidade(dt) {
+    if (nivelFixo) return;
+    const d = Math.min(0.5, Math.max(0.001, dt));
+    mediaDt = mediaDt * 0.85 + d * 0.15;
+    tempoNoNivel += d;
+    if (tempoNoNivel > 1.5 && mediaDt > 1 / 24 && nivel < NIVEIS.length - 1) {
+      nivel++; tempoNoNivel = 0; mediaDt = 1 / 40; aplicarNivel();
+    } else if (tempoNoNivel > 5 && mediaDt < 1 / 55 && nivel > 0) {
+      nivel--; tempoNoNivel = 0; mediaDt = 1 / 45; aplicarNivel();
+    }
+  }
+  let texChao = null, maxAniso = 1;
 
   cena.add(new THREE.HemisphereLight(0xd2dced, 0x6a6454, 1.0));
   const sol = new THREE.DirectionalLight(0xfff0d8, 1.0);
@@ -95,9 +153,10 @@ export function criar(canvas) {
   const cvChao = document.createElement('canvas');
   cvChao.width = Math.round(W * AMPLIA); cvChao.height = Math.round(H * AMPLIA);
   const ctxChao = cvChao.getContext('2d');
-  const texChao = new THREE.CanvasTexture(cvChao);
+  texChao = new THREE.CanvasTexture(cvChao);
   texChao.colorSpace = THREE.SRGBColorSpace;
-  texChao.anisotropy = Math.min(8, rend.capabilities.getMaxAnisotropy());
+  maxAniso = rend.capabilities.getMaxAnisotropy();
+  texChao.anisotropy = Math.min(8, maxAniso);
   texChao.wrapS = texChao.wrapT = THREE.ClampToEdgeWrapping;
   function repintarChao() {
     ctxChao.setTransform(AMPLIA, 0, 0, AMPLIA, 0, 0);
@@ -758,8 +817,15 @@ export function criar(canvas) {
     cena.traverse(o => { if (o.material) o.material.needsUpdate = true; });
     return rend.shadowMap.enabled;
   }
+  /* trocar o nível na mão trava o automático; `null` devolve */
+  function fixarNivel(n) {
+    if (n === null || n === undefined) { nivelFixo = false; return nivel; }
+    nivelFixo = true; nivel = Math.max(0, Math.min(NIVEIS.length - 1, n));
+    aplicarNivel(); return nivel;
+  }
 
   function quadro(J, dt) {
+    ajustarQualidade(dt);
     traduzir(J, dt);
     const lider = J.discos.find(d => d.lider && d.doJogador && d.vivo)
                || J.discos.find(d => d.lider && d.vivo);
@@ -771,9 +837,12 @@ export function criar(canvas) {
     rend.render(cena, cam);
   }
 
-  function redimensionar() {
+  let ultimoL = 0, ultimoA = 0;
+  function redimensionar(forcar) {
     const l = canvas.clientWidth, a = canvas.clientHeight;
     if (!l || !a) return;
+    if (!forcar && l === ultimoL && a === ultimoA) return;
+    ultimoL = l; ultimoA = a;
     rend.setSize(l, a, false);
     cam.aspect = l / a;
     cam.updateProjectionMatrix();
@@ -792,7 +861,9 @@ export function criar(canvas) {
   }
 
   return { montar, quadro, redimensionar, irPara, ligarRotulos,
-           trocarSombra, girarEntrada, mundo: (x, y) => P.mundo(x, y),
+           trocarSombra, fixarNivel, girarEntrada, mundo: (x, y) => P.mundo(x, y),
+           gpu, gpuSoftware,
+           get nivel() { return NIVEIS[nivel].rot + (nivelFixo ? ' (fixo)' : ''); },
            get sombra() { return rend.shadowMap.enabled; },
            get vista() { return vista; },
            get conta() { return conta; },
