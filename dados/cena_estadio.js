@@ -494,12 +494,34 @@ TO.dados.plantaEstadio = (function(){
     return true;                                  // arquibancada e calçada
   }
 
+  /* o vomitório em coordenada de MUNDO: se (X, Z) cai na tira de
+     algum, devolve o raio e se está no buraco (céu aberto) ou no
+     túnel (laje por cima). É o que a câmera precisa saber. */
+  function vomitorioMundo(X, Z){
+    const q = ondeNoRetoMundo(X, Z);
+    if(!q || q.d < VOM.rTop || q.d > VOM.rFoot) return null;
+    for(const v of VOMITORIOS)
+      if(v.lado === q.lado && q.s >= v.e0 && q.s <= v.e1)
+        return { v, r: q.d, buraco: q.d < VOM.capuz, piso: pisoEscada(q.d) };
+    return null;
+  }
+
   /* =======================================================
      O QUE É SÓLIDO, NO MUNDO — pra câmera saber onde não entra
      ======================================================= */
   function solido(X, Y, Z){
     if(Y < 0) return true;
     const r = distMundo(X, Z);
+    /* na tira do vomitório: abaixo do degrau é maciço; no buraco, acima
+       dele é céu; no túnel, entre o degrau e o teto é vão, e a laje de
+       cima continua sendo laje */
+    const vm = vomitorioMundo(X, Z);
+    if(vm){
+      if(Y < vm.piso) return true;
+      if(vm.buraco) return false;
+      const topo = r < D.arq ? alturaDegrau(r) : TOPO_ARQ;
+      return Y > topo - ALT.laje && Y < topo;
+    }
     if(r >= R.calcada1){
       const l = noLote(X, Z);
       if(l && Y < l.alt) return true;
@@ -524,11 +546,15 @@ TO.dados.plantaEstadio = (function(){
   function teto(X, Z){
     const r = distMundo(X, Z);
     if(r < R.corred0 || r > R.fachada1) return Infinity;
+    const vm = vomitorioMundo(X, Z);
+    if(vm && vm.buraco) return Infinity;            // o buraco é céu aberto
     return tetoDe(r);
   }
   /* a superfície de cima naquele ponto do mundo */
   function superficie(X, Z){
     const r = distMundo(X, Z);
+    const vm = vomitorioMundo(X, Z);
+    if(vm && vm.buraco) return vm.piso;             // no buraco, o chão é a escada
     if(r >= D.pista && r < D.arq) return alturaDegrau(r);
     if(r >= D.arq && r < R.fachada1) return TOPO_ARQ;
     return 0;
@@ -558,7 +584,7 @@ TO.dados.plantaEstadio = (function(){
            METRO, ARCADA, RUA, CALC, PONTA, NS, QEST, QEST_X0, QEST_X1, QEST_Y0, QEST_Y1,
            PERFIL, anel, ancora, ancoraMundo, dist, distMundo, alturaDegrau,
            LADOS, ponto, pontoMundo, ondeNoReto, ondeNoRetoMundo,
-           VOM, VOMITORIOS, noVomitorio, rampa, pisoEscada,
+           VOM, VOMITORIOS, noVomitorio, vomitorioMundo, rampa, pisoEscada,
            PORTOES, noPortao, noPortaoMundo, LOJA, LOJAS, naLoja,
            QUADRAS, LOTES, CARROS, ARVORES, TORRES, SEDES, noLote, noCarro,
            faixaDe, dobra, mundo, onde, anda, solido, teto, superficie, mascara };

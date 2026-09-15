@@ -500,9 +500,16 @@ export function criar(canvas) {
   /* o bandeirão de cada setor, na mureta atrás da última fila */
   function montarSetores(T, D) {
     for (const e of D.entradas || []) {
-      const lado = e.dir && e.dir[0] > 0 ? 'o' : e.dir && e.dir[0] < 0 ? 'l' : e.dir && e.dir[1] > 0 ? 'n' : 's';
+      /* só setor: a saída pelo portão é entrada da simulação, não lugar
+         de bandeirão — e o lado vem de ONDE o setor está, não da
+         direção (a saída leste apontava como o setor oeste e pintava
+         um bandeirão azul em cima do vermelho) */
+      if (e.saida) continue;
+      const q = P.ondeNoReto(e.x, e.y);
+      if (!q) continue;
+      const lado = q.lado;
       const cor = COR_LADO[e.lado] || COR_LADO.neutro;
-      const s = lado === 'o' || lado === 'l' ? e.y : e.x;
+      const s = q.s;
       caixaLado(T, lado, s - 74, s + 74, P.D.arq - 1.6, P.D.arq, P.TOPO_ARQ + 3, P.ALT.parapeito - 3, cor);
       caixaLado(T, lado, s - 60, s + 60, P.D.arq - 2.2, P.D.arq - 1.6, P.TOPO_ARQ + 9, P.TOPO_ARQ + 15, 0xf0ece0);
     }

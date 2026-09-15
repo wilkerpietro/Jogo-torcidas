@@ -167,6 +167,17 @@ Nada de mecânica nova. O que há:
    câmera de foto incluída. E ela também precisava saber se o *alvo* está
    embaixo da laje, não só o líder.
 4. **PORTÃO SELADO** — o §4, e antes dele o cordão do tamanho do portão.
+5. **Bandeirão azul no setor mandante.** `montarSetores` desenhava um
+   bandeirão por `entrada`, escolhendo o lado pela direção; a saída leste
+   (por onde o setor visitante vai embora) aponta como o setor oeste e
+   pintava um bandeirão azul por cima do vermelho. Agora só setor tem
+   bandeirão, e o lado vem de onde o setor está.
+6. **Descendo a escada, a câmera afundava no degrau.** `teto()` devolvia o
+   fundo da laje sobre o *buraco* do vomitório, onde é céu aberto; a
+   câmera era presa "sob a laje" e entrava no concreto — a faixa amarela
+   do nariz tomava um terço da tela. `teto`, `superficie` e `solido` agora
+   sabem que o buraco (r < 152) é aberto e que ali o chão é a escada; no
+   túnel a laje continua laje.
 
 ## 8. A caminhada do líder
 
