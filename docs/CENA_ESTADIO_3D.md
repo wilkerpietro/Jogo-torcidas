@@ -148,7 +148,7 @@ Nada de mecânica nova. O que há:
 - Por andar (células de corpo): rua 25.506 · corredor 4.339 · vomitório
   748 · arquibancada 3.572 · portão 48.
 - Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · 172 lotes ·
-  49 carros · 87 árvores · **83.436 triângulos** · **15–16 chamadas de
+  49 carros · 87 árvores · **82.380 triângulos** · **11–16 chamadas de
   desenho** (estádio 5, bairro 1, chão 2, gente e grades o resto).
 - Boneco do Blender ativo (`comModelo: true`).
 - A caminhada do líder pela rota inteira está no §8.
