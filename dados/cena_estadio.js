@@ -74,12 +74,24 @@ TO.dados.plantaEstadio = (function(){
     calcada0: D.fachada - DOBRA,  calcada1: D.calcada - DOBRA    // 240 → 272
   };
 
-  /* o bairro: grade 3 × 3, estádio no meio, rua em volta de tudo */
-  const RUA = 72, CALC = 32, PONTA = 560, NS = 400;
-  const QEST = { larg: 2*(AX + R.calcada1), alt: 2*(AY + R.calcada1) };   // 1184 × 960
-  const W = RUA + PONTA + RUA + QEST.larg + RUA + PONTA + RUA;            // 2592
-  const H = RUA + NS + RUA + QEST.alt + RUA + NS + RUA;                    // 2048
-  const CX = W/2, CY = H/2;
+  /* A CIDADE VEM DE UM MAPA DESENHADO — 1500 × 1100 px: o estádio no
+     norte-centro, a costa a leste, o mato a oeste, dois campos de
+     várzea no sul. Um pixel do mapa é PX unidades do mundo, a escala
+     que deixa o estádio do mapa do tamanho do quarteirão do estádio.
+     O TABULEIRO (o que se anda) é um recorte do mapa; o que se DESENHA
+     vai além dele, até o mar e o mato de fora. */
+  const PX = 5.4;
+  const MAPA  = { x0: 170, y0: 90,  x1: 1170, y1: 1100 };   // o recorte andável, em px do mapa
+  const VISTA = { x0: -60, y0: -60, x1: 1560, y1: 1160 };   // o que se desenha, em px do mapa
+  const ceil8 = v => Math.ceil(v/8)*8;
+  const W = ceil8((MAPA.x1 - MAPA.x0)*PX), H = ceil8((MAPA.y1 - MAPA.y0)*PX);   // 5400 × 5456
+  const pxX = x => (x - MAPA.x0)*PX, pxY = y => (y - MAPA.y0)*PX;
+  const pxm = (x, y) => [pxX(x), pxY(y)];                                        // px do mapa → mundo
+  const QEST = { larg: 2*(AX + R.calcada1), alt: 2*(AY + R.calcada1) };          // 1184 × 960
+  const [CX, CY] = pxm(765, 305);                                                // o estádio, onde o mapa o põe
+  const VW = (VISTA.x1 - VISTA.x0)*PX, VH = (VISTA.y1 - VISTA.y0)*PX;
+  const [VX0, VY0] = pxm(VISTA.x0, VISTA.y0);
+  const RUA = 70, CALC = 32;
 
   const ALT = {
     degrau: 8, subida: 4.6, base: 6, laje: 8,
@@ -294,28 +306,164 @@ TO.dados.plantaEstadio = (function(){
   }
 
   /* =======================================================
-     O BAIRRO
-     Oito quarteirões em volta do estádio. Cada um tem calçada
-     de 24 em volta e, dentro, LOTES de frente contínua — casa,
-     sobrado, prédio, um muro de vez em quando — como um
-     quarteirão de bairro de estádio. O miolo é quintal, murado.
-     Tudo que está aqui bloqueia na máscara e sai no 3D.
+     A CIDADE — a planta tirada do mapa
+
+     A grade de ruas é lida do mapa como colunas (norte-sul) e linhas
+     (leste-oeste), cada uma com a sua largura; as quatro que encostam
+     no estádio vêm do quarteirão dele, pra bater exatamente. Entre
+     ruas há células: dentro do contorno da cidade a célula é um
+     QUARTEIRÃO (calçada de 32 em volta, lotes de frente contínua,
+     quintal no miolo); fora, é mato, praia ou mar. As AVENIDAS
+     diagonais do mapa cortam os quarteirões de verdade — bandas
+     andáveis — e ganham casas rotacionadas na frente. Os dois CAMPOS
+     de várzea do sul são células grandes abertas, com cerca e
+     arquibancadinha. Tudo bloqueia na máscara e sai no 3D, da mesma
+     lista.
      ======================================================= */
   const QEST_X0 = CX - QEST.larg/2, QEST_X1 = CX + QEST.larg/2;
   const QEST_Y0 = CY - QEST.alt/2,  QEST_Y1 = CY + QEST.alt/2;
-  const QUADRAS = [
-    { id:'NO', x0: RUA,              x1: RUA+PONTA,      y0: RUA,              y1: RUA+NS },
-    { id:'N',  x0: QEST_X0,          x1: QEST_X1,        y0: RUA,              y1: RUA+NS },
-    { id:'NE', x0: QEST_X1+RUA,      x1: QEST_X1+RUA+PONTA, y0: RUA,           y1: RUA+NS },
-    { id:'O',  x0: RUA,              x1: RUA+PONTA,      y0: QEST_Y0,          y1: QEST_Y1 },
-    { id:'L',  x0: QEST_X1+RUA,      x1: QEST_X1+RUA+PONTA, y0: QEST_Y0,       y1: QEST_Y1 },
-    { id:'SO', x0: RUA,              x1: RUA+PONTA,      y0: QEST_Y1+RUA,      y1: QEST_Y1+RUA+NS },
-    { id:'S',  x0: QEST_X0,          x1: QEST_X1,        y0: QEST_Y1+RUA,      y1: QEST_Y1+RUA+NS },
-    { id:'SE', x0: QEST_X1+RUA,      x1: QEST_X1+RUA+PONTA, y0: QEST_Y1+RUA,   y1: QEST_Y1+RUA+NS }
-  ].map(q => Object.assign(q, { ix0: q.x0+CALC, ix1: q.x1-CALC, iy0: q.y0+CALC, iy1: q.y1-CALC }));
 
-  /* sorteio com semente: a planta tem de sair IGUAL toda vez,
-     porque a máscara e o desenho nascem dela separados */
+  /* ---- a costa: x do mar em função de y, em px do mapa ---- */
+  const COSTA = [[1130,-60],[1090,130],[1060,240],[1010,400],[950,530],[880,660],
+                 [825,780],[770,900],[720,1010],[680,1160]];
+  function xCosta(ypx){
+    if(ypx <= COSTA[0][1]) return COSTA[0][0];
+    for(let k=1;k<COSTA.length;k++){
+      const [x0,y0] = COSTA[k-1], [x1,y1] = COSTA[k];
+      if(ypx <= y1) return x0 + (x1-x0)*(ypx-y0)/(y1-y0);
+    }
+    return COSTA[COSTA.length-1][0];
+  }
+  const PRAIA = 45, ORLA = 14;          // em px: a faixa de areia e a avenida beira-mar
+  /* ---- o contorno da cidade, em px: fora dele é mato ---- */
+  const CONTORNO = [[330,250],[400,160],[560,110],[620,100],[700,95],[850,100],[1000,110],
+                    [1300,115],[1300,1200],[300,1200],[250,1000],[230,850],[240,700],
+                    [260,560],[290,420]];
+  function dentroPoligono(px, py, pol){
+    let dentro = false;
+    for(let a=0, b=pol.length-1; a<pol.length; b=a++){
+      const [xa,ya] = pol[a], [xb,yb] = pol[b];
+      if((ya > py) !== (yb > py) && px < (xb-xa)*(py-ya)/(yb-ya)+xa) dentro = !dentro;
+    }
+    return dentro;
+  }
+  /* a zona de um ponto do MUNDO: mar, praia, orla, cidade ou mato */
+  function zona(x, y){
+    const px = x/PX + MAPA.x0, py = y/PX + MAPA.y0;
+    const xc = xCosta(py);
+    if(px > xc) return 'mar';
+    if(px > xc - PRAIA) return 'praia';
+    if(px > xc - PRAIA - ORLA) return 'orla';
+    return dentroPoligono(px, py, CONTORNO) ? 'cidade' : 'mato';
+  }
+
+  /* ---- as ruas da grade ---- */
+  const coluna = (px, lpx) => ({ c: pxX(px), l: lpx*PX });
+  const linha  = (px, lpx) => ({ c: pxY(px), l: lpx*PX });
+  const COLUNAS = [ coluna(245,12), coluna(315,12), coluna(385,12), coluna(455,14), coluna(525,12),
+                    coluna(595,12), { c: QEST_X0 - RUA/2, l: RUA }, coluna(765,14),
+                    { c: QEST_X1 + RUA/2, l: RUA }, coluna(945,12), coluna(1015,12),
+                    coluna(1085,12), coluna(1150,12) ];
+  const LINHAS  = [ linha(130,14), linha(172,12), { c: QEST_Y0 - RUA/2, l: RUA }, linha(300,12),
+                    { c: QEST_Y1 + RUA/2, l: RUA }, linha(465,12), linha(535,12), linha(605,14),
+                    linha(675,12), linha(745,12), linha(815,12), linha(885,12), linha(955,14),
+                    linha(1025,12), linha(1092,12) ];
+  const noQuadradoDoEstadio = (x, y) =>
+    x >= QEST_X0 && x < QEST_X1 && y >= QEST_Y0 && y < QEST_Y1;
+
+  /* ---- os campos de várzea: células abertas com cerca ---- */
+  const campo = (x0, y0, x1, y1, ladoArq) => {
+    const [X0, Y0] = pxm(x0, y0), [X1, Y1] = pxm(x1, y1);
+    return { x0:X0, y0:Y0, x1:X1, y1:Y1, cx:(X0+X1)/2, cy:(Y0+Y1)/2, ladoArq };
+  };
+  const CAMPOS = [ campo(414, 705, 522, 797, 'o'), campo(658, 728, 770, 808, 'l') ];   // o 1º afastado da avenida
+  const CERCA = 6, PORTEIRA = 24, ARQ_VARZEA = { fundo: 40, alt: 22 };
+  function noCampo(x, y){
+    for(const c of CAMPOS) if(x >= c.x0 && x < c.x1 && y >= c.y0 && y < c.y1) return c;
+    return null;
+  }
+  /* dentro do campo: a cerca e a arquibancadinha bloqueiam, o resto anda */
+  function andaNoCampo(c, x, y){
+    const dx0 = x - c.x0, dx1 = c.x1 - x, dy0 = y - c.y0, dy1 = c.y1 - y;
+    const naCerca = Math.min(dx0, dx1, dy0, dy1) < CERCA;
+    if(naCerca){
+      /* porteiras no meio dos lados norte e sul */
+      const meio = Math.abs(x - c.cx) < PORTEIRA/2;
+      return meio && (dy0 < CERCA || dy1 < CERCA);
+    }
+    if(c.ladoArq === 'o' && dx0 < CERCA + ARQ_VARZEA.fundo && Math.abs(y - c.cy) < (c.y1-c.y0)*0.3) return false;
+    if(c.ladoArq === 'l' && dx1 < CERCA + ARQ_VARZEA.fundo && Math.abs(y - c.cy) < (c.y1-c.y0)*0.3) return false;
+    return true;
+  }
+
+  /* ---- as avenidas diagonais: segmento + largura, no mundo ---- */
+  const avenida = (ax, ay, bx, by, lpx, id) => {
+    const [x0, y0] = pxm(ax, ay), [x1, y1] = pxm(bx, by);
+    const L = Math.hypot(x1-x0, y1-y0);
+    return { id, x0, y0, x1, y1, l: lpx*PX, ux:(x1-x0)/L, uy:(y1-y0)/L, L,
+             ang: Math.atan2(y1-y0, x1-x0) };
+  };
+  const AVENIDAS = [
+    avenida(185, 1095, 600, 405, 16, 'sudoeste'),   // a grande, do canto sudoeste até o estádio
+    avenida(330, 255, 612, 108, 14, 'noroeste'),
+    avenida(170, 555, 330, 540, 12, 'oeste'),
+    avenida(170, 200, 330, 250, 12, 'noroeste2')
+  ];
+  /* distância de (x,y) ao eixo da avenida, e onde ao longo dela */
+  function distAvenida(av, x, y){
+    const dx = x - av.x0, dy = y - av.y0;
+    const t = Math.max(0, Math.min(av.L, dx*av.ux + dy*av.uy));
+    return { t, d: Math.hypot(dx - av.ux*t, dy - av.uy*t) };
+  }
+  function naAvenida(x, y, folga){
+    for(const av of AVENIDAS){
+      const q = distAvenida(av, x, y);
+      if(q.d <= av.l/2 + (folga === undefined ? CALC : folga)) return { av, ...q };
+    }
+    return null;
+  }
+
+  /* ---- as ruas da grade num ponto (fora do estádio e dos campos) ---- */
+  function naRua(x, y){
+    for(const c of COLUNAS) if(Math.abs(x - c.c) <= c.l/2) return true;
+    for(const l of LINHAS)  if(Math.abs(y - l.c) <= l.l/2) return true;
+    return false;
+  }
+
+  /* ---- as células entre as ruas, e quais são quarteirão ---- */
+  const bordasX = [0]; for(const c of COLUNAS){ bordasX.push(c.c - c.l/2, c.c + c.l/2); } bordasX.push(W);
+  const bordasY = [0]; for(const l of LINHAS){ bordasY.push(l.c - l.l/2, l.c + l.l/2); } bordasY.push(H);
+  const CELULAS = [];
+  const grade = [];    // grade[i][j] → célula
+  for(let i=0;i<bordasX.length;i+=2){
+    grade[i/2] = [];
+    for(let j=0;j<bordasY.length;j+=2){
+      const x0 = bordasX[i], x1 = bordasX[i+1], y0 = bordasY[j], y1 = bordasY[j+1];
+      const cel = { i:i/2, j:j/2, x0, x1, y0, y1, cx:(x0+x1)/2, cy:(y0+y1)/2, tipo:'aberto',
+                    ix0:x0+CALC, ix1:x1-CALC, iy0:y0+CALC, iy1:y1-CALC, lotes:[] };
+      if(x1 - x0 < 4 || y1 - y0 < 4) cel.tipo = 'nada';
+      else if(noQuadradoDoEstadio(cel.cx, cel.cy)) cel.tipo = 'estadio';
+      else if(noCampo(cel.cx, cel.cy)) cel.tipo = 'campo';
+      else if(zona(cel.cx, cel.cy) === 'cidade' && cel.ix1 - cel.ix0 > 48 && cel.iy1 - cel.iy0 > 48) cel.tipo = 'quadra';
+      grade[i/2][j/2] = cel;
+      CELULAS.push(cel);
+    }
+  }
+  /* a célula de um ponto: busca binária nas bordas */
+  function indiceEm(bordas, v){
+    let a = 0, b = bordas.length - 1;
+    while(a < b){ const m = (a+b) >> 1; if(bordas[m+1] <= v) a = m+1; else b = m; }
+    return a;
+  }
+  function celulaEm(x, y){
+    if(x < 0 || y < 0 || x >= W || y >= H) return null;
+    const i = indiceEm(bordasX, x), j = indiceEm(bordasY, y);
+    if(i % 2 || j % 2) return null;              // caiu numa rua
+    return grade[i/2][j/2];
+  }
+  const QUADRAS = CELULAS.filter(c => c.tipo === 'quadra');
+
+  /* ---- sorteio com semente: a planta sai IGUAL toda vez ---- */
   function semente(a){
     return function(){
       a |= 0; a = a + 0x6D2B79F5 | 0;
@@ -330,111 +478,237 @@ TO.dados.plantaEstadio = (function(){
   const par8 = v => Math.round(v/8)*8;
 
   const TIPOS = {
-    casa:    { alt:[34, 48],  cor:['#e8dcc0','#d9c9a3','#e2b9a6','#cfd8c9','#e6e2d6','#d8c8b0'] },
-    sobrado: { alt:[58, 76],  cor:['#e3d3b2','#c9b48a','#d4a48f','#b7c4c2','#ded9cd'] },
-    predio:  { alt:[96, 150], cor:['#cfcac0','#b9b4aa','#d5d0c4','#a9b0b6'] },
+    casa:    { alt:[30, 44],  cor:['#e8dcc0','#d9c9a3','#e2b9a6','#cfd8c9','#e6e2d6','#d8c8b0','#e9d3b3'] },
+    sobrado: { alt:[54, 70],  cor:['#e3d3b2','#c9b48a','#d4a48f','#b7c4c2','#ded9cd'] },
+    predio:  { alt:[92, 150], cor:['#cfcac0','#b9b4aa','#d5d0c4','#a9b0b6','#e0dcd2'] },
     muro:    { alt:[12, 14],  cor:['#b8b09e'] },
-    galpao:  { alt:[40, 52],  cor:['#9fa4a6','#8f948f'] }
+    galpao:  { alt:[40, 56],  cor:['#9fa4a6','#8f948f','#a8a39a'] }
   };
+  /* a sede de cada torcida: um ponto do mapa dentro do quarteirão, e a
+     frente em que ela fica. É onde a torcida nasce. */
   const SEDES = {
-    /* a sede de cada torcida: é onde a torcida nasce */
-    mandante:  { quadra:'O', frente:'n', s:300, larg:88, cor:'#b02a22', rot:'SEDE' },
-    visitante: { quadra:'L', frente:'s', s:QEST_X1+RUA+270, larg:88, cor:'#22439a', rot:'SEDE' }
+    mandante:  { ponto: pxm(280, 1058), frente:'n', cor:'#b02a22', rot:'SEDE' },
+    visitante: { ponto: pxm(980, 255), frente:'l', cor:'#22439a', rot:'SEDE' }   // de frente pra orla
   };
+  const sedeDe = {};
+
+  /* o lote intersecta uma avenida (com folga)? testa os cantos e o centro */
+  function cantosDoLote(l){
+    if(!l.ang) return [[l.x0,l.y0],[l.x1,l.y0],[l.x1,l.y1],[l.x0,l.y1],[(l.x0+l.x1)/2,(l.y0+l.y1)/2]];
+    const c = Math.cos(l.ang), s = Math.sin(l.ang), hw = l.w/2, hh = l.h/2;
+    const r = (u, v) => [l.cx + u*c - v*s, l.cy + u*s + v*c];
+    return [r(-hw,-hh), r(hw,-hh), r(hw,hh), r(-hw,hh), [l.cx, l.cy]];
+  }
+  const tocaAvenida = (l, folga) => cantosDoLote(l).some(([x, y]) => naAvenida(x, y, folga));
+  const dentroRet = (x, y, o) => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1;
+  function dentroLote(x, y, l){
+    if(!l.ang) return dentroRet(x, y, l);
+    const c = Math.cos(-l.ang), s = Math.sin(-l.ang);
+    const dx = x - l.cx, dy = y - l.cy;
+    const u = dx*c - dy*s, v = dx*s + dy*c;
+    return Math.abs(u) <= l.w/2 && Math.abs(v) <= l.h/2;
+  }
 
   const LOTES = [];
+  function tipoDoLote(q){
+    const px = q.cx/PX + MAPA.x0, py = q.cy/PX + MAPA.y0;
+    /* perto do estádio e na orla norte há prédio e galpão, como no mapa;
+       o resto é casa de telha, que é o que o mapa mostra em toda parte */
+    if(py < 230 && px > 820) return escolher(['galpao','galpao','predio','sobrado','casa']);
+    if(Math.abs(px - 765) < 260 && Math.abs(py - 305) < 220) return escolher(['casa','sobrado','sobrado','predio','galpao','muro']);
+    if(px > 900) return escolher(['casa','casa','sobrado','predio','muro']);
+    return escolher(['casa','casa','casa','casa','sobrado','sobrado','muro','galpao']);
+  }
   function lotear(q){
-    const prof = par8(entre(64, 88));
-    /* frentes norte e sul, de ponta a ponta; oeste e leste, entre elas */
-    const frentes = [
-      { f:'n', x0:q.ix0, x1:q.ix1, y0:q.iy0, y1:q.iy0+prof },
-      { f:'s', x0:q.ix0, x1:q.ix1, y0:q.iy1-prof, y1:q.iy1 },
-      { f:'o', x0:q.ix0, x1:q.ix0+prof, y0:q.iy0+prof, y1:q.iy1-prof },
-      { f:'l', x0:q.ix1-prof, x1:q.ix1, y0:q.iy0+prof, y1:q.iy1-prof }
-    ];
+    const largI = q.ix1 - q.ix0, altI = q.iy1 - q.iy0;
+    let prof = par8(entre(60, 84));
+    /* quarteirão raso: uma fileira só, ocupando o fundo todo */
+    const raso = altI < 2*prof + 24 || largI < 2*prof + 24;
+    if(raso) prof = Math.min(altI, largI);
+    const frentes = raso
+      ? (largI >= altI
+          ? [{ f:'n', x0:q.ix0, x1:q.ix1, y0:q.iy0, y1:q.iy1 }]
+          : [{ f:'o', x0:q.ix0, x1:q.ix1, y0:q.iy0, y1:q.iy1 }])
+      : [{ f:'n', x0:q.ix0, x1:q.ix1, y0:q.iy0, y1:q.iy0+prof },
+         { f:'s', x0:q.ix0, x1:q.ix1, y0:q.iy1-prof, y1:q.iy1 },
+         { f:'o', x0:q.ix0, x1:q.ix0+prof, y0:q.iy0+prof, y1:q.iy1-prof },
+         { f:'l', x0:q.ix1-prof, x1:q.ix1, y0:q.iy0+prof, y1:q.iy1-prof }];
     for(const fr of frentes){
       const horizontal = fr.f === 'n' || fr.f === 's';
       const a0 = horizontal ? fr.x0 : fr.y0, a1 = horizontal ? fr.x1 : fr.y1;
+      if(a1 - a0 < 40) continue;
       let a = a0;
       while(a < a1 - 24){
-        let larg = par8(entre(64, 128));
-        if(a + larg > a1 - 40) larg = a1 - a;
-        const sede = Object.values(SEDES).find(s => s.quadra === q.id && s.frente === fr.f &&
-                       s.s >= a && s.s < a + larg);
-        let tipo = escolher(['casa','casa','casa','sobrado','sobrado','predio','muro','galpao']);
-        if(q.id === 'N' || q.id === 'S') tipo = escolher(['casa','sobrado','sobrado','predio','galpao','muro']);
+        let larg = par8(entre(56, 120));
+        if(a + larg > a1 - 36) larg = a1 - a;
+        const tipo = tipoDoLote(q);
         const T = TIPOS[tipo];
         const lote = {
-          quadra: q.id, frente: fr.f, tipo,
+          quadra:q, frente: fr.f, tipo,
           x0: horizontal ? a : fr.x0, x1: horizontal ? a + larg : fr.x1,
           y0: horizontal ? fr.y0 : a, y1: horizontal ? fr.y1 : a + larg,
-          alt: par8(entre(T.alt[0], T.alt[1]))/8*8 || T.alt[0],
+          alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0],
           cor: escolher(T.cor)
         };
-        if(sede){
-          lote.tipo = 'sede'; lote.alt = 62; lote.cor = sede.cor; lote.rot = sede.rot;
-          lote.lado = Object.keys(SEDES).find(k => SEDES[k] === sede);
-        }
-        /* prédio não fica colado em prédio: quebra a monotonia do quarteirão */
-        LOTES.push(lote);
         a += larg;
+        /* a frente da avenida é das casas rotacionadas: aqui não entra;
+           e lote nenhum entra no campo de várzea */
+        if(tocaAvenida(lote, CALC + 96)) continue;
+        if(cantosDoLote(lote).some(([x, y]) => noCampo(x, y))) continue;
+        for(const [k, sd] of Object.entries(SEDES)){
+          if(sedeDe[k]) continue;
+          if(dentroRet(sd.ponto[0], sd.ponto[1], q) && fr.f === sd.frente &&
+             sd.ponto[0] >= lote.x0 - 40 && sd.ponto[0] <= lote.x1 + 40 && (fr.f === 'n' || fr.f === 's') ||
+             dentroRet(sd.ponto[0], sd.ponto[1], q) && fr.f === sd.frente &&
+             sd.ponto[1] >= lote.y0 - 40 && sd.ponto[1] <= lote.y1 + 40 && (fr.f === 'o' || fr.f === 'l')){
+            lote.tipo = 'sede'; lote.alt = 62; lote.cor = sd.cor; lote.rot = sd.rot; lote.lado = k;
+            sedeDe[k] = lote;
+          }
+        }
+        LOTES.push(lote); q.lotes.push(lote);
       }
     }
-    /* o miolo: quintais murados, baixos */
-    LOTES.push({ quadra:q.id, frente:'miolo', tipo:'quintal',
-      x0:q.ix0+prof, x1:q.ix1-prof, y0:q.iy0+prof, y1:q.iy1-prof, alt: 10, cor:'#a8a08c' });
+    if(!raso) q.quintal = { x0:q.ix0+prof, x1:q.ix1-prof, y0:q.iy0+prof, y1:q.iy1-prof, alt:10, cor:'#a8a08c' };
   }
   QUADRAS.forEach(lotear);
+  for(const q of QUADRAS){
+    const pts = [];
+    for(let k=0;k<=8;k++){ const t = k/8; pts.push([q.x0 + (q.x1-q.x0)*t, q.y0], [q.x0 + (q.x1-q.x0)*t, q.y1], [q.x0, q.y0 + (q.y1-q.y0)*t], [q.x1, q.y0 + (q.y1-q.y0)*t]); }
+    pts.push([q.cx, q.cy]);
+    q.cortada = pts.some(([x, y]) => naAvenida(x, y));
+  }
 
-  /* carros na guia, como na foto: nas ruas norte e sul do estádio,
-     do lado do estádio. Bloqueiam — são o que a torcida contorna. */
+  /* as casas rotacionadas na frente das avenidas: caminha ao longo do
+     eixo, um lote de cada lado, e só aceita se os quatro cantos caem no
+     miolo de um mesmo quarteirão e não pisam em lote que já existe */
+  for(const av of AVENIDAS){
+    for(const lado of [-1, 1]){
+      let t = 30;
+      while(t < av.L - 30){
+        const w = par8(entre(56, 112)), h = par8(entre(56, 80));
+        const off = av.l/2 + CALC + h/2 + 2;
+        const cx = av.x0 + av.ux*(t + w/2) - av.uy*off*lado;
+        const cy = av.y0 + av.uy*(t + w/2) + av.ux*off*lado;
+        const q = celulaEm(cx, cy);
+        const tipo = q && q.tipo === 'quadra' ? tipoDoLote(q) : null;
+        if(tipo){
+          const T = TIPOS[tipo];
+          const lote = { quadra:q, frente:'av', tipo, cx, cy, w, h, ang: av.ang,
+                         alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
+          const cantos = cantosDoLote(lote);
+          const cabe = cantos.every(([x, y]) => x >= q.ix0 && x < q.ix1 && y >= q.iy0 && y < q.iy1) &&
+                       !cantos.some(([x, y]) => q.lotes.some(o => !o.ang && dentroRet(x, y, o)));
+          if(cabe){ LOTES.push(lote); q.lotes.push(lote); }
+        }
+        t += w + 4;
+      }
+    }
+  }
+
+  /* ---- as moitas do mato: só onde é mato, num balde espacial ---- */
+  const MOITAS = [];
+  const BALDE = 256, baldes = new Map();
+  const chave = (x, y) => ((x/BALDE)|0) + ',' + ((y/BALDE)|0);
+  for(let n=0;n<2600;n++){
+    const x = VX0 + rng()*VW, y = VY0 + rng()*VH;
+    if(zona(x, y) !== 'mato') continue;
+    if(x >= 0 && y >= 0 && x < W && y < H && (naRua(x, y) || naAvenida(x, y))) continue;
+    const m = { x, y, r: entre(16, 40) };
+    MOITAS.push(m);
+    if(x >= -BALDE && y >= -BALDE){
+      const k = chave(x, y);
+      if(!baldes.has(k)) baldes.set(k, []);
+      baldes.get(k).push(m);
+    }
+  }
+  function naMoita(x, y){
+    const bx = (x/BALDE)|0, by = (y/BALDE)|0;
+    for(let i=-1;i<=1;i++) for(let j=-1;j<=1;j++){
+      const l = baldes.get((bx+i) + ',' + (by+j));
+      if(!l) continue;
+      for(const m of l) if(Math.hypot(x - m.x, y - m.y) < m.r) return m;
+    }
+    return null;
+  }
+  /* trilhas de terra no mato, só desenho */
+  const TRILHAS = [
+    [[-40,300],[60,330],[140,420],[190,520],[230,610]].map(p => pxm(p[0], p[1])),
+    [[-40,760],[40,720],[120,700],[200,690],[240,700]].map(p => pxm(p[0], p[1])),
+    [[-40,900],[60,880],[150,930],[230,980],[250,1000]].map(p => pxm(p[0], p[1])),
+    [[150,-40],[190,60],[260,120],[330,250]].map(p => pxm(p[0], p[1]))
+  ];
+
+  /* ---- carros na guia: nas ruas em volta do estádio e na orla ---- */
   const CARROS = [];
   const CORES_CARRO = ['#d9d9d9','#2b2b2b','#8a8f96','#b8242a','#2a4f9a','#e6e6e6','#6b7280'];
   (function estacionar(){
     const passo = 46;
     for(const [y0, y1] of [[QEST_Y0-RUA+8, QEST_Y0-RUA+24], [QEST_Y1+RUA-24, QEST_Y1+RUA-8]]){
       for(let x = QEST_X0 + 40; x < QEST_X1 - 60; x += passo){
-        if(rng() < 0.22) continue;                         // vaga vazia
-        if(Math.abs(x + 17 - CX) < 90 && y0 > CY) continue;  // a frente do portão sul
+        if(rng() < 0.22) continue;
+        if(Math.abs(x + 17 - CX) < 90 && y0 > CY) continue;
         CARROS.push({ x0:x, x1:x+34, y0, y1, cor: escolher(CORES_CARRO) });
       }
     }
-    /* uns poucos na rua de fora, nas pontas */
-    for(const x of [RUA+60, RUA+160, RUA+260, W-RUA-100, W-RUA-200, W-RUA-300]){
-      CARROS.push({ x0:x, x1:x+34, y0:RUA-24, y1:RUA-8, cor: escolher(CORES_CARRO) });
-      CARROS.push({ x0:x, x1:x+34, y0:H-RUA+8, y1:H-RUA+24, cor: escolher(CORES_CARRO) });
+    for(const [x0, x1] of [[QEST_X0-RUA+8, QEST_X0-RUA+24], [QEST_X1+RUA-24, QEST_X1+RUA-8]]){
+      for(let y = QEST_Y0 + 40; y < QEST_Y1 - 60; y += passo){
+        if(rng() < 0.3) continue;
+        if(Math.abs(y + 17 - CY) < 90) continue;
+        CARROS.push({ x0, x1, y0:y, y1:y+34, cor: escolher(CORES_CARRO) });
+      }
     }
   })();
-
-  /* árvores nas calçadas: só desenho, não bloqueiam (tronco fino) */
-  const ARVORES = [];
-  for(const q of QUADRAS){
-    for(let x = q.x0 + 40; x < q.x1 - 30; x += par8(entre(88, 150))){
-      if(rng() < 0.5) ARVORES.push({ x, y: q.y0 + 12, r: entre(14, 22) });
-      if(rng() < 0.5) ARVORES.push({ x, y: q.y1 - 12, r: entre(14, 22) });
-    }
-    for(let y = q.y0 + 60; y < q.y1 - 40; y += par8(entre(100, 170))){
-      if(rng() < 0.5) ARVORES.push({ x: q.x0 + 12, y, r: entre(14, 22) });
-      if(rng() < 0.5) ARVORES.push({ x: q.x1 - 12, y, r: entre(14, 22) });
-    }
-  }
-
-  /* as torres de refletor, nos quatro cantos do quarteirão do
-     estádio — fora da calçada redonda, dentro do quadrado */
-  const TORRES = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx, sy]) => ({
-    x: CX + sx*(QEST.larg/2 - 44), z: CY + sy*(QEST.alt/2 - 44), alt: ALT.torre }));
-
-  const dentroRet = (x, y, o) => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1;
-  function noLote(x, y){
-    for(const l of LOTES) if(dentroRet(x, y, l)) return l;
-    return null;
-  }
   function noCarro(x, y){
     for(const c of CARROS) if(dentroRet(x, y, c)) return c;
     return null;
   }
-  const noQuadradoDoEstadio = (x, y) =>
-    x >= QEST_X0 && x < QEST_X1 && y >= QEST_Y0 && y < QEST_Y1;
+
+  /* ---- árvores nas calçadas, postes nas ruas do estádio e na avenida ---- */
+  const ARVORES = [];
+  for(const q of QUADRAS){
+    for(let x = q.x0 + 40; x < q.x1 - 30; x += par8(entre(120, 220))){
+      if(rng() < 0.45) ARVORES.push({ x, y: q.y0 + 12, r: entre(14, 22) });
+      if(rng() < 0.45) ARVORES.push({ x, y: q.y1 - 12, r: entre(14, 22) });
+    }
+  }
+  for(const a of ARVORES){ const q = celulaEm(a.x, a.y); if(q){ (q.arvores = q.arvores || []).push(a); } }
+  const POSTES = [];
+  for(const q of QUADRAS){
+    const passo = 200;
+    if(q.y1 <= QEST_Y0 - RUA && q.y1 >= QEST_Y0 - RUA - 4)
+      for(let x = q.x0 + 70; x < q.x1 - 40; x += passo) POSTES.push({ x, y: q.y1 - 8, dx:0, dz:1 });
+    if(q.y0 >= QEST_Y1 + RUA && q.y0 <= QEST_Y1 + RUA + 4)
+      for(let x = q.x0 + 70; x < q.x1 - 40; x += passo) POSTES.push({ x, y: q.y0 + 8, dx:0, dz:-1 });
+    if(q.x1 <= QEST_X0 - RUA && q.x1 >= QEST_X0 - RUA - 4)
+      for(let y = q.y0 + 90; y < q.y1 - 40; y += passo) POSTES.push({ x: q.x1 - 8, y, dx:1, dz:0 });
+    if(q.x0 >= QEST_X1 + RUA && q.x0 <= QEST_X1 + RUA + 4)
+      for(let y = q.y0 + 90; y < q.y1 - 40; y += passo) POSTES.push({ x: q.x0 + 8, y, dx:-1, dz:0 });
+  }
+  {
+    const av = AVENIDAS[0];
+    for(let t = 60; t < av.L - 40; t += 220){
+      const off = av.l/2 + 10;
+      POSTES.push({ x: av.x0 + av.ux*t - av.uy*off, y: av.y0 + av.uy*t + av.ux*off, dx: av.uy, dz: -av.ux });
+    }
+  }
+
+  /* as torres de refletor, nos quatro cantos do quarteirão do estádio */
+  const TORRES = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx, sy]) => ({
+    x: CX + sx*(QEST.larg/2 - 44), z: CY + sy*(QEST.alt/2 - 44), alt: ALT.torre }));
+
+  function noLote(x, y){
+    const q = celulaEm(x, y);
+    if(!q || q.tipo !== 'quadra') return null;
+    for(const l of q.lotes) if(dentroLote(x, y, l)) return l;
+    if(q.quintal && dentroRet(x, y, q.quintal) && !naAvenida(x, y)) return q.quintal;
+    return null;
+  }
+
+  const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC,
+                   COLUNAS, LINHAS, CELULAS, QUADRAS, grade, celulaEm, zona, xCosta, PRAIA, ORLA,
+                   CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, CAMPOS, CERCA, PORTEIRA,
+                   ARQ_VARZEA, noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
+                   CARROS, ARVORES, POSTES, SEDES, sedeDe };
 
   /* =======================================================
      A DOBRA: tabuleiro → mundo
@@ -476,6 +750,26 @@ TO.dados.plantaEstadio = (function(){
   /* =======================================================
      O QUE SE PISA
      ======================================================= */
+  /* O QUE SE PISA FORA DO ESTÁDIO. A ordem importa: o mar ganha de
+     tudo; depois o campo (cerca e arquibancadinha bloqueiam); a avenida
+     e a rua são andáveis onde não é mar; o quarteirão bloqueia no
+     miolo e anda na calçada; o mato anda menos a moita; a praia anda. */
+  function andaNaCidade(x, y){
+    const z = zona(x, y);
+    if(z === 'mar') return false;
+    const c = noCampo(x, y);
+    if(c) return andaNoCampo(c, x, y);
+    if(noCarro(x, y)) return false;
+    if(naAvenida(x, y)) return true;
+    if(naRua(x, y)) return true;
+    const q = celulaEm(x, y);
+    if(q && q.tipo === 'quadra'){
+      const miolo = x >= q.ix0 && x < q.ix1 && y >= q.iy0 && y < q.iy1;
+      return !miolo;
+    }
+    if(z === 'mato') return !naMoita(x, y);
+    return true;                                  // praia, orla, terreno aberto
+  }
   function anda(x, y){
     const a = ancora(x, y);
     if(a.d >= D.calcada){
@@ -483,7 +777,7 @@ TO.dados.plantaEstadio = (function(){
          estádio e fora da calçada redonda, nada se pisa */
       if(noQuadradoDoEstadio(x, y)) return false;
       if(x < 4 || y < 4 || x > W-4 || y > H-4) return false;
-      return !noLote(x, y) && !noCarro(x, y);
+      return andaNaCidade(x, y);
     }
     const v = noVomitorio(x, y);
     if(v) return !v.corrim;
@@ -534,9 +828,12 @@ TO.dados.plantaEstadio = (function(){
     if(r >= R.calcada1){
       const l = noLote(X, Z);
       if(l && Y < l.alt) return true;
+      const m = naMoita(X, Z);
+      if(m && Y < m.r*0.9) return true;
       /* a copa das árvores também é sólida pra câmera: sem isso ela
          atravessa o pinheiro da calçada e a tela fica verde */
-      for(const a of ARVORES)
+      const q = celulaEm(X, Z);
+      if(q && q.arvores) for(const a of q.arvores)
         if(Y > 10 && Y < 13 + a.r*2.3 && Math.hypot(X - a.x, Z - a.y) < a.r) return true;
       return false;
     }
@@ -611,12 +908,12 @@ TO.dados.plantaEstadio = (function(){
   }
 
   return { W, H, CEL, CX, CY, AX, AY, AXb, AYb, DOBRA, D, R, ALT, N, NDEG, TOPO_ARQ, tetoDe,
-           METRO, ARCADA, RUA, CALC, PONTA, NS, QEST, QEST_X0, QEST_X1, QEST_Y0, QEST_Y1,
+           METRO, ARCADA, RUA, CALC, QEST, QEST_X0, QEST_X1, QEST_Y0, QEST_Y1, CIDADE,
            PERFIL, anel, ancora, ancoraMundo, dist, distMundo, alturaDegrau,
            LADOS, ponto, pontoMundo, ondeNoReto, ondeNoRetoMundo,
            VOM, VOMITORIOS, noVomitorio, vomitorioMundo, rampa, pisoEscada,
            PORTOES, noPortao, noPortaoMundo, LOJA, LOJAS, naLoja,
-           QUADRAS, LOTES, CARROS, ARVORES, TORRES, SEDES, noLote, noCarro,
+           QUADRAS, LOTES, CARROS, ARVORES, TORRES, SEDES, noLote, noCarro, andaNaCidade,
            faixaDe, dobra, mundo, onde, anda, solido, piso, teto, superficie, mascara };
 })();
 
@@ -638,16 +935,28 @@ TO.dados.cenaEstadio = (function(){
      setor deles lá dentro, a briga tem onde acontecer: corredor,
      escada e arquibancada. A retaguarda deles chega andando pelo
      quarteirão nordeste. */
-  const S = P.SEDES;
+  const CID = P.CIDADE;
+  /* a calçada na frente de um lote: o meio da frente, dezesseis pra fora */
+  function frenteDa(lote, folga){
+    const f = folga || 16;
+    if(lote.frente === 'n') return { x: Math.round((lote.x0+lote.x1)/2), y: Math.round(lote.y0 - f) };
+    if(lote.frente === 's') return { x: Math.round((lote.x0+lote.x1)/2), y: Math.round(lote.y1 + f) };
+    if(lote.frente === 'o') return { x: Math.round(lote.x0 - f), y: Math.round((lote.y0+lote.y1)/2) };
+    return { x: Math.round(lote.x1 + f), y: Math.round((lote.y0+lote.y1)/2) };
+  }
+  const sedeM = CID.sedeDe.mandante, sedeV = CID.sedeDe.visitante;
+  const pM = sedeM ? frenteDa(sedeM) : { x: Math.round(CID.pxX(280)), y: Math.round(CID.pxY(1030)) };
+  const pV = sedeV ? frenteDa(sedeV) : { x: Math.round(CID.pxX(1050)), y: Math.round(CID.pxY(178)) };
+  const [xM2, yM2] = CID.pxm(350, 946);
   const [xSet, ySet] = P.ponto('l', CY + 26, 118);
   const spawns = [
-    { id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:S.mandante.s, y:P.QEST_Y0+12,
+    { id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:pM.x, y:pM.y,
       jogador:true, entrada:'setor_mandante' },
-    { id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:P.RUA+P.PONTA-12, y:P.QEST_Y1+P.RUA+200,
+    { id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:Math.round(xM2), y:Math.round(yM2),
       entrada:'setor_mandante' },
     { id:'visitante1', rot:'SETOR VISITANTE', lado:'visitante', x:Math.round(xSet), y:Math.round(ySet),
       guarda:true, entrada:'saida_sul' },
-    { id:'visitante2', rot:'RETAGUARDA', lado:'visitante', x:P.QEST_X1+P.RUA+300, y:P.RUA+P.NS-12,
+    { id:'visitante2', rot:'RETAGUARDA', lado:'visitante', x:pV.x, y:pV.y,
       entrada:'setor_visitante' }
   ];
 
@@ -677,14 +986,17 @@ TO.dados.cenaEstadio = (function(){
 
   /* A PM: nos três portões, no corredor, nas divisas de setor e na
      rua do sul, que é onde os dois lados se cruzam se alguém for caçar */
-  const calc = (lado, s) => { const [x, y] = P.ponto(lado, s, 342); return { x:Math.round(x), y:Math.round(y) }; };
+  const calc = (lado, s) => { const [x, y] = P.ponto(lado, s + 24, 354); return { x:Math.round(x), y:Math.round(y) }; };
   const corr = (lado, s) => { const [x, y] = P.ponto(lado, s, 246); return { x:Math.round(x), y:Math.round(y) }; };
-  const arq  = (lado, s) => { const [x, y] = P.ponto(lado, s, 100); return { x:Math.round(x), y:Math.round(y) }; };
+  const arq  = (lado, s) => { const [x, y] = P.ponto(lado, s + 30, 100); return { x:Math.round(x), y:Math.round(y) }; };
+  const [xAv, yAv] = CID.pxm(560, 470), [xOrla, yOrla] = CID.pxm(988, 300);
   const pmPostos = [
     calc('o', CY), calc('l', CY), calc('s', CX),
     corr('n', CX-60), corr('s', CX+60),
     arq('n', CX), arq('s', CX),
-    { x: CX, y: P.QEST_Y1 + P.RUA/2 }
+    { x: CX, y: P.QEST_Y1 + P.RUA/2 },
+    { x: Math.round(xAv), y: Math.round(yAv) },       // onde a avenida do sudoeste chega
+    { x: Math.round(xOrla), y: Math.round(yOrla) }    // a orla, do lado visitante
   ];
 
   /* grade que quebra e vira arma (GDD §12): cordão da PM na boca

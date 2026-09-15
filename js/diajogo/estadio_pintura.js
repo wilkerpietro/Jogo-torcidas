@@ -1,15 +1,16 @@
 /* =========================================================
-   O ESTÁDIO E O BAIRRO, PINTADOS — em coordenada de MUNDO
+   A CIDADE, O ESTÁDIO E A COSTA, PINTADOS — em coordenada de MUNDO
    ---------------------------------------------------------
    Esta pintura é a textura do chão do 3D, projetada de cima.
-   Fora do estádio o mundo é o próprio tabuleiro, então rua,
-   calçada e quarteirão saem no lugar em que estão. O estádio
-   sai no raio do MUNDO (`P.anel`), que é onde a geometria está.
-   O piso do corredor mora EMBAIXO da arquibancada e a projeção
-   de cima já está ocupada: ele tem material próprio.
+   Cobre o que se DESENHA (`P.CIDADE.VISTA`), que vai além do
+   tabuleiro: o mar, a praia e o mato de fora. Fora do estádio o
+   mundo é o próprio tabuleiro, então rua, avenida, quarteirão e
+   campo saem no lugar em que estão; o estádio sai no raio do
+   MUNDO (`P.anel`). O piso do corredor mora EMBAIXO da
+   arquibancada e tem material próprio.
 
-   A paleta é a da foto aérea: concreto claro e encardido,
-   asfalto, gramado puxando pro seco.
+   A paleta é a do mapa: telha e reboco nos quarteirões, areia
+   clara, mar azul-petróleo, mato bege com moita verde-escura.
    ========================================================= */
 window.TO = window.TO || {};
 TO.diaJogo = TO.diaJogo || {};
@@ -19,6 +20,7 @@ TO.diaJogo.estadioPintura = (function(){
     rua:        '#3a3a38',
     calcada:    '#8d897d',
     lote:       '#7d7668',
+    terreno:    '#a89c80',
     calcadaEst: '#9c9789',
     arcada:     '#b3ac9b',
     laje:       '#a39e91',
@@ -30,7 +32,19 @@ TO.diaJogo.estadioPintura = (function(){
     pista:      '#8f8b80',
     gramadoA:   '#437f3a',
     gramadoB:   '#377232',
-    linha:      '#eef0e6'
+    linha:      '#eef0e6',
+    mato:       '#cbb98a',
+    matoEscuro: '#b9a778',
+    moita:      '#5d7746',
+    trilha:     '#b39e74',
+    areia:      '#e6d3a3',
+    areiaMolhada:'#d3bf8e',
+    mar:        '#2e5a75',
+    marFundo:   '#26506a',
+    onda:       '#5d86a0',
+    grama:      '#4a8a3c',
+    gramaB:     '#3f7a33',
+    cerca:      '#6e6a5e'
   };
 
   function contorno(c, P, r, inverso){
@@ -52,11 +66,20 @@ TO.diaJogo.estadioPintura = (function(){
     c.beginPath(); contorno(c, P, r, false);
     c.strokeStyle = cor; c.lineWidth = larg || 1; c.stroke();
   }
-  function sujar(c, x, y, w, h, n, alfa){
+  /* o sorteio da pintura é semeado: a textura sai igual toda vez */
+  let semente = 7;
+  const rnd = () => { semente = (semente * 1664525 + 1013904223) >>> 0; return semente / 4294967296; };
+  function sujar(c, x, y, w, h, n, alfa, tam){
     for(let i=0;i<n;i++){
-      c.fillStyle = 'rgba(0,0,0,'+(alfa*Math.random()).toFixed(3)+')';
-      c.fillRect(x + Math.random()*w, y + Math.random()*h, 1+Math.random()*2, 1+Math.random()*2);
+      c.fillStyle = 'rgba(0,0,0,'+(alfa*rnd()).toFixed(3)+')';
+      const t = tam || 2;
+      c.fillRect(x + rnd()*w, y + rnd()*h, t + rnd()*t*2, t + rnd()*t*2);
     }
+  }
+  function poli(c, pts, cor){
+    c.beginPath(); c.moveTo(pts[0][0], pts[0][1]);
+    for(let i=1;i<pts.length;i++) c.lineTo(pts[i][0], pts[i][1]);
+    c.closePath(); c.fillStyle = cor; c.fill();
   }
 
   function gramado(c, P){
@@ -87,48 +110,137 @@ TO.diaJogo.estadioPintura = (function(){
     }
   }
 
-  /* faixa de pedestre: barras atravessando a rua */
+  /* um campo de várzea: grama, linhas, cerca, arquibancadinha */
+  function campoVarzea(c, K, f){
+    const w = f.x1 - f.x0, h = f.y1 - f.y0;
+    const faixas = 8, fw = w/faixas;
+    for(let i=0;i<faixas;i++){ c.fillStyle = i%2 ? COR.grama : COR.gramaB; c.fillRect(f.x0 + i*fw, f.y0, fw, h); }
+    const m = 22, a = f.x0+m, b = f.y0+m, lx = w-m*2, ly = h-m*2;
+    c.strokeStyle = COR.linha; c.lineWidth = 2;
+    c.strokeRect(a, b, lx, ly);
+    c.beginPath(); c.moveTo(f.cx, b); c.lineTo(f.cx, b+ly); c.stroke();
+    c.beginPath(); c.arc(f.cx, f.cy, 30, 0, 7); c.stroke();
+    for(const s of [-1, 1]) c.strokeRect(s < 0 ? a : a+lx-40, f.cy-50, 40, 100);
+    c.strokeStyle = COR.cerca; c.lineWidth = K.CERCA; c.strokeRect(f.x0 + K.CERCA/2, f.y0 + K.CERCA/2, w - K.CERCA, h - K.CERCA);
+    /* a arquibancadinha */
+    const A = K.ARQ_VARZEA;
+    c.fillStyle = COR.laje;
+    if(f.ladoArq === 'o') c.fillRect(f.x0 + K.CERCA, f.cy - h*0.3, A.fundo, h*0.6);
+    else c.fillRect(f.x1 - K.CERCA - A.fundo, f.cy - h*0.3, A.fundo, h*0.6);
+  }
+
   function faixaPedestre(c, x0, y0, w, h, horizontal){
     c.fillStyle = COR.faixaPed;
     if(horizontal){ for(let x = x0; x < x0 + w; x += 12) c.fillRect(x, y0, 6, h); }
     else { for(let y = y0; y < y0 + h; y += 12) c.fillRect(x0, y, w, 6); }
   }
-
-  function bairro(c, P, W, H){
-    c.fillStyle = COR.rua; c.fillRect(0, 0, W, H);
-    sujar(c, 0, 0, W, H, 9000, 0.16);
-    /* o eixo das ruas, tracejado */
+  function tracejado(c, x0, y0, x1, y1){
     c.strokeStyle = COR.eixo; c.lineWidth = 1.6; c.setLineDash([18, 14]);
-    const R = P.RUA;
-    for(const y of [R/2, P.QEST_Y0 - R/2, P.QEST_Y1 + R/2, H - R/2]){
-      c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke();
-    }
-    for(const x of [R/2, P.QEST_X0 - R/2, P.QEST_X1 + R/2, W - R/2]){
-      c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke();
-    }
+    c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
     c.setLineDash([]);
-    /* os quarteirões: calçada por fora, terreno por dentro */
-    for(const q of P.QUADRAS){
-      c.fillStyle = COR.calcada; c.fillRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
-      c.fillStyle = COR.lote;    c.fillRect(q.ix0, q.iy0, q.ix1-q.ix0, q.iy1-q.iy0);
-      c.strokeStyle = COR.meioFio; c.lineWidth = 2;
-      c.strokeRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
-    }
-    /* faixas de pedestre: na frente dos três portões e no norte */
-    const { CX, CY } = P;
-    faixaPedestre(c, P.QEST_X0 - R, CY - 22, R, 44, true);
-    faixaPedestre(c, P.QEST_X1,     CY - 22, R, 44, true);
-    faixaPedestre(c, CX - 22, P.QEST_Y1,     44, R, false);
-    faixaPedestre(c, CX - 22, P.QEST_Y0 - R, 44, R, false);
   }
 
-  /* pinta o MUNDO inteiro no canvas do tabuleiro */
-  function pintar(c, P, W, H){
-    const D = P.D, R = P.R;
-    bairro(c, P, W, H);
+  /* pinta o MUNDO inteiro: o que se desenha, de VX0/VY0 a VW/VH */
+  function pintar(c, P){
+    const K = P.CIDADE, D = P.D, R = P.R;
+    const X0 = K.VX0, Y0 = K.VY0, X1 = K.VX0 + K.VW, Y1 = K.VY0 + K.VH;
+    semente = 7;
 
-    /* o quarteirão do estádio: calçada redonda, arcada, a laje de
-       trás e a arquibancada, de fora pra dentro */
+    /* ---- 1. o mato, base de tudo ---- */
+    c.fillStyle = COR.mato; c.fillRect(X0, Y0, K.VW, K.VH);
+    for(let i=0;i<260;i++){
+      c.fillStyle = 'rgba(160,140,95,' + (0.12 + rnd()*0.2).toFixed(2) + ')';
+      c.beginPath(); c.ellipse(X0 + rnd()*K.VW, Y0 + rnd()*K.VH, 60 + rnd()*260, 40 + rnd()*160, rnd()*3, 0, 7); c.fill();
+    }
+    sujar(c, X0, Y0, K.VW, K.VH, 6000, 0.12, 3);
+    c.strokeStyle = COR.trilha; c.lineWidth = 16; c.lineCap = 'round'; c.lineJoin = 'round';
+    for(const t of K.TRILHAS){
+      c.beginPath(); c.moveTo(t[0][0], t[0][1]);
+      for(let i=1;i<t.length;i++) c.lineTo(t[i][0], t[i][1]);
+      c.stroke();
+    }
+    for(const m of K.MOITAS){
+      c.fillStyle = COR.moita;
+      c.beginPath(); c.ellipse(m.x, m.y, m.r*0.9, m.r*0.7, 0, 0, 7); c.fill();
+    }
+
+    /* ---- 2. os quarteirões: calçada, e o miolo ---- */
+    for(const q of K.CELULAS){
+      if(q.tipo === 'quadra'){
+        c.fillStyle = COR.calcada; c.fillRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
+        c.fillStyle = COR.lote;    c.fillRect(q.ix0, q.iy0, q.ix1-q.ix0, q.iy1-q.iy0);
+        c.strokeStyle = COR.meioFio; c.lineWidth = 2; c.strokeRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
+      } else if(q.tipo === 'aberto' && K.zona(q.cx, q.cy) === 'cidade'){
+        c.fillStyle = COR.terreno; c.fillRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
+      }
+    }
+    /* os lotes rotacionados pintam o próprio chão (o miolo axial não os cobre) */
+    for(const l of K.LOTES){
+      if(!l.ang) continue;
+      c.save(); c.translate(l.cx, l.cy); c.rotate(l.ang);
+      c.fillStyle = COR.lote; c.fillRect(-l.w/2 - 2, -l.h/2 - 2, l.w + 4, l.h + 4);
+      c.restore();
+    }
+
+    /* ---- 3. as ruas da grade (menos dentro do estádio e dos campos) ---- */
+    c.fillStyle = COR.rua;
+    const foraDoEstadio = (x0, y0, x1, y1) => {
+      /* pinta o retângulo, recortando o quadrado do estádio */
+      const ex0 = P.QEST_X0, ex1 = P.QEST_X1, ey0 = P.QEST_Y0, ey1 = P.QEST_Y1;
+      if(x1 <= ex0 || x0 >= ex1 || y1 <= ey0 || y0 >= ey1){ c.fillRect(x0, y0, x1-x0, y1-y0); return; }
+      if(x0 < ex0) c.fillRect(x0, y0, ex0-x0, y1-y0);
+      if(x1 > ex1) c.fillRect(ex1, y0, x1-ex1, y1-y0);
+      if(y0 < ey0) c.fillRect(Math.max(x0,ex0), y0, Math.min(x1,ex1)-Math.max(x0,ex0), ey0-y0);
+      if(y1 > ey1) c.fillRect(Math.max(x0,ex0), ey1, Math.min(x1,ex1)-Math.max(x0,ex0), y1-ey1);
+    };
+    for(const col of K.COLUNAS) foraDoEstadio(col.c - col.l/2, 0, col.c + col.l/2, P.H);
+    for(const lin of K.LINHAS)  foraDoEstadio(0, lin.c - lin.l/2, P.W, lin.c + lin.l/2);
+    for(const col of K.COLUNAS) if(col.l >= 74) tracejado(c, col.c, 0, col.c, P.H);
+    for(const lin of K.LINHAS)  if(lin.l >= 74) tracejado(c, 0, lin.c, P.W, lin.c);
+
+    /* ---- 4. as avenidas diagonais: calçada, asfalto, eixo ---- */
+    for(const av of K.AVENIDAS){
+      c.save(); c.translate(av.x0, av.y0); c.rotate(av.ang);
+      c.fillStyle = COR.calcada; c.fillRect(-K.CALC, -av.l/2 - K.CALC, av.L + 2*K.CALC, av.l + 2*K.CALC);
+      c.fillStyle = COR.rua;     c.fillRect(-K.CALC, -av.l/2, av.L + 2*K.CALC, av.l);
+      tracejado(c, 0, 0, av.L, 0);
+      c.restore();
+    }
+
+    /* ---- 5. a costa: orla, praia, mar ---- */
+    const costa = (dpx) => {
+      const pts = [];
+      for(let ypx = -80; ypx <= 1200; ypx += 10) pts.push(K.pxm(K.xCosta(ypx) - dpx, ypx));
+      return pts;
+    };
+    const fechado = (pts, xFim) => pts.concat([[xFim, pts[pts.length-1][1]], [xFim, pts[0][1]]]);
+    poli(c, fechado(costa(K.PRAIA + K.ORLA), X1), COR.rua);        // a avenida beira-mar
+    poli(c, fechado(costa(K.PRAIA), X1), COR.areia);               // a praia
+    poli(c, fechado(costa(4), X1), COR.areiaMolhada);
+    poli(c, fechado(costa(0), X1), COR.mar);
+    sujar(c, X0, Y0, K.VW, K.VH, 1400, 0.05, 6);
+    /* o eixo da beira-mar, e a praia com um pouco de vida */
+    c.strokeStyle = COR.eixo; c.lineWidth = 1.6; c.setLineDash([18, 14]);
+    c.beginPath(); const eixo = costa(K.PRAIA + K.ORLA/2); c.moveTo(eixo[0][0], eixo[0][1]);
+    for(let i=1;i<eixo.length;i++) c.lineTo(eixo[i][0], eixo[i][1]); c.stroke(); c.setLineDash([]);
+    /* as ondas: riscos claros paralelos à costa, mar adentro */
+    for(let k=1;k<=7;k++){
+      const w = costa(-k*38 - rnd()*20);
+      c.strokeStyle = 'rgba(120,160,185,' + (0.35 - k*0.03).toFixed(2) + ')'; c.lineWidth = 3 + rnd()*3;
+      c.beginPath(); c.moveTo(w[0][0], w[0][1]);
+      for(let i=1;i<w.length;i++) c.lineTo(w[i][0] + (rnd()-0.5)*30, w[i][1]);
+      c.stroke();
+    }
+    c.fillStyle = COR.marFundo;
+    for(let i=0;i<40;i++){
+      const y = Y0 + rnd()*K.VH; const [xc] = K.pxm(K.xCosta(y/K.PX + K.MAPA.y0), 0);
+      c.beginPath(); c.ellipse(xc + 300 + rnd()*1500, y, 120 + rnd()*300, 30 + rnd()*60, 0.3, 0, 7); c.fill();
+    }
+
+    /* ---- 6. os campos de várzea ---- */
+    for(const f of K.CAMPOS) campoVarzea(c, K, f);
+
+    /* ---- 7. o quarteirão do estádio: calçada redonda, arcada, a laje e a arquibancada ---- */
     c.fillStyle = COR.calcadaEst;
     c.fillRect(P.QEST_X0, P.QEST_Y0, P.QEST_X1-P.QEST_X0, P.QEST_Y1-P.QEST_Y0);
     faixa(c, P, R.calcada0, R.calcada1, COR.calcadaEst);
@@ -136,17 +248,21 @@ TO.diaJogo.estadioPintura = (function(){
     faixa(c, P, R.fachada0, R.fachada1, COR.arcada);
     faixa(c, P, D.arq, R.fachada0, COR.laje);
     sujar(c, P.QEST_X0, P.QEST_Y0, P.QEST_X1-P.QEST_X0, P.QEST_Y1-P.QEST_Y0, 2600, 0.14);
-
-    /* a arquibancada: dezoito degraus de concreto, iguais */
     for(let i=P.NDEG-1;i>=0;i--){
       const r0 = D.pista + i*P.ALT.degrau, r1 = r0 + P.ALT.degrau;
       faixa(c, P, r0, r1, i % 2 ? COR.degrau : COR.degrauAlt);
       risco(c, P, r0, 'rgba(0,0,0,.28)', 1.4);
     }
-    /* a pista e o gramado */
     faixa(c, P, 0, D.pista, COR.pista);
     risco(c, P, D.pista*0.5, 'rgba(238,232,218,.35)', 1.2);
     gramado(c, P);
+
+    /* ---- 8. faixas de pedestre: nos três portões, no norte e onde a avenida chega ---- */
+    const { CX, CY } = P, RUA = K.RUA;
+    faixaPedestre(c, P.QEST_X0 - RUA, CY - 22, RUA, 44, true);
+    faixaPedestre(c, P.QEST_X1,       CY - 22, RUA, 44, true);
+    faixaPedestre(c, CX - 22, P.QEST_Y1,       44, RUA, false);
+    faixaPedestre(c, CX - 22, P.QEST_Y0 - RUA, 44, RUA, false);
   }
 
   /* o piso do corredor: cimento queimado com junta */
@@ -155,7 +271,7 @@ TO.diaJogo.estadioPintura = (function(){
     cv.width = cv.height = lado || 256;
     const c = cv.getContext('2d');
     c.fillStyle = '#7d7a73'; c.fillRect(0, 0, cv.width, cv.height);
-    sujar(c, 0, 0, cv.width, cv.height, 5200, 0.26);
+    semente = 11; sujar(c, 0, 0, cv.width, cv.height, 5200, 0.26);
     c.strokeStyle = 'rgba(0,0,0,.24)'; c.lineWidth = 1.4;
     for(let k=0;k<=4;k++){
       const p = k*cv.width/4;

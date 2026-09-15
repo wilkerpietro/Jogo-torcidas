@@ -45,7 +45,7 @@
     <b>WASD</b> anda (relativo à câmera) &nbsp; <b>1–4</b> formação &nbsp;
     <b>Q</b> pedra &nbsp; <b>E</b> bomba &nbsp; <b>R</b> recuar<br>
     <b>arrastar</b> gira a câmera &nbsp; <b>roda</b> aproxima<br>
-    câmera <b>Z</b> ombro · <b>X</b> alta · <b>C</b> maquete · <b>F</b> zenital &nbsp;
+    câmera <b>Z</b> ombro · <b>X</b> alta · <b>C</b> maquete · <b>F</b> zenital · <b>V</b> mapa &nbsp;
     <b>H</b> sombra &nbsp; <b>L</b> nível de qualidade · <b>K</b> automático &nbsp; <b>ESPAÇO</b> pausa
   </div>
 </div>
@@ -147,7 +147,7 @@ const pad = montarPad({
   })),
   cameras: {
     lista: [{ id: 'ombro', rot: 'OMBRO' }, { id: 'alto', rot: 'ALTA' },
-            { id: 'maquete', rot: 'MAQUETE' }, { id: 'zenital', rot: 'ZENITAL' }],
+            { id: 'maquete', rot: 'MAQUETE' }, { id: 'zenital', rot: 'ZENITAL' }, { id: 'mapa', rot: 'MAPA' }],
     fn: id => vista.irPara(id)
   }
 });
@@ -165,6 +165,7 @@ addEventListener('keydown', e => {
   else if (k === 'x') { vista.irPara('alto');    pad.marcarCamera('alto'); }
   else if (k === 'c') { vista.irPara('maquete'); pad.marcarCamera('maquete'); }
   else if (k === 'f') { vista.irPara('zenital'); pad.marcarCamera('zenital'); }
+  else if (k === 'v') { vista.irPara('mapa');    pad.marcarCamera('mapa'); }
   else if (k === 'h') vista.trocarSombra();
   else if (k === 'l') { const n = vista.fixarNivel(); vista.fixarNivel((n + 1) % 4); }
   else if (k === 'k') vista.fixarNivel(null);
@@ -234,10 +235,10 @@ function laco(agora) {
       ' · entraram <b>' + ((J.entraram||{}).mandante||0) + '</b>/<b>' + ((J.entraram||{}).visitante||0) + '</b><br>' +
       'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') + '<br>' +
       c.degraus + ' degraus · ' + c.vomitorios + ' vomitórios · ' + c.portoes + ' portões · ' +
-      c.lojas + ' balcões · ' + c.lotes + ' lotes · ' +
+      c.lojas + ' balcões · ' + c.quadras + ' quarteirões · ' + c.lotes + ' lotes · ' +
       (c.triangulos || 0).toLocaleString('pt-BR') + ' triângulos' +
       (vista.sombra ? '' : ' · sem sombra') +
-      '<br><span style="color:#8a867b">' + String(vista.gpu).slice(0, 70) + '</span>' +
+      '<br><span style="color:#8a867b">' + String(vista.gpu).slice(0, 70) + ' · cena montada em ' + tCarga + ' ms</span>' +
       (vista.gpuSoftware ? '<br><i>SEM PLACA DE VÍDEO: o Chrome está desenhando por software. ' +
         'Ligue "Usar aceleração gráfica" em chrome://settings/system e reinicie.</i>' : '') +
       (pausado ? '<br>PAUSADO' : '');
@@ -246,12 +247,14 @@ function laco(agora) {
 }
 
 new ResizeObserver(() => vista.redimensionar()).observe(caixa);
+const tAntes = performance.now();
 abrir();
+const tCarga = Math.round(performance.now() - tAntes);
 ant = marcoFps = performance.now();
 requestAnimationFrame(laco);
 
 /* à mão no console, pra medir sem instrumentar nada */
-window.estadio = { get J() { return J; }, vista };
+window.estadio = { get J() { return J; }, vista, tCarga };
 </script>
 </body>
 </html>

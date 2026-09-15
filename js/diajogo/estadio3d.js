@@ -28,11 +28,12 @@ import { montarBairro } from './bairro3d.js';
 
 const P = TO.dados.plantaEstadio;
 const PINT = TO.diaJogo.estadioPintura;
+const K = P.CIDADE;
 const W = P.W, H = P.H;
 
-/* a textura do chão cobre o mapa inteiro; 1,5× é o que cabe em
-   4096 de largura com 2592 de mapa */
-const AMPLIA = 1.5;
+/* a textura do chão cobre o que se DESENHA (mar e mato incluídos), que
+   é maior que o tabuleiro: 4096 de largura, o que toda placa aceita */
+const TEX_LARG = 4096;
 
 const COR = {
   concreto:   0x9d998c,
@@ -83,7 +84,7 @@ export function criar(canvas) {
   cena.background = new THREE.Color(COR.ceu);
   cena.fog = new THREE.Fog(COR.ceu, 2400, 5600);
 
-  const cam = new THREE.PerspectiveCamera(54, 1, 2.0, 9000);
+  const cam = new THREE.PerspectiveCamera(54, 1, 2.0, 22000);
 
   /* =======================================================
      O MODO LEVE
@@ -108,7 +109,12 @@ export function criar(canvas) {
       rend.shadowMap.enabled = q.sombra;
       cena.traverse(o => { if (o.material) o.material.needsUpdate = true; });
     }
-    cena.fog.near = q.nevoa[0]; cena.fog.far = q.nevoa[1];
+    /* a névoa curta do modo leve é da câmera de ombro (encurta o que se
+       desenha atrás do líder); vista de cima fica com a névoa longa, senão
+       a maquete azula inteira no nível mínimo */
+    const c = CAMERAS[vista];
+    const nv = (c && c.nevoa) || (c && !c.seguir ? NIVEIS[0].nevoa : q.nevoa);
+    cena.fog.near = nv[0]; cena.fog.far = nv[1];
     if (texChao) { texChao.anisotropy = Math.min(q.aniso, maxAniso); texChao.needsUpdate = true; }
     redimensionar(true);
   }
@@ -151,7 +157,8 @@ export function criar(canvas) {
      AS TEXTURAS
      ======================================================= */
   const cvChao = document.createElement('canvas');
-  cvChao.width = Math.round(W * AMPLIA); cvChao.height = Math.round(H * AMPLIA);
+  const escalaTex = TEX_LARG / K.VW;
+  cvChao.width = TEX_LARG; cvChao.height = Math.round(K.VH * escalaTex);
   const ctxChao = cvChao.getContext('2d');
   texChao = new THREE.CanvasTexture(cvChao);
   texChao.colorSpace = THREE.SRGBColorSpace;
@@ -159,8 +166,8 @@ export function criar(canvas) {
   texChao.anisotropy = Math.min(8, maxAniso);
   texChao.wrapS = texChao.wrapT = THREE.ClampToEdgeWrapping;
   function repintarChao() {
-    ctxChao.setTransform(AMPLIA, 0, 0, AMPLIA, 0, 0);
-    PINT.pintar(ctxChao, P, W, H);
+    ctxChao.setTransform(escalaTex, 0, 0, escalaTex, -K.VX0 * escalaTex, -K.VY0 * escalaTex);
+    PINT.pintar(ctxChao, P);
     texChao.needsUpdate = true;
   }
   repintarChao();
@@ -176,16 +183,16 @@ export function criar(canvas) {
      plano escuro enorme por baixo pra não acabar o mundo na
      beira do tabuleiro
      ======================================================= */
-  const chao = new THREE.Mesh(new THREE.PlaneGeometry(W, H),
+  const chao = new THREE.Mesh(new THREE.PlaneGeometry(K.VW, K.VH),
     new THREE.MeshLambertMaterial({ map: texChao }));
   chao.rotation.x = -Math.PI / 2;
-  chao.position.set(W / 2, 0, H / 2);
+  chao.position.set(K.VX0 + K.VW / 2, 0, K.VY0 + K.VH / 2);
   chao.receiveShadow = true;
   cena.add(chao);
-  const alem = new THREE.Mesh(new THREE.PlaneGeometry(W * 7, H * 7),
-    new THREE.MeshLambertMaterial({ color: 0x35352f }));
+  const alem = new THREE.Mesh(new THREE.PlaneGeometry(K.VW * 6, K.VH * 6),
+    new THREE.MeshLambertMaterial({ color: 0xbfae86 }));
   alem.rotation.x = -Math.PI / 2;
-  alem.position.set(W / 2, -6, H / 2);
+  alem.position.set(K.VX0 + K.VW / 2, -6, K.VY0 + K.VH / 2);
   cena.add(alem);
 
   /* =======================================================
@@ -194,7 +201,7 @@ export function criar(canvas) {
   const Tecido = () => ({ pos: [], uv: [], cor: [] });
   const branco = new THREE.Color(1, 1, 1);
   const corTmp = new THREE.Color();
-  const uDe = x => x / W, vDe = y => 1 - y / H;
+  const uDe = x => (x - K.VX0) / K.VW, vDe = y => 1 - (y - K.VY0) / K.VH;
 
   /* `tom` é um NÚMERO PEQUENO quando é só claro-escuro e um HEX
      quando a peça tem cor própria. O hex é dividido pela
@@ -606,9 +613,10 @@ export function criar(canvas) {
       color: COR.tela, vertexColors: true, transparent: true,
       opacity: 0.17, depthWrite: false, side: THREE.DoubleSide }), false);
     grupo.add(tela);
-    if (!cidade) { cidade = montarBairro(P); cena.add(cidade.mesh); }
+    if (!cidade) { cidade = montarBairro(P); for (const m of cidade.meshes) cena.add(m); }
     conta = { degraus: P.NDEG, vomitorios: P.VOMITORIOS.length,
-              lojas: P.LOJAS.length, lotes: P.LOTES.length, portoes: P.PORTOES.length,
+              lojas: P.LOJAS.length, lotes: K.LOTES.length, quadras: K.QUADRAS.length,
+              pedacos: cidade.pedacos, portoes: P.PORTOES.length,
               triangulos: Math.round(nTri(TA) + nTri(TC) + nTri(TP) + nTri(TL) + nTri(TF) + cidade.triangulos) };
     return conta;
   }
@@ -642,7 +650,9 @@ export function criar(canvas) {
     ombro:   { seguir: true,  dist: 105,  alt: 0.22, fov: 56 },
     alto:    { seguir: true,  dist: 300,  alt: 0.58, fov: 48 },
     maquete: { seguir: false, dist: 1500, alt: 0.66, fov: 40 },
-    zenital: { seguir: false, dist: 2300, alt: 1.50, fov: 42 }
+    zenital: { seguir: false, dist: 2300, alt: 1.50, fov: 42 },
+    /* a cidade inteira, do mar ao mato: a névoa se afasta pra isso */
+    mapa:    { seguir: false, dist: 7200, alt: 1.30, fov: 44, alvo: 'mapa', nevoa: [9000, 20000] }
   };
   let vista = 'ombro';
   let giro = 0, incl = CAMERAS.ombro.alt, dist = CAMERAS.ombro.dist;
@@ -658,6 +668,7 @@ export function criar(canvas) {
     cam.fov = c.fov; cam.updateProjectionMatrix();
     if (!c.seguir) giro = 0;
     primeira = true;
+    aplicarNivel();
   }
 
   function posicionarCamera(lider, dt) {
@@ -666,7 +677,10 @@ export function criar(canvas) {
     if (c.seguir && lider) {
       mundoLider = P.mundo(lider.x, lider.y);
       alvo.set(mundoLider.x, mundoLider.y + 24, mundoLider.z);
-    } else if (vista !== 'livre') alvo.set(P.CX, 40, P.CY);
+    } else if (vista !== 'livre') {
+      if (c.alvo === 'mapa') alvo.set(K.VX0 + K.VW / 2, 0, K.VY0 + K.VH / 2);
+      else alvo.set(P.CX, 40, P.CY);
+    }
 
     if (c.seguir && lider && arrastou <= 0) {
       const f = lider._b3;
@@ -768,7 +782,7 @@ export function criar(canvas) {
   });
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
-    dist = Math.max(40, Math.min(3600, dist * (1 + Math.sign(e.deltaY) * 0.09)));
+    dist = Math.max(40, Math.min(9000, dist * (1 + Math.sign(e.deltaY) * 0.09)));
   }, { passive: false });
 
   /* =======================================================
