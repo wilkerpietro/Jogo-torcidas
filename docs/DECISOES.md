@@ -6711,6 +6711,51 @@ e 290 Rival → Neutro, contra 8 Aliado → Neutro, 3 Irmandade → Aliado e
 relação com ninguém — o que é nosso se decide na nossa reunião, e ela
 acontece seis vezes por ano.
 
+## O mundo parou de andar em bloco (correção do dono, 15/09/2026)
+
+O dono mandou o print: semana 50 de 2029, e o feed com uma parede de
+cartões idênticos — Los Ninjas, La Barra del Matador, La Banda del Sur,
+La Barra de la Bomba, Los Funebreros, Los de Siempre, La Barra 14, todas
+dizendo a mesma frase, todas no mesmo dia.
+
+Medido com a Young Flu, cinco anos: **316 cartões de status, 286 deles
+num único dia** — o dia 1434, que é exatamente a semana 50 de 2029.
+
+A causa não era o cartão, era a régua da convivência. Ela aplicava o
+MESMO passo (+0,2 por mês de paz, −1 a cada dois meses de secura) às 386
+torcidas, e o relógio de todas começava na mesma semana. Quem nunca
+cruzou com a gente tinha, ano após ano, exatamente o mesmo número que
+todas as outras: as três primeiras que medi marcavam −45, −46,8, −48,6,
+−50,2 nos mesmos dias, uma cópia da outra. Um mundo com um número só
+atravessa a linha de status de uma vez — e cada travessia virava um
+cartão.
+
+Duas correções:
+
+**1. Cada torcida tem o passo dela** (`js/mundo/relacoes.js`). Sorteado
+por hash do id e fixo pra sempre: a paz rende de +0,1 a +0,3 por mês e a
+secura cobra de −0,6 a −1,4 a cada dois, e o primeiro vencimento de cada
+uma cai numa semana diferente (0 a 3 na paz, 0 a 7 na secura). A média da
+régua do dono continua a mesma; o que acaba é o pelotão andando em fila.
+
+**2. Só pergunta quem tem laço** (`js/mundo/feed.js`). O cartão de
+encerrar treta ou encerrar aliança só chega de quem a gente conhece:
+torcida da nossa praça, torcida de cidade onde temos filial, torcida que
+já veio pra cima ou já andou junto, quem está declarado na nossa ficha
+desde o começo e quem divide eixo com a gente. O resto do mundo muda de
+status **calado** — a mudança vale, mas não vira cartão. E mesmo entre as
+que têm laço sai **uma por semana**, a da nossa praça na frente; quem fica
+na fila espera a vez, e se o status voltar sozinho no meio-tempo a
+pergunta nem chega a existir.
+
+Medido de novo, mesmos cinco anos: **28 cartões, nunca mais de um por
+dia**, espalhados por 28 dias — cerca de 5,6 por ano. As 24 torcidas que
+ainda perguntam são todas aliadas nossas de ficha esfriando, que é
+justamente a conversa que tem de existir. Nenhuma barra de fora, nenhuma
+torcida que a gente nunca viu.
+
+Varredura de dois anos sem exceção e sem travamento.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -1379,6 +1379,22 @@ TO.relacoes = (function(){
   const PAZ_MES  =  0.2;
   const SECO_MES = -1;
 
+  /* O MUNDO NÃO ANDA EM BLOCO (correção do dono, 15/09/2026)
+     A régua acima era a MESMA para as 386 torcidas, e o relógio de
+     todas começava no mesmo dia: quem nunca cruzou com a gente tinha,
+     ano após ano, exatamente o mesmo número que todas as outras. Aí
+     bastava esse número encostar numa linha de status pra o mundo
+     inteiro atravessar de uma vez — foi o que deu 286 torcidas
+     perguntando a mesma coisa na semana 50 de 2029.
+     Agora cada torcida tem o passo dela, sorteado por hash do id e
+     fixo pra sempre: a paz rende de +0,1 a +0,3 por mês e a secura
+     cobra de −0,6 a −1,4 a cada dois, e o primeiro vencimento de cada
+     uma cai numa semana diferente. A régua do dono continua a mesma na
+     média; o que acaba é o pelotão andando em fila. */
+  const passoDaPaz  = id => PAZ_MES  * (0.5 + (TO.mapa.hash(`conv|paz|${id}`)  % 101) / 100);
+  const passoDaSeca = id => SECO_MES * (0.6 + (TO.mapa.hash(`conv|seca|${id}`) %  81) / 100);
+  const atrasoDaPaz  = id => TO.mapa.hash(`conv|dp|${id}`) % 4;
+  const atrasoDaSeca = id => TO.mapa.hash(`conv|ds|${id}`) % 8;
 
   function convivencia(E){
     const sa = semanaAbs(E);
@@ -1387,14 +1403,14 @@ TO.relacoes = (function(){
     E.convivenciaDesde = E.convivenciaDesde || sa;
     for(const o of M().jogaveis()){
       if(o.id === E.torcida.id || o.incompleta) continue;
-      const h0 = E.marcaHostil[o.id] || E.convivenciaDesde;
+      const h0 = E.marcaHostil[o.id] || (E.convivenciaDesde + atrasoDaPaz(o.id));
       if(sa - h0 >= 4){
-        E.relacoes[o.id] = U.limitar(nivel(E, o.id) + PAZ_MES, -100, 100);
+        E.relacoes[o.id] = U.limitar(nivel(E, o.id) + passoDaPaz(o.id), -100, 100);
         E.marcaHostil[o.id] = h0 + 4;      // um passo por mês cheio de paz
       }
-      const a0 = E.marcaAjuda[o.id] || E.convivenciaDesde;
+      const a0 = E.marcaAjuda[o.id] || (E.convivenciaDesde + atrasoDaSeca(o.id));
       if(sa - a0 >= 8){
-        E.relacoes[o.id] = U.limitar(nivel(E, o.id) + SECO_MES, -100, 100);
+        E.relacoes[o.id] = U.limitar(nivel(E, o.id) + passoDaSeca(o.id), -100, 100);
         E.marcaAjuda[o.id] = a0 + 8;       // e a conta dos dois meses secos
       }
     }

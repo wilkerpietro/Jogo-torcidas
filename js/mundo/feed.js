@@ -1378,12 +1378,38 @@ TO.feed = (function(){
     (st === 'Maior Rival' || st === 'Rival') ? 'rival'
     : st === 'Neutro' ? 'neutro' : 'aliado';
   const BEIRA = {rival:-16, aliado:20};           // onde o recusado fica
+  /* SÓ PERGUNTA QUEM TEM LAÇO (correção do dono, 15/09/2026)
+     A conversa de encerrar treta ou encerrar aliança só faz sentido com
+     quem a gente conhece: torcida da nossa praça, torcida de cidade
+     onde a gente tem filial, torcida que já veio pra cima ou já andou
+     junto, quem está declarado na nossa ficha desde o começo e quem
+     divide eixo com a gente. Com essas, a pergunta chega. O resto do
+     mundo — barra de outro país que a gente nunca viu — muda de status
+     CALADO: a mudança vale, mas não vira cartão no feed. */
+  function temLacoConosco(E, id){
+    const t = M().torcida(id); if(!t) return false;
+    if(M().relacaoBase(E.torcida.id, id) !== 'Neutro') return true;
+    if(t.mapa && t.mapa === E.torcida.mapa) return true;
+    if(TO.patrimonio && TO.patrimonio.temFilialEm && t.mapa &&
+       TO.patrimonio.temFilialEm(E, t.mapa)) return true;
+    if(E.brigasCom && E.brigasCom[id]) return true;
+    if(TO.eixos && TO.eixos.de(E, E.torcida.id)
+        .some(x => (x.membros || []).includes(id))) return true;
+    return false;
+  }
+  /* UMA POR SEMANA (correção do dono, 15/09/2026): mesmo entre as que
+     têm laço, duas mudanças no mesmo dia viram duas perguntas iguais
+     coladas. Sai uma por semana; quem ficou na fila espera a vez, e se
+     o status voltar sozinho no meio-tempo a pergunta nem chega a
+     existir. A da nossa praça passa na frente — é com ela que a gente
+     se pega de verdade. */
   function statusDeHoje(E){
     const S = E.statusRel = E.statusRel || {};
     S.visto = S.visto || {}; S.recusa = S.recusa || {};
     const R = TO.relacoes, sa = R.semanaAbs(E);
     const pendente = id => [...E.feed, ...E.feedFila]
       .some(m => m.kind === 'status' && !m.respondido && m.dados && m.dados.de === id);
+    const fila = [];
     for(const o of M().jogaveis()){
       if(o.id === E.torcida.id || o.incompleta) continue;
       const agora = grupoDoStatus(M().statusDoValor(R.nivel(E, o.id)));
@@ -1392,11 +1418,22 @@ TO.feed = (function(){
       if(agora === antes) continue;
       const cai = agora === 'neutro' && (antes === 'rival' || antes === 'aliado');
       if(!cai){ S.visto[o.id] = agora; continue; }
+      /* sem laço: a mudança vale, mas em silêncio */
+      if(!temLacoConosco(E, o.id)){ S.visto[o.id] = agora; continue; }
       if(pendente(o.id)) continue;
       /* recusou há pouco: segura na beira do status antigo, sem perguntar */
       if(S.recusa[o.id] && sa - S.recusa[o.id] < RECUSA_STATUS){
         E.relacoes[o.id] = BEIRA[antes]; continue;
       }
+      fila.push({o, antes});
+    }
+    if(!fila.length) return;
+    if(S.ultima !== undefined && sa - S.ultima < 1) return;   // uma por semana
+    fila.sort((x, y) => (y.o.mapa === E.torcida.mapa ? 1 : 0) -
+                        (x.o.mapa === E.torcida.mapa ? 1 : 0));
+    S.ultima = sa;
+    {
+      const o = fila[0].o, antes = fila[0].antes;
       const nos = E.torcida.nome;
       propor(E, {
         kind:'status', peso:'decisao', voz:'torcida',
