@@ -311,6 +311,10 @@ export function criar(canvas) {
         const x1 = a[0] + (b[0]-a[0])*t1, z1 = a[1] + (b[1]-a[1])*t1;
         const r0 = R.corred0 + (R.fachada0-R.corred0)*t0;
         const r1 = R.corred0 + (R.fachada0-R.corred0)*t1;
+        /* perto da parede de dentro o pé-direito é 39 e a viga desceria
+           a 33 — a cabeça do boneco (39, em escala 1,15) entrava nela.
+           Viga só onde o teto passa de 53. */
+        if (r0 < 124) continue;
         const h = Math.min(fundo(r0), fundo(r1));
         caixa(TC, Math.min(x0,x1)-3, Math.max(x0,x1)+3, h - 6, h + 0.5,
                   Math.min(z0,z1)-3, Math.max(z0,z1)+3, 0.82);

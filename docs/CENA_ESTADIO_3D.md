@@ -193,29 +193,63 @@ Nada de mecânica nova. O que há:
    células dali são a escada. `solido`, `piso` e `teto` não sabiam, e com
    o líder no pé da escada a câmera entrava ali. Agora é maciço até a
    arquibancada.
+9. **Cabeça dentro da viga.** Na parede de dentro do corredor o pé-direito
+   é 39, as vigas do teto descem 6 e o boneco em escala 1,15 tem 39 — na
+   foto da briga o líder estava com a cabeça dentro de uma viga. Viga só
+   de r = 124 pra fora, onde o teto passa de 53; perto da parede o teto é
+   liso.
 
 ## 8. A caminhada do líder
 
-(medida com o roteiro `sim3.js`: waypoints em rua, tecla apertada a cada
-passo até chegar; velocidade do líder ~41 px/s)
+Medida com o roteiro `sim3.js`: waypoints em rua e corredor, a tecla certa
+apertada a cada passo de 50 ms até chegar, o líder a ~41 px/s. Nenhuma
+grade tocada até o encontro.
 
-| perna | chegou em | onde | altura 3D | tempo |
+| trecho | chegou em | onde | altura 3D | relógio |
 |---|---|---|---|---|
-| sede → esquina da rua norte | (658, 551) | rua | 0 | 5,2 s |
-| rua oeste até a frente do portão | (664, 1013) | rua | 0 | 7,8 s |
-| calçada do portão | (700, 1019) | rua | 0 | 0,7 s |
-| portão → corredor | (796, 1019) | corredor | 0 | 1,6 s |
-| corredor → pé do vomitório 4 | (807, 945) | vomitório | 5 | 1,3 s |
-| escada acima → arquibancada | (954, 939) | arquibancada | 52 | 2,5 s |
+| sede → esquina da rua norte | (658, 562) | rua | 0 | 9 s |
+| rua oeste até a frente do portão | (662, 1013) | rua | 0 | 17 s |
+| calçada e portão oeste | (702, 1019) | rua | 0 | 18 s |
+| portão → corredor | (795, 1029) | corredor | 0 | 20 s |
+| corredor → pé do vomitório 4 | (808, 947) | vomitório | 5 | 22 s |
+| escada acima → arquibancada | (954, 939) | arquibancada | 52 | 24 s |
+| **setor mandante** | (956, 1013) | arquibancada | 52 | **26 s** |
+| de volta pela boca, escada abaixo | (813, 938) | vomitório | 9 | 30 s |
+| atrás da escada, no corredor | (783, 938) | corredor | 0 | 31 s |
+| quina noroeste do corredor (arco) | (883, 739) | corredor | 0 | 36 s |
+| corredor norte, atrás do vomitório 0 | (1088, 611) | corredor | 0 | 41 s |
+| corredor norte, atrás do vomitório 1 | (1459, 611) | corredor | 0 | 58 s |
+| quina nordeste do corredor (arco) | (1755, 808) | corredor | 0 | 65 s |
+| **corredor leste** | (1774, 890) | corredor | 0 | **67 s** |
 
-Do spawn à arquibancada: **19 segundos**, sem tocar em grade. (A travessia
-pelo corredor norte até o setor visitante e o encontro estão sendo medidos;
-entram na próxima revisão deste documento.)
+Do spawn ao setor: 26 segundos. A volta inteira por baixo, da escada oeste
+ao lado leste, passando pelas duas quinas redondas e atrás das duas
+escadas do norte: 37 segundos. (Na rodada anterior, com a câmera antiga, o
+líder chegou ao setor visitante pela arquibancada em 94 s, e a chegada foi
+recebida com bomba: "Bomba deles", cinco mandantes caídos.)
 
-Na primeira tentativa o líder foi **preso**: o roteiro mirava reto no vão e
-encostou no cordão da PM do próprio portão; o alerta subiu a 79 em vinte
-segundos e a PM levou o líder antes de ele entrar. Foi isso que tirou o
-cordão do portão da casa.
+**O encontro.** O setor visitante, de guarda, acordou aos 58 s ("o setor
+deles viu o bonde chegar") e a PM foi a 100% ("A PM encostou no seu
+pessoal"). Dali a 124 s a briga já estava em dois andares:
+
+| relógio | arquibancada | vomitório | corredor | rua | caídos (mand./vis.) |
+|---|---|---|---|---|---|
+| 87 s | 19 | 4 | 1 | 36 | 2 / 0 |
+| 105 s | 21 | 2 | 1 | 36 | 2 / 1 |
+| 112 s | 18 | **13** | 1 | 31 | 3 / 3 |
+| 124 s | 20 | **15** | 4 | 22 | 9 / 3 |
+
+Quatro visitantes saíram pelo portão leste no meio da briga; dois
+mandantes do 2º escalão chegaram ao setor. Nenhum erro de console em
+nenhuma rodada.
+
+**O que o roteiro não fez, e por quê.** O navegador do teste é guloso —
+anda em linha reta pro waypoint — e três vezes essa linha entrou na tira
+de um vomitório pelo lado, onde está a mureta: a escada só se entra pelo
+pé ou pela boca. É limitação do teste, não da cena: o campo de fluxo dos
+bots contorna a mureta sozinho (é o que os 15 do vomitório mostram). Na
+primeira rodada, o líder foi **preso** encostando no cordão da PM do
+próprio portão — foi isso que tirou o cordão do portão da casa.
 
 ## 9. O que ficou aberto
 
