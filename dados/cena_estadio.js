@@ -646,7 +646,7 @@ TO.dados.cenaEstadio = (function(){
     { id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:P.RUA+P.PONTA-12, y:P.QEST_Y1+P.RUA+200,
       entrada:'setor_mandante' },
     { id:'visitante1', rot:'SETOR VISITANTE', lado:'visitante', x:Math.round(xSet), y:Math.round(ySet),
-      guarda:true, entrada:'saida_leste' },
+      guarda:true, entrada:'saida_sul' },
     { id:'visitante2', rot:'RETAGUARDA', lado:'visitante', x:P.QEST_X1+P.RUA+300, y:P.RUA+P.NS-12,
       entrada:'setor_visitante' }
   ];
@@ -663,12 +663,16 @@ TO.dados.cenaEstadio = (function(){
     return { id, rot, lado: lado === 'o' ? 'mandante' : 'visitante',
              x:Math.round(x), y:Math.round(y), raio:44, dir: lado === 'o' ? [1,0] : [-1,0] };
   };
-  const [xSai, ySai] = P.ponto('l', CY, 348);
+  /* A SAÍDA DELES É PELO PORTÃO SUL, no funil do cordão, e não pelo
+     leste, que fica a treze segundos do setor: acordado e em paz, o
+     bonde caminha pro destino, e pelo sul ele atravessa o corredor por
+     trinta e cinco segundos — é onde ele cruza com quem está entrando. */
+  const [xSai, ySai] = P.ponto('s', CX + 22, 352);
   const entradas = [
     setor('o', 'setor_mandante',  'SETOR MANDANTE'),
     setor('l', 'setor_visitante', 'SETOR VISITANTE'),
-    { id:'saida_leste', rot:'SAÍDA LESTE', lado:'visitante', x:Math.round(xSai), y:Math.round(ySai),
-      raio:40, dir:[1,0], saida:true }
+    { id:'saida_sul', rot:'SAÍDA SUL', lado:'visitante', x:Math.round(xSai), y:Math.round(ySai),
+      raio:36, dir:[0,1], saida:true }
   ];
 
   /* A PM: nos três portões, no corredor, nas divisas de setor e na
@@ -741,8 +745,10 @@ TO.dados.cenaEstadio = (function(){
             dica:'Leve o líder até o setor da sua torcida: portão, corredor, vomitório.' },
     enfeites:[], varais:[],
     spawns, entradas, pmPostos, grades, filas,
-    /* o setor deles dorme até o seu bonde chegar a 300 */
-    gatilho:{ lado:'mandante', perto:300, rot:'DE OLHO',
+    /* o setor deles dorme até o seu bonde chegar a 200 — no TABULEIRO,
+       onde o corredor norte é vizinho da arquibancada leste (a dobra);
+       com 300 ele acordava com o bonde ainda do outro lado da laje */
+    gatilho:{ lado:'mandante', perto:200, rot:'DE OLHO',
               espera:'o setor deles ainda não se mexeu',
               aviso:'o setor deles viu o bonde chegar' },
     planta: P

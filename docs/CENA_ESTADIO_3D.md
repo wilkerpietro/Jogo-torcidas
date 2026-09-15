@@ -119,14 +119,19 @@ Nada de mecânica nova. O que há:
   chega "entrou" e some, como quem entra no portão nos arredores.
 - **O setor visitante já está dentro, de guarda.** O combate só tem um
   estado "fica parado esperando": `guarda`, que dorme até o rival chegar a
-  `gatilho.perto` (300). Sem isso todo mundo caminhava até o destino e
-  sumia em 50 segundos, e o estádio ficava vazio antes de você entrar. O
-  destino desse grupo é a **saída leste** (fora do portão): é por onde ele
-  vai embora depois. A retaguarda deles chega andando do quarteirão NE.
-- **O relógio.** `minutosAteJogo = 60` na página: a marcha pro estádio
-  começa perto de um minuto (tempo de você chegar antes), e o bonde hostil
-  sai atrás do rival entre 20 e 55 segundos. `raioVadiagem = 220` pra
-  ninguém vagar até o meio do estádio.
+  `gatilho.perto` (200, no tabuleiro). Sem isso todo mundo caminhava até o
+  destino e sumia em 50 segundos, e o estádio ficava vazio antes de você
+  entrar. O destino desse grupo é a **saída sul** (fora do portão sul, no
+  funil do cordão): acordado e em paz, o bonde caminha pro destino, e pelo
+  sul ele atravessa o corredor por uns 35 segundos — com a saída leste,
+  a 13 segundos do setor, ele já tinha ido embora quando o líder chegou
+  (§8). A retaguarda deles chega andando do quarteirão NE.
+- **O relógio e o clima.** `minutosAteJogo = 60` na página: a marcha pro
+  estádio começa perto de um minuto (tempo de você chegar antes), e o
+  bonde hostil sai atrás do rival entre 20 e 55 segundos. `raioVadiagem =
+  220` pra ninguém vagar até o meio do estádio. `tensao = 80`: quatro em
+  cinco bondes visitantes vêm pra brigar — com 60, o setor de guarda
+  acordava em paz uma vez em duas e ia embora sem briga.
 - **O cordão da PM não fecha o portão.** Cobre 48 dos 80 e deixa um funil
   de 32 num lado. Selado, o campo de fluxo não tem rota e todo mundo para
   na grade batendo nela.
@@ -224,9 +229,21 @@ grade tocada até o encontro.
 
 Do spawn ao setor: 26 segundos. A volta inteira por baixo, da escada oeste
 ao lado leste, passando pelas duas quinas redondas e atrás das duas
-escadas do norte: 37 segundos. (Na rodada anterior, com a câmera antiga, o
-líder chegou ao setor visitante pela arquibancada em 94 s, e a chegada foi
-recebida com bomba: "Bomba deles", cinco mandantes caídos.)
+escadas do norte: 37 segundos. Na última rodada o roteiro fechou a rota
+inteira: atrás do vomitório 6 aos 65 s, pé da escada aos 66 s, escada
+acima aos 69 s e **setor visitante aos 71 s** (arquibancada, altura 57)
+— o caminho completo que o pedido descreve, sem tocar em grade. (Numa
+rodada anterior o líder chegou ao setor visitante pela arquibancada em
+94 s, e a chegada foi recebida com bomba: "Bomba deles", cinco mandantes
+caídos.)
+
+Nessa última rodada, porém, o setor deles estava **vazio** ao chegar: com
+`perto: 300` os guardas acordaram aos 58 s, quando o líder ainda estava no
+corredor nordeste, do outro lado da laje (item 9 do §9); o bonde deles
+tinha sido sorteado em paz, e acordado e sem inimigo ao alcance a regra
+do combate é caminhar pro destino — a saída leste, a 13 segundos. Dezesseis
+dos dezessete foram embora antes de o líder subir a escada. Foi isso que
+mudou `perto` pra 200, a saída deles pro portão sul e a tensão pra 80.
 
 **O encontro.** O setor visitante, de guarda, acordou aos 58 s ("o setor
 deles viu o bonde chegar") e a PM foi a 100% ("A PM encostou no seu
