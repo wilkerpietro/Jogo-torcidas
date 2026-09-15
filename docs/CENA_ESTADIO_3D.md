@@ -1,4 +1,4 @@
-# O estádio e o bairro em 3D — a segunda cena
+# O estádio e a cidade em 3D — a segunda cena
 
 Este documento é o registro da cena `estadio3d.html` refeita do zero: o
 que foi pedido, como foi resolvido, o que foi medido e o que ficou aberto.
@@ -75,35 +75,66 @@ Entre a parede de dentro (r = 96) e a boca (r = 112), embaixo da
 arquibancada baixa, é concreto maciço (a "cabeceira"): as células dali são
 a escada, e nada anda embaixo dela.
 
-## 4. O bairro e o tabuleiro
+## 4. A cidade do mapa, e o tabuleiro
 
-Grade 3 × 3, estádio no meio, rua de 72 em volta de tudo (é por onde a
-torcida chega e por onde se foge):
+A segunda rodada trocou o bairro de oito quarteirões pela **cidade da
+imagem**: um mapa desenhado de 1500 × 1100 px, com o estádio no
+norte-centro, a costa a leste, o mato a oeste e dois campos de várzea no
+sul. Um pixel do mapa é **PX = 5,4** unidades — a escala que deixa o
+estádio do mapa do tamanho do quarteirão do estádio (1184 × 960).
 
-```
- NO  560 | N  1184 | NE 560       quarteirão: calçada de 32,
- --------+---------+--------      lotes de frente contínua (casa,
- O   560 | ESTÁDIO | L  560       sobrado, prédio, galpão, muro),
- --------+---------+--------      miolo de quintal; carro na guia
- SO  560 | S  1184 | SE 560       das ruas norte e sul do estádio
-```
+**O que se anda e o que se desenha são coisas diferentes.** O tabuleiro
+(a máscara) é um recorte do mapa — px 170–1170 × 90–1100, **5400 × 5456**
+unidades, 675 × 682 = 460 mil células — e o que se desenha vai além dele
+até o mar e o mato de fora (px −60–1560 × −60–1160). Fora do estádio o
+mundo é o próprio tabuleiro, sem dobra nenhuma.
 
-Tabuleiro **2592 × 2048** (324 × 256 células). Os lotes, carros e árvores
-nascem na planta com sorteio de semente fixa (`semente(20260915)`): a
-máscara e o desenho leem a mesma lista.
+Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
 
-**A pegadinha que custou uma hora.** `arredores.js` lê `largura`, `altura`
-e `celula` **uma vez, na carga**, da cena padrão — e a malha, a malha de
-corpo e a memória de rota nascem daquele tamanho. O comentário do próprio
-módulo diz: "todas têm o mesmo tamanho de tela". Trocar de cena não
-redimensiona nada: o tabuleiro de 2592 × 2048 foi decodificado num buffer
-de 1536 × 1024 e tudo com `y ≥ 1024` virou parede — "PORTÃO SELADO, sem
-rota" nos quatro spawns, com a máscara certa. A saída, sem mexer no módulo:
+- **A grade.** Treze colunas (norte-sul) e quinze linhas (leste-oeste),
+  cada uma com a largura do mapa; as quatro que encostam no estádio vêm do
+  quarteirão dele, pra bater exatamente. Entre ruas há células: dentro do
+  contorno da cidade (um polígono lido do mapa) a célula é um **quarteirão**
+  — calçada de 32 em volta, lotes de frente contínua, quintal no miolo;
+  fora, é mato, praia ou mar. O mapa é tratado com a grade alinhada aos
+  eixos (no desenho ela é girada uns 15°), e a costa fica em diagonal.
+- **A costa.** `xCosta(y)`, uma função do mapa: além dela é mar
+  (bloqueia); 45 px pra dentro é praia (anda); mais 14 px é a avenida
+  beira-mar. Os quarteirões que cruzam a orla terminam nela.
+- **As avenidas diagonais** — a grande do canto sudoeste até o estádio, a
+  do noroeste, as duas saídas pro oeste — são bandas andáveis que cortam os
+  quarteirões de verdade, e ganham **casas rotacionadas** na frente (o
+  lote tem ângulo; `dentroLote` gira o ponto). Os lotes axiais que
+  encostam na avenida saem, e o quarteirão cortado não ganha laje de
+  calçada no 3D (a laje cobriria a avenida; fica a pintura).
+- **Os campos de várzea** são células grandes abertas com cerca de mourão
+  (bloqueia, com porteira no meio dos lados norte e sul), arquibancadinha
+  de três degraus (bloqueia) e traves.
+- **O mato**: terreno aberto com moitas sorteadas (bloqueiam, num balde
+  espacial de 256) e trilhas pintadas. A textura do mato, do mar e da
+  praia sai do pintor, não de geometria.
+- **A máscara é "rua recortada de quarteirão sólido"**: mar → campo →
+  carro → avenida → rua → miolo do quarteirão (bloqueia) / calçada (anda)
+  → moita → o resto anda. Lote é só desenho e altura pra câmera. Cada
+  célula sabe os seus lotes e árvores, e `celulaEm(x, y)` acha a célula
+  por busca binária nas bordas: é o que deixa 460 mil `anda()` custarem
+  0,3 s na carga.
+- **As sedes** ficam onde o mapa põe a torcida: a mandante no quarteirão
+  do canto sudoeste, de frente pro mato; a visitante de frente pra orla,
+  a nordeste. A torcida nasce na calçada da porta.
+
+A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
+descarta fora do quadro; carros, postes e campos numa malha; moitas em
+outra.
+
+**A pegadinha que custou uma hora, ainda vale.** `arredores.js` lê
+`largura`, `altura` e `celula` **uma vez, na carga**, da cena padrão — e a
+malha, a malha de corpo e a memória de rota nascem daquele tamanho. O
+comentário do próprio módulo diz: "todas têm o mesmo tamanho de tela".
+Trocar de cena não redimensiona nada. A saída, sem mexer no módulo:
 **nesta página a cena padrão é o estádio** (`TO.dados.cenaArredores =
 TO.dados.cenaEstadio`, antes de `arredores.js` subir). O jogo em
-`index.html` não passa por aqui. Se um dia uma cena do jogo 2D precisar de
-tamanho próprio, é `arredores.js` que tem de mudar (`const` → `let` e
-realocar em `usarCena`), não a cena.
+`index.html` não passa por aqui.
 
 ## 5. A vida da cena — o que o combate já fazia, e como foi ligado
 
@@ -146,17 +177,21 @@ Nada de mecânica nova. O que há:
 
 ## 6. O que foi medido
 
-- Máscara: 40.811 células andáveis, **34.213 onde um corpo cabe, 100%
+- Máscara: 241.165 células andáveis, **220.802 onde um corpo cabe, 100%
   alcançáveis** do spawn do jogador (BFS com a mesma régua do
-  `arredores.js`: as 8 vizinhas livres, grades e filas bloqueando). O campo
-  de fluxo do próprio módulo, no navegador, alcança 34.231.
-- Por andar (células de corpo): rua 25.506 · corredor 4.339 · vomitório
-  748 · arquibancada 3.572 · portão 48.
-- Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · 172 lotes ·
-  49 carros · 87 árvores · **82.380 triângulos** · **11–16 chamadas de
-  desenho** (estádio 5, bairro 1, chão 2, gente e grades o resto).
-- Boneco do Blender ativo (`comModelo: true`).
-- A caminhada do líder pela rota inteira está no §8.
+  `arredores.js`: as 8 vizinhas livres, grades e filas bloqueando).
+- Por andar (células de corpo): rua/cidade 211.000 · corredor 4.371 ·
+  vomitório 577 · arquibancada 3.572 · portão 48.
+- Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **98
+  quarteirões · 646 lotes (20 rotacionados) · 630 moitas · 177 árvores ·
+  73 postes · 55 carros · 2 campos** · 114.612 triângulos estáticos em 11
+  pedaços de cidade mais o estádio · 16 chamadas de desenho sem gente na
+  tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
+  do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
+  leve corta a sombra primeiro por isso).
+- Boneco do Blender ativo (`comModelo: true`). Planta carregada em 0,3 s.
+- A caminhada do líder e a briga estão no §8 (medidas no bairro de oito
+  quarteirões; a cidade grande alonga o caminho, não muda o mecanismo).
 
 ## 7. Bugs achados no caminho, e o que eram
 
@@ -198,6 +233,19 @@ Nada de mecânica nova. O que há:
    células dali são a escada. `solido`, `piso` e `teto` não sabiam, e com
    o líder no pé da escada a câmera entrava ali. Agora é maciço até a
    arquibancada.
+10. **Três fps.** A captura do dono, com a cena antiga (55 mil triângulos,
+   30 chamadas), rodava a 3 fps — isso não é cena pesada, é Chrome sem
+   placa de vídeo (SwiftShader, o rasterizador por software que ele usa
+   com a aceleração desligada ou o driver bloqueado). A página passou a
+   dizer na tela quem desenha (`WEBGL_debug_renderer_info`) e a avisar
+   quando é software. E, independente disso, entraram três medidas: o
+   **modo leve** automático (sombra, resolução, anisotropia e névoa caem
+   depois de 1,5 s ruins e voltam depois de 5 s folgados; `L` fixa, `K`
+   devolve), a **simulação em passo fixo** (o tempo real acumula e
+   `combate.js` dá até 24 passos de 1/60 por quadro: a 3 fps a tela pula,
+   mas o jogo deixa de correr em câmera lenta) e `preserveDrawingBuffer`
+   só com `?foto=1` (custava uma cópia por quadro e só serve pra tirar
+   foto).
 9. **Cabeça dentro da viga.** Na parede de dentro do corredor o pé-direito
    é 39, as vigas do teto descem 6 e o boneco em escala 1,15 tem 39 — na
    foto da briga o líder estava com a cabeça dentro de uma viga. Viga só
@@ -332,8 +380,8 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 
 | arquivo | o que é |
 |---|---|
-| `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, bairro (lotes, carros, árvores, torres), máscara, spawns, setores, PM, grades, filas, gatilho |
-| `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera, ligação com a simulação e com a gente |
-| `js/diajogo/bairro3d.js` | os oito quarteirões, numa malha só |
-| `js/diajogo/estadio_pintura.js` | a textura do chão, em coordenada de mundo |
-| `estadio3d.html` | a página: a troca da cena padrão, o relógio, o pad, o teclado, a linha de estado |
+| `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, a cidade (grade, costa, avenidas, campos, mato, lotes, sedes), máscara, spawns, setores, PM, grades, filas, gatilho |
+| `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera (linha de vista, modo leve), ligação com a simulação e com a gente |
+| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados), calçadas, árvores, carros, postes, campos, moitas |
+| `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões, ruas, avenidas, costa, campos, estádio |
+| `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
