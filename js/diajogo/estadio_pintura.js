@@ -164,46 +164,82 @@ TO.diaJogo.estadioPintura = (function(){
       c.beginPath(); c.ellipse(m.x, m.y, m.r*0.9, m.r*0.7, 0, 0, 7); c.fill();
     }
 
-    /* ---- 2. os quarteirões: calçada, e o miolo ---- */
+    /* ---- 2. as ruas da grade: só em volta das células urbanas, como
+       diz `naRua` — cada célula pinta a si mesma mais as faixas de rua
+       em volta (canto incluído); o que vem depois cobre o miolo ---- */
+    const bx = K.bordasX, by = K.bordasY;
+    const emVolta = q => [
+      q.i > 0 ? bx[2*q.i - 1] : q.x0, q.j > 0 ? by[2*q.j - 1] : q.y0,
+      2*q.i + 2 < bx.length ? bx[2*q.i + 2] : q.x1, 2*q.j + 2 < by.length ? by[2*q.j + 2] : q.y1 ];
+    c.fillStyle = COR.rua;
+    for(const q of K.CELULAS){
+      if(!q.urbana) continue;
+      const [x0, y0, x1, y1] = emVolta(q);
+      c.fillRect(x0, y0, x1 - x0, y1 - y0);
+    }
+    /* o eixo tracejado das ruas largas, em trechos contínuos de célula urbana */
+    const trechos = (n, urbana, borda, pintar) => {
+      let a = -1;
+      for(let k=0;k<=n;k++){
+        const u = k < n && urbana(k);
+        if(u && a < 0) a = k;
+        if(!u && a >= 0){ pintar(borda(a, true), borda(k-1, false)); a = -1; }
+      }
+    };
+    const nCol = bx.length/2, nLin = by.length/2;
+    K.COLUNAS.forEach((col, k) => {
+      if(col.l < 74) return;
+      trechos(nLin, j => K.grade[k][j].urbana || K.grade[k+1][j].urbana,
+              (j, ini) => ini ? (j > 0 ? by[2*j - 1] : by[0]) : (2*j + 2 < by.length ? by[2*j + 2] : by[by.length-1]),
+              (y0, y1) => tracejado(c, col.c, y0, col.c, y1));
+    });
+    K.LINHAS.forEach((lin, k) => {
+      if(lin.l < 74) return;
+      trechos(nCol, i => K.grade[i][k].urbana || K.grade[i][k+1].urbana,
+              (i, ini) => ini ? (i > 0 ? bx[2*i - 1] : bx[0]) : (2*i + 2 < bx.length ? bx[2*i + 2] : bx[bx.length-1]),
+              (x0, x1) => tracejado(c, x0, lin.c, x1, lin.c));
+    });
+
+    /* ---- 3. os quarteirões: calçada, e o miolo ---- */
     for(const q of K.CELULAS){
       if(q.tipo === 'quadra'){
         c.fillStyle = COR.calcada; c.fillRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
         c.fillStyle = COR.lote;    c.fillRect(q.ix0, q.iy0, q.ix1-q.ix0, q.iy1-q.iy0);
         c.strokeStyle = COR.meioFio; c.lineWidth = 2; c.strokeRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
-      } else if(q.tipo === 'aberto' && K.zona(q.cx, q.cy) === 'cidade'){
+      } else if((q.tipo === 'aberto' || q.tipo === 'campo') && K.zona(q.cx, q.cy) === 'cidade'){
         c.fillStyle = COR.terreno; c.fillRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
       }
     }
+
+    /* ---- 4. as avenidas, traçadas ao longo dos pontos: calçada só
+       dentro do contorno da cidade (fora ela é estrada), asfalto e
+       eixo por cima da grade. Ponta redonda: é o que a máscara diz
+       (`distAvenida` mede até a ponta), e é o que sobra na esquina. */
+    const tracarAvenida = (av, larg, cor) => {
+      c.strokeStyle = cor; c.lineWidth = larg; c.lineJoin = 'round'; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(av.pontos[0][0], av.pontos[0][1]);
+      for(let i=1;i<av.pontos.length;i++) c.lineTo(av.pontos[i][0], av.pontos[i][1]);
+      c.stroke();
+    };
+    c.save();
+    c.beginPath();
+    const cont = K.CONTORNO.map(([px, py]) => K.pxm(px, py));
+    c.moveTo(cont[0][0], cont[0][1]);
+    for(let i=1;i<cont.length;i++) c.lineTo(cont[i][0], cont[i][1]);
+    c.closePath(); c.clip();
+    for(const av of K.AVENIDAS) tracarAvenida(av, av.l + 2*K.CALC, COR.calcada);
+    c.restore();
+    for(const av of K.AVENIDAS){
+      tracarAvenida(av, av.l, COR.rua);
+      c.setLineDash([18, 14]); tracarAvenida(av, 1.6, COR.eixo); c.setLineDash([]);
+    }
+    c.lineCap = 'butt'; c.lineJoin = 'miter';
+
     /* os lotes rotacionados pintam o próprio chão (o miolo axial não os cobre) */
     for(const l of K.LOTES){
       if(!l.ang) continue;
       c.save(); c.translate(l.cx, l.cy); c.rotate(l.ang);
       c.fillStyle = COR.lote; c.fillRect(-l.w/2 - 2, -l.h/2 - 2, l.w + 4, l.h + 4);
-      c.restore();
-    }
-
-    /* ---- 3. as ruas da grade (menos dentro do estádio e dos campos) ---- */
-    c.fillStyle = COR.rua;
-    const foraDoEstadio = (x0, y0, x1, y1) => {
-      /* pinta o retângulo, recortando o quadrado do estádio */
-      const ex0 = P.QEST_X0, ex1 = P.QEST_X1, ey0 = P.QEST_Y0, ey1 = P.QEST_Y1;
-      if(x1 <= ex0 || x0 >= ex1 || y1 <= ey0 || y0 >= ey1){ c.fillRect(x0, y0, x1-x0, y1-y0); return; }
-      if(x0 < ex0) c.fillRect(x0, y0, ex0-x0, y1-y0);
-      if(x1 > ex1) c.fillRect(ex1, y0, x1-ex1, y1-y0);
-      if(y0 < ey0) c.fillRect(Math.max(x0,ex0), y0, Math.min(x1,ex1)-Math.max(x0,ex0), ey0-y0);
-      if(y1 > ey1) c.fillRect(Math.max(x0,ex0), ey1, Math.min(x1,ex1)-Math.max(x0,ex0), y1-ey1);
-    };
-    for(const col of K.COLUNAS) foraDoEstadio(col.c - col.l/2, 0, col.c + col.l/2, P.H);
-    for(const lin of K.LINHAS)  foraDoEstadio(0, lin.c - lin.l/2, P.W, lin.c + lin.l/2);
-    for(const col of K.COLUNAS) if(col.l >= 74) tracejado(c, col.c, 0, col.c, P.H);
-    for(const lin of K.LINHAS)  if(lin.l >= 74) tracejado(c, 0, lin.c, P.W, lin.c);
-
-    /* ---- 4. as avenidas diagonais: calçada, asfalto, eixo ---- */
-    for(const av of K.AVENIDAS){
-      c.save(); c.translate(av.x0, av.y0); c.rotate(av.ang);
-      c.fillStyle = COR.calcada; c.fillRect(-K.CALC, -av.l/2 - K.CALC, av.L + 2*K.CALC, av.l + 2*K.CALC);
-      c.fillStyle = COR.rua;     c.fillRect(-K.CALC, -av.l/2, av.L + 2*K.CALC, av.l);
-      tracejado(c, 0, 0, av.L, 0);
       c.restore();
     }
 

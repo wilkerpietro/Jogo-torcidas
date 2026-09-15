@@ -336,7 +336,7 @@ TO.dados.plantaEstadio = (function(){
   }
   const PRAIA = 45, ORLA = 14;          // em px: a faixa de areia e a avenida beira-mar
   /* ---- o contorno da cidade, em px: fora dele é mato ---- */
-  const CONTORNO = [[330,250],[400,160],[560,110],[620,100],[700,95],[850,100],[1000,110],
+  const CONTORNO = [[300,250],[400,160],[560,110],[620,100],[700,95],[850,100],[1000,110],
                     [1300,115],[1300,1200],[300,1200],[250,1000],[230,850],[240,700],
                     [260,560],[290,420]];
   function dentroPoligono(px, py, pol){
@@ -396,24 +396,48 @@ TO.dados.plantaEstadio = (function(){
     return true;
   }
 
-  /* ---- as avenidas diagonais: segmento + largura, no mundo ---- */
-  const avenida = (ax, ay, bx, by, lpx, id) => {
-    const [x0, y0] = pxm(ax, ay), [x1, y1] = pxm(bx, by);
-    const L = Math.hypot(x1-x0, y1-y0);
-    return { id, x0, y0, x1, y1, l: lpx*PX, ux:(x1-x0)/L, uy:(y1-y0)/L, L,
-             ang: Math.atan2(y1-y0, x1-x0) };
+  /* ---- as avenidas: LINHAS DE VÁRIOS PONTOS, com largura, no mundo.
+     Uma avenida do mapa não é um segmento: ela dobra (a do sudoeste
+     dobra perto do canto), nasce numa rua da grade e morre em outra —
+     ou sai da cidade e vira estrada pelo mato até a borda do que se
+     desenha. Aqui os pontos vão até essa borda; fora do tabuleiro eles
+     não fazem célula, só pintura. ---- */
+  const avenida = (pontos, lpx, id) => {
+    const P = pontos.map(([x, y]) => pxm(x, y));
+    const segs = [];
+    let L = 0;
+    for(let k=1;k<P.length;k++){
+      const [x0, y0] = P[k-1], [x1, y1] = P[k];
+      const len = Math.hypot(x1-x0, y1-y0);
+      segs.push({ x0, y0, x1, y1, L: len, t0: L, ux:(x1-x0)/len, uy:(y1-y0)/len, ang: Math.atan2(y1-y0, x1-x0) });
+      L += len;
+    }
+    return { id, pontos: P, segs, l: lpx*PX, L };
   };
+  /* as colunas/linhas em px onde as avenidas desaguam */
   const AVENIDAS = [
-    avenida(185, 1095, 600, 405, 16, 'sudoeste'),   // a grande, do canto sudoeste até o estádio
-    avenida(330, 255, 612, 108, 14, 'noroeste'),
-    avenida(170, 555, 330, 540, 12, 'oeste'),
-    avenida(170, 200, 330, 250, 12, 'noroeste2')
+    /* a grande do sudoeste: entra pelo canto, dobra e vai até a rua sul
+       do estádio */
+    avenida([[120, 1160], [212, 1010], [603, 400.4]], 16, 'sudoeste'),
+    /* a do noroeste: nasce na coluna 315 e sai da cidade pelo norte */
+    avenida([[321, 263], [612, 108], [700, 58], [740, -60]], 14, 'noroeste'),
+    /* as saídas pro oeste: nascem na coluna 315 e viram estrada */
+    avenida([[315, 541], [170, 555], [40, 575], [-60, 600]], 12, 'oeste'),
+    avenida([[321, 245], [170, 200], [60, 170], [-60, 150]], 12, 'noroeste2'),
+    /* a saída pro norte, em cima do estádio */
+    avenida([[765, 135], [765, -60]], 14, 'norte')
   ];
-  /* distância de (x,y) ao eixo da avenida, e onde ao longo dela */
+  /* distância de (x,y) ao eixo da avenida — o segmento mais perto, e
+     onde ao longo dele */
   function distAvenida(av, x, y){
-    const dx = x - av.x0, dy = y - av.y0;
-    const t = Math.max(0, Math.min(av.L, dx*av.ux + dy*av.uy));
-    return { t, d: Math.hypot(dx - av.ux*t, dy - av.uy*t) };
+    let melhor = null;
+    for(const sg of av.segs){
+      const dx = x - sg.x0, dy = y - sg.y0;
+      const t = Math.max(0, Math.min(sg.L, dx*sg.ux + dy*sg.uy));
+      const d = Math.hypot(dx - sg.ux*t, dy - sg.uy*t);
+      if(!melhor || d < melhor.d) melhor = { d, t: sg.t0 + t, seg: sg };
+    }
+    return melhor;
   }
   function naAvenida(x, y, folga){
     for(const av of AVENIDAS){
@@ -422,11 +446,23 @@ TO.dados.plantaEstadio = (function(){
     }
     return null;
   }
-
-  /* ---- as ruas da grade num ponto (fora do estádio e dos campos) ---- */
-  function naRua(x, y){
-    for(const c of COLUNAS) if(Math.abs(x - c.c) <= c.l/2) return true;
-    for(const l of LINHAS)  if(Math.abs(y - l.c) <= l.l/2) return true;
+  /* a mesma faixa, mas SEM a ponta redonda nas duas extremidades: é o
+     que vale pra decidir quem é "casa da avenida". A avenida acaba
+     numa rua da grade, e o quarteirão do outro lado dessa rua não é
+     dela — se a ponta contasse, ele ficava pelado. */
+  function naFaixaDaAvenida(x, y, folga){
+    for(const av of AVENIDAS){
+      const n = av.segs.length;
+      for(let k=0;k<n;k++){
+        const sg = av.segs[k];
+        const dx = x - sg.x0, dy = y - sg.y0;
+        let t = dx*sg.ux + dy*sg.uy;
+        if(t < 0 && k === 0) continue;
+        if(t > sg.L && k === n-1) continue;
+        t = Math.max(0, Math.min(sg.L, t));
+        if(Math.hypot(dx - sg.ux*t, dy - sg.uy*t) <= av.l/2 + folga) return true;
+      }
+    }
     return false;
   }
 
@@ -443,8 +479,10 @@ TO.dados.plantaEstadio = (function(){
                     ix0:x0+CALC, ix1:x1-CALC, iy0:y0+CALC, iy1:y1-CALC, lotes:[] };
       if(x1 - x0 < 4 || y1 - y0 < 4) cel.tipo = 'nada';
       else if(noQuadradoDoEstadio(cel.cx, cel.cy)) cel.tipo = 'estadio';
-      else if(noCampo(cel.cx, cel.cy)) cel.tipo = 'campo';
+      else if(noCampo(cel.cx, cel.cy) || CAMPOS.some(f => x0 < f.x1 && x1 > f.x0 && y0 < f.y1 && y1 > f.y0 &&
+              Math.min(x1, f.x1) - Math.max(x0, f.x0) > (x1-x0)*0.5 && Math.min(y1, f.y1) - Math.max(y0, f.y0) > (y1-y0)*0.5)) cel.tipo = 'campo';
       else if(zona(cel.cx, cel.cy) === 'cidade' && cel.ix1 - cel.ix0 > 48 && cel.iy1 - cel.iy0 > 48) cel.tipo = 'quadra';
+      cel.urbana = cel.tipo !== 'nada' && (cel.tipo !== 'aberto' || zona(cel.cx, cel.cy) === 'cidade');
       grade[i/2][j/2] = cel;
       CELULAS.push(cel);
     }
@@ -460,6 +498,21 @@ TO.dados.plantaEstadio = (function(){
     const i = indiceEm(bordasX, x), j = indiceEm(bordasY, y);
     if(i % 2 || j % 2) return null;              // caiu numa rua
     return grade[i/2][j/2];
+  }
+  /* ---- as ruas da grade num ponto: SÓ ENTRE CÉLULAS URBANAS. A faixa
+     de rua existe onde alguma célula encostada nela é quarteirão,
+     campo, estádio ou terreno da cidade; entre duas células de mato
+     não há asfalto — a rua acaba no último quarteirão, e a saída da
+     cidade é a avenida. ---- */
+  function naRua(x, y){
+    if(x < 0 || y < 0 || x >= W || y >= H) return false;
+    const i = indiceEm(bordasX, x), j = indiceEm(bordasY, y);
+    const emColuna = i % 2 === 1, emLinha = j % 2 === 1;
+    if(!emColuna && !emLinha) return false;
+    const is = emColuna ? [(i-1)/2, (i+1)/2] : [i/2];
+    const js = emLinha ? [(j-1)/2, (j+1)/2] : [j/2];
+    for(const a of is) for(const b of js){ const c = grade[a] && grade[a][b]; if(c && c.urbana) return true; }
+    return false;
   }
   const QUADRAS = CELULAS.filter(c => c.tipo === 'quadra');
 
@@ -499,7 +552,7 @@ TO.dados.plantaEstadio = (function(){
     const r = (u, v) => [l.cx + u*c - v*s, l.cy + u*s + v*c];
     return [r(-hw,-hh), r(hw,-hh), r(hw,hh), r(-hw,hh), [l.cx, l.cy]];
   }
-  const tocaAvenida = (l, folga) => cantosDoLote(l).some(([x, y]) => naAvenida(x, y, folga));
+  const tocaAvenida = (l, folga) => cantosDoLote(l).some(([x, y]) => naFaixaDaAvenida(x, y, folga));
   const dentroRet = (x, y, o) => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1;
   function dentroLote(x, y, l){
     if(!l.ang) return dentroRet(x, y, l);
@@ -508,8 +561,20 @@ TO.dados.plantaEstadio = (function(){
     const u = dx*c - dy*s, v = dx*s + dy*c;
     return Math.abs(u) <= l.w/2 && Math.abs(v) <= l.h/2;
   }
+  /* cantos, centro e meio das arestas: o bastante pra ver se dois
+     lotes (um deles rotacionado) se pisam */
+  function pontosDoLote(l){
+    const pts = cantosDoLote(l);
+    if(!l.ang) return pts.concat([[(l.x0+l.x1)/2, l.y0], [l.x1, (l.y0+l.y1)/2], [(l.x0+l.x1)/2, l.y1], [l.x0, (l.y0+l.y1)/2]]);
+    const c = Math.cos(l.ang), s = Math.sin(l.ang), hw = l.w/2, hh = l.h/2;
+    const r = (u, v) => [l.cx + u*c - v*s, l.cy + u*s + v*c];
+    return pts.concat([r(0,-hh), r(hw,0), r(0,hh), r(-hw,0)]);
+  }
+  const cruzaLotes = (a, b) => pontosDoLote(a).some(([x, y]) => dentroLote(x, y, b)) ||
+                               pontosDoLote(b).some(([x, y]) => dentroLote(x, y, a));
 
   const LOTES = [];
+  const PROF_AV = 88;          // o fundo das casas da avenida
   function tipoDoLote(q){
     const px = q.cx/PX + MAPA.x0, py = q.cy/PX + MAPA.y0;
     /* perto do estádio e na orla norte há prédio e galpão, como no mapa;
@@ -543,7 +608,7 @@ TO.dados.plantaEstadio = (function(){
         if(a + larg > a1 - 36) larg = a1 - a;
         const tipo = tipoDoLote(q);
         const T = TIPOS[tipo];
-        const lote = {
+        let lote = {
           quadra:q, frente: fr.f, tipo,
           x0: horizontal ? a : fr.x0, x1: horizontal ? a + larg : fr.x1,
           y0: horizontal ? fr.y0 : a, y1: horizontal ? fr.y1 : a + larg,
@@ -551,9 +616,23 @@ TO.dados.plantaEstadio = (function(){
           cor: escolher(T.cor)
         };
         a += larg;
-        /* a frente da avenida é das casas rotacionadas: aqui não entra;
-           e lote nenhum entra no campo de várzea */
-        if(tocaAvenida(lote, CALC + 96)) continue;
+        /* as casas da avenida já estão no lugar: o lote axial sai se
+           pisa numa delas ou encosta na calçada da avenida — antes de
+           sair, tenta mais raso, encolhendo pro lado da frente; e lote
+           nenhum entra no campo de várzea */
+        const esbarra = l => tocaAvenida(l, CALC + 4) || q.lotes.some(o => o.ang && cruzaLotes(l, o));
+        if(esbarra(lote)){
+          const encolhe = (l, p) => {
+            const m = { ...l };
+            if(fr.f === 'n') m.y1 = m.y0 + p; else if(fr.f === 's') m.y0 = m.y1 - p;
+            else if(fr.f === 'o') m.x1 = m.x0 + p; else m.x0 = m.x1 - p;
+            return m;
+          };
+          let achou = null;
+          for(const p of [48, 32]) if(p < prof && !esbarra(encolhe(lote, p))){ achou = encolhe(lote, p); break; }
+          if(!achou) continue;
+          lote = achou;
+        }
         if(cantosDoLote(lote).some(([x, y]) => noCampo(x, y))) continue;
         for(const [k, sd] of Object.entries(SEDES)){
           if(sedeDe[k]) continue;
@@ -570,39 +649,51 @@ TO.dados.plantaEstadio = (function(){
     }
     if(!raso) q.quintal = { x0:q.ix0+prof, x1:q.ix1-prof, y0:q.iy0+prof, y1:q.iy1-prof, alt:10, cor:'#a8a08c' };
   }
+  /* AS CASAS DA AVENIDA: caminha ao longo de cada trecho, um lote de
+     cada lado, fundo fixo (PROF_AV) e frente contínua. Aceita se os
+     quatro cantos caem no miolo de um mesmo quarteirão e não pisam em
+     outra casa da avenida; se não cabe, tenta mais estreito antes de
+     desistir — é o que fecha a frente perto das esquinas. Vêm ANTES
+     dos lotes axiais, que desviam delas. */
+  for(const av of AVENIDAS){
+    for(const sg of av.segs){
+      for(const lado of [-1, 1]){
+        let t = 6;
+        while(t < sg.L - 30){
+          let colocado = false;
+          for(const w of [par8(entre(64, 112)), 56, 40]){
+            if(t + w > sg.L - 6) continue;
+            /* fundo cheio primeiro; perto da esquina, mais raso */
+            for(const h of [PROF_AV, 64, 48]){
+              const off = av.l/2 + CALC + h/2 + 2;
+              const cx = sg.x0 + sg.ux*(t + w/2) - sg.uy*off*lado;
+              const cy = sg.y0 + sg.uy*(t + w/2) + sg.ux*off*lado;
+              const q = celulaEm(cx, cy);
+              if(!q || q.tipo !== 'quadra') continue;
+              const tipo = tipoDoLote(q);
+              const T = TIPOS[tipo];
+              const lote = { quadra:q, frente:'av', tipo, cx, cy, w, h, ang: sg.ang,
+                             alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
+              const cantos = cantosDoLote(lote);
+              const cabe = cantos.every(([x, y]) => x >= q.ix0 && x < q.ix1 && y >= q.iy0 && y < q.iy1) &&
+                           !cantos.some(([x, y]) => q.lotes.some(o => dentroLote(x, y, o))) &&
+                           !cantos.some(([x, y]) => noCampo(x, y));
+              if(cabe){ LOTES.push(lote); q.lotes.push(lote); t += w + 2; colocado = true; break; }
+            }
+            if(colocado) break;
+          }
+          if(!colocado) t += 16;
+        }
+      }
+    }
+  }
+
   QUADRAS.forEach(lotear);
   for(const q of QUADRAS){
     const pts = [];
     for(let k=0;k<=8;k++){ const t = k/8; pts.push([q.x0 + (q.x1-q.x0)*t, q.y0], [q.x0 + (q.x1-q.x0)*t, q.y1], [q.x0, q.y0 + (q.y1-q.y0)*t], [q.x1, q.y0 + (q.y1-q.y0)*t]); }
     pts.push([q.cx, q.cy]);
-    q.cortada = pts.some(([x, y]) => naAvenida(x, y));
-  }
-
-  /* as casas rotacionadas na frente das avenidas: caminha ao longo do
-     eixo, um lote de cada lado, e só aceita se os quatro cantos caem no
-     miolo de um mesmo quarteirão e não pisam em lote que já existe */
-  for(const av of AVENIDAS){
-    for(const lado of [-1, 1]){
-      let t = 30;
-      while(t < av.L - 30){
-        const w = par8(entre(56, 112)), h = par8(entre(56, 80));
-        const off = av.l/2 + CALC + h/2 + 2;
-        const cx = av.x0 + av.ux*(t + w/2) - av.uy*off*lado;
-        const cy = av.y0 + av.uy*(t + w/2) + av.ux*off*lado;
-        const q = celulaEm(cx, cy);
-        const tipo = q && q.tipo === 'quadra' ? tipoDoLote(q) : null;
-        if(tipo){
-          const T = TIPOS[tipo];
-          const lote = { quadra:q, frente:'av', tipo, cx, cy, w, h, ang: av.ang,
-                         alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
-          const cantos = cantosDoLote(lote);
-          const cabe = cantos.every(([x, y]) => x >= q.ix0 && x < q.ix1 && y >= q.iy0 && y < q.iy1) &&
-                       !cantos.some(([x, y]) => q.lotes.some(o => !o.ang && dentroRet(x, y, o)));
-          if(cabe){ LOTES.push(lote); q.lotes.push(lote); }
-        }
-        t += w + 4;
-      }
-    }
+    q.cortada = pts.some(([x, y]) => naFaixaDaAvenida(x, y, CALC));
   }
 
   /* ---- as moitas do mato: só onde é mato, num balde espacial ---- */
@@ -612,7 +703,8 @@ TO.dados.plantaEstadio = (function(){
   for(let n=0;n<2600;n++){
     const x = VX0 + rng()*VW, y = VY0 + rng()*VH;
     if(zona(x, y) !== 'mato') continue;
-    if(x >= 0 && y >= 0 && x < W && y < H && (naRua(x, y) || naAvenida(x, y))) continue;
+    if(naAvenida(x, y, CALC + 10)) continue;
+    if(x >= 0 && y >= 0 && x < W && y < H && naRua(x, y)) continue;
     const m = { x, y, r: entre(16, 40) };
     MOITAS.push(m);
     if(x >= -BALDE && y >= -BALDE){
@@ -635,7 +727,7 @@ TO.dados.plantaEstadio = (function(){
     [[-40,300],[60,330],[140,420],[190,520],[230,610]].map(p => pxm(p[0], p[1])),
     [[-40,760],[40,720],[120,700],[200,690],[240,700]].map(p => pxm(p[0], p[1])),
     [[-40,900],[60,880],[150,930],[230,980],[250,1000]].map(p => pxm(p[0], p[1])),
-    [[150,-40],[190,60],[260,120],[330,250]].map(p => pxm(p[0], p[1]))
+    [[100,-40],[130,80],[120,160],[60,230]].map(p => pxm(p[0], p[1]))
   ];
 
   /* ---- carros na guia: nas ruas em volta do estádio e na orla ---- */
@@ -684,11 +776,11 @@ TO.dados.plantaEstadio = (function(){
     if(q.x0 >= QEST_X1 + RUA && q.x0 <= QEST_X1 + RUA + 4)
       for(let y = q.y0 + 90; y < q.y1 - 40; y += passo) POSTES.push({ x: q.x0 + 8, y, dx:-1, dz:0 });
   }
-  {
-    const av = AVENIDAS[0];
-    for(let t = 60; t < av.L - 40; t += 220){
-      const off = av.l/2 + 10;
-      POSTES.push({ x: av.x0 + av.ux*t - av.uy*off, y: av.y0 + av.uy*t + av.ux*off, dx: av.uy, dz: -av.ux });
+  for(const sg of AVENIDAS[0].segs){
+    for(let t = 60; t < sg.L - 40; t += 220){
+      const off = AVENIDAS[0].l/2 + 10;
+      const x = sg.x0 + sg.ux*t - sg.uy*off, y = sg.y0 + sg.uy*t + sg.ux*off;
+      if(x >= 0 && y >= 0 && x < W && y < H) POSTES.push({ x, y, dx: sg.uy, dz: -sg.ux });
     }
   }
 
@@ -706,7 +798,7 @@ TO.dados.plantaEstadio = (function(){
 
   const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC,
                    COLUNAS, LINHAS, CELULAS, QUADRAS, grade, celulaEm, zona, xCosta, PRAIA, ORLA,
-                   CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, CAMPOS, CERCA, PORTEIRA,
+                   CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, bordasX, bordasY, CAMPOS, CERCA, PORTEIRA,
                    ARQ_VARZEA, noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe };
 

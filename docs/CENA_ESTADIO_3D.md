@@ -98,15 +98,27 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   — calçada de 32 em volta, lotes de frente contínua, quintal no miolo;
   fora, é mato, praia ou mar. O mapa é tratado com a grade alinhada aos
   eixos (no desenho ela é girada uns 15°), e a costa fica em diagonal.
+  **A rua só existe entre células urbanas** (`naRua` olha as células
+  encostadas na faixa): a grade acaba no último quarteirão, sem toco de
+  asfalto pelo mato, e a pintura segue a mesma regra, célula por célula.
 - **A costa.** `xCosta(y)`, uma função do mapa: além dela é mar
   (bloqueia); 45 px pra dentro é praia (anda); mais 14 px é a avenida
   beira-mar. Os quarteirões que cruzam a orla terminam nela.
-- **As avenidas diagonais** — a grande do canto sudoeste até o estádio, a
-  do noroeste, as duas saídas pro oeste — são bandas andáveis que cortam os
-  quarteirões de verdade, e ganham **casas rotacionadas** na frente (o
-  lote tem ângulo; `dentroLote` gira o ponto). Os lotes axiais que
-  encostam na avenida saem, e o quarteirão cortado não ganha laje de
-  calçada no 3D (a laje cobriria a avenida; fica a pintura).
+- **As avenidas** são **linhas de vários pontos** com largura — não um
+  segmento: a do sudoeste entra pelo canto, dobra e morre na rua sul do
+  estádio; a do noroeste nasce numa rua da grade e sai da cidade pelo norte;
+  as duas do oeste e a do norte saem da cidade e viram estrada pelo mato
+  até a borda do que se desenha. `distAvenida` mede até o trecho mais
+  perto; a banda é andável (com calçada) e corta os quarteirões de
+  verdade. Fora do contorno da cidade a pintura tira a calçada — é estrada.
+  A frente da avenida é de **casas rotacionadas** (o lote tem ângulo;
+  `dentroLote` gira o ponto), que entram ANTES dos lotes axiais e tentam
+  fundos menores perto da esquina; o lote axial que pisa numa delas ou na
+  calçada da avenida encolhe pro lado da frente (48, depois 32) antes de
+  sair. Quem decide "casa da avenida" é a faixa **sem a ponta redonda**
+  (`naFaixaDaAvenida`): a avenida acaba numa rua, e o quarteirão do outro
+  lado não é dela — com a ponta contando, ele ficava pelado. O quarteirão
+  cortado não ganha laje de calçada nem quintal no 3D.
 - **Os campos de várzea** são células grandes abertas com cerca de mourão
   (bloqueia, com porteira no meio dos lados norte e sul), arquibancadinha
   de três degraus (bloqueia) e traves.
@@ -264,6 +276,20 @@ Nada de mecânica nova. O que há:
    foto da briga o líder estava com a cabeça dentro de uma viga. Viga só
    de r = 124 pra fora, onde o teto passa de 53; perto da parede o teto é
    liso.
+11. **As avenidas ficaram feias.** O dono perguntou se "rua com curva é
+   ruim de fazer". Não é — o feio era outra coisa, visto nas fotos de
+   perto: quarteirões pelados dos dois lados da avenida (o lote axial saía
+   se chegasse a 126 da avenida, e a ponta redonda da avenida contava, então
+   até o quarteirão do outro lado da esquina perdia as casas), tocos de
+   asfalto da grade entrando pelo mato até a linha do contorno, calçada de
+   avenida acompanhando a estrada pelo deserto, e a avenida do sudoeste
+   como um segmento reto que não desaguava em rua nenhuma. As avenidas
+   viraram linhas de vários pontos que nascem e morrem em rua da grade ou
+   saem da cidade como estrada; a rua da grade passou a existir só entre
+   células urbanas; a calçada da avenida é recortada pelo contorno; e os
+   lotes ganharam segunda chance (casa rotacionada com fundo menor, lote
+   axial encolhido). De 656 lotes (28 na avenida) pra 714 (39). A máscara
+   continua 100 % alcançável.
 
 ## 8. A caminhada do líder
 
