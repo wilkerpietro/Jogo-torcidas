@@ -641,18 +641,38 @@ export function criar(canvas) {
       if (posSuave.y < chaoAli + 12) posSuave.y = chaoAli + 12;
     }
 
-    /* o sólido empurra a câmera pra perto: anda do líder até a
-       posição e para no primeiro concreto ou prédio */
+    /* A MARCHA DO SÓLIDO: anda do líder até a posição da câmera.
+       CHÃO LEVANTA, PAREDE PARA. A regra antiga parava no primeiro
+       concreto e recuava pra 55% do braço — e numa escada, num degrau
+       ou num telhado 55% do braço é no chão: a câmera parava rente ao
+       piso e a tela virava concreto. Agora cada amostra do caminho
+       levanta a câmera pra 10 acima do chão dali (`P.piso` sabe em que
+       andar a amostra está), e só parede, teto, pilar ou árvore fazem
+       ela parar. É o que faz a câmera subir por cima do parapeito
+       quando o líder está na última fila, e olhar o buraco do
+       vomitório de cima quando ele desce. */
     const dx = posSuave.x - alvoSuave.x, dz = posSuave.z - alvoSuave.z;
     const dy = posSuave.y - alvoSuave.y;
+    let alturaMin = 0;
     for (let n = 1; n <= 14; n++) {
       const t = n / 14;
-      if (!P.solido(alvoSuave.x + dx * t, alvoSuave.y + dy * t, alvoSuave.z + dz * t)) continue;
+      const sx = alvoSuave.x + dx * t, sz = alvoSuave.z + dz * t;
+      let sy = alvoSuave.y + dy * t;
+      const ch = P.piso(sx, sy, sz) + 10;
+      if (ch > alturaMin) alturaMin = ch;
+      if (sy < ch) sy = ch;
+      if (!P.solido(sx, sy, sz)) continue;
       const u = Math.max(0.55, (n - 1) / 14);
       posSuave.x = alvoSuave.x + dx * u;
       posSuave.z = alvoSuave.z + dz * u;
       posSuave.y = alvoSuave.y + dy * u;
       break;
+    }
+    if (posSuave.y < alturaMin) posSuave.y = alturaMin;
+    /* e embaixo da laje o teto continua mandando, depois de tudo */
+    if (sobLaje) {
+      const tetoAli = P.teto(posSuave.x, posSuave.z);
+      if (posSuave.y > tetoAli - 10) posSuave.y = Math.max(tetoAli - 10, alvoSuave.y - 26);
     }
     if (posSuave.y < 8) posSuave.y = 8;
     cam.position.copy(posSuave);

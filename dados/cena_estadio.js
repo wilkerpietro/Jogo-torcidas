@@ -517,10 +517,14 @@ TO.dados.plantaEstadio = (function(){
        cima continua sendo laje */
     const vm = vomitorioMundo(X, Z);
     if(vm){
-      if(Y < vm.piso) return true;
-      if(vm.buraco) return false;
-      const topo = r < D.arq ? alturaDegrau(r) : TOPO_ARQ;
-      return Y > topo - ALT.laje && Y < topo;
+      if(Y < vm.piso) return true;                 // dentro do degrau da escada
+      if(vm.buraco) return false;                  // céu aberto
+      if(Y <= tetoDe(r)) return false;             // o vão do túnel
+      /* acima do teto do túnel é o que está por cima dele: o degrau da
+         arquibancada, o parapeito ou a laje de trás */
+      if(r < D.arq) return Y < alturaDegrau(r);
+      if(r < D.parapeito) return Y < ALT.parapeito;
+      return Y < TOPO_ARQ;
     }
     if(r >= R.calcada1){
       const l = noLote(X, Z);
@@ -549,6 +553,26 @@ TO.dados.plantaEstadio = (function(){
     const vm = vomitorioMundo(X, Z);
     if(vm && vm.buraco) return Infinity;            // o buraco é céu aberto
     return tetoDe(r);
+  }
+  /* O CHÃO SOB UM PONTO: a superfície andável (ou pisável pela câmera)
+     logo abaixo de (X, Y, Z), levando em conta o andar em que Y está
+     — no corredor é o piso, em cima da laje é a arquibancada, no
+     buraco é a escada, no bairro é o telhado. A câmera usa isto pra
+     NÃO parar no chão: chão levanta a câmera; só parede e teto param. */
+  function piso(X, Y, Z){
+    const r = distMundo(X, Z);
+    if(r >= R.calcada1){ const l = noLote(X, Z); return l ? l.alt : 0; }
+    const vm = vomitorioMundo(X, Z);
+    if(vm){
+      if(vm.buraco || Y < tetoDe(r)) return vm.piso;
+      return r < D.arq ? alturaDegrau(r) : r < D.parapeito ? ALT.parapeito : TOPO_ARQ;
+    }
+    if(r < D.pista) return 0;
+    if(r < R.corred0) return alturaDegrau(r);
+    if(r < D.arq) return Y < tetoDe(r) ? 0 : alturaDegrau(r);
+    if(r < D.parapeito) return Y < tetoDe(r) ? 0 : ALT.parapeito;
+    if(r < R.fachada1) return Y < tetoDe(r) ? 0 : TOPO_ARQ;
+    return 0;
   }
   /* a superfície de cima naquele ponto do mundo */
   function superficie(X, Z){
@@ -587,7 +611,7 @@ TO.dados.plantaEstadio = (function(){
            VOM, VOMITORIOS, noVomitorio, vomitorioMundo, rampa, pisoEscada,
            PORTOES, noPortao, noPortaoMundo, LOJA, LOJAS, naLoja,
            QUADRAS, LOTES, CARROS, ARVORES, TORRES, SEDES, noLote, noCarro,
-           faixaDe, dobra, mundo, onde, anda, solido, teto, superficie, mascara };
+           faixaDe, dobra, mundo, onde, anda, solido, piso, teto, superficie, mascara };
 })();
 
 /* =========================================================
