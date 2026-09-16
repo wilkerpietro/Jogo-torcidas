@@ -6756,6 +6756,75 @@ torcida que a gente nunca viu.
 
 Varredura de dois anos sem exceção e sem travamento.
 
+## Ninguém pede pra largar quem ela própria abraça (dono, 16/09/2026)
+
+O dono leu na tela de eixos: "Remista puxou Jovem Garra Tricolor pra
+longe de Jovem Sport" — com as três de bem entre si. A régua dele:
+**quem senta a mesa só cobra distância de um rival ou maior rival DELA**.
+
+A lista de alvos do `afastar` vinha de `maioresRivaisDoEixo`, que junta
+os maiores rivais de TODOS os membros do eixo. A anfitriã acabava
+cobrando afastamento de uma torcida que ela mesma tinha como aliada ou
+irmã — bastava a treta ser de outro membro. Agora o alvo passa por um
+teste a mais: a relação da anfitriã com ele tem de ser Rival ou Maior
+Rival, e irmã nunca entra.
+
+Medido em quatro anos: 8 afastares, **nenhum incoerente**.
+
+## A Libertadores joga ida e volta (correção do dono, 16/09/2026)
+
+Dois defeitos no mesmo lugar, os dois só no caminho do clube do JOGADOR
+— os outros 30 clubes já decidiam no agregado desde sempre.
+
+**1. Empate em fase de grupos ia pra pênaltis.** A agenda da Conmebol do
+clube do jogador mora em `comp.mata`, porque é de lá que sai o jogo
+dele; e tudo que está em `mata` era tratado como mata-mata, então toda
+fecha de grupo empatada ia pra disputa. Empate em grupo é empate, vale
+um ponto pra cada: a fecha agora nasce marcada com `grupo:true` e o
+`decideNaPartida` a deixa passar sem vencedor.
+
+**2. O mata-mata era mão única.** Prévia, playoff, oitavas, quartas e
+semi decidiam em um jogo só. Agora cada fase tem as duas pernas — a ida
+na casa de quem tem a campanha pior e a volta na casa de quem tem a
+melhor, a mesma orientação do agregado das IAs —, a soma dos dois
+placares classifica e só o empate no agregado vai pros pênaltis, na
+volta. A **final continua em jogo único**, em campo neutro. As prévias
+ganharam a volta na semana seguinte; havia folga de sobra no calendário.
+A fase só fecha depois da volta (`ultimaSemana`).
+
+Medido em cinco anos com a Mancha Verde: **57 jogos de Conmebol, 9
+empates de grupo e nenhum foi pra pênaltis**; das 22 partidas de
+mata-mata, as duas únicas de mão única foram as duas **Finais**. Um
+exemplo do agregado funcionando: oitavas com ida 5×1 e volta 1×1,
+agregado 6×2.
+
+O itinerário foi conferido junto: 32 jogos de Conmebol em três anos, com
+prévia, playoff, grupos, oitavas, quartas e semi — **todos com cartão de
+partida e itinerário montado**, iguais aos de campeonato nacional.
+Varredura de dois anos sem travamento e sem exceção.
+
+## O empacotador mora no repositório (16/09/2026)
+
+O contêiner foi reciclado e o `bundle.py`, que vivia só na área de
+rascunho da sessão, sumiu junto. Reescrito como
+`ferramentas/empacotar_jogo.py`, agora versionado com o resto: ele lê o
+`index.html`, transforma cada folha de estilo em `<style>` e cada script
+em `<script>`, troca no próprio texto os caminhos de foto que os
+arquivos de `dados/` citam literalmente, e monta o dicionário
+`window.__EMBUTIDOS` com escudos, bandeiras e fotos de cidade — que o
+jogo pede em tempo de execução com o id montado na hora.
+
+As fotos originais somam 12,5 MB depois do base64 e, com os 7,8 MB de
+código, o pacote cru dava 23,2 MB — acima do teto de 16 do artifact. O
+empacotador reencoda em webp **só a cópia embutida** (cenas a 1280px e
+qualidade 72, cidades a 900px, escudos a 256px e qualidade 82); os
+arquivos de `img/` ficam intactos. Resultado: **15,63 MB**, com as 318
+imagens do dicionário e as 20 embutidas no texto.
+
+Conferido no navegador abrindo o arquivo único: jogo inicia, 60 dias
+rodam, 68 imagens na tela e nenhuma quebrada. O pacote gerado entrou no
+`.gitignore` — quem se versiona é a ferramenta, não a saída.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

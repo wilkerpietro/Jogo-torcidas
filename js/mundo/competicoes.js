@@ -1015,6 +1015,16 @@ TO.competicoes = (function(){
     };
   }
 
+  /* QUEM DECIDE NA PARTIDA (correção do dono, 16/09/2026)
+     Nem toda linha guardada em `comp.mata` é mata-mata: a fase de
+     grupos da Libertadores e da Sul-Americana do clube do jogador mora
+     ali também, porque é de lá que sai a agenda dele. Sem esta trava,
+     todo empate de fecha de grupo ia pra disputa de pênaltis — e
+     empate em grupo é empate, vale um ponto pra cada. Ida e volta
+     também não decide na partida: quem decide é o agregado. */
+  const decideNaPartida = m =>
+    !m.grupo && m.perna !== 'ida' && m.perna !== 'volta';
+
   /* soma dos dois jogos; empatou, pênaltis */
   function decidirAgregado(E, comp, volta){
     const ida = comp.mata.find(m=>m.indice===volta.indice && m.perna==='ida');
@@ -1204,7 +1214,7 @@ TO.competicoes = (function(){
           const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c, j.f));
           j.gc = a; j.gf = b;
           /* em ida e volta quem decide é o agregado, não a partida */
-          if(m.perna !== 'ida' && m.perna !== 'volta'){
+          if(decideNaPartida(m)){
             j.venceu = a>b ? j.c : b>a ? j.f
                      : penaltisNoJogo(E, j, j.c, j.f,
                                       {comp:comp.nome, fase:m.fase});
@@ -1275,7 +1285,7 @@ TO.competicoes = (function(){
           if(j.gc !== undefined && j.gc !== null) continue;
           const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c));
           j.gc = a; j.gf = b;
-          if(m.perna !== 'ida' && m.perna !== 'volta'){
+          if(decideNaPartida(m)){
             j.venceu = a>b ? j.c : b>a ? j.f
                      : penaltisNoJogo(E, j, j.c, j.f,
                                       {comp:comp.nome, fase:m.fase});

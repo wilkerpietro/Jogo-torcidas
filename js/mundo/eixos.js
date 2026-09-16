@@ -530,11 +530,24 @@ TO.eixos = (function(){
           peso: 1 + (dentro ? 2 : 0)});
       }
     }
-    /* 3: a parceira que anda com um maior rival do eixo */
+    /* 3: a parceira que anda com um maior rival do eixo
+       NINGUÉM PEDE PRA LARGAR QUEM ELA PRÓPRIA ABRAÇA (correção do dono,
+       16/09/2026): a lista de alvos vinha dos maiores rivais do EIXO —
+       dos outros membros, portanto —, e a anfitriã acabava puxando uma
+       parceira pra longe de uma torcida que ELA mesma tinha como aliada
+       ou irmã. Saía "a Remista puxou a Jovem Garra Tricolor pra longe da
+       Jovem Sport" com as três de bem. Quem senta a mesa só cobra
+       distância de quem é rival ou maior rival DELA. */
+    const hostilPraAnfitria = r => {
+      if(M().saoIrmas && M().saoIrmas(aId, r)) return false;
+      const st = M().statusDoValor(relDe(E, aId, r));
+      return st === 'Rival' || st === 'Maior Rival';
+    };
     if(rivaisDoEixo.size) for(const p of parceiras){
       if(!noEixo(p.id)) continue;
       for(const r of rivaisDoEixo){
-        if(r === nos || r === p.id) continue;
+        if(r === nos || r === p.id || r === aId) continue;
+        if(!hostilPraAnfitria(r)) continue;
         const v = relDe(E, p.id, r);
         if(v < DIPLO_ALIADO) continue;
         if(M().saoIrmas && M().saoIrmas(p.id, r)) continue;   // irmã não se larga
