@@ -1055,6 +1055,25 @@ TO.relacoes = (function(){
      ======================================================= */
   const chaveDe = (a,b) => a < b ? a+'|'+b : b+'|'+a;
 
+  /* =======================================================
+     O GANHO QUE ENCOLHE (régua do dono, 17/09/2026)
+     Convite de festa e recepção de caravana somavam sem teto: no
+     save do dono, 1.232 alianças viraram irmandade em cinco anos por
+     essas duas vias. Agora, por dupla de torcidas e por via, o
+     PRIMEIRO do ano vale cheio e cada repetição vale METADE do
+     anterior (8, 4, 2, 1, 1, 0…). Vale pra nós e pras IAs, nos dois
+     sentidos, e zera na virada do ano. As perdas (não receber,
+     recusar) seguem inteiras.
+     ======================================================= */
+  function ganhoRepetido(E, a, b, via, base){
+    const ano = E.data.ano;
+    if(!E.repeticoes || E.repeticoes.ano !== ano) E.repeticoes = {ano, n:{}};
+    const ch = `${via}|${chaveDe(a, b)}`;
+    const n = E.repeticoes.n[ch] || 0;
+    E.repeticoes.n[ch] = n + 1;
+    return Math.round(base / Math.pow(2, n));
+  }
+
   function relacaoDelas(E, a, b){
     E.relacoesDelas = E.relacoesDelas || {};
     const ch = chaveDe(a,b);
@@ -2142,8 +2161,8 @@ TO.relacoes = (function(){
         (ta.recepcoes = ta.recepcoes || []).push({sem: semanaAbs(E), v: custo});
       }
       moverRelacao(E, o.id, anf.id,
-        nivel === 'escolta'  ? REL.hospedarEscolta
-      : nivel === 'hospedar' ? REL.hospedar
+        nivel === 'escolta'  ? ganhoRepetido(E, o.id, anf.id, 'caravana', REL.hospedarEscolta)
+      : nivel === 'hospedar' ? ganhoRepetido(E, o.id, anf.id, 'caravana', REL.hospedar)
       : -REL.naoReceber);
     }
   }
@@ -2513,7 +2532,8 @@ TO.relacoes = (function(){
           U.rng() < U.limitar(0.5 + rel/100, 0.15, 0.95);
         if(aceita){
           if(t) t.caixa -= 2000;
-          moverRelacao(E, o.id, c.id, REL.iaConviteAceito);
+          moverRelacao(E, o.id, c.id,
+            ganhoRepetido(E, o.id, c.id, 'festa', REL.iaConviteAceito));
         } else {
           moverRelacao(E, o.id, c.id, -REL.iaConviteRecusado);
         }
@@ -2754,7 +2774,7 @@ TO.relacoes = (function(){
           brigasDeHoje, mundoDia, brigaIA, disponiveisIA, foraDeCombate, baixasIA,
           convitesDeAniversario,
           mundo, balanco, economiaDelas, ORDEM, proximaCompra, EXPEDIENTE,
-          PRESENTES, ROTULO_PRESENTE, presenteDe, presentear,
+          PRESENTES, ROTULO_PRESENTE, presenteDe, presentear, ganhoRepetido,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,

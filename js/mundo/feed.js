@@ -302,8 +302,11 @@ TO.feed = (function(){
     const REL = TO.relacoes.REL;
     if(ir){
       TO.estado.lancar(E, `Presença na festa da ${item.nome}`, -2000);
+      /* o ganho encolhe a cada festa da mesma torcida no ano (17/09/2026) */
+      item.ganho = TO.relacoes.ganhoRepetido(E, E.torcida.id, torcidaId,
+                                            'festa', REL.irAniversario);
       E.relacoes[torcidaId] = Math.max(-100, Math.min(100,
-        TO.relacoes.nivel(E, torcidaId) + REL.irAniversario));
+        TO.relacoes.nivel(E, torcidaId) + item.ganho));
       TO.relacoes.marcarAjuda(E, torcidaId);
       item.resposta = 'ir';
       mensagemDe(E, torcidaId, `Valeu pela presença, irmão. A festa ficou completa `+
@@ -319,9 +322,13 @@ TO.feed = (function(){
     const foi = lista.filter(x=>x.resposta==='ir').length;
     const furou = lista.filter(x=>x.resposta==='nao').length;
     const cada = n => n === 1 ? 'com ela' : 'com cada uma';
+    const ganhos = lista.filter(x=>x.resposta==='ir')
+      .map(x=>x.ganho != null ? x.ganho : REL.irAniversario);
+    const somaG = ganhos.reduce((a,b)=>a+b, 0);
     m.consequencia =
       (foi ? `${foi} ${foi===1?'festa':'festas'}: ${U.dinheiro(-2000*foi)} · `+
-             `+${REL.irAniversario} de relação ${cada(foi)}. ` : '') +
+             (foi === 1 ? `+${somaG} de relação com ela. `
+                        : `+${somaG} de relação no total (${ganhos.join(', ')}). `) : '') +
       (furou ? `${furou} ${furou===1?'furada':'furadas'}: −${REL.furarAniversario} `+
                `de relação ${cada(furou)} · Prestígio −${2*furou}.` : '');
     if(lista.every(x=>x.resposta)){
@@ -3042,11 +3049,13 @@ TO.feed = (function(){
           `com o bonde de vocês. Casa aberta sempre.`, 'agradecimento');
         TO.estado.lancar(E, `Presença na festa da ${(m.dados||{}).nome}`, -2000);
         E.relacoes = E.relacoes || {};
+        const ganhoF = TO.relacoes.ganhoRepetido(E, E.torcida.id, id, 'festa',
+                                                 TO.relacoes.REL.irAniversario);
         E.relacoes[id] = Math.max(-100, Math.min(100,
-          TO.relacoes.nivel(E, id) + TO.relacoes.REL.irAniversario));
+          TO.relacoes.nivel(E, id) + ganhoF));
         /* aparecer na festa é gesto: zera o relógio da indiferença */
         TO.relacoes.marcarAjuda(E, id);
-        m.consequencia = `Fomos. +${TO.relacoes.REL.irAniversario} de relação `+
+        m.consequencia = `Fomos. +${ganhoF} de relação `+
                          `com a ${(m.dados||{}).nome}.`;
         return {ok:true};
       }

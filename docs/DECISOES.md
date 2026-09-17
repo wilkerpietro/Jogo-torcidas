@@ -7149,6 +7149,14 @@ nos pênaltis): todos os placares na mesma coluna, nenhuma bolinha,
 
 **Medido** (Playwright, TUF): dropdown da subsede com as duas filiais e preços; trocar pra segunda muda o preço de 70 pra 140 mil; ampliar São Paulo levou a filial a nível 2 por R$ 70 mil e o dropdown passou a oferecer "nível 2 → 3". Presente: com a Jovem Garra Tricolor (sede 1) loja, bar e filial travam com o motivo certo e a sede custa R$ 40 mil; com a Bamor (sede 4) loja R$ 50 mil, bar R$ 40 mil, filial R$ 90 mil em São Paulo; dar a loja custou R$ 50 mil, a Bamor ficou com 1 loja, a relação foi de 22 pra 27, e as duas anotações saíram.
 
+## O ganho que encolhe, e a subsede ataca com o núcleo dela (régua do dono, 17/09/2026)
+
+**O ganho que encolhe.** Convite de festa e recepção de caravana somavam relação sem teto — no save do dono, 1.232 alianças viraram irmandade em cinco anos por essas duas vias. O dono escolheu, entre três desenhos, o ganho que encolhe: por dupla de torcidas e por via, o primeiro do ano vale cheio e cada repetição vale metade do anterior (festa: 8, 4, 2, 1, 1, 0; caravana com escolta: 12, 6, 3, 2, 1…; churrasco: 20, 10, 5, 3, 1…). Zera na virada do ano. Vale pra nós e pras IAs, nos dois sentidos: a festa das IAs (`iaConviteAceito`), a recepção de caravana entre elas (`hospedar`/`hospedarEscolta`), a nossa presença na festa de uma aliada (`irAniversario`, na lista mensal e no cartão antigo), a recepção que pedimos fora (`pedirAjuda`) e a que damos em casa (`cobrarRecepcoes`). As perdas (não receber, furar a festa, convite recusado) seguem inteiras. `TO.relacoes.ganhoRepetido(E, a, b, via, base)`, contador em `E.repeticoes` (ano + chaves `via|a|b`). O cartão da lista de aniversários passa a mostrar o ganho real de cada festa.
+
+**Medido** (Playwright): sequência 8, 4, 2, 1, 1, 0 pra festa e 20, 10, 5, 3 pra churrasco; outra dupla começa em 8; ano novo volta a 8. Um ano de mundo com a TUF: 0 duplas em 100, 71 em irmandade (≥ 70) entre 74 mil, 1.222 duplas com repetição anotada, no máximo 5 repetições numa dupla.
+
+**A subsede ataca com o núcleo dela.** O dono recebeu um ataque da subsede da Terror Bicolor em Fortaleza sobre o bar da TUF: a subsede tem 8, a cena trouxe 41. A cena de defesa (`abrirAtaqueAoBar`, que atende bar, emboscada, concentração e pista) contava o efetivo da torcida INTEIRA (`efetivoDePe`), ignorando o `efetivo` que o ataque marcado já trazia. Agora, ataque com `filial:true` desce com o núcleo de lá, inteiro (mínimo 4, e o desconto de ferido continua), e o nome na cena é o da subsede ("Bamor Sub-Sede Fortaleza"). Medido: torcida de 300 membros com subsede de 8 → cena "Bamor Sub-Sede Fortaleza 8 × Leões da TUF 38".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

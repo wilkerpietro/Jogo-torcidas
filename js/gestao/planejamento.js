@@ -295,8 +295,12 @@ TO.planejamento = (function(){
     const r = respostaDaAjuda(E, aliadoId, j);
     const rec = recepcaoDe(r.nivel);
     E.relacoes = E.relacoes || {};
+    /* o ganho encolhe a cada repetição no ano (régua do dono, 17/09/2026) */
+    const ganho = rec.relacao > 0
+      ? TO.relacoes.ganhoRepetido(E, E.torcida.id, aliadoId, 'caravana', rec.relacao)
+      : rec.relacao;
     E.relacoes[aliadoId] = U.limitar(TO.relacoes.nivel(E, aliadoId)
-                                     + rec.relacao, -100, 100);
+                                     + ganho, -100, 100);
     let moral = 0;
     if(r.nivel !== 'nada'){
       TO.relacoes.marcarAjuda(E, aliadoId);
@@ -319,7 +323,7 @@ TO.planejamento = (function(){
     const escolta = (r.nivel === 'escolta' || r.nivel === 'churrasco')
       ? Math.min(10, Math.max(0, TO.relacoes.disponiveisIA(E, aliadoId))) : 0;
     p.ajuda = {aliado:aliadoId, nome:o.nome, nivel:r.nivel, escolta,
-               relacao:rec.relacao, moral: Math.round(moral*5),
+               relacao:ganho, moral: Math.round(moral*5),
                mapa:j.mapaAdv, chave:j.chave};
     /* a resposta chega como mensagem dela (mensagens entre torcidas) */
     if(TO.feed && TO.feed.mensagemDe){
@@ -615,8 +619,11 @@ TO.planejamento = (function(){
       if(custo > 0)
         TO.estado.lancar(E, `Recepção da ${a.torcida.nome} `+
                             `(${a.estimativa} cabeças)`, -custo);
+      const relRec = recepcaoDe(nivel).relacao;
       E.relacoes[a.id] = U.limitar((E.relacoes[a.id]||0)
-        + recepcaoDe(nivel).relacao, -100, 100);
+        + (relRec > 0
+            ? TO.relacoes.ganhoRepetido(E, E.torcida.id, a.id, 'caravana', relRec)
+            : relRec), -100, 100);
       if(nivel !== 'nada') TO.relacoes.marcarAjuda(E, a.id);
       p.pago = p.pago || {}; p.pago[a.id] = true;
       /* o aliado agradece — ou anota (mensagens entre torcidas, 08/09/2026) */

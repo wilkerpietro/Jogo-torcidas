@@ -9190,6 +9190,11 @@
       Math.round(membrosDeles * 0.30),
       Math.min(Math.round(membrosDeles * 0.70), Math.round(nossos * 0.9))));
     if(noBar) deles = Math.min(deles, 60);
+    /* A SUBSEDE ATACA COM O NÚCLEO DELA (correção do dono, 17/09/2026):
+       a conta acima olhava a torcida inteira — a Terror Bicolor com 8
+       na subsede de Fortaleza descia com 41. Quem vem é o núcleo de lá,
+       inteiro, e mais ninguém. */
+    if(atq.filial) deles = Math.max(4, Math.round(atq.efetivo || 4));
     /* e o ferido deles da briga anterior também não desce do carro */
     deles = descontoItn(atq.torcida, deles);
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
@@ -9214,7 +9219,8 @@
       {lado:nosso, n:nossos, nossa:true, nome:e.torcida.nome,
        cor:c1.cor, cor2:c1.cor2, cor3:c1.cor3,
        sigla:TO.mundo.siglaTorcida(e.torcida)},
-      {lado:outro, n:deles, nossa:false, nome:(o&&o.nome)||'Rival',
+      {lado:outro, n:deles, nossa:false,
+       nome:(atq.filial && atq.nome) || (o&&o.nome) || 'Rival',
        cor:c2.cor, cor2:c2.cor2, cor3:c2.cor3,
        sigla:o?TO.mundo.siglaTorcida(o):'RIV',
        perfil: perfilDe(atq.torcida)}
