@@ -5935,6 +5935,7 @@
       ['sede',    'Sede e anexos',        'o que a sede comporta, e o que ela ganha'],
       ['pontos',  'Pontos comerciais',    'bar, loja e subsede: rendem todo mês'],
       ['filiais', 'Subsedes em outras cidades', 'núcleo local que recruta, defende e ataca lá'],
+      ['aliados', 'Presente pra aliado',   'a gente paga, o patrimônio é dele — e a relação sobe'],
       ['pessoal', 'Pessoal',              'professor de MMA e advogado: mensalidade no fechamento'],
       ['frota',   'Frota',                'ônibus: a caravana de estrada sai mais barata'],
       ['outros',  'Outros',               ''],
@@ -5950,19 +5951,49 @@
         it.appendChild(el('b',{texto:o.rot}));
         if(o.nota) it.appendChild(el('small',{class:'loja-nota', texto:o.nota}));
         const pe = el('div',{class:'pe'});
-        let sel = null;
-        if(o.escolhas){
-          sel = el('select',{class:'sel-oferta'});
-          for(const esc of o.escolhas) sel.appendChild(el('option',{value:esc.id, texto:esc.rot}));
-          sel.disabled = !!o.trava;
-          it.appendChild(sel);
-        }
+        let sel = null, sel2 = null;
+        const dropdown = escolhas =>{
+          const d = el('select',{class:'sel-oferta'});
+          for(const esc of escolhas) d.appendChild(el('option',{value:esc.id, texto:esc.rot}));
+          d.disabled = !!o.trava;
+          it.appendChild(d);
+          return d;
+        };
+        if(o.escolhas)  sel  = dropdown(o.escolhas);
+        if(o.escolhas2) sel2 = dropdown(o.escolhas2);   // o presente: aliado e melhoria
         const gratis = !o.custo;
-        pe.appendChild(el('span',{class:'preco', texto: gratis ? 'sem custo' : U.dinheiro(o.custo)}));
-        pe.appendChild(botao(gratis ? 'Confirmar' : 'Comprar', o.trava,
-          ()=>comprar(()=>PAT.comprar(e, sel ? o.id+':'+sel.value : o.id))));
+        const preco = el('span',{class:'preco', texto: gratis ? 'sem custo' : U.dinheiro(o.custo)});
+        pe.appendChild(preco);
+        const idDaCompra = ()=> o.id + (sel ? ':'+sel.value : '') + (sel2 ? ':'+sel2.value : '');
+        const bt = botao(gratis ? 'Confirmar' : 'Comprar', o.trava,
+          ()=>comprar(()=>PAT.comprar(e, idDaCompra())));
+        pe.appendChild(bt);
         it.appendChild(pe);
-        if(o.trava) it.appendChild(el('small',{class:'trava', texto:o.trava}));
+        const travaEl = el('small',{class:'trava', texto:o.trava || ''});
+        if(o.trava) it.appendChild(travaEl);
+        /* O PREÇO ACOMPANHA A ESCOLHA (dono, 17/09/2026): subsede a
+           ampliar e presente pro aliado custam conforme o que se
+           escolhe — o preço, a trava e o botão são refeitos a cada
+           mudança do dropdown, sem redesenhar a vitrine. */
+        const afinar = ()=>{
+          let pr = null;
+          if(o.precos && sel && sel2) pr = (o.precos[sel.value] || {})[sel2.value] || null;
+          else if(sel && o.escolhas){
+            const esc = o.escolhas.find(x=>x.id === sel.value);
+            if(esc && esc.custo != null) pr = {custo:esc.custo, trava:esc.trava || null};
+          }
+          if(!pr || o.trava) return;
+          const trava = pr.trava || (pr.custo > e.dinheiro ? 'falta caixa' : null);
+          preco.textContent = pr.custo != null ? U.dinheiro(pr.custo) : '—';
+          bt.disabled = !!trava;
+          travaEl.textContent = trava || '';
+          if(trava && !travaEl.parentNode) it.appendChild(travaEl);
+          if(!trava && travaEl.parentNode) travaEl.remove();
+          it.classList.toggle('travada', !!trava);
+        };
+        if(sel)  sel.onchange  = afinar;
+        if(sel2) sel2.onchange = afinar;
+        afinar();
         gr.appendChild(it);
       }
       sec.appendChild(gr);

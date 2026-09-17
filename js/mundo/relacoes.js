@@ -590,6 +590,64 @@ TO.relacoes = (function(){
     'ampliar:filial':'Ampliação da filial'
   };
 
+  /* =======================================================
+     O PRESENTE PRO ALIADO (pedido do dono, 17/09/2026)
+     A gente paga, o patrimônio é dele: subir a sede, abrir loja,
+     bar ou subsede em outra cidade. Vale a MESMA régua que a fila
+     dela obedece — a sede dela tem de comportar o ponto, a filial
+     precisa de cidade com torcedor do clube dela e de vaga na sede.
+     Quem ganha presente fica mais próximo: a relação sobe um ponto a
+     cada R$ 10 mil do presente, entre 3 e 15 (régua provisória, até o
+     dono cravar a dele).
+     ======================================================= */
+  const PRESENTES = ['sede', 'loja', 'bar', 'filial'];
+  const ROTULO_PRESENTE = {sede:'Ampliar a sede', loja:'Abrir uma loja',
+                           bar:'Abrir um bar', filial:'Abrir subsede em outra cidade'};
+  function presenteDe(E, id, tipo){
+    const t = mundo(E)[id];
+    if(!t) return {custo:null, trava:'torcida fora do mundo'};
+    const T = P().TETO, PT = P().PONTO, SD = P().SEDE, FL = P().FILIAL;
+    if(tipo === 'sede'){
+      const prox = SD[t.sede + 1];
+      return prox ? {custo:prox.custo, rot:`sede nível ${t.sede + 1}`}
+                  : {custo:null, trava:'a sede dela já é o Complexo (nível 6)'};
+    }
+    if(tipo === 'filial'){
+      const lim = FL.porSede[t.sede] || 0;
+      if((t.filiais || []).length >= lim)
+        return {custo:null, trava: lim
+          ? `a sede nível ${t.sede} dela banca ${lim} ${lim===1?'filial':'filiais'}`
+          : `a sede nível ${t.sede} dela ainda não banca filial`};
+      const cidade = melhorCidadeFilial(E, id, t);
+      return cidade
+        ? {custo:FL.compra, cidade, rot:`subsede em ${FIN().nomeCidade(cidade)}`}
+        : {custo:null, trava:'não há cidade com torcedor do clube dela sem subsede'};
+    }
+    const lim = T[tipo][t.sede], cfg = PT[tipo];
+    const quantos = (t[cfg.plural] || []).length;
+    if(quantos >= lim.qtd)
+      return {custo:null, trava:`a sede nível ${t.sede} dela `+
+        (lim.qtd ? `não comporta mais ${cfg.plural}` : `não comporta ${cfg.rot.toLowerCase()}`)};
+    return {custo:cfg.compra, rot: tipo === 'bar' ? 'bar novo' : 'loja nova'};
+  }
+  function presentear(E, id, tipo){
+    const pr = presenteDe(E, id, tipo);
+    if(pr.trava) return null;
+    const t = mundo(E)[id];
+    if(tipo === 'sede') t.sede++;
+    else if(tipo === 'filial')
+      (t.filiais = t.filiais || []).push({cidade:pr.cidade, nivel:1, membros:8});
+    else (t[P().PONTO[tipo].plural] = t[P().PONTO[tipo].plural] || []).push({nivel:1});
+    /* no extrato dela, com o valor do presente — o caixa dela não mexe */
+    (t.extrato = t.extrato || []).unshift(
+      {q:`${E.data.ano} s${E.data.semana}`,
+       d:`Presente da ${E.torcida.nome}: ${pr.rot}`, v:pr.custo});
+    if(t.extrato.length > 36) t.extrato.pop();
+    const ganho = U.limitar(Math.round(pr.custo / 10000), 3, 15);
+    E.relacoes[id] = U.limitar(nivel(E, id) + ganho, -100, 100);
+    return Object.assign({ganho}, pr);
+  }
+
   function espacoDaPraca(E, t){
     const m = E.mundoTorcidas;
     let ocupado = 0;
@@ -2696,6 +2754,7 @@ TO.relacoes = (function(){
           brigasDeHoje, mundoDia, brigaIA, disponiveisIA, foraDeCombate, baixasIA,
           convitesDeAniversario,
           mundo, balanco, economiaDelas, ORDEM, proximaCompra, EXPEDIENTE,
+          PRESENTES, ROTULO_PRESENTE, presenteDe, presentear,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,

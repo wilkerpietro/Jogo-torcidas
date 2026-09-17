@@ -454,14 +454,45 @@ TO.patrimonio = (function(){
         custo:FILIAL.compra, trava:trava(FILIAL.compra, travaF),
         escolhas: cands.map(c=>({id:c.cidade,
           rot:`${c.nome} — ${U.numero(c.torcedores)} torcedores do ${clube}`}))});
-      const alvoF = fs.filter(f=>FILIAL.ampliar[f.nivel])
-                      .sort((a,b)=>a.nivel-b.nivel)[0];
-      if(alvoF) lista.push({id:'ampliar-filial:'+alvoF.cidade,
-        rot:`Ampliar a subsede de ${F().nomeCidade(alvoF.cidade)} `+
-            `para o nível ${alvoF.nivel+1}`,
-        nota:`o núcleo local passa a caber ${FILIAL.teto[alvoF.nivel+1]} membros`,
-        custo:FILIAL.ampliar[alvoF.nivel],
-        trava:trava(FILIAL.ampliar[alvoF.nivel])});
+      /* QUAL SUBSEDE AMPLIAR É ESCOLHA (pedido do dono, 17/09/2026):
+         era sempre a mais fraca; agora é um botão com o dropdown das
+         que ainda sobem, da mais fraca pra mais forte, cada uma com o
+         preço do nível seguinte na própria linha. O preço da vitrine
+         acompanha a escolha. */
+      const sobem = fs.filter(f=>FILIAL.ampliar[f.nivel])
+                      .sort((a,b)=>a.nivel-b.nivel);
+      if(sobem.length) lista.push({id:'ampliar-filial',
+        rot:'Ampliar uma subsede de outra cidade',
+        nota:`nível 2 cabe ${FILIAL.teto[2]} membros, nível 3 cabe ${FILIAL.teto[3]}`,
+        custo:FILIAL.ampliar[sobem[0].nivel],
+        trava:trava(FILIAL.ampliar[sobem[0].nivel]),
+        escolhas: sobem.map(f=>({id:f.cidade, custo:FILIAL.ampliar[f.nivel],
+          rot:`${F().nomeCidade(f.cidade)} — nível ${f.nivel} → ${f.nivel+1} · `+
+              `R$ ${FILIAL.ampliar[f.nivel].toLocaleString('pt-BR')}`}))});
+    }
+
+    /* O PRESENTE PRO ALIADO (pedido do dono, 17/09/2026): dois
+       dropdowns — qual aliado e qual melhoria (sede, loja, bar ou
+       subsede em outra cidade). O preço e a trava dependem dos dois,
+       então vão na tabela `precos[aliado][tipo]` e a vitrine lê na hora. */
+    {
+      const R = TO.relacoes, X = TO.eixos;
+      const aliados = (X && X.aliadosNossos) ? X.aliadosNossos(E) : [];
+      const precos = {};
+      for(const a of aliados){
+        precos[a.id] = {};
+        for(const tipo of R.PRESENTES) precos[a.id][tipo] = R.presenteDe(E, a.id, tipo);
+      }
+      const primeiro = aliados[0] && precos[aliados[0].id].sede;
+      lista.push({id:'presente', rot:'Dar uma melhoria de presente a um aliado',
+        nota:'a gente paga, o patrimônio é dele · a relação com ele sobe '+
+             'um ponto a cada R$ 10 mil do presente (de 3 a 15)',
+        custo:(primeiro && primeiro.custo) || PONTO.loja.compra,
+        trava: aliados.length ? null : 'nenhum aliado (relação de 20 ou mais)',
+        escolhas: aliados.map(a=>({id:a.id,
+          rot:`${a.nome} — relação ${Math.round(R.nivel(E, a.id))}`})),
+        escolhas2: R.PRESENTES.map(t=>({id:t, rot:R.ROTULO_PRESENTE[t]})),
+        precos});
     }
 
     if(!p.fabrica) lista.push({
@@ -506,6 +537,7 @@ TO.patrimonio = (function(){
     if(/^(sede|anexo:|area-treino|fabrica)/.test(id)) return 'sede';
     if(/^(comprar|ampliar):(bar|loja|subsede)$/.test(id)) return 'pontos';
     if(/^(filial|ampliar-filial)/.test(id)) return 'filiais';
+    if(id === 'presente') return 'aliados';
     if(/^(mma|advogado)/.test(id)) return 'pessoal';
     if(id === 'onibus') return 'frota';
     return 'outros';
@@ -740,10 +772,27 @@ TO.patrimonio = (function(){
       const f = opcoes(E).find(x=>x.id === 'filial');
       if(f && (f.escolhas||[]).some(c=>c.id === id.slice(7))) o = f;
     }
+    /* a ampliação da subsede e o presente também chegam com a escolha
+       colada no id ('ampliar-filial:cidade', 'presente:aliado:tipo') */
+    if(!o && id.indexOf('ampliar-filial:') === 0) o = opcoes(E).find(x=>x.id === 'ampliar-filial');
+    if(!o && id.indexOf('presente:') === 0) o = opcoes(E).find(x=>x.id === 'presente');
     if(!o) return {ok:false, msg:'Opção que não existe.'};
     if(o.trava) return {ok:false, msg:`Não dá: ${o.trava}.`};
 
-    const [acao, tipo] = id.split(':');
+    const [acao, tipo, extra] = id.split(':');
+    if(acao==='presente'){
+      const R = TO.relacoes;
+      if(!(o.escolhas||[]).some(a=>a.id === tipo) || !R.PRESENTES.includes(extra))
+        return {ok:false, msg:'Escolha que não existe.'};
+      const pr = R.presenteDe(E, tipo, extra);
+      if(pr.trava) return {ok:false, msg:`Não dá: ${pr.trava}.`};
+      if(E.dinheiro < pr.custo) return {ok:false, msg:'Não dá: falta caixa.'};
+      const nome = (TO.mundo.torcida(tipo)||{}).nome || tipo;
+      const r = R.presentear(E, tipo, extra);
+      if(!r) return {ok:false, msg:'Não deu.'};
+      TO.estado.lancar(E, `Presente pra ${nome}: ${r.rot}`, -r.custo);
+      return {ok:true, msg:`${nome} ganhou ${r.rot}. Relação +${r.ganho}.`};
+    }
     if(acao==='filial'){
       p.filiais = p.filiais || [];
       p.filiais.push({cidade:tipo, nivel:1});
@@ -772,10 +821,13 @@ TO.patrimonio = (function(){
     }
     if(acao==='ampliar-filial'){
       const f = (p.filiais||[]).find(x=>x.cidade === tipo);
-      if(f){ f.nivel++;
-        TO.estado.lancar(E, `Ampliação da subsede de ${F().nomeCidade(tipo)}`+
-                            ` — nível ${f.nivel}`, -o.custo); }
-      return {ok:true, msg:o.rot+'.'};
+      if(!f || !FILIAL.ampliar[f.nivel]) return {ok:false, msg:'Essa subsede não sobe mais.'};
+      const custo = FILIAL.ampliar[f.nivel];
+      if(E.dinheiro < custo) return {ok:false, msg:'Não dá: falta caixa.'};
+      f.nivel++;
+      TO.estado.lancar(E, `Ampliação da subsede de ${F().nomeCidade(tipo)}`+
+                          ` — nível ${f.nivel}`, -custo);
+      return {ok:true, msg:`Subsede de ${F().nomeCidade(tipo)} no nível ${f.nivel}.`};
     }
     if(acao==='sede'){
       E.torcida.sedeNivel++;

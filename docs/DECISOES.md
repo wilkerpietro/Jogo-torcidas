@@ -7135,6 +7135,20 @@ nos pênaltis): todos os placares na mesma coluna, nenhuma bolinha,
 - Sul-Americana (Fortaleza): playoff, oitavas e quartas em ida e volta (30/32, 35/37, 39/41); a semifinal usa a mesma régua (43/45) e a final é única na 48. O mundo simulado fecha cada fase na segunda semana do par, e o resultado do nosso duelo é lido da agenda, não sorteado.
 - Zero cartões `conmebol` no feed depois da mudança.
 
+## A subsede a ampliar é escolha, e o presente pro aliado (pedido do dono, 17/09/2026)
+
+**O pedido.** (1) A opção "Ampliar a subsede de {praça} para o nível 2" precisa de um dropdown pra escolher qual subsede ampliar. (2) Uma opção de dar uma melhoria de presente a um aliado, com um dropdown do aliado e outro do que dar: subir a sede, loja, bar ou filial.
+
+**Ampliar a subsede.** Era sempre a mais fraca. Agora é um botão só, "Ampliar uma subsede de outra cidade", com o dropdown das que ainda sobem (nível 1 e 2), da mais fraca pra mais forte, cada linha com o preço do nível seguinte ("Sao Paulo — nível 1 → 2 · R$ 70.000"). O preço da vitrine acompanha a escolha (`escolhas[].custo`), e a compra confere o caixa contra o preço da subsede escolhida.
+
+**O presente.** Nova seção da Loja, "Presente pra aliado", com dois dropdowns: o aliado (relação de 20 pra cima, a mesma régua do pedido na reunião) e a melhoria — ampliar a sede, abrir loja, abrir bar, abrir subsede em outra cidade. A gente paga o preço de tabela (sede: o do nível seguinte dela; loja R$ 50 mil; bar R$ 40 mil; filial R$ 90 mil) e o patrimônio é dele. Vale a MESMA régua que a fila da IA obedece: a sede dela tem de comportar o ponto (`TETO`), a filial precisa de vaga na sede dela (`FILIAL.porSede`) e de cidade com torcedor do clube dela sem subsede (`melhorCidadeFilial`); a sede 6 não sobe. Quando não dá, o botão trava e diz por quê ("a sede nível 1 dela não comporta loja"). O preço e a trava vêm da tabela `precos[aliado][tipo]` e a vitrine refaz preço, trava e botão a cada mudança dos dropdowns, sem redesenhar.
+
+**A relação sobe** um ponto a cada R$ 10 mil do presente, entre 3 e 15 (loja +5, bar +4, filial +9, sede de +4 a +15). Régua provisória, até o dono cravar a dele. O presente entra nas nossas transações ("Presente pra Bamor: loja nova") e no extrato dela ("Presente da Leões da TUF: loja nova"), sem mexer no caixa dela.
+
+**Onde mora.** `relacoes.js`: `PRESENTES`, `ROTULO_PRESENTE`, `presenteDe(E, id, tipo)` → `{custo, rot}` ou `{trava}`, `presentear(E, id, tipo)`. `patrimonio.js`: opções `ampliar-filial` (com `escolhas`) e `presente` (com `escolhas`, `escolhas2` e `precos`), natureza `aliados`; `comprar` aceita `ampliar-filial:cidade` e `presente:aliado:tipo`. `main.js`: a vitrine da Loja aceita dois dropdowns e o `afinar()` que acompanha a escolha.
+
+**Medido** (Playwright, TUF): dropdown da subsede com as duas filiais e preços; trocar pra segunda muda o preço de 70 pra 140 mil; ampliar São Paulo levou a filial a nível 2 por R$ 70 mil e o dropdown passou a oferecer "nível 2 → 3". Presente: com a Jovem Garra Tricolor (sede 1) loja, bar e filial travam com o motivo certo e a sede custa R$ 40 mil; com a Bamor (sede 4) loja R$ 50 mil, bar R$ 40 mil, filial R$ 90 mil em São Paulo; dar a loja custou R$ 50 mil, a Bamor ficou com 1 loja, a relação foi de 22 pra 27, e as duas anotações saíram.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
