@@ -6965,6 +6965,43 @@ sem o vigia mexer em cena ou relatório legítimos.
 
 O que resolve de vez é o save do dono: pedido.
 
+## O save do dono: um cartão quebrado derrubava o feed (17/09/2026)
+
+Com o arquivo do save na mão (`tuf2030`, 23/02/2031, 1798 mensagens no
+feed), o travamento reproduziu igualzinho ao print — e a causa não era
+nenhuma das que eu tinha imaginado.
+
+`paraGravar` tira o `dados` de toda mensagem com mais de 90 dias, pra
+o save caber no navegador (decisão antiga, e certa: sem isso o
+localStorage recusa). Só que `cartaoSemana` lia `m.dados.ano` sem
+perguntar se havia `dados`. Uma segunda-feira de 2030 sem anexo
+estourava — e o laço que desenha o feed é uma corrente: a exceção
+levava junto todas as mensagens mais novas, inclusive a decisão que
+segurava o relógio (a partida de sábado, no topo, ainda com "Iniciar
+partida" por dar). Sobravam dois cartões na tela, o ≫ pedia resposta e
+não havia onde responder.
+
+Três correções:
+
+1. **A semana sem anexo vira registro de uma linha** — sem tabela, sem
+   ler o que não está lá.
+2. **Cada cartão se desenha sozinho** (`cartaoSeguro`): o que quebrar
+   vira um cartão de aviso, o erro vai pro console com a chave da
+   mensagem, e o resto do feed segue. Vale no feed, no arquivo de
+   notícias e nas tretas.
+3. As duas blindagens anteriores ficam: a decisão aberta sempre na
+   janela, e a válvula pro cartão sem botão.
+
+Medido com o save do dono: de **2 cartões na tela para 60**, o
+"Iniciar partida" de volta, e o dia de jogo abrindo e parando na
+estrada pedindo a escolha do jogador, como deve.
+
+Fica um aviso que apareceu no caminho: esse save tem **6,3 MB** — o
+`relacoesDelas` (2,6 MB) e o `mundoTorcidas` (1,9 MB) passaram o feed —
+e o localStorage recusou gravá-lo ("NÃO SALVOU · não coube"). O autosave
+do dono pode estar falhando calado desde algum ponto de 2030. Não mexi
+nisso aqui; é o próximo assunto.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -1039,6 +1039,28 @@
     return {hist: todas.slice(0, n), teto: n};
   }
 
+  /* UM CARTÃO QUEBRADO NÃO DERRUBA O FEED (correção do dono,
+     17/09/2026). O laço de desenho é uma corrente: a mensagem que
+     estourar leva junto todas as mais novas que ela — inclusive a
+     decisão que está segurando o relógio, que aí nunca aparece e o
+     jogo fica parado com a tela quase vazia. Foi exatamente o save do
+     dono: uma segunda-feira de 2030 sem anexo quebrava o cartão da
+     semana e só dois cartões chegavam à tela. Agora cada cartão se
+     desenha sozinho; o que quebrar vira um cartão de aviso, o erro vai
+     pro console com a chave da mensagem, e o resto segue. */
+  function cartaoSeguro(e, m){
+    try{ return cartaoMensagem(e, m); }
+    catch(err){
+      if(window.console) console.error('[feed] cartão quebrado:',
+                                       m && m.kind, m && (m.chave || m.id), err);
+      const art = el('article',{class:'msg quebrado', 'data-id': m && m.id});
+      art.appendChild(el('div',{class:'msg-cab', html:'<span class="msg-voz">Arquivo</span>'}));
+      art.appendChild(el('p',{class:'msg-txt fraco', texto:
+        (m && m.texto) || 'Mensagem antiga que não pôde ser desenhada.'}));
+      return art;
+    }
+  }
+
   function atualizarFeed(){
     const e = E();
     if(!e || !noFeedLista || !noFeedLista.isConnected) return;
@@ -1058,7 +1080,7 @@
     for(let i = hist.length - 1; i >= 0; i--){
       const m = hist[i], est = estadoDaMsg(e, m), velho = feedVistas.get(m.id);
       if(velho && velho.estado === est && velho.no.isConnected) continue;
-      const no = cartaoMensagem(e, m);
+      const no = cartaoSeguro(e, m);
       if(velho && velho.no.isConnected) velho.no.replaceWith(no);
       else noFeedLista.prepend(no);
       feedVistas.set(m.id, {no, estado:est});
@@ -2752,7 +2774,22 @@
     if(m.texto)
       art.appendChild(el('p',{class:'msg-txt', html: linkificarNomes(m.texto)}));
 
-    if(m.kind === 'semana') art.appendChild(cartaoSemana(e, m));
+    /* A SEMANA SEM ANEXO (correção do dono, 17/09/2026): o save tira o
+       `dados` de toda mensagem com mais de 90 dias pra caber no
+       navegador (`paraGravar`), e a tabela do planejamento lia
+       `m.dados.ano` sem perguntar. Uma exceção aqui derrubava o desenho
+       do feed inteiro — e o cartão que segurava o tempo, mais novo,
+       nunca chegava à tela. Sem anexo, a segunda antiga é só a linha
+       de registro. */
+    if(m.kind === 'semana'){
+      if(m.dados) art.appendChild(cartaoSemana(e, m));
+      else {
+        const q = m.quando || {};
+        art.appendChild(el('div',{class:'msg-txt fraco', texto:
+          `Planejamento da semana ${q.semana || '?'} de ${q.ano || '?'} — `+
+          `registro antigo, sem o detalhe.`}));
+      }
+    }
 
     /* O RELATÓRIO DO OLHEIRO É TABELA (decisão do dono, 17/08/2026):
        coluna 1 a competição, o dia e o jogo com a cor de cada clube;
@@ -3511,7 +3548,7 @@
     if(!hist.length)
       lista.appendChild(el('div',{class:'em-construcao',
         texto:'Nada aconteceu ainda.'}));
-    for(const m of hist.slice(0, 200)) lista.appendChild(cartaoMensagem(e, m));
+    for(const m of hist.slice(0, 200)) lista.appendChild(cartaoSeguro(e, m));
     if(hist.length > 200)
       lista.appendChild(el('div',{class:'linha-dado', html:
         `<span class="fraco">…e mais ${hist.length-200} mensagens mais `+
@@ -3597,7 +3634,7 @@
         texto:'Nenhuma treta nossa ainda. Quando sair uma, a notícia cai aqui.'}));
       return cx;
     }
-    for(const m of lista.slice(0, 100)) cx.appendChild(cartaoMensagem(e, m));
+    for(const m of lista.slice(0, 100)) cx.appendChild(cartaoSeguro(e, m));
     if(lista.length > 100)
       cx.appendChild(el('div',{class:'linha-dado', html:
         `<span class="fraco">…e mais ${lista.length-100} tretas mais antigas.</span>`}));
