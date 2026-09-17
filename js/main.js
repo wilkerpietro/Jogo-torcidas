@@ -7693,27 +7693,29 @@
     const passos = ()=>{
       const itens = F.pautaAberta(e).map(it=>({tipo:'item', it}));
       const feitos = F.caixaReuniao(e).pauta.filter(x=>x.decidido);
-      return {itens, feitos, total: itens.length + 1};
+      return {itens, feitos, total: itens.length + 2};
     };
 
     const pintar = ()=>{
       const {itens, feitos} = passos();
-      const total = itens.length + 1;
+      /* os assuntos de fora, o pedido a um aliado, e a nossa jogada */
+      const total = itens.length + 2;
       if(passo > total - 1) passo = total - 1;
       if(passo < 0) passo = 0;
 
       /* a trilha: um degrau por assunto, o último é a nossa jogada */
       trilha.innerHTML = '';
       for(let i=0;i<total;i++){
-        const ult = i === total - 1;
+        const ult = i === total - 1, pedido = i === total - 2;
         const d = el('button',{class:'reu-passo'+(i===passo?' on':'')+(i<passo?' feito':'')});
-        d.innerHTML = `<b>${i+1}</b><span>${ult ? 'A nossa jogada' : (itens[i].it.rot||'Assunto')}</span>`;
+        d.innerHTML = `<b>${i+1}</b><span>${ult ? 'A nossa jogada' : pedido ? 'Pedido a um aliado' : (itens[i].it.rot||'Assunto')}</span>`;
         d.onclick = ()=>{ passo = i; pintar(); };
         trilha.appendChild(d);
       }
 
       palco.innerHTML = '';
       if(passo < itens.length) palcoDoItem(itens[passo].it);
+      else if(passo === itens.length) palcoDoPedido();
       else palcoDaMesa();
 
       /* o pé: navegação e o encerrar */
@@ -7750,6 +7752,76 @@
       c.appendChild(bts);
       palco.appendChild(c);
       /* o que já foi decidido nesta mesa fica como ata, embaixo */
+      ata();
+    };
+
+    /* --- o pedido a um aliado (régua do dono, 17/09/2026) ---
+       Três escolhas: aproximar ou afastar, qual aliado a gente pede, e
+       de quem — rivais dele no aproximar, aliados dele no afastar. */
+    const palcoDoPedido = ()=>{
+      const nomeT = id => (TO.mundo.torcida(id)||{}).nome || '—';
+      const c = el('div',{class:'reu-item'});
+      c.appendChild(el('div',{class:'reu-quem', html:
+        `<span class="rot">Pedido a um aliado</span><b>Diretoria</b>`}));
+      const Rn = F.caixaReuniao(e);
+      const feito = Rn.pedido && Rn.pedido.marca === Rn.ultima ? Rn.pedido : null;
+      if(feito){
+        c.appendChild(el('p',{class:'reu-fala', html: linkificarNomes(feito.texto)}));
+        palco.appendChild(c); ata(); return;
+      }
+      if(!X){ palco.appendChild(c); return; }
+      const aliados = X.aliadosNossos(e);
+      c.appendChild(el('p',{class:'reu-fala', texto: aliados.length
+        ? 'Um pedido por reunião: a chance de o aliado topar é o quanto ele anda com a '+
+          'gente. Topando, a relação entre os dois mexe de 15 a 25 e ele ganha +2 com a '+
+          'gente; recusando, −3. Maior rival não senta na mesa, e irmã não se larga.'
+        : 'A gente não tem aliado pra pedir nada — aliado é relação de +20 pra cima.'}));
+      if(!aliados.length){ palco.appendChild(c); ata(); return; }
+      const grade = el('div',{class:'reu-pedido'});
+      const campo = (rot, sel)=>{
+        const w = el('label',{class:'reu-campo'});
+        w.appendChild(el('span',{class:'rot', texto:rot}));
+        w.appendChild(sel); return w;
+      };
+      const opc = (sel, lista, vazio)=>{
+        sel.innerHTML = '';
+        if(!lista.length){ sel.appendChild(el('option',{value:'', texto:vazio})); sel.disabled = true; return; }
+        sel.disabled = false;
+        for(const [v, t] of lista) sel.appendChild(el('option',{value:v, texto:t}));
+      };
+      const sTipo = el('select',{class:'campo'});
+      opc(sTipo, [['aproximar','Aproximar de…'],['afastar','Afastar de…']]);
+      const sAliado = el('select',{class:'campo'});
+      opc(sAliado, aliados.map(o=>[o.id, `${o.nome} · ${pctChance(X.chanceDoPedido(e, o.id))} de topar`]));
+      const sAlvo = el('select',{class:'campo'});
+      const nota = el('div',{class:'eixo-nota'});
+      const bt = el('button',{class:'bt destaque', texto:'Fazer o pedido'});
+      const encherAlvos = ()=>{
+        const tipo = sTipo.value, al = sAliado.value;
+        const alvos = X.alvosDoPedido(e, tipo, al);
+        opc(sAlvo, alvos.map(o=>[o.id, `${o.nome} · ${Math.round(TO.relacoes.relacaoDelas(e, al, o.id))} com ${nomeT(al)}`]),
+            tipo === 'aproximar' ? 'esse aliado não tem rival que sente na mesa' : 'esse aliado não tem aliado pra largar');
+        const ch = X.chanceDoPedido(e, al);
+        nota.textContent = alvos.length
+          ? `${pctChance(ch)} de a ${nomeT(al)} topar ${tipo === 'aproximar' ? 'sentar com a' : 'se afastar da'} ${nomeT(sAlvo.value)}.`
+          : 'Nada pra pedir nessa combinação.';
+        bt.disabled = !alvos.length;
+      };
+      sTipo.onchange = encherAlvos; sAliado.onchange = encherAlvos;
+      sAlvo.onchange = ()=>{ nota.textContent = `${pctChance(X.chanceDoPedido(e, sAliado.value))} de a ${nomeT(sAliado.value)} topar ${sTipo.value === 'aproximar' ? 'sentar com a' : 'se afastar da'} ${nomeT(sAlvo.value)}.`; };
+      encherAlvos();
+      grade.append(campo('O que pedir', sTipo), campo('A qual aliado', sAliado), campo('De quem', sAlvo));
+      c.appendChild(grade);
+      c.appendChild(nota);
+      bt.onclick = ()=>{
+        const r = X.pedirAoAliado(e, sTipo.value, sAliado.value, sAlvo.value);
+        if(!r.ok){ aviso(r.motivo, 'ruim'); return; }
+        TO.estado.salvar();
+        aviso(r.topou ? 'Topou.' : 'Não topou.', r.topou ? 'boa' : 'ruim');
+        pintar();
+      };
+      const bts = el('div',{class:'msg-bts'}); bts.appendChild(bt); c.appendChild(bts);
+      palco.appendChild(c);
       ata();
     };
 
@@ -8032,6 +8104,8 @@
         ? `${T(n.porta)} esfriou a treta entre ${T(n.torcida)} e ${T(n.outra)}`
         : n.tipo === 'afastar'
         ? `${T(n.porta)} puxou ${T(n.torcida)} pra longe de ${T(n.outra)}`
+        : n.tipo === 'saiu'
+        ? `${T(n.torcida)} saiu do <b>${linkEixo(n.eixo, n.nomeEixo)}</b> — virou rival de ${T(n.outra)}`
         : `${T(n.torcida)} entrou `+
           `${n.nosso ? 'pro nosso' : 'pro'} <b>${linkEixo(n.eixo, n.nomeEixo)}</b>`;
       cN.corpo.appendChild(el('div',{class:'nov-eixo'+(n.nova?' nova':'')+(n.nosso?' nosso':''), html:

@@ -1633,6 +1633,23 @@ TO.feed = (function(){
     const nome = id => (M().torcida(id)||{}).nome || id;
     for(const ev of evs){
       const x = X.eixo(E, ev.eixo); if(!x) continue;
+      if(ev.tipo === 'saida'){
+        /* rival não convive no eixo (dono, 17/09/2026): só vira cartão
+           quando é conosco — a gente saindo, ou alguém do nosso eixo */
+        const nos = E.torcida.id;
+        if(ev.torcida !== nos && !x.membros.includes(nos)) continue;
+        propor(E, {
+          kind:'eixo-saida', peso:'info', tipo:'ruim', voz:'eixo',
+          chave:`eixo-saida|${x.id}|${ev.torcida}|${E.data.ano}|${E.data.semana}`,
+          dados:{de:x.id, nome:x.nome},
+          texto: ev.torcida === nos
+            ? `A gente saiu do ${x.nome}: virou rival da ${nome(ev.outra)}, e o eixo ficou `+
+              `com quem é mais próximo dele. Quem fica leva −20 com a gente.`
+            : `A ${nome(ev.torcida)} saiu do ${x.nome}: virou rival da ${nome(ev.outra)}, `+
+              `e o eixo ficou com quem é mais próximo. Sair custou −20 com cada um de nós.`
+        });
+        continue;
+      }
       if(ev.tipo === 'convite'){
         const rivais = X.maioresRivaisDoEixo(E, x).filter(r=>TO.relacoes.nivel(E, r) > -15);
         const outros = x.membros.filter(m=>m !== ev.porta);

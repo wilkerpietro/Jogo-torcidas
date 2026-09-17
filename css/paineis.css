@@ -2493,3 +2493,12 @@ header.capa-cidade{background-size:cover; background-position:center;
   .drop-comp.com-pais{padding-left:0}
   .drop-pais .rot,.drop-comp.com-pais .rot{min-width:0}
 }
+
+/* o pedido a um aliado, na reunião (dono, 17/09/2026): três campos lado
+   a lado, empilhando no celular */
+.reu-pedido{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:4px 0 9px}
+@media (max-width:720px){ .reu-pedido{grid-template-columns:1fr} }
+.reu-campo{display:flex;flex-direction:column;gap:4px;min-width:0}
+.reu-campo .rot{font-family:var(--titulo);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fraco)}
+.reu-campo select.campo{padding:8px 10px;font-size:12px}

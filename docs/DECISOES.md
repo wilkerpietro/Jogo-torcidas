@@ -7044,6 +7044,50 @@ Achado de passagem, que NÃO é deste árbitro (acontece igual sem ele):
 **a Copa do Brasil termina a temporada sem campeão.** Fica anotado como
 próximo assunto.
 
+## Rival não convive no mesmo eixo (régua do dono, 17/09/2026)
+
+O dono pegou a Força Jovem Guarany e a Fúria Independente no mesmo eixo
+e rivais entre si. Impossível. A relação entre duas torcidas anda por
+conta própria — briga, mesa alheia, secura — e nada conferia se o eixo
+ainda fazia sentido.
+
+A régua dele, que agora roda todo dia antes das mesas (`sanearEixos`):
+quando dois membros viram rivais, **um sai — o que tem a menor soma de
+relação com o resto do eixo** (o eixo fica com quem é mais próximo).
+**Sair custa −20 com cada um dos que ficam.** Irmãs (mesmo clube) nunca
+são separadas. A saída vira linha nas novidades de Diplomacia → Eixos
+e, quando é conosco (a gente saindo, ou alguém do nosso eixo), um cartão
+no feed.
+
+Medido em quatro anos: 154.290 checagens de par, **um** par rival
+flagrado (a janela de um dia entre a treta e a manhã seguinte), 7
+saídas. E um efeito colateral que a medição pegou: o Bamor saiu do Dedo
+pro Alto três vezes em cinco semanas — o eixo o chamava de volta e a
+mesma treta o punha pra fora. Fechou-se a porta giratória com o veto que
+já existia: quem sai fica meio ano fora daquele eixo, e o `podeEntrar`
+passou a respeitar o veto em todos os caminhos (recrutamento das IAs,
+convite nosso, candidatura).
+
+## O pedido a um aliado, em toda reunião (régua do dono, 17/09/2026)
+
+Toda reunião de diplomacia ganhou um passo, entre os assuntos de fora e
+a nossa jogada: **pedir a um aliado que se aproxime de alguém ou se
+afaste de alguém.** Três campos — o que pedir (aproximar/afastar), a
+qual aliado, e de quem: no afastar, a lista dos aliados dele; no
+aproximar, a lista dos rivais dele. Um pedido por reunião.
+
+A chance de ele topar é o quanto ele anda com a gente — a mesma régua
+da mesa das outras: 25% + 60% × força, força = quanto a relação passa
+de +20 até +80. Topando, mexe o que a mesa alheia mexe: aproximar de
++15 a +25 (sem passar de Aliado), afastar de −15 a −25 (sem descer de
+Neutro), e +2 com quem topou. Recusando, −3 com ele. **Maior rival não
+senta na mesa, e irmã não se larga** — os dois ficam fora das listas.
+
+Conferido de ponta a ponta na tela: 30 aliados na lista, 85% de chance
+com a Jovem Garra Tricolor, pedido de afastar da Camisa 12 do Inter
+topado — de +45 pra +20 entre as duas, e +2 com a Garra. Seis anos de
+varredura sem travamento.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

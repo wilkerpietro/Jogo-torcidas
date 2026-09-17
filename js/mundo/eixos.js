@@ -221,6 +221,13 @@ TO.eixos = (function(){
     if(!x || !o || o.incompleta) return {ok:false, motivo:'não existe'};
     if(x.membros.includes(torcidaId)) return {ok:false, motivo:'já é do eixo'};
     if(de(E, torcidaId).length >= MAX_POR_TORCIDA) return {ok:false, motivo:'já está em dois eixos'};
+    /* PORTA GIRATÓRIA FECHADA (17/09/2026): quem saiu — por briga com
+       um membro, ou vetado pelo dono — fica meio ano fora daquele eixo.
+       Sem isto o Bamor saiu do Dedo pro Alto três vezes em cinco semanas:
+       o eixo o chamava de volta e a mesma treta o punha pra fora. */
+    const veto = (caixas(E).vetos||{})[`${eixoId}|${torcidaId}`];
+    if(veto && R().semanaAbs(E) - veto < RECUSA_CADA)
+      return {ok:false, motivo:'saiu há pouco desse eixo'};
     /* O EIXO NÃO ATRAVESSA A FRONTEIRA (12/09/2026). Eixo é política de
        arquibancada perto de casa — quem entra desce junto, escolta e
        cobra. Antes dos hermanamientos isto se garantia sozinho: relação
@@ -344,10 +351,142 @@ TO.eixos = (function(){
   /* ---- o dia: recrutamento por eixo e fundação de eixo novo ----
      Devolve os eventos pro feed contar. O convite ao dono é evento
      de decisão; o feed responde chamando `entrar` ou `recusar`. */
+  /* =======================================================
+     RIVAL NÃO CONVIVE NO MESMO EIXO (régua do dono, 17/09/2026)
+
+     O dono pegou a Força Jovem Guarany e a Fúria Independente no
+     mesmo eixo e rivais entre si. Impossível. A relação entre duas
+     torcidas anda por conta própria — briga, mesa alheia, secura — e
+     nada conferia se o eixo ainda fazia sentido. Agora confere, todo
+     dia: quando dois membros viram rivais, UM SAI — o que tem a menor
+     soma de relação com o resto do eixo (o eixo fica com quem é mais
+     próximo). Sair custa −20 com cada um dos que ficam. Irmãs (mesmo
+     clube) nunca são separadas.
+     ======================================================= */
+  const SAIDA_DO_EIXO = -20;
+  const saoRivais = (E, a, b) =>
+    (R().ehMaiorRival && R().ehMaiorRival(E, a, b)) || relDe(E, a, b) < -15;
+  function marcarStatusVisto(E, a, b){
+    const S = E.statusRel; if(!S || !S.visto) return;
+    const outro = a === E.torcida.id ? b : b === E.torcida.id ? a : null;
+    if(!outro) return;
+    const v = R().nivel(E, outro);
+    S.visto[outro] = v <= -15 ? 'rival' : v < 20 ? 'neutro' : 'aliado';
+  }
+  function sanearEixos(E){
+    const X = caixas(E), saidas = [];
+    for(const x of X.lista){
+      for(let guarda = 0; guarda < 20; guarda++){
+        const m = x.membros;
+        let par = null;
+        for(let i = 0; i < m.length && !par; i++)
+          for(let j = i + 1; j < m.length && !par; j++){
+            if(M().saoIrmas && M().saoIrmas(m[i], m[j])) continue;
+            if(saoRivais(E, m[i], m[j])) par = [m[i], m[j]];
+          }
+        if(!par) break;
+        const [a, b] = par;
+        const soma = id => m.filter(o=>o !== a && o !== b)
+                            .reduce((t, o)=>t + relDe(E, id, o), 0);
+        const sa = soma(a), sb = soma(b);
+        const sai = sa < sb ? a : sb < sa ? b
+                  : (TO.mapa.hash(`eixo|sai|${x.id}|${a}|${b}`) % 2 ? a : b);
+        const fica = sai === a ? b : a;
+        x.membros = m.filter(o=>o !== sai);
+        for(const o of x.membros){
+          porRel(E, sai, o, relDe(E, sai, o) + SAIDA_DO_EIXO);
+          marcarStatusVisto(E, sai, o);
+        }
+        X.vetos = X.vetos || {};
+        X.vetos[`${x.id}|${sai}`] = R().semanaAbs(E);   // meio ano sem voltar
+        anotar(E, {tipo:'saiu', eixo:x.id, torcida:sai, outra:fica});
+        saidas.push({tipo:'saida', eixo:x.id, torcida:sai, outra:fica});
+      }
+    }
+    return saidas;
+  }
+
+  /* =======================================================
+     O PEDIDO A UM ALIADO (régua do dono, 17/09/2026)
+
+     Em toda reunião de diplomacia a gente pode pedir a UM aliado que se
+     aproxime de um rival dele ou se afaste de um aliado dele. A chance
+     de ele topar é o quanto ele anda com a gente — a mesma régua da
+     mesa das outras (25% + 60% × força, força = quanto a relação passa
+     de +20 até +80). Topando, mexe o que a mesa alheia mexe: aproximar
+     de +15 a +25 (sem passar de Aliado), afastar de −15 a −25 (sem
+     descer de Neutro), e +2 com quem topou. Recusando, −3 com ele.
+     Maior rival não senta na mesa, e irmã não se larga — os dois ficam
+     de fora das listas. Um pedido por reunião.
+     ======================================================= */
+  const PEDIDO_TOPOU = 2, PEDIDO_RECUSOU = -3;
+  function forcaDoPedido(E, aliadoId){
+    return U.limitar((relDe(E, E.torcida.id, aliadoId) - 20) / 60, 0, 1);
+  }
+  const chanceDoPedido = (E, aliadoId) => 0.25 + 0.6 * forcaDoPedido(E, aliadoId);
+  function aliadosNossos(E){
+    const nos = E.torcida.id;
+    return M().jogaveis()
+      .filter(o=>o.id !== nos && !o.incompleta && relDe(E, nos, o.id) >= DIPLO_ALIADO)
+      .sort((a,b)=>relDe(E, nos, b.id) - relDe(E, nos, a.id));
+  }
+  function alvosDoPedido(E, tipo, aliadoId){
+    const nos = E.torcida.id;
+    return M().jogaveis().filter(o=>{
+      if(o.id === nos || o.id === aliadoId || o.incompleta) return false;
+      if(M().saoIrmas && M().saoIrmas(aliadoId, o.id)) return false;
+      const v = relDe(E, aliadoId, o.id);
+      if(tipo === 'aproximar')
+        return v < -15 && !(R().ehMaiorRival && R().ehMaiorRival(E, aliadoId, o.id));
+      return v >= DIPLO_ALIADO;
+    }).sort((a,b)=>relDe(E, aliadoId, b.id) - relDe(E, aliadoId, a.id));
+  }
+  function pedirAoAliado(E, tipo, aliadoId, alvoId){
+    const X = caixas(E), nos = E.torcida.id;
+    const Rn = E.reuniao || {};
+    if(Rn.pedido && Rn.pedido.marca === Rn.ultima)
+      return {ok:false, motivo:'já pedimos nesta reunião'};
+    const aliado = M().torcida(aliadoId), alvo = M().torcida(alvoId);
+    if(!aliado || !alvo) return {ok:false, motivo:'torcida desconhecida'};
+    if(!alvosDoPedido(E, tipo, aliadoId).some(o=>o.id === alvoId))
+      return {ok:false, motivo:'esse pedido não cabe'};
+    const forca = forcaDoPedido(E, aliadoId), chance = chanceDoPedido(E, aliadoId);
+    const sa = R().semanaAbs(E);
+    const topou = (TO.mapa.hash(`pedido|${sa}|${aliadoId}|${alvoId}`) % 1000) / 1000 < chance;
+    const v = relDe(E, aliadoId, alvoId);
+    let texto;
+    if(topou){
+      if(tipo === 'aproximar'){
+        const ganho = Math.round(15 + 10 * forca);
+        porRel(E, aliadoId, alvoId, Math.min(DIPLO_TETO, v + ganho));
+        texto = `A ${aliado.nome} topou e sentou com a ${alvo.nome}: a relação entre as duas `+
+                `subiu ${Math.min(DIPLO_TETO, v + ganho) - v}.`;
+      } else {
+        const perda = Math.round(15 + 10 * forca);
+        porRel(E, aliadoId, alvoId, Math.max(0, v - perda));
+        texto = `A ${aliado.nome} topou e se afastou da ${alvo.nome}: a relação entre as duas `+
+                `caiu ${v - Math.max(0, v - perda)}.`;
+      }
+      porRel(E, nos, aliadoId, relDe(E, nos, aliadoId) + PEDIDO_TOPOU);
+      anotar(E, {tipo, eixo:null, porta:nos, torcida:aliadoId, outra:alvoId});
+    } else {
+      porRel(E, nos, aliadoId, relDe(E, nos, aliadoId) + PEDIDO_RECUSOU);
+      texto = `A ${aliado.nome} não topou: "isso é problema nosso". `+
+              `A relação com ela caiu ${-PEDIDO_RECUSOU}.`;
+    }
+    marcarStatusVisto(E, nos, aliadoId);
+    E.reuniao = E.reuniao || {};
+    E.reuniao.pedido = {marca:Rn.ultima || null, tipo, aliado:aliadoId, alvo:alvoId,
+                        topou, texto, chance};
+    return {ok:true, topou, chance, texto};
+  }
+
   function eventosDoDia(E, forcar){
     const X = caixas(E);
+    /* antes de qualquer mesa, o eixo confere se ainda faz sentido */
+    const saidas = sanearEixos(E);
     const H = TO.mapa.hash, sa = R().semanaAbs(E);
-    const evs = [];
+    const evs = saidas.slice();
     /* 1. cada eixo tenta recrutar */
     for(const x of X.lista){
       if(!forcar){
@@ -875,6 +1014,7 @@ TO.eixos = (function(){
           eixosPraCandidatar, podemosPedir, nomesLivres, nomeServe, fundadoresPossiveis,
           brigaNoGrupo, fundarNosso, candidatar, convidar, convidaveis,
           chanceDoConvite, chanceDaCandidatura,
+          sanearEixos, aliadosNossos, alvosDoPedido, pedirAoAliado, chanceDoPedido,
           MAX_POR_TORCIDA, MIN_FUNDADORES, MESA_CADA, CONVITE_CADA_DIAS,
           ALIADO_AO_ENTRAR, RIVAL_AO_ENTRAR};
 })();
