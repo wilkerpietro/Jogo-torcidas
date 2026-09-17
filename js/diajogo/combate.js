@@ -1969,6 +1969,47 @@ TO.diaJogo.combate = (function(){
     return cacheFuga.lista;
   }
 
+  /* QUEM CORRE, CORRE PRO LADO CONTRÁRIO AO DE QUEM ESTÁ VINDO
+     (régua do dono, 17/09/2026)
+
+     A fuga escolhia a boca mais PERTO — e, desde 09/09, a entrada por
+     onde o bonde chegou. Nenhuma das duas olha onde está o atacante:
+     quando o outro bonde desce por cima vindo do lado do nosso spawn,
+     a debandada corria PRA DENTRO deles, e o que era fuga virava mais
+     uma leva de caído. Agora toda boca é medida pelo rumo: o cosseno
+     entre "daqui pra saída" e "daqui pro inimigo". Perto de +1 a saída
+     é passar por dentro deles; perto de −1 é o lado oposto, que é o que
+     se quer. Boca com rumo acima de `FUGA_PRA_CIMA` só entra em campo
+     quando não sobrou nenhuma outra com rota — correr pro lado errado
+     ainda é melhor do que ficar parado apanhando.
+
+     O centro do inimigo é o dos que ainda estão DE PÉ: se os dois
+     bondes correram, o que importa é de onde veio a pressão, e quem
+     também está fugindo não empurra ninguém. */
+  const FUGA_PRA_CIMA = 0.2;
+  let cacheInimigo = {t:-1, por:null};
+  function centroDoInimigo(J, lado){
+    if(cacheInimigo.t !== J.t) cacheInimigo = {t:J.t, por:{}};
+    if(cacheInimigo.por[lado] !== undefined) return cacheInimigo.por[lado];
+    const outros = J.discos.filter(d=>d.vivo && !d.sumiu && d.lado !== lado);
+    const dePe = outros.filter(d=>!d.fugindo);
+    const lista = dePe.length ? dePe : outros;
+    const c = lista.length
+      ? {x: lista.reduce((a,d)=>a+d.x,0)/lista.length,
+         y: lista.reduce((a,d)=>a+d.y,0)/lista.length} : null;
+    cacheInimigo.por[lado] = c;
+    return c;
+  }
+  /* −1 = a saída fica no lado oposto ao inimigo; +1 = é atravessá-los */
+  function rumoAoInimigo(x, y, alvo, inimigo){
+    if(!inimigo || !alvo) return -1;
+    const ax = alvo.x - x, ay = alvo.y - y;
+    const ix = inimigo.x - x, iy = inimigo.y - y;
+    const na = Math.hypot(ax, ay), ni = Math.hypot(ix, iy);
+    if(na < 1 || ni < 1) return 0;
+    return (ax*ix + ay*iy) / (na*ni);
+  }
+
   /* CADA LADO FOGE PRA UM CANTO (correção do dono, 24/08/2026).
      Quando os DOIS bondes correm, os dois escolhiam a mesma boca — a
      mais perto — e a tela mostrava caçador e caça fugindo abraçados
@@ -1993,7 +2034,12 @@ TO.diaJogo.combate = (function(){
          cordão devolvia o bonde pro corredor tampado (regressão pega
          pelo fuga-cordao). Sem nenhuma desviável, vale a de grades;
          sem nenhuma, o lado fica sem preferência e cada disco se vira. */
+      /* a mais perto ENTRE AS QUE NÃO VÃO PRA CIMA DELES: as outras
+         caem pro fim da fila e só servem de último recurso */
+      const ini = centroDoInimigo(J, l);
+      const praCima = o => rumoAoInimigo(cx, cy, o.f, ini) >= FUGA_PRA_CIMA;
       const fila = lista.slice().sort((a,b)=>
+        (praCima(a)?1:0) - (praCima(b)?1:0) ||
         U.dist2(cx,cy,a.f.x,a.f.y) - U.dist2(cx,cy,b.f.x,b.f.y));
       const passa = o => !o.desvia.passo(cx,cy).semRota;
       const passaGrade = o => !o.campo.passo(cx,cy).semRota;
@@ -2025,10 +2071,13 @@ TO.diaJogo.combate = (function(){
     /* O PONTO DE FUGA É O SPAWN (pedido do dono, 09/09/2026): quem
        debanda corre pra entrada por onde chegou, em toda cena; só cai
        nas outras bocas se dali não houver rota */
+    const ini = centroDoInimigo(J, d.lado);
     {
       const e = D.entradas.find(x=>x.id===d.entrada) ||
                 D.entradas.find(x=>x.lado===d.lado);
-      if(e){
+      /* a entrada de origem continua sendo a primeira escolha — mas só
+         enquanto voltar por ela não for entrar no meio deles */
+      if(e && rumoAoInimigo(d.x, d.y, e, ini) < FUGA_PRA_CIMA){
         const c = A.campoDaEntrada(e.id, J.grades, J.versaoGrades);
         if(!c.passo(d.x,d.y).semRota)
           return {destino:{x:e.x, y:e.y, raio:e.raio||34, entrada:e.id}, campo:c};
@@ -2037,11 +2086,12 @@ TO.diaJogo.combate = (function(){
     const evita = (d.fugaEvita && d.fugaEvita.ate > J.t) ? d.fugaEvita.chave : null;
     /* a boca do MEU lado primeiro: é o que separa as duas debandadas */
     const minha = saidasPorLado(J)[d.lado] || null;
-    const acha = (qualCampo, pulaEvitada, soDoLado)=>{
+    const acha = (qualCampo, pulaEvitada, soDoLado, soContraria)=>{
       let melhor=null, md=Infinity;
       for(const o of camposDeFuga(J)){
         if(pulaEvitada && o.chave === evita) continue;
         if(soDoLado && o.chave !== minha) continue;
+        if(soContraria && rumoAoInimigo(d.x, d.y, o.f, ini) >= FUGA_PRA_CIMA) continue;
         const c = o[qualCampo];
         if(c.passo(d.x,d.y).semRota) continue;
         const q=U.dist2(d.x,d.y,o.f.x,o.f.y);
@@ -2051,7 +2101,11 @@ TO.diaJogo.combate = (function(){
     };
     /* a boca do lado só vale enquanto ela desvia do cordão: se daqui
        deste disco só se chega nela empurrando PM, cai na régua normal */
+    /* primeiro o que foge DELES; a boca pra cima do inimigo é o último
+       recurso, quando nenhuma outra tem rota */
     const r = (minha && minha !== evita && acha('desvia', false, true)) ||
+              acha('desvia', !!evita, false, true) ||
+              acha('campo',  !!evita, false, true) ||
               acha('desvia', !!evita) || acha('campo', !!evita) ||
               (evita && (acha('desvia', false) || acha('campo', false))) || null;
     if(r) d._fugaChave = r.chave;

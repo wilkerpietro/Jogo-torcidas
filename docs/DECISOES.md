@@ -6825,6 +6825,51 @@ Conferido no navegador abrindo o arquivo único: jogo inicia, 60 dias
 rodam, 68 imagens na tela e nenhuma quebrada. O pacote gerado entrou no
 `.gitignore` — quem se versiona é a ferramenta, não a saída.
 
+## Quem corre, corre pro lado contrário ao atacante (dono, 17/09/2026)
+
+A régua do dono: **a debandada tem de correr pro ponto de spawn oposto
+ao de onde vem o atacante** — senão corre pro lado em que ele está e o
+que era fuga vira mais uma leva de caído.
+
+Era exatamente o que acontecia. A fuga escolhia a boca mais PERTO e,
+desde a régua de 09/09, a entrada por onde o bonde tinha chegado.
+Nenhuma das duas olha onde está o outro bonde: quando ele desce por
+cima vindo do lado do nosso spawn, a saída "de origem" é atravessar o
+meio deles.
+
+Agora toda boca é medida pelo RUMO: o cosseno entre "daqui pra saída" e
+"daqui pro inimigo". Perto de +1 a saída é passar por dentro deles;
+perto de −1 é o lado oposto, que é o que se quer. Boca com rumo acima de
+0,2 só entra em campo quando não sobrou nenhuma outra com rota — correr
+pro lado errado ainda é melhor do que ficar parado apanhando. O centro
+do inimigo é o dos que ainda estão DE PÉ: se os dois bondes correram, o
+que importa é de onde veio a pressão. A régua vale nos três pontos onde
+a saída é escolhida: a entrada de origem, a boca do lado
+(`saidasPorLado`) e a busca por disco (`rotaDeFuga`).
+
+Medido nas 17 cenas do jogo, mandando o bonde do jogador debandar e
+lendo pra onde ele corre:
+
+| | antes | depois |
+|---|---|---|
+| bondes correndo pra cima do inimigo | **13 de 17** | **0 de 16** |
+| fugitivos (por disco) correndo pra cima | 439 de 543 | 52 de 476 |
+| cenas em que alguém conseguiu sumir | 2 | 15 |
+
+O terceiro número é o que mais importa: antes, em quase toda cena o
+`sumiram` era **zero** — o bonde corria pra dentro do inimigo e não saía
+da tela. Agora saem 31 a 34 dos 34.
+
+Uma nota sobre a leitura: na cena do `bar` a conta por disco ainda
+acusa 28 "pra cima", e é artefato da medida — os 34 pegam a MESMA boca,
+a que o grupo escolheu (rumo −0,72), e quem está na ponta de trás do
+bonde mede o próprio caminho como se fosse na direção deles. O que vale
+numa debandada é o rumo da massa, e ele está certo: 31 dos 34 sumiram,
+contra 0 antes.
+
+Varredura de dois anos sem travamento e sem exceção; nenhum disco ficou
+sem rota em cena nenhuma.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
