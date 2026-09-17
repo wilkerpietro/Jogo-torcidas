@@ -799,10 +799,19 @@
       const at = E(); if(!at) return;
       if(TO.feed.travado(at)){
         aviso('Responda o que está aberto — o tempo está parado.', 'ruim');
+        atualizarFeed();
         return;
       }
+      /* o ≫ que não anda tem de dizer por quê (dono, 17/09/2026): antes
+         ele voltava calado quando uma cena órfã segurava o dia */
+      curarRelogio();
+      const antes = at.data.absoluto;
       passarUmDia(at);
       pintarTopo(); atualizarFeed();
+      if(at.data.absoluto === antes){
+        const por = motivosDoRelogioParado();
+        aviso('O dia não andou' + (por.length ? ': ' + por.join(', ') : '') + '.', 'ruim');
+      }
     };
     noFeedQuando.append(txtQuando, bDia);
 
@@ -8249,6 +8258,87 @@
         / (TO.diaJogo.ponte.velocidade || 1));
   }
 
+  /* =======================================================
+     O VIGIA DO RELÓGIO (correção do dono, 17/09/2026)
+
+     O relógio para por quatro caminhos: decisão sem resposta
+     (`travado`), cena aberta (`em-cena`), tela por cima (`pausasT`)
+     e a linha do dia (`ITN`). Cada um deles é tirado por quem o pôs
+     — e quando quem pôs morre no meio (uma exceção dentro da cena,
+     um modal removido do DOM por fora, um `blur` sem `focus` de
+     volta), a marca fica e o jogo congela COM A TELA LIMPA: o ≫ não
+     anda e não diz por quê. Foi o que o dono viu duas vezes seguidas,
+     com feed limpo e nada pra responder.
+
+     Este vigia roda a cada três segundos enquanto o jogo está na
+     tela. Ele não inventa regra: só confere se cada marca ainda tem
+     dono — cena marcada com o palco escondido, modal marcado sem
+     nenhuma moldura no DOM, painel marcado sem painel aberto, foco
+     perdido com a página em foco — e apaga a marca órfã, avisando no
+     console e num aviso na tela. Com tudo limpo, o relógio volta.
+     A decisão sem resposta ele NÃO mexe: dela cuida o feed, que
+     agora desenha sempre o cartão que segura o tempo.
+     ======================================================= */
+  function motivosDoRelogioParado(){
+    const e = E(); if(!e) return [];
+    const m = [];
+    if(TO.feed.travado(e)) m.push('decisão sem resposta');
+    if(document.body.classList.contains('em-cena')) m.push('cena aberta');
+    for(const p of pausasT) m.push('pausa: ' + p);
+    if(ITN) m.push('linha do dia');
+    return m;
+  }
+  function curarRelogio(){
+    const e = E();
+    if(!e || $('jogo').classList.contains('oculto')) return [];
+    const oculto = id => { const n = $(id); return !n || n.classList.contains('oculto'); };
+    const curas = [];
+    /* cena marcada, palco escondido, relatório fechado, sem linha do dia */
+    if(document.body.classList.contains('em-cena') &&
+       oculto('telaDiaJogo') && oculto('telaRelatorio')){
+      document.body.classList.remove('em-cena');
+      TO.estado.bloquear(false);
+      curas.push('cena sem palco');
+    }
+    if(pausasT.has('cena') && oculto('telaDiaJogo') && oculto('telaRelatorio') && !ITN){
+      pausasT.delete('cena'); curas.push('pausa de cena sem cena');
+    }
+    /* as telas fixas (menu, seleção) também são .tela-cheia com moldura,
+       só que escondidas por .oculto: modal de verdade nunca tem .oculto */
+    if(pausasT.has('modal') && !document.querySelector('.tela-cheia:not(.oculto) .moldura')){
+      pausasT.delete('modal'); modaisAbertos = 0; curas.push('pausa de modal sem modal');
+    }
+    if(pausasT.has('painel') && !document.body.classList.contains('com-painel')){
+      pausasT.delete('painel'); curas.push('pausa de painel sem painel');
+    }
+    if(pausasT.has('retro') && oculto('telaRetro')){
+      pausasT.delete('retro'); curas.push('pausa de retrospectiva fechada');
+    }
+    if(pausasT.has('itinerario') && !ITN){
+      pausasT.delete('itinerario'); curas.push('pausa de itinerário sem linha');
+    }
+    if(pausasT.has('foco') && !document.hidden && document.hasFocus()){
+      pausasT.delete('foco'); curas.push('pausa de foco com a página em foco');
+    }
+    for(const p of ['salvar', 'abertura'])
+      if(pausasT.has(p)){ pausasT.delete(p); curas.push('pausa de ' + p + ' esquecida'); }
+    if(curas.length){
+      if(window.console) console.warn('[relógio] marcas órfãs apagadas:', curas.join('; '));
+      aviso('O relógio estava preso (' + curas.join(', ') + ') e foi solto.', 'ruim');
+      TO.estado.salvar();
+      if(!pausasT.size && !TO.feed.travado(e)) rodarTempo();
+      pintarTopo(); atualizarFeed();
+    } else if(!relogioTempo && !pausasT.size && !TO.feed.travado(e) &&
+              !document.body.classList.contains('em-cena') && !ITN){
+      /* nada preso e mesmo assim parado: a corrente de tiques morreu */
+      rodarTempo();
+      if(relogioTempo) curas.push('relógio religado');
+    }
+    return curas;
+  }
+  setInterval(()=>{ try{ if(!pausasT.has('teste')) curarRelogio(); }
+                    catch(err){ if(window.console) console.error('[relógio] vigia:', err); } }, 3000);
+
   /* um dia inteiro: a virada da data — os jogos do dia e as mensagens
      saem de dentro do estado */
   /* O RELÓGIO NÃO MORRE COM O DIA (correção do dono, 11/09/2026): o
@@ -9609,7 +9699,7 @@
     widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima,
     /* a retrospectiva da virada (dono, 09/09/2026) */
     abrirRetrospectiva, abrirRetrospectivaSePendente, fecharRetrospectiva,
-    abrirItinerario,
+    abrirItinerario, curarRelogio, motivosDoRelogioParado,
     /* o cofre de saves, pra bateria dirigir */
     pintarJogo, abrirCofreNoMenu, montarMenu,
     /* A PORTA DE SERVIÇO DA SELEÇÃO (23/08/2026): a bateria escolhia

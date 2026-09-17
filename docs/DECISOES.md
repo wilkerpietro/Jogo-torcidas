@@ -6923,6 +6923,48 @@ e é o único filtrado do feed), e o cartão da partida sem botão durante o
 itinerário é de propósito — foi um falso positivo meu antes de medir com
 os temporizadores rodando.
 
+## O vigia do relógio (dono, 17/09/2026, segundo travamento)
+
+Depois da blindagem do feed o dono travou de novo: cartão do topo
+"Você respondeu: Simular", jornal embaixo, 1449 antigas, e o dia sem
+andar. Sem decisão aberta desta vez — um travamento CALADO.
+
+Reproduzi o Simular numa treta de verdade, com temporizadores rodando:
+abre o "Fim da noite", fecha, a próxima decisão chega com botões, o
+relógio segue. Não é o Simular. Não consegui reproduzir a causa do save
+do dono a partir de jogo novo — e o que sobra são as travas que vivem
+só em memória: `em-cena` no corpo da página, as pausas nomeadas de
+`pausasT` (cena, modal, painel, retro, foco, itinerário, salvar,
+abertura) e a linha do dia. Cada uma é tirada por quem a pôs, e quando
+quem pôs morre no meio — exceção dentro da cena, modal removido por
+fora, `blur` sem `focus` de volta — a marca fica e o jogo congela com a
+tela limpa. O ≫ não andava e não dizia por quê.
+
+Duas coisas:
+
+**1. O vigia** (`curarRelogio`), a cada três segundos com o jogo na
+tela. Não inventa regra: confere se cada marca ainda tem dono — cena
+marcada com o palco escondido e o relatório fechado, modal marcado sem
+moldura visível, painel marcado sem painel, foco perdido com a página
+em foco, itinerário marcado sem linha, salvar/abertura esquecidos — e
+apaga a marca órfã, avisando no console e na tela; com tudo limpo,
+religa o relógio. Se nada está preso e mesmo assim a corrente de tiques
+morreu, religa também. A decisão sem resposta ele NÃO toca: dela cuida
+o feed.
+
+**2. O ≫ explica.** Antes de desistir ele chama o vigia, e se o dia
+não andou diz o motivo na tela: "decisão sem resposta", "cena aberta",
+"pausa: foco", "linha do dia". É isso que o dono vai ler da próxima vez,
+em vez de silêncio — e é o que me diz onde procurar.
+
+Medido forjando as cinco marcas órfãs (cena sem palco, modal, painel,
+foco, salvar): as cinco apagadas em até três segundos e o relógio de
+volta. Seis anos de varredura sem travamento, válvula do feed sem
+disparar, e quatro minutos de relógio real atravessando um dia de jogo
+sem o vigia mexer em cena ou relatório legítimos.
+
+O que resolve de vez é o save do dono: pedido.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
