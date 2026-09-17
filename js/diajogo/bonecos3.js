@@ -2059,13 +2059,7 @@ TO.diaJogo.bonecos3 = (function(){
      boneco de 30 px não sente a diferença; a placa do celular sente
      — 1,5× é 2,25 vezes mais pixel que 1×. */
   const DPR_NIVEIS = [1.5, 1.0, 0.75];
-  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true, movimentoLeve:true,
-               /* O ORÇAMENTO DE BONECOS (medição de 17/09/2026): 600
-                  bonecos eram 2.443 draw calls e 1,5 milhão de
-                  triângulos por quadro — 1 fps na placa integrada.
-                  Só os mais perto do líder ganham corpo; o resto
-                  segue como disco na camada 2D. */
-               orcamento:140};
+  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true, movimentoLeve:true};
   let quadroN = 0;
   let dprNivel = 0, mediaDt = 1/60, tempoNoNivel = 0;
   const dprAtual = () => Math.min(cfg.resolucaoAdaptativa ? DPR_NIVEIS[dprNivel] : 1.5,
@@ -2158,58 +2152,13 @@ TO.diaJogo.bonecos3 = (function(){
     x >= vista.x0 - MARGEM_VISTA && x <= vista.x1 + MARGEM_VISTA &&
     z >= vista.z0 - MARGEM_VISTA && z <= vista.z1 + MARGEM_VISTA;
   const conta = {vistos:0, cortados:0};
-  /* quem ganha corpo: os `orcamento` mais perto do líder (ou do centro
-     da vista, sem líder de pé). Refeito a cada 20 quadros, e quem já
-     tem corpo conta como 30% mais perto — pra ninguém ficar piscando
-     entre disco e boneco na borda do orçamento. */
-  /* o orçamento vivo encolhe quando o quadro pesa e volta quando
-     folga: a placa de cada máquina diz quantos bonecos cabem em 30 fps */
-  let orcamentoVivo = -1, tempoOrcamento = 0;
-  const ORCAMENTO_PISO = 30;
-  function ajustarOrcamento(dt){
-    if(orcamentoVivo < 0) orcamentoVivo = cfg.orcamento;
-    tempoOrcamento += dt;
-    if(tempoOrcamento < 2) return;
-    tempoOrcamento = 0;
-    if(mediaDt > 1/30){
-      /* no piso e ainda pesado: a placa não dá conta de boneco nenhum
-         (WebGL por software, por exemplo) — a cena fica só de disco
-         até o quadro folgar de novo */
-      orcamentoVivo = orcamentoVivo <= ORCAMENTO_PISO ? 0
-                    : Math.max(ORCAMENTO_PISO, Math.round(orcamentoVivo*0.75));
-    } else if(mediaDt < 1/55)
-      orcamentoVivo = Math.min(cfg.orcamento, Math.max(ORCAMENTO_PISO, Math.round(orcamentoVivo*1.25)));
-  }
-  function escolherComCorpo(J){
-    const FICA = 3.0, SOME = 1.5;
-    const orcamento = orcamentoVivo < 0 ? cfg.orcamento : orcamentoVivo;
-    if(orcamento <= 0){ J._comCorpo = new Set(); return; }     // só disco
-    const cand = [];
-    for(const d of J.discos){
-      if(d.entrou || d.sumiu) continue;
-      if(d.caido && J.t - (d.caiuEm||0) >= FICA + SOME) continue;
-      cand.push(d);
-    }
-    if(cand.length <= orcamento){ J._comCorpo = null; return; }
-    const lider = J.discos.find(d=>d.lider && d.vivo);
-    let fx, fy;
-    if(lider){ fx = lider.x; fy = lider.y; }
-    else if(isFinite(vista.x0) && isFinite(vista.x1)){ fx = (vista.x0+vista.x1)/2; fy = (vista.z0+vista.z1)/2; }
-    else { fx = 0; fy = 0; }
-    const antes = J._comCorpo;
-    for(const d of cand){
-      const dx = d.x-fx, dy = d.y-fy;
-      d._dCorpo = (dx*dx+dy*dy) * ((antes && antes.has(d)) ? 0.7 : 1);
-    }
-    cand.sort((a,b)=>a._dCorpo-b._dCorpo);
-    J._comCorpo = new Set(cand.slice(0, orcamento));
-  }
-
+  /* O ORÇAMENTO DE BONECOS SAIU (ordem do dono, 17/09/2026): houve
+     uma versão em que só os 140 discos mais perto do líder ganhavam
+     corpo 3D e o resto ficava disco. O dono preferiu todo mundo de
+     corpo, custe o que custar — medido em 600 discos: 2.443 draw
+     calls e 48 ms de JS por quadro, contra 603 e 11 ms com o orçamento. */
   function atualizarCena(J, dt){
     quadroN++;
-    ajustarOrcamento(dt);
-    if(quadroN % 20 === 1 || J._comCorpo === undefined) escolherComCorpo(J);
-    const comCorpo = J._comCorpo;
     for(const fg of figuras.values()){ fg.corpo.raiz.visible = false; fg.viva = false; }
     const C = TO.diaJogo.combate;
     const FICA = (C && C.CAIDO_FICA) || 3.0, SOME = (C && C.CAIDO_SOME) || 1.5;
@@ -2232,9 +2181,6 @@ TO.diaJogo.bonecos3 = (function(){
       /* o ferido some depois do prazo: não anima, e a limpeza abaixo
          tira a figura da cena */
       if(d.caido && J.t - (d.caiuEm||0) >= FICA + SOME) return;
-      /* fora do orçamento: é disco na camada 2D, e a figura (se
-         houver) sai da cena na limpeza abaixo */
-      if(comCorpo && !comCorpo.has(d)) return;
       animar(d, i, false);
     });
     (J.policiais||[]).forEach((p,i)=>animar(p, i, true));
@@ -2533,6 +2479,5 @@ TO.diaJogo.bonecos3 = (function(){
           cfg, dprAtual, conta, get dprNivel(){ return dprNivel; }, get estatMalha(){ return estatMalha; },
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },
-          get orcamentoVivo(){ return orcamentoVivo; },
           get _dbg(){ return {scene, cam, camV, renderer, figuras, modeloGLB}; }};
 })();

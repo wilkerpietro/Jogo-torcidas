@@ -7176,6 +7176,22 @@ nos pênaltis): todos os placares na mesma coluna, nenhuma bolinha,
 
 **Medido depois.** Simulação: 47 → 14 ms por passo com 600 discos; 3 ms com 120. Bonecos: 2.443 → 603 draw calls, 1,57 M → 0,37 M triângulos, 48 → 11 ms de JS. Comportamento da briga igual (mesma forma de caídos e de pé aos 10, 20, 30 e 40 s, antes e depois, em 300 × 300 e 40 × 40; zero NaN). Neste contêiner, sem placa de vídeo, o fps de tela não mede nada (2 fps até só com disco), então a régua foi o tempo de JS por quadro: ~28 ms em 1× numa cena de 600, e o orçamento adaptativo tira até mais 8 ms se a placa pedir.
 
+## O orçamento de bonecos saiu (ordem do dono, 17/09/2026)
+
+**A ordem.** Remover a regra de só os 140 discos mais perto do líder ganharem corpo 3D. Todo disco tem boneco, como sempre teve. Saíram junto o orçamento adaptativo e o desligamento automático, que dependiam dele; `combate.desenhar` voltou a não desenhar disco nenhum quando há boneco por cima.
+
+**O impacto, medido** (estádio 300 × 300, 600 discos, três medições com aquecimento de 7 s):
+
+| | com orçamento (140) | sem orçamento (todos) |
+|---|---|---|
+| bonecos na placa | 142 | 602 |
+| draw calls por quadro | 603 | 2.443 |
+| triângulos por quadro | 0,37 M | 1,57 M |
+| JS da camada de bonecos por quadro | 11 ms | 40–46 ms |
+| JS total por quadro (simulação 14 + 2D + bonecos) | ~28 ms | ~60 ms |
+
+Em 120 discos não muda nada (122 bonecos nos dois casos, 9 ms de JS, 523 draw calls), porque o orçamento nunca era atingido. O ganho da simulação (47 → 14 ms) fica. Numa cena de 600, só o JS já limita a ~16 quadros por segundo em 1× antes de a placa de vídeo entrar; a resolução adaptativa que já existia (`ajustarResolucao`) continua baixando o DPR quando o quadro pesa.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

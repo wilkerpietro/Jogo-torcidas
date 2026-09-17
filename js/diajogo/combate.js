@@ -3972,19 +3972,13 @@ TO.diaJogo.combate = (function(){
     /* `semCorpo`: os bonecos da vista de cima (tres.js) desenham gente,
        PM e projétil num canvas por cima; aqui fica só nome e vida */
     const corpo = !(opc && opc.semCorpo);
-    /* O ORÇAMENTO DE BONECOS (medição de 17/09/2026): com boneco por
-       cima, quem ficou fora do orçamento (`J._comCorpo`, escolhido em
-       bonecos3) volta a ser disco aqui — sem isso o disco sumia e o
-       boneco não vinha */
-    const comCorpo = corpo ? null : (J._comCorpo || null);
-    const discoDe = d => corpo || (comCorpo && !comCorpo.has(d));
     if(corpo) for(const p of J.policiais) desenharPolicial(c,p,J.t);
     const ord=[...J.discos].sort((a,b)=>a.y-b.y);
     /* O FERIDO SOME (régua do dono, 06/09/2026): fica uns segundos no
        chão e desaparece — com muita gente caída não se sabia quem
        estava de pé. A conta (J.caidos) não muda; só o desenho. */
-    for(const d of ord) if(!d.vivo && discoDe(d) && !(d.caido && J.t-(d.caiuEm||0) > CAIDO_SOME_EM)) desenharDisco(c,d);
-    for(const d of ord) if(d.vivo){ if(discoDe(d)) desenharDisco(c,d); else desenharRotulo(c,d); }
+    if(corpo) for(const d of ord) if(!d.vivo && !(d.caido && J.t-(d.caiuEm||0) > CAIDO_SOME_EM)) desenharDisco(c,d);
+    for(const d of ord) if(d.vivo){ if(corpo) desenharDisco(c,d); else desenharRotulo(c,d); }
     if(corpo) for(const p of J.projeteis) desenharProjetil(c,p);
   }
 
