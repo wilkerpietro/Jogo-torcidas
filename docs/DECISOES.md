@@ -7122,6 +7122,19 @@ nos pênaltis): todos os placares na mesma coluna, nenhuma bolinha,
 
 **Save em andamento.** A chave já sorteada no save do dono (2031, primeira fase marcada) continua valendo; as próximas fases já saem por potes e a final já cai na 50, porque as datas vêm de `COPA_FASES` na hora do avanço.
 
+## O jornal não conta o jogo da Conmebol antes da bola rolar (pedido do dono, 17/09/2026)
+
+**O que o dono viu.** Quarta-feira da volta das oitavas da Sul-Americana: o cartão "Hoje tem Fortaleza × Orense" com o botão de iniciar a partida, e logo abaixo "Fortaleza 3 × 1 Orense, nas oitavas da Copa Sul-Americana. Passamos de fase." — o resultado antes do jogo, e um placar que não batia com a partida jogada em seguida.
+
+**A causa.** O cartão saía de `nossoNaConmebol` (feed.js) no mesmo dia em que a Conmebol fecha a fase, e o placar era o AGREGADO das duas pernas (a soma que `tieCM` devolve), não o do jogo do dia. No save do dono: "Fortaleza 1 × 4 Palmeiras, nas oitavas da Libertadores. Fim de linha." no mesmo dia em que a partida foi "Fortaleza 0 × 2 São Paulo, pelo Brasileirão".
+
+**A decisão.** O cartão saiu. Todo jogo nosso na Conmebol já está na agenda e sai pelo cartão de partida, com o desfecho depois da cena (agregado e pênaltis inclusive, pelo `costurarDecisao`); o campeão e o vice continuam pelo cartão "campeão da América". Os cartões antigos que já estão em saves continuam sendo lidos como texto.
+
+**Conferido a pedido do dono** (temporada inteira, com o clube forçado na competição quando preciso):
+- Libertadores (Palmeiras e Bahia): Fase 2, Fase 3, oitavas, quartas e semifinal em ida e volta, duas semanas cada (32/34, 38/40, 44/46); final única na 49. Agregado e pênaltis na volta ("agr 2 × 2, pen 4x3, venceu Boca Juniors").
+- Sul-Americana (Fortaleza): playoff, oitavas e quartas em ida e volta (30/32, 35/37, 39/41); a semifinal usa a mesma régua (43/45) e a final é única na 48. O mundo simulado fecha cada fase na segunda semana do par, e o resultado do nosso duelo é lido da agenda, não sorteado.
+- Zero cartões `conmebol` no feed depois da mudança.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

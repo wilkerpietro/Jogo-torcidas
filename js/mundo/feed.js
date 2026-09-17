@@ -2294,7 +2294,6 @@ TO.feed = (function(){
      ------------------------------------------------------- */
   function mundoDeHoje(E, ctx){
     if(!TO.conmebol || !E.conmebol) return;
-    nossoNaConmebol(E, ctx);
     campeoesDaConmebol(E);
     fechamentoDoMundo(E);
   }
@@ -2302,42 +2301,14 @@ TO.feed = (function(){
   const CM_NOME = {libertadores:'Copa Libertadores',
                    sulamericana:'Copa Sul-Americana'};
 
-  /* --- 1 · o nosso clube jogou lá fora --- */
-  function nossoNaConmebol(E, ctx){
-    const meu = E.torcida.clubeId;
-    if(!meu) return;
-    for(const chave of ['libertadores','sulamericana']){
-      const c = E.conmebol[chave];
-      if(!c || !c.mata || !c.mata.length) continue;
-      const ult = c.mata[c.mata.length - 1];
-      const j = ult.jogos.find(x=>x.c === meu || x.f === meu);
-      if(!j) continue;
-      const nossoEmCasa = j.c === meu;
-      const rival = M().torcida ? null : null;
-      const nomeR = (M().time(nossoEmCasa ? j.f : j.c) || {}).nome || 'o rival';
-      const nos = nossoEmCasa ? j.gc : j.gf;
-      const deles = nossoEmCasa ? j.gf : j.gc;
-      const passou = j.venceu === meu;
-      propor(E, {
-        kind:'conmebol', peso:'info', voz:'jornal',
-        tipo: passou ? 'bom' : 'ruim',
-        chave:`cm|${chave}|${E.data.ano}|${ult.fase}`,
-        texto:`${E.torcida.clube} ${nos} × ${deles} ${nomeR}, `+
-              `${naFaseCM(ult.fase)} da ${CM_NOME[chave]}. `+
-              (ult.fase === 'Final'
-                ? (passou ? 'É título.' : 'Ficou o vice.')
-                : (passou ? 'Passamos de fase.' : 'Fim de linha.')),
-        dados:{torneio:CM_NOME[chave], fase:ult.fase, nos, deles, passou},
-        links:[{rot:'Ver a chave', args:{pagina:'competicoes',
-                nivel:'internacional', comp:chave}}]
-      });
-    }
-  }
-  const FASE_CM = {'Fase 3':'na Fase 3', 'Fase Preliminar':'na fase preliminar',
-    'Playoff':'no playoff', 'Oitavas':'nas oitavas', 'Quartas':'nas quartas',
-    'Semifinal':'na semifinal', 'Final':'na final'};
-  const naFaseCM = f => FASE_CM[f] || `na ${String(f||'').toLowerCase()}`;
-
+  /* --- 1 · o nosso clube jogou lá fora ---
+     SAIU (pedido do dono, 17/09/2026). O cartão "Fortaleza 3 × 1
+     Orense, nas oitavas da Sul-Americana. Passamos de fase." nascia no
+     mesmo dia da volta, ANTES de o jogador entrar em campo, e o placar
+     era o AGREGADO das duas pernas — não batia com a partida que ele ia
+     ver em seguida. Todo jogo nosso na Conmebol já está na agenda e sai
+     pelo cartão de partida, com o desfecho depois da cena; o título e
+     o vice continuam saindo pelo cartão de campeão logo abaixo. */
   /* --- 2 · o campeão da América --- */
   function campeoesDaConmebol(E){
     for(const chave of ['libertadores','sulamericana']){
