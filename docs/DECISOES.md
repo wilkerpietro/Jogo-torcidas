@@ -6870,6 +6870,59 @@ contra 0 antes.
 Varredura de dois anos sem travamento e sem exceção; nenhum disco ficou
 sem rota em cena nenhuma.
 
+## O relógio parado sem nada pra responder (dono, 17/09/2026)
+
+O dono mandou o print: 23/02/2031, o ≫ dizendo **"Responda o que está
+aberto — o tempo está parado"**, dois cartões de jornal na tela sem
+botão nenhum, e **1329 mensagens** escondidas atrás do "mostrar mais
+antigas". Jogo parado sem saída.
+
+O relógio para com QUALQUER decisão sem resposta em `E.feed`
+(`travado`). O feed, por outro lado, desenha só as **60 mais novas** e
+guarda o resto atrás do botão de antigas. As duas regras nunca
+conversaram: se a decisão que segura o tempo está fora dessas 60, o jogo
+fica pedindo uma resposta que não tem onde ser dada.
+
+Em jogo novo ela nasce no topo — `dropar` não solta mensagem nova
+enquanto há decisão aberta, e o feed empilha do topo. Mas isso é a regra
+de HOJE: um save de versão anterior pode trazer a decisão enterrada, e
+foi o que chegou aqui.
+
+Duas blindagens, e as duas valem pra qualquer causa futura:
+
+**1. A decisão aberta nunca fica fora da tela.** A janela do feed agora
+estica até alcançá-la (`janelaDoFeed`): o cartão que segura o tempo é
+sempre desenhado, com os botões dele. Esticar não bastava sozinho — o
+laço de desenho pula a mensagem cujo estado não mudou, e cartão já
+cortado do DOM está exatamente nesse caso; quando a janela cresce além
+do teto normal, a lista é remontada do zero.
+
+**2. Decisão que não tem como ser respondida não segura o relógio.** No
+fim da montagem do cartão, se ele é a decisão aberta e não desenhou
+botão NENHUM, nasce ali um **"Seguir em frente"** que a marca como
+respondida e solta o tempo. A trava não pode depender de o cartão estar
+bem formado. Os casos que têm quem os conduza — a linha do itinerário e
+a partida ao vivo — passam longe da válvula, porque ali o apito é que
+fecha; se a página recarregar no meio, as duas somem e a válvula volta a
+valer, que é como um dia interrompido se recupera.
+
+Medido:
+
+| | antes | depois |
+|---|---|---|
+| decisão real enterrada (índice 417 de 418) | não era desenhada | desenhada, com os botões dela |
+| decisão sem botão possível | travava pra sempre | sai com "Seguir em frente" |
+| válvula disparando em jogo normal (6 anos) | — | **0 vezes** |
+
+Varredura de seis anos sem travamento e sem exceção, e uma corrida de
+cinco minutos de relógio real atravessando um dia de jogo inteiro —
+itinerário, partida ao vivo e apito final — terminando destravada.
+
+Fica o registro do que NÃO era: o `confronto` não trava (é `peso:'info'`,
+e é o único filtrado do feed), e o cartão da partida sem botão durante o
+itinerário é de propósito — foi um falso positivo meu antes de medir com
+os temporizadores rodando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

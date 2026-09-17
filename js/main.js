@@ -819,9 +819,9 @@
     noFeedLista = el('div',{class:'feed-lista'});
     rolo.appendChild(noFeedLista);
     const hist = feedVisivel(e);
-    if(hist.length > tetoFeed){
+    if(hist.length > janelaDoFeed(e).teto){
       const b = el('button',{class:'bt feed-mais',
-        texto:`Mostrar mais antigas (${hist.length - tetoFeed})`});
+        texto:`Mostrar mais antigas (${hist.length - janelaDoFeed(e).teto})`});
       b.onclick = ()=>{ tetoFeed += TETO_LISTA; pintarFeed(); };
       rolo.appendChild(b);
     }
@@ -1008,21 +1008,53 @@
     : m.respondido ? (m.respondido.rot || m.respondido.botao || 'sim')
     : (m.kind === 'partida' && m.dados && m.dados.iniciada) ? 'aovivo' : '';
 
+  /* A DECISÃO ABERTA NUNCA FICA FORA DA TELA (correção do dono,
+     17/09/2026)
+
+     O feed desenha as 60 mais novas e guarda o resto atrás do "mostrar
+     mais antigas". O relógio, porém, para com QUALQUER decisão sem
+     resposta em `E.feed`, esteja ela desenhada ou não — e aí o jogo
+     fica parado pedindo uma resposta que não tem onde ser dada: o ≫ diz
+     "responda o que está aberto" e não há o que clicar. Em jogo novo
+     ela nasce no topo, mas um save antigo pode trazê-la enterrada.
+     Agora a janela do feed estica até alcançá-la: o cartão que segura o
+     tempo é sempre desenhado. */
+  function janelaDoFeed(e){
+    const todas = feedVisivel(e);
+    let n = tetoFeed;
+    const aberta = TO.feed.decisaoAberta(e);
+    if(aberta){
+      const i = todas.indexOf(aberta);
+      if(i >= n) n = i + 1;
+    }
+    return {hist: todas.slice(0, n), teto: n};
+  }
+
   function atualizarFeed(){
     const e = E();
     if(!e || !noFeedLista || !noFeedLista.isConnected) return;
-    const hist = feedVisivel(e).slice(0, tetoFeed);
+    const {hist, teto} = janelaDoFeed(e);
+    /* ALCANÇAR A DECISÃO ENTERRADA EXIGE REMONTAR (17/09/2026): esticar
+       a janela não basta. O laço abaixo pula a mensagem cujo estado não
+       mudou, e um cartão que já saiu do DOM por corte de tamanho está
+       exatamente nesse caso — ficaria de fora pra sempre. Quando a
+       janela cresce além do teto normal (só acontece pra alcançar a
+       decisão que segurou o tempo), a lista é remontada do zero. */
+    if(teto > tetoFeed && noFeedLista.children.length < hist.length){
+      noFeedLista.innerHTML = '';
+      feedVistas = new Map();
+    }
     /* de trás pra frente: cada uma entra por cima da anterior, então a
        última a entrar é a mais nova — que é a que fica no topo */
     for(let i = hist.length - 1; i >= 0; i--){
       const m = hist[i], est = estadoDaMsg(e, m), velho = feedVistas.get(m.id);
-      if(velho && velho.estado === est) continue;
+      if(velho && velho.estado === est && velho.no.isConnected) continue;
       const no = cartaoMensagem(e, m);
       if(velho && velho.no.isConnected) velho.no.replaceWith(no);
       else noFeedLista.prepend(no);
       feedVistas.set(m.id, {no, estado:est});
     }
-    while(noFeedLista.children.length > tetoFeed) noFeedLista.lastChild.remove();
+    while(noFeedLista.children.length > teto) noFeedLista.lastChild.remove();
     /* O MAPA DE NÓS NÃO PODE CRESCER COM A PARTIDA. Cada mensagem que
        sai da lista deixava aqui um nó solto que o navegador não libera:
        numa corrida de vinte temporadas são milhares deles, e a aba
@@ -2973,6 +3005,42 @@
          fechar o plano sem rolar a tela (pedido do dono, 10/09/2026) */
       const cab = m.kind === 'semana' && art.querySelector('.sem-cab');
       if(cab) cab.appendChild(bs); else art.appendChild(bs);
+    }
+
+    /* A VÁLVULA DO RELÓGIO PARADO (correção do dono, 17/09/2026)
+
+       O tempo para com uma decisão sem resposta, e a resposta é sempre
+       um botão. Se o cartão que está segurando o tempo não desenhou
+       botão NENHUM — nem o dele, nem a linha do dia, nem o placar ao
+       vivo —, o jogo fica parado pedindo uma resposta que não existe
+       em lugar nenhum da tela. Foi o que o dono pegou: o ≫ dizendo
+       "responda o que está aberto" sem nada pra responder.
+
+       A trava não pode depender de o cartão estar bem formado, então a
+       saída nasce aqui, no fim da montagem, olhando o que de fato foi
+       parar no cartão. Não é remendo de regra: mensagem que não tem
+       como ser respondida não tem por que segurar o relógio de
+       ninguém. As que têm quem as conduza — a linha do itinerário e a
+       partida ao vivo — passam longe daqui (`aoVivo`/`linha`), porque
+       ali é a linha do dia que conduz e o apito é que fecha; se a
+       página recarregar no meio, as duas somem e a válvula volta a
+       valer, que é como o dia interrompido se recupera. */
+    if(m.peso === 'decisao' && !m.respondido && !aoVivo && !linha &&
+       !art.querySelector('button:not([disabled])')){
+      const saida = el('div',{class:'msg-bts'});
+      const bt = el('button',{class:'bt destaque'});
+      bt.innerHTML = '<span>Seguir em frente</span>'+
+                     '<small>esta mensagem ficou sem resposta possível '+
+                     'e estava segurando o tempo</small>';
+      bt.onclick = ()=>{
+        m.respondido = {rot:'Seguir em frente', botao:'destravar'};
+        TO.estado.salvar(); atualizarFeed(); pintarTopo();
+        if(!TO.feed.travado(E())) retomarTempo('decisao');
+      };
+      saida.appendChild(bt);
+      art.appendChild(saida);
+      if(window.console) console.warn('[feed] decisão sem botão destravada:',
+                                      m.kind, m.chave || m.id);
     }
     return art;
   }
