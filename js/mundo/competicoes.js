@@ -1192,14 +1192,150 @@ TO.competicoes = (function(){
     return abs - E.bateriaAbs <= 7 ? 55 * 0.20 : 0;
   }
 
+  /* =======================================================
+     O ÁRBITRO DA AGENDA (régua do dono, 17/09/2026)
+
+     O calendário nasce em três lugares que não se olham — o nacional
+     aqui, a Conmebol em conmebol.js e as fases de copa que vão sendo
+     sorteadas — e cada um marca o seu dia sem perguntar aos outros. O
+     resultado era Libertadores e Brasileirão na MESMA quarta-feira, e
+     domingo com jogo de novo na terça. A régua do dono: NO MÁXIMO DOIS
+     JOGOS POR SEMANA, e SEMPRE TRÊS DIAS entre um e outro.
+
+     Este árbitro só cuida do clube do jogador (é a agenda que ele vê e
+     vive; pros outros 300 clubes o dia da semana não muda nada) e só
+     dos jogos que ainda vão acontecer. Ele roda todo dia, é barato e
+     dá sempre a mesma resposta pra mesma agenda:
+
+     1. Semana com três ou mais: adia o de menor peso pra semana mais
+        próxima que tenha vaga. Peso, do mais fixo pro mais móvel:
+        Conmebol (a Conmebol inteira anda na quarta, e o dia dela é a
+        âncora), copa nacional, liga, regional.
+     2. Dias: passa semana a semana escolhendo o dia de cada jogo pra
+        ficar a três ou mais do anterior e do seguinte — a Conmebol não
+        sai da quarta; o resto prefere o fim de semana (sábado, domingo)
+        e depois a quarta, quinta, sexta.
+
+     A mudança fica no próprio jogo (`j.d` = dia, `j.s` = semana), que é
+     o que toda leitura já respeita pro dia e passa a respeitar pra
+     semana. Jogo já jogado, ou de hoje, não se mexe.
+     ======================================================= */
+  const MAX_POR_SEMANA = 2, FOLGA_MIN = 3;
+  const semanaMarcada = (j, r) => j.s || r.semana;
+  const diaMarcado = (j, r, comp) => j.d || r.dia || comp.dia || DIA_FDS;
+  const absDe = (s, d) => (s - 1) * 7 + d;
+
+  function pesoDeFixar(comp, r, mata){
+    if(comp.deFora || comp.tipo === 'copa-de-fora') return 3;
+    if(mata || comp.copa) return 2;
+    if(comp.tipo === 'regional') return 0;
+    return 1;
+  }
+
+  function arrumarAgenda(E){
+    const S = E && E.temporada;
+    const meu = E && E.torcida && M().time(E.torcida.clubeId);
+    if(!S || !meu || !S.competicoes) return 0;
+    const hoje = absDe(E.data.semana, E.data.dia);
+    const ultimaSemana = 52;
+    let mexidas = 0;
+
+    /* a lista viva: cada jogo futuro do clube com o objeto de verdade */
+    const lista = [];
+    let ultimoJogado = -99;
+    for(const comp of S.competicoes){
+      const junta = (r, mata)=>{
+        for(const j of r.jogos){
+          if(!j.f || (j.c !== meu.id && j.f !== meu.id)) continue;
+          const s = semanaMarcada(j, r), d = diaMarcado(j, r, comp), abs = absDe(s, d);
+          if(temJogo(j) || abs <= hoje){ ultimoJogado = Math.max(ultimoJogado, abs); continue; }
+          lista.push({j, r, comp, peso:pesoDeFixar(comp, r, mata), s, d,
+                      fixo: pesoDeFixar(comp, r, mata) === 3});
+        }
+      };
+      comp.rodadas.forEach(r=>junta(r, false));
+      comp.mata.forEach(m=>junta(m, true));
+    }
+    if(!lista.length) return 0;
+
+    const porSemana = ()=>{
+      const m = new Map();
+      for(const x of lista) (m.get(x.s) || m.set(x.s, []).get(x.s)).push(x);
+      return m;
+    };
+
+    /* ---- 1. semana cheia: adia o mais leve ---- */
+    let mapa = porSemana();
+    const semanas = [...mapa.keys()].sort((a,b)=>a-b);
+    for(const s of semanas){
+      const l = mapa.get(s);
+      while(l.length > MAX_POR_SEMANA){
+        /* o mais leve sai; empate, sai o de dia mais tarde */
+        l.sort((a,b)=>a.peso - b.peso || b.d - a.d);
+        const sai = l[0];
+        if(sai.fixo) break;                       // três da Conmebol: não há o que fazer
+        let destino = null;
+        for(let k = 1; k <= 6 && !destino; k++){
+          for(const cand of [s + k, s - k]){
+            if(cand < 1 || cand > ultimaSemana) continue;
+            if(absDe(cand, 7) <= hoje) continue;   // já passou
+            if((mapa.get(cand) || []).length < MAX_POR_SEMANA){ destino = cand; break; }
+          }
+        }
+        if(!destino) break;
+        l.shift();
+        sai.s = destino; sai.j.s = destino; mexidas++;
+        (mapa.get(destino) || mapa.set(destino, []).get(destino)).push(sai);
+      }
+    }
+
+    /* ---- 2. os dias: três de folga com o anterior e o seguinte ---- */
+    mapa = porSemana();
+    const ordem = [...mapa.keys()].sort((a,b)=>a-b);
+    let anterior = ultimoJogado;                  // abs do último jogo marcado
+    const PREFERIDOS = [DIA_FDS, 7, DIA_MEIO, 4, 5, 2, 1];
+    for(let i = 0; i < ordem.length; i++){
+      const s = ordem[i], l = mapa.get(s);
+      /* o fixo da semana seguinte limita até onde esta pode ir */
+      const prox = mapa.get(ordem[i + 1]) || [];
+      const tetoFixo = prox.filter(x=>x.fixo).map(x=>absDe(x.s, x.d));
+      const limite = tetoFixo.length ? Math.min(...tetoFixo) - FOLGA_MIN : Infinity;
+      /* fixos primeiro, depois os móveis do dia mais cedo pro mais tarde */
+      l.sort((a,b)=>(b.fixo?1:0) - (a.fixo?1:0) || a.d - b.d);
+      const tomados = [];
+      for(const x of l){
+        const cabe = d => {
+          const abs = absDe(s, d);
+          if(abs <= hoje) return false;
+          if(abs - anterior < FOLGA_MIN) return false;
+          if(abs > limite) return false;
+          return tomados.every(t => Math.abs(t - abs) >= FOLGA_MIN);
+        };
+        let dia = x.d;
+        if(x.fixo){
+          /* a Conmebol não sai do dia dela; se o anterior ficou perto
+             demais, é o anterior que já deveria ter cedido */
+        } else if(!cabe(dia)){
+          const alt = [x.d, ...PREFERIDOS].find(cabe);
+          if(alt !== undefined) dia = alt;
+        }
+        if(dia !== x.d){ x.d = dia; x.j.d = dia; mexidas++; }
+        tomados.push(absDe(s, dia));
+      }
+      if(tomados.length) anterior = Math.max(...tomados);
+    }
+    return mexidas;
+  }
+
   function jogarSemana(E, semana){
+    arrumarAgenda(E);
     const S = E.temporada;
     if(!S) return [];
     const feitos = [];
     for(const comp of S.competicoes){
       for(const r of comp.rodadas){
-        if(r.semana !== semana) continue;
         for(const j of r.jogos){
+          if((j.s || r.semana) !== semana) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
           const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c, j.f));
           j.gc = a; j.gf = b;
@@ -1207,9 +1343,9 @@ TO.competicoes = (function(){
         }
       }
       for(const m of comp.mata){
-        if(m.semana !== semana) continue;
         for(const j of m.jogos){
           if(!j.f) continue;                       // passou sem jogar
+          if((j.s || m.semana) !== semana) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
           const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c, j.f));
           j.gc = a; j.gf = b;
@@ -1262,11 +1398,12 @@ TO.competicoes = (function(){
   function jogarDia(E, semana, dia){
     const S = E.temporada;
     if(!S) return [];
+    arrumarAgenda(E);
     const feitos = [];
     for(const comp of S.competicoes){
       for(const r of comp.rodadas){
-        if(r.semana !== semana) continue;
         for(const j of r.jogos){
+          if((j.s || r.semana) !== semana) continue;
           if((j.d || r.dia || comp.dia || DIA_FDS) !== dia) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
           const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c));
@@ -1278,9 +1415,9 @@ TO.competicoes = (function(){
         }
       }
       for(const m of comp.mata){
-        if(m.semana !== semana) continue;
         for(const j of m.jogos){
           if(!j.f) continue;
+          if((j.s || m.semana) !== semana) continue;
           if((j.d || m.dia || DIA_FDS) !== dia) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
           const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c));
@@ -1429,7 +1566,7 @@ TO.competicoes = (function(){
           if(j.c!==clubeId && j.f!==clubeId) continue;
           if(!j.f) continue;                     /* passou sem adversário */
           const casa = j.c===clubeId;
-          fora.push({semana:r.semana, dia:j.d || r.dia || comp.dia || DIA_FDS,
+          fora.push({semana:j.s || r.semana, dia:j.d || r.dia || comp.dia || DIA_FDS,
                      hora:j.h || '16:00',
                      comp:comp.nome, compId:comp.id,
                      tipo:comp.tipo, fase, mata:!!mata,
@@ -1666,7 +1803,7 @@ TO.competicoes = (function(){
      só pra tabela não ficar com 38 linhas iguais. */
   const horaDoJogo = j => (j && j.h) || '16:00';
 
-  return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana,
+  return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana, arrumarAgenda,
           bonusTorcida,
           forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
           paisDe, paisDoJogador, simular, forca,

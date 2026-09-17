@@ -521,6 +521,8 @@ TO.conmebol = (function(){
     for(const id of [mand, vis]) if(!c.clubes.includes(id)) c.clubes.push(id);
     c.mata.push(Object.assign({fase, semana, dia:DIA,
                  jogos:[{c:mand, f:vis, d:DIA, h:'21:30'}]}, marca || {}));
+    /* jogo novo na agenda: o árbitro confere a semana (dono, 17/09/2026) */
+    if(C().arrumarAgenda) C().arrumarAgenda(E);
   }
 
   /* IDA E VOLTA NO MATA-MATA (correção do dono, 16/09/2026)
@@ -546,6 +548,7 @@ TO.conmebol = (function(){
                  jogos:[{c:b, f:a, d:DIA, h:'21:30', par:0}]});
     c.mata.push({fase, semana:ss[1], dia:DIA, perna:'volta', indice,
                  jogos:[{c:a, f:b, d:DIA, h:'21:30', par:0}]});
+    if(C().arrumarAgenda) C().arrumarAgenda(E);
   }
   function jogadoCM(E, torneio, fase, semana, a, b){
     const S = E.temporada;

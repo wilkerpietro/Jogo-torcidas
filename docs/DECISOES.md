@@ -7002,6 +7002,48 @@ e o localStorage recusou gravá-lo ("NÃO SALVOU · não coube"). O autosave
 do dono pode estar falhando calado desde algum ponto de 2030. Não mexi
 nisso aqui; é o próximo assunto.
 
+## O árbitro da agenda (régua do dono, 17/09/2026)
+
+O dono pegou na Agenda do time: **11/06, quarta — Brasileirão (São
+Paulo, casa) e Sul-Americana (River, fora) no mesmo dia.** A régua
+dele: **no máximo dois jogos por semana, e sempre três dias entre um e
+outro.**
+
+O calendário nasce em três lugares que não se olham — o nacional em
+`competicoes.js`, a Conmebol em `conmebol.js`, e as fases de copa que
+vão sendo sorteadas — e cada um marca o seu dia sem perguntar aos
+outros. Medido em duas temporadas: **Palmeiras, 5 colisões no mesmo dia
+e 5 semanas com três jogos** (sempre Libertadores na quarta em cima de
+rodada de meio de semana ou de Copa do Brasil); **Fortaleza, 2
+intervalos de só dois dias** (domingo → terça).
+
+Entrou o `arrumarAgenda`: roda todo dia (e na hora em que a Conmebol
+marca um jogo), só pro clube do jogador e só pros jogos que ainda vão
+acontecer, e dá sempre a mesma resposta pra mesma agenda:
+
+1. **Semana com três ou mais:** adia o de menor peso pra semana mais
+   próxima com vaga. Do mais fixo pro mais móvel: Conmebol (a Conmebol
+   inteira anda na quarta, e o dia dela é a âncora), copa nacional,
+   liga, regional.
+2. **Os dias:** semana a semana, cada jogo ganha um dia a três ou mais
+   do anterior e do seguinte; a Conmebol não sai da quarta, o resto
+   prefere sábado e domingo, depois quarta, quinta, sexta.
+
+A mudança fica no próprio jogo: `j.d` (dia) já era respeitado por toda
+leitura; `j.s` (semana) passou a ser — `jogarDia`, `jogarSemana` e
+`agendaDoClube`. Jogo já jogado, ou de hoje, não se mexe.
+
+Medido de novo, mesmas duas temporadas, os dois clubes: **zero colisões,
+zero semanas com três jogos, zero intervalos curtos.** Numa temporada
+inteira do Palmeiras: 1 jogo adiado de semana, 20 com o dia trocado,
+nenhum ficou sem ser jogado, todas as competições fecharam. No save do
+dono (2031, 43 jogos futuros): 2 ajustes, zero conflito. Seis anos de
+varredura sem travamento.
+
+Achado de passagem, que NÃO é deste árbitro (acontece igual sem ele):
+**a Copa do Brasil termina a temporada sem campeão.** Fica anotado como
+próximo assunto.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
