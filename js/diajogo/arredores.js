@@ -16,6 +16,10 @@ TO.diaJogo = TO.diaJogo || {};
 
 TO.diaJogo.arredores = (function(){
   const U = TO.util;
+  /* SEM Math.hypot (medição de 17/09/2026): a versão nativa protege de
+     overflow e custa dez vezes a raiz direta; aqui são milhares de
+     chamadas por quadro. Três argumentos ainda caem no nativo. */
+  const hyp = (x,y,z)=> z===undefined ? Math.sqrt(x*x+y*y) : Math.hypot(x,y,z);
   /* A cena dos arredores é a padrão; praça e rua entram por usarCena().
      Todas têm o mesmo tamanho de tela e a mesma célula, então a malha e
      todo o resto do combate não precisam saber qual está no ar. */
@@ -332,7 +336,7 @@ TO.diaJogo.arredores = (function(){
     const soY = !soX && dy && tentar(ent,0,dy,r);
     if(soX||soY) return true;
     // contorna a quina: mesma velocidade, direção girada
-    const m=Math.hypot(dx,dy);
+    const m=hyp(dx,dy);
     if(m>0.01){
       for(const a of GIROS){
         const cs=Math.cos(a), sn=Math.sin(a);
@@ -527,7 +531,7 @@ TO.diaJogo.arredores = (function(){
             if(v+q*0.5<md){md=v+q*0.5; alvo=[dc,dr];}
           }
           if(!alvo) return {dx:0,dy:0,semRota:true};
-          const d=Math.hypot(alvo[0],alvo[1])||1;
+          const d=hyp(alvo[0],alvo[1])||1;
           return {dx:alvo[0]/d, dy:alvo[1]/d};
         }
 
@@ -540,7 +544,7 @@ TO.diaJogo.arredores = (function(){
           if(v<melhor){melhor=v;melhorC=dc;melhorR=dr;}
         }
         if(!melhorC&&!melhorR) return {dx:0,dy:0};
-        const d=Math.hypot(melhorC,melhorR)||1;
+        const d=hyp(melhorC,melhorR)||1;
         return {dx:melhorC/d, dy:melhorR/d};
       }
     };
@@ -595,7 +599,7 @@ TO.diaJogo.arredores = (function(){
       const pts=f.pontos;
       for(let i=1;i<pts.length;i++){
         const ax=pts[i-1][0], ay=pts[i-1][1], bx=pts[i][0], by=pts[i][1];
-        const vx=bx-ax, vy=by-ay, comp=Math.hypot(vx,vy)||1;
+        const vx=bx-ax, vy=by-ay, comp=hyp(vx,vy)||1;
         const n=Math.max(1,Math.round(comp/22));
         const meia=(comp/n)/2;
         for(let k=0;k<n;k++){
@@ -614,7 +618,7 @@ TO.diaJogo.arredores = (function(){
     for(const g of D.grades){
       const n=g.modulos;
       const vx=g.ate.x-g.de.x, vy=g.ate.y-g.de.y;
-      const comp=Math.hypot(vx,vy)||1;
+      const comp=hyp(vx,vy)||1;
       const meia=(comp/n)/2;
       for(let i=0;i<n;i++){
         const t=(i+0.5)/n;
@@ -644,7 +648,8 @@ TO.diaJogo.arredores = (function(){
 
       const lo = U.limitar(ao, -m.meia, m.meia);
       const lt = U.limitar(at, -m.esp,  m.esp);
-      const d  = Math.hypot(lo-ao, lt-at);
+      const ex=lo-ao, ey=lt-at;
+      const d  = Math.sqrt(ex*ex+ey*ey);
       if(d>=r) continue;
 
       if(d<0.01){
@@ -658,7 +663,7 @@ TO.diaJogo.arredores = (function(){
         const px = m.x + m.ux*lo + (-m.uy)*lt;
         const py = m.y + m.uy*lo + ( m.ux)*lt;
         const ox = ent.x-px, oy = ent.y-py;
-        const od = Math.hypot(ox,oy)||1;
+        const od = hyp(ox,oy)||1;
         ent.x = px + ox/od*r;
         ent.y = py + oy/od*r;
       }

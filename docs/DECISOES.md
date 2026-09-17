@@ -7157,6 +7157,25 @@ nos pênaltis): todos os placares na mesma coluna, nenhuma bolinha,
 
 **A subsede ataca com o núcleo dela.** O dono recebeu um ataque da subsede da Terror Bicolor em Fortaleza sobre o bar da TUF: a subsede tem 8, a cena trouxe 41. A cena de defesa (`abrirAtaqueAoBar`, que atende bar, emboscada, concentração e pista) contava o efetivo da torcida INTEIRA (`efetivoDePe`), ignorando o `efetivo` que o ataque marcado já trazia. Agora, ataque com `filial:true` desce com o núcleo de lá, inteiro (mínimo 4, e o desconto de ferido continua), e o nome na cena é o da subsede ("Bamor Sub-Sede Fortaleza"). Medido: torcida de 300 membros com subsede de 8 → cena "Bamor Sub-Sede Fortaleza 8 × Leões da TUF 38".
 
+## A cena grande a 30 fps (pedido do dono, 17/09/2026)
+
+**O pedido.** As cenas com muita gente de cada lado, principalmente a de estádio, rodavam a 0–1 fps. Jogável é 30 pra cima.
+
+**A medição** (Playwright, estádio 300 × 300, 600 discos): a simulação (`combate.passo`) custava 47 ms por quadro, e a camada de bonecos (`bonecos3`) mais 48 ms de JS com 2.443 draw calls e 1,5 milhão de triângulos — 600 bonecos de 4 malhas cada. Só isso já passa de 90 ms por quadro sem contar a placa de vídeo. Dentro da simulação: `inimigoAlcancavel` 19% (ordenava toda a vizinhança de cada disco a cada quadro), `Math.hypot` 16% (a distância do jogo inteiro), `moverDiscos` 13%, a grade espacial com chave de texto 9,5%, `iaLuta` 9%.
+
+**O que mudou na simulação** (`combate.js`, `arredores.js`, `nucleo.js`):
+- `U.dist` e todo `Math.hypot` de dois argumentos viraram raiz direta (`hyp`); a nativa protege de overflow e custa dez vezes mais.
+- A grade espacial tem chave numérica (coluna × 4096 + linha), baldes reaproveitados entre quadros e divididos por lado: quem procura inimigo só varre o lado de lá. Célula de 96 pra 64 px (o raio de 130 puxava quatro vezes a área do círculo).
+- `inimigoAlcancavel` escolhe os três mais perto por inserção direta, sem ordenar a lista.
+- Buscas escalonadas com cache validado: a curta (130 px) num quadro sim, num não; a longa (240 px, e a vista da retaguarda) a cada três quadros — o alvo vale enquanto estiver de pé e a menos de 150/260 px. A vizinhança do `iaLuta` (inimigo mais perto, aliados, cercado) também se reveza; a decisão de bater ou defender continua todo quadro.
+- O portador da faixa media a distância ao inimigo mais perto varrendo os 300 do outro lado pra cada um dos seus — agora pela grade, a 300 px.
+- A polícia refaz o alvo da carga a cada 15 quadros (varria todos os discos hostis, com vizinhança cada, por policial por quadro). O laço disco × polícia do `separar` compara a distância ao quadrado antes da raiz.
+- Cronômetro por etapa: com `J._perfil = true`, `J._tempos` acumula o custo de cada etapa do passo (e das sub-etapas de `moverDiscos`).
+
+**O que mudou nos bonecos** (`bonecos3.js`, `combate.desenhar`): o ORÇAMENTO. Só os `cfg.orcamento` (140) discos mais perto do líder ganham corpo 3D; o resto volta a ser disco na camada 2D (`J._comCorpo`, refeito a cada 20 quadros, com 30% de vantagem pra quem já tem corpo, pra não piscar na borda). O orçamento vivo encolhe 25% a cada 2 s de quadro acima de 33 ms e volta quando folga; no piso de 30 e ainda pesado, zera — cena só de disco, que é o que salva quem está com WebGL por software. Tudo em `bonecos3.cfg` e `bonecos3.orcamentoVivo`.
+
+**Medido depois.** Simulação: 47 → 14 ms por passo com 600 discos; 3 ms com 120. Bonecos: 2.443 → 603 draw calls, 1,57 M → 0,37 M triângulos, 48 → 11 ms de JS. Comportamento da briga igual (mesma forma de caídos e de pé aos 10, 20, 30 e 40 s, antes e depois, em 300 × 300 e 40 × 40; zero NaN). Neste contêiner, sem placa de vídeo, o fps de tela não mede nada (2 fps até só com disco), então a régua foi o tempo de JS por quadro: ~28 ms em 1× numa cena de 600, e o orçamento adaptativo tira até mais 8 ms se a placa pedir.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

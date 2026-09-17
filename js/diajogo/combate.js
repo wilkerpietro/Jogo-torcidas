@@ -31,6 +31,10 @@ TO.diaJogo.P = {
 TO.diaJogo.combate = (function(){
   const OUTRO_LADO = {mandante:'visitante', visitante:'mandante'};
   const U = TO.util;
+  /* SEM Math.hypot (medição de 17/09/2026): a versão nativa protege de
+     overflow e custa dez vezes a raiz direta; aqui são milhares de
+     chamadas por quadro. Três argumentos ainda caem no nativo. */
+  const hyp = (x,y,z)=> z===undefined ? Math.sqrt(x*x+y*y) : Math.hypot(x,y,z);
   const A = TO.diaJogo.arredores;
   const P = TO.diaJogo.P;
   /* A cena pode trocar no ar (arredores, praça, rua), então D não pode ser
@@ -68,7 +72,7 @@ TO.diaJogo.combate = (function(){
   const GIRO_ANDANDO = 11;     // rad/s acompanhando o próprio passo
   const rumoPara = (d,o)=>Math.atan2(o.x-d.x, o.y-d.y);
   function naFrente(d,o){
-    const dx=o.x-d.x, dy=o.y-d.y, l=Math.hypot(dx,dy)||1;
+    const dx=o.x-d.x, dy=o.y-d.y, l=hyp(dx,dy)||1;
     return (Math.sin(d.rumo)*dx + Math.cos(d.rumo)*dy)/l >= CONE_FRENTE;
   }
   /* gira o rumo em direção a `alvo` no máximo `vel·dt`; true quando chegou */
@@ -198,7 +202,7 @@ TO.diaJogo.combate = (function(){
   class Projetil{
     constructor(x,y,ax,ay,tipo,lado){
       this.x=x; this.y=y; this.ox=x; this.oy=y; this.tipo=tipo; this.lado=lado;
-      const dx=ax-x, dy=ay-y, d=Math.hypot(dx,dy)||1;
+      const dx=ax-x, dy=ay-y, d=hyp(dx,dy)||1;
       const v = tipo==='pedra'?430:300;
       this.vx=dx/d*v; this.vy=dy/d*v;
       this.t=0; this.dur=d/v; this.morto=false;
@@ -858,6 +862,7 @@ TO.diaJogo.combate = (function(){
        ninguém mais se pega, mas quem defendeu ainda anda de volta */
     if(J.fase!=='ativo' && J.fase!=='voltando') return;
     J.t+=dt;
+    J._quadro = (J._quadro||0) + 1;
     refazerGrade(J);      // uma vez por quadro, antes de qualquer busca
     if(J.fase==='voltando'){
       moverDiscos(J,dt);
@@ -865,26 +870,43 @@ TO.diaJogo.combate = (function(){
       conferirVolta(J);
       return;
     }
+    /* O CRONÔMETRO POR ETAPA (medição de 17/09/2026): com `J._perfil`
+       ligado, cada etapa soma o seu tempo em `J._tempos` — é o que
+       diz onde uma cena de 600 gasta o quadro. Desligado, custa um
+       `if` por etapa. */
+    const PF = J._perfil ? (J._tempos = J._tempos || {}) : null;
+    let t0 = PF ? performance.now() : 0;
+    const marca = PF ? nome => { const t = performance.now(); PF[nome] = (PF[nome]||0) + (t - t0); t0 = t; } : null;
     destravarEncalhados(J, dt);
     conferirGatilho(J);
     conferirBondes(J);
     conferirLinhas(J);
+    if(PF) marca('conferir');
     moverLider(J,dt,teclas,podeControlar);
     moverDiscos(J,dt);
+    if(PF) marca('moverDiscos');
     moverPoliciais(J,dt);
-    iaLuta(J,dt); socorrer(J,dt); conferirAgarroes(J); iaChamar(J);
+    if(PF) marca('moverPoliciais');
+    iaLuta(J,dt); if(PF) marca('iaLuta');
+    socorrer(J,dt); conferirAgarroes(J); iaChamar(J);
+    if(PF) marca('socorro+agarrao+chamar');
     atualizarFaixas(J,dt);
+    if(PF) marca('faixas');
     contatos(J,dt);
+    if(PF) marca('contatos');
     iaArremesso(J,dt);
     moverProjeteis(J,dt);
     medirClima(J,dt);
     passoCarga(J,dt);
     pressaoSobreMim(J,dt);
     iaRecuo(J);
+    if(PF) marca('arremesso+clima+carga+pressao+recuo');
     separar(J);
+    if(PF) marca('separar');
     checarDebandada(J);
     conferirEntrada(J);
     conferirFim(J);
+    if(PF) marca('debandada+entrada+fim');
   }
 
   /* =======================================================
@@ -1183,7 +1205,7 @@ TO.diaJogo.combate = (function(){
       if(teclas['w']||teclas['arrowup'])    dy--;
       if(teclas['s']||teclas['arrowdown'])  dy++;
     }
-    const m=Math.hypot(dx,dy);
+    const m=hyp(dx,dy);
     if(!m) return;
     /* o jogador corre atrás no mesmo passo de quem foge — a mesma
        regra dos discos, e pelo mesmo motivo (ver `inimigoFugindo`) */
@@ -1195,7 +1217,7 @@ TO.diaJogo.combate = (function(){
     A.mover(l, dx/m*v*dt, dy/m*v*dt);
     A.barrarGrades(l,J.grades);
     const mx=l.x-px, my=l.y-py;
-    if(Math.hypot(mx,my) > v*dt*0.2){ girarRumo(l, Math.atan2(mx,my), dt, GIRO_ANDANDO); l.viraPara=null; }
+    if(hyp(mx,my) > v*dt*0.2){ girarRumo(l, Math.atan2(mx,my), dt, GIRO_ANDANDO); l.viraPara=null; }
   }
 
   /* ---------- slots de formação ---------- */
@@ -1282,18 +1304,35 @@ TO.diaJogo.combate = (function(){
      pontoLivreMaisProximo (arredores.js) e a varredura par a
      par de separar().
      ======================================================= */
-  const CELULA = 96;
+  /* 64 e não 96 (medição de 17/09/2026): com raio de busca de 130 a
+     célula de 96 puxava até 16 células — quatro vezes a área do
+     círculo; com 64 são 25 células menores, metade dos candidatos */
+  const CELULA = 64;
+  /* A GRADE COM CHAVE NUMÉRICA (medição de 17/09/2026): a chave era
+     texto ("3,7"), montada e comparada a cada consulta — e são
+     milhares por quadro numa cena de 600. Agora é um inteiro (coluna
+     × 4096 + linha, com folga pra coordenada negativa), os baldes são
+     reaproveitados de um quadro pro outro e cada disco guarda a
+     própria ordem na lista, que o escalonamento das buscas usa. */
+  const GRADE_K = 4096, GRADE_FOLGA = 8;
   function refazerGrade(J){
-    const g = new Map();
+    let g = J._grade;
+    if(!g) g = J._grade = new Map();
+    else for(const l of g.values()){ l.length = 0; for(const k in l.porLado) l.porLado[k].length = 0; }
     let maior = 8;
-    for(const o of J.discos){
+    const ds = J.discos;
+    for(let i=0;i<ds.length;i++){
+      const o = ds[i];
+      o._ord = i;
       if(!o.vivo) continue;
-      const k = ((o.x/CELULA)|0) + ',' + ((o.y/CELULA)|0);
-      let l = g.get(k); if(!l){ l=[]; g.set(k,l); }
+      const k = (((o.x/CELULA)|0)+GRADE_FOLGA)*GRADE_K + (((o.y/CELULA)|0)+GRADE_FOLGA);
+      let l = g.get(k); if(!l){ l=[]; l.porLado={}; g.set(k,l); }
       l.push(o);
+      /* o balde também é dividido por lado: quem procura inimigo só
+         olha o lado de lá */
+      (l.porLado[o.lado] || (l.porLado[o.lado] = [])).push(o);
       if(o.r > maior) maior = o.r;
     }
-    J._grade = g;
     /* o maior raio da cena: quem procura vizinho precisa dele pra saber
        até onde olhar sem varrer a lista inteira */
     J._raioMax = maior;
@@ -1302,28 +1341,68 @@ TO.diaJogo.combate = (function(){
   function porPerto(J, x, y, raio){
     const g = J._grade;
     if(!g) return J.discos;
-    const c0=((x-raio)/CELULA)|0, c1=((x+raio)/CELULA)|0;
-    const r0=((y-raio)/CELULA)|0, r1=((y+raio)/CELULA)|0;
+    const c0=(((x-raio)/CELULA)|0)+GRADE_FOLGA, c1=(((x+raio)/CELULA)|0)+GRADE_FOLGA;
+    const r0=(((y-raio)/CELULA)|0)+GRADE_FOLGA, r1=(((y+raio)/CELULA)|0)+GRADE_FOLGA;
     const fora=[];
-    for(let c=c0;c<=c1;c++) for(let r=r0;r<=r1;r++){
-      const l=g.get(c+','+r);
-      if(l) for(const o of l) fora.push(o);
+    for(let c=c0;c<=c1;c++){
+      const base = c*GRADE_K;
+      for(let r=r0;r<=r1;r++){
+        const l=g.get(base+r);
+        if(l) for(let i=0;i<l.length;i++) fora.push(l[i]);
+      }
     }
     return fora;
   }
 
+  /* os três mais perto, sem ordenar a lista inteira: inserção direta
+     em três vagas (a ordenação de cem candidatos por disco era o item
+     mais caro da simulação) */
   function inimigoAlcancavel(J,d,raio){
-    const cands=[];
-    for(const o of porPerto(J,d.x,d.y,raio)){
-      if(!o.vivo||!inimigos(d.lado,o.lado)) continue;
-      const q=U.dist2(d.x,d.y,o.x,o.y);
-      if(q<=raio*raio) cands.push([q,o]);
+    const r2 = raio*raio;
+    let q0=Infinity, q1=Infinity, q2=Infinity, o0=null, o1=null, o2=null;
+    const g = J._grade;
+    const x=d.x, y=d.y, meuLado=d.lado;
+    const c0=(((x-raio)/CELULA)|0)+GRADE_FOLGA, c1=(((x+raio)/CELULA)|0)+GRADE_FOLGA;
+    const r0=(((y-raio)/CELULA)|0)+GRADE_FOLGA, r1=(((y+raio)/CELULA)|0)+GRADE_FOLGA;
+    for(let c=c0;c<=c1;c++){
+      const base = c*GRADE_K;
+      for(let r=r0;r<=r1;r++){
+        const l = g && g.get(base+r);
+        if(!l) continue;
+        for(const lado in l.porLado){
+          if(lado === meuLado) continue;
+          const lista = l.porLado[lado];
+          for(let i=0;i<lista.length;i++){
+            const o = lista[i];
+            const dx=o.x-x, dy=o.y-y, q=dx*dx+dy*dy;
+            if(q>r2 || !o.vivo) continue;
+            if(q<q0){ q2=q1; o2=o1; q1=q0; o1=o0; q0=q; o0=o; }
+            else if(q<q1){ q2=q1; o2=o1; q1=q; o1=o; }
+            else if(q<q2){ q2=q; o2=o; }
+          }
+        }
+      }
     }
-    if(!cands.length) return null;
-    cands.sort((a,b)=>a[0]-b[0]);
-    for(let i=0;i<Math.min(3,cands.length);i++)
-      if(A.livre(d.x,d.y,cands[i][1].x,cands[i][1].y)) return cands[i][1];
+    if(!o0) return null;
+    if(A.livre(d.x,d.y,o0.x,o0.y)) return o0;
+    if(o1 && A.livre(d.x,d.y,o1.x,o1.y)) return o1;
+    if(o2 && A.livre(d.x,d.y,o2.x,o2.y)) return o2;
     return null;
+  }
+
+  /* A BUSCA LONGA É ESCALONADA (medição de 17/09/2026): o disco sem
+     inimigo a 130 px procurava a 240 px TODO quadro — 25 células, e
+     numa esplanada cheia são centenas de candidatos por disco. Agora
+     ele refaz essa busca a cada três quadros (as vezes se revezam
+     pela ordem na lista) e, nos outros dois, reaproveita o alvo se
+     ele ainda está de pé e a menos de 260 px. Alvo não muda em 33 ms. */
+  function buscaLonga(J, d, raio, chave){
+    const c = d[chave];
+    const vez = (((J._quadro||0) + (d._ord||0)) % 3) === 0;
+    if(!vez && c && c.vivo && U.dist2(d.x,d.y,c.x,c.y) <= (raio+20)*(raio+20)) return c;
+    const a = inimigoAlcancavel(J, d, raio);
+    d[chave] = a;
+    return a;
   }
 
   /* o inimigo que já virou as costas, que se enxerga de longe */
@@ -1371,8 +1450,12 @@ TO.diaJogo.combate = (function(){
     }
     const sl=slots(J.form, Math.max(meus.length,1), dirX, dirY);
 
+    const PF = J._perfil ? (J._tempos = J._tempos || {}) : null;
+    let tq = 0;
+    const marca = PF ? nome => { const t = performance.now(); PF[nome] = (PF[nome]||0) + (t - tq); tq = t; } : null;
     for(const d of J.discos){
       if(!d.vivo) continue;
+      if(PF) tq = performance.now();
 
       if(d.segurando || d.seguradoPor){ d.vx=d.vy=0; d._ramo='agarrao'; continue; }
       if(d.derrubado>0){
@@ -1480,7 +1563,16 @@ TO.diaJogo.combate = (function(){
         const eles = J.discos.filter(x=>x.lado!==d.lado && x.vivo);
         /* distância REAL ao inimigo mais perto: `inimigoPerto` só enxerga
            a vizinhança de 90 px da grade, e a régua aqui é 200 */
-        const maisPerto = (x)=>{ let m=1e9; for(const e of eles){ const q=U.dist(x.x,x.y,e.x,e.y); if(q<m) m=q; } return m; };
+        /* pela grade, não pela lista inteira (medição de 17/09/2026):
+           varrer os 300 inimigos pra cada um dos nossos, por portador,
+           era um par de milhões de distâncias por segundo; a 300 px
+           ou menos a grade responde, e mais longe que isso "longe" já
+           serve pras três réguas que usam esta conta */
+        const maisPerto = (x)=>{ let m=1e9;
+          const perto = porPerto(J, x.x, x.y, 300);
+          for(let i=0;i<perto.length;i++){ const e=perto[i]; if(e.lado===d.lado || !e.vivo) continue;
+            const q=U.dist(x.x,x.y,e.x,e.y); if(q<m) m=q; }
+          return m; };
         const brigando = vivos.filter(x=>maisPerto(x) < 200);
         const meus = brigando.length ? brigando : vivos;
         let tx, ty;
@@ -1490,7 +1582,7 @@ TO.diaJogo.combate = (function(){
           if(eles.length){
             const ce = eles.reduce((a,x)=>({x:a.x+x.x, y:a.y+x.y}), {x:0,y:0});
             ce.x /= eles.length; ce.y /= eles.length;
-            let bx = cm.x - ce.x, by = cm.y - ce.y; const n = Math.hypot(bx,by) || 1; bx/=n; by/=n;
+            let bx = cm.x - ce.x, by = cm.y - ce.y; const n = hyp(bx,by) || 1; bx/=n; by/=n;
             tx = cm.x + bx*150; ty = cm.y + by*150;
           } else { tx = cm.x; ty = cm.y; }
         } else {
@@ -1511,9 +1603,9 @@ TO.diaJogo.combate = (function(){
             const q=U.dist(d.x,d.y,e.x,e.y); if(q >= FAIXA_AFASTA) continue;
             const w=(FAIXA_AFASTA-q)/Math.max(q,8); rx += (d.x-e.x)*w; ry += (d.y-e.y)*w;
           }
-          const rn=Math.hypot(rx,ry)||1; rx/=rn; ry/=rn;
-          let gx=tx-d.x, gy=ty-d.y; const gn=Math.hypot(gx,gy)||1; gx/=gn; gy/=gn;
-          let mx=rx*0.75+gx*0.25, my=ry*0.75+gy*0.25; const mn=Math.hypot(mx,my)||1; mx/=mn; my/=mn;
+          const rn=hyp(rx,ry)||1; rx/=rn; ry/=rn;
+          let gx=tx-d.x, gy=ty-d.y; const gn=hyp(gx,gy)||1; gx/=gn; gy/=gn;
+          let mx=rx*0.75+gx*0.25, my=ry*0.75+gy*0.25; const mn=hyp(mx,my)||1; mx/=mn; my/=mn;
           /* a direção ideal pode dar em muro, grade ou fora da cena — o
              portador encostado na parede do fundo andava PRO inimigo
              porque o alvo caía fora do mapa. Sonda um leque de rumos em
@@ -1599,9 +1691,19 @@ TO.diaJogo.combate = (function(){
         /* MESMA VISTA PROS DOIS LADOS: com briga armada, QUALQUER disco
            disposto enxerga inimigo a 240 px — era só o nosso, e a
            assimetria de caça pesava a briga pareada pro jogador */
-        let alvo = inimigoAlcancavel(J,d, 130);
+        /* a busca curta também se reveza (medição de 17/09/2026): num
+           quadro sim, num não, com o alvo do quadro anterior valendo
+           enquanto estiver de pé e a menos de 150 px */
+        if(PF) marca('md:antes-busca');
+        let alvo;
+        {
+          const c = d._alvoCurto;
+          const vez = (((J._quadro||0) + (d._ord||0)) & 1) === 0;
+          if(!vez && c && c.vivo && U.dist2(d.x,d.y,c.x,c.y) <= 150*150) alvo = c;
+          else alvo = d._alvoCurto = inimigoAlcancavel(J,d, 130);
+        }
         if(!alvo && !J.paz && agressivo(J,d))
-          alvo = inimigoAlcancavel(J,d, 240);
+          alvo = buscaLonga(J,d, 240, '_alvoLongo');
         if(alvo && !alvo.fugindo){
           J.encostou[d.lado]=true; J.encostou[alvo.lado]=true;
         }
@@ -1637,7 +1739,7 @@ TO.diaJogo.combate = (function(){
            pancada, pedra ou bomba. Mais longe que o posto, avança até
            o posto. */
         const retaguarda = d.linha==='retaguarda' && !d._cacando && !J.paz && agressivo(J,d);
-        const visto = retaguarda ? (alvo || inimigoAlcancavel(J,d,RAIO_VISTA_RETAGUARDA)) : null;
+        const visto = retaguarda ? (alvo || buscaLonga(J,d,RAIO_VISTA_RETAGUARDA,'_vistoLongo')) : null;
         if(retaguarda && visto && !visto.fugindo){
           const q = postoDaRetaguarda(J, d, visto);
           ax=q.x; ay=q.y; ramo='retaguarda'; d._olhaPara=visto;
@@ -1679,6 +1781,7 @@ TO.diaJogo.combate = (function(){
         }
       }
 
+      if(PF) marca('md:decisao');
       // rastro de diagnóstico: qual decisão e qual alvo, por disco
       d._ramo = ramo || (recua?'recuo' : usarCampo?'campo' : (d.doJogador&&lider)?'formacao':'inimigo');
       d._alvo = usarCampo?null:[Math.round(ax),Math.round(ay)];
@@ -1697,7 +1800,7 @@ TO.diaJogo.combate = (function(){
             if(dd<md){md=dd;g=x;}
           }
           if(g){
-            const gx=g.x-d.x, gy=g.y-d.y, gd=Math.hypot(gx,gy)||1;
+            const gx=g.x-d.x, gy=g.y-d.y, gd=hyp(gx,gy)||1;
             dirx=gx/gd; diry=gy/gd;
           }
         }
@@ -1706,7 +1809,7 @@ TO.diaJogo.combate = (function(){
           if(s && U.dist(d.x,d.y,s.x,s.y)<40){dirx=0;diry=0;}
         }
       } else {
-        const ddx=ax-d.x, ddy=ay-d.y, dist=Math.hypot(ddx,ddy)||1;
+        const ddx=ax-d.x, ddy=ay-d.y, dist=hyp(ddx,ddy)||1;
         /* Histerese: chega com 9, só volta a andar depois de 22. Sem as
            duas soleiras ele oscila em cima do limite — para com 8, a
            separação empurra pra 10, anda de novo — e é isso que faz o
@@ -1747,18 +1850,20 @@ TO.diaJogo.combate = (function(){
            sozinho nunca chega a zero, e o disco fica vibrando de leve —
            com 60 deles na tela isso vira inquietação visível. */
         d.vx*=0.70; d.vy*=0.70;
-        if(Math.hypot(d.vx,d.vy)<3.5){d.vx=0; d.vy=0;}
+        if(hyp(d.vx,d.vy)<3.5){d.vx=0; d.vy=0;}
       } else {
         d.vx += (dirx*vel-d.vx)*Math.min(1,dt*6);
         d.vy += (diry*vel-d.vy)*Math.min(1,dt*6);
       }
+      if(PF) marca('md:direcao');
       const px=d.x, py=d.y;
       A.mover(d, d.vx*dt, d.vy*dt);
       A.barrarGrades(d,J.grades);
+      if(PF) marca('md:mover');
       /* progresso medido na posição real. O retorno do mover mente:
          ele pode "andar" 0,9 px e ser desfeito logo depois por um
          empurrão, e aí o disco nunca é considerado travado. */
-      const andou = Math.hypot(d.x-px, d.y-py) > vel*dt*0.25;
+      const andou = hyp(d.x-px, d.y-py) > vel*dt*0.25;
       /* quem anda olha pra onde vai */
       if(andou){
         /* a retaguarda recua de frente pro inimigo; o resto olha pra onde vai */
@@ -1833,7 +1938,7 @@ TO.diaJogo.combate = (function(){
       const q=U.dist2(d.x,d.y,o.x,o.y);
       if(q<mr){ mr=q; rx=o.x; ry=o.y; }
     }
-    const norma = (x,y)=>{ const l=Math.hypot(x,y); return l<1e-3 ? null : [x/l,y/l]; };
+    const norma = (x,y)=>{ const l=hyp(x,y); return l<1e-3 ? null : [x/l,y/l]; };
     const nb = norma(d.x-bomba.x, d.y-bomba.y) || norma(Math.cos(d.rumo), -Math.sin(d.rumo)) || [1,0];
     const nr = norma(d.x-rx, d.y-ry) || nb;
     const opcoes = [norma(nb[0]+1.3*nr[0], nb[1]+1.3*nr[1]) || nr, nr, nb,
@@ -1858,7 +1963,7 @@ TO.diaJogo.combate = (function(){
       d.recuo = U.entre(55, 170); d.desvio = U.entre(-60, 60);
       d.recuoAte = J.t + U.entre(3, 8);
     }
-    const dx=d.x-visto.x, dy=d.y-visto.y, l=Math.hypot(dx,dy)||1;
+    const dx=d.x-visto.x, dy=d.y-visto.y, l=hyp(dx,dy)||1;
     /* mais perto que o posto: fica onde está, de frente pra ele */
     if(l <= d.recuo){ d.viraPara = rumoPara(d, visto); return {x:d.x, y:d.y}; }
     const ux=dx/l, uy=dy/l;
@@ -2005,7 +2110,7 @@ TO.diaJogo.combate = (function(){
     if(!inimigo || !alvo) return -1;
     const ax = alvo.x - x, ay = alvo.y - y;
     const ix = inimigo.x - x, iy = inimigo.y - y;
-    const na = Math.hypot(ax, ay), ni = Math.hypot(ix, iy);
+    const na = hyp(ax, ay), ni = hyp(ix, iy);
     if(na < 1 || ni < 1) return 0;
     return (ax*ix + ay*iy) / (na*ni);
   }
@@ -2136,7 +2241,13 @@ TO.diaJogo.combate = (function(){
       let ax,ay,vel=54;
 
       if(p.carga){
-        const alvo=alvoDaCarga(J,p);
+        /* O ALVO DA CARGA É REFEITO A CADA 15 QUADROS (medição de
+           17/09/2026): a conta varre todos os discos hostis com uma
+           vizinhança cada — por policial, por quadro. Um quarto de
+           segundo de atraso na escolha não muda a carga. */
+        let alvo = p._alvoCarga;
+        if(!alvo || !procurandoConflito(J,alvo) || ((J._quadro||0) + (p.postoX|0)) % 15 === 0)
+          alvo = p._alvoCarga = alvoDaCarga(J,p);
         if(alvo){ax=alvo.x;ay=alvo.y;vel=96;} else {ax=p.postoX;ay=p.postoY;vel=76;}
         for(const d of porPerto(J,p.x,p.y,40)){
           if(!procurandoConflito(J,d)) continue;
@@ -2164,7 +2275,7 @@ TO.diaJogo.combate = (function(){
         }
         if(perto){
           ax=perto.x; ay=perto.y; vel=70;
-          const fx=ax-p.postoX, fy=ay-p.postoY, f=Math.hypot(fx,fy);
+          const fx=ax-p.postoX, fy=ay-p.postoY, f=hyp(fx,fy);
           if(f>80){ax=p.postoX+fx/f*80; ay=p.postoY+fy/f*80;}
           if(p.cooldown<=0 && pd<perto.r+p.r+8){
             p.cooldown=2.0;
@@ -2177,7 +2288,7 @@ TO.diaJogo.combate = (function(){
         }
       }
 
-      const dx=ax-p.x, dy=ay-p.y, dist=Math.hypot(dx,dy)||1;
+      const dx=ax-p.x, dy=ay-p.y, dist=hyp(dx,dy)||1;
       if(dist>6){
         p.vx=dx/dist*vel; p.vy=dy/dist*vel;
         const andou=A.mover(p, p.vx*dt, p.vy*dt);
@@ -2186,7 +2297,7 @@ TO.diaJogo.combate = (function(){
         p.travado = andou ? 0 : (p.travado||0)+dt;
         if(p.travado>1.0){
           const v=A.pontoLivreMaisProximo(p.postoX,p.postoY,p.r);
-          const bx=v.x-p.x, by=v.y-p.y, bd=Math.hypot(bx,by)||1;
+          const bx=v.x-p.x, by=v.y-p.y, bd=hyp(bx,by)||1;
           A.mover(p, bx/bd*vel*dt, by/bd*vel*dt);
           if(p.travado>2.5){p.x=v.x; p.y=v.y; p.travado=0;}
         }
@@ -2195,7 +2306,7 @@ TO.diaJogo.combate = (function(){
     const vv=J.policiais.filter(p=>p.vivo);
     for(let i=0;i<vv.length;i++)for(let j=i+1;j<vv.length;j++){
       const a=vv[i],b=vv[j],dx=b.x-a.x,dy=b.y-a.y;
-      const d=Math.hypot(dx,dy)||0.01, min=a.r+b.r;
+      const d=hyp(dx,dy)||0.01, min=a.r+b.r;
       if(d<min){const e=(min-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*e;a.y-=ny*e;b.x+=nx*e;b.y+=ny*e;}
     }
   }
@@ -2487,26 +2598,57 @@ TO.diaJogo.combate = (function(){
      defesa, mais vê); respira a cada tantos golpes. Vale pro nosso
      bonde também — só o líder é teclado. */
   function iaLuta(J,dt){
+    const g = J._grade;
     for(const d of J.discos){
       if(!d.vivo) continue;
       /* o inimigo mais perto, pro desenho provocar e pra decidir */
+      /* PELA GRADE, DIRETO (medição de 17/09/2026): sem montar a lista
+         de vizinhos e com a distância ao quadrado antes da raiz — a
+         raiz só sai pra quem está mesmo a 90 px */
       let perto=null, md=1e9, aliados=0;
-      const angs = [];
-      for(const o of porPerto(J,d.x,d.y,90)){
-        if(o===d||!o.vivo) continue;
-        const q=U.dist(d.x,d.y,o.x,o.y);
-        if(!inimigos(d.lado,o.lado)){ if(q<40) aliados++; continue; }
-        if(q<md){ md=q; perto=o; }
-        if(q < alcanceDe(d,o)*1.4) angs.push(Math.atan2(o.y-d.y, o.x-d.x));
+      /* A VARREDURA SE REVEZA (medição de 17/09/2026): num quadro sim,
+         num não, cada disco refaz a vizinhança; no outro, reaproveita
+         o inimigo mais perto (com a distância medida de novo), a conta
+         de aliados e o "cercado" do quadro anterior. A decisão de
+         bater ou defender continua sendo tomada todo quadro. */
+      const vez = (((J._quadro||0) + (d._ord||0)) & 1) === 0;
+      const cache = d._vizinhos;
+      if(!vez && cache && (!cache.perto || cache.perto.vivo)){
+        perto = cache.perto; aliados = cache.aliados;
+        md = perto ? U.dist(d.x,d.y,perto.x,perto.y) : 1e9;
+        d.cercado = cache.cercado;
+      } else {
+        const angs = [];
+        const x=d.x, y=d.y, meuLado=d.lado;
+        const c0=(((x-90)/CELULA)|0)+GRADE_FOLGA, c1=(((x+90)/CELULA)|0)+GRADE_FOLGA;
+        const r0=(((y-90)/CELULA)|0)+GRADE_FOLGA, r1=(((y+90)/CELULA)|0)+GRADE_FOLGA;
+        for(let c=c0;c<=c1;c++){
+          const base = c*GRADE_K;
+          for(let r=r0;r<=r1;r++){
+            const l = g && g.get(base+r);
+            if(!l) continue;
+            for(let i=0;i<l.length;i++){
+              const o = l[i];
+              if(o===d) continue;
+              const dx=o.x-x, dy=o.y-y, q2=dx*dx+dy*dy;
+              if(q2 > 8100 || !o.vivo) continue;
+              if(o.lado===meuLado){ if(q2<1600) aliados++; continue; }
+              const q=Math.sqrt(q2);
+              if(q<md){ md=q; perto=o; }
+              if(q < alcanceDe(d,o)*1.4) angs.push(Math.atan2(dy, dx));
+            }
+          }
+        }
+        /* CERCADO: inimigo ao alcance dos dois lados (110° ou mais entre dois deles) */
+        let cercado = false;
+        for(let i=0;i<angs.length && !cercado;i++) for(let j=i+1;j<angs.length;j++){
+          let df = Math.abs(angs[i]-angs[j]); if(df > Math.PI) df = 2*Math.PI - df;
+          if(df >= 1.92){ cercado = true; break; }
+        }
+        d.cercado = cercado;
+        d._vizinhos = {perto, aliados, cercado};
       }
       d.inimigoPerto = perto ? md : 999; d.aliadosPerto = aliados;
-      /* CERCADO: inimigo ao alcance dos dois lados (110° ou mais entre dois deles) */
-      let cercado = false;
-      for(let i=0;i<angs.length && !cercado;i++) for(let j=i+1;j<angs.length;j++){
-        let df = Math.abs(angs[i]-angs[j]); if(df > Math.PI) df = 2*Math.PI - df;
-        if(df >= 1.92){ cercado = true; break; }
-      }
-      d.cercado = cercado;
       if(d.contra > 0) d.contra -= dt;
       if(d.lider) continue;
       if(d.fugindo || d.atordoado>0 || d.derrubado>0 || d.fugaBomba || d.entrando) continue;
@@ -2924,8 +3066,10 @@ TO.diaJogo.combate = (function(){
        está só de passagem — desviar dela é o que faz o posto importar */
     const pms=J.policiais.filter(p=>p.vivo);
     for(const a of t) for(const p of pms){
-      const dx=a.x-p.x, dy=a.y-p.y;
-      const d=Math.hypot(dx,dy)||0.01, min=a.r+p.r;
+      const dx=a.x-p.x, dy=a.y-p.y, min=a.r+p.r;
+      const q2=dx*dx+dy*dy;
+      if(q2 >= (min-FOLGA)*(min-FOLGA)) continue;     // longe: nem raiz
+      const d=Math.sqrt(q2)||0.01;
       if(d<min-FOLGA){
         const e=(min-FOLGA-d)*MACIEZ;
         a._edx+=dx/d*e; a._edy+=dy/d*e;
@@ -3169,7 +3313,7 @@ TO.diaJogo.combate = (function(){
     if(!alvo){logar(J,'Não tem em quem jogar daqui.','p');return;}
 
     let ax=alvo.x, ay=alvo.y;
-    const dx=ax-l.x, dy=ay-l.y, dist=Math.hypot(dx,dy)||1;
+    const dx=ax-l.x, dy=ay-l.y, dist=hyp(dx,dy)||1;
     if(dist>alcance){ax=l.x+dx/dist*alcance; ay=l.y+dy/dist*alcance;}
 
     if(tipo==='bomba'){ if(J.bombas<=0) return; J.bombas--; }
@@ -3725,7 +3869,7 @@ TO.diaJogo.combate = (function(){
       const d = F.dir, beira = 10;
       const gx = F.x + d[0]*beira, gy = F.y + d[1]*beira;   // o ponto da grade
       const cx = F.arco[0], cy = F.arco[1];
-      const R = Math.max(40, Math.hypot(gx-cx, gy-cy));
+      const R = Math.max(40, hyp(gx-cx, gy-cy));
       const a0 = Math.atan2(gy-cy, gx-cx);
       const w = F.w, h = F.h, vao = w / R;
       /* QUANTAS FATIAS A CURVA PEDE (10/09/2026). 28 era um número
@@ -3828,13 +3972,19 @@ TO.diaJogo.combate = (function(){
     /* `semCorpo`: os bonecos da vista de cima (tres.js) desenham gente,
        PM e projétil num canvas por cima; aqui fica só nome e vida */
     const corpo = !(opc && opc.semCorpo);
+    /* O ORÇAMENTO DE BONECOS (medição de 17/09/2026): com boneco por
+       cima, quem ficou fora do orçamento (`J._comCorpo`, escolhido em
+       bonecos3) volta a ser disco aqui — sem isso o disco sumia e o
+       boneco não vinha */
+    const comCorpo = corpo ? null : (J._comCorpo || null);
+    const discoDe = d => corpo || (comCorpo && !comCorpo.has(d));
     if(corpo) for(const p of J.policiais) desenharPolicial(c,p,J.t);
     const ord=[...J.discos].sort((a,b)=>a.y-b.y);
     /* O FERIDO SOME (régua do dono, 06/09/2026): fica uns segundos no
        chão e desaparece — com muita gente caída não se sabia quem
        estava de pé. A conta (J.caidos) não muda; só o desenho. */
-    if(corpo) for(const d of ord) if(!d.vivo && !(d.caido && J.t-(d.caiuEm||0) > CAIDO_SOME_EM)) desenharDisco(c,d);
-    for(const d of ord) if(d.vivo){ if(corpo) desenharDisco(c,d); else desenharRotulo(c,d); }
+    for(const d of ord) if(!d.vivo && discoDe(d) && !(d.caido && J.t-(d.caiuEm||0) > CAIDO_SOME_EM)) desenharDisco(c,d);
+    for(const d of ord) if(d.vivo){ if(discoDe(d)) desenharDisco(c,d); else desenharRotulo(c,d); }
     if(corpo) for(const p of J.projeteis) desenharProjetil(c,p);
   }
 
