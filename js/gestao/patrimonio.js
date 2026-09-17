@@ -485,8 +485,7 @@ TO.patrimonio = (function(){
       }
       const primeiro = aliados[0] && precos[aliados[0].id].sede;
       lista.push({id:'presente', rot:'Dar uma melhoria de presente a um aliado',
-        nota:'a gente paga, o patrimônio é dele · a relação com ele sobe '+
-             'um ponto a cada R$ 10 mil do presente (de 3 a 15)',
+        nota:'a gente paga, o patrimônio é dele · a relação com ele sobe +50',
         custo:(primeiro && primeiro.custo) || PONTO.loja.compra,
         trava: aliados.length ? null : 'nenhum aliado (relação de 20 ou mais)',
         escolhas: aliados.map(a=>({id:a.id,

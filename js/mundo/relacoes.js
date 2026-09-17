@@ -596,10 +596,10 @@ TO.relacoes = (function(){
      bar ou subsede em outra cidade. Vale a MESMA régua que a fila
      dela obedece — a sede dela tem de comportar o ponto, a filial
      precisa de cidade com torcedor do clube dela e de vaga na sede.
-     Quem ganha presente fica mais próximo: a relação sobe um ponto a
-     cada R$ 10 mil do presente, entre 3 e 15 (régua provisória, até o
-     dono cravar a dele).
+     Quem ganha presente fica mais próximo: a relação com quem ganhou
+     sobe +50, seja qual for o presente (régua do dono, 17/09/2026).
      ======================================================= */
+  const PRESENTE_GANHO = 50;
   const PRESENTES = ['sede', 'loja', 'bar', 'filial'];
   const ROTULO_PRESENTE = {sede:'Ampliar a sede', loja:'Abrir uma loja',
                            bar:'Abrir um bar', filial:'Abrir subsede em outra cidade'};
@@ -643,7 +643,7 @@ TO.relacoes = (function(){
       {q:`${E.data.ano} s${E.data.semana}`,
        d:`Presente da ${E.torcida.nome}: ${pr.rot}`, v:pr.custo});
     if(t.extrato.length > 36) t.extrato.pop();
-    const ganho = U.limitar(Math.round(pr.custo / 10000), 3, 15);
+    const ganho = PRESENTE_GANHO;
     E.relacoes[id] = U.limitar(nivel(E, id) + ganho, -100, 100);
     return Object.assign({ganho}, pr);
   }
