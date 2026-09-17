@@ -204,7 +204,10 @@ table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
   color:var(--fraco);padding:8px 0 3px;
 }
 .jogo-chave{
-  display:grid;grid-template-columns:1fr 62px 1fr auto;align-items:center;gap:8px;
+  /* a quarta coluna tem largura fixa (dono, 17/09/2026): com `auto`
+     a linha que tinha pênaltis empurrava o placar pra esquerda e os
+     placares da chave saíam desalinhados */
+  display:grid;grid-template-columns:1fr 62px 1fr 96px;align-items:center;gap:8px;
   padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12px;
 }
 .jogo-chave .a,.jogo-chave .b{
@@ -213,7 +216,7 @@ table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
 .jogo-chave b{font-family:var(--mono);text-align:center;white-space:nowrap}
 .jogo-chave .b{text-align:right}
 .jogo-chave .venceu{color:#fff;font-weight:600}
-.jogo-chave em{font-family:var(--mono);font-size:9px;color:var(--fraco);font-style:normal}
+.jogo-chave em{font-family:var(--mono);font-size:9.5px;color:var(--fraco);font-style:normal;white-space:nowrap}
 .jogo-chave.meu{background:var(--rubro-fundo)}
 .sub-chave{font-family:var(--mono);font-size:9.5px;color:var(--ouro);
   padding:3px 0 6px;text-align:center}
@@ -1533,14 +1536,6 @@ table.dados tr.selecionada td{background:#252525}
    ========================================================= */
 /* ---- o resumo, nas telas que mostram o placar ---- */
 .jogo-chave em.pen{color:var(--ouro)}
-.pen-serie{display:flex; flex-direction:column; gap:3px; padding:2px 0 6px 2px}
-.pen-serie .l{display:flex; gap:4px}
-.pen-serie i{
-  width:8px; height:8px; border-radius:50%;
-  border:1px solid var(--linha); display:block;
-}
-.pen-serie i.fez{background:var(--verde); border-color:var(--verde)}
-.pen-serie i.errou{border-color:var(--vermelho)}
 td.placar small.pen{
   display:block; font-family:var(--mono); font-size:9.5px;
   color:var(--ouro); letter-spacing:.04em; margin-top:1px;

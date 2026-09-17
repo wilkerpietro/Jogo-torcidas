@@ -7088,6 +7088,23 @@ com a Jovem Garra Tricolor, pedido de afastar da Camisa 12 do Inter
 topado — de +45 pra +20 entre as duas, e +2 com a Garra. Seis anos de
 varredura sem travamento.
 
+## A chave da copa sem as bolinhas (pedido do dono, 17/09/2026)
+
+Na tela da Copa do Brasil o dono pediu: fora a série cobrança a cobrança
+(as bolinhas verdes e vermelhas), placares alinhados, e os pênaltis à
+direita do placar entre parênteses.
+
+O desalinhamento vinha da quarta coluna da linha (`.jogo-chave`): era
+`auto`, então a linha que tinha "nos pênaltis" ficava com a coluna
+larga e empurrava o placar pra esquerda. Agora ela tem 96px fixos em
+toda linha, com ou sem texto, e o placar cai sempre no mesmo lugar. O
+que decidiu o jogo mora nela: `agr. 3 × 2` no agregado, `(6 × 5)` nos
+pênaltis. A série de bolinhas (`penSerie`) e o CSS dela saíram.
+
+Conferido com a Primeira fase de uma Copa do Brasil real (44 jogos, 10
+nos pênaltis): todos os placares na mesma coluna, nenhuma bolinha,
+"Fortaleza 0 × 0 Ferroviário (6 × 5)".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

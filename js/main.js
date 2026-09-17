@@ -2145,16 +2145,6 @@
     ? `${j.pen.c} × ${j.pen.f} nos pênaltis`
     : (j && j.penaltis) ? 'nos pênaltis' : '';
 
-  /* a série cobrança a cobrança: ● converteu, ○ perdeu */
-  function penSerie(pen){
-    if(!pen || !pen.cobrancas) return null;
-    const linha = lado => pen.cobrancas.filter(x=>x.lado === lado)
-      .map(x=>`<i class="${x.marcou?'fez':'errou'}"></i>`).join('');
-    const cx = el('div',{class:'pen-serie'});
-    cx.innerHTML = `<div class="l">${linha('c')}</div>`+
-                   `<div class="l">${linha('f')}</div>`;
-    return cx;
-  }
 
   /* =======================================================
      O ALMANAQUE NO FEED (pedido do dono, 21/08/2026)
@@ -6736,15 +6726,18 @@
     const rolo = el('div',{class:'rolo'});
     for(const j of reais){
       const feito = j.gc!=null;
+      /* A COLUNA DA DIREITA É FIXA (pedido do dono, 17/09/2026): o
+         placar fica sempre na mesma coluna, e o que decidiu — agregado
+         e pênaltis, entre parênteses — mora ao lado dele, sem a série
+         de bolinhas cobrança a cobrança. */
+      const pen = j.pen ? `(${j.pen.c} × ${j.pen.f})` : j.penaltis ? '(pên.)' : '';
+      const lado = [j.agregado ? `agr. ${j.agregado}` : '', pen].filter(Boolean).join(' ');
       rolo.appendChild(el('div',{class:'jogo-chave'+
         (j.c===meu||j.f===meu?' meu':''), html:
         `<span class="a ${j.venceu===j.c?'venceu':''}">${nome(j.c)}</span>
          <b>${feito?`${j.gc} × ${j.gf}`:'—'}</b>
          <span class="b ${j.venceu===j.f?'venceu':''}">${nome(j.f)}</span>
-         ${j.agregado?`<em>${j.agregado}</em>`:''}
-         ${penTexto(j)?`<em class="pen">${penTexto(j)}</em>`:''}`}));
-      const serie = penSerie(j.pen);
-      if(serie) rolo.appendChild(serie);
+         <em class="${pen?'pen':''}">${lado}</em>`}));
       if(j.neutro) rolo.appendChild(el('div',{class:'sub-chave',
         texto:`campo neutro · ${j.neutro}`}));
     }
@@ -9810,7 +9803,7 @@
     widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima,
     /* a retrospectiva da virada (dono, 09/09/2026) */
     abrirRetrospectiva, abrirRetrospectivaSePendente, fecharRetrospectiva,
-    abrirItinerario, curarRelogio, motivosDoRelogioParado,
+    abrirItinerario, curarRelogio, motivosDoRelogioParado, paginaFaseMata,
     /* o cofre de saves, pra bateria dirigir */
     pintarJogo, abrirCofreNoMenu, montarMenu,
     /* A PORTA DE SERVIÇO DA SELEÇÃO (23/08/2026): a bateria escolhia
