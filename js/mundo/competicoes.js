@@ -949,8 +949,18 @@ TO.competicoes = (function(){
      neutro.
      ======================================================= */
   /* Uma fase a cada três semanas, na quarta-feira; ida e volta em
-     semanas seguidas. A final é o último jogo do ano e sai do meio de
-     semana: fecha a temporada depois da última rodada do Brasileirão. */
+     semanas seguidas. A final sai do meio de semana e vem depois da
+     última rodada do Brasileirão (semana 48) e das finais da Conmebol
+     (48 e 49).
+
+     A FINAL NÃO FECHA O ANO (pedido do dono, 17/09/2026): ela ficava
+     na semana 52, e o campeão saía no fechamento dessa semana — o
+     mesmo instante em que o ano vira e a temporada nova apaga a
+     antiga. O título ia pro histórico, mas ninguém noticiava, e a
+     tela da copa já amanhecia com a chave do ano seguinte: pra quem
+     jogava, a copa acabava sem campeão. Na 50 sobram duas semanas pro
+     jornal contar e pra chave ficar de pé com o troféu. */
+  const COPA_FINAL_SEMANA = 50;
   const COPA_FASES = [
     {fase:'Primeira fase', semanas:[22]},
     {fase:'Segunda fase',  semanas:[26], entram:'Brasileirão Série A'},
@@ -958,9 +968,15 @@ TO.competicoes = (function(){
     {fase:'Oitavas',       semanas:[34,35]},
     {fase:'Quartas',       semanas:[39,40]},
     {fase:'Semifinal',     semanas:[44,45]},
-    {fase:'Final',         semanas:[SEMANAS_ANO], neutro:true, grade:GRADE.final}
+    {fase:'Final',         semanas:[COPA_FINAL_SEMANA], neutro:true, grade:GRADE.final}
   ];
   const COPA_NOME = 'Copa do Brasil';
+  /* DOIS POTES ATÉ AS OITAVAS (pedido do dono, 17/09/2026): nessas
+     fases o sorteio separa os clubes em um pote de fortes e um de
+     fracos, e cada jogo cruza um de cada. Das quartas em diante o
+     sorteio é livre. */
+  const FASES_COM_POTES = new Set(['Primeira fase', 'Segunda fase',
+                                   'Terceira fase', 'Oitavas']);
 
   const forcaDivisao = (E, id)=>{
     const t = M().time(id);
@@ -977,6 +993,34 @@ TO.competicoes = (function(){
     return forca(a) >= forca(b) ? [a,b] : [b,a];
   }
 
+  /* do mais forte pro mais fraco: divisão mais alta primeiro, e dentro
+     da divisão a força do elenco */
+  const ordemDeForca = (E, ids) => ids.slice().sort((a,b)=>
+    forcaDivisao(E,a) - forcaDivisao(E,b) || forca(b) - forca(a));
+
+  /* O SORTEIO EM DOIS POTES: a metade de cima é o pote 1, a de baixo o
+     pote 2, cada pote embaralhado por si, e o k-ésimo de um pega o
+     k-ésimo do outro. O mando segue a régua de sempre (divisão mais
+     alta em casa). Com número ímpar, o último do pote 1 passa direto
+     — em vez de sumir da chave, que era o que o laço antigo fazia. */
+  function sortearPorPotes(E, ids){
+    const ordem = ordemDeForca(E, ids);
+    const meio  = Math.ceil(ordem.length / 2);
+    const pote1 = U.embaralhar(ordem.slice(0, meio));
+    const pote2 = U.embaralhar(ordem.slice(meio));
+    return pote1.map((a, k)=> pote2[k] ? mandante(E, a, pote2[k]) : [a, null]);
+  }
+
+  /* sorteio livre: embaralha e emparelha; ímpar, o que sobra passa */
+  function sortearLivre(E, ids){
+    const sorteio = U.embaralhar(ids);
+    const pares = [];
+    for(let i=0;i+1<sorteio.length;i+=2)
+      pares.push(mandante(E, sorteio[i], sorteio[i+1]));
+    if(sorteio.length % 2) pares.push([sorteio[sorteio.length-1], null]);
+    return pares;
+  }
+
   function criarCopa(E){
     /* a Copa do Brasil é só de clube brasileiro: sem este filtro os
        248 de fora entram como "resto" e disputam a primeira fase */
@@ -984,20 +1028,10 @@ TO.competicoes = (function(){
     const daSerieA = T.filter(t=>divisaoDe(E,t)===ESCADA[0]).map(t=>t.id);
     const resto    = T.filter(t=>divisaoDe(E,t)!==ESCADA[0]).map(t=>t.id);
 
-    /* Primeira fase: B e C mandam em casa, e pra isso cada um deles pega
-       um clube da D. O que sobrar da D se enfrenta entre si. */
-    const bc = resto.filter(id=>forcaDivisao(E,id) <= 2);
-    const d  = U.embaralhar(resto.filter(id=>forcaDivisao(E,id) > 2));
-    const jogos = [];
-    for(const casa of U.embaralhar(bc)){
-      const fora = d.length ? d.shift() : null;
-      if(fora) jogos.push({c:casa, f:fora});
-      else jogos.push({c:casa, f:null});
-    }
-    while(d.length >= 2){
-      const [a,b] = mandante(E, d.shift(), d.shift());
-      jogos.push({c:a, f:b});
-    }
+    /* Primeira fase em dois potes: B, C e o topo da D de um lado, o
+       resto da D do outro. B e C seguem mandando em casa, que é a
+       régua do mando. */
+    const jogos = sortearPorPotes(E, resto).map(([c, f])=>({c, f}));
 
     const grade = GRADE.copa;
     jogos.forEach((j,k)=>{ const s = grade[k % grade.length]; j.d = s.d; j.h = s.h; });
@@ -1035,6 +1069,7 @@ TO.competicoes = (function(){
          disputa de pênaltis rodaria duas vezes, com resultados
          diferentes — a manchete diria um e a chave, outro. */
       if(v.venceu) continue;
+      if(!v.f){ v.venceu = v.c; continue; }          // sem adversário, passa
       const i = (ida ? ida.jogos : []).find(x=>x.par===v.par);
       if(!i) { v.venceu = v.gc>v.gf ? v.c : v.f; continue; }
       const golsC = i.gc + v.gf;   // o mandante da ida é o visitante da volta
@@ -1102,13 +1137,10 @@ TO.competicoes = (function(){
     }
     if(chave.length < 2){ comp.campeao = chave[0] || null; return; }
 
-    /* sorteio: embaralha e emparelha, definindo o mando na hora */
-    const sorteio = U.embaralhar(chave);
-    const pares = [];
-    for(let i=0;i+1<sorteio.length;i+=2){
-      const [casa, fora] = mandante(E, sorteio[i], sorteio[i+1]);
-      pares.push([casa, fora]);
-    }
+    /* sorteio: em dois potes até as oitavas, livre dali em diante; o
+       mando sai na hora */
+    const pares = FASES_COM_POTES.has(prox.fase)
+      ? sortearPorPotes(E, chave) : sortearLivre(E, chave);
 
     const grade = prox.grade || comp.grade || GRADE.copa;
     const horario = js => js.forEach((j,k)=>{
@@ -1119,7 +1151,9 @@ TO.competicoes = (function(){
     if(idaEVolta){
       /* quem tem melhor campanha decide em casa, então joga a volta
          como mandante (GDD §18.5) */
-      const ida   = pares.map(([a,b],k)=>({c:b, f:a, par:k}));
+      /* par sem adversário (chave ímpar): o clube fica como mandante
+         das duas pernas, sem jogo, e passa direto */
+      const ida   = pares.map(([a,b],k)=>({c:b || a, f:b ? a : null, par:k}));
       const volta = pares.map(([a,b],k)=>({c:a, f:b, par:k}));
       horario(ida); horario(volta);
       comp.mata.push({fase:`${prox.fase} · ida`, semana:prox.semanas[0], dia,

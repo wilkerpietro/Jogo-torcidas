@@ -297,7 +297,9 @@ TO.almanaque = (function(){
   function campeao(E, comp){
     if(!comp || !comp.campeao) return null;
     const meu = E.torcida.clubeId;
-    const jogou = (comp.rodadas||[]).some(r =>
+    /* a Copa do Brasil não tem rodada: o nosso jogo dela mora em
+       `mata` (correção de 17/09/2026 — a edição nunca saía pra copa) */
+    const jogou = (comp.rodadas||[]).concat(comp.mata||[]).some(r =>
       r.jogos.some(j => j.c === meu || j.f === meu));
     if(!jogou) return null;
 

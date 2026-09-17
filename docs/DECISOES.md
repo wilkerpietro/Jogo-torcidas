@@ -7105,6 +7105,23 @@ Conferido com a Primeira fase de uma Copa do Brasil real (44 jogos, 10
 nos pênaltis): todos os placares na mesma coluna, nenhuma bolinha,
 "Fortaleza 0 × 0 Ferroviário (6 × 5)".
 
+## Copas nacionais em dois potes, e a Copa do Brasil fecha na semana 50 (pedido do dono, 17/09/2026)
+
+**O pedido.** Organizar os confrontos da Copa do Brasil (e das demais copas nacionais) por dois potes na primeira, segunda e terceira fase e nas oitavas: um pote com os mais fortes, outro com os mais fracos, e cada jogo cruzando um de cada. E a Copa do Brasil não pode encerrar a temporada sem campeão — se preciso, adiantar as datas pra caber no ano.
+
+**O que estava errado.** A final ficava na semana 52, e o campeão saía no fechamento dessa semana — o mesmo instante em que o ano vira e a temporada nova apaga a antiga. O título ia pro histórico (`temporada.titulos` tinha campeão de 2026 a 2030 no save do dono), mas nenhuma notícia saía e a tela da copa já amanhecia com a chave do ano seguinte: pra quem jogava, a copa acabava sem campeão. Havia um segundo furo: a edição de campeão do Almanaque só olhava `rodadas`, e a Copa do Brasil não tem rodada nenhuma — mesmo com data boa, a notícia da copa nunca sairia.
+
+**O que mudou.**
+- `competicoes.js`: `COPA_FINAL_SEMANA = 50` (domingo, campo neutro). O Brasileirão acaba na 48, as finais da Conmebol caem na 48 e na 49; sobram a 51 e a 52 pro jornal e pra chave ficar de pé com o troféu. As demais fases não mudaram (22, 26, 30, 34/35, 39/40, 44/45).
+- `sortearPorPotes(E, ids)`: ordena por divisão e depois por força (`ordemDeForca`), corta ao meio, embaralha cada pote e cruza o k-ésimo de um com o k-ésimo do outro. O mando segue a régua de sempre (`mandante`: divisão mais alta em casa; nas fases de ida e volta o mais forte decide em casa). Vale na Primeira, Segunda e Terceira fase e nas Oitavas (`FASES_COM_POTES`); das quartas em diante o sorteio é livre (`sortearLivre`). A primeira fase deixou de ter o laço "B e C pegam um da D" — os potes dão o mesmo resultado (pote 1 = B, C e o topo da D) sem regra à parte.
+- Chave ímpar: o que sobrava sumia do laço antigo (`i+1 < length`); agora passa direto (`f:null`), inclusive em ida e volta (`decidirAgregado` respeita).
+- `conmebol.js`: `emPotes(ids)` faz o mesmo nas copas nacionais de fora quando a fase tem 16 clubes ou mais — a fila `vivos` sai intercalada (forte, fraco, forte, fraco…), que é a ordem em que `agendarCopa` e `andarCopaNacional` emparelham. Com menos de 16 a chave anda na ordem dos jogos, como antes.
+- `almanaque.js`: a edição de campeão passa a olhar `rodadas` e `mata`.
+
+**Medido** (temporada inteira, TUF/Fortaleza): Primeira fase 44 jogos, Segunda 32, Terceira 16, Oitavas 8 — em todos, cada jogo cruza um clube do pote forte com um do fraco (0 jogos entre clubes do mesmo pote na criação; as únicas divergências de uma conferência posterior eram empates de força na borda entre os potes). Final na semana 50, domingo; campeão declarado na semana 51, dia 1; edição "Deu campeão: Botafogo fatura a Copa do Brasil" no feed na semana 51, dia 2; título gravado em 2026. Copas de fora: Argentina (32-avos, 16-avos, oitavas), Chile, Colômbia, Bolívia, Equador, Peru e Uruguai com as fases de 16+ cruzadas forte × fraco.
+
+**Save em andamento.** A chave já sorteada no save do dono (2031, primeira fase marcada) continua valendo; as próximas fases já saem por potes e a final já cai na 50, porque as datas vêm de `COPA_FASES` na hora do avanço.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

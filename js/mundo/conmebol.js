@@ -411,6 +411,22 @@ TO.conmebol = (function(){
     return c;
   }
 
+  /* DOIS POTES ATÉ AS OITAVAS (pedido do dono, 17/09/2026): com
+     dezesseis clubes ou mais, a fase é sorteada em dois potes — a
+     metade forte e a metade fraca, cada uma embaralhada — e a fila
+     `vivos` sai intercalada (forte, fraco, forte, fraco…), que é a
+     ordem em que `agendarCopa` e `andarCopaNacional` emparelham. Das
+     quartas em diante a chave anda na ordem dos jogos, como antes. */
+  function emPotes(ids){
+    if(ids.length < 16) return ids;
+    const ordem = ids.slice().sort((a,b)=>(C().forca(b)||0) - (C().forca(a)||0));
+    const meio  = Math.ceil(ordem.length / 2);
+    const p1 = U.embaralhar(ordem.slice(0, meio)), p2 = U.embaralhar(ordem.slice(meio));
+    const fila = [];
+    for(let k=0;k<p1.length;k++){ fila.push(p1[k]); if(p2[k]) fila.push(p2[k]); }
+    return fila;
+  }
+
   /* o mando é de quem tem a divisão mais alta; empate de divisão, a força */
   function mandoDe(a, b){
     return (C().forca(b)||0) > (C().forca(a)||0) ? [b, a] : [a, b];
@@ -453,7 +469,7 @@ TO.conmebol = (function(){
       /* os melhores entram já classificados pra primeira chave cheia */
       const dentro = ordem.slice(0, n);
       fora[pais] = {nome:nomeCopa, pais, clubes:ordem,
-                    vivos:U.embaralhar(dentro), mata:[],
+                    vivos:emPotes(dentro), mata:[],
                     campeao:null, vice:null, passo:0,
                     comJogos: pais === C().paisDoJogador(E)};
       if(fora[pais].comJogos) agendarCopa(E, fora[pais]);
@@ -960,7 +976,7 @@ TO.conmebol = (function(){
       jogos.push(j); passa.push(j.venceu);
     }
     copa.mata.push({fase, semana:sem, jogos});
-    copa.vivos = passa;
+    copa.vivos = emPotes(passa);
     copa.passo++;
     if(copa.comJogos) agendarCopa(E, copa);
     if(passa.length === 1){
