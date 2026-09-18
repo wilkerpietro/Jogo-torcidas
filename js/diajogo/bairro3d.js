@@ -120,6 +120,19 @@ export function montarBairro(P) {
     const tons = [0.92, 0.84, 0.78, 1.0];
     for (let i = 0; i < 4; i++) tri(T, b[i], b[(i+1)%4], t, hex, tons[i]);
   }
+  function malhaUV(T, tex) {
+    if (!T.pos.length) return;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(T.pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(T.uv, 2));
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({
+      map: tex, alphaTest: 0.45, side: THREE.DoubleSide
+    }));
+    m.receiveShadow = true;
+    triangulos += T.pos.length / 9;
+    meshes.push(m);
+  }
   function malha(T, sombra) {
     if (!T.pos.length) return null;
     const g = new THREE.BufferGeometry();
@@ -131,6 +144,74 @@ export function montarBairro(P) {
     triangulos += T.pos.length / 9;
     meshes.push(m);
     return m;
+  }
+
+  /* ---- OS LETREIROS E AS PIXAÇÕES ----
+     Texto não sai de caixa: sai de textura. Todos os dizeres que a
+     planta pôs nos lotes viram um atlas só, e cada dizer vira um
+     quadrado rente à parede — 0,1 à frente dela, e sempre pra dentro
+     da divisa do lote, que é a regra da casa. Letreiro tem fundo
+     pintado; pixação é tinta direta, fundo transparente, e o recorte
+     por alfa evita ter de ordenar transparência. */
+  const FUNDOS_PLACA = ['#c8342b','#1f5aa8','#e0a52a','#1d7a4a','#f0ede4','#2b2b2b','#7a2f86','#d96a1f'];
+  const TINTAS_PIXO = ['#2a2a28','#1c2a44','#3a1f1f','#23331f'];
+  const somaTexto = t => { let h = 7; for(let k=0;k<t.length;k++) h = (h*31 + t.charCodeAt(k)) >>> 0; return h; };
+
+  function montarAtlas(dizeres) {
+    const LARG = 256, ALT = 64, COLS = 4;
+    const linhas = Math.max(1, Math.ceil(dizeres.length / COLS));
+    const cv = document.createElement('canvas');
+    cv.width = COLS * LARG;
+    cv.height = Math.pow(2, Math.ceil(Math.log2(linhas * ALT)));
+    const c = cv.getContext('2d');
+    const uv = new Map();
+    dizeres.forEach((d, k) => {
+      const x = (k % COLS) * LARG, y = ((k / COLS) | 0) * ALT;
+      const h = somaTexto(d.texto);
+      c.save();
+      c.beginPath(); c.rect(x, y, LARG, ALT); c.clip();
+      if (d.placa) {
+        const fundo = FUNDOS_PLACA[h % FUNDOS_PLACA.length];
+        c.fillStyle = fundo; c.fillRect(x, y, LARG, ALT);
+        const claro = fundo === '#f0ede4' || fundo === '#e0a52a';
+        c.strokeStyle = claro ? 'rgba(0,0,0,.35)' : 'rgba(255,255,255,.35)';
+        c.lineWidth = 4; c.strokeRect(x + 4, y + 4, LARG - 8, ALT - 8);
+        c.fillStyle = claro ? '#20201c' : '#f6f3ea';
+        c.font = 'bold 34px "Arial Narrow", Arial, sans-serif';
+      } else {
+        c.fillStyle = TINTAS_PIXO[h % TINTAS_PIXO.length];
+        c.font = 'italic bold 36px "Arial Narrow", Arial, sans-serif';
+        c.translate(x + LARG/2, y + ALT/2);
+        c.rotate(((h >> 4) % 5 - 2) * 0.012);
+        c.translate(-(x + LARG/2), -(y + ALT/2));
+      }
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      /* encolhe até caber: nome de comércio brasileiro é comprido */
+      let tam = d.placa ? 34 : 36;
+      while (tam > 12 && c.measureText(d.texto).width > LARG - 26) {
+        tam -= 2;
+        c.font = (d.placa ? 'bold ' : 'italic bold ') + tam + 'px "Arial Narrow", Arial, sans-serif';
+      }
+      c.fillText(d.texto, x + LARG/2, y + ALT/2 + 2);
+      c.restore();
+      uv.set(d.chave, [x / cv.width, 1 - (y + ALT) / cv.height, (x + LARG) / cv.width, 1 - y / cv.height]);
+    });
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return { tex, uv };
+  }
+
+  /* um quadrado com textura, de pé, olhando pra fora em (ox, oz).
+     A direção no plano sai da normal: d × cima = fora. */
+  function placa(T, cx, cy, cz, ox, oz, larg, alt, u, desloc) {
+    const dx = oz, dz = -ox, s = desloc || 0;
+    const mx = cx + dx * s, mz = cz + dz * s;
+    const hx = dx * larg / 2, hz = dz * larg / 2, y0 = cy - alt / 2, y1 = cy + alt / 2;
+    const a = [mx - hx, y0, mz - hz], b = [mx + hx, y0, mz + hz];
+    const d = [mx - hx, y1, mz - hz], e = [mx + hx, y1, mz + hz];
+    const p = (v, s, t) => { T.pos.push(v[0], v[1], v[2]); T.uv.push(s, t); };
+    p(a, u[0], u[1]); p(b, u[2], u[1]); p(e, u[2], u[3]);
+    p(a, u[0], u[1]); p(e, u[2], u[3]); p(d, u[0], u[3]);
   }
 
   /* ---- um lote ---- */
@@ -158,7 +239,7 @@ export function montarBairro(P) {
       else if (frente === 'o') caixa(T, x0 - e, x0 + 0.2, y0, y1, z0 + a0, z0 + a1, hex);
       else caixa(T, x1 - 0.2, x1 + e, y0, y1, z0 + a0, z0 + a1, hex);
     };
-    faceBox(larg * 0.5 - 6, larg * 0.5 + 6, 0, 20, PORTA, 0.6);
+    faceBox(larg * 0.5 - 6, larg * 0.5 + 6, 0, l.placa ? 17 : 20, PORTA, 0.6);
     const andares = Math.max(1, Math.floor(l.alt / 26));
     for (let f = 0; f < andares; f++) {
       const y = 12 + f * 26;
@@ -202,6 +283,59 @@ export function montarBairro(P) {
     for (const a of q.arvores || []) arvore(T, a);
   }
   for (const T of pedacos.values()) malha(T, true);
+
+  /* ---- os dizeres ---- */
+  const dizeres = new Map();
+  for (const l of K.LOTES) {
+    for (const [texto, ehPlaca] of [[l.placa, true], [l.pixacao, false]]) {
+      if (!texto) continue;
+      const chave = (ehPlaca ? 'P:' : 'X:') + texto;
+      if (!dizeres.has(chave)) dizeres.set(chave, { chave, texto, placa: ehPlaca });
+    }
+  }
+  if (dizeres.size) {
+    const { tex, uv } = montarAtlas([...dizeres.values()]);
+    const TL = { pos: [], uv: [] };
+    for (const l of K.LOTES) {
+      /* a frente do lote: pra onde ela olha, onde fica a parede e
+         quanto mede — o lote axial pela sua frente, o da avenida pelo
+         eixo local dele */
+      let ox, oz, px, pz, frente;
+      if (l.ang) {
+        const c = Math.cos(l.ang), sn = Math.sin(l.ang), vf = l.vf || -1;
+        ox = -sn * vf; oz = c * vf;
+        const v = vf * (l.h / 2 - 0.9);
+        px = l.cx - v * sn; pz = l.cy + v * c;
+        frente = l.w - 2;
+      } else {
+        const meiox = (l.x0 + l.x1) / 2, meioz = (l.y0 + l.y1) / 2;
+        if (l.frente === 'n') { ox = 0; oz = -1; px = meiox; pz = l.y0 + 0.9; frente = l.x1 - l.x0; }
+        else if (l.frente === 's') { ox = 0; oz = 1; px = meiox; pz = l.y1 - 0.9; frente = l.x1 - l.x0; }
+        else if (l.frente === 'o') { ox = -1; oz = 0; px = l.x0 + 0.9; pz = meioz; frente = l.y1 - l.y0; }
+        else { ox = 1; oz = 0; px = l.x1 - 0.9; pz = meioz; frente = l.y1 - l.y0; }
+      }
+      if (frente < 26) continue;
+      if (l.placa) {
+        const larg = Math.min(frente - 8, 76), alt = Math.min(13, larg / 4.6);
+        const y = Math.min(26, Math.max(18, l.alt - 5 - alt)) + alt / 2;
+        placa(TL, px, y, pz, ox, oz, larg, alt, uv.get('P:' + l.placa));
+      }
+      if (l.pixacao) {
+        /* a pixação não pode passar da parede: em muro de 12 ela tem de
+           caber nos 12, senão sobra tinta boiando no ar */
+        const larg = Math.min(frente - 12, 50);
+        const alt = Math.min(9, larg / 5, l.alt - 4);
+        if (alt < 4) continue;
+        /* baixa, abaixo da linha das janelas, e fora do meio: pixação
+           não se alinha com a porta */
+        const y = Math.min(l.alt - 2 - alt / 2, 3 + alt / 2);
+        const folga = Math.max(0, (frente - larg) / 2 - 2);
+        const lado = somaTexto(l.pixacao) % 2 ? 1 : -1;
+        placa(TL, px, y, pz, ox, oz, larg, alt, uv.get('X:' + l.pixacao), lado * folga * 0.7);
+      }
+    }
+    malhaUV(TL, tex);
+  }
 
   /* ---- os soltos: carros, postes, campos ---- */
   const TS = Tecido();

@@ -212,13 +212,16 @@ TO.diaJogo.estadioPintura = (function(){
        uma rua o chão é asfalto, não calçada — quem atravessa, atravessa
        no asfalto. ---- */
     c.fillStyle = COR.rua;
-    const urbana = (i, j) => { const g = K.grade[i] && K.grade[i][j]; return !!(g && g.urbana); };
+    const cel = (i, j) => K.grade[i] && K.grade[i][j];
+    const urbana = (i, j) => { const g = cel(i, j); return !!(g && g.urbana); };
+    /* a mesma regra da máscara, inclusive a de não cortar campo ao meio */
+    const rua = (...ij) => K.ruaEntre(ij.map(([i, j]) => cel(i, j)).filter(Boolean));
     for(let i=0;i<nCol;i++) for(let j=0;j<nLin;j++){
       const x0 = bx[2*i], x1 = bx[2*i+1], y0 = by[2*j], y1 = by[2*j+1];
       const temCol = 2*i + 2 < bx.length, temLin = 2*j + 2 < by.length;
-      if(temCol && (urbana(i, j) || urbana(i+1, j))) c.fillRect(x1, y0, bx[2*i+2]-x1, y1-y0);
-      if(temLin && (urbana(i, j) || urbana(i, j+1))) c.fillRect(x0, y1, x1-x0, by[2*j+2]-y1);
-      if(temCol && temLin && (urbana(i, j) || urbana(i+1, j) || urbana(i, j+1) || urbana(i+1, j+1)))
+      if(temCol && rua([i, j], [i+1, j])) c.fillRect(x1, y0, bx[2*i+2]-x1, y1-y0);
+      if(temLin && rua([i, j], [i, j+1])) c.fillRect(x0, y1, x1-x0, by[2*j+2]-y1);
+      if(temCol && temLin && rua([i, j], [i+1, j], [i, j+1], [i+1, j+1]))
         c.fillRect(x1, y1, bx[2*i+2]-x1, by[2*j+2]-y1);
     }
     /* o eixo tracejado das ruas largas, em trechos contínuos de célula urbana */

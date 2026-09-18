@@ -424,7 +424,11 @@ TO.dados.plantaEstadio = (function(){
     const [X0, Y0] = pxm(x0, y0), [X1, Y1] = pxm(x1, y1);
     return { x0:X0, y0:Y0, x1:X1, y1:Y1, cx:(X0+X1)/2, cy:(Y0+Y1)/2, ladoArq };
   };
-  const CAMPOS = [ campo(414, 705, 522, 797, 'o'), campo(658, 728, 748, 808, 'l') ];   // o 1º longe da avenida, o 2º da areia
+  /* Os dois campos de várzea. O retângulo aqui é só a INTENÇÃO: diz
+   quais células o campo toma. Passada a classificação, ele encolhe
+   pra caixa dessas células, recuado da calçada — é o que o faz caber
+   no quarteirão em vez de atravessar a rua e a areia. */
+  const CAMPOS = [ campo(400, 752, 525, 808, 'o'), campo(658, 728, 748, 808, 'l') ];
   const CERCA = 6, PORTEIRA = 24, ARQ_VARZEA = { fundo: 40, alt: 22 };
   function noCampo(x, y){
     for(const c of CAMPOS) if(x >= c.x0 && x < c.x1 && y >= c.y0 && y < c.y1) return c;
@@ -584,6 +588,10 @@ TO.dados.plantaEstadio = (function(){
      campo, estádio ou terreno da cidade; entre duas células de mato
      não há asfalto — a rua acaba no último quarteirão, e a saída da
      cidade é a avenida. ---- */
+  /* há rua nessa faixa? Há se alguma célula encostada é urbana — e não
+     há entre duas células de CAMPO, que são as duas metades do mesmo
+     campo: rua nenhuma corta um campo de várzea ao meio. */
+  const ruaEntre = cels => cels.some(c => c.urbana) && !(cels.length > 1 && cels.every(c => c.tipo === 'campo'));
   function naRua(x, y){
     if(x < 0 || y < 0 || x >= W || y >= H) return false;
     const i = indiceEm(bordasX, x), j = indiceEm(bordasY, y);
@@ -591,9 +599,23 @@ TO.dados.plantaEstadio = (function(){
     if(!emColuna && !emLinha) return false;
     const is = emColuna ? [(i-1)/2, (i+1)/2] : [i/2];
     const js = emLinha ? [(j-1)/2, (j+1)/2] : [j/2];
-    for(const a of is) for(const b of js){ const c = grade[a] && grade[a][b]; if(c && c.urbana) return true; }
-    return false;
+    const cels = [];
+    for(const a of is) for(const b of js){ const c = grade[a] && grade[a][b]; if(c) cels.push(c); }
+    return cels.length ? ruaEntre(cels) : false;
   }
+  /* ---- o campo encolhe pra dentro do quarteirão ----
+     A caixa das células que ele tomou, menos a calçada. Assim a cerca
+     nunca cai na rua, e o gramado nunca passa da guia. */
+  for(const f of CAMPOS){
+    const suas = CELULAS.filter(c => c.tipo === 'campo' && c.x0 < f.x1 && c.x1 > f.x0 && c.y0 < f.y1 && c.y1 > f.y0);
+    if(!suas.length) continue;
+    f.x0 = Math.min(...suas.map(c => c.x0)) + CALC;
+    f.x1 = Math.max(...suas.map(c => c.x1)) - CALC;
+    f.y0 = Math.min(...suas.map(c => c.y0)) + CALC;
+    f.y1 = Math.max(...suas.map(c => c.y1)) - CALC;
+    f.cx = (f.x0 + f.x1)/2; f.cy = (f.y0 + f.y1)/2;
+  }
+
   /* o chão do quarteirão, esse, segue a diagonal da costa */
   for(const cel of CELULAS) cel.pol = cel.tipo === 'nada' ? [] : recorteCosta(cel);
   const QUADRAS = CELULAS.filter(c => c.tipo === 'quadra');
@@ -763,7 +785,10 @@ TO.dados.plantaEstadio = (function(){
             if(!q || q.tipo !== 'quadra') return false;
             const tipo = muro ? 'muro' : tipoDoLote(q);
             const T = TIPOS[tipo];
-            const lote = { quadra:q, frente:'av', tipo, cx, cy, w, h, ang: sg.ang,
+            /* `vf` é pra que lado, no eixo local do lote, fica a frente:
+               a casa foi posta a `off` no sentido +v vezes `lado`, então
+               a avenida está no sentido contrário */
+            const lote = { quadra:q, frente:'av', tipo, cx, cy, w, h, ang: sg.ang, vf: -lado,
                            alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
             const cantos = cantosDoLote(lote);
             /* o muro não tem beiral; a casa tem, e ele também precisa caber */
@@ -796,6 +821,41 @@ TO.dados.plantaEstadio = (function(){
     for(let k=0;k<=8;k++){ const t = k/8; pts.push([q.x0 + (q.x1-q.x0)*t, q.y0], [q.x0 + (q.x1-q.x0)*t, q.y1], [q.x0, q.y0 + (q.y1-q.y0)*t], [q.x1, q.y0 + (q.y1-q.y0)*t]); }
     pts.push([q.cx, q.cy]);
     q.cortada = pts.some(([x, y]) => naFaixaDaAvenida(x, y, CALC));
+  }
+
+  /* ---- A DECORAÇÃO: letreiro no comércio, pixação no muro ----
+     O que a planta guarda é só o texto; quem desenha monta o atlas a
+     partir dos textos que apareceram. Letreiro é comércio de rua, e
+     pixação é o que cobre muro e casa baixa por aqui: recado de
+     aluguel, de obra, de amor e de torcida. */
+  const COMERCIO = [
+    'BAR DO ZÉ', 'BOTECO DA ESQUINA', 'BAR E MERCEARIA', 'PONTO DO CHOPE',
+    'BAR DO NEGUINHO', 'BOTEQUIM DA VILA', 'LANCHONETE TRÊS IRMÃOS',
+    'MERCADINHO SÃO JOÃO', 'PADARIA PÃO QUENTE', 'AÇOUGUE BOI GORDO',
+    'SALÃO DA DONA MARIA', 'BARBEARIA DO TIÃO', 'BORRACHARIA 24H',
+    'OFICINA DO GORDO', 'LOTÉRICA SORTE GRANDE', 'FARMÁCIA POPULAR',
+    'MATERIAIS DE CONSTRUÇÃO', 'SORVETERIA GELADÃO', 'PASTEL DA FEIRA',
+    'LAN HOUSE CYBER', 'DEPÓSITO DE BEBIDAS', 'CASA DE CARNES',
+    'ELETRÔNICA DO ZÉ', 'CHAVEIRO 24 HORAS', 'BAZAR PREÇO BOM',
+    'AUTO PEÇAS IRMÃOS', 'MÓVEIS POPULARES', 'GÁS E ÁGUA',
+    'SALGADOS DA VÓ', 'ESPETINHO DO MINEIRO', 'MERCEARIA DOIS IRMÃOS',
+    'COSTURA E CONSERTOS', 'VIDRAÇARIA CENTRAL', 'PEIXARIA MARÉ ALTA'
+  ];
+  const PIXACAO = [
+    'O BAIRRO É NOSSO', 'RESPEITA A VILA', 'SÓ OS FORTES', 'AQUI É RESENHA',
+    'VENDE-SE', 'ALUGA-SE', 'PINTA-SE CASAS', 'PRECISA-SE DE AJUDANTE',
+    'É PROIBIDO JOGAR LIXO', 'NÃO ESTACIONE', 'ENTRADA DE VEÍCULOS',
+    'TE AMO MARIA', 'SAUDADES ETERNAS', 'A VILA NÃO SE RENDE',
+    'DEUS É FIEL', 'A TORCIDA MANDA', 'AQUI É TORCIDA', 'GERAL DO BAIRRO',
+    'NINGUÉM SEGURA', 'DOMINGO TEM JOGO', 'PROIBIDO COLAR CARTAZ',
+    'CUIDADO COM O CÃO', 'TEM ÁGUA', 'LAVA-SE ROUPA', 'CONSERTA-SE GELADEIRA'
+  ];
+  for(const l of LOTES){
+    if(l.tipo === 'sede') continue;                 // a sede já tem a faixa dela
+    if(l.tipo === 'muro'){ if(rng() < 0.55) l.pixacao = escolher(PIXACAO); continue; }
+    const r = rng();
+    if(r < 0.30) l.placa = escolher(COMERCIO);
+    else if(r < 0.54) l.pixacao = escolher(PIXACAO);
   }
 
   /* ---- as moitas do mato: só onde é mato, num balde espacial ---- */
@@ -920,7 +980,7 @@ TO.dados.plantaEstadio = (function(){
   const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC,
                    COLUNAS, LINHAS, CELULAS, QUADRAS, grade, celulaEm, zona, xCosta, PRAIA, ORLA,
                    CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, bordasX, bordasY,
-                   xLimiteCosta, cortarPor, recorteCosta, dentroPol, CAMPOS, CERCA, PORTEIRA,
+                   xLimiteCosta, cortarPor, recorteCosta, dentroPol, ruaEntre, CAMPOS, CERCA, PORTEIRA,
                    ARQ_VARZEA, noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe };
 

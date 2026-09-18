@@ -156,7 +156,22 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   Dá 81–88 % da frente ocupada, contra 55 % antes.
 - **Os campos de várzea** são células grandes abertas com cerca de mourão
   (bloqueia, com porteira no meio dos lados norte e sul), arquibancadinha
-  de três degraus (bloqueia) e traves.
+  de três degraus (bloqueia) e traves. O retângulo declarado é só a
+  **intenção** — diz quais células o campo toma; passada a
+  classificação, ele encolhe pra caixa dessas células menos a calçada,
+  e é isso que o faz caber no quarteirão em vez de atravessar a rua e
+  a areia. E rua nenhuma corta campo ao meio: entre duas células de
+  campo `ruaEntre` diz que não há asfalto, na máscara e na pintura.
+- **A decoração.** Texto não sai de caixa, sai de textura: a planta
+  guarda só o dizer (`l.placa`, `l.pixacao`), e o `bairro3d.js` junta
+  os que apareceram num atlas de 256 × 64 por dizer, uma malha só, com
+  recorte por alfa (sem transparência, sem ordenar). Letreiro de
+  comércio é fundo pintado com borda, acima da porta (que encurta pra
+  17 quando há letreiro); pixação é tinta direta em itálico torto,
+  abaixo da linha das janelas e fora do meio, presa à altura da
+  parede — em muro de 12 ela cabe nos 12. São 34 nomes de comércio e
+  25 dizeres de parede, sorteados com a semente da planta, então a
+  cidade sai igual toda vez.
 - **O mato**: terreno aberto com moitas sorteadas (bloqueiam, num balde
   espacial de 256) e trilhas pintadas. A textura do mato, do mar e da
   praia sai do pintor, não de geometria.
