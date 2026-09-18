@@ -66,9 +66,13 @@ export function montarBairro(P) {
     }
     return out;
   }
+  /* o chão parte do retângulo JÁ RECORTADO PELA COSTA: quarteirão da
+     orla acaba na guia da beira-mar, não em cima da areia */
   function semAsAvenidas(ret, folga) {
-    let pecas = [[[ret.x0, ret.y0], [ret.x1, ret.y0], [ret.x1, ret.y1], [ret.x0, ret.y1]]];
-    const cantos = pecas[0];
+    const base = Array.isArray(ret) ? ret : K.recorteCosta(ret);
+    if (base.length < 3) return [];
+    let pecas = [base];
+    const cantos = base;
     for (const av of K.AVENIDAS) {
       const meia = av.l / 2 + (folga || 0);
       for (const sg of av.segs) {
@@ -188,8 +192,7 @@ export function montarBairro(P) {
        deixa no quarteirão lê como um descampado de cimento); e o
        QUINTAL, mais alto, no meio. */
     for (const p of semAsAvenidas(q)) laje(T, p, 0, 1.4, '#8d897d');
-    const miolo = { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
-    for (const p of semAsAvenidas(miolo, K.CALC)) laje(T, p, 0, 1.6, '#7d7668');
+    for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, '#7d7668');
     if (q.quintal) for (const p of semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
     for (const l of q.lotes) {
       limite = l.ang ? null : { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };

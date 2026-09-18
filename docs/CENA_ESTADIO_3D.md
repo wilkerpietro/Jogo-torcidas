@@ -102,8 +102,21 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   encostadas na faixa): a grade acaba no último quarteirão, sem toco de
   asfalto pelo mato, e a pintura segue a mesma regra, célula por célula.
 - **A costa.** `xCosta(y)`, uma função do mapa: além dela é mar
-  (bloqueia); 45 px pra dentro é praia (anda); mais 14 px é a avenida
-  beira-mar. Os quarteirões que cruzam a orla terminam nela.
+  (bloqueia); 45 px pra dentro é praia (anda); mais 14 px é a **avenida
+  beira-mar**, que é uma avenida de verdade (está em `AVENIDAS`), com
+  calçada do lado de terra e casas rotacionadas de frente pro mar.
+- **O quarteirão da orla acaba na costa, na diagonal.** A costa é
+  diagonal e a célula é reta, então cada célula guarda duas coisas: o
+  **polígono do miolo** (`polMiolo`, o miolo recortado pela linha da
+  cidade), que é quem manda na máscara, na casa da avenida e no chão;
+  e o **retângulo** `ix0..ix1`, o maior que cabe nele (recuado até o
+  ponto mais a oeste da costa no trecho), que é o que os lotes axiais
+  usam, porque lote axial é reto. Quem decide se a célula é quarteirão
+  é a **área do polígono**, não o centro da célula: na faixa da orla o
+  centro já cai na areia, e a terra que sobrava virava mato entre o
+  último quarteirão e a praia. Célula mais fina que duas calçadas tem
+  miolo às avessas e não é miolo nenhum — `areaPol` do avesso daria
+  área de verdade, e era isso que punha laje em cima da rua.
 - **As avenidas** são **linhas de vários pontos** com largura — não um
   segmento: a do sudoeste entra pelo canto, dobra e morre na rua sul do
   estádio; a do noroeste nasce numa rua da grade e sai da cidade pelo norte;
@@ -130,7 +143,8 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
 - **Três regras que não se quebram**, conferidas por `auditar_geo.js`
   (roda o `bairro3d.js` no node com um three.js de mentira e olha
   vértice por vértice): **nada por cima do asfalto**, **casa nenhuma por
-  cima da calçada**, **calçada nenhuma por cima do asfalto**. O que as
+  cima da calçada**, **calçada nenhuma por cima do asfalto**, **nada na
+  orla nem na areia**. O que as
   garante: o recorte acima; o `limite` do `caixa()`, que corta beiral,
   janela, porta e placa pelo miolo do quarteirão; o teste do beiral nas
   casas da avenida; e a copa da árvore menor que meia calçada (tronco no

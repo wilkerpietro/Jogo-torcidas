@@ -169,9 +169,14 @@ TO.diaJogo.estadioPintura = (function(){
     const nCol = bx.length/2, nLin = by.length/2;
     for(const q of K.CELULAS){
       if(q.tipo === 'quadra'){
-        c.fillStyle = COR.calcada; c.fillRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
-        c.fillStyle = COR.lote;    c.fillRect(q.ix0, q.iy0, q.ix1-q.ix0, q.iy1-q.iy0);
-        c.strokeStyle = COR.meioFio; c.lineWidth = 2; c.strokeRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
+        /* polígono, não retângulo: na orla o quarteirão acaba na
+           diagonal da costa, e o miolo com ele */
+        poli(c, q.pol, COR.calcada);
+        if(q.polMiolo.length >= 3) poli(c, q.polMiolo, COR.lote);
+        c.beginPath(); c.moveTo(q.pol[0][0], q.pol[0][1]);
+        for(let i=1;i<q.pol.length;i++) c.lineTo(q.pol[i][0], q.pol[i][1]);
+        c.closePath();
+        c.strokeStyle = COR.meioFio; c.lineWidth = 2; c.stroke();
       } else if((q.tipo === 'aberto' || q.tipo === 'campo') && K.zona(q.cx, q.cy) === 'cidade'){
         c.fillStyle = COR.terreno; c.fillRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
       }

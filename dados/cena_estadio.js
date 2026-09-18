@@ -335,6 +335,54 @@ TO.dados.plantaEstadio = (function(){
     return COSTA[COSTA.length-1][0];
   }
   const PRAIA = 45, ORLA = 14;          // em px: a faixa de areia e a avenida beira-mar
+  /* ONDE A CIDADE ACABA NA COSTA: a guia oeste da avenida beira-mar.
+     Daí pra leste é asfalto da orla, areia e mar — quarteirão nenhum
+     pisa lá. Como `xCosta` é linear por trecho e o recuo é horizontal
+     e constante, a linha do limite é a própria COSTA empurrada. */
+  const xLimiteCosta = y => pxX(xCosta(y/PX + MAPA.y0) - PRAIA - ORLA);
+  const LIMITE_COSTA = COSTA.map(([px, py]) => pxm(px - PRAIA - ORLA, py));
+  const areaPol = pol => {
+    let a = 0;
+    for(let i=0;i<pol.length;i++){ const p = pol[i], q = pol[(i+1)%pol.length]; a += p[0]*q[1] - q[0]*p[1]; }
+    return Math.abs(a)/2;
+  };
+  /* ponto dentro de um polígono CONVEXO: todos os lados do mesmo lado */
+  function dentroPol(x, y, pol){
+    let mais = false, menos = false;
+    for(let i=0;i<pol.length;i++){
+      const a = pol[i], b = pol[(i+1)%pol.length];
+      const d = (b[0]-a[0])*(y-a[1]) - (b[1]-a[1])*(x-a[0]);
+      if(d > 0) mais = true; else if(d < 0) menos = true;
+      if(mais && menos) return false;
+    }
+    return true;
+  }
+  /* recorta um polígono convexo pelo meio-plano n·p <= d */
+  function cortarPor(pol, nx, ny, d){
+    const out = [];
+    for(let i=0;i<pol.length;i++){
+      const a = pol[i], b = pol[(i+1)%pol.length];
+      const da = nx*a[0] + ny*a[1] - d, db = nx*b[0] + ny*b[1] - d;
+      if(da <= 0) out.push(a);
+      if((da < 0) !== (db < 0)){
+        const t = da/(da - db);
+        out.push([a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t]);
+      }
+    }
+    return out;
+  }
+  /* o retângulo cortado pela linha da costa, trecho por trecho */
+  function recorteCosta(ret){
+    let pol = [[ret.x0, ret.y0], [ret.x1, ret.y0], [ret.x1, ret.y1], [ret.x0, ret.y1]];
+    for(let k=1;k<LIMITE_COSTA.length;k++){
+      const [ax, ay] = LIMITE_COSTA[k-1], [bx, by] = LIMITE_COSTA[k];
+      if(Math.max(ay, by) < ret.y0 || Math.min(ay, by) > ret.y1) continue;
+      const nx = by - ay, ny = -(bx - ax);        // normal apontando pro mar
+      pol = cortarPor(pol, nx, ny, nx*ax + ny*ay);
+      if(pol.length < 3) return [];
+    }
+    return pol;
+  }
   /* ---- o contorno da cidade, em px: fora dele é mato ---- */
   const CONTORNO = [[300,250],[400,160],[560,110],[620,100],[700,95],[850,100],[1000,110],
                     [1300,115],[1300,1200],[300,1200],[250,1000],[230,850],[240,700],
@@ -376,7 +424,7 @@ TO.dados.plantaEstadio = (function(){
     const [X0, Y0] = pxm(x0, y0), [X1, Y1] = pxm(x1, y1);
     return { x0:X0, y0:Y0, x1:X1, y1:Y1, cx:(X0+X1)/2, cy:(Y0+Y1)/2, ladoArq };
   };
-  const CAMPOS = [ campo(414, 705, 522, 797, 'o'), campo(658, 728, 770, 808, 'l') ];   // o 1º afastado da avenida
+  const CAMPOS = [ campo(414, 705, 522, 797, 'o'), campo(658, 728, 748, 808, 'l') ];   // o 1º longe da avenida, o 2º da areia
   const CERCA = 6, PORTEIRA = 24, ARQ_VARZEA = { fundo: 40, alt: 22 };
   function noCampo(x, y){
     for(const c of CAMPOS) if(x >= c.x0 && x < c.x1 && y >= c.y0 && y < c.y1) return c;
@@ -412,7 +460,13 @@ TO.dados.plantaEstadio = (function(){
       segs.push({ x0, y0, x1, y1, L: len, t0: L, ux:(x1-x0)/len, uy:(y1-y0)/len, ang: Math.atan2(y1-y0, x1-x0) });
       L += len;
     }
-    return { id, pontos: P, segs, l: lpx*PX, L };
+    const l = lpx*PX, m = l/2 + CALC + 4;
+    const cx = P.map(p => p[0]), cy = P.map(p => p[1]);
+    return { id, pontos: P, segs, l, L,
+             /* caixa em volta, pra `naAvenida` descartar de longe: com a
+                beira-mar são 21 trechos, e a máscara pergunta 460 mil vezes */
+             bx0: Math.min(...cx) - m, bx1: Math.max(...cx) + m,
+             by0: Math.min(...cy) - m, by1: Math.max(...cy) + m };
   };
   /* as colunas/linhas em px onde as avenidas desaguam */
   const AVENIDAS = [
@@ -425,7 +479,12 @@ TO.dados.plantaEstadio = (function(){
     avenida([[315, 541], [170, 555], [40, 575], [-60, 600]], 12, 'oeste'),
     avenida([[321, 245], [170, 200], [60, 170], [-60, 150]], 12, 'noroeste2'),
     /* a saída pro norte, em cima do estádio */
-    avenida([[765, 135], [765, -60]], 14, 'norte')
+    avenida([[765, 135], [765, -60]], 14, 'norte'),
+    /* A BEIRA-MAR: corre rente à areia, acompanhando a costa. Ser
+       avenida é o que dá a ela calçada no lado de terra e casas
+       rotacionadas de frente pro mar — a faixa entre o último
+       quarteirão reto e a praia é diagonal, e casa reta não entra lá. */
+    avenida(COSTA.map(([x, y]) => [x - PRAIA - ORLA/2, y]), ORLA, 'beiramar')
   ];
   /* distância de (x,y) ao eixo da avenida — o segmento mais perto, e
      onde ao longo dele */
@@ -441,6 +500,7 @@ TO.dados.plantaEstadio = (function(){
   }
   function naAvenida(x, y, folga){
     for(const av of AVENIDAS){
+      if(x < av.bx0 || x > av.bx1 || y < av.by0 || y > av.by1) continue;
       const q = distAvenida(av, x, y);
       if(q.d <= av.l/2 + (folga === undefined ? CALC : folga)) return { av, ...q };
     }
@@ -452,6 +512,7 @@ TO.dados.plantaEstadio = (function(){
      dela — se a ponta contasse, ele ficava pelado. */
   function naFaixaDaAvenida(x, y, folga){
     for(const av of AVENIDAS){
+      if(x < av.bx0 || x > av.bx1 || y < av.by0 || y > av.by1) continue;
       const n = av.segs.length;
       for(let k=0;k<n;k++){
         const sg = av.segs[k];
@@ -477,11 +538,30 @@ TO.dados.plantaEstadio = (function(){
       const x0 = bordasX[i], x1 = bordasX[i+1], y0 = bordasY[j], y1 = bordasY[j+1];
       const cel = { i:i/2, j:j/2, x0, x1, y0, y1, cx:(x0+x1)/2, cy:(y0+y1)/2, tipo:'aberto',
                     ix0:x0+CALC, ix1:x1-CALC, iy0:y0+CALC, iy1:y1-CALC, lotes:[] };
+      /* O MIOLO PARA NA COSTA. É retângulo e a costa é diagonal, então
+         recua até o ponto mais a oeste da linha no trecho da célula (o
+         canto sul): assim o miolo inteiro fica em terra. E quem decide
+         se a célula é quarteirão é o MIOLO QUE SOBRA, não o centro da
+         célula — na faixa da orla o centro já cai na areia, e a terra
+         que sobrava virava mato entre o último quarteirão e a praia. */
+      /* o MIOLO em polígono, recortado pela costa: é ele que vale pra
+         máscara, pra casa rotacionada e pro chão. O retângulo
+         `ix0..ix1` é o maior que cabe nele com folga (recuado até o
+         ponto mais a oeste da costa no trecho), e é o que os lotes
+         axiais usam, que são retos. */
+      /* célula mais fina que duas calçadas tem miolo às avessas: não é
+         miolo nenhum, e `areaPol` do avesso daria área de verdade */
+      cel.polMiolo = cel.ix1 - cel.ix0 > 48 && cel.iy1 - cel.iy0 > 48
+        ? recorteCosta({ x0: cel.ix0, x1: cel.ix1, y0: cel.iy0, y1: cel.iy1 }) : [];
+      /* nunca do avesso: na orla o recuo pode passar do ix0 */
+      cel.ix1 = Math.max(cel.ix0, Math.min(cel.ix1, xLimiteCosta(cel.iy0), xLimiteCosta(cel.iy1)));
       if(x1 - x0 < 4 || y1 - y0 < 4) cel.tipo = 'nada';
       else if(noQuadradoDoEstadio(cel.cx, cel.cy)) cel.tipo = 'estadio';
       else if(noCampo(cel.cx, cel.cy) || CAMPOS.some(f => x0 < f.x1 && x1 > f.x0 && y0 < f.y1 && y1 > f.y0 &&
               Math.min(x1, f.x1) - Math.max(x0, f.x0) > (x1-x0)*0.5 && Math.min(y1, f.y1) - Math.max(y0, f.y0) > (y1-y0)*0.5)) cel.tipo = 'campo';
-      else if(zona(cel.cx, cel.cy) === 'cidade' && cel.ix1 - cel.ix0 > 48 && cel.iy1 - cel.iy0 > 48) cel.tipo = 'quadra';
+      else if(cel.polMiolo.length >= 3 && areaPol(cel.polMiolo) > 48*48 &&
+              zona(cel.polMiolo.reduce((a, p) => a + p[0], 0)/cel.polMiolo.length,
+                   cel.polMiolo.reduce((a, p) => a + p[1], 0)/cel.polMiolo.length) === 'cidade') cel.tipo = 'quadra';
       cel.urbana = cel.tipo !== 'nada' && (cel.tipo !== 'aberto' || zona(cel.cx, cel.cy) === 'cidade');
       grade[i/2][j/2] = cel;
       CELULAS.push(cel);
@@ -514,6 +594,8 @@ TO.dados.plantaEstadio = (function(){
     for(const a of is) for(const b of js){ const c = grade[a] && grade[a][b]; if(c && c.urbana) return true; }
     return false;
   }
+  /* o chão do quarteirão, esse, segue a diagonal da costa */
+  for(const cel of CELULAS) cel.pol = cel.tipo === 'nada' ? [] : recorteCosta(cel);
   const QUADRAS = CELULAS.filter(c => c.tipo === 'quadra');
 
   /* ---- sorteio com semente: a planta sai IGUAL toda vez ---- */
@@ -686,7 +768,7 @@ TO.dados.plantaEstadio = (function(){
             const cantos = cantosDoLote(lote);
             /* o muro não tem beiral; a casa tem, e ele também precisa caber */
             const beiral = muro ? cantos : cantosDoLote({ ...lote, w: w + 2, h: h + 2 });
-            if(!beiral.every(([x, y]) => x >= q.ix0 && x < q.ix1 && y >= q.iy0 && y < q.iy1)) return false;
+            if(!beiral.every(([x, y]) => dentroPol(x, y, q.polMiolo))) return false;
             if(cantos.some(([x, y]) => q.lotes.some(o => dentroLote(x, y, o)))) return false;
             if(cantos.some(([x, y]) => noCampo(x, y))) return false;
             LOTES.push(lote); q.lotes.push(lote);
@@ -837,7 +919,8 @@ TO.dados.plantaEstadio = (function(){
 
   const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC,
                    COLUNAS, LINHAS, CELULAS, QUADRAS, grade, celulaEm, zona, xCosta, PRAIA, ORLA,
-                   CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, bordasX, bordasY, CAMPOS, CERCA, PORTEIRA,
+                   CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, bordasX, bordasY,
+                   xLimiteCosta, cortarPor, recorteCosta, dentroPol, CAMPOS, CERCA, PORTEIRA,
                    ARQ_VARZEA, noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe };
 
@@ -894,10 +977,7 @@ TO.dados.plantaEstadio = (function(){
     if(naAvenida(x, y)) return true;
     if(naRua(x, y)) return true;
     const q = celulaEm(x, y);
-    if(q && q.tipo === 'quadra'){
-      const miolo = x >= q.ix0 && x < q.ix1 && y >= q.iy0 && y < q.iy1;
-      return !miolo;
-    }
+    if(q && q.tipo === 'quadra') return !dentroPol(x, y, q.polMiolo);
     if(z === 'mato') return !naMoita(x, y);
     return true;                                  // praia, orla, terreno aberto
   }
