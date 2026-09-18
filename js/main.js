@@ -6769,8 +6769,12 @@
          <b>${feito?`${j.gc} × ${j.gf}`:'—'}</b>
          <span class="b ${j.venceu===j.f?'venceu':''}">${nome(j.f)}</span>
          <em class="${pen?'pen':''}">${lado}</em>`}));
+      /* o nome do estádio quando se sabe qual é; a Conmebol só marca
+         que a final é em campo neutro (correção de 18/09/2026: sem
+         isto a página da final escrevia "campo neutro · true") */
       if(j.neutro) rolo.appendChild(el('div',{class:'sub-chave',
-        texto:`campo neutro · ${j.neutro}`}));
+        texto: typeof j.neutro === 'string' ? `campo neutro · ${j.neutro}`
+                                            : 'campo neutro'}));
     }
     if(!reais.length) rolo.appendChild(el('div',{class:'em-construcao',
       texto:'Os jogos desta fase ainda não estão marcados.'}));

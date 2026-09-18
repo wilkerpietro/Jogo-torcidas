@@ -7192,6 +7192,22 @@ nos pênaltis): todos os placares na mesma coluna, nenhuma bolinha,
 
 Em 120 discos não muda nada (122 bonecos nos dois casos, 9 ms de JS, 523 draw calls), porque o orçamento nunca era atingido. O ganho da simulação (47 → 14 ms) fica. Numa cena de 600, só o JS já limita a ~16 quadros por segundo em 1× antes de a placa de vídeo entrar; a resolução adaptativa que já existia (`ajustarResolucao`) continua baixando o DPR quando o quadro pesa.
 
+## A chave da Conmebol com uma página por perna (pedido do dono, 18/09/2026)
+
+**O pedido.** Os mata-matas da Libertadores e da Sul-Americana, quando são de ida e volta, mostram uma página pra ida e outra pra volta, sem agregado.
+
+**O que era.** A chave (`E.conmebol.<torneio>.mata`) guardava UMA linha por fase, e o placar dela era o AGREGADO das duas pernas (`gc:r.sa, gf:r.sb`) — uma soma que nunca foi um jogo. A tela de Competições abre uma página por linha, então a fase inteira cabia numa página só, com um placar que não bate com nenhuma partida.
+
+**O que é agora.** Toda fase de ida e volta grava duas linhas, "<Fase> · ida" (semana da ida) e "<Fase> · volta" (semana da volta), cada uma com o placar da sua perna. A ida mostra só o placar; o negrito de quem passou e os pênaltis entre parênteses ficam na página da VOLTA, que é onde a vaga se decide. Agregado não aparece em lugar nenhum. A final segue em página única, em campo neutro.
+
+**Onde mora** (`conmebol.js`): `agregado` passa a devolver a disputa de pênaltis junto (`pen`), na orientação da volta; `pernasDe(r,a,b)` traduz um confronto resolvido nas suas duas pernas; `linhasDaFase(fase, quando)` é o coletor que cada fase usa pra escrever as linhas, lendo as semanas do próprio calendário (`CAL_LIB`/`CAL_SUL`), com jogo único caindo numa linha só. Usam o coletor: as fases prévias da Libertadores (1, 2 e 3, esta com as quatro vagas), a Fase Preliminar e o Playoff da Sul-Americana e o `andarChave` (oitavas, quartas, semi e final). O confronto do JOGADOR vem do `tieCM`, que agora devolve `pernas` com os dois jogos como ele os jogou — a chave e a agenda mostram o mesmo placar.
+
+**De quebra:** a página da final escrevia "campo neutro · true", porque a Conmebol marca `neutro:true` (sem nome de estádio) e a Copa do Brasil marca o nome. Agora o nome só sai quando existe.
+
+**Medido** (temporada inteira, Playwright): Libertadores e Sul-Americana com duas páginas por fase e zero linhas com agregado. Palmeiras nas oitavas: ida "Estudiantes 1 × 0 Palmeiras" (semana 32), volta "Palmeiras 3 × 0 Estudiantes" (34), Palmeiras em negrito na volta; nas quartas, 0 × 0 e 1 × 1 com "(3 × 4)" na volta. Fortaleza forçado na Sul-Americana: ida "Melgar 2 × 3 Fortaleza" (35) e volta "Fortaleza 2 × 0 Melgar" (37). Em todos os casos o placar da chave é idêntico ao da agenda do clube.
+
+**Save em andamento.** As fases que já foram jogadas no save do dono continuam como estão, numa página com o agregado — são linhas já gravadas. As que ainda vão acontecer neste ano, e o ano inteiro a partir da virada, já saem em duas páginas.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

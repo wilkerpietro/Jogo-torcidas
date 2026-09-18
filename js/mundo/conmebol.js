@@ -602,7 +602,13 @@ TO.conmebol = (function(){
       if(!venceu) venceu = volta.pen
         ? (volta.pen.c > volta.pen.f ? volta.c : volta.f)
         : C().disputaDePenaltis(a, b).venceu;
-      return {c:a, f:b, gc:ga, gf:gb, venceu, sa:ga, sb:gb};
+      return {c:a, f:b, gc:ga, gf:gb, venceu, sa:ga, sb:gb,
+              /* as duas pernas como o jogador as jogou: a chave abre uma
+                 página pra cada (dono, 18/09/2026) */
+              pernas:{
+                ida:  {c:ida.c,   f:ida.f,   gc:ida.gc,   gf:ida.gf},
+                volta:{c:volta.c, f:volta.f, gc:volta.gc, gf:volta.gf,
+                       venceu, pen:soPenaltis(volta.pen)}}};
     }
     const j = jogadoCM(E, torneio, fase, semana, a, b);
     if(!j) return null;
@@ -627,9 +633,72 @@ TO.conmebol = (function(){
   function agregado(a, b){
     const ida = duelo(b, a), volta = duelo(a, b);
     const sa = ida.gf + volta.gc, sb = ida.gc + volta.gf;
-    const venceu = sa > sb ? a : sb > sa ? b
-                 : C().disputaDePenaltis(a, b).venceu;
-    return {ida, volta, sa, sb, venceu};
+    let venceu, pen = null;
+    if(sa > sb) venceu = a;
+    else if(sb > sa) venceu = b;
+    else { pen = C().disputaDePenaltis(a, b); venceu = pen.venceu; }
+    /* a disputa corre na orientação da VOLTA (`duelo(a,b)`), que é onde
+       ela acontece: `pen.c` é o mandante dela */
+    return {ida, volta, sa, sb, venceu, pen};
+  }
+
+  /* =======================================================
+     UMA PÁGINA POR PERNA (pedido do dono, 18/09/2026)
+
+     A chave guardava UMA linha por fase, com o placar AGREGADO das
+     duas pernas — e agregado é uma soma que nunca foi um jogo. Agora
+     toda fase de ida e volta guarda DUAS linhas, e a tela de
+     competições, que abre uma página por linha, mostra a ida com o
+     placar da ida e a volta com o da volta. Agregado não aparece em
+     lugar nenhum: quem passou fica em negrito na página da VOLTA, que
+     é onde a vaga se decide, com os pênaltis ao lado quando houve.
+
+     A ida é na casa de `b` e a volta na de `a` — a orientação que o
+     `agregado` sempre usou e que a agenda do jogador (`agendarDuelo`)
+     segue.
+     ======================================================= */
+  const soPenaltis = p => p ? {c:p.c, f:p.f} : null;
+  function pernasDe(r, a, b){
+    if(r.pernas) return r.pernas;            // o confronto do jogador, jogado
+    if(!r.ida || !r.volta) return null;      // jogo único
+    return {
+      ida:  {c:r.ida.c,   f:r.ida.f,   gc:r.ida.gc,   gf:r.ida.gf},
+      volta:{c:r.volta.c, f:r.volta.f, gc:r.volta.gc, gf:r.volta.gf,
+             venceu:r.venceu, pen:soPenaltis(r.pen)}
+    };
+  }
+
+  /* o coletor de uma fase: recebe cada confronto resolvido e escreve
+     na chave uma linha por perna — ou uma linha só, no jogo único */
+  function linhasDaFase(fase, quando){
+    const ss = semanasDaFase(quando);
+    const idas = [], voltas = [], unicos = [];
+    return {
+      por(r, a, b, extra){
+        const P = pernasDe(r, a, b);
+        if(P){
+          idas.push(Object.assign(P.ida, extra || {}));
+          voltas.push(Object.assign(P.volta, extra || {}));
+        } else unicos.push(Object.assign({
+          c: r.c || a, f: r.f || b,
+          gc: r.gc != null ? r.gc : r.sa, gf: r.gf != null ? r.gf : r.sb,
+          venceu: r.venceu, pen: soPenaltis(r.pen)}, extra || {}));
+      },
+      unico(j){ unicos.push(j); },
+      escrever(c, limite){
+        const corta = l => limite ? l.slice(0, limite) : l;
+        if(idas.length){
+          /* jogo único no meio de uma fase de ida e volta (save antigo,
+             perna que faltou): entra na página da volta, que decide */
+          c.mata.push({fase:`${fase} · ida`, semana:ss[0], perna:'ida',
+                       jogos:corta(idas)});
+          c.mata.push({fase:`${fase} · volta`, semana:ss[ss.length-1],
+                       perna:'volta', jogos:corta(voltas.concat(unicos))});
+        } else if(unicos.length){
+          c.mata.push({fase, semana:ss[ss.length-1], jogos:corta(unicos)});
+        }
+      }
+    };
   }
 
   function andarLibertadores(E){
@@ -650,14 +719,14 @@ TO.conmebol = (function(){
         const pares = emPares(vivos);
         const caidos = [];
         const passa = [];
-        const jogos = [];
+        const L = linhasDaFase('Fase 3', q);
         for(const [a,b] of pares){
           const r = resolver(E, c.nome, 'Fase 3', sem, a, b);
           passa.push(r.venceu);
           caidos.push(r.venceu === a ? b : a);
-          jogos.push({c:a, f:b, gc:r.sa, gf:r.sb, venceu:r.venceu});
+          L.por(r, a, b);
         }
-        c.mata.push({fase:'Fase 3', semana:sem, jogos:jogos.slice(0, 4)});
+        L.escrever(c, 4);                      // só as quatro vagas
         c.diretos = c.diretos.concat(passa.slice(0, 4));
         E.conmebol.sulamericana.esperandoLib = caidos.slice(0, 4);
         abrirGrupos(E, c, CAL_LIB.grupos);
@@ -669,13 +738,13 @@ TO.conmebol = (function(){
          os duelos eram resolvidos e jogados fora — só a Fase 3 ficava
          em c.mata, e a tela de páginas por fase abria sem as duas
          primeiras. Agora toda prévia guarda os jogos. */
-      const jogosPrev = [];
+      const L = linhasDaFase(rotAtual, q);
       c.vivosPrevia = pares.map(([a,b])=>{
         const r = resolver(E, c.nome, rotAtual, sem, a, b);
-        jogosPrev.push({c:a, f:b, gc:r.sa, gf:r.sb, venceu:r.venceu});
+        L.por(r, a, b);
         return r.venceu;
       });
-      c.mata.push({fase:rotAtual, semana:sem, jogos:jogosPrev});
+      L.escrever(c);
       c.previaFase++;
       /* a fase seguinte do jogador entra na agenda assim que a chave
          dela nasce */
@@ -748,13 +817,13 @@ TO.conmebol = (function(){
     if(c.faseAtual === 'previa'){
       if(sem !== ultimaSemana(CAL_SUL.previa)) return null;
       const pares = emPares(c.previa || []);
-      const jogos = [];
+      const L = linhasDaFase('Fase Preliminar', CAL_SUL.previa);
       const passa = pares.map(([a,b])=>{
         const r = resolver(E, c.nome, 'Fase Preliminar', sem, a, b);
-        jogos.push({c:a, f:b, gc:r.sa, gf:r.sb, venceu:r.venceu});
+        L.por(r, a, b);
         return r.venceu;
       });
-      c.mata.push({fase:'Fase Preliminar', semana:sem, jogos});
+      L.escrever(c);
       c.diretos = c.diretos.concat(passa);
       c.faseAtual = 'espera';
       return {fase:'Fase Preliminar', seguem:passa.length};
@@ -800,16 +869,16 @@ TO.conmebol = (function(){
       /* segundos da Sul contra terceiros da Libertadores; a ida é na
          casa de quem vem da Libertadores */
       const vindos = (c.terceirosLib || []).slice(0, c.segundos.length);
-      const jogos = [];
+      const L = linhasDaFase('Playoff', CAL_SUL.playoff);
       const passa = [];
       c.segundos.forEach((s2, k)=>{
         const lib = vindos[k];
         if(!lib){ passa.push(s2); return; }
         const r = resolver(E, c.nome, 'Playoff', sem, s2, lib);
         passa.push(r.venceu);
-        jogos.push({c:s2, f:lib, gc:r.sa, gf:r.sb, venceu:r.venceu});
+        L.por(r, s2, lib);
       });
-      c.mata.push({fase:'Playoff', semana:sem, jogos});
+      L.escrever(c);
       c.vivos = cruzar(c.primeiros, passa);
       c.faseAtual = 'mata';
       c.matasFeitas = 0;
@@ -917,29 +986,33 @@ TO.conmebol = (function(){
     const vivos = c.vivos || [];
     if(vivos.length < 2){ c.campeao = vivos[0] || null; return {fase:'fim'}; }
     const rot = nomes[c.matasFeitas] || `${vivos.length} clubes`;
-    const jogos = [], passa = [];
+    const passa = [];
     const final = rot === 'Final';
+    /* a fase que está sendo jogada é a da vez no calendário: é dela que
+       saem as semanas da ida e da volta */
+    const quando = (cal && cal[c.matasFeitas]) || E.data.semana;
+    const L = linhasDaFase(rot, quando);
+    const emCampoNeutro = final ? {neutro:true} : null;
     for(let k=0;k+1<vivos.length;k+=2){
       const a = vivos[k], b = vivos[k+1];
       /* o confronto do jogador é o jogo jogado — na final inclusive */
       const t = tieCM(E, c.nome, rot, E.data.semana, a, b);
       if(t){
-        jogos.push({c:t.c, f:t.f, gc:t.gc, gf:t.gf,
-                    venceu:t.venceu, neutro:final || null});
+        L.por(t, a, b, emCampoNeutro);
         passa.push(t.venceu);
       } else if(final){
         const j = duelo(a, b);
         j.venceu = j.gc>j.gf ? a : j.gf>j.gc ? b
                  : C().disputaDePenaltis(a,b).venceu;
         j.neutro = true;
-        jogos.push(j); passa.push(j.venceu);
+        L.unico(j); passa.push(j.venceu);
       } else {
         const r = agregado(a, b);
-        jogos.push({c:a, f:b, gc:r.sa, gf:r.sb, venceu:r.venceu});
+        L.por(r, a, b);
         passa.push(r.venceu);
       }
     }
-    c.mata.push({fase:rot, semana:E.data.semana, jogos});
+    L.escrever(c);
     c.vivos = passa;
     c.matasFeitas++;
     if(cal) agendarMataCM(E, c, cal);
