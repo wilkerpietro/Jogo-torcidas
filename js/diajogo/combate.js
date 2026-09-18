@@ -1777,7 +1777,25 @@ TO.diaJogo.combate = (function(){
         } else {
           campo=A.campoDaEntrada(d.entrada,J.grades,J.versaoGrades); usarCampo=true;
           const e=D.entradas.find(x=>x.id===d.entrada);
-          if(e && U.dist(d.x,d.y,e.x,e.y)<(e.raio||34)){ entrarNoEstadio(J,d); continue; }
+          if(e && U.dist(d.x,d.y,e.x,e.y)<(e.raio||34)){
+            /* SETOR NÃO É PORTA. Nos arredores o destino é o portão:
+               quem chega entra no estádio e sai da cena, e é isso que
+               `entrarNoEstadio` faz. Mas numa cena em que a
+               ARQUIBANCADA é o cenário, quem chega no setor não tem
+               pra onde sair — ele ocupa o lugar e fica. A cena marca
+               isso na própria entrada (`fica`); sem a marca vale o de
+               sempre, e os arredores não mudam em nada.
+               Quem ficou continua contando como "entrou" no placar,
+               para de empurrar pro centro do setor e segue de pé,
+               disponível pra briga — os ramos de inimigo vêm antes
+               deste, então basta o rival chegar. */
+            if(!e.fica){ entrarNoEstadio(J,d); continue; }
+            if(!d.noSetor){ d.noSetor=true; J.entraram[d.lado]=(J.entraram[d.lado]||0)+1; }
+            d._ramo='no setor'; d._alvo=null;
+            d.vx*=0.80; d.vy*=0.80;
+            A.mover(d, d.vx*dt, d.vy*dt);
+            continue;
+          }
         }
       }
 

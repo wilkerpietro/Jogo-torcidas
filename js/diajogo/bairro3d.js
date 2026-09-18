@@ -170,7 +170,7 @@ export function montarBairro(P) {
   /* o tecido de TELHADO (textura de telha) e o de MANCHA (decalque de
      mofo e chuva na parede), os dois com UV */
   const TELHADOS = { pos: [], cor: [], uv: [], esc: TELHA_ESC };
-  const MANCHAS  = { pos: [], cor: [], uv: [] };   // UV própria, do decalque
+  const MANCHAS  = { pos: [], cor: [], uv: [] };   // as falhas de reboco, UV do decalque
 
   /* ---- OS LETREIROS E AS PIXAÇÕES ----
      Texto não sai de caixa: sai de textura. Todos os dizeres que a
@@ -655,7 +655,7 @@ export function montarBairro(P) {
           break;
         }
         case 'letreiro': {
-          const u = uv.get('P:' + o.texto);
+          const u = uv.get((o.placa === false ? 'X:' : 'P:') + o.texto);
           if (!u) break;
           const larg = o.larg || 120, alt = o.altura || 20, base = o.base || 24;
           /* meio ponto à frente da parede, senão some dentro dela */
@@ -708,8 +708,12 @@ export function montarBairro(P) {
       /* `fundo`/`tinta` mandam na cor da placa quando quem pediu sabe
          qual é — a da sede é a segunda cor da torcida. Sem eles, vale
          o sorteio por hash do texto, que é o do comércio. */
-      if (o.k === 'letreiro') dizeres.set('P:' + o.texto,
-        { chave: 'P:' + o.texto, texto: o.texto, placa: true, fundo: o.fundo, tinta: o.tinta });
+      /* `placa: false` pinta DIRETO NA PAREDE, sem chapa: é o que o
+         muro do baldio pede — lá o dizer é tinta spray, não letreiro */
+      if (o.k === 'letreiro') {
+        const ch = (o.placa === false ? 'X:' : 'P:') + o.texto;
+        dizeres.set(ch, { chave: ch, texto: o.texto, placa: o.placa !== false, fundo: o.fundo, tinta: o.tinta });
+      }
       /* a chave leva cor e forma: duas torcidas do país se chamam RAÇA,
          e o escudo de uma não pode servir pra outra */
       else if (o.k === 'mastro' && o.bandeira) {
@@ -763,30 +767,33 @@ export function montarBairro(P) {
         else { ox = 1; oz = 0; px = l.x1 - 0.9; pz = meioz; frente = l.y1 - l.y0; }
       }
       if (frente < 26) continue;
-      /* ---- AS MANCHAS DA PAREDE ----
-         Casa de bairro não tem parede limpa: tem mofo escorrendo do
-         beiral, rastro de chuva embaixo da janela, respingo de barro no
-         rodapé e, na orla, maresia. São quatro decalques numa textura
-         2 × 2, recortados por alfa, e quem leva qual sai do sorteio com
-         a semente da posição — a cidade continua igual toda vez. Muro
-         baixo e casa estreita ficam de fora, que ali não cabe. */
+      /* ---- O REBOCO CAÍDO, com o tijolo aparecendo ----
+         Primeiro isto era MANCHA de sujeira — mofo, chuva, barro — e
+         ficou um borrão escuro sem desenho nenhum. O que a parede de
+         bairro tem de verdade é falha de reboco: um pedaço descascou e
+         o tijolo baiano aparece por baixo, com o lábio de reboco ainda
+         preso na beirada. São quatro falhas numa textura 2 × 2,
+         recortadas por alfa, e quem leva qual sai do sorteio com a
+         semente da posição — a cidade continua igual toda vez.
+         O reboco cai DE BAIXO PRA CIMA (umidade que sobe da calçada),
+         então a falha fica na metade de baixo da parede; só a quarta
+         variante sobe pro alto, que é a do beiral. Muro baixo e casa
+         estreita ficam de fora, que ali não cabe. */
       if (l.tipo !== 'muro' && l.alt >= 54 && frente >= 44) {
-        const h = somaTexto('M' + (px | 0) + ',' + (pz | 0));
-        const quantas = (h % 100) < 34 ? 0 : (h % 100) < 82 ? 1 : 2;
-        const naOrla = px > K.xLimiteCosta(pz) - 700;
+        const h = somaTexto('T' + (px | 0) + ',' + (pz | 0));
+        const quantas = (h % 100) < 46 ? 0 : (h % 100) < 88 ? 1 : 2;
         for (let n = 0; n < quantas; n++) {
-          /* 0 mofo e 1 chuva descem do beiral; 2 é barro no rodapé;
-             3 é maresia, e só na faixa da orla */
           const r = ((h >> (n * 5)) % 97) / 97;
-          const q2 = n === 0 ? (naOrla && r < 0.34 ? 3 : (r < 0.62 ? 0 : 1)) : 2;
-          const alto = q2 !== 2;
-          const larg = Math.min(frente - 10, alto ? 30 + r * 46 : frente - 14);
-          const alt = alto ? Math.min(l.alt * 0.62, 46) : Math.min(l.alt * 0.34, 22);
-          const cy = alto ? l.alt - 2 - alt / 2 : 1 + alt / 2;
-          /* de lado, nunca centralizada: mancha não se alinha com a porta */
-          const desl = (((h >> (n * 3 + 2)) % 2) ? 1 : -1) * (frente - larg) * 0.5 * (0.35 + r * 0.55);
+          const q2 = (h >> (n * 7 + 1)) % 4;
+          const lado = Math.min(frente * 0.34, l.alt * 0.42, 34) * (0.68 + r * 0.6);
+          /* a de cima é a do beiral; as outras sobem da calçada */
+          const alta = q2 === 2;
+          const cy = alta ? l.alt - 4 - lado / 2 : 2 + lado / 2 + r * l.alt * 0.16;
+          if (cy + lado / 2 > l.alt - 2 || lado < 12) continue;
+          /* de lado, nunca centralizada: falha não se alinha com a porta */
+          const desl = (((h >> (n * 3 + 2)) % 2) ? 1 : -1) * (frente - lado) * 0.5 * (0.30 + r * 0.6);
           const u0 = (q2 % 2) * 0.5, v0 = q2 < 2 ? 0.5 : 0;
-          placa(MANCHAS, px, cy, pz, ox, oz, larg, alt,
+          placa(MANCHAS, px, cy, pz, ox, oz, lado, lado,
                 [u0 + 0.004, v0 + 0.004, u0 + 0.496, v0 + 0.496], desl);
         }
       }
@@ -953,7 +960,7 @@ export function montarBairro(P) {
   /* o teto da sede também é caixa, e o tecido dele tem UV: sem mapa a
      malha sai lisa, que é o que fibrocimento é */
   malhaTex(TELHADOS, textura('img/texturas/telha.png', true), 'telhados');
-  malhaTex(MANCHAS, textura('img/texturas/manchas.png'), 'manchas', true);
+  malhaTex(MANCHAS, textura('img/texturas/tijolo.png'), 'tijolo', true);
 
   /* ---- o mato: moitas, em duas pirâmides baixas ---- */
   const TM = Tecido();

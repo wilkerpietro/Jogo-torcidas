@@ -443,7 +443,12 @@ TO.dados.plantaEstadio = (function(){
    no quarteirão em vez de atravessar a rua e a areia. */
   /* os dois campos ficam onde a avenida não passa: a diagonal cruza
      quase todo quarteirão grande, e cerca em cima de asfalto não vai */
-  const CAMPOS = [ campo(510, 220, 630, 390), campo(360, 1020, 480, 1090) ];
+  /* O CAMPO DO LADO DO ESTÁDIO SAIU. Várzea encostada na arena não
+     existe: aquele quarteirão virou TERRENO BALDIO, murado no fundo e
+     com a frente de bar e loja virada pro estádio, que é o que se vê
+     de verdade em volta de estádio de bairro. Ficou o campo do sul, que
+     está no meio do residencial. */
+  const CAMPOS = [ campo(360, 1020, 480, 1090) ];
   const CERCA = 6, PORTEIRA = 24;
   function noCampo(x, y){
     for(const c of CAMPOS) if(x >= c.x0 && x < c.x1 && y >= c.y0 && y < c.y1) return c;
@@ -1012,7 +1017,8 @@ TO.dados.plantaEstadio = (function(){
     { tipo: 'posto',     ponto: pxm(765, 620) },   // na via larga, ao sul
     { tipo: 'escola',    ponto: pxm(568, 706) },   // no meio do residencial
     { tipo: 'galeria',   ponto: pxm(765, 706) },   // o beco de lojas, ao lado da escola
-    { tipo: 'praca',     ponto: pxm(568, 878) }    // o centro do bairro do sul
+    { tipo: 'praca',     ponto: pxm(568, 878) },   // o centro do bairro do sul
+    { tipo: 'baldio',    ponto: pxm(568, 305) }    // onde era o campo, ao lado do estádio
   ];
   const CORES_CARRO_PM = ['#f0f0ee','#1a3f86'];
   /* a mesma paleta dos carros da rua — ela é declarada mais abaixo,
@@ -1022,8 +1028,10 @@ TO.dados.plantaEstadio = (function(){
   /* QUANTO DO QUARTEIRÃO CADA UM TOMA. O resto é casa: quarteirão de
      posto tem casa, o da escola também — é assim na cidade, e um
      equipamento sozinho num quarteirão inteiro lê como maquete. */
+  /* `baldio` é a exceção: ele TOMA O QUARTEIRÃO INTEIRO — era o campo
+     de várzea, e meia quadra de terreno baldio não vira nada. */
   const FATIA = { praca: 0.78, galeria: 0.66, shopping: 0.74, hospital: 0.66,
-                  escola: 0.68, delegacia: 0.58, posto: 0.48 };
+                  escola: 0.68, delegacia: 0.58, posto: 0.48, baldio: 1 };
   function areaDoEquipamento(tipo, q){
     const L = q.ix1 - q.ix0;
     const w = Math.min(L, Math.max(260, L * (FATIA[tipo] || 0.6)));
@@ -1255,6 +1263,138 @@ TO.dados.plantaEstadio = (function(){
       p('letreiro', { x: cx - larg*0.03, y: Y0 + fundo + 26, ox: 0, oz: 1, texto: 'SHOPPING BEIRA-MAR', placa: true, larg: 150, altura: 30, base: 112 }, false);
       p('arvore', { x: X1 - 22, y: Y0 + 22, r: 16 }, false);
     }
+    if(tipo === 'baldio'){
+      /* O TERRENO BALDIO, onde era o campo de várzea. O muro fecha a
+         face de TRÁS — a que dá as costas pro estádio — e as duas
+         laterais; a face virada PRO ESTÁDIO é uma fileira de bares e
+         lojas, que é por onde a torcida passa indo pro jogo. Dentro do
+         muro é terra batida com mato, entulho e um carro abandonado.
+         O muro tem DOIS FUROS de propósito: baldio murado sem buraco
+         não existe, e sem eles o miolo ficaria inalcançável. */
+      chao = '#97865c';                                    // terra batida
+      /* EIXO LOCAL: `u` cresce da face murada pra face do estádio, e
+         `rx` devolve o retângulo já no sentido certo — a mesma planta
+         serve se o quarteirão trocar de lado do mapa. */
+      const proLeste = CX > cx;
+      const ux = u => proLeste ? X0 + u : X1 - u;
+      const rx = (u0, u1) => proLeste ? { x0: X0 + u0, x1: X0 + u1 } : { x0: X1 - u1, x1: X1 - u0 };
+      const ofora = proLeste ? 1 : -1;                     // pra onde olha a frente das lojas
+      const M_ALT = 54, M_ESP = 9;                         // o muro do baldio
+      /* o muro recua 3 da guia: a placa de VENDE-SE sai meio ponto à
+         frente dele, e encostado na guia ela pendurava sobre a calçada */
+      const REC = 3;
+      const PAT = 32;                                      // o pátio das mesas, na guia
+      const FUNDO = Math.min(L*0.26, 132);                 // o fundo das lojas
+      const uL1 = L - PAT, uL0 = uL1 - FUNDO;              // a faixa das lojas, em u
+
+      /* ---- A FILEIRA DE BARES E LOJAS ----
+         Encostadas uma na outra de propósito: as costas delas são a
+         quarta parede do baldio, e vão entre duas seria furo pra rua. */
+      const PA = rx(uL1, L);
+      piso(PA.x0, Y0, PA.x1, Y1, '#a8a296');               // a calçada das mesas
+      const nlj = Math.max(6, Math.round(A/88)), wlj = A/nlj;
+      /* nome sem repetir na mesma fileira: duas placas iguais lado a
+         lado entregam que o letreiro é sorteado */
+      const nomes = COMERCIO.slice();
+      for(let i=nomes.length-1;i>0;i--){ const j = Math.floor(rng()*(i+1)); [nomes[i], nomes[j]] = [nomes[j], nomes[i]]; }
+      for(let i=0;i<nlj;i++){
+        const y0 = Y0 + i*wlj, y1 = Y0 + (i+1)*wlj, ym = (y0 + y1)/2;
+        /* A FRENTE é sempre na guia; o FUNDO varia. Assim o telhado
+           deixa de ser uma laje só e o muro dos fundos fica recortado,
+           como fileira de loja que cresceu uma de cada vez. Varia só
+           pra dentro: a fileira continua vedando o baldio. */
+        const ub = uL0 + FUNDO*rng()*0.30, lj = rx(ub, uL1);
+        const alt = par8(entre(76, 104));
+        p('bloco', { x0: lj.x0, x1: lj.x1, y0, y1, alt,
+                     cor: escolher(TIPOS.casa.cor), teto: escolher(['#8f8a80', '#97928a', '#867f74']) });
+        /* a caixa d'água em cima de uma sim, outra não — no fundo DESTA
+           loja, senão ela flutua sobre o baldio nas mais rasas */
+        if(i % 3 === 1){
+          const cd = rx(ub + 20, ub + 42);
+          p('maquina', { x0: cd.x0, x1: cd.x1, y0: ym - 11, y1: ym + 11,
+                         y: alt + 4, alt: 20, cor: '#9aa0a2' }, false);
+        }
+        const tol = rx(uL1, uL1 + 16), por = rx(uL1 - 1.0, uL1 + 0.4);
+        p('marquise', { x0: tol.x0, x1: tol.x1, y0: y0 + 3, y1: y1 - 3, y: 56, alt: 5,
+                        cor: i % 2 ? '#c05a3a' : '#2f6a4a' }, false);
+        p('marquise', { x0: por.x0, x1: por.x1, y0: ym - 9, y1: ym + 9, y: 0, alt: 46, cor: '#4a3a2c' }, false);
+        p('letreiro', { x: ux(uL1), y: ym, ox: ofora, oz: 0, texto: nomes[i % nomes.length], placa: true,
+                        larg: Math.min(wlj - 14, 118), altura: 16, base: 62 }, false);
+        /* as mesas na calçada: é o que faz o bar em dia de jogo */
+        if(i % 2 === 0) p('banco', Object.assign({}, ret(ux(uL1 + 19), ym, 20, 11)), false);
+      }
+      fila(4, Y0 + 70, Y1 - 70, y => p('poste', { x: ux(uL1 + 26), y, dx: -ofora, dz: 0 }, false));
+
+      /* ---- O MURO ----
+         A face de trás é inteira; as laterais vão da face de trás até
+         as costas das lojas, cada uma com um vão — o portão de arame
+         no norte, o pedaço caído no sul. */
+      const MT = rx(REC, REC + M_ESP);
+      p('muro', { x0: MT.x0, x1: MT.x1, y0: Y0 + REC, y1: Y1 - REC, alt: M_ALT, cor: '#b3ab98' });
+      const VAO = [[uL0*0.42, 60, M_ALT], [uL0*0.72, 44, M_ALT - 16]];
+      [[Y0 + REC, Y0 + REC + M_ESP], [Y1 - REC - M_ESP, Y1 - REC]].forEach((fy, k) => {
+        const [uc, w, alt] = VAO[k];
+        for(const [ua, ub] of [[REC, uc - w/2], [uc + w/2, uL0]]){
+          if(ub - ua < 6) continue;
+          const r = rx(ua, ub);
+          p('muro', { x0: r.x0, x1: r.x1, y0: fy[0], y1: fy[1], alt, cor: '#b3ab98' });
+        }
+      });
+
+      /* ---- O MIOLO: mato, entulho e o carro abandonado ----
+         Baldio é BAGUNÇA: mato em tufo, terra pelada, restos de
+         alicerce e o que os vizinhos largaram lá. Nada disso é
+         geometria cara — o mato é chão pintado, e o entulho é caixa
+         baixa, que o boneco contorna sem ficar preso. */
+      const B = rx(REC + M_ESP, uL0), by0 = Y0 + REC + M_ESP, by1 = Y1 - REC - M_ESP;
+      const BL = B.x1 - B.x0, BA = by1 - by0;
+      const MATO = ['#5e7a3c', '#6d8544', '#55703a', '#7a7a46'];
+      for(let i=0;i<34;i++){
+        const w = entre(34, 132), h = entre(30, 104);
+        /* o mato pega mais no pé do muro, que é onde ninguém passa */
+        const beira = rng() < 0.45;
+        const mx = beira ? (rng() < 0.5 ? B.x0 + entre(0, 26) : B.x1 - w - entre(0, 26))
+                         : B.x0 + 6 + rng()*(BL - w - 12);
+        const my = beira && rng() < 0.5 ? (rng() < 0.5 ? by0 + entre(0, 26) : by1 - h - entre(0, 26))
+                                        : by0 + 6 + rng()*(BA - h - 12);
+        piso(Math.max(B.x0, mx), Math.max(by0, my), Math.min(B.x1, mx + w), Math.min(by1, my + h),
+             i % 4 ? escolher(MATO) : '#8a7a4e');
+      }
+      /* o entulho: monte de alicerce velho, tijolo quebrado e concreto */
+      const ENTULHO = ['#9a9288', '#8c6a56', '#6e675c', '#a49a86'];
+      for(let i=0;i<11;i++){
+        const w = par8(entre(16, 46)), h = par8(entre(14, 38));
+        const ex = B.x0 + 20 + rng()*(BL - w - 40), ey = by0 + 20 + rng()*(BA - h - 40);
+        p('bloco', { x0: ex, x1: ex + w, y0: ey, y1: ey + h,
+                     alt: par8(entre(10, 28)), cor: escolher(ENTULHO) });
+      }
+      /* dois pedaços de muro caído, deitados no mato */
+      for(const [fx, fy, deitado] of [[0.30, 0.22, true], [0.68, 0.78, false]]){
+        const cx2 = B.x0 + BL*fx, cy2 = by0 + BA*fy;
+        p('muro', Object.assign({ alt: 11, cor: '#b3ab98' },
+                                ret(cx2, cy2, deitado ? 86 : 14, deitado ? 14 : 78)));
+      }
+      /* os dois carros largados: um sem rodas e outro queimado */
+      for(const [fx, fy, cor] of [[0.58, 0.72, '#6f6153'], [0.34, 0.46, '#3a342e']]){
+        const carx = B.x0 + BL*fx, cary = by0 + BA*fy;
+        p('carro', { x0: carx - 19, x1: carx + 19, y0: cary - 21, y1: cary + 21, cor });
+      }
+      /* mangueira grande num canto e o mato que virou arbusto */
+      p('arvore', { x: B.x0 + 46, y: by0 + 84, r: 22 }, false);
+      p('arvore', { x: B.x0 + 58, y: by1 - 104, r: 17 }, false);
+      p('arvore', { x: B.x1 - 54, y: by0 + BA*0.36, r: 13 }, false);
+      p('arvore', { x: B.x1 - 70, y: by1 - 120, r: 11 }, false);
+      p('poste', { x: ux(REC + M_ESP + 24), y: (by0 + by1)/2, dx: ofora, dz: 0 }, false);
+      /* O QUE SE LÊ DA RUA. Muro de baldio não tem placa: tem tinta —
+         `placa: false` pinta o dizer direto no reboco. */
+      const pixo = (u, y, ox, oz, texto, larg) =>
+        p('letreiro', { x: ux(u), y, ox, oz, texto, placa: false, larg, altura: 20, base: 20 }, false);
+      pixo(REC, (Y0 + Y1)/2 - 150, -ofora, 0, 'VENDE-SE', 116);
+      pixo(REC, (Y0 + Y1)/2 + 130, -ofora, 0, 'ALUGA-SE', 116);
+      pixo(uL0*0.22, Y0 + REC, 0, -1, 'É PROIBIDO JOGAR LIXO', 150);
+      pixo(uL0*0.62, Y1 - REC, 0, 1, escolher(PIXACAO), 150);
+    }
+
     return { tipo, chao, pecas, area };
   }
 
@@ -2395,8 +2535,13 @@ TO.dados.cenaEstadio = (function(){
      onde ele vai embora quando a briga acaba. */
   const setor = (lado, id, rot) => {
     const [x, y] = P.ponto(lado, CY, 100);
+    /* `fica`: chegar no setor NÃO tira o disco da cena. Nos arredores o
+       destino é o portão e quem entra some; aqui a arquibancada é o
+       cenário, e quem chega ocupa o lugar e fica de pé — foi o que o
+       dono viu sumindo quando a torcida subia. */
     return { id, rot, lado: lado === 'o' ? 'mandante' : 'visitante',
-             x:Math.round(x), y:Math.round(y), raio:44, dir: lado === 'o' ? [1,0] : [-1,0] };
+             x:Math.round(x), y:Math.round(y), raio:44, fica:true,
+             dir: lado === 'o' ? [1,0] : [-1,0] };
   };
   /* A SAÍDA DELES É PELO PORTÃO SUL, no funil do cordão, e não pelo
      leste, que fica a treze segundos do setor: acordado e em paz, o

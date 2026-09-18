@@ -79,8 +79,8 @@ a escada, e nada anda embaixo dela.
 
 A segunda rodada trocou o bairro de oito quarteirões pela **cidade da
 imagem**: um mapa desenhado de 1500 × 1100 px, com o estádio no
-norte-centro, a costa a leste, o mato a oeste e dois campos de várzea no
-sul. Um pixel do mapa é **PX = 5,4** unidades — a escala que deixa o
+norte-centro, a costa a leste, o mato a oeste e um campo de várzea no
+sul (o segundo, o que ficava ao lado do estádio, virou terreno baldio). Um pixel do mapa é **PX = 5,4** unidades — a escala que deixa o
 estádio do mapa do tamanho do quarteirão do estádio (1184 × 960).
 
 **O que se anda e o que se desenha são coisas diferentes.** O tabuleiro
@@ -172,7 +172,7 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   casa. Tenta casa em cinco larguras e cinco fundos; só depois, muro
   fino (14 de fundo), que não tem beiral e entra onde casa não entra.
   Dá 81–88 % da frente ocupada, contra 55 % antes.
-- **Os campos de várzea** são células grandes abertas com cerca de mourão
+- **O campo de várzea** é uma célula grande aberta com cerca de mourão
   (bloqueia, com porteira no meio dos lados norte e sul) e traves. A
   arquibancadinha de três degraus saiu: lia como uma escada solta no
   meio do campo. O retângulo declarado é só a
@@ -223,12 +223,39 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   como se cobre casa de rua. Prédio e sede seguem de laje, que é o
   certo pra eles. O beiral sai 2 do corpo mas vem cortado pelo miolo do
   quarteirão, a mesma regra de sempre.
-- **Sete equipamentos**: praça, delegacia, hospital, shopping,
+- **Oito equipamentos**: praça, delegacia, hospital, shopping,
   **galeria** (o beco de lojas: duas fileiras de lojinhas de frente uma
   pra outra, com um corredor que atravessa o quarteirão e é gargalo),
   **escola** (bloco em L, quadra poliesportiva com alambrado e tabela,
-  mastro) e **posto de gasolina** (cobertura sobre duas ilhas de bomba,
-  loja de conveniência, totem).
+  mastro), **posto de gasolina** (cobertura sobre duas ilhas de bomba,
+  loja de conveniência, totem) e **baldio** (abaixo).
+- **O TERRENO BALDIO, onde era o segundo campo de várzea.** O
+  quarteirão ao lado do estádio (px 568, 305 — miolo de 588 × 864)
+  deixou de ser campo: virou um equipamento `baldio`, o único com
+  `FATIA = 1`, que toma o quarteirão inteiro. Meia quadra de terreno
+  baldio não vira nada.
+  Ele é declarado em **eixo local**: `u` cresce da face MURADA — a que
+  dá as costas pro estádio — pra face virada PRO ESTÁDIO, e `rx(u0,u1)`
+  devolve o retângulo já no sentido do mundo. A mesma planta serve se o
+  quarteirão mudar de lado do mapa (`CX > cx` decide).
+  Na face do estádio vai uma **fileira de bares e lojas** encostadas uma
+  na outra: a frente delas é sempre na guia, com toldo, porta e placa,
+  e ainda sobram 32 de pátio pras mesas na calçada; o FUNDO é que varia
+  (até 30 % do vão), então o telhado deixa de ser uma laje só e o muro
+  dos fundos fica recortado. Uma em cada três leva caixa d'água. As
+  costas delas são a quarta parede do baldio: vão entre duas lojas
+  seria furo pra rua, por isso elas não têm vão nenhum.
+  As outras três faces são **muro** (recuado 3 da guia, senão o dizer
+  pintado nele pendurava sobre a calçada). O da frente é inteiro; os
+  dois laterais têm **um vão cada** — o portão de arame no norte, o
+  pedaço caído no sul. Os vãos são de propósito: baldio murado sem
+  buraco não existe, e sem eles o miolo de 5.157 células ficaria
+  inalcançável (a varredura confirma 5.157 de 5.157).
+  Dentro é terra batida com mato em tufo, terra pelada, restos de
+  alicerce, dois pedaços de muro caído e dois carros largados. O mato é
+  **chão pintado** (não custa geometria) e pega mais no pé do muro, que
+  é onde ninguém passa; o entulho é caixa baixa, que o boneco contorna
+  sem ficar preso.
   **O equipamento divide o quarteirão com as casas.** Ele toma uma
   FATIA da ponta oeste do miolo — `areaDoEquipamento` dá a cada tipo
   uma fração (a praça toma o quarteirão inteiro, o posto 48 %), com um
@@ -271,14 +298,16 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   25 dizeres de parede, sorteados com a semente da planta, então a
   cidade sai igual toda vez. Os letreiros dos equipamentos entram no
   mesmo atlas. A placa é de uma face só: vista por trás, o texto sairia
-  espelhado.
+  espelhado. O letreiro de equipamento aceita `placa: false`, que pinta o
+  dizer DIRETO na parede, sem chapa — é o que o muro do baldio pede, onde
+  "VENDE-SE" e "ALUGA-SE" são tinta, não letreiro.
 - **TEXTURA, enfim.** Até aqui a cidade inteira era cor por vértice.
   Entraram três PNG gerados por `ferramentas/gerar_texturas.py` (sem
   biblioteca de imagem — o script escreve o PNG na mão, e pode ser
   rodado de novo quando a escala mudar), em `img/texturas/`:
-  **telha.png** (telha colonial ladrilhável), **manchas.png** (mofo do
-  beiral, rastro de chuva, barro do rodapé e maresia, quatro numa 2 × 2
-  com alfa) e **reboco.png** (chapiscado fino).
+  **telha.png** (telha colonial ladrilhável), **tijolo.png** (quatro
+  falhas de reboco com o tijolo à vista, numa 2 × 2 com alfa) e
+  **reboco.png** (chapiscado fino).
   **O quarteirão inteiro é texturado**: o reboco dá grão à parede, ao
   muro e à laje da calçada, e a cor do vértice continua mandando no tom
   de cada casa. A UV de parede NÃO pode ser a mesma do telhado: numa
@@ -293,10 +322,19 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   contínua de casa em casa e ladrilha sem costura — a água é rasa e o
   esticamento na rampa não aparece. A cobertura da sede fica de fora:
   aquilo é fibrocimento, e a malha dela liga e desliga sozinha.
-  As MANCHAS são decalques recortados por alfa na parede, uma ou duas
-  por casa, sorteadas com a semente da posição: mofo e chuva descendo do
-  beiral, barro no rodapé, e maresia só na faixa da orla. Nunca
-  centralizadas — mancha não se alinha com a porta.
+  O TIJOLO À VISTA substituiu as manchas de mofo, que saíam como
+  borrão sujo na parede. Agora o decalque é **falha de reboco**: um
+  retalho irregular onde o emboço caiu e aparece a alvenaria em amarração
+  corrida, com lábio de reboco na borda. São quatro, numa 2 × 2 com alfa,
+  uma ou duas por casa, sorteadas com a semente da posição, e ficam
+  **embaixo na parede** — reboco cai por umidade que sobe, não por
+  cima —, só uma das quatro senta alta, sob o beiral. Nunca
+  centralizadas: falha não se alinha com a porta.
+  A primeira versão saiu como papa de argamassa: a erosão aleatória de
+  6 % fazia quase todo pixel ter vizinho de fora a menos de 2 px, e o
+  teste de borda pintava tudo de lábio. A correção foi morder a borda
+  com bolhas SUBTRATIVAS em vez de ruído espalhado, testar vizinhança só
+  na ortogonal e diminuir o tijolo.
 - **A BANDEIRA DO MASTRO TREMULA.** O mastro da sede leva o escudo da
   torcida num pano de 10 × 4 retalhos, e o pano MEXE: ele não pode
   entrar na malha dos letreiros, então sai com geometria própria que a
@@ -500,8 +538,20 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
   página acha a cena pelo registro `TO.dados.cenas.estadio`, não pelo id.
 - **O destino é o setor, não o portão.** `entradas` são os dois setores na
   arquibancada (oeste mandante, leste visitante). O campo de fluxo leva
-  portão → corredor → vomitório → arquibancada sozinho, pela máscara. Quem
-  chega "entrou" e some, como quem entra no portão nos arredores.
+  portão → corredor → vomitório → arquibancada sozinho, pela máscara.
+- **SETOR NÃO É PORTA: quem chega FICA.** No motor, chegar numa `entrada`
+  chamava `entrarNoEstadio`, que marca `d.entrou` — e `entrou` derruba
+  `get vivo`, então a cena filtrava o disco fora. Nos arredores isso está
+  certo (a porta leva pra outra tela), mas aqui o setor é o lugar: os
+  aliados subiam a arquibancada e sumiam na hora.
+  A marca é da CENA, não do motor: `entrada.fica = true` (o `setor()` de
+  `cena_estadio.js` põe nos dois) manda o `combate.js` segurar o disco no
+  setor em vez de removê-lo — conta em `J.entraram`, amortece a
+  velocidade e segue. Sem a marca vale o de sempre, então a cena dos
+  arredores não muda.
+  Medido, adiantando a simulação: aos 245 s, **fora da cena = 0** (entrou
+  0 / sumiu 0), 14 no setor, 22 na arquibancada — contra sumirem todos
+  antes.
 - **O setor visitante já está dentro, de guarda.** O combate só tem um
   estado "fica parado esperando": `guarda`, que dorme até o rival chegar a
   `gatilho.perto` (200, no tabuleiro). Sem isso todo mundo caminhava até o
@@ -536,10 +586,10 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
   `arredores.js`: as 8 vizinhas livres, grades e filas bloqueando).
 - Por andar (células de corpo): rua/cidade 211.000 · corredor 4.371 ·
   vomitório 577 · arquibancada 3.572 · portão 48.
-- Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **98
-  quarteirões · 646 lotes (20 rotacionados) · 630 moitas · 177 árvores ·
-  73 postes · 55 carros · 2 campos** · 114.612 triângulos estáticos em 11
-  pedaços de cidade mais o estádio · 16 chamadas de desenho sem gente na
+- Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **37
+  quarteirões · 452 lotes · 580 moitas · 212 árvores · 72 postes ·
+  55 carros · 1 campo · 8 equipamentos** · 117.071 triângulos estáticos
+  em 6 pedaços de cidade mais o estádio · 16 chamadas de desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
   do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
   leve corta a sombra primeiro por isso).
