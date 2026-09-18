@@ -470,6 +470,64 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   São 80 construções de beira ao todo, 59 com calçada — as sem são as da
   segunda fileira, que dão pro fundo do terreno.
 
+- **A FAVELA, um bairro informal no mato a oeste.** Um retalho de mato
+  limpo, DENTRO do tabuleiro (`anda()` só responde em `[4, W-4] × [4,
+  H-4]` — a primeira área que escolhi ficava fora dele, e desenhava
+  certinho sem UMA célula andável), longe da estrada que a avenida faz
+  por ali e das casas de beira dela, cresce um aglomerado sem quarteirão
+  nem grade reta: são **becos**, um passeio quase aleatório que se
+  desvia do próprio rastro (senão ele enrola feito caracol e prende o
+  miolo — a primeira versão fazia isso), com a casa colada na casa
+  vizinha, a menor folga do mapa. A rua é a própria terra pisada, sem
+  meio-fio: pintada mais clara na textura do chão, larga o bastante pra
+  ler como rua, e é só isso — sem laje nenhuma na malha 3D.
+  Cada casa é um `lote()` girado, o MESMO cano da casa de beira de
+  estrada — corpo, telhado, porta, janela, pixação quando sorteia — e o
+  mesmo balde espacial (`BEIRA`/`naBeira`) bloqueia na máscara. **A
+  escala não pode encolher abaixo do boneco**: a primeira versão tinha
+  casa de 15 a 27 unidades de frente (0,7 a 1,2 m — menor que a CAIXA
+  D'ÁGUA ao lado dela), e a caixa saía maior que a casa na tela. A régua
+  final é 36 a 56 de frente por 34 a 48 de fundo (1,6–2,5 m), apertada
+  de verdade mas ainda gente-de-pé.
+  Três coisas são só daqui: a **caixa d'água azul**, um prisma de oito
+  lados numa armação fina, numa quina do telhado de quase toda casa; o
+  **poste de pau**, sem braço de luminária — não vem da concessionária
+  —; e o **fio de gato**, em segmentos curtos que caem um pouco no meio
+  (a soma dá a fiação frouxa, de poste em poste e de poste em casa).
+  Nenhum dos três bloqueia — a caixa e o fio estão no ar.
+  **RNG PRÓPRIO.** A favela sorteia muito (posição, tamanho, cor, cada
+  tentativa rejeitada). Se ela sangrasse do `rng()` compartilhado, TODA
+  a cidade gerada depois mudaria de sorteio — sede, casas de avenida,
+  tudo — sem eu ter mexido lá. `semente(913247)` local resolve: a
+  favela não consome um único número do sorteio de fora, e o resto do
+  mapa (já testado e auditado) sai bit a bit igual ao de antes dela
+  existir. A única armadilha: um laço que já existia, `for(o of BEIRA)`
+  sorteando árvore perto de casa de beira, passou a rodar também sobre
+  as casas da favela (que entram no mesmo array) — ele pula com
+  `if(o.favela) continue` ANTES de gastar o `rng()` de fora, e a favela
+  ganhou o laço equivalente dela, com o RNG local.
+  **DESENCALHA ILHA.** Casa colada em casa, de posição sorteada, às
+  vezes fecha um anel e prende um pedaço de mato no meio — ninguém
+  nunca ia chegar lá, e pior, é bloqueio que não se vê (o mesmo risco
+  da moita fantasma, contado mais abaixo). Depois de gerar tudo, uma
+  passada testa DE VERDADE: monta uma grade do tamanho da célula com o
+  mesmo teste de corpo que `anda()` usa (as 8 vizinhas livres, não só a
+  célula — um vão de uma célula "anda" mas ninguém PASSA por ele),
+  inunda a partir da borda da área, e quem sobra sem afogar é ilha. Pra
+  cada casa candidata, testa TIRAR ELA e recalcula — só fica removida se
+  a ilha realmente encolher. A primeira versão adivinhava "a casa mais
+  perto da ilha" por proximidade, e ficava rodando: tirar um só dos
+  dois lados de um corredor fechado não abre nada, e a régua de
+  proximidade não sabia dizer qual dos dois lados era o certo (uma
+  ilha de 3 células sobreviveu 20 rodadas). Testar sabe.
+  O pedaço de mato livre, dentro do tabuleiro e longe de tudo, não é
+  grande: por volta de cem tentativas de casa entram, e a garantia de
+  poder andar em toda parte corta esse número — a cidade final tem
+  **58 casas**, não as ~80 que eu tinha em mente ao começar. Não forcei
+  pra 80: ou a casa ficava do tamanho de caixa de fósforo de novo, ou
+  sobrava mato preso sem ninguém poder pisar — as duas coisas piores
+  que ter menos casa.
+
 A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
 descarta fora do quadro; carros, postes e campos numa malha; moitas em
 outra.
@@ -587,9 +645,9 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
 - Por andar (células de corpo): rua/cidade 211.000 · corredor 4.371 ·
   vomitório 577 · arquibancada 3.572 · portão 48.
 - Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **37
-  quarteirões · 452 lotes · 580 moitas · 212 árvores · 72 postes ·
-  55 carros · 1 campo · 8 equipamentos** · 117.071 triângulos estáticos
-  em 6 pedaços de cidade mais o estádio · 16 chamadas de desenho sem gente na
+  quarteirões · 510 lotes (58 na favela) · 559 moitas · 215 árvores ·
+  72 postes · 55 carros · 1 campo · 8 equipamentos** · 124.521 triângulos
+  estáticos em 6 pedaços de cidade mais o estádio · 16 chamadas de desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
   do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
   leve corta a sombra primeiro por isso).

@@ -173,6 +173,15 @@ TO.diaJogo.estadioPintura = (function(){
       c.fillStyle = COR.moita;
       c.beginPath(); c.ellipse(m.x, m.y, m.r*0.9, m.r*0.7, 0, 0, 7); c.fill();
     }
+    /* os becos da favela: mais largos que a trilha comum — é rua, não
+       caminho de mato —, mas sem asfalto nem meio-fio: só terra mais
+       pisada, um tom mais claro que o mato em volta */
+    c.strokeStyle = COR.trilha; c.lineWidth = 34; c.lineCap = 'round'; c.lineJoin = 'round';
+    for(const t of K.FAVELA_RUAS || []){
+      c.beginPath(); c.moveTo(t[0][0], t[0][1]);
+      for(let i=1;i<t.length;i++) c.lineTo(t[i][0], t[i][1]);
+      c.stroke();
+    }
 
     /* ---- 2. os quarteirões: calçada, o miolo, a guia ---- */
     const bx = K.bordasX, by = K.bordasY;

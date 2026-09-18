@@ -394,7 +394,12 @@ export function montarBairro(P) {
      lisa com letreiro em cima. */
   function fachada(T, l, larg, face) {
     const pw = Math.min(20, Math.max(12, larg * 0.36));
-    const meio = larg * 0.5, porta = Math.min(PORTA_ALT, l.alt - 6);
+    /* a porta encolhe em casa baixa: sem isso ela toma quase o pé-
+       direito inteiro e não sobra vão pra janela nem pra bandeira —
+       o que só acontecia a partir do barraco da favela, mais baixo
+       que qualquer casa de antes. Em telhado normal o terceiro termo
+       não é o menor dos três, e a porta sai igual a sempre. */
+    const meio = larg * 0.5, porta = Math.min(PORTA_ALT, l.alt - 6, Math.max(30, l.alt * 0.62));
     face(meio - pw / 2, meio + pw / 2, 0, porta, PORTA, 0.6);
     let pos = 0;
     const painel = (a0, a1, y0, y1, hex) => { if (a1 - a0 >= 5) { face(a0, a1, y0, y1, hex, 0.5); pos++; } };
@@ -488,6 +493,49 @@ export function montarBairro(P) {
     caixa(T, Math.min(p.x, p.x + p.dx*B) - 1.4, Math.max(p.x, p.x + p.dx*B) + 1.4, H - 4, H,
           Math.min(p.y, p.y + p.dz*B) - 1.4, Math.max(p.y, p.y + p.dz*B) + 1.4, POSTE);
     caixa(T, p.x + p.dx*B - 5, p.x + p.dx*B + 5, H - 8, H - 3.5, p.y + p.dz*B - 5, p.y + p.dz*B + 5, '#e9e2c0');
+  }
+
+  /* poste de pau da favela: sem braço de luminária — a luz daqui não
+     vem da concessionária, vem do fio de gato que sobe até ele */
+  function posteFavela(T, p) {
+    caixa(T, p.x - 1.5, p.x + 1.5, 0, p.alt, p.y - 1.5, p.y + 1.5, '#5b4a36');
+  }
+  /* caixa d'água azul, de plástico: um corpo de oito lados (lê redondo
+     de longe) numa armação fina, com a tampa achatada por cima —
+     apoiada no telhado, não bloqueia ninguém */
+  function caixaDagua(T, o) {
+    const AZUL = '#2f6fb0', TAMPA = '#1f4f82', PERNA = '#7a7268';
+    const y0 = o.alt + 9, h = o.r * 1.5, N = 8;
+    for (const [sx, sz] of [[-1,-1],[1,-1],[1,1],[-1,1]])
+      caixa(T, o.x + sx*o.r*0.65 - 1, o.x + sx*o.r*0.65 + 1, o.alt, y0,
+               o.y + sz*o.r*0.65 - 1, o.y + sz*o.r*0.65 + 1, PERNA);
+    for (let i = 0; i < N; i++) {
+      const a0 = i/N*Math.PI*2, a1 = (i+1)/N*Math.PI*2, tom = i % 2 ? 0.9 : 1.0;
+      const p0 = [o.x + Math.cos(a0)*o.r, y0, o.y + Math.sin(a0)*o.r];
+      const p1 = [o.x + Math.cos(a1)*o.r, y0, o.y + Math.sin(a1)*o.r];
+      const p0t = [p0[0], y0 + h, p0[2]], p1t = [p1[0], y0 + h, p1[2]];
+      tri(T, p0, p1, p1t, AZUL, tom);
+      tri(T, p0, p1t, p0t, AZUL, tom);
+      tri(T, [o.x, y0 + h + 1.6, o.y], p0t, p1t, TAMPA, 1.0);
+    }
+  }
+  /* o fio de gato: alguns segmentos curtos entre os dois pontos, cada
+     um um pouco mais baixo que a reta — é o que dá a fiação frouxa,
+     tomada emendada de poste em poste */
+  function fio(T, ax, ay, ah, bx, by, bh, hex) {
+    const SEGS = 3, ESP = 1.3, sag = Math.min(16, Math.hypot(bx-ax, by-ay)*0.12);
+    let px = ax, py = ay, ph = ah;
+    for (let i = 1; i <= SEGS; i++) {
+      const t = i / SEGS;
+      const nx = ax + (bx-ax)*t, ny = ay + (by-ay)*t;
+      const nh = ah + (bh-ah)*t - Math.sin(t*Math.PI)*sag;
+      const len = Math.hypot(nx-px, ny-py);
+      if (len > 0.5) {
+        const ang = Math.atan2(ny-py, nx-px) || 1e-6;
+        caixaRot(T, (px+nx)/2, (py+ny)/2, len, ESP, Math.min(ph,nh)-0.8, Math.max(ph,nh)+0.8, ang, hex);
+      }
+      px = nx; py = ny; ph = nh;
+    }
   }
 
   /* =========================================================
@@ -929,6 +977,9 @@ export function montarBairro(P) {
     else caixa(TS, c.x0 + 1.5, c.x1 - 1.5, 8, 13.5, c.y0 + 9, c.y1 - 10, escuro);
   }
   for (const p of K.POSTES) poste(TS, p);
+  for (const p of K.FAVELA_POSTES || []) posteFavela(TS, p);
+  for (const o of K.FAVELA_CAIXAS || []) caixaDagua(TS, o);
+  for (const f of K.FAVELA_FIOS || []) fio(TS, f.ax, f.ay, f.ah, f.bx, f.by, f.bh, '#2a2a28');
   /* os campos de várzea: cerca de mourão e arame, arquibancadinha, traves */
   for (const f of K.CAMPOS) {
     const CER = '#6e6a5e';

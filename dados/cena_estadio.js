@@ -1906,6 +1906,22 @@ TO.dados.plantaEstadio = (function(){
     return false;
   }
 
+  /* a área da favela, DECLARADA AQUI — antes das moitas — pra elas
+     nunca nascerem lá dentro. Nascer e depois recortar deixava um
+     fantasma no balde espacial: a moita some do desenho (o balde não
+     é reconstruído), mas continua bloqueando `naMoita`, e vira parede
+     invisível no meio da rua. */
+  /* DENTRO DO TABULEIRO. `anda()` só responde dentro de [4, W-4] ×
+     [4, H-4] — o que o mapa desenha (`VISTA`) vai bem mais longe que
+     isso, mas o que se ANDA para ali. A primeira área que escolhi
+     (a oeste, fora do tabuleiro) desenhava certinho e não tinha UMA
+     célula andável: o corpo cabia em zero lugar. Esta aqui é a faixa
+     de mato livre mais larga que sobra DENTRO do tabuleiro, na beira
+     oeste, longe da estrada que a avenida faz por ali (e das casas
+     de beira dela) e do campo/baldio ao sul. */
+  const AREA_FAV = { x0:20, x1:540, y0:1270, y1:2030 };
+  const naAreaFavela = (x, y) => x > AREA_FAV.x0 && x < AREA_FAV.x1 && y > AREA_FAV.y0 && y < AREA_FAV.y1;
+
   /* ---- as moitas do mato: só onde é mato, num balde espacial ---- */
   const MOITAS = [];
   const BALDE = 256, baldes = new Map();
@@ -1917,6 +1933,7 @@ TO.dados.plantaEstadio = (function(){
     if(naAvenida(x, y, CALC + 10)) continue;
     if(tocaAsfalto(x, y, r*0.9)) continue;
     if(naFatiaDeEquipamento(x, y, r)) continue;
+    if(naAreaFavela(x, y)) continue;                  // ali é favela, não descampado
     const m = { x, y, r };
     MOITAS.push(m);
     if(x >= -BALDE && y >= -BALDE){
@@ -2203,6 +2220,310 @@ TO.dados.plantaEstadio = (function(){
     }
   }
 
+  /* =========================================================
+     A FAVELA — um bairro informal, no mato a oeste
+     ---------------------------------------------------------
+     Fora do contorno, num retalho de mato limpo (longe da avenida que
+     virou estrada por ali, longe da beira da estrada, longe da borda
+     do que se desenha), cresce um aglomerado sem malha. Não tem
+     quarteirão: tem BECO — os caminhos são um passeio quase aleatório,
+     não a grade reta da cidade —, e a casa gruda na casa vizinha, com
+     a menor folga do mapa. A rua não é pavimentada: é o próprio mato
+     pisado, e é por isso que ela nasce ONDE MOITA NENHUMA NASCE
+     (`naAreaFavela`, lá na hora das moitas) — descampado sujo de
+     verdade não tem estrada de terra limpa no meio.
+     Entra pelo MESMO cano da casa de beira de estrada: um `lote()`
+     girado, com corpo, telhado, porta e janela — e pixação, quando
+     sorteia —, e o mesmo balde espacial (`BEIRA`/`naBeira`) bloqueia
+     na máscara. Só a caixa d'água azul no telhado e o fio de gato
+     entre os postes de madeira são DAQUI: nenhum dos dois bloqueia —
+     um está em cima do telhado, o outro no ar. */
+  const CORES_FAVELA = ['#d97b9c','#4a9d97','#d7a23c','#6f8fb0','#b5643f','#9a9488',
+                        '#c7c0ac','#7f9c5c','#a83f3c','#e2cf9e','#8a95a6','#c98b3f'];
+  const GRAFITE_FAVELA = PIXACAO.concat([
+    'RUA SEM MEDO', 'FAVELA VIVA', 'LUZ NO BECO', 'CRIA DA VILA',
+    'SOMOS DAQUI', 'FÉ NÃO FALHA', 'MC ZINHO', 'DJ BEIJA-FLOR',
+    'RESPEITA QUEM SUBIU O MORRO', 'BONDE DO BECO', 'TUDO NOSSO', 'ISSO AQUI É NOSSO'
+  ]);
+  const FAVELA = [], FAVELA_CAIXAS = [], FAVELA_POSTES = [], FAVELA_FIOS = [], FAVELA_RUAS = [];
+  (function(){
+    /* RNG PRÓPRIO. A favela usa MUITO sorteio (mais de cem tentativas
+       de casa, cada uma com vários testes de posição) — se ela sangrasse do `rng()`
+       compartilhado, toda a cidade gerada DEPOIS dela mudaria de
+       sorteio, e o resto do mapa (já testado e auditado) sairia
+       diferente sem eu ter mexido nele. Local, ela não consome UM
+       ÚNICO número do `rng()` de fora. */
+    const rngFav = semente(913247);
+    const entreFav = (a, b) => a + rngFav()*(b - a);
+    const escolherFav = l => l[Math.floor(rngFav()*l.length)];
+    /* um caminho tipo passeio aleatório, curvo, preso dentro da área:
+       o beco principal e os dois que saem dele */
+    /* O CAMINHO NÃO PODE SE ENROLAR. A primeira versão virava um
+       pouco a cada passo e, em muitos passos, isso ENROLA — um
+       caracol, não um beco —, e o caracol prende a própria área do
+       meio: nenhuma casa ali tem pra onde sair. A cada passo ela
+       sorteia VÁRIOS ângulos e fica com o que abre mais longe do
+       próprio rastro (não dos últimos passos, que são vizinhos de
+       verdade); se nenhum abre, o caminho para ali — melhor um beco
+       mais curto que um que se fecha em anel. */
+    function caminho(px, py, passos, passo, virada){
+      const pts = [[px, py]];
+      let ang = rngFav()*Math.PI*2;
+      for(let i=0;i<passos;i++){
+        let melhorAng = null, melhorD = -1;
+        for(let t=0;t<7;t++){
+          const a2 = ang + (rngFav() - 0.5)*virada*(1 + t*0.6);
+          const nx = px + Math.cos(a2)*passo, ny = py + Math.sin(a2)*passo;
+          if(nx < AREA_FAV.x0 + 60 || nx > AREA_FAV.x1 - 60 ||
+             ny < AREA_FAV.y0 + 60 || ny > AREA_FAV.y1 - 60) continue;
+          let dmin = 1e9;
+          for(let k=0;k<pts.length-2;k++) dmin = Math.min(dmin, Math.hypot(pts[k][0]-nx, pts[k][1]-ny));
+          if(dmin > melhorD){ melhorD = dmin; melhorAng = a2; }
+        }
+        if(melhorAng === null || melhorD < passo*1.1) break;   // sem saída boa: para aqui
+        ang = melhorAng;
+        px += Math.cos(ang)*passo; py += Math.sin(ang)*passo;
+        pts.push([px, py]);
+      }
+      return pts;
+    }
+    const cx0 = (AREA_FAV.x0 + AREA_FAV.x1)/2, cy0 = (AREA_FAV.y0 + AREA_FAV.y1)/2;
+    const BECOS = [
+      caminho(AREA_FAV.x0 + 90, cy0 - 200, 18, 56, 0.6),
+      caminho(cx0 - 140, AREA_FAV.y0 + 80, 13, 54, 0.65),
+      caminho(cx0 + 160, AREA_FAV.y1 - 80, 13, 54, 0.65),
+      caminho(AREA_FAV.x0 + 70, AREA_FAV.y1 - 150, 12, 50, 0.7),
+      caminho(AREA_FAV.x1 - 90, cy0 + 80, 11, 48, 0.7),
+      caminho(cx0, AREA_FAV.y0 + 60, 10, 46, 0.75)
+    ];
+    for(const beco of BECOS) FAVELA_RUAS.push(beco);
+
+    /* AS MEDIDAS DA CASA. Nada de dollhouse: o boneco tem 39 unidades
+       (1,75 m) — se a frente da casa ficasse abaixo disso, a caixa
+       d'água (que é pequena de verdade) sairia MAIOR que a casa na
+       tela. Um barraco de verdade é apertado, mas ainda é gente de
+       pé: a régua aqui é a menor casa que ainda lê como casa. */
+    const larguraCasa = () => par8(entreFav(36, 56));
+    const fundoCasa = () => par8(entreFav(34, 48));
+
+    /* nada perto demais: a régua é a mesma da casa de beira de
+       estrada (soma das metades mais uma folga), só que a folga aqui
+       é bem menor — é o que faz a fileira ler como favela colada, e
+       não subúrbio */
+    function longe(cx, cy, w, h, folga){
+      for(const c of FAVELA)
+        if(Math.hypot(c.cx - cx, c.cy - cy) < (c.w + w)/2 + folga &&
+           Math.abs(c.cx - cx) + Math.abs(c.cy - cy) < (c.w + c.h + w + h)/2 + folga)
+          return false;
+      for(const c of BEIRA)
+        if(!c.favela && Math.hypot(c.cx - cx, c.cy - cy) < (c.w + w)/2 + folga + 6)
+          return false;
+      return true;
+    }
+    function tentarCasa(cx, cy, ang, w, h){
+      const meia = Math.max(w, h)/2 + 14;
+      if(cx - meia < AREA_FAV.x0 || cx + meia > AREA_FAV.x1 ||
+         cy - meia < AREA_FAV.y0 || cy + meia > AREA_FAV.y1) return null;
+      if(zona(cx, cy) !== 'mato') return null;
+      if(!longe(cx, cy, w, h, 13)) return null;
+      const r = rngFav();
+      /* a maioria é laje (o `lote()` girado dá capa plana pra tudo
+         que não é casa/sobrado/galpão/muro) — telha e zinco entram
+         como variação, não como regra: é o que lê como barraco */
+      const tipo = r < 0.16 ? 'galpao' : r < 0.28 ? 'casa' : 'barraco';
+      let alt = par8(entreFav(50, 70));
+      if(rngFav() < 0.28) alt += par8(entreFav(30, 50));       // o puxado de cima, sem reboco
+      const casa = { tipo, ang: ang || 1e-6, vf: rngFav() < 0.5 ? 1 : -1, cx, cy, w, h,
+                     alt, cor: escolherFav(CORES_FAVELA), favela: true };
+      if(rngFav() < 0.62) casa.pixacao = escolherFav(GRAFITE_FAVELA);
+      FAVELA.push(casa);
+      return casa;
+    }
+
+    for(const beco of BECOS){
+      for(let i=0;i<beco.length-1;i++){
+        const [ax,ay] = beco[i], [bx,by] = beco[i+1];
+        const dx = bx-ax, dy = by-ay, L = Math.hypot(dx,dy);
+        if(L < 1) continue;
+        const ux = dx/L, uy = dy/L, ang = Math.atan2(dy, dx);
+        const perpx = -uy, perpy = ux;
+        let t = entreFav(8, 24);
+        while(t < L){
+          /* o passo segue a LARGURA DA CASA, não um número fixo — com
+             a casa maior que antes, um passo fixo ou sobrava vão
+             enorme entre elas ou fazia a maioria falhar no `longe()` */
+          let maiorW = 40;
+          for(const lado of [-1, 1]){
+            if(rngFav() < 0.14) continue;                    // o vão do beco
+            const w = larguraCasa(), h = fundoCasa();
+            maiorW = Math.max(maiorW, w);
+            const off = entreFav(20, 34) + h/2;   // o beco tem de caber o corpo, não só o pé
+            const cx = ax + ux*t + perpx*off*lado, cy = ay + uy*t + perpy*off*lado;
+            const casa = tentarCasa(cx, cy, ang, w, h);
+            if(casa) casa.vf = -lado;                     // a porta olha pro beco
+          }
+          t += maiorW + entreFav(2, 8);
+        }
+      }
+    }
+    /* enchimento: o que sobrou de área vira casa espalhada — um beco
+       de verdade não é só fileira em linha, tem fundo de quintal que
+       também virou casa. O alvo (120, antes do desencalhe) é de
+       propósito mais alto que o que sobra no fim: o pedaço de mato
+       livre aqui não é grande, e parte do que entra vai ser cortada
+       na hora de garantir que dá pra andar em toda parte. */
+    let tentativas = 0;
+    while(FAVELA.length < 120 && tentativas < 60000){
+      tentativas++;
+      const cx = entreFav(AREA_FAV.x0 + 40, AREA_FAV.x1 - 40);
+      const cy = entreFav(AREA_FAV.y0 + 40, AREA_FAV.y1 - 40);
+      tentarCasa(cx, cy, entreFav(0, Math.PI*2), larguraCasa(), fundoCasa());
+    }
+
+    /* DESENCALHA ILHA. Casa colada em casa, de posição sorteada, às
+       vezes fecha um anel e prende um pedaço de mato no meio — ninguém
+       nunca ia chegar lá, e pior: parede que não se vê continua
+       bloqueando (é o mesmo risco da moita fantasma, lá em cima). Aqui
+       dá pra testar de verdade, com o `dentroLote` que a máscara usa:
+       uma grade do tamanho da célula (8), com o MESMO teste que o
+       jogo faz pra saber se o CORPO cabe (as 8 vizinhas livres, não
+       só a célula) — um vão de uma célula só "anda", mas ninguém
+       PASSA por ele, e contar só a célula sem o corpo dava ilha por
+       "resolvida" que continuava intransponível. Inunda a partir da
+       BORDA da área — quem não afoga é rua por fora —, e quem sobra
+       sem afogar é ilha de verdade. Tira a casa que mais cerca a pior
+       ilha e tenta de novo, até não sobrar nenhuma (ou desistir). */
+    (function desencalhar(){
+      const G = 8;
+      const gx0 = Math.floor(AREA_FAV.x0/G) - 1, gx1 = Math.ceil(AREA_FAV.x1/G) + 1;
+      const gy0 = Math.floor(AREA_FAV.y0/G) - 1, gy1 = Math.ceil(AREA_FAV.y1/G) + 1;
+      const GW = gx1 - gx0, GH = gy1 - gy0;
+      /* conta as células de mato presas, pra lista de casa que for
+         dada — o corpo é o mesmo teste de `anda()` (as 8 vizinhas
+         livres), e a ilha é quem não afoga a partir da borda */
+      function contarIlha(lista){
+        const bloq = new Uint8Array(GW * GH);
+        for(const c of lista){
+          const meia = Math.max(c.w, c.h)/2 + 2;
+          const i0 = Math.max(0, Math.floor((c.cx - meia)/G) - gx0), i1 = Math.min(GW-1, Math.ceil((c.cx + meia)/G) - gx0);
+          const j0 = Math.max(0, Math.floor((c.cy - meia)/G) - gy0), j1 = Math.min(GH-1, Math.ceil((c.cy + meia)/G) - gy0);
+          for(let i = i0; i <= i1; i++) for(let j = j0; j <= j1; j++){
+            const k = j*GW + i;
+            if(bloq[k]) continue;
+            if(dentroLote((gx0+i+0.5)*G, (gy0+j+0.5)*G, c)) bloq[k] = 1;
+          }
+        }
+        const livre = (i, j) => i < 0 || j < 0 || i >= GW || j >= GH ? true : !bloq[j*GW+i];
+        const corpo = new Uint8Array(GW * GH);
+        for(let i=0;i<GW;i++) for(let j=0;j<GH;j++){
+          if(!livre(i,j)) continue;
+          let ok = 1;
+          for(let a=-1;a<=1&&ok;a++) for(let b=-1;b<=1;b++) if(!livre(i+a,j+b)){ ok=0; break; }
+          corpo[j*GW+i] = ok;
+        }
+        const vis = new Uint8Array(GW * GH), fila = [];
+        const semear = k => { if(corpo[k] && !vis[k]){ vis[k] = 1; fila.push(k); } };
+        for(let i=0;i<GW;i++){ semear(i); semear((GH-1)*GW + i); }
+        for(let j=0;j<GH;j++){ semear(j*GW); semear(j*GW + GW-1); }
+        let n = 0;
+        while(n < fila.length){
+          const k = fila[n++], i = k % GW, j = (k - i)/GW;
+          for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){
+            const a = i+di, c2 = j+dj;
+            if(a < 0 || c2 < 0 || a >= GW || c2 >= GH) continue;
+            const kk = c2*GW + a;
+            if(vis[kk] || !corpo[kk]) continue;
+            vis[kk] = 1; fila.push(kk);
+          }
+        }
+        let n2 = 0;
+        for(let k=0;k<GW*GH;k++) if(corpo[k] && !vis[k]) n2++;
+        return n2;
+      }
+      /* TESTA DE VERDADE, não adivinha: um "culpado" só sai da lista
+         se tirar ELE realmente encolhe a ilha. Achar por proximidade
+         (a primeira versão) prendia numa ilha de poucas células que
+         sobrevivia rodada após rodada — tirar só um dos dois lados
+         não abre corredor nenhum, e a régua de proximidade não sabia
+         dizer qual dos dois era o lado certo. Testar sabe. */
+      for(let rodada = 0; rodada < 80; rodada++){
+        const antes = contarIlha(FAVELA);
+        if(!antes) break;
+        let melhorou = false;
+        for(let idx = FAVELA.length - 1; idx >= 0; idx--){
+          const candidata = FAVELA[idx];
+          const resto = FAVELA.slice(0, idx).concat(FAVELA.slice(idx + 1));
+          if(contarIlha(resto) < antes){ FAVELA.splice(idx, 1); melhorou = true; break; }
+        }
+        if(!melhorou) break;              // nenhuma casa sozinha ajuda — desiste dessa ilha
+      }
+    })();
+
+    /* CAIXA D'ÁGUA AZUL, numa quina do telhado — quase toda casa tem */
+    for(const c of FAVELA){
+      if(rngFav() < 0.12) continue;
+      const co = Math.cos(c.ang), so = Math.sin(c.ang);
+      const su = rngFav() < 0.5 ? -1 : 1, sv = rngFav() < 0.5 ? -1 : 1;
+      const u = su*(c.w/2 - 6), v = sv*(c.h/2 - 5);
+      FAVELA_CAIXAS.push({ x: c.cx + u*co - v*so, y: c.cy + u*so + v*co,
+                           alt: c.alt, r: entreFav(7, 10.5) });
+    }
+
+    /* OS POSTES DE GATO E O FIO IMPROVISADO. Poste de pau, sem braço
+       de luminária — a luz daqui não vem da concessionária. Um por
+       beco, espaçado ao longo do caminho, ligado ao vizinho por um fio
+       que a soma de segmentos curtos faz cair um pouco no meio. */
+    for(const beco of BECOS){
+      const postesBeco = [];
+      let sobra = entreFav(50, 80);
+      for(let i=0;i<beco.length-1;i++){
+        const [ax,ay] = beco[i], [bx,by] = beco[i+1];
+        const dx = bx-ax, dy = by-ay, L = Math.hypot(dx,dy);
+        if(L < 1) continue;
+        const ux = dx/L, uy = dy/L;
+        let t = 0;
+        while(t + sobra <= L){
+          t += sobra;
+          postesBeco.push({ x: ax + ux*t, y: ay + uy*t, alt: par8(entreFav(76, 100)) });
+          sobra = entreFav(55, 90);
+        }
+        sobra -= (L - t);
+      }
+      for(const p of postesBeco) FAVELA_POSTES.push(p);
+      for(let i=1;i<postesBeco.length;i++){
+        const a = postesBeco[i-1], b = postesBeco[i];
+        FAVELA_FIOS.push({ ax:a.x, ay:a.y, ah:a.alt, bx:b.x, by:b.y, bh:b.alt });
+      }
+    }
+    /* o gato: da casa até o poste mais perto dela */
+    for(const c of FAVELA){
+      if(rngFav() < 0.42) continue;
+      let melhor = null, dm = 1e9;
+      for(const p of FAVELA_POSTES){
+        const d = Math.hypot(p.x - c.cx, p.y - c.cy);
+        if(d < dm){ dm = d; melhor = p; }
+      }
+      if(!melhor || dm > 170) continue;
+      FAVELA_FIOS.push({ ax: melhor.x, ay: melhor.y, ah: melhor.alt - 6,
+                         bx: c.cx, by: c.cy, bh: c.alt + 3 });
+    }
+
+    /* uma arvorezinha rala perto de alguma casa — rala mesmo, favela
+       não tem quintal, mas uma sombra aqui e ali evita fileira de
+       caixa pura */
+    for(const c of FAVELA){
+      if(rngFav() < 0.82) continue;
+      const co = Math.cos(c.ang), so = Math.sin(c.ang);
+      const d = -c.vf*(c.h/2 + entreFav(20, 40)), u = entreFav(-c.w*0.4, c.w*0.4);
+      const x = c.cx + u*co - d*so, y = c.cy + u*so + d*co;
+      if(!naAreaFavela(x, y) || zona(x, y) !== 'mato') continue;
+      if(FAVELA.some(o => Math.hypot(o.cx - x, o.cy - y) < Math.max(o.w, o.h)/2 + 10)) continue;
+      ARVORES.push({ x, y, r: entreFav(11, 17) });
+    }
+
+    for(const c of FAVELA){ BEIRA.push(c); LOTES.push(c); }
+  })();
+
   /* o balde da beira, pra máscara perguntar barato */
   const BALDE_B = 256, baldesBeira = new Map();
   for(const o of BEIRA){
@@ -2220,8 +2541,13 @@ TO.dados.plantaEstadio = (function(){
     for(const o of l) if(dentroLote(x, y, o)) return true;
     return false;
   }
-  /* árvore e poste na beira, pro trecho não virar fileira de caixas */
+  /* árvore e poste na beira, pro trecho não virar fileira de caixas.
+     A casa da favela pula ANTES do `rng()`: ela já ganhou a árvore
+     dela lá na hora, com o RNG próprio — se entrasse aqui, consumiria
+     um número do sorteio compartilhado por casa nova, e a cidade
+     inteira gerada depois mudaria de sorteio sem eu ter mexido nela. */
   for(const o of BEIRA){
+    if(o.favela) continue;
     if(o.tipo === 'muro' || rng() < 0.5) continue;
     const c = Math.cos(o.ang), s = Math.sin(o.ang);
     const d = -o.vf*(o.h/2 + entre(26, 46)), u = entre(-o.w*0.4, o.w*0.4);
@@ -2248,7 +2574,8 @@ TO.dados.plantaEstadio = (function(){
                    xLimiteCosta, cortarPor, recorteCosta, pedacosSemAvenida, dentroPol, ruaEntre,
                    areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
-                   CARROS, ARVORES, POSTES, SEDES, sedeDe };
+                   CARROS, ARVORES, POSTES, SEDES, sedeDe,
+                   FAVELA, FAVELA_CAIXAS, FAVELA_POSTES, FAVELA_FIOS, FAVELA_RUAS };
 
   /* =======================================================
      A DOBRA: tabuleiro → mundo
