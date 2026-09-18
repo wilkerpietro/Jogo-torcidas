@@ -162,9 +162,10 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   e é isso que o faz caber no quarteirão em vez de atravessar a rua e
   a areia. E rua nenhuma corta campo ao meio: entre duas células de
   campo `ruaEntre` diz que não há asfalto, na máscara e na pintura.
-- **Quatro quarteirões não são de casa.** Praça (colada no estádio, ao
-  sul), delegacia (ao lado dela), hospital (a oeste) e shopping (mais ao
-  sul). Cada um monta as próprias **peças** a partir do miolo da célula,
+- **Quatro quarteirões não são de casa.** Praça (no bairro do sul),
+  delegacia (a oeste, no caminho da torcida), hospital (a oeste) e
+  shopping (ao sul). Nenhum encosta no estádio: a vizinhança dele é
+  de casa e comércio, como no mapa. Cada um monta as próprias **peças** a partir do miolo da célula,
   e a peça diz se bloqueia: a máscara lê as que bloqueiam, o 3D desenha
   todas, e a pintura repinta as de `piso` — é a mesma lista, então não
   há como uma desencontrar da outra. Tudo em retângulo reto, que é o que

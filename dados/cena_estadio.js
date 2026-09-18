@@ -771,8 +771,8 @@ TO.dados.plantaEstadio = (function(){
      máscara sabe perguntar rápido.
      ========================================================= */
   const EQUIPAMENTOS = [
-    { tipo: 'praca',     ponto: pxm(706, 432) },   // colada no estádio, ao sul
-    { tipo: 'delegacia', ponto: pxm(823, 432) },   // ao lado da praça
+    { tipo: 'praca',     ponto: pxm(706, 710) },   // o centro do bairro do sul
+    { tipo: 'delegacia', ponto: pxm(490, 349) },   // a oeste, no caminho da torcida
     { tipo: 'hospital',  ponto: pxm(560, 349) },   // a oeste do estádio
     { tipo: 'shopping',  ponto: pxm(706, 569) }    // mais ao sul, com estacionamento
   ];
@@ -821,7 +821,7 @@ TO.dados.plantaEstadio = (function(){
       fila(5, X0 + 26, X1 - 26, x => { p('arvore', { x, y: Y0 + 20, r: 15 }, false); p('arvore', { x, y: Y1 - 20, r: 15 }, false); });
       for(const sx of [-1, 1]) for(const sy of [-1, 1])
         p('poste', { x: cx + sx*(L*0.36), y: cy + sy*(A*0.30), dx: -sx, dz: 0 }, false);
-      p('letreiro', { x: cx, y: Y1 - 16, ox: 0, oz: 1, texto: 'PRAÇA DA MATRIZ', placa: true, larg: 120, altura: 20, base: 26, pernas: true }, false);
+      p('letreiro', { x: cx, y: Y1 - 14, ox: 0, oz: 1, texto: 'PRAÇA DA MATRIZ', placa: true, larg: 98, altura: 16, base: 22, pernas: true }, false);
     }
 
     if(tipo === 'hospital'){
@@ -867,14 +867,24 @@ TO.dados.plantaEstadio = (function(){
       fila(4, cx - 60, cx + 60, x => p('pilar', { x, y: py1 - 6, r: 4.5, alt: 40, cor: '#eceadf' }));
       p('mastro', { x: bx0 - 26, y: Y0 + fundo + 18, alt: 74 });
       p('guarita', { x0: X1 - 46, x1: X1 - 18, y0: Y1 - 46, y1: Y1 - 18, alt: 30, cor: '#dcd8cc' });
-      fila(4, cx - 148, cx + 148, x => piso(x - 1, Y1 - 64, x + 1, Y1 - 14, '#e8e5da'));   // as vagas
-      fila(3, cx - 110, cx + 110, (x, i) => p('carro', { x0: x - 18, x1: x + 18, y0: Y1 - 60, y1: Y1 - 18,
-                                                        cor: CORES_CARRO_PM[i % 2], modo: 'policia' }));
-      p('muro', { x0: X0, x1: bx0 - 46, y0: Y1 - 6, y1: Y1, alt: 16, cor: '#c6c2b6' });
+      /* o pátio das viaturas: em quarteirão estreito ele encolhe, e em
+         quarteirão fundo ganha uma segunda fileira */
+      const vaga = Math.min(74, (L - 40)/4), meia = vaga*1.5;
+      const fileiras = Y1 - (Y0 + fundo) > 210 ? [Y1 - 60, Y1 - 150] : [Y1 - 60];
+      for(const fy of fileiras){
+        fila(4, cx - meia, cx + meia, x => piso(x - 1, fy - 4, x + 1, fy + 46, '#e8e5da'));
+        fila(3, cx - vaga, cx + vaga, (x, i) => p('carro', { x0: x - 18, x1: x + 18, y0: fy, y1: fy + 42,
+                                                            cor: CORES_CARRO_PM[i % 2], modo: 'policia' }));
+      }
+      if(bx0 - 46 > X0 + 20) p('muro', { x0: X0, x1: bx0 - 46, y0: Y1 - 6, y1: Y1, alt: 16, cor: '#c6c2b6' });
       p('arvore', { x: X0 + 24, y: Y0 + 26, r: 16 }, false);
       p('arvore', { x: X1 - 24, y: Y0 + 26, r: 16 }, false);
-      p('letreiro', { x: cx + 96, y: Y0 + fundo, ox: 0, oz: 1, texto: 'DELEGACIA DE POLÍCIA', placa: true, larg: 130, altura: 20, base: 44 }, false);
-      p('letreiro', { x: cx - 96, y: Y0 + fundo, ox: 0, oz: 1, texto: '3º DISTRITO', placa: true, larg: 64, altura: 13, base: 22 }, false);
+      /* o letreiro da frente vai acima do pórtico, e o do distrito na
+         empena oeste — na frente ele ficaria atrás da laje das colunas */
+      p('letreiro', { x: cx, y: Y0 + fundo, ox: 0, oz: 1, texto: 'DELEGACIA DE POLÍCIA', placa: true,
+                      larg: Math.min(150, larg - 24), altura: 20, base: 48 }, false);
+      p('letreiro', { x: bx0, y: Y0 + fundo*0.45, ox: -1, oz: 0, texto: '3º DISTRITO', placa: true,
+                      larg: Math.min(76, fundo*0.6), altura: 15, base: 30 }, false);
     }
 
     if(tipo === 'shopping'){
