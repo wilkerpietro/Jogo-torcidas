@@ -784,7 +784,8 @@ TO.diaJogo.combate = (function(){
        Com booleanos só há oito direções, e numa cena 3D em que a
        câmera gira isso vira "andar de lado pro lugar errado". Cena
        sem câmera (a 2D de sempre) continua mandando as teclas. */
-    if(teclas.vetor){ dx=teclas.vetor.x; dy=teclas.vetor.y; }
+    const vt=teclas.vetor;
+    if(vt && isFinite(vt.x) && isFinite(vt.y) && (vt.x || vt.y)){ dx=vt.x; dy=vt.y; }
     else {
       if(teclas['a']||teclas['arrowleft'])  dx--;
       if(teclas['d']||teclas['arrowright']) dx++;

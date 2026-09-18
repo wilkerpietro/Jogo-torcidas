@@ -879,7 +879,12 @@ export function criar(canvas) {
     const c = Math.cos(giro), s = Math.sin(giro);
     const x = ix * c + iz * s, z = -ix * s + iz * c;
     const m = Math.hypot(x, z);
-    return { x: x / m, y: z / m };
+    /* vai o vetor E os quatro booleanos equivalentes. Quem lê vetor usa
+       o vetor; quem não lê — um `combate.js` velho parado no cache do
+       navegador — ainda anda pelas teclas, em vez de ficar de pedra. */
+    const lim = Math.max(Math.abs(x), Math.abs(z)) * 0.42;
+    return { x: x / m, y: z / m,
+             d: x > lim, a: x < -lim, s: z > lim, w: z < -lim };
   }
 
   return { montar, quadro, redimensionar, irPara, ligarRotulos,

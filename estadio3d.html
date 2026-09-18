@@ -182,12 +182,21 @@ addEventListener('keyup', e => { teclas[e.key.toLowerCase()] = false; });
    "pro norte da cena". A vista devolve o vetor já no eixo dela, e é
    ele que vai pro combate — as teclas cruas ficam de fora, senão o
    boneco andaria pelo norte do mapa. */
+/* o que a barra de estado mostra: por onde a intenção do jogador está
+   entrando. "vetor" é o caminho certo; "teclas" quer dizer que algum
+   arquivo velho ficou no cache do navegador */
+let comoAnda = 'parado';
 function entradaDoQuadro() {
   const t = Object.assign({}, teclas);
   t.w = t.a = t.s = t.d = false;
   t.arrowup = t.arrowdown = t.arrowleft = t.arrowright = false;
   const v = vista.girarEntrada(teclas);
-  if (v) t.vetor = v;
+  if (!v) { comoAnda = 'parado'; return t; }
+  comoAnda = typeof v.x === 'number' ? 'vetor' : 'teclas (cache velho)';
+  /* a vista nova devolve vetor e booleanos juntos; uma vista velha no
+     cache devolve só booleanos. Repassa os dois, e o combate escolhe. */
+  if (typeof v.x === 'number') t.vetor = v;
+  t.w = !!v.w; t.a = !!v.a; t.s = !!v.s; t.d = !!v.d;
   return t;
 }
 
@@ -235,7 +244,8 @@ function laco(agora) {
       'rua <b>' + onde.rua + '</b> · portão <b>' + onde.fachada + '</b> · corredor <b>' + onde.corredor +
       '</b> · vomitório <b>' + onde.vomitorio + '</b> · arquibancada <b>' + onde.arquibancada + '</b>' +
       ' · entraram <b>' + ((J.entraram||{}).mandante||0) + '</b>/<b>' + ((J.entraram||{}).visitante||0) + '</b><br>' +
-      'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') + '<br>' +
+      'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') +
+      ' · andar: <b>' + comoAnda + '</b><br>' +
       c.degraus + ' degraus · ' + c.vomitorios + ' vomitórios · ' + c.portoes + ' portões · ' +
       c.lojas + ' balcões · ' + c.quadras + ' quarteirões · ' + c.lotes + ' lotes · ' +
       (c.triangulos || 0).toLocaleString('pt-BR') + ' triângulos' +
