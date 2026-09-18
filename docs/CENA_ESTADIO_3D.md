@@ -303,9 +303,8 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   A altura é de casa, não de armazém: fachada de 3,2 m, paredes de fora
   2,8 e o telhado fechando em 3,5 — era 3,9/3,3/4,3 e lia como um
   armazém no meio da rua.
-  Na fachada vão dois **ESCUDOS** de três fiadas — borda, campo e a
-  banda da terceira cor —, um da torcida e um do clube (com as cores do
-  clube, lidas de `dados/times.js`), mais um em cada parede lateral; e a
+  Na fachada vão dois **ESCUDOS** — o da torcida e o do clube —, mais um
+  em cada parede lateral; e a
   **PLACA** com o nome da torcida POR EXTENSO, na parede à direita do
   portão e com o fundo na cor secundária. "Direita" é a de QUEM OLHA DA
   RUA, não a do eixo local: ao sul e a oeste ela cai no trecho de `u`
@@ -318,6 +317,27 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   chapa saía com `z0 > z1`, o recorte devolvia lado negativo e ela era
   descartada inteira — escudo nenhum aparecia nas fachadas viradas pro
   norte nem nas laterais de oeste.
+- **O ESCUDO É O DO JOGO, e vira o PNG quando ele existir.** A primeira
+  versão desenhava um brasão inventado em três fiadas de chapa — e
+  inventar escudo é justamente o que não se faz. O que a cena monta
+  agora são as DUAS regras que o jogo já tinha: o do CLUBE é o `.escudo`
+  da interface (`escudo()` em `js/main.js`) — as duas cores dele
+  divididas em 135°, a primeira até 52% da diagonal, com a sigla do
+  clube em branco e sombra; o da TORCIDA é o pino do mapa
+  (`js/mundo/mapa.js`) — bola na cor principal com a `siglaTorcida` no
+  meio, na cor que LÊ sobre aquele fundo (`corQueLeSobre`: a primeira
+  cor dela que se separa por luminância; se nenhuma servir, preto ou
+  branco). Saem em textura, no mesmo atlas dos letreiros, em vez de em
+  CSS. A célula do atlas é 256 × 64 e o escudo é quadrado, então ele
+  ocupa um quadrado de 64 no meio dela e a UV aponta só pra ele.
+  Por cima disso entra o **PNG de verdade**: a planta diz o caminho
+  (`img/escudos/clube/<clubeId>.png` e `img/escudos/torcida/<id>.png`,
+  ids do próprio banco de dados), a imagem carrega depois da cena
+  montada, repinta a célula do atlas e `needsUpdate` põe na tela. Sem o
+  arquivo o `onerror` não faz nada e fica valendo o gerado — nada
+  quebra, e o dia em que os PNG entrarem no repositório eles aparecem
+  sozinhos, sem mexer em código. Fora do navegador não existe `Image`,
+  então as varreduras no node param no gerado.
   **A frente é a cor primária da torcida**, o rodapé e os batentes do
   portão são a terceira, e a faixa alta, as listras do piso do salão e a
   bandeira do mastro são a segunda.

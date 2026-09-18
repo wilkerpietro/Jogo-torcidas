@@ -741,7 +741,8 @@ TO.dados.plantaEstadio = (function(){
         /* o nome por extenso vai na placa da sede; a sigla continua
            sendo a chave curta da barra de estado */
         nomeCompleto: (t.nome || t.siglaTorcida || '').toUpperCase(),
-        clube: t.clube, clubeSigla: (cl && cl.sigla) || t.sigla || '',
+        clube: t.clube, clubeId: t.clubeId || (cl && cl.id) || null,
+        clubeSigla: (cl && cl.sigla) || t.sigla || '',
         clubeCor: cc[0] || null, clubeCor2: cc.find(c => c !== cc[0]) || '#e8e2d0',
         efetivo: Math.max(40, Math.round(t.membros || 120)) }, coresDaTorcida(t));
     };
@@ -1309,6 +1310,18 @@ TO.dados.plantaEstadio = (function(){
     const l = (n>>16&255)*0.299 + (n>>8&255)*0.587 + (n&255)*0.114;
     return l > 150 ? '#1a1a1a' : '#f6f3ea';
   }
+  /* A COR QUE SE LÊ SOBRE A COR DA TORCIDA — a MESMA de `mapa.js`, que
+     é quem desenha o escudo da torcida no mapa do jogo. A sigla é a
+     primeira cor DELA que se separa do fundo por luminância; se
+     nenhuma servir, cai no preto ou branco. Inventar uma cor que não é
+     dela seria pior. */
+  function corQueLeSobre(fundo, cores){
+    const luz = h => { const n = parseInt(String(h || '#888888').slice(1), 16);
+                       return (0.2126*(n>>16&255) + 0.7152*(n>>8&255) + 0.0722*(n&255)) / 255; };
+    const lf = luz(fundo);
+    for(const c of cores) if(c && Math.abs(luz(c) - lf) >= 0.22) return c;
+    return lf > 0.55 ? '#151515' : '#f2f2f2';
+  }
   function sedeDaTorcida(lado, q, area, frente){
     const T = SEDES[lado].torcida;
     const E = eixos(area, frente), L = E.L, A = E.A;
@@ -1413,21 +1426,29 @@ TO.dados.plantaEstadio = (function(){
        simplesmente não apareciam. Preso em 2,8, a camada mais de fora
        para em 0,2, que ainda é miolo de quarteirão. */
     const VESC = 2.8;
-    /* O ESCUDO DA TORCIDA VAI INVERTIDO: o campo dele na SEGUNDA cor e
-       a borda na primeira. A parede já é a primária, e escudo de campo
-       primário nela some — a Jovem Fla é branca, e um escudo branco em
-       parede branca é uma chapa lisa. */
+    /* OS ESCUDOS SÃO OS DO JOGO, não um desenho inventado aqui.
+       O da TORCIDA é o pino do mapa (`mapa.js`): bola na cor principal
+       dela com a `siglaTorcida` no meio, na cor que lê sobre aquele
+       fundo. O do CLUBE é o `.escudo` da interface (`main.js`): as duas
+       cores do clube divididas em 135°, com a sigla dele por cima. E
+       quando o PNG do escudo estiver em `img/escudos/…`, é ele que
+       aparece — o gerado só vale enquanto o arquivo não existe. */
     const escudoDaTorcida = (x, y, ox, oz, k) =>
-      p('escudo', { x, y, ox, oz, larg: 34*k, alt: 38*k, base: 16,
-                    cor: cor2, cor2: cor1, cor3 }, false);
+      p('escudo', { x, y, ox, oz, larg: 36*k, alt: 36*k, base: 16,
+                    forma: 'bola', texto: T.rot, cor: cor1, cor2,
+                    corTexto: corQueLeSobre(cor1, [cor2, cor3]),
+                    img: T.id ? 'img/escudos/torcida/' + T.id + '.png' : null }, false);
     const vaoEsq = vaoDe(trechoEsq);
     if(vaoEsq > 90){
       const c0 = meio(trechoEsq) - vaoEsq*0.19, c1 = meio(trechoEsq) + vaoEsq*0.19;
       const [ax, ay] = E.pt(direitaEhUAlto ? c0 : c1, VESC);
       const [bx, by] = E.pt(direitaEhUAlto ? c1 : c0, VESC);
       escudoDaTorcida(ax, ay, E.ox, E.oz, 1);
-      p('escudo', { x: bx, y: by, ox: E.ox, oz: E.oz, larg: 27, alt: 30, base: 20,
-                    cor: T.clubeCor || cor1, cor2: T.clubeCor2 || cor2, cor3: cor2 }, false);
+      p('escudo', { x: bx, y: by, ox: E.ox, oz: E.oz, larg: 30, alt: 30, base: 19,
+                    forma: 'diagonal', texto: T.clubeSigla || T.rot,
+                    cor: T.clubeCor || cor1, cor2: T.clubeCor2 || cor2,
+                    corTexto: '#ffffff',
+                    img: T.clubeId ? 'img/escudos/clube/' + T.clubeId + '.png' : null }, false);
     }
     /* e um em cada PAREDE LATERAL, que também é parede externa: a
        direção de `+u` no mundo sai de dois pontos do próprio eixo, e

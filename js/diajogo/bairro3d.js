@@ -136,6 +136,47 @@ export function montarBairro(P) {
       const h = somaTexto(d.texto);
       c.save();
       c.beginPath(); c.rect(x, y, LARG, ALT); c.clip();
+      /* ---- O ESCUDO, do jeito que o JOGO desenha ----
+         Não há banco de imagem: o escudo do jogo é gerado. O do CLUBE é
+         o `.escudo` da interface — divisão em 135° das duas cores dele,
+         a primeira até 52% da diagonal, com a sigla do clube em branco
+         e sombra. O da TORCIDA é o pino do mapa — bola na cor principal
+         com a sigla dela no meio, na cor que LÊ sobre aquele fundo. As
+         duas regras vêm de `js/main.js` e `js/mundo/mapa.js`; aqui elas
+         só saem em textura em vez de em CSS.
+         A célula do atlas é 256 × 64 e o escudo é quadrado, então ele
+         ocupa um quadrado de 64 no meio dela e a UV aponta só pra ele. */
+      if (d.escudo) {
+        const S = ALT, ex = x + (LARG - S) / 2, ey = y;
+        if (d.forma === 'bola') {
+          c.fillStyle = d.cor;
+          c.beginPath(); c.arc(ex + S / 2, ey + S / 2, S / 2 - 2.5, 0, Math.PI * 2); c.fill();
+          c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,.45)'; c.stroke();
+        } else {
+          /* 135° com parada dura em 52%: o corte é a reta x + y = 1,04 S */
+          c.fillStyle = d.cor; c.fillRect(ex, ey, S, S);
+          c.fillStyle = d.cor2;
+          c.beginPath();
+          c.moveTo(ex + 0.04 * S, ey + S); c.lineTo(ex + S, ey + S);
+          c.lineTo(ex + S, ey + 0.04 * S); c.closePath(); c.fill();
+          c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,.45)';
+          c.strokeRect(ex + 1.5, ey + 1.5, S - 3, S - 3);
+        }
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        let t = 21;
+        c.font = 'bold ' + t + 'px "Arial Narrow", Arial, sans-serif';
+        while (t > 7 && c.measureText(d.texto).width > S - 9) {
+          t -= 1; c.font = 'bold ' + t + 'px "Arial Narrow", Arial, sans-serif';
+        }
+        c.shadowColor = 'rgba(0,0,0,.85)'; c.shadowOffsetY = 1; c.shadowBlur = 3;
+        c.fillStyle = d.corTexto;
+        c.fillText(d.texto, ex + S / 2, ey + S / 2 + 1);
+        c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetY = 0;
+        c.restore();
+        uv.set(d.chave, [ex / cv.width, 1 - (ey + S) / cv.height,
+                         (ex + S) / cv.width, 1 - ey / cv.height]);
+        return;
+      }
       if (d.placa) {
         const fundo = d.fundo || FUNDOS_PLACA[h % FUNDOS_PLACA.length];
         c.fillStyle = fundo; c.fillRect(x, y, LARG, ALT);
@@ -166,6 +207,34 @@ export function montarBairro(P) {
     });
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
+    /* ---- O ESCUDO DE VERDADE, quando ele existir ----
+       O escudo pintado acima é o do JOGO — a divisão em 135° do clube e
+       a bola da torcida, as mesmas regras de `main.js` e `mapa.js`. Mas
+       o certo é o PNG do escudo, e ele entra por cima assim que chega:
+       a planta diz o caminho (`img/escudos/clube/<id>.png` e
+       `img/escudos/torcida/<id>.png`), a imagem carrega depois da cena
+       montada e repinta a célula do atlas, e `needsUpdate` põe na tela.
+       Sem o arquivo, o `onerror` não faz nada e fica valendo o gerado —
+       nada quebra, e o dia em que os PNG entrarem no repositório eles
+       aparecem sozinhos. */
+    /* fora do navegador (as varreduras rodam no node) não há `Image`,
+       e o escudo gerado já basta pra medir geometria */
+    if (typeof Image === 'undefined') return { tex, uv };
+    for (const [k, d] of [...dizeres.entries()]) {
+      if (!d.img) continue;
+      const S = ALT, ex = (k % COLS) * LARG + (LARG - S) / 2, ey = ((k / COLS) | 0) * ALT;
+      const im = new Image();
+      im.onload = () => {
+        c.clearRect(ex, ey, S, S);
+        /* encaixa mantendo a proporção, centrado */
+        const e = Math.min(S / im.width, S / im.height);
+        const w = im.width * e, h = im.height * e;
+        c.drawImage(im, ex + (S - w) / 2, ey + (S - h) / 2, w, h);
+        tex.needsUpdate = true;
+      };
+      im.onerror = () => {};
+      im.src = d.img;
+    }
     return { tex, uv };
   }
 
@@ -476,35 +545,11 @@ export function montarBairro(P) {
           break;
         }
         case 'escudo': {
-          /* O ESCUDO: três fiadas que vão estreitando — é o
-             recorte de brasão, e a essa distância lê como um.
-             Cada fiada sai duas vezes: a borda por trás e o campo
-             por cima, com a banda da terceira cor no meio. */
-          const fw = o.larg, fh = o.alt, fb = o.base;
-          const fiadas = [[1.00, 0.00, 0.50], [0.80, 0.50, 0.80], [0.46, 0.80, 1.00]];
-          /* A NORMAL PODE SER NEGATIVA, e `caixa()` quer os limites em
-             ordem: com `oz = −1` saía z0 > z1, o recorte devolvia lado
-             negativo e a chapa era descartada inteira. Escudo nenhum
-             aparecia nas fachadas viradas pro norte nem nas laterais
-             de oeste. */
-          const chapa = (lw, y0, y1, prof, hex) => {
-            const a0 = prof, a1 = prof + 0.9;
-            if (o.ox) caixa(T, Math.min(o.x + o.ox * a0, o.x + o.ox * a1),
-                               Math.max(o.x + o.ox * a0, o.x + o.ox * a1), y0, y1,
-                            o.y - lw / 2, o.y + lw / 2, hex);
-            else caixa(T, o.x - lw / 2, o.x + lw / 2, y0, y1,
-                       Math.min(o.y + o.oz * a0, o.y + o.oz * a1),
-                       Math.max(o.y + o.oz * a0, o.y + o.oz * a1), hex);
-          };
-          for (const [w, t0, t1] of fiadas) {
-            const y0 = fb + fh * (1 - t1), y1 = fb + fh * (1 - t0);
-            /* a borda tem de SER borda: com 2,5 de cada lado o
-               escudo de primária clara lia como uma chapa lisa */
-            chapa(fw * w, y0, y1, 0.3, o.cor2 || '#e8e2d0');
-            chapa(fw * w - 9, y0 + 3, y1 - 3, 1.0, o.cor || '#b02a22');
-          }
-          /* a banda atravessada, na terceira cor */
-          chapa(fw * 0.92, fb + fh * 0.40, fb + fh * 0.56, 1.7, o.cor3 || o.cor2 || '#1a1a1a');
+          /* uma placa só, com a textura que o atlas pintou */
+          const u = uv.get(o.chave);
+          if (!u) break;
+          placa(TL, o.x + o.ox * 0.7, o.base + o.alt / 2, o.y + o.oz * 0.7,
+                o.ox, o.oz, o.larg, o.alt, u);
           break;
         }
         case 'letreiro': {
@@ -562,6 +607,13 @@ export function montarBairro(P) {
          o sorteio por hash do texto, que é o do comércio. */
       if (o.k === 'letreiro') dizeres.set('P:' + o.texto,
         { chave: 'P:' + o.texto, texto: o.texto, placa: true, fundo: o.fundo, tinta: o.tinta });
+      /* a chave leva cor e forma: duas torcidas do país se chamam RAÇA,
+         e o escudo de uma não pode servir pra outra */
+      else if (o.k === 'escudo') {
+        o.chave = 'E:' + o.forma + ':' + o.texto + ':' + o.cor + ':' + o.cor2;
+        dizeres.set(o.chave, { chave: o.chave, texto: o.texto, escudo: true, img: o.img,
+                               forma: o.forma, cor: o.cor, cor2: o.cor2, corTexto: o.corTexto });
+      }
   }
   for (const l of K.LOTES) {
     for (const [texto, ehPlaca] of [[l.placa, true], [l.pixacao, false]]) {
