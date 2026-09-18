@@ -27,7 +27,13 @@ export function montarBairro(P) {
     T.pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
     tmp.set(hex).multiplyScalar(tom === undefined ? 1 : tom);
     for (let k = 0; k < 3; k++) T.cor.push(tmp.r, tmp.g, tmp.b);
+    /* tecido com `uv` é tecido TEXTURADO: a coordenada sai do mundo,
+       de cima (planar), pra telha correr contínua de casa em casa e
+       ladrilhar sem costura. A água do telhado é rasa, então o
+       esticamento na rampa não aparece. */
+    if (T.uv) for (const v of [a, b, c]) T.uv.push(v[0] / TELHA_ESC, v[2] / TELHA_ESC);
   }
+  const TELHA_ESC = 104;          // um ladrilho da textura a cada 104 unidades
   /* caixa com sombra de face: topo claro, lados em dois tons — sem
      isso um bairro de caixas Lambert vira um bloco só */
   const TONS = [1.0, 0.9, 0.86, 0.94, 0.8];
@@ -98,6 +104,37 @@ export function montarBairro(P) {
     triangulos += T.pos.length / 9;
     meshes.push(m);
   }
+  /* malha com TEXTURA e cor por vértice ao mesmo tempo: a textura dá o
+     desenho (a telha, o reboco) e a cor do vértice dá o tom da casa —
+     o Lambert multiplica os dois, que é exatamente o que se quer. */
+  function malhaTex(T, tex, nome, alfa) {
+    if (!T.pos.length) return null;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(T.pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(T.uv, 2));
+    if (T.cor.length) g.setAttribute('color', new THREE.Float32BufferAttribute(T.cor, 3));
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial(Object.assign(
+      { map: tex, vertexColors: !!T.cor.length },
+      alfa ? { alphaTest: 0.35, side: THREE.DoubleSide, transparent: false } : { side: THREE.DoubleSide })));
+    m.castShadow = !alfa; m.receiveShadow = true;
+    m.name = nome;
+    triangulos += T.pos.length / 9;
+    meshes.push(m);
+    return m;
+  }
+  /* as texturas do bairro. Fora do navegador não há `TextureLoader`
+     (as varreduras rodam no node), e aí a malha sai sem mapa — o que
+     se mede lá é geometria, não pintura. */
+  function textura(caminho, repete) {
+    if (!THREE.TextureLoader) return null;
+    const cam = (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho;
+    const t = new THREE.TextureLoader().load(cam);
+    if (repete) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+
   function malha(T, sombra, nome) {
     if (!T.pos.length) return null;
     const g = new THREE.BufferGeometry();
@@ -111,6 +148,13 @@ export function montarBairro(P) {
     meshes.push(m);
     return m;
   }
+
+  /* as bandeiras que tremulam: a cena mexe nelas por quadro */
+  const bandeiras = [];
+  /* o tecido de TELHADO (textura de telha) e o de MANCHA (decalque de
+     mofo e chuva na parede), os dois com UV */
+  const TELHADOS = { pos: [], cor: [], uv: [] };
+  const MANCHAS  = { pos: [], cor: [], uv: [] };
 
   /* ---- OS LETREIROS E AS PIXAÇÕES ----
      Texto não sai de caixa: sai de textura. Todos os dizeres que a
@@ -146,6 +190,36 @@ export function montarBairro(P) {
          só saem em textura em vez de em CSS.
          A célula do atlas é 256 × 64 e o escudo é quadrado, então ele
          ocupa um quadrado de 64 no meio dela e a UV aponta só pra ele. */
+      /* ---- A BANDEIRA: pano da torcida com o escudo no meio ----
+         Metade da célula do atlas (128 × 64, que é a proporção de
+         bandeira), fundo na cor principal, duas faixas na segunda e o
+         escudo no centro. O PNG de verdade, quando existe, entra em
+         cima só do escudo — por isso o alvo dele fica guardado no
+         próprio dizer. */
+      if (d.bandeira) {
+        const W = 128, H = ALT;
+        c.fillStyle = d.cor; c.fillRect(x, y, W, H);
+        c.fillStyle = d.cor2;
+        c.fillRect(x, y, W, 6); c.fillRect(x, y + H - 6, W, 6);
+        const S2 = H - 18, sx = x + (W - S2) / 2, sy = y + 9;
+        c.fillStyle = d.cor2;
+        c.beginPath(); c.arc(sx + S2 / 2, sy + S2 / 2, S2 / 2, 0, Math.PI * 2); c.fill();
+        c.fillStyle = d.cor;
+        c.beginPath(); c.arc(sx + S2 / 2, sy + S2 / 2, S2 / 2 - 2.5, 0, Math.PI * 2); c.fill();
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        let tb = 17;
+        c.font = 'bold ' + tb + 'px "Arial Narrow", Arial, sans-serif';
+        while (tb > 6 && c.measureText(d.texto).width > S2 - 8) {
+          tb -= 1; c.font = 'bold ' + tb + 'px "Arial Narrow", Arial, sans-serif';
+        }
+        c.fillStyle = d.corTexto;
+        c.fillText(d.texto, sx + S2 / 2, sy + S2 / 2 + 1);
+        c.restore();
+        d.alvo = [sx, sy, S2, S2];                 // onde o PNG do escudo entra
+        uv.set(d.chave, [x / cv.width, 1 - (y + H) / cv.height,
+                         (x + W) / cv.width, 1 - y / cv.height]);
+        return;
+      }
       if (d.escudo) {
         const S = ALT, ex = x + (LARG - S) / 2, ey = y;
         if (d.forma === 'bola') {
@@ -173,6 +247,7 @@ export function montarBairro(P) {
         c.fillText(d.texto, ex + S / 2, ey + S / 2 + 1);
         c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetY = 0;
         c.restore();
+        d.alvo = [ex, ey, S, S];
         uv.set(d.chave, [ex / cv.width, 1 - (ey + S) / cv.height,
                          (ex + S) / cv.width, 1 - ey / cv.height]);
         return;
@@ -220,12 +295,12 @@ export function montarBairro(P) {
     /* fora do navegador (as varreduras rodam no node) não há `Image`,
        e o escudo gerado já basta pra medir geometria */
     if (typeof Image === 'undefined') return { tex, uv };
-    for (const [k, d] of [...dizeres.entries()]) {
-      if (!d.img) continue;
-      const S = ALT, ex = (k % COLS) * LARG + (LARG - S) / 2, ey = ((k / COLS) | 0) * ALT;
+    for (const d of dizeres) {
+      if (!d.img || !d.alvo) continue;
+      const [ex, ey, S] = d.alvo;
       const im = new Image();
       im.onload = () => {
-        c.clearRect(ex, ey, S, S);
+        if (!d.bandeira) c.clearRect(ex, ey, S, S);
         /* encaixa mantendo a proporção, centrado */
         const e = Math.min(S / im.width, S / im.height);
         const w = im.width * e, h = im.height * e;
@@ -263,7 +338,14 @@ export function montarBairro(P) {
     tri(T, A, D, E, hex, TONS[4]);                // empena
     tri(T, B, F, C, hex, TONS[2]);                // e a outra
   }
+  /* O TELHADO SAI NUMA MALHA PRÓPRIA, com textura de telha. Quem chama
+     continua passando o tecido do quarteirão; aqui ele é trocado pelo
+     tecido do telhado quando há um. O da sede fica de fora de
+     propósito: aquilo é cobertura de fibrocimento, não telha, e a
+     malha dele liga e desliga sozinha. */
+  let alvoTelhado = null;
   function telhado(T, x0, x1, z0, z1, y0, h, hex) {
+    T = alvoTelhado || T;
     if (x1 - x0 < 1 || z1 - z0 < 1) return;
     const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
     const p = (x, y, z) => [x, y, z];
@@ -275,6 +357,7 @@ export function montarBairro(P) {
                p(mx,y0+h,z1), p(mx,y0+h,z0), hex);
   }
   function telhadoRot(T, cx, cz, w, d, y0, h, ang, hex) {
+    T = alvoTelhado || T;
     const c = Math.cos(ang), s = Math.sin(ang), hw = w/2, hd = d/2;
     const p = (u, v, y) => [cx + u*c - v*s, y, cz + u*s + v*c];
     if (w >= d)
@@ -509,8 +592,11 @@ export function montarBairro(P) {
         case 'mastro':
           caixa(T, o.x - 1.6, o.x + 1.6, 0, o.alt, o.y - 1.6, o.y + 1.6, '#cfcbbe');
           caixa(T, o.x - 0.4, o.x + 0.4, 0, 5, o.y - 5, o.y + 5, '#cfcbbe');
-          /* a bandeira: verde de repartição por padrão, a cor da
-             torcida quando quem pediu o mastro disse qual é */
+          /* Quem pede `bandeira` ganha PANO, numa malha à parte que
+             tremula — ela é montada depois, junto com o atlas. Sem
+             `bandeira` fica a flâmula chapada de antes, que é o que os
+             mastros de repartição da cena usam. */
+          if (o.bandeira) { o.bandeira.x = o.x; o.bandeira.y = o.y; o.bandeira.topo = o.alt; break; }
           caixa(T, o.x + 1.6, o.x + 34, o.alt - 22, o.alt - 2, o.y - 0.5, o.y + 0.5, o.cor || '#2f7a3c');
           if (o.cor2) caixa(T, o.x + 1.6, o.x + 34, o.alt - 14, o.alt - 9, o.y - 0.7, o.y + 0.7, o.cor2);
           break;
@@ -570,6 +656,7 @@ export function montarBairro(P) {
   /* ---- os quarteirões, em pedaços de 4 × 4 células ---- */
   const pedacos = new Map();
   const comEquipamento = [];
+  alvoTelhado = TELHADOS;             // daqui pra frente, telhado é textura
   for (const q of K.QUADRAS) {
     const k = (q.i >> 2) + ',' + (q.j >> 2);
     if (!pedacos.has(k)) pedacos.set(k, Tecido());
@@ -609,6 +696,12 @@ export function montarBairro(P) {
         { chave: 'P:' + o.texto, texto: o.texto, placa: true, fundo: o.fundo, tinta: o.tinta });
       /* a chave leva cor e forma: duas torcidas do país se chamam RAÇA,
          e o escudo de uma não pode servir pra outra */
+      else if (o.k === 'mastro' && o.bandeira) {
+        const b = o.bandeira;
+        b.chave = 'B:' + b.texto + ':' + o.cor + ':' + o.cor2;
+        dizeres.set(b.chave, { chave: b.chave, texto: b.texto, bandeira: true, img: b.img,
+                               cor: o.cor, cor2: o.cor2, corTexto: b.corTexto });
+      }
       else if (o.k === 'escudo') {
         o.chave = 'E:' + o.forma + ':' + o.texto + ':' + o.cor + ':' + o.cor2;
         dizeres.set(o.chave, { chave: o.chave, texto: o.texto, escudo: true, img: o.img,
@@ -654,6 +747,33 @@ export function montarBairro(P) {
         else { ox = 1; oz = 0; px = l.x1 - 0.9; pz = meioz; frente = l.y1 - l.y0; }
       }
       if (frente < 26) continue;
+      /* ---- AS MANCHAS DA PAREDE ----
+         Casa de bairro não tem parede limpa: tem mofo escorrendo do
+         beiral, rastro de chuva embaixo da janela, respingo de barro no
+         rodapé e, na orla, maresia. São quatro decalques numa textura
+         2 × 2, recortados por alfa, e quem leva qual sai do sorteio com
+         a semente da posição — a cidade continua igual toda vez. Muro
+         baixo e casa estreita ficam de fora, que ali não cabe. */
+      if (l.tipo !== 'muro' && l.alt >= 54 && frente >= 44) {
+        const h = somaTexto('M' + (px | 0) + ',' + (pz | 0));
+        const quantas = (h % 100) < 34 ? 0 : (h % 100) < 82 ? 1 : 2;
+        const naOrla = px > K.xLimiteCosta(pz) - 700;
+        for (let n = 0; n < quantas; n++) {
+          /* 0 mofo e 1 chuva descem do beiral; 2 é barro no rodapé;
+             3 é maresia, e só na faixa da orla */
+          const r = ((h >> (n * 5)) % 97) / 97;
+          const q2 = n === 0 ? (naOrla && r < 0.34 ? 3 : (r < 0.62 ? 0 : 1)) : 2;
+          const alto = q2 !== 2;
+          const larg = Math.min(frente - 10, alto ? 30 + r * 46 : frente - 14);
+          const alt = alto ? Math.min(l.alt * 0.62, 46) : Math.min(l.alt * 0.34, 22);
+          const cy = alto ? l.alt - 2 - alt / 2 : 1 + alt / 2;
+          /* de lado, nunca centralizada: mancha não se alinha com a porta */
+          const desl = (((h >> (n * 3 + 2)) % 2) ? 1 : -1) * (frente - larg) * 0.5 * (0.35 + r * 0.55);
+          const u0 = (q2 % 2) * 0.5, v0 = q2 < 2 ? 0.5 : 0;
+          placa(MANCHAS, px, cy, pz, ox, oz, larg, alt,
+                [u0 + 0.004, v0 + 0.004, u0 + 0.496, v0 + 0.496], desl);
+        }
+      }
       if (l.placa) {
         /* ACIMA DA PORTA. Com a casa mais alta o letreiro ficava em
            cima da porta e da vitrine — a placa é do comércio, mas a
@@ -677,6 +797,51 @@ export function montarBairro(P) {
       }
     }
     malhaUV(TL, tex, 'letreiros');
+
+    /* ---- A BANDEIRA DO MASTRO, que tremula ----
+       Um pano de N × M retalhos preso ao mastro, com o escudo da
+       torcida na textura. Ela não pode entrar na malha dos letreiros:
+       o pano MEXE, e pra mexer ele precisa de geometria própria, que a
+       cena atualiza por quadro. A onda é uma senoide que viaja do
+       mastro pra ponta, com amplitude crescendo ao longo do pano —
+       preso na tralha, solto na ponta, que é como bandeira balança. */
+    for (const q of K.QUADRAS) {
+      if (!q.equip) continue;
+      for (const o of q.equip.pecas) {
+        const b = o.k === 'mastro' && o.bandeira;
+        if (!b || b.x === undefined) continue;
+        const u = uv.get(b.chave);
+        if (!u) continue;
+        const NU = 10, NV = 4, T = { pos: [], uv: [] };
+        const base = [], y0 = b.topo - 6 - b.alt;
+        for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) {
+          const s = i / NU, t = j / NV;
+          base.push([b.x + b.dirx * (2 + s * b.larg), y0 + t * b.alt, b.y + b.dirz * (2 + s * b.larg)]);
+        }
+        const idx = (i, j) => j * (NU + 1) + i;
+        for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) {
+          const a0 = idx(i, j), b0 = idx(i + 1, j), c0 = idx(i + 1, j + 1), d0 = idx(i, j + 1);
+          for (const [k, su, sv] of [[a0, i / NU, j / NV], [b0, (i + 1) / NU, j / NV], [c0, (i + 1) / NU, (j + 1) / NV],
+                                     [a0, i / NU, j / NV], [c0, (i + 1) / NU, (j + 1) / NV], [d0, i / NU, (j + 1) / NV]]) {
+            T.pos.push(base[k][0], base[k][1], base[k][2]);
+            T.uv.push(u[0] + (u[2] - u[0]) * su, u[1] + (u[3] - u[1]) * sv);
+          }
+        }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(T.pos.slice(), 3));
+        g.setAttribute('uv', new THREE.Float32BufferAttribute(T.uv, 2));
+        g.computeVertexNormals();
+        const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({
+          map: tex, alphaTest: 0.45, side: THREE.DoubleSide
+        }));
+        m.name = 'bandeira';
+        triangulos += T.pos.length / 9;
+        meshes.push(m);
+        /* o repouso vai junto: a onda é aplicada sobre ele a cada quadro */
+        bandeiras.push({ mesh: m, repouso: Float32Array.from(T.pos),
+                         dirx: b.dirx, dirz: b.dirz, larg: b.larg, x: b.x, y: b.y });
+      }
+    }
   }
   /* ---- O TELHADO DA SEDE, que se abre ----
      A sede é coberta como qualquer casa — cobertura de galpão, duas
@@ -690,7 +855,9 @@ export function montarBairro(P) {
     const e = q.equip;
     if (!e || !e.teto) continue;
     const a = e.area, T = Tecido();
+    alvoTelhado = null;               // fibrocimento, e a malha dela liga e desliga
     telhado(T, a.x0, a.x1, a.y0, a.y1, e.teto.base, e.teto.queda, e.teto.cor);
+    alvoTelhado = TELHADOS;
     /* as CAIXAS D'ÁGUA, que toda laje daqui tem — e sem elas o telhado
        da sede é um retângulo cinza de 19 m sem nada que dê escala */
     const ao = a.x1 - a.x0 > a.y1 - a.y0;
@@ -760,6 +927,11 @@ export function montarBairro(P) {
   }
   malha(TS, true, 'soltos');
 
+  /* ---- as malhas texturadas: telhado e mancha de parede ---- */
+  alvoTelhado = null;
+  malhaTex(TELHADOS, textura('img/texturas/telha.png', true), 'telhados');
+  malhaTex(MANCHAS, textura('img/texturas/manchas.png'), 'manchas', true);
+
   /* ---- o mato: moitas, em duas pirâmides baixas ---- */
   const TM = Tecido();
   for (const m of K.MOITAS) {
@@ -768,5 +940,5 @@ export function montarBairro(P) {
   }
   malha(TM, false, 'moitas');
 
-  return { meshes, triangulos, tetos, pedacos: pedacos.size };
+  return { meshes, triangulos, tetos, bandeiras, pedacos: pedacos.size };
 }

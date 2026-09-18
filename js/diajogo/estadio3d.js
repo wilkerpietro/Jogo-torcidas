@@ -858,8 +858,35 @@ export function criar(canvas) {
     }
   }
 
+  /* A BANDEIRA TREMULA. Uma senoide que VIAJA do mastro pra ponta, com
+     amplitude crescendo ao longo do pano: preso na tralha, solto na
+     ponta, que é como bandeira balança. O deslocamento sai no eixo
+     perpendicular ao pano (pra dentro e pra fora da tela do pano) e um
+     pouco na vertical, senão o pano parece uma cortina de trilho. */
+  let ventoT = 0;
+  function tremular(dt) {
+    if (!cidade || !cidade.bandeiras || !cidade.bandeiras.length) return;
+    ventoT += dt;
+    for (const b of cidade.bandeiras) {
+      const p = b.mesh.geometry.attributes.position, a = p.array, r = b.repouso;
+      /* o eixo do pano no chão, e a normal dele */
+      const nx = -b.dirz, nz = b.dirx;
+      for (let i = 0; i < a.length; i += 3) {
+        /* quanto já andou ao longo do pano, de 0 na tralha a 1 na ponta */
+        const s = Math.min(1, Math.abs((r[i] - b.x) * b.dirx + (r[i + 2] - b.y) * b.dirz) / b.larg);
+        const f = Math.sin(s * 7.5 - ventoT * 5.2) * s * s * 5.2
+                + Math.sin(s * 3.1 - ventoT * 3.3 + 1.7) * s * 2.6;
+        a[i]     = r[i]     + nx * f;
+        a[i + 2] = r[i + 2] + nz * f;
+        a[i + 1] = r[i + 1] + Math.sin(s * 5.0 - ventoT * 4.1) * s * 1.5;
+      }
+      p.needsUpdate = true;
+    }
+  }
+
   function quadro(J, dt) {
     ajustarQualidade(dt);
+    tremular(dt);
     traduzir(J, dt);
     const lider = J.discos.find(d => d.lider && d.doJogador && d.vivo)
                || J.discos.find(d => d.lider && d.vivo);
@@ -920,6 +947,7 @@ export function criar(canvas) {
            get gente() { return povo.quantas; },
            get info() { return rend.info; },
            _rend: rend, _cena: cena, _cam: cam, _planta: P,
+           get _cidade() { return cidade; },
            _mirar(g, i, d) {
              if (g !== undefined) giro = g;
              if (i !== undefined) incl = i;

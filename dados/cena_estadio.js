@@ -1507,7 +1507,17 @@ TO.dados.plantaEstadio = (function(){
        mastro, que sobe pela frente e passa do telhado, como o de
        sede de verdade. */
     const [mx, my] = E.pt(L - 54, MF + 26);
-    p('mastro', { x: mx, y: my, alt: 128, cor: cor1, cor2 }, false);
+    /* O MASTRO leva a bandeira da torcida, com o escudo dela no pano.
+       `dir` é pra que lado o pano estende: pro lado de fora da sede,
+       que é de onde a rua vê. */
+    /* o pano estende AO LONGO da fachada, não pra fora dela: assim
+       quem olha da rua vê a bandeira de lado inteiro, e não de perfil.
+       É a normal girada de 90°. (E aqui não cabe `-E.ox || 1`: menos
+       zero é FALSO em JavaScript, e a bandeira saía na diagonal.) */
+    p('mastro', { x: mx, y: my, alt: 128, cor: cor1, cor2,
+                  bandeira: { larg: 54, alt: 27, dirx: -E.oz, dirz: E.ox,
+                              texto: T.rot, corTexto: corQueLeSobre(cor1, [cor2, cor3]),
+                              img: caminhoDoEscudo('t', T.id) } }, false);
     for(const u of [PAR + 46, L - PAR - 46]){
       const r = E.ret(u - 26, u + 26, vF + 16, vF + 26);
       p('banco', r, false);
@@ -1540,7 +1550,10 @@ TO.dados.plantaEstadio = (function(){
         const fx = frente === 'o' ? area.x0 - 40 : frente === 'l' ? area.x1 + 40 : (area.x0+area.x1)/2;
         const fy = frente === 'n' ? area.y0 - 40 : frente === 's' ? area.y1 + 40 : (area.y0+area.y1)/2;
         if(dentroPol(fx, fy, q.polMiolo)) continue;
-        if(tocaAvenida(area, 4)) continue;          // sede em cima do asfalto, não
+        /* e a avenida não pode CORTAR a fatia: onde a banda dela passa,
+           o chão é calçada de avenida e o quarteirão fica com um
+           corredor aberto no meio da sede */
+        if(tocaAvenida(area, CALC)) continue;
         const eq = sedeDaTorcida(lado, q, area, frente);
         /* a nota: perto do ponto pedido, e grande */
         const nota = d - (area.x1 - area.x0) * (area.y1 - area.y0) / 900;
@@ -2147,16 +2160,25 @@ TO.dados.plantaEstadio = (function(){
     const c = noCampo(x, y);
     if(c) return andaNoCampo(c, x, y);
     if(noCarro(x, y)) return false;
+    const q = celulaEm(x, y);
+    /* PAREDE DE EQUIPAMENTO GANHA DA AVENIDA.
+       A banda da avenida é andável — asfalto mais calçada — e vinha
+       antes de tudo. Onde ela cruzava a fatia de um equipamento, as
+       paredes dele sumiam da máscara e dava pra entrar na sede por
+       fora, atravessando o muro. Peça no ASFALTO já é recusada na
+       montagem do equipamento, então o que pode sobrar aqui é peça na
+       calçada da avenida — e parede é parede, com avenida do lado ou
+       sem ela. */
+    if(q && q.equip && q.solidos.some(o => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1))
+      return false;
     if(naAvenida(x, y)) return true;
     if(naRua(x, y)) return true;
-    const q = celulaEm(x, y);
     if(q && q.tipo === 'quadra'){
       /* no equipamento anda-se em volta das peças; no quarteirão de
          casa o miolo inteiro é maciço */
       if(q.equip){
         const a = q.equip.area;
-        if(x >= a.x0 && x < a.x1 && y >= a.y0 && y < a.y1)
-          return !q.solidos.some(o => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1);
+        if(x >= a.x0 && x < a.x1 && y >= a.y0 && y < a.y1) return true;
       }
       return !dentroPol(x, y, q.polMiolo);
     }

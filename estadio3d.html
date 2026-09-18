@@ -43,7 +43,8 @@
   <div id="estado"></div>
   <div id="legenda">
     <b>WASD</b> anda (relativo à câmera) &nbsp; <b>1–4</b> formação &nbsp;
-    <b>Q</b> pedra &nbsp; <b>E</b> bomba &nbsp; <b>R</b> recuar<br>
+    <b>Q</b> pedra &nbsp; <b>E</b> bomba &nbsp; <b>R</b> recuar &nbsp;
+    <b>ENTER</b> todo mundo pro portão<br>
     <b>arrastar</b> gira a câmera &nbsp; <b>roda</b> aproxima<br>
     câmera <b>Z</b> ombro · <b>X</b> alta · <b>C</b> maquete · <b>F</b> zenital · <b>V</b> mapa &nbsp;
     <b>H</b> sombra &nbsp; <b>L</b> nível de qualidade · <b>K</b> automático &nbsp; <b>ESPAÇO</b> pausa
@@ -215,7 +216,15 @@ const pad = montarPad({
   acoes: [
     { tecla: 'q', rot: 'PEDRA',  fn: () => { if (J) C.arremessar(J, 'pedra'); } },
     { tecla: 'e', rot: 'BOMBA',  fn: () => { if (J) C.arremessar(J, 'bomba'); } },
-    { tecla: 'r', rot: 'RECUAR', fn: () => { if (J) C.alternarRecuo(J); } }
+    { tecla: 'r', rot: 'RECUAR', fn: () => { if (J) C.alternarRecuo(J); } },
+    /* A ORDEM DE ENTRAR, que faltava. O `ponte.js` tem ela no ENTER e
+       esta página não tinha nenhuma: sem ela a torcida só entra no
+       setor quem chega lá sozinho, e não dá pra MANDAR o bonde entrar.
+       É a mesma `C.mandarEntrar` do jogo, sem uma linha de diferença. */
+    { tecla: 'enter', rot: 'ENTRAR', fn: () => {
+        if (!J) return;
+        if (!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p');
+      } }
   ],
   formacoes: Object.entries(C.FORMACOES).map(([id, f]) => ({
     id, tecla: f.tecla, fn: () => { if (J) J.form = id; }
@@ -236,6 +245,7 @@ addEventListener('keydown', e => {
   else if (k === 'q') C.arremessar(J, 'pedra');
   else if (k === 'e') C.arremessar(J, 'bomba');
   else if (k === 'r') C.alternarRecuo(J);
+  else if (k === 'enter') { if (!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p'); }
   else if (k === 'z') { vista.irPara('ombro');   pad.marcarCamera('ombro'); }
   else if (k === 'x') { vista.irPara('alto');    pad.marcarCamera('alto'); }
   else if (k === 'c') { vista.irPara('maquete'); pad.marcarCamera('maquete'); }

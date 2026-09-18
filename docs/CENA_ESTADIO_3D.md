@@ -240,6 +240,15 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   tem chão próprio (o do equipamento), o resto fica com o chão de lote.
   Na máscara o miolo do quarteirão é maciço como sempre, **menos dentro
   da fatia**, onde vale a lista de peças: é ali que se anda entre elas.
+  **A parede de equipamento vem ANTES da avenida na máscara.** A banda
+  da avenida — asfalto mais calçada — é andável e vinha antes de tudo,
+  então onde ela cruzava a fatia de um equipamento as paredes dele
+  sumiam e dava pra entrar na sede por fora, atravessando o muro. Peça
+  no asfalto já era recusada na montagem, então o que sobrava era peça
+  na calçada da avenida — e parede é parede, com avenida do lado ou sem
+  ela. A fatia da sede, além disso, passou a recusar quarteirão que a
+  avenida CORTE (`tocaAvenida(area, CALC)`), senão fica um corredor de
+  calçada atravessando o salão.
   Equipamento cujas peças caiam no asfalto de uma avenida é recusado
   naquele quarteirão, porque as peças são retas e a avenida é diagonal.
 - **O miolo do quarteirão é fundo de quintal**, não pátio: com o
@@ -263,11 +272,37 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   cidade sai igual toda vez. Os letreiros dos equipamentos entram no
   mesmo atlas. A placa é de uma face só: vista por trás, o texto sairia
   espelhado.
+- **TEXTURA, enfim.** Até aqui a cidade inteira era cor por vértice.
+  Entraram três PNG gerados por `ferramentas/gerar_texturas.py` (sem
+  biblioteca de imagem — o script escreve o PNG na mão, e pode ser
+  rodado de novo quando a escala mudar), em `img/texturas/`:
+  **telha.png** (telha colonial ladrilhável), **manchas.png** (mofo do
+  beiral, rastro de chuva, barro do rodapé e maresia, quatro numa 2 × 2
+  com alfa) e **reboco.png**, ainda de reserva.
+  O TELHADO saiu da malha do quarteirão e foi pra uma malha própria com
+  `map` E `vertexColors`: a textura dá o desenho da telha e a cor do
+  vértice dá o tom da casa, e o Lambert multiplica os dois. A UV é
+  PLANAR, tirada do mundo (`x/104, z/104`), então a telha corre
+  contínua de casa em casa e ladrilha sem costura — a água é rasa e o
+  esticamento na rampa não aparece. A cobertura da sede fica de fora:
+  aquilo é fibrocimento, e a malha dela liga e desliga sozinha.
+  As MANCHAS são decalques recortados por alfa na parede, uma ou duas
+  por casa, sorteadas com a semente da posição: mofo e chuva descendo do
+  beiral, barro no rodapé, e maresia só na faixa da orla. Nunca
+  centralizadas — mancha não se alinha com a porta.
+- **A BANDEIRA DO MASTRO TREMULA.** O mastro da sede leva o escudo da
+  torcida num pano de 10 × 4 retalhos, e o pano MEXE: ele não pode
+  entrar na malha dos letreiros, então sai com geometria própria que a
+  cena atualiza por quadro (`tremular` em `estadio3d.js`). A onda são
+  duas senoides que VIAJAM do mastro pra ponta, com amplitude crescendo
+  ao longo do pano — preso na tralha, solto na ponta, que é como
+  bandeira balança — mais um balanço vertical menor, senão o pano lê
+  como cortina de trilho.
 - **O mato**: terreno aberto com moitas sorteadas (bloqueiam, num balde
   espacial de 256) e trilhas pintadas. A textura do mato, do mar e da
   praia sai do pintor, não de geometria.
 - **A máscara é "rua recortada de quarteirão sólido"**: mar → campo →
-  carro → avenida → rua → miolo do quarteirão (bloqueia) / calçada (anda)
+  carro → **parede de equipamento** → avenida → rua → miolo do quarteirão (bloqueia) / calçada (anda)
   → moita → o resto anda. Lote é só desenho e altura pra câmera. Cada
   célula sabe os seus lotes e árvores, e `celulaEm(x, y)` acha a célula
   por busca binária nas bordas: é o que deixa 460 mil `anda()` custarem
