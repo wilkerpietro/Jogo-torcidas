@@ -137,13 +137,14 @@ export function montarBairro(P) {
       c.save();
       c.beginPath(); c.rect(x, y, LARG, ALT); c.clip();
       if (d.placa) {
-        const fundo = FUNDOS_PLACA[h % FUNDOS_PLACA.length];
+        const fundo = d.fundo || FUNDOS_PLACA[h % FUNDOS_PLACA.length];
         c.fillStyle = fundo; c.fillRect(x, y, LARG, ALT);
-        const claro = fundo === '#f0ede4' || fundo === '#e0a52a';
+        const n = parseInt(String(fundo).slice(1), 16);
+        const claro = ((n >> 16 & 255) * 0.299 + (n >> 8 & 255) * 0.587 + (n & 255) * 0.114) > 150;
         /* borda forte no fundo claro: letreiro bege em parede bege some */
         c.strokeStyle = claro ? 'rgba(40,36,28,.75)' : 'rgba(255,255,255,.35)';
         c.lineWidth = claro ? 7 : 4; c.strokeRect(x + 4, y + 4, LARG - 8, ALT - 8);
-        c.fillStyle = claro ? '#20201c' : '#f6f3ea';
+        c.fillStyle = d.tinta || (claro ? '#20201c' : '#f6f3ea');
         c.font = 'bold 34px "Arial Narrow", Arial, sans-serif';
       } else {
         c.fillStyle = TINTAS_PIXO[h % TINTAS_PIXO.length];
@@ -474,6 +475,38 @@ export function montarBairro(P) {
                 Math.min(z0, z1), Math.max(z0, z1), '#c9463c');
           break;
         }
+        case 'escudo': {
+          /* O ESCUDO: três fiadas que vão estreitando — é o
+             recorte de brasão, e a essa distância lê como um.
+             Cada fiada sai duas vezes: a borda por trás e o campo
+             por cima, com a banda da terceira cor no meio. */
+          const fw = o.larg, fh = o.alt, fb = o.base;
+          const fiadas = [[1.00, 0.00, 0.50], [0.80, 0.50, 0.80], [0.46, 0.80, 1.00]];
+          /* A NORMAL PODE SER NEGATIVA, e `caixa()` quer os limites em
+             ordem: com `oz = −1` saía z0 > z1, o recorte devolvia lado
+             negativo e a chapa era descartada inteira. Escudo nenhum
+             aparecia nas fachadas viradas pro norte nem nas laterais
+             de oeste. */
+          const chapa = (lw, y0, y1, prof, hex) => {
+            const a0 = prof, a1 = prof + 0.9;
+            if (o.ox) caixa(T, Math.min(o.x + o.ox * a0, o.x + o.ox * a1),
+                               Math.max(o.x + o.ox * a0, o.x + o.ox * a1), y0, y1,
+                            o.y - lw / 2, o.y + lw / 2, hex);
+            else caixa(T, o.x - lw / 2, o.x + lw / 2, y0, y1,
+                       Math.min(o.y + o.oz * a0, o.y + o.oz * a1),
+                       Math.max(o.y + o.oz * a0, o.y + o.oz * a1), hex);
+          };
+          for (const [w, t0, t1] of fiadas) {
+            const y0 = fb + fh * (1 - t1), y1 = fb + fh * (1 - t0);
+            /* a borda tem de SER borda: com 2,5 de cada lado o
+               escudo de primária clara lia como uma chapa lisa */
+            chapa(fw * w, y0, y1, 0.3, o.cor2 || '#e8e2d0');
+            chapa(fw * w - 9, y0 + 3, y1 - 3, 1.0, o.cor || '#b02a22');
+          }
+          /* a banda atravessada, na terceira cor */
+          chapa(fw * 0.92, fb + fh * 0.40, fb + fh * 0.56, 1.7, o.cor3 || o.cor2 || '#1a1a1a');
+          break;
+        }
         case 'letreiro': {
           const u = uv.get('P:' + o.texto);
           if (!u) break;
@@ -524,7 +557,11 @@ export function montarBairro(P) {
   for (const q of K.QUADRAS) {
     if (!q.equip) continue;
     for (const o of q.equip.pecas)
-      if (o.k === 'letreiro') dizeres.set('P:' + o.texto, { chave: 'P:' + o.texto, texto: o.texto, placa: true });
+      /* `fundo`/`tinta` mandam na cor da placa quando quem pediu sabe
+         qual é — a da sede é a segunda cor da torcida. Sem eles, vale
+         o sorteio por hash do texto, que é o do comércio. */
+      if (o.k === 'letreiro') dizeres.set('P:' + o.texto,
+        { chave: 'P:' + o.texto, texto: o.texto, placa: true, fundo: o.fundo, tinta: o.tinta });
   }
   for (const l of K.LOTES) {
     for (const [texto, ehPlaca] of [[l.placa, true], [l.pixacao, false]]) {
@@ -624,7 +661,12 @@ export function montarBairro(P) {
      duas águas, fachada com porta e janela, e o letreiro vem junto com
      os outros. Sem `limite`, que aqui não há calçada pra respeitar. */
   const TB = Tecido();
-  for (const l of K.BEIRA || []) { limite = null; lote(TB, l); }
+  limite = null;
+  /* a calçada primeiro, que a casa assenta em cima dela */
+  for (const l of K.BEIRA || [])
+    if (l.calcada) caixaRot(TB, l.calcada.cx, l.calcada.cy, l.calcada.w, l.calcada.h,
+                            0, 1.4, l.calcada.ang, '#8d897d');
+  for (const l of K.BEIRA || []) lote(TB, l);
   malha(TB, true, 'beira');
 
   for (const T of pedacos.values()) malha(T, true, 'quarteirao');

@@ -722,17 +722,29 @@ TO.dados.plantaEstadio = (function(){
   }
   function escolherTorcidas(){
     const reserva = {
-      mandante:  { id:'casa', nome:'MANDANTE',  sigla:'CASA', efetivo:180,
+      mandante:  { id:'casa', nome:'MANDANTE',  rot:'MANDANTE',  nomeCompleto:'MANDANTE',
+                   clubeSigla:'CASA', clubeCor:'#b02a22', clubeCor2:'#e8e2d0', efetivo:180,
                    cor:'#b02a22', cor2:'#e8e2d0', cor3:'#1a1a1a' },
-      visitante: { id:'fora', nome:'VISITANTE', sigla:'FORA', efetivo:150,
+      visitante: { id:'fora', nome:'VISITANTE', rot:'VISITANTE', nomeCompleto:'VISITANTE',
+                   clubeSigla:'FORA', clubeCor:'#22439a', clubeCor2:'#e8e2d0', efetivo:150,
                    cor:'#22439a', cor2:'#e8e2d0', cor3:'#e0b040' }
     };
     const T = (typeof TO !== 'undefined' && TO.dados && TO.dados.torcidas) || null;
     if(!T || !T.length) return reserva;
     const porId = new Map(T.map(t => [t.id, t]));
-    const ficha = (t, lado) => Object.assign({ id:t.id, lado,
-      nome: t.siglaTorcida || t.nome, rot: (t.siglaTorcida || t.nome).toUpperCase(),
-      clube: t.clube, efetivo: Math.max(40, Math.round(t.membros || 120)) }, coresDaTorcida(t));
+    const TIMES = (typeof TO !== 'undefined' && TO.dados && TO.dados.times) || [];
+    const ficha = (t, lado) => {
+      const cl = TIMES.find(o => o.id === t.clubeId) || null;
+      const cc = (cl && cl.cores || []).map(c => String(c).toUpperCase());
+      return Object.assign({ id:t.id, lado,
+        nome: t.siglaTorcida || t.nome, rot: (t.siglaTorcida || t.nome).toUpperCase(),
+        /* o nome por extenso vai na placa da sede; a sigla continua
+           sendo a chave curta da barra de estado */
+        nomeCompleto: (t.nome || t.siglaTorcida || '').toUpperCase(),
+        clube: t.clube, clubeSigla: (cl && cl.sigla) || t.sigla || '',
+        clubeCor: cc[0] || null, clubeCor2: cc.find(c => c !== cc[0]) || '#e8e2d0',
+        efetivo: Math.max(40, Math.round(t.membros || 120)) }, coresDaTorcida(t));
+    };
     /* A DE CASA é uma das grandes, com duas cores de verdade e rival no
        elenco; entre elas vêm primeiro as de TRÊS cores, porque a sede
        pinta a frente na primária e os detalhes na segunda e na terceira
@@ -933,11 +945,18 @@ TO.dados.plantaEstadio = (function(){
     if(!raso){
       q.quintal = { x0:q.ix0+prof, x1:q.ix1-prof, y0:q.iy0+prof, y1:q.iy1-prof, alt:8, cor:'#96apagado' };
       q.quintal.cor = '#9a8f78';
+      /* O QUINTAL PARA NA FATIA DO EQUIPAMENTO. Ele é do quarteirão
+         inteiro e a fatia fica na ponta oeste dele: sem recuar, a laje
+         bege de fundo de quintal entrava pela sede e aparecia no
+         corredor do portão, por cima do piso dela. */
+      if(q.equip) q.quintal.x0 = Math.max(q.quintal.x0, q.equip.area.x1);
+      if(q.quintal.x1 - q.quintal.x0 < 24 || q.quintal.y1 - q.quintal.y0 < 24) q.quintal = null;
       /* O MIOLO É FUNDO DE QUINTAL. Com o quarteirão grande ele virou
          um descampado: entram puxadinho, garagem e laje. Nada disso
          muda a máscara — o miolo já é maciço —, é só pra ler como
          quintal em vez de pátio vazio. */
       q.fundos = [];
+      if(!q.quintal) return;
       const qw = q.quintal.x1 - q.quintal.x0, qh = q.quintal.y1 - q.quintal.y0;
       const n = Math.round(qw*qh/24000);
       for(let i=0;i<n;i++){
@@ -1284,6 +1303,12 @@ TO.dados.plantaEstadio = (function(){
     return frente === 'o' ? { x0: q.ix0, x1: q.ix0 + w, y0: q.iy0, y1: q.iy1 }
                           : { x0: q.ix1 - w, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
   }
+  /* preto ou branco por cima de uma cor: o que dá pra ler */
+  function corLegivel(hex){
+    const n = parseInt(String(hex || '#888888').slice(1), 16);
+    const l = (n>>16&255)*0.299 + (n>>8&255)*0.587 + (n&255)*0.114;
+    return l > 150 ? '#1a1a1a' : '#f6f3ea';
+  }
   function sedeDaTorcida(lado, q, area, frente){
     const T = SEDES[lado].torcida;
     const E = eixos(area, frente), L = E.L, A = E.A;
@@ -1298,9 +1323,12 @@ TO.dados.plantaEstadio = (function(){
     const faixa = (u0,u1,v0,v1, y, alt, cor) => p('marquise', Object.assign(E.ret(u0,u1,v0,v1), { y, alt, cor }), false);
 
     const PAR = 9;        // parede interna: 40 cm
-    const MURO = 86;      // a fachada da rua, que é platibanda: 3,9 m
-    const ALT_EXT = 74;   // as paredes de fora, que seguram o telhado
-    const ALT = 66;       // parede de cômodo: 3,0 m — abaixo do telhado
+    /* A SEDE TEM ALTURA DE CASA, não de galpão de fábrica: a fachada
+       bate com o sobrado do lado e o telhado fica por baixo da linha
+       do bairro. Era 86/74/66 e lia como um armazém no meio da rua. */
+    const MURO = 72;      // a fachada da rua, que é platibanda: 3,2 m
+    const ALT_EXT = 62;   // as paredes de fora, que seguram o telhado
+    const ALT = 54;       // parede de cômodo: 2,4 m — abaixo do telhado
     const VAO = 40;       // porta: 1,8 m, e o corpo passa (a máscara pede 24)
     const PORTAO = 56;    // o portão da rua: 2,5 m, cabe bonde em fila
     /* parede com vãos: `em` é um vão ou uma lista deles, e o que sobra
@@ -1348,15 +1376,68 @@ TO.dados.plantaEstadio = (function(){
     paredeU(0, L, F0, MF, MURO, cor1, eixo, PORTAO);
     for(const [a, b] of [[0, g0], [g1, L]]){
       if(b - a < 8) continue;
-      faixa(a, b, 0, MF + 1, 5, 11, cor3);            // rodapé
-      faixa(a, b, 0, MF + 1, MURO - 27, 14, cor2);    // a faixa alta da torcida
+      faixa(a, b, 0, MF + 1, 4, 10, cor3);            // rodapé
+      faixa(a, b, 0, MF + 1, MURO - 18, 11, cor2);    // a faixa alta da torcida
     }
-    /* a verga sobre o portão, e o nome da torcida em cima dela */
-    faixa(g0 - 3, g1 + 3, F0, MF + 1, 72, MURO - 72, cor1);
-    faixa(g0 - 3, g1 + 3, 0, MF + 1.4, 66, 7, cor3);
-    const [lx, ly] = E.pt(eixo, 1);
-    p('letreiro', { x: lx, y: ly, ox: E.ox, oz: E.oz, texto: T.rot,
-                    larg: Math.min(L * 0.5, 200), altura: 21, base: MURO - 23 }, false);
+    /* a verga sobre o portão */
+    faixa(g0 - 3, g1 + 3, F0, MF + 1, 58, MURO - 58, cor1);
+    faixa(g0 - 3, g1 + 3, 0, MF + 1.4, 53, 5, cor3);
+
+    /* ---- O QUE FICA NA FACHADA, e de que lado ----
+       "Direita" é a de QUEM OLHA DA RUA, não a do eixo local. O
+       observador fica na frente da parede olhando pra ela, então o
+       lado direito dele é `+u` numa frente e `−u` na outra: ao sul e a
+       oeste a placa vai no trecho de u alto, ao norte e a leste no de
+       u baixo. Com o eixo cru ela saía sempre do lado errado em duas
+       das quatro frentes. */
+    const direitaEhUAlto = (frente === 's' || frente === 'o');
+    const trechoDir = direitaEhUAlto ? [g1, L] : [0, g0];
+    const trechoEsq = direitaEhUAlto ? [0, g0] : [g1, L];
+    const meio = t => (t[0] + t[1]) / 2, vaoDe = t => t[1] - t[0];
+
+    /* A PLACA COM O NOME POR EXTENSO, no fundo da cor secundária. A
+       sigla continua na barra de estado; na fachada quem manda é o
+       nome da torcida. A proporção segue a do atlas (256 × 64), senão
+       o texto sai esticado. */
+    const larguraPlaca = Math.min(vaoDe(trechoDir) - 22, 116);
+    if(larguraPlaca > 40){
+      const [lx, ly] = E.pt(meio(trechoDir), 1);
+      p('letreiro', { x: lx, y: ly, ox: E.ox, oz: E.oz, texto: T.nomeCompleto || T.rot,
+                      larg: larguraPlaca, altura: larguraPlaca/4.2, base: 19,
+                      fundo: cor2, tinta: corLegivel(cor2) }, false);
+    }
+    /* OS ESCUDOS, do outro lado do portão: o da torcida e o do clube.
+       O ponto de fixação é v = 2,8 e não v = 1: o escudo SAI da parede
+       pra fora, e o `limite` do quarteirão (que corta beiral, janela e
+       placa na guia da calçada) cortava as três chapas a zero — eles
+       simplesmente não apareciam. Preso em 2,8, a camada mais de fora
+       para em 0,2, que ainda é miolo de quarteirão. */
+    const VESC = 2.8;
+    /* O ESCUDO DA TORCIDA VAI INVERTIDO: o campo dele na SEGUNDA cor e
+       a borda na primeira. A parede já é a primária, e escudo de campo
+       primário nela some — a Jovem Fla é branca, e um escudo branco em
+       parede branca é uma chapa lisa. */
+    const escudoDaTorcida = (x, y, ox, oz, k) =>
+      p('escudo', { x, y, ox, oz, larg: 34*k, alt: 38*k, base: 16,
+                    cor: cor2, cor2: cor1, cor3 }, false);
+    const vaoEsq = vaoDe(trechoEsq);
+    if(vaoEsq > 90){
+      const c0 = meio(trechoEsq) - vaoEsq*0.19, c1 = meio(trechoEsq) + vaoEsq*0.19;
+      const [ax, ay] = E.pt(direitaEhUAlto ? c0 : c1, VESC);
+      const [bx, by] = E.pt(direitaEhUAlto ? c1 : c0, VESC);
+      escudoDaTorcida(ax, ay, E.ox, E.oz, 1);
+      p('escudo', { x: bx, y: by, ox: E.ox, oz: E.oz, larg: 27, alt: 30, base: 20,
+                    cor: T.clubeCor || cor1, cor2: T.clubeCor2 || cor2, cor3: cor2 }, false);
+    }
+    /* e um em cada PAREDE LATERAL, que também é parede externa: a
+       direção de `+u` no mundo sai de dois pontos do próprio eixo, e
+       as laterais olham pra `−u` e pra `+u`. */
+    const [p0x, p0y] = E.pt(0, 0), [p1x, p1y] = E.pt(1, 0);
+    const ux = p1x - p0x, uy = p1y - p0y, vm = (vF + vB)/2;
+    for(const [uu, sx, sy] of [[VESC, -ux, -uy], [L - VESC, ux, uy]]){
+      const [sxx, syy] = E.pt(uu, vm);
+      escudoDaTorcida(sxx, syy, sx, sy, 0.8);
+    }
     /* os batentes do portão, na terceira cor */
     for(const u of [g0, g1]) par(u - 4, u + 4, 0, MF + 1, MURO, cor3);
 
@@ -1399,7 +1480,7 @@ TO.dados.plantaEstadio = (function(){
        dele, que a cena esconde quando o jogador entra — é o corte que
        deixa a planta à vista de dentro e o galpão fechado de fora. */
     return { tipo: 'sede', lado, torcida: T, frente, chao: '#a8a396', pecas, area,
-             teto: { base: ALT_EXT, queda: 22, cor: '#7c8285' } };
+             teto: { base: ALT_EXT, queda: 15, cor: '#7c8285' } };
   }
 
   /* AS SEDES ESCOLHEM PRIMEIRO. Elas são o que a cena precisa pra
@@ -1623,6 +1704,19 @@ TO.dados.plantaEstadio = (function(){
     return false;
   }
 
+  /* a fatia de um equipamento, com folga: nem moita nem copa de árvore
+     entram nela. A sede é MURADA, e copa de árvore de calçada passava
+     por cima do muro e aparecia como arbusto dentro do salão. */
+  function naFatiaDeEquipamento(x, y, folga){
+    const f = folga || 0;
+    for(const q of QUADRAS){
+      if(!q.equip) continue;
+      const a = q.equip.area;
+      if(x + f > a.x0 && x - f < a.x1 && y + f > a.y0 && y - f < a.y1) return true;
+    }
+    return false;
+  }
+
   /* ---- as moitas do mato: só onde é mato, num balde espacial ---- */
   const MOITAS = [];
   const BALDE = 256, baldes = new Map();
@@ -1633,6 +1727,7 @@ TO.dados.plantaEstadio = (function(){
     if(zona(x, y) !== 'mato') continue;
     if(naAvenida(x, y, CALC + 10)) continue;
     if(tocaAsfalto(x, y, r*0.9)) continue;
+    if(naFatiaDeEquipamento(x, y, r)) continue;
     const m = { x, y, r };
     MOITAS.push(m);
     if(x >= -BALDE && y >= -BALDE){
@@ -1704,6 +1799,7 @@ TO.dados.plantaEstadio = (function(){
       /* a copa é um QUADRADO de meia-largura r: contra uma avenida
          diagonal a quina dela chega a r·√2, não a r */
       if(naAvenida(x, y, r*1.45)) return;
+      if(naFatiaDeEquipamento(x, y, r*1.45)) return;   // a quina da copa quadrada
       if(q.lotes.some(l => dentroLote(x, y, l))) return;
       ARVORES.push({ x, y, r });
     };
@@ -1775,43 +1871,149 @@ TO.dados.plantaEstadio = (function(){
   }
   const TIPOS_BEIRA = ['casa','casa','casa','sobrado','galpao','muro','muro'];
   for(const av of AVENIDAS){
-    if(av.id === 'beiramar') continue;            // essa corre dentro da cidade
     let t = 0;
     for(const sg of av.segs){
-      for(; t < sg.t0 + sg.L; t += par8(entre(120, 210))){
+      /* passo curto e pouca falta: a estrada tem de ficar POVOADA. Com
+         passo de 120 a 210 e um terço de falta sobrava buraco de cem
+         metros, e o olho lia o fim do cenário do mesmo jeito. */
+      for(; t < sg.t0 + sg.L; t += par8(entre(92, 148))){
         const s = t - sg.t0;
         const ex = sg.x0 + sg.ux*s, ey = sg.y0 + sg.uy*s;
         if(zona(ex, ey) !== 'mato') continue;      // dentro da cidade já há quarteirão
         for(const lado of [-1, 1]){
-          if(rng() < 0.34) continue;               // beira de estrada é rala
+          if(rng() < 0.14) continue;
+          /* DUAS FILEIRAS: a da frente na guia e, às vezes, uma atrás
+             dela. Uma fileira só lê como cenário de papelão; com a
+             segunda a estrada ganha fundo. */
+          for(const fila of (rng() < 0.42 ? [0, 1] : [0])){
+            const tipo = escolher(fila ? ['casa','muro','galpao','casa'] : TIPOS_BEIRA);
+            const T = TIPOS[tipo];
+            const w = par8(entre(88, 168)), h = par8(tipo === 'muro' ? entre(16, 24) : entre(76, 112));
+            /* recuo da guia: a casa de beira de estrada fica mais longe
+               do asfalto que a de rua, e varia — é o que faz a fileira
+               não parecer régua */
+            const frenteDaCasa = av.l/2 + CALC + entre(6, 62) + fila*entre(150, 230);
+            const rec = frenteDaCasa + h/2;
+            const cx = ex - sg.uy*rec*lado, cy = ey + sg.ux*rec*lado;
+            if(cx < VX0 + 30 || cy < VY0 + 30 || cx > VX0 + VW - 30 || cy > VY0 + VH - 30) continue;
+            if(zona(cx, cy) !== 'mato') continue;
+            if(noCampo(cx, cy)) continue;
+            const c = celulaEm(cx, cy);
+            if(c && c.tipo === 'quadra') continue;
+            const casa = { tipo, ang: sg.ang, cx, cy, w, h, vf: -lado, frente:'av', beira:true,
+                           alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
+            /* nada em cima do asfalto, aqui como em toda parte: a
+               avenida pela distância exata, e a RUA da grade amostrada
+               no corpo da casa — na saída da cidade a última faixa da
+               grade ainda existe, e a casa girada pegava nela */
+            if(tocaAvenida(casa, 8)) continue;
+            if(cantosGirados(casa, 6).some(([px, py]) => noAsfalto(px, py))) continue;
+            if(BEIRA.some(o => Math.hypot(o.cx - cx, o.cy - cy) < (o.w + w)/2 + 22 &&
+                               Math.abs(o.cx - cx) + Math.abs(o.cy - cy) < (o.w + o.h + w + h)/2)) continue;
+            /* A CALÇADA DA CASA: da guia até a frente dela, mais larga
+               que a casa pros pedaços vizinhos se encontrarem e virarem
+               uma calçada só. Só a fileira da frente tem — a de trás dá
+               pro fundo do terreno. */
+            if(!fila){
+              const d1 = frenteDaCasa + 3;
+              /* A GUIA NÃO É RETA NA DOBRA. A laje é um retângulo preso
+                 ao trecho, e onde a avenida vira o asfalto do trecho
+                 seguinte corta por dentro dela. Então a beirada interna
+                 recua até o corpo da laje sair inteiro do asfalto — e
+                 se não sair, a casa fica sem calçada mesmo. */
+              let d0 = av.l/2 + 2, laje = null;
+              while(d0 < d1 - 10){
+                const dm = (d0 + d1)/2;
+                const o = { ang: sg.ang, cx: ex - sg.uy*dm*lado, cy: ey + sg.ux*dm*lado,
+                            w: w + 52, h: d1 - d0 };
+                if(!cantosGirados(o, 1).some(([px, py]) => noAsfalto(px, py))){ laje = o; break; }
+                d0 += 4;
+              }
+              if(laje) casa.calcada = laje;
+            }
+            BEIRA.push(casa);
+            LOTES.push(casa);
+          }
+        }
+      }
+    }
+  }
+
+  /* ---- A BORDA DA CIDADE ----
+     Uma rua da grade existe quando UMA das células ao lado é urbana
+     (`ruaEntre`), então na saída do bairro sobra pista com quarteirão
+     de um lado e descampado do outro — foi o que o dono viu na foto
+     do sul. Aqui a célula de mato encostada numa rua dessas ganha uma
+     FILEIRA de casa na guia de fora, com calçada, virada pra pista.
+
+     Elas são RETAS, e por isso saem como lote axial (`frente`, sem
+     `ang`) e não como a casa girada da estrada: `ang: 0` é FALSO em
+     JavaScript, e todo lugar que pergunta `if(l.ang)` — a começar pelo
+     `lote()` que desenha — mandava a casa de ângulo zero pro caminho
+     do lote reto e ia ler `l.x0`, que ela não tinha. Onze delas não
+     eram desenhadas. Lote reto é lote reto. */
+  const amostrasRet = (o, f) => {
+    const pts = [];
+    for(let i=0;i<=4;i++) for(let j=0;j<=4;j++)
+      pts.push([o.x0 - f + (o.x1 - o.x0 + 2*f)*i/4, o.y0 - f + (o.y1 - o.y0 + 2*f)*j/4]);
+    return pts;
+  };
+  const LADOS_BORDA = [[ 1, 0, 'l'], [-1, 0, 'o'], [ 0, 1, 's'], [ 0,-1, 'n']];
+  for(let i = 0; i < grade.length; i++){
+    for(let j = 0; j < (grade[i] || []).length; j++){
+      const n = grade[i][j];
+      if(!n || n.tipo === 'quadra' || n.tipo === 'campo') continue;
+      for(const [di, dj, frente] of LADOS_BORDA){
+        const v = (grade[i + di] || [])[j + dj];
+        if(!v || v.tipo !== 'quadra') continue;
+        const hor = di !== 0;
+        const guia = di > 0 ? n.x1 : di < 0 ? n.x0 : dj > 0 ? n.y1 : n.y0;
+        const dentro = (di > 0 || dj > 0) ? -1 : 1;          // pra dentro da célula de mato
+        const a0 = hor ? n.y0 : n.x0, a1 = hor ? n.y1 : n.x1;
+        for(let a = a0 + 24; a < a1 - 60; a += par8(entre(96, 152))){
+          if(rng() < 0.16) continue;
           const tipo = escolher(TIPOS_BEIRA);
           const T = TIPOS[tipo];
-          const w = par8(entre(88, 168)), h = par8(tipo === 'muro' ? entre(16, 24) : entre(76, 112));
-          /* recuo da guia: a casa de beira de estrada fica mais longe
-             do asfalto que a de rua, e varia — é o que faz a fileira
-             não parecer régua */
-          const rec = av.l/2 + CALC + h/2 + entre(10, 90);
-          const cx = ex - sg.uy*rec*lado, cy = ey + sg.ux*rec*lado;
+          const larg = par8(entre(88, 150));                 // ao longo da rua
+          const prof = par8(tipo === 'muro' ? entre(16, 24) : entre(76, 108));
+          if(a + larg > a1 - 24) continue;
+          const rec = CALC + entre(2, 34);                   // da guia até a FRENTE da casa
+          const f0 = guia + dentro*rec, f1 = f0 + dentro*prof;
+          const casa = { tipo, frente, beira:true, quadra:null,
+                         x0: hor ? Math.min(f0, f1) : a, x1: hor ? Math.max(f0, f1) : a + larg,
+                         y0: hor ? a : Math.min(f0, f1),     y1: hor ? a + larg : Math.max(f0, f1),
+                         alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
+          const cx = (casa.x0 + casa.x1)/2, cy = (casa.y0 + casa.y1)/2;
           if(cx < VX0 + 30 || cy < VY0 + 30 || cx > VX0 + VW - 30 || cy > VY0 + VH - 30) continue;
           if(zona(cx, cy) !== 'mato') continue;
           if(noCampo(cx, cy)) continue;
           const c = celulaEm(cx, cy);
           if(c && c.tipo === 'quadra') continue;
-          const casa = { tipo, ang: sg.ang, cx, cy, w, h, vf: -lado, frente:'av', beira:true,
-                         alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
-          /* nada em cima do asfalto, aqui como em toda parte: a
-             avenida pela distância exata, e a RUA da grade amostrada
-             no corpo da casa — na saída da cidade a última faixa da
-             grade ainda existe, e a casa girada pegava nela */
           if(tocaAvenida(casa, 8)) continue;
-          if(cantosGirados(casa, 6).some(([px, py]) => noAsfalto(px, py))) continue;
-          if(BEIRA.some(o => Math.hypot(o.cx - cx, o.cy - cy) < (o.w + w)/2 + 24)) continue;
+          if(amostrasRet(casa, 6).some(([px, py]) => noAsfalto(px, py))) continue;
+          if(BEIRA.some(o => {
+            const ox = o.ang ? o.cx : (o.x0 + o.x1)/2, oy = o.ang ? o.cy : (o.y0 + o.y1)/2;
+            const ow = o.ang ? o.w : (o.x1 - o.x0), oh = o.ang ? o.h : (o.y1 - o.y0);
+            return Math.abs(ox - cx) < (ow + larg)/2 + 20 && Math.abs(oy - cy) < (oh + prof)/2 + 20;
+          })) continue;
+          /* a calçada: da guia até a frente da casa, mais larga que ela.
+             Começa DOIS pra dentro da guia, e a amostra vai sem folga:
+             a guia é a borda da célula, e um ponto meio à frente dela
+             já está na pista. */
+          const c0 = guia + dentro*2, c1 = f0 + dentro*3;
+          const laje = hor
+            ? { x0: Math.min(c0, c1), x1: Math.max(c0, c1), y0: a - 22, y1: a + larg + 22 }
+            : { x0: a - 22, x1: a + larg + 22, y0: Math.min(c0, c1), y1: Math.max(c0, c1) };
+          if(Math.abs(c1 - c0) > 8 && !amostrasRet(laje, 0).some(([px, py]) => noAsfalto(px, py)))
+            casa.calcada = { cx: (laje.x0 + laje.x1)/2, cy: (laje.y0 + laje.y1)/2,
+                             w: laje.x1 - laje.x0, h: laje.y1 - laje.y0, ang: 0 };
           BEIRA.push(casa);
           LOTES.push(casa);
         }
       }
     }
   }
+
   /* o balde da beira, pra máscara perguntar barato */
   const BALDE_B = 256, baldesBeira = new Map();
   for(const o of BEIRA){

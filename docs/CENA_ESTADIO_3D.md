@@ -293,7 +293,31 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   portão, que é onde a casa se abre mesmo.
   Poste e árvore não entram: dentro de galpão coberto não há luminária
   de rua nem pé de árvore. Ficam os bancos e o mastro, que sobe pela
-  frente e passa do telhado.
+  frente e passa do telhado. **Moita nenhuma e copa de árvore nenhuma
+  entram na fatia de equipamento** (`naFatiaDeEquipamento`): a copa é um
+  quadrado de meia-largura `r` plantado no eixo da calçada, e a quina
+  dela passava por cima do muro e aparecia como arbusto dentro do salão.
+  **O quintal do quarteirão para na fatia**: ele é do quarteirão inteiro
+  e a fatia fica na ponta oeste dele, então a laje bege de fundo de
+  quintal entrava pela sede e aparecia no corredor do portão.
+  A altura é de casa, não de armazém: fachada de 3,2 m, paredes de fora
+  2,8 e o telhado fechando em 3,5 — era 3,9/3,3/4,3 e lia como um
+  armazém no meio da rua.
+  Na fachada vão dois **ESCUDOS** de três fiadas — borda, campo e a
+  banda da terceira cor —, um da torcida e um do clube (com as cores do
+  clube, lidas de `dados/times.js`), mais um em cada parede lateral; e a
+  **PLACA** com o nome da torcida POR EXTENSO, na parede à direita do
+  portão e com o fundo na cor secundária. "Direita" é a de QUEM OLHA DA
+  RUA, não a do eixo local: ao sul e a oeste ela cai no trecho de `u`
+  alto, ao norte e a leste no de `u` baixo, e com o eixo cru saía do
+  lado errado em duas das quatro frentes.
+  Dois detalhes de desenho que custaram uma rodada cada: o escudo se
+  prende a `v = 2,8` e não a `v = 1`, porque ele SAI da parede pra fora
+  e o `limite` do quarteirão cortava as três chapas a zero; e `caixa()`
+  quer os limites em ordem, mas com a normal negativa (`oz = −1`) a
+  chapa saía com `z0 > z1`, o recorte devolvia lado negativo e ela era
+  descartada inteira — escudo nenhum aparecia nas fachadas viradas pro
+  norte nem nas laterais de oeste.
   **A frente é a cor primária da torcida**, o rodapé e os batentes do
   portão são a terceira, e a faixa alta, as listras do piso do salão e a
   bandeira do mastro são a segunda.
@@ -317,6 +341,28 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   da grade, bloqueiam na máscara num balde espacial próprio e saem numa
   malha própria (`beira`), porque fora do contorno não há quarteirão nem
   pedaço onde caber.
+  Cada casa da frente leva a **calçada** dela: uma laje da guia até a
+  frente, mais larga que a casa, pros pedaços vizinhos se encontrarem e
+  virarem uma calçada só. Na dobra da avenida a guia não é reta — a laje
+  é um retângulo preso ao trecho e o asfalto do trecho seguinte corta
+  por dentro dela —, então a beirada interna recua até a laje sair
+  inteira do asfalto, e quem não sair fica sem calçada mesmo.
+  Há também uma **segunda fileira**, recuada, em pouco menos da metade
+  dos pontos: uma fileira só lê como cenário de papelão.
+- **A BORDA DA CIDADE também é rua.** `ruaEntre` só exige UMA célula
+  urbana ao lado, então na saída do bairro sobra pista com quarteirão de
+  um lado e descampado do outro. Agora a célula de mato encostada numa
+  rua dessas ganha uma fileira de casa na guia de fora, com calçada,
+  virada pra pista. São as mesmas casas da estrada, só que retas: `ang`
+  de 0 ou 90° e `vf` dizendo pra que lado a fachada olha, e o mesmo
+  `lote()` desenha — e elas saem como LOTE RETO, com `frente`, não como
+  a casa girada da estrada: **`ang: 0` é falso em JavaScript**, e todo
+  lugar que pergunta `if(l.ang)` — a começar pelo `lote()` que desenha —
+  mandava a casa de ângulo zero pro caminho do lote reto e ia ler
+  `l.x0`, que ela não tinha. Onze delas não eram desenhadas. Lote reto
+  é lote reto.
+  São 80 construções de beira ao todo, 59 com calçada — as sem são as da
+  segunda fileira, que dão pro fundo do terreno.
 
 A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
 descarta fora do quadro; carros, postes e campos numa malha; moitas em
