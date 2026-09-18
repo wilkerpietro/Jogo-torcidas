@@ -91,7 +91,11 @@ TO.dados.plantaEstadio = (function(){
   const [CX, CY] = pxm(765, 305);                                                // o estádio, onde o mapa o põe
   const VW = (VISTA.x1 - VISTA.x0)*PX, VH = (VISTA.y1 - VISTA.y0)*PX;
   const [VX0, VY0] = pxm(VISTA.x0, VISTA.y0);
-  const RUA = 70, CALC = 32;
+  /* A RUA E A CALÇADA, NA ESCALA DO BONECO. Ele tem 39 unidades e mede
+     1,75 m, então a unidade é 4,5 cm. Com RUA 70 a pista tinha 3,1 m e
+     a calçada 1,4 — o boneco era grande demais pra rua. Agora a pista
+     do estádio tem 5,8 m e a calçada 2,2. */
+  const RUA = 128, CALC = 48;
 
   const ALT = {
     degrau: 8, subida: 4.6, base: 6, laje: 8,
@@ -348,6 +352,7 @@ TO.dados.plantaEstadio = (function(){
   };
   /* ponto dentro de um polígono CONVEXO: todos os lados do mesmo lado */
   function dentroPol(x, y, pol){
+    if(!pol || pol.length < 3) return false;      // polígono vazio não contém nada
     let mais = false, menos = false;
     for(let i=0;i<pol.length;i++){
       const a = pol[i], b = pol[(i+1)%pol.length];
@@ -408,14 +413,17 @@ TO.dados.plantaEstadio = (function(){
   /* ---- as ruas da grade ---- */
   const coluna = (px, lpx) => ({ c: pxX(px), l: lpx*PX });
   const linha  = (px, lpx) => ({ c: pxY(px), l: lpx*PX });
-  const COLUNAS = [ coluna(245,12), coluna(315,12), coluna(385,12), coluna(455,14), coluna(525,12),
-                    coluna(595,12), { c: QEST_X0 - RUA/2, l: RUA }, coluna(765,14),
-                    { c: QEST_X1 + RUA/2, l: RUA }, coluna(945,12), coluna(1015,12),
-                    coluna(1085,12), coluna(1150,12) ];
-  const LINHAS  = [ linha(130,14), linha(172,12), { c: QEST_Y0 - RUA/2, l: RUA }, linha(300,12),
-                    { c: QEST_Y1 + RUA/2, l: RUA }, linha(465,12), linha(535,12), linha(605,14),
-                    linha(675,12), linha(745,12), linha(815,12), linha(885,12), linha(955,14),
-                    linha(1025,12), linha(1092,12) ];
+  /* A GRADE É LARGA DE PROPÓSITO. Antes eram treze colunas e quinze
+     linhas a cada 70 px: quarteirão de 11 m, que cabia três casas e
+     não lia como quarteirão. Agora o passo é 150 px — quarteirão de
+     27 m, umas seis casas por face — e a rua tem 22 px (5,3 m de
+     pista) em vez de 12. As quatro que encostam no estádio continuam
+     vindo do quarteirão dele, pra bater exatamente. */
+  const COLUNAS = [ coluna(194,22), coluna(344,22), coluna(494,22),
+                    { c: QEST_X0 - RUA/2, l: RUA }, { c: QEST_X1 + RUA/2, l: RUA },
+                    coluna(1036,22), coluna(1186,22) ];
+  const LINHAS  = [ linha(110,22), { c: QEST_Y0 - RUA/2, l: RUA }, { c: QEST_Y1 + RUA/2, l: RUA },
+                    linha(555,22), linha(705,22), linha(855,22), linha(1005,22) ];
   const noQuadradoDoEstadio = (x, y) =>
     x >= QEST_X0 && x < QEST_X1 && y >= QEST_Y0 && y < QEST_Y1;
 
@@ -428,7 +436,9 @@ TO.dados.plantaEstadio = (function(){
    quais células o campo toma. Passada a classificação, ele encolhe
    pra caixa dessas células, recuado da calçada — é o que o faz caber
    no quarteirão em vez de atravessar a rua e a areia. */
-  const CAMPOS = [ campo(400, 752, 525, 808), campo(658, 728, 748, 808) ];
+  /* os dois campos ficam onde a avenida não passa: a diagonal cruza
+     quase todo quarteirão grande, e cerca em cima de asfalto não vai */
+  const CAMPOS = [ campo(510, 220, 630, 390), campo(360, 1020, 480, 1090) ];
   const CERCA = 6, PORTEIRA = 24;
   function noCampo(x, y){
     for(const c of CAMPOS) if(x >= c.x0 && x < c.x1 && y >= c.y0 && y < c.y1) return c;
@@ -637,10 +647,11 @@ TO.dados.plantaEstadio = (function(){
   for(const f of CAMPOS){
     const suas = CELULAS.filter(c => c.tipo === 'campo' && c.x0 < f.x1 && c.x1 > f.x0 && c.y0 < f.y1 && c.y1 > f.y0);
     if(!suas.length) continue;
-    f.x0 = Math.min(...suas.map(c => c.x0)) + CALC;
-    f.x1 = Math.max(...suas.map(c => c.x1)) - CALC;
-    f.y0 = Math.min(...suas.map(c => c.y0)) + CALC;
-    f.y1 = Math.max(...suas.map(c => c.y1)) - CALC;
+    /* o miolo das células, que já vem recuado da calçada E da costa */
+    f.x0 = Math.min(...suas.map(c => c.ix0));
+    f.x1 = Math.max(...suas.map(c => c.ix1));
+    f.y0 = Math.min(...suas.map(c => c.iy0));
+    f.y1 = Math.max(...suas.map(c => c.iy1));
     f.cx = (f.x0 + f.x1)/2; f.cy = (f.y0 + f.y1)/2;
   }
 
@@ -710,7 +721,7 @@ TO.dados.plantaEstadio = (function(){
                                pontosDoLote(b).some(([x, y]) => dentroLote(x, y, a));
 
   const LOTES = [];
-  const PROF_AV = 88;          // o fundo das casas da avenida
+  const PROF_AV = 124;         // o fundo das casas da avenida
   function tipoDoLote(q){
     const px = q.cx/PX + MAPA.x0, py = q.cy/PX + MAPA.y0;
     /* perto do estádio e na orla norte há prédio e galpão, como no mapa;
@@ -725,7 +736,7 @@ TO.dados.plantaEstadio = (function(){
     /* na orla o recuo da costa pode zerar o miolo: sem miolo não há
        lote, e lote de largura zero vira casa do avesso */
     if(largI < 40 || altI < 40) return;
-    let prof = par8(entre(60, 84));
+    let prof = par8(entre(96, 136));          // 4,3 a 6,1 m de fundo
     /* quarteirão raso: uma fileira só, ocupando o fundo todo */
     const raso = altI < 2*prof + 24 || largI < 2*prof + 24;
     if(raso) prof = Math.min(altI, largI);
@@ -743,7 +754,7 @@ TO.dados.plantaEstadio = (function(){
       if(a1 - a0 < 40) continue;
       let a = a0;
       while(a < a1 - 24){
-        let larg = par8(entre(56, 120));
+        let larg = par8(entre(72, 144));       // 3,2 a 6,5 m de frente
         if(a + larg > a1 - 36) larg = a1 - a;
         const tipo = tipoDoLote(q);
         const T = TIPOS[tipo];
@@ -780,20 +791,32 @@ TO.dados.plantaEstadio = (function(){
           }
         }
         if(cantosDoLote(lote).some(([x, y]) => noCampo(x, y))) continue;
-        for(const [k, sd] of Object.entries(SEDES)){
-          if(sedeDe[k]) continue;
-          if(dentroRet(sd.ponto[0], sd.ponto[1], q) && fr.f === sd.frente &&
-             sd.ponto[0] >= lote.x0 - 40 && sd.ponto[0] <= lote.x1 + 40 && (fr.f === 'n' || fr.f === 's') ||
-             dentroRet(sd.ponto[0], sd.ponto[1], q) && fr.f === sd.frente &&
-             sd.ponto[1] >= lote.y0 - 40 && sd.ponto[1] <= lote.y1 + 40 && (fr.f === 'o' || fr.f === 'l')){
-            lote.tipo = 'sede'; lote.alt = 62; lote.cor = sd.cor; lote.rot = sd.rot; lote.lado = k;
-            sedeDe[k] = lote;
-          }
-        }
         LOTES.push(lote); q.lotes.push(lote);
       }
     }
-    if(!raso) q.quintal = { x0:q.ix0+prof, x1:q.ix1-prof, y0:q.iy0+prof, y1:q.iy1-prof, alt:10, cor:'#a8a08c' };
+    if(!raso){
+      q.quintal = { x0:q.ix0+prof, x1:q.ix1-prof, y0:q.iy0+prof, y1:q.iy1-prof, alt:8, cor:'#96apagado' };
+      q.quintal.cor = '#9a8f78';
+      /* O MIOLO É FUNDO DE QUINTAL. Com o quarteirão grande ele virou
+         um descampado: entram puxadinho, garagem e laje. Nada disso
+         muda a máscara — o miolo já é maciço —, é só pra ler como
+         quintal em vez de pátio vazio. */
+      q.fundos = [];
+      const qw = q.quintal.x1 - q.quintal.x0, qh = q.quintal.y1 - q.quintal.y0;
+      const n = Math.round(qw*qh/24000);
+      for(let i=0;i<n;i++){
+        const w = par8(entre(44, 96)), h = par8(entre(38, 76));
+        if(qw - w - 16 < 0 || qh - h - 16 < 0) continue;
+        const fx = q.quintal.x0 + 8 + rng()*(qw - w - 16), fy = q.quintal.y0 + 8 + rng()*(qh - h - 16);
+        /* o quintal também é cortado pela avenida: puxadinho nenhum
+           em cima do asfalto (o beiral sai 2 além do corpo) */
+        const bate = [[-2,-2],[w+2,-2],[w+2,h+2],[-2,h+2],[w/2,h/2]]
+          .some(([a, b]) => naAvenida(fx + a, fy + b, CALC));
+        if(bate) continue;
+        q.fundos.push({ x0: fx, y0: fy, x1: fx + w, y1: fy + h, alt: par8(entre(32, 60)),
+                        cor: escolher(['#b4ab97','#a79d88','#c0b6a0','#9aa0a2','#bdb3a0']) });
+      }
+    }
   }
   /* =========================================================
      OS EQUIPAMENTOS DO BAIRRO
@@ -805,11 +828,36 @@ TO.dados.plantaEstadio = (function(){
      desencontrar da outra. Tudo em retângulo reto, que é o que a
      máscara sabe perguntar rápido.
      ========================================================= */
+  const COMERCIO = [
+    'BAR DO ZÉ', 'BOTECO DA ESQUINA', 'BAR E MERCEARIA', 'PONTO DO CHOPE',
+    'BAR DO NEGUINHO', 'BOTEQUIM DA VILA', 'LANCHONETE TRÊS IRMÃOS',
+    'MERCADINHO SÃO JOÃO', 'PADARIA PÃO QUENTE', 'AÇOUGUE BOI GORDO',
+    'SALÃO DA DONA MARIA', 'BARBEARIA DO TIÃO', 'BORRACHARIA 24H',
+    'OFICINA DO GORDO', 'LOTÉRICA SORTE GRANDE', 'FARMÁCIA POPULAR',
+    'MATERIAIS DE CONSTRUÇÃO', 'SORVETERIA GELADÃO', 'PASTEL DA FEIRA',
+    'LAN HOUSE CYBER', 'DEPÓSITO DE BEBIDAS', 'CASA DE CARNES',
+    'ELETRÔNICA DO ZÉ', 'CHAVEIRO 24 HORAS', 'BAZAR PREÇO BOM',
+    'AUTO PEÇAS IRMÃOS', 'MÓVEIS POPULARES', 'GÁS E ÁGUA',
+    'SALGADOS DA VÓ', 'ESPETINHO DO MINEIRO', 'MERCEARIA DOIS IRMÃOS',
+    'COSTURA E CONSERTOS', 'VIDRAÇARIA CENTRAL', 'PEIXARIA MARÉ ALTA'
+  ];
+  const PIXACAO = [
+    'O BAIRRO É NOSSO', 'RESPEITA A VILA', 'SÓ OS FORTES', 'AQUI É RESENHA',
+    'VENDE-SE', 'ALUGA-SE', 'PINTA-SE CASAS', 'PRECISA-SE DE AJUDANTE',
+    'É PROIBIDO JOGAR LIXO', 'NÃO ESTACIONE', 'ENTRADA DE VEÍCULOS',
+    'TE AMO MARIA', 'SAUDADES ETERNAS', 'A VILA NÃO SE RENDE',
+    'DEUS É FIEL', 'A TORCIDA MANDA', 'AQUI É TORCIDA', 'GERAL DO BAIRRO',
+    'NINGUÉM SEGURA', 'DOMINGO TEM JOGO', 'PROIBIDO COLAR CARTAZ',
+    'CUIDADO COM O CÃO', 'TEM ÁGUA', 'LAVA-SE ROUPA', 'CONSERTA-SE GELADEIRA'
+  ];
   const EQUIPAMENTOS = [
-    { tipo: 'praca',     ponto: pxm(706, 710) },   // o centro do bairro do sul
-    { tipo: 'delegacia', ponto: pxm(490, 349) },   // a oeste, no caminho da torcida
-    { tipo: 'hospital',  ponto: pxm(560, 349) },   // a oeste do estádio
-    { tipo: 'shopping',  ponto: pxm(706, 569) }    // mais ao sul, com estacionamento
+    { tipo: 'praca',     ponto: pxm(568, 630) },   // o centro do bairro do sul
+    { tipo: 'delegacia', ponto: pxm(419, 480) },   // a oeste, no caminho da torcida
+    { tipo: 'hospital',  ponto: pxm(765, 480) },   // ao sul do estádio, no quarteirão grande
+    { tipo: 'shopping',  ponto: pxm(765, 780) },   // mais ao sul, com estacionamento
+    { tipo: 'galeria',   ponto: pxm(568, 930) },   // o beco de lojas, no sul
+    { tipo: 'escola',    ponto: pxm(419, 930) },   // no meio do residencial do sul
+    { tipo: 'posto',     ponto: pxm(269, 630) }    // na saída oeste, de frente pra estrada
   ];
   const CORES_CARRO_PM = ['#f0f0ee','#1a3f86'];
   /* a mesma paleta dos carros da rua — ela é declarada mais abaixo,
@@ -862,29 +910,30 @@ TO.dados.plantaEstadio = (function(){
     if(tipo === 'hospital'){
       /* Bloco principal ao norte, ala a oeste, marquise do pronto-socorro
          com ambulância embaixo, muro na frente com portão, e a cruz. */
-      const fundo = Math.min(A*0.42, 175), ala = Math.min(L*0.38, 100);
+      const fundo = Math.min(A*0.42, 175), ala = Math.min(L*0.30, 130);
+      const bw = Math.min(L, 520), bx0 = cx - bw/2, bx1 = cx + bw/2;
       chao = '#a4a49c';
       piso(cx - 46, Y1 - 40, cx + 46, Y1, '#8e8b82');            // a entrada de veículos
-      p('bloco', { x0: X0, x1: X1, y0: Y0, y1: Y0 + fundo, alt: 232, cor: '#dfdcd2',
+      p('bloco', { x0: bx0, x1: bx1, y0: Y0, y1: Y0 + fundo, alt: 232, cor: '#dfdcd2',
                    teto: '#9aa0a2', janelas: 'grade' });
-      p('bloco', { x0: X0, x1: X0 + ala, y0: Y0 + fundo, y1: Y0 + fundo + A*0.26, alt: 124,
+      p('bloco', { x0: bx0, x1: bx0 + ala, y0: Y0 + fundo, y1: Y0 + fundo + Math.min(A*0.26, 150), alt: 124,
                    cor: '#d5d2c7', teto: '#9aa0a2', janelas: 'faixa' });
       /* o pronto-socorro: marquise sobre pilares, rente ao bloco */
-      const mx0 = X0 + ala + 14, mx1 = Math.min(X1 - 20, mx0 + 118), my0 = Y0 + fundo, my1 = my0 + 54;
+      const mx0 = bx0 + ala + 14, mx1 = Math.min(bx1 - 20, mx0 + 150), my0 = Y0 + fundo, my1 = my0 + 54;
       p('marquise', { x0: mx0, x1: mx1, y0: my0, y1: my1, y: 56, alt: 8, cor: '#c9463c' }, false);
       for(const x of [mx0 + 5, mx1 - 5]) for(const y of [my1 - 5])
         p('pilar', { x, y, r: 3.5, alt: 56, cor: '#b8b4a8' });
       p('carro', { x0: mx0 + 24, x1: mx0 + 24 + 38, y0: my0 + 8, y1: my0 + 8 + 42, cor: '#f2f2ee', modo: 'ambulancia' });
       /* estacionamento a leste, e o muro da frente com portão */
-      fila(4, Y0 + fundo + 20, Y1 - 60, y => p('carro', { x0: X1 - 40, x1: X1 - 4, y0: y, y1: y + 34, cor: escolher(CORES_CARRO_EQ) }));
+      fila(5, Y0 + fundo + 20, Y1 - 80, y => p('carro', { x0: bx1 - 40, x1: bx1 - 4, y0: y, y1: y + 34, cor: escolher(CORES_CARRO_EQ) }));
       const px0 = cx - 46, px1 = cx + 46;                 // o vão do portão
-      p('muro', { x0: X0, x1: px0, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#c6c2b6' });
-      p('muro', { x0: px1, x1: X1, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#c6c2b6' });
+      p('muro', { x0: bx0, x1: px0, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#c6c2b6' });
+      p('muro', { x0: px1, x1: bx1, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#c6c2b6' });
       p('arvore', { x: X0 + 22, y: Y1 - 26, r: 16 }, false);
       p('arvore', { x: X1 - 22, y: Y1 - 26, r: 16 }, false);
-      p('cruz', { x: cx + 96, y: Y0 + fundo, base: 150, ox: 0, oz: 1, tam: 44 }, false);
+      p('cruz', { x: cx - 120, y: Y0 + fundo, base: 150, ox: 0, oz: 1, tam: 44 }, false);
       /* acima do telhado da ala oeste, senão ela come metade do letreiro */
-      p('letreiro', { x: cx - 8, y: Y0 + fundo, ox: 0, oz: 1, texto: 'HOSPITAL MUNICIPAL', placa: true, larg: 148, altura: 26, base: 152 }, false);
+      p('letreiro', { x: cx + 40, y: Y0 + fundo, ox: 0, oz: 1, texto: 'HOSPITAL MUNICIPAL', placa: true, larg: 148, altura: 26, base: 152 }, false);
       p('letreiro', { x: mx0 + 59, y: my1, ox: 0, oz: 1, texto: 'PRONTO-SOCORRO', placa: true, larg: 96, altura: 20, base: 62 }, false);
     }
 
@@ -922,6 +971,98 @@ TO.dados.plantaEstadio = (function(){
                       larg: Math.min(76, fundo*0.6), altura: 18, base: 54 }, false);
     }
 
+    if(tipo === 'escola'){
+      /* Bloco em L de dois andares, quadra coberta de grade, mastro,
+         muro com portão e o pátio no meio. */
+      chao = '#a8a196';
+      const fundo = Math.min(A*0.30, 150), ala = Math.min(L*0.30, 110);
+      p('bloco', { x0: X0, x1: X0 + Math.min(L, 560), y0: Y0, y1: Y0 + fundo, alt: 124, cor: '#e6e0cc',
+                   teto: '#9aa0a2', janelas: 'grade' });
+      p('bloco', { x0: X0, x1: X0 + ala, y0: Y0 + fundo, y1: Y1 - 120, alt: 118,
+                   cor: '#e0dac6', teto: '#9aa0a2', janelas: 'grade' });
+      /* a passarela coberta que liga o bloco à quadra */
+      p('marquise', { x0: X0 + ala, x1: X0 + ala + 20, y0: Y0 + fundo, y1: Y1 - 130, y: 62, alt: 6, cor: '#cfcbbe' }, false);
+      fila(4, Y0 + fundo + 16, Y1 - 150, y => p('pilar', { x: X0 + ala + 16, y, r: 3, alt: 62, cor: '#d8d3c4' }));
+      /* A QUADRA POLIESPORTIVA: piso pintado, alambrado e duas tabelas */
+      const qx0 = X0 + ala + 34, qx1 = Math.min(X1 - 18, qx0 + 380), qy1 = Y1 - 22, qy0 = qy1 - Math.min(A*0.34, 220);
+      piso(qx0, qy0, qx1, qy1, '#8a5a46');
+      piso(qx0 + 8, qy0 + 8, qx1 - 8, qy0 + 11, '#e8e5da');
+      piso(qx0 + 8, qy1 - 11, qx1 - 8, qy1 - 8, '#e8e5da');
+      piso(qx0 + 8, (qy0+qy1)/2 - 1.5, qx1 - 8, (qy0+qy1)/2 + 1.5, '#e8e5da');
+      for(const [ax, ay] of [[qx0, qy0], [qx1, qy0], [qx0, qy1], [qx1, qy1]])
+        p('pilar', { x: ax, y: ay, r: 2.4, alt: 86, cor: '#6e6a5e' });
+      for(const sy of [qy0 + 14, qy1 - 14])
+        p('tabela', { x: (qx0+qx1)/2, y: sy, alt: 70 });
+      p('mastro', { x: X0 + ala + 40, y: Y0 + fundo + 26, alt: 132 });
+      p('muro', { x0: X0, x1: cx - 44, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#ccc6b4' });
+      p('muro', { x0: cx + 44, x1: X1, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#ccc6b4' });
+      p('arvore', { x: X1 - 26, y: Y0 + fundo + 40, r: 18 }, false);
+      p('arvore', { x: X0 + 26, y: Y1 - 40, r: 18 }, false);
+      p('letreiro', { x: cx, y: Y0 + fundo, ox: 0, oz: 1, texto: 'ESCOLA MUNICIPAL', placa: true,
+                      larg: Math.min(160, L - 30), altura: 26, base: 86 }, false);
+    }
+
+    if(tipo === 'posto'){
+      /* Cobertura sobre duas ilhas de bomba, loja de conveniência,
+         totem de preço na guia e o pátio de cimento. As medidas são
+         ABSOLUTAS e centradas: o quarteirão cresceu, o posto não. */
+      chao = '#8e8b82';
+      const kw = Math.min(L - 60, 230), kh = Math.min(A*0.42, 170);
+      const kx0 = cx - kw/2, kx1 = cx + kw/2, ky1 = Y1 - Math.min(A*0.18, 70), ky0 = ky1 - kh;
+      const lw = Math.min(L - 80, 170), lh = Math.min(A*0.26, 100);
+      p('bloco', { x0: cx - lw/2, x1: cx + lw/2, y0: ky0 - 26 - lh, y1: ky0 - 26, alt: 74,
+                   cor: '#eae6d8', teto: '#c9463c', janelas: 'vidro' });
+      p('marquise', { x0: kx0, x1: kx1, y0: ky0, y1: ky1, y: 108, alt: 10, cor: '#e8e4d6' }, false);
+      p('marquise', { x0: kx0, x1: kx1, y0: ky0, y1: ky0 + 5, y: 96, alt: 12, cor: '#c9463c' }, false);
+      for(const ax of [kx0 + 14, kx1 - 14]) for(const ay of [ky0 + 14, ky1 - 14])
+        p('pilar', { x: ax, y: ay, r: 5, alt: 108, cor: '#e8e4d6' });
+      for(const ay of [(ky0*2 + ky1)/3, (ky0 + ky1*2)/3]){
+        p('piso', { x0: kx0 + 26, x1: kx1 - 26, y0: ay - 13, y1: ay + 13, cor: '#b9b3a4' }, false);
+        for(const ax of [(kx0*2 + kx1)/3, (kx0 + kx1*2)/3])
+          p('bomba', Object.assign({ alt: 52 }, ret(ax, ay, 16, 22)));
+      }
+      p('totem', { x0: X1 - 46, x1: X1 - 20, y0: Y1 - 52, y1: Y1 - 26, alt: 150, cor: '#1f6a3a' });
+      p('carro', { x0: kx0 + 34, x1: kx0 + 70, y0: ky0 + 34, y1: ky0 + 68, cor: escolher(CORES_CARRO_EQ) });
+      fila(3, X0 + 30, cx - lw/2 - 30, x => p('arvore', { x, y: Y0 + 34, r: 18 }, false));
+      p('letreiro', { x: cx, y: ky0 - 26, ox: 0, oz: 1, texto: 'POSTO BEIRA-ESTRADA', placa: true,
+                      larg: Math.min(130, lw - 16), altura: 22, base: 48 }, false);
+    }
+
+    if(tipo === 'galeria'){
+      /* O BECO: duas fileiras de lojinhas de frente uma pra outra, com
+         um corredor no meio que atravessa o quarteirão de ponta a
+         ponta. O corredor não bloqueia — é passagem, e é gargalo. */
+      chao = '#b0aa9c';
+      const vao = Math.min(A*0.26, 62), fundo = (A - vao)/2 - 2;
+      const a0 = cy - vao/2, a1 = cy + vao/2;
+      piso(X0, a0, X1, a1, '#c0b9a8');
+      const n = Math.max(4, Math.round(L/46));
+      const larg = L/n;
+      for(let i=0;i<n;i++){
+        const ux0 = X0 + i*larg + 1.5, ux1 = X0 + (i+1)*larg - 1.5;
+        for(const lado of [-1, 1]){
+          const fy0 = lado < 0 ? Y0 : a1 + 2, fy1 = lado < 0 ? a0 - 2 : Y1;
+          const alt = par8(entre(76, 104));
+          p('bloco', { x0: ux0, x1: ux1, y0: fy0, y1: fy1, alt, cor: escolher(TIPOS.casa.cor), teto: '#8f8a80' });
+          /* a frente da lojinha, virada pro corredor */
+          const face = lado < 0 ? fy1 : fy0, dir = lado < 0 ? 1 : -1;
+          p('marquise', { x0: ux0 + 4, x1: ux1 - 4, y0: face - 0.8*dir, y1: face + 0.4*dir,
+                          y: 12, alt: 34, cor: '#2f3a44' }, false);
+          p('marquise', { x0: (ux0+ux1)/2 - 9, x1: (ux0+ux1)/2 + 9, y0: face - 0.9*dir, y1: face + 0.4*dir,
+                          y: 0, alt: 46, cor: '#4a3a2c' }, false);
+          p('marquise', { x0: ux0, x1: ux1, y0: Math.min(face, face + 15*dir), y1: Math.max(face, face + 15*dir),
+                          y: 54, alt: 5, cor: i%2 ? '#c05a3a' : '#2f6a4a' }, false);
+          if(i % 2 === 0)
+            p('letreiro', { x: (ux0+ux1)/2, y: face, ox: 0, oz: dir, texto: escolher(COMERCIO), placa: true,
+                            larg: larg - 12, altura: 15, base: 62 }, false);
+        }
+      }
+      for(const sx of [X0 + 6, X1 - 6])
+        p('letreiro', { x: sx, y: cy, ox: sx < cx ? -1 : 1, oz: 0, texto: 'GALERIA CENTRAL', placa: true,
+                        larg: vao - 10, altura: 18, base: 110 }, false);
+      fila(3, X0 + larg, X1 - larg, x => p('poste', { x, y: cy, dx: 0, dz: 1 }, false));
+    }
+
     if(tipo === 'shopping'){
       /* Caixa grande com volume de entrada mais alto, marquise de vidro,
          estacionamento com fileiras de carro e o totem na esquina. */
@@ -953,8 +1094,15 @@ TO.dados.plantaEstadio = (function(){
   for(const e of EQUIPAMENTOS){
     const q = celulaEm(e.ponto[0], e.ponto[1]);
     if(!q || q.tipo !== 'quadra' || q.equip) continue;
-    q.equip = equipamento(e.tipo, q);
-    q.solidos = q.equip.pecas.filter(o => o.bloqueia);
+    const eq = equipamento(e.tipo, q);
+    /* as peças são retas e a avenida é diagonal: se alguma cair no
+       asfalto, o equipamento não serve pra esse quarteirão */
+    const pisaNaAvenida = eq.pecas.some(o => o.bloqueia && o.x0 !== undefined &&
+      [0, 0.5, 1].some(t => [0, 0.5, 1].some(u =>
+        naAvenida(o.x0 + (o.x1-o.x0)*t, o.y0 + (o.y1-o.y0)*u, 0))));
+    if(pisaNaAvenida) continue;
+    q.equip = eq;
+    q.solidos = eq.pecas.filter(o => o.bloqueia);
   }
 
   /* AS CASAS DA AVENIDA: caminha ao longo de cada trecho, um lote de
@@ -965,15 +1113,15 @@ TO.dados.plantaEstadio = (function(){
      sobra entre a calçada e o miolo é uma cunha: perto da ponta dela
      não cabe casa, e o que fecha a frente ali é MURO, que é raso e não
      tem beiral. Vêm ANTES dos lotes axiais, que desviam delas. */
-  const LARGURAS = [0, 88, 72, 56, 44, 32, 24];  // a 1ª é sorteada em cada passo
-  const FUNDOS = [PROF_AV, 72, 60, 48, 36];
+  const LARGURAS = [0, 120, 96, 76, 56, 40, 28];  // a 1ª é sorteada em cada passo
+  const FUNDOS = [PROF_AV, 100, 80, 62, 46];
   const FUNDO_MURO = 14;                         // muro de lote: fino, não um caixote
   for(const av of AVENIDAS){
     for(const sg of av.segs){
       for(const lado of [-1, 1]){
         let t = 6;
         while(t < sg.L - 24){
-          LARGURAS[0] = par8(entre(64, 112));
+          LARGURAS[0] = par8(entre(84, 148));
           const tentar = (w, h, muro) => {
             const off = av.l/2 + CALC + h/2 + 2;
             const cx = sg.x0 + sg.ux*(t + w/2) - sg.uy*off*lado;
@@ -1013,6 +1161,30 @@ TO.dados.plantaEstadio = (function(){
   }
 
   QUADRAS.filter(q => !q.equip).forEach(lotear);
+  /* A SEDE É O LOTE MAIS PERTO DO PONTO, na frente pedida. Antes ela
+     dependia de o ponto cair dentro de um lote, e sumia toda vez que a
+     grade mudava — e sem sede visitante a cena não tem spawn. */
+  for(const [k, sd] of Object.entries(SEDES)){
+    if(sedeDe[k]) continue;
+    let melhor = null;
+    for(const l of LOTES){
+      if(l.ang || l.tipo === 'muro' || l.lado) continue;
+      if(l.frente !== sd.frente) continue;
+      /* a frente tem de dar pra rua: num quarteirão recortado pela
+         costa a face leste pode dar pro próprio miolo, e a torcida
+         nasceria dentro do quarteirão */
+      const fx = l.frente === 'o' ? l.x0 - 40 : l.frente === 'l' ? l.x1 + 40 : (l.x0+l.x1)/2;
+      const fy = l.frente === 'n' ? l.y0 - 40 : l.frente === 's' ? l.y1 + 40 : (l.y0+l.y1)/2;
+      if(dentroPol(fx, fy, l.quadra.polMiolo)) continue;
+      const d = Math.hypot((l.x0+l.x1)/2 - sd.ponto[0], (l.y0+l.y1)/2 - sd.ponto[1]);
+      if(!melhor || d < melhor.d) melhor = { l, d };
+    }
+    if(!melhor) continue;
+    const l = melhor.l;
+    l.tipo = 'sede'; l.alt = 124; l.cor = sd.cor; l.rot = sd.rot; l.lado = k;
+    sedeDe[k] = l;
+  }
+
   /* quem a avenida corta: amostra a borda e o centro do quarteirão */
   for(const q of QUADRAS){
     const pts = [];
@@ -1105,28 +1277,6 @@ TO.dados.plantaEstadio = (function(){
      partir dos textos que apareceram. Letreiro é comércio de rua, e
      pixação é o que cobre muro e casa baixa por aqui: recado de
      aluguel, de obra, de amor e de torcida. */
-  const COMERCIO = [
-    'BAR DO ZÉ', 'BOTECO DA ESQUINA', 'BAR E MERCEARIA', 'PONTO DO CHOPE',
-    'BAR DO NEGUINHO', 'BOTEQUIM DA VILA', 'LANCHONETE TRÊS IRMÃOS',
-    'MERCADINHO SÃO JOÃO', 'PADARIA PÃO QUENTE', 'AÇOUGUE BOI GORDO',
-    'SALÃO DA DONA MARIA', 'BARBEARIA DO TIÃO', 'BORRACHARIA 24H',
-    'OFICINA DO GORDO', 'LOTÉRICA SORTE GRANDE', 'FARMÁCIA POPULAR',
-    'MATERIAIS DE CONSTRUÇÃO', 'SORVETERIA GELADÃO', 'PASTEL DA FEIRA',
-    'LAN HOUSE CYBER', 'DEPÓSITO DE BEBIDAS', 'CASA DE CARNES',
-    'ELETRÔNICA DO ZÉ', 'CHAVEIRO 24 HORAS', 'BAZAR PREÇO BOM',
-    'AUTO PEÇAS IRMÃOS', 'MÓVEIS POPULARES', 'GÁS E ÁGUA',
-    'SALGADOS DA VÓ', 'ESPETINHO DO MINEIRO', 'MERCEARIA DOIS IRMÃOS',
-    'COSTURA E CONSERTOS', 'VIDRAÇARIA CENTRAL', 'PEIXARIA MARÉ ALTA'
-  ];
-  const PIXACAO = [
-    'O BAIRRO É NOSSO', 'RESPEITA A VILA', 'SÓ OS FORTES', 'AQUI É RESENHA',
-    'VENDE-SE', 'ALUGA-SE', 'PINTA-SE CASAS', 'PRECISA-SE DE AJUDANTE',
-    'É PROIBIDO JOGAR LIXO', 'NÃO ESTACIONE', 'ENTRADA DE VEÍCULOS',
-    'TE AMO MARIA', 'SAUDADES ETERNAS', 'A VILA NÃO SE RENDE',
-    'DEUS É FIEL', 'A TORCIDA MANDA', 'AQUI É TORCIDA', 'GERAL DO BAIRRO',
-    'NINGUÉM SEGURA', 'DOMINGO TEM JOGO', 'PROIBIDO COLAR CARTAZ',
-    'CUIDADO COM O CÃO', 'TEM ÁGUA', 'LAVA-SE ROUPA', 'CONSERTA-SE GELADEIRA'
-  ];
   for(const l of LOTES){
     if(l.tipo === 'sede') continue;                 // a sede já tem a faixa dela
     if(l.tipo === 'muro'){ if(rng() < 0.55) l.pixacao = escolher(PIXACAO); continue; }
@@ -1200,6 +1350,9 @@ TO.dados.plantaEstadio = (function(){
       }
     }
   })();
+  /* carro nenhum estacionado na areia */
+  for(let i = CARROS.length - 1; i >= 0; i--)
+    if(CARROS[i].x1 > xLimiteCosta((CARROS[i].y0 + CARROS[i].y1)/2)) CARROS.splice(i, 1);
   function noCarro(x, y){
     for(const c of CARROS) if(dentroRet(x, y, c)) return c;
     return null;
@@ -1220,7 +1373,9 @@ TO.dados.plantaEstadio = (function(){
     const por = (x, y) => {
       const r = entre(14, EIXO_CALC - 1);
       if(zona(x, y) !== 'cidade') return;
-      if(naAvenida(x, y, r + 6)) return;           // nem encostar no asfalto da avenida
+      /* a copa é um QUADRADO de meia-largura r: contra uma avenida
+         diagonal a quina dela chega a r·√2, não a r */
+      if(naAvenida(x, y, r*1.45)) return;
       if(q.lotes.some(l => dentroLote(x, y, l))) return;
       ARVORES.push({ x, y, r });
     };
@@ -1255,10 +1410,11 @@ TO.dados.plantaEstadio = (function(){
       if(x >= 0 && y >= 0 && x < W && y < H) POSTES.push({ x, y, dx: sg.uy, dz: -sg.ux });
     }
   }
-  /* poste nenhum no meio da rua: nos cruzamentos a calçada da avenida
-     vira asfalto, e o mastro caía lá */
+  /* poste nenhum no meio da rua nem na areia: nos cruzamentos a calçada
+     da avenida vira asfalto, e a leste a cidade acaba antes da guia */
   for(let i = POSTES.length - 1; i >= 0; i--)
-    if(tocaAsfalto(POSTES[i].x, POSTES[i].y, 2)) POSTES.splice(i, 1);
+    if(tocaAsfalto(POSTES[i].x, POSTES[i].y, 2) || POSTES[i].x > xLimiteCosta(POSTES[i].y))
+      POSTES.splice(i, 1);
 
   /* as torres de refletor, nos quatro cantos do quarteirão do estádio */
   const TORRES = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx, sy]) => ({
@@ -1510,11 +1666,22 @@ TO.dados.cenaEstadio = (function(){
   const CID = P.CIDADE;
   /* a calçada na frente de um lote: o meio da frente, dezesseis pra fora */
   function frenteDa(lote, folga){
-    const f = folga || 16;
-    if(lote.frente === 'n') return { x: Math.round((lote.x0+lote.x1)/2), y: Math.round(lote.y0 - f) };
-    if(lote.frente === 's') return { x: Math.round((lote.x0+lote.x1)/2), y: Math.round(lote.y1 + f) };
-    if(lote.frente === 'o') return { x: Math.round(lote.x0 - f), y: Math.round((lote.y0+lote.y1)/2) };
-    return { x: Math.round(lote.x1 + f), y: Math.round((lote.y0+lote.y1)/2) };
+    /* Caminha pra fora da frente até achar chão onde o CORPO cabe — a
+       máscara exige as oito vizinhas livres, e uma distância fixa da
+       parede não garante isso em quarteirão nenhum. */
+    const d = lote.frente === 'n' ? [0,-1] : lote.frente === 's' ? [0,1]
+            : lote.frente === 'o' ? [-1,0] : [1,0];
+    const bx = lote.frente === 'o' ? lote.x0 : lote.frente === 'l' ? lote.x1 : (lote.x0+lote.x1)/2;
+    const by = lote.frente === 'n' ? lote.y0 : lote.frente === 's' ? lote.y1 : (lote.y0+lote.y1)/2;
+    const cabe = (x, y) => {
+      for(let i=-1;i<=1;i++) for(let j=-1;j<=1;j++) if(!P.anda(x + i*CEL, y + j*CEL)) return false;
+      return true;
+    };
+    for(let f = folga || 30; f < 420; f += CEL){
+      const x = bx + d[0]*f, y = by + d[1]*f;
+      if(cabe(x, y)) return { x: Math.round(x), y: Math.round(y) };
+    }
+    return { x: Math.round(bx + d[0]*40), y: Math.round(by + d[1]*40) };
   }
   const sedeM = CID.sedeDe.mandante, sedeV = CID.sedeDe.visitante;
   const pM = sedeM ? frenteDa(sedeM) : { x: Math.round(CID.pxX(280)), y: Math.round(CID.pxY(1030)) };

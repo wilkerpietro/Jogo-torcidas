@@ -91,9 +91,14 @@ mundo é o próprio tabuleiro, sem dobra nenhuma.
 
 Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
 
-- **A grade.** Treze colunas (norte-sul) e quinze linhas (leste-oeste),
-  cada uma com a largura do mapa; as quatro que encostam no estádio vêm do
-  quarteirão dele, pra bater exatamente. Entre ruas há células: dentro do
+- **A grade.** Sete colunas (norte-sul) e sete linhas (leste-oeste), de
+  150 px em 150, com 22 px de pista; as quatro que encostam no estádio
+  vêm do quarteirão dele, pra bater exatamente. **Era o dobro disso, a
+  cada 70 px e com 12 de pista**: dava quarteirão de 11 m com três
+  casas e rua de 2,9 m, onde o boneco de 1,75 parecia um gigante. Agora
+  o quarteirão tem 27 m e umas dezesseis casas, e a pista 5,3 m. O
+  tabuleiro não mudou de tamanho: as mesmas 460 mil células, a mesma
+  textura de chão, a mesma calibragem do combate. Entre ruas há células: dentro do
   contorno da cidade (um polígono lido do mapa) a célula é um **quarteirão**
   — calçada de 32 em volta, lotes de frente contínua, quintal no miolo;
   fora, é mato, praia ou mar. O mapa é tratado com a grade alinhada aos
@@ -205,6 +210,25 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   como se cobre casa de rua. Prédio e sede seguem de laje, que é o
   certo pra eles. O beiral sai 2 do corpo mas vem cortado pelo miolo do
   quarteirão, a mesma regra de sempre.
+- **Sete quarteirões de equipamento**: praça, delegacia, hospital,
+  shopping, **galeria** (o beco de lojas: duas fileiras de lojinhas de
+  frente uma pra outra, com um corredor que atravessa o quarteirão e é
+  gargalo), **escola** (bloco em L, quadra poliesportiva com alambrado
+  e tabela, mastro) e **posto de gasolina** (cobertura sobre duas ilhas
+  de bomba, loja de conveniência, totem). As medidas deles são
+  ABSOLUTAS e centradas no quarteirão — quando a grade engordou, as
+  que eram fração do quarteirão viraram lajes do tamanho do quarteirão.
+  Equipamento cujas peças caiam no asfalto de uma avenida é recusado
+  naquele quarteirão, porque as peças são retas e a avenida é diagonal.
+- **O miolo do quarteirão é fundo de quintal**, não pátio: com o
+  quarteirão grande ele virava um descampado, então entram puxadinho,
+  garagem e laje. Nada disso muda a máscara — o miolo já é maciço.
+- **A fachada.** Porta de 2,10 sempre; o térreo é **vitrine** no
+  comércio (vidro dos dois lados da porta) e janela dos dois lados na
+  casa; frente estreita demais pras duas ganha bandeira em cima da
+  porta. A casa da avenida passou a ter fachada também — antes o
+  desenho dela saía antes, e dava comércio com letreiro em parede lisa.
+  O letreiro fica **acima da porta**, não em cima dela.
 - **A decoração.** Texto não sai de caixa, sai de textura: a planta
   guarda só o dizer (`l.placa`, `l.pixacao`), e o `bairro3d.js` junta
   os que apareceram num atlas de 256 × 64 por dizer, uma malha só, com

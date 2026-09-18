@@ -84,7 +84,7 @@ export function montarBairro(P) {
     const tons = [0.92, 0.84, 0.78, 1.0];
     for (let i = 0; i < 4; i++) tri(T, b[i], b[(i+1)%4], t, hex, tons[i]);
   }
-  function malhaUV(T, tex) {
+  function malhaUV(T, tex, nome) {
     if (!T.pos.length) return;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(T.pos, 3));
@@ -94,10 +94,11 @@ export function montarBairro(P) {
       map: tex, alphaTest: 0.45, side: THREE.FrontSide
     }));
     m.receiveShadow = true;
+    m.name = nome;
     triangulos += T.pos.length / 9;
     meshes.push(m);
   }
-  function malha(T, sombra) {
+  function malha(T, sombra, nome) {
     if (!T.pos.length) return null;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(T.pos, 3));
@@ -105,6 +106,7 @@ export function montarBairro(P) {
     g.computeVertexNormals();
     const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
     m.castShadow = !!sombra; m.receiveShadow = true;
+    m.name = nome;
     triangulos += T.pos.length / 9;
     meshes.push(m);
     return m;
@@ -216,15 +218,55 @@ export function montarBairro(P) {
   /* ---- um lote ---- */
   const TELHA = '#9a4a33', VIDRO = '#3a4652', PORTA = '#4a3a2c';
   const PORTA_ALT = 46;          // 2,1 m: o boneco tem 39 e passa em pé
+  /* A FACHADA: porta, e o térreo que muda conforme o lote.
+     Comércio ganha VITRINE — vidro de ponta a ponta ao lado da porta —,
+     casa ganha janela dos dois lados. Frente estreita não comporta as
+     duas janelas de sempre, e era isso que deixava comércio de parede
+     lisa com letreiro em cima. */
+  function fachada(T, l, larg, face) {
+    const pw = Math.min(20, Math.max(12, larg * 0.36));
+    const meio = larg * 0.5, porta = Math.min(PORTA_ALT, l.alt - 6);
+    face(meio - pw / 2, meio + pw / 2, 0, porta, PORTA, 0.6);
+    let pos = 0;
+    const painel = (a0, a1, y0, y1, hex) => { if (a1 - a0 >= 5) { face(a0, a1, y0, y1, hex, 0.5); pos++; } };
+    if (l.placa) {
+      const alto = Math.min(PORTA_ALT - 4, l.alt - 10);
+      if (alto > 16) {
+        painel(6, meio - pw / 2 - 2, 10, alto, VIDRO);
+        painel(meio + pw / 2 + 2, larg - 6, 10, alto, VIDRO);
+      }
+    }
+    const andares = Math.max(1, Math.floor(l.alt / 58));
+    for (let f = 0; f < andares; f++) {
+      const y = 26 + f * 58;
+      if (y + 26 > l.alt - 8) break;
+      if (f === 0 && l.placa) continue;                  // o térreo é a vitrine
+      if (f === 0) { painel(8, meio - 16, y, y + 24, VIDRO); painel(meio + 16, larg - 8, y, y + 24, VIDRO); }
+      else painel(8, larg - 8, y, y + 24, VIDRO);
+    }
+    /* frente estreita não comporta janela ao lado da porta: fica a
+       bandeira em cima dela, que é o que essas casas têm mesmo */
+    if (!pos && l.alt - 8 >= porta + 26)
+      painel(meio - pw / 2 - 2, meio + pw / 2 + 2, porta + 6, porta + 24, VIDRO);
+  }
+
   function lote(T, l) {
     if (l.ang) {
-      /* casa da avenida: corpo, telhado e uma faixa de janela na frente */
+      /* casa da avenida: corpo, telhado e a fachada virada pra avenida */
       caixaRot(T, l.cx, l.cy, l.w - 2, l.h - 2, 0, l.alt, l.ang, l.cor);
       if (l.tipo === 'casa' || l.tipo === 'sobrado')
         telhadoRot(T, l.cx, l.cy, l.w + 2, l.h + 2, l.alt, Math.min(l.h, 46) * 0.42, l.ang, TELHA);
       else if (l.tipo === 'galpao')
         telhadoRot(T, l.cx, l.cy, l.w, l.h, l.alt, Math.min(l.h, 46) * 0.24, l.ang, '#7c8285');
       else if (l.tipo !== 'muro') caixaRot(T, l.cx, l.cy, l.w, l.h, l.alt, l.alt + 4, l.ang, '#8f8a80');
+      if (l.tipo === 'muro') return;
+      /* a frente fica no eixo local do lote: `vf` diz de que lado */
+      const largA = l.w - 2, vf = l.vf || -1, c = Math.cos(l.ang), sn = Math.sin(l.ang);
+      const vFace = vf * (l.h / 2 - 1);
+      fachada(T, l, largA, (a0, a1, y0, y1, hex, fora) => {
+        const e = fora || 0.8, u = (a0 + a1) / 2 - largA / 2, v = vFace + vf * (e / 2 - 0.1);
+        caixaRot(T, l.cx + u * c - v * sn, l.cy + u * sn + v * c, a1 - a0, e + 0.2, y0, y1, l.ang, hex);
+      });
       return;
     }
     const x0 = l.x0 + 1, x1 = l.x1 - 1, z0 = l.y0 + 1, z1 = l.y1 - 1;
@@ -247,15 +289,7 @@ export function montarBairro(P) {
       else if (frente === 'o') caixa(T, x0 - e, x0 + 0.2, y0, y1, z0 + a0, z0 + a1, hex);
       else caixa(T, x1 - 0.2, x1 + e, y0, y1, z0 + a0, z0 + a1, hex);
     };
-    faceBox(larg * 0.5 - 10, larg * 0.5 + 10, 0, Math.min(PORTA_ALT, l.alt - 6), PORTA, 0.6);
-    /* um andar a cada 2,6 m, com peitoril a 1,2 e janela de 1,1 */
-    const andares = Math.max(1, Math.floor(l.alt / 58));
-    for (let f = 0; f < andares; f++) {
-      const y = 26 + f * 58;
-      if (y + 26 > l.alt - 8) break;
-      if (f === 0) { faceBox(8, larg * 0.5 - 16, y, y + 24, VIDRO, 0.5); faceBox(larg * 0.5 + 16, larg - 8, y, y + 24, VIDRO, 0.5); }
-      else faceBox(8, larg - 8, y, y + 24, VIDRO, 0.5);
-    }
+    fachada(T, l, larg, faceBox);
     if (l.tipo === 'sede') {
       faceBox(8, larg - 8, 54, 78, l.lado === 'mandante' ? '#e0b040' : '#e6e6e6', 1.6);
       faceBox(12, larg - 12, 60, 72, l.cor, 1.9);
@@ -357,6 +391,22 @@ export function montarBairro(P) {
             piramide(T, mx, o.alt + 14, o.alt + 24, 6, mz, '#6e6a5e');
           }
           break;
+        case 'bomba': {
+          /* bomba de combustível: corpo, visor e a mangueira na lateral */
+          caixa(T, o.x0, o.x1, 0, o.alt, o.y0, o.y1, '#d8d4c8');
+          caixa(T, o.x0 + 2, o.x1 - 2, o.alt * 0.58, o.alt - 6, o.y0 - 0.5, o.y0 + 0.4, '#23282e');
+          caixa(T, o.x0 + 2, o.x1 - 2, o.alt * 0.58, o.alt - 6, o.y1 - 0.4, o.y1 + 0.5, '#23282e');
+          caixa(T, o.x1 - 1, o.x1 + 3, o.alt * 0.4, o.alt * 0.62, mz - 2, mz + 2, '#c9463c');
+          caixa(T, o.x0 - 3, o.x0 + 1, o.alt * 0.4, o.alt * 0.62, mz - 2, mz + 2, '#1f6a3a');
+          break;
+        }
+        case 'tabela': {
+          /* tabela de basquete: poste, prancha e o aro */
+          caixa(T, o.x - 2.4, o.x + 2.4, 0, o.alt, o.y - 2.4, o.y + 2.4, '#6e6a5e');
+          caixa(T, o.x - 22, o.x + 22, o.alt - 26, o.alt, o.y - 1.2, o.y + 1.2, '#eceadf');
+          caixa(T, o.x - 7, o.x + 7, o.alt - 20, o.alt - 18, o.y - 12, o.y + 1, '#c9463c');
+          break;
+        }
         case 'canteiro':
           caixa(T, o.x0, o.x1, 0, o.alt, o.y0, o.y1, PEDRA);
           caixa(T, o.x0 + 3, o.x1 - 3, o.alt, o.alt + 3, o.y0 + 3, o.y1 - 3, GRAMA);
@@ -449,6 +499,11 @@ export function montarBairro(P) {
     const chaoMiolo = q.equip ? q.equip.chao : '#7d7668';
     for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, chaoMiolo);
     if (q.quintal) for (const p of semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
+    /* os puxadinhos do fundo do quintal */
+    for (const f of q.fundos || []) {
+      caixa(T, f.x0, f.x1, 0, f.alt, f.y0, f.y1, f.cor);
+      telhado(T, f.x0 - 2, f.x1 + 2, f.y0 - 2, f.y1 + 2, f.alt, Math.min(f.x1 - f.x0, f.y1 - f.y0) * 0.26, '#8f8a80');
+    }
     for (const l of q.lotes) {
       limite = l.ang ? null : { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
       lote(T, l);
@@ -504,15 +559,18 @@ export function montarBairro(P) {
       }
       if (frente < 26) continue;
       if (l.placa) {
-        const larg = Math.min(frente - 8, 76), alt = Math.min(13, larg / 4.6);
-        const y = Math.min(26, Math.max(18, l.alt - 5 - alt)) + alt / 2;
-        placa(TL, px, y, pz, ox, oz, larg, alt, uv.get('P:' + l.placa));
+        /* ACIMA DA PORTA. Com a casa mais alta o letreiro ficava em
+           cima da porta e da vitrine — a placa é do comércio, mas a
+           porta é por onde se entra. */
+        const larg = Math.min(frente - 12, 110), alt = Math.min(15, larg / 4.6);
+        const base = Math.min(Math.max(PORTA_ALT + 6, 52), l.alt - 6 - alt);
+        placa(TL, px, base + alt / 2, pz, ox, oz, larg, alt, uv.get('P:' + l.placa));
       }
       if (l.pixacao) {
         /* a pixação não pode passar da parede: em muro de 12 ela tem de
            caber nos 12, senão sobra tinta boiando no ar */
-        const larg = Math.min(frente - 12, 50);
-        const alt = Math.min(9, larg / 5, l.alt - 4);
+        const larg = Math.min(frente - 12, 62);
+        const alt = Math.min(12, larg / 5, l.alt - 4);
         if (alt < 4) continue;
         /* baixa, abaixo da linha das janelas, e fora do meio: pixação
            não se alinha com a porta */
@@ -522,9 +580,9 @@ export function montarBairro(P) {
         placa(TL, px, y, pz, ox, oz, larg, alt, uv.get('X:' + l.pixacao), lado * folga * 0.7);
       }
     }
-    malhaUV(TL, tex);
+    malhaUV(TL, tex, 'letreiros');
   }
-  for (const T of pedacos.values()) malha(T, true);
+  for (const T of pedacos.values()) malha(T, true, 'quarteirao');
 
   /* ---- os soltos: carros, postes, campos ---- */
   const TS = Tecido();
@@ -561,7 +619,7 @@ export function montarBairro(P) {
       caixa(TS, x - 1, x + 1, 15, 16.5, f.cy - 24, f.cy + 24, '#eeeeea');
     }
   }
-  malha(TS, true);
+  malha(TS, true, 'soltos');
 
   /* ---- o mato: moitas, em duas pirâmides baixas ---- */
   const TM = Tecido();
@@ -569,7 +627,7 @@ export function montarBairro(P) {
     piramide(TM, m.x, 0, m.r * 0.9, m.r * 0.8, m.y, '#5d7746');
     piramide(TM, m.x + m.r * 0.5, 0, m.r * 0.6, m.r * 0.5, m.y - m.r * 0.3, '#52693e');
   }
-  malha(TM, false);
+  malha(TM, false, 'moitas');
 
   return { meshes, triangulos, pedacos: pedacos.size };
 }
