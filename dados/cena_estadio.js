@@ -422,8 +422,13 @@ TO.dados.plantaEstadio = (function(){
   const COLUNAS = [ coluna(194,22), coluna(344,22), coluna(494,22),
                     { c: QEST_X0 - RUA/2, l: RUA }, { c: QEST_X1 + RUA/2, l: RUA },
                     coluna(1036,22), coluna(1186,22) ];
-  const LINHAS  = [ linha(110,22), { c: QEST_Y0 - RUA/2, l: RUA }, { c: QEST_Y1 + RUA/2, l: RUA },
-                    linha(555,22), linha(705,22), linha(855,22), linha(1005,22) ];
+  /* AS LINHAS SÃO MAIS JUNTAS QUE AS COLUNAS, de propósito: quarteirão
+     bom é comprido e raso, com as casas de uma face encostando o fundo
+     nas da outra. Com 150 px nos dois eixos sobrava um descampado no
+     miolo; com 86 px aqui o fundo de uma fileira encosta no da outra. */
+  const LINHAS  = [ linha(118,22), { c: QEST_Y0 - RUA/2, l: RUA }, { c: QEST_Y1 + RUA/2, l: RUA },
+                    linha(491,22), linha(577,22), linha(663,22), linha(749,22),
+                    linha(835,22), linha(921,22), linha(1007,22), linha(1093,22) ];
   const noQuadradoDoEstadio = (x, y) =>
     x >= QEST_X0 && x < QEST_X1 && y >= QEST_Y0 && y < QEST_Y1;
 
@@ -699,7 +704,59 @@ TO.dados.plantaEstadio = (function(){
     const r = (u, v) => [l.cx + u*c - v*s, l.cy + u*s + v*c];
     return [r(-hw,-hh), r(hw,-hh), r(hw,hh), r(-hw,hh), [l.cx, l.cy]];
   }
-  const tocaAvenida = (l, folga) => cantosDoLote(l).some(([x, y]) => naFaixaDaAvenida(x, y, folga));
+  /* DISTÂNCIA EXATA entre um retângulo (girado ou não) e o eixo de uma
+     avenida. Testar só os cantos e o centro não basta: a avenida é
+     diagonal e tem ponta redonda, então ela morde o MEIO de uma aresta
+     do lote sem tocar canto nenhum. Para dois convexos o mínimo está
+     sempre num vértice de um contra uma aresta do outro — aqui, canto
+     do retângulo contra o segmento, e ponta do segmento contra o
+     retângulo —, e zero se eles se cruzam. */
+  function distSegRet(ax, ay, bx, by, hw, hh){
+    if((Math.abs(ax) <= hw && Math.abs(ay) <= hh) ||
+       (Math.abs(bx) <= hw && Math.abs(by) <= hh)) return 0;
+    const dx = bx - ax, dy = by - ay;
+    let t0 = 0, t1 = 1, cruza = true;
+    const fatia = (p, q) => {                 // recorte de Liang-Barsky: p*t <= q
+      if(p === 0) return q >= 0;
+      const r = q / p;
+      if(p < 0){ if(r > t1) return false; if(r > t0) t0 = r; }
+      else     { if(r < t0) return false; if(r < t1) t1 = r; }
+      return true;
+    };
+    for(const [p, q] of [[-dx, ax + hw], [dx, hw - ax], [-dy, ay + hh], [dy, hh - ay]])
+      if(!fatia(p, q)){ cruza = false; break; }
+    if(cruza) return 0;
+    const L2 = dx*dx + dy*dy;
+    const aoSeg = (x, y) => {
+      const t = L2 ? Math.max(0, Math.min(1, ((x-ax)*dx + (y-ay)*dy) / L2)) : 0;
+      return Math.hypot(x - ax - dx*t, y - ay - dy*t);
+    };
+    const aoRet = (x, y) => Math.hypot(Math.max(Math.abs(x) - hw, 0), Math.max(Math.abs(y) - hh, 0));
+    let m = Math.min(aoRet(ax, ay), aoRet(bx, by));
+    for(const [x, y] of [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]]) m = Math.min(m, aoSeg(x, y));
+    return m;
+  }
+  /* o corpo do lote (ou de uma peça, que também é retângulo) encosta no
+     asfalto de alguma avenida? Aqui entra a PONTA da avenida também:
+     ela é asfalto de verdade, e `naFaixaDaAvenida`, que a ignora, só
+     serve pra dizer quem é "casa da avenida". */
+  function tocaAvenida(l, folga){
+    const g = folga === undefined ? CALC : folga;
+    const girado = !!l.ang;
+    const cx = girado ? l.cx : (l.x0 + l.x1)/2, cy = girado ? l.cy : (l.y0 + l.y1)/2;
+    const hw = girado ? l.w/2 : (l.x1 - l.x0)/2, hh = girado ? l.h/2 : (l.y1 - l.y0)/2;
+    const C = girado ? Math.cos(l.ang) : 1, S = girado ? Math.sin(l.ang) : 0;
+    const R = Math.hypot(hw, hh);
+    for(const av of AVENIDAS){
+      if(cx + R < av.bx0 || cx - R > av.bx1 || cy + R < av.by0 || cy - R > av.by1) continue;
+      const lim = av.l/2 + g;
+      for(const sg of av.segs){
+        const ux = sg.x0 - cx, uy = sg.y0 - cy, vx = sg.x1 - cx, vy = sg.y1 - cy;
+        if(distSegRet(ux*C + uy*S, -ux*S + uy*C, vx*C + vy*S, -vx*S + vy*C, hw, hh) <= lim) return true;
+      }
+    }
+    return false;
+  }
   const dentroRet = (x, y, o) => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1;
   function dentroLote(x, y, l){
     if(!l.ang) return dentroRet(x, y, l);
@@ -736,7 +793,7 @@ TO.dados.plantaEstadio = (function(){
     /* na orla o recuo da costa pode zerar o miolo: sem miolo não há
        lote, e lote de largura zero vira casa do avesso */
     if(largI < 40 || altI < 40) return;
-    let prof = par8(entre(96, 136));          // 4,3 a 6,1 m de fundo
+    let prof = par8(entre(88, 112));          // 4,0 a 5,0 m de fundo
     /* quarteirão raso: uma fileira só, ocupando o fundo todo */
     const raso = altI < 2*prof + 24 || largI < 2*prof + 24;
     if(raso) prof = Math.min(altI, largI);
@@ -791,6 +848,7 @@ TO.dados.plantaEstadio = (function(){
           }
         }
         if(cantosDoLote(lote).some(([x, y]) => noCampo(x, y))) continue;
+        if(q.equip && cruzaRet(lote, q.equip.area)) continue;    // a fatia do equipamento
         LOTES.push(lote); q.lotes.push(lote);
       }
     }
@@ -807,12 +865,11 @@ TO.dados.plantaEstadio = (function(){
       for(let i=0;i<n;i++){
         const w = par8(entre(44, 96)), h = par8(entre(38, 76));
         if(qw - w - 16 < 0 || qh - h - 16 < 0) continue;
+        if(q.equip) continue;
         const fx = q.quintal.x0 + 8 + rng()*(qw - w - 16), fy = q.quintal.y0 + 8 + rng()*(qh - h - 16);
         /* o quintal também é cortado pela avenida: puxadinho nenhum
            em cima do asfalto (o beiral sai 2 além do corpo) */
-        const bate = [[-2,-2],[w+2,-2],[w+2,h+2],[-2,h+2],[w/2,h/2]]
-          .some(([a, b]) => naAvenida(fx + a, fy + b, CALC));
-        if(bate) continue;
+        if(tocaAvenida({ x0: fx-2, y0: fy-2, x1: fx+w+2, y1: fy+h+2 }, CALC)) continue;
         q.fundos.push({ x0: fx, y0: fy, x1: fx + w, y1: fy + h, alt: par8(entre(32, 60)),
                         cor: escolher(['#b4ab97','#a79d88','#c0b6a0','#9aa0a2','#bdb3a0']) });
       }
@@ -851,21 +908,34 @@ TO.dados.plantaEstadio = (function(){
     'CUIDADO COM O CÃO', 'TEM ÁGUA', 'LAVA-SE ROUPA', 'CONSERTA-SE GELADEIRA'
   ];
   const EQUIPAMENTOS = [
-    { tipo: 'praca',     ponto: pxm(568, 630) },   // o centro do bairro do sul
-    { tipo: 'delegacia', ponto: pxm(419, 480) },   // a oeste, no caminho da torcida
-    { tipo: 'hospital',  ponto: pxm(765, 480) },   // ao sul do estádio, no quarteirão grande
-    { tipo: 'shopping',  ponto: pxm(765, 780) },   // mais ao sul, com estacionamento
-    { tipo: 'galeria',   ponto: pxm(568, 930) },   // o beco de lojas, no sul
-    { tipo: 'escola',    ponto: pxm(419, 930) },   // no meio do residencial do sul
-    { tipo: 'posto',     ponto: pxm(269, 630) }    // na saída oeste, de frente pra estrada
+    { tipo: 'hospital',  ponto: pxm(765, 448) },   // logo ao sul do estádio
+    { tipo: 'delegacia', ponto: pxm(419, 448) },   // a oeste, no caminho da torcida
+    { tipo: 'shopping',  ponto: pxm(961, 160) },   // no nordeste, de frente pra orla
+    { tipo: 'posto',     ponto: pxm(765, 620) },   // na via larga, ao sul
+    { tipo: 'escola',    ponto: pxm(568, 706) },   // no meio do residencial
+    { tipo: 'galeria',   ponto: pxm(765, 706) },   // o beco de lojas, ao lado da escola
+    { tipo: 'praca',     ponto: pxm(568, 878) }    // o centro do bairro do sul
   ];
   const CORES_CARRO_PM = ['#f0f0ee','#1a3f86'];
   /* a mesma paleta dos carros da rua — ela é declarada mais abaixo,
      junto do estacionamento da beira do estádio */
   const CORES_CARRO_EQ = ['#d9d9d9','#2b2b2b','#8a8f96','#b8242a','#2a4f9a','#e6e6e6','#6b7280'];
 
-  function equipamento(tipo, q){
-    const X0 = q.ix0, X1 = q.ix1, Y0 = q.iy0, Y1 = q.iy1;
+  /* QUANTO DO QUARTEIRÃO CADA UM TOMA. O resto é casa: quarteirão de
+     posto tem casa, o da escola também — é assim na cidade, e um
+     equipamento sozinho num quarteirão inteiro lê como maquete. */
+  const FATIA = { praca: 1, galeria: 0.66, shopping: 0.74, hospital: 0.66,
+                  escola: 0.68, delegacia: 0.58, posto: 0.48 };
+  function areaDoEquipamento(tipo, q){
+    const L = q.ix1 - q.ix0;
+    const w = Math.min(L, Math.max(260, L * (FATIA[tipo] || 0.6)));
+    /* encostada na face oeste: sobra a leste pras casas */
+    return { x0: q.ix0, x1: q.ix0 + w, y0: q.iy0, y1: q.iy1 };
+  }
+  const cruzaRet = (a, b) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+
+  function equipamento(tipo, q, area){
+    const X0 = area.x0, X1 = area.x1, Y0 = area.y0, Y1 = area.y1;
     const L = X1 - X0, A = Y1 - Y0, cx = (X0 + X1)/2, cy = (Y0 + Y1)/2;
     const pecas = [];
     /* bloqueia por padrão; passe `false` pra peça de enfeite */
@@ -1087,19 +1157,18 @@ TO.dados.plantaEstadio = (function(){
       p('letreiro', { x: cx - larg*0.03, y: Y0 + fundo + 26, ox: 0, oz: 1, texto: 'SHOPPING BEIRA-MAR', placa: true, larg: 150, altura: 30, base: 112 }, false);
       p('arvore', { x: X1 - 22, y: Y0 + 22, r: 16 }, false);
     }
-    return { tipo, chao, pecas };
+    return { tipo, chao, pecas, area };
   }
 
   /* os equipamentos antes dos lotes: o quarteirão deles não é loteado */
   for(const e of EQUIPAMENTOS){
     const q = celulaEm(e.ponto[0], e.ponto[1]);
     if(!q || q.tipo !== 'quadra' || q.equip) continue;
-    const eq = equipamento(e.tipo, q);
+    const eq = equipamento(e.tipo, q, areaDoEquipamento(e.tipo, q));
     /* as peças são retas e a avenida é diagonal: se alguma cair no
        asfalto, o equipamento não serve pra esse quarteirão */
     const pisaNaAvenida = eq.pecas.some(o => o.bloqueia && o.x0 !== undefined &&
-      [0, 0.5, 1].some(t => [0, 0.5, 1].some(u =>
-        naAvenida(o.x0 + (o.x1-o.x0)*t, o.y0 + (o.y1-o.y0)*u, 0))));
+      tocaAvenida(o, 0));
     if(pisaNaAvenida) continue;
     q.equip = eq;
     q.solidos = eq.pecas.filter(o => o.bloqueia);
@@ -1127,7 +1196,8 @@ TO.dados.plantaEstadio = (function(){
             const cx = sg.x0 + sg.ux*(t + w/2) - sg.uy*off*lado;
             const cy = sg.y0 + sg.uy*(t + w/2) + sg.ux*off*lado;
             const q = celulaEm(cx, cy);
-            if(!q || q.tipo !== 'quadra' || q.equip) return false;
+            if(!q || q.tipo !== 'quadra') return false;
+            if(q.equip && cruzaRet({ x0: cx - w/2, x1: cx + w/2, y0: cy - h/2, y1: cy + h/2 }, q.equip.area)) return false;
             const tipo = muro ? 'muro' : tipoDoLote(q);
             const T = TIPOS[tipo];
             /* `vf` é pra que lado, no eixo local do lote, fica a frente:
@@ -1160,7 +1230,7 @@ TO.dados.plantaEstadio = (function(){
     }
   }
 
-  QUADRAS.filter(q => !q.equip).forEach(lotear);
+  QUADRAS.forEach(lotear);
   /* A SEDE É O LOTE MAIS PERTO DO PONTO, na frente pedida. Antes ela
      dependia de o ponto cair dentro de um lote, e sumia toda vez que a
      grade mudava — e sem sede visitante a cena não tem spawn. */
@@ -1492,7 +1562,11 @@ TO.dados.plantaEstadio = (function(){
     if(q && q.tipo === 'quadra'){
       /* no equipamento anda-se em volta das peças; no quarteirão de
          casa o miolo inteiro é maciço */
-      if(q.equip) return !q.solidos.some(o => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1);
+      if(q.equip){
+        const a = q.equip.area;
+        if(x >= a.x0 && x < a.x1 && y >= a.y0 && y < a.y1)
+          return !q.solidos.some(o => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1);
+      }
       return !dentroPol(x, y, q.polMiolo);
     }
     if(z === 'mato') return !naMoita(x, y);

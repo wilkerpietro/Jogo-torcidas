@@ -241,13 +241,18 @@ export function montarBairro(P) {
       const y = 26 + f * 58;
       if (y + 26 > l.alt - 8) break;
       if (f === 0 && l.placa) continue;                  // o térreo é a vitrine
-      if (f === 0) { painel(8, meio - 16, y, y + 24, VIDRO); painel(meio + 16, larg - 8, y, y + 24, VIDRO); }
+      if (f === 0) { painel(8, meio - pw / 2 - 3, y, y + 24, VIDRO); painel(meio + pw / 2 + 3, larg - 8, y, y + 24, VIDRO); }
       else painel(8, larg - 8, y, y + 24, VIDRO);
     }
-    /* frente estreita não comporta janela ao lado da porta: fica a
-       bandeira em cima dela, que é o que essas casas têm mesmo */
-    if (!pos && l.alt - 8 >= porta + 26)
-      painel(meio - pw / 2 - 2, meio + pw / 2 + 2, porta + 6, porta + 24, VIDRO);
+    /* FRENTE ESTREITA. Com menos de uns 1,8 m de frente não sobra vão
+       ao lado da porta pra janela nenhuma — nem no comércio. O que
+       essas casas têm de verdade é BANDEIRA em cima da porta, e é o
+       que entra aqui: pega o que houver entre o topo da porta e o
+       beiral, sem exigir os 24 de uma janela inteira. */
+    if (!pos) {
+      const b0 = porta + 4, b1 = Math.min(b0 + 20, l.alt - 4);
+      if (b1 - b0 >= 7) painel(meio - pw / 2 - 2, meio + pw / 2 + 2, b0, b1, VIDRO);
+    }
   }
 
   function lote(T, l) {
@@ -494,10 +499,9 @@ export function montarBairro(P) {
        deixa no quarteirão lê como um descampado de cimento); e o
        QUINTAL, mais alto, no meio. */
     for (const p of semAsAvenidas(q)) laje(T, p, 0, 1.4, '#8d897d');
-    /* no equipamento o miolo é pátio, não terreno de casa: o chão dele
-       tem cor própria, e as peças de `piso` vão logo acima */
-    const chaoMiolo = q.equip ? q.equip.chao : '#7d7668';
-    for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, chaoMiolo);
+    for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, '#7d7668');
+    /* a fatia do equipamento tem chão próprio, e só ela */
+    if (q.equip) for (const p of semAsAvenidas(q.equip.area, K.CALC)) laje(T, p, 0, 1.65, q.equip.chao);
     if (q.quintal) for (const p of semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
     /* os puxadinhos do fundo do quintal */
     for (const f of q.fundos || []) {

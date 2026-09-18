@@ -141,8 +141,9 @@ TO.diaJogo.estadioPintura = (function(){
   /* o chão de cada equipamento: a MESMA lista de peças que o 3D usa,
      então o mapa visto de cima bate com o que se vê lá embaixo */
   function chaoDoEquipamento(c, q){
+    const a = q.equip.area;
     c.fillStyle = q.equip.chao;
-    c.fillRect(q.ix0, q.iy0, q.ix1 - q.ix0, q.iy1 - q.iy0);
+    c.fillRect(a.x0, a.y0, a.x1 - a.x0, a.y1 - a.y0);
     for(const o of q.equip.pecas){
       if(o.k !== 'piso') continue;
       c.fillStyle = o.cor; c.fillRect(o.x0, o.y0, o.x1 - o.x0, o.y1 - o.y0);
@@ -181,8 +182,8 @@ TO.diaJogo.estadioPintura = (function(){
         /* polígono, não retângulo: na orla o quarteirão acaba na
            diagonal da costa, e o miolo com ele */
         poli(c, q.pol, COR.calcada);
+        if(q.polMiolo.length >= 3) poli(c, q.polMiolo, COR.lote);
         if(q.equip) chaoDoEquipamento(c, q);
-        else if(q.polMiolo.length >= 3) poli(c, q.polMiolo, COR.lote);
         /* as pracinhas das cunhas: as mesmas tiras e peças do 3D */
         for(const pr of q.pracinhas || []){
           c.fillStyle = COR.piso;

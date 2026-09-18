@@ -91,12 +91,17 @@ mundo é o próprio tabuleiro, sem dobra nenhuma.
 
 Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
 
-- **A grade.** Sete colunas (norte-sul) e sete linhas (leste-oeste), de
-  150 px em 150, com 22 px de pista; as quatro que encostam no estádio
-  vêm do quarteirão dele, pra bater exatamente. **Era o dobro disso, a
-  cada 70 px e com 12 de pista**: dava quarteirão de 11 m com três
-  casas e rua de 2,9 m, onde o boneco de 1,75 parecia um gigante. Agora
-  o quarteirão tem 27 m e umas dezesseis casas, e a pista 5,3 m. O
+- **A grade.** Sete colunas (norte-sul) de 150 px em 150 e onze linhas
+  (leste-oeste) de 86 px em 86, com 22 px de pista; as quatro que
+  encostam no estádio vêm do quarteirão dele, pra bater exatamente.
+  **Era o dobro disso, a cada 70 px e com 12 de pista**: dava quarteirão
+  de 11 m com três casas e rua de 2,9 m, onde o boneco de 1,75 parecia
+  um gigante. A pista está em 5,3 m. O quarteirão passou por 150 × 150
+  e voltou: **quadrado ele tinha 27 m de lado e um vazio no meio** — as
+  duas fileiras de lote têm 4 a 5 m de fundo cada, então sobrava um
+  descampado de 17 m entre os fundos. Agora ele é **comprido e raso**
+  (27 × 13 m): as costas das duas fileiras quase se encontram, o quintal
+  virou uma tira, e são 36 quarteirões com cerca de doze casas cada. O
   tabuleiro não mudou de tamanho: as mesmas 460 mil células, a mesma
   textura de chão, a mesma calibragem do combate. Entre ruas há células: dentro do
   contorno da cidade (um polígono lido do mapa) a célula é um **quarteirão**
@@ -136,7 +141,15 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   sair, e no fundo de 20 vira muro. Quem decide "casa da avenida" é a
   faixa **sem a ponta redonda** (`naFaixaDaAvenida`): a avenida acaba
   numa rua, e o quarteirão do outro lado não é dela — com a ponta
-  contando, ele ficava pelado.
+  contando, ele ficava pelado. Mas quem decide **colisão** é a faixa
+  inteira, ponta incluída (`tocaAvenida`), e a conta é a **distância
+  exata entre o retângulo e o eixo** — canto do lote contra o segmento,
+  ponta do segmento contra o lote, zero se eles se cruzam. Testar os
+  quatro cantos e o centro, que era o que havia, deixava passar dois
+  casos: a avenida diagonal mordendo o **meio de uma aresta** sem tocar
+  canto nenhum, e a **ponta redonda** da avenida, que `naFaixaDaAvenida`
+  ignora de propósito. Foi o que pôs uma casa na boca da avenida oeste e
+  outra na da norte.
 - **Três chãos, um sobre o outro** (`bairro3d.js`): a **calçada** (laje de
   1,4) vai da guia da rua até a guia da avenida; o **chão do lote** (1,6)
   cobre o miolo e para na calçada da avenida; o **quintal** (10) fica no
@@ -168,7 +181,7 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   e é isso que o faz caber no quarteirão em vez de atravessar a rua e
   a areia. E rua nenhuma corta campo ao meio: entre duas células de
   campo `ruaEntre` diz que não há asfalto, na máscara e na pintura.
-- **Quatro quarteirões não são de casa.** Praça (no bairro do sul),
+- **Quatro deles vieram primeiro.** Praça (no bairro do sul),
   delegacia (a oeste, no caminho da torcida), hospital (a oeste) e
   shopping (ao sul). Nenhum encosta no estádio: a vizinhança dele é
   de casa e comércio, como no mapa. Cada um monta as próprias **peças** a partir do miolo da célula,
@@ -210,14 +223,23 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   como se cobre casa de rua. Prédio e sede seguem de laje, que é o
   certo pra eles. O beiral sai 2 do corpo mas vem cortado pelo miolo do
   quarteirão, a mesma regra de sempre.
-- **Sete quarteirões de equipamento**: praça, delegacia, hospital,
-  shopping, **galeria** (o beco de lojas: duas fileiras de lojinhas de
-  frente uma pra outra, com um corredor que atravessa o quarteirão e é
-  gargalo), **escola** (bloco em L, quadra poliesportiva com alambrado
-  e tabela, mastro) e **posto de gasolina** (cobertura sobre duas ilhas
-  de bomba, loja de conveniência, totem). As medidas deles são
-  ABSOLUTAS e centradas no quarteirão — quando a grade engordou, as
-  que eram fração do quarteirão viraram lajes do tamanho do quarteirão.
+- **Sete equipamentos**: praça, delegacia, hospital, shopping,
+  **galeria** (o beco de lojas: duas fileiras de lojinhas de frente uma
+  pra outra, com um corredor que atravessa o quarteirão e é gargalo),
+  **escola** (bloco em L, quadra poliesportiva com alambrado e tabela,
+  mastro) e **posto de gasolina** (cobertura sobre duas ilhas de bomba,
+  loja de conveniência, totem).
+  **O equipamento divide o quarteirão com as casas.** Ele toma uma
+  FATIA da ponta oeste do miolo — `areaDoEquipamento` dá a cada tipo
+  uma fração (a praça toma o quarteirão inteiro, o posto 48 %), com um
+  mínimo de 260 pra não virar brinquedo —, e o resto do quarteirão é
+  loteado normalmente: o lote que cruza a fatia é o único que sai. Dá
+  de 3 a 10 casas ao lado da escola, do posto, da delegacia. Antes o
+  quarteirão do equipamento era só dele, e uma delegacia sozinha num
+  quarteirão de 27 m lia como prédio público num descampado. A fatia
+  tem chão próprio (o do equipamento), o resto fica com o chão de lote.
+  Na máscara o miolo do quarteirão é maciço como sempre, **menos dentro
+  da fatia**, onde vale a lista de peças: é ali que se anda entre elas.
   Equipamento cujas peças caiam no asfalto de uma avenida é recusado
   naquele quarteirão, porque as peças são retas e a avenida é diagonal.
 - **O miolo do quarteirão é fundo de quintal**, não pátio: com o
