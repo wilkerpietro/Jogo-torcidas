@@ -114,11 +114,11 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   A frente da avenida é de **casas rotacionadas** (o lote tem ângulo;
   `dentroLote` gira o ponto), que entram ANTES dos lotes axiais e tentam
   fundos menores perto da esquina; o lote axial que pisa numa delas ou na
-  calçada da avenida encolhe pro lado da frente (48, depois 32) antes de
-  sair. Quem decide "casa da avenida" é a faixa **sem a ponta redonda**
-  (`naFaixaDaAvenida`): a avenida acaba numa rua, e o quarteirão do outro
-  lado não é dela — com a ponta contando, ele ficava pelado. O quarteirão
-  cortado não ganha laje de calçada nem quintal no 3D.
+  calçada da avenida encolhe pro lado da frente (48, 32, 20) antes de
+  sair, e no fundo de 20 vira muro. Quem decide "casa da avenida" é a
+  faixa **sem a ponta redonda** (`naFaixaDaAvenida`): a avenida acaba
+  numa rua, e o quarteirão do outro lado não é dela — com a ponta
+  contando, ele ficava pelado.
 - **Três chãos, um sobre o outro** (`bairro3d.js`): a **calçada** (laje de
   1,4) vai da guia da rua até a guia da avenida; o **chão do lote** (1,6)
   cobre o miolo e para na calçada da avenida; o **quintal** (10) fica no
