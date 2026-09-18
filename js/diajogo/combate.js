@@ -780,10 +780,17 @@ TO.diaJogo.combate = (function(){
     const l=J.discos.find(d=>d.lider&&d.vivo);
     if(!l||l.fugindo||l.entrando||!podeControlar) return;
     let dx=0,dy=0;
-    if(teclas['a']||teclas['arrowleft'])  dx--;
-    if(teclas['d']||teclas['arrowright']) dx++;
-    if(teclas['w']||teclas['arrowup'])    dy--;
-    if(teclas['s']||teclas['arrowdown'])  dy++;
+    /* QUEM TEM CÂMERA LIVRE MANDA UM VETOR, não quatro booleanos.
+       Com booleanos só há oito direções, e numa cena 3D em que a
+       câmera gira isso vira "andar de lado pro lugar errado". Cena
+       sem câmera (a 2D de sempre) continua mandando as teclas. */
+    if(teclas.vetor){ dx=teclas.vetor.x; dy=teclas.vetor.y; }
+    else {
+      if(teclas['a']||teclas['arrowleft'])  dx--;
+      if(teclas['d']||teclas['arrowright']) dx++;
+      if(teclas['w']||teclas['arrowup'])    dy--;
+      if(teclas['s']||teclas['arrowdown'])  dy++;
+    }
     const m=Math.hypot(dx,dy);
     if(!m) return;
     /* o jogador corre atrás no mesmo passo de quem foge — a mesma

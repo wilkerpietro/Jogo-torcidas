@@ -179,13 +179,15 @@ addEventListener('keyup', e => { teclas[e.key.toLowerCase()] = false; });
    menor do que é. */
 
 /* Na câmera de ombro, W tem que ser "pra frente da câmera" e não
-   "pro norte da cena". `moverLider` só lê quatro booleanos, então
-   a intenção é girada antes de entrar. */
+   "pro norte da cena". A vista devolve o vetor já no eixo dela, e é
+   ele que vai pro combate — as teclas cruas ficam de fora, senão o
+   boneco andaria pelo norte do mapa. */
 function entradaDoQuadro() {
   const t = Object.assign({}, teclas);
-  const g = vista.girarEntrada(teclas);
-  t.w = !!g.w; t.a = !!g.a; t.s = !!g.s; t.d = !!g.d;
+  t.w = t.a = t.s = t.d = false;
   t.arrowup = t.arrowdown = t.arrowleft = t.arrowright = false;
+  const v = vista.girarEntrada(teclas);
+  if (v) t.vetor = v;
   return t;
 }
 

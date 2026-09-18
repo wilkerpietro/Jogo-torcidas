@@ -48,50 +48,14 @@ export function montarBairro(P) {
     caixaV(T, [[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1],
                [x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]], hex);
   }
-  /* ---- a laje da calçada, recortada pelas avenidas ----
-     Recorta um polígono convexo pelo meio-plano n·p <= d. O que sobra
-     continua convexo, então dá pra ir cortando banda por banda: é
-     exato, e é o que deixa a calçada chegar até a guia da avenida sem
-     nunca passar por cima do asfalto. */
-  function corta(pol, nx, nz, d) {
-    const out = [];
-    for (let i = 0; i < pol.length; i++) {
-      const a = pol[i], b = pol[(i + 1) % pol.length];
-      const da = nx * a[0] + nz * a[1] - d, db = nx * b[0] + nz * b[1] - d;
-      if (da <= 0) out.push(a);
-      if ((da < 0) !== (db < 0)) {
-        const t = da / (da - db);
-        out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
-      }
-    }
-    return out;
-  }
-  /* o chão parte do retângulo JÁ RECORTADO PELA COSTA: quarteirão da
-     orla acaba na guia da beira-mar, não em cima da areia */
-  function semAsAvenidas(ret, folga) {
-    const base = Array.isArray(ret) ? ret : K.recorteCosta(ret);
-    if (base.length < 3) return [];
-    let pecas = [base];
-    const cantos = base;
-    for (const av of K.AVENIDAS) {
-      const meia = av.l / 2 + (folga || 0);
-      for (const sg of av.segs) {
-        const nx = -sg.uy, nz = sg.ux, c = nx * sg.x0 + nz * sg.y0;
-        const ds = cantos.map(([x, z]) => nx * x + nz * z - c);
-        if (Math.min(...ds) > meia || Math.max(...ds) < -meia) continue;
-        const ts = cantos.map(([x, z]) => (x - sg.x0) * sg.ux + (z - sg.y0) * sg.uy);
-        if (Math.max(...ts) < -meia || Math.min(...ts) > sg.L + meia) continue;
-        const novas = [];
-        for (const p of pecas) {
-          const esq = corta(p, nx, nz, c - meia);
-          const dir = corta(p, -nx, -nz, -(c + meia));
-          if (esq.length >= 3) novas.push(esq);
-          if (dir.length >= 3) novas.push(dir);
-        }
-        pecas = novas;
-      }
-    }
-    return pecas;
+  /* a laje da calçada vem recortada da planta: o retângulo menos as
+     bandas das avenidas, que é a mesma conta que a máscara usa */
+  const semAsAvenidas = (ret, folga) => K.pedacosSemAvenida(ret, folga);
+  /* uma tampa plana, sem paredinha: é o chão da pracinha, que já
+     assenta sobre o chão do lote */
+  function tampa(T, x0, x1, y, y0, y1, hex) {
+    tri(T, [x0, y, y1], [x1, y, y1], [x1, y, y0], hex, TONS[0]);
+    tri(T, [x0, y, y1], [x1, y, y0], [x0, y, y0], hex, TONS[0]);
   }
   /* um prisma reto a partir de um polígono convexo: tampa e paredinha.
      O retângulo vem no sentido horário visto de cima; invertido, a
@@ -324,9 +288,9 @@ export function montarBairro(P) {
       caixa(T, c.x0 + 2, c.x1 - 2, 11, 15, c.y1 - 0.4, c.y1 + 0.5, '#c9463c');
     }
   }
-  function desenharEquipamento(T, TL, uv, q) {
+  function desenharPecas(T, TL, uv, pecas) {
     const PEDRA = '#b9b3a4', GRAMA = '#4a7a3c';
-    for (const o of q.equip.pecas) {
+    for (const o of pecas) {
       const mx = (o.x0 + o.x1) / 2, mz = (o.y0 + o.y1) / 2;
       switch (o.k) {
         case 'bloco':
@@ -350,9 +314,11 @@ export function montarBairro(P) {
           caixa(T, o.x0, o.x1, 0, o.alt, o.y0, o.y1, PEDRA);
           caixa(T, o.x0 + 3, o.x1 - 3, o.alt, o.alt + 3, o.y0 + 3, o.y1 - 3, GRAMA);
           break;
-        case 'piso':
-          caixa(T, o.x0, o.x1, 1.6, 1.75, o.y0, o.y1, o.cor);
+        case 'piso': {
+          const b = o.base || 1.6;
+          caixa(T, o.x0, o.x1, b, b + 0.15, o.y0, o.y1, o.cor);
           break;
+        }
         case 'marquise': case 'claraboia': case 'maquina':
           caixa(T, o.x0, o.x1, o.y, o.y + o.alt, o.y0, o.y1, o.cor);
           break;
@@ -442,7 +408,7 @@ export function montarBairro(P) {
       limite = null;
     }
     for (const a of q.arvores || []) arvore(T, a);
-    if (q.equip) comEquipamento.push([T, q]);
+    if (q.equip || q.pracinhas) comEquipamento.push([T, q]);
   }
   /* ---- os dizeres ---- */
   const dizeres = new Map();
@@ -464,7 +430,11 @@ export function montarBairro(P) {
     for (const [T, q] of comEquipamento) {
       /* a mesma regra da casa: beiral de hospital não invade calçada */
       limite = { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
-      desenharEquipamento(T, TL, uv, q);
+      if (q.equip) desenharPecas(T, TL, uv, q.equip.pecas);
+      for (const pr of q.pracinhas || []) {
+        for (const t of pr.tiras) tampa(T, t.x0, t.x1, 1.7, t.y0, t.y1, '#b5afa0');
+        desenharPecas(T, TL, uv, pr.pecas);
+      }
       limite = null;
     }
     for (const l of K.LOTES) {

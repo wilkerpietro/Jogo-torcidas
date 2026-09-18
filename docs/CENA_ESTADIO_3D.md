@@ -180,6 +180,16 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   pintadas; o shopping tem clarabóia e máquina no teto, volume de
   entrada envidraçado, marquise, totem e estacionamento de três
   fileiras.
+- **As cunhas viram pracinha.** Onde a avenida corta o quarteirão na
+  diagonal sobra um triângulo pequeno demais pra casa, que ficava como
+  terreno vago. A sobra não é um polígono que dê pra deduzir — é o que
+  resta do miolo depois de tirar lote, quintal e o corredor da avenida
+  —, então ela é achada por **varredura de 8 em 8**, com as manchas
+  grudadas juntadas por preenchimento. Mancha entre 3.600 e 52.000 de
+  área vira pracinha: chão de pedra, canteiro de grama, árvore e, se
+  couber, dois bancos e um poste. Dezenove delas. Nada ali bloqueia: o
+  pedaço continua andável, e é bom que continue — é atalho e é lugar
+  de briga.
 - **A decoração.** Texto não sai de caixa, sai de textura: a planta
   guarda só o dizer (`l.placa`, `l.pixacao`), e o `bairro3d.js` junta
   os que apareceram num atlas de 256 × 64 por dizer, uma malha só, com
@@ -346,6 +356,23 @@ Nada de mecânica nova. O que há:
    foto da briga o líder estava com a cabeça dentro de uma viga. Viga só
    de r = 124 pra fora, onde o teto passa de 53; perto da parede o teto é
    liso.
+12. **W andava pro lado contrário.** A câmera fica em `alvo + R·(sen
+   giro, cos giro)` e olha pro alvo, então a FRENTE dela é `(−sen giro,
+   −cos giro)`: girar a intenção do jogador é girar por **−giro**. O
+   código girava por **+giro**, e com a câmera a 90° o W levava o
+   boneco pro lado oposto — era esse o "ruim de fazer o boneco ir pro
+   destino". Junto veio o outro meio do problema: a intenção era
+   requantizada em quatro booleanos, e em oito direções não se segue
+   uma rua diagonal. Agora sai um **vetor contínuo**, e `moverLider`
+   passou a aceitar `teclas.vetor` — três linhas em `combate.js`, com
+   as teclas continuando a valer pra quem não tem câmera.
+13. **Poste na rua, moita no asfalto.** Os dois eram filtrados pelo
+   CENTRO, e os dois têm tamanho: a moita tem raio de até 40 e o poste
+   tem base. Meia moita ficava na rua, e nos cruzamentos a calçada da
+   avenida vira asfalto, onde quatro mastros tinham sido plantados.
+   O teste passou a ser o quadrado da peça (`tocaAsfalto`), e a
+   varredura (`varredura.js`) confere árvore, poste, moita, campo,
+   lote, equipamento e carro de uma vez.
 11. **As avenidas ficaram feias.** O dono perguntou se "rua com curva é
    ruim de fazer". Não é — o feio era outra coisa, visto nas fotos de
    perto: quarteirões pelados dos dois lados da avenida (o lote axial saía

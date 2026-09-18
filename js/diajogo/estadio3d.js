@@ -864,14 +864,22 @@ export function criar(canvas) {
 
   /* o WASD do jogo é em eixo do tabuleiro; a câmera de ombro
      precisa que W seja "pra frente da câmera" */
+  /* A INTENÇÃO DO JOGADOR, NO EIXO DA CÂMERA.
+     A câmera fica em alvo + R·(sen giro, cos giro) e olha pro alvo,
+     então a FRENTE dela é (−sen giro, −cos giro) e a DIREITA é
+     (cos giro, −sen giro) — o que é girar por −giro, não por +giro.
+     Com o sinal trocado, W com a câmera a 90° andava pro lado
+     contrário, e era esse o "ruim de fazer o boneco ir pro destino".
+     Sai um vetor contínuo, não quatro booleanos: em oito direções não
+     dá pra seguir uma rua diagonal. */
   function girarEntrada(teclas) {
     const ix = (teclas.d ? 1 : 0) - (teclas.a ? 1 : 0);
     const iz = (teclas.s ? 1 : 0) - (teclas.w ? 1 : 0);
-    if (!ix && !iz) return {};
+    if (!ix && !iz) return null;
     const c = Math.cos(giro), s = Math.sin(giro);
-    const wx = ix * c - iz * s, wz = ix * s + iz * c;
-    const lim = Math.max(Math.abs(wx), Math.abs(wz)) * 0.42;
-    return { d: wx > lim, a: wx < -lim, s: wz > lim, w: wz < -lim };
+    const x = ix * c + iz * s, z = -ix * s + iz * c;
+    const m = Math.hypot(x, z);
+    return { x: x / m, y: z / m };
   }
 
   return { montar, quadro, redimensionar, irPara, ligarRotulos,

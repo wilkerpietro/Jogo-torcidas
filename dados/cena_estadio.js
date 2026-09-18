@@ -583,6 +583,36 @@ TO.dados.plantaEstadio = (function(){
     if(i % 2 || j % 2) return null;              // caiu numa rua
     return grade[i/2][j/2];
   }
+  /* O POLÍGONO MENOS AS BANDAS DAS AVENIDAS.
+     Corta meio-plano a meio-plano: o que sobra continua convexo, então
+     dá pra ir cortando banda por banda. Uma banda que atravessa o
+     polígono o parte em dois, e os dois voltam na lista. Quem usa: o
+     chão do quarteirão no 3D e as pracinhas das cunhas. */
+  function pedacosSemAvenida(ret, folga){
+    const base = Array.isArray(ret) ? ret : recorteCosta(ret);
+    if(base.length < 3) return [];
+    let pecas = [base];
+    for(const av of AVENIDAS){
+      const meia = av.l/2 + (folga || 0);
+      for(const sg of av.segs){
+        const nx = -sg.uy, ny = sg.ux, c = nx*sg.x0 + ny*sg.y0;
+        const ds = base.map(([x, y]) => nx*x + ny*y - c);
+        if(Math.min(...ds) > meia || Math.max(...ds) < -meia) continue;
+        const ts = base.map(([x, y]) => (x - sg.x0)*sg.ux + (y - sg.y0)*sg.uy);
+        if(Math.max(...ts) < -meia || Math.min(...ts) > sg.L + meia) continue;
+        const novas = [];
+        for(const p of pecas){
+          const esq = cortarPor(p, nx, ny, c - meia);
+          const dir = cortarPor(p, -nx, -ny, -(c + meia));
+          if(esq.length >= 3) novas.push(esq);
+          if(dir.length >= 3) novas.push(dir);
+        }
+        pecas = novas;
+      }
+    }
+    return pecas;
+  }
+
   /* ---- as ruas da grade num ponto: SÓ ENTRE CÉLULAS URBANAS. A faixa
      de rua existe onde alguma célula encostada nela é quarteirão,
      campo, estádio ou terreno da cidade; entre duas células de mato
@@ -914,6 +944,14 @@ TO.dados.plantaEstadio = (function(){
     return { tipo, chao, pecas };
   }
 
+  /* os equipamentos antes dos lotes: o quarteirão deles não é loteado */
+  for(const e of EQUIPAMENTOS){
+    const q = celulaEm(e.ponto[0], e.ponto[1]);
+    if(!q || q.tipo !== 'quadra' || q.equip) continue;
+    q.equip = equipamento(e.tipo, q);
+    q.solidos = q.equip.pecas.filter(o => o.bloqueia);
+  }
+
   /* AS CASAS DA AVENIDA: caminha ao longo de cada trecho, um lote de
      cada lado, com a frente encostada na calçada da avenida. Aceita se
      os quatro cantos do BEIRAL caem no miolo de um mesmo quarteirão e
@@ -936,7 +974,7 @@ TO.dados.plantaEstadio = (function(){
             const cx = sg.x0 + sg.ux*(t + w/2) - sg.uy*off*lado;
             const cy = sg.y0 + sg.uy*(t + w/2) + sg.ux*off*lado;
             const q = celulaEm(cx, cy);
-            if(!q || q.tipo !== 'quadra') return false;
+            if(!q || q.tipo !== 'quadra' || q.equip) return false;
             const tipo = muro ? 'muro' : tipoDoLote(q);
             const T = TIPOS[tipo];
             /* `vf` é pra que lado, no eixo local do lote, fica a frente:
@@ -969,19 +1007,92 @@ TO.dados.plantaEstadio = (function(){
     }
   }
 
-  /* os equipamentos antes dos lotes: o quarteirão deles não é loteado */
-  for(const e of EQUIPAMENTOS){
-    const q = celulaEm(e.ponto[0], e.ponto[1]);
-    if(!q || q.tipo !== 'quadra' || q.equip) continue;
-    q.equip = equipamento(e.tipo, q);
-    q.solidos = q.equip.pecas.filter(o => o.bloqueia);
-  }
   QUADRAS.filter(q => !q.equip).forEach(lotear);
+  /* quem a avenida corta: amostra a borda e o centro do quarteirão */
   for(const q of QUADRAS){
     const pts = [];
     for(let k=0;k<=8;k++){ const t = k/8; pts.push([q.x0 + (q.x1-q.x0)*t, q.y0], [q.x0 + (q.x1-q.x0)*t, q.y1], [q.x0, q.y0 + (q.y1-q.y0)*t], [q.x1, q.y0 + (q.y1-q.y0)*t]); }
     pts.push([q.cx, q.cy]);
     q.cortada = pts.some(([x, y]) => naFaixaDaAvenida(x, y, CALC));
+  }
+
+  /* ---- AS PRACINHAS DAS CUNHAS ----
+     Onde a avenida corta o quarteirão na diagonal sobra um triângulo
+     pequeno demais pra casa: ele ficava como terreno vago. Vira
+     pracinha, que é o que a cidade de verdade faz com essa sobra.
+     A sobra não é um polígono fechado que dê pra deduzir — é o que
+     resta do miolo depois de tirar lote, quintal e o corredor da
+     avenida. Então acha-se por varredura de 8 em 8, junta-se o que
+     está grudado, e cada mancha grande o bastante vira pracinha.
+     Nada aqui bloqueia: o pedaço continua andável, e é bom que
+     continue — é atalho, e é lugar de briga. */
+  const GRAO = 8;
+  for(const q of QUADRAS){
+    if(q.equip || !q.cortada) continue;
+    const livre = (x, y) => dentroPol(x, y, q.polMiolo) && !naAvenida(x, y, CALC) &&
+                            !(q.quintal && dentroRet(x, y, q.quintal)) &&
+                            !q.lotes.some(l => dentroLote(x, y, l));
+    const nx = Math.floor((q.ix1 - q.ix0)/GRAO), ny = Math.floor((q.iy1 - q.iy0)/GRAO);
+    if(nx < 3 || ny < 3) continue;
+    const em = (i, j) => [q.ix0 + (i + 0.5)*GRAO, q.iy0 + (j + 0.5)*GRAO];
+    const g = [];
+    for(let i=0;i<nx;i++){ g[i] = []; for(let j=0;j<ny;j++) g[i][j] = livre(...em(i, j)) ? 0 : -1; }
+    const achadas = [];
+    for(let i0=0;i0<nx;i0++) for(let j0=0;j0<ny;j0++){
+      if(g[i0][j0] !== 0) continue;
+      const pilha = [[i0, j0]], cels = []; g[i0][j0] = 1;
+      while(pilha.length){
+        const [a, b] = pilha.pop(); cels.push([a, b]);
+        for(const [da, db] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          const u = a + da, v = b + db;
+          if(u >= 0 && v >= 0 && u < nx && v < ny && g[u][v] === 0){ g[u][v] = 1; pilha.push([u, v]); }
+        }
+      }
+      const area = cels.length*GRAO*GRAO;
+      if(area < 3600 || area > 52000) continue;
+      const dentro = new Set(cels.map(([a, b]) => a + ',' + b));
+      /* o centro mais folgado: o maior quadrado que cabe na mancha */
+      let melhor = null;
+      for(const [a, b] of cels){
+        let r = 0;
+        while(r < 8){
+          let cabe = true;
+          for(let u = a - r - 1; u <= a + r + 1 && cabe; u++)
+            for(let v = b - r - 1; v <= b + r + 1 && cabe; v++)
+              if(!dentro.has(u + ',' + v)) cabe = false;
+          if(!cabe) break;
+          r++;
+        }
+        if(!melhor || r > melhor.r) melhor = { a, b, r };
+      }
+      if(!melhor || melhor.r < 2) continue;
+      const [cx, cy] = em(melhor.a, melhor.b), raio = melhor.r*GRAO;
+      /* as tiras: uma linha de cada vez, pra pintar e pra laje */
+      const tiras = [];
+      for(let j=0;j<ny;j++){
+        let i = 0;
+        while(i < nx){
+          if(!dentro.has(i + ',' + j)){ i++; continue; }
+          let k = i;
+          while(k + 1 < nx && dentro.has((k+1) + ',' + j)) k++;
+          tiras.push({ x0: q.ix0 + i*GRAO, x1: q.ix0 + (k+1)*GRAO,
+                       y0: q.iy0 + j*GRAO, y1: q.iy0 + (j+1)*GRAO });
+          i = k + 1;
+        }
+      }
+      const pecas = [];
+      const pe = (k, o) => pecas.push(Object.assign({ k, bloqueia: false }, o));
+      const g2 = Math.min(raio*0.66, 30);
+      pe('piso', { x0: cx - g2, x1: cx + g2, y0: cy - g2, y1: cy + g2, cor: '#4e7f40', base: 1.7 });
+      pe('arvore', { x: cx, y: cy, r: Math.min(14, raio*0.42) });
+      if(raio >= 30){
+        for(const sx of [-1, 1]) pe('banco', { x0: cx + sx*raio*0.62 - 10, x1: cx + sx*raio*0.62 + 10,
+                                               y0: cy - 5, y1: cy + 5 });
+        pe('poste', { x: cx, y: cy + raio*0.66, dx: 0, dz: -1 });
+      }
+      achadas.push({ tiras, cx, cy, raio, pecas });
+    }
+    if(achadas.length) q.pracinhas = achadas;
   }
 
   /* ---- A DECORAÇÃO: letreiro no comércio, pixação no muro ----
@@ -1019,16 +1130,27 @@ TO.dados.plantaEstadio = (function(){
     else if(r < 0.54) l.pixacao = escolher(PIXACAO);
   }
 
+  /* ---- o que é asfalto, e quem encosta nele ----
+     A moita tem raio e o poste tem base: testar só o centro deixa
+     meia moita na rua. Aqui o teste é o quadrado da peça. */
+  const noAsfalto = (x, y) => !!naAvenida(x, y, 0) || naRua(x, y);
+  function tocaAsfalto(x, y, r){
+    for(const a of [-1, 0, 1]) for(const b of [-1, 0, 1])
+      if(noAsfalto(x + a*r, y + b*r)) return true;
+    return false;
+  }
+
   /* ---- as moitas do mato: só onde é mato, num balde espacial ---- */
   const MOITAS = [];
   const BALDE = 256, baldes = new Map();
   const chave = (x, y) => ((x/BALDE)|0) + ',' + ((y/BALDE)|0);
   for(let n=0;n<2600;n++){
     const x = VX0 + rng()*VW, y = VY0 + rng()*VH;
+    const r = entre(16, 40);
     if(zona(x, y) !== 'mato') continue;
     if(naAvenida(x, y, CALC + 10)) continue;
-    if(x >= 0 && y >= 0 && x < W && y < H && naRua(x, y)) continue;
-    const m = { x, y, r: entre(16, 40) };
+    if(tocaAsfalto(x, y, r*0.9)) continue;
+    const m = { x, y, r };
     MOITAS.push(m);
     if(x >= -BALDE && y >= -BALDE){
       const k = chave(x, y);
@@ -1125,6 +1247,10 @@ TO.dados.plantaEstadio = (function(){
       if(x >= 0 && y >= 0 && x < W && y < H) POSTES.push({ x, y, dx: sg.uy, dz: -sg.ux });
     }
   }
+  /* poste nenhum no meio da rua: nos cruzamentos a calçada da avenida
+     vira asfalto, e o mastro caía lá */
+  for(let i = POSTES.length - 1; i >= 0; i--)
+    if(tocaAsfalto(POSTES[i].x, POSTES[i].y, 2)) POSTES.splice(i, 1);
 
   /* as torres de refletor, nos quatro cantos do quarteirão do estádio */
   const TORRES = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx, sy]) => ({
@@ -1141,7 +1267,8 @@ TO.dados.plantaEstadio = (function(){
   const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC,
                    COLUNAS, LINHAS, CELULAS, QUADRAS, grade, celulaEm, zona, xCosta, PRAIA, ORLA,
                    CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, bordasX, bordasY,
-                   xLimiteCosta, cortarPor, recorteCosta, dentroPol, ruaEntre, CAMPOS, CERCA, PORTEIRA,
+                   xLimiteCosta, cortarPor, recorteCosta, pedacosSemAvenida, dentroPol, ruaEntre,
+                   areaPol, noAsfalto, CAMPOS, CERCA, PORTEIRA,
                    ARQ_VARZEA, noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe };
 

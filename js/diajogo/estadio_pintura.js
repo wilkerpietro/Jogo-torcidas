@@ -188,6 +188,15 @@ TO.diaJogo.estadioPintura = (function(){
         poli(c, q.pol, COR.calcada);
         if(q.equip) chaoDoEquipamento(c, q);
         else if(q.polMiolo.length >= 3) poli(c, q.polMiolo, COR.lote);
+        /* as pracinhas das cunhas: as mesmas tiras e peças do 3D */
+        for(const pr of q.pracinhas || []){
+          c.fillStyle = COR.piso;
+          for(const t of pr.tiras) c.fillRect(t.x0, t.y0, t.x1-t.x0, t.y1-t.y0);
+          for(const o of pr.pecas){
+            if(o.k !== 'piso') continue;
+            c.fillStyle = o.cor; c.fillRect(o.x0, o.y0, o.x1-o.x0, o.y1-o.y0);
+          }
+        }
         c.beginPath(); c.moveTo(q.pol[0][0], q.pol[0][1]);
         for(let i=1;i<q.pol.length;i++) c.lineTo(q.pol[i][0], q.pol[i][1]);
         c.closePath();
