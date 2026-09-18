@@ -127,7 +127,7 @@ export function montarBairro(P) {
     g.setAttribute('uv', new THREE.Float32BufferAttribute(T.uv, 2));
     g.computeVertexNormals();
     const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({
-      map: tex, alphaTest: 0.45, side: THREE.DoubleSide
+      map: tex, alphaTest: 0.45, side: THREE.FrontSide
     }));
     m.receiveShadow = true;
     triangulos += T.pos.length / 9;
@@ -174,8 +174,9 @@ export function montarBairro(P) {
         const fundo = FUNDOS_PLACA[h % FUNDOS_PLACA.length];
         c.fillStyle = fundo; c.fillRect(x, y, LARG, ALT);
         const claro = fundo === '#f0ede4' || fundo === '#e0a52a';
-        c.strokeStyle = claro ? 'rgba(0,0,0,.35)' : 'rgba(255,255,255,.35)';
-        c.lineWidth = 4; c.strokeRect(x + 4, y + 4, LARG - 8, ALT - 8);
+        /* borda forte no fundo claro: letreiro bege em parede bege some */
+        c.strokeStyle = claro ? 'rgba(40,36,28,.75)' : 'rgba(255,255,255,.35)';
+        c.lineWidth = claro ? 7 : 4; c.strokeRect(x + 4, y + 4, LARG - 8, ALT - 8);
         c.fillStyle = claro ? '#20201c' : '#f6f3ea';
         c.font = 'bold 34px "Arial Narrow", Arial, sans-serif';
       } else {
@@ -261,8 +262,165 @@ export function montarBairro(P) {
     piramide(T, a.x, meio, meio - a.r * 0.8, a.r, a.y, '#356b2c');
   }
 
+  /* poste de rua: mastro, braço e a luminária na ponta */
+  const POSTE = '#6b6b66';
+  function poste(T, p) {
+    caixa(T, p.x - 1.2, p.x + 1.2, 1.4, 46, p.y - 1.2, p.y + 1.2, POSTE);
+    caixa(T, Math.min(p.x, p.x + p.dx*12) - 1, Math.max(p.x, p.x + p.dx*12) + 1, 44, 46,
+          Math.min(p.y, p.y + p.dz*12) - 1, Math.max(p.y, p.y + p.dz*12) + 1, POSTE);
+    caixa(T, p.x + p.dx*12 - 3, p.x + p.dx*12 + 3, 42, 44.5, p.y + p.dz*12 - 3, p.y + p.dz*12 + 3, '#e9e2c0');
+  }
+
+  /* =========================================================
+     OS EQUIPAMENTOS: praça, hospital, delegacia, shopping
+     ---------------------------------------------------------
+     A planta manda a lista de peças; aqui cada espécie de peça vira
+     geometria. O que bloqueia na máscara é exatamente o que tem caixa
+     aqui, porque é a mesma lista.
+     ========================================================= */
+  const VIDRACA = '#2f3a44';
+  function janelas(T, b, modo) {
+    const alt = b.alt, y0 = 14;
+    if (modo === 'vidro') {
+      /* pano de vidro na frente inteira */
+      caixa(T, b.x0 + 4, b.x1 - 4, 10, alt - 8, b.y1 - 0.6, b.y1 + 0.4, VIDRACA);
+      return;
+    }
+    const passo = modo === 'faixa' ? 30 : 26, ah = modo === 'faixa' ? 8 : 12;
+    for (let y = y0; y + ah + 8 < alt; y += passo) {
+      if (modo === 'faixa') {
+        caixa(T, b.x0 + 6, b.x1 - 6, y, y + ah, b.y0 - 0.6, b.y0 + 0.4, VIDRACA);
+        caixa(T, b.x0 + 6, b.x1 - 6, y, y + ah, b.y1 - 0.4, b.y1 + 0.6, VIDRACA);
+        caixa(T, b.x0 - 0.6, b.x0 + 0.4, y, y + ah, b.y0 + 6, b.y1 - 6, VIDRACA);
+        caixa(T, b.x1 - 0.4, b.x1 + 0.6, y, y + ah, b.y0 + 6, b.y1 - 6, VIDRACA);
+      } else {
+        for (let x = b.x0 + 14; x + 16 < b.x1; x += 30) {
+          caixa(T, x, x + 16, y, y + ah, b.y0 - 0.6, b.y0 + 0.4, VIDRACA);
+          caixa(T, x, x + 16, y, y + ah, b.y1 - 0.4, b.y1 + 0.6, VIDRACA);
+        }
+        for (let z = b.y0 + 14; z + 16 < b.y1; z += 30) {
+          caixa(T, b.x0 - 0.6, b.x0 + 0.4, y, y + ah, z, z + 16, VIDRACA);
+          caixa(T, b.x1 - 0.4, b.x1 + 0.6, y, y + ah, z, z + 16, VIDRACA);
+        }
+      }
+    }
+  }
+  /* um carro, com cabine — e a barra de luz de quem tem pressa */
+  function carro(T, c) {
+    const ao = c.x1 - c.x0 > c.y1 - c.y0;
+    const teto = c.modo === 'ambulancia' ? 22 : 13.5;
+    caixa(T, c.x0, c.x1, 1.4, 8, c.y0, c.y1, c.cor);
+    tmp.set(c.cor).multiplyScalar(0.7);
+    const escuro = c.modo === 'ambulancia' ? '#e8e8e4' : '#' + tmp.getHexString();
+    if (ao) caixa(T, c.x0 + 9, c.x1 - 10, 8, teto, c.y0 + 1.5, c.y1 - 1.5, escuro);
+    else caixa(T, c.x0 + 1.5, c.x1 - 1.5, 8, teto, c.y0 + 9, c.y1 - 10, escuro);
+    if (!c.modo) return;
+    const mx = (c.x0 + c.x1) / 2, mz = (c.y0 + c.y1) / 2;
+    caixa(T, mx - 9, mx - 1, teto, teto + 3, mz - 3, mz + 3, '#c02a22');
+    caixa(T, mx + 1, mx + 9, teto, teto + 3, mz - 3, mz + 3, '#2a44c0');
+    if (c.modo === 'ambulancia') {
+      /* a faixa vermelha na lateral */
+      caixa(T, c.x0 + 2, c.x1 - 2, 11, 15, c.y0 - 0.5, c.y0 + 0.4, '#c9463c');
+      caixa(T, c.x0 + 2, c.x1 - 2, 11, 15, c.y1 - 0.4, c.y1 + 0.5, '#c9463c');
+    }
+  }
+  function desenharEquipamento(T, TL, uv, q) {
+    const PEDRA = '#b9b3a4', GRAMA = '#4a7a3c';
+    for (const o of q.equip.pecas) {
+      const mx = (o.x0 + o.x1) / 2, mz = (o.y0 + o.y1) / 2;
+      switch (o.k) {
+        case 'bloco':
+          caixa(T, o.x0, o.x1, 0, o.alt, o.y0, o.y1, o.cor);
+          if (o.teto) caixa(T, o.x0 - 2, o.x1 + 2, o.alt, o.alt + 4, o.y0 - 2, o.y1 + 2, o.teto);
+          if (o.janelas) janelas(T, o, o.janelas);
+          break;
+        case 'muro': case 'guarita': case 'totem': case 'monumento':
+          caixa(T, o.x0, o.x1, 0, o.alt, o.y0, o.y1, o.cor || PEDRA);
+          if (o.k === 'guarita') {
+            caixa(T, o.x0 + 2, o.x1 - 2, 12, o.alt - 5, o.y1 - 0.5, o.y1 + 0.4, VIDRACA);
+            caixa(T, o.x0 - 3, o.x1 + 3, o.alt, o.alt + 3, o.y0 - 3, o.y1 + 3, '#8f9499');
+          }
+          if (o.k === 'totem') caixa(T, o.x0 - 7, o.x1 + 7, o.alt * 0.55, o.alt - 6, o.y0 + 2, o.y1 - 2, '#e8e4d8');
+          if (o.k === 'monumento') {
+            caixa(T, o.x0 + 5, o.x1 - 5, o.alt, o.alt + 14, o.y0 + 5, o.y1 - 5, '#6e6a5e');
+            piramide(T, mx, o.alt + 14, o.alt + 24, 6, mz, '#6e6a5e');
+          }
+          break;
+        case 'canteiro':
+          caixa(T, o.x0, o.x1, 0, o.alt, o.y0, o.y1, PEDRA);
+          caixa(T, o.x0 + 3, o.x1 - 3, o.alt, o.alt + 3, o.y0 + 3, o.y1 - 3, GRAMA);
+          break;
+        case 'piso':
+          caixa(T, o.x0, o.x1, 1.6, 1.75, o.y0, o.y1, o.cor);
+          break;
+        case 'marquise': case 'claraboia': case 'maquina':
+          caixa(T, o.x0, o.x1, o.y, o.y + o.alt, o.y0, o.y1, o.cor);
+          break;
+        case 'pilar':
+          caixa(T, o.x - o.r, o.x + o.r, 0, o.alt, o.y - o.r, o.y + o.r, o.cor);
+          break;
+        case 'carro': carro(T, o); break;
+        case 'arvore': arvore(T, o); break;
+        case 'poste': poste(T, o); break;
+        case 'banco': {
+          caixa(T, o.x0, o.x1, 7, 9, o.y0, o.y1, '#7a5a3a');
+          caixa(T, o.x0, o.x1, 9, 16, o.y0, o.y0 + 2, '#7a5a3a');
+          for (const x of [o.x0 + 2, o.x1 - 2]) caixa(T, x - 1, x + 1, 0, 7, mz - 1, mz + 1, '#55524a');
+          break;
+        }
+        case 'mastro':
+          caixa(T, o.x - 1.6, o.x + 1.6, 0, o.alt, o.y - 1.6, o.y + 1.6, '#cfcbbe');
+          caixa(T, o.x - 0.4, o.x + 0.4, 0, 5, o.y - 5, o.y + 5, '#cfcbbe');
+          caixa(T, o.x + 1.6, o.x + 34, o.alt - 22, o.alt - 2, o.y - 0.5, o.y + 0.5, '#2f7a3c');
+          break;
+        case 'fonte': {
+          const r = o.r;
+          caixa(T, o.x - r, o.x + r, 0, 10, o.y - r * 0.72, o.y + r * 0.72, PEDRA);
+          caixa(T, o.x - r * 0.72, o.x + r * 0.72, 0, 10, o.y - r, o.y + r, PEDRA);
+          caixa(T, o.x - r + 4, o.x + r - 4, 8, 9.4, o.y - r + 4, o.y + r - 4, '#4d7f96');
+          caixa(T, o.x - 4, o.x + 4, 9, 24, o.y - 4, o.y + 4, PEDRA);
+          piramide(T, o.x, 24, 34, 8, o.y, '#4d7f96');
+          break;
+        }
+        case 'coreto': {
+          const r = o.r;
+          caixa(T, o.x - r, o.x + r, 0, 7, o.y - r, o.y + r, PEDRA);
+          caixa(T, o.x - r + 8, o.x + r - 8, 7, 8.6, o.y - r + 8, o.y + r - 8, '#c9c3b2');
+          for (let i = 0; i < 8; i++) {
+            const a = i / 8 * Math.PI * 2, px = o.x + Math.cos(a) * (r - 7), pz = o.y + Math.sin(a) * (r - 7);
+            caixa(T, px - 2.2, px + 2.2, 8, o.alt, pz - 2.2, pz + 2.2, '#e6e2d6');
+          }
+          caixa(T, o.x - r, o.x + r, o.alt, o.alt + 3, o.y - r, o.y + r, '#9a4a33');
+          piramide(T, o.x, o.alt + 3, o.alt + 20, r * 0.92, o.y, '#9a4a33');
+          break;
+        }
+        case 'cruz': {
+          /* a fachada é a parede: a cruz vai meio ponto PRA FORA dela */
+          const z0 = o.y + o.oz * 0.4, z1 = o.y + o.oz * 1.4;
+          caixa(T, o.x - o.tam / 2, o.x + o.tam / 2, o.base + o.tam / 3, o.base + o.tam * 2 / 3,
+                Math.min(z0, z1), Math.max(z0, z1), '#c9463c');
+          caixa(T, o.x - o.tam / 6, o.x + o.tam / 6, o.base, o.base + o.tam,
+                Math.min(z0, z1), Math.max(z0, z1), '#c9463c');
+          break;
+        }
+        case 'letreiro': {
+          const u = uv.get('P:' + o.texto);
+          if (!u) break;
+          const larg = o.larg || 120, alt = o.altura || 20, base = o.base || 24;
+          /* meio ponto à frente da parede, senão some dentro dela */
+          placa(TL, o.x + o.ox * 0.6, base + alt / 2, o.y + o.oz * 0.6, o.ox, o.oz, larg, alt, u);
+          if (o.pernas) for (const s of [-1, 1])
+            caixa(T, o.x + s * (larg / 2 - 4) - 1.6, o.x + s * (larg / 2 - 4) + 1.6, 0, base + alt,
+                  o.y - 1.6, o.y + 1.6, '#6e6a5e');
+          break;
+        }
+      }
+    }
+  }
+
   /* ---- os quarteirões, em pedaços de 4 × 4 células ---- */
   const pedacos = new Map();
+  const comEquipamento = [];
   for (const q of K.QUADRAS) {
     const k = (q.i >> 2) + ',' + (q.j >> 2);
     if (!pedacos.has(k)) pedacos.set(k, Tecido());
@@ -273,7 +431,10 @@ export function montarBairro(P) {
        deixa no quarteirão lê como um descampado de cimento); e o
        QUINTAL, mais alto, no meio. */
     for (const p of semAsAvenidas(q)) laje(T, p, 0, 1.4, '#8d897d');
-    for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, '#7d7668');
+    /* no equipamento o miolo é pátio, não terreno de casa: o chão dele
+       tem cor própria, e as peças de `piso` vão logo acima */
+    const chaoMiolo = q.equip ? q.equip.chao : '#7d7668';
+    for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, chaoMiolo);
     if (q.quintal) for (const p of semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
     for (const l of q.lotes) {
       limite = l.ang ? null : { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
@@ -281,11 +442,15 @@ export function montarBairro(P) {
       limite = null;
     }
     for (const a of q.arvores || []) arvore(T, a);
+    if (q.equip) comEquipamento.push([T, q]);
   }
-  for (const T of pedacos.values()) malha(T, true);
-
   /* ---- os dizeres ---- */
   const dizeres = new Map();
+  for (const q of K.QUADRAS) {
+    if (!q.equip) continue;
+    for (const o of q.equip.pecas)
+      if (o.k === 'letreiro') dizeres.set('P:' + o.texto, { chave: 'P:' + o.texto, texto: o.texto, placa: true });
+  }
   for (const l of K.LOTES) {
     for (const [texto, ehPlaca] of [[l.placa, true], [l.pixacao, false]]) {
       if (!texto) continue;
@@ -296,6 +461,12 @@ export function montarBairro(P) {
   if (dizeres.size) {
     const { tex, uv } = montarAtlas([...dizeres.values()]);
     const TL = { pos: [], uv: [] };
+    for (const [T, q] of comEquipamento) {
+      /* a mesma regra da casa: beiral de hospital não invade calçada */
+      limite = { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
+      desenharEquipamento(T, TL, uv, q);
+      limite = null;
+    }
     for (const l of K.LOTES) {
       /* a frente do lote: pra onde ela olha, onde fica a parede e
          quanto mede — o lote axial pela sua frente, o da avenida pelo
@@ -336,6 +507,7 @@ export function montarBairro(P) {
     }
     malhaUV(TL, tex);
   }
+  for (const T of pedacos.values()) malha(T, true);
 
   /* ---- os soltos: carros, postes, campos ---- */
   const TS = Tecido();
@@ -347,13 +519,7 @@ export function montarBairro(P) {
     if (ao) caixa(TS, c.x0 + 9, c.x1 - 10, 8, 13.5, c.y0 + 1.5, c.y1 - 1.5, escuro);
     else caixa(TS, c.x0 + 1.5, c.x1 - 1.5, 8, 13.5, c.y0 + 9, c.y1 - 10, escuro);
   }
-  const POSTE = '#6b6b66';
-  for (const p of K.POSTES) {
-    caixa(TS, p.x - 1.2, p.x + 1.2, 1.4, 46, p.y - 1.2, p.y + 1.2, POSTE);
-    caixa(TS, Math.min(p.x, p.x + p.dx*12) - 1, Math.max(p.x, p.x + p.dx*12) + 1, 44, 46,
-          Math.min(p.y, p.y + p.dz*12) - 1, Math.max(p.y, p.y + p.dz*12) + 1, POSTE);
-    caixa(TS, p.x + p.dx*12 - 3, p.x + p.dx*12 + 3, 42, 44.5, p.y + p.dz*12 - 3, p.y + p.dz*12 + 3, '#e9e2c0');
-  }
+  for (const p of K.POSTES) poste(TS, p);
   /* os campos de várzea: cerca de mourão e arame, arquibancadinha, traves */
   for (const f of K.CAMPOS) {
     const CER = '#6e6a5e';

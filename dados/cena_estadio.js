@@ -760,6 +760,150 @@ TO.dados.plantaEstadio = (function(){
     }
     if(!raso) q.quintal = { x0:q.ix0+prof, x1:q.ix1-prof, y0:q.iy0+prof, y1:q.iy1-prof, alt:10, cor:'#a8a08c' };
   }
+  /* =========================================================
+     OS EQUIPAMENTOS DO BAIRRO
+     ---------------------------------------------------------
+     Quatro quarteirões não são de casa: praça, hospital, delegacia e
+     shopping. Cada um monta as próprias PEÇAS a partir do miolo da
+     célula, e a peça diz se bloqueia. A máscara lê as que bloqueiam e
+     o 3D desenha todas — é a mesma lista, então não há como uma
+     desencontrar da outra. Tudo em retângulo reto, que é o que a
+     máscara sabe perguntar rápido.
+     ========================================================= */
+  const EQUIPAMENTOS = [
+    { tipo: 'praca',     ponto: pxm(706, 432) },   // colada no estádio, ao sul
+    { tipo: 'delegacia', ponto: pxm(823, 432) },   // ao lado da praça
+    { tipo: 'hospital',  ponto: pxm(560, 349) },   // a oeste do estádio
+    { tipo: 'shopping',  ponto: pxm(706, 569) }    // mais ao sul, com estacionamento
+  ];
+  const CORES_CARRO_PM = ['#f0f0ee','#1a3f86'];
+  /* a mesma paleta dos carros da rua — ela é declarada mais abaixo,
+     junto do estacionamento da beira do estádio */
+  const CORES_CARRO_EQ = ['#d9d9d9','#2b2b2b','#8a8f96','#b8242a','#2a4f9a','#e6e6e6','#6b7280'];
+
+  function equipamento(tipo, q){
+    const X0 = q.ix0, X1 = q.ix1, Y0 = q.iy0, Y1 = q.iy1;
+    const L = X1 - X0, A = Y1 - Y0, cx = (X0 + X1)/2, cy = (Y0 + Y1)/2;
+    const pecas = [];
+    /* bloqueia por padrão; passe `false` pra peça de enfeite */
+    const p = (k, o, bloqueia) => pecas.push(Object.assign({ k, bloqueia: bloqueia !== false }, o));
+    /* `piso` é chão pintado: não bloqueia, não tem altura, e sai igual
+       no 3D e na textura do mapa — a mesma lista serve aos dois */
+    const piso = (x0, y0, x1, y1, cor) => p('piso', { x0, y0, x1, y1, cor }, false);
+    let chao = '#9d9a90';
+    const ret = (x, y, w, h) => ({ x0: x - w/2, x1: x + w/2, y0: y - h/2, y1: y + h/2 });
+    const fila = (n, a, b, f) => { for(let i=0;i<n;i++) f(a + (b - a)*(n === 1 ? 0.5 : i/(n-1)), i); };
+
+    if(tipo === 'praca'){
+      /* O CORETO NO MEIO, a fonte de um lado, o busto do outro, quatro
+         canteiros nas quinas e banco e árvore em volta. O chão é todo
+         andável fora disso: praça é onde a torcida se junta. */
+      chao = '#b5afa0';
+      /* quatro gramados com os caminhos em cruz entre eles */
+      const gx = L*0.30, gy = A*0.28, vao = 24;
+      for(const sx of [-1, 1]) for(const sy of [-1, 1])
+        piso(cx + sx*vao + (sx < 0 ? -gx : 0), cy + sy*vao + (sy < 0 ? -gy : 0), 
+             cx + sx*vao + (sx < 0 ? 0 : gx), cy + sy*vao + (sy < 0 ? 0 : gy), '#4e7f40');
+      const r = Math.max(22, Math.min(34, Math.min(L, A)*0.16));
+      p('coreto', Object.assign({ x: cx, y: cy, r, alt: 34 }, ret(cx, cy, r*2, r*2)));
+      const dx = Math.min(L*0.31, L/2 - 40);
+      p('fonte', Object.assign({ x: cx - dx, y: cy, r: Math.min(30, A*0.16) },
+                               ret(cx - dx, cy, Math.min(60, A*0.32), Math.min(60, A*0.32))));
+      p('monumento', Object.assign({ alt: 30 }, ret(cx + dx, cy, 26, 26)));
+      const cw = Math.min(72, L*0.16), ch = Math.min(46, A*0.22);
+      for(const sx of [-1, 1]) for(const sy of [-1, 1])
+        p('canteiro', Object.assign({ alt: 9 }, ret(cx + sx*(r + 18 + cw/2), cy + sy*(A*0.30), cw, ch)));
+      /* banco de praça não tranca ninguém: é enfeite */
+      for(let i=0;i<8;i++){
+        const a = i/8*Math.PI*2, d = r + 34;
+        p('banco', Object.assign({ ang: a }, ret(cx + Math.cos(a)*d, cy + Math.sin(a)*d, 22, 10)), false);
+      }
+      fila(5, X0 + 26, X1 - 26, x => { p('arvore', { x, y: Y0 + 20, r: 15 }, false); p('arvore', { x, y: Y1 - 20, r: 15 }, false); });
+      for(const sx of [-1, 1]) for(const sy of [-1, 1])
+        p('poste', { x: cx + sx*(L*0.36), y: cy + sy*(A*0.30), dx: -sx, dz: 0 }, false);
+      p('letreiro', { x: cx, y: Y1 - 16, ox: 0, oz: 1, texto: 'PRAÇA DA MATRIZ', placa: true, larg: 120, altura: 20, base: 26, pernas: true }, false);
+    }
+
+    if(tipo === 'hospital'){
+      /* Bloco principal ao norte, ala a oeste, marquise do pronto-socorro
+         com ambulância embaixo, muro na frente com portão, e a cruz. */
+      const fundo = Math.min(A*0.42, 175), ala = Math.min(L*0.38, 100);
+      chao = '#a4a49c';
+      piso(cx - 46, Y1 - 40, cx + 46, Y1, '#8e8b82');            // a entrada de veículos
+      p('bloco', { x0: X0, x1: X1, y0: Y0, y1: Y0 + fundo, alt: 116, cor: '#dfdcd2',
+                   teto: '#9aa0a2', janelas: 'grade' });
+      p('bloco', { x0: X0, x1: X0 + ala, y0: Y0 + fundo, y1: Y0 + fundo + A*0.26, alt: 64,
+                   cor: '#d5d2c7', teto: '#9aa0a2', janelas: 'faixa' });
+      /* o pronto-socorro: marquise sobre pilares, rente ao bloco */
+      const mx0 = X0 + ala + 14, mx1 = Math.min(X1 - 20, mx0 + 118), my0 = Y0 + fundo, my1 = my0 + 54;
+      p('marquise', { x0: mx0, x1: mx1, y0: my0, y1: my1, y: 30, alt: 6, cor: '#c9463c' }, false);
+      for(const x of [mx0 + 5, mx1 - 5]) for(const y of [my1 - 5])
+        p('pilar', { x, y, r: 3.5, alt: 30, cor: '#b8b4a8' });
+      p('carro', { x0: mx0 + 24, x1: mx0 + 24 + 38, y0: my0 + 8, y1: my0 + 8 + 42, cor: '#f2f2ee', modo: 'ambulancia' });
+      /* estacionamento a leste, e o muro da frente com portão */
+      fila(4, Y0 + fundo + 20, Y1 - 60, y => p('carro', { x0: X1 - 40, x1: X1 - 4, y0: y, y1: y + 34, cor: escolher(CORES_CARRO_EQ) }));
+      const px0 = cx - 46, px1 = cx + 46;                 // o vão do portão
+      p('muro', { x0: X0, x1: px0, y0: Y1 - 6, y1: Y1, alt: 16, cor: '#c6c2b6' });
+      p('muro', { x0: px1, x1: X1, y0: Y1 - 6, y1: Y1, alt: 16, cor: '#c6c2b6' });
+      p('arvore', { x: X0 + 22, y: Y1 - 26, r: 16 }, false);
+      p('arvore', { x: X1 - 22, y: Y1 - 26, r: 16 }, false);
+      p('cruz', { x: cx + 96, y: Y0 + fundo, base: 72, ox: 0, oz: 1, tam: 30 }, false);
+      /* acima do telhado da ala oeste, senão ela come metade do letreiro */
+      p('letreiro', { x: cx - 8, y: Y0 + fundo, ox: 0, oz: 1, texto: 'HOSPITAL MUNICIPAL', placa: true, larg: 148, altura: 22, base: 76 }, false);
+      p('letreiro', { x: mx0 + 59, y: my1, ox: 0, oz: 1, texto: 'PRONTO-SOCORRO', placa: true, larg: 96, altura: 16, base: 34 }, false);
+    }
+
+    if(tipo === 'delegacia'){
+      /* Prédio de dois andares com pórtico de colunas, mastro com
+         bandeira, guarita e as viaturas estacionadas na frente. */
+      chao = '#a4a49c';
+      const fundo = Math.min(A*0.52, 126), larg = Math.min(L*0.62, 300);
+      const bx0 = cx - larg/2, bx1 = cx + larg/2;
+      p('bloco', { x0: bx0, x1: bx1, y0: Y0, y1: Y0 + fundo, alt: 62, cor: '#e3e0d4',
+                   teto: '#8f9499', janelas: 'grade' });
+      /* o pórtico: laje sobre quatro colunas */
+      const py1 = Y0 + fundo + 34;
+      p('marquise', { x0: cx - 66, x1: cx + 66, y0: Y0 + fundo, y1: py1, y: 40, alt: 7, cor: '#cfcbbe' }, false);
+      fila(4, cx - 60, cx + 60, x => p('pilar', { x, y: py1 - 6, r: 4.5, alt: 40, cor: '#eceadf' }));
+      p('mastro', { x: bx0 - 26, y: Y0 + fundo + 18, alt: 74 });
+      p('guarita', { x0: X1 - 46, x1: X1 - 18, y0: Y1 - 46, y1: Y1 - 18, alt: 30, cor: '#dcd8cc' });
+      fila(4, cx - 148, cx + 148, x => piso(x - 1, Y1 - 64, x + 1, Y1 - 14, '#e8e5da'));   // as vagas
+      fila(3, cx - 110, cx + 110, (x, i) => p('carro', { x0: x - 18, x1: x + 18, y0: Y1 - 60, y1: Y1 - 18,
+                                                        cor: CORES_CARRO_PM[i % 2], modo: 'policia' }));
+      p('muro', { x0: X0, x1: bx0 - 46, y0: Y1 - 6, y1: Y1, alt: 16, cor: '#c6c2b6' });
+      p('arvore', { x: X0 + 24, y: Y0 + 26, r: 16 }, false);
+      p('arvore', { x: X1 - 24, y: Y0 + 26, r: 16 }, false);
+      p('letreiro', { x: cx + 96, y: Y0 + fundo, ox: 0, oz: 1, texto: 'DELEGACIA DE POLÍCIA', placa: true, larg: 130, altura: 20, base: 44 }, false);
+      p('letreiro', { x: cx - 96, y: Y0 + fundo, ox: 0, oz: 1, texto: '3º DISTRITO', placa: true, larg: 64, altura: 13, base: 22 }, false);
+    }
+
+    if(tipo === 'shopping'){
+      /* Caixa grande com volume de entrada mais alto, marquise de vidro,
+         estacionamento com fileiras de carro e o totem na esquina. */
+      chao = '#4a4a46';
+      const larg = Math.min(L*0.60, 320), fundo = Math.min(A*0.72, 190);
+      piso(X0, Y0, X0 + Math.min(L*0.60, 320) + 22, Y1, '#a4a49c');    // o passeio do shopping
+      const bx0 = X0, bx1 = X0 + larg;
+      p('bloco', { x0: bx0, x1: bx1, y0: Y0, y1: Y0 + fundo, alt: 74, cor: '#d8d4c8', teto: '#8e9398' });
+      p('bloco', { x0: cx - larg*0.18, x1: cx - larg*0.18 + larg*0.30, y0: Y0 + fundo - 30, y1: Y0 + fundo + 26,
+                   alt: 96, cor: '#cfd5d8', janelas: 'vidro' });
+      p('marquise', { x0: bx0 + larg*0.14, x1: bx1 - larg*0.10, y0: Y0 + fundo, y1: Y0 + fundo + 30, y: 34, alt: 5, cor: '#9fb0b8' }, false);
+      /* clarabóias e máquinas no teto */
+      fila(4, bx0 + 40, bx1 - 40, x => p('claraboia', { x0: x - 26, x1: x + 26, y0: Y0 + 30, y1: Y0 + fundo - 40, y: 74, alt: 5, cor: '#b8cdd6' }, false));
+      fila(3, bx0 + 60, bx1 - 60, x => p('maquina', { x0: x - 16, x1: x + 16, y0: Y0 + 14, y1: Y0 + 40, y: 74, alt: 12, cor: '#9a9a94' }, false));
+      /* o estacionamento: três fileiras */
+      const ex0 = bx1 + 26;
+      fila(3, ex0, X1 - 42, x => fila(5, Y0 + 16, Y1 - 52, y =>
+        { if(rng() < 0.22) return; p('carro', { x0: x, x1: x + 36, y0: y, y1: y + 34, cor: escolher(CORES_CARRO_EQ) }); }));
+      fila(3, ex0, X1 - 42, x => fila(6, Y0 + 12, Y1 - 44, y => piso(x - 2, y - 1, x + 38, y + 1, '#e8e5da')));
+      fila(4, Y0 + 40, Y1 - 40, y => p('poste', { x: ex0 - 12, y, dx: 1, dz: 0 }, false));
+      p('totem', { x0: X1 - 30, x1: X1 - 10, y0: Y1 - 34, y1: Y1 - 14, alt: 96, cor: '#3a4a66' });
+      p('letreiro', { x: cx - larg*0.03, y: Y0 + fundo + 26, ox: 0, oz: 1, texto: 'SHOPPING BEIRA-MAR', placa: true, larg: 150, altura: 24, base: 60 }, false);
+      p('arvore', { x: X1 - 22, y: Y0 + 22, r: 16 }, false);
+    }
+    return { tipo, chao, pecas };
+  }
+
   /* AS CASAS DA AVENIDA: caminha ao longo de cada trecho, um lote de
      cada lado, com a frente encostada na calçada da avenida. Aceita se
      os quatro cantos do BEIRAL caem no miolo de um mesmo quarteirão e
@@ -815,7 +959,14 @@ TO.dados.plantaEstadio = (function(){
     }
   }
 
-  QUADRAS.forEach(lotear);
+  /* os equipamentos antes dos lotes: o quarteirão deles não é loteado */
+  for(const e of EQUIPAMENTOS){
+    const q = celulaEm(e.ponto[0], e.ponto[1]);
+    if(!q || q.tipo !== 'quadra' || q.equip) continue;
+    q.equip = equipamento(e.tipo, q);
+    q.solidos = q.equip.pecas.filter(o => o.bloqueia);
+  }
+  QUADRAS.filter(q => !q.equip).forEach(lotear);
   for(const q of QUADRAS){
     const pts = [];
     for(let k=0;k<=8;k++){ const t = k/8; pts.push([q.x0 + (q.x1-q.x0)*t, q.y0], [q.x0 + (q.x1-q.x0)*t, q.y1], [q.x0, q.y0 + (q.y1-q.y0)*t], [q.x1, q.y0 + (q.y1-q.y0)*t]); }
@@ -1037,7 +1188,12 @@ TO.dados.plantaEstadio = (function(){
     if(naAvenida(x, y)) return true;
     if(naRua(x, y)) return true;
     const q = celulaEm(x, y);
-    if(q && q.tipo === 'quadra') return !dentroPol(x, y, q.polMiolo);
+    if(q && q.tipo === 'quadra'){
+      /* no equipamento anda-se em volta das peças; no quarteirão de
+         casa o miolo inteiro é maciço */
+      if(q.equip) return !q.solidos.some(o => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1);
+      return !dentroPol(x, y, q.polMiolo);
+    }
     if(z === 'mato') return !naMoita(x, y);
     return true;                                  // praia, orla, terreno aberto
   }
@@ -1184,7 +1340,7 @@ TO.dados.plantaEstadio = (function(){
            LADOS, ponto, pontoMundo, ondeNoReto, ondeNoRetoMundo,
            VOM, VOMITORIOS, noVomitorio, vomitorioMundo, rampa, pisoEscada,
            PORTOES, noPortao, noPortaoMundo, LOJA, LOJAS, naLoja,
-           QUADRAS, LOTES, CARROS, ARVORES, TORRES, SEDES, noLote, noCarro, andaNaCidade,
+           QUADRAS, LOTES, CARROS, ARVORES, TORRES, SEDES, EQUIPAMENTOS, noLote, noCarro, andaNaCidade,
            faixaDe, dobra, mundo, onde, anda, solido, piso, teto, superficie, mascara };
 })();
 

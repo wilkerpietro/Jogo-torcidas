@@ -44,7 +44,10 @@ TO.diaJogo.estadioPintura = (function(){
     onda:       '#5d86a0',
     grama:      '#4a8a3c',
     gramaB:     '#3f7a33',
-    cerca:      '#6e6a5e'
+    cerca:      '#6e6a5e',
+    piso:       '#b5afa0',
+    gramaPraca: '#4e7f40',
+    patio:      '#9d9a90'
   };
 
   function contorno(c, P, r, inverso){
@@ -140,6 +143,17 @@ TO.diaJogo.estadioPintura = (function(){
     c.setLineDash([]);
   }
 
+  /* o chão de cada equipamento: a MESMA lista de peças que o 3D usa,
+     então o mapa visto de cima bate com o que se vê lá embaixo */
+  function chaoDoEquipamento(c, q){
+    c.fillStyle = q.equip.chao;
+    c.fillRect(q.ix0, q.iy0, q.ix1 - q.ix0, q.iy1 - q.iy0);
+    for(const o of q.equip.pecas){
+      if(o.k !== 'piso') continue;
+      c.fillStyle = o.cor; c.fillRect(o.x0, o.y0, o.x1 - o.x0, o.y1 - o.y0);
+    }
+  }
+
   /* pinta o MUNDO inteiro: o que se desenha, de VX0/VY0 a VW/VH */
   function pintar(c, P){
     const K = P.CIDADE, D = P.D, R = P.R;
@@ -172,7 +186,8 @@ TO.diaJogo.estadioPintura = (function(){
         /* polígono, não retângulo: na orla o quarteirão acaba na
            diagonal da costa, e o miolo com ele */
         poli(c, q.pol, COR.calcada);
-        if(q.polMiolo.length >= 3) poli(c, q.polMiolo, COR.lote);
+        if(q.equip) chaoDoEquipamento(c, q);
+        else if(q.polMiolo.length >= 3) poli(c, q.polMiolo, COR.lote);
         c.beginPath(); c.moveTo(q.pol[0][0], q.pol[0][1]);
         for(let i=1;i<q.pol.length;i++) c.lineTo(q.pol[i][0], q.pol[i][1]);
         c.closePath();

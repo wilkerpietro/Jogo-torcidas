@@ -162,6 +162,23 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   e é isso que o faz caber no quarteirão em vez de atravessar a rua e
   a areia. E rua nenhuma corta campo ao meio: entre duas células de
   campo `ruaEntre` diz que não há asfalto, na máscara e na pintura.
+- **Quatro quarteirões não são de casa.** Praça (colada no estádio, ao
+  sul), delegacia (ao lado dela), hospital (a oeste) e shopping (mais ao
+  sul). Cada um monta as próprias **peças** a partir do miolo da célula,
+  e a peça diz se bloqueia: a máscara lê as que bloqueiam, o 3D desenha
+  todas, e a pintura repinta as de `piso` — é a mesma lista, então não
+  há como uma desencontrar da outra. Tudo em retângulo reto, que é o que
+  a máscara sabe perguntar rápido. O miolo desses quarteirões é
+  **andável em volta das peças**, ao contrário do quarteirão de casa,
+  que é maciço: são quase 4.000 células a mais pra briga acontecer.
+  A praça tem coreto, fonte, busto, quatro gramados com caminho em cruz,
+  bancos, árvores e postes; o hospital tem bloco de sete andares com
+  grade de janela, ala oeste, marquise do pronto-socorro com ambulância
+  embaixo, cruz na fachada e muro com portão; a delegacia tem pórtico de
+  colunas, mastro com bandeira, guarita e três viaturas nas vagas
+  pintadas; o shopping tem clarabóia e máquina no teto, volume de
+  entrada envidraçado, marquise, totem e estacionamento de três
+  fileiras.
 - **A decoração.** Texto não sai de caixa, sai de textura: a planta
   guarda só o dizer (`l.placa`, `l.pixacao`), e o `bairro3d.js` junta
   os que apareceram num atlas de 256 × 64 por dizer, uma malha só, com
@@ -171,7 +188,9 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   abaixo da linha das janelas e fora do meio, presa à altura da
   parede — em muro de 12 ela cabe nos 12. São 34 nomes de comércio e
   25 dizeres de parede, sorteados com a semente da planta, então a
-  cidade sai igual toda vez.
+  cidade sai igual toda vez. Os letreiros dos equipamentos entram no
+  mesmo atlas. A placa é de uma face só: vista por trás, o texto sairia
+  espelhado.
 - **O mato**: terreno aberto com moitas sorteadas (bloqueiam, num balde
   espacial de 256) e trilhas pintadas. A textura do mato, do mar e da
   praia sai do pintor, não de geometria.
