@@ -433,11 +433,15 @@ export function montarBairro(P) {
     if (l.ang) {
       /* casa da avenida: corpo, telhado e a fachada virada pra avenida */
       caixaRot(T, l.cx, l.cy, l.w - 2, l.h - 2, 0, l.alt, l.ang, l.cor);
+      /* `telha` manda na cor da cobertura quando quem pediu sabe qual
+         é: a favela tem seis tons de telha cerâmica e três de laje, e
+         é essa variação que faz o telhado dela ler como a foto em vez
+         de um carpete vermelho de uma cor só */
       if (l.tipo === 'casa' || l.tipo === 'sobrado')
-        telhadoRot(T, l.cx, l.cy, l.w + 2, l.h + 2, l.alt, Math.min(l.h, 46) * 0.42, l.ang, TELHA);
+        telhadoRot(T, l.cx, l.cy, l.w + 2, l.h + 2, l.alt, Math.min(l.h, 46) * 0.42, l.ang, l.telha || TELHA);
       else if (l.tipo === 'galpao')
-        telhadoRot(T, l.cx, l.cy, l.w, l.h, l.alt, Math.min(l.h, 46) * 0.24, l.ang, '#7c8285');
-      else if (l.tipo !== 'muro') caixaRot(T, l.cx, l.cy, l.w, l.h, l.alt, l.alt + 4, l.ang, '#8f8a80');
+        telhadoRot(T, l.cx, l.cy, l.w, l.h, l.alt, Math.min(l.h, 46) * 0.24, l.ang, l.telha || '#7c8285');
+      else if (l.tipo !== 'muro') caixaRot(T, l.cx, l.cy, l.w, l.h, l.alt, l.alt + 4, l.ang, l.telha || '#8f8a80');
       if (l.tipo === 'muro') return;
       /* a frente fica no eixo local do lote: `vf` diz de que lado */
       const largA = l.w - 2, vf = l.vf || -1, c = Math.cos(l.ang), sn = Math.sin(l.ang);
@@ -523,7 +527,13 @@ export function montarBairro(P) {
      um um pouco mais baixo que a reta — é o que dá a fiação frouxa,
      tomada emendada de poste em poste */
   function fio(T, ax, ay, ah, bx, by, bh, hex) {
-    const SEGS = 3, ESP = 1.3, sag = Math.min(16, Math.hypot(bx-ax, by-ay)*0.12);
+    /* FIO É FIO, não viga. Com três pedaços grossos o cabo saía como
+       uma barra preta atravessando o bairro inteiro: cada pedaço é um
+       caixote deitado, e o caixote tem de cobrir a diferença de altura
+       das duas pontas — pedaço longo, caixote alto. Mais pedaços,
+       menos espessura e menos folga vertical resolvem os dois: a
+       barriga fica lisa e o cabo fica fino. */
+    const SEGS = 6, ESP = 0.7, sag = Math.min(14, Math.hypot(bx-ax, by-ay)*0.11);
     let px = ax, py = ay, ph = ah;
     for (let i = 1; i <= SEGS; i++) {
       const t = i / SEGS;
@@ -532,7 +542,7 @@ export function montarBairro(P) {
       const len = Math.hypot(nx-px, ny-py);
       if (len > 0.5) {
         const ang = Math.atan2(ny-py, nx-px) || 1e-6;
-        caixaRot(T, (px+nx)/2, (py+ny)/2, len, ESP, Math.min(ph,nh)-0.8, Math.max(ph,nh)+0.8, ang, hex);
+        caixaRot(T, (px+nx)/2, (py+ny)/2, len, ESP, Math.min(ph,nh)-0.35, Math.max(ph,nh)+0.35, ang, hex);
       }
       px = nx; py = ny; ph = nh;
     }

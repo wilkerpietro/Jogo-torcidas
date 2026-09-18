@@ -37,6 +37,7 @@ TO.diaJogo.estadioPintura = (function(){
     matoEscuro: '#b9a778',
     moita:      '#5d7746',
     trilha:     '#b39e74',
+    beco:       '#a08a63',
     areia:      '#e6d3a3',
     areiaMolhada:'#d3bf8e',
     mar:        '#2e5a75',
@@ -173,10 +174,11 @@ TO.diaJogo.estadioPintura = (function(){
       c.fillStyle = COR.moita;
       c.beginPath(); c.ellipse(m.x, m.y, m.r*0.9, m.r*0.7, 0, 0, 7); c.fill();
     }
-    /* os becos da favela: mais largos que a trilha comum — é rua, não
-       caminho de mato —, mas sem asfalto nem meio-fio: só terra mais
-       pisada, um tom mais claro que o mato em volta */
-    c.strokeStyle = COR.trilha; c.lineWidth = 34; c.lineCap = 'round'; c.lineJoin = 'round';
+    /* os becos da favela: é rua, não caminho de mato — mas sem
+       asfalto nem meio-fio, só terra batida. Mais escura que a trilha
+       do mato aberto: ali passa gente o dia inteiro, e o que fica é
+       chão socado, não capim pisado. */
+    c.strokeStyle = COR.beco; c.lineWidth = 44; c.lineCap = 'round'; c.lineJoin = 'round';
     for(const t of K.FAVELA_RUAS || []){
       c.beginPath(); c.moveTo(t[0][0], t[0][1]);
       for(let i=1;i<t.length;i++) c.lineTo(t[i][0], t[i][1]);
