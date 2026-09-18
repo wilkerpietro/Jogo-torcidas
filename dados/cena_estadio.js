@@ -1322,6 +1322,21 @@ TO.dados.plantaEstadio = (function(){
     for(const c of cores) if(c && Math.abs(luz(c) - lf) >= 0.22) return c;
     return lf > 0.55 ? '#151515' : '#f2f2f2';
   }
+  /* O ESCUDO DE VERDADE, o mesmo arquivo que o jogo usa.
+     `dados/escudos.js` é o manifesto do que existe em `img/escudos/`
+     (`clube-<id>.png` e `torcida-<id>.png`, 139 de cada); sem o id lá
+     dentro não há arquivo, e a cena fica com o escudo gerado. E no
+     jogo de arquivo único as imagens moram num dicionário que o
+     empacotador embute — `window.__EMBUTIDOS` —, então o caminho passa
+     por ele antes, que é o mesmo `IMG()` do `main.js`. */
+  function caminhoDoEscudo(tipo, id){
+    const m = ((typeof TO !== 'undefined' && TO.dados && TO.dados.escudos) || {})
+              [tipo === 'c' ? 'clubes' : 'torcidas'];
+    if(!m || !id || !m[id]) return null;
+    const caminho = 'img/escudos/' + (tipo === 'c' ? 'clube' : 'torcida') + '-' + id + '.png';
+    return (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho])
+           || caminho;
+  }
   function sedeDaTorcida(lado, q, area, frente){
     const T = SEDES[lado].torcida;
     const E = eixos(area, frente), L = E.L, A = E.A;
@@ -1437,7 +1452,7 @@ TO.dados.plantaEstadio = (function(){
       p('escudo', { x, y, ox, oz, larg: 36*k, alt: 36*k, base: 16,
                     forma: 'bola', texto: T.rot, cor: cor1, cor2,
                     corTexto: corQueLeSobre(cor1, [cor2, cor3]),
-                    img: T.id ? 'img/escudos/torcida/' + T.id + '.png' : null }, false);
+                    img: caminhoDoEscudo('t', T.id) }, false);
     const vaoEsq = vaoDe(trechoEsq);
     if(vaoEsq > 90){
       const c0 = meio(trechoEsq) - vaoEsq*0.19, c1 = meio(trechoEsq) + vaoEsq*0.19;
@@ -1448,7 +1463,7 @@ TO.dados.plantaEstadio = (function(){
                     forma: 'diagonal', texto: T.clubeSigla || T.rot,
                     cor: T.clubeCor || cor1, cor2: T.clubeCor2 || cor2,
                     corTexto: '#ffffff',
-                    img: T.clubeId ? 'img/escudos/clube/' + T.clubeId + '.png' : null }, false);
+                    img: caminhoDoEscudo('c', T.clubeId) }, false);
     }
     /* e um em cada PAREDE LATERAL, que também é parede externa: a
        direção de `+u` no mundo sai de dois pontos do próprio eixo, e

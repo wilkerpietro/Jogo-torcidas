@@ -330,14 +330,20 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   branco). Saem em textura, no mesmo atlas dos letreiros, em vez de em
   CSS. A célula do atlas é 256 × 64 e o escudo é quadrado, então ele
   ocupa um quadrado de 64 no meio dela e a UV aponta só pra ele.
-  Por cima disso entra o **PNG de verdade**: a planta diz o caminho
-  (`img/escudos/clube/<clubeId>.png` e `img/escudos/torcida/<id>.png`,
-  ids do próprio banco de dados), a imagem carrega depois da cena
-  montada, repinta a célula do atlas e `needsUpdate` põe na tela. Sem o
-  arquivo o `onerror` não faz nada e fica valendo o gerado — nada
-  quebra, e o dia em que os PNG entrarem no repositório eles aparecem
-  sozinhos, sem mexer em código. Fora do navegador não existe `Image`,
+  Por cima disso entra o **PNG de verdade**, que é o MESMO arquivo que o
+  jogo usa: `img/escudos/clube-<clubeId>.png` e
+  `img/escudos/torcida-<id>.png`, 139 de cada, com `dados/escudos.js`
+  como manifesto do que existe — é a convenção de `escudoDe()` em
+  `js/main.js`, não uma inventada aqui. O caminho passa antes por
+  `window.__EMBUTIDOS`, como o `IMG()` do jogo, porque no build de
+  arquivo único o empacotador (`ferramentas/empacotar_jogo.py`) troca
+  essas imagens por `data:` URIs.
+  A imagem carrega depois da cena montada, repinta a célula do atlas e
+  `needsUpdate` põe na tela. Sem o id no manifesto nem arquivo, fica
+  valendo o gerado — nada quebra. Fora do navegador não existe `Image`,
   então as varreduras no node param no gerado.
+  Os 278 arquivos vieram do branch `claude/game-html-news-feed-sndgh4`,
+  que é onde eles foram importados; este branch não os tinha.
   **A frente é a cor primária da torcida**, o rodapé e os batentes do
   portão são a terceira, e a faixa alta, as listras do piso do salão e a
   bandeira do mastro são a segunda.
