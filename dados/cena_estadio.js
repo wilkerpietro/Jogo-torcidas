@@ -534,7 +534,7 @@ TO.dados.plantaEstadio = (function(){
     casa:    { alt:[30, 44],  cor:['#e8dcc0','#d9c9a3','#e2b9a6','#cfd8c9','#e6e2d6','#d8c8b0','#e9d3b3'] },
     sobrado: { alt:[54, 70],  cor:['#e3d3b2','#c9b48a','#d4a48f','#b7c4c2','#ded9cd'] },
     predio:  { alt:[92, 150], cor:['#cfcac0','#b9b4aa','#d5d0c4','#a9b0b6','#e0dcd2'] },
-    muro:    { alt:[12, 14],  cor:['#b8b09e'] },
+    muro:    { alt:[12, 16],  cor:['#b0a794','#a59a86','#bdb3a0','#9d9585'] },
     galpao:  { alt:[40, 56],  cor:['#9fa4a6','#8f948f','#a8a39a'] }
   };
   /* a sede de cada torcida: um ponto do mapa dentro do quarteirão, e a
@@ -629,9 +629,16 @@ TO.dados.plantaEstadio = (function(){
             return m;
           };
           let achou = null;
-          for(const p of [48, 32]) if(p < prof && !esbarra(encolhe(lote, p))){ achou = encolhe(lote, p); break; }
+          for(const p of [48, 32, 20]) if(p < prof && !esbarra(encolhe(lote, p))){ achou = encolhe(lote, p); break; }
           if(!achou) continue;
           lote = achou;
+          /* fundo de muro é muro: casa de 20 de fundo não existe, e o
+             que fecha a frente do terreno vago é o muro mesmo */
+          if(fr.f === 'n' || fr.f === 's' ? lote.y1 - lote.y0 <= 22 : lote.x1 - lote.x0 <= 22){
+            lote.tipo = 'muro';
+            lote.alt = par8(entre(TIPOS.muro.alt[0], TIPOS.muro.alt[1])) || TIPOS.muro.alt[0];
+            lote.cor = escolher(TIPOS.muro.cor);
+          }
         }
         if(cantosDoLote(lote).some(([x, y]) => noCampo(x, y))) continue;
         for(const [k, sd] of Object.entries(SEDES)){
@@ -650,39 +657,52 @@ TO.dados.plantaEstadio = (function(){
     if(!raso) q.quintal = { x0:q.ix0+prof, x1:q.ix1-prof, y0:q.iy0+prof, y1:q.iy1-prof, alt:10, cor:'#a8a08c' };
   }
   /* AS CASAS DA AVENIDA: caminha ao longo de cada trecho, um lote de
-     cada lado, fundo fixo (PROF_AV) e frente contínua. Aceita se os
-     quatro cantos caem no miolo de um mesmo quarteirão e não pisam em
-     outra casa da avenida; se não cabe, tenta mais estreito antes de
-     desistir — é o que fecha a frente perto das esquinas. Vêm ANTES
-     dos lotes axiais, que desviam delas. */
+     cada lado, com a frente encostada na calçada da avenida. Aceita se
+     os quatro cantos do BEIRAL caem no miolo de um mesmo quarteirão e
+     não pisam em outra casa — telhado por cima da calçada é o que se
+     quer evitar. A avenida é diagonal e o quarteirão é reto, então a
+     sobra entre a calçada e o miolo é uma cunha: perto da ponta dela
+     não cabe casa, e o que fecha a frente ali é MURO, que é raso e não
+     tem beiral. Vêm ANTES dos lotes axiais, que desviam delas. */
+  const LARGURAS = [0, 88, 72, 56, 44, 32, 24];  // a 1ª é sorteada em cada passo
+  const FUNDOS = [PROF_AV, 72, 60, 48, 36];
+  const FUNDO_MURO = 14;                         // muro de lote: fino, não um caixote
   for(const av of AVENIDAS){
     for(const sg of av.segs){
       for(const lado of [-1, 1]){
         let t = 6;
-        while(t < sg.L - 30){
-          let colocado = false;
-          for(const w of [par8(entre(64, 112)), 56, 40]){
-            if(t + w > sg.L - 6) continue;
-            /* fundo cheio primeiro; perto da esquina, mais raso */
-            for(const h of [PROF_AV, 64, 48]){
-              const off = av.l/2 + CALC + h/2 + 2;
-              const cx = sg.x0 + sg.ux*(t + w/2) - sg.uy*off*lado;
-              const cy = sg.y0 + sg.uy*(t + w/2) + sg.ux*off*lado;
-              const q = celulaEm(cx, cy);
-              if(!q || q.tipo !== 'quadra') continue;
-              const tipo = tipoDoLote(q);
-              const T = TIPOS[tipo];
-              const lote = { quadra:q, frente:'av', tipo, cx, cy, w, h, ang: sg.ang,
-                             alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
-              const cantos = cantosDoLote(lote);
-              const cabe = cantos.every(([x, y]) => x >= q.ix0 && x < q.ix1 && y >= q.iy0 && y < q.iy1) &&
-                           !cantos.some(([x, y]) => q.lotes.some(o => dentroLote(x, y, o))) &&
-                           !cantos.some(([x, y]) => noCampo(x, y));
-              if(cabe){ LOTES.push(lote); q.lotes.push(lote); t += w + 2; colocado = true; break; }
-            }
-            if(colocado) break;
+        while(t < sg.L - 24){
+          LARGURAS[0] = par8(entre(64, 112));
+          const tentar = (w, h, muro) => {
+            const off = av.l/2 + CALC + h/2 + 2;
+            const cx = sg.x0 + sg.ux*(t + w/2) - sg.uy*off*lado;
+            const cy = sg.y0 + sg.uy*(t + w/2) + sg.ux*off*lado;
+            const q = celulaEm(cx, cy);
+            if(!q || q.tipo !== 'quadra') return false;
+            const tipo = muro ? 'muro' : tipoDoLote(q);
+            const T = TIPOS[tipo];
+            const lote = { quadra:q, frente:'av', tipo, cx, cy, w, h, ang: sg.ang,
+                           alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
+            const cantos = cantosDoLote(lote);
+            /* o muro não tem beiral; a casa tem, e ele também precisa caber */
+            const beiral = muro ? cantos : cantosDoLote({ ...lote, w: w + 2, h: h + 2 });
+            if(!beiral.every(([x, y]) => x >= q.ix0 && x < q.ix1 && y >= q.iy0 && y < q.iy1)) return false;
+            if(cantos.some(([x, y]) => q.lotes.some(o => dentroLote(x, y, o)))) return false;
+            if(cantos.some(([x, y]) => noCampo(x, y))) return false;
+            LOTES.push(lote); q.lotes.push(lote);
+            return true;
+          };
+          let posto = 0;
+          /* casa primeiro, em qualquer largura; só depois o muro de fecho */
+          for(const w of LARGURAS){
+            if(t + w > sg.L - 4) continue;
+            if(FUNDOS.some(h => tentar(w, h, false))){ posto = w; break; }
           }
-          if(!colocado) t += 16;
+          if(!posto) for(const w of LARGURAS){
+            if(t + w > sg.L - 4) continue;
+            if(tentar(w, FUNDO_MURO, true)){ posto = w; break; }
+          }
+          t += posto ? posto + 2 : 8;
         }
       }
     }
@@ -755,15 +775,34 @@ TO.dados.plantaEstadio = (function(){
     return null;
   }
 
-  /* ---- árvores nas calçadas, postes nas ruas do estádio e na avenida ---- */
+  /* ---- árvores nas calçadas ----
+     A COPA INTEIRA TEM DE CABER NA CALÇADA. A calçada tem CALC (32) de
+     largura, então o tronco vai no eixo dela (16 da guia) e a copa é
+     menor que isso: com r até 13 sobra folga dos dois lados, e nenhuma
+     copa passa por cima do asfalto. Árvore nos quatro lados do
+     quarteirão, não só no norte e no sul. */
   const ARVORES = [];
+  const EIXO_CALC = CALC/2;
   for(const q of QUADRAS){
-    for(let x = q.x0 + 40; x < q.x1 - 30; x += par8(entre(120, 220))){
-      if(rng() < 0.45) ARVORES.push({ x, y: q.y0 + 12, r: entre(14, 22) });
-      if(rng() < 0.45) ARVORES.push({ x, y: q.y1 - 12, r: entre(14, 22) });
+    const por = (x, y) => {
+      const r = entre(9, EIXO_CALC - 3);
+      if(zona(x, y) !== 'cidade') return;
+      if(naAvenida(x, y, r + 6)) return;           // nem encostar no asfalto da avenida
+      if(q.lotes.some(l => dentroLote(x, y, l))) return;
+      ARVORES.push({ x, y, r });
+    };
+    for(let x = q.x0 + 56; x < q.x1 - 46; x += par8(entre(104, 176))){
+      if(rng() < 0.6) por(x, q.y0 + EIXO_CALC);
+      if(rng() < 0.6) por(x, q.y1 - EIXO_CALC);
+    }
+    for(let y = q.y0 + 56; y < q.y1 - 46; y += par8(entre(104, 176))){
+      if(rng() < 0.55) por(q.x0 + EIXO_CALC, y);
+      if(rng() < 0.55) por(q.x1 - EIXO_CALC, y);
     }
   }
   for(const a of ARVORES){ const q = celulaEm(a.x, a.y); if(q){ (q.arvores = q.arvores || []).push(a); } }
+
+  /* ---- postes nas ruas do estádio e na avenida ---- */
   const POSTES = [];
   for(const q of QUADRAS){
     const passo = 200;

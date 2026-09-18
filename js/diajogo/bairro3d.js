@@ -35,9 +35,73 @@ export function montarBairro(P) {
     const f = (a, b, c, d, tom) => { tri(T, v[a], v[b], v[c], hex, tom); tri(T, v[a], v[c], v[d], hex, tom); };
     f(4,7,6,5, TONS[0]); f(0,4,5,1, TONS[1]); f(2,6,7,3, TONS[2]); f(1,5,6,2, TONS[3]); f(3,7,4,0, TONS[4]);
   }
+  /* o retângulo legal da peça que está sendo montada: nada de casa por
+     cima da calçada, então beiral, janela, porta e placa saem cortados
+     pelo miolo do quarteirão. Fora de um lote, `limite` é nulo. */
+  let limite = null;
   function caixa(T, x0, x1, y0, y1, z0, z1, hex) {
+    if (limite) {
+      x0 = Math.max(x0, limite.x0); x1 = Math.min(x1, limite.x1);
+      z0 = Math.max(z0, limite.y0); z1 = Math.min(z1, limite.y1);
+      if (x1 - x0 < 0.05 || z1 - z0 < 0.05) return;
+    }
     caixaV(T, [[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1],
                [x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]], hex);
+  }
+  /* ---- a laje da calçada, recortada pelas avenidas ----
+     Recorta um polígono convexo pelo meio-plano n·p <= d. O que sobra
+     continua convexo, então dá pra ir cortando banda por banda: é
+     exato, e é o que deixa a calçada chegar até a guia da avenida sem
+     nunca passar por cima do asfalto. */
+  function corta(pol, nx, nz, d) {
+    const out = [];
+    for (let i = 0; i < pol.length; i++) {
+      const a = pol[i], b = pol[(i + 1) % pol.length];
+      const da = nx * a[0] + nz * a[1] - d, db = nx * b[0] + nz * b[1] - d;
+      if (da <= 0) out.push(a);
+      if ((da < 0) !== (db < 0)) {
+        const t = da / (da - db);
+        out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+      }
+    }
+    return out;
+  }
+  function semAsAvenidas(ret, folga) {
+    let pecas = [[[ret.x0, ret.y0], [ret.x1, ret.y0], [ret.x1, ret.y1], [ret.x0, ret.y1]]];
+    const cantos = pecas[0];
+    for (const av of K.AVENIDAS) {
+      const meia = av.l / 2 + (folga || 0);
+      for (const sg of av.segs) {
+        const nx = -sg.uy, nz = sg.ux, c = nx * sg.x0 + nz * sg.y0;
+        const ds = cantos.map(([x, z]) => nx * x + nz * z - c);
+        if (Math.min(...ds) > meia || Math.max(...ds) < -meia) continue;
+        const ts = cantos.map(([x, z]) => (x - sg.x0) * sg.ux + (z - sg.y0) * sg.uy);
+        if (Math.max(...ts) < -meia || Math.min(...ts) > sg.L + meia) continue;
+        const novas = [];
+        for (const p of pecas) {
+          const esq = corta(p, nx, nz, c - meia);
+          const dir = corta(p, -nx, -nz, -(c + meia));
+          if (esq.length >= 3) novas.push(esq);
+          if (dir.length >= 3) novas.push(dir);
+        }
+        pecas = novas;
+      }
+    }
+    return pecas;
+  }
+  /* um prisma reto a partir de um polígono convexo: tampa e paredinha.
+     O retângulo vem no sentido horário visto de cima; invertido, a
+     tampa olha pra cima e as paredinhas olham pra fora. */
+  function laje(T, entrada, y0, y1, hex) {
+    const pol = entrada.slice().reverse();
+    for (let i = 1; i < pol.length - 1; i++)
+      tri(T, [pol[0][0], y1, pol[0][1]], [pol[i][0], y1, pol[i][1]], [pol[i+1][0], y1, pol[i+1][1]], hex, TONS[0]);
+    for (let i = 0; i < pol.length; i++) {
+      const a = pol[i], b = pol[(i + 1) % pol.length];
+      const tom = Math.abs(a[0] - b[0]) > Math.abs(a[1] - b[1]) ? TONS[1] : TONS[3];
+      tri(T, [a[0], y0, a[1]], [b[0], y0, b[1]], [b[0], y1, b[1]], hex, tom);
+      tri(T, [a[0], y0, a[1]], [b[0], y1, b[1]], [a[0], y1, a[1]], hex, tom);
+    }
   }
   /* caixa girada de `ang` em torno do centro (cx, cz) */
   function caixaRot(T, cx, cz, w, h, y0, y1, ang, hex) {
@@ -118,11 +182,20 @@ export function montarBairro(P) {
     const k = (q.i >> 2) + ',' + (q.j >> 2);
     if (!pedacos.has(k)) pedacos.set(k, Tecido());
     const T = pedacos.get(k);
-    /* a calçada, um palmo acima da rua — menos onde uma avenida corta o
-       quarteirão: ali a laje cobriria a avenida, e fica só a pintura */
-    if (!q.cortada) caixa(T, q.x0, q.x1, 0, 1.4, q.y0, q.y1, '#8d897d');
-    if (q.quintal && !q.cortada) caixa(T, q.quintal.x0, q.quintal.x1, 0, q.quintal.alt, q.quintal.y0, q.quintal.y1, q.quintal.cor);
-    for (const l of q.lotes) lote(T, l);
+    /* Três chãos, um por cima do outro: a CALÇADA vai da guia da rua
+       até a guia da avenida; o CHÃO DO LOTE cobre o miolo e para na
+       calçada da avenida (sem isso a sobra em cunha que a avenida
+       deixa no quarteirão lê como um descampado de cimento); e o
+       QUINTAL, mais alto, no meio. */
+    for (const p of semAsAvenidas(q)) laje(T, p, 0, 1.4, '#8d897d');
+    const miolo = { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
+    for (const p of semAsAvenidas(miolo, K.CALC)) laje(T, p, 0, 1.6, '#7d7668');
+    if (q.quintal) for (const p of semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
+    for (const l of q.lotes) {
+      limite = l.ang ? null : { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
+      lote(T, l);
+      limite = null;
+    }
     for (const a of q.arvores || []) arvore(T, a);
   }
   for (const T of pedacos.values()) malha(T, true);

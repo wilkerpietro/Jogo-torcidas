@@ -119,6 +119,27 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   (`naFaixaDaAvenida`): a avenida acaba numa rua, e o quarteirão do outro
   lado não é dela — com a ponta contando, ele ficava pelado. O quarteirão
   cortado não ganha laje de calçada nem quintal no 3D.
+- **Três chãos, um sobre o outro** (`bairro3d.js`): a **calçada** (laje de
+  1,4) vai da guia da rua até a guia da avenida; o **chão do lote** (1,6)
+  cobre o miolo e para na calçada da avenida; o **quintal** (10) fica no
+  meio. Sem o do meio, a sobra em cunha que a avenida deixa no quarteirão
+  lia como um descampado de cimento. Os três saem de um recorte convexo
+  (`semAsAvenidas`): o retângulo vai sendo cortado meio-plano a
+  meio-plano por cada banda de avenida que o cruza, o que sobra continua
+  convexo, e sai como prisma.
+- **Três regras que não se quebram**, conferidas por `auditar_geo.js`
+  (roda o `bairro3d.js` no node com um three.js de mentira e olha
+  vértice por vértice): **nada por cima do asfalto**, **casa nenhuma por
+  cima da calçada**, **calçada nenhuma por cima do asfalto**. O que as
+  garante: o recorte acima; o `limite` do `caixa()`, que corta beiral,
+  janela, porta e placa pelo miolo do quarteirão; o teste do beiral nas
+  casas da avenida; e a copa da árvore menor que meia calçada (tronco no
+  eixo dela, a 16 da guia, copa de raio até 13).
+- **A frente da avenida se fecha com muro.** A avenida é diagonal e o
+  quarteirão é reto, então a sobra é uma cunha: perto da ponta não cabe
+  casa. Tenta casa em cinco larguras e cinco fundos; só depois, muro
+  fino (14 de fundo), que não tem beiral e entra onde casa não entra.
+  Dá 81–88 % da frente ocupada, contra 55 % antes.
 - **Os campos de várzea** são células grandes abertas com cerca de mourão
   (bloqueia, com porteira no meio dos lados norte e sul), arquibancadinha
   de três degraus (bloqueia) e traves.
