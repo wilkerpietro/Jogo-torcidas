@@ -155,8 +155,9 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   fino (14 de fundo), que não tem beiral e entra onde casa não entra.
   Dá 81–88 % da frente ocupada, contra 55 % antes.
 - **Os campos de várzea** são células grandes abertas com cerca de mourão
-  (bloqueia, com porteira no meio dos lados norte e sul), arquibancadinha
-  de três degraus (bloqueia) e traves. O retângulo declarado é só a
+  (bloqueia, com porteira no meio dos lados norte e sul) e traves. A
+  arquibancadinha de três degraus saiu: lia como uma escada solta no
+  meio do campo. O retângulo declarado é só a
   **intenção** — diz quais células o campo toma; passada a
   classificação, ele encolhe pra caixa dessas células menos a calçada,
   e é isso que o faz caber no quarteirão em vez de atravessar a rua e
@@ -190,6 +191,20 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   couber, dois bancos e um poste. Dezenove delas. Nada ali bloqueia: o
   pedaço continua andável, e é bom que continue — é atalho e é lugar
   de briga.
+- **A ESCALA É A DO BONECO.** Ele tem 39 unidades e mede 1,75 m, então
+  uma unidade é 4,5 cm. Pelas alturas antigas a casa tinha 1,6 m, a
+  porta 0,90, o muro 0,54 e o poste 2,07: o boneco era um gigante entre
+  casinhas, e não passava pela própria porta. Agora está em metros de
+  verdade — porta de 2,10, casa de 3 a 3,6, sobrado de 5 a 6, muro de
+  1,7 a 2,2, árvore de rua de uns 5, poste de 5,2. A planta da cidade
+  (calçada de 1,4 m, rua de 2,9) continua estreita, que é herança da
+  escala do mapa; mexer nela mexeria na grade e na máscara inteiras.
+- **Telhado de duas águas.** Caixa chapada em cima de caixa lia como
+  laje. Agora são duas rampas que se encontram na cumeeira, com as
+  empenas fechando as pontas, e a cumeeira corre no lado maior — que é
+  como se cobre casa de rua. Prédio e sede seguem de laje, que é o
+  certo pra eles. O beiral sai 2 do corpo mas vem cortado pelo miolo do
+  quarteirão, a mesma regra de sempre.
 - **A decoração.** Texto não sai de caixa, sai de textura: a planta
   guarda só o dizer (`l.placa`, `l.pixacao`), e o `bairro3d.js` junta
   os que apareceram num atlas de 256 × 64 por dizer, uma malha só, com

@@ -179,22 +179,65 @@ export function montarBairro(P) {
     p(a, u[0], u[1]); p(e, u[2], u[3]); p(d, u[0], u[3]);
   }
 
+  /* ---- TELHADO DE DUAS ÁGUAS ----
+     Duas rampas que se encontram na cumeeira, com as empenas fechando
+     as pontas. A cumeeira corre no lado MAIOR, que é como se cobre
+     casa de rua. Caixa chapada em cima de caixa lia como laje; com
+     queda a casa vira casa. */
+  function aguas(T, A, B, C, D, E, F, hex) {
+    const q = (a, b, c, d, tom) => { tri(T, a, b, c, hex, tom); tri(T, a, c, d, hex, tom); };
+    q(A, E, F, B, TONS[1]);                       // a água de um lado
+    q(C, F, E, D, TONS[3]);                       // a do outro
+    tri(T, A, D, E, hex, TONS[4]);                // empena
+    tri(T, B, F, C, hex, TONS[2]);                // e a outra
+  }
+  function telhado(T, x0, x1, z0, z1, y0, h, hex) {
+    if (x1 - x0 < 1 || z1 - z0 < 1) return;
+    const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
+    const p = (x, y, z) => [x, y, z];
+    if (x1 - x0 >= z1 - z0)
+      aguas(T, p(x0,y0,z0), p(x1,y0,z0), p(x1,y0,z1), p(x0,y0,z1),
+               p(x0,y0+h,mz), p(x1,y0+h,mz), hex);
+    else
+      aguas(T, p(x0,y0,z1), p(x0,y0,z0), p(x1,y0,z0), p(x1,y0,z1),
+               p(mx,y0+h,z1), p(mx,y0+h,z0), hex);
+  }
+  function telhadoRot(T, cx, cz, w, d, y0, h, ang, hex) {
+    const c = Math.cos(ang), s = Math.sin(ang), hw = w/2, hd = d/2;
+    const p = (u, v, y) => [cx + u*c - v*s, y, cz + u*s + v*c];
+    if (w >= d)
+      aguas(T, p(-hw,-hd,y0), p(hw,-hd,y0), p(hw,hd,y0), p(-hw,hd,y0),
+               p(-hw,0,y0+h), p(hw,0,y0+h), hex);
+    else
+      aguas(T, p(-hw,hd,y0), p(-hw,-hd,y0), p(hw,-hd,y0), p(hw,hd,y0),
+               p(0,hd,y0+h), p(0,-hd,y0+h), hex);
+  }
+
   /* ---- um lote ---- */
   const TELHA = '#9a4a33', VIDRO = '#3a4652', PORTA = '#4a3a2c';
+  const PORTA_ALT = 46;          // 2,1 m: o boneco tem 39 e passa em pé
   function lote(T, l) {
     if (l.ang) {
       /* casa da avenida: corpo, telhado e uma faixa de janela na frente */
       caixaRot(T, l.cx, l.cy, l.w - 2, l.h - 2, 0, l.alt, l.ang, l.cor);
-      if (l.tipo === 'casa' || l.tipo === 'sobrado') caixaRot(T, l.cx, l.cy, l.w + 2, l.h + 2, l.alt, l.alt + 4, l.ang, TELHA);
-      else if (l.tipo !== 'muro') caixaRot(T, l.cx, l.cy, l.w, l.h, l.alt, l.alt + 3, l.ang, '#8f8a80');
+      if (l.tipo === 'casa' || l.tipo === 'sobrado')
+        telhadoRot(T, l.cx, l.cy, l.w + 2, l.h + 2, l.alt, Math.min(l.h, 46) * 0.42, l.ang, TELHA);
+      else if (l.tipo === 'galpao')
+        telhadoRot(T, l.cx, l.cy, l.w, l.h, l.alt, Math.min(l.h, 46) * 0.24, l.ang, '#7c8285');
+      else if (l.tipo !== 'muro') caixaRot(T, l.cx, l.cy, l.w, l.h, l.alt, l.alt + 4, l.ang, '#8f8a80');
       return;
     }
     const x0 = l.x0 + 1, x1 = l.x1 - 1, z0 = l.y0 + 1, z1 = l.y1 - 1;
     caixa(T, x0, x1, 0, l.alt, z0, z1, l.cor);
     if (l.tipo === 'muro') return;
-    if (l.tipo === 'casa' || l.tipo === 'sobrado') caixa(T, x0 - 2, x1 + 2, l.alt, l.alt + 4, z0 - 2, z1 + 2, TELHA);
-    if (l.tipo === 'predio' || l.tipo === 'sede') caixa(T, x0 - 1, x1 + 1, l.alt, l.alt + 3, z0 - 1, z1 + 1, '#8f8a80');
-    if (l.tipo === 'galpao') caixa(T, x0 + 4, x1 - 4, l.alt, l.alt + 6, z0 + 4, z1 - 4, '#7c8285');
+    /* o beiral sai 2 do corpo, mas cortado pelo miolo do quarteirão —
+       telhado por cima da calçada é o que não pode */
+    const bx0 = Math.max(x0 - 2, limite ? limite.x0 : -1e9), bx1 = Math.min(x1 + 2, limite ? limite.x1 : 1e9);
+    const bz0 = Math.max(z0 - 2, limite ? limite.y0 : -1e9), bz1 = Math.min(z1 + 2, limite ? limite.y1 : 1e9);
+    const queda = Math.min(bx1 - bx0, bz1 - bz0) * 0.42;
+    if (l.tipo === 'casa' || l.tipo === 'sobrado') telhado(T, bx0, bx1, bz0, bz1, l.alt, Math.min(queda, 52), TELHA);
+    if (l.tipo === 'predio' || l.tipo === 'sede') caixa(T, x0 - 1, x1 + 1, l.alt, l.alt + 5, z0 - 1, z1 + 1, '#8f8a80');
+    if (l.tipo === 'galpao') telhado(T, x0 + 2, x1 - 2, z0 + 2, z1 - 2, l.alt, Math.min(queda, 30), '#7c8285');
     const frente = l.frente;
     const larg = frente === 'n' || frente === 's' ? x1 - x0 : z1 - z0;
     const faceBox = (a0, a1, y0, y1, hex, fora) => {
@@ -204,35 +247,39 @@ export function montarBairro(P) {
       else if (frente === 'o') caixa(T, x0 - e, x0 + 0.2, y0, y1, z0 + a0, z0 + a1, hex);
       else caixa(T, x1 - 0.2, x1 + e, y0, y1, z0 + a0, z0 + a1, hex);
     };
-    faceBox(larg * 0.5 - 6, larg * 0.5 + 6, 0, l.placa ? 17 : 20, PORTA, 0.6);
-    const andares = Math.max(1, Math.floor(l.alt / 26));
+    faceBox(larg * 0.5 - 10, larg * 0.5 + 10, 0, Math.min(PORTA_ALT, l.alt - 6), PORTA, 0.6);
+    /* um andar a cada 2,6 m, com peitoril a 1,2 e janela de 1,1 */
+    const andares = Math.max(1, Math.floor(l.alt / 58));
     for (let f = 0; f < andares; f++) {
-      const y = 12 + f * 26;
-      if (y + 10 > l.alt - 3) break;
-      if (f === 0) { faceBox(6, larg * 0.5 - 12, y, y + 9, VIDRO, 0.5); faceBox(larg * 0.5 + 12, larg - 6, y, y + 9, VIDRO, 0.5); }
-      else faceBox(6, larg - 6, y, y + 9, VIDRO, 0.5);
+      const y = 26 + f * 58;
+      if (y + 26 > l.alt - 8) break;
+      if (f === 0) { faceBox(8, larg * 0.5 - 16, y, y + 24, VIDRO, 0.5); faceBox(larg * 0.5 + 16, larg - 8, y, y + 24, VIDRO, 0.5); }
+      else faceBox(8, larg - 8, y, y + 24, VIDRO, 0.5);
     }
     if (l.tipo === 'sede') {
-      faceBox(8, larg - 8, 22, 34, l.lado === 'mandante' ? '#e0b040' : '#e6e6e6', 1.6);
-      faceBox(10, larg - 10, 25, 31, l.cor, 1.9);
+      faceBox(8, larg - 8, 54, 78, l.lado === 'mandante' ? '#e0b040' : '#e6e6e6', 1.6);
+      faceBox(12, larg - 12, 60, 72, l.cor, 1.9);
     }
   }
   /* copa arredondada: uma pirâmide pra cima e outra pra baixo, base com
      base — de longe é uma bola, e é o que a árvore de rua do mapa é */
   function arvore(T, a) {
-    caixa(T, a.x - 1.6, a.x + 1.6, 1.4, 16, a.y - 1.6, a.y + 1.6, '#5a4630');
-    const meio = 14 + a.r * 0.8;
-    piramide(T, a.x, meio, meio + a.r * 1.1, a.r, a.y, '#3f7a34');
-    piramide(T, a.x, meio, meio - a.r * 0.8, a.r, a.y, '#356b2c');
+    /* árvore de rua de verdade tem uns 5 m: o tronco sobe acima da
+       cabeça antes de abrir a copa */
+    const galho = 26 + a.r * 1.2, copa = a.r * 3.1;
+    caixa(T, a.x - 2.4, a.x + 2.4, 0, galho + copa * 0.3, a.y - 2.4, a.y + 2.4, '#5a4630');
+    piramide(T, a.x, galho, galho + copa, a.r, a.y, '#3f7a34');
+    piramide(T, a.x, galho, galho - a.r * 0.9, a.r, a.y, '#356b2c');
   }
 
   /* poste de rua: mastro, braço e a luminária na ponta */
   const POSTE = '#6b6b66';
   function poste(T, p) {
-    caixa(T, p.x - 1.2, p.x + 1.2, 1.4, 46, p.y - 1.2, p.y + 1.2, POSTE);
-    caixa(T, Math.min(p.x, p.x + p.dx*12) - 1, Math.max(p.x, p.x + p.dx*12) + 1, 44, 46,
-          Math.min(p.y, p.y + p.dz*12) - 1, Math.max(p.y, p.y + p.dz*12) + 1, POSTE);
-    caixa(T, p.x + p.dx*12 - 3, p.x + p.dx*12 + 3, 42, 44.5, p.y + p.dz*12 - 3, p.y + p.dz*12 + 3, '#e9e2c0');
+    const H = 116, B = 22;                     // 5,2 m de mastro, braço de 1 m
+    caixa(T, p.x - 1.8, p.x + 1.8, 0, H, p.y - 1.8, p.y + 1.8, POSTE);
+    caixa(T, Math.min(p.x, p.x + p.dx*B) - 1.4, Math.max(p.x, p.x + p.dx*B) + 1.4, H - 4, H,
+          Math.min(p.y, p.y + p.dz*B) - 1.4, Math.max(p.y, p.y + p.dz*B) + 1.4, POSTE);
+    caixa(T, p.x + p.dx*B - 5, p.x + p.dx*B + 5, H - 8, H - 3.5, p.y + p.dz*B - 5, p.y + p.dz*B + 5, '#e9e2c0');
   }
 
   /* =========================================================
@@ -272,20 +319,20 @@ export function montarBairro(P) {
   /* um carro, com cabine — e a barra de luz de quem tem pressa */
   function carro(T, c) {
     const ao = c.x1 - c.x0 > c.y1 - c.y0;
-    const teto = c.modo === 'ambulancia' ? 22 : 13.5;
-    caixa(T, c.x0, c.x1, 1.4, 8, c.y0, c.y1, c.cor);
+    const teto = c.modo === 'ambulancia' ? 40 : 28;
+    caixa(T, c.x0, c.x1, 1.4, 17, c.y0, c.y1, c.cor);
     tmp.set(c.cor).multiplyScalar(0.7);
     const escuro = c.modo === 'ambulancia' ? '#e8e8e4' : '#' + tmp.getHexString();
-    if (ao) caixa(T, c.x0 + 9, c.x1 - 10, 8, teto, c.y0 + 1.5, c.y1 - 1.5, escuro);
-    else caixa(T, c.x0 + 1.5, c.x1 - 1.5, 8, teto, c.y0 + 9, c.y1 - 10, escuro);
+    if (ao) caixa(T, c.x0 + 9, c.x1 - 10, 17, teto, c.y0 + 1.5, c.y1 - 1.5, escuro);
+    else caixa(T, c.x0 + 1.5, c.x1 - 1.5, 17, teto, c.y0 + 9, c.y1 - 10, escuro);
     if (!c.modo) return;
     const mx = (c.x0 + c.x1) / 2, mz = (c.y0 + c.y1) / 2;
-    caixa(T, mx - 9, mx - 1, teto, teto + 3, mz - 3, mz + 3, '#c02a22');
-    caixa(T, mx + 1, mx + 9, teto, teto + 3, mz - 3, mz + 3, '#2a44c0');
+    caixa(T, mx - 9, mx - 1, teto, teto + 5, mz - 3, mz + 3, '#c02a22');
+    caixa(T, mx + 1, mx + 9, teto, teto + 5, mz - 3, mz + 3, '#2a44c0');
     if (c.modo === 'ambulancia') {
       /* a faixa vermelha na lateral */
-      caixa(T, c.x0 + 2, c.x1 - 2, 11, 15, c.y0 - 0.5, c.y0 + 0.4, '#c9463c');
-      caixa(T, c.x0 + 2, c.x1 - 2, 11, 15, c.y1 - 0.4, c.y1 + 0.5, '#c9463c');
+      caixa(T, c.x0 + 2, c.x1 - 2, 22, 30, c.y0 - 0.5, c.y0 + 0.4, '#c9463c');
+      caixa(T, c.x0 + 2, c.x1 - 2, 22, 30, c.y1 - 0.4, c.y1 + 0.5, '#c9463c');
     }
   }
   function desenharPecas(T, TL, uv, pecas) {
@@ -329,9 +376,9 @@ export function montarBairro(P) {
         case 'arvore': arvore(T, o); break;
         case 'poste': poste(T, o); break;
         case 'banco': {
-          caixa(T, o.x0, o.x1, 7, 9, o.y0, o.y1, '#7a5a3a');
-          caixa(T, o.x0, o.x1, 9, 16, o.y0, o.y0 + 2, '#7a5a3a');
-          for (const x of [o.x0 + 2, o.x1 - 2]) caixa(T, x - 1, x + 1, 0, 7, mz - 1, mz + 1, '#55524a');
+          caixa(T, o.x0, o.x1, 10, 13, o.y0, o.y1, '#7a5a3a');
+          caixa(T, o.x0, o.x1, 13, 30, o.y0, o.y0 + 2.5, '#7a5a3a');
+          for (const x of [o.x0 + 3, o.x1 - 3]) caixa(T, x - 1.4, x + 1.4, 0, 10, mz - 1.4, mz + 1.4, '#55524a');
           break;
         }
         case 'mastro':
@@ -506,12 +553,6 @@ export function montarBairro(P) {
         caixa(TS, ax, f.cx - K.PORTEIRA / 2 - 6, 12, 13, az - 0.4, az + 0.4, CER);
         caixa(TS, f.cx + K.PORTEIRA / 2 + 6, bx, 12, 13, az - 0.4, az + 0.4, CER);
       } else caixa(TS, ax - 0.4, ax + 0.4, 12, 13, az, bz, CER);
-    }
-    const A = K.ARQ_VARZEA, h = f.y1 - f.y0;
-    for (let k = 0; k < 3; k++) {
-      const prof = A.fundo / 3;
-      if (f.ladoArq === 'o') caixa(TS, f.x0 + K.CERCA + k * prof, f.x0 + K.CERCA + (k + 1) * prof, 0, A.alt - k * 7, f.cy - h * 0.3, f.cy + h * 0.3, '#a8a396');
-      else caixa(TS, f.x1 - K.CERCA - (k + 1) * prof, f.x1 - K.CERCA - k * prof, 0, A.alt - k * 7, f.cy - h * 0.3, f.cy + h * 0.3, '#a8a396');
     }
     for (const s of [-1, 1]) {
       const x = s < 0 ? f.x0 + 22 : f.x1 - 22;

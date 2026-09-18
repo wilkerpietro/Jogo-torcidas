@@ -420,16 +420,16 @@ TO.dados.plantaEstadio = (function(){
     x >= QEST_X0 && x < QEST_X1 && y >= QEST_Y0 && y < QEST_Y1;
 
   /* ---- os campos de várzea: células abertas com cerca ---- */
-  const campo = (x0, y0, x1, y1, ladoArq) => {
+  const campo = (x0, y0, x1, y1) => {
     const [X0, Y0] = pxm(x0, y0), [X1, Y1] = pxm(x1, y1);
-    return { x0:X0, y0:Y0, x1:X1, y1:Y1, cx:(X0+X1)/2, cy:(Y0+Y1)/2, ladoArq };
+    return { x0:X0, y0:Y0, x1:X1, y1:Y1, cx:(X0+X1)/2, cy:(Y0+Y1)/2 };
   };
   /* Os dois campos de várzea. O retângulo aqui é só a INTENÇÃO: diz
    quais células o campo toma. Passada a classificação, ele encolhe
    pra caixa dessas células, recuado da calçada — é o que o faz caber
    no quarteirão em vez de atravessar a rua e a areia. */
-  const CAMPOS = [ campo(400, 752, 525, 808, 'o'), campo(658, 728, 748, 808, 'l') ];
-  const CERCA = 6, PORTEIRA = 24, ARQ_VARZEA = { fundo: 40, alt: 22 };
+  const CAMPOS = [ campo(400, 752, 525, 808), campo(658, 728, 748, 808) ];
+  const CERCA = 6, PORTEIRA = 24;
   function noCampo(x, y){
     for(const c of CAMPOS) if(x >= c.x0 && x < c.x1 && y >= c.y0 && y < c.y1) return c;
     return null;
@@ -443,8 +443,6 @@ TO.dados.plantaEstadio = (function(){
       const meio = Math.abs(x - c.cx) < PORTEIRA/2;
       return meio && (dy0 < CERCA || dy1 < CERCA);
     }
-    if(c.ladoArq === 'o' && dx0 < CERCA + ARQ_VARZEA.fundo && Math.abs(y - c.cy) < (c.y1-c.y0)*0.3) return false;
-    if(c.ladoArq === 'l' && dx1 < CERCA + ARQ_VARZEA.fundo && Math.abs(y - c.cy) < (c.y1-c.y0)*0.3) return false;
     return true;
   }
 
@@ -664,12 +662,16 @@ TO.dados.plantaEstadio = (function(){
   const escolher = l => l[Math.floor(rng()*l.length)];
   const par8 = v => Math.round(v/8)*8;
 
+  /* A ESCALA É A DO BONECO: ele tem 39 unidades e mede 1,75 m, então
+     uma unidade é 4,5 cm. Com as alturas antigas a casa tinha 1,6 m e a
+     porta 0,90 — o boneco não passava por ela. Aqui está em metros de
+     verdade: pé-direito de 3, sobrado de 6, muro de 1,9. */
   const TIPOS = {
-    casa:    { alt:[30, 44],  cor:['#e8dcc0','#d9c9a3','#e2b9a6','#cfd8c9','#e6e2d6','#d8c8b0','#e9d3b3'] },
-    sobrado: { alt:[54, 70],  cor:['#e3d3b2','#c9b48a','#d4a48f','#b7c4c2','#ded9cd'] },
-    predio:  { alt:[92, 150], cor:['#cfcac0','#b9b4aa','#d5d0c4','#a9b0b6','#e0dcd2'] },
-    muro:    { alt:[12, 16],  cor:['#b0a794','#a59a86','#bdb3a0','#9d9585'] },
-    galpao:  { alt:[40, 56],  cor:['#9fa4a6','#8f948f','#a8a39a'] }
+    casa:    { alt:[66, 80],   cor:['#e8dcc0','#d9c9a3','#e2b9a6','#cfd8c9','#e6e2d6','#d8c8b0','#e9d3b3'] },
+    sobrado: { alt:[112, 136], cor:['#e3d3b2','#c9b48a','#d4a48f','#b7c4c2','#ded9cd'] },
+    predio:  { alt:[160, 240], cor:['#cfcac0','#b9b4aa','#d5d0c4','#a9b0b6','#e0dcd2'] },
+    muro:    { alt:[38, 48],   cor:['#b0a794','#a59a86','#bdb3a0','#9d9585'] },
+    galpao:  { alt:[96, 128],  cor:['#9fa4a6','#8f948f','#a8a39a'] }
   };
   /* a sede de cada torcida: um ponto do mapa dentro do quarteirão, e a
      frente em que ela fica. É onde a torcida nasce. */
@@ -720,6 +722,9 @@ TO.dados.plantaEstadio = (function(){
   }
   function lotear(q){
     const largI = q.ix1 - q.ix0, altI = q.iy1 - q.iy0;
+    /* na orla o recuo da costa pode zerar o miolo: sem miolo não há
+       lote, e lote de largura zero vira casa do avesso */
+    if(largI < 40 || altI < 40) return;
     let prof = par8(entre(60, 84));
     /* quarteirão raso: uma fileira só, ocupando o fundo todo */
     const raso = altI < 2*prof + 24 || largI < 2*prof + 24;
@@ -835,14 +840,14 @@ TO.dados.plantaEstadio = (function(){
         piso(cx + sx*vao + (sx < 0 ? -gx : 0), cy + sy*vao + (sy < 0 ? -gy : 0), 
              cx + sx*vao + (sx < 0 ? 0 : gx), cy + sy*vao + (sy < 0 ? 0 : gy), '#4e7f40');
       const r = Math.max(22, Math.min(34, Math.min(L, A)*0.16));
-      p('coreto', Object.assign({ x: cx, y: cy, r, alt: 34 }, ret(cx, cy, r*2, r*2)));
+      p('coreto', Object.assign({ x: cx, y: cy, r, alt: 62 }, ret(cx, cy, r*2, r*2)));
       const dx = Math.min(L*0.31, L/2 - 40);
       p('fonte', Object.assign({ x: cx - dx, y: cy, r: Math.min(30, A*0.16) },
                                ret(cx - dx, cy, Math.min(60, A*0.32), Math.min(60, A*0.32))));
-      p('monumento', Object.assign({ alt: 30 }, ret(cx + dx, cy, 26, 26)));
+      p('monumento', Object.assign({ alt: 52 }, ret(cx + dx, cy, 26, 26)));
       const cw = Math.min(72, L*0.16), ch = Math.min(46, A*0.22);
       for(const sx of [-1, 1]) for(const sy of [-1, 1])
-        p('canteiro', Object.assign({ alt: 9 }, ret(cx + sx*(r + 18 + cw/2), cy + sy*(A*0.30), cw, ch)));
+        p('canteiro', Object.assign({ alt: 15 }, ret(cx + sx*(r + 18 + cw/2), cy + sy*(A*0.30), cw, ch)));
       /* banco de praça não tranca ninguém: é enfeite */
       for(let i=0;i<8;i++){
         const a = i/8*Math.PI*2, d = r + 34;
@@ -851,7 +856,7 @@ TO.dados.plantaEstadio = (function(){
       fila(5, X0 + 26, X1 - 26, x => { p('arvore', { x, y: Y0 + 20, r: 15 }, false); p('arvore', { x, y: Y1 - 20, r: 15 }, false); });
       for(const sx of [-1, 1]) for(const sy of [-1, 1])
         p('poste', { x: cx + sx*(L*0.36), y: cy + sy*(A*0.30), dx: -sx, dz: 0 }, false);
-      p('letreiro', { x: cx, y: Y1 - 14, ox: 0, oz: 1, texto: 'PRAÇA DA MATRIZ', placa: true, larg: 98, altura: 16, base: 22, pernas: true }, false);
+      p('letreiro', { x: cx, y: Y1 - 14, ox: 0, oz: 1, texto: 'PRAÇA DA MATRIZ', placa: true, larg: 98, altura: 20, base: 44, pernas: true }, false);
     }
 
     if(tipo === 'hospital'){
@@ -860,27 +865,27 @@ TO.dados.plantaEstadio = (function(){
       const fundo = Math.min(A*0.42, 175), ala = Math.min(L*0.38, 100);
       chao = '#a4a49c';
       piso(cx - 46, Y1 - 40, cx + 46, Y1, '#8e8b82');            // a entrada de veículos
-      p('bloco', { x0: X0, x1: X1, y0: Y0, y1: Y0 + fundo, alt: 116, cor: '#dfdcd2',
+      p('bloco', { x0: X0, x1: X1, y0: Y0, y1: Y0 + fundo, alt: 232, cor: '#dfdcd2',
                    teto: '#9aa0a2', janelas: 'grade' });
-      p('bloco', { x0: X0, x1: X0 + ala, y0: Y0 + fundo, y1: Y0 + fundo + A*0.26, alt: 64,
+      p('bloco', { x0: X0, x1: X0 + ala, y0: Y0 + fundo, y1: Y0 + fundo + A*0.26, alt: 124,
                    cor: '#d5d2c7', teto: '#9aa0a2', janelas: 'faixa' });
       /* o pronto-socorro: marquise sobre pilares, rente ao bloco */
       const mx0 = X0 + ala + 14, mx1 = Math.min(X1 - 20, mx0 + 118), my0 = Y0 + fundo, my1 = my0 + 54;
-      p('marquise', { x0: mx0, x1: mx1, y0: my0, y1: my1, y: 30, alt: 6, cor: '#c9463c' }, false);
+      p('marquise', { x0: mx0, x1: mx1, y0: my0, y1: my1, y: 56, alt: 8, cor: '#c9463c' }, false);
       for(const x of [mx0 + 5, mx1 - 5]) for(const y of [my1 - 5])
-        p('pilar', { x, y, r: 3.5, alt: 30, cor: '#b8b4a8' });
+        p('pilar', { x, y, r: 3.5, alt: 56, cor: '#b8b4a8' });
       p('carro', { x0: mx0 + 24, x1: mx0 + 24 + 38, y0: my0 + 8, y1: my0 + 8 + 42, cor: '#f2f2ee', modo: 'ambulancia' });
       /* estacionamento a leste, e o muro da frente com portão */
       fila(4, Y0 + fundo + 20, Y1 - 60, y => p('carro', { x0: X1 - 40, x1: X1 - 4, y0: y, y1: y + 34, cor: escolher(CORES_CARRO_EQ) }));
       const px0 = cx - 46, px1 = cx + 46;                 // o vão do portão
-      p('muro', { x0: X0, x1: px0, y0: Y1 - 6, y1: Y1, alt: 16, cor: '#c6c2b6' });
-      p('muro', { x0: px1, x1: X1, y0: Y1 - 6, y1: Y1, alt: 16, cor: '#c6c2b6' });
+      p('muro', { x0: X0, x1: px0, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#c6c2b6' });
+      p('muro', { x0: px1, x1: X1, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#c6c2b6' });
       p('arvore', { x: X0 + 22, y: Y1 - 26, r: 16 }, false);
       p('arvore', { x: X1 - 22, y: Y1 - 26, r: 16 }, false);
-      p('cruz', { x: cx + 96, y: Y0 + fundo, base: 72, ox: 0, oz: 1, tam: 30 }, false);
+      p('cruz', { x: cx + 96, y: Y0 + fundo, base: 150, ox: 0, oz: 1, tam: 44 }, false);
       /* acima do telhado da ala oeste, senão ela come metade do letreiro */
-      p('letreiro', { x: cx - 8, y: Y0 + fundo, ox: 0, oz: 1, texto: 'HOSPITAL MUNICIPAL', placa: true, larg: 148, altura: 22, base: 76 }, false);
-      p('letreiro', { x: mx0 + 59, y: my1, ox: 0, oz: 1, texto: 'PRONTO-SOCORRO', placa: true, larg: 96, altura: 16, base: 34 }, false);
+      p('letreiro', { x: cx - 8, y: Y0 + fundo, ox: 0, oz: 1, texto: 'HOSPITAL MUNICIPAL', placa: true, larg: 148, altura: 26, base: 152 }, false);
+      p('letreiro', { x: mx0 + 59, y: my1, ox: 0, oz: 1, texto: 'PRONTO-SOCORRO', placa: true, larg: 96, altura: 20, base: 62 }, false);
     }
 
     if(tipo === 'delegacia'){
@@ -889,14 +894,14 @@ TO.dados.plantaEstadio = (function(){
       chao = '#a4a49c';
       const fundo = Math.min(A*0.52, 126), larg = Math.min(L*0.62, 300);
       const bx0 = cx - larg/2, bx1 = cx + larg/2;
-      p('bloco', { x0: bx0, x1: bx1, y0: Y0, y1: Y0 + fundo, alt: 62, cor: '#e3e0d4',
+      p('bloco', { x0: bx0, x1: bx1, y0: Y0, y1: Y0 + fundo, alt: 124, cor: '#e3e0d4',
                    teto: '#8f9499', janelas: 'grade' });
       /* o pórtico: laje sobre quatro colunas */
       const py1 = Y0 + fundo + 34;
-      p('marquise', { x0: cx - 66, x1: cx + 66, y0: Y0 + fundo, y1: py1, y: 40, alt: 7, cor: '#cfcbbe' }, false);
-      fila(4, cx - 60, cx + 60, x => p('pilar', { x, y: py1 - 6, r: 4.5, alt: 40, cor: '#eceadf' }));
-      p('mastro', { x: bx0 - 26, y: Y0 + fundo + 18, alt: 74 });
-      p('guarita', { x0: X1 - 46, x1: X1 - 18, y0: Y1 - 46, y1: Y1 - 18, alt: 30, cor: '#dcd8cc' });
+      p('marquise', { x0: cx - 66, x1: cx + 66, y0: Y0 + fundo, y1: py1, y: 74, alt: 9, cor: '#cfcbbe' }, false);
+      fila(4, cx - 60, cx + 60, x => p('pilar', { x, y: py1 - 6, r: 4.5, alt: 74, cor: '#eceadf' }));
+      p('mastro', { x: bx0 - 26, y: Y0 + fundo + 18, alt: 140 });
+      p('guarita', { x0: X1 - 46, x1: X1 - 18, y0: Y1 - 46, y1: Y1 - 18, alt: 58, cor: '#dcd8cc' });
       /* o pátio das viaturas: em quarteirão estreito ele encolhe, e em
          quarteirão fundo ganha uma segunda fileira */
       const vaga = Math.min(74, (L - 40)/4), meia = vaga*1.5;
@@ -906,15 +911,15 @@ TO.dados.plantaEstadio = (function(){
         fila(3, cx - vaga, cx + vaga, (x, i) => p('carro', { x0: x - 18, x1: x + 18, y0: fy, y1: fy + 42,
                                                             cor: CORES_CARRO_PM[i % 2], modo: 'policia' }));
       }
-      if(bx0 - 46 > X0 + 20) p('muro', { x0: X0, x1: bx0 - 46, y0: Y1 - 6, y1: Y1, alt: 16, cor: '#c6c2b6' });
+      if(bx0 - 46 > X0 + 20) p('muro', { x0: X0, x1: bx0 - 46, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#c6c2b6' });
       p('arvore', { x: X0 + 24, y: Y0 + 26, r: 16 }, false);
       p('arvore', { x: X1 - 24, y: Y0 + 26, r: 16 }, false);
       /* o letreiro da frente vai acima do pórtico, e o do distrito na
          empena oeste — na frente ele ficaria atrás da laje das colunas */
       p('letreiro', { x: cx, y: Y0 + fundo, ox: 0, oz: 1, texto: 'DELEGACIA DE POLÍCIA', placa: true,
-                      larg: Math.min(150, larg - 24), altura: 20, base: 48 }, false);
+                      larg: Math.min(150, larg - 24), altura: 24, base: 88 }, false);
       p('letreiro', { x: bx0, y: Y0 + fundo*0.45, ox: -1, oz: 0, texto: '3º DISTRITO', placa: true,
-                      larg: Math.min(76, fundo*0.6), altura: 15, base: 30 }, false);
+                      larg: Math.min(76, fundo*0.6), altura: 18, base: 54 }, false);
     }
 
     if(tipo === 'shopping'){
@@ -924,21 +929,21 @@ TO.dados.plantaEstadio = (function(){
       const larg = Math.min(L*0.60, 320), fundo = Math.min(A*0.72, 190);
       piso(X0, Y0, X0 + Math.min(L*0.60, 320) + 22, Y1, '#a4a49c');    // o passeio do shopping
       const bx0 = X0, bx1 = X0 + larg;
-      p('bloco', { x0: bx0, x1: bx1, y0: Y0, y1: Y0 + fundo, alt: 74, cor: '#d8d4c8', teto: '#8e9398' });
+      p('bloco', { x0: bx0, x1: bx1, y0: Y0, y1: Y0 + fundo, alt: 150, cor: '#d8d4c8', teto: '#8e9398' });
       p('bloco', { x0: cx - larg*0.18, x1: cx - larg*0.18 + larg*0.30, y0: Y0 + fundo - 30, y1: Y0 + fundo + 26,
-                   alt: 96, cor: '#cfd5d8', janelas: 'vidro' });
-      p('marquise', { x0: bx0 + larg*0.14, x1: bx1 - larg*0.10, y0: Y0 + fundo, y1: Y0 + fundo + 30, y: 34, alt: 5, cor: '#9fb0b8' }, false);
+                   alt: 196, cor: '#cfd5d8', janelas: 'vidro' });
+      p('marquise', { x0: bx0 + larg*0.14, x1: bx1 - larg*0.10, y0: Y0 + fundo, y1: Y0 + fundo + 30, y: 66, alt: 7, cor: '#9fb0b8' }, false);
       /* clarabóias e máquinas no teto */
-      fila(4, bx0 + 40, bx1 - 40, x => p('claraboia', { x0: x - 26, x1: x + 26, y0: Y0 + 30, y1: Y0 + fundo - 40, y: 74, alt: 5, cor: '#b8cdd6' }, false));
-      fila(3, bx0 + 60, bx1 - 60, x => p('maquina', { x0: x - 16, x1: x + 16, y0: Y0 + 14, y1: Y0 + 40, y: 74, alt: 12, cor: '#9a9a94' }, false));
+      fila(4, bx0 + 40, bx1 - 40, x => p('claraboia', { x0: x - 26, x1: x + 26, y0: Y0 + 30, y1: Y0 + fundo - 40, y: 150, alt: 7, cor: '#b8cdd6' }, false));
+      fila(3, bx0 + 60, bx1 - 60, x => p('maquina', { x0: x - 16, x1: x + 16, y0: Y0 + 14, y1: Y0 + 40, y: 150, alt: 20, cor: '#9a9a94' }, false));
       /* o estacionamento: três fileiras */
       const ex0 = bx1 + 26;
       fila(3, ex0, X1 - 42, x => fila(5, Y0 + 16, Y1 - 52, y =>
         { if(rng() < 0.22) return; p('carro', { x0: x, x1: x + 36, y0: y, y1: y + 34, cor: escolher(CORES_CARRO_EQ) }); }));
       fila(3, ex0, X1 - 42, x => fila(6, Y0 + 12, Y1 - 44, y => piso(x - 2, y - 1, x + 38, y + 1, '#e8e5da')));
       fila(4, Y0 + 40, Y1 - 40, y => p('poste', { x: ex0 - 12, y, dx: 1, dz: 0 }, false));
-      p('totem', { x0: X1 - 30, x1: X1 - 10, y0: Y1 - 34, y1: Y1 - 14, alt: 96, cor: '#3a4a66' });
-      p('letreiro', { x: cx - larg*0.03, y: Y0 + fundo + 26, ox: 0, oz: 1, texto: 'SHOPPING BEIRA-MAR', placa: true, larg: 150, altura: 24, base: 60 }, false);
+      p('totem', { x0: X1 - 30, x1: X1 - 10, y0: Y1 - 34, y1: Y1 - 14, alt: 190, cor: '#3a4a66' });
+      p('letreiro', { x: cx - larg*0.03, y: Y0 + fundo + 26, ox: 0, oz: 1, texto: 'SHOPPING BEIRA-MAR', placa: true, larg: 150, altura: 30, base: 112 }, false);
       p('arvore', { x: X1 - 22, y: Y0 + 22, r: 16 }, false);
     }
     return { tipo, chao, pecas };
@@ -1207,10 +1212,13 @@ TO.dados.plantaEstadio = (function(){
      copa passa por cima do asfalto. Árvore nos quatro lados do
      quarteirão, não só no norte e no sul. */
   const ARVORES = [];
-  const EIXO_CALC = CALC/2;
+  /* o tronco sai do eixo da calçada e encosta mais na divisa do lote:
+     assim a copa cresce pro lado do quintal, que é de graça, e mesmo
+     com raio 19 ainda sobra folga até a guia */
+  const EIXO_CALC = CALC*0.62;
   for(const q of QUADRAS){
     const por = (x, y) => {
-      const r = entre(9, EIXO_CALC - 3);
+      const r = entre(14, EIXO_CALC - 1);
       if(zona(x, y) !== 'cidade') return;
       if(naAvenida(x, y, r + 6)) return;           // nem encostar no asfalto da avenida
       if(q.lotes.some(l => dentroLote(x, y, l))) return;
@@ -1269,7 +1277,7 @@ TO.dados.plantaEstadio = (function(){
                    CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, bordasX, bordasY,
                    xLimiteCosta, cortarPor, recorteCosta, pedacosSemAvenida, dentroPol, ruaEntre,
                    areaPol, noAsfalto, CAMPOS, CERCA, PORTEIRA,
-                   ARQ_VARZEA, noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
+                   noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe };
 
   /* =======================================================

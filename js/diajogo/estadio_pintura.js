@@ -113,7 +113,7 @@ TO.diaJogo.estadioPintura = (function(){
     }
   }
 
-  /* um campo de várzea: grama, linhas, cerca, arquibancadinha */
+  /* um campo de várzea: grama, linhas e cerca de mourão */
   function campoVarzea(c, K, f){
     const w = f.x1 - f.x0, h = f.y1 - f.y0;
     const faixas = 8, fw = w/faixas;
@@ -125,11 +125,6 @@ TO.diaJogo.estadioPintura = (function(){
     c.beginPath(); c.arc(f.cx, f.cy, 30, 0, 7); c.stroke();
     for(const s of [-1, 1]) c.strokeRect(s < 0 ? a : a+lx-40, f.cy-50, 40, 100);
     c.strokeStyle = COR.cerca; c.lineWidth = K.CERCA; c.strokeRect(f.x0 + K.CERCA/2, f.y0 + K.CERCA/2, w - K.CERCA, h - K.CERCA);
-    /* a arquibancadinha */
-    const A = K.ARQ_VARZEA;
-    c.fillStyle = COR.laje;
-    if(f.ladoArq === 'o') c.fillRect(f.x0 + K.CERCA, f.cy - h*0.3, A.fundo, h*0.6);
-    else c.fillRect(f.x1 - K.CERCA - A.fundo, f.cy - h*0.3, A.fundo, h*0.6);
   }
 
   function faixaPedestre(c, x0, y0, w, h, horizontal){
