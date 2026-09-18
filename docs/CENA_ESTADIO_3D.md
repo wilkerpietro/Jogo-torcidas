@@ -272,9 +272,51 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   célula sabe os seus lotes e árvores, e `celulaEm(x, y)` acha a célula
   por busca binária nas bordas: é o que deixa 460 mil `anda()` custarem
   0,3 s na carga.
-- **As sedes** ficam onde o mapa põe a torcida: a mandante no quarteirão
-  do canto sudoeste, de frente pro mato; a visitante de frente pra orla,
-  a nordeste. A torcida nasce na calçada da porta.
+- **A SEDE É UMA PLANTA, não uma casa pintada.** Era um lote comum com
+  outra cor e uma faixa na fachada — perdido no meio do quarteirão. Agora
+  cada sede toma uma fatia inteira do quarteirão (uns 19 × 11 m) e tem
+  planta de verdade, como a foto que o dono mandou: **muro na rua** com o
+  portão e o nome da torcida, **ala da frente** com quatro cômodos e o
+  corredor do portão no meio, **SALÃO** aberto com mastro, bancos e árvore,
+  e **ala do fundo** com três cômodos.
+  **O telhado se abre quando o jogador entra.** De fora a sede é coberta
+  como qualquer casa — cobertura de galpão de duas águas rasas sobre as
+  paredes externas, com as caixas d'água em cima e a platibanda da
+  fachada passando dela —, e é assim que ela se lê da rua. Quando o
+  líder do jogador cruza a borda da fatia, o telhado some e a planta
+  aparece: cômodo, corredor, salão. É o corte de planta baixa, e custa
+  uma malha por sede (`teto:mandante`, `teto:visitante`), que a cena
+  liga e desliga por quadro. A borda é a da fatia, SEM folga: ela
+  coincide com a guia da calçada e a torcida nasce do lado de fora, e
+  com folga o telhado já abria no spawn. Não pisca, porque entre a
+  calçada e o miolo está a parede: o boneco cruza a borda pelo vão do
+  portão, que é onde a casa se abre mesmo.
+  Poste e árvore não entram: dentro de galpão coberto não há luminária
+  de rua nem pé de árvore. Ficam os bancos e o mastro, que sobe pela
+  frente e passa do telhado.
+  **A frente é a cor primária da torcida**, o rodapé e os batentes do
+  portão são a terceira, e a faixa alta, as listras do piso do salão e a
+  bandeira do mastro são a segunda.
+  Tudo é declarado em EIXO LOCAL — `u` ao longo da frente, `v` pra
+  dentro, `v = 0` na calçada — e `eixos()` gira pro mundo: a mesma planta
+  serve pras quatro frentes, e a sede pode nascer virada pro norte, pro
+  sul, pro leste ou pro oeste sem uma linha a mais.
+  As sedes escolhem o quarteirão ANTES dos outros equipamentos (sem sede
+  não há spawn), e o que sobra do quarteirão continua sendo casa. **O
+  miolo da sede é andável**: a torcida nasce na calçada do portão, entra
+  e ocupa o salão e os cômodos. Porta de cômodo nenhuma cai em cima de
+  uma divisória — na primeira montagem caía, e 332 células ficaram sem
+  chegada.
+- **A BEIRA DA ESTRADA fecha o mapa.** As avenidas saem da cidade e viram
+  estrada pelo mato até a borda do que se desenha, e ali a borda era mato
+  pelado: de dentro do bairro dava pra ver o cenário ACABAR. Agora cada
+  estrada leva casa solta na beira — casa, sobrado, galpão e muro de
+  sítio, uns quarenta ao todo —, viradas pra pista como as casas da
+  avenida, rareando conforme se afasta. Elas nascem só no mato, fora do
+  campo, da praia e do mar, longe do asfalto da avenida E da última faixa
+  da grade, bloqueiam na máscara num balde espacial próprio e saem numa
+  malha própria (`beira`), porque fora do contorno não há quarteirão nem
+  pedaço onde caber.
 
 A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
 descarta fora do quadro; carros, postes e campos numa malha; moitas em
@@ -291,7 +333,33 @@ TO.dados.cenaEstadio`, antes de `arredores.js` subir). O jogo em
 
 ## 5. A vida da cena — o que o combate já fazia, e como foi ligado
 
-Nada de mecânica nova. O que há:
+Quase nada de mecânica nova: o que muda é o que a página ENTREGA pro
+motor. O que há:
+
+- **DUAS TORCIDAS DE VERDADE, não "mandante contra visitante".** A cena
+  abria com `criarEstado({local, intencao, tensao, bombas, efetivoRival})`
+  e mais nada: os dois lados nasciam genéricos, sem nome, sem ficha e sem
+  cor, de camisa do lado. `index.html` nunca fez assim — ele passa
+  **bondes** (lado, efetivo, as três cores e a marca `nossa`) e
+  **escalação** (as fichas). Agora esta página faz o mesmo:
+  - a **planta** escolhe as duas torcidas em `dados/torcidas.js`, com a
+    semente dela: uma grande com rival no elenco, de preferência tricolor,
+    e um rival de primária LONGE da nossa — duas torcidas de preto e branco
+    na mesma briga viram uma só na tela. É a mesma escolha que pinta as
+    sedes, então a camisa do boneco e a fachada da sede não têm como
+    desencontrar (`CIDADE.TORCIDAS`);
+  - a página monta **quatro bondes**, um por spawn (1º escalão, 2º escalão,
+    setor visitante e retaguarda), com as três cores da torcida. Os dois
+    bondes da mesma torcida trazem o MESMO nome, que é a chave da paleta
+    em `bonecos3.js` — com nomes diferentes o segundo entraria como
+    "torcida que repete a primária" e sairia de calção trocado;
+  - a **escalação** sai do gerador da gestão (`TO.membros.povoarInicial`),
+    com a proporção de cargos que a fonte dá pra torcida: 34 fichas com
+    apelido, arquétipo, força, defesa, moral e XP. Quem tem ficha tem
+    nome na cena e vida pela defesa; o resto é povão.
+  - `combate.js` passava `cor` e `cor2` pro disco e **esquecia a terceira**
+    — `bonecos3.js` já a lia do bonde pra montar a paleta, mas o disco ia
+    sem ela e o desenho tricolor caía na segunda cor duas vezes. Uma linha.
 
 - **`id: 'arredores'`, de propósito.** `combate.js` só liga a vida do lado
   de fora — ficar na sede até a hora, bonde hostil sair atrás do rival,

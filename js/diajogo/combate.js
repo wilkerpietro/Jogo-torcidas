@@ -446,6 +446,10 @@ TO.diaJogo.combate = (function(){
          primária, o miolo é a secundária */
       d.cor  = g.bonde ? g.bonde.cor  : null;
       d.cor2 = g.bonde ? g.bonde.cor2 : null;
+      /* e a TERCEIRA, quando a torcida tem: `bonecos3.js` já a lia do
+         bonde pra montar a paleta, mas o disco ia sem ela e o desenho
+         tricolor caía na segunda cor duas vezes */
+      d.cor3 = g.bonde ? g.bonde.cor3 : null;
       d.torcida = g.bonde ? g.bonde.nome : null;
       d.doJogador = meu;
       J.discos.push(d);

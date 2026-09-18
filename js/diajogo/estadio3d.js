@@ -838,11 +838,32 @@ export function criar(canvas) {
     aplicarNivel(); return nivel;
   }
 
+  /* O TELHADO DA SEDE SE ABRE quando o jogador entra. De fora ela é
+     um galpão fechado como qualquer casa; lá dentro o telhado some e
+     a planta aparece — cômodo, corredor, salão.
+
+     A borda é a da FATIA, sem folga nenhuma: ela coincide com a guia
+     da calçada, e a torcida nasce do lado de fora dela. Com folga o
+     telhado já abria no spawn, que fica a trinta da guia. Não pisca:
+     entre a calçada e o miolo está a parede, então o boneco cruza a
+     borda andando pelo vão do portão, que é onde a casa se abre
+     mesmo. */
+  function abrirTetoDaSede(lider) {
+    if (!cidade || !cidade.tetos) return;
+    for (const t of cidade.tetos) {
+      const a = t.area;
+      const dentro = !!lider && lider.x > a.x0 && lider.x < a.x1 &&
+                                lider.y > a.y0 && lider.y < a.y1;
+      if (t.mesh.visible !== !dentro) t.mesh.visible = !dentro;
+    }
+  }
+
   function quadro(J, dt) {
     ajustarQualidade(dt);
     traduzir(J, dt);
     const lider = J.discos.find(d => d.lider && d.doJogador && d.vivo)
                || J.discos.find(d => d.lider && d.vivo);
+    abrirTetoDaSede(lider);
     posicionarCamera(lider, dt);
     cam.updateMatrixWorld();
     atualizarTronco();

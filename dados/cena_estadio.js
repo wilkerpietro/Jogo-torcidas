@@ -689,11 +689,79 @@ TO.dados.plantaEstadio = (function(){
     muro:    { alt:[38, 48],   cor:['#b0a794','#a59a86','#bdb3a0','#9d9585'] },
     galpao:  { alt:[96, 128],  cor:['#9fa4a6','#8f948f','#a8a39a'] }
   };
-  /* a sede de cada torcida: um ponto do mapa dentro do quarteirão, e a
-     frente em que ela fica. É onde a torcida nasce. */
+  /* =========================================================
+     AS DUAS TORCIDAS DA CENA
+     ---------------------------------------------------------
+     A cena não é mais "mandante contra visitante": são DUAS TORCIDAS
+     do `dados/torcidas.js`, com nome, sigla, efetivo e as cores delas.
+     Quem escolhe é a planta, com a semente da planta, e a página lê a
+     mesma escolha pra montar os bondes do combate — a camisa do boneco
+     e a pintura da sede saem da MESMA linha do arquivo, então não há
+     como uma desencontrar da outra.
+
+     `dados/torcidas.js` pode não estar carregado (as outras páginas não
+     o carregam): aí valem duas de reserva, que é o que a cena tinha.
+     ========================================================= */
+  /* as três cores: primária, secundária e terciária. A paleta mente —
+     cinquenta das 140 repetem a primária em `cores[1]` —, então cada
+     uma só vale se for DIFERENTE das anteriores. */
+  function coresDaTorcida(t){
+    const lista = [...((t && t.cores) || []), t && t.detalhe]
+      .filter(Boolean).map(c => String(c).toUpperCase());
+    const cor  = lista[0] || null;
+    const cor2 = lista.slice(1).find(c => c !== cor) || null;
+    const cor3 = lista.slice(1).find(c => c !== cor && c !== cor2) || null;
+    return { cor, cor2, cor3 };
+  }
+  /* duas cores que, na tela, são a mesma cor */
+  function pertoDaCor(a, b){
+    if(!a || !b) return false;
+    const n = h => { const v = parseInt(String(h).slice(1), 16); return [v>>16&255, v>>8&255, v&255]; };
+    const [r1,g1,b1] = n(a), [r2,g2,b2] = n(b);
+    return Math.abs(r1-r2) + Math.abs(g1-g2) + Math.abs(b1-b2) < 230;
+  }
+  function escolherTorcidas(){
+    const reserva = {
+      mandante:  { id:'casa', nome:'MANDANTE',  sigla:'CASA', efetivo:180,
+                   cor:'#b02a22', cor2:'#e8e2d0', cor3:'#1a1a1a' },
+      visitante: { id:'fora', nome:'VISITANTE', sigla:'FORA', efetivo:150,
+                   cor:'#22439a', cor2:'#e8e2d0', cor3:'#e0b040' }
+    };
+    const T = (typeof TO !== 'undefined' && TO.dados && TO.dados.torcidas) || null;
+    if(!T || !T.length) return reserva;
+    const porId = new Map(T.map(t => [t.id, t]));
+    const ficha = (t, lado) => Object.assign({ id:t.id, lado,
+      nome: t.siglaTorcida || t.nome, rot: (t.siglaTorcida || t.nome).toUpperCase(),
+      clube: t.clube, efetivo: Math.max(40, Math.round(t.membros || 120)) }, coresDaTorcida(t));
+    /* A DE CASA é uma das grandes, com duas cores de verdade e rival no
+       elenco; entre elas vêm primeiro as de TRÊS cores, porque a sede
+       pinta a frente na primária e os detalhes na segunda e na terceira
+       — com uma tricolor dá pra ver as três. */
+    const serve = t => { const c = coresDaTorcida(t); return c.cor && c.cor2; };
+    const casa = T.filter(t => serve(t) && (t.membros || 0) >= 150 && (t.rivais || []).some(r => porId.has(r)));
+    if(!casa.length) return reserva;
+    const tri = casa.filter(t => coresDaTorcida(t).cor3);
+    const m = (tri.length ? tri : casa)[Math.floor(rng()*(tri.length ? tri : casa).length)];
+    const cm = coresDaTorcida(m);
+    /* O RIVAL tem de dar pra distinguir de longe: primária LONGE da
+       nossa, senão as duas camisas viram uma só no meio da briga. */
+    const cand = (m.rivais || []).map(r => porId.get(r)).filter(Boolean)
+      .filter(t => serve(t) && (t.membros || 0) >= 100 && !pertoDaCor(coresDaTorcida(t).cor, cm.cor));
+    if(!cand.length) return reserva;
+    const triV = cand.filter(t => coresDaTorcida(t).cor3);
+    const pool = triV.length ? triV : cand;
+    const v = pool[Math.floor(rng()*pool.length)];
+    return { mandante: ficha(m, 'mandante'), visitante: ficha(v, 'visitante') };
+  }
+  const TORCIDAS = escolherTorcidas();
+
+  /* a sede de cada torcida: um ponto do mapa, a frente em que ela fica
+     e a torcida que mora nela. É onde a torcida nasce. */
   const SEDES = {
-    mandante:  { ponto: pxm(280, 1058), frente:'n', cor:'#b02a22', rot:'SEDE' },
-    visitante: { ponto: pxm(980, 255), frente:'l', cor:'#22439a', rot:'SEDE' }   // de frente pra orla
+    mandante:  { ponto: pxm(280, 1058), frente:'n', torcida: TORCIDAS.mandante,
+                 cor: TORCIDAS.mandante.cor, rot: TORCIDAS.mandante.rot },
+    visitante: { ponto: pxm(980, 255),  frente:'n', torcida: TORCIDAS.visitante,
+                 cor: TORCIDAS.visitante.cor, rot: TORCIDAS.visitante.rot }
   };
   const sedeDe = {};
 
@@ -712,6 +780,12 @@ TO.dados.plantaEstadio = (function(){
      do retângulo contra o segmento, e ponta do segmento contra o
      retângulo —, e zero se eles se cruzam. */
   function distSegRet(ax, ay, bx, by, hw, hh){
+    /* NaN ENTRA E VIRA ZERO se passar daqui: no recorte abaixo toda
+       comparação com NaN é falsa, os quatro meios-planos "passam" e a
+       função responde "distância zero", que é "está em cima da
+       avenida". Foi isso que reprovou a praça em quarteirão nenhum. */
+    if(!Number.isFinite(ax) || !Number.isFinite(ay) || !Number.isFinite(bx) ||
+       !Number.isFinite(by) || !Number.isFinite(hw) || !Number.isFinite(hh)) return Infinity;
     if((Math.abs(ax) <= hw && Math.abs(ay) <= hh) ||
        (Math.abs(bx) <= hw && Math.abs(by) <= hh)) return 0;
     const dx = bx - ax, dy = by - ay;
@@ -742,7 +816,11 @@ TO.dados.plantaEstadio = (function(){
      serve pra dizer quem é "casa da avenida". */
   function tocaAvenida(l, folga){
     const g = folga === undefined ? CALC : folga;
-    const girado = !!l.ang;
+    /* girado de verdade é o LOTE da avenida, que tem centro e medidas.
+       Peça de equipamento pode trazer um `ang` que só o desenho usa
+       (o banco da praça), e o corpo dela continua sendo o retângulo. */
+    const girado = !!l.ang && Number.isFinite(l.w) && Number.isFinite(l.h) &&
+                   Number.isFinite(l.cx) && Number.isFinite(l.cy);
     const cx = girado ? l.cx : (l.x0 + l.x1)/2, cy = girado ? l.cy : (l.y0 + l.y1)/2;
     const hw = girado ? l.w/2 : (l.x1 - l.x0)/2, hh = girado ? l.h/2 : (l.y1 - l.y0)/2;
     const C = girado ? Math.cos(l.ang) : 1, S = girado ? Math.sin(l.ang) : 0;
@@ -910,7 +988,7 @@ TO.dados.plantaEstadio = (function(){
   const EQUIPAMENTOS = [
     { tipo: 'hospital',  ponto: pxm(765, 448) },   // logo ao sul do estádio
     { tipo: 'delegacia', ponto: pxm(419, 448) },   // a oeste, no caminho da torcida
-    { tipo: 'shopping',  ponto: pxm(961, 160) },   // no nordeste, de frente pra orla
+    { tipo: 'shopping',  ponto: pxm(568, 792) },   // no nordeste, de frente pra orla
     { tipo: 'posto',     ponto: pxm(765, 620) },   // na via larga, ao sul
     { tipo: 'escola',    ponto: pxm(568, 706) },   // no meio do residencial
     { tipo: 'galeria',   ponto: pxm(765, 706) },   // o beco de lojas, ao lado da escola
@@ -924,7 +1002,7 @@ TO.dados.plantaEstadio = (function(){
   /* QUANTO DO QUARTEIRÃO CADA UM TOMA. O resto é casa: quarteirão de
      posto tem casa, o da escola também — é assim na cidade, e um
      equipamento sozinho num quarteirão inteiro lê como maquete. */
-  const FATIA = { praca: 1, galeria: 0.66, shopping: 0.74, hospital: 0.66,
+  const FATIA = { praca: 0.78, galeria: 0.66, shopping: 0.74, hospital: 0.66,
                   escola: 0.68, delegacia: 0.58, posto: 0.48 };
   function areaDoEquipamento(tipo, q){
     const L = q.ix1 - q.ix0;
@@ -1160,6 +1238,208 @@ TO.dados.plantaEstadio = (function(){
     return { tipo, chao, pecas, area };
   }
 
+  /* =========================================================
+     A SEDE DA TORCIDA
+     ---------------------------------------------------------
+     Não é mais uma casa pintada de vermelho: é um pedaço de
+     quarteirão com PLANTA, como a foto que o dono mandou — muro na
+     rua com o portão e o nome, ala da frente, SALÃO no meio e a ala
+     do fundo. Sem telhado sobre os cômodos, de propósito: de cima se
+     lê a planta (que é o que a foto mostra) e de dentro as paredes
+     leem como cômodos. A frente é a COR PRIMÁRIA da torcida, a faixa
+     e o piso do salão são a SECUNDÁRIA, e o portão, o rodapé e a
+     quadra pintada são a TERCEIRA quando ela existe.
+
+     Tudo é declarado em EIXO LOCAL — `u` ao longo da frente, `v` pra
+     dentro, `v = 0` na calçada — e `eixos()` gira pro mundo: a mesma
+     planta serve pras quatro frentes.
+     ========================================================= */
+  function eixos(a, frente){
+    const X0 = a.x0, X1 = a.x1, Y0 = a.y0, Y1 = a.y1;
+    if(frente === 'n') return { L:X1-X0, A:Y1-Y0, ox:0, oz:-1,
+      ret:(u0,u1,v0,v1)=>({ x0:X0+u0, x1:X0+u1, y0:Y0+v0, y1:Y0+v1 }),
+      pt:(u,v)=>[X0+u, Y0+v] };
+    if(frente === 's') return { L:X1-X0, A:Y1-Y0, ox:0, oz:1,
+      ret:(u0,u1,v0,v1)=>({ x0:X0+u0, x1:X0+u1, y0:Y1-v1, y1:Y1-v0 }),
+      pt:(u,v)=>[X0+u, Y1-v] };
+    if(frente === 'o') return { L:Y1-Y0, A:X1-X0, ox:-1, oz:0,
+      ret:(u0,u1,v0,v1)=>({ x0:X0+v0, x1:X0+v1, y0:Y0+u0, y1:Y0+u1 }),
+      pt:(u,v)=>[X0+v, Y0+u] };
+    return { L:Y1-Y0, A:X1-X0, ox:1, oz:0,
+      ret:(u0,u1,v0,v1)=>({ x0:X1-v1, x1:X1-v0, y0:Y0+u0, y1:Y0+u1 }),
+      pt:(u,v)=>[X1-v, Y0+u] };
+  }
+  /* a fatia que a sede toma do quarteirão, na frente pedida. Ela pega
+     o quarteirão de ponta a ponta na profundidade e uma faixa larga no
+     comprimento — o resto do quarteirão continua sendo casa. */
+  function areaDaSede(q, frente){
+    const Lx = q.ix1 - q.ix0, Ly = q.iy1 - q.iy0;
+    if(frente === 'n' || frente === 's'){
+      const w = Math.min(Lx, Math.max(420, Lx*0.72));
+      if(w < 340 || Ly < 190) return null;
+      return { x0: q.ix0, x1: q.ix0 + w, y0: q.iy0, y1: q.iy1 };
+    }
+    const w = Math.min(Lx, Math.max(300, Lx*0.5));
+    if(w < 280 || Ly < 340) return null;
+    return frente === 'o' ? { x0: q.ix0, x1: q.ix0 + w, y0: q.iy0, y1: q.iy1 }
+                          : { x0: q.ix1 - w, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
+  }
+  function sedeDaTorcida(lado, q, area, frente){
+    const T = SEDES[lado].torcida;
+    const E = eixos(area, frente), L = E.L, A = E.A;
+    const cor1 = T.cor || '#b02a22';
+    const cor2 = T.cor2 || '#e8e2d0';
+    const cor3 = T.cor3 || cor2;
+    const CLARO = '#d9d3c4';                 // o reboco dos cômodos, por dentro
+    const pecas = [];
+    const p = (k, o, bloqueia) => pecas.push(Object.assign({ k, bloqueia: bloqueia !== false }, o));
+    const par  = (u0,u1,v0,v1, alt, cor) => p('muro', Object.assign(E.ret(u0,u1,v0,v1), { alt, cor }));
+    const piso = (u0,u1,v0,v1, cor, base) => p('piso', Object.assign(E.ret(u0,u1,v0,v1), { cor, base: base || 1.72 }), false);
+    const faixa = (u0,u1,v0,v1, y, alt, cor) => p('marquise', Object.assign(E.ret(u0,u1,v0,v1), { y, alt, cor }), false);
+
+    const PAR = 9;        // parede interna: 40 cm
+    const MURO = 86;      // a fachada da rua, que é platibanda: 3,9 m
+    const ALT_EXT = 74;   // as paredes de fora, que seguram o telhado
+    const ALT = 66;       // parede de cômodo: 3,0 m — abaixo do telhado
+    const VAO = 40;       // porta: 1,8 m, e o corpo passa (a máscara pede 24)
+    const PORTAO = 56;    // o portão da rua: 2,5 m, cabe bonde em fila
+    /* parede com vãos: `em` é um vão ou uma lista deles, e o que sobra
+       entre eles sai como pedaço de parede. Um cômodo cujo vão caia em
+       cima da divisória fica MURADO — foi o que deixou 332 células sem
+       chegada na primeira montagem. */
+    const comVaos = (ini, fim, em, larg) => {
+      const w = larg || VAO;
+      const vaos = (em === undefined ? [] : [].concat(em)).map(c => [c - w/2, c + w/2])
+        .sort((p, q) => p[0] - q[0]);
+      const pedacos = [];
+      let a = ini;
+      for(const [v0, v1] of vaos){ if(v0 - a > 3) pedacos.push([a, v0]); a = Math.max(a, v1); }
+      if(fim - a > 3) pedacos.push([a, fim]);
+      return pedacos;
+    };
+    const paredeU = (u0,u1,v0,v1, alt, cor, em, larg) => {
+      for(const [a, b] of comVaos(u0, u1, em, larg)) par(a, b, v0, v1, alt, cor);
+    };
+    const paredeV = (u0,u1,v0,v1, alt, cor, em, larg) => {
+      for(const [a, b] of comVaos(v0, v1, em, larg)) par(u0, u1, a, b, alt, cor);
+    };
+
+    const MF = 13;                                   // espessura da fachada
+    const DF = Math.min(96, Math.max(58, A*0.30));   // ala da frente
+    const DB = Math.min(104, Math.max(60, A*0.32));  // ala do fundo
+    const eixo = L/2;                                // o portão no meio
+    const g0 = eixo - PORTAO/2, g1 = eixo + PORTAO/2;
+    const vF = MF + DF, vB = A - DB;                 // fim da ala da frente, início da do fundo
+
+    /* ---- o chão: cimento no pátio, e o salão pintado ---- */
+    piso(0, L, 0, A, '#a8a396', 1.70);
+    piso(PAR, L - PAR, vF, vB, '#b7b2a4', 1.74);
+    /* a faixa da torcida no piso do salão: duas listras finas, que
+       larga demais o piso vira bandeira e come o pátio */
+    const mS = (vF + vB)/2;
+    piso(PAR + 26, L - PAR - 26, mS - 15, mS - 5, cor2, 1.78);
+    piso(PAR + 26, L - PAR - 26, mS + 5, mS + 15, cor3, 1.78);
+
+    /* ---- A FACHADA: a cor primária dá pra rua ----
+       Nada sai do miolo do quarteirão: a parede recua 2,5 e o rodapé,
+       a faixa e os batentes ocupam esse recuo em vez de avançar pra
+       calçada, que é a regra que vale pra casa e vale pra sede. */
+    const F0 = 2.5;
+    paredeU(0, L, F0, MF, MURO, cor1, eixo, PORTAO);
+    for(const [a, b] of [[0, g0], [g1, L]]){
+      if(b - a < 8) continue;
+      faixa(a, b, 0, MF + 1, 5, 11, cor3);            // rodapé
+      faixa(a, b, 0, MF + 1, MURO - 27, 14, cor2);    // a faixa alta da torcida
+    }
+    /* a verga sobre o portão, e o nome da torcida em cima dela */
+    faixa(g0 - 3, g1 + 3, F0, MF + 1, 72, MURO - 72, cor1);
+    faixa(g0 - 3, g1 + 3, 0, MF + 1.4, 66, 7, cor3);
+    const [lx, ly] = E.pt(eixo, 1);
+    p('letreiro', { x: lx, y: ly, ox: E.ox, oz: E.oz, texto: T.rot,
+                    larg: Math.min(L * 0.5, 200), altura: 21, base: MURO - 23 }, false);
+    /* os batentes do portão, na terceira cor */
+    for(const u of [g0, g1]) par(u - 4, u + 4, 0, MF + 1, MURO, cor3);
+
+    /* ---- ALA DA FRENTE: secretaria, bar, banheiro ----
+       O corredor do portão atravessa ela e desemboca no salão. */
+    par(0, PAR, 0, A, ALT_EXT, cor1);           // parede lateral oeste
+    par(L - PAR, L, 0, A, ALT_EXT, cor1);       // parede lateral leste
+    par(g0 - PAR, g0, MF, vF, ALT, CLARO);      // as paredes do corredor
+    par(g1, g1 + PAR, MF, vF, ALT, CLARO);
+    for(const [a, b] of [[PAR, g0 - PAR], [g1 + PAR, L - PAR]]){
+      if(b - a < 70) continue;
+      const parte = b - a > 150;                       // dá dois cômodos
+      /* a porta de cada cômodo pro salão — nunca em cima da divisória */
+      paredeU(a, b, vF - PAR, vF, ALT, CLARO,
+              parte ? [a + (b-a)*0.25, a + (b-a)*0.75] : (a + b)/2);
+      if(parte) par((a + b)/2 - PAR/2, (a + b)/2 + PAR/2, MF, vF - PAR, ALT, CLARO);
+    }
+
+    /* ---- ALA DO FUNDO: alojamento, diretoria e o depósito ---- */
+    par(PAR, L - PAR, A - PAR, A, ALT_EXT, cor1);   // a parede dos fundos
+    const n = L > 400 ? 3 : 2, passo = (L - 2*PAR)/n;
+    for(let i = 0; i < n; i++){
+      const a = PAR + i*passo, b = a + passo;
+      paredeU(a, b, vB, vB + PAR, ALT, CLARO, (a + b)/2);        // a porta pro salão
+      if(i) par(a - PAR/2, a + PAR/2, vB, A - PAR, ALT, CLARO);  // a divisória
+    }
+
+    /* ---- o que vive no salão ----
+       Poste e árvore saíram: a sede é COBERTA, e luminária de rua e pé
+       de árvore dentro de galpão não existem. Ficam os bancos e o
+       mastro, que sobe pela frente e passa do telhado, como o de
+       sede de verdade. */
+    const [mx, my] = E.pt(L - 54, MF + 26);
+    p('mastro', { x: mx, y: my, alt: 128, cor: cor1, cor2 }, false);
+    for(const u of [PAR + 46, L - PAR - 46]){
+      const r = E.ret(u - 26, u + 26, vF + 16, vF + 26);
+      p('banco', r, false);
+    }
+    /* O TELHADO fica FORA da lista de peças: ele sai numa malha só
+       dele, que a cena esconde quando o jogador entra — é o corte que
+       deixa a planta à vista de dentro e o galpão fechado de fora. */
+    return { tipo: 'sede', lado, torcida: T, frente, chao: '#a8a396', pecas, area,
+             teto: { base: ALT_EXT, queda: 22, cor: '#7c8285' } };
+  }
+
+  /* AS SEDES ESCOLHEM PRIMEIRO. Elas são o que a cena precisa pra
+     existir — sem sede não há spawn —, então elas pegam o quarteirão
+     que quiserem e os outros equipamentos ficam com o que sobrar.
+     Procura, em volta do ponto do mapa, o quarteirão e a frente que
+     dêem a maior fatia com a frente dando pra RUA: num quarteirão
+     recortado pela costa uma das faces dá pro próprio miolo, e a
+     torcida nasceria dentro do quarteirão. */
+  for(const [lado, sd] of Object.entries(SEDES)){
+    let melhor = null;
+    for(const q of QUADRAS){
+      if(q.equip) continue;
+      const d = Math.hypot(q.cx - sd.ponto[0], q.cy - sd.ponto[1]);
+      if(d > 1500) continue;
+      for(const frente of [sd.frente, 'n', 's', 'o', 'l']){
+        const area = areaDaSede(q, frente);
+        if(!area) continue;
+        /* a frente dá pra rua? o ponto logo à frente dela não pode
+           cair no miolo do próprio quarteirão */
+        const fx = frente === 'o' ? area.x0 - 40 : frente === 'l' ? area.x1 + 40 : (area.x0+area.x1)/2;
+        const fy = frente === 'n' ? area.y0 - 40 : frente === 's' ? area.y1 + 40 : (area.y0+area.y1)/2;
+        if(dentroPol(fx, fy, q.polMiolo)) continue;
+        if(tocaAvenida(area, 4)) continue;          // sede em cima do asfalto, não
+        const eq = sedeDaTorcida(lado, q, area, frente);
+        /* a nota: perto do ponto pedido, e grande */
+        const nota = d - (area.x1 - area.x0) * (area.y1 - area.y0) / 900;
+        if(!melhor || nota < melhor.nota) melhor = { q, eq, nota, frente, area };
+        break;                                     // uma frente por quarteirão basta
+      }
+    }
+    if(!melhor) continue;
+    melhor.q.equip = melhor.eq;
+    melhor.q.solidos = melhor.eq.pecas.filter(o => o.bloqueia);
+    /* o que o spawn precisa saber: o retângulo e a frente. `frenteDa`
+       lê isso e caminha pra fora até achar chão onde o corpo cabe. */
+    sedeDe[lado] = { x0: melhor.area.x0, x1: melhor.area.x1, y0: melhor.area.y0, y1: melhor.area.y1,
+                     frente: melhor.frente, quadra: melhor.q, torcida: melhor.eq.torcida };
+  }
+
   /* os equipamentos antes dos lotes: o quarteirão deles não é loteado */
   for(const e of EQUIPAMENTOS){
     const q = celulaEm(e.ponto[0], e.ponto[1]);
@@ -1167,8 +1447,9 @@ TO.dados.plantaEstadio = (function(){
     const eq = equipamento(e.tipo, q, areaDoEquipamento(e.tipo, q));
     /* as peças são retas e a avenida é diagonal: se alguma cair no
        asfalto, o equipamento não serve pra esse quarteirão */
-    const pisaNaAvenida = eq.pecas.some(o => o.bloqueia && o.x0 !== undefined &&
-      tocaAvenida(o, 0));
+    /* peça NENHUMA, nem as de enfeite: o piso pintado do estacionamento
+       também não pode cair no asfalto */
+    const pisaNaAvenida = eq.pecas.some(o => o.x0 !== undefined && tocaAvenida(o, 0));
     if(pisaNaAvenida) continue;
     q.equip = eq;
     q.solidos = eq.pecas.filter(o => o.bloqueia);
@@ -1231,29 +1512,6 @@ TO.dados.plantaEstadio = (function(){
   }
 
   QUADRAS.forEach(lotear);
-  /* A SEDE É O LOTE MAIS PERTO DO PONTO, na frente pedida. Antes ela
-     dependia de o ponto cair dentro de um lote, e sumia toda vez que a
-     grade mudava — e sem sede visitante a cena não tem spawn. */
-  for(const [k, sd] of Object.entries(SEDES)){
-    if(sedeDe[k]) continue;
-    let melhor = null;
-    for(const l of LOTES){
-      if(l.ang || l.tipo === 'muro' || l.lado) continue;
-      if(l.frente !== sd.frente) continue;
-      /* a frente tem de dar pra rua: num quarteirão recortado pela
-         costa a face leste pode dar pro próprio miolo, e a torcida
-         nasceria dentro do quarteirão */
-      const fx = l.frente === 'o' ? l.x0 - 40 : l.frente === 'l' ? l.x1 + 40 : (l.x0+l.x1)/2;
-      const fy = l.frente === 'n' ? l.y0 - 40 : l.frente === 's' ? l.y1 + 40 : (l.y0+l.y1)/2;
-      if(dentroPol(fx, fy, l.quadra.polMiolo)) continue;
-      const d = Math.hypot((l.x0+l.x1)/2 - sd.ponto[0], (l.y0+l.y1)/2 - sd.ponto[1]);
-      if(!melhor || d < melhor.d) melhor = { l, d };
-    }
-    if(!melhor) continue;
-    const l = melhor.l;
-    l.tipo = 'sede'; l.alt = 124; l.cor = sd.cor; l.rot = sd.rot; l.lado = k;
-    sedeDe[k] = l;
-  }
 
   /* quem a avenida corta: amostra a borda e o centro do quarteirão */
   for(const q of QUADRAS){
@@ -1486,6 +1744,101 @@ TO.dados.plantaEstadio = (function(){
     if(tocaAsfalto(POSTES[i].x, POSTES[i].y, 2) || POSTES[i].x > xLimiteCosta(POSTES[i].y))
       POSTES.splice(i, 1);
 
+  /* =========================================================
+     A BEIRA DA ESTRADA — o que fecha o mapa
+     ---------------------------------------------------------
+     As avenidas saem da cidade e viram estrada pelo mato até a borda
+     do que se desenha. Até aqui a borda era mato pelado com moita, e
+     de dentro do bairro dava pra ver o cenário ACABAR. O que a estrada
+     de verdade tem é o que entra aqui: casa solta na beira, galpão,
+     muro de sítio, barraco — indo rareando conforme se afasta, que é
+     o que faz o olho ler "a cidade continua pra lá" em vez de "o
+     cenário termina aqui".
+
+     Elas ficam FORA do contorno da cidade, viradas pra estrada como as
+     casas da avenida (lote com ângulo), longe do asfalto, fora do
+     campo, da praia e do mar. Bloqueiam na máscara como qualquer casa,
+     num balde espacial — são poucas, mas a máscara pergunta 460 mil
+     vezes e varredura linear ali custa caro.
+     ========================================================= */
+  const BEIRA = [];
+  /* o corpo da casa girada amostrado numa grade n × n, com a folga
+     somada às medidas: é o teste de "encosta em" pra quem não é reto */
+  function cantosGirados(o, folga){
+    const c = Math.cos(o.ang), s = Math.sin(o.ang);
+    const hw = o.w/2 + (folga || 0), hh = o.h/2 + (folga || 0), pts = [];
+    for(let i=0;i<=4;i++) for(let j=0;j<=4;j++){
+      const u = -hw + 2*hw*i/4, v = -hh + 2*hh*j/4;
+      pts.push([o.cx + u*c - v*s, o.cy + u*s + v*c]);
+    }
+    return pts;
+  }
+  const TIPOS_BEIRA = ['casa','casa','casa','sobrado','galpao','muro','muro'];
+  for(const av of AVENIDAS){
+    if(av.id === 'beiramar') continue;            // essa corre dentro da cidade
+    let t = 0;
+    for(const sg of av.segs){
+      for(; t < sg.t0 + sg.L; t += par8(entre(120, 210))){
+        const s = t - sg.t0;
+        const ex = sg.x0 + sg.ux*s, ey = sg.y0 + sg.uy*s;
+        if(zona(ex, ey) !== 'mato') continue;      // dentro da cidade já há quarteirão
+        for(const lado of [-1, 1]){
+          if(rng() < 0.34) continue;               // beira de estrada é rala
+          const tipo = escolher(TIPOS_BEIRA);
+          const T = TIPOS[tipo];
+          const w = par8(entre(88, 168)), h = par8(tipo === 'muro' ? entre(16, 24) : entre(76, 112));
+          /* recuo da guia: a casa de beira de estrada fica mais longe
+             do asfalto que a de rua, e varia — é o que faz a fileira
+             não parecer régua */
+          const rec = av.l/2 + CALC + h/2 + entre(10, 90);
+          const cx = ex - sg.uy*rec*lado, cy = ey + sg.ux*rec*lado;
+          if(cx < VX0 + 30 || cy < VY0 + 30 || cx > VX0 + VW - 30 || cy > VY0 + VH - 30) continue;
+          if(zona(cx, cy) !== 'mato') continue;
+          if(noCampo(cx, cy)) continue;
+          const c = celulaEm(cx, cy);
+          if(c && c.tipo === 'quadra') continue;
+          const casa = { tipo, ang: sg.ang, cx, cy, w, h, vf: -lado, frente:'av', beira:true,
+                         alt: par8(entre(T.alt[0], T.alt[1])) || T.alt[0], cor: escolher(T.cor) };
+          /* nada em cima do asfalto, aqui como em toda parte: a
+             avenida pela distância exata, e a RUA da grade amostrada
+             no corpo da casa — na saída da cidade a última faixa da
+             grade ainda existe, e a casa girada pegava nela */
+          if(tocaAvenida(casa, 8)) continue;
+          if(cantosGirados(casa, 6).some(([px, py]) => noAsfalto(px, py))) continue;
+          if(BEIRA.some(o => Math.hypot(o.cx - cx, o.cy - cy) < (o.w + w)/2 + 24)) continue;
+          BEIRA.push(casa);
+          LOTES.push(casa);
+        }
+      }
+    }
+  }
+  /* o balde da beira, pra máscara perguntar barato */
+  const BALDE_B = 256, baldesBeira = new Map();
+  for(const o of BEIRA){
+    const r = Math.max(o.w, o.h)/2;
+    for(let i = ((o.cx - r)/BALDE_B|0); i <= ((o.cx + r)/BALDE_B|0); i++)
+      for(let j = ((o.cy - r)/BALDE_B|0); j <= ((o.cy + r)/BALDE_B|0); j++){
+        const k = i + ',' + j;
+        if(!baldesBeira.has(k)) baldesBeira.set(k, []);
+        baldesBeira.get(k).push(o);
+      }
+  }
+  function naBeira(x, y){
+    const l = baldesBeira.get(((x/BALDE_B)|0) + ',' + ((y/BALDE_B)|0));
+    if(!l) return false;
+    for(const o of l) if(dentroLote(x, y, o)) return true;
+    return false;
+  }
+  /* árvore e poste na beira, pro trecho não virar fileira de caixas */
+  for(const o of BEIRA){
+    if(o.tipo === 'muro' || rng() < 0.5) continue;
+    const c = Math.cos(o.ang), s = Math.sin(o.ang);
+    const d = -o.vf*(o.h/2 + entre(26, 46)), u = entre(-o.w*0.4, o.w*0.4);
+    const x = o.cx + u*c - d*s, y = o.cy + u*s + d*c;
+    if(zona(x, y) !== 'mato' || tocaAsfalto(x, y, 26) || naBeira(x, y)) continue;
+    ARVORES.push({ x, y, r: entre(15, 22) });
+  }
+
   /* as torres de refletor, nos quatro cantos do quarteirão do estádio */
   const TORRES = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx, sy]) => ({
     x: CX + sx*(QEST.larg/2 - 44), z: CY + sy*(QEST.alt/2 - 44), alt: ALT.torre }));
@@ -1498,11 +1851,11 @@ TO.dados.plantaEstadio = (function(){
     return null;
   }
 
-  const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC,
+  const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC, TORCIDAS,
                    COLUNAS, LINHAS, CELULAS, QUADRAS, grade, celulaEm, zona, xCosta, PRAIA, ORLA,
                    CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, bordasX, bordasY,
                    xLimiteCosta, cortarPor, recorteCosta, pedacosSemAvenida, dentroPol, ruaEntre,
-                   areaPol, noAsfalto, CAMPOS, CERCA, PORTEIRA,
+                   areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe };
 
@@ -1569,7 +1922,7 @@ TO.dados.plantaEstadio = (function(){
       }
       return !dentroPol(x, y, q.polMiolo);
     }
-    if(z === 'mato') return !naMoita(x, y);
+    if(z === 'mato') return !naMoita(x, y) && !naBeira(x, y);
     return true;                                  // praia, orla, terreno aberto
   }
   function anda(x, y){

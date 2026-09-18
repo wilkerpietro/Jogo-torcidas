@@ -58,7 +58,9 @@
 <script src="dados/cenas_foto.js"></script>
 <script src="dados/cenas_editadas.js"></script>
 <script src="dados/cenas.js"></script>
-<!-- depois de cenas.js: a cena do estádio se acrescenta ao mapa -->
+<!-- ANTES de cena_estadio.js: a planta escolhe as duas torcidas da noite
+     daqui, e pinta a sede de cada uma com as cores dela -->
+<script src="dados/torcidas.js"></script>
 <script src="dados/cena_estadio.js"></script>
 <script>
 /* O TABULEIRO DESTA CENA É MAIOR QUE O DOS ARREDORES (2592 × 2048
@@ -76,6 +78,9 @@ TO.dados.cenaArredores = TO.dados.cenaEstadio;
 <script src="js/diajogo/estadio_pintura.js"></script>
 <script src="js/diajogo/arredores.js"></script>
 <script src="js/diajogo/combate.js"></script>
+<!-- a ficha de quem briga sai do mesmo gerador da gestão: apelido,
+     arquétipo, força, defesa e moral por cargo -->
+<script src="js/gestao/membros.js"></script>
 
 <script type="module">
 /* =========================================================
@@ -111,6 +116,58 @@ function falhar(e) {
   throw e;
 }
 
+/* =========================================================
+   AS DUAS TORCIDAS DA NOITE
+   ---------------------------------------------------------
+   A cena não é mais "mandante contra visitante" genérico. A planta
+   já escolheu duas torcidas de `dados/torcidas.js` — é com as cores
+   delas que ela pinta as sedes — e aqui elas viram BONDES do combate,
+   que é o que `index.html` faz quando abre um dia de jogo. Com bonde
+   o motor sabe de que lado o jogador está, a camisa de cada boneco
+   sai da paleta da torcida (primária no calção, segunda no anel e
+   terceira no desenho) e a briga tem dois times de verdade.
+
+   A ESCALAÇÃO é a mesma da gestão: `TO.membros.povoarInicial` gera
+   apelido, arquétipo, cargo, força, defesa, moral e XP na proporção
+   de cargos que a fonte dá pra torcida. Quem tem ficha tem nome na
+   cena, vida pela defesa e consequência depois da briga; o resto é
+   povão, que é o que povão é.
+   ========================================================= */
+const TORCIDAS = TO.dados.plantaEstadio.CIDADE.TORCIDAS;
+
+function escalacaoDe(t, quantos) {
+  const reg = (TO.dados.torcidas || []).find(o => o.id === t.id);
+  if (!TO.membros || !reg) return [];
+  const E = { proximoId: 1, data: { semana: 1, dia: 1 }, membros: [],
+              torcida: reg, indicadores: { moral: 62 } };
+  /* POVOA A TORCIDA INTEIRA e só depois corta. `planoDeCargos` usa os
+     números ABSOLUTOS que a fonte dá (a Jovem Fla tem 250), e o total
+     que se passa só serve pra engrossar os novatos quando sobra — não
+     corta quando falta. Pedindo 34 vinham 248, e a cena abria com 298
+     bonecos. Quem vai pro estádio são os mais fortes, como na gestão. */
+  TO.membros.povoarInicial(E, reg.membros || quantos, reg.cargos);
+  return E.membros.sort((a, b) => (b.forca + b.defesa) - (a.forca + a.defesa))
+                  .slice(0, quantos);
+}
+
+/* Quanta gente em cada portão. Um bonde por spawn, na ordem que
+   `combate.js` usa (o do jogador primeiro): 1º escalão, 2º escalão,
+   setor visitante (que já está dentro, de guarda) e retaguarda. Os
+   números são os de sempre — a cena rodava com 68 discos e continua
+   —, só que agora cada monte tem dono. */
+function bondesDaNoite() {
+  const M = TORCIDAS.mandante, V = TORCIDAS.visitante;
+  /* o NOME é a chave da paleta em `bonecos3.js`: os dois bondes da
+     mesma torcida têm de trazer o mesmo, senão o segundo entra como
+     "torcida que repete a primária" e sai de calção trocado */
+  const b = (lado, n, t, nossa) => ({
+    lado, n, nossa, cor: t.cor, cor2: t.cor2, cor3: t.cor3,
+    sigla: t.nome, nome: t.nome
+  });
+  return [ b('mandante', 26, M, true), b('mandante', 14, M, false),
+           b('visitante', 22, V, false), b('visitante', 14, V, false) ];
+}
+
 function abrir() {
   const D = A.usarCena('estadio');
   /* A NOITE, ENCURTADA. `combate.js` conta em minutos até o jogo:
@@ -123,8 +180,11 @@ function abrir() {
   const PC = TO.diaJogo.P;
   PC.minutosAteJogo = 60;
   PC.raioVadiagem = 220;
+  const bondes = bondesDaNoite();
   J = C.criarEstado({ local: 'estadio', intencao: 'atacar', tensao: 80,
-                      bombas: 2, efetivoRival: 34 });
+                      bombas: 2, bondes,
+                      escalacao: escalacaoDe(TORCIDAS.mandante, 34),
+                      efetivoRival: bondes[2].n + bondes[3].n });
   TO.diaJogo.J = J;
   vista.montar(D);
   pad.marcarFormacao(J.form);
@@ -243,7 +303,8 @@ function laco(agora) {
       (vista.corte ? ' · ' + vista.corte.vistos + ' na tela, ' + vista.corte.cortados + ' fora' : '') + '<br>' +
       'rua <b>' + onde.rua + '</b> · portão <b>' + onde.fachada + '</b> · corredor <b>' + onde.corredor +
       '</b> · vomitório <b>' + onde.vomitorio + '</b> · arquibancada <b>' + onde.arquibancada + '</b>' +
-      ' · entraram <b>' + ((J.entraram||{}).mandante||0) + '</b>/<b>' + ((J.entraram||{}).visitante||0) + '</b><br>' +
+      ' · entraram ' + TORCIDAS.mandante.rot + ' <b>' + ((J.entraram||{}).mandante||0) + '</b> · ' +
+      TORCIDAS.visitante.rot + ' <b>' + ((J.entraram||{}).visitante||0) + '</b><br>' +
       'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') +
       ' · andar: <b>' + comoAnda + '</b><br>' +
       c.degraus + ' degraus · ' + c.vomitorios + ' vomitórios · ' + c.portoes + ' portões · ' +

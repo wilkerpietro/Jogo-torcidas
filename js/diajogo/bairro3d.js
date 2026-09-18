@@ -439,7 +439,10 @@ export function montarBairro(P) {
         case 'mastro':
           caixa(T, o.x - 1.6, o.x + 1.6, 0, o.alt, o.y - 1.6, o.y + 1.6, '#cfcbbe');
           caixa(T, o.x - 0.4, o.x + 0.4, 0, 5, o.y - 5, o.y + 5, '#cfcbbe');
-          caixa(T, o.x + 1.6, o.x + 34, o.alt - 22, o.alt - 2, o.y - 0.5, o.y + 0.5, '#2f7a3c');
+          /* a bandeira: verde de repartição por padrão, a cor da
+             torcida quando quem pediu o mastro disse qual é */
+          caixa(T, o.x + 1.6, o.x + 34, o.alt - 22, o.alt - 2, o.y - 0.5, o.y + 0.5, o.cor || '#2f7a3c');
+          if (o.cor2) caixa(T, o.x + 1.6, o.x + 34, o.alt - 14, o.alt - 9, o.y - 0.7, o.y + 0.7, o.cor2);
           break;
         case 'fonte': {
           const r = o.r;
@@ -586,6 +589,44 @@ export function montarBairro(P) {
     }
     malhaUV(TL, tex, 'letreiros');
   }
+  /* ---- O TELHADO DA SEDE, que se abre ----
+     A sede é coberta como qualquer casa — cobertura de galpão, duas
+     águas rasas sobre as paredes de fora —, mas quem está DENTRO
+     precisa ver a planta. Então cada telhado sai numa malha só dele,
+     com a área da sede junto: a cena esconde a malha quando o líder do
+     jogador entra na área e mostra de volta quando ele sai. É o corte
+     de planta baixa dos jogos de gestão, e custa uma malha por sede. */
+  const tetos = [];
+  for (const q of K.QUADRAS) {
+    const e = q.equip;
+    if (!e || !e.teto) continue;
+    const a = e.area, T = Tecido();
+    telhado(T, a.x0, a.x1, a.y0, a.y1, e.teto.base, e.teto.queda, e.teto.cor);
+    /* as CAIXAS D'ÁGUA, que toda laje daqui tem — e sem elas o telhado
+       da sede é um retângulo cinza de 19 m sem nada que dê escala */
+    const ao = a.x1 - a.x0 > a.y1 - a.y0;
+    for (const t of [0.30, 0.62]) {
+      const cx = ao ? a.x0 + (a.x1 - a.x0) * t : (a.x0 + a.x1) / 2 - 2;
+      const cz = ao ? (a.y0 + a.y1) / 2 - 2 : a.y0 + (a.y1 - a.y0) * t;
+      const y = e.teto.base + e.teto.queda - 2;
+      caixa(T, cx - 13, cx + 13, y, y + 5, cz - 13, cz + 13, '#8d8579');
+      caixa(T, cx - 11, cx + 11, y + 5, y + 20, cz - 11, cz + 11, '#3f74a8');
+      caixa(T, cx - 12, cx + 12, y + 20, y + 22, cz - 12, cz + 12, '#5a8cbc');
+    }
+    const m = malha(T, true, 'teto:' + e.lado);
+    if (m) tetos.push({ lado: e.lado, area: a, mesh: m });
+  }
+
+  /* ---- A BEIRA DA ESTRADA ----
+     Fora do contorno da cidade não há quarteirão nem pedaço, então a
+     casa solta da estrada sai numa malha própria. É lote girado, como
+     a casa da avenida, e passa pelo MESMO `lote()`: corpo, telhado de
+     duas águas, fachada com porta e janela, e o letreiro vem junto com
+     os outros. Sem `limite`, que aqui não há calçada pra respeitar. */
+  const TB = Tecido();
+  for (const l of K.BEIRA || []) { limite = null; lote(TB, l); }
+  malha(TB, true, 'beira');
+
   for (const T of pedacos.values()) malha(T, true, 'quarteirao');
 
   /* ---- os soltos: carros, postes, campos ---- */
@@ -633,5 +674,5 @@ export function montarBairro(P) {
   }
   malha(TM, false, 'moitas');
 
-  return { meshes, triangulos, pedacos: pedacos.size };
+  return { meshes, triangulos, tetos, pedacos: pedacos.size };
 }
