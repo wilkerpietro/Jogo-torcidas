@@ -61,7 +61,15 @@ export function montarPad(opc) {
   esq.className = 'pad-lado pad-esq';
   const faixaAcoes = document.createElement('div');
   faixaAcoes.className = 'pad-acoes';
-  for (const a of acoes || []) faixaAcoes.appendChild(disparo(a.tecla, a.rot, a.fn));
+  for (const a of acoes || [])
+    /* ação de SEGURAR (a defesa): o botão liga a tecla enquanto o dedo
+       está nele e chama `aoSoltar` quando sai — é o mesmo caminho do
+       `keydown`/`keyup` do teclado, que é onde o contragolpe nasce */
+    faixaAcoes.appendChild(a.segurar
+      ? botao(a.rot, 'pad-acao pad-' + a.tecla,
+              () => { teclas[a.tecla] = true; },
+              () => { teclas[a.tecla] = false; if (a.aoSoltar) a.aoSoltar(); })
+      : disparo(a.tecla, a.rot, a.fn));
   const cruz = document.createElement('div');
   cruz.className = 'pad-cruz';
   cruz.append(segurar('w'), segurar('a'), segurar('s'), segurar('d'));

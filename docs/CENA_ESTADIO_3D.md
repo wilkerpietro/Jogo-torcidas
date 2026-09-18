@@ -278,7 +278,14 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   rodado de novo quando a escala mudar), em `img/texturas/`:
   **telha.png** (telha colonial ladrilhável), **manchas.png** (mofo do
   beiral, rastro de chuva, barro do rodapé e maresia, quatro numa 2 × 2
-  com alfa) e **reboco.png**, ainda de reserva.
+  com alfa) e **reboco.png** (chapiscado fino).
+  **O quarteirão inteiro é texturado**: o reboco dá grão à parede, ao
+  muro e à laje da calçada, e a cor do vértice continua mandando no tom
+  de cada casa. A UV de parede NÃO pode ser a mesma do telhado: numa
+  face vertical, mapear por x e z sai numa tira esticada, então `tri()`
+  recebe qual é a normal da face — no topo valem x e z, na parede vale
+  o eixo horizontal dela e a ALTURA. A escala do reboco é mais graúda
+  que a da telha (172 contra 104), senão a parede sai penteada.
   O TELHADO saiu da malha do quarteirão e foi pra uma malha própria com
   `map` E `vertexColors`: a textura dá o desenho da telha e a cor do
   vértice dá o tom da casa, e o Lambert multiplica os dois. A UV é
@@ -440,8 +447,27 @@ TO.dados.cenaEstadio`, antes de `arredores.js` subir). O jogo em
 
 ## 5. A vida da cena — o que o combate já fazia, e como foi ligado
 
-Quase nada de mecânica nova: o que muda é o que a página ENTREGA pro
-motor. O que há:
+- **O MOTOR DE LUTA ESTAVA DUAS VERSÕES ATRÁS.** Este branch saiu de um
+  ponto antigo do repositório e ficou com um `combate.js` de 2.207
+  linhas; o do branch `claude/game-html-news-feed-sndgh4` tem 3.997. O
+  sintoma era mudo: `bonecos3.js` daqui já lia `d.ataque`, `d.defendendo`,
+  `d.segurando`, `d.seguradoPor`, `d.socorrendo`, `d.esquivou`,
+  `d.apanhou`, `d.inimigoPerto` e `d.linha` — as poses todas já estavam
+  implementadas —, e o motor velho não escrevia NENHUM desses campos.
+  Os bonecos sabiam brigar e nunca recebiam ordem.
+  Vieram o `combate.js` e o `arredores.js` daquele branch (o motor novo
+  chama `A.campoDoPonto` e `A.celulasDeDiscos`, que o antigo não tinha).
+  O motor novo já traz o vetor de câmera e o `d.cor3` que eu tinha
+  remendado aqui, então não houve remendo a reaplicar.
+  As ações e as teclas são as do `ponte.js`: **Q** bate, **E** segurado
+  defende (soltar na hora do golpe é o contragolpe), **F** agarra,
+  **C** chama, **2** pedra, **3** bomba, **R** recua, **X** foge,
+  **ENTER** manda entrar. As câmeras saíram de X/C/F/V, que viraram
+  teclas de briga, e foram pra **Z/V/B/N/M**. O pad ganhou botão de
+  SEGURAR, que a defesa precisa. A fila de formação sumiu: o motor novo
+  tem uma formação só, o Quadrado, e ela não tem tecla.
+
+Fora isso, o que muda é o que a página ENTREGA pro motor:
 
 - **DUAS TORCIDAS DE VERDADE, não "mandante contra visitante".** A cena
   abria com `criarEstado({local, intencao, tensao, bombas, efetivoRival})`

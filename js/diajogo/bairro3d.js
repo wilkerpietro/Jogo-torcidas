@@ -21,25 +21,37 @@ export function montarBairro(P) {
   const meshes = [];
   let triangulos = 0;
   const tmp = new THREE.Color();
-  const Tecido = () => ({ pos: [], cor: [] });
+  /* o tecido comum agora tem UV: as paredes levam REBOCO, e a escala
+     do reboco é mais graúda que a da telha pra não pentear a parede */
+  const Tecido = () => ({ pos: [], cor: [], uv: [], esc: REBOCO_ESC });
 
-  function tri(T, a, b, c, hex, tom) {
+  /* Tecido com `uv` é tecido TEXTURADO, e a coordenada sai do MUNDO —
+     nunca da peça —, pra textura correr contínua de casa em casa e
+     ladrilhar sem costura. `eixo` diz qual é a normal da face: no topo
+     (y) valem x e z; numa parede o que vale é o eixo horizontal dela e
+     a ALTURA, senão a textura sai esticada numa tira só. */
+  function tri(T, a, b, c, hex, tom, eixo) {
     T.pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
     tmp.set(hex).multiplyScalar(tom === undefined ? 1 : tom);
     for (let k = 0; k < 3; k++) T.cor.push(tmp.r, tmp.g, tmp.b);
-    /* tecido com `uv` é tecido TEXTURADO: a coordenada sai do mundo,
-       de cima (planar), pra telha correr contínua de casa em casa e
-       ladrilhar sem costura. A água do telhado é rasa, então o
-       esticamento na rampa não aparece. */
-    if (T.uv) for (const v of [a, b, c]) T.uv.push(v[0] / TELHA_ESC, v[2] / TELHA_ESC);
+    if (!T.uv) return;
+    const E = T.esc || TELHA_ESC;
+    for (const v of [a, b, c]) {
+      if (eixo === 'x')      T.uv.push(v[2] / E, v[1] / E);
+      else if (eixo === 'z') T.uv.push(v[0] / E, v[1] / E);
+      else                   T.uv.push(v[0] / E, v[2] / E);
+    }
   }
-  const TELHA_ESC = 104;          // um ladrilho da textura a cada 104 unidades
+  const TELHA_ESC = 104;          // um ladrilho da telha a cada 104 unidades
+  const REBOCO_ESC = 172;         // o reboco é mais graúdo, pra não pentear a parede
   /* caixa com sombra de face: topo claro, lados em dois tons — sem
      isso um bairro de caixas Lambert vira um bloco só */
   const TONS = [1.0, 0.9, 0.86, 0.94, 0.8];
   function caixaV(T, v, hex) {
-    const f = (a, b, c, d, tom) => { tri(T, v[a], v[b], v[c], hex, tom); tri(T, v[a], v[c], v[d], hex, tom); };
-    f(4,7,6,5, TONS[0]); f(0,4,5,1, TONS[1]); f(2,6,7,3, TONS[2]); f(1,5,6,2, TONS[3]); f(3,7,4,0, TONS[4]);
+    const f = (a, b, c, d, tom, ei) => { tri(T, v[a], v[b], v[c], hex, tom, ei); tri(T, v[a], v[c], v[d], hex, tom, ei); };
+    f(4,7,6,5, TONS[0], 'y');                          // o topo
+    f(0,4,5,1, TONS[1], 'z'); f(2,6,7,3, TONS[2], 'z'); // as duas faces de z
+    f(1,5,6,2, TONS[3], 'x'); f(3,7,4,0, TONS[4], 'x'); // as duas de x
   }
   /* o retângulo legal da peça que está sendo montada: nada de casa por
      cima da calçada, então beiral, janela, porta e placa saem cortados
@@ -60,8 +72,8 @@ export function montarBairro(P) {
   /* uma tampa plana, sem paredinha: é o chão da pracinha, que já
      assenta sobre o chão do lote */
   function tampa(T, x0, x1, y, y0, y1, hex) {
-    tri(T, [x0, y, y1], [x1, y, y1], [x1, y, y0], hex, TONS[0]);
-    tri(T, [x0, y, y1], [x1, y, y0], [x0, y, y0], hex, TONS[0]);
+    tri(T, [x0, y, y1], [x1, y, y1], [x1, y, y0], hex, TONS[0], 'y');
+    tri(T, [x0, y, y1], [x1, y, y0], [x0, y, y0], hex, TONS[0], 'y');
   }
   /* um prisma reto a partir de um polígono convexo: tampa e paredinha.
      O retângulo vem no sentido horário visto de cima; invertido, a
@@ -69,12 +81,13 @@ export function montarBairro(P) {
   function laje(T, entrada, y0, y1, hex) {
     const pol = entrada.slice().reverse();
     for (let i = 1; i < pol.length - 1; i++)
-      tri(T, [pol[0][0], y1, pol[0][1]], [pol[i][0], y1, pol[i][1]], [pol[i+1][0], y1, pol[i+1][1]], hex, TONS[0]);
+      tri(T, [pol[0][0], y1, pol[0][1]], [pol[i][0], y1, pol[i][1]], [pol[i+1][0], y1, pol[i+1][1]], hex, TONS[0], 'y');
     for (let i = 0; i < pol.length; i++) {
       const a = pol[i], b = pol[(i + 1) % pol.length];
-      const tom = Math.abs(a[0] - b[0]) > Math.abs(a[1] - b[1]) ? TONS[1] : TONS[3];
-      tri(T, [a[0], y0, a[1]], [b[0], y0, b[1]], [b[0], y1, b[1]], hex, tom);
-      tri(T, [a[0], y0, a[1]], [b[0], y1, b[1]], [a[0], y1, a[1]], hex, tom);
+      const ao = Math.abs(a[0] - b[0]) > Math.abs(a[1] - b[1]);
+      const tom = ao ? TONS[1] : TONS[3], ei = ao ? 'z' : 'x';
+      tri(T, [a[0], y0, a[1]], [b[0], y0, b[1]], [b[0], y1, b[1]], hex, tom, ei);
+      tri(T, [a[0], y0, a[1]], [b[0], y1, b[1]], [a[0], y1, a[1]], hex, tom, ei);
     }
   }
   /* caixa girada de `ang` em torno do centro (cx, cz) */
@@ -135,6 +148,9 @@ export function montarBairro(P) {
     return t;
   }
 
+  let _reboco;
+  const REBOCO_LAZY = () => (_reboco === undefined ? (_reboco = textura('img/texturas/reboco.png', true)) : _reboco);
+
   function malha(T, sombra, nome) {
     if (!T.pos.length) return null;
     const g = new THREE.BufferGeometry();
@@ -153,8 +169,8 @@ export function montarBairro(P) {
   const bandeiras = [];
   /* o tecido de TELHADO (textura de telha) e o de MANCHA (decalque de
      mofo e chuva na parede), os dois com UV */
-  const TELHADOS = { pos: [], cor: [], uv: [] };
-  const MANCHAS  = { pos: [], cor: [], uv: [] };
+  const TELHADOS = { pos: [], cor: [], uv: [], esc: TELHA_ESC };
+  const MANCHAS  = { pos: [], cor: [], uv: [] };   // UV própria, do decalque
 
   /* ---- OS LETREIROS E AS PIXAÇÕES ----
      Texto não sai de caixa: sai de textura. Todos os dizeres que a
@@ -886,9 +902,14 @@ export function montarBairro(P) {
     if (l.calcada) caixaRot(TB, l.calcada.cx, l.calcada.cy, l.calcada.w, l.calcada.h,
                             0, 1.4, l.calcada.ang, '#8d897d');
   for (const l of K.BEIRA || []) lote(TB, l);
-  malha(TB, true, 'beira');
+  malhaTex(TB, REBOCO_LAZY(), 'beira');
 
-  for (const T of pedacos.values()) malha(T, true, 'quarteirao');
+  /* O REBOCO NA PAREDE. O quarteirão inteiro passa a ter textura: o
+     reboco chapiscado dá grão à parede, ao muro e à laje da calçada, e
+     a cor do vértice continua mandando no tom de cada casa — o Lambert
+     multiplica os dois. A UV sai do MUNDO, com o eixo certo por face,
+     então parede vizinha não repete o mesmo pedaço da textura. */
+  for (const T of pedacos.values()) malhaTex(T, REBOCO_LAZY(), 'quarteirao');
 
   /* ---- os soltos: carros, postes, campos ---- */
   const TS = Tecido();
@@ -929,6 +950,8 @@ export function montarBairro(P) {
 
   /* ---- as malhas texturadas: telhado e mancha de parede ---- */
   alvoTelhado = null;
+  /* o teto da sede também é caixa, e o tecido dele tem UV: sem mapa a
+     malha sai lisa, que é o que fibrocimento é */
   malhaTex(TELHADOS, textura('img/texturas/telha.png', true), 'telhados');
   malhaTex(MANCHAS, textura('img/texturas/manchas.png'), 'manchas', true);
 

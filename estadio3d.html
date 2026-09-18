@@ -42,12 +42,14 @@
   <div id="rotulos"></div>
   <div id="estado"></div>
   <div id="legenda">
-    <b>WASD</b> anda (relativo à câmera) &nbsp; <b>1–4</b> formação &nbsp;
-    <b>Q</b> pedra &nbsp; <b>E</b> bomba &nbsp; <b>R</b> recuar &nbsp;
+    <b>WASD</b> anda (relativo à câmera)<br>
+    <b>Q</b> bater &nbsp; <b>E</b> defender (segurar; soltar no golpe é contragolpe) &nbsp;
+    <b>F</b> agarrar &nbsp; <b>C</b> chamar<br>
+    <b>2</b> pedra &nbsp; <b>3</b> bomba &nbsp; <b>R</b> recuar &nbsp; <b>X</b> fugir &nbsp;
     <b>ENTER</b> todo mundo pro portão<br>
     <b>arrastar</b> gira a câmera &nbsp; <b>roda</b> aproxima<br>
-    câmera <b>Z</b> ombro · <b>X</b> alta · <b>C</b> maquete · <b>F</b> zenital · <b>V</b> mapa &nbsp;
-    <b>H</b> sombra &nbsp; <b>L</b> nível de qualidade · <b>K</b> automático &nbsp; <b>ESPAÇO</b> pausa
+    câmera <b>Z</b> ombro · <b>V</b> alta · <b>B</b> maquete · <b>N</b> zenital · <b>M</b> mapa &nbsp;
+    <b>H</b> sombra &nbsp; <b>L</b> nível · <b>K</b> automático &nbsp; <b>ESPAÇO</b> pausa
   </div>
 </div>
 
@@ -203,7 +205,6 @@ function abrir() {
                       efetivoRival: bondes[2].n + bondes[3].n });
   TO.diaJogo.J = J;
   vista.montar(D);
-  pad.marcarFormacao(J.form);
   pad.marcarCamera('ombro');
 }
 
@@ -213,20 +214,30 @@ vista.ligarRotulos(document.getElementById('rotulos'));
 const pad = montarPad({
   pai: document.body,
   teclas,
+  /* AS AÇÕES SÃO AS DO MOTOR NOVO, com as MESMAS teclas do
+     `ponte.js`: Q bate, E defende enquanto segurado (soltar na hora do
+     golpe é o contragolpe), F agarra, C chama, 2 pedra, 3 bomba, R
+     recua, X foge, ENTER manda entrar. As câmeras saíram de X/C/F/V,
+     que agora são de briga, e foram pra Z/V/B/N/M. */
   acoes: [
-    { tecla: 'q', rot: 'PEDRA',  fn: () => { if (J) C.arremessar(J, 'pedra'); } },
-    { tecla: 'e', rot: 'BOMBA',  fn: () => { if (J) C.arremessar(J, 'bomba'); } },
-    { tecla: 'r', rot: 'RECUAR', fn: () => { if (J) C.alternarRecuo(J); } },
-    /* A ORDEM DE ENTRAR, que faltava. O `ponte.js` tem ela no ENTER e
-       esta página não tinha nenhuma: sem ela a torcida só entra no
-       setor quem chega lá sozinho, e não dá pra MANDAR o bonde entrar.
-       É a mesma `C.mandarEntrar` do jogo, sem uma linha de diferença. */
+    { tecla: 'q', rot: 'BATER',    fn: () => { const l = lider(); if (l) C.bater(J, l); } },
+    { tecla: 'e', rot: 'DEFENDER', segurar: true,
+      aoSoltar: () => { const l = lider(); if (l) C.soltarDefesa(J, l); } },
+    { tecla: 'f', rot: 'AGARRAR',  fn: () => { const l = lider(); if (l) C.agarrar(J, l); } },
+    { tecla: 'c', rot: 'CHAMAR',   fn: () => { if (J) C.chamar(J, C.ladoDoJogador(J)); } },
+    { tecla: '2', rot: 'PEDRA',    fn: () => { if (J) C.arremessar(J, 'pedra'); } },
+    { tecla: '3', rot: 'BOMBA',    fn: () => { if (J) C.arremessar(J, 'bomba'); } },
+    { tecla: 'r', rot: 'RECUAR',   fn: () => { if (J) C.alternarRecuo(J); } },
+    { tecla: 'x', rot: 'FUGIR',    fn: () => { if (J) C.mandarFugir(J); } },
     { tecla: 'enter', rot: 'ENTRAR', fn: () => {
         if (!J) return;
         if (!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p');
       } }
   ],
-  formacoes: Object.entries(C.FORMACOES).map(([id, f]) => ({
+  /* o motor novo tem uma formação só (o Quadrado), e ela não tem
+     tecla: a fila de formação do pad sai fora em vez de virar um
+     botão solitário */
+  formacoes: Object.entries(C.FORMACOES).filter(([, f]) => f.tecla).map(([id, f]) => ({
     id, tecla: f.tecla, fn: () => { if (J) J.form = id; }
   })),
   cameras: {
@@ -236,27 +247,40 @@ const pad = montarPad({
   }
 });
 
+/* o líder do jogador, que é quem bate, agarra e defende */
+const lider = () => J && (J.discos.find(d => d.lider && d.doJogador && d.vivo)
+                       || J.discos.find(d => d.lider && d.vivo));
+
 /* ---- teclado ---- */
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   teclas[k] = true;
   if (!J) return;
-  if (k >= '1' && k <= '4') { J.form = Object.keys(C.FORMACOES)[+k - 1]; pad.marcarFormacao(J.form); }
-  else if (k === 'q') C.arremessar(J, 'pedra');
-  else if (k === 'e') C.arremessar(J, 'bomba');
+  if (k === 'q') { const l = lider(); if (l) C.bater(J, l); }
+  else if (k === 'f') { const l = lider(); if (l) C.agarrar(J, l); }
+  else if (k === 'c') C.chamar(J, C.ladoDoJogador(J));
+  else if (k === '2') C.arremessar(J, 'pedra');
+  else if (k === '3') C.arremessar(J, 'bomba');
   else if (k === 'r') C.alternarRecuo(J);
+  else if (k === 'x') C.mandarFugir(J);
   else if (k === 'enter') { if (!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p'); }
   else if (k === 'z') { vista.irPara('ombro');   pad.marcarCamera('ombro'); }
-  else if (k === 'x') { vista.irPara('alto');    pad.marcarCamera('alto'); }
-  else if (k === 'c') { vista.irPara('maquete'); pad.marcarCamera('maquete'); }
-  else if (k === 'f') { vista.irPara('zenital'); pad.marcarCamera('zenital'); }
-  else if (k === 'v') { vista.irPara('mapa');    pad.marcarCamera('mapa'); }
+  else if (k === 'v') { vista.irPara('alto');    pad.marcarCamera('alto'); }
+  else if (k === 'b') { vista.irPara('maquete'); pad.marcarCamera('maquete'); }
+  else if (k === 'n') { vista.irPara('zenital'); pad.marcarCamera('zenital'); }
+  else if (k === 'm') { vista.irPara('mapa');    pad.marcarCamera('mapa'); }
   else if (k === 'h') vista.trocarSombra();
   else if (k === 'l') { const n = vista.fixarNivel(); vista.fixarNivel((n + 1) % 4); }
   else if (k === 'k') vista.fixarNivel(null);
   else if (k === ' ') { pausado = !pausado; e.preventDefault(); }
 });
-addEventListener('keyup', e => { teclas[e.key.toLowerCase()] = false; });
+/* SOLTAR O E É O CONTRAGOLPE: a defesa é lida por `teclas.e` dentro do
+   motor, e largar na janela certa devolve o golpe. */
+addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'e' && teclas.e && J) { const l = lider(); if (l) C.soltarDefesa(J, l); }
+  teclas[k] = false;
+});
 
 /* NÃO HÁ CENA 2D AQUI, e é decisão do dono: este cenário é só
    3D. A dobra torna a vista de cima do tabuleiro uma mentira:
@@ -311,8 +335,12 @@ function laco(agora) {
       fps = Math.round(quadrosFps * 1000 / (agora - marcoFps));
       marcoFps = agora; quadrosFps = 0;
     }
-    pad.gastar('q', C.restaCd(J, 'pedra') > 0);
-    pad.gastar('e', J.bombas <= 0 || C.restaCd(J, 'bomba') > 0);
+    pad.gastar('2', C.restaCd(J, 'pedra') > 0);
+    pad.gastar('3', J.bombas <= 0 || C.restaCd(J, 'bomba') > 0);
+    /* `restaCd` só conhece pedra e bomba; o do chamar é por LADO, no
+       `J.chamouEm`, com a espera que o próprio motor publica */
+    pad.gastar('c', J.t < ((J.chamouEm || {})[C.ladoDoJogador(J)] || -99) + C.CD_CHAMAR);
+    pad.gastar('f', !C.podeAgarrar(J, lider()));
     /* quem está onde: é a conta que esta cena inventou, porque é
        a primeira em que "onde" quer dizer alguma coisa */
     const P = vista._planta;
