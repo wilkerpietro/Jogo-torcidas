@@ -133,7 +133,18 @@ function falhar(e) {
    cena, vida pela defesa e consequência depois da briga; o resto é
    povão, que é o que povão é.
    ========================================================= */
-const TORCIDAS = TO.dados.plantaEstadio.CIDADE.TORCIDAS;
+/* A PLANTA PODE SER VELHA. O navegador guarda cada arquivo por conta
+   própria: ele baixa o `torcidas.js` novo (que nunca viu) e continua
+   com o `cena_estadio.js` do cache, que ainda não escolhe torcida
+   nenhuma. Sem reserva aqui a página morria no primeiro `TORCIDAS.
+   mandante` — tela preta, sem uma linha de explicação. Com reserva ela
+   abre igual e a barra de estado diz que o arquivo está velho. */
+const RESERVA = {
+  mandante:  { id:'casa', nome:'MANDANTE',  rot:'MANDANTE',  cor:'#b02a22', cor2:'#e8e2d0', cor3:'#1a1a1a' },
+  visitante: { id:'fora', nome:'VISITANTE', rot:'VISITANTE', cor:'#22439a', cor2:'#e8e2d0', cor3:'#e0b040' }
+};
+const TORCIDAS = (TO.dados.plantaEstadio.CIDADE || {}).TORCIDAS || RESERVA;
+const plantaVelha = TORCIDAS === RESERVA;
 
 function escalacaoDe(t, quantos) {
   const reg = (TO.dados.torcidas || []).find(o => o.id === t.id);
@@ -306,7 +317,8 @@ function laco(agora) {
       ' · entraram ' + TORCIDAS.mandante.rot + ' <b>' + ((J.entraram||{}).mandante||0) + '</b> · ' +
       TORCIDAS.visitante.rot + ' <b>' + ((J.entraram||{}).visitante||0) + '</b><br>' +
       'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') +
-      ' · andar: <b>' + comoAnda + '</b><br>' +
+      ' · andar: <b>' + comoAnda + '</b>' +
+      (plantaVelha ? ' · <i>PLANTA VELHA NO CACHE (Ctrl+Shift+R)</i>' : '') + '<br>' +
       c.degraus + ' degraus · ' + c.vomitorios + ' vomitórios · ' + c.portoes + ' portões · ' +
       c.lojas + ' balcões · ' + c.quadras + ' quarteirões · ' + c.lotes + ' lotes · ' +
       (c.triangulos || 0).toLocaleString('pt-BR') + ' triângulos' +
@@ -321,7 +333,10 @@ function laco(agora) {
 
 new ResizeObserver(() => vista.redimensionar()).observe(caixa);
 const tAntes = performance.now();
-abrir();
+/* MONTAR TAMBÉM FALHA NA TELA, não só no console. Antes só o `criar()`
+   estava protegido: qualquer tropeço daqui pra frente deixava a página
+   preta e a explicação escondida no console, que ninguém abre. */
+try { abrir(); } catch (e) { falhar(e); }
 const tCarga = Math.round(performance.now() - tAntes);
 ant = marcoFps = performance.now();
 requestAnimationFrame(laco);
