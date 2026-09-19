@@ -1073,6 +1073,34 @@ TO.feed = (function(){
                          'Rádio Torcida FM'];
   const TETO_ELOGIO = 70;
 
+  /* O QUE A VIRADA DE ANO FEZ COM O ELENCO (pedido do dono,
+     19/09/2026). `E.elencoVirada` é gravado em `estado.js` no fecho da
+     temporada; aqui ele só vale enquanto for notícia — o primeiro
+     terço do ano novo, que é quando a arquibancada ainda está julgando
+     a lista. Menos de 2 pontos de força não vira pauta: é ruído da
+     evolução, não "o elenco piorou". */
+  const JANELA_VIRADA = 18;      // semanas de vida útil da pauta
+  function viradaDoElenco(E){
+    const v = E.elencoVirada;
+    if(!v) return null;
+    if(E.data.ano !== v.ano + 1 || E.data.semana > JANELA_VIRADA) return null;
+    const delta = v.para - v.de;
+    if(Math.abs(delta) < 2) return null;
+    return {de:v.de, para:v.para, delta};
+  }
+
+  /* A OUTRA ORGANIZADA DO MESMO CLUBE (pedido do dono, 19/09/2026):
+     a maior das outras, que é a que tem voz pra disputar quem
+     representa a massa. Clube de uma torcida só não gera a pergunta. */
+  function coirmaDaEntrevista(E){
+    const outras = M().torcidasDe(E.torcida.clubeId)
+      .filter(o => o.id !== E.torcida.id && !o.incompleta);
+    if(!outras.length) return null;
+    const tam = o => o.membros || 0;
+    const maior = outras.reduce((a,b) => tam(b) > tam(a) ? b : a);
+    return {id:maior.id, nome:maior.nome};
+  }
+
   function alvoDaEntrevista(E){
     const outras = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
     if(!outras.length) return null;
@@ -1224,7 +1252,64 @@ TO.feed = (function(){
          resumo:'não comentou a confusão', ef:{}}
       ]})},
 
+    /* O ELENCO DA TEMPORADA NOVA (pedido do dono, 19/09/2026): duas
+       perguntas irmãs, uma pra cada direção da virada. A de baixo é a
+       única do banco em que ficar com o clube custa moral SEM o time
+       ter jogado nada ainda — a rua quer reforço em janeiro, não em
+       maio. A de cima é o contrário: quando a lista melhorou, elogiar
+       a diretoria é de graça, porque a arquibancada também gostou. */
+    {id:'elenco-piorou', grupo:'clube',
+     quando: c => c.virada && c.virada.delta < 0, monta: c => ({
+      texto:`Saiu a lista pra temporada e a impressão é que o elenco do `+
+            `${c.nomeClube} piorou — ${c.virada.de} pra ${c.virada.para} de `+
+            'força. A torcida cobra reforço?',
+      opcoes:[
+        {id:'cobrar', rot:'Cobrar reforço na porta da diretoria',
+         nota:'−4 relação · +1 prestígio',
+         resumo:'cobrou reforço pra temporada', ef:{clube:-4, prestigio:0.2}},
+        {id:'bancar', rot:'Dizer que o que veio dá conta',
+         nota:notaElogio(c, 2, 0, 0.4),
+         resumo:'bancou o elenco que a diretoria montou',
+         ef:votarComOClube(2, 0.4)},
+        {id:'esperar', rot:'Esperar a bola rolar', nota:'sem efeito',
+         resumo:'preferiu esperar a bola rolar', ef:{}}
+      ]})},
+
+    {id:'elenco-melhorou', grupo:'clube',
+     quando: c => c.virada && c.virada.delta > 0, monta: c => ({
+      texto:`O ${c.nomeClube} se reforçou pra temporada — no papel o elenco `+
+            `está melhor, ${c.virada.de} pra ${c.virada.para} de força. `+
+            'A torcida dá o crédito à diretoria?',
+      opcoes:[
+        {id:'creditar', rot:'Dar o crédito à diretoria',
+         nota:notaElogio(c, 2, 0),
+         resumo:'deu o crédito da montagem à diretoria', ef:elogio(2, 0)},
+        {id:'conter', rot:'Conter a euforia: no papel ganha todo mundo',
+         nota:'sem efeito',
+         resumo:'conteve a euforia com a montagem', ef:{}},
+        {id:'cobrar', rot:'Dizer que agora é título ou nada',
+         nota:'−2 relação · +1 prestígio',
+         resumo:'disse que agora é título ou nada', ef:{clube:-2, prestigio:0.2}}
+      ]})},
+
     /* ---------------- sobre a rua ---------------- */
+    {id:'coirma', grupo:'rua', quando: c => !!c.coirma, monta: c => ({
+      alvo:c.coirma.id,
+      texto:`A ${c.coirma.nome} anda dizendo por aí que quem representa a `+
+            `massa do ${c.nomeClube} são eles. Vocês respondem?`,
+      opcoes:[
+        {id:'peitar', rot:'Peitar: quem representa a massa somos nós',
+         nota:`+2 prestígio · piora a relação com a ${c.coirma.nome}`,
+         resumo:`peitou a ${c.coirma.nome} pela massa do clube`,
+         ef:{outra:-1, prestigio:0.4}},
+        {id:'caber', rot:'Dizer que cabe todo mundo na arquibancada',
+         nota:`melhora a relação com a ${c.coirma.nome}`,
+         resumo:`disse que cabe todo mundo ao lado da ${c.coirma.nome}`,
+         ef:{outra:1}},
+        {id:'ignorar', rot:'Não dar palco', nota:'sem efeito',
+         resumo:'não deu palco à briga por quem representa a massa', ef:{}}
+      ]})},
+
     {id:'rival', grupo:'rua', quando: c => !!c.outra, monta: c => ({
       alvo:c.outra.id,
       texto:`E como está a relação de vocês com a ${c.outra.nome}?`,
@@ -1324,6 +1409,8 @@ TO.feed = (function(){
     const jornal = JORNAIS_CLUBE[H_(`clube-jornal|${E.torcida.id}`, JORNAIS_CLUBE.length)];
     const ctx = {E, nomeClube, pos, totalClubes, timeMal, brigaRecente,
       outra: alvoDaEntrevista(E),
+      coirma: coirmaDaEntrevista(E),
+      virada: viradaDoElenco(E),
       espaco: Math.max(0, TETO_ELOGIO - TO.relacaoClube.nivel(E))};
     const perguntas = escolherPerguntas(ctx, sa)
       .map(q => Object.assign({id:q.id, resposta:null}, q.monta(ctx)));

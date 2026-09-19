@@ -392,6 +392,16 @@ TO.estado = (function(){
                     : TO.relacoes.ranking(E)).slice(0, 8)
         } : null;
         const movForca = TO.competicoes.evoluirForca(E);
+        /* A FOTO DO ELENCO NA VIRADA (pedido do dono, 19/09/2026): o
+           quanto o elenco do NOSSO clube andou pra cima ou pra baixo
+           na evolução de fim de ano. É disso que a entrevista de
+           começo de temporada fala — "a impressão é que o elenco
+           piorou" — e é a única leitura honesta disponível: a força
+           do elenco só se mexe aqui, uma vez por ano. */
+        {
+          const meu = movForca.find(x => x.id === E.torcida.clubeId);
+          if(meu) E.elencoVirada = {ano:anoQueFecha, de:meu.de, para:meu.para};
+        }
         const mov = TO.competicoes.aplicarSobeDesce(E);
         /* a torcida do clube nas cidades é viva (dono, 02/09/2026):
            fase do ano + crescimento vegetativo das praças */

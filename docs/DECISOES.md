@@ -7341,6 +7341,43 @@ O texto das duas perguntas foi reescrito pra deixar claro de que lado a rua est�
 
 **Saíram do banco:** "como anda a sede" e "quantos membros vocês têm". Eram as duas únicas perguntas sem consequência nenhuma pro jogo — ocupavam vaga no sorteio sem mexer em relação, moral nem prestígio de forma que importasse. O banco fica em **8 perguntas de clube por 5 de rua**: 28 duplas por 10, **280 entrevistas diferentes**. O campo `membros` do contexto saiu junto, que só a pergunta do número usava.
 
+## A lista da temporada nova e a briga por quem representa a massa (pedido do dono, 19/09/2026)
+
+**Os dois pedidos.** "Vamos ajustar a 5 para ocorrer depois da virada de ano caso a qualidade do elenco caia, ajustando o texto pra algo como 'A impressão é que o elenco piorou pra essa temporada', assim como deve criar uma mensagem quando o elenco melhorar." · "Implemente a 7."
+
+### A virada do elenco
+
+A sugestão original era genérica ("o clube não contratou ninguém"). Virou **duas perguntas irmãs presas à virada de ano**, e elas só existem porque agora há de onde tirar o número: a força do elenco no jogo só se mexe uma vez por ano, em `evoluirForca` (competicoes.js), no fecho da temporada. `estado.js` passou a guardar ali o movimento do NOSSO clube em `E.elencoVirada = {ano, de, para}`, e a entrevista lê de lá.
+
+Duas travas pra pauta não virar ruído: ela só vale no **primeiro terço do ano novo** (18 semanas — passou disso, a arquibancada já julga pelo que viu em campo) e só quando o elenco andou **2 pontos ou mais**. Um ponto de força é o vaivém normal da evolução, não "o elenco piorou". *Medido numa temporada real: a virada saiu em −1 ponto e, corretamente, não virou pergunta.*
+
+**Piorou** — *"Saiu a lista pra temporada e a impressão é que o elenco do Palmeiras piorou — 62 pra 56 de força. A torcida cobra reforço?"*
+- Cobrar reforço na porta da diretoria: −4 relação · +1 prestígio
+- Dizer que o que veio dá conta: +2 relação (com o teto de 70) · **−2 de moral sempre**
+- Esperar a bola rolar: sem efeito
+
+É a única pergunta do banco em que ficar com o clube custa moral **sem o time ter jogado nada ainda**. É de propósito: a rua quer reforço em janeiro, não em maio, então aqui vale a régua fixa (`moral`) e não a que depende de sequência ruim.
+
+**Melhorou** — *"O Palmeiras se reforçou pra temporada — no papel o elenco está melhor, 56 pra 63 de força. A torcida dá o crédito à diretoria?"*
+- Dar o crédito à diretoria: +2 relação (com o teto) · **sem custo de moral**
+- Conter a euforia: no papel ganha todo mundo: sem efeito
+- Dizer que agora é título ou nada: −2 relação · +1 prestígio
+
+O contraste é o ponto da dupla: quando a lista melhorou, elogiar a diretoria é de graça — a arquibancada também gostou, e não há de quem "trair". Junto com a arbitragem (ainda não implementada), é o caminho de subir relação sem pagar moral.
+
+### Quem representa a massa
+
+A sugestão 7, implementada. `M().torcidasDe(clubeId)` já dava as organizadas irmãs do mesmo clube; a pergunta pega a **maior das outras**, que é a que tem voz pra disputar o posto. Clube de organizada única não gera a pergunta.
+
+*"A TUP anda dizendo por aí que quem representa a massa do Palmeiras são eles. Vocês respondem?"*
+- Peitar: quem representa a massa somos nós: +2 prestígio · piora a relação com ela
+- Dizer que cabe todo mundo na arquibancada: melhora a relação com ela
+- Não dar palco: sem efeito
+
+Usa o mesmo `ef.outra` da pergunta da rival, então mexe na relação de verdade — **medido**: peitar levou a TUP de 80 pra 75, "cabe todo mundo" devolveu pra 80.
+
+**O banco fica em 10 perguntas de clube por 6 de rua**, contando as condicionais (confusão recente, virada do elenco, rival, coirmã).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
