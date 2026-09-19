@@ -133,19 +133,41 @@ TO.diaJogo.estadioPintura = (function(){
     if(horizontal){ for(let x = x0; x < x0 + w; x += 12) c.fillRect(x, y0, 6, h); }
     else { for(let y = y0; y < y0 + h; y += 12) c.fillRect(x0, y, w, 6); }
   }
-  /* a mesma faixa, mas girada — pras avenidas, que não são retas nos
-     eixos do canvas. `angVia` é o sentido de quem dirige na via que a
-     faixa atravessa: em torno dele, as listras saem PERPENDICULARES
-     (giradas 90°) porque é assim que se vê uma faixa de verdade —
-     travessa curta na direção do carro, comprida na do pedestre —, e
-     se repetem AO LONGO da via por `profundidade`, que é a largura da
-     via que CRUZA (o corredor onde a faixa cabe na esquina). */
-  function faixaEmCruzamento(c, cx, cy, angVia, larguraTravessia, profundidade){
+  /* UMA FAIXA DE PEDESTRE ATRAVESSANDO UMA PISTA, em qualquer ângulo.
+     `ang` é o sentido de quem DIRIGE nela, `larg` a largura da pista
+     de guia a guia e `prof` o quanto a faixa avança na direção do
+     carro.
+
+     A LISTRA CORRE NO SENTIDO DO CARRO. Quem atravessa uma faixa de
+     verdade pisa numa listra de cada vez: a listra é comprida no
+     sentido em que o carro anda e se repete de uma guia à outra. A
+     primeira versão disto saiu girada 90° — listra atravessada na
+     pista, repetindo ao longo dela —, que é o desenho de uma
+     lombada, não de uma faixa.
+
+     O número de listras é inteiro e o passo sai da divisão: assim a
+     faixa começa e acaba em listra, sem sobra de meia listra numa
+     guia só, que é o que entrega tinta gerada por laço. */
+  function faixaDePista(c, cx, cy, ang, larg, prof){
     c.save();
     c.translate(cx, cy);
-    c.rotate(angVia);
+    c.rotate(ang);                                   // +x local = sentido do carro
     c.fillStyle = COR.faixaPed;
-    for(let d = -profundidade/2; d < profundidade/2; d += 12) c.fillRect(d, -larguraTravessia/2, 6, larguraTravessia);
+    const n = Math.max(3, Math.round(larg/13));
+    const passo = larg/n;
+    for(let k=0;k<n;k++) c.fillRect(-prof/2, -larg/2 + k*passo, prof, passo*0.54);
+    c.restore();
+  }
+  /* A RETENÇÃO: a barra branca grossa onde o carro para, logo depois
+     da faixa de pedestre. Meia largura de pista porque a outra metade
+     é a mão contrária — quem vem de lá para do outro lado do
+     cruzamento, na retenção dele. */
+  function retencao(c, cx, cy, ang, larg){
+    c.save();
+    c.translate(cx, cy);
+    c.rotate(ang);
+    c.fillStyle = COR.faixaPed;
+    c.fillRect(-5, -larg/2, 10, larg);
     c.restore();
   }
   function tracejado(c, x0, y0, x1, y1){
@@ -356,21 +378,69 @@ TO.diaJogo.estadioPintura = (function(){
     faixaPedestre(c, CX - 22, P.QEST_Y1,       44, RUA, false);
     faixaPedestre(c, CX - 22, P.QEST_Y0 - RUA, 44, RUA, false);
 
-    /* ---- 9. faixas de pedestre nos cruzamentos das avenidas com a
-       rua da grade — os dois sentidos, como numa esquina de verdade:
-       uma pra atravessar a avenida (girada no sentido dela) e outra
-       pra atravessar a rua que a corta (reta, porque a rua da grade
-       é sempre ortogonal). ---- */
+    /* ---- 9. O PADRÃO DA ESQUINA: uma faixa em CADA PERNA do
+       cruzamento da avenida com a rua da grade ----
+
+       Não é uma faixa por cruzamento: são QUATRO, o anel — as duas
+       pernas da avenida e as duas da rua, cada uma encostada na saída
+       do cruzamento, com a listra no sentido de quem dirige naquela
+       perna. Tinta por cima do meio do cruzamento não é faixa.
+
+       ONDE A PERNA COMEÇA, e por que a conta não é "metade da
+       largura". A avenida é DIAGONAL. Andando pela rua a partir do
+       centro do cruzamento, o quanto se anda até sair do asfalto da
+       avenida é `a/proj` — a meia-largura da avenida dividida pela
+       projeção de um sentido na normal do outro. Num cruzamento a 57°
+       isso dá quase o dobro da meia-largura: encostar a faixa "na
+       largura da avenida" deixava ela DENTRO do cruzamento. A
+       projeção é a mesma nos dois sentidos (|v·nu| = |u·nv|), então
+       uma conta serve pras quatro pernas.
+
+       `noAsfalto` é quem decide se a perna existe, e não basta olhar o
+       CENTRO da faixa: a avenida do norte acaba 92 depois de cruzar a
+       última rua, e uma faixa centrada no asfalto ainda assim punha a
+       borda de fora. São quatro pontos — o centro, a borda de fora e
+       as duas pontas da listra —, e a perna só nasce se os quatro
+       estiverem no asfalto. Num T (a rua que morre na beira-mar, a
+       avenida que acaba numa rua) isso derruba a perna que não
+       existe. ---- */
+    const PROF = 56, FOLGA = 7;
     for(const cz of K.CRUZAMENTOS || []){
-      /* só a travessia DA AVENIDA, não as duas. A avenida não é
-         ortogonal à rua da grade — é diagonal — e a listra de quem
-         cruza a rua fica comprida na direção perpendicular à
-         avenida, não na da rua: deslocar seu centro pra longe do
-         cruzamento não evita que ela volte a passar por cima da
-         primeira, e as duas sobrepostas liam como xadrez, não como
-         duas faixas. Uma só, na perna que a torcida de fato atravessa
-         indo pro jogo, fica limpa. */
-      faixaEmCruzamento(c, cz.x, cz.y, cz.ang, cz.avLarg + 8, cz.ruaLarg*0.62);
+      const ux = Math.cos(cz.ang), uy = Math.sin(cz.ang);        // sentido da avenida
+      const vx = cz.vertical ? 0 : 1, vy = cz.vertical ? 1 : 0;  // sentido da rua
+      const proj = Math.abs(vy*ux - vx*uy);
+      if(proj < 0.2) continue;                  // quase paralelas: não é esquina
+      const angRua = Math.atan2(vy, vx);
+      const pernas = [
+        { dx: vx, dy: vy, ang: angRua, larg: cz.ruaLarg, rec: cz.avLarg/2/proj },
+        { dx:-vx, dy:-vy, ang: angRua, larg: cz.ruaLarg, rec: cz.avLarg/2/proj },
+        { dx: ux, dy: uy, ang: cz.ang, larg: cz.avLarg, rec: cz.ruaLarg/2/proj },
+        { dx:-ux, dy:-uy, ang: cz.ang, larg: cz.avLarg, rec: cz.ruaLarg/2/proj }
+      ];
+      for(const p of pernas){
+        const d = p.rec + FOLGA + PROF/2;
+        const fx = cz.x + p.dx*d, fy = cz.y + p.dy*d;
+        const ca = Math.cos(p.ang), sa = Math.sin(p.ang), meia = p.larg/2 - 3;
+        /* as QUATRO QUINAS, não o meio das bordas: a ponta da avenida
+           é uma calota (o traço tem `lineCap` redondo, e `distAvenida`
+           trunca o t), então o meio da borda ainda cai no asfalto
+           enquanto as quinas já estão fora dele */
+        const cabe = [[0, 0], [PROF/2 - 2, -meia], [PROF/2 - 2, meia],
+                      [-PROF/2 + 2, -meia], [-PROF/2 + 2, meia]]
+          .every(([a, b]) => K.noAsfalto(fx + a*ca - b*sa, fy + a*sa + b*ca));
+        if(!cabe) continue;
+        faixaDePista(c, fx, fy, p.ang, p.larg, PROF);
+        /* a retenção só onde há semáforo: barra de parada em rua sem
+           sinal nenhum é tinta que a prefeitura não pintou */
+        if(!cz.principal) continue;
+        const dr = d + PROF/2 + 11;
+        /* a mão de quem CHEGA é a direita dele: o sentido de chegada é
+           -d, e no canvas (y pra baixo) a direita de (tx,ty) é
+           (-ty,tx) — com t = -d isso vira (dy,-dx) */
+        const rx = cz.x + p.dx*dr + p.dy*p.larg*0.25;
+        const ry = cz.y + p.dy*dr - p.dx*p.larg*0.25;
+        if(K.noAsfalto(rx, ry)) retencao(c, rx, ry, p.ang, p.larg*0.46);
+      }
     }
   }
 

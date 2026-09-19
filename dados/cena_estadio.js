@@ -684,10 +684,20 @@ TO.dados.plantaEstadio = (function(){
         }
       }
     }
-    /* uma esquina perto do fim de um segmento pode nascer da COLUNA e
-       da LINHA quase no mesmo lugar — fica só a primeira */
+    /* QUANDO A AVENIDA PASSA POR UMA ESQUINA DA GRADE ela atravessa a
+       COLUNA e a LINHA quase no mesmo lugar, e sai um par de pontos a
+       poucas dezenas de distância. Não são dois cruzamentos: é UM, de
+       seis pernas. Desenhar os dois dava dois anéis de faixa
+       embolados. O raio de fusão é generoso (200) porque ao longo da
+       avenida dois cruzamentos do MESMO tipo nunca ficam a menos de
+       550 — a grade é larga —, então nada legítimo se perde. Fica o
+       da rua mais larga, que é a que manda no cruzamento. */
     const unicos = [];
-    for(const p of pontos) if(!unicos.some(u => Math.hypot(u.x - p.x, u.y - p.y) < 30)) unicos.push(p);
+    for(const p of pontos){
+      const j = unicos.findIndex(u => Math.hypot(u.x - p.x, u.y - p.y) < 200);
+      if(j < 0) unicos.push(p);
+      else if(p.ruaLarg > unicos[j].ruaLarg) unicos[j] = p;
+    }
     return unicos;
   })();
 

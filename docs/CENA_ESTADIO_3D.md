@@ -691,22 +691,55 @@ trecho de mato sem rua nenhuma ali, é `naRua()`: a mesma régua que a
 máscara usa pra saber se um corpo pode virar a esquina. `CRUZAMENTOS`
 sai pronto na planta, pra pintor e 3D lerem o mesmo ponto.
 
-**Uma faixa só, não duas.** A ideia óbvia era pintar as duas travessias
-de um cruzamento — a que atravessa a avenida e a que atravessa a rua —
-como a foto mostra. Não deu: a avenida não é ortogonal à rua, é
-diagonal, e a listra de quem atravessa a rua fica comprida na direção
-perpendicular à AVENIDA, não da rua. Afastar o centro dela do
-cruzamento não evita que ela volte a passar por cima da primeira — as
-duas sobrepostas liam como xadrez, não como duas faixas (testado e
-descartado, com screenshot). Uma só, na travessia da avenida — que é a
-que a torcida de fato atravessa indo pro jogo —, fica limpa: listras
-perpendiculares ao sentido da avenida, repetindo ao longo dela por
-`ruaLarg * 0,62` (a profundidade cabe no corredor da rua que cruza).
+**A LISTRA CORRE NO SENTIDO DO CARRO.** A primeira versão saiu girada
+90°: listra atravessada na pista, repetindo ao longo dela — que é o
+desenho de uma lombada, não de uma faixa. Quem atravessa uma faixa de
+verdade pisa numa listra de cada vez, então a listra é comprida no
+sentido em que o carro anda e se repete de uma guia à outra. (As faixas
+dos portões do estádio, essas, já estavam certas desde sempre; só a
+nova nasceu errada.)
+
+**SÃO QUATRO, UMA POR PERNA.** Tinta por cima do meio do cruzamento não
+é faixa. O padrão é o anel: as duas pernas da avenida e as duas da rua,
+cada uma encostada na SAÍDA do cruzamento. Foram 46 faixas em 12
+cruzamentos — 46 e não 48 porque duas pernas não existem (a avenida
+acaba ali).
+
+**Onde a perna começa, e por que a conta não é "metade da largura".** A
+avenida é DIAGONAL. Andando pela rua a partir do centro do cruzamento,
+o quanto se anda até sair do asfalto da avenida é `a/proj` — a
+meia-largura da avenida dividida pela projeção de um sentido na normal
+do outro. Num cruzamento a 57° isso dá quase o dobro da meia-largura:
+encostar a faixa "na largura da avenida" deixava ela DENTRO do
+cruzamento. A projeção é a mesma nos dois sentidos (|v·nu| = |u·nv|),
+então uma conta só serve pras quatro pernas.
+
+**A perna só nasce se as QUATRO QUINAS estiverem no asfalto.** Testar
+só o centro não bastava, e testar o meio das bordas também não: a ponta
+da avenida do norte é uma CALOTA (o traço da avenida tem `lineCap`
+redondo, e `distAvenida` trunca o `t`), então o meio da borda ainda
+caía no asfalto enquanto as quinas já estavam de fora — a faixa
+sobrava pra fora do fim da avenida. Com as quatro quinas, zero faixa
+fora do asfalto (medido).
+
+**A retenção** — a barra branca grossa onde o carro para — vem depois
+da faixa, em meia largura de pista (a outra metade é a mão contrária,
+que para do outro lado do cruzamento). Só nos cruzamentos com semáforo:
+barra de parada em rua sem sinal nenhum é tinta que a prefeitura não
+pintou.
+
+**Quando a avenida passa numa esquina da grade** ela atravessa a COLUNA
+e a LINHA quase no mesmo lugar, e a conta cospe dois pontos a poucas
+dezenas um do outro. Não são dois cruzamentos: é um, de seis pernas, e
+desenhar os dois dava dois anéis de faixa embolados. O raio de fusão é
+200, generoso de propósito — ao longo da avenida dois cruzamentos do
+mesmo tipo nunca ficam a menos de 550, porque a grade é larga —, e fica
+o da rua mais larga. De 14 pontos crus sobram **12 cruzamentos**.
 
 **O semáforo, só nos PRINCIPAIS.** Nem todo cruzamento leva poste: as
 avenidas de entrada (`sudoeste` e `noroeste`, as que a torcida usa pra
 chegar) marcam `principal: true`; os ramais curtos que só viram estrada
-no mato e a beira-mar não. De 14 cruzamentos, 13 são principais e 12
+no mato e a beira-mar não. Dos 12 cruzamentos, 11 são principais e 10
 ganharam poste — um ficou de fora porque não achou esquina livre de
 asfalto (o próximo item explica por quê).
 
@@ -839,8 +872,8 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
 - Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **37
   quarteirões · 703 lotes (262 na favela) · 538 moitas · 215 árvores ·
   72 postes · 53 carros · 1 campo · 8 equipamentos · 1.822 decalques de
-  chão · 14 cruzamentos de avenida com faixa de pedestre, 12 com
-  semáforo** · 147.213 triângulos estáticos em 6 pedaços de cidade mais
+  chão · 12 cruzamentos de avenida com 46 faixas de pedestre, 10 com
+  semáforo** · 147.093 triângulos estáticos em 6 pedaços de cidade mais
   o estádio · 165 chamadas de desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
   do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
@@ -1077,13 +1110,6 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
    um pouco antes de ver o bonde —, mas é a dobra vazando pra simulação,
    e é o único lugar em que ela vaza. Corrigir é medir em coordenada de
    mundo dentro de `combate.js`, que ficou intacto de propósito.
-10. **O cruzamento pinta só a travessia da avenida, não as duas.** §4.13
-    explica o motivo (a avenida é diagonal; as duas sobrepostas liam
-    como xadrez). Corrigir direito pede achar os quatro CANTOS reais do
-    cruzamento — onde a guia da avenida encontra a guia da rua — e
-    desenhar cada faixa na perna certa, não no centro. É geometria de
-    interseção de duas faixas com largura, não só de duas retas.
-
 ## 10. O que este trabalho NÃO mexeu
 
 - `combate.js`, `arredores.js`, `cenario.js`, `ponte.js`, `cena3d.js`,
