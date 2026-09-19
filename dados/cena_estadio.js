@@ -2143,6 +2143,143 @@ TO.dados.plantaEstadio = (function(){
     SEMAFOROS.push({ x, y, ang: p.ang, lado: -lado, braco: Math.min(p.avLarg*0.6, 46) });
   }
 
+  /* ---- AS FAIXAS DE PEDESTRE DOS CRUZAMENTOS ----
+     Quatro por cruzamento: uma em cada perna, encostada na SAÍDA do
+     cruzamento, com a listra no sentido de quem dirige naquela perna.
+     A planta entrega o retângulo pronto (centro, ângulo, largura de
+     pista e profundidade) e o pintor só desenha — assim dá pra auditar
+     a tinta como se audita casa, e não olhando screenshot.
+
+     ONDE A PERNA COMEÇA, e por que a conta não é "metade da largura".
+     A avenida é DIAGONAL. Andando pela rua a partir do centro do
+     cruzamento, o quanto se anda até sair do asfalto da avenida é
+     `a/proj` — a meia-largura da avenida dividida pela projeção de um
+     sentido na normal do outro. Num cruzamento a 57° isso dá quase o
+     dobro da meia-largura. A projeção é a mesma nos dois sentidos
+     (|v·nu| = |u·nv|), então uma conta serve pras quatro pernas.
+
+     UMA FAIXA NÃO ENCOSTA NA OUTRA. Só recuar pela conta acima não
+     garante isso: na quina AGUDA do cruzamento (57° de um lado, 123°
+     do outro) a faixa da rua e a da avenida saem do cruzamento por
+     direções que ainda se cruzam, e os dois retângulos se tocam. O
+     mecanismo é o que um projeto de rua faz de verdade — RECUAR a
+     faixa pra trás na própria perna, que é a única direção em que ela
+     continua fazendo sentido:
+
+       1. nasce quem cabe inteiro no asfalto (as quatro quinas);
+       2. enquanto duas se tocarem (com folga de GAP), as duas andam
+          pra trás de PASSO em PASSO na sua própria perna — como as
+          pernas divergem, afastar funciona;
+       3. quem não tem pra onde ir (o passo a tiraria do asfalto) ou
+          já andou EMPURRA_MAX para de andar;
+       4. o que ainda assim se tocar, some — e some a da via mais
+          ESTREITA, que é a regra da rua: quem cede é a via menor.
+
+     O teste de toque é o do eixo separador (SAT) entre dois
+     retângulos girados. Não dá pra usar caixa alinhada aqui: a faixa
+     da avenida está a 57°, e a caixa dela alinhada aos eixos é quase o
+     dobro do retângulo de verdade — daria toque onde não há. */
+  /* PROF 46 e GAP 6 saíram de varredura, não de gosto: com 56 e 10 o
+     mecanismo salvava 36 das 46 pernas — as outras 10 batiam no teto
+     de recuo e eram apagadas. Com 46 e 6 sobram as 46, e o teto de 140
+     nem chega a morder (o pior recuo para em 126), ou seja o afastamento
+     converge sozinho em vez de ser cortado. */
+  const FAIXA_PROF = 46;
+  const FAIXAS = (function(){
+    const FOLGA = 7, GAP = 6, PASSO = 6, EMPURRA_MAX = 140;
+    const bruta = [];
+    for(const cz of CRUZAMENTOS){
+      const ux = Math.cos(cz.ang), uy = Math.sin(cz.ang);        // sentido da avenida
+      const vx = cz.vertical ? 0 : 1, vy = cz.vertical ? 1 : 0;  // sentido da rua
+      const proj = Math.abs(vy*ux - vx*uy);
+      if(proj < 0.2) continue;                  // quase paralelas: não é esquina
+      const angRua = Math.atan2(vy, vx);
+      const pernas = [
+        { dx: vx, dy: vy, ang: angRua, larg: cz.ruaLarg, rec: cz.avLarg/2/proj },
+        { dx:-vx, dy:-vy, ang: angRua, larg: cz.ruaLarg, rec: cz.avLarg/2/proj },
+        { dx: ux, dy: uy, ang: cz.ang, larg: cz.avLarg, rec: cz.ruaLarg/2/proj },
+        { dx:-ux, dy:-uy, ang: cz.ang, larg: cz.avLarg, rec: cz.ruaLarg/2/proj }
+      ];
+      for(const p of pernas)
+        bruta.push({ cx: cz.x, cy: cz.y, dx: p.dx, dy: p.dy, ang: p.ang, larg: p.larg,
+                     prof: FAIXA_PROF, principal: cz.principal,
+                     d: p.rec + FOLGA + FAIXA_PROF/2, empurrao: 0 });
+    }
+    /* as quatro quinas do retângulo, com recuo opcional nas duas
+       medidas — o teste de asfalto usa quina puxada pra dentro (a
+       tinta encosta na guia de propósito), o de toque usa a de fora */
+    const quinas = (f, ra, rb) => {
+      const cx = f.cx + f.dx*f.d, cy = f.cy + f.dy*f.d;
+      const ca = Math.cos(f.ang), sa = Math.sin(f.ang);
+      const A = f.prof/2 - ra, B = f.larg/2 - rb;
+      return [[-A,-B],[A,-B],[A,B],[-A,B]].map(([a, b]) => [cx + a*ca - b*sa, cy + a*sa + b*ca]);
+    };
+    /* A QUINA, não o meio da borda: a ponta da avenida do norte é uma
+       CALOTA (o traço tem `lineCap` redondo e `distAvenida` trunca o
+       t), e ali o meio da borda ainda cai no asfalto enquanto as
+       quinas já estão fora. */
+    const cabe = f => quinas(f, 2, 3).every(([x, y]) => noAsfalto(x, y));
+    const separadas = (f, g, folga) => {
+      const A = quinas(f, 0, 0), B = quinas(g, 0, 0);
+      for(const [R, S] of [[A, B], [B, A]])
+        for(let i=0;i<2;i++){                    // retângulo: só duas normais valem
+          const [x0, y0] = R[i], [x1, y1] = R[i+1];
+          const L = Math.hypot(x1 - x0, y1 - y0);
+          const nx = -(y1 - y0)/L, ny = (x1 - x0)/L;
+          const r = R.map(([x, y]) => x*nx + y*ny), t = S.map(([x, y]) => x*nx + y*ny);
+          if(Math.min(...t) - Math.max(...r) >= folga) return true;
+          if(Math.min(...r) - Math.max(...t) >= folga) return true;
+        }
+      return false;
+    };
+
+    let vivas = bruta.filter(cabe);
+    for(let volta = 0; volta < 40; volta++){
+      let mexeu = false;
+      for(let i=0;i<vivas.length;i++) for(let j=i+1;j<vivas.length;j++){
+        if(separadas(vivas[i], vivas[j], GAP)) continue;
+        for(const f of [vivas[i], vivas[j]]){
+          if(f.empurrao >= EMPURRA_MAX) continue;
+          f.d += PASSO; f.empurrao += PASSO;
+          if(cabe(f)) mexeu = true;
+          else { f.d -= PASSO; f.empurrao = EMPURRA_MAX; }   // não tem pra onde ir
+        }
+      }
+      if(!mexeu) break;
+    }
+    /* quem ainda se toca: cede a da via mais estreita */
+    for(;;){
+      let par = null;
+      for(let i=0;i<vivas.length && !par;i++) for(let j=i+1;j<vivas.length && !par;j++)
+        if(!separadas(vivas[i], vivas[j], GAP)) par = [i, j];
+      if(!par) break;
+      const [i, j] = par;
+      vivas.splice(vivas[i].larg <= vivas[j].larg ? i : j, 1);
+    }
+
+    /* A RETENÇÃO, atrás da faixa, na mão de quem CHEGA: o sentido de
+       chegada é -d, e a direita de (tx,ty) num eixo com y pra baixo é
+       (-ty,tx) — com t = -d isso vira (dy,-dx). Só nos cruzamentos com
+       semáforo: barra de parada em rua sem sinal nenhum é tinta que a
+       prefeitura não pintou. E ela não pode cair dentro da faixa de
+       outra perna, pelo mesmo motivo que as faixas não se encostam. */
+    for(const f of vivas){
+      f.x = f.cx + f.dx*f.d; f.y = f.cy + f.dy*f.d;
+      f.ret = null;
+      if(!f.principal) continue;
+      const rx = f.x + f.dx*(f.prof/2 + 11) + f.dy*f.larg*0.25;
+      const ry = f.y + f.dy*(f.prof/2 + 11) - f.dx*f.larg*0.25;
+      if(!noAsfalto(rx, ry)) continue;
+      const dentroDeOutra = vivas.some(g => g !== f &&
+        Math.hypot(rx - g.x, ry - g.y) < (g.prof + g.larg)/2 &&
+        Math.abs((rx - g.x)*Math.cos(g.ang) + (ry - g.y)*Math.sin(g.ang)) < g.prof/2 + 5 &&
+        Math.abs(-(rx - g.x)*Math.sin(g.ang) + (ry - g.y)*Math.cos(g.ang)) < g.larg/2 + 5);
+      if(!dentroDeOutra) f.ret = { x: rx, y: ry };
+    }
+    return vivas.map(f => ({ x: f.x, y: f.y, ang: f.ang, larg: f.larg, prof: f.prof,
+                             dx: f.dx, dy: f.dy, ret: f.ret, empurrao: f.empurrao }));
+  })();
+
   /* =========================================================
      A BEIRA DA ESTRADA — o que fecha o mapa
      ---------------------------------------------------------
@@ -2902,7 +3039,7 @@ TO.dados.plantaEstadio = (function(){
                    xLimiteCosta, cortarPor, recorteCosta, pedacosSemAvenida, dentroPol, ruaEntre,
                    areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
-                   CARROS, ARVORES, POSTES, SEDES, sedeDe, CRUZAMENTOS, SEMAFOROS,
+                   CARROS, ARVORES, POSTES, SEDES, sedeDe, CRUZAMENTOS, SEMAFOROS, FAIXAS,
                    FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES };
 
   /* =======================================================

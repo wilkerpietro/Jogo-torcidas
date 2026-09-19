@@ -705,6 +705,11 @@ cada uma encostada na SAÍDA do cruzamento. Foram 46 faixas em 12
 cruzamentos — 46 e não 48 porque duas pernas não existem (a avenida
 acaba ali).
 
+O retângulo de cada faixa sai pronto da PLANTA (`FAIXAS`: centro,
+ângulo, largura de pista, profundidade e a retenção), não do pintor.
+Assim dá pra auditar a tinta como se audita casa — contando pares que
+se tocam e quinas fora do asfalto —, e não olhando screenshot.
+
 **Onde a perna começa, e por que a conta não é "metade da largura".** A
 avenida é DIAGONAL. Andando pela rua a partir do centro do cruzamento,
 o quanto se anda até sair do asfalto da avenida é `a/proj` — a
@@ -721,6 +726,41 @@ redondo, e `distAvenida` trunca o `t`), então o meio da borda ainda
 caía no asfalto enquanto as quinas já estavam de fora — a faixa
 sobrava pra fora do fim da avenida. Com as quatro quinas, zero faixa
 fora do asfalto (medido).
+
+**UMA FAIXA NÃO ENCOSTA NA OUTRA.** Recuar pela conta acima põe cada
+faixa fora do cruzamento, mas não garante que ela fique fora das
+OUTRAS: na quina AGUDA (57° de um lado, 123° do outro) a faixa da rua
+e a da avenida saem por direções que ainda se cruzam, e os retângulos
+se tocam. O mecanismo é o que um projeto de rua faz de verdade —
+RECUAR a faixa pra trás na própria perna, que é a única direção em que
+ela continua fazendo sentido:
+
+1. nasce quem cabe inteiro no asfalto;
+2. enquanto duas se tocarem (com folga de 6), as duas andam pra trás
+   de 6 em 6 na sua própria perna — como as pernas divergem, afastar
+   funciona;
+3. quem não tem pra onde ir (o passo a tiraria do asfalto) ou já andou
+   140 para de andar;
+4. o que ainda assim se tocar some, e some a da via mais ESTREITA, que
+   é a regra da rua: quem cede é a via menor.
+
+O teste de toque é o do **eixo separador (SAT)** entre dois retângulos
+GIRADOS. Caixa alinhada aos eixos não serve aqui: a faixa da avenida
+está a 57°, e a caixa dela alinhada é quase o dobro do retângulo de
+verdade — acusaria toque onde não há.
+
+**PROF 46 e folga 6 saíram de varredura, não de gosto.** Com os 56 de
+profundidade e 10 de folga que eu tinha chutado, o mecanismo salvava 36
+das 46 pernas: as outras 10 batiam no teto de recuo e eram apagadas.
+Varrendo profundidade × folga × teto, 46/6/140 devolve as 46 com o teto
+nem chegando a morder (o pior recuo para em 126), ou seja o afastamento
+converge sozinho em vez de ser cortado. O preço é recuo: 4 faixas não
+se mexeram, 24 andaram 1,1 m, 13 andaram 3,2 m, 4 andaram 4,3 m e 1
+andou 5,4 m. Num cruzamento a 57° isso é o que a rua de verdade faz —
+a faixa fica pra trás da esquina.
+
+Medido no fim: **46 faixas, zero pares se tocando, menor folga 6,3,
+zero quinas fora do asfalto.**
 
 **A retenção** — a barra branca grossa onde o carro para — vem depois
 da faixa, em meia largura de pista (a outra metade é a mão contrária,
