@@ -1026,6 +1026,13 @@ TO.relacoes = (function(){
         /* a compra entra no extrato dela (crivo do dono, 31/08/2026) */
         if(compra.custo) lancarIA(E, id,
           ROTULO_COMPRA[compra.tipo] || compra.tipo, -compra.custo);
+        /* O MUNDO PASSOU A AVISAR (pedido do dono, 19/09/2026): obra
+           de torcida que interessa à gente — a da nossa cidade, a da
+           aliada, a do rival — vira cartão no feed. O filtro é do
+           feed; aqui só se anuncia. */
+        if(TO.feed && TO.feed.registrarObra && TO.feed.obraInteressa(E, id))
+          TO.feed.registrarObra(E,
+            {tipo:'obra', torcida:id, item:compra.tipo, cidade:compra.cidade});
         /* UMA POR VEZ (dono, 26/08/2026): comprou, a vez desse item
            vai pro fim da fila da torcida. Sede e fábrica não rodam
            nada — não estão na fila. */
@@ -2283,6 +2290,10 @@ TO.relacoes = (function(){
       if(bd){
         FIN().danificarBar(bd, (E.data && E.data.absoluto) || 0);
         reg.barQuebrado = true;
+        /* bar quebrado é notícia de rua (dono, 19/09/2026) */
+        if(TO.feed && TO.feed.registrarObra && TO.feed.obraInteressa(E, o.id))
+          TO.feed.registrarObra(E,
+            {tipo:'bar-quebrado', dono:o.id, atacante:atk.id});
       }
       reg.saque = saque;
     }

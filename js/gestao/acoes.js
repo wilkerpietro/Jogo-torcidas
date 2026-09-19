@@ -455,6 +455,11 @@ TO.acoes = (function(){
         if(meu){
           F.danificarBar(meu, (E.data && E.data.absoluto) || 0);
           linhas.push(`o bar ficou em cacos: metade da receita por ${F.DANO_BAR.dias} dias`);
+          /* a cidade toma conhecimento (dono, 19/09/2026): o cartão do
+             feed pergunta se a gente responde na porta deles */
+          if(TO.feed && TO.feed.registrarObra)
+            TO.feed.registrarObra(E, {tipo:'bar-quebrado',
+              dono:E.torcida.id, atacante:(alvo && alvo.torcidaId) || null});
         }
       }
       TO.estado.mexerIndicador(E, 'moral', -3, 'Fugimos sem defender o que é nosso');

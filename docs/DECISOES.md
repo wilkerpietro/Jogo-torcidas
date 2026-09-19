@@ -7378,6 +7378,62 @@ Usa o mesmo `ef.outra` da pergunta da rival, então mexe na relação de verdade
 
 **O banco fica em 10 perguntas de clube por 6 de rua**, contando as condicionais (confusão recente, virada do elenco, rival, coirmã).
 
+## O noticiário de patrimônio e o veredicto da campanha (pedidos do dono, 19/09/2026)
+
+### 1. A régua das respostas
+
+O dono cravou a forma antes do conteúdo: **"uma opção em tom agressivo e provocador ao rival, exercendo liderança na cidade, que causa piora nas relações e aumento da moral, e outra opção com um tom mais ameno, que não causa nada."**
+
+Isso inverte o sinal da moral no jogo. Até aqui ela só DESCIA — quando a gente passava a mão na cabeça do clube. Agora ela SOBE quando a gente peita, e o preço é relação. É a mesma moeda pelos dois lados, e a opção amena é zero de propósito: quem quiser moral, paga com relação; quem não quiser pagar, não leva.
+
+### 2. O noticiário de patrimônio da cidade (A1 a A6)
+
+**O que já existia e ninguém via.** As IAs sempre compraram bar, loja e subsede — está em `ROTULO_COMPRA` (relacoes.js:579), com extrato e tudo — e sempre tiveram o bar quebrado quando alguém descia nelas (`danificarBar`, relacoes.js:2284). Nada disso aparecia em lugar nenhum: o mundo se mexia em silêncio. Não foi preciso inventar sistema; foi preciso ligar um noticiário no que já rodava.
+
+**Como funciona.** Quem faz a obra chama `TO.feed.registrarObra(E, ev)` e segue a vida; a fila (`E.obrasDaCidade`, 12 posições) é drenada um cartão por dia pelo `eventosDoDia`. Os três pontos que gravam: a compra das IAs (relacoes.js), o bar de IA quebrado (relacoes.js), o nosso bar quebrado (acoes.js) e a nossa inauguração (patrimonio.js).
+
+**O filtro mora no feed, não em quem chama.** Interessa o que acontece **na nossa cidade** e o que acontece com quem a gente ama ou odeia de verdade (|relação| ≥ 25), esteja onde estiver. Sem isso a fila encheria de obra de torcida que a gente nunca ouviu falar, em cidade que nunca visitou.
+
+| | Situação | Agressiva | Amena |
+|---|---|---|---|
+| A1 | Rival inaugurou na cidade | Zoar e marcar território · +2 moral · −8 com ela | Deixar quieto |
+| A2 | Rival abriu subsede em outra cidade | "Aquela cidade tem dono" · +2 moral · −12 com ela | Deixar quieto |
+| A3 | Quebraram o bar do rival | Tirar onda · +2 moral · −12 com ela | Não comentar |
+| A4 | Quebraram o **nosso** bar | Prometer resposta na porta deles · +3 moral · −12 | Levantar e não dar notícia |
+| A5 | **Nós** inauguramos | Inaugurar com a cidade sabendo · +2 moral · +3 relação com o clube · −6 com os rivais da cidade | Abrir sem alarde |
+| A6 | Aliada inaugurou | Descer lá em peso e virar recado · +2 moral · +8 com ela · −6 com os rivais | Mandar parabéns |
+
+Em A6 o "agressivo" não é contra a aliada — é subir no palco junto e transformar a festa dela em demonstração de força das duas. Quem se incomoda é o resto da cidade.
+
+**Dois consertos durante o teste.** O cartão do bar quebrado lia a relação de `ev.torcida`, que nesse evento não existe (a dona é `ev.dono`): saía *"o bar da eles"* e nunca caía no ramo do rival. E "os rivais" de A5/A6 pegava todo rival do **país** — uma inauguração de subsede piorava a relação com 59 torcidas de uma vez. Desfile na rua é recado pra quem mora na rua: agora são só os da nossa cidade (5, no save de teste).
+
+### 3. B1 e o ranking (B6 ajustada)
+
+**B1, o tombo do rival.** Lê o último jogo já jogado do clube da torcida rival nas rodadas da nossa própria agenda; se foi derrota por 2 ou mais, vira pergunta. Esfregar na cara: +3 de moral, −10 com eles. Deboche: +2, −5. Não comentar: nada.
+
+**B6 virou o ranking do jogo**, como o dono pediu: `TO.relacoes.rankingDoPais(E)` — a posição de verdade, a mesma que a tela mostra, não um número inventado pra pergunta. *"Saiu o ranking das organizadas: vocês em 7º de 139, com a Jovem Fla na frente. Satisfeitos?"* Cravar que os maiores somos nós: +3 de moral, −5 com quem está na frente. E quando a gente É o primeiro, o texto e as opções mudam sozinhos.
+
+### 4. O veredicto da campanha
+
+**A régua do esperado, na palavra do dono.** `TO.competicoes.porForca(E, comp)` ordena os participantes por força de elenco; a posição do clube nessa fila é a posição que a rua esperava. 3º elenco mais forte esperava 3º lugar.
+
+**Deu ruim:** terminou 8 posições ou mais abaixo do esperado · foi rebaixado (automático) · caiu **precocemente** pra time com 8 ou mais de força a menos.
+**Deu bom:** terminou 8 posições ou mais acima · foi campeão ou promovido (automático).
+
+**Sai no dia, não no fim do ano.** O mapeamento do laço diário (estado.js:317) mostrou que `jogarDia` e `conmebol.rodar` rodam ANTES do `eventosDoDia`, então o `venceu` do mata-mata já está escrito quando o cartão sai. Só a liga de pontos corridos precisa de cuidado: `comp.campeao` só é preenchido na virada de semana, então a detecção não usa ele — usa "todos os jogos do clube nesta competição já têm placar" + a tabela, que já estão prontos no mesmo dia.
+
+**Três coisas que o teste pegou, e que valem registrar:**
+
+1. **A colocação num mata-mata estava invertida.** Eu contava quantos já tinham caído e somava um — perder a FINAL da Copa do Brasil virava *"107º lugar com o 4º elenco"* e a torcida ia protestar por ter sido vice. O certo é quanta gente ainda estava **viva**: quem cai quando restam dois é o 2º.
+2. **"Precocemente" é palavra do dono, e exclui a final.** Mesmo com a zebra valendo, perder a decisão pra um time mais fraco no papel não é cair cedo — é chegar lá. Vice não vai pra porta do CT. Da semifinal pra trás, vale.
+3. **O esperado tem de ser medido no mesmo universo da posição.** Num estadual de grupos a posição final é dentro do grupo, e a fila de força era da competição inteira: "4º de 5 no grupo" contra "3º elenco de 20" não é comparação, é ruído.
+
+**O cartão ruim** é o protesto na porta do CT, e nenhuma saída é de graça — é a régua literal do dono: ir custa **−15 de relação com o clube** e rende **+5 de moral**; não ir **só** custa moral (−5). A relação não sobe ao segurar: ela apenas não cai, e é esse o prêmio.
+
+**O cartão bom** é a festa: **R$ 10.000** de custo, volta entre **R$ 9.000 e R$ 16.000** em bar, camisa e rifa, e **+5 de moral**. Sem caixa, o cartão recusa com todas as letras em vez de deixar o saldo negativo. *O "+5 de moral" é a minha leitura do "aumento de moral 5.000,00" do pedido — o 5.000 parecia arrastado da formatação dos valores acima. Se era outra coisa, é um número só pra trocar.*
+
+**Medido** (Playwright, temporadas inteiras, várias torcidas, 0 erros no `avancarDia`): campeão da Libertadores e da Copa do Brasil → festa; acesso do Ceará → festa; rebaixamento do Corinthians → protesto; 12º no Brasileirão com o 4º elenco → protesto; queda nas quartas da Libertadores pra um time 24 mais fraco → protesto; queda na segunda fase da Copa do Brasil pra um 26 mais fraco → protesto. Festa executada: −R$ 10.000, +R$ 11.096, +5 de moral, saldo escrito na consequência.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

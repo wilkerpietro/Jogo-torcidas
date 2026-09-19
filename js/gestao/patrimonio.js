@@ -891,6 +891,11 @@ TO.patrimonio = (function(){
       if(tipo === 'subsede')
         E.inauguracao = {tipo:'subsede', bairro,
                          quando:(E.data||{}).absoluto || 0, contada:false};
+      /* INAUGURAÇÃO É RECADO (pedido do dono, 19/09/2026): abrir
+         porta nova na cidade pode ser só abrir, ou pode ser desfile.
+         Quem pergunta é o cartão do feed. */
+      if(TO.feed && TO.feed.registrarObra)
+        TO.feed.registrarObra(E, {tipo:'obra', torcida:E.torcida.id, item:tipo});
     } else if(acao==='ampliar'){
       const cfg = PONTO[tipo];
       const alvo = (p[cfg.plural]||[]).filter(x=>cfg.ampliar[x.nivel])

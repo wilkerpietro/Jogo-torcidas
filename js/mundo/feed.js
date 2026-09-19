@@ -418,6 +418,8 @@ TO.feed = (function(){
     passo('assalto',        ()=>assaltoDeHoje(E));
     passo('assunto do clube',()=>assuntoClubeDeHoje(E));
     passo('bar rival',      ()=>barRivalDeHoje(E));
+    passo('patrimônio da cidade', ()=>obraDeHoje(E));
+    passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
     /* a recepção do aliado vira dinheiro no dia do jogo dele (dono,
        28/08/2026) */
@@ -1101,6 +1103,51 @@ TO.feed = (function(){
     return {id:maior.id, nome:maior.nome};
   }
 
+  /* O TOMBO DO CLUBE DELES (pedido do dono, 19/09/2026 — sugestão B1):
+     o último jogo JÁ JOGADO do clube da torcida rival, se tiver sido
+     derrota por 2 ou mais. Lê das rodadas da nossa própria agenda de
+     competições, que é onde os placares do país estão gravados. */
+  function tomboDoRival(E, outra){
+    if(!outra || !outra.rival) return null;
+    const o = M().torcida(outra.id);
+    const clube = o && o.clubeId;
+    if(!clube) return null;
+    let achado = null;
+    for(const comp of ((E.temporada || {}).competicoes || [])){
+      for(const r of (comp.rodadas || [])){
+        for(const j of (r.jogos || [])){
+          if(j.gc == null || j.gf == null) continue;
+          if(j.c !== clube && j.f !== clube) continue;
+          const seq = (r.semana || 0);
+          if(achado && seq <= achado.semana) continue;
+          const levou = j.c === clube ? j.gf - j.gc : j.gc - j.gf;
+          achado = {semana:seq, levou,
+                    placar: j.c === clube ? `${j.gc} a ${j.gf}` : `${j.gf} a ${j.gc}`};
+        }
+      }
+    }
+    if(!achado || achado.levou < 2) return null;
+    const t = M().time(clube);
+    return {nome:outra.nome, id:outra.id,
+            clube:(t && t.nome) || 'o time deles', placar:achado.placar};
+  }
+
+  /* O RANKING DO JOGO (pedido do dono, 19/09/2026 — sugestão B6 ajustada):
+     a posição de verdade, do ranking nacional que a tela já mostra —
+     não um número inventado pra pergunta. */
+  function nossoRanking(E){
+    const lista = (TO.relacoes.rankingDoPais
+      ? TO.relacoes.rankingDoPais(E) : TO.relacoes.ranking(E)) || [];
+    if(!lista.length) return null;
+    const eu = lista.find(x => x.nossa) ||
+               lista.find(x => x.id === E.torcida.id);
+    if(!eu) return null;
+    const primeiro = lista[0];
+    return {pos:eu.pos, total:lista.length,
+            liderNome:primeiro.nome, liderId:primeiro.id,
+            lider: primeiro.id === E.torcida.id};
+  }
+
   function alvoDaEntrevista(E){
     const outras = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
     if(!outras.length) return null;
@@ -1323,6 +1370,52 @@ TO.feed = (function(){
          ef:{outra:-1, prestigio:0.2}}
       ]})},
 
+    /* B1: o clube deles tomou. Peitar rende MORAL — a rua adora ver a
+       diretoria provocando — e custa relação com eles. A saída amena
+       não faz nada, que é a régua do dono pra toda provocação. */
+    {id:'tombo', grupo:'rua', quando: c => !!c.tombo, monta: c => ({
+      alvo:c.tombo.id,
+      texto:`O ${c.tombo.clube} tomou de ${c.tombo.placar} no fim de semana. `+
+            `Recado pra ${c.tombo.nome}?`,
+      opcoes:[
+        {id:'esfregar', rot:'Esfregar na cara deles, e sem dó',
+         nota:`+3 de moral · piora muito a relação com a ${c.tombo.nome}`,
+         resumo:`esfregou o tombo na cara da ${c.tombo.nome}`,
+         ef:{outra:-2, moralGanho:0.6}},
+        {id:'humor', rot:'Provocar na base do deboche',
+         nota:`+2 de moral · piora a relação com a ${c.tombo.nome}`,
+         resumo:`debochou do tombo da ${c.tombo.nome}`,
+         ef:{outra:-1, moralGanho:0.4}},
+        {id:'nada', rot:'Futebol é assim, não comentar', nota:'sem efeito',
+         resumo:'não comentou o tombo deles', ef:{}}
+      ]})},
+
+    /* B6: a posição no ranking do jogo, lida do ranking de verdade */
+    {id:'ranking', grupo:'rua', quando: c => !!c.ranking, monta: c => ({
+      alvo: c.ranking.lider ? null : c.ranking.liderId,
+      texto: c.ranking.lider
+        ? `Vocês estão em 1º no ranking das organizadas do país. `+
+          'Dá pra dizer que são a maior do Brasil?'
+        : `Saiu o ranking das organizadas: vocês em ${c.ranking.pos}º de `+
+          `${c.ranking.total}, com a ${c.ranking.liderNome} na frente. Satisfeitos?`,
+      opcoes:[
+        {id:'cravar', rot: c.ranking.lider
+           ? 'Cravar: somos a maior do Brasil'
+           : 'Cravar que o ranking está errado, os maiores somos nós',
+         nota:'+3 de moral · piora a relação com quem está na frente',
+         resumo:'cravou que a maior do país é a gente',
+         ef:{outra:-1, moralGanho:0.6}},
+        {id:'raca', rot:'Dizer que número não mede raça', nota:'sem efeito',
+         resumo:'disse que número não mede raça', ef:{}},
+        {id:'reconhecer', rot: c.ranking.lider
+           ? 'Dizer que posição a gente devolve em campo'
+           : `Reconhecer a ${c.ranking.liderNome} na frente`,
+         nota: c.ranking.lider ? 'sem efeito'
+             : `melhora a relação com a ${c.ranking.liderNome}`,
+         resumo:'reconheceu quem está na frente',
+         ef: c.ranking.lider ? {} : {outra:1}}
+      ]})},
+
     {id:'boato', grupo:'rua', monta: () => ({
       texto:'Rolou um boato de que vocês pediram a um aliado pra se '+
             'afastar ou se aproximar de outra torcida. É verdade?',
@@ -1410,8 +1503,10 @@ TO.feed = (function(){
     const ctx = {E, nomeClube, pos, totalClubes, timeMal, brigaRecente,
       outra: alvoDaEntrevista(E),
       coirma: coirmaDaEntrevista(E),
+      ranking: nossoRanking(E),
       virada: viradaDoElenco(E),
       espaco: Math.max(0, TETO_ELOGIO - TO.relacaoClube.nivel(E))};
+    ctx.tombo = tomboDoRival(E, ctx.outra);
     const perguntas = escolherPerguntas(ctx, sa)
       .map(q => Object.assign({id:q.id, resposta:null}, q.monta(ctx)));
     if(!perguntas.length) return;
@@ -1462,6 +1557,11 @@ TO.feed = (function(){
     }
     if(ef.prestigio)
       TO.estado.mexerIndicador(E, 'prestigio', ef.prestigio, `Entrevista: ${rot}`);
+    /* PEITAR SOBE A MORAL (régua do dono, 19/09/2026): a rua gosta de
+       ver a diretoria provocando. É o outro lado da mesma moeda de
+       `moral`, que desce quando a gente passa a mão na cabeça do clube. */
+    if(ef.moralGanho)
+      TO.estado.mexerIndicador(E, 'moral', ef.moralGanho, `Entrevista: ${rot}`);
     /* PASSAR A MÃO NA CABEÇA DO CLUBE CUSTA MORAL
        (pedido do dono, 19/09/2026): os membros querem cobrança, e ver
        o presidente da torcida defendendo o clube no jornal é ficar do
@@ -1495,6 +1595,527 @@ TO.feed = (function(){
                    `−${perdida} de moral.` : '');
     }
     return {ok:true, fechou: perguntas.every(x=>x.resposta)};
+  }
+
+
+  /* =======================================================
+     O NOTICIÁRIO DE PATRIMÔNIO DA CIDADE
+     (pedido do dono, 19/09/2026)
+
+     As IAs SEMPRE compraram bar, loja e subsede — está em
+     `ROTULO_COMPRA`, com extrato e tudo — e SEMPRE tiveram o
+     bar quebrado quando alguém descia nelas. Nada disso
+     aparecia em lugar nenhum: o mundo se mexia em silêncio.
+     Agora cada obra e cada bar quebrado que interessa à gente
+     vira cartão no feed, com duas saídas, na régua do dono:
+
+       AGRESSIVA — provocar, marcar território, exercer a
+       liderança na cidade. Piora a relação com eles e SOBE a
+       moral: a rua gosta de ver a diretoria peitando.
+       AMENA — deixar quieto. Não faz nada, e não custa nada.
+
+     Quem grava é quem faz a obra (`registrarObra`, chamado de
+     relacoes.js, patrimonio.js e acoes.js); quem publica é o
+     `eventosDoDia`, um por dia, do mais novo pro mais velho.
+     A fila é curta de propósito: obra velha não é notícia.
+     ======================================================= */
+  const OBRAS_NA_FILA = 12;
+  /* o que interessa: o que acontece na NOSSA cidade, e o que
+     acontece com quem a gente ama ou odeia, esteja onde estiver */
+  const LIMIAR_INTERESSE = 25;
+
+  const ROT_OBRA = {
+    bar:'um bar novo', loja:'uma loja nova', subsede:'uma subsede nova',
+    filial:'uma subsede em outra cidade', sede:'a ampliação da sede',
+    'ampliar:bar':'a ampliação do bar', 'ampliar:loja':'a ampliação da loja',
+    'ampliar:subsede':'a ampliação da subsede',
+    'ampliar:filial':'a ampliação da subsede de fora',
+    fabrica:'uma fábrica de material'
+  };
+
+  /* o mundo avisa daqui: `tipo` é 'obra' ou 'bar-quebrado'. Guarda só
+     o que vale notícia pra nós — sem isso a fila encheria de obra de
+     torcida que a gente nunca ouviu falar, em cidade que nunca
+     visitou. */
+  function registrarObra(E, ev){
+    if(!E || !ev || !ev.tipo) return null;
+    E.obrasDaCidade = E.obrasDaCidade || [];
+    E.obrasDaCidade.unshift(Object.assign(
+      {ano:E.data.ano, semana:E.data.semana}, ev));
+    if(E.obrasDaCidade.length > OBRAS_NA_FILA) E.obrasDaCidade.pop();
+    return ev;
+  }
+
+  /* o filtro mora aqui e não em quem chama: quem faz a obra não tem
+     de saber o que é notícia pra nós */
+  function obraInteressa(E, idTorcida){
+    if(!idTorcida || idTorcida === E.torcida.id) return true;
+    const o = M().torcida(idTorcida);
+    if(!o || o.incompleta) return false;
+    const nossa = M().torcida(E.torcida.id);
+    if(nossa && o.cidade === nossa.cidade) return true;
+    return Math.abs(TO.relacoes.nivel(E, idTorcida)) >= LIMIAR_INTERESSE;
+  }
+
+  /* o cartão de uma obra da fila. Quatro rostos, conforme de quem é a
+     obra e o que a gente sente por eles — mas sempre as MESMAS duas
+     saídas, a de peitar e a de deixar quieto. */
+  function cartaoDaObra(E, ev){
+    const nomeDe = id => (M().torcida(id) || {}).nome || 'eles';
+    /* A CIDADE SÓ APARECE QUANDO É A DA OBRA. O palpite de antes caía
+       na cidade-sede da torcida, e uma subsede "em outra cidade"
+       saía anunciada na cidade de onde ela nunca saiu. */
+    const ondeFoi = ev.cidade && TO.financeiro.nomeCidade
+      ? ` em ${TO.financeiro.nomeCidade(ev.cidade)}` : '';
+    /* de quem é a notícia: na obra é quem construiu, no bar quebrado é
+       quem levou. Sem isto o cartão do bar dizia "o bar da eles" e
+       nunca caía no ramo do rival, porque lia relação de ninguém. */
+    const dela = ev.torcida || ev.dono;
+    const rel = dela ? TO.relacoes.nivel(E, dela) : 0;
+    const aliada = rel >= LIMIAR_INTERESSE;
+    const rival  = rel <= -LIMIAR_INTERESSE;
+    const nome = nomeDe(dela);
+    const item = ROT_OBRA[ev.item] || 'uma obra nova';
+
+    /* --------- A4: quebraram o NOSSO bar --------- */
+    if(ev.tipo === 'bar-quebrado' && ev.dono === E.torcida.id){
+      const quem = ev.atacante ? nomeDe(ev.atacante) : 'um bonde';
+      return {
+        chave:`obra|nosso-bar|${ev.ano}|${ev.semana}|${ev.atacante||'x'}`,
+        voz:'na rua',
+        texto:`Quebraram o nosso bar. Foi a ${quem}, e a cidade inteira `+
+              'já sabe. O que a gente responde?',
+        alvo:ev.atacante,
+        bravo:{rot:'Prometer resposta na porta deles',
+               dica:'+3 de moral · piora muito a relação com eles',
+               moral:0.6, relacao:-12},
+        ameno:{rot:'Levantar o bar e não dar notícia',
+               dica:'sem efeito'}
+      };
+    }
+
+    /* --------- A3: quebraram o bar DELES --------- */
+    if(ev.tipo === 'bar-quebrado'){
+      const quem = ev.atacante ? nomeDe(ev.atacante) : 'alguém';
+      if(rival) return {
+        chave:`obra|bar-rival|${ev.ano}|${ev.semana}|${ev.dono}`,
+        voz:'na rua',
+        texto:`O bar da ${nome} amanheceu quebrado — foi a ${quem} que `+
+              'desceu lá. A cidade quer saber o que a gente acha.',
+        alvo:ev.dono,
+        bravo:{rot:'Tirar onda: bem feito, e que venha mais',
+               dica:'+2 de moral · piora muito a relação com a '+nome,
+               moral:0.4, relacao:-12},
+        ameno:{rot:'Não comentar bar dos outros', dica:'sem efeito'}
+      };
+      return {
+        chave:`obra|bar-terceiro|${ev.ano}|${ev.semana}|${ev.dono}`,
+        voz:'na rua',
+        texto:`Quebraram o bar da ${nome} aqui na cidade — coisa da `+
+              `${quem}. Perguntaram se a gente entra nessa.`,
+        alvo:ev.dono,
+        bravo:{rot:'Dizer que quem manda na cidade somos nós',
+               dica:'+2 de moral · piora a relação com as duas',
+               moral:0.4, relacao:-8, tambem:ev.atacante, relacaoTambem:-8},
+        ameno:{rot:'Ficar de fora', dica:'sem efeito'}
+      };
+    }
+
+    /* --------- A5: a obra é NOSSA --------- */
+    if(ev.torcida === E.torcida.id) return {
+      chave:`obra|nossa|${ev.ano}|${ev.semana}|${ev.item}`,
+      voz:'na rua',
+      texto:`Ficou pronta ${item} da gente. Inaugura como?`,
+      bravo:{rot:'Inaugurar com a cidade inteira sabendo',
+             dica:'+2 de moral · +3 de relação com o clube · '+
+                  'piora com quem não gosta da gente',
+             moral:0.4, clube:3, rivais:-6},
+      ameno:{rot:'Abrir a porta sem alarde', dica:'sem efeito'}
+    };
+
+    /* --------- A6: a obra é da ALIADA --------- */
+    if(aliada) return {
+      chave:`obra|aliada|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
+      voz:'diplomacia',
+      texto:`A ${nome} inaugurou ${item}${ondeFoi}. Mandamos recado?`,
+      alvo:ev.torcida,
+      /* com aliada o "agressivo" não é contra ela: é subir no palco
+         junto e transformar a festa dela em demonstração de força
+         das duas — quem se incomoda é o resto da cidade */
+      bravo:{rot:'Descer lá em peso e fazer a festa virar recado',
+             dica:'+2 de moral · melhora com a '+nome+' · piora com os rivais',
+             moral:0.4, relacao:+8, rivais:-6},
+      ameno:{rot:'Mandar um parabéns e ficar por isso', dica:'sem efeito'}
+    };
+
+    /* --------- A1 e A2: a obra é do RIVAL ou de um vizinho --------- */
+    const fora = ev.item === 'filial' || ev.item === 'ampliar:filial';
+    return {
+      chave:`obra|outros|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
+      voz:'na rua',
+      texto: fora
+        ? `A ${nome} abriu ${item}${ondeFoi}. Eles estão crescendo pro `+
+          'nosso lado.'
+        : `A ${nome} inaugurou ${item} aqui na cidade.`,
+      alvo:ev.torcida,
+      bravo:{rot: fora
+               ? 'Avisar que aquela cidade tem dono'
+               : 'Zoar a inauguração e marcar território',
+             dica:'+2 de moral · piora a relação com a '+nome,
+             moral:0.4, relacao: fora ? -12 : -8},
+      ameno:{rot:'Deixar quieto', dica:'sem efeito'}
+    };
+  }
+
+  /* um cartão por dia, do mais novo pro mais velho */
+  function obraDeHoje(E){
+    const fila = E.obrasDaCidade || [];
+    if(!fila.length) return;
+    const ev = fila.shift();
+    const c = cartaoDaObra(E, ev);
+    if(!c) return;
+    propor(E, {
+      kind:'obra', peso:'decisao', voz:c.voz, chave:c.chave, texto:c.texto,
+      dados:{alvo:c.alvo, bravo:c.bravo, ameno:c.ameno},
+      botoes:[
+        {id:'bravo', rot:c.bravo.rot, dica:c.bravo.dica, acao:'obra'},
+        {id:'ameno', rot:c.ameno.rot, dica:c.ameno.dica, acao:'obra'}
+      ]
+    });
+  }
+
+  /* PEITAR SOBE A MORAL E DERRUBA A RELAÇÃO (régua do dono,
+     19/09/2026). A opção amena não faz nada de propósito: é o preço
+     de não fazer nada, que é zero — quem quiser moral, paga com
+     relação. */
+  function responderObra(E, m, idBotao){
+    const d = m.dados || {};
+    const ef = idBotao === 'bravo' ? d.bravo : d.ameno;
+    if(!ef){ m.consequencia = 'Deixamos passar.'; return; }
+    if(idBotao !== 'bravo'){
+      m.consequencia = 'Deixamos quieto. Nada mudou.';
+      return;
+    }
+    const partes = [];
+    if(ef.moral){
+      TO.estado.mexerIndicador(E, 'moral', ef.moral, 'Peitou a cidade');
+      partes.push(`+${Math.round(ef.moral*5)} de moral`);
+    }
+    if(ef.clube && TO.relacaoClube){
+      const r = TO.relacaoClube.mexer(E, ef.clube, 'Inauguração com a cidade toda');
+      if(r) partes.push(`+${r} de relação com o clube`);
+    }
+    const mexer = (id, quanto)=>{
+      if(!id || !quanto) return;
+      E.relacoes = E.relacoes || {};
+      E.relacoes[id] = U.limitar(
+        TO.relacoes.nivel(E, id) + quanto, -100, 100);
+    };
+    if(ef.relacao && d.alvo){
+      mexer(d.alvo, ef.relacao);
+      const nm = (M().torcida(d.alvo) || {}).nome || 'eles';
+      partes.push(`${ef.relacao > 0 ? '+' : ''}${ef.relacao} com a ${nm}`);
+    }
+    if(ef.tambem && ef.relacaoTambem){
+      mexer(ef.tambem, ef.relacaoTambem);
+      const nm = (M().torcida(ef.tambem) || {}).nome || 'eles';
+      partes.push(`${ef.relacaoTambem} com a ${nm}`);
+    }
+    /* "OS RIVAIS" SÃO OS DA NOSSA CIDADE (correção, 19/09/2026): a
+       primeira versão pegava todo rival do país e uma inauguração de
+       subsede piorava a relação com 59 torcidas de uma vez. Desfile
+       na rua é recado pra quem mora na rua — o resto do Brasil nem
+       fica sabendo. */
+    if(ef.rivais){
+      let n = 0;
+      const nossa = M().torcida(E.torcida.id);
+      for(const o of M().jogaveis()){
+        if(o.id === E.torcida.id || o.incompleta) continue;
+        if(!nossa || o.cidade !== nossa.cidade) continue;
+        if(TO.relacoes.nivel(E, o.id) > -LIMIAR_INTERESSE) continue;
+        mexer(o.id, ef.rivais); n++;
+      }
+      if(n) partes.push(`${ef.rivais} com ${n} ${n===1?'rival':'rivais'}`);
+    }
+    m.consequencia = 'Fomos pra cima: ' + partes.join(' · ') + '.';
+  }
+
+
+  /* =======================================================
+     O VEREDICTO DA COMPETIÇÃO (régua do dono, 19/09/2026)
+
+     Assim que a participação do clube numa competição acaba
+     — não no fim do ano, no DIA em que acaba —, a torcida
+     julga a campanha contra o que se esperava dela.
+
+     O ESPERADO é a força do elenco: `TO.competicoes.porForca`
+     ordena os participantes do mais forte pro mais fraco, e a
+     posição do clube nessa fila é a posição que a rua esperava.
+     3º elenco mais forte esperava 3º lugar.
+
+     DEU RUIM quando:
+       · terminou 8 posições ou mais abaixo do esperado;
+       · foi REBAIXADO (automático, sem olhar o esperado);
+       · caiu na copa pra um time 8 ou mais de força ABAIXO.
+     DEU BOM quando:
+       · terminou 8 posições ou mais acima do esperado;
+       · foi CAMPEÃO ou PROMOVIDO (automático).
+
+     O cartão ruim é um protesto na porta do CT, e as duas
+     saídas doem: ir custa relação com o clube e SOBE a moral;
+     não ir só derruba a moral — a relação você preserva, e é
+     esse o prêmio de segurar a rua. O cartão bom é uma festa
+     que custa dinheiro e devolve caixa e moral.
+     ======================================================= */
+  const QUEDA_QUE_DOI  = 8;     // posições abaixo do esperado
+  const SUBIDA_QUE_ANIMA = 8;   // e acima
+  const FORCA_ZEBRA    = 8;     // força a menos do time que nos eliminou
+  const FESTA_CUSTO    = 10000;
+  const FESTA_MIN      = 9000;
+  const FESTA_MAX      = 16000;
+  const FESTA_MORAL    = 1.0;   // +5 na régua que a tela mostra
+
+  const temPlacar = j => j && j.gc !== undefined && j.gc !== null;
+
+  /* "do Mineiro" mas "da Copa do Nordeste", e "nas Quartas" mas "na
+     Final": a régua é a MESMA do jornal (`dArt` e `naFase`, em
+     gazeta.js:38-47), copiada porque lá elas são locais. Se uma das
+     duas mudar, a outra tem de mudar junto. */
+  const dComp = n => !n ? 'da competição'
+    : (/^(Copa|Taça|Série)/i.test(n) ? `da ${n}` : `do ${n}`);
+  const naFaseF = f => {
+    const b = String(f || '').toLowerCase();
+    if(!b) return 'fora';
+    if(b === 'grupos') return 'na fase de grupos';
+    return (/s$/.test(b) ? 'nas ' : 'na ') + b;
+  };
+
+  /* o torneio de verdade por trás da competição-sombra da agenda: a
+     chave da Conmebol mora em `E.conmebol`, e o `campeao` da sombra
+     é o vencedor do NOSSO confronto, não o do torneio */
+  function torneioReal(E, comp){
+    if(comp.id === 'libertadores-de-fora') return (E.conmebol||{}).libertadores;
+    if(comp.id === 'sulamericana-de-fora') return (E.conmebol||{}).sulamericana;
+    return null;
+  }
+
+  /* a participação do clube acabou? e terminando como? Devolve null
+     enquanto ainda há o que jogar. */
+  function desfechoDaCompeticao(E, comp){
+    const meu = E.torcida.clubeId;
+    const C = TO.competicoes;
+    const real = torneioReal(E, comp);
+
+    /* --- o que a rua esperava: a fila de força ---
+       O ESPERADO SE MEDE NO MESMO UNIVERSO DA POSIÇÃO (correção,
+       19/09/2026): num estadual de grupos, a posição final é dentro do
+       grupo e a fila de força era da competição inteira — 4º de 5 no
+       grupo contra "3º elenco de 20" não é comparação, é ruído. */
+    const grupoNosso = (comp.grupos && comp.grupos.length > 1)
+      ? comp.grupos.find(g => g.includes(meu)) : null;
+    let fila = C.porForca(E, comp) || [];
+    if(grupoNosso) fila = fila.filter(x => grupoNosso.includes(x.id));
+    const iEsperado = fila.findIndex(x => x.id === meu);
+    if(iEsperado < 0) return null;            // o clube nem joga isto
+    const esperado = iEsperado + 1;
+
+    /* --- mata-mata: caímos? --- */
+    for(let i = (comp.mata || []).length - 1; i >= 0; i--){
+      const m = comp.mata[i];
+      const j = (m.jogos || []).find(x => x.c === meu || x.f === meu);
+      if(!j || !j.venceu) continue;
+      if(j.venceu === meu) break;             // essa a gente passou
+      const algoz = j.venceu === j.c ? j.c : j.f;
+      /* A COLOCAÇÃO NUM MATA-MATA é quanta gente ainda estava VIVA
+         quando a gente caiu — não quanta já tinha caído. A primeira
+         versão somava os eliminados e dava a conta ao contrário:
+         perder a FINAL da Copa do Brasil virava "107º lugar com o 4º
+         elenco" e a torcida ia protestar por ter sido vice. Quem cai
+         quando só restam dois é o 2º; quem cai na primeira fase é o
+         último. A linha da ida não tem `venceu`, então o mesmo
+         confronto não conta duas vezes. */
+      const caidos = new Set();
+      for(let k = 0; k < i; k++)
+        for(const x of (comp.mata[k].jogos || [])){
+          if(!x.venceu || !x.f) continue;
+          caidos.add(x.venceu === x.c ? x.f : x.c);
+        }
+      /* na fila de força da copa entram todos os inscritos; a
+         colocação tem de ser lida contra esse mesmo total */
+      const filaToda = grupoNosso ? (C.porForca(E, comp) || []) : fila;
+      const esperadoNaCopa = Math.max(1,
+        filaToda.findIndex(x => x.id === meu) + 1);
+      return {tipo:'mata', esperado:esperadoNaCopa, total:filaToda.length,
+              posicao:Math.max(1, filaToda.length - caidos.size),
+              algoz, fase:(m.fase || '').replace(/ · (ida|volta)$/, ''),
+              forcaAlgoz:C.forcaDe(E, algoz), forcaNossa:C.forcaDe(E, meu)};
+    }
+
+    /* --- campeão --- */
+    const campeao = real ? real.campeao : comp.campeao;
+    if(campeao === meu)
+      return {tipo:'titulo', esperado, total:fila.length, campeao:true};
+
+    /* --- liga de pontos corridos: a última rodada foi jogada? --- */
+    if(!comp.copa && (comp.rodadas || []).length){
+      const faltou = comp.rodadas.some(r =>
+        (r.jogos || []).some(x => (x.c === meu || x.f === meu) && !temPlacar(x)));
+      if(faltou) return null;
+      const pos = C.posicaoNaTabela(E, comp.id, meu);
+      if(!pos) return null;
+      const t = C.emJogo(comp) || {sobem:0, caem:0};
+      const nTab = (comp.grupos && comp.grupos.length > 1)
+        ? (comp.grupos.find(g => g.includes(meu)) || comp.clubes).length
+        : (comp.clubes || []).length;
+      return {tipo:'liga', esperado, total:fila.length, posicao:pos, nTab,
+              rebaixado: !!(t.caem && pos > nTab - t.caem),
+              promovido: !!(t.sobem && pos <= t.sobem)};
+    }
+    return null;
+  }
+
+  /* o julgamento em si: 'ruim', 'bom' ou nada */
+  function julgarCampanha(d){
+    if(!d) return null;
+    if(d.tipo === 'titulo') return {lado:'bom', motivo:'título'};
+    if(d.tipo === 'liga'){
+      if(d.rebaixado) return {lado:'ruim', motivo:'rebaixamento'};
+      if(d.promovido) return {lado:'bom', motivo:'acesso'};
+      if(d.posicao - d.esperado >= QUEDA_QUE_DOI)
+        return {lado:'ruim', motivo:`${d.posicao}º com elenco de ${d.esperado}º`};
+      if(d.esperado - d.posicao >= SUBIDA_QUE_ANIMA)
+        return {lado:'bom', motivo:`${d.posicao}º com elenco de ${d.esperado}º`};
+      return null;
+    }
+    if(d.tipo === 'mata'){
+      /* A ZEBRA TEM DE SER PRECOCE (palavra do dono): cair pra time
+         muito mais fraco é fracasso, mas PERDER A FINAL não é cair
+         cedo — é chegar lá. Vice não vai pra porta do CT, mesmo que o
+         campeão fosse mais fraco no papel. Da semifinal pra trás,
+         vale. */
+      if(d.posicao > 2 && d.forcaNossa - d.forcaAlgoz >= FORCA_ZEBRA)
+        return {lado:'ruim', motivo:'zebra'};
+      if(d.posicao - d.esperado >= QUEDA_QUE_DOI)
+        return {lado:'ruim', motivo:`${d.posicao}º com elenco de ${d.esperado}º`};
+      if(d.esperado - d.posicao >= SUBIDA_QUE_ANIMA)
+        return {lado:'bom', motivo:`${d.posicao}º com elenco de ${d.esperado}º`};
+      return null;
+    }
+    return null;
+  }
+
+  /* o cartão ruim: protesto na porta do CT, e nenhuma saída é de graça */
+  function cartaoDeFracasso(E, comp, d, jd){
+    const nm = id => (M().time(id) || {}).nome || 'eles';
+    const clube = nm(E.torcida.clubeId);
+    let texto;
+    if(jd.motivo === 'rebaixamento')
+      texto = `Acabou: o ${clube} está rebaixado. A rua está em pedaços.`;
+    else if(jd.motivo === 'zebra')
+      texto = `Caímos ${naFaseF(d.fase)} ${dComp(comp.nome)} pro ${nm(d.algoz)}, `+
+              `que tem ${d.forcaNossa - d.forcaAlgoz} de força a menos que a `+
+              'gente. A torcida está possessa.';
+    else if(d.tipo === 'mata')
+      texto = `Caímos ${naFaseF(d.fase)} ${dComp(comp.nome)} pro ${nm(d.algoz)}. `+
+              `Com o ${d.esperado}º elenco da competição, cair aí é pouco, `+
+              'e a rua sabe.';
+    else
+      texto = `Fim ${dComp(comp.nome)}: ${d.posicao}º lugar, com o ${d.esperado}º `+
+              `elenco da competição. Era pra ser muito melhor, e a rua sabe.`;
+    propor(E, {
+      kind:'veredicto', peso:'decisao', voz:'na rua',
+      chave:`veredicto|ruim|${E.data.ano}|${comp.id}`,
+      texto: texto + ' Vamos pra porta do CT?',
+      dados:{lado:'ruim'},
+      botoes:[
+        {id:'protestar', rot:'Encabeçar o protesto no CT',
+         dica:'+5 de moral · −15 de relação com o clube', acao:'veredicto'},
+        {id:'recusar', rot:'Não é hora, a gente segura',
+         dica:'−5 de moral · a relação com o clube fica de pé',
+         acao:'veredicto'}
+      ]
+    });
+  }
+
+  /* o cartão bom: a festa */
+  function cartaoDeFesta(E, comp, d, jd){
+    const clube = (M().time(E.torcida.clubeId) || {}).nome || 'o time';
+    const o = jd.motivo === 'título'
+      ? `CAMPEÃO. O ${clube} levantou a taça ${dComp(comp.nome)}.`
+      : jd.motivo === 'acesso'
+      ? `ACESSO. O ${clube} subiu de divisão.`
+      : d.tipo === 'mata'
+      ? `Caímos ${naFaseF(d.fase)} ${dComp(comp.nome)}, mas com o `+
+        `${d.esperado}º elenco da competição chegar até aí foi muito mais `+
+        'do que a rua esperava.'
+      : `Fim ${dComp(comp.nome)}: ${d.posicao}º lugar com o ${d.esperado}º elenco `+
+        'da competição — muito acima do que a rua esperava.';
+    propor(E, {
+      kind:'veredicto', peso:'decisao', voz:'na rua',
+      chave:`veredicto|bom|${E.data.ano}|${comp.id}`,
+      texto:`${o} A rua quer festa na sede. A gente banca?`,
+      dados:{lado:'bom'},
+      botoes:[
+        {id:'festa', rot:`Fazer a festa (${U.dinheiro(FESTA_CUSTO)})`,
+         dica:`+5 de moral · volta de ${U.dinheiro(FESTA_MIN)} a `+
+              `${U.dinheiro(FESTA_MAX)} em bar, camisa e rifa`,
+         acao:'veredicto'},
+        {id:'sem-festa', rot:'Comemorar sem gastar', dica:'sem efeito',
+         acao:'veredicto'}
+      ]
+    });
+  }
+
+  /* uma vez por competição por ano, no dia em que acaba */
+  function veredictoDeHoje(E){
+    if(!E.temporada) return;
+    E.veredictosVistos = E.veredictosVistos || {};
+    for(const comp of (E.temporada.competicoes || [])){
+      const ch = `${E.data.ano}|${comp.id}`;
+      if(E.veredictosVistos[ch]) continue;
+      const d = desfechoDaCompeticao(E, comp);
+      if(!d) continue;
+      E.veredictosVistos[ch] = true;      // acabou é acabou, julgue ou não
+      const jd = julgarCampanha(d);
+      if(!jd) continue;
+      if(jd.lado === 'ruim') cartaoDeFracasso(E, comp, d, jd);
+      else cartaoDeFesta(E, comp, d, jd);
+    }
+  }
+
+  function responderVeredicto(E, m, idBotao){
+    const RC = TO.relacaoClube;
+    if(idBotao === 'protestar'){
+      const r = RC.mexer(E, -15, 'Protesto no CT depois da campanha fracassada');
+      TO.estado.mexerIndicador(E, 'moral', 1.0, 'Encabeçou o protesto no CT');
+      m.consequencia = `Fomos pra porta do CT e a rua foi junto. `+
+        `+5 de moral · ${r} de relação com o clube.`;
+      return;
+    }
+    if(idBotao === 'recusar'){
+      /* SEGURAR SÓ CUSTA MORAL (régua do dono): a relação com o clube
+         não sobe — ela apenas não cai, e é esse o prêmio. */
+      TO.estado.mexerIndicador(E, 'moral', -1.0, 'Segurou a torcida depois do fracasso');
+      m.consequencia = 'Seguramos a rua. −5 de moral, e a relação com o '+
+        'clube ficou de pé.';
+      return;
+    }
+    if(idBotao === 'festa'){
+      if(E.dinheiro < FESTA_CUSTO){
+        m.consequencia = 'Não deu: faltou caixa pra bancar a festa.';
+        return;
+      }
+      TO.estado.lancar(E, 'Festa da campanha', -FESTA_CUSTO);
+      const volta = Math.round(FESTA_MIN + U.rng() * (FESTA_MAX - FESTA_MIN));
+      TO.estado.lancar(E, 'Festa da campanha: bar, camisa e rifa', volta);
+      TO.estado.mexerIndicador(E, 'moral', FESTA_MORAL, 'Festa da campanha');
+      const saldo = volta - FESTA_CUSTO;
+      m.consequencia = `Festa na sede. Custou ${U.dinheiro(FESTA_CUSTO)} e `+
+        `voltou ${U.dinheiro(volta)} — saldo de ${saldo >= 0 ? '+' : ''}`+
+        `${U.dinheiro(saldo)} · +5 de moral.`;
+      return;
+    }
+    m.consequencia = 'Comemoramos do nosso jeito, sem gastar.';
   }
 
   /* -------------------------------------------------------
@@ -3376,6 +3997,18 @@ TO.feed = (function(){
       case 'nada':
         marcar();
         return {ok:true};
+      /* o noticiário de patrimônio da cidade (dono, 19/09/2026) */
+      case 'obra': {
+        marcar();
+        responderObra(E, m, idBotao);
+        return {ok:true};
+      }
+      /* o veredicto da campanha (dono, 19/09/2026) */
+      case 'veredicto': {
+        marcar();
+        responderVeredicto(E, m, idBotao);
+        return {ok:true};
+      }
       /* O PROTESTO NA PORTA DO CT (pedido do dono, 18/09/2026): duas
          saídas, sem tela própria — cobrar da diretoria custa relação
          com o clube e rende prestígio de rua; segurar a torcida poupa
@@ -3892,5 +4525,7 @@ TO.feed = (function(){
           pautaAproximacao, pautaPaz, pautaAfastar,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu, responderEntrevista, assuntoClubeDeHoje,
-          entrevistaDeHoje, protestoNoCT};
+          entrevistaDeHoje, protestoNoCT,
+          registrarObra, obraInteressa, obraDeHoje,
+          veredictoDeHoje, desfechoDaCompeticao, julgarCampanha};
 })();
