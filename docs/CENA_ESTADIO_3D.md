@@ -243,7 +243,12 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   na outra: a frente delas é sempre na guia, com toldo, porta e placa,
   e ainda sobram 32 de pátio pras mesas na calçada; o FUNDO é que varia
   (até 30 % do vão), então o telhado deixa de ser uma laje só e o muro
-  dos fundos fica recortado. Uma em cada três leva caixa d'água. As
+  dos fundos fica recortado. Uma em cada três leva caixa d'água.
+  São **seis lojas de 6,5 m de frente por 7,9 de fundo**. Eram dez de
+  3,9 m, e dez portas enfileiradas liam como box de camelô, não como o
+  comércio que atende um estádio: a loja engordou, a conta de quantas
+  cabem caiu junto, e com ela vieram porta mais larga, placa maior e
+  mais pé-direito. As
   costas delas são a quarta parede do baldio: vão entre duas lojas
   seria furo pra rua, por isso elas não têm vão nenhum.
   As outras três faces são **muro** (recuado 3 da guia, senão o dizer
@@ -491,7 +496,7 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   **Caminho garantido**: grade de beco é grade — sempre conexa; o
   passeio aleatório da versão anterior fechava anel, prendia mato e o
   conserto comia um terço das casas, e agora o conserto não tira
-  nenhuma. **Contagem**: são **180 casas**.
+  nenhuma. **Contagem**: são **262 casas**.
   **O VÃO É OU NADA OU BECO.** Entre duas casas ou não há folga (0 a
   3, parede com parede) ou há uma viela de 40 pra cima. O meio-termo —
   uma fresta de 10, de 20 — é o que faz célula que ANDA mas que o
@@ -518,6 +523,16 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   é como esse bairro cresce de verdade. Duas dessas réguas entraram
   depois: a varredura de geometria pegou 233 vértices de casa por cima
   de calçada.
+  **E A VIELA DESEMBOCA NA RUA.** Mover a CASA até lá não bastou: o
+  traçado do beco continuava parando onde o MATO parava, então entre a
+  última casa e a rua da cidade sobrava um pedaço de viela sem asfalto,
+  e o bairro lia como coisa largada ao lado do mapa em vez de parte
+  dele. O traçado passou a valer onde a CASA vale — a mesma régua de
+  chão — e a ir UM PONTO PARA DENTRO do asfalto: o traço do beco entra
+  na rua, a rua é pintada por cima depois (ela vem no passo 4 da
+  pintura e o beco no passo 1) e as duas viram uma superfície só. Com
+  folga de 70 na divisa da área, pra alcançar a rua que passa logo fora
+  dela. As 21 vielas desembocam.
   **ELA VAI ATÉ A RUA DE LESTE.** A primeira versão exigia MATO e
   parava no contorno da cidade — sobrava uma língua de areia vazia
   entre a última casa e a rua, que foi o que o dono viu na foto. O que
@@ -585,9 +600,9 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   camada-base marcada uma vez só (elas não mudam quando a favela perde
   uma casa), a borda só semeia quando há tabuleiro do lado de fora, e o
   limite do tabuleiro usa a MESMA comparação que `anda()`, não uma
-  parecida. Ele tira 3 casas e zera: sobram 10 células presas em 17.536
-  (0,06%), e o mapa inteiro fica com 9 — menos do que tinha antes de a
-  favela existir.
+  parecida. Ele tira as que precisa e zera: com 262 casas não sobra
+  NENHUMA célula presa dentro da favela (24.977 de 24.977), e o mapa
+  inteiro fica com 11 — menos do que tinha antes de a favela existir.
 
 A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
 descarta fora do quadro; carros, postes e campos numa malha; moitas em
@@ -706,8 +721,8 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
 - Por andar (células de corpo): rua/cidade 211.000 · corredor 4.371 ·
   vomitório 577 · arquibancada 3.572 · portão 48.
 - Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **37
-  quarteirões · 632 lotes (180 na favela) · 562 moitas · 212 árvores ·
-  72 postes · 55 carros · 1 campo · 8 equipamentos** · 134.311
+  quarteirões · 703 lotes (262 na favela) · 538 moitas · 217 árvores ·
+  72 postes · 53 carros · 1 campo · 8 equipamentos** · 142.849
   triângulos estáticos em 6 pedaços de cidade mais o estádio · 16
   chamadas de desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco

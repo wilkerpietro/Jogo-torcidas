@@ -1284,7 +1284,7 @@ TO.dados.plantaEstadio = (function(){
          frente dele, e encostado na guia ela pendurava sobre a calçada */
       const REC = 3;
       const PAT = 32;                                      // o pátio das mesas, na guia
-      const FUNDO = Math.min(L*0.26, 132);                 // o fundo das lojas
+      const FUNDO = Math.min(L*0.34, 176);                 // o fundo das lojas
       const uL1 = L - PAT, uL0 = uL1 - FUNDO;              // a faixa das lojas, em u
 
       /* ---- A FILEIRA DE BARES E LOJAS ----
@@ -1292,7 +1292,11 @@ TO.dados.plantaEstadio = (function(){
          quarta parede do baldio, e vão entre duas seria furo pra rua. */
       const PA = rx(uL1, L);
       piso(PA.x0, Y0, PA.x1, Y1, '#a8a296');               // a calçada das mesas
-      const nlj = Math.max(6, Math.round(A/88)), wlj = A/nlj;
+      /* LOJA GRANDE, POUCAS. Dez portas de 3,9 m de frente enfileiradas
+         liam como box de camelô, não como o comércio que atende o
+         estádio: agora são seis de 6,5 m de frente por 7,9 de fundo.
+         Menos letreiro e mais prédio. */
+      const nlj = Math.max(4, Math.round(A/155)), wlj = A/nlj;
       /* nome sem repetir na mesma fileira: duas placas iguais lado a
          lado entregam que o letreiro é sorteado */
       const nomes = COMERCIO.slice();
@@ -1304,7 +1308,7 @@ TO.dados.plantaEstadio = (function(){
            como fileira de loja que cresceu uma de cada vez. Varia só
            pra dentro: a fileira continua vedando o baldio. */
         const ub = uL0 + FUNDO*rng()*0.30, lj = rx(ub, uL1);
-        const alt = par8(entre(76, 104));
+        const alt = par8(entre(88, 124));
         p('bloco', { x0: lj.x0, x1: lj.x1, y0, y1, alt,
                      cor: escolher(TIPOS.casa.cor), teto: escolher(['#8f8a80', '#97928a', '#867f74']) });
         /* a caixa d'água em cima de uma sim, outra não — no fundo DESTA
@@ -1317,9 +1321,9 @@ TO.dados.plantaEstadio = (function(){
         const tol = rx(uL1, uL1 + 16), por = rx(uL1 - 1.0, uL1 + 0.4);
         p('marquise', { x0: tol.x0, x1: tol.x1, y0: y0 + 3, y1: y1 - 3, y: 56, alt: 5,
                         cor: i % 2 ? '#c05a3a' : '#2f6a4a' }, false);
-        p('marquise', { x0: por.x0, x1: por.x1, y0: ym - 9, y1: ym + 9, y: 0, alt: 46, cor: '#4a3a2c' }, false);
+        p('marquise', { x0: por.x0, x1: por.x1, y0: ym - 16, y1: ym + 16, y: 0, alt: 46, cor: '#4a3a2c' }, false);
         p('letreiro', { x: ux(uL1), y: ym, ox: ofora, oz: 0, texto: nomes[i % nomes.length], placa: true,
-                        larg: Math.min(wlj - 14, 118), altura: 16, base: 62 }, false);
+                        larg: Math.min(wlj - 20, 152), altura: 20, base: 66 }, false);
         /* as mesas na calçada: é o que faz o bar em dia de jogo */
         if(i % 2 === 0) p('banco', Object.assign({}, ret(ux(uL1 + 19), ym, 20, 11)), false);
       }
@@ -1919,7 +1923,7 @@ TO.dados.plantaEstadio = (function(){
      de mato livre mais larga que sobra DENTRO do tabuleiro, na beira
      oeste, longe da estrada que a avenida faz por ali (e das casas
      de beira dela) e do campo/baldio ao sul. */
-  const AREA_FAV = { x0:8, x1:960, y0:140, y1:2500 };
+  const AREA_FAV = { x0:8, x1:1120, y0:90, y1:2700 };
   /* a folga de 48 é porque a casa pode passar um pouco da divisa da
      área (a divisa é contabilidade minha; o que manda de verdade é o
      mato, o asfalto e a borda do tabuleiro) — e moita nenhuma pode
@@ -2388,8 +2392,8 @@ TO.dados.plantaEstadio = (function(){
       }
       return { faixas, becos };
     }
-    const CU = cortes(RAIO, 400, 700, 38, 46);     // a quadra comprida, no sentido da faixa
-    const CV = cortes(RAIO, 96, 140, 38, 46);      // e a travessa
+    const CU = cortes(RAIO, 500, 850, 34, 42);     // a quadra comprida, no sentido da faixa
+    const CV = cortes(RAIO, 92, 132, 34, 42);      // e a travessa
 
     /* O BECO VIRA LINHA NO CHÃO, recortada: a reta inteira atravessaria
        o mapa, e o que interessa é só o pedaço que cai na favela */
@@ -2398,9 +2402,27 @@ TO.dados.plantaEstadio = (function(){
       let atual = null;
       for(let i=0;i<=N;i++){
         const t = i/N, x = pa[0] + (pb[0]-pa[0])*t, y = pa[1] + (pb[1]-pa[1])*t;
-        const bom = x > AREA_FAV.x0 && x < AREA_FAV.x1 && y > AREA_FAV.y0 && y < AREA_FAV.y1 &&
-                    zona(x, y) === 'mato' && !noAsfalto(x, y);
-        if(bom){ if(!atual){ atual = []; FAVELA_RUAS.push(atual); } atual.push([x, y]); }
+        /* A VIELA TEM DE DESEMBOCAR NA RUA. Antes ela parava onde o
+           MATO parava — e a casa, que aceita terreno aberto, ia bem
+           além disso: sobrava um pedaço de viela sem asfalto entre a
+           última casa e a rua da cidade, e o bairro lia como coisa
+           solta largada ao lado do mapa. Agora ela vale onde a CASA
+           vale (a mesma régua de chão), e vai UM PONTO PARA DENTRO do
+           asfalto: o traço do beco entra na rua, a rua é pintada por
+           cima depois, e as duas viram uma só. A folga de 70 na divisa
+           da área é pra alcançar a rua que passa logo fora dela. */
+        const F = 70;
+        const dentro = x > AREA_FAV.x0 - F && x < AREA_FAV.x1 + F &&
+                       y > AREA_FAV.y0 - F && y < AREA_FAV.y1 + F;
+        const z = zona(x, y), cel = celulaEm(x, y);
+        const chao = dentro && z !== 'mar' && z !== 'praia' && z !== 'orla' &&
+                     !(cel && (cel.tipo === 'quadra' || cel.tipo === 'campo'));
+        if(chao && noAsfalto(x, y)){          // encostou na rua: emenda e fecha
+          if(atual) atual.push([x, y]);
+          atual = null;
+          continue;
+        }
+        if(chao){ if(!atual){ atual = []; FAVELA_RUAS.push(atual); } atual.push([x, y]); }
         else atual = null;
       }
     }
@@ -2418,7 +2440,7 @@ TO.dados.plantaEstadio = (function(){
     function fileira(u0, u1, vc, fundo, vf){
       let u = u0;
       while(u < u1 - 32){
-        let frente = Math.min(par8(entreFav(44, 70)), u1 - u);
+        let frente = Math.min(par8(entreFav(42, 66)), u1 - u);
         if(u1 - u - frente < 32) frente = u1 - u;
         if(frente < 32) break;
         /* a casa torta de um grau ou dois: fileira de favela não é
