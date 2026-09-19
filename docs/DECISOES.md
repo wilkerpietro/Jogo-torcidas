@@ -7470,14 +7470,39 @@ O caso do meio não existia no cartão antigo e é o que mais denunciava o probl
 
 | De quem é a obra | O que sai |
 |---|---|
-| **Nossa** | Decisão: inaugurar com a cidade sabendo, ou sem alarde |
-| **Aliada, na nossa praça** | Decisão: descer lá em peso, ou mandar parabéns |
+| **Nossa** | ~~Decisão~~ → **notícia** (dono, na mensagem seguinte) |
+| **Aliada, na nossa praça** | ~~Decisão~~ → **notícia** (idem) |
 | **Qualquer outra torcida da praça** | **Notícia** do Futebol e Porrada, sem botão |
 | **Qualquer torcida fora da praça** | Nada |
 
-*A restrição da aliada é decisão minha, por extensão da régua do dono — ele falou do cartão do vizinho, não do da aliada. Se ele quiser a aliada de fora de volta, é uma condição só.*
+*A restrição da aliada foi decisão minha, por extensão da régua do dono. Ele respondeu fechando a régua de vez: obra não é decisão de ninguém — ver a seção abaixo.*
 
 **Medido** (Playwright, temporada inteira, 0 erros no `avancarDia`): de **13 cartões de obra no ano (8 de decisão)** para **4, todos notícia**. Nos testes dirigidos: vizinho da praça gera notícia nos seis tipos com verbo e nada no ônibus; rival de fora não gera nada; aliada de fora não gera nada; aliada da praça (TUP) gera a decisão; a nossa obra segue decisão; e a fila com obra de fora na frente não trava — publica a de dentro.
+
+## Obra não é decisão de ninguém (régua do dono, 19/09/2026)
+
+**O pedido, inteiro.** "Obra nossa, aliada ou qualquer outra torcida da praça sai só notícia."
+
+O dono tinha mandado transformar em notícia o cartão do vizinho; eu estendi pra aliada de fora e deixei de pé dois ramos de decisão — a obra nossa ("inaugura como?") e a da aliada da praça ("mandamos recado?"). Ele fechou a régua: **não sobra decisão nenhuma**.
+
+**E é o certo, por um motivo que eu devia ter visto.** Obra é fato consumado. A nossa já foi paga e construída na tela de patrimônio — quando a notícia sai, a porta está aberta há dias. A dos outros a gente nem opinou. Perguntar depois "inaugura como?" era inventar uma escolha em cima de coisa já feita: o custo já saiu do caixa, o prédio já está no mapa, e o único efeito do clique era um bônus de moral pendurado num evento que não dependia dele. O Futebol e Porrada noticia, inclusive a nossa — é o jornal da praça falando da praça.
+
+**A régua final, sem exceção:**
+
+| De quem é a obra | O que sai |
+|---|---|
+| Nossa | Notícia |
+| Aliada da praça | Notícia |
+| Qualquer outra torcida da praça | Notícia |
+| Qualquer torcida **fora** da praça | Nada |
+
+**Dois cuidados no caminho.**
+
+*O filtro subiu pra porta de entrada.* Obra de torcida de fora não vira linha nenhuma, e deixá-la entrar só gastava vaga na fila de 12 — podia empurrar pra fora uma obra daqui antes de ela ser publicada. `registrarObra` passou a recusar obra de fora da praça na hora de gravar. Bar quebrado continua entrando de qualquer lugar: quem lê aquilo é a entrevista, e lá a aliada de outro estado ainda interessa.
+
+*`responderObra` ficou vivo de propósito.* O cartão de obra nasceu como decisão e virou notícia no MESMO dia — mas um save feito no meio do caminho pode ter um cartão de obra ainda aberto, e **cartão de decisão sem resposta trava o relógio**. Apagar o `case 'obra'` congelaria esse save. O caso e a função ficam de pé só pra isso, comentados; código novo não gera mais cartão de obra com botão. Saiu junto a tabela `ROT_OBRA`, essa sim sem nenhum leitor.
+
+**Medido** (Playwright, temporada inteira, 0 erros no `avancarDia`): **5 cartões de obra no ano, 5 notícias, 0 decisões**. Nos testes dirigidos: vizinho, aliada da praça e a nossa torcida saem todos como `peso:'info'`, voz `porrada`, zero botões; rival e aliada de fora não geram nada; ônibus não vira notícia; a fila não trava atrás de obra de fora.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

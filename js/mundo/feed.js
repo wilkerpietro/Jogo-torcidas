@@ -1708,14 +1708,6 @@ TO.feed = (function(){
     fabrica:'montou uma fábrica de material próprio',
     filial:'abriu uma subsede fora da praça'
   };
-  const ROT_OBRA = {
-    bar:'um bar novo', loja:'uma loja nova', subsede:'uma subsede nova',
-    filial:'uma subsede em outra cidade', sede:'a ampliação da sede',
-    'ampliar:bar':'a ampliação do bar', 'ampliar:loja':'a ampliação da loja',
-    'ampliar:subsede':'a ampliação da subsede',
-    'ampliar:filial':'a ampliação da subsede de fora',
-    fabrica:'uma fábrica de material'
-  };
 
   /* o mundo avisa daqui: `tipo` é 'obra' ou 'bar-quebrado'. Guarda só
      o que vale notícia pra nós — sem isso a fila encheria de obra de
@@ -1724,6 +1716,14 @@ TO.feed = (function(){
   function registrarObra(E, ev){
     if(!E || !ev || !ev.tipo) return null;
     const reg = Object.assign({ano:E.data.ano, semana:E.data.semana}, ev);
+    /* OBRA SÓ DA PRAÇA, JÁ NA PORTA DE ENTRADA (19/09/2026): obra de
+       torcida de fora não vira linha nenhuma, e deixá-la entrar só
+       gastava vaga na fila — 12 lugares — e podia empurrar pra fora
+       uma obra daqui antes de ela ser publicada. O bar quebrado
+       continua entrando de qualquer lugar: quem lê aquilo é a
+       entrevista, e lá a aliada de outro estado ainda interessa. */
+    if(ev.tipo === 'obra' && ev.torcida !== E.torcida.id &&
+       !naPraca(E, ev.torcida)) return null;
     /* duas filas, dois consumidores: obra vira cartão do dia, bar
        quebrado espera o jornalista ligar */
     if(ev.tipo === 'bar-quebrado'){
@@ -1767,75 +1767,29 @@ TO.feed = (function(){
     return Math.abs(TO.relacoes.nivel(E, idTorcida)) >= LIMIAR_INTERESSE;
   }
 
-  /* o cartão de uma obra da fila. Quatro rostos, conforme de quem é a
-     obra e o que a gente sente por eles — mas sempre as MESMAS duas
-     saídas, a de peitar e a de deixar quieto. */
+  /* A LINHA DO JORNAL SOBRE UMA OBRA DA FILA (régua do dono,
+     19/09/2026: "obra nossa, aliada ou qualquer outra torcida da praça
+     sai só notícia").
+
+     Não sobrou decisão nenhuma aqui, e é o certo: obra é fato
+     consumado. A nossa já foi paga e construída na tela de
+     patrimônio; a dos outros a gente nem opinou. Perguntar depois
+     "inaugura como?" era inventar uma escolha em cima de coisa já
+     feita. O Futebol e Porrada noticia, e ponto — inclusive a nossa,
+     que é o jornal da praça falando da praça. */
   function cartaoDaObra(E, ev){
-    const nomeDe = id => (M().torcida(id) || {}).nome || 'eles';
-    /* A CIDADE SÓ APARECE QUANDO É A DA OBRA. O palpite de antes caía
-       na cidade-sede da torcida, e uma subsede "em outra cidade"
-       saía anunciada na cidade de onde ela nunca saiu. */
+    const nome = (M().torcida(ev.torcida) || {}).nome || 'eles';
+    const v = VERBO_OBRA[ev.item];
+    if(!v) return null;               // item sem notícia (ônibus, bomba…)
+    /* a cidade só aparece quando é a da obra: subsede de fora */
     const ondeFoi = ev.cidade && TO.financeiro.nomeCidade
       ? ` em ${TO.financeiro.nomeCidade(ev.cidade)}` : '';
-    const rel = ev.torcida ? TO.relacoes.nivel(E, ev.torcida) : 0;
-    const aliada = rel >= LIMIAR_INTERESSE;
-    const nome = nomeDe(ev.torcida);
-    const item = ROT_OBRA[ev.item] || 'uma obra nova';
-
-    /* --------- A5: a obra é NOSSA --------- */
-    if(ev.torcida === E.torcida.id) return {
-      chave:`obra|nossa|${ev.ano}|${ev.semana}|${ev.item}`,
-      voz:'na rua',
-      texto:`Ficou pronta ${item} da gente. Inaugura como?`,
-      bravo:{rot:'Inaugurar com a cidade inteira sabendo',
-             dica:'+2 de moral · +3 de relação com o clube · '+
-                  'piora com quem não gosta da gente',
-             moral:0.4, clube:3, rivais:-6},
-      ameno:{rot:'Abrir a porta sem alarde', dica:'sem efeito'}
-    };
-
-    /* --------- A6: a obra é da ALIADA, E NA NOSSA PRAÇA ---------
-       A PRAÇA VALE PRA ALIADA TAMBÉM (correção, 19/09/2026). O dono
-       reclamou da obra do vizinho que virava pergunta; medindo a
-       temporada inteira, o ramo da aliada fazia PIOR — 8 cartões de
-       decisão por ano, quase todos de aliada de outro estado, cada um
-       travando o relógio pra perguntar se a gente vai "descer lá em
-       peso". Descer lá em peso em Goiás não é um clique, é caravana.
-       Fora da praça, obra de terceiro não rende cartão nenhum. */
-    if(aliada && naPraca(E, ev.torcida)) return {
-      chave:`obra|aliada|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
-      voz:'diplomacia',
-      texto:`A ${nome} ${VERBO_OBRA[ev.item] || 'inaugurou uma obra nova'}. `+
-            'Mandamos recado?',
-      alvo:ev.torcida,
-      /* com aliada o "agressivo" não é contra ela: é subir no palco
-         junto e transformar a festa dela em demonstração de força
-         das duas — quem se incomoda é o resto da cidade */
-      bravo:{rot:'Descer lá em peso e fazer a festa virar recado',
-             dica:'+2 de moral · melhora com a '+nome+' · piora com os rivais',
-             moral:0.4, relacao:+8, rivais:-6},
-      ameno:{rot:'Mandar um parabéns e ficar por isso', dica:'sem efeito'}
-    };
-
-    /* --------- A OBRA DOS OUTROS É NOTÍCIA, NÃO DECISÃO ---------
-       (pedido do dono, 19/09/2026). "A Independente inaugurou uma loja
-       nova aqui na cidade" não é pergunta: não há o que responder que
-       mude alguma coisa, e um cartão de decisão por obra de vizinho
-       trava o relógio à toa. Vira linha do Futebol e Porrada, e só
-       sai quando é VERDADE: torcida da NOSSA praça inaugurando de
-       fato. Obra de torcida de fora não vira notícia da nossa praça —
-       nem que seja a maior rival do país. */
-    if(!naPraca(E, ev.torcida)) return null;
-    const v = VERBO_OBRA[ev.item];
-    if(!v) return null;                    // item sem notícia (bomba, ônibus…)
     return {
-      noticia:true,
       chave:`obra|noticia|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
       texto:`A ${nome} ${v}${ev.item === 'filial' ? ondeFoi : ''}.`
     };
   }
 
-  /* um cartão por dia, do mais novo pro mais velho */
   function obraDeHoje(E){
     const fila = E.obrasDaCidade || [];
     /* drena até achar uma que renda cartão: obra de torcida de fora
@@ -1845,19 +1799,8 @@ TO.feed = (function(){
       const ev = fila.shift();
       const c = cartaoDaObra(E, ev);
       if(!c) continue;
-      if(c.noticia){
-        propor(E, {kind:'obra', peso:'info', voz:'porrada',
-                   chave:c.chave, texto:c.texto});
-      } else {
-        propor(E, {
-          kind:'obra', peso:'decisao', voz:c.voz, chave:c.chave, texto:c.texto,
-          dados:{alvo:c.alvo, bravo:c.bravo, ameno:c.ameno},
-          botoes:[
-            {id:'bravo', rot:c.bravo.rot, dica:c.bravo.dica, acao:'obra'},
-            {id:'ameno', rot:c.ameno.rot, dica:c.ameno.dica, acao:'obra'}
-          ]
-        });
-      }
+      propor(E, {kind:'obra', peso:'info', voz:'porrada',
+                 chave:c.chave, texto:c.texto});
       return;
     }
   }
@@ -4074,7 +4017,12 @@ TO.feed = (function(){
       case 'nada':
         marcar();
         return {ok:true};
-      /* o noticiário de patrimônio da cidade (dono, 19/09/2026) */
+      /* SÓ PRA SAVE ANTIGO (19/09/2026): obra virou notícia sem botão
+         no mesmo dia em que nasceu como decisão, mas um save feito
+         no meio do caminho pode ter um cartão de obra ainda aberto —
+         e cartão de decisão sem resposta trava o relógio. O caso e o
+         `responderObra` ficam de pé só pra esses; código novo não
+         gera mais cartão de obra com botão. */
       case 'obra': {
         marcar();
         responderObra(E, m, idBotao);
