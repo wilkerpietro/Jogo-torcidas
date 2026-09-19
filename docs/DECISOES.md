@@ -7291,6 +7291,42 @@ c.vice = f ? (f.venceu === f.c ? f.f : f.c) : null;
 
 **Exportado pro teste.** `TO.feed.entrevistaDeHoje` e `TO.feed.protestoNoCT` entraram na lista de exports, junto de `reuniaoDeHoje`, `eixosDoDia` e as outras geradoras que já eram públicas — dá pra forçar a mensagem no harness sem esperar a cadência mensal cair.
 
+## O elogio tem teto, e a imprensa varia as perguntas (pedido do dono, 19/09/2026)
+
+**Os três pedidos.** "Elogiar o elenco e a diretoria em fase boa dá +9 de relação com o clube em um mês. Isso deixa muito fácil subir a relação. Nerfe esses números." · "Preciso que crie mais perguntas da imprensa pra ficar variando. Ficar sempre o mesmo padrão de perguntas todo mês vai encher o saco do jogador." · "Assim que clicado no botão de escolher a resposta já fica definido, no mesmo padrão de como se responde à ida à festa de aliados hoje em dia, pois fiquei sem entender quando cliquei em um botão se tinha dado certo ou não."
+
+### 1. O nerf, em duas travas
+
+Os números caíram: elogiar a gestão de +5 pra **+2**, elogiar a campanha de +4 pra **+1**. Máximo de +3 por entrevista em vez de +9. As perdas ficaram inteiras — criticar ainda custa −5, −6, −20 —, porque o problema era a subida de graça, não a descida.
+
+Só cortar número não resolvia: +3 por mês ainda é +36 no ano, e leva de 50 a 86 só de falar bonito. Então entrou a segunda trava, que é a de verdade: **elogio não passa de 70**. Daí pra cima — justo a faixa 76–100, a dos benefícios grandes (60% de ingresso, +15% de loja, 20% de caravana) — só presença no estádio sobe, que é a régua que o dono escreveu pro motor. Falar bonito no jornal leva a relação até "boa"; a faixa "ótima" se ganha na arquibancada. *Essa segunda trava é régua do autor: o dono pediu nerf nos números, e o teto é a leitura de "deixa muito fácil subir".*
+
+O botão nunca mente sobre isso: a nota é escrita com a MESMA conta que o clique aplica. Com a relação em 69, "+2 relação" vira **"+1 relação com o clube · elogio só sobe até 70"**; em 70 ou mais, vira **"sem efeito: a relação já passou de 70, e daí pra cima só presença no estádio sobe"**, e a consequência repete o motivo no fim da entrevista.
+
+**Medido** (Playwright, 12 entrevistas seguidas, time bem, elogiando tudo que dava pra elogiar — 26 elogios): relação **50 → 67 no ano inteiro**. Antes eram +9 por mês, +108 no ano, com o teto de 100 estourado antes do meio da temporada. No teste do teto, relação cravada em 70: elogiar quatro vezes deixou em 70.
+
+### 2. O banco de perguntas
+
+Eram quatro perguntas fixas, todo mês, na mesma ordem. Agora há um **banco de 14**, metade sobre o clube e metade sobre a rua, e cada entrevista sorteia **duas de cada** — 21 duplas de clube × 21 de rua = **441 entrevistas diferentes**.
+
+| Sobre o clube (mexem na relação) | Sobre a rua (prestígio e outras torcidas) |
+|---|---|
+| diretoria · temporada · técnico · preço do ingresso · elenco · venda do mando de campo · programa de sócio · a confusão do último jogo\* | a rival ou aliada\* · boato de diplomacia · quantos vocês são · a fama de violenta · faixa de cobrança · a sede · o que a arquibancada prepara |
+
+\* condicionais: a confusão só aparece se houve briga em dia de jogo nas últimas semanas (lido do próprio livro da relação com o clube); a pergunta da rival só se existir alvo.
+
+Duas garantias de variedade: a ordem sai de um hash da chave da entrevista — o mesmo mês sorteia sempre igual, então repintar o feed não troca a pergunta no meio do clique — e as perguntas do mês passado ficam **fora do sorteio** deste mês, quando o banco permite. **Medido**: 12 entrevistas seguidas deram 12 conjuntos distintos, zero repetição consecutiva, e as 14 perguntas apareceram.
+
+**Por dentro.** O despacho era um `if/else` por id de pergunta dentro de `responderEntrevista` — não escala pra 14. Agora cada opção carrega o próprio efeito em `ef` (`{clube, elogio, prestigio, moralSeMal, outra}`) e um `resumo` pra linha de consequência; quem aplica é um laço só. **Pergunta nova virou dado, não código.**
+
+### 3. A resposta fica à vista
+
+O clique parecia não fazer nada, e o motivo era um só: `estadoDaMsg` (main.js) decide se um cartão do feed precisa ser repintado, e a entrevista **não estava na conta**. A lista de aniversários estava (`'aniv-'+respondidas`), a entrevista não — então `atualizarFeed` pulava o cartão e a tela só mudava quando a última pergunta fechava a mensagem inteira. Erro meu, de quando a entrevista foi escrita ontem: copiei a régua dos aniversários pro feed e esqueci de copiá-la pro repinte.
+
+Consertado com a chave `'entr-'+respondidas`. E a régua visual virou a da recepção de aliado, que é o que o dono pediu: a pergunta respondida **mantém os botões à vista** — o escolhido aceso em ouro, os outros apagados a 38% e travados — em vez de trocar tudo por uma etiqueta. O acender é imediato, na mão, antes de qualquer repinte, então quem clicou vê na hora que pegou. CSS novo: uma linha, `.rec-bt:disabled:not(.on){opacity:.38}`, que melhora junto a recepção de aliado, onde os botões travados também pareciam todos clicáveis.
+
+**Medido** (Playwright, cartão real, clique de verdade): antes do clique, três botões vivos; depois, linha marcada como respondida, etiqueta "respondido", botão escolhido em `opacity:1` com borda ouro, os outros dois em `opacity:0.38` e desabilitados, e as outras três perguntas seguem clicáveis.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

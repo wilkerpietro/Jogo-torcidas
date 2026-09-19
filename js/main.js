@@ -1010,6 +1010,15 @@
     : m.kind === 'aniversarios'
       ? 'aniv-'+(((m.dados||{}).lista||[]).filter(x=>x.resposta).length)+
         (m.respondido ? '-fim' : '')
+    /* A ENTREVISTA TAMBÉM (conserto de 19/09/2026): ela responde
+       pergunta por pergunta, igual à lista de aniversários, mas ficou
+       de fora desta conta — o estado não mudava, `atualizarFeed` pulava
+       o cartão e o clique no botão do jornalista não pintava NADA na
+       tela até a última pergunta fechar a mensagem. É o "fiquei sem
+       entender se tinha dado certo" que o dono relatou. */
+    : m.kind === 'entrevista'
+      ? 'entr-'+(((m.dados||{}).perguntas||[]).filter(x=>x.resposta).length)+
+        (m.respondido ? '-fim' : '')
     /* o planejamento de segunda muda por dentro do cartão: a chave
        carrega o que o plano diz, e a aba aberta */
     : m.kind === 'semana'
@@ -2912,8 +2921,16 @@
 
     /* A ENTREVISTA (pedido do dono, 18/09/2026): a mesma régua da
        lista de aniversários — cada pergunta tem a resposta própria,
-       dentro do cartão, e a mensagem só fecha quando as quatro
-       tiverem resposta. */
+       dentro do cartão, e a mensagem só fecha quando todas tiverem
+       resposta.
+
+       A RESPOSTA FICA À VISTA (pedido do dono, 19/09/2026): antes, a
+       pergunta respondida PERDIA os botões e virava uma etiqueta — e
+       como o cartão nem era repintado (ver `estadoDaMsg`), o clique
+       parecia não ter feito nada. Agora é a régua da recepção de
+       aliado: os botões continuam lá, o escolhido acende e todos
+       travam. E o acender é imediato, na mão, antes de qualquer
+       repinte — quem clicou vê na hora que pegou. */
     const perguntasEntrevista = m.kind === 'entrevista' && m.dados && m.dados.perguntas;
     if(perguntasEntrevista && perguntasEntrevista.length){
       const bloco = el('div',{class:'bloco-recepcao bloco-anivs'});
@@ -2922,23 +2939,28 @@
         const opcResp = p.resposta && (p.opcoes||[]).find(x=>x.id===p.resposta);
         linha.appendChild(el('div',{class:'rec-nome', html:
           `<b>${p.texto}</b>`+
-          (opcResp ? ` <span class="tag">${opcResp.rot}</span>` : '')}));
-        if(!p.resposta){
-          const bts = el('div',{class:'rec-botoes'});
-          for(const o of (p.opcoes||[])){
-            const b = el('button',{class:'rec-bt', html:
-              `${o.rot}<small>${o.nota||''}</small>`});
-            b.onclick = ()=>{
-              const r = TO.feed.responderEntrevista(e, m.id, p.id, o.id);
-              if(!r.ok) return;
-              TO.estado.salvar();
-              atualizarFeed(); pintarTopo();
-              if(r.fechou){ redesenhar(); if(!TO.feed.travado(e)) retomarTempo('decisao'); }
-            };
-            bts.appendChild(b);
-          }
-          linha.appendChild(bts);
+          /* a etiqueta diz só "respondido": QUAL foi a resposta está
+             logo abaixo, no botão aceso — repetir o rótulo inteiro aqui
+             quebrava a linha em duas e dizia a mesma coisa duas vezes */
+          (opcResp ? ' <span class="tag">respondido</span>' : '')}));
+        const bts = el('div',{class:'rec-botoes'});
+        for(const o of (p.opcoes||[])){
+          const b = el('button',{class:'rec-bt'+(p.resposta===o.id?' on':''), html:
+            `${o.rot}<small>${o.nota||''}</small>`});
+          b.disabled = !!p.resposta;
+          b.onclick = ()=>{
+            const r = TO.feed.responderEntrevista(e, m.id, p.id, o.id);
+            if(!r.ok) return;
+            /* o retorno visual vem primeiro, sem esperar o repinte */
+            for(const x of bts.children){ x.classList.remove('on'); x.disabled = true; }
+            b.classList.add('on');
+            TO.estado.salvar();
+            atualizarFeed(); pintarTopo();
+            if(r.fechou){ redesenhar(); if(!TO.feed.travado(e)) retomarTempo('decisao'); }
+          };
+          bts.appendChild(b);
         }
+        linha.appendChild(bts);
         bloco.appendChild(linha);
       }
       art.appendChild(bloco);

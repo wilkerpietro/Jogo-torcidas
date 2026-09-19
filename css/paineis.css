@@ -1432,6 +1432,12 @@ table.dados tr.selecionada td{background:#252525}
 .rec-bt.on{border-color:var(--ouro);color:#fff}
 .rec-bt.on small{color:var(--ouro)}
 .rec-bt:disabled{cursor:default}
+/* ESCOLHA FEITA, LINHA TRAVADA (pedido do dono, 19/09/2026): quando a
+   pergunta do jornalista (ou a recepção do aliado) já tem resposta, os
+   botões ficam à vista como registro — mas só o escolhido continua
+   aceso. Sem isto os três pareciam clicáveis do mesmo jeito e não dava
+   pra ver qual tinha sido a resposta. */
+.rec-bt:disabled:not(.on){opacity:.38}
 .msg-abaixo{
   margin-top:5px;font-size:11.5px;color:var(--fraco);
   display:flex;align-items:center;gap:8px;

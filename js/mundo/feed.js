@@ -1044,15 +1044,33 @@ TO.feed = (function(){
   /* -------------------------------------------------------
      A ENTREVISTA (pedido do dono, 18/09/2026)
      Um jornalista de um jornal fictício da cidade liga atrás
-     de posição: diretoria, temporada, uma outra torcida (a
-     partir da relação real — o maior rival, se houver, senão
-     a maior aliada) e um boato de diplomacia. Cada pergunta
-     tem a resposta própria, e a mensagem só fecha quando as
-     quatro estiverem respondidas — a mesma régua da lista de
-     aniversários.
+     de posição. Cada pergunta tem a resposta própria, e a
+     mensagem só fecha quando todas estiverem respondidas — a
+     mesma régua da lista de aniversários.
+
+     AS PERGUNTAS RODAM (pedido do dono, 19/09/2026): eram
+     sempre as mesmas quatro, todo mês, e o dono avisou que
+     isso enche o saco. Agora há um BANCO de perguntas, metade
+     sobre o clube e metade sobre a rua, e cada entrevista
+     sorteia duas de cada — sem repetir o que saiu no mês
+     passado, quando dá. São 8 × 7 no banco: 21 duplas de
+     clube por 21 de rua, 441 entrevistas diferentes.
+
+     O TETO DO ELOGIO (régua do autor, 19/09/2026): o dono
+     mediu +9 de relação por mês só de elogiar diretoria e
+     elenco em fase boa e pediu nerf. Duas travas, não uma:
+     os números caíram (elogio vale 1, 2 ou 3, não 4 e 5) e
+     ELOGIO NÃO PASSA DE 70. Daí pra cima — justo a faixa dos
+     benefícios grandes, 76–100 — só presença no estádio
+     sobe, que é a régua que o dono escreveu pro motor. Falar
+     bonito no jornal leva a relação até "boa"; a faixa
+     "ótima" se ganha na arquibancada. As perdas seguem
+     inteiras: criticar continua custando o que custava.
      ------------------------------------------------------- */
   const JORNAIS_CLUBE = ['Diário da Bola', 'Jornal da Arquibancada',
                          'Rádio Torcida FM'];
+  const TETO_ELOGIO = 70;
+
   function alvoDaEntrevista(E){
     const outras = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
     if(!outras.length) return null;
@@ -1066,6 +1084,230 @@ TO.feed = (function(){
     const alvo = rival ? pior : (melhor && melhor.r >= 20 ? melhor : pior);
     return alvo && {id:alvo.o.id, nome:alvo.o.nome, rival: !!rival};
   }
+
+  /* o efeito de um elogio, e a nota que o botão mostra ANTES do
+     clique — as duas leem o mesmo teto, então a nota nunca promete
+     o que o clique não entrega */
+  const elogio = (n, moralSeMal) => ({clube:n, elogio:true, moralSeMal:moralSeMal||0});
+  function notaElogio(c, n, moralSeMal){
+    const real = Math.min(n, c.espaco);
+    const m = (c.timeMal && moralSeMal) ? ` · −${Math.round(moralSeMal*5)} de moral` : '';
+    return (real > 0
+      ? `+${real} relação com o clube · elogio só sobe até ${TETO_ELOGIO}`
+      : `sem efeito: a relação já passou de ${TETO_ELOGIO}, e daí pra cima `+
+        'só presença no estádio sobe') + m;
+  }
+
+  /* =======================================================
+     O BANCO DE PERGUNTAS
+     `grupo` separa o que mexe na relação com o clube do que é
+     assunto de rua; `quando` tira da roda a pergunta que não
+     faz sentido no mês (não há rival, não houve confusão).
+     Cada opção carrega o próprio efeito em `ef` — quem aplica
+     é um laço só, e pergunta nova é dado, não código.
+     ======================================================= */
+  const PERGUNTAS_ENTREVISTA = [
+    /* ---------------- sobre o clube ---------------- */
+    {id:'diretoria', grupo:'clube', monta: c => ({
+      texto:`O que a torcida acha do trabalho da diretoria do ${c.nomeClube}?`,
+      opcoes:[
+        {id:'elogiar', rot:'Elogiar a gestão', nota:notaElogio(c, 2, 0.6),
+         resumo:'elogiou a gestão', ef:elogio(2, 0.6)},
+        {id:'cobrar', rot:'Cobrar mais investimento', nota:'−5 relação · +1 prestígio',
+         resumo:'cobrou a diretoria', ef:{clube:-5, prestigio:0.2}},
+        {id:'saida', rot:'Pedir a saída da diretoria', nota:'−20 relação · +3 prestígio',
+         resumo:'pediu a saída da diretoria', ef:{clube:-20, prestigio:0.6}}
+      ]})},
+
+    {id:'temporada', grupo:'clube', monta: c => ({
+      texto: c.pos
+        ? `E da temporada? Hoje o ${c.nomeClube} está em ${c.pos}º na tabela.`
+        : `E da temporada do ${c.nomeClube} até aqui?`,
+      opcoes:[
+        {id:'elogiar', rot:'Elogiar a campanha', nota:notaElogio(c, 1, 0.4),
+         resumo:'elogiou a campanha', ef:elogio(1, 0.4)},
+        {id:'criticar', rot:'Criticar duramente', nota:'−6 relação · +1 prestígio',
+         resumo:'criticou a campanha', ef:{clube:-6, prestigio:0.2}},
+        {id:'neutro', rot:'Ficar em cima do muro', nota:'sem efeito',
+         resumo:'ficou em cima do muro', ef:{}}
+      ]})},
+
+    {id:'tecnico', grupo:'clube', monta: c => ({
+      texto: c.timeMal
+        ? `Tem gente pedindo a cabeça do técnico do ${c.nomeClube}. A organizada embarca?`
+        : `E o trabalho do técnico do ${c.nomeClube}?`,
+      opcoes:[
+        {id:'bancar', rot:'Bancar o técnico', nota:notaElogio(c, 2, 0.4),
+         resumo:'bancou o técnico', ef:elogio(2, 0.4)},
+        {id:'demissao', rot:'Pedir a demissão', nota:'−4 relação · +1 prestígio',
+         resumo:'pediu a demissão do técnico', ef:{clube:-4, prestigio:0.2}},
+        {id:'muro', rot:'Quem decide é a diretoria', nota:'sem efeito',
+         resumo:'passou a bola pra diretoria', ef:{}}
+      ]})},
+
+    {id:'ingresso', grupo:'clube', monta: c => ({
+      texto:`O ${c.nomeClube} mexeu no preço do ingresso. A torcida engole?`,
+      opcoes:[
+        {id:'engolir', rot:'Dizer que o clube precisa arrecadar', nota:notaElogio(c, 2, 0.6),
+         resumo:'defendeu o preço do ingresso', ef:elogio(2, 0.6)},
+        {id:'reclamar', rot:'Dizer que é caro pra quem vai sempre',
+         nota:'−5 relação · +1 prestígio',
+         resumo:'reclamou do preço do ingresso', ef:{clube:-5, prestigio:0.2}},
+        {id:'muro', rot:'Não entrar nessa', nota:'sem efeito',
+         resumo:'não entrou na discussão do ingresso', ef:{}}
+      ]})},
+
+    {id:'elenco', grupo:'clube', monta: c => ({
+      texto:`Tem jogador do ${c.nomeClube} que a arquibancada não quer mais. `+
+            'Vocês cobram nome a nome?',
+      opcoes:[
+        {id:'defender', rot:'Defender o elenco inteiro', nota:notaElogio(c, 1, 0.4),
+         resumo:'defendeu o elenco', ef:elogio(1, 0.4)},
+        {id:'cobrar', rot:'Cobrar nome a nome', nota:'−3 relação · +1 prestígio',
+         resumo:'cobrou o elenco nome a nome', ef:{clube:-3, prestigio:0.2}},
+        {id:'muro', rot:'Cobrança é dentro do vestiário', nota:'sem efeito',
+         resumo:'disse que cobrança é dentro do vestiário', ef:{}}
+      ]})},
+
+    {id:'mando', grupo:'clube', monta: c => ({
+      texto:`Corre que o ${c.nomeClube} quer vender mando de campo e jogar longe `+
+            'da cidade. Qual é a posição de vocês?',
+      opcoes:[
+        {id:'apoiar', rot:'Apoiar — o clube precisa do dinheiro', nota:notaElogio(c, 2, 0.6),
+         resumo:'apoiou a venda do mando', ef:elogio(2, 0.6)},
+        {id:'condenar', rot:'Condenar: jogo é aqui', nota:'−5 relação · +2 prestígio',
+         resumo:'condenou a venda do mando', ef:{clube:-5, prestigio:0.3}},
+        {id:'muro', rot:'A torcida vai de qualquer jeito', nota:'sem efeito',
+         resumo:'disse que a torcida vai de qualquer jeito', ef:{}}
+      ]})},
+
+    {id:'socio', grupo:'clube', monta: c => ({
+      texto:`E o programa de sócio do ${c.nomeClube}, como está pra quem é da organizada?`,
+      opcoes:[
+        {id:'apoiar', rot:'Dizer que vale a pena', nota:notaElogio(c, 2, 0.4),
+         resumo:'defendeu o programa de sócio', ef:elogio(2, 0.4)},
+        {id:'criticar', rot:'A mensalidade não cabe no bolso',
+         nota:'−4 relação · +1 prestígio',
+         resumo:'criticou a mensalidade do sócio', ef:{clube:-4, prestigio:0.2}},
+        {id:'muro', rot:'Sem opinião formada', nota:'sem efeito',
+         resumo:'não opinou sobre o sócio', ef:{}}
+      ]})},
+
+    {id:'confusao', grupo:'clube', quando: c => c.brigaRecente, monta: c => ({
+      texto:'Depois da confusão do último jogo a imprensa está em cima. '+
+            'A torcida se explica?',
+      opcoes:[
+        {id:'assumir', rot:'Assumir e prometer paz no estádio',
+         nota:notaElogio(c, 3, 0) + ' · −1 prestígio',
+         resumo:'assumiu a confusão e prometeu paz', ef:{clube:3, elogio:true, prestigio:-0.2}},
+        {id:'provocacao', rot:'Foi provocação, a gente se defendeu',
+         nota:'−3 relação · +2 prestígio',
+         resumo:'disse que foi provocação', ef:{clube:-3, prestigio:0.4}},
+        {id:'silencio', rot:'Não comentar', nota:'sem efeito',
+         resumo:'não comentou a confusão', ef:{}}
+      ]})},
+
+    /* ---------------- sobre a rua ---------------- */
+    {id:'rival', grupo:'rua', quando: c => !!c.outra, monta: c => ({
+      alvo:c.outra.id,
+      texto:`E como está a relação de vocês com a ${c.outra.nome}?`,
+      opcoes:[
+        {id:'paz', rot:`Dizer que está em paz com a ${c.outra.nome}`,
+         nota:'melhora um pouco a relação com ela',
+         resumo:`disse que está em paz com a ${c.outra.nome}`, ef:{outra:1}},
+        {id:'guerra', rot:'Dizer que é rixa de verdade',
+         nota:'piora um pouco a relação com ela · +1 prestígio',
+         resumo:`disse que a rixa com a ${c.outra.nome} é de verdade`,
+         ef:{outra:-1, prestigio:0.2}}
+      ]})},
+
+    {id:'boato', grupo:'rua', monta: () => ({
+      texto:'Rolou um boato de que vocês pediram a um aliado pra se '+
+            'afastar ou se aproximar de outra torcida. É verdade?',
+      opcoes:[
+        {id:'confirmar', rot:'Confirmar', nota:'+1 prestígio · transparência',
+         resumo:'confirmou o boato', ef:{prestigio:0.2}},
+        {id:'negar', rot:'Negar, é balela', nota:'sem efeito',
+         resumo:'negou o boato', ef:{}}
+      ]})},
+
+    {id:'tamanho', grupo:'rua', monta: c => ({
+      texto:'Quantos vocês são hoje? A imprensa sempre chuta um número.',
+      opcoes:[
+        {id:'cravar', rot:`Cravar o número real (${c.membros})`,
+         nota:'transparência · sem efeito',
+         resumo:'cravou o número real da torcida', ef:{}},
+        {id:'inflar', rot:'Inflar o número, impressiona', nota:'+1 prestígio',
+         resumo:'inflou o número da torcida', ef:{prestigio:0.2}},
+        {id:'recusar', rot:'Não dar número nenhum', nota:'sem efeito',
+         resumo:'não deu número', ef:{}}
+      ]})},
+
+    {id:'fama', grupo:'rua', monta: () => ({
+      texto:'O jornal quer falar da fama de violenta que a organizada carrega. '+
+            'Como a gente responde?',
+      opcoes:[
+        {id:'negar', rot:'Negar: a gente é festa', nota:'sem efeito',
+         resumo:'negou a fama de violenta', ef:{}},
+        {id:'defesa', rot:'A gente só se defende', nota:'+1 prestígio',
+         resumo:'disse que a torcida só se defende', ef:{prestigio:0.2}},
+        {id:'assumir', rot:'Assumir: somos o que somos',
+         nota:'+2 prestígio · −3 relação com o clube',
+         resumo:'assumiu a fama de violenta', ef:{prestigio:0.4, clube:-3}}
+      ]})},
+
+    {id:'faixa', grupo:'rua', monta: c => ({
+      texto:`Vão levar faixa de cobrança pro próximo jogo do ${c.nomeClube}?`,
+      opcoes:[
+        {id:'sim', rot:'Vamos, e bem grande', nota:'+2 prestígio · −3 relação com o clube',
+         resumo:'prometeu faixa de cobrança', ef:{prestigio:0.4, clube:-3}},
+        {id:'nao', rot:'Não, o momento é de apoiar', nota:notaElogio(c, 1, 0.6),
+         resumo:'descartou a faixa de cobrança', ef:elogio(1, 0.6)},
+        {id:'talvez', rot:'Depende do que acontecer em campo', nota:'sem efeito',
+         resumo:'deixou a faixa em aberto', ef:{}}
+      ]})},
+
+    {id:'sede', grupo:'rua', monta: () => ({
+      texto:'E a sede da organizada — como anda a casa?',
+      opcoes:[
+        {id:'convidar', rot:'Abrir a casa pra quem quiser conhecer', nota:'+1 prestígio',
+         resumo:'abriu a sede pra imprensa', ef:{prestigio:0.2}},
+        {id:'fechar', rot:'É coisa nossa, sem visita', nota:'sem efeito',
+         resumo:'disse que a sede é coisa nossa', ef:{}}
+      ]})},
+
+    {id:'arquibancada', grupo:'rua', monta: c => ({
+      texto:`O que a arquibancada prepara pro próximo jogo do ${c.nomeClube}?`,
+      opcoes:[
+        {id:'mosaico', rot:'Prometer mosaico e festa', nota:notaElogio(c, 1, 0),
+         resumo:'prometeu festa na arquibancada', ef:elogio(1, 0)},
+        {id:'surpresa', rot:'Dizer que é surpresa', nota:'+1 prestígio',
+         resumo:'disse que é surpresa', ef:{prestigio:0.2}},
+        {id:'nada', rot:'Sem resultado não tem festa', nota:'−2 relação · +1 prestígio',
+         resumo:'disse que sem resultado não tem festa', ef:{clube:-2, prestigio:0.2}}
+      ]})}
+  ];
+
+  /* duas de cada grupo, sem repetir o mês passado quando o banco
+     permite. A ordem sai de um hash da chave da entrevista: o mesmo
+     mês sorteia sempre igual (repintar o feed não troca a pergunta),
+     e meses diferentes sorteiam diferente. */
+  function escolherPerguntas(c, sa){
+    const anteriores = c.E.entrevistaUltimas || [];
+    const doGrupo = (grupo, n)=>{
+      const todas = PERGUNTAS_ENTREVISTA
+        .filter(q => q.grupo === grupo && (!q.quando || q.quando(c)));
+      const frescas = todas.filter(q => !anteriores.includes(q.id));
+      const base = frescas.length >= n ? frescas : todas;
+      return base
+        .map(q => ({q, k: TO.mapa.hash(
+          `entrevista|${c.E.torcida.id}|${c.E.data.ano}|${sa}|${q.id}`)}))
+        .sort((a,b) => a.k - b.k)
+        .slice(0, n).map(x => x.q);
+    };
+    return doGrupo('clube', 2).concat(doGrupo('rua', 2));
+  }
+
   function entrevistaDeHoje(E, sa){
     const time = M().time(E.torcida.clubeId);
     const nomeClube = time ? time.nome : 'o clube';
@@ -1079,59 +1321,41 @@ TO.feed = (function(){
     const totalClubes = comp ? (comp.clubes || []).length : 0;
     const timeMal = TO.relacaoClube.sequenciaRuim(E) ||
       !!(pos && totalClubes && pos > totalClubes * 0.75);
-    const outra = alvoDaEntrevista(E);
+    /* confusão recente: o próprio livro da relação com o clube já
+       registra toda briga de dia de jogo, com o motivo por extenso */
+    const brigaRecente = (E.relacaoClubeHistorico || []).slice(0, 6)
+      .some(h => /^Briga/.test(h.motivo || ''));
     const jornal = JORNAIS_CLUBE[H_(`clube-jornal|${E.torcida.id}`, JORNAIS_CLUBE.length)];
-    const perguntas = [
-      {id:'diretoria', resposta:null,
-       texto:`O que a torcida acha do trabalho da diretoria ${nomeClube ? 'do '+nomeClube : ''}?`,
-       opcoes:[
-         {id:'elogiar', rot:'Elogiar a gestão',
-          nota:'+5 relação com o clube' + (timeMal ? ' · −3 de moral' : '')},
-         {id:'cobrar', rot:'Cobrar mais investimento', nota:'−5 relação · +1 prestígio'},
-         {id:'saida', rot:'Pedir a saída da diretoria', nota:'−20 relação · +3 prestígio'}
-       ]},
-      {id:'temporada', resposta:null,
-       texto: pos
-         ? `E da temporada? Hoje o ${nomeClube} está em ${pos}º na tabela.`
-         : `E da temporada do ${nomeClube} até aqui?`,
-       opcoes:[
-         {id:'elogiar', rot:'Elogiar a campanha',
-          nota:'+4 relação com o clube' + (timeMal ? ' · −2 de moral' : '')},
-         {id:'criticar', rot:'Criticar duramente', nota:'−6 relação · +1 prestígio'},
-         {id:'neutro', rot:'Ficar em cima do muro', nota:'sem efeito'}
-       ]}
-    ];
-    if(outra) perguntas.push({id:'rival', resposta:null, alvo:outra.id,
-      texto:`E como está a relação de vocês com a ${outra.nome}?`,
-      opcoes:[
-        {id:'paz', rot:`Dizer que está em paz com a ${outra.nome}`,
-         nota:'melhora um pouco a relação com ela'},
-        {id:'guerra', rot:`Dizer que é rixa de verdade`,
-         nota:'piora um pouco a relação com ela · +1 prestígio'}
-      ]});
-    perguntas.push({id:'boato', resposta:null,
-      texto:'Rolou um boato de que vocês pediram a um aliado pra se '+
-            'afastar ou se aproximar de outra torcida. É verdade?',
-      opcoes:[
-        {id:'confirmar', rot:'Confirmar', nota:'+1 prestígio · transparência'},
-        {id:'negar', rot:'Negar, é balela', nota:'sem efeito'}
-      ]});
-    propor(E, {
+    const ctx = {E, nomeClube, pos, totalClubes, timeMal, brigaRecente,
+      outra: alvoDaEntrevista(E),
+      membros: (E.membros || []).length,
+      espaco: Math.max(0, TETO_ELOGIO - TO.relacaoClube.nivel(E))};
+    const perguntas = escolherPerguntas(ctx, sa)
+      .map(q => Object.assign({id:q.id, resposta:null}, q.monta(ctx)));
+    if(!perguntas.length) return;
+    const quantas = ['', 'Uma pergunta rápida', 'Duas perguntas rápidas',
+      'Três perguntas rápidas', 'Quatro perguntas rápidas'][perguntas.length]
+      || `${perguntas.length} perguntas rápidas`;
+    const m = propor(E, {
       kind:'entrevista', peso:'decisao', voz:'jornal',
       chave:`entrevista-clube|${E.data.ano}|${sa}`,
       texto:`O ${jornal} ligou atrás de uma entrevista sobre a torcida `+
-            `e o ${nomeClube}. Quatro perguntas rápidas — o que a gente `+
-            'responde?' + (timeMal ? ' O time vem mal, e a rua quer cobrança: '+
-            'passar a mão na cabeça da diretoria agora custa moral.' : ''),
-      dados:{jornal, perguntas, timeMal, moralPerdida:0}
+            `e o ${nomeClube}. ${quantas} — o que a gente responde?` +
+            (timeMal ? ' O time vem mal, e a rua quer cobrança: passar a mão '+
+             'na cabeça da diretoria agora custa moral.' : ''),
+      dados:{jornal, perguntas, timeMal, moralPerdida:0, tetoBateu:false}
     });
+    /* só marca como "saiu este mês" o que de fato virou mensagem — a
+       proposta recusada por repetição não pode queimar as perguntas */
+    if(m) E.entrevistaUltimas = perguntas.map(p => p.id);
   }
   /* uma escolha estável por chave, sem sortear de novo a cada leitura */
   function H_(chave, n){ return TO.mapa.hash(chave) % n; }
 
   /* a resposta de cada pergunta da entrevista, uma de cada vez — a
-     mensagem só fecha quando as quatro tiverem resposta (mesma régua
-     de `responderAniversario`) */
+     mensagem só fecha quando todas tiverem resposta (mesma régua
+     de `responderAniversario`). O efeito vem da própria opção: é um
+     laço só, e pergunta nova não pede código novo aqui. */
   function responderEntrevista(E, idMsg, idPergunta, idOpcao){
     caixas(E);
     const m = E.feed.find(x=>x.id === idMsg);
@@ -1142,60 +1366,47 @@ TO.feed = (function(){
     const opc = (p.opcoes||[]).find(x=>x.id === idOpcao);
     if(!opc) return {ok:false};
     p.resposta = idOpcao;
-    const RC = TO.relacaoClube;
+    const RC = TO.relacaoClube, ef = opc.ef || {};
+    const rot = opc.resumo || opc.rot;
+    const timeMal = !!(m.dados||{}).timeMal;
+    if(ef.clube){
+      let n = ef.clube;
+      /* O TETO DO ELOGIO: palavra bonita leva a relação até 70 e para
+         ali. A faixa de cima, a dos benefícios grandes, se ganha no
+         estádio. A nota do botão foi escrita com esta mesma conta. */
+      if(n > 0 && ef.elogio) n = Math.min(n, Math.max(0, TETO_ELOGIO - RC.nivel(E)));
+      if(n) RC.mexer(E, n, `Entrevista: ${rot}`);
+      else m.dados.tetoBateu = true;
+    }
+    if(ef.prestigio)
+      TO.estado.mexerIndicador(E, 'prestigio', ef.prestigio, `Entrevista: ${rot}`);
     /* PASSAR A MÃO NA CABEÇA DO CLUBE COM O TIME MAL CUSTA MORAL
        (pedido do dono, 19/09/2026): os membros querem protesto, e ver
-       o presidente da torcida elogiando a diretoria no jornal é ficar
-       do lado errado do balcão. Só pesa quando o time vem mal — elogio
-       com o time bem é só elogio. */
-    const timeMal = !!(m.dados||{}).timeMal;
-    const cobrarMoral = (quanto, motivo)=>{
-      if(!timeMal) return;
-      TO.estado.mexerIndicador(E, 'moral', -quanto, motivo);
-      m.dados.moralPerdida = (m.dados.moralPerdida || 0) + quanto*5;
-    };
-    if(idPergunta === 'diretoria'){
-      if(idOpcao === 'elogiar'){
-        RC.mexer(E, 5, 'Entrevista: elogiou a diretoria');
-        cobrarMoral(0.6, 'Elogiou a diretoria com o time indo mal');
-      }
-      else if(idOpcao === 'cobrar'){
-        RC.mexer(E, -5, 'Entrevista: cobrou a diretoria');
-        TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: cobrou a diretoria');
-      } else if(idOpcao === 'saida'){
-        RC.mexer(E, -20, 'Entrevista: pediu a saída da diretoria');
-        TO.estado.mexerIndicador(E, 'prestigio', 0.6, 'Entrevista: pediu a saída da diretoria');
-      }
-    } else if(idPergunta === 'temporada'){
-      if(idOpcao === 'elogiar'){
-        RC.mexer(E, 4, 'Entrevista: elogiou a temporada');
-        cobrarMoral(0.4, 'Elogiou a campanha com o time indo mal');
-      }
-      else if(idOpcao === 'criticar'){
-        RC.mexer(E, -6, 'Entrevista: criticou a temporada');
-        TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: criticou a temporada');
-      }
-    } else if(idPergunta === 'rival' && p.alvo){
+       o presidente da torcida defendendo o clube no jornal é ficar do
+       lado errado do balcão. Só pesa quando o time vem mal. */
+    if(ef.moralSeMal && timeMal){
+      TO.estado.mexerIndicador(E, 'moral', -ef.moralSeMal,
+        `Entrevista: ${rot} com o time indo mal`);
+      m.dados.moralPerdida = (m.dados.moralPerdida || 0) + ef.moralSeMal * 5;
+    }
+    if(ef.outra && p.alvo){
       E.relacoes = E.relacoes || {};
       const v = TO.relacoes.nivel(E, p.alvo);
-      const REL = TO.relacoes.REL;
-      if(idOpcao === 'paz')
-        E.relacoes[p.alvo] = U.limitar(v + REL.aproximar, -100, 100);
-      else if(idOpcao === 'guerra'){
-        E.relacoes[p.alvo] = U.limitar(v - REL.aproximar, -100, 100);
-        TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: provocou a rival');
-      }
-    } else if(idPergunta === 'boato' && idOpcao === 'confirmar'){
-      TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: confirmou o boato');
+      E.relacoes[p.alvo] = U.limitar(
+        v + ef.outra * TO.relacoes.REL.aproximar, -100, 100);
     }
     if(perguntas.every(x=>x.resposta)){
-      const RESUMO = {elogiar:'elogiou', cobrar:'cobrou', saida:'pediu a saída',
-        criticar:'criticou', neutro:'ficou em cima do muro', paz:'disse que está em paz',
-        guerra:'disse que é rixa de verdade', confirmar:'confirmou', negar:'negou'};
       m.respondido = {botao:'entrevista', rot:'Entrevista dada'};
-      const perdida = Math.round((m.dados.moralPerdida || 0)*10)/10;
-      m.consequencia = perguntas.map(x=>RESUMO[x.resposta] || x.resposta).join(', ') + '.' +
-        (perdida ? ` A rua não gostou de ver a diretoria defendida com o time `+
+      const perdida = Math.round((m.dados.moralPerdida || 0) * 10) / 10;
+      const frases = perguntas.map(x=>{
+        const o = (x.opcoes||[]).find(y=>y.id === x.resposta);
+        return (o && o.resumo) || x.resposta;
+      });
+      m.consequencia = frases.join('; ') + '.' +
+        (m.dados.tetoBateu
+          ? ` O elogio não mexeu na relação com o clube: acima de ${TETO_ELOGIO} `+
+            'só presença no estádio sobe.' : '') +
+        (perdida ? ` A rua não gostou de ver o clube defendido com o time `+
                    `assim: −${perdida} de moral.` : '');
     }
     return {ok:true, fechou: perguntas.every(x=>x.resposta)};
