@@ -1113,7 +1113,10 @@
      e o mesmo vale pra sobra, que são os cartões de torcida e de eixo
      sem nome no `dados`. */
   const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Diplomacia',
-                   jornal:'Jornal'};
+                   jornal:'Jornal',
+                   /* a obra do vizinho é notícia de jornal de torcida,
+                      não recado da diretoria (dono, 19/09/2026) */
+                   porrada:'Futebol e Porrada'};
 
   /* =======================================================
      A PARTIDA AO VIVO (decisão do dono, 17/08/2026)

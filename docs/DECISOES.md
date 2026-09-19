@@ -7396,8 +7396,8 @@ Isso inverte o sinal da moral no jogo. Até aqui ela só DESCIA — quando a gen
 
 | | Situação | Agressiva | Amena |
 |---|---|---|---|
-| A1 | Rival inaugurou na cidade | Zoar e marcar território · +2 moral · −8 com ela | Deixar quieto |
-| A2 | Rival abriu subsede em outra cidade | "Aquela cidade tem dono" · +2 moral · −12 com ela | Deixar quieto |
+| ~~A1~~ | ~~Rival inaugurou na cidade~~ | *virou notícia do Futebol e Porrada em 19/09/2026 — ver a seção abaixo* | |
+| ~~A2~~ | ~~Rival abriu subsede em outra cidade~~ | *idem* | |
 | ~~A3~~ | ~~Quebraram o bar do rival~~ | *virou pergunta de entrevista em 19/09/2026 — ver a seção abaixo* | |
 | ~~A4~~ | ~~Quebraram o **nosso** bar~~ | *idem* | |
 | A5 | **Nós** inauguramos | Inaugurar com a cidade sabendo · +2 moral · +3 relação com o clube · −6 com os rivais da cidade | Abrir sem alarde |
@@ -7453,6 +7453,31 @@ Em A6 o "agressivo" não é contra a aliada — é subir no palco junto e transf
 O caso do meio não existia no cartão antigo e é o que mais denunciava o problema: perguntar à torcida **o que ela acha** de uma descida que ela mesma fez sai falso. O jornalista não pede opinião, pede confirmação.
 
 **Medido** (Playwright): dois bares quebrados na mesma chamada produzem **0 cartões de obra** e enchem a fila de bares; os três enquadramentos saem com o texto certo; assumir a descida deu +3 de moral e levou a Camisa 12 de −95 a −100; "bar de torcida não se mexe" devolveu +5; bar do ano anterior não vira pauta. Temporada inteira depois da mudança: 0 erros no `avancarDia`.
+
+## Obra de terceiro é notícia, não pergunta — e a praça é `mapa` (correção do dono, 19/09/2026)
+
+**O pedido.** "A mensagem 'A Independente inaugurou uma loja nova aqui na cidade' deixa de ser uma mensagem que eu preciso dar respostas e passa a ser uma notícia do Futebol e Porrada que vai pro feed, que tem que ser condizente com a realidade, ou seja, só gera a notícia quando alguma torcida da praça do jogador realmente inaugurar algo."
+
+**Não havia o que responder.** As duas saídas do cartão do vizinho eram "zoar" e "deixar quieto" — a primeira dava moral e custava relação, a segunda não fazia nada. É decisão no papel, mas o gatilho é a loja de outra torcida: nada do que a gente clique muda a loja. Virou linha do jornal: `peso:'info'`, sem botões, voz nova `porrada` → **Futebol e Porrada** no cabeçalho do cartão.
+
+**A praça era medida errada.** `obraInteressa` comparava o campo `cidade` das torcidas. A praça do jogador, no resto do jogo, é o **`mapa`** — é o que `M().torcidasEm` filtra e o que main.js:908 usa. Comparando `cidade`, torcida de fora passava no filtro e a notícia saía dizendo "aqui na cidade" de obra que aconteceu longe. Era exatamente o "condizente com a realidade" do pedido, e o conserto é uma linha: `o.mapa === nossa.mapa`. A mesma correção valeu pro "−6 com os rivais" das inaugurações, que também lia `cidade`.
+
+**O jornal só escreve o que é porta que abre.** `VERBO_OBRA` mapeia item a frase — bar, loja, subsede, ampliação, fábrica e a subsede de fora. Ônibus, bomba e advogado não estão lá e não viram notícia: não são porta na rua. Quem não tem verbo não rende linha, e a fila não trava atrás dele — `obraDeHoje` drena até achar algo publicável.
+
+**A medição pegou um problema maior, que o pedido não citava.** Rodando a temporada inteira depois da mudança: 5 notícias e **8 cartões de decisão**, quase todos do ramo da ALIADA — "A Galoucura inaugurou uma loja nova. Mandamos recado?", "A Força Jovem Vasco inaugurou um bar novo. Mandamos recado?". Aliada de Minas, de Goiás, do Rio, cada uma travando o relógio pra perguntar se a gente vai "descer lá em peso". **Descer lá em peso em Goiás não é um clique, é caravana.** É a mesma doença que o dono mandou curar, num ramo que ele não viu. Apliquei a mesma régua: *obra de terceiro só rende cartão dentro da praça*.
+
+**Como ficou:**
+
+| De quem é a obra | O que sai |
+|---|---|
+| **Nossa** | Decisão: inaugurar com a cidade sabendo, ou sem alarde |
+| **Aliada, na nossa praça** | Decisão: descer lá em peso, ou mandar parabéns |
+| **Qualquer outra torcida da praça** | **Notícia** do Futebol e Porrada, sem botão |
+| **Qualquer torcida fora da praça** | Nada |
+
+*A restrição da aliada é decisão minha, por extensão da régua do dono — ele falou do cartão do vizinho, não do da aliada. Se ele quiser a aliada de fora de volta, é uma condição só.*
+
+**Medido** (Playwright, temporada inteira, 0 erros no `avancarDia`): de **13 cartões de obra no ano (8 de decisão)** para **4, todos notícia**. Nos testes dirigidos: vizinho da praça gera notícia nos seis tipos com verbo e nada no ônibus; rival de fora não gera nada; aliada de fora não gera nada; aliada da praça (TUP) gera a decisão; a nossa obra segue decisão; e a fila com obra de fora na frente não trava — publica a de dentro.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

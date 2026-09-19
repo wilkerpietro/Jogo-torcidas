@@ -1695,6 +1695,19 @@ TO.feed = (function(){
      acontece com quem a gente ama ou odeia, esteja onde estiver */
   const LIMIAR_INTERESSE = 25;
 
+  /* o que o jornal escreve de cada obra. Quem não está aqui não vira
+     notícia: ônibus, bomba e advogado não são porta que abre na rua. */
+  const VERBO_OBRA = {
+    bar:'abriu um bar novo na praça',
+    loja:'abriu uma loja nova na praça',
+    subsede:'inaugurou uma subsede nova na praça',
+    sede:'ampliou a sede',
+    'ampliar:bar':'ampliou o bar',
+    'ampliar:loja':'ampliou a loja',
+    'ampliar:subsede':'ampliou a subsede',
+    fabrica:'montou uma fábrica de material próprio',
+    filial:'abriu uma subsede fora da praça'
+  };
   const ROT_OBRA = {
     bar:'um bar novo', loja:'uma loja nova', subsede:'uma subsede nova',
     filial:'uma subsede em outra cidade', sede:'a ampliação da sede',
@@ -1737,12 +1750,20 @@ TO.feed = (function(){
 
   /* o filtro mora aqui e não em quem chama: quem faz a obra não tem
      de saber o que é notícia pra nós */
+  /* A PRAÇA É `mapa`, NÃO `cidade` (correção do dono, 19/09/2026): a
+     praça do jogador é o mapa em que ele joga, e é assim que o resto
+     do jogo mede vizinhança (`torcidasEm`, main.js:908). Comparar o
+     campo `cidade` deixava passar torcida de fora, e a notícia saía
+     dizendo "aqui na cidade" de obra que aconteceu longe. */
+  const naPraca = (E, idTorcida) => {
+    const o = M().torcida(idTorcida), nossa = M().torcida(E.torcida.id);
+    return !!(o && nossa && o.mapa === nossa.mapa);
+  };
   function obraInteressa(E, idTorcida){
     if(!idTorcida || idTorcida === E.torcida.id) return true;
     const o = M().torcida(idTorcida);
     if(!o || o.incompleta) return false;
-    const nossa = M().torcida(E.torcida.id);
-    if(nossa && o.cidade === nossa.cidade) return true;
+    if(naPraca(E, idTorcida)) return true;
     return Math.abs(TO.relacoes.nivel(E, idTorcida)) >= LIMIAR_INTERESSE;
   }
 
@@ -1773,11 +1794,19 @@ TO.feed = (function(){
       ameno:{rot:'Abrir a porta sem alarde', dica:'sem efeito'}
     };
 
-    /* --------- A6: a obra é da ALIADA --------- */
-    if(aliada) return {
+    /* --------- A6: a obra é da ALIADA, E NA NOSSA PRAÇA ---------
+       A PRAÇA VALE PRA ALIADA TAMBÉM (correção, 19/09/2026). O dono
+       reclamou da obra do vizinho que virava pergunta; medindo a
+       temporada inteira, o ramo da aliada fazia PIOR — 8 cartões de
+       decisão por ano, quase todos de aliada de outro estado, cada um
+       travando o relógio pra perguntar se a gente vai "descer lá em
+       peso". Descer lá em peso em Goiás não é um clique, é caravana.
+       Fora da praça, obra de terceiro não rende cartão nenhum. */
+    if(aliada && naPraca(E, ev.torcida)) return {
       chave:`obra|aliada|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
       voz:'diplomacia',
-      texto:`A ${nome} inaugurou ${item}${ondeFoi}. Mandamos recado?`,
+      texto:`A ${nome} ${VERBO_OBRA[ev.item] || 'inaugurou uma obra nova'}. `+
+            'Mandamos recado?',
       alvo:ev.torcida,
       /* com aliada o "agressivo" não é contra ela: é subir no palco
          junto e transformar a festa dela em demonstração de força
@@ -1788,40 +1817,49 @@ TO.feed = (function(){
       ameno:{rot:'Mandar um parabéns e ficar por isso', dica:'sem efeito'}
     };
 
-    /* --------- A1 e A2: a obra é do RIVAL ou de um vizinho --------- */
-    const fora = ev.item === 'filial' || ev.item === 'ampliar:filial';
+    /* --------- A OBRA DOS OUTROS É NOTÍCIA, NÃO DECISÃO ---------
+       (pedido do dono, 19/09/2026). "A Independente inaugurou uma loja
+       nova aqui na cidade" não é pergunta: não há o que responder que
+       mude alguma coisa, e um cartão de decisão por obra de vizinho
+       trava o relógio à toa. Vira linha do Futebol e Porrada, e só
+       sai quando é VERDADE: torcida da NOSSA praça inaugurando de
+       fato. Obra de torcida de fora não vira notícia da nossa praça —
+       nem que seja a maior rival do país. */
+    if(!naPraca(E, ev.torcida)) return null;
+    const v = VERBO_OBRA[ev.item];
+    if(!v) return null;                    // item sem notícia (bomba, ônibus…)
     return {
-      chave:`obra|outros|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
-      voz:'na rua',
-      texto: fora
-        ? `A ${nome} abriu ${item}${ondeFoi}. Eles estão crescendo pro `+
-          'nosso lado.'
-        : `A ${nome} inaugurou ${item} aqui na cidade.`,
-      alvo:ev.torcida,
-      bravo:{rot: fora
-               ? 'Avisar que aquela cidade tem dono'
-               : 'Zoar a inauguração e marcar território',
-             dica:'+2 de moral · piora a relação com a '+nome,
-             moral:0.4, relacao: fora ? -12 : -8},
-      ameno:{rot:'Deixar quieto', dica:'sem efeito'}
+      noticia:true,
+      chave:`obra|noticia|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
+      texto:`A ${nome} ${v}${ev.item === 'filial' ? ondeFoi : ''}.`
     };
   }
 
   /* um cartão por dia, do mais novo pro mais velho */
   function obraDeHoje(E){
     const fila = E.obrasDaCidade || [];
-    if(!fila.length) return;
-    const ev = fila.shift();
-    const c = cartaoDaObra(E, ev);
-    if(!c) return;
-    propor(E, {
-      kind:'obra', peso:'decisao', voz:c.voz, chave:c.chave, texto:c.texto,
-      dados:{alvo:c.alvo, bravo:c.bravo, ameno:c.ameno},
-      botoes:[
-        {id:'bravo', rot:c.bravo.rot, dica:c.bravo.dica, acao:'obra'},
-        {id:'ameno', rot:c.ameno.rot, dica:c.ameno.dica, acao:'obra'}
-      ]
-    });
+    /* drena até achar uma que renda cartão: obra de torcida de fora
+       entra na fila (o bar quebrado dela ainda interessa) mas não
+       vira notícia daqui, e não pode travar a fila atrás dela */
+    while(fila.length){
+      const ev = fila.shift();
+      const c = cartaoDaObra(E, ev);
+      if(!c) continue;
+      if(c.noticia){
+        propor(E, {kind:'obra', peso:'info', voz:'porrada',
+                   chave:c.chave, texto:c.texto});
+      } else {
+        propor(E, {
+          kind:'obra', peso:'decisao', voz:c.voz, chave:c.chave, texto:c.texto,
+          dados:{alvo:c.alvo, bravo:c.bravo, ameno:c.ameno},
+          botoes:[
+            {id:'bravo', rot:c.bravo.rot, dica:c.bravo.dica, acao:'obra'},
+            {id:'ameno', rot:c.ameno.rot, dica:c.ameno.dica, acao:'obra'}
+          ]
+        });
+      }
+      return;
+    }
   }
 
   /* PEITAR SOBE A MORAL E DERRUBA A RELAÇÃO (régua do dono,
@@ -1868,10 +1906,9 @@ TO.feed = (function(){
        fica sabendo. */
     if(ef.rivais){
       let n = 0;
-      const nossa = M().torcida(E.torcida.id);
       for(const o of M().jogaveis()){
         if(o.id === E.torcida.id || o.incompleta) continue;
-        if(!nossa || o.cidade !== nossa.cidade) continue;
+        if(!naPraca(E, o.id)) continue;
         if(TO.relacoes.nivel(E, o.id) > -LIMIAR_INTERESSE) continue;
         mexer(o.id, ef.rivais); n++;
       }
