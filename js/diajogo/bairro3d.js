@@ -103,14 +103,15 @@ export function montarBairro(P) {
     const tons = [0.92, 0.84, 0.78, 1.0];
     for (let i = 0; i < 4; i++) tri(T, b[i], b[(i+1)%4], t, hex, tons[i]);
   }
-  function malhaUV(T, tex, nome) {
+  function malhaUV(T, tex, nome, corte, doisLados) {
     if (!T.pos.length) return;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(T.pos, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(T.uv, 2));
     g.computeVertexNormals();
     const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({
-      map: tex, alphaTest: 0.45, side: THREE.FrontSide
+      map: tex, alphaTest: corte || 0.45,
+      side: doisLados ? THREE.DoubleSide : THREE.FrontSide
     }));
     m.receiveShadow = true;
     m.name = nome;
@@ -347,6 +348,28 @@ export function montarBairro(P) {
     const p = (v, s, t) => { T.pos.push(v[0], v[1], v[2]); T.uv.push(s, t); };
     p(a, u[0], u[1]); p(b, u[2], u[1]); p(e, u[2], u[3]);
     p(a, u[0], u[1]); p(e, u[2], u[3]); p(d, u[0], u[3]);
+  }
+
+  /* ---- O DECALQUE DE CHÃO ----
+     Uma placa DEITADA: dois triângulos no plano do chão, girados de
+     `ang` (o giro é o que disfarça a repetição — o pack tem 32 peças
+     pra 1.300 placas), com a UV apontando pra célula do atlas. A ordem
+     dos vértices não é gosto: invertida, a normal aponta pra BAIXO e o
+     Lambert entrega a peça preta. Ela recebe sombra e não projeta — é
+     chão, não objeto. */
+  const DEC_COL = 8, DEC_LIN = 4;
+  function decalqueChao(T, d, Y) {
+    const c = Math.cos(d.ang), s = Math.sin(d.ang), h = d.tam / 2;
+    const col = d.cel % DEC_COL, lin = (d.cel / DEC_COL) | 0;
+    const u0 = col / DEC_COL, u1 = (col + 1) / DEC_COL;
+    /* a linha 0 do atlas é o TOPO da imagem e a UV conta de baixo */
+    const v1 = 1 - lin / DEC_LIN, v0 = 1 - (lin + 1) / DEC_LIN;
+    const p = (u, v, su, sv) => {
+      T.pos.push(d.x + u * c - v * s, Y, d.y + u * s + v * c);
+      T.uv.push(su, sv);
+    };
+    p(-h, -h, u0, v0); p(-h, h, u0, v1); p(h, h, u1, v1);
+    p(-h, -h, u0, v0); p(h, h, u1, v1); p(h, -h, u1, v0);
   }
 
   /* ---- TELHADO DE DUAS ÁGUAS ----
@@ -1003,6 +1026,15 @@ export function montarBairro(P) {
   malhaTex(TELHADOS, textura('img/texturas/telha.png', true), 'telhados');
   malhaTex(TELHADOS_FAV, textura('img/texturas/telha.png', true), 'telhados:favela');
   malhaTex(MANCHAS, textura('img/texturas/tijolo.png'), 'tijolo', true);
+
+  /* ---- os decalques de chão: mato, entulho, terra e folha ----
+     Tudo num tecido só, uma malha só, uma textura só: são mais de mil
+     placas, e cada uma virar chamada de desenho seria o fim. O corte
+     de alfa é mais baixo que o das placas de letreiro (0,32 contra
+     0,45) porque folha de capim é fina e some com corte alto. */
+  const TDEC = { pos: [], uv: [] };
+  for (const d of K.DECALQUES || []) decalqueChao(TDEC, d, 2.4);
+  malhaUV(TDEC, textura('img/texturas/chao.png'), 'decalques', 0.32, true);
 
   /* ---- o mato: moitas, em duas pirâmides baixas ---- */
   const TM = Tecido();

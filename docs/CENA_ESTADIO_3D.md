@@ -604,6 +604,72 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   NENHUMA célula presa dentro da favela (24.977 de 24.977), e o mapa
   inteiro fica com 11 — menos do que tinha antes de a favela existir.
 
+### 4.12. Os decalques de chão
+
+O dono mandou gerar um pack de imagens e voltou com uma folha de contato
+de **8 × 4 = 32 peças** de chão: capim em tufo, entulho, brita, poça de
+barro, terra rachada, folha seca. Nada de asfalto, nada de parede, nada
+de textura que repete — o gerador entregou só uma família das quarenta
+pedidas em `docs/PACK_TEXTURAS.md`. As 32 valem, então foram as 32.
+
+**Por que não dá pra pintar isso no chão.** O canvas do chão tem 4.096 px
+pra 8.748 unidades de mundo: **0,47 px por unidade**. Um tufo de capim de
+40 unidades (1,8 m) sairia com 19 px de largura. É por isso que o mato do
+baldio, que era retângulo pintado, lia como falha de textura e não como
+mato. Detalhe de chão tem que ser **geometria**: um quadrado deitado com
+a foto recortada por cima.
+
+**O recorte (`ferramentas/importar_decalques.py`).** A folha veio em JPEG,
+fundo preto, sem alfa. O caminho óbvio — "escuro vira transparente" —
+destrói as peças escuras: medido, um limiar de luminância preserva 51 a
+74 % da arte nas quatro células mais escuras (a brita e as poças somem
+junto com o fundo). O script faz **inundação a partir da borda**: só é
+fundo o preto que se alcança andando desde fora da célula, então um miolo
+escuro cercado de arte continua sendo arte — 92 a 97 % preservados nas
+mesmas quatro. Depois tira a franja usando a propriedade do fundo preto
+(alfa pré-multiplicado: `cor / alfa` devolve a cor original da borda),
+**dessatura 0,76** — a cena tem sol próprio, arte com cor forte briga com
+ele — e encaixa cada peça numa célula quadrada de 192 px sem distorcer.
+Saída: `img/texturas/chao.png`, 1536 × 768 RGBA, 1,2 MB. A folha original
+fica em `img/texturas/fonte/chao_pack.png`, pra dar pra refazer.
+
+**Onde eles nascem (`DECALQUES`, em `cena_estadio.js`).** Semente própria
+(`semente(560431)`), pelo mesmo motivo da favela: são milhares de
+sorteios, e no `rng()` compartilhado a cidade inteira mudaria de desenho
+por causa de decoração. São três fontes:
+
+- **1.300 espalhados** por tentativa e erro, em mato, terreno aberto e
+  dentro do baldio. `ondeCabe()` recusa mar, praia, asfalto, calçada de
+  avenida, faixa de beira, campo e quarteirão da cidade — o baldio é a
+  exceção, porque é terreno abandonado e é lá que entulho faz sentido. A
+  mistura muda com o lugar: no mato 66 % capim, no baldio 52 % entulho.
+- **Uma saia debaixo de cada moita** (538). A moita bloqueia o boneco,
+  então tem que continuar sendo volume — mas o cone verde chapado, ao
+  lado de um tufo fotografado, fica ainda mais falso do que era sozinho.
+  A saia é um decalque de mato com 2,1 a 3,0 vezes o raio da moita: o
+  cone vira o corpo do arbusto e a vegetação de verdade aparece em volta.
+- **Folha caída sob umas 45 % das árvores** (11). Só uma peça de folha
+  veio no pack, então ela repete; cada placa nasce com um ângulo
+  sorteado, que é o que disfarça.
+
+Total: **1.822 placas, 3.644 triângulos** — 2,5 % da cena. Uma malha só,
+uma chamada de desenho, `alphaTest` 0,32 (folha de capim é fina e some
+com corte alto) e `DoubleSide`, porque a placa está deitada e o triângulo
+é olhado de cima.
+
+**O que não cabe não nasce.** O chão desenhado acaba na VISTA; uma placa
+que passa da borda fica boiando no vazio, e dá pra ver de longe. `por()`
+testa a diagonal (a placa gira) e descarta — foram 27.
+
+**E o mato pintado do baldio saiu.** Os 34 retângulos verdes que o
+`piso()` desenhava lá dentro existiam porque não havia nada melhor; ao
+lado da foto eles viraram o pior detalhe do terreno. Viraram **variação
+de tom de terra** (`#8f8257`, `#9b8c62`, `#877a52`, `#948553`), que é o
+que chão pintado sabe fazer nessa resolução: manchar. O verde agora vem
+das 141 placas que caem no baldio. Mesmo número de sorteios de propósito
+— aquele trecho usa o `rng()` compartilhado, e tirar uma chamada dali
+moveria as casas da cidade inteira.
+
 A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
 descarta fora do quadro; carros, postes e campos numa malha; moitas em
 outra.
@@ -721,10 +787,10 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
 - Por andar (células de corpo): rua/cidade 211.000 · corredor 4.371 ·
   vomitório 577 · arquibancada 3.572 · portão 48.
 - Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **37
-  quarteirões · 703 lotes (262 na favela) · 538 moitas · 217 árvores ·
-  72 postes · 53 carros · 1 campo · 8 equipamentos** · 142.849
-  triângulos estáticos em 6 pedaços de cidade mais o estádio · 16
-  chamadas de desenho sem gente na
+  quarteirões · 703 lotes (262 na favela) · 538 moitas · 215 árvores ·
+  72 postes · 53 carros · 1 campo · 8 equipamentos · 1.822 decalques de
+  chão** · 146.493 triângulos estáticos em 6 pedaços de cidade mais o
+  estádio · 165 chamadas de desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
   do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
   leve corta a sombra primeiro por isso).
@@ -834,6 +900,18 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
    lotes ganharam segunda chance (casa rotacionada com fundo menor, lote
    axial encolhido). De 656 lotes (28 na avenida) pra 714 (39). A máscara
    continua 100 % alcançável.
+
+14. **Quatro árvores com coordenada NaN, desde sempre.** Apareceu quando
+    a malha de decalques reclamou de `Computed radius is NaN` — mas a
+    culpa não era dela. O sorteio de árvore ao redor das casas de beira
+    lê `o.ang` e `o.vf` pra jogar a árvore pra fora da fachada; as **22
+    casas axiais da borda da cidade** têm `frente` e caixa, mas não têm
+    `ang` nem `vf`, então a conta virava `-undefined` = NaN. As árvores
+    nasciam NaN e sumiam caladas, porque `celulaEm(NaN)` não acha célula
+    nenhuma e elas eram descartadas sem aviso. Agora o laço se ramifica
+    em `o.ang` e tira o recuo da `frente` quando o lote é axial. **É a
+    terceira vez que `ang: 0` ser falso em JavaScript morde este
+    arquivo** — vale ler qualquer `if(o.ang)` novo com desconfiança.
 
 ## 8. A caminhada do líder
 
@@ -968,3 +1046,7 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados), calçadas, árvores, carros, postes, campos, moitas |
 | `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões, ruas, avenidas, costa, campos, estádio |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
+| `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |
+| `img/texturas/chao.png` | o atlas de decalques de chão, 8 × 4 células de 192 px (capim, entulho, brita, poça, terra, folha) |
+| `img/texturas/fonte/chao_pack.png` | a folha de contato como veio do gerador, guardada pra dar pra refazer o atlas |
+| `docs/PACK_TEXTURAS.md` | os pedidos de imagem pro gerador: o pack de chão (40 peças, 32 entregues) e o pack de parede |

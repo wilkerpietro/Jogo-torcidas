@@ -1352,7 +1352,15 @@ TO.dados.plantaEstadio = (function(){
          baixa, que o boneco contorna sem ficar preso. */
       const B = rx(REC + M_ESP, uL0), by0 = Y0 + REC + M_ESP, by1 = Y1 - REC - M_ESP;
       const BL = B.x1 - B.x0, BA = by1 - by0;
-      const MATO = ['#5e7a3c', '#6d8544', '#55703a', '#7a7a46'];
+      /* AS MANCHAS DO CHÃO. Antes eram quatro verdes fortes, e no
+         canvas do chão (0,47 px por unidade) cada uma virava um
+         retângulo verde de aresta dura — lia como falha de textura.
+         O mato de verdade agora vem dos DECALQUES, que são foto; o
+         que o chão pintado tem de fazer é só variar o tom da terra,
+         mais seca aqui, mais úmida ali, pra a placa não pousar sobre
+         uma cor chapada. Mesma quantidade de sorteios de propósito:
+         `rng()` é compartilhado com a cidade inteira. */
+      const MATO = ['#8f8257', '#9b8c62', '#877a52', '#948553'];
       for(let i=0;i<34;i++){
         const w = entre(34, 132), h = entre(30, 104);
         /* o mato pega mais no pé do muro, que é onde ninguém passa */
@@ -1362,7 +1370,7 @@ TO.dados.plantaEstadio = (function(){
         const my = beira && rng() < 0.5 ? (rng() < 0.5 ? by0 + entre(0, 26) : by1 - h - entre(0, 26))
                                         : by0 + 6 + rng()*(BA - h - 12);
         piso(Math.max(B.x0, mx), Math.max(by0, my), Math.min(B.x1, mx + w), Math.min(by1, my + h),
-             i % 4 ? escolher(MATO) : '#8a7a4e');
+             i % 4 ? escolher(MATO) : '#8a7a4e');   // o quarto é terra pelada
       }
       /* o entulho: monte de alicerce velho, tijolo quebrado e concreto */
       const ENTULHO = ['#9a9288', '#8c6a56', '#6e675c', '#a49a86'];
@@ -2664,9 +2672,27 @@ TO.dados.plantaEstadio = (function(){
   for(const o of BEIRA){
     if(o.favela) continue;
     if(o.tipo === 'muro' || rng() < 0.5) continue;
-    const c = Math.cos(o.ang), s = Math.sin(o.ang);
-    const d = -o.vf*(o.h/2 + entre(26, 46)), u = entre(-o.w*0.4, o.w*0.4);
-    const x = o.cx + u*c - d*s, y = o.cy + u*s + d*c;
+    /* `ang: 0` É FALSO EM JAVASCRIPT, de novo. As 22 casas da BORDA DA
+       CIDADE são lote RETO — têm `frente` e caixa, não têm `ang` nem
+       `vf` —, e este laço lia `o.ang` e `o.vf` de todo mundo: saía
+       `-undefined`, a coordenada virava NaN e a árvore era descartada
+       adiante sem um pio (`celulaEm(NaN)` não acha célula nenhuma).
+       Eram quatro árvores que nunca existiram. */
+    const fora = entre(26, 46);
+    let x, y;
+    if(o.ang){
+      const c = Math.cos(o.ang), s = Math.sin(o.ang);
+      const d = -o.vf*(o.h/2 + fora), u = entre(-o.w*0.4, o.w*0.4);
+      x = o.cx + u*c - d*s; y = o.cy + u*s + d*c;
+    } else {
+      const mx = (o.x0 + o.x1)/2, my = (o.y0 + o.y1)/2;
+      const jx = entre(-(o.x1 - o.x0)*0.4, (o.x1 - o.x0)*0.4);
+      const jy = entre(-(o.y1 - o.y0)*0.4, (o.y1 - o.y0)*0.4);
+      if(o.frente === 'n'){ x = mx + jx; y = o.y0 - fora; }
+      else if(o.frente === 's'){ x = mx + jx; y = o.y1 + fora; }
+      else if(o.frente === 'o'){ x = o.x0 - fora; y = my + jy; }
+      else { x = o.x1 + fora; y = my + jy; }
+    }
     if(zona(x, y) !== 'mato' || tocaAsfalto(x, y, 26) || naBeira(x, y)) continue;
     ARVORES.push({ x, y, r: entre(15, 22) });
   }
@@ -2683,6 +2709,113 @@ TO.dados.plantaEstadio = (function(){
     return null;
   }
 
+  /* =========================================================
+     OS DECALQUES DE CHÃO
+     ---------------------------------------------------------
+     Mato, entulho, terra e folha vindos de um pack de fotos zenitais
+     (`ferramentas/importar_decalques.py` recorta a folha de contato e
+     monta o atlas `img/texturas/chao.png`, 8 × 4). Cada um é UMA PLACA
+     deitada no chão: duas faces de triângulo, recorte por alfa, e
+     NADA na máscara — decalque é decoração, não obstáculo. É por isso
+     que ele pode ser espalhado à vontade: não há um caminho no mapa
+     que ele feche.
+
+     Onde NÃO vai: asfalto e calçada de avenida (chão da cidade tem
+     acabamento próprio), dentro de casa, no quarteirão da cidade (lá
+     já há calçada, lote e quintal), no campo de várzea (que tem a
+     grama dele) e no mar e na areia. Sobra o mato, o terreno aberto e
+     o baldio — que são justamente os lugares que liam como descampado
+     chapado.
+
+     SEMENTE PRÓPRIA, como a favela: são uns milhares de sorteios, e se
+     eles saíssem do `rng()` compartilhado a cidade inteira mudaria de
+     desenho por causa de um detalhe de decoração. */
+  const DEC_FAMILIA = {
+    /* a família de cada célula do atlas, lida na folha de contato */
+    mato:    [4,5,8,9,11,14,15,17,19,21,23,24,25,27,28,30,31],
+    entulho: [0,1,3,6,7,12,13,18,20,22,29],
+    terra:   [2,16,26],
+    folha:   [10]
+  };
+  const DECALQUES = [];
+  (function decorar(){
+    const rngD = semente(560431);
+    const entreD = (a, b) => a + rngD()*(b - a);
+    const escolherD = l => l[Math.floor(rngD()*l.length)];
+    /* a arte ocupa 91,7% da célula do atlas (o resto é folga
+       transparente), então a placa é o tamanho real dividido por isso */
+    const placa = t => t/0.917;
+    /* O chão desenhado acaba na VISTA. Uma placa que passa da borda
+       fica boiando no vazio — dá pra ver de longe. Então quem não cabe
+       inteiro (com a diagonal, porque ela gira) simplesmente não nasce. */
+    function por(x, y, cel, tam, ang){
+      const h = tam/2*1.42;
+      if(x - h < VX0 || y - h < VY0 || x + h > VX0 + VW || y + h > VY0 + VH) return;
+      DECALQUES.push({ x, y, cel, tam, ang });
+    }
+    function ondeCabe(x, y){
+      const z = zona(x, y);
+      if(z === 'mar' || z === 'praia') return null;
+      if(noAsfalto(x, y) || naAvenida(x, y, CALC)) return null;
+      if(naBeira(x, y)) return null;
+      if(noCampo(x, y)) return null;
+      const q = celulaEm(x, y);
+      if(q && q.tipo === 'quadra'){
+        /* o quarteirão da cidade fica de fora — MENOS o baldio, que é
+           terreno abandonado e é onde entulho e mato fazem sentido */
+        if(!q.equip || q.equip.tipo !== 'baldio') return null;
+        const a = q.equip.area;
+        if(x < a.x0 + 12 || x > a.x1 - 12 || y < a.y0 + 12 || y > a.y1 - 12) return null;
+        if(q.solidos && q.solidos.some(o => x > o.x0 - 8 && x < o.x1 + 8 &&
+                                            y > o.y0 - 8 && y < o.y1 + 8)) return null;
+        return 'baldio';
+      }
+      return z === 'mato' ? 'mato' : 'aberto';
+    }
+    const MISTURA = {
+      /* quanto de cada família, por lugar */
+      mato:   [['mato', 0.66], ['entulho', 0.92], ['terra', 1]],
+      aberto: [['mato', 0.55], ['entulho', 0.90], ['terra', 1]],
+      baldio: [['entulho', 0.52], ['mato', 0.84], ['terra', 1]]
+    };
+    const TAM = { mato: [20, 40], entulho: [26, 52], terra: [38, 62], folha: [40, 66] };
+    let tentativas = 0;
+    while(DECALQUES.length < 1300 && tentativas < 26000){
+      tentativas++;
+      const x = entreD(20, W - 20), y = entreD(20, H - 20);
+      const lugar = ondeCabe(x, y);
+      if(!lugar) continue;
+      const r = rngD();
+      const fam = MISTURA[lugar].find(([, p]) => r <= p)[0];
+      const [t0, t1] = TAM[fam];
+      por(x, y, escolherD(DEC_FAMILIA[fam]),
+          placa(entreD(t0, t1)), rngD()*Math.PI*2);
+    }
+    /* A SAIA DA MOITA. A moita é duas pirâmides — ela BLOQUEIA, então
+       precisa de volume e não pode virar decalque. Só que, ao lado de
+       um tufo de capim fotografado, o cone verde chapado fica ainda
+       mais falso do que era sozinho. A saída é dar chão a ele: um
+       decalque de mato POR BAIXO, maior que a base, de modo que o cone
+       vire o corpo do arbusto e a vegetação de verdade apareça em
+       volta. É onde a moita já está, então não espalha nada novo. */
+    for(const m of MOITAS){
+      if(!Number.isFinite(m.x)) continue;
+      por(m.x, m.y, escolherD(DEC_FAMILIA.mato),
+          placa(m.r*entreD(2.1, 3.0)), rngD()*Math.PI*2);
+    }
+
+    /* A FOLHA CAÍDA SOB A ÁRVORE. Só uma peça de folha veio no pack,
+       então ela repete — o giro é o que disfarça, e por isso cada
+       placa nasce com um ângulo sorteado. */
+    for(const a of ARVORES){
+      if(!Number.isFinite(a.x) || !Number.isFinite(a.y)) continue;
+      if(rngD() < 0.55) continue;
+      if(!ondeCabe(a.x, a.y)) continue;
+      por(a.x, a.y, DEC_FAMILIA.folha[0],
+          placa(a.r*entreD(1.9, 2.8)), rngD()*Math.PI*2);
+    }
+  })();
+
   const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC, TORCIDAS,
                    COLUNAS, LINHAS, CELULAS, QUADRAS, grade, celulaEm, zona, xCosta, PRAIA, ORLA,
                    CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, bordasX, bordasY,
@@ -2690,7 +2823,7 @@ TO.dados.plantaEstadio = (function(){
                    areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe,
-                   FAVELA, FAVELA_CAIXAS, FAVELA_RUAS };
+                   FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES };
 
   /* =======================================================
      A DOBRA: tabuleiro → mundo
