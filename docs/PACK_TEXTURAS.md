@@ -1,5 +1,14 @@
 # Pack de 40 texturas — o que pedir e por quê
 
+> **Estado:** este pedido foi feito e voltou com **32 peças**, todas de
+> chão natural (capim, entulho, brita, poça, terra, folha) numa folha de
+> contato 8 × 4. Elas entraram no jogo — o recorte está em
+> `ferramentas/importar_decalques.py`, o atlas em `img/texturas/chao.png`
+> e o uso no §4.12 de `CENA_ESTADIO_3D.md`. **Não vieram** os decalques
+> de asfalto, os de parede nem nenhum dos 10 ladrilhos; esses continuam
+> pendentes aqui. O pedido de parede foi refeito à parte, com o que este
+> aqui ensinou: `docs/PACK_PAREDE.md`.
+
 Este arquivo é o pedido, não o resultado. Ele existe pra que o pack que
 vier de fora entre no jogo sem retrabalho: o formato, a vista, a luz e o
 tamanho real de cada peça estão fixados aqui porque cada um deles já
