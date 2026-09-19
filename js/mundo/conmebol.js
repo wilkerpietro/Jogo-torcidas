@@ -1018,8 +1018,18 @@ TO.conmebol = (function(){
     if(cal) agendarMataCM(E, c, cal);
     if(passa.length === 1){
       c.campeao = passa[0];
-      const f = jogos[0];
-      c.vice = f.venceu === f.c ? f.f : f.c;
+      /* O VICE SAI DA LINHA QUE ACABOU DE SER ESCRITA (conserto de
+         19/09/2026): a chave por perna trocou o array `jogos` pelo
+         coletor `linhasDaFase`, e esta linha ficou apontando pro
+         nome antigo. O erro era jogado NO DIA DA FINAL e subia até
+         o `avancarDia`, que parava ali: o vice ficava nulo, o
+         campeão não entrava em `conmebolCampeoes` (e perdia a vaga
+         cativa do ano seguinte) e o resto do dia — brigas, feed,
+         fechamento — não rodava. A final é página única, então o
+         jogo que decidiu é o primeiro da última linha. */
+      const ultima = c.mata[c.mata.length - 1];
+      const f = ultima && ultima.jogos && ultima.jogos[0];
+      c.vice = f ? (f.venceu === f.c ? f.f : f.c) : null;
       E.conmebolCampeoes = E.conmebolCampeoes || {};
       E.conmebolCampeoes[c.nome === 'Copa Libertadores'
         ? 'libertadores' : 'sulamericana'] = c.campeao;

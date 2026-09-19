@@ -7236,7 +7236,60 @@ Ingresso vira receita todo jogo em casa — `TO.relacaoClube.ingressosDoJogo(E)`
 
 **Medido** (Playwright, temporada inteira): 10 entrevistas e 2 protestos em 52 semanas (a régua de 12/ano rateada entre os dois, protesto só quando a sequência pedia); ingressos vendidos em 25 jogos em casa, um exemplo de R$ 900 (90 sócios × R$ 10, faixa de 60%); loja a 1.535 → 1.611 (relação 60, +5%) → 1.765 (relação 90, +15%); ingressos por membro conferidos nos quatro degraus (0/10/30/60%); ajuda de caravana 0 na faixa baixa e 20% na alta; briga nos arredores e na arquibancada, casa e fora, com os quatro valores certos (−6/−10/−4/−6); a relação clampada em 100 quando a torcida vai bem o ano inteiro. O cartão da entrevista e do protesto testados na UI real, clique a clique, com a consequência escrita batendo com a conta.
 
-**Achado à parte, fora de escopo.** Durante o teste apareceu um erro pré-existente, "jogos is not defined", pego pelo try/catch do harness duas vezes num ano simulado — não é deste pedido e o jogo real já engole silenciosamente. Fica anotado pro dono decidir se vale investigar.
+**Correção do que ficou escrito aqui.** Esta seção dizia que o erro "jogos is not defined", visto duas vezes no teste, era pré-existente e fora de escopo. **Estava errado**: era regressão minha, do commit anterior (a chave por perna). A investigação e o conserto estão na seção de 19/09/2026, logo abaixo.
+
+*(A linha do protesto no CT acima foi escrita com −1 de moral pra "segurar a torcida"; virou −3 em 19/09/2026, pelo mesmo motivo da seção abaixo.)*
+
+## O "jogos is not defined" era meu (investigação, 19/09/2026)
+
+**O pedido.** "Investiga o erro 'jogos is not defined'."
+
+**O que era.** Regressão do commit `611dbb0` — a mudança que deu uma página pra ida e outra pra volta na chave da Conmebol. Aquela mudança trocou o array `jogos`, que `andarChave` montava à mão, pelo coletor `linhasDaFase`, que escreve as linhas por perna. Uma linha ficou apontando pro nome antigo:
+
+```js
+if(passa.length === 1){
+  c.campeao = passa[0];
+  const f = jogos[0];            // <- `jogos` não existe mais aqui
+  c.vice = f.venceu === f.c ? f.f : f.c;
+```
+
+**Não era pré-existente.** Eu havia escrito na seção anterior que o erro vinha de antes e estava fora de escopo. Estava errado, e o erro de método foi este: o teste de verificação usou `git stash`, que só desfaz o que ainda não está commitado — e `611dbb0` já estava commitado. O stash tirou o motor de relação com o clube (que é de fato inocente) e deixou o culpado em pé, então o erro reapareceu e pareceu antigo. Pra cravar a origem de um erro, `git stash` não serve: o certo é `git show <commit> -- <arquivo>`, que foi o que apontou a linha.
+
+**Quando disparava e o que quebrava.** Só no dia da final, e nas duas: semana 48 (Sul-Americana) e 49 (Libertadores). Como a exceção subia até `avancarDia`, o estrago passava longe da chave:
+- `c.vice` ficava nulo — a final não tinha vice em lugar nenhum;
+- `E.conmebolCampeoes` nunca era preenchido, e é dele que sai **a vaga cativa do campeão no ano seguinte** — o campeão continental perdia a vaga que acabara de ganhar;
+- o resto daquele dia não rodava: brigas, feed, `eventosDoDia`, fechamento do dia. Dois dias por ano sumiam, em silêncio, porque o jogo engole a exceção.
+
+**O conserto.** A final é página única, então o jogo que decidiu é o primeiro da última linha que `L.escrever(c)` acabou de gravar. Lê-se de lá, com guarda:
+
+```js
+const ultima = c.mata[c.mata.length - 1];
+const f = ultima && ultima.jogos && ultima.jogos[0];
+c.vice = f ? (f.venceu === f.c ? f.f : f.c) : null;
+```
+
+**Medido** (Playwright, duas torcidas, 380 dias cada — o ano inteiro e a virada). Com o código do `611dbb0`: `["dia 330 (ano 2026 sem 48): jogos is not defined", "dia 337 (ano 2026 sem 49): jogos is not defined"]`, vice `null` nas duas chaves, `conmebolCampeoes` `null`. Com o conserto: **0 erros**, Sul-Americana decidida na semana 48 e Libertadores na 49, vice batendo com o perdedor do jogo da final (`Atlético Mineiro 0×2 Santos` → vice Atlético Mineiro; `Fluminense 1×1 Palmeiras` → vice Fluminense) e `conmebolCampeoes` preenchido nas duas.
+
+## Elogiar a diretoria com o time mal custa moral (régua do dono, 19/09/2026)
+
+**O pedido.** "Se eu elogiar o time ou a gestão com o time indo mal eu perco moral com meus membros. Eles sempre querem protestar e se eu for pela gestão e não por eles eu perco a moral com eles."
+
+**A ideia.** A relação com o clube e a moral dos membros passam a puxar pra lados opostos quando o time vai mal. Subir a relação com o clube sempre foi bom e de graça; agora, com o time afundando, o preço aparece — e quem paga é a rua, que queria cobrança e viu o presidente da torcida defendendo a diretoria no jornal.
+
+**Quando o time "vai mal".** `timeMal` é ou sequência ruim (3 derrotas ou mais nos últimos 5 jogos, a mesma régua que já convoca o protesto no CT, via `TO.relacaoClube.sequenciaRuim`) ou estar no quarto de baixo da tabela do campeonato de pontos corridos. Basta um dos dois — dá pra estar em 4º e vir de três tombos, ou estar em 18º sem sequência ruim; os dois casos doem.
+
+**O que muda:**
+- Entrevista, pergunta da diretoria, "Elogiar a gestão": continua +5 de relação com o clube e passa a custar **−3 de moral** quando `timeMal`.
+- Entrevista, pergunta da temporada, "Elogiar a campanha": continua +4 de relação e passa a custar **−2 de moral** quando `timeMal`.
+- Protesto no CT, "Segurar a torcida, não é hora": era −1 de moral, vira **−3**. Era barato demais pra uma escolha que é literalmente ficar do lado da diretoria contra a vontade dos membros.
+
+**O que não muda.** Cobrar a diretoria, criticar a campanha, pedir a saída, encabeçar o protesto: nada de moral. Ir pelo lado dos membros nunca custa moral — só relação com o clube, que é o preço já escrito. E com o time bem, elogio é só elogio: 0 de moral.
+
+**Na tela.** O custo aparece antes do clique, não depois: com o time mal, a nota do botão vira "+5 relação com o clube · −3 de moral", o texto da mensagem avisa ("O time vem mal, e a rua quer cobrança: passar a mão na cabeça da diretoria agora custa moral.") e a consequência fecha a conta somando o que foi perdido nas duas perguntas ("A rua não gostou de ver a diretoria defendida com o time assim: −5 de moral."). Os dois botões do protesto no CT ganharam `dica`, que não tinham. Com o time bem, nada disso aparece — a nota volta a ser só "+5 relação com o clube".
+
+**Medido** (Playwright, cartão real, clique a clique): time mal elogiando as duas → moral 60 → 55 (−5) e relação 50 → 59; time mal cobrando e criticando → moral 55 → 55 (0) e relação 59 → 48; time bem elogiando as duas → moral 55 → 55 (0), relação 48 → 57, sem o aviso no texto e sem o "−3 de moral" na nota; protesto no CT segurando a torcida → moral 55 → 52 (−3) e relação 57 → 59.
+
+**Exportado pro teste.** `TO.feed.entrevistaDeHoje` e `TO.feed.protestoNoCT` entraram na lista de exports, junto de `reuniaoDeHoje`, `eixosDoDia` e as outras geradoras que já eram públicas — dá pra forçar a mensagem no harness sem esperar a cadência mensal cair.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

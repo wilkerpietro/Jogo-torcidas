@@ -1032,8 +1032,10 @@ TO.feed = (function(){
       dados:{sequencia:seq, derrotas:der},
       botoes:[
         {id:'protestar', rot:'Encabeçar o protesto',
+         dica:'−8 de relação com o clube · +2 de prestígio',
          acao:'protesto-ct'},
         {id:'segurar', rot:'Segurar a torcida, não é hora',
+         dica:'+2 de relação com o clube · −3 de moral: eles queriam ir',
          acao:'protesto-ct'}
       ]
     });
@@ -1070,13 +1072,21 @@ TO.feed = (function(){
     const comp = ((E.temporada || {}).competicoes || [])
       .find(c => !c.copa && (c.clubes||[]).includes(E.torcida.clubeId));
     const pos = comp ? TO.competicoes.posicaoNaTabela(E, comp.id, E.torcida.clubeId) : 0;
+    /* O TIME INDO MAL (pedido do dono, 19/09/2026): ou vem de sequência
+       ruim, ou está no quarto de baixo da tabela. É o que faz a
+       arquibancada querer sangue — e o que torna elogio público um
+       tapa na cara de quem queria protesto. */
+    const totalClubes = comp ? (comp.clubes || []).length : 0;
+    const timeMal = TO.relacaoClube.sequenciaRuim(E) ||
+      !!(pos && totalClubes && pos > totalClubes * 0.75);
     const outra = alvoDaEntrevista(E);
     const jornal = JORNAIS_CLUBE[H_(`clube-jornal|${E.torcida.id}`, JORNAIS_CLUBE.length)];
     const perguntas = [
       {id:'diretoria', resposta:null,
        texto:`O que a torcida acha do trabalho da diretoria ${nomeClube ? 'do '+nomeClube : ''}?`,
        opcoes:[
-         {id:'elogiar', rot:'Elogiar a gestão', nota:'+5 relação com o clube'},
+         {id:'elogiar', rot:'Elogiar a gestão',
+          nota:'+5 relação com o clube' + (timeMal ? ' · −3 de moral' : '')},
          {id:'cobrar', rot:'Cobrar mais investimento', nota:'−5 relação · +1 prestígio'},
          {id:'saida', rot:'Pedir a saída da diretoria', nota:'−20 relação · +3 prestígio'}
        ]},
@@ -1085,7 +1095,8 @@ TO.feed = (function(){
          ? `E da temporada? Hoje o ${nomeClube} está em ${pos}º na tabela.`
          : `E da temporada do ${nomeClube} até aqui?`,
        opcoes:[
-         {id:'elogiar', rot:'Elogiar a campanha', nota:'+4 relação com o clube'},
+         {id:'elogiar', rot:'Elogiar a campanha',
+          nota:'+4 relação com o clube' + (timeMal ? ' · −2 de moral' : '')},
          {id:'criticar', rot:'Criticar duramente', nota:'−6 relação · +1 prestígio'},
          {id:'neutro', rot:'Ficar em cima do muro', nota:'sem efeito'}
        ]}
@@ -1110,8 +1121,9 @@ TO.feed = (function(){
       chave:`entrevista-clube|${E.data.ano}|${sa}`,
       texto:`O ${jornal} ligou atrás de uma entrevista sobre a torcida `+
             `e o ${nomeClube}. Quatro perguntas rápidas — o que a gente `+
-            'responde?',
-      dados:{jornal, perguntas}
+            'responde?' + (timeMal ? ' O time vem mal, e a rua quer cobrança: '+
+            'passar a mão na cabeça da diretoria agora custa moral.' : ''),
+      dados:{jornal, perguntas, timeMal, moralPerdida:0}
     });
   }
   /* uma escolha estável por chave, sem sortear de novo a cada leitura */
@@ -1131,8 +1143,22 @@ TO.feed = (function(){
     if(!opc) return {ok:false};
     p.resposta = idOpcao;
     const RC = TO.relacaoClube;
+    /* PASSAR A MÃO NA CABEÇA DO CLUBE COM O TIME MAL CUSTA MORAL
+       (pedido do dono, 19/09/2026): os membros querem protesto, e ver
+       o presidente da torcida elogiando a diretoria no jornal é ficar
+       do lado errado do balcão. Só pesa quando o time vem mal — elogio
+       com o time bem é só elogio. */
+    const timeMal = !!(m.dados||{}).timeMal;
+    const cobrarMoral = (quanto, motivo)=>{
+      if(!timeMal) return;
+      TO.estado.mexerIndicador(E, 'moral', -quanto, motivo);
+      m.dados.moralPerdida = (m.dados.moralPerdida || 0) + quanto*5;
+    };
     if(idPergunta === 'diretoria'){
-      if(idOpcao === 'elogiar') RC.mexer(E, 5, 'Entrevista: elogiou a diretoria');
+      if(idOpcao === 'elogiar'){
+        RC.mexer(E, 5, 'Entrevista: elogiou a diretoria');
+        cobrarMoral(0.6, 'Elogiou a diretoria com o time indo mal');
+      }
       else if(idOpcao === 'cobrar'){
         RC.mexer(E, -5, 'Entrevista: cobrou a diretoria');
         TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: cobrou a diretoria');
@@ -1141,7 +1167,10 @@ TO.feed = (function(){
         TO.estado.mexerIndicador(E, 'prestigio', 0.6, 'Entrevista: pediu a saída da diretoria');
       }
     } else if(idPergunta === 'temporada'){
-      if(idOpcao === 'elogiar') RC.mexer(E, 4, 'Entrevista: elogiou a temporada');
+      if(idOpcao === 'elogiar'){
+        RC.mexer(E, 4, 'Entrevista: elogiou a temporada');
+        cobrarMoral(0.4, 'Elogiou a campanha com o time indo mal');
+      }
       else if(idOpcao === 'criticar'){
         RC.mexer(E, -6, 'Entrevista: criticou a temporada');
         TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: criticou a temporada');
@@ -1164,7 +1193,10 @@ TO.feed = (function(){
         criticar:'criticou', neutro:'ficou em cima do muro', paz:'disse que está em paz',
         guerra:'disse que é rixa de verdade', confirmar:'confirmou', negar:'negou'};
       m.respondido = {botao:'entrevista', rot:'Entrevista dada'};
-      m.consequencia = perguntas.map(x=>RESUMO[x.resposta] || x.resposta).join(', ') + '.';
+      const perdida = Math.round((m.dados.moralPerdida || 0)*10)/10;
+      m.consequencia = perguntas.map(x=>RESUMO[x.resposta] || x.resposta).join(', ') + '.' +
+        (perdida ? ` A rua não gostou de ver a diretoria defendida com o time `+
+                   `assim: −${perdida} de moral.` : '');
     }
     return {ok:true, fechou: perguntas.every(x=>x.resposta)};
   }
@@ -3062,10 +3094,15 @@ TO.feed = (function(){
           m.consequencia = `Fomos pra porta do CT cobrar satisfação. `+
             `${r} de relação com o clube · +2 de prestígio.`;
         } else {
+          /* IR PELA GESTÃO E NÃO PELOS MEMBROS CUSTA (pedido do dono,
+             19/09/2026): eles queriam ir pra porta do CT, e quem
+             segurou foi a diretoria da torcida. −3 de moral, não −1. */
           const r = RC.mexer(E, 2, 'Segurou a torcida, não foi ao CT');
-          TO.estado.mexerIndicador(E, 'moral', -0.2, 'Torcida queria protestar e ficou quieta');
+          TO.estado.mexerIndicador(E, 'moral', -0.6,
+            'Segurou a torcida a favor da diretoria do clube');
           m.consequencia = `Seguramos a torcida — não é hora de desgaste com `+
-            `a diretoria. +${r} de relação com o clube · −1 de moral.`;
+            `a diretoria. +${r} de relação com o clube · −3 de moral: o pessoal `+
+            `queria ir e ficou com a impressão de que a gente joga pro outro lado.`;
         }
         return {ok:true};
       }
@@ -3558,5 +3595,6 @@ TO.feed = (function(){
           caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
           pautaAproximacao, pautaPaz, pautaAfastar,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
-          SOFRIDO, naoDesceu, responderEntrevista, assuntoClubeDeHoje};
+          SOFRIDO, naoDesceu, responderEntrevista, assuntoClubeDeHoje,
+          entrevistaDeHoje, protestoNoCT};
 })();
