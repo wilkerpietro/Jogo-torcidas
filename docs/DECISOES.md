@@ -7208,6 +7208,36 @@ Em 120 discos não muda nada (122 bonecos nos dois casos, 9 ms de JS, 523 draw c
 
 **Save em andamento.** As fases que já foram jogadas no save do dono continuam como estão, numa página com o agregado — são linhas já gravadas. As que ainda vão acontecer neste ano, e o ano inteiro a partir da virada, já saem em duas páginas.
 
+## A relação com o clube (pedido do dono, 18/09/2026)
+
+**O pedido.** Um motor novo, à parte de moral e prestígio: relação da TORCIDA com o CLUBE que ela apoia, de 0 a 100, subindo com presença em jogo e caindo com bagunça no dia de jogo e crítica pública, com quatro degraus de benefício.
+
+**Onde mora.** `js/mundo/relacaoclube.js` (`TO.relacaoClube`) — a régua, os quatro degraus e a matemática pura: `nivel`, `mexer`, `faixaDe`, `multLoja`, `abateCaravana`, `ingressosDoJogo`, `pontosPorPresenca`, `pontosPorBriga`, `registrarResultadoClube`, `sequenciaRuim`. Nasce em 50 (nem contra, nem de joelhos), guarda o próprio histórico em `E.relacaoClubeHistorico`, no mesmo espírito do livro de moral e prestígio.
+
+**Os ganhos e as perdas, na tabela do dono:**
+- Presença: em casa, só acima de 80% soma (+2); fora, o degrau mais alto que a caravana alcançou — +1 acima de 20%, +4 acima de 40%, +6 acima de 60% (não soma os três, é o teto). Lido em `placarDoDia` (feed.js), na mesma conta de `presenca` que já monta a linha da torcida no cartão da partida.
+- Briga em dia de jogo: nos arredores do estádio −6 em casa / −4 fora; na arquibancada −10 em casa / −6 fora. Bar, sede e treta ficam de fora — não são a arena do clube. Aplicado no fecho de toda cena (`fecharDiaDeJogo`, main.js), lendo `enc.local === 'arredores'` ou `acao.acao === 'estadio'` e `E.proximoJogo.casa` pro mando.
+- Protesto na porta do CT: só aparece quando o clube vem de sequência ruim (3 derrotas ou mais nos últimos 5 jogos — régua do autor, o dono pediu "observe a sequência" sem cravar o número). Duas saídas: encabeçar custa −8 de relação e rende +2 de prestígio; segurar a torcida poupa a relação (+2) à custa de −1 de moral.
+- Pedido de saída da diretoria: uma das respostas da entrevista (abaixo), −20 de relação e +3 de prestígio — a mais pesada das opções, de propósito.
+
+**A entrevista** (pedido do dono: "reportagem de jornalista perguntando trabalho da diretoria, temporada, relação com outra torcida, boato de diplomacia"). Uma vez por mês (a mesma régua de degrau do assalto, só que com 12 em vez de 9), um jornal fictício — Diário da Bola, Jornal da Arquibancada ou Rádio Torcida FM, sorteado por torcida — liga com quatro perguntas, cada uma com resposta própria dentro do MESMO cartão: diretoria (elogiar +5 / cobrar −5 · +1 prestígio / pedir a saída −20 · +3 prestígio), temporada com a posição real na tabela (elogiar +4 / criticar −6 · +1 prestígio / neutro sem efeito), a relação com outra torcida — o maior rival se houver, senão a maior aliada, lida de `TO.relacoes.nivel` (dizer que está em paz melhora um pouco a relação com ela / dizer que é rixa de verdade piora e rende prestígio), e um boato de pedido de afastamento ou aproximação (confirmar ou negar, efeito só de prestígio — a integração funda com o sistema de eixos ficou de fora desta versão, por escopo). A mensagem só fecha quando as quatro tiverem resposta — a mesma régua da lista de aniversários (`responderAniversario`); a nova é `TO.feed.responderEntrevista(E, idMsg, idPergunta, idOpcao)`, e o cartão reaproveita as mesmas classes CSS (`bloco-recepcao`/`rec-aliado`/`rec-botoes`/`rec-bt`) sem CSS novo.
+
+**Os quatro degraus de benefício:**
+| Faixa | Ingressos pros sócios | Loja | Caravana |
+|---|---|---|---|
+| 0–25 | nenhum | nenhum | nenhum |
+| 26–50 | 10% dos membros, R$ 10 cada | — | — |
+| 51–75 | 30% dos membros | +5% de receita | — |
+| 76–100 | 60% dos membros | +15% de receita | cobre 20% do custo |
+
+Ingresso vira receita todo jogo em casa — `TO.relacaoClube.ingressosDoJogo(E)`, lançada em `placarDoDia` como "Venda de ingressos aos sócios". O buff de loja entra no multiplicador da receita (`js/gestao/financeiro.js`, `contas`), só na loja — o bar é outra economia. A ajuda na caravana abate 20% do que `cobrarCaravana` cobraria, antes de descontar do caixa.
+
+**Na tela.** `Torcida → Moral, Prestígio & Clube` ganhou um cartão "Relação com o clube" (nível, faixa, os três benefícios por extenso) e o histórico próprio, ao lado dos de sempre.
+
+**Medido** (Playwright, temporada inteira): 10 entrevistas e 2 protestos em 52 semanas (a régua de 12/ano rateada entre os dois, protesto só quando a sequência pedia); ingressos vendidos em 25 jogos em casa, um exemplo de R$ 900 (90 sócios × R$ 10, faixa de 60%); loja a 1.535 → 1.611 (relação 60, +5%) → 1.765 (relação 90, +15%); ingressos por membro conferidos nos quatro degraus (0/10/30/60%); ajuda de caravana 0 na faixa baixa e 20% na alta; briga nos arredores e na arquibancada, casa e fora, com os quatro valores certos (−6/−10/−4/−6); a relação clampada em 100 quando a torcida vai bem o ano inteiro. O cartão da entrevista e do protesto testados na UI real, clique a clique, com a consequência escrita batendo com a conta.
+
+**Achado à parte, fora de escopo.** Durante o teste apareceu um erro pré-existente, "jogos is not defined", pego pelo try/catch do harness duas vezes num ano simulado — não é deste pedido e o jogo real já engole silenciosamente. Fica anotado pro dono decidir se vale investigar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -416,6 +416,7 @@ TO.feed = (function(){
     passo('ataque sofrido', ()=>ataqueSofridoHoje(E));
     passo('escolta',        ()=>escoltaDeHoje(E));
     passo('assalto',        ()=>assaltoDeHoje(E));
+    passo('assunto do clube',()=>assuntoClubeDeHoje(E));
     passo('bar rival',      ()=>barRivalDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
     /* a recepção do aliado vira dinheiro no dia do jogo dele (dono,
@@ -977,6 +978,197 @@ TO.feed = (function(){
       ]
     });
   }
+
+  /* =========================================================
+     A RELAÇÃO COM O CLUBE, UMA VEZ POR MÊS (pedido do dono,
+     18/09/2026)
+
+     Doze vezes por ano — a mesma régua do assalto, só que com
+     12 em vez de 9 —, um assunto do clube bate à porta: se o
+     time vem de sequência ruim (3 derrotas ou mais nos últimos
+     5 jogos), meio a meio entre PROTESTO NA PORTA DO CT e
+     entrevista; sem sequência ruim, é sempre entrevista — o
+     protesto só faz sentido quando o time está mal em campo.
+     ========================================================= */
+  const ASSUNTOS_CLUBE_ANO = 12;
+  function assuntoClubeDeHoje(E){
+    if(!TO.relacaoClube || !E.torcida.clubeId) return;
+    const sa = TO.relacoes.semanaAbs(E);
+    const H = TO.mapa.hash;
+    const n = sa + H(`clube|${E.torcida.id}`) % SEMANAS_DO_ANO;
+    const deg = k => Math.floor(k * ASSUNTOS_CLUBE_ANO / SEMANAS_DO_ANO);
+    if(deg(n) === deg(n - 1)) return;
+    let dia = 1 + H(`clube|d|${sa}|${E.torcida.id}`) % 7;
+    for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
+    if(dia !== E.data.dia) return;
+    const ruim = TO.relacaoClube.sequenciaRuim(E);
+    const sorteioProtesto = ruim &&
+      H(`clube-tipo|${sa}|${E.torcida.id}`) % 2 === 0;
+    if(sorteioProtesto) protestoNoCT(E, sa);
+    else entrevistaDeHoje(E, sa);
+  }
+
+  /* -------------------------------------------------------
+     O PROTESTO NA PORTA DO CT (pedido do dono, 18/09/2026)
+     Só sai quando o time vem mal — 3 derrotas ou mais nos
+     últimos 5 jogos —, com a sequência real na manchete. Duas
+     saídas, cada uma com o preço dela: cobrar da diretoria
+     custa 8 pontos de relação com o clube mas rende prestígio
+     de rua; segurar a torcida poupa a relação e ainda soma um
+     pouco, à custa de moral — quem queria ir e ficou quieto
+     não gosta.
+     ------------------------------------------------------- */
+  function protestoNoCT(E, sa){
+    const der = TO.relacaoClube.derrotasRecentes(E);
+    const seq = (E.sequenciaClube || []).slice(0, 5).join('');
+    const time = M().time(E.torcida.clubeId);
+    propor(E, {
+      kind:'protesto-ct', peso:'decisao', voz:'diretor',
+      chave:`protesto-ct|${E.data.ano}|${sa}`,
+      texto:`Chefe, o time tá jogando mal — ${der} derrota`+
+            `${der===1?'':'s'} nos últimos 5 jogos (${seq}) — e um `+
+            `grupo já fala em ir pra porta do CT cobrar satisfação `+
+            `${time?'do '+time.nome:'do clube'}. Encabeçamos o protesto?`,
+      dados:{sequencia:seq, derrotas:der},
+      botoes:[
+        {id:'protestar', rot:'Encabeçar o protesto',
+         acao:'protesto-ct'},
+        {id:'segurar', rot:'Segurar a torcida, não é hora',
+         acao:'protesto-ct'}
+      ]
+    });
+  }
+
+  /* -------------------------------------------------------
+     A ENTREVISTA (pedido do dono, 18/09/2026)
+     Um jornalista de um jornal fictício da cidade liga atrás
+     de posição: diretoria, temporada, uma outra torcida (a
+     partir da relação real — o maior rival, se houver, senão
+     a maior aliada) e um boato de diplomacia. Cada pergunta
+     tem a resposta própria, e a mensagem só fecha quando as
+     quatro estiverem respondidas — a mesma régua da lista de
+     aniversários.
+     ------------------------------------------------------- */
+  const JORNAIS_CLUBE = ['Diário da Bola', 'Jornal da Arquibancada',
+                         'Rádio Torcida FM'];
+  function alvoDaEntrevista(E){
+    const outras = M().jogaveis().filter(o=>o.id !== E.torcida.id && !o.incompleta);
+    if(!outras.length) return null;
+    let pior = null, melhor = null;
+    for(const o of outras){
+      const r = TO.relacoes.nivel(E, o.id);
+      if(!pior || r < pior.r) pior = {o, r};
+      if(!melhor || r > melhor.r) melhor = {o, r};
+    }
+    const rival = pior && pior.r <= -15;
+    const alvo = rival ? pior : (melhor && melhor.r >= 20 ? melhor : pior);
+    return alvo && {id:alvo.o.id, nome:alvo.o.nome, rival: !!rival};
+  }
+  function entrevistaDeHoje(E, sa){
+    const time = M().time(E.torcida.clubeId);
+    const nomeClube = time ? time.nome : 'o clube';
+    const comp = ((E.temporada || {}).competicoes || [])
+      .find(c => !c.copa && (c.clubes||[]).includes(E.torcida.clubeId));
+    const pos = comp ? TO.competicoes.posicaoNaTabela(E, comp.id, E.torcida.clubeId) : 0;
+    const outra = alvoDaEntrevista(E);
+    const jornal = JORNAIS_CLUBE[H_(`clube-jornal|${E.torcida.id}`, JORNAIS_CLUBE.length)];
+    const perguntas = [
+      {id:'diretoria', resposta:null,
+       texto:`O que a torcida acha do trabalho da diretoria ${nomeClube ? 'do '+nomeClube : ''}?`,
+       opcoes:[
+         {id:'elogiar', rot:'Elogiar a gestão', nota:'+5 relação com o clube'},
+         {id:'cobrar', rot:'Cobrar mais investimento', nota:'−5 relação · +1 prestígio'},
+         {id:'saida', rot:'Pedir a saída da diretoria', nota:'−20 relação · +3 prestígio'}
+       ]},
+      {id:'temporada', resposta:null,
+       texto: pos
+         ? `E da temporada? Hoje o ${nomeClube} está em ${pos}º na tabela.`
+         : `E da temporada do ${nomeClube} até aqui?`,
+       opcoes:[
+         {id:'elogiar', rot:'Elogiar a campanha', nota:'+4 relação com o clube'},
+         {id:'criticar', rot:'Criticar duramente', nota:'−6 relação · +1 prestígio'},
+         {id:'neutro', rot:'Ficar em cima do muro', nota:'sem efeito'}
+       ]}
+    ];
+    if(outra) perguntas.push({id:'rival', resposta:null, alvo:outra.id,
+      texto:`E como está a relação de vocês com a ${outra.nome}?`,
+      opcoes:[
+        {id:'paz', rot:`Dizer que está em paz com a ${outra.nome}`,
+         nota:'melhora um pouco a relação com ela'},
+        {id:'guerra', rot:`Dizer que é rixa de verdade`,
+         nota:'piora um pouco a relação com ela · +1 prestígio'}
+      ]});
+    perguntas.push({id:'boato', resposta:null,
+      texto:'Rolou um boato de que vocês pediram a um aliado pra se '+
+            'afastar ou se aproximar de outra torcida. É verdade?',
+      opcoes:[
+        {id:'confirmar', rot:'Confirmar', nota:'+1 prestígio · transparência'},
+        {id:'negar', rot:'Negar, é balela', nota:'sem efeito'}
+      ]});
+    propor(E, {
+      kind:'entrevista', peso:'decisao', voz:'jornal',
+      chave:`entrevista-clube|${E.data.ano}|${sa}`,
+      texto:`O ${jornal} ligou atrás de uma entrevista sobre a torcida `+
+            `e o ${nomeClube}. Quatro perguntas rápidas — o que a gente `+
+            'responde?',
+      dados:{jornal, perguntas}
+    });
+  }
+  /* uma escolha estável por chave, sem sortear de novo a cada leitura */
+  function H_(chave, n){ return TO.mapa.hash(chave) % n; }
+
+  /* a resposta de cada pergunta da entrevista, uma de cada vez — a
+     mensagem só fecha quando as quatro tiverem resposta (mesma régua
+     de `responderAniversario`) */
+  function responderEntrevista(E, idMsg, idPergunta, idOpcao){
+    caixas(E);
+    const m = E.feed.find(x=>x.id === idMsg);
+    if(!m || m.kind !== 'entrevista' || m.respondido) return {ok:false};
+    const perguntas = (m.dados||{}).perguntas || [];
+    const p = perguntas.find(x=>x.id === idPergunta);
+    if(!p || p.resposta) return {ok:false};
+    const opc = (p.opcoes||[]).find(x=>x.id === idOpcao);
+    if(!opc) return {ok:false};
+    p.resposta = idOpcao;
+    const RC = TO.relacaoClube;
+    if(idPergunta === 'diretoria'){
+      if(idOpcao === 'elogiar') RC.mexer(E, 5, 'Entrevista: elogiou a diretoria');
+      else if(idOpcao === 'cobrar'){
+        RC.mexer(E, -5, 'Entrevista: cobrou a diretoria');
+        TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: cobrou a diretoria');
+      } else if(idOpcao === 'saida'){
+        RC.mexer(E, -20, 'Entrevista: pediu a saída da diretoria');
+        TO.estado.mexerIndicador(E, 'prestigio', 0.6, 'Entrevista: pediu a saída da diretoria');
+      }
+    } else if(idPergunta === 'temporada'){
+      if(idOpcao === 'elogiar') RC.mexer(E, 4, 'Entrevista: elogiou a temporada');
+      else if(idOpcao === 'criticar'){
+        RC.mexer(E, -6, 'Entrevista: criticou a temporada');
+        TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: criticou a temporada');
+      }
+    } else if(idPergunta === 'rival' && p.alvo){
+      E.relacoes = E.relacoes || {};
+      const v = TO.relacoes.nivel(E, p.alvo);
+      const REL = TO.relacoes.REL;
+      if(idOpcao === 'paz')
+        E.relacoes[p.alvo] = U.limitar(v + REL.aproximar, -100, 100);
+      else if(idOpcao === 'guerra'){
+        E.relacoes[p.alvo] = U.limitar(v - REL.aproximar, -100, 100);
+        TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: provocou a rival');
+      }
+    } else if(idPergunta === 'boato' && idOpcao === 'confirmar'){
+      TO.estado.mexerIndicador(E, 'prestigio', 0.2, 'Entrevista: confirmou o boato');
+    }
+    if(perguntas.every(x=>x.resposta)){
+      const RESUMO = {elogiar:'elogiou', cobrar:'cobrou', saida:'pediu a saída',
+        criticar:'criticou', neutro:'ficou em cima do muro', paz:'disse que está em paz',
+        guerra:'disse que é rixa de verdade', confirmar:'confirmou', negar:'negou'};
+      m.respondido = {botao:'entrevista', rot:'Entrevista dada'};
+      m.consequencia = perguntas.map(x=>RESUMO[x.resposta] || x.resposta).join(', ') + '.';
+    }
+    return {ok:true, fechou: perguntas.every(x=>x.resposta)};
+  }
+
   /* -------------------------------------------------------
      3f. O BAR DO RIVAL DÁ SOPA (texto do dono, 18/08/2026):
          em torno de 8 vezes no ano (eram 15 até 24/08/2026,
@@ -2543,6 +2735,26 @@ TO.feed = (function(){
          presentes saem do texto corrido e vão pra uma linha única de
          colunas, cada uma com a cor primária na borda esquerda —
          quem desenha é o cartão da mensagem, lendo `dados.presenca` */
+      /* A RELAÇÃO COM O CLUBE LÊ A PRESENÇA (pedido do dono,
+         18/09/2026): quem foi é quem já está em `presentes` —
+         mesma conta que monta a linha da torcida no cartão. Em casa
+         só a faixa de cima soma, e é o dia em que a torcida vende
+         ingresso pros próprios membros, pela fatia que a relação
+         atual dá direito (10/30/60%, R$ 10 cada). Fora, é a
+         caravana que decide o degrau. */
+      if(TO.relacaoClube){
+        const nossaLinha = presentes.find(x => x.id === E.torcida.id);
+        const totalMembros = E.membros.length || 1;
+        const pct = nossaLinha ? nossaLinha.n / totalMembros : 0;
+        TO.relacaoClube.pontosPorPresenca(E, pct, nosso.c === meu);
+        if(nosso.c === meu){
+          const ing = TO.relacaoClube.ingressosDoJogo(E);
+          if(ing.valor){
+            TO.estado.lancar(E, `Venda de ingressos aos sócios `+
+              `(${ing.n} · R$ ${TO.relacaoClube.PRECO_INGRESSO} cada)`, ing.valor);
+          }
+        }
+      }
       propor(E, {
         kind:'partida', peso:'decisao', voz:'jornal',
         chave:`partida|${E.data.ano}|${E.data.semana}|${E.data.dia}|${meu}`,
@@ -2836,6 +3048,27 @@ TO.feed = (function(){
       case 'nada':
         marcar();
         return {ok:true};
+      /* O PROTESTO NA PORTA DO CT (pedido do dono, 18/09/2026): duas
+         saídas, sem tela própria — cobrar da diretoria custa relação
+         com o clube e rende prestígio de rua; segurar a torcida poupa
+         a relação (e ainda soma um pouco pela cabeça fria) à custa de
+         moral, porque quem queria ir e ficou quieto reclama. */
+      case 'protesto-ct': {
+        marcar();
+        const RC = TO.relacaoClube;
+        if(idBotao === 'protestar'){
+          const r = RC.mexer(E, -8, 'Protesto na porta do CT');
+          TO.estado.mexerIndicador(E, 'prestigio', 0.4, 'Protesto na porta do CT');
+          m.consequencia = `Fomos pra porta do CT cobrar satisfação. `+
+            `${r} de relação com o clube · +2 de prestígio.`;
+        } else {
+          const r = RC.mexer(E, 2, 'Segurou a torcida, não foi ao CT');
+          TO.estado.mexerIndicador(E, 'moral', -0.2, 'Torcida queria protestar e ficou quieta');
+          m.consequencia = `Seguramos a torcida — não é hora de desgaste com `+
+            `a diretoria. +${r} de relação com o clube · −1 de moral.`;
+        }
+        return {ok:true};
+      }
       case 'tutorial': {
         marcar();
         if(idBotao === 'pular'){
@@ -3325,5 +3558,5 @@ TO.feed = (function(){
           caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
           pautaAproximacao, pautaPaz, pautaAfastar,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
-          SOFRIDO, naoDesceu};
+          SOFRIDO, naoDesceu, responderEntrevista, assuntoClubeDeHoje};
 })();

@@ -2910,6 +2910,40 @@
       art.appendChild(bloco);
     }
 
+    /* A ENTREVISTA (pedido do dono, 18/09/2026): a mesma régua da
+       lista de aniversários — cada pergunta tem a resposta própria,
+       dentro do cartão, e a mensagem só fecha quando as quatro
+       tiverem resposta. */
+    const perguntasEntrevista = m.kind === 'entrevista' && m.dados && m.dados.perguntas;
+    if(perguntasEntrevista && perguntasEntrevista.length){
+      const bloco = el('div',{class:'bloco-recepcao bloco-anivs'});
+      for(const p of perguntasEntrevista){
+        const linha = el('div',{class:'rec-aliado'+(p.resposta?' pago':'')});
+        const opcResp = p.resposta && (p.opcoes||[]).find(x=>x.id===p.resposta);
+        linha.appendChild(el('div',{class:'rec-nome', html:
+          `<b>${p.texto}</b>`+
+          (opcResp ? ` <span class="tag">${opcResp.rot}</span>` : '')}));
+        if(!p.resposta){
+          const bts = el('div',{class:'rec-botoes'});
+          for(const o of (p.opcoes||[])){
+            const b = el('button',{class:'rec-bt', html:
+              `${o.rot}<small>${o.nota||''}</small>`});
+            b.onclick = ()=>{
+              const r = TO.feed.responderEntrevista(e, m.id, p.id, o.id);
+              if(!r.ok) return;
+              TO.estado.salvar();
+              atualizarFeed(); pintarTopo();
+              if(r.fechou){ redesenhar(); if(!TO.feed.travado(e)) retomarTempo('decisao'); }
+            };
+            bts.appendChild(b);
+          }
+          linha.appendChild(bts);
+        }
+        bloco.appendChild(linha);
+      }
+      art.appendChild(bloco);
+    }
+
     /* a linha de consequência sai dos efeitos aplicados, nunca do texto */
     if(m.consequencia)
       art.appendChild(el('div',{class:'msg-efeitos',
@@ -3966,6 +4000,44 @@
       `correndo até a próxima briga.</span></div>`;
     cx.appendChild(c0);
 
+    /* A RELAÇÃO COM O CLUBE (pedido do dono, 18/09/2026): régua
+       própria de 0 a 100, com os quatro degraus de benefício abaixo
+       do nível atual — pra sempre ficar claro o que falta pro
+       próximo. */
+    if(TO.relacaoClube){
+      const RC = TO.relacaoClube;
+      const nv = RC.nivel(e);
+      const fx = RC.faixaDe(nv);
+      const ing = RC.ingressosDoJogo(e);
+      const c1 = cartao('Relação com o clube');
+      c1.corpo.innerHTML =
+        `<div class="linha-dado"><span>Nível</span>
+           <b>${Math.round(nv)} <span class="fraco">de 100 · faixa ${fx.rot}</span></b></div>
+         <div class="linha-dado"><span>Ingressos pros sócios</span>
+           <b>${ing.n ? `${ing.n} (${Math.round(fx.ingressos*100)}%)` : 'nenhum'}</b></div>
+         <div class="linha-dado"><span>Material oficial na loja</span>
+           <b>${fx.lojaBuff ? `+${Math.round(fx.lojaBuff*100)}% de receita` : 'não'}</b></div>
+         <div class="linha-dado"><span>Ajuda na caravana</span>
+           <b>${fx.caravana ? `cobre ${Math.round(fx.caravana*100)}%` : 'não'}</b></div>
+         <div class="linha-dado"><span class="fraco">Presença nos jogos sobe; briga nos `+
+        `arredores e na arquibancada em dia de jogo desce; entrevista e protesto na `+
+        `porta do CT mexem também — 0 a 25 não dá nenhum benefício, 76 a 100 dá tudo.`+
+        `</span></div>`;
+      cx.appendChild(c1);
+
+      const histC = e.relacaoClubeHistorico || [];
+      const c2 = cartao('Histórico da relação com o clube', `${histC.length} movimentos`);
+      if(!histC.length)
+        c2.corpo.innerHTML = '<div class="em-construcao">Nada mexeu ainda.</div>';
+      for(const h of histC.slice(0, 60))
+        c2.corpo.appendChild(el('div',{class:'transacao', html:
+          `<span class="dia">${h.dia}</span>
+           <span class="desc">${h.motivo||''}</span>
+           <span class="val ${h.delta<0?'negativo':'positivo'}">`+
+          `${h.delta>0?'+':''}${h.delta}</span>`}));
+      cx.appendChild(c2);
+    }
+
     const hist = e.historicoIndicadores || [];
     const c = cartao('Histórico', `${hist.length} movimentos`);
     if(!hist.length)
@@ -3994,7 +4066,7 @@
       {id:'recrutamento', rot:'Recrutamento'},
       {id:'velhaguarda',  rot:`Velha Guarda${(e.velhaGuarda||[]).length
                                 ? ' · '+e.velhaGuarda.length : ''}`},
-      {id:'indicadores',  rot:'Moral & Prestígio'}
+      {id:'indicadores',  rot:'Moral, Prestígio & Clube'}
     ], subTorcida, id=>{subTorcida=id; redesenhar();}));
 
     if(subTorcida==='velhaguarda'){ pg.appendChild(painelVelhaGuarda()); return; }
@@ -8986,10 +9058,23 @@
     if(res && fecho && TO.acoes.aplicarFaixa)
       for(const fx of (res.faixas || (res.faixa ? [res.faixa] : [])))
         if(fx && fx.tomada) TO.acoes.aplicarFaixa(e, res, fecho, rivalIdCtx, fx);
+    const cenaDaLuta = (acao && acao.alvo && (acao.alvo.cena || acao.alvo.local)) || (acao && acao.cena) ||
+            (acao && acao.alvo && acao.alvo.tipo) || (enc && enc.local) || '';
+    /* A RELAÇÃO COM O CLUBE SENTE A BRIGA EM DIA DE JOGO (pedido do
+       dono, 18/09/2026): só nos arredores do estádio (`enc.local`, a
+       rua de antes e depois do jogo) e na arquibancada (`acao.acao
+       === 'estadio'`) — bar, sede e treta não são a arena do clube e
+       ficam de fora. Casa ou fora sai de `E.proximoJogo`, que segue
+       valendo durante toda a partida do dia. */
+    if(TO.relacaoClube){
+      const tipoLuta = cenaDaLuta === 'arredores' ? 'arredores'
+                      : (acao && acao.acao === 'estadio') ? 'arquibancada' : null;
+      if(tipoLuta)
+        TO.relacaoClube.pontosPorBriga(e, tipoLuta, !!(e.proximoJogo && e.proximoJogo.casa));
+    }
     const ctxRelatorio = {
       rival: rivalCtx,
-      cena: (acao && acao.alvo && (acao.alvo.cena || acao.alvo.local)) || (acao && acao.cena) ||
-            (acao && acao.alvo && acao.alvo.tipo) || (enc && enc.local) || '',
+      cena: cenaDaLuta,
       atacamos: !!(acao && acao.acao === 'atacar') || !!(enc && !enc.sofrido),
       delta: {
         dinheiro: Math.round(e.dinheiro - foto.dinheiro),

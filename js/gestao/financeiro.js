@@ -356,10 +356,16 @@ TO.financeiro = (function(){
     }
     /* a fábrica REPENSADA (ordem do dono, 02/09/2026): não mexe mais
        na receita — ela corta 50% do CUSTO da loja, lá nas despesas */
+    /* O MATERIAL OFICIAL DO CLUBE (pedido do dono, 18/09/2026): a
+       relação com o clube acima de 50 põe camisa e material oficial
+       na loja da torcida pra revender — +5% de receita de 51 a 75,
+       +15% de 76 a 100. Só a loja recebe; o bar é outra economia. */
+    const multClube = TO.relacaoClube ? TO.relacaoClube.multLoja(E) : 1;
     for(const l of p.lojas){
       if(l.semInsumo){ des.push({rot:`Loja — ${l.bairro}: sem insumo`, v:0, nota:true}); continue; }
-      juntar(rec, `Loja${l.bairro?' — '+l.bairro:''} (n${l.nivel})${p.fabrica?' · fábrica':''}`,
-             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM);
+      juntar(rec, `Loja${l.bairro?' — '+l.bairro:''} (n${l.nivel})${p.fabrica?' · fábrica':''}`+
+                  (multClube > 1 ? ' · material oficial' : ''),
+             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube);
     }
     for(const s of p.subsedes)
       juntar(rec, `Subsede${s.bairro?' — '+s.bairro:''}`,
@@ -475,7 +481,14 @@ TO.financeiro = (function(){
     /* a conta é da estrada e do tamanho da caravana; sem plano, o valor
        cheio do GDD §7.3 */
     const est = TO.planejamento && TO.planejamento.estimativaCaravana(E);
-    const valor = est ? est.custo : CARAVANA;
+    let valor = est ? est.custo : CARAVANA;
+    /* O CLUBE AJUDA NA ESTRADA (pedido do dono, 18/09/2026): relação
+       76 a 100 cobre 20% do que a caravana custaria. Só entra quando
+       há despesa de verdade — frota cheia já zerou o custo antes
+       disto rodar. */
+    const abate = TO.relacaoClube ? TO.relacaoClube.abateCaravana(E) : 0;
+    const ajudaDoClube = abate && valor > 0 ? Math.round(valor * abate) : 0;
+    if(ajudaDoClube) valor -= ajudaDoClube;
     /* FROTA CHEIA (três ônibus, régua do dono 20/08/2026): a despesa
        da estrada morre e o rateio dos que embarcam vira RECEITA. Com
        um ou dois ônibus a despesa só encolhe — 30% e 60% —, e o
@@ -487,7 +500,8 @@ TO.financeiro = (function(){
         est.rateio);
     else if(valor > 0)
       TO.estado.lancar(E, `Caravana para ${destino}`+
-        (est ? ` (${est.vao} pessoas, rateio de ${U.dinheiro(est.rateio)})` : ''),
+        (est ? ` (${est.vao} pessoas, rateio de ${U.dinheiro(est.rateio)})` : '')+
+        (ajudaDoClube ? ` · clube cobriu ${U.dinheiro(ajudaDoClube)}` : ''),
         -valor);
     /* a lista não pode crescer pra sempre num save de dez temporadas */
     const chaves = Object.keys(E.caravanasPagas);

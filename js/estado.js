@@ -54,6 +54,12 @@ TO.estado = (function(){
       /* GDD §12: tudo na mesma escala 0–20 */
       indicadores:{ moral:12, prestigio:6 },
 
+      /* A RELAÇÃO COM O CLUBE (pedido do dono, 18/09/2026) é escala
+         própria, 0 a 100, nascida no meio — nem contra, nem de
+         joelhos. */
+      relacaoClube: 50,
+      sequenciaClube: [],
+
       dinheiro: 12000,
       membros: [],
       proximoId: 1,
@@ -519,6 +525,9 @@ TO.estado = (function(){
     /* o recrutamento olha pro último jogo (tabela do dono): vitória
        anima a praça, derrota esvazia — empate é semana comum */
     E.ultimoJogoClube = {venceu, perdeu};
+    /* a sequência que o protesto na porta do CT vai ler (pedido do
+       dono, 18/09/2026) */
+    if(TO.relacaoClube) TO.relacaoClube.registrarResultadoClube(E, venceu, perdeu);
   }
 
   function guardarTitulos(E){
