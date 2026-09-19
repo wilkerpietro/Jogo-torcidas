@@ -1050,11 +1050,13 @@ TO.feed = (function(){
 
      AS PERGUNTAS RODAM (pedido do dono, 19/09/2026): eram
      sempre as mesmas quatro, todo mês, e o dono avisou que
-     isso enche o saco. Agora há um BANCO de perguntas, metade
-     sobre o clube e metade sobre a rua, e cada entrevista
-     sorteia duas de cada — sem repetir o que saiu no mês
-     passado, quando dá. São 8 × 7 no banco: 21 duplas de
-     clube por 21 de rua, 441 entrevistas diferentes.
+     isso enche o saco. Agora há um BANCO de perguntas — uma
+     parte sobre o clube, outra sobre a rua — e cada entrevista
+     sorteia duas de cada, sem repetir o que saiu no mês
+     passado, quando dá. Hoje são 8 de clube por 5 de rua: 28
+     duplas por 10, 280 entrevistas diferentes. Saíram do banco,
+     a pedido do dono, "como anda a sede" e "quantos membros
+     vocês têm" — pergunta sem consequência nenhuma pro jogo.
 
      O TETO DO ELOGIO (régua do autor, 19/09/2026): o dono
      mediu +9 de relação por mês só de elogiar diretoria e
@@ -1089,9 +1091,18 @@ TO.feed = (function(){
      clique — as duas leem o mesmo teto, então a nota nunca promete
      o que o clique não entrega */
   const elogio = (n, moralSeMal) => ({clube:n, elogio:true, moralSeMal:moralSeMal||0});
-  function notaElogio(c, n, moralSeMal){
+  /* A PERGUNTA EM QUE A RUA JÁ É CONTRA (régua do dono, 19/09/2026):
+     mando de campo e preço de ingresso não têm dois lados na
+     arquibancada — a torcida É contra, e pronto. Ficar do lado do
+     clube nessas duas rende relação e CUSTA MORAL SEMPRE, com o time
+     bem ou mal. `moral` é a perda fixa; `moralSeMal` continua sendo a
+     perda que só existe quando o time vem mal, e as duas não se
+     somam na mesma opção — seria cobrar duas vezes pelo mesmo voto. */
+  const votarComOClube = (n, moral) => ({clube:n, elogio:true, moral:moral});
+  function notaElogio(c, n, moralSeMal, moralFixa){
     const real = Math.min(n, c.espaco);
-    const m = (c.timeMal && moralSeMal) ? ` · −${Math.round(moralSeMal*5)} de moral` : '';
+    const perda = moralFixa || ((c.timeMal && moralSeMal) ? moralSeMal : 0);
+    const m = perda ? ` · −${Math.round(perda*5)} de moral` : '';
     return (real > 0
       ? `+${real} relação com o clube · elogio só sobe até ${TETO_ELOGIO}`
       : `sem efeito: a relação já passou de ${TETO_ELOGIO}, e daí pra cima `+
@@ -1146,10 +1157,13 @@ TO.feed = (function(){
       ]})},
 
     {id:'ingresso', grupo:'clube', monta: c => ({
-      texto:`O ${c.nomeClube} mexeu no preço do ingresso. A torcida engole?`,
+      texto:`O ${c.nomeClube} subiu o preço do ingresso e a arquibancada `+
+            'inteira está reclamando. A organizada banca o clube?',
       opcoes:[
-        {id:'engolir', rot:'Dizer que o clube precisa arrecadar', nota:notaElogio(c, 2, 0.6),
-         resumo:'defendeu o preço do ingresso', ef:elogio(2, 0.6)},
+        {id:'engolir', rot:'Bancar: o clube precisa arrecadar',
+         nota:notaElogio(c, 2, 0, 0.6),
+         resumo:'bancou o aumento do ingresso contra a própria arquibancada',
+         ef:votarComOClube(2, 0.6)},
         {id:'reclamar', rot:'Dizer que é caro pra quem vai sempre',
          nota:'−5 relação · +1 prestígio',
          resumo:'reclamou do preço do ingresso', ef:{clube:-5, prestigio:0.2}},
@@ -1170,11 +1184,14 @@ TO.feed = (function(){
       ]})},
 
     {id:'mando', grupo:'clube', monta: c => ({
-      texto:`Corre que o ${c.nomeClube} quer vender mando de campo e jogar longe `+
-            'da cidade. Qual é a posição de vocês?',
+      texto:`O ${c.nomeClube} quer vender mando de campo e jogar longe da `+
+            'cidade. Não tem um na arquibancada que seja a favor. E a '+
+            'organizada, fecha com o clube?',
       opcoes:[
-        {id:'apoiar', rot:'Apoiar — o clube precisa do dinheiro', nota:notaElogio(c, 2, 0.6),
-         resumo:'apoiou a venda do mando', ef:elogio(2, 0.6)},
+        {id:'apoiar', rot:'Fechar com o clube: ele precisa do dinheiro',
+         nota:notaElogio(c, 2, 0, 0.6),
+         resumo:'apoiou a venda do mando contra a vontade da arquibancada',
+         ef:votarComOClube(2, 0.6)},
         {id:'condenar', rot:'Condenar: jogo é aqui', nota:'−5 relação · +2 prestígio',
          resumo:'condenou a venda do mando', ef:{clube:-5, prestigio:0.3}},
         {id:'muro', rot:'A torcida vai de qualquer jeito', nota:'sem efeito',
@@ -1231,18 +1248,6 @@ TO.feed = (function(){
          resumo:'negou o boato', ef:{}}
       ]})},
 
-    {id:'tamanho', grupo:'rua', monta: c => ({
-      texto:'Quantos vocês são hoje? A imprensa sempre chuta um número.',
-      opcoes:[
-        {id:'cravar', rot:`Cravar o número real (${c.membros})`,
-         nota:'transparência · sem efeito',
-         resumo:'cravou o número real da torcida', ef:{}},
-        {id:'inflar', rot:'Inflar o número, impressiona', nota:'+1 prestígio',
-         resumo:'inflou o número da torcida', ef:{prestigio:0.2}},
-        {id:'recusar', rot:'Não dar número nenhum', nota:'sem efeito',
-         resumo:'não deu número', ef:{}}
-      ]})},
-
     {id:'fama', grupo:'rua', monta: () => ({
       texto:'O jornal quer falar da fama de violenta que a organizada carrega. '+
             'Como a gente responde?',
@@ -1265,15 +1270,6 @@ TO.feed = (function(){
          resumo:'descartou a faixa de cobrança', ef:elogio(1, 0.6)},
         {id:'talvez', rot:'Depende do que acontecer em campo', nota:'sem efeito',
          resumo:'deixou a faixa em aberto', ef:{}}
-      ]})},
-
-    {id:'sede', grupo:'rua', monta: () => ({
-      texto:'E a sede da organizada — como anda a casa?',
-      opcoes:[
-        {id:'convidar', rot:'Abrir a casa pra quem quiser conhecer', nota:'+1 prestígio',
-         resumo:'abriu a sede pra imprensa', ef:{prestigio:0.2}},
-        {id:'fechar', rot:'É coisa nossa, sem visita', nota:'sem efeito',
-         resumo:'disse que a sede é coisa nossa', ef:{}}
       ]})},
 
     {id:'arquibancada', grupo:'rua', monta: c => ({
@@ -1328,7 +1324,6 @@ TO.feed = (function(){
     const jornal = JORNAIS_CLUBE[H_(`clube-jornal|${E.torcida.id}`, JORNAIS_CLUBE.length)];
     const ctx = {E, nomeClube, pos, totalClubes, timeMal, brigaRecente,
       outra: alvoDaEntrevista(E),
-      membros: (E.membros || []).length,
       espaco: Math.max(0, TETO_ELOGIO - TO.relacaoClube.nivel(E))};
     const perguntas = escolherPerguntas(ctx, sa)
       .map(q => Object.assign({id:q.id, resposta:null}, q.monta(ctx)));
@@ -1380,14 +1375,17 @@ TO.feed = (function(){
     }
     if(ef.prestigio)
       TO.estado.mexerIndicador(E, 'prestigio', ef.prestigio, `Entrevista: ${rot}`);
-    /* PASSAR A MÃO NA CABEÇA DO CLUBE COM O TIME MAL CUSTA MORAL
-       (pedido do dono, 19/09/2026): os membros querem protesto, e ver
+    /* PASSAR A MÃO NA CABEÇA DO CLUBE CUSTA MORAL
+       (pedido do dono, 19/09/2026): os membros querem cobrança, e ver
        o presidente da torcida defendendo o clube no jornal é ficar do
-       lado errado do balcão. Só pesa quando o time vem mal. */
-    if(ef.moralSeMal && timeMal){
-      TO.estado.mexerIndicador(E, 'moral', -ef.moralSeMal,
-        `Entrevista: ${rot} com o time indo mal`);
-      m.dados.moralPerdida = (m.dados.moralPerdida || 0) + ef.moralSeMal * 5;
+       lado errado do balcão. `moralSeMal` só pesa quando o time vem
+       mal; `moral` pesa sempre, e é das perguntas em que a rua já é
+       contra de saída — mando de campo e preço de ingresso. */
+    const perdaMoral = ef.moral || ((ef.moralSeMal && timeMal) ? ef.moralSeMal : 0);
+    if(perdaMoral){
+      TO.estado.mexerIndicador(E, 'moral', -perdaMoral,
+        `Entrevista: ${rot}` + (ef.moral ? '' : ' com o time indo mal'));
+      m.dados.moralPerdida = (m.dados.moralPerdida || 0) + perdaMoral * 5;
     }
     if(ef.outra && p.alvo){
       E.relacoes = E.relacoes || {};
@@ -1406,8 +1404,8 @@ TO.feed = (function(){
         (m.dados.tetoBateu
           ? ` O elogio não mexeu na relação com o clube: acima de ${TETO_ELOGIO} `+
             'só presença no estádio sobe.' : '') +
-        (perdida ? ` A rua não gostou de ver o clube defendido com o time `+
-                   `assim: −${perdida} de moral.` : '');
+        (perdida ? ` A rua não gostou de ver o clube defendido: `+
+                   `−${perdida} de moral.` : '');
     }
     return {ok:true, fechou: perguntas.every(x=>x.resposta)};
   }

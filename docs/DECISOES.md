@@ -7327,6 +7327,20 @@ Consertado com a chave `'entr-'+respondidas`. E a régua visual virou a da recep
 
 **Medido** (Playwright, cartão real, clique de verdade): antes do clique, três botões vivos; depois, linha marcada como respondida, etiqueta "respondido", botão escolhido em `opacity:1` com borda ouro, os outros dois em `opacity:0.38` e desabilitados, e as outras três perguntas seguem clicáveis.
 
+## Mando e ingresso: a rua já é contra (régua do dono, 19/09/2026)
+
+**O pedido.** "Nas perguntas do time mudar o mando de campo e mexer no ingresso a torcida vai sempre ser contra. Votar a favor aumenta a relação com o clube mas diminui a moral." · "Remova a pergunta 'E a sede da organizada, como anda a casa?' e a pergunta 'quantos membros a torcida tem' também."
+
+**A diferença que isso cria.** Até aqui só existia uma régua de moral na entrevista: defender o clube custava moral **quando o time vinha mal** (`moralSeMal`). Mando de campo e preço de ingresso não são assim — não têm dois lados na arquibancada. A torcida É contra, com o time em primeiro ou em último. Então essas duas ganharam `moral`, que é perda **fixa**: −3 de moral sempre que a organizada fecha com o clube, mais os +2 de relação (com o teto de 70 valendo igual).
+
+As duas réguas **não se somam na mesma opção** — seria cobrar duas vezes pelo mesmo voto. Onde há `moral` fixa, `moralSeMal` não entra.
+
+O texto das duas perguntas foi reescrito pra deixar claro de que lado a rua está antes do clique, que é o que dá sentido ao preço: *"O Palmeiras quer vender mando de campo e jogar longe da cidade. **Não tem um na arquibancada que seja a favor.** E a organizada, fecha com o clube?"* e *"O Palmeiras subiu o preço do ingresso e **a arquibancada inteira está reclamando**. A organizada banca o clube?"*. O rótulo do botão também deixou de ser neutro: "Apoiar" virou "**Fechar com o clube**", e o resumo que vai pra linha de consequência diz o que foi feito — "bancou o aumento do ingresso **contra a própria arquibancada**".
+
+**Medido** (Playwright, as duas perguntas, com o time bem e com o time mal): a nota do botão diz "−3 de moral" nos quatro casos, e o clique tira 3 de moral e dá +2 de relação nos quatro — sem diferença entre time bem e time mal, que é a régua pedida.
+
+**Saíram do banco:** "como anda a sede" e "quantos membros vocês têm". Eram as duas únicas perguntas sem consequência nenhuma pro jogo — ocupavam vaga no sorteio sem mexer em relação, moral nem prestígio de forma que importasse. O banco fica em **8 perguntas de clube por 5 de rua**: 28 duplas por 10, **280 entrevistas diferentes**. O campo `membros` do contexto saiu junto, que só a pergunta do número usava.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
