@@ -7398,8 +7398,8 @@ Isso inverte o sinal da moral no jogo. Até aqui ela só DESCIA — quando a gen
 |---|---|---|---|
 | A1 | Rival inaugurou na cidade | Zoar e marcar território · +2 moral · −8 com ela | Deixar quieto |
 | A2 | Rival abriu subsede em outra cidade | "Aquela cidade tem dono" · +2 moral · −12 com ela | Deixar quieto |
-| A3 | Quebraram o bar do rival | Tirar onda · +2 moral · −12 com ela | Não comentar |
-| A4 | Quebraram o **nosso** bar | Prometer resposta na porta deles · +3 moral · −12 | Levantar e não dar notícia |
+| ~~A3~~ | ~~Quebraram o bar do rival~~ | *virou pergunta de entrevista em 19/09/2026 — ver a seção abaixo* | |
+| ~~A4~~ | ~~Quebraram o **nosso** bar~~ | *idem* | |
 | A5 | **Nós** inauguramos | Inaugurar com a cidade sabendo · +2 moral · +3 relação com o clube · −6 com os rivais da cidade | Abrir sem alarde |
 | A6 | Aliada inaugurou | Descer lá em peso e virar recado · +2 moral · +8 com ela · −6 com os rivais | Mandar parabéns |
 
@@ -7433,6 +7433,26 @@ Em A6 o "agressivo" não é contra a aliada — é subir no palco junto e transf
 **O cartão bom** é a festa: **R$ 10.000** de custo, volta entre **R$ 9.000 e R$ 16.000** em bar, camisa e rifa, e **+5 de moral**. Sem caixa, o cartão recusa com todas as letras em vez de deixar o saldo negativo. *O "+5 de moral" é a minha leitura do "aumento de moral 5.000,00" do pedido — o 5.000 parecia arrastado da formatação dos valores acima. Se era outra coisa, é um número só pra trocar.*
 
 **Medido** (Playwright, temporadas inteiras, várias torcidas, 0 erros no `avancarDia`): campeão da Libertadores e da Copa do Brasil → festa; acesso do Ceará → festa; rebaixamento do Corinthians → protesto; 12º no Brasileirão com o 4º elenco → protesto; queda nas quartas da Libertadores pra um time 24 mais fraco → protesto; queda na segunda fase da Copa do Brasil pra um 26 mais fraco → protesto. Festa executada: −R$ 10.000, +R$ 11.096, +5 de moral, saldo escrito na consequência.
+
+## Bar quebrado é pauta de jornal, não cartão do dia (correção do dono, 19/09/2026)
+
+**O pedido.** "Não se deve gerar mensagem perguntando o que achamos dos bares quebrados sem parar. Na verdade isso deve aparecer como uma das perguntas do jornalista quando ele for nos entrevistar."
+
+**O erro era de cadência, não de ideia.** A3 e A4 nasceram hoje mesmo, no mesmo lote das obras, e no mesmo canal: um cartão de decisão por ocorrência. Só que obra é rara e **bar quebrado é comum** — o mundo se pega o tempo todo, e cada briga de dia de jogo que termina em bar produz uma pergunta que trava o relógio. Inauguração de subsede merece o cartão do dia; "o que vocês acharam daquele bar quebrado lá" é exatamente o tipo de comentário de rua que cabe numa entrevista mensal, disputando vaga com as outras perguntas, e não interrompendo o dia.
+
+**Duas filas, dois consumidores.** `registrarObra` passou a rotear por tipo: obra vai pra `E.obrasDaCidade` (cartão do dia), bar quebrado vai pra `E.baresQuebrados` (6 posições). O jornalista lê o mais recente que ainda seja notícia — **8 semanas**; bar quebrado há dois meses não é assunto de ninguém, e `barQuebradoRecente` devolve nada.
+
+**Três enquadramentos, porque a pergunta não é a mesma.**
+
+| Quem levou | Como o jornalista pergunta | Agressiva | Amena |
+|---|---|---|---|
+| **O nosso bar** | "Quebraram o bar de vocês — obra da X. O jornal quer a versão da organizada." | Avisar que vai ter resposta, e logo · +3 moral · −10 com ela | "O bar já está de pé" · nada |
+| **Fomos nós** | "Quebraram o bar da X e a cidade toda aponta pra cá. O jornal quer confirmação." | Assumir: fomos nós, e com orgulho · +3 moral · −10 | Negar · nada |
+| **Entre terceiros** | "Quebraram o bar da X, obra da Y. O que a organizada acha disso?" | Tirar onda · +2 moral · −10 com a X | "Bar de torcida não se mexe" · +5 com a X |
+
+O caso do meio não existia no cartão antigo e é o que mais denunciava o problema: perguntar à torcida **o que ela acha** de uma descida que ela mesma fez sai falso. O jornalista não pede opinião, pede confirmação.
+
+**Medido** (Playwright): dois bares quebrados na mesma chamada produzem **0 cartões de obra** e enchem a fila de bares; os três enquadramentos saem com o texto certo; assumir a descida deu +3 de moral e levou a Camisa 12 de −95 a −100; "bar de torcida não se mexe" devolveu +5; bar do ano anterior não vira pauta. Temporada inteira depois da mudança: 0 erros no `avancarDia`.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

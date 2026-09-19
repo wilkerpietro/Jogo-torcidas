@@ -1416,6 +1416,68 @@ TO.feed = (function(){
          ef: c.ranking.lider ? {} : {outra:1}}
       ]})},
 
+    /* O BAR QUEBRADO VIROU PAUTA DE JORNAL (pedido do dono,
+       19/09/2026): era um cartão por ocorrência, e o mundo quebra bar
+       o tempo todo — virava "sem parar". Aqui ele concorre com as
+       outras perguntas da rua e sai no máximo uma vez por mês. O
+       texto muda conforme o bar seja nosso ou dos outros. */
+    {id:'bar-quebrado', grupo:'rua', quando: c => !!c.barQuebrado,
+     monta: c => {
+      const b = c.barQuebrado;
+      const nomeDe = id => (M().torcida(id) || {}).nome || 'eles';
+      const atk = b.atacante ? nomeDe(b.atacante) : null;
+      if(b.dono === c.E.torcida.id) return {
+        alvo:b.atacante || null,
+        texto:`Quebraram o bar de vocês${atk ? ' — obra da '+atk : ''}. `+
+              'O jornal quer a versão da organizada.',
+        opcoes:[
+          {id:'resposta', rot:'Avisar que vai ter resposta, e logo',
+           nota:'+3 de moral' + (atk ? ` · piora muito a relação com a ${atk}` : ''),
+           resumo:'prometeu resposta pelo bar quebrado',
+           ef:atk ? {outra:-2, moralGanho:0.6} : {moralGanho:0.6}},
+          {id:'levantar', rot:'Dizer que o bar já está de pé de novo',
+           nota:'sem efeito', resumo:'disse que o bar já está de pé', ef:{}},
+          {id:'calar', rot:'Não falar de bar com jornalista',
+           nota:'sem efeito', resumo:'não falou do bar quebrado', ef:{}}
+        ]};
+      const dono = nomeDe(b.dono);
+      /* QUANDO O BONDE FOI NOSSO o jornalista não pergunta o que a
+         gente "acha" — ele cobra confirmação. Perguntar a opinião da
+         torcida sobre a própria descida saía falso. */
+      if(b.atacante === c.E.torcida.id) return {
+        alvo:b.dono,
+        texto:`Quebraram o bar da ${dono} e a cidade toda aponta pra cá. `+
+              'O jornal quer confirmação.',
+        opcoes:[
+          {id:'assumir', rot:'Assumir: fomos nós, e com orgulho',
+           nota:`+3 de moral · piora muito a relação com a ${dono}`,
+           resumo:`assumiu a descida no bar da ${dono}`,
+           ef:{outra:-2, moralGanho:0.6}},
+          {id:'negar', rot:'Negar que tenha sido a gente', nota:'sem efeito',
+           resumo:'negou a descida no bar', ef:{}},
+          {id:'calar', rot:'Não falar de bar com jornalista', nota:'sem efeito',
+           resumo:'não falou do bar com a imprensa', ef:{}}
+        ]};
+      const inimiga = TO.relacoes.nivel(c.E, b.dono) <= -LIMIAR_INTERESSE;
+      return {
+        alvo:b.dono,
+        texto:`Quebraram o bar da ${dono}${atk ? ', obra da '+atk : ''}. `+
+              'O que a organizada acha disso?',
+        opcoes:[
+          {id:'onda', rot: inimiga
+             ? 'Tirar onda: bem feito, e que venha mais'
+             : `Dizer que a ${dono} não soube defender o que era dela`,
+           nota:`+2 de moral · piora muito a relação com a ${dono}`,
+           resumo:`tirou onda do bar quebrado da ${dono}`,
+           ef:{outra:-2, moralGanho:0.4}},
+          {id:'respeito', rot:'Dizer que bar de torcida não se mexe',
+           nota:`melhora a relação com a ${dono}`,
+           resumo:'disse que bar de torcida não se mexe', ef:{outra:1}},
+          {id:'calar', rot:'Não comentar bar dos outros', nota:'sem efeito',
+           resumo:'não comentou o bar dos outros', ef:{}}
+        ]};
+     }},
+
     {id:'boato', grupo:'rua', monta: () => ({
       texto:'Rolou um boato de que vocês pediram a um aliado pra se '+
             'afastar ou se aproximar de outra torcida. É verdade?',
@@ -1504,6 +1566,7 @@ TO.feed = (function(){
       outra: alvoDaEntrevista(E),
       coirma: coirmaDaEntrevista(E),
       ranking: nossoRanking(E),
+      barQuebrado: barQuebradoRecente(E),
       virada: viradaDoElenco(E),
       espaco: Math.max(0, TETO_ELOGIO - TO.relacaoClube.nivel(E))};
     ctx.tombo = tomboDoRival(E, ctx.outra);
@@ -1620,6 +1683,14 @@ TO.feed = (function(){
      A fila é curta de propósito: obra velha não é notícia.
      ======================================================= */
   const OBRAS_NA_FILA = 12;
+  /* O BAR QUEBRADO SAIU DO CARTÃO DIÁRIO (pedido do dono, 19/09/2026):
+     o mundo quebra bar o tempo todo, e um cartão por vez virava
+     "sem parar". Vira pauta do jornalista — uma das perguntas da
+     entrevista do mês —, que é onde comentário de rua cabe sem
+     interromper o dia. A fila é curta: bar quebrado há dois meses
+     não é mais assunto de ninguém. */
+  const BARES_NA_FILA = 6;
+  const BAR_FRESCO = 8;          // semanas em que ainda é pergunta
   /* o que interessa: o que acontece na NOSSA cidade, e o que
      acontece com quem a gente ama ou odeia, esteja onde estiver */
   const LIMIAR_INTERESSE = 25;
@@ -1639,11 +1710,29 @@ TO.feed = (function(){
      visitou. */
   function registrarObra(E, ev){
     if(!E || !ev || !ev.tipo) return null;
+    const reg = Object.assign({ano:E.data.ano, semana:E.data.semana}, ev);
+    /* duas filas, dois consumidores: obra vira cartão do dia, bar
+       quebrado espera o jornalista ligar */
+    if(ev.tipo === 'bar-quebrado'){
+      E.baresQuebrados = E.baresQuebrados || [];
+      E.baresQuebrados.unshift(reg);
+      if(E.baresQuebrados.length > BARES_NA_FILA) E.baresQuebrados.pop();
+      return ev;
+    }
     E.obrasDaCidade = E.obrasDaCidade || [];
-    E.obrasDaCidade.unshift(Object.assign(
-      {ano:E.data.ano, semana:E.data.semana}, ev));
+    E.obrasDaCidade.unshift(reg);
     if(E.obrasDaCidade.length > OBRAS_NA_FILA) E.obrasDaCidade.pop();
     return ev;
+  }
+
+  /* o bar quebrado mais recente que ainda é notícia, pra entrevista */
+  function barQuebradoRecente(E){
+    for(const b of (E.baresQuebrados || [])){
+      const semanas = (E.data.ano - b.ano) * SEMANAS_DO_ANO +
+                      (E.data.semana - b.semana);
+      if(semanas >= 0 && semanas <= BAR_FRESCO) return b;
+    }
+    return null;
   }
 
   /* o filtro mora aqui e não em quem chama: quem faz a obra não tem
@@ -1667,59 +1756,10 @@ TO.feed = (function(){
        saía anunciada na cidade de onde ela nunca saiu. */
     const ondeFoi = ev.cidade && TO.financeiro.nomeCidade
       ? ` em ${TO.financeiro.nomeCidade(ev.cidade)}` : '';
-    /* de quem é a notícia: na obra é quem construiu, no bar quebrado é
-       quem levou. Sem isto o cartão do bar dizia "o bar da eles" e
-       nunca caía no ramo do rival, porque lia relação de ninguém. */
-    const dela = ev.torcida || ev.dono;
-    const rel = dela ? TO.relacoes.nivel(E, dela) : 0;
+    const rel = ev.torcida ? TO.relacoes.nivel(E, ev.torcida) : 0;
     const aliada = rel >= LIMIAR_INTERESSE;
-    const rival  = rel <= -LIMIAR_INTERESSE;
-    const nome = nomeDe(dela);
+    const nome = nomeDe(ev.torcida);
     const item = ROT_OBRA[ev.item] || 'uma obra nova';
-
-    /* --------- A4: quebraram o NOSSO bar --------- */
-    if(ev.tipo === 'bar-quebrado' && ev.dono === E.torcida.id){
-      const quem = ev.atacante ? nomeDe(ev.atacante) : 'um bonde';
-      return {
-        chave:`obra|nosso-bar|${ev.ano}|${ev.semana}|${ev.atacante||'x'}`,
-        voz:'na rua',
-        texto:`Quebraram o nosso bar. Foi a ${quem}, e a cidade inteira `+
-              'já sabe. O que a gente responde?',
-        alvo:ev.atacante,
-        bravo:{rot:'Prometer resposta na porta deles',
-               dica:'+3 de moral · piora muito a relação com eles',
-               moral:0.6, relacao:-12},
-        ameno:{rot:'Levantar o bar e não dar notícia',
-               dica:'sem efeito'}
-      };
-    }
-
-    /* --------- A3: quebraram o bar DELES --------- */
-    if(ev.tipo === 'bar-quebrado'){
-      const quem = ev.atacante ? nomeDe(ev.atacante) : 'alguém';
-      if(rival) return {
-        chave:`obra|bar-rival|${ev.ano}|${ev.semana}|${ev.dono}`,
-        voz:'na rua',
-        texto:`O bar da ${nome} amanheceu quebrado — foi a ${quem} que `+
-              'desceu lá. A cidade quer saber o que a gente acha.',
-        alvo:ev.dono,
-        bravo:{rot:'Tirar onda: bem feito, e que venha mais',
-               dica:'+2 de moral · piora muito a relação com a '+nome,
-               moral:0.4, relacao:-12},
-        ameno:{rot:'Não comentar bar dos outros', dica:'sem efeito'}
-      };
-      return {
-        chave:`obra|bar-terceiro|${ev.ano}|${ev.semana}|${ev.dono}`,
-        voz:'na rua',
-        texto:`Quebraram o bar da ${nome} aqui na cidade — coisa da `+
-              `${quem}. Perguntaram se a gente entra nessa.`,
-        alvo:ev.dono,
-        bravo:{rot:'Dizer que quem manda na cidade somos nós',
-               dica:'+2 de moral · piora a relação com as duas',
-               moral:0.4, relacao:-8, tambem:ev.atacante, relacaoTambem:-8},
-        ameno:{rot:'Ficar de fora', dica:'sem efeito'}
-      };
-    }
 
     /* --------- A5: a obra é NOSSA --------- */
     if(ev.torcida === E.torcida.id) return {
@@ -4526,6 +4566,6 @@ TO.feed = (function(){
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu, responderEntrevista, assuntoClubeDeHoje,
           entrevistaDeHoje, protestoNoCT,
-          registrarObra, obraInteressa, obraDeHoje,
+          registrarObra, obraInteressa, obraDeHoje, barQuebradoRecente,
           veredictoDeHoje, desfechoDaCompeticao, julgarCampanha};
 })();
