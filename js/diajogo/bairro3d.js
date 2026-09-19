@@ -170,6 +170,13 @@ export function montarBairro(P) {
   /* o tecido de TELHADO (textura de telha) e o de MANCHA (decalque de
      mofo e chuva na parede), os dois com UV */
   const TELHADOS = { pos: [], cor: [], uv: [], esc: TELHA_ESC };
+  /* A TELHA DA FAVELA É MIÚDA. A textura tem 8 canaletas por ladrilho,
+     então a escala é o tamanho de OITO telhas: 104 dá canaleta de 13
+     unidades (0,59 m), que numa casa de 47 de frente sai com três
+     canaletas e meia — telha de gigante. Aqui o ladrilho repete a cada
+     34, que é canaleta de 4,25 (0,19 m), a medida da telha de verdade.
+     Escala é do TECIDO, não do triângulo, então é outra malha. */
+  const TELHADOS_FAV = { pos: [], cor: [], uv: [], esc: 34 };
   const MANCHAS  = { pos: [], cor: [], uv: [] };   // as falhas de reboco, UV do decalque
 
   /* ---- OS LETREIROS E AS PIXAÇÕES ----
@@ -499,11 +506,6 @@ export function montarBairro(P) {
     caixa(T, p.x + p.dx*B - 5, p.x + p.dx*B + 5, H - 8, H - 3.5, p.y + p.dz*B - 5, p.y + p.dz*B + 5, '#e9e2c0');
   }
 
-  /* poste de pau da favela: sem braço de luminária — a luz daqui não
-     vem da concessionária, vem do fio de gato que sobe até ele */
-  function posteFavela(T, p) {
-    caixa(T, p.x - 1.5, p.x + 1.5, 0, p.alt, p.y - 1.5, p.y + 1.5, '#5b4a36');
-  }
   /* caixa d'água azul, de plástico: um corpo de oito lados (lê redondo
      de longe) numa armação fina, com a tampa achatada por cima —
      apoiada no telhado, não bloqueia ninguém */
@@ -523,31 +525,6 @@ export function montarBairro(P) {
       tri(T, [o.x, y0 + h + 1.6, o.y], p0t, p1t, TAMPA, 1.0);
     }
   }
-  /* o fio de gato: alguns segmentos curtos entre os dois pontos, cada
-     um um pouco mais baixo que a reta — é o que dá a fiação frouxa,
-     tomada emendada de poste em poste */
-  function fio(T, ax, ay, ah, bx, by, bh, hex) {
-    /* FIO É FIO, não viga. Com três pedaços grossos o cabo saía como
-       uma barra preta atravessando o bairro inteiro: cada pedaço é um
-       caixote deitado, e o caixote tem de cobrir a diferença de altura
-       das duas pontas — pedaço longo, caixote alto. Mais pedaços,
-       menos espessura e menos folga vertical resolvem os dois: a
-       barriga fica lisa e o cabo fica fino. */
-    const SEGS = 6, ESP = 0.7, sag = Math.min(14, Math.hypot(bx-ax, by-ay)*0.11);
-    let px = ax, py = ay, ph = ah;
-    for (let i = 1; i <= SEGS; i++) {
-      const t = i / SEGS;
-      const nx = ax + (bx-ax)*t, ny = ay + (by-ay)*t;
-      const nh = ah + (bh-ah)*t - Math.sin(t*Math.PI)*sag;
-      const len = Math.hypot(nx-px, ny-py);
-      if (len > 0.5) {
-        const ang = Math.atan2(ny-py, nx-px) || 1e-6;
-        caixaRot(T, (px+nx)/2, (py+ny)/2, len, ESP, Math.min(ph,nh)-0.35, Math.max(ph,nh)+0.35, ang, hex);
-      }
-      px = nx; py = ny; ph = nh;
-    }
-  }
-
   /* =========================================================
      OS EQUIPAMENTOS: praça, hospital, delegacia, shopping
      ---------------------------------------------------------
@@ -966,7 +943,12 @@ export function montarBairro(P) {
   for (const l of K.BEIRA || [])
     if (l.calcada) caixaRot(TB, l.calcada.cx, l.calcada.cy, l.calcada.w, l.calcada.h,
                             0, 1.4, l.calcada.ang, '#8d897d');
-  for (const l of K.BEIRA || []) lote(TB, l);
+  for (const l of K.BEIRA || []) {
+    /* a casa da favela manda o telhado dela pra malha de telha miúda */
+    alvoTelhado = l.favela ? TELHADOS_FAV : TELHADOS;
+    lote(TB, l);
+  }
+  alvoTelhado = TELHADOS;
   malhaTex(TB, REBOCO_LAZY(), 'beira');
 
   /* O REBOCO NA PAREDE. O quarteirão inteiro passa a ter textura: o
@@ -987,9 +969,7 @@ export function montarBairro(P) {
     else caixa(TS, c.x0 + 1.5, c.x1 - 1.5, 8, 13.5, c.y0 + 9, c.y1 - 10, escuro);
   }
   for (const p of K.POSTES) poste(TS, p);
-  for (const p of K.FAVELA_POSTES || []) posteFavela(TS, p);
   for (const o of K.FAVELA_CAIXAS || []) caixaDagua(TS, o);
-  for (const f of K.FAVELA_FIOS || []) fio(TS, f.ax, f.ay, f.ah, f.bx, f.by, f.bh, '#2a2a28');
   /* os campos de várzea: cerca de mourão e arame, arquibancadinha, traves */
   for (const f of K.CAMPOS) {
     const CER = '#6e6a5e';
@@ -1021,6 +1001,7 @@ export function montarBairro(P) {
   /* o teto da sede também é caixa, e o tecido dele tem UV: sem mapa a
      malha sai lisa, que é o que fibrocimento é */
   malhaTex(TELHADOS, textura('img/texturas/telha.png', true), 'telhados');
+  malhaTex(TELHADOS_FAV, textura('img/texturas/telha.png', true), 'telhados:favela');
   malhaTex(MANCHAS, textura('img/texturas/tijolo.png'), 'tijolo', true);
 
   /* ---- o mato: moitas, em duas pirâmides baixas ---- */

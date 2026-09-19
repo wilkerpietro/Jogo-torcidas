@@ -1919,7 +1919,7 @@ TO.dados.plantaEstadio = (function(){
      de mato livre mais larga que sobra DENTRO do tabuleiro, na beira
      oeste, longe da estrada que a avenida faz por ali (e das casas
      de beira dela) e do campo/baldio ao sul. */
-  const AREA_FAV = { x0:8, x1:900, y0:140, y1:2500 };
+  const AREA_FAV = { x0:8, x1:960, y0:140, y1:2500 };
   /* a folga de 48 é porque a casa pode passar um pouco da divisa da
      área (a divisa é contabilidade minha; o que manda de verdade é o
      mato, o asfalto e a borda do tabuleiro) — e moita nenhuma pode
@@ -2286,7 +2286,7 @@ TO.dados.plantaEstadio = (function(){
     'SOMOS DAQUI', 'FÉ NÃO FALHA', 'MC ZINHO', 'DJ BEIJA-FLOR',
     'RESPEITA QUEM SUBIU O MORRO', 'BONDE DO BECO', 'TUDO NOSSO', 'ISSO AQUI É NOSSO'
   ]);
-  const FAVELA = [], FAVELA_CAIXAS = [], FAVELA_POSTES = [], FAVELA_FIOS = [], FAVELA_RUAS = [];
+  const FAVELA = [], FAVELA_CAIXAS = [], FAVELA_RUAS = [];
   (function(){
     /* RNG PRÓPRIO. A favela sorteia muito — se ela bebesse do `rng()`
        compartilhado, TODA a cidade gerada depois dela mudaria de
@@ -2320,18 +2320,22 @@ TO.dados.plantaEstadio = (function(){
       if(cx - meia < LIM.x0 || cx + meia > LIM.x1 ||
          cy - meia < LIM.y0 || cy + meia > LIM.y1) return false;
       for(const [px, py] of cantosGirados({ ang, cx, cy, w, h }, 4)){
-        if(zona(px, py) !== 'mato') return false;
+        /* MATO E TERRENO ABERTO, os dois. Exigir mato parava a favela
+           no contorno da cidade e deixava uma língua de areia vazia
+           entre ela e a rua de leste — foi o que o dono viu na foto.
+           O que está ali é célula `aberto`, sem lote e sem calçada:
+           descampado de dentro do contorno, e é dele que a favela toma
+           conta até encostar no asfalto. Mar, praia e orla não. */
+        const z = zona(px, py);
+        if(z === 'mar' || z === 'praia' || z === 'orla') return false;
         /* nem no asfalto NEM na calçada da estrada: a avenida vira
            estrada aqui fora e leva a banda de calçada com ela, e casa
            por cima de calçada é o que a varredura de geometria pega */
         if(noAsfalto(px, py) || naAvenida(px, py, CALC)) return false;
-        /* nem em célula de QUADRA. A grade da cidade classifica como
-           quarteirão algumas células que caem fora do contorno, e ali
-           a calçada e o miolo já são da cidade — casa da favela por
-           cima disso é casa em cima de calçada, que a varredura de
-           geometria pega na hora */
+        /* nem em célula de QUADRA nem de CAMPO: ali a calçada, o miolo
+           e a cerca já são de outra gente */
         const cel = celulaEm(px, py);
-        if(cel && cel.tipo === 'quadra') return false;
+        if(cel && (cel.tipo === 'quadra' || cel.tipo === 'campo')) return false;
       }
       for(const b of BEIRA)
         if(!b.favela && Math.hypot(b.cx - cx, b.cy - cy) < (Math.max(b.w,b.h) + Math.max(w,h))/2 + 14)
@@ -2385,7 +2389,7 @@ TO.dados.plantaEstadio = (function(){
       return { faixas, becos };
     }
     const CU = cortes(RAIO, 400, 700, 38, 46);     // a quadra comprida, no sentido da faixa
-    const CV = cortes(RAIO, 88, 128, 38, 46);      // e a travessa
+    const CV = cortes(RAIO, 96, 140, 38, 46);      // e a travessa
 
     /* O BECO VIRA LINHA NO CHÃO, recortada: a reta inteira atravessaria
        o mapa, e o que interessa é só o pedaço que cai na favela */
@@ -2414,7 +2418,7 @@ TO.dados.plantaEstadio = (function(){
     function fileira(u0, u1, vc, fundo, vf){
       let u = u0;
       while(u < u1 - 32){
-        let frente = Math.min(par8(entreFav(38, 60)), u1 - u);
+        let frente = Math.min(par8(entreFav(44, 70)), u1 - u);
         if(u1 - u - frente < 32) frente = u1 - u;
         if(frente < 32) break;
         /* a casa torta de um grau ou dois: fileira de favela não é
@@ -2452,45 +2456,6 @@ TO.dados.plantaEstadio = (function(){
                            alt: c.alt, r: entreFav(7, 9.5) });
     }
 
-    /* OS POSTES DE GATO E A FIAÇÃO. Poste de pau, sem braço de
-       luminária — a luz daqui não vem da concessionária —, plantado no
-       beco, ligado ao vizinho por um fio que cai no meio. */
-    for(const rua of FAVELA_RUAS){
-      const linha = [];
-      let sobra = entreFav(60, 130);
-      for(let i=0;i<rua.length-1;i++){
-        const [ax, ay] = rua[i], [bx, by] = rua[i+1];
-        const L = Math.hypot(bx-ax, by-ay);
-        if(L < 0.5) continue;
-        const ux = (bx-ax)/L, uy = (by-ay)/L;
-        let t = 0;
-        while(t + sobra <= L){
-          t += sobra;
-          linha.push({ x: ax + ux*t, y: ay + uy*t, alt: par8(entreFav(84, 112)) });
-          sobra = entreFav(100, 165);
-        }
-        sobra -= (L - t);
-      }
-      for(const p of linha) FAVELA_POSTES.push(p);
-      for(let i=1;i<linha.length;i++){
-        const a = linha[i-1], b = linha[i];
-        if(Math.hypot(a.x-b.x, a.y-b.y) > 200) continue;
-        FAVELA_FIOS.push({ ax:a.x, ay:a.y, ah:a.alt, bx:b.x, by:b.y, bh:b.alt });
-      }
-    }
-    /* o gato: do poste mais perto até o telhado da casa */
-    for(const c of FAVELA){
-      if(rngFav() < 0.74) continue;
-      let melhor = null, dm = 1e9;
-      for(const p of FAVELA_POSTES){
-        const d = Math.hypot(p.x - c.cx, p.y - c.cy);
-        if(d < dm){ dm = d; melhor = p; }
-      }
-      if(!melhor || dm > 130) continue;
-      FAVELA_FIOS.push({ ax: melhor.x, ay: melhor.y, ah: melhor.alt - 8,
-                         bx: c.cx, by: c.cy, bh: c.alt + 3 });
-    }
-
     /* DESENCALHA ILHA — a rede de segurança. Com grade de beco isso
        quase não dispara, mas quadra cortada pela borda da mancha, pela
        estrada ou por uma casa de beira ainda fecha um canto. O teste é
@@ -2506,8 +2471,30 @@ TO.dados.plantaEstadio = (function(){
       const gy0 = Math.floor(AREA_FAV.y0/G) - 1, gy1 = Math.ceil(AREA_FAV.y1/G) + 1;
       const GW = gx1 - gx0, GH = gy1 - gy0;
       const mx = i => (gx0 + i + 0.5)*G, my = j => (gy0 + j + 0.5)*G;
+      /* O QUE JÁ ESTAVA LÁ, marcado UMA vez: casa de beira de estrada e
+         moita. O conserto só conhecia as casas da favela, e por isso
+         dava por conectada uma faixa de 700 células que, na máscara de
+         verdade, a fileira de casas da estrada fechava por cima. É a
+         mesma pergunta que `andaNaCidade` faz no mato — `naMoita` e o
+         corpo das casas de beira —, e ela não muda quando a favela
+         perde uma casa, então sai do laço. */
+      const base = new Uint8Array(GW * GH);
+      for(let i=0;i<GW;i++) for(let j=0;j<GH;j++){
+        const x = mx(i), y = my(j);
+        if(naMoita(x, y)) base[j*GW + i] = 1;
+      }
+      for(const b of BEIRA){
+        if(b.favela) continue;
+        const meia = Math.max(b.w, b.h)/2 + 2;
+        const i0 = Math.max(0, Math.floor((b.cx - meia)/G) - gx0), i1 = Math.min(GW-1, Math.ceil((b.cx + meia)/G) - gx0);
+        const j0 = Math.max(0, Math.floor((b.cy - meia)/G) - gy0), j1 = Math.min(GH-1, Math.ceil((b.cy + meia)/G) - gy0);
+        for(let i = i0; i <= i1; i++) for(let j = j0; j <= j1; j++){
+          const k = j*GW + i;
+          if(!base[k] && dentroLote(mx(i), my(j), b)) base[k] = 1;
+        }
+      }
       function ilhaDe(lista){
-        const bloq = new Uint8Array(GW * GH);
+        const bloq = base.slice();
         for(const c of lista){
           const meia = Math.max(c.w, c.h)/2 + 2;
           const i0 = Math.max(0, Math.floor((c.cx - meia)/G) - gx0), i1 = Math.min(GW-1, Math.ceil((c.cx + meia)/G) - gx0);
@@ -2517,7 +2504,17 @@ TO.dados.plantaEstadio = (function(){
             if(!bloq[k] && dentroLote(mx(i), my(j), c)) bloq[k] = 1;
           }
         }
-        const livre = (i, j) => i < 0 || j < 0 || i >= GW || j >= GH ? true : !bloq[j*GW+i];
+        /* FORA DO TABULEIRO NÃO É LIVRE. `anda()` só responde dentro
+           de [4, W-4] × [4, H-4] — a mesma comparação, não uma
+           parecida —, e a favela agora encosta na borda oeste do mapa.
+           Fora da GRADE (mas dentro do tabuleiro) é mato aberto, e
+           esse sim é livre. */
+        const noTab = (x, y) => x >= 4 && y >= 4 && x <= W - 4 && y <= H - 4;
+        const livre = (i, j) => {
+          if(i < 0 || j < 0 || i >= GW || j >= GH) return noTab(mx(i), my(j));
+          if(!noTab(mx(i), my(j))) return false;
+          return !bloq[j*GW+i];
+        };
         const corpo = new Uint8Array(GW * GH);
         for(let i=0;i<GW;i++) for(let j=0;j<GH;j++){
           if(!livre(i,j)) continue;
@@ -2527,8 +2524,20 @@ TO.dados.plantaEstadio = (function(){
         }
         const vis = new Uint8Array(GW * GH), fila = [];
         const semear = k => { if(corpo[k] && !vis[k]){ vis[k] = 1; fila.push(k); } };
-        for(let i=0;i<GW;i++){ semear(i); semear((GH-1)*GW + i); }
-        for(let j=0;j<GH;j++){ semear(j*GW); semear(j*GW + GW-1); }
+        /* SEMEIA SÓ ONDE HÁ MUNDO DO LADO DE FORA. A borda da grade é
+           saída quando o que vem depois dela é tabuleiro; na beira
+           OESTE não é — ali a grade acaba porque o MAPA acaba. Semear
+           aquela borda dava por conectada uma fresta entre a primeira
+           fileira de casas e o fim do mapa que, no jogo, é beco sem
+           saída de 700 células. */
+        for(let i=0;i<GW;i++){
+          if(noTab(mx(i), my(-1))) semear(i);
+          if(noTab(mx(i), my(GH))) semear((GH-1)*GW + i);
+        }
+        for(let j=0;j<GH;j++){
+          if(noTab(mx(-1), my(j))) semear(j*GW);
+          if(noTab(mx(GW), my(j))) semear(j*GW + GW-1);
+        }
         let n = 0;
         while(n < fila.length){
           const k = fila[n++], i = k % GW, j = (k - i)/GW;
@@ -2578,8 +2587,12 @@ TO.dados.plantaEstadio = (function(){
       const r = entreFav(16, 38);
       if(zona(x, y) !== 'mato' || noAsfalto(x, y)) continue;
       if(tocaAsfalto(x, y, r*0.9) || naAvenida(x, y, CALC + 10)) continue;
-      if(FAVELA.some(o => Math.hypot(o.cx - x, o.cy - y) < Math.max(o.w, o.h)/2 + r + 22)) continue;
-      if(FAVELA_POSTES.some(p => Math.hypot(p.x - x, p.y - y) < r + 10)) continue;
+      /* LONGE DA FAVELA, não só fora das casas. Moita é bloqueio, e
+         moita solta no meio de um beco ou na fresta entre a primeira
+         fileira e a borda do mapa SELA a passagem — foram 743 células
+         presas assim, e o desencalha-ilha nem via, porque ele só
+         conhece casa. Aqui elas só voltam no descampado de verdade. */
+      if(FAVELA.some(o => Math.hypot(o.cx - x, o.cy - y) < Math.max(o.w, o.h)/2 + r + 95)) continue;
       const m = { x, y, r };
       MOITAS.push(m);
       if(x >= -BALDE && y >= -BALDE){
@@ -2655,7 +2668,7 @@ TO.dados.plantaEstadio = (function(){
                    areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe,
-                   FAVELA, FAVELA_CAIXAS, FAVELA_POSTES, FAVELA_FIOS, FAVELA_RUAS };
+                   FAVELA, FAVELA_CAIXAS, FAVELA_RUAS };
 
   /* =======================================================
      A DOBRA: tabuleiro → mundo
@@ -2730,7 +2743,11 @@ TO.dados.plantaEstadio = (function(){
       return !dentroPol(x, y, q.polMiolo);
     }
     if(z === 'mato') return !naMoita(x, y) && !naBeira(x, y);
-    return true;                                  // praia, orla, terreno aberto
+    /* praia, orla e TERRENO ABERTO. O aberto de dentro do contorno era
+       livre sem perguntar nada, e passou a ter casa em cima: a favela
+       cresceu até a rua de leste, e ali a célula é `aberto`, não mato.
+       Sem o `naBeira` aqui a casa aparecia e não barrava ninguém. */
+    return !naBeira(x, y);
   }
   function anda(x, y){
     const a = ancora(x, y);

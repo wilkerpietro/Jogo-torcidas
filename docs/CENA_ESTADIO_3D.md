@@ -491,7 +491,7 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   **Caminho garantido**: grade de beco é grade — sempre conexa; o
   passeio aleatório da versão anterior fechava anel, prendia mato e o
   conserto comia um terço das casas, e agora o conserto não tira
-  nenhuma. **Contagem**: são **177 casas**.
+  nenhuma. **Contagem**: são **180 casas**.
   **O VÃO É OU NADA OU BECO.** Entre duas casas ou não há folga (0 a
   3, parede com parede) ou há uma viela de 40 pra cima. O meio-termo —
   uma fresta de 10, de 20 — é o que faz célula que ANDA mas que o
@@ -511,13 +511,23 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   **ONDE ELA CABE.** Não num retângulo limpo: o flanco oeste é cortado
   por duas estradas (avenida que virou estrada) e pelas casas de beira
   delas, então a área declarada é a faixa inteira e quem recorta é o
-  teste casa a casa — mato, fora do asfalto E da calçada da estrada,
-  fora de célula de quarteirão (a grade da cidade classifica como
-  quarteirão algumas células fora do contorno, e ali a calçada já é da
-  cidade), longe da casa de beira. A favela sai em manchas, uma de
-  cada lado das estradas, que é como esse bairro cresce de verdade.
-  Dessas quatro réguas, as duas últimas entraram depois: a varredura
-  de geometria pegou 233 vértices de casa por cima de calçada.
+  teste casa a casa — fora do asfalto E da calçada da estrada, fora de
+  célula de quarteirão e de campo (ali a calçada, o miolo e a cerca já
+  são de outra gente), fora do mar, da praia e da orla, longe da casa
+  de beira. A favela sai em manchas, uma de cada lado das estradas, que
+  é como esse bairro cresce de verdade. Duas dessas réguas entraram
+  depois: a varredura de geometria pegou 233 vértices de casa por cima
+  de calçada.
+  **ELA VAI ATÉ A RUA DE LESTE.** A primeira versão exigia MATO e
+  parava no contorno da cidade — sobrava uma língua de areia vazia
+  entre a última casa e a rua, que foi o que o dono viu na foto. O que
+  está ali é célula `aberto`: descampado de DENTRO do contorno, sem
+  lote e sem calçada. Aceitar `aberto` junto com o mato fecha o vão e
+  encosta o bairro no asfalto. Isso obrigou a um conserto na MÁSCARA:
+  `andaNaCidade` devolvia `true` sem perguntar nada no terreno aberto
+  (era só praia, orla e descampado, onde nunca houve casa), e a casa da
+  favela apareceria lá sem barrar ninguém — agora aquele ramo pergunta
+  `naBeira`, como o do mato.
   **A ESCALA é a conta mais dura aqui.** A unidade é 4,5 cm (o boneco
   tem 39), então uma casa de 47 de frente por 51 de fundo é 2,1 × 2,3 m
   — barraco de um cômodo. É pequeno, e é pequeno porque o mato livre
@@ -525,16 +535,24 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   cabe menos, e o dono pediu 180. A primeira versão errou isso na
   direção oposta e feio — casa de 15 a 27 de frente, menor que a caixa
   d'água que fica em cima dela.
-  **Três coisas são só daqui**: a caixa d'água azul (prisma de oito
-  lados numa armação, numa quina do telhado de ~85% das casas), o
-  poste de pau sem braço de luminária (a luz daqui não vem da
-  concessionária) e o fio de gato, em pedaços curtos que caem no meio
-  pra dar a barriga do cabo. Nenhum dos três bloqueia. O fio começou
-  saindo como VIGA PRETA atravessando o bairro: cada pedaço é um
-  caixote deitado que precisa cobrir a diferença de altura das duas
-  pontas, então pedaço longo vira caixote alto — seis pedaços em vez
-  de três, 0,7 de espessura em vez de 1,3 e a folga vertical pela
-  metade resolveram.
+  **A CAIXA D'ÁGUA AZUL** é o que sobrou de exclusivo daqui: prisma de
+  oito lados numa armação, numa quina do telhado de ~85% das casas, e
+  não bloqueia (está em cima do telhado). O poste de pau e o fio de
+  gato existiram e SAÍRAM a pedido do dono — davam um emaranhado preto
+  por cima do bairro inteiro que competia com o telhado em vez de
+  ajudar. `posteFavela()` e `fio()` saíram do `bairro3d.js` junto com
+  as listas que os alimentavam.
+  **O BECO É ASFALTADO**, também a pedido: era terra batida, e agora é
+  a mesma capa da rua da cidade, num tom um fio mais claro — rua de
+  favela é capa fina jogada por cima, não asfalto grosso e novo —, sem
+  meio-fio e sem faixa.
+  **A TELHA É MIÚDA.** A textura tem 8 canaletas por ladrilho e a
+  escala vale pelo ladrilho inteiro: com os 104 da cidade a canaleta
+  fica com 13 unidades (0,59 m), e uma casa de 57 de frente sai com
+  quatro canaletas — telha de gigante. O telhado da favela foi pra uma
+  malha própria com escala 34, canaleta de 4,25 (0,19 m), que é a
+  medida da telha de verdade. Escala é do TECIDO, não do triângulo,
+  então tinha de ser outra malha.
   **RNG PRÓPRIO** (`semente(913247)`): a favela sorteia muito, e se
   bebesse do `rng()` compartilhado toda a cidade gerada depois dela
   mudaria de sorteio sem eu ter mexido lá. Local, ela não consome um
@@ -550,14 +568,26 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   TAMBÉM no balde espacial, senão `naMoita` não as enxergaria e elas
   ficariam de enfeite, sem bloquear. (Era o mesmo risco que fez a
   exclusão nascer: moita tirada da lista mas não do balde continua
-  bloqueando invisível.)
+  bloqueando invisível.) Elas voltam LONGE — 95 do corpo da casa mais
+  perto, não 22: moita é bloqueio, e moita solta num beco ou na fresta
+  entre a primeira fileira e a borda do mapa SELA a passagem. Foram 743
+  células presas assim.
   **O DESENCALHA ILHA** continua, de rede de segurança: grade do
   tamanho da célula, teste de corpo, inundação a partir da borda, e a
   candidata só sai se TIRAR ELA encolher a ilha — adivinhar por
   proximidade deixava rodando à toa, tirando um lado do corredor de
-  cada vez. Com grade de beco ele não remove nenhuma casa; sobram 25
-  células presas em 17.494 (0,14%), nas franjas onde a mancha encosta
-  na estrada.
+  cada vez.
+  **E ele passou a enxergar o que não é casa.** Modelava só as casas da
+  favela, então dava por conectada uma faixa de 700 células que, na
+  máscara de verdade, a FILEIRA DE CASAS DA ESTRADA fechava por cima —
+  e a borda oeste da grade dele, que ele semeava como saída, é o fim do
+  MAPA, não saída nenhuma. Agora a moita e a casa de beira entram numa
+  camada-base marcada uma vez só (elas não mudam quando a favela perde
+  uma casa), a borda só semeia quando há tabuleiro do lado de fora, e o
+  limite do tabuleiro usa a MESMA comparação que `anda()`, não uma
+  parecida. Ele tira 3 casas e zera: sobram 10 células presas em 17.536
+  (0,06%), e o mapa inteiro fica com 9 — menos do que tinha antes de a
+  favela existir.
 
 A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
 descarta fora do quadro; carros, postes e campos numa malha; moitas em
@@ -676,10 +706,10 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
 - Por andar (células de corpo): rua/cidade 211.000 · corredor 4.371 ·
   vomitório 577 · arquibancada 3.572 · portão 48.
 - Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **37
-  quarteirões · 629 lotes (177 na favela) · 603 moitas · 217 árvores ·
-  72 postes de rua + 89 de favela · 55 carros · 1 campo · 8
-  equipamentos** · 142.325 triângulos estáticos em 6 pedaços de cidade
-  mais o estádio · 16 chamadas de desenho sem gente na
+  quarteirões · 632 lotes (180 na favela) · 562 moitas · 212 árvores ·
+  72 postes · 55 carros · 1 campo · 8 equipamentos** · 134.311
+  triângulos estáticos em 6 pedaços de cidade mais o estádio · 16
+  chamadas de desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
   do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
   leve corta a sombra primeiro por isso).
