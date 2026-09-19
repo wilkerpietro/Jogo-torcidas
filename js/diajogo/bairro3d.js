@@ -529,6 +529,33 @@ export function montarBairro(P) {
     caixa(T, p.x + p.dx*B - 5, p.x + p.dx*B + 5, H - 8, H - 3.5, p.y + p.dz*B - 5, p.y + p.dz*B + 5, '#e9e2c0');
   }
 
+  /* semáforo: mastro mais alto que o de luz, braço estendendo por
+     cima da faixa mais próxima e a cabeça com os três focos, virada
+     pra quem vem dirigindo — é a face oposta ao sentido da avenida
+     (`s.ang`), então o carro que se aproxima vê o vermelho de frente.
+     `s.lado` é pra que lado do mastro o braço sai (a esquina em que o
+     poste caiu, sorteada na planta). */
+  const SEMAF = '#4a4a46', CAIXA_SEMAF = '#26261f';
+  const FOCOS = ['#c0392b', '#c9a227', '#2f8f4e'];
+  function semaforo(T, s) {
+    const H = 148;                              // 6,7 m de mastro
+    const perp = s.ang + Math.PI/2;
+    const px = Math.cos(perp)*s.lado, pz = Math.sin(perp)*s.lado;
+    caixaRot(T, s.x, s.y, 3.6, 3.6, 0, H, 0, SEMAF);
+    /* o braço: do mastro até a metade da pista, na direção perpendicular */
+    const bx = s.x + px*s.braco/2, bz = s.y + pz*s.braco/2;
+    caixaRot(T, bx, bz, s.braco, 3.2, H - 6, H - 2.4, perp, SEMAF);
+    /* a cabeça, na ponta do braço, e os três focos na face que olha
+       pra trás no sentido da avenida (quem chega enxerga o foco) */
+    const hx = s.x + px*s.braco, hz = s.y + pz*s.braco;
+    caixaRot(T, hx, hz, 9, 12, H - 32, H - 6, s.ang, CAIXA_SEMAF);
+    const fx = Math.cos(s.ang)*5.2, fz = Math.sin(s.ang)*5.2;
+    for (let i = 0; i < 3; i++) {
+      const fy0 = H - 12 - i*7.6;
+      caixaRot(T, hx - fx, hz - fz, 5.6, 2, fy0, fy0 + 5.6, s.ang, FOCOS[i]);
+    }
+  }
+
   /* caixa d'água azul, de plástico: um corpo de oito lados (lê redondo
      de longe) numa armação fina, com a tampa achatada por cima —
      apoiada no telhado, não bloqueia ninguém */
@@ -992,6 +1019,7 @@ export function montarBairro(P) {
     else caixa(TS, c.x0 + 1.5, c.x1 - 1.5, 8, 13.5, c.y0 + 9, c.y1 - 10, escuro);
   }
   for (const p of K.POSTES) poste(TS, p);
+  for (const s of K.SEMAFOROS || []) semaforo(TS, s);
   for (const o of K.FAVELA_CAIXAS || []) caixaDagua(TS, o);
   /* os campos de várzea: cerca de mourão e arame, arquibancadinha, traves */
   for (const f of K.CAMPOS) {

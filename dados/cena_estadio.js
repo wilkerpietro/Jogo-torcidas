@@ -651,6 +651,46 @@ TO.dados.plantaEstadio = (function(){
     for(const a of is) for(const b of js){ const c = grade[a] && grade[a][b]; if(c) cels.push(c); }
     return cels.length ? ruaEntre(cels) : false;
   }
+
+  /* ---- OS CRUZAMENTOS DA AVENIDA COM A RUA DA GRADE ----
+     Onde o EIXO da avenida atravessa uma rua de verdade — `naRua` é a
+     mesma régua da máscara, então o cruzamento nasce exatamente onde
+     um corpo pode de fato virar a esquina. Cada avenida é uma
+     sequência de segmentos retos; cada COLUNA e cada LINHA é uma
+     banda em x ou em y. O cruzamento é o ponto do segmento onde ele
+     atravessa aquela banda — não precisa mais conta que isso, porque
+     a rua da cidade é sempre reta e ortogonal.
+
+     Serve pro pintor (faixa de pedestre nos dois sentidos) e pro
+     3D (poste de semáforo nos PRINCIPAIS — as duas avenidas de
+     entrada, que são por onde a torcida de fato chega andando; as
+     saídas curtas pro mato e a beira-mar não levam semáforo). */
+  const CRUZAMENTOS = (function(){
+    const pontos = [];
+    for(const av of AVENIDAS){
+      const principal = av.id === 'sudoeste' || av.id === 'noroeste';
+      for(const sg of av.segs){
+        for(const col of COLUNAS){
+          if((col.c - sg.x0)*(col.c - sg.x1) > 0 || Math.abs(sg.x1 - sg.x0) < 1) continue;
+          const t = (col.c - sg.x0)/(sg.x1 - sg.x0), y = sg.y0 + t*(sg.y1 - sg.y0);
+          if(zona(col.c, y) !== 'cidade' || !naRua(col.c, y)) continue;
+          pontos.push({ x: col.c, y, ang: sg.ang, avLarg: av.l, ruaLarg: col.l, vertical: true, principal });
+        }
+        for(const lin of LINHAS){
+          if((lin.c - sg.y0)*(lin.c - sg.y1) > 0 || Math.abs(sg.y1 - sg.y0) < 1) continue;
+          const t = (lin.c - sg.y0)/(sg.y1 - sg.y0), x = sg.x0 + t*(sg.x1 - sg.x0);
+          if(zona(x, lin.c) !== 'cidade' || !naRua(x, lin.c)) continue;
+          pontos.push({ x, y: lin.c, ang: sg.ang, avLarg: av.l, ruaLarg: lin.l, vertical: false, principal });
+        }
+      }
+    }
+    /* uma esquina perto do fim de um segmento pode nascer da COLUNA e
+       da LINHA quase no mesmo lugar — fica só a primeira */
+    const unicos = [];
+    for(const p of pontos) if(!unicos.some(u => Math.hypot(u.x - p.x, u.y - p.y) < 30)) unicos.push(p);
+    return unicos;
+  })();
+
   /* ---- o campo encolhe pra dentro do quarteirão ----
      A caixa das células que ele tomou, menos a calçada. Assim a cerca
      nunca cai na rua, e o gramado nunca passa da guia. */
@@ -2063,6 +2103,36 @@ TO.dados.plantaEstadio = (function(){
     if(tocaAsfalto(POSTES[i].x, POSTES[i].y, 2) || POSTES[i].x > xLimiteCosta(POSTES[i].y))
       POSTES.splice(i, 1);
 
+  /* ---- os semáforos, nos cruzamentos PRINCIPAIS ----
+     Um poste por esquina de verdade, plantado na guia, com o braço
+     estendendo por cima da faixa mais próxima. `ang` é a direção da
+     avenida (o sentido de quem dirige); a esquina de qual lado
+     plantar é sorteada pela posição, não fixa, senão os postes saíam
+     todos do mesmo lado da rua no mapa inteiro.
+
+     O recuo NÃO é só `avLarg/2 + folga`: no próprio cruzamento a rua
+     que corta a avenida também é asfalto, e um recuo perpendicular à
+     avenida corta essa segunda faixa antes de sair dela — a esquina
+     de verdade fica mais longe do centro do que a avenida sozinha
+     sugere. Por isso o recuo cresce até `noAsfalto` desistir, com um
+     teto: se aos 140 ainda não limpou, não é esquina de plantar poste
+     (avenida e rua muito largas ali), e o cruzamento fica sem
+     semáforo em vez de nascer dentro do asfalto. */
+  const SEMAFOROS = [];
+  for(const p of CRUZAMENTOS){
+    if(!p.principal) continue;
+    const lado = ((Math.round(p.x) ^ Math.round(p.y)) & 1) ? 1 : -1;
+    const perp = p.ang + Math.PI/2;
+    let x, y, achou = false;
+    for(let off = p.avLarg/2 + 14; off <= 140; off += 8){
+      x = p.x + Math.cos(perp)*off*lado; y = p.y + Math.sin(perp)*off*lado;
+      if(!tocaAsfalto(x, y, 3)){ achou = true; break; }
+    }
+    if(!achou) continue;
+    if(x < 0 || y < 0 || x >= W || y >= H || x > xLimiteCosta(y)) continue;
+    SEMAFOROS.push({ x, y, ang: p.ang, lado: -lado, braco: Math.min(p.avLarg*0.6, 46) });
+  }
+
   /* =========================================================
      A BEIRA DA ESTRADA — o que fecha o mapa
      ---------------------------------------------------------
@@ -2822,7 +2892,7 @@ TO.dados.plantaEstadio = (function(){
                    xLimiteCosta, cortarPor, recorteCosta, pedacosSemAvenida, dentroPol, ruaEntre,
                    areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
-                   CARROS, ARVORES, POSTES, SEDES, sedeDe,
+                   CARROS, ARVORES, POSTES, SEDES, sedeDe, CRUZAMENTOS, SEMAFOROS,
                    FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES };
 
   /* =======================================================

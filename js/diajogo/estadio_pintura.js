@@ -133,6 +133,21 @@ TO.diaJogo.estadioPintura = (function(){
     if(horizontal){ for(let x = x0; x < x0 + w; x += 12) c.fillRect(x, y0, 6, h); }
     else { for(let y = y0; y < y0 + h; y += 12) c.fillRect(x0, y, w, 6); }
   }
+  /* a mesma faixa, mas girada — pras avenidas, que não são retas nos
+     eixos do canvas. `angVia` é o sentido de quem dirige na via que a
+     faixa atravessa: em torno dele, as listras saem PERPENDICULARES
+     (giradas 90°) porque é assim que se vê uma faixa de verdade —
+     travessa curta na direção do carro, comprida na do pedestre —, e
+     se repetem AO LONGO da via por `profundidade`, que é a largura da
+     via que CRUZA (o corredor onde a faixa cabe na esquina). */
+  function faixaEmCruzamento(c, cx, cy, angVia, larguraTravessia, profundidade){
+    c.save();
+    c.translate(cx, cy);
+    c.rotate(angVia);
+    c.fillStyle = COR.faixaPed;
+    for(let d = -profundidade/2; d < profundidade/2; d += 12) c.fillRect(d, -larguraTravessia/2, 6, larguraTravessia);
+    c.restore();
+  }
   function tracejado(c, x0, y0, x1, y1){
     c.strokeStyle = COR.eixo; c.lineWidth = 1.6; c.setLineDash([18, 14]);
     c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
@@ -340,6 +355,23 @@ TO.diaJogo.estadioPintura = (function(){
     faixaPedestre(c, P.QEST_X1,       CY - 22, RUA, 44, true);
     faixaPedestre(c, CX - 22, P.QEST_Y1,       44, RUA, false);
     faixaPedestre(c, CX - 22, P.QEST_Y0 - RUA, 44, RUA, false);
+
+    /* ---- 9. faixas de pedestre nos cruzamentos das avenidas com a
+       rua da grade — os dois sentidos, como numa esquina de verdade:
+       uma pra atravessar a avenida (girada no sentido dela) e outra
+       pra atravessar a rua que a corta (reta, porque a rua da grade
+       é sempre ortogonal). ---- */
+    for(const cz of K.CRUZAMENTOS || []){
+      /* só a travessia DA AVENIDA, não as duas. A avenida não é
+         ortogonal à rua da grade — é diagonal — e a listra de quem
+         cruza a rua fica comprida na direção perpendicular à
+         avenida, não na da rua: deslocar seu centro pra longe do
+         cruzamento não evita que ela volte a passar por cima da
+         primeira, e as duas sobrepostas liam como xadrez, não como
+         duas faixas. Uma só, na perna que a torcida de fato atravessa
+         indo pro jogo, fica limpa. */
+      faixaEmCruzamento(c, cz.x, cz.y, cz.ang, cz.avLarg + 8, cz.ruaLarg*0.62);
+    }
   }
 
   /* o piso do corredor: cimento queimado com junta */

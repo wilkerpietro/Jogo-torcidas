@@ -674,6 +674,56 @@ A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
 descarta fora do quadro; carros, postes e campos numa malha; moitas em
 outra.
 
+### 4.13. Faixa de pedestre e semáforo, nos cruzamentos da avenida
+
+O dono mandou a foto de um cruzamento de verdade e pediu faixa nos
+cruzamentos das avenidas, com semáforo nos principais. A cidade já tinha
+faixa de pedestre — nos três portões do estádio e onde a avenida do
+norte chega —, mas eram quatro pontos fixos, escritos na mão. O que
+faltava era achar os cruzamentos que a planta gera sozinha.
+
+**Achando o cruzamento.** A avenida é uma sequência de segmentos retos;
+a rua da grade é sempre ortogonal, em bandas de x (`COLUNAS`) e de y
+(`LINHAS`). O cruzamento é o ponto de cada segmento onde ele atravessa
+uma dessas bandas — resolver `x = col.c` ou `y = lin.c` no segmento. O
+que decide se é cruzamento DE VERDADE, e não a avenida cortando um
+trecho de mato sem rua nenhuma ali, é `naRua()`: a mesma régua que a
+máscara usa pra saber se um corpo pode virar a esquina. `CRUZAMENTOS`
+sai pronto na planta, pra pintor e 3D lerem o mesmo ponto.
+
+**Uma faixa só, não duas.** A ideia óbvia era pintar as duas travessias
+de um cruzamento — a que atravessa a avenida e a que atravessa a rua —
+como a foto mostra. Não deu: a avenida não é ortogonal à rua, é
+diagonal, e a listra de quem atravessa a rua fica comprida na direção
+perpendicular à AVENIDA, não da rua. Afastar o centro dela do
+cruzamento não evita que ela volte a passar por cima da primeira — as
+duas sobrepostas liam como xadrez, não como duas faixas (testado e
+descartado, com screenshot). Uma só, na travessia da avenida — que é a
+que a torcida de fato atravessa indo pro jogo —, fica limpa: listras
+perpendiculares ao sentido da avenida, repetindo ao longo dela por
+`ruaLarg * 0,62` (a profundidade cabe no corredor da rua que cruza).
+
+**O semáforo, só nos PRINCIPAIS.** Nem todo cruzamento leva poste: as
+avenidas de entrada (`sudoeste` e `noroeste`, as que a torcida usa pra
+chegar) marcam `principal: true`; os ramais curtos que só viram estrada
+no mato e a beira-mar não. De 14 cruzamentos, 13 são principais e 12
+ganharam poste — um ficou de fora porque não achou esquina livre de
+asfalto (o próximo item explica por quê).
+
+**O recuo do poste não é só `avLarg/2 + folga`.** No cruzamento, a rua
+que corta a avenida TAMBÉM é asfalto — um recuo perpendicular à avenida
+atravessa essa segunda faixa antes de sair dela, e a esquina de verdade
+fica mais longe do centro do que a avenida sozinha sugere. A busca
+cresce o recuo de 8 em 8 até `noAsfalto` desistir, com teto em 140: se
+não limpou até lá, o cruzamento fica sem poste em vez de plantar um
+dentro do asfalto.
+
+O poste (`semaforo()`, em `bairro3d.js`) é o mastro do `poste()` de luz
+mais alto, com um braço perpendicular à avenida estendendo até a metade
+da pista e a cabeça na ponta, três focos empilhados na face que olha
+pra quem chega. Entra na mesma malha `TS` dos postes e carros — nenhuma
+chamada de desenho a mais.
+
 **A pegadinha que custou uma hora, ainda vale.** `arredores.js` lê
 `largura`, `altura` e `celula` **uma vez, na carga**, da cena padrão — e a
 malha, a malha de corpo e a memória de rota nascem daquele tamanho. O
@@ -789,8 +839,9 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
 - Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **37
   quarteirões · 703 lotes (262 na favela) · 538 moitas · 215 árvores ·
   72 postes · 53 carros · 1 campo · 8 equipamentos · 1.822 decalques de
-  chão** · 146.493 triângulos estáticos em 6 pedaços de cidade mais o
-  estádio · 165 chamadas de desenho sem gente na
+  chão · 14 cruzamentos de avenida com faixa de pedestre, 12 com
+  semáforo** · 147.213 triângulos estáticos em 6 pedaços de cidade mais
+  o estádio · 165 chamadas de desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
   do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
   leve corta a sombra primeiro por isso).
@@ -1026,6 +1077,12 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
    um pouco antes de ver o bonde —, mas é a dobra vazando pra simulação,
    e é o único lugar em que ela vaza. Corrigir é medir em coordenada de
    mundo dentro de `combate.js`, que ficou intacto de propósito.
+10. **O cruzamento pinta só a travessia da avenida, não as duas.** §4.13
+    explica o motivo (a avenida é diagonal; as duas sobrepostas liam
+    como xadrez). Corrigir direito pede achar os quatro CANTOS reais do
+    cruzamento — onde a guia da avenida encontra a guia da rua — e
+    desenhar cada faixa na perna certa, não no centro. É geometria de
+    interseção de duas faixas com largura, não só de duas retas.
 
 ## 10. O que este trabalho NÃO mexeu
 
