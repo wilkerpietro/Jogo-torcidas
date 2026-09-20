@@ -816,6 +816,75 @@ export function criar(canvas) {
       rotulos[i].style.display = 'none';
   }
 
+  /* ---- A DICA DO F, EM CIMA DA TINTA ----
+     Não é uma barra fixa no rodapé: é um rótulo que fica SOBRE a
+     pixação, porque a informação que falta não é "existe a tecla F" —
+     é QUAL muro responde a ela. Um só elemento, reaproveitado: nunca
+     há duas pixações ao alcance do mesmo braço. */
+  let dicaEl = null;
+  function sincronizarDica(lider) {
+    const p = (camadaRotulos && lider && lider.lado)
+            ? pixoPerto(lider.x, lider.y, lider.lado) : null;
+    if (!p) { if (dicaEl) dicaEl.style.display = 'none'; return; }
+    if (!dicaEl) {
+      dicaEl = document.createElement('div');
+      dicaEl.className = 'rot3d dica3d';
+      camadaRotulos.appendChild(dicaEl);
+    }
+    const r = canvas.getBoundingClientRect();
+    const m = P.mundo(p.x, p.y);
+    vProj.set(m.x, m.y + (p.altura || 10) + 12, m.z).project(cam);
+    const fora = vProj.z > 1 || Math.abs(vProj.x) > 1.3 || Math.abs(vProj.y) > 1.3;
+    dicaEl.textContent = 'F  PIXAR POR CIMA';
+    dicaEl.style.display = fora ? 'none' : 'block';
+    dicaEl.style.left = ((vProj.x * 0.5 + 0.5) * r.width) + 'px';
+    dicaEl.style.top = ((-vProj.y * 0.5 + 0.5) * r.height) + 'px';
+  }
+
+  /* =======================================================
+     AS PIXAÇÕES
+     -------------------------------------------------------
+     Cobrir a pixação do rival é TROCAR A UV. Os seis vértices do
+     quadrado já estão na malha dos letreiros e não saem do lugar: o
+     que muda é pra onde eles apontam no atlas, onde a versão da outra
+     torcida já foi pintada na carga. Remontar malha pra isso seria
+     refazer cento e poucos mil triângulos por lata de spray.
+
+     O alcance é maior que o da porta: porta se abre com a mão na
+     maçaneta, pixação se faz a um passo da parede, com o braço
+     esticado e o jato saindo da lata.
+     ======================================================= */
+  const ALCANCE_PIXO = 62;              // 3,2 m: o braço mais o jato
+  /* a pixação mais perto que NÃO é do lado pedido — a sua você não
+     cobre, e sem `lado` vale qualquer uma */
+  function pixoPerto(x, y, lado) {
+    if (!cidade || !cidade.pixacoes) return null;
+    let melhor = null, md = ALCANCE_PIXO * ALCANCE_PIXO;
+    for (const p of cidade.pixacoes) {
+      if (lado && p.lado === lado) continue;
+      const d = (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y);
+      if (d < md) { md = d; melhor = p; }
+    }
+    return melhor;
+  }
+  /* a ordem dos doze floats é a que `placa()` empilhou: (u0,v0)
+     (u1,v0) (u1,v1) | (u0,v0) (u1,v1) (u0,v1) */
+  function pixarPorCima(x, y, lado) {
+    const p = pixoPerto(x, y, lado);
+    if (!p || !p.mesh) return null;
+    const v = p.versao[lado];
+    if (!v) return null;
+    p.lado = lado;
+    if (p.alvo) { p.alvo.pixacao = v.texto; p.alvo.pixoTinta = v.tinta;
+                  if (p.alvo.pixo) p.alvo.pixo.lado = lado; }
+    const a = p.mesh.geometry.attributes.uv, u = v.uv, i = p.i0;
+    const f = [u[0], u[1], u[2], u[1], u[2], u[3],
+               u[0], u[1], u[2], u[3], u[0], u[3]];
+    for (let k = 0; k < 12; k++) a.array[i + k] = f[k];
+    a.needsUpdate = true;
+    return v.texto;
+  }
+
   /* =======================================================
      API
      ======================================================= */
@@ -944,6 +1013,7 @@ export function criar(canvas) {
     atualizarTronco();
     povo.atualizar(J, dt);
     sincronizarRotulos(J);
+    sincronizarDica(lider);
     rend.render(cena, cam);
   }
 
@@ -984,6 +1054,7 @@ export function criar(canvas) {
   }
 
   return { montar, quadro, redimensionar, irPara, ligarRotulos, alternarPorta, portaPerto,
+           pixoPerto, pixarPorCima,
            trocarSombra, fixarNivel, girarEntrada, mundo: (x, y) => P.mundo(x, y),
            gpu, gpuSoftware,
            get nivel() { return NIVEIS[nivel].rot + (nivelFixo ? ' (fixo)' : ''); },

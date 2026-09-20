@@ -781,9 +781,11 @@ TO.dados.plantaEstadio = (function(){
   function escolherTorcidas(){
     const reserva = {
       mandante:  { id:'casa', nome:'MANDANTE',  rot:'MANDANTE',  nomeCompleto:'MANDANTE',
+                   clube:'CASA', fundacao:1970,
                    clubeSigla:'CASA', clubeCor:'#b02a22', clubeCor2:'#e8e2d0', efetivo:180,
                    cor:'#b02a22', cor2:'#e8e2d0', cor3:'#1a1a1a' },
       visitante: { id:'fora', nome:'VISITANTE', rot:'VISITANTE', nomeCompleto:'VISITANTE',
+                   clube:'FORA', fundacao:1975,
                    clubeSigla:'FORA', clubeCor:'#22439a', clubeCor2:'#e8e2d0', efetivo:150,
                    cor:'#22439a', cor2:'#e8e2d0', cor3:'#e0b040' }
     };
@@ -801,6 +803,9 @@ TO.dados.plantaEstadio = (function(){
         nomeCompleto: (t.nome || t.siglaTorcida || '').toUpperCase(),
         clube: t.clube, clubeId: t.clubeId || (cl && cl.id) || null,
         clubeSigla: (cl && cl.sigla) || t.sigla || '',
+        /* o ano vai na pixação: "TOC - 1985" é a assinatura mais comum
+           de muro de torcida, e ele não estava saindo da ficha */
+        fundacao: t.fundacao || null,
         clubeCor: cc[0] || null, clubeCor2: cc.find(c => c !== cc[0]) || '#e8e2d0',
         efetivo: Math.max(40, Math.round(t.membros || 120)) }, coresDaTorcida(t));
     };
@@ -1060,15 +1065,98 @@ TO.dados.plantaEstadio = (function(){
     'SALGADOS DA VÓ', 'ESPETINHO DO MINEIRO', 'MERCEARIA DOIS IRMÃOS',
     'COSTURA E CONSERTOS', 'VIDRAÇARIA CENTRAL', 'PEIXARIA MARÉ ALTA'
   ];
-  const PIXACAO = [
-    'O BAIRRO É NOSSO', 'RESPEITA A VILA', 'SÓ OS FORTES', 'AQUI É RESENHA',
+  /* =========================================================
+     A PIXAÇÃO DA TORCIDA
+     ---------------------------------------------------------
+     Pixação de bairro de torcida não é frase solta: é ASSINATURA, e o
+     que ela diz é DE QUEM É A RUA. São quatro formas, todas tiradas da
+     ficha da torcida — o nome por extenso, a sigla, a sigla com o ano
+     de fundação e o amor ao clube —, e a tinta é SEMPRE a cor primária
+     dela, que é o que se lê de longe sem precisar ler a letra.
+
+     Cada muro pixado guarda AS DUAS versões, a da mandante e a da
+     visitante, e só mostra a do dono. É isso que deixa o jogador
+     COBRIR a do rival: as duas já estão no atlas, e trocar de dono é
+     reescrever a UV daquele quadrado — nenhuma malha se remonta.
+     ========================================================= */
+  function dizeresDaTorcida(T){
+    if(!T) return [];
+    const nome  = String(T.nomeCompleto || T.nome || '').toUpperCase().trim();
+    const sigla = String(T.nome || '').toUpperCase().trim();
+    const clube = String(T.clube || '').toUpperCase().trim();
+    const l = [];
+    if(nome)  l.push(nome);                                   // LEÕES DA TUF
+    if(sigla) l.push(sigla);                                   // TUF
+    if(sigla && T.fundacao) l.push(sigla + ' - ' + T.fundacao); // TUF - 1991
+    if(clube) l.push(clube + ' MEU AMOR', 'SOMOS ' + clube, 'VIVEMOS DE ' + clube);
+    /* sigla e nome podem ser a mesma palavra ("BAMOR"/"BAMOR"): o
+       sorteio não precisa da mesma pixação duas vezes */
+    return [...new Set(l)];
+  }
+  const PIXO_DE = { mandante: dizeresDaTorcida(TORCIDAS.mandante),
+                    visitante: dizeresDaTorcida(TORCIDAS.visitante) };
+
+  /* O RECADO DE PAREDE não é pixação: é o anúncio de quem mora ali —
+     aluguel, obra, cão bravo. Ele FICA. Muro só com as duas torcidas
+     lê como cenário de duas frases repetidas, não como bairro. */
+  const RECADOS = [
     'VENDE-SE', 'ALUGA-SE', 'PINTA-SE CASAS', 'PRECISA-SE DE AJUDANTE',
     'É PROIBIDO JOGAR LIXO', 'NÃO ESTACIONE', 'ENTRADA DE VEÍCULOS',
-    'TE AMO MARIA', 'SAUDADES ETERNAS', 'A VILA NÃO SE RENDE',
-    'DEUS É FIEL', 'A TORCIDA MANDA', 'AQUI É TORCIDA', 'GERAL DO BAIRRO',
-    'NINGUÉM SEGURA', 'DOMINGO TEM JOGO', 'PROIBIDO COLAR CARTAZ',
-    'CUIDADO COM O CÃO', 'TEM ÁGUA', 'LAVA-SE ROUPA', 'CONSERTA-SE GELADEIRA'
+    'TE AMO MARIA', 'SAUDADES ETERNAS', 'DEUS É FIEL',
+    'PROIBIDO COLAR CARTAZ', 'CUIDADO COM O CÃO', 'TEM ÁGUA',
+    'LAVA-SE ROUPA', 'CONSERTA-SE GELADEIRA'
   ];
+
+  /* SEMENTE PRÓPRIA. A pixação sorteia de quem é cada muro e qual das
+     frases vai nele; no sorteio compartilhado isso mexeria em TODA a
+     cidade gerada depois — lote, árvore, moita, favela. */
+  const rngPixo = semente(487219);
+  const centroDaSede = lado => {
+    const s = sedeDe[lado];
+    return s ? [(s.x0 + s.x1)/2, (s.y0 + s.y1)/2] : SEDES[lado].ponto;
+  };
+  /* DE QUEM É O MURO. Perto da sede de uma torcida quase tudo é dela;
+     no meio do bairro é meio a meio. É isso que dá TERRITÓRIO ao mapa:
+     dá pra ver de longe onde acaba um lado e começa o outro. O peso é o
+     inverso do quadrado da distância, que faz a virada acontecer no
+     meio do caminho, e não na porta da sede.
+     Os 12% de piso dos dois lados não são folga de conta: sem eles não
+     sobra pixação de rival pra cobrir perto da sede, que é justamente
+     onde o jogador começa. */
+  function ladoDoMuro(cx, cy){
+    const m = centroDaSede('mandante'), v = centroDaSede('visitante');
+    const dm = Math.max(1, (cx-m[0])*(cx-m[0]) + (cy-m[1])*(cy-m[1]));
+    const dv = Math.max(1, (cx-v[0])*(cx-v[0]) + (cy-v[1])*(cy-v[1]));
+    const p = Math.min(0.88, Math.max(0.12, dv / (dm + dv)));
+    return rngPixo() < p ? 'mandante' : 'visitante';
+  }
+  /* QUANTO DO QUE SE PINTA EM MURO É TORCIDA; o resto é recado de casa */
+  const FATIA_PIXO = 0.66;
+  /* PÕE A PIXAÇÃO NO LOTE, com as duas versões e a do dono à vista.
+     `recado` chega de fora JÁ SORTEADO: o sorteio dele é do `rng()`
+     compartilhado e tem de acontecer do lado de lá, gastando o mesmo
+     número de sempre, senão a cidade inteira muda de lugar. */
+  function pixar(l, recado, sempre){
+    const temTorcida = PIXO_DE.mandante.length && PIXO_DE.visitante.length;
+    /* o sorteio acontece SEMPRE, mesmo quando o muro é obrigado a ser
+       de torcida: é o mesmo `rngPixo` pra todo mundo, e pular um número
+       nele mudaria de quem são todos os muros seguintes */
+    const sorte = rngPixo();
+    if(!temTorcida || (!sempre && sorte >= FATIA_PIXO)){
+      if(recado) l.pixacao = recado;
+      return;
+    }
+    const cx = l.cx !== undefined ? l.cx : (l.x0 + l.x1)/2;
+    const cy = l.cx !== undefined ? l.cy : (l.y0 + l.y1)/2;
+    const lado = ladoDoMuro(cx, cy);
+    const alt = {};
+    for(const k of ['mandante', 'visitante'])
+      alt[k] = { texto: PIXO_DE[k][Math.floor(rngPixo()*PIXO_DE[k].length)],
+                 tinta: TORCIDAS[k].cor };
+    l.pixo = { lado, alt };
+    l.pixacao = alt[lado].texto;
+    l.pixoTinta = alt[lado].tinta;
+  }
   const EQUIPAMENTOS = [
     { tipo: 'hospital',  ponto: pxm(765, 448) },   // logo ao sul do estádio
     { tipo: 'delegacia', ponto: pxm(419, 448) },   // a oeste, no caminho da torcida
@@ -1458,12 +1546,18 @@ TO.dados.plantaEstadio = (function(){
       p('poste', { x: ux(REC + M_ESP + 24), y: (by0 + by1)/2, dx: ofora, dz: 0 }, false);
       /* O QUE SE LÊ DA RUA. Muro de baldio não tem placa: tem tinta —
          `placa: false` pinta o dizer direto no reboco. */
-      const pixo = (u, y, ox, oz, texto, larg) =>
-        p('letreiro', { x: ux(u), y, ox, oz, texto, placa: false, larg, altura: 20, base: 20 }, false);
+      const pixo = (u, y, ox, oz, texto, larg, px) =>
+        p('letreiro', { x: ux(u), y, ox, oz, texto, placa: false, larg, altura: 20, base: 20,
+                        tinta: px ? px.alt[px.lado].tinta : undefined, pixo: px }, false);
       pixo(REC, (Y0 + Y1)/2 - 150, -ofora, 0, 'VENDE-SE', 116);
       pixo(REC, (Y0 + Y1)/2 + 130, -ofora, 0, 'ALUGA-SE', 116);
       pixo(uL0*0.22, Y0 + REC, 0, -1, 'É PROIBIDO JOGAR LIXO', 150);
-      pixo(uL0*0.62, Y1 - REC, 0, 1, escolher(PIXACAO), 150);
+      /* O MURO GRANDE DO BALDIO é o melhor pedaço de parede do bairro:
+         alto, comprido e de frente pra rua. Ali a pixação é de torcida,
+         e dá pra cobrir a do rival como em qualquer muro. */
+      const alvoPix = { cx: ux(uL0*0.62), cy: Y1 - REC };
+      pixar(alvoPix, escolher(RECADOS), true);
+      pixo(uL0*0.62, alvoPix.cy, 0, 1, alvoPix.pixacao, 150, alvoPix.pixo);
     }
 
     return { tipo, chao, pecas, area };
@@ -2467,10 +2561,14 @@ TO.dados.plantaEstadio = (function(){
      aluguel, de obra, de amor e de torcida. */
   for(const l of LOTES){
     if(l.tipo === 'sede') continue;                 // a sede já tem a faixa dela
-    if(l.tipo === 'muro'){ if(rng() < 0.55) l.pixacao = escolher(PIXACAO); continue; }
+    /* `escolher(RECADOS)` continua saindo do `rng()` compartilhado e
+       gastando UM número, como o `escolher(PIXACAO)` de antes: quem
+       decide se o muro é de torcida é o `rngPixo`, lá dentro. Trocar
+       isso de lugar mudaria o sorteio de tudo o que vem depois. */
+    if(l.tipo === 'muro'){ if(rng() < 0.55) pixar(l, escolher(RECADOS)); continue; }
     const r = rng();
     if(r < 0.30) l.placa = escolher(COMERCIO);
-    else if(r < 0.54) l.pixacao = escolher(PIXACAO);
+    else if(r < 0.54) pixar(l, escolher(RECADOS));
   }
 
   /* ---- o que é asfalto, e quem encosta nele ----
@@ -3045,7 +3143,7 @@ TO.dados.plantaEstadio = (function(){
   /* a telha cerâmica em seis tons — é ela que dá a cor da foto */
   const TELHAS_FAVELA = ['#b0603c','#a85a38','#bd6f45','#9c5334','#c07a52','#ab6340'];
   const LAJES_FAVELA = ['#9a958c','#8f8a80','#a6a096'];
-  const GRAFITE_FAVELA = PIXACAO.concat([
+  const GRAFITE_FAVELA = RECADOS.concat([
     'RUA SEM MEDO', 'FAVELA VIVA', 'LUZ NO BECO', 'CRIA DA VILA',
     'SOMOS DAQUI', 'FÉ NÃO FALHA', 'MC ZINHO', 'DJ BEIJA-FLOR',
     'RESPEITA QUEM SUBIU O MORRO', 'BONDE DO BECO', 'TUDO NOSSO', 'ISSO AQUI É NOSSO'
@@ -3129,7 +3227,10 @@ TO.dados.plantaEstadio = (function(){
                 : p < 0.68 ? escolherFav(CORES_FAVELA.reboco)
                            : escolherFav(CORES_FAVELA.pintada);
       const casa = { tipo, ang: ang || 1e-6, vf, cx, cy, w, h, alt, cor, telha, favela: true };
-      if(rngFav() < 0.42) casa.pixacao = escolherFav(GRAFITE_FAVELA);
+      /* a casa da favela pixa pela mesma regra do resto do bairro: o
+         `escolherFav` gasta o número do sorteio DELA, e quem decide se
+         sai torcida ou recado é o `rngPixo`, de dentro do `pixar` */
+      if(rngFav() < 0.42) pixar(casa, escolherFav(GRAFITE_FAVELA));
       FAVELA.push(casa);
       return casa;
     }

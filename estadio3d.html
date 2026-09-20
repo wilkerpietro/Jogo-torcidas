@@ -19,6 +19,11 @@
   .rot3d{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
     font-family:var(--mono);font-size:10px;font-weight:600;color:#e0b040;
     text-shadow:0 1px 3px #000,0 0 6px #000;padding-bottom:3px}
+  /* a dica do F fica SOBRE a pixação, não no rodapé: o que falta saber
+     não é que a tecla existe, é qual muro responde a ela */
+  .dica3d{color:#0e0e0d;background:#e0b040;border-radius:3px;padding:2px 6px 3px;
+    font-size:9px;letter-spacing:.06em;text-shadow:none;
+    box-shadow:0 2px 6px #000a}
   #estado{position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top));
     font-family:var(--mono);font-size:11px;line-height:1.7;color:#cfcabd;
     background:#0e0e0dcc;border:1px solid #45443f;padding:7px 10px;
@@ -44,7 +49,7 @@
   <div id="legenda">
     <b>WASD</b> anda (relativo à câmera)<br>
     <b>Q</b> bater &nbsp; <b>E</b> defender (segurar; soltar no golpe é contragolpe) &nbsp;
-    <b>F</b> agarrar &nbsp; <b>C</b> chamar<br>
+    <b>F</b> agarrar / porta / pixar &nbsp; <b>C</b> chamar<br>
     <b>2</b> pedra &nbsp; <b>3</b> bomba &nbsp; <b>R</b> recuar &nbsp; <b>X</b> fugir &nbsp;
     <b>ENTER</b> todo mundo pro portão<br>
     <b>arrastar</b> gira a câmera &nbsp; <b>roda</b> aproxima<br>
@@ -223,7 +228,7 @@ const pad = montarPad({
     { tecla: 'q', rot: 'BATER',    fn: () => { const l = lider(); if (l) C.bater(J, l); } },
     { tecla: 'e', rot: 'DEFENDER', segurar: true,
       aoSoltar: () => { const l = lider(); if (l) C.soltarDefesa(J, l); } },
-    { tecla: 'f', rot: 'PORTA/AGARRAR', fn: () => usarF() },
+    { tecla: 'f', rot: 'PORTA/PIXAR\nAGARRAR', fn: () => usarF() },
     { tecla: 'c', rot: 'CHAMAR',   fn: () => { if (J) C.chamar(J, C.ladoDoJogador(J)); } },
     { tecla: '2', rot: 'PEDRA',    fn: () => { if (J) C.arremessar(J, 'pedra'); } },
     { tecla: '3', rot: 'BOMBA',    fn: () => { if (J) C.arremessar(J, 'bomba'); } },
@@ -251,21 +256,32 @@ const pad = montarPad({
 const lider = () => J && (J.discos.find(d => d.lider && d.doJogador && d.vivo)
                        || J.discos.find(d => d.lider && d.vivo));
 
-/* O F FAZ DUAS COISAS, e qual delas depende de onde o líder está.
-   Encostado numa porta da sede, ele ABRE OU FECHA a porta; longe de
-   porta, continua sendo o AGARRAR do motor de luta, que é o dono
-   antigo da tecla. Tirar o agarrar pra pôr porta seria trocar uma
-   mecânica de briga por um enfeite; a porta só toma a tecla no
-   instante em que há porta ao alcance.
+/* O F FAZ TRÊS COISAS, e qual delas depende de onde o líder está.
+   Encostado numa porta da sede, ele ABRE OU FECHA a porta; encostado
+   numa pixação do rival, ele PIXA POR CIMA; longe das duas, continua
+   sendo o AGARRAR do motor de luta, que é o dono antigo da tecla.
+   Tirar o agarrar pra pôr porta seria trocar uma mecânica de briga por
+   um enfeite; porta e pixação só tomam a tecla no instante em que há
+   uma delas ao alcance.
+
+   A PORTA VEM PRIMEIRO. As duas quase nunca disputam — porta é de
+   dentro da sede, pixação é de muro de rua —, mas quando disputam quem
+   está com a mão na maçaneta quer entrar, não pintar.
 
    Fora do estádio o mundo é o próprio tabuleiro, então o x,y do líder
-   serve direto pra procurar a porta. */
+   serve direto pra procurar as duas. */
 function usarF() {
   const l = lider();
   if (!l) return;
   const r = vista.alternarPorta(l.x, l.y);
-  if (r === null) { C.agarrar(J, l); return; }
-  C.logar(J, r ? 'Porta aberta.' : 'Porta fechada.', 'n');
+  if (r !== null) { C.logar(J, r ? 'Porta aberta.' : 'Porta fechada.', 'n'); return; }
+  const t = vista.pixarPorCima(l.x, l.y, l.lado);
+  if (t !== null) {
+    const nome = (TORCIDAS[l.lado] && TORCIDAS[l.lado].rot) || l.lado.toUpperCase();
+    C.logar(J, 'Pixou por cima: ' + t + '. O muro é da ' + nome + '.', 'n');
+    return;
+  }
+  C.agarrar(J, l);
 }
 
 /* ---- teclado ---- */

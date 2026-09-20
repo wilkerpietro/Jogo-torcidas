@@ -117,6 +117,7 @@ export function montarBairro(P) {
     m.name = nome;
     triangulos += T.pos.length / 9;
     meshes.push(m);
+    return m;
   }
   /* malha com TEXTURA e cor por vértice ao mesmo tempo: a textura dá o
      desenho (a telha, o reboco) e a cor do vértice dá o tom da casa —
@@ -184,6 +185,11 @@ export function montarBairro(P) {
   const bandeiras = [];
   /* as portas que abrem: a cena gira o Group de cada uma por quadro */
   const portas = [];
+  /* AS PIXAÇÕES QUE DÁ PRA COBRIR. Cada uma guarda onde está no mundo,
+     de quem é hoje e a UV das DUAS torcidas — cobrir é reescrever os
+     doze floats de UV do quadrado dela na malha dos letreiros. Só entra
+     aqui a pixação DE TORCIDA: recado de aluguel não muda de dono. */
+  const pixacoes = [];
   /* o tecido de TELHADO (textura de telha) e o de MANCHA (decalque de
      mofo e chuva na parede), os dois com UV */
   const TELHADOS = { pos: [], cor: [], uv: [], esc: TELHA_ESC };
@@ -206,6 +212,18 @@ export function montarBairro(P) {
   const FUNDOS_PLACA = ['#c8342b','#1f5aa8','#e0a52a','#1d7a4a','#f0ede4','#2b2b2b','#7a2f86','#d96a1f'];
   const TINTAS_PIXO = ['#2a2a28','#1c2a44','#3a1f1f','#23331f'];
   const somaTexto = t => { let h = 7; for(let k=0;k<t.length;k++) h = (h*31 + t.charCodeAt(k)) >>> 0; return h; };
+  /* o brilho percebido de um hex, que é quem decide se o texto por cima
+     vai ser claro ou escuro */
+  const luzHex = h => {
+    const n = parseInt(String(h).slice(1), 16);
+    if(!isFinite(n)) return 128;
+    return (n >> 16 & 255) * 0.299 + (n >> 8 & 255) * 0.587 + (n & 255) * 0.114;
+  };
+  /* A CHAVE DA PIXAÇÃO LEVA A TINTA. A mesma frase pode ir em duas
+     cores no mesmo mapa — a sigla de uma torcida no muro dela e a do
+     rival no muro de lá —, e sem a cor na chave as duas dividiriam a
+     mesma célula do atlas e uma sairia pintada com a cor da outra. */
+  const chavePixo = (texto, tinta) => 'X:' + texto + (tinta ? '|' + tinta : '');
 
   function montarAtlas(dizeres) {
     const LARG = 256, ALT = 64, COLS = 4;
@@ -295,26 +313,48 @@ export function montarBairro(P) {
       if (d.placa) {
         const fundo = d.fundo || FUNDOS_PLACA[h % FUNDOS_PLACA.length];
         c.fillStyle = fundo; c.fillRect(x, y, LARG, ALT);
-        const n = parseInt(String(fundo).slice(1), 16);
-        const claro = ((n >> 16 & 255) * 0.299 + (n >> 8 & 255) * 0.587 + (n & 255) * 0.114) > 150;
+        const claro = luzHex(fundo) > 150;
         /* borda forte no fundo claro: letreiro bege em parede bege some */
         c.strokeStyle = claro ? 'rgba(40,36,28,.75)' : 'rgba(255,255,255,.35)';
         c.lineWidth = claro ? 7 : 4; c.strokeRect(x + 4, y + 4, LARG - 8, ALT - 8);
         c.fillStyle = d.tinta || (claro ? '#20201c' : '#f6f3ea');
         c.font = 'bold 34px "Arial Narrow", Arial, sans-serif';
       } else {
-        c.fillStyle = TINTAS_PIXO[h % TINTAS_PIXO.length];
+        /* A TINTA. Quando quem pediu sabe a cor, é ela que vale — a
+           pixação de torcida usa SEMPRE a primária da torcida. Sem cor
+           pedida, o preto de spray sorteado pelo texto, que é o do
+           recado de parede.
+           O CONTORNO não é enfeite: metade das torcidas do arquivo tem
+           branco ou preto como primária, e branco em reboco claro some
+           por completo. O halo sai do contraste da própria tinta, e ele
+           fica POR BAIXO da letra — a cor de dentro continua sendo
+           exatamente a que a torcida mandou. */
+        const tinta = d.tinta || TINTAS_PIXO[h % TINTAS_PIXO.length];
+        d.halo = luzHex(tinta) > 120 ? 'rgba(22,20,18,.9)' : 'rgba(238,236,228,.8)';
+        c.fillStyle = tinta;
         c.font = 'italic bold 36px "Arial Narrow", Arial, sans-serif';
+        /* LETRA DE PIXAÇÃO É ALTA E ESTREITA, não letreiro de loja: o
+           traço sai do movimento do braço com a lata, que é vertical.
+           Esticar 1,18 e apertar 0,88 no eixo da célula faz a mesma
+           fonte ler como tinta de rua — e o giro de meio grau tira o
+           alinhamento de régua, que é o que entregava a máquina. */
         c.translate(x + LARG/2, y + ALT/2);
         c.rotate(((h >> 4) % 5 - 2) * 0.012);
+        c.scale(0.88, 1.18);
         c.translate(-(x + LARG/2), -(y + ALT/2));
+        d.estica = true;
       }
       c.textAlign = 'center'; c.textBaseline = 'middle';
       /* encolhe até caber: nome de comércio brasileiro é comprido */
       let tam = d.placa ? 34 : 36;
-      while (tam > 12 && c.measureText(d.texto).width > LARG - 26) {
+      const cabe = d.estica ? (LARG - 26) / 0.88 : LARG - 26;
+      while (tam > 12 && c.measureText(d.texto).width > cabe) {
         tam -= 2;
         c.font = (d.placa ? 'bold ' : 'italic bold ') + tam + 'px "Arial Narrow", Arial, sans-serif';
+      }
+      if (d.halo) {
+        c.lineWidth = Math.max(3, tam * 0.17); c.lineJoin = 'round';
+        c.strokeStyle = d.halo; c.strokeText(d.texto, x + LARG/2, y + ALT/2 + 2);
       }
       c.fillText(d.texto, x + LARG/2, y + ALT/2 + 2);
       c.restore();
@@ -351,6 +391,23 @@ export function montarBairro(P) {
       im.src = d.img;
     }
     return { tex, uv };
+  }
+
+  /* GUARDA UMA PIXAÇÃO COBRÍVEL. `i0` é onde os doze floats de UV
+     deste quadrado começam na malha dos letreiros; `x, y` é o meio da
+     tinta no chão, que é onde o jogador encosta a lata — não o meio do
+     lote, que numa casa de esquina fica a vinte da pixação. */
+  function registrarPixo(px, o, uvMap, i0, x, y, altura, ox, oz) {
+    const versao = {};
+    for (const k of ['mandante', 'visitante']) {
+      const v = px.alt && px.alt[k];
+      const u = v && uvMap.get(chavePixo(v.texto, v.tinta));
+      if (!u) return;                       // faltou uma das duas: não é cobrível
+      versao[k] = { uv: u, texto: v.texto, tinta: v.tinta };
+    }
+    /* `ox, oz` é pra que lado a parede olha: é de LÁ que se pixa, e é
+       de lá que a câmera tem de estar pra a tinta aparecer */
+    pixacoes.push({ x, y, altura, ox, oz, lado: px.lado, i0, versao, alvo: o, mesh: null });
   }
 
   /* um quadrado com textura, de pé, olhando pra fora em (ox, oz).
@@ -1230,11 +1287,14 @@ export function montarBairro(P) {
           break;
         }
         case 'letreiro': {
-          const u = uv.get((o.placa === false ? 'X:' : 'P:') + o.texto);
+          const u = uv.get(o.chaveDizer || (o.placa === false ? 'X:' : 'P:') + o.texto);
           if (!u) break;
           const larg = o.larg || 120, alt = o.altura || 20, base = o.base || 24;
+          const i0 = TL.uv.length;
           /* meio ponto à frente da parede, senão some dentro dela */
           placa(TL, o.x + o.ox * 0.6, base + alt / 2, o.y + o.oz * 0.6, o.ox, o.oz, larg, alt, u);
+          if (o.pixo) registrarPixo(o.pixo, o, uv, i0,
+                                    o.x + o.ox * 0.6, o.y + o.oz * 0.6, base + alt / 2, o.ox, o.oz);
           if (o.pernas) for (const s of [-1, 1])
             caixa(T, o.x + s * (larg / 2 - 4) - 1.6, o.x + s * (larg / 2 - 4) + 1.6, 0, base + alt,
                   o.y - 1.6, o.y + 1.6, '#6e6a5e');
@@ -1286,8 +1346,13 @@ export function montarBairro(P) {
       /* `placa: false` pinta DIRETO NA PAREDE, sem chapa: é o que o
          muro do baldio pede — lá o dizer é tinta spray, não letreiro */
       if (o.k === 'letreiro') {
-        const ch = (o.placa === false ? 'X:' : 'P:') + o.texto;
+        const ch = o.placa === false ? chavePixo(o.texto, o.tinta) : 'P:' + o.texto;
+        o.chaveDizer = ch;
         dizeres.set(ch, { chave: ch, texto: o.texto, placa: o.placa !== false, fundo: o.fundo, tinta: o.tinta });
+        /* a peça pode ser pixação de torcida (o muro do baldio é):
+           aí a versão do OUTRO lado também entra no atlas, senão não
+           há pra onde a UV apontar na hora de cobrir */
+        if (o.pixo) porAsDuasVersoes(o.pixo);
       }
       /* a chave leva cor e forma: duas torcidas do país se chamam RAÇA,
          e o escudo de uma não pode servir pra outra */
@@ -1303,11 +1368,23 @@ export function montarBairro(P) {
                                forma: o.forma, cor: o.cor, cor2: o.cor2, corTexto: o.corTexto });
       }
   }
+  /* as duas versões de uma pixação de torcida, cada uma na cor da sua */
+  function porAsDuasVersoes(px) {
+    for (const k of ['mandante', 'visitante']) {
+      const v = px.alt && px.alt[k];
+      if (!v) continue;
+      const chave = chavePixo(v.texto, v.tinta);
+      if (!dizeres.has(chave)) dizeres.set(chave, { chave, texto: v.texto, placa: false, tinta: v.tinta });
+    }
+  }
   for (const l of K.LOTES) {
-    for (const [texto, ehPlaca] of [[l.placa, true], [l.pixacao, false]]) {
-      if (!texto) continue;
-      const chave = (ehPlaca ? 'P:' : 'X:') + texto;
-      if (!dizeres.has(chave)) dizeres.set(chave, { chave, texto, placa: ehPlaca });
+    if (l.placa && !dizeres.has('P:' + l.placa))
+      dizeres.set('P:' + l.placa, { chave: 'P:' + l.placa, texto: l.placa, placa: true });
+    if (l.pixacao) {
+      const chave = chavePixo(l.pixacao, l.pixoTinta);
+      if (!dizeres.has(chave))
+        dizeres.set(chave, { chave, texto: l.pixacao, placa: false, tinta: l.pixoTinta });
+      if (l.pixo) porAsDuasVersoes(l.pixo);
     }
   }
   if (dizeres.size) {
@@ -1381,20 +1458,34 @@ export function montarBairro(P) {
         placa(TL, px, base + alt / 2, pz, ox, oz, larg, alt, uv.get('P:' + l.placa));
       }
       if (l.pixacao) {
-        /* a pixação não pode passar da parede: em muro de 12 ela tem de
-           caber nos 12, senão sobra tinta boiando no ar */
-        const larg = Math.min(frente - 12, 62);
-        const alt = Math.min(12, larg / 5, l.alt - 4);
+        /* NO MURO A PIXAÇÃO TOMA O MURO. Muro não tem porta nem janela:
+           o pixador escreve de ponta a ponta e na altura do peito, que é
+           onde a lata chega. Na CASA ela tem de caber na faixa livre —
+           a janela do térreo começa em 26 e a porta toma o meio —, e
+           por isso lá ela continua baixa, curta e fora do eixo da porta.
+           A proporção é a da célula do atlas (4:1): fora dela a letra
+           sai espremida ou esticada. */
+        const ehMuro = l.tipo === 'muro';
+        const larg = ehMuro ? Math.min(frente - 10, 126) : Math.min(frente - 12, 62);
+        const alt = ehMuro ? Math.min(larg / 4, l.alt - 10)
+                           : Math.min(14, larg / 4.3, l.alt - 4);
         if (alt < 4) continue;
-        /* baixa, abaixo da linha das janelas, e fora do meio: pixação
-           não se alinha com a porta */
-        const y = Math.min(l.alt - 2 - alt / 2, 3 + alt / 2);
+        const y = ehMuro ? Math.max(alt / 2 + 3, l.alt * 0.5)
+                         : Math.min(l.alt - 2 - alt / 2, 3 + alt / 2);
         const folga = Math.max(0, (frente - larg) / 2 - 2);
         const lado = somaTexto(l.pixacao) % 2 ? 1 : -1;
-        placa(TL, px, y, pz, ox, oz, larg, alt, uv.get('X:' + l.pixacao), lado * folga * 0.7);
+        const desloc = lado * folga * 0.7;
+        const u = uv.get(chavePixo(l.pixacao, l.pixoTinta));
+        if (!u) continue;
+        const i0 = TL.uv.length;
+        placa(TL, px, y, pz, ox, oz, larg, alt, u, desloc);
+        /* o meio da tinta no chão: `placa` desloca ao longo da parede,
+           e a direção disso é a normal girada — (oz, -ox) */
+        if (l.pixo) registrarPixo(l.pixo, l, uv, i0, px + oz * desloc, pz - ox * desloc, y, ox, oz);
       }
     }
-    malhaUV(TL, tex, 'letreiros');
+    const malhaLetreiros = malhaUV(TL, tex, 'letreiros');
+    for (const p of pixacoes) p.mesh = malhaLetreiros;
 
     /* ---- A BANDEIRA DO MASTRO, que tremula ----
        Um pano de N × M retalhos preso ao mastro, com o escudo da
@@ -1571,5 +1662,5 @@ export function montarBairro(P) {
   }
   malha(TM, false, 'moitas');
 
-  return { meshes, triangulos, tetos, bandeiras, portas, pedacos: pedacos.size };
+  return { meshes, triangulos, tetos, bandeiras, portas, pixacoes, pedacos: pedacos.size };
 }

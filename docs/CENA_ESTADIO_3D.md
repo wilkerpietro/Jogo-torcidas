@@ -940,6 +940,130 @@ De quebra, mobília menor é mais chão livre: as células de corpo dentro
 dos bares foram de 408/434 pra **518/546**, e as da sede nível 1 de 352
 pra **368**.
 
+### 4.20. A pixação é da torcida, e muda de dono
+
+Antes, o que estava escrito nos muros vinha de uma lista de 25 frases
+soltas — `VENDE-SE`, `CUIDADO COM O CÃO`, `A TORCIDA MANDA` — sorteadas
+por texto e pintadas num preto de spray tirado por hash. Era textura de
+bairro e nada mais: ninguém era dono de nada.
+
+Agora a pixação de torcida é **assinatura**, e diz de quem é a rua.
+
+**O que ela escreve** sai da ficha da torcida, em quatro formas:
+
+| forma | de onde sai | exemplo |
+|---|---|---|
+| nome por extenso | `nomeCompleto` | `TORCIDA JOVEM DO GRÊMIO` |
+| sigla | `siglaTorcida` | `TJG` |
+| sigla com o ano | + `fundacao` | `TJG - 1977` |
+| amor ao clube | `clube` | `GRÊMIO MEU AMOR`, `SOMOS GRÊMIO`, `VIVEMOS DE GRÊMIO` |
+
+`fundacao` não estava na ficha e passou a estar — era o único campo que
+faltava pra a terceira forma.
+
+**A tinta é SEMPRE a cor primária da torcida.** Isso tem um preço que o
+desenho tinha de pagar: metade das 140 torcidas do arquivo tem branco
+ou preto como primária, e branco em reboco claro some por completo. A
+saída não foi trocar a cor — foi pôr um **halo por baixo da letra**,
+escuro em tinta clara e claro em tinta escura. A cor de dentro continua
+sendo exatamente a que a torcida mandou, e ela lê em qualquer parede.
+De quebra, pixador contorna letra mesmo.
+
+**Onde ela vai:** muro e parede de casa, que é onde já ia. O muro,
+porém, deixou de receber a mesma tarja curta e baixa da casa: muro não
+tem porta nem janela, então ali a pixação toma a parede de ponta a
+ponta, na altura do peito. Na casa ela continua curta e baixa porque a
+janela do térreo começa em 26 e a porta toma o meio — é a faixa livre
+que sobra, não gosto. A proporção passou a ser a da célula do atlas
+(4:1), e a letra ganhou um esticão vertical de 1,18 com aperto
+horizontal de 0,88: pixação se escreve com o braço, e o traço sai alto
+e estreito.
+
+**De quem é cada muro** não é cara ou coroa: o peso é o **inverso do
+quadrado da distância às duas sedes**, com piso de 12% dos dois lados.
+Perto da sede da mandante quase tudo é dela, no meio do bairro é meio a
+meio, e os 12% garantem que sempre sobre pixação de rival pra cobrir
+perto de casa — que é onde o jogador começa. O mapa passa a ter
+território visível de longe.
+
+**O recado de parede ficou.** `VENDE-SE`, `ALUGA-SE`, `PINTA-SE CASAS`,
+`CONSERTA-SE GELADEIRA` não são pixação: são o anúncio de quem mora
+ali. Um bairro em que todo muro repete duas frases lê como cenário, não
+como bairro. A divisão é 66% torcida, 34% recado (`FATIA_PIXO`), e o
+muro grande do baldio é obrigado a ser de torcida, porque é o melhor
+pedaço de parede do mapa.
+
+Na cidade de hoje: **137 pixações de torcida** (72 da mandante, 65 da
+visitante) e 85 recados, com 12 textos distintos. O gradiente, medido
+por anel de distância à sede da mandante:
+
+| distância | dela | do rival |
+|---|---|---|
+| até 400 | 100% | 0% |
+| 400–900 | 100% | 0% |
+| 900–1600 | 87% | 13% |
+| acima de 1600 | 47% | 53% |
+
+O lado ruim disso está no primeiro anel: perto da própria sede não há
+pixação de rival pra cobrir. É consequência de haver poucos muros ali
+(cinco no raio de 900) e não do piso de 12% — a primeira de rival está
+a uns 1.000 do spawn. Se isso atrapalhar a descoberta da mecânica, o
+lugar de mexer é o `Math.max(0.12, ...)` do `ladoDoMuro`.
+
+#### Cobrir a do rival: o F, e a troca de UV
+
+Cada muro pixado guarda **as duas versões**, a da mandante e a da
+visitante, e as duas já entram no atlas na carga. Mostrar uma ou outra
+é apontar o quadrado pra uma célula ou pra outra:
+
+```js
+const a = p.mesh.geometry.attributes.uv, u = v.uv, i = p.i0;
+const f = [u[0],u[1], u[2],u[1], u[2],u[3],
+           u[0],u[1], u[2],u[3], u[0],u[3]];
+for (let k = 0; k < 12; k++) a.array[i + k] = f[k];
+a.needsUpdate = true;
+```
+
+**Doze floats.** Nenhuma malha se remonta — remontar pediria refazer os
+160 mil triângulos do bairro a cada lata de spray. `i0` é onde a UV
+daquele quadrado começa, guardado na hora em que `placa()` empilhou os
+seis vértices, e a ordem dos doze é a mesma que ela empilha.
+
+O atlas não engordou por isso: ele tinha **95 células** antes e tem
+**94** agora — as 25 frases soltas viraram 15 recados mais 12 textos de
+torcida, e o desenho continua num 1024 × 2048.
+
+**O F passou a fazer três coisas**, nesta ordem: porta ao alcance →
+pixação de rival ao alcance → agarrar do motor de luta. As duas
+primeiras quase nunca disputam (porta é de dentro da sede, pixação é de
+muro de rua), e quando disputam ganha quem está com a mão na maçaneta.
+O alcance da pixação é 62 (3,2 m) contra 46 da porta: porta se abre com
+a mão na maçaneta, pixação se faz a um passo da parede.
+
+A **dica não é barra de rodapé**: é um rótulo amarelo que fica SOBRE a
+tinta, projetado pela mesma conta dos rótulos de líder. O que falta
+saber não é que a tecla existe — é qual muro responde a ela. Ela some
+sozinha quando a pixação já é sua, porque `pixoPerto(x, y, lado)`
+ignora as do próprio lado.
+
+#### O sorteio compartilhado, mais uma vez
+
+O `rng()` do arquivo é uma sequência só, e TUDO que vem depois anda
+junto com ele. A pixação sorteia de quem é cada muro e qual frase vai
+nele — três números por muro — e isso, na sequência compartilhada,
+mudaria lote, árvore, moita e favela de lugar.
+
+Duas defesas, as mesmas de sempre:
+
+1. **Semente própria** (`semente(487219)`), que não consome um número
+   da sequência de fora.
+2. **O `escolher(RECADOS)` continua saindo do `rng()` compartilhado**,
+   gastando exatamente um número como o `escolher(PIXACAO)` de antes —
+   mesmo quando o muro acaba sendo de torcida e o recado é jogado fora.
+
+Prova: a máscara continua em **100,0% alcançável com 8 células presas**,
+o mesmo número de antes da mudança.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
