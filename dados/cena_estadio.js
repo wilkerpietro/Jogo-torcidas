@@ -1578,9 +1578,14 @@ TO.dados.plantaEstadio = (function(){
     /* A SEDE TEM ALTURA DE CASA, não de galpão de fábrica: a fachada
        bate com o sobrado do lado e o telhado fica por baixo da linha
        do bairro. Era 86/74/66 e lia como um armazém no meio da rua. */
-    const MURO = N === 1 ? 62 : 72;      // a fachada da rua, que é platibanda
-    const ALT_EXT = N === 1 ? 54 : 62;   // as paredes de fora, que seguram o telhado
-    const ALT = N === 1 ? 48 : 54;       // parede de cômodo, abaixo do telhado
+    const MURO = N === 1 ? 66 : 74;      // a fachada da rua, que é platibanda
+    const ALT_EXT = N === 1 ? 60 : 66;   // as paredes de fora, que seguram o telhado
+    /* A PAREDE DE CÔMODO SUBIU pra caber a PLACA em cima da porta.
+       Era 48 (2,16 m) com folha de 46: sobravam 2 de verga, e placa
+       nenhuma cabe em 2. Com 56 sobram 10, que é onde a placa mora —
+       e de quebra o pé-direito virou 2,52 m, que é medida de cômodo
+       de verdade; 2,16 já era baixo demais pro boneco de 1,75. */
+    const ALT = N === 1 ? 56 : 60;       // parede de cômodo, abaixo do telhado
     const VAO = 40;       // porta: 1,8 m, e o corpo passa (a máscara pede 24)
     const PORTAO = 56;    // o portão da rua: 2,5 m, cabe bonde em fila
     /* parede com vãos: `em` é um vão ou uma lista deles, e o que sobra
@@ -1619,7 +1624,7 @@ TO.dados.plantaEstadio = (function(){
        sozinha não existe: a da fachada parte no meio, cada metade na
        sua dobradiça, as duas abrindo pro mesmo lado. */
     const ALT_PORTA = 46;                 // 2,07 m de folha
-    function folhasNoVao(ao, c, outro, w, altParede, opc){
+    function folhasNoVao(ao, c, outro, w, altParede, opc, espessura){
       const alt = Math.min(altParede - 4, ALT_PORTA);
       if(alt < 20) return;
       const vidro = !!(opc && opc.vidro), sentido = (opc && opc.abre) || 1;
@@ -1632,16 +1637,45 @@ TO.dados.plantaEstadio = (function(){
         p('porta', { x: hx, y: hy, larg: duas ? w/2 : w, alt, vidro, lado,
                      ang0: Math.atan2(-dz*s, dx*s), ang1: Math.atan2(-az, ax) }, false);
       }
+      /* ---- A PLACA DA SALA, na verga ----
+         Quem passa no corredor tem de saber o que é cada porta. A
+         placa vai do LADO DE FORA do cômodo — a folha abre pra dentro
+         (`sentido`), então quem lê está no lado contrário, e é pra lá
+         que a normal aponta. Sem isso a placa sairia dentro da sala,
+         de costas pra quem chega.
+
+         Ela cabe na verga e só: a altura é o que sobrou entre a folha
+         e o teto do cômodo, e a largura vem dela pela proporção da
+         célula do atlas (256 × 64). Placa maior que a verga
+         atravessaria a parede por cima. */
+      if(!opc || !opc.nome) return;
+      const hPlaca = Math.min(9, altParede - alt - 3);
+      if(hPlaca < 4) return;
+      const lPlaca = Math.min(hPlaca*4.2, w + 10);
+      const [px, py] = ao === 'u' ? E.pt(c, sentido > 0 ? espessura[0] : espessura[1])
+                                  : E.pt(sentido > 0 ? espessura[0] : espessura[1], c);
+      const [nx, nz] = ao === 'u' ? dir(0, -sentido) : dir(-sentido, 0);
+      p('letreiro', { x: px, y: py, ox: nx, oz: nz, texto: opc.nome,
+                      larg: lPlaca, altura: hPlaca, base: alt + 1.5,
+                      fundo: cor2, tinta: corLegivel(cor2) }, false);
     }
+    /* `opc.nome` vale por VÃO: string quando há um só, lista quando a
+       parede abre mais de um — a ordem é a de `em`, que é a mesma em
+       que os vãos foram pedidos. */
+    const nomeDoVao = (opc, i) =>
+      Array.isArray(opc.nome) ? opc.nome[i] : (i === 0 ? opc.nome : null);
+    const porVaos = (ao, em, outro, larg, alt, cor, opc, espessura) => {
+      const lista = [].concat(em === undefined ? [] : em);
+      lista.forEach((c, i) => folhasNoVao(ao, c, outro, larg || VAO, alt,
+        Object.assign({}, opc, { nome: nomeDoVao(opc, i) }), espessura));
+    };
     const paredeU = (u0,u1,v0,v1, alt, cor, em, larg, opc) => {
       for(const [a, b] of comVaos(u0, u1, em, larg)) par(a, b, v0, v1, alt, cor);
-      if(opc) for(const c of [].concat(em === undefined ? [] : em))
-        folhasNoVao('u', c, (v0 + v1)/2, larg || VAO, alt, opc);
+      if(opc) porVaos('u', em, (v0 + v1)/2, larg, alt, cor, opc, [v0, v1]);
     };
     const paredeV = (u0,u1,v0,v1, alt, cor, em, larg, opc) => {
       for(const [a, b] of comVaos(v0, v1, em, larg)) par(u0, u1, a, b, alt, cor);
-      if(opc) for(const c of [].concat(em === undefined ? [] : em))
-        folhasNoVao('v', c, (u0 + u1)/2, larg || VAO, alt, opc);
+      if(opc) porVaos('v', em, (u0 + u1)/2, larg, alt, cor, opc, [u0, u1]);
     };
 
     const MF = 13;                                   // espessura da fachada
@@ -1764,13 +1798,20 @@ TO.dados.plantaEstadio = (function(){
       par(L - PAR, L, 0, A, ALT_EXT, cor1);       // parede lateral leste
       par(g0 - PAR, g0, MF, vF, ALT, CLARO);      // as paredes do corredor
       par(g1, g1 + PAR, MF, vF, ALT, CLARO);
+      let iF = 0;
       for(const [a, b] of [[PAR, g0 - PAR], [g1 + PAR, L - PAR]]){
         if(b - a < 70) continue;
         const parte = b - a > 150;                       // dá dois cômodos
         /* a porta de cada cômodo pro salão — nunca em cima da divisória */
+        /* os cômodos da ala da frente, na ordem em que o laço os abre:
+           dois de cada lado do corredor quando o trecho é largo, um
+           quando não é */
+        const nomesF = lado === 'mandante' ? ['SECRETARIA', 'BAR', 'BANHEIRO', 'ALMOXARIFADO']
+                                           : ['SECRETARIA', 'BANHEIRO', 'BAR', 'ALMOXARIFADO'];
         paredeU(a, b, vF - PAR, vF, ALT, CLARO,
                 parte ? [a + (b-a)*0.25, a + (b-a)*0.75] : (a + b)/2,
-                VAO, { abre: -1 });        // madeira, abrindo pra dentro do cômodo
+                VAO, { abre: -1, nome: parte ? [nomesF[iF], nomesF[iF+1]] : [nomesF[iF]] });
+        iF += parte ? 2 : 1;               // madeira, abrindo pra dentro do cômodo
         if(parte) par((a + b)/2 - PAR/2, (a + b)/2 + PAR/2, MF, vF - PAR, ALT, CLARO);
       }
 
@@ -1779,7 +1820,12 @@ TO.dados.plantaEstadio = (function(){
       const n = L > 400 ? 3 : 2, passo = (L - 2*PAR)/n;
       for(let i = 0; i < n; i++){
         const a = PAR + i*passo, b = a + passo;
-        paredeU(a, b, vB, vB + PAR, ALT, CLARO, (a + b)/2, VAO, { abre: 1 });   // a porta pro salão
+        /* o nome bate com o que há DENTRO de cada um: o primeiro é o
+           alojamento (colchão), o último o depósito (armário e
+           troféus) e o do meio a diretoria (mesa e cadeira) */
+        const nomeF = i === 0 ? 'ALOJAMENTO' : i === n - 1 ? 'DEPÓSITO' : 'DIRETORIA';
+        paredeU(a, b, vB, vB + PAR, ALT, CLARO, (a + b)/2, VAO,
+                { abre: 1, nome: nomeF });                       // a porta pro salão
         if(i) par(a - PAR/2, a + PAR/2, vB, A - PAR, ALT, CLARO);  // a divisória
         /* O QUE HÁ DENTRO DE CADA CÔMODO. Eram três caixas vazias: de
            dentro da sede via-se parede e mais nada. O primeiro é o
@@ -1861,8 +1907,12 @@ TO.dados.plantaEstadio = (function(){
       par(0, PAR, 0, A, ALT_EXT, cor1);                 // lateral oeste
       par(L - PAR, L, 0, A, ALT_EXT, cor1);             // lateral leste
       par(PAR, L - PAR, A - PAR, A, ALT_EXT, cor1);     // fundos
+      /* as duas portas do pátio pras salas, cada uma com a sua placa.
+         `paredeV` abre os dois vãos na mesma parede, então a placa de
+         cada um vem da lista — a ordem é a dos vãos. */
       paredeV(uDiv, uS0, MF, A - PAR, ALT, CLARO,       // pátio | salas: uma porta pra cada
-              [(vPa0 + vPa1)/2, (vPr0 + vPr1)/2], VAO, { abre: 1 });
+              [(vPa0 + vPa1)/2, (vPr0 + vPr1)/2], VAO,
+              { abre: 1, nome: ['PATRIMÔNIO', 'PRESIDÊNCIA'] });
       par(uS0, uS1, vDiv, vPr0, ALT, CLARO);            // entre as duas salas, cega
 
       /* ---- O PÁTIO: onde o aliado dorme ----

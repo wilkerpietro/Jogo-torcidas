@@ -779,6 +779,38 @@ atravessando a folha ou empacando na frente dela. Medido depois das
 portas: a máscara continua 100 % alcançável com as mesmas 8 células
 soltas, e a sede nível 1 com 352 de 352.
 
+### 4.17. A placa que diz o que é cada sala
+
+Toda porta interna ganhou **placa na verga**, com o nome do cômodo.
+Nível 1: PATRIMÔNIO e PRESIDÊNCIA. Nível 3: SECRETARIA, BAR, BANHEIRO e
+ALMOXARIFADO na ala da frente, ALOJAMENTO, DIRETORIA e DEPÓSITO na do
+fundo — e o nome bate com o que há DENTRO de cada um, não é sorteio: o
+do alojamento tem colchão, o do depósito armário e troféus, o da
+diretoria mesa e cadeira.
+
+Não é peça nova: é o `letreiro` que a fachada já usava, com a chapa na
+segunda cor da torcida e a tinta na cor que lê sobre ela. Sai no mesmo
+atlas de dizeres, então **não custa nem textura nem chamada de
+desenho**.
+
+**A placa sai junto com a folha**, no mesmo `folhasNoVao` — quem abre
+um vão com nome ganha porta e placa de uma vez. É isso que faz a regra
+valer pro resto: qualquer cômodo novo que peça porta já nasce com
+placa.
+
+**Ela fica do lado de FORA do cômodo.** A folha abre pra dentro, então
+quem lê está do lado contrário, e é pra lá que a normal aponta. Sem
+isso a placa nasceria dentro da sala, de costas pra quem chega.
+
+**A parede de cômodo subiu pra caber a placa.** Era 48 (2,16 m) com
+folha de 46: sobravam 2 de verga, e placa nenhuma cabe em 2. Com 56
+sobram 10, que é onde a placa mora — e de quebra o pé-direito virou
+2,52 m, que é medida de cômodo de verdade; 2,16 já era baixo demais pro
+boneco de 1,75 m. A placa se dimensiona pelo que sobrou: a altura é a
+verga menos folga, e a largura vem dela pela proporção da célula do
+atlas (256 × 64). Placa maior que a verga atravessaria a parede por
+cima.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
