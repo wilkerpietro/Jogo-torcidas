@@ -831,10 +831,12 @@ uma vez só. Sem isso cada prédio novo traria a sua cópia da mesma
 sutileza pra sair errada de um jeito diferente. O pedido era "uma porta
 de vidro igual à da sede"; ela é literalmente a mesma.
 
-**A planta**, fiel à foto: **190 × 320** (8,6 × 14,4 m). Começou em
+**A planta**, fiel à foto: **170 × 270** (8,7 × 13,8 m). Começou em
 116 × 232 (no apertado a quarta cadeira de cada mesa batia na parede e
-não havia como entrar atrás do balcão), passou por 200 × 400 (aí sobrou
-chão pelado) e parou aqui.
+não havia como entrar atrás do balcão), foi a 200 × 400 (aí sobrou chão
+pelado), voltou pra 190 × 320 e parou aqui — depois que a mobília
+passou a ter o tamanho certo, o mesmo salão passou a caber em menos
+chão.
 
 | onde | o que |
 |---|---|
@@ -846,7 +848,7 @@ chão pelado) e parou aqui.
 | nordeste | o banheiro |
 
 **Só nas faces LESTE e OESTE do quarteirão.** O miolo tem uns 595 no
-sentido comprido e 249 no curto: 320 de fundo só cabe no comprido, que
+sentido comprido e 249 no curto: 270 de fundo só cabe no comprido, que
 corre em x. Virado pro norte ou pro sul o bar não entraria — e é melhor
 ele existir numa face certa do que caber torto em qualquer uma.
 
@@ -886,11 +888,19 @@ não do olho:
    inteira (ela tem 36) e sobrava menos de 3 de cada lado, que o
    `comVaos` descarta — o banheiro ficava sem parede sul nenhuma.
 
-A mesa bloqueia e a cadeira não: cadeira de plástico se empurra com o
-pé, e uma fila delas fechando o corredor seria pior que qualquer ganho
-de fidelidade. Medido: **408 e 434 células de corpo dentro dos dois
-bares, todas alcançáveis da rua** — e com 20 bonecos dentro sobra
-corredor pra andar, que era o teste que o dono pediu.
+**A cadeira é a dobrável de madeira** de bar de esquina: assento de
+RIPA com fresta, encosto de ripa larga no alto, montante de trás
+subindo do chão e travessa embaixo. São as frestas que fazem ela ler
+como cadeira de madeira e não como banquinho — por isso cada ripa é uma
+caixa, e não um tampo só. Os membros nascem em coordenada da cadeira
+(`u` pra frente, `v` pro lado) e giram pro mundo; sem isso ela sairia
+sempre de frente pro norte.
+
+A mesa bloqueia e a cadeira não: cadeira de bar se empurra com o pé, e
+uma fila delas fechando o corredor seria pior que qualquer ganho de
+fidelidade. Medido: **330 e 336 células de corpo dentro dos dois bares,
+todas alcançáveis da rua** — e com 20 bonecos dentro sobra corredor pra
+andar, que era o teste que o dono pediu.
 
 ### 4.19. A mobília em metros, e não em chute
 
@@ -1194,8 +1204,8 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
   quarteirões · 712 lotes (260 na favela) · 552 moitas · 207 árvores ·
   72 postes · 55 carros · 1 campo · 8 equipamentos · 1.822 decalques de
   chão · 12 cruzamentos de avenida com 46 faixas de pedestre, 10 com
-  semáforo · 2 sedes, uma de cada nível · 2 bares de 8,6 × 14,4 m** ·
-  ~152.000 triângulos
+  semáforo · 2 sedes, uma de cada nível · 2 bares de 8,7 × 13,8 m** ·
+  159.585 triângulos
   estáticos em 6 pedaços de cidade mais o estádio · 165 chamadas de
   desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco

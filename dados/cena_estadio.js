@@ -2122,7 +2122,7 @@ TO.dados.plantaEstadio = (function(){
        verdade. */
     const uServ = PAR + 38;                 // até onde vai a faixa de serviço
     const uBal = uServ + m(0.62);           // a face do balcão que dá pro salão
-    const vBal0 = MF + 74, vBal1 = A - PAR - 96;
+    const vBal0 = MF + 50, vBal1 = A - PAR - 70;
     movel('balcao', uServ, uBal, vBal0 + 22, vBal1, { alt: m(1.10), ox: dir(1,0)[0], oz: dir(1,0)[1] });
     movel('balcao', PAR, uBal, vBal0, vBal0 + 22, { alt: m(1.10), ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
 
@@ -2188,14 +2188,14 @@ TO.dados.plantaEstadio = (function(){
        antes do banheiro, senão ela tapa a porta dele */
     const uMesa = (uBal + L - PAR)/2 + 22;
     const rM = m(0.40), dC = m(0.72);    // mesa de 80 cm, cadeira a 72 do centro
-    for(const vM of [MF + 52, MF + 122, MF + 192]){
+    for(const vM of [MF + 35, MF + 91, MF + 147]){
       movel('mesabar', uMesa - rM, uMesa + rM, vM - rM, vM + rM, { alt: m(0.75) });
       for(const [du, dv] of [[0, -dC], [0, dC], [-dC, 0], [dC, 0]]){
         const [cx, cy] = E.pt(uMesa + du, vM + dv);
         const [ax, az] = dir(-du, -dv);
         const rC = m(0.25);              // cadeira de 50 cm de lado
-        p('cadeiraplast', { x0: cx - rC, x1: cx + rC, y0: cy - rC, y1: cy + rC,
-                            ang: Math.atan2(-az, ax) }, false);
+        p('cadeiramad', { x0: cx - rC, x1: cx + rC, y0: cy - rC, y1: cy + rC,
+                          ang: Math.atan2(-az, ax) }, false);
       }
     }
 
@@ -2204,14 +2204,14 @@ TO.dados.plantaEstadio = (function(){
   }
 
   /* A FATIA DO BAR, encostada na guia como a da sede nível 1. */
-  /* A FATIA DO BAR: 190 de frente por 320 de fundo — 8,6 × 14,4 m.
+  /* A FATIA DO BAR: 170 de frente por 270 de fundo — 8,7 × 13,8 m.
      SÓ NAS FACES LESTE E OESTE do quarteirão. O miolo tem uns 595 no
      sentido comprido e 249 no curto: 400 de fundo só cabe no
      comprido, que corre em x. Virado pro norte ou pro sul o bar não
      entraria, e é melhor ele existir numa face certa do que caber
      torto em qualquer uma. */
   function areaDoBar(q, frente){
-    const LF = 190, PR = 320;
+    const LF = 170, PR = 270;
     const Lx = q.ix1 - q.ix0, Ly = q.iy1 - q.iy0;
     if(frente === 'n' || frente === 's') return null;
     if(Lx < PR + 8 || Ly < LF + 8) return null;

@@ -901,21 +901,45 @@ export function montarBairro(P) {
     caixa(T, o.x0 + 2, o.x1 - 2, 0, 1.2, z - 1.7, z + 1.7, '#3c3f42');
     caixa(T, x - 1.7, x + 1.7, 0, 1.2, o.y0 + 2, o.y1 - 2, '#3c3f42');
   }
-  /* cadeira de plástico branca, a de bar: assento, encosto com o vão
-     do meio e os quatro pés. `ang` é pra onde ela olha. */
-  function cadeiraplast(T, o) {
+  /* CADEIRA DE MADEIRA, a dobrável de bar de esquina: assento de
+     RIPA com fresta, encosto de ripa larga no alto, montante de trás
+     subindo do chão e a travessa embaixo. São as frestas que fazem
+     ela ler como cadeira de madeira e não como banquinho — por isso
+     cada ripa é uma caixa, e não um tampo só.
+
+     `ang` é pra onde ela OLHA. Os membros nascem em coordenada da
+     cadeira (`u` pra frente, `v` pro lado) e `P` gira pro mundo: sem
+     isso a cadeira sairia sempre de frente pro norte. */
+  function cadeiramad(T, o) {
     const x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2, ang = o.ang || 0;
-    const BR = '#e8e6de', BR2 = '#d3d0c6', ASS = mt(0.45), lS = mt(0.44);
-    caixaRot(T, x, z, lS, lS, ASS, ASS + 1.4, ang, BR);
-    const pL = lS / 2 - 1;
-    for (const [u, v] of [[-pL, -pL], [pL, -pL], [pL, pL], [-pL, pL]]) {
-      const c = Math.cos(ang), sn = Math.sin(ang);
-      const px = x + u * c - v * sn, pz = z + u * sn + v * c;
-      caixa(T, px - 0.9, px + 0.9, 0, ASS, pz - 0.9, pz + 0.9, BR2);
+    const c = Math.cos(ang), sn = Math.sin(ang);
+    const P = (u, v) => [x + u * c - v * sn, z + u * sn + v * c];
+    const MAD = o.cor || '#6b4526', MAD2 = '#553519';
+    const ASS = mt(0.45), R = mt(0.21), ENC = mt(0.88);
+    /* as cinco ripas do assento, com fresta entre elas */
+    const n = 5, passo = R * 2 / n;
+    for (let i = 0; i < n; i++) {
+      const [px, pz] = P(-R + passo * (i + 0.5), 0);
+      caixaRot(T, px, pz, passo * 0.7, R * 2, ASS - mt(0.025), ASS, ang, MAD);
     }
-    const bx = x - Math.cos(ang) * pL, bz = z - Math.sin(ang) * pL;
-    caixaRot(T, bx, bz, 1.8, lS - 1, ASS + 1.4, ASS + mt(0.42), ang, BR);
-    caixaRot(T, bx, bz, 2.2, lS - 3, ASS + mt(0.12), ASS + mt(0.36), ang, BR2);
+    /* os montantes de trás, que sobem do chão até o encosto, e as
+       duas pernas da frente */
+    for (const v of [-R + 1.1, R - 1.1]) {
+      const [ax, az] = P(-R + 1, v);
+      caixaRot(T, ax, az, 1.8, 1.8, 0, ENC, ang, MAD2);
+      const [bx, bz] = P(R - 1, v);
+      caixaRot(T, bx, bz, 1.8, 1.8, 0, ASS, ang, MAD2);
+    }
+    /* o travessão largo do encosto, e a ripa do meio dele */
+    for (const [y0, y1] of [[ENC - mt(0.12), ENC], [ENC - mt(0.30), ENC - mt(0.22)]]) {
+      const [px, pz] = P(-R + 1, 0);
+      caixaRot(T, px, pz, 1.4, R * 2 - 1, y0, y1, ang, MAD);
+    }
+    /* as travessas de baixo, que é o que segura a perna da dobrável */
+    for (const u of [-R + 1, R - 1]) {
+      const [px, pz] = P(u, 0);
+      caixaRot(T, px, pz, 1.2, R * 2 - 2.2, mt(0.13), mt(0.13) + 1.2, ang, MAD2);
+    }
   }
 
   /* ---- A PORTA QUE ABRE ----
@@ -1148,7 +1172,7 @@ export function montarBairro(P) {
         case 'prateleira': prateleira(T, o); break;
         case 'banqueta': banqueta(T, o); break;
         case 'mesabar': mesabar(T, o); break;
-        case 'cadeiraplast': cadeiraplast(T, o); break;
+        case 'cadeiramad': cadeiramad(T, o); break;
         case 'caixadagua': caixaDagua(T, o); break;
         case 'banco': {
           caixa(T, o.x0, o.x1, 10, 13, o.y0, o.y1, '#7a5a3a');
