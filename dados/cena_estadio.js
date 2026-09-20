@@ -825,10 +825,16 @@ TO.dados.plantaEstadio = (function(){
 
   /* a sede de cada torcida: um ponto do mapa, a frente em que ela fica
      e a torcida que mora nela. É onde a torcida nasce. */
+  /* `nivel` é o tamanho da sede, que no jogo cresce com a torcida.
+     NÍVEL 1 é o barracão de três compartimentos — pátio com colchão,
+     sala de patrimônio e sala do presidente. NÍVEL 3 é a sede grande,
+     com salão, ala da frente e ala do fundo. Aqui vai uma de cada, que
+     é o que deixa as duas à vista no mesmo mapa pra comparar; no jogo
+     quem manda nisso é o progresso da torcida. */
   const SEDES = {
-    mandante:  { ponto: pxm(280, 1058), frente:'n', torcida: TORCIDAS.mandante,
+    mandante:  { ponto: pxm(280, 1058), frente:'n', torcida: TORCIDAS.mandante, nivel: 3,
                  cor: TORCIDAS.mandante.cor, rot: TORCIDAS.mandante.rot },
-    visitante: { ponto: pxm(980, 255),  frente:'n', torcida: TORCIDAS.visitante,
+    visitante: { ponto: pxm(980, 255),  frente:'n', torcida: TORCIDAS.visitante, nivel: 1,
                  cor: TORCIDAS.visitante.cor, rot: TORCIDAS.visitante.rot }
   };
   const sedeDe = {};
@@ -1494,8 +1500,23 @@ TO.dados.plantaEstadio = (function(){
   /* a fatia que a sede toma do quarteirão, na frente pedida. Ela pega
      o quarteirão de ponta a ponta na profundidade e uma faixa larga no
      comprimento — o resto do quarteirão continua sendo casa. */
-  function areaDaSede(q, frente){
+  function areaDaSede(q, frente, nivel){
     const Lx = q.ix1 - q.ix0, Ly = q.iy1 - q.iy0;
+    /* A SEDE NÍVEL 1 NÃO PEGA O QUARTEIRÃO DE PONTA A PONTA. Ela é um
+       barracão de 11,2 × 8,1 m encostado na guia, e o resto do
+       quarteirão continua sendo casa — é essa diferença de FATIA, e
+       não só de mobília, que faz ela ler como sede pequena. */
+    if(nivel === 1){
+      const LF = 250, PR = 180;
+      if(frente === 'n' || frente === 's'){
+        if(Lx < LF + 40 || Ly < PR + 30) return null;
+        return frente === 'n' ? { x0: q.ix0, x1: q.ix0 + LF, y0: q.iy0, y1: q.iy0 + PR }
+                              : { x0: q.ix0, x1: q.ix0 + LF, y0: q.iy1 - PR, y1: q.iy1 };
+      }
+      if(Lx < PR + 30 || Ly < LF + 40) return null;
+      return frente === 'o' ? { x0: q.ix0, x1: q.ix0 + PR, y0: q.iy0, y1: q.iy0 + LF }
+                            : { x0: q.ix1 - PR, x1: q.ix1, y0: q.iy0, y1: q.iy0 + LF };
+    }
     if(frente === 'n' || frente === 's'){
       const w = Math.min(Lx, Math.max(420, Lx*0.72));
       if(w < 340 || Ly < 190) return null;
@@ -1539,7 +1560,8 @@ TO.dados.plantaEstadio = (function(){
     return (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho])
            || caminho;
   }
-  function sedeDaTorcida(lado, q, area, frente){
+  function sedeDaTorcida(lado, q, area, frente, nivel){
+    const N = nivel === 1 ? 1 : 3;
     const T = SEDES[lado].torcida;
     const E = eixos(area, frente), L = E.L, A = E.A;
     const cor1 = T.cor || '#b02a22';
@@ -1556,9 +1578,9 @@ TO.dados.plantaEstadio = (function(){
     /* A SEDE TEM ALTURA DE CASA, não de galpão de fábrica: a fachada
        bate com o sobrado do lado e o telhado fica por baixo da linha
        do bairro. Era 86/74/66 e lia como um armazém no meio da rua. */
-    const MURO = 72;      // a fachada da rua, que é platibanda: 3,2 m
-    const ALT_EXT = 62;   // as paredes de fora, que seguram o telhado
-    const ALT = 54;       // parede de cômodo: 2,4 m — abaixo do telhado
+    const MURO = N === 1 ? 62 : 72;      // a fachada da rua, que é platibanda
+    const ALT_EXT = N === 1 ? 54 : 62;   // as paredes de fora, que seguram o telhado
+    const ALT = N === 1 ? 48 : 54;       // parede de cômodo, abaixo do telhado
     const VAO = 40;       // porta: 1,8 m, e o corpo passa (a máscara pede 24)
     const PORTAO = 56;    // o portão da rua: 2,5 m, cabe bonde em fila
     /* parede com vãos: `em` é um vão ou uma lista deles, e o que sobra
@@ -1583,20 +1605,24 @@ TO.dados.plantaEstadio = (function(){
     };
 
     const MF = 13;                                   // espessura da fachada
-    const DF = Math.min(96, Math.max(58, A*0.30));   // ala da frente
-    const DB = Math.min(104, Math.max(60, A*0.32));  // ala do fundo
-    const eixo = L/2;                                // o portão no meio
-    const g0 = eixo - PORTAO/2, g1 = eixo + PORTAO/2;
+    const DF = Math.min(96, Math.max(58, A*0.30));   // ala da frente (nível 3)
+    const DB = Math.min(104, Math.max(60, A*0.32));  // ala do fundo  (nível 3)
     const vF = MF + DF, vB = A - DB;                 // fim da ala da frente, início da do fundo
+    const uDiv = Math.round(L*0.58);                 // nível 1: onde o pátio acaba
+    /* ONDE FICA O PORTÃO. No nível 3 ele parte a fachada no meio e o
+       corredor atravessa até o salão. No nível 1 ele tem de dar NO
+       PÁTIO, que é a metade esquerda — no meio da fachada ele abriria
+       dentro da sala de patrimônio. */
+    const eixo = N === 1 ? (PAR + uDiv)/2 : L/2;
+    const g0 = eixo - PORTAO/2, g1 = eixo + PORTAO/2;
 
-    /* ---- o chão: cimento no pátio, e o salão pintado ---- */
-    piso(0, L, 0, A, '#a8a396', 1.70);
-    piso(PAR, L - PAR, vF, vB, '#b7b2a4', 1.74);
-    /* a faixa da torcida no piso do salão: duas listras finas, que
-       larga demais o piso vira bandeira e come o pátio */
-    const mS = (vF + vB)/2;
-    piso(PAR + 26, L - PAR - 26, mS - 15, mS - 5, cor2, 1.78);
-    piso(PAR + 26, L - PAR - 26, mS + 5, mS + 15, cor3, 1.78);
+    /* a direção no MUNDO pra onde aponta um vetor do eixo local: é o
+       que o móvel precisa pra saber de que lado fica a frente dele */
+    const [e0x, e0y] = E.pt(0, 0), [eux, euy] = E.pt(1, 0), [evx, evy] = E.pt(0, 1);
+    const dir = (du, dv) => [(eux - e0x)*du + (evx - e0x)*dv,
+                             (euy - e0y)*du + (evy - e0y)*dv];
+    const movel = (k, u0, u1, v0, v1, o, bloqueia) =>
+      p(k, Object.assign(E.ret(u0, u1, v0, v1), o || {}), bloqueia);
 
     /* ---- A FACHADA: a cor primária dá pra rua ----
        Nada sai do miolo do quarteirão: a parede recua 2,5 e o rodapé,
@@ -1671,7 +1697,7 @@ TO.dados.plantaEstadio = (function(){
        direção de `+u` no mundo sai de dois pontos do próprio eixo, e
        as laterais olham pra `−u` e pra `+u`. */
     const [p0x, p0y] = E.pt(0, 0), [p1x, p1y] = E.pt(1, 0);
-    const ux = p1x - p0x, uy = p1y - p0y, vm = (vF + vB)/2;
+    const ux = p1x - p0x, uy = p1y - p0y, vm = N === 1 ? A/2 : (vF + vB)/2;
     for(const [uu, sx, sy] of [[VESC, -ux, -uy], [L - VESC, ux, uy]]){
       const [sxx, syy] = E.pt(uu, vm);
       escudoDaTorcida(sxx, syy, sx, sy, 0.8);
@@ -1679,56 +1705,203 @@ TO.dados.plantaEstadio = (function(){
     /* os batentes do portão, na terceira cor */
     for(const u of [g0, g1]) par(u - 4, u + 4, 0, MF + 1, MURO, cor3);
 
+    /* ---- O MIOLO NÍVEL 3: salão, ala da frente e ala do fundo ---- */
+    function mioloNivel3(){
+      /* ---- o chão: cimento no pátio, e o salão pintado ---- */
+      piso(0, L, 0, A, '#a8a396', 1.70);
+      piso(PAR, L - PAR, vF, vB, '#b7b2a4', 1.74);
+      /* a faixa da torcida no piso do salão: duas listras finas, que
+         larga demais o piso vira bandeira e come o pátio */
+      const mS = (vF + vB)/2;
+      piso(PAR + 26, L - PAR - 26, mS - 15, mS - 5, cor2, 1.78);
+      piso(PAR + 26, L - PAR - 26, mS + 5, mS + 15, cor3, 1.78);
     /* ---- ALA DA FRENTE: secretaria, bar, banheiro ----
-       O corredor do portão atravessa ela e desemboca no salão. */
-    par(0, PAR, 0, A, ALT_EXT, cor1);           // parede lateral oeste
-    par(L - PAR, L, 0, A, ALT_EXT, cor1);       // parede lateral leste
-    par(g0 - PAR, g0, MF, vF, ALT, CLARO);      // as paredes do corredor
-    par(g1, g1 + PAR, MF, vF, ALT, CLARO);
-    for(const [a, b] of [[PAR, g0 - PAR], [g1 + PAR, L - PAR]]){
-      if(b - a < 70) continue;
-      const parte = b - a > 150;                       // dá dois cômodos
-      /* a porta de cada cômodo pro salão — nunca em cima da divisória */
-      paredeU(a, b, vF - PAR, vF, ALT, CLARO,
-              parte ? [a + (b-a)*0.25, a + (b-a)*0.75] : (a + b)/2);
-      if(parte) par((a + b)/2 - PAR/2, (a + b)/2 + PAR/2, MF, vF - PAR, ALT, CLARO);
+         O corredor do portão atravessa ela e desemboca no salão. */
+      par(0, PAR, 0, A, ALT_EXT, cor1);           // parede lateral oeste
+      par(L - PAR, L, 0, A, ALT_EXT, cor1);       // parede lateral leste
+      par(g0 - PAR, g0, MF, vF, ALT, CLARO);      // as paredes do corredor
+      par(g1, g1 + PAR, MF, vF, ALT, CLARO);
+      for(const [a, b] of [[PAR, g0 - PAR], [g1 + PAR, L - PAR]]){
+        if(b - a < 70) continue;
+        const parte = b - a > 150;                       // dá dois cômodos
+        /* a porta de cada cômodo pro salão — nunca em cima da divisória */
+        paredeU(a, b, vF - PAR, vF, ALT, CLARO,
+                parte ? [a + (b-a)*0.25, a + (b-a)*0.75] : (a + b)/2);
+        if(parte) par((a + b)/2 - PAR/2, (a + b)/2 + PAR/2, MF, vF - PAR, ALT, CLARO);
+      }
+
+      /* ---- ALA DO FUNDO: alojamento, diretoria e o depósito ---- */
+      par(PAR, L - PAR, A - PAR, A, ALT_EXT, cor1);   // a parede dos fundos
+      const n = L > 400 ? 3 : 2, passo = (L - 2*PAR)/n;
+      for(let i = 0; i < n; i++){
+        const a = PAR + i*passo, b = a + passo;
+        paredeU(a, b, vB, vB + PAR, ALT, CLARO, (a + b)/2);        // a porta pro salão
+        if(i) par(a - PAR/2, a + PAR/2, vB, A - PAR, ALT, CLARO);  // a divisória
+        /* O QUE HÁ DENTRO DE CADA CÔMODO. Eram três caixas vazias: de
+           dentro da sede via-se parede e mais nada. O primeiro é o
+           ALOJAMENTO (colchão no chão, como no pátio do nível 1), o
+           último é o DEPÓSITO (armário e troféus) e o do meio é a
+           DIRETORIA (mesa e cadeira). */
+        const vq0 = vB + PAR + 4, vq1 = A - PAR - 4;
+        if(i === 0){
+          for(let k = 0; k < 2; k++){
+            const u0 = a + 12 + k*26;
+            if(u0 + 22 > b - 8) break;
+            movel('colchao', u0, u0 + 22, vq1 - 46, vq1 - 4, { ox: 0, oz: 0 }, false);
+          }
+        } else if(i === n - 1){
+          movel('armario', b - 30, b - 8, vq0, vq0 + 40,
+                { alt: 44, ox: dir(-1, 0)[0], oz: dir(-1, 0)[1] });
+          movel('trofeus', b - 28, b - 10, vq0 + 2, vq0 + 38, { base: 45.6, n: 3 }, false);
+        } else {
+          movel('mesa', a + 14, a + 70, vq1 - 30, vq1 - 8, { alt: 26 });
+          const [cx, cy] = E.pt(a + 40, vq1 - 44);
+          p('cadeira', { x0: cx - 11, x1: cx + 11, y0: cy - 11, y1: cy + 11,
+                         ang: Math.atan2(dir(0, 1)[1], dir(0, 1)[0]) }, false);
+        }
+      }
+
+      /* ---- o que vive no salão ----
+         Poste e árvore saíram: a sede é COBERTA, e luminária de rua e pé
+         de árvore dentro de galpão não existem. Ficam os bancos e o
+         mastro, que sobe pela frente e passa do telhado, como o de
+         sede de verdade. */
+      const [mx, my] = E.pt(L - 54, MF + 26);
+      /* O MASTRO leva a bandeira da torcida, com o escudo dela no pano.
+         `dir` é pra que lado o pano estende: pro lado de fora da sede,
+         que é de onde a rua vê. */
+      /* o pano estende AO LONGO da fachada, não pra fora dela: assim
+         quem olha da rua vê a bandeira de lado inteiro, e não de perfil.
+         É a normal girada de 90°. (E aqui não cabe `-E.ox || 1`: menos
+         zero é FALSO em JavaScript, e a bandeira saía na diagonal.) */
+      p('mastro', { x: mx, y: my, alt: 128, cor: cor1, cor2,
+                    bandeira: { larg: 54, alt: 27, dirx: -E.oz, dirz: E.ox,
+                                texto: T.rot, corTexto: corQueLeSobre(cor1, [cor2, cor3]),
+                                img: caminhoDoEscudo('t', T.id) } }, false);
+      for(const u of [PAR + 46, L - PAR - 46]){
+        const r = E.ret(u - 26, u + 26, vF + 16, vF + 26);
+        p('banco', r, false);
+      }
+      /* O TELHADO fica FORA da lista de peças: ele sai numa malha só
+         dele, que a cena esconde quando o jogador entra — é o corte que
+         deixa a planta à vista de dentro e o galpão fechado de fora. */
+    }
+    /* ---- O MIOLO NÍVEL 1: pátio, patrimônio e a sala do presidente ----
+       Um barracão de três compartimentos, como o da foto: o PÁTIO
+       descoberto tomando a metade esquerda de ponta a ponta, e a
+       metade direita partida em duas salas. Cada sala abre pro pátio
+       pela sua própria porta — entre elas a parede é cega, como na
+       foto. Assim nenhum cômodo depende do outro pra ser alcançado,
+       que é o que já muralhou cômodo nesta cena antes.
+
+       O PÁTIO NÃO TEM TELHADO. É ele que faz a sede pequena ler como
+       sede pequena: de cima vê-se o chão de cimento, o colchão e a
+       caixa d'água, sem precisar esconder malha nenhuma. */
+    function mioloNivel1(){
+      const vDiv = MF + Math.round((A - MF - PAR)*0.46);
+      const uP0 = PAR, uP1 = uDiv;                    // o pátio, em u
+      const uS0 = uDiv + PAR, uS1 = L - PAR;          // as salas, em u
+      const vPa0 = MF, vPa1 = vDiv;                   // patrimônio (frente)
+      const vPr0 = vDiv + PAR, vPr1 = A - PAR;        // presidente (fundo)
+
+      /* ---- os chãos ---- */
+      piso(0, L, 0, A, '#a8a396', 1.70);                       // cimento queimado
+      piso(uS0, uS1, vPa0, vPa1, '#c4c0b3', 1.74);             // piso frio nas salas
+      piso(uS0, uS1, vPr0, vPr1, '#c8c3b6', 1.74);
+      /* a faixa da torcida no cimento do pátio, no fundo — longe do
+         caminho do portão, que é por onde o bonde entra em fila */
+      piso(uP0 + 10, uP1 - 10, vPr1 - 20, vPr1 - 13, cor2, 1.78);
+      piso(uP0 + 10, uP1 - 10, vPr1 - 11, vPr1 - 4, cor3, 1.78);
+
+      /* ---- as paredes ---- */
+      par(0, PAR, 0, A, ALT_EXT, cor1);                 // lateral oeste
+      par(L - PAR, L, 0, A, ALT_EXT, cor1);             // lateral leste
+      par(PAR, L - PAR, A - PAR, A, ALT_EXT, cor1);     // fundos
+      paredeV(uDiv, uS0, MF, A - PAR, ALT, CLARO,       // pátio | salas: uma porta pra cada
+              [(vPa0 + vPa1)/2, (vPr0 + vPr1)/2]);
+      par(uS0, uS1, vDiv, vPr0, ALT, CLARO);            // entre as duas salas, cega
+
+      /* ---- O PÁTIO: onde o aliado dorme ----
+         Três colchões no chão encostados na parede oeste, com o
+         comprimento entrando no pátio como na foto — quem dorme fica
+         fora do caminho de quem entra pelo portão. Não bloqueiam: o
+         aliado deita EM CIMA deles. */
+      const oL = dir(1, 0);
+      for(let i = 0; i < 3; i++){
+        const v = MF + 20 + i*34;
+        if(v + 20 > vPr1 - 26) break;
+        movel('colchao', uP0 + 4, uP0 + 46, v, v + 20, { ox: oL[0], oz: oL[1] }, false);
+      }
+      /* a caixa d'água de plástico no canto do fundo, que é onde ela
+         fica em sede de bairro: perto da parede e longe do portão */
+      const [cdx, cdy] = E.pt(uP0 + 20, vPr1 - 22);
+      p('caixadagua', { x: cdx, y: cdy, r: 14, alt: 0 });
+      /* o ralo no meio do cimento — pátio de verdade tem caimento */
+      const [rlx, rly] = E.pt((uP0 + uP1)/2, (MF + vPr1)/2);
+      p('ralo', { x: rlx, y: rly, r: 5 }, false);
+      /* o portão de chapa, ENCOSTADO na parede: ele corre pro lado, e
+         desenhar a folha fechada no vão seria muro na porta da sede */
+      movel('portao', g1 + 2, g1 + 2 + Math.min(52, uP1 - g1 - 8), MF, MF + 4,
+            { alt: MURO - 12, cor: cor3 }, false);
+      /* o entulho do pátio: caixa de material largada perto do portão */
+      movel('caixote', uP1 - 26, uP1 - 8, MF + 8, MF + 26, { alt: 15 }, false);
+      movel('caixote', uP1 - 24, uP1 - 12, MF + 28, MF + 40, { alt: 11 }, false);
+
+      /* ---- A SALA DE PATRIMÔNIO: o armário do material e os troféus ----
+         É o cômodo da frente, junto da rua: é por onde entra e sai
+         bandeira, instrumento e material de viagem. */
+      const oOeste = dir(-1, 0), oFundo = dir(0, 1);
+      movel('armario', uS1 - 22, uS1 - 2, vPa0 + 6, vPa1 - 6,
+            { alt: 46, ox: oOeste[0], oz: oOeste[1] });
+      movel('trofeus', uS1 - 20, uS1 - 4, vPa0 + 8, vPa1 - 8, { base: 47.6, n: 4 }, false);
+      movel('estante', uS0 + 4, uS1 - 28, vPa0 + 2, vPa0 + 18,
+            { alt: 50, prateleiras: 4, ox: oFundo[0], oz: oFundo[1] });
+      movel('caixote', uS0 + 6, uS0 + 24, vPa1 - 24, vPa1 - 6, { alt: 16 }, false);
+      movel('caixote', uS0 + 26, uS0 + 40, vPa1 - 20, vPa1 - 8, { alt: 11 }, false);
+
+      /* ---- A SALA DO PRESIDENTE ----
+         A MESA ENCOSTADA NAS DUAS PAREDES DO CANTO, e não solta no
+         meio: mesa com folga atrás dela abre um bolsão de 21 entre o
+         tampo e a parede — largo demais pra sumir, estreito demais pro
+         corpo passar (ele pede 24). Foram três células presas na
+         primeira montagem. No canto não sobra fundo nenhum. Pelo mesmo
+         motivo o armário encosta na mesa em vez de ficar do outro
+         lado dela, que é o que fechava a volta. */
+      const oFrente = dir(0, -1);
+      movel('armario', uS0 + 4, uS0 + 27, vPr1 - 20, vPr1 - 2,
+            { alt: 40, ox: oFrente[0], oz: oFrente[1] });
+      movel('mesa', uS0 + 27, uS1 - 4, vPr1 - 24, vPr1 - 4, { alt: 26 });
+      const [cdrx, cdry] = E.pt(uS1 - 30, vPr1 - 40);
+      p('cadeira', { x0: cdrx - 11, x1: cdrx + 11, y0: cdry - 11, y1: cdry + 11,
+                     ang: Math.atan2(oFundo[1], oFundo[0]) }, false);
+      /* o ar-condicionado na parede do fundo e o mural na do patrimônio */
+      movel('ar', uS1 - 34, uS1 - 10, A - PAR - 3, A - PAR,
+            { base: 33, alt: 11, ox: oFrente[0], oz: oFrente[1] }, false);
+      movel('mural', uS0 + 26, uS0 + 60, vPr0 + 1, vPr0 + 3,
+            { base: 24, alt: 20, ox: oFundo[0], oz: oFundo[1] }, false);
+
+      /* o mastro sobe do pátio, que é a parte descoberta — no nível 3
+         ele nasce dentro da ala da frente e fura o telhado, aqui não
+         precisa furar nada */
+      const [mx, my] = E.pt(uP1 - 16, MF + 20);
+      p('mastro', { x: mx, y: my, alt: 112, cor: cor1, cor2,
+                    bandeira: { larg: 46, alt: 23, dirx: -E.oz, dirz: E.ox,
+                                texto: T.rot, corTexto: corQueLeSobre(cor1, [cor2, cor3]),
+                                img: caminhoDoEscudo('t', T.id) } }, false);
+      const b = E.ret(uP0 + 8, uP0 + 52, vPr1 - 34, vPr1 - 24);
+      p('banco', b, false);
     }
 
-    /* ---- ALA DO FUNDO: alojamento, diretoria e o depósito ---- */
-    par(PAR, L - PAR, A - PAR, A, ALT_EXT, cor1);   // a parede dos fundos
-    const n = L > 400 ? 3 : 2, passo = (L - 2*PAR)/n;
-    for(let i = 0; i < n; i++){
-      const a = PAR + i*passo, b = a + passo;
-      paredeU(a, b, vB, vB + PAR, ALT, CLARO, (a + b)/2);        // a porta pro salão
-      if(i) par(a - PAR/2, a + PAR/2, vB, A - PAR, ALT, CLARO);  // a divisória
-    }
+    if(N === 1) mioloNivel1(); else mioloNivel3();
 
-    /* ---- o que vive no salão ----
-       Poste e árvore saíram: a sede é COBERTA, e luminária de rua e pé
-       de árvore dentro de galpão não existem. Ficam os bancos e o
-       mastro, que sobe pela frente e passa do telhado, como o de
-       sede de verdade. */
-    const [mx, my] = E.pt(L - 54, MF + 26);
-    /* O MASTRO leva a bandeira da torcida, com o escudo dela no pano.
-       `dir` é pra que lado o pano estende: pro lado de fora da sede,
-       que é de onde a rua vê. */
-    /* o pano estende AO LONGO da fachada, não pra fora dela: assim
-       quem olha da rua vê a bandeira de lado inteiro, e não de perfil.
-       É a normal girada de 90°. (E aqui não cabe `-E.ox || 1`: menos
-       zero é FALSO em JavaScript, e a bandeira saía na diagonal.) */
-    p('mastro', { x: mx, y: my, alt: 128, cor: cor1, cor2,
-                  bandeira: { larg: 54, alt: 27, dirx: -E.oz, dirz: E.ox,
-                              texto: T.rot, corTexto: corQueLeSobre(cor1, [cor2, cor3]),
-                              img: caminhoDoEscudo('t', T.id) } }, false);
-    for(const u of [PAR + 46, L - PAR - 46]){
-      const r = E.ret(u - 26, u + 26, vF + 16, vF + 26);
-      p('banco', r, false);
-    }
-    /* O TELHADO fica FORA da lista de peças: ele sai numa malha só
-       dele, que a cena esconde quando o jogador entra — é o corte que
-       deixa a planta à vista de dentro e o galpão fechado de fora. */
-    return { tipo: 'sede', lado, torcida: T, frente, chao: '#a8a396', pecas, area,
-             teto: { base: ALT_EXT, queda: 15, cor: '#7c8285' } };
+    /* O TELHADO cobre SÓ AS SALAS no nível 1 — o pátio é descoberto —
+       e a sede inteira no nível 3. Ele sai numa malha só dele, que a
+       cena esconde quando o jogador entra. */
+    const teto = N === 1
+      ? Object.assign({ base: ALT_EXT, queda: 10, cor: '#7c8285', caixas: 0 },
+                      { area: E.ret(uDiv, L, 0, A) })
+      : { base: ALT_EXT, queda: 15, cor: '#7c8285' };
+    return { tipo: 'sede', lado, nivel: N, torcida: T, frente, chao: '#a8a396', pecas, area, teto };
   }
 
   /* AS SEDES ESCOLHEM PRIMEIRO. Elas são o que a cena precisa pra
@@ -1745,7 +1918,7 @@ TO.dados.plantaEstadio = (function(){
       const d = Math.hypot(q.cx - sd.ponto[0], q.cy - sd.ponto[1]);
       if(d > 1500) continue;
       for(const frente of [sd.frente, 'n', 's', 'o', 'l']){
-        const area = areaDaSede(q, frente);
+        const area = areaDaSede(q, frente, sd.nivel);
         if(!area) continue;
         /* a frente dá pra rua? o ponto logo à frente dela não pode
            cair no miolo do próprio quarteirão */
@@ -1756,7 +1929,7 @@ TO.dados.plantaEstadio = (function(){
            o chão é calçada de avenida e o quarteirão fica com um
            corredor aberto no meio da sede */
         if(tocaAvenida(area, CALC)) continue;
-        const eq = sedeDaTorcida(lado, q, area, frente);
+        const eq = sedeDaTorcida(lado, q, area, frente, sd.nivel);
         /* a nota: perto do ponto pedido, e grande */
         const nota = d - (area.x1 - area.x0) * (area.y1 - area.y0) / 900;
         if(!melhor || nota < melhor.nota) melhor = { q, eq, nota, frente, area };
@@ -2072,6 +2245,13 @@ TO.dados.plantaEstadio = (function(){
       /* a copa é um QUADRADO de meia-largura r: contra uma avenida
          diagonal a quina dela chega a r·√2, não a r */
       if(naAvenida(x, y, r*1.45)) return;
+      /* E A RUA DA GRADE TAMBÉM. A avenida estava testada, a rua não:
+         numa QUINA de quarteirão o tronco fica na calçada de uma face
+         e a copa alcança o asfalto da outra. Passou despercebido
+         enquanto o sorteio não pôs árvore naquela quina — o que muda
+         a cada vez que a planta mexe no `rng()` compartilhado, e foi
+         o que aconteceu ao encolher a fatia da sede nível 1. */
+      if(tocaAsfalto(x, y, r + 2)) return;
       if(naFatiaDeEquipamento(x, y, r*1.45)) return;   // a quina da copa quadrada
       if(q.lotes.some(l => dentroLote(x, y, l))) return;
       ARVORES.push({ x, y, r });
@@ -2617,8 +2797,24 @@ TO.dados.plantaEstadio = (function(){
       }
       return { faixas, becos };
     }
-    const CU = cortes(RAIO, 500, 850, 34, 42);     // a quadra comprida, no sentido da faixa
-    const CV = cortes(RAIO, 92, 132, 34, 42);      // e a travessa
+    /* A QUADRA E O BECO. Estes números são VARRIDOS, não escolhidos.
+       Ao encolher a fatia da sede nível 1 a cidade toda andou no
+       `rng()` compartilhado, a reparação de ilha passou a tirar mais
+       casas e a favela caiu de 262 pra 231. Havia dois caminhos pra
+       trazer de volta: baixar a frente da casa (que devolvia 264, mas
+       a 2,14 m — justamente o que o dono reclamou antes) ou apertar a
+       quadra. Apertar a quadra, então; e o beco saiu de varredura:
+
+         beco 30–38 → 262 casas, mas 30 células PRESAS (a reparação de
+                      ilha empaca num bolsão que nenhuma remoção única
+                      abre)
+         beco 31–39 → presa nenhuma, mas só 248 casas
+         beco 32–42 → 260 casas e 25.384 de 25.384 alcançáveis
+
+       Fica o 32–42: 1,44 a 1,89 m de beco, que continua beco de
+       favela e continua passando corpo (que pede 24). */
+    const CU = cortes(RAIO, 500, 850, 32, 42);     // a quadra comprida, no sentido da faixa
+    const CV = cortes(RAIO, 86, 124, 32, 42);      // e a travessa
 
     /* O BECO VIRA LINHA NO CHÃO, recortada: a reta inteira atravessaria
        o mapa, e o que interessa é só o pedaço que cai na favela */
@@ -2858,7 +3054,17 @@ TO.dados.plantaEstadio = (function(){
       const x = c.cx + u*co - d*so, y = c.cy + u*so + d*co;
       if(!naAreaFavela(x, y) || zona(x, y) !== 'mato') continue;
       if(FAVELA.some(o => Math.hypot(o.cx - x, o.cy - y) < Math.max(o.w, o.h)/2 + 14)) continue;
-      ARVORES.push({ x, y, r: entreFav(11, 17) });
+      /* asfalto nenhum sob a copa. Este laço não tinha teste de
+         asfalto NENHUM — só olhava a área da favela e a zona —, e uma
+         casa da beirada punha a árvore com a copa por cima da rua da
+         cidade. O sorteio é que escondia: só aparece quando a peça cai
+         naquela quina, e mudou ao encolher a fatia da sede nível 1.
+         O raio é sorteado ANTES do teste de propósito: `entreFav`
+         continua sendo chamado nas mesmas voltas, então a favela
+         inteira sai igual — o que muda é só a árvore não nascer. */
+      const rArv = entreFav(11, 17);
+      if(tocaAsfalto(x, y, rArv + 2)) continue;
+      ARVORES.push({ x, y, r: rArv });
     }
 
     for(const c of FAVELA){ BEIRA.push(c); LOTES.push(c); }

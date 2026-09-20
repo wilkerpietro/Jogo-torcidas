@@ -674,6 +674,96 @@ A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
 descarta fora do quadro; carros, postes e campos numa malha; moitas em
 outra.
 
+### 4.14. A sede tem NÍVEL, e o nível 1 é o barracão de três cômodos
+
+A sede que existia virou **nível 3**: fatia grande, salão, ala da frente
+e ala do fundo. Ao lado dela entrou a **nível 1**, que é o que uma
+torcida tem antes de crescer — o barracão da foto de referência, com
+três compartimentos.
+
+`SEDES[lado].nivel` é quem decide. No mapa vai uma de cada (mandante 3,
+visitante 1), que é o que deixa as duas à vista pra comparar; no jogo
+quem manda nisso é o progresso da torcida, e trocar é uma linha.
+
+**A diferença começa na FATIA, não na mobília.** A nível 3 pega o
+quarteirão de ponta a ponta na profundidade; a nível 1 é um retângulo
+de **11,2 × 8,1 m** encostado na guia, e o resto do quarteirão continua
+sendo casa. Sem isso ela seria a sede grande com menos parede dentro.
+
+**Os três compartimentos**, no eixo local (`u` corre pela fachada, `v`
+entra pra dentro):
+
+| cômodo | onde | o que tem |
+|---|---|---|
+| pátio | `u` até 58 %, de ponta a ponta | três colchões no chão, caixa d'água de plástico, ralo, o portão encostado, caixa de material, o mastro |
+| patrimônio | os 42 % restantes, metade da frente | armário de aço com quatro troféus em cima, estante de material, caixas |
+| presidente | os 42 % restantes, metade do fundo | mesa com gaveteiro, cadeira de escritório, armário, ar-condicionado, mural |
+
+**Cada sala abre pro PÁTIO pela sua própria porta**, e entre elas a
+parede é cega — como na foto. Não é gosto: com a porta de uma sala
+dando na outra, um cômodo depende do outro pra ser alcançado, e cômodo
+murado já custou 332 células sem chegada nesta cena antes.
+
+**O pátio não tem telhado**, e é isso que faz a sede pequena ler como
+sede pequena: de cima vê-se o cimento, o colchão e a caixa d'água sem
+precisar esconder malha nenhuma. O telhado passou a poder cobrir só um
+pedaço (`teto.area`); a área que a cena ESCONDE continua sendo a da
+sede inteira, senão quem entra pelo portão não abriria a planta.
+
+**A mesa do presidente ficou no CANTO, encostada nas duas paredes.**
+Solta no meio da sala ela abria um bolsão de 21 entre o tampo e a
+parede — largo demais pra sumir, estreito demais pro corpo passar, que
+pede 24. Foram três células presas na primeira montagem, achadas por
+varredura e não a olho. Pelo mesmo motivo o armário encosta na mesa em
+vez de ficar do outro lado dela, que era o que fechava a volta.
+Medido: **352 células de corpo dentro da sede, 352 alcançáveis da rua.**
+
+### 4.15. O mobiliário, e o que ele custa
+
+A sede era casca: parede, piso pintado e mais nada. As peças novas
+(`bairro3d.js`) são caixas como o resto da cena, mas em porção maior —
+uma cadeira de escritório são catorze delas, um armário nove:
+
+`colchao` · `armario` · `estante` · `trofeus` · `mesa` · `cadeira` ·
+`caixote` · `ralo` · `ar` · `mural` · `portao` · `caixadagua`
+
+**A orientação vem da planta**, em `ox`/`oz`: é pra que lado o móvel
+OLHA. Sem isso a porta do armário sai na face encostada na parede e o
+móvel lê como caixote. `naFace()` resolve as quatro orientações numa
+conta só, em vez de quatro trechos iguais.
+
+**Os cômodos do fundo da nível 3 também deixaram de ser caixas
+vazias**: o primeiro virou alojamento (colchão), o último depósito
+(armário e troféus) e o do meio diretoria (mesa e cadeira).
+
+Custo: a sede inteira mobiliada não chega a 1.500 triângulos, e tudo
+entra na malha do quarteirão — **nenhuma chamada de desenho a mais**.
+
+### 4.16. Dois bugs que a sede menor desenterrou
+
+Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
+inteira andou. Duas coisas que estavam erradas desde antes apareceram:
+
+1. **Árvore com a copa no asfalto.** O sorteio de árvore do quarteirão
+   testava avenida, fatia de equipamento e lote — mas **não a rua da
+   grade**. Numa QUINA de quarteirão o tronco fica na calçada de uma
+   face e a copa alcança o asfalto da outra. E o laço de árvore da
+   FAVELA não testava asfalto nenhum. Os dois ganharam
+   `tocaAsfalto(x, y, r + 2)`. Na favela o raio é sorteado ANTES do
+   teste de propósito: `entreFav` continua sendo chamado nas mesmas
+   voltas, então a favela sai igual — o que muda é só a árvore não
+   nascer.
+
+2. **A favela caiu de 262 pra 231 casas.** A reparação de ilha passou a
+   tirar mais casas porque as casas de beira de estrada, que entram na
+   camada-base dela, tinham andado. Havia dois caminhos: baixar a
+   frente da casa (devolvia 264, mas a 2,14 m — justamente o que o dono
+   reclamou antes) ou apertar a quadra. O beco saiu de varredura:
+   30–38 devolve 262 mas deixa 30 células presas (a reparação empaca
+   num bolsão que nenhuma remoção única abre), 31–39 zera as presas mas
+   cai pra 248, e **32–42 dá 260 casas com 25.384 de 25.384
+   alcançáveis**. Ficou o 32–42.
+
 ### 4.13. Faixa de pedestre e semáforo, nos cruzamentos da avenida
 
 O dono mandou a foto de um cruzamento de verdade e pediu faixa nos
@@ -910,11 +1000,12 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
 - Por andar (células de corpo): rua/cidade 211.000 · corredor 4.371 ·
   vomitório 577 · arquibancada 3.572 · portão 48.
 - Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **37
-  quarteirões · 703 lotes (262 na favela) · 538 moitas · 215 árvores ·
-  72 postes · 53 carros · 1 campo · 8 equipamentos · 1.822 decalques de
+  quarteirões · 712 lotes (260 na favela) · 552 moitas · 207 árvores ·
+  72 postes · 55 carros · 1 campo · 8 equipamentos · 1.822 decalques de
   chão · 12 cruzamentos de avenida com 46 faixas de pedestre, 10 com
-  semáforo** · 147.093 triângulos estáticos em 6 pedaços de cidade mais
-  o estádio · 165 chamadas de desenho sem gente na
+  semáforo · 2 sedes, uma de cada nível** · 150.259 triângulos
+  estáticos em 6 pedaços de cidade mais o estádio · 165 chamadas de
+  desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
   do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
   leve corta a sombra primeiro por isso).

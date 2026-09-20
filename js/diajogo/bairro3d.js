@@ -556,6 +556,206 @@ export function montarBairro(P) {
     }
   }
 
+  /* =========================================================
+     O MOBILIÁRIO DA SEDE
+     ---------------------------------------------------------
+     A sede era casca: parede, piso pintado e mais nada. De dentro
+     dela via-se um cômodo vazio, e cômodo vazio não lê como sede de
+     torcida — lê como obra parada. Aqui entra o que enche: colchão,
+     armário, estante, troféu, mesa, cadeira, caixa, mural.
+
+     São caixas, como o resto da cena, mas em PORÇÃO MAIOR: uma
+     cadeira de escritório são catorze delas, um armário são nove. É
+     barato — a sede inteira mobiliada não chega a 1.500 triângulos, e
+     tudo entra na malha do quarteirão, sem chamada de desenho a mais.
+
+     A ORIENTAÇÃO VEM DA PLANTA, em `ox`/`oz`: é pra que lado o móvel
+     OLHA. Sem isso a porta do armário sai na face encostada na parede
+     e o móvel lê como caixote. `naFace` resolve as quatro orientações
+     numa conta só, em vez de quatro trechos iguais. */
+  const MADEIRA = '#8a6a44', MADEIRA_ESC = '#6b5133';
+  const METAL = '#8d9094', METAL_ESC = '#5b5f63', ESTOFO = '#33363a';
+  /* o intervalo que corre AO LONGO da face de um móvel */
+  const aoLongo = o => o.ox ? [o.y0, o.y1] : [o.x0, o.x1];
+  /* um painel colado na face: `a0..a1` correm ao longo dela, `y0..y1`
+     são altura e `fora` é o quanto ele sai do corpo */
+  function naFace(T, o, a0, a1, y0, y1, fora, cor) {
+    if (o.ox) {
+      const f = o.ox > 0 ? o.x1 : o.x0, g = f + o.ox * fora;
+      caixa(T, Math.min(f, g), Math.max(f, g), y0, y1, a0, a1, cor);
+    } else {
+      const f = o.oz > 0 ? o.y1 : o.y0, g = f + o.oz * fora;
+      caixa(T, a0, a1, y0, y1, Math.min(f, g), Math.max(f, g), cor);
+    }
+  }
+  /* colchão no chão: corpo, barriga, duas costuras e o travesseiro na
+     ponta que encosta na parede. É onde o aliado se hospeda, então
+     NÃO bloqueia — ele deita em cima. */
+  function colchao(T, o) {
+    const cor = o.cor || '#d8d2c2';
+    tmp.set(cor).multiplyScalar(0.86);
+    const costura = '#' + tmp.getHexString();
+    const ao = o.x1 - o.x0 > o.y1 - o.y0;
+    caixa(T, o.x0, o.x1, 0, 5, o.y0, o.y1, cor);
+    caixa(T, o.x0 + 1.6, o.x1 - 1.6, 5, 6.4, o.y0 + 1.6, o.y1 - 1.6, cor);
+    for (const t of [0.34, 0.66]) {
+      if (ao) { const x = o.x0 + (o.x1 - o.x0) * t;
+        caixa(T, x - 0.7, x + 0.7, 4.9, 5.6, o.y0 + 2.5, o.y1 - 2.5, costura); }
+      else { const z = o.y0 + (o.y1 - o.y0) * t;
+        caixa(T, o.x0 + 2.5, o.x1 - 2.5, 4.9, 5.6, z - 0.7, z + 0.7, costura); }
+    }
+    if (ao) caixa(T, o.x0 + 2, o.x0 + 12, 5, 8.4, o.y0 + 3, o.y1 - 3, '#e8e4d8');
+    else    caixa(T, o.x0 + 3, o.x1 - 3, 5, 8.4, o.y0 + 2, o.y0 + 12, '#e8e4d8');
+  }
+  /* armário de aço: corpo, pés, tampa, duas portas rebaixadas com
+     puxador e a fresta entre elas */
+  function armario(T, o) {
+    const h = o.alt || 46, cor = o.cor || METAL;
+    caixa(T, o.x0, o.x1, 3, h, o.y0, o.y1, cor);
+    caixa(T, o.x0 + 2, o.x1 - 2, 0, 3, o.y0 + 2, o.y1 - 2, METAL_ESC);
+    caixa(T, o.x0 - 0.8, o.x1 + 0.8, h, h + 1.6, o.y0 - 0.8, o.y1 + 0.8, cor);
+    const [a0, a1] = aoLongo(o), am = (a0 + a1) / 2;
+    naFace(T, o, a0 + 1.6, am - 0.7, 5, h - 2, 1.1, cor);
+    naFace(T, o, am + 0.7, a1 - 1.6, 5, h - 2, 1.1, cor);
+    for (const a of [am - 3.4, am + 3.4])
+      naFace(T, o, a - 0.7, a + 0.7, h * 0.42, h * 0.58, 2.2, METAL_ESC);
+  }
+  /* estante aberta: quatro montantes e as prateleiras */
+  function estante(T, o) {
+    const h = o.alt || 50, n = o.prateleiras || 4, cor = o.cor || METAL;
+    for (const x of [o.x0 + 1.5, o.x1 - 1.5]) for (const z of [o.y0 + 1.5, o.y1 - 1.5])
+      caixa(T, x - 1.5, x + 1.5, 0, h, z - 1.5, z + 1.5, METAL_ESC);
+    for (let i = 0; i <= n; i++) {
+      const y = 3 + (h - 7) * i / n;
+      caixa(T, o.x0, o.x1, y, y + 1.6, o.y0, o.y1, cor);
+    }
+    /* o que mora na estante: caixa e material, alternando de prateleira */
+    for (let i = 0; i < n; i++) {
+      const y = 3 + (h - 7) * i / n + 1.6;
+      const ao = o.x1 - o.x0 > o.y1 - o.y0;
+      const c0 = ao ? o.x0 : o.y0, c1 = ao ? o.x1 : o.y1;
+      for (const t of i % 2 ? [0.28, 0.66] : [0.46]) {
+        const c = c0 + (c1 - c0) * t, w = 7 + (i % 3) * 2;
+        const x0 = ao ? c - w : o.x0 + 2, x1 = ao ? c + w : o.x1 - 2;
+        const z0 = ao ? o.y0 + 2 : c - w, z1 = ao ? o.y1 - 2 : c + w;
+        caixa(T, x0, x1, y, y + 7 + (i % 2) * 3, z0, z1, i % 2 ? '#b98f57' : '#7d7a72');
+      }
+    }
+  }
+  /* a prateleira de troféus: `n` taças enfileiradas, base escura,
+     haste e taça, com as alças dos dois lados. Uma de prata no meio,
+     que fileira toda dourada lê como enfeite e não como prateleira */
+  function trofeus(T, o) {
+    const n = o.n || 3, base = o.base || 0;
+    const ao = o.x1 - o.x0 > o.y1 - o.y0;
+    const c0 = ao ? o.x0 : o.y0, c1 = ao ? o.x1 : o.y1;
+    for (let i = 0; i < n; i++) {
+      const c = c0 + (c1 - c0) * (i + 0.5) / n;
+      const x = ao ? c : (o.x0 + o.x1) / 2, z = ao ? (o.y0 + o.y1) / 2 : c;
+      const h = 8.5 + (i % 3) * 2.2, ouro = i % 3 === 1 ? '#b9b6ae' : '#c9a227';
+      caixa(T, x - 2.5, x + 2.5, base, base + 1.7, z - 2.5, z + 2.5, '#4a3728');
+      caixa(T, x - 0.9, x + 0.9, base + 1.7, base + h * 0.5, z - 0.9, z + 0.9, ouro);
+      caixa(T, x - 2.7, x + 2.7, base + h * 0.5, base + h, z - 2.7, z + 2.7, ouro);
+      for (const sgn of [-1, 1])
+        caixa(T, x + sgn * 2.9, x + sgn * 3.7, base + h * 0.58, base + h * 0.9,
+                 z - 0.7, z + 0.7, ouro);
+    }
+  }
+  /* mesa: tampo com friso, quatro pés e o gaveteiro de três gavetas
+     numa das pontas */
+  function mesa(T, o) {
+    const h = o.alt || 26, cor = o.cor || MADEIRA;
+    caixa(T, o.x0, o.x1, h - 2.6, h, o.y0, o.y1, cor);
+    caixa(T, o.x0 + 1, o.x1 - 1, h - 3.4, h - 2.6, o.y0 + 1, o.y1 - 1, MADEIRA_ESC);
+    for (const x of [o.x0 + 2.4, o.x1 - 2.4]) for (const z of [o.y0 + 2.4, o.y1 - 2.4])
+      caixa(T, x - 1.4, x + 1.4, 0, h - 2.6, z - 1.4, z + 1.4, MADEIRA_ESC);
+    const ao = o.x1 - o.x0 > o.y1 - o.y0;
+    const g0 = (ao ? o.x0 : o.y0) + 3, g1 = g0 + 17;
+    const x0 = ao ? g0 : o.x0 + 2, x1 = ao ? g1 : o.x1 - 2;
+    const z0 = ao ? o.y0 + 2 : g0, z1 = ao ? o.y1 - 2 : g1;
+    caixa(T, x0, x1, 2, h - 3, z0, z1, cor);
+    for (let i = 0; i < 3; i++) {
+      const y = 3.4 + i * 6.4;
+      caixa(T, x0 - 0.5, x1 + 0.5, y, y + 5, z0 - 0.5, z1 + 0.5, MADEIRA_ESC);
+    }
+  }
+  /* cadeira de escritório: estrela de cinco pés com rodízio, coluna,
+     assento e encosto. `ang` é pra onde ela OLHA. É leve e se arrasta,
+     então não bloqueia. */
+  function cadeira(T, o) {
+    const x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2, ASS = 19, ang = o.ang || 0;
+    for (let i = 0; i < 5; i++) {
+      const a = ang + i * Math.PI * 2 / 5;
+      caixaRot(T, x + Math.cos(a) * 6.5, z + Math.sin(a) * 6.5, 13, 2.6, 2.6, 4.2, a, '#3a3d40');
+      const px = x + Math.cos(a) * 12, pz = z + Math.sin(a) * 12;
+      caixa(T, px - 1.3, px + 1.3, 0, 2.8, pz - 1.3, pz + 1.3, '#25272a');
+    }
+    caixa(T, x - 1.9, x + 1.9, 4.2, ASS - 2.6, z - 1.9, z + 1.9, '#4a4d50');
+    caixaRot(T, x, z, 18, 17, ASS - 2.6, ASS, ang, ESTOFO);
+    caixaRot(T, x, z, 17, 16, ASS, ASS + 2.6, ang, '#3f4348');
+    const bx = x - Math.cos(ang) * 7.5, bz = z - Math.sin(ang) * 7.5;
+    caixaRot(T, bx, bz, 3, 16, ASS + 2, ASS + 21, ang, ESTOFO);
+    caixaRot(T, bx, bz, 4.4, 14, ASS + 6, ASS + 19, ang, '#3f4348');
+  }
+  /* caixa de papelão: corpo, abas e a fita no meio */
+  function caixote(T, o) {
+    const h = o.alt || 14, cor = o.cor || '#b98f57';
+    caixa(T, o.x0, o.x1, 0, h, o.y0, o.y1, cor);
+    caixa(T, o.x0 - 0.7, o.x1 + 0.7, h, h + 1.1, o.y0 - 0.7, o.y1 + 0.7, '#a67d4c');
+    const mx = (o.x0 + o.x1) / 2;
+    caixa(T, mx - 1.5, mx + 1.5, h + 1.1, h + 1.5, o.y0 - 0.7, o.y1 + 0.7, '#ddd8c9');
+  }
+  /* o ralo do pátio: caixilho, grelha e as barras */
+  function ralo(T, o) {
+    const r = o.r || 5;
+    caixa(T, o.x - r, o.x + r, 1.75, 2.25, o.y - r, o.y + r, '#6e6a60');
+    caixa(T, o.x - r + 1.1, o.x + r - 1.1, 1.6, 2.05, o.y - r + 1.1, o.y + r - 1.1, '#2b2926');
+    for (let i = 0; i < 3; i++) {
+      const z = o.y - r + 2.2 + i * (r - 1.1);
+      caixa(T, o.x - r + 1.1, o.x + r - 1.1, 2.05, 2.35, z - 0.45, z + 0.45, '#6e6a60');
+    }
+  }
+  /* ar-condicionado de parede: corpo, aletas e o friso de baixo */
+  function arCondicionado(T, o) {
+    const y = o.base || 33, h = o.alt || 11;
+    caixa(T, o.x0, o.x1, y, y + h, o.y0, o.y1, '#e2dfd6');
+    const [a0, a1] = aoLongo(o);
+    for (let i = 0; i < 3; i++)
+      naFace(T, o, a0 + 3, a1 - 3, y + h * 0.28 + i * h * 0.18, y + h * 0.28 + i * h * 0.18 + h * 0.1,
+             0.8, '#c3bfb4');
+    naFace(T, o, a0 + 2, a1 - 2, y - 0.8, y, 1.2, '#b7b3a8');
+  }
+  /* o mural da sala: moldura, cortiça e os papéis pregados nela */
+  function mural(T, o) {
+    const y = o.base || 24, h = o.alt || 20;
+    caixa(T, o.x0, o.x1, y, y + h, o.y0, o.y1, '#4a3728');
+    const [a0, a1] = aoLongo(o);
+    naFace(T, o, a0 + 1.4, a1 - 1.4, y + 1.4, y + h - 1.4, 0.7, '#a98b5e');
+    let k = 0;
+    for (const t of [0.16, 0.4, 0.62, 0.84]) {
+      const a = a0 + (a1 - a0) * t, w = 3 + (k % 2) * 1.6;
+      const yy = y + h * (k % 2 ? 0.28 : 0.52);
+      naFace(T, o, a - w, a + w, yy, yy + h * 0.3, 1.2, k % 3 ? '#e8e4d8' : '#d6cfae');
+      k++;
+    }
+  }
+  /* o portão de chapa corrida, ENCOSTADO na parede: ele corre pro
+     lado, e a folha fechada no vão seria muro na porta da sede */
+  function portao(T, o) {
+    const h = o.alt || 50, cor = o.cor || '#8d9094';
+    caixa(T, o.x0, o.x1, 2, h, o.y0, o.y1, cor);
+    tmp.set(cor).multiplyScalar(0.8);
+    const risco = '#' + tmp.getHexString();
+    const ao = o.x1 - o.x0 > o.y1 - o.y0;
+    const c0 = ao ? o.x0 : o.y0, c1 = ao ? o.x1 : o.y1;
+    for (let c = c0 + 4; c < c1 - 2; c += 5) {
+      const x0 = ao ? c - 0.7 : o.x0 - 0.4, x1 = ao ? c + 0.7 : o.x1 + 0.4;
+      const z0 = ao ? o.y0 - 0.4 : c - 0.7, z1 = ao ? o.y1 + 0.4 : c + 0.7;
+      caixa(T, x0, x1, 4, h - 3, z0, z1, risco);
+    }
+    caixa(T, o.x0 - 0.6, o.x1 + 0.6, h, h + 2, o.y0 - 0.6, o.y1 + 0.6, METAL_ESC);
+  }
+
   /* caixa d'água azul, de plástico: um corpo de oito lados (lê redondo
      de longe) numa armação fina, com a tampa achatada por cima —
      apoiada no telhado, não bloqueia ninguém */
@@ -684,6 +884,19 @@ export function montarBairro(P) {
         case 'carro': carro(T, o); break;
         case 'arvore': arvore(T, o); break;
         case 'poste': poste(T, o); break;
+        /* ---- a mobília da sede ---- */
+        case 'colchao': colchao(T, o); break;
+        case 'armario': armario(T, o); break;
+        case 'estante': estante(T, o); break;
+        case 'trofeus': trofeus(T, o); break;
+        case 'mesa': mesa(T, o); break;
+        case 'cadeira': cadeira(T, o); break;
+        case 'caixote': caixote(T, o); break;
+        case 'ralo': ralo(T, o); break;
+        case 'ar': arCondicionado(T, o); break;
+        case 'mural': mural(T, o); break;
+        case 'portao': portao(T, o); break;
+        case 'caixadagua': caixaDagua(T, o); break;
         case 'banco': {
           caixa(T, o.x0, o.x1, 10, 13, o.y0, o.y1, '#7a5a3a');
           caixa(T, o.x0, o.x1, 13, 30, o.y0, o.y0 + 2.5, '#7a5a3a');
@@ -962,14 +1175,23 @@ export function montarBairro(P) {
   for (const q of K.QUADRAS) {
     const e = q.equip;
     if (!e || !e.teto) continue;
-    const a = e.area, T = Tecido();
+    /* O TELHADO PODE COBRIR SÓ UM PEDAÇO DA SEDE. Na nível 1 o PÁTIO é
+       descoberto — é ele que faz a sede pequena ler como sede pequena
+       —, então o telhado vem com retângulo próprio. Sem isso a malha
+       tapava o pátio e o colchão sumia de cima. A área que a cena
+       esconde continua sendo a da sede inteira: quem entra pelo portão
+       já está dentro. */
+    const a = e.teto.area || e.area, T = Tecido();
     alvoTelhado = null;               // fibrocimento, e a malha dela liga e desliga
     telhado(T, a.x0, a.x1, a.y0, a.y1, e.teto.base, e.teto.queda, e.teto.cor);
     alvoTelhado = TELHADOS;
     /* as CAIXAS D'ÁGUA, que toda laje daqui tem — e sem elas o telhado
-       da sede é um retângulo cinza de 19 m sem nada que dê escala */
+       da sede é um retângulo cinza de 19 m sem nada que dê escala. Na
+       nível 1 são zero: a caixa dela fica no chão do pátio, que é onde
+       fica a de sede de bairro. */
     const ao = a.x1 - a.x0 > a.y1 - a.y0;
-    for (const t of [0.30, 0.62]) {
+    const quantas = e.teto.caixas === undefined ? [0.30, 0.62] : [0.30, 0.62].slice(0, e.teto.caixas);
+    for (const t of quantas) {
       const cx = ao ? a.x0 + (a.x1 - a.x0) * t : (a.x0 + a.x1) / 2 - 2;
       const cz = ao ? (a.y0 + a.y1) / 2 - 2 : a.y0 + (a.y1 - a.y0) * t;
       const y = e.teto.base + e.teto.queda - 2;
@@ -978,7 +1200,7 @@ export function montarBairro(P) {
       caixa(T, cx - 12, cx + 12, y + 20, y + 22, cz - 12, cz + 12, '#5a8cbc');
     }
     const m = malha(T, true, 'teto:' + e.lado);
-    if (m) tetos.push({ lado: e.lado, area: a, mesh: m });
+    if (m) tetos.push({ lado: e.lado, area: e.area, mesh: m });
   }
 
   /* ---- A BEIRA DA ESTRADA ----
