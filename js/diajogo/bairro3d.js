@@ -836,6 +836,37 @@ export function montarBairro(P) {
     /* o pé de fixação, que é o que prende ela na parede */
     naFace(T, o, am - 3, am + 3, y - 2.5, y, 0.6, '#2a2c2e');
   }
+  /* AS GARRAFAS DO ARMÁRIO DO BALCÃO. `n` garrafas enfileiradas na
+     prateleira, cada uma com corpo, ombro e gargalo — três caixas,
+     que é o que basta pra ler como garrafa a essa distância. As cores
+     são as do que fica atrás de um balcão: âmbar de uísque, verde de
+     cerveja, incolor de cachaça e o escuro do vinho. */
+  const VIDROS = ['#8a5a1e', '#2f5f2a', '#c8c4b0', '#4a2028', '#a87a24', '#1f4a3a'];
+  function garrafas(T, o) {
+    const n = o.n || 8, base = o.base || 34, h = o.alt || 13;
+    const ao = o.x1 - o.x0 > o.y1 - o.y0;
+    const c0 = ao ? o.x0 : o.y0, c1 = ao ? o.x1 : o.y1;
+    const semente = Math.abs((o.x0 | 0) * 3 + (o.y0 | 0));
+    for (let i = 0; i < n; i++) {
+      const c = c0 + (c1 - c0) * (i + 0.5) / n;
+      const x = ao ? c : (o.x0 + o.x1) / 2, z = ao ? (o.y0 + o.y1) / 2 : c;
+      const cor = VIDROS[(semente + i * 3) % VIDROS.length];
+      const hh = h * (0.82 + ((semente + i) % 4) * 0.09);
+      caixa(T, x - 1.8, x + 1.8, base, base + hh * 0.6, z - 1.8, z + 1.8, cor);
+      caixa(T, x - 1.2, x + 1.2, base + hh * 0.6, base + hh * 0.76, z - 1.2, z + 1.2, cor);
+      caixa(T, x - 0.6, x + 0.6, base + hh * 0.76, base + hh, z - 0.6, z + 0.6, cor);
+      /* o rótulo, uma faixa clara na barriga */
+      tmp.set(cor).multiplyScalar(1.9);
+      caixa(T, x - 1.9, x + 1.9, base + hh * 0.2, base + hh * 0.42,
+               z - 1.9, z + 1.9, '#' + tmp.getHexString());
+    }
+  }
+  /* a tábua da prateleira, sob a fileira de garrafa */
+  function prateleira(T, o) {
+    const y = o.base || 32;
+    caixa(T, o.x0, o.x1, y, y + 2, o.y0, o.y1, o.cor || '#6b4a2c');
+  }
+
   /* mesa de bar: tampo quadrado, coluna central e pé em cruz */
   function mesabar(T, o) {
     const h = o.alt || 27, x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2;
@@ -1087,6 +1118,8 @@ export function montarBairro(P) {
         case 'engradado': engradado(T, o); break;
         case 'freezer': freezer(T, o); break;
         case 'tv': tv(T, o); break;
+        case 'garrafas': garrafas(T, o); break;
+        case 'prateleira': prateleira(T, o); break;
         case 'mesabar': mesabar(T, o); break;
         case 'cadeiraplast': cadeiraplast(T, o); break;
         case 'caixadagua': caixaDagua(T, o); break;

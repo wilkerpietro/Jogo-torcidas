@@ -2056,99 +2056,99 @@ TO.dados.plantaEstadio = (function(){
     const { pecas, p, par, piso, faixa, movel, dir, paredeU, paredeV, VAO } = O;
     const E = O.E, L = O.L, A = O.A;
     const PAR = 8, MF = 11;
-    const MURO = 64, ALT_EXT = 58, ALT = 54;
+    const MURO = 66, ALT_EXT = 60, ALT = 56;
     const CLARO = '#dcd6c6';
     const AZULEJO = '#5b7fa8', CREME = '#ddd6c2';   // o xadrez do piso
-    const uPorta = Math.round(L*0.69), wPorta = 48;
+    const uPorta = Math.round(L*0.66), wPorta = 56;
 
     /* ---- o chão: xadrez de ladrilho, como na foto ----
-       Ele é UMA peça, não duzentas: o 3D desenha só os ladrilhos
-       escuros por cima de um piso claro, que é metade da geometria
-       pelo mesmo desenho. */
+       Ele é UMA peça, não mil: o 3D desenha só os ladrilhos escuros
+       por cima de um piso claro, que é metade da geometria pelo mesmo
+       desenho. A 1,76 o ladrilho caía DENTRO da caixa do `piso` (que
+       vai de 1,70 a 1,85) e o xadrez existia sem aparecer; fica acima
+       do topo dela. */
     piso(0, L, 0, A, CREME, 1.70);
-    /* 1,92 e não 1,76: o `piso` é uma caixa de 1,70 a 1,85, e o
-       ladrilho a 1,76 nascia DENTRO dela — o xadrez existia e não
-       aparecia. Fica acima do topo dela. */
     movel('xadrez', PAR, L - PAR, MF, A - PAR,
-          { cor: AZULEJO, tam: 9, base: 1.92 }, false);
+          { cor: AZULEJO, tam: 11, base: 1.92 }, false);
 
     /* ---- as paredes ---- */
     paredeU(0, L, 2.5, MF, MURO, cor1, uPorta, wPorta, { vidro: true, abre: 1 });
     par(0, PAR, 0, A, ALT_EXT, cor1);                  // oeste
     par(L - PAR, L, 0, A, ALT_EXT, cor1);              // leste
     par(PAR, L - PAR, A - PAR, A, ALT_EXT, cor1);      // norte
-    /* a faixa da torcida na fachada, como na sede */
-    faixa(0, L, 0, MF + 1, 4, 9, cor3);
-    faixa(0, L, 0, MF + 1, MURO - 16, 10, cor2);
-    p('letreiro', { x: E.pt(Math.round(L*0.30), 1)[0], y: E.pt(Math.round(L*0.30), 1)[1],
-                    ox: E.ox, oz: E.oz, texto: 'BAR DO ' + (T.rot || 'BONDE'),
-                    larg: Math.min(L*0.5, 92), altura: Math.min(L*0.5, 92)/4.2, base: 20,
+    faixa(0, L, 0, MF + 1, 4, 10, cor3);
+    faixa(0, L, 0, MF + 1, MURO - 18, 11, cor2);
+    const [lx, ly] = E.pt(Math.round(L*0.28), 1);
+    p('letreiro', { x: lx, y: ly, ox: E.ox, oz: E.oz, texto: 'BAR DO ' + (T.rot || 'BONDE'),
+                    larg: Math.min(L*0.42, 120), altura: Math.min(L*0.42, 120)/4.2, base: 22,
                     fundo: cor2, tinta: corLegivel(cor2) }, false);
 
     /* ---- O BANHEIRO, no nordeste ----
-       A PORTA DÁ PRO SUL, pro vão que sobra entre a última mesa e ele.
-       No oeste não dá: os dois freezers ocupam o fim do corredor, e a
-       faixa que sobrava ali tinha 12 — o corpo pede 24, e o cubículo
-       ficava sem chegada.
-
-       A FOLHA É DE 28 E NÃO DE 34. Com 34 o vão comia a parede
-       inteira (ela tem 36) e sobrava menos de 3 de cada lado, que o
-       `comVaos` descarta: o banheiro ficava sem parede sul nenhuma. */
-    const bU0 = L - PAR - 36, bV0 = A - PAR - 40;
+       A PORTA DÁ PRO SUL. A folha é menor que o vão da parede de
+       propósito: com a folha do tamanho dela o `comVaos` descartava as
+       sobras (que ficam abaixo de 3) e o banheiro saía sem parede. */
+    const bU0 = L - PAR - 58, bV0 = A - PAR - 62;
     par(bU0, bU0 + PAR, bV0, A - PAR, ALT, CLARO);              // a parede oeste dele
-    paredeU(bU0, L - PAR, bV0, bV0 + PAR, ALT, CLARO,           // a do sul, com a porta
-            (bU0 + L - PAR)/2, VAO - 12, { abre: 1, nome: 'BANHEIRO' });
+    paredeU(bU0 + PAR, L - PAR, bV0, bV0 + PAR, ALT, CLARO,     // a do sul, com a porta
+            (bU0 + PAR + L - PAR)/2, VAO, { abre: 1, nome: 'BANHEIRO' });
 
-    /* ---- O BALCÃO EM L, no oeste ----
-       O tampo avança 3 sobre o corpo, que é o que faz balcão parecer
-       balcão de cima: sem o beiral ele lê como um muro baixo. */
-    const sU1 = PAR + 20;                     // até onde vai a faixa de serviço
-    movel('balcao', sU1, sU1 + 16, 66, 172, { alt: 30, ox: dir(1,0)[0], oz: dir(1,0)[1] });
-    movel('balcao', PAR, sU1 + 16, 66, 80, { alt: 30, ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
-    /* a prateleira de garrafa atrás dele, na parede de serviço */
-    movel('estante', PAR + 1, PAR + 13, 92, 156, { alt: 44, prateleiras: 3,
-           ox: dir(1,0)[0], oz: dir(1,0)[1] });
+    /* ---- O BALCÃO EM L, no oeste, E O LADO DE DENTRO DELE ----
+       A faixa de serviço tem 38 de vão: o corpo pede 24, então dá pra
+       ENTRAR no balcão e ficar atrás dele, que era o pedido. Ela fecha
+       ao sul pelo pé do L e a leste pelo braço comprido, e fica aberta
+       ao norte — é por ali que o dono do bar entra, como no balcão de
+       verdade. */
+    const uServ = PAR + 38;                 // até onde vai a faixa de serviço
+    const uBal = uServ + 20;                // a face do balcão que dá pro salão
+    const vBal0 = MF + 74, vBal1 = A - PAR - 96;
+    movel('balcao', uServ, uBal, vBal0 + 22, vBal1, { alt: 30, ox: dir(1,0)[0], oz: dir(1,0)[1] });
+    movel('balcao', PAR, uBal, vBal0, vBal0 + 22, { alt: 30, ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
+
+    /* ---- O ARMÁRIO DO BALCÃO, com as garrafas ----
+       Encostado na parede oeste, DENTRO da faixa de serviço: é o que o
+       dono do bar alcança sem sair de trás do balcão. Duas prateleiras
+       de garrafa em cima do armário — uísque, cachaça e cerveja, que é
+       o que tem atrás de um balcão de bar de torcida. */
+    movel('armario', PAR + 1, PAR + 17, vBal0 + 30, vBal1 - 30,
+          { alt: 34, ox: dir(1,0)[0], oz: dir(1,0)[1] });
+    for(const [yG, n] of [[35.6, 9], [50, 8]]){
+      movel('garrafas', PAR + 2, PAR + 14, vBal0 + 32, vBal1 - 32,
+            { base: yG, n, alt: 13 }, false);
+      if(yG > 40) movel('prateleira', PAR + 1, PAR + 16, vBal0 + 30, vBal1 - 30,
+                        { base: yG - 2, cor: '#6b4a2c' }, false);
+    }
 
     /* ---- O ENGRADADO DE CERVEJA, no sudoeste ---- */
-    movel('engradado', PAR + 2, PAR + 24, MF + 4, MF + 26, { pilha: 3 }, true);
-    movel('engradado', PAR + 2, PAR + 24, MF + 28, MF + 48, { pilha: 2 }, true);
+    movel('engradado', PAR + 3, PAR + 27, MF + 6, MF + 30, { pilha: 3 });
+    movel('engradado', PAR + 3, PAR + 27, MF + 33, MF + 55, { pilha: 2 });
+    movel('engradado', PAR + 30, PAR + 52, MF + 6, MF + 28, { pilha: 2 });
 
     /* ---- OS DOIS FREEZERS na parede norte, e a TV em cima ----
-       ENCOSTADOS na parede, não a 22 dela: com folga atrás sobrava um
-       corredor de 15 entre eles e a mesa do fundo — estreito demais
-       pro corpo (que pede 24) e largo demais pra sumir, que é a
-       receita de célula presa. Encostados, o corredor é o vão
-       inteiro. */
-    const vFrz = A - PAR - 20;
-    for(const u0 of [PAR + 2, PAR + 28]){
-      movel('freezer', u0, u0 + 24, vFrz, A - PAR,
-            { alt: 26, ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
+       ENCOSTADOS nela: com folga atrás sobra um corredor estreito
+       demais pro corpo e largo demais pra sumir, que é a receita de
+       célula presa. */
+    const vFrz = A - PAR - 26;
+    for(const u0 of [PAR + 6, PAR + 52]){
+      movel('freezer', u0, u0 + 40, vFrz, A - PAR,
+            { alt: 28, ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
     }
-    /* a TV fica NA PAREDE, acima dos freezers: base 34 deixa o vidro
-       na altura do olho de quem está em pé no salão */
-    movel('tv', PAR + 8, PAR + 50, A - PAR - 3, A - PAR,
-          { base: 34, alt: 20, ox: dir(0,-1)[0], oz: dir(0,-1)[1] }, false);
+    movel('tv', PAR + 18, PAR + 82, A - PAR - 3, A - PAR,
+          { base: 40, alt: 28, ox: dir(0,-1)[0], oz: dir(0,-1)[1] }, false);
 
     /* ---- AS TRÊS MESAS DO SALÃO ----
-       ENCOSTADAS NA PAREDE LESTE, com o corredor livre ao lado —
-       não no eixo do salão. Centralizada, a mesa deixava 19 de cada
-       lado: nenhum dos dois serve pro corpo, que pede 24, e o salão
-       ficava partido em três pedaços sem ligação. Encostada, o
-       corredor oeste tem 30 inteiros. É também o que bar apertado de
-       verdade faz — mesa na parede, passagem no meio.
+       Agora com as QUATRO cadeiras: no bar estreito a quarta batia na
+       parede e o conjunto fechava o corredor. Elas ficam na metade
+       leste, com o corredor do balcão livre a oeste — é por ele que a
+       torcida anda do portão até o fundo.
 
        A mesa BLOQUEIA e a cadeira NÃO: cadeira de plástico se empurra
        com o pé, e uma fila delas fechando o corredor seria pior que
        qualquer ganho de fidelidade. */
-    const uMesa = L - PAR - 18;
-    /* as três descem pelo sul: a última tem de parar 27 antes do
-       banheiro, senão ela tapa a porta dele */
-    for(const vM of [MF + 42, MF + 88, MF + 134]){
-      movel('mesabar', uMesa - 12, uMesa + 12, vM - 12, vM + 12, { alt: 27 });
-      for(const [du, dv] of [[0, -20], [0, 20], [-20, 0]]){
+    const uMesa = (uBal + L - PAR)/2 + 22;
+    for(const vM of [MF + 62, MF + 152, MF + 242]){
+      movel('mesabar', uMesa - 14, uMesa + 14, vM - 14, vM + 14, { alt: 27 });
+      for(const [du, dv] of [[0, -24], [0, 24], [-24, 0], [24, 0]]){
         const [cx, cy] = E.pt(uMesa + du, vM + dv);
-        /* a cadeira olha pra mesa: o vetor dela pro centro, no eixo do
-           three (onde o z cresce ao contrário do ângulo) */
         const [ax, az] = dir(-du, -dv);
         p('cadeiraplast', { x0: cx - 9, x1: cx + 9, y0: cy - 9, y1: cy + 9,
                             ang: Math.atan2(-az, ax) }, false);
@@ -2156,19 +2156,21 @@ TO.dados.plantaEstadio = (function(){
     }
 
     return { tipo: 'bar', lado, torcida: T, frente, chao: CREME, pecas, area,
-             teto: { base: ALT_EXT, queda: 9, cor: '#7c8285', caixas: 1 } };
+             teto: { base: ALT_EXT, queda: 12, cor: '#7c8285', caixas: 1 } };
   }
 
   /* A FATIA DO BAR, encostada na guia como a da sede nível 1. */
+  /* A FATIA DO BAR: 200 de frente por 400 de fundo — 9 × 18 m.
+     SÓ NAS FACES LESTE E OESTE do quarteirão. O miolo tem uns 595 no
+     sentido comprido e 249 no curto: 400 de fundo só cabe no
+     comprido, que corre em x. Virado pro norte ou pro sul o bar não
+     entraria, e é melhor ele existir numa face certa do que caber
+     torto em qualquer uma. */
   function areaDoBar(q, frente){
-    const LF = 116, PR = 232;
+    const LF = 200, PR = 400;
     const Lx = q.ix1 - q.ix0, Ly = q.iy1 - q.iy0;
-    if(frente === 'n' || frente === 's'){
-      if(Lx < LF + 40 || Ly < PR + 8) return null;
-      return frente === 'n' ? { x0: q.ix1 - LF, x1: q.ix1, y0: q.iy0, y1: q.iy0 + PR }
-                            : { x0: q.ix1 - LF, x1: q.ix1, y0: q.iy1 - PR, y1: q.iy1 };
-    }
-    if(Lx < PR + 8 || Ly < LF + 40) return null;
+    if(frente === 'n' || frente === 's') return null;
+    if(Lx < PR + 8 || Ly < LF + 8) return null;
     return frente === 'o' ? { x0: q.ix0, x1: q.ix0 + PR, y0: q.iy1 - LF, y1: q.iy1 }
                           : { x0: q.ix1 - PR, x1: q.ix1, y0: q.iy1 - LF, y1: q.iy1 };
   }
