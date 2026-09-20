@@ -811,6 +811,66 @@ verga menos folga, e a largura vem dela pela proporção da célula do
 atlas (256 × 64). Placa maior que a verga atravessaria a parede por
 cima.
 
+### 4.18. O bar da torcida, e a `obra` que sede e bar dividem
+
+Cada torcida começa com um bar, então são dois no mapa. Eles escolhem
+quarteirão DEPOIS das sedes e ANTES dos outros equipamentos: a sede é o
+que a cena precisa pra existir e fica com o quarteirão que quiser; o
+bar quer o mais perto DELA que ainda esteja livre.
+
+**A `obra`.** Antes de escrever o bar, os ajudantes de prédio saíram de
+dentro do `sedeDaTorcida` e viraram uma função à parte: eixo local,
+peça, parede com vão, folha de porta e placa de sala. A sede usa, o bar
+usa, e o que vier depois usa. É aqui que mora a regra de que a porta
+abre pra dentro do cômodo e a placa fica do lado de fora — e ela vale
+uma vez só. Sem isso cada prédio novo traria a sua cópia da mesma
+sutileza pra sair errada de um jeito diferente. O pedido era "uma porta
+de vidro igual à da sede"; ela é literalmente a mesma.
+
+**A planta**, fiel à foto mas APERTADA — o dono pediu largura valendo
+metade da profundidade, então o salão quase quadrado da referência
+virou um corredor. São **116 × 232** (5,2 × 10,4 m):
+
+| onde | o que |
+|---|---|
+| sul | a fachada com a porta de vidro de duas folhas |
+| oeste | faixa de serviço, balcão em L, prateleira de garrafa |
+| sudoeste | as pilhas de engradado de cerveja |
+| meio/leste | três mesas de pé central, cadeira de plástico |
+| norte | dois freezers, e a TV passando futebol em cima deles |
+| nordeste | o banheiro |
+
+**Por que 232 e não mais fundo:** o miolo de um quarteirão tem uns 249
+no sentido curto. Um bar mais fundo só entraria nas quadras viradas
+pro norte-sul, e a torcida ficaria sem bar se a quadra perto dela fosse
+do outro jeito.
+
+**O piso é xadrez de verdade**, como na foto, e é UMA peça: o 3D
+desenha só os ladrilhos escuros por cima do piso claro que já está lá —
+metade da geometria pelo mesmo desenho, umas 300 faces por bar. (Ele
+nasceu invisível: a 1,76 o ladrilho caía DENTRO da caixa do `piso`, que
+vai de 1,70 a 1,85. Subiu pra 1,92.)
+
+**Três coisas o corpo obrigou a mudar**, e todas vieram da varredura,
+não do olho:
+
+1. **Mesa no meio do salão parte o bar em três.** Centralizada ela
+   deixava 19 de cada lado; o corpo pede 24. As mesas foram pra parede
+   leste e o corredor oeste ficou com 30 inteiros — que é também o que
+   bar apertado de verdade faz.
+2. **Freezer com folga atrás vira armadilha.** A 22 da parede sobrava
+   um corredor de 15 entre eles e a mesa do fundo: estreito demais pro
+   corpo, largo demais pra sumir. Encostados na parede, o corredor é o
+   vão inteiro.
+3. **A porta do banheiro tem 28, não 34.** Com 34 o vão comia a parede
+   inteira (ela tem 36) e sobrava menos de 3 de cada lado, que o
+   `comVaos` descarta — o banheiro ficava sem parede sul nenhuma.
+
+A mesa bloqueia e a cadeira não: cadeira de plástico se empurra com o
+pé, e uma fila delas fechando o corredor seria pior que qualquer ganho
+de fidelidade. Medido: **99 e 100 células de corpo dentro dos dois
+bares, todas alcançáveis da rua.**
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -1075,7 +1135,7 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
   quarteirões · 712 lotes (260 na favela) · 552 moitas · 207 árvores ·
   72 postes · 55 carros · 1 campo · 8 equipamentos · 1.822 decalques de
   chão · 12 cruzamentos de avenida com 46 faixas de pedestre, 10 com
-  semáforo · 2 sedes, uma de cada nível** · 150.259 triângulos
+  semáforo · 2 sedes, uma de cada nível · 2 bares** · 154.329 triângulos
   estáticos em 6 pedaços de cidade mais o estádio · 165 chamadas de
   desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco

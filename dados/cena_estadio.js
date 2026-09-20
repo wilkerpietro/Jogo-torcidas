@@ -1560,6 +1560,129 @@ TO.dados.plantaEstadio = (function(){
     return (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho])
            || caminho;
   }
+  /* =========================================================
+     OBRA: a caixa de ferramentas de um prédio com cômodos
+     ---------------------------------------------------------
+     Eixo local, peça, parede com vão, folha de porta e placa de
+     sala. A SEDE usa e o BAR usa — e o que vier depois usa também.
+     É aqui que mora a regra de que a porta abre pra dentro do cômodo
+     e a placa fica do lado de fora dele, e ela vale uma vez só: sem
+     isto, cada prédio novo trazia a sua cópia da mesma sutileza pra
+     sair errada de um jeito diferente.
+
+     `cor2` é a cor da chapa da placa de sala — a segunda cor da
+     torcida dona do prédio. `lado` marca de quem é a peça. */
+  function obra(area, frente, cor2, lado){
+    const E = eixos(area, frente), L = E.L, A = E.A;
+    const pecas = [];
+      const p = (k, o, bloqueia) => pecas.push(Object.assign({ k, bloqueia: bloqueia !== false }, o));
+      const par  = (u0,u1,v0,v1, alt, cor) => p('muro', Object.assign(E.ret(u0,u1,v0,v1), { alt, cor }));
+      const piso = (u0,u1,v0,v1, cor, base) => p('piso', Object.assign(E.ret(u0,u1,v0,v1), { cor, base: base || 1.72 }), false);
+      const faixa = (u0,u1,v0,v1, y, alt, cor) => p('marquise', Object.assign(E.ret(u0,u1,v0,v1), { y, alt, cor }), false);
+
+      const VAO = 40;       // porta: 1,8 m, e o corpo passa (a máscara pede 24)
+      const PORTAO = 56;    // o portão da rua: 2,5 m, cabe bonde em fila
+      /* parede com vãos: `em` é um vão ou uma lista deles, e o que sobra
+         entre eles sai como pedaço de parede. Um cômodo cujo vão caia em
+         cima da divisória fica MURADO — foi o que deixou 332 células sem
+         chegada na primeira montagem. */
+      const comVaos = (ini, fim, em, larg) => {
+        const w = larg || VAO;
+        const vaos = (em === undefined ? [] : [].concat(em)).map(c => [c - w/2, c + w/2])
+          .sort((p, q) => p[0] - q[0]);
+        const pedacos = [];
+        let a = ini;
+        for(const [v0, v1] of vaos){ if(v0 - a > 3) pedacos.push([a, v0]); a = Math.max(a, v1); }
+        if(fim - a > 3) pedacos.push([a, fim]);
+        return pedacos;
+      };
+      /* ---- A FOLHA DA PORTA NO VÃO ----
+         O vão já existia: `comVaos` abre o buraco na parede e o corpo
+         passa por ele. O que entra agora é a FOLHA, que gira na
+         dobradiça — VIDRO na da rua (porta de comércio, que é o que
+         sede de torcida põe na fachada) e MADEIRA nas de dentro.
+
+         ELA NÃO BLOQUEIA, nem fechada, e isso é decisão, não esquecimento:
+         a máscara e os campos de fluxo dos quatro spawns saem prontos na
+         carga. Porta que fecha de verdade pediria recalcular os dois a
+         cada giro, e o bonde que já estava a caminho ficaria com a rota
+         velha, atravessando a folha ou empacando na frente dela.
+
+         `ang0` e `ang1` são o giro do three.js (em torno de Y) com a
+         folha FECHADA e ABERTA. O +X local da folha aponta pro mundo em
+         `(dx, dz)`, e o `rotation.y` que faz isso é `atan2(-dz, dx)` —
+         o menos é porque o z do three cresce pro lado contrário do
+         ângulo de rotação.
+
+         PORTA LARGA É DE DUAS FOLHAS. Uma folha de 2,5 m girando
+         sozinha não existe: a da fachada parte no meio, cada metade na
+         sua dobradiça, as duas abrindo pro mesmo lado. */
+      const ALT_PORTA = 46;                 // 2,07 m de folha
+      function folhasNoVao(ao, c, outro, w, altParede, opc, espessura){
+        const alt = Math.min(altParede - 4, ALT_PORTA);
+        if(alt < 20) return;
+        const vidro = !!(opc && opc.vidro), sentido = (opc && opc.abre) || 1;
+        const [dx, dz] = ao === 'u' ? dir(1, 0) : dir(0, 1);
+        const [ax, az] = ao === 'u' ? dir(0, sentido) : dir(sentido, 0);
+        const duas = w > 44;
+        for(const s of duas ? [1, -1] : [1]){
+          const off = s > 0 ? c - w/2 : c + w/2;
+          const [hx, hy] = ao === 'u' ? E.pt(off, outro) : E.pt(outro, off);
+          p('porta', { x: hx, y: hy, larg: duas ? w/2 : w, alt, vidro, lado,
+                       ang0: Math.atan2(-dz*s, dx*s), ang1: Math.atan2(-az, ax) }, false);
+        }
+        /* ---- A PLACA DA SALA, na verga ----
+           Quem passa no corredor tem de saber o que é cada porta. A
+           placa vai do LADO DE FORA do cômodo — a folha abre pra dentro
+           (`sentido`), então quem lê está no lado contrário, e é pra lá
+           que a normal aponta. Sem isso a placa sairia dentro da sala,
+           de costas pra quem chega.
+
+           Ela cabe na verga e só: a altura é o que sobrou entre a folha
+           e o teto do cômodo, e a largura vem dela pela proporção da
+           célula do atlas (256 × 64). Placa maior que a verga
+           atravessaria a parede por cima. */
+        if(!opc || !opc.nome) return;
+        const hPlaca = Math.min(9, altParede - alt - 3);
+        if(hPlaca < 4) return;
+        const lPlaca = Math.min(hPlaca*4.2, w + 10);
+        const [px, py] = ao === 'u' ? E.pt(c, sentido > 0 ? espessura[0] : espessura[1])
+                                    : E.pt(sentido > 0 ? espessura[0] : espessura[1], c);
+        const [nx, nz] = ao === 'u' ? dir(0, -sentido) : dir(-sentido, 0);
+        p('letreiro', { x: px, y: py, ox: nx, oz: nz, texto: opc.nome,
+                        larg: lPlaca, altura: hPlaca, base: alt + 1.5,
+                        fundo: cor2, tinta: corLegivel(cor2) }, false);
+      }
+      /* `opc.nome` vale por VÃO: string quando há um só, lista quando a
+         parede abre mais de um — a ordem é a de `em`, que é a mesma em
+         que os vãos foram pedidos. */
+      const nomeDoVao = (opc, i) =>
+        Array.isArray(opc.nome) ? opc.nome[i] : (i === 0 ? opc.nome : null);
+      const porVaos = (ao, em, outro, larg, alt, cor, opc, espessura) => {
+        const lista = [].concat(em === undefined ? [] : em);
+        lista.forEach((c, i) => folhasNoVao(ao, c, outro, larg || VAO, alt,
+          Object.assign({}, opc, { nome: nomeDoVao(opc, i) }), espessura));
+      };
+      const paredeU = (u0,u1,v0,v1, alt, cor, em, larg, opc) => {
+        for(const [a, b] of comVaos(u0, u1, em, larg)) par(a, b, v0, v1, alt, cor);
+        if(opc) porVaos('u', em, (v0 + v1)/2, larg, alt, cor, opc, [v0, v1]);
+      };
+      const paredeV = (u0,u1,v0,v1, alt, cor, em, larg, opc) => {
+        for(const [a, b] of comVaos(v0, v1, em, larg)) par(u0, u1, a, b, alt, cor);
+        if(opc) porVaos('v', em, (u0 + u1)/2, larg, alt, cor, opc, [u0, u1]);
+      };
+
+      /* a direção no MUNDO pra onde aponta um vetor do eixo local: é o
+         que o móvel precisa pra saber de que lado fica a frente dele */
+      const [e0x, e0y] = E.pt(0, 0), [eux, euy] = E.pt(1, 0), [evx, evy] = E.pt(0, 1);
+      const dir = (du, dv) => [(eux - e0x)*du + (evx - e0x)*dv,
+                               (euy - e0y)*du + (evy - e0y)*dv];
+      const movel = (k, u0, u1, v0, v1, o, bloqueia) =>
+        p(k, Object.assign(E.ret(u0, u1, v0, v1), o || {}), bloqueia);
+    return { E, L, A, pecas, p, par, piso, faixa, movel, dir,
+             paredeU, paredeV, folhasNoVao, comVaos, VAO, PORTAO, ALT_PORTA };
+  }
+
   function sedeDaTorcida(lado, q, area, frente, nivel){
     const N = nivel === 1 ? 1 : 3;
     const T = SEDES[lado].torcida;
@@ -1568,12 +1691,9 @@ TO.dados.plantaEstadio = (function(){
     const cor2 = T.cor2 || '#e8e2d0';
     const cor3 = T.cor3 || cor2;
     const CLARO = '#d9d3c4';                 // o reboco dos cômodos, por dentro
-    const pecas = [];
-    const p = (k, o, bloqueia) => pecas.push(Object.assign({ k, bloqueia: bloqueia !== false }, o));
-    const par  = (u0,u1,v0,v1, alt, cor) => p('muro', Object.assign(E.ret(u0,u1,v0,v1), { alt, cor }));
-    const piso = (u0,u1,v0,v1, cor, base) => p('piso', Object.assign(E.ret(u0,u1,v0,v1), { cor, base: base || 1.72 }), false);
-    const faixa = (u0,u1,v0,v1, y, alt, cor) => p('marquise', Object.assign(E.ret(u0,u1,v0,v1), { y, alt, cor }), false);
-
+    const O = obra(area, frente, cor2, lado);
+    const { pecas, p, par, piso, faixa, movel, dir,
+            paredeU, paredeV, VAO, PORTAO } = O;
     const PAR = 9;        // parede interna: 40 cm
     /* A SEDE TEM ALTURA DE CASA, não de galpão de fábrica: a fachada
        bate com o sobrado do lado e o telhado fica por baixo da linha
@@ -1586,98 +1706,6 @@ TO.dados.plantaEstadio = (function(){
        e de quebra o pé-direito virou 2,52 m, que é medida de cômodo
        de verdade; 2,16 já era baixo demais pro boneco de 1,75. */
     const ALT = N === 1 ? 56 : 60;       // parede de cômodo, abaixo do telhado
-    const VAO = 40;       // porta: 1,8 m, e o corpo passa (a máscara pede 24)
-    const PORTAO = 56;    // o portão da rua: 2,5 m, cabe bonde em fila
-    /* parede com vãos: `em` é um vão ou uma lista deles, e o que sobra
-       entre eles sai como pedaço de parede. Um cômodo cujo vão caia em
-       cima da divisória fica MURADO — foi o que deixou 332 células sem
-       chegada na primeira montagem. */
-    const comVaos = (ini, fim, em, larg) => {
-      const w = larg || VAO;
-      const vaos = (em === undefined ? [] : [].concat(em)).map(c => [c - w/2, c + w/2])
-        .sort((p, q) => p[0] - q[0]);
-      const pedacos = [];
-      let a = ini;
-      for(const [v0, v1] of vaos){ if(v0 - a > 3) pedacos.push([a, v0]); a = Math.max(a, v1); }
-      if(fim - a > 3) pedacos.push([a, fim]);
-      return pedacos;
-    };
-    /* ---- A FOLHA DA PORTA NO VÃO ----
-       O vão já existia: `comVaos` abre o buraco na parede e o corpo
-       passa por ele. O que entra agora é a FOLHA, que gira na
-       dobradiça — VIDRO na da rua (porta de comércio, que é o que
-       sede de torcida põe na fachada) e MADEIRA nas de dentro.
-
-       ELA NÃO BLOQUEIA, nem fechada, e isso é decisão, não esquecimento:
-       a máscara e os campos de fluxo dos quatro spawns saem prontos na
-       carga. Porta que fecha de verdade pediria recalcular os dois a
-       cada giro, e o bonde que já estava a caminho ficaria com a rota
-       velha, atravessando a folha ou empacando na frente dela.
-
-       `ang0` e `ang1` são o giro do three.js (em torno de Y) com a
-       folha FECHADA e ABERTA. O +X local da folha aponta pro mundo em
-       `(dx, dz)`, e o `rotation.y` que faz isso é `atan2(-dz, dx)` —
-       o menos é porque o z do three cresce pro lado contrário do
-       ângulo de rotação.
-
-       PORTA LARGA É DE DUAS FOLHAS. Uma folha de 2,5 m girando
-       sozinha não existe: a da fachada parte no meio, cada metade na
-       sua dobradiça, as duas abrindo pro mesmo lado. */
-    const ALT_PORTA = 46;                 // 2,07 m de folha
-    function folhasNoVao(ao, c, outro, w, altParede, opc, espessura){
-      const alt = Math.min(altParede - 4, ALT_PORTA);
-      if(alt < 20) return;
-      const vidro = !!(opc && opc.vidro), sentido = (opc && opc.abre) || 1;
-      const [dx, dz] = ao === 'u' ? dir(1, 0) : dir(0, 1);
-      const [ax, az] = ao === 'u' ? dir(0, sentido) : dir(sentido, 0);
-      const duas = w > 44;
-      for(const s of duas ? [1, -1] : [1]){
-        const off = s > 0 ? c - w/2 : c + w/2;
-        const [hx, hy] = ao === 'u' ? E.pt(off, outro) : E.pt(outro, off);
-        p('porta', { x: hx, y: hy, larg: duas ? w/2 : w, alt, vidro, lado,
-                     ang0: Math.atan2(-dz*s, dx*s), ang1: Math.atan2(-az, ax) }, false);
-      }
-      /* ---- A PLACA DA SALA, na verga ----
-         Quem passa no corredor tem de saber o que é cada porta. A
-         placa vai do LADO DE FORA do cômodo — a folha abre pra dentro
-         (`sentido`), então quem lê está no lado contrário, e é pra lá
-         que a normal aponta. Sem isso a placa sairia dentro da sala,
-         de costas pra quem chega.
-
-         Ela cabe na verga e só: a altura é o que sobrou entre a folha
-         e o teto do cômodo, e a largura vem dela pela proporção da
-         célula do atlas (256 × 64). Placa maior que a verga
-         atravessaria a parede por cima. */
-      if(!opc || !opc.nome) return;
-      const hPlaca = Math.min(9, altParede - alt - 3);
-      if(hPlaca < 4) return;
-      const lPlaca = Math.min(hPlaca*4.2, w + 10);
-      const [px, py] = ao === 'u' ? E.pt(c, sentido > 0 ? espessura[0] : espessura[1])
-                                  : E.pt(sentido > 0 ? espessura[0] : espessura[1], c);
-      const [nx, nz] = ao === 'u' ? dir(0, -sentido) : dir(-sentido, 0);
-      p('letreiro', { x: px, y: py, ox: nx, oz: nz, texto: opc.nome,
-                      larg: lPlaca, altura: hPlaca, base: alt + 1.5,
-                      fundo: cor2, tinta: corLegivel(cor2) }, false);
-    }
-    /* `opc.nome` vale por VÃO: string quando há um só, lista quando a
-       parede abre mais de um — a ordem é a de `em`, que é a mesma em
-       que os vãos foram pedidos. */
-    const nomeDoVao = (opc, i) =>
-      Array.isArray(opc.nome) ? opc.nome[i] : (i === 0 ? opc.nome : null);
-    const porVaos = (ao, em, outro, larg, alt, cor, opc, espessura) => {
-      const lista = [].concat(em === undefined ? [] : em);
-      lista.forEach((c, i) => folhasNoVao(ao, c, outro, larg || VAO, alt,
-        Object.assign({}, opc, { nome: nomeDoVao(opc, i) }), espessura));
-    };
-    const paredeU = (u0,u1,v0,v1, alt, cor, em, larg, opc) => {
-      for(const [a, b] of comVaos(u0, u1, em, larg)) par(a, b, v0, v1, alt, cor);
-      if(opc) porVaos('u', em, (v0 + v1)/2, larg, alt, cor, opc, [v0, v1]);
-    };
-    const paredeV = (u0,u1,v0,v1, alt, cor, em, larg, opc) => {
-      for(const [a, b] of comVaos(v0, v1, em, larg)) par(u0, u1, a, b, alt, cor);
-      if(opc) porVaos('v', em, (u0 + u1)/2, larg, alt, cor, opc, [u0, u1]);
-    };
-
     const MF = 13;                                   // espessura da fachada
     const DF = Math.min(96, Math.max(58, A*0.30));   // ala da frente (nível 3)
     const DB = Math.min(104, Math.max(60, A*0.32));  // ala do fundo  (nível 3)
@@ -1690,13 +1718,6 @@ TO.dados.plantaEstadio = (function(){
     const eixo = N === 1 ? (PAR + uDiv)/2 : L/2;
     const g0 = eixo - PORTAO/2, g1 = eixo + PORTAO/2;
 
-    /* a direção no MUNDO pra onde aponta um vetor do eixo local: é o
-       que o móvel precisa pra saber de que lado fica a frente dele */
-    const [e0x, e0y] = E.pt(0, 0), [eux, euy] = E.pt(1, 0), [evx, evy] = E.pt(0, 1);
-    const dir = (du, dv) => [(eux - e0x)*du + (evx - e0x)*dv,
-                             (euy - e0y)*du + (evy - e0y)*dv];
-    const movel = (k, u0, u1, v0, v1, o, bloqueia) =>
-      p(k, Object.assign(E.ret(u0, u1, v0, v1), o || {}), bloqueia);
 
     /* ---- A FACHADA: a cor primária dá pra rua ----
        Nada sai do miolo do quarteirão: a parede recua 2,5 e o rodapé,
@@ -1999,6 +2020,159 @@ TO.dados.plantaEstadio = (function(){
     return { tipo: 'sede', lado, nivel: N, torcida: T, frente, chao: '#a8a396', pecas, area, teto };
   }
 
+  /* =========================================================
+     O BAR DA TORCIDA
+     ---------------------------------------------------------
+     Fiel à foto de referência, mas APERTADO: o dono pediu a largura
+     valendo metade da profundidade, então o salão que na foto é
+     quase quadrado aqui vira um corredor. É 116 × 232 — 5,2 × 10,4 m.
+
+     Por que 232 de fundo e não mais: o miolo de um quarteirão tem uns
+     249 no sentido curto. Um bar mais fundo que isso só entraria nas
+     quadras viradas pro norte-sul, e a torcida ficaria sem bar se o
+     quarteirão perto dela fosse do outro jeito.
+
+     A planta, do sul (a porta) pro norte:
+
+       oeste     faixa de serviço, o balcão em L e o engradado de
+                 cerveja no canto sudoeste
+       meio      o salão, com três mesas de quatro cadeiras
+       norte     os dois freezers, e a TV passando futebol em cima
+       nordeste  o banheiro
+
+     O BANHEIRO É DE PROPÓSITO PEQUENO DEMAIS PRO CORPO. O dono disse
+     que o jogador não entra nele; em vez de fingir com um bloco
+     maciço (e a folha da porta batendo numa parede cheia), ele é um
+     cubículo de verdade com 20 × 28 de vão livre. O corpo pede 24,
+     então ninguém entra — e, o que importa pra máscara, ninguém fica
+     PRESO lá dentro, que é o que um cômodo grande e sem saída faria.
+     ========================================================= */
+  function barDaTorcida(lado, area, frente){
+    const T = SEDES[lado].torcida;
+    const cor1 = T.cor || '#b02a22';
+    const cor2 = T.cor2 || '#e8e2d0';
+    const cor3 = T.cor3 || cor2;
+    const O = obra(area, frente, cor2, lado);
+    const { pecas, p, par, piso, faixa, movel, dir, paredeU, paredeV, VAO } = O;
+    const E = O.E, L = O.L, A = O.A;
+    const PAR = 8, MF = 11;
+    const MURO = 64, ALT_EXT = 58, ALT = 54;
+    const CLARO = '#dcd6c6';
+    const AZULEJO = '#5b7fa8', CREME = '#ddd6c2';   // o xadrez do piso
+    const uPorta = Math.round(L*0.69), wPorta = 48;
+
+    /* ---- o chão: xadrez de ladrilho, como na foto ----
+       Ele é UMA peça, não duzentas: o 3D desenha só os ladrilhos
+       escuros por cima de um piso claro, que é metade da geometria
+       pelo mesmo desenho. */
+    piso(0, L, 0, A, CREME, 1.70);
+    /* 1,92 e não 1,76: o `piso` é uma caixa de 1,70 a 1,85, e o
+       ladrilho a 1,76 nascia DENTRO dela — o xadrez existia e não
+       aparecia. Fica acima do topo dela. */
+    movel('xadrez', PAR, L - PAR, MF, A - PAR,
+          { cor: AZULEJO, tam: 9, base: 1.92 }, false);
+
+    /* ---- as paredes ---- */
+    paredeU(0, L, 2.5, MF, MURO, cor1, uPorta, wPorta, { vidro: true, abre: 1 });
+    par(0, PAR, 0, A, ALT_EXT, cor1);                  // oeste
+    par(L - PAR, L, 0, A, ALT_EXT, cor1);              // leste
+    par(PAR, L - PAR, A - PAR, A, ALT_EXT, cor1);      // norte
+    /* a faixa da torcida na fachada, como na sede */
+    faixa(0, L, 0, MF + 1, 4, 9, cor3);
+    faixa(0, L, 0, MF + 1, MURO - 16, 10, cor2);
+    p('letreiro', { x: E.pt(Math.round(L*0.30), 1)[0], y: E.pt(Math.round(L*0.30), 1)[1],
+                    ox: E.ox, oz: E.oz, texto: 'BAR DO ' + (T.rot || 'BONDE'),
+                    larg: Math.min(L*0.5, 92), altura: Math.min(L*0.5, 92)/4.2, base: 20,
+                    fundo: cor2, tinta: corLegivel(cor2) }, false);
+
+    /* ---- O BANHEIRO, no nordeste ----
+       A PORTA DÁ PRO SUL, pro vão que sobra entre a última mesa e ele.
+       No oeste não dá: os dois freezers ocupam o fim do corredor, e a
+       faixa que sobrava ali tinha 12 — o corpo pede 24, e o cubículo
+       ficava sem chegada.
+
+       A FOLHA É DE 28 E NÃO DE 34. Com 34 o vão comia a parede
+       inteira (ela tem 36) e sobrava menos de 3 de cada lado, que o
+       `comVaos` descarta: o banheiro ficava sem parede sul nenhuma. */
+    const bU0 = L - PAR - 36, bV0 = A - PAR - 40;
+    par(bU0, bU0 + PAR, bV0, A - PAR, ALT, CLARO);              // a parede oeste dele
+    paredeU(bU0, L - PAR, bV0, bV0 + PAR, ALT, CLARO,           // a do sul, com a porta
+            (bU0 + L - PAR)/2, VAO - 12, { abre: 1, nome: 'BANHEIRO' });
+
+    /* ---- O BALCÃO EM L, no oeste ----
+       O tampo avança 3 sobre o corpo, que é o que faz balcão parecer
+       balcão de cima: sem o beiral ele lê como um muro baixo. */
+    const sU1 = PAR + 20;                     // até onde vai a faixa de serviço
+    movel('balcao', sU1, sU1 + 16, 66, 172, { alt: 30, ox: dir(1,0)[0], oz: dir(1,0)[1] });
+    movel('balcao', PAR, sU1 + 16, 66, 80, { alt: 30, ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
+    /* a prateleira de garrafa atrás dele, na parede de serviço */
+    movel('estante', PAR + 1, PAR + 13, 92, 156, { alt: 44, prateleiras: 3,
+           ox: dir(1,0)[0], oz: dir(1,0)[1] });
+
+    /* ---- O ENGRADADO DE CERVEJA, no sudoeste ---- */
+    movel('engradado', PAR + 2, PAR + 24, MF + 4, MF + 26, { pilha: 3 }, true);
+    movel('engradado', PAR + 2, PAR + 24, MF + 28, MF + 48, { pilha: 2 }, true);
+
+    /* ---- OS DOIS FREEZERS na parede norte, e a TV em cima ----
+       ENCOSTADOS na parede, não a 22 dela: com folga atrás sobrava um
+       corredor de 15 entre eles e a mesa do fundo — estreito demais
+       pro corpo (que pede 24) e largo demais pra sumir, que é a
+       receita de célula presa. Encostados, o corredor é o vão
+       inteiro. */
+    const vFrz = A - PAR - 20;
+    for(const u0 of [PAR + 2, PAR + 28]){
+      movel('freezer', u0, u0 + 24, vFrz, A - PAR,
+            { alt: 26, ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
+    }
+    /* a TV fica NA PAREDE, acima dos freezers: base 34 deixa o vidro
+       na altura do olho de quem está em pé no salão */
+    movel('tv', PAR + 8, PAR + 50, A - PAR - 3, A - PAR,
+          { base: 34, alt: 20, ox: dir(0,-1)[0], oz: dir(0,-1)[1] }, false);
+
+    /* ---- AS TRÊS MESAS DO SALÃO ----
+       ENCOSTADAS NA PAREDE LESTE, com o corredor livre ao lado —
+       não no eixo do salão. Centralizada, a mesa deixava 19 de cada
+       lado: nenhum dos dois serve pro corpo, que pede 24, e o salão
+       ficava partido em três pedaços sem ligação. Encostada, o
+       corredor oeste tem 30 inteiros. É também o que bar apertado de
+       verdade faz — mesa na parede, passagem no meio.
+
+       A mesa BLOQUEIA e a cadeira NÃO: cadeira de plástico se empurra
+       com o pé, e uma fila delas fechando o corredor seria pior que
+       qualquer ganho de fidelidade. */
+    const uMesa = L - PAR - 18;
+    /* as três descem pelo sul: a última tem de parar 27 antes do
+       banheiro, senão ela tapa a porta dele */
+    for(const vM of [MF + 42, MF + 88, MF + 134]){
+      movel('mesabar', uMesa - 12, uMesa + 12, vM - 12, vM + 12, { alt: 27 });
+      for(const [du, dv] of [[0, -20], [0, 20], [-20, 0]]){
+        const [cx, cy] = E.pt(uMesa + du, vM + dv);
+        /* a cadeira olha pra mesa: o vetor dela pro centro, no eixo do
+           three (onde o z cresce ao contrário do ângulo) */
+        const [ax, az] = dir(-du, -dv);
+        p('cadeiraplast', { x0: cx - 9, x1: cx + 9, y0: cy - 9, y1: cy + 9,
+                            ang: Math.atan2(-az, ax) }, false);
+      }
+    }
+
+    return { tipo: 'bar', lado, torcida: T, frente, chao: CREME, pecas, area,
+             teto: { base: ALT_EXT, queda: 9, cor: '#7c8285', caixas: 1 } };
+  }
+
+  /* A FATIA DO BAR, encostada na guia como a da sede nível 1. */
+  function areaDoBar(q, frente){
+    const LF = 116, PR = 232;
+    const Lx = q.ix1 - q.ix0, Ly = q.iy1 - q.iy0;
+    if(frente === 'n' || frente === 's'){
+      if(Lx < LF + 40 || Ly < PR + 8) return null;
+      return frente === 'n' ? { x0: q.ix1 - LF, x1: q.ix1, y0: q.iy0, y1: q.iy0 + PR }
+                            : { x0: q.ix1 - LF, x1: q.ix1, y0: q.iy1 - PR, y1: q.iy1 };
+    }
+    if(Lx < PR + 8 || Ly < LF + 40) return null;
+    return frente === 'o' ? { x0: q.ix0, x1: q.ix0 + PR, y0: q.iy1 - LF, y1: q.iy1 }
+                          : { x0: q.ix1 - PR, x1: q.ix1, y0: q.iy1 - LF, y1: q.iy1 };
+  }
+
   /* AS SEDES ESCOLHEM PRIMEIRO. Elas são o que a cena precisa pra
      existir — sem sede não há spawn —, então elas pegam o quarteirão
      que quiserem e os outros equipamentos ficam com o que sobrar.
@@ -2038,6 +2212,46 @@ TO.dados.plantaEstadio = (function(){
        lê isso e caminha pra fora até achar chão onde o corpo cabe. */
     sedeDe[lado] = { x0: melhor.area.x0, x1: melhor.area.x1, y0: melhor.area.y0, y1: melhor.area.y1,
                      frente: melhor.frente, quadra: melhor.q, torcida: melhor.eq.torcida };
+  }
+
+  /* ---- O BAR DE CADA TORCIDA ----
+     Cada torcida começa com um, então são dois no mapa. Eles escolhem
+     DEPOIS das sedes e ANTES dos outros equipamentos: a sede é o que
+     a cena precisa pra existir e fica com o quarteirão que quiser; o
+     bar quer o quarteirão mais perto DELA que ainda esteja livre, que
+     é onde o bonde pararia de verdade antes do jogo.
+
+     A frente tem de dar pra rua — o mesmo teste da sede —, e a fatia
+     não pode ser cortada por avenida, senão o chão do bar vira
+     calçada de avenida no meio do salão. */
+  const BARES = {};
+  for(const lado of ['mandante', 'visitante']){
+    const sd = sedeDe[lado];
+    if(!sd) continue;
+    const alvo = [(sd.x0 + sd.x1)/2, (sd.y0 + sd.y1)/2];
+    let melhor = null;
+    for(const q of QUADRAS){
+      if(q.equip) continue;
+      const d = Math.hypot(q.cx - alvo[0], q.cy - alvo[1]);
+      if(d > 1400) continue;
+      for(const frente of ['n', 's', 'o', 'l']){
+        const area = areaDoBar(q, frente);
+        if(!area) continue;
+        const fx = frente === 'o' ? area.x0 - 40 : frente === 'l' ? area.x1 + 40 : (area.x0+area.x1)/2;
+        const fy = frente === 'n' ? area.y0 - 40 : frente === 's' ? area.y1 + 40 : (area.y0+area.y1)/2;
+        if(dentroPol(fx, fy, q.polMiolo)) continue;
+        if(tocaAvenida(area, CALC)) continue;
+        if(!melhor || d < melhor.d) melhor = { q, area, frente, d };
+        break;
+      }
+    }
+    if(!melhor) continue;
+    const eq = barDaTorcida(lado, melhor.area, melhor.frente);
+    melhor.q.equip = eq;
+    melhor.q.solidos = eq.pecas.filter(o => o.bloqueia);
+    BARES[lado] = { x0: melhor.area.x0, x1: melhor.area.x1,
+                    y0: melhor.area.y0, y1: melhor.area.y1,
+                    frente: melhor.frente, quadra: melhor.q, torcida: eq.torcida };
   }
 
   /* os equipamentos antes dos lotes: o quarteirão deles não é loteado */
@@ -3340,7 +3554,7 @@ TO.dados.plantaEstadio = (function(){
                    xLimiteCosta, cortarPor, recorteCosta, pedacosSemAvenida, dentroPol, ruaEntre,
                    areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
-                   CARROS, ARVORES, POSTES, SEDES, sedeDe, CRUZAMENTOS, SEMAFOROS, FAIXAS,
+                   CARROS, ARVORES, POSTES, SEDES, sedeDe, BARES, CRUZAMENTOS, SEMAFOROS, FAIXAS,
                    FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES };
 
   /* =======================================================

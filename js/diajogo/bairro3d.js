@@ -755,6 +755,112 @@ export function montarBairro(P) {
       k++;
     }
   }
+  /* =========================================================
+     O BAR DA TORCIDA
+     ---------------------------------------------------------
+     O piso de ladrilho xadrez, o balcão, o engradado de cerveja, o
+     freezer, a TV passando futebol, a mesa de pé central e a cadeira
+     de plástico. É o que a foto de referência tem, e é o que faz um
+     retângulo com três mesas ler como BAR e não como sala vazia. */
+  /* O XADREZ DO PISO. Só os ladrilhos ESCUROS saem como tampa, por
+     cima do piso claro que já está lá: metade da geometria pelo mesmo
+     desenho. Um bar inteiro dá umas 150 tampas, 300 triângulos. */
+  function xadrez(T, o) {
+    const t = o.tam || 9, base = o.base || 1.76;
+    const nx = Math.floor((o.x1 - o.x0) / t), nz = Math.floor((o.y1 - o.y0) / t);
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+      if ((i + j) % 2) continue;
+      const x = o.x0 + i * t, z = o.y0 + j * t;
+      tampa(T, x, x + t, base, z, z + t, o.cor || '#5b7fa8');
+    }
+  }
+  /* o balcão: corpo, tampo com BEIRAL (sem ele lê como muro baixo),
+     rodapé recuado e as frisas verticais na face do freguês */
+  function balcao(T, o) {
+    const h = o.alt || 30, MAD = '#6b4a2c', TAMPO = '#8a6136';
+    caixa(T, o.x0, o.x1, 2.6, h - 2.6, o.y0, o.y1, MAD);
+    caixa(T, o.x0 - 2.6, o.x1 + 2.6, h - 2.6, h, o.y0 - 2.6, o.y1 + 2.6, TAMPO);
+    caixa(T, o.x0 + 2, o.x1 - 2, 0, 2.6, o.y0 + 2, o.y1 - 2, '#48331e');
+    if (!o.ox && !o.oz) return;
+    const [a0, a1] = aoLongo(o), n = Math.max(2, Math.round((a1 - a0) / 22));
+    for (let i = 1; i < n; i++) {
+      const a = a0 + (a1 - a0) * i / n;
+      naFace(T, o, a - 0.8, a + 0.8, 4, h - 4, 0.7, '#543c22');
+    }
+  }
+  /* a pilha de engradado de cerveja: cada caixa numa cor, e a de cima
+     com o gargalo das garrafas aparecendo */
+  const CAIXAS_CERVEJA = ['#c8a415', '#1f5fa8', '#b8242a', '#1f7a3a', '#d8d3c6'];
+  function engradado(T, o) {
+    const n = o.pilha || 3, hC = 11;
+    const semente = Math.abs((o.x0 | 0) + (o.y0 | 0) * 7);
+    for (let i = 0; i < n; i++) {
+      const y = i * hC, cor = CAIXAS_CERVEJA[(semente + i) % CAIXAS_CERVEJA.length];
+      caixa(T, o.x0, o.x1, y, y + hC - 1.2, o.y0, o.y1, cor);
+      tmp.set(cor).multiplyScalar(0.74);
+      const esc = '#' + tmp.getHexString();
+      caixa(T, o.x0 - 0.6, o.x1 + 0.6, y + hC - 1.2, y + hC, o.y0 - 0.6, o.y1 + 0.6, esc);
+    }
+    const yT = n * hC;
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+      const x = o.x0 + (o.x1 - o.x0) * (0.3 + i * 0.4);
+      const z = o.y0 + (o.y1 - o.y0) * (0.3 + j * 0.4);
+      caixa(T, x - 2, x + 2, yT, yT + 5, z - 2, z + 2, '#5a3a1e');
+    }
+  }
+  /* freezer horizontal: corpo, tampa com beiral, base escura e o
+     puxador na face de quem abre */
+  function freezer(T, o) {
+    const h = o.alt || 26;
+    caixa(T, o.x0, o.x1, 2, h - 3, o.y0, o.y1, '#e4e2da');
+    caixa(T, o.x0 - 1.2, o.x1 + 1.2, h - 3, h, o.y0 - 1.2, o.y1 + 1.2, '#efede5');
+    caixa(T, o.x0 + 2, o.x1 - 2, 0, 2, o.y0 + 2, o.y1 - 2, '#7d7a72');
+    if (!o.ox && !o.oz) return;
+    const [a0, a1] = aoLongo(o);
+    naFace(T, o, a0 + 5, a1 - 5, h - 8, h - 5.6, 1.1, '#9aa0a6');
+    naFace(T, o, a0 + 4, a1 - 4, 7, 14, 0.7, '#c9463c');          // o adesivo da marca
+  }
+  /* a TV da parede, passando futebol: moldura, gramado, a faixa da
+     arquibancada no alto e as linhas do campo. De longe o que se lê é
+     verde com risco branco, que é exatamente o que uma TV ligada num
+     jogo parece de longe. */
+  function tv(T, o) {
+    const y = o.base || 34, h = o.alt || 20;
+    caixa(T, o.x0, o.x1, y, y + h, o.y0, o.y1, '#191a1c');
+    const [a0, a1] = aoLongo(o), am = (a0 + a1) / 2;
+    naFace(T, o, a0 + 1.6, a1 - 1.6, y + 1.6, y + h - 1.6, 0.9, '#2e7a3a');
+    naFace(T, o, a0 + 1.6, a1 - 1.6, y + h - 5.4, y + h - 1.6, 1.2, '#3c424a');
+    naFace(T, o, am - 0.6, am + 0.6, y + 2.2, y + h - 5.4, 1.3, '#e6ebdc');
+    for (const a of [a0 + 5, a1 - 5])
+      naFace(T, o, a - 0.6, a + 0.6, y + 4, y + h - 8, 1.3, '#e6ebdc');
+    /* o pé de fixação, que é o que prende ela na parede */
+    naFace(T, o, am - 3, am + 3, y - 2.5, y, 0.6, '#2a2c2e');
+  }
+  /* mesa de bar: tampo quadrado, coluna central e pé em cruz */
+  function mesabar(T, o) {
+    const h = o.alt || 27, x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2;
+    caixa(T, o.x0, o.x1, h - 2.2, h, o.y0, o.y1, '#7a4a2a');
+    caixa(T, o.x0 + 1, o.x1 - 1, h - 3, h - 2.2, o.y0 + 1, o.y1 - 1, '#5c3720');
+    caixa(T, x - 2.6, x + 2.6, 1.6, h - 3, z - 2.6, z + 2.6, '#4a4d50');
+    caixa(T, o.x0 + 3, o.x1 - 3, 0, 1.6, z - 2.4, z + 2.4, '#3c3f42');
+    caixa(T, x - 2.4, x + 2.4, 0, 1.6, o.y0 + 3, o.y1 - 3, '#3c3f42');
+  }
+  /* cadeira de plástico branca, a de bar: assento, encosto com o vão
+     do meio e os quatro pés. `ang` é pra onde ela olha. */
+  function cadeiraplast(T, o) {
+    const x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2, ang = o.ang || 0;
+    const BR = '#e8e6de', BR2 = '#d3d0c6', ASS = 17;
+    caixaRot(T, x, z, 17, 16, ASS, ASS + 2, ang, BR);
+    for (const [u, v] of [[-6.5, -6.5], [6.5, -6.5], [6.5, 6.5], [-6.5, 6.5]]) {
+      const c = Math.cos(ang), sn = Math.sin(ang);
+      const px = x + u * c - v * sn, pz = z + u * sn + v * c;
+      caixa(T, px - 1.2, px + 1.2, 0, ASS, pz - 1.2, pz + 1.2, BR2);
+    }
+    const bx = x - Math.cos(ang) * 7.5, bz = z - Math.sin(ang) * 7.5;
+    caixaRot(T, bx, bz, 2.2, 15, ASS + 2, ASS + 18, ang, BR);
+    caixaRot(T, bx, bz, 2.6, 13, ASS + 6, ASS + 15, ang, BR2);
+  }
+
   /* ---- A PORTA QUE ABRE ----
      A folha é montada em coordenada LOCAL, com a DOBRADIÇA na origem
      e a folha deitada no +X: assim abrir é só girar o Group em torno
@@ -975,6 +1081,14 @@ export function montarBairro(P) {
         case 'mural': mural(T, o); break;
         case 'portao': portao(T, o); break;
         case 'porta': montarPorta(o); break;
+        /* ---- o bar ---- */
+        case 'xadrez': xadrez(T, o); break;
+        case 'balcao': balcao(T, o); break;
+        case 'engradado': engradado(T, o); break;
+        case 'freezer': freezer(T, o); break;
+        case 'tv': tv(T, o); break;
+        case 'mesabar': mesabar(T, o); break;
+        case 'cadeiraplast': cadeiraplast(T, o); break;
         case 'caixadagua': caixaDagua(T, o); break;
         case 'banco': {
           caixa(T, o.x0, o.x1, 10, 13, o.y0, o.y1, '#7a5a3a');
