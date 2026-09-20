@@ -739,6 +739,46 @@ vazias**: o primeiro virou alojamento (colchão), o último depósito
 Custo: a sede inteira mobiliada não chega a 1.500 triângulos, e tudo
 entra na malha do quarteirão — **nenhuma chamada de desenho a mais**.
 
+### 4.16. As portas que abrem, e o F que as abre
+
+Todo vão da sede ganhou FOLHA. Na rua é **vidro** — porta de comércio,
+caixilho de alumínio e puxador de tubo, que é o que sede de torcida põe
+na fachada. Por dentro é **madeira**, com os dois painéis rebaixados e
+maçaneta. São 13 folhas nas duas sedes: 4 de vidro e 9 de madeira.
+
+**Porta larga é de duas folhas.** A da fachada tem 2,5 m; uma folha só
+desse tamanho girando não existe. Ela parte no meio, cada metade na sua
+dobradiça, as duas abrindo pro mesmo lado.
+
+**A folha gira, não deforma.** Ela é montada em coordenada local com a
+DOBRADIÇA na origem e a folha deitada no +X; o que abre é
+`rotation.y` do `Group`. A bandeira, que precisa ondular, paga vértice
+por vértice todo quadro; a porta não paga nada — é uma matriz. O curso
+é de um terço de segundo, com aceleração e freada nas pontas
+(`t²(3−2t)`), porque porta que salta de fechada pra aberta num quadro
+lê como teleporte.
+
+A planta entrega `ang0` e `ang1` prontos, que são o `rotation.y` com a
+folha fechada e aberta. Os dois saem de `atan2`, e **o delta vai
+normalizado pra (−π, π]**: dois ângulos a 90° um do outro podem cair
+nos dois lados do ±π, e interpolar cru faria a folha dar a volta por
+270°.
+
+**O F faz duas coisas.** Encostado numa porta (2,1 m, o braço de quem
+vai abrir), ele abre ou fecha; longe de porta, continua sendo o
+AGARRAR do motor de luta, que é o dono antigo da tecla. Tirar o agarrar
+pra pôr porta seria trocar uma mecânica de briga por um enfeite —
+`alternarPorta` devolve `null` quando não há porta ao alcance, e é esse
+`null` que devolve a tecla pro combate.
+
+**A PORTA NÃO BLOQUEIA, NEM FECHADA**, e isso é decisão e não
+esquecimento. A máscara e os campos de fluxo dos quatro spawns saem
+prontos na carga; porta que fecha de verdade pediria refazer os dois a
+cada giro, e o bonde que já estava a caminho ficaria com a rota velha —
+atravessando a folha ou empacando na frente dela. Medido depois das
+portas: a máscara continua 100 % alcançável com as mesmas 8 células
+soltas, e a sede nível 1 com 352 de 352.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade

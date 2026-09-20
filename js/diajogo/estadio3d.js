@@ -884,9 +884,57 @@ export function criar(canvas) {
     }
   }
 
+  /* ---- AS PORTAS DA SEDE ----
+     A folha gira na dobradiça: o Group dela já nasceu com a origem
+     ali, então abrir é interpolar `rotation.y` entre o ângulo fechado
+     e o aberto. Um terço de segundo de curso — porta que salta de
+     fechada pra aberta num quadro lê como teleporte.
+
+     A PORTA NÃO BLOQUEIA, nem fechada. A máscara e os campos de fluxo
+     dos quatro spawns saem prontos na carga; fechar de verdade pediria
+     refazer os dois a cada giro, e quem já estava a caminho ficaria
+     com a rota velha. */
+  const ALCANCE_PORTA = 46;             // 2,1 m: o braço de quem vai abrir
+  function moverPortas(dt) {
+    if (!cidade || !cidade.portas) return;
+    for (const p of cidade.portas) {
+      const alvo = p.aberta ? 1 : 0;
+      if (p.t === alvo) continue;
+      const passo = dt * 3;
+      p.t = alvo > p.t ? Math.min(alvo, p.t + passo) : Math.max(alvo, p.t - passo);
+      /* suaviza a ponta: acelera e freia, que é como porta anda */
+      const e = p.t * p.t * (3 - 2 * p.t);
+      p.grupo.rotation.y = p.ang0 + p.delta * e;
+    }
+  }
+  /* a porta mais perto de um ponto, dentro do alcance do braço. O
+     ponto de referência é o MEIO da folha fechada, não a dobradiça:
+     quem chega numa porta de 2,5 m chega no meio dela. */
+  function portaPerto(x, y) {
+    if (!cidade || !cidade.portas) return null;
+    let melhor = null, md = ALCANCE_PORTA * ALCANCE_PORTA;
+    for (const p of cidade.portas) {
+      const mx = p.x + Math.cos(p.ang0) * p.larg / 2;
+      const my = p.y - Math.sin(p.ang0) * p.larg / 2;
+      const d = (x - mx) * (x - mx) + (y - my) * (y - my);
+      if (d < md) { md = d; melhor = p; }
+    }
+    return melhor;
+  }
+  /* o F do jogador: abre ou fecha a porta que estiver ao alcance, e
+     devolve `false` quando não há nenhuma — aí quem responde ao F é o
+     AGARRAR do combate, que é o dono antigo da tecla */
+  function alternarPorta(x, y) {
+    const p = portaPerto(x, y);
+    if (!p) return null;
+    p.aberta = !p.aberta;
+    return p.aberta;
+  }
+
   function quadro(J, dt) {
     ajustarQualidade(dt);
     tremular(dt);
+    moverPortas(dt);
     traduzir(J, dt);
     const lider = J.discos.find(d => d.lider && d.doJogador && d.vivo)
                || J.discos.find(d => d.lider && d.vivo);
@@ -935,7 +983,7 @@ export function criar(canvas) {
              d: x > lim, a: x < -lim, s: z > lim, w: z < -lim };
   }
 
-  return { montar, quadro, redimensionar, irPara, ligarRotulos,
+  return { montar, quadro, redimensionar, irPara, ligarRotulos, alternarPorta, portaPerto,
            trocarSombra, fixarNivel, girarEntrada, mundo: (x, y) => P.mundo(x, y),
            gpu, gpuSoftware,
            get nivel() { return NIVEIS[nivel].rot + (nivelFixo ? ' (fixo)' : ''); },

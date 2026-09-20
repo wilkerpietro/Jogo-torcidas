@@ -166,8 +166,24 @@ export function montarBairro(P) {
     return m;
   }
 
+  /* uma malha que NÃO entra na lista: a porta vive dentro de um Group
+     (é ele que gira na dobradiça), e quem entra na cena é o Group */
+  function malhaSolta(T, mat) {
+    if (!T.pos.length) return null;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(T.pos, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(T.cor, 3));
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, mat);
+    m.castShadow = !mat.transparent; m.receiveShadow = true;
+    triangulos += T.pos.length / 9;
+    return m;
+  }
+
   /* as bandeiras que tremulam: a cena mexe nelas por quadro */
   const bandeiras = [];
+  /* as portas que abrem: a cena gira o Group de cada uma por quadro */
+  const portas = [];
   /* o tecido de TELHADO (textura de telha) e o de MANCHA (decalque de
      mofo e chuva na parede), os dois com UV */
   const TELHADOS = { pos: [], cor: [], uv: [], esc: TELHA_ESC };
@@ -739,6 +755,68 @@ export function montarBairro(P) {
       k++;
     }
   }
+  /* ---- A PORTA QUE ABRE ----
+     A folha é montada em coordenada LOCAL, com a DOBRADIÇA na origem
+     e a folha deitada no +X: assim abrir é só girar o Group em torno
+     do Y, sem mexer em vértice nenhum por quadro (que é o que a
+     bandeira precisa fazer, e custa caro). A cena põe o Group no
+     ponto da dobradiça e interpola `rotation.y` entre `ang0` e
+     `ang1`, que a planta já entregou prontos.
+
+     A DE VIDRO É DOIS OBJETOS. O caixilho de alumínio é opaco e o
+     vidro é translúcido — um material só não faz os dois, e vidro
+     opaco na fachada de uma sede de torcida seria só uma porta cinza.
+     Por isso o Group tem duas malhas. */
+  function montarPorta(o) {
+    const g = new THREE.Group();
+    const W = o.larg, H = o.alt, T = Tecido();
+    if (o.vidro) {
+      const AL = '#b4b8bd', AL_ESC = '#8e9297';
+      caixa(T, 0.6, W - 0.6, 0, 3.4, -1.3, 1.3, AL);            // travessa de baixo
+      caixa(T, 0.6, W - 0.6, H - 3.6, H, -1.3, 1.3, AL);        // travessa de cima
+      caixa(T, 0.6, 3.6, 0, H, -1.3, 1.3, AL);                  // montante da dobradiça
+      caixa(T, W - 3.6, W - 0.6, 0, H, -1.3, 1.3, AL);          // montante solto
+      /* o puxador vertical de tubo, na borda solta — é ele que diz
+         de longe que a porta é de comércio e não de casa */
+      for (const z of [-2.6, 2.6]) {
+        caixa(T, W - 8.5, W - 7.1, H * 0.30, H * 0.70, z - 0.7, z + 0.7, AL_ESC);
+        for (const y of [H * 0.30, H * 0.70 - 1.4])
+          caixa(T, W - 8.5, W - 4.2, y, y + 1.4, z - 0.7, z + 0.7, AL_ESC);
+      }
+      const mq = malhaSolta(T, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+      if (mq) g.add(mq);
+      const V = Tecido();
+      caixa(V, 3.2, W - 3.2, 3.0, H - 3.2, -0.5, 0.5, '#9fc4cf');
+      const mv = malhaSolta(V, new THREE.MeshLambertMaterial({
+        vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: 0.42 }));
+      if (mv) g.add(mv);
+    } else {
+      const MAD = '#7d5c3a', MAD_ESC = '#63482c';
+      caixa(T, 0.4, W - 0.4, 0, H, -1.6, 1.6, MAD);             // a folha
+      /* os dois painéis rebaixados, um de cada lado — é o que faz a
+         folha ler como porta de madeira e não como tábua */
+      for (const z of [-1.7, 1.7])
+        for (const [y0, y1] of [[H * 0.09, H * 0.44], [H * 0.52, H * 0.91]])
+          caixa(T, 3.2, W - 3.2, y0, y1, Math.min(z, z * 0.82), Math.max(z, z * 0.82), MAD_ESC);
+      /* a maçaneta, na borda solta */
+      for (const z of [-2.4, 2.4])
+        caixa(T, W - 7.5, W - 3.5, H * 0.45, H * 0.51, Math.min(z, 1.5), Math.max(z, 1.5), '#c9a227');
+      const m = malhaSolta(T, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+      if (m) g.add(m);
+    }
+    g.position.set(o.x, 0, o.y);
+    g.rotation.y = o.ang0;
+    g.name = 'porta';
+    meshes.push(g);
+    /* o DELTA vai normalizado pra (-π, π]: `ang0` e `ang1` saem de
+       `atan2`, e dois ângulos a 90° um do outro podem cair nos dois
+       lados do ±π — interpolar cru faria a folha dar a volta por 270° */
+    let d = o.ang1 - o.ang0;
+    d = ((d + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+    portas.push({ grupo: g, x: o.x, y: o.y, ang0: o.ang0, delta: d,
+                  larg: W, lado: o.lado, aberta: false, t: 0 });
+  }
+
   /* o portão de chapa corrida, ENCOSTADO na parede: ele corre pro
      lado, e a folha fechada no vão seria muro na porta da sede */
   function portao(T, o) {
@@ -896,6 +974,7 @@ export function montarBairro(P) {
         case 'ar': arCondicionado(T, o); break;
         case 'mural': mural(T, o); break;
         case 'portao': portao(T, o); break;
+        case 'porta': montarPorta(o); break;
         case 'caixadagua': caixaDagua(T, o); break;
         case 'banco': {
           caixa(T, o.x0, o.x1, 10, 13, o.y0, o.y1, '#7a5a3a');
@@ -1294,5 +1373,5 @@ export function montarBairro(P) {
   }
   malha(TM, false, 'moitas');
 
-  return { meshes, triangulos, tetos, bandeiras, pedacos: pedacos.size };
+  return { meshes, triangulos, tetos, bandeiras, portas, pedacos: pedacos.size };
 }

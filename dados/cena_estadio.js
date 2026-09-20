@@ -1597,11 +1597,51 @@ TO.dados.plantaEstadio = (function(){
       if(fim - a > 3) pedacos.push([a, fim]);
       return pedacos;
     };
-    const paredeU = (u0,u1,v0,v1, alt, cor, em, larg) => {
+    /* ---- A FOLHA DA PORTA NO VÃO ----
+       O vão já existia: `comVaos` abre o buraco na parede e o corpo
+       passa por ele. O que entra agora é a FOLHA, que gira na
+       dobradiça — VIDRO na da rua (porta de comércio, que é o que
+       sede de torcida põe na fachada) e MADEIRA nas de dentro.
+
+       ELA NÃO BLOQUEIA, nem fechada, e isso é decisão, não esquecimento:
+       a máscara e os campos de fluxo dos quatro spawns saem prontos na
+       carga. Porta que fecha de verdade pediria recalcular os dois a
+       cada giro, e o bonde que já estava a caminho ficaria com a rota
+       velha, atravessando a folha ou empacando na frente dela.
+
+       `ang0` e `ang1` são o giro do three.js (em torno de Y) com a
+       folha FECHADA e ABERTA. O +X local da folha aponta pro mundo em
+       `(dx, dz)`, e o `rotation.y` que faz isso é `atan2(-dz, dx)` —
+       o menos é porque o z do three cresce pro lado contrário do
+       ângulo de rotação.
+
+       PORTA LARGA É DE DUAS FOLHAS. Uma folha de 2,5 m girando
+       sozinha não existe: a da fachada parte no meio, cada metade na
+       sua dobradiça, as duas abrindo pro mesmo lado. */
+    const ALT_PORTA = 46;                 // 2,07 m de folha
+    function folhasNoVao(ao, c, outro, w, altParede, opc){
+      const alt = Math.min(altParede - 4, ALT_PORTA);
+      if(alt < 20) return;
+      const vidro = !!(opc && opc.vidro), sentido = (opc && opc.abre) || 1;
+      const [dx, dz] = ao === 'u' ? dir(1, 0) : dir(0, 1);
+      const [ax, az] = ao === 'u' ? dir(0, sentido) : dir(sentido, 0);
+      const duas = w > 44;
+      for(const s of duas ? [1, -1] : [1]){
+        const off = s > 0 ? c - w/2 : c + w/2;
+        const [hx, hy] = ao === 'u' ? E.pt(off, outro) : E.pt(outro, off);
+        p('porta', { x: hx, y: hy, larg: duas ? w/2 : w, alt, vidro, lado,
+                     ang0: Math.atan2(-dz*s, dx*s), ang1: Math.atan2(-az, ax) }, false);
+      }
+    }
+    const paredeU = (u0,u1,v0,v1, alt, cor, em, larg, opc) => {
       for(const [a, b] of comVaos(u0, u1, em, larg)) par(a, b, v0, v1, alt, cor);
+      if(opc) for(const c of [].concat(em === undefined ? [] : em))
+        folhasNoVao('u', c, (v0 + v1)/2, larg || VAO, alt, opc);
     };
-    const paredeV = (u0,u1,v0,v1, alt, cor, em, larg) => {
+    const paredeV = (u0,u1,v0,v1, alt, cor, em, larg, opc) => {
       for(const [a, b] of comVaos(v0, v1, em, larg)) par(u0, u1, a, b, alt, cor);
+      if(opc) for(const c of [].concat(em === undefined ? [] : em))
+        folhasNoVao('v', c, (u0 + u1)/2, larg || VAO, alt, opc);
     };
 
     const MF = 13;                                   // espessura da fachada
@@ -1629,7 +1669,10 @@ TO.dados.plantaEstadio = (function(){
        a faixa e os batentes ocupam esse recuo em vez de avançar pra
        calçada, que é a regra que vale pra casa e vale pra sede. */
     const F0 = 2.5;
-    paredeU(0, L, F0, MF, MURO, cor1, eixo, PORTAO);
+    /* A PORTA DA RUA É DE VIDRO, nos dois níveis: porta de comércio,
+       duas folhas, abrindo pra dentro (`abre: 1` é o sentido de `+v`,
+       que entra na sede). */
+    paredeU(0, L, F0, MF, MURO, cor1, eixo, PORTAO, { vidro: true, abre: 1 });
     for(const [a, b] of [[0, g0], [g1, L]]){
       if(b - a < 8) continue;
       faixa(a, b, 0, MF + 1, 4, 10, cor3);            // rodapé
@@ -1726,7 +1769,8 @@ TO.dados.plantaEstadio = (function(){
         const parte = b - a > 150;                       // dá dois cômodos
         /* a porta de cada cômodo pro salão — nunca em cima da divisória */
         paredeU(a, b, vF - PAR, vF, ALT, CLARO,
-                parte ? [a + (b-a)*0.25, a + (b-a)*0.75] : (a + b)/2);
+                parte ? [a + (b-a)*0.25, a + (b-a)*0.75] : (a + b)/2,
+                VAO, { abre: -1 });        // madeira, abrindo pra dentro do cômodo
         if(parte) par((a + b)/2 - PAR/2, (a + b)/2 + PAR/2, MF, vF - PAR, ALT, CLARO);
       }
 
@@ -1735,7 +1779,7 @@ TO.dados.plantaEstadio = (function(){
       const n = L > 400 ? 3 : 2, passo = (L - 2*PAR)/n;
       for(let i = 0; i < n; i++){
         const a = PAR + i*passo, b = a + passo;
-        paredeU(a, b, vB, vB + PAR, ALT, CLARO, (a + b)/2);        // a porta pro salão
+        paredeU(a, b, vB, vB + PAR, ALT, CLARO, (a + b)/2, VAO, { abre: 1 });   // a porta pro salão
         if(i) par(a - PAR/2, a + PAR/2, vB, A - PAR, ALT, CLARO);  // a divisória
         /* O QUE HÁ DENTRO DE CADA CÔMODO. Eram três caixas vazias: de
            dentro da sede via-se parede e mais nada. O primeiro é o
@@ -1818,7 +1862,7 @@ TO.dados.plantaEstadio = (function(){
       par(L - PAR, L, 0, A, ALT_EXT, cor1);             // lateral leste
       par(PAR, L - PAR, A - PAR, A, ALT_EXT, cor1);     // fundos
       paredeV(uDiv, uS0, MF, A - PAR, ALT, CLARO,       // pátio | salas: uma porta pra cada
-              [(vPa0 + vPa1)/2, (vPr0 + vPr1)/2]);
+              [(vPa0 + vPa1)/2, (vPr0 + vPr1)/2], VAO, { abre: 1 });
       par(uS0, uS1, vDiv, vPr0, ALT, CLARO);            // entre as duas salas, cega
 
       /* ---- O PÁTIO: onde o aliado dorme ----
@@ -1839,11 +1883,12 @@ TO.dados.plantaEstadio = (function(){
       /* o ralo no meio do cimento — pátio de verdade tem caimento */
       const [rlx, rly] = E.pt((uP0 + uP1)/2, (MF + vPr1)/2);
       p('ralo', { x: rlx, y: rly, r: 5 }, false);
-      /* o portão de chapa, ENCOSTADO na parede: ele corre pro lado, e
-         desenhar a folha fechada no vão seria muro na porta da sede */
-      movel('portao', g1 + 2, g1 + 2 + Math.min(52, uP1 - g1 - 8), MF, MF + 4,
-            { alt: MURO - 12, cor: cor3 }, false);
-      /* o entulho do pátio: caixa de material largada perto do portão */
+      /* a grade de correr, RECOLHIDA na parede ao lado da porta de
+         vidro: é o que a loja fecha depois do expediente, e com a
+         porta de vidro no vão ela não pode ficar no meio dele */
+      movel('portao', g1 + 6, g1 + 6 + Math.min(44, uP1 - g1 - 12), MF - 5, MF - 1,
+            { alt: MURO - 16, cor: cor3 }, false);
+      /* o entulho do pátio: caixa de material largada perto da porta */
       movel('caixote', uP1 - 26, uP1 - 8, MF + 8, MF + 26, { alt: 15 }, false);
       movel('caixote', uP1 - 24, uP1 - 12, MF + 28, MF + 40, { alt: 11 }, false);
 

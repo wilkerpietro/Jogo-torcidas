@@ -223,7 +223,7 @@ const pad = montarPad({
     { tecla: 'q', rot: 'BATER',    fn: () => { const l = lider(); if (l) C.bater(J, l); } },
     { tecla: 'e', rot: 'DEFENDER', segurar: true,
       aoSoltar: () => { const l = lider(); if (l) C.soltarDefesa(J, l); } },
-    { tecla: 'f', rot: 'AGARRAR',  fn: () => { const l = lider(); if (l) C.agarrar(J, l); } },
+    { tecla: 'f', rot: 'PORTA/AGARRAR', fn: () => usarF() },
     { tecla: 'c', rot: 'CHAMAR',   fn: () => { if (J) C.chamar(J, C.ladoDoJogador(J)); } },
     { tecla: '2', rot: 'PEDRA',    fn: () => { if (J) C.arremessar(J, 'pedra'); } },
     { tecla: '3', rot: 'BOMBA',    fn: () => { if (J) C.arremessar(J, 'bomba'); } },
@@ -251,13 +251,30 @@ const pad = montarPad({
 const lider = () => J && (J.discos.find(d => d.lider && d.doJogador && d.vivo)
                        || J.discos.find(d => d.lider && d.vivo));
 
+/* O F FAZ DUAS COISAS, e qual delas depende de onde o líder está.
+   Encostado numa porta da sede, ele ABRE OU FECHA a porta; longe de
+   porta, continua sendo o AGARRAR do motor de luta, que é o dono
+   antigo da tecla. Tirar o agarrar pra pôr porta seria trocar uma
+   mecânica de briga por um enfeite; a porta só toma a tecla no
+   instante em que há porta ao alcance.
+
+   Fora do estádio o mundo é o próprio tabuleiro, então o x,y do líder
+   serve direto pra procurar a porta. */
+function usarF() {
+  const l = lider();
+  if (!l) return;
+  const r = vista.alternarPorta(l.x, l.y);
+  if (r === null) { C.agarrar(J, l); return; }
+  C.logar(J, r ? 'Porta aberta.' : 'Porta fechada.', 'n');
+}
+
 /* ---- teclado ---- */
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   teclas[k] = true;
   if (!J) return;
   if (k === 'q') { const l = lider(); if (l) C.bater(J, l); }
-  else if (k === 'f') { const l = lider(); if (l) C.agarrar(J, l); }
+  else if (k === 'f') usarF();
   else if (k === 'c') C.chamar(J, C.ladoDoJogador(J));
   else if (k === '2') C.arremessar(J, 'pedra');
   else if (k === '3') C.arremessar(J, 'bomba');
