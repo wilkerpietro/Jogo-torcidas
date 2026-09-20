@@ -827,10 +827,10 @@ uma vez só. Sem isso cada prédio novo traria a sua cópia da mesma
 sutileza pra sair errada de um jeito diferente. O pedido era "uma porta
 de vidro igual à da sede"; ela é literalmente a mesma.
 
-**A planta**, fiel à foto: **200 × 400** (9 × 18 m), com a largura
-valendo metade da profundidade, como o dono pediu. Começou em 116 ×
-232 e cresceu: no apertado a quarta cadeira de cada mesa batia na
-parede e não havia como entrar atrás do balcão.
+**A planta**, fiel à foto: **190 × 320** (8,6 × 14,4 m). Começou em
+116 × 232 (no apertado a quarta cadeira de cada mesa batia na parede e
+não havia como entrar atrás do balcão), passou por 200 × 400 (aí sobrou
+chão pelado) e parou aqui.
 
 | onde | o que |
 |---|---|
@@ -842,7 +842,7 @@ parede e não havia como entrar atrás do balcão.
 | nordeste | o banheiro |
 
 **Só nas faces LESTE e OESTE do quarteirão.** O miolo tem uns 595 no
-sentido comprido e 249 no curto: 400 de fundo só cabe no comprido, que
+sentido comprido e 249 no curto: 320 de fundo só cabe no comprido, que
 corre em x. Virado pro norte ou pro sul o bar não entraria — e é melhor
 ele existir numa face certa do que caber torto em qualquer uma.
 
@@ -853,6 +853,13 @@ aberta ao norte — que é por onde se entra, como em balcão de verdade.
 No armário encostado na parede oeste, duas prateleiras de garrafa:
 âmbar de uísque, verde de cerveja, incolor de cachaça. Cada garrafa são
 três caixas (corpo, ombro e gargalo) mais a faixa do rótulo.
+
+**Oito banquetas** em volta do balcão, do lado do freguês — a leste do
+braço comprido e ao sul do pé do L. O assento são duas caixas cruzadas
+a 45°, que de cima leem como octógono: é o mais perto de redondo que
+sai por 24 triângulos. Elas NÃO bloqueiam, pela mesma razão da cadeira
+de plástico: uma fila delas encostada no balcão fecharia o corredor que
+leva ao fundo do bar, e banqueta se empurra com a perna.
 
 **O piso é xadrez de verdade**, como na foto, e é UMA peça: o 3D
 desenha só os ladrilhos escuros por cima do piso claro que já está lá —
@@ -877,9 +884,9 @@ não do olho:
 
 A mesa bloqueia e a cadeira não: cadeira de plástico se empurra com o
 pé, e uma fila delas fechando o corredor seria pior que qualquer ganho
-de fidelidade. Medido no bar grande: **604 e 612 células de corpo
-dentro dos dois bares, todas alcançáveis da rua** — e com 20 bonecos
-dentro sobra corredor pra andar, que era o teste que o dono pediu.
+de fidelidade. Medido: **408 e 434 células de corpo dentro dos dois
+bares, todas alcançáveis da rua** — e com 20 bonecos dentro sobra
+corredor pra andar, que era o teste que o dono pediu.
 
 ### 4.16. Dois bugs que a sede menor desenterrou
 
@@ -1145,8 +1152,8 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
   quarteirões · 712 lotes (260 na favela) · 552 moitas · 207 árvores ·
   72 postes · 55 carros · 1 campo · 8 equipamentos · 1.822 decalques de
   chão · 12 cruzamentos de avenida com 46 faixas de pedestre, 10 com
-  semáforo · 2 sedes, uma de cada nível · 2 bares de 9 × 18 m** ·
-  151.825 triângulos
+  semáforo · 2 sedes, uma de cada nível · 2 bares de 8,6 × 14,4 m** ·
+  ~152.000 triângulos
   estáticos em 6 pedaços de cidade mais o estádio · 165 chamadas de
   desenho sem gente na
   tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco

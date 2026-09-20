@@ -2118,6 +2118,17 @@ TO.dados.plantaEstadio = (function(){
                         { base: yG - 2, cor: '#6b4a2c' }, false);
     }
 
+    /* ---- AS BANQUETAS, em volta do balcão ----
+       Do LADO DO FREGUÊS, que é o de fora do L: a leste do braço
+       comprido e ao sul do pé dele. Não bloqueiam, pela mesma razão
+       da cadeira de plástico — uma fila delas encostada no balcão
+       fecharia o corredor que leva ao fundo do bar, e banqueta se
+       empurra com a perna. */
+    for(let v = vBal0 + 28; v < vBal1 - 8; v += 22)
+      movel('banqueta', uBal + 5, uBal + 21, v - 8, v + 8, { alt: 26 }, false);
+    for(let u = PAR + 12; u < uBal - 6; u += 17)
+      movel('banqueta', u - 8, u + 8, vBal0 - 21, vBal0 - 5, { alt: 26 }, false);
+
     /* ---- O ENGRADADO DE CERVEJA, no sudoeste ---- */
     movel('engradado', PAR + 3, PAR + 27, MF + 6, MF + 30, { pilha: 3 });
     movel('engradado', PAR + 3, PAR + 27, MF + 33, MF + 55, { pilha: 2 });
@@ -2144,8 +2155,10 @@ TO.dados.plantaEstadio = (function(){
        A mesa BLOQUEIA e a cadeira NÃO: cadeira de plástico se empurra
        com o pé, e uma fila delas fechando o corredor seria pior que
        qualquer ganho de fidelidade. */
+    /* com 320 de fundo as três mesas sobem: a última tem de parar
+       antes do banheiro, senão ela tapa a porta dele */
     const uMesa = (uBal + L - PAR)/2 + 22;
-    for(const vM of [MF + 62, MF + 152, MF + 242]){
+    for(const vM of [MF + 52, MF + 122, MF + 192]){
       movel('mesabar', uMesa - 14, uMesa + 14, vM - 14, vM + 14, { alt: 27 });
       for(const [du, dv] of [[0, -24], [0, 24], [-24, 0], [24, 0]]){
         const [cx, cy] = E.pt(uMesa + du, vM + dv);
@@ -2160,14 +2173,14 @@ TO.dados.plantaEstadio = (function(){
   }
 
   /* A FATIA DO BAR, encostada na guia como a da sede nível 1. */
-  /* A FATIA DO BAR: 200 de frente por 400 de fundo — 9 × 18 m.
+  /* A FATIA DO BAR: 190 de frente por 320 de fundo — 8,6 × 14,4 m.
      SÓ NAS FACES LESTE E OESTE do quarteirão. O miolo tem uns 595 no
      sentido comprido e 249 no curto: 400 de fundo só cabe no
      comprido, que corre em x. Virado pro norte ou pro sul o bar não
      entraria, e é melhor ele existir numa face certa do que caber
      torto em qualquer uma. */
   function areaDoBar(q, frente){
-    const LF = 200, PR = 400;
+    const LF = 190, PR = 320;
     const Lx = q.ix1 - q.ix0, Ly = q.iy1 - q.iy0;
     if(frente === 'n' || frente === 's') return null;
     if(Lx < PR + 8 || Ly < LF + 8) return null;

@@ -867,6 +867,22 @@ export function montarBairro(P) {
     caixa(T, o.x0, o.x1, y, y + 2, o.y0, o.y1, o.cor || '#6b4a2c');
   }
 
+  /* BANQUETA DE BALCÃO: assento, coluna, o aro de apoiar o pé e a
+     base. O assento são DUAS caixas cruzadas a 45° — de cima elas
+     leem como octógono, que é o mais perto de redondo que sai por 24
+     triângulos. */
+  function banqueta(T, o) {
+    const x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2, h = o.alt || 26;
+    const MAD = o.cor || '#7a4a2a', MET = '#6e7276';
+    for (const a of [0, Math.PI / 4]) caixaRot(T, x, z, 14, 14, h - 3.4, h, a, MAD);
+    caixa(T, x - 2.1, x + 2.1, 2, h - 3.4, z - 2.1, z + 2.1, MET);
+    /* o aro: quatro barrinhas em quadro, que é aro o bastante daqui */
+    for (const [dx, dz, w, d] of [[0, -5.5, 11, 1.4], [0, 5.5, 11, 1.4],
+                                  [-5.5, 0, 1.4, 11], [5.5, 0, 1.4, 11]])
+      caixa(T, x + dx - w / 2, x + dx + w / 2, 9, 10.4, z + dz - d / 2, z + dz + d / 2, MET);
+    caixa(T, x - 5, x + 5, 0, 2, z - 5, z + 5, MET);
+  }
+
   /* mesa de bar: tampo quadrado, coluna central e pé em cruz */
   function mesabar(T, o) {
     const h = o.alt || 27, x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2;
@@ -1120,6 +1136,7 @@ export function montarBairro(P) {
         case 'tv': tv(T, o); break;
         case 'garrafas': garrafas(T, o); break;
         case 'prateleira': prateleira(T, o); break;
+        case 'banqueta': banqueta(T, o); break;
         case 'mesabar': mesabar(T, o); break;
         case 'cadeiraplast': cadeiraplast(T, o); break;
         case 'caixadagua': caixaDagua(T, o); break;
