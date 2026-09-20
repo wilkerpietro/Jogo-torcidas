@@ -589,6 +589,11 @@ export function montarBairro(P) {
      OLHA. Sem isso a porta do armário sai na face encostada na parede
      e o móvel lê como caixote. `naFace` resolve as quatro orientações
      numa conta só, em vez de quatro trechos iguais. */
+  /* O METRO DO BONECO: ele tem 34 unidades pra 1,75 m. Toda medida
+     de móvel que nasce AQUI (e não na planta) sai dele, pelo mesmo
+     motivo: chutada em unidade, a primeira leva saiu 1,8 vez maior
+     que o certo — cadeira com assento na altura do quadril. */
+  const METRO = 34 / 1.75, mt = v => v * METRO;
   const MADEIRA = '#8a6a44', MADEIRA_ESC = '#6b5133';
   const METAL = '#8d9094', METAL_ESC = '#5b5f63', ESTOFO = '#33363a';
   /* o intervalo que corre AO LONGO da face de um móvel */
@@ -612,16 +617,17 @@ export function montarBairro(P) {
     tmp.set(cor).multiplyScalar(0.86);
     const costura = '#' + tmp.getHexString();
     const ao = o.x1 - o.x0 > o.y1 - o.y0;
-    caixa(T, o.x0, o.x1, 0, 5, o.y0, o.y1, cor);
-    caixa(T, o.x0 + 1.6, o.x1 - 1.6, 5, 6.4, o.y0 + 1.6, o.y1 - 1.6, cor);
+    const eC = mt(0.18);
+    caixa(T, o.x0, o.x1, 0, eC, o.y0, o.y1, cor);
+    caixa(T, o.x0 + 1.4, o.x1 - 1.4, eC, eC + 1.1, o.y0 + 1.4, o.y1 - 1.4, cor);
     for (const t of [0.34, 0.66]) {
       if (ao) { const x = o.x0 + (o.x1 - o.x0) * t;
-        caixa(T, x - 0.7, x + 0.7, 4.9, 5.6, o.y0 + 2.5, o.y1 - 2.5, costura); }
+        caixa(T, x - 0.6, x + 0.6, eC - 0.2, eC + 0.4, o.y0 + 2, o.y1 - 2, costura); }
       else { const z = o.y0 + (o.y1 - o.y0) * t;
-        caixa(T, o.x0 + 2.5, o.x1 - 2.5, 4.9, 5.6, z - 0.7, z + 0.7, costura); }
+        caixa(T, o.x0 + 2, o.x1 - 2, eC - 0.2, eC + 0.4, z - 0.6, z + 0.6, costura); }
     }
-    if (ao) caixa(T, o.x0 + 2, o.x0 + 12, 5, 8.4, o.y0 + 3, o.y1 - 3, '#e8e4d8');
-    else    caixa(T, o.x0 + 3, o.x1 - 3, 5, 8.4, o.y0 + 2, o.y0 + 12, '#e8e4d8');
+    if (ao) caixa(T, o.x0 + 2, o.x0 + 2 + mt(0.42), eC, eC + mt(0.10), o.y0 + 3, o.y1 - 3, '#e8e4d8');
+    else    caixa(T, o.x0 + 3, o.x1 - 3, eC, eC + mt(0.10), o.y0 + 2, o.y0 + 2 + mt(0.42), '#e8e4d8');
   }
   /* armário de aço: corpo, pés, tampa, duas portas rebaixadas com
      puxador e a fresta entre elas */
@@ -668,13 +674,13 @@ export function montarBairro(P) {
     for (let i = 0; i < n; i++) {
       const c = c0 + (c1 - c0) * (i + 0.5) / n;
       const x = ao ? c : (o.x0 + o.x1) / 2, z = ao ? (o.y0 + o.y1) / 2 : c;
-      const h = 8.5 + (i % 3) * 2.2, ouro = i % 3 === 1 ? '#b9b6ae' : '#c9a227';
-      caixa(T, x - 2.5, x + 2.5, base, base + 1.7, z - 2.5, z + 2.5, '#4a3728');
-      caixa(T, x - 0.9, x + 0.9, base + 1.7, base + h * 0.5, z - 0.9, z + 0.9, ouro);
-      caixa(T, x - 2.7, x + 2.7, base + h * 0.5, base + h, z - 2.7, z + 2.7, ouro);
+      const h = mt(0.24) + (i % 3) * 1.4, ouro = i % 3 === 1 ? '#b9b6ae' : '#c9a227';
+      caixa(T, x - 1.7, x + 1.7, base, base + 1.2, z - 1.7, z + 1.7, '#4a3728');
+      caixa(T, x - 0.6, x + 0.6, base + 1.2, base + h * 0.5, z - 0.6, z + 0.6, ouro);
+      caixa(T, x - 1.9, x + 1.9, base + h * 0.5, base + h, z - 1.9, z + 1.9, ouro);
       for (const sgn of [-1, 1])
-        caixa(T, x + sgn * 2.9, x + sgn * 3.7, base + h * 0.58, base + h * 0.9,
-                 z - 0.7, z + 0.7, ouro);
+        caixa(T, x + sgn * 2.0, x + sgn * 2.6, base + h * 0.58, base + h * 0.9,
+                 z - 0.5, z + 0.5, ouro);
     }
   }
   /* mesa: tampo com friso, quatro pés e o gaveteiro de três gavetas
@@ -699,19 +705,20 @@ export function montarBairro(P) {
      assento e encosto. `ang` é pra onde ela OLHA. É leve e se arrasta,
      então não bloqueia. */
   function cadeira(T, o) {
-    const x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2, ASS = 19, ang = o.ang || 0;
+    const x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2, ASS = mt(0.45), ang = o.ang || 0;
     for (let i = 0; i < 5; i++) {
       const a = ang + i * Math.PI * 2 / 5;
-      caixaRot(T, x + Math.cos(a) * 6.5, z + Math.sin(a) * 6.5, 13, 2.6, 2.6, 4.2, a, '#3a3d40');
-      const px = x + Math.cos(a) * 12, pz = z + Math.sin(a) * 12;
-      caixa(T, px - 1.3, px + 1.3, 0, 2.8, pz - 1.3, pz + 1.3, '#25272a');
+      caixaRot(T, x + Math.cos(a) * 4.4, z + Math.sin(a) * 4.4, 9, 2, 1.8, 3, a, '#3a3d40');
+      const px = x + Math.cos(a) * 8.2, pz = z + Math.sin(a) * 8.2;
+      caixa(T, px - 1, px + 1, 0, 2, pz - 1, pz + 1, '#25272a');
     }
-    caixa(T, x - 1.9, x + 1.9, 4.2, ASS - 2.6, z - 1.9, z + 1.9, '#4a4d50');
-    caixaRot(T, x, z, 18, 17, ASS - 2.6, ASS, ang, ESTOFO);
-    caixaRot(T, x, z, 17, 16, ASS, ASS + 2.6, ang, '#3f4348');
-    const bx = x - Math.cos(ang) * 7.5, bz = z - Math.sin(ang) * 7.5;
-    caixaRot(T, bx, bz, 3, 16, ASS + 2, ASS + 21, ang, ESTOFO);
-    caixaRot(T, bx, bz, 4.4, 14, ASS + 6, ASS + 19, ang, '#3f4348');
+    caixa(T, x - 1.4, x + 1.4, 3, ASS - 2, z - 1.4, z + 1.4, '#4a4d50');
+    const lA = mt(0.48);
+    caixaRot(T, x, z, lA, lA, ASS - 2, ASS, ang, ESTOFO);
+    caixaRot(T, x, z, lA - 1, lA - 1, ASS, ASS + 1.6, ang, '#3f4348');
+    const bx = x - Math.cos(ang) * (lA / 2 - 1), bz = z - Math.sin(ang) * (lA / 2 - 1);
+    caixaRot(T, bx, bz, 2, lA - 1, ASS + 1.4, ASS + mt(0.45), ang, ESTOFO);
+    caixaRot(T, bx, bz, 3, lA - 3, ASS + mt(0.10), ASS + mt(0.40), ang, '#3f4348');
   }
   /* caixa de papelão: corpo, abas e a fita no meio */
   function caixote(T, o) {
@@ -723,7 +730,7 @@ export function montarBairro(P) {
   }
   /* o ralo do pátio: caixilho, grelha e as barras */
   function ralo(T, o) {
-    const r = o.r || 5;
+    const r = o.r || mt(0.16);
     caixa(T, o.x - r, o.x + r, 1.75, 2.25, o.y - r, o.y + r, '#6e6a60');
     caixa(T, o.x - r + 1.1, o.x + r - 1.1, 1.6, 2.05, o.y - r + 1.1, o.y + r - 1.1, '#2b2926');
     for (let i = 0; i < 3; i++) {
@@ -777,10 +784,10 @@ export function montarBairro(P) {
   /* o balcão: corpo, tampo com BEIRAL (sem ele lê como muro baixo),
      rodapé recuado e as frisas verticais na face do freguês */
   function balcao(T, o) {
-    const h = o.alt || 30, MAD = '#6b4a2c', TAMPO = '#8a6136';
-    caixa(T, o.x0, o.x1, 2.6, h - 2.6, o.y0, o.y1, MAD);
-    caixa(T, o.x0 - 2.6, o.x1 + 2.6, h - 2.6, h, o.y0 - 2.6, o.y1 + 2.6, TAMPO);
-    caixa(T, o.x0 + 2, o.x1 - 2, 0, 2.6, o.y0 + 2, o.y1 - 2, '#48331e');
+    const h = o.alt || mt(1.10), MAD = '#6b4a2c', TAMPO = '#8a6136';
+    caixa(T, o.x0, o.x1, 2, h - 1.8, o.y0, o.y1, MAD);
+    caixa(T, o.x0 - 1.8, o.x1 + 1.8, h - 1.8, h, o.y0 - 1.8, o.y1 + 1.8, TAMPO);
+    caixa(T, o.x0 + 1.5, o.x1 - 1.5, 0, 2, o.y0 + 1.5, o.y1 - 1.5, '#48331e');
     if (!o.ox && !o.oz) return;
     const [a0, a1] = aoLongo(o), n = Math.max(2, Math.round((a1 - a0) / 22));
     for (let i = 1; i < n; i++) {
@@ -792,7 +799,7 @@ export function montarBairro(P) {
      com o gargalo das garrafas aparecendo */
   const CAIXAS_CERVEJA = ['#c8a415', '#1f5fa8', '#b8242a', '#1f7a3a', '#d8d3c6'];
   function engradado(T, o) {
-    const n = o.pilha || 3, hC = 11;
+    const n = o.pilha || 3, hC = mt(0.30);
     const semente = Math.abs((o.x0 | 0) + (o.y0 | 0) * 7);
     for (let i = 0; i < n; i++) {
       const y = i * hC, cor = CAIXAS_CERVEJA[(semente + i) % CAIXAS_CERVEJA.length];
@@ -805,16 +812,16 @@ export function montarBairro(P) {
     for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
       const x = o.x0 + (o.x1 - o.x0) * (0.3 + i * 0.4);
       const z = o.y0 + (o.y1 - o.y0) * (0.3 + j * 0.4);
-      caixa(T, x - 2, x + 2, yT, yT + 5, z - 2, z + 2, '#5a3a1e');
+      caixa(T, x - 1.3, x + 1.3, yT, yT + mt(0.14), z - 1.3, z + 1.3, '#5a3a1e');
     }
   }
   /* freezer horizontal: corpo, tampa com beiral, base escura e o
      puxador na face de quem abre */
   function freezer(T, o) {
-    const h = o.alt || 26;
-    caixa(T, o.x0, o.x1, 2, h - 3, o.y0, o.y1, '#e4e2da');
-    caixa(T, o.x0 - 1.2, o.x1 + 1.2, h - 3, h, o.y0 - 1.2, o.y1 + 1.2, '#efede5');
-    caixa(T, o.x0 + 2, o.x1 - 2, 0, 2, o.y0 + 2, o.y1 - 2, '#7d7a72');
+    const h = o.alt || mt(0.88);
+    caixa(T, o.x0, o.x1, 1.6, h - 2, o.y0, o.y1, '#e4e2da');
+    caixa(T, o.x0 - 1, o.x1 + 1, h - 2, h, o.y0 - 1, o.y1 + 1, '#efede5');
+    caixa(T, o.x0 + 1.6, o.x1 - 1.6, 0, 1.6, o.y0 + 1.6, o.y1 - 1.6, '#7d7a72');
     if (!o.ox && !o.oz) return;
     const [a0, a1] = aoLongo(o);
     naFace(T, o, a0 + 5, a1 - 5, h - 8, h - 5.6, 1.1, '#9aa0a6');
@@ -843,7 +850,7 @@ export function montarBairro(P) {
      cerveja, incolor de cachaça e o escuro do vinho. */
   const VIDROS = ['#8a5a1e', '#2f5f2a', '#c8c4b0', '#4a2028', '#a87a24', '#1f4a3a'];
   function garrafas(T, o) {
-    const n = o.n || 8, base = o.base || 34, h = o.alt || 13;
+    const n = o.n || 8, base = o.base || 34, h = o.alt || mt(0.30);
     const ao = o.x1 - o.x0 > o.y1 - o.y0;
     const c0 = ao ? o.x0 : o.y0, c1 = ao ? o.x1 : o.y1;
     const semente = Math.abs((o.x0 | 0) * 3 + (o.y0 | 0));
@@ -852,13 +859,13 @@ export function montarBairro(P) {
       const x = ao ? c : (o.x0 + o.x1) / 2, z = ao ? (o.y0 + o.y1) / 2 : c;
       const cor = VIDROS[(semente + i * 3) % VIDROS.length];
       const hh = h * (0.82 + ((semente + i) % 4) * 0.09);
-      caixa(T, x - 1.8, x + 1.8, base, base + hh * 0.6, z - 1.8, z + 1.8, cor);
-      caixa(T, x - 1.2, x + 1.2, base + hh * 0.6, base + hh * 0.76, z - 1.2, z + 1.2, cor);
-      caixa(T, x - 0.6, x + 0.6, base + hh * 0.76, base + hh, z - 0.6, z + 0.6, cor);
+      caixa(T, x - 0.9, x + 0.9, base, base + hh * 0.6, z - 0.9, z + 0.9, cor);
+      caixa(T, x - 0.6, x + 0.6, base + hh * 0.6, base + hh * 0.76, z - 0.6, z + 0.6, cor);
+      caixa(T, x - 0.35, x + 0.35, base + hh * 0.76, base + hh, z - 0.35, z + 0.35, cor);
       /* o rótulo, uma faixa clara na barriga */
       tmp.set(cor).multiplyScalar(1.9);
-      caixa(T, x - 1.9, x + 1.9, base + hh * 0.2, base + hh * 0.42,
-               z - 1.9, z + 1.9, '#' + tmp.getHexString());
+      caixa(T, x - 1, x + 1, base + hh * 0.2, base + hh * 0.42,
+               z - 1, z + 1, '#' + tmp.getHexString());
     }
   }
   /* a tábua da prateleira, sob a fileira de garrafa */
@@ -874,38 +881,41 @@ export function montarBairro(P) {
   function banqueta(T, o) {
     const x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2, h = o.alt || 26;
     const MAD = o.cor || '#7a4a2a', MET = '#6e7276';
-    for (const a of [0, Math.PI / 4]) caixaRot(T, x, z, 14, 14, h - 3.4, h, a, MAD);
-    caixa(T, x - 2.1, x + 2.1, 2, h - 3.4, z - 2.1, z + 2.1, MET);
+    const lB = mt(0.36);
+    for (const a of [0, Math.PI / 4]) caixaRot(T, x, z, lB, lB, h - 2, h, a, MAD);
+    caixa(T, x - 1.6, x + 1.6, 1.4, h - 2, z - 1.6, z + 1.6, MET);
     /* o aro: quatro barrinhas em quadro, que é aro o bastante daqui */
-    for (const [dx, dz, w, d] of [[0, -5.5, 11, 1.4], [0, 5.5, 11, 1.4],
-                                  [-5.5, 0, 1.4, 11], [5.5, 0, 1.4, 11]])
-      caixa(T, x + dx - w / 2, x + dx + w / 2, 9, 10.4, z + dz - d / 2, z + dz + d / 2, MET);
-    caixa(T, x - 5, x + 5, 0, 2, z - 5, z + 5, MET);
+    const rA = lB * 0.42, yA = mt(0.24);
+    for (const [dx, dz, w, d] of [[0, -rA, rA * 2, 1.1], [0, rA, rA * 2, 1.1],
+                                  [-rA, 0, 1.1, rA * 2], [rA, 0, 1.1, rA * 2]])
+      caixa(T, x + dx - w / 2, x + dx + w / 2, yA, yA + 1.1, z + dz - d / 2, z + dz + d / 2, MET);
+    caixa(T, x - lB * 0.32, x + lB * 0.32, 0, 1.4, z - lB * 0.32, z + lB * 0.32, MET);
   }
 
   /* mesa de bar: tampo quadrado, coluna central e pé em cruz */
   function mesabar(T, o) {
     const h = o.alt || 27, x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2;
-    caixa(T, o.x0, o.x1, h - 2.2, h, o.y0, o.y1, '#7a4a2a');
-    caixa(T, o.x0 + 1, o.x1 - 1, h - 3, h - 2.2, o.y0 + 1, o.y1 - 1, '#5c3720');
-    caixa(T, x - 2.6, x + 2.6, 1.6, h - 3, z - 2.6, z + 2.6, '#4a4d50');
-    caixa(T, o.x0 + 3, o.x1 - 3, 0, 1.6, z - 2.4, z + 2.4, '#3c3f42');
-    caixa(T, x - 2.4, x + 2.4, 0, 1.6, o.y0 + 3, o.y1 - 3, '#3c3f42');
+    caixa(T, o.x0, o.x1, h - 1.5, h, o.y0, o.y1, '#7a4a2a');
+    caixa(T, o.x0 + 0.8, o.x1 - 0.8, h - 2.1, h - 1.5, o.y0 + 0.8, o.y1 - 0.8, '#5c3720');
+    caixa(T, x - 1.8, x + 1.8, 1.2, h - 2.1, z - 1.8, z + 1.8, '#4a4d50');
+    caixa(T, o.x0 + 2, o.x1 - 2, 0, 1.2, z - 1.7, z + 1.7, '#3c3f42');
+    caixa(T, x - 1.7, x + 1.7, 0, 1.2, o.y0 + 2, o.y1 - 2, '#3c3f42');
   }
   /* cadeira de plástico branca, a de bar: assento, encosto com o vão
      do meio e os quatro pés. `ang` é pra onde ela olha. */
   function cadeiraplast(T, o) {
     const x = (o.x0 + o.x1) / 2, z = (o.y0 + o.y1) / 2, ang = o.ang || 0;
-    const BR = '#e8e6de', BR2 = '#d3d0c6', ASS = 17;
-    caixaRot(T, x, z, 17, 16, ASS, ASS + 2, ang, BR);
-    for (const [u, v] of [[-6.5, -6.5], [6.5, -6.5], [6.5, 6.5], [-6.5, 6.5]]) {
+    const BR = '#e8e6de', BR2 = '#d3d0c6', ASS = mt(0.45), lS = mt(0.44);
+    caixaRot(T, x, z, lS, lS, ASS, ASS + 1.4, ang, BR);
+    const pL = lS / 2 - 1;
+    for (const [u, v] of [[-pL, -pL], [pL, -pL], [pL, pL], [-pL, pL]]) {
       const c = Math.cos(ang), sn = Math.sin(ang);
       const px = x + u * c - v * sn, pz = z + u * sn + v * c;
-      caixa(T, px - 1.2, px + 1.2, 0, ASS, pz - 1.2, pz + 1.2, BR2);
+      caixa(T, px - 0.9, px + 0.9, 0, ASS, pz - 0.9, pz + 0.9, BR2);
     }
-    const bx = x - Math.cos(ang) * 7.5, bz = z - Math.sin(ang) * 7.5;
-    caixaRot(T, bx, bz, 2.2, 15, ASS + 2, ASS + 18, ang, BR);
-    caixaRot(T, bx, bz, 2.6, 13, ASS + 6, ASS + 15, ang, BR2);
+    const bx = x - Math.cos(ang) * pL, bz = z - Math.sin(ang) * pL;
+    caixaRot(T, bx, bz, 1.8, lS - 1, ASS + 1.4, ASS + mt(0.42), ang, BR);
+    caixaRot(T, bx, bz, 2.2, lS - 3, ASS + mt(0.12), ASS + mt(0.36), ang, BR2);
   }
 
   /* ---- A PORTA QUE ABRE ----

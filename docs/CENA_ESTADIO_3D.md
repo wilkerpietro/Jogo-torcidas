@@ -210,8 +210,12 @@ Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
   couber, dois bancos e um poste. Dezenove delas. Nada ali bloqueia: o
   pedaço continua andável, e é bom que continue — é atalho e é lugar
   de briga.
-- **A ESCALA É A DO BONECO.** Ele tem 39 unidades e mede 1,75 m, então
-  uma unidade é 4,5 cm. Pelas alturas antigas a casa tinha 1,6 m, a
+- **A ESCALA É A DO BONECO.** Ele tem **34 unidades** pra 1,75 m, então
+  uma unidade é **5,1 cm** e um metro são **19,4 unidades** — é a
+  constante `METRO`, e é dela que toda medida de móvel tem de sair.
+  (Este parágrafo dizia "39 unidades, 4,5 cm", que não bate com a
+  constante; foi de onde saiu uma leva inteira de mobília 1,8 vez
+  maior que o certo.) Pelas alturas antigas a casa tinha 1,6 m, a
   porta 0,90, o muro 0,54 e o poste 2,07: o boneco era um gigante entre
   casinhas, e não passava pela própria porta. Agora está em metros de
   verdade — porta de 2,10, casa de 3 a 3,6, sobrado de 5 a 6, muro de
@@ -887,6 +891,44 @@ pé, e uma fila delas fechando o corredor seria pior que qualquer ganho
 de fidelidade. Medido: **408 e 434 células de corpo dentro dos dois
 bares, todas alcançáveis da rua** — e com 20 bonecos dentro sobra
 corredor pra andar, que era o teste que o dono pediu.
+
+### 4.19. A mobília em metros, e não em chute
+
+A primeira leva de móveis foi dimensionada em UNIDADE, no olho. Medida
+contra o boneco, saiu sistematicamente grande:
+
+| peça | real | devia ter | tinha |
+|---|---|---|---|
+| mesa de bar | 0,75 m | 15 | 27 (1,8×) |
+| assento de cadeira | 0,45 m | 9 | 17 (1,9×) |
+| banqueta | 0,75 m | 15 | 26 (1,7×) |
+| balcão | 1,10 m | 21 | 30 (1,4×) |
+| freezer | 0,88 m | 17 | 28 (1,7×) |
+| TV | 1,10 m | 21 | 64 (3,0×) |
+
+Cadeira com o assento na altura do quadril, mesa na altura do peito, TV
+de três metros. A causa está no comentário da escala, que dizia "39
+unidades, 4,5 cm" enquanto a constante do arquivo diz `METRO = 34/1,75`
+— 5,1 cm. Medido o boneco na cena: **36,9 unidades** com o braço
+levantado, ou seja a constante é a certa e o comentário é que estava
+errado. Os dois foram corrigidos.
+
+Agora `obra()` entrega um `m(metros)` e a mobília inteira sai dele:
+`m(0.75)` é a altura de uma mesa, `m(0.45)` a de um assento. O número
+fica conferível na leitura, que é o que o chute em unidade não
+permitia.
+
+**A largura da porta é a única medida que NÃO pode ser real.** Uma
+folha de 0,80 m daria 16 unidades e a máscara exige 24 pro corpo passar
+— o corpo do motor de luta é largo demais pra escala do desenho, que é
+a calibragem que o §9 chama de "boneco de mesa". O vão desceu de 40
+(2,06 m, portão de garagem ao lado do boneco) pra **30** (1,54 m), que
+é o mínimo que ainda passa corpo com folga. É a única peça da cena que
+mente sobre a escala, e mente de propósito.
+
+De quebra, mobília menor é mais chão livre: as células de corpo dentro
+dos bares foram de 408/434 pra **518/546**, e as da sede nível 1 de 352
+pra **368**.
 
 ### 4.16. Dois bugs que a sede menor desenterrou
 

@@ -733,10 +733,13 @@ TO.dados.plantaEstadio = (function(){
   const escolher = l => l[Math.floor(rng()*l.length)];
   const par8 = v => Math.round(v/8)*8;
 
-  /* A ESCALA É A DO BONECO: ele tem 39 unidades e mede 1,75 m, então
-     uma unidade é 4,5 cm. Com as alturas antigas a casa tinha 1,6 m e a
-     porta 0,90 — o boneco não passava por ela. Aqui está em metros de
-     verdade: pé-direito de 3, sobrado de 6, muro de 1,9. */
+  /* A ESCALA É A DO BONECO, e ela é o `METRO` lá de cima: ele tem 34
+     unidades pra 1,75 m, então UMA UNIDADE É 5,1 CM e um metro são
+     19,4 unidades. (Este comentário já disse "39 unidades, 4,5 cm",
+     que não bate com a constante e foi de onde saiu uma leva inteira
+     de móveis 1,8 vez maior que o certo. O número que manda é o
+     `METRO`.) Com as alturas antigas a casa tinha 1,6 m e a porta
+     0,90 — o boneco não passava por ela. */
   const TIPOS = {
     casa:    { alt:[66, 80],   cor:['#e8dcc0','#d9c9a3','#e2b9a6','#cfd8c9','#e6e2d6','#d8c8b0','#e9d3b3'] },
     sobrado: { alt:[112, 136], cor:['#e3d3b2','#c9b48a','#d4a48f','#b7c4c2','#ded9cd'] },
@@ -1574,13 +1577,20 @@ TO.dados.plantaEstadio = (function(){
      torcida dona do prédio. `lado` marca de quem é a peça. */
   function obra(area, frente, cor2, lado){
     const E = eixos(area, frente), L = E.L, A = E.A;
+    /* O METRO, pra mobília sair do tamanho do BONECO e não do gosto.
+       Ele tem 34 unidades pra 1,75 m, então 1 m ≈ 19,4. Escrito assim
+       (`m(0.75)` é a altura de uma mesa) o número fica conferível: a
+       primeira leva de móveis foi chutada em unidade e saiu 1,8 vez
+       maior que o certo — cadeira com assento na altura do quadril,
+       mesa na altura do peito, TV de três metros. */
+    const m = v => Math.round(v * METRO);
     const pecas = [];
       const p = (k, o, bloqueia) => pecas.push(Object.assign({ k, bloqueia: bloqueia !== false }, o));
       const par  = (u0,u1,v0,v1, alt, cor) => p('muro', Object.assign(E.ret(u0,u1,v0,v1), { alt, cor }));
       const piso = (u0,u1,v0,v1, cor, base) => p('piso', Object.assign(E.ret(u0,u1,v0,v1), { cor, base: base || 1.72 }), false);
       const faixa = (u0,u1,v0,v1, y, alt, cor) => p('marquise', Object.assign(E.ret(u0,u1,v0,v1), { y, alt, cor }), false);
 
-      const VAO = 40;       // porta: 1,8 m, e o corpo passa (a máscara pede 24)
+      const VAO = 30;       // porta: 1,54 m — o mínimo que passa corpo com folga
       const PORTAO = 56;    // o portão da rua: 2,5 m, cabe bonde em fila
       /* parede com vãos: `em` é um vão ou uma lista deles, e o que sobra
          entre eles sai como pedaço de parede. Um cômodo cujo vão caia em
@@ -1617,7 +1627,13 @@ TO.dados.plantaEstadio = (function(){
          PORTA LARGA É DE DUAS FOLHAS. Uma folha de 2,5 m girando
          sozinha não existe: a da fachada parte no meio, cada metade na
          sua dobradiça, as duas abrindo pro mesmo lado. */
-      const ALT_PORTA = 46;                 // 2,07 m de folha
+      const ALT_PORTA = Math.round(2.10*METRO);   // 41: folha de 2,10 m
+    /* A LARGURA DA PORTA É A ÚNICA MEDIDA QUE NÃO PODE SER REAL.
+       Uma folha de 0,80 m daria 16 unidades, e a máscara exige 24 pro
+       corpo passar (o corpo do motor de luta é largo demais pra
+       escala do desenho — é a calibragem que o §9 chama de "boneco de
+       mesa"). 30 é o meio-termo: passa o corpo e para de parecer
+       portão de garagem, que é o que 40 parecia ao lado do boneco. */
       function folhasNoVao(ao, c, outro, w, altParede, opc, espessura){
         const alt = Math.min(altParede - 4, ALT_PORTA);
         if(alt < 20) return;
@@ -1679,7 +1695,7 @@ TO.dados.plantaEstadio = (function(){
                                (euy - e0y)*du + (evy - e0y)*dv];
       const movel = (k, u0, u1, v0, v1, o, bloqueia) =>
         p(k, Object.assign(E.ret(u0, u1, v0, v1), o || {}), bloqueia);
-    return { E, L, A, pecas, p, par, piso, faixa, movel, dir,
+    return { E, L, A, m, pecas, p, par, piso, faixa, movel, dir,
              paredeU, paredeV, folhasNoVao, comVaos, VAO, PORTAO, ALT_PORTA };
   }
 
@@ -1693,7 +1709,7 @@ TO.dados.plantaEstadio = (function(){
     const CLARO = '#d9d3c4';                 // o reboco dos cômodos, por dentro
     const O = obra(area, frente, cor2, lado);
     const { pecas, p, par, piso, faixa, movel, dir,
-            paredeU, paredeV, VAO, PORTAO } = O;
+            paredeU, paredeV, VAO, PORTAO, m } = O;
     const PAR = 9;        // parede interna: 40 cm
     /* A SEDE TEM ALTURA DE CASA, não de galpão de fábrica: a fachada
        bate com o sobrado do lado e o telhado fica por baixo da linha
@@ -1705,7 +1721,7 @@ TO.dados.plantaEstadio = (function(){
        nenhuma cabe em 2. Com 56 sobram 10, que é onde a placa mora —
        e de quebra o pé-direito virou 2,52 m, que é medida de cômodo
        de verdade; 2,16 já era baixo demais pro boneco de 1,75. */
-    const ALT = N === 1 ? 56 : 60;       // parede de cômodo, abaixo do telhado
+    const ALT = m(N === 1 ? 2.60 : 2.75);  // parede de cômodo, abaixo do telhado
     const MF = 13;                                   // espessura da fachada
     const DF = Math.min(96, Math.max(58, A*0.30));   // ala da frente (nível 3)
     const DB = Math.min(104, Math.max(60, A*0.32));  // ala do fundo  (nível 3)
@@ -1858,16 +1874,18 @@ TO.dados.plantaEstadio = (function(){
           for(let k = 0; k < 2; k++){
             const u0 = a + 12 + k*26;
             if(u0 + 22 > b - 8) break;
-            movel('colchao', u0, u0 + 22, vq1 - 46, vq1 - 4, { ox: 0, oz: 0 }, false);
+            movel('colchao', u0, u0 + m(0.90), vq1 - 4 - m(1.90), vq1 - 4, { ox: 0, oz: 0 }, false);
           }
         } else if(i === n - 1){
-          movel('armario', b - 30, b - 8, vq0, vq0 + 40,
-                { alt: 44, ox: dir(-1, 0)[0], oz: dir(-1, 0)[1] });
-          movel('trofeus', b - 28, b - 10, vq0 + 2, vq0 + 38, { base: 45.6, n: 3 }, false);
+          movel('armario', b - 8 - m(0.45), b - 8, vq0, vq0 + m(1.00),
+                { alt: m(2.00), ox: dir(-1, 0)[0], oz: dir(-1, 0)[1] });
+          movel('trofeus', b - 6 - m(0.40), b - 10, vq0 + 2, vq0 + m(0.95),
+                { base: m(2.00) + 1.6, n: 3 }, false);
         } else {
-          movel('mesa', a + 14, a + 70, vq1 - 30, vq1 - 8, { alt: 26 });
+          movel('mesa', a + 14, a + 14 + m(1.40), vq1 - 8 - m(0.70), vq1 - 8, { alt: m(0.75) });
           const [cx, cy] = E.pt(a + 40, vq1 - 44);
-          p('cadeira', { x0: cx - 11, x1: cx + 11, y0: cy - 11, y1: cy + 11,
+          const rc3 = m(0.30);
+          p('cadeira', { x0: cx - rc3, x1: cx + rc3, y0: cy - rc3, y1: cy + rc3,
                          ang: Math.atan2(dir(0, 1)[1], dir(0, 1)[0]) }, false);
         }
       }
@@ -1945,35 +1963,36 @@ TO.dados.plantaEstadio = (function(){
       for(let i = 0; i < 3; i++){
         const v = MF + 20 + i*34;
         if(v + 20 > vPr1 - 26) break;
-        movel('colchao', uP0 + 4, uP0 + 46, v, v + 20, { ox: oL[0], oz: oL[1] }, false);
+        movel('colchao', uP0 + 4, uP0 + 4 + m(1.90), v, v + m(0.90), { ox: oL[0], oz: oL[1] }, false);
       }
       /* a caixa d'água de plástico no canto do fundo, que é onde ela
          fica em sede de bairro: perto da parede e longe do portão */
       const [cdx, cdy] = E.pt(uP0 + 20, vPr1 - 22);
-      p('caixadagua', { x: cdx, y: cdy, r: 14, alt: 0 });
+      p('caixadagua', { x: cdx, y: cdy, r: m(0.52), alt: 0 });
       /* o ralo no meio do cimento — pátio de verdade tem caimento */
       const [rlx, rly] = E.pt((uP0 + uP1)/2, (MF + vPr1)/2);
-      p('ralo', { x: rlx, y: rly, r: 5 }, false);
+      p('ralo', { x: rlx, y: rly, r: m(0.16) }, false);
       /* a grade de correr, RECOLHIDA na parede ao lado da porta de
          vidro: é o que a loja fecha depois do expediente, e com a
          porta de vidro no vão ela não pode ficar no meio dele */
       movel('portao', g1 + 6, g1 + 6 + Math.min(44, uP1 - g1 - 12), MF - 5, MF - 1,
-            { alt: MURO - 16, cor: cor3 }, false);
+            { alt: MURO - m(0.6), cor: cor3 }, false);
       /* o entulho do pátio: caixa de material largada perto da porta */
-      movel('caixote', uP1 - 26, uP1 - 8, MF + 8, MF + 26, { alt: 15 }, false);
-      movel('caixote', uP1 - 24, uP1 - 12, MF + 28, MF + 40, { alt: 11 }, false);
+      movel('caixote', uP1 - 8 - m(0.45), uP1 - 8, MF + 8, MF + 8 + m(0.45), { alt: m(0.45) }, false);
+      movel('caixote', uP1 - 12 - m(0.34), uP1 - 12, MF + 28, MF + 28 + m(0.34), { alt: m(0.34) }, false);
 
       /* ---- A SALA DE PATRIMÔNIO: o armário do material e os troféus ----
          É o cômodo da frente, junto da rua: é por onde entra e sai
          bandeira, instrumento e material de viagem. */
       const oOeste = dir(-1, 0), oFundo = dir(0, 1);
-      movel('armario', uS1 - 22, uS1 - 2, vPa0 + 6, vPa1 - 6,
-            { alt: 46, ox: oOeste[0], oz: oOeste[1] });
-      movel('trofeus', uS1 - 20, uS1 - 4, vPa0 + 8, vPa1 - 8, { base: 47.6, n: 4 }, false);
-      movel('estante', uS0 + 4, uS1 - 28, vPa0 + 2, vPa0 + 18,
-            { alt: 50, prateleiras: 4, ox: oFundo[0], oz: oFundo[1] });
-      movel('caixote', uS0 + 6, uS0 + 24, vPa1 - 24, vPa1 - 6, { alt: 16 }, false);
-      movel('caixote', uS0 + 26, uS0 + 40, vPa1 - 20, vPa1 - 8, { alt: 11 }, false);
+      movel('armario', uS1 - 2 - m(0.45), uS1 - 2, vPa0 + 6, vPa1 - 6,
+            { alt: m(2.00), ox: oOeste[0], oz: oOeste[1] });
+      movel('trofeus', uS1 - 4 - m(0.40), uS1 - 4, vPa0 + 8, vPa1 - 8,
+            { base: m(2.00) + 1.6, n: 4 }, false);
+      movel('estante', uS0 + 4, uS1 - 28, vPa0 + 2, vPa0 + 2 + m(0.38),
+            { alt: m(1.90), prateleiras: 4, ox: oFundo[0], oz: oFundo[1] });
+      movel('caixote', uS0 + 6, uS0 + 6 + m(0.48), vPa1 - 6 - m(0.48), vPa1 - 6, { alt: m(0.48) }, false);
+      movel('caixote', uS0 + 26, uS0 + 26 + m(0.34), vPa1 - 8 - m(0.34), vPa1 - 8, { alt: m(0.34) }, false);
 
       /* ---- A SALA DO PRESIDENTE ----
          A MESA ENCOSTADA NAS DUAS PAREDES DO CANTO, e não solta no
@@ -1984,17 +2003,19 @@ TO.dados.plantaEstadio = (function(){
          motivo o armário encosta na mesa em vez de ficar do outro
          lado dela, que é o que fechava a volta. */
       const oFrente = dir(0, -1);
-      movel('armario', uS0 + 4, uS0 + 27, vPr1 - 20, vPr1 - 2,
-            { alt: 40, ox: oFrente[0], oz: oFrente[1] });
-      movel('mesa', uS0 + 27, uS1 - 4, vPr1 - 24, vPr1 - 4, { alt: 26 });
-      const [cdrx, cdry] = E.pt(uS1 - 30, vPr1 - 40);
-      p('cadeira', { x0: cdrx - 11, x1: cdrx + 11, y0: cdry - 11, y1: cdry + 11,
+      movel('armario', uS0 + 4, uS0 + 4 + m(1.20), vPr1 - 2 - m(0.45), vPr1 - 2,
+            { alt: m(1.80), ox: oFrente[0], oz: oFrente[1] });
+      movel('mesa', uS0 + 8 + m(1.20), uS1 - 4, vPr1 - 4 - m(0.70), vPr1 - 4, { alt: m(0.75) });
+      const [cdrx, cdry] = E.pt(uS1 - 4 - m(0.70), vPr1 - 4 - m(0.70) - m(0.55));
+      const rcP = m(0.30);
+      p('cadeira', { x0: cdrx - rcP, x1: cdrx + rcP, y0: cdry - rcP, y1: cdry + rcP,
                      ang: Math.atan2(oFundo[1], oFundo[0]) }, false);
-      /* o ar-condicionado na parede do fundo e o mural na do patrimônio */
-      movel('ar', uS1 - 34, uS1 - 10, A - PAR - 3, A - PAR,
-            { base: 33, alt: 11, ox: oFrente[0], oz: oFrente[1] }, false);
-      movel('mural', uS0 + 26, uS0 + 60, vPr0 + 1, vPr0 + 3,
-            { base: 24, alt: 20, ox: oFundo[0], oz: oFundo[1] }, false);
+      /* o ar-condicionado a 2,15 do chão e o mural a 1,40, que é a
+         altura de quem lê em pé */
+      movel('ar', uS1 - 10 - m(0.85), uS1 - 10, A - PAR - 3, A - PAR,
+            { base: m(2.15), alt: m(0.30), ox: oFrente[0], oz: oFrente[1] }, false);
+      movel('mural', uS0 + 26, uS0 + 26 + m(1.00), vPr0 + 1, vPr0 + 3,
+            { base: m(1.40), alt: m(0.70), ox: oFundo[0], oz: oFundo[1] }, false);
 
       /* o mastro sobe do pátio, que é a parte descoberta — no nível 3
          ele nasce dentro da ala da frente e fura o telhado, aqui não
@@ -2053,10 +2074,11 @@ TO.dados.plantaEstadio = (function(){
     const cor2 = T.cor2 || '#e8e2d0';
     const cor3 = T.cor3 || cor2;
     const O = obra(area, frente, cor2, lado);
-    const { pecas, p, par, piso, faixa, movel, dir, paredeU, paredeV, VAO } = O;
+    const { pecas, p, par, piso, faixa, movel, dir, paredeU, paredeV, VAO, m } = O;
     const E = O.E, L = O.L, A = O.A;
     const PAR = 8, MF = 11;
-    const MURO = 66, ALT_EXT = 60, ALT = 56;
+    /* pé-direito de 2,60 m, parede externa de 2,90 e platibanda de 3,20 */
+    const MURO = m(3.20), ALT_EXT = m(2.90), ALT = m(2.60);
     const CLARO = '#dcd6c6';
     const AZULEJO = '#5b7fa8', CREME = '#ddd6c2';   // o xadrez do piso
     const uPorta = Math.round(L*0.66), wPorta = 56;
@@ -2069,7 +2091,7 @@ TO.dados.plantaEstadio = (function(){
        do topo dela. */
     piso(0, L, 0, A, CREME, 1.70);
     movel('xadrez', PAR, L - PAR, MF, A - PAR,
-          { cor: AZULEJO, tam: 11, base: 1.92 }, false);
+          { cor: AZULEJO, tam: m(0.42), base: 1.92 }, false);
 
     /* ---- as paredes ---- */
     paredeU(0, L, 2.5, MF, MURO, cor1, uPorta, wPorta, { vidro: true, abre: 1 });
@@ -2099,23 +2121,24 @@ TO.dados.plantaEstadio = (function(){
        ao norte — é por ali que o dono do bar entra, como no balcão de
        verdade. */
     const uServ = PAR + 38;                 // até onde vai a faixa de serviço
-    const uBal = uServ + 20;                // a face do balcão que dá pro salão
+    const uBal = uServ + m(0.62);           // a face do balcão que dá pro salão
     const vBal0 = MF + 74, vBal1 = A - PAR - 96;
-    movel('balcao', uServ, uBal, vBal0 + 22, vBal1, { alt: 30, ox: dir(1,0)[0], oz: dir(1,0)[1] });
-    movel('balcao', PAR, uBal, vBal0, vBal0 + 22, { alt: 30, ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
+    movel('balcao', uServ, uBal, vBal0 + 22, vBal1, { alt: m(1.10), ox: dir(1,0)[0], oz: dir(1,0)[1] });
+    movel('balcao', PAR, uBal, vBal0, vBal0 + 22, { alt: m(1.10), ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
 
     /* ---- O ARMÁRIO DO BALCÃO, com as garrafas ----
        Encostado na parede oeste, DENTRO da faixa de serviço: é o que o
        dono do bar alcança sem sair de trás do balcão. Duas prateleiras
        de garrafa em cima do armário — uísque, cachaça e cerveja, que é
        o que tem atrás de um balcão de bar de torcida. */
-    movel('armario', PAR + 1, PAR + 17, vBal0 + 30, vBal1 - 30,
-          { alt: 34, ox: dir(1,0)[0], oz: dir(1,0)[1] });
-    for(const [yG, n] of [[35.6, 9], [50, 8]]){
-      movel('garrafas', PAR + 2, PAR + 14, vBal0 + 32, vBal1 - 32,
-            { base: yG, n, alt: 13 }, false);
-      if(yG > 40) movel('prateleira', PAR + 1, PAR + 16, vBal0 + 30, vBal1 - 30,
-                        { base: yG - 2, cor: '#6b4a2c' }, false);
+    movel('armario', PAR + 1, PAR + 1 + m(0.45), vBal0 + 30, vBal1 - 30,
+          { alt: m(0.85), ox: dir(1,0)[0], oz: dir(1,0)[1] });
+    /* as duas prateleiras de garrafa, a 1,05 e a 1,45 do chão */
+    for(const yG of [m(1.05), m(1.45)]){
+      movel('prateleira', PAR + 1, PAR + 2 + m(0.40), vBal0 + 30, vBal1 - 30,
+            { base: yG - 2, cor: '#6b4a2c' }, false);
+      movel('garrafas', PAR + 2, PAR + 2 + m(0.30), vBal0 + 32, vBal1 - 32,
+            { base: yG, n: 10, alt: m(0.30) }, false);
     }
 
     /* ---- AS BANQUETAS, em volta do balcão ----
@@ -2124,27 +2147,33 @@ TO.dados.plantaEstadio = (function(){
        da cadeira de plástico — uma fila delas encostada no balcão
        fecharia o corredor que leva ao fundo do bar, e banqueta se
        empurra com a perna. */
-    for(let v = vBal0 + 28; v < vBal1 - 8; v += 22)
-      movel('banqueta', uBal + 5, uBal + 21, v - 8, v + 8, { alt: 26 }, false);
-    for(let u = PAR + 12; u < uBal - 6; u += 17)
-      movel('banqueta', u - 8, u + 8, vBal0 - 21, vBal0 - 5, { alt: 26 }, false);
+    const rB = m(0.19);                   // meia banqueta: 38 cm de assento
+    for(let v = vBal0 + 28; v < vBal1 - 8; v += m(1.05))
+      movel('banqueta', uBal + 6, uBal + 6 + rB*2, v - rB, v + rB, { alt: m(0.75) }, false);
+    for(let u = PAR + 14; u < uBal - 8; u += m(1.05))
+      movel('banqueta', u - rB, u + rB, vBal0 - 6 - rB*2, vBal0 - 6, { alt: m(0.75) }, false);
 
     /* ---- O ENGRADADO DE CERVEJA, no sudoeste ---- */
-    movel('engradado', PAR + 3, PAR + 27, MF + 6, MF + 30, { pilha: 3 });
-    movel('engradado', PAR + 3, PAR + 27, MF + 33, MF + 55, { pilha: 2 });
-    movel('engradado', PAR + 30, PAR + 52, MF + 6, MF + 28, { pilha: 2 });
+    const cE = m(0.40);                   // o engradado tem 40 cm de lado
+    movel('engradado', PAR + 3, PAR + 3 + cE, MF + 6, MF + 6 + cE, { pilha: 4 });
+    movel('engradado', PAR + 3, PAR + 3 + cE, MF + 9 + cE, MF + 9 + cE*2, { pilha: 3 });
+    movel('engradado', PAR + 6 + cE, PAR + 6 + cE*2, MF + 6, MF + 6 + cE, { pilha: 3 });
 
     /* ---- OS DOIS FREEZERS na parede norte, e a TV em cima ----
        ENCOSTADOS nela: com folga atrás sobra um corredor estreito
        demais pro corpo e largo demais pra sumir, que é a receita de
        célula presa. */
-    const vFrz = A - PAR - 26;
-    for(const u0 of [PAR + 6, PAR + 52]){
-      movel('freezer', u0, u0 + 40, vFrz, A - PAR,
-            { alt: 28, ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
+    const fL = m(1.30), fP = m(0.68);     // freezer horizontal de 1,30 × 0,68
+    const vFrz = A - PAR - fP;
+    for(const u0 of [PAR + 8, PAR + 12 + fL]){
+      movel('freezer', u0, u0 + fL, vFrz, A - PAR,
+            { alt: m(0.88), ox: dir(0,-1)[0], oz: dir(0,-1)[1] });
     }
-    movel('tv', PAR + 18, PAR + 82, A - PAR - 3, A - PAR,
-          { base: 40, alt: 28, ox: dir(0,-1)[0], oz: dir(0,-1)[1] }, false);
+    /* a TV de 1,10 m, pendurada a 1,55 do chão: acima da cabeça de
+       quem está sentado e na linha do olho de quem está em pé */
+    const uTV = PAR + 10 + fL;
+    movel('tv', uTV - m(0.55), uTV + m(0.55), A - PAR - 3, A - PAR,
+          { base: m(1.55), alt: m(0.62), ox: dir(0,-1)[0], oz: dir(0,-1)[1] }, false);
 
     /* ---- AS TRÊS MESAS DO SALÃO ----
        Agora com as QUATRO cadeiras: no bar estreito a quarta batia na
@@ -2158,12 +2187,14 @@ TO.dados.plantaEstadio = (function(){
     /* com 320 de fundo as três mesas sobem: a última tem de parar
        antes do banheiro, senão ela tapa a porta dele */
     const uMesa = (uBal + L - PAR)/2 + 22;
+    const rM = m(0.40), dC = m(0.72);    // mesa de 80 cm, cadeira a 72 do centro
     for(const vM of [MF + 52, MF + 122, MF + 192]){
-      movel('mesabar', uMesa - 14, uMesa + 14, vM - 14, vM + 14, { alt: 27 });
-      for(const [du, dv] of [[0, -24], [0, 24], [-24, 0], [24, 0]]){
+      movel('mesabar', uMesa - rM, uMesa + rM, vM - rM, vM + rM, { alt: m(0.75) });
+      for(const [du, dv] of [[0, -dC], [0, dC], [-dC, 0], [dC, 0]]){
         const [cx, cy] = E.pt(uMesa + du, vM + dv);
         const [ax, az] = dir(-du, -dv);
-        p('cadeiraplast', { x0: cx - 9, x1: cx + 9, y0: cy - 9, y1: cy + 9,
+        const rC = m(0.25);              // cadeira de 50 cm de lado
+        p('cadeiraplast', { x0: cx - rC, x1: cx + rC, y0: cy - rC, y1: cy + rC,
                             ang: Math.atan2(-az, ax) }, false);
       }
     }
