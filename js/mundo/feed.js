@@ -4759,15 +4759,29 @@ TO.feed = (function(){
       case 'fechar-semana': {
         /* o plano já foi escrito pelos controles do cartão; fechar é
            o `confirmar` de sempre — gasta ação, paga recepção e
-           investida, e a estrada continua compromisso da semana */
-        const r = PL().confirmar(E);
+           investida, e a estrada continua compromisso da semana.
+           NUMA SEMANA COM DOIS JOGOS NOSSOS (correção do dono,
+           22/09/2026), o botão fecha os DOIS planos — cada um do seu
+           jogo, achado pela agenda do clube, não só o do `proximoJogo`. */
+        const meu = M().time(E.torcida.clubeId);
+        const jogos = (E.temporada && meu)
+          ? TO.competicoes.jogosDaSemana(E, meu.id, E.data.semana)
+              .map(a => TO.estado.fichaDoJogo(E, a))
+          : (E.proximoJogo ? [E.proximoJogo] : []);
+        let gasto = 0, investidas = 0;
+        for(const jg of jogos){
+          const r = PL().confirmar(E, jg);
+          if(r){ gasto += r.gasto || 0; investidas += r.investidas || 0; }
+        }
         marcar();
-        const p = PL().plano(E), j = E.proximoJogo;
-        const est = j && !j.casa ? PL().estimativaCaravana(E) : null;
+        const j = E.proximoJogo, p = PL().plano(E, j);
+        const est = j && !j.casa ? PL().estimativaCaravana(E, j) : null;
         const alvo = p.intencao !== 'paz' && p.alvoTorcida ? M().torcida(p.alvoTorcida) : null;
+        const outro = jogos.find(jg => j && jg.chave !== j.chave);
         m.consequencia = (est ? `Caravana: ${est.vao} para ${j.cidadeAdv || 'fora'}. ` : '')+
           (alvo ? `Plano: em cima da ${alvo.nome}.` : 'Plano: ir em paz.')+
-          (r && r.gasto ? ` ${U.dinheiro(r.gasto)} pagos agora.` : '');
+          (outro ? ` O outro jogo da semana também está fechado.` : '')+
+          (gasto ? ` ${U.dinheiro(gasto)} pagos agora.` : '');
         return {ok:true};
       }
       case 'tela-ataque':

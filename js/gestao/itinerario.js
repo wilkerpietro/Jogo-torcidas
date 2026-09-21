@@ -128,7 +128,7 @@ TO.itinerario = (function(){
     const j = jogoDeHoje(E) || (E && E.proximoJogo);
     if(!j) return null;
     const hora = emMinutos(j.hora);
-    const p = PL().plano(E);
+    const p = PL().plano(E, j);
     const paradas = [];
 
     /* o que o planejamento decidiu: em que ponto a gente cai em cima
@@ -176,9 +176,13 @@ TO.itinerario = (function(){
                         ponto:id, abrir:{tela:'defesa', atq}});
       /* e a investida que o planejamento marcou, no ponto combinado */
       if(ondeAtaque === id && alvo)
+        /* o jogo vai junto no `args` (correção do dono, 22/09/2026): a
+           cena tem que aplicar o PLANO DESTE jogo, e sem o jogo aqui
+           `abrirGuerra` só sabia ler o do jogo principal da semana —
+           o segundo jogo nosso abria a briga do primeiro. */
         o.eventos.push({tipo:'investida', torcida:p.alvoTorcida, nome:alvo.nome,
                         ponto:id,
-                        abrir:{tela:'guerra', args:{tipo: j.casa ? 'casa' : 'fora'}}});
+                        abrir:{tela:'guerra', args:{tipo: j.casa ? 'casa' : 'fora', jogo:j}}});
       return põe(o);
     };
 
@@ -285,7 +289,7 @@ TO.itinerario = (function(){
        andam com o nosso bonde a partir da CHEGADA na cidade — e ficam
        lá quando a caravana pega a estrada de volta. As paradas da
        cidade ganham `comEscolta`; a linha do dia soma e desconta. */
-    const aj = PL().ajudaDe ? PL().ajudaDe(E) : null;
+    const aj = PL().ajudaDe ? PL().ajudaDe(E, j) : null;
     const escolta = (!casa && aj && aj.escolta > 0 && aj.mapa === (j.mapaAdv || ''))
       ? {aliado:aj.aliado, nome:aj.nome, n:aj.escolta} : null;
     if(escolta){

@@ -8067,6 +8067,20 @@ O artefato do claude.ai parou de servir: o arquivo único tem teto de 16 MB, o p
 - **O artefato para na versão 129** e o `torcida-organizada.html` deixa de ser regenerado a cada mudança. O empacotador fica no repositório, mas não é mais o caminho.
 - **Repositório privado não tem Pages no plano gratuito.** Tornar o repositório público é decisão do dono; o código foi varrido e não há segredo nem caminho absoluto dentro.
 
+## Um plano por jogo, não por semana (correção do dono, 22/09/2026)
+
+O dono viu o segundo jogo nosso da semana — a Sul-Americana de quarta, com o Brasileirão de sábado já marcado — virar uma linha sem NENHUM controle no cartão. Nem o "Deixar passar/Investir" que um jogo alheio tem: nada.
+
+A raiz era mais funda que o desenho da tela. `E.plano` sempre foi UM objeto, preso à chave do `E.proximoJogo` — o jogo que pesa mais na semana (mata-mata, depois fim de semana). Toda a cadeia de planejamento e de execução — caravana, rota, ajuda de aliado, alvo do ataque, efetivo, e a cena do dia do jogo — lia esse único plano e esse único `E.proximoJogo`, direto ou por baixo de outra função. Um segundo jogo nosso na mesma semana não tinha onde morar: a tela não tinha o que desenhar pra ele, e se desenhasse, leria por engano o plano do primeiro.
+
+- **`E.plano` continua sendo o do jogo principal da semana** — nenhum save antigo muda de forma. Um segundo (ou terceiro) jogo ganha um slot próprio em `E.planosExtra`, por chave, criado sob demanda.
+- **`planejamento.plano(E, jogo)`** ganha o parâmetro opcional: sem ele, o comportamento é o de sempre; com um jogo que não é o principal, cria e devolve o slot dele. Toda a cadeia que o cartão usa foi encadeada com esse `jogo`: `estimativaCaravana`, `rotas`/`rotaEscolhida`, `efetivoDaSaida`/`efetivoDoAtaque`, `ajudaDe`/`pedirAjuda`/`aliadasNaPracaDeles`, `definirIntencao`/`definirComo`/`definirOlheiro`/`definirAtaque`, `confirmar`.
+- **O cartão da semana desenha um bloco completo para CADA jogo nosso**, achando a ficha de cada um pela agenda do clube (o mesmo `fichaDoJogo` que monta o `proximoJogo`) e casando com a linha da pauta pelo adversário — o dia sozinho não distingue quando os dois caem na mesma semana.
+- **O dia do jogo lê o plano CERTO.** O itinerário (`itinerario.montar`) já sabia dizer "hoje é outro jogo" desde 22/08; agora ele também lê o PLANO desse outro jogo, e manda o jogo junto no `args` de quem abre a cena de guerra. `abrirGuerra`, `praca.resolverIda` e `praca.encontroDaViagem` passam a aceitar esse jogo e resolver com o plano certo — sem isso, mesmo com a tela corrigida, o ataque marcado no segundo jogo abriria (ou aplicaria) a cena do primeiro.
+- **"Fechar o planejamento" fecha os dois planos da semana** de uma vez, achados pela agenda do clube — continua sendo um botão só.
+
+Teste (Playwright, `dois-jogos-semana.js` e `dois-jogos-itinerario.js`): semana com jogo em casa e jogo fora, cada um com sua planilha e seus alvos; ataque marcado num e paz no outro ficam em `E.plano`/`E.planosExtra` separados; no dia do jogo secundário, `itinerario.montar` gera o evento de investida com o alvo e o jogo certos; "Fechar o planejamento" marca `decidido` nos dois. O cartão de uma semana comum (um jogo só) segue idêntico.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

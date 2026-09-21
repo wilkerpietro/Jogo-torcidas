@@ -638,12 +638,15 @@ TO.praca = (function(){
      `enc` tem a forma que `abrirConfronto` já espera: dois bondes com
      efetivo real e distinto, cor, sigla e nome, mais o local.
      ======================================================= */
-  function resolverIda(E){
+  /* `jogo` é o segundo jogo nosso da semana, quando é o dele que hoje
+     é (correção do dono, 22/09/2026): sem isto, o dia do jogo de casa
+     que não é o `proximoJogo` da semana lia o plano do OUTRO jogo. */
+  function resolverIda(E, jogo){
     const mo = MP().modelo(E);
     const rua = naRuaHoje(E);
     const nosso = rua.find(b => b.nossa) || rua.find(b => b.doJogador);
     if(!nosso) return {desfecho:'paz', semNos:true};
-    const p = PL().plano(E);
+    const p = PL().plano(E, jogo);
     const outros = rua.filter(b => b !== nosso && b.id !== nosso.id);
 
     /* a) INTENÇÃO NOSSA: quem planejou atacar, encontra */
@@ -653,7 +656,7 @@ TO.praca = (function(){
         const onde = lugarPlanejado(E, mo, p);
         /* QUANTOS VÃO ATACAR é escolha da tela (§8.29): quem sai de casa
            é o teto, e o resto fica. Sem escolha, vai o bonde inteiro. */
-        const f = PL().efetivoDoAtaque(E);
+        const f = PL().efetivoDoAtaque(E, jogo);
         const meu = Object.assign({}, nosso, {n: Math.min(nosso.n, f.vao)});
         return {desfecho:'planejada', onde,
                 enc: montarEncontro(meu, alvo, onde)};
@@ -693,9 +696,9 @@ TO.praca = (function(){
      deles não há mando, e a convenção do dado das cenas continua
      valendo (nascemos como mandante).
      ======================================================= */
-  function encontroDaViagem(E){
-    const j = E.proximoJogo;
-    const p = PL().plano(E);
+  function encontroDaViagem(E, jogo){
+    const j = jogo || E.proximoJogo;
+    const p = PL().plano(E, j);
     if(!j || j.casa || p.intencao === 'paz' || !p.alvoTorcida) return null;
     const o = M().torcida(p.alvoTorcida);
     if(!o || M().saoIrmas(E.torcida.id, o.id)) return null;
@@ -707,7 +710,7 @@ TO.praca = (function(){
     const deles = Math.max(4, TO.relacoes && TO.relacoes.disponiveisIA
       ? TO.relacoes.disponiveisIA(E, o.id)
       : Math.round((o.membros || 20) * 0.6));
-    const nossos = Math.max(2, PL().efetivoDoAtaque(E).vao);
+    const nossos = Math.max(2, PL().efetivoDoAtaque(E, j).vao);
     const cores = M().coresDaTorcida(o);
     const nossaCor = M().coresDaTorcida(E.torcida);
     const local = onde === 'praca' ? 'praca'

@@ -2663,8 +2663,14 @@
       : '';
 
     /* ---- o nosso jogo, com o plano dentro ---- */
-    const blocoNosso = (r)=>{
-      const p = P.plano(e);
+    /* A SEMANA COM DOIS JOGOS NOSSOS TEM DOIS PLANOS (correção do
+       dono, 22/09/2026): `blocoNosso` recebe o `jogo` (a ficha do
+       PRÓPRIO jogo desta linha, não sempre `e.proximoJogo`) e passa
+       adiante em toda escolha — caravana, rota, ajuda, alvo, efetivo.
+       Sem o jogo aqui, o segundo jogo da semana não tinha onde marcar
+       nada, e a marcação caía por engano no plano do primeiro. */
+    const blocoNosso = (r, jogo)=>{
+      const p = P.plano(e, jogo);
       const bloco = el('div',{class:'sem-jogo nosso'+(r.passou?' passou':'')});
       bloco.innerHTML = rotuloJogo(r) + ruaDe(r);
       if(r.passou || !vigente) return bloco;
@@ -2690,7 +2696,7 @@
       };
       const fora = r.tipo === 'fora';
       const briga = p.intencao !== 'paz';
-      const alvos = fora ? P.alvosDaViagem(e)
+      const alvos = fora ? P.alvosDaViagem(e, {advId: (jogo && jogo.advId) || r.advId})
                          : (()=>{ const doJogo = new Set([...M.torcidasDe(r.grupo.casa), ...M.torcidasDe(r.grupo.vis)].map(o=>o.id));
                                   return P.alvosNaRua(e, {dia:r.grupo.dia}).filter(a=>doJogo.has(a.id)); })();
       let onde = P.ondeDoPlano(p);
@@ -2698,8 +2704,8 @@
       /* caravana: quantos vão e por qual estrada */
       let est = null;
       if(fora){
-        est = P.estimativaCaravana(e);
-        const rotas = P.rotas(e);
+        est = P.estimativaCaravana(e, jogo);
+        const rotas = P.rotas(e, jogo);
         const passo = Math.max(1, Math.round(est.interessados/10));
         linhaP('Caravana', `de ${est.aptos} aptos · ${U.dinheiro(est.porCabeca)} cada`,
           contador(est.vao, est.minimo, est.interessados, passo,
@@ -2707,14 +2713,14 @@
         if(rotas.length) linhaP('Rota', '', chips(rotas.map(rt=>({id:rt.id, rot:rt.nome,
           nota:`${U.dinheiro(rt.custo)}${rt.risco?` · emboscada ${Math.round(rt.risco)}`:' · sem hostil'}`})),
           p.rota || rotas[0].id, id=>{ p.rota = id; p.decidido = false; salvar(); pintar(); }));
-        const rt = P.rotaEscolhida(e);
+        const rt = P.rotaEscolhida(e, jogo);
         if(rt && rt.cidades.length > 1)
           linhaP('Trajeto', '', el('div',{class:'sem-trajeto', html: rt.cidades.map((c,i)=>{
             const nome = (M.cidade(c)||{}).nome || c; const h = P.hostilidade(e, c);
             return `<span class="${i===0?'saida':i===rt.cidades.length-1?'chegada':''}${h>40?' hostil':''}">${nome}</span>`;
           }).join('<i>›</i>')}));
         /* ajuda de aliado na praça deles */
-        const aliadas = P.aliadasNaPracaDeles(e), ajuda = P.ajudaDe(e);
+        const aliadas = P.aliadasNaPracaDeles(e, jogo), ajuda = P.ajudaDe(e, jogo);
         const NR = {nada:'não vai receber', hospedar:'hospedagem', escolta:'hospedagem e escolta', churrasco:'escolta e churrasco'};
         if(ajuda){
           const rec = P.recepcaoDe(ajuda.nivel);
@@ -2725,7 +2731,7 @@
               `${linkTorcida(ajuda.aliado, ajuda.nome)} · ${NR[ajuda.nivel]||ajuda.nivel}`}));
         } else if(aliadas.length && !fechado){
           const b = el('button',{class:'sem-mini', texto:'Pedir ajuda'});
-          b.onclick = ()=>{ const rr = P.pedirAjuda(e, aliadas[0].id); if(!rr) return;
+          b.onclick = ()=>{ const rr = P.pedirAjuda(e, aliadas[0].id, jogo); if(!rr) return;
             aviso(rr.nivel==='nada' ? `A ${rr.nome} não vai receber a gente.` : `A ${rr.nome} topou: ${NR[rr.nivel]}.`, rr.nivel==='nada'?'ruim':'boa');
             salvar(); pintarTopo(); pintar(); };
           linhaP('Aliada lá',
@@ -2742,23 +2748,23 @@
         {id:'paz', rot:'Ir em paz'},
         {id:'atacar', rot:'Atacar', nota: alvos.length ? '' : 'ninguém pra atacar', off:!alvos.length}
       ], briga ? 'atacar' : 'paz', id=>{
-        if(id==='paz') P.definirIntencao(e, 'paz');
-        else P.definirAtaque(e, {alvo: p.alvoTorcida || (alvos[0]&&alvos[0].id), onde, bombas:p.bombas});
+        if(id==='paz') P.definirIntencao(e, 'paz', jogo);
+        else P.definirAtaque(e, {alvo: p.alvoTorcida || (alvos[0]&&alvos[0].id), onde, bombas:p.bombas}, jogo);
         salvar(); pintar();
       }));
       if(briga && alvos.length){
         const alvoAtual = alvos.find(a=>a.id===p.alvoTorcida) ? p.alvoTorcida : alvos[0].id;
         linhaP('Alvo', '', chips(alvos.map(a=>({id:a.id, rot:linkTorcida(a.id,a.nome)+(a.aliada?' · aliada':''),
           nota:`${a.faixa} · rel. ${Math.round(a.relacao)}`})), alvoAtual,
-          id=>{ P.definirAtaque(e, {alvo:id, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}); salvar(); pintar(); }));
+          id=>{ P.definirAtaque(e, {alvo:id, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}, jogo); salvar(); pintar(); }));
         linhaP('Onde', '', chips(P.ONDE_ATAQUE.map(o=>({id:o.id, rot:o.rot})), onde,
-          id=>{ onde = id; P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}); salvar(); pintar(); }));
+          id=>{ onde = id; P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:p.efetivoAtaque}, jogo); salvar(); pintar(); }));
         if(!fora){
-          const f = P.efetivoDoAtaque(e);
+          const f = P.efetivoDoAtaque(e, jogo);
           const ef = p.efetivoAtaque != null ? U.limitar(p.efetivoAtaque, f.piso, f.teto) : f.teto;
           linhaP('Efetivo', `de ${f.teto} · menos gente rende mais prestígio`,
             contador(ef, f.piso, f.teto, Math.max(1, Math.round(f.teto/10)),
-              v=>{ P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:v}); salvar(); pintar(); }));
+              v=>{ P.definirAtaque(e, {alvo:alvoAtual, onde, bombas:p.bombas, efetivo:v}, jogo); salvar(); pintar(); }));
         }
       }
       /* bombas: pra caravana, só o estoque; em casa, compra na hora */
@@ -2833,16 +2839,24 @@
           `<b>${nucleo}</b> do núcleo de ${cid.nome||''} de pé`}));
       }
       const meus = pauta.linhas.filter(l=>l.tipo==='nosso' || l.tipo==='fora');
-      const pj = e.proximoJogo || {};
-      /* o bloco com o plano é o do `proximoJogo` — pelo adversário, que
-         numa semana com dois jogos nossos o dia sozinho não distingue */
-      const ehDoPlano = l => l.tipo==='fora'
-        ? (!pj.casa && l.advId === pj.advId)
-        : (pj.casa && l.grupo && (l.grupo.casa === pj.advId || l.grupo.vis === pj.advId));
-      const nosso = meus.find(ehDoPlano) || meus[0];
-      if(nosso) corpo.appendChild(blocoNosso(nosso));
+      /* CADA JOGO NOSSO GANHA O SEU BLOCO (correção do dono, 22/09/2026):
+         numa semana com dois jogos, só o `proximoJogo` tinha planilha —
+         o outro caía em `blocoOutro` sem controle nenhum, porque as
+         linhas 'nosso'/'fora' não têm a `chaveJogo` que `blocoOutro`
+         exige. A ficha de cada jogo vem da agenda do clube (o mesmo
+         `fichaDoJogo` que monta o `proximoJogo`), casada com a linha
+         pelo adversário — o dia sozinho não distingue quando os dois
+         jogos caem na mesma semana. */
+      const jogosSemana = (TO.competicoes.jogosDaSemana(e, e.torcida.clubeId, m.dados.semana) || [])
+        .map(a => TO.estado.fichaDoJogo(e, a));
+      const jogoDaLinha = l => {
+        const advId = l.tipo === 'fora' ? l.advId
+          : (l.grupo && (l.grupo.casa === e.torcida.clubeId ? l.grupo.vis : l.grupo.casa));
+        return jogosSemana.find(j => j.advId === advId) || e.proximoJogo || null;
+      };
+      for(const l of meus) corpo.appendChild(blocoNosso(l, jogoDaLinha(l)));
 
-      const outros = pauta.linhas.filter(l=>l !== nosso);
+      const outros = pauta.linhas.filter(l=>l.tipo!=='nosso' && l.tipo!=='fora');
       if(outros.length){
         /* o rótulo "Outros jogos em X · N" saiu (dono, 12/09/2026):
            o duelo de cada linha já diz o que é */
@@ -8744,11 +8758,15 @@
   /* o dia da guerra: o ataque que o jogador marcou vira cena */
   function abrirGuerra(args){
     const e = E();
-    const p = TO.planejamento.plano(e);
+    /* o itinerário manda o jogo junto quando é o segundo da semana
+       (correção do dono, 22/09/2026); sem `args.jogo` continua lendo o
+       jogo principal, como sempre */
+    const jogo = args && args.jogo;
+    const p = TO.planejamento.plano(e, jogo);
     let r = null;
-    if(args && args.tipo === 'fora')       r = TO.praca.encontroDaViagem(e);
+    if(args && args.tipo === 'fora')       r = TO.praca.encontroDaViagem(e, jogo);
     else if(args && args.tipo === 'praca') r = TO.praca.encontroDaPraca(e, args.dia);
-    else                                   r = TO.praca.resolverIda(e);
+    else                                   r = TO.praca.resolverIda(e, jogo);
     if(!r || !r.enc){
       /* o alvo não pisou na rua (banimento não existe mais, mas o
          efetivo pode ter minguado): a guerra esvazia sem briga */

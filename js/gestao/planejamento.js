@@ -22,25 +22,44 @@ TO.planejamento = (function(){
      Zera sozinho quando o jogo muda: plano é da partida, não
      da temporada.
      ======================================================= */
-  function plano(E){
-    const chave = E.proximoJogo ? E.proximoJogo.chave
-                                : `folga-${E.data.ano}-${E.data.semana}`;
-    if(!E.plano || E.plano.chave !== chave){
-      /* o plano nasce do padrão salvo pra esse tipo de jogo, se houver:
-         quem não quer decidir toda semana decide uma vez */
-      const padrao = (E.padroes||{})[tipoDoJogo(E)];
-      E.plano = Object.assign(
-        {intencao:'paz', como:'arredores', olheiro:null,
-         alvo:'arredores', alvoTorcida:null, bombas:0,
-         bondes:1, destinos:{}, investidas:{}, caravana:null, rota:null},
-        padrao ? JSON.parse(JSON.stringify(padrao)) : {},
-        {chave, recepcao:{}, pago:{}, investidas:{}, decidido: !!padrao});
-      if(padrao && padrao.fracao != null){
-        const est = estimativaCaravana(E);
-        if(est) E.plano.caravana = Math.round(est.interessados * padrao.fracao);
-      }
+  /* UM PLANO POR JOGO, NÃO POR SEMANA (correção do dono, 22/09/2026):
+     `E.plano` era um objeto SÓ, preso à chave do `E.proximoJogo` — e
+     `proximoJogo` é um por semana. Numa semana com dois jogos nossos
+     (a Sul-Americana de quarta e o Brasileirão de sábado, por
+     exemplo), o segundo não tinha ONDE morar: a tela não tinha o que
+     mostrar pra ele, e se mostrasse leria por engano o plano do
+     primeiro. O `E.plano` do jogo da semana (o que pesa mais, e é dele
+     que vêm a rota e a caravana) continua exatamente onde estava —
+     save velho não muda nada. O SEGUNDO jogo (e um eventual terceiro)
+     ganha um slot próprio em `E.planosExtra`, por chave. */
+  function plano(E, jogo){
+    jogo = jogo || E.proximoJogo;
+    const chave = jogo ? jogo.chave : `folga-${E.data.ano}-${E.data.semana}`;
+    const primario = !E.proximoJogo || chave === E.proximoJogo.chave;
+    if(primario){
+      if(E.plano && E.plano.chave === chave) return E.plano;
+    } else {
+      E.planosExtra = E.planosExtra || {};
+      if(E.planosExtra[chave] && E.planosExtra[chave].chave === chave)
+        return E.planosExtra[chave];
     }
-    return E.plano;
+    /* o plano nasce do padrão salvo pra esse tipo de jogo, se houver:
+       quem não quer decidir toda semana decide uma vez — o padrão vale
+       pro segundo jogo também, pelo casa/fora DELE, não do primário */
+    const tipo = jogo && !jogo.casa ? 'fora' : 'casa';
+    const padrao = (E.padroes||{})[tipo];
+    const novo = Object.assign(
+      {intencao:'paz', como:'arredores', olheiro:null,
+       alvo:'arredores', alvoTorcida:null, bombas:0,
+       bondes:1, destinos:{}, investidas:{}, caravana:null, rota:null},
+      padrao ? JSON.parse(JSON.stringify(padrao)) : {},
+      {chave, recepcao:{}, pago:{}, investidas:{}, decidido: !!padrao});
+    if(primario) E.plano = novo; else E.planosExtra[chave] = novo;
+    if(padrao && padrao.fracao != null){
+      const est = estimativaCaravana(E, jogo);
+      if(est) novo.caravana = Math.round(est.interessados * padrao.fracao);
+    }
+    return novo;
   }
 
   /* dois padrões dão conta do ano: jogo em casa e viagem */
@@ -209,9 +228,14 @@ TO.planejamento = (function(){
      do dia (`{mapa}` da praça onde ela é, ou `{casa}`); jogo na nossa
      praça leva todo mundo apto, e a caravana só vale pra viagem. Sem
      partida, segue lendo o jogo da semana, como antes. */
-  function efetivoDaSaida(E, partida){
+  /* `jogo` é o TERCEIRO parâmetro, e opcional de propósito: quem chama
+     sem ele continua lendo `E.proximoJogo`, como sempre — o parâmetro
+     só existe pra quem precisa da caravana e da ajuda do SEGUNDO jogo
+     da semana (correção do dono, 22/09/2026), que tem seu próprio
+     plano e não pode herdar o do jogo principal. */
+  function efetivoDaSaida(E, partida, jogo){
     const aptos = TO.membros.aptosParaOEstadio(E).length;
-    const j = E.proximoJogo;
+    const j = jogo || E.proximoJogo;
     const emCasa = partida
       ? (partida.mapa ? partida.mapa === E.torcida.mapa : !!partida.casa)
       : !TO.financeiro.precisaCaravana(E);
@@ -220,12 +244,12 @@ TO.planejamento = (function(){
     const nucleo = (mapaAdv && TO.patrimonio.temFilialEm &&
                     TO.patrimonio.temFilialEm(E, mapaAdv))
       ? TO.membros.aptosDaFilial(E, mapaAdv).length : 0;
-    const est = estimativaCaravana(E);
+    const est = estimativaCaravana(E, j);
     /* A ESCOLTA DO ALIADO DA PRAÇA DELES (pedido do dono, 08/09/2026):
        se a ajuda pedida no planejamento veio com escolta, o bonde deles
        anda junto do nosso na praça do jogo — entra no efetivo da saída
        como a filial entra: gente do nosso lado na rua e no estádio. */
-    const aj = ajudaDe(E);
+    const aj = ajudaDe(E, j);
     const escolta = (aj && aj.mapa === mapaAdv && aj.escolta) ? aj.escolta : 0;
     return (est ? est.vao : aptos) + nucleo + escolta;
   }
@@ -255,7 +279,7 @@ TO.planejamento = (function(){
          linha do dia).
      Um pedido por jogo; a resposta fica no plano da semana.
      ======================================================= */
-  const ajudaDe = E => (E.plano && E.plano.ajuda) || null;
+  const ajudaDe = (E, jogo) => (plano(E, jogo) || {}).ajuda || null;
 
   /* as aliadas da praça do jogo fora, e a resposta que cada uma daria */
   function aliadasNaPracaDeles(E, jogo){
@@ -286,10 +310,11 @@ TO.planejamento = (function(){
     return {nivel, custo: custoRecepcao(nivel, cabecas), cabecas, nota};
   }
 
-  function pedirAjuda(E, aliadoId){
-    const p = plano(E);
+  function pedirAjuda(E, aliadoId, jogo){
+    jogo = jogo || E.proximoJogo;
+    const p = plano(E, jogo);
     if(p.ajuda) return p.ajuda;                       // um pedido por jogo
-    const j = E.proximoJogo;
+    const j = jogo;
     const o = M().torcida(aliadoId);
     if(!j || j.casa || !o) return null;
     const r = respostaDaAjuda(E, aliadoId, j);
@@ -805,7 +830,7 @@ TO.planejamento = (function(){
   }
 
   const rotaEscolhida = (E, jogo) =>{
-    const p = plano(E), lista = rotas(E, jogo);
+    const p = plano(E, jogo), lista = rotas(E, jogo);
     if(!lista.length) return null;
     return lista.find(r=>r.id === p.rota) || lista[0];
   };
@@ -819,15 +844,15 @@ TO.planejamento = (function(){
   /* Passagem, pedágio e comida de estrada: cobra por cabeça e por
      trecho. Setenta pessoas e dois trechos dão os R$ 3.000 do GDD §7.3,
      e levar menos gente pra economizar vira decisão legítima. */
-  function estimativaCaravana(E){
-    const r = rotaEscolhida(E);
+  function estimativaCaravana(E, jogo){
+    const r = rotaEscolhida(E, jogo);
     if(!r) return null;
     const aptos = TO.membros.aptosParaOEstadio(E);
     const moral = E.indicadores.moral/20;
     const vontade = U.limitar(0.72 - r.saltos*0.09 + moral*0.4
                               - (r.risco/100)*0.15, 0.08, 0.95);
     const interessados = Math.max(MINIMO, Math.round(aptos.length * vontade));
-    const escolhido = (E.plano||{}).caravana;
+    const escolhido = (plano(E, jogo)||{}).caravana;
     const vao = U.limitar(escolhido == null ? interessados : escolhido,
                           MINIMO, interessados);
     const porCabeca = r.id === 'ar' ? CABECA_AR
@@ -856,24 +881,24 @@ TO.planejamento = (function(){
      próxima. Ir em paz encerra em dois passos; atacar abre o
      alvo, o modo, o mapa do olheiro e as bombas.
      ======================================================= */
-  function definirIntencao(E, id){
-    const p = plano(E);
+  function definirIntencao(E, id, jogo){
+    const p = plano(E, jogo);
     p.intencao = id;
     if(id === 'paz'){ p.alvoTorcida = null; p.olheiro = null; p.bombas = 0; }
     p.alvo = alvoDe(p);
     p.decidido = false;
     return p;
   }
-  function definirComo(E, id){
-    const p = plano(E);
+  function definirComo(E, id, jogo){
+    const p = plano(E, jogo);
     p.como = id;
     if(id !== 'ida') p.olheiro = null;
     p.alvo = alvoDe(p);
     p.decidido = false;
     return p;
   }
-  function definirOlheiro(E, id){
-    const p = plano(E);
+  function definirOlheiro(E, id, jogo){
+    const p = plano(E, jogo);
     p.olheiro = id; p.como = 'ida'; p.alvo = alvoDe(p);
     p.decidido = false;
     return p;
@@ -1185,9 +1210,12 @@ TO.planejamento = (function(){
   /* QUANTOS VÃO ATACAR. O teto é quem sai de casa naquele dia e o piso
      é o mesmo da caravana — bonde de três não é bonde. Sem escolha, vai
      todo mundo, que é como era antes de existir o seletor. */
-  function efetivoDoAtaque(E){
-    const teto = Math.max(MINIMO, efetivoDaSaida(E));
-    const p = plano(E);
+  function efetivoDoAtaque(E, jogo){
+    const partida = jogo
+      ? {mapa: jogo.casa ? E.torcida.mapa : jogo.mapaAdv, casa: !!jogo.casa}
+      : undefined;
+    const teto = Math.max(MINIMO, efetivoDaSaida(E, partida, jogo));
+    const p = plano(E, jogo);
     return {teto, piso: Math.min(MINIMO, teto),
             vao: U.limitar(p.efetivoAtaque != null ? p.efetivoAtaque : teto,
                            Math.min(MINIMO, teto), teto)};
@@ -1195,9 +1223,9 @@ TO.planejamento = (function(){
 
   /* a escolha do assistente chega ao plano da semana por aqui, e por
      `definirIntencao`, que é o único lugar que sabe da trela */
-  function definirAtaque(E, esc){
-    definirIntencao(E, 'atacar');
-    const p = plano(E);
+  function definirAtaque(E, esc, jogo){
+    definirIntencao(E, 'atacar', jogo);
+    const p = plano(E, jogo);
     if(esc.alvo) p.alvoTorcida = esc.alvo;
     const onde = ONDE_ATAQUE.find(o=>o.id === esc.onde) || ONDE_ATAQUE[2];
     p.como = onde.como;
@@ -1206,7 +1234,7 @@ TO.planejamento = (function(){
     if(esc.bombas != null)
       p.bombas = U.limitar(esc.bombas, 0, (E.estoque||{}).bombas || 0);
     if(esc.efetivo != null){
-      const f = efetivoDoAtaque(E);
+      const f = efetivoDoAtaque(E, jogo);
       p.efetivoAtaque = U.limitar(esc.efetivo, f.piso, f.teto);
     }
     p.decidido = false;
@@ -1216,8 +1244,8 @@ TO.planejamento = (function(){
   /* =======================================================
      FECHAR O PLANO
      ======================================================= */
-  function confirmar(E){
-    const p = plano(E);
+  function confirmar(E, jogo){
+    const p = plano(E, jogo);
     p.decidido = true;
     /* A RECEPÇÃO NÃO É MAIS PAGA AQUI (correção do dono, 28/08/2026):
        a escolha fica no plano e `cobrarRecepcoes` vira a conta no DIA
