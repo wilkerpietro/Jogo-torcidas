@@ -882,6 +882,8 @@
         : m.kind === 'rodada' && TO.gazeta ? TO.gazeta.montar(e, m)
         : (m.kind === 'lnt-fundacao' || m.kind === 'lnt-fim') && TO.porrada && TO.porrada.montarLNT
           ? TO.porrada.montarLNT(e, m)
+        : m.kind === 'obra' && TO.porrada && TO.porrada.montarObra
+          ? TO.porrada.montarObra(e, m)
         : m.kind === 'almanaque' ? (m.dados || {}).pagina
         : null;
       if(pg && pg.manchete)
@@ -2343,6 +2345,50 @@
     return rec;
   }
 
+  /* A OBRA NA PRAÇA (pedido do dono, 21/09/2026): porta nova na rua
+     sai no Futebol e Porrada, com o quadro da praça do lado, e não
+     como linha solta de texto. Mesmo esqueleto da briga e da LNT. */
+  function recorteDaObra(p){
+    const rec = el('article',{class:'gz pp'});
+    const cab = el('div',{class:'gz-cabeca'});
+    cab.innerHTML = `<div class="nome-jornal">Futebol e Porrada</div>`;
+    rec.appendChild(cab);
+
+    const topo = el('div',{class:'gz-topo'});
+    const man = el('div',{class:'gz-manchete'});
+    man.innerHTML =
+      `<div class="chapeu">${p.chapeu}</div>
+       <h2>${p.manchete}</h2>
+       <p class="olho">${p.olho}</p>`;
+    topo.appendChild(man);
+
+    /* sem com quem comparar — obra nossa, ou de fora da praça — a
+       página fica só com a manchete, como a fundação da LNT */
+    if(p.quadro){
+      const q = p.quadro;
+      const cx = el('aside',{class:'pp-quadro pp-obra'});
+      cx.appendChild(el('div',{class:'col-tit', texto:q.titulo}));
+      const g = el('div',{class:'grade'});
+      g.appendChild(el('div',{class:'cab', html:
+        `<span class="rot"></span>`+
+        q.lados.map(l=>`<span class="lado${l.nossa?' nossa':''}">`+
+          `${linkTorcida(l.id, l.nome)}</span>`).join('')}));
+      for(const [rot, vals, forte] of q.linhas){
+        const maior = Math.max(...vals);
+        g.appendChild(el('div',{class:'l'+(forte?' forte':''), html:
+          `<span class="rot">${rot}</span>`+
+          vals.map(v=>`<span class="v${forte && v === maior && maior ? ' pior' : ''}">`+
+            `${v}</span>`).join('')}));
+      }
+      cx.appendChild(g);
+      cx.appendChild(el('div',{class:'venceu', html:
+        `<span class="rot">Na rua</span> ${q.pe}`}));
+      topo.appendChild(cx);
+    }
+    rec.appendChild(topo);
+    return rec;
+  }
+
   /* o quadro da noite: duas colunas de números e o vencedor */
   function quadroDaNoite(q){
     const cx = el('aside',{class:'pp-quadro'});
@@ -3042,6 +3088,17 @@
         const txt = art.querySelector('.msg-txt');
         if(txt) txt.remove();
         art.appendChild(recorteDaLNT(pg));
+      }
+    }
+
+    /* obra de save antigo não tem `dados`: sem eles a página não se
+       monta e o cartão segue sendo a linha de texto de sempre */
+    if(m.kind === 'obra' && TO.porrada && TO.porrada.montarObra){
+      const pg = TO.porrada.montarObra(e, m);
+      if(pg){
+        const txt = art.querySelector('.msg-txt');
+        if(txt) txt.remove();
+        art.appendChild(recorteDaObra(pg));
       }
     }
 

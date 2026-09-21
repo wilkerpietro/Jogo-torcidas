@@ -895,7 +895,8 @@ TO.patrimonio = (function(){
          porta nova na cidade pode ser só abrir, ou pode ser desfile.
          Quem pergunta é o cartão do feed. */
       if(TO.feed && TO.feed.registrarObra)
-        TO.feed.registrarObra(E, {tipo:'obra', torcida:E.torcida.id, item:tipo});
+        TO.feed.registrarObra(E, {tipo:'obra', torcida:E.torcida.id,
+                                  item:tipo, bairro});
     } else if(acao==='ampliar'){
       const cfg = PONTO[tipo];
       const alvo = (p[cfg.plural]||[]).filter(x=>cfg.ampliar[x.nivel])
@@ -903,6 +904,12 @@ TO.patrimonio = (function(){
       if(!alvo) return {ok:false, msg:'Não há o que ampliar.'};
       alvo.nivel++;
       TO.estado.lancar(E, `Ampliação — ${cfg.rot} ${alvo.bairro} (n${alvo.nivel})`, -o.custo);
+      /* a ampliação NOSSA também é notícia (21/09/2026): só a compra
+         avisava o feed, então "ampliou o bar" era coisa que só as
+         outras torcidas faziam no jornal */
+      if(TO.feed && TO.feed.registrarObra)
+        TO.feed.registrarObra(E, {tipo:'obra', torcida:E.torcida.id,
+                                  item:'ampliar:'+tipo, bairro:alvo.bairro});
     }
     return {ok:true, msg:o.rot};
   }

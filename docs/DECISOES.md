@@ -7759,6 +7759,70 @@ provadas direto, o que é mais forte do que esperar cair:
 * O tom do fim da LNT: Campeão → bom, Fase de chaves → ruim, Vice e
   Oitavas → neutro, fora da edição → neutro.
 
+## Obra na praça sai no jornal, não em linha de texto (21/09/2026)
+
+Pedido do dono, com a foto do recorte da briga junto: *"quando alguma
+torcida abre algo na cidade deve aparecer uma notícia desse layout e
+não um simples texto na tela"*.
+
+Era uma linha: *"A Independente abriu uma loja nova na praça."* Porta
+que abre na rua pesa mais que isso — muda quem manda em qual bairro —,
+e o jogo já tinha o esqueleto certo pronto, usado pela briga e pela
+LNT: chapéu, manchete, olho e o quadro do lado.
+
+**A página** (`TO.porrada.montarObra`, moldes em `MOLDES.obra`):
+
+* **chapéu** por tipo de obra — "Porta nova na praça", "Reforma na
+  praça", "A casa cresceu", "Material próprio", "Bandeira fora da
+  praça", e "Obra nossa" quando é a gente.
+* **manchete** curta. A primeira leva tinha frase de linha inteira e o
+  recorte saía com **seis linhas de caixa alta**, o dobro do que a
+  página comporta. O número desceu pro olho e pro quadro, que é onde
+  número se lê.
+* **o quadro da praça**, no lugar do quadro da noite: bares, lojas,
+  subsedes e pontos, lado a lado, com o pé dizendo quem tem mais rua.
+  Na obra de outra torcida a comparação é com ela; **na nossa é com
+  quem manda na praça hoje** — sem isso a nossa obra saía sem quadro,
+  e o quadro é metade do layout que o dono pediu.
+
+**A voz.** A manchete nossa já dizia "Ampliamos a loja" e o olho
+embaixo dizia "A Mancha Verde ampliou a loja": o jornal falava da
+gente em terceira pessoa na mesma página em que falava por nós. Agora
+há um verbo em primeira pessoa por obra.
+
+**Consertado no caminho:**
+
+* **Faltava o artigo antes do nome.** Os moldes abriam com `{A}` puro
+  — "Camisa 12 plantou um bar". Toda torcida é feminina: é "a {A}".
+* **"em Rio de Janeiro".** Cidade tem gênero como o resto, e **metade
+  da lista do jogo é região** — "no Interior de SP", "no Norte do
+  Chile", "na Zona Norte". As 94 entraram em `dados/genero.js` com um
+  quarto valor, **`s` de sem artigo**: "em Salvador" não leva artigo
+  nenhum, e não há regra de forma que separe os três casos.
+* **O bairro em lugar que não é bairro.** Fábrica e sede não abrem
+  porta na rua, e a filial é em OUTRA cidade — saía "subsede fora da
+  praça em Salvador, no bairro Meireles", dois endereços pro mesmo
+  fato. E o "fora da praça" sobrava, porque a cidade vem logo atrás.
+* **A nossa ampliação não era notícia.** Só a compra avisava o feed,
+  então "ampliou o bar" era coisa que só as outras torcidas faziam no
+  jornal.
+* **"CAMIS A 12" no cabeçalho do quadro.** A coluna do quadro da noite
+  tem 3.6em e `overflow-wrap:anywhere`, o que parte nome no meio da
+  palavra. O quadro da praça tem rótulo mais comprido ("SUBSEDES") e
+  ficou com classe própria, mais larga e quebrando por palavra — **o
+  quadro da briga não muda**, é aprovado.
+
+**Save antigo continua funcionando:** obra gravada antes de hoje não
+tem `dados`, a página não se monta e o cartão segue sendo a linha de
+texto de sempre. O `texto` ficou de pé por isso e porque é ele que o
+ticker lê.
+
+**Medido.** Todas as nove obras × torcida da praça, nossa e de fora da
+praça: chapéu, manchete, olho e quadro conferidos um a um, 0 erro de
+página. Obra de torcida de fora da praça continua não virando notícia,
+como o dono decidiu em 19/09. Temporada inteira em três torcidas com o
+console vigiado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

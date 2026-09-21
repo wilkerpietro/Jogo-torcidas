@@ -326,6 +326,79 @@ TO.porrada = (function(){
         'A nossa campanha acabou {F} da {DN} Divisão.']
     },
 
+    /* 7 · A OBRA NA PRAÇA (pedido do dono, 21/09/2026)
+       Porta nova na rua é notícia do Futebol e Porrada, no mesmo
+       esqueleto da briga: chapéu, manchete, olho e o quadro do lado.
+       Era uma linha solta de texto no feed — "A Independente abriu
+       uma loja nova na praça." — e porta que abre na praça pesa mais
+       que isso: muda quem manda em qual bairro.
+       {A} torcida · {O} o que abriu ("um bar") · {N} quantos pontos
+       ela tem agora · {C} cidade (só na filial) */
+    obra:{
+      chapeu:{
+        nossa:  ['Obra nossa'],
+        abriu:  ['Porta nova na praça'],
+        ampliou:['Reforma na praça'],
+        sede:   ['A casa cresceu'],
+        fabrica:['Material próprio'],
+        filial: ['Bandeira fora da praça']
+      },
+      /* MANCHETE CURTA. A primeira leva tinha frase de linha inteira
+         e o recorte saía com seis linhas de caixa alta, o dobro do
+         que a página comporta. O número e a comparação descem pro
+         olho e pro quadro, que é onde número se lê. */
+      abriu:[
+        'A {A} abriu {O} na praça',
+        'Porta nova da {A} na praça',
+        'A {A} plantou {O} na rua'
+      ],
+      abriuNos:[
+        'Abrimos {O} na praça',
+        'Porta nova nossa na praça'
+      ],
+      ampliou:[
+        'A {A} ampliou {O} e ocupa mais rua',
+        'Obra da {A}: {O} cresceu'
+      ],
+      ampliouNos:[
+        'Ampliamos {O} e ocupamos mais rua'
+      ],
+      sede:[
+        'A sede da {A} cresceu',
+        'A {A} ampliou a casa dela'
+      ],
+      sedeNos:[
+        'A nossa sede cresceu'
+      ],
+      fabrica:[
+        'A {A} montou fábrica própria',
+        'A {A} passou a fazer o material dela'
+      ],
+      fabricaNos:[
+        'Montamos a nossa fábrica'
+      ],
+      /* {C} já vem com a preposição — "no Rio de Janeiro", "em
+         Salvador", "na Bahia" —, porque cidade tem gênero e metade
+         desta lista é região. A tabela é dados/genero.js. */
+      filial:[
+        'A {A} fincou bandeira {C}',
+        'Subsede nova da {A} {C}'
+      ],
+      filialNos:[
+        'Fincamos bandeira {C}'
+      ],
+      /* o olho: o fato seco, e a comparação com a gente quando
+         a obra é de outra torcida da praça */
+      olho:[
+        '{F}{C2}.'],
+      olhoCompara:[
+        '{F}{C2}. Na praça são {N} pontos dela contra {M} nossos.'],
+      olhoEmpate:[
+        '{F}{C2}. Na praça ela empata com a gente: {N} pontos de cada lado.'],
+      olhoNossa:[
+        '{F}{C2}. Na praça são {N} pontos nossos na rua.']
+    },
+
     /* 5 · quando o país não se pegou */
     vazio:['O resto do país passou o dia em paz.',
            'Fora essa, nenhuma outra treta hoje.']
@@ -593,6 +666,92 @@ TO.porrada = (function(){
      da Porrada, com o quadro das quatro divisões no lugar do
      quadro da noite.
      ======================================================= */
+  /* ======================================================
+     A PÁGINA DA OBRA
+     `dados` vem pronto do feed (quem tem o quê na praça é
+     conta do feed, não do jornal). Aqui só se escolhe a
+     conversa e se monta o recorte.
+     ====================================================== */
+  const O_QUE = {
+    bar:'um bar', loja:'uma loja', subsede:'uma subsede',
+    'ampliar:bar':'o bar', 'ampliar:loja':'a loja',
+    'ampliar:subsede':'a subsede'
+  };
+  /* O QUADRO DA PRAÇA, no lugar do quadro da noite: quem tem o quê
+     na rua, lado a lado. Na obra de outra torcida a comparação é com
+     ela; na nossa é com quem manda na praça hoje. Fora da praça não
+     há quadro — não há com quem comparar. */
+  function quadroDaPraca(E, d, eles, nos){
+    if(!d.naPraca) return null;
+    const outro = d.nossa ? d.rival : {nome:d.nome, id:d.torcida, pontos:eles};
+    if(!outro) return null;
+    const p = d.nossa ? (outro.pontos || {}) : eles;
+    const linha = (rot, ch) => [rot, d.nossa ? [nos[ch]||0, p[ch]||0]
+                                             : [p[ch]||0, nos[ch]||0]];
+    const meu = nos.total || 0, dele = p.total || 0;
+    return {
+      titulo:'O quadro da praça',
+      lados: d.nossa
+        ? [{nome:d.nomeNossa, id:E.torcida.id, nossa:true},
+           {nome:outro.nome, id:outro.id, nossa:false}]
+        : [{nome:d.nome, id:d.torcida, nossa:false},
+           {nome:d.nomeNossa, id:E.torcida.id, nossa:true}],
+      linhas:[linha('Bares','bares'), linha('Lojas','lojas'),
+              linha('Subsedes','subsedes'),
+              ['Pontos', d.nossa ? [meu, dele] : [dele, meu], true]],
+      pe: meu === dele ? 'Empatadas na praça'
+        : meu > dele ? 'A gente tem mais pontos'
+        : `${outro.nome} tem mais pontos`
+    };
+  }
+
+  function montarObra(E, m){
+    const d = m && m.dados;
+    if(!d || !d.item) return null;
+    const q = m.quando || {};
+    const ano = q.ano || E.data.ano, sem = q.semana || 1, dia = q.dia || 1;
+    const dt = TO.estado.dataDaSemana(ano, sem, dia);
+    const proxima = filaDe((dt.getDate() + dt.getMonth()*31) || 1);
+    const B = MOLDES.obra;
+    const nossa = !!d.nossa;
+
+    const grupo = d.item === 'sede' ? 'sede'
+                : d.item === 'fabrica' ? 'fabrica'
+                : d.item === 'filial' ? 'filial'
+                : /^ampliar:/.test(d.item) ? 'ampliou' : 'abriu';
+    const lista = nossa ? (B[grupo + 'Nos'] || B[grupo]) : B[grupo];
+    const eles = d.eles || {}, nos = d.nos || {};
+    const v = {A:d.nome, O:O_QUE[d.item] || 'um ponto',
+               N:eles.total || 0, M:nos.total || 0,
+               C:d.cidadeEm || 'fora da praça'};
+
+    /* o olho leva o fato seco e, quando é de outra torcida da praça,
+       a comparação — é o que faz a notícia ser NOSSA também */
+    v.F = d.frase || '';
+    v.C2 = d.bairro ? `, no bairro ${d.bairro}` : '';
+    const molde = nossa ? B.olhoNossa
+                : !d.naPraca ? B.olho
+                : (eles.total === nos.total) ? B.olhoEmpate
+                : B.olhoCompara;
+    const olho = encher(proxima(molde, 'obra-olho'),
+                        nossa ? Object.assign({}, v, {N:nos.total}) : v);
+
+    return {
+      cabeca:{
+        ano: ROMANO(Math.max(1, ano - 2025)),
+        edicao: (q.absoluto || E.data.absoluto || 0) + 200,
+        data: `${DIA_SEM[dia]}, ${dt.getDate()} de ${MES[dt.getMonth()]}`
+      },
+      chapeu: (nossa ? B.chapeu.nossa : B.chapeu[grupo] || B.chapeu.abriu)[0],
+      manchete: encher(proxima(lista, 'obra-man'), v),
+      olho,
+      /* O QUADRO DA PRAÇA, no lugar do quadro da noite: quem tem o
+         quê na rua, lado a lado. Só existe quando há com quem
+         comparar — obra nossa compara com quem fez a última. */
+      quadro: quadroDaPraca(E, d, eles, nos)
+    };
+  }
+
   function montarLNT(E, m){
     const d = m && m.dados;
     if(!d) return null;
@@ -671,5 +830,6 @@ TO.porrada = (function(){
     return TO.genero.em('fase', b.toLowerCase());
   };
 
-  return {montar, montarLNT, MOLDES, encher, ondeDe, MOSTRA, naFaseLNT};
+  return {montar, montarLNT, montarObra, MOLDES, encher, ondeDe,
+          MOSTRA, naFaseLNT};
 })();

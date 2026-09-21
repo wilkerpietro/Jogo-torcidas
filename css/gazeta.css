@@ -344,6 +344,16 @@
 }
 .gz.pp .pp-quadro .l .v{font-size:20px}
 .gz.pp .pp-quadro .cab .lado{font-size:10px}
+/* O QUADRO DA PRAÇA (obra, 21/09/2026) tem nome de torcida no
+   cabeçalho e rótulo mais comprido na linha ("SUBSEDES"), então as
+   colunas de número precisam de mais ar que as do quadro da noite:
+   em 3.6em o `overflow-wrap:anywhere` partia "CAMISA 12" no meio da
+   palavra — "CAMIS / A 12". Aqui a quebra é por palavra, e só parte
+   a palavra se ela sozinha não couber. O quadro da briga não muda. */
+.pp-quadro.pp-obra .cab,.pp-quadro.pp-obra .l{
+  grid-template-columns:1fr 4.8em 4.8em;
+}
+.pp-quadro.pp-obra .cab .lado{overflow-wrap:break-word}
 /* quem levou mais ferido e mais cadeia aparece na tinta vermelha:
    é o número que conta a história da noite */
 .pp-quadro .l.forte .v.pior{color:var(--rubro-jornal)}

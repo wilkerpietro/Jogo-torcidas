@@ -169,6 +169,43 @@ TO.dados.genero = {
         "Zinho de Oliveira", "Zorros del Desierto"]
   },
 
+  /* ---------- cidades e praças ----------
+     Aqui há um quarto valor: `s`, de SEM ARTIGO. "em Salvador" não
+     leva artigo nenhum, mas "no Rio de Janeiro" e "na Bahia" levam —
+     e quase metade desta lista é região ("Interior de SP", "Norte do
+     Chile"), que sempre leva. Não há regra de forma que separe as
+     três: é nome por nome. */
+  cidade: {
+    s: ['Alagoas', 'Ambato', 'Assunção', 'Avellaneda', 'Belem',
+        'Belo Horizonte', 'Bogotá', 'Brasilia', 'Buenos Aires', 'Cali',
+        'Caracas', 'Cochabamba', 'Concepción', 'Curitiba', 'Cusco',
+        'Cuyo e Patagônia', 'Córdoba', 'Fortaleza', 'Goiania',
+        'Guayaquil', 'La Matanza', 'La Paz', 'La Plata',
+        'Lanús e Lomas', 'Lima', 'Manaus', 'Medellín', 'Mendoza',
+        'Montevidéu', 'Morón e Merlo', 'Oruro e Potosí',
+        'Porto Alegre', 'Quilmes e Berazategui', 'Quito', 'Rosário',
+        'San Martín e Tres de Febrero', 'Santa Cruz', 'Santiago',
+        'Santiago Sul', 'Santiago del Estero', 'Santos', 'Sao Paulo',
+        'Sergipe', 'Tucumã', 'Valparaíso', 'Varela e Ezeiza'],
+    f: ['Bahia', 'Costa Colombiana', 'Costa Equatoriana',
+        'Grande Assunção', 'Paraiba', 'Região de Campinas',
+        'Zona Norte'],
+    m: ['ABC Paulista', 'Centro da Venezuela', 'Centro do Chile',
+        'Eixo Cafeteiro', 'Interior da Bolívia', 'Interior da Colômbia',
+        'Interior de Buenos Aires', 'Interior de Minas',
+        'Interior de PE', 'Interior de SC', 'Interior de SP',
+        'Interior do CE', 'Interior do PR', 'Interior do Paraguai',
+        'Interior do RS', 'Interior do Uruguai', 'Leste de Montevidéu',
+        'Litoral Argentino', 'Litoral Catarinense', 'Maranhão',
+        'Mato Grosso', 'Norte Chico', 'Norte da Argentina',
+        'Norte da Colômbia', 'Norte de CABA', 'Norte do Chile',
+        'Norte do Peru', 'Oeste da Venezuela', 'Oeste de CABA',
+        'Oeste de Montevidéu', 'Oriente da Venezuela', 'Recife',
+        'Rio Grande do Norte', 'Rio de Janeiro', 'Suburbio Carioca',
+        'Sul da Colômbia', 'Sul de Bogotá', 'Sul de CABA',
+        'Sul do Chile', 'Sul do Equador', 'Sul do Peru']
+  },
+
   /* ---------- fases ----------
      Quase todas femininas, duas no plural. O palpite antigo mandava
      tudo que termina em s pro plural feminino e o resto pro singular

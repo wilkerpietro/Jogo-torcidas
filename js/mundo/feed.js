@@ -1712,8 +1712,31 @@ TO.feed = (function(){
     'ampliar:loja':'ampliou a loja',
     'ampliar:subsede':'ampliou a subsede',
     fabrica:'montou uma fábrica de material próprio',
-    filial:'abriu uma subsede fora da praça'
+    /* a cidade vem logo atrás, então "fora da praça" sobrava:
+       "abriu uma subsede fora da praça no Rio de Janeiro" */
+    filial:'abriu uma subsede'
   };
+  /* A NOSSA OBRA FALA EM PRIMEIRA PESSOA (21/09/2026). A manchete já
+     dizia "Ampliamos a loja" e o olho embaixo dizia "A Mancha Verde
+     ampliou a loja" — o jornal falava da gente em terceira pessoa na
+     mesma página em que falava por nós. */
+  const VERBO_NOSSO = {
+    bar:'abrimos um bar novo na praça',
+    loja:'abrimos uma loja nova na praça',
+    subsede:'inauguramos uma subsede nova na praça',
+    sede:'ampliamos a sede',
+    'ampliar:bar':'ampliamos o bar',
+    'ampliar:loja':'ampliamos a loja',
+    'ampliar:subsede':'ampliamos a subsede',
+    fabrica:'montamos uma fábrica de material próprio',
+    filial:'abrimos uma subsede'
+  };
+  /* O BAIRRO SÓ ONDE ELE QUER DIZER ALGO. Fábrica e sede não abrem
+     porta nova na rua, e a filial é em OUTRA cidade — "subsede fora
+     da praça em Salvador, no bairro Meireles" dizia dois lugares
+     diferentes pro mesmo endereço. */
+  const COM_BAIRRO = {bar:1, loja:1, subsede:1,
+                      'ampliar:bar':1, 'ampliar:loja':1, 'ampliar:subsede':1};
 
   /* o mundo avisa daqui: `tipo` é 'obra' ou 'bar-quebrado'. Guarda só
      o que vale notícia pra nós — sem isso a fila encheria de obra de
@@ -1783,16 +1806,77 @@ TO.feed = (function(){
      "inaugura como?" era inventar uma escolha em cima de coisa já
      feita. O Futebol e Porrada noticia, e ponto — inclusive a nossa,
      que é o jornal da praça falando da praça. */
+  /* QUEM TEM O QUÊ NA PRAÇA. A conta é daqui e não do jornal: o
+     jornal escreve, não sabe onde o jogo guarda patrimônio — e são
+     dois lugares diferentes, `E.patrimonio` pro jogador e
+     `E.mundoTorcidas` pras outras, com `subsedes` número de um lado
+     e lista do outro. */
+  function pontosDe(E, id){
+    const n = x => Array.isArray(x) ? x.length : (x ? Math.round(x) : 0);
+    let p;
+    if(id === E.torcida.id){
+      p = TO.financeiro.patrimonio(E);
+    }else{
+      p = (E.mundoTorcidas || {})[id];
+      if(!p) return {bares:0, lojas:0, subsedes:0, total:0};
+    }
+    const bares = n(p.bares), lojas = n(p.lojas), subsedes = n(p.subsedes);
+    /* a sede conta como ponto: é a porta principal */
+    return {bares, lojas, subsedes, total: 1 + bares + lojas + subsedes};
+  }
+
+  /* quem tem mais pontos na praça, tirando a gente */
+  function maiorDaPraca(E){
+    const nossa = M().torcida(E.torcida.id);
+    if(!nossa) return null;
+    let melhor = null;
+    for(const o of M().torcidasEm(nossa.mapa)){
+      if(o.id === E.torcida.id || o.incompleta) continue;
+      const p = pontosDe(E, o.id);
+      if(!melhor || p.total > melhor.pontos.total)
+        melhor = {id:o.id, nome:o.nome, pontos:p};
+    }
+    return melhor;
+  }
+
   function cartaoDaObra(E, ev){
     const nome = (M().torcida(ev.torcida) || {}).nome || 'eles';
     const v = VERBO_OBRA[ev.item];
     if(!v) return null;               // item sem notícia (ônibus, bomba…)
     /* a cidade só aparece quando é a da obra: subsede de fora */
-    const ondeFoi = ev.cidade && TO.financeiro.nomeCidade
-      ? ` em ${TO.financeiro.nomeCidade(ev.cidade)}` : '';
+    const cidadeNome = ev.cidade && TO.financeiro.nomeCidade
+      ? TO.financeiro.nomeCidade(ev.cidade) : '';
+    /* "em Rio de Janeiro" era o que saía: cidade tem gênero como o
+       resto, e a metade desta lista é região ("no Interior de SP") */
+    const cidadeEm = cidadeNome ? TO.genero.em('cidade', cidadeNome) : '';
+    const ondeFoi = cidadeEm ? ` ${cidadeEm}` : '';
+    const nossa = ev.torcida === E.torcida.id;
+    const texto = `A ${nome} ${v}${ev.item === 'filial' ? ondeFoi : ''}.`;
     return {
       chave:`obra|noticia|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
-      texto:`A ${nome} ${v}${ev.item === 'filial' ? ondeFoi : ''}.`
+      texto,
+      /* O JORNAL PRECISA DOS FATOS, NÃO DA FRASE (dono, 21/09/2026):
+         a obra saía como uma linha de texto no feed e agora tem
+         página no Futebol e Porrada, com o quadro da praça do lado.
+         `texto` fica: é o que o ticker lê e o que aparece em save
+         antigo, que não tem `dados`. */
+      dados:{
+        torcida:ev.torcida, nome, nossa,
+        nomeNossa:(M().torcida(E.torcida.id) || {}).nome || 'nós',
+        item:ev.item, cidade:ev.cidade || null, cidadeNome, cidadeEm,
+        bairro: COM_BAIRRO[ev.item] ? (ev.bairro || null) : null,
+        naPraca: nossa || naPraca(E, ev.torcida),
+        /* obra nossa compara com quem tem mais rua na praça hoje —
+           é a régua que interessa a quem lê: a gente passou quem? */
+        rival: nossa ? maiorDaPraca(E) : null,
+        frase: nossa
+          ? `${VERBO_NOSSO[ev.item][0].toUpperCase()}`+
+            `${VERBO_NOSSO[ev.item].slice(1)}`+
+            `${ev.item === 'filial' ? ondeFoi : ''}`
+          : `A ${nome} ${v}${ev.item === 'filial' ? ondeFoi : ''}`,
+        eles: pontosDe(E, ev.torcida),
+        nos:  pontosDe(E, E.torcida.id)
+      }
     };
   }
 
@@ -1806,7 +1890,7 @@ TO.feed = (function(){
       const c = cartaoDaObra(E, ev);
       if(!c) continue;
       propor(E, {kind:'obra', peso:'info', voz:'porrada',
-                 chave:c.chave, texto:c.texto});
+                 chave:c.chave, texto:c.texto, dados:c.dados});
       return;
     }
   }

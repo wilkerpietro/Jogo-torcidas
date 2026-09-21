@@ -129,11 +129,15 @@ TO.genero = (function(){
     competicao: n => /^(copa|taca|serie|copinha|recopa|supercopa|liga|primera)\b/
                        .test(crua(n)) ? 'f' : 'm',
     estadio:    n => /^(arena|vila|ilha)\b/.test(crua(n)) ? 'f' : 'm',
-    fase:       n => /s$/.test(crua(n)) ? 'fp' : 'f'
+    fase:       n => /s$/.test(crua(n)) ? 'fp' : 'f',
+    /* nome de cidade solto é o caso mais comum, e é o que menos
+       estraga quando se erra: "em Tal Lugar" lê como nome próprio */
+    cidade:     () => 's'
   };
   const avisados = {};
 
-  /* 'f' feminino, 'fp' feminino plural, 'm' masculino */
+  /* 'f' feminino, 'fp' feminino plural, 'm' masculino,
+     's' SEM ARTIGO — "em Salvador", "de Salvador". Só cidade usa. */
   function de(tipo, nome){
     if(!nome) return 'm';
     if(!indice) montar();
@@ -155,13 +159,17 @@ TO.genero = (function(){
 
   /* de+artigo, em+artigo, por+artigo, e o artigo sozinho */
   const ART = {
-    d:   {f:'da',   fp:'das',  m:'do'},
-    em:  {f:'na',   fp:'nas',  m:'no'},
-    por: {f:'pela', fp:'pelas', m:'pelo'},
-    o:   {f:'a',    fp:'as',   m:'o'}
+    d:   {f:'da',   fp:'das',   m:'do',   s:'de'},
+    em:  {f:'na',   fp:'nas',   m:'no',   s:'em'},
+    por: {f:'pela', fp:'pelas', m:'pelo', s:'por'},
+    /* sem artigo não tem o que pôr antes do nome */
+    o:   {f:'a',    fp:'as',    m:'o',    s:''}
   };
-  const junta = (forma, tipo, nome, vazio) =>
-    !nome ? (vazio || '') : `${ART[forma][de(tipo, nome)]} ${nome}`;
+  const junta = (forma, tipo, nome, vazio) => {
+    if(!nome) return vazio || '';
+    const a = ART[forma][de(tipo, nome)];
+    return a ? `${a} ${nome}` : String(nome);
+  };
 
   return {
     de,
