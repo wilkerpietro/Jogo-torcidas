@@ -413,15 +413,37 @@ TO.membros = (function(){
       if(r.veterano && !m.veterano){
         m.veterano = true;
         m.forca += 2; m.defesa += 2;
-        m.historico.push('Virou Veterano: sem vaga na Diretoria, +2/+2');
+        anotar(m, 'promovido', 'Virou Veterano: sem vaga na Diretoria, +2/+2');
         return {ok:true, veterano:true};
       }
       return r;
     }
     if(r.custo) TO.estado.lancar(E, `Promoção de ${nomeDe(m)}`, -r.custo);
     m.cargo = r.para;
-    m.historico.push(`Promovido a ${CARGOS[r.para].nome}`);
+    anotar(m, 'promovido', `Promovido a ${CARGOS[r.para].nome}`);
     return {ok:true, para:r.para};
+  }
+
+  /* =======================================================
+     A FICHA DO MEMBRO GUARDA O TIPO, NÃO SÓ A FRASE
+     (conserto de 21/09/2026)
+
+     O histórico era uma lista de frases, e a tela contava a
+     carreira passando regex por cima da prosa. Contava errado,
+     e dava pra medir: uma lesão com sequela virava DUAS feridas
+     (a linha do machucado e a da sequela casavam as duas
+     `/ferid|sequela/`); uma prisão virava DUAS (a da pena e a
+     do "voltou da cadeia"); e "Pendurou a bandeira aos 38 anos"
+     — aposentadoria — casava `/faixa|bandeira/` e era contada
+     como FAIXA PRODUZIDA, pintada de ouro na linha do tempo.
+
+     Agora cada evento nasce com o tipo ao lado do texto. A
+     frase continua sendo o que a tela mostra; o tipo é o que
+     ela conta. Save antigo tem string pura, e a tela sabe ler
+     os dois — ver `tipoDoEvento` em main.js.
+     ======================================================= */
+  function anotar(m, tipo, texto){
+    (m.historico = m.historico || []).push({t:tipo, x:texto});
   }
 
   /* GDD §5.4: ganho fracionário de 0.0 a 0.3 por sessão.
@@ -503,15 +525,17 @@ TO.membros = (function(){
                                      : U.inteiro(FERIDO_MIN, FERIDO_MAX));
     m.ferido = { dias:d };
     m.naFila = false;
-    m.historico.push(`${motivo || 'Ferido no dia de jogo'}, ${d} dias fora`);
+    anotar(m, 'ferido', `${motivo || 'Ferido no dia de jogo'}, ${d} dias fora`);
     /* SEQUELA (régua do dono, 20/08/2026): parte das lesões deixa
        marca — pouca coisa por vez, mas não volta nunca. */
     if(U.rng() < SEQUELA.chance){
       const q = U.entre(SEQUELA.min, SEQUELA.max);
       const saiu = perder(m, q, true);        // sequela não volta no treino
       m.sequelas = (m.sequelas || 0) + 1;
-      m.historico.push(`Ficou a sequela: −${saiu.forca.toFixed(1).replace('.',',')} `+
-                       `de força e defesa`);
+      /* sequela é consequência da MESMA lesão: tipo próprio, pra não
+         ser contada como uma segunda ferida */
+      anotar(m, 'sequela', `Ficou a sequela: −${saiu.forca.toFixed(1).replace('.',',')} `+
+                           `de força e defesa`);
       return {sequela: saiu};
     }
   }
@@ -537,7 +561,7 @@ TO.membros = (function(){
     m.preso = { dias: pena, total: pena, motivo: txt,
                 desde: (E && E.data && E.data.absoluto) || 0 };
     m.naFila = false;
-    m.historico.push(`${txt} — ${pena} dias`+
+    anotar(m, 'preso', `${txt} — ${pena} dias`+
       (corte > 0 ? ` (o advogado cortou ${corte})` : ''));
   }
   /* quantos dias faltam pra sair. Save antigo pode ter prisão sem
@@ -571,8 +595,9 @@ TO.membros = (function(){
   function enferrujarNaCadeia(m, dias){
     if(!dias) return null;
     const saiu = perder(m, perdaDaCadeia(dias));
-    m.historico.push(`Voltou enferrujado da cadeia (${dias} dias): `+
-                     `−${saiu.forca.toFixed(1).replace('.',',')} de força e defesa`);
+    /* a volta NÃO é uma prisão nova: é o fim da mesma */
+    anotar(m, 'volta', `Voltou enferrujado da cadeia (${dias} dias): `+
+                       `−${saiu.forca.toFixed(1).replace('.',',')} de força e defesa`);
     return saiu;
   }
 
@@ -588,11 +613,11 @@ TO.membros = (function(){
       m.preso.dias -= dias;
       if(m.preso.dias <= 0){
         m.preso = null;
-        m.historico.push('Solto pelo trabalho do advogado');
+        anotar(m, 'advogado', 'Solto pelo trabalho do advogado');
         enferrujarNaCadeia(m, cumpriu);
         soltos.push(m);
       } else {
-        m.historico.push(`O advogado cortou ${dias} dias da pena`);
+        anotar(m, 'advogado', `O advogado cortou ${dias} dias da pena`);
       }
     }
     return soltos;
@@ -605,7 +630,7 @@ TO.membros = (function(){
     TO.estado.lancar(E, `Fiança de ${nomeDe(m)}`, -custo);
     const cumpriu = cumpridos(m);
     m.preso = null;
-    m.historico.push('Solto sob fiança');
+    anotar(m, 'advogado', 'Solto sob fiança');
     enferrujarNaCadeia(m, cumpriu);
     return {ok:true, custo};
   }
@@ -616,7 +641,7 @@ TO.membros = (function(){
         m.ferido.dias--;
         if(m.ferido.dias <= 0){
           m.ferido = null;
-          m.historico.push('Recuperado, de volta');
+          anotar(m, 'volta', 'Recuperado, de volta');
         }
       }
       /* a pena desce um dia por dia; no zero ele sai sozinho */
@@ -626,7 +651,7 @@ TO.membros = (function(){
         if(m.preso.dias <= 0){
           const cumpriu = cumpridos(m);
           m.preso = null;
-          m.historico.push('Cumpriu a pena, de volta');
+          anotar(m, 'volta', 'Cumpriu a pena, de volta');
           enferrujarNaCadeia(m, cumpriu);
         }
       }
@@ -654,8 +679,8 @@ TO.membros = (function(){
       if(m.idade >= IDADE_DECLINIO){
         const saiu = perder(m, DESGASTE_ANO, true);   // idade não volta
         if(saiu.forca > 0)
-          m.historico.push(`${m.idade} anos: −${saiu.forca.toFixed(1).replace('.',',')} `+
-                           `de força e defesa`);
+          anotar(m, 'idade', `${m.idade} anos: −${saiu.forca.toFixed(1).replace('.',',')} `+
+                                `de força e defesa`);
       }
       ficam.push(m);
     }
@@ -663,7 +688,9 @@ TO.membros = (function(){
     E.membros = ficam;
     E.velhaGuarda = E.velhaGuarda || [];
     for(const m of penduraram){
-      m.historico.push(`Pendurou a bandeira aos ${m.idade} anos`);
+      /* aposentadoria, e não faixa: era esta linha que a tela contava
+         como faixa produzida, por causa da palavra "bandeira" */
+      anotar(m, 'aposentou', `Pendurou a bandeira aos ${m.idade} anos`);
       /* na cadeia ou no hospital não se pendura bandeira: sai limpo */
       m.ferido = null; m.preso = null; m.naFila = false;
       E.velhaGuarda.unshift({

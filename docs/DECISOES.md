@@ -7528,6 +7528,32 @@ O modelo fica com a outra metade, que conta não sabe fazer: se a frase **lê be
 
 **Medido:** varredura de 0 divergências depois do conserto, nas duas situações de time, sobre as 19 opções com prestígio, 10 com relação e 8 com moral do banco.
 
+## A ficha do membro guarda o tipo, não só a frase (conserto de 21/09/2026)
+
+**O que estava errado, medido.** O histórico do membro era uma lista de frases, e a tela contava a carreira passando regex por cima da prosa (`main.js`, `conta(/ferid|sequela/i)` e companhia). Com **1 lesão com sequela, 1 prisão cumprida e 1 aposentadoria** — três eventos — a ficha mostrava:
+
+| | antes (regex) | agora (tipo) | real |
+|---|---|---|---|
+| feridas | **2** | 1 | 1 |
+| prisões | **2** | 1 | 1 |
+| faixas | **1** | — | 0 |
+| sequelas | — | 1 | 1 |
+
+Três erros distintos, todos ativos:
+- a linha da lesão e a da sequela casavam as duas `/ferid|sequela/` → **ferida contada em dobro**;
+- a linha da pena e a do "voltou da **cadeia**" casavam as duas → **prisão contada em dobro**;
+- **"Pendurou a bandeira aos 46 anos"** — aposentadoria — casava `/faixa|bandeira/` e era contada como **faixa produzida**, e ainda pintada de ouro na linha do tempo.
+
+**O contador de faixas nunca contou uma faixa.** Varrendo `membros.js`: não existe nenhum evento de faixa por membro, em lugar nenhum. O contador só via a linha da aposentadoria desde sempre. Saiu, e no lugar entrou **sequelas**, que é cicatriz de carreira de verdade e tem evento próprio.
+
+**O conserto.** `anotar(m, tipo, texto)` em `membros.js` grava `{t, x}`: a frase continua sendo o que a tela mostra, o tipo é o que ela conta. Treze eventos ganharam tipo — `ferido`, `sequela`, `preso`, `volta`, `advogado`, `promovido`, `idade`, `aposentou`. Os dois que mais enganavam ganharam tipo próprio de propósito: **sequela** não é uma segunda ferida, e **volta** (da cadeia, do hospital) não é uma prisão nova.
+
+**Save antigo continua abrindo.** Quem já tem save guarda string pura. `tipoDoEvento` em main.js lê os dois formatos e devolve o antigo ao ramo de regex — que segue errado pro que já está gravado, porque **não dá pra adivinhar o tipo depois**. Está escrito lá, sem disfarce: o histórico velho conta errado, o novo conta certo.
+
+**Um segundo leitor apareceu no caminho.** A Velha Guarda (`main.js:4298`) imprimia `${h}` direto — com `{t,x}` isso vira `[object Object]` na tela. Passou a usar o mesmo `textoDoEvento`. Os dois leitores do histórico do membro são esses, e agora compartilham os dois ajudantes.
+
+**Por que isto não é caso de modelo.** Foi o primeiro item da lista que o dono mandou atacar em ordem, e é o mais didático: não há nada de semântico aqui. O dado *existia* na hora em que o evento aconteceu — o código sabia perfeitamente que aquilo era uma sequela — e foi jogado fora, virou prosa, e depois alguém tentou adivinhar de volta com regex. A correção é guardar o fato. Julgamento aqui seria pagar um modelo pra recuperar uma informação que o próprio programa tinha na mão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -1112,6 +1112,23 @@
      usava é a dos convites de festa das aliadas, que é relação pura —
      e o mesmo vale pra sobra, que são os cartões de torcida e de eixo
      sem nome no `dados`. */
+  /* A FICHA DO MEMBRO GUARDA {t, x} desde 21/09/2026; save antigo
+     guarda string pura. Estes dois leem os dois formatos, e são os
+     únicos lugares por onde o histórico do membro passa pra tela —
+     a ficha e a Velha Guarda. */
+  const textoDoEvento = x => (x && typeof x === 'object') ? (x.x || '') : String(x || '');
+  const tipoDoEvento = x => {
+    if(x && typeof x === 'object' && x.t) return x.t;
+    const s = String(x || '');                       // save antigo
+    return /ferid/i.test(s) ? 'ferido' : /sequela/i.test(s) ? 'sequela'
+         : /cadeia|de volta|recuperad/i.test(s) ? 'volta'
+         : /solto|fiança|advogado/i.test(s) ? 'advogado'
+         : /— \d+ dias/.test(s) ? 'preso'
+         : /promovid|veterano/i.test(s) ? 'promovido'
+         : /pendurou/i.test(s) ? 'aposentou'
+         : /anos:/.test(s) ? 'idade' : '';
+  };
+
   const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Diplomacia',
                    jornal:'Jornal',
                    /* a obra do vizinho é notícia de jornal de torcida,
@@ -4296,7 +4313,8 @@
           (v.sequelas ? `<div class="linha-dado"><span>Sequelas de briga</span>`+
                         `<b>${v.sequelas}</b></div>` : '');
         for(const h of (v.historico||[]).slice(-14))
-          corpo.appendChild(el('div',{class:'transacao', html:`<span class="desc">${h}</span>`}));
+          corpo.appendChild(el('div',{class:'transacao',
+            html:`<span class="desc">${textoDoEvento(h)}</span>`}));
         modal(v.apelido, TO.membros.CARGOS[v.cargo].nome + ' · Velha Guarda', corpo);
       };
       tb.appendChild(linha);
@@ -5079,20 +5097,36 @@
         (C.xpPromo ? barra('XP pro próximo cargo', m.xp, C.xpPromo, 'var(--azul)', `${m.xp}<small>/${C.xpPromo}</small>`)
                    : barra('XP', m.xp, Math.max(1, m.xp), 'var(--azul)', String(m.xp)))+
         (m.desgaste ? `<small class="pm-nota negativo">desgaste: −${m.desgaste.toFixed(1)} no teto</small>` : '')}));
-      /* os números da carreira, lidos do histórico */
+      /* OS NÚMEROS DA CARREIRA SAEM DO TIPO, NÃO DA PROSA
+         (conserto de 21/09/2026). A conta era regex por cima da
+         frase e contava errado — dá pra medir:
+           · lesão com sequela → DUAS feridas (as duas linhas casavam
+             `/ferid|sequela/`);
+           · prisão → DUAS prisões (a da pena e a do "voltou da cadeia");
+           · "Pendurou a bandeira aos 38 anos" → contada como FAIXA
+             PRODUZIDA e pintada de ouro, porque casava `/bandeira/`.
+         Agora cada evento nasce com `t` (ver `anotar` em membros.js).
+         Save antigo guarda string pura: `tipoDoEvento` devolve esses
+         ao ramo velho, que continua errado pro que já está gravado —
+         mas é o que existe, e não dá pra adivinhar o tipo depois. */
       const h = m.historico || [];
-      const conta = re => h.filter(x=>re.test(x)).length;
-      const nums = [[conta(/ferid|sequela/i), 'feridas'], [conta(/^preso|cadeia|— \d+ dias/i), 'prisões'],
-                    [conta(/promovid|veterano/i), 'promoções'], [conta(/faixa|bandeira/i), 'faixas'],
+      const conta = t => h.filter(x => tipoDoEvento(x) === t).length;
+      /* "faixas" saiu: NADA por membro produz faixa — o contador só
+         via a linha da aposentadoria. No lugar, sequelas, que é
+         cicatriz de carreira de verdade e tem evento próprio. */
+      const nums = [[conta('ferido'), 'feridas'], [conta('preso'), 'prisões'],
+                    [conta('promovido'), 'promoções'], [conta('sequela'), 'sequelas'],
                     [U.dinheiro(C.mensalidade).replace('R$ ',''), 'mensalidade']];
       corpo.appendChild(el('div',{class:'pm-nums', html:nums.map(([v,r])=>`<div><b>${v}</b><span>${r}</span></div>`).join('')}));
       /* a linha do tempo: do mais recente pro mais antigo, com a cor do tipo */
-      const corDe = x => /ferid|sequela/i.test(x) ? 'vermelho' : /preso|cadeia|solto|fiança|advogado/i.test(x) ? 'pm'
-                       : /promovid|veterano|entrou/i.test(x) ? 'verde' : /faixa|bandeira/i.test(x) ? 'ouro' : 'fraco';
+      const COR_EV = {ferido:'vermelho', sequela:'vermelho', preso:'pm',
+                      advogado:'pm', volta:'pm', promovido:'verde',
+                      aposentou:'ouro', idade:'fraco'};
       const linha = el('div',{class:'pm-linha'});
       if(!h.length) linha.appendChild(el('div',{class:'fraco', texto:'Sem registro ainda: a história começa na primeira briga.'}));
       for(const x of h.slice().reverse().slice(0, 40))
-        linha.appendChild(el('div',{class:'pm-ev '+corDe(x), html:`<i></i><p>${x}</p>`}));
+        linha.appendChild(el('div',{class:'pm-ev '+(COR_EV[tipoDoEvento(x)] || 'fraco'),
+          html:`<i></i><p>${textoDoEvento(x)}</p>`}));
       corpo.appendChild(el('div',{class:'fase-rot', texto:'Linha do tempo', estilo:{paddingTop:'12px'}}));
       corpo.appendChild(linha);
     };
