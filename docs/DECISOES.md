@@ -7818,10 +7818,17 @@ texto de sempre. O `texto` ficou de pé por isso e porque é ele que o
 ticker lê.
 
 **Medido.** Todas as nove obras × torcida da praça, nossa e de fora da
-praça: chapéu, manchete, olho e quadro conferidos um a um, 0 erro de
-página. Obra de torcida de fora da praça continua não virando notícia,
-como o dono decidiu em 19/09. Temporada inteira em três torcidas com o
-console vigiado.
+praça: chapéu, manchete, olho e quadro conferidos um a um. Obra de
+torcida de fora da praça continua não virando notícia, como o dono
+decidiu em 19/09.
+
+Duas temporadas em três torcidas: **toda obra virou página** (0 sem
+página, 0 sem quadro), 0 aviso de nome fora da tabela de gênero, 0
+erro de página. A varredura de texto quebrado acusou dois casos que
+eram **falso positivo dela mesma** — o filtro procurava minúscula
+depois de artigo e pegou "A casa cresceu" e "A sede da Leões da
+Fabulosa cresceu", que estão certos. Fica registrado porque "consertar"
+os dois teria estragado duas linhas boas.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
