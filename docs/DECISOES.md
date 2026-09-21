@@ -7740,9 +7740,24 @@ nomes espanhóis numa arquibancada brasileira.
 
 ### Medido
 
-Três torcidas, duas temporadas cada: 0 artigo errado, 0 aviso de nome
-fora da tabela, 0 erro de página, e o histórico da relação com o clube
-gravando `t:'briga'`.
+Três torcidas, duas temporadas cada: **0 artigo errado, 0 aviso de
+nome fora da tabela, 0 erro de página**.
+
+A corrida larga **não exercitou** a briga de dia de jogo nem a LNT —
+não caiu nenhuma das duas em dois anos de jogo —, então as duas foram
+provadas direto, o que é mais forte do que esperar cair:
+
+* `pontosPorBriga` grava `t:"briga"` nas duas cenas (arquibancada e
+  arredores), e o protesto no CT continua com `t:""`.
+* A pauta enxerga a briga pelo tipo. **Com a frase trocada pra
+  "Confusão na arquibancada" ela continua enxergando** — é exatamente
+  o caso que o `/^Briga/` perdia calado. Save antigo, sem o campo,
+  também continua funcionando.
+* As nove fases da LNT saem com o artigo certo, inclusive as duas que
+  estavam erradas: **"no playoff do acesso"** e **"na fase de 24
+  clubes"**.
+* O tom do fim da LNT: Campeão → bom, Fase de chaves → ruim, Vice e
+  Oitavas → neutro, fora da edição → neutro.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
