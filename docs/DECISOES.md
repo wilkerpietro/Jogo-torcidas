@@ -7504,6 +7504,30 @@ O dono tinha mandado transformar em notícia o cartão do vizinho; eu estendi pr
 
 **Medido** (Playwright, temporada inteira, 0 erros no `avancarDia`): **5 cartões de obra no ano, 5 notícias, 0 decisões**. Nos testes dirigidos: vizinho, aliada da praça e a nossa torcida saem todos como `peso:'info'`, voz `porrada`, zero botões; rival e aliada de fora não geram nada; ônibus não vira notícia; a fila não trava atrás de obra de fora.
 
+## A varredura das dicas, e onde o modelo NÃO entra (21/09/2026)
+
+**O achado.** Colhendo o jogo pra montar a conferência, um par saltou antes de qualquer modelo olhar:
+
+```
+botão : Condenar: jogo é aqui
+dica  : −5 relação · +2 prestígio
+ef    : {clube:-5, prestigio:0.3}      → entrega +1,5
+```
+
+**O valor é que estava errado, não o rótulo.** Prestígio é interno de 0 a 20 e a tela mostra ×5, então a tabela inteira anda numa grade: `0,2 → +1`, `0,4 → +2`, `0,6 → +3`. Das 19 opções com prestígio no banco, dezoito caem na grade e só esta usava `0,3` — que não fecha em número inteiro na tela. Corrigir o rótulo pra "+1,5" seria documentar o acidente; o certo era `0,4`, que é o que a dica sempre prometeu e o que a intenção pedia (condenar a venda do mando é o protesto forte da pergunta).
+
+**A varredura, e por que ela é código e não modelo.** `ferramentas/qualidade/numeros.js` abre o jogo, percorre o banco de perguntas nas duas situações de time, lê a `nota` de cada opção e o `ef` que ela aplica, converte pela escala da tela e compara. É aritmética exata — e o próprio SKILL do TypeSafe manda: *"Keep known rules, calculations, exact lookups, and execution in code."* Julgamento probabilístico aqui seria pior que uma conta: mais caro, mais lento e menos confiável do que subtrair dois números.
+
+O modelo fica com a outra metade, que conta não sabe fazer: se a frase **lê bem** e se a redação **induz a erro** mesmo com os números certos.
+
+**O verificador errou primeiro, e isso é o registro que importa.** A primeira rodada acusou 8 divergências. Seis eram falso-positivo *meu*: `moralSeMal` só desconta quando o time vem mal, e eu subtraía sempre — então o verificador acusava seis dicas corretas de esconder uma perda que, naquela situação, não acontece. Passei o `timeMal` da própria mensagem pro comparador e sobraram 2 linhas, que eram a mesma opção vista nas duas situações. **Uma varredura que não foi conferida contra o caso conhecido não vale nada**: se eu tivesse "consertado" as seis, teria estragado seis dicas certas pra acertar uma errada.
+
+**Conferidos também os cartões de dica literal**, na mão, porque não passam pelo banco de perguntas: protesto no CT (`−8 relação · +2 prestígio` ← `RC.mexer(-8)` e `prestigio 0,4`; `+2 relação · −3 moral` ← `+2` e `moral −0,6`) e veredicto da campanha (`+5 moral · −15 relação` ← `moral 1,0` e `−15`; `−5 moral` ← `moral −1,0`; festa `+5 moral` ← `FESTA_MORAL 1,0`). Todos batem.
+
+**Uma ressalva que fica anotada:** `RC.mexer` trava em 0 e 100. Com a relação em 10, "−15 de relação" entrega −10. O elogio já explica o teto dele na própria nota ("elogio só sobe até 70"); as perdas perto do piso não explicam. Não mexi — é caso de borda e o jogo trava em todo lugar —, mas se o dono quiser a dica honesta também no piso, é o mesmo padrão do teto.
+
+**Medido:** varredura de 0 divergências depois do conserto, nas duas situações de time, sobre as 19 opções com prestígio, 10 com relação e 8 com moral do banco.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

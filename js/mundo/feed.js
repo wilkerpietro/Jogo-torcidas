@@ -1267,8 +1267,12 @@ TO.feed = (function(){
          nota:notaElogio(c, 2, 0, 0.6),
          resumo:'apoiou a venda do mando contra a vontade da arquibancada',
          ef:votarComOClube(2, 0.6)},
+        /* 0,4 e não 0,3 (varredura de 21/09/2026): prestígio é interno de
+           0 a 20 e a tela mostra ×5, então a grade da tabela inteira é
+           0,2 → +1 · 0,4 → +2 · 0,6 → +3. Este 0,3 era o único fora
+           dela: a dica prometia +2 e o clique entregava +1,5. */
         {id:'condenar', rot:'Condenar: jogo é aqui', nota:'−5 relação · +2 prestígio',
-         resumo:'condenou a venda do mando', ef:{clube:-5, prestigio:0.3}},
+         resumo:'condenou a venda do mando', ef:{clube:-5, prestigio:0.4}},
         {id:'muro', rot:'A torcida vai de qualquer jeito', nota:'sem efeito',
          resumo:'disse que a torcida vai de qualquer jeito', ef:{}}
       ]})},
