@@ -986,11 +986,24 @@ TO.feed = (function(){
      18/09/2026)
 
      Doze vezes por ano — a mesma régua do assalto, só que com
-     12 em vez de 9 —, um assunto do clube bate à porta: se o
-     time vem de sequência ruim (3 derrotas ou mais nos últimos
-     5 jogos), meio a meio entre PROTESTO NA PORTA DO CT e
-     entrevista; sem sequência ruim, é sempre entrevista — o
-     protesto só faz sentido quando o time está mal em campo.
+     12 em vez de 9 — um assunto do clube bate à porta.
+
+     A ENTREVISTA É DE DOIS EM DOIS MESES (pedido do dono,
+     21/09/2026). Ela era a porta padrão: com o time bem, saía
+     todo mês, doze por ano. Agora cada assunto é de um dos
+     dois, alternando:
+
+       mês par  → ENTREVISTA, sempre. Seis por ano.
+       mês ímpar → PROTESTO NA PORTA DO CT, e só se o time vem
+                   de sequência ruim (3 derrotas ou mais nos
+                   últimos 5 jogos). Sem isso o mês passa calado
+                   — protesto sem time mal não tem o que cobrar.
+
+     Saiu o sorteio de meio a meio que decidia entre os dois:
+     ele existia porque os dois dividiam o mesmo mês, e agora
+     cada um tem o seu. Com ele no lugar, o protesto comia
+     metade das entrevistas justamente na temporada ruim, e
+     "de dois em dois meses" viraria "de quatro em quatro".
      ========================================================= */
   const ASSUNTOS_CLUBE_ANO = 12;
   function assuntoClubeDeHoje(E){
@@ -999,15 +1012,15 @@ TO.feed = (function(){
     const H = TO.mapa.hash;
     const n = sa + H(`clube|${E.torcida.id}`) % SEMANAS_DO_ANO;
     const deg = k => Math.floor(k * ASSUNTOS_CLUBE_ANO / SEMANAS_DO_ANO);
-    if(deg(n) === deg(n - 1)) return;
+    const mes = deg(n);
+    if(mes === deg(n - 1)) return;
     let dia = 1 + H(`clube|d|${sa}|${E.torcida.id}`) % 7;
     for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
     if(dia !== E.data.dia) return;
-    const ruim = TO.relacaoClube.sequenciaRuim(E);
-    const sorteioProtesto = ruim &&
-      H(`clube-tipo|${sa}|${E.torcida.id}`) % 2 === 0;
-    if(sorteioProtesto) protestoNoCT(E, sa);
-    else entrevistaDeHoje(E, sa);
+    /* `mes` só cresce — não é módulo do ano —, então a alternância
+       atravessa a virada sem repetir nem pular */
+    if(mes % 2 === 0){ entrevistaDeHoje(E, sa); return; }
+    if(TO.relacaoClube.sequenciaRuim(E)) protestoNoCT(E, sa);
   }
 
   /* -------------------------------------------------------
@@ -1694,9 +1707,16 @@ TO.feed = (function(){
      "sem parar". Vira pauta do jornalista — uma das perguntas da
      entrevista do mês —, que é onde comentário de rua cabe sem
      interromper o dia. A fila é curta: bar quebrado há dois meses
-     não é mais assunto de ninguém. */
+     não é mais assunto de ninguém.
+
+     A JANELA SEGUIU A ENTREVISTA (21/09/2026). Eram 8 semanas, com a
+     entrevista saindo todo mês — sobrava folga. Agora ela sai de dois
+     em dois meses, que são ~8,7 semanas: um bar quebrado logo depois
+     de uma entrevista vencia ANTES da próxima e nunca virava pergunta.
+     12 semanas cobrem o novo intervalo com margem, e continuam
+     jogando fora o que é velho demais pra alguém comentar. */
   const BARES_NA_FILA = 6;
-  const BAR_FRESCO = 8;          // semanas em que ainda é pergunta
+  const BAR_FRESCO = 12;         // semanas em que ainda é pergunta
   /* o que interessa: o que acontece na NOSSA cidade, e o que
      acontece com quem a gente ama ou odeia, esteja onde estiver */
   const LIMIAR_INTERESSE = 25;
