@@ -54,7 +54,13 @@ TO.relacaoClube = (function(){
   /* o livro da relação com o clube, no mesmo espírito do livro de
      moral e prestígio (`TO.estado.mexerIndicador`) — motivo sempre
      junto, é o que a sub-tela mostra item a item */
-  function mexer(E, delta, motivo){
+  /* `tipo` É PRA QUEM LÊ, `motivo` É PRA QUEM OLHA (21/09/2026).
+     A pauta da entrevista perguntava "teve briga recente?" rodando
+     /^Briga/ no motivo — quer dizer, decidindo estado de jogo pela
+     redação de uma frase de tela. Trocar "Briga nos arredores" por
+     "Confusão nos arredores" apagava a pergunta sem erro nenhum:
+     ela só deixava de aparecer. Quem grava agora diz o tipo. */
+  function mexer(E, delta, motivo, tipo){
     if(!E || !delta) return 0;
     const antes = nivel(E);
     E.relacaoClube = U.limitar(antes + delta, 0, 100);
@@ -63,7 +69,7 @@ TO.relacaoClube = (function(){
       E.relacaoClubeHistorico = E.relacaoClubeHistorico || [];
       E.relacaoClubeHistorico.unshift({
         dia:`${E.data.semana}/${E.data.dia}`, ano:E.data.ano,
-        delta: real, motivo: motivo || ''});
+        delta: real, motivo: motivo || '', t: tipo || ''});
       if(E.relacaoClubeHistorico.length > 200)
         E.relacaoClubeHistorico.pop();
     }
@@ -121,7 +127,8 @@ TO.relacaoClube = (function(){
     const delta = casa ? t.casa : t.fora;
     mexer(E, delta, tipo === 'arquibancada'
       ? `Briga na arquibancada, jogo ${casa ? 'em casa' : 'fora'}`
-      : `Briga nos arredores do estádio, jogo ${casa ? 'em casa' : 'fora'}`);
+      : `Briga nos arredores do estádio, jogo ${casa ? 'em casa' : 'fora'}`,
+      'briga');
     return delta;
   }
 

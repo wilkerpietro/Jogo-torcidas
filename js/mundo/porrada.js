@@ -657,11 +657,19 @@ TO.porrada = (function(){
   }
   /* "na semifinal", "nas quartas", "no 16-avos" — a preposição
      acompanha a fase, como na Gazeta */
-  const FASE_LNT = {'Fase de chaves':'na fase de chaves',
-                    '16-avos':'no 16-avos', 'Oitavas':'nas oitavas',
-                    'Quartas':'nas quartas', 'Semifinal':'na semifinal',
-                    'Final':'na final'};
-  const naFaseLNT = f => FASE_LNT[f] || `na ${String(f||'').toLowerCase()}`;
+  /* A TABELA DE FASE DA LNT ERA UMA SEGUNDA TABELA, E INCOMPLETA
+     (21/09/2026). Ela acertava seis nomes e mandava o resto pro
+     `na ` fixo — e a LNT tem mais dois: "Playoff do acesso" saía
+     "na playoff do acesso", e a fase de chave grande, que se chama
+     "24 clubes", saía "na 24 clubes". Agora o gênero vem do mesmo
+     dados/genero.js do resto do jogo, e sobra aqui só o que é
+     próprio da LNT: a chave contada, que é montada na hora. */
+  const naFaseLNT = f => {
+    const b = String(f || '').trim();
+    if(!b) return 'na fase';
+    if(/clubes$/i.test(b)) return `na fase de ${b.toLowerCase()}`;
+    return TO.genero.em('fase', b.toLowerCase());
+  };
 
   return {montar, montarLNT, MOLDES, encher, ondeDe, MOSTRA, naFaseLNT};
 })();

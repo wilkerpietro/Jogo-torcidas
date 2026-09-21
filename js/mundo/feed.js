@@ -1562,9 +1562,11 @@ TO.feed = (function(){
     const timeMal = TO.relacaoClube.sequenciaRuim(E) ||
       !!(pos && totalClubes && pos > totalClubes * 0.75);
     /* confusão recente: o próprio livro da relação com o clube já
-       registra toda briga de dia de jogo, com o motivo por extenso */
+       registra toda briga de dia de jogo. O `t` é o que vale; o
+       /^Briga/ fica só pra save gravado antes de 21/09/2026, que não
+       tem o campo. */
     const brigaRecente = (E.relacaoClubeHistorico || []).slice(0, 6)
-      .some(h => /^Briga/.test(h.motivo || ''));
+      .some(h => h.t ? h.t === 'briga' : /^Briga/.test(h.motivo || ''));
     const jornal = JORNAIS_CLUBE[H_(`clube-jornal|${E.torcida.id}`, JORNAIS_CLUBE.length)];
     const ctx = {E, nomeClube, pos, totalClubes, timeMal, brigaRecente,
       outra: alvoDaEntrevista(E),
@@ -3421,11 +3423,13 @@ TO.feed = (function(){
   function chamarParaLNT(E, meu){
     const rival = M().torcida(meu.j.a === E.torcida.id ? meu.j.b : meu.j.a)
                   || {nome:'Rival'};
-    const grupo = meu.grupo !== undefined && meu.grupo !== null
-                ? ` do grupo ${LETRA[meu.grupo] || (meu.grupo+1)}` : '';
-    const fase = /rodada/.test(meu.fase)
-               ? `${meu.fase}${grupo} da ${meu.div.nome}`
-               : `${meu.fase} da ${meu.div.nome}`;
+    /* O GRUPO É O SINAL, NÃO A PALAVRA "rodada" (21/09/2026). A LNT
+       só põe `grupo` no jogo de fase de chave; no mata-mata ele nem
+       existe. Perguntar isso ao rótulo — /rodada/ em `meu.fase` —
+       era ler o texto da tela pra descobrir o que o dado já dizia. */
+    const temGrupo = meu.grupo !== undefined && meu.grupo !== null;
+    const grupo = temGrupo ? ` do grupo ${LETRA[meu.grupo] || (meu.grupo+1)}` : '';
+    const fase = `${meu.fase}${grupo} da ${meu.div.nome}`;
     propor(E, {
       /* KIND PRÓPRIO: treta de LNT não é a treta marcada do
          trimestre — não tem aposta, não sai do calendário da praça e
@@ -3463,8 +3467,13 @@ TO.feed = (function(){
         caem:  emLista((c.caem||[]).map(nomeT))}));
       propor(E, {
         kind:'lnt-fim', peso:'info', voz:'jornal',
-        tipo: meu && /Campeão/.test(meu.fase) ? 'bom'
-            : meu && /chaves/.test(meu.fase) ? 'ruim' : 'neutro',
+        /* `fase` já é valor fechado — 'Campeão', 'Vice', 'Fase de
+           chaves', 'Oitavas'… — então compara igual, não por pedaço.
+           Com /chaves/ bastava renomear a fase pra toda eliminação na
+           chave virar notícia neutra, sem erro nenhum aparecer. */
+        tipo: !meu ? 'neutro'
+            : meu.fase === 'Campeão' ? 'bom'
+            : meu.fase === 'Fase de chaves' ? 'ruim' : 'neutro',
         chave:`lnt-fim|${reg.ano}|${reg.semestre}`,
         texto:`Acabou a LNT: ${camp[0].campeao} é o campeão da 1ª `+
               `Divisão.` + (meu ? ` Nós paramos na ${meu.fase.toLowerCase()}`+

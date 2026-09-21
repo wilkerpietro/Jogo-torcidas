@@ -7669,6 +7669,81 @@ dados", e isso ele faz sem rede.
 0 avisos de nome fora da tabela, 0 suspeitos na varredura de artigo
 errado, 0 erros de página.
 
+## Varredura: o que ainda decidia estado lendo frase (21/09/2026)
+
+O dono pediu pro Jev seguir analisando o código. **Não dá deste
+ambiente**: `api.typesafe.ai` não está na lista de saída permitida do
+proxy e a conexão morre em `connect_rejected` — não é a chave, e não se
+contorna desligando TLS. Então foram feitas as duas metades que dá: a
+colheita ficou pronta pra ele varrer o jogo inteiro, e a varredura
+seguiu à mão.
+
+### A colheita de 189 linhas cobria 5% do texto
+
+`colher.js` colhia uma torcida, 200 dias, e só `E.feed[].texto`. Três
+coisas ficavam fora do alcance porque não passam pelo `texto` da
+mensagem — são montadas pelo módulo na hora de desenhar a tela:
+
+| superfície | linhas | como se colhe |
+|---|---|---|
+| jornal da rodada | 2.489 | `TO.gazeta.montar(E, m)` |
+| resultado de briga | 256 | `TO.porrada.montar` / `montarLNT` |
+| virada de ano | 54 | `TO.almanaque.placarDoAnoTodo` / `abertura` |
+
+Agora são **três torcidas de praças diferentes, temporada inteira cada
+uma**: 189 → **3.419 linhas**. E dois furos na própria ferramenta:
+
+* **A chave de dedup ignorava o contexto.** Era `entrevista|pergunta|
+  opção` — sem o rótulo. A rodada "time bem" inteira entrava como
+  repetida da "time mal" e era descartada, justamente o par em que a
+  dica muda (é o `moralSeMal` que só existe com o time mal). 0 → **37
+  pares**.
+* **As provas rodavam depois de todas as temporadas.** Passada a
+  virada de ano a tabela reinicia e não há campanha encerrada pra
+  julgar, então o veredicto voltava zero. Agora provam no fim da
+  primeira temporada e devolvem o jogo ao estado em que estava. 0 →
+  **4 pares**. Total: 22 → **81**.
+
+### Três achados de código, todos da mesma família do item 1
+
+**1. "Teve briga?" saía de `/^Briga/` no motivo.** A pauta da
+entrevista perguntava ao livro da relação com o clube se houve
+confusão recente rodando regex na frase que a tela mostra. Trocar
+"Briga nos arredores" por "Confusão nos arredores" apagava a pergunta
+**sem erro nenhum** — ela só deixava de aparecer. `RC.mexer` agora
+aceita um tipo e grava `t:'briga'`; o regex fica só pra save antigo.
+
+**2. A LNT tinha uma segunda tabela de fase, incompleta.** `FASE_LNT`
+em `porrada.js` acertava seis nomes e mandava o resto pro `na ` fixo.
+A LNT tem mais dois: **"na playoff do acesso"** e **"na 24 clubes"**.
+Agora consulta o mesmo `dados/genero.js` do resto do jogo, e sobra ali
+só o que é próprio da LNT — a chave contada, montada na hora.
+
+**3. O tom da notícia da LNT saía de pedaço de rótulo.** `fase` já é
+valor fechado ('Campeão', 'Vice', 'Fase de chaves', 'Oitavas'…), e o
+código fazia `/Campeão/` e `/chaves/`. Bastava renomear a fase pra
+toda eliminação na chave virar notícia neutra. O mesmo em `/rodada/`,
+que perguntava ao rótulo o que o dado já dizia: a LNT só põe `grupo`
+no jogo de fase de chave.
+
+### Armadilha registrada, não consertada
+
+`membros.js:209` acha a torcida-mãe de uma filial por **prefixo**
+(`nomeTorcida.indexOf(x.nome) === 0`), e **15 nomes são prefixo de
+outro** — "Mancha Verde" de "Mancha Verde Juventude", "Camisa 12" de
+"Camisa 12 do Inter", "Torcida Jovem" de três. Quem casa primeiro é
+quem vier antes na lista, não a certa. Hoje **não dá em nada**: os 15
+pares são todos de clube brasileiro, e a única coisa que a busca
+decide é banco de nome brasileiro ou hispano. Vira bug visível no dia
+em que entrar uma torcida hispana cujo nome seja prefixo de outra —
+nomes espanhóis numa arquibancada brasileira.
+
+### Medido
+
+Três torcidas, duas temporadas cada: 0 artigo errado, 0 aviso de nome
+fora da tabela, 0 erro de página, e o histórico da relação com o clube
+gravando `t:'briga'`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

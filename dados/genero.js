@@ -178,8 +178,10 @@ TO.dados.genero = {
          'Terceira fase', 'Fase Preliminar', 'Prévia',
          /* a Conmebol numera: "Fecha 1" … "Fecha 13". A consulta tira
             o número do fim, então basta a palavra aqui. */
-         'Fecha'],
+         'Fecha',
+         /* as da LNT, que tem chave propria */
+         'Fase de chaves'],
     fp: ['Oitavas', 'Quartas'],
-    m:  ['Playoff', 'Playoff do acesso']
+    m:  ['Playoff', 'Playoff do acesso', '16-avos']
   }
 };
