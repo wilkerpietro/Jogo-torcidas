@@ -285,7 +285,7 @@ TO.gazeta = (function(){
       placar:{a:nome(topo.c), ga:topo.gc, gb:topo.gf, b:nome(topo.f),
               nossaCasa: topo.c === E.torcida.clubeId,
               nossaFora: topo.f === E.torcida.clubeId},
-      tabela: recorteDaTabela(E),
+      tabela: recorteDaTabela(E, nosso),
       /* O JORNAL COMPLETO FICA PENDURADO (pedido do dono, 21/08/2026):
          a mensagem abre enxuta e o botão "Mostrar jornal completo"
          solta o resto da página — as seções de antes, com os mesmos
@@ -552,28 +552,69 @@ TO.gazeta = (function(){
   const RECORTE = 7;
   /* quantos vizinhos de cada lado, com o nosso no centro */
   const LADO = (RECORTE - 1) / 2;
-  function recorteDaTabela(E){
+  /* A TABELA DA COMPETIÇÃO DA MANCHETE (correção do dono, 21/09/2026):
+     "a classificação deve ser conforme a notícia da manchete" — a
+     capa falava do empate na Sul-Americana e o recorte ao lado
+     mostrava o Brasileirão. Dado o nome da competição do jogo de capa,
+     devolve a tabela DELA: liga ou estadual pela tabela da temporada
+     (no grupo do nosso clube, se há grupos); Libertadores e
+     Sul-Americana pelo grupo do torneio real em `E.conmebol`, que a
+     sombra na agenda não guarda. Competição sem tabela (Copa do
+     Brasil, mata-mata seco) devolve null e a manchete sai sozinha. */
+  function tabelaDaCompeticao(E, nomeComp){
+    const meu = E.torcida.clubeId;
+    const todas = E.temporada.competicoes || [];
+    const comp = todas.find(c => c.nome === nomeComp);
+    if(!comp) return null;
+    if(comp.deFora || comp.tipo === 'copa-de-fora'){
+      const CM = E.conmebol || {};
+      const R = comp.nome === 'Copa Libertadores' ? CM.libertadores
+              : comp.nome === 'Copa Sul-Americana' ? CM.sulamericana : null;
+      const ig = R && R.grupos ? R.grupos.findIndex(g => g.includes(meu)) : -1;
+      if(!R || ig < 0 || !R.tabela || !R.tabela[ig] || !TO.ligas) return {rot:comp.nome, t:[]};
+      const t = TO.ligas.ordenar(R.tabela[ig], R.grupos[ig])
+        .map(l => ({id:l.id, j:l.j, p:l.p, sg:l.gp - l.gc}));
+      return {rot:`${comp.nome} · Grupo ${String.fromCharCode(65 + ig)}`, t};
+    }
+    let grupo, rot = comp.nome;
+    if(comp.grupos && comp.grupos.length > 1){
+      grupo = comp.grupos.findIndex(g => g.indexOf(meu) >= 0);
+      if(grupo < 0) grupo = undefined;
+      else rot += ` · Grupo ${String.fromCharCode(65 + grupo)}`;
+    }
+    return {rot, t: COMP().tabela(comp, grupo)};
+  }
+  function recorteDaTabela(E, nosso){
     try{
       const meu = E.torcida.clubeId;
-      const div = COMP().divisaoDe(E, M().time(meu) || {});
-      const rodou = c => (c.rodadas||[]).some(r =>
-        r.jogos.some(j => j.gc != null && (j.c===meu || j.f===meu)));
-      const todas = E.temporada.competicoes || [];
-      /* o desempate do fallback é a que ele está jogando AGORA, não a
-         que tem mais rodadas no papel */
-      const cumpriu = c => (c.rodadas||[]).reduce((n,r)=>
-        n + (r.jogos.some(j=>j.gc!=null && (j.c===meu||j.f===meu)) ? 1 : 0), 0);
-      const comp = (todas.find(c => c.nome === div && rodou(c)))
-                || todas.filter(rodou).sort((a,b)=> cumpriu(b) - cumpriu(a))[0];
-      if(!comp) return null;
-      let grupo, rot = comp.nome;
-      if(comp.grupos && comp.grupos.length > 1){
-        grupo = comp.grupos.findIndex(g => g.indexOf(meu) >= 0);
-        if(grupo < 0) grupo = undefined;
-        else rot += ` · Grupo ${String.fromCharCode(65 + grupo)}`;
+      let t, rot;
+      /* a competição da manchete manda; sem ela (save antigo, mensagem
+         sem `comp`), a divisão do clube, como era */
+      const daCapa = nosso && nosso.comp ? tabelaDaCompeticao(E, nosso.comp) : null;
+      if(daCapa){
+        t = daCapa.t; rot = daCapa.rot;
+        if(!t.length || !t.some(l => l.j)) return null;
+      } else {
+        const div = COMP().divisaoDe(E, M().time(meu) || {});
+        const rodou = c => (c.rodadas||[]).some(r =>
+          r.jogos.some(j => j.gc != null && (j.c===meu || j.f===meu)));
+        const todas = E.temporada.competicoes || [];
+        /* o desempate do fallback é a que ele está jogando AGORA, não a
+           que tem mais rodadas no papel */
+        const cumpriu = c => (c.rodadas||[]).reduce((n,r)=>
+          n + (r.jogos.some(j=>j.gc!=null && (j.c===meu||j.f===meu)) ? 1 : 0), 0);
+        const comp = (todas.find(c => c.nome === div && rodou(c)))
+                  || todas.filter(rodou).sort((a,b)=> cumpriu(b) - cumpriu(a))[0];
+        if(!comp) return null;
+        let grupo; rot = comp.nome;
+        if(comp.grupos && comp.grupos.length > 1){
+          grupo = comp.grupos.findIndex(g => g.indexOf(meu) >= 0);
+          if(grupo < 0) grupo = undefined;
+          else rot += ` · Grupo ${String.fromCharCode(65 + grupo)}`;
+        }
+        t = COMP().tabela(comp, grupo);
+        if(!t.length || !t.some(l => l.j)) return null;
       }
-      const t = COMP().tabela(comp, grupo);
-      if(!t.length || !t.some(l => l.j)) return null;
       const eu = t.findIndex(l => l.id === meu);
       if(eu < 0) return null;
       /* a janela de sete, empurrada pra dentro nas pontas: o clamp

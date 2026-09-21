@@ -8027,6 +8027,14 @@ A Cearamor produziu, sozinha, a manchete do exemplo do dono:
 
 **Medido (Playwright).** Cena montada com máscara e foto; 20 × 20 (4 por spawn deles); faixa/bandeira exposta em (983,210); `acordou=false` por 240 s com o bonde parado na rua. Com o líder levado ao portão: acorda por `zona` em t=5, recolhe em t=5, na mão em t=8, portador em `faixa-abrigo` e chegando ao depósito em t=24. Defesa: nós como visitante repartidos 5/4/4/4/4, bandeira nossa exposta, casa dormindo. Cena viva abre com os bonecos 3D (três canvases), HUD "LEÕES DA TUF 20 · CEARAMOR 20", objetivo "BEIRA DA PISCINA (LEVE O LÍDER)".
 
+## A classificação do jornal é a da competição da manchete (correção do dono, 21/09/2026)
+
+**Problema.** "A notícia fala do empate do Fortaleza na Copa Sul-Americana, mas a classificação ao lado fala do Brasileirão Série A." O recorte de sete linhas ao lado da manchete era sempre a divisão do clube (régua de 21/08/2026), fosse qual fosse o jogo da capa.
+
+**Decisão.** `recorteDaTabela(E, nosso)` recebe o jogo da capa e mostra a tabela DA competição dele (`tabelaDaCompeticao`): liga e estadual pela tabela da temporada, no grupo do nosso clube quando há grupos; Libertadores e Sul-Americana pelo grupo do torneio real em `E.conmebol` (a sombra na agenda não guarda tabela). Competição sem tabela — Copa do Brasil, mata-mata seco — devolve nada e a manchete sai sozinha (layout `sozinha`, que já existia). Sem `comp` na mensagem (save antigo), cai na divisão do clube como antes. A faixa de baixo do jornal completo continua sendo a divisão do clube, que foi pedido explícito de 20/08.
+
+**Medido (Playwright, TUF, dia 100).** Copa do Nordeste → "Copa do Nordeste · Grupo B", 7 linhas com o Fortaleza; Série B → "Brasileirão Série B"; Sul-Americana simulada em `E.conmebol` → "Copa Sul-Americana · Grupo B" com os 4 do grupo ordenados por pontos; Copa do Brasil → null; sem competição → a divisão (Série B).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
