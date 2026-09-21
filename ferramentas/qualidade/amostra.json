@@ -1,0 +1,1363 @@
+{
+ "textos": [
+  {
+   "tipo": "mensagem",
+   "kind": "tutorial",
+   "texto": "Bem vindo ao jogo, chefe. Se quiser, a gente te mostra o jogo — menu por menu, e no fim uma briga simulada pra você sentir como funciona a pista. Leva uns dois minutos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "dica",
+   "texto": "O prestígio vive numa régua de 0 a 100 e é o nome da torcida na rua: entra no ranking com peso dobrado e sobe com briga vencida, título e ação no bairro."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "eixo-saida",
+   "texto": "A Inferno Coral saiu do Dedo pro Alto: virou rival da Ira Jovem do Vasco, e o eixo ficou com quem é mais próximo. Sair custou −20 com cada um de nós."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "aniversarios",
+   "texto": "Os convites de janeiro chegaram: 1 aliada faz aniversário este mês. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "reuniao",
+   "texto": "Reunião de diplomacia — janeiro. 2 assuntos na mesa, e a nossa jogada nos eixos em aberto."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "abertura",
+   "texto": "E define o Expediente da Sede: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de fora."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "abertura",
+   "texto": "Chefe, antes de tudo: define a nossa ideologia — o que a gente faz com o adversário em dia de jogo e o que faz com os outros jogos da praça. É ela que o botão \"Seguir padrão\" executa quando você não quiser decidir jogo a jogo."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "dica",
+   "texto": "A relação com cada torcida vai de −100 a +100: abaixo de −70 é Maior Rival, abaixo de −15 é Rival, até 20 é Neutro, até 70 é Aliado e de 70 pra cima é Irmandade."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "entrevista",
+   "texto": "O Rádio Torcida FM ligou atrás de uma entrevista sobre a torcida e o Palmeiras. Quatro perguntas rápidas — o que a gente responde?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "assalto",
+   "texto": "Chefe, o Brita mapeou uns alvos pra um assalto — do mercadinho ao banco, cada um com seu risco. Bora ver?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "almanaque",
+   "texto": "Começa a disputa: o Paulistão começa semana que vem. 10 clubes na disputa. Favoritos ao título: Palmeiras, São Paulo, Corinthians. Ameaçados de queda: Ponte Preta."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "aniversarios",
+   "texto": "Os convites de fevereiro chegaram: 4 aliadas fazem aniversário este mês. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: São Paulo 1 × 0 Botafogo/SP, Portuguesa 1 × 0 XV de Piracicaba, Flamengo 1 × 0 Americano, Fluminense 1 × 0 Goytacaz, Joinville 1 × 3 Chapecoense, Figueirense 3 × 0 Barra, Goiás 7 × 3 Anápolis, Atlético/GO 4 × 0 União Rondonópolis e mais 10 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × São Bernardo, pela 1ª rodada do Paulistão. O Palmeiras está em 6º na tabela e o São Bernardo em 9º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Goytacaz 0 × 3 Flamengo, America 2 × 0 Americano, Volta Redonda 2 × 4 Vasco, Chapecoense 2 × 0 Figueirense, Joinville 0 × 3 Avaí, União Rondonópolis 2 × 1 Goiás, Ceilândia 1 × 3 Anápolis, Gama 1 × 1 Vila Nova e mais 15 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Botafogo/SP × Palmeiras, pela 2ª rodada do Paulistão. O Botafogo/SP está em 8º na tabela e o Palmeiras em 4º. A bola vai rolar no Santa Cruz."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "treta",
+   "texto": "Zona Oeste marcou uma treta no Rio Pequeno contra a Gaviões, R$ 6.000 de cada lado, bora pro problema?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "sofrido",
+   "texto": "Invadiram nosso bar! A Gaviões tá na porta quebrando tudo."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "eixo-saida",
+   "texto": "A Torcida Jovem do Grêmio saiu do Dedo pro Alto: virou rival da Mancha Azul do CSA, e o eixo ficou com quem é mais próximo. Sair custou −20 com cada um de nós."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: São Paulo 4 × 1 Mirassol, Flamengo 4 × 0 America, Goytacaz 4 × 1 Madureira, Fluminense 1 × 1 Volta Redonda, Chapecoense 3 × 1 Criciúma, Avaí 1 × 1 Barra, Goiás 0 × 0 Ceilândia, União Rondonópolis 0 × 0 Mixto e mais 16 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Ponte Preta, pela 3ª rodada do Paulistão. O Palmeiras está em 3º na tabela e o Ponte Preta em 8º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "barrival",
+   "texto": "Chefe, chegou a informação que o bar da Pavilhão 9 tá cheio deles lá, a gente quer dar o bote neles e roubar o caixa do bar."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de terça: Volta Redonda 1 × 0 Goytacaz, Gama 2 × 3 União Rondonópolis, Vitória 3 × 0 América/RN, Fortaleza 6 × 1 CRB, São Caetano 1 × 1 Noroeste."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Novorizontino × Palmeiras, pela 4ª rodada do Paulistão. O Novorizontino está em 10º na tabela e o Palmeiras em 1º. A bola vai rolar no Jorge Ismael de Biasi."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "barrival",
+   "texto": "Chefe, chegou a informação que o bar da Camisa 12 tá cheio deles lá, a gente quer dar o bote neles e roubar o caixa do bar."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Flamengo 4 × 0 Bangu, Madureira 0 × 0 Volta Redonda, Goytacaz 0 × 3 Botafogo, Barra 2 × 0 Chapecoense, Joinville 0 × 2 Criciúma, Goiás 1 × 2 Brasiliense, Mixto 1 × 0 Gama, Tuna Luso 0 × 2 Remo e mais 18 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Bragantino, pela 5ª rodada do Paulistão. O Palmeiras está em 1º na tabela e o Bragantino em 4º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "aniversarios",
+   "texto": "Os convites de março chegaram: 3 aliadas fazem aniversário este mês. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "reuniao",
+   "texto": "Reunião de diplomacia — março. 2 assuntos na mesa, e a nossa jogada nos eixos em aberto."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: São Paulo 4 × 0 Ponte Preta, Volta Redonda 1 × 2 Flamengo, Vasco 2 × 1 Bangu, Fluminense 2 × 0 America, Chapecoense 3 × 1 Joinville, Barra 2 × 1 Figueirense, Gama 1 × 3 Goiás, Vila Nova 3 × 1 Brasiliense e mais 19 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Mirassol × Palmeiras, pela 6ª rodada do Paulistão. O Mirassol está em 3º na tabela e o Palmeiras em 2º. A bola vai rolar no Maião."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de quarta: Flamengo 3 × 0 Vasco, Bangu 2 × 1 Fluminense, America 2 × 3 Goytacaz, Avaí 1 × 1 Joinville, Criciúma 4 × 0 Barra, Goiás 0 × 3 Vila Nova, Brasiliense 1 × 3 Atlético/GO, Mixto 1 × 1 Anápolis e mais 20 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Santos, pela 7ª rodada do Paulistão. O Palmeiras está em 2º na tabela e o Santos em 4º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Portuguesa 1 × 1 São Caetano, Botafogo 3 × 3 Flamengo, Goytacaz 1 × 4 Bangu, Chapecoense 0 × 0 Avaí, Figueirense 3 × 0 Criciúma, Cuiabá 1 × 1 Goiás, Atlético/GO 4 × 3 Vila Nova, Remo 2 × 0 Rio Negro e mais 16 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Corinthians × Palmeiras, pela 8ª rodada do Paulistão. O Corinthians está em 3º na tabela e o Palmeiras em 1º. A bola vai rolar no Neo Química Arena."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Corinthians 1 × 0 São Bernardo, Flamengo 4 × 0 Fluminense, Botafogo 4 × 0 Americano, Volta Redonda 1 × 0 America, Criciúma 1 × 1 Chapecoense, Barra 1 × 2 Avaí, Goiás 0 × 2 Atlético/GO, Cuiabá 1 × 1 Anápolis e mais 15 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × São Paulo, pela 9ª rodada do Paulistão. O Palmeiras está em 1º na tabela e o São Paulo em 2º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: São Paulo 0 × 0 Corinthians, Flamengo 1 × 0 Fluminense, Botafogo 3 × 1 Vasco, Chapecoense 4 × 0 Figueirense, Avaí 3 × 0 Criciúma, Vila Nova 2 × 2 Cuiabá, Atlético/GO 1 × 1 Brasiliense, Nacional 4 × 0 Tuna Luso e mais 13 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Mirassol, pela semifinal do Paulistão. O Palmeiras está em 1º na tabela e o Mirassol em 4º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "aniversarios",
+   "texto": "Os convites de abril chegaram: 2 aliadas fazem aniversário este mês. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "almanaque",
+   "texto": "Começa a disputa: Daqui a uma semana rola a bola do Brasileirão Série A. 20 clubes na disputa. Favoritos ao título: Flamengo, Palmeiras, São Paulo. Ameaçados de queda: Remo, Chapecoense, Coritiba."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Flamengo 0 × 0 Botafogo, Chapecoense 1 × 0 Avaí, Atlético/GO 1 × 2 Vila Nova, Remo 4 × 0 Nacional, Bahia 1 × 0 Fortaleza, Grêmio 1 × 2 Internacional, Cruzeiro 2 × 2 Atlético Mineiro, Sergipe 2 × 0 Imperatriz e mais 2 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Corinthians, pela final do Paulistão. O Palmeiras está em 1º na tabela e o Corinthians em 3º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "almanaque",
+   "texto": "É NOSSO: Acabou: o título é do Palmeiras. Palmeiras terminou o Paulistão na frente de todo mundo; o Corinthians ficou com o vice."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "obra",
+   "texto": "A Independente abriu uma loja nova na praça."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "almanaque",
+   "texto": "Começa a disputa: Vem aí a Copa Libertadores. 4 clubes na disputa. Favoritos ao título: Palmeiras, Nacional/URU, Bolívar."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: São Paulo 2 × 1 Coritiba, Flamengo 2 × 0 Remo, Fluminense 1 × 0 Vasco, Atlético Mineiro 1 × 0 Bragantino, Ceará 2 × 1 Operário/PR, Sport Recife 2 × 3 Ponte Preta, Atlético/GO 0 × 2 Vila Nova, América/MG 1 × 0 Náutico e mais 18 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Vitória, pela 1ª rodada do Brasileirão Série A. O Palmeiras está em 15º na tabela e o Vitória em 20º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × UCV, pela fecha 1 da Copa Libertadores. O Palmeiras está em 3º na tabela e o UCV em 4º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Vitória 1 × 3 Flamengo, Coritiba 2 × 1 Remo, Mirassol 3 × 2 Botafogo, Grêmio 2 × 1 Atlético Mineiro, Santos 4 × 0 Cruzeiro, Operário/PR 1 × 1 Fortaleza, Botafogo/SP 1 × 0 São Bernardo, Náutico 2 × 1 Sport Recife e mais 16 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Chapecoense × Palmeiras, pela 2ª rodada do Brasileirão Série A. O Chapecoense está em 14º na tabela e o Palmeiras em 1º. A bola vai rolar na Arena Condá."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de domingo: Corinthians 2 × 1 Bragantino, Bahia 0 × 1 Mirassol, Fluminense 2 × 3 Grêmio, São Bernardo 1 × 1 Ponte Preta, Ceará 3 × 4 Vila Nova, Juventude 1 × 2 Náutico, Sport Recife 2 × 0 Avaí, Atlético/GO 1 × 1 Londrina e mais 20 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Vasco, pela 3ª rodada do Brasileirão Série A. O Palmeiras está em 1º na tabela e o Vasco em 12º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Bolívar, pela fecha 2 da Copa Libertadores. O Palmeiras está em 3º na tabela e o Bolívar em 1º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "aniversarios",
+   "texto": "Os convites de maio chegaram: 2 aliadas fazem aniversário este mês. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de domingo: Athletico 3 × 1 Remo, Mirassol 0 × 1 São Paulo, Grêmio 3 × 1 Corinthians, Cruzeiro 0 × 0 Fluminense, Vila Nova 3 × 2 Operário/PR, Náutico 3 × 2 São Bernardo, CRB 2 × 2 Ceará, Criciúma 1 × 0 Sport Recife e mais 19 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Bragantino × Palmeiras, pela 4ª rodada do Brasileirão Série A. O Bragantino está em 19º na tabela e o Palmeiras em 1º. A bola vai rolar no Nabi Abi Chedid."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "barrival",
+   "texto": "Chefe, chegou a informação que o bar da Gaviões tá cheio deles lá, a gente quer dar o bote neles e roubar o caixa do bar."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "reuniao",
+   "texto": "Reunião de diplomacia — maio. 4 assuntos na mesa, e a nossa jogada nos eixos em aberto."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de domingo: São Paulo 1 × 1 Santos, Portuguesa 0 × 1 Confiança, Vitória 2 × 0 Bragantino, Remo 3 × 2 Mirassol, Fortaleza 4 × 2 Ponte Preta, Botafogo/SP 0 × 0 Náutico, Operário/PR 2 × 1 CRB, São Bernardo 3 × 3 Avaí e mais 18 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Grêmio, pela 5ª rodada do Brasileirão Série A. O Palmeiras está em 1º na tabela e o Grêmio em 5º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Nacional/URU, pela fecha 3 da Copa Libertadores. O Palmeiras está em 3º na tabela e o Nacional/URU em 2º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de domingo: Mirassol 2 × 1 Coritiba, Grêmio 2 × 0 Vitória, Santos 3 × 0 Remo, Fluminense 2 × 3 Bahia, CRB 2 × 1 Athletic, Avaí 1 × 1 Botafogo/SP, Londrina 1 × 1 Operário/PR, Cuiabá 0 × 1 Juventude e mais 20 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Cruzeiro × Palmeiras, pela 6ª rodada do Brasileirão Série A. O Cruzeiro está em 19º na tabela e o Palmeiras em 1º. A bola vai rolar no Mineirão."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "barrival",
+   "texto": "Chefe, chegou a informação que o bar da Dragões da Real tá cheio deles lá, a gente quer dar o bote neles e roubar o caixa do bar."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Corinthians 0 × 1 Bahia, Portuguesa 2 × 1 ABC, Flamengo 1 × 0 Athletico, Internacional 3 × 3 Mirassol, Fortaleza 1 × 0 Náutico, Vila Nova 3 × 0 CRB, Ponte Preta 3 × 0 Avaí, Operário/PR 0 × 2 Novorizontino e mais 19 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Botafogo, pela 7ª rodada do Brasileirão Série A. O Palmeiras está em 1º na tabela e o Botafogo em 13º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "almanaque",
+   "texto": "Mata-mata: Vem aí a Copa do Brasil: erro não tem volta. 108 clubes e um caminho só: quem tropeçar uma vez está fora. Favoritos à taça: Flamengo, Palmeiras, São Paulo."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem UCV × Palmeiras, pela fecha 4 da Copa Libertadores. O UCV está em 4º na tabela e o Palmeiras em 3º. A bola vai rolar no Olímpico de la UCV."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Corinthians 1 × 2 São Paulo, Bragantino 1 × 2 Flamengo, Mirassol 2 × 1 Athletico, Grêmio 0 × 1 Vasco, Cruzeiro 0 × 0 Chapecoense, Fluminense 1 × 0 Remo, CRB 1 × 0 Fortaleza, Avaí 4 × 0 Náutico e mais 19 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Bahia × Palmeiras, pela 8ª rodada do Brasileirão Série A. O Bahia está em 3º na tabela e o Palmeiras em 1º. A bola vai rolar na Arena Fonte Nova."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "aniversarios",
+   "texto": "Os convites de junho chegaram: 1 aliada faz aniversário este mês. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Flamengo 2 × 0 Mirassol, Bragantino 0 × 1 Grêmio, Athletico 1 × 1 Santos, Vitória 2 × 1 Bahia, Remo 0 × 1 Corinthians, Fortaleza 3 × 1 Avaí, CRB 1 × 1 Londrina, Athletic 1 × 1 América/MG e mais 16 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × São Paulo, pela 9ª rodada do Brasileirão Série A. O Palmeiras está em 1º na tabela e o São Paulo em 3º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Bolívar × Palmeiras, pela fecha 5 da Copa Libertadores. O Bolívar está em 1º na tabela e o Palmeiras em 3º. A bola vai rolar no Hernando Siles."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: Corinthians 1 × 0 Coritiba, Portuguesa 1 × 0 Joinville, Grêmio 0 × 0 Flamengo, Cruzeiro 3 × 0 Bragantino, Fluminense 1 × 0 Internacional, Londrina 0 × 4 Fortaleza, Criciúma 0 × 1 Avaí, Atlético/GO 3 × 1 Ponte Preta e mais 15 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Remo, pela 10ª rodada do Brasileirão Série A. O Palmeiras está em 1º na tabela e o Remo em 19º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de quarta: Corinthians 1 × 0 Internacional, Santos 1 × 2 Flamengo, Grêmio 0 × 4 Cruzeiro, Mirassol 1 × 0 Atlético Mineiro, Bragantino 1 × 0 Botafogo, Fluminense 0 × 1 Athletico, Vasco 3 × 1 Bahia, Chapecoense 1 × 0 São Paulo e mais 37 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Coritiba × Palmeiras, pela 11ª rodada do Brasileirão Série A. O Coritiba está em 14º na tabela e o Palmeiras em 1º. A bola vai rolar no Couto Pereira."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de sábado: São Paulo 0 × 2 Vasco, Atlético Mineiro 4 × 1 Santos, Botafogo 1 × 1 Grêmio, Vitória 0 × 2 Coritiba, Novorizontino 1 × 0 Fortaleza, Cuiabá 1 × 0 Criciúma, Goiás 3 × 0 Náutico, Juventude 5 × 1 Vila Nova e mais 18 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Internacional, pela 12ª rodada do Brasileirão Série A. O Palmeiras está em 1º na tabela e o Internacional em 13º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Nacional/URU × Palmeiras, pela fecha 6 da Copa Libertadores. O Nacional/URU está em 3º na tabela e o Palmeiras em 4º. A bola vai rolar no Gran Parque Central."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de domingo: Grêmio 3 × 0 Bahia, Mirassol 1 × 1 Corinthians, Bragantino 2 × 0 São Paulo, Vasco 0 × 1 Remo, Criciúma 1 × 0 Atlético/GO, Londrina 3 × 0 Sport Recife, Avaí 1 × 1 Goiás, Vila Nova 0 × 2 São Bernardo e mais 21 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Athletico × Palmeiras, pela 13ª rodada do Brasileirão Série A. O Athletico está em 3º na tabela e o Palmeiras em 1º. A bola vai rolar no Ligga Arena."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de quarta: São Paulo 2 × 0 América/RN, Corinthians 2 × 0 Paraná, Remo 0 × 2 Operário/PR, Vitória 2 × 2 Paysandu, Juventude 3 × 0 Floresta, Grêmio 0 × 1 Portuguesa, Criciúma 5 × 1 Treze, Internacional 2 × 0 Fluminense de Feira e mais 23 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Salgueiro, pela segunda fase da Copa do Brasil. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "aniversarios",
+   "texto": "Os convites de julho chegaram: 1 aliada faz aniversário este mês. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de domingo: Corinthians 1 × 1 Santos, Fluminense 2 × 2 Atlético Mineiro, Vitória 0 × 3 Athletico, Goiás 2 × 0 Criciúma, Juventude 1 × 0 Londrina, Operário/PR 2 × 0 Náutico, Botafogo/SP 2 × 2 Vila Nova, Athletic 2 × 2 Ponte Preta e mais 19 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Mirassol, pela 14ª rodada do Brasileirão Série A. O Palmeiras está em 1º na tabela e o Mirassol em 8º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "reuniao",
+   "texto": "Reunião de diplomacia — julho. 4 assuntos na mesa, e a nossa jogada nos eixos em aberto."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "obra",
+   "texto": "A Independente abriu um bar novo na praça."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de domingo: Cruzeiro 1 × 0 São Paulo, Grêmio 3 × 1 Remo, Mirassol 0 × 0 Vitória, Vasco 0 × 1 Internacional, Cuiabá 0 × 1 Goiás, Criciúma 0 × 1 Ceará, CRB 3 × 2 Botafogo/SP, Náutico 0 × 2 Athletic e mais 19 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Santos × Palmeiras, pela 15ª rodada do Brasileirão Série A. O Santos está em 8º na tabela e o Palmeiras em 1º. A bola vai rolar na Vila Belmiro."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "rodada",
+   "texto": "Os jogos de domingo: São Paulo 1 × 0 Botafogo, Portuguesa 2 × 0 América/RN, Remo 0 × 2 Cruzeiro, Vitória 1 × 0 Santos, Coritiba 4 × 1 Grêmio, Sport Recife 2 × 1 Fortaleza, Juventude 1 × 0 América/MG, Ceará 3 × 0 Cuiabá e mais 20 jogos."
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "partida",
+   "texto": "Hoje tem Palmeiras × Atlético Mineiro, pela 16ª rodada do Brasileirão Série A. O Palmeiras está em 1º na tabela e o Atlético Mineiro em 17º. A bola vai rolar no Allianz Parque."
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "mando",
+   "texto": "O Palmeiras quer vender mando de campo e jogar longe da cidade. Não tem um na arquibancada que seja a favor. E a organizada, fecha com o clube?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "mando",
+   "texto": "Fechar com o clube: ele precisa do dinheiro"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "mando",
+   "texto": "Condenar: jogo é aqui"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "mando",
+   "texto": "A torcida vai de qualquer jeito"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "diretoria",
+   "texto": "O que a torcida acha do trabalho da diretoria do Palmeiras?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "diretoria",
+   "texto": "Elogiar a gestão"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "diretoria",
+   "texto": "Cobrar mais investimento"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "diretoria",
+   "texto": "Pedir a saída da diretoria"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "rival",
+   "texto": "E como está a relação de vocês com a Gaviões?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "rival",
+   "texto": "Dizer que está em paz com a Gaviões"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "rival",
+   "texto": "Dizer que é rixa de verdade"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "fama",
+   "texto": "O jornal quer falar da fama de violenta que a organizada carrega. Como a gente responde?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "fama",
+   "texto": "Negar: a gente é festa"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "fama",
+   "texto": "A gente só se defende"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "fama",
+   "texto": "Assumir: somos o que somos"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "ingresso",
+   "texto": "O Palmeiras subiu o preço do ingresso e a arquibancada inteira está reclamando. A organizada banca o clube?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "ingresso",
+   "texto": "Bancar: o clube precisa arrecadar"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "ingresso",
+   "texto": "Dizer que é caro pra quem vai sempre"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "ingresso",
+   "texto": "Não entrar nessa"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "coirma",
+   "texto": "A TUP anda dizendo por aí que quem representa a massa do Palmeiras são eles. Vocês respondem?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "coirma",
+   "texto": "Peitar: quem representa a massa somos nós"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "coirma",
+   "texto": "Dizer que cabe todo mundo na arquibancada"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "coirma",
+   "texto": "Não dar palco"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "faixa",
+   "texto": "Vão levar faixa de cobrança pro próximo jogo do Palmeiras?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "faixa",
+   "texto": "Vamos, e bem grande"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "faixa",
+   "texto": "Não, o momento é de apoiar"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "faixa",
+   "texto": "Depende do que acontecer em campo"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "tecnico",
+   "texto": "Tem gente pedindo a cabeça do técnico do Palmeiras. A organizada embarca?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "tecnico",
+   "texto": "Bancar o técnico"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "tecnico",
+   "texto": "Pedir a demissão"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "tecnico",
+   "texto": "Quem decide é a diretoria"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "elenco",
+   "texto": "Tem jogador do Palmeiras que a arquibancada não quer mais. Vocês cobram nome a nome?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "elenco",
+   "texto": "Defender o elenco inteiro"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "elenco",
+   "texto": "Cobrar nome a nome"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "elenco",
+   "texto": "Cobrança é dentro do vestiário"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "bar-quebrado",
+   "texto": "Quebraram o bar da Ultras 92, obra da Dragões Alviverdes. O que a organizada acha disso?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "bar-quebrado",
+   "texto": "Tirar onda: bem feito, e que venha mais"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "bar-quebrado",
+   "texto": "Dizer que bar de torcida não se mexe"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "bar-quebrado",
+   "texto": "Não comentar bar dos outros"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "socio",
+   "texto": "E o programa de sócio do Palmeiras, como está pra quem é da organizada?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "socio",
+   "texto": "Dizer que vale a pena"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "socio",
+   "texto": "A mensalidade não cabe no bolso"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "socio",
+   "texto": "Sem opinião formada"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "ranking",
+   "texto": "Saiu o ranking das organizadas: vocês em 3º de 139, com a Jovem Fla na frente. Satisfeitos?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "ranking",
+   "texto": "Cravar que o ranking está errado, os maiores somos nós"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "ranking",
+   "texto": "Dizer que número não mede raça"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "ranking",
+   "texto": "Reconhecer a Jovem Fla na frente"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "arquibancada",
+   "texto": "O que a arquibancada prepara pro próximo jogo do Palmeiras?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "arquibancada",
+   "texto": "Prometer mosaico e festa"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "arquibancada",
+   "texto": "Dizer que é surpresa"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "arquibancada",
+   "texto": "Sem resultado não tem festa"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "temporada",
+   "texto": "E da temporada? Hoje o Palmeiras está em 1º na tabela."
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "temporada",
+   "texto": "Elogiar a campanha"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "temporada",
+   "texto": "Criticar duramente"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "temporada",
+   "texto": "Ficar em cima do muro"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "ranking",
+   "texto": "Saiu o ranking das organizadas: vocês em 2º de 139, com a Jovem Fla na frente. Satisfeitos?"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "boato",
+   "texto": "Rolou um boato de que vocês pediram a um aliado pra se afastar ou se aproximar de outra torcida. É verdade?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "boato",
+   "texto": "Confirmar"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "entrevista",
+   "id": "boato",
+   "texto": "Negar, é balela"
+  },
+  {
+   "tipo": "pergunta",
+   "kind": "entrevista",
+   "id": "tecnico",
+   "texto": "E o trabalho do técnico do Palmeiras?"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "protesto-ct",
+   "texto": "Chefe, o time tá jogando mal — 4 derrotas nos últimos 5 jogos (DDDDE) — e um grupo já fala em ir pra porta do CT cobrar satisfação do Palmeiras. Encabeçamos o protesto?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "protesto-ct",
+   "texto": "Encabeçar o protesto"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "protesto-ct",
+   "texto": "Segurar a torcida, não é hora"
+  },
+  {
+   "tipo": "mensagem",
+   "kind": "veredicto",
+   "texto": "CAMPEÃO. O Palmeiras levantou a taça do Paulistão. A rua quer festa na sede. A gente banca?"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "veredicto",
+   "texto": "Fazer a festa (R$ 10.000)"
+  },
+  {
+   "tipo": "rotulo-botao",
+   "kind": "veredicto",
+   "texto": "Comemorar sem gastar"
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Camisa 12 abriu um bar novo na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Camisa 12 abriu uma loja nova na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Camisa 12 inaugurou uma subsede nova na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Camisa 12 ampliou a sede."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Camisa 12 ampliou o bar."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Camisa 12 ampliou a loja."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Camisa 12 abriu uma subsede fora da praça em salvador."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Dragões da Real abriu um bar novo na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Dragões da Real abriu uma loja nova na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Dragões da Real inaugurou uma subsede nova na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Dragões da Real ampliou a sede."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Dragões da Real ampliou o bar."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Dragões da Real ampliou a loja."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Dragões da Real abriu uma subsede fora da praça em salvador."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Gaviões abriu um bar novo na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Gaviões abriu uma loja nova na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Gaviões inaugurou uma subsede nova na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Gaviões ampliou a sede."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Gaviões ampliou o bar."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Gaviões ampliou a loja."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Gaviões abriu uma subsede fora da praça em salvador."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Independente abriu um bar novo na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Independente abriu uma loja nova na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Independente inaugurou uma subsede nova na praça."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Independente ampliou a sede."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Independente ampliou o bar."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Independente ampliou a loja."
+  },
+  {
+   "tipo": "noticia",
+   "kind": "obra",
+   "texto": "A Independente abriu uma subsede fora da praça em salvador."
+  }
+ ],
+ "pares": [
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "O Palmeiras quer vender mando de campo e jogar longe da cidade. Não tem um na arquibancada que seja a favor. E a organizada, fecha com o clube?",
+   "rotulo_botao": "Condenar: jogo é aqui",
+   "dica": "−5 relação · +2 prestígio",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 1.5,
+    "relacao_clube": -5,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "O que a torcida acha do trabalho da diretoria do Palmeiras?",
+   "rotulo_botao": "Elogiar a gestão",
+   "dica": "sem efeito: a relação já passou de 70, e daí pra cima só presença no estádio sobe · −3 de moral",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": -3,
+    "prestigio": 0,
+    "relacao_clube": 0,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "O que a torcida acha do trabalho da diretoria do Palmeiras?",
+   "rotulo_botao": "Pedir a saída da diretoria",
+   "dica": "−20 relação · +3 prestígio",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 3,
+    "relacao_clube": -20,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "E como está a relação de vocês com a Gaviões?",
+   "rotulo_botao": "Dizer que é rixa de verdade",
+   "dica": "piora um pouco a relação com ela · +1 prestígio",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 1,
+    "relacao_clube": 0,
+    "relacao_com_ela": -0.29000000000000625,
+    "alvo": "Gaviões",
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "O jornal quer falar da fama de violenta que a organizada carrega. Como a gente responde?",
+   "rotulo_botao": "A gente só se defende",
+   "dica": "+1 prestígio",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 1,
+    "relacao_clube": 0,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "O Palmeiras subiu o preço do ingresso e a arquibancada inteira está reclamando. A organizada banca o clube?",
+   "rotulo_botao": "Dizer que é caro pra quem vai sempre",
+   "dica": "−5 relação · +1 prestígio",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 1,
+    "relacao_clube": -5,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "A TUP anda dizendo por aí que quem representa a massa do Palmeiras são eles. Vocês respondem?",
+   "rotulo_botao": "Peitar: quem representa a massa somos nós",
+   "dica": "+2 prestígio · piora a relação com a TUP",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 2,
+    "relacao_clube": 0,
+    "relacao_com_ela": -5,
+    "alvo": "TUP",
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "A TUP anda dizendo por aí que quem representa a massa do Palmeiras são eles. Vocês respondem?",
+   "rotulo_botao": "Não dar palco",
+   "dica": "sem efeito",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 0,
+    "relacao_clube": 0,
+    "relacao_com_ela": 0,
+    "alvo": "TUP",
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "Vão levar faixa de cobrança pro próximo jogo do Palmeiras?",
+   "rotulo_botao": "Não, o momento é de apoiar",
+   "dica": "sem efeito: a relação já passou de 70, e daí pra cima só presença no estádio sobe · −3 de moral",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": -3,
+    "prestigio": 0,
+    "relacao_clube": 0,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "Tem gente pedindo a cabeça do técnico do Palmeiras. A organizada embarca?",
+   "rotulo_botao": "Pedir a demissão",
+   "dica": "−4 relação · +1 prestígio",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 1,
+    "relacao_clube": -4,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "Tem jogador do Palmeiras que a arquibancada não quer mais. Vocês cobram nome a nome?",
+   "rotulo_botao": "Defender o elenco inteiro",
+   "dica": "sem efeito: a relação já passou de 70, e daí pra cima só presença no estádio sobe · −2 de moral",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": -2,
+    "prestigio": 0,
+    "relacao_clube": 1,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "Tem jogador do Palmeiras que a arquibancada não quer mais. Vocês cobram nome a nome?",
+   "rotulo_botao": "Cobrança é dentro do vestiário",
+   "dica": "sem efeito",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 0,
+    "relacao_clube": 0,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "Quebraram o bar da Ultras 92, obra da Dragões Alviverdes. O que a organizada acha disso?",
+   "rotulo_botao": "Dizer que bar de torcida não se mexe",
+   "dica": "melhora a relação com a Ultras 92",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 0,
+    "relacao_clube": 0,
+    "relacao_com_ela": 5,
+    "alvo": "Ultras 92",
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "E o programa de sócio do Palmeiras, como está pra quem é da organizada?",
+   "rotulo_botao": "A mensalidade não cabe no bolso",
+   "dica": "−4 relação · +1 prestígio",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 1,
+    "relacao_clube": -4,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "Saiu o ranking das organizadas: vocês em 3º de 139, com a Jovem Fla na frente. Satisfeitos?",
+   "rotulo_botao": "Dizer que número não mede raça",
+   "dica": "sem efeito",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 0,
+    "relacao_clube": 0,
+    "relacao_com_ela": 0,
+    "alvo": "Jovem Fla",
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "O que a arquibancada prepara pro próximo jogo do Palmeiras?",
+   "rotulo_botao": "Dizer que é surpresa",
+   "dica": "+1 prestígio",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 1,
+    "relacao_clube": 0,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "E da temporada? Hoje o Palmeiras está em 1º na tabela.",
+   "rotulo_botao": "Criticar duramente",
+   "dica": "−6 relação · +1 prestígio",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 1,
+    "relacao_clube": -6,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "entrevista (time mal)",
+   "kind": "entrevista",
+   "pergunta": "Rolou um boato de que vocês pediram a um aliado pra se afastar ou se aproximar de outra torcida. É verdade?",
+   "rotulo_botao": "Negar, é balela",
+   "dica": "sem efeito",
+   "consequencia": "(a mensagem ainda nao fechou)",
+   "medido": {
+    "moral": 0,
+    "prestigio": 0,
+    "relacao_clube": 0,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "protesto no CT",
+   "kind": "protesto-ct",
+   "pergunta": "Chefe, o time tá jogando mal — 4 derrotas nos últimos 5 jogos (DDDDE) — e um grupo já fala em ir pra porta do CT cobrar satisfação do Palmeiras. Encabeçamos o protesto?",
+   "rotulo_botao": "Encabeçar o protesto",
+   "dica": "−8 de relação com o clube · +2 de prestígio",
+   "consequencia": "Fomos pra porta do CT cobrar satisfação. -8 de relação com o clube · +2 de prestígio.",
+   "medido": {
+    "moral": 0,
+    "prestigio": 2,
+    "relacao_clube": -8,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "protesto no CT",
+   "kind": "protesto-ct",
+   "pergunta": "Chefe, o time tá jogando mal — 4 derrotas nos últimos 5 jogos (DDDDE) — e um grupo já fala em ir pra porta do CT cobrar satisfação do Palmeiras. Encabeçamos o protesto?",
+   "rotulo_botao": "Segurar a torcida, não é hora",
+   "dica": "+2 de relação com o clube · −3 de moral: eles queriam ir",
+   "consequencia": "Seguramos a torcida — não é hora de desgaste com a diretoria. +2 de relação com o clube · −3 de moral: o pessoal queria ir e ficou com a impressão de que a gente joga pro outro lado.",
+   "medido": {
+    "moral": -3,
+    "prestigio": 0,
+    "relacao_clube": 2,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  },
+  {
+   "fonte": "veredicto da campanha",
+   "kind": "veredicto",
+   "pergunta": "CAMPEÃO. O Palmeiras levantou a taça do Paulistão. A rua quer festa na sede. A gente banca?",
+   "rotulo_botao": "Fazer a festa (R$ 10.000)",
+   "dica": "+5 de moral · volta de R$ 9.000 a R$ 16.000 em bar, camisa e rifa",
+   "consequencia": "Festa na sede. Custou R$ 10.000 e voltou R$ 9.000 — saldo de −R$ 1.000 · +5 de moral.",
+   "medido": {
+    "moral": 5,
+    "prestigio": 0,
+    "relacao_clube": 0,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": -1000
+   }
+  },
+  {
+   "fonte": "veredicto da campanha",
+   "kind": "veredicto",
+   "pergunta": "CAMPEÃO. O Palmeiras levantou a taça do Paulistão. A rua quer festa na sede. A gente banca?",
+   "rotulo_botao": "Comemorar sem gastar",
+   "dica": "sem efeito",
+   "consequencia": "Comemoramos do nosso jeito, sem gastar.",
+   "medido": {
+    "moral": 0,
+    "prestigio": 0,
+    "relacao_clube": 0,
+    "relacao_com_ela": null,
+    "alvo": null,
+    "dinheiro": 0
+   }
+  }
+ ]
+}
