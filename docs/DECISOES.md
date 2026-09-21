@@ -7882,6 +7882,54 @@ testar se uma `.tela-cheia` está visível — o certo é
 caminho do clique. Medir pelo caminho de baixo dava "relógio parado"
 onde não havia defeito nenhum.
 
+## Entrevista a cada dois meses (21/09/2026)
+
+Pedido do dono: *"as entrevistas devem ocorrer a cada dois meses"*.
+
+O encaixe mensal do assunto do clube (18/09) continua: doze vezes por
+ano alguém do clube bate à porta. O que mudou é quem atende. Antes a
+entrevista era a porta **padrão** — com o time bem ela saía todos os
+doze meses, e o protesto só entrava por sorteio de meio a meio quando
+o time vinha de sequência ruim. Agora cada mês é de um dos dois:
+
+| mês | quem vem |
+|---|---|
+| par | **entrevista**, sempre — seis por ano |
+| ímpar | **protesto na porta do CT**, e só se o time vem de sequência ruim. Sem isso o mês passa calado |
+
+**Saiu o sorteio de meio a meio.** Ele existia porque os dois dividiam
+o mesmo mês; com cada um no seu, não há o que sortear. Mantê-lo faria
+o protesto comer metade das entrevistas justamente na temporada ruim,
+e "de dois em dois meses" viraria "de quatro em quatro" — o oposto do
+pedido, e só na temporada em que o jogador mais quer falar.
+
+O mês par/ímpar sai de `deg(n)`, que **só cresce** — não é módulo do
+ano —, então a alternância atravessa a virada sem repetir nem pular um
+mês.
+
+### A janela do bar quebrado seguiu junto
+
+A pergunta do bar quebrado valia **8 semanas**, com folga enquanto a
+entrevista era mensal. Dois meses são **~8,7 semanas**: um bar
+quebrado logo depois de uma entrevista venceria ANTES da próxima e
+nunca viraria pergunta — a pauta simplesmente sumiria do jogo, sem
+erro nenhum aparecer. Subiu para **12 semanas**, que cobre o novo
+intervalo com margem e continua jogando fora o que é velho demais pra
+alguém comentar.
+
+### Medido
+
+Quatro temporadas em três torcidas: **6 entrevistas por ano, em todas
+as torcidas e em todos os anos** — 2026:6, 2027:6, 2028:6, 2029:6. O
+protesto continua aparecendo, de 0 a 3 por ano conforme o time vai
+mal: a Mancha Verde (Palmeiras) quase não protestou, os Gaviões
+(Corinthians) tiveram 2 e 3 nos primeiros anos.
+
+A janela do bar: ainda é pergunta em 0, 4, 8, 9, 11 e 12 semanas;
+velho demais em 13. E um bar de **9 semanas** — que vencia na régua
+antiga — chega à entrevista: *"Quebraram o bar da Camisa 12 e a cidade
+toda aponta pra cá."*
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
