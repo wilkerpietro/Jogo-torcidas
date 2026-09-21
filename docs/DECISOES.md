@@ -8056,6 +8056,17 @@ O dono viu o cartão da semana 30 prometer Fortaleza × Cruzeiro e Fortaleza × 
 
 Teste (Playwright, `agenda-semana.js` e `agenda-cartao.js`): semana com campeonato em casa + Sul-Americana de quarta fora + Copa do Brasil de sábado em casa → o campeonato vai pra semana seguinte (`j.s`), some da praça e do cartão dessa semana e aparece no da seguinte; o cartão traz a copa com a planilha e a Sul-Americana como linha; na virada o `proximoJogo` é a copa e bate com a agenda; a copa mudada pra domingo no meio da semana refaz a ficha com o mesmo adversário e a mesma chave.
 
+## O jogo mora no GitHub Pages (decisão do dono, 21/09/2026)
+
+O artefato do claude.ai parou de servir: o arquivo único tem teto de 16 MB, o pacote chegou a 15,96 MB e cada imagem nova exigia encolher a arte (as cenas iam em WebP de 1280 px, os escudos em 256 px). O jogo é estático — `index.html`, scripts por tag e imagens por caminho relativo — e o repositório guarda os originais inteiros, então o GitHub Pages serve tudo como está, sem empacotar.
+
+- **Fonte do Pages: a branch de trabalho, raiz do repositório.** Cada push vira a versão nova em um ou dois minutos; o navegador pode segurar a anterior por até dez, que é o cache que o Pages manda.
+- **`.nojekyll` na raiz.** Sem ele o Pages passa o Jekyll, que ignora tudo que começa com `_` — hoje só as referências de máscara do editor, mas o arquivo custa nada e evita a surpresa.
+- **A bancada de cenas vai junto.** `arredores.html` é a fonte da bancada e sai no mesmo endereço, sem o `empacotar_cena.py`.
+- **O save não viaja sozinho.** `localStorage` é por endereço: a partida do artefato entra no Pages pelo exportar e importar do menu. No Pages o download do `.json` funciona; no visualizador do artefato nunca funcionou, que é por isso que existe o save por texto.
+- **O artefato para na versão 129** e o `torcida-organizada.html` deixa de ser regenerado a cada mudança. O empacotador fica no repositório, mas não é mais o caminho.
+- **Repositório privado não tem Pages no plano gratuito.** Tornar o repositório público é decisão do dono; o código foi varrido e não há segredo nem caminho absoluto dentro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
