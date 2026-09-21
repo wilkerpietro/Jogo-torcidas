@@ -1266,7 +1266,11 @@ TO.diaJogo.combate = (function(){
        situações: no bar o que importa é o LUGAR (a porta), na praça e
        na rua o que importa é a DISTÂNCIA — não há porta pra vigiar,
        eles só reagem quando o outro bonde chega perto. */
-    if(g.perto){
+    /* SÓ A ZONA (casa de piscina, 21/09/2026): a resenha está de
+       costas pra rua e só percebe quem pisa no portão — nem a
+       distância nem a linha de visão pela porta acordam a casa */
+    const soZona = !!g.soZona;
+    if(g.perto && !soZona){
       const parados=J.discos.filter(d=>d.vivo && d.guarda);
       for(const d of parados){
         for(const a of atacantes)
@@ -1276,7 +1280,7 @@ TO.diaJogo.combate = (function(){
     }
     if(!por && g.raio) for(const a of atacantes)
       if(U.dist(a.x,a.y,g.x,g.y) <= g.raio){ por='zona'; break; }
-    if(!por) for(const d of J.discos){
+    if(!por && !soZona) for(const d of J.discos){
       if(!d.vivo || !d.guarda) continue;
       if(inimigoAlcancavel(J,d,170)){ por='visao'; break; }
     }
@@ -1546,6 +1550,19 @@ TO.diaJogo.combate = (function(){
            bar e ficava oscilando a 60 px da faixa (correção, 09/09/2026) */
         campo = A.campoDoPonto('faixa:'+F.torcidaId+':'+F.tipo, F.x, F.y, J.grades, J.versaoGrades);
         usarCampo = true;
+      } else if(d.comFaixa && !d.fugindo && D.faixaAbrigo){
+        /* O ABRIGO DA FAIXA (casa de piscina, 21/09/2026): a cena diz
+           onde a peça se esconde — o depósito da casa — e quem a tirou
+           corre pra lá e fica, em vez de acompanhar o bonde. Pra tomar
+           a faixa o atacante tem de entrar na casa e derrubá-lo ali. */
+        const ab = D.faixaAbrigo;
+        if(U.dist(d.x,d.y,ab.x,ab.y) < (ab.raio||40)){
+          d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
+          d._ramo='faixa-abrigo'; d._alvo=null;
+          continue;
+        }
+        campo = A.campoDoPonto('faixa-abrigo', ab.x, ab.y, J.grades, J.versaoGrades);
+        usarCampo = true; ramo='faixa-abrigo'; d._olhaPara=null;
       } else if(d.comFaixa && !d.fugindo){
         /* QUEM CARREGA A FAIXA VAI JUNTO, MAS ATRÁS (correção do dono,
            09/09/2026): acompanha a aglomeração dos seus e fica no fundo
@@ -3574,14 +3591,14 @@ TO.diaJogo.combate = (function(){
      fecha com a faixa ainda no muro e o lado dela derrotado sem
      ninguém de pé: tomada também.
      ======================================================= */
-  const CENAS_FAIXA = /^(bar|praca|estadio-)/;
+  const CENAS_FAIXA = /^(bar|praca|estadio-|casa-piscina)/;
   /* FAIXA_AFASTA: o portador tenta ficar a pelo menos isto de qualquer inimigo */
   const FAIXA_TIRAR = 3.0, FAIXA_ALCANCE = 180, FAIXA_AFASTA = 200;
   /* O QUE CADA CENA EXPÕE (pedido do dono, 09/09/2026): no bar, bandeira
      em 70% das vezes e faixa nas outras; na concentração (a praça),
      meio a meio; no estádio, faixa E bandeira lado a lado — e TODO
      setor de toda torcida presente estende as suas. */
-  const CHANCE_BANDEIRA = {bar:0.7, praca:0.5};
+  const CHANCE_BANDEIRA = {bar:0.7, praca:0.5, casa:0.5};
   function montarFaixas(J, cfg){
     if(!cfg || !D.id || !CENAS_FAIXA.test(D.id)) return [];
     const PAT = TO.patrimonio, E = TO.estado && TO.estado.E;
@@ -3619,7 +3636,7 @@ TO.diaJogo.combate = (function(){
       const lado = q === 'nos' ? meu : outro;
       const id = q === 'nos' ? E.torcida.id : cfg.rivalId;
       if(!id) continue;
-      const chave = D.id === 'bar' ? 'bar' : 'praca';
+      const chave = D.id === 'bar' ? 'bar' : D.id === 'casa-piscina' ? 'casa' : 'praca';
       const querBandeira = U.rng() < (CHANCE_BANDEIRA[chave] || 0);
       const ordemTipos = querBandeira ? ['bandeira','faixa'] : ['faixa','bandeira'];
       for(const tipo of ordemTipos){
@@ -3722,6 +3739,9 @@ TO.diaJogo.combate = (function(){
     if(!F || F.estado==='tomada') return;
     const inimigo = OUTRO_LADO[F.lado];
     if(F.estado==='exposta'){
+      /* na casa de piscina ninguém corre pra faixa antes de a casa
+         acordar: a resenha não sabe que tem bonde na rua */
+      if(D.gatilho && D.gatilho.soZona && !J.acordou) return;
       const perto = J.discos.some(d=>d.lado===inimigo && d.vivo && !d.entrou && !d.sumiu &&
                                     U.dist(d.x,d.y,F.x,F.y) < FAIXA_ALCANCE);
       if(perto || (!J.paz && J.t > 1.5)){

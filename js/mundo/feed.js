@@ -218,7 +218,7 @@ TO.feed = (function(){
      ======================================================= */
   const ACOES_DE_BRIGA = new Set([
     'cena-guerra', 'cena-defesa', 'cena-escolta', 'cena-treta',
-    'atacar-bar-rival'
+    'atacar-bar-rival', 'atacar-casa-rival'
   ]);
 
   function comSimular(botoes){
@@ -418,6 +418,7 @@ TO.feed = (function(){
     passo('assalto',        ()=>assaltoDeHoje(E));
     passo('assunto do clube',()=>assuntoClubeDeHoje(E));
     passo('bar rival',      ()=>barRivalDeHoje(E));
+    passo('casa rival',     ()=>casaRivalDeHoje(E));
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
@@ -2033,6 +2034,15 @@ TO.feed = (function(){
     if(iEsperado < 0) return null;            // o clube nem joga isto
     const esperado = iEsperado + 1;
 
+    /* O VEREDICTO ESPERA A BOLA ROLAR (correção do dono, 21/09/2026).
+       O dia é simulado na virada, ANTES de o relógio chegar na hora do
+       jogo — a chave já sabia quem caiu às 8 da manhã e a rua ia pra
+       porta do CT com a partida ainda marcada pra 21h30 no plano. Com
+       jogo NOSSO nesta competição hoje, ainda não há desfecho a julgar:
+       amanhã a chave é a mesma e o julgamento sai. */
+    if(C.jogosDaSemana(E, meu, E.data.semana)
+        .some(j => j.dia === E.data.dia && j.compId === comp.id)) return null;
+
     /* --- mata-mata: caímos? ---
        A CHAVE DE VERDADE MANDA (conserto de 21/09/2026). A competição
        na agenda do jogador é uma SOMBRA: pra Libertadores ela guarda
@@ -2262,8 +2272,10 @@ TO.feed = (function(){
   function barRivalDeHoje(E){
     const sa = TO.relacoes.semanaAbs(E);
     const H = TO.mapa.hash;
-    /* ~15% das semanas têm a sugestão: 0,15 × 52 ≈ 8 por ano */
-    if(H(`barrival|${sa}|${E.torcida.id}`) % 100 >= 15) return;
+    /* ~7,5% das semanas têm a sugestão: 0,075 × 52 ≈ 4 por ano. Eram
+       15% até 21/09/2026, quando a casa de piscina levou a outra
+       metade (pedido do dono) */
+    if(H(`barrival|${sa}|${E.torcida.id}`) % 200 >= 15) return;
     let dia = 1 + H(`barrival|d|${sa}|${E.torcida.id}`) % 7;
     for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
     if(dia !== E.data.dia) return;
@@ -2284,6 +2296,47 @@ TO.feed = (function(){
          nota:'Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% '+
               'do caixa · Relação −26 (perdendo, −18)'},
         {id:'nada', rot:'Deixar quieto', acao:'ignorar-bar-rival',
+         nota:'Prestígio −1 · Moral −1'}
+      ]
+    });
+  }
+
+  /* -------------------------------------------------------
+     3g. A RESENHA NA CASA DE PISCINA (texto do dono, 21/09/2026):
+         a outra metade da dose do bar. Uma zona da rival da praça
+         está de resenha numa casa de piscina com a faixa estendida;
+         a diretoria pergunta se a gente dá o bote. Vai a nossa zona
+         (até 20) contra a zona deles (até 20), e o prêmio é a faixa.
+     ------------------------------------------------------- */
+  function casaRivalDeHoje(E){
+    const sa = TO.relacoes.semanaAbs(E);
+    const H = TO.mapa.hash;
+    if(H(`casarival|${sa}|${E.torcida.id}`) % 200 >= 15) return;
+    let dia = 1 + H(`casarival|d|${sa}|${E.torcida.id}`) % 7;
+    for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
+    if(dia !== E.data.dia) return;
+    const rival = TO.relacoes.rivalDaPraca(E, `casarival|${sa}`);
+    if(!rival) return;
+    /* sem faixa nem bandeira não há o que tomar — não há resenha */
+    const t = TO.patrimonio.faixasIA(E, rival.id);
+    if(!t || (t.faixas <= 0 && t.bandeiras <= 0)) return;
+    const peca = t.faixas > 0 ? 'faixa' : 'bandeira';
+    const zonas = M().ZONAS || ['Norte','Sul','Leste','Oeste'];
+    const zona = zonas[H(`casarival|z|${sa}`) % zonas.length];
+    const doLado = (M().bairrosPorZona(rival.mapa || E.torcida.mapa) || {})[zona] || [];
+    const bairro = doLado.length ? doLado[H(`casarival|b|${sa}`) % doLado.length].nome : '';
+    propor(E, {
+      kind:'casarival', peso:'decisao', voz:'diretor',
+      chave:`casarival|${E.data.ano}|${sa}`,
+      texto:`Chefe, vimos nas redes sociais que a Zona ${zona} da ${rival.nome} `+
+            `tá fazendo uma resenha deles numa casa com piscina e a ${peca} `+
+            `deles tá estendida lá, a gente quer dar o bote neles e tomar a ${peca}.`,
+      dados:{rival:rival.id, nome:rival.nome, zona, bairro, peca},
+      botoes:[
+        {id:'atacar', rot:'Dar o bote', acao:'atacar-casa-rival',
+         nota:`Prestígio até ±10 · tomando a ${peca}, prestígio a mais · `+
+              'Relação −26 (perdendo, −18) · 1 ataque por semana'},
+        {id:'nada', rot:'Deixar quieto', acao:'ignorar-casa-rival',
          nota:'Prestígio −1 · Moral −1'}
       ]
     });
@@ -3237,6 +3290,10 @@ TO.feed = (function(){
       : av.alvo === 'bar'
       ? `Fala presida, me passaram a fita de que os caras da ${av.nome} `+
         `vai atacar o nosso bar hoje. Vale ficar de olho.`
+      : av.alvo === 'casa'
+      ? `Fala presida, me passaram a fita de que os caras da ${av.nome} `+
+        `vai dar o bote na resenha da Zona ${av.zona || 'Sul'} hoje, na casa `+
+        `de piscina. Vale ficar de olho.`
       : `Fala presida, me passaram a fita de que os caras da ${av.nome} `+
         `vai atacar a gente ${LUGAR[av.alvo] || 'na rua'} no dia do jogo. `+
         `Vale ficar de olho.`;
@@ -3315,7 +3372,10 @@ TO.feed = (function(){
     pista:        {texto:o=>`A ${o} fechou a gente na pista, a caminho do estádio!`,
                    brigar:'Pra cima deles', fugir:'Furar e seguir pro jogo'},
     emboscada:    {texto:o=>`Pegaram a caravana na estrada. A ${o} fechou a pista.`,
-                   brigar:'Descer pra treta', fugir:'Mandar seguir viagem'}
+                   brigar:'Descer pra treta', fugir:'Mandar seguir viagem'},
+    casa:         {texto:(o,a)=>`A ${o} tá invadindo a resenha da Zona ${(a&&a.zona)||'Sul'} `+
+                                `na casa de piscina! Querem levar a nossa faixa.`,
+                   brigar:'Segurar a casa', fugir:'Largar a resenha'}
   };
 
   function ataqueSofridoHoje(E){
@@ -3331,7 +3391,7 @@ TO.feed = (function(){
     const chave = `sofrido|${E.data.ano}|${E.data.semana}|${a.torcida}|${a.alvo}`;
     propor(E, {
       kind:'sofrido', peso:'decisao', chave, voz:'diretor', tipo:'ruim',
-      texto: cfg.texto(a.nome),
+      texto: cfg.texto(a.nome, a),
       dados:{torcida:a.torcida, alvo:a.alvo, cena:a.cena},
       botoes:[
         {id:'brigar', rot:cfg.brigar, acao:'cena-defesa',
@@ -3360,9 +3420,19 @@ TO.feed = (function(){
       ev.tipo === 'treta' ? ev.chave : null);
     if(!rival) return;
 
-    if(ev.tipo === 'bar'){
+    if(ev.tipo === 'bar' || ev.tipo === 'casa'){
       /* o ataque ao bar entra pelo caminho de sempre: marca o ataque e
-         a convocação de defesa monta a mensagem */
+         a convocação de defesa monta a mensagem. A CASA DE PISCINA
+         (dono, 21/09/2026) entra pela mesma porta: é a resenha de uma
+         zona nossa que eles invadem, atrás da nossa faixa — e sem
+         faixa nem bandeira estendida não há resenha pra invadir. */
+      const casa = ev.tipo === 'casa';
+      if(casa){
+        const PAT = TO.patrimonio;
+        if(!PAT.faixasDe(E).nossas.length && !PAT.bandeirasDe(E).nossas.length) return;
+      }
+      const zonas = M().ZONAS || ['Norte','Sul','Leste','Oeste'];
+      const zona = casa ? zonas[TO.mapa.hash(ev.chave + '|z') % zonas.length] : null;
       if(E.ataqueMarcado && !E.ataqueMarcado.resolvido &&
          E.ataqueMarcado.semana === E.data.semana) return;
       /* ataque de nanica não existe (decisão do dono, 17/08/2026): se
@@ -3372,11 +3442,13 @@ TO.feed = (function(){
       /* de pé, sem ferido nem preso, dos dois lados (dono, 27/08/2026) */
       const vivoR = TO.relacoes.disponiveisIA(E, rival.id);
       if(vivoR < TO.membros.aptosParaOEstadio(E).length * 0.5) return;
-      E.ataqueMarcado = {torcida:rival.id, nome:rival.nome, alvo:'bar',
-                         cena:'bar', ano:E.data.ano, semana:E.data.semana,
+      E.ataqueMarcado = {torcida:rival.id, nome:rival.nome,
+                         alvo: casa ? 'casa' : 'bar',
+                         cena: casa ? 'casa-piscina' : 'bar', zona,
+                         ano:E.data.ano, semana:E.data.semana,
                          dia:E.data.dia};
-      avisoDoOlheiro(E, {chave:`bar|${E.data.ano}|${E.data.semana}|${rival.id}`,
-                         alvo:'bar', nome:rival.nome});
+      avisoDoOlheiro(E, {chave:`${ev.tipo}|${E.data.ano}|${E.data.semana}|${rival.id}`,
+                         alvo: casa ? 'casa' : 'bar', nome:rival.nome, zona});
       return;
     }
 
@@ -4123,7 +4195,8 @@ TO.feed = (function(){
     'estadio-40':'na arquibancada',
     'treta-beco':'no beco', 'treta-galpao':'no pátio do galpão',
     'treta-campo':'no campo de terra',
-    'emb-posto':'no posto', 'emb-onibus':'na estrada'
+    'emb-posto':'no posto', 'emb-onibus':'na estrada',
+    'casa-piscina':'na casa de piscina'
   };
   const nomeDaCena = c => NOMES_CENA[c] || 'na rua';
   /* ONDE NÃO EXISTE BAIRRO: arquibancada e estrada não são endereço de
@@ -4313,6 +4386,53 @@ TO.feed = (function(){
         marcar();
         return {ok:true, abrir:{tela:'cena-acao', args:{cena:r.cena},
                                 simular: !!b.simular}};
+      }
+
+      /* O BOTE NA RESENHA (texto do dono, 21/09/2026): a nossa zona
+         (até 20) desce na casa de piscina onde a zona deles (até 20)
+         está de resenha com a faixa estendida. Abre a cena direto,
+         como a descida da filial, e fecha por `fecharAtaque` — sem
+         saque, que casa de praia não tem caixa; o prêmio é a faixa. */
+      case 'atacar-casa-rival': {
+        const d = m.dados || {};
+        const rival = M().torcida(d.rival);
+        if(!rival){
+          marcar('Dar o bote — não rolou');
+          m.consequencia = 'Não rolou: a torcida sumiu do mapa.';
+          return {ok:true};
+        }
+        E.acoes = E.acoes || {};
+        if(E.acoes.ultimoAtaqueManual === E.data.semana){
+          marcar('Dar o bote — não rolou');
+          m.consequencia = 'Não rolou: já saiu bonde pra cima de casa rival esta semana.';
+          return {ok:true};
+        }
+        const zona = TO.acoes.bondeDaZona(E, d.zona);
+        if(zona.length < 4){
+          marcar('Dar o bote — não rolou');
+          m.consequencia = 'Não rolou: a zona não tem gente de pé.';
+          return {ok:true};
+        }
+        const deles = TO.acoes.efetivoDaZona(E, rival);
+        E.acoes.ultimoAtaqueManual = E.data.semana;
+        marcar();
+        return {ok:true, abrir:{tela:'cena-acao', args:{cena:{
+          cena:'casa-piscina', acao:'atacar',
+          escalacao: zona, efetivoRival: deles,
+          alvo:{torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,
+                tipo:'casa', cena:'casa-piscina', zona:d.zona,
+                bairro:d.bairro || '',
+                nossos:zona.length, efetivo:deles}}},
+          simular: !!b.simular}};
+      }
+      case 'ignorar-casa-rival': {
+        marcar();
+        TO.estado.mexerIndicador(E, 'prestigio', -0.2,
+          'Deixamos a resenha do rival quieta');
+        TO.estado.mexerIndicador(E, 'moral', -1,
+          'Deixamos a resenha do rival quieta');
+        m.consequencia = 'Deixamos quieto. Prestígio −1 · Moral −1.';
+        return {ok:true};
       }
 
       /* a descida do núcleo da SUB-SEDE (dono, 26/08/2026; cena jogável

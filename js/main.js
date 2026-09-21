@@ -9423,12 +9423,18 @@
        na concentração e na pista, o bonde inteiro do dia de jogo */
     const est = naEstrada ? TO.planejamento.estimativaCaravana(e) : null;
     const noDiaDeJogo = atq.alvo === 'concentracao' || atq.alvo === 'pista';
+    /* A RESENHA NA CASA DE PISCINA (dono, 21/09/2026): quem está lá é
+       a zona — um quarto da turma de pé, até 20 —, e é ela que
+       defende; eles vêm com a zona deles, na mesma régua */
+    const naCasa = atq.alvo === 'casa';
+    const bondeZona = naCasa ? TO.acoes.bondeDaZona(e, atq.zona) : null;
     /* teto do dono (18/08/2026): defesa do NOSSO bar bota no máximo
        40 no salão; o atacante traz no máximo 60 (cap logo abaixo) */
-    const noBar = !naEstrada && !noDiaDeJogo;
+    const noBar = !naEstrada && !noDiaDeJogo && !naCasa;
     let nossos = naEstrada
       ? Math.max(2, (est && est.vao) || Math.round(fila.length * 0.25))
       : noDiaDeJogo ? Math.max(2, fila.length)
+      : naCasa ? Math.max(2, bondeZona.length)
       : Math.max(2, Math.round(fila.length * 0.25));
     if(noBar) nossos = Math.min(nossos, 40);
     /* na linha do dia, quem briga é o que SOBROU da caravana */
@@ -9450,6 +9456,7 @@
        na subsede de Fortaleza descia com 41. Quem vem é o núcleo de lá,
        inteiro, e mais ninguém. */
     if(atq.filial) deles = Math.max(4, Math.round(atq.efetivo || 4));
+    if(naCasa) deles = TO.acoes.efetivoDaZona(e, o || {});
     /* e o ferido deles da briga anterior também não desce do carro */
     deles = descontoItn(atq.torcida, deles);
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
@@ -9469,7 +9476,7 @@
        'ELES, DE UM LADO' e 14 deles em 'NÓS, NO ÔNIBUS'. */
     const nosso  = 'visitante';
     const outro  = 'mandante';
-    const aptos = fila.slice(0, nossos);
+    const aptos = naCasa ? bondeZona.slice(0, nossos) : fila.slice(0, nossos);
     const bondes = [
       {lado:nosso, n:nossos, nossa:true, nome:e.torcida.nome,
        cor:c1.cor, cor2:c1.cor2, cor3:c1.cor3,
@@ -9494,7 +9501,7 @@
                 faixaDefensor:'nos', rivalId: atq.torcida },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
-                                cena: atq.cena || 'bar',
+                                cena: atq.cena || 'bar', zona: atq.zona || null,
                                 nome:(o&&o.nome)||'Rival',
                                 nossos, rateio: est && est.rateio,
                                 efetivo:(o&&o.membros)||40}})

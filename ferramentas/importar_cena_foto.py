@@ -42,6 +42,19 @@ LARG, ALT, CEL = 1536, 1024, 8
 COLS, ROWS = LARG // CEL, ALT // CEL
 QUINTAL = (74, 64, 52)          # o tom da faixa que sobra em cima e embaixo
 
+def foto(w, h, *r):
+    """Retangulo em PIXEL DA FOTO ORIGINAL (w x h) -> fracao da tela.
+    A casa de piscina tem parede reta de planta baixa: medir na foto
+    (com o zoom do visualizador) e escrever o numero e mais honesto do
+    que chutar fracao de tela. A conta e a mesma do `encaixar`."""
+    esc = LARG / w
+    topo = (ALT - round(h * esc)) // 2
+    x0, y0, x1, y1 = r
+    return (x0 / w, (topo + y0 * esc) / ALT, x1 / w, (topo + y1 * esc) / ALT)
+
+
+CASA = lambda *r: foto(2000, 1116, *r)
+
 FONTES = [
     {'id': 'praca', 'arquivo': 'Aerial_view_of_public_square_202608131340.jpeg',
      'saida': 'praca.webp',
@@ -178,6 +191,54 @@ FONTES = [
                   (0.15, 0.30), (0.85, 0.30), (0.15, 0.70), (0.85, 0.70)],
      'recorte': [(0.02, 0.02, 0.98, 0.98)],
      'excluir': [(0.275, 0.235, 0.725, 0.775)]},
+
+    # ---- CASA DE PISCINA (pedido do dono, 21/09/2026): a resenha da
+    #      zona numa casa de praia. Foto zenital 2000x1116 (Google Flow):
+    #      a rua de areia embaixo, o lote murado no meio — garagem e casa
+    #      na esquerda, quintal de areia com dois carros, deck com
+    #      piscina na direita, portao na quina de baixo/direita.
+    #      AQUI A PAREDE NAO SAI POR COR NEM POR CRISTA: o topo do muro e
+    #      o piso sao o mesmo creme, e a `crista` (que serve na sede)
+    #      apagava o deck inteiro ao lado da piscina escura (medido: deck
+    #      22% de chao, quartos fechados). A planta e reta, entao as
+    #      paredes sao ditas na mao, em pixel da foto, com `excluir`; os
+    #      vaos de porta que a sombra fecharia sao abertos com `abrir`.
+    #      A garagem fica fechada (na foto ela nao tem vao pra rua nem
+    #      pro quintal) e os dois carros sao obstaculo.
+    {'id': 'casa-piscina', 'arquivo': 'casa_piscina.jpg',
+     'saida': 'casa_piscina.webp', 'terra': True, 'claro': True,
+     'sementes': [(0.50, 0.756), (0.15, 0.719), (0.85, 0.719),  # a rua
+                  (0.625, 0.651),                                # o portao
+                  (0.60, 0.531), (0.45, 0.501), (0.725, 0.531),  # o quintal
+                  (0.725, 0.306), (0.56, 0.418), (0.56, 0.231),  # o deck
+                  (0.475, 0.395), (0.425, 0.246),                # sala, hall
+                  (0.35, 0.253), (0.50, 0.253),                  # quartos
+                  (0.34, 0.418), (0.33, 0.332)],                 # deposito, banheiro
+     # a rua inteira e o lote; as casas da frente e os vizinhos ficam fora
+     'recorte': [CASA(0, 740, 2000, 990), CASA(505, 55, 1505, 750)],
+     'excluir': [
+         CASA(590, 526, 835, 750),                       # a garagem, fechada
+         CASA(890, 578, 1160, 712), CASA(1258, 528, 1432, 718),   # os carros
+         # as quatro paredes de fora da casa
+         CASA(590, 128, 1090, 140), CASA(586, 128, 600, 530),
+         CASA(1076, 128, 1092, 530), CASA(590, 524, 1090, 550),
+         # quarto 1 | hall | quarto 2 (as portas dos quartos dao no hall)
+         CASA(786, 130, 806, 262), CASA(910, 130, 928, 262),
+         CASA(590, 292, 788, 306), CASA(910, 296, 1090, 308),
+         # banheiro e vestibulo; a porta do deposito e no vestibulo
+         CASA(590, 366, 754, 378), CASA(790, 366, 830, 378),
+         CASA(728, 340, 742, 372),
+         CASA(820, 366, 834, 526),                       # deposito | sala
+         CASA(754, 436, 800, 448), CASA(752, 436, 764, 526),  # o quartinho
+         CASA(662, 166, 742, 250), CASA(990, 170, 1070, 258),  # as camas
+         CASA(610, 382, 654, 418), CASA(618, 410, 646, 526),   # tralha do deposito
+         CASA(726, 498, 758, 526),
+         CASA(1150, 136, 1500, 150)],                    # o muro do deck (da faixa)
+     'abrir': [
+         CASA(605, 64, 1495, 126),        # a passagem atras da casa
+         CASA(818, 124, 890, 176),        # a porta dos fundos do hall
+         CASA(1092, 118, 1150, 165),      # a boca da passagem no deck
+         CASA(836, 520, 900, 560)]},      # a porta da frente
 ]
 
 
@@ -247,7 +308,8 @@ def recortar(forma, retangulos):
 
 
 def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
-         terra=False, claro=False, engorda=0, excluir=None, crista=0):
+         terra=False, claro=False, engorda=0, excluir=None, crista=0,
+         abrir=None):
     """1 onde dá pra pisar. Cor dá o candidato; conectividade dá a resposta."""
     R, G, B = a[:, :, 0], a[:, :, 1], a[:, :, 2]
     mx, mn = a.max(2), a.min(2)
@@ -298,6 +360,11 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
         # E o gramado dos estadios — a briga e na arquibancada, e sem
         # isto o campo de terra batida do estadio pequeno vira palco.
         cand &= ~recortar(cand.shape, excluir)
+    if abrir:
+        # o VAO DE PORTA dito na mao: chao por decreto, por cima de cor e
+        # de `excluir` — e a passagem atras da casa de piscina, que a
+        # foto mostra na sombra e a cor nao pega
+        cand |= recortar(cand.shape, abrir)
 
     # fecha junta e remove cisco antes de olhar conectividade
     cand = nd.binary_closing(cand, np.ones((5, 5)))
@@ -396,7 +463,8 @@ def main():
         m = chao(a, f['sementes'], topo, altura,
                  f.get('corredor', False), f.get('recorte'),
                  f.get('terra', False), f.get('claro', False),
-                 f.get('engorda', 0), f.get('excluir'), f.get('crista', 0))
+                 f.get('engorda', 0), f.get('excluir'), f.get('crista', 0),
+                 f.get('abrir'))
         cel = para_celulas(m)
         anc = ancoras(cel)
         fora[f['id']] = {

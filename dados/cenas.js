@@ -918,7 +918,10 @@ TO.dados.cenas = (function(){
     /* a pista da foto não cai na mesma altura da desenhada */
     if(f.meio) for(const s of cena.spawns)
       if(Math.abs(s.y - cena.altura/2) < 40) s.y = f.meio;
-    if(f.bocas) for(const e of cena.entradas){
+    /* as bocas são régua de RUA (transversal em cada ponta); a casa
+       de piscina tem a rua inteira caminhável de borda a borda e a
+       boca "mais próxima" (x=420) puxava o fim da rua pro meio dela */
+    if(f.bocas && !cena.semBocas) for(const e of cena.entradas){
       if(e.x < cena.largura*0.2) e.x = f.bocas[0];
       if(e.x > cena.largura*0.8) e.x = f.bocas[1];
       if(f.meio && Math.abs(e.y - cena.altura/2) < 40) e.y = f.meio;
@@ -980,8 +983,69 @@ TO.dados.cenas = (function(){
     return cena;
   }
 
+  /* =======================================================
+     CASA DE PISCINA (pedido do dono, 21/09/2026)
+     A resenha de uma zona da torcida numa casa de praia. A foto é
+     zenital: rua de areia embaixo, lote murado no meio — garagem e
+     casa na esquerda, quintal com dois carros, deck com piscina na
+     direita, portão na quina de baixo/direita. A máscara vem da
+     foto com as paredes ditas na mão (importar_cena_foto.py); o
+     acabamento fino fica pro editor (F2), como em toda cena.
+
+     Quem é atacado nasce ESPALHADO pelos cinco pontos (80% no deck,
+     em volta da piscina; 20% dentro da casa) e fica de guarda até o
+     invasor pisar no portão — só o portão acorda a casa (`soZona`):
+     ver alguém pela porta não conta, a resenha está de costas pra
+     rua. A faixa fica estendida no muro do fundo do deck; quem a
+     recolhe corre pro depósito, no canto de dentro da casa
+     (`faixaAbrigo`), e ali se tranca. O atacante entra pelo portão,
+     atravessa o quintal e toma o deck; a passagem atrás da casa
+     liga o deck à porta dos fundos, que dá no hall e na sala.
+     ======================================================= */
+  const casaPiscina = cenaDeFoto({
+    id:'casa-piscina', nome:'Casa de piscina',
+    local:'Na resenha deles, numa casa de piscina',
+    saida:{perto:'Tomar a casa', longe:'Beira da piscina (leve o líder)',
+           feito:'sua torcida tomou a resenha deles',
+           dica:'Leve o líder até a beira da piscina.'},
+    /* o muro do fundo do deck: o ponto é no chão, na frente dele */
+    faixas:{visitante:{x:983, y:210, len:130, dir:[0,-1]}},
+    /* onde quem recolheu a faixa se esconde: o depósito da casa */
+    faixaAbrigo:{x:522, y:429, raio:44, rot:'DEPÓSITO'},
+    /* um bonde só de quem defende, repartido pelos cinco pontos */
+    espalharBonde:'visitante',
+    /* a rua vai de borda a borda: o fim dela é a borda, não uma boca */
+    semBocas:true,
+    spawns:[
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:1152, y:760,
+       jogador:true, entrada:'piscina'},
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:998, y:775,
+       entrada:'piscina'},
+      {id:'visitante1', rot:'DECK, LADO DA CASA', lado:'visitante', x:860, y:237,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante2', rot:'CHURRASQUEIRA', lado:'visitante', x:1114, y:252,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante3', rot:'BEIRA DA PISCINA', lado:'visitante', x:860, y:444,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante4', rot:'ESPREGUIÇADEIRAS', lado:'visitante', x:1106, y:444,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante5', rot:'NA SALA', lado:'visitante', x:737, y:406,
+       guarda:true, entrada:'fim_rua'}
+    ],
+    entradas:[
+      {id:'piscina', rot:'BEIRA DA PISCINA', lado:'mandante', x:998, y:463, raio:56, dir:[0,-1]},
+      {id:'fim_rua', rot:'FIM DA RUA', lado:'visitante', x:40, y:770, raio:46, dir:[-1,0]}
+    ],
+    /* só o portão acorda a casa: nem a distância, nem a linha de visão */
+    gatilho:{x:960, y:655, raio:110, lado:'mandante', soZona:true,
+             rot:'PORTÃO DA CASA',
+             espera:'a resenha ainda não te viu',
+             aviso:'gritaram no portão — a casa inteira veio pra cima'},
+    pmPostos:[{x:80, y:780}, {x:1470, y:780}]
+  });
+
   const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
-                 bar, comercio, ct,
+                 bar, comercio, ct, 'casa-piscina':casaPiscina,
                  'treta-beco':tretaBeco, 'treta-galpao':tretaGalpao,
                  'treta-campo':tretaCampo,
                  'emb-posto':embPosto, 'emb-onibus':embOnibus,

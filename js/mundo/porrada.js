@@ -427,7 +427,8 @@ TO.porrada = (function(){
     'estadio-40':'na arquibancada',
     'treta-beco':'no beco', 'treta-galpao':'no pátio do galpão',
     'treta-campo':'no campo de terra',
-    'emb-posto':'no posto', 'emb-onibus':'na estrada'
+    'emb-posto':'no posto', 'emb-onibus':'na estrada',
+    'casa-piscina':'na casa de piscina'
   };
   const SEM_BAIRRO = ['estadio-10','estadio-20','estadio-40','emb-onibus'];
   /* cada cena cai num grupo do baralho por cenário; cena sem grupo
@@ -437,7 +438,7 @@ TO.porrada = (function(){
     'estadio-40':'arquibancada',
     'emb-posto':'emboscada', 'emb-onibus':'emboscada',
     bar:'bar', comercio:'comercio', loja:'comercio',
-    sede:'casa', subsede:'casa', ct:'casa',
+    sede:'casa', subsede:'casa', ct:'casa', 'casa-piscina':'casa',
     praca:'praca',
     rua:'rua', 'rua-media':'rua', 'rua-nobre':'rua',
     arredores:'arredores',

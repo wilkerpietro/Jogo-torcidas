@@ -67,6 +67,25 @@ TO.acoes = (function(){
       ? TO.relacoes.disponiveisIA(E, o.id) : efetivoDe(E, o);
   }
 
+  /* A ZONA QUE VAI PRA RESENHA (casa de piscina, 21/09/2026): membro
+     não tem zona marcada, então a "Zona Sul" é uma fatia da torcida
+     — um quarto do efetivo de pé, entre 4 e 20 (o teto do dono). A
+     dos rivais sai da mesma régua; a nossa é sorteada por hash pra
+     ser a mesma turma dentro do dia. */
+  const ZONA_MIN = 4, ZONA_MAX = 20;
+  function efetivoDaZona(E, o){
+    const zonas = (TO.mundo.ZONAS || []).length || 4;
+    const dePe = efetivoDePe(E, o);
+    return Math.min(ZONA_MAX, Math.max(ZONA_MIN, Math.round(dePe / zonas)));
+  }
+  function bondeDaZona(E, zona){
+    const aptos = TO.membros.aptosParaOEstadio(E);
+    const n = Math.min(aptos.length, efetivoDaZona(E, E.torcida));
+    const H = TO.mapa.hash, sem = `zona|${zona||''}|${E.data.ano}|${E.data.semana}`;
+    return aptos.slice().sort((a,b)=>H(`${sem}|${a.id}`) - H(`${sem}|${b.id}`))
+                .slice(0, n);
+  }
+
   function organizadasDaPraca(E){
     return TO.mundo.torcidasEm(E.torcida.mapa)
       .filter(o=>o.clubeId === E.torcida.clubeId)
@@ -580,6 +599,7 @@ TO.acoes = (function(){
          — ferido 5 a 15 dias, preso 15 a 90 — em vez do desconto seco */
       if(m) m.moral = U.limitar(m.moral - 3, 0, 20);
       if(alvo.tipo === 'sede') linhas.push('faixa deles rasgada na porta');
+      if(alvo.tipo === 'casa') linhas.push('a resenha deles acabou no grito');
     }else{
       linhas.push('a gente saiu de lá pior do que entrou');
     }
@@ -1032,6 +1052,7 @@ TO.acoes = (function(){
           previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe, efetivoDePe,
           ASSALTOS, executarAssalto,
-          alvosDeAtaque, clube, fecharCena, fecharBrigaDeRua,
+          alvosDeAtaque, efetivoDaZona, bondeDaZona,
+          clube, fecharCena, fecharBrigaDeRua,
           COBRANCA, MINIMO_SAIDA, CAP_RECRUTA};
 })();

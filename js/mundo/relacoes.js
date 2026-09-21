@@ -1330,7 +1330,14 @@ TO.relacoes = (function(){
        dono (08/09/2026) sobre a média antiga de 1,5. O bar não muda. */
     const dado = H(chave + '|nt') % 10;
     const nTreta = dado < 3 ? 0 : dado < 8 ? 1 : 2;
-    const nBar   = H(chave + '|nb') % 4 ? 1 : 0;  // 0 ou 1 (média 0,75)
+    /* A CASA DE PISCINA DIVIDE COM O BAR (pedido do dono, 21/09/2026):
+       o ataque do trimestre segue vindo em 3 de 4 blocos, mas metade
+       das vezes o alvo é a resenha da zona numa casa de piscina, e a
+       outra metade o bar — o bar caiu 50% pra abrir espaço pra casa.
+       O mesmo dado decide os dois, pra nunca vir bar E casa no bloco. */
+    const dadoB  = H(chave + '|nb') % 8;
+    const nBar   = dadoB < 3 ? 1 : 0;              // 3/8 (era 3/4)
+    const nCasa  = dadoB >= 3 && dadoB < 6 ? 1 : 0; // 3/8
     const fora = [], usados = new Set();
     const poe = (tipo, i)=>{
       let d = H(`${chave}|${tipo}${i}`) % (SEMANAS_TRI * 7);
@@ -1342,6 +1349,7 @@ TO.relacoes = (function(){
     };
     for(let i=0;i<nTreta;i++) poe('treta', i);
     for(let i=0;i<nBar;i++)   poe('bar', i);
+    for(let i=0;i<nCasa;i++)  poe('casa', i);
     return fora;
   }
 
