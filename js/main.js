@@ -484,8 +484,15 @@
     /* O COFRE DE SAVES tem lugar na coluna (pedido do dono, 23/08/2026):
        salvar estava atrás de um Ctrl+S que ninguém adivinha, e uma
        partida de cinco anos precisa de porta com placa. */
-    {id:'jogo',        rot:'Jogo',        ic:'disquete'}
+    {id:'jogo',        rot:'Jogo',        ic:'disquete'},
+    /* VOLTAR AO MENU PRINCIPAL (pedido do dono, 21/09/2026). Não é
+       página: é saída. Fica no fim da coluna, depois do cofre, e
+       `acao` é o que separa os dois — item com `acao` executa, item
+       sem `acao` abre painel. */
+    {id:'sair',        rot:'Menu principal', ic:'saida', acao:'menu'}
   ];
+  /* o que um item de `acao` faz */
+  const ACAO_NAV = {menu: () => sairParaMenu()};
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
      cidade foi descontinuado e o que ele fazia por simulação virou
      resolução. Todo o resto é painel por cima do feed. */
@@ -529,6 +536,11 @@
     };
     montarLateral();
     ligarTelaEstreita();
+    /* quem saiu pro menu deixou a pausa 'menu' pendurada; sem tirá-la
+       aqui o relógio não voltaria a andar ao continuar a partida.
+       Some e pronto — quem religa o relógio é o `retomarTempo` do fim
+       desta função. */
+    pausasT.delete('menu');
     pagina = 'feed';
     opc(E());
     /* partida nova vive o primeiro dia na hora: os jogos de hoje saem e
@@ -561,6 +573,7 @@
       b.setAttribute('aria-label', n.rot);
       if(painel === n.id) b.classList.add('aceso');
       b.onclick = ()=>{
+        if(n.acao){ (ACAO_NAV[n.acao] || (()=>{}))(); return; }
         if(n.id === 'feed' || painel === n.id){ fecharPainel(); return; }
         abrirPainel(n.id);
       };
@@ -576,11 +589,48 @@
         html:`${IC.get(n.ic)}<span>${n.rot}</span><i class="ic-badge" hidden></i>`});
       b.onclick = ()=>{
         fecharGaveta();
+        if(n.acao){ (ACAO_NAV[n.acao] || (()=>{}))(); return; }
         if(n.id === 'feed'){ fecharPainel(); return; }
         abrirPainel(n.id);
       };
       nav.appendChild(b);
     }
+  }
+
+  /* SAIR PRO MENU PRINCIPAL.
+     Salva antes de qualquer coisa — uma partida de cinco anos não sai
+     da tela por causa de um clique — e para o relógio, senão os dias
+     correriam atrás do menu, que é o mesmo motivo de painel aberto
+     parar o tempo. O save fica na vaga dele e o Continuar do menu
+     abre a partida de volta. */
+  function sairParaMenu(){
+    const e = E();
+    let guardou = false;
+    try{ if(e && !TO.estado.estaBloqueado()){ TO.estado.salvar(); guardou = true; } }
+    catch(x){ guardou = false; }
+    modal('Voltar ao menu principal',
+      e ? `${(E().torcida||{}).nome || ''} · semana ${e.data.semana} de ${e.data.ano}` : '',
+      el('p',{class:'nota', texto: guardou
+        ? 'A partida foi salva agora. Ela continua na vaga dela, e o '+
+          'Continuar do menu abre de onde você parou.'
+        : 'NÃO DEU PRA SALVAR agora. Voltando ao menu, o que não foi '+
+          'salvo antes se perde.'}),
+      [['Voltar ao menu', voltarAoMenu]]);
+  }
+
+  function voltarAoMenu(){
+    pausarTempo('menu');
+    fecharGaveta();
+    fecharPainel();
+    /* as telas cheias do jogo não podem ficar por cima do menu */
+    for(const id of ['telaDiaJogo','telaRelatorio','telaRetro'])
+      if($(id)) $(id).classList.add('oculto');
+    $('jogo').classList.add('oculto');
+    $('telaSelecao').classList.add('oculto');
+    $('telaMenu').classList.remove('oculto');
+    /* o Continuar nasce desligado quando não há save: com a partida
+       recém-gravada ele tem de acender */
+    montarMenu();
   }
 
   function trocarPagina(){

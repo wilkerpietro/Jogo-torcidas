@@ -7830,6 +7830,58 @@ depois de artigo e pegou "A casa cresceu" e "A sede da Leões da
 Fabulosa cresceu", que estão certos. Fica registrado porque "consertar"
 os dois teria estragado duas linhas boas.
 
+## Voltar ao menu principal pelo menu lateral (21/09/2026)
+
+Pedido do dono: *"adicione no fim do menu lateral uma opção de voltar
+ao menu principal do jogo (a tela inicial)"*. Não havia saída nenhuma
+— entrou no jogo, só recarregando a página pra voltar à tela inicial.
+
+O item fica no **fim** da coluna, depois do cofre de saves, com o
+ícone `saida` que já existia (a porta e quem sai por ela). Ele não é
+página, é ação: `NAV` ganhou um campo `acao`, e item com `acao`
+executa em vez de abrir painel. As duas montagens do menu — a coluna
+de ícones do feed e o `#lateral`, que continua no HTML — respeitam o
+mesmo campo.
+
+**Três coisas que a saída tem de fazer, e faz:**
+
+* **Salva antes de qualquer coisa.** Uma partida de cinco anos não sai
+  da tela por causa de um clique. O aviso diz se salvou — e diz em
+  letra grande se NÃO deu pra salvar, porque aí o jogador está prestes
+  a perder o que não gravou.
+* **Para o relógio.** Sem isso os dias correriam atrás do menu, que é
+  o mesmo motivo pelo qual painel aberto para o tempo. A pausa `menu`
+  sai em `entrarNoJogo`, senão continuar a partida devolveria a tela
+  com o relógio congelado.
+* **Solta o que estava aberto.** `fecharPainel` (que também devolve a
+  pausa `painel`), a gaveta, e as três telas cheias do jogo — dia de
+  jogo, relatório e retrospectiva — que não podem ficar por cima do
+  menu.
+
+**O aviso antes de sair** usa o `modal` do próprio jogo, não o
+`confirm` do navegador: o jogo não usa `confirm` em lugar nenhum. Dois
+botões — "Voltar ao menu" e "Fechar" —, e o subtítulo mostra a torcida
+e a semana, pra quem clicou sem querer saber o que está prestes a
+deixar.
+
+### Medido
+
+Ciclo inteiro: o item é o **último** dos dez da coluna; o aviso abre
+com o texto certo; "Fechar" mantém no jogo sem deixar pausa pendurada;
+"Voltar ao menu" esconde o jogo, mostra a tela inicial e acende o
+Continuar; **com o menu na tela o relógio não anda** (5s, dia parado);
+e depois do Continuar a partida volta na mesma semana e **o relógio
+volta a andar** (dia 8 → 23 em 5s). 0 erro de página.
+
+Duas armadilhas de medição que custaram tempo e ficam registradas:
+`offsetParent` é `null` para `position:fixed`, então ele não serve pra
+testar se uma `.tela-cheia` está visível — o certo é
+`getComputedStyle(...).display`. E responder uma decisão por
+`TO.feed.responder` **não** religa o relógio: quem religa é o
+`retomarTempo('decisao')` no fim de `responderMensagem`, que é o
+caminho do clique. Medir pelo caminho de baixo dava "relógio parado"
+onde não havia defeito nenhum.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
