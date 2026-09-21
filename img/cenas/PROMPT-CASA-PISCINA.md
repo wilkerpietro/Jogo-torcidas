@@ -103,12 +103,66 @@ Polished cement and pale ceramic tile floors in light grey and cream, clearly li
 Absolutely no roof over the subject house and no cover of any kind over its rooms or its deck, no pergola, no awning, no sun umbrella, no thatched hut — the neighboring houses DO keep their roofs. No dense city block, no houses packed wall to wall, no asphalt street, no sidewalk, no curb, no bright green lawn, no dark grass. No close crop on the house, no isolated building, no building floating in a void. No wide angle lens, no fisheye, no lens distortion, no perspective, no leaning or splayed walls, no visible wall faces, no visible house facades, no vertical surfaces, no furniture seen from the side, no oblique or 45 degree angle, no tilted camera. No clutter, no furniture in the middle of a room or of the deck, no sun loungers, no pool floats, no toys in the water, no banners, no flags, no flagpoles, no cloth hanging on any wall. No closed rooms without a doorway, no closed gate, no car in the carport. No illustration, no cartoon, no isometric, no 3d render, no blueprint look, no text, no labels, no numbers, no watermark, no people. No dark interior floors, no green or grey pool water, no HDR, no dramatic lighting, no night, no long shadows.
 ```
 
+## Rodada 2 · Saiu boa, e o dono marcou quatro correções
+
+A segunda rodada acertou a vizinhança (Tabuba de verdade: lotes
+espaçados, areia, coqueiro, piscina nos vizinhos), a casa grande e o
+quintal claro. O dono marcou na própria imagem o que muda:
+
+1. **Remover a faixa da esquerda** — o corredor lateral com grama e a
+   parte esquerda do deck (churrasqueira e cadeiras). O muro esquerdo
+   do lote passa a encostar na parede esquerda da casa.
+2. **Reposicionar o deck** — a churrasqueira, as cadeiras e a área de
+   estar vão pro lado DIREITO da piscina, emendando com o quintal de
+   areia da direita.
+3. **Portão no canto direito** da frente, onde o quintal de areia
+   encontra a rua. É por ali que o atacante entra e segue pelo quintal
+   até o deck. O corredor esquerdo do plano original **saiu**: quem
+   liga a frente ao fundo agora é o quintal da direita.
+4. **Porta dos fundos** no meio da parede de cima da casa, abrindo
+   direto pro deck. O cômodo do meio vira um hall curto entre a sala e
+   essa porta; sobram dois quartos, um de cada lado dele.
+
+E a projeção: **não está a 90°.** Dá pra ver a face interna dos muros,
+a fachada da casa e o tronco dos coqueiros. Isso não é só estética —
+face de muro vira faixa larga e torta na máscara, e a parede fica mais
+grossa de um lado do que do outro. É o defeito da 2ª rodada das sedes,
+e a correção é a mesma: a foto do bar como referência de projeção e o
+teste dito em palavras no prompt.
+
+**Como rodar:** anexe a imagem da rodada 2 **como base** (edição sobre
+ela, não geração do zero) e a foto do bar como referência de projeção.
+O prompt abaixo é de edição: manter tudo e mudar só o que está listado.
+
+## O prompt (rodada 3 — edição sobre a imagem anterior)
+
+```
+Edit the attached aerial image of the beach house. KEEP EVERYTHING ELSE EXACTLY AS IT IS: the same Tabuba beach neighborhood, the same neighboring houses with terracotta roofs and pools, the same coconut palms, the same pale sand ground with sparse dry grass, the same sandy dirt street along the bottom, the same roofless house with the same rooms, floors, walls, furniture and colors, the same pool. Make ONLY the following changes.
+
+CHANGE 1 — RE-PROJECT TO A TRUE 90 DEGREE ZENITH. The current image is oblique. Render the same scene as a true orthographic satellite orthophoto, camera pointing straight down at exactly 90 degrees from very high altitude with an extreme telephoto lens, orthographic projection, zero parallax, zero perspective. ONLY TOP SURFACES ARE VISIBLE ANYWHERE IN THE FRAME: the top of every wall reads as a thin flat even band of the same width everywhere, every roof reads as a flat plane, every palm reads as a round crown seen from above with no trunk visible, every piece of furniture reads as a flat top-down shape. NO vertical surface is visible anywhere: no inner face of any wall, no house facade, no gate face, no bed side, no sofa front. The houses at the edges of the frame read exactly like the house at the center, they never lean or splay outward. Match the attached reference photo of the roofless bar exactly in this respect.
+
+CHANGE 2 — REMOVE THE LEFT STRIP OF THE LOT. Delete the narrow side yard with grass on the left of the house and the left part of the pool deck where the barbecue and the stacked chairs are. The lot's left boundary wall now runs directly along the left wall of the house and continues straight up to the back wall, so that the pool deck starts at the house's left edge. The lot becomes narrower; the neighboring house on the left moves closer accordingly, with its own sandy yard.
+
+CHANGE 3 — MOVE THE SITTING AREA TO THE RIGHT OF THE POOL. Put the brick barbecue, the stacked white plastic chairs and the plastic table on the RIGHT side of the pool deck, pushed flat against the right boundary wall, so the deck's sitting area joins the wide sandy yard on the right of the house. The deck around the pool stays wide on all four sides, its center completely clear.
+
+CHANGE 4 — THE GATE GOES TO THE BOTTOM-RIGHT CORNER. Remove the two openings currently at the bottom-left of the front wall. Put ONE wide open gate in the front wall at the bottom-right corner of the lot, where the wide sandy yard on the right meets the street, with its leaf folded flat against the inside of the wall. The carport stays where it is, at the front-left, with its bare concrete floor, and now opens onto the front sandy yard instead of the street. From the gate, the sandy yard on the right runs uninterrupted all the way to the pool deck at the back.
+
+CHANGE 5 — A BACK DOOR IN THE MIDDLE OF THE HOUSE'S TOP WALL. The middle room in the top row of the house becomes a short bare hall of pale tile, open to the living room below it, with ONE wide open doorway cut through the top wall leading straight out onto the pool deck. The two rooms either side of it stay as bedrooms, each with its bed pushed flat against the far wall. The kitchen, the living room, the bathroom and the small storeroom with its single narrow doorway stay exactly as they are.
+
+EVERY DOORWAY IS WIDE AND OPEN: a broad gap cut clean through the wall, no door leaf, no frame, so that the gate, the sandy yard, the carport, the house interior and the pool deck connect into one continuous walkable surface. Only the small storeroom keeps its narrow doorway. THE BACK WALL of the lot, at the top of the pool deck, stays a tall plain continuous wall with a long empty stretch and nothing hanging on it.
+
+Same materials and light as the attached image: pale ceramic tile and cement floors clearly lighter than the walls, pale beige sand with sparse dry grass, vivid saturated blue pool water, bright diffuse coastal daylight with short soft shadows, muted natural colors, photorealistic satellite photography.
+
+No oblique angle, no drone perspective, no tilted camera, no visible wall faces, no visible facades, no visible palm trunks, no vertical surfaces, no wide angle, no fisheye, no lens distortion. No roof over the subject house, no pergola, no umbrella. No bright green lawn, no asphalt, no curb. No furniture in the middle of any room or of the deck, no sun loungers, no pool floats, no banners, no flags, no cloth on any wall. No closed rooms, no closed gate, no car. No text, no labels, no watermark, no people.
+```
+
 ## Conferência antes de aceitar
 
 1. Alterne com a foto do bar: só topo de tudo, nenhuma face de parede.
-2. Conte os caminhos: portão → garagem → porta da frente; corredor
-   esquerdo de ponta a ponta com porta pra dentro; porta de dentro pro
-   deck. Se um deles fechou, o atacante não chega ao deck.
+2. Conte os caminhos (rodada 3): portão no canto direito → quintal de
+   areia da direita até o deck; garagem → porta da frente → sala →
+   hall → porta dos fundos → deck. Se um deles fechou, o atacante não
+   chega ao deck.
 3. O compartimento tem UMA porta e é pequeno.
 4. O muro do fundo tem trecho liso, e não há pano nenhum na imagem.
 5. A água é azul de piscina — se veio cinza ou verde, o importador vai
@@ -116,3 +170,7 @@ Absolutely no roof over the subject house and no cover of any kind over its room
 6. Deck largo dos quatro lados; nada no meio dele.
 7. **O quintal saiu bege, cor de areia** — se saiu verde-vivo, o
    importador vai tratá-lo como mato e o atacante não anda por ele.
+8. **Zênite de verdade:** nenhuma face de muro, nenhuma fachada,
+   nenhum tronco de coqueiro. Muro é faixa fina da mesma largura em
+   todo canto. Se ainda der pra ver a cara de uma parede, a máscara
+   vai sair torta.
