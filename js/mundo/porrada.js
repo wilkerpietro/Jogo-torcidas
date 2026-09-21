@@ -329,74 +329,70 @@ TO.porrada = (function(){
     /* 7 · A OBRA NA PRAÇA (pedido do dono, 21/09/2026)
        Porta nova na rua é notícia do Futebol e Porrada, no mesmo
        esqueleto da briga: chapéu, manchete, olho e o quadro do lado.
-       Era uma linha solta de texto no feed — "A Independente abriu
-       uma loja nova na praça." — e porta que abre na praça pesa mais
-       que isso: muda quem manda em qual bairro.
-       {A} torcida · {O} o que abriu ("um bar") · {N} quantos pontos
-       ela tem agora · {C} cidade (só na filial) */
+
+       TUDO EM TERCEIRA PESSOA (correção do dono, 21/09/2026). A obra
+       nossa tinha voz própria — "Abrimos um bar", "Porta nova nossa
+       na praça" — e o dono cortou: manchete de jornal diz QUEM fez,
+       pelo nome, e "Porta nova nossa na praça" não diz nem quem nem o
+       quê. O modelo é o do próprio dono: LEÕES DA TUF ABRE LOJA NA
+       CIDADE. Nome na frente, verbo no presente, sem artigo antes do
+       nome — é como manchete de esporte se escreve —, e o olho
+       embaixo segue a mesma voz. Saíram os moldes `…Nos` e o verbo em
+       primeira pessoa: a nossa obra lê igual à das outras.
+
+       {A} torcida · {O} o que foi feito, sem artigo ("bar") ou com
+       ele na reforma ("o bar") · {N} pontos dela · {M} pontos da
+       outra · {NN} o nome da nossa · {C} cidade (só na filial) */
     obra:{
+      /* "CIDADE" EM TODO O CARTÃO. A manchete do dono diz "na
+         cidade" e o chapéu dizia "na praça" logo acima dela: duas
+         palavras pro mesmo lugar, na mesma notícia. */
       chapeu:{
-        nossa:  ['Obra nossa'],
-        abriu:  ['Porta nova na praça'],
-        ampliou:['Reforma na praça'],
+        abriu:  ['Porta nova na cidade'],
+        ampliou:['Reforma na cidade'],
         sede:   ['A casa cresceu'],
         fabrica:['Material próprio'],
-        filial: ['Bandeira fora da praça']
+        filial: ['Bandeira fora da cidade']
       },
       /* MANCHETE CURTA. A primeira leva tinha frase de linha inteira
          e o recorte saía com seis linhas de caixa alta, o dobro do
          que a página comporta. O número e a comparação descem pro
          olho e pro quadro, que é onde número se lê. */
       abriu:[
-        'A {A} abriu {O} na praça',
-        'Porta nova da {A} na praça',
-        'A {A} plantou {O} na rua'
-      ],
-      abriuNos:[
-        'Abrimos {O} na praça',
-        'Porta nova nossa na praça'
+        '{A} abre {O} na cidade',
+        '{A} inaugura {O} na cidade'
       ],
       ampliou:[
-        'A {A} ampliou {O} e ocupa mais rua',
-        'Obra da {A}: {O} cresceu'
-      ],
-      ampliouNos:[
-        'Ampliamos {O} e ocupamos mais rua'
+        '{A} amplia {O} na cidade',
+        '{A} reforma {O} e ocupa mais rua'
       ],
       sede:[
-        'A sede da {A} cresceu',
-        'A {A} ampliou a casa dela'
-      ],
-      sedeNos:[
-        'A nossa sede cresceu'
+        '{A} amplia a sede',
+        '{A} reforma a casa e ganha espaço'
       ],
       fabrica:[
-        'A {A} montou fábrica própria',
-        'A {A} passou a fazer o material dela'
-      ],
-      fabricaNos:[
-        'Montamos a nossa fábrica'
+        '{A} monta fábrica própria',
+        '{A} passa a fazer o material dela'
       ],
       /* {C} já vem com a preposição — "no Rio de Janeiro", "em
          Salvador", "na Bahia" —, porque cidade tem gênero e metade
          desta lista é região. A tabela é dados/genero.js. */
       filial:[
-        'A {A} fincou bandeira {C}',
-        'Subsede nova da {A} {C}'
+        '{A} abre subsede {C}',
+        '{A} finca bandeira {C}'
       ],
-      filialNos:[
-        'Fincamos bandeira {C}'
-      ],
-      /* o olho: o fato seco, e a comparação com a gente quando
-         a obra é de outra torcida da praça */
+      /* o olho: o fato seco e a comparação, na mesma terceira pessoa
+         da manchete — era "contra 2 nossos" e "empata com a gente" */
       olho:[
         '{F}{C2}.'],
+      /* o fato já disse "na cidade"; repetir na comparação dava
+         "abriu um bar novo na cidade… Na cidade são 2 pontos" */
       olhoCompara:[
-        '{F}{C2}. Na praça são {N} pontos dela contra {M} nossos.'],
+        '{F}{C2}. São {N} pontos dela contra {M} da {NN}.'],
       olhoEmpate:[
-        '{F}{C2}. Na praça ela empata com a gente: {N} pontos de cada lado.'],
+        '{F}{C2}. Ela empata com a {NN}: {N} pontos de cada lado.'],
       olhoNossa:[
-        '{F}{C2}. Na praça são {N} pontos nossos na rua.']
+        '{F}{C2}. São {N} pontos dela na cidade.']
     },
 
     /* 5 · quando o país não se pegou */
@@ -672,8 +668,11 @@ TO.porrada = (function(){
      conta do feed, não do jornal). Aqui só se escolhe a
      conversa e se monta o recorte.
      ====================================================== */
+  /* MANCHETE NÃO LEVA ARTIGO NO OBJETO: "abre loja na cidade", como
+     o dono escreveu. Na reforma o artigo volta, porque ali o ponto já
+     existia — "amplia o bar" e não "amplia bar". */
   const O_QUE = {
-    bar:'um bar', loja:'uma loja', subsede:'uma subsede',
+    bar:'bar', loja:'loja', subsede:'subsede',
     'ampliar:bar':'o bar', 'ampliar:loja':'a loja',
     'ampliar:subsede':'a subsede'
   };
@@ -690,7 +689,7 @@ TO.porrada = (function(){
                                              : [p[ch]||0, nos[ch]||0]];
     const meu = nos.total || 0, dele = p.total || 0;
     return {
-      titulo:'O quadro da praça',
+      titulo:'O quadro da cidade',
       lados: d.nossa
         ? [{nome:d.nomeNossa, id:E.torcida.id, nossa:true},
            {nome:outro.nome, id:outro.id, nossa:false}]
@@ -699,8 +698,9 @@ TO.porrada = (function(){
       linhas:[linha('Bares','bares'), linha('Lojas','lojas'),
               linha('Subsedes','subsedes'),
               ['Pontos', d.nossa ? [meu, dele] : [dele, meu], true]],
-      pe: meu === dele ? 'Empatadas na praça'
-        : meu > dele ? 'A gente tem mais pontos'
+      /* o pé segue a voz da página: nome, não "a gente" */
+      pe: meu === dele ? 'Empatadas na cidade'
+        : meu > dele ? `${d.nomeNossa} tem mais pontos`
         : `${outro.nome} tem mais pontos`
     };
   }
@@ -719,10 +719,13 @@ TO.porrada = (function(){
                 : d.item === 'fabrica' ? 'fabrica'
                 : d.item === 'filial' ? 'filial'
                 : /^ampliar:/.test(d.item) ? 'ampliou' : 'abriu';
-    const lista = nossa ? (B[grupo + 'Nos'] || B[grupo]) : B[grupo];
+    /* a nossa obra usa os MESMOS moldes das outras: quem fez aparece
+       pelo nome, na terceira pessoa, e não há mais lista `…Nos` */
+    const lista = B[grupo];
     const eles = d.eles || {}, nos = d.nos || {};
-    const v = {A:d.nome, O:O_QUE[d.item] || 'um ponto',
+    const v = {A:d.nome, O:O_QUE[d.item] || 'ponto',
                N:eles.total || 0, M:nos.total || 0,
+               NN:d.nomeNossa || 'a gente',
                C:d.cidadeEm || 'fora da praça'};
 
     /* o olho leva o fato seco e, quando é de outra torcida da praça,
@@ -733,6 +736,8 @@ TO.porrada = (function(){
                 : !d.naPraca ? B.olho
                 : (eles.total === nos.total) ? B.olhoEmpate
                 : B.olhoCompara;
+    /* na nossa obra `{N}` é o nosso total: `eles` e `nos` são a mesma
+       torcida, e o molde fala dela em terceira pessoa */
     const olho = encher(proxima(molde, 'obra-olho'),
                         nossa ? Object.assign({}, v, {N:nos.total}) : v);
 
@@ -742,7 +747,10 @@ TO.porrada = (function(){
         edicao: (q.absoluto || E.data.absoluto || 0) + 200,
         data: `${DIA_SEM[dia]}, ${dt.getDate()} de ${MES[dt.getMonth()]}`
       },
-      chapeu: (nossa ? B.chapeu.nossa : B.chapeu[grupo] || B.chapeu.abriu)[0],
+      /* o chapéu é do tipo de obra pra todo mundo: "Obra nossa" era
+         a última primeira pessoa que sobrava, e quem é a torcida já
+         está na manchete e em vermelho no quadro */
+      chapeu: (B.chapeu[grupo] || B.chapeu.abriu)[0],
       manchete: encher(proxima(lista, 'obra-man'), v),
       olho,
       /* O QUADRO DA PRAÇA, no lugar do quadro da noite: quem tem o

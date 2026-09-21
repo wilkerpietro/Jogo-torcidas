@@ -1724,9 +1724,9 @@ TO.feed = (function(){
   /* o que o jornal escreve de cada obra. Quem não está aqui não vira
      notícia: ônibus, bomba e advogado não são porta que abre na rua. */
   const VERBO_OBRA = {
-    bar:'abriu um bar novo na praça',
-    loja:'abriu uma loja nova na praça',
-    subsede:'inaugurou uma subsede nova na praça',
+    bar:'abriu um bar novo na cidade',
+    loja:'abriu uma loja nova na cidade',
+    subsede:'inaugurou uma subsede nova na cidade',
     sede:'ampliou a sede',
     'ampliar:bar':'ampliou o bar',
     'ampliar:loja':'ampliou a loja',
@@ -1736,21 +1736,11 @@ TO.feed = (function(){
        "abriu uma subsede fora da praça no Rio de Janeiro" */
     filial:'abriu uma subsede'
   };
-  /* A NOSSA OBRA FALA EM PRIMEIRA PESSOA (21/09/2026). A manchete já
-     dizia "Ampliamos a loja" e o olho embaixo dizia "A Mancha Verde
-     ampliou a loja" — o jornal falava da gente em terceira pessoa na
-     mesma página em que falava por nós. */
-  const VERBO_NOSSO = {
-    bar:'abrimos um bar novo na praça',
-    loja:'abrimos uma loja nova na praça',
-    subsede:'inauguramos uma subsede nova na praça',
-    sede:'ampliamos a sede',
-    'ampliar:bar':'ampliamos o bar',
-    'ampliar:loja':'ampliamos a loja',
-    'ampliar:subsede':'ampliamos a subsede',
-    fabrica:'montamos uma fábrica de material próprio',
-    filial:'abrimos uma subsede'
-  };
+  /* A VOZ É UMA SÓ, E É A TERCEIRA PESSOA (correção do dono,
+     21/09/2026). Havia aqui uma tabela de verbos em primeira pessoa
+     — "abrimos um bar novo na praça" — pra obra nossa. O dono cortou:
+     o jornal fala de todo mundo pelo nome, inclusive da gente. Uma
+     tabela de verbos, e o `VERBO_OBRA` acima serve a nós também. */
   /* O BAIRRO SÓ ONDE ELE QUER DIZER ALGO. Fábrica e sede não abrem
      porta nova na rua, e a filial é em OUTRA cidade — "subsede fora
      da praça em Salvador, no bairro Meireles" dizia dois lugares
@@ -1889,11 +1879,7 @@ TO.feed = (function(){
         /* obra nossa compara com quem tem mais rua na praça hoje —
            é a régua que interessa a quem lê: a gente passou quem? */
         rival: nossa ? maiorDaPraca(E) : null,
-        frase: nossa
-          ? `${VERBO_NOSSO[ev.item][0].toUpperCase()}`+
-            `${VERBO_NOSSO[ev.item].slice(1)}`+
-            `${ev.item === 'filial' ? ondeFoi : ''}`
-          : `A ${nome} ${v}${ev.item === 'filial' ? ondeFoi : ''}`,
+        frase: `A ${nome} ${v}${ev.item === 'filial' ? ondeFoi : ''}`,
         eles: pontosDe(E, ev.torcida),
         nos:  pontosDe(E, E.torcida.id)
       }

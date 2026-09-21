@@ -7930,6 +7930,58 @@ velho demais em 13. E um bar de **9 semanas** — que vencia na régua
 antiga — chega à entrevista: *"Quebraram o bar da Camisa 12 e a cidade
 toda aponta pra cá."*
 
+## A obra fala de todo mundo em terceira pessoa (21/09/2026)
+
+Correção do dono sobre a página de obra publicada hoje de manhã:
+*"a manchete 'Porta nova nossa na praça' é ruim. melhor algo mais
+claro: 'LEÕES DA TUF ABRE LOJA NA CIDADE', com o subtítulo deixando de
+ser em primeira pessoa mas sim em terceira pessoa"*.
+
+Ele está certo e o erro foi meu: de manhã eu tinha **criado** uma voz
+em primeira pessoa pra obra nossa, achando que o jornal falando por
+nós era mais próximo. Manchete de jornal diz QUEM fez, pelo nome —
+e "Porta nova nossa na praça" não diz nem quem nem o quê.
+
+**O modelo é o do dono:** nome na frente, verbo no presente, sem
+artigo antes do nome. É como manchete de esporte se escreve.
+
+| antes | agora |
+|---|---|
+| Porta nova nossa na praça | Mancha Verde inaugura loja na cidade |
+| Abrimos um bar na praça | Mancha Verde abre bar na cidade |
+| Ampliamos a loja e ocupamos mais rua | Mancha Verde reforma a loja e ocupa mais rua |
+| Fincamos bandeira no Rio de Janeiro | Mancha Verde finca bandeira no Rio de Janeiro |
+
+Saíram os seis moldes `…Nos` e a tabela `VERBO_NOSSO` inteira: **a
+obra nossa usa exatamente os mesmos moldes das outras**. Uma voz, uma
+tabela de verbos.
+
+**O olho e o quadro foram junto**, porque a primeira pessoa não estava
+só na manchete:
+
+* olho: *"Na praça são 2 pontos nossos"* → *"São 2 pontos dela na
+  cidade"*; *"ela empata com a gente"* → *"ela empata com a Mancha
+  Verde"*; *"contra 2 nossos"* → *"contra 2 da Mancha Verde"*.
+* pé do quadro: *"A gente tem mais pontos"* → *"Mancha Verde tem mais
+  pontos"*.
+* chapéu: **"Obra nossa" saiu**. Era a última primeira pessoa que
+  sobrava, e quem é a torcida já está na manchete e em vermelho no
+  quadro. Agora o chapéu é o do tipo de obra pra todo mundo.
+
+**Duas coisas que o pedido não citava e que o cartão pedia:**
+
+* **Uma palavra só pro lugar.** A manchete do dono diz "na cidade" e o
+  chapéu dizia "na praça" logo acima dela — duas palavras pro mesmo
+  lugar, na mesma notícia. Agora é "cidade" no cartão inteiro, chapéu,
+  olho, quadro e verbo.
+* **"na cidade" duas vezes no olho.** Com o fato já dizendo "abriu uma
+  loja nova na cidade", a comparação repetia: "…na cidade. Na cidade
+  são 8 pontos". A comparação perdeu a repetição.
+
+**Manchete não leva artigo no objeto:** "abre loja na cidade", como o
+dono escreveu. Na reforma o artigo volta, porque ali o ponto já
+existia — "amplia o bar", não "amplia bar".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
