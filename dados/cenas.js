@@ -1019,7 +1019,10 @@ TO.dados.cenas = (function(){
     spawns:[
       {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:1152, y:760,
        jogador:true, entrada:'piscina'},
-      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:998, y:775,
+      /* longe do portão: a 998 a grade do 2º escalão da bancada (sem
+         bonde, os dois spawns dividem o efetivo) nascia dentro da zona
+         do gatilho e a casa acordava no primeiro segundo */
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:1290, y:790,
        entrada:'piscina'},
       {id:'visitante1', rot:'DECK, LADO DA CASA', lado:'visitante', x:860, y:237,
        guarda:true, entrada:'fim_rua'},

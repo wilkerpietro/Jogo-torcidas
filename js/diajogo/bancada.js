@@ -57,7 +57,13 @@ TO.diaJogo.bancada = (function(){
     {id:'estadio-20', rot:'Estádio · 20 mil', titulo:'Arquibancada do estádio de 20 mil',
      cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:80}},
     {id:'estadio-40', rot:'Estádio · 40 mil', titulo:'Arquibancada do estádio de 40 mil',
-     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:90}}
+     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:90}},
+    /* A CASA DE PISCINA (dono, 21/09/2026): a zona deles de resenha,
+       20 contra 20, faixa no muro do deck — entra aqui antes de tudo,
+       pra máscara ser acertada no F2 e a cena ser vista antes de
+       valer no jogo. `faixaDefensor:'eles'` estende a peça deles. */
+    {id:'casa-piscina', rot:'Casa de piscina', titulo:'Resenha na casa de piscina',
+     cfg:{intencao:'atacar', bombas:0, efetivoRival:20, faixaDefensor:'eles'}}
   ];
 
   /* A BANCADA DE PERTO (briga3d.html) usa a mesma bancada com outra

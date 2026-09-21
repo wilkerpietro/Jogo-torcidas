@@ -22,14 +22,24 @@ CSS = ['css/base.css', 'css/paineis.css', 'css/cenas.css', 'css/mobile.css']
 
 # dois alvos: a cena solta (pra calibrar) e o jogo inteiro (pra jogar)
 ALVOS = {
+    # a lista e a do <script src> de arredores.html, na mesma ordem: a
+    # bancada de hoje tem boneco 3D (three + GLB embutido) e o elenco
+    # fixo (membros.js), que a lista antiga nao tinha — o artifact
+    # "Cenas de briga" saia sem boneco e quebrava no nome do figurante
     'cena': {
         'pagina': 'arredores.html',
         'js': ['js/nucleo.js', 'dados/nomes.js', 'dados/cena_arredores.js',
                'dados/cenas_foto.js', 'dados/cenas_editadas.js',
-               'dados/cenas.js', 'js/diajogo/cenario.js',
-               'js/diajogo/arredores.js', 'js/diajogo/combate.js', 'js/diajogo/ponte.js',
+               'dados/cenas.js', 'js/gestao/membros.js', 'js/diajogo/cenario.js',
+               'js/diajogo/arredores.js', 'js/diajogo/combate.js',
+               'js/diajogo/tres.js', 'js/lib/three.min.js', 'js/lib/GLTFLoader.js',
+               'js/lib/SkeletonUtils.js', 'dados/boneco_leve_glb.js',
+               'js/diajogo/bonecos3.js', 'js/diajogo/ponte.js',
                'js/diajogo/bancada.js'],
-        'inicio': 'TO.diaJogo.bancada.montar();',
+        # o mesmo arranque do <script> de arredores.html
+        'inicio': ("(function(){ const B = TO.diaJogo.bancada;"
+                   " B.montar(null, {bonecos: !/discos/.test(location.search),"
+                   " sobreGL: document.getElementById('djSobreGL')}); })();"),
     },
     'jogo': {
         'pagina': 'index.html',
@@ -127,9 +137,13 @@ def main():
     corpo = re.sub(r'<script[^>]*src=[^>]*></script>\s*', '', corpo)
     corpo = re.sub(r'<script>[^<]*</script>\s*', '', corpo)
 
-    nomes = {'cena': 'Arredores do estádio', 'jogo': 'Torcida Organizada'}
+    nomes = {'cena': 'Cenas de briga — Torcida Organizada', 'jogo': 'Torcida Organizada'}
     titulo = '' if parcial else f'<title>{nomes[alvo]}</title>\n'
-    saida = (titulo +
+    # o charset vai na frente de tudo: sem ele o navegador le o arquivo
+    # solto como Latin-1 e o `[\u0300-\u036f]` escrito em caractere no
+    # nucleo.js vira "Range out of order" — a pagina morre no primeiro
+    # script (medido, 21/09/2026)
+    saida = ('<meta charset="UTF-8">\n' + titulo +
              '<style>\n' + fontes + '\n' + css + '\n</style>\n' +
              corpo +
              '\n<script>\n' + js + '\n' + cfg['inicio'] + '\n</script>\n')
