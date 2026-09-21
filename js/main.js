@@ -113,10 +113,10 @@
     /* CONTINUAR ABRE A VAGA MAIS RECENTE (dono, 23/08/2026), e não mais
        só a do autosave: com seis vagas, "continuar" tem de ser o último
        jogo que o jogador tocou, venha da vaga que vier. */
-    bc.onclick = ()=>{
+    bc.onclick = async ()=>{
       const v = TO.estado.saveMaisNovo();
-      if(v && TO.estado.carregarDe(v)) return entrarNoJogo();
-      if(TO.estado.carregar()) return entrarNoJogo();
+      if(v && await TO.estado.carregarDe(v)) return entrarNoJogo();
+      if(await TO.estado.carregar()) return entrarNoJogo();
       alert('O save guardado não abriu — pode ser de outra versão do jogo.');
     };
     $('btNovoJogo').onclick = abrirSelecao;
@@ -165,8 +165,8 @@
             `${String(q.getMonth()+1).padStart(2,'0')}` : ''}</small>`}));
         const bts = el('div',{class:'save-bts'});
         const ler = el('button',{class:'bt destaque', texto:'Jogar'});
-        ler.onclick = ()=>{
-          if(TO.estado.carregarDe(v.vaga)){ fechar(); entrarNoJogo(); }
+        ler.onclick = async ()=>{
+          if(await TO.estado.carregarDe(v.vaga)){ fechar(); entrarNoJogo(); }
           else alert('Esse save não abriu — pode ser de outra versão.');
         };
         bts.appendChild(ler);
@@ -3560,8 +3560,8 @@
 
     /* carregar por cima de uma partida em curso pede confirmação */
     function confirmarCarga(v){
-      const abrir = ()=>{
-        const ok = TO.estado.carregarDe(v.vaga);
+      const abrir = async ()=>{
+        const ok = await TO.estado.carregarDe(v.vaga);
         if(!ok){ aviso('Esse save não abriu — pode ser de outra versão '+
                        'do jogo.', 'ruim'); return; }
         fecharPainel();
@@ -10038,7 +10038,9 @@
      jogava a semana inteira fora. `beforeunload` é o último instante em
      que ainda dá pra escrever, e `localStorage` é síncrono — cabe. */
   addEventListener('beforeunload', ()=>{
-    try{ if(E() && !TO.estado.estaBloqueado()) TO.estado.salvar(); }catch(x){}
+    /* síncrono de propósito: fechar a aba não espera promessa; se a
+       última gravação comprimida já cobriu este estado, nem grava */
+    try{ if(E() && !TO.estado.estaBloqueado()) TO.estado.salvarEm('auto', null, {sincrono:true}); }catch(x){}
   });
   addEventListener('blur', ()=>pararTudo('foco'));
   addEventListener('focus', ()=>soltarTudo('foco'));

@@ -1081,17 +1081,21 @@ TO.relacoes = (function(){
     return Math.round(base / Math.pow(2, n));
   }
 
+  /* O PAR INTOCADO NÃO É GRAVADO (correção do dono, 22/09/2026): isto
+     gravava em `E.relacoesDelas` todo par que fosse LIDO, mesmo com o
+     valor inicial — e o valor inicial é tabela fixa (`valorInicial` de
+     `relacaoBase`), informação nenhuma. Com 386 torcidas são 74 mil
+     pares; na semana 12 o save carregava 2,4 MB disso, 99% igual ao
+     inicial, e o `localStorage` recusava a gravação. Agora só o par
+     que alguém MEXEU mora no save; o resto é recalculado na leitura. */
   function relacaoDelas(E, a, b){
     E.relacoesDelas = E.relacoesDelas || {};
-    const ch = chaveDe(a,b);
-    if(E.relacoesDelas[ch] === undefined)
-      E.relacoesDelas[ch] = M().valorInicial(M().relacaoBase(a, b));
-    return E.relacoesDelas[ch];
+    const v = E.relacoesDelas[chaveDe(a,b)];
+    return v === undefined ? M().valorInicial(M().relacaoBase(a, b)) : v;
   }
   function moverRelacao(E, a, b, quanto){
-    const ch = chaveDe(a,b);
-    relacaoDelas(E, a, b);
-    E.relacoesDelas[ch] = U.limitar(E.relacoesDelas[ch] + quanto, -100, 100);
+    E.relacoesDelas[chaveDe(a,b)] =
+      U.limitar(relacaoDelas(E, a, b) + quanto, -100, 100);
   }
 
   /* mexer num indicador delas devolve o delta aplicado — é o número

@@ -8081,6 +8081,21 @@ A raiz era mais funda que o desenho da tela. `E.plano` sempre foi UM objeto, pre
 
 Teste (Playwright, `dois-jogos-semana.js` e `dois-jogos-itinerario.js`): semana com jogo em casa e jogo fora, cada um com sua planilha e seus alvos; ataque marcado num e paz no outro ficam em `E.plano`/`E.planosExtra` separados; no dia do jogo secundário, `itinerario.montar` gera o evento de investida com o alvo e o jogo certos; "Fechar o planejamento" marca `decidido` nos dois. O cartão de uma semana comum (um jogo só) segue idêntico.
 
+## A entrevista tem duas perguntas (pedido do dono, 22/09/2026)
+
+Eram duas de cada grupo — clube e rua —, quatro por entrevista. Passa a ser uma de cada: a do clube e a da rua, duas ao todo. O sorteio por hash e a regra de não repetir o mês passado seguem iguais.
+
+## O save cabe de novo: par intocado não é gravado, e a vaga vai em gzip (correção do dono, 22/09/2026)
+
+O dono viu "NÃO SALVOU · o save (2854 KB) não coube" toda vez que tentava gravar — numa partida na QUINTA semana. Medido: um save novo tinha 1.408 KB na semana 1 e 2.669 KB na semana 4, crescendo uns 170 KB por semana. O `localStorage` do Chrome aceita perto de 5 milhões de caracteres por origem; nesse ritmo o teto chegaria no primeiro ano.
+
+- **O vilão era `relacoesDelas`**, a tabela de relação entre as torcidas da IA. `relacaoDelas(E, a, b)` gravava a entrada de todo par que fosse LIDO, mesmo com o valor inicial — e o inicial é tabela fixa (`valorInicial` de `relacaoBase`). Com 386 torcidas são 74 mil pares; na semana 12 a tabela pesava 2.482 KB com 99% dos pares iguais ao inicial. Agora só o par que alguém MEXEU mora no save (`moverRelacao`, e o ajuste dos eixos); a leitura recalcula o inicial. Save gravado antes desta data é podado na carga (`repararSave`): 73.982 pares fora, 323 ficam.
+- **A vaga guarda o save em gzip.** A saída "texto" já comprimia com o `CompressionStream` do navegador; a vaga passa a guardar o mesmo formato (`TO2z:` + base64), 6 a 10 vezes menor: o save da semana 4 vai de 953 KB cru pra 164 KB gravados. A compressão é assíncrona — `salvarEm` tira a foto do estado na hora e devolve na hora, a gravação chega logo depois, e falha de cota continua saindo pelo aviso do canto. Duas gravações seguidas na mesma vaga: só a última escreve. O cartão da vaga é gravado síncrono, pra lista já mostrar a linha nova.
+- **Fechar a aba grava síncrono e cru** (`{sincrono:true}` no `beforeunload`), porque ali não dá pra esperar promessa — e pula a gravação se a última assíncrona já cobriu o mesmo estado.
+- **A carga é assíncrona** (`carregarDe`/`carregar` devolvem promessa): a vaga pode estar comprimida, cru ou em base64 — o prefixo diz qual é, o mesmo `destrinchar` do save colado. Os três pontos de carga (Continuar, cofre do menu, Jogo → Vagas) esperam o `await`.
+
+Teste (Playwright, `save-gzip.js` e `medir-pares.js`): na semana 4 o cru cai de 2.669 KB pra 953 KB e a vaga fica com 164 KB; recarregar a página e Continuar volta na semana 4 com os 150 membros; um save inchado de 3.441 KB carrega e sai podado; o caminho síncrono devolve `repetido` quando nada mudou e grava cru quando mudou, e esse cru carrega; texto gerado e colado seguem funcionando. Cota medida no Chromium: 5,2 milhões de caracteres, contados por troca líquida do valor.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

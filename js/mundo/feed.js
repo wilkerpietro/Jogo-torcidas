@@ -1571,10 +1571,11 @@ TO.feed = (function(){
       ]})}
   ];
 
-  /* duas de cada grupo, sem repetir o mês passado quando o banco
-     permite. A ordem sai de um hash da chave da entrevista: o mesmo
-     mês sorteia sempre igual (repintar o feed não troca a pergunta),
-     e meses diferentes sorteiam diferente. */
+  /* UMA de cada grupo — duas perguntas por entrevista (pedido do dono,
+     22/09/2026; eram duas de cada, quatro no total) —, sem repetir o
+     mês passado quando o banco permite. A ordem sai de um hash da
+     chave da entrevista: o mesmo mês sorteia sempre igual (repintar o
+     feed não troca a pergunta), e meses diferentes sorteiam diferente. */
   function escolherPerguntas(c, sa){
     const anteriores = c.E.entrevistaUltimas || [];
     const doGrupo = (grupo, n)=>{
@@ -1588,7 +1589,7 @@ TO.feed = (function(){
         .sort((a,b) => a.k - b.k)
         .slice(0, n).map(x => x.q);
     };
-    return doGrupo('clube', 2).concat(doGrupo('rua', 2));
+    return doGrupo('clube', 1).concat(doGrupo('rua', 1));
   }
 
   function entrevistaDeHoje(E, sa){

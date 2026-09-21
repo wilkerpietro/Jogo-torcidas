@@ -716,17 +716,58 @@ TO.estado = (function(){
         /* save antigo, gravado antes das vagas: lê o cartão do próprio
            save uma vez e guarda, pra não reabrir 300 KB toda vez */
         try{
+          if(cru.indexOf(MARCA_Z) === 0) throw new Error('comprimido');
           const d = JSON.parse(cru);
           cartao = cartaoDe(d, v === 'auto' ? 'Autosave' : '');
           localStorage.setItem(chaveCartao(v), JSON.stringify(cartao));
-        }catch(e){ cartao = {nome:'save ilegível'}; }
+        }catch(e){ cartao = {nome: v === 'auto' ? 'Autosave' : 'save', quando:null}; }
       }
       return Object.assign({vaga:v, auto:v==='auto', vazia:false,
                             bytes:cru.length}, cartao);
     });
   }
 
-  function salvarEm(vaga, nome){
+  /* O SAVE VAI COMPRIMIDO PRO NAVEGADOR (correção do dono, 22/09/2026).
+     O `localStorage` tem cota por origem — na casa de 5 milhões de
+     caracteres no Chrome —, e um save de 2,8 MB já batia nela com a
+     partida na quinta semana. A saída "texto" já comprimia com o gzip
+     do próprio navegador (CompressionStream); a vaga passa a guardar o
+     MESMO formato (`TO2z:` + base64), que é 6 a 10 vezes menor. A
+     compressão é assíncrona: `salvarEm` tira a foto do estado na hora
+     (o `cru`), devolve na hora, e a gravação chega logo depois — falha
+     de cota continua saindo pelos ouvintes de `aoFalharSave`, que é o
+     aviso do canto da tela. Duas gravações seguidas na mesma vaga: só a
+     última escreve (`pendentes`). O cartão da vaga é gravado na hora,
+     síncrono, pra lista de vagas já mostrar a linha nova.
+     `{sincrono:true}` é o caminho do `beforeunload`, que não espera
+     promessa: grava o JSON cru — e pula se a última gravação
+     assíncrona já cobriu este mesmo estado. Navegador sem
+     CompressionStream segue no cru, como sempre. */
+  const pendentes = {}, ultimoCru = {};
+  function gravar(vaga, txt, tamanhoCru){
+    try{
+      localStorage.setItem(chaveDaVaga(vaga), txt);
+      ultimoCru[vaga] = tamanhoCru.cru;
+      return {ok:true, bytes:tamanhoCru.cru.length, gravados:txt.length};
+    }catch(e){
+      /* cota estourada é o erro mais comum, e o jogador precisa saber
+         AGORA: cinco anos de jogo cabem, mas seis saves de 300 KB
+         mais o resto do navegador podem não caber */
+      const cota = /quota|exceeded|NS_ERROR_DOM_QUOTA/i.test(e.name+e.message);
+      return gritar({ok:false, motivo: cota
+        ? `o save (${Math.round(txt.length/1024)} KB) não coube: apague uma `+
+          'vaga antiga em Jogo → Vagas, ou guarde esta partida em '+
+          'arquivo/texto'
+        : 'o navegador recusou gravar ('+(e.name||'erro')+')'});
+    }
+  }
+  async function comprimir(cru){
+    const fluxo = new Blob([cru]).stream()
+      .pipeThrough(new CompressionStream('gzip'));
+    const bytes = new Uint8Array(await new Response(fluxo).arrayBuffer());
+    return MARCA_Z + b64De(bytes);
+  }
+  function salvarEm(vaga, nome, opts){
     if(!E) return {ok:false, motivo:'sem partida'};
     if(bloqueado) return {ok:false, motivo:'aguarde chegar ao estádio'};
     if(VAGAS.indexOf(vaga) < 0) return {ok:false, motivo:'vaga que não existe'};
@@ -736,29 +777,44 @@ TO.estado = (function(){
     }catch(e){
       return gritar({ok:false, motivo:'o save não virou texto: '+e.message});
     }
+    const sincrono = !!(opts && opts.sincrono);
+    if(sincrono && ultimoCru[vaga] === cru)
+      return {ok:true, bytes:cru.length, repetido:true};   // já está gravado
     try{
-      localStorage.setItem(chaveDaVaga(vaga), cru);
       localStorage.setItem(chaveCartao(vaga),
         JSON.stringify(cartaoDe(E, nome || (vaga==='auto' ? 'Autosave' : ''))));
-      return {ok:true, bytes:cru.length};
-    }catch(e){
-      /* cota estourada é o erro mais comum, e o jogador precisa saber
-         AGORA: cinco anos de jogo cabem, mas seis saves de 300 KB
-         mais o resto do navegador podem não caber */
-      const cota = /quota|exceeded|NS_ERROR_DOM_QUOTA/i.test(e.name+e.message);
-      return gritar({ok:false, motivo: cota
-        ? `o save (${Math.round(cru.length/1024)} KB) não coube: apague uma `+
-          'vaga antiga em Jogo → Vagas, ou guarde esta partida em '+
-          'arquivo/texto'
-        : 'o navegador recusou gravar ('+(e.name||'erro')+')'});
-    }
+    }catch(e){ /* o cartão é só a etiqueta; o save de verdade vem abaixo */ }
+    if(sincrono || typeof CompressionStream === 'undefined')
+      return gravar(vaga, cru, {cru});
+    const n = pendentes[vaga] = (pendentes[vaga] || 0) + 1;
+    comprimir(cru)
+      .then(z => { if(pendentes[vaga] === n) gravar(vaga, z, {cru}); })
+      .catch(() => { if(pendentes[vaga] === n) gravar(vaga, cru, {cru}); });
+    return {ok:true, bytes:cru.length, pendente:true};
   }
 
-  function carregarDe(vaga){
+  /* o texto guardado (vaga ou colado) vira o JSON cru: comprimido,
+     base64 ou cru, o prefixo diz qual é */
+  async function destrinchar(txt){
+    if(txt.indexOf(MARCA_Z) === 0){
+      const fluxo = new Blob([bytesDe(txt.slice(MARCA_Z.length))]).stream()
+        .pipeThrough(new DecompressionStream('gzip'));
+      return await new Response(fluxo).text();
+    }
+    if(txt.indexOf(MARCA_J) === 0)
+      return decodeURIComponent(escape(atob(txt.slice(MARCA_J.length))));
+    return txt;
+  }
+
+  /* A CARGA É ASSÍNCRONA (22/09/2026): a vaga pode estar comprimida, e
+     descomprimir é promessa. Quem chama espera o `await`. */
+  async function carregarDe(vaga){
     let txt = null;
     try{ txt = localStorage.getItem(chaveDaVaga(vaga)); }catch(e){ return null; }
     if(!txt) return null;
-    return adotar(txt, vaga);
+    let cru;
+    try{ cru = await destrinchar(txt); }catch(e){ return null; }
+    return adotar(cru, vaga);
   }
 
   function apagarSave(vaga){
@@ -830,18 +886,9 @@ TO.estado = (function(){
     txt = String(txt||'').replace(/\s+/g, '');
     if(!txt) return {ok:false, motivo:'não veio texto nenhum'};
     try{
-      let cru;
-      if(txt.indexOf(MARCA_Z) === 0){
-        const fluxo = new Blob([bytesDe(txt.slice(MARCA_Z.length))]).stream()
-          .pipeThrough(new DecompressionStream('gzip'));
-        cru = await new Response(fluxo).text();
-      } else if(txt.indexOf(MARCA_J) === 0){
-        cru = decodeURIComponent(escape(atob(txt.slice(MARCA_J.length))));
-      } else if(txt[0] === '{'){
-        cru = txt;                       // alguém colou o JSON cru
-      } else {
+      if(txt.indexOf(MARCA_Z) !== 0 && txt.indexOf(MARCA_J) !== 0 && txt[0] !== '{')
         return {ok:false, motivo:'isso não parece um save do jogo'};
-      }
+      const cru = await destrinchar(txt);     // ou alguém colou o JSON cru
       return adotar(cru) ? {ok:true}
                          : {ok:false, motivo:'save de outra versão do jogo'};
     }catch(e){
@@ -863,25 +910,9 @@ TO.estado = (function(){
      espaço é justamente o que falta num save de cinco anos. */
   function salvar(){ return salvarEm('auto'); }
 
-  function carregar(){
-    try{
-      const txt = localStorage.getItem(CHAVE);
-      if(!txt) return null;
-      const dados = JSON.parse(txt);
-      if(dados.versao !== VERSAO) return null;
-      E = dados;
-      /* O SAVE VOLTA COM A SEMENTE DELE.
-         Sem isto o gerador continuava sendo o `Math.random` com que o
-         módulo nasce, e "mesmo save, mesma semente, mesmo feed" era
-         mentira: duas cargas do mesmo arquivo davam mundos diferentes.
-         Recomeçar o fluxo do zero é reprodutível, que é o que o save
-         precisa ser. */
-      U.usarSemente(E.semente || 1);
-      TO.competicoes.usarSave(E);
-      repararSave(E);
-      mudou(); return E;
-    }catch(e){ return null; }
-  }
+  /* o Continuar antigo: a vaga do autosave. A semente volta com o
+     save dentro de `adotar` (mesmo save, mesma semente, mesmo feed). */
+  function carregar(){ return carregarDe('auto'); }
 
   /* CONSERTO DE SAVE FERIDO (18/08/2026): entre a v0.12.0 e a v0.12.2,
      os botões de abertura (ideologia, expediente), ataque, caravana e
@@ -890,6 +921,24 @@ TO.estado = (function(){
      relações com a chave 'undefined'. Aqui o save carregado devolve o
      dinheiro e apaga a sujeira, uma vez só. */
   function repararSave(E){
+    /* OS PARES INTOCADOS SAEM DO SAVE (correção do dono, 22/09/2026):
+       save gravado antes desta data traz até 74 mil pares de
+       `relacoesDelas` iguais ao valor inicial — 2,4 MB de nada. Podados
+       na carga, uma vez; a leitura recalcula o inicial sozinha. */
+    try{
+      const rd = E.relacoesDelas, Mn = TO.mundo;
+      if(rd && Mn && Mn.relacaoBase && Mn.valorInicial){
+        let podados = 0;
+        for(const k of Object.keys(rd)){
+          const i = k.indexOf('|');
+          if(i < 0) continue;
+          if(rd[k] === Mn.valorInicial(Mn.relacaoBase(k.slice(0, i), k.slice(i+1)))){
+            delete rd[k]; podados++;
+          }
+        }
+        if(podados) console.info(`[save] ${podados} pares intocados podados de relacoesDelas`);
+      }
+    }catch(e){ /* a poda nunca pode derrubar a carga */ }
     try{
       if(E.relacoes) delete E.relacoes['undefined'];
       if(E.marcaAjuda) delete E.marcaAjuda['undefined'];
