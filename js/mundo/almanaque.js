@@ -252,9 +252,8 @@ TO.almanaque = (function(){
      Copa" pedem a forma com de; "faturou O Brasileirão" e "terminou A
      Copa" pedem a forma sem. Um molde só dava "terminou do
      Brasileirão", que não é português. */
-  const feminino = n => /^(Copa|Taça|Série|Copinha)/i.test(n||'');
-  const dArt = n => !n ? 'do campeonato' : (feminino(n) ? `da ${n}` : `do ${n}`);
-  const oArt = n => !n ? 'o campeonato'  : (feminino(n) ? `a ${n}`  : `o ${n}`);
+  const dArt = n => TO.genero.d('competicao', n, 'do campeonato');
+  const oArt = n => TO.genero.o('competicao', n, 'o campeonato');
 
   /* =======================================================
      A FOTO DO ANO

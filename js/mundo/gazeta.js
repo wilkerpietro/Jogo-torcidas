@@ -34,27 +34,31 @@ TO.gazeta = (function(){
   const gols    = j => j.gc + j.gf;
   const vencedor = j => j.gc > j.gf ? j.c : j.gf > j.gc ? j.f : null;
   const perdedor = j => j.gc > j.gf ? j.f : j.gf > j.gc ? j.c : null;
-  /* "do Mineiro" mas "da Copa do Nordeste": o artigo segue o nome */
-  const dArt = n => !n ? 'a rodada' : (/^(Copa|Taça|Série)/i.test(n) ? `a ${n}` : `o ${n}`);
-  /* AS FASES SÃO TODAS FEMININAS — "na semifinal", "nas quartas" — e
-     duas são plurais. O `dArt` genérico devolvia "o Quartas", e o molde
-     do mata-mata saía "está no Quartas". */
+  /* "d{comp}" tem de virar "do Mineiro" e "da Copa do Nordeste", e
+     "pel{comp}" vira "pelo"/"pela": o molde traz a preposição e daqui
+     sai só o artigo colado no nome. O gênero vem de dados/genero.js —
+     era regex por aqui, e regex mandava "o Argentina Primera". */
+  const dArt   = n => !n ? 'a rodada' : TO.genero.o('competicao', n);
   const naFase = f => {
     const b = String(f || '').toLowerCase();
     if(!b) return 'na fase';
     if(b === 'grupos') return 'na fase de grupos';
-    return (/s$/.test(b) ? 'nas ' : 'na ') + b;
+    return TO.genero.em('fase', b);
   };
   /* quem passou, num jogo decidido na marca da cal. `temPen` existe
      porque save antigo guarda `pen` como sim/não, e não como placar */
   const temPen = j => !!(j && j.pen && j.pen.c != null && j.pen.f != null);
   const passou = j => !temPen(j) ? null : (j.pen.c > j.pen.f ? j.c : j.f);
   const caiu   = j => !temPen(j) ? null : (j.pen.c > j.pen.f ? j.f : j.c);
-  /* ESTÁDIO TEM GÊNERO: é "na Arena Castelão" e "no Maracanã". Arena e
-     Vila são femininos; o resto do país é masculino. */
-  const artEst = e => !e ? '' : (/^(Arena|Vila|Ilha)\b/i.test(e) ? 'na' : 'no');
-  const noEst  = e => e ? `${artEst(e)} ${e}` : '';
-  const NoEst  = e => e ? `N${artEst(e)} ${e}` : '';
+  /* ESTÁDIO TEM GÊNERO: é "na Arena Castelão" e "no Maracanã". A lista
+     dos 76 está em dados/genero.js; o palpite de antes errava a Joia
+     da Princesa e a Moça Bonita.
+     E `NoEst` COLAVA UM N NA CRASE: `N` + `na` dava "Nna Arena
+     Castelão" no molde da praça. Agora é o mesmo texto com a primeira
+     letra em maiúscula. */
+  const artEst = e => !e ? '' : TO.genero.artigo('em', 'estadio', e);
+  const noEst  = e => e ? TO.genero.em('estadio', e) : '';
+  const NoEst  = e => { const t = noEst(e); return t && t[0].toUpperCase() + t.slice(1); };
 
   const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
                'agosto','setembro','outubro','novembro','dezembro'];
@@ -234,7 +238,8 @@ TO.gazeta = (function(){
     const vTopo = {A: A?nome(A):'', B: B?nome(B):'',
                    c: nome(topo.c), f: nome(topo.f),
                    gA: Math.max(topo.gc, topo.gf), gB: Math.min(topo.gc, topo.gf),
-                   G: gols(topo), fase: topo.fase ? dArt(topo.fase) : '',
+                   G: gols(topo),
+                   fase: topo.fase ? TO.genero.o('fase', topo.fase) : '',
                    naFase: naFase(topo.fase),
                    pA: temPen(topo) ? Math.max(topo.pen.c, topo.pen.f) : '',
                    pB: temPen(topo) ? Math.min(topo.pen.c, topo.pen.f) : '',

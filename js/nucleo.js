@@ -101,3 +101,74 @@ TO.util = (function(){
           dinheiro,numero,identificador,faixa,FAIXAS_PADRAO,
           $,$$,criar};
 })();
+
+/* =========================================================
+   GÊNERO — o artigo certo antes de nome próprio.
+   A tabela é dados/genero.js; aqui só a consulta. A tabela é
+   lida na primeira chamada porque nucleo.js carrega antes de
+   dados/. Nome que não está lá cai no palpite antigo e avisa
+   uma vez no console, pra aparecer no teste e não no jogo.
+   ========================================================= */
+TO.genero = (function(){
+  let indice = null;
+  const crua = s => String(s||'').trim().toLowerCase()
+                     .normalize('NFD').replace(/[̀-ͯ]/g,'');
+
+  function montar(){
+    indice = {};
+    const t = (TO.dados && TO.dados.genero) || {};
+    for(const tipo of Object.keys(t)){
+      const m = indice[tipo] = {};
+      for(const g of Object.keys(t[tipo]))
+        for(const nome of t[tipo][g]) m[crua(nome)] = g;
+    }
+  }
+
+  /* o palpite de antes, mantido só pra nome desconhecido */
+  const PALPITE = {
+    competicao: n => /^(copa|taca|serie|copinha|recopa|supercopa|liga|primera)\b/
+                       .test(crua(n)) ? 'f' : 'm',
+    estadio:    n => /^(arena|vila|ilha)\b/.test(crua(n)) ? 'f' : 'm',
+    fase:       n => /s$/.test(crua(n)) ? 'fp' : 'f'
+  };
+  const avisados = {};
+
+  /* 'f' feminino, 'fp' feminino plural, 'm' masculino */
+  function de(tipo, nome){
+    if(!nome) return 'm';
+    if(!indice) montar();
+    const m = indice[tipo] || {};
+    const c = crua(nome);
+    /* o gênero é da fase, não do sufixo: "Fecha 1" vale por "Fecha",
+       e "Semifinal · ida" / "Semifinal (ida)" valem por "Semifinal" */
+    const podado = c.replace(/\s*[·(].*$/, '').replace(/\s+\d+$/, '').trim();
+    const g = m[c] || m[podado];
+    if(g) return g;
+    const chave = tipo + '/' + nome;
+    if(!avisados[chave]){
+      avisados[chave] = 1;
+      if(typeof console !== 'undefined' && console.warn)
+        console.warn(`genero: "${nome}" não está em dados/genero.js (${tipo})`);
+    }
+    return (PALPITE[tipo] || PALPITE.competicao)(nome);
+  }
+
+  /* de+artigo, em+artigo, por+artigo, e o artigo sozinho */
+  const ART = {
+    d:   {f:'da',   fp:'das',  m:'do'},
+    em:  {f:'na',   fp:'nas',  m:'no'},
+    por: {f:'pela', fp:'pelas', m:'pelo'},
+    o:   {f:'a',    fp:'as',   m:'o'}
+  };
+  const junta = (forma, tipo, nome, vazio) =>
+    !nome ? (vazio || '') : `${ART[forma][de(tipo, nome)]} ${nome}`;
+
+  return {
+    de,
+    d:   (tipo, nome, vazio) => junta('d',   tipo, nome, vazio),
+    em:  (tipo, nome, vazio) => junta('em',  tipo, nome, vazio),
+    por: (tipo, nome, vazio) => junta('por', tipo, nome, vazio),
+    o:   (tipo, nome, vazio) => junta('o',   tipo, nome, vazio),
+    artigo: (forma, tipo, nome) => ART[forma][de(tipo, nome)]
+  };
+})();

@@ -7604,6 +7604,71 @@ A terceira não depende de histórico, de contagem acumulada nem do nome da fase
 
 *Medido* (3 torcidas, temporada inteira, 0 erros): final da Libertadores → posição 2, veredicto `null`; oitavas e quartas contra time mais fraco → protesto, como deve.
 
+## Gênero do nome próprio sai de tabela, não de regex (21/09/2026)
+
+Terceiro item da lista de código frágil. O jogo escolhia o artigo antes
+de nome de competição, de estádio e de fase por expressão regular, e
+havia **seis cópias da mesma regra**, todas diferentes:
+
+| onde | regra | o que deixava passar |
+|---|---|---|
+| `gazeta.js` | `/^(Copa\|Taça\|Série)/i` | tudo que não começa com essas três |
+| `feed.js` (`dComp`) | igual, copiada à mão | idem, e as duas já podiam divergir |
+| `feed.js` (`pelaComp`) | só `/^Copa/i` | "pelo Libertadores", "pelo Série B" |
+| `feed.js` (relatório) | `/^Copa/i` + lista de fase | idem |
+| `almanaque.js` | as três + `Copinha` | quarta variante da mesma coisa |
+| estádio | `/^(Arena\|Vila\|Ilha)\b/` | "no Joia da Princesa", "no La Bombonera" |
+
+A lista de nomes do jogo é **fechada** — vem de `dados/times.js`,
+`dados/estadios.js` e das fases do mata-mata. Então isto nunca foi
+problema de adivinhar: era consulta exata sem tabela pra consultar.
+Agora a tabela é `dados/genero.js` (36 competições, 343 estádios, 11
+fases) e a consulta é `TO.genero`, em `nucleo.js`. Nome fora da tabela
+cai no palpite antigo **e avisa no console** — o aviso é o que fez o
+teste encontrar o resto.
+
+O que estava errado no jogo e agora não está:
+
+* **Toda liga sul-americana.** `Argentina Primera`, `Peru Liga 1`,
+  `Equador Serie A` e mais dez saíam no masculino — "do Argentina
+  Primera". São 13 nomes, e nenhum começa com Copa.
+* **`pelaComp`.** Era a cópia mais curta: só `Copa`. "pelo
+  Libertadores", "pelo Sul-Americana".
+* **A fase `Playoff`.** A régua era "termina em s → plural feminino,
+  senão feminino singular", então saía "na playoff".
+* **Dois estádios do Brasil e 267 do continente.** O palpite valia
+  pros 76 de `dados/estadios.js`, mas o nome que o texto usa é o campo
+  `estadio` de `dados/times.js` — 343 nomes, o continente inteiro.
+  Errava a Joia da Princesa, a Moça Bonita, a Neo Química Arena, a
+  Ligga Arena, a Arena MRV e todo estádio hispânico com cabeça
+  feminina (La Bombonera, La Nueva Olla, La Ciudadela).
+* **"Nna Arena Castelão".** `NoEst` montava a versão com inicial
+  maiúscula fazendo `` `N${artEst(e)}` ``, e `artEst` já devolvia
+  `na`/`no`. O molde da praça (`gazeta.js`, `{NoEst}`) abria a frase
+  com "Nna". Agora é o mesmo texto com a primeira letra em maiúscula.
+* **A fase mandada pro julgamento de competição.** `gazeta.js` passava
+  `topo.fase` pro `dArt`, que julga nome de campeonato.
+
+**O bairro ficou de fora de propósito.** O mesmo teste achou "marcou
+uma treta **no** Vila Maria". Bairro também tem gênero, mas são **897**
+deles, entre "o Ipiranga" e "a Tijuca", e a diferença não está na forma
+da palavra — está no uso. Montar essa tabela no olho é trocar um chute
+por outro mais comprido. As duas frases passaram a usar **"em"**, que
+cai certo em todos os 897 e não pede tabela nenhuma.
+
+**Manutenção.** `ferramentas/qualidade/genero.py` varre os dados, vê
+que nome entrou sem gênero e propõe a linha. Ele pede o julgamento ao
+TypeSafe porque "Joia da Princesa é feminino e Passo d'Areia é
+masculino" não é regra que caiba em regex — seis regexes já provaram.
+Roda fora do jogo, com chave no ambiente, e o que sai é **proposta pra
+revisar e colar**: o que entra no bundle é sempre o arquivo revisado.
+Hoje ele responde "nada a propor: a tabela cobre todos os nomes dos
+dados", e isso ele faz sem rede.
+
+**Medido.** Três torcidas, duas temporadas cada, com o console vigiado:
+0 avisos de nome fora da tabela, 0 suspeitos na varredura de artigo
+errado, 0 erros de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

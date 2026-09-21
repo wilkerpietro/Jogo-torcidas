@@ -1902,16 +1902,14 @@ TO.feed = (function(){
   const temPlacar = j => j && j.gc !== undefined && j.gc !== null;
 
   /* "do Mineiro" mas "da Copa do Nordeste", e "nas Quartas" mas "na
-     Final": a régua é a MESMA do jornal (`dArt` e `naFase`, em
-     gazeta.js:38-47), copiada porque lá elas são locais. Se uma das
-     duas mudar, a outra tem de mudar junto. */
-  const dComp = n => !n ? 'da competição'
-    : (/^(Copa|Taça|Série)/i.test(n) ? `da ${n}` : `do ${n}`);
+     Final". Era cópia da régua do jornal, e as cópias já tinham
+     divergido entre si; agora as duas consultam dados/genero.js. */
+  const dComp   = n => TO.genero.d('competicao', n, 'da competição');
   const naFaseF = f => {
     const b = String(f || '').toLowerCase();
     if(!b) return 'fora';
     if(b === 'grupos') return 'na fase de grupos';
-    return (/s$/.test(b) ? 'nas ' : 'na ') + b;
+    return TO.genero.em('fase', b);
   };
 
   /* o torneio de verdade por trás da competição-sombra da agenda: a
@@ -2257,8 +2255,10 @@ TO.feed = (function(){
   };
 
   const diaDoOlheiro = diaJogo => Math.max(1, diaJogo - 2);
-  /* "pela Copa do Nordeste", "pelo Paulistão" */
-  const pelaComp = n => n ? (/^Copa/i.test(n) ? `, pela ${n}` : `, pelo ${n}`) : '';
+  /* "pela Copa do Nordeste", "pelo Paulistão". Esta era a quinta
+     cópia da regra e a mais curta de todas — só `/^Copa/i`, então
+     "Libertadores" e "Série B" saíam no masculino. */
+  const pelaComp = n => n ? ', ' + TO.genero.por('competicao', n) : '';
   const NOME_DIA = [null,'segunda','terça','quarta','quinta','sexta',
                     'sábado','domingo'];
 
@@ -3308,7 +3308,12 @@ TO.feed = (function(){
       /* o valor entra na própria frase da diretoria (pedido do dono,
          22/08/2026): a aposta é a notícia, não uma letra miúda de
          botão. O resto do texto é o aprovado, palavra por palavra. */
-      texto:`Zona ${b.zona} marcou uma treta no ${b.nome} contra a `+
+      /* "EM" E NÃO "NO": bairro tem gênero e o jogo tem 897 deles,
+         entre "o Ipiranga" e "a Tijuca". Era "no ${b.nome}" fixo, e
+         saía "no Vila Maria". A tabela de dados/genero.js resolveria,
+         mas classificar 897 nomes no olho é trocar um chute por
+         outro; "em" cai certo em todos, e não custa tabela. */
+      texto:`Zona ${b.zona} marcou uma treta em ${b.nome} contra a `+
             `${rival.nome}, ${U.dinheiro(aposta)} de cada lado, `+
             `bora pro problema?`,
       dados:{rival:rival.id, bairro:b.nome, zona:b.zona,
@@ -3323,7 +3328,7 @@ TO.feed = (function(){
       ]
     });
     /* o recado do rival, na caixa de mensagens (dono, 08/09/2026) */
-    mensagemDe(E, rival.id, `Hoje à noite, no ${b.nome}, ${tam} contra ${tam}. `+
+    mensagemDe(E, rival.id, `Hoje à noite, em ${b.nome}, ${tam} contra ${tam}. `+
       `${U.dinheiro(aposta)} na roda. Aparece.`, 'treta', {chave:`treta-msg|${ev.chave}`});
   }
 
@@ -3671,19 +3676,21 @@ TO.feed = (function(){
       const p1 = TO.competicoes.posicaoNaTabela(E, nosso.comp, nosso.c, hoje);
       const p2 = TO.competicoes.posicaoNaTabela(E, nosso.comp, nosso.f, hoje);
       const estadio = (M().time(nosso.c)||{}).estadio || '';
-      const artEst = /^(Arena|Vila|Fonte|Ilha)/i.test(estadio) ? 'na' : 'no';
+      const artEst = TO.genero.artigo('em', 'estadio', estadio);
       /* A ETAPA NA FRASE (reformulação do dono, 18/08/2026): grupos
          falam "pela 3ª rodada da Copa do Nordeste"; mata-mata fala a
          fase — "pela semifinal (ida)", "pelas quartas", "pela final". */
-      const deComp = nosso.compNome
-        ? (/^Copa/i.test(nosso.compNome) ? `da ${nosso.compNome}`
-                                         : `do ${nosso.compNome}`) : '';
+      const deComp = TO.genero.d('competicao', nosso.compNome, '');
       let etapa = '';
       if(nosso.fase){
         let rot = String(nosso.fase)
           .replace(' · ida', ' (ida)').replace(' · volta', ' (volta)');
-        if(/clubes$/i.test(rot)) rot = `fase de ${rot}`;
-        const plural = /^(Oitavas|Quartas)/i.test(rot);
+        const contada = /clubes$/i.test(rot);
+        if(contada) rot = `fase de ${rot}`;
+        /* o gênero sai do nome da fase sem o "(ida)"/"(volta)"; a
+           "fase de 16 clubes" é montada aqui e não está na tabela */
+        const plural = !contada &&
+          TO.genero.de('fase', rot.replace(/ \(.*$/, '')) === 'fp';
         etapa = `, pel${plural ? 'as' : 'a'} `+
                 `${rot.charAt(0).toLowerCase()}${rot.slice(1)}`;
       } else if(nosso.rodada){
