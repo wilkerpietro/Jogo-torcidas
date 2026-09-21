@@ -2335,7 +2335,7 @@ TO.feed = (function(){
       botoes:[
         {id:'atacar', rot:'Dar o bote', acao:'atacar-casa-rival',
          nota:`Prestígio até ±10 · tomando a ${peca}, prestígio a mais · `+
-              'Relação −26 (perdendo, −18) · 1 ataque por semana'},
+              'Relação −26 (perdendo, −18)'},
         {id:'nada', rot:'Deixar quieto', acao:'ignorar-casa-rival',
          nota:'Prestígio −1 · Moral −1'}
       ]
@@ -4401,12 +4401,12 @@ TO.feed = (function(){
           m.consequencia = 'Não rolou: a torcida sumiu do mapa.';
           return {ok:true};
         }
-        E.acoes = E.acoes || {};
-        if(E.acoes.ultimoAtaqueManual === E.data.semana){
-          marcar('Dar o bote — não rolou');
-          m.consequencia = 'Não rolou: já saiu bonde pra cima de casa rival esta semana.';
-          return {ok:true};
-        }
+        /* DAR O BOTE SEMPRE ABRE A CENA (ordem do dono, 21/09/2026): a
+           resenha é uma oportunidade que a diretoria trouxe, não o
+           ataque manual da semana — o limite de um bonde por semana do
+           `atacar` não vale aqui, e este bote também não gasta a vez
+           dele. Antes, com bar ou casa já atacados na semana, o botão
+           respondia "não rolou" e o dono não entendeu a mensagem. */
         const zona = TO.acoes.bondeDaZona(E, d.zona);
         if(zona.length < 4){
           marcar('Dar o bote — não rolou');
@@ -4414,7 +4414,6 @@ TO.feed = (function(){
           return {ok:true};
         }
         const deles = TO.acoes.efetivoDaZona(E, rival);
-        E.acoes.ultimoAtaqueManual = E.data.semana;
         marcar();
         return {ok:true, abrir:{tela:'cena-acao', args:{cena:{
           cena:'casa-piscina', acao:'atacar',
