@@ -476,12 +476,18 @@ TO.almanaque = (function(){
         titulo:'Quem mais mexeu no elenco',
         /* SEM NÚMERO DE FORÇA (régua do dono, 21/08/2026): o que a
            notícia conta é o QUANTO mudou, não o nível de ninguém */
+        /* `num` É O NÚMERO, `rot` É O RÓTULO (conserto de 21/09/2026).
+           A barra do gráfico media o tamanho com `parseInt(l.rot)` —
+           quer dizer, lia de volta o número do texto que esta mesma
+           linha acabou de montar. Bastava um rótulo que não começasse
+           por dígito, ou o menos tipográfico "−" que o resto do jogo
+           usa, pra dar NaN e a barra sumir. O valor vai junto agora. */
         linhas:[...subiram.slice(0, LINHAS).map((x,i)=>({
-                  rot:`+${x.d}`, valor:x.nome,
+                  rot:`+${x.d}`, num:x.d, valor:x.nome,
                   sobe:true, forte: i === 0,
                   nossa: x.id === E.torcida.clubeId})),
                 ...cairam.slice(0, 2).map(x=>({
-                  rot:`${x.d}`, valor:x.nome,
+                  rot:`${x.d}`, num:x.d, valor:x.nome,
                   sobe:false, nossa: x.id === E.torcida.clubeId}))]
       }
     };

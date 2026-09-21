@@ -1943,34 +1943,52 @@ TO.feed = (function(){
     if(iEsperado < 0) return null;            // o clube nem joga isto
     const esperado = iEsperado + 1;
 
-    /* --- mata-mata: caímos? --- */
-    for(let i = (comp.mata || []).length - 1; i >= 0; i--){
-      const m = comp.mata[i];
+    /* --- mata-mata: caímos? ---
+       A CHAVE DE VERDADE MANDA (conserto de 21/09/2026). A competição
+       na agenda do jogador é uma SOMBRA: pra Libertadores ela guarda
+       só os confrontos que a gente jogou — 8 clubes, não 32. Contando
+       a colocação ali, perder a FINAL dava "5º de 8" em vez de vice,
+       o `posicao > 2` que protege a decisão não pegava, e a torcida
+       ia pra porta do CT por ter sido vice da Libertadores. Quando
+       existe torneio real (`E.conmebol`), é dele que saem a chave e a
+       lista de clubes; a sombra fica só pras competições que são elas
+       mesmas (Copa do Brasil, estaduais). */
+    const chave = (real && real.mata && real.mata.length) ? real.mata : (comp.mata || []);
+    const universo = (real && (real.clubes || []).length)
+      ? (real.clubes || []) : null;
+    for(let i = chave.length - 1; i >= 0; i--){
+      const m = chave[i];
       const j = (m.jogos || []).find(x => x.c === meu || x.f === meu);
       if(!j || !j.venceu) continue;
       if(j.venceu === meu) break;             // essa a gente passou
       const algoz = j.venceu === j.c ? j.c : j.f;
-      /* A COLOCAÇÃO NUM MATA-MATA é quanta gente ainda estava VIVA
-         quando a gente caiu — não quanta já tinha caído. A primeira
-         versão somava os eliminados e dava a conta ao contrário:
-         perder a FINAL da Copa do Brasil virava "107º lugar com o 4º
-         elenco" e a torcida ia protestar por ter sido vice. Quem cai
-         quando só restam dois é o 2º; quem cai na primeira fase é o
-         último. A linha da ida não tem `venceu`, então o mesmo
-         confronto não conta duas vezes. */
-      const caidos = new Set();
-      for(let k = 0; k < i; k++)
-        for(const x of (comp.mata[k].jogos || [])){
-          if(!x.venceu || !x.f) continue;
-          caidos.add(x.venceu === x.c ? x.f : x.c);
-        }
-      /* na fila de força da copa entram todos os inscritos; a
+      /* A COLOCAÇÃO SAI DO TAMANHO DA RODADA, e de mais nada.
+         (terceira versão, 21/09/2026 — as duas anteriores estão
+         registradas porque as duas erraram.)
+
+         1ª: contei quem já tinha caído e somei um. Ficou ao
+             contrário — perder a final virava "107º".
+         2ª: `total − caídos`. Certo na Copa do Brasil, errado na
+             Libertadores: lá a fase de grupos elimina SEM deixar
+             linha de mata com `venceu`, então os caídos vinham
+             subestimados e o vice saía em 18º.
+
+         A conta que não depende de histórico nenhum: numa rodada de
+         mata-mata com N confrontos, N×2 clubes ainda estão vivos.
+         Final → 1 confronto → 2 vivos → somos o 2º. Semi → 4. Quartas
+         → 8. Vale igual na chave cheia e na sombra, com ida e volta ou
+         jogo único, e não precisa saber o nome da fase. */
+      const confrontos = (m.jogos || []).filter(x => x.c && x.f).length;
+      /* na fila de força entram todos os inscritos do torneio, e a
          colocação tem de ser lida contra esse mesmo total */
-      const filaToda = grupoNosso ? (C.porForca(E, comp) || []) : fila;
-      const esperadoNaCopa = Math.max(1,
-        filaToda.findIndex(x => x.id === meu) + 1);
+      const filaToda = universo
+        ? universo.map(id => ({id, forca:C.forcaDe(E, id)}))
+                  .sort((a,b) => b.forca - a.forca)
+        : (grupoNosso ? (C.porForca(E, comp) || []) : fila);
+      const iMeu = filaToda.findIndex(x => x.id === meu);
+      const esperadoNaCopa = iMeu >= 0 ? iMeu + 1 : esperado;
       return {tipo:'mata', esperado:esperadoNaCopa, total:filaToda.length,
-              posicao:Math.max(1, filaToda.length - caidos.size),
+              posicao:Math.max(2, confrontos * 2),
               algoz, fase:(m.fase || '').replace(/ · (ida|volta)$/, ''),
               forcaAlgoz:C.forcaDe(E, algoz), forcaNossa:C.forcaDe(E, meu)};
     }
@@ -3893,7 +3911,20 @@ TO.feed = (function(){
     if(TO.almanaque && TO.almanaque.anotarTreta)
       TO.almanaque.anotarTreta(E, {
         semana:E.data.semana, dia:E.data.dia,
-        cidade: onde.replace(/^n[ao]s? /, '').replace(/^num[a]? /, ''),
+        /* A CIDADE É A CIDADE, NÃO A FRASE DESCASCADA (conserto de
+           21/09/2026). Aqui se arrancava a preposição do texto da cena
+           — `onde.replace(/^n[ao]s? /,'')` — e o resultado ia pro campo
+           `cidade`. Briga na arquibancada gravava cidade "arquibancada";
+           no bar, "bar"; na estrada, "estrada". O ticker escrevia "se
+           pegaram em bar" e `linkCidadePorNome` tentava achar uma
+           cidade chamada "arquibancada" no mapa.
+           `cidadeDeHoje` já existia e já faz a conta certa: cidade do
+           adversário em jogo fora, a nossa praça no resto — e é o mesmo
+           campo que o lado das IAs grava (relacoes.js:2253), que sempre
+           foi nome de cidade de verdade. O lugar da briga continua
+           inteiro em `local`, pra quem quiser a frase. */
+        cidade: cidadeDeHoje(E),
+        local: onde + bairro,
         ganhouA: !!d.ganhamos,
         a:{id:E.torcida.id, nome:a.nome || E.torcida.nome, n:a.n || 0,
            feridos:a.caidos || 0, presos:a.presos || 0},

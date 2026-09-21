@@ -9646,12 +9646,24 @@
     if(p.tipo === 'janela'){
       if(!linhas.length) return vazio('Janela magra: nenhum elenco mudou de patamar.');
       const cx = el('div',{class:'retro-destaque retro-barras'});
-      const maior = Math.max(1, ...linhas.map(l=>Math.abs(parseInt(l.rot,10)||0)));
+      /* O NÚMERO VEM DO CAMPO, NÃO DO RÓTULO (conserto de 21/09/2026).
+         Isto fazia `parseInt` no texto que o almanaque montou: "+12"
+         funcionava por sorte, "−8" com o menos tipográfico (U+2212, que
+         é o que o resto do jogo escreve) dava NaN → 0 e a barra sumia.
+         A direção também saía daí, e já existia em `l.sobe`. Página de
+         save antigo não tem `num`: cai no rótulo, como antes. */
+      const valorDe = l => {
+        if(typeof l.num === 'number') return l.num;
+        const n = parseInt(String(l.rot||'').replace(/−/g, '-'), 10);
+        return isNaN(n) ? 0 : n;
+      };
+      const maior = Math.max(1, ...linhas.map(l=>Math.abs(valorDe(l))));
       for(const l of linhas){
-        const v = parseInt(l.rot,10) || 0;
+        const v = valorDe(l);
+        const sobe = l.sobe !== undefined ? !!l.sobe : v > 0;
         const id = ((TO.mundo.todosTimes||[]).find(t=>t.nome === l.valor)||{}).id;
         const w = Math.round(100*Math.abs(v)/maior);
-        cx.appendChild(el('div',{class:'retro-barra'+(v>0?' sobe':' desce')+(l.nossa?' nossa':''), html:
+        cx.appendChild(el('div',{class:'retro-barra'+(sobe?' sobe':' desce')+(l.nossa?' nossa':''), html:
           `<span class="nome">${chipClube(id, corDoClube(id))}${l.valor}</span>`+
           `<span class="trilho"><i style="width:${w}%"></i></span><span class="dado">${l.rot}</span>`}));
       }

@@ -7554,6 +7554,56 @@ Três erros distintos, todos ativos:
 
 **Por que isto não é caso de modelo.** Foi o primeiro item da lista que o dono mandou atacar em ordem, e é o mais didático: não há nada de semântico aqui. O dado *existia* na hora em que o evento aconteceu — o código sabia perfeitamente que aquilo era uma sequela — e foi jogado fora, virou prosa, e depois alguém tentou adivinhar de volta com regex. A correção é guardar o fato. Julgamento aqui seria pagar um modelo pra recuperar uma informação que o próprio programa tinha na mão.
 
+## O lugar da briga e o número da barra param de sair do texto (21/09/2026)
+
+Item 2 da ordem do dono. Dois round-trips: o código montava uma frase e depois outro lugar lia o dado **de volta** dela.
+
+### A "cidade" da briga era a frase descascada
+
+`feed.js` gravava no anuário `cidade: onde.replace(/^n[ao]s? /, '')` — arrancava a preposição do texto da cena. O campo `cidade` ficava com:
+
+| cena | gravava |
+|---|---|
+| arquibancada | `"arquibancada"` |
+| bar | `"bar"` |
+| arredores | `"arredores do estádio"` |
+| ônibus | `"estrada"` |
+
+O ticker escrevia **"se pegaram em bar"**; `linkCidadePorNome` (main.js:5389) tentava achar no mapa uma cidade chamada *arquibancada*.
+
+O mais revelador: **o lado das IAs sempre gravou certo** — `relacoes.js:2253` põe `cidade:(M().cidade(o.mapa)||{}).nome`, cidade de verdade. O mesmo campo tinha dois significados conforme quem brigou. E `cidadeDeHoje(E)` já existia em feed.js fazendo exatamente a conta boa (cidade do adversário em jogo fora, nossa praça no resto). Era só usar. A frase do lugar continua inteira, agora em `local`, pra quem quiser mostrar.
+
+*Medido:* seis cenas diferentes (arquibancada, bar, arredores, estrada, sede, rua) gravam todas `"Sao Paulo"`, que está na lista de cidades e é linkável.
+
+### A barra do gráfico lia o próprio rótulo
+
+`main.js` media o tamanho da barra com `parseInt(l.rot, 10)` — o rótulo que o almanaque tinha acabado de montar. `"+12"` funcionava por sorte; **`"−8"` com o menos tipográfico U+2212 — que é o que o resto do jogo escreve — dava `NaN → 0` e a barra sumia.** A direção (sobe/desce) saía do sinal do mesmo `parseInt`, embora `l.sobe` já existisse ao lado como dado.
+
+Agora a linha carrega `num` e o gráfico lê dali; `l.sobe` manda na direção. Página de save antigo não tem `num` e cai no rótulo — mas o fallback normaliza o `−`, então **o save velho também passa a desenhar a barra**.
+
+| rótulo | antes | agora |
+|---|---|---|
+| `+12` | 12 | 12 |
+| `−8` (com `num`) | **NaN → 0** | −8 |
+| `−8` (save antigo) | **NaN → 0** | −8 |
+| `+12 no elenco` | 12 | 12 |
+
+### E a regressão que a temporada pegou
+
+Rodando a regressão do veredicto depois dessas duas, apareceu **"Caímos na final da Copa Libertadores... A torcida está possessa"** — exatamente o que o `posicao > 2` de 19/09 deveria impedir.
+
+A causa é estrutural e vale registrar: a competição na agenda do jogador é uma **sombra** — pra Libertadores ela guarda só os confrontos que a gente jogou, **8 clubes, não 47**. Contando ali, o vice dava "5º de 8".
+
+A correção passou por três versões, e as duas primeiras estão no comentário do código porque as duas erraram:
+
+1. contar quem já caiu e somar um → ao contrário (vice virava 107º);
+2. `total − caídos` → certo na Copa do Brasil, errado na Libertadores, onde a **fase de grupos elimina sem deixar linha de mata com `venceu`** — os caídos vinham subestimados e o vice saía em 18º;
+3. **o tamanho da rodada**: numa rodada com N confrontos, N×2 clubes estão vivos. Final → 1 confronto → 2 vivos → somos o 2º.
+
+A terceira não depende de histórico, de contagem acumulada nem do nome da fase, e vale igual na chave cheia e na sombra, com ida e volta ou jogo único. É a mesma lição das outras duas correções do dia: **o dado estava na estrutura, não no texto.**
+
+*Medido* (3 torcidas, temporada inteira, 0 erros): final da Libertadores → posição 2, veredicto `null`; oitavas e quartas contra time mais fraco → protesto, como deve.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
