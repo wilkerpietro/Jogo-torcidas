@@ -2269,6 +2269,19 @@ TO.feed = (function(){
          Atacar abre a mesma cena do ataque manual — com o
          mesmo limite de um bonde por semana.
      ------------------------------------------------------- */
+  /* UMA SUGESTÃO DE ATAQUE DE CADA VEZ (correção do dono, 21/09/2026):
+     bar e casa de piscina rolam em dados separados, mas os dois caíam
+     na mesma semana (e o desvio pro dia comum punha os dois no MESMO
+     dia — medido em 3 anos: 2 de 14 casas coladas no bar). A diretoria
+     não traz dois botes na mesma semana: depois de uma sugestão, a
+     outra espera pelo menos duas semanas. */
+  const ESPACO_SUGESTAO = 2;
+  const sugestaoRecente = (E, sa) => {
+    const u = (E.acoes || {}).ultimaSugestaoDeAtaque;
+    return u != null && sa - u < ESPACO_SUGESTAO;
+  };
+  const marcarSugestao = (E, sa) => { E.acoes = E.acoes || {}; E.acoes.ultimaSugestaoDeAtaque = sa; };
+
   function barRivalDeHoje(E){
     const sa = TO.relacoes.semanaAbs(E);
     const H = TO.mapa.hash;
@@ -2283,6 +2296,8 @@ TO.feed = (function(){
       a.tipo === 'bar' && TO.relacoes.nivel(E, a.torcidaId) <= -15);
     if(!alvos.length) return;
     const alvo = alvos[H(`barrival|a|${sa}`) % alvos.length];
+    if(sugestaoRecente(E, sa)) return;
+    marcarSugestao(E, sa);
     propor(E, {
       kind:'barrival', peso:'decisao', voz:'diretor',
       chave:`barrival|${E.data.ano}|${sa}`,
@@ -2325,6 +2340,8 @@ TO.feed = (function(){
     const zona = zonas[H(`casarival|z|${sa}`) % zonas.length];
     const doLado = (M().bairrosPorZona(rival.mapa || E.torcida.mapa) || {})[zona] || [];
     const bairro = doLado.length ? doLado[H(`casarival|b|${sa}`) % doLado.length].nome : '';
+    if(sugestaoRecente(E, sa)) return;
+    marcarSugestao(E, sa);
     propor(E, {
       kind:'casarival', peso:'decisao', voz:'diretor',
       chave:`casarival|${E.data.ano}|${sa}`,
