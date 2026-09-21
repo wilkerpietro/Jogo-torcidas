@@ -1064,6 +1064,99 @@ Duas defesas, as mesmas de sempre:
 Prova: a máscara continua em **100,0% alcançável com 8 células presas**,
 o mesmo número de antes da mudança.
 
+### 4.21. O chão em PBR, e a nuvem que faz sombra
+
+O chão tinha um número que explicava tudo: **9,1 pixels por metro**
+(4096 px esticados sobre 450 m de mundo). A referência que se persegue
+tem 256 a 512. Pintar o mundo nessa densidade daria 115.200 × 86.784 px
+— dez gigapixels. Não é questão de caprichar na pintura; é impossível
+por aritmética.
+
+A saída é a de qualquer motor: **a pintura deixa de ser a aparência e
+vira a máscara**. `texChao` continua dizendo onde é rua, calçada,
+granulado e grama — pela mesma paleta que o `estadio_pintura.js` já
+usava — e o grão vem de texturas pequenas ladrilhadas a cada 2–4 m.
+1024 px a cada 4 m são 256 px/m: a conta fecha.
+
+| superfície | antes | depois |
+|---|---|---|
+| chão | 9,1 px/m | **256 px/m** (onde há textura na pasta) |
+
+Duas decisões que não são gosto:
+
+- **Só a luminância do detalhe entra, multiplicando.** A cor de cada
+  ponto continua sendo a da planta. Deixar a cor da textura entrar
+  faria o bege da areia tingir o asfalto. E a luminância é normalizada
+  pela média da própria imagem, pra a cidade não clarear nem escurecer
+  no conjunto.
+- **O UV ladrilhado sai do mesmo `vMapUv` da pintura**, multiplicado
+  pelo tamanho do mundo. O three.js monta a base tangente a partir
+  desse UV; amostrar o relevo num UV de outra orientação sairia
+  espelhado num eixo — buraco virando bolha só no sentido norte-sul.
+
+**A armadilha que custou a primeira versão:** a máscara foi escrita
+num canvas RGBA, e canvas guarda **alfa pré-multiplicado**. Um pixel
+"100% asfalto" é R=255, A=0 — e volta do `getImageData` como zero puro.
+A máscara nasceu **98% vazia** e só o canal da grama (que é o próprio
+alfa) sobreviveu. A correção é uma `DataTexture`, que leva o array
+direto pra GPU sem passar por canvas.
+
+#### A nuvem, e por que a sombra é fiel
+
+Duas coisas que têm de ser a mesma: o lençol que se vê e a sombra que
+ele faz. As duas saem da mesma textura, na mesma escala, com o mesmo
+vento — e a função que lê a nuvem é literalmente o mesmo GLSL nos dois.
+
+O que faz a sombra ser fiel é o **deslocamento**: nuvem não sombreia
+embaixo de si, sombreia do lado oposto ao sol. Uma nuvem a `H` de
+altura com o sol na direção `L` joga a sombra a `H/L.y · L.xz` de
+distância. Com o sol desta cena (elevação de uns 49°) e nuvem a 2.200,
+a sombra cai **1.683 unidades a oeste e 906 ao norte** da nuvem — uns
+87 m. É essa conta que faz o olho aceitar as duas como a mesma nuvem.
+
+A sombra desconta **só a luz direta**. A hemisférica é o céu, e o céu
+continua lá quando a nuvem passa: embaixo dela fica mais azulado e mais
+chapado, não preto.
+
+Três coisas que pareciam óbvias e estavam erradas:
+
+1. **A escala é de jogo, não de meteorologia.** Uma nuvem real tem
+   quilômetros; este mundo tem 450 m. Uma nuvem fiel cobriria a cidade
+   inteira de uma vez e a sombra leria como "a tela escureceu" — foi
+   exatamente o que aconteceu com ladrilho de 2.600. Em **1.500**
+   cabem umas seis no mapa e dá pra ver a mancha andando.
+2. **O céu apaga por ângulo, não por distância.** O fade por distância
+   parecia a conta certa e apagava o céu inteiro: de uma câmera rente
+   ao chão, o lençol todo está longe. O que precisa sumir é o rasante,
+   onde o raio quase tangencia o plano.
+3. **O sol teve de subir junto** (1,0 → 1,45). Sombra de nuvem
+   *subtrai* luz; adicioná-la sem mexer no sol só deixa a cidade
+   inteira mais escura — troca sol por penumbra em vez de criar
+   contraste. Com 1,45 o trecho no sol fica mais claro do que era e o
+   trecho na sombra cai perto do nível antigo.
+
+#### O que ainda não recebe a nuvem
+
+A sombra entra em **25 materiais** — chão, cidade, estádio. Os ~400
+restantes são os bonecos, que ficam de fora de propósito: o corte de
+distância usa `InstancedMesh`, e ali `modelMatrix` é a matriz da malha
+inteira, não a de cada instância — todos seriam sombreados pelo mesmo
+ponto de nuvem. Um bonde inteiro escurecendo junto no meio de uma rua
+clara seria mais visível como bug do que a falta da sombra é hoje.
+
+#### O caminho das texturas
+
+`ferramentas/arrumar_pbr.py` normaliza qualquer pacote (Poly Haven ou
+ambientCG) pro mesmo nome e tamanho, escreve o `manifesto.json` e apaga
+os originais. O manifesto existe pra o carregador **pedir só o que
+existe**: sem ele, seriam seis 404 vermelhos no console a cada carga,
+num projeto que trata "erros: nenhum" como regra.
+
+Hoje só `areia/` tem textura de verdade (Poly Haven, 15 MB de 4K viram
+936 KB de 1K). Os outros três canais caem num grão gerado, com a mesma
+conta de normal map de sempre — a cena nunca fica pior do que estava, e
+cada pacote que chega melhora um pedaço sem tocar em código.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade

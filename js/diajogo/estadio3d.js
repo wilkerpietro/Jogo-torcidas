@@ -25,6 +25,8 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { entrarEm } from './bonecos3.js';
 import { criarTradutor } from './sinais3d.js';
 import { montarBairro } from './bairro3d.js';
+import { criarChaoPBR } from './chao3d.js';
+import { criarNuvens } from './nuvens3d.js';
 
 const P = TO.dados.plantaEstadio;
 const PINT = TO.diaJogo.estadioPintura;
@@ -116,16 +118,10 @@ export function criar(canvas) {
     const nv = (c && c.nevoa) || (c && !c.seguir ? NIVEIS[0].nevoa : q.nevoa);
     cena.fog.near = nv[0]; cena.fog.far = nv[1];
     if (texChao) { texChao.anisotropy = Math.min(q.aniso, maxAniso); texChao.needsUpdate = true; }
-    if (matChao) {
-      const relevo = nivel < 2;
-      matChao.normalMap = relevo ? texRelevoChao : null;
-      matChao.aoMap = relevo ? texOclusaoChaoRef : null;
-      /* a mesma anisotropia do texChao: sem ela o relevo lava no
-         ângulo raso da câmera de ombro, que é bem onde ele mais serve */
-      if (texRelevoChao) texRelevoChao.anisotropy = Math.min(q.aniso, maxAniso);
-      if (texOclusaoChaoRef) texOclusaoChaoRef.anisotropy = Math.min(q.aniso, maxAniso);
-      matChao.needsUpdate = true;
-    }
+    /* a anisotropia do chão vale pro conjunto do splat: sem ela o
+       relevo lava no ângulo raso da câmera de ombro, que é bem onde
+       ele mais serve */
+    if (chaoPBR) chaoPBR.anisotropia(q.aniso);
     redimensionar(true);
   }
   function ajustarQualidade(dt) {
@@ -139,10 +135,17 @@ export function criar(canvas) {
       nivel--; tempoNoNivel = 0; mediaDt = 1 / 45; aplicarNivel();
     }
   }
-  let texChao = null, matChao = null, texRelevoChao = null, texOclusaoChaoRef = null, maxAniso = 1;
+  let texChao = null, matChao = null, chaoPBR = null, nuvens = null, maxAniso = 1;
 
   cena.add(new THREE.HemisphereLight(0xd2dced, 0x6a6454, 1.0));
-  const sol = new THREE.DirectionalLight(0xfff0d8, 1.0);
+  /* O SOL SUBIU DE 1,0 PRA 1,45 QUANDO A NUVEM ENTROU, e não é gosto:
+     a sombra de nuvem SUBTRAI luz direta, então adicioná-la sem mexer
+     no sol só deixa a cidade inteira mais escura — troca sol por
+     penumbra em vez de criar contraste. Com 1,45 o trecho no sol fica
+     mais claro do que era antes e o trecho na sombra cai perto do
+     nível antigo: a média se mantém e o que aparece é a DIFERENÇA,
+     que é o ponto de ter nuvem. */
+  const sol = new THREE.DirectionalLight(0xfff0d8, 1.45);
   sol.position.set(P.CX - 1300, 1700, P.CY - 700);
   sol.target.position.set(P.CX, 0, P.CY);
   sol.castShadow = true;
@@ -164,142 +167,23 @@ export function criar(canvas) {
   cena.add(luzArcada, luzArcada.target);
 
   /* =======================================================
-     O RELEVO DO CHÃO — altura, não cor
+     A NUVEM, E A SOMBRA DELA NA CIDADE
      -------------------------------------------------------
-     `texChao` é o MAPA da cidade inteira num canvas só — rua, calçada,
-     praça, mar, tudo pintado por `PINT.pintar`. Ótimo pra dizer ONDE é
-     cada coisa; péssimo pra dar textura de perto: são só uns 4096 px
-     pro bairro inteiro, menos de um texel por unidade, então de perto
-     todo detalhe sai borrado — é ele que faz o chão ler como papelão
-     pintado.
-
-     A saída não é aumentar a resolução do mapa (isso não escala: o
-     bairro é grande demais pra qualquer resolução razoável cobrir de
-     perto). É separar as duas perguntas. `texChao` continua dizendo A
-     COR — o layout, único, sem repetição, do jeito que já é. Um
-     segundo mapa, pequeno e ladrilhado centenas de vezes por cima do
-     chão inteiro, diz o RELEVO — grão, poeira, sem ligar pra cor
-     nenhuma. As duas convivem na mesma malha porque, neste three.js,
-     cada mapa carrega a PRÓPRIA transformação de UV (`normalMapTransform`
-     é um uniform à parte de `mapTransform`): dá pra repetir o relevo
-     duzentas vezes com a cor por baixo continuando 1:1, sem escrever
-     shader nenhum à mão.
-
-     O relevo é GERADO — não é foto de ninguém, é a mesma família de
-     conta de qualquer filtro de normal map: desenha um mapa de altura
-     em cinza (manchas de três tamanhos, pra não ficar regular) e tira
-     a inclinação de cada pixel pros vizinhos. */
-  const TAM_GRAO = 512;
-  /* semente própria, só do grão: isto é decoração, não faz parte do
-     sorteio da planta, e fixa só ajuda a comparar print com print */
-  function sementeGrao(a) {
-    return function () {
-      a |= 0; a = (a + 0x6D2B79F5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-  /* a mancha, desenhada TAMBÉM nas cópias espelhadas quando cai perto
-     de uma borda — é isso que faz o ladrilho repetir sem costura */
-  function manchaSemCosto(c, x, y, r, tom, alfa) {
-    c.globalAlpha = alfa; c.fillStyle = tom;
-    const xs = x < r ? [0, TAM_GRAO] : x > TAM_GRAO - r ? [0, -TAM_GRAO] : [0];
-    const ys = y < r ? [0, TAM_GRAO] : y > TAM_GRAO - r ? [0, -TAM_GRAO] : [0];
-    for (const dx of xs) for (const dy of ys) {
-      c.beginPath(); c.arc(x + dx, y + dy, r, 0, Math.PI * 2); c.fill();
-    }
-  }
-  function criarAlturaChao() {
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = TAM_GRAO;
-    /* este canvas é lido de volta duas vezes (`alturaParaNormal` e
-       `alturaParaOclusao` chamam `getImageData` nele) — o aviso do
-       Chrome pede o hint aqui, na criação, não lá na leitura */
-    const c = cv.getContext('2d', { willReadFrequently: true });
-    c.fillStyle = '#b4b4b0'; c.fillRect(0, 0, TAM_GRAO, TAM_GRAO);
-    const rng = sementeGrao(51703);
-    const entre = (a, b) => a + rng() * (b - a);
-    /* três camadas: remendo grande e raro, o grão médio que é a
-       maioria, e a poeira fina que dá a serrilhada de perto.
-       ALFA ALTO DE PROPÓSITO — a primeira leva (0,05–0,14) somava
-       mancha semitransparente em cima de mancha semitransparente e o
-       resultado MÉDIA de volta pro cinza-base: dava textura quase
-       invisível, mesmo de perto e com a luz rasante. Mancha de bump
-       tem de ter aresta de verdade, não neblina. */
-    const CAMADAS = [
-      { n: 22, r: [24, 52], alfa: [0.16, 0.30] },
-      { n: 130, r: [6, 15], alfa: [0.18, 0.34] },
-      { n: 500, r: [1.2, 3.0], alfa: [0.22, 0.42] }
-    ];
-    for (const cam of CAMADAS) for (let i = 0; i < cam.n; i++) {
-      const claro = rng() < 0.5;
-      manchaSemCosto(c, rng() * TAM_GRAO, rng() * TAM_GRAO, entre(cam.r[0], cam.r[1]),
-                      claro ? '#f2f0e8' : '#5c584c', entre(cam.alfa[0], cam.alfa[1]));
-    }
-    c.globalAlpha = 1;
-    return cv;
-  }
-  /* A MESMA ALTURA, SEM DEPENDER DE LUZ. `alturaParaNormal` só aparece
-     quando a luz direta bate de raspão — sol baixo, lanterna — porque
-     ela reage à DIREÇÃO da luz. Debaixo do sol de meio-dia da cena (e
-     da hemisférica, que é luz ambiente por definição) ela quase não
-     mostra nada: foi assim que o primeiro teste, com o chão inteiro
-     iluminado pela cena normal, saiu praticamente liso, e só quando
-     entrou uma luz baixa e rasante de propósito o relevo apareceu.
-     Um mapa de OCLUSÃO resolve isso: multiplica a luz INDIRETA (a
-     hemisférica conta como indireta) pela profundidade do vale, sem
-     ligar pra de onde vem a luz — é o que faz o grão aparecer mesmo
-     num dia nublado. Sai da MESMA altura, só normalizada de verdade
-     (pelo mínimo e máximo que o cinza alcançou) e prensada num teto
-     que nunca escurece até o preto — chão sujo, não buraco. */
-  function alturaParaOclusao(cvAltura, minEscuro) {
-    const n = cvAltura.width;
-    const d = cvAltura.getContext('2d').getImageData(0, 0, n, n).data;
-    let lo = 255, hi = 0;
-    for (let i = 0; i < d.length; i += 4) { lo = Math.min(lo, d[i]); hi = Math.max(hi, d[i]); }
-    const faixa = Math.max(1, hi - lo);
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = n;
-    const c = cv.getContext('2d');
-    const img = c.createImageData(n, n);
-    for (let i = 0; i < d.length; i += 4) {
-      const t = (d[i] - lo) / faixa;
-      const v = Math.round((minEscuro + (1 - minEscuro) * t) * 255);
-      img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
-    }
-    c.putImageData(img, 0, 0);
-    return cv;
-  }
-  /* ALTURA VIRA RELEVO. Lê o cinza de cada pixel como altura e tira a
-     inclinação pros vizinhos — a mesma conta de um filtro de normal
-     map de qualquer editor de imagem. Os vizinhos são lidos com
-     ENVOLTÓRIO (`% TAM_GRAO`), não grudados na borda: sem isso o
-     ladrilho ganha uma costura visível a cada repetição. */
-  function alturaParaNormal(cvAltura, forca) {
-    const n = cvAltura.width;
-    const dados = cvAltura.getContext('2d').getImageData(0, 0, n, n).data;
-    const alt = (x, y) => {
-      const px = ((x % n) + n) % n, py = ((y % n) + n) % n;
-      return dados[(py * n + px) * 4] / 255;
-    };
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = n;
-    const c = cv.getContext('2d');
-    const img = c.createImageData(n, n);
-    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-      const dx = (alt(x + 1, y) - alt(x - 1, y)) * forca;
-      const dy = (alt(x, y + 1) - alt(x, y - 1)) * forca;
-      const len = Math.hypot(dx, dy, 1);
-      const i = (y * n + x) * 4;
-      img.data[i]     = (-dx / len * 0.5 + 0.5) * 255;
-      img.data[i + 1] = (-dy / len * 0.5 + 0.5) * 255;
-      img.data[i + 2] = (1 / len * 0.5 + 0.5) * 255;
-      img.data[i + 3] = 255;
-    }
-    c.putImageData(img, 0, 0);
-    return cv;
-  }
+     O lençol que se vê lá em cima e a sombra que cai na rua saem da
+     MESMA textura, com o mesmo vento — e a sombra é projetada pelo
+     ângulo do sol, não pintada embaixo da nuvem. Os porquês estão no
+     `nuvens3d.js`; aqui só se liga o sol nela.
+     ======================================================= */
+  /* A ESCALA É DE JOGO, NÃO DE METEOROLOGIA. Uma nuvem de verdade tem
+     quilômetros; este mundo inteiro tem 450 m, então uma nuvem fiel
+     cobriria a cidade toda de uma vez e a sombra leria como "a tela
+     escureceu". Em 1500 unidades (77 m) cabem umas seis no mapa, e aí
+     dá pra ver a mancha ANDANDO por cima dos quarteirões — que é o que
+     se pediu. `cobertura` alta deixa mais sol que sombra. */
+  nuvens = criarNuvens({ altura: 2200, escala: 1500, cobertura: 0.55,
+                         forca: 0.58, ventoX: 34, ventoZ: 14 });
+  nuvens.apontarSol(sol);
+  cena.add(nuvens.ceu);
 
   /* =======================================================
      AS TEXTURAS
@@ -326,61 +210,25 @@ export function criar(canvas) {
   texPiso.repeat.set(W / 120, H / 120);
   texPiso.anisotropy = texChao.anisotropy;
 
-  /* o ladrilho do relevo: 42 unidades (~2,2 m) é fino o bastante pra
-     não repetir feio numa avenida larga e grosso o bastante pra não
-     virar ruído de moiré vista de cima, no zenital */
-  const AZULEJO_GRAO = 42;
-  const cvAlturaChao = criarAlturaChao();
-  texRelevoChao = new THREE.CanvasTexture(alturaParaNormal(cvAlturaChao, 5.2));
-  texRelevoChao.wrapS = texRelevoChao.wrapT = THREE.RepeatWrapping;
-  texRelevoChao.repeat.set(K.VW / AZULEJO_GRAO, K.VH / AZULEJO_GRAO);
-  const texOclusaoChao = new THREE.CanvasTexture(alturaParaOclusao(cvAlturaChao, 0.28));
-  texOclusaoChao.wrapS = texOclusaoChao.wrapT = THREE.RepeatWrapping;
-  texOclusaoChao.repeat.set(K.VW / AZULEJO_GRAO, K.VH / AZULEJO_GRAO);
-  /* SEM ANISOTROPIA, O RELEVO SOME — e some bem onde ele mais faz
-     falta. A câmera de ombro olha o chão quase de raspão, e sem
-     filtragem anisotrópica a GPU escolhe, pra um ângulo raso, um
-     mipmap tão reduzido que ele já é a MÉDIA do ladrilho inteiro —
-     e a média de um ruído centrado no neutro É o neutro. Foi assim
-     que um teste ANTES/DEPOIS pixel a pixel, numa rua olhada da
-     câmera de ombro de verdade, deu ZERO de diferença: bug real,
-     não só "sutil" — o mesmo material, no zenital (quase de cima,
-     onde o ângulo não é raso), já mudava a imagem de verdade. */
-  texRelevoChao.anisotropy = texOclusaoChao.anisotropy = Math.min(8, maxAniso);
-  texOclusaoChaoRef = texOclusaoChao;
-  /* NENHUM DOS DOIS É COR: ficam em espaço linear, sem sRGB — por
-     isso, ao contrário de TODA outra textura aqui, estes dois não
-     recebem `.colorSpace = THREE.SRGBColorSpace`. Marcado assim de
-     propósito, não esquecido: com sRGB a luz lê a inclinação (ou a
-     sombra) errada e o relevo sai invertido ou estourado. */
-
   /* =======================================================
-     O CHÃO: um plano do tamanho do mapa, com a pintura, e um
-     plano escuro enorme por baixo pra não acabar o mundo na
-     beira do tabuleiro
+     O CHÃO: um plano do tamanho do mapa, e um plano escuro
+     enorme por baixo pra não acabar o mundo na beira do
+     tabuleiro
+     -------------------------------------------------------
+     A PINTURA VIROU MÁSCARA. `texChao` continua sendo a cor da cidade,
+     mas agora ela também diz QUAL material ladrilhado entra em cada
+     ponto — rua, calçada, granulado, grama —, e o grão de perto vem
+     desses materiais e não mais dela. Os números estão no `chao3d.js`:
+     9,1 px/m antes, 256 px/m agora, onde houver textura de verdade na
+     pasta `img/texturas/pbr/`.
      ======================================================= */
-  matChao = new THREE.MeshStandardMaterial({
-    map: texChao, normalMap: texRelevoChao,
-    normalScale: new THREE.Vector2(1.1, 1.1),
-    /* MEDIDO, NÃO CHUTADO: `aoMap` só multiplica a luz INDIRETA
-       (a hemisférica) — a `sol` direta, que domina a cena, não passa
-       por ele. Testei com um diff de pixel contra o mesmo quadro sem
-       relevo nenhum: só o normalMap mudava 0,32 de tom médio no chão,
-       quase nada, porque o sol daqui é quase a pino e N·L varia pouco
-       com uma inclinação pequena; o aoMap sozinho já mudava 1,28 —
-       quatro vezes mais — mesmo sem depender do ângulo do sol. Por
-       isso o teto (`aoMapIntensity`) vai além de 1: em três.js isso é
-       permitido e aqui é estilização deliberada, não erro de física. */
-    aoMap: texOclusaoChao, aoMapIntensity: 2.2,
-    roughness: 0.92, metalness: 0
+  chaoPBR = criarChaoPBR({
+    pintura: PINT, canvasPintado: cvChao, texChao,
+    area: { x0: K.VX0, y0: K.VY0, w: K.VW, h: K.VH },
+    maxAniso, METRO: P.METRO
   });
-  const geoChao = new THREE.PlaneGeometry(K.VW, K.VH);
-  /* `aoMap` quer um SEGUNDO canal de UV — sem ele fica preso lendo
-     sempre o mesmo texel (0,0) do mapa de oclusão, e o relevo não
-     aparece nem sob a luz ambiente. `PlaneGeometry` só nasce com um
-     canal; o segundo é o mesmo, clonado. */
-  geoChao.setAttribute('uv2', geoChao.attributes.uv);
-  const chao = new THREE.Mesh(geoChao, matChao);
+  matChao = nuvens.aplicarEm(chaoPBR.material);
+  const chao = new THREE.Mesh(new THREE.PlaneGeometry(K.VW, K.VH), matChao);
   chao.rotation.x = -Math.PI / 2;
   chao.position.set(K.VX0 + K.VW / 2, 0, K.VY0 + K.VH / 2);
   chao.receiveShadow = true;
@@ -799,6 +647,7 @@ export function criar(canvas) {
     montarGradil(TC);
     montarTorres(TC);
     montarSetores(TC, D);
+    for (const m of [matPintado, matConcreto, matFaixa, matPiso]) nuvens.aplicarEm(m);
     grupo.add(malha(TA, matPintado));
     grupo.add(malha(TC, matConcreto));
     grupo.add(malha(TF, matFaixa, false));
@@ -809,7 +658,12 @@ export function criar(canvas) {
       color: COR.tela, vertexColors: true, transparent: true,
       opacity: 0.17, depthWrite: false, side: THREE.DoubleSide }), false);
     grupo.add(tela);
-    if (!cidade) { cidade = montarBairro(P); for (const m of cidade.meshes) cena.add(m); }
+    if (!cidade) {
+      cidade = montarBairro(P);
+      /* a nuvem passa por cima da CIDADE, não só do chão: sem isto o
+         telhado fica no sol enquanto a rua ao lado escurece */
+      for (const m of cidade.meshes) { nuvens.aplicarEm(m.material); cena.add(m); }
+    }
     conta = { degraus: P.NDEG, vomitorios: P.VOMITORIOS.length,
               lojas: P.LOJAS.length, lotes: K.LOTES.length, quadras: K.QUADRAS.length,
               pedacos: cidade.pedacos, portoes: P.PORTOES.length,
@@ -1198,6 +1052,7 @@ export function criar(canvas) {
 
   function quadro(J, dt) {
     ajustarQualidade(dt);
+    if (nuvens) nuvens.avancar(dt, cam);
     tremular(dt);
     moverPortas(dt);
     traduzir(J, dt);
@@ -1262,6 +1117,7 @@ export function criar(canvas) {
            get gente() { return povo.quantas; },
            get info() { return rend.info; },
            _rend: rend, _cena: cena, _cam: cam, _planta: P,
+           get _chaoPBR() { return chaoPBR; }, get _nuvens() { return nuvens; },
            get _cidade() { return cidade; },
            _mirar(g, i, d) {
              if (g !== undefined) giro = g;
