@@ -7982,6 +7982,17 @@ só na manchete:
 dono escreveu. Na reforma o artigo volta, porque ali o ponto já
 existia — "amplia o bar", não "amplia bar".
 
+### Medido
+
+Duas temporadas em três torcidas, com a varredura procurando
+explicitamente primeira pessoa sobrando (`nosso`, `nossa`, `a gente`,
+`Abrimos`, `Ampliamos`, `Montamos`, `Fincamos`, `nós`): **0
+ocorrências**. Toda obra virou página, nenhuma ficou sem quadro, 0
+aviso de nome fora da tabela de gênero, 0 erro de página.
+
+A Cearamor produziu, sozinha, a manchete do exemplo do dono:
+**"Leões da TUF abre loja na cidade"**.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
