@@ -414,8 +414,13 @@ TO.planejamento = (function(){
     const fora = [];
     for(const comp of E.temporada.competicoes){
       for(const etapa of [...comp.rodadas, ...comp.mata]){
-        if(etapa.semana !== semana) continue;
         for(const j of etapa.jogos){
+          /* A SEMANA É A DO JOGO, NÃO A DA RODADA (correção do dono,
+             21/09/2026): o árbitro da agenda (`arrumarAgenda`) adia o
+             jogo do clube escrevendo `j.s`; lendo só a rodada, o jogo
+             adiado seguia na semana velha e faltava na nova. */
+          const sem = j.s || etapa.semana;
+          if(sem !== semana) continue;
           if(!j.f) continue;
           if(j.c === meu || j.f === meu) continue;
           const casa = M().time(j.c), vis = M().time(j.f);
@@ -426,7 +431,7 @@ TO.planejamento = (function(){
                     aliada: v !== undefined && v >= 20};
           });
           if(!visitantes.length) continue;
-          fora.push({chave:`${comp.id}|${etapa.semana}|${j.c}|${j.f}`,
+          fora.push({chave:`${comp.id}|${sem}|${j.c}|${j.f}`,
                      casa, vis, comp:comp.nome, dia:j.d || etapa.dia || 6,
                      visitantes});
         }
@@ -545,8 +550,9 @@ TO.planejamento = (function(){
     const fora = [];
     for(const comp of E.temporada.competicoes){
       for(const etapa of [...comp.rodadas, ...comp.mata]){
-        if(etapa.semana !== semana) continue;
         for(const j of etapa.jogos){
+          /* a semana é a do jogo (ver `outrosJogosNaCidade`) */
+          if((j.s || etapa.semana) !== semana) continue;
           if(!j.f) continue;
           const casa = M().time(j.c), vis = M().time(j.f);
           if(!casa || !vis || casa.mapa !== nossa || vis.mapa === nossa) continue;

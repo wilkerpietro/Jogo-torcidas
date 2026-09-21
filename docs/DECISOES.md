@@ -8043,6 +8043,19 @@ A Cearamor produziu, sozinha, a manchete do exemplo do dono:
 
 **Medido (Playwright).** Tirando Os Imbatíveis do UPC com o registro `saiu`: repinte não devolve; devolvida na mão (o save antigo), o repinte seguinte tira; `entrar` de novo fica.
 
+## A semana do cartão é a da agenda arbitrada (correção do dono, 21/09/2026)
+
+O dono viu o cartão da semana 30 prometer Fortaleza × Cruzeiro e Fortaleza × Ceilândia enquanto o Cruzeiro tinha sido adiado pra 05/08 (semana 31) — e o Millonarios × Fortaleza da Sul-Americana, no meio da mesma semana, não aparecia. Varredura do caso:
+
+- **A semana é a do jogo, não a da rodada.** O árbitro da agenda (`arrumarAgenda`) adia o jogo do clube escrevendo `j.s` (semana) e `j.d` (dia) no próprio jogo. Cinco leitores filtravam a rodada pela semana nominal (`etapa.semana`) e ignoravam o `j.s`: `praca.jogosDaPraca`, `planejamento.outrosJogosNaCidade` e `aliadosNaCidade`, `feed.boteNaCaravanaRival` e `hospedagemDaFilialSemana`, e a régua do "último jogo" do protesto. Todos leem `j.s || etapa.semana` agora, e a chave do jogo alheio na cidade leva a semana arbitrada.
+- **Todo jogo nosso fora entra no cartão da sede.** A aba da sede só punha o `proximoJogo` quando ele era fora; a Sul-Americana de quarta sumia quando o jogo da semana era a copa em casa no sábado. A lista vem de `jogosDaSemana`, jogo a jogo, com semana e dia já arbitrados; o do plano (`proximoJogo`) ganha a planilha, o outro entra como linha sem controle.
+- **O bloco do plano é o do adversário do `proximoJogo`**, não o do dia: numa semana com dois jogos nossos o dia sozinho não distingue.
+- **O árbitro passa antes de escolher o jogo da semana.** Na virada, `jogarSemana` acaba de criar a fase seguinte da copa e a semana nova pode ter ficado com três jogos; `sortearProximoJogo` rodava antes de `arrumarAgenda` e planejava caravana pra jogo que mudaria de data no dia seguinte.
+- **A ficha acompanha a agenda todo dia** (`conferirProximoJogo`, logo depois de `jogarDia`): se o jogo saiu da semana, sorteia de novo; se só o dia mudou, a ficha é refeita do MESMO jogo — a chave do plano é por adversário, a caravana planejada continua valendo. Domingo conta como fim de semana no peso do jogo da semana, já que o árbitro manda jogo pra lá.
+- **A régua "antes de hoje" da posição na tabela** (`posicaoNaTabela`) recebe o jogo e lê `j.s`/`j.d`: o jogo adiado entrava (ou saía) errado da conta da mensagem da partida.
+
+Teste (Playwright, `agenda-semana.js` e `agenda-cartao.js`): semana com campeonato em casa + Sul-Americana de quarta fora + Copa do Brasil de sábado em casa → o campeonato vai pra semana seguinte (`j.s`), some da praça e do cartão dessa semana e aparece no da seguinte; o cartão traz a copa com a planilha e a Sul-Americana como linha; na virada o `proximoJogo` é a copa e bate com a agenda; a copa mudada pra domingo no meio da semana refaz a ficha com o mesmo adversário e a mesma chave.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

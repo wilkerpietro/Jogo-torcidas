@@ -579,8 +579,10 @@ TO.feed = (function(){
       if(nucleo.length < 6) continue;
       for(const comp of E.temporada.competicoes)
         for(const etapa of [...comp.rodadas, ...comp.mata]){
-          if(etapa.semana !== E.data.semana) continue;
           for(const jg of etapa.jogos){
+            /* a semana é a do jogo, não a da rodada: jogo adiado tem
+               `j.s` (correção do dono, 21/09/2026) */
+            if((jg.s || etapa.semana) !== E.data.semana) continue;
             if(!jg.f) continue;
             if((jg.d || etapa.dia || 6) !== E.data.dia) continue;
             const casa = M().time(jg.c), vis = M().time(jg.f);
@@ -648,8 +650,9 @@ TO.feed = (function(){
     const piso = PL().RELACAO_ALIADO || 20;
     for(const comp of (E.temporada.competicoes||[])){
       for(const etapa of [...(comp.rodadas||[]), ...(comp.mata||[])]){
-        if(etapa.semana !== E.data.semana) continue;
         for(const j of (etapa.jogos||[])){
+          /* a semana é a do jogo, não a da rodada (dono, 21/09/2026) */
+          if((j.s || etapa.semana) !== E.data.semana) continue;
           if(!j.f) continue;
           const casa = M().time(j.c);
           if(!casa || !cidades.has(casa.mapa)) continue;
@@ -1158,7 +1161,7 @@ TO.feed = (function(){
         for(const j of (r.jogos || [])){
           if(j.gc == null || j.gf == null) continue;
           if(j.c !== clube && j.f !== clube) continue;
-          const seq = (r.semana || 0);
+          const seq = (j.s || r.semana || 0);   // jogo adiado tem semana própria
           if(achado && seq <= achado.semana) continue;
           const levou = j.c === clube ? j.gf - j.gc : j.gc - j.gf;
           achado = {semana:seq, levou,
@@ -2727,19 +2730,32 @@ TO.feed = (function(){
         temAlvo: ests.some(x=>x.hostil)
       });
     }
-    /* o nosso jogo fora entra na aba da sede: é de lá que a caravana sai */
-    const jf = E.proximoJogo;
-    if(vigente && emCasa && jf && !jf.casa && jf.mapaAdv && jf.mapaAdv !== E.torcida.mapa){
-      const alvos = PL().alvosDaViagem(E, {advId:jf.advId, crua:true});
-      linhas.push({
-        tipo:'fora', advId:jf.advId, cidade:jf.cidadeAdv, mapaAdv:jf.mapaAdv,
-        comp:jf.competicao || 'fora de casa', diaN:jf.dia||6, dia:NOME_DIA[jf.dia||6],
-        hora:jf.hora || '', estadio:jf.estadio || '', passou:passou(jf.dia||6),
-        clubes:[{id:jf.mandante.id, nome:jf.mandante.nome, cor:(jf.mandante.cores||[])[0]||'#888'},
-                {id:jf.visitante.id, nome:jf.visitante.nome, cor:(jf.visitante.cores||[])[0]||'#888'}],
-        torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id), faixa:a.faixa, hostil:!a.aliada})),
-        temAlvo: alvos.some(a=>!a.aliada)
-      });
+    /* TODO JOGO NOSSO FORA ENTRA NA ABA DA SEDE (correção do dono,
+       21/09/2026): é de lá que a caravana sai. Antes só o `proximoJogo`
+       entrava — numa semana com a copa no meio e o campeonato no fim, o
+       jogo fora do meio da semana (a Sul-Americana em Bogotá) sumia do
+       cartão. Agora a lista vem da agenda do clube, jogo a jogo, com a
+       semana e o dia já arbitrados (`j.s`, `j.d`). O da viagem planejada
+       (`proximoJogo`) ganha o plano; o outro entra como linha sem
+       controle. */
+    const clube = M().time(meu);
+    if(emCasa && clube && ano === E.data.ano){
+      for(const g of TO.competicoes.jogosDaSemana(E, meu, semana)){
+        if(g.casa) continue;
+        const adv = M().time(g.adversario);
+        if(!adv || adv.mapa === E.torcida.mapa) continue;   // esse está na pauta da praça
+        const cAdv = M().cidade(adv.mapa);
+        const alvos = vigente ? PL().alvosDaViagem(E, {advId:adv.id, crua:true}) : [];
+        linhas.push({
+          tipo:'fora', advId:adv.id, cidade: cAdv ? cAdv.nome : (adv.cidade || ''), mapaAdv:adv.mapa,
+          comp:g.comp || 'fora de casa', diaN:g.dia||6, dia:NOME_DIA[g.dia||6],
+          hora:g.hora || '', estadio:adv.estadio || '', passou:passou(g.dia||6),
+          clubes:[{id:adv.id, nome:adv.nome, cor:(adv.cores||[])[0]||'#888'},
+                  {id:clube.id, nome:clube.nome, cor:(clube.cores||[])[0]||'#888'}],
+          torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id), faixa:a.faixa, hostil:!a.aliada})),
+          temAlvo: alvos.some(a=>!a.aliada)
+        });
+      }
     }
     linhas.sort((a,b)=>a.diaN - b.diaN);
     const aliados = !emCasa || !vigente ? [] : PL().aliadosNaCidade(E, semana)

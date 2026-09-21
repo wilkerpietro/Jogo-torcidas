@@ -224,6 +224,32 @@ TO.estado = (function(){
     est.postura = TO.financeiro.postura(est);
   }
 
+  /* O JOGO DA SEMANA ACOMPANHA A AGENDA (correção do dono, 21/09/2026):
+     o árbitro da agenda roda todo dia (`jogarDia`) e pode mudar o dia
+     do nosso jogo — ou tirá-lo da semana, ou trazer um pra ela. A
+     ficha em `E.proximoJogo` era tirada na segunda e nunca mais
+     conferida: caravana, ataque no dia de jogo e cobrança da estrada
+     liam um dia que já não era o do jogo. Se a ficha não bate mais com
+     a agenda, é tirada de novo; a chave do plano é por adversário,
+     então o plano feito continua valendo quando só o dia mudou. */
+  function conferirProximoJogo(est){
+    if(!est.temporada) return;
+    const meu = TO.mundo.time(est.torcida.clubeId);
+    if(!meu) return;
+    const agenda = TO.competicoes.jogosDaSemana(est, meu.id, est.data.semana);
+    const pj = est.proximoJogo;
+    if(!pj){ if(agenda.length) sortearProximoJogo(est); return; }
+    const mesmo = agenda.find(j => j.adversario === pj.advId && !!j.casa === !!pj.casa);
+    if(!mesmo){ sortearProximoJogo(est); return; }      // o jogo saiu da semana
+    if(mesmo.dia !== pj.dia || (mesmo.hora || '') !== (pj.hora || '')){
+      /* só o dia mudou: a ficha é refeita do MESMO jogo, não sorteada de
+         novo — trocar de jogo no meio da semana jogaria fora a caravana
+         que o jogador já planejou pra esse adversário */
+      est.proximoJogo = fichaDoJogo(est, mesmo);
+      est.postura = TO.financeiro.postura(est);
+    }
+  }
+
   /* -------------------------------------------------------
      FINANCEIRO MÍNIMO (o módulo completo vem depois)
      ------------------------------------------------------- */
@@ -435,6 +461,13 @@ TO.estado = (function(){
         /* e a foto do ano que começa, pra virada seguinte comparar */
         if(TO.almanaque) TO.almanaque.tirarFoto(E);
       }
+      /* O ÁRBITRO DA AGENDA PASSA ANTES DE ESCOLHER O JOGO DA SEMANA
+         (correção do dono, 21/09/2026): o `jogarSemana` acima acaba de
+         criar a fase seguinte da copa, e a semana nova pode ter ficado
+         com três jogos; escolher o jogo da semana antes de o árbitro
+         adiar o mais leve era planejar caravana pra jogo que ia mudar
+         de data no dia seguinte. */
+      if(TO.competicoes.arrumarAgenda) TO.competicoes.arrumarAgenda(E);
       sortearProximoJogo(E);
       /* o mundo anda: economia das 138, relações esfriam e os
          ataques-surpresa da semana nova são agendados */
@@ -488,6 +521,7 @@ TO.estado = (function(){
        que a joga; se as ligas andassem primeiro, elas leriam a fecha
        do dia ainda sem placar e sorteariam por cima. */
     const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
+    conferirProximoJogo(E);
 
     const passoLigas = TO.ligas ? TO.ligas.rodar(E) : null;
     const passoCM    = TO.conmebol ? TO.conmebol.rodar(E) : null;

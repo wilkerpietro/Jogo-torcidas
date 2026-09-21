@@ -1185,8 +1185,11 @@ TO.competicoes = (function(){
     for(const id of lista) linhas[id] = linhaVazia(id);
 
     for(const r of comp.rodadas){
-      if(pular && pular(r, comp)) continue;
       for(const j of r.jogos){
+        /* o `pular` recebe o JOGO também (dono, 21/09/2026): jogo adiado
+           tem semana e dia próprios (`j.s`, `j.d`), e a régua "antes de
+           hoje" da mensagem da partida lê os dele, não os da rodada */
+        if(pular && pular(r, comp, j)) continue;
         if(j.gc===undefined || j.gc===null) continue;
         if(alvo!==null && j.g!==alvo) continue;
         const a = linhas[j.c], b = linhas[j.f];
@@ -1639,9 +1642,9 @@ TO.competicoes = (function(){
     const comp = ((E.temporada && E.temporada.competicoes) || [])
       .find(c=>c.id === compId);
     if(!comp || comp.copa) return 0;
-    const pular = antesDe ? (r, c)=>
-      r.semana === antesDe.semana &&
-      (r.dia || c.dia || DIA_FDS) === antesDe.dia : null;
+    const pular = antesDe ? (r, c, j)=>
+      ((j && j.s) || r.semana) === antesDe.semana &&
+      ((j && j.d) || r.dia || c.dia || DIA_FDS) === antesDe.dia : null;
     let t;
     if(comp.grupos.length > 1){
       const gi = comp.grupos.findIndex(g=>g.includes(clubeId));
@@ -1660,7 +1663,9 @@ TO.competicoes = (function(){
   function jogoDaSemana(E, clubeId, semana){
     const lista = jogosDaSemana(E, clubeId, semana);
     if(!lista.length) return null;
-    const peso = j => (j.mata ? 2 : 0) + (j.dia===DIA_FDS ? 1 : 0);
+    /* domingo também é fim de semana: o árbitro da agenda manda jogo
+       pra lá (dono, 21/09/2026) */
+    const peso = j => (j.mata ? 2 : 0) + (j.dia >= DIA_FDS ? 1 : 0);
     return lista.slice().sort((a,b)=>peso(b)-peso(a))[0];
   }
 

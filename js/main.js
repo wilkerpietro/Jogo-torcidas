@@ -2834,7 +2834,12 @@
       }
       const meus = pauta.linhas.filter(l=>l.tipo==='nosso' || l.tipo==='fora');
       const pj = e.proximoJogo || {};
-      const nosso = meus.find(l=> l.tipo==='fora' ? !pj.casa : (pj.casa && l.diaN === pj.dia)) || meus[0];
+      /* o bloco com o plano é o do `proximoJogo` — pelo adversário, que
+         numa semana com dois jogos nossos o dia sozinho não distingue */
+      const ehDoPlano = l => l.tipo==='fora'
+        ? (!pj.casa && l.advId === pj.advId)
+        : (pj.casa && l.grupo && (l.grupo.casa === pj.advId || l.grupo.vis === pj.advId));
+      const nosso = meus.find(ehDoPlano) || meus[0];
       if(nosso) corpo.appendChild(blocoNosso(nosso));
 
       const outros = pauta.linhas.filter(l=>l !== nosso);

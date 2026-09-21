@@ -42,8 +42,12 @@ TO.praca = (function(){
     const alvo = semana != null ? semana : E.data.semana;
     for(const comp of E.temporada.competicoes)
       for(const etapa of [...comp.rodadas, ...comp.mata]){
-        if(etapa.semana !== alvo) continue;
         for(const j of etapa.jogos){
+          /* A SEMANA É A DO JOGO, NÃO A DA RODADA (correção do dono,
+             21/09/2026): o árbitro da agenda (`arrumarAgenda`) adia o
+             jogo do clube escrevendo `j.s`; lendo só a rodada, o jogo
+             adiado seguia na semana velha e faltava na nova. */
+          if((j.s || etapa.semana) !== alvo) continue;
           if(!j.f) continue;
           const casa = M().time(j.c), vis = M().time(j.f);
           if(!casa || !vis || casa.mapa !== nossa) continue;
