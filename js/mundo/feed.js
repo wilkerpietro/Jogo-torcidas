@@ -259,7 +259,26 @@ TO.feed = (function(){
   function dropar(E){
     caixas(E);
     if(travado(E)) return null;
-    const m = E.feedFila.shift();
+    /* O PROTESTO NA PORTA DO CT SÓ SAI DA FILA SE AINDA VALE (correção
+       do dono, 21/09/2026): "meu time ganhou o jogo e mesmo assim
+       gerou a mensagem". Ele nasce num dia comum, com 3 derrotas em 5,
+       e fica na fila atrás de outra decisão; quando enfim aparece, o
+       time já pode ter ganhado — e aparecia em cima da vitória, com a
+       sequência velha. Agora, ao sair da fila: se a sequência já não
+       é ruim, a mensagem morre; em dia de jogo nosso ela espera (vai
+       pro fim da fila — a bola ainda vai rolar); e o texto é reescrito
+       com a sequência de hoje. */
+    let m = null;
+    for(let k = E.feedFila.length; k > 0 && !m; k--){
+      const c = E.feedFila.shift();
+      if(!c) break;
+      if(c.kind === 'protesto-ct'){
+        if(TO.relacaoClube && !TO.relacaoClube.sequenciaRuim(E)) continue;
+        if(!diaComumFeed(E, E.data.dia)){ E.feedFila.push(c); continue; }
+        Object.assign(c, textoDoProtesto(E));
+      }
+      m = c;
+    }
     if(!m) return null;
     E.feed.unshift(m);
     /* A NOTÍCIA DE TRETA NÃO PASSA PELO FEED (pedido do dono, 08/09/2026):
@@ -417,8 +436,7 @@ TO.feed = (function(){
     passo('escolta',        ()=>escoltaDeHoje(E));
     passo('assalto',        ()=>assaltoDeHoje(E));
     passo('assunto do clube',()=>assuntoClubeDeHoje(E));
-    passo('bar rival',      ()=>barRivalDeHoje(E));
-    passo('casa rival',     ()=>casaRivalDeHoje(E));
+    passo('sugestão de ataque', ()=>sugestaoDeAtaqueDeHoje(E));
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
@@ -1034,18 +1052,26 @@ TO.feed = (function(){
      pouco, à custa de moral — quem queria ir e ficou quieto
      não gosta.
      ------------------------------------------------------- */
-  function protestoNoCT(E, sa){
+  /* o texto do protesto lê a sequência DE AGORA: a mensagem pode
+     esperar dias na fila atrás de outra decisão, e o placar anda */
+  function textoDoProtesto(E){
     const der = TO.relacaoClube.derrotasRecentes(E);
     const seq = (E.sequenciaClube || []).slice(0, 5).join('');
     const time = M().time(E.torcida.clubeId);
-    propor(E, {
-      kind:'protesto-ct', peso:'decisao', voz:'diretor',
-      chave:`protesto-ct|${E.data.ano}|${sa}`,
+    return {
       texto:`Chefe, o time tá jogando mal — ${der} derrota`+
             `${der===1?'':'s'} nos últimos 5 jogos (${seq}) — e um `+
             `grupo já fala em ir pra porta do CT cobrar satisfação `+
             `${time?'do '+time.nome:'do clube'}. Encabeçamos o protesto?`,
-      dados:{sequencia:seq, derrotas:der},
+      dados:{sequencia:seq, derrotas:der}};
+  }
+  function protestoNoCT(E, sa){
+    const t = textoDoProtesto(E);
+    propor(E, {
+      kind:'protesto-ct', peso:'decisao', voz:'diretor',
+      chave:`protesto-ct|${E.data.ano}|${sa}`,
+      texto: t.texto,
+      dados: t.dados,
       botoes:[
         {id:'protestar', rot:'Encabeçar o protesto',
          dica:'−8 de relação com o clube · +2 de prestígio',
@@ -2282,23 +2308,38 @@ TO.feed = (function(){
   };
   const marcarSugestao = (E, sa) => { E.acoes = E.acoes || {}; E.acoes.ultimaSugestaoDeAtaque = sa; };
 
-  function barRivalDeHoje(E){
+  /* BAR E CASA NA MESMA FREQUÊNCIA (ordem do dono, 21/09/2026). Com um
+     dado pra cada um a casa saía o dobro do bar: o cartão do bar ainda
+     exige um bar hostil mapeado na praça e o da casa não. Agora é UM
+     dado só — ~15% das semanas, ≈ 8 por ano, como o bar sozinho era —
+     e os dois se REVEZAM: o tipo da vez é o contrário do último que
+     saiu; se ele não tem alvo hoje, sai o outro e a vez dele fica pra
+     próxima. Contado igual, ±1, enquanto o bar tiver alvo. */
+  function sugestaoDeAtaqueDeHoje(E){
     const sa = TO.relacoes.semanaAbs(E);
     const H = TO.mapa.hash;
-    /* ~7,5% das semanas têm a sugestão: 0,075 × 52 ≈ 4 por ano. Eram
-       15% até 21/09/2026, quando a casa de piscina levou a outra
-       metade (pedido do dono) */
-    if(H(`barrival|${sa}|${E.torcida.id}`) % 200 >= 15) return;
-    let dia = 1 + H(`barrival|d|${sa}|${E.torcida.id}`) % 7;
+    if(H(`sugestao|${sa}|${E.torcida.id}`) % 100 >= 15) return;
+    let dia = 1 + H(`sugestao|d|${sa}|${E.torcida.id}`) % 7;
     for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
     if(dia !== E.data.dia) return;
+    if(sugestaoRecente(E, sa)) return;
+    E.acoes = E.acoes || {};
+    const ordem = E.acoes.ultimaSugestaoTipo === 'casa' ? ['bar','casa'] : ['casa','bar'];
+    for(const tipo of ordem){
+      const saiu = tipo === 'bar' ? barRivalDeHoje(E, sa) : casaRivalDeHoje(E, sa);
+      if(saiu){ E.acoes.ultimaSugestaoTipo = tipo; marcarSugestao(E, sa); return; }
+    }
+  }
+
+  /* o cartão do bar: devolve true se saiu (o dado e o dia são do
+     `sugestaoDeAtaqueDeHoje`) */
+  function barRivalDeHoje(E, sa){
+    const H = TO.mapa.hash;
     const alvos = (TO.acoes.alvosDeAtaque(E) || []).filter(a =>
       a.tipo === 'bar' && TO.relacoes.nivel(E, a.torcidaId) <= -15);
-    if(!alvos.length) return;
+    if(!alvos.length) return false;
     const alvo = alvos[H(`barrival|a|${sa}`) % alvos.length];
-    if(sugestaoRecente(E, sa)) return;
-    marcarSugestao(E, sa);
-    propor(E, {
+    return !!propor(E, {
       kind:'barrival', peso:'decisao', voz:'diretor',
       chave:`barrival|${E.data.ano}|${sa}`,
       /* texto do dono (26/08/2026) */
@@ -2323,26 +2364,19 @@ TO.feed = (function(){
          a diretoria pergunta se a gente dá o bote. Vai a nossa zona
          (até 20) contra a zona deles (até 20), e o prêmio é a faixa.
      ------------------------------------------------------- */
-  function casaRivalDeHoje(E){
-    const sa = TO.relacoes.semanaAbs(E);
+  function casaRivalDeHoje(E, sa){
     const H = TO.mapa.hash;
-    if(H(`casarival|${sa}|${E.torcida.id}`) % 200 >= 15) return;
-    let dia = 1 + H(`casarival|d|${sa}|${E.torcida.id}`) % 7;
-    for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
-    if(dia !== E.data.dia) return;
     const rival = TO.relacoes.rivalDaPraca(E, `casarival|${sa}`);
-    if(!rival) return;
+    if(!rival) return false;
     /* sem faixa nem bandeira não há o que tomar — não há resenha */
     const t = TO.patrimonio.faixasIA(E, rival.id);
-    if(!t || (t.faixas <= 0 && t.bandeiras <= 0)) return;
+    if(!t || (t.faixas <= 0 && t.bandeiras <= 0)) return false;
     const peca = t.faixas > 0 ? 'faixa' : 'bandeira';
     const zonas = M().ZONAS || ['Norte','Sul','Leste','Oeste'];
     const zona = zonas[H(`casarival|z|${sa}`) % zonas.length];
     const doLado = (M().bairrosPorZona(rival.mapa || E.torcida.mapa) || {})[zona] || [];
     const bairro = doLado.length ? doLado[H(`casarival|b|${sa}`) % doLado.length].nome : '';
-    if(sugestaoRecente(E, sa)) return;
-    marcarSugestao(E, sa);
-    propor(E, {
+    return !!propor(E, {
       kind:'casarival', peso:'decisao', voz:'diretor',
       chave:`casarival|${E.data.ano}|${sa}`,
       texto:`Chefe, vimos nas redes sociais que a Zona ${zona} da ${rival.nome} `+

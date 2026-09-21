@@ -940,6 +940,20 @@ TO.diaJogo.combate = (function(){
      deixava o vencedor sozinho no cenário sem nada pra fazer.
      ======================================================= */
   const dePe = (J,lado)=> J.discos.filter(d=>d.lado===lado && d.vivo).length;
+  /* quem este disco escolta: o portador da faixa do lado dele, quando a
+     cena tem abrigo (casa de piscina), a faixa está na mão, o lado dele
+     está em menor número e não há inimigo a 110 px — com inimigo em
+     cima, briga como sempre. O líder do jogador fica de fora: ele é
+     quem manda. */
+  function escoltaDaFaixa(J, d){
+    if(!D.faixaAbrigo || d.comFaixa || d.fugindo || d.noChao || d.lider || d.entrou || d.sumiu) return null;
+    const F = (J.faixas || []).find(F => F.lado === d.lado && F.estado === 'na-mao' &&
+                                     F.portador && F.portador.vivo && !F.portador.sumiu);
+    if(!F) return null;
+    if(dePe(J, d.lado) >= dePe(J, OUTRO_LADO[d.lado])) return null;
+    if(inimigoAlcancavel(J, d, 110)) return null;
+    return F.portador;
+  }
 
   /* =======================================================
      QUEM ESTÁ DISPOSTO A BATER
@@ -1501,7 +1515,7 @@ TO.diaJogo.combate = (function(){
 
       const recua = d.fugindo || recuando(J, d.lado);
 
-      let ax,ay, usarCampo=false, campo=null, ramo=null;
+      let ax,ay, usarCampo=false, campo=null, ramo=null, escolta=null;
       d._olhaPara=null;
 
       /* de guarda: fica no posto. Sem isto o dono do bar sai andando
@@ -1693,6 +1707,23 @@ TO.diaJogo.combate = (function(){
         }
         campo = A.campoDaEntrada(id, J.grades, J.versaoGrades);
         usarCampo = true;
+      } else if((escolta = escoltaDaFaixa(J, d))){
+        /* A ESCOLTA DA FAIXA (pedido do dono, 21/09/2026): na casa de
+           piscina, a torcida atacada em MENOR NÚMERO não sai caçando —
+           fecha em volta de quem carrega a faixa, dentro da casa, e
+           briga ali. Quem tem inimigo em cima continua brigando (ver
+           `escoltaDaFaixa`); o resto vai pro portador e para a 70 px. */
+        if(U.dist(d.x,d.y,escolta.x,escolta.y) < 70){
+          d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
+          d._ramo='escolta-faixa'; d._alvo=null; d._olhaPara=null;
+          continue;
+        }
+        let qx = Math.round(escolta.x/64)*64, qy = Math.round(escolta.y/64)*64, achou = A.caminhavel(qx, qy);
+        if(!achou) for(const [ox,oy] of [[32,0],[-32,0],[0,32],[0,-32],[32,32],[-32,-32],[32,-32],[-32,32]]){
+          if(A.caminhavel(qx+ox, qy+oy)){ qx+=ox; qy+=oy; achou=true; break; } }
+        if(achou){ campo = A.campoDoPonto('escolta:'+qx+':'+qy, qx, qy, J.grades, J.versaoGrades); usarCampo=true; }
+        else { ax=escolta.x; ay=escolta.y; }
+        ramo='escolta-faixa';
       } else if(recua){
         // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
