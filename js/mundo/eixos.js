@@ -90,8 +90,24 @@ TO.eixos = (function(){
              fundado:{ano:E.data.ano, semana:E.data.semana}, membros:[]};
         X.lista.push(x); mexeu = true;
       }
+      /* QUEM SAIU NÃO VOLTA PELA PORTA DA FONTE (correção do dono,
+         21/09/2026): "Jovem Chape saiu do União Punho Cruzado" e ela
+         seguia na lista — cada `caixas()` passava por aqui e devolvia
+         o membro de nascença que a briga tinha tirado. O histórico diz
+         quem saiu: se o último registro dela neste eixo é `saiu`, ela
+         está fora, e fora fica (e sai agora, se algum repinte anterior
+         já a tinha devolvido). */
+      const foraDe = new Set();
+      for(const h of X.historico.slice().sort((a,b)=>(a.seq||0)-(b.seq||0))){
+        if(h.eixo !== x.id || !h.torcida) continue;
+        if(h.tipo === 'saiu') foraDe.add(h.torcida);
+        else if(h.tipo === 'entrou') foraDe.delete(h.torcida);
+      }
+      if(x.membros.some(id=>foraDe.has(id))){
+        x.membros = x.membros.filter(id=>!foraDe.has(id)); mexeu = true;
+      }
       for(const id of membros){
-        if(x.membros.includes(id)) continue;
+        if(x.membros.includes(id) || foraDe.has(id)) continue;
         if(X.lista.filter(y=>y.membros.includes(id)).length >= MAX_POR_TORCIDA) continue;
         x.membros.push(id); mexeu = true;
       }

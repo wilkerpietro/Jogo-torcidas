@@ -8035,6 +8035,14 @@ A Cearamor produziu, sozinha, a manchete do exemplo do dono:
 
 **Medido (Playwright, TUF, dia 100).** Copa do Nordeste → "Copa do Nordeste · Grupo B", 7 linhas com o Fortaleza; Série B → "Brasileirão Série B"; Sul-Americana simulada em `E.conmebol` → "Copa Sul-Americana · Grupo B" com os 4 do grupo ordenados por pontos; Copa do Brasil → null; sem competição → a divisão (Série B).
 
+## Quem saiu do eixo não volta pela porta da fonte (correção do dono, 21/09/2026)
+
+**Problema.** "Jovem Chape saiu do União Punho Cruzado — virou rival de Dragões da Real", e a Jovem Chape seguia na lista de membros do eixo. `migrar(E)` roda em todo `caixas()` (todo repinte) e devolve ao eixo de nascença qualquer membro que a fonte (`dados/eixos.js`) lista e o save não tem — a regra existia pra membro que o dono somou depois, mas não distinguia isso de membro que a briga tirou.
+
+**Decisão.** `migrar` lê o histórico do eixo: se o último registro da torcida naquele eixo é `saiu`, ela está fora e não volta pela fonte; se já tinha sido devolvida por um repinte anterior (save de antes desta correção), sai agora. `entrou` depois do `saiu` reabre a porta, como deve.
+
+**Medido (Playwright).** Tirando Os Imbatíveis do UPC com o registro `saiu`: repinte não devolve; devolvida na mão (o save antigo), o repinte seguinte tira; `entrar` de novo fica.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
