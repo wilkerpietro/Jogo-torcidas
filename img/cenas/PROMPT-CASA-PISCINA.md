@@ -156,6 +156,40 @@ Same materials and light as the attached image: pale ceramic tile and cement flo
 No oblique angle, no drone perspective, no tilted camera, no visible wall faces, no visible facades, no visible palm trunks, no vertical surfaces, no wide angle, no fisheye, no lens distortion. No roof over the subject house, no pergola, no umbrella. No bright green lawn, no asphalt, no curb. No furniture in the middle of any room or of the deck, no sun loungers, no pool floats, no banners, no flags, no cloth on any wall. No closed rooms, no closed gate, no car. No text, no labels, no watermark, no people.
 ```
 
+## Rodada 3 · Saiu certa. Falta a rua
+
+A edição sobre a imagem boa acertou tudo o que o dono marcou, e a
+projeção veio a 90° de verdade: muro como faixa fina e uniforme,
+nenhuma face de parede, coqueiro só copa. Portão no canto direito,
+deck com churrasqueira à direita, hall com porta dos fundos.
+
+O que falta é o **sul**: a rua aparece como um filete na borda de
+baixo, e é dela que o atacante nasce e por ela que ele vem. Pedido do
+dono: ampliar a visão pro sul até mostrar a rua inteira e uma parte
+das casas da frente.
+
+Como o Flow só faz 16:9, "ampliar pro sul" vira **afastar a câmera**:
+o lote fica menor no quadro pra caber a rua embaixo. Não é problema —
+o importador encaixa a largura, e a rua no quarto de baixo é a
+proporção que as outras cenas usam. O que NÃO pode acontecer é o
+modelo aproveitar pra redesenhar o lote: o prompt é de extensão, tudo
+o que já existe fica como está.
+
+## O prompt (rodada 4 — extensão pro sul, sobre a imagem da rodada 3)
+
+```
+Extend the attached aerial image DOWNWARD. Zoom the camera out slightly so that the frame now shows MORE GROUND BELOW the lot: keep everything already visible exactly as it is — the same roofless house, the same rooms, the same pool and deck, the same sandy yard, the same gate at the bottom-right, the same neighboring houses and palms — only proportionally smaller, still centered horizontally, and still a true orthographic 90 degree zenith view with only top surfaces visible and no vertical surface anywhere.
+
+The NEW content fills the bottom of the frame, about the lower quarter of the image, and it is the street and the houses across it:
+- Directly below the lot's front wall and the gate: the FULL WIDTH of the unpaved sandy dirt street, running unbroken from the left edge to the right edge of the frame, pale beige packed sand with faint tire tracks, no asphalt, no curb, a few weeds at the edges. The street is wide enough to walk along and to cross, with real open space in front of the gate.
+- Below the street, at the very bottom of the frame: the FRONT STRIP of the houses on the other side of the street — their low front boundary walls with closed gates seen from above, a bit of their sandy front yards, one or two coconut palm crowns, and the top edge of their terracotta roofs cut off by the bottom of the frame.
+- The new ground continues the same pale sand with sparse dry grass as the rest of the image, the same materials, the same bright diffuse coastal daylight with short soft shadows, the same muted natural colors, seamlessly joined to the existing image with no visible seam.
+
+Do not change anything inside the existing image. Do not move, resize, redraw or add rooms, walls, furniture, pools or doors on the subject lot or on its neighbors. The lot's gate stays wide open at the bottom-right corner, opening directly onto the street.
+
+No oblique angle, no drone perspective, no tilted camera, no visible wall faces, no visible facades, no visible palm trunks, no vertical surfaces, no lens distortion. No asphalt, no sidewalk, no curb, no crosswalk, no bright green lawn. No cars, no people, no text, no labels, no watermark. No seam or color shift between the old and the new parts of the image.
+```
+
 ## Conferência antes de aceitar
 
 1. Alterne com a foto do bar: só topo de tudo, nenhuma face de parede.
@@ -174,3 +208,7 @@ No oblique angle, no drone perspective, no tilted camera, no visible wall faces,
    nenhum tronco de coqueiro. Muro é faixa fina da mesma largura em
    todo canto. Se ainda der pra ver a cara de uma parede, a máscara
    vai sair torta.
+9. **A rua inteira no quarto de baixo**, de ponta a ponta, com espaço
+   aberto na frente do portão — é o spawn do atacante. E o lote não
+   pode ter sido redesenhado na extensão: compare cômodo por cômodo
+   com a rodada 3.
