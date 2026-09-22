@@ -35,13 +35,28 @@ Este arquivo é o desenho inteiro, o que já está feito e o que falta.
 
 ## 2. O que falta — as fases
 
-### Fase A · A foto da sala (dono)
-Gerar a imagem pelo prompt, importar (`importar_cena_foto.py`, receita
-`reuniao`), acertar a máscara e as marcas no F2 da bancada (as 12
-cadeiras do C, o lugar do presidente à direita, a porta) e colar em
-`dados/cenas_editadas.js`. A cena desenhada de hoje (`pintura:'sala'`)
-some sozinha quando a foto entrar: `sobreFoto` troca o chão pela foto e
-mantém `cadeiras` e `presidente`.
+### Fase A · A reunião muda de endereço (correção do dono, 22/09/2026)
+A cena solta `reuniao`, com sala própria e prompt próprio
+(`img/cenas/PROMPT-REUNIAO.md`), foi **descartada antes de nascer**: o
+dono decidiu aproveitar o pátio que cada sede já tem, em vez de gerar
+uma sétima cena. Os PROMPTS-SEDE-PRONTOS.md dos níveis 2 a 4 e 5-6 já
+reservam um pátio de concreto vazio dentro da sede — é lá que a mesa
+senta. O nível 1 já está importado (`sede-1`, com máscara).
+
+Quando as quatro fotos que faltam chegarem (dono gera, eu importo):
+1. cada `sede-N` ganha `D.cadeiras` (o C quadrado) e `D.presidente`
+   (sozinho, virado pra roda), dentro do retângulo do pátio daquele
+   nível — a posição muda de nível pra nível, porque o pátio não fica
+   no mesmo lugar em cada planta;
+2. `dados/cenas.js` perde a cena `reuniao` (blocosSala, cadeirasDoC,
+   PRESIDENTE_C, a entrada `montar({id:'reuniao', …})`) — o `combate`
+   e o `bonecos3` não mudam, a lógica de sentar é a mesma, só passa a
+   valer pra `sede-N`;
+3. `abrir-reuniao` abre a cena do NÍVEL ATUAL da sede
+   (`E.torcida.sedeNivel`), não mais uma cena fixa.
+Até lá, `reuniao` continua no jogo como o rascunho desenhado (sem
+foto), pra não perder o que já funciona (a pose sentado, o disco que
+não anda, o fim de cena que não fecha sozinho).
 
 ### Fase B · A cena da reunião no jogo (código)
 Hoje o cartão do dia 5 abre a **tela** da reunião (a trilha de passos com
