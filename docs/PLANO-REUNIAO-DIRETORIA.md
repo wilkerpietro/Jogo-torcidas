@@ -25,6 +25,7 @@ Este arquivo é o desenho inteiro, o que já está feito e o que falta.
 | Cada pauta tem o diretor que a traz (`quem`); a tela mostra o nome e a fala num balão | `feed.pautar`/`diretorDaPauta`, `main.abrirReuniao` (`.reu-balao`) | **feito** |
 | O modelo da mesa pra cena: presidente, diretores, pautas com o diretor de cada uma | `feed.mesaDaReuniao` | **feito** |
 | Botes do mês propostos na reunião, com dia (sem jogo, sem caravana) e alvo | `feed.pautaBote`, `diaDoBote`, `diaLivre`, `alvoDoBar`, `alvoDaCasa` | **feito** |
+| Os convites de festa das aliadas na reunião (até a próxima mesa), com o Ir / Não ir de cada uma dentro do balão | `feed.pautaFestas`, `responderFestaDaPauta`, `main.construtoresDaReuniao` | **feito (22/09)** |
 | Bote aceito → `E.botes`; o calendário mostra; no dia, o cartão abre a cena | `feed.aplicarPauta` (`bote-marcar`), `feed.boteDeHoje`, `main.celulaDoDia` | **feito** |
 | A sugestão semanal solta de bar/casa saiu | `feed.eventosDoDia` (passo "bote do dia") | **feito** |
 | A pose **sentado na cadeira** do boneco 3D, com três jeitos | `bonecos3.sentadoCadeira`, `d.sentado` | **feito** |

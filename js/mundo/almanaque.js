@@ -587,6 +587,9 @@ TO.almanaque = (function(){
        força fica onde sempre esteve, na tela de Competições. */
     const linha = (x, rot, cls) => ({
       rot, valor:nomeTime(x.id), sobe: cls, nossa: x.id === meu});
+    /* a posição na fila de força, pra rotular a linha da queda quando
+       ela é a nossa: "18º", e não só "risco" */
+    const posDe = x => `${fila.findIndex(y=>y.id === x.id) + 1}º`;
     return {
       ano, tipo:'abertura', tom:'',
       jornal:'O Almanaque', edicao:'Edição de véspera',
@@ -609,12 +612,17 @@ TO.almanaque = (function(){
              caem ? `<b>${caem}</b> caem` : ''].filter(Boolean),
       quadro:{
         titulo:'Como chegam',
+        /* A LINHA DO NOSSO CLUBE (pedido do dono, 22/09/2026): quando
+           ele não está em nenhuma das duas pontas, entra NO MEIO do
+           quadro — entre os de cima e os de baixo — e o rótulo é a
+           posição estimada na fila de força ("13º"), não "o nosso":
+           a fila é a mesma que rotula os favoritos, e 13º elenco
+           mais forte é o que a rua espera dele. Nas pontas, a linha
+           dele já vem com a posição (o favorito é o 1º). */
         linhas:[...topo.map((x,i)=>linha(x, i === 0 ? 'favorito' : `${i+1}º`, true)),
-                ...daQueda.map(x=>linha(x, 'risco', false)),
-                /* e a linha do nosso clube, quando ele não está em
-                   nenhuma das duas pontas */
-                ...(jaCitado ? [] : [{rot:'o nosso', valor:nomeTime(meu),
-                                      nossa:true}])]
+                ...(jaCitado ? [] : [{rot:`${nossaPos+1}º`, valor:nomeTime(meu),
+                                      nossa:true}]),
+                ...daQueda.map(x=>linha(x, x.id === meu ? posDe(x) : 'risco', false))]
       }
     };
   }

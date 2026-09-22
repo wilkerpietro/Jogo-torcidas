@@ -8046,6 +8046,35 @@
           (b.bairro ? `<span>Onde: <b>${b.bairro}</b></span>` : '')+
           `<span>dia sem jogo e sem caravana</span>`}));
       }
+      /* OS CONVITES DE FESTA (dono, 22/09/2026): cada aliada numa linha
+         com a data, a idade e o seu Ir / Não ir; quem já tem resposta
+         mostra a etiqueta. É a régua do cartão de antes, dentro da pauta. */
+      if(it.festas && it.festas.length){
+        const REL = TO.relacoes.REL;
+        const bloco = el('div',{class:'bloco-recepcao bloco-anivs'});
+        for(const a of it.festas){
+          const linha = el('div',{class:'rec-aliado'+(a.resposta?' pago':'')});
+          linha.appendChild(el('div',{class:'rec-nome', html:
+            `<b>${naCena ? a.nome : linkTorcida(a.torcida, a.nome)}</b> <span class="fraco">· dia `+
+            `${a.data} · ${a.idade} anos</span>`+
+            (a.resposta === 'ir' ? ' <span class="tag">vamos</span>'
+             : a.resposta === 'nao' ? ' <span class="tag">não vamos</span>' : '')}));
+          if(!a.resposta && !it.decidido){
+            const bts = el('div',{class:'rec-botoes'});
+            const opcoes = [
+              ['Ir pra festa', `R$ 2.000 · +${REL.irAniversario} rel.`, true],
+              ['Não ir', `−${REL.furarAniversario} rel. · −2 prestígio`, false]];
+            for(const [rot, nota, ir] of opcoes){
+              const b = el('button',{class:'rec-bt'+(ir?' on':''), html:`${rot}<small>${nota}</small>`});
+              b.onclick = ()=>{ const r = F.responderFestaDaPauta(e, it.id, a.torcida, ir); if(r.ok) depois(); };
+              bts.appendChild(b);
+            }
+            linha.appendChild(bts);
+          }
+          bloco.appendChild(linha);
+        }
+        c.appendChild(bloco);
+      }
       /* já decidido (só a cena mostra o item assim; a tela usa a ata) */
       if(it.decidido){
         const a = el('div',{class:'reu-ata'});

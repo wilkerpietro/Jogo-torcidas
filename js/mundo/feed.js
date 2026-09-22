@@ -315,8 +315,19 @@ TO.feed = (function(){
     caixas(E);
     const m = E.feed.find(x=>x.id === idMsg);
     if(!m || m.kind !== 'aniversarios' || m.respondido) return {ok:false};
-    const item = ((m.dados||{}).lista||[]).find(x=>x.torcida === torcidaId);
-    if(!item || item.resposta) return {ok:false};
+    const lista = ((m.dados||{}).lista||[]);
+    const r = responderFesta(E, lista, torcidaId, ir);
+    if(!r) return {ok:false};
+    m.consequencia = r.consequencia;
+    if(r.todas) m.respondido = {botao:'lista', rot:r.rot};
+    return {ok:true, fechou: !!m.respondido};
+  }
+  /* O EFEITO DE UMA RESPOSTA, por aliada — o mesmo pro cartão antigo
+     e pra pauta da reunião (dono, 22/09/2026). Devolve a linha de
+     consequência da lista inteira e se todas já têm resposta. */
+  function responderFesta(E, lista, torcidaId, ir){
+    const item = lista.find(x=>x.torcida === torcidaId);
+    if(!item || item.resposta) return null;
     E.relacoes = E.relacoes || {};
     const REL = TO.relacoes.REL;
     if(ir){
@@ -337,24 +348,31 @@ TO.feed = (function(){
         `Furamos o aniversário da ${item.nome}`);
       item.resposta = 'nao';
     }
-    const lista = m.dados.lista;
     const foi = lista.filter(x=>x.resposta==='ir').length;
     const furou = lista.filter(x=>x.resposta==='nao').length;
     const cada = n => n === 1 ? 'com ela' : 'com cada uma';
     const ganhos = lista.filter(x=>x.resposta==='ir')
       .map(x=>x.ganho != null ? x.ganho : REL.irAniversario);
     const somaG = ganhos.reduce((a,b)=>a+b, 0);
-    m.consequencia =
+    const consequencia =
       (foi ? `${foi} ${foi===1?'festa':'festas'}: ${U.dinheiro(-2000*foi)} · `+
              (foi === 1 ? `+${somaG} de relação com ela. `
                         : `+${somaG} de relação no total (${ganhos.join(', ')}). `) : '') +
       (furou ? `${furou} ${furou===1?'furada':'furadas'}: −${REL.furarAniversario} `+
                `de relação ${cada(furou)} · Prestígio −${2*furou}.` : '');
-    if(lista.every(x=>x.resposta)){
-      m.respondido = {botao:'lista',
-        rot:`${foi} ${foi===1?'festa':'festas'}, ${furou} ${furou===1?'furada':'furadas'}`};
-    }
-    return {ok:true, fechou: !!m.respondido};
+    return {consequencia, todas: lista.every(x=>x.resposta),
+            rot:`${foi} ${foi===1?'festa':'festas'}, ${furou} ${furou===1?'furada':'furadas'}`};
+  }
+  /* a resposta por aliada DENTRO DA PAUTA da reunião: a pauta fecha
+     (decidida) quando a última aliada tiver resposta */
+  function responderFestaDaPauta(E, idItem, torcidaId, ir){
+    const it = caixaReuniao(E).pauta.find(x=>x.id === idItem);
+    if(!it || it.decidido || !it.festas) return {ok:false};
+    const r = responderFesta(E, it.festas, torcidaId, ir);
+    if(!r) return {ok:false};
+    it.consequencia = r.consequencia;
+    if(r.todas) it.decidido = {botao:'lista', rot:r.rot};
+    return {ok:true, fechou: !!it.decidido};
   }
 
   /* -------------------------------------------------------
@@ -775,59 +793,11 @@ TO.feed = (function(){
     const em10 = new Date(hoje.getTime());
     em10.setDate(em10.getDate() + 10);
 
-    /* o convite das outras — SÓ DE ALIADA (correção do dono,
-       18/08/2026): a Garra do CRB chamando a TUF pra festa não faz
-       sentido. Convida quem a Diplomacia rotula Aliado ou Irmandade
-       (relação viva ≥ 20) e as irmãs de clube.
-
-       UMA MENSAGEM POR MÊS (pedido do dono, 08/09/2026): um convite
-       por aliada, dez dias antes de cada festa, era spam — com trinta
-       aliadas o feed parava trinta vezes. Agora sai UMA lista no
-       começo de cada mês com as aliadas que fazem aniversário nele, e
-       cada uma tem o seu Ir / Não ir dentro do cartão
-       (`responderAniversario`). O efeito de cada resposta é o mesmo de
-       antes: ir custa R$ 2.000 e aproxima; não ir afasta e queima
-       prestígio. A mensagem só é dada por respondida quando todas
-       tiverem resposta — até lá o relógio fica parado, como em toda
-       decisão. */
-    {
-      const ano = hoje.getFullYear(), mes = hoje.getMonth();
-      const chave = `aniv-mes|${ano}|${mes+1}`;
-      const lista = [];
-      for(const o of M().jogaveis()){
-        if(o.id === E.torcida.id || o.incompleta || !o.fundacao) continue;
-        const irma = M().saoIrmas && M().saoIrmas(E.torcida.id, o.id);
-        if(!irma && TO.relacoes.nivel(E, o.id) < 20) continue;
-        const aniv = dataDoAniversario(o.id, ano);
-        if(aniv.getMonth() !== mes) continue;
-        /* festa que já passou quando a lista sai (partida começada no
-           meio do mês) não entra: não se decide o que já aconteceu */
-        if(aniv.getDate() < hoje.getDate()) continue;
-        const idade = ano - o.fundacao;
-        if(idade <= 0) continue;
-        lista.push({torcida:o.id, nome:o.nome, data:fmtDia(aniv),
-                    dia:aniv.getDate(), idade, resposta:null});
-      }
-      if(lista.length){
-        lista.sort((a,b)=>a.dia-b.dia);
-        const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
-                       'agosto','setembro','outubro','novembro','dezembro'];
-        const m = propor(E, {
-          kind:'aniversarios', peso:'decisao', voz:'rua', chave,
-          texto:`Os convites de ${MESES[mes]} chegaram: ${lista.length} `+
-                `${lista.length===1?'aliada faz':'aliadas fazem'} aniversário `+
-                `este mês. Ir custa R$ 2.000 por festa e aproxima; furar afasta `+
-                `e queima na rua. Em quais a gente aparece?`,
-          dados:{ano, mes:mes+1, lista}
-        });
-        /* o convite de antes, sem botão, vira mensagem de cada aliada —
-           só quando a lista do mês de fato nasce (pedido do dono,
-           08/09/2026) */
-        if(m) for(const a of lista)
-          mensagemDe(E, a.torcida, `Fala irmão, dia ${a.data} comemoramos ${a.idade} `+
-            `anos de história. A presença de vocês seria uma honra pra gente.`, 'convite');
-      }
-    }
+    /* OS CONVITES DAS ALIADAS FORAM PRA REUNIÃO (pedido do dono,
+       22/09/2026): a lista do mês nasce como pauta no dia 5
+       (`pautaFestas`), com o Ir / Não ir de cada aliada dentro do
+       balão. O cartão solto de antes (`aniversarios`) só existe em
+       save antigo, e continua respondendo por `responderAniversario`. */
 
     /* a nossa festa e a do clube */
     const meus = [];
@@ -3103,12 +3073,24 @@ TO.feed = (function(){
     const marca = `${E.data.ano}|${mesDe(E)}`;
     if(Rn.ultima === marca) return null;
     Rn.ultima = marca;
+    /* CONVITE SEM RESPOSTA É FESTA FURADA (22/09/2026): a lista de
+       festas de uma mesa vai até a véspera da mesa seguinte, então o
+       que ficou sem resposta na pauta antiga já passou — e furar
+       afasta e queima, como sempre. A pauta fecha e sai na ata. */
+    for(const it of Rn.pauta){
+      if(it.decidido || !it.festas || it.chave === `festas|${E.data.ano}|${mesDe(E)}`) continue;
+      let r = null;
+      for(const a of it.festas) if(!a.resposta) r = responderFesta(E, it.festas, a.torcida, false) || r;
+      if(r){ it.consequencia = r.consequencia; if(r.todas) it.decidido = {botao:'lista', rot:r.rot}; }
+    }
     /* o que as aliadas trazem nasce na própria mesa */
     const a = pautaAproximacao(E); if(a) pautar(E, a);
     const p = pautaPaz(E);         if(p) pautar(E, p);
     const f = pautaAfastar(E);     if(f) pautar(E, f);
     /* os botes do mês: o bar e a casa de piscina, cada um no seu dado */
     for(const tipo of ['bar','casa']){ const b = pautaBote(E, tipo); if(b) pautar(E, b); }
+    /* os convites de festa das aliadas até a próxima reunião */
+    { const fe = pautaFestas(E); if(fe) pautar(E, fe); }
     const abertos = pautaAberta(E);
     const X = TO.eixos;
     const mesa = X && X.cabemosEmMais(E) && !X.esperaDaMesa(E);
@@ -3125,6 +3107,49 @@ TO.feed = (function(){
       dados:{ano:E.data.ano, mes:mesDe(E), assuntos:quantos},
       botoes:[{id:'abrir', rot:'Sentar com a diretoria', acao:'abrir-reuniao'}]
     });
+  }
+
+  /* =======================================================
+     OS CONVITES DE FESTA NA REUNIÃO (pedido do dono, 22/09/2026)
+     Era um cartão solto no começo de cada mês (08/09); agora é
+     pauta da reunião do dia 5, com as aliadas — Aliado ou Irmandade
+     (relação ≥ 20) e as irmãs de clube — cujo aniversário cai da
+     reunião até o dia 4 do mês seguinte, ou seja, até a próxima
+     mesa. Cada aliada tem o seu Ir / Não ir dentro do balão
+     (`responderFestaDaPauta`); ir custa R$ 2.000 e aproxima, furar
+     afasta e queima na rua; a pauta fecha quando todas tiverem
+     resposta. A mensagem de cada aliada sai no mesmo dia.
+     ======================================================= */
+  function pautaFestas(E){
+    const hoje = dataDeHoje(E);
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 4, 23, 59);
+    const lista = [];
+    for(const o of M().jogaveis()){
+      if(o.id === E.torcida.id || o.incompleta || !o.fundacao) continue;
+      const irma = M().saoIrmas && M().saoIrmas(E.torcida.id, o.id);
+      if(!irma && TO.relacoes.nivel(E, o.id) < 20) continue;
+      /* o aniversário neste ano civil ou no próximo (a mesa de
+         dezembro cobre até 4 de janeiro) */
+      let aniv = dataDoAniversario(o.id, hoje.getFullYear());
+      if(aniv < hoje) aniv = dataDoAniversario(o.id, hoje.getFullYear() + 1);
+      if(aniv < hoje || aniv > fim) continue;
+      const idade = aniv.getFullYear() - o.fundacao;
+      if(idade <= 0) continue;
+      lista.push({torcida:o.id, nome:o.nome, data:fmtDia(aniv), dia:aniv.getDate(),
+                  mes:aniv.getMonth()+1, idade, resposta:null});
+    }
+    if(!lista.length) return null;
+    lista.sort((a,b)=>(a.mes*40 + a.dia) - (b.mes*40 + b.dia));
+    for(const a of lista)
+      mensagemDe(E, a.torcida, `Fala irmão, dia ${a.data} comemoramos ${a.idade} `+
+        `anos de história. A presença de vocês seria uma honra pra gente.`, 'convite');
+    return {
+      chave:`festas|${E.data.ano}|${mesDe(E)}`, rot:'Convites de festa', voz:'Diretoria',
+      tipo:'festas', festas:lista, botoes:[],
+      texto:`Os convites chegaram: ${lista.length} ${lista.length===1?'aliada faz':'aliadas fazem'} `+
+            `aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; `+
+            `furar afasta e queima na rua. Em quais a gente aparece?`
+    };
   }
 
   /* =======================================================
@@ -4994,7 +5019,7 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
-          registrarConfronto, responder, marcarResposta, responderAniversario,
+          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,
