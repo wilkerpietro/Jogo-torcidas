@@ -139,14 +139,24 @@ TO.relacoes = (function(){
   const devedorasPrimeiro = (E, lista) =>
     lista.slice().sort((x,y)=>(dividaIA(E, y.id, E.torcida.id)?1:0) - (dividaIA(E, x.id, E.torcida.id)?1:0));
   const PESO_OUTROS = 0.5;
+  /* O MAIOR RIVAL DE NASCENÇA DEIXA DE SER QUANDO VIRA ALIADO (correção
+     do dono, 22/09/2026): a rivalidade de nascença (`relacaoBase`)
+     segurava o par em "maior rival" com qualquer número — a Jovem Garra
+     e a Inferno Coral a +39, aproximadas a pedido nosso, continuavam
+     nos "maiores rivais" e nunca viravam aliadas. Agora o ódio de
+     nascença vale enquanto a relação não chega ao patamar de aliado
+     (20); chegando, é aliança como outra qualquer. E ≤ −70 é maior
+     rival de qualquer par, como sempre. */
+  const ALIADO_MIN = 20;
   function ehMaiorRival(E, idA, idB){
     if(!idA || !idB || idA === idB) return false;
-    const base = M().relacaoBase(idA, idB), base2 = M().relacaoBase(idB, idA);
-    if(base === 'Maior Rival' || base2 === 'Maior Rival') return true;
     const rel = (idA === E.torcida.id) ? nivel(E, idB)
               : (idB === E.torcida.id) ? nivel(E, idA)
               : relacaoDelas(E, idA, idB);
-    return rel <= -70;
+    if(rel <= -70) return true;
+    if(rel >= ALIADO_MIN) return false;
+    const base = M().relacaoBase(idA, idB), base2 = M().relacaoBase(idB, idA);
+    return base === 'Maior Rival' || base2 === 'Maior Rival';
   }
   const pesoDoRival = (E, a, b) => ehMaiorRival(E, a, b) ? 1 : PESO_OUTROS;
   /* A TRÉGUA (mensagens entre torcidas, 08/09/2026): aceita a proposta
