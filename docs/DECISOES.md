@@ -8142,6 +8142,10 @@ No pedido a um aliado na reunião, a lista "de quem" do APROXIMAR era a dos riva
 
 Na cena da reunião, os assuntos de um mesmo diretor estavam juntos num balão só (o presidente chegou a mostrar bote, pedido a um aliado e a nossa jogada empilhados). O dono mandou: três demandas da mesma pessoa são três balões, nunca um. Agora cada pauta é um balão próprio, e o pedido a um aliado e a nossa jogada nos eixos são dois balões do presidente (`main.itensDaReuniao`). Os marcadores fechados de um mesmo boneco ficam lado a lado em cima da cabeça, cada um na sua vaga; o aberto fica no boneco. A palavra continua passando pro próximo por decidir.
 
+## A festa de aniversário e os alvos de assalto também vão pra reunião (pedido do dono, 22/09/2026)
+
+Mais dois cartões soltos viram pauta da reunião do dia 5. A pergunta "que festa vamos fazer?" do aniversário da torcida e do clube — antes um cartão dez dias antes — entra na mesa quando o aniversário cai da reunião até a véspera da próxima (`feed.pautaAniversarios`), com as mesmas três escolhas e os mesmos números (`aplicarFestaAniv`, compartilhada com o cartão antigo de save velho); a receita continua saindo no dia da festa. Aniversário sem resposta até a mesa seguinte passou em branco (−2 de moral), como se tivesse escolhido não fazer nada. Os alvos de assalto deixam de ser um cartão numa semana sorteada e viram a pauta "Alvos de assalto" (`pautaAssalto`), nove meses em doze pelo hash do mês — a dose de sempre, nove por ano: "Ver os alvos" abre a tela do assalto por cima da cena e o resultado fecha a pauta (`fecharPautaAssalto`: "R$ 510 na conta" ou "3 presos por 20 dias"); lista que envelheceu sem resposta sai calada na mesa seguinte. `assaltoDeHoje` saiu; o cartão antigo de save velho continua abrindo pela `tela-assalto`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

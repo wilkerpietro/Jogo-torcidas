@@ -452,7 +452,6 @@ TO.feed = (function(){
     passo('LNT',            ()=>lntDeHoje(E));
     passo('ataque sofrido', ()=>ataqueSofridoHoje(E));
     passo('escolta',        ()=>escoltaDeHoje(E));
-    passo('assalto',        ()=>assaltoDeHoje(E));
     passo('assunto do clube',()=>assuntoClubeDeHoje(E));
     passo('bote do dia',    ()=>boteDeHoje(E));
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
@@ -790,8 +789,6 @@ TO.feed = (function(){
 
   function aniversariosDeHoje(E){
     const hoje = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
-    const em10 = new Date(hoje.getTime());
-    em10.setDate(em10.getDate() + 10);
 
     /* OS CONVITES DAS ALIADAS FORAM PRA REUNIÃO (pedido do dono,
        22/09/2026): a lista do mês nasce como pauta no dia 5
@@ -810,32 +807,9 @@ TO.feed = (function(){
                  fundacao:time.fundacao, nome:time.nome, fonte:time});
     for(const q of meus){
       const F = FESTA_ANIV[q.tipo];
-      const aniv = dataDoAniversario(q.id, em10.getFullYear(), q.fonte);
-      if(mesmoDia(aniv, em10)){
-        const idade = em10.getFullYear() - q.fundacao;
-        if(idade > 0) propor(E, {
-          kind:'aniversario', peso:'decisao', voz:'diretor',
-          chave:`aniv-${q.tipo}|${em10.getFullYear()}`,
-          texto: q.tipo === 'torcida'
-            ? `Dia ${fmtDia(aniv)} a torcida completa ${idade} anos. `+
-              `Que festa vamos fazer?`
-            : `Dia ${fmtDia(aniv)} o ${q.nome} completa ${idade} anos. `+
-              `Que festa vamos fazer?`,
-          dados:{tipo:q.tipo, anoCivil:em10.getFullYear()},
-          botoes:[
-            {id:'grande',  rot:'Festa grande', acao:'aniv-festa',
-             nota:`R$ ${U.numero(F.grande.custo)} · potencial de `+
-                  `${U.dinheiro(F.grande.min)} a ${U.dinheiro(F.grande.max)}`+
-                  ` · +${F.grande.moral} de moral`},
-            {id:'simples', rot:'Festa simples', acao:'aniv-festa',
-             nota:`R$ ${U.numero(F.simples.custo)} · potencial de `+
-                  `${U.dinheiro(F.simples.min)} a ${U.dinheiro(F.simples.max)}`+
-                  ` · +${F.simples.moral} de moral`},
-            {id:'nada',    rot:'Não fazer nada', acao:'aniv-festa',
-             nota:`${F.nada.moral} de moral`}
-          ]
-        });
-      }
+      /* a pergunta "que festa vamos fazer?" foi pra reunião do dia 5
+         (pautaAniversarios, pedido do dono, 22/09/2026); aqui fica só
+         o dia da festa */
       /* o dia da festa: a receita sai do potencial */
       const anivHoje = dataDoAniversario(q.id, hoje.getFullYear(), q.fonte);
       if(mesmoDia(anivHoje, hoje)){
@@ -944,34 +918,9 @@ TO.feed = (function(){
          disponível pro menor dos alvos.
      ------------------------------------------------------- */
   const ASSALTOS_ANO = 9, SEMANAS_DO_ANO = 52;
-  function assaltoDeHoje(E){
-    const sa = TO.relacoes.semanaAbs(E);
-    const H = TO.mapa.hash;
-    /* NOVE EM CADA 52, sem sorteio: o contador `n × 9 / 52` vira de
-       degrau exatamente nove vezes por ano, e as semanas saem
-       espalhadas em vez de agrupadas. O deslocamento por torcida é o
-       que faz dois saves caírem em semanas diferentes. */
-    const n = sa + H(`assalto|${E.torcida.id}`) % SEMANAS_DO_ANO;
-    const deg = k => Math.floor(k * ASSALTOS_ANO / SEMANAS_DO_ANO);
-    if(deg(n) === deg(n - 1)) return;
-    let dia = 1 + H(`assalto|${sa}|${E.torcida.id}`) % 7;
-    for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
-    if(dia !== E.data.dia) return;
-    const dir = E.membros.find(m=>m.cargo === 'diretoria' &&
-                                  TO.membros.disponivel(m));
-    if(!dir) return;
-    if(E.membros.filter(TO.membros.disponivel).length < 2) return;
-    propor(E, {
-      kind:'assalto', peso:'decisao', voz:'diretor',
-      chave:`assalto|${E.data.ano}|${sa}`,
-      texto:`Chefe, o ${dir.apelido} mapeou uns alvos pra um assalto — `+
-            `do mercadinho ao banco, cada um com seu risco. Bora ver?`,
-      botoes:[
-        {id:'ver',  rot:'Ver os alvos',  acao:'tela-assalto'},
-        {id:'nada', rot:'Deixar quieto', acao:'nada'}
-      ]
-    });
-  }
+  /* `assaltoDeHoje` saiu (22/09/2026): a lista de alvos virou pauta da
+     reunião do dia 5 (`pautaAssalto`). O cartão antigo de save velho
+     continua respondendo por `tela-assalto`. */
 
   /* =========================================================
      A RELAÇÃO COM O CLUBE, UMA VEZ POR MÊS (pedido do dono,
@@ -3078,6 +3027,15 @@ TO.feed = (function(){
        que ficou sem resposta na pauta antiga já passou — e furar
        afasta e queima, como sempre. A pauta fecha e sai na ata. */
     for(const it of Rn.pauta){
+      /* aniversário sem resposta até a mesa seguinte: passou em branco */
+      if(!it.decidido && it.tipo === 'aniversario' && it.dados){
+        const F = FESTA_ANIV[it.dados.tipo] || FESTA_ANIV.torcida;
+        it.consequencia = aplicarFestaAniv(E, it.dados, 'nada');
+        it.decidido = {botao:'nada', rot:'Não fazer nada'};
+        void F; continue;
+      }
+      /* alvos de assalto sem resposta: a lista envelheceu, sai calada */
+      if(!it.decidido && it.tipo === 'assalto'){ it.decidido = {botao:'nada', rot:'Deixar quieto'}; it.consequencia = 'Ficou quieto.'; continue; }
       if(it.decidido || !it.festas || it.chave === `festas|${E.data.ano}|${mesDe(E)}`) continue;
       let r = null;
       for(const a of it.festas) if(!a.resposta) r = responderFesta(E, it.festas, a.torcida, false) || r;
@@ -3091,6 +3049,9 @@ TO.feed = (function(){
     for(const tipo of ['bar','casa']){ const b = pautaBote(E, tipo); if(b) pautar(E, b); }
     /* os convites de festa das aliadas até a próxima reunião */
     { const fe = pautaFestas(E); if(fe) pautar(E, fe); }
+    /* a nossa festa de aniversário e a do clube, e os alvos de assalto */
+    for(const pa of pautaAniversarios(E)) pautar(E, pa);
+    { const as = pautaAssalto(E); if(as) pautar(E, as); }
     const abertos = pautaAberta(E);
     const X = TO.eixos;
     const mesa = X && X.cabemosEmMais(E) && !X.esperaDaMesa(E);
@@ -3383,6 +3344,12 @@ TO.feed = (function(){
           ' Está no calendário.';
         return {};
       }
+      case 'aniv-festa':
+        it.consequencia = aplicarFestaAniv(E, it.dados || {}, b.id);
+        return {};
+      case 'assalto-nao':
+        it.consequencia = 'Ficou quieto.';
+        return {};
       case 'bote-nao':
         TO.estado.mexerIndicador(E, 'prestigio', -0.2, 'Deixamos o bote quieto');
         TO.estado.mexerIndicador(E, 'moral', -1, 'Deixamos o bote quieto');
@@ -3391,6 +3358,96 @@ TO.feed = (function(){
     }
     return {};
   }
+  /* A FESTA DE ANIVERSÁRIO, o efeito de cada escolha — o mesmo pro
+     cartão antigo (save velho) e pra pauta da reunião */
+  function aplicarFestaAniv(E, d, idBotao){
+    const F = FESTA_ANIV[d.tipo] || FESTA_ANIV.torcida;
+    const f = F[idBotao];
+    if(!f) return '';
+    const quem = d.tipo === 'torcida' ? 'da torcida' : 'do clube';
+    if(idBotao === 'nada'){
+      TO.estado.mexerIndicador(E, 'moral', f.moral, `Aniversário ${quem} passou em branco`);
+      return 'Ninguém fez nada. −2 de moral.';
+    }
+    TO.estado.lancar(E, `Festa de aniversário ${quem}`, -f.custo);
+    TO.estado.mexerIndicador(E, 'moral', f.moral, `Festa de aniversário ${quem}`);
+    (E.festasAniversario = E.festasAniversario || {})[`festa-${d.tipo}|${d.anoCivil}`] = idBotao;
+    return `Festa ${idBotao === 'grande' ? 'grande' : 'simples'} marcada: `+
+           `${U.dinheiro(-f.custo)} agora, a receita sai no dia.`;
+  }
+  /* AS PAUTAS DO ANIVERSÁRIO NOSSO E DO CLUBE (pedido do dono,
+     22/09/2026): a pergunta "que festa vamos fazer?" — antes um cartão
+     dez dias antes — entra na reunião do dia 5 quando o aniversário
+     cai da mesa até a véspera da próxima (dia 4 do mês seguinte). */
+  function pautaAniversarios(E){
+    const hoje = dataDeHoje(E);
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 4, 23, 59);
+    const meus = [];
+    if(E.torcida.fundacao)
+      meus.push({tipo:'torcida', id:E.torcida.id, fundacao:E.torcida.fundacao, fonte:E.torcida});
+    const time = M().time(E.torcida.clubeId);
+    if(time && time.fundacao)
+      meus.push({tipo:'clube', id:'clube|'+E.torcida.clubeId, fundacao:time.fundacao, nome:time.nome, fonte:time});
+    const fora = [];
+    for(const q of meus){
+      let aniv = dataDoAniversario(q.id, hoje.getFullYear(), q.fonte);
+      if(aniv < hoje) aniv = dataDoAniversario(q.id, hoje.getFullYear() + 1, q.fonte);
+      if(aniv < hoje || aniv > fim) continue;
+      const anoCivil = aniv.getFullYear(), idade = anoCivil - q.fundacao;
+      if(idade <= 0) continue;
+      const F = FESTA_ANIV[q.tipo];
+      fora.push({
+        chave:`aniv-${q.tipo}|${anoCivil}`, tipo:'aniversario', voz:'Diretoria',
+        rot: q.tipo === 'torcida' ? 'Aniversário da torcida' : `Aniversário do ${q.nome}`,
+        texto: q.tipo === 'torcida'
+          ? `Dia ${fmtDia(aniv)} a torcida completa ${idade} anos. Que festa vamos fazer?`
+          : `Dia ${fmtDia(aniv)} o ${q.nome} completa ${idade} anos. Que festa vamos fazer?`,
+        dados:{tipo:q.tipo, anoCivil},
+        botoes:[
+          {id:'grande',  rot:'Festa grande', acao:'aniv-festa',
+           nota:`R$ ${U.numero(F.grande.custo)} · potencial de ${U.dinheiro(F.grande.min)} a `+
+                `${U.dinheiro(F.grande.max)} · +${F.grande.moral} de moral`},
+          {id:'simples', rot:'Festa simples', acao:'aniv-festa',
+           nota:`R$ ${U.numero(F.simples.custo)} · potencial de ${U.dinheiro(F.simples.min)} a `+
+                `${U.dinheiro(F.simples.max)} · +${F.simples.moral} de moral`},
+          {id:'nada',    rot:'Não fazer nada', acao:'aniv-festa', nota:`${F.nada.moral} de moral`}
+        ]
+      });
+    }
+    return fora;
+  }
+  /* O ASSALTO NA REUNIÃO (pedido do dono, 22/09/2026): a lista de
+     alvos deixa de ser cartão solto numa semana sorteada e vira pauta
+     da mesa — nove meses em doze, pela mesma dose de sempre (9 por
+     ano), decididos pelo hash do mês. "Ver os alvos" abre a tela do
+     assalto por cima da cena e o resultado fecha a pauta. */
+  const ASSALTOS_MESES = 9;
+  function pautaAssalto(E){
+    const H = TO.mapa.hash;
+    if(H(`assalto|${E.data.ano}|${mesDe(E)}|${E.torcida.id}`) % 12 >= ASSALTOS_MESES) return null;
+    const dir = E.membros.find(m=>m.cargo === 'diretoria' && !m.presidente && TO.membros.disponivel(m));
+    if(!dir) return null;
+    if(E.membros.filter(TO.membros.disponivel).length < 2) return null;
+    return {
+      chave:`assalto|${E.data.ano}|${mesDe(E)}`, tipo:'assalto', voz:'Diretoria', quem:dir.id,
+      rot:'Alvos de assalto',
+      texto:`Chefe, mapeei uns alvos pra um assalto — do mercadinho ao banco, cada um com seu risco. Bora ver?`,
+      botoes:[
+        {id:'ver',  rot:'Ver os alvos',  acao:'assalto-ver'},
+        {id:'nada', rot:'Deixar quieto', acao:'assalto-nao', nota:'sem efeito'}
+      ]
+    };
+  }
+  /* o assalto feito pela tela fecha a pauta com o resultado dele */
+  function fecharPautaAssalto(E, idItem, r){
+    const it = caixaReuniao(E).pauta.find(x=>x.id === idItem);
+    if(!it || it.decidido) return {ok:false};
+    it.decidido = {botao:'ver', rot: r.caiu ? 'Deu ruim' : 'Assalto feito'};
+    it.consequencia = r.caiu ? `${r.n} presos por ${r.pena} dias — e o dinheiro ficou lá.`
+                             : `${U.dinheiro(r.valor)} na conta.`;
+    return {ok:true};
+  }
+
   /* a mesa levanta: o que não foi decidido fica pra próxima */
   function fecharReuniao(E){
     const Rn = caixaReuniao(E);
@@ -4766,24 +4823,7 @@ TO.feed = (function(){
       }
       case 'aniv-festa': {
         marcar();
-        const d = m.dados || {};
-        const F = FESTA_ANIV[d.tipo] || FESTA_ANIV.torcida;
-        const f = F[idBotao];
-        if(!f) return {ok:true};
-        const quem = d.tipo === 'torcida' ? 'da torcida' : 'do clube';
-        if(idBotao === 'nada'){
-          TO.estado.mexerIndicador(E, 'moral', f.moral,
-            `Aniversário ${quem} passou em branco`);
-          m.consequencia = 'Ninguém fez nada. −2 de moral.';
-        } else {
-          TO.estado.lancar(E, `Festa de aniversário ${quem}`, -f.custo);
-          TO.estado.mexerIndicador(E, 'moral', f.moral,
-            `Festa de aniversário ${quem}`);
-          (E.festasAniversario = E.festasAniversario || {})
-            [`festa-${d.tipo}|${d.anoCivil}`] = idBotao;
-          m.consequencia = `Festa ${idBotao === 'grande' ? 'grande' : 'simples'} `+
-            `marcada: ${U.dinheiro(-f.custo)} agora, a receita sai no dia.`;
-        }
+        m.consequencia = aplicarFestaAniv(E, m.dados || {}, idBotao);
         return {ok:true};
       }
       /* --- as telas que DÃO PRA CANCELAR (correção do dono,
@@ -5019,7 +5059,7 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
-          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas,
+          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,

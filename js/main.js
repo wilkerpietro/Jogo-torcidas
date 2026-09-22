@@ -4685,7 +4685,7 @@
      sorteados entre os disponíveis; o dado é um só pro bonde
      inteiro — partilha pra todos ou cadeia pra todos.
      ======================================================= */
-  function abrirAssalto(){
+  function abrirAssalto(aoFeito){
     const e = E();
     const A = TO.acoes.ASSALTOS;
     const disp = e.membros.filter(TO.membros.disponivel).length;
@@ -4729,8 +4729,9 @@
         aviso(r.caiu ? `Deu ruim: ${r.n} presos por ${r.pena} dias.`
                      : `${U.dinheiro(r.valor)} na conta.`,
               r.caiu ? 'ruim' : 'boa');
-        /* assalto feito responde a mensagem que abriu a lista */
-        confirmarDecisao('Ver os alvos — assalto feito');
+        /* assalto feito responde a mensagem que abriu a lista — ou,
+           vindo da reunião, fecha a pauta */
+        if(aoFeito) aoFeito(r); else confirmarDecisao('Ver os alvos — assalto feito');
         TO.estado.salvar();
         pintarTopo();
         atualizarFeed();
@@ -8090,7 +8091,11 @@
       (it.botoes||[]).forEach((b,i)=>{
         const bt = el('button',{class:'bt'+(i===0?' destaque':'')});
         bt.innerHTML = `<span>${b.rot}</span>`+(b.nota?`<small>${b.nota}</small>`:'');
-        bt.onclick = ()=>{ F.decidirPauta(e, it.id, b.id); depois(); };
+        bt.onclick = ()=>{
+          /* os alvos de assalto abrem a tela por cima; o resultado dela fecha a pauta */
+          if(b.acao === 'assalto-ver'){ abrirAssalto(r=>{ F.fecharPautaAssalto(e, it.id, r); depois(); }); return; }
+          F.decidirPauta(e, it.id, b.id); depois();
+        };
         bts.appendChild(bt);
       });
       c.appendChild(bts);
