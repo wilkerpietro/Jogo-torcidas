@@ -1151,6 +1151,30 @@
       art.appendChild(el('div',{class:'msg-cab', html:'<span class="msg-voz">Arquivo</span>'}));
       art.appendChild(el('p',{class:'msg-txt fraco', texto:
         (m && m.texto) || 'Mensagem antiga que não pôde ser desenhada.'}));
+      /* O ERRO FICA À VISTA (dono, 22/09/2026): no celular não há
+         console, e "mensagem antiga" sem dizer qual é não ajuda ninguém */
+      art.appendChild(el('small',{class:'fraco', texto:
+        `${m && m.kind ? m.kind + ' · ' : ''}${err && err.message ? err.message : String(err)}`}));
+      /* UM CARTÃO QUEBRADO NÃO SEGURA O RELÓGIO (dono, 22/09/2026): a
+         decisão que não se desenha ainda pode ser respondida pelos
+         botões dela — e, se nem isso, deixada pra lá. Antes o jogo
+         parava com o aviso e sem saída. */
+      if(m && m.peso === 'decisao' && !m.respondido){
+        const bts = el('div',{class:'msg-bts'});
+        for(const b of (m.botoes||[])){
+          const bt = el('button',{class:'bt', texto:b.rot || b.id});
+          bt.onclick = ()=>{ try{ responderMensagem(m.id, b.id); }catch(e2){ console.error(e2); aviso('Não deu: '+e2.message, 'ruim'); } };
+          bts.appendChild(bt);
+        }
+        const deixar = el('button',{class:'bt destaque', texto:'Deixar pra lá'});
+        deixar.onclick = ()=>{
+          TO.feed.marcarResposta(e, m.id, 'auto', 'deixado pra lá');
+          TO.estado.salvar(); atualizarFeed(); pintarTopo();
+          if(!TO.feed.travado(e)) retomarTempo('decisao');
+        };
+        bts.appendChild(deixar);
+        art.appendChild(bts);
+      }
       return art;
     }
   }

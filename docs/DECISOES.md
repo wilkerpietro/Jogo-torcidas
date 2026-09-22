@@ -8150,6 +8150,10 @@ Mais dois cartões soltos viram pauta da reunião do dia 5. A pergunta "que fest
 
 Num save da TUF o dono forçou a aproximação da Jovem Garra Tricolor com a Inferno Coral pelo pedido da reunião: a relação entre as duas chegou a +39 e elas continuavam em "Maiores rivais", com a etiqueta, sem virar aliadas. A causa: `relacoes.ehMaiorRival` dizia sim a qualquer par com rivalidade de nascença na fonte (`relacaoBase` = Maior Rival), com qualquer número — o "ódio de nascença não muda de prateleira" de 21/08. Agora o ódio de nascença vale enquanto a relação não chega ao patamar de aliado (20); chegando, é aliança como outra qualquer, e a etiqueta e o bloco seguem o número. ≤ −70 continua maior rival pra qualquer par. Vale pra elas entre si e pra nós com o nosso maior rival: a Aliança a +25 deixa de ser maior rival, a −30 volta a ser. Tudo que lê `ehMaiorRival` (peso da rivalidade, ordem das listas, alvo do bote, quem senta na mesa) acompanha.
 
+## Cartão quebrado mostra o erro e não segura o relógio (dono, 22/09/2026)
+
+O dono viu "ARQUIVO — Mensagem antiga que não pôde ser desenhada" e o jogo parado: era uma decisão cujo cartão estourou ao desenhar (o aviso de 17/09 salvava o feed, mas a decisão continuava sem botão e travando o relógio). Agora o cartão de aviso traz o tipo e a mensagem do erro em letra miúda — no celular não há console — e, sendo decisão sem resposta, os botões dela (respondem pelo caminho de sempre) e um "Deixar pra lá" que marca a resposta e solta o relógio. Uma fumaça de 400 dias em jogo novo (TUF e GAV) não quebrou cartão nenhum: a causa está no save do dono, e o erro à vista é o que vai dizer qual.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
