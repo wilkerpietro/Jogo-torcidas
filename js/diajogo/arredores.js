@@ -761,6 +761,10 @@ TO.diaJogo.arredores = (function(){
 
   function desenharSobreposicoes(c, mods, opc){
     opc=opc||{};
+    /* as cadeiras da reunião da diretoria (22/09/2026): a foto da sede
+       não as tem, o jogo desenha uma por diretor em cima dela */
+    if(D.cadeiras && TO.diaJogo.cenario && TO.diaJogo.cenario.cadeira)
+      for(const k of D.cadeiras) TO.diaJogo.cenario.cadeira(c, k);
 
     /* ---- spawns: invisíveis em jogo. São ponto de partida, não
        informação que o jogador precise ver a noite toda. Só o editor

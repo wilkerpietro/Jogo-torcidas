@@ -1267,48 +1267,24 @@ TO.diaJogo.cenario = (function(){
     }
   }
 
-  /* A SALA DA REUNIÃO (rascunho, 22/09/2026): piso de cimento, as
-     paredes como blocos e as cadeiras de plástico em roda, uma por
-     diretor, viradas pro meio. É o que se vê até a foto da sede chegar
-     (img/cenas/PROMPT-REUNIAO.md); com a foto, só as cadeiras seguem
-     desenhadas — o boneco senta em cima delas. */
+  /* A CADEIRA DA REUNIÃO (22/09/2026): a foto da sede não tem cadeira
+     nenhuma — quem põe é o jogo, uma por diretor, em cima da foto
+     (`arredores.desenharSobreposicoes` lê `D.cadeiras`). Assento de
+     plástico com o encosto atrás; o boneco senta em cima. */
   function cadeira(c, k){
     const sx = Math.sin(k.rumo||0), sy = Math.cos(k.rumo||0);   // pra onde olha
     c.save();
     c.translate(k.x, k.y); c.rotate(-(k.rumo||0));
-    /* assento */
     c.fillStyle = '#e4e1d8'; c.fillRect(-8, -8, 16, 16);
     c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; c.strokeRect(-8, -8, 16, 16);
-    /* encosto atrás (a figura olha pra +y local, o encosto fica em -y) */
     c.fillStyle = '#c9c5b9'; c.fillRect(-8, -11, 16, 4);
     c.restore();
-    /* a sombra do encosto no chão, do lado oposto ao olhar */
     c.fillStyle = 'rgba(0,0,0,.12)';
     c.beginPath(); c.arc(k.x - sx*6, k.y - sy*6, 9, 0, Math.PI*2); c.fill();
   }
-  function sala(c, D, W, H){
-    /* cimento queimado claro, com o veio das placas */
-    c.fillStyle = '#a9a294'; c.fillRect(0, 0, W, H);
-    c.save(); c.strokeStyle = 'rgba(0,0,0,.10)'; c.lineWidth = 2;
-    for(let x=64; x<W; x+=176){ c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
-    for(let y=64; y<H; y+=176){ c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
-    c.globalAlpha = 0.05; c.fillStyle = '#000';
-    for(let i=0;i<40;i++){
-      const x = (i*367)%W, y = (i*211)%H;
-      c.beginPath(); c.arc(x, y, 18 + (i%5)*6, 0, Math.PI*2); c.fill();
-    }
-    c.restore();
-    /* as paredes, do jeito do muro; o resto dos blocos pelo pintor de cada um */
-    for(const b of D.blocos || []){
-      if(b.tipo === 'parede') muro(c, b);
-      else { const f = PINTOR[b.tipo]; if(f) f(c, b); else { c.fillStyle = '#6a6459'; c.fillRect(b.x, b.y, b.w, b.h); } }
-    }
-    enfeites(c, D);
-    for(const k of D.cadeiras || []) cadeira(c, k);
-  }
 
   const CENAS = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
-                 bar, comercio, ct, sala};
+                 bar, comercio, ct};
   const pintar = (c, D, W, H) => {
     const f = CENAS[D && D.pintura];
     if(!f) return false;
@@ -1316,7 +1292,7 @@ TO.diaJogo.cenario = (function(){
     return true;
   };
 
-  return {pintar, CENAS, ENFEITE, PINTOR, arvore, varal,
+  return {pintar, CENAS, ENFEITE, PINTOR, arvore, varal, cadeira,
           asfalto, calcadaPortuguesa, calcadaComum, paralelepipedo,
           bloquete, pedraClara, terreno, meioFio, faixaPedestre};
 })();

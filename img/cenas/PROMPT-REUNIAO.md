@@ -1,3 +1,9 @@
+> **Superado (decisão do dono, 22/09/2026).** A reunião não tem sala
+> própria: ela senta no **pátio da sede** de cada nível — as fotos das
+> cinco sedes estão importadas (`PROMPT-SEDE.md`, `PROMPTS-SEDE-PRONTOS.md`,
+> cenas `sede-1` a `sede-5`). Este prompt fica só como registro do que se
+> pensou antes; **não gerar**.
+
 # A sala da reunião da diretoria — prompt pronto pra colar
 
 Cena nova (pedido do dono, 22/09/2026): a reunião mensal da diretoria,

@@ -29,41 +29,46 @@ Este arquivo é o desenho inteiro, o que já está feito e o que falta.
 | A sugestão semanal solta de bar/casa saiu | `feed.eventosDoDia` (passo "bote do dia") | **feito** |
 | A pose **sentado na cadeira** do boneco 3D, com três jeitos | `bonecos3.sentadoCadeira`, `d.sentado` | **feito** |
 | Disco sentado: não anda, não é empurrado, não acaba a cena | `combate` (laço de movimento, `separar`, `conferirFim`) | **feito** |
-| O C quadrado: 12 cadeiras com posição e rumo (4 no fundo, 4 em cima, 4 embaixo, abertura pra direita), o presidente em pé sozinho à direita, virado pra eles | `dados/cenas.js` (`reuniao`: `D.cadeiras`, `D.presidente`), `combate.sentarNaRoda` | **feito (rascunho desenhado)** |
-| A aba "Reunião" na bancada (cenas de briga) e o estado "sentado" na vitrine | `bancada.js`, `bonecos.html` | **feito** |
-| O prompt da foto da sala | `img/cenas/PROMPT-REUNIAO.md` | **feito** |
+| O C quadrado: 12 cadeiras com posição e rumo (4 no fundo, 4 em cima, 4 embaixo, abertura pra direita), o presidente em pé sozinho à direita, virado pra eles — **no pátio de cada sede** | `dados/cenas.js` (`SEDES`, `cadeirasEmC`: `D.cadeiras`, `D.presidente` em cada `sede-N`), `combate.sentarNaRoda`, `arredores.desenharSobreposicoes` (as cadeiras por cima da foto) | **feito** |
+| As fotos das sedes 2, 3, 4 e 5 (o 6 usa a do 5) importadas, as cinco cenas `sede-N` registradas, `TO.dados.sedeCenaDoNivel(n)` | `ferramentas/importar_cena_foto.py`, `dados/cenas_foto.js`, `dados/cenas.js` | **feito (22/09)** |
+| As abas "Sede 1" a "Sede 5" na bancada (cenas de briga), com a diretoria sentada, e o estado "sentado" na vitrine | `bancada.js`, `bonecos.html` | **feito** |
+| O prompt da foto da sala própria | `img/cenas/PROMPT-REUNIAO.md` | **superado** — a reunião é no pátio da sede |
 
 ## 2. O que falta — as fases
 
-### Fase A · A reunião muda de endereço (correção do dono, 22/09/2026)
+### Fase A · A reunião muda de endereço — feita (22/09/2026)
 A cena solta `reuniao`, com sala própria e prompt próprio
 (`img/cenas/PROMPT-REUNIAO.md`), foi **descartada antes de nascer**: o
 dono decidiu aproveitar o pátio que cada sede já tem, em vez de gerar
-uma sétima cena. Os PROMPTS-SEDE-PRONTOS.md dos níveis 2 a 4 e 5-6 já
-reservam um pátio de concreto vazio dentro da sede — é lá que a mesa
-senta. O nível 1 já está importado (`sede-1`, com máscara).
+uma sétima cena, e gerou as quatro fotos que faltavam no mesmo dia.
 
-Quando as quatro fotos que faltam chegarem (dono gera, eu importo):
-1. cada `sede-N` ganha `D.cadeiras` (o C quadrado) e `D.presidente`
-   (sozinho, virado pra roda), dentro do retângulo do pátio daquele
-   nível — a posição muda de nível pra nível, porque o pátio não fica
-   no mesmo lugar em cada planta;
-2. `dados/cenas.js` perde a cena `reuniao` (blocosSala, cadeirasDoC,
-   PRESIDENTE_C, a entrada `montar({id:'reuniao', …})`) — o `combate`
-   e o `bonecos3` não mudam, a lógica de sentar é a mesma, só passa a
-   valer pra `sede-N`;
-3. `abrir-reuniao` abre a cena do NÍVEL ATUAL da sede
-   (`E.torcida.sedeNivel`), não mais uma cena fixa.
-Até lá, `reuniao` continua no jogo como o rascunho desenhado (sem
-foto), pra não perder o que já funciona (a pose sentado, o disco que
-não anda, o fim de cena que não fecha sozinho).
+O que ficou feito:
+1. as fotos dos níveis 2, 3, 4 e 5 importadas (`importar_cena_foto.py`,
+   receitas `sede-2` a `sede-5`), com máscara e faixa; o nível 6 usa a
+   foto do 5;
+2. as cinco cenas `sede-N` nascem de um laço (`SEDES` em `dados/cenas.js`):
+   cada uma com o retângulo do pátio medido na foto e, dentro dele, o C
+   quadrado (`cadeirasEmC` → `D.cadeiras`, `D.presidente`) — a posição
+   muda de nível pra nível, porque o pátio não fica no mesmo lugar em
+   cada planta; o retângulo foi conferido contra a máscara, cadeira por
+   cadeira (níveis 2, 4 e 5 ajustados até nenhuma cair em parede);
+3. a cena `reuniao` e o pintor `sala` saíram; o `combate` e o `bonecos3`
+   não mudaram — a lógica de sentar é a mesma, só vale pra `sede-N`; o
+   `cenario.cadeira` passou a desenhar as cadeiras por cima da foto;
+4. `TO.dados.sedeCenaDoNivel(n)` diz a cena do nível atual (6 → 5): é
+   por ela que a fase B abre a reunião na sede certa.
+
+O que a máscara ainda pede (F2 do dono, na aba "Sede N" da bancada): no
+nível 4 só o pátio abriu — as salas ficaram escuras; nos outros níveis as
+paredes finas entre pátio e sala nem sempre viraram parede.
 
 ### Fase B · A cena da reunião no jogo (código)
 Hoje o cartão do dia 5 abre a **tela** da reunião (a trilha de passos com
 o balão de cada pauta). A fase B troca a tela pela **cena**:
 
 1. `abrir-reuniao` passa a abrir o palco (`abrirPalco`) com
-   `local:'reuniao'`, `paz:true`, `reuniao:true`, `escalacao` = a
+   `local: TO.dados.sedeCenaDoNivel(E.torcida.sedeNivel)`, `paz:true`,
+   `reuniao:true`, `escalacao` = a
    diretoria de pé (presidente primeiro) — o mesmo caminho de
    `abrirAcaoEmCena`, sem rival, sem bomba, sem PM.
 2. **Os balões**: uma camada HTML por cima do canvas (como `#djSobre`

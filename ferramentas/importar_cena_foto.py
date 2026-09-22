@@ -120,6 +120,37 @@ FONTES = [
      'recorte': [(0.00, 0.545, 1.00, 0.930),    # a rua e os dois passeios
                  (0.255, 0.085, 0.750, 0.575)]},# o quarteirao da sede
 
+    # ---- AS OUTRAS SEDES (fotos do dono, 22/09/2026): 2576x1438 do
+    #      Flow, a rua no quarto de baixo, o quarteirao sem telhado no
+    #      meio. Mesma receita da sede 1: crista tira o topo do muro, o
+    #      recorte segura a rua e o quarteirao, e as salas acendem pela
+    #      porta a partir da semente da rua. A semente extra e a calcada
+    #      na frente do portao, que na foto e um passeio claro e as
+    #      vezes nao encosta na pista por cor. O fino e do F2 (dono).
+    #      O nivel 6 usa a foto do 5 (decisao do dono, 10/09/2026).
+    {'id': 'sede-2', 'arquivo': 'sede_nivel_2.jpg', 'saida': 'sede_2.webp',
+     'crista': 8,
+     'sementes': [(0.50, 0.85), (0.10, 0.85), (0.90, 0.85), (0.498, 0.72)],
+     'recorte': [(0.00, 0.69, 1.00, 0.93),      # a rua e os dois passeios
+                 (0.34, 0.25, 0.66, 0.70)]},    # o quarteirao da sede
+    {'id': 'sede-3', 'arquivo': 'sede_nivel_3.jpg', 'saida': 'sede_3.webp',
+     'crista': 8,
+     'sementes': [(0.50, 0.85), (0.10, 0.85), (0.90, 0.85), (0.477, 0.72)],
+     'recorte': [(0.00, 0.69, 1.00, 0.93),
+                 (0.33, 0.20, 0.68, 0.745)]},
+    {'id': 'sede-4', 'arquivo': 'sede_nivel_4.jpg', 'saida': 'sede_4.webp',
+     'crista': 8,
+     'sementes': [(0.50, 0.85), (0.10, 0.85), (0.90, 0.85),
+                  (0.40, 0.72), (0.60, 0.72), (0.70, 0.72)],   # portao, garagem, loja
+     'recorte': [(0.00, 0.69, 1.00, 0.93),
+                 (0.26, 0.23, 0.75, 0.70)]},
+    {'id': 'sede-5', 'arquivo': 'sede_nivel_5.jpg', 'saida': 'sede_5.webp',
+     'crista': 8,
+     'sementes': [(0.50, 0.85), (0.10, 0.85), (0.90, 0.85),
+                  (0.38, 0.72), (0.66, 0.72), (0.75, 0.72)],   # portao, loja, garagem
+     'recorte': [(0.00, 0.69, 1.00, 0.93),
+                 (0.19, 0.225, 0.815, 0.695)]},
+
     # ---- lote de 19/08 (pedido do dono): tretas, emboscadas, CT e
     #      os tres estadios por capacidade -------------------------------
     # 5x5: a viela entre os quintais — corredor apertado de ponta a ponta

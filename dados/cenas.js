@@ -915,8 +915,9 @@ TO.dados.cenas = (function(){
     if(!cena.gradesDaFoto) cena.grades = [];
 
     const puxa = puxador(cena, f.mascara);
-    /* a pista da foto não cai na mesma altura da desenhada */
-    if(f.meio) for(const s of cena.spawns)
+    /* a pista da foto não cai na mesma altura da desenhada — mas numa
+       cena de DENTRO (as sedes) não há pista: `semMeio` (22/09/2026) */
+    if(f.meio && !cena.semMeio) for(const s of cena.spawns)
       if(Math.abs(s.y - cena.altura/2) < 40) s.y = f.meio;
     /* as bocas são régua de RUA (transversal em cada ponta); a casa
        de piscina tem a rua inteira caminhável de borda a borda e a
@@ -1048,68 +1049,78 @@ TO.dados.cenas = (function(){
   });
 
   /* =======================================================
-     A REUNIÃO DA DIRETORIA — o C quadrado (pedido do dono, 22/09/2026)
-     Cena sem briga: a sala da sede, as cadeiras da diretoria em
-     C QUADRADO — três lados de um retângulo, a abertura virada pra
-     direita — e o presidente sozinho do lado direito, em pé, virado
-     pra eles (correção do dono, 22/09/2026: era uma roda). Cada
-     pauta da reunião vira um balão em cima de um diretor sentado.
-     Este é o RASCUNHO desenhado — a foto da sala vem do prompt em
-     img/cenas/PROMPT-REUNIAO.md e entra por `cenas_foto.js` como as
-     outras; as cadeiras e o lugar do presidente ficam aqui, que é o
-     que o combate lê (`D.cadeiras`, `D.presidente`).
+     AS SEDES (fotos do dono: nível 1 em 10/09, 2 a 5 em 22/09/2026)
+     Uma cena por nível de sede, sobre a foto de zênite do quarteirão
+     sem telhado — o nível 6 usa a foto do 5. É NELAS que a reunião
+     da diretoria acontece, no pátio (decisão do dono, 22/09/2026, no
+     lugar de uma sala própria): as cadeiras em C QUADRADO — quatro
+     no fundo, quatro em cima, quatro embaixo, a abertura pra direita
+     —, todas viradas pra dentro, e o presidente em pé sozinho do lado
+     direito, virado pra eles. O retângulo do pátio de cada nível foi
+     medido na foto; `cadeirasEmC` distribui as cadeiras nele e diz
+     onde o presidente fica. O combate lê `D.cadeiras` e
+     `D.presidente` (`sentarNaRoda`); o desenho das cadeiras por cima
+     da foto é do `arredores.desenharSobreposicoes`.
 
-     A ordem das cadeiras importa: `sentarNaRoda` senta na ordem da
-     lista, então com poucos diretores o C continua sendo um C — o
-     fundo (a coluna da esquerda) primeiro, depois os braços de cima e
-     de baixo, do fundo pra abertura. O rumo é pra dentro do C. */
-  const C_X0 = 560, C_X1 = 1000;          // o fundo do C e a ponta dos braços
-  const C_Y0 = 300, C_Y1 = 700;           // o braço de cima e o de baixo
-  const cadeirasDoC = (()=>{
-    const fora = [];
-    const olhaDireita = Math.atan2(1, 0), olhaBaixo = Math.atan2(0, 1), olhaCima = Math.atan2(0, -1);
-    /* o fundo: quatro cadeiras na coluna da esquerda, olhando pra direita */
-    for(const y of [360, 453, 547, 640]) fora.push({x:C_X0, y, rumo:olhaDireita});
-    /* os braços: do fundo pra abertura, alternando cima e baixo */
-    for(const x of [650, 760, 870, 980]){
-      fora.push({x, y:C_Y0, rumo:olhaBaixo});
-      fora.push({x, y:C_Y1, rumo:olhaCima});
+     O spawn é o lugar do presidente; a entrada é o portão da rua, que
+     a máscara liga ao pátio pela conectividade — `conferirPortoes`
+     avisa no console se a foto não deixou o portão passar (aí é F2).
+     `semMeio`/`semBocas`: a régua de rua do `sobreFoto` (a pista no
+     meio, as bocas nas pontas) não vale numa cena de dentro.
+     ======================================================= */
+  function cadeirasEmC(x0, y0, x1, y1){
+    /* o C não cresce sem limite num pátio grande: fica centrado */
+    const wMax = 300, hMax = 230;
+    if(x1 - x0 > wMax){ const c = (x0+x1)/2; x0 = c - wMax/2; x1 = c + wMax/2; }
+    if(y1 - y0 > hMax){ const c = (y0+y1)/2; y0 = c - hMax/2; y1 = c + hMax/2; }
+    const w = x1 - x0, h = y1 - y0;
+    const mx = Math.max(14, Math.min(24, w*0.08)), my = Math.max(14, Math.min(24, h*0.10));
+    const xc = x0 + mx;                              // a coluna do fundo
+    const xp = x1 - mx;                              // o presidente
+    const xa0 = xc + Math.max(34, w*0.16), xa1 = xp - Math.max(50, w*0.24);
+    const olhaDireita = Math.atan2(1, 0), olhaBaixo = 0, olhaCima = Math.PI;
+    const R = Math.round;
+    const cadeiras = [];
+    for(let i=0;i<4;i++) cadeiras.push({x:R(xc), y:R(y0 + my + (h - 2*my)*i/3), rumo:olhaDireita});
+    for(let i=0;i<4;i++){
+      const x = R(xa0 + (xa1 - xa0)*i/3);
+      cadeiras.push({x, y:R(y0 + my), rumo:olhaBaixo});
+      cadeiras.push({x, y:R(y1 - my), rumo:olhaCima});
     }
-    return fora;
-  })();
-  /* o presidente: sozinho, à direita da abertura, olhando pra esquerda */
-  const PRESIDENTE_C = {x:C_X1 + 150, y:(C_Y0 + C_Y1)/2, rumo:Math.atan2(-1, 0)};
-  const blocosSala = [
-    {x:0, y:0, w:1536, h:64, tipo:'parede'},
-    {x:0, y:960, w:690, h:64, tipo:'parede'},        // parede de baixo, com a porta no meio
-    {x:846, y:960, w:690, h:64, tipo:'parede'},
-    {x:0, y:0, w:64, h:1024, tipo:'parede'},
-    {x:1472, y:0, w:64, h:1024, tipo:'parede'},
-    /* o balcão da cozinha da sede e o armário, encostados na parede */
-    {x:64, y:64, w:260, h:70, tipo:'balcao'},
-    {x:1250, y:64, w:222, h:70, tipo:'armario'}
+    return {cadeiras, presidente:{x:R(xp), y:R((y0+y1)/2), rumo:Math.atan2(-1, 0)}};
+  }
+  const SEDE_SAIDA = {perto:'Sair da sede', longe:'Portão da rua (leve o líder)',
+                      feito:'a reunião acabou',
+                      dica:'A reunião acaba pelo botão de encerrar.'};
+  /* o pátio de cada nível, em pixel da tela (medido na foto, 22/09/2026),
+     e o portão da rua */
+  const SEDES = [
+    {n:1, patio:[430, 200, 770, 540], portao:600},
+    {n:2, patio:[632, 434, 930, 569], portao:765},
+    {n:3, patio:[538, 491, 768, 660], portao:732},
+    {n:4, patio:[452, 499, 646, 680], portao:610},
+    {n:5, patio:[472, 540, 682, 670], portao:585}
   ];
-  const reuniao = montar({
-    id:'reuniao', nome:'Sala da sede', local:'Na sede, reunião da diretoria',
-    pintura:'sala', blocos:blocosSala,
-    cadeiras: cadeirasDoC,
-    presidente: PRESIDENTE_C,
-    saida:{perto:'Sair da sala', longe:'Porta da sala (leve o líder)',
-           feito:'a reunião acabou',
-           dica:'A reunião acaba pelo botão de encerrar.'},
-    spawns:[
-      {id:'mandante1', rot:'DIRETORIA', lado:'mandante', x:PRESIDENTE_C.x, y:PRESIDENTE_C.y,
-       jogador:true, entrada:'porta'}
-    ],
-    entradas:[
-      {id:'porta', rot:'PORTA DA SALA', lado:'mandante', x:768, y:992, raio:40, dir:[0,1]}
-    ],
-    /* sem PM, sem grade, sem enfeite: é uma sala */
-    pmPostos:[], grades:[], enfeites:[], tropaChoque:false
-  });
+  const sedes = {};
+  for(const sd of SEDES){
+    const c = cadeirasEmC(...sd.patio);
+    sedes['sede-'+sd.n] = cenaDeFoto({
+      id:'sede-'+sd.n, nome:`Sede nível ${sd.n}`, local:'Na sede, reunião da diretoria',
+      cadeiras:c.cadeiras, presidente:c.presidente,
+      saida:SEDE_SAIDA, semBocas:true, semMeio:true, tropaChoque:false,
+      spawns:[
+        {id:'mandante1', rot:'DIRETORIA', lado:'mandante', x:c.presidente.x, y:c.presidente.y,
+         jogador:true, entrada:'portao'}
+      ],
+      entradas:[
+        {id:'portao', rot:'PORTÃO DA RUA', lado:'mandante', x:sd.portao, y:880, raio:40, dir:[0,1]}
+      ],
+      pmPostos:[]
+    });
+  }
 
   const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
-                 bar, comercio, ct, 'casa-piscina':casaPiscina, reuniao,
+                 bar, comercio, ct, 'casa-piscina':casaPiscina, ...sedes,
                  'treta-beco':tretaBeco, 'treta-galpao':tretaGalpao,
                  'treta-campo':tretaCampo,
                  'emb-posto':embPosto, 'emb-onibus':embOnibus,
@@ -1148,3 +1159,10 @@ TO.dados.cenas = (function(){
   return cenas;
 })();
 
+/* A cena da sede pelo NÍVEL (22/09/2026): `sede-1` a `sede-5`, e o
+   nível 6 (o Complexo) usa a foto do 5 — decisão do dono, 10/09/2026.
+   É por aqui que a reunião da diretoria acha o pátio dela. */
+TO.dados.sedeCenaDoNivel = function(n){
+  const k = Math.max(1, Math.min(5, Math.round(+n) || 1));
+  return TO.dados.cenas['sede-'+k] ? 'sede-'+k : 'sede-1';
+};

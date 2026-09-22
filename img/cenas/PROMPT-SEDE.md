@@ -9,11 +9,19 @@ ortofoto de zênite, dia nublado, cor dessaturada, periferia brasileira.
 
 | Cena | Nível | Planta de entrada | Saída pro jogo | Estado |
 |---|---|---|---|---|
-| Sede nv 1 | 1 | `docs/plantas/sede-nivel-1.jpg` | `sede_1.webp` | **importada** — falta o colchão no pátio |
-| Sede nv 2 | 2 | `docs/plantas/sede-nivel-2.png` | `sede_2.webp` | a fazer |
-| Sede nv 3 | 3 | `docs/plantas/sede-nivel-3.png` | `sede_3.webp` | a fazer |
-| Sede nv 4 | 4 | `docs/plantas/sede-nivel-4.jpg` | `sede_4.webp` | a fazer |
-| Sede nv 5 e 6 | 5 e 6 | `docs/plantas/sede-nivel-5.jpg` | `sede_5.webp` | a fazer |
+| Sede nv 1 | 1 | `docs/plantas/sede-nivel-1.jpg` | `sede_1.webp` | **importada** (10/09) — falta o colchão no pátio |
+| Sede nv 2 | 2 | `docs/plantas/sede-nivel-2.png` | `sede_2.webp` | **importada** (22/09) — mestre `sede_nivel_2.jpg`; pátio e salas abertos na máscara |
+| Sede nv 3 | 3 | `docs/plantas/sede-nivel-3.png` | `sede_3.webp` | **importada** (22/09) — mestre `sede_nivel_3.jpg`; salão e pátio abertos |
+| Sede nv 4 | 4 | `docs/plantas/sede-nivel-4.jpg` | `sede_4.webp` | **importada** (22/09) — mestre `sede_nivel_4.jpg`; só o pátio da esquerda abriu, as salas pedem F2 |
+| Sede nv 5 e 6 | 5 e 6 | `docs/plantas/sede-nivel-5.jpg` | `sede_5.webp` | **importada** (22/09) — mestre `sede_nivel_5.jpg`; corredor e salas abertos |
+
+As cinco cenas estão registradas (`sede-1` a `sede-5`, o laço `SEDES` em
+`dados/cenas.js`) e é **no pátio delas que a reunião da diretoria senta**
+(decisão do dono, 22/09/2026 — `docs/PLANO-REUNIAO-DIRETORIA.md`): o C
+quadrado de cadeiras cabe no retângulo do pátio medido em cada foto, e a
+medida foi conferida contra a máscara, cadeira por cadeira. Pra ver cada
+uma com a diretoria sentada: `arredores.html#sede-N` (abas "Sede 1" a
+"Sede 5"); é ali que a máscara se acerta no F2.
 
 O nível 6 (o Complexo) usa a planta do 5 — decisão do dono, 10/09/2026. O que
 muda no 6 é o que está aceso dentro das salas (cofre e enfermaria), e isso o
