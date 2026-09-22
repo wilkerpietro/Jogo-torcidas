@@ -8134,6 +8134,10 @@ A lista mensal de aniversários das aliadas (o cartão solto do começo do mês,
 
 No quadro "Como chegam" da abertura de competição (`almanaque.abertura`), a linha do nosso clube dizia "o nosso" e ficava no fim. Agora o rótulo é a posição estimada na fila de força — o 13º elenco mais forte aparece como "13º", a mesma fila que rotula os favoritos (favorito, 2º, 3º) —, e quando o clube não está entre os favoritos nem entre os da queda a linha dele entra no meio do quadro, entre os de cima e os de baixo. Na zona da queda a linha dele também traz a posição ("18º"), não só "risco".
 
+## O pedido de aproximar apresenta os nossos aliados (régua do dono, 22/09/2026)
+
+No pedido a um aliado na reunião, a lista "de quem" do APROXIMAR era a dos rivais dele (relação abaixo de −15, sem o maior rival). Passa a ser a dos NOSSOS aliados — relação ≥ 20 com a gente — que ainda não são aliados nem irmãos dele, seja lá o que os dois são entre si: neutro, rival ou maior rival (`eixos.alvosDoPedido`). A ideia é juntar a turma da gente. O afastar não mudou: os aliados dele, e irmã não se larga.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

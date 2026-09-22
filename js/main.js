@@ -8100,7 +8100,9 @@
 
     /* --- o pedido a um aliado (régua do dono, 17/09/2026) ---
        Três escolhas: aproximar ou afastar, qual aliado a gente pede, e
-       de quem — rivais dele no aproximar, aliados dele no afastar. */
+       de quem — no aproximar, os NOSSOS aliados que ainda não são
+       aliados dele (régua do dono, 22/09/2026); no afastar, os aliados
+       dele. */
     const palcoDoPedido = (palco)=>{
       const c = el('div',{class:'reu-item'});
       c.appendChild(el('div',{class:'reu-quem', html:
@@ -8116,7 +8118,8 @@
       c.appendChild(el('p',{class:'reu-fala', texto: aliados.length
         ? 'Um pedido por reunião: a chance de o aliado topar é o quanto ele anda com a '+
           'gente. Topando, a relação entre os dois mexe de 15 a 25 e ele ganha +2 com a '+
-          'gente; recusando, −3. Maior rival não senta na mesa, e irmã não se larga.'
+          'gente; recusando, −3. No aproximar, a gente apresenta um aliado nosso que ainda '+
+          'não anda com ele — seja neutro, rival ou maior rival dele; irmã não se larga.'
         : 'A gente não tem aliado pra pedir nada — aliado é relação de +20 pra cima.'}));
       if(!aliados.length){ palco.appendChild(c); return c; }
       const grade = el('div',{class:'reu-pedido'});
@@ -8142,7 +8145,7 @@
         const tipo = sTipo.value, al = sAliado.value;
         const alvos = X.alvosDoPedido(e, tipo, al);
         opc(sAlvo, alvos.map(o=>[o.id, `${o.nome} · ${Math.round(TO.relacoes.relacaoDelas(e, al, o.id))} com ${nomeT(al)}`]),
-            tipo === 'aproximar' ? 'esse aliado não tem rival que sente na mesa' : 'esse aliado não tem aliado pra largar');
+            tipo === 'aproximar' ? 'todo aliado nosso já anda com ele' : 'esse aliado não tem aliado pra largar');
         const ch = X.chanceDoPedido(e, al);
         nota.textContent = alvos.length
           ? `${pctChance(ch)} de a ${nomeT(al)} topar ${tipo === 'aproximar' ? 'sentar com a' : 'se afastar da'} ${nomeT(sAlvo.value)}.`

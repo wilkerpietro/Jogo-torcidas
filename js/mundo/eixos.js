@@ -446,6 +446,11 @@ TO.eixos = (function(){
       .filter(o=>o.id !== nos && !o.incompleta && relDe(E, nos, o.id) >= DIPLO_ALIADO)
       .sort((a,b)=>relDe(E, nos, b.id) - relDe(E, nos, a.id));
   }
+  /* DE QUEM SE PEDE (régua do dono, 22/09/2026): no APROXIMAR, a lista
+     é dos NOSSOS aliados que ainda não são aliados nem irmãos do aliado
+     pedido — tanto faz se entre os dois é neutro, rival ou maior rival;
+     a ideia é juntar a nossa turma. No afastar continua sendo dos
+     aliados dele (irmã não se larga). */
   function alvosDoPedido(E, tipo, aliadoId){
     const nos = E.torcida.id;
     return M().jogaveis().filter(o=>{
@@ -453,7 +458,7 @@ TO.eixos = (function(){
       if(M().saoIrmas && M().saoIrmas(aliadoId, o.id)) return false;
       const v = relDe(E, aliadoId, o.id);
       if(tipo === 'aproximar')
-        return v < -15 && !(R().ehMaiorRival && R().ehMaiorRival(E, aliadoId, o.id));
+        return relDe(E, nos, o.id) >= DIPLO_ALIADO && v < DIPLO_ALIADO;
       return v >= DIPLO_ALIADO;
     }).sort((a,b)=>relDe(E, aliadoId, b.id) - relDe(E, aliadoId, a.id));
   }
