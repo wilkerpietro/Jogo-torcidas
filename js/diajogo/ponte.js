@@ -266,6 +266,15 @@ TO.diaJogo.ponte = (function(){
   }
   function focoDoZoom(){
     if(!J) return null;
+    /* NA REUNIÃO A CÂMERA OLHA PRA RODA (fase B, 22/09/2026): o líder
+       está em pé na ponta direita do C, e centrar nele deixava a
+       coluna do fundo fora do quadro no celular. O foco é o meio
+       entre a cadeira mais à esquerda e o presidente. */
+    if(J.reuniao && A.D.cadeiras && A.D.cadeiras.length){
+      const xs = A.D.cadeiras.map(k=>k.x), ys = A.D.cadeiras.map(k=>k.y);
+      const px = A.D.presidente ? A.D.presidente.x : Math.max(...xs);
+      return {x:(Math.min(...xs) + px)/2, y:(Math.min(...ys) + Math.max(...ys))/2};
+    }
     const l=J.discos.find(d=>d.lider&&d.vivo);
     if(l) return l;
     const meu=C.ladoDoJogador(J);
@@ -723,7 +732,7 @@ TO.diaJogo.ponte = (function(){
       } else {cg.textContent='LINHA RECOMPOSTA'; cg.className='';}
     }
 
-    if(el('djPlacar')){
+    if(el('djPlacar') && !J.reuniao){
       const ent=(J.entraram.mandante||0)+(J.entraram.visitante||0);
       /* O PLACAR FALA O NOME DAS TORCIDAS (pedido do dono, 18/08/2026):
          MANDANTE/VISITANTE é convenção interna dos lados, não coisa que
@@ -898,6 +907,9 @@ TO.diaJogo.ponte = (function(){
      a acabar a cena com o líder entrando sozinho, que é exatamente o que
      a ordem de entrar veio corrigir. */
   function mandarEntrarOuSair(){
+    /* a reunião acaba pelo botão de encerrar (fase B): o portão não é
+       saída de reunião, e o pad do celular também chega por aqui */
+    if(J && J.reuniao) return;
     const s = D.saida || SAIDA_PADRAO;
     /* NOS ARREDORES O BOTÃO É UMA ORDEM.
        Todo mundo caminha pro próprio portão e a cena fecha quando
@@ -1253,6 +1265,9 @@ TO.diaJogo.ponte = (function(){
         return;
       }
       if(!J) return;
+      /* na reunião só se anda: bater, chamar, correr, pedra, bomba e o
+         ENTER do portão não têm o que fazer numa roda de cadeiras */
+      if(J.reuniao) return;
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
       if(k==='x'){C.mandarFugir(J);atualizarBotoes();}
       if(k==='q'){ const l=liderVivo(); if(l) C.bater(J, l); }
@@ -1408,6 +1423,18 @@ TO.diaJogo.ponte = (function(){
   function encerrar(motivo, opc){
     if(!J||J.fase==='fim') return;
     J.fase='fim';
+    /* A REUNIÃO NÃO É BRIGA (fase B, 22/09/2026): fecha sem XP, sem
+       moral, sem prestígio e sem ficha de caído — quem decide o que a
+       mesa rendeu é `fecharReuniao`, no feed. O resultado só diz que
+       foi reunião, pra quem montou a cena fechar a tela certa. */
+    if(J.reuniao){
+      const r={motivo, reuniao:true, membros:[], prestigio:0, moralTorcida:0,
+               caidosMandante:0, caidosVisitante:0, presosMandante:0, presosVisitante:0};
+      J.resultado=r; J.falante=null;
+      C.logar(J,`Encerrado (${motivo}).`,'p');
+      if(aoTerminar) aoTerminar(r);
+      return;
+    }
     /* chegar no objetivo é o sucesso da ação — tomar o bar, levar a
        loja, chegar no gramado. Nos arredores não: lá entrar pelo portão
        é o fim normal da noite e não uma vitória sobre ninguém, então
@@ -1901,6 +1928,10 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
           get config(){return config;},
           /* o vetor da bola de controle, pra quem quiser conferir de fora */
           get eixo(){return teclas.eixo || null;},
+          /* a régua cena→canvas do último quadro (s, ox, oy) e o canvas:
+             é com isso que os balões da reunião se ancoram no boneco */
+          get escala(){return escala;},
+          get canvas(){return cv;},
           /* a seta da borda do último quadro, ou null se não teve */
           get seta(){return ultimaSeta;},
           get J(){return J;}};

@@ -560,6 +560,9 @@ TO.diaJogo.combate = (function(){
                  : Math.atan2(A.W/2 - lider.x, A.H/2 - lider.y);
     }
     J.reuniao = true;
+    /* quem está com a palavra (o balão aberto): quem monta a cena põe
+       o disco aqui e o boneco gesticula; os outros viram a cabeça */
+    J.falante = null;
     return ficam.length;
   }
 

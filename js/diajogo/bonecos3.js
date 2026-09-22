@@ -1672,7 +1672,7 @@ TO.diaJogo.bonecos3 = (function(){
      cotovelos nos joelhos. Respira, e de vez em quando vira a cabeça
      pra quem fala. */
   const ASSENTO = 8.9;                 // canela + pé: a altura do quadril sentado
-  function sentadoCadeira(p, f, t){
+  function sentadoCadeira(p, f, t, d, J){
     const v = f.varianteForcada!=null ? f.varianteForcada : dado(f.sem+'sc', 3);
     const r = Math.sin(t*1.5 + f.fase);
     p.y = ASSENTO - 16.5;
@@ -1691,6 +1691,55 @@ TO.diaJogo.bonecos3 = (function(){
     } else {              // as mãos nas coxas
       p.ombro = [0.55, 0.55]; p.ombroZ = [0.15, 0.15]; p.cotovelo = [-0.75, -0.75]; p.maoZ = [0.2, 0.2];
     }
+    /* quem escuta olha pra quem fala (fase B, 22/09/2026) */
+    if(d && J && J.falante && J.falante !== d) olharPara(p, f, d, J.falante, t);
+  }
+
+  /* OLHAR PRA QUEM FALA (fase B da reunião, 22/09/2026): a cabeça vira
+     pro alvo, até uns 65° pra cada lado — mais que isso o pescoço não
+     dá, e aí vira só o que dá. `f.yaw` é pra onde o corpo aponta
+     (atan2(dx, dz), a mesma régua do andar), então o ângulo da cabeça
+     é a diferença. Um resto de respiração continua na cabeça. */
+  const PESCOCO = 1.15;
+  function olharPara(p, f, d, alvo, t){
+    let rel = Math.atan2(alvo.x - d.x, alvo.y - d.y) - f.yaw;
+    while(rel > Math.PI) rel -= Math.PI*2;
+    while(rel < -Math.PI) rel += Math.PI*2;
+    p.olhaY = Math.max(-PESCOCO, Math.min(PESCOCO, rel)) + 0.03*ruido(f, t, 0.3, 0.9);
+    p.olhaX = Math.min(p.olhaX, 0.05) + 0.02*Math.sin(t*0.9 + f.fase);
+  }
+
+  /* FALAR SENTADO (fase B, 22/09/2026): o diretor que traz a pauta —
+     o balão aberto em cima dele. Sentado na cadeira, o tronco vai um
+     pouco pra frente, a cabeça sobe, e as mãos explicam: uma vem e
+     volta na frente do peito, a outra abre e fecha no compasso da
+     fala, com o ombro subindo de vez em quando. Ritmo de conversa,
+     não de briga. */
+  function falarSentado(p, f, t, d, J){
+    sentadoCadeira(p, f, t, null, null);
+    const w = t*2.6 + f.fase;
+    const a = 0.5 + 0.5*Math.sin(w), b = 0.5 + 0.5*Math.sin(w*1.37 + 1.1);
+    p.inclina = 0.16 + 0.03*Math.sin(w*0.5);
+    p.olhaX = -0.12 + 0.05*Math.sin(w*0.8);
+    p.olhaY = 0.12*Math.sin(w*0.33 + f.fase);
+    p.gira = 0.06*Math.sin(w*0.45);
+    /* a mão direita explica na frente do peito; a esquerda apoia e
+       abre de vez em quando */
+    p.ombro = [0.45 + 0.15*b, -0.55 - 0.45*a]; p.ombroZ = [0.25 + 0.2*b, 0.55 + 0.25*a];
+    p.cotovelo = [-1.0 - 0.3*b, -1.65 + 0.55*a]; p.maoZ = [0.35, 0.3 + 0.4*a]; p.punho = [0.4, 0];
+    /* e o presidente, se estiver na roda, é pra quem se fala */
+    if(d && J){ const pres = J.discos.find(x=>x.lider && x.vivo); if(pres && pres !== d) olharPara(p, f, d, pres, t); }
+  }
+  /* FALAR EM PÉ: o presidente com a palavra, de frente pra roda — o
+     peso numa perna, uma mão na cintura, a outra abrindo pros
+     diretores no compasso da fala. */
+  function falarEmPe(p, f, t){
+    parado(p, f, t);
+    const w = t*2.4 + f.fase;
+    const a = 0.5 + 0.5*Math.sin(w), b = 0.5 + 0.5*Math.sin(w*0.61 + 2.0);
+    p.inclina += 0.05; p.olhaX = -0.06 + 0.04*Math.sin(w*0.7); p.olhaY = 0.25*Math.sin(w*0.29 + f.fase);
+    p.ombro = [0.35, -0.75 - 0.55*a]; p.ombroZ = [0.62, 0.45 + 0.3*b];
+    p.cotovelo = [-1.5, -1.35 + 0.5*a]; p.maoZ = [1.05, 0.2 + 0.35*a]; p.punho = [0, 0];
   }
 
   /* QUEM CAIU FICA A 50% (pedido do dono, 06/09/2026): os materiais
@@ -1782,7 +1831,8 @@ TO.diaJogo.bonecos3 = (function(){
     const leve = cfg.movimentoLeve && !d.lider;
     const agitado = !d.vivo || d.derrubado > 0 || !!d.ataque || d.golpe > 0 || d.apanhou > 0 ||
       d.atordoado > 0 || !!d.arremesso || !!d.segurando || !!d.seguradoPor || d.esquivou > 0 ||
-      d.tremor >= 4.5 || !!f.impacto || !!f.queda || !!d.fugindo || !!d.fugaBomba || (d.chamou > t - 1.3);
+      d.tremor >= 4.5 || !!f.impacto || !!f.queda || !!d.fugindo || !!d.fugaBomba || (d.chamou > t - 1.3) ||
+      (J.falante === d);
     fg.mudou = true;
     if(leve && !agitado && ((quadroN + i) % 3)){
       const moveu = f.px == null || Math.abs(d.x - f.px) > 0.05 || Math.abs(d.y - f.pz) > 0.05;
@@ -1823,7 +1873,10 @@ TO.diaJogo.bonecos3 = (function(){
       f.queda = null; f.jazido = 0; esmaecer(c, 1);
       f.px = d.x; f.pz = d.y; f.vx = 0; f.vz = 0;
       if(typeof d.rumo === 'number') f.yaw = girar(f.yaw, d.rumo, Math.min(1, dt*14));
-      sentadoCadeira(p, f, ti); rapidez = 8;
+      /* com a palavra, gesticula (no relógio vivo); sem ela, escuta
+         olhando pra quem fala */
+      if(J.falante === d){ falarSentado(p, f, t, d, J); rapidez = 9; }
+      else { sentadoCadeira(p, f, ti, d, J); rapidez = 8; }
       f.impacto = null; f.ataque = null; f.provoca = null;
     } else {
       f.queda = null; f.jazido = 0;
@@ -1870,6 +1923,10 @@ TO.diaJogo.bonecos3 = (function(){
       else if(d.segurando){ segurarPose(p, f, t); rapidez = 14; f.ataque = null; f.provoca = null; }
       else if(d.seguradoPor){ seguradoPose(p, f, t); rapidez = 14; f.ataque = null; f.provoca = null; }
       else if(d.chamou > t - 1.3){ chamarPose(p, f, t, (t - d.chamou)/1.3); rapidez = 16; f.ataque = null; f.provoca = null; }
+      /* a reunião: o presidente com a palavra explica; sem ela, escuta
+         de frente pra quem fala (o corpo fica; a cabeça vira) */
+      else if(J.reuniao && !andando && J.falante === d){ falarEmPe(p, f, t); rapidez = 9; f.ataque = null; f.provoca = null; }
+      else if(J.reuniao && !andando && J.falante){ olharPara(p, f, d, J.falante, t); rapidez = 8; f.ataque = null; f.provoca = null; }
       else if(d.defendendo > 0 && !andando){ bloquear(p, f, ti); rapidez = 20; f.ataque = null; }
       else if(d.socorrendo && d.socorrendo.noChao && !andando){ socorrerPose(p, f, t); rapidez = 12; f.ataque = null; f.provoca = null; }
       else if(d.tirando && !andando){ socorrerPose(p, f, t); rapidez = 12; f.ataque = null; f.provoca = null; }

@@ -33,6 +33,7 @@ Este arquivo é o desenho inteiro, o que já está feito e o que falta.
 | As fotos das sedes 2, 3, 4 e 5 (o 6 usa a do 5) importadas, as cinco cenas `sede-N` registradas, `TO.dados.sedeCenaDoNivel(n)` | `ferramentas/importar_cena_foto.py`, `dados/cenas_foto.js`, `dados/cenas.js` | **feito (22/09)** |
 | As abas "Sede 1" a "Sede 5" na bancada (cenas de briga), com a diretoria sentada, e o estado "sentado" na vitrine | `bancada.js`, `bonecos.html` | **feito** |
 | O prompt da foto da sala própria | `img/cenas/PROMPT-REUNIAO.md` | **superado** — a reunião é no pátio da sede |
+| A reunião como CENA: o cartão do dia 5 abre o pátio da sede do nível atual com os balões nos bonecos, o presidente fala o pedido e a jogada, o encerrar na faixa | `main.js` (`abrirReuniaoEmCena`, `construtoresDaReuniao`), `ponte.js` (`encerrar` de reunião, `focoDoZoom`, `escala`), `bonecos3.js` (`falarSentado`, `falarEmPe`, `olharPara`), `css/cenas.css` | **feito (22/09, fase B)** |
 
 ## 2. O que falta — as fases
 
@@ -62,32 +63,53 @@ O que a máscara ainda pede (F2 do dono, na aba "Sede N" da bancada): no
 nível 4 só o pátio abriu — as salas ficaram escuras; nos outros níveis as
 paredes finas entre pátio e sala nem sempre viraram parede.
 
-### Fase B · A cena da reunião no jogo (código)
-Hoje o cartão do dia 5 abre a **tela** da reunião (a trilha de passos com
-o balão de cada pauta). A fase B troca a tela pela **cena**:
+### Fase B · A cena da reunião no jogo — feita (22/09/2026)
+O cartão do dia 5 abria a **tela** da reunião (a trilha de passos com
+o balão de cada pauta). Agora abre a **cena** — `abrirReuniaoEmCena`
+em `main.js`; a tela (`abrirReuniao`) ficou de reserva, só pra save
+sem sede ou navegador sem canvas:
 
-1. `abrir-reuniao` passa a abrir o palco (`abrirPalco`) com
+1. `abrir-reuniao` abre o palco (`abrirPalco`) com
    `local: TO.dados.sedeCenaDoNivel(E.torcida.sedeNivel)`, `paz:true`,
-   `reuniao:true`, `escalacao` = a
-   diretoria de pé (presidente primeiro) — o mesmo caminho de
-   `abrirAcaoEmCena`, sem rival, sem bomba, sem PM.
-2. **Os balões**: uma camada HTML por cima do canvas (como `#djSobre`
-   das cenas de perto), um balão por pauta ancorado na posição do disco
-   do diretor (`d.x, d.y` → tela). O balão traz o texto da pauta e os
-   botões (`decidirPauta`), e o "quando/contra" do bote. Clicar num
-   diretor abre o balão dele; os já decididos ficam com a ata em cinza.
-3. **O presidente fala**: as duas pautas que hoje não têm diretor — o
-   pedido a um aliado e a nossa jogada nos eixos — abrem no balão do
-   presidente (em pé, à direita), com os mesmos controles de hoje.
-4. **Encerrar**: o botão de encerrar (na faixa da transmissão) chama
-   `fecharReuniao`; a cena fecha sem relatório de noite (não é briga).
-5. O diretor que fala **gesticula** enquanto o balão está aberto (um
-   movimento novo, `falar`, no estilo do `chamar`), e os outros viram a
-   cabeça pra ele (`olharPara` no `sentadoCadeira`).
+   `reuniao:true`, `escalacao` = a diretoria de pé (presidente
+   primeiro; preso não vem) — sem rival, sem bomba, sem PM. Em tela
+   larga a cena abre em 2× centrada na roda (`ponte.focoDoZoom` olha
+   pro C na reunião, não pro líder); no celular a ponte já aproxima.
+2. **Os balões**: a camada `#djBaloes` (HTML) por cima do canvas, um
+   balão por diretor com pauta, ancorado no boneco pela régua
+   cena→canvas da ponte (`ponte.escala`, `ponte.canvas`) e refeito só
+   quando a câmera ou o presidente mexem. Fechado, o balão é um `!`
+   em cima da cabeça (o assunto ao passar o mouse; as cadeiras
+   vizinhas ficam a 50 px e um rótulo cobriria o vizinho); aberto,
+   traz o nome de quem fala, a pauta, o quando/contra do bote e os
+   botões (`decidirPauta`). Um aberto por vez: decidiu, vira ata
+   cinza e a palavra passa pro próximo com assunto; o `×` fecha tudo
+   até clicar de novo. Sem lugar em cima, abre embaixo; alto demais,
+   rola por dentro. Os construtores (`construtoresDaReuniao`) são os
+   mesmos da tela, montando num container dado — na cena os nomes não
+   viram link (abriria painel por baixo do palco).
+3. **O presidente fala**: o pedido a um aliado e a nossa jogada nos
+   eixos abrem no balão dele (em pé, à direita), com os mesmos
+   controles de sempre; e as pautas de quem não está na roda também
+   vão pra ele.
+4. **Encerrar**: a faixa da transmissão vira o cabeçalho da reunião
+   (mês, quantos assuntos por decidir) com o botão de encerrar, que
+   chama `ponte.encerrar` → ramo de reunião (sem XP, moral, prestígio
+   ou ficha de caído) → `fecharReuniaoEmCena`: fecha a tela sem
+   relatório de noite, `fecharReuniao` no feed, `confirmarDecisao`
+   marca o cartão, o relógio volta. PM, placar, botões de briga, pad
+   e as teclas de briga (Q, E, F, C, 2, 3, R, X, ENTER) não valem na
+   reunião; o WASD segue andando.
+5. **Quem fala gesticula**: `J.falante` é o disco do balão aberto;
+   `bonecos3.falarSentado` (as mãos explicando, o tronco pra frente)
+   e `falarEmPe` (o presidente, uma mão na cintura e a outra abrindo
+   pra roda); os outros sentados e o presidente viram a cabeça pra
+   quem fala (`olharPara`, até 65° de pescoço).
 
 ### Fase C · Acabamento
-- Preso ou ferido não senta: a cadeira dele fica vazia, e a pauta que
-  seria dele vai pra outro (hoje `diretorDaPauta` já pula preso).
+- Preso não senta (já é assim: fica fora da escalação da reunião, e a
+  pauta que seria dele abre no balão do presidente); ferido ainda
+  senta — decidir se a cadeira dele fica vazia.
 - A reunião na sub-sede? Não: a diretoria senta na sede-mãe.
 - Com poucos diretores o C encolhe sozinho: as cadeiras são ocupadas na
   ordem fundo → braços, do fundo pra abertura, então seis diretores

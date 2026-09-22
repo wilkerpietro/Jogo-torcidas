@@ -365,3 +365,91 @@
 #djComandos .form-btn{flex:none; min-width:0; white-space:nowrap;
   padding-left:8px; padding-right:8px}
 #djComandos .form-btn small{display:inline; margin-top:0; margin-left:5px}
+
+/* =========================================================
+   A REUNIÃO DA DIRETORIA NO PÁTIO DA SEDE (fase B, 22/09/2026)
+   O palco é o mesmo da briga; o que muda é o que fica por cima
+   dele. Sem PM, sem placar, sem botão de briga: a faixa vira o
+   cabeçalho da reunião (mês, assuntos) com o botão de encerrar, e
+   os balões de fala — HTML — ficam ancorados nos bonecos, um por
+   diretor com pauta e um pro presidente.
+   ========================================================= */
+#djPalco.reuniao #djAlerta, #djPalco.reuniao #djPlacar,
+#djPalco.reuniao #djComandos{display:none}
+body.em-reuniao #djPad{display:none !important}
+/* um modal aberto de dentro da reunião (fundar eixo, chamar um nome)
+   tem de vencer o palco fixo do celular (z 60) */
+body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
+#djFaixa .fx-reuniao{margin-left:auto;gap:12px;padding:5px 8px 5px 12px;min-width:0;flex:0 1 auto}
+#djFaixa .fx-reuniao .reu-titulo{display:flex;flex-direction:column;line-height:1.2;min-width:0;overflow:hidden}
+#djFaixa .fx-reuniao .reu-titulo b, #djFaixa .fx-reuniao .reu-titulo span{overflow:hidden;text-overflow:ellipsis}
+#djFaixa .fx-reuniao .bt{flex:none}
+@media(max-width:600px){ #djFaixa .fx-reuniao .reu-titulo b{font-size:11px} }
+#djFaixa .fx-reuniao .reu-titulo b{font-family:var(--titulo);font-size:13px;letter-spacing:.08em;
+  text-transform:uppercase;color:#f3dcdc;white-space:nowrap}
+#djFaixa .fx-reuniao .reu-titulo span{font-size:10px;color:var(--fraco);letter-spacing:.06em;white-space:nowrap}
+#djFaixa .fx-reuniao .bt{margin:0;padding:6px 11px;font-size:11px;white-space:nowrap}
+.cena-baloes{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;
+  z-index:6;overflow:hidden;font-family:var(--corpo);line-height:1.4}
+.cena-baloes[hidden]{display:none}
+.cena-balao{position:absolute;pointer-events:auto;transform:translate(-50%,-100%);
+  --rabo:50%;max-width:min(330px,88vw);box-sizing:border-box}
+.cena-balao.abaixo{transform:translate(-50%,0)}
+/* o marcador fechado: um ponto de exclamação em cima da cabeça (e o
+   assunto ao passar o mouse); as cadeiras vizinhas ficam a 50 px e um
+   rótulo inteiro cobriria o vizinho */
+.cena-balao .cena-marca{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  background:rgba(14,14,13,.92);border:1px solid rgba(255,255,255,.3);color:#f3dcdc;
+  font-family:var(--titulo);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  padding:0;border-radius:13px;height:26px;min-width:26px;box-sizing:border-box;white-space:nowrap}
+.cena-balao .cena-marca i{font-style:normal;color:var(--ouro);font-family:var(--mono);font-size:13px;
+  font-weight:700;width:24px;text-align:center;line-height:1}
+.cena-balao .cena-marca span{display:none;padding:0 10px 0 1px}
+.cena-balao .cena-marca:hover{border-color:var(--ouro)}
+.cena-balao .cena-marca:hover span{display:inline}
+.cena-balao.feito .cena-marca{border-color:rgba(255,255,255,.14);color:var(--fraco)}
+.cena-balao.feito .cena-marca i{color:var(--verde-vivo)}
+.cena-balao.aberto{z-index:2}
+/* o rabo do balão aberto fica no embrulho: a fala rola por dentro
+   (overflow) e cortaria um rabo desenhado nela */
+.cena-balao.aberto::after{content:'';position:absolute;left:var(--rabo);top:100%;
+  transform:translateX(-50%);border:7px solid transparent;border-top-color:rgba(255,255,255,.2)}
+.cena-balao.aberto::before{content:'';position:absolute;left:var(--rabo);top:calc(100% - 1px);
+  transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(16,16,15,.96);z-index:1}
+.cena-balao.aberto.abaixo::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:rgba(255,255,255,.2)}
+.cena-balao.aberto.abaixo::before{top:auto;bottom:calc(100% - 1px);border-top-color:transparent;border-bottom-color:rgba(16,16,15,.96)}
+/* o balão aberto: quem fala, a fala, o quando/contra do bote e os botões */
+.cena-balao .cena-fala{background:rgba(16,16,15,.96);border:1px solid rgba(255,255,255,.2);
+  border-radius:6px;padding:10px 12px 11px;box-shadow:0 6px 22px rgba(0,0,0,.55);
+  min-width:240px;text-align:left;position:relative;box-sizing:border-box;overflow-y:auto}
+.cena-balao .cena-fala .cena-quem{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ouro);margin:0 22px 8px 0}
+.cena-balao .cena-fala .reu-quem{margin-bottom:6px;flex-wrap:wrap;gap:6px 9px}
+.cena-balao .cena-fala .reu-quem b{font-size:14px}
+.cena-balao .cena-fala .reu-quem .quem{margin-left:0;flex-basis:100%;font-size:11px}
+.cena-balao .cena-fala .reu-balao{font-size:12.5px;line-height:1.5;margin:0 0 8px;padding:0;
+  background:none;border:0;border-radius:0;color:var(--texto)}
+.cena-balao .cena-fala .reu-balao::before{display:none}
+.cena-balao .cena-fala .reu-balao b{color:#e9a6a6}
+.cena-balao .cena-fala .reu-quando{margin-bottom:8px}
+.cena-balao .cena-fala .reu-fala{font-size:12px;margin-bottom:8px}
+.cena-balao .cena-fala .msg-bts{display:flex;flex-wrap:wrap;gap:6px}
+.cena-balao .cena-fala .msg-bts .bt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  padding:6px 10px;font-size:11.5px;margin:0}
+.cena-balao .cena-fala .msg-bts .bt small{font-family:var(--corpo);font-size:10px;text-transform:none;letter-spacing:0;color:var(--fraco)}
+.cena-balao .cena-fala .msg-bts .bt.destaque small{color:#f0d6d6}
+.cena-balao .cena-fala .reu-ata{margin-top:6px;padding:7px 9px}
+.cena-balao .cena-fala .reu-pedido{display:grid;gap:6px;margin-bottom:8px}
+.cena-balao .cena-fala .reu-campo{display:flex;flex-direction:column;gap:2px}
+.cena-balao .cena-fala .reu-campo .rot{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--fraco);text-transform:uppercase}
+.cena-balao .cena-fala .eixo-nota{font-size:11px;color:var(--fraco);margin-bottom:6px}
+.cena-balao .cena-fala .reu-eixos{margin-top:8px}
+.cena-balao .cena-fala .cena-fechar{position:absolute;right:6px;top:4px;background:none;border:0;
+  color:var(--fraco);font-size:15px;cursor:pointer;padding:2px 5px;line-height:1}
+.cena-balao .cena-fala .cena-fechar:hover{color:var(--texto)}
+.cena-balao .cena-fala .cena-lista{display:flex;flex-direction:column;gap:9px}
+.cena-balao .cena-fala .cena-lista > div + div{border-top:1px solid var(--sulco);padding-top:9px}
+.cena-balao .cena-fala .cena-vazio{font-size:12px;color:var(--fraco)}
+#djPalco.hud-mini .fx-reuniao .reu-titulo{display:none}
+#djPalco.hud-mini .cena-balao .cena-fala{min-width:200px;padding:8px 10px 9px}
+#djPalco.hud-mini .cena-balao .cena-marca{font-size:10.5px;padding:4px 7px}
