@@ -1048,30 +1048,37 @@ TO.dados.cenas = (function(){
   });
 
   /* =======================================================
-     A REUNIÃO DA DIRETORIA — a roda (pedido do dono, 22/09/2026)
-     Cena sem briga: a sala da sede, as cadeiras em roda com a
-     abertura virada pra frente, e o presidente em pé nessa
-     abertura, virado pra roda. Cada pauta da reunião vira um
-     balão em cima de um diretor sentado. Este é o RASCUNHO
-     desenhado — a foto da sala vem do prompt em
-     img/cenas/PROMPT-REUNIAO.md e entra por `cenas_foto.js`
-     como as outras; as cadeiras e o lugar do presidente ficam
-     aqui, que é o que o combate lê (`D.cadeiras`, `D.presidente`).
-     ======================================================= */
-  const RODA_CX = 768, RODA_CY = 470, RODA_R = 205, CADEIRAS = 12;
-  const cadeirasDaRoda = (()=>{
+     A REUNIÃO DA DIRETORIA — o C quadrado (pedido do dono, 22/09/2026)
+     Cena sem briga: a sala da sede, as cadeiras da diretoria em
+     C QUADRADO — três lados de um retângulo, a abertura virada pra
+     direita — e o presidente sozinho do lado direito, em pé, virado
+     pra eles (correção do dono, 22/09/2026: era uma roda). Cada
+     pauta da reunião vira um balão em cima de um diretor sentado.
+     Este é o RASCUNHO desenhado — a foto da sala vem do prompt em
+     img/cenas/PROMPT-REUNIAO.md e entra por `cenas_foto.js` como as
+     outras; as cadeiras e o lugar do presidente ficam aqui, que é o
+     que o combate lê (`D.cadeiras`, `D.presidente`).
+
+     A ordem das cadeiras importa: `sentarNaRoda` senta na ordem da
+     lista, então com poucos diretores o C continua sendo um C — o
+     fundo (a coluna da esquerda) primeiro, depois os braços de cima e
+     de baixo, do fundo pra abertura. O rumo é pra dentro do C. */
+  const C_X0 = 560, C_X1 = 1000;          // o fundo do C e a ponta dos braços
+  const C_Y0 = 300, C_Y1 = 700;           // o braço de cima e o de baixo
+  const cadeirasDoC = (()=>{
     const fora = [];
-    /* a abertura fica embaixo (rumo 0 = +y): a roda vai de 0,55 a
-       2π−0,55 rad, uma cadeira a cada passo igual */
-    const a0 = 0.55, a1 = Math.PI*2 - 0.55;
-    for(let i=0;i<CADEIRAS;i++){
-      const a = a0 + (a1 - a0) * (i/(CADEIRAS-1));
-      const x = Math.round(RODA_CX + RODA_R*Math.sin(a));
-      const y = Math.round(RODA_CY + RODA_R*Math.cos(a));
-      fora.push({x, y, rumo: Math.atan2(RODA_CX - x, RODA_CY - y)});
+    const olhaDireita = Math.atan2(1, 0), olhaBaixo = Math.atan2(0, 1), olhaCima = Math.atan2(0, -1);
+    /* o fundo: quatro cadeiras na coluna da esquerda, olhando pra direita */
+    for(const y of [360, 453, 547, 640]) fora.push({x:C_X0, y, rumo:olhaDireita});
+    /* os braços: do fundo pra abertura, alternando cima e baixo */
+    for(const x of [650, 760, 870, 980]){
+      fora.push({x, y:C_Y0, rumo:olhaBaixo});
+      fora.push({x, y:C_Y1, rumo:olhaCima});
     }
     return fora;
   })();
+  /* o presidente: sozinho, à direita da abertura, olhando pra esquerda */
+  const PRESIDENTE_C = {x:C_X1 + 150, y:(C_Y0 + C_Y1)/2, rumo:Math.atan2(-1, 0)};
   const blocosSala = [
     {x:0, y:0, w:1536, h:64, tipo:'parede'},
     {x:0, y:960, w:690, h:64, tipo:'parede'},        // parede de baixo, com a porta no meio
@@ -1085,15 +1092,13 @@ TO.dados.cenas = (function(){
   const reuniao = montar({
     id:'reuniao', nome:'Sala da sede', local:'Na sede, reunião da diretoria',
     pintura:'sala', blocos:blocosSala,
-    cadeiras: cadeirasDaRoda,
-    /* o presidente em pé na abertura da roda, virado pra ela */
-    presidente:{x:RODA_CX, y:RODA_CY + RODA_R + 40,
-                rumo: Math.atan2(0, -(RODA_R + 40))},
+    cadeiras: cadeirasDoC,
+    presidente: PRESIDENTE_C,
     saida:{perto:'Sair da sala', longe:'Porta da sala (leve o líder)',
            feito:'a reunião acabou',
            dica:'A reunião acaba pelo botão de encerrar.'},
     spawns:[
-      {id:'mandante1', rot:'DIRETORIA', lado:'mandante', x:RODA_CX, y:RODA_CY + RODA_R + 40,
+      {id:'mandante1', rot:'DIRETORIA', lado:'mandante', x:PRESIDENTE_C.x, y:PRESIDENTE_C.y,
        jogador:true, entrada:'porta'}
     ],
     entradas:[

@@ -8114,6 +8114,10 @@ A reunião de diplomacia (dia 5, bimestral desde 12/09) vira **reunião da diret
 
 Teste (Playwright, `presidente.js`, `reuniao-botes.js`, `bancada-reuniao.js`, `vitrine-sentado.js`): o passo 3 pede o nome e o save nasce com "Wilker Pietro" na diretoria como presidente; numa cena ele é o líder; ferido, o líder vira o mais forte da escalação; `envelhecer` não o aposenta; save sem presidente ganha um na carga. No dia 5 a reunião traz as pautas de diplomacia e os dois botes com dia e alvo, cada pauta com o diretor que a traz; a tela mostra o balão, "traz o assunto: Bomba Lessa · diretoria" e "Quando: quarta, 18/02 · Contra: a Zona Oeste da MOFI"; marcar põe o bote em `E.botes`; no dia, o cartão abre a cena do bar; o calendário mostra a célula. Na bancada, a aba Reunião senta 12 na roda e deixa o presidente em pé na abertura, ninguém sai da cadeira e a cena não acaba sozinha.
 
+## A diretoria senta em C quadrado, o presidente sozinho à direita (correção do dono, 22/09/2026)
+
+A primeira versão da cena da reunião pôs as cadeiras em roda com a abertura embaixo e o presidente em pé na abertura. O dono mandou a imagem de referência — um C quadrado — e a regra: os reunidos sentam em **C quadrado**, e o **presidente fica sozinho do lado direito, virado pra eles**. A cena `reuniao` (`dados/cenas.js`) passa a ter as 12 cadeiras em três lados retos — quatro no fundo (a coluna da esquerda), quatro no braço de cima e quatro no de baixo, a abertura pra direita —, todas viradas pra dentro do C, e o lugar do presidente à direita da abertura, olhando pra esquerda. A ordem das cadeiras é fundo → braços, do fundo pra abertura: com seis diretores o C continua sendo um C. O prompt da foto e o plano foram junto. `sentarNaRoda` não mudou: a forma é da cena, não do combate.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

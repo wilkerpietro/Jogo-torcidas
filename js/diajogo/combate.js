@@ -528,13 +528,15 @@ TO.diaJogo.combate = (function(){
   }
 
   /* =======================================================
-     A RODA DA REUNIÃO (pedido do dono, 22/09/2026)
-     Cena sem briga: a diretoria sentada nas cadeiras, em roda, e o
-     presidente — o líder, o boneco do jogador — em pé na frente
-     dela, virado pra roda. Cada cadeira da cena (`D.cadeiras`) tem
-     posição e rumo (pra onde o sentado olha: o meio da roda). Quem
-     não coube nas cadeiras sai da cena: reunião é da diretoria, não
-     do bonde inteiro.
+     AS CADEIRAS DA REUNIÃO (pedido do dono, 22/09/2026)
+     Cena sem briga: a diretoria sentada nas cadeiras — em C quadrado,
+     com a abertura pra direita (correção do dono, 22/09/2026) — e o
+     presidente — o líder, o boneco do jogador — em pé sozinho do lado
+     direito, virado pra eles. A forma é da CENA: cada cadeira de
+     `D.cadeiras` tem posição e rumo (pra onde o sentado olha), na
+     ordem em que se senta; `D.presidente` é o lugar dele. Quem não
+     coube nas cadeiras sai da cena: reunião é da diretoria, não do
+     bonde inteiro.
      ======================================================= */
   function sentarNaRoda(J){
     const nossos = J.discos.filter(d=>d.doJogador && d.vivo);

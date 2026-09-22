@@ -4,7 +4,9 @@ O pedido, nas palavras do dono: *"transformar a reunião de diplomacia
 numa reunião mensal. A reunião abre a cena de uma roda de cadeiras com
 todos os diretores reunidos, com o presidente da torcida na frente da
 roda e cada pauta da reunião abre um balão de mensagens em cima de algum
-membro da diretoria."* E junto: os botes no bar e na casa de piscina
+membro da diretoria."* E a correção, no mesmo dia: *"Prefiro que os
+reunidos sentem em formato de C quadrado, e o presidente sozinho do lado
+direito, virado pra eles."* E junto: os botes no bar e na casa de piscina
 passam a ser propostos nessa reunião, com dia e alvo; aceitos, entram no
 calendário e acontecem no dia. E a torcida ganha um presidente com nome
 — o jogador —, que é o boneco controlado nas cenas.
@@ -27,7 +29,7 @@ Este arquivo é o desenho inteiro, o que já está feito e o que falta.
 | A sugestão semanal solta de bar/casa saiu | `feed.eventosDoDia` (passo "bote do dia") | **feito** |
 | A pose **sentado na cadeira** do boneco 3D, com três jeitos | `bonecos3.sentadoCadeira`, `d.sentado` | **feito** |
 | Disco sentado: não anda, não é empurrado, não acaba a cena | `combate` (laço de movimento, `separar`, `conferirFim`) | **feito** |
-| A roda: cadeiras com posição e rumo, presidente em pé na abertura | `dados/cenas.js` (`reuniao`: `D.cadeiras`, `D.presidente`), `combate.sentarNaRoda` | **feito (rascunho desenhado)** |
+| O C quadrado: 12 cadeiras com posição e rumo (4 no fundo, 4 em cima, 4 embaixo, abertura pra direita), o presidente em pé sozinho à direita, virado pra eles | `dados/cenas.js` (`reuniao`: `D.cadeiras`, `D.presidente`), `combate.sentarNaRoda` | **feito (rascunho desenhado)** |
 | A aba "Reunião" na bancada (cenas de briga) e o estado "sentado" na vitrine | `bancada.js`, `bonecos.html` | **feito** |
 | O prompt da foto da sala | `img/cenas/PROMPT-REUNIAO.md` | **feito** |
 
@@ -36,7 +38,7 @@ Este arquivo é o desenho inteiro, o que já está feito e o que falta.
 ### Fase A · A foto da sala (dono)
 Gerar a imagem pelo prompt, importar (`importar_cena_foto.py`, receita
 `reuniao`), acertar a máscara e as marcas no F2 da bancada (as 12
-cadeiras, o lugar do presidente, a porta) e colar em
+cadeiras do C, o lugar do presidente à direita, a porta) e colar em
 `dados/cenas_editadas.js`. A cena desenhada de hoje (`pintura:'sala'`)
 some sozinha quando a foto entrar: `sobreFoto` troca o chão pela foto e
 mantém `cadeiras` e `presidente`.
@@ -56,7 +58,7 @@ o balão de cada pauta). A fase B troca a tela pela **cena**:
    diretor abre o balão dele; os já decididos ficam com a ata em cinza.
 3. **O presidente fala**: as duas pautas que hoje não têm diretor — o
    pedido a um aliado e a nossa jogada nos eixos — abrem no balão do
-   presidente (em pé), com os mesmos controles de hoje.
+   presidente (em pé, à direita), com os mesmos controles de hoje.
 4. **Encerrar**: o botão de encerrar (na faixa da transmissão) chama
    `fecharReuniao`; a cena fecha sem relatório de noite (não é briga).
 5. O diretor que fala **gesticula** enquanto o balão está aberto (um
@@ -67,6 +69,9 @@ o balão de cada pauta). A fase B troca a tela pela **cena**:
 - Preso ou ferido não senta: a cadeira dele fica vazia, e a pauta que
   seria dele vai pra outro (hoje `diretorDaPauta` já pula preso).
 - A reunião na sub-sede? Não: a diretoria senta na sede-mãe.
+- Com poucos diretores o C encolhe sozinho: as cadeiras são ocupadas na
+  ordem fundo → braços, do fundo pra abertura, então seis diretores
+  fazem um C pequeno, não um lado só.
 - Som ambiente e a fala do presidente quando a pauta é decidida — depois.
 
 ## 3. As regras que já valem
