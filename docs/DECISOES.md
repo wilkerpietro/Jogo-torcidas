@@ -8138,6 +8138,10 @@ No quadro "Como chegam" da abertura de competição (`almanaque.abertura`), a li
 
 No pedido a um aliado na reunião, a lista "de quem" do APROXIMAR era a dos rivais dele (relação abaixo de −15, sem o maior rival). Passa a ser a dos NOSSOS aliados — relação ≥ 20 com a gente — que ainda não são aliados nem irmãos dele, seja lá o que os dois são entre si: neutro, rival ou maior rival (`eixos.alvosDoPedido`). A ideia é juntar a turma da gente. O afastar não mudou: os aliados dele, e irmã não se larga.
 
+## Um assunto por balão, sempre (ordem do dono, 22/09/2026)
+
+Na cena da reunião, os assuntos de um mesmo diretor estavam juntos num balão só (o presidente chegou a mostrar bote, pedido a um aliado e a nossa jogada empilhados). O dono mandou: três demandas da mesma pessoa são três balões, nunca um. Agora cada pauta é um balão próprio, e o pedido a um aliado e a nossa jogada nos eixos são dois balões do presidente (`main.itensDaReuniao`). Os marcadores fechados de um mesmo boneco ficam lado a lado em cima da cabeça, cada um na sua vaga; o aberto fica no boneco. A palavra continua passando pro próximo por decidir.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

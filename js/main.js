@@ -8421,57 +8421,63 @@
     R.raf = requestAnimationFrame(laco);
   }
 
-  /* os grupos: um por boneco com fala — cada diretor sentado com
-     pauta, e o presidente (o pedido a um aliado, a nossa jogada, e as
-     pautas de quem não está na roda). A ordem de fala é a das cadeiras
-     (fundo → braços), o presidente por último. */
-  function gruposDaReuniao(R){
-    const e = R.e, J = TO.diaJogo.J, F = TO.feed;
-    const grupos = new Map();
-    if(!J) return grupos;
+  /* OS ITENS: UM ASSUNTO POR BALÃO, SEMPRE (ordem do dono, 22/09/2026:
+     três demandas do mesmo diretor são três balões, nunca um). Cada
+     pauta é um balão ancorado no diretor que a traz; o pedido a um
+     aliado e a nossa jogada nos eixos são dois balões do presidente,
+     e as pautas de quem não está na roda também vão pra ele. A ordem
+     de fala é a das cadeiras (fundo → braços), o presidente por último;
+     no mesmo boneco, na ordem em que as pautas nasceram. */
+  function itensDaReuniao(R){
+    const e = R.e, J = TO.diaJogo.J, F = TO.feed, X = TO.eixos;
+    const itens = [];
+    if(!J) return itens;
     const lider = J.discos.find(d=>d.lider && d.vivo) || J.discos.find(d=>d.doJogador && d.vivo) || null;
-    const chaveDe = d => d === lider ? 'presidente' : 'm'+d.membroId;
     const discoDe = id => J.discos.find(d=>d.vivo && d.sentado && d.membroId === id) || null;
-    const por = d => {
-      const k = chaveDe(d);
-      if(!grupos.has(k)) grupos.set(k, {chave:k, disco:d, itens:[], presidente: d === lider});
-      return grupos.get(k);
-    };
-    for(const it of F.caixaReuniao(e).pauta){
+    const Rn = F.caixaReuniao(e);
+    for(const it of Rn.pauta){
       const d = (it.quem != null && discoDe(it.quem)) || lider;
-      if(d) por(d).itens.push(it);
+      if(d) itens.push({chave:'p'+it.id, disco:d, it, tipo:'pauta', presidente: d === lider,
+                        rot: it.rot || 'Assunto', pendente: !it.decidido});
     }
-    if(lider) por(lider);
+    if(lider){
+      const pedidoAberto = !(Rn.pedido && Rn.pedido.marca === Rn.ultima) && !!(X && X.aliadosNossos(e).length);
+      itens.push({chave:'pedido', disco:lider, it:null, tipo:'pedido', presidente:true,
+                  rot:'Pedido a um aliado', pendente: pedidoAberto});
+      const mesa = !!(X && X.cabemosEmMais(e) && !X.esperaDaMesa(e));
+      itens.push({chave:'mesa', disco:lider, it:null, tipo:'mesa', presidente:true,
+                  rot:'A nossa jogada', pendente: mesa});
+    }
     const cad = ((TO.diaJogo.arredores && TO.diaJogo.arredores.D) || {}).cadeiras || [];
     const idx = d => { const i = cad.findIndex(k=>Math.hypot(k.x-d.x, k.y-d.y) < 3); return i < 0 ? 99 : i; };
-    return new Map([...grupos.values()]
-      .sort((a,b)=>(a.presidente?1:0)-(b.presidente?1:0) || idx(a.disco)-idx(b.disco))
-      .map(g=>[g.chave, g]));
+    itens.sort((a,b)=>(a.presidente?1:0)-(b.presidente?1:0) || idx(a.disco)-idx(b.disco));
+    /* no mesmo boneco, cada marcador fechado tem a sua vaga, lado a lado */
+    const porDisco = new Map();
+    for(const x of itens){ const l = porDisco.get(x.disco) || []; l.push(x); porDisco.set(x.disco, l); }
+    for(const l of porDisco.values()) l.forEach((x,i)=>{ x.vaga = i - (l.length-1)/2; });
+    return itens;
   }
 
   function pintarBaloesDaReuniao(R){
     if(reuniaoCena !== R || !R.camada) return;
-    const e = R.e, J = TO.diaJogo.J, B = R.B, X = TO.eixos;
-    R.grupos = gruposDaReuniao(R);
-    const grupos = [...R.grupos.values()];
-    const abertos = g => g.itens.filter(x=>!x.decidido).length;
-    const Rn = TO.feed.caixaReuniao(e);
-    const pedidoAberto = !(Rn.pedido && Rn.pedido.marca === Rn.ultima) && !!(X && X.aliadosNossos(e).length);
-    /* o que está aberto: o que o jogador pediu; senão o primeiro com
-       assunto por decidir, e o presidente por último. 'nenhum' é o
-       jogador que fechou o balão — fica tudo fechado até clicar. */
+    const e = R.e, J = TO.diaJogo.J, B = R.B;
+    const itens = itensDaReuniao(R);
+    R.grupos = new Map(itens.map(x=>[x.chave, x]));
+    /* o que está aberto: o que o jogador pediu; senão o primeiro por
+       decidir, e o presidente por último. Decidido o aberto, a palavra
+       passa pro próximo por decidir. 'nenhum' é o jogador que fechou
+       o balão — fica tudo fechado até clicar. */
     const atual = R.aberto && R.aberto !== 'nenhum' ? R.grupos.get(R.aberto) : null;
-    if(R.aberto !== 'nenhum' && (!atual || (R.avancar && !atual.presidente && !abertos(atual)))){
-      const prox = grupos.find(g=>abertos(g)) || grupos.find(g=>g.presidente) || null;
+    if(R.aberto !== 'nenhum' && (!atual || (R.avancar && atual.tipo === 'pauta' && !atual.pendente))){
+      const prox = itens.find(x=>x.pendente) || null;
       R.aberto = prox ? prox.chave : 'nenhum';
     }
     R.avancar = false;
 
     R.camada.innerHTML = '';
     let falante = null;
-    for(const g of grupos){
-      const n = abertos(g);
-      const b = el('div',{class:'cena-balao'+(g.chave===R.aberto?' aberto':'')+(!n && !g.presidente ? ' feito':'')});
+    for(const g of itens){
+      const b = el('div',{class:'cena-balao'+(g.chave===R.aberto?' aberto':'')+(!g.pendente && g.tipo==='pauta' ? ' feito':'')});
       b.dataset.chave = g.chave;
       if(g.chave === R.aberto){
         falante = g.disco;
@@ -8485,19 +8491,15 @@
           ? `${TO.membros.nomeDe(mb)} · ${TO.membros.cargoNome ? TO.membros.cargoNome(mb).toLowerCase() : mb.cargo}`
           : (g.presidente ? 'O presidente' : g.disco.nome)}));
         const lista = el('div',{class:'cena-lista'});
-        for(const it of g.itens) B.palcoDoItem(it, lista);
-        if(g.presidente){ B.palcoDoPedido(lista); B.palcoDaMesa(lista); }
-        if(!lista.childElementCount) lista.appendChild(el('div',{class:'cena-vazio', texto:'Nada a dizer.'}));
+        if(g.tipo === 'pauta') B.palcoDoItem(g.it, lista);
+        else if(g.tipo === 'pedido') B.palcoDoPedido(lista);
+        else B.palcoDaMesa(lista);
         c.appendChild(lista);
         b.appendChild(c);
       } else {
-        const primeiro = g.itens.find(x=>!x.decidido) || g.itens[0] || null;
-        const rot = primeiro ? `${primeiro.rot||'Assunto'}${n>1 ? ' +'+(n-1) : ''}`
-                  : g.presidente ? 'A nossa jogada' : 'Assunto';
-        const pendente = n > 0 || (g.presidente && pedidoAberto);
-        const m = el('button',{class:'cena-marca', title: rot});
-        m.appendChild(el('i',{texto: pendente ? '!' : '✓'}));
-        m.appendChild(el('span',{texto: rot}));
+        const m = el('button',{class:'cena-marca', title: g.rot});
+        m.appendChild(el('i',{texto: g.pendente ? '!' : (g.tipo === 'pauta' ? '✓' : '·')}));
+        m.appendChild(el('span',{texto: g.rot}));
         m.onclick = ()=>{ R.aberto = g.chave; pintarBaloesDaReuniao(R); };
         b.appendChild(m);
       }
@@ -8505,7 +8507,7 @@
     }
     if(J) J.falante = falante;
     const d = TO.estado.dataDaSemana(e.data.ano, e.data.semana, e.data.dia);
-    const nAb = grupos.reduce((a,g)=>a+abertos(g), 0);
+    const nAb = itens.filter(x=>x.tipo === 'pauta' && x.pendente).length;
     if(R.sub) R.sub.textContent = `${MESES_R[d.getMonth()]} de ${d.getFullYear()} · `+
       (nAb ? `${nAb} assunto${nAb>1?'s':''} por decidir` : 'nada mais por decidir');
     posicionarBaloesDaReuniao(R, true);
@@ -8533,7 +8535,8 @@
       const g = R.grupos.get(b.dataset.chave); if(!g) continue;
       const d = g.disco;
       const alt = d.sentado ? ALTURA_BALAO.sentado : ALTURA_BALAO.emPe;
-      const px = (d.x*s + ox)*k, py = ((d.y - alt)*s + oy)*k, pyBaixo = ((d.y + alt)*s + oy)*k;
+      const aberto = b.classList.contains('aberto');
+      const px = (d.x*s + ox)*k + (aberto ? 0 : (g.vaga||0)*30), py = ((d.y - alt)*s + oy)*k, pyBaixo = ((d.y + alt)*s + oy)*k;
       /* mede solto; se não cabe nem em cima nem embaixo, rola por dentro */
       const fala = b.querySelector('.cena-fala');
       if(fala) fala.style.maxHeight = '';

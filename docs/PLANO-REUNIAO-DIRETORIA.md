@@ -77,7 +77,7 @@ sem sede ou navegador sem canvas:
    larga a cena abre em 2× centrada na roda (`ponte.focoDoZoom` olha
    pro C na reunião, não pro líder); no celular a ponte já aproxima.
 2. **Os balões**: a camada `#djBaloes` (HTML) por cima do canvas, um
-   balão por diretor com pauta, ancorado no boneco pela régua
+   balão POR PAUTA (um assunto por balão, ordem do dono), ancorado no boneco pela régua
    cena→canvas da ponte (`ponte.escala`, `ponte.canvas`) e refeito só
    quando a câmera ou o presidente mexem. Fechado, o balão é um `!`
    em cima da cabeça (o assunto ao passar o mouse; as cadeiras
