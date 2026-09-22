@@ -78,12 +78,22 @@ TO.acoes = (function(){
     const dePe = efetivoDePe(E, o);
     return Math.min(ZONA_MAX, Math.max(ZONA_MIN, Math.round(dePe / zonas)));
   }
+  /* CADA MEMBRO TEM A SUA ZONA, E A ZONA LEVA OS MAIS FORTES DELA
+     (régua do dono, 22/09/2026): a zona de um membro sai do hash do id
+     dele — fixa, pra sempre —, e o bonde da zona são os mais fortes
+     dessa zona, até o teto. Antes era um sorteio da torcida inteira
+     por semana, e o sorteio dava novato e componente contra a elite
+     que o gerador dá pra zona deles (`combate.fichasDaZona`, a mesma
+     régua). */
+  const zonaDoMembro = m => {
+    const Z = TO.mundo.ZONAS || ['Norte','Sul','Leste','Oeste'];
+    return Z[TO.mapa.hash(`zona-membro|${m.id}`) % Z.length];
+  };
   function bondeDaZona(E, zona){
     const aptos = TO.membros.aptosParaOEstadio(E);
     const n = Math.min(aptos.length, efetivoDaZona(E, E.torcida));
-    const H = TO.mapa.hash, sem = `zona|${zona||''}|${E.data.ano}|${E.data.semana}`;
-    return aptos.slice().sort((a,b)=>H(`${sem}|${a.id}`) - H(`${sem}|${b.id}`))
-                .slice(0, n);
+    const daZona = zona ? aptos.filter(m=>zonaDoMembro(m) === zona) : aptos;
+    return daZona.slice().sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa)).slice(0, n);
   }
 
   function organizadasDaPraca(E){
@@ -1052,7 +1062,7 @@ TO.acoes = (function(){
           previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe, efetivoDePe,
           ASSALTOS, executarAssalto,
-          alvosDeAtaque, efetivoDaZona, bondeDaZona,
+          alvosDeAtaque, efetivoDaZona, bondeDaZona, zonaDoMembro,
           clube, fecharCena, fecharBrigaDeRua,
           COBRANCA, MINIMO_SAIDA, CAP_RECRUTA};
 })();

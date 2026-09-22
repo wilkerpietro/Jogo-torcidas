@@ -290,6 +290,10 @@ TO.diaJogo.combate = (function(){
          : cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
       config_perfilRival: cfg.perfilRival || null,
+      /* fichas prontas pro lado deles (a zona deles na casa de piscina):
+         cada grupo tira a sua fatia, na ordem, em vez de cada spawn
+         receber o topo do plantel de novo */
+      config_fichasRival: cfg.fichasRival || null, _fichasIdx:0,
       /* onde a briga cai: arredores do estádio, praça ou rua. Muda o
          tamanho do bonde rival e a pressa da PM (GDD §12). */
       local: cfg.local || 'arredores',
@@ -670,6 +674,20 @@ TO.diaJogo.combate = (function(){
                .slice(0, qtd);
   }
 
+  /* A ZONA DELES (régua do dono, 22/09/2026): o plantel inteiro da
+     torcida é gerado, repartido nas quatro zonas — a fila ordenada por
+     força, um pra cada zona, na roda — e a zona pedida leva os seus
+     mais fortes, até `qtd`. É a mesma régua da nossa zona
+     (`acoes.bondeDaZona`): os mais fortes DAQUELA zona, não da torcida. */
+  function fichasDaZona(perfil, zonaIdx, qtd){
+    const p = perfil || {};
+    const tamanho = Math.max(qtd, Math.min(p.membros || 60, 250));
+    const todos = fichasDoPerfil(p, tamanho);
+    const nZ = 4, z = ((zonaIdx|0) % nZ + nZ) % nZ;
+    const daZona = todos.filter((f, i) => i % nZ === z);
+    return (daZona.length ? daZona : todos).slice(0, qtd);
+  }
+
   function bancoDeApelidos(){
     const N = TO.dados.nomes;
     if(!N) return ['TROVÃO'];
@@ -701,7 +719,13 @@ TO.diaJogo.combate = (function(){
       idx[rotN] = de + qtd;
     } else nomes = nomes || U.embaralhar(bancoDeApelidos());
     const perfil = (g.bonde && g.bonde.perfil) || J.config_perfilRival || null;
-    const geradas = meuLado ? null : fichasDoPerfil(perfil, qtd);
+    let geradas = null;
+    if(!meuLado){
+      const prontas = J.config_fichasRival;
+      const fatia = prontas ? prontas.slice(J._fichasIdx, J._fichasIdx + qtd) : [];
+      if(prontas) J._fichasIdx += qtd;
+      geradas = fatia.length ? fatia : fichasDoPerfil(perfil, qtd);
+    }
     /* só o nosso bonde obedece à formação; aliado que divide o portão não */
     const meu = g.bonde ? !!g.bonde.nossa : !!s.jogador;
     /* LADO A LADO, COMO NO QUADRADO (pedido do dono, 19/08/2026).
@@ -4092,7 +4116,7 @@ TO.diaJogo.combate = (function(){
   return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa, fimDasFaixas, recolherAntesDeFugir,
           /* o simulador precisa das MESMAS fichas que a cena geraria:
              simular não pode dar ao rival um bonde diferente */
-          fichasDoPerfil,
+          fichasDoPerfil, fichasDaZona,
           naFrente, rumoPara, RAIO_BOMBA, podeArremessar, bater, defender, DUR_GOLPE, CAIDO_FICA, CAIDO_SOME,
           soltarDefesa, agarrar, podeAgarrar, chamar, perfilDe, CD_CHAMAR,
           ladoDoJogador, ladoDeles, OUTRO_LADO,

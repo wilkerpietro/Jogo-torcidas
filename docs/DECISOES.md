@@ -8154,6 +8154,10 @@ Num save da TUF o dono forçou a aproximação da Jovem Garra Tricolor com a Inf
 
 O dono viu "ARQUIVO — Mensagem antiga que não pôde ser desenhada" e o jogo parado: era uma decisão cujo cartão estourou ao desenhar (o aviso de 17/09 salvava o feed, mas a decisão continuava sem botão e travando o relógio). Agora o cartão de aviso traz o tipo e a mensagem do erro em letra miúda — no celular não há console — e, sendo decisão sem resposta, os botões dela (respondem pelo caminho de sempre) e um "Deixar pra lá" que marca a resposta e solta o relógio. Uma fumaça de 400 dias em jogo novo (TUF e GAV) não quebrou cartão nenhum: a causa está no save do dono, e o erro à vista é o que vai dizer qual.
 
+## A zona leva os mais fortes dela, dos dois lados (régua do dono, 22/09/2026)
+
+O dono sentia a IA mais forte na casa de piscina, atacando e defendendo. Medido: a nossa zona era um sorteio da torcida inteira (média 14,9 de força+defesa, seis novatos e nove componentes em vinte) e a zona deles saía do gerador que corta o topo do plantel (25,0, nove frentes e dois diretores) — e, pior, cada um dos cinco pontos da casa recebia o topo de novo. A régua nova é a mesma pros dois lados: cada membro tem a sua zona (hash do id, fixa pra sempre — `acoes.zonaDoMembro`) e o bonde da zona são os mais fortes daquela zona, até o teto (`bondeDaZona`); do lado deles o plantel inteiro é gerado, repartido nas quatro zonas na roda da fila de força, e a zona pedida leva os mais fortes dela (`combate.fichasDaZona`), entregues prontos à cena (`cfg.fichasRival`), cada grupo tirando a sua fatia na ordem. Num jogo novo da TUF contra a MOFI: nossa zona 17,5, a deles 15,2 (o topo do plantel deles daria 25,3). As outras duas causas medidas ficaram anotadas pro dono decidir: a casa favorece quem defende (portão-funil; com fichas iguais o atacante ganha 3 a 5 em 16, seja quem for) e a pedra automática é só da IA (na praça, fichas iguais, nós atacando: 1 em 16 com pedra, 10 em 16 sem).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

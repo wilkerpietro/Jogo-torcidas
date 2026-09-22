@@ -9345,6 +9345,18 @@
             quadro: TO.relacoes.quadroDe(E(), id)};
   };
 
+  /* a zona deles na casa de piscina: os mais fortes daquela zona do
+     plantel gerado — só quando o alvo é casa; nas outras cenas o
+     gerador segue cortando o topo do plantel (a nossa seleção lá é o
+     topo também) */
+  const fichasDaZonaDeles = (alvo, n) => {
+    if(!alvo || alvo.tipo !== 'casa' || !alvo.torcidaId) return null;
+    const C = TO.diaJogo.combate; if(!C || !C.fichasDaZona) return null;
+    const Z = TO.mundo.ZONAS || ['Norte','Sul','Leste','Oeste'];
+    const zi = Math.max(0, Z.indexOf(alvo.zona));
+    return C.fichasDaZona(perfilDe(alvo.torcidaId), zi, Math.max(1, Math.round(n || 4)));
+  };
+
   const LOCAL_ROT = {rua:'na rua', 'rua-media':'numa rua de classe média',
                      'rua-nobre':'numa rua de bairro nobre',
                      praca:'na praça', arredores:'nos arredores do estádio'};
@@ -9794,6 +9806,9 @@
       config: { escalacao: aptos, intencao:'atacar', bondes,
                 bombas: p.bombas,
                 efetivoRival: cena.efetivoRival, local: cena.cena,
+                /* na casa de piscina a zona deles são os mais fortes
+                   daquela zona (régua do dono, 22/09/2026) */
+                fichasRival: fichasDaZonaDeles(cena.alvo, cena.efetivoRival),
                 /* a faixa: quem é atacado expõe — aqui, eles */
                 faixaDefensor:'eles', rivalId: cena.alvo && cena.alvo.torcidaId,
                 rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
@@ -9921,7 +9936,8 @@
       config: { escalacao: aptos, intencao:'atacar', paz:false, bombas:p.bombas,
                 efetivoRival: deles, local: atq.cena || 'bar', bondes,
                 /* a faixa: quem é atacado expõe — aqui, a gente */
-                faixaDefensor:'nos', rivalId: atq.torcida },
+                faixaDefensor:'nos', rivalId: atq.torcida,
+                fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
                                 cena: atq.cena || 'bar', zona: atq.zona || null,
