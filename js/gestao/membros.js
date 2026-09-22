@@ -183,7 +183,59 @@ TO.membros = (function(){
   /* Nome de tela. Só a Diretoria usa sobrenome — dá ar de liderança
      sem custo nenhum (GDD §5.1). */
   function nomeDe(m){
-    return m.cargo==='diretoria' ? `${m.apelido} ${m.sobrenome}` : m.apelido;
+    return m.cargo==='diretoria' ? `${m.apelido} ${m.sobrenome||''}`.trim() : m.apelido;
+  }
+  /* o rótulo do cargo na tela: o presidente é presidente, e não "um da
+     diretoria" (pedido do dono, 22/09/2026) */
+  function cargoNome(m){
+    return m && m.presidente ? 'Presidente' : CARGOS[(m||{}).cargo] ? CARGOS[m.cargo].nome : '';
+  }
+
+  /* =======================================================
+     O PRESIDENTE DA TORCIDA (pedido do dono, 22/09/2026)
+     O jogador tem nome e ficha: é um membro da diretoria, batizado
+     na abertura do save. É ele o boneco que o jogador controla nas
+     cenas; preso, ferido ou fora da escalação, o controle passa ao
+     membro mais forte que estiver de pé (`combate.criarEstado`).
+     Presidente não pendura a bandeira por idade (`envelhecer`).
+     ======================================================= */
+  function nomearPresidente(E, nome){
+    nome = String(nome || '').replace(/\s+/g, ' ').trim().slice(0, 28);
+    let m = E.membros.filter(x=>x.cargo==='diretoria')
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa) || b.xp-a.xp)[0];
+    if(!m){
+      m = criar(E, {cargo:'diretoria', forca:14, defesa:14, xp:400});
+      E.membros.unshift(m);
+    }
+    for(const x of E.membros) if(x.presidente && x !== m) delete x.presidente;
+    m.presidente = true;
+    if(nome){
+      const partes = nome.split(' ');
+      m.apelido = partes[0]; m.nome = partes[0];
+      m.sobrenome = partes.slice(1).join(' ');
+    }
+    /* presidente de 19 anos não existe: quem manda tem estrada */
+    if(m.idade == null || m.idade < 26) m.idade = U.inteiro(28, 42);
+    E.presidenteId = m.id;
+    anotar(m, 'presidente', 'Presidente da torcida');
+    return m;
+  }
+  /* save de antes do presidente existir: o mais forte da diretoria
+     assume, com o nome que já tinha */
+  function garantirPresidente(E){
+    if(!E || !E.membros) return null;
+    const atual = E.presidenteId != null ? E.membros.find(m=>m.id === E.presidenteId) : null;
+    if(atual){ atual.presidente = true; return atual; }
+    return nomearPresidente(E, '');
+  }
+  const presidente = E => (E && E.membros || []).find(m=>m.id === E.presidenteId) || null;
+  /* um nome pra sugerir na abertura, no banco do país do clube */
+  function nomeSugerido(clubeId){
+    const N = TO.dados.nomes;
+    const t = clubeId && TO.mundo ? TO.mundo.time(clubeId) : null;
+    const B = (t && t.pais && t.pais !== 'Brasil' && N.hispano) ? N.hispano : N;
+    const nome = U.escolher(B.nomes || N.nomes), sob = U.escolher(B.sobrenomes || N.sobrenomes);
+    return `${nome} ${sob}`;
   }
 
   /* O ELENCO DE RUA DE CADA TORCIDA (pedido do dono, 27/08/2026):
@@ -675,7 +727,8 @@ TO.membros = (function(){
     const ficam = [], penduraram = [];
     for(const m of E.membros){
       m.idade = (m.idade != null ? m.idade : U.inteiro(IDADE_MIN, IDADE_MAX)) + 1;
-      if(m.idade >= IDADE_SAIDA){ penduraram.push(m); continue; }
+      /* o presidente não pendura a bandeira: é o jogador (22/09/2026) */
+      if(m.idade >= IDADE_SAIDA && !m.presidente){ penduraram.push(m); continue; }
       if(m.idade >= IDADE_DECLINIO){
         const saiu = perder(m, DESGASTE_ANO, true);   // idade não volta
         if(saiu.forca > 0)
@@ -761,7 +814,8 @@ TO.membros = (function(){
 
   return {
     CARGOS, ACIMA, SEDE, AREA_TREINO, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
-    criar, nomeDe, nomeCompletoDe, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe,
+    criar, nomeDe, nomeCompletoDe, cargoNome, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe,
+    nomearPresidente, garantirPresidente, presidente, nomeSugerido,
     compensacaoDe, PIRAMIDE_COMPENSADA,
     disponivel, capacidade, capacidadeMatriz, capTreino, capDiretoria,
     contar, emCampanha, naMatriz, daFilial, aptosDaFilial,

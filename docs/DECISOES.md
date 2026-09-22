@@ -8096,6 +8096,24 @@ O dono viu "NÃO SALVOU · o save (2854 KB) não coube" toda vez que tentava gra
 
 Teste (Playwright, `save-gzip.js` e `medir-pares.js`): na semana 4 o cru cai de 2.669 KB pra 953 KB e a vaga fica com 164 KB; recarregar a página e Continuar volta na semana 4 com os 150 membros; um save inchado de 3.441 KB carrega e sai podado; o caminho síncrono devolve `repetido` quando nada mudou e grava cru quando mudou, e esse cru carrega; texto gerado e colado seguem funcionando. Cota medida no Chromium: 5,2 milhões de caracteres, contados por troca líquida do valor.
 
+## O presidente da torcida é o jogador (pedido do dono, 22/09/2026)
+
+A torcida ganha um presidente com nome: na abertura do save, depois de escolher a torcida, o passo 3 pede o nome do presidente (vem um sorteado do banco do país do clube, pra quem não quiser inventar). Ele é um membro da diretoria — o mais forte dela, rebatizado — e é o boneco que o jogador controla nas cenas.
+
+- **O líder da cena é o presidente** (`combate.criarEstado`): antes era "o mais rodado" da escalação. Preso, ferido ou fora da escalação (a zona da casa de piscina, o núcleo da filial), o controle passa ao mais forte que desceu — força e defesa, xp no desempate. O líder continua 20/20 na cena, como sempre.
+- **Não pendura a bandeira por idade** (`envelhecer`); a tela chama de "Presidente" (`membros.cargoNome`); `nomeDe` aceita nome sem sobrenome.
+- **Save antigo** ganha presidente na carga (`repararSave` → `garantirPresidente`): o mais forte da diretoria, com o nome que já tinha.
+
+## A reunião mensal da diretoria, com os botes do mês (pedido do dono, 22/09/2026)
+
+A reunião de diplomacia (dia 5, bimestral desde 12/09) vira **reunião da diretoria, todo mês, dia 5**. Cada pauta passa a ter o diretor que a traz (`quem`, rodando pela diretoria de pé) e a fala dele sai num balão — a mesma fala que vai abrir em cima do boneco sentado quando a cena da roda existir. O desenho inteiro está em `docs/PLANO-REUNIAO-DIRETORIA.md`; o prompt da foto da sala em `img/cenas/PROMPT-REUNIAO.md`.
+
+- **Os botes nascem na reunião.** A sugestão semanal solta do bar e da casa de piscina (~15% das semanas, alternando) saiu. Na reunião um diretor propõe o bote no bar rival e/ou na resenha da casa de piscina — cada tipo com 35% ao mês, ≈ 8 por ano, a dose de sempre — dizendo **o dia** (sorteado entre os dias do mês a partir do 7 que não têm jogo do clube nem véspera/dia seguinte de caravana, com dois dias de folga de outro bote) e **contra quem**. Textos do dono ajustados: *"…o bar da MOFI fica cheio deles todo sábado. A gente quer dar o bote neles sábado, dia 07/02 e roubar o caixa do bar."*
+- **Marcado, vai pro calendário** (`E.botes`; a célula do dia mostra "Bote marcado · bar da MOFI"). No dia, o cartão de hoje tem um botão só — o bote foi decidido na reunião — e abre a mesma cena de sempre (`atacar-bar-rival`, `atacar-casa-rival`). Se a agenda pôs um jogo em cima (o árbitro adia jogo), o bote é empurrado pro próximo dia livre. "Deixar quieto" custa o de sempre: prestígio −1, moral −1.
+- **A cena da roda** ainda não abre no jogo: a tela da reunião continua (com o balão e o nome de quem fala). O que já existe pra cena: a pose **sentado na cadeira** do boneco 3D (`bonecos3.sentadoCadeira`, três jeitos — mãos nas coxas, braços cruzados, cotovelos nos joelhos —, estado "sentado" na vitrine), o disco sentado que não anda, não é empurrado e não acaba a cena (`d.sentado`), a cena `reuniao` desenhada (sala da sede, 12 cadeiras em roda com a abertura pra porta, o presidente em pé na abertura, virado pra roda — `D.cadeiras`, `D.presidente`, `combate.sentarNaRoda`) e a aba "Reunião" na bancada. Falta a foto (prompt pronto) e a camada dos balões sobre o canvas (fase B do plano).
+
+Teste (Playwright, `presidente.js`, `reuniao-botes.js`, `bancada-reuniao.js`, `vitrine-sentado.js`): o passo 3 pede o nome e o save nasce com "Wilker Pietro" na diretoria como presidente; numa cena ele é o líder; ferido, o líder vira o mais forte da escalação; `envelhecer` não o aposenta; save sem presidente ganha um na carga. No dia 5 a reunião traz as pautas de diplomacia e os dois botes com dia e alvo, cada pauta com o diretor que a traz; a tela mostra o balão, "traz o assunto: Bomba Lessa · diretoria" e "Quando: quarta, 18/02 · Contra: a Zona Oeste da MOFI"; marcar põe o bote em `E.botes`; no dia, o cartão abre a cena do bar; o calendário mostra a célula. Na bancada, a aba Reunião senta 12 na roda e deixa o presidente em pé na abertura, ninguém sai da cadeira e a cena não acaba sozinha.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

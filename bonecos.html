@@ -66,6 +66,7 @@
     ['contra',   (d,t)=>{ golpeia(d,t,1.2,0,'contra'); d.hostil=3; }],
     ['cair',     (d,t)=>{ d.caido = (t%4.5) > 0.9; }],
     ['preso',    (d,t)=>{ d.preso=true; }],
+    ['sentado',  (d,t)=>{ d.sentado=true; }],
     ['torcer',   (d,t)=>{ d.linha='retaguarda'; }],
     ['policial', null],
     ['troca', (d,t)=>{ golpeia(d,t,0.9,0); d.hostil=3; d.rumo=Math.atan2(d.par.x-d.x, d.par.y-d.y); if(d.par.ataque && d.par.ataque.t<0.15 && !d.ataque && (Math.floor(t/0.9)%3===0)) d.defendendo=0.5; }],

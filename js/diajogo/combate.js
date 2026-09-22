@@ -122,6 +122,7 @@ TO.diaJogo.combate = (function(){
       this.sumiu=false;     // debandou e saiu da cena por uma boca de rua
       this.voltando=false;  // defendeu, ganhou, e está voltando pro posto
       this.vadiando=false;  // noite tranquila: fica de conversa até a hora
+      this.sentado=false;   // na roda da reunião: não anda, não é empurrado
       this.atordoado=0; this.tremor=0; this.golpe=0; this.hostil=0;
       /* sinais só de desenho: a cena de perto e a de cima leem e animam,
          ninguém decide nada por eles. `apanhou` acende quando leva
@@ -407,9 +408,17 @@ TO.diaJogo.combate = (function(){
                     || alvo.find(g=>g.s.jogador) || alvo[0] || null;
     const fichas = new Map();
     if(temEscalacao && grupoLider){
-      /* o mais rodado vai no bonde do jogador e vira o líder */
-      const fila=[...cfg.escalacao].sort((a,b)=>b.xp-a.xp);
-      fichas.set(grupoLider, [fila.shift()]);
+      /* O LÍDER É O PRESIDENTE (pedido do dono, 22/09/2026): o boneco
+         que o jogador controla é o membro batizado na abertura. Preso,
+         ferido ou fora desta escalação (a zona da casa de piscina, o
+         núcleo da filial), o controle passa ao mais forte que desceu —
+         força e defesa, e o mais rodado no desempate. */
+      const pres = (TO.estado && TO.estado.E) ? TO.estado.E.presidenteId : null;
+      const fila=[...cfg.escalacao].sort((a,b)=>
+        ((b.forca||0)+(b.defesa||0))-((a.forca||0)+(a.defesa||0)) || (b.xp||0)-(a.xp||0));
+      const iP = pres != null ? fila.findIndex(m=>m.id === pres) : -1;
+      const chefe = iP >= 0 ? fila.splice(iP, 1)[0] : fila.shift();
+      fichas.set(grupoLider, [chefe]);
       let k=0;
       for(const m of fila){
         const g = alvo[k++ % alvo.length];
@@ -514,7 +523,42 @@ TO.diaJogo.combate = (function(){
     /* `J.faixa` continua apontando pra faixa de quem defende (a
        primeira): é o nome que a ponte e os testes conhecem */
     J.faixa = J.faixas[0] || null;
+    if(D.cadeiras && D.cadeiras.length) sentarNaRoda(J);
     return J;
+  }
+
+  /* =======================================================
+     A RODA DA REUNIÃO (pedido do dono, 22/09/2026)
+     Cena sem briga: a diretoria sentada nas cadeiras, em roda, e o
+     presidente — o líder, o boneco do jogador — em pé na frente
+     dela, virado pra roda. Cada cadeira da cena (`D.cadeiras`) tem
+     posição e rumo (pra onde o sentado olha: o meio da roda). Quem
+     não coube nas cadeiras sai da cena: reunião é da diretoria, não
+     do bonde inteiro.
+     ======================================================= */
+  function sentarNaRoda(J){
+    const nossos = J.discos.filter(d=>d.doJogador && d.vivo);
+    const lider = nossos.find(d=>d.lider) || null;
+    const resto = nossos.filter(d=>d!==lider);
+    const cad = D.cadeiras.slice();
+    /* a mesma cadeira pro mesmo membro toda reunião: pela ficha */
+    resto.sort((a,b)=>(a.membroId||0)-(b.membroId||0));
+    const ficam = resto.slice(0, cad.length), saem = resto.slice(cad.length);
+    ficam.forEach((d, i)=>{
+      const c = cad[i];
+      d.x = c.x; d.y = c.y; d.vx = d.vy = 0;
+      d.rumo = c.rumo != null ? c.rumo : Math.atan2(A.W/2 - c.x, A.H/2 - c.y);
+      d.sentado = true; d.guarda = false; d.vadiando = false;
+    });
+    for(const d of saem){ d.vivo = false; d.sumiu = true; }
+    J.discos = J.discos.filter(d=>!saem.includes(d));
+    if(lider && D.presidente){
+      lider.x = D.presidente.x; lider.y = D.presidente.y; lider.vx = lider.vy = 0;
+      lider.rumo = D.presidente.rumo != null ? D.presidente.rumo
+                 : Math.atan2(A.W/2 - lider.x, A.H/2 - lider.y);
+    }
+    J.reuniao = true;
+    return ficam.length;
   }
 
   /* PORTÃO SELADO É BUG DE ARTE, E BUG DE ARTE TEM DE APARECER.
@@ -1016,6 +1060,9 @@ TO.diaJogo.combate = (function(){
 
   function conferirFim(J){
     if(J.fase!=='ativo') return;
+    /* a reunião não acaba por briga: acaba pelo botão de encerrar
+       (22/09/2026) */
+    if(J.reuniao) return;
     /* Nos arredores o fim é outro e é mais simples: acabou quando o
        presidente entrou pelo portão. Lá não se toma nada de ninguém —
        o que se faz é chegar e entrar, e depois disso não há mais cena
@@ -1474,6 +1521,9 @@ TO.diaJogo.combate = (function(){
     for(const d of J.discos){
       if(!d.vivo) continue;
       if(PF) tq = performance.now();
+      /* sentado na roda (reunião da diretoria, 22/09/2026): fica na
+         cadeira, e ponto */
+      if(d.sentado){ d.vx=d.vy=0; d._ramo='sentado'; continue; }
 
       if(d.segurando || d.seguradoPor){ d.vx=d.vy=0; d._ramo='agarrao'; continue; }
       if(d.derrubado>0){
@@ -3123,9 +3173,10 @@ TO.diaJogo.combate = (function(){
         a._edx+=dx/d*e; a._edy+=dy/d*e;
       }
     }
-    /* e agora o movimento, um por disco */
+    /* e agora o movimento, um por disco — quem está sentado na roda é
+       obstáculo pros outros e não sai da cadeira (22/09/2026) */
     for(const d of t)
-      if(d._edx || d._edy) A.empurrar(d, d._edx, d._edy);
+      if((d._edx || d._edy) && !d.sentado) A.empurrar(d, d._edx, d._edy);
   }
 
   /* =======================================================

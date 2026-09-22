@@ -1664,6 +1664,35 @@ TO.diaJogo.bonecos3 = (function(){
     p.olhaX = 0.45 + 0.05*Math.sin(t*1.5+f.fase);
   }
 
+  /* SENTADO NA CADEIRA (pedido do dono, 22/09/2026): a diretoria na
+     roda da reunião. Diferente do preso, que senta no chão: aqui o
+     quadril fica na altura do assento, as coxas na horizontal e as
+     canelas caindo pra baixo, o tronco ereto. Três jeitos, pela figura:
+     as mãos nas coxas; os braços cruzados; inclinado pra frente com os
+     cotovelos nos joelhos. Respira, e de vez em quando vira a cabeça
+     pra quem fala. */
+  const ASSENTO = 8.9;                 // canela + pé: a altura do quadril sentado
+  function sentadoCadeira(p, f, t){
+    const v = f.varianteForcada!=null ? f.varianteForcada : dado(f.sem+'sc', 3);
+    const r = Math.sin(t*1.5 + f.fase);
+    p.y = ASSENTO - 16.5;
+    p.coxa = [-1.45, -1.42]; p.joelho = [1.5, 1.5]; p.pe = [0.05, 0.05];
+    p.peito = 1 + 0.02*r;
+    p.inclina = 0.06 + 0.01*r;
+    p.tomba = 0.015*ruido(f, t, 0.5, 1.1);
+    p.olhaY = 0.25*ruido(f, t, 0.25, 0.7);
+    p.olhaX = 0.04*Math.sin(t*0.7 + f.fase);
+    if(v===1){            // braços cruzados
+      p.ombro = [0.95, 0.95]; p.ombroZ = [0.05, 0.05]; p.cotovelo = [-2.15, -2.15]; p.maoZ = [0.95, 0.95];
+      p.inclina -= 0.04;
+    } else if(v===2){     // pra frente, cotovelos nos joelhos
+      p.inclina = 0.5 + 0.01*r; p.olhaX = -0.3;
+      p.ombro = [1.05, 1.05]; p.ombroZ = [0.25, 0.25]; p.cotovelo = [-1.35, -1.35]; p.maoZ = [0.3, 0.3];
+    } else {              // as mãos nas coxas
+      p.ombro = [0.55, 0.55]; p.ombroZ = [0.15, 0.15]; p.cotovelo = [-0.75, -0.75]; p.maoZ = [0.2, 0.2];
+    }
+  }
+
   /* QUEM CAIU FICA A 50% (pedido do dono, 06/09/2026): os materiais
      da figura viram cópias transparentes na primeira vez (o corpo de
      caixas compartilha um material por vértice entre todos; o GLB
@@ -1789,6 +1818,13 @@ TO.diaJogo.bonecos3 = (function(){
       /* se apanhar aqui, cai de vez do jeito que está deitado */
       f.jazido = (f.quedaVar||0)===0 ? 1 : 2; f.jazidoLado = (f.quedaVar||0)===1 ? 1 : -1;
       esmaecer(c, 1);
+    } else if(d.sentado){
+      /* a roda da reunião: sentado na cadeira, olhando pro meio */
+      f.queda = null; f.jazido = 0; esmaecer(c, 1);
+      f.px = d.x; f.pz = d.y; f.vx = 0; f.vz = 0;
+      if(typeof d.rumo === 'number') f.yaw = girar(f.yaw, d.rumo, Math.min(1, dt*14));
+      sentadoCadeira(p, f, ti); rapidez = 8;
+      f.impacto = null; f.ataque = null; f.provoca = null;
     } else {
       f.queda = null; f.jazido = 0;
       esmaecer(c, 1);

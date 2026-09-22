@@ -436,7 +436,7 @@ TO.feed = (function(){
     passo('escolta',        ()=>escoltaDeHoje(E));
     passo('assalto',        ()=>assaltoDeHoje(E));
     passo('assunto do clube',()=>assuntoClubeDeHoje(E));
-    passo('sugestão de ataque', ()=>sugestaoDeAtaqueDeHoje(E));
+    passo('bote do dia',    ()=>boteDeHoje(E));
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
@@ -2299,102 +2299,37 @@ TO.feed = (function(){
          Atacar abre a mesma cena do ataque manual — com o
          mesmo limite de um bonde por semana.
      ------------------------------------------------------- */
-  /* UMA SUGESTÃO DE ATAQUE DE CADA VEZ (correção do dono, 21/09/2026):
-     bar e casa de piscina rolam em dados separados, mas os dois caíam
-     na mesma semana (e o desvio pro dia comum punha os dois no MESMO
-     dia — medido em 3 anos: 2 de 14 casas coladas no bar). A diretoria
-     não traz dois botes na mesma semana: depois de uma sugestão, a
-     outra espera pelo menos duas semanas. */
-  const ESPACO_SUGESTAO = 2;
-  const sugestaoRecente = (E, sa) => {
-    const u = (E.acoes || {}).ultimaSugestaoDeAtaque;
-    return u != null && sa - u < ESPACO_SUGESTAO;
-  };
-  const marcarSugestao = (E, sa) => { E.acoes = E.acoes || {}; E.acoes.ultimaSugestaoDeAtaque = sa; };
-
-  /* BAR E CASA NA MESMA FREQUÊNCIA (ordem do dono, 21/09/2026). Com um
-     dado pra cada um a casa saía o dobro do bar: o cartão do bar ainda
-     exige um bar hostil mapeado na praça e o da casa não. Agora é UM
-     dado só — ~15% das semanas, ≈ 8 por ano, como o bar sozinho era —
-     e os dois se REVEZAM: o tipo da vez é o contrário do último que
-     saiu; se ele não tem alvo hoje, sai o outro e a vez dele fica pra
-     próxima. Contado igual, ±1, enquanto o bar tiver alvo. */
-  function sugestaoDeAtaqueDeHoje(E){
-    const sa = TO.relacoes.semanaAbs(E);
-    const H = TO.mapa.hash;
-    if(H(`sugestao|${sa}|${E.torcida.id}`) % 100 >= 15) return;
-    let dia = 1 + H(`sugestao|d|${sa}|${E.torcida.id}`) % 7;
-    for(let k=0; k<7 && !diaComumFeed(E, dia); k++) dia = (dia % 7) + 1;
-    if(dia !== E.data.dia) return;
-    if(sugestaoRecente(E, sa)) return;
-    E.acoes = E.acoes || {};
-    const ordem = E.acoes.ultimaSugestaoTipo === 'casa' ? ['bar','casa'] : ['casa','bar'];
-    for(const tipo of ordem){
-      const saiu = tipo === 'bar' ? barRivalDeHoje(E, sa) : casaRivalDeHoje(E, sa);
-      if(saiu){ E.acoes.ultimaSugestaoTipo = tipo; marcarSugestao(E, sa); return; }
-    }
-  }
-
-  /* o cartão do bar: devolve true se saiu (o dado e o dia são do
-     `sugestaoDeAtaqueDeHoje`) */
-  function barRivalDeHoje(E, sa){
+  /* O BOTE NASCE NA REUNIÃO (pedido do dono, 22/09/2026). A sugestão
+     semanal solta — o cartão do bar e o da casa de piscina caindo num
+     dia comum ao acaso — deixou de existir: os botes do mês são
+     PROPOSTOS na reunião da diretoria (`pautaBote`), com o dia e o
+     alvo, e o aceito fica marcado no calendário (`E.botes`); no dia,
+     o cartão de hoje abre a mesma cena de sempre (`boteDeHoje`). O
+     que ficou aqui são os dois escolhedores de alvo, que a pauta usa. */
+  function alvoDoBar(E, sem){
     const H = TO.mapa.hash;
     const alvos = (TO.acoes.alvosDeAtaque(E) || []).filter(a =>
       a.tipo === 'bar' && TO.relacoes.nivel(E, a.torcidaId) <= -15);
-    if(!alvos.length) return false;
-    const alvo = alvos[H(`barrival|a|${sa}`) % alvos.length];
-    return !!propor(E, {
-      kind:'barrival', peso:'decisao', voz:'diretor',
-      chave:`barrival|${E.data.ano}|${sa}`,
-      /* texto do dono (26/08/2026) */
-      texto:`Chefe, chegou a informação que o bar da ${alvo.deQuem} tá `+
-            `cheio deles lá, a gente quer dar o bote neles e roubar o `+
-            `caixa do bar.`,
-      dados:{alvo: alvo.id, nome: alvo.deQuem},
-      botoes:[
-        {id:'atacar', rot:'Atacar o bar', acao:'atacar-bar-rival',
-         nota:'Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% '+
-              'do caixa · Relação −26 (perdendo, −18)'},
-        {id:'nada', rot:'Deixar quieto', acao:'ignorar-bar-rival',
-         nota:'Prestígio −1 · Moral −1'}
-      ]
-    });
+    if(!alvos.length) return null;
+    const alvo = alvos[H(`barrival|a|${sem}`) % alvos.length];
+    return {alvo: alvo.id, torcida: alvo.torcidaId, nome: alvo.deQuem,
+            bairro: alvo.bairro || ''};
   }
-
-  /* -------------------------------------------------------
-     3g. A RESENHA NA CASA DE PISCINA (texto do dono, 21/09/2026):
-         a outra metade da dose do bar. Uma zona da rival da praça
-         está de resenha numa casa de piscina com a faixa estendida;
-         a diretoria pergunta se a gente dá o bote. Vai a nossa zona
-         (até 20) contra a zona deles (até 20), e o prêmio é a faixa.
-     ------------------------------------------------------- */
-  function casaRivalDeHoje(E, sa){
+  /* a resenha na casa de piscina (texto do dono, 21/09/2026): uma zona
+     da rival da praça, com a faixa ou a bandeira estendida — sem peça
+     não há resenha pra invadir */
+  function alvoDaCasa(E, sem){
     const H = TO.mapa.hash;
-    const rival = TO.relacoes.rivalDaPraca(E, `casarival|${sa}`);
-    if(!rival) return false;
-    /* sem faixa nem bandeira não há o que tomar — não há resenha */
+    const rival = TO.relacoes.rivalDaPraca(E, `casarival|${sem}`);
+    if(!rival) return null;
     const t = TO.patrimonio.faixasIA(E, rival.id);
-    if(!t || (t.faixas <= 0 && t.bandeiras <= 0)) return false;
+    if(!t || (t.faixas <= 0 && t.bandeiras <= 0)) return null;
     const peca = t.faixas > 0 ? 'faixa' : 'bandeira';
     const zonas = M().ZONAS || ['Norte','Sul','Leste','Oeste'];
-    const zona = zonas[H(`casarival|z|${sa}`) % zonas.length];
+    const zona = zonas[H(`casarival|z|${sem}`) % zonas.length];
     const doLado = (M().bairrosPorZona(rival.mapa || E.torcida.mapa) || {})[zona] || [];
-    const bairro = doLado.length ? doLado[H(`casarival|b|${sa}`) % doLado.length].nome : '';
-    return !!propor(E, {
-      kind:'casarival', peso:'decisao', voz:'diretor',
-      chave:`casarival|${E.data.ano}|${sa}`,
-      texto:`Chefe, vimos nas redes sociais que a Zona ${zona} da ${rival.nome} `+
-            `tá fazendo uma resenha deles numa casa com piscina e a ${peca} `+
-            `deles tá estendida lá, a gente quer dar o bote neles e tomar a ${peca}.`,
-      dados:{rival:rival.id, nome:rival.nome, zona, bairro, peca},
-      botoes:[
-        {id:'atacar', rot:'Dar o bote', acao:'atacar-casa-rival',
-         nota:`Prestígio até ±10 · tomando a ${peca}, prestígio a mais · `+
-              'Relação −26 (perdendo, −18)'},
-        {id:'nada', rot:'Deixar quieto', acao:'ignorar-casa-rival',
-         nota:'Prestígio −1 · Moral −1'}
-      ]
-    });
+    const bairro = doLado.length ? doLado[H(`casarival|b|${sem}`) % doLado.length].nome : '';
+    return {rival: rival.id, torcida: rival.id, nome: rival.nome, zona, bairro, peca};
   }
 
   /* dia sem jogo do clube e sem caravana — mesma régua dos eventos do
@@ -3120,27 +3055,51 @@ TO.feed = (function(){
     E.reuniao.seq = E.reuniao.seq || 1;
     return E.reuniao;
   }
+  /* QUEM TRAZ A PAUTA (pedido do dono, 22/09/2026): cada assunto da
+     mesa é a fala de UM diretor — é em cima dele que o balão abre na
+     cena da roda. A escolha é pelo número do assunto, rodando pela
+     diretoria de pé; o presidente não pauta, ele decide. */
+  function diretorDaPauta(E, n){
+    const dir = (E.membros||[]).filter(m=>m.cargo==='diretoria' && !m.presidente && !m.preso);
+    const lista = dir.length ? dir : (E.membros||[]).filter(m=>!m.presidente);
+    if(!lista.length) return null;
+    return lista[n % lista.length].id;
+  }
   /* guarda um assunto pra próxima mesa; a mesma chave não entra duas vezes */
   function pautar(E, item){
     const Rn = caixaReuniao(E);
     if(item.chave && Rn.pauta.some(x=>x.chave === item.chave)) return null;
     const it = Object.assign({id:Rn.seq++, decidido:null, consequencia:''}, item);
+    if(it.quem == null) it.quem = diretorDaPauta(E, it.id);
     Rn.pauta.push(it);
     return it;
   }
   const pautaAberta = E => caixaReuniao(E).pauta.filter(x=>!x.decidido);
 
-  /* O CARTÃO DA REUNIÃO: dia 5, DE DOIS EM DOIS MESES (dono, 12/09/2026).
-     Era todo mês; o dono pediu bimestral. Fica nos meses ÍMPARES —
-     janeiro, março, maio, julho, setembro e novembro —, que é o mês em
-     que o jogo começa: seis mesas por ano em vez de doze. O que nasce
-     entre uma e outra continua guardado em `E.reuniao.pauta` e espera
-     a próxima; nada vira cartão solto. */
-  const MES_DA_MESA = m => (m % 2) === 1;
+  /* A MESA PRA CENA DA RODA: o presidente, os diretores nas cadeiras e
+     cada pauta com o diretor que a traz. É o que a cena desenha
+     (docs/PLANO-REUNIAO-DIRETORIA.md) e o que a tela provisória lê. */
+  function mesaDaReuniao(E){
+    const Mb = TO.membros;
+    const pres = Mb.presidente ? Mb.presidente(E) : null;
+    const ficha = m => m ? {id:m.id, nome:Mb.nomeDe(m), cargo:Mb.cargoNome ? Mb.cargoNome(m) : m.cargo,
+                            preso:!!m.preso, ferido:!!m.ferido} : null;
+    const diretores = (E.membros||[]).filter(m=>m.cargo==='diretoria' && !m.presidente).map(ficha);
+    const porId = new Map((E.membros||[]).map(m=>[m.id, m]));
+    const pautas = caixaReuniao(E).pauta.map(it=>Object.assign({}, it, {diretor: ficha(porId.get(it.quem))}));
+    return {presidente: ficha(pres), diretores, pautas};
+  }
+
+  /* O CARTÃO DA REUNIÃO: DIA 5, TODO MÊS (pedido do dono, 22/09/2026).
+     Foi mensal, virou bimestral (12/09) e volta a ser mensal: agora é a
+     REUNIÃO DA DIRETORIA, e não só de diplomacia — é nela que os botes
+     do mês são propostos, com dia e alvo. O que nasce entre uma e outra
+     continua guardado em `E.reuniao.pauta` e espera a próxima; nada
+     vira cartão solto. */
   function reuniaoDeHoje(E){
     const Rn = caixaReuniao(E);
     const d = dataDeHoje(E);
-    if(d.getDate() !== 5 || !MES_DA_MESA(mesDe(E))) return null;
+    if(d.getDate() !== 5) return null;
     const marca = `${E.data.ano}|${mesDe(E)}`;
     if(Rn.ultima === marca) return null;
     Rn.ultima = marca;
@@ -3148,6 +3107,8 @@ TO.feed = (function(){
     const a = pautaAproximacao(E); if(a) pautar(E, a);
     const p = pautaPaz(E);         if(p) pautar(E, p);
     const f = pautaAfastar(E);     if(f) pautar(E, f);
+    /* os botes do mês: o bar e a casa de piscina, cada um no seu dado */
+    for(const tipo of ['bar','casa']){ const b = pautaBote(E, tipo); if(b) pautar(E, b); }
     const abertos = pautaAberta(E);
     const X = TO.eixos;
     const mesa = X && X.cabemosEmMais(E) && !X.esperaDaMesa(E);
@@ -3157,13 +3118,148 @@ TO.feed = (function(){
     return propor(E, {
       kind:'reuniao', peso:'decisao', voz:'diretor',
       chave:`reuniao|${marca}`,
-      texto:`Reunião de diplomacia — ${MESES[d.getMonth()]}. `+
+      texto:`Reunião da diretoria — ${MESES[d.getMonth()]}. `+
         (quantos ? `${quantos} assunto${quantos>1?'s':''} na mesa`
-                 : 'Nada trazido de fora no bimestre')+
+                 : 'Nada na mesa este mês')+
         (mesa ? ', e a nossa jogada nos eixos em aberto.' : '.'),
       dados:{ano:E.data.ano, mes:mesDe(E), assuntos:quantos},
       botoes:[{id:'abrir', rot:'Sentar com a diretoria', acao:'abrir-reuniao'}]
     });
+  }
+
+  /* =======================================================
+     OS BOTES DO MÊS (pedido do dono, 22/09/2026)
+     Um diretor propõe, na reunião, o bote no bar rival e/ou na
+     resenha da casa de piscina — QUANDO (um dia do mês sem jogo
+     do clube e sem caravana) e CONTRA QUEM. Cada tipo tem o seu
+     dado: 35% ao mês, ≈ 8 botes por ano, a dose de sempre. O
+     aceito entra em `E.botes` e no calendário; no dia, o cartão
+     de hoje abre a cena pela porta de sempre.
+     ======================================================= */
+  const CHANCE_BOTE = 35;
+  const todoDia = dia => (dia >= 6 ? 'todo ' : 'toda ') + NOME_DIA[dia];
+  const dataCurtaDe = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+
+  /* dia livre: sem jogo do clube e fora da véspera e do dia seguinte de
+     um jogo em outra cidade — vale pra qualquer semana do ano, não só a
+     corrente (que é o que `diaComumFeed` lê) */
+  function diaLivre(E, semana, dia){
+    const meu = M().time(E.torcida.clubeId);
+    if(!meu || !E.temporada) return true;
+    const abs = (semana-1)*7 + (dia-1);
+    for(const j of TO.competicoes.agendaDoClube(E, meu.id)){
+      if(j.semana === semana && j.dia === dia) return false;
+      if(TO.financeiro.diasDaViagem(E, j).includes(abs)) return false;
+    }
+    return true;
+  }
+  const absDe = (semana, dia) => (semana-1)*7 + (dia-1);
+  /* dois dias de folga entre um bote e outro */
+  const boteColado = (E, semana, dia, extra) =>
+    (E.botes||[]).some(b=>!b.feito && b.ano===E.data.ano && Math.abs(absDe(b.semana, b.dia) - absDe(semana, dia)) <= 2) ||
+    (extra||[]).some(b=>Math.abs(absDe(b.semana, b.dia) - absDe(semana, dia)) <= 2);
+
+  function diaDoBote(E, tipo, sem){
+    const hoje = dataDeHoje(E);
+    const ultimo = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
+    const outros = caixaReuniao(E).pauta.filter(x=>x.bote && !x.decidido).map(x=>x.bote);
+    const cands = [];
+    for(let dm = hoje.getDate()+2; dm <= ultimo; dm++){
+      const d = new Date(hoje.getFullYear(), hoje.getMonth(), dm);
+      const sd = TO.estado.semanaDiaDe(d);
+      if(!sd || sd.ano !== E.data.ano || sd.semana > 52) continue;
+      if(!diaLivre(E, sd.semana, sd.dia)) continue;
+      if(boteColado(E, sd.semana, sd.dia, outros)) continue;
+      cands.push({ano:sd.ano, semana:sd.semana, dia:sd.dia,
+                  dataTxt: dataCurtaDe(d), nomeDia: NOME_DIA[sd.dia]});
+    }
+    if(!cands.length) return null;
+    return cands[TO.mapa.hash(`bote|dia|${tipo}|${sem}|${E.torcida.id}`) % cands.length];
+  }
+
+  function pautaBote(E, tipo){
+    const sem = `${E.data.ano}|${mesDe(E)}`;
+    if(TO.mapa.hash(`bote|${tipo}|${sem}|${E.torcida.id}`) % 100 >= CHANCE_BOTE) return null;
+    const alvo = tipo === 'bar' ? alvoDoBar(E, sem) : alvoDaCasa(E, sem);
+    if(!alvo) return null;
+    const quando = diaDoBote(E, tipo, sem);
+    if(!quando) return null;
+    const bote = Object.assign({tipo}, alvo, quando);
+    const q = `${quando.nomeDia}, dia ${quando.dataTxt}`;
+    /* textos do dono (26/08 e 21/09/2026), com o dia e o alvo na fala */
+    const texto = tipo === 'bar'
+      ? `Chefe, chegou a informação que o bar da ${alvo.nome} fica cheio deles `+
+        `${todoDia(quando.dia)}. A gente quer dar o bote neles ${q} e roubar o caixa do bar.`
+      : `Chefe, vimos nas redes sociais que a Zona ${alvo.zona} da ${alvo.nome} faz `+
+        `resenha numa casa com piscina e a ${alvo.peca} deles fica estendida lá. `+
+        `A gente quer dar o bote neles ${q} e tomar a ${alvo.peca}.`;
+    return {
+      chave:`bote|${tipo}|${sem}`, rot: tipo === 'bar' ? 'Bote no bar' : 'Bote na casa de piscina',
+      voz:'Diretoria', tipo:'bote', bote, texto,
+      botoes:[
+        {id:'marcar', rot: tipo === 'bar' ? 'Marcar o bote no bar' : 'Marcar o bote', acao:'bote-marcar',
+         nota: tipo === 'bar'
+           ? 'Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% do caixa · Relação −26 (perdendo, −18)'
+           : `Prestígio até ±10 · tomando a ${alvo.peca}, prestígio a mais · Relação −26 (perdendo, −18)`},
+        {id:'nada', rot:'Deixar quieto', acao:'bote-nao', nota:'Prestígio −1 · Moral −1'}
+      ]
+    };
+  }
+
+  /* o próximo dia livre depois do marcado: a agenda pode ter posto um
+     jogo em cima (o árbitro adia jogo) */
+  function proximoDiaLivre(E, b){
+    for(let k=1;k<=10;k++){
+      const abs = absDe(b.semana, b.dia) + k;
+      const semana = Math.floor(abs/7)+1, dia = (abs%7)+1;
+      if(semana > 52) return null;
+      if(!diaLivre(E, semana, dia)) continue;
+      const d = TO.estado.dataDaSemana(b.ano, semana, dia);
+      return {semana, dia, dataTxt: dataCurtaDe(d), nomeDia: NOME_DIA[dia]};
+    }
+    return null;
+  }
+
+  /* O DIA DO BOTE: o cartão de hoje, com a mesma ação dos cartões de
+     sempre — `atacar-bar-rival` e `atacar-casa-rival` abrem a cena. Um
+     botão só: o bote foi decidido na reunião, hoje ele acontece. */
+  function boteDeHoje(E){
+    const lista = E.botes || [];
+    if(!lista.length) return;
+    const hojeAbs = absDe(E.data.semana, E.data.dia);
+    E.botes = lista.filter(b => !(b.feito && (b.ano < E.data.ano ||
+      (b.ano === E.data.ano && hojeAbs - absDe(b.semana, b.dia) > 60))));
+    for(const b of E.botes){
+      if(b.feito || b.ano !== E.data.ano || b.semana !== E.data.semana || b.dia !== E.data.dia) continue;
+      if(!diaComumFeed(E, E.data.dia)){
+        const prox = proximoDiaLivre(E, b);
+        if(prox){ Object.assign(b, prox); continue; }
+      }
+      b.feito = true;
+      if(b.tipo === 'bar'){
+        propor(E, {
+          kind:'barrival', peso:'decisao', voz:'diretor',
+          chave:`bote|dia|${b.ano}|${b.semana}|${b.dia}|bar`,
+          texto:`Hoje é o dia, chefe: o bar da ${b.nome} tá cheio deles. `+
+                `O bonde desce e leva o caixa.`,
+          dados:{alvo:b.alvo, nome:b.nome},
+          botoes:[{id:'atacar', rot:'Descer no bar', acao:'atacar-bar-rival',
+                   nota:'Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% '+
+                        'do caixa · Relação −26 (perdendo, −18)'}]
+        });
+      } else {
+        propor(E, {
+          kind:'casarival', peso:'decisao', voz:'diretor',
+          chave:`bote|dia|${b.ano}|${b.semana}|${b.dia}|casa`,
+          texto:`Hoje é o dia, chefe: a Zona ${b.zona} da ${b.nome} tá na resenha da `+
+                `casa com piscina, com a ${b.peca} estendida. Bora dar o bote e tomar a ${b.peca}.`,
+          dados:{rival:b.rival, nome:b.nome, zona:b.zona, bairro:b.bairro, peca:b.peca},
+          botoes:[{id:'atacar', rot:'Dar o bote', acao:'atacar-casa-rival',
+                   nota:`Prestígio até ±10 · tomando a ${b.peca}, prestígio a mais · `+
+                        'Relação −26 (perdendo, −18)'}]
+        });
+      }
+    }
   }
 
   /* a decisão de UM item da pauta, com o mesmo efeito que o cartão solto
@@ -3249,6 +3345,23 @@ TO.feed = (function(){
       case 'eixo-veta':
         TO.eixos.vetar(E, it.de, it.torcida);
         it.consequencia = `A gente vetou a ${nome(it.torcida)} no ${it.nomeEixo}.`;
+        return {};
+      /* o bote do mês (dono, 22/09/2026): marcado, entra no calendário */
+      case 'bote-marcar': {
+        const b = it.bote; if(!b) return {};
+        E.botes = E.botes || [];
+        if(!E.botes.some(x=>x.ano===b.ano && x.semana===b.semana && x.dia===b.dia && x.tipo===b.tipo))
+          E.botes.push(Object.assign({}, b, {feito:false,
+            marcadoEm:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia}}));
+        it.consequencia = `Marcado pra ${b.nomeDia}, ${b.dataTxt}: `+
+          (b.tipo==='bar' ? `o bar da ${b.nome}.` : `a resenha da Zona ${b.zona} da ${b.nome}.`)+
+          ' Está no calendário.';
+        return {};
+      }
+      case 'bote-nao':
+        TO.estado.mexerIndicador(E, 'prestigio', -0.2, 'Deixamos o bote quieto');
+        TO.estado.mexerIndicador(E, 'moral', -1, 'Deixamos o bote quieto');
+        it.consequencia = 'Deixamos quieto. Prestígio −1 · Moral −1.';
         return {};
     }
     return {};
@@ -4889,6 +5002,7 @@ TO.feed = (function(){
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
           statusDeHoje, eixosDoDia, reuniaoDeHoje,
           caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
+          mesaDaReuniao, pautaBote, boteDeHoje, diaLivre, alvoDoBar, alvoDaCasa,
           pautaAproximacao, pautaPaz, pautaAfastar,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu, responderEntrevista, assuntoClubeDeHoje,

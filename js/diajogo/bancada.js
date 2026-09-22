@@ -63,7 +63,20 @@ TO.diaJogo.bancada = (function(){
        pra máscara ser acertada no F2 e a cena ser vista antes de
        valer no jogo. `faixaDefensor:'eles'` estende a peça deles. */
     {id:'casa-piscina', rot:'Casa de piscina', titulo:'Resenha na casa de piscina',
-     cfg:{intencao:'atacar', bombas:0, efetivoRival:20, faixaDefensor:'eles'}}
+     cfg:{intencao:'atacar', bombas:0, efetivoRival:20, faixaDefensor:'eles'}},
+    /* A REUNIÃO DA DIRETORIA (dono, 22/09/2026): a roda de cadeiras com
+       os diretores sentados e o presidente em pé na frente — sem briga.
+       A escalação de mentira é só pra cada cadeira ter um nome. */
+    {id:'reuniao', rot:'Reunião', titulo:'Reunião da diretoria — a roda',
+     cfg:{paz:true, reuniao:true, bombas:0, efetivoRival:0,
+          escalacao: (()=>{
+            const N = (TO.dados && TO.dados.nomes) || {};
+            const ap = N.apelidos || ['Zé','Tião','Bento','Dudu','Caju','Neco','Buda','Tico'];
+            const fora = [];
+            for(let i=0;i<13;i++) fora.push({id:i+1, apelido:String(ap[i % ap.length]),
+              forca:12+(i%6), defesa:12+((i*3)%6), xp:300+i*10, moral:12, cargo:'diretoria'});
+            return fora;
+          })()}}
   ];
 
   /* A BANCADA DE PERTO (briga3d.html) usa a mesma bancada com outra

@@ -1047,8 +1047,64 @@ TO.dados.cenas = (function(){
     pmPostos:[{x:80, y:780}, {x:1470, y:780}]
   });
 
+  /* =======================================================
+     A REUNIÃO DA DIRETORIA — a roda (pedido do dono, 22/09/2026)
+     Cena sem briga: a sala da sede, as cadeiras em roda com a
+     abertura virada pra frente, e o presidente em pé nessa
+     abertura, virado pra roda. Cada pauta da reunião vira um
+     balão em cima de um diretor sentado. Este é o RASCUNHO
+     desenhado — a foto da sala vem do prompt em
+     img/cenas/PROMPT-REUNIAO.md e entra por `cenas_foto.js`
+     como as outras; as cadeiras e o lugar do presidente ficam
+     aqui, que é o que o combate lê (`D.cadeiras`, `D.presidente`).
+     ======================================================= */
+  const RODA_CX = 768, RODA_CY = 470, RODA_R = 205, CADEIRAS = 12;
+  const cadeirasDaRoda = (()=>{
+    const fora = [];
+    /* a abertura fica embaixo (rumo 0 = +y): a roda vai de 0,55 a
+       2π−0,55 rad, uma cadeira a cada passo igual */
+    const a0 = 0.55, a1 = Math.PI*2 - 0.55;
+    for(let i=0;i<CADEIRAS;i++){
+      const a = a0 + (a1 - a0) * (i/(CADEIRAS-1));
+      const x = Math.round(RODA_CX + RODA_R*Math.sin(a));
+      const y = Math.round(RODA_CY + RODA_R*Math.cos(a));
+      fora.push({x, y, rumo: Math.atan2(RODA_CX - x, RODA_CY - y)});
+    }
+    return fora;
+  })();
+  const blocosSala = [
+    {x:0, y:0, w:1536, h:64, tipo:'parede'},
+    {x:0, y:960, w:690, h:64, tipo:'parede'},        // parede de baixo, com a porta no meio
+    {x:846, y:960, w:690, h:64, tipo:'parede'},
+    {x:0, y:0, w:64, h:1024, tipo:'parede'},
+    {x:1472, y:0, w:64, h:1024, tipo:'parede'},
+    /* o balcão da cozinha da sede e o armário, encostados na parede */
+    {x:64, y:64, w:260, h:70, tipo:'balcao'},
+    {x:1250, y:64, w:222, h:70, tipo:'armario'}
+  ];
+  const reuniao = montar({
+    id:'reuniao', nome:'Sala da sede', local:'Na sede, reunião da diretoria',
+    pintura:'sala', blocos:blocosSala,
+    cadeiras: cadeirasDaRoda,
+    /* o presidente em pé na abertura da roda, virado pra ela */
+    presidente:{x:RODA_CX, y:RODA_CY + RODA_R + 40,
+                rumo: Math.atan2(0, -(RODA_R + 40))},
+    saida:{perto:'Sair da sala', longe:'Porta da sala (leve o líder)',
+           feito:'a reunião acabou',
+           dica:'A reunião acaba pelo botão de encerrar.'},
+    spawns:[
+      {id:'mandante1', rot:'DIRETORIA', lado:'mandante', x:RODA_CX, y:RODA_CY + RODA_R + 40,
+       jogador:true, entrada:'porta'}
+    ],
+    entradas:[
+      {id:'porta', rot:'PORTA DA SALA', lado:'mandante', x:768, y:992, raio:40, dir:[0,1]}
+    ],
+    /* sem PM, sem grade, sem enfeite: é uma sala */
+    pmPostos:[], grades:[], enfeites:[], tropaChoque:false
+  });
+
   const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
-                 bar, comercio, ct, 'casa-piscina':casaPiscina,
+                 bar, comercio, ct, 'casa-piscina':casaPiscina, reuniao,
                  'treta-beco':tretaBeco, 'treta-galpao':tretaGalpao,
                  'treta-campo':tretaCampo,
                  'emb-posto':embPosto, 'emb-onibus':embOnibus,

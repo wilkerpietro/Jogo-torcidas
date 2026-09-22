@@ -228,7 +228,7 @@
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.remove('oculto');
     selPais = selLiga = selClube = escolhida = null;
-    buscaSel = ''; passoSel = 1;
+    buscaSel = ''; passoSel = 1; nomePresidenteSel = '';
     pintarSelecao();
   }
 
@@ -313,25 +313,58 @@
   };
 
   function pintarSelecao(){
-    const p2 = passoSel === 2 && selClube;
-    $('passo1Sel').classList.toggle('oculto', !!p2);
+    const p3 = passoSel === 3 && escolhida;
+    const p2 = passoSel === 2 && selClube && !p3;
+    $('passo1Sel').classList.toggle('oculto', !!(p2 || p3));
     $('passo2Sel').classList.toggle('oculto', !p2);
-    $('btAvancarSelecao').classList.toggle('oculto', !!p2);
+    $('passo3Sel').classList.toggle('oculto', !p3);
+    $('btAvancarSelecao').classList.toggle('oculto', !!(p2 || p3));
     $('btAvancarSelecao').disabled = !selClube;
     $('btSelecionarTorcida').classList.toggle('oculto', !p2);
     $('btSelecionarTorcida').disabled = !escolhida;
-    $('btVoltarMenu').textContent = p2 ? 'Voltar' : 'Voltar ao menu';
+    $('btComecarPartida').classList.toggle('oculto', !p3);
+    $('btVoltarMenu').textContent = (p2 || p3) ? 'Voltar' : 'Voltar ao menu';
     $('abasSelecao').innerHTML = '';
 
     const sub = $('subSelecao');
+    if(p3){
+      sub.textContent = `passo 3 de 3 · ${escolhida.nome} · quem é o presidente`;
+      pintarPasso3();
+      return;
+    }
     if(!p2){
-      sub.textContent = `passo 1 de 2 · país, liga e clube · `+
+      sub.textContent = `passo 1 de 3 · país, liga e clube · `+
         `${TO.mundo.todosTimes.length} clubes em 10 países`;
       pintarPasso1();
       return;
     }
-    sub.textContent = `passo 2 de 2 · ${selClube.nome} · escolha a torcida`;
+    sub.textContent = `passo 2 de 3 · ${selClube.nome} · escolha a torcida`;
     pintarPasso2();
+  }
+
+  /* ---------- PASSO 3: o nome do presidente (dono, 22/09/2026) ----------
+     O jogador é um membro da diretoria com nome próprio: é o boneco que
+     ele controla nas cenas. Vem um nome sorteado no banco do país do
+     clube, pra quem não quiser inventar; o campo aceita qualquer um. */
+  let nomePresidenteSel = '';
+  function pintarPasso3(){
+    const cx = $('fichaPresidente'); cx.innerHTML = '';
+    if(!nomePresidenteSel) nomePresidenteSel = TO.membros.nomeSugerido(escolhida.clubeId);
+    cx.appendChild(el('p',{class:'nota', html:
+      `Você é o presidente da <b>${escolhida.nome}</b>. É o seu boneco que desce `+
+      `nas cenas — quando ele estiver preso, ferido ou fora da escalação, você `+
+      `assume o membro mais forte que estiver de pé.`}));
+    const linha = el('div',{class:'sel-presidente'});
+    const campo = el('input',{class:'busca', type:'text', maxlength:'28',
+      placeholder:'nome do presidente'});
+    campo.value = nomePresidenteSel;
+    campo.oninput = ev=>{ nomePresidenteSel = ev.target.value; };
+    campo.onkeydown = ev=>{ if(ev.key === 'Enter') $('btComecarPartida').click(); };
+    const sortear = el('button',{class:'bt', texto:'Sortear outro'});
+    sortear.onclick = ()=>{ nomePresidenteSel = TO.membros.nomeSugerido(escolhida.clubeId); campo.value = nomePresidenteSel; campo.focus(); };
+    linha.append(campo, sortear);
+    cx.appendChild(linha);
+    setTimeout(()=>{ campo.focus(); campo.select(); }, 30);
   }
 
   /* ---------- PASSO 1: três colunas encadeadas ---------- */
@@ -4334,7 +4367,7 @@
       const pontinho = (m.cargo==='diretoria'||m.veterano) ? '<span class="ponto"></span>' : '';
       linha.innerHTML =
         `<td>${pontinho}${TO.membros.nomeDe(m)}</td>
-         <td>${TO.membros.CARGOS[m.cargo].nome}</td>
+         <td>${TO.membros.cargoNome(m)}</td>
          ${temFilial ? `<td>${m.filial
            ? linkCidade(m.filial, origemDe(m)) : 'Sede'}</td>` : ''}
          <td class="num${m.idade >= TO.membros.IDADE_DECLINIO ? ' velho' : ''}"`+
@@ -5258,7 +5291,7 @@
     };
 
     pintar();
-    fechar = modal('Perfil do membro', TO.membros.CARGOS[m.cargo].nome, corpo, null, 'media');
+    fechar = modal('Perfil do membro', TO.membros.cargoNome(m), corpo, null, 'media');
     return fechar;
   }
 
@@ -5461,7 +5494,7 @@
       const rows = nossa
         ? e.membros.map(m=>({
             nome: TO.membros.nomeDe(m),
-            cargo: TO.membros.CARGOS[m.cargo].nome,
+            cargo: TO.membros.cargoNome(m),
             origem: m.filial ? linkCidade(m.filial, nomeCid(m.filial)) : 'Sede',
             idade: m.idade, forca: m.forca, defesa: m.defesa, xp: m.xp,
             sit: m.preso ? `Preso · ${TO.membros.diasPresos(m)}d`
@@ -7698,6 +7731,9 @@
     /* agenda do clube indexada por semana e dia: numa semana de Copa do
        Brasil tem jogo na quarta e no sábado */
     const agenda = new Map(), caravanas = new Map();
+    /* os botes marcados na reunião (dono, 22/09/2026) */
+    const botes = new Map();
+    for(const b of (e.botes||[])) if(b.ano === e.data.ano) botes.set(`${b.semana}/${b.dia}`, b);
     for(const j of C.agendaDoClube(e, e.torcida.clubeId)){
       agenda.set(`${j.semana}/${j.dia}`, j);
       /* jogo fora, em outra cidade: a véspera e o dia seguinte são da
@@ -7726,13 +7762,13 @@
     for(let k=0;k<celulas;k++){
       const d = new Date(inicio);
       d.setDate(inicio.getDate() + k);
-      grade.appendChild(celulaDoDia(e, d, mes, hoje, agenda, caravanas));
+      grade.appendChild(celulaDoDia(e, d, mes, hoje, agenda, caravanas, botes));
     }
     q.appendChild(grade);
     return q;
   }
 
-  function celulaDoDia(e, d, mesAtual, hoje, agenda, caravanas){
+  function celulaDoDia(e, d, mesAtual, hoje, agenda, caravanas, botes){
     const sd = TO.estado.semanaDiaDe(d);
     const cel = el('div',{class:'dia'});
     const classes = [];
@@ -7761,6 +7797,13 @@
         cel.appendChild(el('span',{class:'rot', html:
           `${IC.get('onibus')}Caravana`}));
         cel.appendChild(el('span',{class:'sub', texto:`${cv.rot} · ${cv.cidade}`}));
+      }else if(botes && botes.get(`${sd.semana}/${sd.dia}`)){
+        const b = botes.get(`${sd.semana}/${sd.dia}`);
+        classes.push('bote');
+        cel.appendChild(el('span',{class:'rot bote-rot', html:
+          `${IC.get('punho') || ''}${b.feito ? 'Bote feito' : 'Bote marcado'}`}));
+        cel.appendChild(el('span',{class:'sub', texto:
+          b.tipo === 'bar' ? `bar da ${b.nome}` : `casa de piscina · ${b.nome}`}));
       }else{
         /* OS TRÊS TURNOS NO DIA (pedido do dono, 24/08/2026): a célula
            mostrava só o primeiro turno preenchido, e o calendário
@@ -8019,10 +8062,23 @@
     /* --- um assunto trazido de fora --- */
     const palcoDoItem = (it)=>{
       const c = el('div',{class:'reu-item'});
+      /* QUEM TRAZ A PAUTA (dono, 22/09/2026): o diretor que fala, e a
+         fala dele num balão — é a mesma fala que vai abrir em cima do
+         boneco sentado quando a cena da roda existir */
+      const dir = it.quem != null ? e.membros.find(m=>m.id === it.quem) : null;
       c.appendChild(el('div',{class:'reu-quem', html:
         `<span class="rot">${it.rot||'Assunto'}</span>`+
-        `<b>${it.de && TO.mundo.torcida(it.de) ? linkTorcida(it.de, it.voz||'') : (it.voz||'')}</b>`}));
-      c.appendChild(el('p',{class:'reu-fala', html: linkificarNomes(it.texto||'')}));
+        `<b>${it.de && TO.mundo.torcida(it.de) ? linkTorcida(it.de, it.voz||'') : (it.voz||'')}</b>`+
+        (dir ? `<span class="quem">traz o assunto: <b>${TO.membros.nomeDe(dir)}</b> · ${TO.membros.cargoNome(dir).toLowerCase()}</span>` : '')}));
+      c.appendChild(el('div',{class:'reu-balao', html: linkificarNomes(it.texto||'')}));
+      if(it.bote){
+        const b = it.bote;
+        c.appendChild(el('div',{class:'reu-quando', html:
+          `<span>Quando: <b>${b.nomeDia}, ${b.dataTxt}</b></span>`+
+          `<span>Contra: <b>${b.tipo==='bar' ? 'o bar da '+b.nome : 'a Zona '+b.zona+' da '+b.nome}</b></span>`+
+          (b.bairro ? `<span>Onde: <b>${b.bairro}</b></span>` : '')+
+          `<span>dia sem jogo e sem caravana</span>`}));
+      }
       const bts = el('div',{class:'msg-bts'});
       (it.botoes||[]).forEach((b,i)=>{
         const bt = el('button',{class:'bt'+(i===0?' destaque':'')});
@@ -8172,7 +8228,7 @@
 
     pintar();
     const d = TO.estado.dataDaSemana(e.data.ano, e.data.semana, e.data.dia);
-    const fechar = modal('Reunião de diplomacia',
+    const fechar = modal('Reunião da diretoria',
       `${MESES_R[d.getMonth()]} de ${d.getFullYear()} · dia 5`, cx,
       [['Encerrar a reunião', ()=>{
         const r = TO.feed.fecharReuniao(e);
@@ -10073,14 +10129,22 @@
     /* o modal do mês, só pra quem ligou a chave */
     if(opc(e).relatorio && rel.mes) abrirFechamento(rel.mes);
   });
+  /* escolhida a torcida, falta o presidente: o passo 3 (dono, 22/09/2026) */
   $('btSelecionarTorcida').onclick = ()=>{
     if(!escolhida) return;
-    TO.estado.novo({torcida: escolhida});
+    nomePresidenteSel = '';
+    irParaPasso(3);
+  };
+  $('btComecarPartida').onclick = ()=>{
+    if(!escolhida) return;
+    const nome = String(nomePresidenteSel || '').trim() || TO.membros.nomeSugerido(escolhida.clubeId);
+    TO.estado.novo({torcida: escolhida, presidente: nome});
     entrarNoJogo(true);
   };
   $('btAvancarSelecao').onclick = ()=>{ if(selClube) irParaPasso(2); };
-  /* do passo 2 volta pra escolha do clube; do passo 1, pro menu */
+  /* do passo 3 volta pra torcida; do 2, pra escolha do clube; do 1, pro menu */
   $('btVoltarMenu').onclick = ()=>{
+    if(passoSel === 3){ irParaPasso(2); return; }
     if(passoSel === 2){ escolhida = null; irParaPasso(1); return; }
     $('telaSelecao').classList.add('oculto');
     $('telaMenu').classList.remove('oculto');

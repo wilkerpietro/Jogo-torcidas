@@ -99,6 +99,8 @@ TO.estado = (function(){
 
     TO.membros.povoarInicial(E, opc.efetivo || E.efetivoAlvo || 34,
                              (opc.torcida||{}).cargos, E.torcida.sedeNivel);
+    /* o presidente: o nome que o jogador deu na abertura (22/09/2026) */
+    if(TO.membros.nomearPresidente) TO.membros.nomearPresidente(E, opc.presidente || '');
     TO.membros.sortearFila(E);
     E.forcas = {};
     TO.competicoes.usarSave(E);
@@ -939,6 +941,9 @@ TO.estado = (function(){
         if(podados) console.info(`[save] ${podados} pares intocados podados de relacoesDelas`);
       }
     }catch(e){ /* a poda nunca pode derrubar a carga */ }
+    /* save de antes do presidente (22/09/2026): o mais forte da
+       diretoria assume, com o nome que já tinha */
+    try{ if(TO.membros && TO.membros.garantirPresidente) TO.membros.garantirPresidente(E); }catch(e){}
     try{
       if(E.relacoes) delete E.relacoes['undefined'];
       if(E.marcaAjuda) delete E.marcaAjuda['undefined'];
