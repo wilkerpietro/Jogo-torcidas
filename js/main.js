@@ -458,8 +458,7 @@
     cxF.appendChild(cab);
 
     /* o efetivo que a torcida realmente tem, cargo a cargo (GDD §5.1) */
-    const nivelSede = Math.max(f.sedeNivel||1,
-      TO.membros.nivelQueCabe(f.membros, (f.cargos||{}).diretoria || 0));
+    const nivelSede = TO.membros.nivelInicialDaSede(f);
     const plano = TO.membros.planoDeCargos(f.membros, f.cargos, nivelSede);
     const barras = el('div',{class:'hierarquia-fina'});
     for(const [cargo, n] of plano){
@@ -489,7 +488,7 @@
        de igual pra igual". */
     cxF.appendChild(el('div',{class:'grade-atributos', html:
       `<div><span>Membros</span><b>${U.numero(f.membros)}</b></div>
-       <div><span>Sede</span><b>nível ${nivelSede}</b></div>
+       <div><span>Sede</span><b>${nivelSede > 0 ? `nível ${nivelSede}` : 'nenhuma'}</b></div>
        <div><span>Prestígio</span><b>${f.prestigio}/100</b></div>
        <div><span>Divisão</span><b>${f.divisao||'—'}</b></div>
        <div><span>Estádio</span><b>${f.estadio||'—'}</b></div>
@@ -5482,7 +5481,7 @@
       if(nossa){
         const pat = TO.financeiro.patrimonio(e);
         cx.innerHTML =
-          linhaD('Sede', `nível ${e.torcida.sedeNivel}`) +
+          linhaD('Sede', e.torcida.sedeNivel > 0 ? `nível ${e.torcida.sedeNivel}` : 'nenhuma — ponto de encontro') +
           linhaD('Bares', conta(pat.bares)) +
           linhaD('Lojas', conta(pat.lojas)) +
           linhaD('Subsedes na cidade', conta(pat.subsedes)) +
@@ -5870,7 +5869,7 @@
         if(nossa){
           const bs = TO.mundo.bairroDaSede(e.torcida);
           põe(bs ? bs.nome : o.bairroSede,
-              `Sede (nível ${e.torcida.sedeNivel})`, o.id, o.nome);
+              e.torcida.sedeNivel > 0 ? `Sede (nível ${e.torcida.sedeNivel})` : 'Ponto de encontro (sem sede)', o.id, o.nome);
           const pat = TO.financeiro.patrimonio(e);
           (pat.bares||[]).forEach((b,i)=>põe(
             b.bairro || bairroFixo(`${o.id}|bar|${i}`),
@@ -6441,7 +6440,7 @@
          <b class="${e.dinheiro<0?'negativo':''}">${U.dinheiro(e.dinheiro)}</b></div>
        <div class="linha-dado"><span>Membros pagantes</span><b>${pagantes}`+
       `${pagantes<e.membros.length?` <span class="fraco">de ${e.membros.length}</span>`:''}</b></div>
-       <div class="linha-dado"><span>Sede nível ${e.torcida.sedeNivel}</span>
+       <div class="linha-dado"><span>${e.torcida.sedeNivel > 0 ? `Sede nível ${e.torcida.sedeNivel}` : 'Sem sede (ponto de encontro)'}</span>
          <b>${U.dinheiro(TO.financeiro.MANUT_SEDE[e.torcida.sedeNivel])}/mês</b></div>
        <div class="linha-dado"><span>Bares · lojas · subsedes</span>
          <b>${pat.bares.length} · ${pat.lojas.length} · ${pat.subsedes.length}</b></div>`
@@ -7835,7 +7834,7 @@
            escondia dois terços do expediente. Agora manhã, tarde e
            noite aparecem, cada um na sua linha. */
         const exp = TO.acoes.expediente(e);
-        for(const turno of ['manha','tarde','noite']){
+        for(const turno of TO.acoes.turnos(e).map(t=>t.id)){
           const a = exp[turno] && TO.acoes.porId(exp[turno]);
           if(a) cel.appendChild(el('span',{class:'acao',
             html:`${IC.get(a.icone)}<span>${a.nome}</span>`}));
@@ -7858,7 +7857,8 @@
 
     const exp = TO.acoes.expediente(e);
     const disponiveis = TO.acoes.agendaveis();
-    for(const t of TO.acoes.TURNOS){
+    /* sem sede só a tarde tem expediente (dono, 22/09/2026) */
+    for(const t of TO.acoes.turnos(e)){
       const linha = el('div',{class:'linha-rotina'});
       linha.appendChild(el('span',{texto:t.nome}));
       const sel = el('select',{class:'campo'});

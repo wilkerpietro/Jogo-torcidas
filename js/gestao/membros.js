@@ -105,7 +105,11 @@ TO.membros = (function(){
 
   /* GDD §8.1 — limites por nível de sede */
   const SEDE = [
-    null,
+    /* O NÍVEL 0 É O PONTO DE ENCONTRO (decisão do dono, 22/09/2026): a
+       torcida pequena (até 30 na fonte) começa sem sede — a esquina não
+       cabe mais de 30, não treina ninguém, não custa nada. A primeira
+       sede é uma obra (patrimonio.SEDE[1]). */
+    {membros:30,  diretoria:2,  treino:0},
     {membros:50,  diretoria:2,  treino:2},
     {membros:90,  diretoria:4,  treino:4},
     {membros:150, diretoria:6,  treino:8},
@@ -289,6 +293,17 @@ TO.membros = (function(){
       if(SEDE[i].membros >= (membros||0) && SEDE[i].diretoria >= (diretores||0)) return i;
     return SEDE.length-1;
   }
+  /* O NÍVEL INICIAL DA SEDE, numa função só pro `estado.novo` e pra
+     ficha da seleção (as duas repetiam a fórmula): até 30 membros na
+     fonte é nível 0, o ponto de encontro; acima, a sede sobe até caber
+     o efetivo e a diretoria da fonte. */
+  const PEQUENA_MAX = 30;
+  function nivelInicialDaSede(f){
+    f = f || {};
+    if((f.membros || 34) <= PEQUENA_MAX) return 0;
+    return Math.max(f.sedeNivel || 1,
+      nivelQueCabe(f.membros || 34, (f.cargos||{}).diretoria || 0));
+  }
 
   /* =======================================================
      A PIRÂMIDE DA PEQUENA (ordem do dono, 10/09/2026)
@@ -325,7 +340,7 @@ TO.membros = (function(){
       const alvo = Math.round(PIRAMIDE_COMPENSADA[c] * total);
       if(alvo > (p[c] || 0)) p[c] = (p[c] || 0) + Math.round(k * (alvo - (p[c] || 0)));
     }
-    const teto = (SEDE[U.limitar(sedeNivel || 1, 1, SEDE.length-1)] || {}).diretoria || 2;
+    const teto = (SEDE[U.limitar(sedeNivel == null ? 1 : sedeNivel, 0, SEDE.length-1)] || {}).diretoria || 2;
     if(p.diretoria > teto){ p.frente = (p.frente || 0) + (p.diretoria - teto); p.diretoria = teto; }
     const cima = (p.diretoria||0) + (p.frente||0) + (p.componente||0);
     /* o efetivo é o que a fonte diz: quem sobe sai do povão, e se o
@@ -814,7 +829,7 @@ TO.membros = (function(){
 
   return {
     CARGOS, ACIMA, SEDE, AREA_TREINO, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
-    criar, nomeDe, nomeCompletoDe, cargoNome, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe,
+    criar, nomeDe, nomeCompletoDe, cargoNome, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe, nivelInicialDaSede, PEQUENA_MAX,
     nomearPresidente, garantirPresidente, presidente, nomeSugerido,
     compensacaoDe, PIRAMIDE_COMPENSADA,
     disponivel, capacidade, capacidadeMatriz, capTreino, capDiretoria,

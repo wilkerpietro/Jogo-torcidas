@@ -16,7 +16,7 @@ TO.financeiro = (function(){
   const SEM = 1/4;                                   // mês → semana
 
   /* GDD §8.1 — manutenção mensal por nível de sede */
-  const MANUT_SEDE = [null, 200, 480, 960, 1800, 3000, 5000];
+  const MANUT_SEDE = [0, 200, 480, 960, 1800, 3000, 5000];   // n0: o ponto de encontro não custa
   /* =======================================================
      O CUSTO DA FESTA, POR NÍVEL DE SEDE
      (régua do dono, 20/08/2026 — pra ser viável pra todos)
@@ -202,9 +202,11 @@ TO.financeiro = (function(){
      dos dois; a partir do 2 cabe um, do 3 cabem dois, e o
      terceiro só na sede nível 5.
      ======================================================= */
-  const TETO_SEDE = [null, 0, 1, 2, 2, 3, 4];
-  const nivelDaSede = E => (E && E.torcida && E.torcida.sedeNivel) || 1;
-  const cabeNaSede = nivel => TETO_SEDE[U.limitar(nivel || 1, 1, 6)] || 0;
+  const TETO_SEDE = [0, 0, 1, 2, 2, 3, 4];
+  /* o nível 0 é honesto (decisão do dono, 22/09/2026): `|| 1` virava a
+     esquina em sede */
+  const nivelDaSede = E => (E && E.torcida && E.torcida.sedeNivel != null) ? E.torcida.sedeNivel : 1;
+  const cabeNaSede = nivel => TETO_SEDE[U.limitar(nivel == null ? 1 : nivel, 0, 6)] || 0;
   const onibusMax = E => cabeNaSede(nivelDaSede(E));
   const mmaMax    = E => cabeNaSede(nivelDaSede(E));
   /* =======================================================
@@ -227,9 +229,8 @@ TO.financeiro = (function(){
      oito.
      ======================================================= */
   const ADVOGADO_MES = 5000, ADVOGADO_DIAS = 10;
-  const ADVOGADOS_SEDE = [null, 0, 1, 2, 4, 8, 12];
-  const advogadosMax = E => ADVOGADOS_SEDE[U.limitar(
-    (E && E.torcida && E.torcida.sedeNivel) || 1, 1, 6)] || 0;
+  const ADVOGADOS_SEDE = [0, 0, 1, 2, 4, 8, 12];
+  const advogadosMax = E => ADVOGADOS_SEDE[U.limitar(nivelDaSede(E), 0, 6)] || 0;
   function advogadosDe(E){
     const a = E && E.advogados;
     if(!a) return 0;
@@ -264,9 +265,14 @@ TO.financeiro = (function(){
     if(!E.patrimonio.filiais) E.patrimonio.filiais = [];
     if(!E.patrimonio.itens) E.patrimonio.itens = {};
     const p = E.patrimonio;
-    /* GDD §8.1: sede nível 1 já vem com um bar nível 1, grátis */
-    if(!p.bares.length)
+    /* O BAR GRÁTIS VEM COM A SEDE NÍVEL 2 (decisão do dono, 22/09/2026;
+       era o n1 do GDD §8.1): a torcida sem sede e a de primeira sede
+       vivem sem bar até comprar um ou ampliar. Dado uma vez só — o bar
+       não renasce se a lista esvaziar. Save antigo já tem o dele. */
+    if(!p.bares.length && !p.barGratisDado && nivelDaSede(E) >= 2){
       p.bares.push({nivel:1, bairro:bairroDeFora(E), gratis:true});
+      p.barGratisDado = true;
+    }
     return p;
   }
 
@@ -377,8 +383,9 @@ TO.financeiro = (function(){
              RECEITA.subsede*multFilial(E,f)*fator*SEM);
 
     /* --- despesas --- */
-    juntar(des, `Manutenção da sede (n${E.torcida.sedeNivel})`,
-           MANUT_SEDE[E.torcida.sedeNivel]*SEM);
+    if(MANUT_SEDE[E.torcida.sedeNivel])
+      juntar(des, `Manutenção da sede (n${E.torcida.sedeNivel})`,
+             MANUT_SEDE[E.torcida.sedeNivel]*SEM);
     const corteFab = p.fabrica
       ? (TO.patrimonio ? TO.patrimonio.FABRICA.corteCusto : 0.5) : 0;
     let manutCom = 0;

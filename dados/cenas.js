@@ -86,6 +86,11 @@ TO.dados.cenas = (function(){
        da faixa vira pra lá — virada pro campo, ela fica vertical na
        lateral e deitada atrás do gol */
     faixas:{mandante:{x:207, y:490, len:150, dir:[-1,0]}, visitante:{x:1306, y:493, len:150, dir:[1,0]}}, pintura:'praca', blocos:blocosPraca,
+    /* A REUNIÃO DA TORCIDA SEM SEDE (decisão do dono, 22/09/2026): a
+       pequena senta na praça do bairro — o C de cadeiras no largo do
+       meio (o retângulo livre da malha, conferido), o presidente à
+       direita */
+    ...(()=>{ const c = cadeirasEmC(620, 440, 920, 620); return {cadeiras:c.cadeiras, presidente:c.presidente}; })(),
     /* aqui não se entra em estádio nenhum: quem sai da praça sai pela rua */
     local:'Na praça',
     /* praça de bairro não tem operação montada: quem responde é a PM
@@ -1163,6 +1168,9 @@ TO.dados.cenas = (function(){
    nível 6 (o Complexo) usa a foto do 5 — decisão do dono, 10/09/2026.
    É por aqui que a reunião da diretoria acha o pátio dela. */
 TO.dados.sedeCenaDoNivel = function(n){
-  const k = Math.max(1, Math.min(5, Math.round(+n) || 1));
+  const v = Math.round(+n);
+  /* sem sede (nível 0), a reunião é na praça do bairro (dono, 22/09/2026) */
+  if(!(v > 0)) return TO.dados.cenas.praca && TO.dados.cenas.praca.cadeiras ? 'praca' : 'sede-1';
+  const k = Math.max(1, Math.min(5, v));
   return TO.dados.cenas['sede-'+k] ? 'sede-'+k : 'sede-1';
 };

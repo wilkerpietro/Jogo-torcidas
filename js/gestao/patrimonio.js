@@ -35,7 +35,9 @@ TO.patrimonio = (function(){
      membros, diretoria, treino e quantos pontos comerciais cabem —
      e não só quantos, também de que nível. GDD V4 §8.1. */
   const SEDE = [null,
-    null,                                        // n1 é onde se começa
+    /* A PRIMEIRA SEDE É OBRA (decisão do dono, 22/09/2026): a torcida
+       pequena começa no ponto de encontro (nível 0) e constrói a sede */
+    {custo: 30000,  rot:'Sede nível 1'},
     {custo: 40000,  rot:'Sede nível 2'},
     {custo:100000,  rot:'Sede nível 3'},
     {custo:200000,  rot:'Sede nível 4'},
@@ -48,15 +50,15 @@ TO.patrimonio = (function(){
      dimensões, não uma: `qtd` é quantos pontos, `nivel` é até que
      nível eles podem chegar. Bar nível 3 só existe em sede nível 5. */
   const TETO = {
-    bar:     [null, {qtd:1, nivel:1}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
+    bar:     [{qtd:0, nivel:0}, {qtd:1, nivel:1}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
                     {qtd:2, nivel:2}, {qtd:2, nivel:3}, {qtd:2, nivel:3}],
-    loja:    [null, {qtd:0, nivel:0}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
+    loja:    [{qtd:0, nivel:0}, {qtd:0, nivel:0}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
                     {qtd:2, nivel:2}, {qtd:2, nivel:3}, {qtd:2, nivel:3}],
     /* subsede na cidade e fora somadas: a cena não distingue as duas
        ainda, então o teto é a soma das duas colunas do GDD */
     /* o nível 6 NÃO abre ponto comercial novo (ordem do dono,
        02/09/2026): o Complexo é membro, estrutura e anexo */
-    subsede: [null, {qtd:0, nivel:1}, {qtd:1, nivel:1}, {qtd:2, nivel:1},
+    subsede: [{qtd:0, nivel:0}, {qtd:0, nivel:1}, {qtd:1, nivel:1}, {qtd:2, nivel:1},
                     {qtd:5, nivel:1}, {qtd:8, nivel:1}, {qtd:8, nivel:1}]
   };
 
@@ -303,14 +305,15 @@ TO.patrimonio = (function(){
       custo:BANDEIRA.custo, trava:trava(BANDEIRA.custo)});
 
     if(SEDE[n+1]) lista.push({
-      id:'sede', rot:`Ampliar a sede para o nível ${n+1}`,
-      nota:'mais membros, mais diretoria, mais pontos comerciais',
+      id:'sede', rot: n === 0 ? 'Construir a sede' : `Ampliar a sede para o nível ${n+1}`,
+      nota: n === 0 ? 'o ponto de encontro vira sede: 50 membros, treino, festa e os três turnos'
+                    : 'mais membros, mais diretoria, mais pontos comerciais',
       custo:SEDE[n+1].custo, trava:trava(SEDE[n+1].custo)});
 
     for(const tipo of ['bar','loja','subsede']){
       const cfg = PONTO[tipo], tem = cont(E,tipo), teto = TETO[tipo][n];
       lista.push({id:'comprar:'+tipo, rot:`Abrir ${cfg.rot.toLowerCase()}`,
-        nota:`${tem} de ${teto.qtd} pela sede nível ${n}`,
+        nota: n === 0 ? 'sem sede não há ponto comercial' : `${tem} de ${teto.qtd} pela sede nível ${n}`,
         custo:cfg.compra,
         trava:trava(cfg.compra, tem>=teto.qtd ? 'a sede não comporta mais' : null)});
 

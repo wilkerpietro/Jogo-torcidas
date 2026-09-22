@@ -220,7 +220,8 @@ TO.mundo = (function(){
       divisao:t.divisao || `Série ${'ABCD'[(o.divisaoClube||1)-1] || '?'}`,
       regional:t.regional || '', mapa:o.mapa,
       grade:c.grade || [8,8], nivelCidade:c.nivel || 3,
-      sedeNivel:o.sedeNivel || 1,
+      /* a pequena (até 30) mora no ponto de encontro: nível 0 (dono, 22/09/2026) */
+      sedeNivel:(o.membros || 60) <= 30 ? 0 : (o.sedeNivel || 1),
       prestigio:o.prestigio || 15, moral:o.moral || 60,
       dinheiro:o.saldo || 0, poder:o.poder || 0,
       influencia:influencia(o), territorios:territorios(o),

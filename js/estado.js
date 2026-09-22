@@ -79,14 +79,16 @@ TO.estado = (function(){
 
     if(opc.torcida){
       const f = opc.torcida;
-      E.dinheiro = Math.max(4000, Math.round((f.dinheiro||4000)*4));
+      /* O CAIXA INICIAL É O SALDO DA FONTE × 4, piso 4.000 (decisão do
+         dono, 22/09/2026): a fórmula lia `dinheiro`, campo que a fonte
+         não tem, e todo mundo começava com 16.000 */
+      E.dinheiro = Math.max(4000, Math.round((f.saldo||f.dinheiro||1000)*4));
       E.indicadores.prestigio = U.limitar(Math.round((f.prestigio||15)/5),0,20);
       E.indicadores.moral     = U.limitar(Math.round((f.moral||60)/5),0,20);
       E.efetivoAlvo = f.membros || 60;
       /* a torcida entra no jogo do tamanho que a fonte diz, e a sede
          sobe até caber esse tamanho (GDD §8.1) */
-      E.torcida.sedeNivel = Math.max(f.sedeNivel || 1,
-        TO.membros.nivelQueCabe(f.membros || 34, (f.cargos||{}).diretoria || 0));
+      E.torcida.sedeNivel = TO.membros.nivelInicialDaSede(f);
 
       /* semeia a diplomacia a partir do grafo importado */
       for(const outra of TO.mundo.todasTorcidas){

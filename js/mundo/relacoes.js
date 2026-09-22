@@ -296,7 +296,7 @@ TO.relacoes = (function(){
   const advogadosIA = t =>{
     if(!t || !t.advogados) return 0;
     return U.limitar(Math.round(t.advogados), 0,
-                     FIN().ADVOGADOS_SEDE[U.limitar(t.sede || 1, 1, 5)] || 0);
+                     FIN().ADVOGADOS_SEDE[U.limitar(t.sede == null ? 1 : t.sede, 0, 5)] || 0);
   };
   const cofreDoAdvogado = t => FIN().ADVOGADO_MES * 3 * (advogadosIA(t) + 1);
   /* a pena que o camburão dá hoje, já com o corte do escritório */
@@ -327,7 +327,8 @@ TO.relacoes = (function(){
     for(const o of M().jogaveis()){
       if(o.id === E.torcida.id) continue;
       const membros = o.membros || 20;
-      const sede = TO.membros.nivelQueCabe(membros, (o.cargos||{}).diretoria || 0);
+      /* a pequena da IA também mora no ponto de encontro (dono, 22/09/2026) */
+      const sede = TO.membros.nivelInicialDaSede({membros, sedeNivel:o.sedeNivel, cargos:o.cargos});
       E.mundoTorcidas[o.id] = {
         membros, sede,
         piso: membros,

@@ -82,22 +82,24 @@ das 386 torcidas.
    encontro"; o tutorial e as dicas que falam em sede; DECISOES.
 7. **Caixa inicial** — `saldo × 4` com piso 4.000.
 
-## 4. As perguntas pra decidir
+## 4. As decisões do dono (22/09/2026) — e o que ficou feito
 
-1. **O preço da primeira sede.** R$ 20.000? Mais barato (10.000, uns
-   cinco meses) ou mais caro (30.000, mais de um ano)?
-2. **O turno único.** É a tarde? Ou o jogador escolhe qual dos três? E
-   o nível 1 volta aos 3 de uma vez, ou é uma escada (n0: 1, n1: 2, n2+: 3)?
-3. **Teto de 30 sem sede.** Recrutar trava em 30 até construir? Ou a
-   pequena pode crescer e a sede só destrava treino, festa e bar?
-4. **A reunião da diretoria sem sede.** Onde a roda senta? (a) na praça
-   do bairro (a cena `praca` ganha cadeiras num canto); (b) numa foto
-   nova, a esquina/calçada do ponto de encontro (mais uma imagem pra
-   você gerar); (c) vale a tela antiga (o modal) até ter sede, e a cena
-   só nasce com a sede n1.
-5. **Caixa inicial.** Corrigir pra `saldo × 4` (a pequena começa com
-   4.000; a grande com o saldo dela vezes quatro) — ou 16.000 pra todo
-   mundo era intencional?
-6. **A IA.** As pequenas do mundo ficam como estão (sede n1)?
-7. **Bar grátis com a sede.** Mantém — a sede n1 traz o bar — ou o bar
-   vira outra obra depois da sede?
+1. **A primeira sede custa R$ 30.000.**
+2. **O turno único é a tarde.** Do nível 1 em diante voltam os três.
+3. **Recrutar trava em 30** até sair a sede.
+4. **A reunião senta na praça do bairro** (o C no largo do meio; sem
+   rival e sem PM na roda).
+5. **Caixa inicial: saldo × 4, piso 4.000.** Com os saldos da fonte
+   (200 a 1.000) todo mundo começa em 4.000 — o piso manda.
+6. **As pequenas da IA também nascem no nível 0.**
+7. **O bar grátis vem com a sede nível 2**, não mais com a 1. Dado
+   uma vez só; não renasce. Save antigo fica com o bar que tem.
+
+Feito no mesmo dia: `SEDE[0]` (30 membros, 2 diretores, 0 de treino),
+`MANUT_SEDE[0] = 0`, `TETO_SEDE[0] = 0`, `ADVOGADOS_SEDE[0] = 0`,
+`patrimonio.SEDE[1] = 30.000` ("Construir a sede"), `patrimonio.TETO.*[0]
+= 0`, os `|| 1` viraram leitura honesta do 0, `membros.nivelInicialDaSede`
+(uma função pro `estado.novo`, pra ficha da seleção e pra IA),
+`acoes.turnos(E)`, a festa indisponível sem sede, o recado "a esquina
+não cabe mais gente", os textos "sem sede — ponto de encontro", a praça
+com o C (`sedeCenaDoNivel(0) = 'praca'`).

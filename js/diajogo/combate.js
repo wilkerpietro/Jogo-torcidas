@@ -319,7 +319,8 @@ TO.diaJogo.combate = (function(){
     };
 
     for(const g of J.grades){ g.hpMax=P.vidaGrade; g.hp=P.vidaGrade; }
-    for(const p of D.pmPostos) J.policiais.push(new Policial(p));
+    /* a reunião não tem PM (a praça tem posto; a roda não) */
+    if(!cfg.reuniao) for(const p of D.pmPostos) J.policiais.push(new Policial(p));
 
     /* ---- povoa cada spawn ----
        Com escalação, cada disco É um membro: nome, força, defesa e moral
@@ -527,6 +528,13 @@ TO.diaJogo.combate = (function(){
     /* `J.faixa` continua apontando pra faixa de quem defende (a
        primeira): é o nome que a ponte e os testes conhecem */
     J.faixa = J.faixas[0] || null;
+    /* A REUNIÃO É SÓ NOSSA (22/09/2026): na praça a cena tem portão do
+       outro lado e nasceria rival; na roda não há rival nem PM */
+    if(cfg.reuniao){
+      J.discos = J.discos.filter(d=>d.doJogador);
+      J.total = {mandante:J.discos.filter(d=>d.lado==='mandante').length,
+                 visitante:J.discos.filter(d=>d.lado==='visitante').length};
+    }
     if(D.cadeiras && D.cadeiras.length) sentarNaRoda(J);
     return J;
   }

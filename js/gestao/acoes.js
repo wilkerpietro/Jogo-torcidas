@@ -36,12 +36,15 @@ TO.acoes = (function(){
   const resolver = (v, E) => typeof v === 'function' ? v(E) : v;
   const custoDe  = (E, a) => resolver(a.custo, E) || 0;
   const efeitoDe = (E, a) => resolver(a.efeito, E) || '';
-  const nivelDaSede = E => (E.torcida && E.torcida.sedeNivel) || 1;
+  const nivelDaSede = E => (E.torcida && E.torcida.sedeNivel != null) ? E.torcida.sedeNivel : 1;
   const custoFesta  = E => TO.financeiro.FESTA[nivelDaSede(E)] || 700;
 
+  /* SEM SEDE, UM TURNO SÓ (decisão do dono, 22/09/2026): o ponto de
+     encontro tem só a tarde; a sede, do nível 1 em diante, os três */
+  const turnos = E => (E && nivelDaSede(E) <= 0) ? TURNOS.filter(t=>t.id === 'tarde') : TURNOS;
   /* compat: quem pergunta quantas ações sobram (telas antigas) */
-  const maximo = () => TURNOS.length;
-  const restantes = E => Math.max(0, TURNOS.length - (E.acoes.usadas||0));
+  const maximo = E => turnos(E || (TO.estado && TO.estado.E)).length;
+  const restantes = E => Math.max(0, turnos(E).length - (E.acoes.usadas||0));
 
   /* GDD §6.2 */
   const MULT_SEDE   = [null, 1.0, 1.3, 1.7, 2.2, 3.0];
@@ -674,14 +677,14 @@ TO.acoes = (function(){
       efeito:'chance diária de 1–2 novatos (R$ 5 cada) — a fase do clube dita a sorte',
       disponivel(E){
         const p = previsaoRecrutamento(E);
-        if(p.vaga <= 0) return {ok:false, motivo:'a sede está cheia'};
+        if(p.vaga <= 0) return {ok:false, motivo: nivelDaSede(E) <= 0 ? 'a esquina não cabe mais gente: construa a sede' : 'a sede está cheia'};
         if(p.base <= 0) return {ok:false, motivo:'não há torcedor fora de organizada'};
         return {ok:true, nota:`${p.rotRegime}: ${Math.round(p.um*100)}% de 1 · `+
                               `${Math.round(p.dois*100)}% de 2`};
       },
       executar(E){
         const p = previsaoRecrutamento(E);
-        if(p.vaga <= 0) return {ok:false, msg:'A sede está cheia.', semCusto:true};
+        if(p.vaga <= 0) return {ok:false, msg: nivelDaSede(E) <= 0 ? 'A esquina não cabe mais gente: construa a sede.' : 'A sede está cheia.', semCusto:true};
 
         /* o dado do dono: dois primeiro, um depois, o resto é ninguém */
         const r = U.rng();
@@ -741,6 +744,8 @@ TO.acoes = (function(){
         `por presente — lucra com ~${TO.financeiro.pisoDaFesta(nivelDaSede(E))} disponíveis`,
       custo: E => custoFesta(E),
       disponivel(E){
+        /* sem sede não há festa (dono, 22/09/2026): a esquina não tem salão */
+        if(nivelDaSede(E) <= 0) return {ok:false, motivo:'sem sede não há festa'};
         const c = custoFesta(E);
         return E.dinheiro >= c ? {ok:true}
              : {ok:false, motivo:`custa ${U.dinheiro(c)}`};
@@ -1033,7 +1038,7 @@ TO.acoes = (function(){
   function rodarExpediente(E){
     const exp = expediente(E);
     const fora = [];
-    for(const t of TURNOS){
+    for(const t of turnos(E)){
       const id = exp[t.id];
       if(!id) continue;
       const a = porId(id);
@@ -1056,7 +1061,7 @@ TO.acoes = (function(){
     return fora;
   }
 
-  return {aplicarFaixa, LISTA, TURNOS, REDUCAO, custoDe, efeitoDe, custoFesta,
+  return {aplicarFaixa, LISTA, TURNOS, turnos, REDUCAO, custoDe, efeitoDe, custoFesta,
           porId, agendaveis, expediente,
           maximo, restantes, executar, rodarExpediente,
           previsaoRecrutamento, TABELA_RECRUTA,
