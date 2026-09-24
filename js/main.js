@@ -579,7 +579,7 @@
       atualizarBadges();
       /* com a aba Mensagens aberta a lista já mostra o recado: sem balão */
       if(painel === 'noticias' && subNoticias === 'mensagens'){ redesenhar(); return; }
-      balaoNoIcone('noticias', `Mensagem de ${m.nome}`);
+      balaoNoIcone('noticias', _t('Mensagem de {nome}', {nome:m.nome}));
     };
     /* TRETA NÃO NOTIFICA (pedido do dono, 12/09/2026): a briga já foi
        contada no Fim da noite, e a página do Futebol e Porrada fica
@@ -663,14 +663,12 @@
     let guardou = false;
     try{ if(e && !TO.estado.estaBloqueado()){ TO.estado.salvar(); guardou = true; } }
     catch(x){ guardou = false; }
-    modal('Voltar ao menu principal',
-      e ? `${(E().torcida||{}).nome || ''} · semana ${e.data.semana} de ${e.data.ano}` : '',
+    modal(_t('Voltar ao menu principal'),
+      e ? `${(E().torcida||{}).nome || ''} · ${_t('semana {s} de {a}', {s:e.data.semana, a:e.data.ano})}` : '',
       el('p',{class:'nota', texto: guardou
-        ? 'A partida foi salva agora. Ela continua na vaga dela, e o '+
-          'Continuar do menu abre de onde você parou.'
-        : 'NÃO DEU PRA SALVAR agora. Voltando ao menu, o que não foi '+
-          'salvo antes se perde.'}),
-      [['Voltar ao menu', voltarAoMenu]]);
+        ? _t('A partida foi salva agora. Ela continua na vaga dela, e o Continuar do menu abre de onde você parou.')
+        : _t('NÃO DEU PRA SALVAR agora. Voltando ao menu, o que não foi salvo antes se perde.')}),
+      [[_t('Voltar ao menu'), voltarAoMenu]]);
   }
 
   function voltarAoMenu(){
@@ -787,7 +785,7 @@
     const P = TO.planejamento;
     const cx = el('div',{class:'ass-politicas'});
     cx.appendChild(el('div',{class:'fase-rot',
-      texto:'Ideologia — vale toda semana'}));
+      texto:_t('Ideologia — vale toda semana')}));
     /* PENDENTE ATÉ SALVAR. A escolha se aplicava solta, a cada `change`,
        e o jogador não tinha confirmação nenhuma de que ficou guardada.
        Agora os três seletores e a chave escrevem aqui, e um botão só
@@ -821,20 +819,19 @@
       cx.appendChild(d);
     };
     const pol = P.politicas(e);
-    grupo('Nosso jogo', P.POLITICA_ATAQUE, pol.jogo,
+    grupo(_t('Nosso jogo'), P.POLITICA_ATAQUE, pol.jogo,
           id=>P.definirPolitica(e, 'jogo', id));
-    grupo('Aliados na cidade',
+    grupo(_t('Aliados na cidade'),
           P.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
-            nota:(r.porCabeca ? `R$ ${r.porCabeca} por cabeça · ` : 'de graça · ')+
-                 `${r.relacao>0?'+':''}${r.relacao} de relação com o aliado — ${r.nota}`})),
+            nota:(r.porCabeca ? _t('R$ {valor} por cabeça', {valor:r.porCabeca}) : _t('de graça'))+' · '+
+                 _t('{rel} de relação com o aliado — {nota}',
+                    {rel:`${r.relacao>0?'+':''}${r.relacao}`, nota:r.nota})})),
           P.recepcaoPadrao(e) || 'nada',
           id=>P.definirRecepcaoPadrao(e, id === 'nada' ? 'nada' : id));
-    grupo('Outros jogos na cidade', P.POLITICA_ATAQUE, pol.outros,
+    grupo(_t('Outros jogos na cidade'), P.POLITICA_ATAQUE, pol.outros,
           id=>P.definirPolitica(e, 'outros', id));
     cx.appendChild(el('div',{class:'linha-dado', html:
-      '<span class="fraco">O olheiro sempre pergunta antes de cada jogo. '+
-      'O botão "Seguir padrão" da mensagem executa o que está definido '+
-      'aqui.</span>'}));
+      `<span class="fraco">${_t('O olheiro sempre pergunta antes de cada jogo. O botão "Seguir padrão" da mensagem executa o que está definido aqui.')}</span>`}));
 
     /* UM BOTÃO SÓ, e é ele que confirma. Aberta como tela, quem carrega
        esse botão é o rodapé do modal — daí a caixa saber salvar sem ter
@@ -845,8 +842,8 @@
       redesenhar();
     };
     if(comBotao !== false){
-      const bt = el('button',{class:'bt destaque', texto:'Salvar'});
-      bt.onclick = ()=>{ cx.salvar(); aviso('Ideologia salva.', 'boa'); };
+      const bt = el('button',{class:'bt destaque', texto:_t('Salvar')});
+      bt.onclick = ()=>{ cx.salvar(); aviso(_t('Ideologia salva.'), 'boa'); };
       const rod = el('div',{class:'pol-rodape'});
       rod.appendChild(bt);
       cx.appendChild(rod);
@@ -896,14 +893,14 @@
        nem sozinho nem no dedo. */
     noFeedQuando = el('div',{class:'feed-quando'});
     const txtQuando = el('div',{class:'quando-txt'});
-    txtQuando.title = 'Data do jogo — o dia corre sozinho; um painel aberto ou uma decisão pendente param o tempo';
+    txtQuando.title = _t('Data do jogo — o dia corre sozinho; um painel aberto ou uma decisão pendente param o tempo');
     const bDia = el('button',{class:'mapa-ic', html:'<span class="rot">≫</span>'});
-    bDia.title = 'Empurrar o dia: passa pro dia seguinte sem esperar';
-    bDia.setAttribute('aria-label', 'Empurrar o dia');
+    bDia.title = _t('Empurrar o dia: passa pro dia seguinte sem esperar');
+    bDia.setAttribute('aria-label', _t('Empurrar o dia'));
     bDia.onclick = ()=>{
       const at = E(); if(!at) return;
       if(TO.feed.travado(at)){
-        aviso('Responda o que está aberto — o tempo está parado.', 'ruim');
+        aviso(_t('Responda o que está aberto — o tempo está parado.'), 'ruim');
         atualizarFeed();
         return;
       }
@@ -915,7 +912,8 @@
       pintarTopo(); atualizarFeed();
       if(at.data.absoluto === antes){
         const por = motivosDoRelogioParado();
-        aviso('O dia não andou' + (por.length ? ': ' + por.join(', ') : '') + '.', 'ruim');
+        aviso(por.length ? _t('O dia não andou: {motivos}.', {motivos:por.join(', ')})
+                         : _t('O dia não andou.'), 'ruim');
       }
     };
     noFeedQuando.append(txtQuando, bDia);
@@ -924,7 +922,8 @@
        botão da cena, uma velocidade só pro jogo */
     const bVel = el('button',{class:'mapa-ic', html:
       `<span class="rot">${TO.diaJogo.ponte.velocidade}×</span>`});
-    bVel.title = `Velocidade do tempo (vale pro dia e pra briga) — agora em ${TO.diaJogo.ponte.velocidade}×; clique pra alternar 1×/2×`;
+    bVel.title = _t('Velocidade do tempo (vale pro dia e pra briga) — agora em {v}×; clique pra alternar 1×/2×',
+                    {v:TO.diaJogo.ponte.velocidade});
     bVel.onclick = ()=>{ TO.diaJogo.ponte.alternarVelocidade(); redesenhar(); };
     if(TO.diaJogo.ponte.velocidade > 1) bVel.classList.add('aceso');
     barra.append(noFeedTopo, noFeedQuando, bVel);
@@ -935,7 +934,7 @@
     const hist = feedVisivel(e);
     if(hist.length > janelaDoFeed(e).teto){
       const b = el('button',{class:'bt feed-mais',
-        texto:`Mostrar mais antigas (${hist.length - janelaDoFeed(e).teto})`});
+        texto:_t('Mostrar mais antigas ({n})', {n:hist.length - janelaDoFeed(e).teto})});
       b.onclick = ()=>{ tetoFeed += TETO_LISTA; pintarFeed(); };
       rolo.appendChild(b);
     }
@@ -947,7 +946,7 @@
        logo abaixo do cabeçalho, com as notícias da nossa torcida e do
        nosso clube na frente. Quem a enche é `atualizarTicker`. */
     noFeedTicker = el('div',{class:'feed-ticker', html:
-      `<span class="ticker-rot">Últimas</span>`+
+      `<span class="ticker-rot">${_t('Últimas')}</span>`+
       `<div class="ticker-caixa"><div class="ticker-fita"></div></div>`});
     noFeedTicker.addEventListener('click', ev=>{
       const a = ev.target.closest('.ticker-item');
@@ -1000,6 +999,23 @@
       tickerManchetes.delete(tickerManchetes.keys().next().value);
     return r;
   }
+  /* a manchete de uma briga do país, frase inteira por chave: o
+     `pano.tipo` ('faixa'/'bandeira') é chave de lógica e muda o
+     gênero em espanhol, então cada um tem a sua frase */
+  function tickerDaBriga(b){
+    const p = {a:b.a.nome, b:b.b.nome, cidade:b.cidade || _t('algum lugar')};
+    let txt = b.revanche ? _t('Revanche: {a} e {b} se pegaram em {cidade}', p)
+                         : _t('{a} e {b} se pegaram em {cidade}', p);
+    const venc = b.vencedor && !/ningu/i.test(b.vencedor) ? b.vencedor : null;
+    const pano = b.pano ? b.pano.tipo === 'bandeira' ? 'bandeira' : 'faixa' : null;
+    const q = {venc, de:b.pano && b.pano.de};
+    if(venc && pano === 'bandeira') txt += _t(': a {venc} levou a melhor e ficou com a bandeira da {de}', q);
+    else if(venc && pano)           txt += _t(': a {venc} levou a melhor e ficou com a faixa da {de}', q);
+    else if(venc)                   txt += _t(': a {venc} levou a melhor', q);
+    else if(pano === 'bandeira')    txt += _t(' e ficou com a bandeira da {de}', q);
+    else if(pano)                   txt += _t(' e ficou com a faixa da {de}', q);
+    return txt;
+  }
   function manchetesDoTicker(e){
     const abs = e.data.absoluto || 0;
     const nomeT = e.torcida.nome, clube = TO.mundo.time(e.torcida.clubeId);
@@ -1037,9 +1053,7 @@
       if(paisDe(b.a.id) !== nossoPais && paisDe(b.b.id) !== nossoPais) continue;
       const daPraca = daCidade(b.a.id) || daCidade(b.b.id);
       itens.push({aba:'brigas', prio: daPraca ? 1 : 2, abs:bAbs,
-        texto:`${b.revanche ? 'Revanche: ' : ''}${b.a.nome} e ${b.b.nome} se pegaram em ${b.cidade || 'algum lugar'}`+
-              `${b.vencedor && !/ningu/i.test(b.vencedor) ? `: a ${b.vencedor} levou a melhor` : ''}`+
-              `${b.pano ? ` e ficou com a ${b.pano.tipo} da ${b.pano.de}` : ''}`});
+        texto:tickerDaBriga(b)});
     }
     itens.sort((x,y)=> x.prio - y.prio || y.abs - x.abs);
     /* o resto do país fecha a fita, mas não a toma: no máximo quatro */
@@ -1170,9 +1184,9 @@
       if(window.console) console.error('[feed] cartão quebrado:',
                                        m && m.kind, m && (m.chave || m.id), err);
       const art = el('article',{class:'msg quebrado', 'data-id': m && m.id});
-      art.appendChild(el('div',{class:'msg-cab', html:'<span class="msg-voz">Arquivo</span>'}));
+      art.appendChild(el('div',{class:'msg-cab', html:`<span class="msg-voz">${_t('Arquivo')}</span>`}));
       art.appendChild(el('p',{class:'msg-txt fraco', texto:
-        (m && m.texto) || 'Mensagem antiga que não pôde ser desenhada.'}));
+        (m && m.texto) || _t('Mensagem antiga que não pôde ser desenhada.')}));
       /* O ERRO FICA À VISTA (dono, 22/09/2026): no celular não há
          console, e "mensagem antiga" sem dizer qual é não ajuda ninguém */
       art.appendChild(el('small',{class:'fraco', texto:
@@ -1185,12 +1199,12 @@
         const bts = el('div',{class:'msg-bts'});
         for(const b of (m.botoes||[])){
           const bt = el('button',{class:'bt', texto:b.rot || b.id});
-          bt.onclick = ()=>{ try{ responderMensagem(m.id, b.id); }catch(e2){ console.error(e2); aviso('Não deu: '+e2.message, 'ruim'); } };
+          bt.onclick = ()=>{ try{ responderMensagem(m.id, b.id); }catch(e2){ console.error(e2); aviso(_t('Não deu: {motivo}', {motivo:e2.message}), 'ruim'); } };
           bts.appendChild(bt);
         }
-        const deixar = el('button',{class:'bt destaque', texto:'Deixar pra lá'});
+        const deixar = el('button',{class:'bt destaque', texto:_t('Deixar pra lá')});
         deixar.onclick = ()=>{
-          TO.feed.marcarResposta(e, m.id, 'auto', 'deixado pra lá');
+          TO.feed.marcarResposta(e, m.id, 'auto', _t('deixado pra lá'));
           TO.estado.salvar(); atualizarFeed(); pintarTopo();
           if(!TO.feed.travado(e)) retomarTempo('decisao');
         };
@@ -1260,8 +1274,8 @@
          : /anos:/.test(s) ? 'idade' : '';
   };
 
-  const ROT_VOZ = {olheiro:'Olheiro', diretor:'Diretoria', rua:'Diplomacia',
-                   jornal:'Jornal',
+  const ROT_VOZ = {olheiro:_t('Olheiro'), diretor:_t('Diretoria'), rua:_t('Diplomacia'),
+                   jornal:_t('Jornal'),
                    /* a obra do vizinho é notícia de jornal de torcida,
                       não recado da diretoria (dono, 19/09/2026) */
                    porrada:'Futebol e Porrada'};
@@ -1402,9 +1416,9 @@
     const placar = el('div',{class:'partida-placar'});
     const linha = el('div',{class:'partida-linha'});
     const btPausa = el('button',{class:'partida-bt',
-      title:'Pausar/seguir (espaço)'});
+      title:_t('Pausar/seguir (espaço)')});
     const btVel = el('button',{class:'partida-bt partida-vel',
-      title:'Velocidade da partida'});
+      title:_t('Velocidade da partida')});
     const trilho = el('div',{class:'partida-trilho'});
     const fill = el('i',{class:'partida-fill'});
     const meio = el('b',{class:'partida-meio'});
@@ -1418,16 +1432,16 @@
        rápido; aliado presente segura o clima em tranquilo. TENSO abre
        a arquibancada. */
     const climaEl = el('div',{class:'partida-clima clima-0',
-      texto:'Clima do estádio: TRANQUILO'});
+      texto:_t('Clima do estádio: {clima}', {clima:_t('TRANQUILO')})});
     caixa.append(placar, linha, climaEl, eventos);
 
     const chance = chanceDeClima(E(), d);
     const pMin = chance.pMin;
     if(!d.clima) d.clima = {nivel:0, min:0};
-    const ROT_CLIMA = ['TRANQUILO', 'ESQUENTANDO', 'TENSO'];
+    const ROT_CLIMA = [_t('TRANQUILO'), _t('ESQUENTANDO'), _t('TENSO')];
     const pintarClima = ()=>{
       climaEl.className = 'partida-clima clima-' + d.clima.nivel;
-      climaEl.textContent = 'Clima do estádio: ' + ROT_CLIMA[d.clima.nivel];
+      climaEl.textContent = _t('Clima do estádio: {clima}', {clima:ROT_CLIMA[d.clima.nivel]});
     };
     pintarClima();
 
@@ -1469,7 +1483,7 @@
         const f2 = vistos.slice(0, eventos.children.length+1)
           .filter(x=>x.lado==='f').length;
         eventos.appendChild(el('div',{class:'partida-gol',
-          texto:`${g.min}' · GOL do ${de} — ${c2} × ${f2}`}));
+          texto:_t("{min}' · GOL do {time} — {c} × {f}", {min:g.min, time:de, c:c2, f:f2})}));
       }
       pintarPlacar(vistos.filter(x=>x.lado==='c').length,
                    vistos.filter(x=>x.lado==='f').length);
@@ -1487,7 +1501,7 @@
         d.penAte = Math.min(cb.length, Math.max(0, passou));
         if(!eventos.querySelector('.pen-abre'))
           eventos.appendChild(el('div',{class:'partida-gol pen pen-abre',
-            texto:'Fim do tempo normal — vai pros pênaltis.'}));
+            texto:_t('Fim do tempo normal — vai pros pênaltis.')}));
         if(!penCena){
           penCena = cenaDePenaltis(d);
           caixa.insertBefore(penCena, eventos);
@@ -1517,7 +1531,7 @@
           pontoDeControle(d);
           d.pausada = true;
           eventos.appendChild(el('div',{class:'partida-gol',
-            texto:`${min}' · A arquibancada se pegou — o jogo espera.`}));
+            texto:_t("{min}' · A arquibancada se pegou — o jogo espera.", {min})}));
           setTimeout(()=>comEscolhaDeBriga(sim=>{
             simularProxima = sim;
             abrirBrigaNoEstadio(m, ()=>{
@@ -1572,11 +1586,11 @@
   function cenaDePenaltis(d){
     const cb = (d.pen && d.pen.cobrancas) || [];
     const cena = el('div',{class:'partida-pen'});
-    cena.appendChild(el('div',{class:'pen-onde', texto:'disputa de pênaltis'}));
+    cena.appendChild(el('div',{class:'pen-onde', texto:_t('disputa de pênaltis')}));
 
     const placar = el('div',{class:'pen-placar'});
     const grade  = el('div',{class:'pen-grade'});
-    const recado = el('div',{class:'pen-recado', texto:'Vai bater…'});
+    const recado = el('div',{class:'pen-recado', texto:_t('Vai bater…')});
 
     /* AS DUAS FILEIRAS TÊM AS MESMAS VAGAS (correção do dono,
        24/08/2026): uma bolinha por cobrança REAL entregava o fim antes
@@ -1621,8 +1635,9 @@
         if(b) b.className = 'pen-bola ' + (k.marcou ? 'fez' : 'errou');
         if(k.marcou){ if(k.lado === 'c') gc++; else gf++; }
         pintarSerie();
-        recado.textContent = `${k.lado === 'c' ? d.casa : d.fora} — `+
-          (k.marcou ? 'na rede!' : 'perdeu!');
+        const quem = k.lado === 'c' ? d.casa : d.fora;
+        recado.textContent = k.marcou ? _t('{time} — na rede!', {time:quem})
+                                      : _t('{time} — perdeu!', {time:quem});
         recado.className = 'pen-recado ' + (k.marcou ? 'fez' : 'errou');
       }
     };
@@ -1631,7 +1646,7 @@
       const venc = d.pen.c > d.pen.f ? d.casa : d.fora;
       const alto = Math.max(d.pen.c, d.pen.f);
       const baixo = Math.min(d.pen.c, d.pen.f);
-      recado.textContent = `${venc} passa nos pênaltis, por ${alto} a ${baixo}.`;
+      recado.textContent = _t('{time} passa nos pênaltis, por {alto} a {baixo}.', {time:venc, alto, baixo});
       recado.className = 'pen-recado fim';
     };
     return cena;
@@ -1668,7 +1683,7 @@
        congelava aos 63'. Agora ela está PAUSADA — quem apita é o
        relógio, aos 90. */
     m.consequencia = (m.consequencia || '') +
-      ' O clima azedou e a arquibancada se pegou.';
+      ' ' + _t('O clima azedou e a arquibancada se pegou.');
     /* quem ficou quieto entra na consequência mais abaixo, depois de
        a gente saber quem é aliado de quem */
     /* quem abre a arquibancada pausa a partida — vale pra quem chega
@@ -1745,8 +1760,10 @@
       const q = quietas.map(x=>x.nome);
       /* o jogo trata toda torcida como feminina — "A Leões da TUF caiu
          em cima da gente" —, então aqui é "da", sem exceção */
-      m.consequencia += ` ${q.join(' e ')} ${q.length===1?'ficou':'ficaram'} `+
-        `na cadeira: ${q.length===1?'é aliada':'são aliadas'} da ${quietas[0].de}.`;
+      m.consequencia += ' ' + _tn(q.length,
+        '{nomes} ficou na cadeira: é aliada da {de}.',
+        '{nomes} ficaram na cadeira: são aliadas da {de}.',
+        {nomes:q.join(` ${_t('e')} `), de:quietas[0].de});
     }
     const minha = nossosSet.find(p => p.id === e.torcida.id) || {n:10};
     const aptos = TO.membros.aptosParaOEstadio(e)
@@ -1827,8 +1844,8 @@
     const ic = el('div',{class:'itn-ic'});
     const hora = el('div',{class:'itn-hora'});
     const corpo = el('div',{class:'itn-corpo'});
-    const nome = el('div',{class:'itn-nome', texto:'Dia de jogo'});
-    const estado = el('div',{class:'estado', texto:'o dia ainda não começou'});
+    const nome = el('div',{class:'itn-nome', texto:_t('Dia de jogo')});
+    const estado = el('div',{class:'estado', texto:_t('o dia ainda não começou')});
     corpo.append(nome, estado);
     const conta = el('div',{class:'itn-efetivo'});
     linha.append(ic, hora, corpo, conta);
@@ -1903,11 +1920,11 @@
     const nome = ITN.it.efetivo.nomeDeles;
     const esc = itnEscoltaAtiva();
     ITN.conta.innerHTML =
-      `<b>${ITN.nos}</b> ${ITN.nos===1?'nosso':'nossos'}` +
-      (esc ? ` <span class="escolta">+ <b>${esc}</b> da ${ITN.escolta.nome}</span>` : '') +
+      _tn(ITN.nos, '<b>{n}</b> nosso', '<b>{n}</b> nossos') +
+      (esc ? ` <span class="escolta">${_t('+ <b>{n}</b> da {nome}', {n:esc, nome:ITN.escolta.nome})}</span>` : '') +
       /* zerado continua aparecendo: sumir com a linha esconderia
          justamente a informação de que não sobrou ninguém deles */
-      (ITN.it.efetivo.eles ? ` · <b>${ITN.eles}</b> da ${nome}` : '');
+      (ITN.it.efetivo.eles ? ' · ' + _t('<b>{n}</b> da {nome}', {n:ITN.eles, nome}) : '');
   }
   /* a linha só tem um número, o da barra: o efetivo anda com ela */
   function itnMarcarEfetivo(){ itnContar(); }
@@ -1968,7 +1985,7 @@
 
     if(p.jogo){                       /* O JOGO SEGURA A LINHA */
       ITN.travado = true;
-      itnDizer('a partida rolando · o dia só segue no apito final', true);
+      itnDizer(_t('a partida rolando · o dia só segue no apito final'), true);
       itnPartida(ITN.recados);
       return;
     }
@@ -1978,9 +1995,9 @@
     const chegou = ITN.escolta && ITN.escolta.n > 0 && p.comEscolta && !(antes && antes.comEscolta);
     const ficou  = ITN.escolta && ITN.escolta.n > 0 && !p.comEscolta && antes && antes.comEscolta;
     if(!fila.length){                 /* parada sem nada não fala */
-      itnDizer(chegou ? `a ${ITN.escolta.nome} manda ${ITN.escolta.n} pra escolta`
-             : ficou ? `a escolta da ${ITN.escolta.nome} fica`
-             : 'passando · ' + p.nome.toLowerCase());
+      itnDizer(chegou ? _t('a {nome} manda {n} pra escolta', {nome:ITN.escolta.nome, n:ITN.escolta.n})
+             : ficou ? _t('a escolta da {nome} fica', {nome:ITN.escolta.nome})
+             : _t('passando · {lugar}', {lugar:p.nome.toLowerCase()}));
       itnAgenda(chegou || ficou ? 1400 : 900);
       return;
     }
@@ -1996,9 +2013,9 @@
     if(!ITN) return;
     const p = ITN.it.paradas[ITN.ponto];
     const ev = ITN.fila.shift();
-    if(!ev){ ITN.travado = false; itnDizer('seguindo'); itnAgenda(1200); return; }
+    if(!ev){ ITN.travado = false; itnDizer(_t('seguindo')); itnAgenda(1200); return; }
     ITN.travado = true;
-    itnDizer('recado na parada · esperando você responder', true);
+    itnDizer(_t('recado na parada · esperando você responder'), true);
     ITN.recados.appendChild(itnCartao(p, ev));
   }
 
@@ -2010,23 +2027,23 @@
     /* onde foi: a parada de verdade dentro da fase (dono, 08/09/2026) */
     const onde = ev.lugarTxt || p.nome;
     if(ev.tipo === 'investida'){
-      voz = 'Diretor de rua · investida marcada no planejamento';
-      texto = `Hoje é o dia. A ${ev.nome} vai estar em ${onde}, e a gente vai pra cima.`;
-      bts = [{rot:'Ir pra cima', briga:true}];
+      voz = _t('Diretor de rua · investida marcada no planejamento');
+      texto = _t('Hoje é o dia. A {nome} vai estar em {onde}, e a gente vai pra cima.', {nome:ev.nome, onde});
+      bts = [{rot:_t('Ir pra cima'), briga:true}];
     } else if(ev.tipo === 'emboscada'){
-      voz = `Emboscada · ${ev.nome}`;
+      voz = _t('Emboscada · {nome}', {nome:ev.nome});
       texto = (S.emboscada ? S.emboscada.texto(ev.nome)
-                           : `Pegaram a caravana na estrada. A ${ev.nome} fechou a pista.`)
-              + ` Foi em ${onde}.`;
-      bts = [{rot:(S.emboscada||{}).brigar || 'Descer pra treta', briga:true},
-             {rot:(S.emboscada||{}).fugir  || 'Mandar seguir viagem', briga:false}];
+                           : _t('Pegaram a caravana na estrada. A {nome} fechou a pista.', {nome:ev.nome}))
+              + ' ' + _t('Foi em {onde}.', {onde});
+      bts = [{rot:(S.emboscada||{}).brigar || _t('Descer pra treta'), briga:true},
+             {rot:(S.emboscada||{}).fugir  || _t('Mandar seguir viagem'), briga:false}];
     } else {
       const cfg = S[ev.ponto] || S.bar || {};
-      voz = `Caiu em cima da gente · ${ev.nome}`;
+      voz = _t('Caiu em cima da gente · {nome}', {nome:ev.nome});
       texto = (cfg.texto ? cfg.texto(ev.nome)
-                         : `A ${ev.nome} caiu em cima da gente.`) + ` Foi em ${onde}.`;
-      bts = [{rot:cfg.brigar || 'Pra cima deles', briga:true},
-             {rot:cfg.fugir  || 'Deixar quieto',  briga:false}];
+                         : _t('A {nome} caiu em cima da gente.', {nome:ev.nome})) + ' ' + _t('Foi em {onde}.', {onde});
+      bts = [{rot:cfg.brigar || _t('Pra cima deles'), briga:true},
+             {rot:cfg.fugir  || _t('Deixar quieto'),  briga:false}];
     }
     /* O SIMULAR TAMBÉM NA LINHA DO DIA (correção do dono, 23/08/2026).
        A briga da parada — emboscada na estrada, ataque na pista,
@@ -2035,18 +2052,18 @@
        quem desce: é briga, e briga tem as duas saídas. */
     const descer = bts.find(b=>b.briga);
     if(descer) bts.splice(bts.indexOf(descer) + 1, 0,
-      {rot:'Simular', briga:true, simular:true});
+      {rot:_t('Simular'), briga:true, simular:true});
     cx.appendChild(el('div',{class:'voz', texto:voz}));
     cx.appendChild(el('p',{texto}));
     if(ev.tipo !== 'investida')
       cx.appendChild(el('div',{class:'custo',
-        html:'Ninguém descendo: <b>Moral −3 · Prestígio −3,5 · Relação −6</b>'}));
+        html:_t('Ninguém descendo: <b>Moral −3 · Prestígio −3,5 · Relação −6</b>')}));
     const caixa = el('div',{class:'bts'});
     bts.forEach((b, k)=>{
       const bt = el('button',{class:'itn-bt'+(k===0?' acao':'')+
                                      (b.simular?' simular':''), texto:b.rot});
       if(b.simular) bt.title =
-        'Roda o duelo sem abrir a cena. As consequências são as mesmas.';
+        _t('Roda o duelo sem abrir a cena. As consequências são as mesmas.');
       bt.onclick = ()=> itnResponder(p, ev, b.briga, cx, b.simular);
       caixa.appendChild(bt);
     });
@@ -2063,8 +2080,7 @@
       const atq = (ev.abrir && ev.abrir.atq) || null;
       const r = TO.feed.naoDesceu ? TO.feed.naoDesceu(e, atq) : null;
       cx.appendChild(el('div',{class:'saldo',
-        html:'Ninguém desceu. <span class="ruim">Moral −3 · Prestígio −3,5 · '+
-             'Relação −6</span>'}));
+        html:_t('Ninguém desceu. <span class="ruim">Moral −3 · Prestígio −3,5 · Relação −6</span>')}));
       TO.estado.salvar();
       pintarTopo();
       setTimeout(itnRecado, 900 / velTempo());   // o próximo recado da mesma parada
@@ -2079,8 +2095,8 @@
 
   function itnAbrirCena(ev, simular){
     simularProxima = !!simular;
-    itnDizer(simular ? 'duelo simulado · a linha espera'
-                     : 'cena aberta · a linha espera', true);
+    itnDizer(simular ? _t('duelo simulado · a linha espera')
+                     : _t('cena aberta · a linha espera'), true);
     if(ev.abrir.tela === 'guerra') abrirGuerra(ev.abrir.args);
     else abrirAtaqueAoBar(ev.abrir.atq);
   }
@@ -2142,14 +2158,14 @@
     const caidosDeles = Math.max(0, Math.round(
       res['caidos' + (outro==='mandante'?'Mandante':'Visitante')] || 0));
     cartao.appendChild(el('div',{class:'saldo',
-      html:`${res.ganhamos ? '<span class="bom">Saímos por cima.</span>'
-                           : '<span class="ruim">Saímos por baixo.</span>'} `+
-           `<b>${caidosDeles} caídos deles, ${caidosNossos} nossos</b>`+
-           (res.prestigio ? ` · Prestígio ${res.prestigio>0?'+':''}${res.prestigio}` : '')+
+      html:`${res.ganhamos ? `<span class="bom">${_t('Saímos por cima.')}</span>`
+                           : `<span class="ruim">${_t('Saímos por baixo.')}</span>`} `+
+           `<b>${_t('{deles} caídos deles, {nossos} nossos', {deles:caidosDeles, nossos:caidosNossos})}</b>`+
+           (res.prestigio ? ` · ${_t('Prestígio')} ${res.prestigio>0?'+':''}${res.prestigio}` : '')+
            (perdaNos || perdaEles
-             ? `<br>Segue viagem com <b>${ITN.nos}</b>`+
+             ? '<br>' + _t('Segue viagem com <b>{n}</b>', {n:ITN.nos})+
                (perdaNos ? ` <span class="ruim">(−${perdaNos})</span>` : '')+
-               (antesEles ? ` · eles com <b>${ITN.eles}</b>`+
+               (antesEles ? ' · ' + _t('eles com <b>{n}</b>', {n:ITN.eles})+
                  (perdaEles ? ` <span class="bom">(−${perdaEles})</span>` : '') : '')
              : '')}));
     /* o cartão precisa estar na tela pra a linha se medir: repinta
