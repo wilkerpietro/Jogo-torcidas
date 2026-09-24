@@ -15,6 +15,7 @@
    fora do quadro, que numa cidade desse tamanho é quase tudo.
    ========================================================= */
 import * as THREE from '../../vendor/three/three.module.min.js';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, arquivoDaFolha } from './casas3d.js';
 
 export function montarBairro(P) {
   const K = P.CIDADE;
@@ -544,7 +545,53 @@ export function montarBairro(P) {
     }
   }
 
+  /* AS CASAS DE MODELO. Casa, sobrado e barraco saem de um dos cinco
+     tipos do `casas3d.js` (a casa térrea, a de tijolo, a do comércio
+     embaixo, o sobrado de laje e o casarão), com a folha pintada das
+     casas; galpão, muro, prédio e sede continuam caixa. Cada pedaço da
+     cidade junta as casas dele numa malha — é o que deixa a câmera
+     descartar o que está fora do quadro. */
+  const CASAS = new Map();
+  let chaveCasas = 'solta', chaoCasas = 0;
+  const registroCasas = [];
+  function casaDeModelo(l) {
+    const pc = planoDaCasa(l, K);
+    if (!pc) return false;
+    if (!CASAS.has(chaveCasas)) CASAS.set(chaveCasas, { casas: [], grades: [] });
+    const c = montarCasa(l, pc, CASAS.get(chaveCasas), chaoCasas);
+    registroCasas.push({ lote: l, tipo: pc.tipo, portas: c.portas, janelas: c.janelas, janelasLado: c.janelasLado });
+    return true;
+  }
+  const materiaisCasas = [];
+  const matCasas = {};
+  function materialCasa(folha) {
+    if (matCasas[folha]) return matCasas[folha];
+    /* GRADE É BARRA FINA: com `alphaToCoverage` o alfa vira cobertura do
+       antisserrilhado e o portão de longe não vira chiado */
+    const alfa = folha === 'grades';
+    const m = new THREE.MeshLambertMaterial({
+      map: textura(arquivoDaFolha(folha)), vertexColors: true, side: THREE.DoubleSide,
+      alphaTest: alfa ? 0.08 : 0, alphaToCoverage: alfa });
+    materiaisCasas.push(m);
+    return (matCasas[folha] = m);
+  }
+  function malhaCasas(blocos, folha, nome) {
+    if (!blocos.length) return;
+    const pos = juntarBlocos(blocos, 'pos');
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'uv'), 2));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'cor'), 3));
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, materialCasa(folha));
+    m.castShadow = true; m.receiveShadow = true;
+    m.name = nome;
+    triangulos += pos.length / 9;
+    meshes.push(m);
+  }
+
   function lote(T, l) {
+    if (casaDeModelo(l)) return;
     if (l.ang) {
       /* casa da avenida: corpo, telhado e a fachada virada pra avenida */
       caixaRot(T, l.cx, l.cy, l.w - 2, l.h - 2, 0, l.alt, l.ang, l.cor);
@@ -1355,11 +1402,14 @@ export function montarBairro(P) {
       caixa(T, f.x0, f.x1, 0, f.alt, f.y0, f.y1, f.cor);
       telhado(T, f.x0 - 2, f.x1 + 2, f.y0 - 2, f.y1 + 2, f.alt, Math.min(f.x1 - f.x0, f.y1 - f.y0) * 0.26, '#8f8a80');
     }
+    /* a casa assenta na laje do lote (1,6), não no asfalto */
+    chaveCasas = k; chaoCasas = 1.6;
     for (const l of q.lotes) {
       limite = l.ang ? null : { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
       lote(T, l);
       limite = null;
     }
+    chaveCasas = 'solta'; chaoCasas = 0;
     for (const a of q.arvores || []) arvore(T, a);
     if (q.equip || q.pracinhas) comEquipamento.push([T, q]);
   }
@@ -1396,6 +1446,52 @@ export function montarBairro(P) {
                                forma: o.forma, cor: o.cor, cor2: o.cor2, corTexto: o.corTexto });
       }
   }
+  /* OS DECALQUES DA CASA DE MODELO: as mesmas três coisas do lote de
+     caixa — a falha de reboco, o letreiro e a pixação —, mas cada uma
+     vai pro lugar livre da parede da frente (`lugarDoDecalque`), longe
+     da janela e da porta, que ali são fundas. A falha só vai em parede
+     de reboco: tijolo aparente e reboco cru não têm reboco pra cair. */
+  const semDecalque = { letreiro: 0, pixacao: 0 };
+  function decalquesDaCasa(l, pc, TL, uv) {
+    const W = pc.W * METRO, H = l.alt;
+    if (!pc.semManchas) {
+      const sorte = pc.s('manchas'), quantas = sorte < 0.46 ? 0 : sorte < 0.88 ? 1 : 2;
+      for (let n = 0; n < quantas; n++) {
+        const r = pc.s('mancha' + n), q2 = Math.floor(pc.s('qual' + n) * 4) % 4;
+        const lado = Math.min(W * 0.34, H * 0.42, 34) * (0.68 + r * 0.6);
+        /* a de cima é a do beiral; as outras sobem da calçada */
+        const alta = q2 === 2;
+        const desl = (pc.s('lado' + n) < 0.5 ? 1 : -1) * W * 0.25 * (0.3 + r * 0.6);
+        const lug = lugarDoDecalque(l, pc, lado, lado, { u: desl, y: alta ? 999 : 2 + lado / 2 + r * H * 0.16, min: 10 });
+        if (!lug) continue;
+        const u0 = (q2 % 2) * 0.5, v0 = q2 < 2 ? 0.5 : 0;
+        placa(MANCHAS, lug.x, lug.y, lug.z, lug.ox, lug.oz, lug.larg, lug.alt,
+              [u0 + 0.004, v0 + 0.004, u0 + 0.496, v0 + 0.496]);
+      }
+    }
+    if (l.placa) {
+      /* o comércio tem o lugar do letreiro no desenho dele (entre a
+         porta de enrolar e a marquise); o resto usa a regra antiga */
+      const pp = pc.placa;
+      const larg = pp ? pp.larg : Math.min(W - 12, 110), alt = pp ? pp.alt : Math.min(15, larg / 4.6);
+      const lug = lugarDoDecalque(l, pc, larg, alt, { u: 0, y: pp ? pp.y : Math.max(PORTA_ALT + 6, 52) + alt / 2, min: larg * 0.55 });
+      if (lug) placa(TL, lug.x, lug.y, lug.z, lug.ox, lug.oz, lug.larg, lug.alt, uv.get('P:' + l.placa));
+      else semDecalque.letreiro++;
+    }
+    if (l.pixacao) {
+      /* baixa, na altura do peito pra baixo, e fora do eixo da porta —
+         ou na porta de aço, se a parede não tem vão livre */
+      const larg = Math.min(W - 12, 62), alt = Math.min(14, larg / 4.3);
+      const u = uv.get(chavePixo(l.pixacao, l.pixoTinta));
+      if (!u || alt < 3) return;
+      const lado = somaTexto(l.pixacao) % 2 ? 1 : -1;
+      const lug = lugarDoDecalque(l, pc, larg, alt, { u: lado * W * 0.22, y: 3 + alt / 2, min: 14, portas: true });
+      if (!lug) { semDecalque.pixacao++; return; }
+      const i0 = TL.uv.length;
+      placa(TL, lug.x, lug.y, lug.z, lug.ox, lug.oz, lug.larg, lug.alt, u);
+      if (l.pixo) registrarPixo(l.pixo, l, uv, i0, lug.x, lug.z, lug.y, lug.ox, lug.oz);
+    }
+  }
   /* as duas versões de uma pixação de torcida, cada uma na cor da sua */
   function porAsDuasVersoes(px) {
     for (const k of ['mandante', 'visitante']) {
@@ -1429,6 +1525,7 @@ export function montarBairro(P) {
       limite = null;
     }
     for (const l of K.LOTES) {
+      if (l._plano && l._plano.frentes) { decalquesDaCasa(l, l._plano, TL, uv); continue; }
       /* a frente do lote: pra onde ela olha, onde fica a parede e
          quanto mede — o lote axial pela sua frente, o da avenida pelo
          eixo local dele */
@@ -1614,10 +1711,20 @@ export function montarBairro(P) {
   for (const l of K.BEIRA || []) {
     /* a casa da favela manda o telhado dela pra malha de telha miúda */
     alvoTelhado = l.favela ? TELHADOS_FAV : TELHADOS;
+    /* fora do quarteirão a casa de modelo se junta por quadrado de
+       1.600 (uns 80 m): a favela inteira numa malha só não sairia
+       nunca do quadro */
+    const cx = l.ang ? l.cx : (l.x0 + l.x1) / 2, cy = l.ang ? l.cy : (l.y0 + l.y1) / 2;
+    chaveCasas = 'b' + Math.floor(cx / 1600) + ',' + Math.floor(cy / 1600);
     lote(TB, l);
   }
+  chaveCasas = 'solta';
   alvoTelhado = TELHADOS;
   malhaTex(TB, REBOCO_LAZY(), 'beira');
+  for (const [k, A] of CASAS) {
+    malhaCasas(A.casas, 'casas', 'casas:' + k);
+    malhaCasas(A.grades, 'grades', 'casas:grade:' + k);
+  }
 
   /* O REBOCO NA PAREDE. O quarteirão inteiro passa a ter textura: o
      reboco chapiscado dá grão à parede, ao muro e à laje da calçada, e
@@ -1654,7 +1761,19 @@ export function montarBairro(P) {
   }
   for (const p of K.POSTES) poste(TS, p);
   for (const s of K.SEMAFOROS || []) semaforo(TS, s);
-  for (const o of K.FAVELA_CAIXAS || []) caixaDagua(TS, o);
+  /* a caixa d'água da favela assenta no alto da casa de modelo dela,
+     que não tem a altura do lote de caixa (`alt`) */
+  function sobreACasa(o) {
+    for (const c of K.FAVELA || []) {
+      const pc = c._plano;
+      if (!pc || pc.topo === undefined) continue;
+      const co = Math.cos(c.ang), so = Math.sin(c.ang), dx = o.x - c.cx, dy = o.y - c.cy;
+      if (Math.abs(dx * co + dy * so) <= c.w / 2 && Math.abs(-dx * so + dy * co) <= c.h / 2)
+        return Object.assign({}, o, { alt: (pc.y0 || 0) + pc.topo * METRO });
+    }
+    return o;
+  }
+  for (const o of K.FAVELA_CAIXAS || []) caixaDagua(TS, sobreACasa(o));
   /* os campos de várzea: cerca de mourão e arame, arquibancadinha, traves */
   for (const f of K.CAMPOS) {
     const CER = '#6e6a5e';
@@ -1706,5 +1825,6 @@ export function montarBairro(P) {
   }
   malha(TM, false, 'moitas');
 
-  return { meshes, triangulos, tetos, bandeiras, portas, pixacoes, lajesChao, pedacos: pedacos.size };
+  return { meshes, triangulos, tetos, bandeiras, portas, pixacoes, lajesChao, pedacos: pedacos.size,
+           casas: registroCasas, materiaisCasas, semDecalque };
 }

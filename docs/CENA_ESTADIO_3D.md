@@ -1304,6 +1304,88 @@ aparelho de ar) são os da referência. Trocar uma folha por foto de
 verdade não mexe em código: é pintar (ou colar) por cima da célula
 certa da folha e manter o tamanho dela.
 
+### 4.23. As casas da cidade: cinco tipos que vestem os lotes
+
+Depois dos marcos, a casa comum. Cinco modelos de referência passaram
+a ditar como a casa de verdade da cidade é feita — não cinco casas
+postas num lugar, mas cinco TIPOS paramétricos que vestem qualquer
+lote de casa, sobrado ou barraco, do tamanho que ele tiver
+(`js/diajogo/casas3d.js`):
+
+| tipo | referência | sai de |
+|---|---|---|
+| T1 | casa térrea de reboco branco encardido, telhado de duas águas com a calha na frente, porta de veneziana, janela de correr e basculante | 78% dos lotes `casa` |
+| T2 | casa de tijolo sem reboco: embasamento de cimento, borda da laje à mostra, ferro de espera. Com dois andares é a da foto, em L — o bloco do terraço na frente (porta de ferro e janelinha, mureta de tijolo por terminar em cima), o de dois andares recuado, a escada de alvenaria no dente entre os dois e o pilar solto na frente dela | 22% das `casa` (térrea) e 28% dos `sobrado` fora do centro |
+| T3 | casa com PONTO COMERCIAL embaixo: porta de enrolar entre pilastras (uma meio aberta mostrando a prateleira), porta do apartamento, quadro de promoções, marquise, letreiro da loja; em cima, janela de cortina. Só a frente é pintada, o lado é reboco cru | todo lote com `placa` |
+| T4 | sobrado de laje com as caixas d'água azuis em cima, térreo recuado sob o balanço do andar de cima, grade preta nas janelas, garagem de telhadinho com portão de ferro de lança quando a frente passa de 6,3 m | o resto dos `sobrado` |
+| T5 | casarão colonial: cunhal, friso, cornija, guilhotina de moldura amarela, porta-janela em arco com a sacada de gradil, telhado baixo de quatro águas | 60% dos `sobrado` perto da Praça da Matriz, 12% no resto |
+
+E a casa da FAVELA, que é da família do T2: o caixote de um a três
+andares com parede de tijolo, reboco cru ou pintada (a planta diz
+qual em `parede`), coberto de telha, laje nua (o `barraco`) ou
+fibrocimento (o que a planta chama de `galpao` na favela é casa com
+telha de fibrocimento). Galpão, muro, prédio e sede continuam com o
+desenho antigo do bairro.
+
+**Quem vira o quê sai da POSIÇÃO do lote.** Um hash da posição
+escolhe o tipo, a cor, o lado da garagem, se a porta de enrolar está
+aberta. O `rng()` da planta não é tocado: a cidade continua igual casa
+por casa, só muda a roupa. A única mudança na planta é a anotação
+`parede` nas 280 casas da favela, tirada do mesmo número que já
+escolhia a cor — conferido contra a versão anterior, os 643 lotes, os
+carros e a favela saem idênticos.
+
+**Tudo cabe no lote.** Telhado por cima da calçada é o que a
+varredura pega. Quando o tipo tem beiral, marquise ou sacada na
+frente, a parede da frente RECUA o que eles avançam (`rec`), e nada
+passa pro lado: o vizinho está ali. Conferido vértice por vértice nas
+514 casas: nenhum passa da divisa.
+
+**A casa assenta na laje do lote.** No quarteirão o chão do lote é
+uma laje 1,6 acima da rua; a casa começa nela, e não enterrada.
+
+**O decalque procura parede livre.** A janela e a porta são FUNDAS
+(têm requadro), então o letreiro, a pixação e a falha de reboco não
+podem cair por cima de um vão — ficariam boiando na frente dele.
+`lugarDoDecalque` procura, nas paredes da frente, o lugar livre mais
+perto do que o bairro pediu, longe de vão, escada, cunhal e sacada, e
+encolhe o decalque se não couber. A pixação pode ir na porta de aço
+fechada (é das coisas mais comuns da cidade). Todos os letreiros e
+todas as pixações acharam lugar. A falha de reboco só vai em parede
+de reboco — tijolo e reboco cru não têm reboco pra cair.
+
+**A mesma folha dos marcos, o mesmo construtor.** O construtor de
+fachada saiu de `modelos3d.js` pra `construtor3d.js` e é dividido
+pelos marcos e pelas casas. Ele ganhou duas coisas: a TINTA
+(`pintar`, ou `tinta` numa peça), que multiplica a cor do vértice —
+a folha tem um reboco claro só, e é a tinta que faz o sobrado verde, o
+mercado azul e o casarão amarelo, enquanto a janela desenhada sai sem
+tinta; e o VÃO EM ARCO (`arco`), porque a peça da porta-janela é
+retangular e o canto acima do arco tem de voltar a ser parede, com o
+intradorso fechando a volta. As peças das casas estão na folha
+`casas` (`img/texturas/modelos/casas.jpg`), pintada pelo mesmo
+`pintar_modelos.py`.
+
+Custo: cerca de 118 mil triângulos nas 514 casas (o T1 tem uns 200, o
+casarão uns 500; o bairro inteiro foi de 87 mil pra 183 mil), 26
+malhas (a das casas e a das grades, por pedaço de quarteirão e por
+quadrado de 80 m fora dele — a favela inteira numa malha só nunca
+sairia do quadro), duas texturas e uns 350 ms na carga. Na vista do
+jogo foram 18 chamadas de desenho a mais (173 → 191). Duas coisas
+seguraram o custo: a faixa (borda de laje, embasamento) desenha só o
+lábio em cima e embaixo, e não a tampa inteira ladrilhada com a peça
+de 30 cm — era de onde saía metade dos triângulos —, e a escada
+desenha só a frente, o piso e o espelho de cada degrau.
+
+O que não é fiel, dito com todas as letras: as texturas continuam
+PINTADAS por código. As casas mais estreitas (a favela tem casa de
+1,8 m de frente) não comportam o tipo inteiro: a janela sai antes da
+porta, e três casas ficaram só com a porta. O T2 de dois andares
+precisa de uns 5 m de frente pra ter o L com a escada; abaixo disso
+ele vira o caixote de dois andares. O quarteirão desta cidade é raso
+(13 m pros dois lados), então as casas têm de 2,5 a 6,5 m de fundo:
+a proporção é de casa de frente larga e pouco fundo.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -1823,12 +1905,14 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 |---|---|
 | `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, a cidade (grade, costa, avenidas, campos, mato, lotes, sedes), máscara, spawns, setores, PM, grades, filas, gatilho |
 | `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera (linha de vista, modo leve), ligação com a simulação e com a gente |
-| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados), calçadas, árvores, carros, postes, campos, moitas |
+| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados; casa, sobrado e barraco vêm do `casas3d.js`), calçadas, árvores, carros, postes, campos, moitas |
 | `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões, ruas, avenidas, costa, campos, estádio |
-| `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa): o construtor de fachada (ladrilho recortado, módulo, vão com fundo, telhado de quatro águas, torno, extrusão) e a montagem de cada um |
+| `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão |
+| `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa) e a montagem de cada um |
+| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5) e a casa da favela, o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
-| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos e escreve o atlas; roda de novo sempre que mudar uma peça |
-| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio) e a folha de grades vazadas, com alfa |
+| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos e das casas e escreve o atlas; roda de novo sempre que mudar uma peça |
+| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`) e a folha de grades vazadas, com alfa (portão de lança e gradil de sacada incluídos) |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
 | `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |
 | `img/texturas/chao.png` | o atlas de decalques de chão, 8 × 4 células de 192 px (capim, entulho, brita, poça, terra, folha) |

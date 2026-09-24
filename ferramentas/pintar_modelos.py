@@ -1476,12 +1476,358 @@ def p_grade(cor_barra, passo, larg_barra, travessas, quadrada=False):
     return f
 
 
+def p_portao_lanca(w, h, ppm, rnd):
+    """portão de ferro preto de barra redonda com ponta de lança"""
+    a = p_grade('#171818', 0.1, 0.022, (0.12, 1.0), quadrada=False)(w, h, ppm, rnd)
+    Y = em(h, ppm)
+    a[:int(Y(2.1))] = 0                                   # nada acima da lança
+    im = Image.new('L', (w, h), 0)
+    d = ImageDraw.Draw(im)
+    n = max(1, int(round(w / (0.1 * ppm))))
+    for i in range(n):
+        x = (i + 0.5) * w / n
+        d.polygon([(x - 0.03 * ppm, Y(2.02)), (x + 0.03 * ppm, Y(2.02)), (x, Y(2.18))], fill=255)
+    m = np.asarray(im, np.float32) / 255
+    a[..., :3] = a[..., :3] * (1 - m[..., None]) + cor('#171818') * m[..., None]
+    a[..., 3] = np.maximum(a[..., 3], m)
+    return a
+
+
 def folha_grades():
     F = Folha('grades', larg=512, alfa=True)
     F.cel('branca', 1.0, 2.5, 120, p_grade('#f1f1ee', 0.1, 0.028, (0.06, 1.25, 2.44)), lad=True)
     F.cel('preta', 1.0, 2.2, 120, p_grade('#1e1e1d', 0.12, 0.03, (0.06, 1.1, 2.14), quadrada=True), lad=True)
+    F.cel('lanca', 1.0, 2.2, 120, p_portao_lanca, lad=True)
+    F.cel('gradil', 1.0, 1.0, 120, p_grade('#e9eaec', 0.09, 0.022, (0.04, 0.95)), lad=True)
     return F.montar()
 
+
+
+# =========================================================
+#   7. AS CASAS DA CIDADE — cinco tipos que vestem os lotes
+#   A casa térrea branca e suja, a casa de tijolo inacabada, a casa
+#   com ponto comercial embaixo, o sobrado com laje e caixa d'água e
+#   o casarão colonial. As paredes saem CLARAS e neutras: a cor da
+#   casa vem do vértice (a tinta multiplica), então uma célula de
+#   reboco serve pro sobrado verde e pro mercado azul.
+# =========================================================
+def p_parede_suja(w, h, ppm, rnd):
+    """o reboco branco e encardido da casa térrea: escorrido escuro que
+       desce do beiral, mancha de umidade embaixo"""
+    a = reboco(w, h, ppm, rnd, '#ebebe8', grao=0.05, manchas=0.10, fuligem=8)
+    e = escorrido(h, w, rnd, 18, inicio=(0.0, 0.25), comp=(0.3, 0.95), larg=(1, 5), lad=True)
+    a = multiplicar(a, 1 - 0.30 * e)
+    area = (w / ppm) * (h / ppm)
+    m = borrar(np.clip(pontos(h, w, 2 * area, 3, 9, rnd, True, sinal=1.0), 0, 1), 4)
+    return multiplicar(a, 1 - 0.14 * m)
+
+
+def p_parede_lisa(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#f1f1ee', grao=0.035, manchas=0.07, fuligem=3)
+    e = escorrido(h, w, rnd, 6, inicio=(0.0, 0.3), comp=(0.2, 0.6), larg=(1, 3), lad=True)
+    return multiplicar(a, 1 - 0.12 * e)
+
+
+def p_parede_crua(w, h, ppm, rnd):
+    """reboco cru, sem tinta: é assim o lado e o fundo de quase toda casa
+       de bairro — só a frente leva pintura"""
+    a = reboco(w, h, ppm, rnd, '#b9b6ae', grao=0.07, manchas=0.18, fuligem=14)
+    e = escorrido(h, w, rnd, 10, inicio=(0.0, 0.3), comp=(0.3, 0.9), larg=(1, 4), lad=True)
+    return multiplicar(a, 1 - 0.2 * e)
+
+
+def p_tijolo_casa(w, h, ppm, rnd):
+    return tijolos(w, h, ppm, rnd, ['#a55a44', '#9a513c', '#b0624a', '#8f4a36', '#a8604a', '#b56b52'],
+                   argamassa='#9e968a', tam=(0.23, 0.075), junta=0.014, var=0.14)
+
+
+def p_laje_borda(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#9d9b95', grao=0.07, manchas=0.15, fuligem=10)
+    e = escorrido(h, w, rnd, 10, inicio=(0.3, 0.6), comp=(0.4, 0.9), larg=(1, 3), lad=True)
+    return multiplicar(a, 1 - 0.25 * e)
+
+
+def p_calha(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#8e9193', grao=0.03, manchas=0.08, lad=True)
+    ys = np.linspace(0, 1, h, dtype=np.float32)
+    return a * (0.75 + 0.35 * np.sin(ys * np.pi))[:, None, None]
+
+
+def moldura_simples(a, ppm, x0, y0, x1, y1, cor_mold='#e8e8e3', esp_m=0.05):
+    esp = max(2, int(esp_m * ppm))
+    moldura(a, x0, y0, x1, y1, esp, cor_mold)
+    return esp
+
+
+def p_jan2(w, h, ppm, rnd):
+    """janela de duas folhas de correr, vidro escuro, e o peitoril"""
+    a = vidro(w, h, rnd, base='#1a1f22', topo='#56636b', reflexo=0.18)
+    esp = moldura_simples(a, ppm, 0, 0, w, h * 0.93, '#dcdcd7')
+    retangulo(a, w / 2 - esp / 2, 0, w / 2 + esp / 2, h * 0.93, '#dcdcd7')
+    retangulo(a, 0, h * 0.93, w, h, '#cfcbc2')
+    sombra_interna(a, esp, esp, w - esp, h * 0.93 - esp, esp * 1.5, 0.3)
+    return a
+
+
+def p_basc(w, h, ppm, rnd):
+    a = vidro(w, h, rnd, base='#20262a', topo='#5d6a72', reflexo=0.1)
+    esp = moldura_simples(a, ppm, 0, 0, w, h, '#dcdcd7')
+    retangulo(a, w / 2 - esp / 2, 0, w / 2 + esp / 2, h, '#dcdcd7')
+    retangulo(a, 0, h / 2 - esp / 2, w, h / 2 + esp / 2, '#dcdcd7')
+    return a
+
+
+def p_porta_vene(w, h, ppm, rnd):
+    """porta de chapa com a metade de cima em veneziana"""
+    a = reboco(w, h, ppm, rnd, '#d9dad6', grao=0.03, manchas=0.08, lad=False)
+    esp = moldura_simples(a, ppm, 0, 0, w, h, '#c9cac5', 0.06)
+    passo = max(3, int(0.05 * ppm))
+    for y in range(int(h * 0.1), int(h * 0.48)):
+        f = ((y - int(h * 0.1)) % passo) / passo
+        a[y, int(w * 0.18):int(w * 0.82)] *= 0.7 + 0.35 * f
+    retangulo(a, w * 0.16, h * 0.08, w * 0.84, h * 0.09, '#b5b6b1', sombra=False)
+    retangulo(a, w * 0.74, h * 0.52, w * 0.82, h * 0.55, '#8a8b86', sombra=False)
+    e = escorrido(h, w, rnd, 4, inicio=(0.5, 0.6), comp=(0.2, 0.4), larg=(1, 2), lad=False)
+    return multiplicar(multiplicar(a, 1 - 0.15 * e), pe_de_parede(h, w, h * 0.12, 0.25))
+
+
+def p_veneziana_mad(w, h, ppm, rnd):
+    """janela de madeira de duas folhas, fechada"""
+    a = reboco(w, h, ppm, rnd, '#5e4535', grao=0.06, manchas=0.12, lad=False)
+    passo = max(3, int(0.045 * ppm))
+    for y in range(h):
+        f = (y % passo) / passo
+        a[y] *= 0.8 + 0.28 * f
+    esp = moldura_simples(a, ppm, 0, 0, w, h * 0.92, '#4a362a', 0.05)
+    retangulo(a, w / 2 - esp / 2, 0, w / 2 + esp / 2, h * 0.92, '#4a362a')
+    retangulo(a, -2, h * 0.92, w + 2, h, '#8f8c85')
+    return a
+
+
+def p_jan_vidro(w, h, ppm, rnd):
+    a = vidro(w, h, rnd, base='#39506e', topo='#9fb4c8', reflexo=0.25)
+    esp = moldura_simples(a, ppm, 0, 0, w, h, '#c9ccce', 0.045)
+    for k in (1, 2):
+        y = h * k / 3
+        retangulo(a, esp, y - 1, w - esp, y + 1, '#c9ccce', sombra=False)
+    return a
+
+
+def p_porta_ferro(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#6d6f6c', grao=0.05, manchas=0.2, lad=False, fuligem=20)
+    ferr = np.clip(fbm(h, w, 0.2 * ppm, rnd, 3, False) * 3 - 0.2, 0, 1)
+    aplicar(a, '#7a4a2e', ferr * 0.6)                      # a ferrugem
+    moldura_simples(a, ppm, 0, 0, w, h, '#5b5d5a', 0.05)
+    for y in (h * 0.3, h * 0.65):
+        retangulo(a, w * 0.12, y, w * 0.88, y + h * 0.18, a[int(y) + 2, int(w * 0.5)] * 1.05, relevo=0.15)
+    retangulo(a, w * 0.78, h * 0.5, w * 0.86, h * 0.53, '#3b3c3a', sombra=False)
+    return a
+
+
+def enrolar(w, h, ppm, rnd, aberta):
+    """porta de enrolar: as lâminas de chapa, a caixa do rolo em cima e,
+       se `aberta`, o comércio aparecendo embaixo"""
+    a = interior_loja(w, h, ppm, rnd, luz=1.1) if aberta else np.zeros((h, w, 3), np.float32)
+    corte = int(h * (0.52 if aberta else 1.0))
+    metal = reboco(w, corte, ppm, rnd, '#c2c4c3', grao=0.03, manchas=0.1, lad=False, fuligem=6)
+    passo = max(3, int(0.065 * ppm))
+    for y in range(corte):
+        f = (y % passo) / passo
+        metal[y] *= 0.78 + 0.3 * math.sin(f * math.pi)
+        if f > 0.9:
+            metal[y] *= 0.8
+    a[:corte] = metal
+    if aberta:
+        a[corte:corte + 3] = cor('#5b5d5c')
+        a[corte + 3:corte + 8] *= 0.5
+    else:
+        a[int(h * 0.95):] *= 0.7                                           # a soleira
+    retangulo(a, 0, 0, w, 0.13 * ppm, '#9ea09f')
+    for x in (0, w - 0.05 * ppm):
+        retangulo(a, x, 0.13 * ppm, x + 0.05 * ppm, h, '#8d8f8e', sombra=False)
+    e = escorrido(h, w, rnd, 6, inicio=(0.05, 0.1), comp=(0.3, 0.8), larg=(1, 3), lad=False)
+    return multiplicar(a, 1 - 0.18 * e)
+
+
+def p_promocoes(w, h, ppm, rnd):
+    """o quadro-negro de promoções pregado na parede"""
+    a = reboco(w, h, ppm, rnd, '#1f2021', grao=0.04, manchas=0.1, lad=False)
+    moldura_simples(a, ppm, 0, 0, w, h, '#3a3a38', 0.03)
+    itens = ['ARROZ 5KG 21,90', 'FEIJÃO 1KG 7,49', 'CAFÉ 500G 16,90', 'ÓLEO 900ML 7,99',
+             'AÇÚCAR 5KG 19,90', 'FARINHA 1KG 5,49']
+    carnes = ['ACÉM 1KG 32,90', 'FRANGO 1KG 13,90', 'LINGUIÇA 1KG 19,90', 'COSTELA 1KG 27,90']
+    fT = fonte('negrito', 0.07 * ppm)
+    fI = fonte('normal', 0.038 * ppm)
+    def t(d, im):
+        d.text((w / 2, h * 0.07), '% PROMOÇÕES %', fill=(235, 235, 230), anchor='mm', font=fonte('negrito', 0.045 * ppm))
+        for i, it in enumerate(itens):
+            d.text((w * 0.08, h * (0.13 + i * 0.055)), it, fill=(225, 225, 220), anchor='lm', font=fI)
+        d.text((w / 2, h * 0.52), 'CARNES', fill=(240, 240, 235), anchor='mm', font=fT)
+        for i, it in enumerate(carnes):
+            d.text((w * 0.08, h * (0.62 + i * 0.07)), it, fill=(225, 225, 220), anchor='lm', font=fI)
+    desenhar(a, t)
+    return a
+
+
+def p_jan_cortina(w, h, ppm, rnd):
+    """janela de correr com a cortina de lâmina vertical cinza"""
+    a = vidro(w, h, rnd, base='#20262a', topo='#667780', reflexo=0.16)
+    esp = moldura_simples(a, ppm, 0, 0, w, h * 0.94, '#cfd1d0')
+    passo = max(3, int(0.08 * ppm))
+    for x in range(esp, w - esp):
+        f = ((x - esp) % passo) / passo
+        a[esp:int(h * 0.94) - esp, x] = a[esp:int(h * 0.94) - esp, x] * 0.35 + cor('#9a9c9b') * (0.55 + 0.25 * math.sin(f * math.pi))
+    retangulo(a, w / 2 - esp / 2, 0, w / 2 + esp / 2, h * 0.94, '#cfd1d0')
+    retangulo(a, -2, h * 0.94, w + 2, h, '#c4c1b8')
+    return a
+
+
+def p_porta_ap(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#8c8f8e', grao=0.04, manchas=0.12, lad=False)
+    moldura_simples(a, ppm, 0, 0, w, h, '#707372', 0.05)
+    v = vidro(int(w * 0.5), int(h * 0.3), rnd, reflexo=0.12)
+    colar(a, v, w * 0.25, h * 0.12)
+    for x in np.linspace(w * 0.3, w * 0.7, 4):
+        retangulo(a, x - 1, h * 0.12, x + 1, h * 0.42, '#2a2a29', sombra=False)
+    retangulo(a, w * 0.76, h * 0.52, w * 0.84, h * 0.55, '#3b3c3a', sombra=False)
+    return a
+
+
+def p_porta_alu(w, h, ppm, rnd):
+    """porta de alumínio branco de lambril"""
+    a = reboco(w, h, ppm, rnd, '#f0f0ee', grao=0.02, manchas=0.05, lad=False)
+    passo = max(3, int(0.07 * ppm))
+    for y in range(int(h * 0.05), int(h * 0.97)):
+        f = (y % passo) / passo
+        a[y, int(w * 0.08):int(w * 0.92)] *= 0.86 + 0.16 * f
+    moldura_simples(a, ppm, 0, 0, w, h, '#d9dad6', 0.05)
+    retangulo(a, w * 0.78, h * 0.5, w * 0.86, h * 0.53, '#8b8c88', sombra=False)
+    return multiplicar(a, pe_de_parede(h, w, h * 0.1, 0.2))
+
+
+def p_jan_grade(w, h, ppm, rnd):
+    """janela com grade de ferro preta de barra vertical e a cortina
+       branca atrás"""
+    a = vidro(w, h, rnd, base='#39424a', topo='#9aa6ae', reflexo=0.14)
+    cortina(a, w * 0.05, w * 0.95, h * 0.05, h * 0.95, '#e8e6df', 9, luz=0.72)
+    esp = moldura_simples(a, ppm, 0, 0, w, h, '#1e1f1f', 0.045)
+    n = int(w / (0.07 * ppm))
+    for i in range(1, n):
+        x = w * i / n
+        retangulo(a, x - 1.5, esp, x + 1.5, h - esp, '#161717', sombra=False)
+    for y in (h * 0.25, h * 0.75):
+        retangulo(a, esp, y - 1.5, w - esp, y + 1.5, '#161717', sombra=False)
+    return a
+
+
+def p_caixa_dagua(w, h, ppm, rnd):
+    """o plástico azul da caixa d'água: a célula dá a volta inteira"""
+    a = reboco(w, h, ppm, rnd, '#2336a8', grao=0.04, manchas=0.06, lad=True)
+    xs = np.linspace(0, 16 * 2 * np.pi, w, endpoint=False, dtype=np.float32)
+    a *= (0.88 + 0.12 * np.cos(xs))[None, :, None]
+    ys = np.linspace(0, 1, h, dtype=np.float32)
+    return a * (0.8 + 0.3 * ys)[:, None, None]
+
+
+AMARELO_COL = '#d8a826'
+AZUL_COL = '#2447c4'
+
+
+def p_col_janela(w, h, ppm, rnd):
+    """janela de guilhotina colonial: quadro amarelo, vidraça miúda de
+       caixilho azul"""
+    a = chapado(w, h, AMARELO_COL)
+    a = multiplicar(a, 1 + 0.05 * fbm(h, w, 0.2 * ppm, rnd, 3, False))
+    b = int(0.1 * ppm)
+    moldura(a, 0, 0, w, h, b, AMARELO_COL)
+    v = chapado(w - 2 * b, h - 2 * b, '#f4f5f7')
+    vh, vw = v.shape[:2]
+    nx, ny = 5, 7
+    for i in range(nx):
+        for j in range(ny):
+            x0, y0 = i * vw / nx + 2, j * vh / ny + 2
+            x1, y1 = (i + 1) * vw / nx - 2, (j + 1) * vh / ny - 2
+            g = vidro(int(x1 - x0), int(y1 - y0), rnd, base='#26407a', topo='#8aa3d8', reflexo=0.25)
+            colar(v, g, x0, y0)
+    colar(a, v, b, b)
+    retangulo(a, b, h / 2 - 2, w - b, h / 2 + 2, '#e9eaec')
+    return a
+
+
+def p_col_porta(w, h, ppm, rnd):
+    """porta colonial: moldura amarela, requadro azul e as duas folhas
+       escuras de almofada em cruz"""
+    a = chapado(w, h, AMARELO_COL)
+    a = multiplicar(a, 1 + 0.05 * fbm(h, w, 0.2 * ppm, rnd, 3, False))
+    b = int(0.12 * ppm)
+    retangulo(a, b, b, w - b, h, AZUL_COL)
+    c = int(0.08 * ppm)
+    folha = reboco(int(w - 2 * b - 2 * c), int(h - b - c), ppm, rnd, '#3d3f41', grao=0.05, manchas=0.1, lad=False)
+    fh, fw = folha.shape[:2]
+    for x0 in (0, fw // 2):
+        retangulo(folha, x0 + fw * 0.08, fh * 0.1, x0 + fw * 0.42, fh * 0.46, folha[int(fh * 0.2), int(x0 + fw * 0.2)] * 1.12, relevo=0.2)
+        retangulo(folha, x0 + fw * 0.08, fh * 0.54, x0 + fw * 0.42, fh * 0.9, folha[int(fh * 0.6), int(x0 + fw * 0.2)] * 1.12, relevo=0.2)
+    folha[:, fw // 2 - 1:fw // 2 + 1] *= 0.5
+    colar(a, folha, b + c, b + c)
+    return a
+
+
+def p_col_arco(w, h, ppm, rnd):
+    """a porta-janela em arco do andar de cima: arco amarelo, o fundo
+       azul da bandeira e a porta de vidraça branca"""
+    a = np.zeros((h, w, 3), np.float32)
+    b = int(0.1 * ppm)
+    fora = mascara_arco(w, h, 0, w, 0, w / 2, h, cheio=True)
+    dentro = mascara_arco(w, h, b, w - b, b, w / 2 + b * 0.2, h, cheio=True)
+    aplicar(a, AMARELO_COL, fora)
+    aplicar(a, AZUL_COL, dentro)
+    # a porta de vidraça, retangular, embaixo do arco
+    px0, px1, py0 = b + 0.05 * ppm, w - b - 0.05 * ppm, w / 2 + 0.05 * ppm
+    porta = chapado(int(px1 - px0), int(h - py0), '#f3f4f5')
+    ph, pw = porta.shape[:2]
+    for i in range(4):
+        for j in range(6):
+            x0, y0 = (i % 2) * pw / 2 + (i // 2) * 0 + 3, j * ph / 6 + 3
+            if i >= 2:
+                continue
+            for k in range(2):
+                xx0 = (i * pw / 2) + k * pw / 4 + 3
+                g = vidro(int(pw / 4 - 6), int(ph / 6 - 6), rnd, base='#2a3d63', topo='#93a8cf', reflexo=0.2)
+                colar(porta, g, xx0, y0)
+    porta[:, pw // 2 - 2:pw // 2 + 2] *= 0.8
+    colar(a, porta, px0, py0)
+    return multiplicar(a, 1 + 0.04 * fbm(h, w, 0.2 * ppm, rnd, 3, False))
+
+
+def folha_casas():
+    F = Folha('casas')
+    F.cel('suja', 2.5, 2.5, 110, p_parede_suja, lad=True)
+    F.cel('lisa', 2.5, 2.5, 110, p_parede_lisa, lad=True)
+    F.cel('crua', 2.5, 2.5, 110, p_parede_crua, lad=True)
+    F.cel('tijolo', 2.3, 1.5, 110, p_tijolo_casa, lad=True)
+    F.cel('laje_borda', 2.0, 0.3, 110, p_laje_borda, lad=True)
+    F.cel('laje', 3.0, 3.0, 60, p_piso('#a3a19a', junta=False), lad=True)
+    F.cel('telha', 2.1, 2.16, 110, lambda w, h, ppm, rnd: telhas(w, h, ppm, rnd, ['#d08a52', '#c47d46', '#d9955c', '#bd7440', '#cb8650'], musgo=0.12), lad=True)
+    F.cel('calha', 2.0, 0.25, 110, p_calha, lad=True)
+    F.cel('jan2', 1.2, 1.15, 150, p_jan2)
+    F.cel('basc', 0.6, 0.6, 150, p_basc)
+    F.cel('porta_vene', 0.9, 2.1, 150, p_porta_vene)
+    F.cel('veneziana', 1.1, 1.2, 140, p_veneziana_mad)
+    F.cel('jan_vidro', 0.8, 0.7, 150, p_jan_vidro)
+    F.cel('porta_ferro', 0.9, 2.1, 140, p_porta_ferro)
+    F.cel('enrolar', 2.4, 2.5, 120, lambda w, h, ppm, rnd: enrolar(w, h, ppm, rnd, False))
+    F.cel('enrolar_meia', 2.4, 2.5, 120, lambda w, h, ppm, rnd: enrolar(w, h, ppm, rnd, True))
+    F.cel('promocoes', 0.8, 1.15, 200, p_promocoes)
+    F.cel('jan_cortina', 1.4, 1.2, 140, p_jan_cortina)
+    F.cel('jan_peq', 0.7, 0.8, 150, p_jan2)
+    F.cel('porta_ap', 0.9, 2.2, 140, p_porta_ap)
+    F.cel('porta_alu', 0.9, 2.1, 150, p_porta_alu)
+    F.cel('jan_grade', 1.4, 1.0, 150, p_jan_grade)
+    F.cel('caixa', 3.0, 1.0, 110, p_caixa_dagua, lad=True)
+    F.cel('col_janela', 1.1, 1.6, 140, p_col_janela)
+    F.cel('col_porta', 1.3, 2.7, 130, p_col_porta)
+    F.cel('col_arco', 1.1, 2.7, 130, p_col_arco)
+    return F.montar()
 
 def main():
     print('pintando as folhas dos prédios modelados:')
@@ -1491,6 +1837,7 @@ def main():
         'loja': folha_loja(),
         'adm': folha_adm(),
         'casa': folha_casa(),
+        'casas': folha_casas(),
         'grades': folha_grades(),
     }
     corpo = json.dumps(atlas, ensure_ascii=False, indent=1)

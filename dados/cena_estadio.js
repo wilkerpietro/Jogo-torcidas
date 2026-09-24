@@ -3226,7 +3226,10 @@ TO.dados.plantaEstadio = (function(){
       const cor = p < 0.44 ? escolherFav(CORES_FAVELA.tijolo)
                 : p < 0.68 ? escolherFav(CORES_FAVELA.reboco)
                            : escolherFav(CORES_FAVELA.pintada);
-      const casa = { tipo, ang: ang || 1e-6, vf, cx, cy, w, h, alt, cor, telha, favela: true };
+      /* `parede` diz ao modelo da casa (casas3d.js) qual das três é —
+         a cor sozinha não diz, e sortear de novo andaria o `rngFav` */
+      const parede = p < 0.44 ? 'tijolo' : p < 0.68 ? 'reboco' : 'pintada';
+      const casa = { tipo, ang: ang || 1e-6, vf, cx, cy, w, h, alt, cor, telha, parede, favela: true };
       /* a casa da favela pixa pela mesma regra do resto do bairro: o
          `escolherFav` gasta o número do sorteio DELA, e quem decide se
          sai torcida ou recado é o `rngPixo`, de dentro do `pixar` */

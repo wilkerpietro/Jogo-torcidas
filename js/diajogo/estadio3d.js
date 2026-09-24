@@ -125,7 +125,7 @@ export function criar(canvas) {
     if (chaoPBR) chaoPBR.anisotropia(q.aniso);
     /* só textura já carregada: marcar pra subir antes da imagem chegar
        dá o aviso de "no image data" no console */
-    if (marcos) for (const m of marcos.materiais)
+    for (const m of [...(marcos ? marcos.materiais : []), ...(cidade ? cidade.materiaisCasas || [] : [])])
       if (m.map && m.map.image) { m.map.anisotropy = Math.min(q.aniso, maxAniso); m.map.needsUpdate = true; }
     redimensionar(true);
   }
@@ -677,6 +677,9 @@ export function criar(canvas) {
       /* a nuvem passa por cima da CIDADE, não só do chão: sem isto o
          telhado fica no sol enquanto a rua ao lado escurece */
       for (const m of cidade.meshes) { nuvens.aplicarEm(m.material); cena.add(m); }
+      /* a folha das casas de modelo é vista de lado, na rua: sem
+         anisotropia o reboco e a telha lavam no ângulo raso */
+      for (const m of cidade.materiaisCasas || []) if (m.map) m.map.anisotropy = Math.min(8, maxAniso);
       /* os cinco prédios modelados (igreja, prédio alto, mercado,
          centro administrativo, casa): a planta abriu o lugar deles */
       marcos = montarModelos(P, { anisotropia: Math.min(8, maxAniso) });
