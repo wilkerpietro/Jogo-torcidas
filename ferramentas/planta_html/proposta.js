@@ -443,16 +443,19 @@ export function gerarProposta(P) {
     }
   }
 
-  /* ---- AS FAVELAS, na grade da cidade ----
-     A mesma conta da favela da planta: faixas de quadra miúda (86 a 124
-     de fundo) separadas por beco de 32 a 42, cada faixa cortada em
-     quadras compridas (500 a 850) pelo beco de norte a sul, e dentro da
-     quadra duas fileiras de costas, casa encostada na casa (42 a 66 de
-     frente), cada uma virada pro seu beco. Só que reta: o beco corre de
-     leste a oeste ou de norte a sul, como a rua da cidade. O que tira o
-     jeito de bairro planejado é o corte de cada faixa começar num lugar
-     (o beco de norte a sul não emenda de uma faixa pra outra) e a borda,
-     que é a mancha que o dono desenhou. */
+  /* ---- AS FAVELAS: primeiro a grade de ruas, casando com a da cidade;
+     depois as casas nos quarteirões que ela deixa ----
+     A grade da favela É a da cidade. Cada rua da cidade segue dentro da
+     favela na mesma linha, só que estreita: a viela de 48 (2,5 m) no
+     meio da faixa da rua. Onde a favela encosta numa quadra da cidade,
+     a rua da cidade é a borda dela, e a casa dá direto pra rua. Cada
+     quarteirão da grade que cai na favela vira miolo de favela, com a
+     conta da favela da planta:
+     - faixas de 86 a 124 de fundo separadas por beco de 32 a 42;
+     - um ou dois becos de norte a sul (que às vezes não cortam a faixa);
+     - em cada faixa, duas fileiras de costas, casa encostada na casa
+       (42 a 66 de frente), cada uma virada pro seu beco.
+     A mancha que o dono desenhou recorta as casas do lado do mato. */
   const barra = quadras.map(q => ({ x0: q.x0 - RUA, x1: q.x1 + RUA, y0: q.y0 - RUA, y1: q.y1 + RUA }))
     .concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ({ x0: q.x0 - RUA, x1: q.x1 + RUA, y0: q.y0 - RUA, y1: q.y1 + RUA })))
     .concat(K.BEIRA.filter(l => !l.favela).map(l => bbOf(cantos(l))).filter(b => {
@@ -465,6 +468,29 @@ export function gerarProposta(P) {
     .concat(atacadex ? [{ x0: atacadex.bb.x0 - 60, x1: atacadex.bb.x1 + 60, y0: atacadex.bb.y0 - 60, y1: atacadex.bb.y1 + 60 }] : []);
   const livre = (x, y) => !barra.some(r => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1) && !naAvenida(x, y, CALC + 10) &&
                           !porticos.some(p => Math.hypot(p.x - x, p.y - y) < 280);
+  /* a grade estendida: as linhas depois da 10 seguem no mesmo passo */
+  const linYx = j => {
+    if (j <= 10) return linY(j);
+    const y0 = linY(10)[1] + RUA + (j - 11) * PASSO_Y;
+    return [y0, y0 + PASSO_Y - RUA];
+  };
+  const faixaX = i => [colX(i)[1], colX(i + 1)[0]];                   // a faixa da rua entre a coluna i e a i+1
+  const faixaY = j => [linYx(j)[1], linYx(j + 1)[0]];
+  const meioX = i => (faixaX(i)[0] + faixaX(i)[1]) / 2, meioY = j => (faixaY(j)[0] + faixaY(j)[1]) / 2;
+  /* onde a grade já é cidade: quadra nova, quadra de hoje, estádio, campo */
+  const ocupadas = new Set();
+  for (const q of quadras) {
+    if (q.id === 'estadio2') { for (let i = ESTADIO2.i[0]; i <= ESTADIO2.i[1]; i++) for (let j = ESTADIO2.j[0]; j <= ESTADIO2.j[1]; j++) ocupadas.add(i + ',' + j); }
+    else if (q.juntas) for (const id of q.juntas) ocupadas.add(id);
+    else ocupadas.add(q.i + ',' + q.j);
+  }
+  for (const q of K.QUADRAS) if (!substitui.has(q.i + ',' + q.j)) ocupadas.add(q.i + ',' + q.j);
+  for (let i = 0; i < K.grade.length; i++) for (let j = 0; j < (K.grade[i] || []).length; j++) {
+    const c = K.grade[i][j];
+    if (c && (c.tipo === 'estadio' || c.tipo === 'campo')) ocupadas.add(i + ',' + j);
+  }
+  const cidade = (i, j) => ocupadas.has(i + ',' + j);
+  const VIELA = 48;
   const favelas = FAVELAS.map(F => gerarFavela(F));
   function gerarFavela(F) {
     let est = F.semente >>> 0;
@@ -474,12 +500,10 @@ export function gerarProposta(P) {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
     const ent = (a, b) => a + rnd() * (b - a), esc = l => l[Math.floor(rnd() * l.length)];
-    /* A FAVELA ENCOSTA NA CIDADE. A mancha é o traço à mão, e entre ela
-       e a rua da cidade sobrava uma faixa de mato. Entra na favela o que
-       fica ENTRE a mancha e a cidade: o ponto de fora cuja distância até
-       a mancha mais a distância até a rua (ou a quadra) não passa de
-       GAP. Uma faixa estreita entre as duas enche; o mato largo do lado
-       de fora, não — a borda da favela continua a do traço. */
+    /* A MANCHA: o traço do dono e, junto, a faixa estreita entre ele e a
+       cidade (o ponto de fora cuja distância até a mancha mais a
+       distância até a rua não passa de GAP), pra não sobrar mato entre
+       a favela e a rua */
     const GAP = 340;
     const distPoly = (x, y) => { let d = Infinity; for (let i = 0, j = F.poly.length - 1; i < F.poly.length; j = i++) d = Math.min(d, distSeg(x, y, F.poly[j], F.poly[i])); return d; };
     const distBarra = (x, y) => { let d = Infinity; for (const r of barra) { const dx = Math.max(r.x0 - x, 0, x - r.x1), dy = Math.max(r.y0 - y, 0, y - r.y1); d = Math.min(d, Math.hypot(dx, dy)); } return d; };
@@ -487,8 +511,7 @@ export function gerarProposta(P) {
     const bb0 = bbOf(F.poly), bb = { x0: bb0.x0 - GAP, x1: bb0.x1 + GAP, y0: bb0.y0 - GAP, y1: bb0.y1 + GAP };
     const dentro = (x, y) => naArea(x, y) && livre(x, y);
     const cabe = (x0, x1, y0, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [(x0 + x1) / 2, (y0 + y1) / 2]].every(([x, y]) => dentro(x, y));
-    /* a casa que bate na rua da cidade é aparada até a guia, em vez de
-       sair: é assim que a fileira chega na calçada */
+    /* a casa que bate na rua da cidade é aparada até a guia */
     const encaixar = (x0, x1, y0, y1) => {
       for (let it = 0; it < 4; it++) {
         const r = barra.find(r => x0 < r.x1 && x1 > r.x0 && y0 < r.y1 && y1 > r.y0);
@@ -505,54 +528,102 @@ export function gerarProposta(P) {
       }
       return [x0, x1, y0, y1];
     };
-    /* o campinho de terra, o mais perto do meio da mancha que couber */
+
+    /* 1. OS QUARTEIRÕES: as células da grade que caem na mancha e não são cidade */
+    const cels = [];
+    for (let i = -10; i <= 1; i++) for (let j = -6; j <= 16; j++) {
+      if (cidade(i, j)) continue;
+      const [x0, x1] = colX(i), [y0, y1] = linYx(j);
+      if (x1 < bb.x0 || x0 > bb.x1 || y1 < bb.y0 || y0 > bb.y1) continue;
+      let alguma = false;
+      for (let a = 0; a <= 6 && !alguma; a++) for (let b = 0; b <= 6 && !alguma; b++)
+        if (dentro(x0 + (x1 - x0) * a / 6, y0 + (y1 - y0) * b / 6)) alguma = true;
+      if (alguma) cels.push({ i, j, x0, x1, y0, y1 });
+    }
+    /* a borda de cada quarteirão: rua da cidade do lado de lá → a borda é
+       a guia (a casa dá pra rua); senão, a viela corre no meio da faixa
+       e o quarteirão avança até ela */
+    for (const c of cels) {
+      c.sb = { x0: cidade(c.i - 1, c.j) ? c.x0 : meioX(c.i - 1) + VIELA / 2, x1: cidade(c.i + 1, c.j) ? c.x1 : meioX(c.i) - VIELA / 2,
+               y0: cidade(c.i, c.j - 1) ? c.y0 : meioY(c.j - 1) + VIELA / 2, y1: cidade(c.i, c.j + 1) ? c.y1 : meioY(c.j) - VIELA / 2 };
+    }
+
+    /* 2. AS VIELAS DA GRADE: a continuação das ruas da cidade, de cruzamento a cruzamento */
+    const vielas = new Map();
+    for (const c of cels) {
+      const { i, j } = c;
+      if (!cidade(i - 1, j)) vielas.set('v' + (i - 1) + ',' + j, [[meioX(i - 1), meioY(j - 1)], [meioX(i - 1), meioY(j)]]);
+      if (!cidade(i + 1, j)) vielas.set('v' + i + ',' + j, [[meioX(i), meioY(j - 1)], [meioX(i), meioY(j)]]);
+      if (!cidade(i, j - 1)) vielas.set('h' + i + ',' + (j - 1), [[meioX(i - 1), meioY(j - 1)], [meioX(i), meioY(j - 1)]]);
+      if (!cidade(i, j + 1)) vielas.set('h' + i + ',' + j, [[meioX(i - 1), meioY(j)], [meioX(i), meioY(j)]]);
+    }
+
+    /* 3. O MIOLO: cada quarteirão em faixas, com os becos */
+    const blocos = [], becosMiolo = [];
+    for (const c of cels) {
+      const sb = c.sb, H = sb.y1 - sb.y0, W = sb.x1 - sb.x0;
+      if (H < 60 || W < 60) continue;
+      const n = Math.max(1, Math.round((H + 37) / (112 + 37)));
+      const gs = Array.from({ length: n - 1 }, () => Math.round(ent(32, 42)));
+      const b = (H - gs.reduce((a, v) => a + v, 0)) / n;
+      const nv = W > 560 ? (rnd() < 0.5 ? 1 : 2) : W > 330 ? 1 : 0;
+      const xs = [];
+      for (let k = 1; k <= nv; k++) xs.push(par8(sb.x0 + W * k / (nv + 1) + ent(-36, 36)));
+      const gv = xs.map(() => Math.round(ent(32, 42)));
+      let y = sb.y0;
+      for (let k = 0; k < n; k++) {
+        const v0 = y, v1 = y + b;
+        const ext0 = k ? gs[k - 1] / 2 : 14, ext1 = k < n - 1 ? gs[k] / 2 : 14;
+        let u = sb.x0;
+        xs.forEach((x, m) => {
+          if (rnd() > 0.82) return;                                        // o beco que não corta esta faixa
+          blocos.push({ v0, v1, u0: u, u1: x - gv[m] / 2, c });
+          becosMiolo.push({ pts: [[x, v0 - ext0], [x, v1 + ext1]], w: gv[m] });
+          u = x + gv[m] / 2;
+        });
+        blocos.push({ v0, v1, u0: u, u1: sb.x1, c });
+        if (k < n - 1) { becosMiolo.push({ pts: [[sb.x0 - 14, v1 + gs[k] / 2], [sb.x1 + 14, v1 + gs[k] / 2]], w: gs[k] }); y = v1 + gs[k]; }
+      }
+    }
+
+    /* o campinho de terra, no quarteirão mais perto do meio da mancha que o comporte */
     let campinho = null;
     {
-      const cw = 360, ch = 200, cx = F.poly.reduce((a, p) => a + p[0], 0) / F.poly.length, cy = F.poly.reduce((a, p) => a + p[1], 0) / F.poly.length;
+      const cx = F.poly.reduce((a, p) => a + p[0], 0) / F.poly.length, cy = F.poly.reduce((a, p) => a + p[1], 0) / F.poly.length;
       let melhor = Infinity;
-      for (let y = bb.y0; y + ch < bb.y1; y += 40) for (let x = bb.x0; x + cw < bb.x1; x += 40) {
-        const d = Math.hypot(x + cw / 2 - cx, y + ch / 2 - cy);
-        if (d < melhor && cabe(x - 50, x + cw + 50, y - 50, y + ch + 50)) { melhor = d; campinho = { x0: x, x1: x + cw, y0: y, y1: y + ch }; }
+      for (const c of cels) {
+        const sb = c.sb, r = { x0: sb.x0 + 24, x1: sb.x0 + 24 + 360, y0: sb.y0 + 12, y1: sb.y0 + 12 + 200 };
+        if (r.x1 > sb.x1 - 24 || r.y1 > sb.y1 - 12) continue;
+        const d = Math.hypot((r.x0 + r.x1) / 2 - cx, (r.y0 + r.y1) / 2 - cy);
+        if (d < melhor && cabe(r.x0 - 20, r.x1 + 20, r.y0 - 20, r.y1 + 20)) { melhor = d; campinho = r; }
       }
     }
-    const noCampinho = (x0, x1, y0, y1) => !!campinho && x0 < campinho.x1 + 30 && x1 > campinho.x0 - 30 && y0 < campinho.y1 + 30 && y1 > campinho.y0 - 30;
-    /* as faixas, de norte a sul, e as quadras de cada uma, de oeste a leste */
-    const faixas = [];
-    for (let y = bb.y0 - 10; y < bb.y1;) {
-      const b = par8(ent(86, 124)), g = Math.round(ent(32, 42));
-      const blocos = [];
-      for (let x = bb.x0 - 10 - ent(0, 420); x < bb.x1;) {
-        const L = par8(ent(500, 850)), gx = Math.round(ent(32, 42));
-        blocos.push({ u0: x, u1: x + L, gx });
-        x += L + gx;
-      }
-      faixas.push({ v0: y, v1: y + b, g, blocos });
-      y += b + g;
-    }
-    /* as casas grandes da favela: guardam o pedaço delas na quadra (as
-       duas fileiras, de beco a beco) antes das casinhas */
+    const noCampinho = (x0, x1, y0, y1) => !!campinho && x0 < campinho.x1 + 18 && x1 > campinho.x0 - 18 && y0 < campinho.y1 + 18 && y1 > campinho.y0 - 18;
+
+    /* 4. AS CASAS GRANDES da favela: guardam o pedaço delas (a faixa inteira, de beco a beco) */
     const reservas = [], lotes = [];
     const conta = new Map();
-    const todos = faixas.flatMap(f => f.blocos.map(b => ({ f, b })));
     for (let rodada = 0; rodada < 8; rodada++) for (const md of CASAS_GRANDES) {
-      if ((conta.get(md) || 0) >= md.n) continue;
+      if ((conta.get(md) || 0) >= md.n || !blocos.length) continue;
       for (let t = 0; t < 60; t++) {
-        const { f, b } = todos[Math.floor(rnd() * todos.length)];
-        if ((f.v1 - f.v0) / M < md.d) continue;
+        const bl = blocos[Math.floor(rnd() * blocos.length)];
+        if ((bl.v1 - bl.v0) / M < md.d) continue;
         const w = par8(ent(md.w[0], md.w[1]) * M);
         const ponta = md.esquina ? (rnd() < 0.5 ? 'oeste' : 'leste') : null;
-        const u0 = ponta === 'oeste' ? b.u0 : ponta === 'leste' ? b.u1 - w : par8(ent(b.u0 + 60, b.u1 - 60 - w));
+        const u0 = ponta === 'oeste' ? bl.u0 : ponta === 'leste' ? bl.u1 - w : par8(ent(bl.u0 + 60, bl.u1 - 60 - w));
         const u1 = u0 + w;
-        if (u0 < b.u0 || u1 > b.u1 || !cabe(u0, u1, f.v0, f.v1) || noCampinho(u0, u1, f.v0, f.v1)) continue;
-        if (reservas.some(r => r.b === b && u0 < r.u1 + 8 && u1 > r.u0 - 8)) continue;
-        const cx = (u0 + u1) / 2, cy = (f.v0 + f.v1) / 2;
+        if (u0 < bl.u0 || u1 > bl.u1 || !cabe(u0, u1, bl.v0, bl.v1) || noCampinho(u0, u1, bl.v0, bl.v1)) continue;
+        if (reservas.some(r => r.bl === bl && u0 < r.u1 + 8 && u1 > r.u0 - 8)) continue;
+        const cx = (u0 + u1) / 2, cy = (bl.v0 + bl.v1) / 2;
         if (reservas.some(r => Math.hypot(r.cx - cx, r.cy - cy) < (r.md === md ? md.longe : (md.perto || 8)) * M)) continue;
-        reservas.push({ f, b, u0, u1, md, ponta, cx, cy });
+        reservas.push({ bl, u0, u1, md, ponta, cx, cy });
         conta.set(md, (conta.get(md) || 0) + 1);
         break;
       }
     }
-    const casa = (x0, x1, y0, y1, fr, fi) => {
+
+    /* 5. AS CASAS, nos pedaços que sobram */
+    const casa = (x0, x1, y0, y1, fr) => {
       if (!cabe(x0, x1, y0, y1)) {
         const e = encaixar(x0, x1, y0, y1);
         if (!e || !cabe(...e)) return;
@@ -566,82 +637,78 @@ export function gerarProposta(P) {
       const r = rnd(), tipo = r < 0.68 ? 'casa' : r < 0.88 ? 'barraco' : 'galpao';
       const telha = tipo === 'casa' ? esc(TELHAS_FAVELA) : tipo === 'barraco' ? esc(LAJES_FAVELA) : '#9aa0a2';
       const p = rnd(), parede = p < 0.44 ? 'tijolo' : p < 0.68 ? 'reboco' : 'pintada';
-      const l = { tipo, frente: fr, x0, x1, y0, y1, alt, cor: esc(CORES_FAVELA[parede]), telha, parede, favela: true, proposta: true, faixa: fi };
+      const l = { tipo, frente: fr, x0, x1, y0, y1, alt, cor: esc(CORES_FAVELA[parede]), telha, parede, favela: true, proposta: true };
       if (rnd() < 0.42) { l.pixacao = esc(GRAFITE_FAVELA); l.pixoTinta = esc(TINTAS_PIXO); }
       lotes.push(l);
     };
-    const fileira = (u0, u1, y0, y1, fr, fi) => {
+    const fileira = (u0, u1, y0, y1, fr) => {
       let u = u0;
       while (u < u1 - 32) {
         let w = Math.min(par8(ent(42, 66)), u1 - u);
         if (u1 - u - w < 32) w = u1 - u;
         if (w < 32) break;
-        casa(u, u + w, y0, y1, fr, fi);
+        casa(u, u + w, y0, y1, fr);
         /* o vão entre duas casas é ou nada ou viela */
         u += w + (rnd() < 0.08 ? par8(ent(40, 56)) : ent(-1, 3));
       }
     };
-    faixas.forEach((f, fi) => {
-      const BV = f.v1 - f.v0;
+    for (const bl of blocos) {
+      const BV = bl.v1 - bl.v0;
       const dA = par8(BV * ent(0.42, 0.58));
-      const linhas = BV < 88 ? [[f.v0, f.v1, rnd() < 0.5 ? 'n' : 's']] : [[f.v0, f.v0 + dA, 'n'], [f.v0 + dA, f.v1, 's']];
-      for (const b of f.blocos) {
-        /* o que sobra da quadra depois das casas grandes */
-        const rs = reservas.filter(r => r.b === b).sort((p, q) => p.u0 - q.u0);
-        const trechos = [];
-        let u = b.u0;
-        for (const r of rs) { if (r.u0 - u > 32) trechos.push([u, r.u0]); u = r.u1; }
-        if (b.u1 - u > 32) trechos.push([u, b.u1]);
-        for (const [a0, a1] of trechos) for (const [y0, y1, fr] of linhas) fileira(a0, a1, y0, y1, fr, fi);
-      }
-    });
+      const linhas = BV < 88 ? [[bl.v0, bl.v1, rnd() < 0.5 ? 'n' : 's']] : [[bl.v0, bl.v0 + dA, 'n'], [bl.v0 + dA, bl.v1, 's']];
+      const rs = reservas.filter(r => r.bl === bl).sort((p, q) => p.u0 - q.u0);
+      const trechos = [];
+      let u = bl.u0;
+      for (const r of rs) { if (r.u0 - u > 32) trechos.push([u, r.u0]); u = r.u1; }
+      if (bl.u1 - u > 32) trechos.push([u, bl.u1]);
+      for (const [a0, a1] of trechos) for (const [y0, y1, fr] of linhas) fileira(a0, a1, y0, y1, fr);
+    }
     for (const r of reservas) {
       const fr = rnd() < 0.5 ? 'n' : 's', md = r.md;
-      const l = { tipo: md.tipo, frente: fr, x0: r.u0, x1: r.u1, y0: r.f.v0, y1: r.f.v1, alt: Math.round(md.alt * M),
-                  cor: esc(CORES_FAVELA[md.parede]), telha: esc(TELHAS_FAVELA), parede: md.parede, favela: true, proposta: true,
-                  modelo: md.modelo, faixa: faixas.indexOf(r.f) };
+      const l = { tipo: md.tipo, frente: fr, x0: r.u0, x1: r.u1, y0: r.bl.v0, y1: r.bl.v1, alt: Math.round(md.alt * M),
+                  cor: esc(CORES_FAVELA[md.parede]), telha: esc(TELHAS_FAVELA), parede: md.parede, favela: true, proposta: true, modelo: md.modelo };
       /* o lado da esquina, na mão de quem olha a fachada */
       if (r.ponta) l.esquina = (r.ponta === 'oeste') === (fr === 's') ? 'esq' : 'dir';
       if (rnd() < 0.42) { l.pixacao = esc(GRAFITE_FAVELA); l.pixoTinta = esc(TINTAS_PIXO); }
       lotes.push(l);
     }
-    /* OS BECOS, só onde tem casa: o de leste a oeste entre duas faixas
-       (e por fora da primeira e da última), o de norte a sul entre duas
-       quadras da mesma faixa */
-    const becos = [];
-    const junta = (ext, folga) => {
-      ext.sort((a, b) => a[0] - b[0]);
-      const out = [];
-      for (const e of ext) { const u = out[out.length - 1]; if (u && e[0] <= u[1] + folga) u[1] = Math.max(u[1], e[1]); else out.push(e.slice()); }
-      return out;
-    };
-    for (let k = 0; k <= faixas.length; k++) {
-      const cima = faixas[k - 1], baixo = faixas[k];
-      const yb = cima && baixo ? (cima.v1 + baixo.v0) / 2 : cima ? cima.v1 + 18 : baixo.v0 - 18;
-      const ext = lotes.filter(l => (cima && l.faixa === k - 1 && Math.abs(l.y1 - cima.v1) < 1) || (baixo && l.faixa === k && Math.abs(l.y0 - baixo.v0) < 1))
-                       .map(l => [l.x0 - 20, l.x1 + 20]);
-      for (const [a, b] of junta(ext, 70)) becos.push([[a, yb], [b, yb]]);
+
+    /* 6. O CHÃO DAS RUAS: a viela e o beco só onde tem casa do lado */
+    const balde = new Map(), B = 120;
+    for (const l of lotes) for (let a = Math.floor(l.x0 / B); a <= Math.floor(l.x1 / B); a++) for (let b = Math.floor(l.y0 / B); b <= Math.floor(l.y1 / B); b++) {
+      const k = a + ',' + b; if (!balde.has(k)) balde.set(k, []); balde.get(k).push(l);
     }
-    faixas.forEach((f, fi) => {
-      for (let n = 0; n + 1 < f.blocos.length; n++) {
-        const b = f.blocos[n], xb = b.u1 + b.gx / 2;
-        const temCasa = lotes.some(l => l.faixa === fi && (Math.abs(l.x1 - b.u1) < 4 || Math.abs(l.x0 - f.blocos[n + 1].u0) < 4));
-        if (temCasa) becos.push([[xb, f.v0 - 20], [xb, f.v1 + 20]]);
+    const temCasaPerto = (x, y, r) => {
+      for (let a = Math.floor((x - r) / B); a <= Math.floor((x + r) / B); a++) for (let b = Math.floor((y - r) / B); b <= Math.floor((y + r) / B); b++)
+        for (const l of balde.get(a + ',' + b) || []) if (x > l.x0 - r && x < l.x1 + r && y > l.y0 - r && y < l.y1 + r) return true;
+      return false;
+    };
+    const becos = [];
+    const recortar = (pts, w) => {
+      const [[ax, ay], [bx, by]] = pts, L = Math.hypot(bx - ax, by - ay), N = Math.max(1, Math.ceil(L / 16));
+      let atual = null;
+      for (let k = 0; k <= N; k++) {
+        const x = ax + (bx - ax) * k / N, y = ay + (by - ay) * k / N;
+        const vale = temCasaPerto(x, y, w / 2 + 30) && !noCampinho(x, x, y, y);
+        if (vale) { if (!atual) { atual = []; atual.w = w; becos.push(atual); } atual.push([x, y]); }
+        else atual = null;
       }
-    });
+    };
+    for (const pts of vielas.values()) recortar(pts, VIELA);
+    for (const bc of becosMiolo) recortar(bc.pts, bc.w);
+    for (let k = becos.length - 1; k >= 0; k--) if (becos[k].length < 2) becos.splice(k, 1);
+
     /* umas árvores no que sobra: longe da casa e do beco */
     const arvores = [];
-    const noBeco = (x, y) => becos.some(([[ax, ay], [bx, by]]) => distSeg(x, y, [ax, ay], [bx, by]) < 30);
-    for (let t = 0; t < 600 && arvores.length < 12; t++) {
+    const noBeco = (x, y) => becos.some(b => distSeg(x, y, b[0], b[b.length - 1]) < b.w / 2 + 12);
+    for (let t = 0; t < 800 && arvores.length < 12; t++) {
       const x = ent(bb.x0, bb.x1), y = ent(bb.y0, bb.y1), r = ent(12, 19);
-      if (!dentro(x, y) || noBeco(x, y) || noCampinho(x - r, x + r, y - r, y + r)) continue;
-      if (lotes.some(l => x > l.x0 - r - 6 && x < l.x1 + r + 6 && y > l.y0 - r - 6 && y < l.y1 + r + 6)) continue;
+      if (!dentro(x, y) || noBeco(x, y) || noCampinho(x - r, x + r, y - r, y + r) || temCasaPerto(x, y, r + 6)) continue;
       arvores.push({ x, y, r });
     }
-    for (const l of lotes) delete l.faixa;
     const bbL = lotes.length ? bbOf(lotes.flatMap(l => [[l.x0, l.y0], [l.x1, l.y1]])) : bb0;
     return { id: F.id, nome: F.nome, poly: F.poly, lotes, becos, arvores, moitas: [], campinho, bb: bbL,
-             grandes: reservas.length };
+             grandes: reservas.length, quarteiroes: cels.length };
   }
 
   /* ---- o que a proposta cobre (pra esconder o mato, a beira e a favela de hoje) ---- */

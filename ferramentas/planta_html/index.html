@@ -463,7 +463,8 @@ function desenhar() {
   ctx.strokeStyle = COR.beco; ctx.lineWidth = 44;
   if (!prop) for (const t of K.FAVELA_RUAS || []) { caminho(t, false); ctx.stroke(); }
   else for (const f of PROP.favelas) {
-    for (const t of f.becos) { caminho(t, false); ctx.stroke(); }
+    for (const t of f.becos) { ctx.lineWidth = t.w || 44; caminho(t, false); ctx.stroke(); }
+    ctx.lineWidth = 44;
     const c = f.campinho;
     if (c) {
       ret(c, '#b39463');
@@ -474,6 +475,14 @@ function desenhar() {
     }
   }
 
+  /* ---- as ruas da cidade nova, na largura inteira: vêm antes das quadras
+     de hoje (que pintam por cima do que passar da faixa delas) e antes
+     da favela (que encosta na guia) ---- */
+  if (prop) {
+    const r = RUA + 12;
+    ctx.fillStyle = COR.rua;
+    for (const q of PROP.quadras) ctx.fillRect(q.x0 - r, q.y0 - r, q.x1 - q.x0 + 2 * r, q.y1 - q.y0 + 2 * r);
+  }
   /* ---- os quarteirões: calçada, miolo, o chão do equipamento ---- */
   for (const q of K.CELULAS) {
     if (q.tipo !== 'quadra' || !ve(q)) continue;
@@ -630,11 +639,6 @@ function desenharEstadio(dx, dy) {
   pol(T(P.anel(0)), COR.gramado);
 }
 function desenharProposta(ve, px) {
-  /* a rua em volta de cada quadra nova: meia rua e um pouco (as ruas da
-     linha do estádio têm 128, não 118,8, e sobrava um fio no meio) */
-  const meia = RUA / 2 + 8;
-  ctx.fillStyle = COR.rua;
-  for (const q of PROP.quadras) ctx.fillRect(q.x0 - meia, q.y0 - meia, q.x1 - q.x0 + 2 * meia, q.y1 - q.y0 + 2 * meia);
   for (const q of PROP.quadras) {
     if (!ve(q)) continue;
     ret(q, COR.calcada);
@@ -1504,7 +1508,7 @@ function notasDaProposta() {
   </dl>
   <h3>O que mudou nesta versão</h3>
   <ul>
-    <li><b>As favelas nas manchas circuladas, encostadas na cidade</b>: entre a favela e a rua não sobra mato, a casa vai até a calçada (a do sudoeste pega também o canto a oeste de −3,6 a −3,8). O beco é reto, de leste a oeste e de norte a sul, como a rua da cidade, e estreito como o de hoje (1,6 a 2,2 m). A conta é a da favela do jogo: quadra miúda, casa encostada na casa, as casas grandes (bar, lanchonete, a da escada...) e um campinho de terra em cada. Noroeste: ${fNO} casas; sudoeste: ${fSO}.</li>
+    <li><b>As favelas nas manchas circuladas, na grade da cidade.</b> Primeiro a grade de ruas: cada rua da cidade segue dentro da favela na mesma linha, como viela estreita (2,5 m), e onde a favela encosta numa quadra a rua da cidade é a borda dela. Depois as casas: cada quarteirão da grade vira miolo de favela, com becos de 1,6 a 2,2 m e casa encostada na casa. Não sobra mato entre a favela e a rua (a do sudoeste pega também o canto a oeste de −3,6 a −3,8). A conta é a da favela do jogo: quadra miúda, casa encostada na casa, as casas grandes (bar, lanchonete, a da escada...) e um campinho de terra em cada. Noroeste: ${fNO} casas; sudoeste: ${fSO}.</li>
     <li><b>Sem as avenidas transversais do oeste</b> (a oeste e a noroeste2). As quadras que elas cortavam voltaram a ser inteiras, e a 1,4 de hoje foi refeita sem o rasgo.</li>
     <li><b>Rua no meio</b> das quadras altas −3,2, −1,2 e 0,2, de norte a sul: o quintal enorme virou duas fileiras de casa de cada lado.</li>
     <li><b>Quadras juntadas</b> por cima da rua: 0,7 com 1,7 (a 1,7 é de hoje), −2,3 com −1,3 e 0,−1 com 1,−1.</li>

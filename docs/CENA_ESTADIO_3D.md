@@ -1936,7 +1936,7 @@ em seis quadras.
 |---|---|---|
 | quadras | 37 | 105 |
 | lotes em quadra | 323 | 1.112 |
-| casas na favela | 229 | 2.009 (622 no noroeste, 1.387 no sudoeste) |
+| casas na favela | 229 | 1.724 (545 no noroeste, 1.179 no sudoeste) |
 
 **A favela encosta na cidade** (pedido seguinte do dono, com a faixa de mato entre a favela do
 noroeste e o condomínio −4,2 circulada):
@@ -1949,10 +1949,28 @@ noroeste e o condomínio −4,2 circulada):
 - **O canto do sudoeste também entra.** É o canto entre a favela e a quina da cidade, a oeste
   de −3,6 a −3,8 e ao sul de −4,5.
 
+**Primeiro a grade, depois as casas** (pedido seguinte do dono). A favela não sorteia mais as
+faixas a partir da borda da mancha; ela usa a grade da cidade:
+
+- **As vielas.** Cada rua da cidade segue dentro da favela na mesma linha, como uma viela
+  de 48 (2,5 m) no meio da faixa da rua. As linhas depois da 10 seguem no mesmo passo.
+- **A borda.** Onde o quarteirão da favela encosta numa quadra da cidade, a rua da cidade
+  (na largura inteira) é a borda dele, e a casa dá direto pra ela.
+- **O miolo.** Cada célula da grade que cai na mancha e não é cidade vira um quarteirão de
+  favela. Ele é cortado em faixas de 86 a 124 com beco de 32 a 42 entre elas, e por um ou
+  dois becos de norte a sul (que às vezes não cortam a faixa). Dentro, vêm as duas fileiras
+  de casa e as casas grandes.
+- **O corte.** A mancha recorta as casas do lado do mato, e a viela e o beco só aparecem
+  onde tem casa do lado.
+
+Com isso a rua nova da cidade passou a ser pintada na largura inteira, antes das quadras de
+hoje (que pintam por cima do que passar da faixa delas): era a meia rua que deixava um fio
+de mato entre a favela e a guia. As favelas ficaram com 545 e 1.179 casas.
+
 O que não é fiel, ou pesa:
 
 - **As favelas ficaram grandes**, porque enchem a mancha inteira e agora encostam na cidade:
-  são quase nove vezes as casas de hoje. No jogo isso pesa (triângulo e máscara). Se for
+  são mais de sete vezes as casas de hoje. No jogo isso pesa (triângulo e máscara). Se for
   muito, é diminuir o polígono.
 - **O tabuleiro cresce ainda mais:** uns 213 m pra oeste, 100 m pro norte e 55 m pro sul.
 - **O polígono é o desenho à mão, lido da foto.** A borda da favela segue o traço, com a
