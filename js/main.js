@@ -6045,11 +6045,11 @@
        porque já estavam mortos aqui desde que a compra foi pra Loja. */
     const linhas = PAT.linhas(e);
     const soma = k => linhas.reduce((s,l)=>s+l[k], 0);
-    const c = cartao('Estrutura',
-      'por mês · mensalidade e caravana ficam no Resumo');
+    const c = cartao(_t('Estrutura'),
+      _t('por mês · mensalidade e caravana ficam no Resumo'));
     const tab = el('div',{class:'tabela-pat'});
     tab.appendChild(el('div',{class:'cab', html:
-      '<span>Local</span><span>Receita</span><span>Despesa</span><span>Mês</span>'}));
+      `<span>${_t('Local')}</span><span>${_t('Receita')}</span><span>${_t('Despesa')}</span><span>${_t('Mês')}</span>`}));
     for(const l of linhas){
       tab.appendChild(el('div',{class:'linha', html:
         `<span class="nome">${l.rot}${l.bairro
@@ -6062,7 +6062,7 @@
     }
     const s = soma('receita')-soma('despesa');
     tab.appendChild(el('div',{class:'linha total', html:
-      `<span class="nome">Total do patrimônio</span>
+      `<span class="nome">${_t('Total do patrimônio')}</span>
        <span class="v positivo">${U.dinheiro(soma('receita'))}</span>
        <span class="v negativo">${U.dinheiro(-soma('despesa'))}</span>
        <span class="v ${s>=0?'positivo':'negativo'}">${U.dinheiro(s)}</span>`}));
@@ -6071,33 +6071,33 @@
 
     /* AS COMPRAS SAÍRAM DAQUI (a Loja do dono, 09/09/2026): o Patrimônio
        mostra o que a torcida tem e o que rende; comprar é na aba Loja */
-    const irLoja = el('button',{class:'bt', texto:'Comprar e ampliar é na Loja →'});
+    const irLoja = el('button',{class:'bt', texto:_t('Comprar e ampliar é na Loja →')});
     irLoja.onclick = ()=>{ subFin='loja'; redesenhar(); };
     pg.appendChild(el('div',{class:'loja-chamada'},[irLoja]));
 
     /* AS FAIXAS (pedido do dono, 09/09/2026): as nossas e as que tomamos,
        estas de cabeça pra baixo */
     const fx = PAT.faixasDe(e);
-    const c3 = cartao('Faixas', `${fx.nossas.length} ${fx.nossas.length===1?'nossa':'nossas'} · ${fx.tomadas.length} ${fx.tomadas.length===1?'tomada':'tomadas'}`);
+    const c3 = cartao(_t('Faixas'), `${_tn(fx.nossas.length, '{n} nossa', '{n} nossas')} · ${_tn(fx.tomadas.length, '{n} tomada', '{n} tomadas')}`);
     const bl = el('div',{class:'faixas'});
-    bl.appendChild(el('div',{class:'faixas-rot', texto:'As nossas'}));
+    bl.appendChild(el('div',{class:'faixas-rot', texto:_t('As nossas')}));
     const nossas = el('div',{class:'faixas-lista'});
-    if(!fx.nossas.length) nossas.appendChild(el('div',{class:'fraco', texto:'Nenhuma: sem faixa na sede, nada a expor — nem a perder. Compre uma na Loja.'}));
+    if(!fx.nossas.length) nossas.appendChild(el('div',{class:'fraco', texto:_t('Nenhuma: sem faixa na sede, nada a expor — nem a perder. Compre uma na Loja.')}));
     const imgFaixa = (o, cls, title, k) => {
       const im = el('img',{class:cls, title});
       im.src = PAT.imagemDaFaixa(o, url => { im.src = url; }, 'faixa', k || 0) || '';
       return im;
     };
-    fx.nossas.forEach((f, k) => nossas.appendChild(imgFaixa(e.torcida, 'faixa-img', `Faixa da ${e.torcida.nome} · desde ${f.desde}`, k)));
+    fx.nossas.forEach((f, k) => nossas.appendChild(imgFaixa(e.torcida, 'faixa-img', _t('Faixa da {nome} · desde {desde}', {nome:e.torcida.nome, desde:f.desde}), k)));
     bl.appendChild(nossas);
-    bl.appendChild(el('div',{class:'faixas-rot', texto:'Tomadas'}));
+    bl.appendChild(el('div',{class:'faixas-rot', texto:_t('Tomadas')}));
     const tomadas = el('div',{class:'faixas-lista'});
-    if(!fx.tomadas.length) tomadas.appendChild(el('div',{class:'fraco', texto:'Nenhuma ainda. Faixa se toma na rua: quem carrega a deles cai, ela é nossa.'}));
+    if(!fx.tomadas.length) tomadas.appendChild(el('div',{class:'fraco', texto:_t('Nenhuma ainda. Faixa se toma na rua: quem carrega a deles cai, ela é nossa.')}));
     for(const f of fx.tomadas){
       const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
       const cx = el('div',{class:'faixa-tomada'});
-      cx.appendChild(imgFaixa(o, 'faixa-img virada', `Faixa da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
-      cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
+      cx.appendChild(imgFaixa(o, 'faixa-img virada', _t('Faixa da {nome}, tomada em {ano}', {nome:f.nome, ano:(f.quando||{}).ano||''})));
+      cx.appendChild(el('small',{html:`${_t('da {torcida}', {torcida:linkTorcida(f.de, f.nome)})}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
       tomadas.appendChild(cx);
     }
     bl.appendChild(tomadas);
@@ -6108,15 +6108,15 @@
       im.src = PAT.imagemDaBandeira(o, url => { im.src = url; }) || '';
       return im;
     };
-    bl.appendChild(el('div',{class:'faixas-rot', texto:`Bandeiras · ${bd.nossas.length} ${bd.nossas.length===1?'nossa':'nossas'} · ${bd.tomadas.length} ${bd.tomadas.length===1?'tomada':'tomadas'}`}));
+    bl.appendChild(el('div',{class:'faixas-rot', texto:`${_t('Bandeiras')} · ${_tn(bd.nossas.length, '{n} nossa', '{n} nossas')} · ${_tn(bd.tomadas.length, '{n} tomada', '{n} tomadas')}`}));
     const bands = el('div',{class:'faixas-lista bandeiras'});
-    if(!bd.nossas.length && !bd.tomadas.length) bands.appendChild(el('div',{class:'fraco', texto:'Nenhuma. Compre uma na Loja: sai no lugar da faixa no bar e na concentração, e junto dela no estádio.'}));
-    for(const f of bd.nossas) bands.appendChild(imgBand(e.torcida, 'bandeira-img', `Bandeira da ${e.torcida.nome} · desde ${f.desde}`));
+    if(!bd.nossas.length && !bd.tomadas.length) bands.appendChild(el('div',{class:'fraco', texto:_t('Nenhuma. Compre uma na Loja: sai no lugar da faixa no bar e na concentração, e junto dela no estádio.')}));
+    for(const f of bd.nossas) bands.appendChild(imgBand(e.torcida, 'bandeira-img', _t('Bandeira da {nome} · desde {desde}', {nome:e.torcida.nome, desde:f.desde})));
     for(const f of bd.tomadas){
       const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
       const cx = el('div',{class:'faixa-tomada'});
-      cx.appendChild(imgBand(o, 'bandeira-img virada', `Bandeira da ${f.nome}, tomada em ${(f.quando||{}).ano||''}`));
-      cx.appendChild(el('small',{html:`da ${linkTorcida(f.de, f.nome)}`}));
+      cx.appendChild(imgBand(o, 'bandeira-img virada', _t('Bandeira da {nome}, tomada em {ano}', {nome:f.nome, ano:(f.quando||{}).ano||''})));
+      cx.appendChild(el('small',{html:_t('da {torcida}', {torcida:linkTorcida(f.de, f.nome)})}));
       bands.appendChild(cx);
     }
     bl.appendChild(bands);
@@ -6139,8 +6139,8 @@
     const custo = C.custoDoPonto(e, id);
     const noTeto = forca >= C.FORCA_MAX;
 
-    const c = cartao(`Elenco do ${time.nome || id}`,
-      `${time.divisao || ''}${time.divisao?' · ':''}força de ${C.FORCA_MIN} a ${C.FORCA_MAX}`);
+    const c = cartao(_t('Elenco do {time}', {time:time.nome || id}),
+      `${time.divisao || ''}${time.divisao?' · ':''}${_t('força de {min} a {max}', {min:C.FORCA_MIN, max:C.FORCA_MAX})}`);
     /* a barra separa o que o clube conquistou do que a torcida bancou */
     const barra = el('div',{class:'barra-elenco'});
     barra.appendChild(el('i',{class:'base',
@@ -6149,21 +6149,21 @@
       style:`left:${base/C.FORCA_MAX*100}%;width:${inv/C.FORCA_MAX*100}%`}));
     c.corpo.appendChild(barra);
     c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Força hoje</span><b>${forca} de ${C.FORCA_MAX}</b>`}));
+      `<span>${_t('Força hoje')}</span><b>${_t('{n} de {max}', {n:forca, max:C.FORCA_MAX})}</b>`}));
     c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Conquistada em campo</span><b>${base}</b>`}));
+      `<span>${_t('Conquistada em campo')}</span><b>${base}</b>`}));
     c.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span>Bancada pela torcida</span><b${inv?' class="positivo"':''}>`+
+      `<span>${_t('Bancada pela torcida')}</span><b${inv?' class="positivo"':''}>`+
       `${inv ? '+'+inv : '—'}</b>`}));
     pg.appendChild(c);
 
-    const c2 = cartao('Reforçar elenco', `caixa: ${U.dinheiro(e.dinheiro)}`);
+    const c2 = cartao(_t('Reforçar elenco'), _t('caixa: {valor}', {valor:U.dinheiro(e.dinheiro)}));
     c2.corpo.appendChild(oferta(
-      '+1 de força',
-      noTeto ? '' : `o clube está na faixa de ${U.dinheiro(custo)} por ponto`,
+      _t('+1 de força'),
+      noTeto ? '' : _t('o clube está na faixa de {valor} por ponto', {valor:U.dinheiro(custo)}),
       custo,
-      noTeto ? 'o elenco já está no teto'
-             : e.dinheiro < custo ? 'falta caixa' : null,
+      noTeto ? _t('o elenco já está no teto')
+             : e.dinheiro < custo ? _t('falta caixa') : null,
       ()=>comprar(()=>C.investir(e, id, 1))));
     pg.appendChild(c2);
 
@@ -6193,7 +6193,7 @@
     const acha = id => todas.find(o=>o.id===id);
 
     pg.appendChild(el('div',{class:'loja-caixa', html:
-      `<span>Caixa da torcida</span><b>${U.dinheiro(e.dinheiro)}</b>`}));
+      `<span>${_t('Caixa da torcida')}</span><b>${U.dinheiro(e.dinheiro)}</b>`}));
 
     /* ---- compra rápida ---- */
     const rap = el('div',{class:'loja-rapida'});
@@ -6206,19 +6206,19 @@
     {
       const preco = PAT.precoBomba(e), est = PAT.bombas(e);
       const t = el('div',{class:'loja-tile'});
-      t.appendChild(el('h3',{texto:'Bombas'}));
+      t.appendChild(el('h3',{texto:_t('Bombas')}));
       t.appendChild(el('span',{class:'estoque', html:
-        `estoque: <b>${est}</b> · ${U.dinheiro(preco)} cada`+
-        `${(e.patrimonio||{}).galpao ? ' · galpão: 15% mais barata' : ''}`}));
+        _t('estoque: <b>{n}</b> · {preco} cada', {n:est, preco:U.dinheiro(preco)})+
+        `${(e.patrimonio||{}).galpao ? ' · '+_t('galpão: 15% mais barata') : ''}`}));
       const st = el('div',{class:'stepper'});
       const menos = el('button',{texto:'−'}), mais = el('button',{texto:'+'});
       const num = el('b',{texto:String(lojaBombas)});
       const total = el('span',{class:'preco'});
       const pe = el('div',{class:'pe'});
-      const bt = botao('Comprar', null, ()=>comprar(()=>{
+      const bt = botao(_t('Comprar'), null, ()=>comprar(()=>{
         const r = PAT.comprarBombas(e, lojaBombas);
-        return r.ok ? {ok:true, msg:`${r.compradas} bomba${r.compradas===1?'':'s'} no estoque.`}
-                    : {ok:false, msg:'Não dá: '+(r.msg||'falta caixa')+'.'};
+        return r.ok ? {ok:true, msg:_tn(r.compradas, '{n} bomba no estoque.', '{n} bombas no estoque.')}
+                    : {ok:false, msg:_t('Não dá: {motivo}.', {motivo:r.msg||_t('falta caixa')})};
       }));
       const atualiza = ()=>{
         num.textContent = String(lojaBombas);
@@ -6245,37 +6245,37 @@
       const t = el('div',{class:'loja-tile'});
       t.appendChild(el('h3',{texto:rot}));
       t.appendChild(el('span',{class:'estoque', html:
-        `na sede: <b>${quantas}</b> · ${o.nota.split(' · ').slice(1).join(' · ')}`}));
+        _t('na sede: <b>{n}</b> · {nota}', {n:quantas, nota:o.nota.split(' · ').slice(1).join(' · ')})}));
       const pv = el('div',{class:'previa'});
-      const im = el('img',{class:tipo==='faixa'?'faixa-img':'bandeira-img', title:'a próxima'});
+      const im = el('img',{class:tipo==='faixa'?'faixa-img':'bandeira-img', title:_t('a próxima')});
       im.src = img(url=>{ im.src = url; }) || '';
       pv.appendChild(im); t.appendChild(pv);
       const pe = el('div',{class:'pe'});
       pe.appendChild(el('span',{class:'preco', texto:U.dinheiro(o.custo)}));
-      pe.appendChild(botao('Comprar', o.trava, ()=>comprar(()=>PAT.comprar(e, o.id))));
+      pe.appendChild(botao(_t('Comprar'), o.trava, ()=>comprar(()=>PAT.comprar(e, o.id))));
       t.appendChild(pe);
       if(o.trava) t.appendChild(el('small',{class:'trava', texto:o.trava}));
       rap.appendChild(t);
     };
     const oF = acha('faixa'), oB = acha('bandeira');
-    if(oF) pano('faixa', 'Faixa', oF, PAT.faixasDe(e).nossas.length,
+    if(oF) pano('faixa', _t('Faixa'), oF, PAT.faixasDe(e).nossas.length,
       cb=>PAT.imagemDaFaixa(e.torcida, cb, 'faixa', PAT.faixasDe(e).nossas.length));
-    if(oB) pano('bandeira', 'Bandeira', oB, PAT.bandeirasDe(e).nossas.length,
+    if(oB) pano('bandeira', _t('Bandeira'), oB, PAT.bandeirasDe(e).nossas.length,
       cb=>PAT.imagemDaBandeira(e.torcida, cb));
     const sec0 = el('div',{class:'loja-secao'});
-    sec0.appendChild(el('h3',{html:'Compra rápida <small>material de cena — o que se repõe toda semana</small>'}));
+    sec0.appendChild(el('h3',{html:_t('Compra rápida <small>material de cena — o que se repõe toda semana</small>')}));
     sec0.appendChild(rap);
     pg.appendChild(sec0);
 
     /* ---- o resto, por natureza ---- */
     const SECOES = [
-      ['sede',    'Sede e anexos',        'o que a sede comporta, e o que ela ganha'],
-      ['pontos',  'Pontos comerciais',    'bar, loja e subsede: rendem todo mês'],
-      ['filiais', 'Subsedes em outras cidades', 'núcleo local que recruta, defende e ataca lá'],
-      ['aliados', 'Presente pra aliado',   'a gente paga, o patrimônio é dele — e a relação sobe'],
-      ['pessoal', 'Pessoal',              'professor de MMA e advogado: mensalidade no fechamento'],
-      ['frota',   'Frota',                'ônibus: a caravana de estrada sai mais barata'],
-      ['outros',  'Outros',               ''],
+      ['sede',    _t('Sede e anexos'),        _t('o que a sede comporta, e o que ela ganha')],
+      ['pontos',  _t('Pontos comerciais'),    _t('bar, loja e subsede: rendem todo mês')],
+      ['filiais', _t('Subsedes em outras cidades'), _t('núcleo local que recruta, defende e ataca lá')],
+      ['aliados', _t('Presente pra aliado'),   _t('a gente paga, o patrimônio é dele — e a relação sobe')],
+      ['pessoal', _t('Pessoal'),              _t('professor de MMA e advogado: mensalidade no fechamento')],
+      ['frota',   _t('Frota'),                _t('ônibus: a caravana de estrada sai mais barata')],
+      ['outros',  _t('Outros'),               ''],
     ];
     for(const [nat, rot, sub] of SECOES){
       const itens = de(nat);
@@ -6299,10 +6299,10 @@
         if(o.escolhas)  sel  = dropdown(o.escolhas);
         if(o.escolhas2) sel2 = dropdown(o.escolhas2);   // o presente: aliado e melhoria
         const gratis = !o.custo;
-        const preco = el('span',{class:'preco', texto: gratis ? 'sem custo' : U.dinheiro(o.custo)});
+        const preco = el('span',{class:'preco', texto: gratis ? _t('sem custo') : U.dinheiro(o.custo)});
         pe.appendChild(preco);
         const idDaCompra = ()=> o.id + (sel ? ':'+sel.value : '') + (sel2 ? ':'+sel2.value : '');
-        const bt = botao(gratis ? 'Confirmar' : 'Comprar', o.trava,
+        const bt = botao(gratis ? _t('Confirmar') : _t('Comprar'), o.trava,
           ()=>comprar(()=>PAT.comprar(e, idDaCompra())));
         pe.appendChild(bt);
         it.appendChild(pe);
@@ -6320,7 +6320,7 @@
             if(esc && esc.custo != null) pr = {custo:esc.custo, trava:esc.trava || null};
           }
           if(!pr || o.trava) return;
-          const trava = pr.trava || (pr.custo > e.dinheiro ? 'falta caixa' : null);
+          const trava = pr.trava || (pr.custo > e.dinheiro ? _t('falta caixa') : null);
           preco.textContent = pr.custo != null ? U.dinheiro(pr.custo) : '—';
           bt.disabled = !!trava;
           travaEl.textContent = trava || '';
@@ -6346,13 +6346,13 @@
   function pintarFinanceiro(){
     const e = E(), pg = U.$('.pagina[data-pag="financeiro"]');
     pg.innerHTML='';
-    pg.appendChild(el('div',{class:'titulo-pagina', texto:'Financeiro'}));
+    pg.appendChild(el('div',{class:'titulo-pagina', texto:_t('Financeiro')}));
     pg.appendChild(subabas([
-      {id:'resumo', rot:'Resumo'},
-      {id:'loja', rot:'Loja'},
-      {id:'patrimonio', rot:'Patrimônio'},
-      {id:'elenco', rot:'Elenco'},
-      {id:'transacoes', rot:'Transações'}
+      {id:'resumo', rot:_t('Resumo')},
+      {id:'loja', rot:_t('Loja')},
+      {id:'patrimonio', rot:_t('Patrimônio')},
+      {id:'elenco', rot:_t('Elenco')},
+      {id:'transacoes', rot:_t('Transações')}
     ], subFin, id=>{subFin=id; redesenhar();}));
 
     if(subFin==='loja'){ pintarLoja(pg, e); return; }
@@ -6380,8 +6380,7 @@
     }
 
     if(subFin==='transacoes'){
-      const c = cartao('Transações', `${e.transacoes.length} lançamentos`+
-        ' · comércio e festa fecham por mês');
+      const c = cartao(_t('Transações'), _tn(e.transacoes.length, '{n} lançamento · comércio e festa fecham por mês', '{n} lançamentos · comércio e festa fecham por mês'));
       /* O MÊS CORRENTE À VISTA (pedido do dono, 18/08/2026): bar,
          loja e festa entram no caixa na hora mas só escrevem a linha
          no fechamento — enquanto o mês corre, o acumulado aparece
@@ -6389,29 +6388,29 @@
       const rm = e.resumoMes || {};
       const pend = [];
       if(rm.comercio && (rm.comercio.rec || rm.comercio.des))
-        pend.push({rot:'Comércio no mês corrente (bar, loja, subsede)',
+        pend.push({rot:_t('Comércio no mês corrente (bar, loja, subsede)'),
                    v: Math.round(rm.comercio.rec - rm.comercio.des)});
       if(rm.festa && (rm.festa.rec || rm.festa.des))
-        pend.push({rot:`Festas na sede no mês corrente (${rm.festa.n})`,
+        pend.push({rot:_t('Festas na sede no mês corrente ({n})', {n:rm.festa.n}),
                    v: Math.round(rm.festa.rec - rm.festa.des)});
       if(rm.pix && rm.pix.rec)
-        pend.push({rot:`Doações por PIX no mês corrente (${rm.pix.n})`,
+        pend.push({rot:_t('Doações por PIX no mês corrente ({n})', {n:rm.pix.n}),
                    v: Math.round(rm.pix.rec)});
       if(rm.campana && rm.campana.des)
-        pend.push({rot:`Campana do olheiro no mês corrente (${rm.campana.n})`,
+        pend.push({rot:_t('Campana do olheiro no mês corrente ({n})', {n:rm.campana.n}),
                    v: -Math.round(rm.campana.des)});
       if(rm.padrinho && rm.padrinho.des)
-        pend.push({rot:`Padrinho de treino no mês corrente (${rm.padrinho.n})`,
+        pend.push({rot:_t('Padrinho de treino no mês corrente ({n})', {n:rm.padrinho.n}),
                    v: -Math.round(rm.padrinho.des)});
       for(const p of pend)
         c.corpo.appendChild(el('div',{class:'transacao pendente', html:
-          `<span class="dia">mês</span>
+          `<span class="dia">${_t('mês')}</span>
            <span class="desc">${p.rot}
-             <small>já no caixa · a linha fecha no fim do mês</small></span>
+             <small>${_t('já no caixa · a linha fecha no fim do mês')}</small></span>
            <span class="val ${p.v<0?'negativo':p.v>0?'positivo':''}">`+
           `${U.dinheiro(p.v)}</span>`}));
       if(!e.transacoes.length && !pend.length)
-        c.corpo.innerHTML='<div class="em-construcao">Nada ainda.</div>';
+        c.corpo.innerHTML=`<div class="em-construcao">${_t('Nada ainda.')}</div>`;
       for(const t of e.transacoes.slice(0,200)){
         c.corpo.appendChild(el('div',{class:'transacao', html:
           `<span class="dia">${t.dia}</span><span class="desc">${t.descricao}</span>
@@ -6433,51 +6432,50 @@
     const sem  = TO.financeiro.resumoDaSemana(e);
     const comp = sem.gestao;
 
-    const c1 = cartao('Fluxo da semana');
+    const c1 = cartao(_t('Fluxo da semana'));
     c1.corpo.innerHTML =
-      `<div class="valorao"><span>Receitas</span>
+      `<div class="valorao"><span>${_t('Receitas')}</span>
          <b class="positivo">${U.dinheiro(sem.receita)}</b></div>
-       <div class="valorao"><span>Despesas</span>
+       <div class="valorao"><span>${_t('Despesas')}</span>
          <b class="negativo">${U.dinheiro(sem.despesa)}</b></div>`
       + (comp.total
-         ? `<div class="linha-dado"><span>Conta fixa</span>
+         ? `<div class="linha-dado"><span>${_t('Conta fixa')}</span>
               <b class="negativo">${U.dinheiro(-cx.despesa)}</b></div>
-            <div class="linha-dado"><span>Decidido na Gestão`+
-           `${comp.pendente?'':' <small class="fraco">pago</small>'}</span>
+            <div class="linha-dado"><span>${_t('Decidido na Gestão')}`+
+           `${comp.pendente?'':` <small class="fraco">${_t('pago')}</small>`}</span>
               <b class="negativo">${U.dinheiro(-comp.total)}</b></div>` : '')
-      + `<div class="valorao"><span>Saldo da semana</span>
+      + `<div class="valorao"><span>${_t('Saldo da semana')}</span>
            <b class="${sem.saldo>=0?'positivo':'negativo'}">${U.dinheiro(sem.saldo)}</b></div>`;
-    const btDet = el('button',{class:'bt larga', texto:'Detalhes'});
+    const btDet = el('button',{class:'bt larga', texto:_t('Detalhes')});
     btDet.onclick = ()=>{ subFin='transacoes'; redesenhar(); };
     let btUlt = null;
     if(e.ultimoFechamento){
-      btUlt = el('button',{class:'bt larga', texto:'Último fechamento do mês'});
+      btUlt = el('button',{class:'bt larga', texto:_t('Último fechamento do mês')});
       btUlt.onclick = ()=>abrirFechamento(e.ultimoFechamento);
     }
     c1.rodape(btDet, btUlt);
     grade.appendChild(c1);
 
-    const c2 = cartao('Caixa');
+    const c2 = cartao(_t('Caixa'));
     c2.corpo.innerHTML =
-      `<div class="valorao"><span>Em caixa</span>
+      `<div class="valorao"><span>${_t('Em caixa')}</span>
          <b class="${e.dinheiro<0?'negativo':''}">${U.dinheiro(e.dinheiro)}</b></div>
-       <div class="linha-dado"><span>Membros pagantes</span><b>${pagantes}`+
-      `${pagantes<e.membros.length?` <span class="fraco">de ${e.membros.length}</span>`:''}</b></div>
-       <div class="linha-dado"><span>${e.torcida.sedeNivel > 0 ? `Sede nível ${e.torcida.sedeNivel}` : 'Sem sede (ponto de encontro)'}</span>
-         <b>${U.dinheiro(TO.financeiro.MANUT_SEDE[e.torcida.sedeNivel])}/mês</b></div>
-       <div class="linha-dado"><span>Bares · lojas · subsedes</span>
+       <div class="linha-dado"><span>${_t('Membros pagantes')}</span><b>${pagantes}`+
+      `${pagantes<e.membros.length?` <span class="fraco">${_t('de {n}', {n:e.membros.length})}</span>`:''}</b></div>
+       <div class="linha-dado"><span>${e.torcida.sedeNivel > 0 ? _t('Sede nível {n}', {n:e.torcida.sedeNivel}) : _t('Sem sede (ponto de encontro)')}</span>
+         <b>${U.dinheiro(TO.financeiro.MANUT_SEDE[e.torcida.sedeNivel])}${_t('/mês')}</b></div>
+       <div class="linha-dado"><span>${_t('Bares · lojas · subsedes')}</span>
          <b>${pat.bares.length} · ${pat.lojas.length} · ${pat.subsedes.length}</b></div>`
       + (e.semanasNoVermelho
-         ? `<div class="linha-dado"><span class="negativo">No vermelho há `+
-           `${e.semanasNoVermelho} semana(s) — a moral sofre.</span></div>`
+         ? `<div class="linha-dado"><span class="negativo">${_tn(e.semanasNoVermelho, 'No vermelho há {n} semana — a moral sofre.', 'No vermelho há {n} semanas — a moral sofre.')}</span></div>`
          : '');
     if(e.historicoSemanas && e.historicoSemanas.length){
-      c2.corpo.appendChild(el('div',{class:'titulo-pagina', texto:'Últimas semanas',
+      c2.corpo.appendChild(el('div',{class:'titulo-pagina', texto:_t('Últimas semanas'),
         estilo:{fontSize:'12px', paddingTop:'10px'}}));
       for(const h of e.historicoSemanas.slice(0,6))
         c2.corpo.appendChild(el('div',{class:'transacao', html:
-          `<span class="dia">S${h.semana}</span>
-           <span class="desc">caixa ${U.dinheiro(h.caixa)}</span>
+          `<span class="dia">${_t('S{n}', {n:h.semana})}</span>
+           <span class="desc">${_t('caixa {valor}', {valor:U.dinheiro(h.caixa)})}</span>
            <span class="val ${h.saldo<0?'negativo':'positivo'}">${U.dinheiro(h.saldo)}</span>`}));
     }
     grade.appendChild(c2);
@@ -6487,25 +6485,25 @@
         `<span>${rot}</span><b class="${v?(neg?'negativo':'positivo'):'fraco'}">`+
         `${v?U.dinheiro(neg?-v:v):'—'}</b>`});
 
-    const c3 = cartao('Receitas', 'por semana');
-    if(!cx.receitas.length) c3.corpo.appendChild(linha('Nada entrando', 0));
+    const c3 = cartao(_t('Receitas'), _t('por semana'));
+    if(!cx.receitas.length) c3.corpo.appendChild(linha(_t('Nada entrando'), 0));
     for(const r of cx.receitas) c3.corpo.appendChild(linha(r.rot, r.v, false));
 
-    const c4 = cartao('Despesas', 'por semana');
+    const c4 = cartao(_t('Despesas'), _t('por semana'));
     for(const d of cx.despesas) c4.corpo.appendChild(linha(d.rot, d.v, true));
 
     /* GESTÃO → FINANCEIRO: caravana, recepção de aliado e investida não
        são conta fixa de semana; são decisão. Ficam num cartão só delas,
        dizendo o que já saiu do caixa e o que ainda vai sair. */
-    const c5 = cartao('Compromissos da semana', 'decididos nas mensagens do feed');
+    const c5 = cartao(_t('Compromissos da semana'), _t('decididos nas mensagens do feed'));
     if(!comp.itens.length)
       c5.corpo.innerHTML = '<div class="em-construcao">'+
-        'Nada decidido nesta semana que mexa no caixa.</div>';
+        _t('Nada decidido nesta semana que mexa no caixa.')+'</div>';
     for(const i of comp.itens){
-      const val = i.tipo==='acao'  ? '1 ação'
-                : i.tipo==='aviso' ? 'sem custo'
+      const val = i.tipo==='acao'  ? _t('1 ação')
+                : i.tipo==='aviso' ? _t('sem custo')
                 : U.dinheiro(-i.v);
-      const est = i.tipo==='aviso' ? '' : i.pago ? ' pago' : ' a pagar';
+      const est = i.tipo==='aviso' ? '' : i.pago ? ' '+_t('pago') : ' '+_t('a pagar');
       c5.corpo.appendChild(el('div',{class:'linha-dado', html:
         `<span>${i.rot}<br><small class="fraco">${i.nota}</small></span>
          <b class="${i.tipo==='dinheiro'?'negativo':'fraco'}">${val}`+
@@ -6513,7 +6511,7 @@
     }
     if(comp.itens.length)
       c5.corpo.appendChild(el('div',{class:'linha-dado total', html:
-        `<span>Total decidido</span><b class="${comp.total?'negativo':'fraco'}">`+
+        `<span>${_t('Total decidido')}</span><b class="${comp.total?'negativo':'fraco'}">`+
         `${comp.total?U.dinheiro(-comp.total):'—'}</b>`}));
 
     const col3 = el('div'); col3.append(c3,c4,c5);
@@ -6571,9 +6569,9 @@
     const zona = comp.pontosCorridos ? 0 : comp.passam;
     const t = el('table',{class:'liga'});
     t.innerHTML =
-      `<thead><tr><th>#</th><th class="time">Time</th>
-        <th>P</th><th>V</th><th>E</th><th>D</th>
-        <th>GP</th><th>GC</th><th>SG</th></tr></thead>`;
+      `<thead><tr><th>#</th><th class="time">${_t('Time')}</th>`+
+      _t('<th>P</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th>')+
+      `</tr></thead>`;
     const tb = el('tbody');
     linhas.forEach((l,i)=>{
       const cls = [];
@@ -6596,7 +6594,7 @@
     const meu = e.torcida.clubeId;
     const feito = j.gc!=null;
     const d = TO.estado.dataDaSemana(e.data.ano, semana, dia || comp.dia || 6);
-    const SEM = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+    const SEM = [_t('DOM'),_t('SEG'),_t('TER'),_t('QUA'),_t('QUI'),_t('SEX'),_t('SÁB')];
     const quando = `${SEM[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}/`+
                    `${String(d.getMonth()+1).padStart(2,'0')} · ${TO.competicoes.horaDoJogo(j)}`;
     const cx = el('div',{class:'jogo'+(j.c===meu||j.f===meu?' meu':'')+(feito?' feito':'')});
@@ -6607,6 +6605,17 @@
        <span class="fora">${chipClube(j.f, corClube(j.f))}${nomeClube(j.f)}</span>`}));
     return cx;
   }
+
+  /* o rótulo da etapa vem do motor como dado ("Rodada 4", "Oitavas"):
+     traduz só aqui, na hora de mostrar */
+  const rotEtapa = r => {
+    let m = /^Rodada (\d+)$/.exec(r || '');
+    if(m) return _t('Rodada {n}', {n:m[1]});
+    if((m = /^Fecha (\d+)$/.exec(r || ''))) return _t('Fecha {n}', {n:m[1]});
+    if((m = /^Grupos · (\d+)ª rodada$/.exec(r || ''))) return _t('Grupos · {n}ª rodada', {n:m[1]});
+    if((m = /^(\d+)ª rodada$/.exec(r || ''))) return _t('{n}ª rodada', {n:m[1]});
+    return _t(r);
+  };
 
   function painelRodada(e, comp){
     const es = TO.competicoes.etapas(comp);
@@ -6623,7 +6632,7 @@
     pro.onclick = ()=>{ rodadaSel = i+1; redesenhar(); };
     cab.appendChild(ant);
     cab.appendChild(el('h2',{html:
-      `${et.rot}<span class="conta">de ${es.length}</span>`}));
+      `${rotEtapa(et.rot)}<span class="conta">${_t('de {n}', {n:es.length})}</span>`}));
     cab.appendChild(pro);
     q.appendChild(cab);
     q.corpo = el('div');
@@ -6633,7 +6642,7 @@
     for(const j of et.jogos)
       rolo.appendChild(linhaJogo(e, comp, j, et.semana, et.dia));
     if(!et.jogos.length)
-      rolo.appendChild(el('div',{class:'em-construcao', texto:'Sem jogos nesta fase.'}));
+      rolo.appendChild(el('div',{class:'em-construcao', texto:_t('Sem jogos nesta fase.')}));
     q.corpo.appendChild(rolo);
     return q;
   }
@@ -6675,13 +6684,13 @@
     const iso = PAIS_ISO[pais];
     if(!iso) return '';
     return `<img class="bandeira" src="${IMG('img/bandeiras/'+iso+'.svg')}" `+
-           `width="30" height="20" alt="${pais}">`;
+           `width="30" height="20" alt="${_t(pais)}">`;
   }
 
   const NIVEIS = [
-    {id:'internacional', rot:'Internacional'},
-    {id:'nacional',      rot:'Nacional'},
-    {id:'regional',      rot:'Regional'}
+    {id:'internacional', rot:_t('Internacional')},
+    {id:'nacional',      rot:_t('Nacional')},
+    {id:'regional',      rot:_t('Regional')}
   ];
 
   /* o cardápio de cada nível: [{id, rot, conta}] */
@@ -6748,10 +6757,10 @@
   function pintarCompeticoes(){
     const e = E(), pg = U.$('.pagina[data-pag="competicoes"]');
     pg.innerHTML='';
-    pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Competições</h1>'}));
+    pg.appendChild(el('div',{class:'titulo-barra', html:`<h1>${_t('Competições')}</h1>`}));
 
     if(!e.temporada){
-      pg.appendChild(emConstrucao('Sem temporada','Comece um jogo novo pra gerar a tabela.'));
+      pg.appendChild(emConstrucao(_t('Sem temporada'),_t('Comece um jogo novo pra gerar a tabela.')));
       return;
     }
 
@@ -6775,8 +6784,8 @@
          país escolhido fica ao lado do seletor: ela é o que se
          reconhece de longe, e o nome está logo ali dentro. */
       const meu = TO.competicoes.paisDe(TO.mundo.time(e.torcida.clubeId)||{});
-      const cxP = escolha('País',
-        paises.map(p=>({id:p, rot:p + (p===meu ? ' · a nossa' : '')})),
+      const cxP = escolha(_t('País'),
+        paises.map(p=>({id:p, rot:_t(p) + (p===meu ? ' · '+_t('a nossa') : '')})),
         paisComp,
         p => { paisComp = p; compSel = null; vistaComp = null; redesenhar(); },
         'drop-pais');
@@ -6788,13 +6797,13 @@
     /* ---- o filtro da competição ---- */
     const menu = menuDoNivel(e);
     if(nivelComp === 'regional' && !menu.length){
-      pg.appendChild(emConstrucao('Sem regional',
-        'Competição regional só existe no Brasil: lá fora não há estadual.'));
+      pg.appendChild(emConstrucao(_t('Sem regional'),
+        _t('Competição regional só existe no Brasil: lá fora não há estadual.')));
       return;
     }
     if(!menu.length){
-      pg.appendChild(emConstrucao('Ainda não',
-        'Esta parte do calendário ainda não abriu neste ano.'));
+      pg.appendChild(emConstrucao(_t('Ainda não'),
+        _t('Esta parte do calendário ainda não abriu neste ano.')));
       return;
     }
     if(!menu.some(m=>m.id===compSel)) compSel = escolhaPadrao(e, menu);
@@ -6804,7 +6813,7 @@
        uma por estado e o nacional uma por divisão de dez países; o
        internacional tem só duas, mas ficar de botão fazia a tela
        trocar de vocabulário de uma aba pra outra. */
-    pg.appendChild(escolha('Competição',
+    pg.appendChild(escolha(_t('Competição'),
       menu.map(m=>({id:m.id, rot:m.rot, nota:m.conta})),
       compSel, trocarComp,
       /* no nacional os dois seletores ficam um embaixo do outro: o
@@ -6822,7 +6831,7 @@
       pintarLigaDeFora(e, pg, paisComp, compSel.slice(5)); return;
     }
     const comp = e.temporada.competicoes.find(c=>c.id===compSel);
-    if(!comp){ pg.appendChild(emConstrucao('Sem dados','Competição não encontrada.')); return; }
+    if(!comp){ pg.appendChild(emConstrucao(_t('Sem dados'),_t('Competição não encontrada.'))); return; }
     pintarCompeticaoBR(e, pg, comp);
   }
 
@@ -6861,10 +6870,10 @@
     const esq = el('div');
 
     if(comp.campeao){
-      const c = quadro('Campeão');
+      const c = quadro(_t('Campeão'));
       c.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
         `${IC.get('trofeu')}<div><b>${nomeClube(comp.campeao)}</b>
-         <small>vice: ${nomeClube(comp.vice)}</small></div>`}));
+         <small>${_t('vice: {nome}', {nome:nomeClube(comp.vice)})}</small></div>`}));
       esq.appendChild(c);
     }
     /* UMA PÁGINA POR FASE (pedido do dono, 24/08/2026): a
@@ -6877,13 +6886,13 @@
       comp.grupos.forEach((g, ig)=>{
         if(comp.grupos.length>1)
           corpo.appendChild(el('div',{class:'fase-rot',
-            texto:`Grupo ${'ABCDEFGH'[ig]||ig+1}`,
+            texto:_t('Grupo {g}', {g:'ABCDEFGH'[ig]||ig+1}),
             estilo:{padding:'8px 14px 3px'}}));
         const rolo = el('div',{class:'rolo'});
         rolo.appendChild(tabelaLiga(e, comp, ig));
         corpo.appendChild(rolo);
       });
-      paginas.push({rot:'Classificação', semana:0, corpo});
+      paginas.push({rot:_t('Classificação'), semana:0, corpo});
     }
     for(const fase of (comp.mata||[]))
       paginas.push({rot:fase.fase, semana:fase.semana,
@@ -6892,8 +6901,8 @@
     if(paginas.length > 1){
       esq.appendChild(painelFases(paginas, faseCorrente(e, paginas)));
     } else if(paginas.length === 1){
-      const q = quadro('Classificação', el('span',{class:'conta',
-        texto:`${es[atual] ? es[atual].rot : ''} de ${es.length}`}));
+      const q = quadro(_t('Classificação'), el('span',{class:'conta',
+        texto:_t('{rot} de {n}', {rot:es[atual] ? rotEtapa(es[atual].rot) : '', n:es.length})}));
       q.corpo.appendChild(paginas[0].corpo);
       esq.appendChild(q);
     } else if(comp.copa){
@@ -6913,8 +6922,8 @@
      ======================================================= */
   function botoesDaCompeticao(pg){
     const f = el('div',{class:'filtros-linha vista-comp'});
-    for(const [id, rot] of [['publico','Média de público'],
-                            ['historico','Histórico']]){
+    for(const [id, rot] of [['publico',_t('Média de público')],
+                            ['historico',_t('Histórico')]]){
       const b = el('button',{class:vistaComp===id?'on':'', texto:rot});
       b.onclick = ()=>{ vistaComp = vistaComp===id ? null : id; redesenhar(); };
       f.appendChild(b);
@@ -6947,30 +6956,29 @@
     }
     const quadroDe = (titulo, chave, nota)=>{
       const q = quadro(titulo, el('span',{class:'conta',
-        texto:`${linhas.length} organizadas`}));
+        texto:_tn(linhas.length, '{n} organizada', '{n} organizadas')}));
       q.corpo.appendChild(el('div',{class:'recado', html:nota}));
       const rolo = el('div',{class:'rolo'});
       linhas.sort((a,b)=>b[chave]-a[chave]).forEach((l,i)=>{
         rolo.appendChild(el('div',{class:'transacao',
           estilo: l.nossa ? {background:'var(--rubro-fundo)'} : null, html:
-          `<span class="dia">${i+1}º</span>
+          `<span class="dia">${_t('{n}º', {n:i+1})}</span>
            <span class="desc">${linkTorcida(l.id, l.nome)} `+
           `<small class="fraco">· ${l.clube}</small></span>
            <span class="val">${U.numero(l[chave])}</span>`}));
       });
       if(!linhas.length) q.corpo.appendChild(el('div',
-        {class:'em-construcao', texto:'Nenhuma organizada mapeada aqui.'}));
+        {class:'em-construcao', texto:_t('Nenhuma organizada mapeada aqui.')}));
       q.corpo.appendChild(rolo);
       return q;
     };
     const cx = el('div',{class:'comp-duas'});
     const esq = el('div'), dir = el('div');
-    esq.appendChild(quadroDe(`Média de público — em casa`, 'casa',
-      `${rotulo||'A competição'}: quanto cada organizada põe no estádio `+
-      `jogando em casa — todo o efetivo de pé.`));
-    dir.appendChild(quadroDe('Média como visitante', 'fora',
-      'A caravana típica na estrada: quem está de pé vezes a vontade '+
-      'de viajar, que sobe com a moral.'));
+    esq.appendChild(quadroDe(_t('Média de público — em casa'), 'casa',
+      _t('{comp}: quanto cada organizada põe no estádio jogando em casa — todo o efetivo de pé.',
+         {comp:rotulo||_t('A competição')})));
+    dir.appendChild(quadroDe(_t('Média como visitante'), 'fora',
+      _t('A caravana típica na estrada: quem está de pé vezes a vontade de viajar, que sobe com a moral.')));
     cx.appendChild(esq); cx.appendChild(dir);
     return cx;
   }
@@ -6999,36 +7007,36 @@
     const maiores = [...conta.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
 
     const esq = el('div');
-    const q1 = quadro('Maiores campeões', el('span',{class:'conta',
+    const q1 = quadro(_t('Maiores campeões'), el('span',{class:'conta',
       texto:nomeComp||''}));
     if(hist && hist.nota)
       q1.corpo.appendChild(el('div',{class:'recado', html:hist.nota}));
     if(!maiores.length)
       q1.corpo.appendChild(el('div',{class:'em-construcao',
-        texto:'Sem campeão registrado ainda — a história começa agora.'}));
+        texto:_t('Sem campeão registrado ainda — a história começa agora.')}));
     maiores.forEach(([n,t],i)=>{
       q1.corpo.appendChild(el('div',{class:'transacao', html:
-        `<span class="dia">${i+1}º</span>
+        `<span class="dia">${_t('{n}º', {n:i+1})}</span>
          <span class="desc">${n}</span>
-         <span class="val">${t} ${t===1?'título':'títulos'}</span>`}));
+         <span class="val">${_tn(t, '{n} título', '{n} títulos')}</span>`}));
     });
     esq.appendChild(q1);
     cx.appendChild(esq);
 
     const dir = el('div');
-    const q2 = quadro('Campeões e vices por ano', el('span',{class:'conta',
-      texto:`${todos.length} edições`}));
+    const q2 = quadro(_t('Campeões e vices por ano'), el('span',{class:'conta',
+      texto:_tn(todos.length, '{n} edição', '{n} edições')}));
     const rolo = el('div',{class:'rolo'});
     for(const l of todos)
       rolo.appendChild(el('div',{class:'transacao',
         estilo: l.jogo ? {background:'var(--rubro-fundo)'} : null, html:
         `<span class="dia">${l.ano}</span>
          <span class="desc"><b>${l.campeao}</b>`+
-        `${l.vice?` <small class="fraco">· vice: ${l.vice}</small>`:''}</span>`+
-        `${l.jogo?'<span class="val fraco">no jogo</span>':''}`}));
+        `${l.vice?` <small class="fraco">· ${_t('vice: {nome}', {nome:l.vice})}</small>`:''}</span>`+
+        `${l.jogo?`<span class="val fraco">${_t('no jogo')}</span>`:''}`}));
     if(!todos.length)
       q2.corpo.appendChild(el('div',{class:'em-construcao',
-        texto:'Nenhuma edição registrada.'}));
+        texto:_t('Nenhuma edição registrada.')}));
     q2.corpo.appendChild(rolo);
     dir.appendChild(q2);
     cx.appendChild(dir);
@@ -7063,7 +7071,7 @@
     pro.onclick = ()=>{ faseSel = i+1; redesenhar(); };
     cab.appendChild(ant);
     cab.appendChild(el('h2',{html:
-      `${p.rot}<span class="conta">de ${paginas.length}</span>`}));
+      `${rotEtapa(p.rot)}<span class="conta">${_t('de {n}', {n:paginas.length})}</span>`}));
     cab.appendChild(pro);
     q.appendChild(cab);
     const corpo = el('div');
@@ -7088,9 +7096,9 @@
     const reais = (fase.jogos||[]).filter(j=>j.f);
     const passes = (fase.jogos||[]).length - reais.length;
     corpo.appendChild(el('div',{class:'fase-rot',
-      texto:`semana ${fase.semana}`+
-            ` · ${reais.length} ${reais.length===1?'jogo':'jogos'}`+
-            (passes?` · ${passes} ${passes===1?'passa':'passam'} direto`:'')}));
+      texto:`${_t('semana {n}', {n:fase.semana})}`+
+            ` · ${_tn(reais.length, '{n} jogo', '{n} jogos')}`+
+            (passes?` · ${_tn(passes, '{n} passa direto', '{n} passam direto')}`:'')}));
     const rolo = el('div',{class:'rolo'});
     for(const j of reais){
       const feito = j.gc!=null;
@@ -7098,8 +7106,8 @@
          placar fica sempre na mesma coluna, e o que decidiu — agregado
          e pênaltis, entre parênteses — mora ao lado dele, sem a série
          de bolinhas cobrança a cobrança. */
-      const pen = j.pen ? `(${j.pen.c} × ${j.pen.f})` : j.penaltis ? '(pên.)' : '';
-      const lado = [j.agregado ? `agr. ${j.agregado}` : '', pen].filter(Boolean).join(' ');
+      const pen = j.pen ? `(${j.pen.c} × ${j.pen.f})` : j.penaltis ? _t('(pên.)') : '';
+      const lado = [j.agregado ? _t('agr. {placar}', {placar:j.agregado}) : '', pen].filter(Boolean).join(' ');
       rolo.appendChild(el('div',{class:'jogo-chave'+
         (j.c===meu||j.f===meu?' meu':''), html:
         `<span class="a ${j.venceu===j.c?'venceu':''}">${nome(j.c)}</span>
@@ -7110,11 +7118,11 @@
          que a final é em campo neutro (correção de 18/09/2026: sem
          isto a página da final escrevia "campo neutro · true") */
       if(j.neutro) rolo.appendChild(el('div',{class:'sub-chave',
-        texto: typeof j.neutro === 'string' ? `campo neutro · ${j.neutro}`
-                                            : 'campo neutro'}));
+        texto: typeof j.neutro === 'string' ? `${_t('campo neutro')} · ${j.neutro}`
+                                            : _t('campo neutro')}));
     }
     if(!reais.length) rolo.appendChild(el('div',{class:'em-construcao',
-      texto:'Os jogos desta fase ainda não estão marcados.'}));
+      texto:_t('Os jogos desta fase ainda não estão marcados.')}));
     corpo.appendChild(rolo);
     return corpo;
   }
@@ -7122,10 +7130,10 @@
   /* a chave de uma copa jogada: uma página por fase */
   function painelChave(e, comp){
     if(!(comp.mata||[]).length){
-      const q = quadro('Chave', el('span',{class:'conta',
-        texto:`${(comp.clubes||[]).length} clubes`}));
-      q.corpo.innerHTML = '<div class="em-construcao">A copa começa na semana '+
-        `${comp.semanaInicio}.</div>`;
+      const q = quadro(_t('Chave'), el('span',{class:'conta',
+        texto:_t('{n} clubes', {n:(comp.clubes||[]).length})}));
+      q.corpo.innerHTML = '<div class="em-construcao">'+
+        _t('A copa começa na semana {n}.', {n:comp.semanaInicio})+'</div>';
       return q;
     }
     const paginas = comp.mata.map(f=>({rot:f.fase, semana:f.semana,
@@ -7178,13 +7186,13 @@
     if(!v || (!v.lib.length && !v.sul.length)) return null;
     const proximo = (e.data.ano || 2026) + 1;
 
-    const q = quadro(`Vagas da Conmebol · ${proximo}`,
-      el('span',{class:'conta', texto:`${v.lib.length + v.sul.length} vagas`}));
+    const q = quadro(_t('Vagas da Conmebol · {ano}', {ano:proximo}),
+      el('span',{class:'conta', texto:_tn(v.lib.length + v.sul.length, '{n} vaga', '{n} vagas')}));
 
     if(D && D.campeao){
       q.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
         `${IC.get('trofeu')}<div><b>${nomeT(D.campeao)}</b>`+
-        `<small>${D.vice ? 'vice: ' + nomeT(D.vice) : 'campeão do ano'}</small></div>`}));
+        `<small>${D.vice ? _t('vice: {nome}', {nome:nomeT(D.vice)}) : _t('campeão do ano')}</small></div>`}));
     }
 
     /* o campeão continental já tem a vaga na mão, e ela não sai da
@@ -7192,7 +7200,7 @@
        sete numa Libertadores de sete e seis */
     for(const id of v.donos)
       q.corpo.appendChild(el('div',{class:'sub-chave',
-        texto:`${nomeT(id)} entra como campeão continental, fora da conta do país`}));
+        texto:_t('{nome} entra como campeão continental, fora da conta do país', {nome:nomeT(id)})}));
 
     /* a numeração é a da fila do país, e corre pelos dois torneios: o
        5º do campeonato é o 1º da Sul-Americana, e mostrar "1º" ali
@@ -7205,7 +7213,7 @@
         n++;
         const nosso = id === e.torcida.clubeId;
         q.corpo.appendChild(el('div',{class:'vaga-cm '+classe+(nosso?' meu':''), html:
-          `<span class="pos">${n}º</span>`+
+          `<span class="pos">${_t('{n}º', {n})}</span>`+
           `${chipClube(id, corT(id))}`+
           `<span class="nm">${nomeT(id)}</span>`}));
       }
@@ -7215,7 +7223,7 @@
 
     if(!D || !D.campeao)
       q.corpo.appendChild(el('div',{class:'sub-chave',
-        texto:'a temporada ainda corre — a lista muda com a tabela'}));
+        texto:_t('a temporada ainda corre — a lista muda com a tabela')}));
     return q;
   }
 
@@ -7223,8 +7231,8 @@
     const L = TO.ligas;
     const P = (e.ligas||{}).paises && e.ligas.paises[pais];
     const D = P && P.divisoes[div];
-    if(!D){ pg.appendChild(emConstrucao('Sem dados',
-      'Esta liga ainda não montou neste ano.')); return; }
+    if(!D){ pg.appendChild(emConstrucao(_t('Sem dados'),
+      _t('Esta liga ainda não montou neste ano.'))); return; }
 
     const nomes = D.torneios.map(t=>t.nome);
     if(!nomes.includes(torneioSel)) torneioSel = nomes[0];
@@ -7265,13 +7273,13 @@
     const esq = el('div');
 
     if(D.campeao){
-      const q = quadro('Campeão do ano', el('span',{class:'conta',
+      const q = quadro(_t('Campeão do ano'), el('span',{class:'conta',
         texto:D.comoFechou||''}));
       q.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
         `${IC.get('trofeu')}<div><b>${nomeT(D.campeao)}</b>`+
-        `<small>${D.vice?'vice: '+nomeT(D.vice):''}</small></div>`}));
+        `<small>${D.vice?_t('vice: {nome}', {nome:nomeT(D.vice)}):''}</small></div>`}));
       if(D.campeaoDeLiga) q.corpo.appendChild(el('div',{class:'sub-chave',
-        texto:`Campeão de Liga (tabela anual): ${nomeT(D.campeaoDeLiga)}`}));
+        texto:_t('Campeão de Liga (tabela anual): {nome}', {nome:nomeT(D.campeaoDeLiga)})}));
       esq.appendChild(q);
     }
 
@@ -7290,9 +7298,9 @@
     const fase = T.fases[T.faseAtual] || {};
     const zonas = T.zonas && T.zonas.length > 1 ? T.zonas : [D.clubes];
     zonas.forEach((z, iz)=>{
-      const rot = zonas.length > 1 ? `${T.nome} · zona ${'AB'[iz]||iz+1}` : T.nome;
+      const rot = zonas.length > 1 ? `${T.nome} · ${_t('zona {z}', {z:'AB'[iz]||iz+1})}` : T.nome;
       const q = quadro(rot, el('span',{class:'conta', texto: T.campeao
-        ? 'encerrado' : `fecha ${T.fecha} de ${fase.fechas||'—'}`}));
+        ? _t('encerrado') : _t('fecha {n} de {total}', {n:T.fecha, total:fase.fechas||'—'})}));
       const rolo = el('div',{class:'rolo'});
       rolo.appendChild(tabelaLiga2(L.ordenar(T.tabela, z), T.passam,
                                    e.torcida.clubeId));
@@ -7303,7 +7311,7 @@
     if(T.grupos && T.grupos.length){
       T.grupos.forEach((g, ig)=>{
         const q = quadro(T.grupos.length>1
-          ? `Quadrangular ${'AB'[ig]||ig+1}` : 'Hexagonal final');
+          ? _t('Quadrangular {g}', {g:'AB'[ig]||ig+1}) : _t('Hexagonal final'));
         const rolo = el('div',{class:'rolo'});
         rolo.appendChild(tabelaLiga2(L.ordenar(T.tabelaGrupo[ig], g), 1,
                                      e.torcida.clubeId));
@@ -7322,9 +7330,9 @@
     }
 
     const anual = D.anual && Object.keys(D.anual).length
-      ? {rot:'Tabela anual',
+      ? {rot:_t('Tabela anual'),
          linhas: L.ordenar(D.anual, D.clubes).slice(0,6)
-           .map((l,i)=>`${i+1}º ${nomeT(l.id)} · ${l.p} pts`)}
+           .map((l,i)=>_t('{pos}º {nome} · {p} pts', {pos:i+1, nome:nomeT(l.id), p:l.p}))}
       : null;
 
     const sombra = sombraDe(e, T);
@@ -7333,12 +7341,12 @@
          o mesmo desenho da tela brasileira. O mata-mata desce pro pé
          da coluna esquerda, porque a direita agora é a rodada. */
       if(T.mata.length || anual)
-        esq.appendChild(chaveSimples('Mata-mata', T.mata, anual));
+        esq.appendChild(chaveSimples(_t('Mata-mata'), T.mata, anual));
       duas.appendChild(esq);
       duas.appendChild(painelRodada(e, sombra));
     } else {
       duas.appendChild(esq);
-      duas.appendChild(chaveSimples('Mata-mata', T.mata, anual));
+      duas.appendChild(chaveSimples(_t('Mata-mata'), T.mata, anual));
     }
     pg.appendChild(duas);
   }
@@ -7346,9 +7354,9 @@
   /* uma tabela de liga estrangeira: só o que a classificação guarda */
   function tabelaLiga2(linhas, passam, meuClube){
     const t = el('table',{class:'liga'});
-    t.innerHTML = `<thead><tr><th>#</th><th class="time">Clube</th>
-      <th>P</th><th>J</th><th>V</th><th>E</th><th>D</th>
-      <th>GP</th><th>GC</th><th>SG</th></tr></thead>`;
+    t.innerHTML = `<thead><tr><th>#</th><th class="time">${_t('Clube')}</th>`+
+      _t('<th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th>')+
+      `</tr></thead>`;
     const tb = el('tbody');
     linhas.forEach((l,i)=>{
       const cls = [];
@@ -7369,14 +7377,14 @@
   /* a chave de um torneio que guarda só o resultado */
   function chaveSimples(titulo, mata, extra){
     const q = quadro(titulo, el('span',{class:'conta',
-      texto:`${(mata||[]).length} fases`}));
+      texto:_tn((mata||[]).length, '{n} fase', '{n} fases')}));
     if(!mata || !mata.length){
-      q.corpo.innerHTML = '<div class="em-construcao">A chave abre quando '+
-        'a fase regular terminar.</div>';
+      q.corpo.innerHTML = '<div class="em-construcao">'+
+        _t('A chave abre quando a fase regular terminar.')+'</div>';
     }
     for(const m of (mata||[])){
       q.corpo.appendChild(el('div',{class:'fase-rot',
-        texto:`${m.fase}${m.neutro?' · campo neutro':''}`}));
+        texto:`${rotEtapa(m.fase)}${m.neutro?' · '+_t('campo neutro'):''}`}));
       for(const j of m.jogos){
         /* jogo guardado empatado com vencedor decidido saiu nos
            pênaltis: sem esta linha o placar 1 × 1 com um nome em
@@ -7386,7 +7394,7 @@
           `<span class="a ${j.venceu===j.c?'venceu':''}">${nomeT(j.c)}</span>
            <b>${j.gc!=null?`${j.gc} × ${j.gf}`:'—'}</b>
            <span class="b ${j.venceu===j.f?'venceu':''}">${nomeT(j.f)}</span>
-           ${nosPen?'<em class="pen">nos pênaltis</em>':''}`}));
+           ${nosPen?`<em class="pen">${_t('nos pênaltis')}</em>`:''}`}));
       }
     }
     if(extra){
@@ -7407,7 +7415,7 @@
   function compDaConmebol(c){
     const DIA = TO.conmebol.DIA;
     const rodadas = (c.fechas||[]).map(f=>({
-      rot:`Fecha ${f.fecha}`, semana:f.semana,
+      rot:_t('Fecha {n}', {n:f.fecha}), semana:f.semana,
       jogos:f.jogos.map(j=>({c:j.c, f:j.f, gc:j.gc, gf:j.gf, d:DIA, h:'21:30'}))}));
     /* as fechas que ainda vêm: a chave existe desde o sorteio */
     if(c.faseAtual === 'grupos' && (c.grupos||[]).length && c.calGrupos){
@@ -7417,7 +7425,7 @@
           for(const [a,b] of TO.ligas.jogosDaFecha(g, i, 2))
             jogos.push({c:a, f:b, d:DIA, h:'21:30'});
         });
-        rodadas.push({rot:`Fecha ${i+1}`, semana:c.calGrupos[i], jogos});
+        rodadas.push({rot:_t('Fecha {n}', {n:i+1}), semana:c.calGrupos[i], jogos});
       }
     }
     /* TUDO NUMA LINHA DO TEMPO SÓ: prévia, fechas e mata em ordem de
@@ -7449,16 +7457,16 @@
           .filter(h=>h[qual] && h[qual].campeao)
           .map(h=>({ano:h.ano, campeao:h[qual].campeao, vice:h[qual].vice})));
       pg.appendChild(painelHistoricoComp(e, qual, nomeCM, anosJogo)); return; }
-    if(!c){ pg.appendChild(emConstrucao('Ainda não',
-      'As copas da Conmebol montam na virada do ano.')); return; }
+    if(!c){ pg.appendChild(emConstrucao(_t('Ainda não'),
+      _t('As copas da Conmebol montam na virada do ano.'))); return; }
     const duas = el('div',{class:'comp-duas'});
     const esq = el('div');
 
     if(c.campeao){
-      const q = quadro('Campeão');
+      const q = quadro(_t('Campeão'));
       q.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
         `${IC.get('trofeu')}<div><b>${nomeT(c.campeao)}</b>`+
-        `<small>vice: ${nomeT(c.vice)}</small></div>`}));
+        `<small>${_t('vice: {nome}', {nome:nomeT(c.vice)})}</small></div>`}));
       esq.appendChild(q);
     }
     /* UMA PÁGINA POR FASE (pedido do dono, 24/08/2026): as prévias
@@ -7477,7 +7485,7 @@
     if((c.grupos||[]).length){
       c.grupos.forEach((g, ig)=>{
         corpoG.appendChild(el('div',{class:'fase-rot',
-          texto:`Grupo ${'ABCDEFGH'[ig]||ig+1}`,
+          texto:_t('Grupo {g}', {g:'ABCDEFGH'[ig]||ig+1}),
           estilo:{padding:'8px 14px 3px'}}));
         const rolo = el('div',{class:'rolo'});
         rolo.appendChild(tabelaLiga2(TO.ligas.ordenar(c.tabela[ig], g),
@@ -7488,13 +7496,13 @@
       /* edição recém-montada ainda não sorteou os grupos: em vez de
          uma página vazia, mostra quem ganhou a última */
       corpoG.appendChild(el('div',{class:'em-construcao',
-        html:'Os grupos são sorteados depois das fases prévias.'}));
+        html:_t('Os grupos são sorteados depois das fases prévias.')}));
       const antEd = (e.conmebolHistorico||[])[0];
       if(antEd && antEd[qual] && antEd[qual].campeao)
         corpoG.appendChild(el('div',{class:'sub-chave',
-          texto:`Campeão de ${antEd.ano}: ${nomeT(antEd[qual].campeao)}`}));
+          texto:_t('Campeão de {ano}: {nome}', {ano:antEd.ano, nome:nomeT(antEd[qual].campeao)})}));
     }
-    paginas.push({rot:'Fase de grupos',
+    paginas.push({rot:_t('Fase de grupos'),
       semana: inicioGrupos!=null ? inicioGrupos
             : (antes.length ? antes[antes.length-1].semana+1 : 1),
       corpo:corpoG});
@@ -7509,11 +7517,11 @@
     const vistaCM = compDaConmebol(c);
     if(vistaCM.rodadas.length || vistaCM.mata.length)
       dir.appendChild(painelRodada(e, vistaCM));
-    const vagas = quadro('Vagas por país');
+    const vagas = quadro(_t('Vagas por país'));
     const rolo = el('div',{class:'rolo', estilo:{padding:'8px 14px 12px'}});
     for(const [pais, n] of Object.entries(
         qual==='libertadores' ? TO.conmebol.VAGAS_LIB : TO.conmebol.VAGAS_SUL))
-      rolo.appendChild(el('div',{class:'sub-chave', texto:`${pais}: ${n}`}));
+      rolo.appendChild(el('div',{class:'sub-chave', texto:`${_t(pais)}: ${n}`}));
     vagas.corpo.appendChild(rolo);
     dir.appendChild(vagas);
     duas.appendChild(dir);
@@ -7546,13 +7554,13 @@
       ((e.temporada||{}).competicoes||[]).find(c=>c.tipo === 'copa-de-fora'
         && (c.mata||[]).length);
     const q = quadro(copa.nome, el('span',{class:'conta',
-      texto:`${copa.clubes.length} clubes de todas as divisões`}));
+      texto:_t('{n} clubes de todas as divisões', {n:copa.clubes.length})}));
     if(copa.campeao)
       q.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
         `${IC.get('trofeu')}<div><b>${nomeT(copa.campeao)}</b>`+
-        `<small>vice: ${nomeT(copa.vice)}</small></div>`}));
+        `<small>${_t('vice: {nome}', {nome:nomeT(copa.vice)})}</small></div>`}));
     else q.corpo.appendChild(el('div',{class:'em-construcao',
-      html:'A copa corre por dentro do ano, do 32-avos à final.'}));
+      html:_t('A copa corre por dentro do ano, do 32-avos à final.')}));
     esq.appendChild(q);
     if(sombra){
       esq.appendChild(painelChave(e, sombra));
@@ -7560,7 +7568,7 @@
       duas.appendChild(painelRodada(e, sombra));
     } else {
       duas.appendChild(esq);
-      duas.appendChild(chaveSimples('Chave', copa.mata, null));
+      duas.appendChild(chaveSimples(_t('Chave'), copa.mata, null));
     }
     pg.appendChild(duas);
   }
@@ -7579,7 +7587,7 @@
     };
     if(!ed){
       pg.appendChild(emConstrucao('LNT',
-        'A liga foi fundada. A primeira edição começa na virada do semestre.'));
+        _t('A liga foi fundada. A primeira edição começa na virada do semestre.')));
       return;
     }
     const minha = ed.divs.findIndex(d=>d.clubes.includes(e.torcida.id));
@@ -7588,7 +7596,7 @@
     const filtros = el('div',{class:'filtros-linha'});
     ed.divs.forEach((d, k)=>{
       const b = el('button',{class:(k===divLNT?'on':'')+(k===minha?' minha':''),
-        html:`${d.nome}<span class="conta">${d.clubes.length}</span>`});
+        html:`${_t(d.nome)}<span class="conta">${d.clubes.length}</span>`});
       b.onclick = ()=>{ divLNT = k; redesenhar(); };
       filtros.appendChild(b);
     });
@@ -7599,16 +7607,16 @@
     const esq = el('div');
 
     if(div.campeao){
-      const c = quadro('Campeão');
+      const c = quadro(_t('Campeão'));
       c.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
         `${IC.get('trofeu')}<div><b>${nomeT(div.campeao)}</b>
-         <small>vice: ${nomeT(div.vice)}</small></div>`}));
+         <small>${_t('vice: {nome}', {nome:nomeT(div.vice)})}</small></div>`}));
       esq.appendChild(c);
     }
 
     div.grupos.forEach((g, gi)=>{
-      const q = quadro(`Chave ${'ABCDEFGHI'[gi]}`, el('span',{class:'conta',
-        texto:`${(FORMATO_LNT()[divLNT].passam || 4) } passam`}));
+      const q = quadro(_t('Chave {g}', {g:'ABCDEFGHI'[gi]}), el('span',{class:'conta',
+        texto:_tn(FORMATO_LNT()[divLNT].passam || 4, '{n} passa', '{n} passam')}));
       const rolo = el('div',{class:'rolo'});
       rolo.appendChild(tabelaLNT(e, div, gi, nomeT, corT));
       q.corpo.appendChild(rolo);
@@ -7629,9 +7637,9 @@
     /* FZ é ferido do rival, TM é ferido nosso: o saldo entre os dois é
        o primeiro desempate depois dos pontos (régua do dono) */
     t.innerHTML =
-      `<thead><tr><th>#</th><th class="time">Torcida</th>
-        <th>P</th><th>V</th><th>D</th>
-        <th>FZ</th><th>TM</th><th>SF</th></tr></thead>`;
+      `<thead><tr><th>#</th><th class="time">${_t('Torcida')}</th>`+
+      _t('<th>P</th><th>V</th><th>D</th><th>FZ</th><th>TM</th><th>SF</th>')+
+      `</tr></thead>`;
     const tb = el('tbody');
     linhas.forEach((l,i)=>{
       const cls = [];
@@ -7653,19 +7661,19 @@
   function chaveLNT(e, div, nomeT){
     const meu = e.torcida.id;
     const f = TO.lnt.FORMATO.find(x=>x.n === div.n);
-    const q = quadro('Mata-mata', el('span',{class:'conta',
-      texto:`${div.clubes.length} torcidas`}));
+    const q = quadro(_t('Mata-mata'), el('span',{class:'conta',
+      texto:_tn(div.clubes.length, '{n} torcida', '{n} torcidas')}));
     if(!div.mata.length){
-      q.corpo.innerHTML = '<div class="em-construcao">A chave abre quando '+
-        'as cinco rodadas de grupo terminarem.</div>';
+      q.corpo.innerHTML = '<div class="em-construcao">'+
+        _t('A chave abre quando as cinco rodadas de grupo terminarem.')+'</div>';
     }
     for(const m of div.mata){
       const meus = m.jogos.filter(j=>j.a===meu||j.b===meu);
       const mostra = meus.length ? meus : m.jogos.slice(0,4);
       q.corpo.appendChild(el('div',{class:'fase-rot',
-        texto:`${m.fase}`+(m.espera && m.espera.length
-              ? ` · ${m.espera.length} esperando nas oitavas` : '')+
-              (meus.length?'':` · ${m.jogos.length} duelos`)}));
+        texto:`${rotEtapa(m.fase)}`+(m.espera && m.espera.length
+              ? ` · ${_t('{n} esperando nas oitavas', {n:m.espera.length})}` : '')+
+              (meus.length?'':` · ${_tn(m.jogos.length, '{n} duelo', '{n} duelos')}`)}));
       for(const j of mostra){
         const feito = !!j.venceu;
         q.corpo.appendChild(el('div',{class:'jogo-chave'+
@@ -7677,11 +7685,11 @@
       }
     }
     /* o dinheiro da divisão, na régua do dono */
-    const pr = el('div',{class:'fase-rot', texto:'Prêmios da divisão'});
+    const pr = el('div',{class:'fase-rot', texto:_t('Prêmios da divisão')});
     q.corpo.appendChild(pr);
-    const tab = [['Campeão', f.premio.campeao], ['Vice', f.premio.vice],
-                 ['Semifinal', f.premio.semi], ['Quartas', f.premio.quartas],
-                 ['Oitavas', f.premio.oitavas], ['16-avos', f.premio.dezesseis]];
+    const tab = [[_t('Campeão'), f.premio.campeao], [_t('Vice'), f.premio.vice],
+                 [_t('Semifinal'), f.premio.semi], [_t('Quartas'), f.premio.quartas],
+                 [_t('Oitavas'), f.premio.oitavas], [_t('16-avos'), f.premio.dezesseis]];
     for(const [rot, v] of tab){
       if(!v) continue;
       q.corpo.appendChild(el('div',{class:'lnt-premio', html:
@@ -7689,7 +7697,7 @@
     }
     const nosso = div.premiados[meu];
     if(nosso) q.corpo.appendChild(el('div',{class:'lnt-premio nosso', html:
-      `<span class="rot">Já embolsamos</span>`+
+      `<span class="rot">${_t('Já embolsamos')}</span>`+
       `<span class="v">${U.dinheiro(nosso)}</span>`}));
     return q;
   }
@@ -7712,7 +7720,7 @@
       b.innerHTML =
         `<span class="rot">${it.rot}</span>
          ${it.custo!==undefined?`<span class="custo">${
-            it.custo ? U.dinheiro(-it.custo) : 'de graça'}</span>`:''}
+            it.custo ? U.dinheiro(-it.custo) : _t('de graça')}</span>`:''}
          <small>${it.nota||''}</small>`;
       b.onclick = ()=>aoTrocar(it.id);
       cx.appendChild(b);
@@ -7733,23 +7741,23 @@
      ======================================================= */
   let abaCal = 'torcida', mesCal = null, agendaClube = null, agendaFiltro = 'todas';
 
-  const MES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho',
-                    'Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const DIA_CURTO = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const DIA_LONGO = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  const MES_NOME = [_t('Janeiro'),_t('Fevereiro'),_t('Março'),_t('Abril'),_t('Maio'),_t('Junho'),_t('Julho'),
+                    _t('Agosto'),_t('Setembro'),_t('Outubro'),_t('Novembro'),_t('Dezembro')];
+  const DIA_CURTO = [_t('Dom'),_t('Seg'),_t('Ter'),_t('Qua'),_t('Qui'),_t('Sex'),_t('Sáb')];
+  const DIA_LONGO = [_t('Segunda'),_t('Terça'),_t('Quarta'),_t('Quinta'),_t('Sexta'),_t('Sábado'),_t('Domingo')];
 
   function pintarCalendario(){
     const e = E(), pg = U.$('.pagina[data-pag="calendario"]');
     pg.innerHTML='';
-    pg.appendChild(el('div',{class:'titulo-barra', html:'<h1>Calendário</h1>'}));
+    pg.appendChild(el('div',{class:'titulo-barra', html:`<h1>${_t('Calendário')}</h1>`}));
     pg.appendChild(abasGrandes([
-      {id:'torcida',    rot:'Calendário da torcida'},
-      {id:'expediente', rot:'Expediente da Sede'},
-      {id:'time',       rot:'Agenda do time'}
+      {id:'torcida',    rot:_t('Calendário da torcida')},
+      {id:'expediente', rot:_t('Expediente da Sede')},
+      {id:'time',       rot:_t('Agenda do time')}
     ], abaCal, id=>{ abaCal=id; redesenhar(); }));
 
     if(!e.temporada){
-      pg.appendChild(emConstrucao('Sem calendário','Comece um jogo novo pra gerar a tabela.'));
+      pg.appendChild(emConstrucao(_t('Sem calendário'),_t('Comece um jogo novo pra gerar a tabela.')));
       return;
     }
     if(abaCal==='expediente') pg.appendChild(painelExpediente(e));
@@ -7771,7 +7779,7 @@
     pro.onclick = ()=>{ mesCal++; redesenhar(); };
     cab.appendChild(ant);
     cab.appendChild(el('div',{class:'titulo',
-      html:`${MES_NOME[mes]}<small>de ${ano}</small>`}));
+      html:`${MES_NOME[mes]}<small>${_t('de {ano}', {ano})}</small>`}));
     cab.appendChild(pro);
     q.appendChild(cab);
 
@@ -7793,7 +7801,7 @@
          já na semana seguinte */
       viagem.forEach((a, i)=>{
         const semana = Math.floor(a/7)+1, dia = (a%7)+1;
-        caravanas.set(`${semana}/${dia}`, {rot: i===0?'IDA':'VOLTA', cidade});
+        caravanas.set(`${semana}/${dia}`, {rot: i===0?_t('IDA'):_t('VOLTA'), cidade});
       });
     }
 
@@ -7837,20 +7845,20 @@
           `${j.casa?'':'@ '}${nomeClube(j.adversario)}`}));
         cel.appendChild(el('span',{class:'sub',
           texto: j.jogado
-            ? `${j.gp} × ${j.gc}`+(j.pen?` (${j.pen.c}×${j.pen.f} pên.)`:'')
-            : `${j.comp} · ${j.neutro ? 'neutro' : j.casa?'casa':'fora'}`}));
+            ? `${j.gp} × ${j.gc}`+(j.pen?' '+_t('({c}×{f} pên.)', {c:j.pen.c, f:j.pen.f}):'')
+            : `${j.comp} · ${j.neutro ? _t('neutro') : j.casa?_t('casa'):_t('fora')}`}));
       }else if(cv){
         classes.push('caravana');
         cel.appendChild(el('span',{class:'rot', html:
-          `${IC.get('onibus')}Caravana`}));
+          `${IC.get('onibus')}${_t('Caravana')}`}));
         cel.appendChild(el('span',{class:'sub', texto:`${cv.rot} · ${cv.cidade}`}));
       }else if(botes && botes.get(`${sd.semana}/${sd.dia}`)){
         const b = botes.get(`${sd.semana}/${sd.dia}`);
         classes.push('bote');
         cel.appendChild(el('span',{class:'rot bote-rot', html:
-          `${IC.get('punho') || ''}${b.feito ? 'Bote feito' : 'Bote marcado'}`}));
+          `${IC.get('punho') || ''}${b.feito ? _t('Bote feito') : _t('Bote marcado')}`}));
         cel.appendChild(el('span',{class:'sub', texto:
-          b.tipo === 'bar' ? `bar da ${b.nome}` : `casa de piscina · ${b.nome}`}));
+          b.tipo === 'bar' ? _t('bar da {nome}', {nome:b.nome}) : _t('casa de piscina · {nome}', {nome:b.nome})}));
       }else{
         /* OS TRÊS TURNOS NO DIA (pedido do dono, 24/08/2026): a célula
            mostrava só o primeiro turno preenchido, e o calendário
@@ -7860,7 +7868,7 @@
         for(const turno of TO.acoes.turnos(e).map(t=>t.id)){
           const a = exp[turno] && TO.acoes.porId(exp[turno]);
           if(a) cel.appendChild(el('span',{class:'acao',
-            html:`${IC.get(a.icone)}<span>${a.nome}</span>`}));
+            html:`${IC.get(a.icone)}<span>${_t(a.nome)}</span>`}));
         }
       }
     }
@@ -7872,23 +7880,20 @@
   function painelExpediente(e){
     const cx = el('div');
     cx.appendChild(el('div',{class:'recado', html:
-      `Defina o <b>Expediente da Sede</b>: três turnos por dia — manhã, `+
-      `tarde e noite —, cada um com uma ação que a rapaziada toca sozinha.
-       <small>Por ser diário, o rendimento é reduzido: recrutar traz menos `+
-      `gente por turno, treinar treina menos membros. Dia de jogo do clube `+
-      `e dias de caravana ficam de fora.</small>`}));
+      _t('Defina o <b>Expediente da Sede</b>: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha.')+
+      `<small>${_t('Por ser diário, o rendimento é reduzido: recrutar traz menos gente por turno, treinar treina menos membros. Dia de jogo do clube e dias de caravana ficam de fora.')}</small>`}));
 
     const exp = TO.acoes.expediente(e);
     const disponiveis = TO.acoes.agendaveis();
     /* sem sede só a tarde tem expediente (dono, 22/09/2026) */
     for(const t of TO.acoes.turnos(e)){
       const linha = el('div',{class:'linha-rotina'});
-      linha.appendChild(el('span',{texto:t.nome}));
+      linha.appendChild(el('span',{texto:_t(t.nome)}));
       const sel = el('select',{class:'campo'});
-      sel.appendChild(el('option',{value:'', texto:'— sem ação —'}));
+      sel.appendChild(el('option',{value:'', texto:_t('— sem ação —')}));
       for(const a of disponiveis){
         const o = el('option',{value:a.id,
-          texto:`${a.nome} — ${TO.acoes.efeitoDe(E(), a)}`});
+          texto:`${_t(a.nome)} — ${TO.acoes.efeitoDe(E(), a)}`});
         if(exp[t.id]===a.id) o.selected = true;
         sel.appendChild(o);
       }
@@ -7903,11 +7908,11 @@
     /* o que rendeu nos últimos dias */
     const feitas = (e.acoes.feitas || []).slice(-9).reverse();
     if(feitas.length){
-      const c = cartao('Últimos turnos');
+      const c = cartao(_t('Últimos turnos'));
       for(const f of feitas)
         c.corpo.appendChild(el('div',
           {class:'transacao'+(f.ok===false?' turno-falhou':''), html:
-          `<span class="dia">S${f.semana}·d${f.dia}</span>
+          `<span class="dia">${_t('S{s}·d{d}', {s:f.semana, d:f.dia})}</span>
            <span class="desc">${f.msg||f.id}</span>`}));
       cx.appendChild(c);
     }
@@ -7926,7 +7931,7 @@
     /* seletor de clube */
     const escolha = el('div',{class:'escolha-time'});
     const col = el('div');
-    col.appendChild(el('div',{class:'rot', texto:'Ver agenda de'}));
+    col.appendChild(el('div',{class:'rot', texto:_t('Ver agenda de')}));
     const sel = el('select',{class:'campo'});
     /* SÓ O PAÍS FILTRADO (pedido do dono, 24/08/2026): a lista seguia
        os 388 clubes dos dez países; agora acompanha o país escolhido
@@ -7940,7 +7945,7 @@
       agendaClube = (meu && meu.id) || (doPais[0] && doPais[0].id);
     for(const t of doPais){
       const o = el('option',{value:t.id,
-        texto: t.id===(meu&&meu.id) ? `${t.nome} (seu time)` : t.nome});
+        texto: t.id===(meu&&meu.id) ? _t('{nome} (seu time)', {nome:t.nome}) : t.nome});
       if(t.id===agendaClube) o.selected = true;
       sel.appendChild(o);
     }
@@ -7957,14 +7962,14 @@
     const agenda = C.agendaDoClube(e, clube.id);
     const comps = [...new Set(agenda.map(j=>j.comp))];
     cx.appendChild(subabas(
-      [{id:'todas', rot:'Todas'}].concat(comps.map(c=>({id:c, rot:c}))),
+      [{id:'todas', rot:_t('Todas')}].concat(comps.map(c=>({id:c, rot:c}))),
       agendaFiltro, id=>{ agendaFiltro=id; redesenhar(); }));
 
     const lista = agenda.filter(j=>agendaFiltro==='todas' || j.comp===agendaFiltro);
     const q = el('div',{class:'quadro'});
     const t = el('table',{class:'agenda'});
-    t.innerHTML = `<thead><tr><th>Data</th><th>Hora</th><th>Competição</th>
-                   <th>Local</th><th>Adversário</th><th style="text-align:center">Placar</th>
+    t.innerHTML = `<thead><tr><th>${_t('Data')}</th><th>${_t('Hora')}</th><th>${_t('Competição')}</th>
+                   <th>${_t('Local')}</th><th>${_t('Adversário')}</th><th style="text-align:center">${_t('Placar')}</th>
                    </tr></thead>`;
     const tb = el('tbody');
     for(const j of lista){
@@ -7977,12 +7982,12 @@
           <small>${DIA_CURTO[d.getDay()].toUpperCase()}</small></td>
          <td class="hora">${C.horaDoJogo({c:j.casa?clube.id:j.adversario,
                                           f:j.casa?j.adversario:clube.id})}</td>
-         <td class="comp"><b>${j.comp}</b><small>${j.fase}</small></td>
-         <td><span class="local ${j.casa?'casa':'fora'}">${j.casa?'Casa':'Fora'}</span></td>
+         <td class="comp"><b>${j.comp}</b><small>${rotEtapa(j.fase)}</small></td>
+         <td><span class="local ${j.casa?'casa':'fora'}">${j.casa?_t('Casa'):_t('Fora')}</span></td>
          <td><span class="adv">${chipClube(j.adversario, corClube(j.adversario))}
            ${nomeClube(j.adversario)}</span></td>
          <td class="placar">${j.jogado ? `${j.gp} × ${j.gc}` : '—'}`+
-        `${j.pen ? `<small class="pen">${j.pen.c} × ${j.pen.f} nos pênaltis</small>` : ''}</td>`;
+        `${j.pen ? `<small class="pen">${_t('{c} × {f} nos pênaltis', {c:j.pen.c, f:j.pen.f})}</small>` : ''}</td>`;
       tb.appendChild(tr);
     }
     t.appendChild(tb);
@@ -7990,7 +7995,7 @@
     rolo.appendChild(t);
     q.appendChild(rolo);
     if(!lista.length)
-      q.innerHTML = '<div class="em-construcao">Sem jogos nesta competição.</div>';
+      q.innerHTML = `<div class="em-construcao">${_t('Sem jogos nesta competição.')}</div>`;
     cx.appendChild(q);
     return cx;
   }
