@@ -4,5 +4,15 @@
   "normal",
   "rugosidade",
   "ao"
+ ],
+ "asfalto": [
+  "cor",
+  "normal",
+  "rugosidade"
+ ],
+ "concreto": [
+  "cor",
+  "normal",
+  "rugosidade"
  ]
 }

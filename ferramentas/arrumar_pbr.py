@@ -24,6 +24,12 @@
    buraco vira bolha — e o erro parece "ficou feio", não "está errado".
    Este script ignora o DX de propósito, mesmo quando ele está na pasta.
 
+   SERVE OS DOIS PACOTES DO POLY HAVEN. O de textura vem com tudo em
+   JPG; o ".blend" (o do arquivo do Blender) vem com o relevo e a
+   rugosidade em EXR e um `.blend` junto. Os dois entram — o EXR é
+   convertido e o `.blend` é descartado, que num jogo de navegador ele
+   não serve pra nada.
+
    Rodar:
        python3 ferramentas/arrumar_pbr.py            # todos
        python3 ferramentas/arrumar_pbr.py areia      # só um
@@ -48,7 +54,7 @@ QUALIDADE = 88
 # ANTES de `nor` na lista de recusa justamente pra ser descartado antes
 # de o `nor` genérico pegá-lo.
 RECUSA = (r'nor[_-]?dx', r'normaldx', r'_disp', r'displacement', r'opacity',
-          r'preview', r'\.usd', r'\.mtlx', r'\.mtl')
+          r'preview', r'\.usd', r'\.mtlx', r'\.mtl', r'\.blend')
 PADROES = [
     ('normal',     (r'nor[_-]?gl', r'normalgl', r'_nor_', r'normal')),
     ('rugosidade', (r'_rough', r'roughness', r'rugosidade')),
@@ -89,8 +95,36 @@ def abrir_zips(pasta):
         os.remove(caminho)
 
 
+def abrir(origem):
+    """abre a imagem, inclusive EXR.
+
+       O pacote ".blend" do Poly Haven manda o relevo e a rugosidade em
+       EXR (float), não em JPG — é o formato que o Blender prefere. O
+       Pillow deste ambiente não lê EXR, então entra o `OpenEXR`.
+
+       NADA DE GAMA AQUI. O EXR guarda esses mapas como DADO linear em
+       [0,1]: 0,5 no canal verde é "sem inclinação", e 0,8 na rugosidade
+       é 0,8 de rugosidade. Aplicar a curva sRGB na conversão (o reflexo
+       de quem está acostumado a converter foto) empurraria o 0,5 pra
+       0,74 e o relevo sairia toda torto, com a luz batendo de um lado
+       que não existe. A escala é direta: valor × 255."""
+    if origem.lower().endswith('.exr'):
+        try:
+            import OpenEXR, numpy as np
+        except ImportError:
+            sys.exit('para ler EXR: pip install OpenEXR')
+        with OpenEXR.File(origem) as ex:
+            canais = ex.channels()
+            a = (canais.get('RGB') or next(iter(canais.values()))).pixels
+        a = np.asarray(a, dtype='float32')
+        if a.ndim == 2:
+            a = np.stack([a] * 3, axis=-1)
+        return Image.fromarray((np.clip(a[:, :, :3], 0, 1) * 255 + 0.5).astype('uint8'), 'RGB')
+    return Image.open(origem)
+
+
 def converter(origem, destino, cinza):
-    im = Image.open(origem)
+    im = abrir(origem)
     if im.size != (LADO, LADO):
         # LANCZOS é o que preserva grão fino ao reduzir; BILINEAR lava a
         # textura e é justamente o grão que a gente está indo buscar
@@ -117,7 +151,7 @@ def arrumar(material):
         if raiz in prontos and ext.lower() == '.jpg' and Image.open(caminho).size == (LADO, LADO):
             achados[raiz] = caminho
             continue
-        if recusado(arq) or ext.lower() not in ('.jpg', '.jpeg', '.png', '.tif', '.tiff'):
+        if recusado(arq) or ext.lower() not in ('.jpg', '.jpeg', '.png', '.tif', '.tiff', '.exr'):
             lixo.append(caminho); continue
         papel = classificar(arq)
         if not papel:

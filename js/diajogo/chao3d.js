@@ -130,14 +130,26 @@ function mediaDaImagem(fonte) {
    vira máscara, sem precisar repintar nada.
    ======================================================= */
 const CANAIS = [
-  { chave: 'asfalto', pasta: 'asfalto', ladrilho: 3.4, rugosidade: 0.93,
-    paleta: ['rua', 'beco', 'pista', 'eixo', 'faixaPed', 'linha'],
+  /* `tinta` baixa no asfalto de propósito: o asphalt_04 do Poly Haven é
+     um asfalto PÁLIDO (cinza médio 134), e emprestar 62% da cor dele
+     subia a rua de 58 pra ~105 — clareava tanto que rua e calçada
+     ficavam do mesmo tom e a cidade perdia a leitura. Com 0,35 a rua
+     ficaria em ~85 — mas de longe, onde o mipmap reduz a textura à
+     própria média, isso vira um cinza chapado e a rua encosta no tom da
+     calçada; a cidade perde a leitura à distância, que é justamente
+     onde ela mais precisa dela.
+
+     A saída é separar os dois pesos: o GRÃO (`splatForcaCor`, alto)
+     traz a textura sem mexer no tom, e a COR (`tinta`, baixa) só dá uma
+     puxada pro cinza sem clarear a rua. */
+  { chave: 'asfalto', pasta: 'asfalto', ladrilho: 3.4, rugosidade: 0.93, tinta: 0.22,
+    paleta: ['rua', 'beco', 'pista'],
     grao: { base: '#b0b0ae', claro: '#e8e6de', escuro: '#4e4a42', camadas: [
       { n: 18, r: [22, 48], a: [0.10, 0.20] },
       { n: 150, r: [5, 13], a: [0.14, 0.28] },
       { n: 620, r: [1.1, 2.8], a: [0.20, 0.40] }] } },
 
-  { chave: 'concreto', pasta: 'concreto', ladrilho: 2.8, rugosidade: 0.88,
+  { chave: 'concreto', pasta: 'concreto', ladrilho: 2.8, rugosidade: 0.88, tinta: 0.58,
     paleta: ['calcada', 'calcadaEst', 'piso', 'patio', 'laje', 'degrau',
              'degrauAlt', 'arcada', 'meioFio', 'cerca'],
     grao: { base: '#b4b4b0', claro: '#efeee8', escuro: '#6e6a60', camadas: [
@@ -148,7 +160,7 @@ const CANAIS = [
   /* terra e areia dividem o canal enquanto só uma das duas pastas tem
      textura: as duas são granulado, e como só a LUMINÂNCIA entra, a
      cor de cada uma continua sendo a que a planta pintou */
-  { chave: 'granulado', pasta: 'areia', ladrilho: 4.0, rugosidade: 0.96,
+  { chave: 'granulado', pasta: 'areia', ladrilho: 4.0, rugosidade: 0.96, tinta: 0.16,
     paleta: ['lote', 'terreno', 'mato', 'matoEscuro', 'trilha',
              'areia', 'areiaMolhada'],
     grao: { base: '#b4b2ac', claro: '#efe9d8', escuro: '#6b6152', camadas: [
@@ -156,15 +168,19 @@ const CANAIS = [
       { n: 130, r: [6, 16], a: [0.14, 0.26] },
       { n: 520, r: [1.2, 3.0], a: [0.18, 0.36] }] } },
 
-  { chave: 'grama', pasta: 'grama', ladrilho: 2.2, rugosidade: 0.97,
+  { chave: 'grama', pasta: 'grama', ladrilho: 2.2, rugosidade: 0.97, tinta: 0.45,
     paleta: ['gramadoA', 'gramadoB', 'grama', 'gramaB', 'gramaPraca', 'moita'],
     grao: { base: '#b0b2ac', claro: '#e6ecd8', escuro: '#5e6a4e', camadas: [
       { n: 30, r: [18, 40], a: [0.10, 0.20] },
       { n: 260, r: [4, 11], a: [0.16, 0.30] },
       { n: 700, r: [1.0, 2.6], a: [0.20, 0.40] }] } }
 ];
-/* o que NÃO recebe grão nenhum: água é água */
-const SEM_GRAO = ['mar', 'marFundo', 'onda'];
+/* O QUE NÃO RECEBE GRÃO NENHUM. Água é água — e a SINALIZAÇÃO também
+   fica de fora: faixa de pedestre, eixo e linha são TINTA sobre o
+   asfalto, e deixá-las no canal do asfalto faria a cor da textura
+   lavar o amarelo por cima delas. Sem canal, a pintura da planta passa
+   intacta, que é exatamente o que se quer numa faixa. */
+const SEM_GRAO = ['mar', 'marFundo', 'onda', 'eixo', 'faixaPed', 'linha'];
 
 /* =======================================================
    A MÁSCARA, tirada da própria pintura
@@ -227,6 +243,7 @@ uniform sampler2D splatNorA, splatNorB, splatNorC, splatNorD;
 uniform vec4 splatLadrilho;
 uniform vec4 splatMedia;
 uniform vec4 splatRugosidade;
+uniform vec4 splatTinta;
 uniform vec2 splatArea;
 uniform float splatForcaCor;
 vec4 gPeso; vec2 gUV; float gTotal;
@@ -238,11 +255,18 @@ void splatPreparar() {
   gTotal = clamp( s, 0.0, 1.0 );
   gUV = vMapUv * splatArea;
 }
-float splatDetalhe() {
-  return gPeso.r * splatLum( texture2D( splatCorA, gUV / splatLadrilho.x ).rgb ) / max( splatMedia.x, 0.02 )
-       + gPeso.g * splatLum( texture2D( splatCorB, gUV / splatLadrilho.y ).rgb ) / max( splatMedia.y, 0.02 )
-       + gPeso.b * splatLum( texture2D( splatCorC, gUV / splatLadrilho.z ).rgb ) / max( splatMedia.z, 0.02 )
-       + gPeso.a * splatLum( texture2D( splatCorD, gUV / splatLadrilho.w ).rgb ) / max( splatMedia.w, 0.02 );
+/* devolve a COR ponderada em rgb e o GRÃO (luminância normalizada) em a.
+   São as mesmas quatro amostras pros dois — só muda a conta em cima. */
+vec4 splatDetalhe() {
+  vec3 a = texture2D( splatCorA, gUV / splatLadrilho.x ).rgb;
+  vec3 b = texture2D( splatCorB, gUV / splatLadrilho.y ).rgb;
+  vec3 c = texture2D( splatCorC, gUV / splatLadrilho.z ).rgb;
+  vec3 d = texture2D( splatCorD, gUV / splatLadrilho.w ).rgb;
+  float lum = gPeso.r * splatLum( a ) / max( splatMedia.x, 0.02 )
+            + gPeso.g * splatLum( b ) / max( splatMedia.y, 0.02 )
+            + gPeso.b * splatLum( c ) / max( splatMedia.z, 0.02 )
+            + gPeso.a * splatLum( d ) / max( splatMedia.w, 0.02 );
+  return vec4( a * gPeso.r + b * gPeso.g + c * gPeso.b + d * gPeso.a, lum );
 }
 vec3 splatNormal() {
   vec3 n = ( texture2D( splatNorA, gUV / splatLadrilho.x ).xyz * 2.0 - 1.0 ) * gPeso.r
@@ -286,8 +310,12 @@ export function criarChaoPBR(opc) {
     splatLadrilho:  { value: new THREE.Vector4() },
     splatMedia:     { value: new THREE.Vector4(0.5, 0.5, 0.5, 0.5) },
     splatRugosidade:{ value: new THREE.Vector4() },
+    /* quanto da cor real de cada canal entra. Nasce ZERO: o grão gerado
+       não tem cor que preste (é cinza de altura), e só sobe pro valor
+       do canal quando o `cor.jpg` de verdade termina de carregar. */
+    splatTinta:     { value: new THREE.Vector4(0, 0, 0, 0) },
     splatArea:      { value: new THREE.Vector2(area.w, area.h) },
-    splatForcaCor:  { value: opc.forcaCor !== undefined ? opc.forcaCor : 0.55 },
+    splatForcaCor:  { value: opc.forcaCor !== undefined ? opc.forcaCor : 0.92 },
     splatCorA: { value: null }, splatCorB: { value: null },
     splatCorC: { value: null }, splatCorD: { value: null },
     splatNorA: { value: null }, splatNorB: { value: null },
@@ -337,6 +365,7 @@ export function criarChaoPBR(opc) {
           tex.anisotropy = aniso;
           uniformes[CHAVE_COR[i]].value = tex;
           uniformes.splatMedia.value.setComponent(i, mediaDaImagem(tex.image));
+          uniformes.splatTinta.value.setComponent(i, canal.tinta || 0);
           relatorio.push(canal.chave + ':cor');
         });
         if (tem.indexOf('normal') >= 0) carregador.load(base + 'normal.jpg', tex => {
@@ -382,7 +411,19 @@ export function criarChaoPBR(opc) {
       .replace('void main() {', GLSL_SPLAT + '\nvoid main() {')
       .replace('#include <map_fragment>', `#include <map_fragment>
   splatPreparar();
-  diffuseColor.rgb *= mix( 1.0, splatDetalhe(), splatForcaCor * gTotal );`)
+  {
+    vec4 det = splatDetalhe();
+    /* O GRÃO entra sempre, multiplicando: é variação, serve pra
+       qualquer superfície, inclusive as que só têm o grão gerado.
+       A COR DE VERDADE entra por cima, e só onde o canal tem textura
+       própria (\`splatTinta\`). Foi ela que faltou na primeira versão:
+       guardando só a luminância, uma rua pintada de #3a3a38 — quase
+       preta — continuava quase preta, porque multiplicar escuro por
+       ±10% não muda quase nada. Com a cor do asfalto de verdade
+       entrando, a rua sobe pro cinza que asfalto tem no sol. */
+    vec3 comGrao = diffuseColor.rgb * mix( 1.0, det.a, splatForcaCor * gTotal );
+    diffuseColor.rgb = mix( comGrao, det.rgb, dot( gPeso, splatTinta ) * gTotal );
+  }`)
       .replace('#include <roughnessmap_fragment>',
                'float roughnessFactor = mix( roughness, dot( gPeso, splatRugosidade ), gTotal );')
       .replace('#include <normal_fragment_maps>', CHUNK_N);
