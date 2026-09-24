@@ -109,8 +109,10 @@ function medidas(l) {
 }
 
 /* o recuo da parede da frente de cada casa grande da favela: a da
-   lanchonete recua o que o toldinho da porta de enrolar avança */
-const REC_MODELO = { f1: 0.06, f2: 0.04, bar: 0.03, lanche: 0.5, escada: 0.04, varal: 0.04, garagem: 0.32, base: 0.04 };
+   lanchonete recua o que o toldinho da porta de enrolar avança. O bar
+   da torcida (o de esquina, embaixo do apartamento) é modelo também. */
+const REC_MODELO = { f1: 0.06, f2: 0.04, bar: 0.03, lanche: 0.5, escada: 0.04, varal: 0.04, garagem: 0.32, base: 0.04,
+                     bartorcida: 0.04 };
 
 export function planoDaCasa(l, K) {
   if (l._plano !== undefined) return l._plano;
@@ -119,6 +121,8 @@ export function planoDaCasa(l, K) {
     const [W, D] = medidas(l);
     p = { tipo: l.modelo, andares: 2, rec: REC_MODELO[l.modelo], W, D, H: l.alt / M, s: sorteDe(l),
           semManchas: l.modelo !== 'f2' && l.modelo !== 'varal' };
+    /* o letreiro BAR DO X do bar da torcida vai no frontão da varanda */
+    if (l.modelo === 'bartorcida' && l.placa) p.placa = placaDoBar(W, l.esquina);
     l._plano = p;
     return p;
   }
@@ -1938,7 +1942,293 @@ const m4 = comEspelho((B, p, l, conta, G, r) => {
   casaDoMuro(B, p, r, x0, x1, z0, zc, h, vf, { dir: dd >= 1.3 ? portaDir : [] }, conta);
 });
 
-const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2, m1, m2, m3, m4 };
+
+/* =======================================================
+   O BAR DA TORCIDA — o bar pequeno de esquina, embaixo do apartamento
+   O bar grande (13,9 × 8,8 m, o salão inteiro) encolheu pro tamanho do
+   bar da favela e ficou com o arranjo dele: a VARANDA coberta na
+   frente, com as mesas, e o salão aberto pra rua atrás dela. Só que no
+   jeito de bairro de classe média: reboco pintado, porta de enrolar,
+   piso de cerâmica e, em cima, o APARTAMENTO (a sacada de gradil sobre
+   a varanda, a janela de alumínio, o ar-condicionado, a platibanda e a
+   casinha da caixa d'água). A entrada do apartamento é a porta cinza do
+   lado, com a escada no corredor.
+   ABERTO, o térreo é da torcida (`l.torcida`): parede, pilar e frontão
+   na cor 1, o rodapé na 3, a faixa alta na 2, e o letreiro BAR DO X
+   (`l.placa`) no frontão da varanda, no fundo da cor 2. Dentro vai o
+   que tinha no bar grande: o chão de xadrez azul e creme, o balcão em
+   L com as banquetas, o armário e a prateleira de garrafa atrás dele,
+   a cervejeira, os dois freezers e a TV em cima, o engradado, as mesas
+   e cadeiras de madeira e a porta do banheiro.
+   SEM TORCIDA o bar fica NEUTRO: o térreo em cor de reboco, as portas
+   de enrolar abaixadas, o ALUGA-SE numa delas e nada de letreiro.
+   O desenho é o da esquina à direita (a escada do apartamento do lado
+   de lá); com a esquina à esquerda ele sai espelhado, e a peça que tem
+   letra (a cervejeira, o ALUGA-SE) é desenhada depois, sem espelho.
+   ======================================================= */
+const CORES_APTO = ['#efe9dc', '#e9e2d0', '#f1efe8', '#e2e6e1', '#eee2c9', '#e6ded6'];
+const XADREZ_AZUL = '#5b7fa8', XADREZ_CREME = '#ddd6c2', GRANITO = '#3b3936', TELA = '#2f6a3c';
+const NEUTRO_BAR = { cor: '#d6d1c4', cor2: '#c4beb0', cor3: '#8f8a7f' };
+/* as medidas que o letreiro também precisa (o plano da casa as usa
+   antes do modelo existir) */
+function medidasDoBar(W) {
+  const x0 = 0.04, x1 = W - 0.04, e = 0.12;
+  const we = clamp(W * 0.16, 1.05, 1.25);          // o corredor da escada do apartamento
+  return { x0, x1, e, we, xe: x0 + we, xi0: x0 + we + e, xi1: x1 - e,
+           h1: 3.0, lj: 0.2, yV: 2.2, hp: 2.55 };    // o térreo, a laje, a viga da varanda, a porta de enrolar
+}
+/* o letreiro no frontão da varanda: a altura do meio, a largura e o
+   deslocamento do meio da frente (o frontão não é centrado no lote,
+   porque o corredor da escada fica de fora) */
+function placaDoBar(W, esquina) {
+  const m = medidasDoBar(W);
+  /* o frontão vai de yV + 0,08 (a faixa da cor 2 embaixo) até 2 cm da
+     laje; o decalque guarda 6 cm de folga em cima e embaixo */
+  const alt = Math.min(0.54, m.h1 - 0.02 - (m.yV + 0.08) - 0.13), larg = Math.min(3.3, m.x1 - m.xi0 - 0.5, alt * 5.2);
+  const u = ((m.xi0 + m.x1) / 2 - W / 2) * (esquina === 'esq' ? -1 : 1);
+  return { y: (m.yV + 0.08 + m.h1 - 0.02) / 2 * M, larg: larg * M, alt: (larg / 5.2) * M, u: u * M };
+}
+/* a tinta da torcida no reboco: o preto puro vira buraco no Lambert e o
+   branco puro estoura, então os dois vão um pouco pra dentro */
+function tintaViva(c) {
+  const n = parseInt(String(c || '#888888').slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+  if (Math.max(r, g, b) < 0x26) return '#262626';
+  if (Math.min(r, g, b) > 0xf2) return '#f2f1ec';
+  return c;
+}
+/* o chão de xadrez: o piso claro inteiro e, por cima, só as pedras escuras */
+function xadrez(B, xa, xb, za, zb, y, lado, claro, escuro) {
+  tampo(B, xa, xb, za, zb, y, 'lisa', claro);
+  const ni = Math.ceil((xb - xa) / lado - 1e-6), nj = Math.ceil((zb - za) / lado - 1e-6);
+  for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) {
+    if ((i + j) % 2) continue;
+    const a0 = xa + i * lado, b0 = za + j * lado;
+    tampo(B, a0, Math.min(xb, a0 + lado), b0, Math.min(zb, b0 + lado), y + 0.006, 'lisa', escuro);
+  }
+}
+/* a banqueta do balcão: o pé, o apoio do pé e o assento redondo */
+function banqueta(B, cx, cz, y, tinta) {
+  const ferro = { k: 'laje_borda', tinta: '#34322f' };
+  B.caixa(cx - 0.025, cx + 0.025, y, y + 0.72, cz - 0.025, cz + 0.025, { todas: ferro, base: null, topo: null });
+  B.caixa(cx - 0.14, cx + 0.14, y + 0.22, y + 0.245, cz - 0.14, cz + 0.14, { todas: ferro, base: null });
+  B.pintar(tinta);
+  B.torno(cx, cz, [[0.17, y + 0.72], [0.185, y + 0.76], [0.1, y + 0.785], [0, y + 0.79]], 8, 'lisa');
+  B.pintar(null);
+}
+/* o freezer horizontal: a caixa branca, a tampa e a faixa da marca na
+   face `frente` ('frente' = +z, 'esq' = −x) */
+function freezer(B, x0, x1, z0, z1, y, frente) {
+  B.caixa(x0, x1, y, y + 0.82, z0, z1, { todas: { k: 'lisa', tinta: '#eef0ef' }, base: null, topo: null });
+  B.caixa(x0 - 0.01, x1 + 0.01, y + 0.82, y + 0.88, z0 - 0.01, z1 + 0.01, { todas: { k: 'lisa', tinta: '#c9ced1' }, base: null });
+  const marca = { k: 'lisa', tinta: '#c8342b' };
+  if (frente === 'frente') B.caixa(x0 + 0.12, x1 - 0.12, y + 0.5, y + 0.66, z1, z1 + 0.006, { frente: marca, topo: marca, base: null, tras: null });
+  else B.caixa(x0 - 0.006, x0, y + 0.5, y + 0.66, z0 + 0.12, z1 - 0.12, { esq: marca, topo: marca, base: null, dir: null });
+}
+/* a parede do salão, com as portas de enrolar: montantes e vergas em
+   caixa, e o vão vazio (a porta enrolada, só a régua de baixo à vista
+   no alto) ou com a porta abaixada. `ao` é o eixo em que a parede
+   corre: 'x' (a da frente, com a face de fora em +z) ou 'z' (a do
+   lado, com a face de fora em +x). `a0`–`a1` é o comprimento, `c0`–`c1`
+   a espessura; `vaos` são [a0, a1] com a altura `hp`. */
+function paredeDoSalao(B, ao, a0, a1, c0, c1, h, vaos, hp, fora, dentro, aberto, bandas, pontaFim) {
+  const cx = (u0, u1, y0, y1, spec) => ao === 'x' ? B.caixa(u0, u1, y0, y1, c0, c1, spec) : B.caixa(c0, c1, y0, y1, u0, u1, spec);
+  /* os nomes das faces da caixa: a de fora, a de dentro, e as duas
+     pontas (a do começo e a do fim do comprimento) */
+  const F = ao === 'x' ? { fora: 'frente', dentro: 'tras', ini: 'esq', fim: 'dir' }
+                       : { fora: 'dir', dentro: 'esq', ini: 'tras', fim: 'frente' };
+  const cheios = [];
+  let a = a0;
+  for (const [v0, v1] of vaos) { if (v0 > a + 1e-6) cheios.push([a, v0]); a = v1; }
+  if (a1 > a + 1e-6) cheios.push([a, a1]);
+  for (const [u0, u1] of cheios) {
+    /* a ponta que dá pro vão é ombreira; a do fim da parede só aparece
+       quando ela não morre noutra parede (a quina do salão na varanda) */
+    const spec = { [F.fora]: fora, [F.dentro]: dentro, [F.ini]: u0 > a0 + 1e-6 ? fora : null,
+                   [F.fim]: u1 < a1 - 1e-6 || pontaFim ? fora : null, topo: null, base: null };
+    cx(u0, u1, 0, h, spec);
+    /* o rodapé da cor 3, saltado um dedo da parede */
+    if (bandas.rodape) {
+      const r = { [F.fora]: bandas.rodape, topo: bandas.rodape, [F.ini]: bandas.rodape, [F.fim]: bandas.rodape, base: null, [F.dentro]: null };
+      if (ao === 'x') B.caixa(u0 + (u0 > a0 + 1e-6 ? 0.01 : 0), u1 - (u1 < a1 - 1e-6 ? 0.01 : 0), 0.12, 0.48, c1, c1 + 0.012, r);
+      else B.caixa(c1, c1 + 0.012, 0.12, 0.48, u0 + (u0 > a0 + 1e-6 ? 0.01 : 0), u1 - (u1 < a1 - 1e-6 ? 0.01 : 0), r);
+    }
+  }
+  for (const [v0, v1] of vaos) {
+    cx(v0, v1, hp, h, { [F.fora]: fora, [F.dentro]: dentro, base: fora, topo: null, [F.ini]: null, [F.fim]: null });
+    /* a porta: abaixada, ou enrolada lá em cima (só a régua de baixo aparece) */
+    const Fp = ao === 'x' ? B.plano([v0, 0, c1 - 0.05], [1, 0, 0], [0, 1, 0]) : B.plano([c1 - 0.05, 0, v1], [0, 0, -1], [0, 1, 0]);
+    if (aberto) B.esticar(Fp, 0, v1 - v0, hp - 0.13, hp, 'enrolar', { parte: [0, 1, 0, 0.05] });
+    else B.esticar(Fp, 0, v1 - v0, 0.02, hp, 'enrolar');
+  }
+  /* a faixa alta da cor 2, corrida por cima das portas */
+  if (bandas.alta) {
+    const r = { [F.fora]: bandas.alta, topo: bandas.alta, base: bandas.alta, [F.ini]: bandas.alta, [F.fim]: bandas.alta, [F.dentro]: null };
+    if (ao === 'x') B.caixa(a0, a1, hp + 0.08, hp + 0.3, c1, c1 + 0.012, r);
+    else B.caixa(c1, c1 + 0.012, hp + 0.08, hp + 0.3, a0, a1, r);
+  }
+}
+
+function barTorcida(B, p, l, conta, G) {
+  const espelho = l.esquina === 'esq', letras = [];
+  if (espelho) espelhado(B, G, p.W, conta, (B2, G2, c2) => barTorcidaDireita(B2, p, l, c2, G2, letras));
+  else barTorcidaDireita(B, p, l, conta, G, letras);
+  /* o que tem letra sai do lado certo mesmo com o bar espelhado */
+  for (const t of letras) {
+    const a0 = espelho ? p.W - t.x1 : t.x0, a1 = espelho ? p.W - t.x0 : t.x1;
+    B.esticar(B.plano([a0, t.y0, t.z], [1, 0, 0], [0, 1, 0]), 0, a1 - a0, 0, t.y1 - t.y0, t.k);
+  }
+}
+function barTorcidaDireita(B, p, l, conta, G, letras) {
+  const { s, W, D } = p;
+  const T = l.torcida || null, aberto = !!T;
+  const c1 = T ? tintaViva(T.cor) : NEUTRO_BAR.cor;
+  const c2 = T ? tintaViva(T.cor2 || '#e8e2d0') : NEUTRO_BAR.cor2;
+  const c3 = T ? tintaViva(T.cor3 || T.cor2 || '#e8e2d0') : NEUTRO_BAR.cor3;
+  const apto = escolher(s, 'apto', CORES_APTO), claro = '#f3f2ee';
+  const { x0, x1, e, we, xe, xi0, xi1, h1, lj, yV, hp } = medidasDoBar(W);
+  const z1 = -p.rec, z0 = -D + 0.04;
+  const pa = clamp((z1 - z0) * 0.3, 1.3, 1.7), zS = z1 - pa;       // a varanda e a frente do salão
+  const zi0 = z0 + e, zi1 = zS - e, iw = xi1 - xi0, di = zi1 - zi0;
+  const y2 = h1 + lj, h2 = 2.75, topo = y2 + h2;
+  const cor1 = { k: 'lisa', tinta: c1 }, dentro = aberto ? cor1 : null;
+  const bandas = { rodape: { k: 'lisa', tinta: c3 }, alta: aberto ? { k: 'lisa', tinta: c2 } : null };
+
+  /* ---- O CORREDOR DO APARTAMENTO: a porta cinza na frente; a escada
+     sobe por dentro, rente à parede do salão ---- */
+  paredes(B, x0, xe, z0, z1, 0, h1, {
+    frente: { k: 'lisa', tinta: apto, vaos: [{ a0: (we - 0.85) / 2, a1: (we + 0.85) / 2, b0: 0.02, b1: 2.2, k: 'porta_ap', fundo: 0.08 }] },
+    esq: { k: 'lisa', tinta: apto }, tras: { k: 'lisa', tinta: apto }
+  }, conta);
+  B.caixa(x0, xe, 0, 0.12, z1, z1 + 0.035, { frente: 'laje_borda', topo: 'laje_borda', esq: null, dir: null, base: null, tras: null });
+  /* a parede entre o corredor e o bar: do lado do bar, a cor dele */
+  B.caixa(xe, xi0, 0, h1, z0, z1, { dir: cor1, frente: cor1, esq: null, tras: { k: 'lisa', tinta: apto }, topo: null, base: null });
+
+  /* ---- O SALÃO ---- */
+  /* o fundo: por fora o reboco do prédio, a quina da esquina na cor do bar */
+  B.caixa(xi0, x1, 0, h1, z0, zi0, { tras: { k: 'lisa', tinta: apto }, dir: cor1, frente: null, esq: null, topo: null, base: null });
+  /* a parede da esquina, com a porta de enrolar do lado quando o salão
+     tem fundo pra ela e pros freezers */
+  const dwS = Math.min(1.6, di - 1.25);
+  const portaLado = dwS >= 1.1 ? [zi1 - 0.2 - dwS, zi1 - 0.2] : null;
+  paredeDoSalao(B, 'z', zi0, zS, xi1, x1, h1, portaLado ? [portaLado] : [], hp, cor1, dentro, aberto, bandas, true);
+  /* a frente do salão, com as duas portas de enrolar */
+  const dw = Math.min(2.4, (iw - 0.9) / 2);
+  const portas = [[xi0 + 0.25, xi0 + 0.25 + dw], [xi1 - 0.25 - dw, xi1 - 0.25]];
+  paredeDoSalao(B, 'x', xi0, xi1, zS - e, zS, h1, portas, hp, cor1, dentro, aberto, bandas, false);
+  conta.portas += portas.length + (portaLado ? 1 : 0);
+  if (!aberto) letras.push({ k: 'aviso_aluga', x0: portas[0][0] + 0.3, x1: portas[0][0] + 1.6, y0: 1.3, y1: 1.72, z: zS - 0.04 });
+
+  /* ---- A VARANDA: o chão de cerâmica, o pilar da esquina, a viga da
+     frente (o frontão do letreiro) e a do lado, o forro ---- */
+  B.caixa(xi0, x1, 0, 0.05, zS, z1, { topo: 'piso_bar', frente: 'crua', dir: 'crua', esq: null, tras: null, base: null });
+  B.caixa(x1 - 0.26, x1, 0.05, yV, z1 - 0.26, z1, { todas: cor1, base: null, topo: null });
+  B.caixa(x1 - 0.27, x1 + 0.006, 0.05, 0.48, z1 - 0.27, z1 + 0.006, { todas: bandas.rodape, base: null });
+  B.caixa(xi0, x1, yV, h1, z1 - 0.22, z1, { frente: cor1, base: cor1, tras: cor1, dir: cor1, esq: null, topo: null });
+  B.caixa(x1 - 0.22, x1, yV, h1, zS, z1 - 0.22, { dir: cor1, esq: cor1, base: cor1, frente: null, tras: null, topo: null });
+  if (bandas.alta) B.caixa(xi0, x1, yV, yV + 0.08, z1, z1 + 0.01, { frente: bandas.alta, base: bandas.alta, dir: bandas.alta, esq: null, tras: null, topo: null });
+  B.tampa([[xi0, z1], [x1, z1], [x1, zS], [xi0, zS]], h1, 'lisa', true, { tinta: BRANCO_BAR });
+  /* o frontão é onde o letreiro mora */
+  conta.frentes.push({ x0: xi0, x1, y0: yV + 0.08, y1: h1 - 0.02, z: z1, vaos: [] });
+
+  if (aberto) {
+    /* o chão de xadrez e o forro do salão */
+    xadrez(B, xi0, xi1, zi0, zi1, 0.05, 0.42, XADREZ_CREME, XADREZ_AZUL);
+    B.tampa([[xi0, zi1], [xi1, zi1], [xi1, zi0], [xi0, zi0]], h1, 'lisa', true, { tinta: BRANCO_BAR });
+    /* o balcão em L: o braço comprido no fundo, com a faixa de serviço
+       atrás dele, e o braço curto voltando pra frente junto da parede
+       da escada; a frente na cor 2 e o tampo de granito */
+    const cL = clamp(iw * 0.5, 2.2, 3.2), zc0 = zi0 + 0.95, zc1 = zc0 + 0.55, hc = 1.08;
+    const corpo = { k: 'lisa', tinta: c2 }, pedra = { k: 'lisa', tinta: GRANITO };
+    B.caixa(xi0, xi0 + cL, 0.05, hc - 0.04, zc0, zc1, { frente: corpo, dir: corpo, tras: { k: 'lisa', tinta: MADEIRA }, esq: null, topo: null, base: null });
+    B.caixa(xi0, xi0 + cL + 0.04, hc - 0.04, hc, zc0 - 0.02, zc1 + 0.06, { todas: pedra, esq: null, base: null });
+    B.caixa(xi0, xi0 + 0.5, 0.05, hc - 0.04, zc1 + 0.06, zc1 + 0.66, { frente: corpo, dir: corpo, esq: null, tras: null, topo: null, base: null });
+    B.caixa(xi0, xi0 + 0.56, hc - 0.04, hc, zc1 + 0.06, zc1 + 0.68, { todas: pedra, esq: null, tras: null, base: null });
+    for (let x = xi0 + 0.95; x <= xi0 + cL - 0.25; x += 0.62) banqueta(B, x, zc1 + 0.32, 0.05, c1);
+    /* o fundo por dentro: o armário com a prateleira de garrafa em
+       cima, a porta do banheiro depois da ponta do balcão */
+    const vf = [{ a0: 0.9, a1: Math.min(2.1, cL - 0.15), b0: 0.05, b1: 0.95, k: 'armario' },
+                { a0: 0.9, a1: Math.min(2.1, cL - 0.15), b0: 1.08, b1: 2.05, k: 'prateleira' }];
+    const bw0 = cL + 0.22;
+    if (bw0 + 0.85 <= iw - 0.1) vf.push({ a0: bw0, a1: bw0 + 0.85, b0: 0, b1: 2.1, k: 'porta_madeira', fundo: 0.06 });
+    B.fachada(B.plano([xi0, 0, zi0], [1, 0, 0], [0, 1, 0]), iw, h1, 'lisa', vf, { tinta: c1 });
+    /* a cervejeira na ponta da faixa de serviço, virada pro balcão */
+    B.caixa(xi0 + 0.08, xi0 + 0.74, 0.05, 1.9, zi0 + 0.02, zi0 + 0.62, { todas: { k: 'lisa', tinta: '#eef0ef' }, frente: null, base: null });
+    letras.push({ k: 'geladeira', x0: xi0 + 0.08, x1: xi0 + 0.74, y0: 0.05, y1: 1.9, z: zi0 + 0.62 });
+    /* os dois freezers no canto do fundo e a TV em cima (se o salão é
+       estreito, fica um freezer só, na parede da esquina) */
+    const fA = xi1 - 1.24 >= xi0 + bw0 + 0.95;
+    if (fA) {
+      freezer(B, xi1 - 1.24, xi1 - 0.02, zi0 + 0.02, zi0 + 0.68, 0.05, 'frente');
+      const tx = xi1 - 0.63;
+      B.caixa(tx - 0.53, tx + 0.53, 1.66, 2.28, zi0, zi0 + 0.05, { todas: { k: 'lisa', tinta: '#141414' }, tras: null, base: null });
+      B.caixa(tx - 0.48, tx + 0.48, 1.7, 2.24, zi0 + 0.05, zi0 + 0.056, { frente: { k: 'lisa', tinta: TELA }, tras: null, base: null, topo: null, esq: null, dir: null });
+    }
+    const fz0 = zi0 + (fA ? 0.74 : 0.05), fz1 = portaLado ? portaLado[0] - 0.1 : zi1 - 0.1;
+    if (fz1 - fz0 >= 1.2) freezer(B, xi1 - 0.68, xi1 - 0.02, fz0, fz0 + 1.2, 0.05, 'esq');
+    /* o engradado de cerveja, empilhado no canto da frente */
+    const eg = { todas: { k: 'engradado', modo: 'esticar' }, base: null };
+    if (zi1 - 0.46 >= zc1 + 0.72)
+      for (const [dx, n] of [[0, 3], [0.46, 2]])
+        for (let k = 0; k < n; k++)
+          B.caixa(xi0 + 0.05 + dx, xi0 + 0.47 + dx, 0.05 + k * 0.3, 0.35 + k * 0.3, zi1 - 0.46, zi1 - 0.12, eg);
+    /* a mesa do salão, entre as banquetas e a porta */
+    const mz0 = zc1 + 0.6, mz1 = zi1 - 0.1;
+    if (mz1 - mz0 >= 1.1) {
+      const mx = xi0 + iw * 0.6, mz = (mz0 + mz1) / 2;
+      mesa(B, mx, mz, 0.05, 0.7, MADEIRA);
+      cadeira(B, mx - 0.6, mz, 0.05, 'o', MADEIRA);
+      cadeira(B, mx + 0.6, mz, 0.05, 'l', MADEIRA);
+      if (mz1 - mz0 >= 1.9) { cadeira(B, mx, mz - 0.6, 0.05, 'n', MADEIRA); cadeira(B, mx, mz + 0.6, 0.05, 's', MADEIRA); }
+    }
+    /* as duas mesas da varanda */
+    const vz = (zS + z1) / 2 - 0.04, va = xi0 + 0.25, vb = x1 - 0.4;
+    for (const f of [0.27, 0.73]) {
+      const cx = va + (vb - va) * f;
+      mesa(B, cx, vz, 0.05, 0.68, MADEIRA);
+      cadeira(B, cx - 0.6, vz, 0.05, 'o', MADEIRA);
+      cadeira(B, cx + 0.6, vz, 0.05, 'l', MADEIRA);
+    }
+  }
+
+  /* ---- A LAJE entre o bar e o apartamento ---- */
+  faixa(B, x0, x1, z0, z1, h1, y2, 0.04, 'lisa', claro);
+
+  /* ---- O APARTAMENTO ---- */
+  const wb = x1 - x0, dd = z1 - z0;
+  const sw = clamp(wb * 0.34, 1.8, 2.4), sa0 = wb - 0.35 - sw;      // a sacada, em cima da varanda
+  const vA = [{ a0: sa0, a1: sa0 + sw, b0: 0.05, b1: 2.45, k: 'sacada_fundo', fundo: 0.9, tinta: apto }];
+  let ar = null;
+  if (sa0 - 0.7 >= 1.3) {
+    const c = sa0 / 2;
+    vA.push({ a0: c - 0.6, a1: c + 0.6, b0: 1.0, b1: 2.15, k: 'jan2', fundo: 0.07 });
+    /* o ar-condicionado ao lado da janela, longe da sacada (embaixo
+       dela ele tapava o letreiro visto de cima) */
+    if (c - 0.6 - 0.2 - 0.84 >= 0.15) ar = c - 0.6 - 0.2 - 0.42;
+  }
+  const vLado = [{ a0: 0.8, a1: 2.0, b0: 1.0, b1: 2.15, k: 'jan2', fundo: 0.07 }];
+  if (dd >= 4.2) vLado.push({ a0: dd - 1.4, a1: dd - 0.8, b0: 1.5, b1: 2.1, k: 'basc', fundo: 0.05 });
+  paredes(B, x0, x1, z0, z1, y2, topo, {
+    frente: { k: 'lisa', tinta: apto, vaos: vA }, dir: { k: 'lisa', tinta: apto, vaos: vLado },
+    esq: { k: 'lisa', tinta: apto }, tras: { k: 'lisa', tinta: apto, vaos: distribuir(wb, ['jan2', 'basc'], 0.06) }
+  }, conta);
+  G.ladrilhar(G.plano([x0 + sa0, y2 + 0.05, z1 - 0.02], [1, 0, 0], [0, 1, 0]), G.ret(0, sw, 0, 1.0), 'gradil', { tw: 0.65 });
+  B.caixa(x0 + sa0, x0 + sa0 + sw, y2 + 1.05, y2 + 1.1, z1 - 0.05, z1 - 0.005, { todas: { k: 'lisa', tinta: claro } });
+  if (ar !== null && s('ar') < 0.6) arSplit(B, B.plano([x0, y2, z1], [1, 0, 0], [0, 1, 0]), ar, 1.2);
+  /* a platibanda, a laje e a casinha da caixa d'água no fundo, do lado
+     da escada (é por ela que se sobe) */
+  tampo(B, x0, x1, z0, z1, topo, 'laje');
+  B.pintar(apto);
+  mureta(B, [[x0, z1], [x1, z1], [x1, z0], [x0, z0]], topo, 0.7, 0.15, 'lisa');
+  B.pintar(null);
+  const cw = Math.min(2.0, wb - 0.6), cd = Math.min(1.8, dd - 0.8);
+  if (cd >= 1.0) {
+    B.caixa(x0 + 0.3, x0 + 0.3 + cw, topo, topo + 1.5, z0 + 0.3, z0 + 0.3 + cd, { todas: { k: 'lisa', tinta: claro }, base: null });
+    B.caixa(x0 + 0.25, x0 + 0.35 + cw, topo + 1.5, topo + 1.6, z0 + 0.25, z0 + 0.35 + cd, { todas: 'laje_borda', base: null });
+  }
+}
+
+const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2, m1, m2, m3, m4,
+                bartorcida: barTorcida };
 
 /* =======================================================
    A MONTAGEM DE UMA CASA, direto no acumulador do mundo

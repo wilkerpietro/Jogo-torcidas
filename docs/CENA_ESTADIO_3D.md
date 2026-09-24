@@ -2016,6 +2016,69 @@ cidade nova, numerados de 1 a 7 no mapa:
 O que falta pro jogo: a planta hoje monta duas sedes (`SEDES.mandante` e `.visitante`).
 Pra usar os sete terrenos, ela teria que aceitar uma lista de sedes.
 
+### 4.34. O bar pequeno da torcida, 18 bares e quem mora em cada espaço
+
+O dono pediu o bar da torcida menor, no tamanho e no arranjo do bar da favela, só que de
+classe média: o bar nas cores da torcida embaixo de um apartamento, com o que o bar grande
+tinha dentro. E 18 lugares assim pelo mapa; o bar que nenhuma torcida da cidade usa fica
+neutro, de porta fechada, e o espaço de sede também (torcida de sede nível 0 não tem sede).
+
+**O modelo** é o `bartorcida` do `casas3d.js` (entra pelo `l.modelo`, como as casas grandes
+da favela). O lote é o de esquina, 7,4 m de frente e o fundo da fileira (4,5 a 5,8 m):
+
+- **o térreo**, de 3 m: a varanda coberta na frente (1,3 a 1,7 m, como a do bar da favela),
+  com duas mesas de madeira; atrás dela o salão, com duas portas de enrolar na frente e uma
+  do lado da esquina. Parede, pilar e frontão na cor 1 da torcida, o rodapé na 3, a faixa
+  alta na 2, e o letreiro BAR DO X no frontão, no fundo da cor 2 (`l.placa`,
+  `l.placaFundo`, `l.placaTinta`; o plano da casa diz onde ele vai, com o deslocamento `u`
+  porque o frontão não é centrado no lote);
+- **dentro**, o que o bar grande tinha: o chão de xadrez azul e creme, o balcão em L na cor 2
+  com tampo de granito e as banquetas, o armário com a prateleira de garrafa, a cervejeira,
+  dois freezers com a TV (o jogo passando) em cima, o engradado, a mesa de madeira e a porta
+  do banheiro. Salão raso perde a mesa de dentro e um freezer;
+- **o corredor do apartamento**, do lado que não é a esquina: a porta cinza na frente, na
+  cor do prédio;
+- **o apartamento**, de 2,75 m: reboco pintado (seis cores claras), sacada recuada com gradil
+  em cima da varanda, janela de alumínio, ar-condicionado, janela do lado da esquina,
+  platibanda e a casinha da caixa d'água;
+- **fechado** (sem `l.torcida`): o térreo em cor de reboco, as três portas abaixadas, o
+  ALUGA-SE numa delas, sem letreiro e sem nada dentro (1.900 triângulos aberto, 600
+  fechado).
+
+O desenho é o da esquina à direita; a da esquerda sai pelo `espelhado`, e a peça com letra
+(a cervejeira, o ALUGA-SE) é desenhada depois, sem espelho. Nenhum lote do jogo usa o modelo
+ainda: as 2.917 casas do jogo e da proposta saem com a mesma geometria de antes.
+
+**Os 18 lugares** (`proposta.js`): o bar grande sai das quadras 2,8 e 5,1 e a fatia dele vira
+casa (as fileiras da conta do lotear, no fundo das que já existem, só onde não tem lote). Os
+dois primeiros bares ficam nessas quadras, na esquina mais perto da fatia; os outros 16, um a
+um, na esquina que fica mais longe de todo bar já posto (no máximo um por quadra, com quadra
+nova e quadra de hoje concorrendo). O mais perto de outro fica a 69 m. O bar pega a ponta da
+fileira norte ou sul; o lote do caminho é aparado (se sobrasse menos de 2,9 m, o bar fica
+com ele inteiro, até 9 m, ou encolhe até sobrar). Seis bares caem em quadra de hoje: o lote
+de hoje que vira bar sai do desenho da proposta (`lotesTirados`) e o novo entra
+(`lotesExtra`).
+
+**Os espaços de sede** são nove: os sete terrenos e as duas sedes de hoje (a 2,9 é fatia de
+nível 3; na 5,2 só cabe a de nível 1).
+
+**Quem mora onde** é da página, pela cidade escolhida no alto (a praça da torcida, o `mapa`
+dela): a maior torcida (nível da sede, depois o poder) escolhe primeiro e fica com o espaço
+mais perto do estádio; a de nível 1 prefere o espaço pequeno. Cada sede ganha um bar (o
+GDD §8.1 dá um bar nível 1 com a sede nível 1), o livre mais perto dela. A sede no espaço é
+a do jogo levada pra lá: o molde de nível 3 da 2,9 (do nível 2 em diante, como a planta faz)
+ou o de nível 1 da 5,2, girado pra frente do espaço, com as cores e o nome da torcida; a de
+nível 1 num terreno inteiro fica no canto, e o resto é pátio murado. Espaço vago leva o molde
+sem nada dentro, em cor de reboco, com porta e portão fechados e a laje por cima.
+
+Em São Paulo as 8 torcidas ocupam 8 bares e 8 espaços; em Santos, 3 e 3.
+
+O que falta pro jogo: a cena do dia de jogo ainda usa o bar grande andável (`barDaTorcida`) e
+duas sedes; pôr as torcidas da cidade nos 18 bares e nas 9 sedes é trabalho da planta. O
+GDD §7.2 pede o bar em outra zona que a sede; o mapa 3D não tem zona, então a página ficou
+com o que a planta já fazia (o bar perto da sede). E não existe sede nível 0 nos dados (as
+140 torcidas estão entre 1 e 4): a regra do nível 0 está pronta, mas nenhuma cai nela hoje.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -2540,8 +2603,8 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão |
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX, as duas torres do condomínio do baldio (Edifício Mirante e Residencial Bela Vista, com o muro, a guarita e os portões) e a montagem de cada um |
 | `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
-| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo) e as casas de muro (M1 a M4), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico), `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico), `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar |
+| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo), as casas de muro (M1 a M4) e o bar pequeno da torcida embaixo do apartamento (`bartorcida`, aberto ou fechado), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico, os 18 bares e os 9 espaços de sede), `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`) e escreve o atlas; roda de novo sempre que mudar uma peça |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |

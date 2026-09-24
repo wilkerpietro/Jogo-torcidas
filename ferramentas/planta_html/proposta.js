@@ -493,6 +493,138 @@ export function gerarProposta(P) {
     terrenos.push(T);
   });
 
+  /* ---- OS BARES DA TORCIDA: dezoito, espalhados pela cidade toda ----
+     O bar grande de hoje (13,9 × 8,8 m, o salão inteiro numa fatia da
+     quadra) sai das quadras 2,8 e 5,1: a fatia dele vira casa, com a
+     mesma conta do lote novo, e o resto da quadra fica como está. No
+     lugar, dezoito bares pequenos de esquina — o bar da torcida
+     embaixo do apartamento, 7,4 m de frente e o fundo da fileira, do
+     tamanho do bar da favela. Os dois primeiros ficam nas quadras dos
+     bares de hoje; os outros, um a um, na esquina que fica mais longe
+     de todo bar já posto (dá um a cada três quadras, mais ou menos).
+     Quem ocupa cada um a página é que diz, pela cidade escolhida: bar
+     que nenhuma torcida usa fica neutro, de porta fechada. */
+  const BARES_HOJE = ['2,8', '5,1'], N_BARES = 18, LARG_BAR = 144;
+  const lotesExtra = [], lotesTirados = new Set();
+  const bbLote = l => l.ang ? bbOf(cantos(l)) : l;
+  const deHojeSem = K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j));
+  /* a fatia do bar grande: as fileiras da conta do lotear, no fundo das
+     que já existem na quadra, só onde não tem lote */
+  for (const id of BARES_HOJE) {
+    const q = deHojeSem.find(q => q.i + ',' + q.j === id);
+    if (!q || !q.equip || q.equip.tipo !== 'bar') continue;
+    const fundos = q.lotes.filter(l => !l.ang && (l.frente === 'n' || l.frente === 's')).map(l => l.y1 - l.y0);
+    const prof = Math.max(88, ...fundos);
+    const ocup = q.lotes.map(bbLote);
+    const fileiras = [{ f: 'n', x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy0 + prof }, { f: 's', x0: q.ix0, x1: q.ix1, y0: q.iy1 - prof, y1: q.iy1 },
+                      { f: 'o', x0: q.ix0, x1: q.ix0 + prof, y0: q.iy0 + prof, y1: q.iy1 - prof }, { f: 'l', x0: q.ix1 - prof, x1: q.ix1, y0: q.iy0 + prof, y1: q.iy1 - prof }];
+    const livres = [];
+    for (const fr of fileiras) {
+      const hz = fr.f === 'n' || fr.f === 's';
+      const tomados = ocup.filter(b => cruza(b, fr, -2)).map(b => hz ? [b.x0, b.x1] : [b.y0, b.y1]).sort((a, b) => a[0] - b[0]);
+      let a = hz ? fr.x0 : fr.y0;
+      const fim = hz ? fr.x1 : fr.y1;
+      for (const [t0, t1] of tomados.concat([[fim, fim]])) {
+        if (t0 - a >= 60) livres.push(hz ? { ...fr, x0: a, x1: t0 } : { ...fr, y0: a, y1: t0 });
+        a = Math.max(a, t1);
+      }
+    }
+    const qx = { i: q.i, j: q.j, sal: 7, lotes: [] };
+    lotear(qx, livres);
+    for (const l of qx.lotes) { l.quadra = { i: q.i, j: q.j, hoje: true }; l.fatiaDoBar = true; lotesExtra.push(l); }
+  }
+  /* as esquinas: o lote da ponta da fileira norte ou sul, rente à quina
+     da quadra, com fundo de casa (não de lote de avenida) */
+  const esquinas = [];
+  const fileiraDe = (lista, q, fr) => lista.filter(l => !l.ang && l.frente === fr && !l.modelo &&
+    (fr === 'n' ? Math.abs(l.y0 - q.iy0) < 2 : Math.abs(l.y1 - q.iy1) < 2)).sort((a, b) => a.x0 - b.x0);
+  const juntar = (q, hoje, lista) => {
+    for (const fr of ['n', 's']) {
+      const fila = fileiraDe(lista, q, fr);
+      if (!fila.length) continue;
+      for (const lado of ['o', 'l']) {
+        const pta = lado === 'o' ? fila[0] : fila[fila.length - 1];
+        if (lado === 'o' ? Math.abs(pta.x0 - q.ix0) > 2 : Math.abs(pta.x1 - q.ix1) > 2) continue;
+        /* fundo de fileira de casa: nem o lote raso de avenida, nem a
+           quadra rasa de uma fileira só, que daria um salão de 12 m */
+        if (pta.y1 - pta.y0 < 84 || pta.y1 - pta.y0 > 130) continue;
+        /* a fileira tem de dar o bar e um lote de sobra */
+        if (fila[fila.length - 1].x1 - fila[0].x0 < LARG_BAR + 60) continue;
+        esquinas.push({ q, hoje, fr, lado, fila, lista, x: lado === 'o' ? q.ix0 : q.ix1, y: fr === 'n' ? q.iy0 : q.iy1,
+                        id: q.id || (q.i + ',' + q.j) });
+      }
+    }
+  };
+  for (const q of quadras) if (!q.equip && q.lotes.length) juntar(q, false, q.lotes);
+  for (const q of deHojeSem) {
+    const id = q.i + ',' + q.j, extra = lotesExtra.filter(l => l.quadra.i === q.i && l.quadra.j === q.j);
+    if (q.equip && !BARES_HOJE.includes(id)) continue;
+    if (q.lotes.length + extra.length) juntar(q, true, q.lotes.concat(extra));
+  }
+  /* a escolha: os dois das quadras dos bares de hoje (a esquina mais
+     perto da fatia do bar grande) e depois a mais longe de todos */
+  const escolhidas = [];
+  for (const id of BARES_HOJE) {
+    const q = deHojeSem.find(q => q.i + ',' + q.j === id);
+    const cand = esquinas.filter(e => e.hoje && e.id === id);
+    if (!q || !q.equip || !cand.length) continue;
+    const a = q.equip.area, cx = (a.x0 + a.x1) / 2, cy = (a.y0 + a.y1) / 2;
+    escolhidas.push(cand.sort((e, f) => Math.hypot(e.x - cx, e.y - cy) - Math.hypot(f.x - cx, f.y - cy))[0]);
+  }
+  while (escolhidas.length < N_BARES) {
+    let melhor = null, md = -1;
+    for (const e of esquinas) {
+      if (escolhidas.some(o => o.q === e.q)) continue;
+      const d = Math.min(...escolhidas.map(o => Math.hypot(o.x - e.x, o.y - e.y)));
+      if (d > md + 1e-6) { md = d; melhor = e; }
+    }
+    if (!melhor) break;
+    escolhidas.push(melhor);
+  }
+  /* o corte: o bar pega a ponta da fileira; o lote que fica no meio do
+     caminho é aparado. Se a sobra dele dá menos de 56 (2,9 m), o bar
+     fica com ele inteiro (até 9 m de frente) ou encolhe até sobrar 56 */
+  const bares = [];
+  escolhidas.forEach((e, k) => {
+    const oeste = e.lado === 'o', fila = oeste ? e.fila.slice() : e.fila.slice().reverse();
+    const larg = l => l.x1 - l.x0;
+    let acc = 0, n = 0;
+    while (n < fila.length && acc < LARG_BAR) acc += larg(fila[n++]);
+    const ultimo = fila[n - 1];
+    const w = acc - LARG_BAR >= 56 ? LARG_BAR : acc <= 176 ? acc : acc - 56;
+    const x0 = oeste ? e.q.ix0 : e.q.ix1 - w, x1 = oeste ? e.q.ix0 + w : e.q.ix1;
+    const { y0, y1 } = fila[0];
+    const tira = l => {
+      if (e.hoje && !l.proposta) lotesTirados.add(l);
+      else { const lista = e.hoje ? lotesExtra : e.q.lotes; const i = lista.indexOf(l); if (i >= 0) lista.splice(i, 1); }
+    };
+    for (let i = 0; i < n; i++) tira(fila[i]);
+    if (acc > w) {
+      /* o lote aparado: o de hoje sai e entra a cópia dele, mais estreita */
+      const resto = { ...ultimo, x0: oeste ? x1 : ultimo.x0, x1: oeste ? ultimo.x1 : x0, proposta: true, aparado: true };
+      delete resto._plano;
+      if (resto.muro) delete resto.muro;
+      (e.hoje ? lotesExtra : e.q.lotes).push(resto);
+      if (e.hoje && !resto.quadra) resto.quadra = { i: e.q.i, j: e.q.j, hoje: true };
+    }
+    /* a esquina na mão de quem olha a fachada: de frente pro norte, o
+       oeste fica à direita */
+    const esquina = (e.fr === 'n') === oeste ? 'dir' : 'esq';
+    const bar = { tipo: 'sobrado', modelo: 'bartorcida', frente: e.fr, esquina, x0, x1, y0, y1, alt: par8(6.7 * M),
+                  cor: '#b9ae98', proposta: true, bar: k + 1, quadra: { i: e.q.i, j: e.q.j, hoje: e.hoje || undefined } };
+    (e.hoje ? lotesExtra : e.q.lotes).push(bar);
+    bares.push({ n: k + 1, lote: bar, quadra: e.id, hoje: e.hoje, x: (x0 + x1) / 2, y: (y0 + y1) / 2,
+                 nome: 'Bar ' + (k + 1), noLugarDoBarGrande: BARES_HOJE.includes(e.id) });
+  });
+
+  /* ---- OS ESPAÇOS DE SEDE: os sete terrenos e as duas sedes de hoje
+     (a 2,9 é a fatia de nível 3; a 5,2, a de nível 1 — ali só cabe a
+     sede pequena). A página é que diz quem mora em cada um. ---- */
+  const espacosSede = terrenos.map(t => ({ id: 'terreno' + t.n, nome: t.nome, area: t.area, frente: t.frente, cabe: 5, hoje: false, quadra: t.quadra, terreno: t }));
+  for (const q of deHojeSem) if (q.equip && q.equip.tipo === 'sede')
+    espacosSede.push({ id: 'sede' + q.i + ',' + q.j, nome: 'Sede da quadra ' + q.i + ',' + q.j, area: { ...q.equip.area }, frente: q.equip.frente,
+                       cabe: q.equip.nivel === 1 ? 1 : 5, hoje: true, quadra: q.i + ',' + q.j, equip: q.equip });
+
   /* ---- AS FAVELAS: primeiro a grade de ruas, casando com a da cidade;
      depois as casas nos quarteirões que ela deixa ----
      A grade da favela É a da cidade. Cada rua da cidade segue dentro da
@@ -770,9 +902,11 @@ export function gerarProposta(P) {
   for (const q of quadras) if (q.equip) conta[q.equip.tipo] = (conta[q.equip.tipo] || 0) + 1;
   return {
     quadras, fora, avenidas, avenidasTiradas, favelas, atacadex, porticos, estadio2, condominios, substitui, terrenos,
+    bares, baresHoje: BARES_HOJE, lotesExtra, lotesTirados, espacosSede,
     coberto, naFavelaNova, noAtacadex, naAvenida, distAvenida, favelaDeHoje: favBB,
     contagem: { quadras: quadras.length, residenciais: residenciais.length, equipamentos: quadras.length - residenciais.length,
-                porTipo: conta, lotesNovos, casasFavela: favelas.map(f => f.lotes.length), casasFavelaHoje: FAV.length,
+                porTipo: conta, lotesNovos, lotesExtra: lotesExtra.length, lotesTirados: lotesTirados.size,
+                casasFavela: favelas.map(f => f.lotes.length), casasFavelaHoje: FAV.length,
                 quadrasTrocadas: substitui.size,
                 quadrasHoje: K.QUADRAS.length, lotesHoje: K.QUADRAS.reduce((n, q) => n + q.lotes.length, 0) },
     limite: { x0: x0 - RUA, y0: y0 - RUA, x1, y1 },

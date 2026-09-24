@@ -53,6 +53,10 @@ body { background: var(--papel); color: var(--tinta); font: 14px/1.45 var(--f-te
 .modos button[aria-selected="true"] { background: var(--tinta); color: var(--papel); }
 .modos button#aba-proposta[aria-selected="true"] { background: var(--acento); color: var(--folha); }
 .camadas { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 500 13px/1 var(--f-ui); color: var(--tinta-2); }
+.cidade { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta-2); }
+.cidade select { font: 600 14px/1.2 var(--f-ui); letter-spacing: .01em; color: var(--tinta); background: var(--folha);
+  border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; max-width: 190px; }
+.cidade select:focus-visible { outline: 2px solid var(--selecao); outline-offset: 2px; }
 .camadas label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 .camadas input { accent-color: var(--acento); margin: 0; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); outline-offset: 2px; }
@@ -77,7 +81,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 .legenda span { display: inline-flex; align-items: center; gap: 5px; }
 .legenda i { width: 11px; height: 11px; border: 1px solid #111; display: inline-block; }
 .legenda i.nova { border: 2px dashed #45b6be; background: transparent; }
-.legenda i.terreno { border: 2px dashed #b77fc6; background: #b3946a; }
+.legenda i.bar { background: #c8342b; border: 2px solid #f2f1ec; border-radius: 50%; }
+.legenda i.barf { background: #8f8a7f; border: 2px solid #3d3a35; border-radius: 50%; }
+.legenda i.sede { background: #1f5aa8; border: 2px solid #f2f1ec; }
+.legenda i.sedev { background: #aaa598; border: 2px dashed #57544d; }
+.torcidas { width: 100%; border-collapse: collapse; margin: 6px 0 0; font: 13px/1.3 var(--f-texto); }
+.torcidas th { text-align: left; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); padding: 0 6px 4px 0; }
+.torcidas td { padding: 4px 6px 4px 0; border-top: 1px solid var(--linha); vertical-align: top; font-variant-numeric: tabular-nums; }
+.torcidas .cores { display: inline-flex; gap: 2px; vertical-align: -1px; margin-right: 5px; }
+.torcidas .cores i, .ficha .cores i { width: 10px; height: 10px; display: inline-block; border: 1px solid rgba(0,0,0,.45); }
+.ficha .cores { display: inline-flex; gap: 3px; vertical-align: -1px; }
 .regua {
   position: absolute; right: 10px; bottom: 10px; padding: 5px 8px 6px; border-radius: 8px;
   background: rgba(24,27,26,.78); color: #eef0ec; font: 11px/1 var(--f-dado); pointer-events: none;
@@ -146,6 +159,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
       <p class="resumo" id="resumo">carregando a planta…</p>
     </div>
     <div class="controles">
+      <label class="cidade">Cidade <select id="sel-cidade"></select></label>
       <div class="modos" role="tablist" aria-label="O que mostrar">
         <button role="tab" id="aba-atual" aria-selected="true">Mapa atual</button>
         <button role="tab" id="aba-proposta" aria-selected="false">Proposta de expansão</button>
@@ -368,7 +382,156 @@ function poligonoDoPortico(p, fundo = PORTICO.zb) {
   const { noMundo } = eixosDoPortico(p), b = PORTICO.beiral;
   return [noMundo(-b, -fundo), noMundo(b, -fundo), noMundo(b, fundo), noMundo(-b, fundo)];
 }
-const terrenosSede = PROP.terrenos.map(t => ({ tipo: 'terreno', t, pol: retPts(t.area), bb: { ...t.area }, nome: t.nome, proposta: true }));
+
+/* ======================================================
+   OS BARES E AS SEDES DA PROPOSTA — e quem mora em cada um
+   ====================================================== */
+/* o lote de hoje que a proposta troca (a esquina que vira bar, o vizinho
+   aparado) some; entram os lotes que ela põe nas quadras de hoje (a
+   fatia do bar grande, que vira casa, e os bares) */
+for (const it of lotes) if (PROP.lotesTirados.has(it.l)) it.sobProposta = true;
+for (const l of PROP.lotesExtra)
+  lotesNovos.push({ tipo: 'lote', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, proposta: true,
+                    qh: K.QUADRAS.find(q => q.i === l.quadra.i && q.j === l.quadra.j) });
+/* o equipamento de hoje que sai do desenho da proposta: o bar grande
+   (vira casa) e as duas sedes (viram espaço de sede, da torcida da
+   cidade escolhida) */
+const somemNaProposta = new Set(PROP.baresHoje.concat(PROP.espacosSede.filter(e => e.hoje).map(e => e.quadra)));
+for (const e of equipamentos) e.somePelaProposta = somemNaProposta.has(e.q.i + ',' + e.q.j);
+const bares = PROP.bares.map(b => ({ b, it: lotesNovos.find(it => it.l === b.lote) }));
+const ehBar = l => l.modelo === 'bartorcida';
+const espacos = PROP.espacosSede.map(e => ({ tipo: 'espaco', e, pol: retPts(e.area), bb: { ...e.area }, nome: e.nome, proposta: true }));
+
+/* as torcidas da cidade: a praça do jogo (`mapa` da torcida) é o nome
+   da cidade sem acento; a cor é a mesma conta da planta */
+const slugDe = n => n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, '-');
+function coresDaTorcida(t) {
+  const lista = [...(t.cores || []), t.detalhe].filter(Boolean).map(c => String(c).toUpperCase());
+  const cor = lista[0] || '#8E3F9C', cor2 = lista.slice(1).find(c => c !== cor) || '#E8E2D0';
+  const cor3 = lista.slice(1).find(c => c !== cor && c !== cor2) || null;
+  return { cor, cor2, cor3 };
+}
+const corLegivel = hex => luz(hex) > 150 ? '#1a1a1a' : '#f6f3ea';
+const NEUTRO = { cor: '#d6d1c4', cor2: '#c4beb0', cor3: '#8f8a7f' };
+
+/* QUEM FICA COM O QUÊ (a regra é desta página; o jogo ainda não tem):
+   - SEDE: a maior torcida (nível da sede, depois o poder) escolhe
+     primeiro, e o espaço mais perto do estádio vai pra ela. A sede de
+     nível 1 prefere o espaço pequeno (o da 5,2, onde só ela cabe); de
+     nível 2 pra cima, o terreno inteiro. Nível 0 não tem sede.
+   - BAR: toda sede já vem com um bar (GDD §8.1: a sede nível 1 ganha
+     um bar nível 1), e é o bar livre mais perto da sede. Se a torcida
+     tiver `bares` nos dados, ela fica com esse tanto.
+   - O que ninguém ocupa fica NEUTRO, de porta fechada. */
+let ocupacao = { torcidas: [], semSede: [], mapa: '' };
+function distribuirTorcidas() {
+  const mapa = slugDe(cidade);
+  const ts = (TO.dados.torcidas || []).filter(t => t.mapa === mapa).map(t => {
+    const c = coresDaTorcida(t);
+    return { t, id: t.id, sigla: String(t.siglaTorcida || t.nome).toUpperCase(), nome: t.nome, nomeCompleto: String(t.nome || t.siglaTorcida).toUpperCase(),
+             clube: t.clube, nivel: t.sedeNivel ?? 1, poder: t.poder || 0, membros: t.membros || 0,
+             cor: c.cor, cor2: c.cor2, cor3: c.cor3 || c.cor2, nBares: Array.isArray(t.bares) ? t.bares.length : null, sede: null, bares: [] };
+  }).sort((a, b) => b.nivel - a.nivel || b.poder - a.poder || a.sigla.localeCompare(b.sigla));
+  for (const x of espacos) x.dono = null;
+  for (const x of bares) x.dono = null;
+  const doEstadio = x => Math.hypot((x.bb.x0 + x.bb.x1) / 2 - P.CX, (x.bb.y0 + x.bb.y1) / 2 - P.CY);
+  const grandes = espacos.filter(x => x.e.cabe > 1).sort((a, b) => doEstadio(a) - doEstadio(b));
+  const pequenos = espacos.filter(x => x.e.cabe === 1).sort((a, b) => doEstadio(a) - doEstadio(b));
+  for (const T of ts) {
+    if (T.nivel < 1) continue;
+    const x = (T.nivel === 1 && pequenos.find(p => !p.dono)) || grandes.find(g => !g.dono);
+    if (x) { x.dono = T; T.sede = x; }
+  }
+  for (const T of ts) {
+    if (!T.sede) continue;
+    const a = T.sede.bb, cx = (a.x0 + a.x1) / 2, cy = (a.y0 + a.y1) / 2;
+    const livres = bares.filter(x => !x.dono).sort((p, q) => Math.hypot(p.b.x - cx, p.b.y - cy) - Math.hypot(q.b.x - cx, q.b.y - cy));
+    for (const x of livres.slice(0, T.nBares ?? 1)) { x.dono = T; T.bares.push(x); }
+  }
+  /* o bar leva a torcida pro modelo 3D: a cor, o letreiro e o fundo dele */
+  for (const x of bares) {
+    const l = x.b.lote, T = x.dono;
+    l.torcida = T ? { cor: T.cor, cor2: T.cor2, cor3: T.cor3, rot: T.sigla } : null;
+    l.placa = T ? 'BAR DO ' + T.sigla : undefined;
+    l.placaFundo = T ? T.cor2 : undefined;
+    l.placaTinta = T ? corLegivel(T.cor2) : undefined;
+    l._plano = undefined;
+  }
+  for (const x of espacos) x.montagem = montagemDoEspaco(x);
+  ocupacao = { torcidas: ts, semSede: ts.filter(T => !T.sede), mapa };
+}
+
+/* A SEDE NO ESPAÇO: a sede do jogo (a de nível 3 da 2,9 serve de molde
+   pra nível 2 em diante, como na planta; a de nível 1 da 5,2 pra nível
+   1) levada pro espaço — girada pra frente dele, as cores da torcida no
+   lugar das do molde, o nome dela no letreiro. Espaço vago leva o
+   molde sem nada dentro, em cor de reboco, com a porta fechada e a
+   laje em cima. */
+const MOLDE_SEDE = {};
+for (const q of K.QUADRAS) if (q.equip && q.equip.tipo === 'sede') MOLDE_SEDE[q.equip.nivel === 1 ? 1 : 3] = q.equip;
+const EIXOS = { n: [[-1, 0], [0, 1]], s: [[1, 0], [0, -1]], o: [[0, 1], [1, 0]], l: [[0, -1], [-1, 0]] };
+/* o referencial de uma fatia pela frente dela: `a` corre a frente, da
+   esquerda pra direita de quem olha a fachada, e `b` vai pro fundo */
+function referencial(area, frente) {
+  const [R, I] = EIXOS[frente], hz = frente === 'n' || frente === 's';
+  return { R, I, ox: R[0] < 0 || I[0] < 0 ? area.x1 : area.x0, oy: R[1] < 0 || I[1] < 0 ? area.y1 : area.y0,
+           L: hz ? area.x1 - area.x0 : area.y1 - area.y0, A: hz ? area.y1 - area.y0 : area.x1 - area.x0 };
+}
+const PECAS_DO_VAZIO = new Set(['muro', 'marquise', 'piso', 'porta', 'portao', 'caixadagua', 'pilar', 'bloco']);
+function transplante(eq, area, frente, T) {
+  const de = referencial(eq.area, eq.frente), para = referencial(area, frente);
+  const su = para.L / de.L, sv = para.A / de.A;
+  const pt = (x, y) => {
+    const dx = x - de.ox, dy = y - de.oy, a = (dx * de.R[0] + dy * de.R[1]) * su, b = (dx * de.I[0] + dy * de.I[1]) * sv;
+    return [para.ox + a * para.R[0] + b * para.I[0], para.oy + a * para.R[1] + b * para.I[1]];
+  };
+  const dir = (x, y) => { const a = x * de.R[0] + y * de.R[1], b = x * de.I[0] + y * de.I[1]; return [a * para.R[0] + b * para.I[0], a * para.R[1] + b * para.I[1]]; };
+  const ret2 = r => { const [ax, ay] = pt(r.x0, r.y0), [bx, by] = pt(r.x1, r.y1); return { x0: Math.min(ax, bx), x1: Math.max(ax, bx), y0: Math.min(ay, by), y1: Math.max(ay, by) }; };
+  const T0 = eq.torcida || {}, c1 = T0.cor || '#b02a22', c2 = T0.cor2 || '#e8e2d0', c3 = T0.cor3 || c2;
+  const vazio = !T, C = T || NEUTRO;
+  const troca = new Map();
+  for (const [de0, para0] of [[c3, C.cor3], [c2, C.cor2], [c1, C.cor]]) troca.set(String(de0).toUpperCase(), para0);
+  const cor = c => (c && troca.get(String(c).toUpperCase())) || c;
+  const pecas = [];
+  for (const o of eq.pecas) {
+    if (vazio && !PECAS_DO_VAZIO.has(o.k)) continue;
+    const n = { ...o };
+    if (o.x0 !== undefined) Object.assign(n, ret2(o));
+    if (o.x !== undefined && o.y !== undefined) [n.x, n.y] = pt(o.x, o.y);
+    if (o.ox !== undefined) [n.ox, n.oz] = dir(o.ox, o.oz);
+    if (o.k === 'porta') { const [dx, dy] = dir(Math.cos(o.ang0), -Math.sin(o.ang0)); n.ang0 = Math.atan2(-dy, dx); }
+    if (o.cor) n.cor = cor(o.cor);
+    if (o.cor2) n.cor2 = cor(o.cor2);
+    if (o.k === 'letreiro') {
+      n.fundo = cor(o.fundo); n.tinta = corLegivel(n.fundo);
+      if (T && (o.texto === T0.nomeCompleto || o.texto === T0.rot)) n.texto = T.nomeCompleto;
+    }
+    if (o.k === 'mastro' && o.bandeira) {
+      const [dx, dy] = dir(o.bandeira.dirx, o.bandeira.dirz);
+      n.bandeira = { ...o.bandeira, dirx: dx, dirz: dy, texto: T ? T.sigla : '' };
+    }
+    pecas.push(n);
+  }
+  const teto = eq.teto ? { ...eq.teto, area: eq.teto.area ? ret2(eq.teto.area) : null } : null;
+  return { tipo: 'sede', nivel: eq.nivel, area: { ...area }, frente, chao: eq.chao, pecas, teto, vazio, torcida: T };
+}
+/* a fatia da sede de nível 1 num terreno inteiro: o canto da frente,
+   como o areaDaSede da planta */
+function fatiaDoNivel1(a, frente) {
+  const LF = 250, PR = 180;
+  if (frente === 'n') return { x0: a.x0, x1: a.x0 + LF, y0: a.y0, y1: a.y0 + PR };
+  if (frente === 's') return { x0: a.x0, x1: a.x0 + LF, y0: a.y1 - PR, y1: a.y1 };
+  if (frente === 'o') return { x0: a.x0, x1: a.x0 + PR, y0: a.y0, y1: a.y0 + LF };
+  return { x0: a.x1 - PR, x1: a.x1, y0: a.y0, y1: a.y0 + LF };
+}
+function montagemDoEspaco(x) {
+  const e = x.e, T = x.dono;
+  const pequeno = e.cabe === 1 || (T && T.nivel === 1);
+  const molde = MOLDE_SEDE[pequeno ? 1 : 3];
+  if (!molde) return null;
+  const area = pequeno && e.cabe > 1 ? fatiaDoNivel1(e.area, e.frente) : e.area;
+  return { eq: transplante(molde, area, e.frente, T || null), resto: area !== e.area ? e.area : null };
+}
 const porticos = PROP.porticos.map(p => { const pol = poligonoDoPortico(p, 3.2); return { tipo: 'portico', p, pol, bb: bbox(pol), nome: p.nome, proposta: true }; });
 const estadios = [
   { tipo: 'estadio', dx: 0, dy: 0, nome: 'Estádio', pol: P.anel(P.R.fachada1) },
@@ -495,7 +658,7 @@ function desenhar() {
       pol(q.polMiolo, COR.miolo);
       ctx.strokeStyle = '#000'; ctx.lineWidth = px(1); ctx.stroke();
     }
-    if (q.equip) {
+    if (q.equip && !(prop && somemNaProposta.has(q.i + ',' + q.j))) {
       ret(q.equip.area, q.equip.chao || '#9d9a90');
       for (const o of q.equip.pecas) if (o.k === 'piso') ret(o, o.cor);
     }
@@ -567,7 +730,7 @@ function desenhar() {
   }
 
   /* ---- os equipamentos: as peças em planta ---- */
-  for (const e of equipamentos) if (ve(e.bb)) desenharPecas(e.q.equip.pecas);
+  for (const e of equipamentos) if (ve(e.bb) && !(prop && e.somePelaProposta)) desenharPecas(e.q.equip.pecas);
   for (const q of K.QUADRAS) for (const pr of q.pracinhas || []) desenharPecas(pr.pecas);
   /* ---- os marcos, o atacarejo e as torres: o chão da fatia e o volume ---- */
   for (const m of prop ? marcos.filter(m => !m.atacadex).concat(marcosNovos) : marcos) {
@@ -588,6 +751,13 @@ function desenhar() {
   }
   if (prop) for (const it of lotesNovos) {
     if (!ve(it.bb)) continue;
+    if (ehBar(it.l)) {
+      /* o bar da torcida: a cor dela, com a borda na segunda; fechado, cinza */
+      const T = it.l.torcida;
+      pol(it.pol, T ? T.cor : '#8f8a7f');
+      ctx.strokeStyle = T ? T.cor2 : '#3d3a35'; ctx.lineWidth = px(2.2); ctx.stroke();
+      continue;
+    }
     pol(it.pol, COR_LOTE[it.l.tipo] || '#f0f');
     ctx.strokeStyle = '#123a3d'; ctx.lineWidth = px(0.9); ctx.stroke();
   }
@@ -617,6 +787,13 @@ function desenhar() {
       if (p.k === 'poste') { ctx.fillStyle = COR.poste; ctx.fillRect(p.x - 4, p.y - 4, 8, 8); ctx.strokeStyle = '#333'; ctx.lineWidth = px(0.8); ctx.strokeRect(p.x - 4, p.y - 4, 8, 8); }
       else { ctx.fillStyle = COR_PROP[p.k] || '#fff'; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(3.5, px(2.2)), 0, 7); ctx.fill(); }
     }
+  }
+  /* ---- de longe, o bar vira um ponto na cor da torcida (o lote tem 7 m) ---- */
+  if (prop && s < 0.3) for (const x of bares) {
+    const T = x.b.lote.torcida, r = px(T ? 6 : 4.5);
+    ctx.beginPath(); ctx.arc(x.b.x, x.b.y, r, 0, 7);
+    ctx.fillStyle = T ? T.cor : '#8f8a7f'; ctx.fill();
+    ctx.lineWidth = px(2); ctx.strokeStyle = T ? T.cor2 : '#3d3a35'; ctx.stroke();
   }
   /* ---- a seleção e o que está debaixo do mouse ---- */
   for (const [it, cor, esp] of [[estado.sobre, '#ffffff', 2], [estado.sel, getComputedStyle(document.documentElement).getPropertyValue('--selecao').trim() || '#d4731c', 3.5]]) {
@@ -660,13 +837,22 @@ function desenharProposta(ve, px) {
       if (q.quintal) ret(q.quintal, COR.quintal);
     }
   }
-  /* os terrenos pra sede: terra batida, com a borda roxa */
-  for (const it of terrenosSede) {
-    const a = it.t.area;
+  /* os espaços de sede: a sede da torcida que mora ali, em planta (com o
+     resto do terreno de terra, se a sede é a pequena), ou a sede vaga,
+     cinza e coberta */
+  for (const it of espacos) {
+    const a = it.e.area, m = it.montagem;
     if (!ve(a)) continue;
-    ret(a, COR.terreno);
-    ctx.setLineDash([px(6), px(4)]); ctx.strokeStyle = COR.sede; ctx.lineWidth = px(2.4);
-    ctx.strokeRect(a.x0 + 3, a.y0 + 3, a.x1 - a.x0 - 6, a.y1 - a.y0 - 6); ctx.setLineDash([]);
+    if (!m) { ret(a, COR.terreno); continue; }
+    if (m.resto) ret(m.resto, COR.terreno);
+    const eq = m.eq;
+    ret(eq.area, eq.chao || '#a8a396');
+    for (const o of eq.pecas) if (o.k === 'piso') ret(o, o.cor);
+    desenharPecas(eq.pecas);
+    if (eq.vazio) { ctx.globalAlpha = 0.8; ret((eq.teto && eq.teto.area) || eq.area, '#8e8a82'); ctx.globalAlpha = 1; }
+    const T = it.dono;
+    ctx.setLineDash(T ? [] : [px(6), px(4)]); ctx.strokeStyle = T ? T.cor2 : '#57544d'; ctx.lineWidth = px(T ? 3 : 2.4);
+    ctx.strokeRect(a.x0 + 2, a.y0 + 2, a.x1 - a.x0 - 4, a.y1 - a.y0 - 4); ctx.setLineDash([]);
   }
   ctx.setLineDash([px(7), px(5)]); ctx.strokeStyle = COR.nova; ctx.lineWidth = px(2.2);
   for (const q of PROP.quadras) if (ve(q)) ctx.strokeRect(q.x0, q.y0, q.x1 - q.x0, q.y1 - q.y0);
@@ -715,6 +901,7 @@ function desenharGrade(vis) {
 }
 
 function rotuloDoLote(l) {
+  if (ehBar(l)) return l.torcida ? 'bar ' + l.torcida.rot : 'bar fechado';
   const pc = planoSeguro(l);
   const m = l.muro || (pc && pc.tipo && pc.tipo !== 'favela' ? pc.tipo.toUpperCase() : '');
   return (NOME_TIPO[l.tipo] || l.tipo).toLowerCase() + ' ' + (l.frente || '') + (m ? ' ' + m : '');
@@ -748,14 +935,18 @@ function desenharRotulos(vis, prop) {
     ctx.fillStyle = '#f2f3ef'; ctx.fillText(texto, sx, sy + 0.5);
   };
   if (s >= 0.07) {
-    for (const e of equipamentos) etiqueta(e.nome, (e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2);
+    for (const e of equipamentos) if (!(prop && e.somePelaProposta)) etiqueta(e.nome, (e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2);
     for (const m of prop ? marcos.filter(m => !m.atacadex).concat(marcosNovos) : marcos) etiqueta(m.nome, (m.bb.x0 + m.bb.x1) / 2, (m.bb.y0 + m.bb.y1) / 2);
     etiqueta('ESTÁDIO', P.CX, P.CY);
     if (prop) {
       etiqueta(PROP.estadio2.nome.toUpperCase(), P.CX + PROP.estadio2.dx, P.CY + PROP.estadio2.dy);
       for (const q of PROP.quadras) if (q.equip && q.equip.tipo !== 'condominio' && q.equip.tipo !== 'estadio') etiqueta(q.equip.nome, (q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2);
       for (const f of PROP.favelas) etiqueta(f.nome, (f.bb.x0 + f.bb.x1) / 2, (f.bb.y0 + f.bb.y1) / 2);
-      for (const it of terrenosSede) etiqueta('Terreno p/ sede ' + it.t.n, (it.bb.x0 + it.bb.x1) / 2, (it.bb.y0 + it.bb.y1) / 2);
+      for (const it of espacos) etiqueta(it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga', (it.bb.x0 + it.bb.x1) / 2, (it.bb.y0 + it.bb.y1) / 2);
+      if (s >= 0.1) for (const x of bares) {
+        const T = x.b.lote.torcida;
+        if (T || s >= 0.25) etiqueta(T ? 'Bar do ' + T.rot : 'Bar fechado', x.b.x, x.b.y + (x.b.lote.frente === 'n' ? -60 : 60));
+      }
       for (const it of porticos) etiqueta(it.p.id === 'norte' ? 'Entrada norte' : 'Entrada sul', it.p.x - it.p.dir[0] * 260, it.p.y - it.p.dir[1] * 260);
     }
   }
@@ -795,7 +986,7 @@ function pegar(sx, sy) {
     for (const p of pecasSoltas) { if (prop && p.somePelaProposta) continue; const d = Math.hypot(p.x - x, p.y - y); if (d < md) { md = d; melhor = p; } }
     if (melhor) return melhor;
   }
-  if (prop) { const n = naLista(marcosNovos) || naLista(porticos) || naLista(terrenosSede); if (n) return n; }
+  if (prop) { const n = naLista(marcosNovos) || naLista(porticos) || naLista(espacos); if (n) return n; }
   const m = naLista(prop ? marcos.filter(m => !m.atacadex) : marcos);
   if (m) return m;
   const est = naLista(prop ? estadios : estadios.slice(0, 1));
@@ -804,7 +995,7 @@ function pegar(sx, sy) {
     const q = PROP.quadras.find(q => x >= q.x0 && x <= q.x1 && y >= q.y0 && y <= q.y1);
     if (q) return { tipo: 'quadraNova', q, pol: retPts(q), bb: { x0: q.x0, y0: q.y0, x1: q.x1, y1: q.y1 } };
   }
-  const e = naLista(equipamentos);
+  const e = naLista(prop ? equipamentos.filter(e => !e.somePelaProposta) : equipamentos);
   if (e) return e;
   const q = K.celulaEm(x, y);
   if (q && q.tipo === 'quadra') return { tipo: 'quadra', q, pol: q.pol, bb: { x0: q.x0, y0: q.y0, x1: q.x1, y1: q.y1 } };
@@ -898,7 +1089,8 @@ function montarLegenda() {
                  ['Muro', COR_LOTE.muro], ['Favela', COR_FAVELA.casa], ['Marco', COR.marco], ['Quintal', COR.quintal],
                  ['Árvore', '#2e7d2e'], ['Poste', COR.poste]];
   $('legenda').innerHTML = itens.map(([n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('') +
-    (estado.modo === 'proposta' ? '<span><i class="nova"></i>Quadra nova</span><span><i class="terreno"></i>Terreno p/ sede</span>' : '');
+    (estado.modo === 'proposta' ? '<span><i class="nova"></i>Quadra nova</span><span><i class="bar"></i>Bar aberto</span><span><i class="barf"></i>Bar fechado</span>' +
+                                  '<span><i class="sede"></i>Sede</span><span><i class="sedev"></i>Sede vaga</span>' : '');
 }
 
 /* ======================================================
@@ -911,13 +1103,15 @@ function avenidaCorta(q) {
 }
 function planoSeguro(l) { try { return planoDaCasa(l, K); } catch (e) { return null; } }
 function tituloDe(it) {
+  if (it.tipo === 'lote' && ehBar(it.l)) return it.l.torcida ? 'Bar do ' + it.l.torcida.rot : 'Bar fechado';
+  if (it.tipo === 'espaco') return it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga';
   if (it.tipo === 'lote') {
     const pc = planoSeguro(it.l);
     const m = it.l.muro || (pc && pc.tipo);
     return (m && NOME_MODELO[m]) || NOME_TIPO[it.l.tipo] || it.l.tipo;
   }
   if (it.tipo === 'prop') return NOME_PROP[it.k] + (it.k === 'poste' && it.v ? ' com transformador' : '');
-  if (it.tipo === 'marco' || it.tipo === 'equip' || it.tipo === 'portico' || it.tipo === 'estadio' || it.tipo === 'terreno') return it.nome;
+  if (it.tipo === 'marco' || it.tipo === 'equip' || it.tipo === 'portico' || it.tipo === 'estadio') return it.nome;
   if (it.tipo === 'quadraNova') return it.q.equip ? it.q.equip.nome : 'Quadra nova ' + nomeQuadraNova(it.q);
   if (it.tipo === 'quadra') return 'Quadra ' + it.q.i + ',' + it.q.j;
   return '';
@@ -930,12 +1124,43 @@ function linhas(pares) {
 function fichaDe(it) {
   if (!it) return '<p class="sobre">Ficha</p><h2>Clique num lote</h2><p class="nota">Cada lote do mapa abre o imóvel em 3D, montado com o mesmo código do jogo.</p>';
   const chip = it.proposta || it.tipo === 'quadraNova' ? '<span class="chip">proposta</span>' : '';
+  const coresDe = T => `<span class="cores">${[T.cor, T.cor2, T.cor3].filter((c, i, a) => c && a.indexOf(c) === i).map(c => `<i style="background:${c}"></i>`).join('')}</span>`;
+  if (it.tipo === 'lote' && ehBar(it.l)) {
+    const l = it.l, x = bares.find(x => x.b.lote === l), T = x && x.dono;
+    const onde = it.qh ? 'quadra ' + it.qh.i + ',' + it.qh.j : 'quadra nova ' + nomeQuadraNova(it.qn);
+    const nS = l.frente === 'n' || l.frente === 's';
+    const sede = T && T.sede ? (T.sede.e.hoje ? 'a de hoje, na quadra ' + T.sede.e.quadra : T.sede.e.nome.replace('Terreno para sede', 'terreno')) : '';
+    return `<p class="sobre">Bar ${x ? x.b.n : ''} de ${bares.length} · ${esc(onde)}${chip}</p><h2>${esc(tituloDe(it))}</h2>` + linhas([
+      ['Torcida', T ? T.nome + ' (' + T.sigla + ')' : 'nenhuma', true], ['Clube', T ? T.clube : ''], ['Sede', sede, true],
+      ['Frente para', FRENTE[l.frente]], ['Esquina', l.esquina === 'dir' ? 'à direita da fachada' : 'à esquerda da fachada'],
+      ['Testada', metros(nS ? l.x1 - l.x0 : l.y1 - l.y0)], ['Fundo', metros(nS ? l.y1 - l.y0 : l.x1 - l.x0)],
+      ['Letreiro', l.placa, true]
+    ]) + (T ? `<p class="nota">Aberto: o térreo é da torcida — ${coresDe(T)} na parede, no pilar e no frontão, e o letreiro no fundo da segunda cor. Dentro vai o que o bar grande tinha: o xadrez azul e creme, o balcão em L com as banquetas, o armário com a garrafa, a cervejeira, os dois freezers com a TV, o engradado, as mesas de madeira e a porta do banheiro. Em cima, o apartamento.</p>`
+            : `<p class="nota">Nenhuma torcida de ${esc(cidade)} usa este bar: ele fica neutro, de porta de enrolar abaixada, com o ALUGA-SE. O apartamento de cima continua morado.</p>`)
+      + (x && x.b.noLugarDoBarGrande ? '<p class="nota">É a quadra do bar grande de hoje (13,9 × 8,8 m): a fatia dele vira casa, e o bar pequeno fica na esquina.</p>' : '');
+  }
+  if (it.tipo === 'espaco') {
+    const e = it.e, a = e.area, T = it.dono, m = it.montagem;
+    const tam = metros(a.x1 - a.x0) + ' × ' + metros(a.y1 - a.y0);
+    const onde = e.hoje ? 'a sede de hoje, quadra ' + e.quadra : e.nome.replace('Terreno para sede', 'terreno') + ', quadra ' + e.quadra;
+    if (T) return `<p class="sobre">Espaço de sede · ${esc(onde)}${chip}</p><h2>${esc(T.nome)}</h2>` + linhas([
+      ['Torcida', T.sigla], ['Clube', T.clube], ['Nível da sede', T.nivel], ['Membros', T.membros],
+      ['Bar', T.bares.length ? T.bares.map(x => 'bar ' + x.b.n).join(', ') : 'nenhum livre', true],
+      ['Espaço', tam], ['Frente para', FRENTE[e.frente]], ['Onde', e.terreno ? e.terreno.onde : '', true]
+    ]) + `<p class="nota">A sede do jogo (${T.nivel === 1 ? 'o barracão de nível 1' : 'a de nível 3, que a planta usa do nível 2 em diante'}) levada pra este espaço, nas cores da torcida ${coresDe(T)}, com o nome dela no letreiro.${m && m.resto ? ' O resto do terreno fica de pátio murado, pra quando a sede crescer.' : ''}</p>`;
+    const zero = ocupacao.semSede.filter(T => T.nivel < 1);
+    return `<p class="sobre">Espaço de sede · ${esc(onde)}${chip}</p><h2>Sede vaga</h2>` + linhas([
+      ['Espaço', tam], ['Frente para', FRENTE[e.frente]], ['Cabe', e.cabe === 1 ? 'só a sede de nível 1' : 'sede de qualquer nível', true],
+      ['Onde', e.terreno ? e.terreno.onde : '', true]
+    ]) + `<p class="nota">Nenhuma torcida de ${esc(cidade)} mora aqui${zero.length ? ` (${esc(zero.map(T => T.sigla).join(', '))}, no nível 0, não tem sede)` : ''}: o espaço fica neutro, com a sede fechada — cor de reboco, porta fechada e a laje por cima.</p>`;
+  }
   if (it.tipo === 'lote') {
     const l = it.l, pc = planoSeguro(l);
     const nS = l.frente === 'n' || l.frente === 's';
     const testada = l.ang ? l.w : nS ? l.x1 - l.x0 : l.y1 - l.y0;
     const fundo = l.ang ? l.h : nS ? l.y1 - l.y0 : l.x1 - l.x0;
     const onde = it.favelaNova ? it.favelaNova.nome.toLowerCase()
+               : it.qh ? 'quadra ' + it.qh.i + ',' + it.qh.j
                : it.proposta ? 'quadra nova ' + nomeQuadraNova(it.qn)
                : it.q ? 'quadra ' + it.q.i + ',' + it.q.j : l.favela ? 'favela' : 'beira da estrada';
     const modelo = l.muro || (pc && pc.tipo);
@@ -949,6 +1174,8 @@ function fichaDe(it) {
       ['Letreiro', l.placa, true], ['Pixação', l.pixacao, true],
       ['Na planta', 'x ' + Math.round(l.cx ?? (l.x0 + l.x1) / 2) + ' · y ' + Math.round(l.cy ?? (l.y0 + l.y1) / 2), true]
     ]) + (it.favelaNova ? '<p class="nota">Casa da favela nova: a mesma conta da favela do jogo (a casa, a altura, a cor, as casas grandes), com o beco na grade da cidade.</p>'
+        : it.l.fatiaDoBar ? '<p class="nota">Casa nova no lugar do bar grande de hoje: a fatia dele volta a ser lote, com a mesma conta dos lotes da proposta.</p>'
+        : it.l.aparado ? '<p class="nota">O lote de hoje, mais estreito: a esquina do lado virou bar da torcida.</p>'
         : it.proposta ? '<p class="nota">Casa que o gerador do jogo põe nesse lote hoje. Com a expansão feita, é ela que aparece.</p>' : '');
   }
   if (it.tipo === 'prop') {
@@ -968,21 +1195,12 @@ function fichaDe(it) {
       ['Na planta', 'x ' + Math.round((b.x0 + b.x1) / 2) + ' · y ' + Math.round((b.y0 + b.y1) / 2), true]
     ]) + nota;
   }
-  if (it.tipo === 'terreno') {
-    const t = it.t, a = t.area;
-    return `<p class="sobre">Terreno pra sede${chip}</p><h2>${esc(t.nome)}</h2>` + linhas([
-      ['Terreno', metros(a.x1 - a.x0) + ' × ' + metros(a.y1 - a.y0), true], ['Frente para', FRENTE[t.frente]], ['Quadra', t.quadra],
-      ['Onde', t.onde, true], ['Na planta', 'x ' + Math.round((a.x0 + a.x1) / 2) + ' · y ' + Math.round((a.y0 + a.y1) / 2), true]
-    ]) + `<p class="nota">Do tamanho que a sede de nível 3 do jogo pede (a conta do areaDaSede: 72% da frente da quadra e o fundo inteiro); a de nível 1 usa um canto dele. O resto da quadra continua casa. No 3D, o terreno murado, esperando a torcida.</p>`;
-  }
   if (it.tipo === 'portico') {
     const [a, b] = boasVindas();
-    const ops = CIDADES.map(([n]) => `<option${n === cidade ? ' selected' : ''}>${esc(n)}</option>`).join('');
     return `<p class="sobre">Entrada da cidade${chip}</p><h2>${esc(it.nome)}</h2>` + linhas([
       ['Na frente', a + ' ' + b, true], ['No verso', 'VOLTE SEMPRE', true],
       ['Vão livre', metros((2 * (PORTICO.xp - PORTICO.pilar)) * M)], ['Altura', metros(8.6 * M)]
-    ]) + `<label class="campo">Cidade da torcida <select id="sel-cidade">${ops}</select></label>
-      <p class="nota">No jogo o texto sai do nome da cidade da torcida, o {cidade}. A preposição muda com o nome: a São Paulo, ao Recife, à Bahia.</p>`;
+    ]) + `<p class="nota">No jogo o texto sai do nome da cidade da torcida, o {cidade} — aqui, a cidade escolhida no alto da página. A preposição muda com o nome: a São Paulo, ao Recife, à Bahia.</p>`;
   }
   if (it.tipo === 'estadio' || (it.tipo === 'quadraNova' && it.q.equip && it.q.equip.tipo === 'estadio')) {
     const e2 = it.tipo !== 'estadio' || it.proposta;
@@ -1027,19 +1245,20 @@ function fichaDe(it) {
   }
   return '';
 }
-function ligarFicha() {
-  const sel = $('sel-cidade');
-  if (sel) sel.onchange = ev => {
-    cidade = ev.target.value;
-    try { localStorage.setItem('planta-cidade', cidade); } catch (e) {}
-    $('ficha').innerHTML = fichaDe(estado.sel); ligarFicha();
-    vista.mostrar(estado.sel);
-  };
+/* A CIDADE: muda o texto do pórtico e quem mora nos bares e nas sedes
+   da proposta (as torcidas da praça dela) */
+function mudarCidade(c) {
+  cidade = c;
+  try { localStorage.setItem('planta-cidade', cidade); } catch (e) {}
+  distribuirTorcidas();
+  $('notas').innerHTML = notasDaProposta();
+  $('ficha').innerHTML = fichaDe(estado.sel);
+  if (estado.sel) vista.mostrar(estado.sel);
+  pedirDesenho();
 }
 function selecionar(it, rolar) {
   estado.sel = it;
   $('ficha').innerHTML = fichaDe(it);
-  ligarFicha();
   pedirDesenho();
   if (!it) return;
   vista.mostrar(it);
@@ -1130,8 +1349,8 @@ function decalques(l, pc, g) {
   if (l.placa) {
     const pp = pc.placa;
     const larg = pp ? pp.larg : Math.min(W - 12, 110), alt = pp ? pp.alt : Math.min(15, larg / 4.6);
-    const lug = lugarDoDecalque(l, pc, larg, alt, { u: 0, y: pp ? pp.y : Math.max(46 + 6, 52) + alt / 2, min: larg * 0.55 });
-    if (lug) placaNoMundo(g, lug, texturaDizer(l.placa, true));
+    const lug = lugarDoDecalque(l, pc, larg, alt, { u: (pp && pp.u) || 0, y: pp ? pp.y : Math.max(46 + 6, 52) + alt / 2, min: larg * 0.55 });
+    if (lug) placaNoMundo(g, lug, texturaDizer(l.placa, true, l.placaTinta, l.placaFundo));
   }
   if (l.pixacao) {
     const larg = Math.min(W - 12, 62), alt = Math.min(14, larg / 4.3);
@@ -1254,30 +1473,67 @@ function objetoDoPortico(p, g) {
 }
 /* O TERRENO PRA SEDE: chão de terra, muro de 1,8 m em volta, o portão de
    chapa na frente e a placa */
-function objetoDoTerreno(t, g) {
-  const a = t.area, h = 1.8 * M, e = 0.2 * M, vao = 4 * M, cor = '#d3cbb8';
+/* O TERRENO MURADO: o chão de terra e o muro em volta, com o portão no
+   meio da frente. `o.fora` é a fatia que a sede pequena toma num canto
+   (o muro não passa por ela); `o.placa`, o dizer no muro da frente. */
+function objetoDoTerreno(a, frente, g, o = {}) {
+  const h = 1.8 * M, e = 0.2 * M, vao = 4 * M, cor = '#d3cbb8', f = o.fora;
   caixa(g, a.x0, a.x1, 0, 1.2, a.y0, a.y1, '#a88d66');
-  const hz = t.frente === 'n' || t.frente === 's';
-  const muro = (x0, x1, y0, y1) => caixa(g, x0, x1, 0, h, y0, y1, cor);
-  /* os quatro lados; o da frente com o vão do portão no meio */
-  for (const k of ['n', 's', 'o', 'l']) {
-    const yL = k === 'n' ? a.y0 : a.y1, xL = k === 'o' ? a.x0 : a.x1;
-    if (k === 'n' || k === 's') {
-      if (k === t.frente) { const m = (a.x0 + a.x1) / 2; muro(a.x0, m - vao / 2, yL - e / 2, yL + e / 2); muro(m + vao / 2, a.x1, yL - e / 2, yL + e / 2);
-        caixa(g, m - vao / 2, m + vao / 2, 0, h * 0.92, yL - e / 4, yL + e / 4, '#5d6166'); }
-      else muro(a.x0, a.x1, yL - e / 2, yL + e / 2);
-    } else {
-      if (k === t.frente) { const m = (a.y0 + a.y1) / 2; muro(xL - e / 2, xL + e / 2, a.y0, m - vao / 2); muro(xL - e / 2, xL + e / 2, m + vao / 2, a.y1);
-        caixa(g, xL - e / 4, xL + e / 4, 0, h * 0.92, m - vao / 2, m + vao / 2, '#5d6166'); }
-      else muro(xL - e / 2, xL + e / 2, a.y0, a.y1);
+  const nsDe = k => k === 'n' || k === 's', linhaDe = k => k === 'n' ? a.y0 : k === 's' ? a.y1 : k === 'o' ? a.x0 : a.x1;
+  /* o trecho de cada lado que fica fora da fatia da sede */
+  const trecho = k => {
+    const nS = nsDe(k), L = linhaDe(k);
+    let t0 = nS ? a.x0 : a.y0, t1 = nS ? a.x1 : a.y1;
+    if (f && (nS ? L >= f.y0 - 1 && L <= f.y1 + 1 : L >= f.x0 - 1 && L <= f.x1 + 1)) {
+      const f0 = nS ? f.x0 : f.y0, f1 = nS ? f.x1 : f.y1;
+      if (f0 <= t0 + 1) t0 = Math.max(t0, f1); else if (f1 >= t1 - 1) t1 = Math.min(t1, f0);
     }
+    return [t0, t1];
+  };
+  for (const k of ['n', 's', 'o', 'l']) {
+    const [t0, t1] = trecho(k), nS = nsDe(k), L = linhaDe(k);
+    if (t1 - t0 < 1) continue;
+    const muro = (u0, u1) => nS ? caixa(g, u0, u1, 0, h, L - e / 2, L + e / 2, cor) : caixa(g, L - e / 2, L + e / 2, 0, h, u0, u1, cor);
+    if (k === frente && t1 - t0 > vao + 40) {
+      const m = (t0 + t1) / 2;
+      muro(t0, m - vao / 2); muro(m + vao / 2, t1);
+      if (nS) caixa(g, m - vao / 2, m + vao / 2, 0, h * 0.92, L - e / 4, L + e / 4, '#5d6166');
+      else caixa(g, L - e / 4, L + e / 4, 0, h * 0.92, m - vao / 2, m + vao / 2, '#5d6166');
+    } else muro(t0, t1);
   }
-  /* a placa no muro da frente, entre a quina e o portão */
-  const n = NORMAL[t.frente], larg = Math.min(5.2 * M, ((hz ? a.x1 - a.x0 : a.y1 - a.y0) - vao) / 2 - 20), alt = larg / 4.6;
-  const x = hz ? a.x0 + ((a.x1 - a.x0) - vao) / 4 : (t.frente === 'o' ? a.x0 : a.x1) + n[0] * (e / 2 + 0.6);
-  const z = hz ? (t.frente === 'n' ? a.y0 : a.y1) + n[1] * (e / 2 + 0.6) : a.y0 + ((a.y1 - a.y0) - vao) / 4;
-  placaNoMundo(g, { x, y: h * 0.55, z, ox: n[0], oz: n[1], larg, alt }, texturaDizer('TERRENO PARA SEDE', true, '#f6f3ea', '#7a2f86'));
-  for (const [sx, sz] of [[0.3, 0.35], [0.72, 0.62]]) arvore3d(g, { x: a.x0 + (a.x1 - a.x0) * sx, y: a.y0 + (a.y1 - a.y0) * sz, r: 12 });
+  if (o.placa) {
+    /* a placa no muro da frente, entre a quina e o portão */
+    const [t0, t1] = trecho(frente), nS = nsDe(frente), n = NORMAL[frente], L = linhaDe(frente);
+    const larg = Math.min(5.2 * M, ((t1 - t0) - vao) / 2 - 20), alt = larg / 4.6, u = t0 + ((t1 - t0) - vao) / 4;
+    if (larg > 20) placaNoMundo(g, { x: nS ? u : L + n[0] * (e / 2 + 0.6), y: h * 0.55, z: nS ? L + n[1] * (e / 2 + 0.6) : u, ox: n[0], oz: n[1], larg, alt },
+                                texturaDizer(o.placa, true, '#f6f3ea', '#7a2f86'));
+  }
+  for (const [sx, sz] of [[0.3, 0.35], [0.72, 0.62]]) {
+    const x = a.x0 + (a.x1 - a.x0) * sx, y = a.y0 + (a.y1 - a.y0) * sz;
+    if (f && x > f.x0 - 16 && x < f.x1 + 16 && y > f.y0 - 16 && y < f.y1 + 16) continue;
+    arvore3d(g, { x, y, r: 12 });
+  }
+}
+/* O ESPAÇO DE SEDE: a sede da torcida que mora ali (e o resto do
+   terreno de pátio murado, quando ela é a pequena), ou a sede vaga —
+   o molde em cor de reboco, com a porta e o portão fechados e a laje
+   por cima */
+function objetoDoEspaco(it, g) {
+  const m = it.montagem, e = it.e;
+  if (!m) { objetoDoTerreno(e.area, e.frente, g, { placa: 'TERRENO PARA SEDE' }); return; }
+  if (m.resto) objetoDoTerreno(m.resto, e.frente, g, { fora: m.eq.area });
+  objetoDoEquip(m.eq, g);
+  if (!m.eq.vazio) return;
+  const FECHADA = '#6d6a64';
+  for (const o of m.eq.pecas) {
+    if (o.k === 'portao') caixa(g, o.x0, o.x1, 0, o.alt || 54, o.y0, o.y1, FECHADA);
+    if (o.k !== 'porta') continue;
+    const dx = Math.cos(o.ang0), dy = -Math.sin(o.ang0), L = o.larg || 28, bx = o.x + dx * L, by = o.y + dy * L, alt = o.alt || 41;
+    if (Math.abs(dx) >= Math.abs(dy)) caixa(g, Math.min(o.x, bx), Math.max(o.x, bx), 0, alt, o.y - 1.6, o.y + 1.6, FECHADA);
+    else caixa(g, o.x - 1.6, o.x + 1.6, 0, alt, Math.min(o.y, by), Math.max(o.y, by), FECHADA);
+  }
+  const t = m.eq.teto, a = (t && t.area) || m.eq.area, y = t ? t.base : 60;
+  caixa(g, a.x0 - 1, a.x1 + 1, y, y + 4, a.y0 - 1, a.y1 + 1, '#9a968d');
 }
 /* O ESTÁDIO: o volume na medida do jogo (a esplanada, o gramado, a pista,
    a arquibancada em degraus, a cobertura, a fachada e os refletores) */
@@ -1378,14 +1634,21 @@ function arvore3d(g, a) {
   const c1 = new THREE.Mesh(new THREE.ConeGeometry(a.r, copa, 4), lisa('#3f7a34')); c1.position.set(a.x, galho + copa / 2, a.y); c1.castShadow = true; g.add(c1);
   const c2 = new THREE.Mesh(new THREE.ConeGeometry(a.r, a.r * 0.9, 4), lisa('#356b2c')); c2.rotation.x = Math.PI; c2.position.set(a.x, galho - a.r * 0.45, a.y); g.add(c2);
 }
-function objetoDaQuadra(q, g, nova) {
+function objetoDaQuadra(q, g, nova, prop) {
   const pts = nova ? retPts(q) : q.pol;
   const forma = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)));
   const calc = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, { depth: 1.4, bevelEnabled: false }), lisa('#a9a69b'));
   calc.rotation.x = Math.PI / 2; calc.position.y = 1.4; calc.receiveShadow = true; g.add(calc);
-  for (const l of q.lotes) objetoDoLote(l, g);
-  if (nova && q.terreno) objetoDoTerreno(q.terreno, g);
-  if (q.equip && !nova) objetoDoEquip(q.equip, g);
+  /* na proposta, a quadra de hoje perde o lote que virou bar e ganha
+     os lotes que a proposta põe nela; o bar grande e a sede de hoje
+     saem, e a sede volta como espaço de sede */
+  const id = q.i + ',' + q.j;
+  const lotesDela = nova || !prop ? q.lotes
+    : q.lotes.filter(l => !PROP.lotesTirados.has(l)).concat(PROP.lotesExtra.filter(l => l.quadra.i === q.i && l.quadra.j === q.j));
+  for (const l of lotesDela) objetoDoLote(l, g);
+  const esp = espacos.find(x => nova ? x.e.terreno && x.e.terreno === q.terreno : prop && x.e.hoje && x.e.quadra === id);
+  if (esp) objetoDoEspaco(esp, g);
+  if (q.equip && !nova && !(prop && somemNaProposta.has(id))) objetoDoEquip(q.equip, g);
   if (!nova) for (const a of q.arvores || []) arvore3d(g, a);
 }
 function objetoDeEstudo(q, g) {
@@ -1413,7 +1676,7 @@ function frenteDe(it) {
   }
   if (it.tipo === 'marco') return NORMAL[it.pc.frente] || null;
   if (it.tipo === 'portico') return [-it.p.dir[0], -it.p.dir[1]];
-  if (it.tipo === 'terreno') return NORMAL[it.t.frente] || null;
+  if (it.tipo === 'espaco') return NORMAL[it.e.frente] || null;
   return null;
 }
 function criarVista(canvas) {
@@ -1468,9 +1731,9 @@ function criarVista(canvas) {
         else if (it.tipo === 'marco') objetoDoMarco(it, grupo);
         else if (it.tipo === 'prop') objetoDoProp(it, grupo);
         else if (it.tipo === 'equip') objetoDoEquip(it.q.equip, grupo);
-        else if (it.tipo === 'quadra') objetoDaQuadra(it.q, grupo, false);
+        else if (it.tipo === 'quadra') objetoDaQuadra(it.q, grupo, false, estado.modo === 'proposta');
         else if (it.tipo === 'portico') objetoDoPortico(it.p, grupo);
-        else if (it.tipo === 'terreno') objetoDoTerreno(it.t, grupo);
+        else if (it.tipo === 'espaco') objetoDoEspaco(it, grupo);
         else if (it.tipo === 'estadio') objetoDoEstadio(it.dx, it.dy, grupo);
         else if (it.tipo === 'quadraNova') {
           const e = it.q.equip;
@@ -1528,15 +1791,29 @@ function criarVista(canvas) {
 }
 const vista = criarVista($('c3d'));
 /* pro teste automático: ?teste expõe o estado do mapa */
-if (new URLSearchParams(location.search).has('teste')) window.__planta = { estado, paraTela, zoomEm, lotes, lotesNovos, lotesFavelaNova, marcosNovos, porticos, estadios, pecasSoltas, marcos, equipamentos, K, PROP };
+if (new URLSearchParams(location.search).has('teste')) window.__planta = { estado, paraTela, zoomEm, lotes, lotesNovos, lotesFavelaNova, marcosNovos, porticos, estadios, pecasSoltas, marcos, equipamentos, K, PROP,
+  bares, espacos, ocupacao: () => ocupacao, mudarCidade, selecionar };
 
 /* ======================================================
    AS NOTAS DA PROPOSTA
    ====================================================== */
+const LARG_BAR_M = 7.4;
+/* a tabela das torcidas da cidade: quem mora onde */
+function tabelaDaCidade() {
+  const ts = ocupacao.torcidas;
+  if (!ts.length) return `<p class="nota">Nenhuma torcida nos dados tem ${esc(cidade)} como praça: todos os bares e as sedes ficam fechados.</p>`;
+  const abertos = bares.filter(x => x.dono).length, ocupados = espacos.filter(x => x.dono).length;
+  const linhasT = ts.map(T => `<tr><td><span class="cores">${[T.cor, T.cor2, T.cor3].filter((c, i, a) => c && a.indexOf(c) === i).map(c => `<i style="background:${c}"></i>`).join('')}</span>${esc(T.sigla)}</td>
+    <td>${T.nivel}</td><td>${T.sede ? esc(T.sede.e.hoje ? 'quadra ' + T.sede.e.quadra : T.sede.e.nome.replace('Terreno para sede ', 'terreno ')) : T.nivel < 1 ? 'sem sede (nível 0)' : 'sem espaço'}</td>
+    <td>${T.bares.length ? T.bares.map(x => x.b.n).join(', ') : '—'}</td></tr>`).join('');
+  return `<h3>As torcidas de ${esc(cidade)}</h3>
+  <p>${ts.length} torcida${ts.length > 1 ? 's' : ''}: ${abertos} de ${bares.length} bares abertos e ${ocupados} de ${espacos.length} espaços de sede ocupados.</p>
+  <table class="torcidas"><thead><tr><th>Torcida</th><th>Nível</th><th>Sede</th><th>Bar</th></tr></thead><tbody>${linhasT}</tbody></table>`;
+}
 function notasDaProposta() {
   const c = PROP.contagem;
   const tipos = {};
-  for (const it of lotesNovos) { const k = it.l.muro ? 'casa de muro' : NOME_TIPO[it.l.tipo].toLowerCase(); tipos[k] = (tipos[k] || 0) + 1; }
+  for (const it of lotesNovos) { if (ehBar(it.l)) continue; const k = it.l.muro ? 'casa de muro' : NOME_TIPO[it.l.tipo].toLowerCase(); tipos[k] = (tipos[k] || 0) + 1; }
   const plural = { casa: 'casas', sobrado: 'sobrados', galpão: 'galpões', prédio: 'prédios', muro: 'muros', 'casa de muro': 'casas de muro' };
   const lista = Object.entries(tipos).sort((a, b) => b[1] - a[1]).map(([k, n]) => n + ' ' + (n > 1 ? plural[k] || k : k)).join(', ');
   const EQ = { praca: ['praça', 'praças'], condominio: ['condomínio', 'condomínios'], igreja: ['igreja', 'igrejas'], sede: ['terreno de sede', 'terrenos de sede'],
@@ -1545,9 +1822,9 @@ function notasDaProposta() {
   const oeste = Math.round((K.VX0 - PROP.mundo.x0) / M), norte = Math.round((K.VY0 - PROP.mundo.y0) / M), sul = Math.round((PROP.mundo.y1 - (K.VY0 + K.VH)) / M);
   const saem = lotes.filter(it => it.sobProposta && it.beira && !it.l.favela).length;
   const trocados = lotes.filter(it => it.q && PROP.substitui.has(it.q.i + ',' + it.q.j)).length;
-  const qTotal = c.quadrasHoje - c.quadrasTrocadas + c.quadras, lTotal = c.lotesHoje - trocados + c.lotesNovos;
+  const qTotal = c.quadrasHoje - c.quadrasTrocadas + c.quadras, lTotal = c.lotesHoje - trocados + c.lotesNovos + c.lotesExtra - c.lotesTirados;
   const [fNO, fSO] = c.casasFavela, fTotal = fNO + fSO;
-  const comercio = lotesNovos.filter(it => it.l.placa).length;
+  const comercio = lotesNovos.filter(it => it.l.placa && !ehBar(it.l)).length;
   const cond = PROP.condominios.map(cd => `${cd.t1.replace('Edifício ', '')} e ${cd.t2.replace('Residencial ', '')} (${cd.cores})`).join('; ');
   return `<p class="sobre">Proposta · 3ª versão</p><h2>A cidade cresce pra oeste e pro norte</h2>
   <dl class="numeros">
@@ -1555,13 +1832,21 @@ function notasDaProposta() {
     <div><dt>Lotes</dt><dd>${c.lotesHoje} → ${lTotal}</dd><small>em quadra</small></div>
     <div><dt>Na favela</dt><dd>${c.casasFavelaHoje} → ${fTotal}</dd><small>em 2 favelas</small></div>
   </dl>
+  <h3>Os bares e as sedes da torcida</h3>
+  <ul>
+    <li><b>O bar da torcida encolheu</b> pro tamanho do bar da favela (${metros(LARG_BAR_M * M)} de frente, o fundo da fileira), com o arranjo dele — a varanda coberta com as mesas na frente, o salão aberto pra rua atrás — mas no jeito de classe média: térreo nas cores da torcida com porta de enrolar e o letreiro BAR DO ${esc(ocupacao.torcidas[0] ? ocupacao.torcidas[0].sigla : 'X')} no frontão, e o apartamento em cima. Dentro, o que o bar grande tinha.</li>
+    <li><b>${bares.length} bares</b> de esquina espalhados pela cidade (um a cada três quadras, mais ou menos): dois nas quadras dos bares grandes de hoje (2,8 e 5,1, onde a fatia do bar vira casa) e o resto na esquina mais longe de todo bar já posto.</li>
+    <li><b>${espacos.length} espaços de sede</b>: os ${PROP.terrenos.length} terrenos e as duas sedes de hoje (a da 5,2 só cabe a sede de nível 1).</li>
+    <li>Quem ocupa cada um é a torcida da cidade escolhida no alto da página. Bar que nenhuma torcida usa fica <b>neutro, de porta fechada</b> (o ALUGA-SE na porta); espaço de sede sem torcida — ou de torcida no nível 0 — fica com a <b>sede fechada</b>, em cor de reboco.</li>
+  </ul>
+  ${tabelaDaCidade()}
   <h3>O que mudou nesta versão</h3>
   <ul>
     <li><b>As favelas nas manchas circuladas, na grade da cidade.</b> Primeiro a grade de ruas: cada rua da cidade segue dentro da favela na mesma linha, como viela estreita (2,5 m), e onde a favela encosta numa quadra a rua da cidade é a borda dela. Depois as casas: cada quarteirão da grade vira miolo de favela, com becos de 1,6 a 2,2 m e casa encostada na casa. Não sobra mato entre a favela e a rua (a do sudoeste pega também o canto a oeste de −3,6 a −3,8). A conta é a da favela do jogo: quadra miúda, casa encostada na casa, as casas grandes (bar, lanchonete, a da escada...) e um campinho de terra em cada. Noroeste: ${fNO} casas; sudoeste: ${fSO}.</li>
     <li><b>Sem as avenidas transversais do oeste</b> (a oeste e a noroeste2). As quadras que elas cortavam voltaram a ser inteiras, e a 1,4 de hoje foi refeita sem o rasgo.</li>
     <li><b>Rua no meio</b> das quadras altas −3,2, −1,2 e 0,2, de norte a sul: o quintal enorme virou duas fileiras de casa de cada lado.</li>
     <li><b>Quadras juntadas</b> por cima da rua: 0,7 com 1,7 (a 1,7 é de hoje), −2,3 com −1,3 e 0,−1 com 1,−1.</li>
-    <li><b>${PROP.terrenos.length} terrenos pra sede</b>, espalhados pela cidade nova: cada um do tamanho da sede de nível 3 do jogo (${metros(PROP.terrenos[0].area.x1 - PROP.terrenos[0].area.x0)} × ${metros(PROP.terrenos[0].area.y1 - PROP.terrenos[0].area.y0)}), na ponta de uma quadra que continua casa. As duas sedes de hoje (TJF e TJG) ficam onde estão.</li>
+    <li><b>${PROP.terrenos.length} terrenos pra sede</b>, espalhados pela cidade nova: cada um do tamanho da sede de nível 3 do jogo (${metros(PROP.terrenos[0].area.x1 - PROP.terrenos[0].area.x0)} × ${metros(PROP.terrenos[0].area.y1 - PROP.terrenos[0].area.y0)}), na ponta de uma quadra que continua casa.</li>
   </ul>
   <h3>O que continua da 2ª versão</h3>
   <ul>
@@ -1577,15 +1862,20 @@ function notasDaProposta() {
     <li>As favelas saem do gerador da planta com o beco reto; a de hoje sai. Favela grande pesa: são ${fTotal} casas, contra ${c.casasFavelaHoje} hoje.</li>
     <li>O pórtico é modelo novo; o texto sai do nome da cidade da torcida.</li>
     <li>O Estádio Municipal é o mesmo estádio: a cena da torcida teria que aceitar dois.</li>
-    <li>Os equipamentos novos (igreja, posto de saúde, campo) ainda não têm modelo. Os terrenos de sede já são a fatia que a planta dá pra sede: é só a planta aceitar mais de duas sedes.</li>
+    <li>Os equipamentos novos (igreja, posto de saúde, campo) ainda não têm modelo. Os espaços de sede já são a fatia que a planta dá pra sede: é só a planta aceitar mais de duas sedes.</li>
+    <li>O bar pequeno já é modelo do jogo (<code>bartorcida</code> no casas3d), mas a cena do dia de jogo ainda usa o bar grande andável, com as duas torcidas da partida. Pôr as torcidas da cidade nos 18 bares e nas 9 sedes é trabalho da planta.</li>
+    <li>A regra de quem fica com o quê é desta página (a sede maior perto do estádio, um bar por sede, o mais perto dela). O GDD §7.2 pede o bar em outra zona que a sede; o mapa 3D não tem zona, então fiquei com o que a planta já fazia.</li>
   </ul>
-  <p class="nota">Clique numa casa da favela, num terreno pra sede, numa quadra nova ou num pórtico pra ver em 3D.</p>`;
+  <p class="nota">Clique num bar, num espaço de sede, numa casa da favela, numa quadra nova ou num pórtico pra ver em 3D.</p>`;
 }
-$('notas').innerHTML = notasDaProposta();
-
 /* ======================================================
    COMEÇO
    ====================================================== */
+const selCidade = $('sel-cidade');
+selCidade.innerHTML = CIDADES.map(([n]) => `<option${n === cidade ? ' selected' : ''}>${esc(n)}</option>`).join('');
+selCidade.onchange = ev => mudarCidade(ev.target.value);
+distribuirTorcidas();
+$('notas').innerHTML = notasDaProposta();
 $('resumo').textContent = `${K.QUADRAS.length} quadras · ${nLotesQuadra} lotes em quadra · ${nFavela} casas na favela · ${K.BEIRA.length - nFavela} na beira da estrada · 1 m = ${M.toFixed(1).replace('.', ',')} un`;
 tamanho();
 let modoSalvo = 'atual';
