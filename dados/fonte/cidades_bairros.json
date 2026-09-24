@@ -2,7 +2,7 @@
  "meta": {
   "fonte": "Unity — Assets/Scripts/Data/Cidades/*.asset (CityMapData + BairroDados)",
   "total_cidades": 30,
-  "total_bairros": 348,
+  "total_bairros": 352,
   "chaves": "cidade.id + bairro.id (slugs ASCII); a combinação dos dois é única"
  },
  "enums": {
@@ -3764,11 +3764,11 @@
    "regiao": "Sudeste",
    "assetUnity": "Interior_de_SP",
    "mapa": {
-    "nivel": 3,
-    "tamanho": "Pequeno",
-    "quarteiroes": 64,
-    "bairrosEsperados": 8,
-    "bairrosPorZonaEsperado": 2
+    "nivel": 2,
+    "tamanho": "Médio",
+    "quarteiroes": 120,
+    "bairrosEsperados": 12,
+    "bairrosPorZonaEsperado": 3
    },
    "populacao": 1000,
    "temMetro": false,
@@ -3782,7 +3782,7 @@
     "Rodovia Sudeste 1",
     "Rodovia Sudeste 2"
    ],
-   "multiplicadorFaturamentoMedio": 0.975,
+   "multiplicadorFaturamentoMedio": 0.992,
    "bairros": [
     {
      "id": "itu",
@@ -3805,6 +3805,14 @@
      ]
     },
     {
+     "id": "sorocaba",
+     "nome": "Sorocaba",
+     "zona": "Sul",
+     "classeSocial": "Classe Baixa",
+     "multiplicadorFaturamento": 0.8,
+     "torcidasComSede": []
+    },
+    {
      "id": "mirassol",
      "nome": "Mirassol",
      "zona": "Norte",
@@ -3823,6 +3831,14 @@
      "torcidasComSede": [
       "Fiel Força Tricolor"
      ]
+    },
+    {
+     "id": "sao_jose_do_rio_preto",
+     "nome": "São José do Rio Preto",
+     "zona": "Norte",
+     "classeSocial": "Nobre",
+     "multiplicadorFaturamento": 1.5,
+     "torcidasComSede": []
     },
     {
      "id": "novo_horizonte",
@@ -3845,6 +3861,14 @@
      ]
     },
     {
+     "id": "araraquara",
+     "nome": "Araraquara",
+     "zona": "Leste",
+     "classeSocial": "Classe Média",
+     "multiplicadorFaturamento": 1.0,
+     "torcidasComSede": []
+    },
+    {
      "id": "bauru",
      "nome": "Bauru",
      "zona": "Oeste",
@@ -3857,6 +3881,14 @@
     {
      "id": "marilia",
      "nome": "Marília",
+     "zona": "Oeste",
+     "classeSocial": "Classe Baixa",
+     "multiplicadorFaturamento": 0.8,
+     "torcidasComSede": []
+    },
+    {
+     "id": "presidente_prudente",
+     "nome": "Presidente Prudente",
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
