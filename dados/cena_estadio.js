@@ -3695,6 +3695,224 @@ TO.dados.plantaEstadio = (function(){
     }
   })();
 
+  /* =========================================================
+     OS MARCOS — cinco prédios modelados peça por peça
+     ---------------------------------------------------------
+     A igreja matriz, o centro administrativo, o prédio alto, o
+     prédio de três andares com o mercado embaixo e a casa de classe
+     média. Não são lote sorteado: cada um tem lugar certo, na PONTA
+     de um quarteirão (`ponta`), com a fachada virada pra uma rua
+     (`frente`).
+
+     POR QUE ENTRAM AQUI, NO FIM, E NÃO JUNTO COM OS EQUIPAMENTOS.
+     Tudo o que vem antes gasta o `rng()` compartilhado, e um
+     quarteirão com fatia de equipamento gasta DIFERENTE (o quintal
+     encolhe, o puxadinho do fundo não sorteia a posição). Posto lá
+     em cima, cada marco mexeria no sorteio da cidade inteira dali pra
+     frente — já aconteceu uma vez, quando a sede encolheu. Aqui no fim
+     ele só troca o que está embaixo dele: a cidade em volta sai igual,
+     casa por casa.
+
+     A FATIA. Parte da largura pedida, na ponta do quarteirão, e engole
+     os lotes que ela pisa: lote que sobra com 2,5 m ou mais de frente
+     do lado de fora é aparado; o que sobra menos que isso sai e a
+     fatia cresce até a divisa dele — sem isso ficaria uma fresta de
+     meio lote vazio entre o marco e a casa vizinha.
+
+     A MASSA. Cada modelo diz, em metros e no referencial DELE (x da
+     esquerda pra direita de quem olha a fachada, z negativo pra dentro
+     do terreno), onde ficam os volumes grandes. É a mesma conta pros
+     dois lados: aqui ela vira o que bloqueia o boneco e o que a
+     câmera não atravessa; no 3D (`js/diajogo/modelos3d.js`) ela é o
+     esqueleto em que a fachada é montada. Uma fonte só.
+     ========================================================= */
+  const MASSAS = {
+    igreja(W, D){
+      const larg = 12.1, T = 3.225, fz = -0.55;
+      const xa = (W - larg)/2, xb = xa + larg, xm = W/2;
+      const m = { fz, larg, T, xa, xb, xm, naveZ: fz - 13.5, fundoZ: fz - 20.3,
+                  hNave: 9.6, hCornija: 10.05, hFundo: 7.4, hTorre: 13.8 };
+      m.volumes = [
+        { x0: xa, x1: xa + T, z0: fz - T, z1: fz, alt: 18 },
+        { x0: xb - T, x1: xb, z0: fz - T, z1: fz, alt: 18 },
+        { x0: xa, x1: xb, z0: m.naveZ, z1: fz, alt: 13.2 },
+        { x0: xa, x1: xb, z0: m.fundoZ, z1: m.naveZ, alt: 10.9 },
+        { x0: xm - 1.7, x1: xm + 1.7, z0: fz, z1: fz + 0.5, alt: 0.45 }        // os degraus
+      ];
+      return m;
+    },
+    predio(W, D){
+      const fz = -0.45, p0 = 0.4, p1 = W - 0.4;
+      const t1 = W - 1.6, t0 = t1 - 14.4, tz1 = fz - 1.4, tz0 = tz1 - 9.2;
+      const m = { fz, p0, p1, pz0: fz - 11.9, chanfro: 2.2, hTerreo: 4.0, hPodio: 7.4,
+                  t0, t1, tz0, tz1, andares: 12, pe: 2.9,
+                  w0: t0 - 3.3, w1: t0, wz0: fz - 10.15, wz1: tz1 - 1.95, andaresAla: 11 };
+      m.hTorre = m.hPodio + m.andares*m.pe + m.pe;
+      m.volumes = [
+        { x0: p0, x1: p1, z0: m.pz0, z1: fz, alt: 8.2 },
+        { x0: t0, x1: t1, z0: tz0, z1: tz1, alt: m.hTorre + 2.6 },
+        { x0: m.w0, x1: m.w1, z0: m.wz0, z1: m.wz1, alt: m.hPodio + (m.andaresAla + 1)*m.pe + 0.4 }
+      ];
+      return m;
+    },
+    loja(W, D){
+      const fz = -0.9;
+      const m = { fz, g0: 0.35, g1: 3.95, gz0: fz - 6.0, m0: 3.95, m1: 14.75, mz0: fz - 11.4,
+                  c1: Math.min(W - 0.3, 17.95), grade: 0.7, alturas: [3.8, 6.7, 9.6, 10.2] };
+      m.volumes = [
+        { x0: m.g0, x1: m.g1, z0: m.gz0, z1: fz, alt: 2.9 },
+        { x0: m.m0, x1: m.m1, z0: m.mz0, z1: fz, alt: 11.5 },
+        { x0: m.c1 - 0.6, x1: m.c1, z0: fz - 4.0, z1: fz, alt: 2.2 },
+        /* a grade da frente do mercado: dos lados da porta de enrolar */
+        { x0: m.m0 + 0.15, x1: m.m0 + 3.75, z0: fz + m.grade - 0.12, z1: fz + m.grade + 0.12, alt: 2.2 },
+        { x0: m.m1 - 3.45, x1: m.m1 - 0.15, z0: fz + m.grade - 0.12, z1: fz + m.grade + 0.12, alt: 2.2 }
+      ];
+      return m;
+    },
+    adm(W, D){
+      const fz = -1.2, vao = 2.44, recuo = 2.4;
+      const m1 = W - 0.5, m0 = m1 - 11*vao, mz0 = fz - 4*vao;
+      const m = { fz, vao, recuo, m0, m1, mz0, a0: m0 - 3*vao, a1: m0, az0: mz0, az1: fz - recuo,
+                  alturas: [3.4, 6.6, 9.8, 10.6], alturasAla: [3.4, 6.6, 7.4] };
+      m.volumes = [
+        /* o térreo fechado, atrás da colunata */
+        { x0: m0, x1: m1, z0: mz0, z1: fz - recuo, alt: 10.6 },
+        /* os andares de cima, por cima da colunata: a câmera não entra,
+           o boneco passa embaixo */
+        { x0: m0, x1: m1, z0: fz - recuo, z1: fz + 0.2, alt: 10.6, base: 3.4 },
+        { x0: m.a0, x1: m.a1, z0: m.az0, z1: m.az1, alt: 7.4 }
+      ];
+      /* os pilotis, um a cada vão */
+      for(let k = 0; k <= 11; k++){
+        const x = m0 + k*vao;
+        m.volumes.push({ x0: x - 0.25, x1: x + 0.25, z0: fz - 0.25, z1: fz + 0.25, alt: 3.4 });
+      }
+      return m;
+    },
+    casa(W, D){
+      const fz = -0.5;
+      /* 0,35 da divisa dos dois lados: é o que o beiral do telhado avança */
+      const m = { fz, a0: 0.35, a1: 5.2, s0: 5.2, s1: Math.min(W - 0.35, 10.3), z0: fz - 12.0 };
+      m.volumes = [
+        { x0: m.a0, x1: m.a1, z0: m.z0, z1: fz, alt: 4.6 },
+        { x0: m.s0, x1: m.s1, z0: m.z0, z1: fz, alt: 8.0 }
+      ];
+      return m;
+    }
+  };
+
+  /* o referencial do modelo (metros, x pra direita de quem olha a
+     fachada, z negativo pra dentro) → o mundo. É uma rotação de 0°,
+     90°, 180° ou 270°: nunca espelha, então letreiro não sai ao
+     contrário. */
+  function paraMundoDoMarco(f, frente, lx, lz){
+    const M = METRO;
+    if(frente === 's') return [f.x0 + lx*M, f.y1 + lz*M];
+    if(frente === 'n') return [f.x1 - lx*M, f.y0 - lz*M];
+    if(frente === 'o') return [f.x0 - lz*M, f.y0 + lx*M];
+    return [f.x1 + lz*M, f.y1 - lx*M];                                // 'l'
+  }
+  function retDoMarco(f, frente, v){
+    const [ax, ay] = paraMundoDoMarco(f, frente, v.x0, v.z0);
+    const [bx, by] = paraMundoDoMarco(f, frente, v.x1, v.z1);
+    return { x0: Math.min(ax, bx), x1: Math.max(ax, bx), y0: Math.min(ay, by), y1: Math.max(ay, by) };
+  }
+
+  const MARCOS = [
+    /* a matriz ao sul da Praça da Matriz: a praça já tinha o nome e
+       não tinha igreja. A fachada dá pra rua de oeste, e o lado
+       comprido fica de frente pra praça, do outro lado da rua. */
+    { modelo: 'igreja', ponto: pxm(568, 964),  ponta: 'o', frente: 'o', larg: 21.3, chao: '#b5afa0' },
+    /* o centro administrativo de frente pro hospital */
+    { modelo: 'adm',    ponto: pxm(765, 534),  ponta: 'o', frente: 'n', larg: 37.5, chao: '#b5afa0' },
+    /* o prédio alto no meio da cidade, com a quina chanfrada na esquina */
+    { modelo: 'predio', ponto: pxm(568, 620),  ponta: 'l', frente: 'n', larg: 17.5, chao: '#b5afa0' },
+    /* o mercado na esquina da rua que a torcida da casa sobe pro estádio */
+    { modelo: 'loja',   ponto: pxm(419, 534),  ponta: 'l', frente: 'n', larg: 17.0, chao: '#9d9a90' },
+    /* a casa de classe média na esquina do bairro residencial do sul */
+    { modelo: 'casa',   ponto: pxm(568, 1050), ponta: 'o', frente: 'n', larg: 10.5, chao: '#9d9a90' }
+  ];
+  const MARCOS_POSTOS = [];
+  for(const mc of MARCOS){
+    const q = celulaEm(mc.ponto[0], mc.ponto[1]);
+    /* só em quarteirão reto, inteiro e sem equipamento: a fatia é um
+       retângulo e a massa não sabe se desviar de costa nem de avenida */
+    if(!q || q.tipo !== 'quadra' || q.equip) continue;
+    if(q.polMiolo.length !== 4 || q.lotes.some(l => l.ang)) continue;
+    const f = mc.ponta === 'o' ? { x0: q.ix0, x1: q.ix0 + mc.larg*METRO }
+                               : { x0: q.ix1 - mc.larg*METRO, x1: q.ix1 };
+    f.y0 = q.iy0; f.y1 = q.iy1;
+    if(tocaAvenida(f, CALC)) continue;
+    const SOBRA_MIN = 48;
+    const tirar = l => {
+      q.lotes.splice(q.lotes.indexOf(l), 1);
+      LOTES.splice(LOTES.indexOf(l), 1);
+    };
+    for(let volta = 0; volta < 8; volta++){
+      let cresceu = false;
+      for(const l of q.lotes.slice()){
+        if(!cruzaRet(l, f)) continue;
+        const sobra = mc.ponta === 'o' ? l.x1 - f.x1 : f.x0 - l.x0;
+        if(sobra >= SOBRA_MIN){
+          if(mc.ponta === 'o') l.x0 = f.x1; else l.x1 = f.x0;
+        } else {
+          tirar(l);
+          if(sobra > 0){
+            if(mc.ponta === 'o') f.x1 = l.x1; else f.x0 = l.x0;
+            cresceu = true;
+          }
+        }
+      }
+      if(!cresceu) break;
+    }
+    q.fundos = (q.fundos || []).filter(p => !cruzaRet(p, f));
+    if(q.quintal){
+      if(mc.ponta === 'o') q.quintal.x0 = Math.max(q.quintal.x0, f.x1);
+      else q.quintal.x1 = Math.min(q.quintal.x1, f.x0);
+      if(q.quintal.x1 - q.quintal.x0 < 24) q.quintal = null;
+    }
+    const W = (mc.frente === 'n' || mc.frente === 's' ? f.x1 - f.x0 : f.y1 - f.y0)/METRO;
+    const D = (mc.frente === 'n' || mc.frente === 's' ? f.y1 - f.y0 : f.x1 - f.x0)/METRO;
+    const massa = MASSAS[mc.modelo](W, D);
+    const pecas = [{ k: 'modelo', modelo: mc.modelo, frente: mc.frente, fatia: { ...f }, W, D, massa, bloqueia: false }];
+    const volumes = massa.volumes.map(v => Object.assign(retDoMarco(f, mc.frente, v), { alt: v.alt*METRO, base: (v.base || 0)*METRO }));
+    /* ÁRVORE DE CALÇADA CUJA COPA ENCOSTA NO PRÉDIO SAI: a copa tampava
+       a fachada da igreja e entrava na parede do prédio alto. Só essas —
+       a primeira versão tirava tudo o que estava a 60 cm da fatia e
+       levou 28 árvores, a calçada dos cinco quarteirões inteira. */
+    const encosta = a => volumes.some(v => a.x + a.r > v.x0 - 8 && a.x - a.r < v.x1 + 8 &&
+                                           a.y + a.r > v.y0 - 8 && a.y - a.r < v.y1 + 8);
+    for(let i = ARVORES.length - 1; i >= 0; i--) if(encosta(ARVORES[i])) ARVORES.splice(i, 1);
+    for(const c of CELULAS) if(c.arvores) c.arvores = c.arvores.filter(a => !encosta(a));
+    /* o que toca o chão bloqueia o boneco; o que flutua (o andar por
+       cima da colunata) só a câmera enxerga */
+    for(const v of volumes) if(!v.base) pecas.push(Object.assign({ k: 'volume', bloqueia: true }, v));
+    const noMundo = (lx, lz) => paraMundoDoMarco(f, mc.frente, lx, lz);
+    /* a direção pra onde a fachada olha, no mundo */
+    const olha = { n: [0, -1], s: [0, 1], o: [-1, 0], l: [1, 0] }[mc.frente];
+    if(mc.modelo === 'adm'){
+      /* a placa de pé na frente e dois carros no pátio da ala */
+      const [lx, ly] = noMundo(massa.m0 + 5.5*massa.vao, -0.45);
+      pecas.push({ k: 'letreiro', x: lx, y: ly, ox: olha[0], oz: olha[1], texto: 'CENTRO ADMINISTRATIVO',
+                   placa: true, larg: 150, altura: 24, base: 30, pernas: true, bloqueia: false });
+      for(const [cx, cz] of [[2.2, -4.0], [4.9, -4.0]]){
+        const r = retDoMarco(f, mc.frente, { x0: cx - 1.0, x1: cx + 1.0, z0: cz - 2.2, z1: cz + 2.2 });
+        pecas.push(Object.assign({ k: 'carro', cor: cx < 3 ? '#8a8f96' : '#2a4f9a', bloqueia: true }, r));
+      }
+    }
+    q.equip = { tipo: 'marco', modelo: mc.modelo, area: { ...f }, chao: mc.chao, pisoPBR: true, pecas, volumes };
+    q.solidos = pecas.filter(o => o.bloqueia);
+    MARCOS_POSTOS.push({ modelo: mc.modelo, quadra: [q.i, q.j], fatia: { ...f }, frente: mc.frente, W, D });
+  }
+  /* a câmera não atravessa marco: o volume vale da `base` até o `alt` */
+  function noMarco(x, z, y){
+    const q = celulaEm(x, z);
+    if(!q || !q.equip || q.equip.tipo !== 'marco') return false;
+    for(const v of q.equip.volumes)
+      if(x >= v.x0 && x < v.x1 && z >= v.y0 && z < v.y1 && y >= v.base && y < v.alt) return true;
+    return false;
+  }
+
   const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC, TORCIDAS,
                    COLUNAS, LINHAS, CELULAS, QUADRAS, grade, celulaEm, zona, xCosta, PRAIA, ORLA,
                    CONTORNO, AVENIDAS, distAvenida, naAvenida, naRua, bordasX, bordasY,
@@ -3702,7 +3920,7 @@ TO.dados.plantaEstadio = (function(){
                    areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe, BARES, CRUZAMENTOS, SEMAFOROS, FAIXAS,
-                   FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES };
+                   FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES, MARCOS: MARCOS_POSTOS, noMarco };
 
   /* =======================================================
      A DOBRA: tabuleiro → mundo
@@ -3841,6 +4059,7 @@ TO.dados.plantaEstadio = (function(){
     if(r >= R.calcada1){
       const l = noLote(X, Z);
       if(l && Y < l.alt) return true;
+      if(noMarco(X, Z, Y)) return true;
       const m = naMoita(X, Z);
       if(m && Y < m.r*0.9) return true;
       /* a copa das árvores também é sólida pra câmera: sem isso ela

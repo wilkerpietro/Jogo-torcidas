@@ -1217,6 +1217,93 @@ a 11 cm/px é o que a pintura consegue desenhar. Faixa nítida pede
 geometria própria (uma tira fina com a tinta) ou decalque — não mais
 resolução no chão inteiro.
 
+### 4.22. Os marcos: cinco prédios modelados peça por peça
+
+A cidade é de lote sorteado — casa, sobrado, galpão — e nenhum lote é
+um prédio que se reconheça. Entraram cinco, feitos a partir de
+fotos de modelos de referência:
+
+| marco | onde | tamanho |
+|---|---|---|
+| a igreja matriz (barroco mineiro: duas torres com cúpula bulbosa e pináculo, frontão de volutas com medalhão, cantaria, porta verde) | quarteirão 3,9, ao sul da Praça da Matriz — a praça já tinha o nome e não tinha igreja; a fachada dá pra rua de oeste e o lado comprido fica de frente pra praça | 12 × 21 m, torres de 18 m |
+| o prédio alto (embasamento de dois pisos com a quina chanfrada e a faixa vermelha, 12 andares de caixilho preto, painel ocre nas empenas, a ala mais baixa, casa de máquinas) | ponta leste do 3,5, na esquina: a quina chanfrada fica no cruzamento | 20 × 12 m, 47,6 m de altura |
+| o prédio de três andares com o mercado (tijolinho, letreiro verde, porta de enrolar, faixa marrom nas janelas, ar-condicionado, toldo, garagem com telhadinho) | ponta leste do 2,4, na rua por onde a torcida da casa sobe pro estádio | 18 × 12 m |
+| o centro administrativo (tijolo aparente e janela em fita azul sobre pilotis, faixa verde-azulada, toldo azul, ala baixa) | ponta oeste do 4,4, de frente pro hospital | 41 × 12 m |
+| a casa de classe média (sobrado cinza com portão de garagem e janela gradeada no quadro saltado, edícula verde com portão de grade) | ponta oeste do 3,10, esquina do bairro residencial do sul | 10 × 12 m |
+
+A escala vertical é a do boneco (andar de 2,9 m, porta de 2,1 m). A
+horizontal teve de caber: o quarteirão desta cidade tem 31 × 13 m, e
+todo marco ocupa a profundidade inteira de um. A igreja tem a
+proporção da foto (fachada de 12 m, nave mais capela-mor de 20 m); o
+prédio alto ficou com os 12 andares da foto e é, de longe, a coisa
+mais alta do mapa — 3 vezes a torre de refletor.
+
+**Por que entram no fim da planta, e não com os equipamentos.** O
+`rng()` é compartilhado, e quarteirão com fatia de equipamento gasta
+diferente (o quintal encolhe, o puxadinho não sorteia posição). Um
+marco posto lá em cima mudaria o sorteio da cidade inteira dali pra
+frente. No fim, ele só troca o que está embaixo: conferido lote por
+lote contra a versão anterior, os 643 lotes fora dos cinco
+quarteirões saem idênticos, e os carros e a favela também.
+
+**A fatia.** Parte da largura pedida na ponta do quarteirão e engole
+os lotes que pisa: o que sobra com 2,5 m ou mais de frente é aparado,
+o que sobra menos sai e a fatia cresce até a divisa dele. 43 lotes
+saíram (719 → 676). Árvore de calçada cuja copa encostaria num volume
+também sai (13 delas).
+
+**A massa é uma fonte só.** Cada modelo declara na planta (`MASSAS`),
+em metros e no referencial dele, os volumes grandes. Na planta eles
+viram o que bloqueia o boneco (`q.solidos`) e o que a câmera não
+atravessa (`noMarco`, chamado de `solido`); no 3D são o esqueleto da
+fachada. O volume pode ter `base`: o andar de cima do centro
+administrativo, por cima da colunata, a câmera não atravessa, mas o
+boneco passa embaixo, entre os pilotis.
+
+**A fachada é montada, não modelada.** `ferramentas/pintar_modelos.py`
+pinta uma folha de textura por prédio (`img/texturas/modelos/`): a
+janela do prédio alto com o peitoril, a porta verde com a cantaria, o
+letreiro do mercado, o reboco, o tijolo, a telha. O script também
+escreve `js/diajogo/modelos_atlas.js`, que diz onde cada peça caiu na
+folha e quanto ela mede em metros — **não se edita esse arquivo à
+mão**: muda-se o pintor e roda-se de novo. O 3D
+(`js/diajogo/modelos3d.js`) repete as peças (o 7º andar usa a mesma
+janela do 3º) e ladrilha as superfícies lisas no tamanho de mundo
+delas, recortando no contorno da face. Relevo que conta é geometria:
+pilastra, cornija, laje, requadro de janela com fundo, toldo,
+ar-condicionado, cúpula no torno, frontão extrudado.
+
+Quatro coisas que decidiram como ficou:
+
+1. **Parede e janela nunca se sobrepõem.** A fachada é partida pela
+   grade das bordas dos vãos: cada pedaço é parede ladrilhada OU a peça
+   do vão, no mesmo plano. Pôr a janela 2 cm na frente da parede daria
+   briga de profundidade a 100 m de câmera.
+2. **Tijolo tem de caber inteiro no módulo.** Com 10,6 tijolos por vão,
+   cada módulo terminava num tijolo cortado e a junta dele virava uma
+   costura clara a cada 2,4 m. O pintor estica o tijolo o que for
+   preciso pra caber um número inteiro.
+3. **O frontão é um contorno só.** O desenho das volutas está em
+   `FRONTAO`, no pintor; a folha pinta a cantaria acompanhando a borda
+   dele e o 3D extruda o mesmo polígono (sai no atlas).
+4. **Grade é `alphaToCoverage`.** Barra de 3 cm com recorte seco de
+   alfa virava chiado de longe (moiré no portão inteiro); com o alfa
+   virando cobertura do antisserrilhado ela só clareia com a distância.
+
+Custo: 14.870 triângulos (a cidade tem 160 mil), sete malhas, seis
+texturas somando uns 800 KB, e 60–100 ms na carga pra montar tudo. A
+câmera e o boneco foram conferidos contra os volumes: não se entra na
+nave, anda-se sob a colunata e no pátio que sobra atrás da igreja.
+
+O que não é fiel à foto, dito com todas as letras: as texturas são
+PINTADAS por código, não fotografadas — os sites de textura CC0 estão
+bloqueados na rede deste ambiente. De perto se vê que o reboco é
+ruído e a mercadoria da vitrine são retângulos coloridos. A forma, as
+proporções, as cores e os elementos (cada janela, pilastra, toldo,
+aparelho de ar) são os da referência. Trocar uma folha por foto de
+verdade não mexe em código: é pintar (ou colar) por cima da célula
+certa da folha e manter o tamanho dela.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -1738,6 +1825,10 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera (linha de vista, modo leve), ligação com a simulação e com a gente |
 | `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados), calçadas, árvores, carros, postes, campos, moitas |
 | `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões, ruas, avenidas, costa, campos, estádio |
+| `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa): o construtor de fachada (ladrilho recortado, módulo, vão com fundo, telhado de quatro águas, torno, extrusão) e a montagem de cada um |
+| `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
+| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos e escreve o atlas; roda de novo sempre que mudar uma peça |
+| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio) e a folha de grades vazadas, com alfa |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
 | `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |
 | `img/texturas/chao.png` | o atlas de decalques de chão, 8 × 4 células de 192 px (capim, entulho, brita, poça, terra, folha) |

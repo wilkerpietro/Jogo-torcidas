@@ -1345,7 +1345,10 @@ export function montarBairro(P) {
     for (const p of semAsAvenidas(q)) laje(T, p, 0, 1.4, '#8d897d', TCHAO);
     for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, '#7d7668', TCHAO);
     /* a fatia do equipamento tem chão próprio, e só ela */
-    if (q.equip) for (const p of semAsAvenidas(q.equip.area, K.CALC)) laje(T, p, 0, 1.65, q.equip.chao);
+    /* `pisoPBR`: o pátio dos marcos veste o material do chão (concreto
+       de verdade), como a calçada; os equipamentos antigos continuam
+       com o piso pintado deles */
+    if (q.equip) for (const p of semAsAvenidas(q.equip.area, K.CALC)) laje(T, p, 0, 1.65, q.equip.chao, q.equip.pisoPBR ? TCHAO : undefined);
     if (q.quintal) for (const p of semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
     /* os puxadinhos do fundo do quintal */
     for (const f of q.fundos || []) {

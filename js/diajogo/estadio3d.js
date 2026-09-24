@@ -25,6 +25,7 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { entrarEm } from './bonecos3.js';
 import { criarTradutor } from './sinais3d.js';
 import { montarBairro } from './bairro3d.js';
+import { montarModelos } from './modelos3d.js';
 import { criarChaoPBR } from './chao3d.js';
 import { criarNuvens } from './nuvens3d.js';
 
@@ -122,6 +123,10 @@ export function criar(canvas) {
        relevo lava no ângulo raso da câmera de ombro, que é bem onde
        ele mais serve */
     if (chaoPBR) chaoPBR.anisotropia(q.aniso);
+    /* só textura já carregada: marcar pra subir antes da imagem chegar
+       dá o aviso de "no image data" no console */
+    if (marcos) for (const m of marcos.materiais)
+      if (m.map && m.map.image) { m.map.anisotropy = Math.min(q.aniso, maxAniso); m.map.needsUpdate = true; }
     redimensionar(true);
   }
   function ajustarQualidade(dt) {
@@ -638,7 +643,7 @@ export function criar(canvas) {
      MONTAR TUDO
      ======================================================= */
   let conta = null;
-  let cidade = null;
+  let cidade = null, marcos = null;
   function montarEstadio(D) {
     while (grupo.children.length) {
       const o = grupo.children.pop();
@@ -672,11 +677,16 @@ export function criar(canvas) {
       /* a nuvem passa por cima da CIDADE, não só do chão: sem isto o
          telhado fica no sol enquanto a rua ao lado escurece */
       for (const m of cidade.meshes) { nuvens.aplicarEm(m.material); cena.add(m); }
+      /* os cinco prédios modelados (igreja, prédio alto, mercado,
+         centro administrativo, casa): a planta abriu o lugar deles */
+      marcos = montarModelos(P, { anisotropia: Math.min(8, maxAniso) });
+      for (const m of marcos.meshes) { nuvens.aplicarEm(m.material); cena.add(m); }
     }
     conta = { degraus: P.NDEG, vomitorios: P.VOMITORIOS.length,
               lojas: P.LOJAS.length, lotes: K.LOTES.length, quadras: K.QUADRAS.length,
               pedacos: cidade.pedacos, portoes: P.PORTOES.length,
-              triangulos: Math.round(nTri(TA) + nTri(TC) + nTri(TP) + nTri(TL) + nTri(TF) + cidade.triangulos) };
+              triangulos: Math.round(nTri(TA) + nTri(TC) + nTri(TP) + nTri(TL) + nTri(TF) + cidade.triangulos +
+                                     (marcos ? marcos.triangulos : 0)) };
     return conta;
   }
 
@@ -1126,7 +1136,7 @@ export function criar(canvas) {
            get gente() { return povo.quantas; },
            get info() { return rend.info; },
            _rend: rend, _cena: cena, _cam: cam, _planta: P,
-           get _chaoPBR() { return chaoPBR; }, get _nuvens() { return nuvens; },
+           get _chaoPBR() { return chaoPBR; }, get _nuvens() { return nuvens; }, get _marcos() { return marcos; },
            get _cidade() { return cidade; },
            _mirar(g, i, d) {
              if (g !== undefined) giro = g;
