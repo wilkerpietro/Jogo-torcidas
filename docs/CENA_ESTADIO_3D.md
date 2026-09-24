@@ -1084,11 +1084,16 @@ usava — e o grão vem de texturas pequenas ladrilhadas a cada 2–4 m.
 
 Duas decisões que não são gosto:
 
-- **Só a luminância do detalhe entra, multiplicando.** A cor de cada
-  ponto continua sendo a da planta. Deixar a cor da textura entrar
-  faria o bege da areia tingir o asfalto. E a luminância é normalizada
-  pela média da própria imagem, pra a cidade não clarear nem escurecer
-  no conjunto.
+- **O grão entra pela luminância, multiplicando; a cor entra à parte,
+  por canal (`tinta`).** Na primeira versão só a luminância entrava e a
+  cor era toda da planta — o que não deixava o bege da areia tingir o
+  asfalto, mas também deixava a rua pintada de quase preto (#3a3a38)
+  quase preta com qualquer textura. Hoje cada canal diz quanto da cor
+  da textura entra: asfalto 0,45 (escolhido entre três renderizações),
+  concreto 1, areia 0,16. A luminância segue normalizada pela média da
+  própria imagem, e com um ganho automático pelo desvio dela: textura
+  de pouco contraste (o concreto) é esticada até render a mesma
+  variação que as outras.
 - **O UV ladrilhado sai do mesmo `vMapUv` da pintura**, multiplicado
   pelo tamanho do mundo. O three.js monta a base tangente a partir
   desse UV; amostrar o relevo num UV de outra orientação sairia
@@ -1152,10 +1157,65 @@ os originais. O manifesto existe pra o carregador **pedir só o que
 existe**: sem ele, seriam seis 404 vermelhos no console a cada carga,
 num projeto que trata "erros: nenhum" como regra.
 
-Hoje só `areia/` tem textura de verdade (Poly Haven, 15 MB de 4K viram
-936 KB de 1K). Os outros três canais caem num grão gerado, com a mesma
-conta de normal map de sempre — a cena nunca fica pior do que estava, e
-cada pacote que chega melhora um pedaço sem tocar em código.
+Hoje `areia/`, `asfalto/` e `concreto/` têm textura de verdade (Poly
+Haven; 15 MB de 4K viram ~1 MB de 1K). A grama cai num grão gerado,
+com a mesma conta de normal map de sempre — a cena nunca fica pior do
+que estava, e cada pacote que chega melhora um pedaço sem tocar em
+código.
+
+#### A calçada que não mostrava o concreto
+
+Com o concreto na pasta, a calçada continuou igual — e a suspeita do
+dono ("a textura antiga deve estar misturando") estava certa. A
+calçada e o miolo do lote **não são o chão**: são lajes elevadas
+(1,4 e 1,6 de altura) do `bairro3d.js`, e o topo delas vestia o reboco
+das paredes. O plano do chão, com o concreto, estava lá embaixo,
+coberto. Na cidade inteira o plano só aparece na rua.
+
+A correção tira o topo dessas lajes da malha do quarteirão e o põe numa
+malha própria, `lajes:chao`, com UV no mesmo sistema do plano
+(`(x − VX0)/VW`, `1 − (z − VY0)/VH`) e **o mesmo material do chão**. A
+laje continua com a altura e as bordas dela; só o que se pisa passou a
+ser o chão. As lajes de equipamento e de quintal ficaram como estavam.
+
+#### A faixa amarela e o anel em volta dela
+
+Consertada a calçada, cada tracejado da avenida apareceu dentro de um
+halo — roxo numa versão, um retângulo escuro na seguinte. Foram três
+causas empilhadas, e a última é a que importava:
+
+1. **Grão negativo.** O ganho era `1 + (razão − 1) × ganho`; com ganho
+   3 e um pixel escuro da textura a conta ia a −1,1. Na borda amarela
+   o negativo comia vermelho e verde e sobrava azul. Virou potência
+   (`razão^ganho`), que nunca passa de zero.
+2. **Conta não linear na cor.** Travas e um "isto é tinta ou é
+   asfalto?" decidiam diferente pro pixel que o mipmap borra entre
+   amarelo e cinza. A conta final é linear na pintura (textura +
+   diferença pra base, quando mais clara; textura × s, quando mais
+   escura), e o pixel borrado sai a mistura dos dois lados.
+3. **A máscara classificava a mistura.** A pintura tem 11 cm por
+   pixel e o tracejado tem 2 px com antisserrilhado: nenhum pixel dele
+   é o amarelo da paleta. Medido, é `#827a51` (50% amarelo sobre a rua)
+   e `#5e5a45` (25%) — que caíam no `lote` e na `moita`. Terra e grama
+   em volta de cada tracejado. Agora a classificação é feita na
+   pintura cheia, com a média dos PESOS por texel, e pergunta também
+   se o pixel está na reta entre uma tinta e o piso dela
+   (`MISTURAS`: eixo e faixa sobre a rua, linha sobre o gramado).
+
+Custo: a máscara passou a ler os 12,6 milhões de pixels da pintura. O
+que pesava não era a conta, era **a leitura**: com o canvas da pintura
+na GPU (o padrão do navegador) cada `getImageData` é uma cópia de volta
+de 50 MB, e medido na carga a máscara levava **3,8 s — já na versão
+antiga**, que encolhia a pintura com `drawImage` e pagava a mesma cópia
+sem aparecer em lugar nenhum. Criando o canvas com
+`willReadFrequently: true` ele fica na memória: a máscara cai pra
+**0,36 s** e a cena fica pronta 3 s antes (9,2 → 6,1 s no navegador de
+teste, que roda sem placa de vídeo).
+
+O tracejado ainda sai **apagado** de perto. Isso não é o shader: 2 px
+a 11 cm/px é o que a pintura consegue desenhar. Faixa nítida pede
+geometria própria (uma tira fina com a tinta) ou decalque — não mais
+resolução no chão inteiro.
 
 ### 4.16. Dois bugs que a sede menor desenterrou
 

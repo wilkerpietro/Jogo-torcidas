@@ -35,6 +35,14 @@ export function montarBairro(P) {
     tmp.set(hex).multiplyScalar(tom === undefined ? 1 : tom);
     for (let k = 0; k < 3; k++) T.cor.push(tmp.r, tmp.g, tmp.b);
     if (!T.uv) return;
+    /* o tampo da laje que vai pro material do CHÃO precisa da MESMA UV
+       do plano do chão naquele ponto — é por ela que o shader acha a
+       pintura e a máscara, e é dela que ele monta a base tangente */
+    if (T.uvChao) {
+      for (const v of [a, b, c])
+        T.uv.push((v[0] - K.VX0) / K.VW, 1 - (v[2] - K.VY0) / K.VH);
+      return;
+    }
     const E = T.esc || TELHA_ESC;
     for (const v of [a, b, c]) {
       if (eixo === 'x')      T.uv.push(v[2] / E, v[1] / E);
@@ -78,10 +86,14 @@ export function montarBairro(P) {
   /* um prisma reto a partir de um polígono convexo: tampa e paredinha.
      O retângulo vem no sentido horário visto de cima; invertido, a
      tampa olha pra cima e as paredinhas olham pra fora. */
-  function laje(T, entrada, y0, y1, hex) {
+  function laje(T, entrada, y0, y1, hex, topo) {
     const pol = entrada.slice().reverse();
+    /* `topo`, quando vem, recebe só o TAMPO — as paredinhas ficam em T.
+       É o que separa o chão que se pisa (que vai pro material do chão)
+       da guia de 7 cm, que continua de reboco */
+    const TT = topo || T;
     for (let i = 1; i < pol.length - 1; i++)
-      tri(T, [pol[0][0], y1, pol[0][1]], [pol[i][0], y1, pol[i][1]], [pol[i+1][0], y1, pol[i+1][1]], hex, TONS[0], 'y');
+      tri(TT, [pol[0][0], y1, pol[0][1]], [pol[i][0], y1, pol[i][1]], [pol[i+1][0], y1, pol[i+1][1]], hex, TONS[0], 'y');
     for (let i = 0; i < pol.length; i++) {
       const a = pol[i], b = pol[(i + 1) % pol.length];
       const ao = Math.abs(a[0] - b[0]) > Math.abs(a[1] - b[1]);
@@ -1304,6 +1316,19 @@ export function montarBairro(P) {
     }
   }
 
+  /* ---- O TAMPO DAS LAJES, QUE É CHÃO ----
+     A calçada e o miolo do lote são LAJES elevadas (1,4 e 1,6) sobre o
+     plano do chão, e até aqui elas vestiam o reboco das paredes. Por
+     isso o concreto que chegou em `img/texturas/pbr/concreto/` "não
+     aparecia": ele estava sendo aplicado no plano do chão, EMBAIXO da
+     laje, onde ninguém enxerga. Só a rua, que não tem laje, recebia o
+     material novo.
+
+     O tampo vai pra um tecido à parte, com a UV do chão, e quem monta
+     a cena põe nele o MESMO material do chão — mesma pintura, mesma
+     máscara, mesmo splat, mesma sombra de nuvem. */
+  const TCHAO = { pos: [], cor: [], uv: [], uvChao: true };
+
   /* ---- os quarteirões, em pedaços de 4 × 4 células ---- */
   const pedacos = new Map();
   const comEquipamento = [];
@@ -1317,8 +1342,8 @@ export function montarBairro(P) {
        calçada da avenida (sem isso a sobra em cunha que a avenida
        deixa no quarteirão lê como um descampado de cimento); e o
        QUINTAL, mais alto, no meio. */
-    for (const p of semAsAvenidas(q)) laje(T, p, 0, 1.4, '#8d897d');
-    for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, '#7d7668');
+    for (const p of semAsAvenidas(q)) laje(T, p, 0, 1.4, '#8d897d', TCHAO);
+    for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, '#7d7668', TCHAO);
     /* a fatia do equipamento tem chão próprio, e só ela */
     if (q.equip) for (const p of semAsAvenidas(q.equip.area, K.CALC)) laje(T, p, 0, 1.65, q.equip.chao);
     if (q.quintal) for (const p of semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
@@ -1598,6 +1623,22 @@ export function montarBairro(P) {
      então parede vizinha não repete o mesmo pedaço da textura. */
   for (const T of pedacos.values()) malhaTex(T, REBOCO_LAZY(), 'quarteirao');
 
+  /* o tampo das lajes nasce com um material provisório: quem sabe o
+     material do chão é a cena, e ela troca este na montagem. Recebe
+     sombra (a do prédio cai na calçada) e não projeta — é chão. */
+  let lajesChao = null;
+  if (TCHAO.pos.length) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(TCHAO.pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(TCHAO.uv, 2));
+    g.computeVertexNormals();
+    lajesChao = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x8d897d }));
+    lajesChao.receiveShadow = true; lajesChao.castShadow = false;
+    lajesChao.name = 'lajes:chao';
+    triangulos += TCHAO.pos.length / 9;
+    meshes.push(lajesChao);
+  }
+
   /* ---- os soltos: carros, postes, campos ---- */
   const TS = Tecido();
   for (const c of K.CARROS) {
@@ -1662,5 +1703,5 @@ export function montarBairro(P) {
   }
   malha(TM, false, 'moitas');
 
-  return { meshes, triangulos, tetos, bandeiras, portas, pixacoes, pedacos: pedacos.size };
+  return { meshes, triangulos, tetos, bandeiras, portas, pixacoes, lajesChao, pedacos: pedacos.size };
 }

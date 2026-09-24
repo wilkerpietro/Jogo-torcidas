@@ -191,7 +191,12 @@ export function criar(canvas) {
   const cvChao = document.createElement('canvas');
   const escalaTex = TEX_LARG / K.VW;
   cvChao.width = TEX_LARG; cvChao.height = Math.round(K.VH * escalaTex);
-  const ctxChao = cvChao.getContext('2d');
+  /* `willReadFrequently`: a máscara do chão PBR lê esta pintura
+     inteira uma vez. Com o canvas na GPU (o padrão) essa leitura é uma
+     cópia de volta de 50 MB e custava 3,8 s na carga; na memória,
+     0,36 s. A pintura é feita uma vez só, então desenhar fora da GPU
+     não pesa — a carga toda ficou 3 s mais curta. */
+  const ctxChao = cvChao.getContext('2d', { willReadFrequently: true });
   texChao = new THREE.CanvasTexture(cvChao);
   texChao.colorSpace = THREE.SRGBColorSpace;
   maxAniso = rend.capabilities.getMaxAnisotropy();
@@ -660,6 +665,10 @@ export function criar(canvas) {
     grupo.add(tela);
     if (!cidade) {
       cidade = montarBairro(P);
+      /* o tampo da calçada e do lote veste o MESMO material do chão:
+         sem isto o concreto e a areia que chegaram na pasta só
+         apareciam na rua, que é o único chão sem laje por cima */
+      if (cidade.lajesChao) cidade.lajesChao.material = matChao;
       /* a nuvem passa por cima da CIDADE, não só do chão: sem isto o
          telhado fica no sol enquanto a rua ao lado escurece */
       for (const m of cidade.meshes) { nuvens.aplicarEm(m.material); cena.add(m); }
