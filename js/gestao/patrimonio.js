@@ -37,13 +37,13 @@ TO.patrimonio = (function(){
   const SEDE = [null,
     /* A PRIMEIRA SEDE É OBRA (decisão do dono, 22/09/2026): a torcida
        pequena começa no ponto de encontro (nível 0) e constrói a sede */
-    {custo: 30000,  rot:'Sede nível 1'},
-    {custo: 40000,  rot:'Sede nível 2'},
-    {custo:100000,  rot:'Sede nível 3'},
-    {custo:200000,  rot:'Sede nível 4'},
-    {custo:400000,  rot:'Sede nível 5'},
+    {custo: 30000,  rot:_t('Sede nível {n}', {n:1})},
+    {custo: 40000,  rot:_t('Sede nível {n}', {n:2})},
+    {custo:100000,  rot:_t('Sede nível {n}', {n:3})},
+    {custo:200000,  rot:_t('Sede nível {n}', {n:4})},
+    {custo:400000,  rot:_t('Sede nível {n}', {n:5})},
     /* o COMPLEXO (dono, 02/09/2026): um milhão pra virar império */
-    {custo:1000000, rot:'Sede nível 6'}
+    {custo:1000000, rot:_t('Sede nível {n}', {n:6})}
   ];
 
   /* Quanto de cada coisa cabe por nível de sede (GDD V4 §8.1). Duas
@@ -74,12 +74,12 @@ TO.patrimonio = (function(){
        o dinheiro grande não dorme no balcão.
      ======================================================= */
   const ANEXOS = {
-    enfermaria: {rot:'Enfermaria da sede', custo:150000, mes:1200, sede:4,
-      nota:'ferido volta em 3 a 9 dias em vez de 5 a 15'},
-    galpao:     {rot:'Galpão de material', custo:150000, mes:600,  sede:3,
-      nota:'bomba 15% mais barata e o saque no nosso bar leva 30% menos'},
-    cofre:      {rot:'Cofre blindado',     custo:300000, mes:0,    sede:5,
-      nota:'metade do prejuízo de qualquer saque fica guardada'},
+    enfermaria: {rot:_t('Enfermaria da sede'), custo:150000, mes:1200, sede:4,
+      nota:_t('ferido volta em 3 a 9 dias em vez de 5 a 15')},
+    galpao:     {rot:_t('Galpão de material'), custo:150000, mes:600,  sede:3,
+      nota:_t('bomba 15% mais barata e o saque no nosso bar leva 30% menos')},
+    cofre:      {rot:_t('Cofre blindado'),     custo:300000, mes:0,    sede:5,
+      nota:_t('metade do prejuízo de qualquer saque fica guardada')},
   };
 
   /* a perda de saque passa por aqui: galpão corta 30%, cofre corta
@@ -93,7 +93,10 @@ TO.patrimonio = (function(){
 
   const PONTO = {
     bar: {
-      rot:'Bar', plural:'bares',
+      rot:_t('Bar'), plural:'bares',
+      abrir:_t('Abrir bar'),
+      rotAmpliar: n => _t('Ampliar bar para nível {n}', {n}),
+      emBairro: bairro => _t('Bar em {bairro}', {bairro}),
       compra: 40000,
       /* ampliar baixou na reforma do comércio (dono, 24/08/2026):
          era 80/150 mil — a ampliação nunca se pagava */
@@ -102,13 +105,19 @@ TO.patrimonio = (function(){
       ampliar:[null, 60000, 120000, null]
     },
     loja: {
-      rot:'Loja', plural:'lojas',
+      rot:_t('Loja'), plural:'lojas',
+      abrir:_t('Abrir loja'),
+      rotAmpliar: n => _t('Ampliar loja para nível {n}', {n}),
+      emBairro: bairro => _t('Loja em {bairro}', {bairro}),
       compra: 50000,
       /* idem: era 100/150 mil */
       ampliar:[null, 70000, 140000, null]
     },
     subsede: {
-      rot:'Subsede', plural:'subsedes',
+      rot:_t('Subsede'), plural:'subsedes',
+      abrir:_t('Abrir subsede'),
+      rotAmpliar: n => _t('Ampliar subsede para nível {n}', {n}),
+      emBairro: bairro => _t('Subsede em {bairro}', {bairro}),
       /* ÚNICO PREÇO INFERIDO: o GDD V4 §8.3 descreve o que a subsede
          faz mas não diz quanto custa. Ela rende 600/mês contra 90 de
          manutenção e dobra o recrutamento da zona — na escala que os
@@ -165,7 +174,7 @@ TO.patrimonio = (function(){
   /* A FÁBRICA REPENSADA (ordem do dono, 02/09/2026): nada de
      triplicar faturamento — ela corta 50% do CUSTO da loja
      (manutenção e insumo). Produto próprio sai mais barato. */
-  const FABRICA = {custo:400000, sede:5, corteCusto:0.5, rot:'Fábrica'};
+  const FABRICA = {custo:400000, sede:5, corteCusto:0.5, rot:_t('Fábrica')};
 
   /* A ÁREA DE TREINO (ordem do dono, 02/09/2026): obra em três
      níveis, cada um esticando as vagas de treino da sede */
@@ -178,8 +187,8 @@ TO.patrimonio = (function(){
   /* qual sede é preciso ter pra caber o enésimo ônibus/professor */
   function proximaSedeQueCabe(n){
     const T = F().TETO_SEDE;
-    for(let i = 1; i < T.length; i++) if(T[i] >= n) return `cabe na sede nível ${i}`;
-    return 'não cabe em sede nenhuma';
+    for(let i = 1; i < T.length; i++) if(T[i] >= n) return _t('cabe na sede nível {n}', {n:i});
+    return _t('não cabe em sede nenhuma');
   }
   const cont = (E, tipo) => (F().patrimonio(E)[PONTO[tipo].plural] || []).length;
 
@@ -202,7 +211,7 @@ TO.patrimonio = (function(){
     const REC = F().RECEITA, MAN = F().MANUT, INSUMO = F().INSUMO;
     const fora = [];
 
-    fora.push({tipo:'sede', rot:`Sede (nível ${nivelSede(E)})`,
+    fora.push({tipo:'sede', rot:_t('Sede (nível {n})', {n:nivelSede(E)}),
                bairro:(TO.mundo.bairroDaSede(E.torcida)||{}).nome || '',
                receita:0, despesa:F().MANUT_SEDE[nivelSede(E)]});
     for(const chave of Object.keys(ANEXOS))
@@ -211,8 +220,8 @@ TO.patrimonio = (function(){
         receita:0, despesa:ANEXOS[chave].mes});
     const nArea = (E.patrimonio && E.patrimonio.areaTreino) || 0;
     if(nArea) fora.push({tipo:'anexo',
-      rot:`Área de treino (nível ${nArea})`, bairro:'',
-      nota:`+${[0,25,50,75][nArea]}% de membros treinando por dia`,
+      rot:_t('Área de treino (nível {n})', {n:nArea}), bairro:'',
+      nota:_t('+{p}% de membros treinando por dia', {p:[0,25,50,75][nArea]}),
       receita:0, despesa:0});
 
     const hojeAbs = (E.data && E.data.absoluto) || 0;
@@ -220,53 +229,55 @@ TO.patrimonio = (function(){
       /* bar quebrado no ataque rende metade por 45 dias (dono, 10/09/2026) */
       const dd = F().diasDeDano ? F().diasDeDano(b, hojeAbs) : 0;
       fora.push({tipo:'bar',
-        rot:`Bar (nível ${b.nivel})${b.gratis?' · da sede':''}`, bairro:b.bairro,
-        nota: dd ? `quebrado no ataque: metade da receita por mais ${dd} dia${dd>1?'s':''}` : undefined,
+        rot:_t('Bar (nível {n})', {n:b.nivel}) + (b.gratis ? ' · ' + _t('da sede') : ''), bairro:b.bairro,
+        nota: dd ? _tn(dd, 'quebrado no ataque: metade da receita por mais {n} dia',
+                           'quebrado no ataque: metade da receita por mais {n} dias') : undefined,
         receita: REC.bar[b.nivel]*mult(b.bairro)*fator*(F().multDano ? F().multDano(b, hojeAbs) : 1),
         despesa: MAN.bar[b.nivel]});
     }
     const fab = p.fabrica ? FABRICA : null;
     for(const l of p.lojas) fora.push({tipo:'loja',
-      rot:`Loja (nível ${l.nivel})${l.semInsumo?' · sem insumo':fab?' · fábrica':''}`,
+      rot:_t('Loja (nível {n})', {n:l.nivel}) +
+          (l.semInsumo ? ' · ' + _t('sem insumo') : fab ? ' · ' + _t('fábrica') : ''),
       bairro:l.bairro,
       receita: l.semInsumo ? 0 : REC.loja[l.nivel]*mult(l.bairro)*fator,
       despesa: (MAN.loja[l.nivel] + REC.loja[l.nivel]*INSUMO)
                * (fab ? 1-fab.corteCusto : 1)});
     for(const f of (p.filiais||[])) fora.push({tipo:'filial',
-      rot:`Subsede de ${F().nomeCidade(f.cidade)} (nível ${f.nivel})`,
+      rot:_t('Subsede de {cidade} (nível {n})', {cidade:F().nomeCidade(f.cidade), n:f.nivel}),
       bairro:F().nomeCidade(f.cidade),
       nucleo: (E.membros||[]).filter(m=>m.filial === f.cidade).length,
       teto: FILIAL.teto[f.nivel],
       receita: REC.subsede * F().multFilial(E, f) * fator,
       despesa: MAN.subsede[f.nivel] || MAN.subsede[1]});
-    for(const s of p.subsedes) fora.push({tipo:'subsede', rot:'Subsede', bairro:s.bairro,
+    for(const s of p.subsedes) fora.push({tipo:'subsede', rot:_t('Subsede'), bairro:s.bairro,
       receita: REC.subsede*mult(s.bairro)*fator,
       despesa: MAN.subsede[s.nivel || 1]});
 
     const frota = F().onibusDe(E);
     if(frota) fora.push({tipo:'onibus',
-      rot: frota === 1 ? 'Ônibus da torcida' : `Ônibus da torcida (${frota})`,
+      rot: frota === 1 ? _t('Ônibus da torcida') : _t('Ônibus da torcida ({n})', {n:frota}),
       bairro:'',
-      nota:`combustível e manutenção · a caravana sai `+
-           `${Math.round(F().descontoCaravana(E)*100)}% mais barata`,
+      nota:_t('combustível e manutenção · a caravana sai {p}% mais barata',
+              {p:Math.round(F().descontoCaravana(E)*100)}),
       receita:0, despesa:F().ONIBUS_MES * frota});
 
     const profs = F().professoresDe(E);
     if(profs) fora.push({tipo:'mma',
-      rot: profs === 1 ? 'Professor de MMA' : `Professores de MMA (${profs})`,
+      rot: profs === 1 ? _t('Professor de MMA') : _t('Professores de MMA ({n})', {n:profs}),
       bairro:'',
-      nota:`força e defesa evoluem +${Math.round((F().ganhoDoTreino(E)-1)*100)}% no treino`,
+      nota:_t('força e defesa evoluem +{p}% no treino', {p:Math.round((F().ganhoDoTreino(E)-1)*100)}),
       receita:0, despesa:F().MMA_MES * profs});
 
     /* o escritório aparece na Estrutura como a comissão técnica
        (correção do dono, 31/08/2026: contratou, tem que registrar) */
     const advs = F().advogadosDe(E);
     if(advs) fora.push({tipo:'advogado',
-      rot: advs === 1 ? 'Advogado' : `Advogados (${advs})`,
+      rot: advs === 1 ? _t('Advogado') : _t('Advogados ({n})', {n:advs}),
       bairro:'',
-      nota:(advs === 1 ? `corta ${F().ADVOGADO_DIAS}`
-                       : `cortam ${advs * F().ADVOGADO_DIAS}`)+
-           ' dias de cadeia de todo membro preso',
+      nota: advs === 1
+        ? _t('corta {n} dias de cadeia de todo membro preso', {n:F().ADVOGADO_DIAS})
+        : _t('cortam {n} dias de cadeia de todo membro preso', {n:advs * F().ADVOGADO_DIAS}),
       receita:0, despesa:F().ADVOGADO_MES * advs});
 
     /* A LINHA DE MATERIAL POR MEMBRO SAIU do financeiro, e sai daqui
@@ -293,29 +304,31 @@ TO.patrimonio = (function(){
     const n = nivelSede(E);
     const lista = [];
     const trava = (custo, extra)=> extra ? extra
-      : E.dinheiro < custo ? 'falta caixa' : null;
+      : E.dinheiro < custo ? _t('falta caixa') : null;
 
     /* a faixa (dono, 09/09/2026): R$ 5.000, quantas quiser */
-    lista.push({id:'faixa', rot:'Faixa nova',
-      nota:`${faixasDe(E).nossas.length} na sede · é a que a torcida expõe quando é atacada`,
+    lista.push({id:'faixa', rot:_t('Faixa nova'),
+      nota:_t('{n} na sede · é a que a torcida expõe quando é atacada', {n:faixasDe(E).nossas.length}),
       custo:FAIXA.custo, trava:trava(FAIXA.custo)});
     /* a bandeira (dono, 09/09/2026): R$ 2.000 */
-    lista.push({id:'bandeira', rot:'Bandeira nova',
-      nota:`${bandeirasDe(E).nossas.length} na sede · quadrada, com o escudo; sai no lugar da faixa no bar e na concentração, e junto dela no estádio`,
+    lista.push({id:'bandeira', rot:_t('Bandeira nova'),
+      nota:_t('{n} na sede · quadrada, com o escudo; sai no lugar da faixa no bar e na concentração, e junto dela no estádio',
+              {n:bandeirasDe(E).nossas.length}),
       custo:BANDEIRA.custo, trava:trava(BANDEIRA.custo)});
 
     if(SEDE[n+1]) lista.push({
-      id:'sede', rot: n === 0 ? 'Construir a sede' : `Ampliar a sede para o nível ${n+1}`,
-      nota: n === 0 ? 'o ponto de encontro vira sede: 50 membros, treino, festa e os três turnos'
-                    : 'mais membros, mais diretoria, mais pontos comerciais',
+      id:'sede', rot: n === 0 ? _t('Construir a sede') : _t('Ampliar a sede para o nível {n}', {n:n+1}),
+      nota: n === 0 ? _t('o ponto de encontro vira sede: 50 membros, treino, festa e os três turnos')
+                    : _t('mais membros, mais diretoria, mais pontos comerciais'),
       custo:SEDE[n+1].custo, trava:trava(SEDE[n+1].custo)});
 
     for(const tipo of ['bar','loja','subsede']){
       const cfg = PONTO[tipo], tem = cont(E,tipo), teto = TETO[tipo][n];
-      lista.push({id:'comprar:'+tipo, rot:`Abrir ${cfg.rot.toLowerCase()}`,
-        nota: n === 0 ? 'sem sede não há ponto comercial' : `${tem} de ${teto.qtd} pela sede nível ${n}`,
+      lista.push({id:'comprar:'+tipo, rot:cfg.abrir,
+        nota: n === 0 ? _t('sem sede não há ponto comercial')
+                      : _t('{tem} de {max} pela sede nível {n}', {tem, max:teto.qtd, n}),
         custo:cfg.compra,
-        trava:trava(cfg.compra, tem>=teto.qtd ? 'a sede não comporta mais' : null)});
+        trava:trava(cfg.compra, tem>=teto.qtd ? _t('a sede não comporta mais') : null)});
 
       /* ampliar o ponto mais fraco de cada tipo: é o que o jogador
          faria de qualquer jeito, e evita uma lista de dez botões */
@@ -323,11 +336,12 @@ TO.patrimonio = (function(){
       const alvo = pontos.filter(x=>cfg.ampliar[x.nivel])
                          .sort((a,b)=>a.nivel-b.nivel)[0];
       if(alvo) lista.push({
-        id:'ampliar:'+tipo, rot:`Ampliar ${cfg.rot.toLowerCase()} para nível ${alvo.nivel+1}`,
-        nota:alvo.bairro ? `em ${alvo.bairro}` : '',
+        id:'ampliar:'+tipo, rot:cfg.rotAmpliar(alvo.nivel+1),
+        nota:alvo.bairro ? _t('em {bairro}', {bairro:alvo.bairro}) : '',
         custo:cfg.ampliar[alvo.nivel],
         trava:trava(cfg.ampliar[alvo.nivel],
-          alvo.nivel+1 > teto.nivel ? `sede nível ${n} não comporta ${cfg.rot.toLowerCase()} nível ${alvo.nivel+1}` : null)});
+          alvo.nivel+1 > teto.nivel ? _t('sede nível {n} não comporta {ponto} nível {nivel}',
+            {n, ponto:cfg.rot.toLowerCase(), nivel:alvo.nivel+1}) : null)});
     }
 
     /* A FROTA (régua do dono, 20/08/2026): até TRÊS ônibus, cada um
@@ -341,21 +355,23 @@ TO.patrimonio = (function(){
       const desc = Math.round(F().DESCONTO_ONIBUS[proximo]*100);
       lista.push({
         id:'onibus',
-        rot: temOnibus ? `Comprar mais um ônibus (${proximo}º)`
-                       : 'Comprar o ônibus da torcida',
-        nota:`com ${proximo} ${proximo===1?'ônibus':'ônibus'} a caravana `+
-             `de estrada sai ${desc}% mais barata`+
-             (proximo === F().ONIBUS_MAX
-               ? ' — frota cheia, estrada de graça e o rateio vira receita' : '')+
-             ` · R$ 1.500/mês por ônibus · rota de avião continua paga`,
+        rot: temOnibus ? _t('Comprar mais um ônibus ({n}º)', {n:proximo})
+                       : _t('Comprar o ônibus da torcida'),
+        nota:(proximo === F().ONIBUS_MAX
+               ? _tn(proximo, 'com {n} ônibus a caravana de estrada sai {p}% mais barata — frota cheia, estrada de graça e o rateio vira receita',
+                              'com {n} ônibus a caravana de estrada sai {p}% mais barata — frota cheia, estrada de graça e o rateio vira receita', {p:desc})
+               : _tn(proximo, 'com {n} ônibus a caravana de estrada sai {p}% mais barata',
+                              'com {n} ônibus a caravana de estrada sai {p}% mais barata', {p:desc}))+
+             ' · ' + _t('{valor}/mês por ônibus · rota de avião continua paga', {valor:U.dinheiro(F().ONIBUS_MES)}),
         custo:F().ONIBUS_CUSTO, trava:trava(F().ONIBUS_CUSTO)});
     } else if(F().onibusMax(E) < F().ONIBUS_MAX){
       /* dinheiro não é o que falta: falta garagem */
-      lista.push({id:'onibus', rot:'Comprar mais um ônibus',
-        nota:`a sede nível ${nivelSede(E)} guarda ${F().onibusMax(E)} `+
-             `${F().onibusMax(E)===1?'ônibus':'ônibus'} · `+
-             `${proximaSedeQueCabe(F().onibusMax(E)+1)}`,
-        custo:F().ONIBUS_CUSTO, trava:'a garagem da sede está cheia'});
+      const cabem = F().onibusMax(E);
+      lista.push({id:'onibus', rot:_t('Comprar mais um ônibus'),
+        nota:_tn(cabem, 'a sede nível {nivel} guarda {n} ônibus',
+                                   'a sede nível {nivel} guarda {n} ônibus', {nivel:nivelSede(E)})+
+             ' · ' + proximaSedeQueCabe(F().onibusMax(E)+1),
+        custo:F().ONIBUS_CUSTO, trava:_t('a garagem da sede está cheia')});
     }
 
     /* A COMISSÃO TÉCNICA (dono, 18/08/2026; escada em 20/08/2026):
@@ -363,33 +379,35 @@ TO.patrimonio = (function(){
        fechamento — e o treino rende +30%, +60% e +100%. */
     const temProf = F().professoresDe(E);
     if(temProf >= F().mmaMax(E) && F().mmaMax(E) < F().MMA_MAX){
-      lista.push({id:'mma', rot:'Contratar mais um professor de MMA',
-        nota:`a sede nível ${nivelSede(E)} comporta `+
-             `${F().mmaMax(E)} ${F().mmaMax(E)===1?'professor':'professores'} · `+
-             `${proximaSedeQueCabe(F().mmaMax(E)+1)}`,
-        custo:F().MMA_MES, trava:'a sala de treino da sede está cheia'});
+      const cabem = F().mmaMax(E);
+      lista.push({id:'mma', rot:_t('Contratar mais um professor de MMA'),
+        nota:_tn(cabem, 'a sede nível {nivel} comporta {n} professor',
+                                'a sede nível {nivel} comporta {n} professores', {nivel:nivelSede(E)})+
+             ' · ' + proximaSedeQueCabe(F().mmaMax(E)+1),
+        custo:F().MMA_MES, trava:_t('a sala de treino da sede está cheia')});
     } else if(temProf < F().mmaMax(E)){
       const proximo = Math.round((F().GANHO_MMA[temProf+1]-1)*100);
-      const ORD = ['', '', '2º', '3º'];
       lista.push({
         id:'mma',
-        rot: temProf ? `Contratar mais um professor de MMA (${ORD[temProf+1]})`
-                     : 'Contratar professor de MMA',
-        nota:`força e defesa evoluem +${proximo}% no treino`+
-             (temProf ? ` (hoje +${Math.round((F().ganhoDoTreino(E)-1)*100)}%)` : '')+
-             ` · R$ ${F().MMA_MES.toLocaleString('pt-BR')} fixos por mês por `+
-             `professor, cobrados no fechamento`,
+        rot: temProf ? _t('Contratar mais um professor de MMA ({n}º)', {n:temProf+1})
+                     : _t('Contratar professor de MMA'),
+        nota:(temProf
+               ? _t('força e defesa evoluem +{p}% no treino (hoje +{hoje}%)',
+                    {p:proximo, hoje:Math.round((F().ganhoDoTreino(E)-1)*100)})
+               : _t('força e defesa evoluem +{p}% no treino', {p:proximo}))+
+             ' · ' + _t('{valor} fixos por mês por professor, cobrados no fechamento',
+                        {valor:U.dinheiro(F().MMA_MES)}),
         custo:F().MMA_MES, trava:trava(F().MMA_MES)});
     }
     if(temProf) lista.push({
       id:'mma-fora',
-      rot: temProf === 1 ? 'Dispensar o professor de MMA'
-                         : 'Dispensar um professor de MMA',
+      rot: temProf === 1 ? _t('Dispensar o professor de MMA')
+                         : _t('Dispensar um professor de MMA'),
       nota: temProf === 1
-        ? 'o treino volta ao ritmo normal e a mensalidade de '+
-          'R$ 2.000 para de cobrar no próximo fechamento'
-        : `o treino cai pra +${Math.round((F().GANHO_MMA[temProf-1]-1)*100)}% e `+
-          `a folha desce pra R$ ${(F().MMA_MES*(temProf-1)).toLocaleString('pt-BR')} por mês`,
+        ? _t('o treino volta ao ritmo normal e a mensalidade de {valor} para de cobrar no próximo fechamento',
+             {valor:U.dinheiro(F().MMA_MES)})
+        : _t('o treino cai pra +{p}% e a folha desce pra {valor} por mês',
+             {p:Math.round((F().GANHO_MMA[temProf-1]-1)*100), valor:U.dinheiro(F().MMA_MES*(temProf-1))}),
       custo:0, trava:null});
 
     /* O ESCRITÓRIO DE ADVOCACIA (pedido do dono, 31/08/2026): cada
@@ -400,38 +418,38 @@ TO.patrimonio = (function(){
     const maxAdv = F().advogadosMax(E);
     if(temAdv >= maxAdv && n < 6){
       lista.push({id:'advogado',
-        rot: maxAdv ? 'Contratar mais um advogado' : 'Contratar advogado',
-        nota:`a sede nível ${n} comporta `+
-             `${maxAdv} advogado${maxAdv===1?'':'s'} — a nível ${n+1} `+
-             `comporta ${F().ADVOGADOS_SEDE[n+1]}`,
+        rot: maxAdv ? _t('Contratar mais um advogado') : _t('Contratar advogado'),
+        nota:_tn(maxAdv, 'a sede nível {nivel} comporta {n} advogado — a nível {prox} comporta {m}',
+                         'a sede nível {nivel} comporta {n} advogados — a nível {prox} comporta {m}',
+                 {nivel:n, prox:n+1, m:F().ADVOGADOS_SEDE[n+1]}),
         custo:F().ADVOGADO_MES,
-        trava: maxAdv ? 'o escritório da sede está cheio'
-                      : 'a sede nível 1 não comporta advogado'});
+        trava: maxAdv ? _t('o escritório da sede está cheio')
+                      : _t('a sede nível 1 não comporta advogado')});
     } else if(temAdv < maxAdv){
       lista.push({id:'advogado',
-        rot: temAdv ? `Contratar mais um advogado (${temAdv+1}º)`
-                    : 'Contratar advogado',
-        nota:`cada advogado corta 10 dias de cadeia de todo membro preso `+
-             `— na contratação e em toda prisão nova · R$ `+
-             `${F().ADVOGADO_MES.toLocaleString('pt-BR')} fixos por mês por `+
-             `advogado, cobrados no fechamento`,
+        rot: temAdv ? _t('Contratar mais um advogado ({n}º)', {n:temAdv+1})
+                    : _t('Contratar advogado'),
+        nota:_t('cada advogado corta {dias} dias de cadeia de todo membro preso — na contratação e em toda prisão nova',
+                {dias:F().ADVOGADO_DIAS})+
+             ' · ' + _t('{valor} fixos por mês por advogado, cobrados no fechamento',
+                        {valor:U.dinheiro(F().ADVOGADO_MES)}),
         custo:F().ADVOGADO_MES, trava:trava(F().ADVOGADO_MES)});
     }
     if(temAdv) lista.push({
       id:'advogado-fora',
-      rot: temAdv === 1 ? 'Demitir o advogado' : 'Demitir um advogado',
+      rot: temAdv === 1 ? _t('Demitir o advogado') : _t('Demitir um advogado'),
       nota: temAdv === 1
-        ? 'os R$ 5.000 param de cobrar no próximo fechamento — quem está '+
-          'preso cumpre a pena que já tem'
-        : `a folha desce pra R$ ${(F().ADVOGADO_MES*(temAdv-1)).toLocaleString('pt-BR')} `+
-          `por mês — as penas já cortadas ficam cortadas`,
+        ? _t('os {valor} param de cobrar no próximo fechamento — quem está preso cumpre a pena que já tem',
+             {valor:U.dinheiro(F().ADVOGADO_MES)})
+        : _t('a folha desce pra {valor} por mês — as penas já cortadas ficam cortadas',
+             {valor:U.dinheiro(F().ADVOGADO_MES*(temAdv-1))}),
       custo:0, trava:null});
 
     /* bomba também se compra pelo Financeiro (pedido do dono,
        18/08/2026): caixa com 5, direto pro estoque que as cenas usam */
     lista.push({
-      id:'bombas', rot:'Comprar bombas (caixa com 5)',
-      nota:`estoque atual: ${bombas(E)} · R$ ${PRECO_BOMBA} cada`,
+      id:'bombas', rot:_t('Comprar bombas (caixa com 5)'),
+      nota:_t('estoque atual: {n} · {valor} cada', {n:bombas(E), valor:U.dinheiro(PRECO_BOMBA)}),
       custo:5*PRECO_BOMBA, trava:trava(5*PRECO_BOMBA)});
 
     /* AS FILIAIS: um botão só com o dropdown do destino (pedido do
@@ -442,21 +460,21 @@ TO.patrimonio = (function(){
       const fs = p.filiais || [];
       const limite = FILIAL.porSede[n] || 0;
       const travaF =
-        n < 3 ? 'precisa de sede nível 3' :
+        n < 3 ? _t('precisa de sede nível {n}', {n:3}) :
         (E.indicadores.prestigio < FILIAL.prestigioMin)
-          ? 'precisa de 60 de prestígio' :
+          ? _t('precisa de {n} de prestígio', {n:FILIAL.prestigioMin*5}) :
         fs.length >= limite
-          ? `a sede nível ${n} banca ${limite} ${limite===1?'filial':'filiais'}`
+          ? _tn(limite, 'a sede nível {nivel} banca {n} filial', 'a sede nível {nivel} banca {n} filiais', {nivel:n})
           : null;
       const cands = cidadesCandidatas(E);
-      const clube = (TO.mundo.time(E.torcida.clubeId)||{}).nome || 'clube';
+      const clube = (TO.mundo.time(E.torcida.clubeId)||{}).nome || _t('clube');
       if(cands.length) lista.push({
-        id:'filial', rot:'Abrir subsede em outra cidade',
-        nota:`núcleo local de até ${FILIAL.teto[1]} membros no nível 1 · `+
-             `recruta, defende e ataca na cidade dela`,
+        id:'filial', rot:_t('Abrir subsede em outra cidade'),
+        nota:_t('núcleo local de até {n} membros no nível 1 · recruta, defende e ataca na cidade dela',
+                {n:FILIAL.teto[1]}),
         custo:FILIAL.compra, trava:trava(FILIAL.compra, travaF),
         escolhas: cands.map(c=>({id:c.cidade,
-          rot:`${c.nome} — ${U.numero(c.torcedores)} torcedores do ${clube}`}))});
+          rot:_t('{cidade} — {n} torcedores do {clube}', {cidade:c.nome, n:U.numero(c.torcedores), clube})}))});
       /* QUAL SUBSEDE AMPLIAR É ESCOLHA (pedido do dono, 17/09/2026):
          era sempre a mais fraca; agora é um botão com o dropdown das
          que ainda sobem, da mais fraca pra mais forte, cada uma com o
@@ -465,13 +483,13 @@ TO.patrimonio = (function(){
       const sobem = fs.filter(f=>FILIAL.ampliar[f.nivel])
                       .sort((a,b)=>a.nivel-b.nivel);
       if(sobem.length) lista.push({id:'ampliar-filial',
-        rot:'Ampliar uma subsede de outra cidade',
-        nota:`nível 2 cabe ${FILIAL.teto[2]} membros, nível 3 cabe ${FILIAL.teto[3]}`,
+        rot:_t('Ampliar uma subsede de outra cidade'),
+        nota:_t('nível 2 cabe {a} membros, nível 3 cabe {b}', {a:FILIAL.teto[2], b:FILIAL.teto[3]}),
         custo:FILIAL.ampliar[sobem[0].nivel],
         trava:trava(FILIAL.ampliar[sobem[0].nivel]),
         escolhas: sobem.map(f=>({id:f.cidade, custo:FILIAL.ampliar[f.nivel],
-          rot:`${F().nomeCidade(f.cidade)} — nível ${f.nivel} → ${f.nivel+1} · `+
-              `R$ ${FILIAL.ampliar[f.nivel].toLocaleString('pt-BR')}`}))});
+          rot:_t('{cidade} — nível {de} → {para} · {valor}', {cidade:F().nomeCidade(f.cidade),
+              de:f.nivel, para:f.nivel+1, valor:U.dinheiro(FILIAL.ampliar[f.nivel])})}))});
     }
 
     /* O PRESENTE PRO ALIADO (pedido do dono, 17/09/2026): dois
@@ -487,32 +505,34 @@ TO.patrimonio = (function(){
         for(const tipo of R.PRESENTES) precos[a.id][tipo] = R.presenteDe(E, a.id, tipo);
       }
       const primeiro = aliados[0] && precos[aliados[0].id].sede;
-      lista.push({id:'presente', rot:'Dar uma melhoria de presente a um aliado',
-        nota:'a gente paga, o patrimônio é dele · a relação com ele sobe +50',
+      lista.push({id:'presente', rot:_t('Dar uma melhoria de presente a um aliado'),
+        nota:_t('a gente paga, o patrimônio é dele · a relação com ele sobe +50'),
         custo:(primeiro && primeiro.custo) || PONTO.loja.compra,
-        trava: aliados.length ? null : 'nenhum aliado (relação de 20 ou mais)',
+        trava: aliados.length ? null : _t('nenhum aliado (relação de 20 ou mais)'),
         escolhas: aliados.map(a=>({id:a.id,
-          rot:`${a.nome} — relação ${Math.round(R.nivel(E, a.id))}`})),
-        escolhas2: R.PRESENTES.map(t=>({id:t, rot:R.ROTULO_PRESENTE[t]})),
+          rot:_t('{nome} — relação {n}', {nome:a.nome, n:Math.round(R.nivel(E, a.id))})})),
+        escolhas2: R.PRESENTES.map(t=>({id:t, rot:_t(R.ROTULO_PRESENTE[t])})),
         precos});
     }
 
     if(!p.fabrica) lista.push({
       id:'fabrica', rot:FABRICA.rot,
-      nota:`corta ${Math.round(FABRICA.corteCusto*100)}% do custo das lojas — manutenção e insumo`,
+      nota:_t('corta {p}% do custo das lojas — manutenção e insumo', {p:Math.round(FABRICA.corteCusto*100)}),
       custo:FABRICA.custo,
       trava:trava(FABRICA.custo,
-        n < FABRICA.sede ? `precisa de sede nível ${FABRICA.sede}` : null)});
+        n < FABRICA.sede ? _t('precisa de sede nível {n}', {n:FABRICA.sede}) : null)});
 
     /* a área de treino: um degrau por vez, até o nível 3 */
     const nAT = (E.patrimonio && E.patrimonio.areaTreino) || 0;
     if(AREA_TREINO.custo[nAT+1]) lista.push({
       id:'area-treino',
-      rot: nAT ? `Ampliar a área de treino — nível ${nAT+1}`
-               : 'Ampliar a área de treino',
-      nota:`+${AREA_TREINO.bonus[nAT+1]}% de membros treinando por dia `+
-           `(hoje: ${AREA_TREINO.bonus[nAT]
-             ? '+'+AREA_TREINO.bonus[nAT]+'%' : 'a régua da sede'})`,
+      rot: nAT ? _t('Ampliar a área de treino — nível {n}', {n:nAT+1})
+               : _t('Ampliar a área de treino'),
+      nota: AREA_TREINO.bonus[nAT]
+        ? _t('+{p}% de membros treinando por dia (hoje: +{hoje}%)',
+             {p:AREA_TREINO.bonus[nAT+1], hoje:AREA_TREINO.bonus[nAT]})
+        : _t('+{p}% de membros treinando por dia (hoje: a régua da sede)',
+             {p:AREA_TREINO.bonus[nAT+1]}),
       custo:AREA_TREINO.custo[nAT+1],
       trava:trava(AREA_TREINO.custo[nAT+1])});
 
@@ -521,11 +541,11 @@ TO.patrimonio = (function(){
       const a = ANEXOS[chave];
       if(p[chave]) continue;
       lista.push({id:'anexo:'+chave, rot:a.rot,
-        nota:a.nota + (a.mes ? ` · R$ ${a.mes.toLocaleString('pt-BR')}/mês`
-                             : ' · sem mensalidade'),
+        nota:a.nota + ' · ' + (a.mes ? _t('{valor}/mês', {valor:U.dinheiro(a.mes)})
+                                     : _t('sem mensalidade')),
         custo:a.custo,
         trava:trava(a.custo,
-          n < a.sede ? `precisa de sede nível ${a.sede}` : null)});
+          n < a.sede ? _t('precisa de sede nível {n}', {n:a.sede}) : null)});
     }
 
     /* A NATUREZA de cada item (a Loja do dono, 09/09/2026): a tela
@@ -625,11 +645,12 @@ TO.patrimonio = (function(){
     const t = (TO.mundo && TO.mundo.time && o.clubeId) ? TO.mundo.time(o.clubeId) : null;
     const nome = String(o.nome || '').toUpperCase();
     const opcoes = [{grande:nome, pequeno:''}];
-    if(o.fundacao) opcoes.push({grande:`DESDE ${o.fundacao}`, pequeno:nome});
+    if(o.fundacao) opcoes.push({grande:_t('DESDE {ano}', {ano:o.fundacao}), pequeno:nome});
     if(t && t.mascote){
       const m = String(t.mascote).toUpperCase();
       const fem = /A$/.test(m) && !/HOMEM$/.test(m);
-      opcoes.push({grande:`SEMPRE COM ${fem ? 'A' : 'O'} ${m}`, pequeno:nome});
+      opcoes.push({grande: fem ? _t('SEMPRE COM A {mascote}', {mascote:m})
+                               : _t('SEMPRE COM O {mascote}', {mascote:m}), pequeno:nome});
     }
     let h = 0; for(const ch of String(o.id || o.nome || '')) h = (h*31 + ch.charCodeAt(0)) >>> 0;
     return opcoes[(h + (k||0)) % opcoes.length];
@@ -755,16 +776,16 @@ TO.patrimonio = (function(){
 
   function comprar(E, id){
     if(id === 'faixa'){
-      if(E.dinheiro < FAIXA.custo) return {ok:false, msg:'Não dá: falta caixa.'};
+      if(E.dinheiro < FAIXA.custo) return {ok:false, msg:_t('Não dá: falta caixa.')};
       faixasDe(E).nossas.push({n: faixasDe(E).nossas.length + 1, desde:(E.data||{}).ano||2026});
-      TO.estado.lancar(E, 'Faixa nova', -FAIXA.custo);
-      return {ok:true, msg:'Faixa nova na sede.'};
+      TO.estado.lancar(E, _t('Faixa nova'), -FAIXA.custo);
+      return {ok:true, msg:_t('Faixa nova na sede.')};
     }
     if(id === 'bandeira'){
-      if(E.dinheiro < BANDEIRA.custo) return {ok:false, msg:'Não dá: falta caixa.'};
+      if(E.dinheiro < BANDEIRA.custo) return {ok:false, msg:_t('Não dá: falta caixa.')};
       bandeirasDe(E).nossas.push({n: bandeirasDe(E).nossas.length + 1, desde:(E.data||{}).ano||2026});
-      TO.estado.lancar(E, 'Bandeira nova', -BANDEIRA.custo);
-      return {ok:true, msg:'Bandeira nova na sede.'};
+      TO.estado.lancar(E, _t('Bandeira nova'), -BANDEIRA.custo);
+      return {ok:true, msg:_t('Bandeira nova na sede.')};
     }
     const p = F().patrimonio(E);
     let o = opcoes(E).find(x=>x.id===id);
@@ -778,27 +799,27 @@ TO.patrimonio = (function(){
        colada no id ('ampliar-filial:cidade', 'presente:aliado:tipo') */
     if(!o && id.indexOf('ampliar-filial:') === 0) o = opcoes(E).find(x=>x.id === 'ampliar-filial');
     if(!o && id.indexOf('presente:') === 0) o = opcoes(E).find(x=>x.id === 'presente');
-    if(!o) return {ok:false, msg:'Opção que não existe.'};
-    if(o.trava) return {ok:false, msg:`Não dá: ${o.trava}.`};
+    if(!o) return {ok:false, msg:_t('Opção que não existe.')};
+    if(o.trava) return {ok:false, msg:_t('Não dá: {motivo}.', {motivo:o.trava})};
 
     const [acao, tipo, extra] = id.split(':');
     if(acao==='presente'){
       const R = TO.relacoes;
       if(!(o.escolhas||[]).some(a=>a.id === tipo) || !R.PRESENTES.includes(extra))
-        return {ok:false, msg:'Escolha que não existe.'};
+        return {ok:false, msg:_t('Escolha que não existe.')};
       const pr = R.presenteDe(E, tipo, extra);
-      if(pr.trava) return {ok:false, msg:`Não dá: ${pr.trava}.`};
-      if(E.dinheiro < pr.custo) return {ok:false, msg:'Não dá: falta caixa.'};
+      if(pr.trava) return {ok:false, msg:_t('Não dá: {motivo}.', {motivo:_t(pr.trava)})};
+      if(E.dinheiro < pr.custo) return {ok:false, msg:_t('Não dá: falta caixa.')};
       const nome = (TO.mundo.torcida(tipo)||{}).nome || tipo;
       const r = R.presentear(E, tipo, extra);
-      if(!r) return {ok:false, msg:'Não deu.'};
-      TO.estado.lancar(E, `Presente pra ${nome}: ${r.rot}`, -r.custo);
-      return {ok:true, msg:`${nome} ganhou ${r.rot}. Relação +${r.ganho}.`};
+      if(!r) return {ok:false, msg:_t('Não deu.')};
+      TO.estado.lancar(E, _t('Presente pra {nome}: {item}', {nome, item:_t(r.rot)}), -r.custo);
+      return {ok:true, msg:_t('{nome} ganhou {item}. Relação +{n}.', {nome, item:_t(r.rot), n:r.ganho})};
     }
     if(acao==='filial'){
       p.filiais = p.filiais || [];
       p.filiais.push({cidade:tipo, nivel:1});
-      TO.estado.lancar(E, `Subsede em ${F().nomeCidade(tipo)}`, -o.custo);
+      TO.estado.lancar(E, _t('Subsede em {cidade}', {cidade:F().nomeCidade(tipo)}), -o.custo);
       /* A FUNDAÇÃO DESCE COM GENTE DA SEDE (ordem do dono, 31/08/2026;
          ampliada em 09/09/2026): um diretor, dois linha de frente e
          CINCO componentes saem destacados pra abrir a subsede — ela já
@@ -812,48 +833,50 @@ TO.patrimonio = (function(){
         .concat(aptosDe('componente').slice(0,5));
       for(const m of destacados){
         m.filial = tipo;
-        m.historico.push(
-          `Destacado pra fundar a subsede de ${F().nomeCidade(tipo)}`);
+        /* com o tipo ao lado, como `membros.anotar` (a frase já nasce
+           no idioma do jogador) */
+        m.historico.push({t:'filial',
+          x:_t('Destacado pra fundar a subsede de {cidade}', {cidade:F().nomeCidade(tipo)})});
       }
       E.inauguracao = {tipo:'subsede', bairro:F().nomeCidade(tipo),
                        quando:(E.data||{}).absoluto || 0, contada:false};
-      return {ok:true, msg:`Subsede aberta em ${F().nomeCidade(tipo)}`+
-        (destacados.length
-          ? ` — ${destacados.length} da sede destacados pra lá.` : '.')};
+      return {ok:true, msg: destacados.length
+        ? _t('Subsede aberta em {cidade} — {n} da sede destacados pra lá.',
+             {cidade:F().nomeCidade(tipo), n:destacados.length})
+        : _t('Subsede aberta em {cidade}.', {cidade:F().nomeCidade(tipo)})};
     }
     if(acao==='ampliar-filial'){
       const f = (p.filiais||[]).find(x=>x.cidade === tipo);
-      if(!f || !FILIAL.ampliar[f.nivel]) return {ok:false, msg:'Essa subsede não sobe mais.'};
+      if(!f || !FILIAL.ampliar[f.nivel]) return {ok:false, msg:_t('Essa subsede não sobe mais.')};
       const custo = FILIAL.ampliar[f.nivel];
-      if(E.dinheiro < custo) return {ok:false, msg:'Não dá: falta caixa.'};
+      if(E.dinheiro < custo) return {ok:false, msg:_t('Não dá: falta caixa.')};
       f.nivel++;
-      TO.estado.lancar(E, `Ampliação da subsede de ${F().nomeCidade(tipo)}`+
-                          ` — nível ${f.nivel}`, -custo);
-      return {ok:true, msg:`Subsede de ${F().nomeCidade(tipo)} no nível ${f.nivel}.`};
+      TO.estado.lancar(E, _t('Ampliação da subsede de {cidade} — nível {n}',
+                             {cidade:F().nomeCidade(tipo), n:f.nivel}), -custo);
+      return {ok:true, msg:_t('Subsede de {cidade} no nível {n}.', {cidade:F().nomeCidade(tipo), n:f.nivel})};
     }
     if(acao==='sede'){
       E.torcida.sedeNivel++;
-      TO.estado.lancar(E, `Ampliação da sede — nível ${E.torcida.sedeNivel}`, -o.custo);
+      TO.estado.lancar(E, _t('Ampliação da sede — nível {n}', {n:E.torcida.sedeNivel}), -o.custo);
       /* a inauguração é EFEMÉRIDE (feed 9.4), e quem sabe que ela
          aconteceu é quem comprou. O feed lê este carimbo e conta. */
       E.inauguracao = {tipo:'sede', nivel:E.torcida.sedeNivel,
                        quando:(E.data||{}).absoluto || 0, contada:false};
     } else if(acao==='fabrica'){
       p.fabrica = true;
-      TO.estado.lancar(E, 'Fábrica de material', -o.custo);
+      TO.estado.lancar(E, _t('Fábrica de material'), -o.custo);
     } else if(acao==='anexo'){
       p[tipo] = true;
       TO.estado.lancar(E, ANEXOS[tipo].rot, -o.custo);
     } else if(acao==='area-treino'){
       E.patrimonio.areaTreino = ((E.patrimonio.areaTreino||0) + 1);
-      TO.estado.lancar(E, `Área de treino — nível `+
-                          `${E.patrimonio.areaTreino}`, -o.custo);
+      TO.estado.lancar(E, _t('Área de treino — nível {n}', {n:E.patrimonio.areaTreino}), -o.custo);
     } else if(acao==='onibus'){
       const tinha = F().onibusDe(E);
       E.onibus = {desde:(E.onibus && E.onibus.desde) || (E.data||{}).absoluto || 0,
                   n: Math.min(F().onibusMax(E), tinha + 1)};
-      TO.estado.lancar(E, tinha ? `Ônibus da torcida (${tinha+1}º)`
-                                : 'Ônibus da torcida', -o.custo);
+      TO.estado.lancar(E, tinha ? _t('Ônibus da torcida ({n}º)', {n:tinha+1})
+                                : _t('Ônibus da torcida'), -o.custo);
     } else if(acao==='mma'){
       /* nada sai do caixa agora: a mensalidade cobra no fim do mês */
       const tinha = F().professoresDe(E);
@@ -883,12 +906,12 @@ TO.patrimonio = (function(){
         ? {desde:(E.advogados && E.advogados.desde) || 0, n:fica} : null;
     } else if(acao==='bombas'){
       estoquePiro(E).bombas += 5;
-      TO.estado.lancar(E, 'Bombas ×5', -o.custo);
+      TO.estado.lancar(E, _t('Bombas ×{n}', {n:5}), -o.custo);
     } else if(acao==='comprar'){
       const cfg = PONTO[tipo];
       const bairro = F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1));
       p[cfg.plural].push({nivel:1, bairro});
-      TO.estado.lancar(E, `${cfg.rot} em ${bairro}`, -o.custo);
+      TO.estado.lancar(E, cfg.emBairro(bairro), -o.custo);
       /* subsede nova tem batismo (feed 9.5); bar e loja não — quem se
          reúne na subsede é a torcida, e é isso que vira data */
       if(tipo === 'subsede')
@@ -904,9 +927,10 @@ TO.patrimonio = (function(){
       const cfg = PONTO[tipo];
       const alvo = (p[cfg.plural]||[]).filter(x=>cfg.ampliar[x.nivel])
                                       .sort((a,b)=>a.nivel-b.nivel)[0];
-      if(!alvo) return {ok:false, msg:'Não há o que ampliar.'};
+      if(!alvo) return {ok:false, msg:_t('Não há o que ampliar.')};
       alvo.nivel++;
-      TO.estado.lancar(E, `Ampliação — ${cfg.rot} ${alvo.bairro} (n${alvo.nivel})`, -o.custo);
+      TO.estado.lancar(E, _t('Ampliação — {ponto} {bairro} (n{n})',
+                             {ponto:cfg.rot, bairro:alvo.bairro, n:alvo.nivel}), -o.custo);
       /* a ampliação NOSSA também é notícia (21/09/2026): só a compra
          avisava o feed, então "ampliou o bar" era coisa que só as
          outras torcidas faziam no jornal */
@@ -941,9 +965,9 @@ TO.patrimonio = (function(){
     qtd = Math.max(0, Math.round(qtd||0));
     if(!qtd) return {ok:true, compradas:0};
     const custo = qtd * precoBomba(E);
-    if(E.dinheiro < custo) return {ok:false, msg:'falta caixa'};
+    if(E.dinheiro < custo) return {ok:false, msg:_t('falta caixa')};
     estoquePiro(E).bombas += qtd;
-    TO.estado.lancar(E, `Bombas ×${qtd}`, -custo);
+    TO.estado.lancar(E, _t('Bombas ×{n}', {n:qtd}), -custo);
     return {ok:true, compradas:qtd, custo};
   }
 

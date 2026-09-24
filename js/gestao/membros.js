@@ -10,13 +10,13 @@ TO.membros = (function(){
 
   /* GDD §5.1 e §5.2 */
   const CARGOS = {
-    novato:     {nome:'Novato',          teto:8,  mensalidade:20,  ordem:0,
+    novato:     {nome:_t('Novato'),          teto:8,  mensalidade:20,  ordem:0,
                  xpPromo:40,  forcaPromo:8,  custoPromo:0},
-    componente: {nome:'Componente',      teto:12, mensalidade:50,  ordem:1,
+    componente: {nome:_t('Componente'),      teto:12, mensalidade:50,  ordem:1,
                  xpPromo:100, forcaPromo:12, custoPromo:1000},
-    frente:     {nome:'Linha de Frente', teto:18, mensalidade:100, ordem:2,
+    frente:     {nome:_t('Linha de Frente'), teto:18, mensalidade:100, ordem:2,
                  xpPromo:300, forcaPromo:18, custoPromo:5000},
-    diretoria:  {nome:'Diretoria',       teto:20, mensalidade:100, ordem:3,
+    diretoria:  {nome:_t('Diretoria'),       teto:20, mensalidade:100, ordem:3,
                  xpPromo:null}
   };
   const ACIMA = {novato:'componente', componente:'frente', frente:'diretoria'};
@@ -192,7 +192,7 @@ TO.membros = (function(){
   /* o rótulo do cargo na tela: o presidente é presidente, e não "um da
      diretoria" (pedido do dono, 22/09/2026) */
   function cargoNome(m){
-    return m && m.presidente ? 'Presidente' : CARGOS[(m||{}).cargo] ? CARGOS[m.cargo].nome : '';
+    return m && m.presidente ? _t('Presidente') : CARGOS[(m||{}).cargo] ? CARGOS[m.cargo].nome : '';
   }
 
   /* =======================================================
@@ -221,7 +221,7 @@ TO.membros = (function(){
     /* presidente de 19 anos não existe: quem manda tem estrada */
     if(m.idade == null || m.idade < 26) m.idade = U.inteiro(28, 42);
     E.presidenteId = m.id;
-    anotar(m, 'presidente', 'Presidente da torcida');
+    anotar(m, 'presidente', _t('Presidente da torcida'));
     return m;
   }
   /* save de antes do presidente existir: o mais forte da diretoria
@@ -458,16 +458,16 @@ TO.membros = (function(){
 
   function podePromover(E, m){
     const acima = ACIMA[m.cargo];
-    if(!acima) return {ok:false, motivo:'já é Diretoria'};
+    if(!acima) return {ok:false, motivo:_t('já é Diretoria')};
     const c = CARGOS[m.cargo];
-    if(m.xp < c.xpPromo) return {ok:false, motivo:`precisa de ${c.xpPromo} XP`};
+    if(m.xp < c.xpPromo) return {ok:false, motivo:_t('precisa de {n} XP', {n:c.xpPromo})};
     if(m.forca < c.forcaPromo || m.defesa < c.forcaPromo)
-      return {ok:false, motivo:`precisa de ${c.forcaPromo} de Força e Defesa`};
+      return {ok:false, motivo:_t('precisa de {n} de Força e Defesa', {n:c.forcaPromo})};
     if(E.dinheiro < c.custoPromo)
-      return {ok:false, motivo:`custa ${U.dinheiro(c.custoPromo)}`};
+      return {ok:false, motivo:_t('custa {valor}', {valor:U.dinheiro(c.custoPromo)})};
     if(acima==='diretoria'){
       const n = E.membros.filter(x=>x.cargo==='diretoria').length;
-      if(n >= capDiretoria(E)) return {ok:false, motivo:'Diretoria lotada', veterano:true};
+      if(n >= capDiretoria(E)) return {ok:false, motivo:_t('Diretoria lotada'), veterano:true};
     }
     return {ok:true, custo:c.custoPromo, para:acima};
   }
@@ -480,14 +480,14 @@ TO.membros = (function(){
       if(r.veterano && !m.veterano){
         m.veterano = true;
         m.forca += 2; m.defesa += 2;
-        anotar(m, 'promovido', 'Virou Veterano: sem vaga na Diretoria, +2/+2');
+        anotar(m, 'promovido', _t('Virou Veterano: sem vaga na Diretoria, +2/+2'));
         return {ok:true, veterano:true};
       }
       return r;
     }
-    if(r.custo) TO.estado.lancar(E, `Promoção de ${nomeDe(m)}`, -r.custo);
+    if(r.custo) TO.estado.lancar(E, _t('Promoção de {nome}', {nome:nomeDe(m)}), -r.custo);
     m.cargo = r.para;
-    anotar(m, 'promovido', `Promovido a ${CARGOS[r.para].nome}`);
+    anotar(m, 'promovido', _t('Promovido a {cargo}', {cargo:CARGOS[r.para].nome}));
     return {ok:true, para:r.para};
   }
 
@@ -592,7 +592,8 @@ TO.membros = (function(){
                                      : U.inteiro(FERIDO_MIN, FERIDO_MAX));
     m.ferido = { dias:d };
     m.naFila = false;
-    anotar(m, 'ferido', `${motivo || 'Ferido no dia de jogo'}, ${d} dias fora`);
+    anotar(m, 'ferido', _t('{motivo}, {d} dias fora',
+      {motivo: motivo || _t('Ferido no dia de jogo'), d}));
     /* SEQUELA (régua do dono, 20/08/2026): parte das lesões deixa
        marca — pouca coisa por vez, mas não volta nunca. */
     if(U.rng() < SEQUELA.chance){
@@ -601,8 +602,8 @@ TO.membros = (function(){
       m.sequelas = (m.sequelas || 0) + 1;
       /* sequela é consequência da MESMA lesão: tipo próprio, pra não
          ser contada como uma segunda ferida */
-      anotar(m, 'sequela', `Ficou a sequela: −${saiu.forca.toFixed(1).replace('.',',')} `+
-                           `de força e defesa`);
+      anotar(m, 'sequela', _t('Ficou a sequela: −{v} de força e defesa',
+                           {v:U.numero(saiu.forca, 1)}));
       return {sequela: saiu};
     }
   }
@@ -615,7 +616,7 @@ TO.membros = (function(){
   const PENA_TETO = 360;
   function prender(E, m, dias, motivo){
     if(m.preso) return;
-    const txt = motivo || 'Preso no dia de jogo';
+    const txt = motivo || _t('Preso no dia de jogo');
     let pena = dias ? Math.min(PENA_TETO, dias)
                     : Math.min(PENA_MAX, U.inteiro(15, PENA_MAX));
     /* O ADVOGADO CORTA A PENA (pedido do dono, 31/08/2026): 10 dias
@@ -628,14 +629,15 @@ TO.membros = (function(){
     m.preso = { dias: pena, total: pena, motivo: txt,
                 desde: (E && E.data && E.data.absoluto) || 0 };
     m.naFila = false;
-    anotar(m, 'preso', `${txt} — ${pena} dias`+
-      (corte > 0 ? ` (o advogado cortou ${corte})` : ''));
+    anotar(m, 'preso', corte > 0
+      ? _t('{motivo} — {n} dias (o advogado cortou {corte})', {motivo:txt, n:pena, corte})
+      : _t('{motivo} — {n} dias', {motivo:txt, n:pena}));
   }
   /* quantos dias faltam pra sair. Save antigo pode ter prisão sem
      prazo: ganha um na primeira leitura. */
   const diasPresos = m => {
     if(!m.preso) return null;
-    if(typeof m.preso !== 'object') m.preso = {dias:PENA_MAX/2, motivo:'Preso'};
+    if(typeof m.preso !== 'object') m.preso = {dias:PENA_MAX/2, motivo:_t('Preso')};
     if(m.preso.dias == null) m.preso.dias = Math.round(PENA_MAX/2);
     return m.preso.dias;
   };
@@ -663,8 +665,8 @@ TO.membros = (function(){
     if(!dias) return null;
     const saiu = perder(m, perdaDaCadeia(dias));
     /* a volta NÃO é uma prisão nova: é o fim da mesma */
-    anotar(m, 'volta', `Voltou enferrujado da cadeia (${dias} dias): `+
-                       `−${saiu.forca.toFixed(1).replace('.',',')} de força e defesa`);
+    anotar(m, 'volta', _t('Voltou enferrujado da cadeia ({dias} dias): −{v} de força e defesa',
+                       {dias, v:U.numero(saiu.forca, 1)}));
     return saiu;
   }
 
@@ -680,24 +682,24 @@ TO.membros = (function(){
       m.preso.dias -= dias;
       if(m.preso.dias <= 0){
         m.preso = null;
-        anotar(m, 'advogado', 'Solto pelo trabalho do advogado');
+        anotar(m, 'advogado', _t('Solto pelo trabalho do advogado'));
         enferrujarNaCadeia(m, cumpriu);
         soltos.push(m);
       } else {
-        anotar(m, 'advogado', `O advogado cortou ${dias} dias da pena`);
+        anotar(m, 'advogado', _t('O advogado cortou {dias} dias da pena', {dias}));
       }
     }
     return soltos;
   }
 
   function resgatar(E, m){
-    if(!m.preso) return {ok:false, motivo:'não está preso'};
+    if(!m.preso) return {ok:false, motivo:_t('não está preso')};
     const custo = fianca(m);
-    if(E.dinheiro < custo) return {ok:false, motivo:`fiança de ${U.dinheiro(custo)}`};
-    TO.estado.lancar(E, `Fiança de ${nomeDe(m)}`, -custo);
+    if(E.dinheiro < custo) return {ok:false, motivo:_t('fiança de {valor}', {valor:U.dinheiro(custo)})};
+    TO.estado.lancar(E, _t('Fiança de {nome}', {nome:nomeDe(m)}), -custo);
     const cumpriu = cumpridos(m);
     m.preso = null;
-    anotar(m, 'advogado', 'Solto sob fiança');
+    anotar(m, 'advogado', _t('Solto sob fiança'));
     enferrujarNaCadeia(m, cumpriu);
     return {ok:true, custo};
   }
@@ -708,7 +710,7 @@ TO.membros = (function(){
         m.ferido.dias--;
         if(m.ferido.dias <= 0){
           m.ferido = null;
-          anotar(m, 'volta', 'Recuperado, de volta');
+          anotar(m, 'volta', _t('Recuperado, de volta'));
         }
       }
       /* a pena desce um dia por dia; no zero ele sai sozinho */
@@ -718,7 +720,7 @@ TO.membros = (function(){
         if(m.preso.dias <= 0){
           const cumpriu = cumpridos(m);
           m.preso = null;
-          anotar(m, 'volta', 'Cumpriu a pena, de volta');
+          anotar(m, 'volta', _t('Cumpriu a pena, de volta'));
           enferrujarNaCadeia(m, cumpriu);
         }
       }
@@ -747,8 +749,8 @@ TO.membros = (function(){
       if(m.idade >= IDADE_DECLINIO){
         const saiu = perder(m, DESGASTE_ANO, true);   // idade não volta
         if(saiu.forca > 0)
-          anotar(m, 'idade', `${m.idade} anos: −${saiu.forca.toFixed(1).replace('.',',')} `+
-                                `de força e defesa`);
+          anotar(m, 'idade', _t('{idade} anos: −{v} de força e defesa',
+                                {idade:m.idade, v:U.numero(saiu.forca, 1)}));
       }
       ficam.push(m);
     }
@@ -758,7 +760,7 @@ TO.membros = (function(){
     for(const m of penduraram){
       /* aposentadoria, e não faixa: era esta linha que a tela contava
          como faixa produzida, por causa da palavra "bandeira" */
-      anotar(m, 'aposentou', `Pendurou a bandeira aos ${m.idade} anos`);
+      anotar(m, 'aposentou', _t('Pendurou a bandeira aos {idade} anos', {idade:m.idade}));
       /* na cadeia ou no hospital não se pendura bandeira: sai limpo */
       m.ferido = null; m.preso = null; m.naFila = false;
       E.velhaGuarda.unshift({
@@ -813,9 +815,9 @@ TO.membros = (function(){
        linha do ocorrido mostra, pra nunca prometer crédito que o teto
        de 100 não deixou entrar (revisão do dono, 27/08/2026). */
     res.prestigioAplicado = TO.estado.mexerIndicador(E, 'prestigio',
-      U.limitar((res.prestigio||0)/5, -2, 2), 'Resultado da briga') * 5;
+      U.limitar((res.prestigio||0)/5, -2, 2), _t('Resultado da briga')) * 5;
     res.moralAplicada = TO.estado.mexerIndicador(E, 'moral',
-      res.moralTorcida||0, 'Resultado da briga');
+      res.moralTorcida||0, _t('Resultado da briga'));
 
     E.historicoNoites.unshift({
       semana:E.data.semana,
