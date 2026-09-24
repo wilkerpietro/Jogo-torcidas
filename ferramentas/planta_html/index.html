@@ -373,9 +373,19 @@ const estadios = [
     pol: P.anel(P.R.fachada1).map(([x, y]) => [x + PROP.estadio2.dx, y + PROP.estadio2.dy]) }
 ];
 for (const e of estadios) e.bb = bbox(e.pol);
+/* as quadras de hoje que a proposta refaz (a que a avenida tirada rasgava
+   e a que se juntou com uma nova): somem com os lotes, as árvores e o que
+   estava no miolo delas; o que ficava na beira da avenida tirada também */
+const trocadas = K.QUADRAS.filter(q => PROP.substitui.has(q.i + ',' + q.j));
+const naTrocada = (x, y) => trocadas.some(q => x > q.x0 + CALC && x < q.x1 - CALC && y > q.y0 + CALC && y < q.y1 - CALC);
+const naAvenidaTirada = (x, y) => PROP.avenidasTiradas.some(a => PROP.distAvenida(x, y, a) < a.l / 2 + CALC + 30);
+for (const it of lotes) if (it.q && PROP.substitui.has(it.q.i + ',' + it.q.j)) it.sobProposta = true;
+const nomeQuadraNova = q => q.rotulo || (q.i + ',' + q.j + (q.parte || ''));
 /* o carro, o poste e o prop que ficam no atacarejo de hoje ou debaixo da proposta somem */
-const carroSome = new Set(K.CARROS.filter(c => { const x = (c.x0 + c.x1) / 2, y = (c.y0 + c.y1) / 2; return noAtacadexDeHoje(x, y, 20) || (somePelaProposta(x, y, 0) && !dentroDaCidadeHoje(x, y)); }));
-for (const p of pecasSoltas) p.somePelaProposta = noAtacadexDeHoje(p.x, p.y, 20) || (somePelaProposta(p.x, p.y, 0) && !dentroDaCidadeHoje(p.x, p.y));
+const carroSome = new Set(K.CARROS.filter(c => { const x = (c.x0 + c.x1) / 2, y = (c.y0 + c.y1) / 2;
+  return noAtacadexDeHoje(x, y, 20) || (somePelaProposta(x, y, 0) && !dentroDaCidadeHoje(x, y)) || naTrocada(x, y) || naAvenidaTirada(x, y); }));
+for (const p of pecasSoltas) p.somePelaProposta = noAtacadexDeHoje(p.x, p.y, 20) || (somePelaProposta(p.x, p.y, 0) && !dentroDaCidadeHoje(p.x, p.y))
+  || naTrocada(p.x, p.y) || naAvenidaTirada(p.x, p.y);
 function dentroDaCidadeHoje(x, y) { const q = K.celulaEm(x, y); return !!q && q.tipo === 'quadra'; }
 
 /* ======================================================
@@ -389,7 +399,7 @@ const estado = {
   sel: null, sobre: null
 };
 const LIM_ATUAL = { x0: 120, y0: 150, x1: 4700, y1: 5420 };
-const LIM_PROPOSTA = { x0: PROP.limite.x0 - 40, y0: -2640, x1: 5000, y1: 5980 };
+const LIM_PROPOSTA = { x0: PROP.limite.x0 - 40, y0: -2640, x1: 5000, y1: Math.max(5980, PROP.limite.y1 + 80) };
 const MUNDO = { x0: Math.min(K.VX0, PROP.mundo.x0), y0: Math.min(K.VY0, PROP.mundo.y0), x1: K.VX0 + K.VW, y1: Math.max(K.VY0 + K.VH, PROP.mundo.y1) };
 
 function enquadrar(r) {
@@ -454,12 +464,20 @@ function desenhar() {
   if (!prop) for (const t of K.FAVELA_RUAS || []) { caminho(t, false); ctx.stroke(); }
   else for (const f of PROP.favelas) {
     for (const t of f.becos) { caminho(t, false); ctx.stroke(); }
-    if (f.rua) { ctx.lineWidth = 56; caminho(f.rua, false); ctx.stroke(); ctx.lineWidth = 44; }
+    const c = f.campinho;
+    if (c) {
+      ret(c, '#b39463');
+      ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2.4;
+      ctx.strokeRect(c.x0 + 10, c.y0 + 10, c.x1 - c.x0 - 20, c.y1 - c.y0 - 20);
+      ctx.beginPath(); ctx.moveTo((c.x0 + c.x1) / 2, c.y0 + 10); ctx.lineTo((c.x0 + c.x1) / 2, c.y1 - 10); ctx.stroke();
+      ctx.strokeStyle = COR.beco; ctx.lineWidth = 44;
+    }
   }
 
   /* ---- os quarteirões: calçada, miolo, o chão do equipamento ---- */
   for (const q of K.CELULAS) {
     if (q.tipo !== 'quadra' || !ve(q)) continue;
+    if (prop && PROP.substitui.has(q.i + ',' + q.j)) continue;
     pol(q.pol, COR.calcada);
     if (q.polMiolo.length >= 3) {
       pol(q.polMiolo, COR.miolo);
@@ -571,7 +589,7 @@ function desenhar() {
     ctx.fillStyle = COR.arvore;
     for (const a of K.ARVORES) {
       if (a.x + a.r < vis.x0 || a.x - a.r > vis.x1 || a.y + a.r < vis.y0 || a.y - a.r > vis.y1) continue;
-      if (prop && ((somePelaProposta(a.x, a.y, 0) && !dentroDaCidade(a.x, a.y)) || naFavelaDeHoje(a.x, a.y, 0) || noAtacadexDeHoje(a.x, a.y, 10))) continue;
+      if (prop && ((somePelaProposta(a.x, a.y, 0) && !dentroDaCidade(a.x, a.y)) || naFavelaDeHoje(a.x, a.y, 0) || noAtacadexDeHoje(a.x, a.y, 10) || naTrocada(a.x, a.y))) continue;
       ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 7); ctx.fill();
     }
     if (prop) for (const f of PROP.favelas) for (const a of f.arvores) { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 7); ctx.fill(); }
@@ -612,9 +630,11 @@ function desenharEstadio(dx, dy) {
   pol(T(P.anel(0)), COR.gramado);
 }
 function desenharProposta(ve, px) {
-  const meia = RUA / 2;
+  /* a rua em volta de cada quadra nova: meia rua e um pouco (as ruas da
+     linha do estádio têm 128, não 118,8, e sobrava um fio no meio) */
+  const meia = RUA / 2 + 8;
   ctx.fillStyle = COR.rua;
-  for (const q of PROP.quadras) ctx.fillRect(q.x0 - meia, q.y0 - meia, q.x1 - q.x0 + RUA, q.y1 - q.y0 + RUA);
+  for (const q of PROP.quadras) ctx.fillRect(q.x0 - meia, q.y0 - meia, q.x1 - q.x0 + 2 * meia, q.y1 - q.y0 + 2 * meia);
   for (const q of PROP.quadras) {
     if (!ve(q)) continue;
     ret(q, COR.calcada);
@@ -726,14 +746,14 @@ function desenharRotulos(vis, prop) {
   if (s < 0.55 && s >= 0.12) {
     ctx.font = '600 11px "IBM Plex Mono", monospace';
     for (const q of K.QUADRAS) {
-      if (q.equip) continue;
+      if (q.equip || (prop && PROP.substitui.has(q.i + ',' + q.j))) continue;
       const [sx, sy] = paraTela(q.cx, q.cy);
       ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillText('Q ' + q.i + ',' + q.j, sx, sy);
     }
     if (prop) for (const q of PROP.quadras) {
       if (q.equip) continue;
       const [sx, sy] = paraTela((q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2);
-      ctx.fillStyle = '#0b4e53'; ctx.fillText('Q ' + q.i + ',' + q.j + (q.parte || ''), sx, sy);
+      ctx.fillStyle = '#0b4e53'; ctx.fillText('Q ' + nomeQuadraNova(q), sx, sy);
     }
   }
 }
@@ -882,7 +902,7 @@ function tituloDe(it) {
   }
   if (it.tipo === 'prop') return NOME_PROP[it.k] + (it.k === 'poste' && it.v ? ' com transformador' : '');
   if (it.tipo === 'marco' || it.tipo === 'equip' || it.tipo === 'portico' || it.tipo === 'estadio') return it.nome;
-  if (it.tipo === 'quadraNova') return it.q.equip ? it.q.equip.nome : 'Quadra nova ' + it.q.i + ',' + it.q.j + it.q.parte;
+  if (it.tipo === 'quadraNova') return it.q.equip ? it.q.equip.nome : 'Quadra nova ' + nomeQuadraNova(it.q);
   if (it.tipo === 'quadra') return 'Quadra ' + it.q.i + ',' + it.q.j;
   return '';
 }
@@ -900,7 +920,7 @@ function fichaDe(it) {
     const testada = l.ang ? l.w : nS ? l.x1 - l.x0 : l.y1 - l.y0;
     const fundo = l.ang ? l.h : nS ? l.y1 - l.y0 : l.x1 - l.x0;
     const onde = it.favelaNova ? it.favelaNova.nome.toLowerCase()
-               : it.proposta ? 'quadra nova ' + it.qn.i + ',' + it.qn.j + it.qn.parte
+               : it.proposta ? 'quadra nova ' + nomeQuadraNova(it.qn)
                : it.q ? 'quadra ' + it.q.i + ',' + it.q.j : l.favela ? 'favela' : 'beira da estrada';
     const modelo = l.muro || (pc && pc.tipo);
     return `<p class="sobre">Lote · ${esc(onde)}${chip}</p><h2>${esc(tituloDe(it))}</h2>` + linhas([
@@ -912,7 +932,7 @@ function fichaDe(it) {
       ['Altura', metros(l.alt)],
       ['Letreiro', l.placa, true], ['Pixação', l.pixacao, true],
       ['Na planta', 'x ' + Math.round(l.cx ?? (l.x0 + l.x1) / 2) + ' · y ' + Math.round(l.cy ?? (l.y0 + l.y1) / 2), true]
-    ]) + (it.favelaNova ? '<p class="nota">A mesma casa da favela de hoje, no desenho copiado. No jogo a favela nova seria gerada de novo nesse lugar.</p>'
+    ]) + (it.favelaNova ? '<p class="nota">Casa da favela nova: a mesma conta da favela do jogo (a casa, a altura, a cor, as casas grandes), com o beco na grade da cidade.</p>'
         : it.proposta ? '<p class="nota">Casa que o gerador do jogo põe nesse lote hoje. Com a expansão feita, é ela que aparece.</p>' : '');
   }
   if (it.tipo === 'prop') {
@@ -966,9 +986,13 @@ function fichaDe(it) {
     const q = it.q;
     if (q.equip) return `<p class="sobre">Quadra nova ${q.i},${q.j}${chip}</p><h2>${esc(q.equip.nome)}</h2>` +
       linhas([['Quadra', metros(q.x1 - q.x0) + ' × ' + metros(q.y1 - q.y0), true]]) + `<p class="nota">${esc(q.equip.nota)} Ainda sem modelo: o 3D é só o volume de estudo.</p>`;
-    return `<p class="sobre">Quadra nova ${q.i},${q.j}${esc(q.parte)}${chip}</p><h2>${q.lotes.length} lotes</h2>` +
+    const como = q.juntas ? 'Juntou ' + q.juntas.join(' e ') + ', por cima da rua que as separava' + (q.substitui && q.substitui.length ? ` (a ${q.substitui.join(', ')} é de hoje)` : '') + '.'
+               : q.partida ? 'A quadra alta ' + q.i + ',' + q.j + ' partida pela rua nova do meio: esta é a metade ' + (q.parte === 'o' ? 'oeste' : 'leste') + '.'
+               : q.refeita ? 'A quadra de hoje refeita: a avenida oeste, que saiu, cortava ela na diagonal.' : '';
+    return `<p class="sobre">Quadra nova ${esc(nomeQuadraNova(q))}${chip}</p><h2>${q.lotes.length} lotes</h2>` +
       linhas([['Quadra', metros(q.x1 - q.x0) + ' × ' + metros(q.y1 - q.y0), true],
               ['Avenida', avenidaCorta(q) ? 'corta a quadra' : '', true]]) +
+      (como ? `<p class="nota">${esc(como)}</p>` : '') +
       '<p class="nota">O 3D mostra a quadra inteira, com as casas que o gerador põe em cada lote.</p>';
   }
   if (it.tipo === 'quadra') {
@@ -1466,36 +1490,42 @@ function notasDaProposta() {
                campo: ['campo de várzea', 'campos de várzea'], ubs: ['posto de saúde', 'postos de saúde'], estadio: ['estádio', 'estádios'] };
   const eqTxt = Object.entries(c.porTipo).sort((a, b) => b[1] - a[1]).map(([k, n]) => n + ' ' + (EQ[k] ? EQ[k][n > 1 ? 1 : 0] : k)).join(', ');
   const oeste = Math.round((K.VX0 - PROP.mundo.x0) / M), norte = Math.round((K.VY0 - PROP.mundo.y0) / M), sul = Math.round((PROP.mundo.y1 - (K.VY0 + K.VH)) / M);
-  const saem = lotes.filter(it => it.sobProposta && !it.l.favela).length;
+  const saem = lotes.filter(it => it.sobProposta && it.beira && !it.l.favela).length;
+  const trocados = lotes.filter(it => it.q && PROP.substitui.has(it.q.i + ',' + it.q.j)).length;
+  const qTotal = c.quadrasHoje - c.quadrasTrocadas + c.quadras, lTotal = c.lotesHoje - trocados + c.lotesNovos;
+  const [fNO, fSO] = c.casasFavela, fTotal = fNO + fSO;
   const comercio = lotesNovos.filter(it => it.l.placa).length;
   const cond = PROP.condominios.map(cd => `${cd.t1.replace('Edifício ', '')} e ${cd.t2.replace('Residencial ', '')} (${cd.cores})`).join('; ');
-  return `<p class="sobre">Proposta · 2ª versão</p><h2>A cidade cresce pra oeste e pro norte</h2>
+  return `<p class="sobre">Proposta · 3ª versão</p><h2>A cidade cresce pra oeste e pro norte</h2>
   <dl class="numeros">
-    <div><dt>Quadras</dt><dd>${c.quadrasHoje} → ${c.quadrasHoje + c.quadras}</dd><small>+${c.quadras} novas</small></div>
-    <div><dt>Lotes</dt><dd>${c.lotesHoje} → ${c.lotesHoje + c.lotesNovos}</dd><small>+${c.lotesNovos} em quadra</small></div>
-    <div><dt>Favelas</dt><dd>1 → 2</dd><small>${c.casasFavela} casas cada</small></div>
+    <div><dt>Quadras</dt><dd>${c.quadrasHoje} → ${qTotal}</dd><small>${qTotal - c.quadrasHoje >= 0 ? '+' : ''}${qTotal - c.quadrasHoje}</small></div>
+    <div><dt>Lotes</dt><dd>${c.lotesHoje} → ${lTotal}</dd><small>em quadra</small></div>
+    <div><dt>Na favela</dt><dd>${c.casasFavelaHoje} → ${fTotal}</dd><small>em 2 favelas</small></div>
   </dl>
-  <h3>O que mudou desde a 1ª versão</h3>
+  <h3>O que mudou nesta versão</h3>
   <ul>
-    <li><b>+22 quadras</b>: 12 a oeste (a coluna −3 e um degrau na −4) e 10 ao norte (a linha −2 inteira e um degrau na −3). A borda fica em escada, não num retângulo.</li>
-    <li><b>Favelas nas pontas.</b> A favela de hoje vai pra ponta noroeste, com o mesmo desenho; uma segunda, o mesmo desenho girado de meia volta, fica na ponta sudoeste. O lugar da favela vira quadra, com a Praça da Vila no meio.</li>
-    <li><b>Atacadex</b> na estrada de entrada do norte, de frente pra estrada, antes do pórtico.</li>
-    <li><b>${esc(PROP.estadio2.nome)}</b>: a cópia do quarteirão do estádio, a sudoeste, numa quadra de seis com a esplanada em volta.</li>
-    <li><b>Seis prédios novos</b> em três condomínios na linha alta (a do estádio): ${esc(cond)}.</li>
-    <li><b>Duas entradas</b>, cada uma com o pórtico BEM-VINDO: a estrada norte (a avenida reta do estádio) e a do sul (a avenida sudoeste). As duas vão dar no estádio. A beira-mar termina nas pontas da orla e as avenidas do oeste terminam na borda da cidade: não sai outra estrada.</li>
-    <li>A escola saiu: a quadra dela é de casa.</li>
+    <li><b>As favelas nas manchas circuladas</b>, com o beco reto, de leste a oeste e de norte a sul, como a rua da cidade, e estreito como o de hoje (1,6 a 2,2 m). A conta é a da favela do jogo: quadra miúda, casa encostada na casa, as casas grandes (bar, lanchonete, a da escada...) e um campinho de terra em cada. Noroeste: ${fNO} casas; sudoeste: ${fSO}.</li>
+    <li><b>Sem as avenidas transversais do oeste</b> (a oeste e a noroeste2). As quadras que elas cortavam voltaram a ser inteiras, e a 1,4 de hoje foi refeita sem o rasgo.</li>
+    <li><b>Rua no meio</b> das quadras altas −3,2, −1,2 e 0,2, de norte a sul: o quintal enorme virou duas fileiras de casa de cada lado.</li>
+    <li><b>Quadras juntadas</b> por cima da rua: 0,7 com 1,7 (a 1,7 é de hoje), −2,3 com −1,3 e 0,−1 com 1,−1.</li>
+  </ul>
+  <h3>O que continua da 2ª versão</h3>
+  <ul>
+    <li>A borda em escada: 12 quadras a oeste e 10 ao norte a mais que a 1ª versão.</li>
+    <li>O Atacadex na estrada de entrada do norte, antes do pórtico; o ${esc(PROP.estadio2.nome)} a sudoeste; os seis prédios novos em três condomínios: ${esc(cond)}.</li>
+    <li>As duas entradas com o pórtico BEM-VINDO, a do norte e a do sul, que vão dar no estádio. Não sai outra estrada da cidade.</li>
   </ul>
   <h3>Os números</h3>
-  <p>${c.residenciais} quadras de casa e ${c.equipamentos} de equipamento: ${esc(eqTxt)}. Nos lotes novos: ${esc(lista)}; ${comercio} com comércio. ${saem} casas de beira de estrada saem, porque a estrada vira rua ou deixa de existir.</p>
+  <p>${c.residenciais} quadras novas de casa e ${c.equipamentos} de equipamento: ${esc(eqTxt)}. Nos lotes novos: ${esc(lista)}; ${comercio} com comércio. ${saem} casas de beira de estrada saem, porque a estrada vira rua ou deixa de existir.</p>
   <h3>O que muda no jogo pra fazer</h3>
   <ul>
-    <li>O tabuleiro cresce uns ${oeste} m pra oeste (as favelas ficam na ponta), ${norte} m pro norte (a estrada e o Atacadex) e ${sul} m pro sul (a estrada).</li>
-    <li>A favela tem que ser gerada de novo nos dois lugares: aqui é o mesmo desenho copiado, e a de hoje sai.</li>
+    <li>O tabuleiro cresce uns ${oeste} m pra oeste, ${norte} m pro norte e ${sul} m pro sul: são as favelas e as duas estradas que empurram.</li>
+    <li>As favelas saem do gerador da planta com o beco reto; a de hoje sai. Favela grande pesa: são ${fTotal} casas, contra ${c.casasFavelaHoje} hoje.</li>
     <li>O pórtico é modelo novo; o texto sai do nome da cidade da torcida.</li>
-    <li>O Estádio Municipal é o mesmo estádio: a cena da torcida teria que aceitar dois estádios.</li>
+    <li>O Estádio Municipal é o mesmo estádio: a cena da torcida teria que aceitar dois.</li>
     <li>Os equipamentos novos (igreja, posto de saúde, campo, terrenos de sede) ainda não têm modelo.</li>
   </ul>
-  <p class="nota">Clique num pórtico pra trocar a cidade e ver o texto em 3D, ou numa quadra nova pra ver as casas.</p>`;
+  <p class="nota">Clique numa casa da favela, numa quadra nova ou num pórtico pra ver em 3D.</p>`;
 }
 $('notas').innerHTML = notasDaProposta();
 

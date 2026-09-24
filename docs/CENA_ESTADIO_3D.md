@@ -1905,6 +1905,47 @@ O que não é fiel:
 - **Parte das praças são regiões,** não cidades: "BEM-VINDO AO INTERIOR DE SP" não é placa
   de verdade. O jogo precisaria do nome de uma cidade.
 
+### 4.32. A proposta, 3ª versão
+
+O dono circulou no mapa onde quer as favelas e as duas avenidas que não quer, e pediu mudanças
+em seis quadras.
+
+- **As favelas nas manchas circuladas.** Elas não são mais a cópia torta da favela de hoje:
+  nascem de novo dentro do polígono que ele desenhou (o gancho do noroeste, em volta do
+  condomínio −4,2, e a meia-lua do sudoeste, a oeste e ao sul do Estádio Municipal). A conta
+  é a da favela da planta:
+  - faixas de quadra miúda (86 a 124 de fundo) com beco de 32 a 42 entre elas;
+  - quadras compridas (500 a 850) em cada faixa;
+  - duas fileiras de casa encostada na casa, de 42 a 66 de frente;
+  - as mesmas alturas, coberturas, paredes e pixações;
+  - as 19 casas grandes de cada tipo, com o sorteio da planta (bar, lanchonete, a da escada…);
+  - um campinho de terra.
+
+  A diferença é que o beco é reto, de leste a oeste ou de norte a sul, como a rua da cidade.
+  Pra não ler como bairro planejado, o corte de norte a sul de cada faixa começa num lugar, e
+  o beco não emenda de uma faixa pra outra. O sorteio é próprio, de semente fixa.
+- **Saem as avenidas transversais do oeste**, a oeste e a noroeste2. As quadras novas que elas
+  cortavam voltam a ser inteiras; as duas praças de sobra somem. A 1,4 de hoje, que a oeste
+  rasgava na diagonal, é refeita.
+- **A rua no meio.** As quadras altas −3,2, −1,2 e 0,2 ganham uma rua de norte a sul. Cada
+  metade vira duas fileiras de casa de costas, sem o quintal enorme.
+- **As quadras juntadas.** 0,7 com 1,7, −2,3 com −1,3 e 0,−1 com 1,−1 viram uma quadra só
+  cada par, por cima da rua. A 1,7 é de hoje e entra na junta.
+
+| | hoje | 3ª versão |
+|---|---|---|
+| quadras | 37 | 105 |
+| lotes em quadra | 323 | 1.112 |
+| casas na favela | 229 | 1.429 (485 no noroeste, 944 no sudoeste) |
+
+O que não é fiel, ou pesa:
+
+- **As favelas ficaram grandes**, porque enchem a mancha inteira: são seis vezes as casas de
+  hoje. No jogo isso pesa (triângulo e máscara). Se for muito, é diminuir o polígono.
+- **O tabuleiro cresce ainda mais:** uns 213 m pra oeste, 100 m pro norte e 55 m pro sul.
+- **O polígono é o desenho à mão, lido da foto.** A borda da favela segue o traço, com a
+  imprecisão dele.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
