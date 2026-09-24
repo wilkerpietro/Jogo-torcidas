@@ -1963,9 +1963,21 @@ faixas a partir da borda da mancha; ela usa a grade da cidade:
 - **O corte.** A mancha recorta as casas do lado do mato, e a viela e o beco só aparecem
   onde tem casa do lado.
 
-Com isso a rua nova da cidade passou a ser pintada na largura inteira, antes das quadras de
-hoje (que pintam por cima do que passar da faixa delas): era a meia rua que deixava um fio
-de mato entre a favela e a guia. As favelas ficaram com 545 e 1.179 casas.
+Com isso a rua nova da cidade passou a ser pintada na largura inteira: era a meia rua que
+deixava um fio de mato entre a favela e a guia. As favelas ficaram com 545 e 1.179 casas.
+
+**A casa em cima do asfalto** (o dono desconfiou pela foto, e estava certo). A rua nova era
+pintada com RUA + 12, pra cobrir as ruas de 128 em volta da linha do estádio, mas a favela
+parava na RUA (118,8). Uma varredura casa a casa (9 × 9 pontos em cada casa contra a faixa
+de rua pintada, a avenida com a calçada e o asfalto da cidade de hoje) achou 48 casas no
+noroeste e 82 no sudoeste com até 11,5 (60 cm) em cima do asfalto.
+
+Agora cada quadra nova tem a faixa de rua dela na largura de verdade: até a borda da coluna
+ou da linha do lado, 118,8 quase sempre e 128 em volta da linha e da coluna do estádio; do
+lado de dentro da quadra partida, a rua do meio. É essa mesma faixa que a página pinta e que
+a favela não pisa. A varredura deu 0 casa em cima de asfalto. A rua nova também não pisa
+quadra de hoje nem miolo de quadra nova.
+
 
 O que não é fiel, ou pesa:
 

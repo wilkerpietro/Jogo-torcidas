@@ -170,6 +170,29 @@ export function gerarProposta(P) {
                            : [cx0 + (i - 1) * passoX + RUA / 2, cx0 + i * passoX - RUA / 2];
   const linY = j => j >= 1 ? [K.bordasY[2 * j], K.bordasY[2 * j + 1]]
                            : [ly0 + (j - 1) * PASSO_Y + RUA / 2, ly0 + j * PASSO_Y - RUA / 2];
+  /* a grade estendida: as linhas depois da 10 seguem no mesmo passo */
+  const linYx = j => {
+    if (j <= 10) return linY(j);
+    const y0 = linY(10)[1] + RUA + (j - 11) * PASSO_Y;
+    return [y0, y0 + PASSO_Y - RUA];
+  };
+  /* A RUA EM VOLTA DE UMA QUADRA, NA LARGURA DE VERDADE: até a borda da
+     coluna (ou da linha) do lado. É 118,8 quase sempre, e 128 em volta
+     da linha do estádio e da coluna dele. Do lado de dentro da quadra
+     partida (onde não há linha da grade perto), é a rua do meio. É essa
+     faixa que a página pinta de asfalto e que a favela não pisa: com as
+     duas iguais, a casa encosta na guia sem cair em cima da rua. */
+  const bordasCol = [], bordasLin = [];
+  for (let i = -12; i <= 6; i++) { const [a, b] = colX(i); if (b > a) bordasCol.push([a, b]); }
+  for (let j = -8; j <= 16; j++) { const [a, b] = linYx(j); if (b > a) bordasLin.push([a, b]); }
+  const ruaDe = r => {
+    const esq = Math.max(...bordasCol.map(c => c[1]).filter(v => v <= r.x0 - 20));
+    const dir = Math.min(...bordasCol.map(c => c[0]).filter(v => v >= r.x1 + 20));
+    const cima = Math.max(...bordasLin.map(c => c[1]).filter(v => v <= r.y0 - 20));
+    const baixo = Math.min(...bordasLin.map(c => c[0]).filter(v => v >= r.y1 + 20));
+    const faixa = d => d > 140 ? RUA : d;
+    return { x0: r.x0 - faixa(r.x0 - esq), x1: r.x1 + faixa(dir - r.x1), y0: r.y0 - faixa(r.y0 - cima), y1: r.y1 + faixa(baixo - r.y1) };
+  };
 
   /* ---- as avenidas da proposta ---- */
   const av = id => K.AVENIDAS.find(a => a.id === id);
@@ -456,8 +479,9 @@ export function gerarProposta(P) {
      - em cada faixa, duas fileiras de costas, casa encostada na casa
        (42 a 66 de frente), cada uma virada pro seu beco.
      A mancha que o dono desenhou recorta as casas do lado do mato. */
-  const barra = quadras.map(q => ({ x0: q.x0 - RUA, x1: q.x1 + RUA, y0: q.y0 - RUA, y1: q.y1 + RUA }))
-    .concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ({ x0: q.x0 - RUA, x1: q.x1 + RUA, y0: q.y0 - RUA, y1: q.y1 + RUA })))
+  for (const q of quadras) q.rua = ruaDe(q);
+  const barra = quadras.map(q => q.rua)
+    .concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ruaDe(q)))
     .concat(K.BEIRA.filter(l => !l.favela).map(l => bbOf(cantos(l))).filter(b => {
       /* a casa de beira que a proposta tira (debaixo da grade nova, ou
          longe de toda estrada que sobrou) não segura a favela */
@@ -468,12 +492,6 @@ export function gerarProposta(P) {
     .concat(atacadex ? [{ x0: atacadex.bb.x0 - 60, x1: atacadex.bb.x1 + 60, y0: atacadex.bb.y0 - 60, y1: atacadex.bb.y1 + 60 }] : []);
   const livre = (x, y) => !barra.some(r => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1) && !naAvenida(x, y, CALC + 10) &&
                           !porticos.some(p => Math.hypot(p.x - x, p.y - y) < 280);
-  /* a grade estendida: as linhas depois da 10 seguem no mesmo passo */
-  const linYx = j => {
-    if (j <= 10) return linY(j);
-    const y0 = linY(10)[1] + RUA + (j - 11) * PASSO_Y;
-    return [y0, y0 + PASSO_Y - RUA];
-  };
   const faixaX = i => [colX(i)[1], colX(i + 1)[0]];                   // a faixa da rua entre a coluna i e a i+1
   const faixaY = j => [linYx(j)[1], linYx(j + 1)[0]];
   const meioX = i => (faixaX(i)[0] + faixaX(i)[1]) / 2, meioY = j => (faixaY(j)[0] + faixaY(j)[1]) / 2;

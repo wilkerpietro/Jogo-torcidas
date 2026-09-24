@@ -476,12 +476,12 @@ function desenhar() {
   }
 
   /* ---- as ruas da cidade nova, na largura inteira: vêm antes das quadras
-     de hoje (que pintam por cima do que passar da faixa delas) e antes
-     da favela (que encosta na guia) ---- */
+     de hoje e antes da favela, que encosta na guia ---- */
   if (prop) {
-    const r = RUA + 12;
+    /* a faixa de rua de cada quadra nova, na largura de verdade (a mesma
+       que a favela não pisa) */
     ctx.fillStyle = COR.rua;
-    for (const q of PROP.quadras) ctx.fillRect(q.x0 - r, q.y0 - r, q.x1 - q.x0 + 2 * r, q.y1 - q.y0 + 2 * r);
+    for (const q of PROP.quadras) ctx.fillRect(q.rua.x0, q.rua.y0, q.rua.x1 - q.rua.x0, q.rua.y1 - q.rua.y0);
   }
   /* ---- os quarteirões: calçada, miolo, o chão do equipamento ---- */
   for (const q of K.CELULAS) {
