@@ -1,0 +1,1227 @@
+<title>Planta da Cidade do Estádio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --papel: #e8eae4;
+  --folha: #f6f7f3;
+  --tinta: #1d2420;
+  --tinta-2: #56605a;
+  --linha: #c7ccc4;
+  --acento: #0e7a82;
+  --acento-fundo: rgba(14, 122, 130, .12);
+  --selecao: #d4731c;
+  --ceu3d: #dfe6ea;
+  --chao3d: #b9b8ae;
+  --f-ui: "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-texto: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --f-dado: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel: #121615; --folha: #1a1f1e; --tinta: #e2e7e3; --tinta-2: #9ba59f; --linha: #2d3534;
+    --acento: #45b6be; --acento-fundo: rgba(69, 182, 190, .16); --selecao: #f09c45;
+    --ceu3d: #1d2529; --chao3d: #3b3e39;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --papel: #121615; --folha: #1a1f1e; --tinta: #e2e7e3; --tinta-2: #9ba59f; --linha: #2d3534;
+  --acento: #45b6be; --acento-fundo: rgba(69, 182, 190, .16); --selecao: #f09c45;
+  --ceu3d: #1d2529; --chao3d: #3b3e39;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--papel); color: var(--tinta); font: 14px/1.45 var(--f-texto); }
+.app {
+  box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 10px;
+  padding-inline: 16px; padding-block: 12px;
+}
+.topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+.nome h1 {
+  margin: 0; font: 700 24px/1.05 var(--f-ui); letter-spacing: .01em; text-wrap: balance;
+}
+.resumo { margin: 3px 0 0; font: 12px/1.3 var(--f-dado); color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.controles { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.modos { display: inline-flex; border: 1px solid var(--linha); border-radius: 8px; padding: 2px; background: var(--folha); }
+.modos button {
+  font: 600 14px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta-2); background: none;
+  border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer;
+}
+.modos button[aria-selected="true"] { background: var(--tinta); color: var(--papel); }
+.modos button#aba-proposta[aria-selected="true"] { background: var(--acento); color: var(--folha); }
+.camadas { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 500 13px/1 var(--f-ui); color: var(--tinta-2); }
+.camadas label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.camadas input { accent-color: var(--acento); margin: 0; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); outline-offset: 2px; }
+
+.corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; }
+.mapa {
+  position: relative; min-height: 0; border-radius: 10px; overflow: hidden; background: #555;
+  border: 1px solid var(--linha); touch-action: none; cursor: grab;
+}
+.mapa.arrastando { cursor: grabbing; }
+.mapa canvas { display: block; width: 100%; height: 100%; }
+.zoom { position: absolute; right: 10px; top: 30px; display: flex; flex-direction: column; gap: 4px; }
+.zoom button {
+  width: 34px; height: 34px; border-radius: 8px; border: 1px solid rgba(0,0,0,.35); cursor: pointer;
+  background: rgba(246,247,243,.92); color: #1d2420; font: 600 18px/1 var(--f-ui);
+}
+.legenda {
+  position: absolute; left: 30px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 4px 10px; max-width: calc(100% - 200px);
+  padding: 6px 9px; border-radius: 8px; background: rgba(24,27,26,.78); color: #eef0ec;
+  font: 500 12px/1.2 var(--f-ui); letter-spacing: .02em; pointer-events: none;
+}
+.legenda span { display: inline-flex; align-items: center; gap: 5px; }
+.legenda i { width: 11px; height: 11px; border: 1px solid #111; display: inline-block; }
+.legenda i.nova { border: 2px dashed #45b6be; background: transparent; }
+.regua {
+  position: absolute; right: 10px; bottom: 10px; padding: 5px 8px 6px; border-radius: 8px;
+  background: rgba(24,27,26,.78); color: #eef0ec; font: 11px/1 var(--f-dado); pointer-events: none;
+}
+.regua b { display: block; height: 4px; margin-bottom: 4px; background: repeating-linear-gradient(90deg, #eef0ec 0 50%, #555 50% 100%); border: 1px solid #eef0ec; }
+.coord {
+  position: absolute; left: 30px; top: 30px; padding: 4px 8px; border-radius: 6px; background: rgba(24,27,26,.72);
+  color: #eef0ec; font: 11px/1.2 var(--f-dado); pointer-events: none; font-variant-numeric: tabular-nums;
+}
+.aviso {
+  position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 16px;
+  background: #555; color: #eef0ec; font: 600 16px/1.4 var(--f-ui); letter-spacing: .02em;
+}
+.dica-hover {
+  position: absolute; pointer-events: none; padding: 4px 7px; border-radius: 6px; background: rgba(24,27,26,.88);
+  color: #fff; font: 500 12px/1.25 var(--f-ui); white-space: nowrap; transform: translate(12px, 12px);
+}
+
+.painel { min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.vista3d {
+  position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--linha); background: var(--ceu3d);
+  aspect-ratio: 4 / 3; max-width: 100%; flex: none;
+}
+.vista3d canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.dica { position: absolute; left: 8px; bottom: 6px; margin: 0; font: 500 11px/1 var(--f-ui); color: var(--tinta-2); pointer-events: none; }
+.carregando3d { position: absolute; inset: 0; display: grid; place-items: center; font: 600 13px var(--f-ui); color: var(--tinta-2); pointer-events: none; }
+.ficha, .notas { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 14px 16px; }
+.sobre { margin: 0 0 4px; font: 600 12px/1.3 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+.sobre .chip { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--acento); color: var(--folha); letter-spacing: .04em; }
+.ficha h2, .notas h2 { margin: 0 0 10px; font: 700 21px/1.15 var(--f-ui); text-wrap: balance; }
+.dados { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+.dados div { min-width: 0; }
+.dados dt { font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+.dados dd { margin: 2px 0 0; font: 13px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.dados .largo { grid-column: 1 / -1; }
+.nota { margin: 10px 0 0; color: var(--tinta-2); font-size: 13px; }
+.notas h3 { margin: 14px 0 6px; font: 700 15px/1.2 var(--f-ui); letter-spacing: .02em; }
+.notas p, .notas li { font-size: 13.5px; }
+.notas ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+.numeros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.numeros div { border-left: 3px solid var(--acento); padding: 2px 0 2px 8px; }
+.numeros dt { font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+.numeros dd { margin: 2px 0 0; font: 600 17px/1.15 var(--f-dado); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.numeros small { font: 12px var(--f-dado); color: var(--tinta-2); }
+
+@media (max-width: 860px) {
+  .app { height: auto; min-height: 100%; }
+  .corpo { grid-template-columns: minmax(0, 1fr); }
+  .mapa { height: 62vh; min-height: 320px; }
+  .legenda { left: 10px; max-width: calc(100% - 20px); bottom: 44px; }
+  .coord { left: 10px; top: 10px; }
+  .zoom { top: 10px; }
+  .painel { overflow: visible; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header class="topo">
+    <div class="nome">
+      <h1>Planta da Cidade do Estádio</h1>
+      <p class="resumo" id="resumo">carregando a planta…</p>
+    </div>
+    <div class="controles">
+      <div class="modos" role="tablist" aria-label="O que mostrar">
+        <button role="tab" id="aba-atual" aria-selected="true">Mapa atual</button>
+        <button role="tab" id="aba-proposta" aria-selected="false">Proposta de expansão</button>
+      </div>
+      <div class="camadas">
+        <label><input type="checkbox" id="c-rotulos" checked> Rótulos</label>
+        <label><input type="checkbox" id="c-grade" checked> Grade</label>
+        <label><input type="checkbox" id="c-arvores" checked> Árvores</label>
+        <label><input type="checkbox" id="c-props" checked> Postes e props</label>
+        <label><input type="checkbox" id="c-carros" checked> Carros</label>
+      </div>
+    </div>
+  </header>
+  <main class="corpo">
+    <section class="mapa" id="mapa" aria-label="Mapa da cidade: arraste pra mover, role pra aproximar, clique num lote">
+      <canvas id="cv"></canvas>
+      <div class="zoom">
+        <button id="z-mais" aria-label="Aproximar">+</button>
+        <button id="z-menos" aria-label="Afastar">−</button>
+        <button id="z-tudo" aria-label="Enquadrar a cidade">⤢</button>
+      </div>
+      <div class="coord" id="coord">x — · y —</div>
+      <div class="legenda" id="legenda"></div>
+      <div class="regua" id="regua"><b></b><span></span></div>
+      <div class="dica-hover" id="hover" hidden></div>
+      <div class="aviso" id="aviso">Montando a cidade…</div>
+    </section>
+    <aside class="painel">
+      <div class="vista3d" id="vista3d">
+        <canvas id="c3d"></canvas>
+        <div class="carregando3d" id="carregando3d" hidden>montando…</div>
+        <p class="dica">Arraste pra girar · role pra aproximar · duplo clique centraliza</p>
+      </div>
+      <div class="ficha" id="ficha">
+        <p class="sobre">Ficha</p>
+        <h2>Clique num lote</h2>
+        <p class="nota">Cada lote do mapa abre o imóvel em 3D, montado com o mesmo código do jogo.</p>
+      </div>
+      <div class="notas" id="notas" hidden></div>
+    </aside>
+  </main>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque } from './js/casas3d.js';
+import { montarModelos } from './js/modelos3d.js';
+import { moldeDaPeca, comTransformador } from './js/props3d.js';
+import { ATLAS } from './js/modelos_atlas.js';
+import { gerarProposta, RUA } from './js/proposta.js';
+
+const $ = id => document.getElementById(id);
+const aviso = $('aviso');
+
+/* ======================================================
+   A PLANTA DO JOGO, rodando aqui mesmo
+   ====================================================== */
+function carregarScript(src) {
+  return new Promise((ok, erro) => {
+    const s = document.createElement('script');
+    s.src = src; s.charset = 'utf-8'; s.onload = ok; s.onerror = () => erro(new Error(src));
+    document.head.appendChild(s);
+  });
+}
+window.TO = window.TO || { dados: {} };
+try {
+  await carregarScript('dados/torcidas.js');
+  await carregarScript('dados/cena_estadio.js');
+} catch (e) {
+  aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
+  throw e;
+}
+const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
+const PROP = gerarProposta(P);
+
+/* ======================================================
+   OS NOMES
+   ====================================================== */
+const NOME_MODELO = {
+  t1: 'Casa térrea de reboco', t2: 'Casa de tijolo à vista', t3: 'Casa com ponto de comércio',
+  t4: 'Sobrado de laje com caixa-d’água', t5: 'Casarão colonial',
+  g1: 'Galpão de platibanda', g2: 'Galpão de arco', p1: 'Prédio de reboco', p2: 'Prédio de tijolo',
+  m1: 'Casa de muro com garagem coberta', m2: 'Casa de muro alto com torrinha',
+  m3: 'Casa de muro com quintal na frente', m4: 'Casinha no meio do lote',
+  favela: 'Casa da favela', f1: 'Casa de laje com terraço', f2: 'Casa rosa de quintal', bar: 'Bar da favela',
+  lanche: 'Lanchonete da favela', escada: 'Casa da escada de fora', varal: 'Sobrado do varal',
+  garagem: 'Casa das garagens', base: 'Casa do embasamento'
+};
+const NOME_TIPO = { casa: 'Casa', sobrado: 'Sobrado', galpao: 'Galpão', predio: 'Prédio', muro: 'Muro', barraco: 'Barraco' };
+const NOME_MARCO = {
+  igreja: 'Igreja Matriz', predio: 'Prédio alto do centro', loja: 'Prédio do mercado', adm: 'Centro Administrativo',
+  casa: 'Casa de classe média', atacadex: 'Atacadex', torre1: 'Edifício Mirante', torre2: 'Residencial Bela Vista'
+};
+const NOME_EQUIP = {
+  praca: 'Praça da Matriz', hospital: 'Hospital', delegacia: 'Delegacia', escola: 'Escola', posto: 'Posto de gasolina',
+  shopping: 'Shopping Beira-Mar', galeria: 'Galeria', bar: 'Bar da torcida', sede: 'Sede da torcida',
+  baldio: 'Bares do estádio'
+};
+const NOME_PROP = {
+  cesto: 'Cesto de lixo', cacamba: 'Contêiner de lixo', lixeira: 'Lixeira de coleta seletiva', saco: 'Saco de lixo',
+  caixa: 'Caixa de papelão', barreira: 'Barreira de concreto', correio: 'Caixa de correio', hidrante: 'Hidrante',
+  balizador: 'Balizador', espuma: 'Balizador de espuma', delineador: 'Delineador', cone: 'Cone', cinzeiro: 'Cinzeiro',
+  banco: 'Banco de madeira', poste: 'Poste de concreto'
+};
+const FRENTE = { n: 'norte', s: 'sul', o: 'oeste', l: 'leste', av: 'a avenida' };
+const metros = v => (v / M).toLocaleString('pt-BR', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' m';
+
+/* ======================================================
+   AS CORES DO DESENHO (as do diagrama da quadra)
+   ====================================================== */
+const COR = {
+  mato: '#8a8866', moita: '#5f6b46', trilha: '#a8966c', beco: '#6c6c68',
+  rua: '#555555', avenida: '#4a4a48', eixo: '#c9b96a', calcada: '#bbbbbb', miolo: '#999988',
+  quintal: '#c9b98f', fundos: '#88aa77', pracinha: '#55aa55', areia: '#dccb9e', mar: '#3f6c84',
+  estadio: '#a7a397', arquibancada: '#8a8780', pista: '#8f8b80', gramado: '#4f8f3f',
+  arvore: 'rgba(0,120,0,.7)', carro: '#ee3333', poste: '#ffff00', marco: '#b39ad6', nova: '#45b6be'
+};
+const COR_LOTE = { casa: '#dd8888', sobrado: '#cc6666', galpao: '#8899aa', predio: '#7777aa', muro: '#aaaa88', barraco: '#c98a5a' };
+const COR_FAVELA = { casa: '#d9a066', sobrado: '#c9804e', barraco: '#c98a5a', galpao: '#a88a6a' };
+const COR_PROP = { cacamba: '#2f8f2f', lixeira: '#7f9fb0', saco: '#111', caixa: '#b88a50', cesto: '#d2b53a', barreira: '#e0e0e0',
+                   correio: '#c33b27', hidrante: '#d33', balizador: '#e3b21f', espuma: '#e8cf36', delineador: '#e1701f',
+                   cone: '#ea6a1c', cinzeiro: '#babcb9', banco: '#8f5d33' };
+
+/* ======================================================
+   O QUE SE CLICA
+   ====================================================== */
+const bbox = pts => {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const [x, y] of pts) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return { x0, y0, x1, y1 };
+};
+const retPts = r => [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1]];
+function dentro(x, y, pol) {
+  let d = false;
+  for (let i = 0, j = pol.length - 1; i < pol.length; j = i++) {
+    const [xi, yi] = pol[i], [xj, yj] = pol[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) d = !d;
+  }
+  return d;
+}
+const quadraDe = new Map();
+for (const q of K.QUADRAS) for (const l of q.lotes) quadraDe.set(l, q);
+
+/* K.LOTES já traz a beira da estrada e a favela junto com os lotes de quadra */
+const naBeira = new Set(K.BEIRA);
+const lotes = [];
+for (const l of K.LOTES) { const pol = K.cantosDoLote(l).slice(0, 4); lotes.push({ tipo: 'lote', l, pol, bb: bbox(pol), q: quadraDe.get(l), beira: naBeira.has(l) }); }
+const nLotesQuadra = K.QUADRAS.reduce((n, q) => n + q.lotes.length, 0);
+const nFavela = K.BEIRA.filter(l => l.favela).length;
+
+const marcos = [];
+for (const q of K.QUADRAS) {
+  if (!q.equip) continue;
+  for (const pc of q.equip.pecas) if (pc.k === 'modelo')
+    marcos.push({ tipo: 'marco', pc, q, pol: retPts(pc.fatia), bb: { ...pc.fatia }, nome: NOME_MARCO[pc.modelo] || pc.modelo,
+                  volumes: q.equip.tipo === 'marco' ? q.equip.volumes : volumesDaFatia(q.equip.volumes, pc.fatia) });
+}
+function volumesDaFatia(vs, f) { return (vs || []).filter(v => v.x0 >= f.x0 - 1 && v.x1 <= f.x1 + 1 && v.y0 >= f.y0 - 1 && v.y1 <= f.y1 + 1); }
+if (K.ATACADEX) {
+  const A = K.ATACADEX;
+  marcos.push({ tipo: 'marco', atacadex: true, pc: A, pol: A.area, bb: bbox(A.area), nome: 'Atacadex', volumes: A.volumes });
+}
+const equipamentos = K.QUADRAS.filter(q => q.equip && q.equip.tipo !== 'marco').map(q => ({
+  tipo: 'equip', q, pol: retPts(q.equip.area), bb: { ...q.equip.area },
+  nome: q.equip.tipo === 'sede' ? 'Sede da ' + (q.equip.torcida && (q.equip.torcida.nome || q.equip.torcida.sigla) || 'torcida')
+      : q.equip.tipo === 'bar' ? 'Bar da torcida' : NOME_EQUIP[q.equip.tipo] || q.equip.tipo
+}));
+const pecasSoltas = [];
+for (const p of K.PROPS) pecasSoltas.push({ tipo: 'prop', k: p.k, v: p.v || 0, x: p.x, y: p.y, ang: p.ang, r: Math.max(6, p.r || 8), s: p.s || 1 });
+for (const p of K.POSTES) pecasSoltas.push({ tipo: 'prop', k: 'poste', v: comTransformador(p.x, p.y) ? 1 : 0, x: p.x, y: p.y, ang: Math.atan2(p.dx, p.dz), r: 6, s: 1 });
+
+/* o que a proposta cobre: o mato, a casa de beira e a moita que ficam
+   debaixo das quadras novas saem do desenho e do clique */
+const cobertoPelaProposta = (x, y, folga = RUA / 2) => PROP.quadras.some(q => x > q.x0 - folga && x < q.x1 + folga && y > q.y0 - folga && y < q.y1 + folga);
+/* a casa de beira que fica na rua ou na quadra nova sai: a beira da estrada vira cidade */
+for (const it of lotes) it.sobProposta = it.beira && !it.l.favela && cobertoPelaProposta((it.bb.x0 + it.bb.x1) / 2, (it.bb.y0 + it.bb.y1) / 2, RUA);
+const lotesNovos = [];
+for (const q of PROP.quadras) for (const l of q.lotes) { const pol = retPts(l); lotesNovos.push({ tipo: 'lote', l, pol, bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, qn: q, proposta: true }); }
+
+/* ======================================================
+   O MAPA
+   ====================================================== */
+const cv = $('cv'), ctx = cv.getContext('2d');
+const mapa = $('mapa');
+const estado = {
+  modo: 'atual', s: 0.1, ox: 0, oy: 0, larg: 1, alt: 1, dpr: 1,
+  camadas: { rotulos: true, grade: true, arvores: true, props: true, carros: true },
+  sel: null, sobre: null
+};
+const LIM_ATUAL = { x0: 120, y0: 150, x1: 4700, y1: 5420 };
+const LIM_PROPOSTA = { x0: PROP.limite.x0 - 40, y0: PROP.limite.y0 - 40, x1: 4760, y1: 5420 };
+const MUNDO = { x0: Math.min(K.VX0, PROP.limite.x0 - 200), y0: Math.min(K.VY0, PROP.limite.y0 - 120), x1: K.VX0 + K.VW, y1: K.VY0 + K.VH };
+
+function enquadrar(r) {
+  const s = Math.min(estado.larg / (r.x1 - r.x0), estado.alt / (r.y1 - r.y0)) * 0.96;
+  estado.s = s;
+  estado.ox = (r.x0 + r.x1) / 2 - estado.larg / 2 / s;
+  estado.oy = (r.y0 + r.y1) / 2 - estado.alt / 2 / s;
+}
+const paraMundo = (sx, sy) => [estado.ox + sx / estado.s, estado.oy + sy / estado.s];
+const paraTela = (x, y) => [(x - estado.ox) * estado.s, (y - estado.oy) * estado.s];
+
+function tamanho() {
+  const r = mapa.getBoundingClientRect();
+  estado.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  estado.larg = Math.max(1, r.width); estado.alt = Math.max(1, r.height);
+  cv.width = Math.round(estado.larg * estado.dpr); cv.height = Math.round(estado.alt * estado.dpr);
+}
+
+let pedido = 0;
+function pedirDesenho() { if (!pedido) pedido = requestAnimationFrame(() => { pedido = 0; desenhar(); }); }
+
+function caminho(pts, fechar = true) {
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  if (fechar) ctx.closePath();
+}
+const pol = (pts, cor) => { caminho(pts); ctx.fillStyle = cor; ctx.fill(); };
+const ret = (r, cor) => { ctx.fillStyle = cor; ctx.fillRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0); };
+
+function costa(dpx) {
+  const pts = [];
+  for (let ypx = -200; ypx <= 1200; ypx += 10) pts.push(K.pxm(K.xCosta(ypx) - dpx, ypx));
+  return pts;
+}
+const fechado = (pts, xFim) => pts.concat([[xFim, pts[pts.length - 1][1]], [xFim, pts[0][1]]]);
+
+function desenhar() {
+  const { s, ox, oy, dpr } = estado;
+  const vis = { x0: ox, y0: oy, x1: ox + estado.larg / s, y1: oy + estado.alt / s };
+  const ve = b => b.x1 >= vis.x0 && b.x0 <= vis.x1 && b.y1 >= vis.y0 && b.y0 <= vis.y1;
+  const px = v => v / s;                                    // v pixels de tela, em unidades de mundo
+  const prop = estado.modo === 'proposta';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = COR.mato; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(dpr * s, 0, 0, dpr * s, -dpr * s * ox, -dpr * s * oy);
+
+  /* ---- o mato: trilha, moita, beco da favela ---- */
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = COR.trilha; ctx.lineWidth = 16;
+  for (const t of K.TRILHAS) { caminho(t, false); ctx.stroke(); }
+  for (const m of K.MOITAS) {
+    if (m.x + m.r < vis.x0 || m.x - m.r > vis.x1 || m.y + m.r < vis.y0 || m.y - m.r > vis.y1) continue;
+    if (prop && cobertoPelaProposta(m.x, m.y)) continue;
+    ctx.fillStyle = COR.moita; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * 0.9, m.r * 0.7, 0, 0, 7); ctx.fill();
+  }
+  ctx.strokeStyle = COR.beco; ctx.lineWidth = 44;
+  for (const t of K.FAVELA_RUAS || []) { caminho(t, false); ctx.stroke(); }
+
+  /* ---- os quarteirões: calçada, miolo, o chão do equipamento ---- */
+  for (const q of K.CELULAS) {
+    if (q.tipo !== 'quadra' || !ve(q)) continue;
+    pol(q.pol, COR.calcada);
+    if (q.polMiolo.length >= 3) {
+      pol(q.polMiolo, COR.miolo);
+      ctx.strokeStyle = '#000'; ctx.lineWidth = px(1); ctx.stroke();
+    }
+    if (q.equip) {
+      ret(q.equip.area, q.equip.chao || '#9d9a90');
+      for (const o of q.equip.pecas) if (o.k === 'piso') ret(o, o.cor);
+    }
+    for (const pr of q.pracinhas || []) {
+      for (const t of pr.tiras) ret(t, COR.pracinha);
+    }
+    if (q.quintal) ret(q.quintal, COR.quintal);
+    for (const f of q.fundos || []) ret(f, COR.fundos);
+    const ss = q.semSaida;
+    if (ss) {
+      for (const r of ss.calcadas) ret(r, COR.calcada);
+      for (const r of ss.asfalto) ret(r, COR.rua);
+    }
+  }
+  /* ---- a calçada das avenidas (só dentro da cidade) ---- */
+  ctx.save();
+  caminho(K.CONTORNO.map(([a, b]) => K.pxm(a, b))); ctx.clip();
+  ctx.strokeStyle = COR.calcada;
+  for (const av of K.AVENIDAS) { ctx.lineWidth = av.l + 2 * CALC; caminho(av.pontos, false); ctx.stroke(); }
+  ctx.restore();
+  /* ---- as ruas da grade: só entre células urbanas ---- */
+  const bx = K.bordasX, by = K.bordasY, nCol = bx.length / 2, nLin = by.length / 2;
+  const celula = (i, j) => K.grade[i] && K.grade[i][j];
+  const temRua = (...ij) => K.ruaEntre(ij.map(([i, j]) => celula(i, j)).filter(Boolean));
+  ctx.fillStyle = COR.rua;
+  for (let i = 0; i < nCol; i++) for (let j = 0; j < nLin; j++) {
+    const x0 = bx[2 * i], x1 = bx[2 * i + 1], y0 = by[2 * j], y1 = by[2 * j + 1];
+    const temCol = 2 * i + 2 < bx.length, temLin = 2 * j + 2 < by.length;
+    if (temCol && temRua([i, j], [i + 1, j])) ctx.fillRect(x1, y0, bx[2 * i + 2] - x1, y1 - y0);
+    if (temLin && temRua([i, j], [i, j + 1])) ctx.fillRect(x0, y1, x1 - x0, by[2 * j + 2] - y1);
+    if (temCol && temLin && temRua([i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1])) ctx.fillRect(x1, y1, bx[2 * i + 2] - x1, by[2 * j + 2] - y1);
+  }
+  /* ---- a orla: a avenida da beira, a praia e o mar ---- */
+  const X1 = MUNDO.x1 + 200;
+  pol(fechado(costa(K.PRAIA + K.ORLA), X1), COR.rua);
+  pol(fechado(costa(K.PRAIA), X1), COR.areia);
+  pol(fechado(costa(0), X1), COR.mar);
+  /* ---- o campo de várzea ---- */
+  for (const f of K.CAMPOS) {
+    ret(f, COR.gramado);
+    ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 3;
+    ctx.strokeRect(f.x0 + 14, f.y0 + 14, f.x1 - f.x0 - 28, f.y1 - f.y0 - 28);
+    ctx.beginPath(); ctx.moveTo((f.x0 + f.x1) / 2, f.y0 + 14); ctx.lineTo((f.x0 + f.x1) / 2, f.y1 - 14); ctx.stroke();
+  }
+  /* ---- o estádio ---- */
+  ret({ x0: P.QEST_X0, y0: P.QEST_Y0, x1: P.QEST_X1, y1: P.QEST_Y1 }, COR.estadio);
+  pol(P.anel(P.R.fachada1), COR.arquibancada);
+  pol(P.anel(P.D.arq), '#b3ad9c');
+  pol(P.anel(P.D.pista), COR.pista);
+  pol(P.anel(0), COR.gramado);
+
+  /* ---- a proposta: as ruas e as quadras novas por baixo das avenidas ---- */
+  if (prop) desenharProposta(ve, px);
+
+  /* ---- as avenidas por cima ---- */
+  for (const av of K.AVENIDAS) {
+    ctx.strokeStyle = COR.avenida; ctx.lineWidth = av.l; caminho(av.pontos, false); ctx.stroke();
+    ctx.setLineDash([18, 14]); ctx.strokeStyle = COR.eixo; ctx.lineWidth = 1.6; caminho(av.pontos, false); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  /* ---- os equipamentos: as peças em planta ---- */
+  for (const e of equipamentos) if (ve(e.bb)) desenharPecas(e.q.equip.pecas);
+  for (const q of K.QUADRAS) for (const pr of q.pracinhas || []) desenharPecas(pr.pecas);
+  /* ---- os marcos, o atacarejo e as torres: o chão da fatia e o volume ---- */
+  for (const m of marcos) {
+    if (!ve(m.bb)) continue;
+    if (m.atacadex) pol(m.pc.area, COR.rua);
+    for (const v of m.volumes || []) {
+      if (v.base) continue;
+      ret(v, v.alt > 400 ? '#9b8cc4' : COR.marco);
+      ctx.strokeStyle = '#222'; ctx.lineWidth = px(1); ctx.strokeRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    }
+  }
+  /* ---- os lotes ---- */
+  for (const it of lotes) {
+    if (!ve(it.bb) || (prop && it.sobProposta)) continue;
+    const l = it.l;
+    pol(it.pol, l.favela ? (COR_FAVELA[l.tipo] || COR_FAVELA.casa) : (COR_LOTE[l.tipo] || '#f0f'));
+    ctx.strokeStyle = '#222'; ctx.lineWidth = px(0.9); ctx.stroke();
+  }
+  if (prop) for (const it of lotesNovos) {
+    if (!ve(it.bb)) continue;
+    pol(it.pol, COR_LOTE[it.l.tipo] || '#f0f');
+    ctx.strokeStyle = '#123a3d'; ctx.lineWidth = px(0.9); ctx.stroke();
+  }
+  /* ---- árvore, carro, poste e prop ---- */
+  if (estado.camadas.arvores) {
+    ctx.fillStyle = COR.arvore;
+    for (const a of K.ARVORES) {
+      if (a.x + a.r < vis.x0 || a.x - a.r > vis.x1 || a.y + a.r < vis.y0 || a.y - a.r > vis.y1) continue;
+      if (prop && cobertoPelaProposta(a.x, a.y) && !dentroDaCidade(a.x, a.y)) continue;
+      ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 7); ctx.fill();
+    }
+  }
+  if (estado.camadas.carros) {
+    ctx.fillStyle = COR.carro;
+    for (const c of K.CARROS) if (ve(c)) ctx.fillRect(c.x0, c.y0, c.x1 - c.x0, c.y1 - c.y0);
+  }
+  if (estado.camadas.props && s > 0.12) {
+    for (const p of pecasSoltas) {
+      if (p.x < vis.x0 - 20 || p.x > vis.x1 + 20 || p.y < vis.y0 - 20 || p.y > vis.y1 + 20) continue;
+      if (p.k === 'poste') { ctx.fillStyle = COR.poste; ctx.fillRect(p.x - 4, p.y - 4, 8, 8); ctx.strokeStyle = '#333'; ctx.lineWidth = px(0.8); ctx.strokeRect(p.x - 4, p.y - 4, 8, 8); }
+      else { ctx.fillStyle = COR_PROP[p.k] || '#fff'; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(3.5, px(2.2)), 0, 7); ctx.fill(); }
+    }
+  }
+  /* ---- a seleção e o que está debaixo do mouse ---- */
+  for (const [it, cor, esp] of [[estado.sobre, '#ffffff', 2], [estado.sel, getComputedStyle(document.documentElement).getPropertyValue('--selecao').trim() || '#d4731c', 3.5]]) {
+    if (!it) continue;
+    if (it.tipo === 'prop') { ctx.strokeStyle = cor; ctx.lineWidth = px(esp); ctx.beginPath(); ctx.arc(it.x, it.y, Math.max(it.r, px(9)), 0, 7); ctx.stroke(); continue; }
+    if (it.pol) { caminho(it.pol); ctx.strokeStyle = cor; ctx.lineWidth = px(esp); ctx.stroke(); }
+  }
+
+  /* ---- em tela: a grade com a régua de coordenadas e os rótulos ---- */
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (estado.camadas.grade) desenharGrade(vis);
+  if (estado.camadas.rotulos) desenharRotulos(vis, prop);
+  atualizarRegua();
+}
+const dentroDaCidade = (x, y) => { const q = K.celulaEm(x, y); return !!q && q.tipo === 'quadra'; };
+
+function desenharProposta(ve, px) {
+  const meia = RUA / 2;
+  ctx.fillStyle = COR.rua;
+  for (const q of PROP.quadras) ctx.fillRect(q.x0 - meia, q.y0 - meia, q.x1 - q.x0 + RUA, q.y1 - q.y0 + RUA);
+  for (const q of PROP.quadras) {
+    if (!ve(q)) continue;
+    ret(q, COR.calcada);
+    const miolo = { x0: q.ix0, y0: q.iy0, x1: q.ix1, y1: q.iy1 };
+    if (q.equip) {
+      ret(miolo, q.equip.cor);
+      if (q.equip.tipo === 'campo') {
+        ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 3;
+        ctx.strokeRect(miolo.x0 + 16, miolo.y0 + 16, miolo.x1 - miolo.x0 - 32, miolo.y1 - miolo.y0 - 32);
+        ctx.beginPath(); ctx.moveTo((miolo.x0 + miolo.x1) / 2, miolo.y0 + 16); ctx.lineTo((miolo.x0 + miolo.x1) / 2, miolo.y1 - 16); ctx.stroke();
+      }
+    } else {
+      ret(miolo, COR.miolo);
+      if (q.quintal) ret(q.quintal, COR.quintal);
+    }
+  }
+  ctx.setLineDash([px(7), px(5)]); ctx.strokeStyle = COR.nova; ctx.lineWidth = px(2.2);
+  for (const q of PROP.quadras) if (ve(q)) ctx.strokeRect(q.x0, q.y0, q.x1 - q.x0, q.y1 - q.y0);
+  ctx.setLineDash([]);
+}
+
+function desenharPecas(pecas) {
+  for (const o of pecas) {
+    switch (o.k) {
+      case 'bloco': ret(o, o.cor || '#cfcac0'); ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.strokeRect(o.x0, o.y0, o.x1 - o.x0, o.y1 - o.y0); break;
+      case 'muro': case 'guarita': case 'totem': case 'monumento': case 'canteiro': case 'bomba': ret(o, o.cor || '#b9b3a4'); break;
+      case 'marquise': case 'claraboia': ctx.globalAlpha = 0.55; ret(o, o.cor || '#aaa'); ctx.globalAlpha = 1; break;
+      case 'pilar': ctx.fillStyle = o.cor || '#b8b4a8'; ctx.fillRect(o.x - o.r, o.y - o.r, 2 * o.r, 2 * o.r); break;
+      case 'coreto': ctx.fillStyle = '#b5543a'; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 7); ctx.fill(); break;
+      case 'fonte': ctx.fillStyle = '#4d7f96'; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 7); ctx.fill(); break;
+      case 'carro': if (estado.camadas.carros) ret(o, o.cor || COR.carro); break;
+      case 'arvore': if (estado.camadas.arvores) { ctx.fillStyle = COR.arvore; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 7); ctx.fill(); } break;
+      case 'poste': if (estado.camadas.props) { ctx.fillStyle = COR.poste; ctx.fillRect(o.x - 3, o.y - 3, 6, 6); } break;
+      case 'banco': ret(o, '#8f5d33'); break;
+      case 'mastro': ctx.fillStyle = '#eee'; ctx.fillRect(o.x - 3, o.y - 3, 6, 6); break;
+    }
+  }
+}
+
+function passoDaGrade() {
+  for (const p of [25, 50, 100, 250, 500, 1000, 2000]) if (p * estado.s >= 55) return p;
+  return 5000;
+}
+function desenharGrade(vis) {
+  const passo = passoDaGrade(), s = estado.s;
+  ctx.strokeStyle = 'rgba(255,255,255,.33)'; ctx.lineWidth = 0.7;
+  ctx.fillStyle = 'rgba(20,22,21,.72)'; ctx.fillRect(0, 0, estado.larg, 18); ctx.fillRect(0, 0, 22, estado.alt);
+  ctx.font = '10px "IBM Plex Mono", monospace'; ctx.fillStyle = '#eef0ec'; ctx.textBaseline = 'top';
+  for (let x = Math.ceil(vis.x0 / passo) * passo; x < vis.x1; x += passo) {
+    const [sx] = paraTela(x, 0);
+    ctx.beginPath(); ctx.moveTo(sx, 18); ctx.lineTo(sx, estado.alt); ctx.stroke();
+    ctx.fillText(String(x), sx + 2, 4);
+  }
+  ctx.save();
+  for (let y = Math.ceil(vis.y0 / passo) * passo; y < vis.y1; y += passo) {
+    const [, sy] = paraTela(0, y);
+    ctx.beginPath(); ctx.moveTo(22, sy); ctx.lineTo(estado.larg, sy); ctx.stroke();
+    ctx.save(); ctx.translate(4, sy - 2); ctx.rotate(-Math.PI / 2); ctx.fillText(String(y), 0, 0); ctx.restore();
+  }
+  ctx.restore();
+}
+
+function rotuloDoLote(l) {
+  const pc = planoSeguro(l);
+  const m = l.muro || (pc && pc.tipo && pc.tipo !== 'favela' ? pc.tipo.toUpperCase() : '');
+  return (NOME_TIPO[l.tipo] || l.tipo).toLowerCase() + ' ' + (l.frente || '') + (m ? ' ' + m : '');
+}
+function desenharRotulos(vis, prop) {
+  const s = estado.s;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  if (s >= 0.55) {
+    ctx.font = '500 11px "Barlow Semi Condensed", "Arial Narrow", sans-serif'; ctx.fillStyle = '#000';
+    const lista = prop ? lotes.filter(it => !it.sobProposta).concat(lotesNovos) : lotes;
+    for (const it of lista) {
+      const b = it.bb;
+      if (b.x1 < vis.x0 || b.x0 > vis.x1 || b.y1 < vis.y0 || b.y0 > vis.y1) continue;
+      if (Math.min(b.x1 - b.x0, b.y1 - b.y0) * s < 30) continue;
+      const [sx, sy] = paraTela((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2);
+      ctx.fillText(rotuloDoLote(it.l), sx, sy);
+    }
+  }
+  /* os nomes grandes: equipamento, marco e quadra nova */
+  ctx.font = '700 12px "Barlow Semi Condensed", "Arial Narrow", sans-serif';
+  const ocupados = [];
+  const etiqueta = (texto, x, y) => {
+    const [sx, y0] = paraTela(x, y);
+    if (sx < -80 || sx > estado.larg + 80 || y0 < -20 || y0 > estado.alt + 20) return;
+    const w = ctx.measureText(texto).width + 10;
+    const sy = [0, 20, -20, 40, -40].map(d => y0 + d).find(sy => !ocupados.some(o =>
+      Math.abs(o.x - sx) < (o.w + w) / 2 + 2 && Math.abs(o.y - sy) < 19));
+    if (sy === undefined) return;
+    ocupados.push({ x: sx, y: sy, w });
+    ctx.fillStyle = 'rgba(20,22,21,.78)'; ctx.fillRect(sx - w / 2, sy - 9, w, 18);
+    ctx.fillStyle = '#f2f3ef'; ctx.fillText(texto, sx, sy + 0.5);
+  };
+  if (s >= 0.07) {
+    for (const e of equipamentos) etiqueta(e.nome, (e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2);
+    for (const m of marcos) etiqueta(m.nome, (m.bb.x0 + m.bb.x1) / 2, (m.bb.y0 + m.bb.y1) / 2);
+    etiqueta('ESTÁDIO', P.CX, P.CY);
+    if (prop) for (const q of PROP.quadras) if (q.equip) etiqueta(q.equip.nome, (q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2);
+  }
+  if (s < 0.55 && s >= 0.12) {
+    ctx.font = '600 11px "IBM Plex Mono", monospace';
+    for (const q of K.QUADRAS) {
+      if (q.equip) continue;
+      const [sx, sy] = paraTela(q.cx, q.cy);
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillText('Q ' + q.i + ',' + q.j, sx, sy);
+    }
+    if (prop) for (const q of PROP.quadras) {
+      if (q.equip) continue;
+      const [sx, sy] = paraTela((q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2);
+      ctx.fillStyle = '#0b4e53'; ctx.fillText('Q ' + q.i + ',' + q.j + (q.parte || ''), sx, sy);
+    }
+  }
+}
+function atualizarRegua() {
+  const alvo = 110 / estado.s / M;
+  const m = [1, 2, 5, 10, 20, 50, 100, 200, 500].find(v => v >= alvo * 0.6) || 500;
+  $('regua').querySelector('b').style.width = Math.round(m * M * estado.s) + 'px';
+  $('regua').querySelector('span').textContent = m + ' m  ·  1 m = ' + M.toFixed(1).replace('.', ',') + ' un';
+}
+
+/* ======================================================
+   CLIQUE E ARRASTE
+   ====================================================== */
+function pegar(sx, sy) {
+  const [x, y] = paraMundo(sx, sy);
+  const prop = estado.modo === 'proposta';
+  const naLista = lista => lista.find(it => x >= it.bb.x0 && x <= it.bb.x1 && y >= it.bb.y0 && y <= it.bb.y1 && dentro(x, y, it.pol));
+  if (prop) { const n = naLista(lotesNovos); if (n) return n; }
+  const l = naLista(lotes.filter(it => !(prop && it.sobProposta)));
+  if (l) return l;
+  if (estado.camadas.props && estado.s > 0.12) {
+    let melhor = null, md = Math.max(8 / estado.s, 6);
+    for (const p of pecasSoltas) { const d = Math.hypot(p.x - x, p.y - y); if (d < md) { md = d; melhor = p; } }
+    if (melhor) return melhor;
+  }
+  const m = naLista(marcos);
+  if (m) return m;
+  if (prop) {
+    const q = PROP.quadras.find(q => x >= q.x0 && x <= q.x1 && y >= q.y0 && y <= q.y1);
+    if (q) return { tipo: 'quadraNova', q, pol: retPts(q), bb: { x0: q.x0, y0: q.y0, x1: q.x1, y1: q.y1 } };
+  }
+  const e = naLista(equipamentos);
+  if (e) return e;
+  const q = K.celulaEm(x, y);
+  if (q && q.tipo === 'quadra') return { tipo: 'quadra', q, pol: q.pol, bb: { x0: q.x0, y0: q.y0, x1: q.x1, y1: q.y1 } };
+  return null;
+}
+
+const ptrs = new Map();
+let arrasto = null, pinca = null;
+mapa.addEventListener('pointerdown', ev => {
+  if (ev.target.closest('.zoom')) return;
+  mapa.setPointerCapture(ev.pointerId);
+  ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+  if (ptrs.size === 1) arrasto = { x: ev.offsetX, y: ev.offsetY, ox: estado.ox, oy: estado.oy, moveu: false };
+  if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    pinca = { d: Math.hypot(a.x - b.x, a.y - b.y), s: estado.s, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+    arrasto = null;
+  }
+});
+mapa.addEventListener('pointermove', ev => {
+  if (ptrs.has(ev.pointerId)) ptrs.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
+  if (pinca && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    zoomEm(pinca.cx, pinca.cy, pinca.s * Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, pinca.d), true);
+    return;
+  }
+  if (arrasto) {
+    const dx = ev.offsetX - arrasto.x, dy = ev.offsetY - arrasto.y;
+    if (Math.hypot(dx, dy) > 4) { arrasto.moveu = true; mapa.classList.add('arrastando'); }
+    if (arrasto.moveu) { estado.ox = arrasto.ox - dx / estado.s; estado.oy = arrasto.oy - dy / estado.s; pedirDesenho(); }
+    return;
+  }
+  if (ev.pointerType === 'mouse') passar(ev.offsetX, ev.offsetY);
+});
+const soltar = ev => {
+  const era = arrasto;
+  ptrs.delete(ev.pointerId);
+  if (ptrs.size < 2) pinca = null;
+  mapa.classList.remove('arrastando');
+  if (era && !era.moveu && ev.type === 'pointerup') selecionar(pegar(ev.offsetX, ev.offsetY), true);
+  arrasto = null;
+};
+mapa.addEventListener('pointerup', soltar);
+mapa.addEventListener('pointercancel', soltar);
+mapa.addEventListener('pointerleave', () => { if (!arrasto) { estado.sobre = null; $('hover').hidden = true; pedirDesenho(); } });
+mapa.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  zoomEm(ev.offsetX, ev.offsetY, estado.s * Math.exp(-ev.deltaY * 0.0015));
+}, { passive: false });
+function zoomEm(sx, sy, s, absoluto) {
+  const [x, y] = paraMundo(sx, sy);
+  estado.s = Math.min(6, Math.max(0.035, s));
+  estado.ox = x - sx / estado.s; estado.oy = y - sy / estado.s;
+  pedirDesenho();
+}
+$('z-mais').onclick = () => zoomEm(estado.larg / 2, estado.alt / 2, estado.s * 1.5);
+$('z-menos').onclick = () => zoomEm(estado.larg / 2, estado.alt / 2, estado.s / 1.5);
+$('z-tudo').onclick = () => { enquadrar(estado.modo === 'proposta' ? LIM_PROPOSTA : LIM_ATUAL); pedirDesenho(); };
+
+function passar(sx, sy) {
+  const [x, y] = paraMundo(sx, sy);
+  const q = K.celulaEm(x, y);
+  $('coord').textContent = 'x ' + Math.round(x) + ' · y ' + Math.round(y) + (q && q.tipo === 'quadra' ? ' · quadra ' + q.i + ',' + q.j : '');
+  const it = pegar(sx, sy);
+  const h = $('hover');
+  if (it && it !== estado.sel && it.tipo !== 'quadra') {
+    h.hidden = false; h.style.left = sx + 'px'; h.style.top = sy + 'px'; h.textContent = tituloDe(it);
+  } else h.hidden = true;
+  if ((it && it.l) !== (estado.sobre && estado.sobre.l) || it !== estado.sobre) { estado.sobre = it && it.tipo !== 'quadra' ? it : null; pedirDesenho(); }
+}
+
+for (const [id, chave] of [['c-rotulos', 'rotulos'], ['c-grade', 'grade'], ['c-arvores', 'arvores'], ['c-props', 'props'], ['c-carros', 'carros']]) {
+  $(id).addEventListener('change', ev => { estado.camadas[chave] = ev.target.checked; pedirDesenho(); });
+}
+function mudarModo(modo) {
+  estado.modo = modo;
+  $('aba-atual').setAttribute('aria-selected', String(modo === 'atual'));
+  $('aba-proposta').setAttribute('aria-selected', String(modo === 'proposta'));
+  $('notas').hidden = modo !== 'proposta';
+  if (modo !== 'proposta' && estado.sel && (estado.sel.proposta || estado.sel.tipo === 'quadraNova')) selecionar(null);
+  enquadrar(modo === 'proposta' ? LIM_PROPOSTA : LIM_ATUAL);
+  montarLegenda();
+  pedirDesenho();
+  try { localStorage.setItem('planta-modo', modo); } catch (e) {}
+}
+$('aba-atual').onclick = () => mudarModo('atual');
+$('aba-proposta').onclick = () => mudarModo('proposta');
+
+function montarLegenda() {
+  const itens = [['Casa', COR_LOTE.casa], ['Sobrado', COR_LOTE.sobrado], ['Galpão', COR_LOTE.galpao], ['Prédio', COR_LOTE.predio],
+                 ['Muro', COR_LOTE.muro], ['Favela', COR_FAVELA.casa], ['Marco', COR.marco], ['Quintal', COR.quintal],
+                 ['Árvore', '#2e7d2e'], ['Poste', COR.poste]];
+  $('legenda').innerHTML = itens.map(([n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('') +
+    (estado.modo === 'proposta' ? '<span><i class="nova"></i>Quadra nova</span>' : '');
+}
+
+/* ======================================================
+   A FICHA
+   ====================================================== */
+function planoSeguro(l) { try { return planoDaCasa(l, K); } catch (e) { return null; } }
+function tituloDe(it) {
+  if (it.tipo === 'lote') {
+    const pc = planoSeguro(it.l);
+    const m = it.l.muro || (pc && pc.tipo);
+    return (m && NOME_MODELO[m]) || NOME_TIPO[it.l.tipo] || it.l.tipo;
+  }
+  if (it.tipo === 'prop') return NOME_PROP[it.k] + (it.k === 'poste' && it.v ? ' com transformador' : '');
+  if (it.tipo === 'marco' || it.tipo === 'equip') return it.nome;
+  if (it.tipo === 'quadraNova') return it.q.equip ? it.q.equip.nome : 'Quadra nova ' + it.q.i + ',' + it.q.j + it.q.parte;
+  if (it.tipo === 'quadra') return 'Quadra ' + it.q.i + ',' + it.q.j;
+  return '';
+}
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function linhas(pares) {
+  return '<dl class="dados">' + pares.filter(p => p && p[1] !== undefined && p[1] !== null && p[1] !== '').map(([k, v, largo]) =>
+    `<div${largo ? ' class="largo"' : ''}><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('') + '</dl>';
+}
+function fichaDe(it) {
+  if (!it) return '<p class="sobre">Ficha</p><h2>Clique num lote</h2><p class="nota">Cada lote do mapa abre o imóvel em 3D, montado com o mesmo código do jogo.</p>';
+  const chip = it.proposta || it.tipo === 'quadraNova' ? '<span class="chip">proposta</span>' : '';
+  if (it.tipo === 'lote') {
+    const l = it.l, pc = planoSeguro(l);
+    const nS = l.frente === 'n' || l.frente === 's';
+    const testada = l.ang ? l.w : nS ? l.x1 - l.x0 : l.y1 - l.y0;
+    const fundo = l.ang ? l.h : nS ? l.y1 - l.y0 : l.x1 - l.x0;
+    const onde = it.proposta ? 'quadra nova ' + it.qn.i + ',' + it.qn.j + it.qn.parte
+               : it.q ? 'quadra ' + it.q.i + ',' + it.q.j : l.favela ? 'favela' : 'beira da estrada';
+    const modelo = l.muro || (pc && pc.tipo);
+    return `<p class="sobre">Lote · ${esc(onde)}${chip}</p><h2>${esc(tituloDe(it))}</h2>` + linhas([
+      ['Tipo na planta', NOME_TIPO[l.tipo] || l.tipo],
+      ['Modelo 3D', modelo ? String(modelo).toUpperCase() : 'caixa (muro)'],
+      ['Frente para', FRENTE[l.frente] || '—'],
+      ['Testada', metros(testada)], ['Fundo', l.tipo === 'muro' ? '' : metros(fundo)],
+      ['Área', l.tipo === 'muro' ? '' : ((testada / M) * (fundo / M)).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' m²'],
+      ['Altura', metros(l.alt)],
+      ['Letreiro', l.placa, true], ['Pixação', l.pixacao, true],
+      ['Na planta', 'x ' + Math.round(l.cx ?? (l.x0 + l.x1) / 2) + ' · y ' + Math.round(l.cy ?? (l.y0 + l.y1) / 2), true]
+    ]) + (it.proposta ? '<p class="nota">Casa que o gerador do jogo põe nesse lote hoje. Com a expansão feita, é ela que aparece.</p>' : '');
+  }
+  if (it.tipo === 'prop') {
+    return `<p class="sobre">Mobiliário da rua</p><h2>${esc(tituloDe(it))}</h2>` + linhas([
+      ['Na planta', 'x ' + Math.round(it.x) + ' · y ' + Math.round(it.y), true]
+    ]);
+  }
+  if (it.tipo === 'marco') {
+    const b = it.bb;
+    const alto = Math.max(0, ...(it.volumes || []).map(v => v.alt || 0));
+    return `<p class="sobre">Marco modelado peça por peça</p><h2>${esc(it.nome)}</h2>` + linhas([
+      ['Terreno', metros(b.x1 - b.x0) + ' × ' + metros(b.y1 - b.y0), true], ['Altura', metros(alto)],
+      ['Na planta', 'x ' + Math.round((b.x0 + b.x1) / 2) + ' · y ' + Math.round((b.y0 + b.y1) / 2), true]
+    ]);
+  }
+  if (it.tipo === 'equip') {
+    const a = it.q.equip.area;
+    return `<p class="sobre">Equipamento · quadra ${it.q.i},${it.q.j}</p><h2>${esc(it.nome)}</h2>` + linhas([
+      ['Área', metros(a.x1 - a.x0) + ' × ' + metros(a.y1 - a.y0), true],
+      ['Peças', it.q.equip.pecas.length]
+    ]) + '<p class="nota">No jogo o equipamento é montado em caixas; aqui aparecem os mesmos volumes, sem a textura.</p>';
+  }
+  if (it.tipo === 'quadraNova') {
+    const q = it.q;
+    if (q.equip) return `<p class="sobre">Quadra nova ${q.i},${q.j}${chip}</p><h2>${esc(q.equip.nome)}</h2>` +
+      linhas([['Quadra', metros(q.x1 - q.x0) + ' × ' + metros(q.y1 - q.y0), true]]) + `<p class="nota">${esc(q.equip.nota)} Ainda sem modelo: o 3D é só o volume de estudo.</p>`;
+    return `<p class="sobre">Quadra nova ${q.i},${q.j}${esc(q.parte)}${chip}</p><h2>${q.lotes.length} lotes</h2>` +
+      linhas([['Quadra', metros(q.x1 - q.x0) + ' × ' + metros(q.y1 - q.y0), true],
+              ['Encolheu por causa', q.encolheu === 'favela' ? 'da favela' : q.encolheu === 'atacadex' ? 'do atacarejo' : '', true]]) +
+      '<p class="nota">O 3D mostra a quadra inteira, com as casas que o gerador põe em cada lote.</p>';
+  }
+  if (it.tipo === 'quadra') {
+    const q = it.q;
+    return `<p class="sobre">Quadra ${q.i},${q.j}</p><h2>${q.lotes.length} lotes</h2>` +
+      linhas([['Quadra', metros(q.x1 - q.x0) + ' × ' + metros(q.y1 - q.y0), true],
+              ['Rua sem saída', q.semSaida ? 'sim, no miolo' : '', true]]) +
+      '<p class="nota">O 3D mostra a quadra inteira. Clique num lote pra ver só o imóvel.</p>';
+  }
+  return '';
+}
+function selecionar(it, rolar) {
+  estado.sel = it;
+  $('ficha').innerHTML = fichaDe(it);
+  pedirDesenho();
+  if (!it) return;
+  vista.mostrar(it);
+  if (rolar && matchMedia('(max-width: 860px)').matches)
+    $('vista3d').scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+
+/* ======================================================
+   O 3D
+   ====================================================== */
+const texturas = {}, materiais = {};
+THREE.DefaultLoadingManager.onLoad = () => vista && vista.pedir();
+THREE.DefaultLoadingManager.onProgress = () => vista && vista.pedir();
+function textura(folha) {
+  if (!texturas[folha]) {
+    const t = new THREE.TextureLoader().load(ATLAS[folha].arquivo);
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+    texturas[folha] = t;
+  }
+  return texturas[folha];
+}
+function material(folha) {
+  if (!materiais[folha]) materiais[folha] = new THREE.MeshLambertMaterial({
+    map: textura(folha), vertexColors: true, side: THREE.DoubleSide,
+    alphaTest: folha === 'grades' ? 0.08 : 0, alphaToCoverage: folha === 'grades' });
+  return materiais[folha];
+}
+function malhaDeBlocos(blocos, folha) {
+  if (!blocos.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'pos'), 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'uv'), 2));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'cor'), 3));
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, material(folha));
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+const matCor = {};
+const lisa = cor => matCor[cor] || (matCor[cor] = new THREE.MeshLambertMaterial({ color: cor }));
+function caixa(g, x0, x1, y0, y1, z0, z1, cor) {
+  if (x1 - x0 <= 0 || y1 - y0 <= 0 || z1 - z0 <= 0) return;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), lisa(cor));
+  m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  m.castShadow = true; m.receiveShadow = true;
+  g.add(m);
+  return m;
+}
+
+/* o letreiro e a pixação: a mesma regra de lugar do jogo, o texto num canvas */
+const FUNDOS_PLACA = ['#c8342b', '#1f5aa8', '#e0a52a', '#1d7a4a', '#f0ede4', '#2b2b2b', '#7a2f86', '#d96a1f'];
+const TINTAS_PIXO = ['#2a2a28', '#1c2a44', '#3a1f1f', '#23331f'];
+const somaTexto = t => { let h = 7; for (let k = 0; k < t.length; k++) h = (h * 31 + t.charCodeAt(k)) >>> 0; return h; };
+const luz = hex => { const n = parseInt(hex.slice(1), 16); return 0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255); };
+function texturaDizer(texto, placa, tinta, fundoPedido) {
+  const cv2 = document.createElement('canvas'); cv2.width = 512; cv2.height = 128;
+  const c = cv2.getContext('2d'), h = somaTexto(texto);
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  if (placa) {
+    const fundo = fundoPedido || FUNDOS_PLACA[h % FUNDOS_PLACA.length], claro = luz(fundo) > 150;
+    c.fillStyle = fundo; c.fillRect(0, 0, 512, 128);
+    c.strokeStyle = claro ? 'rgba(40,36,28,.75)' : 'rgba(255,255,255,.35)'; c.lineWidth = claro ? 12 : 8; c.strokeRect(8, 8, 496, 112);
+    c.fillStyle = tinta || (claro ? '#20201c' : '#f6f3ea');
+    let tam = 68; c.font = `bold ${tam}px "Arial Narrow", Arial, sans-serif`;
+    while (tam > 20 && c.measureText(texto).width > 460) { tam -= 4; c.font = `bold ${tam}px "Arial Narrow", Arial, sans-serif`; }
+    c.fillText(texto, 256, 68);
+  } else {
+    const cor = tinta || TINTAS_PIXO[h % TINTAS_PIXO.length];
+    let tam = 72; c.font = `italic bold ${tam}px "Arial Narrow", Arial, sans-serif`;
+    while (tam > 20 && c.measureText(texto).width > 440 / 0.88) { tam -= 4; c.font = `italic bold ${tam}px "Arial Narrow", Arial, sans-serif`; }
+    c.translate(256, 64); c.scale(0.88, 1.18); c.translate(-256, -64);
+    c.lineWidth = Math.max(5, tam * 0.17); c.lineJoin = 'round';
+    c.strokeStyle = luz(cor) > 120 ? 'rgba(22,20,18,.9)' : 'rgba(238,236,228,.8)'; c.strokeText(texto, 256, 68);
+    c.fillStyle = cor; c.fillText(texto, 256, 68);
+  }
+  const t = new THREE.CanvasTexture(cv2); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+function placaNoMundo(g, lug, tex, alfa) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(lug.larg, lug.alt),
+                           new THREE.MeshLambertMaterial({ map: tex, transparent: !!alfa, alphaTest: alfa ? 0.35 : 0, side: THREE.DoubleSide }));
+  m.position.set(lug.x, lug.y, lug.z);
+  m.rotation.y = Math.atan2(lug.ox, lug.oz);
+  g.add(m);
+}
+function decalques(l, pc, g) {
+  const W = pc.W * M;
+  if (l.placa) {
+    const pp = pc.placa;
+    const larg = pp ? pp.larg : Math.min(W - 12, 110), alt = pp ? pp.alt : Math.min(15, larg / 4.6);
+    const lug = lugarDoDecalque(l, pc, larg, alt, { u: 0, y: pp ? pp.y : Math.max(46 + 6, 52) + alt / 2, min: larg * 0.55 });
+    if (lug) placaNoMundo(g, lug, texturaDizer(l.placa, true));
+  }
+  if (l.pixacao) {
+    const larg = Math.min(W - 12, 62), alt = Math.min(14, larg / 4.3);
+    if (alt < 3) return;
+    const lado = somaTexto(l.pixacao) % 2 ? 1 : -1;
+    const lug = lugarDoDecalque(l, pc, larg, alt, { u: lado * W * 0.22, y: 3 + alt / 2, min: 14, portas: true });
+    if (lug) placaNoMundo(g, lug, texturaDizer(l.pixacao, false, l.pixoTinta), true);
+  }
+}
+
+/* cada coisa do mapa vira um grupo em coordenada de mundo (y pra cima) */
+function objetoDoLote(l, g) {
+  const pc = planoSeguro(l);
+  if (pc) {
+    const destino = { casas: [], grades: [] };
+    montarCasa(l, pc, destino, 0);
+    for (const [lista, folha] of [[destino.casas, 'casas'], [destino.grades, 'grades']]) { const m = malhaDeBlocos(lista, folha); if (m) g.add(m); }
+    decalques(l, pc, g);
+    return;
+  }
+  /* muro e lote de caixa */
+  if (l.ang) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(l.w - 2, l.alt, l.h - 2), lisa(l.cor || '#b0a794'));
+    m.position.set(l.cx, l.alt / 2, l.cy); m.rotation.y = -l.ang; m.castShadow = m.receiveShadow = true; g.add(m);
+  } else caixa(g, l.x0 + 1, l.x1 - 1, 0, l.alt, l.y0 + 1, l.y1 - 1, l.cor || '#b0a794');
+  if (l.pixacao && !l.ang) {
+    const f = l.frente, larg = Math.min((f === 'n' || f === 's' ? l.x1 - l.x0 : l.y1 - l.y0) - 10, 126), alt = Math.min(larg / 4, l.alt - 10);
+    if (alt > 4) {
+      const n = { n: [0, -1], s: [0, 1], o: [-1, 0], l: [1, 0] }[f] || [0, 1];
+      const x = f === 'o' ? l.x0 + 0.5 : f === 'l' ? l.x1 - 0.5 : (l.x0 + l.x1) / 2, z = f === 'n' ? l.y0 + 0.5 : f === 's' ? l.y1 - 0.5 : (l.y0 + l.y1) / 2;
+      placaNoMundo(g, { x: x + n[0] * 0.8, y: Math.max(alt / 2 + 3, l.alt * 0.5), z: z + n[1] * 0.8, ox: n[0], oz: n[1], larg, alt }, texturaDizer(l.pixacao, false, l.pixoTinta), true);
+    }
+  }
+}
+function objetoDoMarco(it, g) {
+  const fakeP = it.atacadex ? { CIDADE: { QUADRAS: [], ATACADEX: it.pc } }
+                            : { CIDADE: { QUADRAS: [{ equip: { pecas: [it.pc] } }], ATACADEX: null } };
+  const r = montarModelos(fakeP, { anisotropia: 8 });
+  for (const m of r.meshes) g.add(m);
+}
+function objetoDoProp(it, g) {
+  const B = moldeDaPeca(it.k, it.v);
+  if (!B) return;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(B.pos.map(v => v * M * (it.s || 1)), 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(B.uv, 2));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(B.cor, 3));
+  geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, material('props'));
+  m.castShadow = m.receiveShadow = true;
+  m.position.set(it.x, 0, it.y); m.rotation.y = it.ang || 0;
+  g.add(m);
+}
+function objetoDoEquip(eq, g) {
+  const a = eq.area;
+  caixa(g, a.x0, a.x1, 0, 1.65, a.y0, a.y1, eq.chao || '#9d9a90');
+  for (const o of eq.pecas) {
+    switch (o.k) {
+      case 'bloco': caixa(g, o.x0, o.x1, 0, o.alt, o.y0, o.y1, o.cor || '#cfcac0'); if (o.teto) caixa(g, o.x0 - 2, o.x1 + 2, o.alt, o.alt + 4, o.y0 - 2, o.y1 + 2, o.teto); break;
+      case 'muro': case 'guarita': case 'totem': case 'monumento': case 'bomba': caixa(g, o.x0, o.x1, 0, o.alt || 20, o.y0, o.y1, o.cor || '#b9b3a4'); break;
+      case 'canteiro': caixa(g, o.x0, o.x1, 0, o.alt, o.y0, o.y1, '#b9b3a4'); caixa(g, o.x0 + 3, o.x1 - 3, o.alt, o.alt + 3, o.y0 + 3, o.y1 - 3, '#4a7a3c'); break;
+      case 'marquise': case 'claraboia': case 'maquina': caixa(g, o.x0, o.x1, o.y, o.y + o.alt, o.y0, o.y1, o.cor || '#aaa'); break;
+      case 'pilar': caixa(g, o.x - o.r, o.x + o.r, 0, o.alt, o.y - o.r, o.y + o.r, o.cor || '#b8b4a8'); break;
+      case 'piso': if (!o.soMapa) caixa(g, o.x0, o.x1, 1.6, 1.8, o.y0, o.y1, o.cor); break;
+      case 'coreto': {
+        caixa(g, o.x - o.r, o.x + o.r, 0, 6, o.y - o.r, o.y + o.r, '#cfc8b6');
+        for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) caixa(g, o.x + sx * o.r * 0.8 - 2, o.x + sx * o.r * 0.8 + 2, 6, o.alt - 8, o.y + sz * o.r * 0.8 - 2, o.y + sz * o.r * 0.8 + 2, '#eeeae0');
+        const tel = new THREE.Mesh(new THREE.ConeGeometry(o.r * 1.35, 22, 4), lisa('#b5543a'));
+        tel.position.set(o.x, o.alt + 3, o.y); tel.rotation.y = Math.PI / 4; tel.castShadow = true; g.add(tel);
+        break;
+      }
+      case 'fonte': { const f = new THREE.Mesh(new THREE.CylinderGeometry(o.r, o.r, 10, 20), lisa('#b9b3a4')); f.position.set(o.x, 5, o.y); g.add(f);
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(o.r - 4, o.r - 4, 1, 20), lisa('#4d7f96')); w.position.set(o.x, 10.2, o.y); g.add(w); break; }
+      case 'carro': caixa(g, o.x0, o.x1, 1.4, 17, o.y0, o.y1, o.cor || '#8a8f96'); caixa(g, o.x0 + 4, o.x1 - 4, 17, 28, o.y0 + 4, o.y1 - 4, '#3a3d42'); break;
+      case 'arvore': arvore3d(g, o); break;
+      case 'poste': caixa(g, o.x - 1.6, o.x + 1.6, 0, 116, o.y - 1.6, o.y + 1.6, '#6b6b66'); break;
+      case 'banco': caixa(g, o.x0, o.x1, 10, 13, o.y0, o.y1, '#7a5a3a'); break;
+      case 'mastro': caixa(g, o.x - 1.6, o.x + 1.6, 0, o.alt, o.y - 1.6, o.y + 1.6, '#cfcbbe'); caixa(g, o.x + 1.6, o.x + 40, o.alt - 24, o.alt - 2, o.y - 0.5, o.y + 0.5, o.cor || '#2f7a3c'); break;
+      case 'letreiro': {
+        if (!o.texto || !o.larg) break;
+        const lug = { x: o.x + (o.ox || 0) * 0.8, y: (o.base || 20) + (o.altura || 20) / 2, z: o.y + (o.oz || 0) * 0.8, ox: o.ox || 0, oz: o.oz || 1, larg: o.larg, alt: o.altura || 20 };
+        placaNoMundo(g, lug, texturaDizer(o.texto, o.placa !== false, o.tinta, o.fundo), o.placa === false);
+        break;
+      }
+      case 'modelo': objetoDoMarco({ pc: o }, g); break;
+    }
+  }
+}
+function arvore3d(g, a) {
+  const galho = 26 + a.r * 1.2, copa = a.r * 3.1;
+  caixa(g, a.x - 2.4, a.x + 2.4, 0, galho + copa * 0.3, a.y - 2.4, a.y + 2.4, '#5a4630');
+  const c1 = new THREE.Mesh(new THREE.ConeGeometry(a.r, copa, 4), lisa('#3f7a34')); c1.position.set(a.x, galho + copa / 2, a.y); c1.castShadow = true; g.add(c1);
+  const c2 = new THREE.Mesh(new THREE.ConeGeometry(a.r, a.r * 0.9, 4), lisa('#356b2c')); c2.rotation.x = Math.PI; c2.position.set(a.x, galho - a.r * 0.45, a.y); g.add(c2);
+}
+function objetoDaQuadra(q, g, nova) {
+  const pts = nova ? retPts(q) : q.pol;
+  const forma = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)));
+  const calc = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, { depth: 1.4, bevelEnabled: false }), lisa('#a9a69b'));
+  calc.rotation.x = Math.PI / 2; calc.position.y = 1.4; calc.receiveShadow = true; g.add(calc);
+  for (const l of q.lotes) objetoDoLote(l, g);
+  if (q.equip && !nova) objetoDoEquip(q.equip, g);
+  if (!nova) for (const a of q.arvores || []) arvore3d(g, a);
+}
+function objetoDeEstudo(q, g) {
+  /* o equipamento proposto ainda não tem modelo: um volume de estudo */
+  const e = q.equip, x0 = q.ix0 + 20, x1 = q.ix1 - 20, y0 = q.iy0 + 20, y1 = q.iy1 - 20;
+  caixa(g, q.x0, q.x1, 0, 1.4, q.y0, q.y1, '#a9a69b');
+  if (e.tipo === 'praca' || e.tipo === 'campo') {
+    caixa(g, q.ix0, q.ix1, 1.4, 2, q.iy0, q.iy1, e.tipo === 'campo' ? '#3f7f3a' : '#5f9a4c');
+    if (e.tipo === 'campo') for (const x of [q.ix0 + 20, q.ix1 - 24]) caixa(g, x, x + 4, 2, 50, (q.iy0 + q.iy1) / 2 - 36, (q.iy0 + q.iy1) / 2 + 36, '#f2f2ee');
+    else for (let k = 0; k < 6; k++) arvore3d(g, { x: q.ix0 + 40 + ((q.ix1 - q.ix0 - 80) * ((k * 37) % 100)) / 100, y: q.iy0 + 30 + ((q.iy1 - q.iy0 - 60) * ((k * 61 + 13) % 100)) / 100, r: 16 });
+    return;
+  }
+  const alt = { escola: 150, ubs: 90, igreja: 220, sede: 110 }[e.tipo] || 100;
+  caixa(g, x0, x1, 0, alt, y0, y1, e.cor);
+  caixa(g, x0 - 3, x1 + 3, alt, alt + 5, y0 - 3, y1 + 3, '#8f8a80');
+}
+
+/* pra onde a fachada olha (x, z): a câmera abre de frente, a três quartos */
+const NORMAL = { n: [0, -1], s: [0, 1], o: [-1, 0], l: [1, 0] };
+function frenteDe(it) {
+  if (it.tipo === 'lote') {
+    const l = it.l;
+    if (l.ang) { const vf = l.vf || -1; return [-Math.sin(l.ang) * vf, Math.cos(l.ang) * vf]; }
+    return NORMAL[l.frente] || null;
+  }
+  if (it.tipo === 'marco') return NORMAL[it.pc.frente] || null;
+  return null;
+}
+function criarVista(canvas) {
+  const rend = new THREE.WebGLRenderer({ canvas, antialias: true });
+  rend.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  rend.shadowMap.enabled = true; rend.shadowMap.type = THREE.PCFSoftShadowMap;
+  const cena = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(32, 4 / 3, 1, 60000);
+  cena.add(new THREE.HemisphereLight(0xe8eff4, 0x6d695d, 1.35));
+  const sol = new THREE.DirectionalLight(0xfff1da, 2.1);
+  sol.castShadow = true; sol.shadow.mapSize.set(2048, 2048); sol.shadow.bias = -0.0004;
+  cena.add(sol, sol.target);
+  const chao = new THREE.Mesh(new THREE.CircleGeometry(1, 72), new THREE.MeshLambertMaterial({ color: 0xb9b8ae }));
+  chao.rotation.x = -Math.PI / 2; chao.receiveShadow = true; cena.add(chao);
+  let grupo = null, raio = 200, elBase = 0.42, azBase = -0.75;
+  const orb = { az: -0.75, el: 0.42, dist: 600, alvo: new THREE.Vector3(), gira: true };
+  const reduzido = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function cores() {
+    const cs = getComputedStyle(document.documentElement);
+    rend.setClearColor(new THREE.Color(cs.getPropertyValue('--ceu3d').trim() || '#dfe6ea'));
+    chao.material.color.set(cs.getPropertyValue('--chao3d').trim() || '#b9b8ae');
+  }
+  function posicionar() {
+    const c = orb.alvo;
+    cam.position.set(c.x + orb.dist * Math.cos(orb.el) * Math.sin(orb.az), c.y + orb.dist * Math.sin(orb.el), c.z + orb.dist * Math.cos(orb.el) * Math.cos(orb.az));
+    cam.lookAt(c);
+  }
+  let pedido3 = 0, ultimo = 0;
+  function pedir() { if (!pedido3) pedido3 = requestAnimationFrame(quadro); }
+  function quadro(t) {
+    pedido3 = 0;
+    const dt = ultimo ? Math.min(0.05, (t - ultimo) / 1000) : 0; ultimo = t;
+    if (orb.gira && !reduzido && grupo) { orb.az += dt * 0.28; pedido3 = requestAnimationFrame(quadro); }
+    else ultimo = 0;
+    posicionar();
+    rend.render(cena, cam);
+  }
+  function ajustar() {
+    const r = canvas.getBoundingClientRect();
+    rend.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
+    cam.aspect = Math.max(1, r.width) / Math.max(1, r.height); cam.updateProjectionMatrix();
+    pedir();
+  }
+  new ResizeObserver(ajustar).observe(canvas);
+  function mostrar(it) {
+    $('carregando3d').hidden = false;
+    setTimeout(() => {
+      if (grupo) { cena.remove(grupo); grupo.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+      grupo = new THREE.Group();
+      try {
+        if (it.tipo === 'lote') objetoDoLote(it.l, grupo);
+        else if (it.tipo === 'marco') objetoDoMarco(it, grupo);
+        else if (it.tipo === 'prop') objetoDoProp(it, grupo);
+        else if (it.tipo === 'equip') objetoDoEquip(it.q.equip, grupo);
+        else if (it.tipo === 'quadra') objetoDaQuadra(it.q, grupo, false);
+        else if (it.tipo === 'quadraNova') { if (it.q.equip) objetoDeEstudo(it.q, grupo); else objetoDaQuadra(it.q, grupo, true); }
+      } catch (e) { console.error(e); }
+      const box = new THREE.Box3().setFromObject(grupo);
+      if (box.isEmpty()) box.set(new THREE.Vector3(-50, 0, -50), new THREE.Vector3(50, 50, 50));
+      const c = box.getCenter(new THREE.Vector3()), tam = box.getSize(new THREE.Vector3());
+      grupo.position.set(-c.x, 0, -c.z);
+      cena.add(grupo);
+      raio = Math.max(40, 0.5 * Math.hypot(tam.x, tam.y, tam.z));
+      orb.alvo.set(0, tam.y * 0.5, 0);
+      orb.dist = raio / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2)) * 1.04;
+      orb.el = elBase = tam.y > Math.max(tam.x, tam.z) * 1.5 ? 0.22 : 0.45;
+      const fr = frenteDe(it);
+      orb.az = azBase = fr ? Math.atan2(fr[0], fr[1]) + 0.55 : -0.75;
+      orb.gira = true;
+      const r2 = Math.max(tam.x, tam.z) * 2.2 + 200;
+      chao.scale.set(r2, r2, 1);
+      sol.position.set(raio * 1.6, raio * 2.4 + tam.y, raio * 1.1);
+      const sc = sol.shadow.camera, e = raio * 1.5;
+      sc.left = -e; sc.right = e; sc.top = e; sc.bottom = -e; sc.near = 1; sc.far = raio * 8 + tam.y * 2; sc.updateProjectionMatrix();
+      cores();
+      $('carregando3d').hidden = true;
+      pedir();
+    }, 16);
+  }
+  /* girar e aproximar */
+  const toques = new Map(); let base = null;
+  canvas.addEventListener('pointerdown', ev => { canvas.setPointerCapture(ev.pointerId); toques.set(ev.pointerId, [ev.clientX, ev.clientY]); orb.gira = false;
+    if (toques.size === 2) { const [a, b] = [...toques.values()]; base = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), dist: orb.dist }; } });
+  canvas.addEventListener('pointermove', ev => {
+    if (!toques.has(ev.pointerId)) return;
+    const ant = toques.get(ev.pointerId); toques.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    if (toques.size === 2 && base) { const [a, b] = [...toques.values()]; orb.dist = base.dist * base.d / Math.max(1, Math.hypot(a[0] - b[0], a[1] - b[1])); }
+    else { orb.az -= (ev.clientX - ant[0]) * 0.008; orb.el = Math.min(1.45, Math.max(0.05, orb.el + (ev.clientY - ant[1]) * 0.006)); }
+    orb.dist = Math.min(raio * 12, Math.max(raio * 0.6, orb.dist));
+    pedir();
+  });
+  const fim = ev => { toques.delete(ev.pointerId); if (toques.size < 2) base = null; };
+  canvas.addEventListener('pointerup', fim); canvas.addEventListener('pointercancel', fim);
+  canvas.addEventListener('wheel', ev => { ev.preventDefault(); orb.gira = false; orb.dist = Math.min(raio * 12, Math.max(raio * 0.6, orb.dist * Math.exp(ev.deltaY * 0.0012))); pedir(); }, { passive: false });
+  canvas.addEventListener('dblclick', () => { orb.az = azBase; orb.el = elBase; orb.dist = raio / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2)) * 1.04; orb.gira = true; pedir(); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { cores(); pedir(); });
+  new MutationObserver(() => { cores(); pedir(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  cores();
+  return { mostrar, pedir };
+}
+const vista = criarVista($('c3d'));
+/* pro teste automático: ?teste expõe o estado do mapa */
+if (new URLSearchParams(location.search).has('teste')) window.__planta = { estado, paraTela, zoomEm, lotes, lotesNovos, pecasSoltas, marcos, equipamentos, K };
+
+/* ======================================================
+   AS NOTAS DA PROPOSTA
+   ====================================================== */
+function notasDaProposta() {
+  const c = PROP.contagem;
+  const tipos = {};
+  for (const it of lotesNovos) { const k = it.l.muro ? 'casa de muro' : NOME_TIPO[it.l.tipo].toLowerCase(); tipos[k] = (tipos[k] || 0) + 1; }
+  const lista = Object.entries(tipos).sort((a, b) => b[1] - a[1]).map(([k, n]) => n + ' ' + k).join(', ');
+  const equip = PROP.quadras.filter(q => q.equip).map(q => q.equip.nome);
+  const conta = {};
+  for (const n of equip) conta[n] = (conta[n] || 0) + 1;
+  const eqTxt = Object.entries(conta).map(([n, k]) => (k > 1 ? k + ' × ' : '') + n.toLowerCase()).join(', ');
+  const novas = c.quadrasNovas + c.equipamentos;
+  const oeste = Math.round((K.VX0 - PROP.limite.x0) / M), norte = (K.VY0 - PROP.limite.y0) / M;
+  const saem = lotes.filter(it => it.sobProposta).length;
+  return `<p class="sobre">Proposta</p><h2>Dobrar a cidade pra oeste e pro norte</h2>
+  <dl class="numeros">
+    <div><dt>Quadras</dt><dd>${c.quadrasHoje} → ${c.quadrasHoje + novas}</dd><small>+${novas} novas</small></div>
+    <div><dt>De casa</dt><dd>+${c.quadrasNovas}</dd><small>${c.equipamentos} de equipamento</small></div>
+    <div><dt>Lotes</dt><dd>${c.lotesHoje} → ${c.lotesHoje + c.lotesNovos}</dd><small>+${c.lotesNovos} em quadra</small></div>
+  </dl>
+  <h3>Como a grade cresce</h3>
+  <ul>
+    <li>Três colunas novas a oeste e duas linhas ao norte, no mesmo passo da cidade: rua de 6,1 m e quadra de 35,6 × 17,8 m.</li>
+    <li>A favela, o atacarejo, o estádio e a orla não mudam. Quadra nova que encosta na favela ou no atacarejo encolhe; duas saíram inteiras (o atacarejo ocupa o lugar delas).</li>
+    <li>As avenidas continuam onde estão e cortam as quadras novas na diagonal, como já cortam no centro. Onde não sobra lote, a quadra vira praça.</li>
+    <li>${saem} das ${K.BEIRA.length - nFavela} casas de beira de estrada ficam debaixo da grade nova e saem: a estrada vira rua de cidade.</li>
+    <li>A avenida norte sobe reta pelo meio da coluna do estádio e parte as quadras em duas.</li>
+  </ul>
+  <h3>O que tem nas quadras novas</h3>
+  <p>${esc(lista)}. ${lotesNovos.filter(it => it.l.placa).length} lotes com comércio. Equipamentos: ${esc(eqTxt)}.</p>
+  <h3>O que muda no jogo pra fazer</h3>
+  <ul>
+    <li>O tabuleiro cresce uns ${oeste} m pra oeste (até x ${Math.round(PROP.limite.x0)}). ${norte > 3 ? `Pro norte, uns ${Math.round(norte)} m.` : `Pro norte, o de hoje já vai quase até lá: faltam ${norte.toFixed(1).replace('.', ',')} m da rua de cima.`}</li>
+    <li>A planta ganha as colunas e linhas novas; os lotes saem da mesma conta do lotear de hoje, e o resto da cidade fica igual.</li>
+    <li>Os quatro equipamentos novos (escola, posto de saúde, igreja, campo) e os dois terrenos de sede ainda não têm modelo.</li>
+  </ul>
+  <p class="nota">Clique numa quadra nova pra ver a quadra em 3D, ou num lote novo pra ver a casa que o gerador põe nele.</p>`;
+}
+$('notas').innerHTML = notasDaProposta();
+
+/* ======================================================
+   COMEÇO
+   ====================================================== */
+$('resumo').textContent = `${K.QUADRAS.length} quadras · ${nLotesQuadra} lotes em quadra · ${nFavela} casas na favela · ${K.BEIRA.length - nFavela} na beira da estrada · 1 m = ${M.toFixed(1).replace('.', ',')} un`;
+tamanho();
+let modoSalvo = 'atual';
+try { modoSalvo = localStorage.getItem('planta-modo') === 'proposta' ? 'proposta' : 'atual'; } catch (e) {}
+mudarModo(modoSalvo);
+new ResizeObserver(() => { tamanho(); pedirDesenho(); }).observe(mapa);
+aviso.hidden = true;
+/* abre com um imóvel na tela: o Residencial Bela Vista */
+const inicial = marcos.find(m => m.pc && m.pc.modelo === 'torre2') || lotes[0];
+selecionar(inicial);
+</script>

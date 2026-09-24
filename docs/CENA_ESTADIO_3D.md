@@ -1750,6 +1750,23 @@ toda pixação e toda placa da cidade tinham um fio tracejado em cima e
 embaixo. Agora cada célula tem um respiro de 4 px (o passo continua
 256), e a placa estende o fundo dela no respiro.
 
+O que não é fiel, dito com todas as letras:
+
+- **A rua sem saída não tem balão redondo.** O miolo tem 19 m de
+  largura: um balão de retorno ocuparia tudo e não sobraria lote em
+  volta. Ficou o T, que é o retorno das vilas daqui.
+- **Os prédios são mais altos que tudo na cidade** (o prédio alto do
+  centro tem 45 m; estes, 60 e 52). É o que as fotos mostram — 18 e 15
+  andares —, e de longe eles mandam no horizonte do estádio.
+- **Os nomes EDIFÍCIO MIRANTE e RESIDENCIAL BELA VISTA são meus**; a
+  foto não mostra nome legível. É trocar a célula no pintor.
+- **A caixa de correio diz CORREIO**, não POST: a cidade é brasileira.
+  A cor ficou a da referência (vermelha); a daqui seria amarela.
+- **O carro parado continua a caixa de carro da cidade**, que de perto
+  parece um degrau: foi por isso que o T ficou sem carro.
+- Os cestos da referência têm uma trama mais fina do que dá pra pintar
+  a 200 px por metro; de longe eles leem como chapa lisa colorida.
+
 ### 4.29. O poste de concreto
 
 O poste que o dono mandou (a foto dos dois postes de concreto) veste
@@ -1769,22 +1786,61 @@ baldio, que davam pra rua do estádio e ainda eram o modelo velho; o
 poste pequeno continua só onde é de praça e de pátio. Custo: uns 230
 triângulos por poste (18 mil ao todo), na mesma malha dos props.
 
-O que não é fiel, dito com todas as letras:
+### 4.30. A planta em HTML e a proposta de expansão
 
-- **A rua sem saída não tem balão redondo.** O miolo tem 19 m de
-  largura: um balão de retorno ocuparia tudo e não sobraria lote em
-  volta. Ficou o T, que é o retorno das vilas daqui.
-- **Os prédios são mais altos que tudo na cidade** (o prédio alto do
-  centro tem 45 m; estes, 60 e 52). É o que as fotos mostram — 18 e 15
-  andares —, e de longe eles mandam no horizonte do estádio.
-- **Os nomes EDIFÍCIO MIRANTE e RESIDENCIAL BELA VISTA são meus**; a
-  foto não mostra nome legível. É trocar a célula no pintor.
-- **A caixa de correio diz CORREIO**, não POST: a cidade é brasileira.
-  A cor ficou a da referência (vermelha); a daqui seria amarela.
-- **O carro parado continua a caixa de carro da cidade**, que de perto
-  parece um degrau: foi por isso que o T ficou sem carro.
-- Os cestos da referência têm uma trama mais fina do que dá pra pintar
-  a 200 px por metro; de longe eles leem como chapa lisa colorida.
+`ferramentas/planta_html/` é uma página solta, publicada como artefato. Ela
+desenha a planta inteira nas cores do diagrama das quadras (o lote pela
+cor do tipo e o rótulo "casa n T1", calçada, miolo, quintal, árvore,
+carro, poste e prop), com a régua em coordenada de planta. O que se
+clica abre em 3D, e o 3D sai do mesmo código do jogo:
+
+- a casa do lote vem do `planoDaCasa`/`montarCasa`, com o letreiro e a
+  pixação no lugar que o `lugarDoDecalque` dá;
+- o marco e as torres vêm do `montarModelos`;
+- o poste e os props vêm do `moldeDaPeca`;
+- o equipamento aparece nos volumes em caixa, sem textura.
+
+A página roda a planta de verdade (`dados/cena_estadio.js` cortado antes
+da cena). Então, quando a cidade mudar, é rodar `montar.sh` de novo e
+republicar.
+
+A segunda aba é a proposta de dobrar as quadras crescendo pra oeste e
+pro norte (`proposta.js`):
+
+| | hoje | com a proposta |
+|---|---|---|
+| quadras | 37 | 83 (+35 de casa, +11 de equipamento ou praça) |
+| lotes em quadra | 323 | 724 |
+| casas de beira de estrada | 75 | 15 (60 ficam debaixo da grade nova) |
+
+(Os 627 lotes que a planta conta em `K.LOTES` são os 323 de quadra mais
+as 229 casas da favela e as 75 de beira.)
+
+- **A grade.** São três colunas a oeste (até x −2.360) e duas linhas ao
+  norte, no passo da grade de hoje: rua de 6,1 m e quadra de
+  35,6 × 17,8 m.
+- **O que não muda.** Favela, atacarejo, estádio e orla ficam como
+  estão. A quadra que encosta na favela ou no atacarejo encolhe, e
+  fica a opção de maior área. As duas que caíam em cima do atacarejo
+  (0,5 e 0,6) saem.
+- **As avenidas** ficam onde estão e cortam as quadras novas. O lote
+  que encosta nelas sai, e a quadra que fica com menos de 3 lotes vira
+  praça. A avenida norte parte ao meio as quadras da coluna 4.
+- **Os lotes** saem da mesma regra do `lotear`: testada, fundo, tipo,
+  placa em 26%, pixação, 1 em 8 casa de muro. A diferença é que são
+  sorteados por hash do lugar, não pelo `rng()` do jogo.
+
+O que não é fiel:
+
+- **A proposta não está no jogo.** Se a planta ganhar as colunas novas
+  de verdade, os lotes vêm do `rng()`. Mudam os detalhes (tipo, placa,
+  pixação), não a conta.
+- **Os equipamentos novos não têm modelo:** escola, posto de saúde,
+  igreja, campo e os dois terrenos de sede. O 3D mostra um volume de
+  estudo.
+- **Os nomes e o lugar de cada equipamento são sugestão**, não pedido.
+- **O tabuleiro andável** precisa crescer uns 58 m pra oeste. Pro norte,
+  o de hoje já vai quase até lá: falta 1,4 m da rua de cima.
 
 ### 4.16. Dois bugs que a sede menor desenterrou
 
@@ -2311,6 +2367,7 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX, as duas torres do condomínio do baldio (Edifício Mirante e Residencial Bela Vista, com o muro, a guarita e os portões) e a montagem de cada um |
 | `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
 | `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo) e as casas de muro (M1 a M4), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o lote clicado, `proposta.js` gera a expansão pra oeste e pro norte, `montar.sh` junta a página com a planta, os módulos 3D e as folhas numa pasta pra publicar |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`) e escreve o atlas; roda de novo sempre que mudar uma peça |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
