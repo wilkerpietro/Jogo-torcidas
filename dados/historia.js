@@ -19,7 +19,7 @@ TO.dados.historia = {
 
 'brasileirao-serie-a': {
  nome:'Brasileirão Série A',
- nota:'Taça Brasil (1959–68) e Roberto Gomes Pedrosa (1967–70) contam como edições do nacional, como a CBF conta.',
+ nota:_t('Taça Brasil (1959–68) e Roberto Gomes Pedrosa (1967–70) contam como edições do nacional, como a CBF conta.'),
  maiores:[['Palmeiras',12],['Flamengo',8],['Santos',8],['Corinthians',7],
   ['São Paulo',6],['Cruzeiro',4],['Fluminense',4],['Vasco da Gama',4],
   ['Internacional',3],['Botafogo',3],['Grêmio',2],['Bahia',2],['Atlético-MG',2]],
@@ -62,7 +62,7 @@ TO.dados.historia = {
 
 'brasileirao-serie-b': {
  nome:'Brasileirão Série B',
- nota:'A Série B não foi disputada em 1973–79, 1986–87 e 1993; em 2000 o Módulo Amarelo não é reconhecido pela CBF.',
+ nota:_t('A Série B não foi disputada em 1973–79, 1986–87 e 1993; em 2000 o Módulo Amarelo não é reconhecido pela CBF.'),
  anos:[
   [2025,'Coritiba','Athletico-PR'],[2024,'Santos','Mirassol'],
   [2023,'Vitória','Juventude'],[2022,'Cruzeiro','Grêmio'],
@@ -89,7 +89,7 @@ TO.dados.historia = {
 
 'brasileirao-serie-c': {
  nome:'Brasileirão Série C',
- nota:'A Série C não foi disputada em 1982–87, 1989, 1991, 1993 e 2000.',
+ nota:_t('A Série C não foi disputada em 1982–87, 1989, 1991, 1993 e 2000.'),
  anos:[
   [2025,'Ponte Preta','Londrina'],[2024,'Volta Redonda','Athletic-MG'],
   [2023,'Amazonas','Brusque'],[2022,'Mirassol','ABC'],
@@ -112,7 +112,7 @@ TO.dados.historia = {
 
 'brasileirao-serie-d': {
  nome:'Brasileirão Série D',
- nota:'A Série D existe desde 2009.',
+ nota:_t('A Série D existe desde 2009.'),
  anos:[
   [2025,'Barra-SC',null],[2024,'Retrô','Anápolis'],
   [2023,'Ferroviária','Caxias'],[2022,'América-RN','Pouso Alegre'],
@@ -151,7 +151,7 @@ TO.dados.historia = {
 
 'copa-do-nordeste': {
  nome:'Copa do Nordeste',
- nota:'A copa moderna: 1994 e de 1997 em diante (parou em 2004–09, 2011–12).',
+ nota:_t('A copa moderna: 1994 e de 1997 em diante (parou em 2004–09, 2011–12).'),
  anos:[
   [2025,'Bahia','Confiança'],[2024,'Fortaleza','CRB'],
   [2023,'Ceará','Sport'],[2022,'Fortaleza','Sport'],
@@ -167,7 +167,7 @@ TO.dados.historia = {
 
 'paulistao': {
  nome:'Paulistão',
- nota:'A lista ano a ano entra de 1971 pra cá; a contagem de títulos vale a história inteira, desde 1902.',
+ nota:_t('A lista ano a ano entra de 1971 pra cá; a contagem de títulos vale a história inteira, desde 1902.'),
  maiores:[['Corinthians',31],['Palmeiras',26],['Santos',22],['São Paulo',22],
   ['Paulistano',11],['Portuguesa',3],['Ituano',2]],
  anos:[
@@ -202,7 +202,7 @@ TO.dados.historia = {
 
 'cariocao': {
  nome:'Cariocão',
- nota:'A lista ano a ano entra de 1971 pra cá; a contagem de títulos vale a história inteira, desde 1906.',
+ nota:_t('A lista ano a ano entra de 1971 pra cá; a contagem de títulos vale a história inteira, desde 1906.'),
  maiores:[['Flamengo',39],['Fluminense',33],['Vasco da Gama',24],
   ['Botafogo',21],['América-RJ',7],['Bangu',2]],
  anos:[
@@ -237,7 +237,7 @@ TO.dados.historia = {
 
 'mineiro': {
  nome:'Campeonato Mineiro',
- nota:'A lista ano a ano entra de 2016 pra cá; a contagem de títulos vale a história inteira, desde 1915.',
+ nota:_t('A lista ano a ano entra de 2016 pra cá; a contagem de títulos vale a história inteira, desde 1915.'),
  maiores:[['Atlético-MG',50],['Cruzeiro',38],['América-MG',16],['Villa Nova',5]],
  anos:[
   [2025,'Atlético-MG','América-MG'],[2024,'Atlético-MG','Cruzeiro'],
@@ -248,7 +248,7 @@ TO.dados.historia = {
 
 'gauchao': {
  nome:'Gauchão',
- nota:'A lista ano a ano entra de 2011 pra cá; a contagem de títulos vale a história inteira, desde 1919.',
+ nota:_t('A lista ano a ano entra de 2011 pra cá; a contagem de títulos vale a história inteira, desde 1919.'),
  maiores:[['Internacional',46],['Grêmio',43],['Juventude',1],['Caxias',1]],
  anos:[
   [2025,'Internacional','Grêmio'],[2024,'Grêmio','Juventude'],
@@ -262,12 +262,12 @@ TO.dados.historia = {
 
 'catarinense': {
  nome:'Campeonato Catarinense',
- nota:'A lista ano a ano entra do que está confirmado; a história completa entra por partes, pra não inventar dado.',
+ nota:_t('A lista ano a ano entra do que está confirmado; a história completa entra por partes, pra não inventar dado.'),
  anos:[[2025,'Avaí','Chapecoense']]},
 
 'paranaense': {
  nome:'Campeonato Paranaense',
- nota:'A lista ano a ano entra do que está confirmado; a história completa entra por partes, pra não inventar dado.',
+ nota:_t('A lista ano a ano entra do que está confirmado; a história completa entra por partes, pra não inventar dado.'),
  anos:[[2025,'Operário-PR',null]]},
 
 'libertadores': {
@@ -328,7 +328,7 @@ TO.dados.historia = {
 
 'liga:Argentina': {
  nome:'Primeira divisão argentina',
- nota:'A lista ano a ano entra de 2015 pra cá; a contagem de títulos vale a era profissional inteira, desde 1931.',
+ nota:_t('A lista ano a ano entra de 2015 pra cá; a contagem de títulos vale a era profissional inteira, desde 1931.'),
  maiores:[['River Plate',38],['Boca Juniors',35],['Racing',18],
   ['Independiente',16],['San Lorenzo',15],['Vélez Sarsfield',10],
   ['Estudiantes',7],['Lanús',2],['Platense',1]],
@@ -343,7 +343,7 @@ TO.dados.historia = {
 
 'liga:Chile': {
  nome:'Primeira divisão chilena',
- nota:'A lista ano a ano entra de 2018 pra cá; a contagem de títulos vale desde 1933.',
+ nota:_t('A lista ano a ano entra de 2018 pra cá; a contagem de títulos vale desde 1933.'),
  maiores:[['Colo-Colo',34],['Universidad de Chile',18],['Universidad Católica',17],
   ['Cobreloa',8],['Unión Española',7]],
  anos:[
@@ -354,7 +354,7 @@ TO.dados.historia = {
 
 'liga:Uruguai': {
  nome:'Primeira divisão uruguaia',
- nota:'A lista ano a ano entra de 2017 pra cá; a contagem de títulos vale desde 1900.',
+ nota:_t('A lista ano a ano entra de 2017 pra cá; a contagem de títulos vale desde 1900.'),
  maiores:[['Peñarol',52],['Nacional-URU',50],['Defensor Sporting',4],
   ['Danubio',4]],
  anos:[
@@ -366,7 +366,7 @@ TO.dados.historia = {
 
 'liga:Colômbia': {
  nome:'Primeira divisão colombiana',
- nota:'A lista ano a ano entra de 2020 pra cá (dois torneios por ano); a contagem vale desde 1948.',
+ nota:_t('A lista ano a ano entra de 2020 pra cá (dois torneios por ano); a contagem vale desde 1948.'),
  maiores:[['Atlético Nacional',18],['Millonarios',16],['América de Cali',15],
   ['Junior',11],['Santa Fe',10],['Deportivo Cali',10]],
  anos:[
@@ -379,7 +379,7 @@ TO.dados.historia = {
 
 'liga:Equador': {
  nome:'Primeira divisão equatoriana',
- nota:'A lista ano a ano entra de 2019 pra cá; a contagem vale desde 1957.',
+ nota:_t('A lista ano a ano entra de 2019 pra cá; a contagem vale desde 1957.'),
  maiores:[['Barcelona-EQU',16],['LDU Quito',13],['Emelec',14],
   ['El Nacional',13],['Independiente del Valle',2]],
  anos:[
@@ -390,7 +390,7 @@ TO.dados.historia = {
 
 'liga:Paraguai': {
  nome:'Primeira divisão paraguaia',
- nota:'A lista ano a ano entra do que está confirmado; a contagem vale desde 1906.',
+ nota:_t('A lista ano a ano entra do que está confirmado; a contagem vale desde 1906.'),
  maiores:[['Olimpia',47],['Cerro Porteño',35],['Libertad',26],['Guaraní-PAR',11]],
  anos:[
   ['2025 (Clausura)','Cerro Porteño',null],['2025 (Apertura)','Libertad',null],
@@ -399,7 +399,7 @@ TO.dados.historia = {
 
 'liga:Peru': {
  nome:'Primeira divisão peruana',
- nota:'A lista ano a ano entra de 2015 pra cá; a contagem vale desde 1912.',
+ nota:_t('A lista ano a ano entra de 2015 pra cá; a contagem vale desde 1912.'),
  maiores:[['Universitario',29],['Alianza Lima',25],['Sporting Cristal',20]],
  anos:[
   [2025,'Universitario','Cusco FC'],[2024,'Universitario','Alianza Lima'],
@@ -411,18 +411,18 @@ TO.dados.historia = {
 
 'liga:Bolívia': {
  nome:'Primeira divisão boliviana',
- nota:'A lista ano a ano entra do que está confirmado; a contagem vale desde 1950.',
+ nota:_t('A lista ano a ano entra do que está confirmado; a contagem vale desde 1950.'),
  maiores:[['Bolívar',30],['The Strongest',18],['Jorge Wilstermann',11]],
  anos:[[2025,'Always Ready',null]]},
 
 'liga:Venezuela': {
  nome:'Primeira divisão venezuelana',
- nota:'O registro ano a ano entra a partir do jogo.',
+ nota:_t('O registro ano a ano entra a partir do jogo.'),
  anos:[]},
 
 'copa:Copa Argentina': {
  nome:'Copa Argentina',
- nota:'A copa moderna, desde a edição 2011-12.',
+ nota:_t('A copa moderna, desde a edição 2011-12.'),
  anos:[
   [2025,'Independiente Rivadavia',null],[2024,'Central Córdoba','Vélez Sarsfield'],
   [2023,'Estudiantes','Defensa y Justicia'],[2022,'Patronato','Talleres'],

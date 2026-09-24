@@ -170,12 +170,12 @@ TO.competicoes = (function(){
     }
     if(!feitos) return {ok:false, pontos:0, gasto:0,
       msg: forcaDe(E, id) >= FORCA_MAX
-        ? 'O elenco já está no teto.' : 'Não dá: falta caixa.'};
+        ? _t('O elenco já está no teto.') : _t('Não dá: falta caixa.')};
     const time = (M().time(id)||{}).nome || id;
-    TO.estado.lancar(E, `Reforço no elenco do ${time}`, -gasto);
-    TO.estado.anotar(E, `A torcida reforçou o elenco do ${time}: `+
-      `+${feitos} de força.`, 'boa', {cat:6, assunto:'elenco'});
-    return {ok:true, pontos:feitos, gasto, msg:`${time}: +${feitos} de força`};
+    TO.estado.lancar(E, _t('Reforço no elenco do {time}', {time}), -gasto);
+    TO.estado.anotar(E, _t('A torcida reforçou o elenco do {time}: +{n} de força.', {time, n:feitos}),
+      'boa', {cat:6, assunto:'elenco'});
+    return {ok:true, pontos:feitos, gasto, msg:_t('{time}: +{n} de força', {time, n:feitos})};
   }
 
 
@@ -1095,7 +1095,7 @@ TO.competicoes = (function(){
     const fora = M().todosTimes
       .filter(t=>t.estadio && !deles.has(t.estadio))
       .sort((x,y)=>(y.capacidade||0)-(x.capacidade||0))[0];
-    return fora ? fora.estadio : 'campo neutro';
+    return fora ? fora.estadio : _t('campo neutro');
   }
 
   function avancarCopa(E, comp, semana){
@@ -1671,7 +1671,7 @@ TO.competicoes = (function(){
 
   /* competições rolando nesta semana, pra tela de calendário */
   function faseDaSemana(semana){
-    return semana < INICIO_NACIONAL ? 'Regionais e estaduais' : 'Brasileirão';
+    return semana < INICIO_NACIONAL ? _t('Regionais e estaduais') : 'Brasileirão';
   }
 
   /* =======================================================
@@ -1818,10 +1818,10 @@ TO.competicoes = (function(){
        fecha de mata-mata de "Semifinal", não de "Rodada 18" */
     let n = 0;
     const fora = comp.rodadas.map(r=>({
-      rot: r.rot || `Rodada ${++n}`, semana:r.semana, dia,
+      rot: r.rot ? _t(r.rot) : _t('Rodada {n}', {n:++n}), semana:r.semana, dia,
       jogos:r.jogos, mata:!!r.rot}));
     for(const m of comp.mata)
-      fora.push({rot:m.fase, semana:m.semana, dia:m.dia||dia,
+      fora.push({rot:_t(m.fase), semana:m.semana, dia:m.dia||dia,
                  jogos:m.jogos, mata:true});
     return fora;
   }

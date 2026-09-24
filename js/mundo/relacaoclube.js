@@ -32,13 +32,13 @@ TO.relacaoClube = (function(){
      ======================================================= */
   const FAIXAS = [
     {min:0,  max:25,  ingressos:0,    lojaBuff:0,    caravana:0,
-     rot:'ruim'},
+     rot:_t('ruim')},
     {min:26, max:50,  ingressos:0.10, lojaBuff:0,    caravana:0,
-     rot:'morna'},
+     rot:_t('morna')},
     {min:51, max:75,  ingressos:0.30, lojaBuff:0.05, caravana:0,
-     rot:'boa'},
+     rot:_t('boa')},
     {min:76, max:100, ingressos:0.60, lojaBuff:0.15, caravana:0.20,
-     rot:'ótima'}
+     rot:_t('ótima')}
   ];
   function faixaDe(v){
     for(const f of FAIXAS) if(v <= f.max) return f;
@@ -105,8 +105,8 @@ TO.relacaoClube = (function(){
       else if(pct > 0.2) delta = 1;
     }
     if(delta) mexer(E, delta, casa
-      ? `Casa cheia: ${Math.round(pct*100)}% dos membros no estádio`
-      : `Caravana forte: ${Math.round(pct*100)}% dos membros na viagem`);
+      ? _t('Casa cheia: {pct}% dos membros no estádio', {pct:Math.round(pct*100)})
+      : _t('Caravana forte: {pct}% dos membros na viagem', {pct:Math.round(pct*100)}));
     return delta;
   }
 
@@ -126,8 +126,8 @@ TO.relacaoClube = (function(){
     if(!t) return 0;
     const delta = casa ? t.casa : t.fora;
     mexer(E, delta, tipo === 'arquibancada'
-      ? `Briga na arquibancada, jogo ${casa ? 'em casa' : 'fora'}`
-      : `Briga nos arredores do estádio, jogo ${casa ? 'em casa' : 'fora'}`,
+      ? (casa ? _t('Briga na arquibancada, jogo em casa') : _t('Briga na arquibancada, jogo fora'))
+      : (casa ? _t('Briga nos arredores do estádio, jogo em casa') : _t('Briga nos arredores do estádio, jogo fora')),
       'briga');
     return delta;
   }

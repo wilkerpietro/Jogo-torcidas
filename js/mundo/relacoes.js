@@ -410,7 +410,7 @@ TO.relacoes = (function(){
     let mensCheia = 0;
     for(const [cargo, n] of TO.membros.planoDeCargos(total, o.cargos))
       mensCheia += TO.membros.CARGOS[cargo].mensalidade * n;
-    pon(rec, `Mensalidades (${pagantes})`, mensCheia * pagantes / total);
+    pon(rec, _t('Mensalidades ({n})', {n:pagantes}), mensCheia * pagantes / total);
 
     const fx = FIN().faixaDaMoral ? FIN().faixaDaMoral((t.moral||12)*5) : 1;
     const fator = fx * (0.7 + ((t.prestigio||0)/20)*0.4
@@ -423,29 +423,31 @@ TO.relacoes = (function(){
       /* bar quebrado no ataque rende metade por 45 dias, pra elas
          também (dono, 10/09/2026) */
       const dd = FIN().diasDeDano ? FIN().diasDeDano(b, hojeAbs) : 0;
-      pon(rec, `Bar${ba?' — '+ba.nome:''} (n${b.nivel})`+
-               (dd ? ` · quebrado, ${dd} d` : ''),
+      pon(rec, (ba ? _t('Bar — {bairro} (n{nivel})', {bairro:ba.nome, nivel:b.nivel})
+                   : _t('Bar (n{nivel})', {nivel:b.nivel}))+
+               (dd ? _t(' · quebrado, {d} d', {d:dd}) : ''),
           R.bar[b.nivel] * multB(ba) * fator
             * (FIN().multDano ? FIN().multDano(b, hojeAbs) : 1));
     });
     (t.lojas||[]).forEach((l, i)=>{
       const ba = bairroIA(o, 'loja', i);
-      pon(rec, `Loja${ba?' — '+ba.nome:''} (n${l.nivel})`+
-               `${t.fabrica?' · fábrica':''}`,
+      pon(rec, (ba ? _t('Loja — {bairro} (n{nivel})', {bairro:ba.nome, nivel:l.nivel})
+                   : _t('Loja (n{nivel})', {nivel:l.nivel}))+
+               (t.fabrica ? _t(' · fábrica') : ''),
           R.loja[l.nivel] * multB(ba) * fator);
     });
     for(let i=0; i<(t.subsedes||0); i++){
       const ba = bairroIA(o, 'subsede', i);
-      pon(rec, `Subsede${ba?' — '+ba.nome:''}`,
+      pon(rec, ba ? _t('Subsede — {bairro}', {bairro:ba.nome}) : _t('Subsede'),
           R.subsede * multB(ba) * fator);
     }
     for(const f of (t.filiais||[]))
-      pon(rec, `Subsede — ${(TO.dados.cidades.find(x=>x.id===f.cidade)||{}).nome
-                 || f.cidade} (n${f.nivel})`,
+      pon(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:(TO.dados.cidades.find(x=>x.id===f.cidade)||{}).nome
+                 || f.cidade, nivel:f.nivel}),
           R.subsede * (E && id && FIN().multFilial
             ? FIN().multFilial(E, f, id) : (t.mult||1)) * fator);
 
-    pon(des, `Manutenção da sede (n${t.sede})`, FIN().MANUT_SEDE[t.sede]);
+    pon(des, _t('Manutenção da sede (n{n})', {n:t.sede}), FIN().MANUT_SEDE[t.sede]);
     /* a fábrica delas corta os MESMOS 50% do custo da loja */
     const corteFab = t.fabrica ? fab.corteCusto : 0;
     let manutCom = 0;
@@ -454,25 +456,25 @@ TO.relacoes = (function(){
     manutCom += (t.subsedes||0) * MAN.subsede[1];
     for(const f of (t.filiais||[]))
       manutCom += MAN.subsede[f.nivel] || MAN.subsede[1];
-    pon(des, 'Manutenção do comércio', manutCom);
+    pon(des, _t('Manutenção do comércio'), manutCom);
     let insumo = 0;
     for(const l of (t.lojas||[]))
       insumo += R.loja[l.nivel]*FIN().INSUMO*(1-corteFab);
-    pon(des, `Insumos das lojas${t.fabrica?' · fábrica':''}`, insumo);
+    pon(des, t.fabrica ? _t('Insumos das lojas · fábrica') : _t('Insumos das lojas'), insumo);
     /* as folhas nas mensalidades CHEIAS do jogador */
-    pon(des, 'Ônibus da torcida', frotaIA(t) * FIN().ONIBUS_MES);
-    pon(des, 'Professores de MMA', mmaDe(t) * FIN().MMA_MES);
-    pon(des, 'Advogados', advogadosIA(t) * FIN().ADVOGADO_MES);
+    pon(des, _t('Ônibus da torcida'), frotaIA(t) * FIN().ONIBUS_MES);
+    pon(des, _t('Professores de MMA'), mmaDe(t) * FIN().MMA_MES);
+    pon(des, _t('Advogados'), advogadosIA(t) * FIN().ADVOGADO_MES);
     /* recepção de aliado: o que ela gastou hospedando nas últimas 4
        semanas — o mês corrido, na mesma unidade do resto do balanço */
     if(E && (t.recepcoes||[]).length){
       const sa = semanaAbs(E);
       t.recepcoes = t.recepcoes.filter(x=>sa - x.sem < 4);
       const gasto = t.recepcoes.reduce((s,x)=>s+x.v, 0);
-      pon(des, `Recepção de aliados (${t.recepcoes.length})`, gasto);
+      pon(des, _t('Recepção de aliados ({n})', {n:t.recepcoes.length}), gasto);
     }
-    if(t.enfermaria) pon(des, 'Enfermaria da sede', P().ANEXOS.enfermaria.mes);
-    if(t.galpao)     pon(des, 'Galpão de material', P().ANEXOS.galpao.mes);
+    if(t.enfermaria) pon(des, _t('Enfermaria da sede'), P().ANEXOS.enfermaria.mes);
+    if(t.galpao)     pon(des, _t('Galpão de material'), P().ANEXOS.galpao.mes);
 
     const soma = l => l.reduce((s,x)=>s+x.v, 0);
     return {receitas:rec, despesas:des,
@@ -584,21 +586,21 @@ TO.relacoes = (function(){
     const v = Math.round(valor);
     if(!t || !v) return;
     (t.extrato = t.extrato || []).unshift(
-      {q:`${E.data.ano} s${E.data.semana}`, d:descricao, v});
+      {q:_t('{ano} s{semana}', {ano:E.data.ano, semana:E.data.semana}), d:descricao, v});
     if(t.extrato.length > 36) t.extrato.pop();
   }
   const ROTULO_COMPRA = {
-    sede:'Ampliação da sede', bar:'Bar novo', loja:'Loja nova',
-    subsede:'Subsede nova', filial:'Subsede em outra cidade',
-    elenco:'Investimento no clube', onibus:'Ônibus novo',
-    bombas:'Bombas ×5', fabrica:'Fábrica de material',
-    'anexo:galpao':'Galpão de material',
-    'anexo:enfermaria':'Enfermaria da sede',
-    'anexo:cofre':'Cofre blindado',
-    'area-treino':'Área de treino ampliada',
-    'ampliar:bar':'Ampliação do bar', 'ampliar:loja':'Ampliação da loja',
-    'ampliar:subsede':'Ampliação da subsede',
-    'ampliar:filial':'Ampliação da filial'
+    sede:_t('Ampliação da sede'), bar:_t('Bar novo'), loja:_t('Loja nova'),
+    subsede:_t('Subsede nova'), filial:_t('Subsede em outra cidade'),
+    elenco:_t('Investimento no clube'), onibus:_t('Ônibus novo'),
+    bombas:_t('Bombas ×5'), fabrica:_t('Fábrica de material'),
+    'anexo:galpao':_t('Galpão de material'),
+    'anexo:enfermaria':_t('Enfermaria da sede'),
+    'anexo:cofre':_t('Cofre blindado'),
+    'area-treino':_t('Área de treino ampliada'),
+    'ampliar:bar':_t('Ampliação do bar'), 'ampliar:loja':_t('Ampliação da loja'),
+    'ampliar:subsede':_t('Ampliação da subsede'),
+    'ampliar:filial':_t('Ampliação da filial')
   };
 
   /* =======================================================
@@ -612,34 +614,37 @@ TO.relacoes = (function(){
      ======================================================= */
   const PRESENTE_GANHO = 50;
   const PRESENTES = ['sede', 'loja', 'bar', 'filial'];
-  const ROTULO_PRESENTE = {sede:'Ampliar a sede', loja:'Abrir uma loja',
-                           bar:'Abrir um bar', filial:'Abrir subsede em outra cidade'};
+  const ROTULO_PRESENTE = {sede:_t('Ampliar a sede'), loja:_t('Abrir uma loja'),
+                           bar:_t('Abrir um bar'), filial:_t('Abrir subsede em outra cidade')};
   function presenteDe(E, id, tipo){
     const t = mundo(E)[id];
-    if(!t) return {custo:null, trava:'torcida fora do mundo'};
+    if(!t) return {custo:null, trava:_t('torcida fora do mundo')};
     const T = P().TETO, PT = P().PONTO, SD = P().SEDE, FL = P().FILIAL;
     if(tipo === 'sede'){
       const prox = SD[t.sede + 1];
-      return prox ? {custo:prox.custo, rot:`sede nível ${t.sede + 1}`}
-                  : {custo:null, trava:'a sede dela já é o Complexo (nível 6)'};
+      return prox ? {custo:prox.custo, rot:_t('sede nível {n}', {n:t.sede + 1})}
+                  : {custo:null, trava:_t('a sede dela já é o Complexo (nível 6)')};
     }
     if(tipo === 'filial'){
       const lim = FL.porSede[t.sede] || 0;
       if((t.filiais || []).length >= lim)
         return {custo:null, trava: lim
-          ? `a sede nível ${t.sede} dela banca ${lim} ${lim===1?'filial':'filiais'}`
-          : `a sede nível ${t.sede} dela ainda não banca filial`};
+          ? _tn(lim, 'a sede nível {s} dela banca {n} filial', 'a sede nível {s} dela banca {n} filiais', {s:t.sede})
+          : _t('a sede nível {s} dela ainda não banca filial', {s:t.sede})};
       const cidade = melhorCidadeFilial(E, id, t);
       return cidade
-        ? {custo:FL.compra, cidade, rot:`subsede em ${FIN().nomeCidade(cidade)}`}
-        : {custo:null, trava:'não há cidade com torcedor do clube dela sem subsede'};
+        ? {custo:FL.compra, cidade, rot:_t('subsede em {cidade}', {cidade:FIN().nomeCidade(cidade)})}
+        : {custo:null, trava:_t('não há cidade com torcedor do clube dela sem subsede')};
     }
     const lim = T[tipo][t.sede], cfg = PT[tipo];
     const quantos = (t[cfg.plural] || []).length;
     if(quantos >= lim.qtd)
-      return {custo:null, trava:`a sede nível ${t.sede} dela `+
-        (lim.qtd ? `não comporta mais ${cfg.plural}` : `não comporta ${cfg.rot.toLowerCase()}`)};
-    return {custo:cfg.compra, rot: tipo === 'bar' ? 'bar novo' : 'loja nova'};
+      return {custo:null, trava: tipo === 'bar'
+        ? (lim.qtd ? _t('a sede nível {s} dela não comporta mais bares', {s:t.sede})
+                   : _t('a sede nível {s} dela não comporta bar', {s:t.sede}))
+        : (lim.qtd ? _t('a sede nível {s} dela não comporta mais lojas', {s:t.sede})
+                   : _t('a sede nível {s} dela não comporta loja', {s:t.sede}))};
+    return {custo:cfg.compra, rot: tipo === 'bar' ? _t('bar novo') : _t('loja nova')};
   }
   function presentear(E, id, tipo){
     const pr = presenteDe(E, id, tipo);
@@ -651,8 +656,8 @@ TO.relacoes = (function(){
     else (t[P().PONTO[tipo].plural] = t[P().PONTO[tipo].plural] || []).push({nivel:1});
     /* no extrato dela, com o valor do presente — o caixa dela não mexe */
     (t.extrato = t.extrato || []).unshift(
-      {q:`${E.data.ano} s${E.data.semana}`,
-       d:`Presente da ${E.torcida.nome}: ${pr.rot}`, v:pr.custo});
+      {q:_t('{ano} s{semana}', {ano:E.data.ano, semana:E.data.semana}),
+       d:_t('Presente da {nome}: {rot}', {nome:E.torcida.nome, rot:pr.rot}), v:pr.custo});
     if(t.extrato.length > 36) t.extrato.pop();
     const ganho = PRESENTE_GANHO;
     E.relacoes[id] = U.limitar(nivel(E, id) + ganho, -100, 100);
@@ -876,7 +881,7 @@ TO.relacoes = (function(){
       }
       const b = balanco(t, E, id);
       t.caixa += Math.round(b.saldo * SEM);
-      lancarIA(E, id, 'Semana — comércio, folhas e manutenção',
+      lancarIA(E, id, _t('Semana — comércio, folhas e manutenção'),
                Math.round(b.saldo * SEM));
 
       /* A CARAVANA DELAS PAGA ESTRADA (assimetria fechada pelo dono,
@@ -896,7 +901,7 @@ TO.relacoes = (function(){
           const n = TO.planejamento.caravanaDe(o, 0, E);
           const cv = TO.planejamento.custoCaravanaIA(n, frotaIA(t));
           t.caixa -= cv;
-          lancarIA(E, id, `Caravana — jogo fora (${n} cabeças)`, -cv);
+          lancarIA(E, id, _t('Caravana — jogo fora ({n} cabeças)', {n}), -cv);
         }
         if(viaja) recepcaoIA(E, o, t, jogos);
         /* A CARAVANA SILENCIOSA DA SUBSEDE DELAS (ordem do dono,
@@ -921,7 +926,7 @@ TO.relacoes = (function(){
               const cvf = TO.planejamento.custoCaravanaFilial(
                 nF, saltos, frotaIA(t));
               t.caixa -= cvf;
-              lancarIA(E, id, `Caravana da subsede (${nF} cabeças)`, -cvf);
+              lancarIA(E, id, _t('Caravana da subsede ({n} cabeças)', {n:nF}), -cvf);
               if(U.rng() >= 0.04 * FREIO_BRIGA * FREIO_IA) continue;   // 2,4% × freio das IAs
               const hostil = M().torcidasEm(destino)
                 .filter(x=>x.id !== id && x.id !== E.torcida.id &&
@@ -961,7 +966,7 @@ TO.relacoes = (function(){
               if((t.lojas[k].nivel||1) < (t.lojas[iL].nivel||1)) iL = k;
             t.lojas.splice(iL, 1);
             t.caixa += FIN().VENDA_LOJA || 90000;
-            lancarIA(E, id, 'Loja vendida — 30 dias no vermelho',
+            lancarIA(E, id, _t('Loja vendida — 30 dias no vermelho'),
                      FIN().VENDA_LOJA || 90000);
             mexeu = true;
           }
@@ -1657,11 +1662,11 @@ TO.relacoes = (function(){
     let comprou = false;
     if(pan.faixas < 1 && t.caixa >= P().FAIXA.custo){
       t.caixa -= P().FAIXA.custo; pan.faixas = 1; comprou = true;
-      lancarIA(E, id, 'Faixa nova', -P().FAIXA.custo);
+      lancarIA(E, id, _t('Faixa nova'), -P().FAIXA.custo);
     }
     if(pan.bandeiras < 1 && t.caixa >= P().BANDEIRA.custo){
       t.caixa -= P().BANDEIRA.custo; pan.bandeiras = 1; comprou = true;
-      lancarIA(E, id, 'Bandeira nova', -P().BANDEIRA.custo);
+      lancarIA(E, id, _t('Bandeira nova'), -P().BANDEIRA.custo);
     }
     return comprou;
   }
@@ -1685,7 +1690,7 @@ TO.relacoes = (function(){
       if(quantos <= 0) continue;
       const custo = quantos * c.custoPromo;
       t.caixa -= custo;
-      if(custo) lancarIA(E, id, `Promoção de ${quantos} a ${C[acima].nome}`, -custo);
+      if(custo) lancarIA(E, id, _t('Promoção de {n} a {cargo}', {n:quantos, cargo:_t(C[acima].nome)}), -custo);
       /* quem sobe chega com a força da régua; quem fica perde essa
          gente de cima e a média do cargo cede um pouco */
       const n = q.cargos[acima], N = q.cargos[cargo], resto = N - quantos;
@@ -2184,7 +2189,7 @@ TO.relacoes = (function(){
       if(ta && custo > ta.caixa){ nivel = 'nada'; custo = 0; }
       if(custo > 0 && ta){
         ta.caixa -= custo;
-        lancarIA(E, anf.id, `Recepção da ${o.nome} (${n} cabeças)`, -custo);
+        lancarIA(E, anf.id, _t('Recepção da {nome} ({n} cabeças)', {nome:o.nome, n}), -custo);
         /* e fica anotado pro balanço mensal do perfil dela (ordem do
            dono, 03/09/2026): a recepção é gasto de evento, então o
            balanço mostra o que ela gastou nas últimas 4 semanas */
@@ -2273,7 +2278,7 @@ TO.relacoes = (function(){
     moverRelacao(E, o.id, r.id, -REL.iaTreta);
     return registrarBrigaIA(E, {
       ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
-      cidade:(M().cidade(o.mapa)||{}).nome || o.mapa, jogo:'treta marcada',
+      cidade:(M().cidade(o.mapa)||{}).nome || o.mapa, jogo:_t('treta marcada'),
       a:{id:o.id, nome:o.nome, n:tam, feridos:fA, presos:0},
       b:{id:r.id, nome:r.nome, n:tam, feridos:fB, presos:0},
       vencedor: ganhouA ? o.nome : r.nome, prestigio:display, ganhouA
@@ -2288,7 +2293,7 @@ TO.relacoes = (function(){
     if(!atk) return null;
     /* ataque de nanica não existe — a mesma régua do nosso bar */
     if(vivoDe(E, atk.id) < vivoDe(E, o.id) * 0.5) return null;
-    const reg = brigaIA(E, atk, o, o.mapa, 'ataque ao bar',
+    const reg = brigaIA(E, atk, o, o.mapa, _t('ataque ao bar'),
                         {tetoA:60, tetoB:40});
     if(!reg) return null;
     if(reg.ganhouA){
@@ -2301,11 +2306,11 @@ TO.relacoes = (function(){
          dono, 03/09/2026) */
       if(tDono){
         tDono.caixa -= saque;
-        lancarIA(E, o.id, `Bar saqueado pela ${atk.nome}`, -saque);
+        lancarIA(E, o.id, _t('Bar saqueado pela {nome}', {nome:atk.nome}), -saque);
       }
       if(tAtk){
         tAtk.caixa += saque;
-        lancarIA(E, atk.id, `Saque no bar da ${o.nome}`, saque);
+        lancarIA(E, atk.id, _t('Saque no bar da {nome}', {nome:o.nome}), saque);
       }
       /* e o bar do dono sai quebrado, metade da receita por 45 dias —
          a mesma régua do nosso (dono, 10/09/2026) */
@@ -2340,7 +2345,7 @@ TO.relacoes = (function(){
       const chance = ((QUENTE - rel)/(100 + QUENTE)) * 0.28 * briga / 7
                      * FREIO_BRIGA * (cobra ? 1 : FREIO_IA * pesoDoRival(E, o.id, v.id));
       if(U.rng() > chance) continue;
-      return brigaIA(E, o, v, o.mapa, 'ataque-surpresa');
+      return brigaIA(E, o, v, o.mapa, _t('ataque-surpresa'));
     }
     return null;
   }
@@ -2370,7 +2375,7 @@ TO.relacoes = (function(){
         /* o maior rival da praça fecha a pista primeiro */
         const emb = hostis.find(x=>ehMaiorRival(E, o.id, x.id)) || hostis[0];
         if(!emb) continue;
-        const r = brigaIA(E, emb, o, cid, 'emboscada na estrada');
+        const r = brigaIA(E, emb, o, cid, _t('emboscada na estrada'));
         if(r) fora.push(r);
         break;
       }
@@ -2591,12 +2596,12 @@ TO.relacoes = (function(){
   /* a situação pesa de 0,8 a 1,2 (régua do dono, 24/08/2026): o caixa
      tempera o ranking, não o domina */
   function situacaoFinanceira(caixa){
-    if(caixa < -10000) return {rot:'Endividado', slug:'endividado', mult:0.8};
-    if(caixa <= 0)     return {rot:'Muito ruim', slug:'muitoruim',  mult:0.88};
-    if(caixa <= 10000) return {rot:'Pobre',      slug:'pobre',      mult:0.96};
-    if(caixa <= 20000) return {rot:'Estável',    slug:'estavel',    mult:1.04};
-    if(caixa <= 40000) return {rot:'Bem financeiramente', slug:'bem', mult:1.12};
-    return {rot:'Rico', slug:'rico', mult:1.2};
+    if(caixa < -10000) return {rot:_t('Endividado'), slug:'endividado', mult:0.8};
+    if(caixa <= 0)     return {rot:_t('Muito ruim'), slug:'muitoruim',  mult:0.88};
+    if(caixa <= 10000) return {rot:_t('Pobre'),      slug:'pobre',      mult:0.96};
+    if(caixa <= 20000) return {rot:_t('Estável'),    slug:'estavel',    mult:1.04};
+    if(caixa <= 40000) return {rot:_t('Bem financeiramente'), slug:'bem', mult:1.12};
+    return {rot:_t('Rico'), slug:'rico', mult:1.2};
   }
 
   let cacheRanking = {chave:'', lista:null};

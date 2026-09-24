@@ -742,7 +742,7 @@ TO.ligas = (function(){
       if(f.serieFinal || f.finalDosCampeoes || f.playoffTitulo){
         if(unicos.length === 1){
           D.campeao = unicos[0];              // ganhou tudo: campeão direto
-          D.comoFechou = 'campeão dos dois torneios';
+          D.comoFechou = _t('campeão dos dois torneios');
         } else {
           let chave = unicos.slice();
           if(f.playoffTitulo){
@@ -760,19 +760,19 @@ TO.ligas = (function(){
           D.decisao = decidirEntre(E, chave);
           D.campeao = D.decisao.campeao;
           D.vice = D.decisao.vice;
-          D.comoFechou = f.playoffTitulo ? 'playoff do título'
-                       : f.serieFinal ? 'Série Final' : 'final do campeonato';
+          D.comoFechou = f.playoffTitulo ? _t('playoff do título')
+                       : f.serieFinal ? _t('Série Final') : _t('final do campeonato');
         }
       } else if(f.campeaoDeLiga){
         /* Argentina: o Campeão de Liga é quem somou mais na anual */
         const t = ordenar(D.anual, D.clubes);
         D.campeaoDeLiga = t[0] && t[0].id;
         D.campeao = D.torneios[D.torneios.length-1].campeao || D.campeaoDeLiga;
-        D.comoFechou = 'campeão do Clausura · Campeão de Liga pela anual';
+        D.comoFechou = _t('campeão do Clausura · Campeão de Liga pela anual');
       } else {
         D.campeao = D.torneios[D.torneios.length-1].campeao;
         D.vice    = D.torneios[D.torneios.length-1].vice;
-        D.comoFechou = 'campeão do torneio';
+        D.comoFechou = _t('campeão do torneio');
       }
 
       /* PROMEDIOS: média de pontos das últimas N temporadas. Save novo

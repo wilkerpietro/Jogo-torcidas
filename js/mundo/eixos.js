@@ -191,8 +191,9 @@ TO.eixos = (function(){
   }
   /* o motivo em português, pra nota de tela e pra teste */
   const motivoDaTranca = (E, t) => !t ? '' :
-    `${(M().torcida(t.quem)||{}).nome} anda com a ${(M().torcida(t.aliada)||{}).nome}, `+
-    `que é maior rival da ${(M().torcida(t.contra)||{}).nome}`;
+    _t('{quem} anda com a {aliada}, que é maior rival da {contra}',
+       {quem:(M().torcida(t.quem)||{}).nome, aliada:(M().torcida(t.aliada)||{}).nome,
+        contra:(M().torcida(t.contra)||{}).nome});
 
   /* =========================================================
      O CÍRCULO EM COMUM (regra do dono, 12/09/2026)
@@ -234,16 +235,16 @@ TO.eixos = (function(){
   /* ---- quem pode entrar ---- */
   function podeEntrar(E, eixoId, torcidaId){
     const x = eixo(E, eixoId); const o = M().torcida(torcidaId);
-    if(!x || !o || o.incompleta) return {ok:false, motivo:'não existe'};
-    if(x.membros.includes(torcidaId)) return {ok:false, motivo:'já é do eixo'};
-    if(de(E, torcidaId).length >= MAX_POR_TORCIDA) return {ok:false, motivo:'já está em dois eixos'};
+    if(!x || !o || o.incompleta) return {ok:false, motivo:_t('não existe')};
+    if(x.membros.includes(torcidaId)) return {ok:false, motivo:_t('já é do eixo')};
+    if(de(E, torcidaId).length >= MAX_POR_TORCIDA) return {ok:false, motivo:_t('já está em dois eixos')};
     /* PORTA GIRATÓRIA FECHADA (17/09/2026): quem saiu — por briga com
        um membro, ou vetado pelo dono — fica meio ano fora daquele eixo.
        Sem isto o Bamor saiu do Dedo pro Alto três vezes em cinco semanas:
        o eixo o chamava de volta e a mesma treta o punha pra fora. */
     const veto = (caixas(E).vetos||{})[`${eixoId}|${torcidaId}`];
     if(veto && R().semanaAbs(E) - veto < RECUSA_CADA)
-      return {ok:false, motivo:'saiu há pouco desse eixo'};
+      return {ok:false, motivo:_t('saiu há pouco desse eixo')};
     /* O EIXO NÃO ATRAVESSA A FRONTEIRA (12/09/2026). Eixo é política de
        arquibancada perto de casa — quem entra desce junto, escolta e
        cobra. Antes dos hermanamientos isto se garantia sozinho: relação
@@ -255,30 +256,30 @@ TO.eixos = (function(){
     for(const m of x.membros){
       const mo = M().torcida(m);
       if(mo && pais(mo) !== pais(o))
-        return {ok:false, motivo:`a ${mo.nome} é de outro país`};
+        return {ok:false, motivo:_t('a {nome} é de outro país', {nome:mo.nome})};
     }
     let aliadas = 0;
     for(const m of x.membros){
-      if(R().ehMaiorRival(E, m, torcidaId)) return {ok:false, motivo:`maior rival da ${(M().torcida(m)||{}).nome}`};
+      if(R().ehMaiorRival(E, m, torcidaId)) return {ok:false, motivo:_t('maior rival da {nome}', {nome:(M().torcida(m)||{}).nome})};
       const v = relDe(E, m, torcidaId);
-      if(v < -15) return {ok:false, motivo:`rival da ${(M().torcida(m)||{}).nome}`};
+      if(v < -15) return {ok:false, motivo:_t('rival da {nome}', {nome:(M().torcida(m)||{}).nome})};
       if(v >= 20) aliadas++;
     }
     /* "se fizerem sentido": aliada de pelo menos metade do eixo */
     if(aliadas < Math.max(1, Math.ceil(x.membros.length * METADE_ALIADA)))
-      return {ok:false, motivo:`aliada de só ${aliadas} de ${x.membros.length}`};
+      return {ok:false, motivo:_t('aliada de só {n} de {total}', {n:aliadas, total:x.membros.length})};
     /* e não pode ser aliada/irmã de um maior rival do eixo? Não: basta
        não ser maior rival de ninguém — o dono pediu só isso. Mas quem é
        irmã de um maior rival do eixo não entra: irmã não vira rival. */
     for(const r of maioresRivaisDoEixo(E, x))
-      if(M().saoIrmas && M().saoIrmas(torcidaId, r)) return {ok:false, motivo:`irmã da ${(M().torcida(r)||{}).nome}, maior rival do eixo`};
+      if(M().saoIrmas && M().saoIrmas(torcidaId, r)) return {ok:false, motivo:_t('irmã da {nome}, maior rival do eixo', {nome:(M().torcida(r)||{}).nome})};
     /* eixo novo não pode virar cópia de outro: com ela dentro, no
        máximo MAX_EM_COMUM membros em comum com qualquer eixo em que ela
        já esteja — quando um dos dois é novo */
     for(const y of de(E, torcidaId)){
       if(x.base && y.base) continue;
       const comum = x.membros.filter(m=>y.membros.includes(m)).length + 1;
-      if(comum > MAX_EM_COMUM) return {ok:false, motivo:`o ${x.nome} ficaria com ${comum} em comum com o ${y.nome}`};
+      if(comum > MAX_EM_COMUM) return {ok:false, motivo:_t('o {eixo} ficaria com {n} em comum com o {outro}', {eixo:x.nome, n:comum, outro:y.nome})};
     }
     return {ok:true};
   }
@@ -466,11 +467,11 @@ TO.eixos = (function(){
     const X = caixas(E), nos = E.torcida.id;
     const Rn = E.reuniao || {};
     if(Rn.pedido && Rn.pedido.marca === Rn.ultima)
-      return {ok:false, motivo:'já pedimos nesta reunião'};
+      return {ok:false, motivo:_t('já pedimos nesta reunião')};
     const aliado = M().torcida(aliadoId), alvo = M().torcida(alvoId);
-    if(!aliado || !alvo) return {ok:false, motivo:'torcida desconhecida'};
+    if(!aliado || !alvo) return {ok:false, motivo:_t('torcida desconhecida')};
     if(!alvosDoPedido(E, tipo, aliadoId).some(o=>o.id === alvoId))
-      return {ok:false, motivo:'esse pedido não cabe'};
+      return {ok:false, motivo:_t('esse pedido não cabe')};
     const forca = forcaDoPedido(E, aliadoId), chance = chanceDoPedido(E, aliadoId);
     const sa = R().semanaAbs(E);
     const topou = (TO.mapa.hash(`pedido|${sa}|${aliadoId}|${alvoId}`) % 1000) / 1000 < chance;
@@ -480,20 +481,20 @@ TO.eixos = (function(){
       if(tipo === 'aproximar'){
         const ganho = Math.round(15 + 10 * forca);
         porRel(E, aliadoId, alvoId, Math.min(DIPLO_TETO, v + ganho));
-        texto = `A ${aliado.nome} topou e sentou com a ${alvo.nome}: a relação entre as duas `+
-                `subiu ${Math.min(DIPLO_TETO, v + ganho) - v}.`;
+        texto = _t('A {aliado} topou e sentou com a {alvo}: a relação entre as duas subiu {n}.',
+                   {aliado:aliado.nome, alvo:alvo.nome, n:Math.min(DIPLO_TETO, v + ganho) - v});
       } else {
         const perda = Math.round(15 + 10 * forca);
         porRel(E, aliadoId, alvoId, Math.max(0, v - perda));
-        texto = `A ${aliado.nome} topou e se afastou da ${alvo.nome}: a relação entre as duas `+
-                `caiu ${v - Math.max(0, v - perda)}.`;
+        texto = _t('A {aliado} topou e se afastou da {alvo}: a relação entre as duas caiu {n}.',
+                   {aliado:aliado.nome, alvo:alvo.nome, n:v - Math.max(0, v - perda)});
       }
       porRel(E, nos, aliadoId, relDe(E, nos, aliadoId) + PEDIDO_TOPOU);
       anotar(E, {tipo, eixo:null, porta:nos, torcida:aliadoId, outra:alvoId});
     } else {
       porRel(E, nos, aliadoId, relDe(E, nos, aliadoId) + PEDIDO_RECUSOU);
-      texto = `A ${aliado.nome} não topou: "isso é problema nosso". `+
-              `A relação com ela caiu ${-PEDIDO_RECUSOU}.`;
+      texto = _t('A {aliado} não topou: "isso é problema nosso". A relação com ela caiu {n}.',
+                 {aliado:aliado.nome, n:-PEDIDO_RECUSOU});
     }
     marcarStatusVisto(E, nos, aliadoId);
     E.reuniao = E.reuniao || {};
@@ -789,6 +790,11 @@ TO.eixos = (function(){
   const RECUSA_NOSSA     = 26;   // semanas até voltar a chamar quem disse não
 
   const cabemosEmMais = E => de(E, E.torcida.id).length < MAX_POR_TORCIDA;
+  /* os motivos de espera, com o plural certo em cada língua */
+  const motivoDaMesa = n =>
+    _tn(n, 'a mesa só senta de novo em {n} semana', 'a mesa só senta de novo em {n} semanas');
+  const motivoDaRecusa = n =>
+    _tn(n, 'eles disseram não faz pouco — voltam a ouvir em {n} semana', 'eles disseram não faz pouco — voltam a ouvir em {n} semanas');
   const eixosNossos   = E => de(E, E.torcida.id);
 
   /* quantas semanas faltam pra próxima mesa (0 = pode agora) */
@@ -837,20 +843,20 @@ TO.eixos = (function(){
      em comum, que são regras de estrutura, não de simpatia. */
   function podemosPedir(E, eixoId){
     const x = eixo(E, eixoId); const nos = E.torcida.id;
-    if(!x) return {ok:false, motivo:'não existe'};
-    if(x.membros.includes(nos)) return {ok:false, motivo:'a gente já é do eixo'};
-    if(de(E, nos).length >= MAX_POR_TORCIDA) return {ok:false, motivo:'a gente já está em dois eixos'};
+    if(!x) return {ok:false, motivo:_t('não existe')};
+    if(x.membros.includes(nos)) return {ok:false, motivo:_t('a gente já é do eixo')};
+    if(de(E, nos).length >= MAX_POR_TORCIDA) return {ok:false, motivo:_t('a gente já está em dois eixos')};
     for(const m of x.membros){
-      if(R().ehMaiorRival(E, m, nos)) return {ok:false, motivo:`maior rival da ${(M().torcida(m)||{}).nome}`};
-      if(relDe(E, m, nos) < -15)      return {ok:false, motivo:`rival da ${(M().torcida(m)||{}).nome}`};
+      if(R().ehMaiorRival(E, m, nos)) return {ok:false, motivo:_t('maior rival da {nome}', {nome:(M().torcida(m)||{}).nome})};
+      if(relDe(E, m, nos) < -15)      return {ok:false, motivo:_t('rival da {nome}', {nome:(M().torcida(m)||{}).nome})};
     }
     for(const r of maioresRivaisDoEixo(E, x))
       if(M().saoIrmas && M().saoIrmas(nos, r))
-        return {ok:false, motivo:`a gente é irmã da ${(M().torcida(r)||{}).nome}, maior rival do eixo`};
+        return {ok:false, motivo:_t('a gente é irmã da {nome}, maior rival do eixo', {nome:(M().torcida(r)||{}).nome})};
     for(const y of de(E, nos)){
       if(x.base && y.base) continue;
       const comum = x.membros.filter(m=>y.membros.includes(m)).length + 1;
-      if(comum > MAX_EM_COMUM) return {ok:false, motivo:`o ${x.nome} ficaria com ${comum} em comum com o ${y.nome}`};
+      if(comum > MAX_EM_COMUM) return {ok:false, motivo:_t('o {eixo} ficaria com {n} em comum com o {outro}', {eixo:x.nome, n:comum, outro:y.nome})};
     }
     return {ok:true};
   }
@@ -863,7 +869,7 @@ TO.eixos = (function(){
       const neg = X.nossos.recusaramNos[x.id];
       const espera = neg ? Math.max(0, RECUSA_NOSSA - (sa - neg)) : 0;
       return {id:x.id, nome:x.nome, membros:x.membros.length,
-              ok: pode.ok && !espera, motivo: espera ? `disseram não — voltam a ouvir em ${espera} semanas` : pode.motivo,
+              ok: pode.ok && !espera, motivo: espera ? _tn(espera, 'disseram não — voltam a ouvir em {n} semana', 'disseram não — voltam a ouvir em {n} semanas') : pode.motivo,
               chance: pode.ok ? chanceDaCandidatura(E, x.id) : 0};
     }).sort((a,b)=>(b.ok?1:0) - (a.ok?1:0) || b.chance - a.chance);
   }
@@ -880,10 +886,10 @@ TO.eixos = (function(){
   /* o nome serve? não pode ser vazio nem repetir eixo que existe */
   function nomeServe(E, nome){
     const n = String(nome || '').trim();
-    if(n.length < 3)  return {ok:false, motivo:'o nome precisa de pelo menos 3 letras'};
-    if(n.length > 32) return {ok:false, motivo:'nome comprido demais'};
+    if(n.length < 3)  return {ok:false, motivo:_t('o nome precisa de pelo menos 3 letras')};
+    if(n.length > 32) return {ok:false, motivo:_t('nome comprido demais')};
     const igual = s2 => String(s2||'').trim().toLowerCase() === n.toLowerCase();
-    if(lista(E).some(x=>igual(x.nome))) return {ok:false, motivo:'já existe um eixo com esse nome'};
+    if(lista(E).some(x=>igual(x.nome))) return {ok:false, motivo:_t('já existe um eixo com esse nome')};
     return {ok:true, nome:n};
   }
 
@@ -909,9 +915,9 @@ TO.eixos = (function(){
   function brigaNoGrupo(E, ids){
     for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++){
       if(R().ehMaiorRival(E, ids[i], ids[j]))
-        return `${(M().torcida(ids[i])||{}).nome} e ${(M().torcida(ids[j])||{}).nome} são maiores rivais`;
+        return _t('{a} e {b} são maiores rivais', {a:(M().torcida(ids[i])||{}).nome, b:(M().torcida(ids[j])||{}).nome});
       if(relDe(E, ids[i], ids[j]) < -15)
-        return `${(M().torcida(ids[i])||{}).nome} e ${(M().torcida(ids[j])||{}).nome} são rivais`;
+        return _t('{a} e {b} são rivais', {a:(M().torcida(ids[i])||{}).nome, b:(M().torcida(ids[j])||{}).nome});
     }
     return null;
   }
@@ -919,13 +925,13 @@ TO.eixos = (function(){
   /* ---- fundar o NOSSO eixo ---- */
   function fundarNosso(E, nome, sigla, convidados){
     const X = caixas(E), sa = R().semanaAbs(E), nos = E.torcida.id;
-    if(!cabemosEmMais(E)) return {ok:false, motivo:'a gente já está em dois eixos'};
-    if(esperaDaMesa(E))   return {ok:false, motivo:`a mesa só senta de novo em ${esperaDaMesa(E)} semanas`};
+    if(!cabemosEmMais(E)) return {ok:false, motivo:_t('a gente já está em dois eixos')};
+    if(esperaDaMesa(E))   return {ok:false, motivo:motivoDaMesa(esperaDaMesa(E))};
     const nm = nomeServe(E, nome);
     if(!nm.ok) return {ok:false, motivo:nm.motivo};
     const ids = [...new Set(convidados || [])].filter(id=>id !== nos);
     if(ids.length < MIN_FUNDADORES - 1)
-      return {ok:false, motivo:`um eixo nasce com ${MIN_FUNDADORES}: chame pelo menos ${MIN_FUNDADORES-1}`};
+      return {ok:false, motivo:_t('um eixo nasce com {n}: chame pelo menos {m}', {n:MIN_FUNDADORES, m:MIN_FUNDADORES-1})};
     const briga = brigaNoGrupo(E, ids);
     if(briga) return {ok:false, motivo:briga};
     /* gasta a mesa do trimestre, tenha dado certo ou não */
@@ -940,9 +946,9 @@ TO.eixos = (function(){
     }
     if(dentro.length < MIN_FUNDADORES - 1)
       return {ok:false, nasceu:false, dentro, fora,
-              motivo:`só ${dentro.length} toparam — um eixo nasce com ${MIN_FUNDADORES}`};
+              motivo:_tn(dentro.length, 'só {n} topou — um eixo nasce com {min}', 'só {n} toparam — um eixo nasce com {min}', {min:MIN_FUNDADORES})};
     const x = fundar(E, [nos, ...dentro], {nome:nm.nome, sigla:String(sigla||'').trim().toUpperCase().slice(0,5)});
-    if(!x) return {ok:false, motivo:'não rolou'};
+    if(!x) return {ok:false, motivo:_t('não rolou')};
     X.nomesUsados.push(nm.nome);
     X.nossos.convites[x.id] = E.data.absoluto || 0;
     return {ok:true, nasceu:true, eixo:x, dentro, fora};
@@ -952,12 +958,12 @@ TO.eixos = (function(){
   function candidatar(E, eixoId){
     const X = caixas(E), sa = R().semanaAbs(E), nos = E.torcida.id;
     const x = eixo(E, eixoId);
-    if(!x) return {ok:false, motivo:'esse eixo não existe'};
-    if(!cabemosEmMais(E)) return {ok:false, motivo:'a gente já está em dois eixos'};
-    if(esperaDaMesa(E))   return {ok:false, motivo:`a mesa só senta de novo em ${esperaDaMesa(E)} semanas`};
+    if(!x) return {ok:false, motivo:_t('esse eixo não existe')};
+    if(!cabemosEmMais(E)) return {ok:false, motivo:_t('a gente já está em dois eixos')};
+    if(esperaDaMesa(E))   return {ok:false, motivo:motivoDaMesa(esperaDaMesa(E))};
     const neg = X.nossos.recusaramNos[eixoId];
     if(neg && sa - neg < RECUSA_NOSSA)
-      return {ok:false, motivo:`eles disseram não faz pouco — voltam a ouvir em ${RECUSA_NOSSA - (sa - neg)} semanas`};
+      return {ok:false, motivo:motivoDaRecusa(RECUSA_NOSSA - (sa - neg))};
     const pode = podemosPedir(E, eixoId);
     if(!pode.ok) return {ok:false, motivo:pode.motivo};
     X.nossos.mesa = sa;
@@ -974,13 +980,13 @@ TO.eixos = (function(){
   function convidar(E, eixoId, torcidaId){
     const X = caixas(E), sa = R().semanaAbs(E), abs = E.data.absoluto || 0;
     const x = eixo(E, eixoId);
-    if(!x) return {ok:false, motivo:'esse eixo não existe'};
-    if(!x.membros.includes(E.torcida.id)) return {ok:false, motivo:'esse eixo não é nosso'};
+    if(!x) return {ok:false, motivo:_t('esse eixo não existe')};
+    if(!x.membros.includes(E.torcida.id)) return {ok:false, motivo:_t('esse eixo não é nosso')};
     const espera = esperaDoConvite(E, eixoId);
-    if(espera) return {ok:false, motivo:`o eixo já chamou alguém: o próximo nome sai em ${espera} dias`};
+    if(espera) return {ok:false, motivo:_tn(espera, 'o eixo já chamou alguém: o próximo nome sai em {n} dia', 'o eixo já chamou alguém: o próximo nome sai em {n} dias')};
     const neg = X.nossos.recusaram[torcidaId];
     if(neg && sa - neg < RECUSA_NOSSA)
-      return {ok:false, motivo:`eles disseram não faz pouco — voltam a ouvir em ${RECUSA_NOSSA - (sa - neg)} semanas`};
+      return {ok:false, motivo:motivoDaRecusa(RECUSA_NOSSA - (sa - neg))};
     const pode = podeEntrar(E, eixoId, torcidaId);
     if(!pode.ok) return {ok:false, motivo:pode.motivo};
     X.nossos.convites[eixoId] = abs;
@@ -1005,7 +1011,7 @@ TO.eixos = (function(){
                 rel: Math.round(relDe(E, E.torcida.id, o.id)),
                 eixos: de(E, o.id).length,
                 ok: pode.ok && !espera,
-                motivo: espera ? `disseram não — voltam a ouvir em ${espera} semanas` : pode.motivo,
+                motivo: espera ? _tn(espera, 'disseram não — voltam a ouvir em {n} semana', 'disseram não — voltam a ouvir em {n} semanas') : pode.motivo,
                 chance: pode.ok ? chanceDoConvite(E, eixoId, o.id) : 0};
       })
       .filter(c=>c.ok || c.chance > 0 || c.rel >= 20)

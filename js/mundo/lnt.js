@@ -552,7 +552,7 @@ TO.lnt = (function(){
     if(!valor) return;
     div.premiados[id] = (div.premiados[id] || 0) + valor;
     if(id === E.torcida.id){
-      TO.estado.lancar(E, `LNT · ${rot}`, valor);
+      TO.estado.lancar(E, _t('LNT · {rot}', {rot}), valor);
     } else {
       const t = (E.mundoTorcidas || {})[id];
       if(t) t.caixa = (t.caixa || 0) + valor;
@@ -575,9 +575,9 @@ TO.lnt = (function(){
           for(const j of m.jogos){
             const caiu = j.venceu === j.a ? j.b : j.a;
             if(m.fase === 'Final'){
-              pagar(E, div, j.venceu, f.premio.campeao, 'campeão');
-              pagar(E, div, caiu, f.premio.vice, 'vice');
-            } else pagar(E, div, caiu, valor, m.fase.toLowerCase());
+              pagar(E, div, j.venceu, f.premio.campeao, _t('campeão'));
+              pagar(E, div, caiu, f.premio.vice, _t('vice'));
+            } else pagar(E, div, caiu, valor, _t(m.fase).toLowerCase());
           }
         }
       }
