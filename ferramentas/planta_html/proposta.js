@@ -82,11 +82,7 @@ const EQUIP = {
   '-1,6': { tipo: 'ubs',    nome: 'Posto de saúde', cor: '#e2ddd0',
             nota: 'UBS pro oeste, no meio do bairro novo.' },
   '2,-1': { tipo: 'igreja', nome: 'Igreja', cor: '#d8cfb8',
-            nota: 'A igreja do bairro novo do norte.' },
-  '-4,4': { tipo: 'sede',   nome: 'Terreno para sede', cor: '#9a4f9a',
-            nota: 'Lugar pra sede de uma torcida nova, na ponta oeste, longe do estádio.' },
-  '5,0':  { tipo: 'sede',   nome: 'Terreno para sede', cor: '#9a4f9a',
-            nota: 'Lugar pra sede de uma torcida nova, a duas quadras do estádio.' }
+            nota: 'A igreja do bairro novo do norte.' }
 };
 /* os condomínios: a quadra alta (linha 2) e a folha de cor de cada um */
 const CONDOMINIOS = [
@@ -98,6 +94,20 @@ const CONDOMINIOS = [
     cores: 'concreto terracota, vidro bronze e tijolo mostarda' }
 ];
 
+/* OS TERRENOS PRA SEDE: sete, espalhados pela cidade nova. Cada um é a
+   fatia que a sede de nível 3 do jogo pede (a conta do `areaDaSede` da
+   planta: 72% da frente da quadra, pelo menos 420, e o fundo inteiro),
+   na ponta oeste da quadra; o resto da quadra continua casa. A sede de
+   nível 1 usa só um canto dela. */
+const TERRENOS_SEDE = [
+  { id: '5,0',   frente: 'n', onde: 'a duas quadras do estádio, no nordeste' },
+  { id: '2,-3',  frente: 's', onde: 'no bairro novo do norte' },
+  { id: '-1,-2', frente: 's', onde: 'no noroeste, perto da favela' },
+  { id: '-4,4',  frente: 'n', onde: 'na ponta oeste' },
+  { id: '0,4',   frente: 'n', onde: 'no meio do oeste' },
+  { id: '-3,6',  frente: 's', onde: 'no oeste, perto da favela do sudoeste' },
+  { id: '0,9',   frente: 's', onde: 'no sul, perto da entrada sul' }
+];
 /* as quadras altas que ganham rua no meio (um corte de norte a sul) */
 const PARTIDAS = ['-3,2', '-1,2', '0,2'];
 /* os pares que viram uma quadra só, por cima da rua (de oeste pra leste) */
@@ -466,6 +476,23 @@ export function gerarProposta(P) {
     }
   }
 
+  /* ---- os terrenos pra sede: a fatia sai da quadra (com as casas que
+     caíam nela), e o quintal encolhe até a divisa dela ---- */
+  const terrenos = [];
+  TERRENOS_SEDE.forEach((t, k) => {
+    const q = quadras.find(q => q.id === t.id);
+    if (!q || q.equip) return;
+    const Lx = q.ix1 - q.ix0, Ly = q.iy1 - q.iy0;
+    const w = Math.min(Lx, Math.max(420, Lx * 0.72));
+    if (w < 340 || Ly < 190) return;
+    const area = { x0: q.ix0, x1: q.ix0 + w, y0: q.iy0, y1: q.iy1 };
+    q.lotes = q.lotes.filter(l => l.x1 <= area.x0 + 0.5 || l.x0 >= area.x1 - 0.5 || l.y1 <= area.y0 + 0.5 || l.y0 >= area.y1 - 0.5);
+    if (q.quintal) { q.quintal = { ...q.quintal, x0: Math.max(q.quintal.x0, area.x1) }; if (q.quintal.x1 - q.quintal.x0 < 20) q.quintal = null; }
+    const T = { n: k + 1, nome: 'Terreno para sede ' + (k + 1), frente: t.frente, onde: t.onde, area, quadra: q.id };
+    q.terreno = T;
+    terrenos.push(T);
+  });
+
   /* ---- AS FAVELAS: primeiro a grade de ruas, casando com a da cidade;
      depois as casas nos quarteirões que ela deixa ----
      A grade da favela É a da cidade. Cada rua da cidade segue dentro da
@@ -742,7 +769,7 @@ export function gerarProposta(P) {
   const conta = {};
   for (const q of quadras) if (q.equip) conta[q.equip.tipo] = (conta[q.equip.tipo] || 0) + 1;
   return {
-    quadras, fora, avenidas, avenidasTiradas, favelas, atacadex, porticos, estadio2, condominios, substitui,
+    quadras, fora, avenidas, avenidasTiradas, favelas, atacadex, porticos, estadio2, condominios, substitui, terrenos,
     coberto, naFavelaNova, noAtacadex, naAvenida, distAvenida, favelaDeHoje: favBB,
     contagem: { quadras: quadras.length, residenciais: residenciais.length, equipamentos: quadras.length - residenciais.length,
                 porTipo: conta, lotesNovos, casasFavela: favelas.map(f => f.lotes.length), casasFavelaHoje: FAV.length,

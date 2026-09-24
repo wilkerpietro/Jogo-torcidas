@@ -1988,6 +1988,34 @@ O que não é fiel, ou pesa:
 - **O polígono é o desenho à mão, lido da foto.** A borda da favela segue o traço, com a
   imprecisão dele.
 
+### 4.33. Sete terrenos pra sede na proposta
+
+O dono pediu pelo menos sete terrenos pra sede no mapa. A proposta tem sete, espalhados pela
+cidade nova, numerados de 1 a 7 no mapa:
+
+| nº | quadra | onde |
+|---|---|---|
+| 1 | 5,0 | nordeste, a duas quadras do estádio |
+| 2 | 2,−3 | bairro novo do norte |
+| 3 | −1,−2 | noroeste |
+| 4 | −4,4 | ponta oeste |
+| 5 | 0,4 | meio do oeste |
+| 6 | −3,6 | oeste |
+| 7 | 0,9 | sul, perto da entrada |
+
+- **O tamanho** é a fatia que a sede de nível 3 da planta pede (a conta do `areaDaSede`: 72%
+  da frente da quadra, pelo menos 420, e o fundo inteiro), uns 22 × 12,8 m. Fica na ponta
+  oeste da quadra, com a frente pra rua. A sede de nível 1 usa só um canto dela.
+- **O resto da quadra** continua casa. As casas que caíam na fatia saem, e o quintal encolhe
+  até a divisa.
+- **Os dois terrenos de quadra inteira** da 2ª versão viraram fatia também. As sedes de hoje
+  (TJF e TJG) ficam onde estão.
+- **Na página,** o terreno é terra batida com a borda roxa. No 3D, é murado, com portão de
+  chapa e a placa TERRENO PARA SEDE.
+
+O que falta pro jogo: a planta hoje monta duas sedes (`SEDES.mandante` e `.visitante`).
+Pra usar os sete terrenos, ela teria que aceitar uma lista de sedes.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
