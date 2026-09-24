@@ -1,8 +1,9 @@
 /* =========================================================
-   OS MARCOS — cinco prédios modelados peça por peça
+   OS MARCOS — cinco prédios modelados peça por peça, e o atacarejo
    ---------------------------------------------------------
    A igreja matriz, o prédio alto, o prédio de três andares com o
-   mercado, o centro administrativo e a casa de classe média. Quem diz
+   mercado, o centro administrativo e a casa de classe média; e o
+   ATACADEX, o atacarejo no mato a oeste da cidade. Quem diz
    ONDE cada um fica, pra que lado olha e quais são os volumes grandes
    é a planta (`dados/cena_estadio.js`, "OS MARCOS"); aqui a massa
    ganha fachada.
@@ -520,6 +521,173 @@ function casa(B, m, G) {
   B.telhado4(a0 - 0.3, a1 + 0.3, za - 0.2, fz + 0.3, ha, 1.2, 'telha', 'cumeeira');
 }
 
+
+/* =======================================================
+   6. O ATACAREJO — o ATACADEX
+   O galpão de atacado no mato a oeste da cidade, de frente pra
+   avenida: a marquise comprida sobre as colunas brancas de pé
+   amarelo e preto, a testeira azul com o filete verde e amarelo, a
+   marca (o selo vermelho-laranja e o emblema do carrinho saindo por
+   cima da testeira) e o ATACADISTA; embaixo, a vitrine de vidro com a
+   porta automática, o painel bordô e os cartazes. O galpão é chapa
+   branca com a faixa azul em cima e embaixo; na parede oeste, o painel
+   amarelo da quina e as cinco docas com o fole preto, uma com a
+   carreta encostada. O telhado de chapa tem fileiras de claraboia. Na
+   frente, o estacionamento pintado, a faixa de pedestre, a guia e o
+   totem na esquina. Os carros e os postes são da cidade (a planta os
+   põe nas vagas).
+   ======================================================= */
+function atacadex(B, m) {
+  const { E0, E1, zP, zF, hM0, hM1, hP, W, D } = m;
+  const L = E1 - E0;
+  const yA = 0.03, yC = 0.15;                  // o asfalto e a calçada, acima do chão pintado
+  const hTeto = hP - 0.9;                      // a laje do telhado, escondida pela platibanda
+  const tampaRet = (x0, x1, z0, z1, y, k, o) => B.tampa([[x0, z0], [x1, z0], [x1, z1], [x0, z1]], y, k, false, o);
+
+  /* ---- o chão: o estacionamento em tiras (a borda da avenida é torta),
+     o pátio dos caminhões, a calçada da marquise, a de leste e a do fundo ---- */
+  const N = m.norte;
+  for (let i = 1; i < N.length; i++) {
+    const [xa, za] = N[i - 1], [xb, zb] = N[i];
+    B.tampa([[xa, 0], [xb, 0], [xb, zb], [xa, za]], yA, 'asfalto');
+  }
+  tampaRet(E1 + 0.4, W, -D, 0, yA, 'asfalto');
+  tampaRet(E0 - 0.4, E1 + 0.4, zP, 0, yC, 'piso');
+  tampaRet(0, E0 - 0.4, -D, 0, yC, 'piso');
+  tampaRet(E0 - 0.4, E1 + 0.4, -D, zF, yC, 'piso');
+  /* a guia da calçada da marquise, de frente pro estacionamento */
+  B.ladrilhar(B.plano([0, yA, 0], [1, 0, 0], [0, 1, 0]), B.ret(0, E1 + 0.4, 0, yC - yA), 'piso', { escuro: 0.85 });
+
+  /* ---- as vagas, a faixa de pedestre e a guia da avenida ---- */
+  const xsLinha = new Set();
+  for (const v of m.vagas) {
+    for (const x of [v.x0, v.x1]) {
+      const k = x.toFixed(2) + '/' + v.z0;
+      if (xsLinha.has(k)) continue;
+      xsLinha.add(k);
+      tampaRet(x - 0.05, x + 0.05, v.z0, v.z1, yA + 0.01, 'linha');
+    }
+  }
+  const fx = m.faixa;
+  for (let z = fx.z0 + 0.5; z + 0.5 <= fx.z1; z += 1.0) tampaRet(fx.x0, fx.x1, z, z + 0.5, yA + 0.01, 'linha');
+  const entrada = x => (x > 10 && x < 16) || (x > 42 && x < 52);
+  for (let i = 1; i < N.length; i++) {
+    const [xa, za] = N[i - 1], [xb, zb] = N[i];
+    if (entrada((xa + xb) / 2)) continue;
+    const L2 = Math.hypot(xb - xa, zb - za), ux = (xb - xa) / L2, uz = (zb - za) / L2;
+    /* a face de pé olhando pra avenida e o topo */
+    B.ladrilhar(B.plano([xa, 0, za], [ux, 0, uz], [0, 1, 0]), B.ret(0, L2, 0, 0.18), 'piso');
+    B.tampa([[xa, za], [xb, zb], [xb, zb - 0.22], [xa, za - 0.22]], 0.18, 'piso');
+  }
+
+  /* ---- a fachada de vidro, sob a marquise: nove vãos de 4 m ---- */
+  const nB = 9, wB = L / nB;
+  const qual = ['vidro', 'vidro', 'cartaz', 'vidro', 'porta', 'bordo', 'bordo', 'cartaz', 'bordo'];
+  const vaosFrente = [];
+  for (let i = 0; i < nB; i++) vaosFrente.push({ a0: i * wB, a1: (i + 1) * wB, b0: yC, b1: 4.3, k: qual[i] });
+  vaosFrente.push({ a0: 0, a1: L, b0: 6.3, b1: 6.5, k: 'verde', modo: 'ladrilho' },
+                  { a0: 0, a1: L, b0: 6.5, b1: hP, k: 'azul', modo: 'ladrilho' });
+  B.fachada(B.plano([E0, 0, zP], [1, 0, 0], [0, 1, 0]), L, hP, 'branco', vaosFrente);
+
+  /* ---- as faixas do galpão, iguais nas outras três paredes ---- */
+  const bandas = (comp, extra = []) => [
+    { a0: 0, a1: comp, b0: 0, b1: 0.9, k: 'azul', modo: 'ladrilho' },
+    { a0: 0, a1: comp, b0: 6.3, b1: 6.5, k: 'verde', modo: 'ladrilho' },
+    { a0: 0, a1: comp, b0: 6.5, b1: hP, k: 'azul', modo: 'ladrilho' }
+  ].flatMap(b => {
+    /* a faixa pula o que já ocupa a parede nessa altura */
+    let pedacos = [[b.a0, b.a1]];
+    for (const e of extra) {
+      if (e.b1 <= b.b0 || e.b0 >= b.b1) continue;
+      pedacos = pedacos.flatMap(([p0, p1]) => (e.a1 <= p0 || e.a0 >= p1) ? [[p0, p1]]
+        : [[p0, e.a0], [e.a1, p1]].filter(([q0, q1]) => q1 - q0 > 0.01));
+    }
+    return pedacos.map(([p0, p1]) => Object.assign({}, b, { a0: p0, a1: p1 }));
+  }).concat(extra);
+  const Dz = zP - zF;
+  /* a parede leste (a da cidade): as pilastras azuis, a marca pequena e a porta de serviço */
+  const leste = [{ a0: 8.0, a1: 9.0, b0: yC, b1: 2.35, k: 'porta_servico', fundo: 0.08 }];
+  B.fachada(B.plano([E0, 0, zF], [0, 0, 1], [0, 1, 0]), Dz, hP, 'branco', bandas(Dz, leste));
+  /* a marca pequena na faixa azul de cima, perto da quina da frente —
+     um plano 3 cm pra fora, com a faixa inteira atrás */
+  B.esticar(B.plano([E0 - 0.03, 0, zF], [0, 0, 1], [0, 1, 0]), Dz - 7.4, Dz - 1.4, 6.9, 8.4, 'marca');
+  for (let a = 2.0; a < Dz - 0.5; a += 4.0) {
+    if (a > 7.4 && a < 9.6) continue;
+    B.caixa(E0 - 0.06, E0, 0.9, 6.3, zF + a - 0.3, zF + a + 0.3, { esq: 'azul', frente: 'azul', tras: 'azul', dir: null, topo: null, base: null });
+  }
+  /* a parede oeste: o painel amarelo na quina e as docas */
+  const oeste = [{ a0: zP - m.painel.z1, a1: zP - m.painel.z0, b0: 0.9, b1: 6.3, k: 'painel' }];
+  for (const dz of m.docas) oeste.push({ a0: zP - dz - 1.8, a1: zP - dz + 1.8, b0: 0, b1: 4.3, k: 'doca' });
+  B.fachada(B.plano([E1, 0, zP], [0, 0, -1], [0, 1, 0]), Dz, hP, 'branco', bandas(Dz, oeste));
+  /* o fundo */
+  B.fachada(B.plano([E1, 0, zF], [-1, 0, 0], [0, 1, 0]), L, hP, 'branco', bandas(L));
+
+  /* ---- a platibanda por dentro, o telhado de chapa e a claraboia ---- */
+  const e = 0.25;
+  B.caixa(E0, E1, hTeto, hP, zF, zF + e, { frente: 'branco', topo: 'piso', tras: null, dir: null, esq: null, base: null });
+  B.caixa(E0, E1, hTeto, hP, zP - e, zP, { tras: 'branco', topo: 'piso', frente: null, dir: null, esq: null, base: null });
+  B.caixa(E0, E0 + e, hTeto, hP, zF + e, zP - e, { dir: 'branco', topo: 'piso', frente: null, tras: null, esq: null, base: null });
+  B.caixa(E1 - e, E1, hTeto, hP, zF + e, zP - e, { esq: 'branco', topo: 'piso', frente: null, tras: null, dir: null, base: null });
+  tampaRet(E0 + e, E1 - e, zF + e, zP - e, hTeto, 'telhado');
+  for (let x = E0 + 3.0; x < E1 - 2.0; x += 4.0)
+    tampaRet(x, x + 1.0, zF + 2.0, zP - 2.0, hTeto + 0.06, 'claraboia');
+
+  /* ---- a marquise: a testeira azul com o filete, o forro e as colunas ---- */
+  const mx0 = E0 - 0.4, mx1 = E1 + 0.4, mL = mx1 - mx0;
+  const Ft = B.plano([mx0, 0, 0], [1, 0, 0], [0, 1, 0]);
+  B.ladrilhar(Ft, B.ret(0, mL, hM0, hM0 + 0.16), 'verde');
+  B.ladrilhar(Ft, B.ret(0, mL, hM0 + 0.16, hM1), 'azul');
+  B.caixa(mx0, mx1, hM0, hM1, zP, 0, { frente: null, tras: null, dir: 'azul', esq: 'azul', topo: 'telhado', base: 'forro' });
+  for (const x of m.colunas)
+    B.caixa(x - 0.2, x + 0.2, yC, hM0, m.zCol - 0.2, m.zCol + 0.2, { todas: { k: 'coluna', modo: 'esticar' }, topo: null, base: null });
+
+  /* ---- a marca: o selo na testeira, o emblema por cima, o ATACADISTA ---- */
+  const xm = E0 + 15.0;
+  const selo = [];
+  const rS = 0.42, S0 = xm - 3.0, S1 = xm + 3.0, SB = hM0 - 0.08, ST = hM1 + 0.1;
+  for (const [cx, cy, a0] of [[S1 - rS, SB + rS, -Math.PI / 2], [S1 - rS, ST - rS, 0], [S0 + rS, ST - rS, Math.PI / 2], [S0 + rS, SB + rS, Math.PI]])
+    for (let k = 0; k <= 4; k++) { const a = a0 + (Math.PI / 2) * k / 4; selo.push([cx + rS * Math.cos(a), cy + rS * Math.sin(a)]); }
+  const Fs = B.plano([0, 0, 0.05], [1, 0, 0], [0, 1, 0]);
+  B.ladrilhar(Fs, selo, 'marca', { tw: S1 - S0, th: ST - SB, oa: S0, ob: SB });
+  const rE = 1.05, cxE = xm - 1.6, cyE = ST + 0.55, disco = [];
+  for (let k = 0; k < 28; k++) { const a = 2 * Math.PI * k / 28; disco.push([cxE + rE * Math.cos(a), cyE + rE * Math.sin(a)]); }
+  B.ladrilhar(B.plano([0, 0, 0.09], [1, 0, 0], [0, 1, 0]), disco, 'emblema', { tw: 2 * rE / 0.98, th: 2 * rE / 0.98, oa: cxE - rE / 0.98, ob: cyE - rE / 0.98 });
+  /* o emblema tem costas: de trás da testeira ele também aparece */
+  B.ladrilhar(B.plano([0, 0, -0.02], [-1, 0, 0], [0, 1, 0]), disco.map(([a, b]) => [-a, b]).reverse(), 'azul');
+  B.esticar(B.plano([0, 0, 0.05], [1, 0, 0], [0, 1, 0]), xm + 3.5, xm + 8.5, hM0 + 0.35, hM0 + 1.15, 'atacadista');
+
+  /* ---- as docas: o fole preto e a plataforma ---- */
+  for (const dz of m.docas) {
+    B.pintar('#1b1c1d');
+    B.caixa(E1, E1 + 0.6, 1.1, 4.3, dz - 1.8, dz - 1.4, { todas: 'linha', base: null });
+    B.caixa(E1, E1 + 0.6, 1.1, 4.3, dz + 1.4, dz + 1.8, { todas: 'linha', base: null });
+    B.caixa(E1, E1 + 0.6, 3.9, 4.3, dz - 1.4, dz + 1.4, { todas: 'linha', base: null });
+    B.pintar(null);
+    B.caixa(E1, E1 + 0.45, 0, 1.1, dz - 1.4, dz + 1.4, { todas: 'piso', base: null });
+  }
+
+  /* ---- a carreta na doca, e o cavalo ---- */
+  const zc = m.docas[m.docaCaminhao];
+  const cx0 = E1 + 0.6, cx1 = E1 + 13.0;           // a mesma conta da massa, na planta
+  B.caixa(cx0, cx1, 1.15, 4.1, zc - 1.25, zc + 1.25, { frente: { k: 'carreta', modo: 'esticar' }, tras: { k: 'carreta', modo: 'esticar' },
+          esq: { k: 'carreta_porta', modo: 'esticar' }, dir: 'branco', topo: 'branco', base: null });
+  B.pintar('#2a2b2c');
+  B.caixa(cx0 + 0.3, cx1 - 0.3, 0.95, 1.15, zc - 1.0, zc + 1.0, { todas: 'linha', topo: null });
+  for (const x of [cx0 + 1.2, cx0 + 2.5, cx0 + 3.8, cx1 + 0.7, cx1 + 1.6])
+    for (const s of [-1, 1]) B.caixa(x - 0.5, x + 0.5, 0, 1.0, zc + s * 1.2 - 0.18, zc + s * 1.2 + 0.18, { todas: 'linha' });
+  B.caixa(cx1 - 2.4, cx1 - 2.2, 0, 1.15, zc - 0.9, zc + 0.9, { todas: 'linha' });           // o pé de apoio
+  B.pintar(null);
+  const kx0 = cx1 + 0.05, kx1 = cx1 + 2.25;
+  B.caixa(kx0, kx1, 0.5, 3.2, zc - 1.2, zc + 1.2, { dir: { k: 'cavalo', modo: 'esticar' },
+          frente: { k: 'cavalo_lado', modo: 'esticar', espelho: true }, tras: { k: 'cavalo_lado', modo: 'esticar' },
+          topo: { k: 'linha', tinta: '#a8221b' }, esq: { k: 'linha', tinta: '#2a2b2c' }, base: null });
+
+  /* ---- o totem da esquina ---- */
+  const t = m.totem;
+  B.caixa(t.x - t.larg / 2, t.x + t.larg / 2, 0, t.alt, t.z - t.esp / 2, t.z + t.esp / 2,
+          { frente: { k: 'totem', modo: 'esticar' }, tras: { k: 'totem', modo: 'esticar' }, dir: 'azul', esq: 'azul', topo: 'azul', base: null });
+}
+
 /* =======================================================
    A MONTAGEM: da planta pro mundo
    ======================================================= */
@@ -528,7 +696,8 @@ const MODELOS = {
   predio: { folha: 'predio', montar: predio },
   loja:   { folha: 'loja',   montar: loja },
   adm:    { folha: 'adm',    montar: adm },
-  casa:   { folha: 'casa',   montar: casa }
+  casa:   { folha: 'casa',   montar: casa },
+  atacadex: { folha: 'atacadex', montar: atacadex }
 };
 
 /* a mesma conta de `paraMundoDoMarco`, na planta */
@@ -567,10 +736,17 @@ export function montarModelos(P, opc = {}) {
     });
     return (materiais[folha] = mat);
   };
+  /* os marcos moram na ponta de um quarteirão; o atacarejo, no mato
+     a oeste — a planta dá os dois do mesmo jeito (fatia, frente, massa) */
+  const pecas = [];
   for (const q of K.QUADRAS) {
     if (!q.equip || q.equip.tipo !== 'marco') continue;
-    for (const pc of q.equip.pecas) {
-      if (pc.k !== 'modelo' || !MODELOS[pc.modelo]) continue;
+    for (const pc of q.equip.pecas) if (pc.k === 'modelo') pecas.push(pc);
+  }
+  if (K.ATACADEX) pecas.push(K.ATACADEX);
+  {
+    for (const pc of pecas) {
+      if (!MODELOS[pc.modelo]) continue;
       const def = MODELOS[pc.modelo];
       const B = Construtor(def.folha), G = Construtor('grades');
       def.montar(B, pc.massa, G);

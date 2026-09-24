@@ -33,6 +33,9 @@ const P = TO.dados.plantaEstadio;
 const PINT = TO.diaJogo.estadioPintura;
 const K = P.CIDADE;
 const W = P.W, H = P.H;
+/* o x da SIMULAÇÃO é o do tabuleiro, que começa `DX` a oeste do x da
+   planta: quem compara o líder com casa, porta ou pixação desconta */
+const DX = P.DX || 0;
 
 /* a textura do chão cobre o que se DESENHA (mar e mato incluídos), que
    é maior que o tabuleiro: 4096 de largura, o que toda placa aceita */
@@ -629,7 +632,7 @@ export function criar(canvas) {
          direção (a saída leste apontava como o setor oeste e pintava
          um bandeirão azul em cima do vermelho) */
       if (e.saida) continue;
-      const q = P.ondeNoReto(e.x, e.y);
+      const q = P.ondeNoReto(e.x - DX, e.y);          // a entrada vem no x do tabuleiro
       if (!q) continue;
       const lado = q.lado;
       const cor = COR_LADO[e.lado] || COR_LADO.neutro;
@@ -896,7 +899,7 @@ export function criar(canvas) {
   let dicaEl = null;
   function sincronizarDica(lider) {
     const p = (camadaRotulos && lider && lider.lado)
-            ? pixoPerto(lider.x, lider.y, lider.lado) : null;
+            ? pixoPerto(lider.x - DX, lider.y, lider.lado) : null;
     if (!p) { if (dicaEl) dicaEl.style.display = 'none'; return; }
     if (!dicaEl) {
       dicaEl = document.createElement('div');
@@ -904,7 +907,7 @@ export function criar(canvas) {
       camadaRotulos.appendChild(dicaEl);
     }
     const r = canvas.getBoundingClientRect();
-    const m = P.mundo(p.x, p.y);
+    const m = P.mundo(p.x + DX, p.y);                  // a pixação está no x da planta
     vProj.set(m.x, m.y + (p.altura || 10) + 12, m.z).project(cam);
     const fora = vProj.z > 1 || Math.abs(vProj.x) > 1.3 || Math.abs(vProj.y) > 1.3;
     dicaEl.textContent = 'F  PIXAR POR CIMA';
@@ -991,9 +994,10 @@ export function criar(canvas) {
      mesmo. */
   function abrirTetoDaSede(lider) {
     if (!cidade || !cidade.tetos) return;
+    const lx = lider ? lider.x - DX : 0;               // o líder anda no x do tabuleiro
     for (const t of cidade.tetos) {
       const a = t.area;
-      const dentro = !!lider && lider.x > a.x0 && lider.x < a.x1 &&
+      const dentro = !!lider && lx > a.x0 && lx < a.x1 &&
                                 lider.y > a.y0 && lider.y < a.y1;
       if (t.mesh.visible !== !dentro) t.mesh.visible = !dentro;
     }

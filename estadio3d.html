@@ -268,14 +268,16 @@ const lider = () => J && (J.discos.find(d => d.lider && d.doJogador && d.vivo)
    dentro da sede, pixação é de muro de rua —, mas quando disputam quem
    está com a mão na maçaneta quer entrar, não pintar.
 
-   Fora do estádio o mundo é o próprio tabuleiro, então o x,y do líder
-   serve direto pra procurar as duas. */
+   Fora do estádio o mundo é o próprio tabuleiro — a menos do `DX`, o
+   tabuleiro começa a oeste do mundo —, então o x,y do líder passa por
+   `mundo()` e serve pra procurar as duas. */
 function usarF() {
   const l = lider();
   if (!l) return;
-  const r = vista.alternarPorta(l.x, l.y);
+  const m = vista.mundo(l.x, l.y), mx = m.x, mz = m.z;
+  const r = vista.alternarPorta(mx, mz);
   if (r !== null) { C.logar(J, r ? 'Porta aberta.' : 'Porta fechada.', 'n'); return; }
-  const t = vista.pixarPorCima(l.x, l.y, l.lado);
+  const t = vista.pixarPorCima(mx, mz, l.lado);
   if (t !== null) {
     const nome = (TORCIDAS[l.lado] && TORCIDAS[l.lado].rot) || l.lado.toUpperCase();
     C.logar(J, 'Pixou por cima: ' + t + '. O muro é da ' + nome + '.', 'n');
@@ -380,7 +382,8 @@ function laco(agora) {
     const onde = { arquibancada: 0, vomitorio: 0, corredor: 0, rua: 0, fachada: 0 };
     for (const d of J.discos) {
       if (!d.vivo || d.entrou || d.sumiu) continue;
-      onde[P.onde(d.x, d.y)] = (onde[P.onde(d.x, d.y)] || 0) + 1;
+      const k = P.onde(d.x - P.DX, d.y);             // o disco anda no x do tabuleiro
+      onde[k] = (onde[k] || 0) + 1;
     }
     const c = vista.conta || {};
     elEstado.innerHTML =

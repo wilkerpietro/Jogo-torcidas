@@ -23,6 +23,10 @@
    tabuleiro é 86 menor por lado que o gramado do mundo;
    ninguém pisa no gramado, então não custa nada. Resultado:
    FORA DO ESTÁDIO, TABULEIRO = MUNDO. Rua reta é rua reta.
+   (A menos de `DX`: o tabuleiro da simulação começa a oeste do
+   mundo — o mato do atacarejo é andável — e o x dele é o x da
+   planta mais `DX`. Aqui dentro tudo continua no x da planta; só a
+   cena e o `mundo()` falam o do tabuleiro.)
 
    A dobra, faixa por faixa. `d` é a distância ao retângulo
    âncora no TABULEIRO; `r` é a distância ao gramado no MUNDO.
@@ -86,6 +90,19 @@ TO.dados.plantaEstadio = (function(){
   const ceil8 = v => Math.ceil(v/8)*8;
   const W = ceil8((MAPA.x1 - MAPA.x0)*PX), H = ceil8((MAPA.y1 - MAPA.y0)*PX);   // 5400 × 5456
   const pxX = x => (x - MAPA.x0)*PX, pxY = y => (y - MAPA.y0)*PX;
+  /* O TABULEIRO COMEÇA A OESTE DO MUNDO. O mato a oeste da cidade,
+     onde fica o atacarejo, passou a ser andável — e o tabuleiro de
+     `arredores.js` conta célula a partir de zero. Então quem cresce
+     pra oeste é o TABULEIRO: o x dele é o x da planta mais `DX`. O
+     mundo, a cidade, a favela e tudo o que a planta sorteia não saem
+     do lugar (mover o MAPA mudaria cada sorteio por posição). */
+  /* 1152 = 2 × 576, e 576 é o mmc de 8, 18 e 64 — a célula da malha,
+     a vaga de nascimento e a grade espacial de `combate.js`. Com isso
+     a noite de antes sai IDÊNTICA, disco por disco, com a mesma
+     semente (medido: 90 s, 76 discos, zero diferença); com 1040 ela
+     saía equivalente mas não igual, porque o arredondamento caía em
+     outro lugar. */
+  const DX = 1152;
   const pxm = (x, y) => [pxX(x), pxY(y)];                                        // px do mapa → mundo
   const QEST = { larg: 2*(AX + R.calcada1), alt: 2*(AY + R.calcada1) };          // 1184 × 960
   const [CX, CY] = pxm(765, 305);                                                // o estádio, onde o mapa o põe
@@ -3411,6 +3428,9 @@ TO.dados.plantaEstadio = (function(){
            parecida —, e a favela agora encosta na borda oeste do mapa.
            Fora da GRADE (mas dentro do tabuleiro) é mato aberto, e
            esse sim é livre. */
+        /* (o tabuleiro cresceu depois pra oeste, `DX`: esta conta fica
+           com a borda antiga de propósito — a favela é sorteada com ela
+           e sairia outra) */
         const noTab = (x, y) => x >= 4 && y >= 4 && x <= W - 4 && y <= H - 4;
         const livre = (i, j) => {
           if(i < 0 || j < 0 || i >= GW || j >= GH) return noTab(mx(i), my(j));
@@ -3955,6 +3975,70 @@ TO.dados.plantaEstadio = (function(){
         { x0: m.s0, x1: m.s1, z0: m.z0, z1: fz, alt: 8.0 }
       ];
       return m;
+    },
+    /* O ATACAREJO. O referencial é o do marco com a frente pro norte:
+       x cresce da divisa LESTE pra oeste (esquerda pra direita de quem
+       olha a loja do estacionamento), z = 0 é a testa da marquise, z
+       negativo entra no galpão e z positivo é o estacionamento, até a
+       avenida. `norte` é a borda do estacionamento nesse referencial,
+       [[x, z], ...], x crescendo. */
+    atacadex(W, D, norte){
+      const m = { W, D, norte,
+                  E0: 2.6, E1: 38.6,              // as paredes leste e oeste do galpão (36 m de frente)
+                  zP: -4.5, zF: -30.5,            // a fachada de vidro (sob a marquise) e o fundo (26 m)
+                  hM0: 4.6, hM1: 6.1,             // a marquise: a laje embaixo e o alto da testeira
+                  hP: 8.8,                        // o alto da platibanda do galpão
+                  zCol: -0.7 };                   // o eixo das colunas, pra dentro da testeira
+      const zNorte = x => {
+        if(x <= norte[0][0]) return norte[0][1];
+        for(let i = 1; i < norte.length; i++){
+          const [xa, za] = norte[i-1], [xb, zb] = norte[i];
+          if(x <= xb) return za + (zb - za)*(x - xa)/(xb - xa);
+        }
+        return norte[norte.length-1][1];
+      };
+      m.zNorte = zNorte;
+      /* as colunas da marquise, na divisa dos nove vãos de 4 m da vitrine
+         (fora da divisa, uma delas caía na frente da porta) */
+      const nV = 9, passo = (m.E1 - m.E0)/nV;
+      m.colunas = [];
+      for(let i = 0; i <= nV; i++) m.colunas.push(m.E0 + i*passo);
+      m.vaoPorta = Math.floor(nV/2);             // a porta automática, no vão do meio
+      /* a parede oeste: o painel amarelo na quina da frente e as cinco
+         docas atrás dele, de 4 em 4 m */
+      m.painel = { z0: -10.4, z1: -4.9 };
+      m.docas = [-12.4, -16.4, -20.4, -24.4, -28.4];
+      m.docaCaminhao = 1;                        // o caminhão encostado na segunda
+      /* AS VAGAS: a fileira de frente pra loja e, onde a avenida deixa,
+         a de trás; 2,5 × 5 m. Na frente da porta fica a faixa de
+         pedestre, sem vaga. */
+      const xP0 = m.colunas[m.vaoPorta], xP1 = m.colunas[m.vaoPorta + 1];
+      m.faixa = { x0: xP0 + 0.4, x1: xP1 - 0.4, z0: 0, z1: 12.4 };
+      m.vagas = [];
+      const fileira = (z0, z1) => {
+        for(let x = m.E0 + 0.4; x + 2.5 <= m.E1 - 0.4 + 1e-6; x += 2.5){
+          if(x < m.faixa.x1 && x + 2.5 > m.faixa.x0) continue;
+          if(zNorte(x) < z1 + 0.6 || zNorte(x + 2.5) < z1 + 0.6) continue;
+          m.vagas.push({ x0: x, x1: x + 2.5, z0, z1 });
+        }
+      };
+      fileira(2.2, 7.2);
+      fileira(13.0, 18.0);
+      /* o totem na esquina da avenida com a rua da borda, e os postes na guia */
+      m.totem = { x: 1.5, z: zNorte(1.5) - 1.3, larg: 2.4, esp: 0.7, alt: 8.5 };
+      m.postes = [9, 21, 33, 47].map(x => ({ x, z: zNorte(x) - 0.6 }));
+      const zC = m.docas[m.docaCaminhao];
+      m.volumes = [
+        { x0: m.E0, x1: m.E1, z0: m.zF, z1: m.zP, alt: m.hP },                       // o galpão
+        { x0: m.E0 - 0.4, x1: m.E1 + 0.4, z0: m.zP, z1: 0, alt: m.hM1, base: m.hM0 },  // a marquise: só a câmera
+        ...m.colunas.map(x => ({ x0: x - 0.25, x1: x + 0.25, z0: m.zCol - 0.25, z1: m.zCol + 0.25, alt: m.hM0 })),
+        ...m.docas.map(z => ({ x0: m.E1, x1: m.E1 + 0.7, z0: z - 1.8, z1: z + 1.8, alt: 4.3 })),
+        { x0: m.E1 + 0.6, x1: m.E1 + 13.0, z0: zC - 1.25, z1: zC + 1.25, alt: 4.1 },     // a carreta
+        { x0: m.E1 + 13.05, x1: m.E1 + 15.25, z0: zC - 1.2, z1: zC + 1.2, alt: 3.2 },    // o cavalo
+        { x0: m.totem.x - m.totem.larg/2, x1: m.totem.x + m.totem.larg/2,
+          z0: m.totem.z - m.totem.esp/2, z1: m.totem.z + m.totem.esp/2, alt: m.totem.alt }
+      ];
+      return m;
     }
   };
 
@@ -4061,8 +4145,174 @@ TO.dados.plantaEstadio = (function(){
     q.solidos = pecas.filter(o => o.bloqueia);
     MARCOS_POSTOS.push({ modelo: mc.modelo, quadra: [q.i, q.j], fatia: { ...f }, frente: mc.frente, W, D });
   }
+  /* =========================================================
+     O ATACAREJO — o ATACADEX, no mato a oeste da cidade
+     ---------------------------------------------------------
+     No lugar que o dono marcou no mapa: entre a avenida do oeste e a
+     trilha de terra, encostado na rua da borda da cidade. É por ele
+     que o tabuleiro cresceu pra oeste (`DX`). Entra no fim, como os
+     marcos: não sorteia nada e só tira o que está embaixo — as
+     moitas, o pedaço da trilha, as árvores e as cinco casas de beira
+     do lado sul da avenida.
+     ========================================================= */
+  const ATACADEX = (function(){
+    const M = METRO;
+    const f = { x0: -1010, x1: 40, y0: 2990, y1: 3622 };        // y0: a testa da marquise
+    /* a borda do estacionamento é a da faixa da avenida (asfalto e
+       calçada) mais a guia, medida de 30 em 30 */
+    const bordaAv = x => {
+      let y = 2300;
+      while(!naAvenida(x, y) && y < 3000) y += 1;
+      while(naAvenida(x, y)) y += 1;
+      return y;
+    };
+    const GUIA = 12;
+    const norteMundo = [];
+    for(let x = f.x1; x > f.x0; x -= 30) norteMundo.push([x, bordaAv(x) + GUIA]);
+    norteMundo.push([f.x0, bordaAv(f.x0) + GUIA]);
+    const norte = norteMundo.map(([x, y]) => [(f.x1 - x)/M, (f.y0 - y)/M]);
+    const W = (f.x1 - f.x0)/M, D = (f.y1 - f.y0)/M;
+    const massa = MASSAS.atacadex(W, D, norte);
+    const noMundo = (lx, lz) => paraMundoDoMarco(f, 'n', lx, lz);
+    const volumes = massa.volumes.map(v => Object.assign(retDoMarco(f, 'n', v), { alt: v.alt*M, base: (v.base || 0)*M }));
+    const solidos = volumes.filter(v => !v.base);
+    /* o terreno inteiro: da guia da avenida ao fundo do galpão */
+    const area = norteMundo.concat([[f.x0, f.y1], [f.x1, f.y1]]);
+    const noTerreno = (x, y, r) => {
+      if(!Number.isFinite(x) || !Number.isFinite(y)) throw new Error('atacarejo: ponto sem coordenada');
+      if(dentroPol(x, y, area)) return true;
+      if(!r) return false;
+      for(const [dx, dy] of [[r,0],[-r,0],[0,r],[0,-r]]) if(dentroPol(x + dx, y + dy, area)) return true;
+      return false;
+    };
+
+    /* o que estava embaixo sai: as moitas (do balde também, senão a
+       moita some do desenho e continua barrando o boneco) ... */
+    for(let i = MOITAS.length - 1; i >= 0; i--) if(noTerreno(MOITAS[i].x, MOITAS[i].y, MOITAS[i].r)) MOITAS.splice(i, 1);
+    for(const [k, l] of baldes) baldes.set(k, l.filter(m => !noTerreno(m.x, m.y, m.r)));
+    /* ... as casas de beira do lado sul da avenida ... */
+    const meio = l => l.ang ? [l.cx, l.cy] : [(l.x0 + l.x1)/2, (l.y0 + l.y1)/2];
+    const fora = BEIRA.filter(l => !l.favela && noTerreno(...meio(l)));
+    for(const l of fora){
+      BEIRA.splice(BEIRA.indexOf(l), 1);
+      if(LOTES.includes(l)) LOTES.splice(LOTES.indexOf(l), 1);
+    }
+    for(const [k, l] of baldesBeira) baldesBeira.set(k, l.filter(o => !fora.includes(o)));
+    /* ... as árvores e os postes ... */
+    for(let i = ARVORES.length - 1; i >= 0; i--) if(noTerreno(ARVORES[i].x, ARVORES[i].y, ARVORES[i].r)) ARVORES.splice(i, 1);
+    for(const c of CELULAS) if(c.arvores) c.arvores = c.arvores.filter(a => !noTerreno(a.x, a.y, a.r));
+    for(let i = POSTES.length - 1; i >= 0; i--) if(noTerreno(POSTES[i].x, POSTES[i].y)) POSTES.splice(i, 1);
+    /* ... o capim e o entulho pintados no chão (no asfalto eles boiavam) ... */
+    for(let i = DECALQUES.length - 1; i >= 0; i--) if(noTerreno(DECALQUES[i].x, DECALQUES[i].y, DECALQUES[i].tam/2)) DECALQUES.splice(i, 1);
+    /* ... e o pedaço da trilha que atravessava: ela passa a chegar
+       até o muro de trás e recomeçar do outro lado */
+    const corte = { x0: f.x0 - 12, x1: f.x1 + 12, y0: Math.min(...norteMundo.map(p => p[1])) - 12, y1: f.y1 + 12 };
+    const dentroCorte = (x, y) => x > corte.x0 && x < corte.x1 && y > corte.y0 && y < corte.y1;
+    const cortarTrilha = t => {
+      const pedacos = []; let atual = [];
+      for(let i = 0; i < t.length; i++){
+        const p = t[i];
+        if(!dentroCorte(p[0], p[1])){
+          if(i > 0 && dentroCorte(t[i-1][0], t[i-1][1])) atual.push(saidaDoCorte(p, t[i-1]));
+          atual.push(p);
+        } else if(i > 0 && !dentroCorte(t[i-1][0], t[i-1][1])){
+          atual.push(saidaDoCorte(t[i-1], p));
+          if(atual.length > 1) pedacos.push(atual);
+          atual = [];
+        }
+      }
+      if(atual.length > 1) pedacos.push(atual);
+      return pedacos;
+    };
+    /* o ponto em que o segmento de fora (a) pra dentro (b) cruza a borda */
+    function saidaDoCorte(a, b){
+      let lo = 0, hi = 1;
+      for(let k = 0; k < 30; k++){
+        const t = (lo + hi)/2, x = a[0] + (b[0] - a[0])*t, y = a[1] + (b[1] - a[1])*t;
+        if(dentroCorte(x, y)) hi = t; else lo = t;
+      }
+      return [a[0] + (b[0] - a[0])*lo, a[1] + (b[1] - a[1])*lo];
+    }
+    const trilhas = [];
+    for(const t of TRILHAS) for(const p of cortarTrilha(t)) trilhas.push(p);
+    TRILHAS.length = 0;
+    for(const t of trilhas) TRILHAS.push(t);
+
+    /* O ESTACIONAMENTO: uns carros nas vagas (sem sorteio: um padrão
+       fixo, que deixa vaga livre na frente da porta e no fundo) */
+    const CORES = ['#e8e6e0', '#8a8f96', '#23272c', '#b8bcc1', '#a3312c', '#2a4f9a', '#d7d3c6', '#4d5a3f'];
+    const vagas = massa.vagas.map(v => retDoMarco(f, 'n', v));
+    vagas.forEach((v, i) => {
+      if((i*7 + 3) % 11 >= 5) return;
+      const mx = (v.x0 + v.x1)/2, my = (v.y0 + v.y1)/2;
+      CARROS.push({ x0: Math.round(mx - 0.9*M), x1: Math.round(mx + 0.9*M), y0: Math.round(my - 2.15*M), y1: Math.round(my + 2.15*M),
+                    cor: CORES[(i*5 + 1) % CORES.length] });
+    });
+    /* os postes na guia da avenida, com o braço pra dentro do estacionamento */
+    for(const pt of massa.postes){ const [x, y] = noMundo(pt.x, pt.z); POSTES.push({ x, y, dx: 0, dz: 1 }); }
+
+    return { modelo: 'atacadex', frente: 'n', fatia: { ...f }, W, D, massa, area, volumes, solidos,
+             caixa: { x0: f.x0 - 40, x1: f.x1 + 40, y0: corte.y0 - 40, y1: f.y1 + 40 } };
+  })();
+  /* =========================================================
+     AS CASAS DE MURO — três de cada modelo, espalhadas pelo mapa
+     ---------------------------------------------------------
+     O dono mandou quatro casas de muro (a da garagem coberta com o
+     gradil, a do muro alto com a torrinha da caixa d'água, a do
+     quintal com a porta no corredor e a casinha no meio do lote) e
+     pediu TRÊS DE CADA, espalhadas, cada uma diferente da outra (a
+     roupa de cada uma sai do hash da posição, no `casas3d.js`). Quem
+     escolhe o lote é esta conta, sem sorteio nenhum: um modelo por
+     vez, a casa térrea comum (sem comércio, fora da favela, no
+     tabuleiro de antes do atacarejo) que cabe o modelo e fica MAIS
+     LONGE das já escolhidas.
+     A primeira é a mais perto do meio da cidade.
+     ========================================================= */
+  (function(){
+    const MIN = { m1: [4.6, 4.6], m2: [4.8, 4.6], m3: [4.2, 4.3], m4: [3.6, 4.0] };
+    const medida = l => {
+      if(l.ang) return [l.w/METRO, l.h/METRO];
+      const nS = l.frente === 'n' || l.frente === 's';
+      return [(nS ? l.x1 - l.x0 : l.y1 - l.y0)/METRO, (nS ? l.y1 - l.y0 : l.x1 - l.x0)/METRO];
+    };
+    const centro = l => l.ang ? [l.cx, l.cy] : [(l.x0 + l.x1)/2, (l.y0 + l.y1)/2];
+    const cands = LOTES.filter(l => {
+      if(l.tipo !== 'casa' || l.favela || l.placa || l.modelo) return false;
+      const [x, y] = centro(l);
+      /* dentro do tabuleiro de antes: a faixa nova a oeste é mato de beira
+         de estrada, e casa escolhida lá ficava na borda do mapa */
+      return x > 40 && x < W - 40 && y > 40 && y < H - 40;
+    });
+    const [mx, my] = pxm(700, 600);                 // o meio da cidade
+    const postas = [];
+    for(const tipo of ['m1', 'm2', 'm3', 'm4', 'm1', 'm2', 'm3', 'm4', 'm1', 'm2', 'm3', 'm4']){
+      const [wm, dm] = MIN[tipo];
+      let melhor = null, nota = -Infinity;
+      for(const l of cands){
+        if(l.muro) continue;
+        const [w, d] = medida(l);
+        if(w < wm || d < dm) continue;
+        const [x, y] = centro(l);
+        const n = postas.length ? Math.min(...postas.map(([a, b]) => Math.hypot(x - a, y - b))) : -Math.hypot(x - mx, y - my);
+        if(n > nota){ nota = n; melhor = l; }
+      }
+      if(!melhor) continue;
+      melhor.muro = tipo;
+      postas.push(centro(melhor));
+    }
+  })();
+
+  const naMassaDoAtacadex = (x, y) => {
+    const c = ATACADEX.caixa;
+    if(x < c.x0 || x > c.x1 || y < c.y0 || y > c.y1) return false;
+    return ATACADEX.solidos.some(o => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1);
+  };
+
   /* a câmera não atravessa marco: o volume vale da `base` até o `alt` */
   function noMarco(x, z, y){
+    const c = ATACADEX.caixa;
+    if(x >= c.x0 && x <= c.x1 && z >= c.y0 && z <= c.y1)
+      return ATACADEX.volumes.some(v => x >= v.x0 && x < v.x1 && z >= v.y0 && z < v.y1 && y >= v.base && y < v.alt);
     const q = celulaEm(x, z);
     if(!q || !q.equip || q.equip.tipo !== 'marco') return false;
     for(const v of q.equip.volumes)
@@ -4077,7 +4327,8 @@ TO.dados.plantaEstadio = (function(){
                    areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe, BARES, CRUZAMENTOS, SEMAFOROS, FAIXAS,
-                   FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES, MARCOS: MARCOS_POSTOS, noMarco };
+                   FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES, MARCOS: MARCOS_POSTOS, noMarco,
+                   ATACADEX };
 
   /* =======================================================
      A DOBRA: tabuleiro → mundo
@@ -4098,7 +4349,9 @@ TO.dados.plantaEstadio = (function(){
   }
 
   const saida = { x:0, y:0, z:0 };
-  function mundo(x, y, alvo){
+  function mundo(xTab, y, alvo){
+    /* quem chama é a simulação: o x dela é o do tabuleiro */
+    const x = xTab - DX;
     const o = alvo || saida;
     const a = ancora(x, y);
     if(a.d >= D.calcada){ o.x = x; o.z = y; o.y = 0; return o; }   // o bairro: identidade
@@ -4129,6 +4382,7 @@ TO.dados.plantaEstadio = (function(){
     const c = noCampo(x, y);
     if(c) return andaNoCampo(c, x, y);
     if(noCarro(x, y)) return false;
+    if(naMassaDoAtacadex(x, y)) return false;
     const q = celulaEm(x, y);
     /* PAREDE DE EQUIPAMENTO GANHA DA AVENIDA.
        A banda da avenida é andável — asfalto mais calçada — e vinha
@@ -4164,7 +4418,7 @@ TO.dados.plantaEstadio = (function(){
       /* a lasca da quina, e o canto das torres: dentro do quadrado do
          estádio e fora da calçada redonda, nada se pisa */
       if(noQuadradoDoEstadio(x, y)) return false;
-      if(x < 4 || y < 4 || x > W-4 || y > H-4) return false;
+      if(x < 4 - DX || y < 4 || x > W-4 || y > H-4) return false;
       return andaNaCidade(x, y);
     }
     const v = noVomitorio(x, y);
@@ -4280,13 +4534,13 @@ TO.dados.plantaEstadio = (function(){
      A MÁSCARA — o formato de `arredores.codificarMascara`
      ======================================================= */
   function mascara(){
-    const COLS = Math.ceil(W/CEL), ROWS = Math.ceil(H/CEL);
+    const COLS = Math.ceil((W + DX)/CEL), ROWS = Math.ceil(H/CEL);
     const linhas = [];
     for(let r=0;r<ROWS;r++){
       const y = (r+0.5)*CEL;
       const runs = []; let atual = 0, cont = 0;
       for(let c=0;c<COLS;c++){
-        const v = anda((c+0.5)*CEL, y) ? 1 : 0;
+        const v = anda((c+0.5)*CEL - DX, y) ? 1 : 0;
         if(v === atual) cont++;
         else { runs.push(cont); atual = v; cont = 1; }
       }
@@ -4296,7 +4550,7 @@ TO.dados.plantaEstadio = (function(){
     return linhas.join(';');
   }
 
-  return { W, H, CEL, CX, CY, AX, AY, AXb, AYb, DOBRA, D, R, ALT, N, NDEG, TOPO_ARQ, tetoDe,
+  return { W, H, CEL, DX, CX, CY, AX, AY, AXb, AYb, DOBRA, D, R, ALT, N, NDEG, TOPO_ARQ, tetoDe,
            METRO, ARCADA, RUA, CALC, QEST, QEST_X0, QEST_X1, QEST_Y0, QEST_Y1, CIDADE,
            PERFIL, anel, ancora, ancoraMundo, dist, distMundo, alturaDegrau,
            LADOS, ponto, pontoMundo, ondeNoReto, ondeNoRetoMundo,
@@ -4311,7 +4565,7 @@ TO.dados.plantaEstadio = (function(){
    ========================================================= */
 TO.dados.cenaEstadio = (function(){
   const P = TO.dados.plantaEstadio;
-  const { W, H, CEL, CX, CY } = P;
+  const { W, H, CEL, DX, CX, CY } = P;
 
   /* A TORCIDA NASCE NAS PONTAS DO BAIRRO, na porta da sede, e
      caminha. O primeiro escalão mandante é o seu.
@@ -4441,6 +4695,15 @@ TO.dados.cenaEstadio = (function(){
   };
   const filas = [].concat(fila('o', CY, 'fila_o'), fila('l', CY, 'fila_l'), fila('s', CX, 'fila_s'));
 
+  /* O QUE A SIMULAÇÃO LÊ ESTÁ NO TABULEIRO, e ele começa `DX` a oeste
+     do x da planta: tudo acima foi medido na planta e anda junto aqui */
+  const aoTab = p => { p.x += DX; return p; };
+  for(const s of spawns) aoTab(s);
+  for(const e of entradas) aoTab(e);
+  for(const p of pmPostos) aoTab(p);
+  for(const g of grades){ aoTab(g.de); aoTab(g.ate); }
+  for(const f of filas) for(const p of f.pontos) p[0] += DX;
+
   return {
     /* `id:'arredores'` DE PROPÓSITO. `combate.js` só liga a vida do
        lado de fora — ficar na sede até a hora, bonde hostil sair
@@ -4449,9 +4712,9 @@ TO.dados.cenaEstadio = (function(){
        registro `TO.dados.cenas.estadio`, não pelo id; o id é só o
        que o combate lê pra decidir como a noite começa. */
     id:'arredores', nome:'Estádio e bairro',
-    largura:W, altura:H, celula:CEL, imagem:null,
+    largura:W + DX, altura:H, celula:CEL, imagem:null,
     poligonos:{
-      caminhavel:[{rot:'chão', pontos:[[0,0],[W,0],[W,H],[0,H]]}],
+      caminhavel:[{rot:'chão', pontos:[[0,0],[W + DX,0],[W + DX,H],[0,H]]}],
       bloqueio:[]
     },
     mascara: P.mascara(),

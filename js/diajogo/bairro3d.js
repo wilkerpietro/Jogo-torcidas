@@ -549,7 +549,8 @@ export function montarBairro(P) {
      tipos do `casas3d.js` (a casa térrea, a de tijolo, a do comércio
      embaixo, o sobrado de laje e o casarão), o galpão e o prédio da
      cidade dos quatro modelos deles (o galpão de platibanda, o de arco,
-     o predinho de reboco e o prédio de tijolo), tudo com a folha pintada
+     o predinho de reboco e o prédio de tijolo), e doze casas térreas
+     viram casa de muro (três de cada modelo), tudo com a folha pintada
      das casas; só o muro (e a sede) continua caixa. Cada pedaço da
      cidade junta as casas dele numa malha — é o que deixa a câmera
      descartar o que está fora do quadro. */

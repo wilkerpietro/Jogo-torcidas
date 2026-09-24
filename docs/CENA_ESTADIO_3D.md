@@ -1557,6 +1557,92 @@ O que não é bom:
   portão. É da planta (`q.quintal`), estava lá antes com a caixa velha,
   e não foi mexido.
 
+### 4.27. O atacarejo ATACADEX, o tabuleiro maior e as casas de muro
+
+Dois pedidos juntos: um supermercado "inspirado" nas três fotos de um
+atacarejo, com o nome **ATACADEX**, no mato a oeste da cidade que o
+dono marcou no mapa; e as quatro casas de muro das fotos (de frente e
+de cima), três de cada, espalhadas pela cidade, cada cópia diferente.
+
+**O tabuleiro cresceu pra oeste.** O mato marcado ficava FORA do que se
+anda: `arredores.js` conta célula a partir de x = 0, e o tabuleiro
+começava na rua da borda da cidade. Mexer no recorte do mapa (`MAPA`)
+andaria o mundo inteiro, e cada sorteio por posição (o tipo e a cor de
+cada casa, as casas grandes da favela, a pixação) mudaria. Então quem
+anda é só o TABULEIRO: o x da simulação é o x da planta mais `DX`
+(1152). A planta, o 3D e tudo o que ela sorteia ficam onde estavam; a
+cena (os pontos de nascimento, as entradas, os postos da PM, as
+grades, as filas, a máscara) sai no x do tabuleiro, `mundo()` desconta
+o `DX`, e os quatro lugares que comparavam o líder com coisa da cidade
+(a porta da sede, a pixação, o telhado da sede que abre, o bandeirão
+do setor) descontam também. `DX` é 2 × 576, e 576 é o mmc de 8, 18 e
+64 — a célula da malha, a vaga de nascimento e a grade espacial de
+`combate.js`: com isso a noite de antes sai IDÊNTICA, disco por disco
+(medido com a mesma semente: 90 s, 76 discos, zero diferença). Com
+1040 ela saía equivalente, mas não igual. A parte velha da máscara é a
+mesma célula a célula, fora o terreno do atacarejo; a faixa nova é
+mato andável (94%, o resto é moita e casa de beira) e a passagem
+continua 100%. A carga não mudou (uns 7,5 s pra montar a cena).
+
+**O atacarejo.** Entra no fim da planta, como os marcos (sem sorteio),
+com a massa em metros declarada uma vez só (`MASSAS.atacadex`): ela
+vira o que barra o boneco e a câmera e o esqueleto do modelo
+(`modelos3d.js`, folha `atacadex.jpg`). Tem, da avenida pra dentro:
+
+| parte | o que tem |
+|---|---|
+| estacionamento | asfalto de guia a guia, 14 vagas pintadas, seis carros, a faixa de pedestre na frente da porta, a guia da avenida com as duas entradas e quatro postes |
+| marquise | 36 m de testeira azul com o filete verde e amarelo, o selo ATACADEX (vermelho-laranja) com o emblema do carrinho saindo por cima e o ATACADISTA; dez colunas brancas de pé amarelo e preto, na divisa dos nove vãos da vitrine |
+| vitrine | vidro com caixilho branco e as gôndolas lá dentro, a porta automática com o ENTRADA, o painel bordô e os cartazes de oferta |
+| galpão | 36 × 26 m, 8,8 m de altura, chapa branca com a faixa azul embaixo e em cima; pilastras azuis e a marca pequena na parede da cidade, a porta de serviço |
+| parede oeste | o painel amarelo da quina e as cinco docas com o fole preto, uma com a carreta encostada |
+| telhado | chapa com fileiras de claraboia, a platibanda por dentro |
+| totem | na esquina da avenida com a rua da borda: a marca, o horário e o ESTACIONAMENTO GRÁTIS |
+
+A marca é nossa: o nome é ATACADEX e o emblema é um carrinho num disco
+amarelo — nada da marca da referência. Pra caber, saíram do terreno 50
+moitas (do balde espacial também), duas árvores, 62 decalques de chão,
+sete casas de beira (cinco na avenida, duas retas na rua da borda) e o
+pedaço da trilha de terra que atravessava. Custo: 6.744 triângulos,
+uma folha de 172 KB e uma chamada de desenho.
+
+**As casas de muro.** Quatro modelos no `casas3d.js`, do jeito das
+fotos:
+
+| modelo | o que tem |
+|---|---|
+| M1 | a garagem coberta na frente, fechada pelo gradil sobre a mureta, com o portãozinho no canto; a água de telha da garagem entra embaixo do beiral da casa de quatro águas |
+| M2 | o muro alto com o requadro bege em volta do portão de garagem (de losango ou de chapa) e do portão de grade, o telhadinho da garagem; atrás, a casa de quatro águas com a caixa d'água numa torrinha de telhado próprio |
+| M3 | o muro com o portãozinho de grade na boca do corredor, o quintal na frente, a casa com a janela e a porta no corredor |
+| M4 | a casinha no meio do lote: muro baixo, o portãozinho, o quintal, a passagem do lado e, no lote fundo, o quintalzinho de trás |
+
+**Três de cada, espalhadas.** Quem escolhe o lote é a planta, sem
+sorteio: um modelo por vez, a casa térrea comum (sem comércio, fora da
+favela) que cabe o modelo e fica mais longe das já escolhidas; a
+primeira é a mais perto do meio da cidade. Deu doze casas pelo mapa,
+a mais perto de outra a 48 m. Os doze lotes eram T1 (10) e T2 (2); as
+outras 514 casas saem idênticas, vértice por vértice.
+
+**Cada cópia com a sua roupa**, do hash da posição: a cor do muro
+(branco, creme, gelo) e a da casa (branco, creme e os pastéis de
+bairro), a janela (de correr, de grade, veneziana), a porta (madeira,
+veneziana, ferro), a grade (preta, branca, enferrujada), a altura do
+muro, o lado do portão (a casa sai espelhada), o tom da telha, o
+requadro e o portão do M2, e às vezes um pé de bananeira no quintal.
+
+O que não é fiel, dito com todas as letras:
+
+- **O lote da foto tem uns 20 m de fundo; o da cidade, no máximo 7.** O
+  quintal ficou com 1,2 a 2,4 m, a edícula dos fundos não coube e na
+  garagem do M1 não cabe carro.
+- **O atacarejo é pequeno pra um atacarejo:** 36 × 26 m, na escala da
+  cidade (o quarteirão daqui tem 31 × 13 m); um de verdade passa de
+  100 m. Os carros do estacionamento são as caixas de carro da cidade.
+- **A borda do mapa ficou perto:** o chão pintado acaba uns 4,6 m além
+  da nova borda oeste, e de lá se vê o plano liso de areia que fica
+  depois dele. Empurrar a pintura mudaria o sorteio das moitas.
+- As texturas continuam pintadas por código.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -2074,15 +2160,15 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 
 | arquivo | o que é |
 |---|---|
-| `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, a cidade (grade, costa, avenidas, campos, mato, lotes, sedes), máscara, spawns, setores, PM, grades, filas, gatilho |
+| `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, a cidade (grade, costa, avenidas, campos, mato, lotes, sedes), o atacarejo e as casas de muro, máscara, spawns, setores, PM, grades, filas, gatilho; o `DX` do tabuleiro |
 | `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera (linha de vista, modo leve), ligação com a simulação e com a gente |
 | `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados; casa, sobrado, barraco, galpão e prédio vêm do `casas3d.js`, só o muro é caixa), calçadas, árvores, carros, postes, campos, moitas |
 | `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões, ruas, avenidas, costa, campos, estádio |
 | `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão |
-| `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa) e a montagem de cada um |
-| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco) e o prédio comum (P1 de reboco, P2 de tijolo), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
+| `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX e a montagem de cada um |
+| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo) e as casas de muro (M1 a M4), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
-| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) e do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) e escreve o atlas; roda de novo sempre que mudar uma peça |
+| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) e do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta) e escreve o atlas; roda de novo sempre que mudar uma peça |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
 | `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |

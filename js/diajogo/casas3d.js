@@ -33,6 +33,11 @@
    o galpão de platibanda (G1), o de telhado em arco (G2), o predinho
    de reboco pintado (P1) e o prédio de tijolo que foi subindo (P2).
 
+   E as quatro CASAS DE MURO (M1 a M4): a térrea atrás do muro, com a
+   garagem coberta, o muro alto com a caixa d'água, o quintal com a
+   porta no corredor e a casinha no meio do lote — três de cada,
+   espalhadas, no lote que a planta escolhe (`l.muro`).
+
    QUEM VIRA O QUÊ sai da POSIÇÃO do lote, não do `rng()` da planta:
    a cidade continua a mesma casa por casa, só muda a roupa. Só o muro
    continua com o desenho antigo do bairro.
@@ -163,6 +168,9 @@ export function planoDaCasa(l, K) {
          caixa d'água e, um em quatro, o de tijolo com a escada por fora */
       p = s('colonial') < (pertoDoCentro(l, K) ? 0.6 : 0.12) ? { tipo: 't5', andares: 2, rec: 0.45 }
         : s('tijolo2') < 0.28 ? { tipo: 't2', andares: 2, rec: 0.06 } : { tipo: 't4', andares: 2, rec: 0.35 };
+    } else if (l.muro) {
+      /* a casa de muro: a planta escolheu o lote e o modelo (três de cada, espalhadas) */
+      p = { tipo: l.muro, andares: 1, rec: 0.06 };
     } else {
       p = s('tijolo') < 0.22 ? { tipo: 't2', andares: 1, rec: 0.06 } : { tipo: 't1', andares: 1, rec: 0.32 };
     }
@@ -225,7 +233,8 @@ const PECA = {
   col_arco:    { w: 1.0, b0: 0.2, b1: 2.75 },
   promocoes:   { w: 0.75, b0: 0.9, b1: 2.0 },
   jan_alu4:    { w: 1.2, b0: 0.9, b1: 1.9 },
-  jan_madeira: { w: 1.0, b0: 1.0, b1: 2.1 }
+  jan_madeira: { w: 1.0, b0: 1.0, b1: 2.1 },
+  porta_madeira: { w: 0.85, b0: 0, b1: 2.1 }
 };
 const E_PORTA = k => k.startsWith('porta') || k === 'col_porta' || k.startsWith('enrolar');
 
@@ -1715,7 +1724,221 @@ function p2(B, p, l, conta, G) {
   }
 }
 
-const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2 };
+
+/* =======================================================
+   AS CASAS DE MURO — a térrea atrás do muro, do jeito das quatro fotos
+   que o dono mandou (de frente e de cima):
+     M1  a garagem coberta na frente, fechada pelo gradil preto sobre
+         a mureta, com o portãozinho no canto; a água de telha da
+         garagem entra embaixo do beiral da casa de quatro águas;
+     M2  o muro alto com o requadro bege em volta do portão de garagem
+         de losango e do portão de grade; atrás, a casa de quatro águas
+         com a caixa d'água numa torrinha de telhado próprio;
+     M3  o muro com o portãozinho de grade à esquerda, o quintal na
+         frente, a casa com a janela de veneziana e a porta no corredor;
+     M4  a casinha no meio do lote: o muro baixo, o portãozinho à
+         direita, o quintal e uma janela.
+   A foto é de lote de uns 20 m de fundo; o da cidade tem até 7. Então
+   o muro é a divisa da frente, o quintal tem de 1,2 a 2,4 m e a casa
+   fica com o resto — o jeito é o da foto, a medida é a do lote.
+   ======================================================= */
+const TINTA_MURO = ['#f1efe8', '#ebe8df', '#e6e3da', '#efe9dc', '#e2dfd8', '#ece4d4', '#e3e6e2', '#eadfca'];
+/* a casa de muro é branca na foto; na cidade, cada cópia sai com a sua:
+   branco, creme e os pastéis de bairro */
+const CORES_CASA_MURO = ['#f3f1ea', '#ece8dc', '#e9d9b8', '#cfe0d0', '#d5e1ec', '#f0d7cf', '#efe3b4', '#e4e4e4'];
+const REQUADROS = ['#c9ad84', '#b9a17c', '#d3bd96', '#a89478'];
+/* A ROUPA DE CADA CÓPIA: as três de cada modelo saem diferentes —
+   cor do muro e da casa, a janela, a porta, a grade, a altura do muro,
+   o lado do portão e a telha, tudo do hash da posição do lote */
+function roupaDoMuro(s) {
+  return {
+    tinta: escolher(s, 'cor', TINTA_MURO),
+    casa: escolher(s, 'corCasa', CORES_CASA_MURO),
+    telha: escolher(s, 'telha', TELHA.t1),
+    jan: escolher(s, 'janMuro', ['jan2', 'jan_grade', 'veneziana', 'jan2']),
+    porta: escolher(s, 'portaMuro', ['porta_madeira', 'porta_vene', 'porta_ferro']),
+    grade: escolher(s, 'gradeMuro', ['preta', 'branca', 'preta', 'ferrugem']),
+    dh: (s('altMuro') - 0.5) * 0.3,
+    espelho: s('lado') < 0.5,
+    bananeira: s('bananeira') < 0.45
+  };
+}
+/* um pedaço de muro (reboco pintado, capa de laje em cima) */
+const muroDe = (B, x0, x1, y1, z0, z1, tinta) =>
+  B.caixa(x0, x1, 0, y1, z0, z1, { todas: { k: 'suja', tinta }, topo: 'laje_borda', base: null });
+/* os muros do lado do lote, de `zA` (o muro da frente) até `zB`; `lados`
+   diz quais ('e' esquerdo, 'd' direito) */
+function murosDoLado(B, W, zA, zB, h, tinta, lados = 'ed') {
+  if (zA - zB < 0.05) return;
+  if (lados.includes('e')) muroDe(B, 0.03, 0.15, h, zB, zA, tinta);
+  if (lados.includes('d')) muroDe(B, W - 0.15, W - 0.03, h, zB, zA, tinta);
+}
+/* a casa atrás do muro: paredes com os vãos e o telhado de quatro águas
+   com o beiral (que não passa da divisa) */
+function casaDoMuro(B, p, r, x0, x1, z0, z1, h, vf, lados, conta) {
+  const { W, D } = p;
+  paredes(B, x0, x1, z0, z1, 0, h, {
+    frente: { k: 'suja', tinta: r.casa, vaos: vf },
+    dir: { k: 'suja', tinta: r.casa, vaos: lados.dir || [] }, esq: { k: 'suja', tinta: r.casa, vaos: lados.esq || [] },
+    tras: { k: 'suja', tinta: r.casa, vaos: (x1 - x0) >= 1.6 ? distribuir(x1 - x0, ['jan2'], 0.06) : [] }
+  }, conta);
+  const xa = Math.max(0.03, x0 - 0.25), xb = Math.min(W - 0.03, x1 + 0.25);
+  const za = Math.max(-D + 0.03, z0 - 0.25), zb = z1 + 0.3;
+  B.pintar(r.telha);
+  B.telhado4(xa, xb, za, zb, h - 0.08, clamp(Math.min(xb - xa, zb - za) * 0.24, 0.8, 1.3), 'telha', 'telha');
+  B.pintar(null);
+}
+/* o portão de pedestre de grade, entre dois pilares mais altos que o muro */
+function portaozinho(B, G, xg0, xg1, zm, e, hp, tinta, grade) {
+  muroDe(B, xg0 - 0.22, xg0, hp, zm - e, zm, tinta);
+  muroDe(B, xg1, xg1 + 0.22, hp, zm - e, zm, tinta);
+  G.ladrilhar(G.plano([xg0, 0.02, zm - e / 2], [1, 0, 0], [0, 1, 0]), G.ret(0, xg1 - xg0, 0, Math.min(2.0, hp - 0.15)), grade);
+}
+/* o modelo é desenhado com o portão de um lado; a cópia com a roupa
+   "espelho" sai do outro */
+const comEspelho = fn => (B, p, l, conta, G) => {
+  const r = roupaDoMuro(p.s);
+  if (r.espelho) return espelhado(B, G, p.W, conta, (B2, G2, c2) => fn(B2, p, l, c2, G2, r));
+  fn(B, p, l, conta, G, r);
+};
+
+/* ---------------- M1: a garagem coberta com o gradil ---------------- */
+const m1 = comEspelho((B, p, l, conta, G, r) => {
+  const { s, W, D } = p;
+  const e = 0.13, zm = -0.03, zmi = zm - e, hm = 0.55, hp = 2.45 + r.dh;
+  const dG = clamp(D * 0.4, 1.6, 2.4), zc = zmi - dG, h = 2.8;
+  /* a frente: pilar, a mureta com o gradil em cima, o portãozinho e o pilar do canto */
+  const grade = r.grade === 'ferrugem' ? 'preta' : r.grade;
+  const pw = 0.9, xg1 = W - 0.25, xg0 = xg1 - pw;
+  muroDe(B, 0.03, 0.28, hp, zmi, zm, r.tinta);
+  muroDe(B, 0.28, xg0 - 0.22, hm, zmi, zm, r.tinta);
+  G.ladrilhar(G.plano([0.28, hm, zm - e / 2], [1, 0, 0], [0, 1, 0]), G.ret(0, xg0 - 0.5, 0, hp - 0.12 - hm), grade);
+  portaozinho(B, G, xg0, xg1, zm, e, hp, r.tinta, grade);
+  muroDe(B, xg1 + 0.22, W - 0.03, hp, zmi, zm, r.tinta);
+  conta.portas += 2;
+  conta.frentes.push({ x0: 0.28, x1: xg0 - 0.22, y0: 0, y1: hm, z: zm, vaos: [] });
+  /* o chão da garagem, as paredes do lado e a água de telha caindo pra rua */
+  B.tampa([[0.15, zmi], [W - 0.15, zmi], [W - 0.15, zc], [0.15, zc]], 0.02, 'crua');
+  murosDoLado(B, W, zmi, zc, hp - 0.05, r.tinta);
+  const yA = 2.6, yB = Math.min(2.36, hp - 0.09), zE = zmi - 0.02;
+  const V = [0, yA - yB, zc - zE], Lv = Math.hypot(V[1], V[2]);
+  B.ladrilhar(B.plano([0.03, yB, zE], [1, 0, 0], [0, V[1] / Lv, V[2] / Lv]), B.ret(0, W - 0.06, 0, Lv), 'telha', { tinta: r.telha });
+  B.caixa(0.03, W - 0.03, yB - 0.14, yB + 0.02, zE - 0.06, zE, { todas: { k: 'lisa', tinta: BRANCO }, base: null });
+  /* a casa: a porta e as janelas atrás da garagem */
+  const x0 = 0.05, x1 = W - 0.05, z0 = -D + 0.05, wb = x1 - x0;
+  let vf = distribuir(wb, wb < 5.2 ? [r.porta, r.jan] : [r.porta, r.jan, r.jan], 0.07);
+  if (s('esp') < 0.5) vf = espelhar(vf, wb);
+  const lado = z0 < zc - 3 ? [{ a0: 0.6, a1: 1.2, b0: 1.5, b1: 2.1, k: 'basc', fundo: 0.06 }] : [];
+  casaDoMuro(B, p, r, x0, x1, z0, zc, h, vf, { dir: lado }, conta);
+});
+
+/* ---------------- M2: o muro alto, o requadro bege e a torrinha da caixa ---------------- */
+function m2(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const r = roupaDoMuro(s);
+  /* o muro alto nunca fica abaixo do requadro (2,31 m) */
+  const e = 0.14, zm = -0.03, zmi = zm - e, hm = 2.4 + Math.max(0, r.dh);
+  const dG = clamp(D * 0.36, 1.5, 2.2), zc = zmi - dG, h = 2.85;
+  /* a abertura no requadro: o portão de garagem e o de pedestre de grade */
+  const q = 0.16, hA = 2.15, pw = 0.9, gw = clamp(W - 2.3, 2.0, 2.6), meio = 0.12;
+  const esq = r.espelho;
+  const req = { todas: { k: 'lisa', tinta: escolher(s, 'requadro', REQUADROS) }, base: null };
+  const portao = s('portao') < 0.65 ? 'portao_losango' : 'portao_chapa';
+  const a0 = esq ? 0.45 : W - 0.45 - (gw + meio + pw), a1 = a0 + gw + meio + pw;
+  muroDe(B, 0.03, a0 - q, hm, zmi, zm, r.tinta);
+  muroDe(B, a1 + q, W - 0.03, hm, zmi, zm, r.tinta);
+  B.caixa(a0 - q, a1 + q, hA + q, hm, zmi, zm, { todas: { k: 'suja', tinta: r.tinta }, topo: 'laje_borda', base: null });
+  /* o requadro, 3 cm pra fora, e a coluna do meio */
+  B.caixa(a0 - q, a0, 0, hA + q, zmi, zm + 0.03, req);
+  B.caixa(a1, a1 + q, 0, hA + q, zmi, zm + 0.03, req);
+  B.caixa(a0, a1, hA, hA + q, zmi, zm + 0.03, req);
+  const g0 = esq ? a0 : a0 + pw + meio, p0 = esq ? a0 + gw + meio : a0;
+  B.caixa(esq ? g0 + gw : p0 + pw, (esq ? g0 + gw : p0 + pw) + meio, 0, hA, zmi, zm - 0.02, req);
+  B.esticar(B.plano([g0, 0.02, zm - 0.07], [1, 0, 0], [0, 1, 0]), 0, gw, 0, hA - 0.02, portao);
+  G.ladrilhar(G.plano([p0, 0.02, zm - 0.07], [1, 0, 0], [0, 1, 0]), G.ret(0, pw, 0, hA - 0.04), r.grade);
+  conta.portas += 2;
+  conta.frentes.push({ x0: 0.03, x1: a0 - q, y0: 0, y1: hm, z: zm, vaos: [] },
+                     { x0: a1 + q, x1: W - 0.03, y0: 0, y1: hm, z: zm, vaos: [] });
+  /* o telhadinho da garagem, atrás do portão, e o chão */
+  const zT = zmi - Math.min(1.4, dG - 0.2);
+  const V = [0, 0.22, zT - zmi], Lv = Math.hypot(V[1], V[2]);
+  B.ladrilhar(B.plano([g0 - 0.05, 2.4, zmi], [1, 0, 0], [0, V[1] / Lv, V[2] / Lv]), B.ret(0, gw + 0.1, 0, Lv), 'telha', { tinta: r.telha });
+  B.tampa([[0.15, zmi], [W - 0.15, zmi], [W - 0.15, zc], [0.15, zc]], 0.02, 'crua');
+  murosDoLado(B, W, zmi, zc, 2.1, r.tinta);
+  /* a casa e a torrinha da caixa d'água, no fundo, do lado da garagem */
+  const x0 = 0.05, x1 = W - 0.05, z0 = -D + 0.05, wb = x1 - x0;
+  let vf = distribuir(wb, wb < 5.4 ? [r.jan, r.porta] : [r.jan, r.porta, r.jan], 0.07);
+  if (!esq) vf = espelhar(vf, wb);
+  casaDoMuro(B, p, r, x0, x1, z0, zc, h, vf, {}, conta);
+  const tw = 1.5, tz1 = Math.max(z0 + tw + 0.3, zc - Math.min(2.2, (zc - z0) * 0.55));
+  const tx0 = esq ? x1 - 0.5 - tw : x0 + 0.5;
+  B.caixa(tx0, tx0 + tw, h - 0.3, h + 1.75, tz1 - tw, tz1, { todas: { k: 'lisa', tinta: r.casa }, base: null, topo: null });
+  B.pintar(r.telha);
+  B.telhado4(tx0 - 0.14, tx0 + tw + 0.14, tz1 - tw - 0.14, tz1 + 0.14, h + 1.7, 0.45, 'telha', 'telha');
+  B.pintar(null);
+}
+
+/* ---------------- M3: o quintal na frente e a porta no corredor ---------------- */
+const m3 = comEspelho((B, p, l, conta, G, r) => {
+  const { s, W, D } = p;
+  const e = 0.13, zm = -0.03, zmi = zm - e, hm = 1.8 + r.dh, hp = hm + 0.2;
+  const dQ = clamp(D * 0.3, 1.2, 1.8), zc = zmi - dQ, h = 2.75, corr = 0.95;
+  const grade = r.grade === 'preta' ? 'branca' : r.grade;
+  /* o muro com o portãozinho de grade à esquerda, na boca do corredor */
+  const xg0 = 0.25, xg1 = xg0 + 0.85;
+  muroDe(B, 0.03, xg0 - 0.22, hp, zmi, zm, r.tinta);
+  portaozinho(B, G, xg0, xg1, zm, e, hp, r.tinta, grade);
+  muroDe(B, xg1 + 0.22, W - 0.03, hm, zmi, zm, r.tinta);
+  conta.portas++;
+  conta.frentes.push({ x0: xg1 + 0.22, x1: W - 0.03, y0: 0, y1: hm, z: zm, vaos: [] });
+  /* o quintal cimentado, o corredor e o muro do lado */
+  const z0 = -D + 0.05;
+  B.tampa([[0.15, zmi], [W - 0.15, zmi], [W - 0.15, zc], [0.15, zc]], 0.02, 'crua');
+  B.tampa([[0.15, zc], [corr, zc], [corr, z0], [0.15, z0]], 0.02, 'crua');
+  murosDoLado(B, W, zmi, zc, 1.9, r.tinta, 'd');
+  murosDoLado(B, W, zmi, z0, 1.9, r.tinta, 'e');
+  if (r.bananeira && dQ >= 1.35) bananeira(G, W - 0.85, (zmi + zc) / 2, 0.02, 1.7, s('giroBan') * Math.PI);
+  /* a casa: a janela na frente, a porta no corredor */
+  const x0 = 0.05 + corr, x1 = W - 0.05, wb = x1 - x0, dd = zc - z0;
+  const jan = r.jan === 'jan2' ? 'veneziana' : r.jan;
+  const vf = wb >= 3.4 ? distribuir(wb, [jan, 'jan2'], 0.07) : distribuir(wb, [jan], 0.07);
+  const porta = [{ a0: Math.max(0.2, dd - 1.25), a1: Math.max(0.2, dd - 1.25) + 0.85, b0: 0, b1: 2.1, k: r.porta, fundo: 0.08 }];
+  casaDoMuro(B, p, r, x0, x1, z0, zc, h, vf, { esq: dd >= 1.3 ? porta : [] }, conta);
+});
+
+/* ---------------- M4: a casinha no meio do lote ---------------- */
+const m4 = comEspelho((B, p, l, conta, G, r) => {
+  const { s, W, D } = p;
+  const e = 0.13, zm = -0.03, zmi = zm - e, hm = 1.6 + r.dh, hp = hm + 0.3;
+  const dQ = clamp(D * 0.35, 1.2, 2.0), zc = zmi - dQ, h = 2.7, corr = 0.85;
+  /* o muro baixo e o portãozinho à direita */
+  const xg1 = W - 0.25, xg0 = xg1 - 0.85;
+  muroDe(B, 0.03, xg0 - 0.22, hm, zmi, zm, r.tinta);
+  portaozinho(B, G, xg0, xg1, zm, e, hp, r.tinta, r.grade);
+  muroDe(B, xg1 + 0.22, W - 0.03, hp, zmi, zm, r.tinta);
+  conta.portas++;
+  conta.frentes.push({ x0: 0.03, x1: xg0 - 0.22, y0: 0, y1: hm, z: zm, vaos: [] });
+  /* a casa no meio: o quintal na frente, a passagem à direita e, se o
+     lote deixa, um quintalzinho no fundo com o muro */
+  const fundo = D >= 5.6 ? 1.0 : 0.05, z0 = -D + fundo;
+  const x0 = 0.05, x1 = W - 0.05 - corr, wb = x1 - x0, dd = zc - z0;
+  B.tampa([[0.15, zmi], [W - 0.15, zmi], [W - 0.15, zc], [0.15, zc]], 0.02, 'crua');
+  B.tampa([[x1, zc], [W - 0.15, zc], [W - 0.15, -D + 0.05], [x1, -D + 0.05]], 0.02, 'crua');
+  murosDoLado(B, W, zmi, zc, 1.8, r.tinta, 'e');
+  murosDoLado(B, W, zmi, -D + 0.05, 1.8, r.tinta, 'd');
+  if (fundo > 0.5) {
+    muroDe(B, 0.03, W - 0.03, 1.8, -D + 0.03, -D + 0.15, r.tinta);
+    murosDoLado(B, W, z0, -D + 0.15, 1.8, r.tinta, 'e');
+  }
+  if (r.bananeira && dQ >= 1.35) bananeira(G, 0.85, (zmi + zc) / 2, 0.02, 1.7, s('giroBan') * Math.PI);
+  const vf = distribuir(wb, [wb >= 2.2 ? r.jan : 'basc'], 0.07);
+  const porta = [{ a0: Math.max(0.15, dd - 1.2), a1: Math.max(0.15, dd - 1.2) + 0.85, b0: 0, b1: 2.1, k: r.porta, fundo: 0.08 }];
+  /* a face 'dir' corre do fundo pra frente ao contrário da 'esq': a porta vai perto da frente */
+  const portaDir = porta.map(v => ({ ...v, a0: dd - v.a1, a1: dd - v.a0 }));
+  casaDoMuro(B, p, r, x0, x1, z0, zc, h, vf, { dir: dd >= 1.3 ? portaDir : [] }, conta);
+});
+
+const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2, m1, m2, m3, m4 };
 
 /* =======================================================
    A MONTAGEM DE UMA CASA, direto no acumulador do mundo

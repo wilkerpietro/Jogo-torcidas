@@ -2487,8 +2487,31 @@ def p_sacada_fundo(w, h, ppm, rnd):
     return a
 
 
+def p_portao_losango(w, h, ppm, rnd):
+    """o portão de garagem de chapa da casa de muro: branco, com o
+       desenho de losango em relevo (as tiras cruzadas em diagonal), o
+       quadro em volta e a divisa das duas folhas no meio"""
+    a = reboco(w, h, ppm, rnd, '#e9e8e2', grao=0.03, manchas=0.05, lad=False)
+    passo = 0.42 * ppm
+    esp = max(2, int(0.035 * ppm))
+    def f(d, im):
+        for k in range(-int(h / passo) - 2, int(w / passo) + 3):
+            x = k * passo
+            d.line([(x, h), (x + h, 0)], fill=(206, 205, 198), width=esp)
+            d.line([(x, 0), (x + h, h)], fill=(206, 205, 198), width=esp)
+            d.line([(x + 2, h), (x + h + 2, 0)], fill=(250, 250, 246), width=max(1, esp // 2))
+    desenhar(a, f)
+    q = max(3, int(0.07 * ppm))
+    moldura(a, 0, 0, w, h, q, '#dcdbd4')
+    retangulo(a, w / 2 - q / 2, 0, w / 2 + q / 2, h, '#d3d2cb')
+    retangulo(a, w / 2 + 0.1 * ppm, h * 0.5, w / 2 + 0.16 * ppm, h * 0.56, '#5a5a56', sombra=False)
+    e = escorrido(h, w, rnd, 8, inicio=(0.0, 0.2), comp=(0.2, 0.6), larg=(1, 2), lad=False)
+    return multiplicar(a, 1 - 0.1 * e)
+
+
 def folha_casas():
     F = Folha('casas')
+    F.cel('portao_losango', 2.4, 2.1, 110, p_portao_losango)
     F.cel('suja', 2.5, 2.5, 110, p_parede_suja, lad=True)
     F.cel('lisa', 2.5, 2.5, 110, p_parede_lisa, lad=True)
     F.cel('crua', 2.5, 2.5, 110, p_parede_crua, lad=True)
@@ -2560,6 +2583,400 @@ def folha_casas():
     F.cel('ar', 0.85, 0.6, 200, p_ar)
     F.cel('ar_lado', 0.3, 0.6, 120, p_ar_lado)
     return F.montar()
+# =========================================================
+#   10. O ATACAREJO — o ATACADEX
+#   Galpão de atacado: chapa azul na testeira e na platibanda com o
+#   filete verde e amarelo, parede branca de painel, a vitrine de vidro
+#   com a porta automática, painel bordô, cartaz de oferta, a marca
+#   (o selo vermelho-laranja com o nome e o emblema do carrinho em
+#   cima), o painel amarelo da quina, as docas de caminhão, o telhado
+#   de chapa com a claraboia, a coluna da marquise, o asfalto do
+#   estacionamento, o totem e o caminhão.
+#   A marca é NOSSA: o nome é ATACADEX e o emblema é um carrinho num
+#   disco — nada da marca que serviu de referência.
+# =========================================================
+AZUL_AT = '#2f78c9'
+AZUL_AT_ESC = '#1f5596'
+BORDO_AT = '#6b1e2b'
+AMARELO_AT = '#f7c531'
+LARANJA_AT = '#f08a1c'
+VERMELHO_AT = '#d23f1b'
+NOME_ATACADO = 'ATACADEX'
+
+
+def chapa_trapezoidal(w, h, ppm, rnd, base, passo_m=0.2, vertical=True, lad=True, suja=0.05):
+    """chapa de aço trapezoidal: a onda corre no sentido `vertical`
+       (as nervuras em pé, como na testeira) ou deitada"""
+    a = chapado(w, h, base)
+    n = max(2, int(round((w if vertical else h) / (passo_m * ppm))))
+    comp = w if vertical else h
+    t = np.arange(comp, dtype=np.float32) / comp * n
+    f = t - np.floor(t)
+    perfil = np.where(f < 0.18, 1.12, np.where(f < 0.26, 0.86, np.where(f < 0.62, 1.0, np.where(f < 0.7, 0.9, 1.0))))
+    if vertical:
+        a *= perfil[None, :, None]
+    else:
+        a *= perfil[:, None, None]
+    a = multiplicar(a, 1 + suja * fbm(h, w, 0.5 * ppm, rnd, 3, lad))
+    return np.clip(a, 0, 1)
+
+
+def p_at_azul(w, h, ppm, rnd):
+    return chapa_trapezoidal(w, h, ppm, rnd, AZUL_AT, 0.2, True)
+
+
+def p_at_branco(w, h, ppm, rnd):
+    a = chapa_trapezoidal(w, h, ppm, rnd, '#eceeed', 0.5, True, suja=0.04)
+    e = escorrido(h, w, rnd, 5, inicio=(0.0, 0.2), comp=(0.2, 0.5), larg=(1, 3), lad=True)
+    return multiplicar(a, 1 - 0.07 * e)
+
+
+def p_at_verde(w, h, ppm, rnd):
+    a = chapado(w, h, '#86c53a')
+    a[int(h * 0.62):] = cor('#f1d23a')
+    return multiplicar(a, 1 + 0.03 * fbm(h, w, 0.3 * ppm, rnd, 2, True))
+
+
+def interior_atacado(W, H, ppm, rnd):
+    """dentro do atacado: pé-direito alto, luz de galpão em fila no teto
+       e as gôndolas cheias de caixa colorida"""
+    a = chapado(W, H, '#d9d6c9')
+    ys = np.linspace(0, 1, H, dtype=np.float32)[:, None, None]
+    a = a * (1.05 - 0.35 * ys)
+    # a fileira de luminária
+    for x in np.arange(0.3 * ppm, W, 0.9 * ppm):
+        retangulo(a, x, 0.35 * ppm, x + 0.55 * ppm, 0.42 * ppm, '#fbfbf4', sombra=False)
+    cores = ['#c0392b', '#e67e22', '#f1c40f', '#27ae60', '#2980b9', '#ecf0f1', '#8e44ad', '#d35400', '#16a085', '#f39c12']
+    y = 1.5 * ppm
+    while y < H - 0.1 * ppm:
+        a[int(y):int(y) + 3] = cor('#8f8c84')
+        x = 0
+        while x < W:
+            pw = rnd.uniform(0.12, 0.3) * ppm
+            ph = rnd.uniform(0.2, 0.42) * ppm
+            if rnd.random() < 0.9:
+                c = cor(cores[int(rnd.integers(0, len(cores)))]) * (0.6 + 0.3 * rnd.random())
+                a[max(0, int(y - ph)):int(y), int(x):int(x + pw - 1)] = c
+            x += pw
+        y += 0.55 * ppm
+    return a
+
+
+def caixilho_vitrine(a, w, h, ppm, montantes=(1 / 3, 2 / 3), bandeira=3.3):
+    esp = max(3, int(0.07 * ppm))
+    Y = em(h, ppm)
+    moldura(a, 0, 0, w, h, esp, '#f2f2ef')
+    for f in montantes:
+        retangulo(a, w * f - esp / 2, 0, w * f + esp / 2, h, '#f2f2ef')
+    retangulo(a, 0, Y(bandeira) - esp / 2, w, Y(bandeira) + esp / 2, '#f2f2ef')
+    retangulo(a, 0, Y(0.3), w, h, '#c9ccca')                 # o rodapé de chapa
+
+
+def p_at_vidro(w, h, ppm, rnd):
+    a = interior_atacado(w, h, ppm, rnd)
+    v = vidro(w, h, rnd, base='#0d1418', topo='#7f93a3', reflexo=0.25)
+    a = a * 0.55 + v * 0.5
+    caixilho_vitrine(a, w, h, ppm)
+    return np.clip(a, 0, 1)
+
+
+def p_at_porta(w, h, ppm, rnd):
+    a = interior_atacado(w, h, ppm, rnd)
+    v = vidro(w, h, rnd, base='#0d1418', topo='#7f93a3', reflexo=0.2)
+    a = a * 0.62 + v * 0.42
+    Y = em(h, ppm)
+    esp = max(3, int(0.07 * ppm))
+    caixilho_vitrine(a, w, h, ppm, montantes=(0.2, 0.8), bandeira=3.3)
+    # as duas folhas de correr, com o puxador vertical, e o trilho em cima
+    retangulo(a, w * 0.2, Y(2.55) - esp, w * 0.8, Y(2.55), '#b9bcbd')
+    retangulo(a, w / 2 - esp / 2, Y(2.55), w / 2 + esp / 2, Y(0.3), '#d9dcdc')
+    # a faixa ENTRADA em cima da porta
+    x0, x1, y0, y1 = w * 0.22, w * 0.78, Y(3.2), Y(2.7)
+    retangulo(a, x0, y0, x1, y1, '#1f8a3c')
+    desenhar(a, lambda d, im: d.text(((x0 + x1) / 2, (y0 + y1) / 2), 'ENTRADA', fill=(250, 250, 244), anchor='mm',
+                                     font=caber(d, 'ENTRADA', (x1 - x0) * 0.8, (y1 - y0) * 0.7)))
+    return np.clip(a, 0, 1)
+
+
+def p_at_bordo(w, h, ppm, rnd):
+    """o painel bordô: chapa lisa, com a junta a cada metro (a de
+       nervura lia como cortina)"""
+    a = multiplicar(chapado(w, h, BORDO_AT), 1 + 0.05 * fbm(h, w, 0.5 * ppm, rnd, 3, False))
+    for x in np.arange(ppm, w - 2, ppm):
+        retangulo(a, x - 1, 0, x + 2, h, '#4f1520', sombra=False)
+    Y = em(h, ppm)
+    esp = max(3, int(0.07 * ppm))
+    moldura(a, 0, 0, w, h, esp, '#f2f2ef')
+    retangulo(a, 0, Y(0.3), w, h, '#c9ccca')
+    return a
+
+
+def p_at_cartaz(w, h, ppm, rnd):
+    a = p_at_vidro(w, h, ppm, rnd)
+    Y = em(h, ppm)
+    cartazes = [(0.06, 2.0, 1.15, 1.5, '#f7d52a', 'OFERTAS|DA SEMANA'), (0.36, 2.2, 0.85, 1.1, '#e53a2a', 'R$ 4,99|ARROZ 5KG'),
+                (0.69, 2.0, 1.1, 1.5, '#f7d52a', 'PREÇO BAIXO|TODO DIA'), (0.4, 0.9, 1.3, 0.55, '#ffffff', 'LEVE 3 PAGUE 2')]
+    for (fx, yb, lw, lh, fundo, txt) in cartazes:
+        x0, y1 = w * fx, Y(yb)
+        x1, y0 = x0 + lw * ppm, Y(yb + lh)
+        retangulo(a, x0, y0, x1, y1, fundo)
+        linhas = txt.split('|')
+        def t(d, im, x0=x0, x1=x1, y0=y0, y1=y1, linhas=linhas, fundo=fundo):
+            tinta = (250, 250, 245) if fundo == '#e53a2a' else (200, 30, 25)
+            for i, l in enumerate(linhas):
+                yy = y0 + (y1 - y0) * (i + 0.6) / (len(linhas) + 0.2)
+                d.text(((x0 + x1) / 2, yy), l, fill=tinta if i == 0 else (25, 25, 25), anchor='mm',
+                       font=caber(d, l, (x1 - x0) * 0.86, (y1 - y0) / (len(linhas) + 0.6)))
+        desenhar(a, t)
+    return a
+
+
+def carrinho(d, cx, cy, s, fill, largura):
+    """o carrinho de compras em traço grosso: alça, cesto, rodas"""
+    lw = max(2, int(largura))
+    alca = [(cx - 0.62 * s, cy - 0.46 * s), (cx - 0.42 * s, cy - 0.46 * s), (cx - 0.26 * s, cy + 0.18 * s)]
+    d.line(alca, fill=fill, width=lw, joint='curve')
+    cesto = [(cx - 0.36 * s, cy - 0.26 * s), (cx + 0.6 * s, cy - 0.26 * s), (cx + 0.44 * s, cy + 0.18 * s), (cx - 0.24 * s, cy + 0.18 * s)]
+    d.polygon(cesto, fill=fill)
+    d.line([(cx - 0.24 * s, cy + 0.18 * s), (cx - 0.3 * s, cy + 0.32 * s), (cx + 0.5 * s, cy + 0.32 * s)], fill=fill, width=lw)
+    for rx in (cx - 0.2 * s, cx + 0.4 * s):
+        r = 0.09 * s
+        d.ellipse([rx - r, cy + 0.44 * s - r, rx + r, cy + 0.44 * s + r], fill=fill)
+
+
+def p_at_emblema(w, h, ppm, rnd):
+    """o emblema: disco amarelo com a borda laranja e o carrinho branco"""
+    a = chapa_trapezoidal(w, h, ppm, rnd, AZUL_AT, 0.2, True, lad=False)
+    r = min(w, h) * 0.49
+    cx, cy = w / 2, h / 2
+    m = mascara_forma(w, h, lambda d: d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=255), borrao=1)
+    ys = np.linspace(0, 1, h, dtype=np.float32)[:, None, None]
+    grad = cor('#ffd94a')[None, None, :] * (1 - ys) + cor(LARANJA_AT)[None, None, :] * ys
+    aplicar(a, np.broadcast_to(grad, (h, w, 3)), m)
+    desenhar(a, lambda d, im: (d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(214, 92, 20), width=max(3, int(0.06 * ppm))),
+                                carrinho(d, cx + 0.02 * w, cy - 0.02 * h, r * 1.05, (255, 255, 250), 0.07 * ppm)))
+    return a
+
+
+def p_at_marca(w, h, ppm, rnd):
+    """o selo: retângulo de canto redondo, vermelho em baixo e laranja em
+       cima, com o nome em branco e a sombra escura"""
+    a = chapa_trapezoidal(w, h, ppm, rnd, AZUL_AT, 0.2, True, lad=False)
+    raio = h * 0.28
+    m = mascara_forma(w, h, lambda d: d.rounded_rectangle([1, 1, w - 2, h - 2], raio, fill=255), borrao=1)
+    ys = np.linspace(0, 1, h, dtype=np.float32)[:, None, None]
+    grad = cor(LARANJA_AT)[None, None, :] * (1 - ys) + cor(VERMELHO_AT)[None, None, :] * ys
+    aplicar(a, np.broadcast_to(grad, (h, w, 3)), m)
+    def t(d, im):
+        d.rounded_rectangle([1, 1, w - 2, h - 2], raio, outline=(255, 238, 214), width=max(3, int(0.04 * ppm)))
+        f = caber(d, NOME_ATACADO, w * 0.84, h * 0.66)
+        d.text((w / 2 + 0.03 * ppm, h / 2 + 0.04 * ppm), NOME_ATACADO, fill=(110, 25, 10), anchor='mm', font=f)
+        d.text((w / 2, h / 2), NOME_ATACADO, fill=(255, 255, 250), anchor='mm', font=f)
+    desenhar(a, t)
+    return a
+
+
+def p_at_atacadista(w, h, ppm, rnd):
+    a = chapa_trapezoidal(w, h, ppm, rnd, AZUL_AT, 0.2, True, lad=False)
+    desenhar(a, lambda d, im: d.text((w * 0.02, h / 2), 'ATACADISTA', fill=(255, 255, 252), anchor='lm',
+                                     font=caber(d, 'ATACADISTA', w * 0.96, h * 0.78)))
+    return a
+
+
+def p_at_painel(w, h, ppm, rnd):
+    """o painel da quina: amarelo, as faixas diagonais laranja e vermelha
+       e o carrinho grande em traço branco"""
+    a = chapado(w, h, AMARELO_AT)
+    def f(d, im):
+        for i, (c, larg) in enumerate(((LARANJA_AT, 0.55), (VERMELHO_AT, 0.28), (LARANJA_AT, 0.18))):
+            off = (0.35 + i * 0.22) * w
+            e = larg * ppm
+            d.polygon([(off, h), (off + e, h), (off + e + h * 0.55, 0), (off + h * 0.55, 0)], fill=tuple(int(v * 255) for v in cor(c)))
+        carrinho(d, w * 0.36, h * 0.3, w * 0.4, (255, 255, 250), 0.12 * ppm)
+    desenhar(a, f)
+    return multiplicar(a, 1 + 0.03 * fbm(h, w, 0.6 * ppm, rnd, 3, False))
+
+
+def p_at_doca(w, h, ppm, rnd):
+    """a doca: porta de enrolar cinza dentro do fole de borracha preto, o
+       para-choque amarelo e preto embaixo"""
+    a = chapa_trapezoidal(w, h, ppm, rnd, '#eceeed', 0.5, True, lad=False)
+    Y = em(h, ppm)
+    x0, x1, y0, y1 = 0.12 * w, 0.88 * w, Y(4.1), Y(1.2)
+    retangulo(a, x0, y0, x1, y1, '#1b1c1d')
+    px0, px1, py0 = x0 + 0.28 * ppm, x1 - 0.28 * ppm, y0 + 0.3 * ppm
+    porta = chapado(int(px1 - px0), int(y1 - py0), '#9aa0a3')
+    passo = max(3, int(0.1 * ppm))
+    for yy in range(porta.shape[0]):
+        porta[yy] *= 0.86 + 0.18 * math.sin((yy % passo) / passo * math.pi)
+    colar(a, porta, px0, py0)
+    retangulo(a, 0.2 * w, Y(1.2), 0.8 * w, Y(0.95), '#3c3d3e')
+    for i in range(8):
+        xa = 0.2 * w + i * 0.6 * w / 8
+        retangulo(a, xa, Y(1.18), xa + 0.3 * w / 8, Y(0.97), '#f2c230', sombra=False)
+    retangulo(a, 0, Y(0.95), w, h, '#8b8c89')
+    return a
+
+
+def p_at_telhado(w, h, ppm, rnd):
+    a = chapa_trapezoidal(w, h, ppm, rnd, '#dfe2e2', 0.25, True, suja=0.06)
+    return multiplicar(a, 1 - 0.1 * borrar(np.clip(pontos(h, w, 6, 4, 12, rnd, True, sinal=1.0), 0, 1), 5))
+
+
+def p_at_claraboia(w, h, ppm, rnd):
+    a = chapa_trapezoidal(w, h, ppm, rnd, '#c9dbe6', 0.25, True, suja=0.03)
+    return np.clip(a * 1.08, 0, 1)
+
+
+def p_at_forro(w, h, ppm, rnd):
+    a = chapa_trapezoidal(w, h, ppm, rnd, '#e9ebea', 0.3, False, suja=0.03)
+    retangulo(a, w * 0.35, h * 0.44, w * 0.65, h * 0.56, '#fffff6', sombra=False)
+    return a
+
+
+def p_at_coluna(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#f3f3f0', grao=0.02, manchas=0.04, lad=False)
+    Y = em(h, ppm)
+    retangulo(a, 0, Y(0.62), w, Y(0.3), '#f2c230', sombra=False)
+    retangulo(a, 0, Y(0.3), w, h, '#1c1c1c', sombra=False)
+    return a
+
+
+def p_at_asfalto(w, h, ppm, rnd):
+    a = chapado(w, h, '#4b4d4f')
+    a = multiplicar(a, 1 + 0.12 * fbm(h, w, 0.08 * ppm, rnd, 4, True))
+    m = borrar(np.clip(pontos(h, w, 5, 6, 22, rnd, True, sinal=1.0), 0, 1), 6)
+    return np.clip(multiplicar(a, 1 - 0.16 * m), 0, 1)
+
+
+def p_at_piso(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#b9b6ad', grao=0.05, manchas=0.08, lad=True)
+    for f in (0, 0.5):
+        retangulo(a, 0, h * f, w, h * f + 2, '#8e8b83', sombra=False)
+        retangulo(a, w * f, 0, w * f + 2, h, '#8e8b83', sombra=False)
+    return a
+
+
+def p_at_linha(w, h, ppm, rnd):
+    return multiplicar(chapado(w, h, '#f1f0e8'), 1 + 0.05 * fbm(h, w, 2, rnd, 2, True))
+
+
+def p_at_totem(w, h, ppm, rnd):
+    """o totem da avenida: a marca em cima, o horário no meio, o
+       estacionamento grátis embaixo e o pé de concreto"""
+    a = chapa_trapezoidal(w, h, ppm, rnd, AZUL_AT, 0.2, True, lad=False)
+    Y = em(h, ppm)
+    # o emblema e o selo, em cima
+    em_ = p_at_emblema(int(1.3 * ppm), int(1.3 * ppm), ppm, rnd)
+    colar(a, em_, (w - em_.shape[1]) / 2, Y(8.35))
+    selo = p_at_marca(int(2.2 * ppm), int(0.62 * ppm), ppm, rnd)
+    colar(a, selo, (w - selo.shape[1]) / 2, Y(7.0))
+    desenhar(a, lambda d, im: d.text((w / 2, Y(6.12)), 'ATACADISTA', fill=(255, 255, 252), anchor='mm',
+                                     font=caber(d, 'ATACADISTA', w * 0.84, 0.3 * ppm)))
+    retangulo(a, 0, Y(5.62), w, Y(5.5), '#86c53a', sombra=False)
+    # o quadro branco do horário
+    retangulo(a, 0.1 * w, Y(5.3), 0.9 * w, Y(3.55), '#f6f6f2')
+    desenhar(a, lambda d, im: (d.text((w / 2, Y(4.85)), 'ABERTO TODOS', fill=(30, 60, 110), anchor='mm', font=caber(d, 'ABERTO TODOS', w * 0.74, 0.3 * ppm)),
+                                d.text((w / 2, Y(4.45)), 'OS DIAS', fill=(30, 60, 110), anchor='mm', font=caber(d, 'OS DIAS', w * 0.74, 0.3 * ppm)),
+                                d.text((w / 2, Y(3.92)), '7H ÀS 22H', fill=(210, 60, 25), anchor='mm', font=caber(d, '7H ÀS 22H', w * 0.74, 0.42 * ppm))))
+    # o estacionamento grátis, na faixa amarela
+    retangulo(a, 0.1 * w, Y(3.3), 0.9 * w, Y(2.3), AMARELO_AT)
+    desenhar(a, lambda d, im: (d.text((w / 2, Y(3.0)), 'ESTACIONAMENTO', fill=(35, 35, 30), anchor='mm', font=caber(d, 'ESTACIONAMENTO', w * 0.74, 0.3 * ppm)),
+                                d.text((w / 2, Y(2.58)), 'GRÁTIS', fill=(200, 40, 20), anchor='mm', font=caber(d, 'GRÁTIS', w * 0.74, 0.34 * ppm))))
+    # o pé de concreto
+    a[int(Y(1.1)):] = reboco(w, h - int(Y(1.1)), ppm, rnd, '#b4b1a8', grao=0.05, lad=False)
+    return a
+
+
+def p_at_carreta(w, h, ppm, rnd):
+    a = chapa_trapezoidal(w, h, ppm, rnd, '#f1f2f0', 0.6, True, lad=False, suja=0.05)
+    Y = em(h, ppm)
+    retangulo(a, 0, Y(0.55), w, h, AZUL_AT, sombra=False)
+    retangulo(a, 0, Y(0.62), w, Y(0.55), '#86c53a', sombra=False)
+    em_ = p_at_emblema(int(1.6 * ppm), int(1.6 * ppm), ppm, rnd)
+    colar(a, em_, 0.8 * ppm, Y(2.55))
+    selo = p_at_marca(int(4.6 * ppm), int(1.15 * ppm), ppm, rnd)
+    colar(a, selo, 2.7 * ppm, Y(2.3))
+    desenhar(a, lambda d, im: d.text((7.6 * ppm, Y(1.72)), 'ENTREGA PRA TODA A CIDADE', fill=(31, 85, 150), anchor='lm',
+                                     font=caber(d, 'ENTREGA PRA TODA A CIDADE', w - 8.0 * ppm, 0.38 * ppm)))
+    e = escorrido(h, w, rnd, 10, inicio=(0.0, 0.1), comp=(0.3, 0.7), larg=(1, 3), lad=False)
+    return multiplicar(a, 1 - 0.08 * e)
+
+
+def p_at_carreta_porta(w, h, ppm, rnd):
+    a = chapa_trapezoidal(w, h, ppm, rnd, '#e7e8e6', 0.6, False, lad=False)
+    esp = max(3, int(0.05 * ppm))
+    moldura(a, 0, 0, w, h, esp, '#9ea3a5')
+    retangulo(a, w / 2 - esp / 2, 0, w / 2 + esp / 2, h, '#9ea3a5')
+    for f in (0.3, 0.7):
+        retangulo(a, w * f - 2, esp, w * f + 2, h - esp, '#6f7477', sombra=False)
+    return a
+
+
+def p_at_cavalo(w, h, ppm, rnd):
+    """a frente do cavalo mecânico: para-brisa, grade e os faróis"""
+    a = reboco(w, h, ppm, rnd, '#b8231c', grao=0.03, manchas=0.05, lad=False)
+    Y = em(h, ppm)
+    v = vidro(int(w * 0.84), int(0.7 * ppm), rnd, base='#101417', topo='#60717c', reflexo=0.3)
+    colar(a, v, w * 0.08, Y(2.05))
+    retangulo(a, w * 0.22, Y(1.2), w * 0.78, Y(0.55), '#2a2b2c')
+    for fx in (0.08, 0.8):
+        retangulo(a, w * fx, Y(0.95), w * fx + 0.28 * ppm, Y(0.7), '#f4f2e0')
+    retangulo(a, 0, Y(0.35), w, h, '#303132')
+    return a
+
+
+def p_at_cavalo_lado(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#b8231c', grao=0.03, manchas=0.05, lad=False)
+    Y = em(h, ppm)
+    v = vidro(int(w * 0.36), int(0.6 * ppm), rnd, base='#101417', topo='#60717c', reflexo=0.3)
+    colar(a, v, w * 0.08, Y(2.0))
+    moldura(a, w * 0.05, Y(2.1), w * 0.5, Y(0.5), 2, '#8a1a15')
+    retangulo(a, 0, Y(0.35), w, h, '#303132')
+    return a
+
+
+def p_at_porta_servico(w, h, ppm, rnd):
+    a = chapa_trapezoidal(w, h, ppm, rnd, '#9fa6aa', 0.25, True, lad=False)
+    esp = max(3, int(0.05 * ppm))
+    moldura(a, 0, 0, w, h, esp, '#e9ebea')
+    retangulo(a, w * 0.72, h * 0.5, w * 0.84, h * 0.53, '#2a2b2c', sombra=False)
+    x0, x1, y0, y1 = w * 0.14, w * 0.86, h * 0.14, h * 0.26
+    retangulo(a, x0, y0, x1, y1, '#f4f2ec')
+    desenhar(a, lambda d, im: d.text(((x0 + x1) / 2, (y0 + y1) / 2), 'SÓ FUNCIONÁRIOS', fill=(180, 30, 25), anchor='mm',
+                                     font=caber(d, 'SÓ FUNCIONÁRIOS', (x1 - x0) * 0.9, (y1 - y0) * 0.6)))
+    return a
+
+
+def folha_atacadex():
+    F = Folha('atacadex')
+    F.cel('azul', 2.0, 1.0, 80, p_at_azul, lad=True)
+    F.cel('branco', 2.0, 2.0, 60, p_at_branco, lad=True)
+    F.cel('verde', 2.0, 0.2, 80, p_at_verde, lad=True)
+    F.cel('vidro', 4.0, 4.3, 64, p_at_vidro)
+    F.cel('porta', 4.0, 4.3, 64, p_at_porta)
+    F.cel('bordo', 4.0, 4.3, 64, p_at_bordo)
+    F.cel('cartaz', 4.0, 4.3, 64, p_at_cartaz)
+    F.cel('marca', 6.0, 1.5, 100, p_at_marca)
+    F.cel('emblema', 2.0, 2.0, 100, p_at_emblema)
+    F.cel('atacadista', 5.0, 0.8, 90, p_at_atacadista)
+    F.cel('painel', 5.5, 5.4, 45, p_at_painel)
+    F.cel('doca', 3.6, 4.3, 60, p_at_doca)
+    F.cel('telhado', 3.0, 3.0, 40, p_at_telhado, lad=True)
+    F.cel('claraboia', 1.0, 3.0, 40, p_at_claraboia, lad=True)
+    F.cel('forro', 2.0, 2.0, 40, p_at_forro, lad=True)
+    F.cel('coluna', 0.45, 4.6, 60, p_at_coluna)
+    F.cel('asfalto', 4.0, 4.0, 40, p_at_asfalto, lad=True)
+    F.cel('piso', 2.0, 2.0, 50, p_at_piso, lad=True)
+    F.cel('linha', 0.5, 0.5, 20, p_at_linha, lad=True)
+    F.cel('totem', 2.4, 8.5, 50, p_at_totem)
+    F.cel('carreta', 12.4, 3.1, 32, p_at_carreta)
+    F.cel('carreta_porta', 2.5, 3.1, 50, p_at_carreta_porta)
+    F.cel('cavalo', 2.4, 2.2, 60, p_at_cavalo)
+    F.cel('cavalo_lado', 2.0, 2.2, 60, p_at_cavalo_lado)
+    F.cel('porta_servico', 1.0, 2.2, 80, p_at_porta_servico)
+    return F.montar()
+
 
 def main():
     print('pintando as folhas dos prédios modelados:')
@@ -2569,6 +2986,7 @@ def main():
         'loja': folha_loja(),
         'adm': folha_adm(),
         'casa': folha_casa(),
+        'atacadex': folha_atacadex(),
         'casas': folha_casas(),
         'grades': folha_grades(),
     }
