@@ -1656,18 +1656,21 @@ TO.feed = (function(){
 
   /* o que o jornal escreve de cada obra. Quem não está aqui não vira
      notícia: ônibus, bomba e advogado não são porta que abre na rua. */
+  /* a frase inteira é a chave de tradução (docs/I18N.md): o sujeito
+     entra como {nome}, com o artigo dentro; cada item é função pra
+     a ferramenta de tradução enxergar a chave no `_t` */
   const VERBO_OBRA = {
-    bar:'abriu um bar novo na cidade',
-    loja:'abriu uma loja nova na cidade',
-    subsede:'inaugurou uma subsede nova na cidade',
-    sede:'ampliou a sede',
-    'ampliar:bar':'ampliou o bar',
-    'ampliar:loja':'ampliou a loja',
-    'ampliar:subsede':'ampliou a subsede',
-    fabrica:'montou uma fábrica de material próprio',
+    bar: nome => _t('A {nome} abriu um bar novo na cidade', {nome}),
+    loja: nome => _t('A {nome} abriu uma loja nova na cidade', {nome}),
+    subsede: nome => _t('A {nome} inaugurou uma subsede nova na cidade', {nome}),
+    sede: nome => _t('A {nome} ampliou a sede', {nome}),
+    'ampliar:bar': nome => _t('A {nome} ampliou o bar', {nome}),
+    'ampliar:loja': nome => _t('A {nome} ampliou a loja', {nome}),
+    'ampliar:subsede': nome => _t('A {nome} ampliou a subsede', {nome}),
+    fabrica: nome => _t('A {nome} montou uma fábrica de material próprio', {nome}),
     /* a cidade vem logo atrás, então "fora da praça" sobrava:
        "abriu uma subsede fora da praça no Rio de Janeiro" */
-    filial:'abriu uma subsede'
+    filial: nome => _t('A {nome} abriu uma subsede', {nome})
   };
   /* A VOZ É UMA SÓ, E É A TERCEIRA PESSOA (correção do dono,
      21/09/2026). Havia aqui uma tabela de verbos em primeira pessoa
@@ -1783,7 +1786,7 @@ TO.feed = (function(){
   }
 
   function cartaoDaObra(E, ev){
-    const nome = (M().torcida(ev.torcida) || {}).nome || 'eles';
+    const nome = (M().torcida(ev.torcida) || {}).nome || _t('eles');
     const v = VERBO_OBRA[ev.item];
     if(!v) return null;               // item sem notícia (ônibus, bomba…)
     /* a cidade só aparece quando é a da obra: subsede de fora */
@@ -1792,9 +1795,11 @@ TO.feed = (function(){
     /* "em Rio de Janeiro" era o que saía: cidade tem gênero como o
        resto, e a metade desta lista é região ("no Interior de SP") */
     const cidadeEm = cidadeNome ? TO.genero.em('cidade', cidadeNome) : '';
-    const ondeFoi = cidadeEm ? ` ${cidadeEm}` : '';
     const nossa = ev.torcida === E.torcida.id;
-    const texto = `A ${nome} ${v}${ev.item === 'filial' ? ondeFoi : ''}.`;
+    const frase = (ev.item === 'filial' && cidadeEm)
+      ? _t('A {nome} abriu uma subsede {onde}', {nome, onde:cidadeEm})
+      : v(nome);
+    const texto = frase + '.';
     return {
       chave:`obra|noticia|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
       texto,
@@ -1805,14 +1810,14 @@ TO.feed = (function(){
          antigo, que não tem `dados`. */
       dados:{
         torcida:ev.torcida, nome, nossa,
-        nomeNossa:(M().torcida(E.torcida.id) || {}).nome || 'nós',
+        nomeNossa:(M().torcida(E.torcida.id) || {}).nome || _t('nós'),
         item:ev.item, cidade:ev.cidade || null, cidadeNome, cidadeEm,
         bairro: COM_BAIRRO[ev.item] ? (ev.bairro || null) : null,
         naPraca: nossa || naPraca(E, ev.torcida),
         /* obra nossa compara com quem tem mais rua na praça hoje —
            é a régua que interessa a quem lê: a gente passou quem? */
         rival: nossa ? maiorDaPraca(E) : null,
-        frase: `A ${nome} ${v}${ev.item === 'filial' ? ondeFoi : ''}`,
+        frase,
         eles: pontosDe(E, ev.torcida),
         nos:  pontosDe(E, E.torcida.id)
       }
@@ -1841,19 +1846,19 @@ TO.feed = (function(){
   function responderObra(E, m, idBotao){
     const d = m.dados || {};
     const ef = idBotao === 'bravo' ? d.bravo : d.ameno;
-    if(!ef){ m.consequencia = 'Deixamos passar.'; return; }
+    if(!ef){ m.consequencia = _t('Deixamos passar.'); return; }
     if(idBotao !== 'bravo'){
-      m.consequencia = 'Deixamos quieto. Nada mudou.';
+      m.consequencia = _t('Deixamos quieto. Nada mudou.');
       return;
     }
     const partes = [];
     if(ef.moral){
-      TO.estado.mexerIndicador(E, 'moral', ef.moral, 'Peitou a cidade');
-      partes.push(`+${Math.round(ef.moral*5)} de moral`);
+      TO.estado.mexerIndicador(E, 'moral', ef.moral, _t('Peitou a cidade'));
+      partes.push(_t('+{n} de moral', {n:Math.round(ef.moral*5)}));
     }
     if(ef.clube && TO.relacaoClube){
-      const r = TO.relacaoClube.mexer(E, ef.clube, 'Inauguração com a cidade toda');
-      if(r) partes.push(`+${r} de relação com o clube`);
+      const r = TO.relacaoClube.mexer(E, ef.clube, _t('Inauguração com a cidade toda'));
+      if(r) partes.push(_t('+{n} de relação com o clube', {n:r}));
     }
     const mexer = (id, quanto)=>{
       if(!id || !quanto) return;
@@ -1863,13 +1868,13 @@ TO.feed = (function(){
     };
     if(ef.relacao && d.alvo){
       mexer(d.alvo, ef.relacao);
-      const nm = (M().torcida(d.alvo) || {}).nome || 'eles';
-      partes.push(`${ef.relacao > 0 ? '+' : ''}${ef.relacao} com a ${nm}`);
+      const nm = (M().torcida(d.alvo) || {}).nome || _t('eles');
+      partes.push(_t('{n} com a {nome}', {n:`${ef.relacao > 0 ? '+' : ''}${ef.relacao}`, nome:nm}));
     }
     if(ef.tambem && ef.relacaoTambem){
       mexer(ef.tambem, ef.relacaoTambem);
-      const nm = (M().torcida(ef.tambem) || {}).nome || 'eles';
-      partes.push(`${ef.relacaoTambem} com a ${nm}`);
+      const nm = (M().torcida(ef.tambem) || {}).nome || _t('eles');
+      partes.push(_t('{n} com a {nome}', {n:ef.relacaoTambem, nome:nm}));
     }
     /* "OS RIVAIS" SÃO OS DA NOSSA CIDADE (correção, 19/09/2026): a
        primeira versão pegava todo rival do país e uma inauguração de
@@ -1884,9 +1889,9 @@ TO.feed = (function(){
         if(TO.relacoes.nivel(E, o.id) > -LIMIAR_INTERESSE) continue;
         mexer(o.id, ef.rivais); n++;
       }
-      if(n) partes.push(`${ef.rivais} com ${n} ${n===1?'rival':'rivais'}`);
+      if(n) partes.push(_tn(n, '{d} com {n} rival', '{d} com {n} rivais', {d:ef.rivais}));
     }
-    m.consequencia = 'Fomos pra cima: ' + partes.join(' · ') + '.';
+    m.consequencia = _t('Fomos pra cima: {efeitos}.', {efeitos:partes.join(' · ')});
   }
 
 
@@ -1929,12 +1934,22 @@ TO.feed = (function(){
   /* "do Mineiro" mas "da Copa do Nordeste", e "nas Quartas" mas "na
      Final". Era cópia da régua do jornal, e as cópias já tinham
      divergido entre si; agora as duas consultam dados/genero.js. */
-  const dComp   = n => TO.genero.d('competicao', n, 'da competição');
+  const dComp   = n => TO.genero.d('competicao', n, _t('da competição'));
+  /* sem fase devolve null: quem chama usa a frase "Caímos fora …" */
   const naFaseF = f => {
     const b = String(f || '').toLowerCase();
-    if(!b) return 'fora';
-    if(b === 'grupos') return 'na fase de grupos';
+    if(!b) return null;
+    if(b === 'grupos') return _t('na fase de grupos');
     return TO.genero.em('fase', b);
+  };
+  /* "3º" em português, "3.º" em espanhol, "3rd" em inglês */
+  const ordFeed2 = n => {
+    const lang = (TO.i18n && TO.i18n.idioma) || 'pt';
+    if(lang === 'en'){
+      const r = n % 100;
+      return n + ((r >= 11 && r <= 13) ? 'th' : ({1:'st', 2:'nd', 3:'rd'}[n % 10] || 'th'));
+    }
+    return n + (lang === 'es' ? '.º' : 'º');
   };
 
   /* o torneio de verdade por trás da competição-sombra da agenda: a
@@ -2080,32 +2095,35 @@ TO.feed = (function(){
 
   /* o cartão ruim: protesto na porta do CT, e nenhuma saída é de graça */
   function cartaoDeFracasso(E, comp, d, jd){
-    const nm = id => (M().time(id) || {}).nome || 'eles';
+    const nm = id => (M().time(id) || {}).nome || _t('eles');
     const clube = nm(E.torcida.clubeId);
+    const fase = naFaseF(d.fase);
+    const p = {fase, comp:dComp(comp.nome), algoz:nm(d.algoz),
+               esperado:ordFeed2(d.esperado), posicao:ordFeed2(d.posicao || 0),
+               forca:d.forcaNossa - d.forcaAlgoz};
     let texto;
     if(jd.motivo === 'rebaixamento')
-      texto = `Acabou: o ${clube} está rebaixado. A rua está em pedaços.`;
+      texto = _t('Acabou: o {clube} está rebaixado. A rua está em pedaços.', {clube});
     else if(jd.motivo === 'zebra')
-      texto = `Caímos ${naFaseF(d.fase)} ${dComp(comp.nome)} pro ${nm(d.algoz)}, `+
-              `que tem ${d.forcaNossa - d.forcaAlgoz} de força a menos que a `+
-              'gente. A torcida está possessa.';
+      texto = fase
+        ? _t('Caímos {fase} {comp} pro {algoz}, que tem {forca} de força a menos que a gente. A torcida está possessa.', p)
+        : _t('Caímos fora {comp} pro {algoz}, que tem {forca} de força a menos que a gente. A torcida está possessa.', p);
     else if(d.tipo === 'mata')
-      texto = `Caímos ${naFaseF(d.fase)} ${dComp(comp.nome)} pro ${nm(d.algoz)}. `+
-              `Com o ${d.esperado}º elenco da competição, cair aí é pouco, `+
-              'e a rua sabe.';
+      texto = fase
+        ? _t('Caímos {fase} {comp} pro {algoz}. Com o {esperado} elenco da competição, cair aí é pouco, e a rua sabe.', p)
+        : _t('Caímos fora {comp} pro {algoz}. Com o {esperado} elenco da competição, cair aí é pouco, e a rua sabe.', p);
     else
-      texto = `Fim ${dComp(comp.nome)}: ${d.posicao}º lugar, com o ${d.esperado}º `+
-              `elenco da competição. Era pra ser muito melhor, e a rua sabe.`;
+      texto = _t('Fim {comp}: {posicao} lugar, com o {esperado} elenco da competição. Era pra ser muito melhor, e a rua sabe.', p);
     propor(E, {
       kind:'veredicto', peso:'decisao', voz:'na rua',
       chave:`veredicto|ruim|${E.data.ano}|${comp.id}`,
-      texto: texto + ' Vamos pra porta do CT?',
+      texto: _t('{texto} Vamos pra porta do CT?', {texto}),
       dados:{lado:'ruim'},
       botoes:[
-        {id:'protestar', rot:'Encabeçar o protesto no CT',
-         dica:'+5 de moral · −15 de relação com o clube', acao:'veredicto'},
-        {id:'recusar', rot:'Não é hora, a gente segura',
-         dica:'−5 de moral · a relação com o clube fica de pé',
+        {id:'protestar', rot:_t('Encabeçar o protesto no CT'),
+         dica:_t('+5 de moral · −15 de relação com o clube'), acao:'veredicto'},
+        {id:'recusar', rot:_t('Não é hora, a gente segura'),
+         dica:_t('−5 de moral · a relação com o clube fica de pé'),
          acao:'veredicto'}
       ]
     });
@@ -2113,28 +2131,30 @@ TO.feed = (function(){
 
   /* o cartão bom: a festa */
   function cartaoDeFesta(E, comp, d, jd){
-    const clube = (M().time(E.torcida.clubeId) || {}).nome || 'o time';
+    const clube = (M().time(E.torcida.clubeId) || {}).nome || _t('o time');
+    const fase = naFaseF(d.fase);
+    const p = {clube, fase, comp:dComp(comp.nome),
+               esperado:ordFeed2(d.esperado), posicao:ordFeed2(d.posicao || 0)};
     const o = jd.motivo === 'título'
-      ? `CAMPEÃO. O ${clube} levantou a taça ${dComp(comp.nome)}.`
+      ? _t('CAMPEÃO. O {clube} levantou a taça {comp}.', p)
       : jd.motivo === 'acesso'
-      ? `ACESSO. O ${clube} subiu de divisão.`
+      ? _t('ACESSO. O {clube} subiu de divisão.', p)
       : d.tipo === 'mata'
-      ? `Caímos ${naFaseF(d.fase)} ${dComp(comp.nome)}, mas com o `+
-        `${d.esperado}º elenco da competição chegar até aí foi muito mais `+
-        'do que a rua esperava.'
-      : `Fim ${dComp(comp.nome)}: ${d.posicao}º lugar com o ${d.esperado}º elenco `+
-        'da competição — muito acima do que a rua esperava.';
+      ? (fase
+        ? _t('Caímos {fase} {comp}, mas com o {esperado} elenco da competição chegar até aí foi muito mais do que a rua esperava.', p)
+        : _t('Caímos fora {comp}, mas com o {esperado} elenco da competição chegar até aí foi muito mais do que a rua esperava.', p))
+      : _t('Fim {comp}: {posicao} lugar com o {esperado} elenco da competição — muito acima do que a rua esperava.', p);
     propor(E, {
       kind:'veredicto', peso:'decisao', voz:'na rua',
       chave:`veredicto|bom|${E.data.ano}|${comp.id}`,
-      texto:`${o} A rua quer festa na sede. A gente banca?`,
+      texto:_t('{texto} A rua quer festa na sede. A gente banca?', {texto:o}),
       dados:{lado:'bom'},
       botoes:[
-        {id:'festa', rot:`Fazer a festa (${U.dinheiro(FESTA_CUSTO)})`,
-         dica:`+5 de moral · volta de ${U.dinheiro(FESTA_MIN)} a `+
-              `${U.dinheiro(FESTA_MAX)} em bar, camisa e rifa`,
+        {id:'festa', rot:_t('Fazer a festa ({valor})', {valor:U.dinheiro(FESTA_CUSTO)}),
+         dica:_t('+5 de moral · volta de {min} a {max} em bar, camisa e rifa',
+                 {min:U.dinheiro(FESTA_MIN), max:U.dinheiro(FESTA_MAX)}),
          acao:'veredicto'},
-        {id:'sem-festa', rot:'Comemorar sem gastar', dica:'sem efeito',
+        {id:'sem-festa', rot:_t('Comemorar sem gastar'), dica:_t('sem efeito'),
          acao:'veredicto'}
       ]
     });
@@ -2160,36 +2180,34 @@ TO.feed = (function(){
   function responderVeredicto(E, m, idBotao){
     const RC = TO.relacaoClube;
     if(idBotao === 'protestar'){
-      const r = RC.mexer(E, -15, 'Protesto no CT depois da campanha fracassada');
-      TO.estado.mexerIndicador(E, 'moral', 1.0, 'Encabeçou o protesto no CT');
-      m.consequencia = `Fomos pra porta do CT e a rua foi junto. `+
-        `+5 de moral · ${r} de relação com o clube.`;
+      const r = RC.mexer(E, -15, _t('Protesto no CT depois da campanha fracassada'));
+      TO.estado.mexerIndicador(E, 'moral', 1.0, _t('Encabeçou o protesto no CT'));
+      m.consequencia = _t('Fomos pra porta do CT e a rua foi junto. +5 de moral · {r} de relação com o clube.', {r});
       return;
     }
     if(idBotao === 'recusar'){
       /* SEGURAR SÓ CUSTA MORAL (régua do dono): a relação com o clube
          não sobe — ela apenas não cai, e é esse o prêmio. */
-      TO.estado.mexerIndicador(E, 'moral', -1.0, 'Segurou a torcida depois do fracasso');
-      m.consequencia = 'Seguramos a rua. −5 de moral, e a relação com o '+
-        'clube ficou de pé.';
+      TO.estado.mexerIndicador(E, 'moral', -1.0, _t('Segurou a torcida depois do fracasso'));
+      m.consequencia = _t('Seguramos a rua. −5 de moral, e a relação com o clube ficou de pé.');
       return;
     }
     if(idBotao === 'festa'){
       if(E.dinheiro < FESTA_CUSTO){
-        m.consequencia = 'Não deu: faltou caixa pra bancar a festa.';
+        m.consequencia = _t('Não deu: faltou caixa pra bancar a festa.');
         return;
       }
-      TO.estado.lancar(E, 'Festa da campanha', -FESTA_CUSTO);
+      TO.estado.lancar(E, _t('Festa da campanha'), -FESTA_CUSTO);
       const volta = Math.round(FESTA_MIN + U.rng() * (FESTA_MAX - FESTA_MIN));
-      TO.estado.lancar(E, 'Festa da campanha: bar, camisa e rifa', volta);
-      TO.estado.mexerIndicador(E, 'moral', FESTA_MORAL, 'Festa da campanha');
+      TO.estado.lancar(E, _t('Festa da campanha: bar, camisa e rifa'), volta);
+      TO.estado.mexerIndicador(E, 'moral', FESTA_MORAL, _t('Festa da campanha'));
       const saldo = volta - FESTA_CUSTO;
-      m.consequencia = `Festa na sede. Custou ${U.dinheiro(FESTA_CUSTO)} e `+
-        `voltou ${U.dinheiro(volta)} — saldo de ${saldo >= 0 ? '+' : ''}`+
-        `${U.dinheiro(saldo)} · +5 de moral.`;
+      m.consequencia = _t('Festa na sede. Custou {custo} e voltou {volta} — saldo de {saldo} · +5 de moral.',
+        {custo:U.dinheiro(FESTA_CUSTO), volta:U.dinheiro(volta),
+         saldo:`${saldo >= 0 ? '+' : ''}${U.dinheiro(saldo)}`});
       return;
     }
-    m.consequencia = 'Comemoramos do nosso jeito, sem gastar.';
+    m.consequencia = _t('Comemoramos do nosso jeito, sem gastar.');
   }
 
   /* -------------------------------------------------------
@@ -2253,28 +2271,21 @@ TO.feed = (function(){
     propor(E, {
       kind:'tutorial', peso:'decisao', voz:'diretor',
       chave:'abertura|tutorial',
-      texto:'Bem vindo ao jogo, chefe. Se quiser, a gente te mostra o '+
-            'jogo — menu por menu, e no fim uma briga simulada pra você '+
-            'sentir como funciona a pista. Leva uns dois minutos.',
-      botoes:[{id:'abrir', rot:'Mostra o jogo', acao:'tutorial'},
-              {id:'pular', rot:'Já sei jogar — pular', acao:'tutorial'}]
+      texto:_t('Bem vindo ao jogo, chefe. Se quiser, a gente te mostra o jogo — menu por menu, e no fim uma briga simulada pra você sentir como funciona a pista. Leva uns dois minutos.'),
+      botoes:[{id:'abrir', rot:_t('Mostra o jogo'), acao:'tutorial'},
+              {id:'pular', rot:_t('Já sei jogar — pular'), acao:'tutorial'}]
     });
     propor(E, {
       kind:'abertura', peso:'decisao', voz:'diretor',
       chave:'abertura|ideologia',
-      texto:'Chefe, antes de tudo: define a nossa ideologia — o que a '+
-            'gente faz com o adversário em dia de jogo e o que faz com os '+
-            'outros jogos da praça. É ela que o botão "Seguir padrão" '+
-            'executa quando você não quiser decidir jogo a jogo.',
-      botoes:[{id:'ideologia', rot:'Definir ideologia', acao:'tela-ideologia'}]
+      texto:_t('Chefe, antes de tudo: define a nossa ideologia — o que a gente faz com o adversário em dia de jogo e o que faz com os outros jogos da praça. É ela que o botão "Seguir padrão" executa quando você não quiser decidir jogo a jogo.'),
+      botoes:[{id:'ideologia', rot:_t('Definir ideologia'), acao:'tela-ideologia'}]
     });
     propor(E, {
       kind:'abertura', peso:'decisao', voz:'diretor',
       chave:'abertura|expediente',
-      texto:'E define o Expediente da Sede: três turnos por dia — manhã, '+
-            'tarde e noite —, cada um com uma ação que a rapaziada toca '+
-            'sozinha. Dia de jogo e dia de estrada ficam de fora.',
-      botoes:[{id:'expediente', rot:'Abrir o Expediente', acao:'painel-expediente'}]
+      texto:_t('E define o Expediente da Sede: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de fora.'),
+      botoes:[{id:'expediente', rot:_t('Abrir o Expediente'), acao:'painel-expediente'}]
     });
   }
 
@@ -2296,8 +2307,9 @@ TO.feed = (function(){
      cópia da regra e a mais curta de todas — só `/^Copa/i`, então
      "Libertadores" e "Série B" saíam no masculino. */
   const pelaComp = n => n ? ', ' + TO.genero.por('competicao', n) : '';
-  const NOME_DIA = [null,'segunda','terça','quarta','quinta','sexta',
-                    'sábado','domingo'];
+  /* só rótulo de tela (ninguém compara), então já nasce traduzido */
+  const NOME_DIA = [null, ...['segunda','terça','quarta','quinta','sexta',
+                    'sábado','domingo'].map(d => _t(d))];
 
   /* UM RELATÓRIO POR DIA (decisão do dono): todos os jogos relevantes
      que reportam hoje entram na MESMA mensagem, cada um com suas
@@ -2380,24 +2392,20 @@ TO.feed = (function(){
       const oAlvo = M().torcida(alvo.id) || {};
       const daCidade = oAlvo.mapa === E.torcida.mapa;
       const clubeDela = oAlvo.clube || (M().time(oAlvo.clubeId) || {}).nome || '';
+      const pt = {nome:alvo.nome, cidade:cidadeNossa, dia:NOME_DIA[j.dia],
+                  clube:clubeDela, onde:dv && dv.cidade, mes:dv && dv.mes};
       const texto = dv
-        ? `Chefe, a gente ainda não engoliu o que esses caras da ${alvo.nome} `+
-          `fizeram com a gente em ${dv.cidade}. Eles vão jogar em ${cidadeNossa} `+
-          `${NOME_DIA[j.dia]}. É uma oportunidade de vingar o que eles fizeram `+
-          `com a gente em ${dv.mes}.`
+        ? _t('Chefe, a gente ainda não engoliu o que esses caras da {nome} fizeram com a gente em {onde}. Eles vão jogar em {cidade} {dia}. É uma oportunidade de vingar o que eles fizeram com a gente em {mes}.', pt)
         : daCidade
-        ? `Chefe, vai ter jogo do ${clubeDela} ${NOME_DIA[j.dia]} e a ${alvo.nome} `+
-          `vai estar na pista. Acho interessante a gente bolar um ataque pra cima deles.`
-        : `Chefe, a ${alvo.nome} vai jogar aqui em ${cidadeNossa} `+
-          `${NOME_DIA[j.dia]}. Acho interessante a gente bolar um ataque pra `+
-          `cima deles, esses vermes na nossa cidade não tem vez.`;
+        ? _t('Chefe, vai ter jogo do {clube} {dia} e a {nome} vai estar na pista. Acho interessante a gente bolar um ataque pra cima deles.', pt)
+        : _t('Chefe, a {nome} vai jogar aqui em {cidade} {dia}. Acho interessante a gente bolar um ataque pra cima deles, esses vermes na nossa cidade não tem vez.', pt);
       propor(E, {
         kind:'olheiro', peso:'decisao', voz:'olheiro', chave,
         texto, dados:{grupos, alvo:alvo.id, divida:!!dv},
         botoes:[
-          {id:'atacar', rot: dv ? 'Vingar' : 'Bolar o ataque', acao:'tela-ataque',
+          {id:'atacar', rot: dv ? _t('Vingar') : _t('Bolar o ataque'), acao:'tela-ataque',
            args:{ctx:{grupos}}},
-          {id:'paz', rot:'Deixar quieto', acao:'paz-grupo', args:{grupos}}
+          {id:'paz', rot:_t('Deixar quieto'), acao:'paz-grupo', args:{grupos}}
         ]
       });
     }
@@ -2422,19 +2430,16 @@ TO.feed = (function(){
       const chaveFora = hostis.length ? `olheiro|${E.data.ano}|${E.data.semana}|fora|${hostis[0].id}` : '';
       if(SUGESTOES_DO_OLHEIRO && hostis.length){
         const alvo = hostis[0], dv = dividas[alvo.id];
-        const texto =
-            `Chefe, a gente ainda não engoliu o que esses caras da ${alvo.nome} `+
-            `fizeram com a gente em ${dv.cidade}. A gente vai jogar em `+
-            `${fora.cidadeAdv} ${NOME_DIA[fora.dia||6]}. É uma oportunidade de `+
-            `vingar o que eles fizeram com a gente em ${dv.mes}.`;
+        const texto = _t('Chefe, a gente ainda não engoliu o que esses caras da {nome} fizeram com a gente em {onde}. A gente vai jogar em {cidade} {dia}. É uma oportunidade de vingar o que eles fizeram com a gente em {mes}.',
+          {nome:alvo.nome, onde:dv.cidade, cidade:fora.cidadeAdv, dia:NOME_DIA[fora.dia||6], mes:dv.mes});
         propor(E, {
           kind:'olheiro', peso:'decisao', voz:'olheiro',
           chave: chaveFora,
           texto, dados:{fora:true, alvo:alvo.id, divida:!!dv},
           botoes:[
-            {id:'atacar', rot:'Vingar', acao:'tela-ataque',
+            {id:'atacar', rot:_t('Vingar'), acao:'tela-ataque',
              args:{ctx:{fora:true, advId:fora.advId}}},
-            {id:'paz', rot:'Deixar quieto', acao:'paz-grupo', args:{grupos:[]}}
+            {id:'paz', rot:_t('Deixar quieto'), acao:'paz-grupo', args:{grupos:[]}}
           ]
         });
       }
@@ -2446,9 +2451,8 @@ TO.feed = (function(){
        recepção saiu da mensagem do olheiro. */
     for(const a of PL().aliadosNaCidade(E, E.data.semana)){
       if(diaDoOlheiro(a.dia) !== hoje) continue;
-      mensagemDe(E, a.id, `Fala irmão, vamos a ${cidadeNossa} ${NOME_DIA[a.dia]} `+
-        `pro jogo do ${a.clube.nome}, uns ${a.estimativa} de bonde. Tem como receber `+
-        `a gente? Qualquer coisa já ajuda.`, 'pedido',
+      mensagemDe(E, a.id, _t('Fala irmão, vamos a {cidade} {dia} pro jogo do {clube}, uns {n} de bonde. Tem como receber a gente? Qualquer coisa já ajuda.',
+        {cidade:cidadeNossa, dia:NOME_DIA[a.dia], clube:a.clube.nome, n:a.estimativa}), 'pedido',
         {chave:`pedido|${E.data.ano}|${E.data.semana}|${a.id}`,
          dados:{n:a.estimativa, dia:a.dia, clube:a.clube.nome}});
     }
@@ -2492,7 +2496,7 @@ TO.feed = (function(){
       const alvos = PL().alvosDaViagem(E, {advId:fora.advId, crua:true});
       linhas.push({
         tipo:'fora', advId: fora.advId, cidade: fora.cidadeAdv,
-        comp: fora.competicao || 'fora de casa', diaN: fora.dia||6, dia: NOME_DIA[fora.dia||6],
+        comp: fora.competicao || _t('fora de casa'), diaN: fora.dia||6, dia: NOME_DIA[fora.dia||6],
         clubes: [{id:fora.mandante.id, nome:fora.mandante.nome, cor:(fora.mandante.cores||[])[0]||'#888'},
                  {id:fora.visitante.id, nome:fora.visitante.nome, cor:(fora.visitante.cores||[])[0]||'#888'}],
         torcidas: alvos.map(a=>({id:a.id, nome:a.nome, cor:corDe(a.id), faixa:a.faixa, hostil:!a.aliada})),
@@ -2586,7 +2590,7 @@ TO.feed = (function(){
         const alvos = vigente ? PL().alvosDaViagem(E, {advId:adv.id, crua:true}) : [];
         linhas.push({
           tipo:'fora', advId:adv.id, cidade: cAdv ? cAdv.nome : (adv.cidade || ''), mapaAdv:adv.mapa,
-          comp:g.comp || 'fora de casa', diaN:g.dia||6, dia:NOME_DIA[g.dia||6],
+          comp:g.comp || _t('fora de casa'), diaN:g.dia||6, dia:NOME_DIA[g.dia||6],
           hora:g.hora || '', estadio:adv.estadio || '', passou:passou(g.dia||6),
           clubes:[{id:adv.id, nome:adv.nome, cor:(adv.cores||[])[0]||'#888'},
                   {id:clube.id, nome:clube.nome, cor:(clube.cores||[])[0]||'#888'}],
@@ -2679,20 +2683,18 @@ TO.feed = (function(){
         kind:'status', peso:'decisao', voz:'torcida',
         chave:`status|${o.id}|${antes}|${sa}`,
         texto: antes === 'rival'
-          ? `Fala, ${nos}. Faz tempo que a gente não se pega na rua, e da nossa `+
-            `parte a treta esfriou. Dá pra tratar como neutro daqui pra frente. Fechado?`
-          : `Fala, ${nos}. Faz um tempão que ninguém ajuda ninguém, e a rua já `+
-            `nota. Melhor cada um pro seu lado, sem mágoa. Encerra a aliança?`,
+          ? _t('Fala, {nos}. Faz tempo que a gente não se pega na rua, e da nossa parte a treta esfriou. Dá pra tratar como neutro daqui pra frente. Fechado?', {nos})
+          : _t('Fala, {nos}. Faz um tempão que ninguém ajuda ninguém, e a rua já nota. Melhor cada um pro seu lado, sem mágoa. Encerra a aliança?', {nos}),
         dados:{de:o.id, nome:o.nome, antes},
         botoes: antes === 'rival'
-          ? [{id:'sim', rot:'Fechado, neutro', acao:'status-sim',
-              nota:'a treta acaba: ninguém procura ninguém'},
-             {id:'nao', rot:'Rival continua rival', acao:'status-nao',
-              nota:'a relação volta pra −16 e eles perguntam de novo em 12 semanas'}]
-          : [{id:'sim', rot:'Encerrar a aliança', acao:'status-sim',
-              nota:'vira neutra: sem ajuda, sem convite'},
-             {id:'nao', rot:'A aliança fica', acao:'status-nao',
-              nota:'a relação segura em +20 — mas precisa de ajuda pra se manter'}]
+          ? [{id:'sim', rot:_t('Fechado, neutro'), acao:'status-sim',
+              nota:_t('a treta acaba: ninguém procura ninguém')},
+             {id:'nao', rot:_t('Rival continua rival'), acao:'status-nao',
+              nota:_t('a relação volta pra −16 e eles perguntam de novo em 12 semanas')}]
+          : [{id:'sim', rot:_t('Encerrar a aliança'), acao:'status-sim',
+              nota:_t('vira neutra: sem ajuda, sem convite')},
+             {id:'nao', rot:_t('A aliança fica'), acao:'status-nao',
+              nota:_t('a relação segura em +20 — mas precisa de ajuda pra se manter')}]
       });
     }
   }
@@ -2741,14 +2743,14 @@ TO.feed = (function(){
     const {a, c, semAliada} = passa;
     const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
     return {tipo:'aproximacao', chave:`interm|${a.id}|${c.id}|${E.data.ano}`,
-      rot:'Aproximação', voz:a.nome, de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
-      texto:`Fala irmão. A gente é de boa com a ${c.nome} (${cid})`+
-            (semAliada ? `, e vocês não têm ninguém lá` : '')+
-            `. Se quiser, a gente senta os dois pra aproximar. Topa?`,
-      botoes:[{id:'sim', rot:'Aproximar', acao:'interm-sim',
-               nota:`a ${c.nome} vira aliada (+25 no mínimo) · +3 com a ${a.nome}`},
-              {id:'nao', rot:'Deixar como está', acao:'interm-nao',
-               nota:`−3 com a ${a.nome}`}]};
+      rot:_t('Aproximação'), voz:a.nome, de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
+      texto: semAliada
+        ? _t('Fala irmão. A gente é de boa com a {nome} ({cidade}), e vocês não têm ninguém lá. Se quiser, a gente senta os dois pra aproximar. Topa?', {nome:c.nome, cidade:cid})
+        : _t('Fala irmão. A gente é de boa com a {nome} ({cidade}). Se quiser, a gente senta os dois pra aproximar. Topa?', {nome:c.nome, cidade:cid}),
+      botoes:[{id:'sim', rot:_t('Aproximar'), acao:'interm-sim',
+               nota:_t('a {nome} vira aliada (+25 no mínimo) · +3 com a {inter}', {nome:c.nome, inter:a.nome})},
+              {id:'nao', rot:_t('Deixar como está'), acao:'interm-nao',
+               nota:_t('−3 com a {inter}', {inter:a.nome})}]};
   }
 
   /* =======================================================
@@ -2793,16 +2795,14 @@ TO.feed = (function(){
     const {a, c} = passa;
     const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
     return {tipo:'paz', chave:`paz|${a.id}|${c.id}|${E.data.ano}`,
-      rot:'Fim de treta', voz:a.nome, de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
+      rot:_t('Fim de treta'), voz:a.nome, de:a.id, nome:a.nome, alvo:c.id, alvoNome:c.nome,
       valor: Math.round(R.nivel(E, c.id)),
-      texto:`Fala irmão. A ${c.nome} (${cid}) anda junto com a gente, e vocês dois `+
-            `se pegando põe a gente no meio — a gente não quer escolher lado. `+
-            `Se vocês toparem, a gente senta os dois e encerra essa treta: `+
-            `ninguém vira aliado de ninguém, mas ninguém procura ninguém também. Topa?`,
-      botoes:[{id:'sim', rot:'Encerrar a treta', acao:'paz-sim',
-               nota:`a ${c.nome} vira neutra · +3 com a ${a.nome}`},
-              {id:'nao', rot:'Rival continua rival', acao:'paz-nao',
-               nota:`−3 com a ${a.nome} · nada muda com a ${c.nome}`}]};
+      texto:_t('Fala irmão. A {nome} ({cidade}) anda junto com a gente, e vocês dois se pegando põe a gente no meio — a gente não quer escolher lado. Se vocês toparem, a gente senta os dois e encerra essa treta: ninguém vira aliado de ninguém, mas ninguém procura ninguém também. Topa?',
+               {nome:c.nome, cidade:cid}),
+      botoes:[{id:'sim', rot:_t('Encerrar a treta'), acao:'paz-sim',
+               nota:_t('a {nome} vira neutra · +3 com a {inter}', {nome:c.nome, inter:a.nome})},
+              {id:'nao', rot:_t('Rival continua rival'), acao:'paz-nao',
+               nota:_t('−3 com a {inter} · nada muda com a {nome}', {nome:c.nome, inter:a.nome})}]};
   }
 
   /* =======================================================
@@ -2849,16 +2849,15 @@ TO.feed = (function(){
     const {a, c, maior} = cands[0];
     const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(c.mapa) : c.mapa;
     return {tipo:'afastar', chave:`afasta|${a.id}|${c.id}|${E.data.ano}`,
-      rot:'Cobrança de aliada', voz:a.nome, de:a.id, nome:a.nome,
+      rot:_t('Cobrança de aliada'), voz:a.nome, de:a.id, nome:a.nome,
       alvo:c.id, alvoNome:c.nome,
-      texto:`Fala irmão. Vocês andam com a ${c.nome} (${cid}), e a gente `+
-            (maior ? `se pega com eles desde sempre` : `não se bica com eles`)+
-            `. Não dá pra ficar de bem com os dois lados: ou é a gente, ou é eles. `+
-            `Larga a ${c.nome}?`,
-      botoes:[{id:'sim', rot:`Largar a ${c.nome}`, acao:'afastar-sim',
-               nota:`a ${c.nome} vira neutra · +3 com a ${a.nome}`},
-              {id:'nao', rot:'Continuar com as duas', acao:'afastar-nao',
-               nota:`−3 com a ${a.nome}`}]};
+      texto: maior
+        ? _t('Fala irmão. Vocês andam com a {nome} ({cidade}), e a gente se pega com eles desde sempre. Não dá pra ficar de bem com os dois lados: ou é a gente, ou é eles. Larga a {nome}?', {nome:c.nome, cidade:cid})
+        : _t('Fala irmão. Vocês andam com a {nome} ({cidade}), e a gente não se bica com eles. Não dá pra ficar de bem com os dois lados: ou é a gente, ou é eles. Larga a {nome}?', {nome:c.nome, cidade:cid}),
+      botoes:[{id:'sim', rot:_t('Largar a {nome}', {nome:c.nome}), acao:'afastar-sim',
+               nota:_t('a {nome} vira neutra · +3 com a {inter}', {nome:c.nome, inter:a.nome})},
+              {id:'nao', rot:_t('Continuar com as duas'), acao:'afastar-nao',
+               nota:_t('−3 com a {inter}', {inter:a.nome})}]};
   }
 
   /* =======================================================
@@ -2883,28 +2882,35 @@ TO.feed = (function(){
           chave:`eixo-saida|${x.id}|${ev.torcida}|${E.data.ano}|${E.data.semana}`,
           dados:{de:x.id, nome:x.nome},
           texto: ev.torcida === nos
-            ? `A gente saiu do ${x.nome}: virou rival da ${nome(ev.outra)}, e o eixo ficou `+
-              `com quem é mais próximo dele. Quem fica leva −20 com a gente.`
-            : `A ${nome(ev.torcida)} saiu do ${x.nome}: virou rival da ${nome(ev.outra)}, `+
-              `e o eixo ficou com quem é mais próximo. Sair custou −20 com cada um de nós.`
+            ? _t('A gente saiu do {eixo}: virou rival da {outra}, e o eixo ficou com quem é mais próximo dele. Quem fica leva −20 com a gente.',
+                 {eixo:x.nome, outra:nome(ev.outra)})
+            : _t('A {nome} saiu do {eixo}: virou rival da {outra}, e o eixo ficou com quem é mais próximo. Sair custou −20 com cada um de nós.',
+                 {nome:nome(ev.torcida), eixo:x.nome, outra:nome(ev.outra)})
         });
         continue;
       }
       if(ev.tipo === 'convite'){
         const rivais = X.maioresRivaisDoEixo(E, x).filter(r=>TO.relacoes.nivel(E, r) > -15);
         const outros = x.membros.filter(m=>m !== ev.porta);
+        const pc = {porta:nome(ev.porta), eixo:x.nome, outros:outros.map(nome).join(', '),
+                    rivais:rivais.map(nome).join(', '), n:x.membros.length, r:rivais.length};
+        const texto = outros.length
+          ? (rivais.length
+            ? _t('Fala irmão, aqui é a {porta}. O pessoal do {eixo} sentou e o nome de vocês saiu na mesa: {outros} e a gente queremos vocês dentro. Entrando, vocês são aliados de todos nós — e rivais de quem é maior rival da gente: {rivais}. Fecha?', pc)
+            : _t('Fala irmão, aqui é a {porta}. O pessoal do {eixo} sentou e o nome de vocês saiu na mesa: {outros} e a gente queremos vocês dentro. Entrando, vocês são aliados de todos nós. Fecha?', pc))
+          : (rivais.length
+            ? _t('Fala irmão, aqui é a {porta}. O pessoal do {eixo} sentou e o nome de vocês saiu na mesa: a gente queremos vocês dentro. Entrando, vocês são aliados de todos nós — e rivais de quem é maior rival da gente: {rivais}. Fecha?', pc)
+            : _t('Fala irmão, aqui é a {porta}. O pessoal do {eixo} sentou e o nome de vocês saiu na mesa: a gente queremos vocês dentro. Entrando, vocês são aliados de todos nós. Fecha?', pc));
         pautar(E, {
-          tipo:'eixo-convite', rot:'Convite de eixo', voz:nome(ev.porta),
+          tipo:'eixo-convite', rot:_t('Convite de eixo'), voz:nome(ev.porta),
           chave:`eixo-convite|${x.id}|${E.data.ano}|${E.data.semana}`,
-          texto:`Fala irmão, aqui é a ${nome(ev.porta)}. O pessoal do ${x.nome} sentou e o `+
-                `nome de vocês saiu na mesa: ${outros.length ? outros.map(nome).join(', ')+' e a gente' : 'a gente'} `+
-                `queremos vocês dentro. Entrando, vocês são aliados de todos nós`+
-                (rivais.length ? ` — e rivais de quem é maior rival da gente: ${rivais.map(nome).join(', ')}` : '')+`. Fecha?`,
+          texto,
           de:x.id, nomeEixo:x.nome, porta:ev.porta, rivais,
-          botoes:[{id:'sim', rot:`Entrar no ${x.nome}`, acao:'eixo-sim',
-                   nota:`aliada de ${x.membros.length} torcidas`+(rivais.length ? ` · rival de ${rivais.length}` : '')},
-                  {id:'nao', rot:'Ficar de fora', acao:'eixo-nao',
-                   nota:`−3 com a ${nome(ev.porta)} · eles voltam a chamar em meio ano`}]
+          botoes:[{id:'sim', rot:_t('Entrar no {eixo}', pc), acao:'eixo-sim',
+                   nota: rivais.length ? _t('aliada de {n} torcidas · rival de {r}', pc)
+                                       : _t('aliada de {n} torcidas', pc)},
+                  {id:'nao', rot:_t('Ficar de fora'), acao:'eixo-nao',
+                   nota:_t('−3 com a {porta} · eles voltam a chamar em meio ano', pc)}]
         });
       } else if(ev.tipo === 'proposta'){
         /* NO NOSSO EIXO O DONO DÁ O AVAL (dono, 11/09/2026): o eixo põe
@@ -2912,16 +2918,15 @@ TO.feed = (function(){
         const o = M().torcida(ev.torcida) || {};
         const cid = TO.financeiro.nomeCidade ? TO.financeiro.nomeCidade(o.mapa) : o.mapa;
         pautar(E, {
-          tipo:'eixo-proposta', rot:'Nome na mesa', voz:nome(ev.porta),
+          tipo:'eixo-proposta', rot:_t('Nome na mesa'), voz:nome(ev.porta),
           chave:`eixo-proposta|${x.id}|${ev.torcida}|${E.data.ano}|${E.data.semana}`,
-          texto:`Fala irmão, aqui é a ${nome(ev.porta)}. O ${x.nome} sentou pra falar `+
-                `da ${o.nome || ''}, de ${cid}. O pessoal quer eles dentro do eixo — `+
-                `com vocês também, claro. Tá fechado pra vocês?`,
+          texto:_t('Fala irmão, aqui é a {porta}. O {eixo} sentou pra falar da {nome}, de {cidade}. O pessoal quer eles dentro do eixo — com vocês também, claro. Tá fechado pra vocês?',
+                   {porta:nome(ev.porta), eixo:x.nome, nome:o.nome || '', cidade:cid}),
           de:x.id, nomeEixo:x.nome, torcida:ev.torcida, porta:ev.porta,
-          botoes:[{id:'sim', rot:'Aceitar no eixo', acao:'eixo-aceita',
-                   nota:`a ${o.nome || ''} vira aliada de todo o eixo`},
-                  {id:'nao', rot:'Vetar', acao:'eixo-veta',
-                   nota:`o nome sai da mesa por meio ano`}]
+          botoes:[{id:'sim', rot:_t('Aceitar no eixo'), acao:'eixo-aceita',
+                   nota:_t('a {nome} vira aliada de todo o eixo', {nome:o.nome || ''})},
+                  {id:'nao', rot:_t('Vetar'), acao:'eixo-veta',
+                   nota:_t('o nome sai da mesa por meio ano')}]
         });
       }
       /* ENTRADA E FUNDAÇÃO ALHEIAS NÃO VÃO PRO FEED (ordem do dono,
@@ -2946,8 +2951,9 @@ TO.feed = (function(){
      virar cartão solto: o feed tem um cartão por bimestre, e ele abre a
      tela da reunião.
      ======================================================= */
+  /* só rótulo de tela, então já nasce traduzido */
   const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
-                 'agosto','setembro','outubro','novembro','dezembro'];
+                 'agosto','setembro','outubro','novembro','dezembro'].map(m => _t(m));
   const dataDeHoje = E => TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
   const mesDe = E => dataDeHoje(E).getMonth() + 1;
 
@@ -3014,11 +3020,11 @@ TO.feed = (function(){
       if(!it.decidido && it.tipo === 'aniversario' && it.dados){
         const F = FESTA_ANIV[it.dados.tipo] || FESTA_ANIV.torcida;
         it.consequencia = aplicarFestaAniv(E, it.dados, 'nada');
-        it.decidido = {botao:'nada', rot:'Não fazer nada'};
+        it.decidido = {botao:'nada', rot:_t('Não fazer nada')};
         void F; continue;
       }
       /* alvos de assalto sem resposta: a lista envelheceu, sai calada */
-      if(!it.decidido && it.tipo === 'assalto'){ it.decidido = {botao:'nada', rot:'Deixar quieto'}; it.consequencia = 'Ficou quieto.'; continue; }
+      if(!it.decidido && it.tipo === 'assalto'){ it.decidido = {botao:'nada', rot:_t('Deixar quieto')}; it.consequencia = _t('Ficou quieto.'); continue; }
       if(it.decidido || !it.festas || it.chave === `festas|${E.data.ano}|${mesDe(E)}`) continue;
       let r = null;
       for(const a of it.festas) if(!a.resposta) r = responderFesta(E, it.festas, a.torcida, false) || r;
@@ -3044,12 +3050,17 @@ TO.feed = (function(){
     return propor(E, {
       kind:'reuniao', peso:'decisao', voz:'diretor',
       chave:`reuniao|${marca}`,
-      texto:`Reunião da diretoria — ${MESES[d.getMonth()]}. `+
-        (quantos ? `${quantos} assunto${quantos>1?'s':''} na mesa`
-                 : 'Nada na mesa este mês')+
-        (mesa ? ', e a nossa jogada nos eixos em aberto.' : '.'),
+      texto: quantos
+        ? (mesa
+          ? _tn(quantos, 'Reunião da diretoria — {mes}. {n} assunto na mesa, e a nossa jogada nos eixos em aberto.',
+                         'Reunião da diretoria — {mes}. {n} assuntos na mesa, e a nossa jogada nos eixos em aberto.', {mes:MESES[d.getMonth()]})
+          : _tn(quantos, 'Reunião da diretoria — {mes}. {n} assunto na mesa.',
+                         'Reunião da diretoria — {mes}. {n} assuntos na mesa.', {mes:MESES[d.getMonth()]}))
+        : (mesa
+          ? _t('Reunião da diretoria — {mes}. Nada na mesa este mês, e a nossa jogada nos eixos em aberto.', {mes:MESES[d.getMonth()]})
+          : _t('Reunião da diretoria — {mes}. Nada na mesa este mês.', {mes:MESES[d.getMonth()]})),
       dados:{ano:E.data.ano, mes:mesDe(E), assuntos:quantos},
-      botoes:[{id:'abrir', rot:'Sentar com a diretoria', acao:'abrir-reuniao'}]
+      botoes:[{id:'abrir', rot:_t('Sentar com a diretoria'), acao:'abrir-reuniao'}]
     });
   }
 
@@ -3085,14 +3096,14 @@ TO.feed = (function(){
     if(!lista.length) return null;
     lista.sort((a,b)=>(a.mes*40 + a.dia) - (b.mes*40 + b.dia));
     for(const a of lista)
-      mensagemDe(E, a.torcida, `Fala irmão, dia ${a.data} comemoramos ${a.idade} `+
-        `anos de história. A presença de vocês seria uma honra pra gente.`, 'convite');
+      mensagemDe(E, a.torcida, _t('Fala irmão, dia {data} comemoramos {n} anos de história. A presença de vocês seria uma honra pra gente.',
+        {data:a.data, n:a.idade}), 'convite');
     return {
-      chave:`festas|${E.data.ano}|${mesDe(E)}`, rot:'Convites de festa', voz:'Diretoria',
+      chave:`festas|${E.data.ano}|${mesDe(E)}`, rot:_t('Convites de festa'), voz:_t('Diretoria'),
       tipo:'festas', festas:lista, botoes:[],
-      texto:`Os convites chegaram: ${lista.length} ${lista.length===1?'aliada faz':'aliadas fazem'} `+
-            `aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; `+
-            `furar afasta e queima na rua. Em quais a gente aparece?`
+      texto:_tn(lista.length,
+        'Os convites chegaram: {n} aliada faz aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?',
+        'Os convites chegaram: {n} aliadas fazem aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?')
     };
   }
 
@@ -3106,7 +3117,11 @@ TO.feed = (function(){
      de hoje abre a cena pela porta de sempre.
      ======================================================= */
   const CHANCE_BOTE = 35;
-  const todoDia = dia => (dia >= 6 ? 'todo ' : 'toda ') + NOME_DIA[dia];
+  const todoDia = dia => dia >= 6 ? _t('todo {dia}', {dia:NOME_DIA[dia]})
+                                  : _t('toda {dia}', {dia:NOME_DIA[dia]});
+  /* a peça muda o gênero da frase em espanhol (el trapo, la bandera):
+     uma chave inteira pra cada peça */
+  const porPeca = (peca, faixa, bandeira) => peca === 'bandeira' ? bandeira : faixa;
   const dataCurtaDe = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
 
   /* dia livre: sem jogo do clube e fora da véspera e do dia seguinte de
@@ -3154,23 +3169,25 @@ TO.feed = (function(){
     const quando = diaDoBote(E, tipo, sem);
     if(!quando) return null;
     const bote = Object.assign({tipo}, alvo, quando);
-    const q = `${quando.nomeDia}, dia ${quando.dataTxt}`;
+    const q = _t('{dia}, dia {data}', {dia:quando.nomeDia, data:quando.dataTxt});
     /* textos do dono (26/08 e 21/09/2026), com o dia e o alvo na fala */
+    const pb = {nome:alvo.nome, todo:todoDia(quando.dia), quando:q, zona:_t(alvo.zona || '')};
     const texto = tipo === 'bar'
-      ? `Chefe, chegou a informação que o bar da ${alvo.nome} fica cheio deles `+
-        `${todoDia(quando.dia)}. A gente quer dar o bote neles ${q} e roubar o caixa do bar.`
-      : `Chefe, vimos nas redes sociais que a Zona ${alvo.zona} da ${alvo.nome} faz `+
-        `resenha numa casa com piscina e a ${alvo.peca} deles fica estendida lá. `+
-        `A gente quer dar o bote neles ${q} e tomar a ${alvo.peca}.`;
+      ? _t('Chefe, chegou a informação que o bar da {nome} fica cheio deles {todo}. A gente quer dar o bote neles {quando} e roubar o caixa do bar.', pb)
+      : porPeca(alvo.peca,
+        _t('Chefe, vimos nas redes sociais que a Zona {zona} da {nome} faz resenha numa casa com piscina e a faixa deles fica estendida lá. A gente quer dar o bote neles {quando} e tomar a faixa.', pb),
+        _t('Chefe, vimos nas redes sociais que a Zona {zona} da {nome} faz resenha numa casa com piscina e a bandeira deles fica estendida lá. A gente quer dar o bote neles {quando} e tomar a bandeira.', pb));
     return {
-      chave:`bote|${tipo}|${sem}`, rot: tipo === 'bar' ? 'Bote no bar' : 'Bote na casa de piscina',
-      voz:'Diretoria', tipo:'bote', bote, texto,
+      chave:`bote|${tipo}|${sem}`, rot: tipo === 'bar' ? _t('Bote no bar') : _t('Bote na casa de piscina'),
+      voz:_t('Diretoria'), tipo:'bote', bote, texto,
       botoes:[
-        {id:'marcar', rot: tipo === 'bar' ? 'Marcar o bote no bar' : 'Marcar o bote', acao:'bote-marcar',
+        {id:'marcar', rot: tipo === 'bar' ? _t('Marcar o bote no bar') : _t('Marcar o bote'), acao:'bote-marcar',
          nota: tipo === 'bar'
-           ? 'Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% do caixa · Relação −26 (perdendo, −18)'
-           : `Prestígio até ±10 · tomando a ${alvo.peca}, prestígio a mais · Relação −26 (perdendo, −18)`},
-        {id:'nada', rot:'Deixar quieto', acao:'bote-nao', nota:'Prestígio −1 · Moral −1'}
+           ? _t('Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% do caixa · Relação −26 (perdendo, −18)')
+           : porPeca(alvo.peca,
+               _t('Prestígio até ±10 · tomando a faixa, prestígio a mais · Relação −26 (perdendo, −18)'),
+               _t('Prestígio até ±10 · tomando a bandeira, prestígio a mais · Relação −26 (perdendo, −18)'))},
+        {id:'nada', rot:_t('Deixar quieto'), acao:'bote-nao', nota:_t('Prestígio −1 · Moral −1')}
       ]
     };
   }
@@ -3209,23 +3226,23 @@ TO.feed = (function(){
         propor(E, {
           kind:'barrival', peso:'decisao', voz:'diretor',
           chave:`bote|dia|${b.ano}|${b.semana}|${b.dia}|bar`,
-          texto:`Hoje é o dia, chefe: o bar da ${b.nome} tá cheio deles. `+
-                `O bonde desce e leva o caixa.`,
+          texto:_t('Hoje é o dia, chefe: o bar da {nome} tá cheio deles. O bonde desce e leva o caixa.', {nome:b.nome}),
           dados:{alvo:b.alvo, nome:b.nome},
-          botoes:[{id:'atacar', rot:'Descer no bar', acao:'atacar-bar-rival',
-                   nota:'Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% '+
-                        'do caixa · Relação −26 (perdendo, −18)'}]
+          botoes:[{id:'atacar', rot:_t('Descer no bar'), acao:'atacar-bar-rival',
+                   nota:_t('Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% do caixa · Relação −26 (perdendo, −18)')}]
         });
       } else {
         propor(E, {
           kind:'casarival', peso:'decisao', voz:'diretor',
           chave:`bote|dia|${b.ano}|${b.semana}|${b.dia}|casa`,
-          texto:`Hoje é o dia, chefe: a Zona ${b.zona} da ${b.nome} tá na resenha da `+
-                `casa com piscina, com a ${b.peca} estendida. Bora dar o bote e tomar a ${b.peca}.`,
+          texto: porPeca(b.peca,
+            _t('Hoje é o dia, chefe: a Zona {zona} da {nome} tá na resenha da casa com piscina, com a faixa estendida. Bora dar o bote e tomar a faixa.', {zona:_t(b.zona || ''), nome:b.nome}),
+            _t('Hoje é o dia, chefe: a Zona {zona} da {nome} tá na resenha da casa com piscina, com a bandeira estendida. Bora dar o bote e tomar a bandeira.', {zona:_t(b.zona || ''), nome:b.nome})),
           dados:{rival:b.rival, nome:b.nome, zona:b.zona, bairro:b.bairro, peca:b.peca},
-          botoes:[{id:'atacar', rot:'Dar o bote', acao:'atacar-casa-rival',
-                   nota:`Prestígio até ±10 · tomando a ${b.peca}, prestígio a mais · `+
-                        'Relação −26 (perdendo, −18)'}]
+          botoes:[{id:'atacar', rot:_t('Dar o bote'), acao:'atacar-casa-rival',
+                   nota: porPeca(b.peca,
+                     _t('Prestígio até ±10 · tomando a faixa, prestígio a mais · Relação −26 (perdendo, −18)'),
+                     _t('Prestígio até ±10 · tomando a bandeira, prestígio a mais · Relação −26 (perdendo, −18)'))}]
         });
       }
     }
@@ -3254,13 +3271,13 @@ TO.feed = (function(){
         E.relacoes[it.alvo] = U.limitar(Math.max(v + 15, 25), -100, 100);
         E.relacoes[it.de]   = U.limitar(TO.relacoes.nivel(E, it.de) + 3, -100, 100);
         S.visto[it.alvo] = 'aliado';
-        it.consequencia = `A ${it.nome} sentou os dois: a ${it.alvoNome} agora é aliada `+
-          `(${Math.round(E.relacoes[it.alvo])}) · +3 com a ${it.nome}.`;
+        it.consequencia = _t('A {nome} sentou os dois: a {alvo} agora é aliada ({v}) · +3 com a {nome}.',
+          {nome:it.nome, alvo:it.alvoNome, v:Math.round(E.relacoes[it.alvo])});
         return {};
       }
       case 'interm-nao':
         E.relacoes[it.de] = U.limitar(TO.relacoes.nivel(E, it.de) - 3, -100, 100);
-        it.consequencia = `Ficou como está. A ${it.nome} não gostou: −3.`;
+        it.consequencia = _t('Ficou como está. A {nome} não gostou: −3.', {nome:it.nome});
         return {};
       case 'paz-sim': {
         const S = E.statusRel = E.statusRel || {visto:{}, recusa:{}};
@@ -3268,13 +3285,13 @@ TO.feed = (function(){
         E.relacoes[it.alvo] = 0;
         E.relacoes[it.de]   = U.limitar(TO.relacoes.nivel(E, it.de) + 3, -100, 100);
         S.visto[it.alvo] = 'neutro';
-        it.consequencia = `A ${it.nome} sentou os dois: a treta com a ${it.alvoNome} `+
-          `acabou — neutro daqui pra frente · +3 com a ${it.nome}.`;
+        it.consequencia = _t('A {nome} sentou os dois: a treta com a {alvo} acabou — neutro daqui pra frente · +3 com a {nome}.',
+          {nome:it.nome, alvo:it.alvoNome});
         return {};
       }
       case 'paz-nao':
         E.relacoes[it.de] = U.limitar(TO.relacoes.nivel(E, it.de) - 3, -100, 100);
-        it.consequencia = `A treta com a ${it.alvoNome} fica de pé. A ${it.nome} não gostou: −3.`;
+        it.consequencia = _t('A treta com a {alvo} fica de pé. A {nome} não gostou: −3.', {nome:it.nome, alvo:it.alvoNome});
         return {};
       case 'afastar-sim': {
         const S = E.statusRel = E.statusRel || {visto:{}, recusa:{}};
@@ -3283,37 +3300,38 @@ TO.feed = (function(){
         E.relacoes[it.alvo] = 0;
         E.relacoes[it.de]   = U.limitar(TO.relacoes.nivel(E, it.de) + 3, -100, 100);
         S.visto[it.alvo] = 'neutro';
-        it.consequencia = `A gente largou a ${it.alvoNome} — neutro daqui pra frente · `+
-          `+3 com a ${it.nome}.`;
+        it.consequencia = _t('A gente largou a {alvo} — neutro daqui pra frente · +3 com a {nome}.', {nome:it.nome, alvo:it.alvoNome});
         return {};
       }
       case 'afastar-nao':
         E.relacoes[it.de] = U.limitar(TO.relacoes.nivel(E, it.de) - 3, -100, 100);
-        it.consequencia = `A gente fica com as duas. A ${it.nome} não gostou: −3.`;
+        it.consequencia = _t('A gente fica com as duas. A {nome} não gostou: −3.', {nome:it.nome});
         return {};
       case 'eixo-sim': {
         const r = TO.eixos.entrar(E, it.de, E.torcida.id);
-        it.consequencia = !r ? 'Não rolou.'
-          : `Dentro do ${it.nomeEixo}. `+
-            (r.novasAliadas.length ? `Novas aliadas: ${r.novasAliadas.map(nome).join(', ')}. ` : 'Já éramos aliados de todos. ')+
-            (r.novosRivais.length ? `Novos rivais: ${r.novosRivais.map(nome).join(', ')}.` : '');
+        it.consequencia = !r ? _t('Não rolou.')
+          : [_t('Dentro do {eixo}.', {eixo:it.nomeEixo}),
+             r.novasAliadas.length ? _t('Novas aliadas: {lista}.', {lista:r.novasAliadas.map(nome).join(', ')})
+                                   : _t('Já éramos aliados de todos.'),
+             r.novosRivais.length ? _t('Novos rivais: {lista}.', {lista:r.novosRivais.map(nome).join(', ')}) : '']
+            .filter(Boolean).join(' ');
         return {};
       }
       case 'eixo-nao':
         TO.eixos.recusar(E, it.de, it.porta);
-        it.consequencia = `A gente ficou de fora do ${it.nomeEixo}.`;
+        it.consequencia = _t('A gente ficou de fora do {eixo}.', {eixo:it.nomeEixo});
         return {};
       case 'eixo-aceita': {
         const r = TO.eixos.entrar(E, it.de, it.torcida);
-        it.consequencia = !r ? 'Não rolou.'
-          : `A ${nome(it.torcida)} está dentro do ${it.nomeEixo}. `+
-            (r.novasAliadas.includes(E.torcida.id) || TO.relacoes.nivel(E, it.torcida) >= 20
-              ? 'Aliada nossa agora.' : '');
+        it.consequencia = !r ? _t('Não rolou.')
+          : (r.novasAliadas.includes(E.torcida.id) || TO.relacoes.nivel(E, it.torcida) >= 20)
+            ? _t('A {nome} está dentro do {eixo}. Aliada nossa agora.', {nome:nome(it.torcida), eixo:it.nomeEixo})
+            : _t('A {nome} está dentro do {eixo}.', {nome:nome(it.torcida), eixo:it.nomeEixo});
         return {};
       }
       case 'eixo-veta':
         TO.eixos.vetar(E, it.de, it.torcida);
-        it.consequencia = `A gente vetou a ${nome(it.torcida)} no ${it.nomeEixo}.`;
+        it.consequencia = _t('A gente vetou a {nome} no {eixo}.', {nome:nome(it.torcida), eixo:it.nomeEixo});
         return {};
       /* o bote do mês (dono, 22/09/2026): marcado, entra no calendário */
       case 'bote-marcar': {
@@ -3322,21 +3340,23 @@ TO.feed = (function(){
         if(!E.botes.some(x=>x.ano===b.ano && x.semana===b.semana && x.dia===b.dia && x.tipo===b.tipo))
           E.botes.push(Object.assign({}, b, {feito:false,
             marcadoEm:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia}}));
-        it.consequencia = `Marcado pra ${b.nomeDia}, ${b.dataTxt}: `+
-          (b.tipo==='bar' ? `o bar da ${b.nome}.` : `a resenha da Zona ${b.zona} da ${b.nome}.`)+
-          ' Está no calendário.';
+        it.consequencia = b.tipo==='bar'
+          ? _t('Marcado pra {dia}, {data}: o bar da {nome}. Está no calendário.',
+               {dia:b.nomeDia, data:b.dataTxt, nome:b.nome})
+          : _t('Marcado pra {dia}, {data}: a resenha da Zona {zona} da {nome}. Está no calendário.',
+               {dia:b.nomeDia, data:b.dataTxt, nome:b.nome, zona:_t(b.zona || '')});
         return {};
       }
       case 'aniv-festa':
         it.consequencia = aplicarFestaAniv(E, it.dados || {}, b.id);
         return {};
       case 'assalto-nao':
-        it.consequencia = 'Ficou quieto.';
+        it.consequencia = _t('Ficou quieto.');
         return {};
       case 'bote-nao':
-        TO.estado.mexerIndicador(E, 'prestigio', -0.2, 'Deixamos o bote quieto');
-        TO.estado.mexerIndicador(E, 'moral', -1, 'Deixamos o bote quieto');
-        it.consequencia = 'Deixamos quieto. Prestígio −1 · Moral −1.';
+        TO.estado.mexerIndicador(E, 'prestigio', -0.2, _t('Deixamos o bote quieto'));
+        TO.estado.mexerIndicador(E, 'moral', -1, _t('Deixamos o bote quieto'));
+        it.consequencia = _t('Deixamos quieto. Prestígio −1 · Moral −1.');
         return {};
     }
     return {};
@@ -3347,16 +3367,19 @@ TO.feed = (function(){
     const F = FESTA_ANIV[d.tipo] || FESTA_ANIV.torcida;
     const f = F[idBotao];
     if(!f) return '';
-    const quem = d.tipo === 'torcida' ? 'da torcida' : 'do clube';
+    const daTorcida = d.tipo === 'torcida';
     if(idBotao === 'nada'){
-      TO.estado.mexerIndicador(E, 'moral', f.moral, `Aniversário ${quem} passou em branco`);
-      return 'Ninguém fez nada. −2 de moral.';
+      TO.estado.mexerIndicador(E, 'moral', f.moral, daTorcida
+        ? _t('Aniversário da torcida passou em branco') : _t('Aniversário do clube passou em branco'));
+      return _t('Ninguém fez nada. −2 de moral.');
     }
-    TO.estado.lancar(E, `Festa de aniversário ${quem}`, -f.custo);
-    TO.estado.mexerIndicador(E, 'moral', f.moral, `Festa de aniversário ${quem}`);
+    const rotFesta = daTorcida ? _t('Festa de aniversário da torcida') : _t('Festa de aniversário do clube');
+    TO.estado.lancar(E, rotFesta, -f.custo);
+    TO.estado.mexerIndicador(E, 'moral', f.moral, rotFesta);
     (E.festasAniversario = E.festasAniversario || {})[`festa-${d.tipo}|${d.anoCivil}`] = idBotao;
-    return `Festa ${idBotao === 'grande' ? 'grande' : 'simples'} marcada: `+
-           `${U.dinheiro(-f.custo)} agora, a receita sai no dia.`;
+    return idBotao === 'grande'
+      ? _t('Festa grande marcada: {valor} agora, a receita sai no dia.', {valor:U.dinheiro(-f.custo)})
+      : _t('Festa simples marcada: {valor} agora, a receita sai no dia.', {valor:U.dinheiro(-f.custo)});
   }
   /* AS PAUTAS DO ANIVERSÁRIO NOSSO E DO CLUBE (pedido do dono,
      22/09/2026): a pergunta "que festa vamos fazer?" — antes um cartão
@@ -3380,20 +3403,22 @@ TO.feed = (function(){
       if(idade <= 0) continue;
       const F = FESTA_ANIV[q.tipo];
       fora.push({
-        chave:`aniv-${q.tipo}|${anoCivil}`, tipo:'aniversario', voz:'Diretoria',
-        rot: q.tipo === 'torcida' ? 'Aniversário da torcida' : `Aniversário do ${q.nome}`,
+        chave:`aniv-${q.tipo}|${anoCivil}`, tipo:'aniversario', voz:_t('Diretoria'),
+        rot: q.tipo === 'torcida' ? _t('Aniversário da torcida') : _t('Aniversário do {clube}', {clube:q.nome}),
         texto: q.tipo === 'torcida'
-          ? `Dia ${fmtDia(aniv)} a torcida completa ${idade} anos. Que festa vamos fazer?`
-          : `Dia ${fmtDia(aniv)} o ${q.nome} completa ${idade} anos. Que festa vamos fazer?`,
+          ? _t('Dia {d} a torcida completa {n} anos. Que festa vamos fazer?', {d:fmtDia(aniv), n:idade})
+          : _t('Dia {d} o {clube} completa {n} anos. Que festa vamos fazer?', {d:fmtDia(aniv), n:idade, clube:q.nome}),
         dados:{tipo:q.tipo, anoCivil},
         botoes:[
-          {id:'grande',  rot:'Festa grande', acao:'aniv-festa',
-           nota:`R$ ${U.numero(F.grande.custo)} · potencial de ${U.dinheiro(F.grande.min)} a `+
-                `${U.dinheiro(F.grande.max)} · +${F.grande.moral} de moral`},
-          {id:'simples', rot:'Festa simples', acao:'aniv-festa',
-           nota:`R$ ${U.numero(F.simples.custo)} · potencial de ${U.dinheiro(F.simples.min)} a `+
-                `${U.dinheiro(F.simples.max)} · +${F.simples.moral} de moral`},
-          {id:'nada',    rot:'Não fazer nada', acao:'aniv-festa', nota:`${F.nada.moral} de moral`}
+          {id:'grande',  rot:_t('Festa grande'), acao:'aniv-festa',
+           nota:_t('{custo} · potencial de {min} a {max} · +{moral} de moral',
+                   {custo:`R$ ${U.numero(F.grande.custo)}`, min:U.dinheiro(F.grande.min),
+                    max:U.dinheiro(F.grande.max), moral:F.grande.moral})},
+          {id:'simples', rot:_t('Festa simples'), acao:'aniv-festa',
+           nota:_t('{custo} · potencial de {min} a {max} · +{moral} de moral',
+                   {custo:`R$ ${U.numero(F.simples.custo)}`, min:U.dinheiro(F.simples.min),
+                    max:U.dinheiro(F.simples.max), moral:F.simples.moral})},
+          {id:'nada',    rot:_t('Não fazer nada'), acao:'aniv-festa', nota:_t('{moral} de moral', {moral:F.nada.moral})}
         ]
       });
     }
@@ -3412,12 +3437,12 @@ TO.feed = (function(){
     if(!dir) return null;
     if(E.membros.filter(TO.membros.disponivel).length < 2) return null;
     return {
-      chave:`assalto|${E.data.ano}|${mesDe(E)}`, tipo:'assalto', voz:'Diretoria', quem:dir.id,
-      rot:'Alvos de assalto',
-      texto:`Chefe, mapeei uns alvos pra um assalto — do mercadinho ao banco, cada um com seu risco. Bora ver?`,
+      chave:`assalto|${E.data.ano}|${mesDe(E)}`, tipo:'assalto', voz:_t('Diretoria'), quem:dir.id,
+      rot:_t('Alvos de assalto'),
+      texto:_t('Chefe, mapeei uns alvos pra um assalto — do mercadinho ao banco, cada um com seu risco. Bora ver?'),
       botoes:[
-        {id:'ver',  rot:'Ver os alvos',  acao:'assalto-ver'},
-        {id:'nada', rot:'Deixar quieto', acao:'assalto-nao', nota:'sem efeito'}
+        {id:'ver',  rot:_t('Ver os alvos'),  acao:'assalto-ver'},
+        {id:'nada', rot:_t('Deixar quieto'), acao:'assalto-nao', nota:_t('sem efeito')}
       ]
     };
   }
@@ -3425,9 +3450,10 @@ TO.feed = (function(){
   function fecharPautaAssalto(E, idItem, r){
     const it = caixaReuniao(E).pauta.find(x=>x.id === idItem);
     if(!it || it.decidido) return {ok:false};
-    it.decidido = {botao:'ver', rot: r.caiu ? 'Deu ruim' : 'Assalto feito'};
-    it.consequencia = r.caiu ? `${r.n} presos por ${r.pena} dias — e o dinheiro ficou lá.`
-                             : `${U.dinheiro(r.valor)} na conta.`;
+    it.decidido = {botao:'ver', rot: r.caiu ? _t('Deu ruim') : _t('Assalto feito')};
+    it.consequencia = r.caiu ? _tn(r.n, '{n} preso por {pena} dias — e o dinheiro ficou lá.',
+                                        '{n} presos por {pena} dias — e o dinheiro ficou lá.', {pena:r.pena})
+                             : _t('{valor} na conta.', {valor:U.dinheiro(r.valor)});
     return {ok:true};
   }
 
@@ -3461,10 +3487,10 @@ TO.feed = (function(){
     propor(E, {
       kind:'semana', voz:'diretor', peso: temJogo ? 'decisao' : 'info',
       chave:`semana|${E.data.ano}|${E.data.semana}`,
-      texto: temJogo ? '' : 'Semana de folga do time.',
+      texto: temJogo ? '' : _t('Semana de folga do time.'),
       dados:{cidades, semana:E.data.semana, ano:E.data.ano},
       botoes: temJogo
-        ? [{id:'fechar', rot:'Fechar o planejamento', acao:'fechar-semana'}]
+        ? [{id:'fechar', rot:_t('Fechar o planejamento'), acao:'fechar-semana'}]
         : null
     });
   }
