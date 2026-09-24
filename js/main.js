@@ -5460,7 +5460,7 @@
         linhaD(_t('Clube'), clube.nome
           ? `${chipClube(o.clubeId, (clube.cores||[])[0] || '#888')}${clube.nome}`
           : '—') +
-        linhaD(_t('Praça'), linkCidade(o.mapa, cidade)) +
+        linhaD(_t('cidade::Praça'), linkCidade(o.mapa, cidade)) +
         linhaD(_t('Fundação'), fund) +
         linhaD(_t('Membros'), `${Math.round(membros)} `+
           `<small class="fraco">${_t('· {n} de pé', {n:dePe})}</small>`) +
@@ -6010,7 +6010,7 @@
       linhaD(_t('Fundação'), r.x.base ? _t('de nascença') : _t('{ano}, semana {s}', {ano:r.x.fundado.ano, s:r.x.fundado.semana}))+
       (r.rivais.length ? linhaD(_t('Maiores rivais do eixo'), r.rivais.map(x=>linkTorcida(x, (TO.mundo.torcida(x)||{}).nome || x)).join(', ')) : '')}));
     const tab = el('table',{class:'dados'});
-    tab.appendChild(el('thead', null, [el('tr',{html:`<th>${_t('Torcida')}</th><th>${_t('Clube')}</th><th>${_t('Praça')}</th><th>${_t('Relação')}</th></tr>`})]));
+    tab.appendChild(el('thead', null, [el('tr',{html:`<th>${_t('Torcida')}</th><th>${_t('Clube')}</th><th>${_t('cidade::Praça')}</th><th>${_t('Relação')}</th></tr>`})]));
     const tb = el('tbody');
     for(const o of r.membros){
       const nossa = o.id === e.torcida.id;

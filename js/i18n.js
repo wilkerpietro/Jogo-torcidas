@@ -48,20 +48,37 @@ TO.i18n = (function(){
       if(!v) continue;
       if(v.es != null) dic.es[pt] = v.es;
       if(v.en != null) dic.en[pt] = v.en;
+      valores = null;
     }
   }
 
+  /* os valores da língua atual, pra reconhecer texto já traduzido */
+  let valores = null;
+  const jaTraduzido = s => {
+    if(!valores){ valores = new Set(); for(const k in dic[idioma]) valores.add(dic[idioma][k]); }
+    return valores.has(s);
+  };
   /* o que foi pedido e não achou (pra ferramenta e pra bancada) */
   const faltando = new Set();
   const encher = (s, p) => p ? String(s).replace(/\{(\w+)\}/g,
     (m, k) => (p[k] !== undefined && p[k] !== null) ? p[k] : m) : s;
 
+  /* CONTEXTO: a mesma palavra em português pode ter duas traduções
+     ("Praça" a cena é a plaza/square; "Praça" a cidade da torcida é la
+     ciudad/the city). A chave leva o contexto na frente, com '::' —
+     _t('cidade::Praça') — e o português mostra só o que vem depois. */
+  const semContexto = s => { const i = s.indexOf('::'); return i > 0 && i < 24 ? s.slice(i+2) : s; };
   function t(pt, p){
-    if(pt == null) return '';
+    if(pt == null || pt === '') return '';
     pt = String(pt);
-    if(idioma === 'pt') return encher(pt, p);
+    if(idioma === 'pt') return encher(semContexto(pt), p);
     const v = dic[idioma][pt];
-    if(v === undefined){ faltando.add(pt); return encher(pt, p); }
+    if(v === undefined){
+      /* texto que JÁ É tradução (um rótulo traduzido na definição e
+         passado de novo por _t na hora de mostrar) não falta nada */
+      if(!jaTraduzido(pt)) faltando.add(pt);
+      return encher(semContexto(pt), p);
+    }
     return encher(v, p);
   }
   /* plural simples: tn(n, '{n} festa', '{n} festas') */

@@ -330,7 +330,7 @@ TO.i18n.registrar({
   'Patrimônio':    {es:'Patrimonio',     en:'Assets'},
   'Brigas':        {es:'Peleas',         en:'Fights'},
   'Finanças':      {es:'Finanzas',       en:'Finances'},
-  'Praça':         {es:'Plaza',          en:'Town'},
+  'cidade::Praça': {es:'Ciudad',         en:'City'},
   'Fundação':      {es:'Fundación',      en:'Founded'},
   '· {n} de pé':   {es:'· {n} en pie',   en:'· {n} fit'},
   'Relação com a gente': {es:'Relación con nosotros', en:'Relationship with us'},

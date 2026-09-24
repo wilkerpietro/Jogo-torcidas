@@ -27,8 +27,8 @@ TO.i18n.registrar({
   '{rel} de relação com o aliado — {nota}':
     {es:'{rel} de relación con el aliado — {nota}', en:'{rel} relationship with the ally — {nota}'},
   'O olheiro sempre pergunta antes de cada jogo. O botão "Seguir padrão" da mensagem executa o que está definido aqui.':
-    {es:'El informante siempre pregunta antes de cada partido. El botón "Seguir la norma" del mensaje hace lo que está definido acá.',
-     en:'The scout always asks before every match. The "Follow default" button on the message does what is set here.'},
+    {es:'El informante siempre pregunta antes de cada partido. El botón "Seguir el plan" del mensaje hace lo que está definido acá.',
+     en:'The scout always asks before every match. The "Follow the default" button on the message does what is set here.'},
   'Ideologia salva.': {es:'Ideología guardada.', en:'Ideology saved.'},
 
   /* ---------- a barra do feed ---------- */

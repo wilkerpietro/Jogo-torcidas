@@ -87,8 +87,8 @@ TO.i18n.registrar({
   'Mostra o jogo': {es:'Muéstrame el juego', en:'Show me the game'},
   'Já sei jogar — pular': {es:'Ya sé jugar — saltar', en:'I know how to play — skip'},
   'Chefe, antes de tudo: define a nossa ideologia — o que a gente faz com o adversário em dia de jogo e o que faz com os outros jogos da praça. É ela que o botão "Seguir padrão" executa quando você não quiser decidir jogo a jogo.':
-    {es:'Jefe, antes que nada: define nuestra ideología — qué hacemos con el rival en día de partido y qué hacemos con los otros partidos de la ciudad. Es la que ejecuta el botón "Seguir el patrón" cuando no quieras decidir partido por partido.',
-     en:'Boss, first things first: set our ideology — what we do to the opposition on match day and what we do about the other matches in town. It is what the "Follow default" button runs when you don\'t want to decide match by match.'},
+    {es:'Jefe, antes que nada: define nuestra ideología — qué hacemos con el rival en día de partido y qué hacemos con los otros partidos de la ciudad. Es la que ejecuta el botón "Seguir el plan" cuando no quieras decidir partido por partido.',
+     en:'Boss, first things first: set our ideology — what we do to the opposition on match day and what we do about the other matches in town. It is what the "Follow the default" button runs when you don\'t want to decide match by match.'},
   'Definir ideologia': {es:'Definir ideología', en:'Set ideology'},
   'E define o Expediente da Sede: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de fora.':
     {es:'Y define la Jornada de la Sede: tres turnos por día — mañana, tarde y noche —, cada uno con una acción que los muchachos llevan solos. Los días de partido y de ruta quedan afuera.',
