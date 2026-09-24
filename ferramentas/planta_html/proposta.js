@@ -23,6 +23,10 @@
    - 0,7 e 1,7, −2,3 e −1,3, 0,−1 e 1,−1 viram uma quadra só cada par,
      por cima da rua que as separava.
 
+   Depois disso a favela do sudoeste foi dividida em três: fica o pedaço
+   colado no Estádio Municipal, e os outros dois vão pro sul da 2,10 (a
+   Favela do Sul) e pro norte da 3,−2 (a Favela do Norte).
+
    Os lotes saem com a mesma conta do `lotear()` da planta, só que com
    hash da posição no lugar do sorteio, e a favela com a mesma conta da
    favela da planta, com um sorteio próprio de semente fixa: a proposta
@@ -139,12 +143,30 @@ const FAVELAS = [
     poly: [[-4230, 1530], [-4975, 1150], [-4985, 360], [-4580, -130], [-3935, -565], [-3290, -745], [-2745, -745],
            [-2450, -475], [-2375, -105], [-2595, -65], [-3040, -30], [-3170, 20], [-3170, 430], [-3735, 410],
            [-4045, 560], [-4060, 1150], [-4010, 1370]] },
+  /* A do sudoeste foi dividida em três (o dono pediu): o que fica é o
+     pedaço colado no Estádio Municipal — a coluna −3 do lado oeste dele
+     (fileiras 9 a 11) e as duas fileiras de baixo (11 e 12) —, com o
+     traço do dono do lado do estádio e da estrada sul, cortado na viela
+     a oeste da coluna −3 e na viela de baixo da fileira 11 (da 12, só
+     embaixo do estádio). Os outros dois pedaços foram pro sul da 2,10 e
+     pro norte da 3,−2. `caixa`: onde a favela pode pôr casa (a viela da
+     borda), pra ela não vazar pela regra do GAP pro quarteirão vizinho. */
   { id: 'sudoeste', nome: 'Favela do Sudoeste', semente: 481523,
-    /* com o canto entre a favela e a cidade (a oeste de −3,6 a −3,8 e ao
-       sul de −4,5) dentro: a favela encosta na quina da cidade */
-    poly: [[-3100, 3120], [-3900, 3120], [-4000, 3500], [-4150, 4300], [-4310, 5010], [-4555, 5875], [-4310, 6125],
-           [-3690, 6430], [-2950, 6555], [-2085, 6495], [-1215, 6310], [-720, 6000], [-660, 5660], [-1095, 5595],
-           [-1590, 5445], [-2085, 5350], [-2160, 5195], [-2180, 4640], [-3230, 4565], [-3070, 4360]] }
+    poly: [[-3140, 4571], [-3140, 5880], [-2300, 5880], [-2300, 6345], [-1380, 6345], [-1215, 6310], [-720, 6000],
+           [-660, 5660], [-1095, 5595], [-1590, 5445], [-2085, 5350], [-2160, 5195], [-2180, 4640]],
+    caixa: { x0: -3110, x1: 130, y0: 4300, y1: 6345 } },
+  /* o pedaço do sul: abaixo da 2,10 (o campo), da 1,10 e da 3,10, entre a
+     estrada sul e a praia — as fileiras 11 e 12 das colunas 1 a 3 */
+  { id: 'sul', nome: 'Favela do Sul', semente: 275183,
+    poly: [[160, 5430], [2560, 5430], [2560, 5870], [2470, 6150], [2230, 6340], [1640, 6390], [1050, 6370],
+           [560, 6310], [250, 6140], [160, 5900]],
+    caixa: { x0: 130, x1: 2557, y0: 5400, y1: 6345 } },
+  /* o pedaço do norte: acima da 3,−2 e da sede da 2,−3, até a estrada do
+     norte — as fileiras −3 a −5 das colunas 2 a 4 (a 4 só do lado de cá
+     da estrada, longe do pórtico) */
+  { id: 'norte', nome: 'Favela do Norte', semente: 639127,
+    poly: [[1180, -2650], [3130, -2650], [3130, -1290], [1760, -1290], [1760, -1720], [960, -1720], [960, -2420]],
+    caixa: { x0: 940, x1: 3150, y0: -2660, y1: -1250 } }
 ];
 /* as cores da favela do jogo */
 const CORES_FAVELA = {
@@ -764,10 +786,16 @@ export function gerarProposta(P) {
   for (const q of K.QUADRAS) if (!substitui.has(q.i + ',' + q.j)) ocupadas.add(q.i + ',' + q.j);
   for (let i = 0; i < K.grade.length; i++) for (let j = 0; j < (K.grade[i] || []).length; j++) {
     const c = K.grade[i][j];
-    if (c && (c.tipo === 'estadio' || c.tipo === 'campo')) ocupadas.add(i + ',' + j);
+    if (!c || (c.tipo !== 'estadio' && c.tipo !== 'campo')) continue;
+    ocupadas.add(i + ',' + j);
+    /* a rua em volta do campo (e do estádio) também é cidade: sem isso a
+       árvore da favela do sul caía no asfalto de baixo do campo da 2,10 */
+    const [x0, x1] = colX(i), [y0, y1] = linY(j);
+    barra.push(ruaDe({ x0, x1, y0, y1 }));
   }
   const cidade = (i, j) => ocupadas.has(i + ',' + j);
   const VIELA = 48;
+  const tomadas = new Set();                                            // a célula é de uma favela só
   const favelas = FAVELAS.map(F => gerarFavela(F));
   function gerarFavela(F) {
     let est = F.semente >>> 0;
@@ -786,7 +814,8 @@ export function gerarProposta(P) {
     const distBarra = (x, y) => { let d = Infinity; for (const r of barra) { const dx = Math.max(r.x0 - x, 0, x - r.x1), dy = Math.max(r.y0 - y, 0, y - r.y1); d = Math.min(d, Math.hypot(dx, dy)); } return d; };
     const naArea = (x, y) => dentroPol(x, y, F.poly) || distPoly(x, y) + distBarra(x, y) <= GAP;
     const bb0 = bbOf(F.poly), bb = { x0: bb0.x0 - GAP, x1: bb0.x1 + GAP, y0: bb0.y0 - GAP, y1: bb0.y1 + GAP };
-    const dentro = (x, y) => naArea(x, y) && livre(x, y);
+    const C = F.caixa, naCaixa = (x, y) => !C || (x >= C.x0 && x <= C.x1 && y >= C.y0 && y <= C.y1);
+    const dentro = (x, y) => naCaixa(x, y) && naArea(x, y) && livre(x, y);
     const cabe = (x0, x1, y0, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [(x0 + x1) / 2, (y0 + y1) / 2]].every(([x, y]) => dentro(x, y));
     /* a casa que bate na rua da cidade é aparada até a guia */
     const encaixar = (x0, x1, y0, y1) => {
@@ -806,10 +835,11 @@ export function gerarProposta(P) {
       return [x0, x1, y0, y1];
     };
 
-    /* 1. OS QUARTEIRÕES: as células da grade que caem na mancha e não são cidade */
+    /* 1. OS QUARTEIRÕES: as células da grade que caem na mancha e não são
+       cidade nem de outra favela */
     const cels = [];
-    for (let i = -10; i <= 1; i++) for (let j = -6; j <= 16; j++) {
-      if (cidade(i, j)) continue;
+    for (let i = -10; i <= 5; i++) for (let j = -6; j <= 16; j++) {
+      if (cidade(i, j) || tomadas.has(i + ',' + j)) continue;
       const [x0, x1] = colX(i), [y0, y1] = linYx(j);
       if (x1 < bb.x0 || x0 > bb.x1 || y1 < bb.y0 || y0 > bb.y1) continue;
       let alguma = false;
@@ -817,6 +847,7 @@ export function gerarProposta(P) {
         if (dentro(x0 + (x1 - x0) * a / 6, y0 + (y1 - y0) * b / 6)) alguma = true;
       if (alguma) cels.push({ i, j, x0, x1, y0, y1 });
     }
+    for (const c of cels) tomadas.add(c.i + ',' + c.j);
     /* a borda de cada quarteirão: rua da cidade do lado de lá → a borda é
        a guia (a casa dá pra rua); senão, a viela corre no meio da faixa
        e o quarteirão avança até ela */

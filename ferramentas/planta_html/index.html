@@ -2191,16 +2191,22 @@ function notasDaProposta() {
   const saem = lotes.filter(it => it.sobProposta && it.beira && !it.l.favela).length;
   const trocados = lotes.filter(it => it.q && PROP.substitui.has(it.q.i + ',' + it.q.j)).length;
   const qTotal = c.quadrasHoje - c.quadrasTrocadas + c.quadras, lTotal = c.lotesHoje - trocados + c.lotesNovos + c.lotesExtra - c.lotesTirados;
-  const [fNO, fSO] = c.casasFavela, fTotal = fNO + fSO;
+  const fTotal = c.casasFavela.reduce((a, n) => a + n, 0);
+  const porFavela = PROP.favelas.map(f => `${f.nome.replace('Favela do ', '').toLowerCase()}: ${f.lotes.length}`).join('; ');
+  const fav = id => PROP.favelas.find(f => f.id === id);
   const comercio = lotesNovos.filter(it => it.l.placa && !ehBar(it.l)).length;
   const cond = PROP.condominios.map(cd => `${cd.t1.replace('Edifício ', '')} e ${cd.t2.replace('Residencial ', '')} (${cd.cores})`).join('; ');
-  return `<p class="sobre">Proposta · 4ª versão</p><h2>A cidade cresce pra oeste e pro norte</h2>
+  return `<p class="sobre">Proposta · 5ª versão</p><h2>A cidade cresce pra oeste e pro norte</h2>
   <dl class="numeros">
     <div><dt>Quadras</dt><dd>${c.quadrasHoje} → ${qTotal}</dd><small>${qTotal - c.quadrasHoje >= 0 ? '+' : ''}${qTotal - c.quadrasHoje}</small></div>
     <div><dt>Lotes</dt><dd>${c.lotesHoje} → ${lTotal}</dd><small>em quadra</small></div>
-    <div><dt>Na favela</dt><dd>${c.casasFavelaHoje} → ${fTotal}</dd><small>em 2 favelas</small></div>
+    <div><dt>Na favela</dt><dd>${c.casasFavelaHoje} → ${fTotal}</dd><small>em ${PROP.favelas.length} favelas</small></div>
   </dl>
   <h3>O que entrou agora</h3>
+  <ul>
+    <li><b>A favela do sudoeste virou três.</b> O que ficou no sudoeste é o pedaço colado no ${esc(PROP.estadio2.nome)}: a coluna do lado oeste dele e as duas fileiras de baixo, com ${fav('sudoeste') ? fav('sudoeste').lotes.length : '—'} casas. Um pedaço foi pro sul, abaixo do campo da 2,10, entre a estrada sul e a praia (<b>Favela do Sul</b>, ${fav('sul') ? fav('sul').lotes.length : '—'} casas); o outro foi pro norte, acima da 3,−2, até a estrada do norte (<b>Favela do Norte</b>, ${fav('norte') ? fav('norte').lotes.length : '—'} casas). Cada pedaço tem as casas grandes e o campinho dele, e a conta continua a da favela do jogo.</li>
+  </ul>
+  <h3>O que entrou na 4ª versão</h3>
   <ul>
     <li><b>O metrô</b>: a ${esc(METRO_P ? METRO_P.nome : 'Linha 1')}, com duas estações subterrâneas — a Poente, na ponta leste da quadra −2,6 (de frente pra delegacia nova), e a Norte, na ponta oeste da 3,−1 (do lado da igreja). A entrada é a da foto (a caixa de vidro no pórtico branco, a escada e a rolante entre o azulejo azul); embaixo, o mezanino com as catracas e a plataforma da outra foto, com o trem parado. Um túnel de ${METRO_P ? metros(METRO_P.tunel) : '—'} liga as duas (${METRO_P ? metros(METRO_P.comprimento) : '—'} de trilho de plataforma a plataforma). Na ficha da estação, <b>Pegar o trem</b> faz a viagem até a outra, e <b>Descer na plataforma</b> põe a câmera lá embaixo.</li>
     <li><b>O Shopping Poente</b> no lugar do campo de várzea (−2,4): a cortina de vidro, a ponta redonda, o último andar recuado de vidro inclinado, a marquise da entrada e o totem.</li>
@@ -2216,9 +2222,9 @@ function notasDaProposta() {
     <li>Quem ocupa cada um é a torcida da cidade escolhida no alto da página. Bar que nenhuma torcida usa fica <b>neutro, de porta fechada</b> (o ALUGA-SE na porta); espaço de sede sem torcida — ou de torcida no nível 0 — fica com a <b>sede fechada</b>, em cor de reboco.</li>
   </ul>
   ${tabelaDaCidade()}
-  <h3>O que mudou nesta versão</h3>
+  <h3>O que mudou na 3ª versão</h3>
   <ul>
-    <li><b>As favelas nas manchas circuladas, na grade da cidade.</b> Primeiro a grade de ruas: cada rua da cidade segue dentro da favela na mesma linha, como viela estreita (2,5 m), e onde a favela encosta numa quadra a rua da cidade é a borda dela. Depois as casas: cada quarteirão da grade vira miolo de favela, com becos de 1,6 a 2,2 m e casa encostada na casa. Não sobra mato entre a favela e a rua (a do sudoeste pega também o canto a oeste de −3,6 a −3,8). A conta é a da favela do jogo: quadra miúda, casa encostada na casa, as casas grandes (bar, lanchonete, a da escada...) e um campinho de terra em cada. Noroeste: ${fNO} casas; sudoeste: ${fSO}.</li>
+    <li><b>As favelas nas manchas circuladas, na grade da cidade.</b> Primeiro a grade de ruas: cada rua da cidade segue dentro da favela na mesma linha, como viela estreita (2,5 m), e onde a favela encosta numa quadra a rua da cidade é a borda dela. Depois as casas: cada quarteirão da grade vira miolo de favela, com becos de 1,6 a 2,2 m e casa encostada na casa. Não sobra mato entre a favela e a rua. A conta é a da favela do jogo: quadra miúda, casa encostada na casa, as casas grandes (bar, lanchonete, a da escada...) e um campinho de terra em cada. Casas por favela — ${esc(porFavela)}.</li>
     <li><b>Sem as avenidas transversais do oeste</b> (a oeste e a noroeste2). As quadras que elas cortavam voltaram a ser inteiras, e a 1,4 de hoje foi refeita sem o rasgo.</li>
     <li><b>Rua no meio</b> das quadras altas −3,2, −1,2 e 0,2, de norte a sul: o quintal enorme virou duas fileiras de casa de cada lado.</li>
     <li><b>Quadras juntadas</b> por cima da rua: 0,7 com 1,7 (a 1,7 é de hoje), −2,3 com −1,3 e 0,−1 com 1,−1.</li>

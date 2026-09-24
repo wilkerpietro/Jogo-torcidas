@@ -2299,6 +2299,87 @@ Isso junta as duas no atlas que já existe. As outras folhas ficam idênticas, b
   pintada.
 - O shopping não tem estacionamento. A igreja e as praças que sobraram continuam sem modelo.
 
+### 4.37. A favela do sudoeste em três pedaços, e as 30 cidades contra os dois mapas
+
+**A favela.** O dono pediu pra dividir a favela do sudoeste em três. Um pedaço vai pro sul do
+mapa, abaixo da 2,10; outro vai pro norte, acima da 3,−2; o resto fica no sudoeste, ao lado do
+estádio. Em `FAVELAS` (`proposta.js`):
+
+- **Favela do Sudoeste**: é o traço do dono do lado do Estádio Municipal e da estrada sul,
+  cortado na viela a oeste da coluna −3 e na viela de baixo da fileira 11. Da fileira 12, fica
+  só o trecho embaixo do estádio. Tem a coluna −3 (fileiras 9 a 11) e as duas fileiras de baixo
+  do estádio: 397 casas.
+- **Favela do Sul**: fica abaixo da 1,10, do campo da 2,10 e da 3,10, entre a estrada sul e a
+  praia. São as fileiras 11 e 12 das colunas 1 a 3: 309 casas.
+- **Favela do Norte**: fica acima da 3,−2 e da sede da 2,−3, até a estrada do norte (longe do
+  pórtico). São as fileiras −3 a −5 das colunas 2 a 4: 388 casas.
+
+Eram 1.179 casas numa favela só e agora são 1.094 em três. A diferença vem de que cada pedaço
+tem as suas 19 casas grandes e o seu campinho, e isso come lugar de casa pequena. A do
+noroeste não mudou (545).
+
+Três mudanças no gerador de favela:
+
+1. **A célula é de uma favela só.** O conjunto `tomadas` guarda cada quarteirão que uma favela
+   pegou, e a próxima pula ele.
+2. **Cada mancha pode ter uma `caixa`.** A caixa limita onde a favela põe casa (a viela da
+   borda). Sem ela, a regra do GAP, que cola a favela na rua da cidade, puxava um pedaço do
+   quarteirão vizinho.
+3. **A rua em volta do campo e do estádio da planta entrou na `barra`.** Antes só a rua das
+   quadras entrava, e seis árvores da favela do sul caíam no asfalto de baixo do campo da 2,10.
+
+Fora as favelas, a proposta sai igual, byte a byte (quadras, bares, espaços de sede, metrô).
+Muda só a borda sul do mundo, que as favelas empurram: ela sobe de 6.855 pra 6.690, e com ela o
+primeiro ponto da estrada sul, na mesma reta. O pórtico não sai do lugar. A borda de cima da
+proposta agora vai até a Favela do Norte.
+
+**As cidades contra os mapas.** O dono pensa no mapa de hoje como o das cidades pequenas e
+na proposta como o das grandes, e mandou uma planilha com as 30 praças: nível, porte,
+bairros, torcidas e estádios. `ferramentas/planta_html/conferir_cidades.mjs` confere cada
+praça (`dados/cidades.js` e `dados/torcidas.js`) contra o que cada mapa tem, tirado do próprio
+mapa:
+
+| | estádios | espaços de sede (grande + pequeno) | bares | favelas | metrô |
+|---|---|---|---|---|---|
+| mapa atual | 1 | 1 + 1 | 2 | 1 | não |
+| proposta | 2 | 8 + 1 | 18 | 4 | sim |
+
+Cada praça pede:
+
+- um estádio por estádio dela;
+- uma sede por torcida (a de nível 2 em diante pede espaço grande);
+- um bar por torcida;
+- uma mancha de favela por bairro de classe Favela;
+- o metrô, se ela tem.
+
+O que saiu:
+
+- **Nenhuma das 30 cabe no mapa atual, nem as pequenas.** Toda praça pequena tem 3 torcidas ou
+  mais, e seis das sete têm 2 estádios. Pra servir as pequenas, o mapa atual precisa de:
+  - 1 estádio a mais;
+  - de 2 pra 5 espaços de sede, 4 deles grandes;
+  - de 2 pra 5 bares;
+  - de 1 pra 3 favelas.
+- **Na proposta cabem todas as pequenas, 8 das 18 médias e só 1 das 5 grandes** (Belo
+  Horizonte). Contando pela planilha: Interior de SP como média, e Interior do RS e de SC com 2
+  estádios. O que barra é o estádio: 13 praças têm 3, e São Paulo tem 4. Sede e bar sobram pra
+  todo mundo, porque o máximo é 8 torcidas, 7 de sede grande. Fortaleza tem 5 bairros de
+  favela, e a proposta tem 4.
+- **A planilha e os dados do jogo não batem em três praças.** São elas:
+  - Interior de SP: a planilha diz Médio com 12 bairros; os dados dizem Pequeno com 8.
+  - Interior do RS e Interior de SC: a planilha diz 2 estádios; os dados dizem 3.
+
+  `dados/cidades.js` é gerado por `ferramentas/importar_bairros.py`, então a correção vai na
+  fonte. São Paulo está sem metrô (`temMetro: false`), o que parece erro de dado.
+- **As zonas.** O mapa não tem bairro, e o jogo tem. A sede fica no bairro da torcida
+  (`bairroSede`), o bar fica em outra zona (GDD §7.2), e a classe do bairro decide renda e cena.
+  As quatro favelas da proposta ficam no norte, no sul e no oeste; nenhuma fica no leste, que é
+  a praia. 16 das 30 praças têm bairro de favela no leste.
+- **A praia.** Os dois mapas têm mar a leste. Isso serve pras praças do litoral (Rio,
+  Fortaleza, Recife, Salvador, Natal, Maceió, João Pessoa, Aracaju, São Luís, Santos, o litoral
+  catarinense), mas não pras sete pequenas, que são todas do interior, nem pra São Paulo e Belo
+  Horizonte.
+
 
 ### 4.16. Dois bugs que a sede menor desenterrou
 
@@ -2828,7 +2909,7 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
 | `js/diajogo/metro3d.js` | o metrô da proposta: a estação inteira (a entrada de vidro, a descida, o mezanino e a plataforma, escrita uma vez e girada pra outra ponta, no corte de casa de boneca da lista `metro_sub`), o túnel ao longo do caminho e o carro do trem. Por enquanto só o artefato usa |
 | `js/diajogo/equip3d.js` | os equipamentos novos da proposta: o Shopping Poente, o 2º Distrito Policial (com o pátio e as viaturas) e a Praça da Vila; cada um devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos e a Linha 1 do metrô: o terreno das duas entradas, o salão de cada estação e o caminho do túnel), `conferir_sede.mjs` confere o modelo da sede contra a planta, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes e os módulos 3D) |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as quatro favelas: noroeste, sudoeste, sul e norte), `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o mapa atual e a proposta (estádio, sede, bar, favela, metrô), `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes e os módulos 3D) |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) e dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça) e escreve o atlas; roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela), a do metrô (`metro.jpg`), a dos equipamentos novos (`equip.jpg`) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
