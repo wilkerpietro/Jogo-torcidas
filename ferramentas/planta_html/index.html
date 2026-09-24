@@ -116,6 +116,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 }
 .vista3d canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 .dica { position: absolute; left: 8px; bottom: 6px; margin: 0; font: 500 11px/1 var(--f-ui); color: var(--tinta-2); pointer-events: none; }
+.alterna3d {
+  position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px 6px 8px;
+  border-radius: 8px; border: 1px solid rgba(0,0,0,.35); background: rgba(246,247,243,.92); color: #1d2420;
+  font: 600 13px/1 var(--f-ui); letter-spacing: .02em; cursor: pointer;
+}
+.alterna3d input { accent-color: #0e7a82; margin: 0; }
+.alterna3d:has(input:focus-visible) { outline: 2px solid var(--selecao); outline-offset: 2px; }
+.ficha h3 { margin: 14px 0 6px; font: 700 15px/1.2 var(--f-ui); letter-spacing: .02em; }
+.comodos { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13px; color: var(--tinta-2); }
+.comodos b { color: var(--tinta); font: 700 13.5px/1.2 var(--f-ui); letter-spacing: .02em; }
+.comodos span { font: 12px var(--f-dado); font-variant-numeric: tabular-nums; }
 .carregando3d { position: absolute; inset: 0; display: grid; place-items: center; font: 600 13px var(--f-ui); color: var(--tinta-2); pointer-events: none; }
 .ficha, .notas { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 14px 16px; }
 .sobre { margin: 0 0 4px; font: 600 12px/1.3 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
@@ -190,6 +201,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
     <aside class="painel">
       <div class="vista3d" id="vista3d">
         <canvas id="c3d"></canvas>
+        <label class="alterna3d" id="alterna-telhado" hidden><input type="checkbox" id="c-telhado"> Telhado</label>
         <div class="carregando3d" id="carregando3d" hidden>montando…</div>
         <p class="dica">Arraste pra girar · role pra aproximar · duplo clique centraliza</p>
       </div>
@@ -211,6 +223,7 @@ import { moldeDaPeca, comTransformador } from './js/props3d.js';
 import { ATLAS } from './js/modelos_atlas.js';
 import { Construtor } from './js/construtor3d.js';
 import { gerarProposta, RUA } from './js/proposta.js';
+import { montarSede } from './js/sede3d.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -228,6 +241,7 @@ function carregarScript(src) {
 window.TO = window.TO || { dados: {} };
 try {
   await carregarScript('dados/torcidas.js');
+  await carregarScript('dados/times.js');
   await carregarScript('dados/cena_estadio.js');
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
@@ -427,8 +441,9 @@ let ocupacao = { torcidas: [], semSede: [], mapa: '' };
 function distribuirTorcidas() {
   const mapa = slugDe(cidade);
   const ts = (TO.dados.torcidas || []).filter(t => t.mapa === mapa).map(t => {
-    const c = coresDaTorcida(t);
-    return { t, id: t.id, sigla: String(t.siglaTorcida || t.nome).toUpperCase(), nome: t.nome, nomeCompleto: String(t.nome || t.siglaTorcida).toUpperCase(),
+    const c = coresDaTorcida(t), cl = (TO.dados.times || []).find(o => o.id === t.clubeId) || null;
+    const cc = (cl && cl.cores || []).map(x => String(x).toUpperCase());
+    return { t, id: t.id, clubeSigla: (cl && cl.sigla) || t.sigla || '', clubeCor: cc[0] || null, clubeCor2: cc.find(x => x !== cc[0]) || '#E8E2D0', sigla: String(t.siglaTorcida || t.nome).toUpperCase(), nome: t.nome, nomeCompleto: String(t.nome || t.siglaTorcida).toUpperCase(),
              clube: t.clube, nivel: t.sedeNivel ?? 1, poder: t.poder || 0, membros: t.membros || 0,
              cor: c.cor, cor2: c.cor2, cor3: c.cor3 || c.cor2, nBares: Array.isArray(t.bares) ? t.bares.length : null, sede: null, bares: [] };
   }).sort((a, b) => b.nivel - a.nivel || b.poder - a.poder || a.sigla.localeCompare(b.sigla));
@@ -457,64 +472,16 @@ function distribuirTorcidas() {
     l.placaTinta = T ? corLegivel(T.cor2) : undefined;
     l._plano = undefined;
   }
-  for (const x of espacos) x.montagem = montagemDoEspaco(x);
+  for (const x of espacos) { x.sede = sedeDoEspaco(x); x.montagem = plantaDaSede(x.sede); }
   ocupacao = { torcidas: ts, semSede: ts.filter(T => !T.sede), mapa };
 }
 
-/* A SEDE NO ESPAÇO: a sede do jogo (a de nível 3 da 2,9 serve de molde
-   pra nível 2 em diante, como na planta; a de nível 1 da 5,2 pra nível
-   1) levada pro espaço — girada pra frente dele, as cores da torcida no
-   lugar das do molde, o nome dela no letreiro. Espaço vago leva o
-   molde sem nada dentro, em cor de reboco, com a porta fechada e a
-   laje em cima. */
-const MOLDE_SEDE = {};
-for (const q of K.QUADRAS) if (q.equip && q.equip.tipo === 'sede') MOLDE_SEDE[q.equip.nivel === 1 ? 1 : 3] = q.equip;
-const EIXOS = { n: [[-1, 0], [0, 1]], s: [[1, 0], [0, -1]], o: [[0, 1], [1, 0]], l: [[0, -1], [-1, 0]] };
-/* o referencial de uma fatia pela frente dela: `a` corre a frente, da
-   esquerda pra direita de quem olha a fachada, e `b` vai pro fundo */
-function referencial(area, frente) {
-  const [R, I] = EIXOS[frente], hz = frente === 'n' || frente === 's';
-  return { R, I, ox: R[0] < 0 || I[0] < 0 ? area.x1 : area.x0, oy: R[1] < 0 || I[1] < 0 ? area.y1 : area.y0,
-           L: hz ? area.x1 - area.x0 : area.y1 - area.y0, A: hz ? area.y1 - area.y0 : area.x1 - area.x0 };
-}
-const PECAS_DO_VAZIO = new Set(['muro', 'marquise', 'piso', 'porta', 'portao', 'caixadagua', 'pilar', 'bloco']);
-function transplante(eq, area, frente, T) {
-  const de = referencial(eq.area, eq.frente), para = referencial(area, frente);
-  const su = para.L / de.L, sv = para.A / de.A;
-  const pt = (x, y) => {
-    const dx = x - de.ox, dy = y - de.oy, a = (dx * de.R[0] + dy * de.R[1]) * su, b = (dx * de.I[0] + dy * de.I[1]) * sv;
-    return [para.ox + a * para.R[0] + b * para.I[0], para.oy + a * para.R[1] + b * para.I[1]];
-  };
-  const dir = (x, y) => { const a = x * de.R[0] + y * de.R[1], b = x * de.I[0] + y * de.I[1]; return [a * para.R[0] + b * para.I[0], a * para.R[1] + b * para.I[1]]; };
-  const ret2 = r => { const [ax, ay] = pt(r.x0, r.y0), [bx, by] = pt(r.x1, r.y1); return { x0: Math.min(ax, bx), x1: Math.max(ax, bx), y0: Math.min(ay, by), y1: Math.max(ay, by) }; };
-  const T0 = eq.torcida || {}, c1 = T0.cor || '#b02a22', c2 = T0.cor2 || '#e8e2d0', c3 = T0.cor3 || c2;
-  const vazio = !T, C = T || NEUTRO;
-  const troca = new Map();
-  for (const [de0, para0] of [[c3, C.cor3], [c2, C.cor2], [c1, C.cor]]) troca.set(String(de0).toUpperCase(), para0);
-  const cor = c => (c && troca.get(String(c).toUpperCase())) || c;
-  const pecas = [];
-  for (const o of eq.pecas) {
-    if (vazio && !PECAS_DO_VAZIO.has(o.k)) continue;
-    const n = { ...o };
-    if (o.x0 !== undefined) Object.assign(n, ret2(o));
-    if (o.x !== undefined && o.y !== undefined) [n.x, n.y] = pt(o.x, o.y);
-    if (o.ox !== undefined) [n.ox, n.oz] = dir(o.ox, o.oz);
-    if (o.k === 'porta') { const [dx, dy] = dir(Math.cos(o.ang0), -Math.sin(o.ang0)); n.ang0 = Math.atan2(-dy, dx); }
-    if (o.cor) n.cor = cor(o.cor);
-    if (o.cor2) n.cor2 = cor(o.cor2);
-    if (o.k === 'letreiro') {
-      n.fundo = cor(o.fundo); n.tinta = corLegivel(n.fundo);
-      if (T && (o.texto === T0.nomeCompleto || o.texto === T0.rot)) n.texto = T.nomeCompleto;
-    }
-    if (o.k === 'mastro' && o.bandeira) {
-      const [dx, dy] = dir(o.bandeira.dirx, o.bandeira.dirz);
-      n.bandeira = { ...o.bandeira, dirx: dx, dirz: dy, texto: T ? T.sigla : '' };
-    }
-    pecas.push(n);
-  }
-  const teto = eq.teto ? { ...eq.teto, area: eq.teto.area ? ret2(eq.teto.area) : null } : null;
-  return { tipo: 'sede', nivel: eq.nivel, area: { ...area }, frente, chao: eq.chao, pecas, teto, vazio, torcida: T };
-}
+/* A SEDE NO ESPAÇO: o modelo novo da sede (js/sede3d.js), que refaz as
+   paredes e as portas da sede da planta na fatia do espaço, virada pra
+   frente dele, com a textura, a janela, o telhado e a mobília de cada
+   cômodo. Torcida de nível 1 fica com o barracão; do nível 2 em diante,
+   com a sede grande (como na planta). O espaço vago leva a sede do
+   tamanho dele fechada: cor de reboco, nada dentro, porta abaixada. */
 /* a fatia da sede de nível 1 num terreno inteiro: o canto da frente,
    como o areaDaSede da planta */
 function fatiaDoNivel1(a, frente) {
@@ -524,14 +491,24 @@ function fatiaDoNivel1(a, frente) {
   if (frente === 'o') return { x0: a.x0, x1: a.x0 + PR, y0: a.y0, y1: a.y0 + LF };
   return { x0: a.x1 - PR, x1: a.x1, y0: a.y0, y1: a.y0 + LF };
 }
-function montagemDoEspaco(x) {
+function sedeDoEspaco(x) {
   const e = x.e, T = x.dono;
-  const pequeno = e.cabe === 1 || (T && T.nivel === 1);
-  const molde = MOLDE_SEDE[pequeno ? 1 : 3];
-  if (!molde) return null;
+  const pequeno = e.cabe === 1 || (!!T && T.nivel === 1);
   const area = pequeno && e.cabe > 1 ? fatiaDoNivel1(e.area, e.frente) : e.area;
-  return { eq: transplante(molde, area, e.frente, T || null), resto: area !== e.area ? e.area : null };
+  return { area, frente: e.frente, nivel: pequeno ? 1 : 3, lado: 'mandante', resto: area !== e.area ? e.area : null,
+           torcida: T ? { cor: T.cor, cor2: T.cor2, cor3: T.cor3, sigla: T.sigla, nome: T.nomeCompleto,
+                          clubeSigla: T.clubeSigla, clubeCor: T.clubeCor, clubeCor2: T.clubeCor2 } : null };
 }
+/* a sede de hoje (a da planta, com a torcida da partida que ela põe lá) */
+function sedeDoEquip(eq) {
+  const T = eq.torcida;
+  return { area: eq.area, frente: eq.frente, nivel: eq.nivel, lado: eq.lado || 'mandante', resto: null,
+           torcida: T ? { cor: T.cor, cor2: T.cor2, cor3: T.cor3, sigla: T.rot || T.nome, nome: T.nomeCompleto || T.rot,
+                          clubeSigla: T.clubeSigla, clubeCor: T.clubeCor, clubeCor2: T.clubeCor2 } : null };
+}
+/* a planta baixa sai do mesmo modelo, sem a geometria */
+const plantaDaSede = sd => montarSede(sd, {}, { so2d: true });
+for (const e of equipamentos) if (e.q.equip.tipo === 'sede') { e.sede = sedeDoEquip(e.q.equip); e.montagem = plantaDaSede(e.sede); }
 const porticos = PROP.porticos.map(p => { const pol = poligonoDoPortico(p, 3.2); return { tipo: 'portico', p, pol, bb: bbox(pol), nome: p.nome, proposta: true }; });
 const estadios = [
   { tipo: 'estadio', dx: 0, dy: 0, nome: 'Estádio', pol: P.anel(P.R.fachada1) },
@@ -658,7 +635,7 @@ function desenhar() {
       pol(q.polMiolo, COR.miolo);
       ctx.strokeStyle = '#000'; ctx.lineWidth = px(1); ctx.stroke();
     }
-    if (q.equip && !(prop && somemNaProposta.has(q.i + ',' + q.j))) {
+    if (q.equip && q.equip.tipo !== 'sede' && !(prop && somemNaProposta.has(q.i + ',' + q.j))) {
       ret(q.equip.area, q.equip.chao || '#9d9a90');
       for (const o of q.equip.pecas) if (o.k === 'piso') ret(o, o.cor);
     }
@@ -730,7 +707,11 @@ function desenhar() {
   }
 
   /* ---- os equipamentos: as peças em planta ---- */
-  for (const e of equipamentos) if (ve(e.bb) && !(prop && e.somePelaProposta)) desenharPecas(e.q.equip.pecas);
+  for (const e of equipamentos) {
+    if (!ve(e.bb) || (prop && e.somePelaProposta)) continue;
+    if (e.montagem) desenharSede(e.sede, e.montagem, px);
+    else desenharPecas(e.q.equip.pecas);
+  }
   for (const q of K.QUADRAS) for (const pr of q.pracinhas || []) desenharPecas(pr.pecas);
   /* ---- os marcos, o atacarejo e as torres: o chão da fatia e o volume ---- */
   for (const m of prop ? marcos.filter(m => !m.atacadex).concat(marcosNovos) : marcos) {
@@ -839,17 +820,12 @@ function desenharProposta(ve, px) {
   }
   /* os espaços de sede: a sede da torcida que mora ali, em planta (com o
      resto do terreno de terra, se a sede é a pequena), ou a sede vaga,
-     cinza e coberta */
+     coberta pelo telhado */
   for (const it of espacos) {
-    const a = it.e.area, m = it.montagem;
+    const a = it.e.area;
     if (!ve(a)) continue;
-    if (!m) { ret(a, COR.terreno); continue; }
-    if (m.resto) ret(m.resto, COR.terreno);
-    const eq = m.eq;
-    ret(eq.area, eq.chao || '#a8a396');
-    for (const o of eq.pecas) if (o.k === 'piso') ret(o, o.cor);
-    desenharPecas(eq.pecas);
-    if (eq.vazio) { ctx.globalAlpha = 0.8; ret((eq.teto && eq.teto.area) || eq.area, '#8e8a82'); ctx.globalAlpha = 1; }
+    if (it.sede.resto) ret(it.sede.resto, COR.terreno);
+    desenharSede(it.sede, it.montagem, px);
     const T = it.dono;
     ctx.setLineDash(T ? [] : [px(6), px(4)]); ctx.strokeStyle = T ? T.cor2 : '#57544d'; ctx.lineWidth = px(T ? 3 : 2.4);
     ctx.strokeRect(a.x0 + 2, a.y0 + 2, a.x1 - a.x0 - 4, a.y1 - a.y0 - 4); ctx.setLineDash([]);
@@ -859,6 +835,13 @@ function desenharProposta(ve, px) {
   ctx.setLineDash([]);
 }
 
+/* A SEDE EM PLANTA: o chão, os pisos de cada cômodo, a mobília e as
+   paredes (com o vão das portas), tudo do modelo; a vaga, coberta */
+function desenharSede(sd, m, px) {
+  ret(sd.area, '#a8a396');
+  for (const tipo of ['piso', 'movel', 'parede']) for (const r of m.planta2d) if (r.tipo === tipo) ret(r, r.cor);
+  if (!sd.torcida) { ctx.globalAlpha = 0.85; for (const t of m.teto) ret(t, t.cor); ctx.globalAlpha = 1; }
+}
 function desenharPecas(pecas) {
   for (const o of pecas) {
     switch (o.k) {
@@ -1121,6 +1104,27 @@ function linhas(pares) {
   return '<dl class="dados">' + pares.filter(p => p && p[1] !== undefined && p[1] !== null && p[1] !== '').map(([k, v, largo]) =>
     `<div${largo ? ' class="largo"' : ''}><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('') + '</dl>';
 }
+/* o que tem em cada cômodo (a mobília do js/sede3d.js) */
+const O_QUE_TEM = {
+  secretaria: 'mesa de atendimento com computador, cadeira de escritório e duas de quem chega, arquivo de aço, estante de pasta, mural, bebedouro, bandeira e ar',
+  bar: 'janela de balcão pro salão, balcão de granito, prateleira de garrafa, armário, geladeira, freezer e engradados',
+  banheiro: 'azulejo até 1,60 m, dois boxes com vaso, dois mictórios, pia de duas cubas com espelho, tijolo de vidro',
+  almoxarifado: 'três estantes de aço cheias (caixa, bandeira, surdo), surdos no chão, mastros no canto e bandeira dobrada',
+  corredor: 'capacho, extintor e quadro de aviso',
+  salao: 'barrado na cor da torcida, sinuca, pebolim, mesa comprida com cadeira de plástico, a bateria no pé da faixa, TV, bancos, pilha de cadeira, a lojinha de camisa e as banquetas do balcão',
+  alojamento: 'três beliches, colchões no chão, armário de aço e as mochilas',
+  diretoria: 'mesa do diretor com computador e duas cadeiras, estante de troféus, mesa de reunião com seis cadeiras, TV, bandeira e ar',
+  deposito: 'estantes de aço, faixas dobradas, colchões empilhados, caixas, armário com troféu velho em cima e o bumbo velho',
+  patio: 'colchões na parede, caixa-d’água, tanque, churrasqueira de tijolo, mesa de plástico, varal, banco, a faixa e o mastro',
+  patrimonio: 'armário do material com os troféus em cima, estante de aço com bandeira enrolada, surdos, mastros e caixas',
+  presidencia: 'mesa no canto com computador, cadeira de escritório, armário, sofá, mural, bandeira e ar'
+};
+const nomeDoComodo = n => n.charAt(0) + n.slice(1).toLowerCase();
+function comodosDaSede(m) {
+  return '<h3>Cômodo por cômodo</h3><ul class="comodos">' + m.comodos.map(c =>
+    `<li><b>${esc(nomeDoComodo(c.nome))}</b> <span>${metros(c.larg * M)} × ${metros(c.fundo * M)}</span> — ${esc(O_QUE_TEM[c.tipo] || '')}</li>`).join('') + '</ul>';
+}
+const NOTA_DA_SEDE = '<p class="nota">Modelo novo (<code>js/diajogo/sede3d.js</code>): as paredes, as portas e os móveis que bloqueiam a caminhada são os da sede andável da planta, no mesmo lugar e na mesma medida; a textura, as janelas, o telhado e o resto da mobília são novos. A cena do dia de jogo ainda monta a sede em caixa lisa, e a mobília nova ainda não entra na colisão.</p>';
 function fichaDe(it) {
   if (!it) return '<p class="sobre">Ficha</p><h2>Clique num lote</h2><p class="nota">Cada lote do mapa abre o imóvel em 3D, montado com o mesmo código do jogo.</p>';
   const chip = it.proposta || it.tipo === 'quadraNova' ? '<span class="chip">proposta</span>' : '';
@@ -1140,19 +1144,29 @@ function fichaDe(it) {
       + (x && x.b.noLugarDoBarGrande ? '<p class="nota">É a quadra do bar grande de hoje (13,9 × 8,8 m): a fatia dele vira casa, e o bar pequeno fica na esquina.</p>' : '');
   }
   if (it.tipo === 'espaco') {
-    const e = it.e, a = e.area, T = it.dono, m = it.montagem;
+    const e = it.e, a = e.area, T = it.dono, sd = it.sede;
     const tam = metros(a.x1 - a.x0) + ' × ' + metros(a.y1 - a.y0);
     const onde = e.hoje ? 'a sede de hoje, quadra ' + e.quadra : e.nome.replace('Terreno para sede', 'terreno') + ', quadra ' + e.quadra;
     if (T) return `<p class="sobre">Espaço de sede · ${esc(onde)}${chip}</p><h2>${esc(T.nome)}</h2>` + linhas([
       ['Torcida', T.sigla], ['Clube', T.clube], ['Nível da sede', T.nivel], ['Membros', T.membros],
       ['Bar', T.bares.length ? T.bares.map(x => 'bar ' + x.b.n).join(', ') : 'nenhum livre', true],
       ['Espaço', tam], ['Frente para', FRENTE[e.frente]], ['Onde', e.terreno ? e.terreno.onde : '', true]
-    ]) + `<p class="nota">A sede do jogo (${T.nivel === 1 ? 'o barracão de nível 1' : 'a de nível 3, que a planta usa do nível 2 em diante'}) levada pra este espaço, nas cores da torcida ${coresDe(T)}, com o nome dela no letreiro.${m && m.resto ? ' O resto do terreno fica de pátio murado, pra quando a sede crescer.' : ''}</p>`;
+    ]) + `<p class="nota">${sd.nivel === 1 ? 'O barracão de nível 1' : 'A sede grande (a de nível 3, que a planta usa do nível 2 em diante)'} nas cores da torcida ${coresDe(T)}, com o nome dela no letreiro da fachada, a placa em cada sala e a faixa ${sd.nivel === 1 ? 'no pátio' : 'no salão'}.${sd.resto ? ' O resto do terreno fica de pátio murado, pra quando a sede crescer.' : ''}</p>`
+      + comodosDaSede(it.montagem) + NOTA_DA_SEDE;
     const zero = ocupacao.semSede.filter(T => T.nivel < 1);
     return `<p class="sobre">Espaço de sede · ${esc(onde)}${chip}</p><h2>Sede vaga</h2>` + linhas([
       ['Espaço', tam], ['Frente para', FRENTE[e.frente]], ['Cabe', e.cabe === 1 ? 'só a sede de nível 1' : 'sede de qualquer nível', true],
       ['Onde', e.terreno ? e.terreno.onde : '', true]
-    ]) + `<p class="nota">Nenhuma torcida de ${esc(cidade)} mora aqui${zero.length ? ` (${esc(zero.map(T => T.sigla).join(', '))}, no nível 0, não tem sede)` : ''}: o espaço fica neutro, com a sede fechada — cor de reboco, porta fechada e a laje por cima.</p>`;
+    ]) + `<p class="nota">Nenhuma torcida de ${esc(cidade)} mora aqui${zero.length ? ` (${esc(zero.map(T => T.sigla).join(', '))}, no nível 0, não tem sede)` : ''}: o espaço fica com a ${sd.nivel === 1 ? 'sede de nível 1' : 'sede grande'} fechada — cor de reboco, vazia por dentro, a porta de enrolar abaixada, as portas fechadas e o telhado.</p>`
+      + NOTA_DA_SEDE;
+  }
+  if (it.tipo === 'equip' && it.q.equip.tipo === 'sede') {
+    const eq = it.q.equip, T = eq.torcida || {}, a = eq.area;
+    return `<p class="sobre">Sede do jogo · quadra ${it.q.i},${it.q.j}</p><h2>${esc(T.nomeCompleto || it.nome)}</h2>` + linhas([
+      ['Torcida', T.rot], ['Clube', T.clube], ['Na partida', eq.lado === 'visitante' ? 'visitante' : 'mandante'], ['Nível da sede', eq.nivel],
+      ['Área', metros(a.x1 - a.x0) + ' × ' + metros(a.y1 - a.y0)], ['Frente para', FRENTE[eq.frente]]
+    ]) + `<p class="nota">A sede que a planta põe na cidade pra torcida ${eq.lado === 'visitante' ? 'visitante' : 'mandante'} da partida (a planta escolhe as duas; aqui é o exemplo que vem nos dados).</p>`
+      + comodosDaSede(it.montagem) + NOTA_DA_SEDE;
   }
   if (it.tipo === 'lote') {
     const l = it.l, pc = planoSeguro(l);
@@ -1253,11 +1267,14 @@ function mudarCidade(c) {
   distribuirTorcidas();
   $('notas').innerHTML = notasDaProposta();
   $('ficha').innerHTML = fichaDe(estado.sel);
+  ajustarTelhado(estado.sel);
   if (estado.sel) vista.mostrar(estado.sel);
   pedirDesenho();
 }
 function selecionar(it, rolar) {
   estado.sel = it;
+  verTelhado = null;
+  ajustarTelhado(it);
   $('ficha').innerHTML = fichaDe(it);
   pedirDesenho();
   if (!it) return;
@@ -1515,25 +1532,86 @@ function objetoDoTerreno(a, frente, g, o = {}) {
   }
 }
 /* O ESPAÇO DE SEDE: a sede da torcida que mora ali (e o resto do
-   terreno de pátio murado, quando ela é a pequena), ou a sede vaga —
-   o molde em cor de reboco, com a porta e o portão fechados e a laje
-   por cima */
-function objetoDoEspaco(it, g) {
-  const m = it.montagem, e = it.e;
-  if (!m) { objetoDoTerreno(e.area, e.frente, g, { placa: 'TERRENO PARA SEDE' }); return; }
-  if (m.resto) objetoDoTerreno(m.resto, e.frente, g, { fora: m.eq.area });
-  objetoDoEquip(m.eq, g);
-  if (!m.eq.vazio) return;
-  const FECHADA = '#6d6a64';
-  for (const o of m.eq.pecas) {
-    if (o.k === 'portao') caixa(g, o.x0, o.x1, 0, o.alt || 54, o.y0, o.y1, FECHADA);
-    if (o.k !== 'porta') continue;
-    const dx = Math.cos(o.ang0), dy = -Math.sin(o.ang0), L = o.larg || 28, bx = o.x + dx * L, by = o.y + dy * L, alt = o.alt || 41;
-    if (Math.abs(dx) >= Math.abs(dy)) caixa(g, Math.min(o.x, bx), Math.max(o.x, bx), 0, alt, o.y - 1.6, o.y + 1.6, FECHADA);
-    else caixa(g, o.x - 1.6, o.x + 1.6, 0, alt, Math.min(o.y, by), Math.max(o.y, by), FECHADA);
+   terreno de pátio murado, quando ela é a pequena), ou a sede vaga */
+function objetoDoEspaco(it, g, o) {
+  const sd = it.sede;
+  if (sd.resto) objetoDoTerreno(sd.resto, sd.frente, g, { fora: sd.area });
+  objetoDaSede(sd, g, o);
+}
+/* A SEDE EM 3D: o modelo de js/sede3d.js (paredes e piso no atlas das
+   casas, grades e janelas na folha de grade, o telhado à parte pra poder
+   tirar) e os decalques com texto: o letreiro, a placa de cada sala, a
+   faixa e os escudos. O telhado da sede ocupada começa tirado, pra ver
+   dentro; o da vaga, posto. */
+let verTelhado = null;
+const telhadoDe = sd => verTelhado ?? !sd.torcida;
+const sedeDe = it => it && (it.tipo === 'espaco' || (it.tipo === 'equip' && it.q.equip.tipo === 'sede')) ? it.sede : null;
+function ajustarTelhado(it) {
+  const sd = sedeDe(it);
+  $('alterna-telhado').hidden = !sd;
+  if (sd) $('c-telhado').checked = telhadoDe(sd);
+}
+$('c-telhado').onchange = ev => { verTelhado = ev.target.checked; vista.telhado(verTelhado); };
+/* `o.telhado`: na vista da quadra inteira o telhado fica sempre posto */
+function objetoDaSede(sd, g, o = {}) {
+  const destino = {};
+  const r = montarSede(sd, destino);
+  const a = sd.area;
+  caixa(g, a.x0, a.x1, 0, 1.5, a.y0, a.y1, '#a8a396');
+  for (const [lista, folha] of [['casas', 'casas'], ['grades', 'grades'], ['telhado', 'casas']]) {
+    const m = malhaDeBlocos(destino[lista] || [], folha);
+    if (!m) continue;
+    if (lista === 'telhado') { m.name = 'telhado'; m.visible = o.telhado ?? telhadoDe(sd); }
+    g.add(m);
   }
-  const t = m.eq.teto, a = (t && t.area) || m.eq.area, y = t ? t.base : 60;
-  caixa(g, a.x0 - 1, a.x1 + 1, y, y + 4, a.y0 - 1, a.y1 + 1, '#9a968d');
+  for (const p of r.placas) {
+    const lug = { x: p.x, y: p.y, z: p.z, ox: p.ox, oz: p.oz, larg: p.larg, alt: p.alt };
+    if (p.tipo === 'escudo') placaNoMundo(g, lug, texturaEscudo(p), true);
+    else placaNoMundo(g, lug, texturaPlaca(p.texto, p.tinta, p.fundo, p.larg / p.alt, p.tipo === 'faixa'));
+  }
+}
+/* o letreiro, a placa da sala e a faixa: a mesma placa do jogo, mas no
+   tamanho de cada uma (o canvas na proporção dela, pra letra não esticar) */
+function texturaPlaca(texto, tinta, fundo, razao, faixa) {
+  const H = 128, W = Math.round(H * Math.min(8, Math.max(1.2, razao)));
+  const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+  const c = cv2.getContext('2d'), claro = luz(fundo) > 150;
+  c.fillStyle = fundo; c.fillRect(0, 0, W, H);
+  if (faixa) {
+    /* o pano: uma lista da cor do texto em cima e embaixo */
+    c.fillStyle = tinta; c.fillRect(0, 10, W, 7); c.fillRect(0, H - 17, W, 7);
+  } else {
+    c.strokeStyle = claro ? 'rgba(40,36,28,.75)' : 'rgba(255,255,255,.35)'; c.lineWidth = claro ? 10 : 7; c.strokeRect(7, 7, W - 14, H - 14);
+  }
+  c.fillStyle = tinta; c.textAlign = 'center'; c.textBaseline = 'middle';
+  const fonte = t => `${faixa ? 'italic ' : ''}bold ${t}px "Arial Narrow", Arial, sans-serif`;
+  let tam = faixa ? 78 : 70; c.font = fonte(tam);
+  while (tam > 18 && c.measureText(texto).width > W - 44) { tam -= 3; c.font = fonte(tam); }
+  c.fillText(texto, W / 2, H / 2 + 4);
+  const t = new THREE.CanvasTexture(cv2); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+/* O ESCUDO, do jeito que o jogo desenha (bairro3d): o da torcida é a
+   bola na cor dela com a sigla; o do clube, as duas cores em 135° com a
+   sigla em branco */
+function texturaEscudo(p) {
+  const S = 128, cv2 = document.createElement('canvas'); cv2.width = cv2.height = S;
+  const c = cv2.getContext('2d');
+  if (p.forma === 'bola') {
+    c.fillStyle = p.cor; c.beginPath(); c.arc(S / 2, S / 2, S / 2 - 5, 0, Math.PI * 2); c.fill();
+    c.lineWidth = 6; c.strokeStyle = 'rgba(0,0,0,.45)'; c.stroke();
+  } else {
+    c.fillStyle = p.cor; c.fillRect(0, 0, S, S);
+    c.fillStyle = p.cor2; c.beginPath(); c.moveTo(0.04 * S, S); c.lineTo(S, S); c.lineTo(S, 0.04 * S); c.closePath(); c.fill();
+    c.lineWidth = 6; c.strokeStyle = 'rgba(0,0,0,.45)'; c.strokeRect(3, 3, S - 6, S - 6);
+  }
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  let t = 42; c.font = `bold ${t}px "Arial Narrow", Arial, sans-serif`;
+  while (t > 14 && c.measureText(p.texto).width > S - 22) { t -= 2; c.font = `bold ${t}px "Arial Narrow", Arial, sans-serif`; }
+  c.shadowColor = 'rgba(0,0,0,.85)'; c.shadowOffsetY = 2; c.shadowBlur = 6;
+  c.fillStyle = p.corTexto; c.fillText(p.texto, S / 2, S / 2 + 2);
+  const tx = new THREE.CanvasTexture(cv2); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
+  return tx;
 }
 /* O ESTÁDIO: o volume na medida do jogo (a esplanada, o gramado, a pista,
    a arquibancada em degraus, a cobertura, a fachada e os refletores) */
@@ -1593,7 +1671,8 @@ function objetoDoProp(it, g) {
   m.position.set(it.x, 0, it.y); m.rotation.y = it.ang || 0;
   g.add(m);
 }
-function objetoDoEquip(eq, g) {
+function objetoDoEquip(eq, g, o) {
+  if (eq.tipo === 'sede') { objetoDaSede(sedeDoEquip(eq), g, o); return; }
   const a = eq.area;
   caixa(g, a.x0, a.x1, 0, 1.65, a.y0, a.y1, eq.chao || '#9d9a90');
   for (const o of eq.pecas) {
@@ -1647,8 +1726,8 @@ function objetoDaQuadra(q, g, nova, prop) {
     : q.lotes.filter(l => !PROP.lotesTirados.has(l)).concat(PROP.lotesExtra.filter(l => l.quadra.i === q.i && l.quadra.j === q.j));
   for (const l of lotesDela) objetoDoLote(l, g);
   const esp = espacos.find(x => nova ? x.e.terreno && x.e.terreno === q.terreno : prop && x.e.hoje && x.e.quadra === id);
-  if (esp) objetoDoEspaco(esp, g);
-  if (q.equip && !nova && !(prop && somemNaProposta.has(id))) objetoDoEquip(q.equip, g);
+  if (esp) objetoDoEspaco(esp, g, { telhado: true });
+  if (q.equip && !nova && !(prop && somemNaProposta.has(id))) objetoDoEquip(q.equip, g, { telhado: true });
   if (!nova) for (const a of q.arvores || []) arvore3d(g, a);
 }
 function objetoDeEstudo(q, g) {
@@ -1677,6 +1756,7 @@ function frenteDe(it) {
   if (it.tipo === 'marco') return NORMAL[it.pc.frente] || null;
   if (it.tipo === 'portico') return [-it.p.dir[0], -it.p.dir[1]];
   if (it.tipo === 'espaco') return NORMAL[it.e.frente] || null;
+  if (it.tipo === 'equip' && it.q.equip.tipo === 'sede') return NORMAL[it.q.equip.frente] || null;
   return null;
 }
 function criarVista(canvas) {
@@ -1724,7 +1804,14 @@ function criarVista(canvas) {
   function mostrar(it) {
     $('carregando3d').hidden = false;
     setTimeout(() => {
-      if (grupo) { cena.remove(grupo); grupo.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+      if (grupo) {
+        cena.remove(grupo);
+        grupo.traverse(o => {
+          if (o.geometry) o.geometry.dispose();
+          /* o decalque tem material e textura só dele; os outros são da casa */
+          if (o.material && o.material.map && o.material.map.isCanvasTexture) { o.material.map.dispose(); o.material.dispose(); }
+        });
+      }
       grupo = new THREE.Group();
       try {
         if (it.tipo === 'lote') objetoDoLote(it.l, grupo);
@@ -1787,7 +1874,12 @@ function criarVista(canvas) {
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { cores(); pedir(); });
   new MutationObserver(() => { cores(); pedir(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   cores();
-  return { mostrar, pedir };
+  /* tira e põe o telhado da sede sem remontar o modelo */
+  function telhado(v) {
+    if (grupo) grupo.traverse(o => { if (o.name === 'telhado') o.visible = v; });
+    pedir();
+  }
+  return { mostrar, pedir, telhado };
 }
 const vista = criarVista($('c3d'));
 /* pro teste automático: ?teste expõe o estado do mapa */
@@ -1837,6 +1929,7 @@ function notasDaProposta() {
     <li><b>O bar da torcida encolheu</b> pro tamanho do bar da favela (${metros(LARG_BAR_M * M)} de frente, o fundo da fileira), com o arranjo dele — a varanda coberta com as mesas na frente, o salão aberto pra rua atrás — mas no jeito de classe média: térreo nas cores da torcida com porta de enrolar e o letreiro BAR DO ${esc(ocupacao.torcidas[0] ? ocupacao.torcidas[0].sigla : 'X')} no frontão, e o apartamento em cima. Dentro, o que o bar grande tinha.</li>
     <li><b>${bares.length} bares</b> de esquina espalhados pela cidade (um a cada três quadras, mais ou menos): dois nas quadras dos bares grandes de hoje (2,8 e 5,1, onde a fatia do bar vira casa) e o resto na esquina mais longe de todo bar já posto.</li>
     <li><b>${espacos.length} espaços de sede</b>: os ${PROP.terrenos.length} terrenos e as duas sedes de hoje (a da 5,2 só cabe a sede de nível 1).</li>
+    <li><b>A sede foi refeita</b> no jeito das construções novas (o bar da torcida, as casas da favela): parede e piso com textura, fachada com rodapé, faixa e letreiro, janela de grade, porta com verga e batente, telhado de fibrocimento — e cada cômodo mobiliado conforme o que ele é (a lista está na ficha da sede). As paredes e as portas são as da sede andável da planta. O botão <b>Telhado</b>, no 3D, tira e põe o telhado; a sede ocupada abre sem ele, pra ver dentro.</li>
     <li>Quem ocupa cada um é a torcida da cidade escolhida no alto da página. Bar que nenhuma torcida usa fica <b>neutro, de porta fechada</b> (o ALUGA-SE na porta); espaço de sede sem torcida — ou de torcida no nível 0 — fica com a <b>sede fechada</b>, em cor de reboco.</li>
   </ul>
   ${tabelaDaCidade()}
@@ -1864,6 +1957,7 @@ function notasDaProposta() {
     <li>O Estádio Municipal é o mesmo estádio: a cena da torcida teria que aceitar dois.</li>
     <li>Os equipamentos novos (igreja, posto de saúde, campo) ainda não têm modelo. Os espaços de sede já são a fatia que a planta dá pra sede: é só a planta aceitar mais de duas sedes.</li>
     <li>O bar pequeno já é modelo do jogo (<code>bartorcida</code> no casas3d), mas a cena do dia de jogo ainda usa o bar grande andável, com as duas torcidas da partida. Pôr as torcidas da cidade nos 18 bares e nas 9 sedes é trabalho da planta.</li>
+    <li>A sede nova (<code>sede3d.js</code>) por enquanto é só visual: a cena do dia de jogo ainda monta a sede em caixa lisa, e a mobília nova teria que entrar na máscara de caminhada antes da troca.</li>
     <li>A regra de quem fica com o quê é desta página (a sede maior perto do estádio, um bar por sede, o mais perto dela). O GDD §7.2 pede o bar em outra zona que a sede; o mapa 3D não tem zona, então fiquei com o que a planta já fazia.</li>
   </ul>
   <p class="nota">Clique num bar, num espaço de sede, numa casa da favela, numa quadra nova ou num pórtico pra ver em 3D.</p>`;

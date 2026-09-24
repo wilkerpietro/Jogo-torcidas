@@ -2066,10 +2066,10 @@ nível 3; na 5,2 só cabe a de nível 1).
 dela): a maior torcida (nível da sede, depois o poder) escolhe primeiro e fica com o espaço
 mais perto do estádio; a de nível 1 prefere o espaço pequeno. Cada sede ganha um bar (o
 GDD §8.1 dá um bar nível 1 com a sede nível 1), o livre mais perto dela. A sede no espaço é
-a do jogo levada pra lá: o molde de nível 3 da 2,9 (do nível 2 em diante, como a planta faz)
-ou o de nível 1 da 5,2, girado pra frente do espaço, com as cores e o nome da torcida; a de
-nível 1 num terreno inteiro fica no canto, e o resto é pátio murado. Espaço vago leva o molde
-sem nada dentro, em cor de reboco, com porta e portão fechados e a laje por cima.
+o modelo da 4.35: a de nível 3 (do nível 2 em diante, como a planta faz) ou o barracão de
+nível 1, virado pra frente do espaço, com as cores e o nome da torcida; a de nível 1 num
+terreno inteiro fica no canto, e o resto é pátio murado. Espaço vago leva a sede do tamanho
+dele fechada, em cor de reboco, sem nada dentro.
 
 Em São Paulo as 8 torcidas ocupam 8 bares e 8 espaços; em Santos, 3 e 3.
 
@@ -2078,6 +2078,79 @@ duas sedes; pôr as torcidas da cidade nos 18 bares e nas 9 sedes é trabalho da
 GDD §7.2 pede o bar em outra zona que a sede; o mapa 3D não tem zona, então a página ficou
 com o que a planta já fazia (o bar perto da sede). E não existe sede nível 0 nos dados (as
 140 torcidas estão entre 1 e 4): a regra do nível 0 está pronta, mas nenhuma cai nela hoje.
+
+### 4.35. A sede refeita no jeito das construções novas
+
+O dono pediu a sede com o visual das construções mais recentes (o bar da torcida, as casas
+da favela, o Atacadex), no mesmo nível de detalhe, e cada cômodo mobiliado conforme o que
+ele é. A sede da planta (`sedeDaTorcida`) é a sede ANDÁVEL da cena do dia de jogo: parede,
+porta e móvel em caixa lisa, que é o que a máscara de caminhada precisa. Ela não foi mexida.
+O modelo novo é um módulo à parte, `js/diajogo/sede3d.js`, que por enquanto só o artefato usa.
+
+**As paredes e as portas são as da planta.** `planoDaSede(L, A, nivel, lado)` refaz a conta
+do `sedeDaTorcida` — as mesmas constantes (parede de 9, muro da frente de 66/74, vão de 30,
+portão de 56), os mesmos cômodos e as mesmas folhas de porta — em coordenada local: `u` ao
+longo da fachada, `v` da fachada pro fundo, pelo mesmo `eixos` (em duas das quatro frentes o
+referencial é espelhado, e o modelo também). `ferramentas/planta_html/conferir_sede.mjs`
+confere nas duas sedes da cidade, parede por parede (23 e 9), folha por folha (9 e 4), a
+placa de cada sala e o MÓVEL QUE BLOQUEIA a caminhada: a mesa da diretoria e o armário do
+depósito na sede grande; a caixa d'água, o armário e a estante do patrimônio, o armário e a
+mesa da presidência no barracão — os sete no mesmo retângulo da planta. Se a planta mudar a
+sede, o teste acusa.
+
+**O que é só do modelo** (visual, não muda a caminhada): as janelas (a de grade na frente de
+cada sala, o tijolo de vidro no banheiro, o basculante no almoxarifado e no fundo, o vitrô
+alto no salão), a verga e o batente das portas, a janela de balcão entre o bar e o salão, a
+parede do pátio subindo até o telhado no barracão (na planta ela para em 2,6 m), e a mobília
+nova. Na fachada: a parede na cor 1 da torcida, o rodapé na 3, a faixa na 2, o letreiro com o
+nome dela em cima da porta (nível 3; no barracão, no trecho das salas), um escudo de cada
+lado (a bola da torcida e as duas cores do clube em 135°, a regra do jogo) e um em cada
+parede do lado. Os batentes da porta da rua param na faixa da verga pra dar lugar ao
+letreiro — na planta eles sobem até em cima.
+
+**O que tem em cada cômodo** (tudo em metro, no referencial do cômodo: `s` ao longo da parede
+da porta, `t` da porta pra dentro; a mobília deixa livre a frente de cada porta):
+
+- NÍVEL 3 (22 × 12,8 m): SECRETARIA (mesa de atendimento com computador, cadeira de
+  escritório e duas de quem chega, arquivo de aço, estante de pasta, mural, bebedouro,
+  bandeira, ar); BAR (balcão de granito atrás da janela de balcão, prateleira de garrafa,
+  armário, geladeira, freezer, engradados); BANHEIRO (azulejo até 1,60 m, dois boxes com
+  vaso, dois mictórios, pia de duas cubas com espelho); ALMOXARIFADO (três estantes de aço
+  cheias, surdos, mastros no canto); CORREDOR (capacho, extintor, quadro de aviso); SALÃO
+  (barrado e duas listras no chão nas cores da torcida, sinuca, pebolim, mesa comprida com
+  cadeira de plástico, a bateria no pé da faixa com o nome da torcida, TV, bancos, pilha de
+  cadeira, a lojinha de camisa e as banquetas do balcão); ALOJAMENTO (três beliches,
+  colchões, armário de aço); DIRETORIA (a mesa da planta vira a do diretor, com computador e
+  duas cadeiras; estante de troféus; mesa de reunião com seis cadeiras; TV, bandeira, ar);
+  DEPÓSITO (estantes, faixa dobrada, colchão empilhado, caixas, o armário da planta com
+  troféu velho em cima, o bumbo velho).
+- NÍVEL 1 (12,9 × 9,3 m): PÁTIO descoberto (os três colchões, a caixa d'água e o mastro da
+  planta; tanque, churrasqueira de tijolo, mesa de plástico, varal, banco, a faixa na parede,
+  a grade de correr recolhida ao lado da porta); PATRIMÔNIO (o armário e a estante da planta,
+  troféus em cima do armário, surdos, mastros, caixas); PRESIDÊNCIA (a mesa e o armário da
+  planta, computador, cadeira de escritório, sofá, mural, bandeira, ar).
+
+**Sede vaga** (sem torcida, ou torcida de sede nível 0): a mesma construção em cor de reboco,
+nada dentro, a porta de enrolar abaixada no portão, as portas fechadas e o telhado.
+
+**O que `montarSede(sede, destino, opc)` devolve**: os blocos no mundo em três listas — `casas`
+(folha das casas), `grades` e `telhado` (à parte, pra quem mostra poder tirar); os decalques
+com texto (o letreiro, a placa de cada sala, a faixa e os escudos: quem desenha o texto é quem
+mostra, como no bar da torcida); e a planta baixa em retângulos (piso, parede com o vão das
+portas, móvel). Com `opc.so2d` sai só a planta baixa. A sede grande aberta tem 15.300
+triângulos (5.200 vaga); o barracão, 4.260 (1.800 vago); montar a grande leva uns 100 ms.
+
+**No artefato**: as duas sedes de hoje (aba Mapa atual) e os nove espaços da proposta usam o
+modelo; o mapa 2D desenha a planta baixa dele (a vaga coberta pelo telhado). No 3D, o botão
+**Telhado** tira e põe o telhado; a sede ocupada abre sem ele, a vaga com ele, e a vista da
+quadra inteira sempre com ele. A página agora carrega `dados/times.js` (como o jogo), pra o
+escudo do clube sair com as cores dele; sem os clubes, o escudo do clube usa as duas últimas
+cores da torcida.
+
+O que falta pro jogo: a cena do dia de jogo continua montando a sede em caixa. Pra trocar,
+é chamar `montarSede` com o equipamento da planta e pôr a mobília nova na máscara de
+caminhada (hoje só a da planta bloqueia) — o telhado já vem à parte, que é o corte que a
+cena faz quando o jogador entra.
 
 ### 4.16. Dois bugs que a sede menor desenterrou
 
@@ -2604,7 +2677,8 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX, as duas torres do condomínio do baldio (Edifício Mirante e Residencial Bela Vista, com o muro, a guarita e os portões) e a montagem de cada um |
 | `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
 | `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo), as casas de muro (M1 a M4) e o bar pequeno da torcida embaixo do apartamento (`bartorcida`, aberto ou fechado), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico, os 18 bares e os 9 espaços de sede), `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar |
+| `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico, os 18 bares e os 9 espaços de sede), `conferir_sede.mjs` confere o modelo da sede contra a planta, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes e os módulos 3D) |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`) e escreve o atlas; roda de novo sempre que mudar uma peça |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
