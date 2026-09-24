@@ -1413,6 +1413,32 @@ export function montarBairro(P) {
     for (const a of q.arvores || []) arvore(T, a);
     if (q.equip || q.pracinhas) comEquipamento.push([T, q]);
   }
+
+  /* ---- a beira da estrada e a favela ----
+     As casas de fora do quarteirão saem AQUI, antes dos dizeres: é a
+     casa montada que diz onde fica a parede dela (`frentes`), e sem
+     isso o letreiro, a pixação e a falha de reboco da casa de beira
+     caíam no plano velho da divisa — boiando na frente da parede
+     recuada, ou no ar em cima da varanda. A malha 'beira' sai lá
+     embaixo, com as outras. */
+  const TB = Tecido();
+  limite = null;
+  /* a calçada primeiro, que a casa assenta em cima dela */
+  for (const l of K.BEIRA || [])
+    if (l.calcada) caixaRot(TB, l.calcada.cx, l.calcada.cy, l.calcada.w, l.calcada.h,
+                            0, 1.4, l.calcada.ang, '#8d897d');
+  for (const l of K.BEIRA || []) {
+    /* a casa da favela manda o telhado dela pra malha de telha miúda */
+    alvoTelhado = l.favela ? TELHADOS_FAV : TELHADOS;
+    /* fora do quarteirão a casa de modelo se junta por quadrado de
+       1.600 (uns 80 m): a favela inteira numa malha só não sairia
+       nunca do quadro */
+    const cx = l.ang ? l.cx : (l.x0 + l.x1) / 2, cy = l.ang ? l.cy : (l.y0 + l.y1) / 2;
+    chaveCasas = 'b' + Math.floor(cx / 1600) + ',' + Math.floor(cy / 1600);
+    lote(TB, l);
+  }
+  chaveCasas = 'solta';
+  alvoTelhado = TELHADOS;
   /* ---- os dizeres ---- */
   const dizeres = new Map();
   for (const q of K.QUADRAS) {
@@ -1698,28 +1724,10 @@ export function montarBairro(P) {
 
   /* ---- A BEIRA DA ESTRADA ----
      Fora do contorno da cidade não há quarteirão nem pedaço, então a
-     casa solta da estrada sai numa malha própria. É lote girado, como
-     a casa da avenida, e passa pelo MESMO `lote()`: corpo, telhado de
-     duas águas, fachada com porta e janela, e o letreiro vem junto com
-     os outros. Sem `limite`, que aqui não há calçada pra respeitar. */
-  const TB = Tecido();
-  limite = null;
-  /* a calçada primeiro, que a casa assenta em cima dela */
-  for (const l of K.BEIRA || [])
-    if (l.calcada) caixaRot(TB, l.calcada.cx, l.calcada.cy, l.calcada.w, l.calcada.h,
-                            0, 1.4, l.calcada.ang, '#8d897d');
-  for (const l of K.BEIRA || []) {
-    /* a casa da favela manda o telhado dela pra malha de telha miúda */
-    alvoTelhado = l.favela ? TELHADOS_FAV : TELHADOS;
-    /* fora do quarteirão a casa de modelo se junta por quadrado de
-       1.600 (uns 80 m): a favela inteira numa malha só não sairia
-       nunca do quadro */
-    const cx = l.ang ? l.cx : (l.x0 + l.x1) / 2, cy = l.ang ? l.cy : (l.y0 + l.y1) / 2;
-    chaveCasas = 'b' + Math.floor(cx / 1600) + ',' + Math.floor(cy / 1600);
-    lote(TB, l);
-  }
-  chaveCasas = 'solta';
-  alvoTelhado = TELHADOS;
+     casa solta da estrada sai numa malha própria (montada lá em cima,
+     antes dos dizeres). É lote girado, como a casa da avenida, e passa
+     pelo MESMO `lote()`. Sem `limite`, que aqui não há calçada pra
+     respeitar. */
   malhaTex(TB, REBOCO_LAZY(), 'beira');
   for (const [k, A] of CASAS) {
     malhaCasas(A.casas, 'casas', 'casas:' + k);

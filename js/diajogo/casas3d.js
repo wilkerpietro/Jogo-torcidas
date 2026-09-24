@@ -23,7 +23,9 @@
 
    E a casa da FAVELA, da família do T2 e do T1: parede de tijolo, de
    reboco cru ou pintada (a planta diz qual), um a três andares, laje,
-   telha ou fibrocimento.
+   telha ou fibrocimento. E as quatro CASAS GRANDES da favela, que a
+   planta monta juntando vizinhas (`l.modelo`): a de laje com terraço
+   (F1), a casa rosa de quintal e muro (F2), o bar e a lanchonete.
 
    QUEM VIRA O QUÊ sai da POSIÇÃO do lote, não do `rng()` da planta:
    a cidade continua a mesma casa por casa, só muda a roupa. Galpão,
@@ -35,7 +37,7 @@
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta } from './construtor3d.js';
+import { Construtor, METRO, mureta, toldo } from './construtor3d.js';
 import { ATLAS } from './modelos_atlas.js';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
@@ -91,9 +93,20 @@ function medidas(l) {
   return [(nS ? l.x1 - l.x0 : l.y1 - l.y0) / M, (nS ? l.y1 - l.y0 : l.x1 - l.x0) / M];
 }
 
+/* o recuo da parede da frente de cada casa grande da favela: a da
+   lanchonete recua o que o toldinho da porta de enrolar avança */
+const REC_MODELO = { f1: 0.06, f2: 0.04, bar: 0.03, lanche: 0.5 };
+
 export function planoDaCasa(l, K) {
   if (l._plano !== undefined) return l._plano;
   let p = null;
+  if (l.modelo && REC_MODELO[l.modelo] !== undefined) {
+    const [W, D] = medidas(l);
+    p = { tipo: l.modelo, andares: 2, rec: REC_MODELO[l.modelo], W, D, H: l.alt / M, s: sorteDe(l),
+          semManchas: l.modelo !== 'f2' };
+    l._plano = p;
+    return p;
+  }
   /* o "galpão" da favela é casa com telha de fibrocimento, não galpão */
   if (l.tipo === 'casa' || l.tipo === 'sobrado' || l.tipo === 'barraco' || (l.favela && l.tipo === 'galpao')) {
     const s = sorteDe(l);
@@ -661,7 +674,377 @@ function t5(B, p, l, conta, G) {
   B.pintar(null);
 }
 
-const TIPOS = { t1, t2, t3, t4, t5, favela };
+/* =======================================================
+   AS CASAS GRANDES DA FAVELA
+   Quatro referências que a planta monta juntando vizinhas
+   (`l.modelo`), com 5 a 8,6 m de frente e 4,3 a 6,2 m de fundo, de
+   beco a beco:
+     F1  a casa de laje em três níveis: térreo de tijolo entre pilar e
+         viga de concreto, com a porta verde de vidrinho e a vidraça
+         verde de correr; o terraço com a mureta, o guarda-sol listrado
+         e as cadeiras azuis; o quarto verde; e em cima dele a varanda
+         e o quarto de reboco coberto de fibrocimento;
+     F2  a casa rosa atrás do muro: muro de reboco encardido com o
+         portão de madeira, o pedaço de tijolo por terminar, o quintal
+         de grama com bananeira, a varanda de fibrocimento em pilarete;
+     BAR o bar de esquina: o térreo aberto pra rua sob a água de
+         fibrocimento, a faixa de cerveja, mesa de plástico, cadeira de
+         madeira e de plástico, o freezer, os engradados, a escada de
+         ladrilho e a prateleira de garrafa; em cima, tijolo com duas
+         janelas;
+     KI  a lanchonete KI-DELÍCIA: o muro pintado da frente inteira, a
+         porta de grade azul, a porta de enrolar com o toldinho; em
+         cima, o terraço com a caixa d'água, o guarda-sol amarelo, a
+         mesa e as cadeiras vermelhas, e o quartinho de tijolo.
+   ======================================================= */
+const VERDE_QUARTO = '#a9b443', ROSA = '#d45a82', ROSA_BAIXO = '#a93d62', BRANCO_BAR = '#f1f0ea',
+      AZUL_CADEIRA = '#2d62c8', VERMELHO_CADEIRA = '#d23a2a', MADEIRA = '#7a4e2e',
+      CINZA_ENROLAR = '#8a8d8e', AMARELO_MURO = '#f2d04a', BRANCO_MURO = '#e4e1da';
+
+/* uma água de telhado reta, de (zA, yA) a (zB, yB), com a borda da
+   placa na ponta de baixo */
+function agua(B, x0, x1, zA, yA, zB, yB, k) {
+  const dz = zB - zA, dy = yB - yA, L = Math.hypot(dz, dy);
+  B.ladrilhar(B.plano([x0, yA, zA], [1, 0, 0], [0, dy / L, dz / L]), B.ret(0, x1 - x0, 0, L), k);
+  const [zb, yb] = yA < yB ? [zA, yA] : [zB, yB];
+  B.esticar(B.plano([x0, yb - 0.03, zb], [1, 0, 0], [0, 1, 0]), 0, x1 - x0, 0, 0.03, 'laje_borda');
+}
+/* o pilar de concreto aparente, saltado da parede de plano z */
+function pilar(B, x, z, y0, y1, larg = 0.22, sai = 0.03) {
+  B.caixa(x - larg / 2, x + larg / 2, y0, y1, z - 0.02, z + sai, { todas: 'crua', base: null, tras: null });
+}
+/* a cadeira (de plástico ou de madeira): assento, quatro pés e o
+   encosto do lado `costas` ('n' = −z, 's' = +z, 'o' = −x, 'l' = +x) */
+function cadeira(B, cx, cz, y, costas, tinta) {
+  const s = 0.42, a = 0.44, e = 0.035, o = { todas: { k: 'lisa', tinta }, base: null };
+  B.caixa(cx - s / 2, cx + s / 2, y + a - 0.04, y + a, cz - s / 2, cz + s / 2, { todas: { k: 'lisa', tinta } });
+  for (const [dx, dz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+    const px = cx + dx * (s / 2 - e / 2), pz = cz + dz * (s / 2 - e / 2);
+    B.caixa(px - e / 2, px + e / 2, y, y + a - 0.04, pz - e / 2, pz + e / 2, o);
+  }
+  const t = 0.04, h = s / 2;
+  const enc = { n: [cx - h, cx + h, cz - h, cz - h + t], s: [cx - h, cx + h, cz + h - t, cz + h],
+                o: [cx - h, cx - h + t, cz - h, cz + h], l: [cx + h - t, cx + h, cz - h, cz + h] }[costas];
+  B.caixa(enc[0], enc[1], y + a, y + a + 0.45, enc[2], enc[3], o);
+}
+/* a mesa de plástico branca, de quatro pés */
+function mesa(B, cx, cz, y, lado = 0.7, tinta = BRANCO_BAR) {
+  const a = 0.72, e = 0.04, o = { todas: { k: 'lisa', tinta }, base: null };
+  B.caixa(cx - lado / 2, cx + lado / 2, y + a - 0.035, y + a, cz - lado / 2, cz + lado / 2, { todas: { k: 'lisa', tinta } });
+  for (const [dx, dz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+    const px = cx + dx * (lado / 2 - 0.06), pz = cz + dz * (lado / 2 - 0.06);
+    B.caixa(px - e / 2, px + e / 2, y, y + a - 0.035, pz - e / 2, pz + e / 2, o);
+  }
+}
+/* o guarda-sol: o pau e o pano em gomos (o torno dá uma volta na peça) */
+function guardaSol(B, cx, cz, y, r, k) {
+  B.caixa(cx - 0.02, cx + 0.02, y, y + 2.25, cz - 0.02, cz + 0.02, { todas: { k: 'laje_borda', tinta: '#e8e8e4' }, base: null });
+  B.torno(cx, cz, [[r, y + 1.85], [r * 0.6, y + 2.12], [0.06, y + 2.3], [0, y + 2.32]], 12, k);
+}
+/* a caixa d'água azul de mil litros, assentada em `y` */
+function caixaDagua(B, cx, cz, y, r = 0.55) {
+  B.torno(cx, cz, [[r, y], [r, y + 0.72], [r + 0.05, y + 0.74], [r * 0.55, y + 0.96], [0, y + 1.02]], 10, 'caixa');
+}
+/* o pé de bananeira: dois planos cruzados com a folha recortada */
+function bananeira(G, cx, cz, y, alt, giro) {
+  const larg = alt * 1.6 / 2.4;
+  for (const a of [giro, giro + Math.PI / 2]) {
+    const ux = Math.cos(a), uz = Math.sin(a);
+    G.esticar(G.plano([cx - ux * larg / 2, y, cz - uz * larg / 2], [ux, 0, uz], [0, 1, 0]), 0, larg, 0, alt, 'bananeira');
+  }
+}
+/* a escada encostada numa parede lateral (a de x0), subindo pro fundo:
+   o piso e o espelho de cada degrau, e o lado de fora (x1) do chão até
+   o piso, num plano só pra peça correr contínua */
+function escadaFundo(B, x0, x1, zFrente, zFundo, altura, k, kLado, tintaLado) {
+  const passos = Math.max(6, Math.round(altura / 0.2)), run = zFrente - zFundo;
+  const Fl = B.plano([x1, 0, zFrente], [0, 0, -1], [0, 1, 0]);
+  for (let i = 0; i < passos; i++) {
+    const t0 = i / passos, t1 = (i + 1) / passos;
+    const za = zFrente - run * t1, zb = zFrente - run * t0, y0 = altura * t0, y1 = altura * t1;
+    B.tampa([[x0, zb], [x1, zb], [x1, za], [x0, za]], y1, k);
+    B.ladrilhar(B.plano([x0, y0, zb], [1, 0, 0], [0, 1, 0]), B.ret(0, x1 - x0, 0, y1 - y0), k, { escuro: 0.9 });
+    B.ladrilhar(Fl, B.ret(zFrente - zb, zFrente - za, 0, y1), kLado, { tinta: tintaLado });
+  }
+}
+/* uma conta à parte: a parede conta porta e janela, mas não entra
+   como superfície de decalque (a de trás do quintal, a do fundo do bar) */
+const contaMuda = () => ({ portas: 0, janelas: 0, janelasLado: 0, frentes: [], obst: [] });
+const somar = (conta, c) => { conta.portas += c.portas; conta.janelas += c.janelas; conta.janelasLado += c.janelasLado; };
+
+/* ---------------- F1: a casa de laje em três níveis ---------------- */
+function f1(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const x0 = 0.04, x1 = W - 0.04, z1 = -p.rec, z0 = -D + 0.04, wb = x1 - x0;
+  const h1 = 2.75, lj = 0.2, y2 = h1 + lj;
+  /* o térreo: tijolo entre pilar e viga de concreto, a porta verde de
+     vidrinho e a vidraça verde de correr */
+  const vw = clamp(wb * 0.42, 1.6, 2.5), pc = clamp(wb * 0.2, 0.75, 1.4), vc = wb - 0.4 - vw / 2;
+  paredes(B, x0, x1, z0, z1, 0, h1, {
+    frente: { k: 'tijolo', vaos: [{ a0: pc - 0.43, a1: pc + 0.43, b0: 0.02, b1: 2.12, k: 'porta_verde', fundo: 0.1 },
+                                  { a0: vc - vw / 2, a1: vc + vw / 2, b0: 0.04, b1: 2.24, k: 'vidraca_verde', fundo: 0.12 }] },
+    dir: { k: 'tijolo' }, esq: { k: 'tijolo' }, tras: { k: 'tijolo', vaos: distribuir(wb, ['basc', 'basc'], 0.06) }
+  }, conta);
+  const xm = x0 + (pc + 0.43 + vc - vw / 2) / 2;
+  for (const x of [x0 + 0.11, xm, x1 - 0.11]) {
+    pilar(B, x, z1, 0, h1);
+    conta.obst.push({ a0: x - 0.14, a1: x + 0.14, b0: 0, b1: h1 });
+  }
+  faixa(B, x0, x1, z0, z1, h1, y2, 0.04, 'laje_borda', null);
+  tampo(B, x0, x1, z0, z1, y2, 'laje');
+  /* o terraço, com a mureta de tijolo e pilarete, e o quarto verde no
+     fundo; quarto largo deixa uma faixa de terraço do lado */
+  const t = clamp((z1 - z0) * 0.38, 1.6, 2.4), zq = z1 - t;
+  const gr = wb >= 5.6 ? wb * 0.78 : wb, qx0 = x0, qx1 = x0 + gr;
+  const h2 = 2.45, y3 = y2 + h2 + lj, mur = 1.0;
+  const vq = [{ a0: gr - 1.25, a1: gr - 0.4, b0: 0, b1: 2.1, k: 'porta_alu', fundo: 0.06 }];
+  if (gr >= 3.2) vq.push({ a0: 0.6, a1: 1.2, b0: 1.2, b1: 1.8, k: 'basc', fundo: 0.05 });
+  const cq = contaMuda();
+  paredes(B, qx0, qx1, z0, zq, y2, y2 + h2, {
+    frente: { k: 'lisa', tinta: VERDE_QUARTO, vaos: vq },
+    dir: { k: 'lisa', tinta: VERDE_QUARTO }, esq: { k: 'tijolo' }, tras: { k: 'tijolo' }
+  }, cq);
+  somar(conta, cq);
+  faixa(B, qx0, qx1, z0, zq, y2 + h2, y3, 0.04, 'laje_borda', null);
+  const tij = { todas: 'tijolo', topo: 'laje_borda', base: null };
+  B.caixa(x0, x1, y2, y2 + mur, z1 - 0.12, z1, tij);
+  B.caixa(x0, x0 + 0.12, y2, y2 + mur, zq, z1 - 0.12, tij);
+  if (gr < wb) {
+    B.caixa(x1 - 0.12, x1, y2, y2 + mur, z0, z1 - 0.12, tij);
+    B.caixa(qx1, x1 - 0.12, y2, y2 + mur, z0, z0 + 0.12, tij);
+    const r = Math.min(0.55, (x1 - 0.12 - qx1) / 2 - 0.05);
+    if (r > 0.3) caixaDagua(B, (qx1 + x1 - 0.12) / 2, z0 + 0.12 + r + 0.05, y2, r);
+  } else B.caixa(x1 - 0.12, x1, y2, y2 + mur, zq, z1 - 0.12, tij);
+  for (const x of [x0 + 0.1, (x0 + x1) / 2, x1 - 0.1])
+    B.caixa(x - 0.1, x + 0.1, y2, y2 + mur + 0.08, z1 - 0.16, z1, { todas: 'crua', base: null });
+  const ux = x0 + Math.min(1.5, gr * 0.35), uz = (z1 + zq) / 2;
+  guardaSol(B, ux, uz, y2, Math.min(1.1, t * 0.5), 'guarda_sol_pb');
+  cadeira(B, ux + 0.6, uz + 0.1, y2, 'l', AZUL_CADEIRA);
+  cadeira(B, ux - 0.6, uz - 0.15, y2, 'o', AZUL_CADEIRA);
+  /* o terceiro nível, em cima do quarto verde: a varanda com a mureta
+     e o quarto de reboco com a janela e a porta azul, e o telhado de
+     fibrocimento caindo pro fundo, cobrindo a varanda */
+  tampo(B, qx0, qx1, z0, zq, y3, 'laje');
+  B.caixa(qx0, qx1, y3, y3 + mur, zq - 0.12, zq, tij);
+  for (const x of [qx0 + 0.1, qx1 - 0.1]) B.caixa(x - 0.1, x + 0.1, y3, y3 + mur + 0.08, zq - 0.16, zq, { todas: 'crua', base: null });
+  const zr = zq - Math.min(0.9, (zq - z0) * 0.3), h3 = 2.3;
+  if (zr - z0 >= 1.2) {
+    const wq = qx1 - qx0;
+    const v3 = [{ a0: wq - 1.2, a1: wq - 0.3, b0: 0, b1: 2.0, k: 'porta_azul', fundo: 0.06 }];
+    if (wq * 0.15 + 1.2 < wq - 1.3) v3.push({ a0: wq * 0.15, a1: wq * 0.15 + 1.1, b0: 1.0, b1: 2.05, k: 'jan2', fundo: 0.06 });
+    const c3 = contaMuda();
+    paredes(B, qx0, qx1, z0, zr, y3, y3 + h3, { frente: { k: 'crua', vaos: v3 }, dir: { k: 'crua' }, esq: { k: 'tijolo' }, tras: { k: 'crua' } }, c3);
+    somar(conta, c3);
+    agua(B, qx0, qx1, z0, y3 + h3 + 0.05, zq + 0.1, y3 + h3 + 0.3, 'fibro');
+  }
+}
+
+/* ---------------- F2: a casa rosa atrás do muro ---------------- */
+function f2(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const zm = -p.rec, zmi = zm - 0.14, hm = 1.85;
+  const pd = 1.0, bd = clamp(D - 0.22 - pd - 1.4, 2.2, 3.4);
+  const zfu = -D + 0.04, zc = zfu + bd, zv = zc + pd;           // o fundo, a frente da casa, a beira da varanda
+  const hx0 = 0.16, hx1 = W - 0.16, hb = 2.7;
+  /* o muro da frente: reboco encardido com o portão de madeira entre
+     dois pilares, e, da direita, o tijolo por terminar em degrau */
+  const xb = W * 0.64, gw = Math.min(1.5, W * 0.22), g0 = Math.max(0.55, W * 0.2), g1 = g0 + gw;
+  const mOpts = { todas: { k: 'suja', tinta: BRANCO_MURO }, topo: { k: 'laje_borda' }, base: null };
+  B.caixa(0.02, g0 - 0.1, 0, hm, zmi, zm, mOpts);
+  B.caixa(g1 + 0.1, xb, 0, hm, zmi, zm, mOpts);
+  for (const x of [g0 - 0.1, g1]) B.caixa(x, x + 0.1, 0, hm + 0.2, zmi - 0.03, zm, mOpts);
+  B.esticar(B.plano([g0, 0, zm - 0.07], [1, 0, 0], [0, 1, 0]), 0, gw, 0, 1.8, 'portao_madeira');
+  B.esticar(B.plano([g1, 0, zm - 0.07], [-1, 0, 0], [0, 1, 0]), 0, gw, 0, 1.8, 'portao_madeira');
+  const degraus = [hm, hm - 0.3, hm - 0.55, hm - 0.8], passo = (W - 0.02 - xb) / degraus.length;
+  for (let k = 0; k < degraus.length; k++)
+    B.caixa(xb + k * passo, xb + (k + 1) * passo, 0, degraus[k], zmi, zm, { todas: 'tijolo', base: null });
+  conta.portas++;
+  conta.frentes.push({ x0: 0.02, x1: xb, y0: 0, y1: hm, z: zm,
+                       vaos: [{ a0: g0 - 0.14, a1: g1 + 0.14, b0: 0, b1: hm + 0.25, k: 'portao_madeira', fundo: 0 }] });
+  /* os muros do lado do quintal, o chão de grama, o caminho de cimento
+     e as bananeiras */
+  B.caixa(0.02, 0.16, 0, hm, zv, zmi, mOpts);
+  B.caixa(W - 0.16, W - 0.02, 0, hm - 0.8, zv, zmi, { todas: 'tijolo', base: null });
+  B.tampa([[0.16, zmi], [W - 0.16, zmi], [W - 0.16, zv], [0.16, zv]], 0.03, 'grama');
+  B.tampa([[g0 + 0.15, zmi], [g1 - 0.15, zmi], [g1 - 0.15, zv], [g0 + 0.15, zv]], 0.045, 'laje');
+  const zq = (zmi + zv) / 2, alt = Math.min(2.1, 1.1 + (zmi - zv) * 0.8);
+  bananeira(G, 0.7, zq, 0.03, alt, Math.PI / 4 + 0.2);
+  if (W - 0.9 > xb) bananeira(G, W - 0.8, zq, 0.03, alt * 0.9, Math.PI / 4 - 0.3);
+  /* a varanda: piso de cimento, o degrau, os pilaretes rosa e a água de
+     fibrocimento presa na parede da casa */
+  const cim = { todas: { k: 'crua', tinta: '#d3cec4' }, base: null };
+  B.caixa(hx0, hx1, 0, 0.15, zc, zv, cim);
+  B.caixa(W / 2 - 0.6, W / 2 + 0.6, 0, 0.08, zv, zv + 0.28, cim);
+  for (const x of [hx0 + 0.06, W * 0.36, W * 0.64, hx1 - 0.06])
+    B.caixa(x - 0.04, x + 0.04, 0.15, 2.33, zv - 0.1, zv - 0.02, { todas: { k: 'lisa', tinta: ROSA }, base: null });
+  agua(B, hx0, hx1, zc, hb - 0.05, zv + 0.08, 2.3, 'fibro');
+  /* a casa: rosa com a barra mais escura, as duas janelas e a porta de
+     madeira no meio, a platibanda e o telhado de fibrocimento sujo
+     caindo pro fundo */
+  const wbH = hx1 - hx0;
+  const jan = c => ({ a0: c - 0.5, a1: c + 0.5, b0: 1.0, b1: 1.9, k: 'jan_vidro', fundo: 0.06 });
+  const cc = contaMuda();
+  paredes(B, hx0, hx1, zfu, zc, 0, hb, {
+    frente: { k: 'lisa', tinta: ROSA, vaos: [jan(wbH * 0.2), { a0: wbH / 2 - 0.43, a1: wbH / 2 + 0.43, b0: 0.15, b1: 2.25, k: 'porta_madeira', fundo: 0.08 }, jan(wbH * 0.8)] },
+    dir: { k: 'lisa', tinta: ROSA }, esq: { k: 'lisa', tinta: ROSA }, tras: { k: 'crua' }
+  }, cc);
+  somar(conta, cc);
+  faixa(B, hx0, hx1, zfu, zc, 0, 0.45, 0.01, 'lisa', ROSA_BAIXO);
+  B.caixa(hx0, hx1, hb, hb + 0.35, zc - 0.12, zc, { todas: { k: 'lisa', tinta: ROSA }, base: null });
+  agua(B, hx0, hx1, zc - 0.12, hb + 0.25, zfu + 0.02, hb + 0.02, 'fibro_sujo');
+}
+
+/* ---------------- O BAR ---------------- */
+function bar(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const z1 = -p.rec, z0 = -D + 0.04;
+  /* lote largo tem o portão de chapa do lado, pro quintal: do lado que
+     não é a esquina */
+  let bx0 = 0.04, bx1 = W - 0.04;
+  const temPortao = W >= 7.2;
+  const ladoPortao = l.esquina === 'esq' ? 'dir' : l.esquina === 'dir' ? 'esq' : (s('portao') < 0.5 ? 'esq' : 'dir');
+  if (temPortao) { if (ladoPortao === 'dir') bx1 = W - 2.34; else bx0 = 2.34; }
+  const bw = bx1 - bx0;
+  const pa = clamp((z1 - z0) * 0.33, 1.3, 1.8), zU = z1 - pa;
+  const h1 = 2.9, lj = 0.2, y2 = h1 + lj, h2 = 2.6, topo = y2 + h2;
+  /* o andar de cima: tijolo, as janelas, pilar de concreto nas quinas */
+  const vj = distribuir(bw, bw >= 3.6 ? ['jan2', 'jan2'] : ['jan2'], 0.06).map(v => Object.assign(v, { b0: 1.0, b1: 2.15 }));
+  paredes(B, bx0, bx1, z0, zU, y2, topo, {
+    frente: { k: 'tijolo', vaos: vj }, dir: { k: 'tijolo' }, esq: { k: 'tijolo' },
+    tras: { k: 'tijolo', vaos: distribuir(bw, ['basc'], 0.05) }
+  }, conta);
+  for (const x of [bx0 + 0.11, bx1 - 0.11]) {
+    pilar(B, x, zU, y2, topo);
+    conta.obst.push({ a0: x - 0.14, a1: x + 0.14, b0: y2, b1: topo });
+  }
+  faixa(B, bx0, bx1, z0, zU, h1, y2, 0.03, 'laje_borda', null);
+  faixa(B, bx0, bx1, z0, zU, topo, topo + 0.12, 0.03, 'laje_borda', null);
+  agua(B, bx0, bx1, z0, topo + 0.12, zU + 0.08, topo + 0.3, 'fibro');
+  caixaDagua(B, bx1 - 0.75, z0 + 0.7, topo + 0.2, 0.5);
+  /* o térreo: o piso de cerâmica da beira da varanda ao fundo, o forro,
+     as paredes (branca por dentro), e a viga que segura a frente de cima */
+  B.caixa(bx0, bx1, 0, 0.05, z0, z1, { topo: 'piso_bar', frente: 'crua', dir: 'crua', esq: 'crua', tras: null, base: null });
+  B.tampa([[bx0, zU], [bx1, zU], [bx1, z0], [bx0, z0]], h1, 'lisa', true, { tinta: BRANCO_BAR });
+  const esquinaE = l.esquina === 'esq', esquinaD = l.esquina === 'dir';
+  const branco = { k: 'lisa', tinta: BRANCO_BAR };
+  B.caixa(bx0, bx0 + 0.12, 0, h1, z0, zU, { esq: esquinaE ? branco : 'tijolo', dir: branco, frente: branco, tras: 'tijolo', topo: null, base: null });
+  B.caixa(bx1 - 0.12, bx1, 0, h1, z0, zU, { dir: esquinaD ? branco : 'tijolo', esq: branco, frente: branco, tras: 'tijolo', topo: null, base: null });
+  B.caixa(bx0, bx1, 0, h1, z0, z0 + 0.12, { tras: 'tijolo', frente: null, dir: null, esq: null, topo: null, base: null });
+  B.caixa(bx0, bx1, h1 - 0.3, h1, zU - 0.2, zU, { todas: branco, topo: null });
+  /* o fundo por dentro: a prateleira de garrafa, o cartaz, o armário
+     amarelo e a porta escura que dá pra casa */
+  const iw = bw - 0.24;
+  const fundo = [{ a0: iw - 1.25, a1: iw - 0.45, b0: 0, b1: 2.0, k: 'porta_escura', fundo: 0.1 }];
+  if (iw >= 3.8) fundo.push({ a0: 1.1, a1: 2.3, b0: 1.0, b1: 2.0, k: 'prateleira' },
+                           { a0: 1.4, a1: 2.0, b0: 2.1, b1: 2.75, k: 'cartaz_verde' });
+  if (iw >= 4.4) fundo.push({ a0: iw - 2.3, a1: iw - 1.5, b0: 0.05, b1: 1.25, k: 'armario' });
+  B.fachada(B.plano([bx0 + 0.12, 0, z0 + 0.12], [1, 0, 0], [0, 1, 0]), iw, h1, 'lisa', fundo, { tinta: BRANCO_BAR });
+  /* a escada de ladrilho encostada na parede da esquerda, subindo pro
+     fundo (vai pro andar de cima pelo alçapão) */
+  escadaFundo(B, bx0 + 0.12, bx0 + 0.95, zU - 0.15, z0 + 0.12, h1 - 0.05, 'azulejo', 'lisa', BRANCO_BAR);
+  /* o freezer e os engradados, do lado direito */
+  const fx0 = bx1 - 0.12 - 0.8;
+  B.caixa(fx0, fx0 + 0.72, 0.05, 1.85, zU - 0.82, zU - 0.12,
+          { frente: { k: 'geladeira', modo: 'esticar' }, todas: branco, base: null });
+  for (const [dy, dx] of [[0, 0], [0.3, 0], [0.6, 0.03], [0, -0.48]])
+    B.caixa(fx0 - 0.5 + dx, fx0 - 0.05 + dx, 0.05 + dy, 0.35 + dy, zU - 0.55, zU - 0.25,
+            { todas: { k: 'engradado', modo: 'esticar' }, base: null });
+  /* as mesas: uma sob a água da frente, outra lá dentro */
+  const tz = (zU + z1) / 2 - 0.05, tx = bx0 + bw * 0.45;
+  mesa(B, tx, tz, 0.05);
+  cadeira(B, tx - 0.62, tz, 0.05, 'o', MADEIRA);
+  cadeira(B, tx + 0.62, tz, 0.05, 'l', AZUL_CADEIRA);
+  if (bw >= 4.2 && zU - z0 >= 2.4) {
+    const ix = bx0 + 1.1 + (fx0 - 0.6 - bx0 - 1.1) / 2, iz = zU - 1.05;
+    mesa(B, ix, iz, 0.05);
+    cadeira(B, ix, iz - 0.58, 0.05, 'n', AZUL_CADEIRA);
+    cadeira(B, ix - 0.58, iz, 0.05, 'o', MADEIRA);
+  }
+  /* a varanda: os dois pilares brancos da frente, a água de
+     fibrocimento e a faixa de cerveja pendurada na beira (e no lado
+     da esquina) */
+  B.caixa(bx0, bx0 + 0.24, 0, 2.62, z1 - 0.24, z1, { todas: branco, base: null });
+  B.caixa(bx1 - 0.24, bx1, 0, 2.62, z1 - 0.24, z1, { todas: branco, base: null });
+  agua(B, bx0, bx1, zU, y2 - 0.05, z1, 2.62, 'fibro');
+  B.ladrilhar(B.plano([bx0 + 0.24, 2.07, z1 - 0.12], [1, 0, 0], [0, 1, 0]), B.ret(0, bw - 0.48, 0, 0.55), 'faixa_cerveja');
+  if (esquinaE) B.ladrilhar(B.plano([bx0 + 0.06, 2.07, zU], [0, 0, 1], [0, 1, 0]), B.ret(0, pa - 0.24, 0, 0.55), 'faixa_cerveja');
+  if (esquinaD) B.ladrilhar(B.plano([bx1 - 0.06, 2.07, z1 - 0.24], [0, 0, -1], [0, 1, 0]), B.ret(0, pa - 0.24, 0, 0.55), 'faixa_cerveja');
+  conta.portas++;                                         // o bar é aberto: a frente toda é porta
+  /* o portão de chapa do lado, no muro branco, e o quintal de grama */
+  if (temPortao) {
+    const gx0 = ladoPortao === 'dir' ? bx1 : 0.04, gx1 = ladoPortao === 'dir' ? W - 0.04 : bx0;
+    const gw = gx1 - gx0, pw = Math.min(2.4, gw - 0.3);
+    const vaoP = [{ a0: (gw - pw) / 2, a1: (gw + pw) / 2, b0: 0, b1: 2.0, k: 'portao_chapa', fundo: 0.05, requadro: 'crua' }];
+    B.caixa(gx0, gx1, 0, 2.1, z1 - 0.15, z1, { todas: branco, frente: null, base: null });
+    B.fachada(B.plano([gx0, 0, z1], [1, 0, 0], [0, 1, 0]), gw, 2.1, 'lisa', vaoP, { tinta: BRANCO_BAR });
+    B.esticar(B.plano([gx0 + (gw + pw) / 2, 0, z1 - 0.15], [-1, 0, 0], [0, 1, 0]), 0, pw, 0, 2.0, 'portao_chapa');
+    B.tampa([[gx0, z1 - 0.15], [gx1, z1 - 0.15], [gx1, z0], [gx0, z0]], 0.03, 'grama');
+    conta.frentes.push({ x0: gx0, x1: gx1, y0: 0, y1: 2.1, z: z1,
+                         vaos: vaoP.map(v => ({ a0: gx0 + v.a0, a1: gx0 + v.a1, b0: v.b0, b1: v.b1, k: v.k, fundo: v.fundo })) });
+  }
+}
+
+/* ---------------- A LANCHONETE KI-DELÍCIA ---------------- */
+function lanche(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const x0 = 0.04, x1 = W - 0.04, z1 = -p.rec, z0 = -D + 0.04, wb = x1 - x0;
+  const hM = 3.8, h1 = 2.75, lj = 0.2, y2 = h1 + lj;
+  /* a frente é o muro pintado inteiro, do chão ao alto da mureta do
+     terraço — a pintura esticada UMA vez na parede. A porta de grade e
+     a de enrolar abrem nos cantos de baixo que a pintura deixou lisos */
+  const dc = wb * 0.12, rw = clamp(wb * 0.19, 1.1, 1.45), rc = wb * 0.845;
+  const vaos = [{ a0: dc - 0.43, a1: dc + 0.43, b0: 0.02, b1: 2.1, k: 'porta_grade_azul', fundo: 0.08, requadro: 'crua' },
+                { a0: rc - rw / 2, a1: rc + rw / 2, b0: 0.02, b1: 2.3, k: 'enrolar', fundo: 0.12, requadro: 'crua', tinta: CINZA_ENROLAR }];
+  const Ff = B.plano([x0, 0, z1], [1, 0, 0], [0, 1, 0]);
+  B.fachada(Ff, wb, hM, 'mural_ki', vaos, { tinta: null, tw: wb, th: hM });
+  conta.portas += 2;
+  conta.frentes.push({ x0, x1, y0: 0, y1: hM, z: z1,
+                       vaos: vaos.map(v => ({ a0: x0 + v.a0, a1: x0 + v.a1, b0: v.b0, b1: v.b1, k: v.k, fundo: v.fundo })) });
+  /* a pintura (o nome e o que vende em cima, os desenhos e o cardápio
+     no meio) não leva decalque por cima: sobra a faixa de baixo e o
+     alto da porta */
+  conta.obst.push({ a0: x0 + 0.24 * wb, a1: x0 + 0.71 * wb, b0: 0.36, b1: hM },
+                  { a0: x0 + 0.1 * wb, a1: x0 + 0.9 * wb, b0: 2.7, b1: hM });
+  /* o toldinho vermelho da porta de enrolar, e o degrau na frente dela */
+  toldo(B, Ff, rc - rw / 2 - 0.1, rc + rw / 2 + 0.1, 2.72, 0.42, 0.22, 'toldo_ki');
+  conta.obst.push({ a0: x0 + rc - rw / 2 - 0.12, a1: x0 + rc + rw / 2 + 0.12, b0: 2.4, b1: 2.8 });
+  B.caixa(x0 + rc - rw / 2 - 0.05, x0 + rc + rw / 2 + 0.05, 0, 0.14, z1, z1 + 0.35, { todas: 'crua', base: null });
+  /* o resto do térreo, de tijolo; a laje; a mureta dos lados e a face
+     de dentro do muro pintado */
+  paredes(B, x0, x1, z0, z1, 0, h1, { dir: { k: 'tijolo' }, esq: { k: 'tijolo' },
+                                      tras: { k: 'tijolo', vaos: distribuir(wb, ['basc'], 0.05) } }, null);
+  tampo(B, x0, x1, z0, z1 - 0.12, y2, 'laje');
+  B.ladrilhar(B.plano([x1, y2, z1 - 0.12], [-1, 0, 0], [0, 1, 0]), B.ret(0, wb, 0, hM - y2), 'lisa', { tinta: AMARELO_MURO });
+  B.caixa(x0, x1, hM, hM + 0.05, z1 - 0.12, z1, { todas: 'laje_borda', base: null });
+  const dr = clamp((z1 - z0) * 0.42, 1.6, 2.2), zr = z0 + dr, rx0 = x0 + wb * 0.32;
+  const tij = { todas: 'tijolo', topo: 'laje_borda', base: null };
+  B.caixa(x0, x0 + 0.12, y2, hM, zr, z1 - 0.12, tij);
+  B.caixa(x1 - 0.12, x1, y2, hM, zr, z1 - 0.12, tij);
+  B.caixa(x0, rx0, y2, hM - 0.1, z0, z0 + 0.12, tij);
+  B.caixa(x0, x0 + 0.12, y2, hM - 0.1, z0 + 0.12, zr, tij);
+  /* o quartinho de tijolo no fundo do terraço, com a janelinha azul e a
+     porta de chapa, coberto de fibrocimento */
+  const rw2 = x1 - rx0, h3 = 2.3;
+  const cr = contaMuda();
+  paredes(B, rx0, x1, z0, zr, y2, y2 + h3, {
+    frente: { k: 'tijolo', vaos: [{ a0: 0.35, a1: 0.95, b0: 1.3, b1: 1.9, k: 'jan_vidro', fundo: 0.05 },
+                                  { a0: rw2 - 1.2, a1: rw2 - 0.35, b0: 0, b1: 2.0, k: 'porta_ferro', fundo: 0.06 }].filter(v => v.a0 >= 0.1) },
+    dir: { k: 'tijolo' }, esq: { k: 'tijolo' }, tras: { k: 'tijolo' }
+  }, cr);
+  somar(conta, cr);
+  agua(B, rx0, x1, z0, y2 + h3 + 0.05, zr + 0.12, y2 + h3 + 0.25, 'fibro');
+  /* o terraço: a caixa d'água grande, o guarda-sol amarelo, a mesa e
+     as cadeiras vermelhas */
+  caixaDagua(B, x0 + 0.8, z1 - 0.12 - 0.75, y2, 0.62);
+  const ux = x0 + wb * 0.56, uz = (z1 - 0.12 + zr) / 2;
+  guardaSol(B, ux, uz, y2, Math.min(1.15, (z1 - 0.12 - zr) / 2), 'guarda_sol_am');
+  mesa(B, ux, uz, y2, 0.65);
+  cadeira(B, ux - 0.6, uz, y2, 'o', VERMELHO_CADEIRA);
+  cadeira(B, ux + 0.6, uz, y2, 'l', VERMELHO_CADEIRA);
+  cadeira(B, ux, uz - 0.58, y2, 'n', VERMELHO_CADEIRA);
+}
+
+const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche };
 
 /* =======================================================
    A MONTAGEM DE UMA CASA, direto no acumulador do mundo

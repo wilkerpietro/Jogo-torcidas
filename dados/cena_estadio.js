@@ -3526,6 +3526,146 @@ TO.dados.plantaEstadio = (function(){
       ARVORES.push({ x, y, r: rArv });
     }
 
+    /* AS CASAS GRANDES DA FAVELA. Quatro referências — a casa de laje
+       com terraço e guarda-sol, a casa rosa de quintal e muro, o bar e
+       a lanchonete — não cabem na casa de 2,6 m que a fileira sorteia:
+       elas têm de 5 a 8 m de frente. Então nascem JUNTANDO vizinhas,
+       como a casa que comprou a do lado. Só se junta quem já encosta
+       (vão de até 8 — nunca por cima de beco, que fecharia passagem),
+       e a casa funda pega as DUAS fileiras de costas, de beco a beco:
+       é onde a quadra dá os 4,5 a 6,4 m de fundo que a referência pede.
+       O corte tem de cair numa junta das duas fileiras ao mesmo tempo
+       (14 de folga: a fresta que sobra não passa corpo, então não vira
+       ilha), senão a casa nova morderia meia vizinha.
+       Quem vira o quê sai de um hash da POSIÇÃO — nenhum `rngFav` —, e
+       isto roda depois de tudo que sorteia: o resto da favela sai igual.
+       A casa nova herda a pixação de uma das que engoliu (a de torcida,
+       se houver), e a caixa d'água e a árvore que caíam dentro dela saem
+       (o modelo tem a caixa dele). */
+    (function juntarCasasGrandes(){
+      const Mt = METRO;
+      const hashPos = (s) => { let h = 2166136261 >>> 0;
+        for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+        return h / 4294967296; };
+      const loc = (x, y) => { const dx = x - CXF, dy = y - CYF; return [dx*CO + dy*SE, -dx*SE + dy*CO]; };
+      /* as fileiras: mesma linha de centro e mesmo lado de porta */
+      const fileiras = new Map();
+      for(const c of FAVELA){
+        const [u, v] = loc(c.cx, c.cy);
+        const k = Math.round(v) + '|' + c.vf;
+        if(!fileiras.has(k)) fileiras.set(k, { v, h: c.h, vf: c.vf, casas: [] });
+        fileiras.get(k).casas.push({ c, u0: u - c.w/2, u1: u + c.w/2 });
+      }
+      /* cada fileira em TRECHOS de casas encostadas, com as juntas */
+      const trechosDe = f => {
+        f.casas.sort((a, b) => a.u0 - b.u0);
+        const out = [];
+        let atual = null;
+        for(const x of f.casas){
+          if(!atual || x.u0 - atual[atual.length - 1].u1 > 8){ atual = []; out.push(atual); }
+          atual.push(x);
+        }
+        return out.map(t => ({ casas: t, juntas: [t[0].u0].concat(t.slice(1).map((x, i) => (t[i].u1 + x.u0)/2), [t[t.length - 1].u1]) }));
+      };
+      const lista = [...fileiras.values()];
+      for(const f of lista) f.trechos = trechosDe(f);
+      const cands = [];
+      const pedaco = (tA, k1, k2, tB, m1, m2, fA, fB) => {
+        const cs = tA.casas.slice(k1, k2).concat(tB ? tB.casas.slice(m1, m2) : []);
+        const u0 = Math.max(tA.casas[k1].u0, tB ? tB.casas[m1].u0 : -1e9);
+        const u1 = Math.min(tA.casas[k2 - 1].u1, tB ? tB.casas[m2 - 1].u1 : 1e9);
+        const v0 = fA.v - fA.h/2, v1 = tB ? fB.v + fB.h/2 : fA.v + fA.h/2;
+        /* ESQUINA: a ponta do trecho (nas duas fileiras) dá pro beco de
+           lado — é onde o bar abre pros dois lados, como na foto */
+        const pontaU0 = k1 === 0 && (!tB || m1 === 0);
+        const pontaU1 = k2 === tA.casas.length && (!tB || m2 === tB.casas.length);
+        cands.push({ casas: cs.map(x => x.c), u0, u1, v0, v1, W: (u1 - u0)/Mt, D: (v1 - v0)/Mt,
+                     lados: tB ? [-1, 1] : [fA.vf], pontaU0, pontaU1 });
+      };
+      for(const fA of lista){
+        /* a fileira de COSTAS pra esta (a de porta pro outro lado, com
+           a borda de trás colada) — se houver, a casa pega as duas */
+        const fB = fA.vf < 0 ? lista.find(g => g.vf > 0 && Math.abs((fA.v + fA.h/2) - (g.v - g.h/2)) < 2) : null;
+        if(fA.vf > 0 && lista.some(g => g.vf < 0 && Math.abs((g.v + g.h/2) - (fA.v - fA.h/2)) < 2)) continue;
+        for(const tA of fA.trechos){
+          const n = tA.casas.length;
+          if(!fB){
+            for(let k1 = 0; k1 < n; k1++) for(let k2 = k1 + 2; k2 <= n; k2++) pedaco(tA, k1, k2, null, 0, 0, fA, null);
+            continue;
+          }
+          for(const tB of fB.trechos){
+            if(tB.juntas[tB.juntas.length - 1] < tA.juntas[0] || tB.juntas[0] > tA.juntas[n]) continue;
+            /* os cortes que caem numa junta das duas fileiras */
+            const cortes = [];
+            for(let k = 0; k <= n; k++) for(let m = 0; m < tB.juntas.length; m++)
+              if(Math.abs(tA.juntas[k] - tB.juntas[m]) <= 14) cortes.push([k, m]);
+            for(const [k1, m1] of cortes) for(const [k2, m2] of cortes)
+              if(k2 > k1 && m2 > m1) pedaco(tA, k1, k2, tB, m1, m2, fA, fB);
+          }
+        }
+      }
+      /* as quatro, das mais exigentes pras mais fáceis: largura e fundo
+         em metros, quantas, e a distância mínima entre duas iguais */
+      /* o fundo da quadra de duas fileiras aqui é quase sempre 4,5 a
+         4,9 m (só uma em oito passa de 5,8): o modelo se ajusta a ele */
+      const MODELOS = [
+        { modelo: 'bar',    w: [5.0, 7.8], d: 4.3, n: 2, longe: 30, tipo: 'sobrado', alt: 6.0, parede: 'tijolo', esquina: true },
+        { modelo: 'f2',     w: [5.6, 8.6], d: 4.4, n: 3, longe: 18, tipo: 'casa',    alt: 3.4, parede: 'pintada' },
+        { modelo: 'lanche', w: [5.0, 7.4], d: 4.3, n: 2, longe: 22, tipo: 'sobrado', alt: 6.2, parede: 'pintada' },
+        { modelo: 'f1',     w: [5.0, 7.6], d: 4.4, n: 4, longe: 15, tipo: 'sobrado', alt: 8.2, parede: 'tijolo' }
+      ];
+      const usadas = new Set(), postas = [];
+      for(const md of MODELOS){
+        md.fila = cands.filter(c => c.W >= md.w[0] && c.W <= md.w[1] && c.D >= md.d)
+          .map(c => ({ c, h: hashPos(md.modelo + ':' + Math.round(c.u0) + ',' + Math.round(c.v0)) }))
+          .sort((a, b) => md.esquina ? ((b.c.pontaU0 || b.c.pontaU1) - (a.c.pontaU0 || a.c.pontaU1)) || a.h - b.h : a.h - b.h);
+        md.postas = 0;
+      }
+      /* em RODADAS, uma de cada por vez: a primeira da lista não leva
+         todos os terrenos bons antes da última escolher */
+      for(let rodada = 0; rodada < 8; rodada++){
+        for(const md of MODELOS){
+          if(md.postas >= md.n) continue;
+          for(const { c, h } of md.fila){
+            if(c.casas.some(x => usadas.has(x))) continue;
+            const uc = (c.u0 + c.u1)/2, vc = (c.v0 + c.v1)/2;
+            if(postas.some(p => Math.hypot(p.uc - uc, p.vc - vc) < (p.modelo === md.modelo ? md.longe : 8)*Mt)) continue;
+            for(const x of c.casas) usadas.add(x);
+            postas.push({ c, uc, vc, modelo: md.modelo, md, vf: c.lados[Math.floor(h*1e4) % c.lados.length] });
+            md.postas++;
+            break;
+          }
+        }
+      }
+      for(const p of postas){
+        const { c, md } = p;
+        const [cx, cy] = paraMundo(p.uc, p.vc);
+        const base = c.casas[0];
+        const lote = { tipo: md.tipo, ang: ANG, vf: p.vf, cx, cy, w: c.u1 - c.u0, h: c.v1 - c.v0,
+                       alt: Math.round(md.alt*Mt), cor: base.cor, telha: base.telha, parede: md.parede,
+                       favela: true, modelo: md.modelo };
+        /* o lado da esquina, na mão de quem olha a fachada: a direita dele
+           é +u quando a porta dá pra +v, e −u quando dá pra −v */
+        const esqU = p.vf > 0 ? 'esq' : 'dir', dirU = p.vf > 0 ? 'dir' : 'esq';
+        if(c.pontaU0 || c.pontaU1) lote.esquina = c.pontaU0 ? esqU : dirU;
+        const pix = c.casas.find(x => x.pixo) || c.casas.find(x => x.pixacao);
+        if(pix){ lote.pixacao = pix.pixacao; if(pix.pixoTinta) lote.pixoTinta = pix.pixoTinta; if(pix.pixo) lote.pixo = pix.pixo; }
+        for(const x of c.casas) FAVELA.splice(FAVELA.indexOf(x), 1);
+        FAVELA.push(lote);
+        /* a caixa d'água e a árvore que caíam dentro da casa nova — ou de
+           uma das engolidas, que pode passar um palmo da casa nova e
+           deixaria a caixa dela no ar — saem */
+        const dentro = (x, y, folga) => { const [u, v] = loc(x, y);
+          return (u > c.u0 - folga && u < c.u1 + folga && v > c.v0 - folga && v < c.v1 + folga) ||
+                 c.casas.some(o => { const [uo, vo] = loc(o.cx, o.cy);
+                   return Math.abs(u - uo) < o.w/2 + folga && Math.abs(v - vo) < o.h/2 + folga; }); };
+        for(let i = FAVELA_CAIXAS.length - 1; i >= 0; i--)
+          if(dentro(FAVELA_CAIXAS[i].x, FAVELA_CAIXAS[i].y, 4)) FAVELA_CAIXAS.splice(i, 1);
+        for(let i = ARVORES.length - 1; i >= 0; i--)
+          if(dentro(ARVORES[i].x, ARVORES[i].y, ARVORES[i].r*0.5)) ARVORES.splice(i, 1);
+      }
+    })();
+
     for(const c of FAVELA){ BEIRA.push(c); LOTES.push(c); }
   })();
 

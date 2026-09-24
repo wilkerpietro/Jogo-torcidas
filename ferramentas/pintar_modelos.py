@@ -1499,6 +1499,7 @@ def folha_grades():
     F.cel('preta', 1.0, 2.2, 120, p_grade('#1e1e1d', 0.12, 0.03, (0.06, 1.1, 2.14), quadrada=True), lad=True)
     F.cel('lanca', 1.0, 2.2, 120, p_portao_lanca, lad=True)
     F.cel('gradil', 1.0, 1.0, 120, p_grade('#e9eaec', 0.09, 0.022, (0.04, 0.95)), lad=True)
+    F.cel('bananeira', 1.6, 2.4, 80, p_bananeira)
     return F.montar()
 
 
@@ -1799,6 +1800,428 @@ def p_col_arco(w, h, ppm, rnd):
     return multiplicar(a, 1 + 0.04 * fbm(h, w, 0.2 * ppm, rnd, 3, False))
 
 
+
+# =========================================================
+#   8. AS CASAS GRANDES DA FAVELA — a casa de laje com terraço, a
+#   casa rosa de quintal e muro, o bar e a lanchonete KI-DELÍCIA.
+#   Entram na folha das CASAS (é a mesma malha da favela); o pé de
+#   bananeira, recortado, vai pra folha das grades.
+# =========================================================
+VERDE_FAV = '#2f6a3c'
+
+
+def caber(d, texto, larg, alt, tipo='negrito'):
+    """a maior fonte (até `alt` px) em que `texto` cabe em `larg` px"""
+    tam = alt
+    while tam > 6:
+        f = fonte(tipo, tam)
+        if d.textlength(texto, font=f) <= larg:
+            return f
+        tam *= 0.92
+    return fonte(tipo, 6)
+
+
+def p_fibro(sujeira):
+    """telha de fibrocimento ondulada: a onda corre no sentido da água,
+       e o limo e a fuligem escorrem por ela"""
+    def f(w, h, ppm, rnd):
+        a = reboco(w, h, ppm, rnd, '#bdbeb9', grao=0.04, manchas=0.10 + 0.08 * sujeira, lad=True)
+        xs = np.arange(w, dtype=np.float32) / w * 6 * 2 * np.pi
+        a *= (0.8 + 0.26 * np.sin(xs))[None, :, None]
+        m = np.clip(fbm(h, w, 0.5 * ppm, rnd, 4, True) * 2.2 - 0.3 + 0.4 * sujeira, 0, 1)
+        e = escorrido(h, w, rnd, int(8 + 22 * sujeira), inicio=(0.0, 1.0), comp=(0.2, 0.7), larg=(1, 3), lad=True)
+        a = multiplicar(a, 1 - (0.28 + 0.32 * sujeira) * m - 0.22 * e)
+        a[:max(2, int(0.03 * ppm))] *= 0.78                  # a emenda de uma placa na outra
+        return a
+    return f
+
+
+def p_grama(w, h, ppm, rnd):
+    """o quintal: grama rala com terra aparecendo"""
+    a = multiplicar(chapado(w, h, '#5b7b37'), 1 + 0.35 * fbm(h, w, 0.6 * ppm, rnd, 4, True))
+    terra = np.clip(fbm(h, w, 0.8 * ppm, rnd, 3, True) * 2.5 - 0.35, 0, 1)
+    aplicar(a, '#7e6b49', terra * 0.6)
+    p = pontos(h, w, (w / ppm) * (h / ppm) * 500, 0.6, 1.3, rnd, True)
+    return multiplicar(a, 1 + 0.2 * p)
+
+
+def p_piso_bar(w, h, ppm, rnd):
+    """o piso de cerâmica cinza do bar, placa de 40 cm"""
+    a = reboco(w, h, ppm, rnd, '#cac8c0', grao=0.03, manchas=0.08, lad=True)
+    n, passo = 3, w / 3
+    for i in range(n):
+        for j in range(n):
+            a[int(j * passo):int((j + 1) * passo), int(i * passo):int((i + 1) * passo)] *= 0.92 + 0.16 * rnd.random()
+    rej = max(1, int(0.008 * ppm))
+    for k in range(n):
+        x = int(k * passo)
+        a[:, x:x + rej] = cor('#8e8b84')
+        a[x:x + rej, :] = cor('#8e8b84')
+    s = np.clip(fbm(h, w, 0.4 * ppm, rnd, 3, True) * 2 - 0.4, 0, 1)
+    return multiplicar(a, 1 - 0.2 * s)
+
+
+def p_azulejo(w, h, ppm, rnd):
+    """o ladrilho vermelho e preto da escada do bar"""
+    a = np.zeros((h, w, 3), np.float32)
+    n = 4
+    cores = ['#8e2a22', '#6e1f1a', '#2a2422', '#a23a2c', '#5a2a22']
+    for i in range(n):
+        for j in range(n):
+            a[int(j * h / n):int((j + 1) * h / n), int(i * w / n):int((i + 1) * w / n)] = \
+                cor(cores[int(rnd.integers(0, len(cores)))]) * (0.9 + 0.2 * rnd.random())
+    rej = max(1, int(0.006 * ppm))
+    for k in range(n):
+        a[:, int(k * w / n):int(k * w / n) + rej] = cor('#b8b0a4')
+        a[int(k * h / n):int(k * h / n) + rej, :] = cor('#b8b0a4')
+    return multiplicar(a, 1 + 0.08 * ruido(h, w, max(2, w / 8), rnd, True))
+
+
+def caixilho_verde(a, x0, y0, x1, y1, nx, ny, ppm, rnd, verde=VERDE_FAV, esp_m=0.035):
+    """uma grade de vidrinhos com caixilho de ferro verde"""
+    esp = max(2, int(esp_m * ppm))
+    v = vidro(int(x1 - x0), int(y1 - y0), rnd, base='#26353a', topo='#8aa2ad', reflexo=0.22)
+    colar(a, v, x0, y0)
+    for i in range(nx + 1):
+        x = x0 + (x1 - x0) * i / nx
+        retangulo(a, x - esp / 2, y0, x + esp / 2, y1, verde)
+    for j in range(ny + 1):
+        y = y0 + (y1 - y0) * j / ny
+        retangulo(a, x0, y - esp / 2, x1, y + esp / 2, verde)
+
+
+def p_porta_verde(w, h, ppm, rnd):
+    """a porta de ferro verde com vidrinho em cima (a casa de laje)"""
+    a = reboco(w, h, ppm, rnd, VERDE_FAV, grao=0.05, manchas=0.15, lad=False)
+    moldura_simples(a, ppm, 0, 0, w, h, '#24522e', 0.05)
+    caixilho_verde(a, w * 0.12, h * 0.07, w * 0.88, h * 0.55, 2, 4, ppm, rnd)
+    retangulo(a, w * 0.12, h * 0.6, w * 0.88, h * 0.93, cor(VERDE_FAV) * 0.92, relevo=0.15)
+    retangulo(a, w * 0.78, h * 0.56, w * 0.86, h * 0.59, '#1c1c1a', sombra=False)
+    e = escorrido(h, w, rnd, 5, inicio=(0.5, 0.6), comp=(0.2, 0.4), larg=(1, 2), lad=False)
+    return multiplicar(a, 1 - 0.2 * e)
+
+
+def p_vidraca_verde(w, h, ppm, rnd):
+    """a porta de correr larga de vidrinhos com caixilho verde: quatro
+       folhas, e a fileira de baixo de chapa"""
+    a = chapado(w, h, '#24522e')
+    esp = max(2, int(0.04 * ppm))
+    for k in range(4):
+        x0, x1 = w * k / 4, w * (k + 1) / 4
+        caixilho_verde(a, x0 + esp, esp, x1 - esp, h * 0.8, 3, 4, ppm, rnd)
+        retangulo(a, x0 + esp, h * 0.8, x1 - esp, h - esp, cor(VERDE_FAV) * 0.95, relevo=0.14)
+        retangulo(a, x0, 0, x0 + esp, h, '#24522e')
+    e = escorrido(h, w, rnd, 8, inicio=(0.75, 0.8), comp=(0.1, 0.25), larg=(1, 2), lad=False)
+    return multiplicar(a, 1 - 0.18 * e)
+
+
+def p_porta_azul(w, h, ppm, rnd):
+    """a porta de chapa azul do andar de cima (a casa de laje)"""
+    a = reboco(w, h, ppm, rnd, '#2f62b3', grao=0.05, manchas=0.14, lad=False, fuligem=6)
+    passo = max(4, int(0.12 * ppm))
+    for x in range(0, w, passo):
+        a[:, x:x + 2] *= 0.82
+    moldura_simples(a, ppm, 0, 0, w, h, '#264f91', 0.05)
+    retangulo(a, w * 0.8, h * 0.5, w * 0.88, h * 0.53, '#1b1b1a', sombra=False)
+    return a
+
+
+def madeira(w, h, ppm, rnd, base='#8f6038', tabua=0.12):
+    """tábua vertical de madeira velha, com o veio e a fresta"""
+    a = reboco(w, h, ppm, rnd, base, grao=0.08, manchas=0.15, lad=False)
+    col = borrar(rnd.random((1, w)).astype(np.float32), 1.5)[0]
+    a *= (0.86 + 0.26 * col)[None, :, None]
+    passo = max(4, int(tabua * ppm))
+    for x in range(0, w, passo):
+        a[:, x:x + max(1, int(0.008 * ppm))] *= 0.55
+    return a
+
+
+def p_portao_madeira(w, h, ppm, rnd):
+    """o portão de madeira de duas folhas com o X de reforço (a casa
+       rosa de quintal)"""
+    a = madeira(w, h, ppm, rnd, '#9a6a3f')
+    esp = max(3, int(0.07 * ppm))
+    for k in (0, 1):
+        x0, x1 = w * k / 2, w * (k + 1) / 2
+        moldura(a, x0, 0, x1, h, esp, '#7e5431')
+        def xis(d, im, x0=x0, x1=x1):
+            for (p0, p1) in (((x0 + esp, esp), (x1 - esp, h - esp)), ((x1 - esp, esp), (x0 + esp, h - esp))):
+                d.line([p0, p1], fill=(118, 80, 46), width=esp)
+        desenhar(a, xis)
+    retangulo(a, w / 2 - 1, 0, w / 2 + 1, h, '#5a3a22', sombra=False)
+    return multiplicar(a, pe_de_parede(h, w, h * 0.15, 0.3))
+
+
+def p_porta_madeira_fav(w, h, ppm, rnd):
+    a = madeira(w, h, ppm, rnd, '#5d3b27', tabua=0.1)
+    moldura_simples(a, ppm, 0, 0, w, h, '#4a2e1e', 0.05)
+    retangulo(a, w * 0.78, h * 0.5, w * 0.86, h * 0.53, '#c9b48a', sombra=False)
+    return a
+
+
+def p_faixa_cerveja(w, h, ppm, rnd):
+    """a faixa de propaganda de cerveja do bar: laranja, a garrafa, o
+       copo e o CERVEJA GELADA. Marca nenhuma — é a cara da faixa."""
+    ys = np.linspace(0, 1, h, dtype=np.float32)[:, None, None]
+    a = np.broadcast_to(cor('#f6a91f') * (1 - ys) + cor('#e0661a') * ys, (h, w, 3)).copy()
+    mw = w / 2
+    def t(d, im):
+        for k in range(2):
+            x0 = mw * k
+            bx = x0 + mw * 0.05
+            d.rounded_rectangle([bx, h * 0.3, bx + h * 0.24, h * 0.96], radius=h * 0.06, fill=(96, 54, 18))
+            d.rectangle([bx + h * 0.08, h * 0.05, bx + h * 0.16, h * 0.32], fill=(96, 54, 18))
+            d.rectangle([bx, h * 0.52, bx + h * 0.24, h * 0.74], fill=(238, 228, 198))
+            cx = bx + h * 0.4
+            d.polygon([(cx, h * 0.32), (cx + h * 0.3, h * 0.32), (cx + h * 0.25, h * 0.96), (cx + h * 0.05, h * 0.96)],
+                      fill=(248, 198, 48))
+            d.ellipse([cx - h * 0.03, h * 0.18, cx + h * 0.33, h * 0.4], fill=(252, 250, 242))
+            f = caber(d, 'CERVEJA GELADA', mw * 0.68, h * 0.46)
+            d.text((x0 + mw * 0.28, h * 0.54), 'CERVEJA GELADA', fill=(120, 30, 10), anchor='lm', font=f)
+            d.text((x0 + mw * 0.28 - 1, h * 0.52), 'CERVEJA GELADA', fill=(255, 250, 236), anchor='lm', font=f)
+    desenhar(a, t)
+    return multiplicar(a, 1 - 0.12 * escorrido(h, w, rnd, 10, inicio=(0.0, 0.2), comp=(0.4, 1.0), larg=(1, 2), lad=True))
+
+
+def p_geladeira(w, h, ppm, rnd):
+    """o freezer vertical branco do bar"""
+    a = reboco(w, h, ppm, rnd, '#eeeeea', grao=0.02, manchas=0.06, lad=False)
+    xs = np.linspace(0, 1, w, dtype=np.float32)
+    a *= (0.9 + 0.12 * np.sin(xs * np.pi))[None, :, None]
+    retangulo(a, 0, 0, w, h * 0.12, '#2a2c2e')
+    def t(d, im):
+        d.text((w / 2, h * 0.06), 'GELADA', fill=(230, 60, 40), anchor='mm', font=caber(d, 'GELADA', w * 0.8, h * 0.07))
+    desenhar(a, t)
+    retangulo(a, w * 0.82, h * 0.3, w * 0.88, h * 0.62, '#9a9c9c')
+    retangulo(a, 0, h * 0.95, w, h, '#3a3a3a', sombra=False)
+    return a
+
+
+def p_engradado(w, h, ppm, rnd):
+    """o engradado amarelo de cerveja, de lado"""
+    a = reboco(w, h, ppm, rnd, '#e8c01c', grao=0.03, manchas=0.08, lad=False)
+    for k in range(4):
+        x0 = w * (k + 0.2) / 4
+        retangulo(a, x0, h * 0.25, x0 + w * 0.6 / 4, h * 0.75, cor('#e8c01c') * 0.62, relevo=0.2)
+    retangulo(a, 0, 0, w, h * 0.1, cor('#e8c01c') * 1.05)
+    return a
+
+
+def p_prateleira(w, h, ppm, rnd):
+    """a prateleira de garrafas do fundo do bar"""
+    a = reboco(w, h, ppm, rnd, '#3a2a1e', grao=0.06, manchas=0.1, lad=False)
+    cores = [(56, 110, 52), (120, 70, 30), (205, 205, 200), (150, 40, 30), (40, 60, 110), (210, 170, 60)]
+    for j in range(3):
+        yb = h * (j + 1) / 3 - h * 0.04
+        retangulo(a, 0, yb, w, yb + h * 0.04, '#6a4a30')
+        def gar(d, im, yb=yb):
+            xx = w * 0.03
+            while xx < w * 0.95:
+                bw = w * (0.035 + 0.02 * rnd.random())
+                bh = h / 3 * (0.55 + 0.3 * rnd.random())
+                c = cores[int(rnd.integers(0, len(cores)))]
+                d.rectangle([xx, yb - bh * 0.7, xx + bw, yb], fill=c)
+                d.rectangle([xx + bw * 0.3, yb - bh, xx + bw * 0.7, yb - bh * 0.7], fill=c)
+                xx += bw * 1.35
+        desenhar(a, gar)
+    return a
+
+
+def p_armario(w, h, ppm, rnd):
+    """o armário amarelo de gavetas do fundo do bar"""
+    a = reboco(w, h, ppm, rnd, '#dfb52a', grao=0.03, manchas=0.1, lad=False)
+    for k in range(4):
+        y0 = h * (0.04 + 0.24 * k)
+        retangulo(a, w * 0.06, y0, w * 0.94, y0 + h * 0.21, cor('#dfb52a') * 0.97, relevo=0.18)
+        retangulo(a, w * 0.42, y0 + h * 0.08, w * 0.58, y0 + h * 0.11, '#6a5a2a', sombra=False)
+    return a
+
+
+def p_porta_escura(w, h, ppm, rnd):
+    """o vão escuro da porta dos fundos, que dá pra dentro da casa"""
+    ys = np.linspace(0, 1, h, dtype=np.float32)[:, None, None]
+    a = np.broadcast_to(cor('#3a3c3e') * (1 - ys) * 0.7 + cor('#151617') * ys, (h, w, 3)).copy()
+    moldura_simples(a, ppm, 0, 0, w, h, '#d8d6d0', 0.05)
+    return a
+
+
+def p_cartaz_verde(w, h, ppm, rnd):
+    a = chapado(w, h, '#2f8a3a')
+    def t(d, im):
+        d.ellipse([w * 0.22, h * 0.14, w * 0.78, h * 0.58], fill=(250, 214, 60))
+        d.ellipse([w * 0.34, h * 0.24, w * 0.66, h * 0.48], fill=(244, 150, 40))
+        d.text((w / 2, h * 0.72), 'SUCO', fill=(255, 255, 255), anchor='mm', font=caber(d, 'SUCO', w * 0.8, h * 0.13))
+        d.text((w / 2, h * 0.86), 'NATURAL', fill=(255, 255, 255), anchor='mm', font=caber(d, 'NATURAL', w * 0.8, h * 0.09))
+    desenhar(a, t)
+    moldura_simples(a, ppm, 0, 0, w, h, '#1f5f28', 0.02)
+    return a
+
+
+# as frações do muro pintado que o 3D usa: embaixo, a porta de grade à
+# esquerda e a porta de enrolar à direita ficam no amarelo liso
+MURAL_PORTA = (0.02, 0.23)
+MURAL_ENROLAR = (0.72, 0.97)
+
+
+def lanches(d, w, h):
+    """os desenhos do muro: o x-burguer, o cachorro-quente, a batata, o
+       espetinho e o copo de refrigerante"""
+    # a fileira toda cabe entre 0,26 e 0,70 da largura: à direita disso
+    # vem o toldinho e a porta de enrolar
+    hh = min(h * 0.16, w * 0.44 / 6.2)
+    y0 = h * 0.34
+    y1 = y0 + hh
+    x = w * 0.26
+    # o x-burguer
+    d.ellipse([x, y0, x + hh * 1.3, y0 + hh * 0.55], fill=(214, 150, 60), outline=(90, 40, 10), width=2)
+    d.rectangle([x + 2, y0 + hh * 0.45, x + hh * 1.3 - 2, y0 + hh * 0.6], fill=(90, 160, 50))
+    d.rectangle([x, y0 + hh * 0.58, x + hh * 1.3, y0 + hh * 0.78], fill=(96, 50, 24))
+    d.rounded_rectangle([x, y0 + hh * 0.76, x + hh * 1.3, y1], radius=hh * 0.12, fill=(206, 140, 56), outline=(90, 40, 10), width=2)
+    x += hh * 1.55
+    # o cachorro-quente
+    d.rounded_rectangle([x, y0 + hh * 0.35, x + hh * 1.9, y1], radius=hh * 0.3, fill=(214, 156, 70), outline=(90, 40, 10), width=2)
+    d.rounded_rectangle([x - hh * 0.1, y0 + hh * 0.3, x + hh * 2.0, y0 + hh * 0.6], radius=hh * 0.15, fill=(170, 60, 36))
+    d.line([(x + hh * 0.1 + k * hh * 0.2, y0 + hh * (0.36 if k % 2 else 0.52)) for k in range(10)], fill=(250, 214, 40), width=2)
+    x += hh * 2.25
+    # a batata: palito claro com contorno, senão some no amarelo do muro
+    for k in range(6):
+        d.rectangle([x + hh * (0.12 + k * 0.13), y0 + hh * (0.02 + 0.08 * (k % 3)), x + hh * (0.2 + k * 0.13), y0 + hh * 0.6],
+                    fill=(255, 238, 150), outline=(150, 90, 20), width=1)
+    d.polygon([(x, y0 + hh * 0.45), (x + hh * 1.0, y0 + hh * 0.45), (x + hh * 0.85, y1), (x + hh * 0.15, y1)], fill=(210, 40, 30))
+    x += hh * 1.25
+    # o espetinho
+    d.line([(x, y1), (x + hh * 1.2, y0)], fill=(140, 110, 70), width=2)
+    for k in range(4):
+        cx, cy = x + hh * (0.25 + 0.25 * k), y1 - hh * (0.25 + 0.25 * k)
+        d.rounded_rectangle([cx - hh * 0.13, cy - hh * 0.13, cx + hh * 0.13, cy + hh * 0.13], radius=hh * 0.05, fill=(128, 62, 30))
+
+
+def p_mural_ki(w, h, ppm, rnd):
+    """o muro pintado da lanchonete KI-DELÍCIA: o nome em vermelho com
+       contorno, o que ela vende, os desenhos dos lanches e o cardápio
+       pintado à mão. Os cantos de baixo ficam no amarelo liso: ali o 3D
+       abre a porta de grade e a porta de enrolar."""
+    a = reboco(w, h, ppm, rnd, '#f2c52a', grao=0.06, manchas=0.12, lad=False, fuligem=4)
+    a = multiplicar(a, 1 + 0.07 * fbm(h, w, 0.25 * ppm, rnd, 3, False))
+    VERM, ESC = (206, 38, 28), (70, 22, 14)
+    def t(d, im):
+        f = caber(d, 'KI-DELÍCIA', w * 0.72, h * 0.17)
+        for dx, dy in ((-3, 0), (3, 0), (0, -3), (0, 3), (3, 3), (-3, 3)):
+            d.text((w / 2 + dx, h * 0.135 + dy), 'KI-DELÍCIA', fill=ESC, anchor='mm', font=f)
+        d.text((w / 2, h * 0.135), 'KI-DELÍCIA', fill=VERM, anchor='mm', font=f)
+        sub = 'LANCHES · ESPETINHOS · BATATA FRITA'
+        fs = caber(d, sub, w * 0.62, h * 0.055)
+        for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2)):
+            d.text((w / 2 + dx, h * 0.245 + dy), sub, fill=VERM, anchor='mm', font=fs)
+        d.text((w / 2, h * 0.245), sub, fill=(255, 246, 226), anchor='mm', font=fs)
+        lanches(d, w, h)
+        esq = ['X-SALADA', 'X-BURGUER', 'X-BACON', 'X-CALABRESA', 'X-FRANGO']
+        dirr = ['X-TUDO', 'X-CHURRASCO', 'MISTO QUENTE', 'HOT DOG', 'AMERICANO']
+        fc = caber(d, 'MISTO QUENTE', w * 0.2, h * 0.045)
+        for i, it in enumerate(esq):
+            d.text((w * 0.26, h * (0.58 + i * 0.075)), it, fill=ESC, anchor='lm', font=fc)
+        for i, it in enumerate(dirr):
+            d.text((w * 0.48, h * (0.58 + i * 0.075)), it, fill=ESC, anchor='lm', font=fc)
+    desenhar(a, t)
+    # a tinta gasta: descasca aqui e ali, e o pé do muro encarde
+    desc = np.clip(pontos(h, w, (w / ppm) * (h / ppm) * 3, 2, 6, rnd, False, sinal=1.0), 0, 1)
+    aplicar(a, '#b9b1a0', borrar(desc, 1.0) * 0.7)
+    return multiplicar(multiplicar(a, pe_de_parede(h, w, h * 0.12, 0.3)),
+                       1 - 0.15 * escorrido(h, w, rnd, 12, inicio=(0.0, 0.1), comp=(0.3, 0.9), larg=(1, 3), lad=False))
+
+
+def p_toldo_ki(w, h, ppm, rnd):
+    """o toldinho vermelho em cima da porta de enrolar, com o nome"""
+    a = reboco(w, h, ppm, rnd, '#d42a20', grao=0.04, manchas=0.1, lad=False)
+    def t(d, im):
+        d.text((w / 2, h * 0.46), 'KI-DELÍCIA', fill=(252, 214, 60), anchor='mm', font=caber(d, 'KI-DELÍCIA', w * 0.8, h * 0.55))
+    desenhar(a, t)
+    a[int(h * 0.86):] *= 0.72
+    return a
+
+
+def p_porta_grade_azul(w, h, ppm, rnd):
+    """a porta da lanchonete: grade azul em cima, chapa vermelha
+       embaixo com o recado pintado à mão"""
+    a = chapado(w, h, '#1d2228')
+    corte = int(h * 0.55)
+    passo = max(4, int(0.07 * ppm))
+    for x in range(int(w * 0.08), int(w * 0.92), passo):
+        retangulo(a, x, h * 0.05, x + max(2, int(0.018 * ppm)), corte, '#2d62b0')
+    for y in (h * 0.05, h * 0.3, corte - 3):
+        retangulo(a, w * 0.06, y, w * 0.94, y + max(2, int(0.025 * ppm)), '#2d62b0')
+    a[corte:] = reboco(w, h - corte, ppm, rnd, '#c02a22', grao=0.05, manchas=0.15, lad=False)
+    def t(d, im):
+        d.text((w * 0.5, corte + (h - corte) * 0.3), 'Família', fill=(245, 240, 230), anchor='mm',
+               font=caber(d, 'Família', w * 0.7, h * 0.07, 'normal'))
+    desenhar(a, t)
+    moldura_simples(a, ppm, 0, 0, w, h, '#23498a', 0.05)
+    return a
+
+
+def p_guarda_sol(c1, c2, n=12):
+    """o pano do guarda-sol: gomos alternados. O torno dá uma volta
+       inteira na célula, então cada faixa vira um gomo."""
+    def f(w, h, ppm, rnd):
+        a = np.zeros((h, w, 3), np.float32)
+        for k in range(n):
+            a[:, int(w * k / n):int(w * (k + 1) / n)] = cor(c1 if k % 2 == 0 else c2)
+        ys = np.linspace(0, 1, h, dtype=np.float32)
+        return a * (0.84 + 0.16 * ys)[:, None, None]
+    return f
+
+
+def p_portao_chapa(w, h, ppm, rnd):
+    """o portão de chapa marrom com o X estampado, com a grade em cima
+       (o do lado do bar)"""
+    a = reboco(w, h, ppm, rnd, '#8a4c33', grao=0.05, manchas=0.18, lad=False, fuligem=10)
+    esp = max(3, int(0.05 * ppm))
+    topo = h * 0.14
+    for k in (0, 1):
+        x0, x1 = w * k / 2, w * (k + 1) / 2
+        moldura(a, x0, topo, x1, h, esp, '#6e3a26')
+        def xis(d, im, x0=x0, x1=x1):
+            for (p0, p1) in (((x0 + esp, topo + esp), (x1 - esp, h - esp)), ((x1 - esp, topo + esp), (x0 + esp, h - esp))):
+                d.line([p0, p1], fill=(160, 96, 66), width=max(2, esp // 2))
+        desenhar(a, xis)
+    a[:int(topo)] = cor('#2a2a2a')
+    for x in range(0, w, max(4, int(0.1 * ppm))):
+        a[:int(topo), x:x + 2] = cor('#6e3a26')
+    a[:3] = cor('#6e3a26')
+    return a
+
+
+def p_bananeira(w, h, ppm, rnd):
+    """o pé de bananeira, recortado (alfa): folhas largas com a
+       nervura, umas rasgadas, em leque em cima do tronco"""
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.polygon([(w * 0.45, h), (w * 0.55, h), (w * 0.53, h * 0.5), (w * 0.47, h * 0.5)], fill=(104, 116, 58, 255))
+    bx, by = w * 0.5, h * 0.52
+    for k in range(8):
+        ang = math.radians(-172 + k * 23 + rnd.uniform(-8, 8))
+        L = h * rnd.uniform(0.34, 0.48)
+        larg = L * rnd.uniform(0.3, 0.38)
+        dx, dy = math.cos(ang), math.sin(ang)
+        caida = 0.45 * abs(dx)                           # a folha pesa e cai na ponta
+        esq, dirr = [], []
+        for i in range(13):
+            t = i / 12
+            cx = bx + dx * L * t
+            cy = by + dy * L * t + caida * L * t * t
+            m = larg * math.sin(math.pi * min(1, t * 1.05)) ** 0.7
+            if rnd.random() < 0.25:
+                m *= 0.5                                 # o rasgado
+            esq.append((cx - dy * m, cy + dx * m))
+            dirr.append((cx + dy * m, cy - dx * m))
+        g = rnd.uniform(0.85, 1.15)
+        d.polygon(esq + dirr[::-1], fill=(int(96 * g), int(160 * g), int(56 * g), 255))
+        d.line([(bx, by)] + [((esq[i][0] + dirr[i][0]) / 2, (esq[i][1] + dirr[i][1]) / 2) for i in range(13)],
+               fill=(150, 190, 90, 255), width=1)
+    return np.asarray(im, np.float32) / 255
+
+
 def folha_casas():
     F = Folha('casas')
     F.cel('suja', 2.5, 2.5, 110, p_parede_suja, lad=True)
@@ -1827,6 +2250,30 @@ def folha_casas():
     F.cel('col_janela', 1.1, 1.6, 140, p_col_janela)
     F.cel('col_porta', 1.3, 2.7, 130, p_col_porta)
     F.cel('col_arco', 1.1, 2.7, 130, p_col_arco)
+    # as casas grandes da favela
+    F.cel('fibro', 1.1, 1.83, 100, p_fibro(0.0), lad=True)
+    F.cel('fibro_sujo', 1.1, 1.83, 100, p_fibro(1.0), lad=True)
+    F.cel('grama', 2.0, 2.0, 64, p_grama, lad=True)
+    F.cel('piso_bar', 1.2, 1.2, 100, p_piso_bar, lad=True)
+    F.cel('azulejo', 0.6, 0.6, 120, p_azulejo, lad=True)
+    F.cel('porta_verde', 0.85, 2.1, 120, p_porta_verde)
+    F.cel('vidraca_verde', 2.4, 2.2, 100, p_vidraca_verde)
+    F.cel('porta_azul', 0.9, 2.0, 120, p_porta_azul)
+    F.cel('portao_madeira', 1.5, 1.8, 110, p_portao_madeira)
+    F.cel('porta_madeira', 0.85, 2.1, 120, p_porta_madeira_fav)
+    F.cel('faixa_cerveja', 4.0, 0.55, 110, p_faixa_cerveja, lad=True)
+    F.cel('geladeira', 0.7, 1.8, 110, p_geladeira)
+    F.cel('engradado', 0.45, 0.3, 150, p_engradado)
+    F.cel('prateleira', 1.2, 1.0, 110, p_prateleira)
+    F.cel('armario', 0.8, 1.2, 110, p_armario)
+    F.cel('porta_escura', 0.8, 2.0, 80, p_porta_escura)
+    F.cel('cartaz_verde', 0.6, 0.8, 140, p_cartaz_verde)
+    F.cel('mural_ki', 5.6, 3.8, 90, p_mural_ki)
+    F.cel('toldo_ki', 1.4, 0.5, 150, p_toldo_ki)
+    F.cel('porta_grade_azul', 0.9, 2.1, 120, p_porta_grade_azul)
+    F.cel('guarda_sol_pb', 2.0, 0.8, 128, p_guarda_sol('#1c1c1e', '#f2f2ef'))
+    F.cel('guarda_sol_am', 2.0, 0.8, 128, p_guarda_sol('#f2c41c', '#f6f4ec'))
+    F.cel('portao_chapa', 2.4, 2.0, 90, p_portao_chapa)
     return F.montar()
 
 def main():

@@ -1386,6 +1386,76 @@ ele vira o caixote de dois andares. O quarteirão desta cidade é raso
 (13 m pros dois lados), então as casas têm de 2,5 a 6,5 m de fundo:
 a proporção é de casa de frente larga e pouco fundo.
 
+### 4.24. As casas grandes da favela: laje com terraço, casa rosa, bar e lanchonete
+
+Mais quatro referências, estas de favela: a casa de laje em três
+níveis com o terraço e o guarda-sol, a casa rosa atrás do muro com
+quintal, o bar de esquina (em dois ângulos) e a lanchonete KI-DELÍCIA.
+
+**Elas não cabem no lote da favela.** A fileira sorteia casa de 2,6 m
+de frente por 2,5 de fundo; as referências têm de 5 a 8 m. Encolher
+seria perder o que elas são. Então a planta JUNTA vizinhas, como a
+casa que comprou a do lado (`juntarCasasGrandes`, no fim da favela):
+
+- só junta quem já encosta — vão de até 8 entre duas casas, nunca por
+  cima de beco, que fecharia passagem;
+- a casa funda pega as DUAS fileiras de costas, de beco a beco, e é
+  aí que a quadra dá os 4,5 a 6,4 m de fundo (quase sempre 4,5 a 4,9 —
+  os modelos se ajustam a isso);
+- o corte tem de cair numa junta das duas fileiras ao mesmo tempo, com
+  14 de folga: a fresta que sobra não passa corpo, então não vira ilha;
+- quem vira o quê sai de um hash da posição, em rodadas (uma de cada
+  por vez), com distância mínima entre duas iguais; o bar prefere a
+  ponta do trecho, que é esquina — a referência abre pros dois lados;
+- roda depois de tudo que sorteia a favela: nada fora dela muda, e
+  das 280 casas 236 ficaram idênticas.
+
+Saíram 9: 2 bares, 1 lanchonete, 3 casas rosas e 3 de laje, no lugar
+de 44 barracos. A casa nova herda a pixação de uma das engolidas (a de
+torcida, se houver); as outras se perdem (112 → 104 pixações na favela,
+71 → 67 cobríveis). A caixa d'água e a árvore que caíam dentro da casa
+nova — ou de uma das engolidas, que às vezes passa um palmo dela —
+saem: a caixa sobraria no ar.
+
+**Os modelos** (`f1`, `f2`, `bar`, `lanche` em `casas3d.js`):
+
+| modelo | o que tem |
+|---|---|
+| F1 | térreo de tijolo entre pilar e viga de concreto aparente, porta verde de vidrinho e vidraça verde de correr; o terraço com mureta e pilarete, guarda-sol listrado preto e branco, cadeiras azuis, caixa d'água; o quarto verde com a porta branca; em cima, a varanda de mureta e o quarto de reboco com janela e porta azul, coberto de fibrocimento |
+| F2 | muro de reboco encardido com o portão de madeira de X entre pilares, o pedaço de tijolo por terminar em degrau, quintal de grama com bananeira, caminho de cimento, varanda de fibrocimento em pilarete rosa, casa rosa com a barra mais escura, platibanda e telhado de fibrocimento sujo |
+| bar | térreo aberto sob a água de fibrocimento, pilar branco, a faixa de cerveja (na frente e no lado da esquina), piso de cerâmica, escada de ladrilho, prateleira de garrafa, armário amarelo, freezer, engradados, mesa de plástico com cadeira de madeira e de plástico; em cima, tijolo com duas janelas e caixa d'água; em lote largo, o portão de chapa marrom com o quintal do lado |
+| lanchonete | o muro pintado (nome, o que vende, os desenhos e o cardápio) esticado uma vez na frente inteira, a porta de grade azul com a chapa vermelha, a porta de enrolar com o toldinho vermelho e o degrau; o terraço com a caixa d'água grande, guarda-sol amarelo, mesa e cadeiras vermelhas, e o quartinho de tijolo no fundo |
+
+As peças novas (fibrocimento, grama, piso, ladrilho, os caixilhos
+verdes, a faixa de cerveja, o muro da KI-DELÍCIA, o toldinho, as
+portas, o freezer, os engradados, a prateleira, o pano dos guarda-sóis,
+o portão de chapa) foram pintadas na mesma folha das casas, que passou
+a ter 2048 × 1168; o pé de bananeira, recortado, foi pra folha das
+grades. A faixa de cerveja não tem marca nenhuma — é a cara da faixa.
+O construtor não mudou: o muro pintado é a parede ladrilhada com a
+peça do tamanho exato da parede (`tw`, `th`).
+
+O decalque da casa grande procura a parede certa: o da casa rosa vai
+pro muro (a casa fica atrás do quintal), o do bar pro andar de cima, e
+a pintura da lanchonete (nome e cardápio) não leva pixação por cima.
+
+**Um bug achado aqui, e que vinha do passo anterior.** O bairro põe os
+dizeres (letreiro, pixação, falha de reboco) ANTES de montar as casas
+da beira da estrada e da favela. Pra essas, a casa ainda não tinha
+dito onde fica a parede dela, e o código caía no plano velho da
+divisa: o letreiro e a pixação da casa de beira com a frente recuada
+boiavam na frente da parede (até 60 cm, no comércio de marquise), e a
+falha de reboco da casa rosa aparecia no ar em cima da varanda. As
+casas de fora do quarteirão agora saem antes dos dizeres.
+
+O que não é fiel, dito com todas as letras: as texturas continuam
+pintadas por código (o muro da lanchonete é mais limpo que o da foto,
+a faixa de cerveja é genérica); não há bicicleta, varal, fio nem poste
+das referências; e as fotos das casas grandes que acompanham este
+trabalho foram tiradas com o plano de corte da câmera logo na frente
+da fachada — no jogo o beco tem 1,6 a 2,2 m, e a casa do outro lado
+fica na frente de quem olha de longe.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -1909,10 +1979,10 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões, ruas, avenidas, costa, campos, estádio |
 | `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão |
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa) e a montagem de cada um |
-| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5) e a casa da favela, o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
+| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as quatro casas grandes dela (F1, F2, bar, lanchonete), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
-| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos e das casas e escreve o atlas; roda de novo sempre que mudar uma peça |
-| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`) e a folha de grades vazadas, com alfa (portão de lança e gradil de sacada incluídos) |
+| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas e das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) e escreve o atlas; roda de novo sempre que mudar uma peça |
+| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada e o pé de bananeira incluídos) |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
 | `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |
 | `img/texturas/chao.png` | o atlas de decalques de chão, 8 × 4 células de 192 px (capim, entulho, brita, poça, terra, folha) |
