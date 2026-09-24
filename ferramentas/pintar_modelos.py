@@ -1500,6 +1500,9 @@ def folha_grades():
     F.cel('lanca', 1.0, 2.2, 120, p_portao_lanca, lad=True)
     F.cel('gradil', 1.0, 1.0, 120, p_grade('#e9eaec', 0.09, 0.022, (0.04, 0.95)), lad=True)
     F.cel('bananeira', 1.6, 2.4, 80, p_bananeira)
+    F.cel('ferrugem', 1.0, 2.0, 120, p_grade('#6e4632', 0.1, 0.022, (0.1, 1.05, 1.9)), lad=True)
+    F.cel('antena', 0.8, 0.8, 120, p_antena)
+    F.cel('varal', 2.0, 0.6, 110, p_varal)
     return F.montar()
 
 
@@ -2222,6 +2225,149 @@ def p_bananeira(w, h, ppm, rnd):
     return np.asarray(im, np.float32) / 255
 
 
+
+# a segunda leva da favela: a casa da escada de fora, o sobrado do
+# varal, o das garagens e o do embasamento
+def p_jan_grade_branca(w, h, ppm, rnd):
+    """o vitrô de grade branca: vidro escuro atrás das barras deitadas"""
+    a = vidro(w, h, rnd, base='#1d2428', topo='#63727a', reflexo=0.15)
+    esp = moldura_simples(a, ppm, 0, 0, w, h, '#ecebe6', 0.05)
+    for k in range(1, 6):
+        y = h * k / 6
+        retangulo(a, esp, y - 0.012 * ppm, w - esp, y + 0.012 * ppm, '#e6e5e0')
+    retangulo(a, w / 2 - 1, esp, w / 2 + 1, h - esp, '#d8d7d2', sombra=False)
+    return a
+
+
+def p_jan_verde_grade(w, h, ppm, rnd):
+    """janela de caixilho verde com a grade de barra em pé"""
+    a = vidro(w, h, rnd, base='#1c2327', topo='#5c6b72', reflexo=0.14)
+    moldura_simples(a, ppm, 0, 0, w, h, '#2f6a3c', 0.05)
+    esp = max(2, int(0.05 * ppm))
+    for k in range(1, 6):
+        x = w * k / 6
+        retangulo(a, x - 0.01 * ppm, esp, x + 0.01 * ppm, h - esp, '#264f30')
+    retangulo(a, esp, h / 2 - 0.01 * ppm, w - esp, h / 2 + 0.01 * ppm, '#264f30')
+    return a
+
+
+def p_jan_madeira(w, h, ppm, rnd):
+    """janela de caixilho de madeira escura, seis vidros"""
+    a = vidro(w, h, rnd, base='#20262a', topo='#5a666c', reflexo=0.12)
+    esp = moldura_simples(a, ppm, 0, 0, w, h, '#4a3a2e', 0.06)
+    retangulo(a, w / 2 - esp / 2, 0, w / 2 + esp / 2, h, '#4a3a2e')
+    for k in (1, 2):
+        retangulo(a, 0, h * k / 3 - esp / 3, w, h * k / 3 + esp / 3, '#4a3a2e')
+    return a
+
+
+def p_jan_alu4(w, h, ppm, rnd):
+    """janela de alumínio de quatro vidros"""
+    a = vidro(w, h, rnd, base='#1d2327', topo='#63727b', reflexo=0.16)
+    esp = moldura_simples(a, ppm, 0, 0, w, h * 0.94, '#b9bcbd', 0.04)
+    retangulo(a, w / 2 - esp / 2, 0, w / 2 + esp / 2, h * 0.94, '#b9bcbd')
+    retangulo(a, 0, h * 0.45, w, h * 0.45 + esp, '#b9bcbd')
+    retangulo(a, -2, h * 0.94, w + 2, h, '#9d9a92')
+    return a
+
+
+def p_zinco(w, h, ppm, rnd):
+    """a telha de zinco ondulada, com a ferrugem escorrendo"""
+    a = reboco(w, h, ppm, rnd, '#a9b1b7', grao=0.03, manchas=0.1, lad=True)
+    xs = np.arange(w, dtype=np.float32) / w * 13 * 2 * np.pi
+    a *= (0.82 + 0.22 * np.sin(xs))[None, :, None]
+    fer = escorrido(h, w, rnd, 14, inicio=(0.0, 1.0), comp=(0.2, 0.6), larg=(1, 3), lad=True)
+    aplicar(a, '#7a4a2e', fer * 0.55)
+    aplicar(a, '#8a5a3a', np.clip(fbm(h, w, 0.5 * ppm, rnd, 3, True) * 2 - 0.3, 0, 1) * 0.35)
+    return a
+
+
+def p_portao_vermelho(w, h, ppm, rnd):
+    """o portão de garagem de chapa vermelha de duas folhas, com a
+       bandeira vazada em losango em cima"""
+    a = reboco(w, h, ppm, rnd, '#c64a3c', grao=0.04, manchas=0.12, lad=False, fuligem=4)
+    topo = int(h * 0.2)
+    a[:topo] = cor('#2a2a2a')
+    lw = max(2, int(0.02 * ppm))
+    def losango(d, im):
+        passo = 0.16 * ppm
+        k = -float(topo)
+        while k < w + topo:
+            d.line([(k, 0), (k + topo, topo)], fill=(206, 206, 200), width=lw)
+            d.line([(k + topo, 0), (k, topo)], fill=(206, 206, 200), width=lw)
+            k += passo
+    desenhar(a, losango)
+    moldura(a, 0, 0, w, h, max(3, int(0.04 * ppm)), '#a53a2e')
+    retangulo(a, 0, topo - 3, w, topo + 3, '#a53a2e')
+    retangulo(a, w / 2 - 2, topo, w / 2 + 2, h, '#8e3026', sombra=False)
+    e = escorrido(h, w, rnd, 8, inicio=(0.2, 0.3), comp=(0.3, 0.7), larg=(1, 3), lad=False)
+    return multiplicar(a, 1 - 0.15 * e)
+
+
+def p_tijolo_furos(w, h, ppm, rnd):
+    """a fiada de cima da parede de tijolo, com os furos de ventilação
+       embaixo da laje"""
+    a = tijolos(w, h, ppm, rnd, ['#a55a44', '#9a513c', '#b0624a', '#8f4a36', '#a8604a', '#b56b52'],
+                argamassa='#9e968a', tam=(0.23, 0.075), junta=0.014, var=0.14)
+    n = 9
+    for k in range(n):
+        x = w * (k + 0.5) / n
+        retangulo(a, x - 0.05 * ppm, h * 0.3, x + 0.05 * ppm, h * 0.7, '#1e1a18', sombra=False)
+    return a
+
+
+def p_antena(w, h, ppm, rnd):
+    """a antena parabólica de frente, recortada (alfa): o prato claro
+       com a concha e o braço do receptor. Marca nenhuma."""
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for k in range(10):
+        f = k / 10
+        c = int(222 - 44 * f)
+        d.ellipse([w * (0.04 + 0.2 * f), h * (0.08 + 0.2 * f), w * (0.88 - 0.2 * f), h * (0.92 - 0.2 * f)],
+                  fill=(c, c + 2, c, 255))
+    d.ellipse([w * 0.04, h * 0.08, w * 0.88, h * 0.92], outline=(150, 152, 150, 255), width=max(2, int(0.02 * ppm)))
+    d.line([(w * 0.46, h * 0.5), (w * 0.9, h * 0.62)], fill=(120, 122, 120, 255), width=max(2, int(0.025 * ppm)))
+    d.rectangle([w * 0.86, h * 0.56, w * 0.97, h * 0.7], fill=(90, 92, 90, 255))
+    return np.asarray(im, np.float32) / 255
+
+
+def p_varal(w, h, ppm, rnd):
+    """o varal: o fio e a roupa pendurada, recortado (alfa)"""
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.line([(0, h * 0.06), (w, h * 0.06)], fill=(60, 60, 60, 255), width=2)
+    cores = [(60, 120, 210), (240, 240, 235), (220, 120, 170), (250, 200, 60), (120, 200, 120), (230, 90, 70), (170, 120, 220)]
+    x = w * 0.03
+    while x < w * 0.93:
+        tipo = int(rnd.integers(0, 3))
+        c = cores[int(rnd.integers(0, len(cores)))] + (255,)
+        y0 = h * 0.06
+        if tipo == 0:                                   # a calça
+            cw, ch = w * 0.07, h * 0.8
+            d.polygon([(x, y0), (x + cw, y0), (x + cw, y0 + ch), (x + cw * 0.58, y0 + ch), (x + cw * 0.5, h * 0.35),
+                       (x + cw * 0.42, y0 + ch), (x, y0 + ch)], fill=c)
+        elif tipo == 1:                                 # a camiseta
+            cw, ch = w * 0.09, h * 0.55
+            d.polygon([(x, y0), (x + cw, y0), (x + cw * 1.12, h * 0.22), (x + cw * 0.85, h * 0.27), (x + cw * 0.85, y0 + ch),
+                       (x + cw * 0.15, y0 + ch), (x + cw * 0.15, h * 0.27), (x - cw * 0.12, h * 0.22)], fill=c)
+        else:                                           # o pano
+            cw, ch = w * 0.045, h * 0.36
+            d.rectangle([x, y0, x + cw, y0 + ch], fill=c)
+        d.rectangle([x + cw * 0.3, h * 0.02, x + cw * 0.42, h * 0.11], fill=(230, 200, 60, 255))
+        x += cw + w * rnd.uniform(0.015, 0.04)
+    return np.asarray(im, np.float32) / 255
+
+
+
+def p_tijolo_rosa(w, h, ppm, rnd):
+    """o tijolo rosado claro, de argamassa cinza e um ou outro tijolo
+       faltando (o sobrado das garagens)"""
+    a = tijolos(w, h, ppm, rnd, ['#e3a79a', '#d99a8c', '#eab3a6', '#d4907f', '#e0a090', '#cf8f80'],
+                argamassa='#b4aca3', tam=(0.23, 0.075), junta=0.014, var=0.10)
+    buraco = np.clip(pontos(h, w, (w / ppm) * (h / ppm) * 1.2, 1.5, 3, rnd, True, sinal=1.0), 0, 1)
+    return multiplicar(a, 1 - 0.3 * borrar(buraco, 0.8))
+
 def folha_casas():
     F = Folha('casas')
     F.cel('suja', 2.5, 2.5, 110, p_parede_suja, lad=True)
@@ -2274,6 +2420,14 @@ def folha_casas():
     F.cel('guarda_sol_pb', 2.0, 0.8, 128, p_guarda_sol('#1c1c1e', '#f2f2ef'))
     F.cel('guarda_sol_am', 2.0, 0.8, 128, p_guarda_sol('#f2c41c', '#f6f4ec'))
     F.cel('portao_chapa', 2.4, 2.0, 90, p_portao_chapa)
+    F.cel('jan_grade_branca', 1.2, 0.9, 140, p_jan_grade_branca)
+    F.cel('jan_verde_grade', 0.8, 1.2, 140, p_jan_verde_grade)
+    F.cel('jan_madeira', 1.0, 1.1, 140, p_jan_madeira)
+    F.cel('jan_alu4', 1.2, 1.0, 140, p_jan_alu4)
+    F.cel('zinco', 1.0, 1.8, 100, p_zinco, lad=True)
+    F.cel('portao_vermelho', 2.4, 2.3, 100, p_portao_vermelho)
+    F.cel('tijolo_furos', 2.3, 0.3, 110, p_tijolo_furos, lad=True)
+    F.cel('tijolo_rosa', 2.3, 1.5, 110, p_tijolo_rosa, lad=True)
     return F.montar()
 
 def main():

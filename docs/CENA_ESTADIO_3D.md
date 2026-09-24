@@ -1456,6 +1456,48 @@ trabalho foram tiradas com o plano de corte da câmera logo na frente
 da fachada — no jogo o beco tem 1,6 a 2,2 m, e a casa do outro lado
 fica na frente de quem olha de longe.
 
+### 4.25. A segunda leva da favela: a casa da escada, o sobrado do varal, o das garagens e o do embasamento
+
+Mais quatro referências, pelo mesmo caminho da §4.24: a planta junta
+vizinhas encostadas e o `casas3d.js` desenha o modelo no terreno que
+sobrou. Elas escolhem DEPOIS das nove da primeira leva, no que ficou
+livre (`MODELOS2`, com a distância mínima menor — 5 m de outra casa
+grande, 15 de uma igual), então as nove não saíram do lugar. Coube uma
+de cada; a favela ficou com 229 lotes (216 barracos, idênticos aos de
+antes, e 13 casas grandes). As pixações da favela, somadas as duas
+levas, foram de 112 pra 97 (as cobríveis, de 71 pra 65). A passagem
+continua 100%.
+
+| modelo | o que tem |
+|---|---|
+| escada | a casa de esquina de reboco cru: o muro de tijolo que faz a CURVA na esquina (segmentos com o tijolo correndo contínuo), o portão de grade enferrujada, o quintal de cimento com a bananeira; a escada de laje por fora — o voo com o fundo inclinado à mostra — subindo rente à casa até a varanda de mureta; os dois pilares altos que seguram a varanda e o telhado de fibrocimento; porta escura, vitrô de grade branca, janela verde de grade, a antena e o varal |
+| varal | o sobrado de tijolo em pilar de concreto com a laje do meio saltada 60 cm pra frente (a varandinha sem guarda-corpo), a janela de caixilho de madeira, a porta de chapa marrom, o varal de roupa; embaixo, o muro baixo de reboco (é nele que picham), o portão de grade com o poste amarelo e o toldinho de zinco, e a porta aberta pro corredor branco; em cima, a laje com o ferro de espera e a caixa d'água; e o poste de concreto com as duas cruzetas, a luminária, o transformador e a antena |
+| garagem | a moldura de concreto ocre com os dois portões de garagem vermelhos de bandeira vazada em losango e a entrada funda da esquerda; em cima, o tijolo rosado sem reboco entre pilar de concreto, as duas janelas de alumínio, a antena e a telha de zinco |
+| base | a casa de tijolo sobre o embasamento alto de cimento: a escada maciça da frente subindo pra plataforma da porta, a do lado subindo pro patamar da porta de lado, a janela de cortina, a porta de veneziana, a fiada de furo de ventilação embaixo da laje e a laje saltada em cima |
+
+Três coisas que vieram junto:
+
+1. **O desenho espelhado.** A casa da escada foi desenhada com a
+   esquina à direita, como na foto; quando o terreno tem a esquina do
+   outro lado, ela é montada à parte e os vértices trocam de lado
+   (`espelhado`) — e as paredes que o bairro usa pro decalque também.
+2. **A antena e o varal são recorte**, na folha das grades, como a
+   bananeira; a antena não tem marca.
+3. **O tijolo rosado é outra peça.** Tinta só multiplica: o tijolo da
+   folha multiplicado por qualquer cor fica mais vermelho ou mais
+   escuro, nunca rosa claro. A casa das garagens tem a peça dela.
+
+O decalque segue a casa: a pixação vai no muro (casa da escada e
+sobrado do varal — como a pichação azul da foto), no cimento do
+embasamento, ou no andar de cima e nos portões vermelhos (o das
+garagens).
+
+O que não é fiel: a curva do muro é feita de seis retas; o poste não
+tem fio (não há fio na cidade); a garagem recua 32 cm da divisa pra
+antena não sair do lote; e as escadas desta favela são mais íngremes
+que as da foto (40 a 49°), porque o quintal da casa da escada tem de
+caber em 4,5 a 6 m de fundo.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -1979,10 +2021,10 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões, ruas, avenidas, costa, campos, estádio |
 | `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão |
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa) e a montagem de cada um |
-| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as quatro casas grandes dela (F1, F2, bar, lanchonete), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
+| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas e das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) e escreve o atlas; roda de novo sempre que mudar uma peça |
-| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada e o pé de bananeira incluídos) |
+| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
 | `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |
 | `img/texturas/chao.png` | o atlas de decalques de chão, 8 × 4 células de 192 px (capim, entulho, brita, poça, terra, folha) |

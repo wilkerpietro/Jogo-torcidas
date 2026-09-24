@@ -3614,29 +3614,43 @@ TO.dados.plantaEstadio = (function(){
         { modelo: 'lanche', w: [5.0, 7.4], d: 4.3, n: 2, longe: 22, tipo: 'sobrado', alt: 6.2, parede: 'pintada' },
         { modelo: 'f1',     w: [5.0, 7.6], d: 4.4, n: 4, longe: 15, tipo: 'sobrado', alt: 8.2, parede: 'tijolo' }
       ];
+      /* a segunda leva de referências: a casa da escada de fora com o
+         muro curvo (quer esquina), o sobrado do varal com o poste, o
+         sobrado das duas garagens e a casa de tijolo no embasamento alto */
+      const MODELOS2 = [
+        { modelo: 'escada',  w: [6.4, 8.6], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.1, parede: 'reboco', esquina: true },
+        { modelo: 'varal',   w: [5.0, 7.0], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.2, parede: 'tijolo' },
+        { modelo: 'garagem', w: [6.2, 8.2], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 5.6, parede: 'tijolo' },
+        { modelo: 'base',    w: [6.0, 8.2], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.5, parede: 'tijolo' }
+      ];
       const usadas = new Set(), postas = [];
-      for(const md of MODELOS){
-        md.fila = cands.filter(c => c.W >= md.w[0] && c.W <= md.w[1] && c.D >= md.d)
-          .map(c => ({ c, h: hashPos(md.modelo + ':' + Math.round(c.u0) + ',' + Math.round(c.v0)) }))
-          .sort((a, b) => md.esquina ? ((b.c.pontaU0 || b.c.pontaU1) - (a.c.pontaU0 || a.c.pontaU1)) || a.h - b.h : a.h - b.h);
-        md.postas = 0;
-      }
       /* em RODADAS, uma de cada por vez: a primeira da lista não leva
-         todos os terrenos bons antes da última escolher */
-      for(let rodada = 0; rodada < 8; rodada++){
-        for(const md of MODELOS){
-          if(md.postas >= md.n) continue;
-          for(const { c, h } of md.fila){
-            if(c.casas.some(x => usadas.has(x))) continue;
-            const uc = (c.u0 + c.u1)/2, vc = (c.v0 + c.v1)/2;
-            if(postas.some(p => Math.hypot(p.uc - uc, p.vc - vc) < (p.modelo === md.modelo ? md.longe : 8)*Mt)) continue;
-            for(const x of c.casas) usadas.add(x);
-            postas.push({ c, uc, vc, modelo: md.modelo, md, vf: c.lados[Math.floor(h*1e4) % c.lados.length] });
-            md.postas++;
-            break;
+         todos os terrenos bons antes da última escolher. A segunda leva
+         escolhe no que sobrou da primeira, que assim não mexe. */
+      function escolherEmRodadas(lista){
+        for(const md of lista){
+          md.fila = cands.filter(c => c.W >= md.w[0] && c.W <= md.w[1] && c.D >= md.d)
+            .map(c => ({ c, h: hashPos(md.modelo + ':' + Math.round(c.u0) + ',' + Math.round(c.v0)) }))
+            .sort((a, b) => md.esquina ? ((b.c.pontaU0 || b.c.pontaU1) - (a.c.pontaU0 || a.c.pontaU1)) || a.h - b.h : a.h - b.h);
+          md.postas = 0;
+        }
+        for(let rodada = 0; rodada < 8; rodada++){
+          for(const md of lista){
+            if(md.postas >= md.n) continue;
+            for(const { c, h } of md.fila){
+              if(c.casas.some(x => usadas.has(x))) continue;
+              const uc = (c.u0 + c.u1)/2, vc = (c.v0 + c.v1)/2;
+              if(postas.some(p => Math.hypot(p.uc - uc, p.vc - vc) < (p.modelo === md.modelo ? md.longe : (md.perto || 8))*Mt)) continue;
+              for(const x of c.casas) usadas.add(x);
+              postas.push({ c, uc, vc, modelo: md.modelo, md, vf: c.lados[Math.floor(h*1e4) % c.lados.length] });
+              md.postas++;
+              break;
+            }
           }
         }
       }
+      escolherEmRodadas(MODELOS);
+      escolherEmRodadas(MODELOS2);
       for(const p of postas){
         const { c, md } = p;
         const [cx, cy] = paraMundo(p.uc, p.vc);

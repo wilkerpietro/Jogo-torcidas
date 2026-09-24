@@ -23,9 +23,11 @@
 
    E a casa da FAVELA, da família do T2 e do T1: parede de tijolo, de
    reboco cru ou pintada (a planta diz qual), um a três andares, laje,
-   telha ou fibrocimento. E as quatro CASAS GRANDES da favela, que a
+   telha ou fibrocimento. E as oito CASAS GRANDES da favela, que a
    planta monta juntando vizinhas (`l.modelo`): a de laje com terraço
-   (F1), a casa rosa de quintal e muro (F2), o bar e a lanchonete.
+   (F1), a casa rosa de quintal e muro (F2), o bar, a lanchonete, a
+   casa da escada de fora, o sobrado do varal, o das garagens e o do
+   embasamento.
 
    QUEM VIRA O QUÊ sai da POSIÇÃO do lote, não do `rng()` da planta:
    a cidade continua a mesma casa por casa, só muda a roupa. Galpão,
@@ -95,7 +97,7 @@ function medidas(l) {
 
 /* o recuo da parede da frente de cada casa grande da favela: a da
    lanchonete recua o que o toldinho da porta de enrolar avança */
-const REC_MODELO = { f1: 0.06, f2: 0.04, bar: 0.03, lanche: 0.5 };
+const REC_MODELO = { f1: 0.06, f2: 0.04, bar: 0.03, lanche: 0.5, escada: 0.04, varal: 0.04, garagem: 0.32, base: 0.04 };
 
 export function planoDaCasa(l, K) {
   if (l._plano !== undefined) return l._plano;
@@ -103,7 +105,7 @@ export function planoDaCasa(l, K) {
   if (l.modelo && REC_MODELO[l.modelo] !== undefined) {
     const [W, D] = medidas(l);
     p = { tipo: l.modelo, andares: 2, rec: REC_MODELO[l.modelo], W, D, H: l.alt / M, s: sorteDe(l),
-          semManchas: l.modelo !== 'f2' };
+          semManchas: l.modelo !== 'f2' && l.modelo !== 'varal' };
     l._plano = p;
     return p;
   }
@@ -1044,7 +1046,340 @@ function lanche(B, p, l, conta, G) {
   cadeira(B, ux, uz - 0.58, y2, 'n', VERMELHO_CADEIRA);
 }
 
-const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche };
+/* =======================================================
+   A SEGUNDA LEVA DA FAVELA
+     ESCADA   a casa de esquina de reboco cru: muro de tijolo que faz a
+              curva na esquina, o portão de grade, a escada de laje por
+              fora subindo pra varanda de mureta, o telhado de
+              fibrocimento em pilar alto, a antena e o varal;
+     VARAL    o sobrado de tijolo com a laje saltada na frente, o varal
+              de roupa, o muro baixo de reboco com o portão de grade e o
+              toldinho de zinco, e o poste de concreto com a luminária;
+     GARAGEM  o sobrado das duas garagens: moldura de concreto ocre, os
+              dois portões vermelhos de bandeira vazada, a entrada
+              funda; em cima, tijolo rosado com pilar e telha de zinco;
+     BASE     a casa de tijolo sobre o embasamento alto de cimento, com
+              a escada da frente subindo pra plataforma da porta e a do
+              lado subindo pro patamar, e os furos de ventilação.
+   ======================================================= */
+const OCRE = '#e1a55e', AMARELO_POSTE = '#d9a441';
+
+/* a escada maciça de cimento: ocupa [x0,x1]×[z0,z1] e sobe de y0 a y1
+   no sentido `sobe` ('x+', 'x-', 'z+', 'z-'): o piso e o espelho de
+   cada degrau, os dois lados em dente e o fundo alto */
+function quadroEscada(x0, x1, z0, z1, sobe) {
+  const aoX = sobe[0] === 'x', pos = sobe[1] === '+';
+  const L = aoX ? x1 - x0 : z1 - z0, larg = aoX ? z1 - z0 : x1 - x0;
+  const dS = aoX ? [pos ? 1 : -1, 0, 0] : [0, 0, pos ? 1 : -1], dT = aoX ? [0, 0, 1] : [1, 0, 0];
+  const O = [aoX ? (pos ? x0 : x1) : x0, aoX ? z0 : (pos ? z0 : z1)];
+  const P = (s, t, y) => [O[0] + dS[0] * s + dT[0] * t, y, O[1] + dS[2] * s + dT[2] * t];
+  return { L, larg, dS, dT, P };
+}
+function escadaMacica(B, x0, x1, z0, z1, y0, y1, sobe, k = 'crua') {
+  const { L, larg, dS, dT, P } = quadroEscada(x0, x1, z0, z1, sobe), up = [0, 1, 0];
+  const n = Math.max(3, Math.round((y1 - y0) / 0.18));
+  const l0 = B.plano(P(0, 0, y0), dS, up), l1 = B.plano(P(0, larg, y0), dS, up);
+  for (let i = 0; i < n; i++) {
+    const s0 = L * i / n, s1 = L * (i + 1) / n, ya = y0 + (y1 - y0) * i / n, yb = y0 + (y1 - y0) * (i + 1) / n;
+    B.ladrilhar(B.plano(P(s0, 0, yb), dS, dT), B.ret(0, s1 - s0, 0, larg), k);
+    B.ladrilhar(B.plano(P(s0, 0, ya), dT, up), B.ret(0, larg, 0, yb - ya), k, { escuro: 0.9 });
+    B.ladrilhar(l0, B.ret(s0, s1, 0, yb - y0), k, { escuro: 0.85 });
+    B.ladrilhar(l1, B.ret(s0, s1, 0, yb - y0), k, { escuro: 0.85 });
+  }
+  B.ladrilhar(B.plano(P(L, 0, y0), dT, up), B.ret(0, larg, 0, y1 - y0), k, { escuro: 0.8 });
+}
+/* a escada de laje: o voo de concreto com o fundo inclinado à mostra —
+   o degrau em cima, a laje embaixo e o lado em trapézio — do chão (no
+   pé) até `yAlto` (no alto) */
+function escadaVoo(B, x0, x1, z0, z1, yAlto, sobe, k = 'crua') {
+  const { L, larg, dS, dT, P } = quadroEscada(x0, x1, z0, z1, sobe), up = [0, 1, 0];
+  const n = Math.max(6, Math.round(yAlto / 0.18)), esp = 0.18;
+  const yU = s => Math.max(0, (yAlto - esp) * s / L);
+  const l0 = B.plano(P(0, 0, 0), dS, up), l1 = B.plano(P(0, larg, 0), dS, up);
+  for (let i = 0; i < n; i++) {
+    const s0 = L * i / n, s1 = L * (i + 1) / n, ya = yAlto * i / n, yb = yAlto * (i + 1) / n;
+    B.ladrilhar(B.plano(P(s0, 0, yb), dS, dT), B.ret(0, s1 - s0, 0, larg), k);
+    B.ladrilhar(B.plano(P(s0, 0, ya), dT, up), B.ret(0, larg, 0, yb - ya), k, { escuro: 0.9 });
+    const lado = [[s0, yU(s0)], [s1, yU(s1)], [s1, yb], [s0, yb]];
+    B.ladrilhar(l0, lado, k, { escuro: 0.85 });
+    B.ladrilhar(l1, lado, k, { escuro: 0.85 });
+  }
+  const H = yAlto - esp, Lf = Math.hypot(L, H);
+  B.ladrilhar(B.plano(P(0, 0, 0), dT, [dS[0] * L / Lf, H / Lf, dS[2] * L / Lf]), B.ret(0, larg, 0, Lf), k, { escuro: 0.72 });
+}
+/* o muro que faz a curva na esquina: a volta em segmentos, face de fora
+   e de dentro com o tijolo correndo contínuo, e a capa em cima */
+function muroCurvo(B, Xc, Zc, r, esp, h, k) {
+  const N = 6, ponto = (rr, t) => [Xc + rr * Math.sin(t), Zc + rr * Math.cos(t)];
+  let acc = 0;
+  for (let i = 0; i < N; i++) {
+    const t0 = Math.PI / 2 * i / N, t1 = Math.PI / 2 * (i + 1) / N;
+    for (const rr of [r + esp / 2, r - esp / 2]) {
+      const [ax, az] = ponto(rr, t0), [bx, bz] = ponto(rr, t1), L = Math.hypot(bx - ax, bz - az);
+      B.ladrilhar(B.plano([ax, 0, az], [(bx - ax) / L, 0, (bz - az) / L], [0, 1, 0]), B.ret(0, L, 0, h), k,
+                  { oa: -acc * (rr / r) });
+      if (rr === r + esp / 2) acc += L;
+    }
+    const q = [ponto(r + esp / 2, t0), ponto(r + esp / 2, t1), ponto(r - esp / 2, t1), ponto(r - esp / 2, t0)];
+    B.tampa(q, h, 'laje_borda');
+  }
+}
+/* a antena parabólica na parede de normal (nx, nz): o prato (recortado,
+   na folha das grades) um palmo pra fora, olhando um pouco pro céu, e o
+   braço que o segura */
+function antena(B, G, x, y, z, nx, nz, d = 0.7, sai = 0.2, inc = 0.35) {
+  const ux = nz, uz = -nx;
+  const cx = x + nx * sai, cz = z + nz * sai;
+  const V = [-nx * Math.sin(inc), Math.cos(inc), -nz * Math.sin(inc)];
+  G.esticar(G.plano([cx - ux * d / 2 - V[0] * d / 2, y - V[1] * d / 2, cz - uz * d / 2 - V[2] * d / 2], [ux, 0, uz], V), 0, d, 0, d, 'antena');
+  B.caixa(Math.min(x, cx) - 0.02, Math.max(x, cx) + 0.02, y - 0.03, y + 0.03, Math.min(z, cz) - 0.02, Math.max(z, cz) + 0.02,
+          { todas: { k: 'laje_borda', tinta: '#9a9c9c' }, base: null });
+}
+/* o varal ao longo de x: o fio e a roupa pendurada (recortada) */
+function varalDe(B, G, x0, x1, y, z) {
+  B.caixa(x0, x1, y - 0.008, y + 0.008, z - 0.008, z + 0.008, { todas: { k: 'laje_borda', tinta: '#3a3a3a' }, base: null });
+  G.ladrilhar(G.plano([x0, y - 0.6, z], [1, 0, 0], [0, 1, 0]), G.ret(0, x1 - x0, 0, 0.6), 'varal');
+}
+/* o poste de concreto: o fuste afunilado, as duas cruzetas com os
+   isoladores, a luminária e o transformador — tudo ao longo de x, que
+   é o que cabe no lote */
+function poste(B, cx, cz, alt) {
+  B.torno(cx, cz, [[0.13, 0], [0.085, alt], [0, alt + 0.02]], 8, 'crua');
+  for (const [y, meia] of [[alt - 0.5, 0.72], [alt - 1.2, 0.62]]) {
+    B.caixa(cx - meia, cx + meia, y, y + 0.1, cz - 0.05, cz + 0.05, { todas: 'laje_borda', base: null });
+    for (let k = 0; k < 4; k++) {
+      const x = cx - meia + 0.1 + k * (2 * meia - 0.2) / 3;
+      B.caixa(x - 0.03, x + 0.03, y + 0.1, y + 0.22, cz - 0.03, cz + 0.03, { todas: { k: 'lisa', tinta: '#f4f4f0' }, base: null });
+    }
+  }
+  const yl = alt - 2.6;
+  B.caixa(cx, cx + 0.95, yl, yl + 0.06, cz - 0.03, cz + 0.03, { todas: { k: 'laje_borda', tinta: '#b8baba' }, base: null });
+  B.caixa(cx + 0.72, cx + 1.25, yl - 0.08, yl + 0.06, cz - 0.12, cz + 0.12, { todas: { k: 'lisa', tinta: '#c8cacb' }, base: null });
+  B.torno(cx - 0.34, cz, [[0.2, alt - 3.4], [0.2, alt - 2.72], [0.1, alt - 2.64], [0, alt - 2.62]], 8, 'crua');
+}
+/* o desenho feito do lado canônico e espelhado em x (a esquina do lado
+   de lá): os vértices trocam de lado, e as paredes que o bairro usa pro
+   decalque também */
+function espelhado(B, G, W, conta, fn) {
+  const B2 = Construtor('casas'), G2 = Construtor('grades'), c2 = contaMuda();
+  fn(B2, G2, c2);
+  for (const [C, Dst] of [[B2, B], [G2, G]]) {
+    for (let i = 0; i < C.pos.length; i += 3) Dst.pos.push(W - C.pos[i], C.pos[i + 1], C.pos[i + 2]);
+    for (const v of C.uv) Dst.uv.push(v);
+    for (const v of C.cor) Dst.cor.push(v);
+  }
+  somar(conta, c2);
+  for (const f of c2.frentes) conta.frentes.push({ x0: W - f.x1, x1: W - f.x0, y0: f.y0, y1: f.y1, z: f.z,
+    vaos: f.vaos.map(v => Object.assign({}, v, { a0: W - v.a1, a1: W - v.a0 })) });
+  for (const o of c2.obst) conta.obst.push(Object.assign({}, o, { a0: W - o.a1, a1: W - o.a0 }));
+}
+
+/* ---------------- A CASA DA ESCADA DE FORA ---------------- */
+function escada(B, p, l, conta, G) {
+  /* o desenho é da esquina à direita, como na foto; com a esquina do
+     outro lado ele sai espelhado */
+  if (l.esquina === 'esq') return espelhado(B, G, p.W, conta, (B2, G2, c2) => escadaDireita(B2, p, l, c2, G2));
+  escadaDireita(B, p, l, conta, G);
+}
+function escadaDireita(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const zm = -p.rec, zmi = zm - 0.14, hm = 1.7, z0 = -D + 0.04;
+  const yd = clamp(D - 3.1, 1.2, 1.8), zc = zmi - yd;           // o quintal da frente e a frente da casa
+  const xs = clamp(W * 0.4, 2.2, 3.4);                           // a varanda, à esquerda
+  const rc = 0.9;                                                // o raio da curva do muro
+  const L = clamp(W - rc - 0.35 - xs, 2.3, 3.4), xb = xs + L;    // a escada: do pé (xb) ao alto (xs)
+  const h1 = 2.8, lj = 0.2, y2 = h1 + lj, h2 = 2.6, topo = y2 + h2;
+  const zv = zm - 0.42;                                          // a beira da varanda
+  /* o muro de tijolo: o trecho da esquerda, o portão de grade, o
+     trecho da direita, a curva e o lado */
+  const gw = 1.9, gx0 = clamp(xb - 1.35, xs + 0.2, W - rc - 0.3 - gw), gx1 = gx0 + gw;
+  const tij = { todas: 'tijolo', topo: 'laje_borda', base: null };
+  const xCurva = W - 0.11 - rc;
+  B.caixa(0.04, gx0 - 0.12, 0, hm, zmi, zm, tij);
+  B.caixa(gx1 + 0.12, xCurva, 0, hm, zmi, zm, tij);
+  for (const x of [gx0 - 0.12, gx1]) B.caixa(x, x + 0.12, 0, 2.0, zmi, zm, { todas: 'crua', base: null });
+  G.ladrilhar(G.plano([gx0, 0, zm - 0.07], [1, 0, 0], [0, 1, 0]), G.ret(0, gw, 0, 1.9), 'ferrugem');
+  muroCurvo(B, xCurva, zm - 0.07 - rc, rc, 0.14, hm, 'tijolo');
+  B.caixa(W - 0.18, W - 0.04, 0, hm, zc, zm - 0.07 - rc, tij);
+  conta.portas++;
+  conta.frentes.push({ x0: 0.04, x1: gx0 - 0.12, y0: 0, y1: hm, z: zm, vaos: [] },
+                     { x0: gx1 + 0.12, x1: xCurva, y0: 0, y1: hm, z: zm, vaos: [] });
+  /* o chão de cimento do quintal e a bananeira no canto da curva */
+  B.tampa([[0.18, zmi], [W - 0.18, zmi], [W - 0.18, zc], [0.18, zc]], 0.03, 'laje');
+  if (W - 0.8 > xb + 0.2) bananeira(G, W - 0.75, (zmi + zc) / 2 - 0.1, 0.03, 2.1, Math.PI / 4);
+  /* a casa: o térreo de reboco cru (a porta e o vitrô de grade debaixo
+     da varanda, a janela verde de grade depois da escada) */
+  const cm = contaMuda();
+  const w = W - 0.08;
+  const vT = [{ a0: 0.4, a1: 1.25, b0: 0, b1: 2.1, k: 'porta_ferro', fundo: 0.07 }];
+  if (xs >= 2.9) vT.push({ a0: 1.55, a1: 2.75, b0: 1.1, b1: 2.0, k: 'jan_grade_branca', fundo: 0.06 });
+  if (w - (xb + 0.2) >= 1.0) vT.push({ a0: xb + 0.25, a1: xb + 1.05, b0: 0.9, b1: 2.1, k: 'jan_verde_grade', fundo: 0.06 });
+  paredes(B, 0.04, W - 0.04, z0, zc, 0, h1, { frente: { k: 'crua', vaos: vT }, dir: { k: 'crua' }, esq: { k: 'crua' },
+          tras: { k: 'crua', vaos: distribuir(w, ['basc'], 0.05) } }, cm);
+  faixa(B, 0.04, W - 0.04, z0, zc, h1, y2, 0.03, 'laje_borda', null);
+  /* o andar de cima: a porta escura e o vitrô dando pra varanda, e a
+     janela verde de grade no pedaço da escada */
+  const vC = [{ a0: 0.35, a1: 1.2, b0: 0, b1: 2.05, k: 'porta_escura', fundo: 0.08 }];
+  if (xs >= 2.9) vC.push({ a0: 1.5, a1: 2.7, b0: 1.0, b1: 1.9, k: 'jan_grade_branca', fundo: 0.06 });
+  for (let x = xs + 0.45; x + 0.8 <= w - 0.25; x += 1.15) vC.push({ a0: x, a1: x + 0.8, b0: 0.8, b1: 2.0, k: 'jan_verde_grade', fundo: 0.06 });
+  paredes(B, 0.04, W - 0.04, z0, zc, y2, topo, { frente: { k: 'crua', vaos: vC }, dir: { k: 'crua' }, esq: { k: 'crua' },
+          tras: { k: 'crua', vaos: distribuir(w, ['basc'], 0.05) } }, cm);
+  somar(conta, cm);
+  /* a varanda: a laje saltada por cima do quintal, a mureta de tijolo e
+     os dois pilares altos da frente, que vão até o telhado */
+  B.caixa(0.04, xs, h1, y2, zc, zv, { todas: 'laje_borda', topo: 'laje', tras: null });
+  B.caixa(0.04, xs, y2, y2 + 1.0, zv - 0.12, zv, tij);
+  B.caixa(0.04, 0.16, y2, y2 + 1.0, zc, zv - 0.12, tij);
+  B.caixa(xs - 0.12, xs, y2, y2 + 1.0, zc + 0.95, zv - 0.12, tij);
+  for (const x of [0.14, xs - 0.1]) B.caixa(x - 0.1, x + 0.1, 0, topo + 0.32, zv - 0.2, zv, { todas: 'crua', base: null });
+  /* a escada de laje, rente à casa, do portão até a varanda */
+  escadaVoo(B, xs, xb, zc + 0.02, zc + 0.92, y2, 'x-');
+  conta.obst.push({ a0: xs, a1: xb, b0: 0, b1: y2 + 0.2 });
+  /* o telhado de fibrocimento: cobre a casa e a varanda, e do lado da
+     escada chega até a beira dela */
+  const yF = topo + 0.34, yT = topo + 0.08, zF = zv + 0.05;
+  const yEm = z => yT + (yF - yT) * (z - z0) / (zF - z0);
+  agua(B, 0.04, xs, z0, yT, zF, yF, 'fibro');
+  agua(B, xs, W - 0.04, z0, yT, zc + 0.98, yEm(zc + 0.98), 'fibro');
+  /* a antena e o varal */
+  if (W - 0.75 > xs + 1.6) antena(B, G, W - 0.7, y2 + 1.65, zc, 0, 1);
+  varalDe(B, G, 0.3, xs - 0.3, topo - 0.1, zv - 0.4);
+}
+
+/* ---------------- O SOBRADO DO VARAL ---------------- */
+function varal(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const zm = -p.rec, zmi = zm - 0.14, hm = 1.1, z0 = -D + 0.04;
+  const yd = clamp(D - 3.5, 0.8, 1.25), zc = zmi - yd;
+  const x0 = 0.04, x1 = W - 0.04, wb = x1 - x0;
+  const h1 = 2.7, lj = 0.2, y2 = h1 + lj, h2 = 2.5, topo = y2 + h2;
+  const gw = 1.0, gx1 = W - 0.25, gx0 = gx1 - gw;
+  /* o muro baixo de reboco encardido (é nele que picham) */
+  B.caixa(0.04, gx0 - 0.1, 0, hm, zmi, zm, { todas: { k: 'suja', tinta: '#dcd8cf' }, topo: { k: 'laje_borda' }, base: null });
+  conta.frentes.push({ x0: 0.04, x1: gx0 - 0.1, y0: 0, y1: hm, z: zm, vaos: [] });
+  /* o portão de grade entre o pilarzinho de cimento e o poste amarelo,
+     com o toldinho de zinco caindo da parede da casa */
+  B.caixa(gx0 - 0.1, gx0, 0, 2.1, zmi, zm, { todas: 'crua', base: null });
+  B.caixa(gx1, gx1 + 0.15, 0, 2.35, zmi, zm, { todas: { k: 'lisa', tinta: AMARELO_POSTE }, base: null });
+  G.ladrilhar(G.plano([gx0, 0, zm - 0.07], [1, 0, 0], [0, 1, 0]), G.ret(0, gw, 0, 2.0), 'ferrugem');
+  agua(B, gx0 - 0.2, gx1 + 0.15, zc, 2.55, zm, 2.3, 'zinco');
+  conta.portas++;
+  B.tampa([[0.18, zmi], [W - 0.18, zmi], [W - 0.18, zc], [0.18, zc]], 0.03, 'laje');
+  /* o térreo de tijolo: a janela de madeira e, atrás do portão, a porta
+     aberta pro corredor branco */
+  const cm = contaMuda();
+  const jan = { a0: wb * 0.16, a1: wb * 0.16 + 1.0, b0: 1.0, b1: 2.1, k: 'jan_madeira', fundo: 0.07 };
+  const aberta = { a0: gx0 - x0 + 0.02, a1: gx0 - x0 + 0.92, b0: 0, b1: 2.15, k: 'lisa', fundo: 0.9, requadro: 'lisa', tinta: '#efeee8' };
+  paredes(B, x0, x1, z0, zc, 0, h1, { frente: { k: 'tijolo', vaos: [jan, aberta] }, dir: { k: 'tijolo' }, esq: { k: 'tijolo' },
+          tras: { k: 'tijolo', vaos: distribuir(wb, ['basc'], 0.05) } }, cm);
+  const meio = x0 + (jan.a1 + aberta.a0) / 2;
+  for (const x of [x0 + 0.11, meio, x1 - 0.11]) { pilar(B, x, zc, 0, h1); pilar(B, x, zc, y2, topo); }
+  /* a laje saltada na frente, sem guarda-corpo: é a varandinha */
+  faixa(B, x0, x1, z0, zc, h1, y2, 0.6, 'laje_borda', null);
+  /* o andar de cima: a janela de madeira e a porta de chapa marrom que
+     dá pra laje saltada */
+  paredes(B, x0, x1, z0, zc, y2, topo, { frente: { k: 'tijolo', vaos: [
+            { a0: wb * 0.12, a1: wb * 0.12 + 1.0, b0: 0.95, b1: 2.05, k: 'jan_madeira', fundo: 0.07 },
+            { a0: wb * 0.64, a1: wb * 0.64 + 0.85, b0: 0, b1: 2.05, k: 'porta_ferro', fundo: 0.07, tinta: '#8a5a44' }] },
+          dir: { k: 'tijolo' }, esq: { k: 'tijolo' }, tras: { k: 'tijolo' } }, cm);
+  somar(conta, cm);
+  /* a laje de cima com o ferro de espera e a caixa d'água */
+  faixa(B, x0, x1, z0, zc, topo, topo + 0.2, 0.05, 'laje_borda', null);
+  tampo(B, x0, x1, z0, zc, topo + 0.2, 'laje');
+  ferros(B, x0, x1, z0, zc, topo + 0.2);
+  caixaDagua(B, x1 - 0.8, z0 + 0.8, topo + 0.2);
+  /* o varal na frente do andar de cima, em cima da laje saltada, e o
+     poste da rua com a antena */
+  varalDe(B, G, x0 + wb * 0.4, x1 - 0.3, y2 + 1.95, zc + 0.35);
+  const pz = zmi - 0.28;
+  poste(B, 0.9, pz, 8.4);
+  antena(B, G, 0.9, 4.4, pz, 0, 1, 0.6);
+}
+
+/* ---------------- O SOBRADO DAS DUAS GARAGENS ---------------- */
+function garagem(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const x0 = 0.04, x1 = W - 0.04, wb = x1 - x0, z1 = -p.rec, z0 = -D + 0.04;
+  const h1 = 2.6, h2 = 2.5, topo = h1 + h2, pl = 0.3;
+  /* a moldura de concreto ocre com os dois portões vermelhos e a
+     entrada funda da esquerda */
+  const gw = clamp((wb - 3 * pl - 1.0) / 2, 1.9, 2.6), ew = wb - 3 * pl - 2 * gw - 0.12;
+  const e0 = pl, e1 = pl + ew, g10 = e1 + 0.12, g11 = g10 + gw, g20 = g11 + pl, g21 = g20 + gw;
+  const vaos = [{ a0: e0, a1: e1, b0: 0, b1: 2.3, k: 'porta_alu', fundo: 0.9, requadro: 'lisa' },
+                { a0: g10, a1: g11, b0: 0, b1: 2.3, k: 'portao_vermelho', fundo: 0.12, requadro: 'crua' },
+                { a0: g20, a1: g21, b0: 0, b1: 2.3, k: 'portao_vermelho', fundo: 0.12, requadro: 'crua' }];
+  B.fachada(B.plano([x0, 0, z1], [1, 0, 0], [0, 1, 0]), wb, h1, 'lisa', vaos, { tinta: OCRE });
+  for (const [a, b] of [[0, pl], [g11, g20], [wb - pl, wb]])
+    B.caixa(x0 + a, x0 + b, 0, 2.3, z1, z1 + 0.05, { todas: { k: 'lisa', tinta: OCRE }, tras: null, base: null });
+  B.caixa(x0, x1, 2.3, h1, z1, z1 + 0.05, { todas: { k: 'lisa', tinta: OCRE }, tras: null });
+  conta.portas += 3;
+  conta.frentes.push({ x0, x1, y0: 0, y1: h1, z: z1 + 0.05,
+                       vaos: vaos.map(v => ({ a0: x0 + v.a0, a1: x0 + v.a1, b0: v.b0, b1: v.b1, k: v.k, fundo: v.fundo + 0.05 })) });
+  paredes(B, x0, x1, z0, z1, 0, h1, { dir: { k: 'crua' }, esq: { k: 'crua' }, tras: { k: 'crua', vaos: distribuir(wb, ['basc'], 0.05) } }, null);
+  /* em cima: o tijolo rosado sem reboco, o pilar de concreto nas quinas
+     e no meio, as duas janelas de alumínio e a antena */
+  const vC = [{ a0: wb * 0.14, a1: wb * 0.14 + 1.2, b0: 0.85, b1: 1.85, k: 'jan_alu4', fundo: 0.06 },
+              { a0: wb * 0.62, a1: wb * 0.62 + 1.2, b0: 0.85, b1: 1.85, k: 'jan_alu4', fundo: 0.06 }];
+  paredes(B, x0, x1, z0, z1, h1, topo, { frente: { k: 'tijolo_rosa', vaos: vC }, dir: { k: 'crua' }, esq: { k: 'crua' },
+          tras: { k: 'tijolo_rosa' } }, conta);
+  for (const x of [x0 + 0.11, x0 + (g11 + g20) / 2, x1 - 0.11]) {
+    pilar(B, x, z1, h1, topo);
+    conta.obst.push({ a0: x - 0.14, a1: x + 0.14, b0: h1, b1: topo });
+  }
+  antena(B, G, x0 + wb * 0.62 - 0.45, h1 + 1.3, z1, 0, 1, 0.62, 0.12, 0.25);
+  conta.obst.push({ a0: x0 + wb * 0.62 - 0.9, a1: x0 + wb * 0.62, b0: h1 + 0.9, b1: h1 + 1.7 });
+  /* o telhado de zinco caindo pro fundo, saindo um palmo na frente */
+  agua(B, x0, x1, z0, topo + 0.05, Math.min(-0.02, z1 + 0.06), topo + 0.28, 'zinco');
+}
+
+/* ---------------- A CASA DO EMBASAMENTO ---------------- */
+function base(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const z1 = -p.rec, z0 = -D + 0.04;
+  const sw = 1.05, bx0 = 0.04 + sw, bx1 = W - 0.04, bw = bx1 - bx0;   // a escada do lado, à esquerda
+  const pd = 1.05, zc = z1 - pd;                                      // a plataforma da porta
+  const yb = 0.95, h1 = 2.6, lj = 0.2, y2 = yb + h1 + lj, h2 = 2.5, topo = y2 + h2;
+  const dd = zc - z0;
+  /* o embasamento de cimento, e a casa em cima dele */
+  B.caixa(bx0, bx1, 0, yb, z0, zc, { todas: 'crua', topo: null, base: null });
+  /* o térreo: a janela de cortina e a porta de veneziana na frente; no
+     lado, a porta do patamar e a janela */
+  const pc = bw - 1.05;
+  const cm = contaMuda();
+  paredes(B, bx0, bx1, z0, zc, yb, yb + h1, {
+    frente: { k: 'tijolo', vaos: [{ a0: bw * 0.16, a1: bw * 0.16 + 1.4, b0: 0.9, b1: 2.1, k: 'jan_cortina', fundo: 0.07 },
+                                  { a0: pc - 0.45, a1: pc + 0.45, b0: 0, b1: 2.1, k: 'porta_vene', fundo: 0.07 }] },
+    esq: { k: 'tijolo', vaos: [{ a0: 0.3, a1: 1.15, b0: 0, b1: 2.1, k: 'porta_vene', fundo: 0.07 }]
+                               .concat(dd >= 2.9 ? [{ a0: dd - 1.25, a1: dd - 0.45, b0: 1.0, b1: 1.9, k: 'jan2', fundo: 0.06 }] : []) },
+    dir: { k: 'tijolo' }, tras: { k: 'tijolo', vaos: distribuir(bw, ['jan2'], 0.06) }
+  }, cm);
+  for (const x of [bx0 + 0.11, bx0 + bw * 0.16 + 1.62, bx1 - 0.11]) pilar(B, x, zc, yb, yb + h1);
+  faixa(B, bx0, bx1, z0, zc, yb + h1, y2, 0.06, 'laje_borda', null);
+  /* o andar de cima, com a fiada de furo de ventilação embaixo da laje */
+  paredes(B, bx0, bx1, z0, zc, y2, topo - 0.3, {
+    frente: { k: 'tijolo', vaos: distribuir(bw, ['jan2', 'jan2'], 0.07) },
+    esq: { k: 'tijolo', vaos: [{ a0: dd / 2 - 0.6, a1: dd / 2 + 0.6, b0: 0.9, b1: 1.95, k: 'jan2', fundo: 0.06 }] },
+    dir: { k: 'tijolo' }, tras: { k: 'tijolo' }
+  }, cm);
+  somar(conta, cm);
+  paredes(B, bx0, bx1, z0, zc, topo - 0.3, topo, { frente: { k: 'tijolo_furos' }, esq: { k: 'tijolo_furos' },
+          dir: { k: 'tijolo_furos' }, tras: { k: 'tijolo_furos' } }, null);
+  for (const x of [bx0 + 0.11, bx1 - 0.11]) pilar(B, x, zc, y2, topo);
+  faixa(B, bx0, bx1, z0, zc, topo, topo + 0.2, 0.1, 'laje_borda', null);
+  tampo(B, bx0, bx1, z0, zc, topo + 0.2, 'laje');
+  /* a plataforma da porta da frente e a escada subindo pra ela */
+  const px1 = bx1 - 0.3, px0 = px1 - 1.4;
+  B.caixa(px0, px1, 0, yb, zc, z1, { todas: 'crua', base: null });
+  escadaMacica(B, px0 - 1.3, px0, zc + 0.02, z1, 0, yb, 'x+');
+  /* o patamar da porta do lado e a escada do lado subindo pra ele */
+  const zp1 = z0 + 1.35;
+  B.caixa(0.04, bx0, 0, yb, z0 + 0.05, zp1, { todas: 'crua', base: null });
+  escadaMacica(B, 0.04, bx0, zp1, Math.min(zp1 + 1.4, zc), 0, yb, 'z-');
+  /* o decalque vai no cimento do embasamento, na frente, fora da escada */
+  conta.frentes.push({ x0: bx0, x1: px0 - 1.3, y0: 0, y1: yb, z: zc, vaos: [] });
+}
+
+const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base };
 
 /* =======================================================
    A MONTAGEM DE UMA CASA, direto no acumulador do mundo
@@ -1109,7 +1444,9 @@ export function lugarDoDecalque(l, p, larg, alt, o = {}) {
   for (const S of p.frentes) {
     sup.push({ x0: S.x0, x1: S.x1, y0: S.y0, y1: S.y1, z: S.z, m: folga, obst: S.vaos.concat(p.obst) });
     if (o.portas) for (const v of S.vaos)
-      if (v.k === 'enrolar') sup.push({ x0: v.a0, x1: v.a1, y0: v.b0, y1: v.b1, z: S.z - v.fundo, m: 0.1, obst: [] });
+      if (v.k === 'enrolar' || v.k === 'portao_vermelho')
+        sup.push({ x0: v.a0, x1: v.a1, y0: v.b0 + (v.k === 'portao_vermelho' ? 0.1 : 0), y1: v.k === 'portao_vermelho' ? v.b1 * 0.78 : v.b1,
+                   z: S.z - v.fundo, m: 0.1, obst: [] });
   }
   for (let w = larg / M; w >= wMin - 1e-6; w *= 0.86) {
     const h = w * prop;
