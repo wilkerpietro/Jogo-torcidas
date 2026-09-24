@@ -1947,6 +1947,25 @@ Fora isso, o que muda é o que a página ENTREGA pro motor:
     terceira vez que `ang: 0` ser falso em JavaScript morde este
     arquivo** — vale ler qualquer `if(o.ang)` novo com desconfiança.
 
+15. **Degrau de quintal na porta das casas da avenida.** O quintal do
+    quarteirão cortado é um retângulo reto (`q.quintal`, laje de 8, que
+    fica 34 cm acima da calçada) e só perdia a banda da avenida com a
+    calçada. As casas giradas ficavam em cima dele, com a frente 2 atrás
+    da calçada: nessa lasca a laje aparecia como um degrau bem na porta —
+    foi visto no quarteirão 3,3, na frente do portão do galpão de
+    136 × 62. E não era só a lasca: a casa de modelo recua a fachada (até
+    0,6 m, na loja da marquise) e assenta no chão do lote, a 1,6, então o
+    quintal saía também debaixo da marquise e no vão do portão. Eram 21
+    casas giradas com quintal na frente, em nove quarteirões, e o quintal
+    corria por baixo de 36. Agora o lote girado segue a regra do reto —
+    **quintal não entra em lote**: numa passada no fim da planta, sem
+    sortear nada, cada pedaço é cortado pela linha da frente da casa que
+    dá pra ele e perde o retângulo dela, com 1 a mais de cada lado
+    (metade do vão entre vizinhas). Sai `q.quintal.pecas`, que o
+    `bairro3d.js` desenha e o `noLote` da câmera consulta. `LOTES`, a
+    máscara e o resto da cidade saem idênticos: o quintal não entra na
+    máscara, o miolo já é maciço.
+
 ## 8. A caminhada do líder
 
 Medida com o roteiro `sim3.js`: waypoints em rua e corredor, a tecla certa

@@ -3741,7 +3741,8 @@ TO.dados.plantaEstadio = (function(){
     const q = celulaEm(x, y);
     if(!q || q.tipo !== 'quadra') return null;
     for(const l of q.lotes) if(dentroLote(x, y, l)) return l;
-    if(q.quintal && dentroRet(x, y, q.quintal) && !naAvenida(x, y)) return q.quintal;
+    /* o quintal é o que se desenha: os pedaços, não o retângulo */
+    if(q.quintal && dentroRet(x, y, q.quintal) && q.quintal.pecas.some(p => dentroPol(x, y, p))) return q.quintal;
     return null;
   }
 
@@ -4068,6 +4069,67 @@ TO.dados.plantaEstadio = (function(){
     for(const v of q.equip.volumes)
       if(x >= v.x0 && x < v.x1 && z >= v.y0 && z < v.y1 && y >= v.base && y < v.alt) return true;
     return false;
+  }
+
+  /* =========================================================
+     O QUINTAL NÃO ENTRA NA CASA DA AVENIDA
+     ---------------------------------------------------------
+     O quintal é o retângulo reto do meio do quarteirão, e dele só se
+     tirava a banda da avenida com a calçada. As casas giradas ficavam
+     EM CIMA dele: a frente delas fica 2 atrás da calçada (o `off` das
+     casas da avenida), e nessa lasca a laje de 8 (0,4 m) saía na
+     calçada como um degrau bem na porta — no portão do galpão também.
+     Por dentro do lote era a mesma coisa, só que escondida: a casa de
+     modelo recua a fachada (até 0,6 m, na loja da marquise) e assenta
+     no chão do lote, a 1,6, então o quintal aparecia debaixo da
+     marquise e no fundo do vão do portão.
+
+     A regra do lote reto passa a valer pro girado: QUINTAL NÃO ENTRA
+     EM LOTE. Cada pedaço é cortado pela linha da frente da casa girada
+     que dá pra ele (a lasca, a fila inteira, com o vão entre duas
+     casas), e depois perde o retângulo da casa, com 1 a mais de cada
+     lado — metade do vão de 2 entre vizinhas, que senão ficava como
+     um dedo de quintal entre as duas. O que sobra é convexo, em
+     pedaços, que é o que a `laje` sabe desenhar.
+
+     Vem por último, depois do marco (que ainda mexe no retângulo), e
+     não sorteia nada: o quintal é só desenho — a máscara não o lê, o
+     miolo do quarteirão já é maciço. O retângulo fica, pra quem
+     pergunta rápido "está no quintal?" antes de testar os pedaços. */
+  for(const q of QUADRAS){
+    if(!q.quintal) continue;
+    let pecas = pedacosSemAvenida(q.quintal, CALC);
+    /* `frente: 'av'` e não `if(l.ang)`: ângulo zero é falso */
+    for(const l of q.lotes){
+      if(l.frente !== 'av') continue;
+      const c = Math.cos(l.ang), s = Math.sin(l.ang);
+      /* u corre ao longo da frente; v aponta pra avenida */
+      const vx = -s*l.vf, vy = c*l.vf;
+      const u0 = l.cx*c + l.cy*s, v0 = l.cx*vx + l.cy*vy;
+      const linhaDaFrente = [vx, vy, v0 + l.h/2];
+      /* o retângulo que sai, como n·p <= d: a casa e a frente dela até
+         a calçada, que é aonde o pedaço chega */
+      const lados = [[c, s, u0 + l.w/2 + 1], [-c, -s, -(u0 - l.w/2 - 1)],
+                     [vx, vy, v0 + l.h/2 + 2 + CALC], [-vx, -vy, -(v0 - l.h/2)]];
+      const novas = [];
+      for(const p of pecas){
+        let toca = p;
+        for(const [nx, ny, d] of lados) if((toca = cortarPor(toca, nx, ny, d)).length < 3) break;
+        if(toca.length < 3 || areaPol(toca) < 1){ novas.push(p); continue; }
+        /* o pedaço é do lado desta casa: a linha da frente vale pra ele
+           inteiro, e o que fica fora de cada lado do retângulo é um
+           pedaço convexo novo */
+        let resto = cortarPor(p, ...linhaDaFrente);
+        for(const [nx, ny, d] of lados){
+          if(resto.length < 3) break;
+          const fora = cortarPor(resto, -nx, -ny, -d);
+          if(fora.length >= 3 && areaPol(fora) >= 1) novas.push(fora);
+          resto = cortarPor(resto, nx, ny, d);
+        }
+      }
+      pecas = novas;
+    }
+    q.quintal.pecas = pecas;
   }
 
   const CIDADE = { PX, MAPA, VISTA, VW, VH, VX0, VY0, pxm, pxX, pxY, RUA, CALC, TORCIDAS,

@@ -1398,7 +1398,10 @@ export function montarBairro(P) {
        de verdade), como a calçada; os equipamentos antigos continuam
        com o piso pintado deles */
     if (q.equip) for (const p of semAsAvenidas(q.equip.area, K.CALC)) laje(T, p, 0, 1.65, q.equip.chao, q.equip.pisoPBR ? TCHAO : undefined);
-    if (q.quintal) for (const p of semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
+    /* o quintal já vem recortado da planta: sem a avenida e sem as
+       casas giradas, que ficavam em cima dele (a planta velha no cache
+       do navegador não traz os pedaços: sai o recorte antigo) */
+    if (q.quintal) for (const p of q.quintal.pecas || semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
     /* os puxadinhos do fundo do quintal */
     for (const f of q.fundos || []) {
       caixa(T, f.x0, f.x1, 0, f.alt, f.y0, f.y1, f.cor);
