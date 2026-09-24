@@ -2368,6 +2368,125 @@ def p_tijolo_rosa(w, h, ppm, rnd):
     buraco = np.clip(pontos(h, w, (w / ppm) * (h / ppm) * 1.2, 1.5, 3, rnd, True, sinal=1.0), 0, 1)
     return multiplicar(a, 1 - 0.3 * borrar(buraco, 0.8))
 
+
+# =========================================================
+#   9. O GALPÃO E O PRÉDIO COMUM
+#   O bloco de cimento aparente, o vitrô alto de ferro, a veneziana
+#   do oitão, o portão de correr, os avisos pintados na platibanda, o
+#   tijolo de vidro da escada do prédio e o fundo da sacada embutida.
+# =========================================================
+def p_bloco(w, h, ppm, rnd):
+    """o bloco de cimento aparente (39 × 19 cm), cada um num tom, com a
+       junta rebaixada — ladrilhável"""
+    a = reboco(w, h, ppm, rnd, '#aeada7', grao=0.07, manchas=0.12, lad=True, fuligem=10)
+    nx, ny = 5, 6
+    bw, bh = w / nx, h / ny
+    jt = max(1, int(0.011 * ppm))
+    for j in range(ny):
+        y0, y1 = int(j * bh), int((j + 1) * bh)
+        desl = bw / 2 if j % 2 else 0
+        for i in range(nx + 1):
+            xa = i * bw + desl - bw
+            tom = 0.9 + 0.14 * rnd.random()
+            for x in range(int(xa), int(xa + bw)):
+                a[y0:y1, x % w] *= tom
+            xj = int(i * bw + desl) % w
+            a[y0:y1, xj:xj + jt] *= 0.7
+        a[y0:y0 + jt, :] *= 0.7
+    return a
+
+
+def p_tijolo_vidro(w, h, ppm, rnd):
+    """o tijolo de vidro da escada do prédio: o bloco translúcido
+       esverdeado, com o brilho no meio, e a junta de cimento"""
+    a = np.zeros((h, w, 3), np.float32)
+    n = 4
+    for i in range(n):
+        for j in range(n):
+            x0, x1 = int(i * w / n), int((i + 1) * w / n)
+            y0, y1 = int(j * h / n), int((j + 1) * h / n)
+            bw, bh = x1 - x0, y1 - y0
+            yy, xx = np.mgrid[0:bh, 0:bw].astype(np.float32)
+            r = np.hypot((xx - bw / 2) / bw, (yy - bh / 2) / bh)
+            brilho = 0.7 + 0.55 * np.clip(1 - r * 2.2, 0, 1)
+            a[y0:y1, x0:x1] = cor('#9cc3bf')[None, None, :] * brilho[..., None] * (0.92 + 0.12 * rnd.random())
+    jt = max(1, int(0.012 * ppm))
+    for k in range(n):
+        a[:, int(k * w / n):int(k * w / n) + jt] = cor('#c9c5bc')
+        a[int(k * h / n):int(k * h / n) + jt, :] = cor('#c9c5bc')
+    return a
+
+
+def p_vitro_alto(w, h, ppm, rnd):
+    """o vitrô basculante de ferro do alto da parede do galpão: muitos
+       vidrinhos, uns abertos"""
+    a = vidro(w, h, rnd, base='#2a3236', topo='#7d8e96', reflexo=0.2)
+    esp = max(2, int(0.03 * ppm))
+    for j in range(3):
+        y0, y1 = int(j * h / 3), int((j + 1) * h / 3)
+        if rnd.random() < 0.5:
+            a[y0:y1] = a[y0:y1] * 0.55 + cor('#1a1f22') * 0.45        # a fileira aberta, mais escura
+    for i in range(7):
+        x = int(i * (w - esp) / 6)
+        a[:, x:x + esp] = cor('#3e4447')
+    for j in range(4):
+        y = int(j * (h - esp) / 3)
+        a[y:y + esp, :] = cor('#3e4447')
+    return a
+
+
+def p_veneziana_ar(w, h, ppm, rnd):
+    """a veneziana de chapa do oitão do galpão, que deixa o ar passar"""
+    a = reboco(w, h, ppm, rnd, '#8d9295', grao=0.03, manchas=0.1, lad=False)
+    passo = max(3, int(0.07 * ppm))
+    for y in range(h):
+        a[y] *= 0.55 + 0.55 * ((y % passo) / passo)
+    moldura_simples(a, ppm, 0, 0, w, h, '#6c7174', 0.04)
+    return a
+
+
+def p_portao_galpao(w, h, ppm, rnd):
+    """o portão de correr de chapa do galpão, pintado de azul-acinzentado,
+       com a nervura, a portinhola de pedestre e a ferrugem no pé"""
+    a = reboco(w, h, ppm, rnd, '#5f7c93', grao=0.04, manchas=0.14, lad=False, fuligem=6)
+    passo, e1, e2 = max(4, int(0.2 * ppm)), max(2, int(0.02 * ppm)), max(3, int(0.035 * ppm))
+    for x in range(0, w, passo):
+        a[:, x:x + e1] *= 0.78
+        a[:, x + e1:x + e2] *= 1.08
+    moldura(a, 0, 0, w, h, max(3, int(0.05 * ppm)), '#4d6679')
+    retangulo(a, w / 2 - 2, 0, w / 2 + 2, h, '#3f5566', sombra=False)
+    px0, px1, py0 = w * 0.6, w * 0.88, h * 0.34
+    moldura(a, px0, py0, px1, h - max(3, int(0.05 * ppm)), max(2, int(0.02 * ppm)), '#465e70')
+    retangulo(a, px1 - 0.08 * ppm, h * 0.64, px1 - 0.05 * ppm, h * 0.68, '#222222', sombra=False)
+    aplicar(a, '#7a4a2e', escorrido(h, w, rnd, 14, inicio=(0.6, 0.95), comp=(0.1, 0.3), larg=(1, 3), lad=False) * 0.5)
+    return multiplicar(a, pe_de_parede(h, w, h * 0.1, 0.3))
+
+
+def p_aviso(txt, fundo='#f1efe8', tinta=(40, 40, 40)):
+    """o aviso pintado direto na platibanda do galpão"""
+    def f(w, h, ppm, rnd):
+        a = reboco(w, h, ppm, rnd, fundo, grao=0.05, manchas=0.15, lad=False, fuligem=4)
+        def t(d, im):
+            d.text((w / 2, h * 0.53), txt, fill=tinta, anchor='mm', font=caber(d, txt, w * 0.88, h * 0.68))
+        desenhar(a, t)
+        return multiplicar(a, 1 - 0.2 * escorrido(h, w, rnd, 10, inicio=(0.0, 0.2), comp=(0.3, 0.9), larg=(1, 3), lad=False))
+    return f
+
+
+def p_sacada_fundo(w, h, ppm, rnd):
+    """o fundo da sacada embutida do prédio: a parede clara (a tinta do
+       prédio pinta ela) com a porta de vidro de correr e a cortina"""
+    a = reboco(w, h, ppm, rnd, '#f1f0eb', grao=0.03, manchas=0.06, lad=False)
+    px0, px1, py0 = w * 0.18, w * 0.82, h * 0.1
+    v = vidro(int(px1 - px0), int(h - py0), rnd, base='#20272b', topo='#62727a', reflexo=0.18)
+    colar(a, v, px0, py0)
+    cortina(a, px0 + 4, px0 + (px1 - px0) * 0.42, py0 + 4, h - 2, c='#e6dfcf', dobras=5, rnd=rnd, luz=0.7)
+    esp = max(2, int(0.04 * ppm))
+    moldura(a, px0, py0, px1, h, esp, '#c9ccce')
+    retangulo(a, (px0 + px1) / 2 - esp / 2, py0, (px0 + px1) / 2 + esp / 2, h, '#c9ccce')
+    return a
+
+
 def folha_casas():
     F = Folha('casas')
     F.cel('suja', 2.5, 2.5, 110, p_parede_suja, lad=True)
@@ -2428,6 +2547,18 @@ def folha_casas():
     F.cel('portao_vermelho', 2.4, 2.3, 100, p_portao_vermelho)
     F.cel('tijolo_furos', 2.3, 0.3, 110, p_tijolo_furos, lad=True)
     F.cel('tijolo_rosa', 2.3, 1.5, 110, p_tijolo_rosa, lad=True)
+    # o galpão e o prédio comum
+    F.cel('bloco', 2.0, 1.2, 110, p_bloco, lad=True)
+    F.cel('tijolo_vidro', 0.8, 0.8, 120, p_tijolo_vidro, lad=True)
+    F.cel('vitro_alto', 1.6, 0.7, 120, p_vitro_alto)
+    F.cel('veneziana_ar', 1.4, 0.7, 110, p_veneziana_ar)
+    F.cel('portao_galpao', 3.2, 3.2, 80, p_portao_galpao)
+    F.cel('aviso_deposito', 3.0, 0.7, 110, p_aviso('DEPÓSITO'))
+    F.cel('aviso_oficina', 3.0, 0.7, 110, p_aviso('OFICINA', '#f3d34a', (30, 30, 30)))
+    F.cel('aviso_aluga', 2.4, 0.7, 110, p_aviso('ALUGA-SE', '#f1efe8', (190, 30, 30)))
+    F.cel('sacada_fundo', 1.8, 2.4, 100, p_sacada_fundo)
+    F.cel('ar', 0.85, 0.6, 200, p_ar)
+    F.cel('ar_lado', 0.3, 0.6, 120, p_ar_lado)
     return F.montar()
 
 def main():

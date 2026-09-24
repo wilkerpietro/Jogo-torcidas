@@ -1498,6 +1498,65 @@ antena não sair do lote; e as escadas desta favela são mais íngremes
 que as da foto (40 a 49°), porque o quintal da casa da escada tem de
 caber em 4,5 a 6 m de fundo.
 
+### 4.26. O galpão e o prédio comum da cidade
+
+O pedido foi modelar o galpão e o prédio "do mesmo jeito" das casas
+novas: porta, janela, portão de verdade em vez da caixa cinza com
+retângulo escuro. Desta vez não veio foto — os quatro modelos saíram do
+repertório de periferia de cidade brasileira, com as mesmas peças e o
+mesmo acabamento das casas (§4.23 a §4.25). São 67 lotes, todos fora da
+favela: 59 galpões e 8 prédios. Os 19 galpões DA favela continuam sendo
+o barraco da §4.24 — lá o galpão é barraco maior, não depósito.
+
+| modelo | onde | o que tem |
+|---|---|---|
+| G1 | 48 galpões (11 com letreiro) | o galpão de platibanda: bloco de cimento aparente (55%) ou reboco pintado, a frente alta escondendo o telhado de fibrocimento de duas águas (10°); o portão de correr de chapa com a porta de pedestre desenhada nele, a porta de ferro ao lado com o vitrô em cima; o aviso pintado na platibanda em metade dos sem letreiro (DEPÓSITO, OFICINA, ALUGA-SE); a fileira de vitrô alto nos dois lados e no oitão do fundo; o rufo e o cano de descer água na quina. No comércio: uma ou duas portas de enrolar (às vezes meio aberta, com a prateleira à mostra), a porta de ferro e o letreiro na platibanda |
+| G2 | 11 galpões | o galpão de telhado em arco: a abóbada de zinco (a onda corre na volta do arco, como na telha curvada de verdade), o oitão em arco com a veneziana de ventilação, o portão de correr, a porta e o vitrô, a calha dos dois lados. Só sai em galpão sem letreiro de pelo menos 4,2 × 3 m |
+| P1 | 4 prédios | o predinho de reboco pintado (oito cores), 3 ou 4 andares: a faixa da escada em tijolo de vidro com a porta do prédio embaixo, a sacada embutida com gradil e corrimão onde o apartamento tem 3,2 m, a janela com o ar-condicionado, o friso branco em cada laje, a platibanda pintada e a casinha da caixa d'água. Embaixo, a loja, a garagem de portão vermelho ou o vitrô de grade. Só a frente é pintada; lado e fundo são reboco cru |
+| P2 | 4 prédios | o prédio de tijolo que foi subindo: tijolo aparente entre pilar e laje de concreto, janela de alumínio de quatro folhas ou de madeira; embaixo, a porta de ferro e a janela de grade, ou a loja; em cima, a laje do último andar virou terraço de mureta de tijolo com o puxadinho no fundo (porta, janela, ferro de espera e caixa d'água). No lote raso, o último andar é inteiro, com os pilares subindo e a caixa na laje |
+
+Quem vira o quê sai da posição do lote (`sorteDe`), como nas casas: a
+planta não mudou, e as outras 463 casas saem idênticas — vértice por
+vértice, cor e contagem de porta e janela; só o UV andou, porque a folha
+das casas cresceu de 2048 × 1264 pra 2048 × 1424 com as peças novas
+(bloco, tijolo de vidro, vitrô alto, veneziana, portão de galpão, os três
+avisos, o fundo da sacada e o ar-condicionado).
+
+Duas coisas que vieram junto:
+
+1. **O térreo do comércio é mais alto** (3,35 m no P1, 3,55 no P2). Com
+   o térreo igual aos outros andares, a porta de enrolar comia a parede
+   e o letreiro ("GÁS E ÁGUA") não tinha onde ir.
+2. **Onde não há reboco, não há reboco caído.** O prédio de tijolo e o
+   galpão de bloco não ganham a falha de reboco do bairro — a pixação,
+   sim.
+
+Medido: 146.858 triângulos de casa (eram 117.164; +443 por prédio ou
+galpão, em média), 467 mil na cena com o boneco, as mesmas 193 chamadas
+de desenho (as casas entram na malha do pedaço). Nenhuma passando da
+divisa, nenhum NaN, nenhuma sem porta, todo letreiro achou lugar. A
+passagem continua 100% (as mesmas 8 células de antes), auditoria e
+varredura limpas. Os quatro modelos também foram forçados nos 67 lotes,
+com e sem letreiro: nada quebra, nada passa da divisa, e o letreiro
+sempre cabe — é o único teste do P1 com loja, que a planta de hoje não
+sorteia.
+
+O que não é bom:
+
+- **Sete fachadas sem vidro.** Dois galpões de 1,4 m (a sobra do lado de
+  um marco) são porta, parede e laje. Três lojas-galpão de 2,1 a 2,7 m
+  são só a porta de enrolar e o letreiro — a portinha de comércio
+  existe assim, mas não tem janela nenhuma.
+- **A loja meio aberta mostra prateleira colorida**, que é a peça da
+  loja do T3; num "MATERIAIS DE CONSTRUÇÃO" ela lê como livraria.
+- **Dois galpões vizinhos podem sair com a mesma cor e o mesmo portão**
+  — o sorteio é por posição, não olha o vizinho.
+- **Um degrau na calçada, que já existia:** uma sobra da laje de quintal
+  de um quarteirão cortado pela avenida fica entre a frente de um galpão
+  girado e a calçada, e aparece como um degrau de uns 30 cm na frente do
+  portão. É da planta (`q.quintal`), estava lá antes com a caixa velha,
+  e não foi mexido.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -2017,13 +2076,13 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 |---|---|
 | `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, a cidade (grade, costa, avenidas, campos, mato, lotes, sedes), máscara, spawns, setores, PM, grades, filas, gatilho |
 | `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera (linha de vista, modo leve), ligação com a simulação e com a gente |
-| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados; casa, sobrado e barraco vêm do `casas3d.js`), calçadas, árvores, carros, postes, campos, moitas |
+| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados; casa, sobrado, barraco, galpão e prédio vêm do `casas3d.js`, só o muro é caixa), calçadas, árvores, carros, postes, campos, moitas |
 | `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões, ruas, avenidas, costa, campos, estádio |
 | `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão |
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa) e a montagem de cada um |
-| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
+| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco) e o prédio comum (P1 de reboco, P2 de tijolo), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
-| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas e das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) e escreve o atlas; roda de novo sempre que mudar uma peça |
+| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) e do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) e escreve o atlas; roda de novo sempre que mudar uma peça |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
 | `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |
