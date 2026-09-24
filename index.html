@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torcida Organizada</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<link rel="stylesheet" href="css/cenas.css">
+<link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+
+<!-- ================= JOGO ================= -->
+<div id="jogo" class="oculto">
+
+  <!-- O CABEÇALHO ENTROU NA BARRA DO FEED.
+       Havia aqui uma faixa de 56px com a marca, a data, o nome da
+       torcida e três indicadores. Ela virou HUD do mapa e, com o mapa
+       descontinuado, virou HUD do feed: a data e o ≫ no canto de cima à
+       direita, o escudo, o nome e os números na faixa da torcida, e a
+       marca "Torcida Organizada" fora — o nome da torcida na periferia
+       já diz onde o jogador está. Quem monta tudo isso é `pintarFeed`.
+       O ☰ e a gaveta saíram junto: a coluna de ícones é a navegação
+       inteira, em qualquer largura. -->
+  <div id="painelBarra">
+    <span id="painelTitulo">—</span>
+    <button id="painelFechar" aria-label="Fechar">Fechar &times;</button>
+  </div>
+  <div id="avisoGirar">gire o aparelho pra ver a briga inteira</div>
+
+  <nav id="lateral"></nav>
+
+  <main id="tela">
+    <!-- O FEED É A TELA PRINCIPAL. Ele vem primeiro porque é o que o
+         jogo é: uma lista de mensagens que chega sozinha. As outras
+         páginas são painéis de gestão que abrem por cima dele; a página
+         do mapa saiu com o mapa. -->
+    <section class="pagina" data-pag="feed"></section>
+    <section class="pagina" data-pag="inicio"></section>
+    <section class="pagina" data-pag="torcida"></section>
+    <section class="pagina" data-pag="financeiro"></section>
+    <section class="pagina" data-pag="gestao"></section>
+    <section class="pagina" data-pag="calendario"></section>
+    <section class="pagina" data-pag="competicoes"></section>
+    <section class="pagina" data-pag="diplomacia"></section>
+    <section class="pagina" data-pag="whatsapp"></section>
+    <section class="pagina" data-pag="noticias"></section>
+    <section class="pagina" data-pag="conquistas"></section>
+    <section class="pagina" data-pag="opcoes"></section>
+  </main>
+
+  <footer id="ticker">
+    <div id="tickerRot">Ticker de notícias</div>
+    <div id="tickerCaixa"><div id="tickerFita"></div></div>
+  </footer>
+</div>
+
+<!-- ================= MENU PRINCIPAL ================= -->
+<div id="telaMenu" class="tela-cheia">
+  <div id="menuFundo"></div>
+  <div id="menuConteudo">
+    <div id="menuTitulo">
+      <div class="estrelas">★ ★ ★</div>
+      <h1>Torcida<em>Organizada</em></h1>
+      <div class="desde">— desde 1997 —</div>
+    </div>
+    <div id="menuLista">
+      <button id="btContinuar">Continuar</button>
+      <button id="btNovoJogo" class="destaque">Novo jogo</button>
+      <button id="btCarregar">Carregar jogo</button>
+      <button disabled>Configurações</button>
+      <button disabled>Conquistas</button>
+      <button disabled>Créditos</button>
+    </div>
+    <div id="menuVersao">v0.3.0 · vertical slice</div>
+  </div>
+</div>
+
+<!-- ================= SELEÇÃO DE TORCIDA ================= -->
+<div id="telaSelecao" class="tela-cheia oculto">
+  <div class="moldura">
+    <header><h2>Seleção de torcida</h2><span id="subSelecao"></span></header>
+    <!-- DOIS PASSOS: escolher o nome, e só depois ler a ficha. Ler a
+         ficha é a decisão; escolher o nome é o começo dela. -->
+    <div>
+      <div id="passo1Sel">
+        <div class="subabas" id="abasSelecao"></div>
+        <div class="cartao">
+          <h2>Torcidas <span class="conta" id="contaTorcidas"></span></h2>
+          <div id="listaTorcidas"></div>
+        </div>
+      </div>
+      <div id="passo2Sel" class="oculto">
+        <div class="cartao">
+          <div class="corpo" id="fichaTorcida"></div>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <button class="bt" id="btVoltarMenu">Voltar</button>
+      <button class="bt destaque" id="btAvancarSelecao">Avançar</button>
+      <button class="bt destaque oculto" id="btSelecionarTorcida">Selecionar torcida</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ================= ESCALAÇÃO ================= -->
+<div id="telaEscalacao" class="tela-cheia oculto">
+  <div class="moldura">
+    <header><h2>Dia de jogo</h2><span id="subEscalacao"></span></header>
+    <div id="corpoEscalacao"></div>
+    <footer>
+      <button class="bt" id="btCancelarEscalacao">Ficar em casa</button>
+      <button class="bt destaque" id="btConfirmarEscalacao">Sair pro estádio</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ================= DIA DE JOGO ================= -->
+<div id="telaDiaJogo" class="tela-cheia oculto">
+  <div id="djGrade">
+    <div id="djPalco">
+      <canvas id="djPrincipal" width="1140" height="820"></canvas>
+      <div class="hud" id="djRelogio">18:00</div>
+      <button class="hud" id="djVelocidade" title="Velocidade da cena">1×</button>
+      <!-- a PM numa linha só: duas barras empilhadas com rótulo em caixa
+           alta era muita tela pra informação que muda devagar. A de
+           pressão só acende quando há pressão. -->
+      <div class="hud" id="djAlerta">
+        <span class="rot">PM</span>
+        <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
+        <div class="barra pressao"><i id="djBarraPressao" style="width:0%"></i></div>
+        <div id="djCarga"></div>
+      </div>
+      <div class="hud" id="djPlacar"></div>
+      <div class="hud" id="djAviso"></div>
+      <!-- os comandos ficam sobre o palco: a cena é a tela inteira -->
+      <div class="hud" id="djComandos">
+        <div id="djFormacoes"></div>
+        <div class="dj-botoes">
+          <button class="acao-btn" id="djBtPedra">Pedra <b>Q</b></button>
+          <button class="acao-btn" id="djBtBomba">Bomba <b>E</b> · <span id="djQtdBomba">0</span></button>
+          <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
+          <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
+        </div>
+      </div>
+      <!-- djLocal, djLog e djSliders saíram daqui: eram `hidden` e o
+           `atualizarHUD` continuava escrevendo neles todo quadro.
+           Continuam existindo na bancada (arredores.html), que é onde
+           servem pra alguma coisa. -->
+    </div>
+  </div>
+</div>
+
+<!-- ================= RELATÓRIO ================= -->
+<div id="telaRelatorio" class="tela-cheia oculto">
+  <div class="moldura">
+    <header><h2>Fim da noite</h2><span id="subRelatorio"></span></header>
+    <div id="corpoRelatorio"></div>
+    <footer><button class="bt destaque" id="btFecharRelatorio">Voltar pra sede</button></footer>
+  </div>
+</div>
+
+<input type="file" id="arquivoSave" accept=".json" hidden>
+<div id="notificacoes"></div>
+
+<!-- núcleo (cria o namespace TO, tem que vir antes dos dados) -->
+<script src="js/nucleo.js"></script>
+
+<!-- dados -->
+<script src="dados/nomes.js"></script>
+<script src="dados/cidades.js"></script>
+<script src="dados/times.js"></script>
+<script src="dados/torcidas.js"></script>
+<script src="dados/estadios.js"></script>
+<script src="dados/cidade_mapa.js"></script>
+<script src="dados/cidade_mapa_sao_paulo.js"></script>
+<script src="dados/cidade_mapa_belo_horizonte.js"></script>
+<script src="dados/diplomacia.js"></script>
+<script src="dados/cena_arredores.js"></script>
+<script src="dados/cenas_foto.js"></script>
+<script src="dados/cenas_editadas.js"></script>
+  <script src="dados/cenas.js"></script>
+
+<!-- gestão -->
+<script src="js/mundo/mundo.js"></script>
+<script src="js/mundo/competicoes.js"></script>
+<script src="js/mundo/tensao.js"></script>
+<script src="js/mundo/mapa.js"></script>
+  <script src="js/mundo/mapa_gerado.js"></script>
+<script src="js/mundo/praca.js"></script>
+<script src="js/gestao/membros.js"></script>
+<script src="js/gestao/torcedores.js"></script>
+<script src="js/gestao/financeiro.js"></script>
+<script src="js/gestao/patrimonio.js"></script>
+<script src="js/gestao/acoes.js"></script>
+<script src="js/gestao/planejamento.js"></script>
+<script src="js/estado.js"></script>
+<!-- o feed lê tudo que está acima dele: calendário, tensão, rua,
+     membros, patrimônio e planejamento. Ele não simula nada. -->
+<script src="js/mundo/feed.js"></script>
+
+<!-- dia de jogo -->
+<script src="js/diajogo/cenario.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+<script src="js/diajogo/ponte.js"></script>
+
+<!-- interface -->
+<script src="js/ui/icones.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

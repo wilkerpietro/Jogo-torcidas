@@ -1,0 +1,165 @@
+/* =========================================================
+   CENAS — dia de jogo (canvas) e editor de cena
+   ========================================================= */
+
+#djGrade{display:grid;grid-template-columns:1fr 300px;gap:12px;
+  width:100%;max-width:1460px;margin:0 auto;padding:12px}
+@media(max-width:1100px){#djGrade{grid-template-columns:1fr}}
+
+#djPalco{position:relative;line-height:0}
+#djPrincipal{display:block;width:100%;height:auto;background:#16150f;
+  border:1px solid #45443f;cursor:crosshair}
+
+/* ---------- mini-mapa ---------- */
+#djCaixaMini{position:absolute;right:10px;bottom:10px;width:182px;
+  border:1px solid #55534d;background:#0e0e0de6;cursor:pointer;
+  transition:border-color .15s,width .18s}
+#djCaixaMini:hover{border-color:var(--ouro);width:300px}
+#djMini{display:block;width:100%;height:auto;background:#22231f}
+#djMiniRot{position:absolute;top:0;left:0;right:0;
+  font-family:var(--mono);font-size:8px;letter-spacing:.1em;
+  color:var(--texto);background:#0e0e0dcc;padding:2px 4px;text-transform:uppercase;
+  display:flex;justify-content:space-between;pointer-events:none}
+#djMiniRot b{color:var(--ouro)}
+#djMiniAviso{position:absolute;left:0;right:0;bottom:0;background:#c0392bdd;color:#fff;
+  font-family:var(--mono);font-size:8px;padding:2px 4px;line-height:1.25;
+  text-align:center;pointer-events:none;opacity:0;transition:opacity .25s}
+#djMiniAviso.on{opacity:1}
+
+/* ---------- HUD ---------- */
+.hud{position:absolute;pointer-events:none;font-family:var(--mono)}
+#djRelogio{top:9px;left:50%;transform:translateX(-50%);font-size:27px;font-weight:600;
+  background:#0e0e0dcc;border:1px solid #45443f;padding:2px 14px 4px}
+#djSubrelogio{top:50px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--fraco);
+  text-shadow:0 1px 4px #000;white-space:nowrap}
+/* A PM NUMA LINHA SÓ.
+   Eram duas barras empilhadas, cada uma com um rótulo em caixa alta —
+   quase cem pixels de altura no canto da tela pra dois números que
+   mudam devagar. Agora é uma faixa: a sigla, a barra da atenção
+   policial e, colada nela, a fita fina da pressão, que só acende
+   quando existe pressão. */
+#djAlerta{top:9px;left:11px;width:150px;display:flex;align-items:center;gap:6px;
+  flex-wrap:wrap}
+#djAlerta .rot{font-size:9px;letter-spacing:.13em;color:var(--pm)}
+#djAlerta .barra{height:5px;background:#00000077;border:1px solid #2f5c44;
+  position:relative;flex:1 1 60px}
+#djAlerta .barra i{position:absolute;inset:0 auto 0 0;background:var(--pm);transition:width .3s}
+#djAlerta .barra.pressao{flex-basis:100%;border-color:#6b3a32;height:3px;
+  opacity:0;transition:opacity .3s}
+#djAlerta .barra.pressao i{background:#c0392b}
+
+/* o 1×/2× fica ao lado do relógio, e mostra o estado de agora — botão
+   que anuncia o que vai virar é a fonte clássica de clique errado */
+#djVelocidade{position:absolute;top:12px;left:calc(50% + 52px);
+  font-family:var(--mono);font-size:12px;padding:2px 8px;
+  background:#00000099;border:1px solid #55534d;color:var(--texto);
+  border-radius:3px;cursor:pointer;line-height:1.5}
+#djVelocidade:hover{border-color:var(--ouro);color:var(--ouro)}
+#djVelocidade.rapido{border-color:var(--ouro);color:var(--ouro)}
+#djCarga{font-size:10px;letter-spacing:.08em;color:#5fa87d;margin-top:5px;min-height:12px}
+#djCarga.quente{color:var(--ouro)}
+#djPlacar{top:9px;right:11px;text-align:right;font-size:11px;line-height:1.55;
+  text-shadow:0 1px 4px #000}
+#djPlacar b{font-family:var(--titulo);font-size:14px;letter-spacing:.07em}
+#djAviso{top:40%;left:0;right:0;text-align:center;font-family:var(--titulo);
+  font-size:34px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  text-shadow:0 3px 14px #000;opacity:0;transition:opacity .3s}
+#djDica{bottom:8px;left:12px;font-size:11px;color:var(--fraco);
+  text-shadow:0 1px 4px #000;max-width:700px}
+#djDica kbd{font-family:var(--mono);background:#00000099;border:1px solid #55534d;
+  padding:1px 5px;color:var(--texto)}
+
+/* ---------- botões da cena ---------- */
+#djFormacoes{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}
+.form-btn{flex:1;min-width:76px;background:#252522;border:1px solid #3d3d39;color:var(--texto);
+  font-family:var(--titulo);font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;padding:7px 3px 5px;cursor:pointer}
+.form-btn:hover{background:#2e2e2a}
+.form-btn.on{background:var(--rubro);border-color:var(--rubro)}
+.form-btn small{display:block;font-family:var(--mono);font-size:8px;color:var(--fraco);margin-top:2px}
+.form-btn.on small{color:#00000099}
+
+.acao-btn{width:100%;background:#252522;border:1px solid #3d3d39;color:var(--texto);
+  font-family:var(--titulo);font-size:12.5px;letter-spacing:.07em;
+  text-transform:uppercase;padding:8px 5px;cursor:pointer;margin-bottom:5px}
+.acao-btn:hover:not(:disabled){background:#2e2e2a}
+.acao-btn:disabled{opacity:.35;cursor:default}
+.acao-btn b{color:var(--ouro);font-family:var(--mono);font-size:10.5px}
+.acao-btn.entrar{border-color:var(--ouro);color:var(--ouro)}
+.acao-btn.entrar:hover:not(:disabled){background:var(--ouro);color:#151514}
+
+#djLog{height:118px;overflow-y:auto;font-family:var(--mono);
+  font-size:10px;line-height:1.5;color:var(--fraco)}
+#djLog div{padding:1px 0;border-bottom:1px solid var(--sulco)}
+#djLog .r{color:#d9705f}
+#djLog .a{color:#7098d9}
+#djLog .p{color:var(--ouro)}
+#djLog .pm{color:#5fa87d}
+
+.slider{margin-bottom:7px}
+.slider label{display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:9.5px;color:var(--fraco);margin-bottom:2px}
+.slider label b{color:var(--texto)}
+.slider input[type=range]{width:100%;accent-color:var(--rubro);height:3px}
+
+/* =========================================================
+   EDITOR DE CENA
+   ========================================================= */
+#editorBarra{
+  position:fixed;left:0;right:0;top:0;z-index:70;
+  background:#0e0e0df2;border-bottom:1px solid var(--ouro);
+  display:flex;align-items:center;gap:14px;padding:7px 14px;
+  font-family:var(--mono);font-size:11px;color:var(--texto);
+}
+#editorBarra b{color:var(--ouro);letter-spacing:.1em}
+#editorBarra .grupo{display:flex;align-items:center;gap:6px}
+#editorBarra button{
+  background:#252522;border:1px solid #3d3d39;color:var(--texto);
+  font-family:var(--mono);font-size:10.5px;padding:4px 9px;cursor:pointer;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+#editorBarra button:hover{background:#2e2e2a}
+#editorBarra button.on{background:var(--ouro);border-color:var(--ouro);color:#151514}
+#editorBarra .dica{color:var(--fraco);margin-left:auto;text-align:right;line-height:1.4}
+
+#editorSaida{
+  position:fixed;inset:6% 8%;z-index:80;background:#0e0e0dfa;
+  border:1px solid var(--ouro);display:flex;flex-direction:column;padding:12px;gap:9px;
+}
+#editorSaida textarea{
+  flex:1;background:#141412;color:#cfcabd;border:1px solid var(--linha);
+  font-family:var(--mono);font-size:10.5px;line-height:1.45;padding:9px;resize:none;
+}
+#editorSaida .linha{display:flex;gap:8px;align-items:center}
+#editorSaida .linha span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);margin-right:auto}
+
+#alvoSolta{
+  position:fixed;inset:0;z-index:90;background:#0c0c0bdd;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--titulo);font-size:30px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ouro);border:3px dashed var(--ouro);
+  pointer-events:none;
+}
+
+/* =========================================================
+   O PALCO EM POP-UP
+   A cena é a tela: nada de cartão de log, de calibragem nem
+   de painel lateral. Os comandos ficam sobre o próprio palco.
+   ========================================================= */
+#telaDiaJogo{display:flex; align-items:center; justify-content:center;
+  background:rgba(6,6,7,.92); padding:18px}
+#djGrade{display:block; max-width:min(96vw, 1180px); max-height:94vh}
+#djPalco{
+  border:1px solid var(--fio, #383838);
+  box-shadow:0 24px 70px rgba(0,0,0,.7);
+  max-width:100%;
+}
+#djPalco canvas{max-width:100%; height:auto; display:block}
+#djComandos{
+  left:50%; transform:translateX(-50%); bottom:12px; right:auto; top:auto;
+  display:flex; flex-direction:column; gap:7px; align-items:center;
+  background:rgba(12,12,14,.82); border:1px solid rgba(255,255,255,.10);
+  padding:8px 10px; max-width:calc(100% - 24px);
+}
+#djComandos .dj-botoes{display:flex; gap:6px; flex-wrap:wrap; justify-content:center}
+#djComandos #djFormacoes{display:flex; gap:5px; flex-wrap:wrap; justify-content:center}

@@ -1,0 +1,1173 @@
+/* =========================================================
+   PAINÉIS — cartões, sub-abas, tabelas e listas
+   Vocabulário visual dos mockups: cartão com faixa de título,
+   sub-aba ativa em vermelho, número com barrinha ao lado.
+   ========================================================= */
+
+/* ---------- cartão ---------- */
+.cartao{
+  background:var(--painel);
+  border:1px solid var(--linha);
+  margin-bottom:11px;
+  display:flex;flex-direction:column;
+}
+.cartao>h2{
+  background:var(--painel-alto);
+  border-bottom:1px solid var(--linha);
+  padding:8px 12px;
+  font-family:var(--titulo);font-size:12px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:#cfcfcf;
+  display:flex;align-items:center;gap:8px;
+}
+.cartao>h2 .conta{
+  margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--fraco);
+  letter-spacing:.04em;text-transform:none;
+}
+.cartao>.corpo{padding:11px 12px}
+.cartao>.rodape{
+  border-top:1px solid var(--linha);padding:8px 12px;
+  display:flex;gap:8px;justify-content:flex-end;
+}
+
+.tag{
+  font-family:var(--mono);font-size:9px;letter-spacing:.05em;
+  background:#2a2a2a;border:1px solid var(--linha);color:var(--texto);
+  padding:1px 6px;text-transform:none;
+}
+
+/* ---------- grades de layout ---------- */
+.colunas{display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:start}
+.colunas-2{display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:start}
+.colunas-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;align-items:start}
+.principal-lateral{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:11px;align-items:start}
+.lista-detalhe{display:grid;grid-template-columns:230px minmax(0,1fr);gap:11px;align-items:start}
+@media(max-width:1080px){
+  .colunas,.colunas-2,.colunas-3,.principal-lateral,.lista-detalhe{grid-template-columns:1fr}
+}
+
+/* ---------- abas grandes (competições e calendário) ---------- */
+.abas-grandes{
+  display:flex;background:var(--fundo);border-bottom:1px solid var(--linha);
+  margin-bottom:13px;
+}
+.abas-grandes button{
+  flex:1;background:transparent;border:0;border-bottom:3px solid transparent;
+  padding:17px 12px;cursor:pointer;
+  font-family:var(--titulo);font-size:13.5px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;color:#8a8a8a;line-height:1.25;
+}
+.abas-grandes button:hover{color:#d0d0d0;background:#141414}
+.abas-grandes button.on{
+  color:#fff;background:#1a1a1a;border-bottom-color:var(--rubro-vivo);
+}
+.abas-grandes button:disabled{opacity:.35;cursor:default}
+.abas-grandes button:disabled:hover{background:transparent;color:#8a8a8a}
+
+/* ---------- competições ---------- */
+.comp-duas{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:13px;align-items:start}
+@media(max-width:1200px){ .comp-duas{grid-template-columns:1fr} }
+
+.quadro{background:var(--painel);border:1px solid var(--linha)}
+.quadro>header{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-bottom:1px solid var(--linha);
+}
+.quadro>header h2{
+  font-family:var(--titulo);font-size:13px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;color:#dcdcdc;
+}
+.quadro>header .conta{font-size:11.5px;color:var(--fraco)}
+.rolo{max-height:560px;overflow-y:auto}
+.rolo::-webkit-scrollbar{width:9px}
+.rolo::-webkit-scrollbar-track{background:#151515}
+.rolo::-webkit-scrollbar-thumb{background:#3a3a3a}
+
+/* classificação no formato do mockup */
+table.liga{width:100%;border-collapse:collapse}
+table.liga th{
+  background:#151515;color:var(--fraco);
+  font-family:var(--titulo);font-size:11px;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;text-align:center;padding:9px 4px;
+  border-bottom:1px solid var(--linha);position:sticky;top:0;z-index:2;
+}
+table.liga th.time{text-align:left;padding-left:8px}
+table.liga td{
+  padding:9px 4px;text-align:center;border-bottom:1px solid #1e1e1e;
+  font-family:var(--mono);font-size:12px;font-weight:600;
+}
+table.liga td.pos{width:34px;color:var(--fraco);font-size:11.5px}
+table.liga td.time{
+  text-align:left;padding-left:8px;font-family:var(--corpo);font-size:12.5px;
+  font-weight:600;color:#e6e6e6;white-space:nowrap;
+}
+table.liga td.time i{
+  width:11px;height:11px;display:inline-block;margin-right:8px;vertical-align:-1px;
+  border:1px solid rgba(255,255,255,.22);
+}
+table.liga tbody tr:hover td{background:#1b1b1b}
+table.liga tr.meu td{background:#2b1414}
+table.liga tr.meu td.pos{
+  box-shadow:inset 3px 0 0 var(--rubro-vivo);color:var(--rubro-vivo);
+}
+table.liga tr.sobe td.pos{color:var(--verde-vivo)}
+table.liga tr.cai  td.pos{color:var(--vermelho)}
+
+/* navegação de rodada: ‹ RODADA 4 DE 38 › */
+header.nav-rodada{justify-content:space-between}
+header.nav-rodada h2{
+  flex:1;text-align:center;display:flex;align-items:baseline;justify-content:center;gap:9px;
+}
+header.nav-rodada h2 .conta{
+  font-family:var(--mono);font-size:11px;color:var(--fraco);letter-spacing:.08em;
+  text-transform:none;
+}
+.nav-rodada button{
+  background:#1e1e1e;border:1px solid var(--linha);color:#cfcfcf;
+  width:30px;height:30px;cursor:pointer;font-size:14px;line-height:1;
+}
+.nav-rodada button:hover:not(:disabled){background:#2a2a2a;color:#fff}
+.nav-rodada button:disabled{opacity:.3;cursor:default}
+
+.jogo{padding:9px 14px;border-bottom:1px solid #1e1e1e}
+.jogo .quando{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  color:var(--ouro);margin-bottom:5px;
+}
+.jogo .duelo{
+  display:grid;grid-template-columns:1fr 26px 1fr;align-items:center;gap:8px;
+  font-size:12.5px;font-weight:600;
+}
+.jogo .duelo .casa{text-align:right}
+.jogo .duelo .x{text-align:center;color:var(--apagado);font-family:var(--mono);font-size:11px}
+.jogo .duelo i{
+  width:11px;height:11px;display:inline-block;vertical-align:-1px;
+  border:1px solid rgba(255,255,255,.22);
+}
+.jogo .duelo .casa i{margin-left:7px}
+.jogo .duelo .fora i{margin-right:7px}
+.jogo .placar{
+  font-family:var(--mono);font-size:13px;color:#fff;text-align:center;
+}
+.jogo.meu{background:#2b1414;box-shadow:inset 3px 0 0 var(--rubro-vivo)}
+.jogo.feito .duelo{color:#cdcdcd}
+
+.filtros-linha{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
+.filtros-linha button{
+  background:var(--painel);border:1px solid var(--linha);color:var(--fraco);
+  padding:6px 11px;cursor:pointer;font-size:11.5px;display:flex;gap:7px;align-items:center;
+}
+.filtros-linha button:hover{background:#1f1f1f;color:var(--texto)}
+.filtros-linha button.on{background:var(--rubro);border-color:var(--rubro);color:#fff}
+.filtros-linha button.minha{border-color:var(--rubro-vivo)}
+.filtros-linha button .conta{font-family:var(--mono);font-size:9.5px;opacity:.7}
+
+table.tabela-liga{font-size:11.5px}
+table.tabela-liga td{padding:4px 6px;font-family:var(--mono);text-align:right}
+table.tabela-liga th{padding:4px 6px;text-align:right;font-size:9.5px}
+table.tabela-liga th:nth-child(2),table.tabela-liga td.clube{text-align:left}
+table.tabela-liga td.pos,table.tabela-liga th.pos{width:22px;text-align:center;color:var(--fraco)}
+table.tabela-liga td.clube{
+  font-family:var(--corpo);display:flex;align-items:center;gap:6px;border-bottom:0;
+}
+table.tabela-liga td.clube i{width:3px;height:13px;display:block;flex:none}
+table.tabela-liga td.p{color:#fff;font-weight:600}
+table.tabela-liga tr.passa td.pos{color:var(--verde-vivo)}
+table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
+
+.campeao{display:flex;align-items:center;gap:11px;padding:6px 0}
+.campeao svg{width:26px;height:26px;color:var(--ouro)}
+.campeao b{font-family:var(--titulo);font-size:17px;letter-spacing:.08em;text-transform:uppercase}
+.campeao small{display:block;font-family:var(--mono);font-size:10px;color:var(--fraco)}
+
+.fase-rot{
+  font-family:var(--titulo);font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fraco);padding:8px 0 3px;
+}
+.jogo-chave{
+  display:grid;grid-template-columns:1fr 62px 1fr auto;align-items:center;gap:8px;
+  padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12px;
+}
+.jogo-chave b{font-family:var(--mono);text-align:center}
+.jogo-chave .b{text-align:right}
+.jogo-chave .venceu{color:#fff;font-weight:600}
+.jogo-chave em{font-family:var(--mono);font-size:9px;color:var(--fraco);font-style:normal}
+.jogo-chave.meu{background:var(--rubro-fundo)}
+.sub-chave{font-family:var(--mono);font-size:9.5px;color:var(--ouro);
+  padding:3px 0 6px;text-align:center}
+
+/* ---------- calendário mensal ---------- */
+.mes-cab{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid var(--linha);
+}
+.mes-cab .titulo{
+  font-family:var(--titulo);font-size:15px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;
+}
+.mes-cab .titulo small{
+  font-family:var(--mono);font-size:11px;color:var(--fraco);
+  letter-spacing:.1em;margin-left:7px;
+}
+.mes-cab button{
+  background:#1e1e1e;border:1px solid var(--linha);color:#cfcfcf;
+  width:36px;height:32px;cursor:pointer;font-size:15px;line-height:1;
+}
+.mes-cab button:hover{background:#2a2a2a;color:#fff}
+
+.mes{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid var(--linha)}
+.mes .cab{
+  background:#151515;border-right:1px solid var(--linha);
+  border-bottom:1px solid var(--linha);
+  padding:9px 4px;text-align:center;
+  font-family:var(--titulo);font-size:11px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--fraco);
+}
+.mes .dia{
+  min-height:96px;border-right:1px solid var(--linha);border-bottom:1px solid var(--linha);
+  padding:7px 8px;display:flex;flex-direction:column;gap:3px;
+  background:var(--painel);
+}
+.mes .dia .n{font-family:var(--mono);font-size:12.5px;color:#cfcfcf}
+.mes .dia.fora-do-mes{background:#101010}
+.mes .dia.fora-do-mes .n{color:#3d3d3d}
+.mes .dia.passou{background:#131313}
+.mes .dia.passou .n{color:var(--apagado)}
+.mes .dia.hoje{border:1px solid var(--rubro-vivo);background:#1d1212}
+.mes .dia.hoje .n{color:var(--rubro-vivo);font-weight:600}
+.mes .dia.jogo{background:#241414}
+.mes .dia.jogo .n{color:#e8b0b0}
+.mes .dia .rot{
+  font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;
+}
+.mes .dia .rot i{width:9px;height:9px;display:block;flex:none;border:1px solid rgba(255,255,255,.2)}
+.mes .dia .rot svg{width:15px;height:15px;flex:none}
+.mes .dia .sub{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+.mes .dia.caravana{
+  background:
+    repeating-linear-gradient(135deg, #1b1a16 0 7px, #151511 7px 14px);
+  border-color:#5a4a1e;
+}
+.mes .dia.caravana .n{color:var(--ouro)}
+.mes .dia.caravana .rot{color:var(--ouro);letter-spacing:.08em}
+.mes .dia .acao{
+  font-size:10.5px;color:#9fb8a5;display:flex;align-items:flex-start;gap:5px;
+  line-height:1.3;
+}
+.mes .dia .acao svg{width:11px;height:11px;flex:none;margin-top:1px}
+.mes .dia.fora-do-mes .acao{color:#5d6f62}
+
+/* ---------- rotina semanal ---------- */
+.recado{
+  border:1px solid var(--linha);border-left:3px solid var(--rubro-vivo);
+  background:var(--painel);padding:13px 15px;margin-bottom:13px;font-size:12.5px;
+  line-height:1.6;
+}
+.recado b{color:var(--rubro-vivo);font-weight:600}
+.recado small{display:block;color:var(--fraco);font-size:11.5px;margin-top:4px}
+.linha-rotina{
+  display:grid;grid-template-columns:170px minmax(0,1fr);align-items:center;gap:14px;
+  background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--rubro);
+  padding:12px 15px;margin-bottom:7px;
+}
+.linha-rotina.hoje{border-left-color:var(--rubro-vivo);background:#1d1414}
+.linha-rotina>span{
+  font-family:var(--titulo);font-size:13px;font-weight:600;
+  letter-spacing:.17em;text-transform:uppercase;color:#dcdcdc;
+}
+select.campo{
+  width:100%;background:#141414;border:1px solid var(--linha);color:var(--texto);
+  padding:10px 12px;font-family:var(--corpo);font-size:12.5px;cursor:pointer;
+}
+select.campo:focus{outline:0;border-color:var(--rubro-vivo)}
+
+/* ---------- ideologia ---------- */
+/* Os três seletores e a chave não tinham estilo NENHUM — nem `.pol-grupo`
+   nem `.ass-politicas` existiam aqui. O bloco funcionava e parecia
+   rascunho, e o `select` pelado é o que ficou branco no branco. */
+.ass-politicas{
+  background:var(--painel);border:1px solid var(--linha);padding:14px 16px;
+}
+.pol-grupo{margin-bottom:12px}
+.pol-grupo > b{
+  display:block;font-family:var(--titulo);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fraco);margin-bottom:6px;
+}
+.pol-rodape{
+  display:flex;justify-content:flex-end;
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--linha);
+}
+
+/* ---------- agenda do time ---------- */
+.escolha-time{
+  display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:18px;align-items:center;
+  background:var(--painel);border:1px solid var(--linha);padding:14px 16px;margin-bottom:13px;
+}
+.escolha-time .rot{
+  font-family:var(--titulo);font-size:11px;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--fraco);margin-bottom:7px;
+}
+.escolha-time .quem{display:flex;align-items:center;gap:10px}
+.escolha-time .quem i{width:14px;height:14px;display:block;border:1px solid rgba(255,255,255,.22)}
+.escolha-time .quem b{font-family:var(--titulo);font-size:17px;letter-spacing:.06em}
+.escolha-time .quem small{font-family:var(--mono);font-size:11px;color:var(--fraco)}
+
+table.agenda{width:100%;border-collapse:collapse}
+table.agenda th{
+  background:#151515;color:var(--fraco);text-align:left;
+  font-family:var(--titulo);font-size:11px;font-weight:600;letter-spacing:.15em;
+  text-transform:uppercase;padding:11px 14px;border-bottom:1px solid var(--linha);
+}
+table.agenda td{padding:10px 14px;border-bottom:1px solid #1e1e1e;font-size:12.5px}
+table.agenda tr:hover td{background:#1b1b1b}
+table.agenda tr.meu td{background:#2b1414}
+table.agenda .data b{font-family:var(--mono);font-size:13px;display:block}
+table.agenda .data small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+table.agenda .hora{font-family:var(--mono);font-size:12px;color:#cfcfcf}
+table.agenda .comp b{display:block;font-weight:600}
+table.agenda .comp small{color:var(--fraco);font-size:11px}
+table.agenda .local{
+  font-family:var(--titulo);font-size:12px;letter-spacing:.13em;text-transform:uppercase;
+}
+table.agenda .local.casa{color:var(--verde-vivo)}
+table.agenda .local.fora{color:var(--ouro)}
+table.agenda .adv{display:flex;align-items:center;gap:8px;font-weight:600}
+table.agenda .adv i{width:11px;height:11px;display:block;border:1px solid rgba(255,255,255,.22)}
+table.agenda .placar{font-family:var(--mono);font-size:13px;text-align:center}
+
+/* ---------- calendário: grade por semana (visão do ano) ---------- */
+.grade-semanas{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:5px}
+.cel-semana{
+  border:1px solid var(--linha);background:var(--painel-alto);padding:6px 7px;
+  display:flex;flex-direction:column;gap:2px;min-height:62px;
+}
+.cel-semana .s{
+  font-family:var(--mono);font-size:9px;color:var(--fraco);
+  display:flex;justify-content:space-between;
+}
+.cel-semana .s i{font-style:normal;opacity:.7}
+.cel-semana .adv{
+  font-family:var(--titulo);font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+}
+.cel-semana .res{font-family:var(--mono);font-size:12px;color:var(--fraco)}
+.cel-semana .res.ganhou{color:var(--verde-vivo)}
+.cel-semana .res.perdeu{color:var(--vermelho)}
+.cel-semana .cp{font-size:8.5px;color:var(--apagado);text-transform:uppercase;letter-spacing:.06em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cel-semana.folga{opacity:.45}
+.cel-semana.folga .adv{font-size:11px;color:var(--fraco)}
+.cel-semana.passou{opacity:.75}
+.cel-semana.agora{border-color:var(--rubro-vivo);background:#241717;opacity:1}
+
+/* ---------- sub-abas ---------- */
+.subabas{display:flex;gap:1px;background:var(--linha);border:1px solid var(--linha);margin-bottom:11px}
+.subabas button{
+  flex:1;background:var(--painel);border:0;padding:9px 10px;cursor:pointer;
+  font-family:var(--titulo);font-size:12.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fraco);
+}
+.subabas button:hover{background:#202020;color:var(--texto)}
+.subabas button.on{background:var(--rubro);color:#fff}
+.subabas button:disabled{opacity:.35;cursor:default}
+.subabas button:disabled:hover{background:var(--painel);color:var(--fraco)}
+
+/* ---------- linhas de dado ---------- */
+.linha-dado{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:6px 0;border-bottom:1px solid var(--sulco);
+}
+.linha-dado:last-child{border-bottom:0}
+.linha-dado b{font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.linha-dado .fraco{color:var(--fraco);font-size:12px}
+.positivo{color:var(--verde-vivo)}
+.negativo{color:var(--vermelho)}
+
+/* bloco grande de valor, como no Fluxo Financeiro */
+.valorao{padding:7px 0 10px;border-bottom:1px solid var(--sulco)}
+.valorao:last-child{border-bottom:0}
+.valorao span{
+  display:block;font-size:11.5px;color:var(--fraco);margin-bottom:3px;
+}
+.valorao b{
+  font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;
+}
+
+/* ---------- lista de filtro à esquerda ---------- */
+.filtros{display:flex;flex-direction:column}
+.filtros button{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  background:transparent;border:0;border-left:3px solid transparent;
+  padding:9px 12px;cursor:pointer;text-align:left;color:var(--fraco);
+  font-family:var(--titulo);font-size:13px;letter-spacing:.11em;text-transform:uppercase;
+  border-bottom:1px solid var(--sulco);
+}
+.filtros button .conta{font-family:var(--mono);font-size:11px}
+.filtros button:hover{background:#1f1f1f;color:var(--texto)}
+.filtros button.on{background:#212121;border-left-color:var(--rubro-vivo);color:var(--texto)}
+
+/* ---------- tabela ---------- */
+table.dados{width:100%;border-collapse:collapse;font-size:12.5px}
+table.dados th{
+  font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fraco);text-align:left;padding:7px 9px;
+  border-bottom:1px solid var(--linha);white-space:nowrap;user-select:none;
+}
+table.dados th.ordenavel{cursor:pointer}
+table.dados th.ordenavel:hover{color:var(--texto)}
+table.dados th .seta{color:var(--rubro-vivo);margin-left:3px}
+table.dados td{padding:6px 9px;border-bottom:1px solid var(--sulco)}
+table.dados tbody tr:hover td{background:#1d1d1d}
+table.dados td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+table.dados tr.ferido td{color:var(--vermelho)}
+table.dados tr.preso td{color:var(--pm)}
+table.dados tr.selecionada td{background:#252525}
+
+/* número + barrinha, como nos mockups de membros */
+.medida{display:flex;align-items:center;gap:7px}
+.medida .n{font-family:var(--mono);font-size:12px;min-width:20px;text-align:right;
+  font-variant-numeric:tabular-nums}
+.medida .barra{flex:1;max-width:52px;height:4px;background:#2b2b2b;position:relative}
+.medida .barra i{position:absolute;inset:0 auto 0 0;background:var(--verde)}
+.medida.media .barra i{background:var(--ouro)}
+.medida.baixa .barra i{background:var(--vermelho)}
+
+/* marcador de cargo, o pontinho vermelho do mockup */
+.ponto{
+  display:inline-block;width:9px;height:9px;border-radius:50%;
+  background:var(--rubro-vivo);margin-right:6px;vertical-align:-1px;
+}
+
+/* ---------- item de lista ---------- */
+.item{
+  border-left:3px solid #3a3a3a;padding:6px 0 6px 9px;margin-bottom:5px;
+  background:#00000026;
+}
+.item.meu{border-left-color:var(--rubro-vivo)}
+.item.chegou{border-left-color:var(--ouro);background:#d9a44112}
+.item.ferido{border-left-color:var(--vermelho);background:#e04b4512}
+.item.preso{border-left-color:var(--pm);background:#3f7d5a12}
+.item .l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.item .nm{font-family:var(--titulo);font-size:13.5px;letter-spacing:.06em;text-transform:uppercase}
+.item .qt{font-family:var(--mono);font-size:11px;color:var(--ouro)}
+.item .l2{font-family:var(--mono);font-size:9.5px;color:var(--fraco);margin-top:2px}
+
+/* ---------- lista de notícias ---------- */
+.noticia{
+  display:flex;gap:10px;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12px;
+}
+.noticia .data{font-family:var(--mono);font-size:10px;color:var(--fraco);flex:none}
+.noticia .txt{flex:1}
+.noticia .hora{font-family:var(--mono);font-size:10px;color:var(--apagado);flex:none}
+
+/* ---------- ações do dia ---------- */
+.acao-linha{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 0;border-bottom:1px solid var(--sulco);
+  background:none;border-left:0;border-right:0;border-top:0;
+  width:100%;text-align:left;cursor:pointer;color:var(--texto);font-size:12.5px;
+}
+.acao-linha:hover{color:#fff}
+.acao-linha:hover .ic{color:var(--rubro-vivo)}
+.acao-linha .ic{color:var(--fraco);display:flex}
+.acao-linha .ic svg{width:15px;height:15px}
+.acao-linha:disabled{opacity:.55;cursor:default}
+.acao-linha:disabled:hover{color:var(--texto)}
+.acao-linha:disabled:hover .ic{color:var(--fraco)}
+/* nome em cima, efeito ou motivo do bloqueio embaixo */
+.acao-linha .txt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.acao-linha .txt small{font-size:10.5px;color:var(--fraco);line-height:1.3}
+.acao-linha:disabled .txt small{color:#a36b60}
+.acao-linha .custo{font-family:var(--mono);font-size:10.5px;color:var(--fraco);white-space:nowrap}
+
+/* fichas de ação da semana: gastas apagam */
+.fichas{display:flex;gap:4px;align-items:center;margin-left:auto}
+.fichas i{width:9px;height:9px;border:1px solid var(--rubro-vivo);border-radius:50%;
+  background:var(--rubro-vivo);display:block}
+.fichas i.gasta{background:none;border-color:var(--apagado)}
+
+/* relatório do fechamento semanal */
+.fecho{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.fecho h3{font-family:var(--titulo);font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fraco);margin:2px 0 4px;font-weight:600}
+.fecho .col{min-width:0}
+.fecho .total{border-top:1px solid var(--linha);margin-top:5px;padding-top:5px}
+.fecho .largo{grid-column:1 / -1}
+
+/* ---------- confronto (próximo jogo) ---------- */
+.confronto{display:flex;align-items:center;justify-content:center;gap:26px;padding:8px 0 4px}
+.confronto .lado{text-align:center;width:110px}
+.confronto .escudo{width:54px;height:54px;margin:0 auto 7px;font-size:17px}
+.confronto .nome{
+  font-family:var(--titulo);font-size:13px;letter-spacing:.09em;text-transform:uppercase;
+}
+.confronto .x{font-family:var(--titulo);font-size:24px;color:var(--fraco)}
+.confronto-info{text-align:center;padding:6px 0 2px;font-family:var(--mono);font-size:11px}
+.confronto-info .local{
+  display:block;font-size:9.5px;color:var(--fraco);letter-spacing:.13em;
+  text-transform:uppercase;margin-top:4px;
+}
+.competicao-rot{
+  text-align:center;font-size:11.5px;color:var(--fraco);
+  padding-bottom:6px;border-bottom:1px solid var(--sulco);margin-bottom:6px;
+}
+
+/* ---------- seleção de torcida ---------- */
+.torcida-opcao{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:transparent;border:0;border-bottom:1px solid var(--sulco);
+  border-left:3px solid transparent;
+  padding:8px 11px;cursor:pointer;text-align:left;
+}
+.torcida-opcao:hover{background:#1f1f1f}
+.torcida-opcao.on{background:#242424;border-left-color:var(--rubro-vivo)}
+.torcida-opcao .escudo{width:30px;height:30px;font-size:11px}
+.torcida-opcao .nm{
+  font-family:var(--titulo);font-size:13.5px;letter-spacing:.07em;text-transform:uppercase;
+  line-height:1.15;
+}
+.torcida-opcao .cid{font-family:var(--mono);font-size:9px;color:var(--fraco)}
+.torcida-opcao .qt-membros{
+  margin-left:auto;text-align:right;font-family:var(--mono);font-size:13px;line-height:1.1;
+}
+.torcida-opcao .qt-membros small{
+  display:block;font-size:8px;color:var(--fraco);letter-spacing:.1em;text-transform:uppercase;
+}
+
+/* divisão de cargos na ficha da seleção */
+.hierarquia-fina{display:grid;gap:3px;padding:0 0 12px}
+.hierarquia-fina>div{
+  display:grid;grid-template-columns:96px 1fr 34px;align-items:center;gap:8px;
+  font-size:11px;
+}
+.hierarquia-fina span{color:var(--fraco)}
+.hierarquia-fina i{height:7px;background:var(--rubro);display:block;min-width:2px}
+.hierarquia-fina b{font-family:var(--mono);font-size:11.5px;text-align:right}
+
+.ficha-torcida{display:flex;align-items:center;gap:16px;padding:4px 0 14px}
+.ficha-torcida .escudo{width:74px;height:74px;font-size:20px;border-width:3px}
+.ficha-torcida h3{
+  font-family:var(--titulo);font-size:26px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;line-height:1;
+}
+.ficha-torcida span{font-family:var(--mono);font-size:11px;color:var(--fraco)}
+.grade-atributos{
+  display:grid;grid-template-columns:1fr 1fr;gap:11px 20px;
+  border-top:1px solid var(--sulco);padding-top:12px;
+}
+.grade-atributos div span{
+  display:block;font-size:11px;color:var(--fraco);margin-bottom:2px;
+}
+.grade-atributos div b{font-family:var(--mono);font-size:14px}
+
+/* ---------- busca ---------- */
+.busca{
+  width:100%;background:#111;border:1px solid var(--linha);
+  padding:7px 10px;font-size:12.5px;color:var(--texto);margin-bottom:9px;
+}
+.busca:focus{outline:0;border-color:var(--rubro-vivo)}
+
+/* ---------- transações ---------- */
+.transacao{
+  display:flex;justify-content:space-between;gap:10px;
+  font-family:var(--mono);font-size:10.5px;padding:4px 0;
+  border-bottom:1px solid var(--sulco);
+}
+.transacao .dia{color:var(--fraco);flex:none;width:44px}
+.transacao .desc{flex:1;color:var(--texto);font-family:var(--corpo);font-size:11.5px}
+.transacao .val{flex:none;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- aviso de fase ---------- */
+.em-construcao{
+  padding:26px 18px;text-align:center;color:var(--fraco);font-size:12.5px;line-height:1.6;
+}
+.em-construcao b{
+  display:block;font-family:var(--titulo);font-size:16px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--texto);margin-bottom:7px;
+}
+
+/* ---------- diplomacia ---------- */
+.rel-barra{
+  display:inline-block;position:relative;width:110px;height:8px;
+  background:#262626;border:1px solid var(--linha);vertical-align:-1px;
+}
+.rel-barra i{position:absolute;top:0;bottom:0;display:block}
+.rel-barra u{
+  position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;
+  background:var(--apagado);
+}
+.rel-num{
+  font-family:var(--mono);font-size:10.5px;margin-left:8px;color:var(--fraco);
+  font-variant-numeric:tabular-nums;
+}
+.rel-acoes{white-space:nowrap}
+.mini-bt{
+  width:22px;height:20px;margin-right:3px;cursor:pointer;
+  background:#262626;border:1px solid #383838;color:var(--texto);
+  font-family:var(--mono);font-size:11px;line-height:1;
+}
+.mini-bt:hover:not(:disabled){background:var(--rubro);border-color:var(--rubro)}
+.mini-bt:disabled{opacity:.3;cursor:default}
+
+/* ---------- o saldo da cena de ação, no relatório ---------- */
+.fecho-cena{
+  display:flex;flex-direction:column;gap:3px;margin-top:12px;
+  padding:9px 11px;background:#16160f;border-left:3px solid var(--fraco);
+}
+.fecho-cena.boa{border-left-color:var(--verde-vivo)}
+.fecho-cena.ruim{border-left-color:var(--vermelho)}
+.fecho-cena b{font-size:13px;line-height:1.35}
+.fecho-cena small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+
+/* ---------- o cartaz que abre o fim da cena ----------
+   Deu certo ou não, em letra grande, e a conta da noite embaixo.
+   É a primeira coisa da tela de relatório. */
+.cartaz-cena{
+  margin-bottom:14px;padding:13px 15px;
+  background:#16160f;border:1px solid var(--linha);border-top:3px solid var(--fraco);
+}
+.cartaz-cena.boa {border-top-color:var(--verde-vivo);background:#131a13}
+.cartaz-cena.ruim{border-top-color:var(--vermelho);  background:#1a1312}
+/* eles correram: nem verde nem vermelho. Não houve vitória — não houve
+   briga —, e também não houve derrota: quem virou as costas foi o outro. */
+.cartaz-cena.neutra{border-top-color:var(--fraco);background:#15161a}
+.cartaz-cena h3{
+  font-size:21px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  margin-bottom:10px;
+}
+.cartaz-cena.boa  h3{color:var(--verde-vivo)}
+.cartaz-cena.ruim h3{color:var(--vermelho)}
+.cartaz-cena.neutra h3{color:var(--texto)}
+.dados-cena{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 18px}
+.dado-cena{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  border-bottom:1px solid var(--sulco);padding-bottom:4px;
+}
+.dado-cena span{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--fraco);
+}
+.dado-cena b{font-size:14px;white-space:nowrap}
+@media (max-width:720px){ .dados-cena{grid-template-columns:1fr} }
+
+/* o mesmo cartaz por cima do palco, na bancada, que não tem
+   tela de relatório depois da cena */
+#djFim{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(10,10,9,.72);z-index:6;
+}
+#djFim .cartaz-cena{width:min(560px,86%);box-shadow:0 18px 60px rgba(0,0,0,.6)}
+#djFim .cartaz-cena small{
+  display:block;margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--fraco);
+}
+#djFim .acao-btn{margin-top:12px}
+
+/* ---------- avisos na tela de início ---------- */
+.aviso-linha{
+  display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left;cursor:pointer;
+  background:none;border:0;border-bottom:1px solid var(--sulco);
+  padding:8px 0;color:var(--texto);
+}
+.aviso-linha:last-child{border-bottom:0}
+.aviso-linha:hover{color:#fff}
+.aviso-linha:hover .pino{background:var(--rubro-vivo)}
+.aviso-linha .pino{
+  width:7px;height:7px;flex:none;margin-top:5px;background:var(--fraco);
+  border-radius:50%;
+}
+.aviso-linha.urgente .pino{background:var(--vermelho)}
+.aviso-linha.aliado  .pino{background:var(--verde-vivo)}
+.aviso-linha .txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.aviso-linha .txt span{font-size:12.5px;font-weight:600}
+.aviso-linha .txt small{font-size:10.5px;color:var(--fraco);line-height:1.3}
+
+/* ---------- gestão inteligente ---------- */
+.confronto-linha{
+  display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+  padding:4px 0 10px;border-bottom:1px solid var(--sulco);margin-bottom:9px;
+}
+.confronto-linha b{font-family:var(--titulo);font-size:16px;letter-spacing:.06em}
+.confronto-linha span{color:var(--apagado);font-family:var(--mono)}
+.confronto-linha small{
+  width:100%;font-family:var(--mono);font-size:10.5px;color:var(--fraco);margin-top:3px;
+}
+
+.opcoes{display:flex;flex-direction:column;gap:5px;padding:2px 0 4px}
+.opcao{
+  display:grid;grid-template-columns:1fr auto;gap:2px 10px;
+  background:#171717;border:1px solid var(--linha);border-left:3px solid transparent;
+  padding:9px 11px;cursor:pointer;text-align:left;color:var(--texto);
+}
+.opcao:hover:not(.off){background:#1f1f1f}
+.opcao.on{background:#241717;border-left-color:var(--rubro-vivo)}
+.opcao.off{opacity:.4;cursor:default}
+.opcao .rot{font-size:12.5px;font-weight:600}
+.opcao .custo{font-family:var(--mono);font-size:11px;color:var(--ouro);text-align:right}
+.opcao small{grid-column:1/-1;font-size:10.5px;color:var(--fraco);line-height:1.35}
+.opcao.on small{color:#a89a95}
+
+.contador{display:flex;align-items:center;gap:9px;padding:5px 0}
+.contador button{
+  width:30px;height:30px;background:#1e1e1e;border:1px solid var(--linha);
+  color:#cfcfcf;cursor:pointer;font-size:15px;line-height:1;
+}
+.contador button:hover:not(:disabled){background:#2a2a2a;color:#fff}
+.contador button:disabled{opacity:.3;cursor:default}
+.contador b{font-family:var(--mono);font-size:17px;min-width:22px;text-align:center}
+.contador small{color:var(--fraco);font-size:11px}
+
+.medidor{display:flex;align-items:center;gap:9px;width:100%;font-size:11.5px}
+.medidor span{color:var(--fraco);min-width:112px}
+.medidor i{flex:1;height:7px;background:#242424;display:block}
+.medidor i b{display:block;height:100%}
+.medidor em{font-family:var(--mono);font-style:normal;font-size:11.5px;min-width:26px;text-align:right}
+
+.aliado-cab{display:flex;align-items:center;gap:9px;padding:9px 0 6px}
+.aliado-cab .escudinho{
+  width:16px;height:16px;flex:none;border:1px solid rgba(255,255,255,.25);
+}
+.aliado-cab b{font-family:var(--titulo);font-size:14px;letter-spacing:.05em}
+.aliado-cab small{display:block;font-family:var(--mono);font-size:10px;color:var(--fraco)}
+
+.trajeto{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 0}
+.trajeto .parada{
+  font-size:11px;background:#1d1d1d;border:1px solid var(--linha);padding:3px 8px;
+}
+.trajeto .parada.saida{border-color:var(--verde);color:var(--verde-vivo)}
+.trajeto .parada.chegada{border-color:var(--rubro-vivo);color:#e8b0b0}
+.trajeto .parada.hostil{border-color:var(--ouro);color:var(--ouro)}
+.trajeto i{color:var(--apagado);font-style:normal}
+.quadro>.rodape{
+  border-top:1px solid var(--linha);padding:9px 14px;
+  display:flex;gap:8px;justify-content:flex-end;
+}
+/* o corpo do quadro é encostado (tabelas) e só recua quando pedido */
+.quadro>.recuado{padding:9px 14px 12px}
+
+/* destino de cada bonde */
+.linha-bonde{
+  display:grid;grid-template-columns:104px minmax(0,1fr);gap:10px;align-items:center;
+  padding:4px 0;
+}
+.linha-bonde .zona{
+  font-family:var(--titulo);font-size:13px;letter-spacing:.13em;text-transform:uppercase;
+}
+.linha-bonde .zona small{
+  display:block;font-family:var(--mono);font-size:9.5px;color:var(--fraco);
+  letter-spacing:.04em;text-transform:none;
+}
+
+/* ---------- tensão ---------- */
+.ten-barra{
+  display:inline-block;width:66px;height:7px;background:#242424;vertical-align:middle;
+}
+.ten-barra i{display:block;height:100%}
+.ten-num{font-family:var(--mono);font-size:11px;margin-left:7px}
+.linha-tensao{
+  display:grid;grid-template-columns:14px minmax(0,1fr) auto 92px;
+  gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--sulco);
+}
+.linha-tensao:last-child{border-bottom:0}
+.linha-tensao .cor{width:12px;height:12px;border:1px solid rgba(255,255,255,.25)}
+.linha-tensao .nm{font-size:12.5px;font-weight:600}
+.linha-tensao .nm small{
+  display:block;font-family:var(--mono);font-size:9.5px;color:var(--fraco);font-weight:400;
+}
+.linha-tensao .faixa{
+  font-family:var(--titulo);font-size:11.5px;letter-spacing:.13em;
+  text-transform:uppercase;text-align:right;
+}
+
+/* ---------- gestão: faixa do próximo jogo ---------- */
+.gestao-topo{
+  background:linear-gradient(180deg,#1c1414,#151515);
+  border:1px solid var(--linha);border-left:3px solid var(--rubro-vivo);
+  padding:12px 16px;margin-bottom:10px;
+}
+.gestao-topo.vazio{border-left-color:var(--linha)}
+.gestao-topo .cab h2{
+  font-family:var(--titulo);font-size:16px;letter-spacing:.08em;text-transform:uppercase;
+}
+.gestao-topo .times{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gestao-topo .times .lado{
+  display:flex;align-items:center;gap:7px;font-family:var(--titulo);
+  font-size:17px;letter-spacing:.05em;color:var(--apagado);
+}
+.gestao-topo .times .lado.nosso{color:#fff}
+.gestao-topo .times .lado i{
+  width:13px;height:13px;flex:none;border:1px solid rgba(255,255,255,.28);
+}
+.gestao-topo .times em{color:var(--fraco);font-family:var(--mono);font-style:normal}
+.gestao-topo .cab small{
+  display:block;font-family:var(--mono);font-size:10.5px;color:var(--fraco);margin-top:4px;
+}
+.gestao-topo .dados{
+  display:flex;flex-wrap:wrap;gap:6px 26px;margin-top:10px;padding-top:9px;
+  border-top:1px solid var(--sulco);
+}
+.gestao-topo .dados > div{display:flex;flex-direction:column;gap:1px}
+.gestao-topo .dados span{font-size:10px;color:var(--fraco);text-transform:uppercase;
+  letter-spacing:.1em}
+.gestao-topo .dados b{font-size:12.5px}
+
+/* ---------- gestão: trilha das decisões ---------- */
+.trilha{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px;
+  padding:8px 12px;background:#151515;border:1px solid var(--linha);
+}
+.trilha .etapa{
+  font-size:11px;line-height:1.25;color:var(--apagado);
+  border-left:2px solid var(--verde);padding-left:7px;
+}
+.trilha .etapa.aberta{border-left-color:var(--vermelho);color:#e8b0b0}
+.trilha .etapa small{
+  display:block;font-family:var(--mono);font-size:9.5px;color:var(--fraco);
+}
+.trilha i{color:var(--apagado);font-style:normal}
+
+/* ---------- gestão: cartão de passo ---------- */
+.passo{background:var(--painel);border:1px solid var(--linha);margin-bottom:10px}
+.passo.pendente{border-color:#4a2a2a}
+.passo > header{
+  display:flex;align-items:center;gap:10px;padding:9px 14px;
+  border-bottom:1px solid var(--linha);background:#161616;
+}
+.passo > header .num{
+  width:20px;height:20px;flex:none;display:grid;place-items:center;
+  background:#241717;border:1px solid var(--rubro);color:#e8b0b0;
+  font-family:var(--mono);font-size:11px;font-style:normal;
+}
+.passo.pendente > header .num{background:var(--rubro);color:#fff}
+.passo > header h2{
+  flex:1;font-family:var(--titulo);font-size:12.5px;letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.passo > header .conta{font-size:11.5px;color:var(--fraco)}
+.passo > .corpo{padding:9px 14px 12px}
+
+/* ---------- gestão: o mapa do olheiro ---------- */
+.mapa-olheiro{
+  background:#111;border:1px solid var(--linha);margin:8px 0;padding:6px;
+}
+.mapa-olheiro svg{display:block;width:100%;height:auto;aspect-ratio:174/78}
+.mapa-olheiro .malha{stroke:#1e1e1e;stroke-width:.3}
+.mapa-olheiro .moldura{fill:none;stroke:#262626;stroke-width:.4}
+.mapa-olheiro .rota{
+  fill:none;stroke:#3a2a2a;stroke-width:.7;stroke-dasharray:2 1.6;
+}
+.mapa-olheiro .ancora{fill:#222;stroke:#555;stroke-width:.4}
+.mapa-olheiro .ancora.nossa{fill:#1d3326;stroke:var(--verde)}
+.mapa-olheiro .ancora.deles{fill:#331d1d;stroke:var(--rubro-vivo)}
+.mapa-olheiro .ancora.estadio{fill:#2e2a18;stroke:var(--ouro)}
+.mapa-olheiro text{
+  font-family:var(--mono);font-size:2.4px;fill:var(--fraco);text-anchor:middle;
+}
+.mapa-olheiro text.rot{font-size:2.3px;letter-spacing:.12px}
+.mapa-olheiro text.rot.nossa{fill:var(--verde-vivo)}
+.mapa-olheiro text.rot.deles{fill:#e08b8b}
+.mapa-olheiro text.rot.estadio{fill:var(--ouro)}
+.mapa-olheiro .pino{cursor:pointer}
+.mapa-olheiro .pino circle{fill:#242424;stroke:#6a6a6a;stroke-width:.4}
+.mapa-olheiro .pino:hover circle{stroke:#fff}
+.mapa-olheiro .pino.quente circle{fill:#3a2418;stroke:var(--ouro)}
+.mapa-olheiro .pino.on circle{fill:var(--rubro);stroke:#fff;stroke-width:.6}
+.mapa-olheiro .pino.on text{fill:#fff}
+.mapa-olheiro .pino .qtd{fill:var(--ouro);font-size:2.6px}
+
+/* ---------- gestão: relatório do olheiro ---------- */
+.olheiro{
+  background:#151515;border:1px solid var(--linha);border-left:3px solid var(--ouro);
+  padding:8px 11px;margin:6px 0;
+}
+.olheiro .l1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.olheiro .l1 b{font-family:var(--titulo);font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase}
+.olheiro .l1 span{font-family:var(--mono);font-size:10.5px;color:var(--ouro)}
+.olheiro .l2{font-size:12px;color:var(--apagado);margin-top:3px}
+.olheiro .bondes{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.olheiro .bondes span{
+  background:#1d1d1d;border:1px solid var(--linha);padding:4px 9px;text-align:center;
+}
+.olheiro .bondes b{display:block;font-family:var(--mono);font-size:14px}
+.olheiro .bondes small{font-size:9.5px;color:var(--fraco)}
+
+/* ---------- a coluna de ícones ---------- */
+/* AQUI MORAVA A TELA DO MAPA: o palco, o viewport que arrastava, a HUD
+   por cima do canvas, o recolhível de pontos, o zoom, a dica flutuante,
+   a faixa da torcida e o bloco de data sobre a cidade. Saiu tudo com o
+   canvas. O que ficou é o botão de ícone, porque ele nunca foi do mapa:
+   é o botão da navegação, e a navegação agora mora no feed. */
+.mapa-ic{
+  width:32px;height:30px;display:flex;align-items:center;justify-content:center;
+  background:#1e1e20;border:1px solid var(--linha);color:#cfcfcf;cursor:pointer;
+  padding:0;
+}
+.mapa-ic svg{width:18px;height:18px;display:block}
+.mapa-ic .rot{font-family:var(--mono);font-size:11.5px;line-height:1}
+.mapa-ic:hover:not(:disabled){background:#2a2a2a;color:#fff;border-color:#5a5a5a}
+.mapa-ic:disabled{opacity:.32;cursor:default}
+.mapa-ic.aceso{border-color:var(--ouro,#d9a441);color:var(--ouro,#d9a441)}
+.mapa-ic.alerta{
+  background:var(--rubro);border-color:var(--rubro-vivo);color:#fff;
+  animation:pisca-ic 1.1s ease-in-out infinite;
+}
+@keyframes pisca-ic{50%{opacity:.55}}
+.mapa-ic.largo{width:auto;gap:6px;padding:0 9px}
+.mapa-ic.largo .rot{
+  font-family:var(--titulo);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+/* ---------- fator torcida (GDD §9.5) ---------- */
+.fator{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:4px 20px;margin-top:10px;padding-top:9px;border-top:1px solid var(--sulco);
+}
+.fator-parte{display:grid;grid-template-columns:1fr 70px auto;gap:9px;align-items:center}
+.fator-parte .rot{font-size:11.5px}
+.fator-parte .rot small{
+  display:block;font-family:var(--mono);font-size:9.5px;color:var(--fraco);
+}
+.fator-parte i{height:6px;background:#242424;display:block}
+.fator-parte i b{display:block;height:100%;background:var(--rubro-vivo)}
+.fator-parte em{
+  font-family:var(--mono);font-style:normal;font-size:11.5px;text-align:right;
+  min-width:52px;
+}
+.fator-parte em small{color:var(--fraco);font-size:9.5px;margin-left:3px}
+
+/* =========================================================
+   PATRIMÔNIO — a tabela da estrutura e a loja de material
+   ========================================================= */
+.tabela-pat{display:flex;flex-direction:column}
+.tabela-pat .cab,.tabela-pat .linha{
+  display:grid;grid-template-columns:1fr 96px 96px 100px;gap:8px;align-items:baseline;
+  padding:7px 0;border-bottom:1px solid var(--sulco);
+}
+.tabela-pat .cab{
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--fraco);border-bottom-color:var(--linha);
+}
+.tabela-pat .cab span:not(:first-child),.tabela-pat .v{text-align:right}
+.tabela-pat .nome{display:flex;flex-direction:column;gap:1px;font-size:13px}
+.tabela-pat .nome small{font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.tabela-pat .v{font-family:var(--mono);font-size:12.5px}
+.tabela-pat .total{border-bottom:0;border-top:1px solid var(--linha);margin-top:2px}
+.tabela-pat .total .nome{font-weight:700}
+
+/* uma oferta: o que é, quanto custa, e o motivo quando não dá */
+.oferta{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:#16160f;border:1px solid var(--linha);color:var(--texto);
+  padding:9px 12px;margin-bottom:6px;cursor:pointer;
+}
+.oferta:hover:not(:disabled){border-color:var(--ouro);color:#fff}
+.oferta .txt{display:flex;flex-direction:column;gap:2px;flex:1}
+.oferta .txt b{font-size:13px}
+.oferta .txt small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+.oferta .preco{font-family:var(--mono);font-size:13px;color:var(--ouro);white-space:nowrap}
+.oferta.travada{opacity:.55;cursor:default}
+.oferta .trava{
+  font-family:var(--mono);font-size:10px;color:var(--vermelho);
+  text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;
+}
+
+.itens-pat{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px}
+.item-pat{
+  display:flex;align-items:baseline;gap:8px;
+  background:#16160f;border-left:2px solid var(--ouro);padding:7px 10px;
+}
+.item-pat b{font-family:var(--mono);font-size:16px;color:var(--ouro)}
+.item-pat span{font-size:12px;line-height:1.25}
+@media (max-width:820px){
+  .tabela-pat .cab,.tabela-pat .linha{grid-template-columns:1fr 78px 78px 84px}
+}
+
+/* barra do elenco: o que o clube conquistou e o que a torcida bancou
+   por cima, na mesma escala de 4 a 50 */
+.barra-elenco{
+  position:relative; height:14px; background:var(--sulco);
+  border:1px solid var(--linha); margin:2px 0 10px;
+}
+.barra-elenco i{position:absolute; top:0; bottom:0; display:block}
+.barra-elenco i.base{left:0; background:var(--azul)}
+.barra-elenco i.inv{background:var(--ouro)}
+
+/* =========================================================
+   O FEED — a tela principal, e agora a única
+
+   A coluna de ícones na esquerda, o corpo à direita: em cima a
+   faixa da torcida em uma linha, o bloco de data com o ≫ e o
+   1×/2×; embaixo a lista, a nova sempre no topo. A lista é uma
+   coluna estreita no meio: linha de texto que atravessa 1600px
+   não se lê.
+
+   A coluna é a mesma que morava dentro do mapa, e volta pro
+   lugar em que estava — a borda esquerda. Ela é `column wrap`
+   porque são onze ícones: enche a altura que tem e quebra numa
+   segunda coluna ao lado em vez de rolar escondida.
+   ========================================================= */
+.pagina[data-pag="feed"].on{
+  height:100%;display:flex;flex-direction:row;min-height:0;
+}
+.feed-menu{
+  display:flex;flex-flow:column wrap;gap:3px;align-content:flex-start;
+  background:#141416;border-right:1px solid var(--linha);padding:5px 4px;
+  flex:none;min-height:0;max-height:100%;
+}
+.feed-menu .mapa-ic{width:32px;height:28px;flex:none}
+.feed-menu .mapa-ic svg{width:16px;height:16px}
+.feed-menu .mapa-ic.aceso{
+  background:var(--rubro);border-color:var(--rubro-vivo);color:#fff;
+}
+.feed-corpo{
+  flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
+}
+.feed-barra{
+  display:flex;align-items:center;gap:10px;flex-wrap:nowrap;
+  padding:6px 10px;background:var(--painel);
+  border-bottom:1px solid var(--linha);flex:none;
+}
+.feed-marca{display:flex;align-items:center;gap:9px;min-width:0;flex:1 1 auto;
+  flex-wrap:nowrap;overflow:hidden}
+.feed-marca .escudo{
+  width:26px;height:26px;flex:none;display:flex;align-items:center;
+  justify-content:center;font-family:var(--titulo);font-size:11px;
+  letter-spacing:.04em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.85);
+}
+.feed-marca b{
+  font-family:var(--titulo);font-size:15px;letter-spacing:.04em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw;
+}
+.feed-marca .num{
+  display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);
+  font-size:12px;white-space:nowrap;
+}
+.feed-marca .num svg{width:14px;height:14px;opacity:.8}
+.feed-marca .num.negativo,.feed-marca .num.falta{color:var(--vermelho)}
+.feed-marca .num.sobra{color:var(--verde-vivo)}
+.feed-marca .num em{font-style:normal;opacity:.55;font-size:10px}
+/* O BLOCO DE DATA NO CANTO DE CIMA À DIREITA, com o ≫ colado.
+   Ele já foi HUD do mapa e a forma é a mesma: quando estamos e o
+   botão de empurrar o dia, numa moldura só. */
+.feed-quando{
+  display:flex;align-items:center;gap:8px;flex:none;
+  background:#141416;border:1px solid var(--linha);padding:2px 4px 2px 9px;
+}
+.feed-quando .quando-txt{text-align:right;line-height:1.15}
+.feed-quando b{
+  display:block;font-family:var(--titulo);font-size:14px;letter-spacing:.05em;
+  white-space:nowrap;
+}
+.feed-quando small{display:block;color:var(--fraco);font-size:10.5px;
+  white-space:nowrap}
+.feed-quando .mapa-ic{width:30px;height:26px}
+
+/* A ORDEM DE SACRIFÍCIO, quando não cabe — escrita aqui e não no olho:
+   escudo e sigla nunca saem; depois caem prestígio e membros; depois o
+   saldo da semana; e a linha de baixo do bloco de data. Item que não
+   cabe SAI INTEIRO: número em reais cortado é número errado. */
+@media (max-width:900px){ .feed-marca .num:nth-last-child(-n+2){display:none} }
+@media (max-width:640px){
+  .feed-marca .num.semana{display:none}
+  .feed-marca b{font-size:13px}
+}
+/* abaixo disto o bloco de data perde a linha de baixo: "semana 12 de 52"
+   é contexto, e o dia e o ≫ são o que se usa */
+@media (max-width:380px){ .feed-quando small{display:none} }
+.feed-rolo{flex:1;overflow-y:auto;min-height:0;padding:10px 12px 30px}
+.feed-lista{
+  display:flex;flex-direction:column;gap:8px;
+  max-width:720px;margin:0 auto;
+}
+.feed-mais{display:block;margin:12px auto 0}
+
+/* ---------- a mensagem ---------- */
+.msg{
+  border:1px solid var(--linha);border-left:3px solid var(--linha);
+  background:var(--painel);padding:9px 11px;
+}
+.msg-cab{
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  font-size:11px;color:var(--fraco);margin-bottom:4px;
+}
+.msg-voz{
+  font-family:var(--titulo);font-size:13px;letter-spacing:.05em;
+  color:var(--texto);text-transform:uppercase;
+}
+.msg-papel{font-size:10.5px}
+.msg-cat{
+  margin-left:auto;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.08em;text-transform:uppercase;opacity:.6;
+}
+.msg-cab time{font-family:var(--mono);font-size:10.5px;opacity:.75}
+.msg-txt{font-size:13.5px;line-height:1.4}
+.msg-abaixo{
+  margin-top:5px;font-size:11.5px;color:var(--fraco);
+  display:flex;align-items:center;gap:8px;
+}
+.msg-link{
+  background:none;border:none;border-bottom:1px solid var(--ouro);
+  color:var(--ouro);cursor:pointer;font-size:11.5px;padding:0;
+}
+.msg-bts{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.msg-bts .bt{
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  line-height:1.15;padding:5px 10px;
+}
+.msg-bts .bt small{font-size:10px;opacity:.65;font-weight:400}
+.msg-prazo{
+  margin-top:5px;font-family:var(--mono);font-size:10px;color:var(--fraco);
+}
+.msg-resp{
+  margin-top:6px;font-size:11.5px;color:var(--fraco);
+  border-top:1px dashed var(--sulco);padding-top:5px;
+}
+.msg-resp.expirou{color:var(--ouro)}
+.msg.respondida{opacity:.72}
+
+/* a cor da barra da esquerda diz de quem é a voz, e o peso diz se ela
+   está pedindo alguma coisa */
+.msg.cat1{border-left-color:#6f8fae}
+.msg.cat2{border-left-color:var(--ouro)}
+.msg.cat3{border-left-color:var(--vermelho)}
+.msg.cat4{border-left-color:#8d8d8d}
+.msg.cat5{border-left-color:#4b4b4b}
+.msg.cat6{border-left-color:var(--verde)}
+.msg.cat7{border-left-color:#a05fbe}
+.msg.peso-decisao{background:var(--painel-alto);border-color:#3a3a3a}
+.msg.peso-decisao .msg-voz{color:#fff}
+.msg.boa .msg-txt{color:#d8f0dd}
+.msg.ruim .msg-txt{color:#f4d6d4}
+
+@media (max-width:640px){
+  /* A FAIXA CONTINUA SENDO UMA LINHA, e é a BARRA que quebra em duas.
+     Aqui a faixa é que ganhava a linha inteira com `flex-wrap:wrap`, e
+     em 390px o resultado era o contrário do pedido: 85px de largura pro
+     nome, o escudo em cima, o nome no meio e o saldo embaixo — três
+     linhas. Agora o bloco de data e o 1×/2× descem pra segunda linha da
+     barra e a faixa fica com os 390px inteiros, numa linha só. */
+  .feed-barra{flex-wrap:wrap;row-gap:5px}
+  .feed-marca{flex:1 1 100%;flex-wrap:nowrap}
+  .feed-quando{margin-right:auto}
+  .feed-marca b{max-width:none;min-width:0;font-size:14px}
+  .feed-marca .num{font-size:11px}
+  .feed-quando b{font-size:12.5px}
+  .feed-rolo{padding:8px 8px 24px}
+  .msg-txt{font-size:13px}
+}
+
+/* o cartão de confronto no arquivo de Notícias: mesma moldura da
+   mensagem, com o placar de baixas e a linha de consequência */
+.msg-briga .msg-voz{text-transform:none}
+.msg-briga .msg-txt{font-size:13px;color:var(--apagado)}
+.msg-briga.boa{border-left-color:var(--verde)}
+.msg-briga.ruim{border-left-color:var(--rubro-vivo)}
+
+/* a linha de consequência: o que a mensagem moveu no estado */
+.msg-efeitos{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin-top:5px;
+  font-family:var(--mono);font-size:10.5px;line-height:1.35;
+}
+.msg-efeitos .sep{color:var(--apagado)}
+.msg-efeitos .ef.boa{color:var(--verde-vivo)}
+.msg-efeitos .ef.ruim{color:var(--vermelho)}
