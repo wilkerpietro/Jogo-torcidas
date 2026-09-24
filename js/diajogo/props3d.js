@@ -7,7 +7,9 @@
    correio vermelha, o hidrante, os dois balizadores (o preto e
    amarelo e o amarelo de espuma), o delineador, o cone, o cinzeiro de
    pé e o banco de madeira de pé de ferro. O poste NÃO: o dono vai
-   mandar o dele.
+   mandou o dele depois — o poste de concreto com as duas cruzetas, a
+   luminária e, em alguns, o transformador —, e ele veste os postes da
+   rua (`K.POSTES`) no lugar da caixa de antes.
 
    QUEM DIZ ONDE é a planta (`dados/cena_estadio.js`, "OS PROPS DE
    RUA"): uma lista de `{ k, x, y, ang, v, s, alt0 }` — a peça, o ponto,
@@ -173,13 +175,53 @@ function banco(B) {
   }
 }
 
+/* ---- o poste de concreto da rua, o da foto que o dono mandou: o
+   fuste afunilado de 9,3 m com o colar branco no pé e as faixas
+   pintadas, as duas cruzetas no alto, o braço da luminária pra rua com
+   a mão-francesa e, na variante 1, a caixa do transformador do lado da
+   calçada, com o cabo pendurado em laço ---- */
+function poste(B, v) {
+  const oct = { giro: Math.PI / 8 };
+  B.torno(0, 0, [[0.25, 0], [0.25, 0.5], [0.19, 0.6]], 8, 'poste_base', oct);
+  B.torno(0, 0, [[0.17, 0.6], [0.085, 9.3]], 8, 'poste_fuste', oct);
+  B.torno(0, 0, [[0.085, 9.3], [0.07, 9.42], [0.0, 9.5]], 8, 'cruzeta', oct);
+  for (const y of [8.55, 8.0]) B.caixa(-0.055, 0.055, y, y + 0.11, -0.9, 0.9, { todas: 'cruzeta' });
+  B.caixa(-0.03, 0.03, 7.18, 7.24, 0.08, 1.05, { todas: 'cruzeta' });
+  B.viga([0, 6.72, 0.1], [0, 7.18, 0.78], 0.05, 0.05, 'cruzeta');
+  B.caixa(-0.14, 0.14, 7.06, 7.3, 0.85, 1.5, { todas: { k: 'luminaria', modo: 'esticar' }, base: { k: 'luminaria_lente', modo: 'esticar' } });
+  if (v === 1) {
+    B.caixa(-0.32, 0.32, 5.1, 5.95, -0.75, -0.11, { todas: { k: 'transformador', modo: 'esticar' } });
+    const cabo = [[0.18, 5.1, -0.42], [0.2, 4.72, -0.36], [0.12, 4.55, -0.22], [0.03, 4.7, -0.12], [0.0, 4.95, -0.1]];
+    for (let i = 0; i < cabo.length - 1; i++) B.viga(cabo[i], cabo[i + 1], 0.035, 0.035, 'escuro');
+  }
+}
+
 const PECAS = {
   cesto, cacamba, lixeira: lixeiraRodas, saco, caixa: caixaPapelao, barreira, correio, hidrante,
-  balizador, espuma: balizadorEspuma, delineador, cone, cinzeiro, banco
+  balizador, espuma: balizadorEspuma, delineador, cone, cinzeiro, banco, poste
 };
 /* quantas variantes de molde cada peça tem (a cor do cesto e da tampa
-   entra no molde, o jeito do saco também) */
-const VARIANTES = { cesto: 5, lixeira: 5, saco: 4, caixa: 2 };
+   entra no molde, o jeito do saco também; o poste tem ou não tem a
+   caixa do transformador) */
+const VARIANTES = { cesto: 5, lixeira: 5, saco: 4, caixa: 2, poste: 2 };
+
+/* um poste em cada quatro tem transformador: o hash embaralha o ponto
+   (os postes caem de 200 em 200, e um hash de multiplicar simples
+   punha transformador em mais da metade) */
+export function comTransformador(x, y) {
+  let h = Math.imul(Math.round(x) ^ Math.imul(Math.round(y), 0x27d4eb2d), 0x9e3779b1);
+  h ^= h >>> 15; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13;
+  return (h >>> 0) % 4 === 0;
+}
+
+/* a peça montada, no referencial dela (pro visualizador do mapa, que
+   mostra uma peça sozinha) */
+export function moldeDaPeca(k, v = 0) {
+  if (!PECAS[k]) return null;
+  const B = Construtor('props');
+  PECAS[k](B, v % (VARIANTES[k] || 1));
+  return B;
+}
 
 function textura(caminho, aniso) {
   const cam = (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho;
@@ -203,7 +245,13 @@ export function montarProps(P, opc = {}) {
     return moldes.get(chave);
   };
   const pedacos = new Map();
-  for (const p of lista) {
+  /* OS POSTES DA RUA entram aqui também: a planta dá o ponto e pra que
+     lado o braço aponta (a rua); um em cada quatro, pelo hash do ponto,
+     tem a caixa do transformador */
+  const postes = (K.POSTES || []).map(p => ({
+    k: 'poste', x: p.x, y: p.y, ang: Math.atan2(p.dx, p.dz), alt0: 1.4, v: comTransformador(p.x, p.y) ? 1 : 0
+  }));
+  for (const p of lista.concat(postes)) {
     if (!PECAS[p.k]) continue;
     const B = molde(p.k, p.v);
     const chave = Math.floor(p.x / 1600) + ',' + Math.floor(p.y / 1600);
@@ -236,5 +284,5 @@ export function montarProps(P, opc = {}) {
     meshes.push(m);
     triangulos += T.pos.length / 9;
   }
-  return { meshes, triangulos, materiais: [mat], moldes: moldes.size, pecas: lista.length };
+  return { meshes, triangulos, materiais: [mat], moldes: moldes.size, pecas: lista.length, postes: postes.length };
 }

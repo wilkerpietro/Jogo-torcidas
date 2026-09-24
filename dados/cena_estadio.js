@@ -4524,6 +4524,10 @@ TO.dados.plantaEstadio = (function(){
                                              : o.x >= Mr.x0 && o.x < Mr.x1 && o.y >= Mr.y0 && o.y < Mr.y1;
     const pixo = eq.pecas.find(o => o.k === 'letreiro' && o.pixo && noMurado(o));
     eq.pecas = eq.pecas.filter(o => !noMurado(o));
+    /* os postes da calçada dos bares dão pra rua do estádio: viram poste
+       de rua (o de concreto, com cruzeta e luminária) */
+    for(const o of eq.pecas) if(o.k === 'poste') POSTES.push({ x: o.x, y: o.y, dx: o.dx, dz: o.dz });
+    eq.pecas = eq.pecas.filter(o => o.k !== 'poste');
     eq.chao = '#b5afa0';
     eq.pisoPBR = true;
     eq.volumes = [];

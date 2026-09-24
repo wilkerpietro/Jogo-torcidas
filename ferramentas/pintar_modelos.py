@@ -3421,8 +3421,61 @@ def p_pr_madeira(w, h, ppm, rnd):
     return np.clip(a, 0, 1)
 
 
+def p_pr_fuste(w, h, ppm, rnd):
+    """o fuste do poste de concreto, do colar até o alto (8,7 m): cinza
+       de concreto centrifugado, o escorrido que desce das cruzetas, a
+       mancha escura de mão e de fuligem na altura do meio e as faixas
+       brancas pintadas embaixo"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, '#8b8c89', grao=0.06, manchas=0.14, fuligem=2)
+    e = escorrido(h, w, rnd, 7, inicio=(0.0, 0.15), comp=(0.2, 0.7), larg=(1, 2), lad=True)
+    a = multiplicar(a, 1 - 0.18 * e)
+    mancha = np.clip(fbm(h, w, 0.3 * ppm, rnd, 3, True) * 2.6 + 0.3, 0, 1)
+    faixa = np.exp(-((np.arange(h, dtype=np.float32)[:, None] - Y(3.6)) / (0.9 * ppm)) ** 2)
+    a = multiplicar(a, 1 - 0.35 * mancha * faixa)
+    for y0, y1, forca in ((0.45, 0.55, 1.0), (1.85, 1.95, 1.0), (3.45, 3.5, 0.55)):
+        b = a[int(Y(y1)):int(Y(y0))]
+        a[int(Y(y1)):int(Y(y0))] = b * (1 - forca) + cor('#e8e7e2') * forca
+    return np.clip(a, 0, 1)
+
+
+def p_pr_luminaria(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#dcdcd8', grao=0.04, manchas=0.10, lad=False)
+    retangulo(a, 0, h * 0.46, w, h * 0.52, '#a9aaa6', sombra=False)
+    e = escorrido(h, w, rnd, 3, inicio=(0.1, 0.3), comp=(0.3, 0.6), larg=(1, 2), lad=False)
+    return multiplicar(a, 1 - 0.15 * e)
+
+
+def p_pr_lente(w, h, ppm, rnd):
+    a = chapado(w, h, '#f1e7c4')
+    ys = np.linspace(-1, 1, h, dtype=np.float32)[:, None]
+    xs = np.linspace(-1, 1, w, dtype=np.float32)[None, :]
+    a *= (0.75 + 0.25 * np.exp(-(xs ** 2 + ys ** 2) * 1.5))[..., None]
+    moldura(a, 0, 0, w, h, max(2, int(0.02 * ppm)), '#a9aaa6')
+    return np.clip(a, 0, 1)
+
+
+def p_pr_transformador(w, h, ppm, rnd):
+    """a caixa do transformador: chapa cinza clara, a porta com a
+       dobradiça, o aviso amarelo de perigo e a sujeira que escorre"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, '#c9cac6', grao=0.05, manchas=0.16, lad=False, fuligem=10)
+    moldura(a, w * 0.1, h * 0.1, w * 0.9, h * 0.92, max(2, int(0.015 * ppm)), '#8f908c')
+    retangulo(a, w * 0.84, h * 0.45, w * 0.88, h * 0.58, '#5d5e5b')
+    desenhar(a, lambda d, im: d.polygon([(w * 0.5, h * 0.2), (w * 0.62, h * 0.4), (w * 0.38, h * 0.4)], fill=(236, 190, 40)))
+    desenhar(a, lambda d, im: d.polygon([(w * 0.5, h * 0.25), (w * 0.555, h * 0.36), (w * 0.445, h * 0.36)], fill=(40, 36, 30)))
+    e = escorrido(h, w, rnd, 9, inicio=(0.0, 0.1), comp=(0.3, 0.9), larg=(1, 3), lad=False)
+    return multiplicar(a, 1 - 0.3 * e)
+
+
 def folha_props():
     F = Folha('props', larg=1024)
+    F.cel('poste_fuste', 1.05, 8.7, 44, p_pr_fuste, lad=True)
+    F.cel('poste_base', 0.6, 0.6, 70, p_pr_tinta('#e4e3de', 0.05, 0.14), lad=True)
+    F.cel('cruzeta', 0.5, 0.5, 70, p_pr_tinta('#7e7f7c', 0.06, 0.14), lad=True)
+    F.cel('luminaria', 0.65, 0.3, 160, p_pr_luminaria)
+    F.cel('luminaria_lente', 0.28, 0.6, 120, p_pr_lente)
+    F.cel('transformador', 0.64, 0.85, 120, p_pr_transformador)
     F.cel('cesto_malha', 1.4, 0.7, 200, p_pr_malha)
     F.cel('metal', 0.5, 0.5, 100, p_pr_tinta('#9fa2a1', 0.05, 0.12), lad=True)
     F.cel('escuro', 0.2, 0.2, 60, p_pr_tinta('#1e1f20'), lad=True)

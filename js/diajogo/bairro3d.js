@@ -1805,7 +1805,8 @@ export function montarBairro(P) {
     if (ao) caixa(TS, c.x0 + 9, c.x1 - 10, 8, 13.5, c.y0 + 1.5, c.y1 - 1.5, escuro);
     else caixa(TS, c.x0 + 1.5, c.x1 - 1.5, 8, 13.5, c.y0 + 9, c.y1 - 10, escuro);
   }
-  for (const p of K.POSTES) poste(TS, p);
+  /* os postes da rua saem no `props3d.js` (o poste de concreto com
+     cruzeta e luminária); o `poste()` daqui fica pro das praças e pátios */
   for (const s of K.SEMAFOROS || []) semaforo(TS, s);
   /* a caixa d'água da favela assenta no alto da casa de modelo dela,
      que não tem a altura do lote de caixa (`alt`) */

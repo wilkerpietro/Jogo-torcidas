@@ -1750,6 +1750,25 @@ toda pixação e toda placa da cidade tinham um fio tracejado em cima e
 embaixo. Agora cada célula tem um respiro de 4 px (o passo continua
 256), e a placa estende o fundo dela no respiro.
 
+### 4.29. O poste de concreto
+
+O poste que o dono mandou (a foto dos dois postes de concreto) veste
+os postes da rua (`K.POSTES`) no lugar da caixa de antes. Ele é mais
+uma peça do `props3d.js` (folha `props`):
+
+| parte | o que tem |
+|---|---|
+| fuste | 9,3 m de concreto octogonal afunilado (31 cm no pé, 16 cm no alto), o escorrido, a mancha escura no meio e as faixas brancas pintadas embaixo |
+| colar | a base branca octogonal de 60 cm |
+| cruzetas | duas, a 8,0 e 8,55 m, atravessadas no sentido da rua, e o chapéu do topo |
+| luminária | o braço de 1 m pra rua a 7,2 m, com a mão-francesa embaixo, e a cabeça clara com a lente |
+| transformador | em um de cada quatro postes (pelo hash do ponto): a caixa cinza com o aviso de perigo, do lado da calçada, e o cabo pendurado em laço |
+
+São 80 postes: os 76 de antes e os quatro da calçada dos bares do
+baldio, que davam pra rua do estádio e ainda eram o modelo velho; o
+poste pequeno continua só onde é de praça e de pátio. Custo: uns 230
+triângulos por poste (18 mil ao todo), na mesma malha dos props.
+
 O que não é fiel, dito com todas as letras:
 
 - **A rua sem saída não tem balão redondo.** O miolo tem 19 m de
@@ -2290,7 +2309,7 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões (e a rua sem saída), ruas, avenidas, costa, campos, estádio |
 | `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão |
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX, as duas torres do condomínio do baldio (Edifício Mirante e Residencial Bela Vista, com o muro, a guarita e os portões) e a montagem de cada um |
-| `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro e banco; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
+| `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
 | `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo) e as casas de muro (M1 a M4), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`) e escreve o atlas; roda de novo sempre que mudar uma peça |
