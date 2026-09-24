@@ -34,16 +34,22 @@ TO.gazeta = (function(){
   const gols    = j => j.gc + j.gf;
   const vencedor = j => j.gc > j.gf ? j.c : j.gf > j.gc ? j.f : null;
   const perdedor = j => j.gc > j.gf ? j.f : j.gf > j.gc ? j.c : null;
-  /* "d{comp}" tem de virar "do Mineiro" e "da Copa do Nordeste", e
-     "pel{comp}" vira "pelo"/"pela": o molde traz a preposição e daqui
-     sai só o artigo colado no nome. O gênero vem de dados/genero.js —
-     era regex por aqui, e regex mandava "o Argentina Primera". */
-  const dArt   = n => !n ? 'a rodada' : TO.genero.o('competicao', n);
+  /* "{dComp}" vira "do Mineiro" e "da Copa do Nordeste", e
+     "{pelComp}" vira "pelo"/"pela": a preposição sai colada no nome,
+     já no idioma do jogo ("del Mineiro", "of the Mineiro"). Era
+     "d{comp}" com o artigo solto, o que só funcionava em português.
+     O gênero vem de dados/genero.js — era regex por aqui, e regex
+     mandava "o Argentina Primera". */
+  const dArt   = n => !n ? _t('a rodada') : TO.genero.o('competicao', n);
+  const dComp  = n => TO.genero.d('competicao', n, _t('da rodada'));
+  const pelComp = n => TO.genero.por('competicao', n, _t('pela rodada'));
+  /* a fase vai com o nome original pro gênero achar a tradução, e só
+     depois desce pra minúscula — em português dá o mesmo texto */
   const naFase = f => {
     const b = String(f || '').toLowerCase();
-    if(!b) return 'na fase';
-    if(b === 'grupos') return 'na fase de grupos';
-    return TO.genero.em('fase', b);
+    if(!b) return _t('na fase');
+    if(b === 'grupos') return _t('na fase de grupos');
+    return TO.genero.em('fase', String(f)).toLowerCase();
   };
   /* quem passou, num jogo decidido na marca da cal. `temPen` existe
      porque save antigo guarda `pen` como sim/não, e não como placar */
@@ -74,49 +80,48 @@ TO.gazeta = (function(){
   const MOLDES = {
     /* 1 · chapéu — condição única, não alterna */
     chapeu:{
-      goleada:  ['A maior goleada do dia'],
-      decisao:  ['Dia de decisão'],
-      classico: ['Clássico na nossa praça'],
-      semana:   ['Rodada do meio de semana'],
-      padrao:   ['O jogo do dia']
+      goleada:  [_t('A maior goleada do dia')],
+      decisao:  [_t('Dia de decisão')],
+      classico: [_t('Clássico na nossa praça')],
+      semana:   [_t('Rodada do meio de semana')],
+      padrao:   [_t('O jogo do dia')]
     },
     /* 2 · manchete */
     manchete:{
-      s5:['{A} passa o rodo no {B}',
-          'Chuva de gols do {A} sobre o {B}',
-          '{A} faz {gA} no {B} e não toma nenhum'],
-      s4:['{A} atropela o {B}',
-          '{A} passeia sobre o {B}'],
-      s3:['{A} passa fácil pelo {B}',
-          '{A} não dá chance ao {B}',
-          '{A} resolve cedo contra o {B}'],
-      s2:['{A} bate o {B} com autoridade',
-          '{A} vence o {B} sem apuros'],
-      s1fora:['{A} vence fora e leva os pontos do {B}',
-              '{A} arranca a vitória na casa do {B}'],
-      s1casa:['{A} bate o {B} no sufoco',
-              '{A} leva a melhor num jogo de detalhe'],
-      empate:['{c} e {f} empatam num jogo de {G} gols',
-              '{c} e {f} dividem os pontos'],
-      zero:['{c} e {f} ficam no zero',
-            'Nem {c} nem {f}: o dia foi de zero a zero'],
-      mata:['{A} elimina o {B} e passa {naFase}'],
+      s5:[_t('{A} passa o rodo no {B}'),
+          _t('Chuva de gols do {A} sobre o {B}'),
+          _t('{A} faz {gA} no {B} e não toma nenhum')],
+      s4:[_t('{A} atropela o {B}'),
+          _t('{A} passeia sobre o {B}')],
+      s3:[_t('{A} passa fácil pelo {B}'),
+          _t('{A} não dá chance ao {B}'),
+          _t('{A} resolve cedo contra o {B}')],
+      s2:[_t('{A} bate o {B} com autoridade'),
+          _t('{A} vence o {B} sem apuros')],
+      s1fora:[_t('{A} vence fora e leva os pontos do {B}'),
+              _t('{A} arranca a vitória na casa do {B}')],
+      s1casa:[_t('{A} bate o {B} no sufoco'),
+              _t('{A} leva a melhor num jogo de detalhe')],
+      empate:[_t('{c} e {f} empatam num jogo de {G} gols'),
+              _t('{c} e {f} dividem os pontos')],
+      zero:[_t('{c} e {f} ficam no zero'),
+            _t('Nem {c} nem {f}: o dia foi de zero a zero')],
+      mata:[_t('{A} elimina o {B} e passa {naFase}')],
       /* PÊNALTI TEM DE DIZER QUE FOI PÊNALTI, E QUEM PASSOU (crivo do
          dono, 22/08/2026): antes o jogo caía no molde de empate e a
          notícia contava o 1 a 1 sem falar da disputa nem da vaga. */
-      penaltis:['{A} passa pelo {B} nos pênaltis',
-                '{A} elimina o {B} na marca da cal',
-                'Nos pênaltis, o {A} tira o {B} do caminho']
+      penaltis:[_t('{A} passa pelo {B} nos pênaltis'),
+                _t('{A} elimina o {B} na marca da cal'),
+                _t('Nos pênaltis, o {A} tira o {B} do caminho')]
     },
     /* 3 · olho da manchete */
     olho:{
-      comEstadio:['{gA} a {gB} {noEst}, o placar mais largo desta rodada d{comp}.'],
-      semEstadio:['{gA} a {gB}, o placar mais largo desta rodada d{comp}.'],
-      diaCheio:['{gA} a {gB} {noEst}, num dia de {N} jogos e {Gdia} gols.'],
-      empate:['Ficou no {gA} a {gB} {noEst}, pela {rod}ª rodada d{comp}.'],
-      mata:['{gA} a {gB} {noEst}, {naFase} d{comp}.'],
-      penaltis:['Empate em {gA} a {gB} {noEst} e {pA} a {pB} na marca da '+
-                'cal: quem segue {naFase} d{comp} é o {A}.']
+      comEstadio:[_t('{gA} a {gB} {noEst}, o placar mais largo desta rodada {dComp}.')],
+      semEstadio:[_t('{gA} a {gB}, o placar mais largo desta rodada {dComp}.')],
+      diaCheio:[_t('{gA} a {gB} {noEst}, num dia de {N} jogos e {Gdia} gols.')],
+      empate:[_t('Ficou no {gA} a {gB} {noEst}, pela {rod}ª rodada {dComp}.')],
+      mata:[_t('{gA} a {gB} {noEst}, {naFase} {dComp}.')],
+      penaltis:[_t('Empate em {gA} a {gB} {noEst} e {pA} a {pB} na marca da cal: quem segue {naFase} {dComp} é o {A}.')]
     },
     /* ---------------------------------------------------
        DAQUI PRA BAIXO: as seções que só aparecem com o
@@ -124,42 +129,42 @@ TO.gazeta = (function(){
        --------------------------------------------------- */
     /* 4 · na nossa praça */
     praca:{
-      um:['O {A} recebeu o {B} e o placar fechou em {gA} × {gB} {noEst}.',
-          '{NoEst}, {A} e {B} fecharam em {gA} × {gB}.'],
-      dois:['Dois jogos na cidade: {l1} e {l2}.'],
-      nenhum:['Sem outro jogo na nossa praça nesta rodada.',
-              'A cidade ficou quieta: nenhum outro jogo por aqui.']
+      um:[_t('O {A} recebeu o {B} e o placar fechou em {gA} × {gB} {noEst}.'),
+          _t('{NoEst}, {A} e {B} fecharam em {gA} × {gB}.')],
+      dois:[_t('Dois jogos na cidade: {l1} e {l2}.')],
+      nenhum:[_t('Sem outro jogo na nossa praça nesta rodada.'),
+              _t('A cidade ficou quieta: nenhum outro jogo por aqui.')]
     },
     /* 5 · a caixa do nosso jogo */
     nossa:{
-      vitoriaFora:['Vitória fora de casa, pel{comp}.'],
-      vitoriaCasa:['Vitória em casa, na {rod}ª rodada d{comp}.'],
-      empate:['Empate na {rod}ª rodada d{comp}.'],
-      derrota:['Derrota na {rod}ª rodada d{comp}.'],
-      goleadaPro:['Goleada nossa, pel{comp}.'],
-      goleadaContra:['Baile do {adv}, pel{comp}.'],
-      passouPen:['Classificados nos pênaltis, {naFase} d{comp}.'],
-      caiuPen:['Eliminados nos pênaltis, {naFase} d{comp}.'],
-      naoJogou:['Não joga hoje']
+      vitoriaFora:[_t('Vitória fora de casa, {pelComp}.')],
+      vitoriaCasa:[_t('Vitória em casa, na {rod}ª rodada {dComp}.')],
+      empate:[_t('Empate na {rod}ª rodada {dComp}.')],
+      derrota:[_t('Derrota na {rod}ª rodada {dComp}.')],
+      goleadaPro:[_t('Goleada nossa, {pelComp}.')],
+      goleadaContra:[_t('Baile do {adv}, {pelComp}.')],
+      passouPen:[_t('Classificados nos pênaltis, {naFase} {dComp}.')],
+      caiuPen:[_t('Eliminados nos pênaltis, {naFase} {dComp}.')],
+      naoJogou:[_t('Não joga hoje')]
     },
     /* 6 · pelo país */
     nota:{
-      s4:['Goleada sem sustos.',
-          'Passeio do {A} de ponta a ponta.',
-          'O {B} não apareceu em campo.'],
-      s3:['Resolvido antes do intervalo.',
-          'Três de vantagem e nenhum susto no fim.'],
-      s2:['Vitória tranquila do {A}.',
-          'O {A} controlou o jogo sem apertar.'],
-      s1fora:['O visitante levou os pontos de fora.',
-              'O {A} calou a casa do {B}.'],
-      s1casa:['Vitória em casa, no sufoco.',
-              'O {A} segurou a vantagem até o apito.'],
-      empate:['Os dois marcaram e nenhum levou.'],
-      zero:['Empate travado, sem quem levasse a melhor.',
-            'Zero a zero de jogo amarrado.'],
-      penaltis:['Decidido na marca da cal: o {A} passou.',
-                'Empate no tempo normal, vaga do {A} nos pênaltis.']
+      s4:[_t('Goleada sem sustos.'),
+          _t('Passeio do {A} de ponta a ponta.'),
+          _t('O {B} não apareceu em campo.')],
+      s3:[_t('Resolvido antes do intervalo.'),
+          _t('Três de vantagem e nenhum susto no fim.')],
+      s2:[_t('Vitória tranquila do {A}.'),
+          _t('O {A} controlou o jogo sem apertar.')],
+      s1fora:[_t('O visitante levou os pontos de fora.'),
+              _t('O {A} calou a casa do {B}.')],
+      s1casa:[_t('Vitória em casa, no sufoco.'),
+              _t('O {A} segurou a vantagem até o apito.')],
+      empate:[_t('Os dois marcaram e nenhum levou.')],
+      zero:[_t('Empate travado, sem quem levasse a melhor.'),
+            _t('Zero a zero de jogo amarrado.')],
+      penaltis:[_t('Decidido na marca da cal: o {A} passou.'),
+                _t('Empate no tempo normal, vaga do {A} nos pênaltis.')]
     }
   };
 
@@ -244,6 +249,7 @@ TO.gazeta = (function(){
                    pA: temPen(topo) ? Math.max(topo.pen.c, topo.pen.f) : '',
                    pB: temPen(topo) ? Math.min(topo.pen.c, topo.pen.f) : '',
                    comp: dArt(topo.comp), rod: topo.rod,
+                   dComp: dComp(topo.comp), pelComp: pelComp(topo.comp),
                    est: estadio(topo.c), noEst: noEst(estadio(topo.c)),
                    N: jogos.length, Gdia: totalGols};
     const H = MOLDES.manchete;
@@ -270,15 +276,17 @@ TO.gazeta = (function(){
       cabeca:{
         ano: ROMANO(Math.max(1, ano - 2025)),
         edicao: (E.data.absoluto || 0) + 100,
-        data: `${DIA_SEM[dia]}, ${dt.getDate()} de ${MES[dt.getMonth()]}`
+        data: _t('{dia}, {n} de {mes}', {dia:_t(DIA_SEM[dia]), n:dt.getDate(),
+                                          mes:_t(MES[dt.getMonth()])})
       },
       tarja: [
-        `<b>${jogos.length}</b> ${jogos.length===1?'jogo':'jogos'}`,
-        `<b>${comps.length}</b> ${comps.length===1?'competição':'competições'}`,
-        `<b>${totalGols}</b> ${totalGols===1?'gol':'gols'}`,
+        _tn(jogos.length, '<b>{n}</b> jogo', '<b>{n}</b> jogos'),
+        _tn(comps.length, '<b>{n}</b> competição', '<b>{n}</b> competições'),
+        _tn(totalGols, '<b>{n}</b> gol', '<b>{n}</b> gols'),
         ...comps.slice(0,2).map(c=>{
           const j = jogos.find(x=>x.comp===c);
-          return j.fase ? `${c} · <b>${j.fase}</b>` : `${c} · <b>${j.rod}ª</b> rodada`;
+          return j.fase ? `${c} · <b>${_t(j.fase)}</b>`
+                        : _t('{comp} · <b>{n}ª</b> rodada', {comp:c, n:j.rod});
         })
       ],
       chapeu, manchete, olho,
@@ -329,6 +337,8 @@ TO.gazeta = (function(){
     } else if(praca.length === 1){
       const j = praca[0];
       const est = estadio(j.c);
+      /* sem estádio o molde perde o " {noEst}" — as traduções do
+         primeiro molde guardam o marcador com o espaço antes */
       const molde = est ? proxima(P.um, 'praca') : P.um[0].replace(' {noEst}','');
       textoPraca = encher(molde, {A:nome(j.c), B:nome(j.f), gA:j.gc, gB:j.gf,
                                   noEst:noEst(est), NoEst:NoEst(est)});
@@ -354,9 +364,13 @@ TO.gazeta = (function(){
                  : meus > deles ? (emCasa ? 'vitoriaCasa' : 'vitoriaFora')
                  : meus < deles ? 'derrota' : 'empate';
       caixa = {
-        placar: `${nome(nosso.c)} ${nosso.gc} × ${nosso.gf} ${nome(nosso.f)}`+
-                (temPen(nosso) ? ` (${nosso.pen.c} × ${nosso.pen.f} nos pênaltis)` : ''),
+        placar: temPen(nosso)
+          ? _t('{placar} ({a} × {b} nos pênaltis)', {placar:
+              `${nome(nosso.c)} ${nosso.gc} × ${nosso.gf} ${nome(nosso.f)}`,
+              a:nosso.pen.c, b:nosso.pen.f})
+          : `${nome(nosso.c)} ${nosso.gc} × ${nosso.gf} ${nome(nosso.f)}`,
         sob: encher(NS[cond][0], {comp:dArt(nosso.comp), rod:nosso.rod, adv,
+                                  dComp:dComp(nosso.comp), pelComp:pelComp(nosso.comp),
                                   naFase:naFase(nosso.fase)}),
         bom: temPen(nosso) ? !!passamos : meus > deles,
         ruim: temPen(nosso) ? !passamos : meus < deles
@@ -403,8 +417,9 @@ TO.gazeta = (function(){
       const cond = condDe(j);
       const a = temPen(j) ? passou(j) : vencedor(j);
       const b = temPen(j) ? caiu(j)   : perdedor(j);
-      return {placar:`${nome(j.c)} ${j.gc} × ${j.gf} ${nome(j.f)}`+
-                     (temPen(j) ? ` (${j.pen.c} × ${j.pen.f} pên.)` : ''),
+      const pl = `${nome(j.c)} ${j.gc} × ${j.gf} ${nome(j.f)}`;
+      return {placar: temPen(j)
+                ? _t('{placar} ({a} × {b} pên.)', {placar:pl, a:j.pen.c, b:j.pen.f}) : pl,
               frase: encher(proxima(NT[cond], 'nota-'+cond),
                 {A: a?nome(a):'', B: b?nome(b):''})};
     });
@@ -433,7 +448,9 @@ TO.gazeta = (function(){
     const ordem = [];
     const por = {};
     for(const j of jogos){
-      const k = j.comp + (j.fase ? ' · '+j.fase : ' · '+j.rod+'ª rodada');
+      /* `k` agrupa e é o título da coluna: já nasce no idioma */
+      const k = j.fase ? `${j.comp} · ${_t(j.fase)}`
+                       : _t('{comp} · {n}ª rodada', {comp:j.comp, n:j.rod});
       if(!por[k]){ por[k] = []; ordem.push({k, comp:j.comp}); }
       por[k].push(j);
     }
@@ -496,7 +513,7 @@ TO.gazeta = (function(){
       if(comp.grupos && comp.grupos.length > 1){
         grupo = comp.grupos.findIndex(g => g.indexOf(meu) >= 0);
         if(grupo < 0) grupo = undefined;
-        else rot += ` · Grupo ${String.fromCharCode(65 + grupo)}`;
+        else rot = _t('{comp} · Grupo {g}', {comp:rot, g:String.fromCharCode(65 + grupo)});
       }
       const t = COMP().tabela(comp, grupo);
       if(!t.length || !t.some(l => l.j)) return null;
@@ -529,8 +546,9 @@ TO.gazeta = (function(){
       const t = COMP().tabela(comp);
       const i = t.findIndex(x=>x.id === meu);
       if(i < 0 || !t[i].j) return null;
-      return `${comp.nome} · <b>${i+1}º</b> lugar · <b>${t[i].p}</b> `+
-             `${t[i].p===1?'ponto':'pontos'} em ${t[i].j} ${t[i].j===1?'jogo':'jogos'}`;
+      return _t('{comp} · <b>{pos}º</b> lugar · {pontos} em {jogos}', {comp:comp.nome, pos:i+1,
+        pontos:_tn(t[i].p, '<b>{n}</b> ponto', '<b>{n}</b> pontos'),
+        jogos:_tn(t[i].j, '{n} jogo', '{n} jogos')});
     }catch(x){ return null; }
   }
 
@@ -574,13 +592,13 @@ TO.gazeta = (function(){
       if(!R || ig < 0 || !R.tabela || !R.tabela[ig] || !TO.ligas) return {rot:comp.nome, t:[]};
       const t = TO.ligas.ordenar(R.tabela[ig], R.grupos[ig])
         .map(l => ({id:l.id, j:l.j, p:l.p, sg:l.gp - l.gc}));
-      return {rot:`${comp.nome} · Grupo ${String.fromCharCode(65 + ig)}`, t};
+      return {rot:_t('{comp} · Grupo {g}', {comp:comp.nome, g:String.fromCharCode(65 + ig)}), t};
     }
     let grupo, rot = comp.nome;
     if(comp.grupos && comp.grupos.length > 1){
       grupo = comp.grupos.findIndex(g => g.indexOf(meu) >= 0);
       if(grupo < 0) grupo = undefined;
-      else rot += ` · Grupo ${String.fromCharCode(65 + grupo)}`;
+      else rot = _t('{comp} · Grupo {g}', {comp:rot, g:String.fromCharCode(65 + grupo)});
     }
     return {rot, t: COMP().tabela(comp, grupo)};
   }
@@ -610,7 +628,7 @@ TO.gazeta = (function(){
         if(comp.grupos && comp.grupos.length > 1){
           grupo = comp.grupos.findIndex(g => g.indexOf(meu) >= 0);
           if(grupo < 0) grupo = undefined;
-          else rot += ` · Grupo ${String.fromCharCode(65 + grupo)}`;
+          else rot = _t('{comp} · Grupo {g}', {comp:rot, g:String.fromCharCode(65 + grupo)});
         }
         t = COMP().tabela(comp, grupo);
         if(!t.length || !t.some(l => l.j)) return null;
