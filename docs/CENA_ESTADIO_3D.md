@@ -1543,7 +1543,7 @@ sorteia.
 
 O que não é bom:
 
-- **Sete fachadas sem vidro.** Dois galpões de 1,4 m (a sobra do lado de
+- **Cinco galpões sem vidro na frente.** Dois de 1,4 m (a sobra do lado de
   um marco) são porta, parede e laje. Três lojas-galpão de 2,1 a 2,7 m
   são só a porta de enrolar e o letreiro — a portinha de comércio
   existe assim, mas não tem janela nenhuma.
