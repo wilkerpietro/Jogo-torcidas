@@ -715,8 +715,8 @@ TO.diaJogo.arredores = (function(){
       if(malha[r*COLS+cx]) c.fillRect(cx*CEL,r*CEL,CEL,CEL);
     c.font='600 15px "IBM Plex Mono",monospace';
     c.textAlign='center'; c.fillStyle='#e0b040';
-    c.fillText(imagemErro? 'img/cenas/arredores.png não encontrada — usando a malha'
-                         : 'carregando fundo…', W/2, 40);
+    c.fillText(imagemErro? _t('img/cenas/arredores.png não encontrada — usando a malha')
+                         : _t('carregando fundo…'), W/2, 40);
   }
 
   const COR_LADO={mandante:'#c0392b', visitante:'#2a5fa8'};
