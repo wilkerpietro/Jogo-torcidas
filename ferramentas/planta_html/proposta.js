@@ -12,7 +12,9 @@
    - as duas favelas saem da cópia torta e nascem de novo nas manchas
      que ele desenhou (noroeste e sudoeste), com o mesmo jeito da favela
      do jogo (quadra miúda, casa encostada na casa, beco estreito), mas
-     na grade da cidade: beco de norte a sul ou de leste a oeste;
+     na grade da cidade: beco de norte a sul ou de leste a oeste. E
+     encostam na cidade: a faixa de mato entre a mancha e a rua entra
+     na favela, e a casa que bate na rua é aparada até a guia;
    - as duas avenidas transversais do oeste (a oeste e a noroeste2)
      saem: as quadras que elas cortavam voltam a ser quadra inteira, e a
      1,4 de hoje, que a avenida oeste rasgava, é refeita;
@@ -110,9 +112,11 @@ const FAVELAS = [
            [-2450, -475], [-2375, -105], [-2595, -65], [-3040, -30], [-3170, 20], [-3170, 430], [-3735, 410],
            [-4045, 560], [-4060, 1150], [-4010, 1370]] },
   { id: 'sudoeste', nome: 'Favela do Sudoeste', semente: 481523,
-    poly: [[-3070, 4360], [-3690, 4515], [-4310, 5010], [-4555, 5875], [-4310, 6125], [-3690, 6430], [-2950, 6555],
-           [-2085, 6495], [-1215, 6310], [-720, 6000], [-660, 5660], [-1095, 5595], [-1590, 5445], [-2085, 5350],
-           [-2160, 5195], [-2180, 4640], [-3230, 4565]] }
+    /* com o canto entre a favela e a cidade (a oeste de −3,6 a −3,8 e ao
+       sul de −4,5) dentro: a favela encosta na quina da cidade */
+    poly: [[-3100, 3120], [-3900, 3120], [-4000, 3500], [-4150, 4300], [-4310, 5010], [-4555, 5875], [-4310, 6125],
+           [-3690, 6430], [-2950, 6555], [-2085, 6495], [-1215, 6310], [-720, 6000], [-660, 5660], [-1095, 5595],
+           [-1590, 5445], [-2085, 5350], [-2160, 5195], [-2180, 4640], [-3230, 4565], [-3070, 4360]] }
 ];
 /* as cores da favela do jogo */
 const CORES_FAVELA = {
@@ -451,7 +455,13 @@ export function gerarProposta(P) {
      que é a mancha que o dono desenhou. */
   const barra = quadras.map(q => ({ x0: q.x0 - RUA, x1: q.x1 + RUA, y0: q.y0 - RUA, y1: q.y1 + RUA }))
     .concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ({ x0: q.x0 - RUA, x1: q.x1 + RUA, y0: q.y0 - RUA, y1: q.y1 + RUA })))
-    .concat(K.BEIRA.filter(l => !l.favela).map(l => { const b = bbOf(cantos(l)); return { x0: b.x0 - 30, x1: b.x1 + 30, y0: b.y0 - 30, y1: b.y1 + 30 }; }))
+    .concat(K.BEIRA.filter(l => !l.favela).map(l => bbOf(cantos(l))).filter(b => {
+      /* a casa de beira que a proposta tira (debaixo da grade nova, ou
+         longe de toda estrada que sobrou) não segura a favela */
+      const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+      const coberta = quadras.some(q => cx > q.x0 - RUA && cx < q.x1 + RUA && cy > q.y0 - RUA && cy < q.y1 + RUA);
+      return !coberta && avenidas.some(a => distAvenida(cx, cy, a) <= a.l / 2 + 260);
+    }).map(b => ({ x0: b.x0 - 30, x1: b.x1 + 30, y0: b.y0 - 30, y1: b.y1 + 30 })))
     .concat(atacadex ? [{ x0: atacadex.bb.x0 - 60, x1: atacadex.bb.x1 + 60, y0: atacadex.bb.y0 - 60, y1: atacadex.bb.y1 + 60 }] : []);
   const livre = (x, y) => !barra.some(r => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1) && !naAvenida(x, y, CALC + 10) &&
                           !porticos.some(p => Math.hypot(p.x - x, p.y - y) < 280);
@@ -464,9 +474,37 @@ export function gerarProposta(P) {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
     const ent = (a, b) => a + rnd() * (b - a), esc = l => l[Math.floor(rnd() * l.length)];
-    const bb = bbOf(F.poly);
-    const dentro = (x, y) => dentroPol(x, y, F.poly) && livre(x, y);
+    /* A FAVELA ENCOSTA NA CIDADE. A mancha é o traço à mão, e entre ela
+       e a rua da cidade sobrava uma faixa de mato. Entra na favela o que
+       fica ENTRE a mancha e a cidade: o ponto de fora cuja distância até
+       a mancha mais a distância até a rua (ou a quadra) não passa de
+       GAP. Uma faixa estreita entre as duas enche; o mato largo do lado
+       de fora, não — a borda da favela continua a do traço. */
+    const GAP = 340;
+    const distPoly = (x, y) => { let d = Infinity; for (let i = 0, j = F.poly.length - 1; i < F.poly.length; j = i++) d = Math.min(d, distSeg(x, y, F.poly[j], F.poly[i])); return d; };
+    const distBarra = (x, y) => { let d = Infinity; for (const r of barra) { const dx = Math.max(r.x0 - x, 0, x - r.x1), dy = Math.max(r.y0 - y, 0, y - r.y1); d = Math.min(d, Math.hypot(dx, dy)); } return d; };
+    const naArea = (x, y) => dentroPol(x, y, F.poly) || distPoly(x, y) + distBarra(x, y) <= GAP;
+    const bb0 = bbOf(F.poly), bb = { x0: bb0.x0 - GAP, x1: bb0.x1 + GAP, y0: bb0.y0 - GAP, y1: bb0.y1 + GAP };
+    const dentro = (x, y) => naArea(x, y) && livre(x, y);
     const cabe = (x0, x1, y0, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [(x0 + x1) / 2, (y0 + y1) / 2]].every(([x, y]) => dentro(x, y));
+    /* a casa que bate na rua da cidade é aparada até a guia, em vez de
+       sair: é assim que a fileira chega na calçada */
+    const encaixar = (x0, x1, y0, y1) => {
+      for (let it = 0; it < 4; it++) {
+        const r = barra.find(r => x0 < r.x1 && x1 > r.x0 && y0 < r.y1 && y1 > r.y0);
+        if (!r) break;
+        const ops = [];
+        if (r.x0 > x0) ops.push([x0, r.x0, y0, y1]);
+        if (r.x1 < x1) ops.push([r.x1, x1, y0, y1]);
+        if (r.y0 > y0) ops.push([x0, x1, y0, r.y0]);
+        if (r.y1 < y1) ops.push([x0, x1, r.y1, y1]);
+        const ok = ops.filter(([a, b, c, d]) => b - a >= 32 && d - c >= 36)
+                      .sort((p, q) => (q[1] - q[0]) * (q[3] - q[2]) - (p[1] - p[0]) * (p[3] - p[2]));
+        if (!ok.length) return null;
+        [x0, x1, y0, y1] = ok[0];
+      }
+      return [x0, x1, y0, y1];
+    };
     /* o campinho de terra, o mais perto do meio da mancha que couber */
     let campinho = null;
     {
@@ -515,7 +553,12 @@ export function gerarProposta(P) {
       }
     }
     const casa = (x0, x1, y0, y1, fr, fi) => {
-      if (!cabe(x0, x1, y0, y1) || noCampinho(x0, x1, y0, y1)) return;
+      if (!cabe(x0, x1, y0, y1)) {
+        const e = encaixar(x0, x1, y0, y1);
+        if (!e || !cabe(...e)) return;
+        [x0, x1, y0, y1] = e;
+      }
+      if (noCampinho(x0, x1, y0, y1)) return;
       /* a mesma altura, cobertura e parede da favela da planta */
       let alt = par8(ent(52, 74));
       if (rnd() < 0.34) alt += par8(ent(28, 46));
@@ -596,7 +639,7 @@ export function gerarProposta(P) {
       arvores.push({ x, y, r });
     }
     for (const l of lotes) delete l.faixa;
-    const bbL = lotes.length ? bbOf(lotes.flatMap(l => [[l.x0, l.y0], [l.x1, l.y1]])) : bb;
+    const bbL = lotes.length ? bbOf(lotes.flatMap(l => [[l.x0, l.y0], [l.x1, l.y1]])) : bb0;
     return { id: F.id, nome: F.nome, poly: F.poly, lotes, becos, arvores, moitas: [], campinho, bb: bbL,
              grandes: reservas.length };
   }

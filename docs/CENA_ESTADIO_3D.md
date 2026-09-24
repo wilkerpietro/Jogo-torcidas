@@ -1936,12 +1936,24 @@ em seis quadras.
 |---|---|---|
 | quadras | 37 | 105 |
 | lotes em quadra | 323 | 1.112 |
-| casas na favela | 229 | 1.429 (485 no noroeste, 944 no sudoeste) |
+| casas na favela | 229 | 2.009 (622 no noroeste, 1.387 no sudoeste) |
+
+**A favela encosta na cidade** (pedido seguinte do dono, com a faixa de mato entre a favela do
+noroeste e o condomínio −4,2 circulada):
+
+- **As faixas estreitas entram.** Entra na favela o ponto de fora da mancha cuja distância
+  até ela, mais a distância até a rua ou a quadra da cidade, não passa de 340 (17,5 m).
+  Assim, a faixa estreita entre as duas enche, e o mato largo do lado de fora fica.
+- **A casa encosta na rua.** A que batia na rua passa a ser aparada até a guia, no lugar de
+  sair.
+- **O canto do sudoeste também entra.** É o canto entre a favela e a quina da cidade, a oeste
+  de −3,6 a −3,8 e ao sul de −4,5.
 
 O que não é fiel, ou pesa:
 
-- **As favelas ficaram grandes**, porque enchem a mancha inteira: são seis vezes as casas de
-  hoje. No jogo isso pesa (triângulo e máscara). Se for muito, é diminuir o polígono.
+- **As favelas ficaram grandes**, porque enchem a mancha inteira e agora encostam na cidade:
+  são quase nove vezes as casas de hoje. No jogo isso pesa (triângulo e máscara). Se for
+  muito, é diminuir o polígono.
 - **O tabuleiro cresce ainda mais:** uns 213 m pra oeste, 100 m pro norte e 55 m pro sul.
 - **O polígono é o desenho à mão, lido da foto.** A borda da favela segue o traço, com a
   imprecisão dele.
