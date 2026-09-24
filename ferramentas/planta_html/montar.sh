@@ -24,6 +24,8 @@ done
 for f in casas.jpg grades.png predio.jpg igreja.jpg loja.jpg adm.jpg casa.jpg atacadex.jpg torres.jpg props.jpg; do
   cp "$R/img/texturas/modelos/$f" "$A/img/texturas/modelos/"
 done
+# as três variantes de cor da folha das torres (pintar_variantes.py)
+cp "$R/ferramentas/planta_html/texturas/"torres_v*.jpg "$A/img/texturas/modelos/"
 { printf '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>\n'
   cat "$A/index.html"; printf '</body></html>\n'; } > "$A/local.html"
 du -sh "$A"

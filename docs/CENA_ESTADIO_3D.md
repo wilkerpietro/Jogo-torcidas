@@ -1842,6 +1842,69 @@ O que não é fiel:
 - **O tabuleiro andável** precisa crescer uns 58 m pra oeste. Pro norte,
   o de hoje já vai quase até lá: falta 1,4 m da rua de cima.
 
+### 4.31. A proposta, 2ª versão
+
+O dono pediu pra refazer a proposta assim: favelas nas duas pontas (noroeste e sudoeste), o
+supermercado num extremo do mapa, a escola fora, uma cópia do quarteirão do estádio a
+sudoeste, mais três prédios de cada tipo em outras cores, mais 22 quadras (12 a oeste, 10
+ao norte) com a borda menos quadrada, e duas estradas de entrada, uma no norte e uma no sul,
+cada uma com o pórtico "BEM-VINDO A {cidade}".
+
+| | hoje | 2ª versão |
+|---|---|---|
+| quadras | 37 | 105 (+55 de casa, +13 de equipamento) |
+| lotes em quadra | 323 | 1.014 |
+| favelas | 1 | 2 (o mesmo desenho, 229 casas cada) |
+| casas de beira de estrada | 75 | 3 (as outras 72 ficam debaixo da cidade nova ou de estrada que acabou) |
+
+Onde ficou cada pedido:
+
+- **A grade.** São 12 quadras a oeste: a coluna −3 nas linhas 1 a 8 e um degrau na coluna −4,
+  linhas 2 a 5. As 10 do norte são a linha −2 inteira e um degrau na linha −3 (colunas 1 e 2).
+  A borda fica em escada.
+- **As favelas.** A de hoje vai pra ponta noroeste, transladada. A segunda é o mesmo desenho
+  girado de meia volta, na ponta sudoeste. O vão por onde a avenida noroeste2 passava vira a
+  rua principal das duas. O lugar da favela de hoje vira quadra, com a Praça da Vila no meio.
+- **O Atacadex** vai pra estrada de entrada do norte, de frente pra estrada e antes do pórtico.
+  A borda do estacionamento ficou reta, e as vagas, o totem e os postes da guia foram refeitos
+  com a mesma conta da planta.
+- **O Estádio Municipal** é o quarteirão do estádio copiado no meio de uma quadra de seis,
+  a sudoeste, com a esplanada em volta. No 3D aparece o volume: arquibancada em degraus,
+  cobertura, fachada e os quatro refletores.
+- **Os prédios.** São três condomínios na linha alta (a do estádio): (1,2), (−2,2) e (−4,2).
+  Cada um tem o par do baldio, com a mesma massa, e uma fileira de casas do outro lado. As
+  cores saem de `ferramentas/planta_html/pintar_variantes.py`, que roda o pintor da folha
+  `torres` com outra paleta. As células caem no mesmo lugar (o script confere o atlas), e o
+  modelo só troca a textura. Os pares:
+  - Horizonte e Porto Belo: concreto areia, vidro verde, tijolo vinho;
+  - Atlântico e Monte Verde: concreto branco, vidro fumê, pastilha grafite;
+  - Solar e Ipê Amarelo: concreto terracota, vidro bronze, tijolo mostarda.
+- **As entradas.** A do norte é a avenida norte, que sobe reta até a borda nova; a noroeste
+  termina num entroncamento com ela. A do sul é a avenida sudoeste. As duas vão dar no
+  estádio. A beira-mar termina nas duas pontas da orla, e as avenidas do oeste terminam na
+  borda da cidade (a noroeste2 na entrada da favela do noroeste): não sai outra estrada.
+- **O pórtico** é feito com o construtor e a folha da igreja: dois pilares com embasamento de
+  cantaria e fuste rebocado, viga rebocada com cornija de pedra e telhadinho de telha
+  colonial. As letras são aplicadas na viga: BEM-VINDO pra quem chega, VOLTE SEMPRE pra quem
+  sai. A ficha deixa trocar a cidade entre as 30 praças do jogo, e a preposição acompanha o
+  nome: a São Paulo, ao Recife, à Bahia.
+
+O que não é fiel:
+
+- **Nada disso está no jogo.** É a página.
+- **As favelas são cópias.** No jogo, a favela teria que ser gerada de novo nos dois lugares,
+  e a de hoje sai. Ela é o maior pedaço feito à mão da cidade, então isso não é pouca coisa.
+  Se for melhor manter a favela onde está, dá pra deixar a de hoje e pôr só a do sudoeste.
+- **O tabuleiro cresce bastante:** uns 163 m pra oeste (as favelas ficam na ponta), 100 m
+  pro norte (a estrada e o Atacadex) e 17 m pro sul (a estrada).
+- **Algumas praças são sobra.** Das quatro, três são o que sobrou onde a avenida corta a
+  quadra na diagonal.
+- **O Estádio Municipal é o mesmo estádio.** A cena da torcida teria que aceitar dois.
+- **Os equipamentos novos não têm modelo:** igreja, posto de saúde, campo e os terrenos de
+  sede.
+- **Parte das praças são regiões,** não cidades: "BEM-VINDO AO INTERIOR DE SP" não é placa
+  de verdade. O jogo precisaria do nome de uma cidade.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -2367,7 +2430,7 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX, as duas torres do condomínio do baldio (Edifício Mirante e Residencial Bela Vista, com o muro, a guarita e os portões) e a montagem de cada um |
 | `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
 | `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo) e as casas de muro (M1 a M4), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o lote clicado, `proposta.js` gera a expansão pra oeste e pro norte, `montar.sh` junta a página com a planta, os módulos 3D e as folhas numa pasta pra publicar |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico), `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico), `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`) e escreve o atlas; roda de novo sempre que mudar uma peça |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
