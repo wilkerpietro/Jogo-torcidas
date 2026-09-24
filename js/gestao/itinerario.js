@@ -204,9 +204,9 @@ TO.itinerario = (function(){
         const nome = (M().cidade(c) || {}).nome || c;
         const o = {id:'praca:'+c, cidade:c, nome, min, hora:hhmm(min),
                    dia:diaDe(min), estrada:k>0,
-                   lugar: k===0 ? 'Sede · a caravana pega a estrada'
-                        : k===cid.length-1 ? 'Chegada na praça deles'
-                        : 'Praça de passagem'};
+                   lugar: k===0 ? _t('Sede · a caravana pega a estrada')
+                        : k===cid.length-1 ? _t('Chegada na praça deles')
+                        : _t('Praça de passagem')};
         if(k>0){
           const emb = emboscadaEm(E, c, true);
           if(emb){
@@ -233,22 +233,23 @@ TO.itinerario = (function(){
     }
 
     /* ---- o bloco do estádio, igual em casa e fora ---- */
-    pontoDoDia('concentracao', 'Concentração',
-      casa ? 'Praça da concentração' : 'Praça deles · ponto do rival',
+    pontoDoDia('concentracao', _t('Concentração'),
+      casa ? _t('Praça da concentração') : _t('Praça deles · ponto do rival'),
       hora + ANTES.concentracao);
-    pontoDoDia('pista', 'Pista', 'Avenida de acesso · a caminho',
+    pontoDoDia('pista', _t('Pista'), _t('Avenida de acesso · a caminho'),
       hora + ANTES.pista);
-    pontoDoDia('arredores', 'Arredores',
-      (casa ? 'Esplanada do ' : 'Estádio deles · ') + (j.estadio || 'estádio'),
+    pontoDoDia('arredores', _t('Arredores'),
+      casa ? _t('Esplanada do {estadio}', {estadio:j.estadio || _t('estádio')})
+           : _t('Estádio deles · {estadio}', {estadio:j.estadio || _t('estádio')}),
       hora + ANTES.arredores);
 
-    põe({id:'jogo', nome:'O jogo', jogo:true, min:hora, hora:hhmm(hora), dia:0,
-         lugar:`${j.estadio || 'Estádio'} · em tempo real`});
+    põe({id:'jogo', nome:_t('O jogo'), jogo:true, min:hora, hora:hhmm(hora), dia:0,
+         lugar:_t('{estadio} · em tempo real', {estadio:j.estadio || _t('Estádio')})});
 
-    põe({id:'arredores-volta', nome:'Arredores', lugar:'Saída dos portões',
+    põe({id:'arredores-volta', nome:_t('Arredores'), lugar:_t('Saída dos portões'),
          min:hora+DEPOIS.arredores, hora:hhmm(hora+DEPOIS.arredores),
          dia:diaDe(hora+DEPOIS.arredores)});
-    põe({id:'pista-volta', nome:'Pista', lugar:'Avenida de acesso · volta',
+    põe({id:'pista-volta', nome:_t('Pista'), lugar:_t('Avenida de acesso · volta'),
          min:hora+DEPOIS.pista, hora:hhmm(hora+DEPOIS.pista),
          dia:diaDe(hora+DEPOIS.pista)});
 
@@ -261,9 +262,9 @@ TO.itinerario = (function(){
         const nome = (M().cidade(c) || {}).nome || c;
         const o = {id:'volta:'+c, cidade:c, nome, min, hora:hhmm(min),
                    dia:diaDe(min), estrada:k>0,
-                   lugar: k===0 ? 'Saída da praça deles'
-                        : k===cid.length-1 ? 'Sede · fim da caravana'
-                        : 'Praça de passagem'};
+                   lugar: k===0 ? _t('Saída da praça deles')
+                        : k===cid.length-1 ? _t('Sede · fim da caravana')
+                        : _t('Praça de passagem')};
         if(k < cid.length-1){
           const emb = emboscadaEm(E, c, false);
           if(emb){
@@ -317,7 +318,7 @@ TO.itinerario = (function(){
       const evs = [];
       for(const o of lista) for(const ev of (o.eventos||[]))
         evs.push(Object.assign({}, ev, {
-          lugarTxt: o.cidade ? `${o.nome} (${o.lugar || 'estrada'})` : `${o.nome} · ${o.lugar || ''}`,
+          lugarTxt: o.cidade ? `${o.nome} (${o.lugar || _t('estrada')})` : `${o.nome} · ${o.lugar || ''}`,
           naCidade: !o.cidade || o.cidade === (j.mapaAdv || ''),
           cidade: o.cidade || null}));
       evs.sort((a,b)=>(PRIO[a.tipo] ?? 3) - (PRIO[b.tipo] ?? 3));
@@ -325,14 +326,14 @@ TO.itinerario = (function(){
               eventos: evs.slice(0, 1), comEscolta:false, detalhe: lista.map(o=>o.id)};
     };
     const origem = (M().cidade(E.torcida.mapa) || {}).nome || E.torcida.mapa;
-    const destino = j.cidadeAdv || ((M().cidade(j.mapaAdv) || {}).nome) || 'lá';
+    const destino = j.cidadeAdv || ((M().cidade(j.mapaAdv) || {}).nome) || _t('lá');
     const fases = viaja
-      ? [fase('ida', 'Caravana · ida', `${origem} → ${destino}`, antes, 'onibus'),
+      ? [fase('ida', _t('Caravana · ida'), `${origem} → ${destino}`, antes, 'onibus'),
          Object.assign(jogo, {simbolo:'estadio'}),
-         fase('volta', 'Caravana · volta', `${destino} → ${origem}`, depois, 'onibus')]
-      : [fase('ida', 'Ida ao estádio', 'concentração, pista e arredores', antes, 'cidade'),
+         fase('volta', _t('Caravana · volta'), `${destino} → ${origem}`, depois, 'onibus')]
+      : [fase('ida', _t('Ida ao estádio'), _t('concentração, pista e arredores'), antes, 'cidade'),
          Object.assign(jogo, {simbolo:'estadio'}),
-         fase('volta', 'Volta do estádio', 'saída dos portões e pista', depois, 'cidade')];
+         fase('volta', _t('Volta do estádio'), _t('saída dos portões e pista'), depois, 'cidade')];
     if(escolta) jogo.comEscolta = true;
     const detalhadas = paradas;
     paradas.length = 0; paradas.push(...fases);
@@ -343,9 +344,11 @@ TO.itinerario = (function(){
     const rotDia = d => {
       const t = TO.estado.dataTextoEm ? TO.estado.dataTextoEm(E, d) : null;
       const quando = t ? `${t.semana} ${t.curta.slice(0,5)}` : '';
-      return quando + (d === 0 ? ' · dia do jogo'
-                     : d < 0 ? ' · véspera, dia de caravana'
-                             : ' · volta, dia de caravana');
+      /* o ' · ' fica em todas as línguas: a tela corta o rótulo nele
+         pra mostrar só a data (main.js, ITN.rotDia) */
+      return d === 0 ? _t('{quando} · dia do jogo', {quando})
+           : d < 0 ? _t('{quando} · véspera, dia de caravana', {quando})
+                   : _t('{quando} · volta, dia de caravana', {quando});
     };
     let anterior = null;
     for(const o of paradas){

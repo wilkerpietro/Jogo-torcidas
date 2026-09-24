@@ -42,7 +42,7 @@ TO.estado = (function(){
 
       torcida: Object.assign({
         id:'propria', nome:'Fúria Independente', sigla:'FI',
-        clube:'seu clube', clubeId:null, cidade:'a cidade', uf:'BR',
+        clube:_t('seu clube'), clubeId:null, cidade:_t('a cidade'), uf:'BR',
         mapa:null, bairroSede:'', cores:['#9d2222','#e8e8e8'], sedeNivel:1
       }, opc.torcida || {}),
 
@@ -111,7 +111,7 @@ TO.estado = (function(){
        que comparar patrimônio, e o balanço sairia vazio */
     if(TO.almanaque) TO.almanaque.tirarFoto(E);
     sortearProximoJogo(E);
-    lancar(E, 'Caixa inicial', 0);
+    lancar(E, _t('Caixa inicial'), 0);
     mudou();
     return E;
   }
@@ -122,7 +122,9 @@ TO.estado = (function(){
   /* semana 1 é a primeira segunda-feira do ano: assim o calendário do
      jogo bate com o do futebol, estaduais em janeiro (GDD §18.1) */
   const BASE = new Date(2026, 0, 5);
-  const SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  /* só mostrado (nunca comparado): já sai no idioma do jogador */
+  const SEMANA = [_t('Domingo'), _t('Segunda'), _t('Terça'), _t('Quarta'),
+                  _t('Quinta'), _t('Sexta'), _t('Sábado')];
 
   function dataDe(est){
     const d = new Date(BASE.getTime());
@@ -332,15 +334,15 @@ TO.estado = (function(){
       if(!exp.manha && !exp.tarde && !exp.noite) return;
       est.acoes.feitas = est.acoes.feitas || [];
       est.acoes.feitas.push({semana:est.data.semana, dia:est.data.dia,
-        id:'folga', ok:false, msg:`Expediente de folga: ${motivo}.`});
+        id:'folga', ok:false, msg:_t('Expediente de folga: {motivo}.', {motivo})});
       if(est.acoes.feitas.length > 60) est.acoes.feitas.shift();
     };
     const meu = TO.mundo.time(est.torcida.clubeId);
     if(meu && TO.competicoes.jogosDaSemana(est, meu.id, est.data.semana)
                 .some(j=>j.dia === est.data.dia))
-      return folga('dia de jogo do clube');
+      return folga(_t('dia de jogo do clube'));
     const cv = TO.financeiro.diasDeCaravana(est);
-    if(cv.includes(est.data.dia)) return folga('dia de caravana');
+    if(cv.includes(est.data.dia)) return folga(_t('dia de caravana'));
     TO.acoes.rodarExpediente(est);
   }
 
@@ -390,7 +392,7 @@ TO.estado = (function(){
           if(c.campeao) TO.relacoes.conquistaDoClube(E, c.campeao, 'campeao');
           if(c.vice)    TO.relacoes.conquistaDoClube(E, c.vice, 'vice');
           if(c.campeao === E.torcida.clubeId)
-            mexerIndicador(E, 'moral', 2.5, `Título: ${c.nome}`);
+            mexerIndicador(E, 'moral', 2.5, _t('Título: {comp}', {comp:c.nome}));
         }
         E.classifAnterior = null;
         /* O ALMANAQUE COLHE ANTES DA VIRADA APAGAR (pedido do dono,
@@ -455,7 +457,7 @@ TO.estado = (function(){
           /* acesso enche a fila do recrutamento; rebaixamento esvazia */
           TO.torcedores.abrirJanela(E, sub ? 1.6 : 0.45, sub ? 4 : 8);
           mexerIndicador(E, 'moral', sub ? 2 : -3,
-            sub ? 'Acesso do clube' : 'Rebaixamento do clube');
+            sub ? _t('Acesso do clube') : _t('Rebaixamento do clube'));
           /* e abre a janela de 2 semanas da tabela do dono: acesso é
              regime quente, rebaixamento é regime seco */
           E.janelaRecruta = {tipo: sub ? 'titulo' : 'rebaixamento',
@@ -498,8 +500,8 @@ TO.estado = (function(){
     const marcoPaz = Math.max(E.ultimaBriga, E.ultimaDepreciacao || 0);
     if(E.data.absoluto - marcoPaz >= 20){
       E.ultimaDepreciacao = E.data.absoluto;
-      mexerIndicador(E, 'prestigio', -0.2, '20 dias sem briga');
-      mexerIndicador(E, 'moral', -0.5, '20 dias sem briga');
+      mexerIndicador(E, 'prestigio', -0.2, _t('20 dias sem briga'));
+      mexerIndicador(E, 'moral', -0.5, _t('20 dias sem briga'));
       /* A FERRUGEM DA PAZ (régua do dono, 20/08/2026): quem não bate
          desaprende. Cada 20 dias parados tiram 0,2 de força e defesa
          de todo mundo — inclusive de quem está de molho, que é
@@ -569,7 +571,7 @@ TO.estado = (function(){
     const venceu = j.gp > j.gc, perdeu = j.gp < j.gc;
     const d = venceu ? 0.6 : perdeu ? -0.6 : 0;
     mexerIndicador(E, 'moral', d,
-      venceu ? 'Vitória do clube em campo' : 'Derrota do clube em campo');
+      venceu ? _t('Vitória do clube em campo') : _t('Derrota do clube em campo'));
     /* o recrutamento olha pro último jogo (tabela do dono): vitória
        anima a praça, derrota esvazia — empate é semana comum */
     E.ultimoJogoClube = {venceu, perdeu};
@@ -690,12 +692,10 @@ TO.estado = (function(){
       const leu = localStorage.getItem(k) === '1';
       localStorage.removeItem(k);
       return leu ? {ok:true}
-                 : {ok:false, motivo:'o navegador aceitou gravar mas não '+
-                    'devolveu o que gravou — o save some ao fechar'};
+                 : {ok:false, motivo:_t('o navegador aceitou gravar mas não devolveu o que gravou — o save some ao fechar')};
     }catch(e){
-      return {ok:false, motivo:'o navegador bloqueou o armazenamento '+
-              `(${e.name || 'erro'}). Janela anônima e "bloquear dados de `+
-              'sites" fazem isso. Use o save por texto ou por arquivo.'};
+      return {ok:false, motivo:_t('o navegador bloqueou o armazenamento ({erro}). Janela anônima e "bloquear dados de sites" fazem isso. Use o save por texto ou por arquivo.',
+              {erro:e.name || _t('erro')})};
     }
   }
 
@@ -759,10 +759,9 @@ TO.estado = (function(){
          mais o resto do navegador podem não caber */
       const cota = /quota|exceeded|NS_ERROR_DOM_QUOTA/i.test(e.name+e.message);
       return gritar({ok:false, motivo: cota
-        ? `o save (${Math.round(txt.length/1024)} KB) não coube: apague uma `+
-          'vaga antiga em Jogo → Vagas, ou guarde esta partida em '+
-          'arquivo/texto'
-        : 'o navegador recusou gravar ('+(e.name||'erro')+')'});
+        ? _t('o save ({kb} KB) não coube: apague uma vaga antiga em Jogo → Vagas, ou guarde esta partida em arquivo/texto',
+             {kb:Math.round(txt.length/1024)})
+        : _t('o navegador recusou gravar ({erro})', {erro:e.name || _t('erro')})});
     }
   }
   async function comprimir(cru){
@@ -772,14 +771,14 @@ TO.estado = (function(){
     return MARCA_Z + b64De(bytes);
   }
   function salvarEm(vaga, nome, opts){
-    if(!E) return {ok:false, motivo:'sem partida'};
-    if(bloqueado) return {ok:false, motivo:'aguarde chegar ao estádio'};
-    if(VAGAS.indexOf(vaga) < 0) return {ok:false, motivo:'vaga que não existe'};
+    if(!E) return {ok:false, motivo:_t('sem partida')};
+    if(bloqueado) return {ok:false, motivo:_t('aguarde chegar ao estádio')};
+    if(VAGAS.indexOf(vaga) < 0) return {ok:false, motivo:_t('vaga que não existe')};
     let cru;
     try{
       cru = paraGravar(E);
     }catch(e){
-      return gritar({ok:false, motivo:'o save não virou texto: '+e.message});
+      return gritar({ok:false, motivo:_t('o save não virou texto: {erro}', {erro:e.message})});
     }
     const sincrono = !!(opts && opts.sincrono);
     if(sincrono && ultimoCru[vaga] === cru)
@@ -868,10 +867,10 @@ TO.estado = (function(){
   };
 
   async function paraTexto(){
-    if(!E) return {ok:false, motivo:'sem partida'};
+    if(!E) return {ok:false, motivo:_t('sem partida')};
     let cru;
     try{ cru = paraGravar(E); }
-    catch(e){ return {ok:false, motivo:'o save não virou texto: '+e.message}; }
+    catch(e){ return {ok:false, motivo:_t('o save não virou texto: {erro}', {erro:e.message})}; }
     if(typeof CompressionStream === 'undefined')
       return {ok:true, texto: MARCA_J + btoa(unescape(encodeURIComponent(cru))),
               cru: cru.length};
@@ -888,15 +887,15 @@ TO.estado = (function(){
 
   async function deTexto(txt){
     txt = String(txt||'').replace(/\s+/g, '');
-    if(!txt) return {ok:false, motivo:'não veio texto nenhum'};
+    if(!txt) return {ok:false, motivo:_t('não veio texto nenhum')};
     try{
       if(txt.indexOf(MARCA_Z) !== 0 && txt.indexOf(MARCA_J) !== 0 && txt[0] !== '{')
-        return {ok:false, motivo:'isso não parece um save do jogo'};
+        return {ok:false, motivo:_t('isso não parece um save do jogo')};
       const cru = await destrinchar(txt);     // ou alguém colou o JSON cru
       return adotar(cru) ? {ok:true}
-                         : {ok:false, motivo:'save de outra versão do jogo'};
+                         : {ok:false, motivo:_t('save de outra versão do jogo')};
     }catch(e){
-      return {ok:false, motivo:'o texto veio quebrado ('+(e.name||'erro')+')'};
+      return {ok:false, motivo:_t('o texto veio quebrado ({erro})', {erro:e.name || _t('erro')})};
     }
   }
 
@@ -953,7 +952,7 @@ TO.estado = (function(){
         /Presença na festa da undefined/.test(t.descricao||''));
       if(erradas.length && !E.estornoFestaFeito){
         E.estornoFestaFeito = true;
-        lancar(E, 'Estorno — cobrança errada de festa',
+        lancar(E, _t('Estorno — cobrança errada de festa'),
                erradas.length * 2000);
       }
     }catch(e){ /* conserto nunca pode derrubar a carga do save */ }
@@ -995,7 +994,7 @@ TO.estado = (function(){
     fr.onload = ()=>{
       try{
         const dados = JSON.parse(fr.result);
-        if(!dados.membros || !dados.data) throw new Error('não parece um save');
+        if(!dados.membros || !dados.data) throw new Error(_t('não parece um save'));
         E = dados;
         U.usarSemente(E.semente || 1);
         TO.competicoes.usarSave(E);

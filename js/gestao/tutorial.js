@@ -16,35 +16,29 @@
   /* acha o menor elemento que casa o texto — os alvos do círculo */
   const porTexto = (sel, rx) =>
     [...document.querySelectorAll(sel)].find(n=>rx.test(n.textContent)) || null;
+  /* os alvos e as subabas são achados pelo TEXTO da tela, que muda com
+     o idioma: o padrão casa o português e a tradução de cada rótulo
+     (mais as palavras soltas de `extra`, já nas três línguas) */
+  const escRx = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rxDe = (pts, extra) => new RegExp(
+    pts.flatMap(w=>[w, _t(w)]).map(escRx).join('|') + (extra ? '|'+extra : ''), 'i');
 
   /* ---------- os passos (crivo do dono, 02/09/2026) ----------
      `circ` circula um indicador na faixa do topo; `painel` abre a
-     tela real atrás (null = o feed); `aba` clica a subaba certa;
-     `alvos` devolve os pedaços da tela que o texto descreve. */
+     tela real atrás (null = o feed); `aba` clica a subaba certa (o
+     rótulo em português; casa também a tradução); `alvos` devolve os
+     pedaços da tela que o texto descreve. */
   const PASSOS = [
-    {ic:'⭐', tela:'Indicadores · Prestígio', circ:'ind-prestigio', txt:
-      'O jogo é regido por uma série de indicadores que vão dizer se sua '+
-      'torcida vai bem ou mal.<br><br><em>Prestígio</em>: Seu respeito '+
-      'dentro do universo das torcidas. Vencer brigas, construir '+
-      'patrimônio, dominar rivais, tudo isso aumenta o prestígio. O '+
-      'contrário diminui.'},
-    {ic:'⚡', tela:'Indicadores · Moral', circ:'ind-moral', txt:
-      '<em>Moral</em>: É a satisfação do seu membro com a torcida. Moral '+
-      'alta faz ele estar mais presente nos jogos e nas brigas. Moral '+
-      'baixa faz ele repensar se vale a pena estar na torcida.'},
-    {ic:'🫂', tela:'Indicadores · Recrutar', circ:'ind-membros', txt:
-      '<em>Recrutar</em>: É a ação de conseguir novos membros. Quem dita '+
-      'se um dia terá novos membros recrutados é a fase do clube: se vai '+
-      'bem novos membros são recrutados mais fácil, se vai mal se torna '+
-      'bem mais difícil.'},
-    {ic:'🤝', tela:'Indicadores · Relações', txt:
-      '<em>Relações</em>: Nível de relação com um rival, mas mais na '+
-      'frente eu te explico com mais detalhe no passo a passo.'},
-    {ic:'📣', tela:'Feed', txt:
-      'O feed é onde o jogo acontece. Tudo é decidido por aqui: recado '+
-      'de olheiro, planejamento de ações, notícia. Decisões importantes '+
-      'têm opções que detalham as consequências de cada uma — o resto é '+
-      'pra ler e seguir.',
+    {ic:'⭐', tela:_t('Indicadores · Prestígio'), circ:'ind-prestigio', txt:_t(
+      'O jogo é regido por uma série de indicadores que vão dizer se sua torcida vai bem ou mal.<br><br><em>Prestígio</em>: Seu respeito dentro do universo das torcidas. Vencer brigas, construir patrimônio, dominar rivais, tudo isso aumenta o prestígio. O contrário diminui.')},
+    {ic:'⚡', tela:_t('Indicadores · Moral'), circ:'ind-moral', txt:_t(
+      '<em>Moral</em>: É a satisfação do seu membro com a torcida. Moral alta faz ele estar mais presente nos jogos e nas brigas. Moral baixa faz ele repensar se vale a pena estar na torcida.')},
+    {ic:'🫂', tela:_t('Indicadores · Recrutar'), circ:'ind-membros', txt:_t(
+      '<em>Recrutar</em>: É a ação de conseguir novos membros. Quem dita se um dia terá novos membros recrutados é a fase do clube: se vai bem novos membros são recrutados mais fácil, se vai mal se torna bem mais difícil.')},
+    {ic:'🤝', tela:_t('Indicadores · Relações'), txt:_t(
+      '<em>Relações</em>: Nível de relação com um rival, mas mais na frente eu te explico com mais detalhe no passo a passo.')},
+    {ic:'📣', tela:_t('Feed'), txt:_t(
+      'O feed é onde o jogo acontece. Tudo é decidido por aqui: recado de olheiro, planejamento de ações, notícia. Decisões importantes têm opções que detalham as consequências de cada uma — o resto é pra ler e seguir.'),
       alvos: ()=>{
         /* de preferência uma decisão em aberto; sem uma, o cartão mais
            novo do feed serve de exemplo */
@@ -52,91 +46,69 @@
         return [(bts && bts.closest('.msg')) ||
                 document.querySelector('.msg')];
       }},
-    {ic:'👥', tela:'Torcida', painel:'torcida', aba:/Membros/, txt:
-      'Aqui é detalhado todos os dados da sua torcida, inclusive a lista '+
-      'de membros, que possuem força de ataque e defesa, cargo inicial, '+
-      'podendo evoluir para demais cargos se evoluírem sua força e XP. '+
-      'Eles podem ficar feridos em brigas ou presos se a polícia pegar '+
-      'eles. Nesse caso eles não são usados por você enquanto estiverem '+
-      'nessas condições.',
+    {ic:'👥', tela:_t('Torcida'), painel:'torcida', aba:'Membros', txt:_t(
+      'Aqui é detalhado todos os dados da sua torcida, inclusive a lista de membros, que possuem força de ataque e defesa, cargo inicial, podendo evoluir para demais cargos se evoluírem sua força e XP. Eles podem ficar feridos em brigas ou presos se a polícia pegar eles. Nesse caso eles não são usados por você enquanto estiverem nessas condições.'),
       alvos: ()=>{
         /* a tabela inteira estoura a tela: o círculo vai no cabeçalho,
            onde moram ataque, defesa, XP e o estado */
         const t = document.querySelector('.pagina[data-pag="torcida"] table');
         return [t && (t.tHead || t)];
       }},
-    {ic:'💰', tela:'Financeiro · 1 de 2', painel:'financeiro',
-      aba:/Patrimônio/, txt:
-      'Essa parte do menu mostra o controle financeiro da torcida. Toda '+
-      'torcida inicia com uma sede social e um bar embutido dentro da '+
-      'sede. Você pode evoluir o patrimônio da torcida comprando novas '+
-      'lojas, bares e subsedes. O nível da sede dita a quantidade de '+
-      'patrimônio que você pode ter, mas cada um tem níveis que quando '+
-      'evoluídos geram mais receita.',
+    {ic:'💰', tela:_t('Financeiro · 1 de 2'), painel:'financeiro',
+      aba:'Patrimônio', txt:_t(
+      'Essa parte do menu mostra o controle financeiro da torcida. Toda torcida inicia com uma sede social e um bar embutido dentro da sede. Você pode evoluir o patrimônio da torcida comprando novas lojas, bares e subsedes. O nível da sede dita a quantidade de patrimônio que você pode ter, mas cada um tem níveis que quando evoluídos geram mais receita.'),
       alvos: ()=>[
         porTexto('.pagina[data-pag="financeiro"] .cartao, '+
-                 '.pagina[data-pag="financeiro"] .quadro', /Sede|Estrutura/i),
+                 '.pagina[data-pag="financeiro"] .quadro',
+                 rxDe(['Sede', 'Estrutura'], 'Estructura|Structure|HQ')),
         document.querySelector('.pagina[data-pag="financeiro"] .oferta')]},
-    {ic:'💰', tela:'Financeiro · 2 de 2', painel:'financeiro',
-      aba:/Patrimônio/, txt:
-      'Além disso, você pode contratar treinadores de luta pra aumentar '+
-      'a qualidade do seu treino e advogados pra livrar membros da '+
-      'cadeia, sempre com prudência pra não quebrar as finanças da '+
-      'torcida.',
-      alvos: ()=>[
-        porTexto('.pagina[data-pag="financeiro"] .oferta', /[Aa]dvogado/) ||
-        porTexto('.pagina[data-pag="financeiro"] .linha-dado, '+
-                 '.pagina[data-pag="financeiro"] .transacao', /[Aa]dvogado/)]},
-    {ic:'📆', tela:'Calendário', painel:'calendario', aba:/Expediente/, txt:
-      'O expediente da sede é a ação passiva da torcida: o que ela vai '+
-      'fazer sem você. Todas as escolhas mexem nos indicadores ou nas '+
-      'finanças. Existe também o calendário seu e dos outros times pra '+
-      'você se programar.',
+    {ic:'💰', tela:_t('Financeiro · 2 de 2'), painel:'financeiro',
+      aba:'Patrimônio', txt:_t(
+      'Além disso, você pode contratar treinadores de luta pra aumentar a qualidade do seu treino e advogados pra livrar membros da cadeia, sempre com prudência pra não quebrar as finanças da torcida.'),
+      alvos: ()=>{
+        const adv = rxDe(['Advogado', 'Advogados'], 'abogad|lawyer');
+        return [
+          porTexto('.pagina[data-pag="financeiro"] .oferta', adv) ||
+          porTexto('.pagina[data-pag="financeiro"] .linha-dado, '+
+                   '.pagina[data-pag="financeiro"] .transacao', adv)];
+      }},
+    {ic:'📆', tela:_t('Calendário'), painel:'calendario', aba:'Expediente da Sede', txt:_t(
+      'O expediente da sede é a ação passiva da torcida: o que ela vai fazer sem você. Todas as escolhas mexem nos indicadores ou nas finanças. Existe também o calendário seu e dos outros times pra você se programar.'),
       alvos: ()=>[document.querySelector('.pagina[data-pag="calendario"] '+
         '.cartao, .pagina[data-pag="calendario"] .quadro')]},
-    {ic:'🏆', tela:'Competições', painel:'competicoes', txt:
-      'Aqui você consegue detalhar todos os campeonatos do mundo, com '+
-      'tabela de classificação e jogos por rodada.',
+    {ic:'🏆', tela:_t('Competições'), painel:'competicoes', txt:_t(
+      'Aqui você consegue detalhar todos os campeonatos do mundo, com tabela de classificação e jogos por rodada.'),
       alvos: ()=>{
         const jogo = document.querySelector('.pagina[data-pag="competicoes"] .jogo');
         return [document.querySelector('.pagina[data-pag="competicoes"] table.liga'),
                 jogo && jogo.closest('.quadro')];
       }},
-    {ic:'🏅', tela:'Ranking', painel:'ranking', txt:
-      'A régua nacional das torcidas: membros, prestígio, força, saldo '+
-      'de briga. <em>Subir aqui é o objetivo do ano</em> — e todo mundo '+
-      'tá olhando.',
+    {ic:'🏅', tela:_t('Ranking'), painel:'ranking', txt:_t(
+      'A régua nacional das torcidas: membros, prestígio, força, saldo de briga. <em>Subir aqui é o objetivo do ano</em> — e todo mundo tá olhando.'),
       alvos: ()=>[
         document.querySelector('.pagina[data-pag="ranking"] tr.nossa') ||
         document.querySelector('.pagina[data-pag="ranking"] table')]},
-    {ic:'🤝', tela:'Diplomacia · Aliados', painel:'diplomacia',
-      aba:/Alianças/, txt:
-      'A diplomacia mostra as relações da sua torcida com todas as '+
-      'demais. Os aliados vão te ajudar e pedir auxílio; qualquer ajuda '+
-      'entre vocês aumenta a relação, negar diminui.',
+    {ic:'🤝', tela:_t('Diplomacia · Aliados'), painel:'diplomacia',
+      aba:'Alianças', txt:_t(
+      'A diplomacia mostra as relações da sua torcida com todas as demais. Os aliados vão te ajudar e pedir auxílio; qualquer ajuda entre vocês aumenta a relação, negar diminui.'),
       alvos: ()=>[document.querySelector('.pagina[data-pag="diplomacia"] '+
         '.cartao, .pagina[data-pag="diplomacia"] table')]},
-    {ic:'⚔️', tela:'Diplomacia · Rivais', painel:'diplomacia',
-      aba:/Rivalidades/, txt:
-      'Os rivais vão ser aqueles que procuram hostilidade contra você no '+
-      'jogo, seja na sua cidade, em outra cidade em jogos fora de casa '+
-      'ou em emboscadas na estrada quando você estiver viajando. Cada '+
-      'ação dessa piora as relações entre você e o rival.',
+    {ic:'⚔️', tela:_t('Diplomacia · Rivais'), painel:'diplomacia',
+      aba:'Rivalidades', txt:_t(
+      'Os rivais vão ser aqueles que procuram hostilidade contra você no jogo, seja na sua cidade, em outra cidade em jogos fora de casa ou em emboscadas na estrada quando você estiver viajando. Cada ação dessa piora as relações entre você e o rival.'),
       alvos: ()=>[document.querySelector('.pagina[data-pag="diplomacia"] '+
         '.cartao, .pagina[data-pag="diplomacia"] table')]},
-    {ic:'📰', tela:'Notícias', painel:'noticias', aba:/Brigas/, txt:
-      'Aqui é onde as notícias do mundo inteiro são compiladas, além da '+
-      'lista de brigas entre as demais torcidas do jogo (IA × IA).',
+    {ic:'📰', tela:_t('Notícias'), painel:'noticias', aba:'Brigas', txt:_t(
+      'Aqui é onde as notícias do mundo inteiro são compiladas, além da lista de brigas entre as demais torcidas do jogo (IA × IA).'),
       alvos: ()=>{
         const b = document.querySelector('.pagina[data-pag="noticias"] .briga-ia');
         return [b ? b.closest('.cartao') :
           document.querySelector('.pagina[data-pag="noticias"] .cartao')];
       }},
-    {ic:'💾', tela:'Jogo', painel:'jogo', txt:
-      'O cofre de saves. Partida de cinco anos se salva — <em>vaga, '+
-      'arquivo ou texto</em>. Salva antes de decisão grande e ninguém '+
-      'chora depois.',
-      alvos: ()=>[porTexto('.pagina[data-pag="jogo"] .quadro', /Vagas/i)]},
+    {ic:'💾', tela:_t('Jogo'), painel:'jogo', txt:_t(
+      'O cofre de saves. Partida de cinco anos se salva — <em>vaga, arquivo ou texto</em>. Salva antes de decisão grande e ninguém chora depois.'),
+      alvos: ()=>[porTexto('.pagina[data-pag="jogo"] .quadro',
+                           rxDe(['Vagas de save'], 'Vagas|Ranuras|Slots'))]},
   ];
 
   let passo = 0, overlay = null;
@@ -151,14 +123,14 @@
     overlay = el('div',{id:'tutOverlay'});
     overlay.innerHTML =
       `<div class="tut-msg">
-        <div class="tut-cab"><span>Diretoria</span><small>passo a passo</small></div>
+        <div class="tut-cab"><span>${_t('Diretoria')}</span><small>${_t('passo a passo')}</small></div>
         <div class="tut-progresso"><small id="tutConta"></small>
           <div class="tut-tracos" id="tutTracos"></div></div>
         <div class="tut-tela" id="tutTela"></div>
         <div class="tut-corpo" id="tutCorpo"></div>
         <div class="tut-acoes">
-          <button class="tut-forte" id="tutAvancar">Avançar →</button>
-          <button id="tutPular">Pular o resto</button>
+          <button class="tut-forte" id="tutAvancar">${_t('Avançar →')}</button>
+          <button id="tutPular">${_t('Pular o resto')}</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
@@ -172,22 +144,26 @@
   function pintarPasso(){
     const p = PASSOS[passo];
     overlay.querySelector('#tutConta').textContent =
-      `Passo ${passo+1} de ${PASSOS.length}`;
+      _t('Passo {n} de {total}', {n:passo+1, total:PASSOS.length});
     [...overlay.querySelectorAll('#tutTracos i')].forEach((i,k)=>
       i.classList.toggle('feito', k <= passo));
     overlay.querySelector('#tutTela').innerHTML =
       `<span class="ic">${p.ic}</span>${p.tela}`;
     overlay.querySelector('#tutCorpo').innerHTML = p.txt;
     overlay.querySelector('#tutAvancar').textContent =
-      passo === PASSOS.length-1 ? 'Fechar com a briga →' : 'Avançar →';
+      passo === PASSOS.length-1 ? _t('Fechar com a briga →') : _t('Avançar →');
 
     /* a tela DE VERDADE no fundo (menu abre atrás do cartão) */
     if(p.painel) TO.tela.abrirPainel(p.painel);
     else TO.tela.fecharPainel();
     if(p.aba){
-      const b = [...document.querySelectorAll(
-        `.pagina[data-pag="${p.painel}"] .subabas button`)]
-        .find(x=>p.aba.test(x.textContent));
+      /* o rótulo da subaba em português ou já traduzido: primeiro o
+         botão com o rótulo exato, senão o que o contém */
+      const rots = [p.aba, _t(p.aba)];
+      const bts = [...document.querySelectorAll(
+        `.pagina[data-pag="${p.painel}"] .subabas button`)];
+      const b = bts.find(x=>rots.includes(x.textContent.trim())) ||
+                bts.find(x=>rots.some(r=>x.textContent.includes(r)));
       if(b && !b.classList.contains('on')) b.click();
     }
     /* os círculos entram depois que a tela pintou */
@@ -248,27 +224,21 @@
     baloes = el('div',{id:'tutBaloes'});
     baloes.innerHTML =
       `<div class="tut-balao" id="tutBalao0">
-        <div class="rot">A pista · 1 de 4</div>
-        <p>O bonde anda com o <b>WASD</b> — ou com o direcional na tela,
-          no toque. Aponta pra onde quer ir que os seus vão atrás de
-          você.</p>
-        <span class="feito">✓ isso — agora vai pra cima deles</span></div>
+        <div class="rot">${_t('A pista · 1 de 4')}</div>
+        <p>${_t('O bonde anda com o <b>WASD</b> — ou com o direcional na tela, no toque. Aponta pra onde quer ir que os seus vão atrás de você.')}</p>
+        <span class="feito">${_t('✓ isso — agora vai pra cima deles')}</span></div>
       <div class="tut-balao" id="tutBalao1">
-        <div class="rot">A porrada · 2 de 4</div>
-        <p>Não precisa clicar no rival e nem em alguma tecla pra bater
-          nele: <b>basta encostar nele</b>.</p>
-        <button class="entendi" data-n="1">Entendi</button></div>
+        <div class="rot">${_t('A porrada · 2 de 4')}</div>
+        <p>${_t('Não precisa clicar no rival e nem em alguma tecla pra bater nele: <b>basta encostar nele</b>.')}</p>
+        <button class="entendi" data-n="1">${_t('Entendi')}</button></div>
       <div class="tut-balao" id="tutBalao2">
-        <div class="rot">O arsenal · 3 de 4</div>
-        <p>Clique <kbd>Q</kbd> pra jogar pedra, <kbd>E</kbd> pra jogar
-          bomba.</p>
-        <span class="feito">✓ voou coisa na praça</span></div>
+        <div class="rot">${_t('O arsenal · 3 de 4')}</div>
+        <p>${_t('Clique <kbd>Q</kbd> pra jogar pedra, <kbd>E</kbd> pra jogar bomba.')}</p>
+        <span class="feito">${_t('✓ voou coisa na praça')}</span></div>
       <div class="tut-balao" id="tutBalao3">
-        <div class="rot">A fuga · 4 de 4</div>
-        <p>Quando o rival perder uma <b>% dos envolvidos</b>, ela vai
-          correr da briga.</p>
-        <button class="entendi" data-n="3">Entendi — terminar o
-          serviço</button></div>`;
+        <div class="rot">${_t('A fuga · 4 de 4')}</div>
+        <p>${_t('Quando o rival perder uma <b>% dos envolvidos</b>, ela vai correr da briga.')}</p>
+        <button class="entendi" data-n="3">${_t('Entendi — terminar o serviço')}</button></div>`;
     document.body.appendChild(baloes);
     baloes.addEventListener('click', ev=>{
       const n = ev.target && ev.target.dataset && ev.target.dataset.n;
@@ -281,11 +251,10 @@
     if(desfecho) return desfecho;
     desfecho = el('div',{class:'tut-desfecho', id:'tutDesfecho'});
     desfecho.innerHTML =
-      `<h2 id="tutDfRot">A rival correu!</h2>
-       <p id="tutDfSub">Ela quebrou e abandonou a praça. É assim que
-         briga termina: no número, não no clique.</p>
-       <button id="tutDeNovo">Brigar de novo</button>
-       <button id="tutVoltar">Voltar pro jogo</button>`;
+      `<h2 id="tutDfRot">${_t('A rival correu!')}</h2>
+       <p id="tutDfSub">${_t('Ela quebrou e abandonou a praça. É assim que briga termina: no número, não no clique.')}</p>
+       <button id="tutDeNovo">${_t('Brigar de novo')}</button>
+       <button id="tutVoltar">${_t('Voltar pro jogo')}</button>`;
     document.body.appendChild(desfecho);
     desfecho.querySelector('#tutDeNovo').onclick = ()=>{
       desfecho.style.display = 'none';
@@ -349,12 +318,10 @@
       baloes.style.display = 'none';
       const venceu = !!(res && res.ganhamos);
       desfecho.querySelector('#tutDfRot').textContent =
-        venceu ? 'A rival correu!' : 'Fim da demonstração';
+        venceu ? _t('A rival correu!') : _t('Fim da demonstração');
       desfecho.querySelector('#tutDfSub').textContent = venceu
-        ? 'Ela quebrou e abandonou a praça. É assim que briga termina: '+
-          'no número, não no clique.'
-        : 'Na briga de verdade seria dia de lamber ferida — aqui não '+
-          'custou nada. Quer tentar de novo?';
+        ? _t('Ela quebrou e abandonou a praça. É assim que briga termina: no número, não no clique.')
+        : _t('Na briga de verdade seria dia de lamber ferida — aqui não custou nada. Quer tentar de novo?');
       desfecho.style.display = 'block';
     });
   }
