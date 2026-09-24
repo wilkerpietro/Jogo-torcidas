@@ -135,11 +135,13 @@ TO.feed = (function(){
     const rivais = [...new Set(brigas.map(m=>m.dados.b && m.dados.b.nome).filter(Boolean))];
     return propor(E, Object.assign({}, principal, {
       tipo: ganhas*2 >= brigas.length ? 'boa' : 'ruim',
-      texto: `Dia de jogo com ${brigas.length} brigas`+
-             (rivais.length ? ` (${rivais.join(', ')})` : '')+
-             `: ${fA} ${fA===1?'ferido nosso':'feridos nossos'}, ${fB} do lado deles`+
-             (pA ? `, ${pA} ${pA===1?'preso nosso':'presos nossos'}` : '')+
-             `. Levamos a melhor em ${ganhas} de ${brigas.length}.`,
+      texto: (rivais.length
+               ? _t('Dia de jogo com {n} brigas ({rivais})', {n:brigas.length, rivais:rivais.join(', ')})
+               : _t('Dia de jogo com {n} brigas', {n:brigas.length}))+
+             ': '+_tn(fA, '{n} ferido nosso', '{n} feridos nossos')+', '+
+             _t('{n} do lado deles', {n:fB})+
+             (pA ? ', '+_tn(pA, '{n} preso nosso', '{n} presos nossos') : '')+
+             '. '+_t('Levamos a melhor em {g} de {n}.', {g:ganhas, n:brigas.length}),
       efeitos,
       consequencia: linhaDeConsequencia(efeitos),
       dados: Object.assign({}, principal.dados, {
@@ -149,8 +151,9 @@ TO.feed = (function(){
     }));
   }
 
-  const MES_NOME = ['janeiro','fevereiro','março','abril','maio','junho','julho',
-                    'agosto','setembro','outubro','novembro','dezembro'];
+  /* traduzido aqui: o nome do mês vai pro save (a dívida) e só é mostrado */
+  const MES_NOME = TO.i18n.tl(['janeiro','fevereiro','março','abril','maio','junho','julho',
+                    'agosto','setembro','outubro','novembro','dezembro']);
   /* a cidade onde a briga de hoje aconteceu: na viagem, a deles */
   function cidadeDeHoje(E){
     const j = E.proximoJogo;
@@ -169,8 +172,8 @@ TO.feed = (function(){
       PL().definirRecepcao(E, m.de, escolha);
       const r = PL().recepcaoDe(escolha);
       m.resposta = escolha;
-      m.consequencia = `${r.rot}: ${r.porCabeca ? U.dinheiro(r.porCabeca * (d.n||0)) + ' no dia do jogo · ' : ''}`+
-                       `${r.relacao>0?'+':''}${r.relacao} de relação`;
+      m.consequencia = `${_t(r.rot)}: ${r.porCabeca ? _t('{valor} no dia do jogo', {valor:U.dinheiro(r.porCabeca * (d.n||0))}) + ' · ' : ''}`+
+                       _t('{n} de relação', {n:`${r.relacao>0?'+':''}${r.relacao}`});
       return {ok:true};
     }
     if(m.tipo === 'tregua'){
@@ -182,10 +185,10 @@ TO.feed = (function(){
         /* trégua apaga a dívida dos dois lados */
         if(E.dividas) delete E.dividas[m.de];
         if(TO.relacoes.quitarDividaIA) TO.relacoes.quitarDividaIA(E, m.de, E.torcida.id);
-        m.consequencia = 'Trégua até o fim do ano: ninguém procura ninguém. Relação +15.';
+        m.consequencia = _t('Trégua até o fim do ano: ninguém procura ninguém. Relação +15.');
       } else {
         E.relacoes[m.de] = U.limitar(TO.relacoes.nivel(E, m.de) - 5, -100, 100);
-        m.consequencia = 'Recusada. Relação −5 — e eles sabem.';
+        m.consequencia = _t('Recusada. Relação −5 — e eles sabem.');
       }
       m.resposta = escolha;
       return {ok:true};
@@ -228,9 +231,9 @@ TO.feed = (function(){
       fora.push(b);
       if(!ACOES_DE_BRIGA.has(b.acao) || b.simular) continue;
       fora.push(Object.assign({}, b, {
-        id: b.id + '-sim', rot: 'Simular', simular: true,
+        id: b.id + '-sim', rot: _t('Simular'), simular: true,
         /* a dica diz o que muda e o que não muda */
-        dica: 'Roda o duelo sem abrir a cena. As consequências são as mesmas.'
+        dica: _t('Roda o duelo sem abrir a cena. As consequências são as mesmas.')
       }));
     }
     return fora;
@@ -331,7 +334,7 @@ TO.feed = (function(){
     E.relacoes = E.relacoes || {};
     const REL = TO.relacoes.REL;
     if(ir){
-      TO.estado.lancar(E, `Presença na festa da ${item.nome}`, -2000);
+      TO.estado.lancar(E, _t('Presença na festa da {nome}', {nome:item.nome}), -2000);
       /* o ganho encolhe a cada festa da mesma torcida no ano (17/09/2026) */
       item.ganho = TO.relacoes.ganhoRepetido(E, E.torcida.id, torcidaId,
                                             'festa', REL.irAniversario);
@@ -339,29 +342,28 @@ TO.feed = (function(){
         TO.relacoes.nivel(E, torcidaId) + item.ganho));
       TO.relacoes.marcarAjuda(E, torcidaId);
       item.resposta = 'ir';
-      mensagemDe(E, torcidaId, `Valeu pela presença, irmão. A festa ficou completa `+
-        `com o bonde de vocês. Casa aberta sempre.`, 'agradecimento');
+      mensagemDe(E, torcidaId, _t('Valeu pela presença, irmão. A festa ficou completa com o bonde de vocês. Casa aberta sempre.'), 'agradecimento');
     } else {
       E.relacoes[torcidaId] = Math.max(-100, Math.min(100,
         TO.relacoes.nivel(E, torcidaId) - REL.furarAniversario));
       TO.estado.mexerIndicador(E, 'prestigio', -0.4,
-        `Furamos o aniversário da ${item.nome}`);
+        _t('Furamos o aniversário da {nome}', {nome:item.nome}));
       item.resposta = 'nao';
     }
     const foi = lista.filter(x=>x.resposta==='ir').length;
     const furou = lista.filter(x=>x.resposta==='nao').length;
-    const cada = n => n === 1 ? 'com ela' : 'com cada uma';
     const ganhos = lista.filter(x=>x.resposta==='ir')
       .map(x=>x.ganho != null ? x.ganho : REL.irAniversario);
     const somaG = ganhos.reduce((a,b)=>a+b, 0);
     const consequencia =
-      (foi ? `${foi} ${foi===1?'festa':'festas'}: ${U.dinheiro(-2000*foi)} · `+
-             (foi === 1 ? `+${somaG} de relação com ela. `
-                        : `+${somaG} de relação no total (${ganhos.join(', ')}). `) : '') +
-      (furou ? `${furou} ${furou===1?'furada':'furadas'}: −${REL.furarAniversario} `+
-               `de relação ${cada(furou)} · Prestígio −${2*furou}.` : '');
+      (foi ? _tn(foi, '{n} festa', '{n} festas')+`: ${U.dinheiro(-2000*foi)} · `+
+             (foi === 1 ? _t('+{g} de relação com ela.', {g:somaG})+' '
+                        : _t('+{g} de relação no total ({lista}).', {g:somaG, lista:ganhos.join(', ')})+' ') : '') +
+      (furou ? (furou === 1
+                 ? _t('1 furada: −{r} de relação com ela · Prestígio −{p}.', {r:REL.furarAniversario, p:2*furou})
+                 : _t('{n} furadas: −{r} de relação com cada uma · Prestígio −{p}.', {n:furou, r:REL.furarAniversario, p:2*furou})) : '');
     return {consequencia, todas: lista.every(x=>x.resposta),
-            rot:`${foi} ${foi===1?'festa':'festas'}, ${furou} ${furou===1?'furada':'furadas'}`};
+            rot:_tn(foi, '{n} festa', '{n} festas')+', '+_tn(furou, '{n} furada', '{n} furadas')};
   }
   /* a resposta por aliada DENTRO DA PAUTA da reunião: a pauta fecha
      (decidida) quando a última aliada tiver resposta */
@@ -379,8 +381,8 @@ TO.feed = (function(){
      A LINHA DE CONSEQUÊNCIA — sai dos efeitos aplicados,
      nunca do texto.
      ------------------------------------------------------- */
-  const NOME_IND = {relacao:'Relação', moral:'Moral', prestigio:'Prestígio',
-                    dinheiro:'Caixa', efetivo:'Efetivo', bombas:'Bombas'};
+  const NOME_IND = {relacao:_t('Relação'), moral:_t('Moral'), prestigio:_t('Prestígio'),
+                    dinheiro:_t('Caixa'), efetivo:_t('Efetivo'), bombas:_t('Bombas')};
   function linhaDeConsequencia(efeitos){
     if(!efeitos || !efeitos.length) return '';
     return efeitos.map(e=>{
@@ -415,8 +417,7 @@ TO.feed = (function(){
       if(TO.relacoes.nivel(E, id) > TO.relacoes.QUENTE) continue;
       const o = M().torcida(id);
       if(!o) continue;
-      mensagemDe(E, id, `Muito sangue esse ano. ${c.n} vezes a gente se pegou, e dos dois `+
-        `lados tem gente no hospital. Trégua até o fim da temporada?`, 'tregua',
+      mensagemDe(E, id, _t('Muito sangue esse ano. {n} vezes a gente se pegou, e dos dois lados tem gente no hospital. Trégua até o fim da temporada?', {n:c.n}), 'tregua',
         {chave:`tregua|${E.data.ano}|${id}`, dados:{ano:E.data.ano}});
     }
   }
@@ -530,12 +531,11 @@ TO.feed = (function(){
       propor(E, {
         kind:'filial-ataque', peso:'decisao', voz:'olheiro', tipo:'ruim',
         chave:`fsug|${f.cidade}|${sa}`,
-        texto:`Chefe, o pessoal da nossa Sub-Sede ${cid} mapeou o bar da `+
-              `${alvo.nome}. São ${nucleo.length} dos nossos na cidade. `+
-              `Manda descer?`,
+        texto:_t('Chefe, o pessoal da nossa Sub-Sede {cidade} mapeou o bar da {nome}. São {n} dos nossos na cidade. Manda descer?',
+                 {cidade:cid, nome:alvo.nome, n:nucleo.length}),
         dados:{cidade:f.cidade, rival:alvo.id},
-        botoes:[{id:'desce',  rot:'Atacar', acao:'filial-ataque'},
-                {id:'quieto', rot:'Não atacar', acao:'nada'}]});
+        botoes:[{id:'desce',  rot:_t('Atacar'), acao:'filial-ataque'},
+                {id:'quieto', rot:_t('Não atacar'), acao:'nada'}]});
     }
   }
 
@@ -559,8 +559,7 @@ TO.feed = (function(){
         TO.financeiro.onibusDe(E));
       if(custo > E.dinheiro) continue;         // sem caixa, ninguém embarca
       if(custo > 0) TO.estado.lancar(E,
-        `Caravana da subsede ${TO.financeiro.nomeCidade(f.cidade)} `+
-        `(${c.n} cabeças)`, -custo);
+        _t('Caravana da subsede {cidade} ({n} cabeças)', {cidade:TO.financeiro.nomeCidade(f.cidade), n:c.n}), -custo);
       /* a estrada tem dono de vez em quando */
       if(U.rng() >= 0.05 * TO.relacoes.FREIO_BRIGA) continue;   // 3% (dono, 08/09/2026)
       const rival = M().torcidasEm(destino)
@@ -635,22 +634,19 @@ TO.feed = (function(){
                 chave:`bote|${f.cidade}|${o.id}|${E.data.ano}|${E.data.semana}`,
                 /* texto AGUARDANDO O CRIVO do dono (31/08/2026) */
                 texto: local
-                  ? `Chefe, como combinado na segunda: a ${o.nome} vai estar `+
-                    `${cena === 'praca' ? 'na praça' : 'na pista'} em ${cid} pro `+
-                    `jogo de hoje — uns ${n}. O pessoal da nossa Sub-Sede `+
-                    `tá com ${nucleo.length}, pronto pro bote.`
+                  ? (cena === 'praca'
+                    ? _t('Chefe, como combinado na segunda: a {nome} vai estar na praça em {cidade} pro jogo de hoje — uns {n}. O pessoal da nossa Sub-Sede tá com {nossos}, pronto pro bote.', {nome:o.nome, cidade:cid, n, nossos:nucleo.length})
+                    : _t('Chefe, como combinado na segunda: a {nome} vai estar na pista em {cidade} pro jogo de hoje — uns {n}. O pessoal da nossa Sub-Sede tá com {nossos}, pronto pro bote.', {nome:o.nome, cidade:cid, n, nossos:nucleo.length}))
                   : inv && inv.alvo
-                  ? `Chefe, como combinado na segunda: a caravana da ${o.nome} `+
-                    `desceu em ${cid} pro jogo de hoje — uns ${n} ${cena === 'praca'
-                      ? 'na praça' : 'na pista'}. O pessoal da nossa Sub-Sede `+
-                    `tá com ${nucleo.length}, pronto pro bote.`
-                  : `Chefe, a caravana da ${o.nome} desceu em ${cid} pro `+
-                    `jogo de hoje — uns ${n} ${cena === 'praca'
-                      ? 'na praça' : 'na pista'}. O pessoal da nossa `+
-                    `Sub-Sede tá com ${nucleo.length}. Manda dar o bote?`,
+                  ? (cena === 'praca'
+                    ? _t('Chefe, como combinado na segunda: a caravana da {nome} desceu em {cidade} pro jogo de hoje — uns {n} na praça. O pessoal da nossa Sub-Sede tá com {nossos}, pronto pro bote.', {nome:o.nome, cidade:cid, n, nossos:nucleo.length})
+                    : _t('Chefe, como combinado na segunda: a caravana da {nome} desceu em {cidade} pro jogo de hoje — uns {n} na pista. O pessoal da nossa Sub-Sede tá com {nossos}, pronto pro bote.', {nome:o.nome, cidade:cid, n, nossos:nucleo.length}))
+                  : (cena === 'praca'
+                    ? _t('Chefe, a caravana da {nome} desceu em {cidade} pro jogo de hoje — uns {n} na praça. O pessoal da nossa Sub-Sede tá com {nossos}. Manda dar o bote?', {nome:o.nome, cidade:cid, n, nossos:nucleo.length})
+                    : _t('Chefe, a caravana da {nome} desceu em {cidade} pro jogo de hoje — uns {n} na pista. O pessoal da nossa Sub-Sede tá com {nossos}. Manda dar o bote?', {nome:o.nome, cidade:cid, n, nossos:nucleo.length})),
                 dados:{cidade:f.cidade, rival:o.id, n, cena},
-                botoes:[{id:'bote', rot:'Atacar', acao:'filial-caravana'},
-                        {id:'quieto', rot:'Não atacar', acao:'nada'}]});
+                botoes:[{id:'bote', rot:_t('Atacar'), acao:'filial-caravana'},
+                        {id:'quieto', rot:_t('Não atacar'), acao:'nada'}]});
             }
           }
         }
@@ -693,46 +689,46 @@ TO.feed = (function(){
         quando acabam. Números sempre na régua das telas.
      ------------------------------------------------------- */
   const DICAS = [
-    'O prestígio vive numa régua de 0 a 100 e é o nome da torcida na rua: entra no ranking com peso dobrado e sobe com briga vencida, título e ação no bairro.',
-    'A relação com cada torcida vai de −100 a +100: abaixo de −70 é Maior Rival, abaixo de −15 é Rival, até 20 é Neutro, até 70 é Aliado e de 70 pra cima é Irmandade.',
-    'Seus membros treinam sozinhos todo dia: a fila é sorteada com prioridade pra quem ainda não bateu o teto do cargo. As vagas de treino vêm da sede — 2, 4, 8, 12 ou 20 por dia, conforme o nível.',
-    'Cada professor de MMA custa R$ 2.000 por mês: um faz o treino render +30% de força e defesa, dois +60% e três +100%. Contrata e dispensa no Financeiro → Patrimônio.',
-    'Cada cargo tem teto de ficha: novato vai até 8, componente até 12, linha de frente até 18 e diretoria até 20. Promoção pede XP e força — e cargo maior paga mensalidade maior.',
-    'A mensalidade entra toda semana: R$ 20 por novato, R$ 50 por componente e R$ 100 por linha de frente e diretoria. Torcida grande é caixa forte.',
-    'O ranking de torcidas soma disponíveis + prestígio×2, multiplica pela média de força e defesa dos membros e ainda pela situação financeira. Feridos e presos saem da conta.',
-    'A situação financeira multiplica o ranking: Endividado corta pra 0,6×, e a escada sobe até Rico, que paga 1,6×. Caixa saudável é ranking alto.',
-    'A festa na sede custa R$ 700 e rende R$ 4,80 a 6,40 por presente. Com uns 150 disponíveis ela sempre dá lucro; abaixo disso é vaquinha.',
-    'Bar e loja rendem toda semana e pagam manutenção. Dá pra ampliar cada um por nível — e a fábrica corta o custo de insumo da loja e multiplica a receita dela.',
-    'A subsede é presença no bairro: rende toda semana e aumenta o alcance da torcida. Compra e ampliação moram no Financeiro → Patrimônio.',
-    'O ônibus custa R$ 100 mil e muda a estrada: a viagem sai de graça e o rateio dos embarcados vira RECEITA. Em troca, R$ 1.500 de manutenção por mês — e vez ou outra um conserto de R$ 15 mil.',
-    'Na caravana de estrada quem embarca paga rateio. Sem ônibus, o rateio abate o custo da viagem; de avião a viagem é sempre paga.',
-    'Reforçar o elenco do clube custa por ponto de força: de R$ 20 mil no time fraco a R$ 320 mil no gigante, teto 100. Time forte ganha mais, e vitória enche o recrutamento.',
-    'Assalto tem tabela: do mercadinho (10% de chance de cadeia, 45 dias) ao banco (50% e 180 dias). O sorteio é um só pro bonde inteiro — ou todos voltam com a partilha, ou todos caem.',
-    'Bombas custam R$ 600 o lote de 5 no Patrimônio. O estoque inteiro vai junto pra TODA briga — só a treta marcada é limpa, sem pedra nem bomba.',
-    'Na cena, o rival responde com até metade das suas bombas — mas nunca joga mais do que tem no paiol dele. Bomba jogada sai do estoque dos dois lados.',
-    'Treta marcada tem palco pelo tamanho: 5x5 no beco, 7x7 no galpão, 10x10 no campo de terra. Vencer paga +3/+4/+5 de prestígio; perder custa −1; recusar custa −1 de prestígio.',
-    'Ataque a bar tem teto: no máximo 60 atacantes contra 40 defensores. E o bonde só sai pra UM ataque manual por semana.',
-    'Ferido volta em 5 a 15 dias; preso fica de 15 a 90. Enquanto estão fora, não treinam, não brigam e não contam no ranking.',
-    'Quando um aliado hospedado apanha na sua cidade e você entra na briga, o prestígio da noite é DELE — pra você ficam +10 de relação na hora e a gratidão.',
-    'A recepção de aliado vai de R$ 25 a R$ 75 por cabeça: hospedar dá +2 de relação, escoltar +5, churrasco com escolta +12. Não receber cobra −5.',
-    'Aniversário de aliado: ir custa R$ 2.000 e rende +3 de relação; furar tira −3 de relação e −2 de prestígio. Só aliado e irmã de clube convidam.',
-    'No aniversário da torcida e do clube, a festa grande custa mais e rende mais; a simples é segura; não fazer nada derruba a moral. Os números estão na própria decisão.',
-    'Pra ir à guerra, marque o ataque na semana: o olheiro diz em quantos bondes o rival sai e por onde. Emboscar na ida pega o bonde deles quebrado em pedaços.',
-    'O olheiro erra: a confiança da leitura cai quando o rival está cauteloso e quando ele se divide em muitos bondes. Rival num bonde só é tudo ou nada.',
-    'Na estrada, rota curta pode cruzar praça de rival — e a caravana vira alvo de emboscada no posto ou na pista. Rota longa e avião custam mais e arriscam menos.',
-    'O prestígio de uma briga vai até ±10 por noite, contado pelos caídos e presos de cada lado. Fazer o rival correr sem briga rende de 1 a 6.',
-    'Vencer em menor número vale mais: o prestígio da vitória é multiplicado pela razão dos efetivos, de 0,5× (esmagando) a 2× (de zebra).',
-    'Nas brigas do mundo o favorito é efetivo × ficha média — e vence 70% das vezes. A zebra acontece, e quem ganha por baixo leva mais prestígio e moral.',
-    'Caixa no vermelho derruba a moral toda semana, pra você e pra qualquer torcida do mundo. Moral baixa esvazia a saída e piora a briga.',
-    'O recrutamento do expediente joga o dado do regime do clube: fase normal rende pouco, janela de título ou acesso enche a praça, rebaixamento seca tudo.',
-    'A praça tem um bolo fixo de torcedores do seu clube: as organizadas irmãs dividem esse bolo. Cidade pequena não sustenta torcida gigante.',
-    'A sede dita tudo: teto de membros, vagas de treino por dia e o que dá pra construir. Ampliar sede é o investimento que destrava os outros.',
-    'As outras torcidas jogam o mesmo jogo: têm caixa, expediente, compram bar, loja, ônibus, professor de MMA e bombas — e investem no elenco do clube delas.',
-    'Na cena de briga: WASD move o líder, 1 a 4 trocam a formação, Q pedra, E bomba, R recua, ENTER entra pelo portão — e a rodinha do mouse dá zoom.',
-    'Formação é ferramenta: BONDE anda junto, MURALHA segura linha, QUADRADO protege o meio, ESPALHAR foge de bomba e cerca. Trocar na hora certa vira briga.',
-    'A PM esquenta com briga e arma na rua: o alerta enche, a pressão empurra, e grade rompida chama a tropa de choque. Recuar a tempo é sair inteiro — e decisão no feed segura o relógio até você responder.',
-    'Na partida ao vivo, o cartão do clima do estádio vai de tranquilo a esquentando e tenso: rival de relação muito ruim na arquibancada esquenta rápido, e aliado presente segura o jogo inteiro em tranquilo. Se ficar TENSO, a arquibancada se pega e a cena abre.',
-    'Na briga de arquibancada cada torcida senta no setor do seu escalão — 1º escalão é a maior torcida do clube, 2º a seguinte, e isso vira quando uma passa a outra. Vencer paga de +1 a +3 de prestígio (mais se você estava em menor número); perder tira de −1 a −3.'
+    _t('O prestígio vive numa régua de 0 a 100 e é o nome da torcida na rua: entra no ranking com peso dobrado e sobe com briga vencida, título e ação no bairro.'),
+    _t('A relação com cada torcida vai de −100 a +100: abaixo de −70 é Maior Rival, abaixo de −15 é Rival, até 20 é Neutro, até 70 é Aliado e de 70 pra cima é Irmandade.'),
+    _t('Seus membros treinam sozinhos todo dia: a fila é sorteada com prioridade pra quem ainda não bateu o teto do cargo. As vagas de treino vêm da sede — 2, 4, 8, 12 ou 20 por dia, conforme o nível.'),
+    _t('Cada professor de MMA custa R$ 2.000 por mês: um faz o treino render +30% de força e defesa, dois +60% e três +100%. Contrata e dispensa no Financeiro → Patrimônio.'),
+    _t('Cada cargo tem teto de ficha: novato vai até 8, componente até 12, linha de frente até 18 e diretoria até 20. Promoção pede XP e força — e cargo maior paga mensalidade maior.'),
+    _t('A mensalidade entra toda semana: R$ 20 por novato, R$ 50 por componente e R$ 100 por linha de frente e diretoria. Torcida grande é caixa forte.'),
+    _t('O ranking de torcidas soma disponíveis + prestígio×2, multiplica pela média de força e defesa dos membros e ainda pela situação financeira. Feridos e presos saem da conta.'),
+    _t('A situação financeira multiplica o ranking: Endividado corta pra 0,6×, e a escada sobe até Rico, que paga 1,6×. Caixa saudável é ranking alto.'),
+    _t('A festa na sede custa R$ 700 e rende R$ 4,80 a 6,40 por presente. Com uns 150 disponíveis ela sempre dá lucro; abaixo disso é vaquinha.'),
+    _t('Bar e loja rendem toda semana e pagam manutenção. Dá pra ampliar cada um por nível — e a fábrica corta o custo de insumo da loja e multiplica a receita dela.'),
+    _t('A subsede é presença no bairro: rende toda semana e aumenta o alcance da torcida. Compra e ampliação moram no Financeiro → Patrimônio.'),
+    _t('O ônibus custa R$ 100 mil e muda a estrada: a viagem sai de graça e o rateio dos embarcados vira RECEITA. Em troca, R$ 1.500 de manutenção por mês — e vez ou outra um conserto de R$ 15 mil.'),
+    _t('Na caravana de estrada quem embarca paga rateio. Sem ônibus, o rateio abate o custo da viagem; de avião a viagem é sempre paga.'),
+    _t('Reforçar o elenco do clube custa por ponto de força: de R$ 20 mil no time fraco a R$ 320 mil no gigante, teto 100. Time forte ganha mais, e vitória enche o recrutamento.'),
+    _t('Assalto tem tabela: do mercadinho (10% de chance de cadeia, 45 dias) ao banco (50% e 180 dias). O sorteio é um só pro bonde inteiro — ou todos voltam com a partilha, ou todos caem.'),
+    _t('Bombas custam R$ 600 o lote de 5 no Patrimônio. O estoque inteiro vai junto pra TODA briga — só a treta marcada é limpa, sem pedra nem bomba.'),
+    _t('Na cena, o rival responde com até metade das suas bombas — mas nunca joga mais do que tem no paiol dele. Bomba jogada sai do estoque dos dois lados.'),
+    _t('Treta marcada tem palco pelo tamanho: 5x5 no beco, 7x7 no galpão, 10x10 no campo de terra. Vencer paga +3/+4/+5 de prestígio; perder custa −1; recusar custa −1 de prestígio.'),
+    _t('Ataque a bar tem teto: no máximo 60 atacantes contra 40 defensores. E o bonde só sai pra UM ataque manual por semana.'),
+    _t('Ferido volta em 5 a 15 dias; preso fica de 15 a 90. Enquanto estão fora, não treinam, não brigam e não contam no ranking.'),
+    _t('Quando um aliado hospedado apanha na sua cidade e você entra na briga, o prestígio da noite é DELE — pra você ficam +10 de relação na hora e a gratidão.'),
+    _t('A recepção de aliado vai de R$ 25 a R$ 75 por cabeça: hospedar dá +2 de relação, escoltar +5, churrasco com escolta +12. Não receber cobra −5.'),
+    _t('Aniversário de aliado: ir custa R$ 2.000 e rende +3 de relação; furar tira −3 de relação e −2 de prestígio. Só aliado e irmã de clube convidam.'),
+    _t('No aniversário da torcida e do clube, a festa grande custa mais e rende mais; a simples é segura; não fazer nada derruba a moral. Os números estão na própria decisão.'),
+    _t('Pra ir à guerra, marque o ataque na semana: o olheiro diz em quantos bondes o rival sai e por onde. Emboscar na ida pega o bonde deles quebrado em pedaços.'),
+    _t('O olheiro erra: a confiança da leitura cai quando o rival está cauteloso e quando ele se divide em muitos bondes. Rival num bonde só é tudo ou nada.'),
+    _t('Na estrada, rota curta pode cruzar praça de rival — e a caravana vira alvo de emboscada no posto ou na pista. Rota longa e avião custam mais e arriscam menos.'),
+    _t('O prestígio de uma briga vai até ±10 por noite, contado pelos caídos e presos de cada lado. Fazer o rival correr sem briga rende de 1 a 6.'),
+    _t('Vencer em menor número vale mais: o prestígio da vitória é multiplicado pela razão dos efetivos, de 0,5× (esmagando) a 2× (de zebra).'),
+    _t('Nas brigas do mundo o favorito é efetivo × ficha média — e vence 70% das vezes. A zebra acontece, e quem ganha por baixo leva mais prestígio e moral.'),
+    _t('Caixa no vermelho derruba a moral toda semana, pra você e pra qualquer torcida do mundo. Moral baixa esvazia a saída e piora a briga.'),
+    _t('O recrutamento do expediente joga o dado do regime do clube: fase normal rende pouco, janela de título ou acesso enche a praça, rebaixamento seca tudo.'),
+    _t('A praça tem um bolo fixo de torcedores do seu clube: as organizadas irmãs dividem esse bolo. Cidade pequena não sustenta torcida gigante.'),
+    _t('A sede dita tudo: teto de membros, vagas de treino por dia e o que dá pra construir. Ampliar sede é o investimento que destrava os outros.'),
+    _t('As outras torcidas jogam o mesmo jogo: têm caixa, expediente, compram bar, loja, ônibus, professor de MMA e bombas — e investem no elenco do clube delas.'),
+    _t('Na cena de briga: WASD move o líder, 1 a 4 trocam a formação, Q pedra, E bomba, R recua, ENTER entra pelo portão — e a rodinha do mouse dá zoom.'),
+    _t('Formação é ferramenta: BONDE anda junto, MURALHA segura linha, QUADRADO protege o meio, ESPALHAR foge de bomba e cerca. Trocar na hora certa vira briga.'),
+    _t('A PM esquenta com briga e arma na rua: o alerta enche, a pressão empurra, e grade rompida chama a tropa de choque. Recuar a tempo é sair inteiro — e decisão no feed segura o relógio até você responder.'),
+    _t('Na partida ao vivo, o cartão do clima do estádio vai de tranquilo a esquentando e tenso: rival de relação muito ruim na arquibancada esquenta rápido, e aliado presente segura o jogo inteiro em tranquilo. Se ficar TENSO, a arquibancada se pega e a cena abre.'),
+    _t('Na briga de arquibancada cada torcida senta no setor do seu escalão — 1º escalão é a maior torcida do clube, 2º a seguinte, e isso vira quando uma passa a outra. Vencer paga de +1 a +3 de prestígio (mais se você estava em menor número); perder tira de −1 a −3.')
   ];
   function dicaDeHoje(E){
     const sa = TO.relacoes.semanaAbs(E);
@@ -819,14 +815,14 @@ TO.feed = (function(){
           delete E.festasAniversario[chave];
           const v = U.inteiro(F[marcada].min, F[marcada].max);
           TO.estado.lancar(E, q.tipo === 'torcida'
-            ? 'Festa de aniversário da torcida — receita'
-            : 'Festa de aniversário do clube — receita', v);
+            ? _t('Festa de aniversário da torcida — receita')
+            : _t('Festa de aniversário do clube — receita'), v);
           propor(E, {
             kind:'aniversario', peso:'info', tipo:'boa', voz:'diretor',
             chave:`festa-fim|${q.tipo}|${hoje.getFullYear()}`,
             texto: q.tipo === 'torcida'
-              ? `A festa dos nossos anos rendeu ${U.dinheiro(v)}.`
-              : `A festa do aniversário do ${q.nome} rendeu ${U.dinheiro(v)}.`
+              ? _t('A festa dos nossos anos rendeu {valor}.', {valor:U.dinheiro(v)})
+              : _t('A festa do aniversário do {clube} rendeu {valor}.', {clube:q.nome, valor:U.dinheiro(v)})
           });
         }
       }
@@ -981,10 +977,11 @@ TO.feed = (function(){
     const seq = (E.sequenciaClube || []).slice(0, 5).join('');
     const time = M().time(E.torcida.clubeId);
     return {
-      texto:`Chefe, o time tá jogando mal — ${der} derrota`+
-            `${der===1?'':'s'} nos últimos 5 jogos (${seq}) — e um `+
-            `grupo já fala em ir pra porta do CT cobrar satisfação `+
-            `${time?'do '+time.nome:'do clube'}. Encabeçamos o protesto?`,
+      texto: time
+        ? _t('Chefe, o time tá jogando mal — {derrotas} nos últimos 5 jogos ({seq}) — e um grupo já fala em ir pra porta do CT cobrar satisfação do {clube}. Encabeçamos o protesto?',
+             {derrotas:_tn(der, '{n} derrota', '{n} derrotas'), seq, clube:time.nome})
+        : _t('Chefe, o time tá jogando mal — {derrotas} nos últimos 5 jogos ({seq}) — e um grupo já fala em ir pra porta do CT cobrar satisfação do clube. Encabeçamos o protesto?',
+             {derrotas:_tn(der, '{n} derrota', '{n} derrotas'), seq}),
       dados:{sequencia:seq, derrotas:der}};
   }
   function protestoNoCT(E, sa){
@@ -995,11 +992,11 @@ TO.feed = (function(){
       texto: t.texto,
       dados: t.dados,
       botoes:[
-        {id:'protestar', rot:'Encabeçar o protesto',
-         dica:'−8 de relação com o clube · +2 de prestígio',
+        {id:'protestar', rot:_t('Encabeçar o protesto'),
+         dica:_t('−8 de relação com o clube · +2 de prestígio'),
          acao:'protesto-ct'},
-        {id:'segurar', rot:'Segurar a torcida, não é hora',
-         dica:'+2 de relação com o clube · −3 de moral: eles queriam ir',
+        {id:'segurar', rot:_t('Segurar a torcida, não é hora'),
+         dica:_t('+2 de relação com o clube · −3 de moral: eles queriam ir'),
          acao:'protesto-ct'}
       ]
     });
@@ -1084,14 +1081,14 @@ TO.feed = (function(){
           if(achado && seq <= achado.semana) continue;
           const levou = j.c === clube ? j.gf - j.gc : j.gc - j.gf;
           achado = {semana:seq, levou,
-                    placar: j.c === clube ? `${j.gc} a ${j.gf}` : `${j.gf} a ${j.gc}`};
+                    placar: j.c === clube ? _t('{a} a {b}', {a:j.gc, b:j.gf}) : _t('{a} a {b}', {a:j.gf, b:j.gc})};
         }
       }
     }
     if(!achado || achado.levou < 2) return null;
     const t = M().time(clube);
     return {nome:outra.nome, id:outra.id,
-            clube:(t && t.nome) || 'o time deles', placar:achado.placar};
+            clube:(t && t.nome) || _t('o time deles'), placar:achado.placar};
   }
 
   /* O RANKING DO JOGO (pedido do dono, 19/09/2026 — sugestão B6 ajustada):
@@ -1139,11 +1136,10 @@ TO.feed = (function(){
   function notaElogio(c, n, moralSeMal, moralFixa){
     const real = Math.min(n, c.espaco);
     const perda = moralFixa || ((c.timeMal && moralSeMal) ? moralSeMal : 0);
-    const m = perda ? ` · −${Math.round(perda*5)} de moral` : '';
+    const m = perda ? ' · ' + _t('−{n} de moral', {n:Math.round(perda*5)}) : '';
     return (real > 0
-      ? `+${real} relação com o clube · elogio só sobe até ${TETO_ELOGIO}`
-      : `sem efeito: a relação já passou de ${TETO_ELOGIO}, e daí pra cima `+
-        'só presença no estádio sobe') + m;
+      ? _t('+{n} relação com o clube · elogio só sobe até {teto}', {n:real, teto:TETO_ELOGIO})
+      : _t('sem efeito: a relação já passou de {teto}, e daí pra cima só presença no estádio sobe', {teto:TETO_ELOGIO})) + m;
   }
 
   /* =======================================================
@@ -1157,112 +1153,107 @@ TO.feed = (function(){
   const PERGUNTAS_ENTREVISTA = [
     /* ---------------- sobre o clube ---------------- */
     {id:'diretoria', grupo:'clube', monta: c => ({
-      texto:`O que a torcida acha do trabalho da diretoria do ${c.nomeClube}?`,
+      texto:_t('O que a torcida acha do trabalho da diretoria do {clube}?', {clube:c.nomeClube}),
       opcoes:[
-        {id:'elogiar', rot:'Elogiar a gestão', nota:notaElogio(c, 2, 0.6),
-         resumo:'elogiou a gestão', ef:elogio(2, 0.6)},
-        {id:'cobrar', rot:'Cobrar mais investimento', nota:'−5 relação · +1 prestígio',
-         resumo:'cobrou a diretoria', ef:{clube:-5, prestigio:0.2}},
-        {id:'saida', rot:'Pedir a saída da diretoria', nota:'−20 relação · +3 prestígio',
-         resumo:'pediu a saída da diretoria', ef:{clube:-20, prestigio:0.6}}
+        {id:'elogiar', rot:_t('Elogiar a gestão'), nota:notaElogio(c, 2, 0.6),
+         resumo:_t('elogiou a gestão'), ef:elogio(2, 0.6)},
+        {id:'cobrar', rot:_t('Cobrar mais investimento'), nota:_t('−5 relação · +1 prestígio'),
+         resumo:_t('cobrou a diretoria'), ef:{clube:-5, prestigio:0.2}},
+        {id:'saida', rot:_t('Pedir a saída da diretoria'), nota:_t('−20 relação · +3 prestígio'),
+         resumo:_t('pediu a saída da diretoria'), ef:{clube:-20, prestigio:0.6}}
       ]})},
 
     {id:'temporada', grupo:'clube', monta: c => ({
       texto: c.pos
-        ? `E da temporada? Hoje o ${c.nomeClube} está em ${c.pos}º na tabela.`
-        : `E da temporada do ${c.nomeClube} até aqui?`,
+        ? _t('E da temporada? Hoje o {clube} está em {pos}º na tabela.', {clube:c.nomeClube, pos:c.pos})
+        : _t('E da temporada do {clube} até aqui?', {clube:c.nomeClube}),
       opcoes:[
-        {id:'elogiar', rot:'Elogiar a campanha', nota:notaElogio(c, 1, 0.4),
-         resumo:'elogiou a campanha', ef:elogio(1, 0.4)},
-        {id:'criticar', rot:'Criticar duramente', nota:'−6 relação · +1 prestígio',
-         resumo:'criticou a campanha', ef:{clube:-6, prestigio:0.2}},
-        {id:'neutro', rot:'Ficar em cima do muro', nota:'sem efeito',
-         resumo:'ficou em cima do muro', ef:{}}
+        {id:'elogiar', rot:_t('Elogiar a campanha'), nota:notaElogio(c, 1, 0.4),
+         resumo:_t('elogiou a campanha'), ef:elogio(1, 0.4)},
+        {id:'criticar', rot:_t('Criticar duramente'), nota:_t('−6 relação · +1 prestígio'),
+         resumo:_t('criticou a campanha'), ef:{clube:-6, prestigio:0.2}},
+        {id:'neutro', rot:_t('Ficar em cima do muro'), nota:_t('sem efeito'),
+         resumo:_t('ficou em cima do muro'), ef:{}}
       ]})},
 
     {id:'tecnico', grupo:'clube', monta: c => ({
       texto: c.timeMal
-        ? `Tem gente pedindo a cabeça do técnico do ${c.nomeClube}. A organizada embarca?`
-        : `E o trabalho do técnico do ${c.nomeClube}?`,
+        ? _t('Tem gente pedindo a cabeça do técnico do {clube}. A organizada embarca?', {clube:c.nomeClube})
+        : _t('E o trabalho do técnico do {clube}?', {clube:c.nomeClube}),
       opcoes:[
-        {id:'bancar', rot:'Bancar o técnico', nota:notaElogio(c, 2, 0.4),
-         resumo:'bancou o técnico', ef:elogio(2, 0.4)},
-        {id:'demissao', rot:'Pedir a demissão', nota:'−4 relação · +1 prestígio',
-         resumo:'pediu a demissão do técnico', ef:{clube:-4, prestigio:0.2}},
-        {id:'muro', rot:'Quem decide é a diretoria', nota:'sem efeito',
-         resumo:'passou a bola pra diretoria', ef:{}}
+        {id:'bancar', rot:_t('Bancar o técnico'), nota:notaElogio(c, 2, 0.4),
+         resumo:_t('bancou o técnico'), ef:elogio(2, 0.4)},
+        {id:'demissao', rot:_t('Pedir a demissão'), nota:_t('−4 relação · +1 prestígio'),
+         resumo:_t('pediu a demissão do técnico'), ef:{clube:-4, prestigio:0.2}},
+        {id:'muro', rot:_t('Quem decide é a diretoria'), nota:_t('sem efeito'),
+         resumo:_t('passou a bola pra diretoria'), ef:{}}
       ]})},
 
     {id:'ingresso', grupo:'clube', monta: c => ({
-      texto:`O ${c.nomeClube} subiu o preço do ingresso e a arquibancada `+
-            'inteira está reclamando. A organizada banca o clube?',
+      texto:_t('O {clube} subiu o preço do ingresso e a arquibancada inteira está reclamando. A organizada banca o clube?', {clube:c.nomeClube}),
       opcoes:[
-        {id:'engolir', rot:'Bancar: o clube precisa arrecadar',
+        {id:'engolir', rot:_t('Bancar: o clube precisa arrecadar'),
          nota:notaElogio(c, 2, 0, 0.6),
-         resumo:'bancou o aumento do ingresso contra a própria arquibancada',
+         resumo:_t('bancou o aumento do ingresso contra a própria arquibancada'),
          ef:votarComOClube(2, 0.6)},
-        {id:'reclamar', rot:'Dizer que é caro pra quem vai sempre',
-         nota:'−5 relação · +1 prestígio',
-         resumo:'reclamou do preço do ingresso', ef:{clube:-5, prestigio:0.2}},
-        {id:'muro', rot:'Não entrar nessa', nota:'sem efeito',
-         resumo:'não entrou na discussão do ingresso', ef:{}}
+        {id:'reclamar', rot:_t('Dizer que é caro pra quem vai sempre'),
+         nota:_t('−5 relação · +1 prestígio'),
+         resumo:_t('reclamou do preço do ingresso'), ef:{clube:-5, prestigio:0.2}},
+        {id:'muro', rot:_t('Não entrar nessa'), nota:_t('sem efeito'),
+         resumo:_t('não entrou na discussão do ingresso'), ef:{}}
       ]})},
 
     {id:'elenco', grupo:'clube', monta: c => ({
-      texto:`Tem jogador do ${c.nomeClube} que a arquibancada não quer mais. `+
-            'Vocês cobram nome a nome?',
+      texto:_t('Tem jogador do {clube} que a arquibancada não quer mais. Vocês cobram nome a nome?', {clube:c.nomeClube}),
       opcoes:[
-        {id:'defender', rot:'Defender o elenco inteiro', nota:notaElogio(c, 1, 0.4),
-         resumo:'defendeu o elenco', ef:elogio(1, 0.4)},
-        {id:'cobrar', rot:'Cobrar nome a nome', nota:'−3 relação · +1 prestígio',
-         resumo:'cobrou o elenco nome a nome', ef:{clube:-3, prestigio:0.2}},
-        {id:'muro', rot:'Cobrança é dentro do vestiário', nota:'sem efeito',
-         resumo:'disse que cobrança é dentro do vestiário', ef:{}}
+        {id:'defender', rot:_t('Defender o elenco inteiro'), nota:notaElogio(c, 1, 0.4),
+         resumo:_t('defendeu o elenco'), ef:elogio(1, 0.4)},
+        {id:'cobrar', rot:_t('Cobrar nome a nome'), nota:_t('−3 relação · +1 prestígio'),
+         resumo:_t('cobrou o elenco nome a nome'), ef:{clube:-3, prestigio:0.2}},
+        {id:'muro', rot:_t('Cobrança é dentro do vestiário'), nota:_t('sem efeito'),
+         resumo:_t('disse que cobrança é dentro do vestiário'), ef:{}}
       ]})},
 
     {id:'mando', grupo:'clube', monta: c => ({
-      texto:`O ${c.nomeClube} quer vender mando de campo e jogar longe da `+
-            'cidade. Não tem um na arquibancada que seja a favor. E a '+
-            'organizada, fecha com o clube?',
+      texto:_t('O {clube} quer vender mando de campo e jogar longe da cidade. Não tem um na arquibancada que seja a favor. E a organizada, fecha com o clube?', {clube:c.nomeClube}),
       opcoes:[
-        {id:'apoiar', rot:'Fechar com o clube: ele precisa do dinheiro',
+        {id:'apoiar', rot:_t('Fechar com o clube: ele precisa do dinheiro'),
          nota:notaElogio(c, 2, 0, 0.6),
-         resumo:'apoiou a venda do mando contra a vontade da arquibancada',
+         resumo:_t('apoiou a venda do mando contra a vontade da arquibancada'),
          ef:votarComOClube(2, 0.6)},
         /* 0,4 e não 0,3 (varredura de 21/09/2026): prestígio é interno de
            0 a 20 e a tela mostra ×5, então a grade da tabela inteira é
            0,2 → +1 · 0,4 → +2 · 0,6 → +3. Este 0,3 era o único fora
            dela: a dica prometia +2 e o clique entregava +1,5. */
-        {id:'condenar', rot:'Condenar: jogo é aqui', nota:'−5 relação · +2 prestígio',
-         resumo:'condenou a venda do mando', ef:{clube:-5, prestigio:0.4}},
-        {id:'muro', rot:'A torcida vai de qualquer jeito', nota:'sem efeito',
-         resumo:'disse que a torcida vai de qualquer jeito', ef:{}}
+        {id:'condenar', rot:_t('Condenar: jogo é aqui'), nota:_t('−5 relação · +2 prestígio'),
+         resumo:_t('condenou a venda do mando'), ef:{clube:-5, prestigio:0.4}},
+        {id:'muro', rot:_t('A torcida vai de qualquer jeito'), nota:_t('sem efeito'),
+         resumo:_t('disse que a torcida vai de qualquer jeito'), ef:{}}
       ]})},
 
     {id:'socio', grupo:'clube', monta: c => ({
-      texto:`E o programa de sócio do ${c.nomeClube}, como está pra quem é da organizada?`,
+      texto:_t('E o programa de sócio do {clube}, como está pra quem é da organizada?', {clube:c.nomeClube}),
       opcoes:[
-        {id:'apoiar', rot:'Dizer que vale a pena', nota:notaElogio(c, 2, 0.4),
-         resumo:'defendeu o programa de sócio', ef:elogio(2, 0.4)},
-        {id:'criticar', rot:'A mensalidade não cabe no bolso',
-         nota:'−4 relação · +1 prestígio',
-         resumo:'criticou a mensalidade do sócio', ef:{clube:-4, prestigio:0.2}},
-        {id:'muro', rot:'Sem opinião formada', nota:'sem efeito',
-         resumo:'não opinou sobre o sócio', ef:{}}
+        {id:'apoiar', rot:_t('Dizer que vale a pena'), nota:notaElogio(c, 2, 0.4),
+         resumo:_t('defendeu o programa de sócio'), ef:elogio(2, 0.4)},
+        {id:'criticar', rot:_t('A mensalidade não cabe no bolso'),
+         nota:_t('−4 relação · +1 prestígio'),
+         resumo:_t('criticou a mensalidade do sócio'), ef:{clube:-4, prestigio:0.2}},
+        {id:'muro', rot:_t('Sem opinião formada'), nota:_t('sem efeito'),
+         resumo:_t('não opinou sobre o sócio'), ef:{}}
       ]})},
 
     {id:'confusao', grupo:'clube', quando: c => c.brigaRecente, monta: c => ({
-      texto:'Depois da confusão do último jogo a imprensa está em cima. '+
-            'A torcida se explica?',
+      texto:_t('Depois da confusão do último jogo a imprensa está em cima. A torcida se explica?'),
       opcoes:[
-        {id:'assumir', rot:'Assumir e prometer paz no estádio',
-         nota:notaElogio(c, 3, 0) + ' · −1 prestígio',
-         resumo:'assumiu a confusão e prometeu paz', ef:{clube:3, elogio:true, prestigio:-0.2}},
-        {id:'provocacao', rot:'Foi provocação, a gente se defendeu',
-         nota:'−3 relação · +2 prestígio',
-         resumo:'disse que foi provocação', ef:{clube:-3, prestigio:0.4}},
-        {id:'silencio', rot:'Não comentar', nota:'sem efeito',
-         resumo:'não comentou a confusão', ef:{}}
+        {id:'assumir', rot:_t('Assumir e prometer paz no estádio'),
+         nota:notaElogio(c, 3, 0) + ' · ' + _t('−1 prestígio'),
+         resumo:_t('assumiu a confusão e prometeu paz'), ef:{clube:3, elogio:true, prestigio:-0.2}},
+        {id:'provocacao', rot:_t('Foi provocação, a gente se defendeu'),
+         nota:_t('−3 relação · +2 prestígio'),
+         resumo:_t('disse que foi provocação'), ef:{clube:-3, prestigio:0.4}},
+        {id:'silencio', rot:_t('Não comentar'), nota:_t('sem efeito'),
+         resumo:_t('não comentou a confusão'), ef:{}}
       ]})},
 
     /* O ELENCO DA TEMPORADA NOVA (pedido do dono, 19/09/2026): duas
@@ -1273,66 +1264,63 @@ TO.feed = (function(){
        a diretoria é de graça, porque a arquibancada também gostou. */
     {id:'elenco-piorou', grupo:'clube',
      quando: c => c.virada && c.virada.delta < 0, monta: c => ({
-      texto:`Saiu a lista pra temporada e a impressão é que o elenco do `+
-            `${c.nomeClube} piorou — ${c.virada.de} pra ${c.virada.para} de `+
-            'força. A torcida cobra reforço?',
+      texto:_t('Saiu a lista pra temporada e a impressão é que o elenco do {clube} piorou — {de} pra {para} de força. A torcida cobra reforço?',
+               {clube:c.nomeClube, de:c.virada.de, para:c.virada.para}),
       opcoes:[
-        {id:'cobrar', rot:'Cobrar reforço na porta da diretoria',
-         nota:'−4 relação · +1 prestígio',
-         resumo:'cobrou reforço pra temporada', ef:{clube:-4, prestigio:0.2}},
-        {id:'bancar', rot:'Dizer que o que veio dá conta',
+        {id:'cobrar', rot:_t('Cobrar reforço na porta da diretoria'),
+         nota:_t('−4 relação · +1 prestígio'),
+         resumo:_t('cobrou reforço pra temporada'), ef:{clube:-4, prestigio:0.2}},
+        {id:'bancar', rot:_t('Dizer que o que veio dá conta'),
          nota:notaElogio(c, 2, 0, 0.4),
-         resumo:'bancou o elenco que a diretoria montou',
+         resumo:_t('bancou o elenco que a diretoria montou'),
          ef:votarComOClube(2, 0.4)},
-        {id:'esperar', rot:'Esperar a bola rolar', nota:'sem efeito',
-         resumo:'preferiu esperar a bola rolar', ef:{}}
+        {id:'esperar', rot:_t('Esperar a bola rolar'), nota:_t('sem efeito'),
+         resumo:_t('preferiu esperar a bola rolar'), ef:{}}
       ]})},
 
     {id:'elenco-melhorou', grupo:'clube',
      quando: c => c.virada && c.virada.delta > 0, monta: c => ({
-      texto:`O ${c.nomeClube} se reforçou pra temporada — no papel o elenco `+
-            `está melhor, ${c.virada.de} pra ${c.virada.para} de força. `+
-            'A torcida dá o crédito à diretoria?',
+      texto:_t('O {clube} se reforçou pra temporada — no papel o elenco está melhor, {de} pra {para} de força. A torcida dá o crédito à diretoria?',
+               {clube:c.nomeClube, de:c.virada.de, para:c.virada.para}),
       opcoes:[
-        {id:'creditar', rot:'Dar o crédito à diretoria',
+        {id:'creditar', rot:_t('Dar o crédito à diretoria'),
          nota:notaElogio(c, 2, 0),
-         resumo:'deu o crédito da montagem à diretoria', ef:elogio(2, 0)},
-        {id:'conter', rot:'Conter a euforia: no papel ganha todo mundo',
-         nota:'sem efeito',
-         resumo:'conteve a euforia com a montagem', ef:{}},
-        {id:'cobrar', rot:'Dizer que agora é título ou nada',
-         nota:'−2 relação · +1 prestígio',
-         resumo:'disse que agora é título ou nada', ef:{clube:-2, prestigio:0.2}}
+         resumo:_t('deu o crédito da montagem à diretoria'), ef:elogio(2, 0)},
+        {id:'conter', rot:_t('Conter a euforia: no papel ganha todo mundo'),
+         nota:_t('sem efeito'),
+         resumo:_t('conteve a euforia com a montagem'), ef:{}},
+        {id:'cobrar', rot:_t('Dizer que agora é título ou nada'),
+         nota:_t('−2 relação · +1 prestígio'),
+         resumo:_t('disse que agora é título ou nada'), ef:{clube:-2, prestigio:0.2}}
       ]})},
 
     /* ---------------- sobre a rua ---------------- */
     {id:'coirma', grupo:'rua', quando: c => !!c.coirma, monta: c => ({
       alvo:c.coirma.id,
-      texto:`A ${c.coirma.nome} anda dizendo por aí que quem representa a `+
-            `massa do ${c.nomeClube} são eles. Vocês respondem?`,
+      texto:_t('A {nome} anda dizendo por aí que quem representa a massa do {clube} são eles. Vocês respondem?', {nome:c.coirma.nome, clube:c.nomeClube}),
       opcoes:[
-        {id:'peitar', rot:'Peitar: quem representa a massa somos nós',
-         nota:`+2 prestígio · piora a relação com a ${c.coirma.nome}`,
-         resumo:`peitou a ${c.coirma.nome} pela massa do clube`,
+        {id:'peitar', rot:_t('Peitar: quem representa a massa somos nós'),
+         nota:_t('+2 prestígio · piora a relação com a {nome}', {nome:c.coirma.nome}),
+         resumo:_t('peitou a {nome} pela massa do clube', {nome:c.coirma.nome}),
          ef:{outra:-1, prestigio:0.4}},
-        {id:'caber', rot:'Dizer que cabe todo mundo na arquibancada',
-         nota:`melhora a relação com a ${c.coirma.nome}`,
-         resumo:`disse que cabe todo mundo ao lado da ${c.coirma.nome}`,
+        {id:'caber', rot:_t('Dizer que cabe todo mundo na arquibancada'),
+         nota:_t('melhora a relação com a {nome}', {nome:c.coirma.nome}),
+         resumo:_t('disse que cabe todo mundo ao lado da {nome}', {nome:c.coirma.nome}),
          ef:{outra:1}},
-        {id:'ignorar', rot:'Não dar palco', nota:'sem efeito',
-         resumo:'não deu palco à briga por quem representa a massa', ef:{}}
+        {id:'ignorar', rot:_t('Não dar palco'), nota:_t('sem efeito'),
+         resumo:_t('não deu palco à briga por quem representa a massa'), ef:{}}
       ]})},
 
     {id:'rival', grupo:'rua', quando: c => !!c.outra, monta: c => ({
       alvo:c.outra.id,
-      texto:`E como está a relação de vocês com a ${c.outra.nome}?`,
+      texto:_t('E como está a relação de vocês com a {nome}?', {nome:c.outra.nome}),
       opcoes:[
-        {id:'paz', rot:`Dizer que está em paz com a ${c.outra.nome}`,
-         nota:'melhora um pouco a relação com ela',
-         resumo:`disse que está em paz com a ${c.outra.nome}`, ef:{outra:1}},
-        {id:'guerra', rot:'Dizer que é rixa de verdade',
-         nota:'piora um pouco a relação com ela · +1 prestígio',
-         resumo:`disse que a rixa com a ${c.outra.nome} é de verdade`,
+        {id:'paz', rot:_t('Dizer que está em paz com a {nome}', {nome:c.outra.nome}),
+         nota:_t('melhora um pouco a relação com ela'),
+         resumo:_t('disse que está em paz com a {nome}', {nome:c.outra.nome}), ef:{outra:1}},
+        {id:'guerra', rot:_t('Dizer que é rixa de verdade'),
+         nota:_t('piora um pouco a relação com ela · +1 prestígio'),
+         resumo:_t('disse que a rixa com a {nome} é de verdade', {nome:c.outra.nome}),
          ef:{outra:-1, prestigio:0.2}}
       ]})},
 
@@ -1341,44 +1329,42 @@ TO.feed = (function(){
        não faz nada, que é a régua do dono pra toda provocação. */
     {id:'tombo', grupo:'rua', quando: c => !!c.tombo, monta: c => ({
       alvo:c.tombo.id,
-      texto:`O ${c.tombo.clube} tomou de ${c.tombo.placar} no fim de semana. `+
-            `Recado pra ${c.tombo.nome}?`,
+      texto:_t('O {clube} tomou de {placar} no fim de semana. Recado pra {nome}?', {clube:c.tombo.clube, placar:c.tombo.placar, nome:c.tombo.nome}),
       opcoes:[
-        {id:'esfregar', rot:'Esfregar na cara deles, e sem dó',
-         nota:`+3 de moral · piora muito a relação com a ${c.tombo.nome}`,
-         resumo:`esfregou o tombo na cara da ${c.tombo.nome}`,
+        {id:'esfregar', rot:_t('Esfregar na cara deles, e sem dó'),
+         nota:_t('+3 de moral · piora muito a relação com a {nome}', {nome:c.tombo.nome}),
+         resumo:_t('esfregou o tombo na cara da {nome}', {nome:c.tombo.nome}),
          ef:{outra:-2, moralGanho:0.6}},
-        {id:'humor', rot:'Provocar na base do deboche',
-         nota:`+2 de moral · piora a relação com a ${c.tombo.nome}`,
-         resumo:`debochou do tombo da ${c.tombo.nome}`,
+        {id:'humor', rot:_t('Provocar na base do deboche'),
+         nota:_t('+2 de moral · piora a relação com a {nome}', {nome:c.tombo.nome}),
+         resumo:_t('debochou do tombo da {nome}', {nome:c.tombo.nome}),
          ef:{outra:-1, moralGanho:0.4}},
-        {id:'nada', rot:'Futebol é assim, não comentar', nota:'sem efeito',
-         resumo:'não comentou o tombo deles', ef:{}}
+        {id:'nada', rot:_t('Futebol é assim, não comentar'), nota:_t('sem efeito'),
+         resumo:_t('não comentou o tombo deles'), ef:{}}
       ]})},
 
     /* B6: a posição no ranking do jogo, lida do ranking de verdade */
     {id:'ranking', grupo:'rua', quando: c => !!c.ranking, monta: c => ({
       alvo: c.ranking.lider ? null : c.ranking.liderId,
       texto: c.ranking.lider
-        ? `Vocês estão em 1º no ranking das organizadas do país. `+
-          'Dá pra dizer que são a maior do Brasil?'
-        : `Saiu o ranking das organizadas: vocês em ${c.ranking.pos}º de `+
-          `${c.ranking.total}, com a ${c.ranking.liderNome} na frente. Satisfeitos?`,
+        ? _t('Vocês estão em 1º no ranking das organizadas do país. Dá pra dizer que são a maior do Brasil?')
+        : _t('Saiu o ranking das organizadas: vocês em {pos}º de {total}, com a {nome} na frente. Satisfeitos?',
+             {pos:c.ranking.pos, total:c.ranking.total, nome:c.ranking.liderNome}),
       opcoes:[
         {id:'cravar', rot: c.ranking.lider
-           ? 'Cravar: somos a maior do Brasil'
-           : 'Cravar que o ranking está errado, os maiores somos nós',
-         nota:'+3 de moral · piora a relação com quem está na frente',
-         resumo:'cravou que a maior do país é a gente',
+           ? _t('Cravar: somos a maior do Brasil')
+           : _t('Cravar que o ranking está errado, os maiores somos nós'),
+         nota:_t('+3 de moral · piora a relação com quem está na frente'),
+         resumo:_t('cravou que a maior do país é a gente'),
          ef:{outra:-1, moralGanho:0.6}},
-        {id:'raca', rot:'Dizer que número não mede raça', nota:'sem efeito',
-         resumo:'disse que número não mede raça', ef:{}},
+        {id:'raca', rot:_t('Dizer que número não mede raça'), nota:_t('sem efeito'),
+         resumo:_t('disse que número não mede raça'), ef:{}},
         {id:'reconhecer', rot: c.ranking.lider
-           ? 'Dizer que posição a gente devolve em campo'
-           : `Reconhecer a ${c.ranking.liderNome} na frente`,
-         nota: c.ranking.lider ? 'sem efeito'
-             : `melhora a relação com a ${c.ranking.liderNome}`,
-         resumo:'reconheceu quem está na frente',
+           ? _t('Dizer que posição a gente devolve em campo')
+           : _t('Reconhecer a {nome} na frente', {nome:c.ranking.liderNome}),
+         nota: c.ranking.lider ? _t('sem efeito')
+             : _t('melhora a relação com a {nome}', {nome:c.ranking.liderNome}),
+         resumo:_t('reconheceu quem está na frente'),
          ef: c.ranking.lider ? {} : {outra:1}}
       ]})},
 
@@ -1390,21 +1376,22 @@ TO.feed = (function(){
     {id:'bar-quebrado', grupo:'rua', quando: c => !!c.barQuebrado,
      monta: c => {
       const b = c.barQuebrado;
-      const nomeDe = id => (M().torcida(id) || {}).nome || 'eles';
+      const nomeDe = id => (M().torcida(id) || {}).nome || _t('eles');
       const atk = b.atacante ? nomeDe(b.atacante) : null;
       if(b.dono === c.E.torcida.id) return {
         alvo:b.atacante || null,
-        texto:`Quebraram o bar de vocês${atk ? ' — obra da '+atk : ''}. `+
-              'O jornal quer a versão da organizada.',
+        texto: atk
+          ? _t('Quebraram o bar de vocês — obra da {nome}. O jornal quer a versão da organizada.', {nome:atk})
+          : _t('Quebraram o bar de vocês. O jornal quer a versão da organizada.'),
         opcoes:[
-          {id:'resposta', rot:'Avisar que vai ter resposta, e logo',
-           nota:'+3 de moral' + (atk ? ` · piora muito a relação com a ${atk}` : ''),
-           resumo:'prometeu resposta pelo bar quebrado',
+          {id:'resposta', rot:_t('Avisar que vai ter resposta, e logo'),
+           nota: atk ? _t('+3 de moral · piora muito a relação com a {nome}', {nome:atk}) : _t('+3 de moral'),
+           resumo:_t('prometeu resposta pelo bar quebrado'),
            ef:atk ? {outra:-2, moralGanho:0.6} : {moralGanho:0.6}},
-          {id:'levantar', rot:'Dizer que o bar já está de pé de novo',
-           nota:'sem efeito', resumo:'disse que o bar já está de pé', ef:{}},
-          {id:'calar', rot:'Não falar de bar com jornalista',
-           nota:'sem efeito', resumo:'não falou do bar quebrado', ef:{}}
+          {id:'levantar', rot:_t('Dizer que o bar já está de pé de novo'),
+           nota:_t('sem efeito'), resumo:_t('disse que o bar já está de pé'), ef:{}},
+          {id:'calar', rot:_t('Não falar de bar com jornalista'),
+           nota:_t('sem efeito'), resumo:_t('não falou do bar quebrado'), ef:{}}
         ]};
       const dono = nomeDe(b.dono);
       /* QUANDO O BONDE FOI NOSSO o jornalista não pergunta o que a
@@ -1412,81 +1399,79 @@ TO.feed = (function(){
          torcida sobre a própria descida saía falso. */
       if(b.atacante === c.E.torcida.id) return {
         alvo:b.dono,
-        texto:`Quebraram o bar da ${dono} e a cidade toda aponta pra cá. `+
-              'O jornal quer confirmação.',
+        texto:_t('Quebraram o bar da {nome} e a cidade toda aponta pra cá. O jornal quer confirmação.', {nome:dono}),
         opcoes:[
-          {id:'assumir', rot:'Assumir: fomos nós, e com orgulho',
-           nota:`+3 de moral · piora muito a relação com a ${dono}`,
-           resumo:`assumiu a descida no bar da ${dono}`,
+          {id:'assumir', rot:_t('Assumir: fomos nós, e com orgulho'),
+           nota:_t('+3 de moral · piora muito a relação com a {nome}', {nome:dono}),
+           resumo:_t('assumiu a descida no bar da {nome}', {nome:dono}),
            ef:{outra:-2, moralGanho:0.6}},
-          {id:'negar', rot:'Negar que tenha sido a gente', nota:'sem efeito',
-           resumo:'negou a descida no bar', ef:{}},
-          {id:'calar', rot:'Não falar de bar com jornalista', nota:'sem efeito',
-           resumo:'não falou do bar com a imprensa', ef:{}}
+          {id:'negar', rot:_t('Negar que tenha sido a gente'), nota:_t('sem efeito'),
+           resumo:_t('negou a descida no bar'), ef:{}},
+          {id:'calar', rot:_t('Não falar de bar com jornalista'), nota:_t('sem efeito'),
+           resumo:_t('não falou do bar com a imprensa'), ef:{}}
         ]};
       const inimiga = TO.relacoes.nivel(c.E, b.dono) <= -LIMIAR_INTERESSE;
       return {
         alvo:b.dono,
-        texto:`Quebraram o bar da ${dono}${atk ? ', obra da '+atk : ''}. `+
-              'O que a organizada acha disso?',
+        texto: atk
+          ? _t('Quebraram o bar da {nome}, obra da {atk}. O que a organizada acha disso?', {nome:dono, atk})
+          : _t('Quebraram o bar da {nome}. O que a organizada acha disso?', {nome:dono}),
         opcoes:[
           {id:'onda', rot: inimiga
-             ? 'Tirar onda: bem feito, e que venha mais'
-             : `Dizer que a ${dono} não soube defender o que era dela`,
-           nota:`+2 de moral · piora muito a relação com a ${dono}`,
-           resumo:`tirou onda do bar quebrado da ${dono}`,
+             ? _t('Tirar onda: bem feito, e que venha mais')
+             : _t('Dizer que a {nome} não soube defender o que era dela', {nome:dono}),
+           nota:_t('+2 de moral · piora muito a relação com a {nome}', {nome:dono}),
+           resumo:_t('tirou onda do bar quebrado da {nome}', {nome:dono}),
            ef:{outra:-2, moralGanho:0.4}},
-          {id:'respeito', rot:'Dizer que bar de torcida não se mexe',
-           nota:`melhora a relação com a ${dono}`,
-           resumo:'disse que bar de torcida não se mexe', ef:{outra:1}},
-          {id:'calar', rot:'Não comentar bar dos outros', nota:'sem efeito',
-           resumo:'não comentou o bar dos outros', ef:{}}
+          {id:'respeito', rot:_t('Dizer que bar de torcida não se mexe'),
+           nota:_t('melhora a relação com a {nome}', {nome:dono}),
+           resumo:_t('disse que bar de torcida não se mexe'), ef:{outra:1}},
+          {id:'calar', rot:_t('Não comentar bar dos outros'), nota:_t('sem efeito'),
+           resumo:_t('não comentou o bar dos outros'), ef:{}}
         ]};
      }},
 
     {id:'boato', grupo:'rua', monta: () => ({
-      texto:'Rolou um boato de que vocês pediram a um aliado pra se '+
-            'afastar ou se aproximar de outra torcida. É verdade?',
+      texto:_t('Rolou um boato de que vocês pediram a um aliado pra se afastar ou se aproximar de outra torcida. É verdade?'),
       opcoes:[
-        {id:'confirmar', rot:'Confirmar', nota:'+1 prestígio · transparência',
-         resumo:'confirmou o boato', ef:{prestigio:0.2}},
-        {id:'negar', rot:'Negar, é balela', nota:'sem efeito',
-         resumo:'negou o boato', ef:{}}
+        {id:'confirmar', rot:_t('Confirmar'), nota:_t('+1 prestígio · transparência'),
+         resumo:_t('confirmou o boato'), ef:{prestigio:0.2}},
+        {id:'negar', rot:_t('Negar, é balela'), nota:_t('sem efeito'),
+         resumo:_t('negou o boato'), ef:{}}
       ]})},
 
     {id:'fama', grupo:'rua', monta: () => ({
-      texto:'O jornal quer falar da fama de violenta que a organizada carrega. '+
-            'Como a gente responde?',
+      texto:_t('O jornal quer falar da fama de violenta que a organizada carrega. Como a gente responde?'),
       opcoes:[
-        {id:'negar', rot:'Negar: a gente é festa', nota:'sem efeito',
-         resumo:'negou a fama de violenta', ef:{}},
-        {id:'defesa', rot:'A gente só se defende', nota:'+1 prestígio',
-         resumo:'disse que a torcida só se defende', ef:{prestigio:0.2}},
-        {id:'assumir', rot:'Assumir: somos o que somos',
-         nota:'+2 prestígio · −3 relação com o clube',
-         resumo:'assumiu a fama de violenta', ef:{prestigio:0.4, clube:-3}}
+        {id:'negar', rot:_t('Negar: a gente é festa'), nota:_t('sem efeito'),
+         resumo:_t('negou a fama de violenta'), ef:{}},
+        {id:'defesa', rot:_t('A gente só se defende'), nota:_t('+1 prestígio'),
+         resumo:_t('disse que a torcida só se defende'), ef:{prestigio:0.2}},
+        {id:'assumir', rot:_t('Assumir: somos o que somos'),
+         nota:_t('+2 prestígio · −3 relação com o clube'),
+         resumo:_t('assumiu a fama de violenta'), ef:{prestigio:0.4, clube:-3}}
       ]})},
 
     {id:'faixa', grupo:'rua', monta: c => ({
-      texto:`Vão levar faixa de cobrança pro próximo jogo do ${c.nomeClube}?`,
+      texto:_t('Vão levar faixa de cobrança pro próximo jogo do {clube}?', {clube:c.nomeClube}),
       opcoes:[
-        {id:'sim', rot:'Vamos, e bem grande', nota:'+2 prestígio · −3 relação com o clube',
-         resumo:'prometeu faixa de cobrança', ef:{prestigio:0.4, clube:-3}},
-        {id:'nao', rot:'Não, o momento é de apoiar', nota:notaElogio(c, 1, 0.6),
-         resumo:'descartou a faixa de cobrança', ef:elogio(1, 0.6)},
-        {id:'talvez', rot:'Depende do que acontecer em campo', nota:'sem efeito',
-         resumo:'deixou a faixa em aberto', ef:{}}
+        {id:'sim', rot:_t('Vamos, e bem grande'), nota:_t('+2 prestígio · −3 relação com o clube'),
+         resumo:_t('prometeu faixa de cobrança'), ef:{prestigio:0.4, clube:-3}},
+        {id:'nao', rot:_t('Não, o momento é de apoiar'), nota:notaElogio(c, 1, 0.6),
+         resumo:_t('descartou a faixa de cobrança'), ef:elogio(1, 0.6)},
+        {id:'talvez', rot:_t('Depende do que acontecer em campo'), nota:_t('sem efeito'),
+         resumo:_t('deixou a faixa em aberto'), ef:{}}
       ]})},
 
     {id:'arquibancada', grupo:'rua', monta: c => ({
-      texto:`O que a arquibancada prepara pro próximo jogo do ${c.nomeClube}?`,
+      texto:_t('O que a arquibancada prepara pro próximo jogo do {clube}?', {clube:c.nomeClube}),
       opcoes:[
-        {id:'mosaico', rot:'Prometer mosaico e festa', nota:notaElogio(c, 1, 0),
-         resumo:'prometeu festa na arquibancada', ef:elogio(1, 0)},
-        {id:'surpresa', rot:'Dizer que é surpresa', nota:'+1 prestígio',
-         resumo:'disse que é surpresa', ef:{prestigio:0.2}},
-        {id:'nada', rot:'Sem resultado não tem festa', nota:'−2 relação · +1 prestígio',
-         resumo:'disse que sem resultado não tem festa', ef:{clube:-2, prestigio:0.2}}
+        {id:'mosaico', rot:_t('Prometer mosaico e festa'), nota:notaElogio(c, 1, 0),
+         resumo:_t('prometeu festa na arquibancada'), ef:elogio(1, 0)},
+        {id:'surpresa', rot:_t('Dizer que é surpresa'), nota:_t('+1 prestígio'),
+         resumo:_t('disse que é surpresa'), ef:{prestigio:0.2}},
+        {id:'nada', rot:_t('Sem resultado não tem festa'), nota:_t('−2 relação · +1 prestígio'),
+         resumo:_t('disse que sem resultado não tem festa'), ef:{clube:-2, prestigio:0.2}}
       ]})}
   ];
 
@@ -1513,7 +1498,7 @@ TO.feed = (function(){
 
   function entrevistaDeHoje(E, sa){
     const time = M().time(E.torcida.clubeId);
-    const nomeClube = time ? time.nome : 'o clube';
+    const nomeClube = time ? time.nome : _t('clube');
     const comp = ((E.temporada || {}).competicoes || [])
       .find(c => !c.copa && (c.clubes||[]).includes(E.torcida.clubeId));
     const pos = comp ? TO.competicoes.posicaoNaTabela(E, comp.id, E.torcida.clubeId) : 0;
@@ -1542,16 +1527,15 @@ TO.feed = (function(){
     const perguntas = escolherPerguntas(ctx, sa)
       .map(q => Object.assign({id:q.id, resposta:null}, q.monta(ctx)));
     if(!perguntas.length) return;
-    const quantas = ['', 'Uma pergunta rápida', 'Duas perguntas rápidas',
-      'Três perguntas rápidas', 'Quatro perguntas rápidas'][perguntas.length]
-      || `${perguntas.length} perguntas rápidas`;
+    const quantas = ['', _t('Uma pergunta rápida'), _t('Duas perguntas rápidas'),
+      _t('Três perguntas rápidas'), _t('Quatro perguntas rápidas')][perguntas.length]
+      || _t('{n} perguntas rápidas', {n:perguntas.length});
     const m = propor(E, {
       kind:'entrevista', peso:'decisao', voz:'jornal',
       chave:`entrevista-clube|${E.data.ano}|${sa}`,
-      texto:`O ${jornal} ligou atrás de uma entrevista sobre a torcida `+
-            `e o ${nomeClube}. ${quantas} — o que a gente responde?` +
-            (timeMal ? ' O time vem mal, e a rua quer cobrança: passar a mão '+
-             'na cabeça da diretoria agora custa moral.' : ''),
+      texto:_t('O {jornal} ligou atrás de uma entrevista sobre a torcida e o {clube}. {quantas} — o que a gente responde?',
+               {jornal, clube:nomeClube, quantas}) +
+            (timeMal ? ' ' + _t('O time vem mal, e a rua quer cobrança: passar a mão na cabeça da diretoria agora custa moral.') : ''),
       dados:{jornal, perguntas, timeMal, moralPerdida:0, tetoBateu:false}
     });
     /* só marca como "saiu este mês" o que de fato virou mensagem — a
@@ -1584,16 +1568,16 @@ TO.feed = (function(){
          ali. A faixa de cima, a dos benefícios grandes, se ganha no
          estádio. A nota do botão foi escrita com esta mesma conta. */
       if(n > 0 && ef.elogio) n = Math.min(n, Math.max(0, TETO_ELOGIO - RC.nivel(E)));
-      if(n) RC.mexer(E, n, `Entrevista: ${rot}`);
+      if(n) RC.mexer(E, n, _t('Entrevista: {resp}', {resp:rot}));
       else m.dados.tetoBateu = true;
     }
     if(ef.prestigio)
-      TO.estado.mexerIndicador(E, 'prestigio', ef.prestigio, `Entrevista: ${rot}`);
+      TO.estado.mexerIndicador(E, 'prestigio', ef.prestigio, _t('Entrevista: {resp}', {resp:rot}));
     /* PEITAR SOBE A MORAL (régua do dono, 19/09/2026): a rua gosta de
        ver a diretoria provocando. É o outro lado da mesma moeda de
        `moral`, que desce quando a gente passa a mão na cabeça do clube. */
     if(ef.moralGanho)
-      TO.estado.mexerIndicador(E, 'moral', ef.moralGanho, `Entrevista: ${rot}`);
+      TO.estado.mexerIndicador(E, 'moral', ef.moralGanho, _t('Entrevista: {resp}', {resp:rot}));
     /* PASSAR A MÃO NA CABEÇA DO CLUBE CUSTA MORAL
        (pedido do dono, 19/09/2026): os membros querem cobrança, e ver
        o presidente da torcida defendendo o clube no jornal é ficar do
@@ -1603,7 +1587,8 @@ TO.feed = (function(){
     const perdaMoral = ef.moral || ((ef.moralSeMal && timeMal) ? ef.moralSeMal : 0);
     if(perdaMoral){
       TO.estado.mexerIndicador(E, 'moral', -perdaMoral,
-        `Entrevista: ${rot}` + (ef.moral ? '' : ' com o time indo mal'));
+        ef.moral ? _t('Entrevista: {resp}', {resp:rot})
+                 : _t('Entrevista: {resp} com o time indo mal', {resp:rot}));
       m.dados.moralPerdida = (m.dados.moralPerdida || 0) + perdaMoral * 5;
     }
     if(ef.outra && p.alvo){
@@ -1613,7 +1598,7 @@ TO.feed = (function(){
         v + ef.outra * TO.relacoes.REL.aproximar, -100, 100);
     }
     if(perguntas.every(x=>x.resposta)){
-      m.respondido = {botao:'entrevista', rot:'Entrevista dada'};
+      m.respondido = {botao:'entrevista', rot:_t('Entrevista dada')};
       const perdida = Math.round((m.dados.moralPerdida || 0) * 10) / 10;
       const frases = perguntas.map(x=>{
         const o = (x.opcoes||[]).find(y=>y.id === x.resposta);
@@ -1621,10 +1606,8 @@ TO.feed = (function(){
       });
       m.consequencia = frases.join('; ') + '.' +
         (m.dados.tetoBateu
-          ? ` O elogio não mexeu na relação com o clube: acima de ${TETO_ELOGIO} `+
-            'só presença no estádio sobe.' : '') +
-        (perdida ? ` A rua não gostou de ver o clube defendido: `+
-                   `−${perdida} de moral.` : '');
+          ? ' ' + _t('O elogio não mexeu na relação com o clube: acima de {teto} só presença no estádio sobe.', {teto:TETO_ELOGIO}) : '') +
+        (perdida ? ' ' + _t('A rua não gostou de ver o clube defendido: −{n} de moral.', {n:perdida}) : '');
     }
     return {ok:true, fechou: perguntas.every(x=>x.resposta)};
   }
