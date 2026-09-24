@@ -4195,20 +4195,24 @@
      perfil (decisão do dono, 21/08/2026). */
   const JANELA_DUPLO = 400;
   let ultimoClique = {id:null, em:0};
+  /* a faixa de efetivo do olheiro ("20 a 30") vem pronta do
+     planejamento: o "a" do meio vira o da língua do jogo */
+  const faixaT = s => String(s == null ? '' : s).replace(/^(\d+) a (\d+)$/,
+    (x, a, b) => _t('{a} a {b}', {a, b}));
 
   const COLUNAS = [
-    {k:'nome',    rot:'Membro',   larg:'26%'},
-    {k:'cargo',   rot:'Função',   larg:'20%'},
-    {k:'idade',   rot:'Idade',    larg:'7%'},
-    {k:'forca',   rot:'Força',    barra:true, max:20},
-    {k:'defesa',  rot:'Defesa',   barra:true, max:20},
+    {k:'nome',    rot:_t('Membro'),   larg:'26%'},
+    {k:'cargo',   rot:_t('Função'),   larg:'20%'},
+    {k:'idade',   rot:_t('Idade'),    larg:'7%'},
+    {k:'forca',   rot:_t('Força'),    barra:true, max:20},
+    {k:'defesa',  rot:_t('Defesa'),   barra:true, max:20},
     {k:'xp',      rot:'XP'},
-    {k:'situacao',rot:'Situação'}
+    {k:'situacao',rot:_t('Situação')}
   ];
 
   /* de onde é o membro: a sede, ou a cidade da sub-sede dele */
   const origemDe = m => m.filial
-    ? (TO.financeiro.nomeCidade(m.filial) || m.filial) : 'Sede';
+    ? (TO.financeiro.nomeCidade(m.filial) || m.filial) : _t('Sede');
   function valorCol(m,k){
     if(k==='nome') return TO.membros.nomeDe(m).toLowerCase();
     if(k==='cargo') return TO.membros.CARGOS[m.cargo].ordem;
@@ -4223,6 +4227,7 @@
     const sit = m.preso?'preso' : m.ferido?'ferido' : 'apto';
     return TO.membros.nomeDe(m).toLowerCase().includes(t)
         || TO.membros.CARGOS[m.cargo].nome.toLowerCase().includes(t)
+        || _t(TO.membros.CARGOS[m.cargo].nome).toLowerCase().includes(t)
         || origemDe(m).toLowerCase().includes(t)
         || (m.arquetipo||'').includes(t) || sit.includes(t);
   }
@@ -4236,15 +4241,13 @@
   function painelIndicadores(){
     const e = E();
     const cx = el('div');
-    const c0 = cartao('Agora');
+    const c0 = cartao(_t('Agora'));
     c0.corpo.innerHTML =
-      `<div class="linha-dado"><span>Prestígio</span>
-         <b>${Math.round(e.indicadores.prestigio*5)} <span class="fraco">de 100</span></b></div>
-       <div class="linha-dado"><span>Moral da torcida</span>
-         <b>${Math.round(e.indicadores.moral*5)} <span class="fraco">de 100</span></b></div>
-       <div class="linha-dado"><span class="fraco">Ficar 20 dias sem briga `+
-      `deprecia: −5 de prestígio e −2,5 de moral, e o relógio segue `+
-      `correndo até a próxima briga.</span></div>`;
+      `<div class="linha-dado"><span>${_t('Prestígio')}</span>
+         <b>${Math.round(e.indicadores.prestigio*5)} <span class="fraco">${_t('de 100')}</span></b></div>
+       <div class="linha-dado"><span>${_t('Moral da torcida')}</span>
+         <b>${Math.round(e.indicadores.moral*5)} <span class="fraco">${_t('de 100')}</span></b></div>
+       <div class="linha-dado"><span class="fraco">${_t('Ficar 20 dias sem briga deprecia: −5 de prestígio e −2,5 de moral, e o relógio segue correndo até a próxima briga.')}</span></div>`;
     cx.appendChild(c0);
 
     /* A RELAÇÃO COM O CLUBE (pedido do dono, 18/09/2026): régua
@@ -4256,26 +4259,23 @@
       const nv = RC.nivel(e);
       const fx = RC.faixaDe(nv);
       const ing = RC.ingressosDoJogo(e);
-      const c1 = cartao('Relação com o clube');
+      const c1 = cartao(_t('Relação com o clube'));
       c1.corpo.innerHTML =
-        `<div class="linha-dado"><span>Nível</span>
-           <b>${Math.round(nv)} <span class="fraco">de 100 · faixa ${fx.rot}</span></b></div>
-         <div class="linha-dado"><span>Ingressos pros sócios</span>
-           <b>${ing.n ? `${ing.n} (${Math.round(fx.ingressos*100)}%)` : 'nenhum'}</b></div>
-         <div class="linha-dado"><span>Material oficial na loja</span>
-           <b>${fx.lojaBuff ? `+${Math.round(fx.lojaBuff*100)}% de receita` : 'não'}</b></div>
-         <div class="linha-dado"><span>Ajuda na caravana</span>
-           <b>${fx.caravana ? `cobre ${Math.round(fx.caravana*100)}%` : 'não'}</b></div>
-         <div class="linha-dado"><span class="fraco">Presença nos jogos sobe; briga nos `+
-        `arredores e na arquibancada em dia de jogo desce; entrevista e protesto na `+
-        `porta do CT mexem também — 0 a 25 não dá nenhum benefício, 76 a 100 dá tudo.`+
-        `</span></div>`;
+        `<div class="linha-dado"><span>${_t('Nível')}</span>
+           <b>${Math.round(nv)} <span class="fraco">${_t('de 100 · faixa {faixa}', {faixa:_t(fx.rot)})}</span></b></div>
+         <div class="linha-dado"><span>${_t('Ingressos pros sócios')}</span>
+           <b>${ing.n ? `${ing.n} (${Math.round(fx.ingressos*100)}%)` : _t('nenhum')}</b></div>
+         <div class="linha-dado"><span>${_t('Material oficial na loja')}</span>
+           <b>${fx.lojaBuff ? _t('+{p}% de receita', {p:Math.round(fx.lojaBuff*100)}) : _t('não')}</b></div>
+         <div class="linha-dado"><span>${_t('Ajuda na caravana')}</span>
+           <b>${fx.caravana ? _t('cobre {p}%', {p:Math.round(fx.caravana*100)}) : _t('não')}</b></div>
+         <div class="linha-dado"><span class="fraco">${_t('Presença nos jogos sobe; briga nos arredores e na arquibancada em dia de jogo desce; entrevista e protesto na porta do CT mexem também — 0 a 25 não dá nenhum benefício, 76 a 100 dá tudo.')}</span></div>`;
       cx.appendChild(c1);
 
       const histC = e.relacaoClubeHistorico || [];
-      const c2 = cartao('Histórico da relação com o clube', `${histC.length} movimentos`);
+      const c2 = cartao(_t('Histórico da relação com o clube'), _tn(histC.length, '{n} movimento', '{n} movimentos'));
       if(!histC.length)
-        c2.corpo.innerHTML = '<div class="em-construcao">Nada mexeu ainda.</div>';
+        c2.corpo.innerHTML = `<div class="em-construcao">${_t('Nada mexeu ainda.')}</div>`;
       for(const h of histC.slice(0, 60))
         c2.corpo.appendChild(el('div',{class:'transacao', html:
           `<span class="dia">${h.dia}</span>
@@ -4286,15 +4286,15 @@
     }
 
     const hist = e.historicoIndicadores || [];
-    const c = cartao('Histórico', `${hist.length} movimentos`);
+    const c = cartao(_t('Histórico'), _tn(hist.length, '{n} movimento', '{n} movimentos'));
     if(!hist.length)
-      c.corpo.innerHTML = '<div class="em-construcao">Nada mexeu ainda.</div>';
+      c.corpo.innerHTML = `<div class="em-construcao">${_t('Nada mexeu ainda.')}</div>`;
     for(const h of hist.slice(0, 80)){
       const prest = h.ind === 'prestigio';
       const v = Math.round(h.delta*5*10)/10;
       c.corpo.appendChild(el('div',{class:'transacao', html:
         `<span class="dia">${h.dia}</span>
-         <span class="desc">${prest ? 'Prestígio' : 'Moral'} · ${h.motivo||''}</span>
+         <span class="desc">${prest ? _t('Prestígio') : _t('Moral')} · ${h.motivo||''}</span>
          <span class="val ${h.delta<0?'negativo':'positivo'}">`+
         `${v>0?'+':''}${v}</span>`}));
     }
@@ -4305,15 +4305,15 @@
   function pintarTorcida(){
     const e = E(), pg = U.$('.pagina[data-pag="torcida"]');
     pg.innerHTML='';
-    pg.appendChild(el('div',{class:'titulo-pagina', texto:'Torcida — membros'}));
+    pg.appendChild(el('div',{class:'titulo-pagina', texto:_t('Torcida — membros')}));
     pg.appendChild(subabas([
-      {id:'membros',      rot:'Membros'},
+      {id:'membros',      rot:_t('Membros')},
 
-      {id:'treinamentos', rot:'Treinamentos'},
-      {id:'recrutamento', rot:'Recrutamento'},
-      {id:'velhaguarda',  rot:`Velha Guarda${(e.velhaGuarda||[]).length
+      {id:'treinamentos', rot:_t('Treinamentos')},
+      {id:'recrutamento', rot:_t('Recrutamento')},
+      {id:'velhaguarda',  rot:`${_t('Velha Guarda')}${(e.velhaGuarda||[]).length
                                 ? ' · '+e.velhaGuarda.length : ''}`},
-      {id:'indicadores',  rot:'Moral, Prestígio & Clube'}
+      {id:'indicadores',  rot:_t('Moral, Prestígio & Clube')}
     ], subTorcida, id=>{subTorcida=id; redesenhar();}));
 
     if(subTorcida==='velhaguarda'){ pg.appendChild(painelVelhaGuarda()); return; }
@@ -4328,30 +4328,30 @@
        direita, e a promoção na própria linha */
     /* os cartões de resumo saíram (dono, 10/09/2026); ficam os filtros e a tabela */
     const filtros = [
-      ['todos','Todos', c.total],
-      ['diretoria','Diretoria', c.diretoria],
-      ['frente','Linha de Frente', c.frente],
-      ['componente','Componentes', c.componente],
-      ['novato','Apoiadores', c.novato]
+      ['todos',_t('Todos'), c.total],
+      ['diretoria',_t('Diretoria'), c.diretoria],
+      ['frente',_t('Linha de Frente'), c.frente],
+      ['componente',_t('Componentes'), c.componente],
+      ['novato',_t('Apoiadores'), c.novato]
     ];
     /* CARGO E ESTADO EM DROPDOWN (dono, 12/09/2026): duas fileiras de
        botões viravam quatro linhas em tela estreita; agora é uma faixa
        só, com a busca no fim. */
     const fl = el('div',{class:'mb-filtros'});
-    fl.appendChild(escolha('Cargo',
+    fl.appendChild(escolha(_t('Cargo'),
       filtros.map(([id,rot,n])=>({id, rot, nota:n})),
       filtroCargo, id=>{ filtroCargo=id; redesenhar(); }));
-    fl.appendChild(escolha('Estado',
+    fl.appendChild(escolha(_t('Estado'),
       [['todos','Todos'],['pe','De pé'],['ferido','Ferido'],
-       ['preso','Preso'],['apto','Apto a promoção']].map(([id,rot])=>({id, rot})),
+       ['preso','Preso'],['apto','Apto a promoção']].map(([id,rot])=>({id, rot:_t(rot)})),
       filtroEstado, id=>{ filtroEstado=id; redesenhar(); }));
-    const bs = el('input',{class:'busca mb-busca', type:'search', placeholder:'buscar por nome, arquétipo…'});
+    const bs = el('input',{class:'busca mb-busca', type:'search', placeholder:_t('buscar por nome, arquétipo…')});
     bs.value = busca;
     bs.oninput = ev=>{ busca = ev.target.value; pintarTorcida(); };
     fl.appendChild(bs);
     pg.appendChild(fl);
 
-    const ct = cartao('Membros', `${c.aptos} de pé · ${c.feridos} feridos · ${c.presos} presos`);
+    const ct = cartao(_t('Membros'), _t('{a} de pé · {f} feridos · {p} presos', {a:c.aptos, f:c.feridos, p:c.presos}));
     const passaEstado = m => filtroEstado==='todos' ? true
       : filtroEstado==='pe' ? (!m.ferido && !m.preso)
       : filtroEstado==='ferido' ? !!m.ferido
@@ -4375,7 +4375,7 @@
     const colunas = temFilial
       ? [Object.assign({}, COLUNAS[0], {larg:'22%'}),
          Object.assign({}, COLUNAS[1], {larg:'16%'}),
-         {k:'origem', rot:'Origem', larg:'12%'}].concat(COLUNAS.slice(2))
+         {k:'origem', rot:_t('Origem'), larg:'12%'}].concat(COLUNAS.slice(2))
       : COLUNAS;
     for(const col of colunas){
       const seta = ordem.col===col.k ? (ordem.dir<0?' ▼':' ▲') : '';
@@ -4404,33 +4404,33 @@
          no perfil, e sem um aviso na linha ninguém achava que ela
          existia. Agora a Situação avisa, e o cartão conta quantos. */
       const pronto = TO.membros.podePromover(e, m);
-      const sit = m.preso ? (penaDele != null ? `Preso · ${penaDele}d` : 'Preso')
-                : m.ferido ? `Ferido · ${m.ferido.dias}d`
-                : pronto.ok ? '<b class="pronto-promo">Pronto p/ promoção</b>'
-                : m.naFila ? 'Treinando' : 'De pé';
+      const sit = m.preso ? (penaDele != null ? _t('Preso · {d}d', {d:penaDele}) : _t('Preso'))
+                : m.ferido ? _t('Ferido · {d}d', {d:m.ferido.dias})
+                : pronto.ok ? `<b class="pronto-promo">${_t('Pronto p/ promoção')}</b>`
+                : m.naFila ? _t('Treinando') : _t('De pé');
       const linha = el('tr',{class:(m.preso?'preso':m.ferido?'ferido':'')
         + (selecionado===m.id?' selecionada':'')});
       const pontinho = (m.cargo==='diretoria'||m.veterano) ? '<span class="ponto"></span>' : '';
       linha.innerHTML =
         `<td>${pontinho}${TO.membros.nomeDe(m)}</td>
-         <td>${TO.membros.cargoNome(m)}</td>
+         <td>${_t(TO.membros.cargoNome(m))}</td>
          ${temFilial ? `<td>${m.filial
-           ? linkCidade(m.filial, origemDe(m)) : 'Sede'}</td>` : ''}
+           ? linkCidade(m.filial, origemDe(m)) : _t('Sede')}</td>` : ''}
          <td class="num${m.idade >= TO.membros.IDADE_DECLINIO ? ' velho' : ''}"`+
         ` title="${m.idade >= TO.membros.IDADE_DECLINIO
-          ? 'em declínio: perde 0,6 de força e defesa por ano; pendura a bandeira aos '
-            + TO.membros.IDADE_SAIDA
-          : 'no auge'}">${m.idade != null ? m.idade : '—'}</td>
+          ? _t('em declínio: perde 0,6 de força e defesa por ano; pendura a bandeira aos {n}', {n:TO.membros.IDADE_SAIDA})
+          : _t('no auge')}">${m.idade != null ? m.idade : '—'}</td>
          <td>${medida(m.forca,20)}</td>
          <td>${medida(m.defesa,20)}</td>
          <td class="num">${m.xp}</td>
          <td>${sit}</td>
          <td class="mb-acao"></td>`;
       if(pronto.ok){
-        const bp = el('button',{class:'mini-bt mb-promo', texto:'Promover'});
-        bp.title = pronto.custo ? `promove a ${TO.membros.CARGOS[pronto.para].nome} por ${U.dinheiro(pronto.custo)}` : `promove a ${TO.membros.CARGOS[pronto.para].nome}`;
+        const bp = el('button',{class:'mini-bt mb-promo', texto:_t('Promover')});
+        const paraNome = _t(TO.membros.CARGOS[pronto.para].nome);
+        bp.title = pronto.custo ? _t('promove a {cargo} por {valor}', {cargo:paraNome, valor:U.dinheiro(pronto.custo)}) : _t('promove a {cargo}', {cargo:paraNome});
         bp.onclick = ev=>{ ev.stopPropagation(); const r = TO.membros.promover(e, m);
-          aviso(r.ok ? `${TO.membros.nomeDe(m)} promovido` : r.motivo, r.ok ? 'boa' : 'ruim'); redesenhar(); };
+          aviso(r.ok ? _t('{nome} promovido', {nome:TO.membros.nomeDe(m)}) : r.motivo, r.ok ? 'boa' : 'ruim'); redesenhar(); };
         linha.querySelector('.mb-acao').appendChild(bp);
       }
       linha.style.cursor='pointer';
@@ -4451,7 +4451,7 @@
         if(btPerfil){ btPerfil.disabled = false; btPerfil.onclick = ()=>abrirFicha(m); }
         if(duplo){ ultimoClique = {id:null, em:0}; abrirFicha(m); }
       };
-      linha.title = 'dois cliques abrem o perfil';
+      linha.title = _t('dois cliques abrem o perfil');
       linha.style.userSelect = 'none';   // dois cliques não pintam texto
       tb.appendChild(linha);
     }
@@ -4460,7 +4460,7 @@
 
     const alvo = e.membros.find(m=>m.id===selecionado);
     /* o botão Ações foi embora: as ações moram dentro do perfil */
-    btPerfil = el('button',{class:'bt destaque', texto:'Abrir perfil'});
+    btPerfil = el('button',{class:'bt destaque', texto:_t('Abrir perfil')});
     btPerfil.disabled = !alvo;
     if(alvo) btPerfil.onclick = ()=>abrirFicha(alvo);
     ct.rodape(btPerfil);
@@ -4476,23 +4476,20 @@
      ======================================================= */
   function painelVelhaGuarda(){
     const e = E(), lista = e.velhaGuarda || [];
-    const ct = cartao('Velha Guarda',
-      lista.length ? `${lista.length} ${lista.length===1?'nome pendurado'
-                                                       :'nomes pendurados'}`
-                   : 'ninguém pendurou a bandeira ainda');
+    const ct = cartao(_t('Velha Guarda'),
+      lista.length ? _tn(lista.length, '{n} nome pendurado', '{n} nomes pendurados')
+                   : _t('ninguém pendurou a bandeira ainda'));
     if(!lista.length){
       ct.corpo.appendChild(el('div',{class:'recado', html:
-        `Membro que chega aos <b>${TO.membros.IDADE_SAIDA} anos</b> deixa a `+
-        `lista de membros e vem parar aqui. Da <b>${TO.membros.IDADE_DECLINIO}ª `+
-        `primavera</b> em diante ele já perde ${String(TO.membros.DESGASTE_ANO)
-          .replace('.', ',')} de força e defesa por ano — é o preço de uma `+
-        `torcida que envelhece junto.`}));
+        _t('Membro que chega aos <b>{saida} anos</b> deixa a lista de membros e vem parar aqui. Da <b>{declinio}ª primavera</b> em diante ele já perde {perda} de força e defesa por ano — é o preço de uma torcida que envelhece junto.',
+           {saida:TO.membros.IDADE_SAIDA, declinio:TO.membros.IDADE_DECLINIO,
+            perda:String(TO.membros.DESGASTE_ANO).replace('.', TO.i18n.idioma === 'en' ? '.' : ',')})}));
       return ct;
     }
     const tab = el('table',{class:'dados'});
-    tab.innerHTML = `<thead><tr><th>Nome</th><th>Último cargo</th>
-      <th class="num">Idade</th><th class="num">Força</th><th class="num">Defesa</th>
-      <th class="num">XP</th><th class="num">Sequelas</th><th>Pendurou</th>
+    tab.innerHTML = `<thead><tr><th>${_t('Nome')}</th><th>${_t('Último cargo')}</th>
+      <th class="num">${_t('Idade')}</th><th class="num">${_t('Força')}</th><th class="num">${_t('Defesa')}</th>
+      <th class="num">XP</th><th class="num">${_t('Sequelas')}</th><th>${_t('Pendurou')}</th>
       </tr></thead>`;
     const tb = el('tbody');
     for(const v of lista){
@@ -4500,7 +4497,7 @@
       linha.innerHTML =
         `<td>${v.cargo==='diretoria' ? `${v.apelido} ${v.sobrenome}` : v.apelido}
            ${v.veterano ? '<span class="ponto"></span>' : ''}</td>
-         <td>${TO.membros.CARGOS[v.cargo].nome}</td>
+         <td>${_t(TO.membros.CARGOS[v.cargo].nome)}</td>
          <td class="num">${v.idade}</td>
          <td class="num">${v.forca}</td>
          <td class="num">${v.defesa}</td>
@@ -4511,16 +4508,16 @@
       linha.onclick = ()=>{
         const corpo = el('div');
         corpo.innerHTML =
-          `<div class="linha-dado"><span>Pendurou a bandeira</span>`+
-          `<b>${v.idade} anos, em ${v.ano}</b></div>`+
-          `<div class="linha-dado"><span>Ficha do último dia</span>`+
+          `<div class="linha-dado"><span>${_t('Pendurou a bandeira')}</span>`+
+          `<b>${_t('{idade} anos, em {ano}', {idade:v.idade, ano:v.ano})}</b></div>`+
+          `<div class="linha-dado"><span>${_t('Ficha do último dia')}</span>`+
           `<b>${v.forca}/${v.defesa} · ${v.xp} XP</b></div>`+
-          (v.sequelas ? `<div class="linha-dado"><span>Sequelas de briga</span>`+
+          (v.sequelas ? `<div class="linha-dado"><span>${_t('Sequelas de briga')}</span>`+
                         `<b>${v.sequelas}</b></div>` : '');
         for(const h of (v.historico||[]).slice(-14))
           corpo.appendChild(el('div',{class:'transacao',
             html:`<span class="desc">${textoDoEvento(h)}</span>`}));
-        modal(v.apelido, TO.membros.CARGOS[v.cargo].nome + ' · Velha Guarda', corpo);
+        modal(v.apelido, _t('{cargo} · Velha Guarda', {cargo:_t(TO.membros.CARGOS[v.cargo].nome)}), corpo);
       };
       tb.appendChild(linha);
     }
@@ -4538,42 +4535,40 @@
 
     /* o treino roda sozinho no virar do dia (decisão do dono): o
        painel só mostra quem a diretoria escalou hoje */
-    const c1 = cartao('Treino de hoje',
-      `${fila.length} escalados · ${cap} vagas · sorteado e treinado todo dia`);
+    const c1 = cartao(_t('Treino de hoje'),
+      _t('{n} escalados · {cap} vagas · sorteado e treinado todo dia', {n:fila.length, cap}));
     if(!fila.length){
-      c1.corpo.innerHTML = `<div class="em-construcao">Ninguém escalado `+
-        `hoje — todo mundo ferido, preso ou no teto. A diretoria sorteia `+
-        `de novo amanhã.</div>`;
+      c1.corpo.innerHTML = `<div class="em-construcao">${_t('Ninguém escalado hoje — todo mundo ferido, preso ou no teto. A diretoria sorteia de novo amanhã.')}</div>`;
     } else {
       fila.forEach((m,i)=>{
         const pl = TO.membros.planoDeTreino(m);
-        const falta = pl.noTeto ? 'no teto do cargo'
-          : `${pl.sessoes} ${pl.sessoes===1?'sessão':'sessões'} até o teto ${pl.teto}`;
+        const falta = pl.noTeto ? _t('no teto do cargo')
+          : _tn(pl.sessoes, '{n} sessão até o teto {teto}', '{n} sessões até o teto {teto}', {teto:pl.teto});
         c1.corpo.appendChild(el('div',{class:'item'+(i<cap?' meu':''), html:
           `<div class="l1"><span class="nm">${TO.membros.nomeDe(m)}</span>
              <span class="qt">${m.forca}/${m.defesa}</span></div>
-           <div class="l2">treinou hoje · ${falta} · frações `+
-          `${m.fracForca.toFixed(2)} / ${m.fracDefesa.toFixed(2)}</div>`}));
+           <div class="l2">${_t('treinou hoje · {falta} · frações {f} / {d}', {falta,
+             f:m.fracForca.toFixed(2), d:m.fracDefesa.toFixed(2)})}</div>`}));
       });
     }
     grade.appendChild(c1);
 
     /* GDD §5.4 — quem ainda tem o que ganhar, por cargo */
-    const c2 = cartao('Plano de treino', 'GDD §5.4');
+    const c2 = cartao(_t('Plano de treino'), 'GDD §5.4');
     const disp = e.membros.filter(m=>TO.membros.disponivel(m));
     const emTeto = disp.filter(m=>TO.membros.planoDeTreino(m).noTeto).length;
     c2.corpo.innerHTML =
-      `<div class="linha-dado"><span>Ganho por sessão</span>
+      `<div class="linha-dado"><span>${_t('Ganho por sessão')}</span>
          <b>${(()=>{ const g = TO.financeiro.ganhoDoTreino(e),
                         n = TO.financeiro.professoresDe(e);
-             return n ? `0.00 a ${(0.3*g).toFixed(2)} · `+
-                        `${n===1?'professor':n+' professores'} de MMA `+
-                        `(+${Math.round((g-1)*100)}%)`
-                      : '0.00 a 0.30'; })()}</b></div>
-       <div class="linha-dado"><span>Vagas por dia</span><b>${cap}</b></div>
-       <div class="linha-dado"><span>Disponíveis pra treinar</span>
-         <b>${disp.length - emTeto} <span class="fraco">de ${disp.length}</span></b></div>
-       <div class="linha-dado"><span>Já no teto do cargo</span>
+             return n ? _tn(n, '0.00 a {max} · professor de MMA (+{p}%)',
+                               '0.00 a {max} · {n} professores de MMA (+{p}%)',
+                            {max:(0.3*g).toFixed(2), p:Math.round((g-1)*100)})
+                      : _t('0.00 a 0.30'); })()}</b></div>
+       <div class="linha-dado"><span>${_t('Vagas por dia')}</span><b>${cap}</b></div>
+       <div class="linha-dado"><span>${_t('Disponíveis pra treinar')}</span>
+         <b>${disp.length - emTeto} <span class="fraco">${_t('de {n}', {n:disp.length})}</span></b></div>
+       <div class="linha-dado"><span>${_t('Já no teto do cargo')}</span>
          <b class="fraco">${emTeto}</b></div>`;
     for(const cargo of ['novato','componente','frente','diretoria']){
       const C = TO.membros.CARGOS[cargo];
@@ -4581,14 +4576,11 @@
       if(!dele.length) continue;
       const falt = dele.reduce((s,m)=>s+TO.membros.planoDeTreino(m).sessoes, 0);
       c2.corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>${C.nome} <span class="fraco">teto ${C.teto}</span></span>
-         <b>${dele.length} <span class="fraco">· ${falt} sessões pra encher</span></b>`}));
+        `<span>${_t(C.nome)} <span class="fraco">${_t('teto {n}', {n:C.teto})}</span></span>
+         <b>${dele.length} <span class="fraco">${_tn(falt, '· {n} sessão pra encher', '· {n} sessões pra encher')}</span></b>`}));
     }
     c2.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span class="fraco">O atributo só sobe de inteiro quando a fração `+
-      `acumula, e veterano leva +2 acima do teto do cargo. A diretoria `+
-      `sorteia e treina a turma sozinha todo dia, priorizando quem ainda `+
-      `tem o que ganhar.</span>`}));
+      `<span class="fraco">${_t('O atributo só sobe de inteiro quando a fração acumula, e veterano leva +2 acima do teto do cargo. A diretoria sorteia e treina a turma sozinha todo dia, priorizando quem ainda tem o que ganhar.')}</span>`}));
     grade.appendChild(c2);
     return grade;
   }
@@ -4609,42 +4601,40 @@
 
     /* SEM O "MIL" (correção do dono, 26/08/2026): o número da planilha
        é o número de verdade — 60 torcedores na praça são 60 */
-    const c1 = cartao(`Torcedores do ${clube?clube.nome:'clube'} em ${cid?cid.nome:'—'}`,
-                      `${U.numero(torcedores)} na praça`);
+    const c1 = cartao(clube ? _t('Torcedores do {clube} em {cidade}', {clube:clube.nome, cidade:cid?cid.nome:'—'})
+                            : _t('Torcedores do clube em {cidade}', {cidade:cid?cid.nome:'—'}),
+                      _t('{n} na praça', {n:U.numero(torcedores)}));
     /* PESSOAS, NÃO MILHARES (correção do dono, 24/08/2026): "695 mil
        fora de organizada" era fantasia — o que existe é o punhado que
        dá pra recrutar de verdade. */
     c1.corpo.innerHTML =
-      `<div class="valorao"><span>Possíveis de recrutar</span>
+      `<div class="valorao"><span>${_t('Possíveis de recrutar')}</span>
          <b class="${p.base>0?'positivo':'negativo'}">${U.numero(Math.round(p.base))}`+
-      `<span class="fraco"> pessoas</span></b></div>
-       <div class="linha-dado"><span>Já organizados</span>
-         <b>${organizados} <span class="fraco">pessoas</span></b></div>`;
+      `<span class="fraco"> ${_t('pessoas')}</span></b></div>
+       <div class="linha-dado"><span>${_t('Já organizados')}</span>
+         <b>${organizados} <span class="fraco">${_t('pessoas')}</span></b></div>`;
     for(const o of org)
       c1.corpo.appendChild(el('div',{class:'linha-dado', html:
         `<span class="${o.nossa?'':'fraco'}">${o.torcida.nome}`+
-        `${o.nossa?' <span class="tag">nós</span>':''}</span>
+        `${o.nossa?` <span class="tag">${_t('nós')}</span>`:''}</span>
          <b class="${o.nossa?'':'fraco'}">${o.membros}</b>`}));
     c1.corpo.appendChild(el('div',{class:'linha-dado', html:
-      `<span class="fraco">Recrutar tira gente desse bolo. Ele só cresce `+
-      `quando o clube sobe de divisão e ganha torcedor na praça.</span>`}));
+      `<span class="fraco">${_t('Recrutar tira gente desse bolo. Ele só cresce quando o clube sobe de divisão e ganha torcedor na praça.')}</span>`}));
     grade.appendChild(c1);
 
-    const c2 = cartao('Previsão da próxima campanha',
-                      `regime: ${p.rotRegime}`);
+    const c2 = cartao(_t('Previsão da próxima campanha'),
+                      _t('regime: {r}', {r:_t(p.rotRegime)}));
+
     const pc = v => `${Math.round(v*100)}%`;
     c2.corpo.innerHTML =
-      `<div class="linha-dado"><span>Recruta 1</span><b>${pc(p.um)}</b></div>
-       <div class="linha-dado"><span>Recruta 2</span><b>${pc(p.dois)}</b></div>
-       <div class="linha-dado"><span>Ninguém entra</span><b>${pc(p.zero)}</b></div>
-       <div class="linha-dado"><span>Vagas na sede</span>
+      `<div class="linha-dado"><span>${_t('Recruta 1')}</span><b>${pc(p.um)}</b></div>
+       <div class="linha-dado"><span>${_t('Recruta 2')}</span><b>${pc(p.dois)}</b></div>
+       <div class="linha-dado"><span>${_t('Ninguém entra')}</span><b>${pc(p.zero)}</b></div>
+       <div class="linha-dado"><span>${_t('Vagas na sede')}</span>
          <b class="${p.vaga>0?'':'negativo'}">${p.vaga}</b></div>
-       <div class="valorao"><span>Devem entrar por semana</span>
+       <div class="valorao"><span>${_t('Devem entrar por semana')}</span>
          <b class="${p.porSemana>0?'positivo':'negativo'}">~${p.porSemana}</b></div>
-       <div class="linha-dado"><span class="fraco">O dado muda com a fase do `+
-      `clube: vitória esquenta a praça, derrota esfria; título e acesso `+
-      `abrem 2 semanas quentes, rebaixamento seca 2. Sai R$ 5 por `+
-      `novato.</span></div>`;
+       <div class="linha-dado"><span class="fraco">${_t('O dado muda com a fase do clube: vitória esquenta a praça, derrota esfria; título e acesso abrem 2 semanas quentes, rebaixamento seca 2. Sai R$ 5 por novato.')}</span></div>`;
     for(const id of ['recrutar']){
       const a = TO.acoes.porId(id);
       if(a) c2.corpo.appendChild(linhaAcao(a));
@@ -4652,14 +4642,14 @@
     grade.appendChild(c2);
 
     const h = e.historicoRecrutamento || [];
-    const c3 = cartao('Campanhas anteriores', `${h.length} registradas`);
+    const c3 = cartao(_t('Campanhas anteriores'), _tn(h.length, '{n} registrada', '{n} registradas'));
     if(!h.length) c3.corpo.innerHTML =
-      '<div class="em-construcao">Nenhuma campanha ainda.</div>';
+      `<div class="em-construcao">${_t('Nenhuma campanha ainda.')}</div>`;
     for(const r of h.slice(0,14))
       c3.corpo.appendChild(el('div',{class:'transacao', html:
-        `<span class="dia">S${r.semana}</span>
-         <span class="desc">base de ${r.base} mil`+
-        `${r.querem?` · ${U.numero(r.querem)} topariam`:''}</span>
+        `<span class="dia">${_t('S{n}', {n:r.semana})}</span>
+         <span class="desc">${_t('base de {n} mil', {n:r.base})}`+
+        `${r.querem?_t(' · {n} topariam', {n:U.numero(r.querem)}):''}</span>
          <span class="val ${r.n?'positivo':''}">${r.n?'+'+r.n:'0'}</span>`}));
     grade.appendChild(c3);
     return grade;
@@ -4673,11 +4663,11 @@
                     .sort((a,b)=>b.xp-a.xp);
       const C = TO.membros.CARGOS[cargo];
       const limite = cargo==='diretoria' ? ` / ${TO.membros.capDiretoria(e)}` : '';
-      const c = cartao(C.nome, `${dele.length}${limite}`);
-      if(!dele.length) c.corpo.innerHTML='<div class="em-construcao">Ninguém.</div>';
+      const c = cartao(_t(C.nome), `${dele.length}${limite}`);
+      if(!dele.length) c.corpo.innerHTML=`<div class="em-construcao">${_t('Ninguém.')}</div>`;
       for(const m of dele.slice(0,12)){
         c.corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span>${TO.membros.nomeDe(m)}${m.veterano?' <span class="tag">vet</span>':''}</span>
+          `<span>${TO.membros.nomeDe(m)}${m.veterano?` <span class="tag">${_t('vet')}</span>`:''}</span>
            <b>${m.forca}/${m.defesa} · ${m.xp} XP</b>`}));
       }
       grade.appendChild(c);
@@ -4741,43 +4731,42 @@
 
     const pintar = ()=>{
       corpo.innerHTML = '';
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Qual o alvo'}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Qual o alvo')}));
       corpo.appendChild(opcoes(A.map(a=>({
-        id:a.id, rot:a.nome,
-        nota:`${U.dinheiro(a.ganho[a.efetivos[0]][0])} a `+
-             `${U.dinheiro(a.ganho[a.efetivos[1]][1])} · `+
-             `${Math.round(a.chance*100)}% de cadeia · `+
-             `pena de ${a.pena} dias`,
+        id:a.id, rot:_t(a.nome),
+        nota:_t('{min} a {max} · {p}% de cadeia · pena de {d} dias', {
+               min:U.dinheiro(a.ganho[a.efetivos[0]][0]),
+               max:U.dinheiro(a.ganho[a.efetivos[1]][1]),
+               p:Math.round(a.chance*100), d:a.pena}),
         desabilitada: disp < a.efetivos[0]
       })), alvo, id=>{ alvo = id; efetivo = null; pintar(); }));
 
       const a = A.find(x=>x.id === alvo);
       if(efetivo === null && disp >= a.efetivos[0]) efetivo = a.efetivos[0];
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantos vão'}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantos vão')}));
       corpo.appendChild(opcoes(a.efetivos.map(n=>({
-        id:String(n), rot:`${n} membros`,
-        nota: disp < n ? `só ${disp} disponíveis`
-            : `${U.dinheiro(a.ganho[n][0])} a ${U.dinheiro(a.ganho[n][1])}`,
+        id:String(n), rot:_tn(n, '{n} membro', '{n} membros'),
+        nota: disp < n ? _tn(disp, 'só {n} disponível', 'só {n} disponíveis')
+            : _t('{min} a {max}', {min:U.dinheiro(a.ganho[n][0]), max:U.dinheiro(a.ganho[n][1])}),
         desabilitada: disp < n
       })), efetivo !== null ? String(efetivo) : null,
           id=>{ efetivo = parseInt(id, 10); pintar(); }));
       corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">Os ${efetivo || '—'} são sorteados entre os `+
-        `disponíveis. Se cair, cai todo mundo — e o dinheiro fica lá.</span>`}));
+        `<span class="fraco">${_t('Os {n} são sorteados entre os disponíveis. Se cair, cai todo mundo — e o dinheiro fica lá.', {n:efetivo || '—'})}</span>`}));
     };
     pintar();
 
-    modal('Assalto', 'a diretoria mapeou os alvos', corpo, [
-      ['Assaltar', ()=>{
-        if(efetivo === null){ aviso('Escolhe o efetivo.', 'ruim'); return; }
+    modal(_t('Assalto'), _t('a diretoria mapeou os alvos'), corpo, [
+      [_t('Assaltar'), ()=>{
+        if(efetivo === null){ aviso(_t('Escolhe o efetivo.'), 'ruim'); return; }
         const r = TO.acoes.executarAssalto(e, alvo, efetivo);
         if(!r.ok){ aviso(r.msg, 'ruim'); return; }
-        aviso(r.caiu ? `Deu ruim: ${r.n} presos por ${r.pena} dias.`
-                     : `${U.dinheiro(r.valor)} na conta.`,
+        aviso(r.caiu ? _t('Deu ruim: {n} presos por {d} dias.', {n:r.n, d:r.pena})
+                     : _t('{valor} na conta.', {valor:U.dinheiro(r.valor)}),
               r.caiu ? 'ruim' : 'boa');
         /* assalto feito responde a mensagem que abriu a lista — ou,
            vindo da reunião, fecha a pauta */
-        if(aoFeito) aoFeito(r); else confirmarDecisao('Ver os alvos — assalto feito');
+        if(aoFeito) aoFeito(r); else confirmarDecisao(_t('Ver os alvos — assalto feito'));
         TO.estado.salvar();
         pintarTopo();
         atualizarFeed();
@@ -4833,13 +4822,13 @@
 
       /* --- em paz ou pra cima deles --- */
       corpo.appendChild(el('div',{class:'fase-rot',
-        texto:'A torcida vai em paz ou vai atacar?'}));
+        texto:_t('A torcida vai em paz ou vai atacar?')}));
       corpo.appendChild(opcoes([
-        {id:'paz', rot:'Ir em paz',
-         nota:'entrar pelo portão, bandeira e bateria'},
-        {id:'atacar', rot:'Atacar',
-         nota: alvos.length ? 'procurar a torcida deles antes da bola rolar'
-                            : 'não há torcida do mandante pra atacar',
+        {id:'paz', rot:_t('Ir em paz'),
+         nota:_t('entrar pelo portão, bandeira e bateria')},
+        {id:'atacar', rot:_t('Atacar'),
+         nota: alvos.length ? _t('procurar a torcida deles antes da bola rolar')
+                            : _t('não há torcida do mandante pra atacar'),
          desabilitada: !alvos.length}
       ], briga ? 'atacar' : 'paz', id=>{
         if(id === 'paz'){ P.definirIntencao(e, 'paz'); }
@@ -4852,22 +4841,23 @@
 
       if(briga){
         /* --- quem --- */
-        corpo.appendChild(el('div',{class:'fase-rot', texto:'Quem atacar'}));
+        corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quem atacar')}));
         corpo.appendChild(opcoes(alvos.map(a=>({
           id:a.id, rot:linkTorcida(a.id, a.nome),
-          nota:`${a.faixa} na rua · relação ${Math.round(a.relacao)}`
+          nota:_t('{faixa} na rua · relação {r}', {faixa:faixaT(a.faixa), r:Math.round(a.relacao)})
         })), (alvo||alvos[0]||{}).id, id=>{
           P.definirAtaque(e, {alvo:id, onde, bombas:p.bombas}); pintar();
         }));
         /* --- onde --- */
-        corpo.appendChild(el('div',{class:'fase-rot', texto:'Onde atacar'}));
+        corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Onde atacar')}));
         corpo.appendChild(opcoes(P.ONDE_ATAQUE.map(o=>({
-          id:o.id, rot:o.rot,
+          id:o.id, rot:_t(o.rot),
           /* nos arredores do estádio DELES o mando é deles, e a cena
              abre com a gente do lado visitante — que é o que a gente é */
           nota: o.id === 'arredores'
-            ? 'a beira do estádio deles, e lá a gente é o visitante'
-            : o.nota
+            ? _t('a beira do estádio deles, e lá a gente é o visitante')
+            : _t(o.nota)
+
         })), onde, id=>{
           onde = id;
           P.definirAtaque(e, {alvo:p.alvoTorcida, onde, bombas:p.bombas});
@@ -4876,12 +4866,12 @@
       }
 
       /* --- quantos vão --- */
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantos vão'}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantos vão')}));
       corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Querem ir</span><b>${est.interessados} `+
-        `<span class="fraco">de ${est.aptos} aptos</span></b>`}));
+        `<span>${_t('Querem ir')}</span><b>${est.interessados} `+
+        `<span class="fraco">${_t('de {n} aptos', {n:est.aptos})}</span></b>`}));
       corpo.appendChild(el('div',{class:'linha-dado', html:
-        medidor('Vontade de viajar', Math.round(est.vontade*100), 100,
+        medidor(_t('Vontade de viajar'), Math.round(est.vontade*100), 100,
                 est.vontade>0.5?'var(--verde)':'var(--ouro)')}));
       const passo = Math.max(1, Math.round(est.interessados/10));
       const linha = el('div',{class:'contador'});
@@ -4893,25 +4883,25 @@
       bMais.onclick  = ()=>{ p.caravana = Math.min(est.interessados, est.vao + passo);
                              p.decidido = false; pintar(); };
       linha.append(bMenos, el('b',{texto:String(est.vao)}), bMais,
-        el('small',{texto:`embarcam · mínimo ${est.minimo}`}));
+        el('small',{texto:_t('embarcam · mínimo {n}', {n:est.minimo})}));
       corpo.appendChild(linha);
       corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Por cabeça</span><b>${U.dinheiro(est.porCabeca)}</b>`}));
+        `<span>${_t('Por cabeça')}</span><b>${U.dinheiro(est.porCabeca)}</b>`}));
       corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Ônibus e pedágio</span><b>${U.dinheiro(est.bruto)}</b>`}));
+        `<span>${_t('Ônibus e pedágio')}</span><b>${U.dinheiro(est.bruto)}</b>`}));
       corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span>Rateio entre os que vão</span>`+
+        `<span>${_t('Rateio entre os que vão')}</span>`+
         `<b class="positivo">${U.dinheiro(est.rateio)}</b>`}));
       corpo.appendChild(el('div',{class:'linha-dado total', html:
-        `<span>Sai do caixa</span>`+
+        `<span>${_t('Sai do caixa')}</span>`+
         `<b class="negativo">${U.dinheiro(-est.custo)}</b>`}));
 
       /* --- por qual estrada --- */
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Por qual estrada'}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Por qual estrada')}));
       corpo.appendChild(opcoes(listaRotas.map(r=>({
-        id:r.id, rot:r.nome, custo:Math.round(r.custo*0.4),
-        nota:`${r.nota}${r.risco ? ` · risco de emboscada ${Math.round(r.risco)}`
-                                 : ' · sem território hostil'}`
+        id:r.id, rot:_t(r.nome), custo:Math.round(r.custo*0.4),
+        nota:`${r.nota}${r.risco ? _t(' · risco de emboscada {n}', {n:Math.round(r.risco)})
+                                 : _t(' · sem território hostil')}`
       })), (p.rota || listaRotas[0].id),
         id=>{ p.rota = id; p.decidido = false; pintar(); }));
       const r = P.rotaEscolhida(e);
@@ -4929,38 +4919,39 @@
          a resposta vem na hora, com o tipo de ajuda; um pedido por jogo */
       const aliadas = P.aliadasNaPracaDeles(e);
       const ajuda = P.ajudaDe(e);
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Ajuda de aliado na praça deles'}));
-      const NIVEL_ROT = {nada:'não vai receber a gente', hospedar:'só hospedagem',
-                         escolta:'hospedagem e escolta', churrasco:'escolta e churrasco'};
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Ajuda de aliado na praça deles')}));
+      const NIVEL_ROT = {nada:_t('não vai receber a gente'), hospedar:_t('só hospedagem'),
+                         escolta:_t('hospedagem e escolta'), churrasco:_t('escolta e churrasco')};
       if(ajuda){
         const rec = P.recepcaoDe(ajuda.nivel);
         corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span>${linkTorcida(ajuda.aliado, ajuda.nome)} respondeu: `+
-          `<b>${NIVEL_ROT[ajuda.nivel] || ajuda.nivel}</b></span>`+
+          `<span>${_t('{torcida} respondeu: <b>{resposta}</b>', {torcida:linkTorcida(ajuda.aliado, ajuda.nome),
+             resposta:NIVEL_ROT[ajuda.nivel] || ajuda.nivel})}</span>`+
           `<b class="${ajuda.nivel==='nada'?'negativo':'positivo'}">`+
-          `${rec.relacao>0?'+':''}${rec.relacao} rel.`+
-          `${ajuda.moral ? ` · +${ajuda.moral} moral` : ''}`+
-          `${ajuda.escolta ? ` · ${ajuda.escolta} na escolta` : ''}</b>`}));
+          `${_t('{n} rel.', {n:(rec.relacao>0?'+':'')+rec.relacao})}`+
+          `${ajuda.moral ? _t(' · +{n} moral', {n:ajuda.moral}) : ''}`+
+          `${ajuda.escolta ? _t(' · {n} na escolta', {n:ajuda.escolta}) : ''}</b>`}));
       } else if(!aliadas.length){
         corpo.appendChild(el('div',{class:'linha-dado', html:
-          `<span class="fraco">Nenhuma aliada em ${j.cidadeAdv || 'lá'} — `+
-          `só aliada de verdade (relação 20+) ou irmã de clube recebe</span>`}));
+          `<span class="fraco">${j.cidadeAdv
+            ? _t('Nenhuma aliada em {cidade} — só aliada de verdade (relação 20+) ou irmã de clube recebe', {cidade:j.cidadeAdv})
+            : _t('Nenhuma aliada lá — só aliada de verdade (relação 20+) ou irmã de clube recebe')}</span>`}));
       } else {
         const bloco = el('div',{class:'bloco-recepcao'});
         for(const a of aliadas){
           const linha = el('div',{class:'rec-aliado'});
           linha.appendChild(el('div',{class:'rec-nome', html:
-            `<b>${linkTorcida(a.id, a.nome)}</b> <span class="fraco">· relação `+
-            `${Math.round(a.relacao)}${a.irma ? ' · irmã de clube' : ''}</span>`}));
+            `<b>${linkTorcida(a.id, a.nome)}</b> <span class="fraco">${_t('· relação {n}', {n:Math.round(a.relacao)})}`+
+            `${a.irma ? _t(' · irmã de clube') : ''}</span>`}));
           const bts = el('div',{class:'rec-botoes'});
           const b = el('button',{class:'rec-bt on', html:
-            `Pedir ajuda<small>a resposta vem na hora · pesa na relação</small>`});
+            _t('Pedir ajuda<small>a resposta vem na hora · pesa na relação</small>')});
           b.onclick = ()=>{
             const r = P.pedirAjuda(e, a.id);
             if(!r) return;
             aviso(r.nivel === 'nada'
-              ? `A ${r.nome} não vai receber a gente.`
-              : `A ${r.nome} topou: ${NIVEL_ROT[r.nivel]}.`,
+              ? _t('A {nome} não vai receber a gente.', {nome:r.nome})
+              : _t('A {nome} topou: {nivel}.', {nome:r.nome, nivel:NIVEL_ROT[r.nivel]}),
               r.nivel === 'nada' ? 'ruim' : 'boa');
             TO.estado.salvar(); pintarTopo(); pintar();
           };
@@ -4973,7 +4964,7 @@
 
       /* --- quantas bombas --- */
       const temBomba = (e.estoque||{}).bombas || 0;
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantas bombas'}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantas bombas')}));
       const lb = el('div',{class:'contador'});
       const bB = el('button',{texto:'−'}), bM = el('button',{texto:'+'});
       const leva = U.limitar(p.bombas || 0, 0, temBomba);
@@ -4982,31 +4973,32 @@
       bB.onclick = ()=>{ p.bombas = Math.max(0, leva-1); p.decidido=false; pintar(); };
       bM.onclick = ()=>{ p.bombas = Math.min(temBomba, leva+1); p.decidido=false; pintar(); };
       lb.append(bB, el('b',{texto:String(leva)}), bM,
-        el('small',{texto: temBomba ? `de ${temBomba} no estoque`
-                                    : 'não temos bomba no estoque'}));
+        el('small',{texto: temBomba ? _t('de {n} no estoque', {n:temBomba})
+                                    : _t('não temos bomba no estoque')}));
       corpo.appendChild(lb);
 
       /* --- o resumo, com as duas decisões --- */
-      const ondeRot = (P.ONDE_ATAQUE.find(o=>o.id === onde)||{}).rot || '';
+      const ondeRot = _t((P.ONDE_ATAQUE.find(o=>o.id === onde)||{}).rot || '');
       corpo.appendChild(el('div',{class:'linha-dado total', html:
-        `<span>${est.vao} para ${j.cidadeAdv || 'fora'} por `+
-        `${(r||{}).nome || '—'}${leva ? `, com ${leva} bomba${leva>1?'s':''}` : ''}`+
-        (briga && alvo ? ` · em cima da ${alvo.nome} `+
-                         `${ondeRot.toLowerCase()}` : '')+
+        `<span>${_t('{n} para {cidade} por {rota}', {n:est.vao, cidade:j.cidadeAdv || _t('fora'),
+                    rota:(r||{}).nome ? _t(r.nome) : '—'})}`+
+        `${leva ? _tn(leva, ', com {n} bomba', ', com {n} bombas') : ''}`+
+        (briga && alvo ? _t(' · em cima da {nome} {onde}', {nome:alvo.nome,
+                            onde:ondeRot.toLowerCase()}) : '')+
         `</span><b class="negativo">${U.dinheiro(-est.custo)}</b>`}));
     };
 
     pintar();
-    fechar = modal('Caravana',
-      `${(e.proximoJogo||{}).mandante ? e.proximoJogo.mandante.nome : 'Fora'} · `+
-      `semana ${e.data.semana}`, corpo,
+    fechar = modal(_t('Caravana'),
+      _t('{adv} · semana {s}', {adv:(e.proximoJogo||{}).mandante ? e.proximoJogo.mandante.nome : _t('Fora'),
+                                 s:e.data.semana}), corpo,
       /* CONFIRMAR NÃO COBRA. `confirmar` fecha o plano e paga recepção e
          investida; a estrada continua sendo compromisso da semana, e
          cobrá-la aqui seria o lançamento duplicado. */
-      [['Confirmar', ()=>{
+      [[_t('Confirmar'), ()=>{
         const est = P.estimativaCaravana(e);
         P.confirmar(e);
-        aviso(`Caravana fechada: ${est.vao} para ${(e.proximoJogo||{}).cidadeAdv}.`,
+        aviso(_t('Caravana fechada: {n} para {cidade}.', {n:est.vao, cidade:(e.proximoJogo||{}).cidadeAdv}),
               'boa');
         confirmarDecisao();
         TO.estado.salvar();
@@ -5081,25 +5073,25 @@
       const j = e.proximoJogo || {};
 
       /* --- 1: quem atacar --- */
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quem atacar'}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quem atacar')}));
       corpo.appendChild(opcoes(lista.map(a=>({
-        id:a.id, rot:linkTorcida(a.id, a.nome) + (a.aliada ? ' · aliada' : ''),
+        id:a.id, rot:linkTorcida(a.id, a.nome) + (a.aliada ? _t(' · aliada') : ''),
         /* o efetivo é ESTIMATIVA, em faixa, como o olheiro dá: número
            exato de bonde alheio é coisa que ninguém tem */
-        nota:`${a.faixa} na rua · relação ${Math.round(a.relacao)}`+
-             (a.deFora ? ' · caravana de fora' : '')
+        nota:_t('{faixa} na rua · relação {r}', {faixa:faixaT(a.faixa), r:Math.round(a.relacao)})+
+             (a.deFora ? _t(' · caravana de fora') : '')
       })), alvo, id=>{ alvo = id; pintar(); }));
 
       /* --- 2: onde atacar --- */
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Onde atacar'}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Onde atacar')}));
       corpo.appendChild(opcoes(P.ONDE_ATAQUE.map(o=>({
-        id:o.id, rot:o.rot, nota:o.nota
+        id:o.id, rot:_t(o.rot), nota:_t(o.nota)
       })), onde, id=>{ onde = id; pintar(); }));
 
       /* --- 3: quantos vão --- */
       const f = P.efetivoDoAtaque(e);
       if(efetivo == null) efetivo = f.teto;
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantos vão atacar'}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantos vão atacar')}));
       const le = el('div',{class:'contador'});
       const eB = el('button',{texto:'−'}), eM = el('button',{texto:'+'});
       const passo = Math.max(1, Math.round(f.teto/10));
@@ -5110,15 +5102,15 @@
       /* QUANTIDADE EQUIVALENTE (decisão do autor): iguala o nosso
          efetivo ao da torcida selecionada — e vencer em menor número
          rende mais prestígio; em maior número, menos. */
-      const bEq = el('button',{class:'bt', texto:'Quantidade equivalente'});
+      const bEq = el('button',{class:'bt', texto:_t('Quantidade equivalente')});
       bEq.onclick = ()=>{
         const a2 = lista.find(x=>x.id === alvo);
         if(a2 && a2.n) efetivo = U.limitar(Math.round(a2.n), f.piso, f.teto);
         pintar();
       };
       le.append(eB, el('b',{texto:String(efetivo)}), eM, bEq,
-        el('small',{texto:`de ${f.teto} que saem de casa · mínimo ${f.piso} · `+
-          `vencer em menor número rende mais prestígio`}));
+        el('small',{texto:_t('de {teto} que saem de casa · mínimo {piso} · vencer em menor número rende mais prestígio',
+          {teto:f.teto, piso:f.piso})}));
       corpo.appendChild(le);
 
       /* --- 4: quantas bombas --- */
@@ -5126,7 +5118,7 @@
       const podeComprar = Math.floor(Math.max(0, e.dinheiro) /
                                      TO.patrimonio.precoBomba(e));
       const teto = tem + podeComprar;
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Quantas bombas'}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantas bombas')}));
       const lb = el('div',{class:'contador'});
       const bB = el('button',{texto:'−'}), bM = el('button',{texto:'+'});
       bB.disabled = bombas <= 0;
@@ -5135,8 +5127,8 @@
       bM.onclick = ()=>{ bombas = Math.min(teto, bombas+1); pintar(); };
       const custoExtra = Math.max(0, bombas - tem) * TO.patrimonio.precoBomba(e);
       lb.append(bB, el('b',{texto:String(bombas)}), bM,
-        el('small',{texto:`${tem} no estoque`+
-          (custoExtra ? ` · comprar ${bombas-tem} por ${U.dinheiro(custoExtra)}`
+        el('small',{texto:_t('{n} no estoque', {n:tem})+
+          (custoExtra ? _t(' · comprar {n} por {valor}', {n:bombas-tem, valor:U.dinheiro(custoExtra)})
                       : '')}));
       corpo.appendChild(lb);
 
@@ -5144,21 +5136,20 @@
       const a = lista.find(x=>x.id === alvo) || {};
       const o = P.ONDE_ATAQUE.find(x=>x.id === onde) || {};
       corpo.appendChild(el('div',{class:'linha-dado total', html:
-        `<span>${efetivo} nossos contra a ${a.nome||'—'} `+
-        `${(o.rot||'').toLowerCase()}`+
-        `${bombas ? `, com ${bombas} bomba${bombas>1?'s':''}` : ''}</span>`+
-        `<b>${DIA_DA_SEMANA[diaDoEvento()] || 'sábado'}</b>`}));
+        `<span>${_t('{n} nossos contra a {nome} {onde}', {n:efetivo, nome:a.nome||'—',
+                    onde:_t(o.rot||'').toLowerCase()})}`+
+        `${bombas ? _tn(bombas, ', com {n} bomba', ', com {n} bombas') : ''}</span>`+
+        `<b>${_t(DIA_DA_SEMANA[diaDoEvento()] || 'sábado')}</b>`}));
       if(a.aliada)
         corpo.appendChild(el('div',{class:'linha-dado', html:
-          '<span class="negativo">É aliada nossa. Bater nela derruba a '+
-          'relação de vez.</span>'}));
+          `<span class="negativo">${_t('É aliada nossa. Bater nela derruba a relação de vez.')}</span>`}));
     };
 
     pintar();
-    return modal('Atacar',
-      `${(e.proximoJogo||{}).mandante ? e.proximoJogo.mandante.nome : 'Jogo'} · `+
-      `semana ${e.data.semana}`, corpo,
-      [['Confirmar', ()=>{
+    return modal(_t('Atacar'),
+      _t('{adv} · semana {s}', {adv:(e.proximoJogo||{}).mandante ? e.proximoJogo.mandante.nome : _t('Jogo'),
+                                 s:e.data.semana}), corpo,
+      [[_t('Confirmar'), ()=>{
         /* bomba que falta no estoque é comprada agora, R$ 120 cada */
         const falta = Math.max(0, bombas - ((e.estoque||{}).bombas || 0));
         if(falta) TO.patrimonio.comprarBombas(e, falta);
@@ -5183,7 +5174,7 @@
           {ctx, alvo, onde, bombas, efetivo});
         const a = lista.find(x=>x.id === alvo) || {};
         const o = P.ONDE_ATAQUE.find(x=>x.id === onde) || {};
-        aviso(`Marcado: ${a.nome} ${(o.rot||'').toLowerCase()}.`, 'boa');
+        aviso(_t('Marcado: {nome} {onde}.', {nome:a.nome, onde:_t(o.rot||'').toLowerCase()}), 'boa');
         confirmarDecisao();
         TO.estado.salvar();
         redesenhar();
@@ -5197,8 +5188,8 @@
        no corpo e Fechar no rodapé, e o Fechar não guardava nada. Agora
        é um botão só, no rodapé, e ele faz as duas coisas. */
     const cx = caixaDeIdeologia(E(), false);
-    return modal('Ideologia', 'vale toda semana', cx,
-                 [['Salvar', ()=>{ cx.salvar(); aviso('Ideologia salva.', 'boa'); }]],
+    return modal(_t('Ideologia'), _t('vale toda semana'), cx,
+                 [[_t('Salvar'), ()=>{ cx.salvar(); aviso(_t('Ideologia salva.'), 'boa'); }]],
                  'media', true);
   }
 
@@ -5237,44 +5228,45 @@
       const pend = [];
       if(m.preso){
         const dias = TO.membros.diasPresos(m);
-        pend.push(pendencia('Pagar fiança',
-          dias != null ? `preso há ${dias} ${dias===1?'dia':'dias'} — `+
-                         `a fiança sobe a cada dia` : 'tira ele hoje da cadeia',
+        pend.push(pendencia(_t('Pagar fiança'),
+          dias != null ? _tn(dias, 'preso há {n} dia — a fiança sobe a cada dia',
+                                   'preso há {n} dias — a fiança sobe a cada dia')
+                       : _t('tira ele hoje da cadeia'),
           TO.membros.fianca(m),
-          e.dinheiro < TO.membros.fianca(m) ? 'sem caixa' : '',
+          e.dinheiro < TO.membros.fianca(m) ? _t('sem caixa') : '',
           ()=>{
             const r = TO.membros.resgatar(e, m);
-            aviso(r.ok ? `${TO.membros.nomeDe(m)} está solto` : r.motivo,
+            aviso(r.ok ? _t('{nome} está solto', {nome:TO.membros.nomeDe(m)}) : r.motivo,
                   r.ok ? 'boa' : 'ruim');
             pintar(); redesenhar();
           }));
       }
       const p = TO.membros.podePromover(e, m);
       if(p.ok)
-        pend.push(pendencia(`Promover pra ${TO.membros.CARGOS[p.para].nome}`,
-          'bateu XP, força e defesa do cargo', p.custo || 0, '',
+        pend.push(pendencia(_t('Promover pra {cargo}', {cargo:_t(TO.membros.CARGOS[p.para].nome)}),
+          _t('bateu XP, força e defesa do cargo'), p.custo || 0, '',
           ()=>{
             const r = TO.membros.promover(e, m);
-            aviso(r.ok ? `${TO.membros.nomeDe(m)} promovido` : r.motivo,
+            aviso(r.ok ? _t('{nome} promovido', {nome:TO.membros.nomeDe(m)}) : r.motivo,
                   r.ok ? 'boa' : 'ruim');
             pintar(); redesenhar();
           }));
       else if(p.veterano && !m.veterano)
         /* GDD §5.2: sem vaga na Diretoria o caminho é Veterano */
-        pend.push(pendencia('Dar galões de Veterano',
-          'Diretoria lotada — ganha +2 de força e +2 de defesa', null, '',
+        pend.push(pendencia(_t('Dar galões de Veterano'),
+          _t('Diretoria lotada — ganha +2 de força e +2 de defesa'), null, '',
           ()=>{
             const r = TO.membros.promover(e, m);
-            aviso(r.ok ? `${TO.membros.nomeDe(m)} virou Veterano` : r.motivo,
+            aviso(r.ok ? _t('{nome} virou Veterano', {nome:TO.membros.nomeDe(m)}) : r.motivo,
                   r.ok ? 'boa' : 'ruim');
             pintar(); redesenhar();
           }));
       else if(TO.membros.ACIMA && TO.membros.ACIMA[m.cargo])
-        pend.push(pendencia('Promover', 'ainda não bate o corte do cargo',
+        pend.push(pendencia(_t('Promover'), _t('ainda não bate o corte do cargo'),
                             null, p.motivo, ()=>{}));
 
       if(pend.length){
-        corpo.appendChild(el('div',{class:'fase-rot', texto:'Pendências'}));
+        corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Pendências')}));
         pend.forEach(b=>corpo.appendChild(b));
       }
 
@@ -5282,14 +5274,14 @@
          cabeçalho com as iniciais nas cores da torcida, etiquetas,
          barras grandes, os números da carreira e a linha do tempo */
       const teto = TO.membros.tetoDe(m);
-      const sit = m.preso ? 'Preso' : m.ferido ? `Ferido · ${m.ferido.dias} dias`
-                : m.naFila ? 'Escalado pro treino de hoje' : 'De pé';
+      const sit = m.preso ? _t('Preso') : m.ferido ? _tn(m.ferido.dias, 'Ferido · {n} dia', 'Ferido · {n} dias')
+                : m.naFila ? _t('Escalado pro treino de hoje') : _t('De pé');
       const velho = m.idade != null && m.idade >= TO.membros.IDADE_DECLINIO;
       const cores = TO.mundo.coresDaTorcida(e.torcida);
       const nomeC = TO.membros.nomeCompletoDe(m) || TO.membros.nomeDe(m);
       const iniciais = TO.membros.nomeDe(m).split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
-      const tags = [C.nome + (m.veterano ? ' · Veterano' : ''), `${m.idade != null ? m.idade + ' anos' : ''}${velho ? ' · em declínio' : ''}`,
-                    sit, m.filial ? `Subsede ${TO.financeiro.nomeCidade(m.filial)}` : 'Sede', m.arquetipo || ''].filter(Boolean);
+      const tags = [_t(C.nome) + (m.veterano ? _t(' · Veterano') : ''), `${m.idade != null ? _t('{n} anos', {n:m.idade}) : ''}${velho ? _t(' · em declínio') : ''}`,
+                    sit, m.filial ? _t('Subsede {cidade}', {cidade:TO.financeiro.nomeCidade(m.filial)}) : _t('Sede'), m.arquetipo ? _t(m.arquetipo) : ''].filter(Boolean);
       const cab = el('div',{class:'pm-cab'});
       const av = el('div',{class:'pm-av', texto:iniciais}); av.style.background = cores.cor || '#444'; av.style.color = cores.cor2 || '#fff';
       cab.appendChild(av);
@@ -5298,11 +5290,11 @@
       /* as barras: força e defesa contra o teto, XP contra o corte do cargo */
       const barra = (rot, v, max, cor, txt)=> `<div class="pm-f"><span>${rot}</span><div class="barra-g"><i style="width:${Math.round(100*U.limitar(v/max,0,1))}%;background:${cor}"></i></div><b>${txt}</b></div>`;
       corpo.appendChild(el('div',{class:'pm-forca', html:
-        barra('Força', m.forca, teto, 'var(--verde)', `${m.forca}<small>/${teto}</small>`)+
-        barra('Defesa', m.defesa, teto, 'var(--ouro)', `${m.defesa}<small>/${teto}</small>`)+
-        (C.xpPromo ? barra('XP pro próximo cargo', m.xp, C.xpPromo, 'var(--azul)', `${m.xp}<small>/${C.xpPromo}</small>`)
+        barra(_t('Força'), m.forca, teto, 'var(--verde)', `${m.forca}<small>/${teto}</small>`)+
+        barra(_t('Defesa'), m.defesa, teto, 'var(--ouro)', `${m.defesa}<small>/${teto}</small>`)+
+        (C.xpPromo ? barra(_t('XP pro próximo cargo'), m.xp, C.xpPromo, 'var(--azul)', `${m.xp}<small>/${C.xpPromo}</small>`)
                    : barra('XP', m.xp, Math.max(1, m.xp), 'var(--azul)', String(m.xp)))+
-        (m.desgaste ? `<small class="pm-nota negativo">desgaste: −${m.desgaste.toFixed(1)} no teto</small>` : '')}));
+        (m.desgaste ? `<small class="pm-nota negativo">${_t('desgaste: −{n} no teto', {n:m.desgaste.toFixed(1)})}</small>` : '')}));
       /* OS NÚMEROS DA CARREIRA SAEM DO TIPO, NÃO DA PROSA
          (conserto de 21/09/2026). A conta era regex por cima da
          frase e contava errado — dá pra medir:
@@ -5320,25 +5312,25 @@
       /* "faixas" saiu: NADA por membro produz faixa — o contador só
          via a linha da aposentadoria. No lugar, sequelas, que é
          cicatriz de carreira de verdade e tem evento próprio. */
-      const nums = [[conta('ferido'), 'feridas'], [conta('preso'), 'prisões'],
-                    [conta('promovido'), 'promoções'], [conta('sequela'), 'sequelas'],
-                    [U.dinheiro(C.mensalidade).replace('R$ ',''), 'mensalidade']];
+      const nums = [[conta('ferido'), _t('feridas')], [conta('preso'), _t('prisões')],
+                    [conta('promovido'), _t('promoções')], [conta('sequela'), _t('sequelas')],
+                    [U.dinheiro(C.mensalidade).replace('R$ ',''), _t('mensalidade')]];
       corpo.appendChild(el('div',{class:'pm-nums', html:nums.map(([v,r])=>`<div><b>${v}</b><span>${r}</span></div>`).join('')}));
       /* a linha do tempo: do mais recente pro mais antigo, com a cor do tipo */
       const COR_EV = {ferido:'vermelho', sequela:'vermelho', preso:'pm',
                       advogado:'pm', volta:'pm', promovido:'verde',
                       aposentou:'ouro', idade:'fraco'};
       const linha = el('div',{class:'pm-linha'});
-      if(!h.length) linha.appendChild(el('div',{class:'fraco', texto:'Sem registro ainda: a história começa na primeira briga.'}));
+      if(!h.length) linha.appendChild(el('div',{class:'fraco', texto:_t('Sem registro ainda: a história começa na primeira briga.')}));
       for(const x of h.slice().reverse().slice(0, 40))
         linha.appendChild(el('div',{class:'pm-ev '+(COR_EV[tipoDoEvento(x)] || 'fraco'),
           html:`<i></i><p>${textoDoEvento(x)}</p>`}));
-      corpo.appendChild(el('div',{class:'fase-rot', texto:'Linha do tempo', estilo:{paddingTop:'12px'}}));
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Linha do tempo'), estilo:{paddingTop:'12px'}}));
       corpo.appendChild(linha);
     };
 
     pintar();
-    fechar = modal('Perfil do membro', TO.membros.cargoNome(m), corpo, null, 'media');
+    fechar = modal(_t('Perfil do membro'), _t(TO.membros.cargoNome(m)), corpo, null, 'media');
     return fechar;
   }
 
@@ -5460,22 +5452,22 @@
       const fund = o.fundacaoDia
         ? `${o.fundacaoDia}/${String(o.fundacaoMes).padStart(2,'0')}` : '—';
       cx.innerHTML =
-        linhaD('Clube', clube.nome
+        linhaD(_t('Clube'), clube.nome
           ? `${chipClube(o.clubeId, (clube.cores||[])[0] || '#888')}${clube.nome}`
           : '—') +
-        linhaD('Praça', linkCidade(o.mapa, cidade)) +
-        linhaD('Fundação', fund) +
-        linhaD('Membros', `${Math.round(membros)} `+
-          `<small class="fraco">· ${dePe} de pé</small>`) +
-        linhaD('Moral', `${Math.round(moral*5)} <small class="fraco">de 100</small>`) +
-        linhaD('Prestígio', `${Math.round(prest*5)} <small class="fraco">de 100</small>`) +
-        (nossa ? '' : linhaD('Relação com a gente',
+        linhaD(_t('Praça'), linkCidade(o.mapa, cidade)) +
+        linhaD(_t('Fundação'), fund) +
+        linhaD(_t('Membros'), `${Math.round(membros)} `+
+          `<small class="fraco">${_t('· {n} de pé', {n:dePe})}</small>`) +
+        linhaD(_t('Moral'), `${Math.round(moral*5)} <small class="fraco">${_t('de 100')}</small>`) +
+        linhaD(_t('Prestígio'), `${Math.round(prest*5)} <small class="fraco">${_t('de 100')}</small>`) +
+        (nossa ? '' : linhaD(_t('Relação com a gente'),
           Math.round(TO.relacoes.nivel(e, id)))) +
-        linhaD('Brigas no ano', `${p.v}V · ${p.d}D `+
-          `<small class="fraco">saldo ${p.v - p.d >= 0 ? '+' : ''}${p.v - p.d}</small>`) +
-        (irmas.length ? linhaD('Torcida irmã', irmas.join(', ')) : '') +
+        linhaD(_t('Brigas no ano'), `${_t('{v}V · {d}D', {v:p.v, d:p.d})} `+
+          `<small class="fraco">${_t('saldo {n}', {n:(p.v - p.d >= 0 ? '+' : '')+(p.v - p.d)})}</small>`) +
+        (irmas.length ? linhaD(_t('Torcida irmã'), irmas.join(', ')) : '') +
         (TO.eixos && TO.eixos.de(e, id).length
-          ? linhaD('Eixos de aliança', TO.eixos.de(e, id).map(x=>linkEixo(x.id, x.nome)).join(', ')) : '') +
+          ? linhaD(_t('Eixos de aliança'), TO.eixos.de(e, id).map(x=>linkEixo(x.id, x.nome)).join(', ')) : '') +
         linhasDePano();
       return cx;
     };
@@ -5488,8 +5480,8 @@
       if(nossa){ const f = PAT.faixasDe(e); fx = {n:f.nossas.length, tomadas:f.tomadas}; bd = {n:f.bandeiras.nossas.length, tomadas:f.bandeiras.tomadas}; }
       else { const t2 = PAT.faixasIA(e, id) || {}; fx = {n:t2.faixas||0, tomadas:t2.faixasTomadas||[]}; bd = {n:t2.bandeiras||0, tomadas:t2.bandeirasTomadas||[]}; }
       const lista = l => l.length ? ` <small class="fraco">(${l.map(x=>linkTorcida(x.de, x.nome)).join(', ')})</small>` : '';
-      return linhaD('Faixas', `${fx.n} na sede · ${fx.tomadas.length} ${fx.tomadas.length===1?'tomada':'tomadas'}${lista(fx.tomadas)}`) +
-             linhaD('Bandeiras', `${bd.n} na sede · ${bd.tomadas.length} ${bd.tomadas.length===1?'tomada':'tomadas'}${lista(bd.tomadas)}`);
+      return linhaD(_t('Faixas'), _t('{n} na sede', {n:fx.n}) + ' · ' + _tn(fx.tomadas.length, '{n} tomada', '{n} tomadas') + lista(fx.tomadas)) +
+             linhaD(_t('Bandeiras'), _t('{n} na sede', {n:bd.n}) + ' · ' + _tn(bd.tomadas.length, '{n} tomada', '{n} tomadas') + lista(bd.tomadas));
     };
 
     const abaPatrimonio = ()=>{
@@ -5499,39 +5491,39 @@
         for(const x of (lista||[])) por[x.nivel||1] = (por[x.nivel||1]||0)+1;
         const tot = (lista||[]).length;
         return tot ? `${tot} <small class="fraco">(${Object.keys(por)
-          .sort().map(nv=>`${por[nv]}× nível ${nv}`).join(', ')})</small>` : '—';
+          .sort().map(nv=>_t('{n}× nível {nv}', {n:por[nv], nv})).join(', ')})</small>` : '—';
       };
       if(nossa){
         const pat = TO.financeiro.patrimonio(e);
         cx.innerHTML =
-          linhaD('Sede', e.torcida.sedeNivel > 0 ? `nível ${e.torcida.sedeNivel}` : 'nenhuma — ponto de encontro') +
-          linhaD('Bares', conta(pat.bares)) +
-          linhaD('Lojas', conta(pat.lojas)) +
-          linhaD('Subsedes na cidade', conta(pat.subsedes)) +
+          linhaD(_t('Sede'), e.torcida.sedeNivel > 0 ? _t('nível {n}', {n:e.torcida.sedeNivel}) : _t('nenhuma — ponto de encontro')) +
+          linhaD(_t('Bares'), conta(pat.bares)) +
+          linhaD(_t('Lojas'), conta(pat.lojas)) +
+          linhaD(_t('Subsedes na cidade'), conta(pat.subsedes)) +
           ((pat.filiais||[]).map(f=>linhaD(
-            `Subsede — ${linkCidade(f.cidade, nomeCid(f.cidade))}`,
-            `nível ${f.nivel} · núcleo ${TO.membros.daFilial
+            _t('Subsede — {cidade}', {cidade:linkCidade(f.cidade, nomeCid(f.cidade))}),
+            _t('nível {n} · núcleo {m}', {n:f.nivel, m:TO.membros.daFilial
               ? TO.membros.daFilial(e, f.cidade).length
-              : e.membros.filter(m=>m.filial === f.cidade).length}`)).join('')) +
-          linhaD('Ônibus', TO.financeiro.onibusDe(e) || '—') +
-          linhaD('Professores de MMA', TO.financeiro.professoresDe(e) || '—') +
-          linhaD('Advogados', TO.financeiro.advogadosDe(e) || '—') +
-          linhaD('Bombas', TO.patrimonio.bombas(e)) +
-          linhaD('Fábrica de material', pat.fabrica ? 'sim' : '—');
+              : e.membros.filter(m=>m.filial === f.cidade).length}))).join('')) +
+          linhaD(_t('Ônibus'), TO.financeiro.onibusDe(e) || '—') +
+          linhaD(_t('Professores de MMA'), TO.financeiro.professoresDe(e) || '—') +
+          linhaD(_t('Advogados'), TO.financeiro.advogadosDe(e) || '—') +
+          linhaD(_t('Bombas'), TO.patrimonio.bombas(e)) +
+          linhaD(_t('Fábrica de material'), pat.fabrica ? _t('sim') : '—');
       } else {
         cx.innerHTML =
-          linhaD('Sede', `nível ${t.sede}`) +
-          linhaD('Bares', conta(t.bares)) +
-          linhaD('Lojas', conta(t.lojas)) +
-          linhaD('Subsedes na cidade', t.subsedes || '—') +
+          linhaD(_t('Sede'), _t('nível {n}', {n:t.sede})) +
+          linhaD(_t('Bares'), conta(t.bares)) +
+          linhaD(_t('Lojas'), conta(t.lojas)) +
+          linhaD(_t('Subsedes na cidade'), t.subsedes || '—') +
           ((t.filiais||[]).map(f=>linhaD(
-            `Subsede — ${linkCidade(f.cidade, nomeCid(f.cidade))}`,
-            `nível ${f.nivel} · núcleo ${f.membros||0}`)).join('')) +
-          linhaD('Ônibus', t.onibus || '—') +
-          linhaD('Professores de MMA', TO.relacoes.mmaDe(t) || '—') +
-          linhaD('Advogados', t.advogados || '—') +
-          linhaD('Bombas', t.bombas != null ? t.bombas : '—') +
-          linhaD('Fábrica de material', t.fabrica ? 'sim' : '—');
+            _t('Subsede — {cidade}', {cidade:linkCidade(f.cidade, nomeCid(f.cidade))}),
+            _t('nível {n} · núcleo {m}', {n:f.nivel, m:f.membros||0}))).join('')) +
+          linhaD(_t('Ônibus'), t.onibus || '—') +
+          linhaD(_t('Professores de MMA'), TO.relacoes.mmaDe(t) || '—') +
+          linhaD(_t('Advogados'), t.advogados || '—') +
+          linhaD(_t('Bombas'), t.bombas != null ? t.bombas : '—') +
+          linhaD(_t('Fábrica de material'), t.fabrica ? _t('sim') : '—');
       }
       return cx;
     };
@@ -5541,28 +5533,30 @@
       const rows = nossa
         ? e.membros.map(m=>({
             nome: TO.membros.nomeDe(m),
-            cargo: TO.membros.cargoNome(m),
+            cargo: _t(TO.membros.cargoNome(m)),
             origem: m.filial ? linkCidade(m.filial, nomeCid(m.filial)) : 'Sede',
             idade: m.idade, forca: m.forca, defesa: m.defesa, xp: m.xp,
-            sit: m.preso ? `Preso · ${TO.membros.diasPresos(m)}d`
-               : m.ferido ? `Ferido · ${m.ferido.dias}d` : 'Apto'}))
+            est: m.preso ? 'preso' : m.ferido ? 'ferido' : '',
+            sit: m.preso ? _t('Preso · {d}d', {d:TO.membros.diasPresos(m)})
+               : m.ferido ? _t('Ferido · {d}d', {d:m.ferido.dias}) : _t('Apto')}))
         : TO.relacoes.elencoDaTorcida(e, id).map(m=>({
             nome: m.nome,
-            cargo: (TO.membros.CARGOS[m.cargo]||{nome:m.cargo}).nome,
+            cargo: _t((TO.membros.CARGOS[m.cargo]||{nome:m.cargo}).nome),
             origem: m.origem ? linkCidade(m.origem, nomeCid(m.origem)) : 'Sede',
             idade: m.idade, forca: m.forca, defesa: m.defesa, xp: m.xp,
-            sit: m.preso ? `Preso · ${m.preso}d`
-               : m.ferido ? `Ferido · ${m.ferido}d` : 'Apto'}));
+            est: m.preso ? 'preso' : m.ferido ? 'ferido' : '',
+            sit: m.preso ? _t('Preso · {d}d', {d:m.preso})
+               : m.ferido ? _t('Ferido · {d}d', {d:m.ferido}) : _t('Apto')}));
       const temFilial = rows.some(r=>r.origem !== 'Sede');
+      for(const r of rows) if(r.origem === 'Sede') r.origem = _t('Sede');
       const tab = el('table',{class:'dados'});
       tab.appendChild(el('thead', null, [el('tr',{html:
-        `<th>Membro</th><th>Função</th>${temFilial?'<th>Origem</th>':''}`+
-        `<th>Idade</th><th>Força</th><th>Defesa</th><th>XP</th>`+
-        `<th>Situação</th>`})]));
+        `<th>${_t('Membro')}</th><th>${_t('Função')}</th>${temFilial?`<th>${_t('Origem')}</th>`:''}`+
+        `<th>${_t('Idade')}</th><th>${_t('Força')}</th><th>${_t('Defesa')}</th><th>XP</th>`+
+        `<th>${_t('Situação')}</th>`})]));
       const tb = el('tbody');
       for(const r of rows)
-        tb.appendChild(el('tr',{class: /Preso/.test(r.sit) ? 'preso'
-          : /Ferido/.test(r.sit) ? 'ferido' : '', html:
+        tb.appendChild(el('tr',{class: r.est, html:
           `<td>${r.nome}</td><td>${r.cargo}</td>`+
           `${temFilial?`<td>${r.origem}</td>`:''}`+
           `<td class="num">${r.idade != null ? r.idade : '—'}</td>`+
@@ -5570,7 +5564,7 @@
           `<td class="num">${r.xp}</td><td>${r.sit}</td>`}));
       tab.appendChild(tb);
       cx.appendChild(el('div',{class:'recado',
-        html:`<b>${rows.length}</b> membros`}));
+        html:_tn(rows.length, '<b>{n}</b> membro', '<b>{n}</b> membros')}));
       cx.appendChild(tab);
       return cx;
     };
@@ -5579,31 +5573,33 @@
       const cx = el('div');
       const p = TO.relacoes.placarDoAno(e, id) || {v:0, d:0};
       cx.appendChild(el('div',{class:'recado', html:
-        `Placar do ano: <b>${p.v}</b> vitórias · <b>${p.d}</b> derrotas`}));
+        _t('Placar do ano: <b>{v}</b> vitórias · <b>{d}</b> derrotas', {v:p.v, d:p.d})}));
       const minhas = (e.brigasIA||[])
         .filter(x=>(x.a && x.a.id === id) || (x.b && x.b.id === id))
         .slice(0, 12);
       if(!minhas.length)
         cx.appendChild(el('div',{class:'em-construcao',
-          texto: nossa ? 'As nossas brigas moram no feed e no jornal.'
-                       : 'Nenhuma briga registrada por aí.'}));
+          texto: nossa ? _t('As nossas brigas moram no feed e no jornal.')
+                       : _t('Nenhuma briga registrada por aí.')}));
       for(const x of minhas)
         cx.appendChild(el('div',{class:'transacao', html:
-          `<span class="dia">s${x.semana}</span>
+          `<span class="dia">${_t('s{n}', {n:x.semana})}</span>
            <span class="desc">${linkTorcida(x.a.id, x.a.nome)} ${x.a.n} × `+
           `${x.b.n} ${linkTorcida(x.b.id, x.b.nome)}`+
           `${x.cidade ? ` <small class="fraco">· `+
             `${linkCidadePorNome(x.cidade)}</small>` : ''}</span>
            <span class="val ${x.vencedor === o.nome ? 'positivo' : 'negativo'}">`+
-          `${x.vencedor === o.nome ? 'venceu' : 'perdeu'}`+
-          `${x.pano ? ` <small>· ${x.pano.para === o.nome ? 'tomou' : 'perdeu'} a ${x.pano.tipo}</small>` : ''}</span>`}));
+          `${x.vencedor === o.nome ? _t('venceu') : _t('perdeu')}`+
+          `${x.pano ? ` <small>· ${x.pano.tipo === 'bandeira'
+              ? (x.pano.para === o.nome ? _t('tomou a bandeira') : _t('perdeu a bandeira'))
+              : (x.pano.para === o.nome ? _t('tomou a faixa') : _t('perdeu a faixa'))}</small>` : ''}</span>`}));
       return cx;
     };
 
     const abaFinancas = ()=>{
       const cx = el('div');
       if(nossa){
-        cx.innerHTML = linhaD('Caixa', U.dinheiro(e.dinheiro));
+        cx.innerHTML = linhaD(_t('Caixa'), U.dinheiro(e.dinheiro));
         for(const tr of (e.transacoes||[]).slice(0, 15))
           cx.appendChild(el('div',{class:'transacao', html:
             `<span class="dia">${tr.dia}</span>
@@ -5615,8 +5611,8 @@
            a mesma complexidade do nosso Financeiro */
         const b = TO.relacoes.balanco(t, e, id);
         cx.innerHTML =
-          linhaD('Caixa', U.dinheiro(Math.round(t.caixa))) +
-          linhaD('Balanço do mês', `${U.dinheiro(Math.round(b.rec))} `+
+          linhaD(_t('Caixa'), U.dinheiro(Math.round(t.caixa))) +
+          linhaD(_t('Balanço do mês'), `${U.dinheiro(Math.round(b.rec))} `+
             `<small class="fraco">−${U.dinheiro(Math.round(b.des))
               .replace('R$','R$ ')} = </small>`+
             `${U.dinheiro(Math.round(b.saldo))}`);
@@ -5630,7 +5626,7 @@
              <span class="val negativo">${U.dinheiro(-linha.v)}</span>`}));
         if(!(t.extrato||[]).length)
           cx.appendChild(el('div',{class:'em-construcao',
-            texto:'O extrato começa a contar daqui pra frente.'}));
+            texto:_t('O extrato começa a contar daqui pra frente.')}));
         for(const tr of (t.extrato||[]))
           cx.appendChild(el('div',{class:'transacao', html:
             `<span class="dia">${tr.q}</span>
@@ -5660,14 +5656,16 @@
 
       /* os eixos dela: é deles que vem boa parte das alianças */
       const X = TO.eixos, meus = X ? X.de(e, o.id) : [];
-      const cE = cartao('Eixos de aliança', meus.length ? `${meus.length}` : 'nenhum');
+      const cE = cartao(_t('Eixos de aliança'), meus.length ? `${meus.length}` : _t('nenhum'));
       if(!meus.length)
-        cE.corpo.innerHTML = '<div class="fraco">Não anda em eixo nenhum.</div>';
-      for(const x of meus)
+        cE.corpo.innerHTML = `<div class="fraco">${_t('Não anda em eixo nenhum.')}</div>`;
+      for(const x of meus){
+        const nComp = x.membros.filter(m=>m!==o.id).length;
         cE.corpo.appendChild(el('div',{class:'dip-eixo', html:
           `<b>${linkEixo(x.id, x.nome)}</b>`+
-          `<span class="fraco">${x.membros.filter(m=>m!==o.id).length} companheiros`+
-          `${x.membros.includes(nos) ? ' · a gente está dentro' : ''}</span>`}));
+          `<span class="fraco">${_tn(nComp, '{n} companheiro', '{n} companheiros')}`+
+          `${x.membros.includes(nos) ? _t(' · a gente está dentro') : ''}</span>`}));
+      }
       cx.appendChild(cE);
 
       /* um bloco por faixa, do mais próximo ao mais distante */
@@ -5685,30 +5683,30 @@
                          .sort((a,b)=>b.v - a.v);
         for(const l of ls) usadas.add(l.p.id);
         if(!ls.length) continue;
-        const c = cartao(rot, String(ls.length));
+        const c = cartao(_t(rot), String(ls.length));
         c.classList.add('dip-bloco', 'dip-'+(tom||'neutro'));
         const g = el('div',{class:'dip-lista'});
         /* AS NEUTRAS FICAM DOBRADAS: são trezentas e poucas, e o que se
            vem ver aqui é com quem ela anda e com quem se pega */
         if(rot === 'Neutras'){
-          const b = el('button',{class:'bt larga', texto:`Mostrar as ${ls.length} neutras`});
+          const b = el('button',{class:'bt larga', texto:_t('Mostrar as {n} neutras', {n:ls.length})});
           g.classList.add('oculto');
           b.onclick = ()=>{ g.classList.toggle('oculto');
             b.textContent = g.classList.contains('oculto')
-              ? `Mostrar as ${ls.length} neutras` : 'Esconder as neutras'; };
+              ? _t('Mostrar as {n} neutras', {n:ls.length}) : _t('Esconder as neutras'); };
           c.corpo.appendChild(b);
         }
         for(const l of ls){
           const cor = (TO.mundo.coresDaTorcida(l.p)||{}).cor || '#888';
           g.appendChild(el('div',{class:'dip-linha', html:
             `${chipTorcida(l.p.id, cor)}${linkTorcida(l.p.id, l.p.nome)}`+
-            `${l.irma ? '<span class="tag">irmã</span>' : ''}`+
-            `${l.maior ? '<span class="tag ruim">maior rival</span>' : ''}`+
+            `${l.irma ? `<span class="tag">${_t('irmã')}</span>` : ''}`+
+            `${l.maior ? `<span class="tag ruim">${_t('maior rival')}</span>` : ''}`+
             /* a praça, e o país junto quando ela é de fora: "Buenos
                Aires" sozinho não diz que a irmandade atravessa a
                fronteira, e os hermanamientos moram nesta lista */
             `<small>${(TO.financeiro.nomeCidade && TO.financeiro.nomeCidade(l.p.mapa)) || l.p.mapa}`+
-            `${l.p.fora && l.p.regiao ? ' · ' + l.p.regiao : ''}</small>`+
+            `${l.p.fora && l.p.regiao ? ' · ' + _t(l.p.regiao) : ''}</small>`+
             `<b class="${l.v>0?'positivo':l.v<0?'negativo':''}">${l.v>0?'+':''}${Math.round(l.v)}</b>`}));
         }
         c.corpo.appendChild(g);
@@ -5731,7 +5729,7 @@
           ['patrimonio','Patrimônio'], ['membros','Membros'],
           ['brigas','Brigas'], ['financas','Finanças']]){
         const b = el('button',{class: aid === abaPerfilT ? 'on' : '',
-                               texto: rot});
+                               texto: _t(rot)});
         b.onclick = ()=>{ abaPerfilT = aid; pintar(); };
         abas.appendChild(b);
       }
@@ -5781,21 +5779,21 @@
       /* Onde/Tamanho/Metrô/Policiamento saíram (ordem do dono,
          01/09/2026): fica só a quantidade — a população. E cada time
          mostra a fatia dele na cidade ao lado dos torcedores. */
-      let html = linhaD('População', U.numero(c.populacao || 0));
+      let html = linhaD(_t('População'), U.numero(c.populacao || 0));
       const somaT = times.reduce((s,x)=>s+(x.torcedores||0), 0) || 1;
       for(const tm of times)
         html += linhaD(`${chipClube(tm.id, tm.cor)}${tm.nome}`,
-          `${U.numero(tm.torcedores)} torcedores <small class="fraco">· `+
-          `${Math.round(tm.torcedores/somaT*100)}% da cidade</small>`);
+          _t('{n} torcedores <small class="fraco">· {p}% da cidade</small>',
+             {n:U.numero(tm.torcedores), p:Math.round(tm.torcedores/somaT*100)}));
       if((c.rodovias||[]).length)
-        html += linhaD('Rodovias', c.rodovias.join(', '));
+        html += linhaD(_t('Rodovias'), c.rodovias.join(', '));
       /* as vizinhas pela estrada, cada uma com o próprio link */
       try{
         const g = TO.planejamento.grafo();
         const viz = [...((g.get(c.id)||new Map()).keys())]
           .map(v=>linkCidadePorNome((TO.financeiro.nomeCidade(v)) || v))
           .filter(Boolean);
-        if(viz.length) html += linhaD('Vizinhas pela estrada', viz.join(', '));
+        if(viz.length) html += linhaD(_t('Vizinhas pela estrada'), viz.join(', '));
       }catch(x){}
       cx.innerHTML = html;
       return cx;
@@ -5808,8 +5806,8 @@
          dizem ONDE cada estrutura está */
       const tab = el('table',{class:'dados'});
       tab.appendChild(el('thead', null, [el('tr',{html:
-        `<th>Torcida</th><th>Membros</th><th>Sede</th>`+
-        `<th>Subsedes</th><th>Lojas</th><th>Bares</th>`})]));
+        `<th>${_t('Torcida')}</th><th>${_t('Membros')}</th><th>${_t('Sede')}</th>`+
+        `<th>${_t('Subsedes')}</th><th>${_t('Lojas')}</th><th>${_t('Bares')}</th>`})]));
       const tb = el('tbody');
       for(const o of TO.mundo.torcidasEm(c.id)){
         if(o.incompleta) continue;
@@ -5821,14 +5819,14 @@
           `<td>${linkTorcida(o.id, o.nome)}</td>`+
           `<td class="num">${nossa ? e.membros.length
             : Math.round(t.membros)}</td>`+
-          `<td class="num">n${nossa ? e.torcida.sedeNivel : t.sede}</td>`+
+          `<td class="num">${_t('n{n}', {n:nossa ? e.torcida.sedeNivel : t.sede})}</td>`+
           `<td class="num">${nossa ? ((pat.subsedes||[]).length || '—')
             : (t.subsedes || '—')}</td>`+
           `<td class="num">${(pat.lojas||[]).length || '—'}</td>`+
           `<td class="num">${(pat.bares||[]).length || '—'}</td>`}));
       }
       tab.appendChild(tb);
-      cx.appendChild(el('div',{class:'recado', html:'<b>Da casa</b>'}));
+      cx.appendChild(el('div',{class:'recado', html:`<b>${_t('Da casa')}</b>`}));
       cx.appendChild(tab);
 
       /* subsedes de fora: quem plantou núcleo nesta praça */
@@ -5849,15 +5847,15 @@
       }
       if(deFora.length){
         cx.appendChild(el('div',{class:'recado',
-          html:'<b>Subsedes de fora</b>'}));
+          html:`<b>${_t('Subsedes de fora')}</b>`}));
         const tab2 = el('table',{class:'dados'});
         tab2.appendChild(el('thead', null, [el('tr',{html:
-          `<th>Torcida</th><th>Nível</th><th>Núcleo</th>`})]));
+          `<th>${_t('Torcida')}</th><th>${_t('Nível')}</th><th>${_t('Núcleo')}</th>`})]));
         const tb2 = el('tbody');
         for(const f of deFora.sort((a,b)=>b.nucleo - a.nucleo))
           tb2.appendChild(el('tr',{html:
             `<td>${linkTorcida(f.id, f.nome)}</td>`+
-            `<td class="num">n${f.nivel}</td>`+
+            `<td class="num">${_t('n{n}', {n:f.nivel})}</td>`+
             `<td class="num">${f.nucleo}</td>`}));
         tab2.appendChild(tb2);
         cx.appendChild(tab2);
@@ -5892,31 +5890,31 @@
         if(nossa){
           const bs = TO.mundo.bairroDaSede(e.torcida);
           põe(bs ? bs.nome : o.bairroSede,
-              e.torcida.sedeNivel > 0 ? `Sede (nível ${e.torcida.sedeNivel})` : 'Ponto de encontro (sem sede)', o.id, o.nome);
+              e.torcida.sedeNivel > 0 ? _t('Sede (nível {n})', {n:e.torcida.sedeNivel}) : _t('Ponto de encontro (sem sede)'), o.id, o.nome);
           const pat = TO.financeiro.patrimonio(e);
           (pat.bares||[]).forEach((b,i)=>põe(
             b.bairro || bairroFixo(`${o.id}|bar|${i}`),
-            `Bar (nível ${b.nivel})`, o.id, o.nome));
+            _t('Bar (nível {n})', {n:b.nivel}), o.id, o.nome));
           (pat.lojas||[]).forEach((l,i)=>põe(
             l.bairro || bairroFixo(`${o.id}|loja|${i}`),
-            `Loja (nível ${l.nivel})`, o.id, o.nome));
+            _t('Loja (nível {n})', {n:l.nivel}), o.id, o.nome));
           (pat.subsedes||[]).forEach((s,i)=>põe(
             s.bairro || bairroFixo(`${o.id}|subsede|${i}`),
-            'Subsede', o.id, o.nome));
+            _t('Subsede'), o.id, o.nome));
         } else {
           põe(o.bairroSede || bairroFixo(`${o.id}|sede`),
-              `Sede (nível ${t.sede})`, o.id, o.nome);
+              _t('Sede (nível {n})', {n:t.sede}), o.id, o.nome);
           (t.bares||[]).forEach((b,i)=>põe(bairroFixo(`${o.id}|bar|${i}`),
-            `Bar (nível ${b.nivel||1})`, o.id, o.nome));
+            _t('Bar (nível {n})', {n:b.nivel||1}), o.id, o.nome));
           (t.lojas||[]).forEach((l,i)=>põe(bairroFixo(`${o.id}|loja|${i}`),
-            `Loja (nível ${l.nivel||1})`, o.id, o.nome));
+            _t('Loja (nível {n})', {n:l.nivel||1}), o.id, o.nome));
           for(let i=0;i<(t.subsedes||0);i++)
-            põe(bairroFixo(`${o.id}|subsede|${i}`), 'Subsede', o.id, o.nome);
+            põe(bairroFixo(`${o.id}|subsede|${i}`), _t('Subsede'), o.id, o.nome);
         }
       }
       for(const f of deFora)
         põe(bairroFixo(`${f.id}|filial`),
-            `Subsede de fora (nível ${f.nivel} · núcleo ${f.nucleo})`,
+            _t('Subsede de fora (nível {n} · núcleo {m})', {n:f.nivel, m:f.nucleo}),
             f.id, f.nome);
       const ordem = [];
       for(const b of bairros)
@@ -5926,11 +5924,11 @@
         const doz = itens.filter(x=>x.zona === z);
         if(!doz.length) continue;
         cx.appendChild(el('div',{class:'recado',
-          html:`<b>${z === 'Centro' ? 'Centro' : 'Zona '+z}</b>`}));
+          html:`<b>${z === 'Centro' ? _t('Centro') : z === 'Sem zona' ? _t('Sem zona')
+                     : _t('Zona {z}', {z:_t(z)})}</b>`}));
         for(const it of doz)
           cx.appendChild(el('div',{class:'transacao linha-zona', html:
-            `<span class="desc">${it.rot} da `+
-            `${linkTorcida(it.tid, it.tnome)}</span>
+            `<span class="desc">${_t('{rot} da {torcida}', {rot:it.rot, torcida:linkTorcida(it.tid, it.tnome)})}</span>
              <span class="dia" title="${it.bairro}">${it.bairro}</span>`}));
       }
       return cx;
@@ -5942,7 +5940,7 @@
       for(const [aid, rot] of [['visao','Visão geral'],
           ['torcidas','Torcidas e estruturas']]){
         const b = el('button',{class: aid === abaPerfilC ? 'on' : '',
-                               texto: rot});
+                               texto: _t(rot)});
         b.onclick = ()=>{ abaPerfilC = aid; pintar(); };
         abas.appendChild(b);
       }
@@ -5951,8 +5949,9 @@
                                                   : abaVisaoC());
     };
     pintar();
-    modal(c.nome, `${c.uf || ''}${c.regiao ? ` · ${c.regiao}` : ''} · `+
-      `${TO.mundo.torcidasEm(c.id).filter(o=>!o.incompleta).length} torcidas`,
+    const nTorcidas = TO.mundo.torcidasEm(c.id).filter(o=>!o.incompleta).length;
+    modal(c.nome, `${c.uf || ''}${c.regiao ? ` · ${_t(c.regiao)}` : ''} · `+
+      _tn(nTorcidas, '{n} torcida', '{n} torcidas'),
       corpo);
     /* A CAPA DA CIDADE (pedido do dono, 01/09/2026): o cabeçalho do
        perfil vira cartão-postal — a foto mora em img/cidades/<id>.webp
@@ -6000,13 +5999,13 @@
     const faixa = el('div',{class:'perfil-t-faixa'}); faixa.style.background = r.nosso ? 'var(--ouro)' : '#444';
     corpo.appendChild(faixa);
     corpo.appendChild(el('div',{html:
-      linhaD('Torcidas', `${r.membros.length}${r.nosso ? ' <small class="fraco">· a gente está dentro</small>' : ''}`)+
-      linhaD('Força somada', `${U.numero(Math.round(r.forca))} membros`)+
-      linhaD('Praças', r.pracas.map(c=>linkCidade(c, nomeCid(c))).join(', ') || '—')+
-      linhaD('Fundação', r.x.base ? 'de nascença' : `${r.x.fundado.ano}, semana ${r.x.fundado.semana}`)+
-      (r.rivais.length ? linhaD('Maiores rivais do eixo', r.rivais.map(x=>linkTorcida(x, (TO.mundo.torcida(x)||{}).nome || x)).join(', ')) : '')}));
+      linhaD(_t('Torcidas'), `${r.membros.length}${r.nosso ? ` <small class="fraco">${_t('· a gente está dentro')}</small>` : ''}`)+
+      linhaD(_t('Força somada'), _t('{n} membros', {n:U.numero(Math.round(r.forca))}))+
+      linhaD(_t('Praças'), r.pracas.map(c=>linkCidade(c, nomeCid(c))).join(', ') || '—')+
+      linhaD(_t('Fundação'), r.x.base ? _t('de nascença') : _t('{ano}, semana {s}', {ano:r.x.fundado.ano, s:r.x.fundado.semana}))+
+      (r.rivais.length ? linhaD(_t('Maiores rivais do eixo'), r.rivais.map(x=>linkTorcida(x, (TO.mundo.torcida(x)||{}).nome || x)).join(', ')) : '')}));
     const tab = el('table',{class:'dados'});
-    tab.appendChild(el('thead', null, [el('tr',{html:`<th>Torcida</th><th>Clube</th><th>Praça</th><th>Relação</th></tr>`})]));
+    tab.appendChild(el('thead', null, [el('tr',{html:`<th>${_t('Torcida')}</th><th>${_t('Clube')}</th><th>${_t('Praça')}</th><th>${_t('Relação')}</th></tr>`})]));
     const tb = el('tbody');
     for(const o of r.membros){
       const nossa = o.id === e.torcida.id;
@@ -6016,18 +6015,19 @@
         `<td>${chipTorcida(o.id, (TO.mundo.coresDaTorcida(o)||{}).cor)} ${linkTorcida(o.id, o.nome)}</td>`+
         `<td>${clube.nome ? chipClube(o.clubeId, (clube.cores||[])[0]||'#888')+' '+clube.nome : '—'}</td>`+
         `<td>${linkCidade(o.mapa, nomeCid(o.mapa))}</td>`+
-        `<td class="num">${nossa ? '—' : `${v} <small class="fraco">${TO.mundo.statusDoValor(v)}</small>`}</td>`}));
+        `<td class="num">${nossa ? '—' : `${v} <small class="fraco">${_t(TO.mundo.statusDoValor(v))}</small>`}</td>`}));
     }
     tab.appendChild(tb); corpo.appendChild(tab);
     const hist = (X.caixas(e).historico||[]).filter(h=>h.eixo === id).slice(0, 12);
     if(hist.length){
-      corpo.appendChild(el('div',{class:'rec-titulo', texto:'Movimento', estilo:{marginTop:'10px'}}));
+      corpo.appendChild(el('div',{class:'rec-titulo', texto:_t('Movimento'), estilo:{marginTop:'10px'}}));
       for(const h of hist) corpo.appendChild(el('div',{class:'noticia', html:
-        `<span class="data">${h.ano} · s${h.semana}</span><span class="txt">${
-          h.tipo === 'fundou' ? `Fundado por ${h.membros.map(m=>linkTorcida(m, (TO.mundo.torcida(m)||{}).nome||m)).join(', ')}`
-          : `${linkTorcida(h.torcida, (TO.mundo.torcida(h.torcida)||{}).nome||h.torcida)} entrou`}</span>`}));
+        `<span class="data">${h.ano} · ${_t('s{n}', {n:h.semana})}</span><span class="txt">${
+          h.tipo === 'fundou' ? _t('Fundado por {nomes}', {nomes:h.membros.map(m=>linkTorcida(m, (TO.mundo.torcida(m)||{}).nome||m)).join(', ')})
+          : _t('{torcida} entrou', {torcida:linkTorcida(h.torcida, (TO.mundo.torcida(h.torcida)||{}).nome||h.torcida)})}</span>`}));
     }
-    modal(r.x.nome, `${r.x.sigla ? r.x.sigla+' · ' : ''}eixo de aliança · ${r.membros.length} torcidas`, corpo);
+    modal(r.x.nome, `${r.x.sigla ? r.x.sigla+' · ' : ''}`+
+      _tn(r.membros.length, 'eixo de aliança · {n} torcida', 'eixo de aliança · {n} torcidas'), corpo);
   }
 
   /* =======================================================
