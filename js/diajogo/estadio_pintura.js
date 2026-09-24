@@ -245,6 +245,19 @@ TO.diaJogo.estadioPintura = (function(){
         for(let i=1;i<q.pol.length;i++) c.lineTo(q.pol[i][0], q.pol[i][1]);
         c.closePath();
         c.strokeStyle = COR.meioFio; c.lineWidth = 2; c.stroke();
+        /* a rua sem saída no miolo: calçada, asfalto por cima (que
+           apaga a guia do quarteirão na boca) e a guia dela, aberta
+           na boca */
+        const s = q.semSaida;
+        if(s){
+          c.fillStyle = COR.calcada;
+          for(const r of s.calcadas) c.fillRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
+          c.fillStyle = COR.rua;
+          for(const r of s.asfalto) c.fillRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0 + (r.y1 === q.y1 ? 2 : 0));
+          c.beginPath(); c.moveTo(s.guia[0][0], s.guia[0][1]);
+          for(let i=1;i<s.guia.length;i++) c.lineTo(s.guia[i][0], s.guia[i][1]);
+          c.strokeStyle = COR.meioFio; c.lineWidth = 2; c.stroke();
+        }
       } else if((q.tipo === 'aberto' || q.tipo === 'campo') && K.zona(q.cx, q.cy) === 'cidade'){
         c.fillStyle = COR.terreno; c.fillRect(q.x0, q.y0, q.x1-q.x0, q.y1-q.y0);
       }

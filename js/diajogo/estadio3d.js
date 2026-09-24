@@ -26,6 +26,7 @@ import { entrarEm } from './bonecos3.js';
 import { criarTradutor } from './sinais3d.js';
 import { montarBairro } from './bairro3d.js';
 import { montarModelos } from './modelos3d.js';
+import { montarProps } from './props3d.js';
 import { criarChaoPBR } from './chao3d.js';
 import { criarNuvens } from './nuvens3d.js';
 
@@ -646,7 +647,7 @@ export function criar(canvas) {
      MONTAR TUDO
      ======================================================= */
   let conta = null;
-  let cidade = null, marcos = null;
+  let cidade = null, marcos = null, props = null;
   function montarEstadio(D) {
     while (grupo.children.length) {
       const o = grupo.children.pop();
@@ -687,12 +688,17 @@ export function criar(canvas) {
          centro administrativo, casa): a planta abriu o lugar deles */
       marcos = montarModelos(P, { anisotropia: Math.min(8, maxAniso) });
       for (const m of marcos.meshes) { nuvens.aplicarEm(m.material); cena.add(m); }
+      /* o mobiliário da calçada: lixo, lixeira, cesto, hidrante, cone,
+         barreira, correio, banco de praça — onde a planta mandou */
+      props = montarProps(P, { anisotropia: Math.min(8, maxAniso) });
+      nuvens.aplicarEm(props.materiais[0]);
+      for (const m of props.meshes) cena.add(m);
     }
     conta = { degraus: P.NDEG, vomitorios: P.VOMITORIOS.length,
               lojas: P.LOJAS.length, lotes: K.LOTES.length, quadras: K.QUADRAS.length,
               pedacos: cidade.pedacos, portoes: P.PORTOES.length,
               triangulos: Math.round(nTri(TA) + nTri(TC) + nTri(TP) + nTri(TL) + nTri(TF) + cidade.triangulos +
-                                     (marcos ? marcos.triangulos : 0)) };
+                                     (marcos ? marcos.triangulos : 0) + (props ? props.triangulos : 0)) };
     return conta;
   }
 
@@ -1143,7 +1149,7 @@ export function criar(canvas) {
            get gente() { return povo.quantas; },
            get info() { return rend.info; },
            _rend: rend, _cena: cena, _cam: cam, _planta: P,
-           get _chaoPBR() { return chaoPBR; }, get _nuvens() { return nuvens; }, get _marcos() { return marcos; },
+           get _chaoPBR() { return chaoPBR; }, get _nuvens() { return nuvens; }, get _marcos() { return marcos; }, get _props() { return props; },
            get _cidade() { return cidade; },
            _mirar(g, i, d) {
              if (g !== undefined) giro = g;

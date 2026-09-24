@@ -1214,6 +1214,9 @@ TO.dados.plantaEstadio = (function(){
        no 3D e na textura do mapa — a mesma lista serve aos dois */
     const piso = (x0, y0, x1, y1, cor) => p('piso', { x0, y0, x1, y1, cor }, false);
     let chao = '#9d9a90';
+    /* o que o equipamento quer contar pra quem vem depois (o baldio diz
+       onde acaba o miolo murado e começa a fileira das lojas) */
+    const extra = {};
     const ret = (x, y, w, h) => ({ x0: x - w/2, x1: x + w/2, y0: y - h/2, y1: y + h/2 });
     const fila = (n, a, b, f) => { for(let i=0;i<n;i++) f(a + (b - a)*(n === 1 ? 0.5 : i/(n-1)), i); };
 
@@ -1450,6 +1453,7 @@ TO.dados.plantaEstadio = (function(){
       const PAT = 32;                                      // o pátio das mesas, na guia
       const FUNDO = Math.min(L*0.34, 176);                 // o fundo das lojas
       const uL1 = L - PAT, uL0 = uL1 - FUNDO;              // a faixa das lojas, em u
+      extra.murado = { ...rx(0, uL0), y0: Y0, y1: Y1 };     // o terreno de dentro do muro
 
       /* ---- A FILEIRA DE BARES E LOJAS ----
          Encostadas uma na outra de propósito: as costas delas são a
@@ -1577,7 +1581,7 @@ TO.dados.plantaEstadio = (function(){
       pixo(uL0*0.62, alvoPix.cy, 0, 1, alvoPix.pixacao, 150, alvoPix.pixo);
     }
 
-    return { tipo, chao, pecas, area };
+    return { tipo, chao, pecas, area, ...extra };
   }
 
   /* =========================================================
@@ -4039,6 +4043,82 @@ TO.dados.plantaEstadio = (function(){
           z0: m.totem.z - m.totem.esp/2, z1: m.totem.z + m.totem.esp/2, alt: m.totem.alt }
       ];
       return m;
+    },
+    /* OS DOIS PRÉDIOS DO BALDIO, cada um no seu meio terreno (22 × 19,6
+       m), com a frente pro oeste — a rua entre o baldio e a rua sem
+       saída. Referencial do marco: x da esquerda pra direita de quem
+       olha a fachada (do norte pro sul), z = 0 no muro da frente, z
+       negativo entrando no terreno. Os dois dividem o muro do
+       condomínio: frente, fundo e o lado que dá pra rua.
+
+       O EDIFÍCIO MIRANTE: concreto cinza, 18 andares sobre o térreo. A
+       frente é partida por um RASGO fundo com a cortina de vidro azul,
+       e a quina da direita é outra faixa de vidro que dobra pro lado.
+       A massa da esquerda para um andar antes; a da direita sobe na
+       coroa da casa de máquinas. Na frente, a caixa da portaria. */
+    torre1(W, D){
+      const m = { W, D, x0: 3.0, x1: W - 3.0, zf: -4.4, zb: -16.6,
+                  hT: 3.6, pe: 2.9, andares: 18,
+                  e1: 8.2, r1: 10.0, q0: W - 4.8,           // a massa da esquerda, o rasgo, a da direita, a quina de vidro
+                  fundoRasgo: 1.5, dobra: 1.8, muro: 2.4, ladoRua: 'esq',
+                  recMuro: 0.15 };                         // o muro recua da divisa: a pixação sai à frente dele
+      m.hTopo = m.hT + m.andares*m.pe;                      // 55,8 m
+      m.hEsq = m.hTopo - m.pe;
+      m.coroa = { x0: m.r1, x1: m.q0, z0: -12.0, z1: m.zf, alt: m.hTopo + 3.8 };
+      m.portaria = { x0: 12.2, x1: 16.2, z0: m.zf, z1: m.zf + 2.8, alt: 3.5 };
+      m.guarita = { x0: 9.6, x1: 11.4, z0: -2.2, z1: -m.recMuro, alt: 2.7 };
+      m.pedestre = { a0: 13.6, a1: 14.8 };                  // no muro da frente, em x
+      m.portao = { a0: W - 4.2, a1: W - 0.3 };
+      /* o jardim: a frente da esquerda, o recuo do lado da rua e o fundo */
+      m.jardins = [{ x0: 0.25, x1: 9.4, z0: m.zf, z1: -0.25 },
+                   { x0: 0.25, x1: m.x0, z0: -D + 0.25, z1: m.zf },
+                   { x0: m.x0, x1: m.x1, z0: -D + 0.25, z1: m.zb }];
+      m.arvores = [[1.6, -2.2], [5.6, -2.6], [1.5, -10.5]];
+      m.volumes = [
+        { x0: m.x0, x1: m.x1, z0: m.zb, z1: m.zf, alt: m.hTopo + 1.0 },
+        m.coroa,
+        m.portaria, m.guarita,
+        { x0: 0, x1: W, z0: -m.recMuro - 0.25, z1: -m.recMuro, alt: m.muro },    // o muro da frente
+        { x0: m.recMuro, x1: m.recMuro + 0.25, z0: -D, z1: 0, alt: m.muro },     // o do lado da rua
+        { x0: 0, x1: W, z0: -D, z1: -D + 0.25, alt: m.muro }                     // o do fundo
+      ];
+      return m;
+    },
+    /* O RESIDENCIAL BELA VISTA: quadro branco, os dois painéis de
+       tijolinho laranja e, no meio, as duas colunas de sacada de vidro
+       azul com a borda branca da laje, separadas pela ALETA branca que
+       passa do telhado. 15 andares sobre um térreo alto, e o PÓRTICO
+       branco na frente, com o nome na viga. */
+    torre2(W, D){
+      const m = { W, D, x0: 3.0, x1: W - 3.0, zf: -5.0, zb: -17.0,
+                  hT: 4.2, pe: 2.9, andares: 15, muro: 2.4, ladoRua: 'dir',
+                  canto: 1.2, sacada: 2.7, aleta: 0.6, fundoSacada: 1.1, recMuro: 0.15 };
+      m.hTopo = m.hT + m.andares*m.pe;                      // 47,7 m
+      const xm = (m.x0 + m.x1)/2;
+      m.xm = xm;
+      m.tij = (m.x1 - m.x0 - 2*m.canto - 2*m.sacada - m.aleta)/2;   // cada painel de tijolo
+      m.aletaV = { x0: xm - m.aleta/2, x1: xm + m.aleta/2, z0: m.zf, z1: m.zf + 0.9, alt: m.hTopo + 3.8 };
+      m.portico = { x0: 3.4, x1: 18.6, z0: -2.9, z1: -1.7, y0: 5.4, y1: 6.7, pilar: 0.8 };
+      m.guarita = { x0: 13.2, x1: 15.0, z0: -1.6, z1: -m.recMuro, alt: 2.7 };
+      m.pedestre = { a0: xm - 0.6, a1: xm + 0.6 };
+      m.portao = { a0: W - 4.0, a1: W - 0.4 };
+      m.jardins = [{ x0: 0.25, x1: m.portico.x0 - 0.2, z0: m.zf, z1: -0.25 },
+                   { x0: m.portico.x0 + 1.0, x1: xm - 1.4, z0: -1.5, z1: -0.25 },
+                   { x0: m.x0, x1: m.x1, z0: -D + 0.25, z1: m.zb }];
+      m.arvores = [[1.4, -2.4], [6.2, -0.9]];
+      const P = m.portico;
+      m.volumes = [
+        { x0: m.x0, x1: m.x1, z0: m.zb, z1: m.zf, alt: m.hTopo + 1.0 },
+        m.aletaV,
+        { x0: P.x0, x1: P.x1, z0: P.z0, z1: P.z1, alt: P.y1, base: P.y0 },       // a viga: só a câmera
+        { x0: P.x0, x1: P.x0 + P.pilar, z0: P.z0, z1: P.z1, alt: P.y0 },
+        { x0: P.x1 - P.pilar, x1: P.x1, z0: P.z0, z1: P.z1, alt: P.y0 },
+        m.guarita,
+        { x0: 0, x1: W, z0: -m.recMuro - 0.25, z1: -m.recMuro, alt: m.muro },
+        { x0: W - m.recMuro - 0.25, x1: W - m.recMuro, z0: -D, z1: 0, alt: m.muro },
+        { x0: 0, x1: W, z0: -D, z1: -D + 0.25, alt: m.muro }
+      ];
+      return m;
     }
   };
 
@@ -4302,6 +4382,419 @@ TO.dados.plantaEstadio = (function(){
     }
   })();
 
+  /* =========================================================
+     A RUA SEM SAÍDA — no miolo do quarteirão ao sul da avenida
+     ---------------------------------------------------------
+     O dono marcou no mapa o miolo do quarteirão 2,2 (o fundo de
+     quintal com os puxadinhos, entre a avenida noroeste e a rua da
+     delegacia) e pediu uma rua sem saída com casas em volta. Ela
+     entra pela rua do sul no lugar de um sobrado, sobe pelo meio do
+     quarteirão e acaba num T — o retorno —, encostado no fundo das
+     casas da avenida. Em volta, dez lotes novos: três de cada lado da
+     haste, de frente pra ela, três de frente pro T e um muro na ponta
+     de oeste, onde o fundo das casas da avenida só deixa 2 m de chão.
+
+     Entra no fim, como o atacarejo e DEPOIS das casas de muro: não
+     sorteia nada (a cidade continua igual, e as doze casas de muro
+     são as mesmas) e só mexe no que estava embaixo — o quintal, os
+     puxadinhos, o sobrado da boca e o vizinho dele, que estreita. O
+     que a rua é fica em `q.semSaida`: o asfalto e as calçadas, em
+     retângulos, e a guia em volta do asfalto. Quem pinta o chão, quem
+     monta a laje e quem diz onde se anda leem dali.
+     ========================================================= */
+  const SEM_SAIDA = (function(){
+    const q = QUADRAS.find(c => c.i === 2 && c.j === 2);
+    const Q = q && q.quintal;
+    if(!Q) throw new Error('rua sem saída: o quarteirão 2,2 não tem mais o quintal do miolo');
+    const ASF = 110, CAL = 30;                 // 5,7 m de asfalto e 1,5 m de calçada
+    /* A BOCA: o lote da face sul que está no meio do quintal sai
+       inteiro, e a rua começa na divisa oeste dele — a parede do
+       galpão vizinho vira a quina da calçada */
+    const xc = (Q.x0 + Q.x1)/2;
+    const boca = q.lotes.find(l => !l.ang && l.frente === 's' && l.x0 <= xc && l.x1 > xc);
+    const xs0 = boca.x0, xs1 = xs0 + 2*CAL + ASF;
+    const xa0 = xs0 + CAL, xa1 = xs1 - CAL;
+    /* três lotes de 4,8 m de frente de cada lado da haste; o T (5,1 m
+       de asfalto) logo acima deles, de uma ponta à outra do quintal */
+    const FRENTE = 94;
+    const yR0 = Q.y1 - 3*FRENTE;
+    const yT1 = yR0 - CAL, yT0 = yT1 - 100, yN = yT0 - CAL;
+    const asfalto = [
+      { x0: xa0, x1: xa1, y0: yT1, y1: q.y1 },                  // a haste, até o asfalto da rua do sul
+      { x0: Q.x0 + CAL, x1: Q.x1 - CAL, y0: yT0, y1: yT1 }      // o T
+    ];
+    const calcadas = [
+      { x0: Q.x0, x1: Q.x1, y0: yN, y1: yT0 },                  // a do norte do T
+      { x0: Q.x0, x1: Q.x0 + CAL, y0: yT0, y1: yT1 },           // as duas pontas do T
+      { x0: Q.x1 - CAL, x1: Q.x1, y0: yT0, y1: yT1 },
+      { x0: Q.x0, x1: xa0, y0: yT1, y1: yR0 },                  // as do sul do T
+      { x0: xa1, x1: Q.x1, y0: yT1, y1: yR0 },
+      { x0: xs0, x1: xa0, y0: yR0, y1: q.iy1 },                 // as da haste, até a calçada da rua
+      { x0: xa1, x1: xs1, y0: yR0, y1: q.iy1 }
+    ];
+    /* a guia contorna o asfalto e fica aberta na boca */
+    const guia = [[xa0, q.y1], [xa0, yT1], [Q.x0 + CAL, yT1], [Q.x0 + CAL, yT0],
+                  [Q.x1 - CAL, yT0], [Q.x1 - CAL, yT1], [xa1, yT1], [xa1, q.y1]];
+
+    /* o que estava embaixo sai: o quintal e os puxadinhos dele ... */
+    q.quintal = null;
+    q.fundos = [];
+    /* ... e a face sul na boca: o lote que fica inteiro dentro dela
+       sai, o que passa da divisa encolhe (e sai se sobrar menos de
+       2 m de frente) */
+    for(const l of q.lotes.slice()){
+      if(l.ang || l.frente !== 's' || l.x1 <= xs0 || l.x0 >= xs1) continue;
+      const a = l.x0 < xs0 ? l.x0 : xs1, b = l.x0 < xs0 ? xs0 : l.x1;
+      if(b - a < 40){ q.lotes.splice(q.lotes.indexOf(l), 1); LOTES.splice(LOTES.indexOf(l), 1); continue; }
+      l.x0 = a; l.x1 = b;
+    }
+
+    /* OS LOTES NOVOS, sem sorteio: tipo, altura e cor por posição. A
+       casa que vai em cada um (e a roupa dela) sai do hash da posição
+       no `casas3d.js`, como no resto da cidade. */
+    const ALTS = { casa: [72, 80], sobrado: [120, 128, 136], muro: [40, 48] };
+    const novos = [];
+    const novo = (frente, tipo, x0, x1, y0, y1, k) => {
+      const cores = TIPOS[tipo].cor;
+      const l = { quadra: q, frente, tipo, x0, x1, y0, y1, semSaida: true,
+                  alt: ALTS[tipo][k % ALTS[tipo].length], cor: cores[(k*3 + 1) % cores.length] };
+      LOTES.push(l); q.lotes.push(l); novos.push(l);
+      return l;
+    };
+    const fileira = i => [yR0 + i*FRENTE, i < 2 ? yR0 + (i + 1)*FRENTE : Q.y1];
+    ['casa', 'sobrado', 'casa'].forEach((t, i) => novo('l', t, Q.x0, xs0, ...fileira(i), i));
+    ['casa', 'casa', 'sobrado'].forEach((t, i) => novo('o', t, xs1, Q.x1, ...fileira(i), i + 3));
+    /* De frente pro T: o chão começa no fundo das casas da avenida
+       (que são giradas e entram no quintal) e da pracinha da cunha. */
+    const fundoLivre = (a, b) => {
+      let y = Q.y0;
+      for(const l of q.lotes){
+        if(!l.ang) continue;
+        const pol = cortarPor(cortarPor(cantosDoLote(l).slice(0, 4), -1, 0, -a), 1, 0, b);
+        for(const p of pol) y = Math.max(y, p[1]);
+      }
+      for(const pr of q.pracinhas || []) for(const t of pr.tiras) if(t.x1 > a && t.x0 < b) y = Math.max(y, t.y1);
+      return y > Q.y0 ? Math.ceil(y + 4) : Q.y0;
+    };
+    const passo = (Q.x1 - Q.x0)/4;
+    for(let i = 0; i < 4; i++){
+      const a = Q.x0 + i*passo, b = i < 3 ? a + passo : Q.x1;
+      const y0 = fundoLivre(a, b), fundo = (yN - y0)/METRO;
+      /* sem 3 m de fundo não cabe casa: vira o muro de um terreno
+         vazio, com o recado de sempre de rua sem saída */
+      if(fundo < 3){
+        const m = novo('s', 'muro', a, b, yN - 12, yN, i);
+        m.pixacao = 'É PROIBIDO JOGAR LIXO';
+      } else novo('s', fundo < 6 ? 'casa' : 'sobrado', a, b, y0, yN, i + 6);
+    }
+    /* um carro parado na guia da haste; o T fica livre, que é o retorno */
+    CARROS.push({ x0: Math.round(xa1 - 4 - 1.8*METRO), x1: xa1 - 4, y0: yR0 + 60, y1: Math.round(yR0 + 60 + 4.3*METRO),
+                  cor: '#8a8f96' });
+
+    const livre = asfalto.concat(calcadas);
+    q.semSaida = { asfalto, calcadas, livre, guia, lotes: novos,
+                   caixa: { x0: Q.x0, x1: Q.x1, y0: yN, y1: q.y1 } };
+    return q.semSaida;
+  })();
+  /* =========================================================
+     OS DOIS PRÉDIOS NO BALDIO
+     ---------------------------------------------------------
+     O dono pediu que o terreno baldio virasse dois prédios no estilo
+     do prédio alto do centro (modelado peça por peça, com a folha de
+     textura dele), sendo os dois das fotos que mandou: o EDIFÍCIO
+     MIRANTE, de concreto cinza com o rasgo de vidro azul, e o
+     RESIDENCIAL BELA VISTA, de quadro branco, tijolinho e sacadas de
+     vidro. O miolo murado do baldio vira o condomínio dos dois, um em
+     cada metade, de frente pra rua de oeste; a fileira de bares e
+     lojas virada pro estádio fica como estava (também foi pedido dele).
+
+     Entra no fim, como os marcos: não sorteia nada e só troca o que
+     estava no miolo — o muro, o mato pintado, o entulho, os carros
+     largados, as árvores e o poste de dentro —, e o chão de terra
+     batida vira piso. A pixação de torcida do muro grande (a que dá
+     pra cobrir) passa pro muro do condomínio na mesma rua, com o mesmo
+     dizer. O condomínio é fechado: o terreno inteiro barra o boneco, e
+     o prédio, o pórtico e o muro barram a câmera (`q.equip.volumes`).
+     ========================================================= */
+  const PREDIOS_BALDIO = (function(){
+    const q = QUADRAS.find(c => c.equip && c.equip.tipo === 'baldio');
+    if(!q) return [];
+    const eq = q.equip, Mr = eq.murado;
+    const noMurado = o => o.x0 !== undefined ? o.x0 < Mr.x1 && o.x1 > Mr.x0 && o.y0 < Mr.y1 && o.y1 > Mr.y0
+                                             : o.x >= Mr.x0 && o.x < Mr.x1 && o.y >= Mr.y0 && o.y < Mr.y1;
+    const pixo = eq.pecas.find(o => o.k === 'letreiro' && o.pixo && noMurado(o));
+    eq.pecas = eq.pecas.filter(o => !noMurado(o));
+    eq.chao = '#b5afa0';
+    eq.pisoPBR = true;
+    eq.volumes = [];
+    const ym = (Mr.y0 + Mr.y1)/2;
+    const terrenos = [{ modelo: 'torre1', f: { x0: Mr.x0, x1: Mr.x1, y0: Mr.y0, y1: ym } },
+                      { modelo: 'torre2', f: { x0: Mr.x0, x1: Mr.x1, y0: ym, y1: Mr.y1 } }];
+    const postos = [];
+    for(const { modelo, f } of terrenos){
+      const W = (f.y1 - f.y0)/METRO, D = (f.x1 - f.x0)/METRO;
+      const massa = MASSAS[modelo](W, D);
+      eq.pecas.push({ k: 'modelo', modelo, frente: 'o', fatia: { ...f }, W, D, massa, bloqueia: false });
+      for(const v of massa.volumes)
+        eq.volumes.push(Object.assign(retDoMarco(f, 'o', v), { alt: v.alt*METRO, base: (v.base || 0)*METRO }));
+      eq.pecas.push({ k: 'volume', bloqueia: true, x0: f.x0, x1: f.x1, y0: f.y0, y1: f.y1 });
+      /* o jardim é chão pintado (grama no mapa e no material do chão);
+         a laje do pátio já veste o material do chão, então ele não
+         precisa de caixa no 3D */
+      for(const j of massa.jardins)
+        eq.pecas.push(Object.assign({ k: 'piso', cor: '#4e7f40', soMapa: true, bloqueia: false }, retDoMarco(f, 'o', j)));
+      for(const [lx, lz] of massa.arvores){
+        const [x, y] = paraMundoDoMarco(f, 'o', lx, lz);
+        eq.pecas.push({ k: 'arvore', x, y, r: 15, bloqueia: false });
+      }
+      postos.push({ modelo, quadra: [q.i, q.j], fatia: { ...f }, frente: 'o', W, D });
+    }
+    if(pixo){
+      /* a face de fora do muro do lado da rua do sul */
+      const f = terrenos[1].f;
+      Object.assign(pixo, { y: f.y1 - 0.15*METRO, ox: 0, oz: 1, x: Math.min(Math.max(pixo.x, f.x0 + 90), f.x1 - 90) });
+      eq.pecas.push(pixo);
+    }
+    q.solidos = eq.pecas.filter(o => o.bloqueia);
+    /* o mato e o entulho que eram decalque no chão do baldio saem */
+    for(let i = DECALQUES.length - 1; i >= 0; i--){
+      const d = DECALQUES[i], r = d.tam/2;
+      if(d.x + r > Mr.x0 && d.x - r < Mr.x1 && d.y + r > Mr.y0 && d.y - r < Mr.y1) DECALQUES.splice(i, 1);
+    }
+    return postos;
+  })();
+
+  /* =========================================================
+     OS PROPS DE RUA
+     ---------------------------------------------------------
+     O dono mandou um pacote de mobiliário urbano — contêiner de lixo,
+     lixeiras de coleta seletiva, sacos, caixas de papelão, cestos,
+     barreira de concreto, caixa de correio, hidrante, balizadores,
+     delineador, cone, cinzeiro e banco de madeira — e pediu que fosse
+     espalhado pelas calçadas: os sacos de lixo do lado dos tambores de
+     lixo, e as caixas junto; os cestos e o banco de madeira na praça.
+     O poste fica de fora: ele vai mandar o dele.
+
+     ONDE. Na faixa de serviço da calçada do quarteirão — a que encosta
+     na guia, onde fica o que é da rua e não da casa —, um ponto
+     candidato a cada 150 (7,7 m), longe da esquina. O HASH do ponto
+     diz se ali tem alguma coisa e o quê; nada sai do `rng()`, então a
+     cidade é a mesma e o ponto também, toda vez. Um grupo só entra se
+     CADA peça dele cabe na calçada (nem no asfalto, nem no lote, nem
+     na calçada da avenida), longe do tronco, do poste, do semáforo, da
+     faixa de pedestre, do carro e de outro grupo. Na praça, o banco de
+     caixote vira o banco de madeira, de frente pro coreto, com um
+     cesto a cada dois; nas pracinhas das cunhas, a mesma coisa. E na
+     rua sem saída, o lixo da vizinhança amontoado debaixo do "É
+     PROIBIDO JOGAR LIXO".
+
+     O QUE BARRA. O contêiner, a lixeira de rodinha, a barreira e a
+     caixa de correio barram o boneco (são móvel de verdade, e ficam
+     todos na beira da guia: a calçada continua passando). Saco, caixa,
+     cone, balizador, hidrante, cesto, cinzeiro e o banco da praça não:
+     a praça é onde a torcida se junta, e o miúdo não pode fazer da
+     calçada um labirinto.
+     ========================================================= */
+  const PROPS = [];
+  const PROPS_SOLIDOS = [], baldesProps = new Map();
+  (function(){
+    const M = METRO;
+    const hash = (...n) => {
+      let h = 2166136261;
+      for(const v of n){ h = Math.imul(h ^ Math.round(v), 16777619); h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; }
+      return h >>> 0;
+    };
+    const sorte = (...n) => hash(...n)/4294967296;
+    /* a meia medida de cada peça, em metros: ao longo da frente (x) e
+       de frente pra trás (z) — o que ela ocupa no chão */
+    const MEIA = { cacamba: [0.78, 0.6], lixeira: [0.33, 0.44], saco: [0.33, 0.33], caixa: [0.36, 0.3],
+                   cesto: [0.24, 0.24], barreira: [1.0, 0.3], correio: [0.25, 0.23], hidrante: [0.18, 0.18],
+                   balizador: [0.07, 0.07], espuma: [0.13, 0.13], delineador: [0.19, 0.19], cone: [0.18, 0.18],
+                   cinzeiro: [0.18, 0.18], banco: [0.9, 0.3] };
+    const BARRA = new Set(['cacamba', 'lixeira', 'barreira', 'correio']);
+    const naCalcada = (x, y) => {
+      const q = celulaEm(x, y);
+      return !!q && q.tipo === 'quadra' && !dentroPol(x, y, q.polMiolo) && dentroPol(x, y, q.pol) &&
+             !naAvenida(x, y, CALC) && !noAsfalto(x, y) && !noCarro(x, y) &&
+             /* a boca da rua sem saída corta a calçada do quarteirão */
+             !SEM_SAIDA.asfalto.some(r => x > r.x0 - 6 && x < r.x1 + 6 && y > r.y0 - 6 && y < r.y1 + 6);
+    };
+    const longeDe = (x, y, r) =>
+      ARVORES.every(a => Math.hypot(x - a.x, y - a.y) > r + 5) &&
+      POSTES.every(p => Math.hypot(x - p.x, y - p.y) > r + 9) &&
+      SEMAFOROS.every(s => Math.hypot(x - s.x, y - s.y) > r + 14) &&
+      FAIXAS.every(f => Math.hypot(x - f.x, y - f.y) > r + 64) &&
+      PROPS.every(p => Math.hypot(x - p.x, y - p.y) > r + p.r + 10);
+    /* o retângulo que a peça ocupa no chão, já girado (ângulo reto) */
+    const pegada = (k, x, y, ang, s) => {
+      const [hx, hz] = MEIA[k].map(v => v*M*(s || 1));
+      const c = Math.abs(Math.cos(ang)), sn = Math.abs(Math.sin(ang));
+      const ex = hx*c + hz*sn, ey = hx*sn + hz*c;
+      return { x0: x - ex, x1: x + ex, y0: y - ey, y1: y + ey };
+    };
+    const poe = (p, alt0) => {
+      const r = Math.hypot(...MEIA[p.k])*M*(p.s || 1);
+      const o = Object.assign({ v: 0, s: 1, alt0 }, p, { r });
+      PROPS.push(o);
+      if(BARRA.has(o.k)){
+        const b = pegada(o.k, o.x, o.y, o.ang, o.s);
+        PROPS_SOLIDOS.push(b);
+        for(let i = Math.floor(b.x0/64); i <= Math.floor(b.x1/64); i++)
+          for(let j = Math.floor(b.y0/64); j <= Math.floor(b.y1/64); j++){
+            const ch = i + ',' + j;
+            if(!baldesProps.has(ch)) baldesProps.set(ch, []);
+            baldesProps.get(ch).push(b);
+          }
+      }
+    };
+
+    /* OS GRUPOS, em metros: `u` ao longo da guia, `w` da guia pra dentro
+       (o centro da peça), `da` um giro a mais (o que se larga não fica
+       alinhado). `h` é o hash do ponto: ele escolhe cor, quantidade e
+       o jeito de cada coisa. */
+    const G = 0.35;                                  // a folga da peça pra guia
+    const GRUPOS = {
+      lixo: h => [{ k: 'cacamba', u: 0, w: G + 0.6 },
+                  { k: 'saco', u: 1.02, w: G + 0.3, v: h, s: 0.95, da: h % 7 },
+                  { k: 'saco', u: 1.5, w: G + 0.55, v: h + 1, da: h % 5 },
+                  { k: 'saco', u: 1.1, w: G + 0.9, v: h + 2, s: 0.85, da: h % 3 },
+                  ...(h % 2 ? [{ k: 'saco', u: 1.95, w: G + 0.3, v: h + 3, s: 1.1 }] : []),
+                  { k: 'caixa', u: -1.25, w: G + 0.35, v: h, da: 0.35 },
+                  ...(h % 3 === 0 ? [{ k: 'caixa', u: -1.35, w: G + 1.05, v: h + 1, da: -0.5 }] : [])],
+      seletiva: h => {
+        const n = 3 + h % 3, g = [];
+        for(let i = 0; i < n; i++) g.push({ k: 'lixeira', u: i*0.7, w: G + 0.44, v: h + i });
+        g.push({ k: 'saco', u: n*0.7 + 0.1, w: G + 0.3, v: h, da: h % 7 }, { k: 'saco', u: n*0.7 + 0.35, w: G + 0.8, v: h + 2, s: 0.9 });
+        if(h % 2) g.push({ k: 'caixa', u: -0.75, w: G + 0.35, v: h, da: -0.3 });
+        return g;
+      },
+      sacos: h => [{ k: 'saco', u: 0, w: G + 0.3, v: h, da: h % 7 }, { k: 'saco', u: 0.5, w: G + 0.45, v: h + 1, s: 0.9 },
+                   ...(h % 2 ? [{ k: 'saco', u: 0.2, w: G + 0.85, v: h + 2, s: 1.05 }] : []),
+                   { k: 'caixa', u: -0.6, w: G + 0.3, v: h, da: 0.4 }],
+      cesto: h => [{ k: 'cesto', u: 0, w: G + 0.25, v: h }],
+      hidrante: () => [{ k: 'hidrante', u: 0, w: G + 0.2 }],
+      correio: () => [{ k: 'correio', u: 0, w: G + 0.25 }],
+      balizadores: h => (h % 2 ? [-1.2, 0, 1.2] : [-0.8, 0.8]).map(u => ({ k: h % 3 === 0 ? 'espuma' : 'balizador', u, w: 0.3 })),
+      obra: h => [{ k: 'barreira', u: 0, w: G + 0.3 }, { k: 'cone', u: 1.45, w: G + 0.2, da: 0.4 },
+                  { k: 'cone', u: 1.95, w: G + 0.55, da: 1.1 }, { k: 'delineador', u: -1.4, w: G + 0.2 },
+                  ...(h % 2 ? [{ k: 'cone', u: -1.9, w: G + 0.45 }] : [])],
+      cinzeiro: () => [{ k: 'cinzeiro', u: 0, w: G + 0.2 }]
+    };
+    /* o que sai em cada ponto: comércio atrás puxa cinzeiro e correio */
+    const PESOS = [['lixo', 24], ['seletiva', 18], ['sacos', 8], ['cesto', 14], ['hidrante', 11],
+                   ['balizadores', 9], ['obra', 7], ['correio', 4], ['cinzeiro', 5]];
+    const PESOS_COMERCIO = [['lixo', 20], ['seletiva', 8], ['sacos', 12], ['cesto', 12], ['hidrante', 6],
+                            ['balizadores', 6], ['obra', 4], ['correio', 14], ['cinzeiro', 18]];
+    const escolhe = (pesos, r) => {
+      let tot = 0; for(const [, p] of pesos) tot += p;
+      let a = r*tot;
+      for(const [k, p] of pesos){ if(a < p) return k; a -= p; }
+      return pesos[pesos.length - 1][0];
+    };
+    /* monta o grupo no chão: devolve as peças no mundo, ou nada se
+       alguma não cabe */
+    const montar = (g, ponto, alt0) => {
+      const pecas = [];
+      for(const p of g){
+        const [x, y] = ponto(p.u*M, p.w*M);
+        const ang = ponto.ang + (p.da || 0);
+        const b = pegada(p.k, x, y, ponto.ang, p.s);
+        if(![[b.x0, b.y0], [b.x1, b.y0], [b.x0, b.y1], [b.x1, b.y1], [x, y]].every(([a, c]) => naCalcada(a, c))) return null;
+        const r = Math.hypot(...MEIA[p.k])*M*(p.s || 1);
+        if(!longeDe(x, y, r)) return null;
+        /* o que barra não fica de frente pra carro parado na guia: o
+           asfalto entre os dois virava um beco onde o corpo não passa */
+        if(BARRA.has(p.k) && CARROS.some(c => c.x0 < b.x1 + 32 && c.x1 > b.x0 - 32 && c.y0 < b.y1 + 32 && c.y1 > b.y0 - 32))
+          return null;
+        pecas.push({ k: p.k, x, y, ang, v: p.v || 0, s: p.s || 1 });
+      }
+      for(const p of pecas) poe(p, alt0);
+      return pecas;
+    };
+
+    /* ---- a calçada dos quarteirões ---- */
+    const PASSO = 150, ESQUINA = 96;
+    for(const q of QUADRAS){
+      const lados = [
+        { f: 'n', a0: q.x0, a1: q.x1, olha: [0, -1], ponto: (u, w) => [u, q.y0 + w] },
+        { f: 's', a0: q.x0, a1: q.x1, olha: [0, 1],  ponto: (u, w) => [u, q.y1 - w] },
+        { f: 'o', a0: q.y0, a1: q.y1, olha: [-1, 0], ponto: (u, w) => [q.x0 + w, u] },
+        { f: 'l', a0: q.y0, a1: q.y1, olha: [1, 0],  ponto: (u, w) => [q.x1 - w, u] }
+      ];
+      lados.forEach((L, li) => {
+        const ang = Math.atan2(L.olha[0], L.olha[1]);
+        for(let k = 0, u = L.a0 + ESQUINA; u < L.a1 - ESQUINA; k++, u += PASSO){
+          if(sorte(q.i, q.j, li, k, 11) > 0.34) continue;
+          /* o lote de trás: comércio muda o que se põe na calçada, e a
+             sede da torcida fica com a calçada livre */
+          const nS = L.f === 'n' || L.f === 's';
+          const atras = q.lotes.find(l => !l.ang && l.frente === L.f && (nS ? l.x0 <= u && l.x1 > u : l.y0 <= u && l.y1 > u));
+          if(q.equip && q.equip.tipo === 'sede') continue;
+          const h = hash(q.i, q.j, li, k, 5);
+          const tipo = escolhe(atras && atras.placa ? PESOS_COMERCIO : PESOS, sorte(q.i, q.j, li, k, 7));
+          const ponto = (du, dw) => L.ponto(u + du, dw);
+          ponto.ang = ang;
+          montar(GRUPOS[tipo](h % 1000), ponto, 1.4);
+        }
+      });
+    }
+
+    /* ---- a praça: o banco de madeira de frente pro coreto, e o cesto ---- */
+    for(const q of QUADRAS){
+      if(!q.equip || q.equip.tipo !== 'praca') continue;
+      const eq = q.equip, coreto = eq.pecas.find(o => o.k === 'coreto');
+      const bancos = eq.pecas.filter(o => o.k === 'banco');
+      eq.pecas = eq.pecas.filter(o => o.k !== 'banco');
+      bancos.forEach((b, i) => {
+        const mx = (b.x0 + b.x1)/2, my = (b.y0 + b.y1)/2;
+        const fx = coreto.x - mx, fy = coreto.y - my, l = Math.hypot(fx, fy) || 1;
+        poe({ k: 'banco', x: mx, y: my, ang: Math.atan2(fx/l, fy/l) }, 1.65);
+        if(i % 2 === 0) poe({ k: 'cesto', x: mx - fy/l*28, y: my + fx/l*28, ang: 0, v: i/2 }, 1.65);
+      });
+    }
+    /* ---- as pracinhas das cunhas ---- */
+    for(const q of QUADRAS) for(const pr of q.pracinhas || []){
+      const bancos = pr.pecas.filter(o => o.k === 'banco');
+      if(!bancos.length) continue;
+      pr.pecas = pr.pecas.filter(o => o.k !== 'banco');
+      bancos.forEach((b, i) => {
+        const mx = (b.x0 + b.x1)/2, my = (b.y0 + b.y1)/2;
+        const fx = pr.cx - mx, fy = pr.cy - my, l = Math.hypot(fx, fy) || 1;
+        poe({ k: 'banco', x: mx, y: my, ang: Math.atan2(fx/l, fy/l) }, 1.7);
+        if(i === 0) poe({ k: 'cesto', x: mx, y: my + 22, ang: 0, v: hash(q.i, q.j) % 5 }, 1.7);
+      });
+    }
+
+    /* ---- o lixo da rua sem saída, debaixo do "É PROIBIDO JOGAR LIXO" ---- */
+    const muro = SEM_SAIDA.lotes.find(l => l.tipo === 'muro');
+    if(muro){
+      const y = muro.y1, x = muro.x0 + 10;
+      const ponto = (du, dw) => [x + du, y + dw];
+      ponto.ang = 0;                                   // de frente pro T, pro sul
+      const g = [{ k: 'lixeira', u: 0.45, w: 0.5, v: 3 }, { k: 'lixeira', u: 1.15, w: 0.5, v: 1 },
+                 { k: 'saco', u: 1.95, w: 0.35, v: 5, da: 1 }, { k: 'saco', u: 2.4, w: 0.55, v: 6, s: 1.1 },
+                 { k: 'saco', u: 2.1, w: 0.95, v: 7, s: 0.9 }, { k: 'saco', u: 2.85, w: 0.35, v: 8 },
+                 { k: 'caixa', u: 3.4, w: 0.4, v: 1, da: 0.5 }, { k: 'caixa', u: 3.3, w: 0.95, v: 2, da: -0.3 }];
+      for(const p of g){
+        const [px, py] = ponto(p.u*M, p.w*M);
+        poe({ k: p.k, x: px, y: py, ang: (p.da || 0), v: p.v, s: p.s || 1 }, 1.4);
+      }
+    }
+  })();
+  function noProp(x, y){
+    const l = baldesProps.get(Math.floor(x/64) + ',' + Math.floor(y/64));
+    if(!l) return null;
+    for(const b of l) if(x >= b.x0 && x < b.x1 && y >= b.y0 && y < b.y1) return b;
+    return null;
+  }
+
+  /* na rua sem saída se anda: asfalto e calçada, dentro do miolo maciço */
+  const naRuaSemSaida = (q, x, y) => {
+    const s = q.semSaida;
+    if(!s || x < s.caixa.x0 || x >= s.caixa.x1 || y < s.caixa.y0 || y >= s.caixa.y1) return false;
+    return s.livre.some(r => x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1);
+  };
+
   const naMassaDoAtacadex = (x, y) => {
     const c = ATACADEX.caixa;
     if(x < c.x0 || x > c.x1 || y < c.y0 || y > c.y1) return false;
@@ -4313,8 +4806,10 @@ TO.dados.plantaEstadio = (function(){
     const c = ATACADEX.caixa;
     if(x >= c.x0 && x <= c.x1 && z >= c.y0 && z <= c.y1)
       return ATACADEX.volumes.some(v => x >= v.x0 && x < v.x1 && z >= v.y0 && z < v.y1 && y >= v.base && y < v.alt);
+    /* o marco da ponta do quarteirão e os prédios do baldio: todo
+       equipamento que tem volume */
     const q = celulaEm(x, z);
-    if(!q || !q.equip || q.equip.tipo !== 'marco') return false;
+    if(!q || !q.equip || !q.equip.volumes) return false;
     for(const v of q.equip.volumes)
       if(x >= v.x0 && x < v.x1 && z >= v.y0 && z < v.y1 && y >= v.base && y < v.alt) return true;
     return false;
@@ -4327,7 +4822,7 @@ TO.dados.plantaEstadio = (function(){
                    areaPol, noAsfalto, BEIRA, naBeira, CAMPOS, CERCA, PORTEIRA,
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe, BARES, CRUZAMENTOS, SEMAFOROS, FAIXAS,
-                   FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES, MARCOS: MARCOS_POSTOS, noMarco,
+                   FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES, MARCOS: MARCOS_POSTOS, PREDIOS: PREDIOS_BALDIO, PROPS, noProp, noMarco,
                    ATACADEX };
 
   /* =======================================================
@@ -4382,6 +4877,7 @@ TO.dados.plantaEstadio = (function(){
     const c = noCampo(x, y);
     if(c) return andaNoCampo(c, x, y);
     if(noCarro(x, y)) return false;
+    if(noProp(x, y)) return false;
     if(naMassaDoAtacadex(x, y)) return false;
     const q = celulaEm(x, y);
     /* PAREDE DE EQUIPAMENTO GANHA DA AVENIDA.
@@ -4403,6 +4899,7 @@ TO.dados.plantaEstadio = (function(){
         const a = q.equip.area;
         if(x >= a.x0 && x < a.x1 && y >= a.y0 && y < a.y1) return true;
       }
+      if(naRuaSemSaida(q, x, y)) return true;
       return !dentroPol(x, y, q.polMiolo);
     }
     if(z === 'mato') return !naMoita(x, y) && !naBeira(x, y);

@@ -2,8 +2,9 @@
    OS MARCOS — cinco prédios modelados peça por peça, e o atacarejo
    ---------------------------------------------------------
    A igreja matriz, o prédio alto, o prédio de três andares com o
-   mercado, o centro administrativo e a casa de classe média; e o
-   ATACADEX, o atacarejo no mato a oeste da cidade. Quem diz
+   mercado, o centro administrativo e a casa de classe média; o
+   ATACADEX, o atacarejo no mato a oeste da cidade; e as duas torres
+   do condomínio que tomou o miolo do baldio. Quem diz
    ONDE cada um fica, pra que lado olha e quais são os volumes grandes
    é a planta (`dados/cena_estadio.js`, "OS MARCOS"); aqui a massa
    ganha fachada.
@@ -689,6 +690,222 @@ function atacadex(B, m) {
 }
 
 /* =======================================================
+   7. OS DOIS PRÉDIOS DO BALDIO — o condomínio de duas torres
+   O Edifício Mirante (concreto cinza, o rasgo e a quina de vidro
+   azul, a coroa da casa de máquinas e a caixa da portaria) e o
+   Residencial Bela Vista (quadro branco, tijolinho laranja, as
+   sacadas de vidro com a borda branca da laje, a aleta que passa do
+   telhado e o pórtico com o nome). Cada um no seu meio terreno, com o
+   muro do condomínio: frente, fundo e o lado que dá pra rua.
+   ======================================================= */
+/* o muro do condomínio: a frente com a guarita, o portãozinho e o
+   portão da garagem de grade preta; o fundo; e o lado da rua */
+function muroCondominio(B, G, m, kBranco) {
+  const { W, D, muro: h } = m, e = 0.25, r = m.recMuro || 0;
+  const esq = m.ladoRua === 'esq', dir = m.ladoRua === 'dir';
+  const lisa = { todas: 'muro', topo: { k: 'muro', modo: 'esticar', parte: [0, 1, 0.95, 1] }, base: null };
+  const g = m.guarita;
+  /* a frente, recuada `r` da divisa (a pixação e a placa saem à frente
+     dele sem pendurar na calçada), com os três furos */
+  const furos = [[g.x0, g.x1], [m.pedestre.a0, m.pedestre.a1], [m.portao.a0, m.portao.a1]].sort((a, b) => a[0] - b[0]);
+  let a = esq ? r : 0;
+  const fim = dir ? W - r : W;
+  for (const [f0, f1] of furos) {
+    if (f0 - a > 0.02) B.caixa(a, f0, 0, h, -r - e, -r, lisa);
+    a = f1;
+  }
+  if (fim - a > 0.02) B.caixa(a, fim, 0, h, -r - e, -r, lisa);
+  for (const [f0, f1] of [[m.pedestre.a0, m.pedestre.a1], [m.portao.a0, m.portao.a1]]) {
+    G.ladrilhar(G.plano([f0, 0, -r - e / 2], [1, 0, 0], [0, 1, 0]), G.ret(0, f1 - f0, 0, 2.2), 'preta');
+    for (const x of [f0, f1]) {
+      B.caixa(x - 0.16, x + 0.16, 0, h, -r - 0.4, -r, { todas: 'muro', base: null, topo: null });
+      B.caixa(x - 0.2, x + 0.2, h, h + 0.12, -r - 0.44, -r, { todas: kBranco });
+    }
+  }
+  /* a guarita encaixada no muro, com o vidro fumê pra rua */
+  B.caixa(g.x0, g.x1, 0, g.alt, g.z0, g.z1, { todas: kBranco, frente: null, base: null });
+  B.esticar(B.plano([0, 0, g.z1 + 0.01], [1, 0, 0], [0, 1, 0]), g.x0, g.x1, 0, g.alt, 'guarita');
+  B.caixa(g.x0 - 0.25, g.x1 + 0.25, g.alt, g.alt + 0.18, g.z0 - 0.2, g.z1, { todas: kBranco, topo: 'cobertura' });
+  if (esq) B.caixa(r, r + e, 0, h, -D, -r - e, lisa);
+  if (dir) B.caixa(W - r - e, W - r, 0, h, -D, -r - e, lisa);
+  B.caixa(esq ? r + e : 0, dir ? W - r - e : W, 0, h, -D, -D + e, lisa);
+}
+
+/* uma fileira de faixas verticais numa face: cada faixa é [peça,
+   largura]; peça de ANDAR (módulo) é empilhada uma por andar, peça de
+   PAREDE é ladrilhada inteira */
+function faixas(B, F, a0, b0, nAnd, pe, lista, porAndar) {
+  let a = a0;
+  for (const [k, w] of lista) {
+    if (porAndar.has(k)) B.modulos(F, a, a + w, b0, b0 + nAnd * pe, 1, nAnd, () => k);
+    else B.ladrilhar(F, B.ret(a, a + w, b0, b0 + nAnd * pe), k);
+    a += w;
+  }
+}
+
+function torre1(B, m, G) {
+  const { x0, x1, zf, zb, hT, pe: PE, andares: N, e1, r1, q0, hTopo, hEsq } = m;
+  const dR = m.fundoRasgo, dq = m.dobra, C = m.coroa, Pt = m.portaria, prof = zf - zb;
+  const peca = { j: 't1_jan', c: 't1_cego', v: 't1_vidro' };
+  /* uma grade de módulos de andar: `padrao` é uma letra por coluna
+     (j = janelinha, c = cego, v = vidro) */
+  const grade = (F, a0, a1, b0, nAnd, padrao) =>
+    B.modulos(F, a0, a1, b0, b0 + nAnd * PE, padrao.length, nAnd, i => peca[padrao[i]]);
+  const Ff = B.plano([0, 0, zf], [1, 0, 0], [0, 1, 0]);
+
+  /* ---- o térreo: o saguão de vidro, com a porta atrás da portaria ---- */
+  const pc = (Pt.x0 + Pt.x1) / 2 - x0;
+  B.fachada(B.plano([x0, 0, zf], [1, 0, 0], [0, 1, 0]), x1 - x0, hT, 't1_concreto', [
+    { a0: 2.2, a1: 4.8, b0: 0, b1: hT - 0.3, k: 't1_terreo' },
+    { a0: 4.8, a1: 7.4, b0: 0, b1: hT - 0.3, k: 't1_terreo' },
+    { a0: 7.4, a1: pc - 1.2, b0: 0, b1: hT - 0.3, k: 't1_terreo' },
+    { a0: pc - 1.2, a1: pc + 1.2, b0: 0, b1: hT - 0.3, k: 't1_porta' },
+    { a0: pc + 1.2, a1: pc + 3.7, b0: 0, b1: hT - 0.3, k: 't1_terreo' }
+  ]);
+  const Fd = B.plano([x1, 0, zf], [0, 0, -1], [0, 1, 0]);          // o lado da direita, da frente pro fundo
+  const Fe = B.plano([x0, 0, zb], [0, 0, 1], [0, 1, 0]);           // o da esquerda, do fundo pra frente
+  const Ft = B.plano([x1, 0, zb], [-1, 0, 0], [0, 1, 0]);          // o fundo, da direita pra esquerda
+  for (const [F, L] of [[Fd, prof], [Fe, prof], [Ft, x1 - x0]]) B.ladrilhar(F, B.ret(0, L, 0, hT), 't1_concreto');
+
+  /* ---- a frente: a massa da esquerda, o rasgo, a massa da direita e a quina ---- */
+  grade(Ff, x0, e1, hT, N - 1, 'cjc');
+  grade(Ff, r1, q0, hT, N, 'jccj');
+  grade(Ff, q0, x1, hT, N, 'v');
+  /* o RASGO: a cortina de vidro no fundo dele, as duas paredes de
+     concreto e o piso na altura do teto do térreo */
+  grade(B.plano([0, 0, zf - dR], [1, 0, 0], [0, 1, 0]), e1, r1, hT, N, 'v');
+  B.ladrilhar(B.plano([r1, 0, zf - dR], [0, 0, 1], [0, 1, 0]), B.ret(0, dR, hT, hTopo), 't1_concreto', { escuro: 0.85 });
+  B.ladrilhar(B.plano([e1, 0, zf], [0, 0, -1], [0, 1, 0]), B.ret(0, dR, hT, hEsq), 't1_concreto', { escuro: 0.85 });
+  B.tampa([[e1, zf], [r1, zf], [r1, zf - dR], [e1, zf - dR]], hT, 't1_concreto');
+  /* ---- os lados e o fundo ---- */
+  grade(Fd, 0, dq, hT, N, 'v');                                     // a quina de vidro dobra pro lado
+  grade(Fd, dq, prof, hT, N, 'cjccjc');
+  grade(Fe, 0, prof, hT, N - 1, 'cjcvcjc');
+  grade(Ft, 0, x1 - e1, hT, N, 'cjcvjc');
+  grade(Ft, x1 - e1, x1 - x0, hT, N - 1, 'cjc');
+  /* o último andar da massa da direita, por cima do telhado da esquerda */
+  grade(B.plano([e1, 0, zb], [0, 0, 1], [0, 1, 0]), 0, prof - dR, hEsq, 1, 'cjcjc');
+  /* o friso da laje no vidro: é o relevo que faz a cortina ler como
+     andares, e não como papel azul */
+  for (let j = 1; j < N; j++) {
+    const y = hT + j * PE;
+    B.caixa(e1, r1, y - 0.08, y + 0.08, zf - dR, zf - dR + 0.14, { todas: 't1_concreto', base: null });
+    B.caixa(q0, x1 + 0.1, y - 0.08, y + 0.08, zf - dq, zf + 0.1, { todas: 't1_concreto' });
+  }
+
+  /* ---- os telhados: a massa da esquerda um andar abaixo, a laje de
+     cima em L (o rasgo fica aberto pro céu) e a coroa ---- */
+  const tetoE = [[x0, zf], [e1, zf], [e1, zb], [x0, zb]];
+  B.tampa(tetoE, hEsq, 'cobertura');
+  mureta(B, tetoE, hEsq, 1.0, 0.18, 't1_concreto');
+  B.tampa([[e1, zf - dR], [r1, zf - dR], [r1, zb], [e1, zb]], hTopo, 'cobertura');
+  B.tampa([[r1, zf], [x1, zf], [x1, zb], [r1, zb]], hTopo, 'cobertura');
+  mureta(B, [[e1, zf - dR], [r1, zf - dR], [r1, zf], [x1, zf], [x1, zb], [e1, zb]], hTopo, 1.0, 0.18, 't1_concreto');
+  B.caixa(C.x0, C.x1, hTopo, C.alt, C.z0, C.z1 + 0.03, { todas: 't1_concreto', frente: null, topo: 'cobertura', base: null });
+  B.esticar(B.plano([0, 0, C.z1 + 0.03], [1, 0, 0], [0, 1, 0]), C.x0, C.x1, hTopo, C.alt, 't1_coroa');
+  mureta(B, [[C.x0, C.z1 + 0.03], [C.x1, C.z1 + 0.03], [C.x1, C.z0], [C.x0, C.z0]], C.alt, 0.6, 0.15, 't1_concreto');
+
+  /* ---- a caixa da portaria: a laje com o nome e as duas paredes ---- */
+  B.caixa(Pt.x0, Pt.x1, 2.9, Pt.alt, Pt.z0, Pt.z1, { todas: 't1_concreto', frente: null, topo: 'cobertura' });
+  B.esticar(B.plano([0, 0, Pt.z1 + 0.01], [1, 0, 0], [0, 1, 0]), Pt.x0, Pt.x1, 2.9, Pt.alt, 't1_placa');
+  for (const [a, b] of [[Pt.x0, Pt.x0 + 0.25], [Pt.x1 - 0.25, Pt.x1]])
+    B.caixa(a, b, 0, 2.9, Pt.z0, Pt.z1, { todas: 't1_concreto', base: null });
+
+  muroCondominio(B, G, m, 't2_branco');
+}
+
+function torre2(B, m, G) {
+  const { x0, x1, zf, zb, hT, pe: PE, andares: N, hTopo, xm } = m;
+  const cn = m.canto, sc = m.sacada, tj = m.tij, fs = m.fundoSacada, P = m.portico, A = m.aletaV;
+  const xa = x0 + cn, xb = xa + tj, xc = xb + sc, xd = xc + m.aleta, xe = xd + sc, xf = xe + tj;
+  const prof = zf - zb, H = hTopo - hT;
+  const porAndar = new Set(['t2_jan_br', 't2_jan_tij', 't2_sacada']);
+  const Ff = B.plano([0, 0, zf], [1, 0, 0], [0, 1, 0]);
+
+  /* ---- o térreo alto: o saguão de vidro com a porta debaixo da aleta ---- */
+  const r = xm - x0;
+  B.fachada(B.plano([x0, 0, zf], [1, 0, 0], [0, 1, 0]), x1 - x0, hT, 't2_branco', [
+    { a0: 1.5, a1: (1.5 + r - 1.2) / 2, b0: 0, b1: hT - 0.3, k: 't2_terreo' },
+    { a0: (1.5 + r - 1.2) / 2, a1: r - 1.2, b0: 0, b1: hT - 0.3, k: 't2_terreo' },
+    { a0: r - 1.2, a1: r + 1.2, b0: 0, b1: hT - 0.3, k: 't2_porta' },
+    { a0: r + 1.2, a1: (r + 1.2 + x1 - x0 - 1.5) / 2, b0: 0, b1: hT - 0.3, k: 't2_terreo' },
+    { a0: (r + 1.2 + x1 - x0 - 1.5) / 2, a1: x1 - x0 - 1.5, b0: 0, b1: hT - 0.3, k: 't2_terreo' }
+  ]);
+  const Fd = B.plano([x1, 0, zf], [0, 0, -1], [0, 1, 0]);
+  const Fe = B.plano([x0, 0, zb], [0, 0, 1], [0, 1, 0]);
+  const Ft = B.plano([x1, 0, zb], [-1, 0, 0], [0, 1, 0]);
+  for (const [F, L] of [[Fd, prof], [Fe, prof], [Ft, x1 - x0]]) B.ladrilhar(F, B.ret(0, L, 0, hT), 't2_branco');
+
+  /* ---- a frente e o fundo em faixas: quina branca, tijolinho com a
+     janela do lado da sacada, sacada, aleta (ou a faixa branca, no
+     fundo), sacada, tijolinho, quina ---- */
+  const tijE = [['t2_tijolo', tj - 1.3], ['t2_jan_tij', 1.3]], tijD = [['t2_jan_tij', 1.3], ['t2_tijolo', tj - 1.3]];
+  faixas(B, Ff, x0, hT, N, PE, [['t2_jan_br', cn], ...tijE], porAndar);
+  faixas(B, Ff, xe, hT, N, PE, [...tijD, ['t2_jan_br', cn]], porAndar);
+  /* no fundo o `a` corre da direita pra esquerda: a mesma ordem, espelhada */
+  faixas(B, Ft, 0, hT, N, PE, [['t2_jan_br', cn], ...tijE], porAndar);
+  faixas(B, Ft, x1 - xb, hT, N, PE, [...tijD, ['t2_jan_br', cn]], porAndar);
+  /* AS SACADAS, na frente e no fundo: o fundo de vidro recuado, as
+     paredes brancas do recuo, a borda da laje de cada andar e o
+     guarda-corpo de vidro */
+  const sacadas = (zFace, sentido) => {
+    const zFundo = zFace - sentido * fs;
+    for (const [s0, s1] of [[xb, xc], [xd, xe]]) {
+      const Fs = sentido > 0 ? B.plano([0, 0, zFundo], [1, 0, 0], [0, 1, 0])
+                             : B.plano([0, 0, zFundo], [-1, 0, 0], [0, 1, 0]);
+      const [a0, a1] = sentido > 0 ? [s0, s1] : [-s1, -s0];
+      B.modulos(Fs, a0, a1, hT, hTopo, 1, N, () => 't2_sacada');
+      B.tampa([[s0, zFace], [s1, zFace], [s1, zFundo], [s0, zFundo]], hT, 't2_branco');
+      for (let j = 0; j < N; j++) {
+        const y = hT + j * PE;
+        const zA = Math.min(zFace, zFundo), zB = Math.max(zFace, zFundo);
+        B.caixa(s0, s1, y - 0.2, y, zA - (sentido < 0 ? 0.05 : 0), zB + (sentido > 0 ? 0.05 : 0), { todas: 't2_branco' });
+        const Fg = sentido > 0 ? B.plano([0, 0, zFace + 0.03], [1, 0, 0], [0, 1, 0])
+                               : B.plano([0, 0, zFace - 0.03], [-1, 0, 0], [0, 1, 0]);
+        B.esticar(Fg, a0, a1, y, y + 1.1, 't2_guarda');
+      }
+    }
+  };
+  sacadas(zf, 1);
+  sacadas(zb, -1);
+  /* as paredes do recuo que não são da aleta nem da faixa do meio */
+  B.ladrilhar(B.plano([xb, 0, zf], [0, 0, -1], [0, 1, 0]), B.ret(0, fs, hT, hTopo), 't2_branco', { escuro: 0.85 });
+  B.ladrilhar(B.plano([xe, 0, zf - fs], [0, 0, 1], [0, 1, 0]), B.ret(0, fs, hT, hTopo), 't2_branco', { escuro: 0.85 });
+  B.ladrilhar(B.plano([xb, 0, zb + fs], [0, 0, -1], [0, 1, 0]), B.ret(0, fs, hT, hTopo), 't2_branco', { escuro: 0.85 });
+  B.ladrilhar(B.plano([xe, 0, zb], [0, 0, 1], [0, 1, 0]), B.ret(0, fs, hT, hTopo), 't2_branco', { escuro: 0.85 });
+  /* a ALETA na frente, do teto do térreo até passar do telhado, com o
+     chapéu; no fundo, a mesma faixa entre as sacadas, rente */
+  B.caixa(xc, xd, hT, A.alt, zf - fs, A.z1, { todas: 't2_branco', base: null });
+  B.caixa(xc - 0.2, xd + 0.2, A.alt, A.alt + 0.35, zf - fs - 0.2, A.z1 + 0.2, { todas: 't2_branco' });
+  B.caixa(xc, xd, hT, hTopo, zb, zb + fs, { todas: 't2_branco', base: null, topo: null });
+
+  /* ---- os lados: quina, tijolinho, a faixa branca do meio, tijolinho, quina ---- */
+  const lado = [['t2_jan_br', cn], ['t2_jan_tij', 1.3], ['t2_tijolo', 2.6], ['t2_jan_br', 1.2], ['t2_branco', prof - 2 * cn - 2 * 3.9 - 1.2],
+                ['t2_tijolo', 2.6], ['t2_jan_tij', 1.3], ['t2_jan_br', cn]];
+  faixas(B, Fd, 0, hT, N, PE, lado, porAndar);
+  faixas(B, Fe, 0, hT, N, PE, lado, porAndar);
+
+  /* ---- o telhado, a casa de máquinas e a caixa d'água ---- */
+  const teto = [[x0, zf], [x1, zf], [x1, zb], [x0, zb]];
+  B.tampa(teto, hTopo, 'cobertura');
+  mureta(B, teto, hTopo, 1.0, 0.18, 't2_branco');
+  B.caixa(xm - 2.5, xm + 2.5, hTopo, hTopo + 2.8, zb + 1.2, zb + 4.6, { todas: 't2_branco', topo: 'cobertura', base: null });
+  B.caixa(xm - 1.6, xm + 1.6, hTopo + 2.8, hTopo + 4.0, zb + 1.6, zb + 4.2, { todas: 't2_branco', topo: 'cobertura', base: null });
+
+  /* ---- o PÓRTICO: os dois pilares de tijolinho, a viga branca com o
+     nome, as duas vigas que amarram na fachada e a marquise da porta ---- */
+  for (const [a, b] of [[P.x0, P.x0 + P.pilar], [P.x1 - P.pilar, P.x1]])
+    B.caixa(a, b, 0, P.y0, P.z0, P.z1, { todas: 't2_tijolo', base: null });
+  B.caixa(P.x0, P.x1, P.y0, P.y1, P.z0, P.z1, { todas: 't2_branco' });
+  B.esticar(B.plano([0, 0, P.z1 + 0.01], [1, 0, 0], [0, 1, 0]), xm - 5.0, xm + 5.0, P.y0 + 0.2, P.y0 + 1.1, 't2_nome');
+  for (const x of [xa + 0.4, xf - 0.4])
+    B.caixa(x - 0.2, x + 0.2, P.y0 + 0.3, P.y1, zf, P.z0, { todas: 't2_branco' });
+  B.caixa(xm - 2.6, xm + 2.6, hT - 0.25, hT, zf, P.z0, { todas: 't2_branco' });
+
+  muroCondominio(B, G, m, 't2_branco');
+}
+
+/* =======================================================
    A MONTAGEM: da planta pro mundo
    ======================================================= */
 const MODELOS = {
@@ -697,7 +914,9 @@ const MODELOS = {
   loja:   { folha: 'loja',   montar: loja },
   adm:    { folha: 'adm',    montar: adm },
   casa:   { folha: 'casa',   montar: casa },
-  atacadex: { folha: 'atacadex', montar: atacadex }
+  atacadex: { folha: 'atacadex', montar: atacadex },
+  torre1: { folha: 'torres', montar: torre1 },
+  torre2: { folha: 'torres', montar: torre2 }
 };
 
 /* a mesma conta de `paraMundoDoMarco`, na planta */
@@ -736,11 +955,12 @@ export function montarModelos(P, opc = {}) {
     });
     return (materiais[folha] = mat);
   };
-  /* os marcos moram na ponta de um quarteirão; o atacarejo, no mato
-     a oeste — a planta dá os dois do mesmo jeito (fatia, frente, massa) */
+  /* os marcos moram na ponta de um quarteirão, os dois prédios no
+     miolo do baldio e o atacarejo no mato a oeste — a planta dá todos
+     do mesmo jeito (fatia, frente, massa) */
   const pecas = [];
   for (const q of K.QUADRAS) {
-    if (!q.equip || q.equip.tipo !== 'marco') continue;
+    if (!q.equip) continue;
     for (const pc of q.equip.pecas) if (pc.k === 'modelo') pecas.push(pc);
   }
   if (K.ATACADEX) pecas.push(K.ATACADEX);

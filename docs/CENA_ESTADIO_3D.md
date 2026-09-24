@@ -1643,6 +1643,130 @@ O que não é fiel, dito com todas as letras:
   depois dele. Empurrar a pintura mudaria o sorteio das moitas.
 - As texturas continuam pintadas por código.
 
+### 4.28. A rua sem saída, os dois prédios do baldio e os props de rua
+
+Três pedidos de uma vez: uma rua sem saída com casas em volta no miolo
+vazio que o dono circulou no mapa (o quarteirão 2,2, entre a avenida
+noroeste e a rua da delegacia); o terreno baldio virando dois prédios
+"no estilo do prédio que te mandei" (o prédio alto do centro, modelado
+peça por peça), sendo os dois das fotos; e o pacote de mobiliário de
+rua espalhado pelas calçadas — "os sacos de lixo ao lado dos tambores
+de lixo, caixas; cestos de lixo na praça, banco de madeira" —, tudo
+menos o poste, que ele vai mandar. Os três entram no FIM da planta,
+sem gastar `rng()`: o resto da cidade sai igual (medido abaixo).
+
+**A rua sem saída** (`SEM_SAIDA`, guardada em `q.semSaida`). Entra pela
+rua do sul no lugar do sobrado que ficava no meio da face, com 5,7 m
+de asfalto e calçada de 1,5 m dos dois lados; sobe 24 m pelo meio do
+quarteirão e acaba num T de retorno (16 × 5,1 m) encostado no fundo
+das casas da avenida. Em volta, dez lotes novos: três de cada lado da
+haste (4,8 m de frente, 5 m de fundo), três de frente pro T (a do meio
+e a de leste são sobrados, porque ali o fundo livre passa de 6 m) e,
+na ponta de oeste, onde o fundo das casas da avenida só deixa 2 m de
+chão, o muro de um terreno vazio com o "É PROIBIDO JOGAR LIXO". O tipo,
+a altura e a cor de cada lote saem da posição; a casa que vai nele
+(T1, T2, T4, T5…) e a roupa dela saem do hash, no `casas3d.js`, como
+no resto da cidade. Saíram o quintal e os dez puxadinhos do miolo; o
+sobrado da boca sumiu e o vizinho de leste estreitou pra 3,2 m. A rua
+é um conjunto de retângulos (asfalto, calçadas) e uma guia: o pintor
+do chão pinta calçada, asfalto e meio-fio; o `bairro3d.js` FURA as duas
+lajes (a de 1,4 da calçada no asfalto, a de 1,6 do lote no asfalto e
+na calçada — `menosRets`, corte de convexo por meio-plano), e a borda
+do furo é a guia; `andaNaCidade` anda nela antes de perguntar pelo
+miolo maciço. Um carro parado na haste; o T fica livre, que é retorno.
+
+**Os dois prédios** (`PREDIOS`, `MASSAS.torre1/torre2`, folha
+`torres.jpg`). O miolo murado do baldio virou um condomínio fechado de
+duas torres, uma em cada metade (22 × 19,6 m), de frente pra rua de
+oeste; a fileira de bares e lojas virada pro estádio ficou como estava.
+
+| prédio | o que tem |
+|---|---|
+| EDIFÍCIO MIRANTE | concreto cinza, térreo de 3,6 m e 18 andares (55,8 m, a coroa chega a 60 m); a frente partida pelo RASGO de 1,5 m de fundo com a cortina de vidro azul, a massa da esquerda um andar mais baixa, a da direita subindo na coroa da casa de máquinas com a veneziana, a quina de vidro azul que dobra pro lado; janelinha solta em coluna no concreto e o friso de laje no vidro; a caixa da portaria com o nome na frente |
+| RESIDENCIAL BELA VISTA | quadro branco, térreo de 4,2 m e 15 andares (47,7 m); os dois painéis de tijolinho laranja com a janela de requadro branco do lado das sacadas, as duas colunas de sacada recuada com o fundo de vidro azul, a borda branca da laje e o guarda-corpo de vidro em cada andar, e a ALETA branca no meio que passa 3,8 m do telhado, de chapéu; no fundo, as mesmas sacadas; o PÓRTICO de pilares de tijolinho e viga branca com o nome, amarrado na fachada, e a marquise da porta |
+| o condomínio | muro creme recuado 15 cm da divisa (frente, fundo e o lado da rua), guarita de vidro fumê com PORTARIA, portãozinho e portão de garagem de grade preta, jardim na frente, no lado e no fundo, e árvores |
+
+A massa de cada um (em metros, uma vez só) dá o que a câmera não
+atravessa — `noMarco` agora vale pra qualquer equipamento com
+`volumes`, não só marco — e o esqueleto do modelo; o terreno inteiro
+barra o boneco (condomínio fechado). O jardim é tinta no chão
+(`piso` com `soMapa`): a laje do pátio veste o material do chão, que
+lê a tinta, e a grama sai grama sem caixa nenhuma no 3D. A pixação de
+torcida do muro grande do baldio (a que dá pra cobrir) mudou pro muro
+do condomínio na mesma rua, com o mesmo dizer. Saíram o muro do
+baldio, o mato pintado, o entulho, os dois carros largados, as árvores
+e o poste de dentro, e 134 decalques de mato e entulho do chão. Custo:
+2.598 + 5.146 triângulos, uma folha de 116 KB e quatro chamadas de
+desenho.
+
+**Os props de rua** (`PROPS`, `props3d.js`, folha `props.jpg`). Catorze
+peças modeladas em metros: o contêiner verde de tampa cinza de duas
+folhas (com o encaixe do garfo e as rodinhas), a lixeira de rodinha de
+tampa colorida (laranja, vermelha, azul, verde, amarela), o saco de
+lixo de 100 litros (amassado, cada variante de um jeito, com o nó), a
+caixa de papelão aberta, o cesto de praça de chapa trançada (cinco
+cores), a barreira New Jersey, a caixa de correio vermelha, o
+hidrante, o balizador preto e amarelo, o balizador amarelo de espuma,
+o delineador laranja e branco, o cone, o cinzeiro de pé e o banco de
+ripa de madeira com pé de ferro. Cada peça é montada uma vez por
+variante e copiada pros lugares; o que cai no mesmo quadrado de
+1.600 vira uma malha (384 peças, 38,7 mil triângulos, dez malhas).
+
+Onde: na faixa de serviço da calçada (a que encosta na guia), um
+ponto a cada 7,7 m, longe da esquina; o hash do ponto diz se tem
+alguma coisa (um em três) e o quê — contêiner com sacos e caixas,
+lixeiras da coleta com sacos, sacos soltos, cesto, hidrante,
+balizadores, uma obra (barreira, cones, delineador), correio ou
+cinzeiro; atrás de comércio sai mais cinzeiro e correio. O grupo só
+entra se cada peça cabe na calçada, longe de tronco, poste, semáforo,
+faixa de pedestre, carro e de outro grupo — e o que barra não fica de
+frente pra carro parado na guia (no primeiro teste uma barreira fez
+um beco de dois quadradinhos entre ela e o carro). Na praça, os oito
+bancos de caixote viraram o banco de madeira, de frente pro coreto,
+com um cesto a cada dois; nas cinco pracinhas das cunhas, o mesmo. Na
+rua sem saída, duas lixeiras, quatro sacos e duas caixas amontoados
+debaixo do "É PROIBIDO JOGAR LIXO". Barram o boneco o contêiner, a
+lixeira de rodinha, a barreira e o correio; o miúdo e o banco da praça
+não (a praça é onde a torcida se junta).
+
+**O que se mediu.** A planta de antes contra a de agora: 618 lotes
+viraram 627 — só mudaram os dois sobrados da boca, mais os dez lotes
+novos; quarteirões, casas de beira, favela, árvores, postes e moitas
+idênticos; um carro a mais (o da haste) e 134 decalques a menos, todos
+no baldio. A máscara mudou em 7.174 células: 4.761 no baldio (o
+condomínio é fechado), 1.886 que passaram a ser andáveis na rua sem
+saída, e umas dezenas por quarteirão onde entrou peça que barra. A
+passagem continua 100% (os mesmos 10 bolsões isolados de antes, nenhum
+novo). As casas: 0 passando da divisa, 0 sem porta na frente; a
+auditoria de geometria e a varredura, limpas (a auditoria pegou a
+pixação do muro novo pendurada meio ponto sobre a calçada: o muro do
+condomínio recuou 15 cm da divisa, como o do baldio recuava). A cena
+monta em ~8,1 s (era ~7,5–8) e desenha 207 chamadas (eram 195).
+
+De quebra, um defeito antigo que o muro claro deixou à vista: o atlas
+dos letreiros e das pixações tinha as células de 256 × 64 coladas uma
+na outra, e o filtro da textura puxava a borda da vizinha pra dentro —
+toda pixação e toda placa da cidade tinham um fio tracejado em cima e
+embaixo. Agora cada célula tem um respiro de 4 px (o passo continua
+256), e a placa estende o fundo dela no respiro.
+
+O que não é fiel, dito com todas as letras:
+
+- **A rua sem saída não tem balão redondo.** O miolo tem 19 m de
+  largura: um balão de retorno ocuparia tudo e não sobraria lote em
+  volta. Ficou o T, que é o retorno das vilas daqui.
+- **Os prédios são mais altos que tudo na cidade** (o prédio alto do
+  centro tem 45 m; estes, 60 e 52). É o que as fotos mostram — 18 e 15
+  andares —, e de longe eles mandam no horizonte do estádio.
+- **Os nomes EDIFÍCIO MIRANTE e RESIDENCIAL BELA VISTA são meus**; a
+  foto não mostra nome legível. É trocar a célula no pintor.
+- **A caixa de correio diz CORREIO**, não POST: a cidade é brasileira.
+  A cor ficou a da referência (vermelha); a daqui seria amarela.
+- **O carro parado continua a caixa de carro da cidade**, que de perto
+  parece um degrau: foi por isso que o T ficou sem carro.
+- Os cestos da referência têm uma trama mais fina do que dá pra pintar
+  a 200 px por metro; de longe eles leem como chapa lisa colorida.
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -2160,15 +2284,16 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 
 | arquivo | o que é |
 |---|---|
-| `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, a cidade (grade, costa, avenidas, campos, mato, lotes, sedes), o atacarejo e as casas de muro, máscara, spawns, setores, PM, grades, filas, gatilho; o `DX` do tabuleiro |
+| `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, a cidade (grade, costa, avenidas, campos, mato, lotes, sedes), o atacarejo e as casas de muro, a rua sem saída, os dois prédios do baldio e os props de rua, máscara, spawns, setores, PM, grades, filas, gatilho; o `DX` do tabuleiro |
 | `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera (linha de vista, modo leve), ligação com a simulação e com a gente |
-| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados; casa, sobrado, barraco, galpão e prédio vêm do `casas3d.js`, só o muro é caixa), calçadas, árvores, carros, postes, campos, moitas |
-| `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões, ruas, avenidas, costa, campos, estádio |
+| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados; casa, sobrado, barraco, galpão e prédio vêm do `casas3d.js`, só o muro é caixa), calçadas (com o furo da rua sem saída), árvores, carros, postes, campos, moitas |
+| `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões (e a rua sem saída), ruas, avenidas, costa, campos, estádio |
 | `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão |
-| `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX e a montagem de cada um |
+| `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX, as duas torres do condomínio do baldio (Edifício Mirante e Residencial Bela Vista, com o muro, a guarita e os portões) e a montagem de cada um |
+| `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro e banco; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
 | `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo) e as casas de muro (M1 a M4), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
-| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) e do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta) e escreve o atlas; roda de novo sempre que mudar uma peça |
+| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`) e escreve o atlas; roda de novo sempre que mudar uma peça |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
 | `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |

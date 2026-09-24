@@ -78,6 +78,23 @@ export function montarBairro(P) {
   /* a laje da calçada vem recortada da planta: o retângulo menos as
      bandas das avenidas, que é a mesma conta que a máscara usa */
   const semAsAvenidas = (ret, folga) => K.pedacosSemAvenida(ret, folga);
+  /* os pedaços (convexos) menos uns retângulos: cada retângulo parte o
+     pedaço em até quatro — o que fica a oeste, a leste, ao norte e ao
+     sul dele —, e todos continuam convexos */
+  function menosRets(pecas, rets) {
+    if (!rets) return pecas;
+    for (const r of rets) {
+      const novas = [];
+      for (const p of pecas) {
+        const oeste = K.cortarPor(p, 1, 0, r.x0), resto = K.cortarPor(p, -1, 0, -r.x0);
+        const leste = K.cortarPor(resto, -1, 0, -r.x1), meio = K.cortarPor(resto, 1, 0, r.x1);
+        const norte = K.cortarPor(meio, 0, 1, r.y0), sul = K.cortarPor(meio, 0, -1, -r.y1);
+        for (const n of [oeste, leste, norte, sul]) if (n.length >= 3 && Math.abs(K.areaPol(n)) > 1) novas.push(n);
+      }
+      pecas = novas;
+    }
+    return pecas;
+  }
   /* uma tampa plana, sem paredinha: é o chão da pracinha, que já
      assenta sobre o chão do lote */
   function tampa(T, x0, x1, y, y0, y1, hex) {
@@ -239,16 +256,27 @@ export function montarBairro(P) {
   const chavePixo = (texto, tinta) => 'X:' + texto + (tinta ? '|' + tinta : '');
 
   function montarAtlas(dizeres) {
-    const LARG = 256, ALT = 64, COLS = 4;
+    /* UM RESPIRO DE 4 px EM VOLTA DE CADA CÉLULA. Coladas uma na outra,
+       o filtro da textura (e o mipmap, de longe) puxava a borda da
+       vizinha pra dentro da UV: toda pixação e toda placa ganhavam um
+       fio tracejado em cima e embaixo — o contorno escuro da placa do
+       lado. O passo continua 256, que é potência de dois. */
+    const G = 4, LARG = 256 - 2 * G, ALT = 64, COLS = 4;
     const linhas = Math.max(1, Math.ceil(dizeres.length / COLS));
     const cv = document.createElement('canvas');
-    cv.width = COLS * LARG;
-    cv.height = Math.pow(2, Math.ceil(Math.log2(linhas * ALT)));
+    cv.width = COLS * (LARG + 2 * G);
+    cv.height = Math.pow(2, Math.ceil(Math.log2(linhas * (ALT + 2 * G))));
     const c = cv.getContext('2d');
     const uv = new Map();
     dizeres.forEach((d, k) => {
-      const x = (k % COLS) * LARG, y = ((k / COLS) | 0) * ALT;
+      const x = (k % COLS) * (LARG + 2 * G) + G, y = ((k / COLS) | 0) * (ALT + 2 * G) + G;
       const h = somaTexto(d.texto);
+      /* a placa tem fundo: ele invade o respiro, senão a borda dela
+         esmaece contra o vazio */
+      if (d.placa && !d.bandeira && !d.escudo) {
+        c.fillStyle = d.fundo || FUNDOS_PLACA[h % FUNDOS_PLACA.length];
+        c.fillRect(x - G, y - G, LARG + 2 * G, ALT + 2 * G);
+      }
       c.save();
       c.beginPath(); c.rect(x, y, LARG, ALT); c.clip();
       /* ---- O ESCUDO, do jeito que o JOGO desenha ----
@@ -1255,6 +1283,9 @@ export function montarBairro(P) {
           caixa(T, o.x0 + 3, o.x1 - 3, o.alt, o.alt + 3, o.y0 + 3, o.y1 - 3, GRAMA);
           break;
         case 'piso': {
+          /* `soMapa`: só tinta no chão — a laje do pátio já veste o
+             material do chão, que lê essa tinta (o jardim do condomínio) */
+          if (o.soMapa) break;
           const b = o.base || 1.6;
           caixa(T, o.x0, o.x1, b, b + 0.15, o.y0, o.y1, o.cor);
           break;
@@ -1392,8 +1423,12 @@ export function montarBairro(P) {
        calçada da avenida (sem isso a sobra em cunha que a avenida
        deixa no quarteirão lê como um descampado de cimento); e o
        QUINTAL, mais alto, no meio. */
-    for (const p of semAsAvenidas(q)) laje(T, p, 0, 1.4, '#8d897d', TCHAO);
-    for (const p of semAsAvenidas(q.polMiolo, K.CALC)) laje(T, p, 0, 1.6, '#7d7668', TCHAO);
+    /* A RUA SEM SAÍDA fura as duas lajes: o asfalto fica no chão (a
+       borda do furo na laje da calçada é a guia), e a calçada dela é a
+       laje de 1,4 aparecendo pelo furo da laje do lote */
+    const s = q.semSaida;
+    for (const p of menosRets(semAsAvenidas(q), s && s.asfalto)) laje(T, p, 0, 1.4, '#8d897d', TCHAO);
+    for (const p of menosRets(semAsAvenidas(q.polMiolo, K.CALC), s && s.livre)) laje(T, p, 0, 1.6, '#7d7668', TCHAO);
     /* a fatia do equipamento tem chão próprio, e só ela */
     /* `pisoPBR`: o pátio dos marcos veste o material do chão (concreto
        de verdade), como a calçada; os equipamentos antigos continuam

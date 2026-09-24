@@ -2978,6 +2978,481 @@ def folha_atacadex():
     return F.montar()
 
 
+# =========================================================
+#   11. OS DOIS PRÉDIOS DO BALDIO — o condomínio de duas torres
+#   O EDIFÍCIO MIRANTE, de concreto cinza com a cortina de vidro azul
+#   no rasgo e na quina, janelinha solta no concreto; e o RESIDENCIAL
+#   BELA VISTA, de quadro branco, tijolinho laranja e as sacadas de
+#   vidro azul. Os módulos de andar têm os 2,9 m do pé-direito: a
+#   fachada é montada empilhando um por andar.
+# =========================================================
+CONCRETO_T1 = '#aba598'
+BRANCO_T2 = '#eeede8'
+
+
+def junta_de_laje(a, h, ppm, c=0.78):
+    """o friso da laje no pé do módulo: é o que conta os andares de longe"""
+    Y = em(h, ppm)
+    a[int(Y(0.03)):] *= c
+    a[:max(1, int(0.012 * ppm))] *= 0.9
+
+
+def p_t1_concreto(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, CONCRETO_T1, grao=0.06, manchas=0.10, fuligem=4)
+    e = escorrido(h, w, rnd, 4, inicio=(0.0, 0.4), comp=(0.3, 0.8), larg=(1, 3), lad=True)
+    return multiplicar(a, 1 - 0.10 * e)
+
+
+def modulo_t1(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, CONCRETO_T1, grao=0.06, manchas=0.08, lad=False, fuligem=3)
+    junta_de_laje(a, h, ppm)
+    return a
+
+
+def p_t1_cego(w, h, ppm, rnd):
+    a = modulo_t1(w, h, ppm, rnd)
+    e = escorrido(h, w, rnd, 3, inicio=(0.0, 0.2), comp=(0.2, 0.6), larg=(1, 2), lad=False)
+    return multiplicar(a, 1 - 0.12 * e)
+
+
+def p_t1_jan(w, h, ppm, rnd):
+    """o concreto com a janelinha: vidro escuro, caixilho grafite e o
+       peitoril claro que escorre"""
+    a = modulo_t1(w, h, ppm, rnd)
+    Y = em(h, ppm)
+    jw, y0, y1 = 0.72 * ppm, Y(2.3), Y(1.0)
+    x0 = w / 2 - jw / 2
+    esp = max(2, int(0.04 * ppm))
+    v = vidro(int(jw) - 2 * esp, int(y1 - y0) - 2 * esp, rnd, base='#15202a', topo='#6f8596', reflexo=0.16)
+    colar(a, v, x0 + esp, y0 + esp)
+    moldura(a, x0, y0, x0 + jw, y1, esp, '#3a3d40')
+    retangulo(a, x0 + jw / 2 - esp * 0.4, y0, x0 + jw / 2 + esp * 0.4, y1, '#3a3d40', sombra=False)
+    sombra_interna(a, x0 + esp, y0 + esp, x0 + jw - esp, y1 - esp, esp * 1.8, 0.45)
+    retangulo(a, x0 - 0.05 * ppm, y1, x0 + jw + 0.05 * ppm, y1 + 0.05 * ppm, '#c9c4b8')
+    e = escorrido(h, w, rnd, 4, inicio=(0.66, 0.68), comp=(0.1, 0.3), larg=(1, 3), lad=False)
+    return multiplicar(a, 1 - 0.22 * e)
+
+
+def cortina_azul(w, h, ppm, rnd, peitoril=0.9, montantes=(0.5,)):
+    """a pele de vidro azul: o vidro de visão em cima, o spandrel opaco
+       na altura da laje e os montantes de alumínio"""
+    Y = em(h, ppm)
+    a = vidro(w, h, rnd, base='#23405e', topo='#9bb6cf', reflexo=0.22)
+    a = multiplicar(a, 1 + 0.05 * fbm(h, w, 0.8 * ppm, rnd, 2, False))
+    sp = vidro(w, int(peitoril * ppm), rnd, base='#1d3047', topo='#4f6d8c', reflexo=0.08)
+    colar(a, sp, 0, Y(peitoril))
+    esp = max(2, int(0.045 * ppm))
+    al = '#586572'
+    retangulo(a, 0, 0, w, esp, al)
+    retangulo(a, 0, h - esp, w, h, al)
+    retangulo(a, 0, Y(peitoril) - esp / 2, w, Y(peitoril) + esp / 2, al)
+    retangulo(a, 0, 0, esp, h, al)
+    retangulo(a, w - esp, 0, w, h, al)
+    for f in montantes:
+        retangulo(a, w * f - esp / 2, 0, w * f + esp / 2, Y(peitoril), al)
+    return np.clip(a, 0, 1)
+
+
+def p_t1_vidro(w, h, ppm, rnd):
+    return cortina_azul(w, h, ppm, rnd)
+
+
+def p_t1_coroa(w, h, ppm, rnd):
+    """a coroa: o concreto da massa da direita subindo cego, com a
+       veneziana larga da casa de máquinas"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, CONCRETO_T1, grao=0.06, manchas=0.12, lad=False, fuligem=4)
+    x0, x1, y0, y1 = w * 0.30, w * 0.70, Y(2.9), Y(1.2)
+    retangulo(a, x0, y0, x1, y1, '#6f7274')
+    passo = max(3, int(0.07 * ppm))
+    for y in range(int(y0 + 2), int(y1 - 2)):
+        f = ((y - y0) % passo) / passo
+        a[y, int(x0 + 2):int(x1 - 2)] = cor('#5d6062') * (0.75 + 0.45 * f)
+    moldura(a, x0, y0, x1, y1, max(2, int(0.05 * ppm)), '#8c8f90')
+    retangulo(a, 0, 0, w, Y(3.55), '#c2bcb0')                  # o capeamento
+    e = escorrido(h, w, rnd, 8, inicio=(0.02, 0.08), comp=(0.3, 0.9), larg=(1, 4), lad=False)
+    return multiplicar(a, 1 - 0.2 * e)
+
+
+def interior_saguao(W, H, ppm, rnd):
+    """o saguão lá dentro: teto claro com a luminária, parede bege e a
+       mancha verde de um vaso"""
+    a = chapado(W, H, '#cfc6b4')
+    ys = np.linspace(0, 1, H, dtype=np.float32)[:, None, None]
+    a = a * (1.08 - 0.45 * ys)
+    for x in np.arange(0.4 * ppm, W, 1.1 * ppm):
+        retangulo(a, x, 0.12 * ppm, x + 0.5 * ppm, 0.18 * ppm, '#fffbea', sombra=False)
+    cx = rnd.uniform(0.25, 0.75) * W
+    desenhar(a, lambda d, im: d.ellipse([cx - 0.2 * ppm, H - 1.15 * ppm, cx + 0.2 * ppm, H - 0.45 * ppm], fill=(86, 104, 74)))
+    retangulo(a, cx - 0.14 * ppm, H - 0.5 * ppm, cx + 0.14 * ppm, H - 0.1 * ppm, '#8a7a66', sombra=False)
+    return a
+
+
+def p_saguao(montantes, porta=False, branco=False):
+    def f(w, h, ppm, rnd):
+        Y = em(h, ppm)
+        a = interior_saguao(w, h, ppm, rnd)
+        v = vidro(w, h, rnd, base='#101820', topo='#7d93a6', reflexo=0.2)
+        a = a * 0.5 + v * 0.55
+        esp = max(3, int(0.06 * ppm))
+        c = '#e9e9e4' if branco else '#50575d'
+        retangulo(a, 0, 0, w, Y(h / ppm - 0.35), '#e3e1da' if branco else '#b6b0a3')   # a viga em cima
+        moldura(a, 0, Y(h / ppm - 0.35), w, h, esp, c)
+        for fx in montantes:
+            retangulo(a, w * fx - esp / 2, Y(h / ppm - 0.35), w * fx + esp / 2, h, c)
+        retangulo(a, 0, Y(2.7) - esp / 2, w, Y(2.7) + esp / 2, c)
+        if porta:
+            # as duas folhas de abrir com o puxador comprido
+            for fx in (0.46, 0.54):
+                retangulo(a, w * fx - esp * 0.35, Y(1.5), w * fx + esp * 0.35, Y(0.8), '#cfd2d4')
+        retangulo(a, 0, Y(0.08), w, h, '#8f8b82')                  # a soleira
+        return np.clip(a, 0, 1)
+    return f
+
+
+def placa_letras(texto, fundo, tinta, sombra=True):
+    def f(w, h, ppm, rnd):
+        a = reboco(w, h, ppm, rnd, fundo, grao=0.03, manchas=0.04, lad=False)
+        fnt = [None]
+
+        def t(d, im):
+            fnt[0] = caber(d, texto, w * 0.92, h * 0.62)
+            if sombra:
+                d.text((w / 2 + max(1, h * 0.03), h / 2 + max(1, h * 0.04)), texto, fill=(90, 88, 84), anchor='mm', font=fnt[0])
+            d.text((w / 2, h / 2), texto, fill=tuple(int(v * 255) for v in cor(tinta)), anchor='mm', font=fnt[0])
+        desenhar(a, t)
+        return a
+    return f
+
+
+def p_cobertura(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#8f8c85', grao=0.10, manchas=0.14, pintas=8)
+    return a
+
+
+def p_t2_branco(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, BRANCO_T2, grao=0.03, manchas=0.05)
+    e = escorrido(h, w, rnd, 3, inicio=(0.0, 0.5), comp=(0.2, 0.5), larg=(1, 2), lad=True)
+    return multiplicar(a, 1 - 0.06 * e)
+
+
+TIJOLO_T2 = ['#c56b3b', '#b95f34', '#cf7746', '#b1592f', '#c87040', '#bd6436']
+
+
+def p_t2_tijolo(w, h, ppm, rnd, lad=True):
+    return tijolos(w, h, ppm, rnd, TIJOLO_T2, argamassa='#d9cfc1', lad=lad, var=0.12)
+
+
+def p_t2_jan_tij(w, h, ppm, rnd):
+    """o tijolinho com a janela pequena de requadro branco"""
+    Y = em(h, ppm)
+    a = p_t2_tijolo(w, h, ppm, rnd, lad=False)
+    jw = 0.62 * ppm
+    x0, y0, y1 = w / 2 - jw / 2, Y(2.25), Y(1.05)
+    req = max(3, int(0.07 * ppm))
+    retangulo(a, x0 - req, y0 - req, x0 + jw + req, y1 + req, '#f1f0eb')
+    esp = max(2, int(0.035 * ppm))
+    v = vidro(int(jw) - 2 * esp, int(y1 - y0) - 2 * esp, rnd, base='#162330', topo='#7f97aa', reflexo=0.15)
+    colar(a, v, x0 + esp, y0 + esp)
+    moldura(a, x0, y0, x0 + jw, y1, esp, '#dedfdc')
+    sombra_interna(a, x0 + esp, y0 + esp, x0 + jw - esp, y1 - esp, esp * 1.6, 0.4)
+    return a
+
+
+def p_t2_jan_br(w, h, ppm, rnd):
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, BRANCO_T2, grao=0.03, manchas=0.05, lad=False)
+    junta_de_laje(a, h, ppm, 0.9)
+    jw = 0.5 * ppm
+    x0, y0, y1 = w / 2 - jw / 2, Y(2.15), Y(1.15)
+    esp = max(2, int(0.035 * ppm))
+    v = vidro(int(jw) - 2 * esp, int(y1 - y0) - 2 * esp, rnd, base='#162330', topo='#7f97aa', reflexo=0.14)
+    colar(a, v, x0 + esp, y0 + esp)
+    moldura(a, x0, y0, x0 + jw, y1, esp, '#9a9d9f')
+    sombra_interna(a, x0 + esp, y0 + esp, x0 + jw - esp, y1 - esp, esp * 1.6, 0.4)
+    e = escorrido(h, w, rnd, 3, inicio=(0.60, 0.62), comp=(0.1, 0.25), larg=(1, 2), lad=False)
+    return multiplicar(a, 1 - 0.10 * e)
+
+
+def p_t2_sacada(w, h, ppm, rnd):
+    """o fundo da sacada: a porta de correr de vidro azul de parede a
+       parede, o forro da laje de cima na sombra"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, '#dcdad3', grao=0.03, manchas=0.05, lad=False)
+    x0, x1, y0, y1 = 0.12 * ppm, w - 0.12 * ppm, Y(2.45), Y(0.05)
+    v = cortina_azul(int(x1 - x0), int(y1 - y0), ppm, rnd, peitoril=0.02, montantes=(0.25, 0.5, 0.75))
+    colar(a, v, x0, y0)
+    moldura(a, x0, y0, x1, y1, max(2, int(0.04 * ppm)), '#eeeeea')
+    a[:int(Y(2.45))] *= 0.8                                     # a sombra do forro
+    return np.clip(a, 0, 1)
+
+
+def p_t2_guarda(w, h, ppm, rnd):
+    """o guarda-corpo de vidro: vidro verde-azulado, o corrimão branco
+       em cima e os montantinhos"""
+    Y = em(h, ppm)
+    a = vidro(w, h, rnd, base='#3a6378', topo='#a9c6d4', reflexo=0.28)
+    a = a * 0.85 + cor('#6f9bb0')[None, None, :] * 0.15
+    esp = max(3, int(0.05 * ppm))
+    retangulo(a, 0, 0, w, esp * 1.6, '#f3f3ef')
+    for f in (0.0, 0.5, 1.0):
+        x = min(w - esp, max(0, w * f - esp / 2))
+        retangulo(a, x, 0, x + esp, h, '#e9e9e4')
+    retangulo(a, 0, Y(0.06), w, h, '#dcdcd6')
+    return np.clip(a, 0, 1)
+
+
+def p_muro_condo(w, h, ppm, rnd):
+    """o muro do condomínio: reboco creme, rodapé cinza, capa clara em
+       cima e a sujeira que escorre dela"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, '#e4dfd2', grao=0.04, manchas=0.10)
+    a[int(Y(0.28)):] = reboco(w, h, ppm, rnd, '#9a978f', grao=0.06, manchas=0.10)[int(Y(0.28)):]
+    a[:int(Y(2.28))] = reboco(w, h, ppm, rnd, '#c9c5ba', grao=0.04, manchas=0.06)[:int(Y(2.28))]
+    a[int(Y(2.28)):int(Y(2.26))] *= 0.7
+    e = escorrido(h, w, rnd, 7, inicio=(0.05, 0.08), comp=(0.2, 0.6), larg=(1, 3), lad=True)
+    a = multiplicar(a, 1 - 0.14 * e)
+    respingo = np.clip(fbm(h, w, 0.25 * ppm, rnd, 3, True) * 2.5, 0, 1)
+    rodape = np.clip((np.arange(h)[:, None] - Y(0.7)) / (0.45 * ppm), 0, 1)
+    return multiplicar(a, 1 - 0.18 * respingo * rodape)
+
+
+def p_guarita(w, h, ppm, rnd):
+    """a frente da guarita: o vidro escuro fumê, o interfone e a placa"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, '#e8e6df', grao=0.03, manchas=0.06, lad=False)
+    x0, x1, y0, y1 = 0.2 * ppm, w - 0.2 * ppm, Y(2.1), Y(1.05)
+    v = vidro(int(x1 - x0), int(y1 - y0), rnd, base='#0b0f12', topo='#46525b', reflexo=0.2)
+    colar(a, v, x0, y0)
+    moldura(a, x0, y0, x1, y1, max(2, int(0.04 * ppm)), '#6c7074')
+    retangulo(a, w / 2 - 0.12 * ppm, Y(1.0), w / 2 + 0.12 * ppm, Y(0.8), '#4f5357')   # o passa-volume
+    retangulo(a, x0, Y(2.5), x1, Y(2.25), '#2f5f8a')
+    desenhar(a, lambda d, im: d.text((w / 2, Y(2.375)), 'PORTARIA', fill=(240, 240, 236), anchor='mm',
+                                     font=caber(d, 'PORTARIA', (x1 - x0) * 0.8, 0.2 * ppm)))
+    retangulo(a, 0, Y(0.12), w, h, '#9a978f')
+    return a
+
+
+def folha_torres():
+    F = Folha('torres')
+    F.cel('t1_concreto', 2.0, 2.0, 90, p_t1_concreto, lad=True)
+    F.cel('t1_jan', 1.8, 2.9, 90, p_t1_jan)
+    F.cel('t1_cego', 1.8, 2.9, 90, p_t1_cego)
+    F.cel('t1_vidro', 1.8, 2.9, 90, p_t1_vidro)
+    F.cel('t1_coroa', 7.4, 3.8, 40, p_t1_coroa)
+    F.cel('t1_terreo', 2.4, 3.6, 80, p_saguao((0.5,)))
+    F.cel('t1_porta', 2.4, 3.6, 80, p_saguao((0.5,), porta=True))
+    F.cel('t1_placa', 4.0, 0.6, 110, placa_letras('EDIFÍCIO MIRANTE', '#b8b2a6', '#2d3034'))
+    F.cel('cobertura', 2.0, 2.0, 50, p_cobertura, lad=True)
+    F.cel('t2_branco', 2.0, 2.0, 90, p_t2_branco, lad=True)
+    F.cel('t2_tijolo', 1.84, 1.2, 110, p_t2_tijolo, lad=True)
+    F.cel('t2_jan_tij', 1.3, 2.9, 90, p_t2_jan_tij)
+    F.cel('t2_jan_br', 1.2, 2.9, 90, p_t2_jan_br)
+    F.cel('t2_sacada', 2.7, 2.9, 90, p_t2_sacada)
+    F.cel('t2_guarda', 2.7, 1.1, 90, p_t2_guarda)
+    F.cel('t2_terreo', 2.4, 4.2, 70, p_saguao((0.5,), branco=True))
+    F.cel('t2_porta', 2.4, 4.2, 70, p_saguao((0.5,), porta=True, branco=True))
+    F.cel('t2_nome', 10.0, 0.9, 70, placa_letras('RESIDENCIAL BELA VISTA', '#f2f1ec', '#3a3f45'))
+    F.cel('muro', 3.0, 2.4, 60, p_muro_condo, lad=True)
+    F.cel('guarita', 1.8, 2.7, 80, p_guarita)
+    return F.montar()
+
+
+# =========================================================
+#   12. OS PROPS DE RUA — o que se instala e o que se larga na calçada
+#   O contêiner verde de tampa cinza, a lixeira de rodinha de tampa
+#   colorida, o saco de lixo preto, a caixa de papelão, o cesto de
+#   praça de chapa trançada, a barreira de concreto, a caixa de
+#   correio vermelha, o hidrante, os balizadores, o delineador, o
+#   cone, o cinzeiro de pé e o banco de madeira. O que muda de cor de
+#   um pra outro (o cesto, a tampa da lixeira) sai CLARO: a cor vem do
+#   vértice, como na casa.
+# =========================================================
+def p_pr_malha(w, h, ppm, rnd):
+    """a chapa trançada do cesto, clara, com o aro liso em cima e
+       embaixo e o encardido que sobe do chão"""
+    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+    P = 0.036 * ppm
+    t = np.sin(2 * np.pi * (xs + ys) / P) * np.sin(2 * np.pi * (xs - ys) / P)
+    m = 0.5 + 0.5 * t
+    a = np.repeat((0.95 * (0.6 + 0.4 * m))[..., None], 3, axis=2)
+    Y = em(h, ppm)
+    a[:max(1, int(Y(0.66)))] = 0.9
+    a[int(Y(0.05)):] = 0.88
+    a = multiplicar(a, 1 - 0.22 * np.clip((ys / h - 0.55) / 0.45, 0, 1))
+    return np.clip(a, 0, 1)
+
+
+def p_pr_cacamba(w, h, ppm, rnd):
+    """o plástico verde do contêiner, com as nervuras e a borda grossa"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, '#4f9b3d', grao=0.04, manchas=0.12, lad=False)
+    xs = np.arange(w, dtype=np.float32)
+    nerv = 0.5 + 0.5 * np.cos(2 * np.pi * xs / (0.16 * ppm))
+    a *= (0.9 + 0.12 * nerv)[None, :, None]
+    retangulo(a, 0, 0, w, Y(h / ppm - 0.09), '#428a33')
+    e = escorrido(h, w, rnd, 6, inicio=(0.1, 0.3), comp=(0.3, 0.7), larg=(1, 3), lad=False)
+    a = multiplicar(a, 1 - 0.22 * e)
+    a = multiplicar(a, 1 - 0.25 * np.clip((np.arange(h)[:, None] - Y(0.25)) / (0.25 * ppm), 0, 1))
+    return np.clip(a, 0, 1)
+
+
+def p_pr_tampa_cacamba(w, h, ppm, rnd):
+    """a tampa cinza de duas folhas, com as canaletas correndo pro fundo"""
+    a = reboco(w, h, ppm, rnd, '#aeafab', grao=0.03, manchas=0.08, lad=False)
+    meio = w / 2
+    for k in range(2):
+        x0, x1 = k * meio + 0.07 * ppm, (k + 1) * meio - 0.07 * ppm
+        n = 6
+        for i in range(n):
+            x = x0 + (i + 0.5) * (x1 - x0) / n
+            retangulo(a, x - 0.02 * ppm, 0.07 * ppm, x + 0.02 * ppm, h - 0.07 * ppm, '#8f908c')
+    retangulo(a, meio - 0.012 * ppm, 0, meio + 0.012 * ppm, h, '#6c6d69', sombra=False)
+    return a
+
+
+def p_pr_plastico(base):
+    def f(w, h, ppm, rnd):
+        return reboco(w, h, ppm, rnd, base, grao=0.03, manchas=0.08)
+    return f
+
+
+def p_pr_lixeira(w, h, ppm, rnd):
+    """o corpo cinza da lixeira de rodinha: a boca mais grossa em cima,
+       a nervura do meio e o encardido"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, '#9c9e9c', grao=0.03, manchas=0.10, lad=False)
+    retangulo(a, 0, 0, w, Y(h / ppm - 0.07), '#8c8e8c')
+    retangulo(a, w * 0.15, Y(0.56), w * 0.85, Y(0.53), '#8f918f', sombra=False)
+    e = escorrido(h, w, rnd, 5, inicio=(0.1, 0.2), comp=(0.3, 0.8), larg=(1, 3), lad=False)
+    return multiplicar(a, 1 - 0.16 * e)
+
+
+def p_pr_tampa_lixeira(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#eeeeec', grao=0.03, manchas=0.05, lad=False)
+    retangulo(a, w * 0.12, h * 0.06, w * 0.88, h * 0.14, '#d4d4d0')
+    return a
+
+
+def p_pr_saco(w, h, ppm, rnd):
+    """plástico preto: o vinco claro amassado e o brilho em cima"""
+    ys = np.mgrid[0:h, 0:w][0].astype(np.float32)
+    a = chapado(w, h, '#1b1c1e')
+    vinco = np.clip(fbm(h, w, 0.08 * ppm, rnd, 4, True) * 2.4 - 0.35, 0, 1)
+    a = a + 0.22 * vinco[..., None]
+    a = a + (np.exp(-((ys / h - 0.3) / 0.2) ** 2) * 0.10)[..., None]
+    return np.clip(a, 0, 1)
+
+
+def p_pr_papelao(w, h, ppm, rnd):
+    """o papelão com a fita no meio e a setinha de este lado pra cima"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, '#b88a50', grao=0.05, manchas=0.10, lad=False)
+    retangulo(a, w * 0.45, 0, w * 0.55, h, '#caa069', sombra=False)
+    for fx in (0.16, 0.28):
+        desenhar(a, lambda d, im, fx=fx: d.polygon([(w * fx - 4, Y(0.2)), (w * fx, Y(0.27)), (w * fx + 4, Y(0.2))], fill=(64, 52, 40)))
+        retangulo(a, w * fx - 1, Y(0.2), w * fx + 1, Y(0.13), '#403428', sombra=False)
+    a[:2] *= 0.8
+    return a
+
+
+def p_pr_papelao_dentro(w, h, ppm, rnd):
+    return reboco(w, h, ppm, rnd, '#8f6a3c', grao=0.05, manchas=0.12, lad=False)
+
+
+def p_pr_concreto(w, h, ppm, rnd):
+    return reboco(w, h, ppm, rnd, '#d9d7d0', grao=0.05, manchas=0.14, fuligem=4)
+
+
+def p_pr_correio(w, h, ppm, rnd):
+    """a frente da caixa de correio: a portinhola com CARTAS lá em cima
+       e o nome embaixo"""
+    Y = em(h, ppm)
+    a = reboco(w, h, ppm, rnd, '#c33b27', grao=0.03, manchas=0.08, lad=False)
+    x0, x1, y0, y1 = w * 0.13, w * 0.87, Y(0.64), Y(0.50)
+    retangulo(a, x0, y0, x1, y1, '#a9301f')
+    retangulo(a, x0 + 0.03 * ppm, y0 + 0.02 * ppm, x1 - 0.03 * ppm, y0 + 0.05 * ppm, '#241512', sombra=False)
+    px0, px1, py0, py1 = w * 0.3, w * 0.7, y0 + 0.065 * ppm, y1 - 0.02 * ppm
+    retangulo(a, px0, py0, px1, py1, '#e9e6de', sombra=False)
+    desenhar(a, lambda d, im: d.text(((px0 + px1) / 2, (py0 + py1) / 2), 'CARTAS', fill=(40, 40, 40), anchor='mm',
+                                     font=caber(d, 'CARTAS', (px1 - px0) * 0.9, (py1 - py0) * 0.8)))
+    desenhar(a, lambda d, im: d.text((w / 2, Y(0.3)), 'CORREIO', fill=(238, 232, 222), anchor='mm',
+                                     font=caber(d, 'CORREIO', w * 0.84, 0.12 * ppm)))
+    return a
+
+
+def p_pr_tinta(base, grao=0.04, manchas=0.10, fuligem=0):
+    def f(w, h, ppm, rnd):
+        return reboco(w, h, ppm, rnd, base, grao=grao, manchas=manchas, fuligem=fuligem)
+    return f
+
+
+def faixas_horizontais(base, faixas, cor_faixa):
+    """cilindro pintado com anéis: `faixas` são (base, topo) em metros"""
+    def f(w, h, ppm, rnd):
+        Y = em(h, ppm)
+        a = reboco(w, h, ppm, rnd, base, grao=0.03, manchas=0.06, lad=False)
+        for y0, y1 in faixas:
+            retangulo(a, 0, Y(y1), w, Y(y0), cor_faixa, sombra=False)
+        return a
+    return f
+
+
+def p_pr_espuma(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#e8cf36', grao=0.05, manchas=0.10, lad=False)
+    retangulo(a, w * 0.5 - 1, 0, w * 0.5 + 1, h, '#b9a52b', sombra=False)
+    return a
+
+
+def p_pr_tampa_cinzeiro(w, h, ppm, rnd):
+    a = reboco(w, h, ppm, rnd, '#c2c4c1', grao=0.03, manchas=0.06, lad=False)
+    for fx, fy in ((0.4, 0.42), (0.6, 0.42), (0.5, 0.6)):
+        desenhar(a, lambda d, im, fx=fx, fy=fy: d.ellipse([w * (fx - 0.075), h * (fy - 0.075), w * (fx + 0.075), h * (fy + 0.075)],
+                                                          fill=(58, 60, 58)))
+    return a
+
+
+def p_pr_madeira(w, h, ppm, rnd):
+    """a ripa envernizada, o veio correndo no comprimento"""
+    ys = np.mgrid[0:h, 0:w][0].astype(np.float32)
+    n = fbm(h, w, 0.3 * ppm, rnd, 3, True)
+    veio = 0.5 + 0.5 * np.sin(2 * np.pi * (ys / (0.012 * ppm) + 3.0 * n))
+    a = chapado(w, h, '#8f5d33') * (0.8 + 0.26 * veio)[..., None]
+    return np.clip(a, 0, 1)
+
+
+def folha_props():
+    F = Folha('props', larg=1024)
+    F.cel('cesto_malha', 1.4, 0.7, 200, p_pr_malha)
+    F.cel('metal', 0.5, 0.5, 100, p_pr_tinta('#9fa2a1', 0.05, 0.12), lad=True)
+    F.cel('escuro', 0.2, 0.2, 60, p_pr_tinta('#1e1f20'), lad=True)
+    F.cel('cacamba', 1.3, 0.92, 110, p_pr_cacamba)
+    F.cel('tampa_cacamba', 1.4, 1.1, 90, p_pr_tampa_cacamba)
+    F.cel('plastico', 0.5, 0.5, 80, p_pr_plastico('#8f918f'), lad=True)
+    F.cel('plastico_verde', 0.5, 0.5, 80, p_pr_plastico('#4a9139'), lad=True)
+    F.cel('lixeira', 0.58, 0.91, 130, p_pr_lixeira)
+    F.cel('tampa_lixeira', 0.64, 0.78, 110, p_pr_tampa_lixeira)
+    F.cel('pneu', 0.2, 0.2, 60, p_pr_tinta('#1a1a1a', 0.06, 0.05), lad=True)
+    F.cel('saco', 1.4, 0.7, 110, p_pr_saco, lad=True)
+    F.cel('papelao', 0.5, 0.34, 170, p_pr_papelao)
+    F.cel('papelao_dentro', 0.4, 0.4, 80, p_pr_papelao_dentro, lad=True)
+    F.cel('concreto', 1.0, 1.0, 110, p_pr_concreto, lad=True)
+    F.cel('correio', 0.5, 0.93, 170, p_pr_correio)
+    F.cel('correio_lado', 0.45, 0.93, 90, p_pr_tinta('#bf3926', 0.03, 0.08))
+    F.cel('hidrante', 0.63, 0.8, 160, p_pr_tinta('#b3342a', 0.05, 0.16, 6))
+    F.cel('balizador', 0.41, 0.93, 150, faixas_horizontais('#1d1e20', ((0.62, 0.69), (0.76, 0.83)), '#e3b21f'))
+    F.cel('espuma', 0.82, 0.78, 120, p_pr_espuma)
+    F.cel('delineador', 0.32, 1.02, 160, faixas_horizontais('#e1701f', ((0.66, 0.74), (0.82, 0.9)), '#f1f1ec'))
+    F.cel('cone', 0.94, 0.51, 160, faixas_horizontais('#ea6a1c', ((0.14, 0.2), (0.27, 0.37)), '#f3f3ee'))
+    F.cel('cone_base', 0.36, 0.36, 80, p_pr_tinta('#c9521a', 0.04, 0.08), lad=True)
+    F.cel('borracha', 0.4, 0.4, 70, p_pr_tinta('#232323', 0.06, 0.06), lad=True)
+    F.cel('cinzeiro', 1.1, 0.78, 120, faixas_horizontais('#babcb9', ((0.6, 0.63),), '#9c9e9b'))
+    F.cel('tampa_cinzeiro', 0.36, 0.36, 220, p_pr_tampa_cinzeiro)
+    F.cel('madeira', 1.8, 0.15, 200, p_pr_madeira, lad=True)
+    F.cel('ferro', 0.3, 0.3, 100, p_pr_tinta('#2d2e2f', 0.06, 0.10), lad=True)
+    return F.montar()
+
+
 def main():
     print('pintando as folhas dos prédios modelados:')
     atlas = {
@@ -2987,6 +3462,8 @@ def main():
         'adm': folha_adm(),
         'casa': folha_casa(),
         'atacadex': folha_atacadex(),
+        'torres': folha_torres(),
+        'props': folha_props(),
         'casas': folha_casas(),
         'grades': folha_grades(),
     }
