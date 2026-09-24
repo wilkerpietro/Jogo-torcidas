@@ -1604,9 +1604,9 @@ TO.diaJogo.tres = (function(){
      CÂMERA — atrás do líder, do jeito dos jogos de rua
      ======================================================= */
   const MODOS = [
-    {nome:'ombro', dist:170, pitch:0.46},
-    {nome:'alta',  dist:300, pitch:0.66},
-    {nome:'drone', dist:560, pitch:1.10}
+    {nome:'ombro', rot:_t('câmera ombro'), dist:170, pitch:0.46},
+    {nome:'alta',  rot:_t('câmera alta'),  dist:300, pitch:0.66},
+    {nome:'drone', rot:_t('câmera drone'), dist:560, pitch:1.10}
   ];
   const cam = {
     yaw:Math.PI/2, pitch:0.46, dist:170, modo:0, zoom:1,
@@ -1756,7 +1756,7 @@ TO.diaJogo.tres = (function(){
       if(!d.vivo){
         if(d.preso && p.w < 900){
           c.fillStyle='#5fa87d'; c.font='600 10px "IBM Plex Mono", monospace';
-          c.fillText('PRESO', p.x, p.y);
+          c.fillText(_t('PRESO'), p.x, p.y);
         }
         continue;
       }
@@ -1775,7 +1775,7 @@ TO.diaJogo.tres = (function(){
     /* o nome do modo de câmera, discreto */
     c.font='600 9px "IBM Plex Mono", monospace'; c.textAlign='right';
     c.fillStyle='rgba(233,233,233,.55)';
-    c.fillText('CÂMERA '+MODOS[cam.modo].nome.toUpperCase()+' · C troca · arrastar gira · roda aproxima', sobre.width-12, sobre.height-10);
+    c.fillText(_t('{camera} · C troca · arrastar gira · roda aproxima', {camera:MODOS[cam.modo].rot.toUpperCase()}), sobre.width-12, sobre.height-10);
   }
 
   function radar(J){

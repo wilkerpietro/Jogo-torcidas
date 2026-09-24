@@ -179,7 +179,7 @@ TO.diaJogo.ponte = (function(){
     if(sg && sg !== cv){ sg.hidden = true; sg.classList.remove('sobre-gl'); }
     T = null;
     console.warn('bonecos desligados: ' + motivo);
-    if(J) C.aviso(J, 'Bonecos desligados — a cena segue com os discos', '#e0b040');
+    if(J) C.aviso(J, _t('Bonecos desligados — a cena segue com os discos'), '#e0b040');
   }
   /* O LAÇO PARA QUANDO A CENA FECHA (crash do celular, 07/09/2026).
      Ele nunca parava: com o palco escondido, a simulação e as duas
@@ -495,7 +495,7 @@ TO.diaJogo.ponte = (function(){
     if(!J) return false;
     if(tres){ C.arremessar(J,'bomba'); return false; }
     if(!C.podeArremessar(J,'bomba')){
-      C.aviso(J, J.bombas<=0 ? 'Sem bomba na mochila.' : 'Bomba recarregando.', '#e0b040');
+      C.aviso(J, J.bombas<=0 ? _t('Sem bomba na mochila.') : _t('Bomba recarregando.'), '#e0b040');
       return false;
     }
     const l=liderVivo(); if(!l) return false;
@@ -548,7 +548,7 @@ TO.diaJogo.ponte = (function(){
        pra coisa que acontece, não pra instrução */
     c.font='bold 11px system-ui, sans-serif'; c.textAlign='center';
     c.fillStyle='rgba(0,0,0,.55)';
-    const dica = mira.arrasto ? 'solte pra jogar' : 'clique · E joga · Esc cancela';
+    const dica = mira.arrasto ? _t('solte pra jogar') : _t('clique · E joga · Esc cancela');
     const tw=c.measureText(dica).width+10;
     c.fillRect(mira.x-tw/2, mira.y+raio+6, tw, 16);
     c.fillStyle='#ffd35a'; c.fillText(dica, mira.x, mira.y+raio+18);
@@ -694,10 +694,10 @@ TO.diaJogo.ponte = (function(){
     if(btP) btP.style.display = J.semArmas ? 'none' : '';
     if(btB) btB.style.display = J.semArmas ? 'none' : '';
     if(btP && !J.semArmas){const r=C.restaCd(J,'pedra'); btP.disabled=r>0;
-      btP.firstChild.textContent=r>0?`Pedra ${r.toFixed(1)}s `:'Pedra ';}
+      btP.firstChild.textContent=(r>0?_t('Pedra {s}s', {s:r.toFixed(1)}):_t('Pedra'))+' ';}
     const btQ=el('djBtBater'); if(btQ) btQ.style.display = '';
     if(btB && !J.semArmas){const r=C.restaCd(J,'bomba'); btB.disabled=J.bombas<=0||r>0;
-      btB.firstChild.textContent=r>0?`Bomba ${r.toFixed(1)}s `:'Bomba ';}
+      btB.firstChild.textContent=(r>0?_t('Bomba {s}s', {s:r.toFixed(1)}):_t('Bomba'))+' ';}
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
 
     atualizarPad();
@@ -709,11 +709,12 @@ TO.diaJogo.ponte = (function(){
         /* nos arredores a ordem vale sempre, inclusive no meio da briga:
            o botão não fica cinza esperando o líder chegar no portão */
         be.disabled = !!J.entrando;
-        be.firstChild.textContent = (J.entrando ? 'Indo pro portão'
-                                                : 'Entrar pelo portão') + ' ';
+        be.firstChild.textContent = (J.entrando ? _t('Indo pro portão')
+                                                : _t('Entrar pelo portão')) + ' ';
       } else {
         const perto=!!C.noPortao(J); be.disabled=!perto;
-        be.firstChild.textContent=(perto?s.perto:s.longe)+' ';
+        /* os textos da saída são dado da cena (dados/cenas.js): traduz aqui */
+        be.firstChild.textContent=_t(perto?s.perto:s.longe)+' ';
       }
     }
 
@@ -722,14 +723,14 @@ TO.diaJogo.ponte = (function(){
       if(!J.rompido){cg.textContent='';cg.className='';}
       else if(J.cargaEm===null){
         /* sem tropa de choque: o que aperta é a PM que já estava na cena */
-        cg.textContent = J.t<J.cargaAte ? 'PM EM CIMA' : 'LINHA RECOMPOSTA';
+        cg.textContent = J.t<J.cargaAte ? _t('PM EM CIMA') : _t('LINHA RECOMPOSTA');
         cg.className = J.t<J.cargaAte ? 'quente' : '';
       }
       else if(!J.tropaVeio){
-        cg.textContent=`TROPA CHEGA EM ${Math.max(0,J.cargaEm-J.t).toFixed(1)}s`; cg.className='quente';
+        cg.textContent=_t('TROPA CHEGA EM {s}s', {s:Math.max(0,J.cargaEm-J.t).toFixed(1)}); cg.className='quente';
       } else if(J.t<J.cargaAte){
-        cg.textContent=`CARGA EM CURSO · ${Math.max(0,J.cargaAte-J.t).toFixed(0)}s`; cg.className='quente';
-      } else {cg.textContent='LINHA RECOMPOSTA'; cg.className='';}
+        cg.textContent=_t('CARGA EM CURSO · {s}s', {s:Math.max(0,J.cargaAte-J.t).toFixed(0)}); cg.className='quente';
+      } else {cg.textContent=_t('LINHA RECOMPOSTA'); cg.className='';}
     }
 
     if(el('djPlacar') && !J.reuniao){
@@ -744,7 +745,7 @@ TO.diaJogo.ponte = (function(){
         if(b && b.nome) return b.nome;
         const nosso=(((J.bondes_||[]).find(x=>x.nossa))||{}).lado||'mandante';
         if(lado!==nosso && J.rivalInfo && J.rivalInfo.nome) return J.rivalInfo.nome;
-        return lado==='mandante'?'MANDANTE':'VISITANTE';
+        return lado==='mandante'?_t('MANDANTE'):_t('VISITANTE');
       };
       /* O PLACAR É UM PLACAR DE TRANSMISSÃO (pedido do dono,
          22/08/2026): duas linhas de time com a tarja da cor do bonde,
@@ -797,11 +798,11 @@ TO.diaJogo.ponte = (function(){
           `<span class="pl-nome">${g.nome}</span>`+
           `<span class="pl-n">${g.n}</span></div>`;
       const rodape = [
-        `<span class="pl-dado"><i>caídos</i>`+
+        `<span class="pl-dado"><i>${_t('caídos')}</i>`+
         `${J.caidos.mandante}–${J.caidos.visitante}</span>`];
       /* "entraram" só existe onde há portão pra entrar */
       if(entradaDeVerdade())
-        rodape.push(`<span class="pl-dado"><i>entraram</i>${ent}</span>`);
+        rodape.push(`<span class="pl-dado"><i>${_t('entraram')}</i>${ent}</span>`);
       /* NA FAIXA É TUDO UMA LINHA (22/08/2026): os dois times lado a
          lado e o resto emendado à direita, em vez do bloco de duas
          fileiras que a placa flutuante usava. */
@@ -810,8 +811,8 @@ TO.diaJogo.ponte = (function(){
         `${torcidasNaCena().map(linhaDoTime).join('')}</div>`+
         `<div class="pl-rodape">${rodape.join('')}`+
         `<span class="pl-clima ${J.paz?'calmo':'pesado'}">`+
-        `<span class="rot-clima">clima </span>`+
-        `${J.paz?'tranquilo':'pesado'}</span></div>`;
+        `<span class="rot-clima">${_t('clima')} </span>`+
+        `${J.paz?_t('tranquilo'):_t('pesado')}</span></div>`;
       /* nome e número mudam de largura no meio da briga (10 → 9, um
          escalão que some): a conta da quebra é refeita junto */
       medirFaixa();
@@ -848,9 +849,10 @@ TO.diaJogo.ponte = (function(){
     if(!hudBancada) return;
     const n = hudBancada;
     if(n.sub) n.sub.textContent = ED.ativo
-      ? 'editor de cena — jogo pausado'
-      : (D.nome ? 'na '+D.nome.toLowerCase() : 'nos arredores');
-    if(n.local) n.local.textContent = D.local || 'Nos arredores';
+      ? _t('editor de cena — jogo pausado')
+      : (D.nome ? _t('na {lugar}', {lugar:_t(D.nome).toLowerCase()}) : _t('nos arredores'));
+    /* nome e local são dado da cena (dados/cenas.js): traduz aqui */
+    if(n.local) n.local.textContent = D.local ? _t(D.local) : _t('Nos arredores');
     if(n.log && n.log.dataset.n != String(J.log.length)){
       n.log.dataset.n = String(J.log.length);
       n.log.innerHTML = J.log.map(l=>`<div class="${l.cor}">${l.txt}</div>`).join('');
@@ -859,17 +861,13 @@ TO.diaJogo.ponte = (function(){
        importa saber — e some no instante em que gritam lá dentro */
     const espera = D.gatilho && !J.acordou && D.gatilho.espera;
     if(n.dica) n.dica.innerHTML = ED.ativo
-      ? '<kbd>F2</kbd> sair do editor'
+      ? _t('<kbd>F2</kbd> sair do editor')
       : espera
-      ? `<b style="color:var(--ouro)">${espera.toUpperCase()}</b> · `+
-        '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação'
+      ? `<b style="color:var(--ouro)">${_t(espera).toUpperCase()}</b> · `+
+        _t('<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação')
       : tres
-      ? '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · '+
-        '<kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · '+
-        'arrastar gira · roda aproxima'
-      : '<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · '+
-        '<kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · '+
-        '<kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena';
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
+      : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
   }
 
   /* =======================================================
@@ -886,7 +884,7 @@ TO.diaJogo.ponte = (function(){
       for(const [id,f] of Object.entries(C.FORMACOES)){
         const b=document.createElement('button');
         b.className='form-btn'; b.dataset.f=id;
-        b.innerHTML=`${f.nome}<small>${f.tecla}</small>`;
+        b.innerHTML=`${_t(f.nome)}<small>${f.tecla}</small>`;
         b.onclick=()=>{J.form=id;atualizarBotoes();};
         cf.appendChild(b);
       }
@@ -918,20 +916,21 @@ TO.diaJogo.ponte = (function(){
        botão continua sendo a SAÍDA da cena, com o líder no ponto e os
        textos que a cena declara. */
     if(entradaDeVerdade()){
-      if(!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p');
+      if(!C.mandarEntrar(J)) C.logar(J, _t('Não sobrou ninguém pra entrar.'), 'p');
       atualizarBotoes();
       return;
     }
-    if(!C.noPortao(J)){ C.logar(J, s.dica, 'p'); return; }
+    if(!C.noPortao(J)){ C.logar(J, _t(s.dica), 'p'); return; }
     const l=J.discos.find(d=>d.lider&&d.vivo);
     if(l) C.entrarNoEstadio(J, l);
-    encerrar(s.feito, {objetivo:true});
+    /* o motivo vai pra tela de relatório já na língua do jogo */
+    encerrar(_t(s.feito), {objetivo:true});
   }
   /* A ORDEM DE CORRER, do botão e da tecla F: quem manda é o combate,
      aqui só se pinta o que sobrou de escolha. */
   function mandarCorrer(){
     if(!J) return;
-    if(!C.mandarFugir(J)) C.logar(J, 'Não sobrou ninguém pra correr.', 'p');
+    if(!C.mandarFugir(J)) C.logar(J, _t('Não sobrou ninguém pra correr.'), 'p');
     atualizarBotoes();
     marcarFugaNoPad();
   }
@@ -939,7 +938,7 @@ TO.diaJogo.ponte = (function(){
     U.$$('.form-btn').forEach(b=>b.classList.toggle('on', b.dataset.f===J.form));
     const br=$('djBtRecuar');
     if(br&&br.firstChild){
-      br.firstChild.textContent=J.recuando?'Voltar pra briga ':'Recuar ';
+      br.firstChild.textContent=(J.recuando?_t('Voltar pra briga'):_t('Recuar'))+' ';
       br.style.borderColor=J.recuando?'var(--ouro)':'#3d3d39';
       br.style.color=J.recuando?'var(--ouro)':'var(--texto)';
     }
@@ -975,25 +974,25 @@ TO.diaJogo.ponte = (function(){
     if(!cs || cs.hidden || cs.childElementCount) return;
     if(getComputedStyle(cs).display === 'none') return;
     const LISTA=[
-      ['efetivo','Efetivo mandante',6,120,2,v=>v],
-      ['efetivoRival','Efetivo visitante',6,120,2,v=>v],
-      ['velocidade','Velocidade',30,160,2,v=>v],
-      ['dano','Intensidade do dano',0.5,3,0.1,v=>v.toFixed(1)+'×'],
-      ['vidaGrade','Resistência da grade',150,900,25,v=>v],
-      ['forcaPM','Força do cassetete',10,60,2,v=>v],
-      ['debandada','Debandada em',20,80,5,v=>v+'%'],
-      ['atrasoCarga','Demora da carga',0,20,1,v=>v+'s'],
-      ['tropaCarga','Tropa de choque',2,16,1,v=>v+' PM'],
+      ['efetivo',_t('Efetivo mandante'),6,120,2,v=>v],
+      ['efetivoRival',_t('Efetivo visitante'),6,120,2,v=>v],
+      ['velocidade',_t('Velocidade'),30,160,2,v=>v],
+      ['dano',_t('Intensidade do dano'),0.5,3,0.1,v=>v.toFixed(1)+'×'],
+      ['vidaGrade',_t('Resistência da grade'),150,900,25,v=>v],
+      ['forcaPM',_t('Força do cassetete'),10,60,2,v=>v],
+      ['debandada',_t('Debandada em'),20,80,5,v=>v+'%'],
+      ['atrasoCarga',_t('Demora da carga'),0,20,1,v=>v+'s'],
+      ['tropaCarga',_t('Tropa de choque'),2,16,1,v=>_t('{n} PM', {n:v})],
       /* a barra enche nesse tempo de pressão; ela não recua mais o bonde
          sozinho — quem recua é o jogador, ou a debandada por baixas */
-      ['aguentaPM','Tempo pra barra de pressão encher',3,20,1,v=>v+'s'],
-      ['chancePaz','Chance de noite tranquila',0,100,5,v=>v+'%'],
-      ['cdPedra','Recarga da pedra',0.5,6,0.1,v=>v.toFixed(1)+'s'],
-      ['alcancePedra','Alcance da pedra',80,320,10,v=>v+'px'],
+      ['aguentaPM',_t('Tempo pra barra de pressão encher'),3,20,1,v=>v+'s'],
+      ['chancePaz',_t('Chance de noite tranquila'),0,100,5,v=>v+'%'],
+      ['cdPedra',_t('Recarga da pedra'),0.5,6,0.1,v=>v.toFixed(1)+'s'],
+      ['alcancePedra',_t('Alcance da pedra'),80,320,10,v=>v+'px'],
       /* o relógio da cena anda 0,6 min por segundo: 150 min são 4 min
          de espera até o pessoal entrar. Baixar isto é o jeito de ver a
          noite tranquila inteira sem esperar a noite inteira. */
-      ['minutosAteJogo','Falta pro jogo',10,240,10,v=>v+' min']
+      ['minutosAteJogo',_t('Falta pro jogo'),10,240,10,v=>v+' min']
     ];
     for(const [k,rot,mi,ma,pa,fmt] of LISTA){
       const d=document.createElement('div'); d.className='slider';
@@ -1005,7 +1004,7 @@ TO.diaJogo.ponte = (function(){
     }
     const b=document.createElement('button');
     b.className='acao-btn'; b.style.marginTop='6px';
-    b.textContent='Nova noite';
+    b.textContent=_t('Nova noite');
     b.onclick=novaNoite;
     cs.parentElement.appendChild(b);
   }
@@ -1155,7 +1154,7 @@ TO.diaJogo.ponte = (function(){
        a bomba sai quando solta. Toque curto só abre a mira — aí o
        próximo toque na cena é onde ela cai (ver A MIRA DA BOMBA). */
     const bomba = document.createElement('button');
-    bomba.className = 'pad-bt pad-acao pad-e'; bomba.textContent = 'BOMBA';
+    bomba.className = 'pad-bt pad-acao pad-e'; bomba.textContent = _t('BOMBA');
     bomba.addEventListener('pointerdown', ev=>{
       ev.preventDefault();
       try{ bomba.setPointerCapture(ev.pointerId); }catch(_){}
@@ -1183,29 +1182,29 @@ TO.diaJogo.ponte = (function(){
     bomba.addEventListener('contextmenu', ev=>ev.preventDefault());
     /* Q bate (toque), E defende (segurar), R recua; pedra e bomba
        ficam do outro lado, nos números 2 e 3 */
-    const defender = botao('DEFENDER', 'pad-acao pad-e', ()=>{ teclas.e=true; }, ()=>{ teclas.e=false; if(J) C.soltarDefesa(J, liderVivo()); });
+    const defender = botao(_t('DEFENDER'), 'pad-acao pad-e', ()=>{ teclas.e=true; }, ()=>{ teclas.e=false; if(J) C.soltarDefesa(J, liderVivo()); });
     /* OS MAIS USADOS NA LINHA DE CIMA, MAIORES (pedido do dono,
        08/09/2026): bater, defender, pedra e bomba; o resto embaixo */
     const principais = document.createElement('div');
     principais.className = 'pad-acoes pad-principais';
     principais.append(
-      disparo('q','BATER', ()=>{ if(J){ const l=liderVivo(); if(l) C.bater(J, l); } }),
+      disparo('q',_t('BATER'), ()=>{ if(J){ const l=liderVivo(); if(l) C.bater(J, l); } }),
       defender);
     acoes.append(
-      disparo('r','RECUAR',()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
-      disparo('f','AGARRAR',()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }),
-      disparo('c','CHAMAR',()=>{ if(J) C.chamar(J, C.ladoDoJogador(J)); }),
+      disparo('r',_t('RECUAR'),()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
+      disparo('f',_t('AGARRAR'),()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }),
+      disparo('c',_t('CHAMAR'),()=>{ if(J) C.chamar(J, C.ladoDoJogador(J)); }),
       /* FUGIR SAIU DO F (que virou agarrar) e foi pro X */
-      disparo('x','FUGIR', ()=>{ mandarCorrer(); }),
+      disparo('x',_t('FUGIR'), ()=>{ mandarCorrer(); }),
       /* O PORTÃO/SAÍDA VEIO PRO PAD (decisão do dono, 22/08/2026): ele
          era o último botão em cima do palco, com o rótulo comprido
          atravessado no meio da briga. Aqui o rótulo é curto e o estado
          (ligado/desligado) sai do mesmo lugar que o do HUD. */
-      disparo('enter','SAIR', ()=>{ mandarEntrarOuSair(); }));
+      disparo('enter',_t('SAIR'), ()=>{ mandarEntrarOuSair(); }));
     /* pedra e bomba fecham a mesma linha (os números 2 e 3 são do
        teclado, não dizem nada no dedo) */
-    const pedra = botao('PEDRA', 'pad-acao pad-2', ()=>{ if(J) C.arremessar(J,'pedra'); });
-    bomba.className = 'pad-bt pad-acao pad-3'; bomba.textContent = 'BOMBA';
+    const pedra = botao(_t('PEDRA'), 'pad-acao pad-2', ()=>{ if(J) C.arremessar(J,'pedra'); });
+    bomba.className = 'pad-bt pad-acao pad-3'; bomba.textContent = _t('BOMBA');
     principais.append(pedra, bomba);
     const linhas = document.createElement('div');
     linhas.className = 'pad-linhas';
@@ -1236,7 +1235,7 @@ TO.diaJogo.ponte = (function(){
       const be = $('djBtEntrar');
       sai.disabled = be ? be.disabled : false;
       sai.classList.toggle('gasto', sai.disabled);
-      sai.textContent = entradaDeVerdade() ? 'PORTÃO' : 'SAIR';
+      sai.textContent = entradaDeVerdade() ? _t('PORTÃO') : _t('SAIR');
     }
     marcarFormacaoNoPad();
     marcarFugaNoPad();
@@ -1256,7 +1255,9 @@ TO.diaJogo.ponte = (function(){
       const k=e.key.toLowerCase();
       teclas[k]=true;
       if(k==='f2'){e.preventDefault(); alternarEditor(); return;}
-      if(k==='c' && tres && T && J){ C.aviso(J, 'câmera '+T.trocarCamera(), '#e0b040'); return; }
+      if(k==='c' && tres && T && J){
+        const nm = T.trocarCamera(), md = (T.MODOS||[]).find(m=>m.nome===nm);
+        C.aviso(J, md && md.rot ? md.rot : 'câmera '+nm, '#e0b040'); return; }
       if(ED.ativo){
         if(k==='[') ED.pincel=Math.max(4,ED.pincel-4);
         if(k===']') ED.pincel=Math.min(80,ED.pincel+4);
@@ -1382,7 +1383,7 @@ TO.diaJogo.ponte = (function(){
     let el=$('alvoSolta');
     if(on&&!el){
       el=document.createElement('div');
-      el.id='alvoSolta'; el.textContent='solte a imagem pra usar de fundo';
+      el.id='alvoSolta'; el.textContent=_t('solte a imagem pra usar de fundo');
       document.body.appendChild(el);
     } else if(!on&&el) el.remove();
   }
@@ -1431,7 +1432,7 @@ TO.diaJogo.ponte = (function(){
       const r={motivo, reuniao:true, membros:[], prestigio:0, moralTorcida:0,
                caidosMandante:0, caidosVisitante:0, presosMandante:0, presosVisitante:0};
       J.resultado=r; J.falante=null;
-      C.logar(J,`Encerrado (${motivo}).`,'p');
+      C.logar(J,_t('Encerrado ({motivo}).', {motivo}),'p');
       if(aoTerminar) aoTerminar(r);
       return;
     }
@@ -1545,7 +1546,7 @@ TO.diaJogo.ponte = (function(){
       membros
     };
     J.resultado=r;
-    C.logar(J,`Encerrado (${motivo}). Prestígio ${r.prestigio>0?'+':''}${r.prestigio}.`,'p');
+    C.logar(J,_t('Encerrado ({motivo}). Prestígio {n}.', {motivo, n:(r.prestigio>0?'+':'')+r.prestigio}),'p');
     if(aoTerminar) aoTerminar(r); else mostrarFimNaCena(r);
   }
 
@@ -1569,9 +1570,9 @@ TO.diaJogo.ponte = (function(){
     const a=(r.armas&&r.armas[nosso])||{pedra:0,bomba:0};
     /* mesmas três palavras da tela de relatório do jogo, e nesta ordem:
        ter vencido diz mais que a noite ter sido calma */
-    const titulo = r.correram ? 'ELES CORRERAM'
-                 : ganhou ? 'SAÍMOS POR CIMA'
-                 : r.tranquila ? 'NOITE TRANQUILA' : 'SAÍMOS POR BAIXO';
+    const titulo = r.correram ? _t('ELES CORRERAM')
+                 : ganhou ? _t('SAÍMOS POR CIMA')
+                 : r.tranquila ? _t('NOITE TRANQUILA') : _t('SAÍMOS POR BAIXO');
     const dado=(rot,val)=>`<div class="dado-cena"><span>${rot}</span><b>${val}</b></div>`;
     const ef = r.efetivo || {};
     const cx=document.createElement('div');
@@ -1580,19 +1581,20 @@ TO.diaJogo.ponte = (function(){
       `<div class="cartaz-cena ${r.correram?'neutra':ganhou?'boa':'ruim'}">
          <h3>${titulo}</h3>
          <div class="dados-cena">
-           ${dado('Feridos deles', r['caidos'+Cap(dele)]||0)}
-           ${dado('Feridos nossos', r['caidos'+Cap(nosso)]||0)}
-           ${r.correram ? dado('Eram deles', ef[dele]||0) +
-                          dado('Éramos nós', ef[nosso]||0) +
-                          dado('Escaparam', (r.sumiram||{})[dele]||0)
-                        : dado('Armas empregadas',
-                               `${a.pedra||0} pedras · ${a.bomba||0} bombas`) +
-                          dado('Presos', r.presosMandante+r.presosVisitante) +
-                          dado('Chegaram no alvo', (r.entraram||{})[nosso]||0)}
-           ${dado('Prestígio', (r.prestigio>0?'+':'')+r.prestigio)}
+           ${dado(_t('Feridos deles'), r['caidos'+Cap(dele)]||0)}
+           ${dado(_t('Feridos nossos'), r['caidos'+Cap(nosso)]||0)}
+           ${r.correram ? dado(_t('Eram deles'), ef[dele]||0) +
+                          dado(_t('Éramos nós'), ef[nosso]||0) +
+                          dado(_t('Escaparam'), (r.sumiram||{})[dele]||0)
+                        : dado(_t('Armas empregadas'),
+                               _tn(a.pedra||0, '{n} pedra', '{n} pedras')+' · '+
+                               _tn(a.bomba||0, '{n} bomba', '{n} bombas')) +
+                          dado(_t('Presos'), r.presosMandante+r.presosVisitante) +
+                          dado(_t('Chegaram no alvo'), (r.entraram||{})[nosso]||0)}
+           ${dado(_t('Prestígio'), (r.prestigio>0?'+':'')+r.prestigio)}
          </div>
          <small>${r.motivo}</small>
-         <button class="acao-btn" id="djOutraNoite">Nova noite</button>
+         <button class="acao-btn" id="djOutraNoite">${_t('Nova noite')}</button>
        </div>`;
     palco.appendChild(cx);
     $('djOutraNoite').onclick=()=>{ cx.remove(); novaNoite(); };
@@ -1603,7 +1605,7 @@ TO.diaJogo.ponte = (function(){
      ======================================================= */
   function alternarEditor(){
     /* o editor pinta a malha na tela de cima; em 3D não há onde pintar */
-    if(tres){ if(J) C.aviso(J, 'o editor é da cena de cima', '#e0b040'); return; }
+    if(tres){ if(J) C.aviso(J, _t('o editor é da cena de cima'), '#e0b040'); return; }
     ED.ativo=!ED.ativo;
     if(ED.ativo) montarBarraEditor(); else { const b=$('editorBarra'); if(b) b.remove(); }
   }

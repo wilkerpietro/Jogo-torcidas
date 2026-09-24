@@ -138,7 +138,7 @@ TO.diaJogo.simular = (function(){
       -10, 10) || 0;
 
     const res = {
-      motivo: 'briga simulada',
+      motivo: _t('briga simulada'),
       simulada: true,
       caidosMandante: caidos.mandante, caidosVisitante: caidos.visitante,
       presosMandante: presos.mandante, presosVisitante: presos.visitante,
